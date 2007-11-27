@@ -1,0 +1,16 @@
+// graphical interface appearance
+objref g
+g = new Graph()
+g.size(-80, 50, 0, 1)
+proc prate() {
+	g.addexpr("minf_hh",1,1)
+	g.addexpr("hinf_hh",2,1)
+	g.addexpr("ninf_hh", 3,1)
+	for (vi=-80; vi<50; vi=vi+1) {
+		rates_hh(vi)
+		g.plot(vi)
+	}
+	g.flush()
+}
+
+prate()

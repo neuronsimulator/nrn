@@ -1,0 +1,40 @@
+{
+load_file("nrngui.hoc")
+load_file("synchronize.hoc")
+load_file("spkplot.hoc")
+cvode_active(1)
+}
+
+createnet(2)
+tau(10)
+weight(0)
+delay(1)
+interval(10, 11)
+
+objref sp
+sp = new SpikePlot1(cells)
+
+proc recreate() {
+	if (sp != nil) {
+		sp.unmap()
+		sp = nil
+	}
+	doNotify()
+	createnet($1)
+	weight(w)  delay(del)
+	tau(ta)  interval(low, high)
+	sp = new SpikePlot1(cells, 0)
+	sp.map("", 700, 50, 300, 300)
+}
+
+/*
+xpanel("Synchronizing network parameters")
+xvalue("Number of all to all cells", "ncell", 1, "recreate(ncell)")
+xvalue("All to all connection weight", "w", 1, "weight(w)")
+xvalue("Delay (ms)", "del", 1, "delay(del)")
+xvalue("Cell time constant (ms)", "ta", 1, "tau(ta)")
+xvalue("Lowest natural interval", "low", 1, "interval(low, high)")
+xvalue("Highest natural interval", "high", 1, "interval(low, high)")
+xpanel()
+*/
+

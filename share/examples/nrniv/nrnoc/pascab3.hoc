@@ -1,0 +1,79 @@
+/* hoc.pascab3 -- test of Rall 3/2 power law
+   Compare a uniform cable and cable with 8 rall branches.
+      Notice that the voltage profile is the same up to the branch point
+      since the 8 branches have the same total input impedance as a
+      continuation of the cable.  From then on, since the diameter is 1/4 of
+      its former value, the space constant is 1/2 of its former value. */
+
+// physical properties of the cell
+create a,b
+access a
+a.nseg = 5	
+b.nseg = 20
+a {connect b(0), 1}
+a {diam = 1  L = 1  insert pas g_pas=.001 e_pas=0}
+b {diam = 1  L = 4  insert pas g_pas=.001 e_pas=0 rallbranch=1}
+forall Ra = 1e7/4
+
+// experimental tools
+objref stim
+stim = new VClamp(0)
+
+// graphical interface appearance
+length = a.L + b.L
+objref g
+g = new Graph()
+g.size(0,length,-.2,1)
+g.color(0)
+g.color(1)
+proc label() {
+	g.vfixed
+	g.label(.315,.01, "x (Lambda)")
+	g.label(0, .5, "V")
+	g.label(0,.95,"Steady state voltage as function of distance for infinite cable")
+	g.label("Compare current injection, voltage clamp, and analytic sol'n.")
+}
+label()
+
+// simulation control
+proc plotvolt() { local x
+	g.beginline()
+	a for (x) {
+		g.line(x*L, v(x))
+	}
+	b for (x) {
+		g.line(x*L + a.L, v(x))
+	}	
+}
+proc run() {
+	a.v =  b.v = 0
+	t = 0	dt = 1e9
+	stim.dur[0]=1e20 stim.amp[0]=1 stim.gain=1e9
+//	fclamp(1,0) fclamp(0,1e20, 1)
+	g.color(1)
+	g.vfixed(1)
+	g.label(.5,.8,"uniform")
+	fadvance() plotvolt()
+	g.color(2)
+	g.label("8 rall branches")
+	b.rallbranch = 8   b.diam = 8^(-2/3)
+	fadvance() plotvolt()
+	g.beginline()
+	g.flush()
+}
+// run simulation
+run()
+
+
+
+
+
+
+
+
+	
+	
+
+
+
+

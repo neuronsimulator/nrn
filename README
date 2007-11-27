@@ -1,0 +1,11 @@
+This is very out of date.
+
+As of version 4.2.2., the neuron compilation procedure has been
+completely redone.  There are some substantial differences from older
+versions of neuron, so please read the beginning of the INSTALL file
+before you try to build it.
+
+Some examples of neuron .hoc and .mod files are contained in the
+examples subdirectory of the distribution.  These files are not
+installed since they aren't at all important for running neuron, but you 
+may want to look through them.

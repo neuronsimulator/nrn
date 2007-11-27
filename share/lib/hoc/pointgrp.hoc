@@ -1,0 +1,368 @@
+/*
+?0 UserClasses PointProcessGroupManager
+
+?0 User HocCode PointProcessGroupManager
+*/
+help ?0
+
+begintemplate PointProcessGroupManager
+begintemplate PPItem
+public pp, s, move, name, save, type
+objref pp, sec, tobj
+strdef s, name, tstr
+proc init() {
+	if ($1 >= 0) { // the point process case
+		type = $1
+		pp = $o2
+	}else{ // the new mechanism type case
+		type = $o2.selected(tstr)
+		$o2.make(pp)
+		pp.loc(.5)
+	}
+	sprint(name, "%s", pp)
+	sloc()
+	if (numarg() > 2) {
+		$o3.out(pp)
+	}
+}
+proc sloc() {
+	xloc = pp.get_loc()
+	sec = new SectionRef()
+	pop_section()
+	sec.sec sectionname(tstr)
+	sprint(s, "%s at %s(%g)", pp, tstr, xloc)
+}
+proc move() {
+	pp.loc($1)
+	sloc()
+}
+proc save() {
+	sec.sec sprint(tstr, "execute(\"%s ocbox_.move(%g)\")", secname(), xloc)
+	$o1.save(tstr)
+}
+
+endtemplate PPItem
+
+public v1, move
+
+objectvar pp
+objref mt, sf, v1, h1, this, plist, tobj, tobj1, ms
+objref shape, d1, tvb
+strdef mname, tempstr, ppname, sloc, tstr, tstr1
+double mstate[1]
+
+style_ = 0 // 0 is selection  1 is global set  2 is view one name
+
+proc init() {
+	plist = new List()
+	ppindex = -1
+	build()
+	if (numarg() == 1) if ($1 == 0) return
+	mnew(0)
+	v1.map("PointProcessGroupManager")
+	have_von_in_d1 = 0
+}
+
+proc build() { local i
+	v1 = new VBox()
+	v1.priority(980)
+	v1.ref(this)
+	v1.save("save()")
+	v1.intercept(1)
+	sf = new StringFunctions()
+
+	xpanel("PointProcessGroupManager", 1)
+	build_menu()
+	xmenu("PanelStyle")
+	xbutton("View Selection", "force_style(0)")
+	xbutton("Global Spec", "force_style(1)")
+	xbutton("View One Name", "force_style(2)")
+	xmenu()
+	xbutton("Remove", "remove()")
+	xbutton("Copy", "copy()")
+	xpanel()
+	xpanel("PointProcessGroupManager")
+	ppname = "None"
+	xvarlabel(ppname)
+	xpanel()
+	h1 = new HBox()
+	h1.intercept(1)
+	shape = new Shape()
+	shape.action("move(hoc_ac_)")
+	plist.browser("", "name")
+	plist.select_action("select(hoc_ac_)")
+	d1 = new Deck()
+	d1.intercept(1)
+	d1.intercept(0)
+	d1.map()
+	h1.intercept(0)
+	h1.map()
+	v1.intercept(0)
+}
+
+proc force_style() {
+	if (style_ != 0) {
+		style_ = -1
+	}
+	style($1)
+}
+
+proc style() {local i, cnt
+	if (style_ == $1) return
+	if (have_von_in_d1) {
+		d1.remove_last()
+		have_von_in_d1 = 0
+	}
+	if (style_ != 0) {
+		d1.remove_last()
+	}
+	style_ = $1
+	if ($1 == 0) {
+		select(ppindex)
+	}
+	i = ppindex
+	if (i < 0) i = 0
+	act_type = plist.object(i).type
+	if ($1 == 1) {
+		mt.select(plist.object(i).type)
+		mt.selected(tstr)
+		ms = new MechanismStandard(tstr)
+		ms.in(plist.object(i).pp)
+		d1.intercept(1)
+		tvb = new VBox()
+		tvb.intercept(1)
+		xpanel("")
+		xlabel("All PP's set to these values")
+		xpanel()
+		ms.action("gs_action()")
+		ms.panel()
+		tvb.intercept(0)
+		tvb.map()
+		d1.intercept(0)
+		d1.flip_to(plist.count)
+	}
+	if ($1 == 2) {
+		d1.intercept(1)
+		xpanel("")
+		xlabel("Select a name")
+		mt.select(plist.object(i).type)
+		mt.selected(tstr)
+		ms = new MechanismStandard(tstr)
+		for i=0, ms.count() - 1 {
+			cnt = ms.name(tstr, i)
+			sprint(tstr1, "von_act(\"%s\")", tstr)
+			xbutton(tstr, tstr1)
+		}
+		xpanel()
+		d1.intercept(0)
+		d1.flip_to(plist.count)
+	}
+}
+
+proc gs_action() {local i, indx, x
+	indx = hoc_ac_
+	ms.name(tstr, indx)
+	x = ms.get(tstr)
+	for i = 0, plist.count-1 if (plist.object(i).type == act_type) {
+		sprint(tstr1, "%s.%s = %g", plist.object(i).pp, tstr, x)
+		execute(tstr1)
+	}
+}
+
+j=0
+proc von_act() {local i
+// can't destroy a button while it is executing the release action
+//	d1.remove_last()
+	d1.intercept(1)
+	xpanel("")
+	mt.selected(tstr)
+	xlabel(tstr)
+	for i=0, plist.count-1 if (plist.object(i).type == act_type) {
+		sprint(tstr, "%s", plist.object(i).pp)
+		sscanf(tstr, "%*[^[][%d]", &j)
+		sprint(tstr, "...[%d].%s", j, $s1)
+		sprint(tstr1, "%s.%s", plist.object(i).pp, $s1)
+		xvalue(tstr, tstr1, 1)
+	}
+	xpanel()
+	d1.intercept(0)
+	have_von_in_d1 = 1
+	d1.flip_to(plist.count+1)
+}
+
+proc build_menu() {
+	mt = new MechanismType(1)
+	xmenu("New")
+	for i=0,mt.count()-1 {
+		mt.select(i)
+		mt.selected(mname)
+		sprint(tempstr, "mnew(%d)", i)
+		xbutton(mname, tempstr)
+	}
+	xmenu()
+	xmenu("Show All")
+	for i=0,mt.count()-1 {
+		mt.select(i)
+		mt.selected(mname)
+		sprint(tempstr, "mshow(%d)", i)
+		xbutton(mname, tempstr)
+	}
+	xmenu()
+}
+
+proc move() {
+	if (ppindex >= 0) {
+		plist.object(ppindex).move($1)
+		ppname = plist.object(ppindex).s
+	}
+}
+
+proc copy() {local i
+	i = plist.selected()
+	if (i < 0) {return}
+	sprint(tstr, "%s", plist.object(i).pp)
+	sf.head(tstr, "\\[", tstr1)
+	mt.select(tstr1)
+	ms = new MechanismStandard(tstr1)
+	ms.in(plist.object(i).pp)
+	mnew(mt.selected(), ms)
+}
+
+proc remove() {
+	i = plist.selected()
+	select(-1)
+	if (i >= 0) {
+		shape.point_mark_remove(plist.object(i).pp)
+		plist.remove(i)
+		d1.remove(i)
+	}
+}
+
+proc mnew() { local i
+	i = $1
+	mt.select(i)
+	if (numarg() == 2) {
+		tobj = new PPItem(-1, mt, $o2)
+	}else{
+		tobj = new PPItem(-1, mt)
+	}
+	additem(tobj)
+	select(plist.count-1)
+	objref tobj
+}
+
+proc mnews() {
+	mt.select($s1)
+	if (numarg() == 2) {
+		tobj = new PPItem(-1, mt, $o2)
+	}else{
+		tobj = new PPItem(-1, mt)
+	}
+	additem(tobj)
+	select(plist.count-1)
+	objref tobj
+}
+
+proc mshow() { local i
+	i = $1
+	mt.select(i)
+	mt.selected(tstr)
+	tobj1 = new List(tstr)
+	addpplist(tobj1)
+	objref tobj1
+	select(plist.count-1)
+}
+
+proc additem() {
+	style(0)
+	plist.append($o1)
+	d1.intercept(1)
+	nrnpointmenu($o1.pp, 0)
+	d1.intercept(0)
+}
+
+proc addpp() {
+	tobj = new PPItem(gettype($o1), $o1)
+	additem(tobj)
+	objref tobj
+}
+
+proc addpplist() { local i
+	for i = 0, $o1.count - 1 {
+		addpp($o1.object(i))
+	}
+}
+
+func gettype() {// find type of point process
+	sprint(tstr, "%s", $o1)
+	sf.head(tstr, "\\[", tstr1)
+	mt.select(tstr1)
+	return mt.selected()	
+}
+
+proc select() {local i
+	i = $1
+	if (ppindex != -1) {
+		shape.point_mark_remove(plist.object(ppindex).pp)
+		shape.point_mark(plist.object(ppindex).pp, 3)
+	}
+	if (i != -1) { // make a new one and put in the previous params
+		tobj = plist.object(i)
+		pp = tobj.pp
+		sprint(ppname, "%s", tobj.s)
+		if (style_ == 0) {
+			d1.flip_to(i)
+		}
+		shape.point_mark_remove(pp)
+		shape.point_mark(pp, 2)
+		objref tobj, pp
+	}else{
+		sprint(ppname, "None")
+		if (style_ == 0) {
+			d1.flip_to(i)
+		}
+	}
+	ppindex = i
+	plist.select(i)
+}
+
+proc save() { local i
+	v1.save("load_file(\"pointgrp.hoc\")\n}\n{")
+	sprint(tempstr, "ocbox_ = new PointProcessGroupManager(0)")
+	v1.save(tempstr)
+	v1.save("}\n{object_push(ocbox_)}\n{")
+
+	for i=0, plist.count - 1 {
+		tobj = plist.object(i)
+		mt.select(tobj.type)
+		mt.selected(tstr)
+		ms = new MechanismStandard(tstr)
+		ms.in(tobj.pp)
+		ms.save("ms")
+		sprint(tstr, "mnews(\"%s\", ms)", tstr)
+		v1.save(tstr)
+		
+		sprint(tstr, "select(%d)", i)
+		v1.save(tstr)
+		plist.object(i).save(v1)
+		if ((i+1)%50 == 0) {
+			v1.save("}\n{")
+		}
+	}
+	objref tobj
+	v1.save("}\n{object_pop() doNotify()}\n{")
+	v1.save("ocbox_ = ocbox_.v1")
+}
+
+endtemplate PointProcessGroupManager
+
+objectvar tempobj
+
+proc makeppgm() {
+	if(!execute1("v", 0)) {
+		continue_dialog("No accessed section: Can't start a PointProcessGroupManager")
+		return
+	}
+	tempobj = new PointProcessGroupManager()
+	objectvar tempobj
+}

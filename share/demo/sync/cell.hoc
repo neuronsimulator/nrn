@@ -1,0 +1,20 @@
+//Network cell templates
+
+//   C_IntervalFire
+
+
+begintemplate Cell
+public pp, connect2target, x, y, z, position, is_art
+objref pp
+
+proc init() {
+    pp = new IntervalFire(.5)
+    pp.tau = 10
+    pp.invl = 20
+}
+func is_art() { return 1 }
+proc connect2target() { $o2 = new NetCon(pp, $o1) }
+proc position(){x=$1  y=$2  z=$3}
+endtemplate Cell
+
+

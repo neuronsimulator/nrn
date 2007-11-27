@@ -1,0 +1,134 @@
+begintemplate VecWrap
+// wrapper for the Vector class to allow simple manipulations
+public input, list, lines
+public g, b
+
+objref g, this, b, list, vx, vy
+objref ux[5], uy[5]
+strdef tstr
+
+proc init() {
+	list = new List()
+	build()
+	sprint(tstr, "%s", this)
+	if (numarg() == 0) {
+		b.map(tstr)
+	}
+}
+
+iterator lines() {local i
+	for i=0, list.count-2 {
+		$o2 = list.object(i)
+		$o1 = list.object(i+1)
+		iterator_statement
+		list.remove(i)
+		list.insrt(i, $o2)
+		list.remove(i+1)
+		list.insrt(i+1, $o1)
+		i += 1
+	}
+}
+
+proc build() {
+	b = new VBox()
+	b.ref(this)
+	b.save("save()")
+	b.intercept(1)
+	xpanel("",1)
+	xmenu("CrossHair Action")
+	xradiobutton("xy-origin", "caction(\"xy_origin\", 0)")
+	xradiobutton("Cut Left", "caction(\"cut_left\", 1)")
+	xradiobutton("Cut Right", "caction(\"cut_right\", 1)")
+	xmenu()
+	xpanel()
+	g = new Graph()
+	g.menu_action("Copy From Clipboard", "input1()")
+	b.intercept(0)
+}
+
+proc input1() {
+	sprint(tstr, "%s.input(hoc_obj_[1], hoc_obj_[0])", this)
+	if (execute1(tstr) == 0) {
+continue_dialog("No data in the Vector clipboard. Select a Graph line first")
+	}
+}
+
+proc pl() {local i
+	g.erase()
+	g.label(.6,.95)
+	for i=0, list.count() - 2 {
+		list.object(i).line(g, list.object(i+1))
+		i += 1
+	}
+	g.flush()
+}
+
+proc input() { local i
+	list.append($o2.cl)
+	list.append($o1.c)
+	pl()
+}
+proc caction() {
+	g.crosshair_action($s1, $2)
+}
+proc xy_origin() {
+	for lines(vx, vy) {
+		if ($3 == 120) { // x
+			vx.sub($1)
+		}else if ($3 == 121) { // y
+			vy.sub($2)
+		}else{
+			vx.sub($1)
+			vy.sub($2)
+		}
+	}
+	pl()
+}
+proc cut_left() {
+	size = $o3.size
+	for lines(vx, vy) {
+		vx = vx.c($1, size-1)
+		vy = vy.cl($1, size-1)
+	}
+	pl()
+}
+proc cut_right() {
+	for lines(vx, vy) {
+		vx = vx.c(0, $1)
+		vy = vy.cl(0, $1)
+	}
+	pl()
+}
+
+proc save() {
+	b.save("load_file(\"vecwrap.hoc\")\n}\n{")
+	b.save("ocbox_=new VecWrap(1)")
+	b.save("}\n{object_push(ocbox_)}")
+	for lines(vx, vy) {
+		sprint(tstr, "vy = new Vector(%d)", vy.size)
+		b.save(tstr)
+		sprint(tstr, "vx = new Vector(%d)", vx.size)
+		b.save(tstr)
+		sprint(tstr, "vy.label(\"%s\")", vy.label)
+		b.save(tstr)
+		sprint(tstr, "for i=0,%d { vx.x[i]=fscan() vy.x[i]=fscan()}",\
+			vx.size-1)
+		b.save(tstr)
+		for i=0, vx.size-1 {
+			sprint(tstr, "%g %g", vx.x[i], vy.x[i])
+			b.save(tstr)
+		}
+		b.save("input(vx, vy)")
+	}
+	b.save("{object_pop()}\n{")
+	g.save_name("ocbox_.g", 1)
+	b.save("ocbox_ = ocbox_.b")
+}
+
+endtemplate VecWrap
+
+objref tobj
+proc makeVecWrap() {
+	tobj = new VecWrap()
+	objref tobj
+}

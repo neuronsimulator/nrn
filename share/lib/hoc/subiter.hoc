@@ -1,0 +1,146 @@
+begintemplate SubsetDomainIterator
+public sl, x, p, p0, p1, loop, update
+objref sl, map, this, tobj
+
+proc init() {
+	nsc = 0
+	sl = $o1
+	x = 0
+	p = 0
+	p0 = p1 = 0
+	map = new Vector()
+
+	// distance_from_root, distance_from_origin
+	// radial_from_origin, project_onto_line
+	// position_from_line
+	// only implemented for 0
+	path_style_ = $2
+	if (path_style_ == 1 || path_style_ > 3) {
+		printf("path_style_ %d not implemented\n", path_style_)
+		1/0
+	}
+	
+	// no origin translation, 0 at most proximal end,
+	// 0 at proximal disjoint ends
+	// only implemented for 0 and 1
+	proximal_style_ = $3
+	if (proximal_style_ == 2) {
+		printf("proximal_style_ %d not implemented\n", proximal_style_)
+		1/0
+	}
+
+	// no distal end normalization, 1 at most distal end,
+	// 1 at distal ends (longer path has uniform metric across branch point)
+	// only implemented for 0 and 1
+	distal_style_ = $4
+	if (distal_style_ == 2) {
+		printf("distal_style_ %d not implemented\n", distal_style_)
+		1/0
+	}
+	if (path_style_ == 2) {
+		xo_ = $5
+		yo_ = $6
+		zo_ = $7
+	}
+	if (path_style_ == 3) {
+		origin_ = $5
+		theta_ = $6
+	}
+}
+
+iterator loop() {local i, usearg
+	update()
+	if (numarg() == 2) { usearg = 1 } else { usearg = 0 }
+	i = 0	
+	forsec sl for (x, 0) {
+		p = map.x[i]  i += 1
+		if (usearg) {
+			$&1 = x
+			$&2 = p
+		}
+		iterator_statement
+	}
+}
+
+// everything following is map specific
+proc update() {local i
+	if (nsc == nrn_shape_changed_) {
+		return
+	}
+//	printf("updating map for %s nsc=%d  nrn_shape_changed_=%d\n", this, nsc, nrn_shape_changed_)
+	nsc = nrn_shape_changed_
+	i = 0
+	forsec sl for (x, 0) { i += 1 }
+	map.resize(i)
+	if (path_style_ == 0) { // path distance from root
+		ps0()
+	}else if (path_style_ == 2) {
+		ps2()
+	}else if (path_style_ == 3) {
+		ps3()
+	}
+	if (proximal_style_ == 1) {
+		map.sub(map.min)
+	}
+	if (distal_style_ == 1) {
+		map.div(map.max)
+	}
+	p0 = map.min
+	p1 = map.max
+}
+
+// path distance from root
+// assume sectionlist is a subset of a single cell
+proc ps0() {local i
+	i = 0
+	forsec sl for (x, 0) {
+		if (i == 0) {
+			tobj = new SectionRef()
+			tobj.root { distance() }
+			objref tobj
+		}
+		map.x[i] = distance(x)
+		i += 1
+	}
+}
+
+// radial distance from origin
+proc ps2() {local i, a, x, y, z
+	i = 0
+	forsec sl {
+		i3 = 1
+		for (a, 0) {
+			seg_from_3d(a)
+			map.x[i] = sqrt((x3 - xo_)^2 + (y3 - yo_)^2 + (z3 - zo_)^2)
+			i += 1
+		}
+	}
+}
+
+// projection onto line at angle theta with 0 defined at origin
+proc ps3() {local i, a, c, s
+	c = cos(theta_/DEG)  s = sin(theta_/DEG)
+	i = 0
+	forsec sl {
+		i3 = 1
+		for (a, 0) {
+			seg_from_3d(a)
+			map.x[i] = x3*c + y3*s
+			i += 1
+		}
+	}
+	map.sub(origin_)
+}
+
+proc seg_from_3d() {local th, a, i
+	$1 *= L
+	while($1 > arc3d(i3)) {	i3 += 1	}
+	i = i3 - 1
+	a = arc3d(i)
+	th = ($1 - a)/(arc3d(i3) - a)
+	x3 = (1 - th)*x3d(i) + th*x3d(i3)
+	y3 = (1 - th)*y3d(i) + th*y3d(i3)
+	z3 = (1 - th)*z3d(i) + th*z3d(i3)
+}
+endtemplate SubsetDomainIterator
+

@@ -1,0 +1,52 @@
+/* Stylized Motoneurone */
+{nmyelin = 5 ndend = 3}
+create soma, initial_seg, axon, myelin[nmyelin], node[nmyelin],\
+	 dend1[ndend], dend2[ndend][2], dend3[ndend][2]
+access soma
+
+/* TOPOLOGY */
+connect initial_seg(0), 0
+{initial_seg connect axon(0), 1   axon connect myelin[0](0), 1}
+for i=0,nmyelin-2 {
+	myelin[i] connect node[i](0), 1
+	node[i] connect myelin[i+1](0),1
+}
+	myelin[i] connect node[i](0), 1
+
+for i=0,ndend-1  connect dend1[i](0), 1
+for i=0,ndend-1 for j=0,1 {
+	dend1[i] { connect dend2[i][j](0), 1 }
+	dend2[i][j] { connect dend3[i][j](0), 1 }
+}
+
+/* MORPHOLOGY */
+soma {nseg = 1  diam = 100  L = 100}
+initial_seg {nseg = 4 diam(0:1)=100:10 L=70}
+axon {nseg=5 diam=10 L=100}
+for i=0,nmyelin-1 {
+	myelin[i] {nseg=5 diam=10 L=600}
+	node[i] {nseg=1 diam=10 L=3.2}
+}
+for i=0,ndend-1 {
+	dend1[i] {nseg=5 diam=10 L=1000}
+	for j=0,1 {
+		dend2[i][j] {nseg=5 diam=5 L=1000}
+		dend3[i][j] {nseg=5 diam=3 L=700 rallbranch=2}
+	}
+}
+
+/* MEMBRANE */
+{soma{insert hh}  initial_seg{insert hh}  axon{insert hh}}
+for i=0,nmyelin-1 {
+	myelin[i]{cm=.001 insert pas g_pas=.00001 e_pas=-65}
+	node[i]{insert hh}
+}
+for i=0,ndend-1 {
+	dend1[i]{insert pas g_pas=.001 e_pas=-65}
+	for j=0,1 {
+		dend2[i][j]{insert pas g_pas=.001 e_pas=-65}
+		dend3[i][j]{insert pas g_pas=.001 e_pas=-65}
+	}
+}
+
+topology()

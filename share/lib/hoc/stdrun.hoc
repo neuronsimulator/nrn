@@ -1,0 +1,730 @@
+objref cvode
+cvode = new CVode()
+{load_file("stdlib.hoc", "String")}
+
+begintemplate NEURONMainMenu // avoid some namespace pollution
+public filemenu, miscellaneous_add, misclist
+objref rwl_, rwf_, sf_, tobj
+objref ldfile, misclist
+strdef tstr, rwdname
+
+proc init() {
+	sf_ = new StringFunctions()
+	if (unix_mac_pc() == 1) {
+		rwdname = "$(HOME)/.NRNWorkingDirs"
+	}else{
+		rwdname = "$(NEURONHOME)/RecentWorkingDirs"
+	}
+	misclist = new List()
+	if (ropen("RCS/nrnversion,v")) {
+		ropen()
+		miscellaneous_add("Archive and Hardcopy", "prjnrn()")
+	}
+	
+}
+
+proc miscellaneous_add() {
+	misclist.append(new String($s1))
+	misclist.append(new String($s2))
+}
+
+proc filemenu() {
+	xmenu("File")
+	xbutton("load session", "load(\"*.ses\", 1)")
+	xbutton("load hoc", "load(\"*.hoc\", 0)")
+	if (unix_mac_pc() != 1) {
+		xbutton("load dll", "load(\"*.dll\", 2)")
+	}
+	xbutton("save session", "save_ses_nrnmainmenu()")
+	xbutton("working dir", "change_working_dir()")
+	if (unix_mac_pc() != 0) {
+		xmenu("recent dir", "recent_working_dirs()")
+	}
+	xbutton("Print", "print_session(0)")
+	xbutton("Quit", "quit()")
+	xmenu()
+}
+
+proc load() {
+	if (object_id(ldfile) == 0) {
+		ldfile = new File()
+	}
+	ldfile.chooser("r", "Load", $s1, "Load", "Cancel", getcwd())
+	if (ldfile.chooser()) {
+		if ($2 == 2) {
+			nrn_load_dll(ldfile.getname)
+		}else{
+			load_file($2, ldfile.getname)
+		}
+	}
+}
+
+proc change_working_dir() {
+	if (object_id(ldfile) == 0) {
+		ldfile = new File()
+	}
+	ldfile.chooser("d", "Directory", "", "Move To", "Cancel", getcwd())
+	if (ldfile.chooser()) {
+		read_recent_working_dirs()
+		change_working_dir1(ldfile.dir)
+	}
+}
+
+func change_working_dir1() {
+	if(chdir($s1) != 0) {
+		sprint(tstr, "No such directory: %s", $s1)
+		continue_dialog(tstr)
+		return 0
+	}
+	print "Changed working directory to ", $s1
+	ldfile = new File()
+	write_recent_working_dirs()
+	if (!default_dll_loaded_) {
+		if (unix_mac_pc() == 2) {
+			if(nrn_load_dll("nrnmac.dll") != 0){
+				default_dll_loaded_ = 1
+			}
+		}
+		if (unix_mac_pc() == 3) {
+			if (nrn_load_dll("nrnmech.dll") != 0) {
+				default_dll_loaded_ = 1
+			}
+		}
+	}
+	return 1
+}
+
+proc change_working_dir2() {
+	tobj = rwl_.object($1)
+	rwl_.remove($1)
+	if (change_working_dir1(tobj.s) == 0) {
+		while (string_dialog("Working Directory", tobj.s)) {
+			if (change_working_dir1(tobj.s) == 1) {
+				break
+			}
+		}
+	}
+}
+
+proc read_recent_working_dirs() {local i
+	rwf_ = new File()
+	rwl_ = new List()
+	if (rwf_.ropen(rwdname)) {
+		while (!rwf_.eof()) {
+			rwf_.gets(tstr)
+			sf_.left(tstr, sf_.len(tstr) - 1)
+			tobj = new String(tstr)
+			rwl_.append(tobj)
+		}
+		rwf_.close()
+	}
+}
+
+proc write_recent_working_dirs() {local i
+	rwf_ = new File()
+	tstr = getcwd()
+	if (rwf_.wopen(rwdname)) {
+		rwf_.printf("%s\n", tstr)
+		for i=0, rwl_.count-1 {
+			if (strcmp(rwl_.object(i).s, tstr) != 0) {
+				rwf_.printf("%s\n", rwl_.object(i).s)
+			}
+			if (i > 10) break
+		}
+		rwf_.close()
+	}
+}
+
+proc recent_working_dirs() {local i
+	read_recent_working_dirs()
+	for i=0, rwl_.count-1 {
+		sprint(tstr, "change_working_dir2(%d)", i)
+		xbutton(rwl_.object(i).s, tstr)
+	}
+}
+
+proc save_ses_nrnmainmenu() {
+	if (object_id(ldfile) == 0) {
+		ldfile = new File()
+	}
+	ldfile.chooser("w", "Save Session", "*.ses", "Save", "Cancel", ldfile.dir)
+	if (ldfile.chooser()) {
+		ldfile.close()
+		sprint(tstr, "save_session(\"%s\",\"{load_file(\\\"nrngui.hoc\\\")}\")", ldfile.getname)
+		execute(tstr)
+	}
+}
+
+endtemplate NEURONMainMenu
+
+using_cvode_ = 0 // now controlled in NumericalMethodPanel
+{load_file("atoltool.hoc")}
+{load_file("varmeth1.hoc")}
+{load_file("movierun.hoc")}
+objref tobj, tobj1, nrnmainmenu_, numericalmethodpanel
+stdrun_quiet = 0
+realtime=0
+{units(&realtime, "s")}
+screen_update_invl = .05
+{variable_domain(&screen_update_invl, .01, 1e9) units(&screen_update_invl, "s")}
+tstop = 5
+{variable_domain(&tstop, 0, 1e9) units(&tstop, "ms")}
+stoprun = 0
+steps_per_ms = 1/.025
+{variable_domain(&steps_per_ms, 1e-6, 1e6)}
+nstep_steprun=1
+runStopAt = tstop
+{variable_domain(&runStopAt, 0, 1e9) units(&runStopAt, "ms")}
+runStopIn = 1
+{variable_domain(&runStopIn, 0, 1e6) units(&runStopIn, "ms")}
+global_ra = 35.4
+{variable_domain(&global_ra, 1e-3, 1e6) units(&global_ra, "ohm-cm")}
+strdef temp_string_, temp_string2_
+temp_string_ = "t"
+
+proc prjnrn() {	// Project management.
+	save_session("start.ses")   
+	print_session(1, "prjnrnpr")
+}
+
+/* stylized control processes for nrncontrolmenu() */
+{load_file("pointbsr.hoc", "PointBrowser")}
+strdef tstr
+{load_file("wingroup.hoc", "WindowMenu")}
+
+if (name_declared("mapped_nrnmainmenu_") == 0) {
+	mapped_nrnmainmenu_ = 0
+}
+
+proc nrnmainmenu() {
+	if (mapped_nrnmainmenu_ == 1) {
+		return
+	}
+	nrnmainmenu_ = new NEURONMainMenu()
+	mapped_nrnmainmenu_ = 1
+    xpanel("NEURON Main Menu")
+	nrnmainmenu_.filemenu()
+	editmenu()
+	buildmenu()
+	toolmenu()
+	graphmenu()
+	vectormenu()
+	windowmenu()
+    xpanel(0,25)
+	if (object_id(WindowMenu[0].pwm) == 0) {
+		// some sessions need a PWManager which used not to
+		// exist until the Window menu was used
+		WindowMenu[0].pwm = new PWManager()
+	}
+	// also many idioms assume there is no PWManager window at this point
+	//so close it.
+	if (PWManager[0].manager < PWManager[0].count) {
+		PWManager[0].close(PWManager[0].manager)
+	}
+}
+
+proc editmenu() {
+	xmenu("Edit", 1)
+	xmenu()
+}
+proc buildmenu() {
+	xmenu("Build", 1)
+	xbutton("single compartment", "load_file(\"single.hoc\") makesinglecompartment()")
+	xbutton("Cell Builder", "load_file(\"celbild.hoc\") makecellbuilder()")
+	xmenu("NetWork Cell")
+	xbutton("From Cell Builder", "load_file(\"netbild.hoc\") makenetreadycell()")
+	xbutton("Artificial Cell", "load_file(\"netbild.hoc\") makeartcelltype()")
+	xmenu()
+	xbutton("NetWork Builder", "load_file(\"netbild.hoc\") makenetbuilder()")
+	xbutton("Linear Circuit", "load_file(\"lincir.hoc\") makeCircuit()")
+//	xbutton("Channels", "channel_builder()")
+	xmenu("Channel Builder")
+	xbutton("Density", "load_file(\"chanbild.hoc\", \"ChannelBuild\") chanbild(1)")
+	xbutton("Point", "load_file(\"chanbild.hoc\", \"ChannelBuild\") chanbild(0)")
+	xmenu("import KSChan", "cbimportmenu()")
+	xmenu()
+	xmenu()
+}
+proc cbimportmenu() {local i, j
+	load_file("chanbild.hoc")
+	tobj = new List("KSChan")
+	tobj1 = new List("ChannelBuild")
+	for i=0, tobj1.count-1 { 
+		j = tobj.index(tobj1.object(i).ks)
+		if (j != -1) {
+			tobj.remove(j)
+		}
+	}
+	for i=0, tobj.count - 1 {
+		sprint(tstr, "chanbild(%s)", tobj.object(i))
+		xbutton(tobj.object(i).name, tstr)
+	}
+	if (tobj.count == 0) {
+		xbutton("No uncontrolled KSChan", "")
+	}
+	objref tobj, tobj1
+}
+running_ = 0
+proc toolmenu() {
+	xmenu("Tools", 1)
+	xbutton("RunControl", "nrncontrolmenu()")
+//	xbutton("RunButton", "xpanel(\"Run\") xbutton(\"Init & Run\", \"run()\") xpanel()")
+	xbutton("RunButton", "xpanel(\"Run\") xcheckbox(\"Init & Run\", &running_,\"runbutton()\") xpanel()")
+	xbutton("VariableStepControl", "numericalmethodpanel.map()")
+	pointprocessesmenu()
+	distmechmenu()
+	fittingmenu()
+	impedancemenu()
+	xbutton("Model View", "load_file(\"mview.hoc\", \"ModelView\") execute(\"mview()\")")
+	xbutton("Movie Run", "load_file(\"movierun.hoc\") movierunpanel()")
+	xmenu("Miscellaneous", "miscellaneousmenu()", 1)
+	xmenu()
+}
+
+proc vectormenu() {
+	xmenu("Vector", 1)
+	xbutton("Save to File", "load_file(\"stdlib.hoc\",\"clipboard_save\") clipboard_save()")
+	xbutton("Retrieve from File", "load_file(\"stdlib.hoc\",\"clipboard_retrieve\") clipboard_retrieve()")
+	xbutton("Gather Values", "load_file(\"gatherv.hoc\") makeGatherVec()")
+	xbutton("Play", "load_file(\"vplay.hoc\") makeVectorPlay()")
+	xbutton("Display", "load_file(\"vecwrap.hoc\") makeVecWrap()")
+	xbutton("Draw", "load_file(\"mkcurve.hoc\") makeMakeCurve()")
+	xmenu()
+}
+proc windowmenu() {
+	tobj = new WindowMenu()
+	sprint(tstr, "%s.make()", tobj)
+	xmenu("Window", tstr, 1)
+	objref tobj
+}
+
+proc graphmenu() {
+    xmenu("Graph", 1)
+	xbutton("Voltage axis", "newPlotV()")
+	xbutton("Current axis", "newPlotI()")
+	xbutton("State axis", "newPlotS()")
+	xbutton("Shape plot", "newshapeplot()")
+	xbutton("Vector movie", "newvectorplot()")
+	xbutton("Phase Plane", "newphaseplane()")
+	xbutton("Grapher", "load_file(\"grapher.hoc\") makegrapher(1)")
+    xmenu()
+}
+
+proc pointprocessesmenu() {
+    xmenu("Point Processes")
+    xmenu("Managers")
+	xbutton("Point Manager", "load_file(\"pointman.hoc\") makeppm()")
+	xbutton("Point Group", "load_file(\"pointgrp.hoc\") makeppgm()")
+	xbutton("Electrode", "load_file(\"electrod.hoc\") makeelectrode()")
+    xmenu()
+    xmenu("Viewers", "pointmenu()")
+    xmenu()
+}
+proc distmechmenu() {
+  xmenu("Distributed Mechanisms")
+    xmenu("Managers")
+	xbutton("Inserter", "load_file(\"inserter.hoc\", \"Inserter\") makeinserter()")
+	xbutton("Homogeneous Spec", "load_file(\"showmech.hoc\") makeshowmechanism()")
+    xmenu()
+    xmenu("Viewers", "distmechviewers()")
+    xbutton("celsius", "celsius_panel()")
+    xbutton("globalRa", "globalra_panel()")
+
+  xmenu()
+}
+
+proc distmechviewers() {
+	xbutton("Shape Name", "load_file(\"shapebox.hoc\", \"MenuExplore\") makeMenuExplore()")
+	xbutton("Name Values", "nrnallsectionmenu()")
+	nrnglobalmechmenu()
+}
+
+proc celsius_panel() {
+	xpanel("Temperature")
+	xpvalue("celsius", &celsius, 1)
+	xpanel()
+}
+proc globalra_panel() {
+	xpanel("forall Ra=global_ra")
+	xvalue("global Ra", "global_ra", 1, "set_ra()", 1, 1)
+	xpanel()
+}
+
+proc fittingmenu() {
+	xmenu("Fitting")
+	xbutton("Parameterized Function", "load_file(\"funfit.hoc\") makefitter()")
+	xbutton("Run Fitter", "load_file(\"runfit.hoc\") makerunfitter()")
+	xbutton("Multiple Run Fitter", "load_file(\"mulfit.hoc\") makemulrunfitter()")
+	xmenu()
+}
+
+proc impedancemenu() {
+	xmenu("Impedance")
+	xbutton("Frequency", "load_file(\"impratio.hoc\") makeImpRatio()")
+	xbutton("Path", "load_file(\"impedanx.hoc\") makeImpx()")
+	xbutton("log(A) vs x", "load_file(\"logax.hoc\") makelogax()")
+	xbutton("Shape", "load_file(\"attshape.hoc\") makeImpShape()")
+	xmenu()
+}
+
+proc miscellaneousmenu() {local i
+	xbutton("Import 3D", "load_file(\"import3d.hoc\") makeimport3dtool()")
+	xmenu("Family")
+	xbutton("Family", "load_file(\"family.hoc\",\"Family\") makeFamily()")
+	xbutton("Command", "load_file(\"stdlib.hoc\",\"ExecCommand\") newcommand()")
+	xmenu()
+	xmenu("Builders")
+	xbutton("Kinetic Scheme Builder", "load_file(\"kinbuild.hoc\") makekineticbuilder()")
+	xmenu()
+	for (i=0; i < nrnmainmenu_.misclist.count; i += 2) {
+xbutton(nrnmainmenu_.misclist.object(i).s, nrnmainmenu_.misclist.object(i+1).s)
+	}
+}
+
+v_init = -65
+{units(&v_init, "mV")}
+
+numericalmethodpanel = new NumericalMethodPanel()
+
+func cvode_active() {
+	if (numarg() == 1) {
+		numericalmethodpanel.varstep($1)
+	}
+	return cvode.active()
+}
+
+func cvode_local() {
+	if (numarg() == 1) {
+		numericalmethodpanel.localstep($1)
+	}
+	return cvode.use_local_dt()
+}	
+
+proc nrncontrolmenu() {
+    xpanel("RunControl")
+	xpvalue("Init", &v_init, 1, "stdinit()", 1)
+	xbutton("Init & Run", "run()")
+	xbutton("Stop", "stoprun=1")
+xvalue("Continue til", "runStopAt", 1, "{continuerun(runStopAt) stoprun=1}", 1, 1)
+xvalue("Continue for", "runStopIn", 1, "{continuerun(t + runStopIn) stoprun=1}", 1,1)
+	xbutton("Single Step", "steprun()")
+	xvalue("t", "t", 2)
+	xvalue("Tstop", "tstop", 1, "tstop_changed()", 0, 1)
+	xpvalue("dt", &dt, 1, "setdt()")
+	xvalue("Points plotted/ms", "steps_per_ms", 1, "setdt()", 0, 1)
+	xpvalue("Scrn update invl", &screen_update_invl, 1)
+//	xcheckbox("Quiet", &stdrun_quiet)
+	xpvalue("Real Time", &realtime)
+    xpanel()
+}
+
+func set_v_init() {local old
+	old = v_init
+	if (numarg(1)) {
+		v_init = $1
+	}
+	return old
+}
+
+proc stdinit() {
+	cvode_simgraph()
+	realtime = 0
+	setdt()
+	init()
+	initPlot()
+}
+
+proc init() {
+	finitialize(v_init)
+	// fcurrent() // no longer necessary. finitialize now
+	// initializes all conductances and currents as well as states.
+	// Extra initialization should normally go here.
+	// If you change any states or parameters after an finitialize
+	// then you should complete the initialization with
+    /*
+	if (cvode.active()) {
+		cvode.re_init()
+	}else{
+		fcurrent()
+	}
+	frecord_init()	
+    */
+}
+
+n_graph_lists = 4
+objectvar graphList[n_graph_lists], graphItem, flush_list, fast_flush_list
+for i=0,n_graph_lists-1 graphList[i] = new List(1)
+flush_list = new List(1)
+fast_flush_list = new List(1)
+
+proc set_ra() {/* this alleviates the backward compatibility problems */
+	if (numarg() == 1) {
+		global_ra = $1
+	}
+	forall Ra = global_ra
+}
+
+proc runbutton() {
+	if (running_ == 0) {
+		stoprun = 1
+		return
+	}
+	execute1("run()")
+	running_ = 0
+	stoprun = 0
+}
+
+proc run() {
+	running_ = 1
+	stdinit()
+	continuerun(tstop)
+}
+
+func stoppedrun() { return stoprun }
+
+proc setdt() {local Dt, dtnew
+	if (using_cvode_) return
+	Dt = 1/steps_per_ms
+	nstep_steprun = int(Dt/dt)
+	if (nstep_steprun == 0) {
+		nstep_steprun = 1
+	}
+	dtnew = Dt/nstep_steprun
+	if (abs(dt*nstep_steprun*steps_per_ms - 1) > 1e-6) {
+		print "Changed dt"
+		dt = dtnew
+	}
+}
+
+eventslow=1
+eventcount=0
+
+proc continuerun() {local rt, rtstart, ts
+	realtime = 0  rt = screen_update_invl  rtstart = startsw()
+	eventcount=0
+	eventslow=1
+	stoprun = 0
+	if (using_cvode_) {
+		cvode.event($1)
+		ts = $1
+		if (cvode.use_local_dt) {
+			cvode.solve(ts)
+			flushPlot()
+			realtime = startsw() - rtstart
+			return
+		}
+	}else{
+		ts = $1 - dt/2
+	}
+	while(t < ts && stoprun == 0) {
+		step()
+		realtime = startsw() - rtstart
+		if (realtime >= rt) {
+//			if (!stdrun_quiet) fastflushPlot()
+			screen_update()
+			//really compute for at least screen_update_invl
+			realtime = startsw() - rtstart
+			rt = realtime + screen_update_invl
+		}
+	}
+	if (using_cvode_ && stoprun == 0) { // handle the "tstop" event
+		step() // so all recordings take place at tstop
+	}
+	flushPlot()
+	realtime = startsw() - rtstart
+}
+
+proc steprun() {
+	step()
+	flushPlot()
+}
+
+proc step() {local i
+	if (using_cvode_) {
+		advance()
+	}else for i=1,nstep_steprun {
+		advance()
+	}
+	Plot()
+}
+
+proc advance() {
+	fadvance()
+}
+
+proc cvode_simgraph() {local i, j
+	cvode.simgraph_remove()
+	if (cvode.active && cvode.use_local_dt) {
+		for j=0,n_graph_lists-1 {
+			for i=0,graphList[j].count-1 graphList[j].object(i).simgraph()
+		}
+	}
+}
+
+proc initPlot(){local i, j, cnt
+	if (cvode.active && cvode.use_local_dt) {
+		flushPlot()
+		return
+	}
+	for j=0,n_graph_lists-1 {
+		cnt = graphList[j].count() - 1
+		for (i=cnt; i >= 0; i=i-1) if (graphList[j].object(i).view_count() == 0){
+			graphList[j].remove(i)
+			cnt = cnt - 1
+		}
+		for i=0,cnt graphList[j].object(i).begin()
+	}
+	cnt = flush_list.count() -1
+	for (i=cnt; i >= 0; i=i-1) if (flush_list.object(i).view_count() == 0){
+		flush_list.remove(i)
+	}
+	cnt = fast_flush_list.count() -1
+	for (i=cnt; i >= 0; i=i-1) if (fast_flush_list.object(i).view_count() == 0){
+		fast_flush_list.remove(i)
+	}
+	Plot()
+	flushPlot()
+}
+
+proc tstop_changed() {local i, j, cnt
+	for j=0,2 {
+		cnt = graphList[j].count() - 1
+		for i=0,cnt {
+			graphItem = graphList[j].object(i)
+			graphItem.size(0, tstop, graphItem.size(3), \
+				graphItem.size(4))
+		}
+	}
+}
+
+proc Plot() {local i, j, cnt, dt2
+	if (using_cvode_) {
+		dt2=0
+	}else{
+		dt2 = dt/2
+	}
+	cnt = graphList[0].count() - 1
+	for i=0,cnt graphList[0].object(i).plot(t)
+	cnt = graphList[1].count() - 1
+	for i=0,cnt graphList[1].object(i).plot(t - dt2)
+	cnt = graphList[2].count() - 1
+	for i=0,cnt graphList[2].object(i).plot(t + dt2)
+	cnt = graphList[3].count() - 1
+	for i=0,cnt graphList[3].object(i).plot(t)
+}
+
+proc screen_update() {local i
+	if (!stdrun_quiet) {
+		cnt = flush_list.count() - 1
+		for i=0,cnt flush_list.object(i).begin()
+		for i=0,cnt flush_list.object(i).flush()
+		cnt = fast_flush_list.count() - 1
+		for i=0,cnt fast_flush_list.object(i).fastflush()
+		fastflushPlot()
+		doNotify()
+	}
+}
+
+proc flushPlot() {local i, j, cnt
+	screen_update()
+	for j=0,n_graph_lists-1 {
+		cnt = graphList[j].count() - 1
+		for i=0,cnt graphList[j].object(i).flush()
+	}
+	cnt = flush_list.count() - 1
+	if (cnt >= 0) {
+		for i=0,cnt flush_list.object(i).flush()
+	}
+	cnt = fast_flush_list.count() - 1
+	if (cnt >= 0) {
+		for i=0,cnt fast_flush_list.object(i).flush()
+	}
+	if (!stdrun_quiet) {
+		doEvents()
+	}
+}
+
+proc fastflushPlot() {local i, j, cnt
+	for j=0,n_graph_lists-1 {
+		cnt = graphList[j].count() - 1
+		for i=0,cnt graphList[j].object(i).fastflush()
+	}
+//	doEvents()
+}
+
+proc newPlotV() {
+	newPlot(0,tstop,-80,40)
+	graphItem.save_name("graphList[0].")
+	graphList[0].append(graphItem)
+	graphItem.addexpr("v(.5)")
+}
+proc newPlotI() {
+	newPlot(0,tstop,-1,1)
+	graphItem.save_name("graphList[1].")
+	graphList[1].append(graphItem)
+}
+proc newPlotS() {
+	newPlot(0,tstop,0,1)
+	graphItem.save_name("graphList[2].")
+	graphList[2].append(graphItem)
+}
+proc newPlot() {local w, h
+	graphItem = new Graph()
+	graphItem.size($1,$2,$3,$4)
+	graphItem.xaxis()	// view axis for x and y
+/*
+	w = $2 - $1
+	h = $4 - $3
+	graphItem.size($1- w/10, $2+w/10, $3-h/10, $4+h/10)
+*/
+}
+proc addplot() {
+	$o1.size(0,tstop,-1,1)
+	graphList[$2].append($o1)
+}
+
+proc newshapeplot() {
+	if(!execute1("v", 0)) {
+		continue_dialog("No accessed section: Can't start a PlotShape")
+		return
+	}
+	graphItem = new PlotShape()
+	fast_flush_list.append(graphItem)
+	graphItem.save_name("fast_flush_list.")
+}
+proc newvectorplot() {
+	graphItem = new Graph()
+	flush_list.append(graphItem)
+	graphItem.save_name("flush_list.")
+}
+proc newphaseplane() {
+	graphItem = new Graph()
+	string_dialog("x axis expression", temp_string_)
+	graphItem.xexpr(temp_string_)
+	sprint(temp_string_, "x-axis: %s", temp_string_)
+	graphItem.label(.5, .9, temp_string_)
+	
+	graphItem.save_name("graphList[3].")
+	graphList[3].append(graphItem)
+	temp_string_ = "t"
+}
+
+
+proc channel_builder() {
+	if (name_declared("nrnccmb_Channels") == 0) {
+print "Loading Robert Cannon's Catacomb channel builder. This may take a minute."
+	}
+	if (load_java("nrnccmb.Channels")) {
+		tobj = new List("nrnccmb_Channels")
+		if (tobj.count == 0) {
+			execute("tobj = new nrnccmb_Channels()")
+		}else{
+			tobj = tobj.object(0)
+		}
+		tobj.map()
+		objref tobj
+	}else{
+continue_dialog("The Catacomb simulator (ccmb.jar) is not in the CLASSPATH.")
+	}
+}
+

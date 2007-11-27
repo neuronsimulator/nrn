@@ -1,0 +1,55 @@
+load_file("nrngui.hoc")
+objectvar save_window_, rvp_
+objectvar scene_vector_[4]
+objectvar ocbox_, ocbox_list_, scene_, scene_list_
+{ocbox_list_ = new List()  scene_list_ = new List()}
+{pwman_place(0,0,0)}
+{
+xpanel("RunControl", 0)
+v_init = -65
+xvalue("Init","v_init", 1,"stdinit()", 1, 1 )
+xbutton("Init & Run","run()")
+xbutton("Stop","stoprun=1")
+runStopAt = 5
+xvalue("Continue til","runStopAt", 1,"{continuerun(runStopAt) stoprun=1}", 1, 1 )
+runStopIn = 1
+xvalue("Continue for","runStopIn", 1,"{continuerun(t + runStopIn) stoprun=1}", 1, 1 )
+xbutton("Single Step","steprun()")
+t = 50
+xvalue("t","t", 2 )
+tstop = 50
+xvalue("Tstop","tstop", 1,"tstop_changed()", 0, 1 )
+dt = 0.025
+xvalue("dt","dt", 1,"setdt()", 0, 1 )
+steps_per_ms = 40
+xvalue("Points plotted/ms","steps_per_ms", 1,"setdt()", 0, 1 )
+xcheckbox("Quiet",&stdrun_quiet,"")
+realtime = 0
+xvalue("Real Time","realtime", 0,"", 0, 1 )
+xpanel(99,139)
+}
+{
+save_window_ = new Graph(0)
+save_window_.size(0,60,-100,1100)
+scene_vector_[2] = save_window_
+{save_window_.view(0, -100, 60, 1200, 513, 627, 300.48, 200.32)}
+graphList[0].append(save_window_)
+save_window_.save_name("graphList[0].")
+save_window_.addexpr("pg[0].y", 1, 1, 0.8, 0.2, 2)
+save_window_.addexpr("pg[1].y+200", 1, 1, 0.8, 0.42, 2)
+save_window_.addexpr("pg[2].y+400", 1, 1, 0.8, 0.64, 2)
+save_window_.addexpr("pg[3].y+600", 1, 1, 0.8, 0.86, 2)
+save_window_.addexpr("pg[4].y+800", 1, 1, 0.8, 1.08, 2)
+save_window_.addexpr("pg[39].y+1000", 1, 1, 0.8, 1.3, 2)
+}
+{
+save_window_ = new Graph(0)
+save_window_.size(0,50,0,40)
+scene_vector_[3] = save_window_
+{save_window_.view(0, 0, 50, 40, 863, 624, 300.48, 200.32)}
+graphList[2].append(save_window_)
+save_window_.save_name("graphList[2].")
+save_window_.addexpr("nrn[0].ampa.g", 1, 1, 0.523323, 0.133227, 2)
+}
+objectvar scene_vector_[1]
+{doNotify()}

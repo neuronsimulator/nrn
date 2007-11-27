@@ -1,0 +1,352 @@
+begintemplate WindowGroup
+public name, state_, mk, list
+external object_index
+objref list, this
+strdef name
+proc init() {
+	state_ = 0
+	list = new List()
+	if (numarg() > 0) {
+		name = $s1
+	}else{
+		name = "unnamed Window Group"
+	}
+}
+
+proc mk() {
+	xcheckbox(name, &state_, "action()")
+}
+
+proc action() {local i
+	for i = 0, PWManager[0].count-1 {
+		if (PWManager[0].group(i) == this) {
+			if (state_) {
+				PWManager[0].map(i)
+			}else{
+				PWManager[0].hide(i)
+			}
+		}
+	}
+}
+endtemplate WindowGroup
+
+begintemplate WindowGroupItem
+public s, index
+strdef s
+proc init() {
+	index = $1
+	s = $s2
+}
+endtemplate WindowGroupItem
+
+begintemplate WindowGroupManager
+public box
+external WindowGroup, WindowGroupItem
+objref box, vb[3], m, pwm, hbox, glist, deck, toplist, tobj, tobj1, nil
+objref ldfile
+strdef gname, tstr
+
+proc init() {
+	m = $o1
+	pwm = m.pwm
+	glist = m.groups
+	mklist()
+	build()
+	glistsel(-1)
+}
+
+proc mklist() {local i, lead, man
+	toplist = new List()
+	for i=0, glist.count-1 {
+		glist.object(i).list.remove_all
+	}
+	lead = pwm.leader()
+	man = pwm.manager()
+	for i=0, pwm.count-1 {
+		if (i == lead || i == man) {continue}
+		tobj = pwm.group(i)
+		if (tobj == nil) {
+			toplist.append(new WindowGroupItem(i, pwm.name(i)))
+		}else{
+			tobj.list.append(new WindowGroupItem(i, pwm.name(i)))
+		}
+	}
+	objref tobj
+}
+
+proc build() {local i
+	box = new VBox(3)
+	box.intercept(1)
+	hbox = new HBox(3)
+	hbox.intercept(1)
+	vb[0] = new VBox(3)
+	vb[0].intercept(1)
+	xpanel("")
+	xlabel("           Window Groups               ")
+	xpanel()
+	glist.browser("", "name")
+	vb[0].intercept(0)
+	vb[0].map
+	vb[1] = new VBox(3)
+	vb[1].intercept(1)
+	xpanel("")
+	gname = "                   No group selected              "
+	xvarlabel(gname)
+	xpanel()
+	deck = new Deck(3)
+	deck.intercept(1)
+	for i=0, glist.count -1 {
+		glist.object(i).list.browser("", "s") 
+		glist.object(i).list.select_action("gsel(hoc_ac_)", 1)
+	}
+	deck.intercept(0)
+	deck.map()
+	vb[1].intercept(0)
+	vb[1].map
+	vb[2] = new VBox(3)
+	vb[2].intercept(1)
+	xpanel("")
+	xlabel(" <---      Ungrouped Windows           ")
+	xpanel()
+	toplist.browser("", "s")
+	vb[2].intercept(0)
+	vb[2].map
+	hbox.intercept(0)
+	hbox.map()
+	xpanel("", 1)
+	xbutton("New Group", "append()")
+	xbutton("Change Name", "change()")
+	xbutton("Remove Group", "remove()")
+	xbutton("Save Group", "fsave()")
+	xpanel()
+	box.intercept(0)
+	glist.select_action("glistsel(hoc_ac_)", 1)
+	toplist.select_action("topsel(hoc_ac_)", 1)
+}
+
+proc fsave() {local i
+	i = glist.selected()
+	if (i == -1) { return }
+	tobj = glist.object(i)
+	if (tobj.list.count == 0) {
+		continue_dialog("no windows in selected group")
+		return
+	}
+	sprint(tstr, "Save Group %s", tobj.name)
+	if (object_id(ldfile) == 0) {
+		ldfile = new File()
+	}
+	ldfile.chooser("w", tstr, "*.ses", "Save", "Cancel", ldfile.dir)
+	if (ldfile.chooser()) {
+		ldfile.close
+		sprint(tstr, "%s.save(\"%s\", %s)", pwm, ldfile.getname, tobj)
+		execute(tstr)
+//		pwm.save(ldfile.getname, tobj)
+	}
+}
+
+proc append() {
+	tobj = new WindowGroup()
+	glist.append(tobj)
+	deck.intercept(1)
+	tobj.list.browser("", "s")
+	tobj.list.select_action("gsel(hoc_ac_)", 1)
+	deck.intercept(0)
+	glistsel(glist.count-1)
+	objref tobj
+}
+
+proc change() {local i
+	i = glist.selected()
+	if (i == -1) { return }
+	tobj = glist.object(i)
+	tstr = tobj.name
+	if (string_dialog("Change group name", tstr)) {
+		tobj.name = tstr
+		glist.remove(i)
+		glist.insrt(i, tobj)
+		glistsel(i)
+		glist.select(i)
+	}
+	objref tobj
+}
+
+proc remove() {local i
+	i = glist.selected()
+	if (i == -1) { return }
+	while (glist.object(i).list.count) {
+		gsel(0)
+	}
+	glist.remove(i)
+	deck.remove(i)
+	glistsel(-1)
+}
+
+proc glistsel() {
+	deck.flip_to($1)
+	if ($1 == -1) {
+	gname = "                   No group selected              "
+	}else{
+		sprint(gname, " %30s   ---> ", glist.object($1).name)
+	}
+}
+proc topsel() {local i
+	if ($1 == -1) { return }
+	i = glist.selected()
+	toplist.select(-1)
+	if (i < 0) {return}
+	tobj = toplist.object($1)
+	toplist.remove($1)
+	glist.object(i).list.append(tobj)
+	glist.object(i).list.select(-1)
+	pwm.group(tobj.index, glist.object(i))
+	objref tobj
+}
+proc gsel() {local i
+	i = glist.selected()
+	if ($1 == -1) { return }
+	tobj = glist.object(i).list
+	tobj1 = tobj.object($1)
+	tobj.remove($1)
+	tobj.select(-1)
+	toplist.append(tobj1)
+	toplist.select(-1)
+	pwm.group(tobj1.index, nil)
+	objref tobj, tobj1
+}
+endtemplate WindowGroupManager
+
+/*
+manage the Window item on the NeuronMainMenu menubar
+*/
+
+begintemplate WindowMenu
+public make, groups, pwm, ses_gid
+external WindowGroup, WindowGroupManager
+objref pwm, this, state, keep, groups, tobj, oldgids, newgids, nil
+strdef tstr
+
+proc init() {
+	keep = this
+//if this exists now, it would be before the NeuronMainMenu
+//	pwm = new PWManager()
+	groups = new List()
+	state = new Vector(50)
+	oldgids = new Vector(20)
+	newgids = new Vector(20)
+	oldgids.resize(0)  newgids.resize(0)
+}
+
+// when a session is saved, after each window is mapped, pwman.cpp
+// puts the following statement in the session file
+// {WindowMenu[0].ses_gid(first, oldgid, show, "name")}
+// It is the responsibility of the following procedure to map the
+// oldgid's to new ones and put the last window created in the proper group
+// note that oldgid's are the meaningless object indices when saved
+// but the newgid vector is the index into the groups list
+proc ses_gid() {local i
+	if (!object_id(pwm)) {
+		pwm = new PWManager()
+	}
+	if ($1 == 1) {
+		oldgids.resize(0)
+		newgids.resize(0)
+	}
+	if (pwm.group(pwm.count-1) != nil) {
+		printf("error in %s.ses_gid(%d, %d, %d, \"%s\")\n", this, $1, $2, $3, $s4)
+		return
+	}
+	i = oldgids.indwhere("==", $2)
+	if (i == -1) {
+		groups.append(new WindowGroup($s4))
+		oldgids.append($2)
+		newgids.append(groups.count-1)
+		i = oldgids.size-1
+	}
+	pwm.group(pwm.count-1, groups.object(newgids.x[i]))
+	if ($3 == 0) {
+		pwm.hide(pwm.count-1)
+	}
+}
+
+// if make starts getting slow then we will have to reimplement with
+// a notification mechanism.
+
+proc make() {local i, lead, man
+	if (!object_id(pwm)) {
+		pwm = new PWManager()
+	}
+	man = pwm.manager
+	lead = pwm.leader
+	state.resize(pwm.count)
+	mk(man)
+	xmenu("Ungrouped")
+	xbutton("Show", "showall()")
+	xbutton("Hide", "hideall()")
+	xmenu()
+	for i=0, groups.count - 1 {
+		groups.object(i).state_ = 1
+	}
+	for i=0, pwm.count-1 {
+		if (i == lead || i == man) continue
+		tobj = pwm.group(i)
+		if (tobj == nil) {
+			mk(i)
+		}else{
+			if (pwm.is_mapped(i) == 0) {
+				tobj.state_ = 0
+			}
+		}
+	}
+	objref tobj
+	xbutton("---------","")
+	for i=0, groups.count - 1 {
+		groups.object(i).mk()
+	}
+	xbutton("Group Manager", "group_manager()")
+}
+
+proc mk() { local i
+	i = $1
+	sprint(tstr, "action(%d)", i)
+	state.x[i] = pwm.is_mapped(i)
+	xcheckbox(pwm.name(i), &state.x[i], tstr)
+//	printf("%s %g\n", pwm.name(i), state.x[i])
+}
+
+proc action() {
+	if (state.x[$1] == 1) {
+		pwm.map($1)
+	}else{
+		pwm.hide($1)
+	}
+}
+
+proc showall() {local i, lead, man
+	lead = pwm.leader
+	man = pwm.manager
+	for i=0, pwm.count-1 {
+		if (i == lead || i == man) continue
+		if (state.x[i] == 0 && pwm.group(i) == nil) {
+			pwm.map(i)
+		}
+	}
+}
+proc hideall() {local i, lead, man
+	lead = pwm.leader
+	man = pwm.manager
+	for i=0, pwm.count-1 {
+		if (i == lead || i == man) continue
+		if (state.x[i] == 1 && pwm.group(i) == nil) {
+			pwm.hide(i)
+		}
+	}
+}
+proc group_manager() {
+	tobj = new WindowGroupManager(this)
+	tobj.box.dialog("WindowGroupManager", "Close", "Close")
+	objref tobj
+}
+
+endtemplate WindowMenu
+

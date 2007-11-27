@@ -1,0 +1,267 @@
+begintemplate SChanHist
+public hist, g, vbox, thist, nbin, tmax, meanstr, cond, tobj
+objref thist, g, vbox, time, this, tobj
+strdef meanstr
+proc init() {
+	cond = 0
+	nbin = 20
+	tmax = 20
+	if (numarg() > 1) {
+		cond = $1
+		nbin = $2
+		tmax = $3
+	}
+	build()
+}
+proc build() {
+	vbox = new VBox()
+	vbox.save("")
+	vbox.intercept(1)
+	xpanel("")
+	xpvalue("Conductance", &cond, 1, "g.erase")
+	xpvalue("# Bins", &nbin, 1, "hist1()")
+	xpvalue("Tmax", &tmax, 1, "hist1()")
+	meanstr = "Mean = ????????????"
+	xvarlabel(meanstr)
+	xbutton("Erase", "g.erase")
+	xpanel()
+	g = new Graph()
+	vbox.intercept(0)
+}
+proc hist() {local m
+	time = $o1.ind($o2.c.indvwhere("==", cond))
+	hist1()
+}
+proc hist1() {local m2
+	m2 = tmax
+	sprint(meanstr, "Mean = %g", time.mean)
+        thist = time.histogram(0, m2, m2/nbin)
+	thist.remove(0)
+        thist.line(g, thist.c.indgen(m2/2/nbin, m2/nbin))
+}
+proc save() {
+}
+endtemplate SChanHist
+
+begintemplate SingleChannel
+public sch, m, g, vbox, map
+objref sch, m, xpos, ypos, vbox, g, tobj, cvec, svec, tvec, hlist
+objref tman, sman, gman, this
+strdef tstr
+
+proc init() {local i
+	ntran = 100
+	vv = -70
+	radius = 20
+	sch = $o1
+	m = new Matrix()
+	sch.set_rates(v)
+	sch.get_rates(m)
+	xpos = new Vector(m.nrow)
+	xpos.indgen(100)
+	ypos = new Vector(m.nrow)
+	cvec = new Vector(m.nrow)
+	for i=0, m.nrow-1 cvec.x[i] = sch.cond(i)
+	svec = new Vector()
+	tvec = new Vector()
+	tman = new Vector()
+	sman = new Vector()
+	gman = new Graph(0)
+	hlist = new List()
+	if (numarg() == 1) {
+		build()
+		draw()
+		center()
+		map()
+	}
+}
+
+proc build() {
+	vbox = new VBox()
+	vbox.save("save()")
+	vbox.ref(this)
+	vbox.intercept(1)
+	xpanel("Control")
+	xpvalue("v (mV)", &vv, 1, "sch.set_rates(vv) sch.get_rates(m) draw()")
+	xbutton("Conductances", "conductance_panel()")
+	xpvalue("# Conductance transitions in run", &ntran, 1)
+	xbutton("Run", "run()")
+	xbutton("Conductance vs time Graph", "gman = new Graph()")
+	xbutton("Conductance Histogram", "maphist(new SChanHist())")
+	xpanel()
+	g = new Graph(0)
+	g.view(2)
+	g.menu_tool("Arrange State Diagram", "arrange")
+	vbox.intercept(0)
+}
+
+proc run() {local i
+	tvec.resize(ntran)
+	sch.cond_transitions(tvec, svec)
+	manhattan(tvec, svec)
+	for i=0, hlist.count-1 {
+		hlist.object(i).hist(tvec, svec)
+	}
+}
+
+proc manhattan() {  
+	gman.erase()
+	tman.resample($o1.c.integral(),2)
+	tman.rotate(1,0)
+	sman.resample($o2,2)
+	sman.line(gman, tman)
+}
+
+proc center() {
+	tobj = new Vector(4)
+	g.size(&tobj.x[0])
+	g.size(tobj.x[0], tobj.x[1], tobj.x[2], tobj.x[3])
+	draw()
+}
+
+proc maphist() {
+	hlist.append($o1)
+	sprint(tstr, "Histogram for %s", this)
+	hlist.object(hlist.count-1).vbox.map(tstr)
+}
+proc draw() {local i, j
+	g.xaxis(3)
+	g.erase_all
+	for i=0, m.nrow()-1 {
+		circle(i)
+	}
+	for i=0, m.nrow()-1 {
+		for j=0, m.ncol()-1 {
+			if (m.x[i][j] > 0) {
+				arrow(i, j)
+			}
+		}
+	}
+
+	if (numarg() > 0) return
+	for i=0, m.nrow()-1 {
+		sprint(tstr, "%g", i)
+		g.label(xpos.x[i], ypos.x[i], tstr, 1, 1, .5, 0, 1) 
+		sprint(tstr, "%g", sch.cond(i))
+		g.label(xpos.x[i], ypos.x[i], tstr, 1, 1, .5, 1, 1) 
+	}
+	g.flush()
+}
+proc circle() {local i, x, y
+	g.beginline()
+	for i=0, 20 {
+		x = radius*sin(PI*i/10) y = radius*cos(PI*i/10)
+		g.line(x+xpos.x[$1], y + ypos.x[$1])
+	}
+	g.flush()
+}
+proc arrow() {local x, y, d, x1, y1, r, r2, x2, y2, ax, ay
+	r = 3*radius/2
+	r2 = radius/4
+	x = xpos.x[$2] - xpos.x[$1]
+	y = ypos.x[$2] - ypos.x[$1]
+	d = sqrt(x*x + y*y)
+	x /= d  y /= d
+	x1 = xpos.x[$1] + x*r - y*r2
+	y1 = ypos.x[$1] + y*r + x*r2
+	g.beginline()
+	g.line(x1, y1)
+	x2 = xpos.x[$2] - x*r - y*r2
+	y2 = ypos.x[$2] - y*r + x*r2
+	g.line(x2, y2)
+	x2 += -y*r2 - 2*x*r2
+	y2 += x*r2 - 2*y*r2
+	g.line(x2, y2)
+	g.flush()
+	sprint(tstr, "1/%g", m.x[$1][$2])
+	if (x > 0) {
+		if (y > 0) {
+			ax = 1 ay = 0
+		}else{
+			ax = 0 ay = 0
+		}
+	}else{
+		if (y >= 0) {
+			ax = 1 ay = 1
+		}else{
+			ax = 0 ay = 1
+		}
+	}
+	g.label(x1, y1, tstr, 1, 1, ax, ay, 1) 
+}
+
+proc arrange() {local i
+	if ($1 == 2) {
+		imove = -1
+		for i=0, m.nrow-1 {
+			if ((($2-xpos.x[i])^2 + ($3-ypos.x[i])^2) < radius^2) {
+				imove = i
+				$1 = 1
+				break
+			}
+		}
+	}
+	if (imove == -1) return
+	xpos.x[imove] = $2
+	ypos.x[imove] = $3
+	if ($1 == 1) {
+		draw(0)
+	}
+	if ($1 == 3) {
+		draw()
+		imove = -1
+	}
+}
+proc conductance_panel() {local i
+	xpanel("Conductance (integers)")
+	for i=0, cvec.size-1 {
+		sprint(tstr, "State %d", i)
+		xpvalue(tstr, &cvec.x[i], 1, "set_cond()")
+	}
+	xpanel()
+}
+proc set_cond() {local i
+	for i=0, cvec.size-1 {
+		sch.cond(i, cvec.x[i])
+	}
+	draw()
+}
+
+proc set_rate() {
+}
+proc map() {
+	sprint(tstr, "%s", this)
+	if (numarg() > 1) {
+		vbox.map(tstr, $2, $3, $4, $5)
+	}else{
+		vbox.map(tstr)
+	}
+}
+
+proc save() {local i
+	vbox.save("load_file(\"singlech.hoc\". \"SingleChannel\")}\n{")
+	sprint(tstr, "ocbox_=new SingleChannel(%s, 0)", sch)
+	vbox.save(tstr)
+	vbox.save("}\n{object_push(ocbox_)}\n{")
+	sprint(tstr, "vv=%g  ntran=%d  build() sch.set_rates(vv) sch.get_rates(m)",\
+		vv, ntran)
+	vbox.save(tstr)
+	for i=0, m.nrow-1 {
+		sprint(tstr, "xpos.x[%d]=%g  ypos.x[%d]=%g  cvec.x[%d]=%g",\
+			i, xpos.x[i], i, ypos.x[i], i, cvec.x[i])
+		vbox.save(tstr)
+	}
+	for i=0, hlist.count-1 {
+		tobj = hlist.object(i)
+		sprint(tstr, "maphist(new SChanHist(%g, %g, %g))",\
+			tobj.cond, tobj.nbin, tobj.tmax)
+		vbox.save(tstr)
+	}
+	objref tobj
+	g.erase_all()
+	vbox.save("set_cond()\n}\n{object_pop()}\n{")
+	g.save_name("ocbox_.g", 1)
+	draw()
+}
+
+endtemplate SingleChannel

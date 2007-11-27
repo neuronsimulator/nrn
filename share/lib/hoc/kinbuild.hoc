@@ -1,0 +1,533 @@
+/* This is proof of concept. to be complete it should also
+1) Have a tool for setting Boltzmann factors for voltage sensitive rates.
+2) For single channel set random initial condition with respect to
+	steady state probabilities.
+3) Allow macroscopic current simulations (plot total conductance
+	and plot time dependent probabilities)
+4) Sum single channel sweeps during voltage clamp
+5) Calculate log liklihood of a data trace given a model (should take
+	into account brief transitions too fast for data acquisition.)
+*/
+
+begintemplate SChanAnal
+public q, perm, qa, qf, qfa, qaf, odist, cdist, pinf, phio, phis, r, R
+objref q, perm, tobj, qa, qf, qaf, qfa, pinf, phio, phis, r, R
+
+proc init() {local i, j
+	q = $o1.c
+	for i=0, q.nrow-1 {
+		for j=0, q.nrow-1 if (q.x[i][j] > 0) q.x[i][j] = 1/q.x[i][j]
+		q.x[i][i] = -q.getrow(i).sum
+	}
+	perm = q.getdiag(0)
+	na = q.nrow
+	for i=0, q.nrow-1 if ($o2.x[i] == 0) {perm.x[i] = -1/perm.x[i]  na -= 1}
+	perm = perm.sortindex
+	permute()
+	qa = q.bcopy(0,0,na,na)
+	qf = q.bcopy(na,na,q.nrow-na,q.ncol-na)
+	qaf = q.bcopy(0, na, na, q.ncol-na)
+	qfa = q.bcopy(na, 0, q.nrow-na, na)
+	//print "m" $o1.printf
+	//print "perm" perm.printf
+	//print "q" q.printf
+	//print "qa" qa.printf
+	//print "qf" qf.printf
+	//print "qaf" qaf.printf
+	//print "qfa" qfa.printf
+	steady_state()
+	//print "pinf" pinf.printf
+	//print "q*pinf" q.transpose.mulv(pinf).printf
+	//print "phio" phio.printf
+	//print "phis" phis.printf
+}
+proc permute() {local i, j
+	tobj = q.c
+	for i=0, q.nrow-1 for j=0, q.ncol-1 {
+		q.x[i][j] = tobj.x[perm.x[i]][perm.x[j]]
+	}
+}
+proc steady_state() {local i
+	r = q.getrow(q.nrow-1).resize(q.nrow-1)
+	R = q.bcopy(0,0,q.nrow-1, q.ncol-1)
+	for i=0, r.size-1 {
+		R.setrow(i, R.getrow(i).sub(r))
+	}
+	pinf = R.inverse.transpose.mulv(r).mul(-1)
+	pinf.append(1 - pinf.sum)
+
+	phio = qfa.transpose.mulv(pinf.c(na, q.nrow-1))
+	phio.div(phio.sum)
+	phis = qaf.transpose.mulv(pinf.c(0, na-1))
+	phis.div(phis.sum)
+}
+
+
+func odist() {
+	return qa.c.muls($1).exp.mulm(qa).muls(-1).transpose.mulv(phio).sum
+}
+func cdist() {
+	return qf.c.muls($1).exp.mulm(qf).muls(-1).transpose.mulv(phis).sum
+}
+	
+
+endtemplate SChanAnal
+
+begintemplate SChanHist
+public hist, g, vbox, thist, nbin, tmax, meanstr, cond, tobj, analysis, plog, ltmin
+objref thist, g, vbox, time, this, tobj
+strdef meanstr
+proc init() {
+	plog = 0
+	cond = 0
+	nbin = 20
+	tmax = 10
+	ltmin = -2
+	if (numarg() > 1) {
+		cond = $1
+		nbin = $2
+		tmax = $3
+		plog = $4
+		ltmin = $5
+	}
+	build()
+}
+proc build() {
+	vbox = new VBox()
+	vbox.save("")
+	vbox.intercept(1)
+	xpanel("")
+	xstatebutton("Sqrt(Frequency) vs log10(time)", &plog, "g.erase()")
+	xpvalue("Conductance", &cond, 1, "g.erase")
+	xpvalue("# Bins", &nbin, 1, "hist1()")
+	xpvalue("log10(tmin) (for log scale)", &ltmin)
+	xpvalue("Tmax", &tmax, 1, "hist1()")
+	meanstr = "Mean = ????????????"
+	xvarlabel(meanstr)
+	xbutton("Erase", "g.erase")
+	xpanel()
+	g = new Graph()
+	vbox.intercept(0)
+}
+proc analysis() {local i, t, y, ltmax, lt, dt
+	g.beginline(2,1)
+    if (plog) {
+	ltmax = log10(tmax)
+	for i=0,nbin {
+		lt =(ltmin + i*(ltmax - ltmin)/nbin)
+		t = 10^lt
+		dt = log(10)*10^lt
+		if (cond==0) {
+			y = $o1.cdist(t)*dt
+		}else{
+			y = $o1.odist(t)*dt
+		}
+		g.line(lt, sqrt(y))
+	}
+    }else{
+	for i=0,nbin {
+		t = i*tmax/nbin
+		if (cond==0) {
+			y = $o1.cdist(t)
+		}else{
+			y = $o1.odist(t)
+		}
+		g.line(t, y)
+	}
+    }
+	g.flush()
+}
+ 
+proc hist() {local m
+	time = $o1.ind($o2.c.indvwhere("==", cond))
+	hist1()
+}
+proc hist1() {local i, m2, dlt, ltmax
+	if (object_id(time) == 0) return
+	m2 = tmax
+	sprint(meanstr, "Mean = %g", time.mean)
+	if (plog) {
+		ltmax = log10(tmax)
+		dlt = (ltmax - ltmin)/nbin
+		thist = time.c.log10.histogram(ltmin, ltmax, dlt)
+		thist.remove(0)
+		thist.div(thist.sum)
+		tobj = thist.c.indgen(ltmin+dlt/2, dlt)
+		//for i=0, thist.size-1 thist.x[i] *= 10^(ltmin+dlt+i*dlt) - 10^(ltmin+i*dlt)
+		thist.mul(1/dlt)
+		thist.sqrt
+	}else{
+        	thist = time.histogram(0, m2, m2/nbin)
+		thist.remove(0)
+        	tobj = thist.c.indgen(m2/2/nbin, m2/nbin)
+		thist.mul(nbin/m2/thist.sum)
+	}
+	thist.line(g, tobj)
+}
+proc save() {
+}
+endtemplate SChanHist
+
+begintemplate KineticBuild
+public m, g, vbox, map, sch, cvec
+objref m, xpos, ypos, vbox, g, tobj, cvec, this, sch, cpan, taupan
+objref svec, tvec, hlist, gman, tman, sman, anal
+strdef tstr, tstr1
+
+proc init() {local i
+	radius = 20
+	m = new Matrix(2,2)
+	m.setdiag(1,1)
+	m.setdiag(-1,1)
+	ntran=100
+	sch = new SingleChan(m)
+	xpos = new Vector(m.nrow)
+	xpos.indgen(100)
+	ypos = new Vector(m.nrow)
+	cvec = new Vector(m.nrow)
+	cvec.x[1] = 1
+	svec = new Vector()  tvec=svec.c tman=svec.c sman=svec.c
+	gman = new Graph(0)
+	hlist = new List()
+	if (numarg() == 0) {
+		build()
+		draw()
+		center()
+		map()
+		setcond()
+	}
+}
+
+proc build() {
+	vbox = new VBox()
+	vbox.dismiss_action("dismiss()")
+	vbox.save("save()")
+	vbox.ref(this)
+	vbox.intercept(1)
+	xpanel("Control")
+	xbutton("Conductances", "conductance_panel()")
+	xbutton("Tau's", "tau_panel()")
+	xpvalue("# Conductance transitions in run", &ntran, 1)
+	xbutton("Run", "run()")
+	xbutton("Conductance vs time Graph", "gman = new Graph()")
+	xbutton("Conductance Prob Distribution", "maphist(new SChanHist())")
+	xbutton("Analysis", "analysis()")
+	xpanel()
+	g = new Graph(0)
+	g.view(2)
+	g.menu_tool("Arrange State Diagram", "arrange")
+	g.menu_tool("Draw new transition", "newtrans")
+	g.menu_tool("Remove transition", "removetrans")
+	g.menu_tool("New States", "newstate")
+	g.menu_tool("Remove state", "removestate")
+	vbox.intercept(0)
+}
+
+proc dismiss() {local i
+	for i=0, hlist.count-1 {
+		hlist.object(i).vbox.unmap
+	}
+	vbox.unmap()
+}
+
+proc analysis() {local i
+	anal = new SChanAnal(m, cvec)
+	for i=0, hlist.count-1 {
+		hlist.object(i).analysis(anal)
+	}
+}
+
+proc maphist() {
+	hlist.append($o1)
+	sprint(tstr, "Histogram for %s", this)
+	hlist.object(hlist.count-1).vbox.map(tstr)
+}
+
+proc run() {local i
+	tvec.resize(ntran)
+	sch.current_state(0)
+	sch.cond_transitions(tvec, svec)
+	manhattan(tvec, svec)
+	for i=0, hlist.count-1 {
+		hlist.object(i).hist(tvec, svec)
+	}
+}
+
+proc manhattan() {  
+	if (gman.view_count > 0) {
+		gman.erase()
+		tman.resample($o1.c.integral(),2)
+		tman.rotate(1,0)
+		sman.resample($o2,2)
+		sman.line(gman, tman)
+	}
+}
+
+proc draw() {local i, j
+	g.xaxis(3)
+	g.erase_all
+	for i=0, m.nrow()-1 {
+		circle(i)
+	}
+	for i=0, m.nrow()-1 {
+		for j=0, m.ncol()-1 {
+			if (m.x[i][j] > 0) {
+				arrow(i, j)
+			}
+		}
+	}
+
+	if (numarg() > 0) return
+	for i=0, m.nrow()-1 {
+		sprint(tstr, "%g", i)
+		g.label(xpos.x[i], ypos.x[i], tstr, 1, 1, .5, 0, 1) 
+		sprint(tstr, "%g", cvec.x[i])
+		g.label(xpos.x[i], ypos.x[i], tstr, 1, 1, .5, 1, 1) 
+	}
+	g.flush()
+}
+
+proc center() {local w, h, sx, sy, cx, cy
+	tobj = new Vector(4)
+	g.size(&tobj.x[0])
+	g.size(tobj.x[0], tobj.x[1], tobj.x[2], tobj.x[3])
+	draw()
+}
+
+proc circle() {local i, x, y
+	g.beginline()
+	for i=0, 20 {
+		x = radius*sin(PI*i/10) y = radius*cos(PI*i/10)
+		g.line(x+xpos.x[$1], y + ypos.x[$1])
+	}
+	g.flush()
+}
+
+proc arrow() {local x, y, d, x1, y1, r, r2, x2, y2, ax, ay
+	r = 3*radius/2
+	r2 = radius/4
+	x = xpos.x[$2] - xpos.x[$1]
+	y = ypos.x[$2] - ypos.x[$1]
+	d = sqrt(x*x + y*y)
+	x /= d  y /= d
+	x1 = xpos.x[$1] + x*r - y*r2
+	y1 = ypos.x[$1] + y*r + x*r2
+	g.beginline()
+	g.line(x1, y1)
+	x2 = xpos.x[$2] - x*r - y*r2
+	y2 = ypos.x[$2] - y*r + x*r2
+	g.line(x2, y2)
+	x2 += -y*r2 - 2*x*r2
+	y2 += x*r2 - 2*y*r2
+	g.line(x2, y2)
+	g.flush()
+	sprint(tstr, "1/%g", m.x[$1][$2])
+	if (x > 0) {
+		if (y > 0) {
+			ax = 1 ay = 0
+		}else{
+			ax = 0 ay = 0
+		}
+	}else{
+		if (y >= 0) {
+			ax = 1 ay = 1
+		}else{
+			ax = 0 ay = 1
+		}
+	}
+	g.label(x1, y1, tstr, 1, 1, ax, ay, 1) 
+}
+
+func selstate() {local i
+	for i=0, m.nrow-1 {
+		if ((($1-xpos.x[i])^2 + ($2-ypos.x[i])^2) < radius^2) {
+			return i
+		}
+	}
+	return -1
+}
+
+proc arrange() {local i
+	if ($1 == 2) {
+		imove = selstate($2,$3)
+		$1 = 1
+	}
+	if (imove == -1) return
+	xpos.x[imove] = $2
+	ypos.x[imove] = $3
+	if ($1 == 1) {
+		draw(0)
+	}
+	if ($1 == 3) {
+		draw()
+		imove = -1
+	}
+}
+
+proc newstate() {
+	if ($1 == 2) {
+		m.resize(m.nrow+1, m.ncol+1)
+		cvec.resize(m.nrow)
+		xpos.resize(m.nrow)
+		ypos.resize(m.nrow)
+		cvec.x[xpos.size-1] = 0
+		xpos.x[xpos.size-1] = $2
+		ypos.x[xpos.size-1] = $3
+		draw()
+		sch.set_rates(m)
+		objref taupan, cpan
+	}
+	arrange($1, $2, $3)
+}
+
+proc removestate() {local i, j
+	if ($1 == 2 && m.nrow > 2) {
+		i = selstate($2, $3)
+		cvec.remove(i)
+		xpos.remove(i)
+		ypos.remove(i)
+		for j = i, m.nrow-2 {
+			m.setcol(j, m.getcol(j+1))
+			m.setrow(j, m.getrow(j+1))
+		}
+		m.resize(m.nrow-1, m.ncol-1)
+		draw()
+		sch.set_rates(m)
+		objref taupan, cpan
+	}			
+}
+
+proc dotrans() {local i
+	if ($1 == 2) {
+		imove = selstate($2,$3)
+		$1 = 1
+	}
+	if (imove == -1) return
+	if ($1 == 1) {
+		draw(0)
+		g.beginline()
+		g.line(xpos.x[imove], ypos.x[imove])
+		g.line($2, $3)
+		g.flush()
+	}
+	if ($1 == 3) {
+		i = selstate($2,$3)
+		if (i >= 0) {
+			m.x[imove][i] = $4
+			m.x[i][imove] = $4
+		}
+		draw()
+		imove = -1
+		sch.set_rates(m)
+		objref taupan
+	}
+}
+
+proc newtrans() {
+	dotrans($1,$2,$3,1)
+}
+
+proc removetrans() {
+	dotrans($1,$2,$3,0)
+}
+
+proc conductance_panel() {local i
+	cpan = new VBox()
+	cpan.intercept(1)
+	cpan.save("")
+	xpanel("")
+	for i=0, cvec.size-1 {
+		sprint(tstr, "State %d", i)
+		xpvalue(tstr, &cvec.x[i], 1, "setcond()")
+	}
+	xpanel()
+	cpan.intercept(0)
+	sprint(tstr, "Conductance for %s", this)
+	cpan.map(tstr)
+}
+
+proc tau_panel() {local i, j
+	taupan = new VBox()
+	taupan.intercept(1)
+	taupan.save("")
+	xpanel("")
+	for i=0, m.nrow-1 for j=0, m.ncol-1 if (m.x[i][j] > 0) {
+		sprint(tstr, "From %d to %d", i, j)
+		sprint(tstr1, "set_rate(%d,%d)", i, j)
+		xpvalue(tstr, &m.x[i][j], 1, tstr1)
+	}
+	xpanel()
+	taupan.intercept(0)
+	sprint(tstr, "Tau (ms) values for %s", this)
+	taupan.map(tstr)
+}
+
+proc setcond() {local i
+	for i=0, m.nrow-1 { 
+		cvec.x[i] = abs(int(cvec.x[i]))
+		sch.cond(i, cvec.x[i])
+	}
+	draw()
+}
+
+proc set_rate() {
+	if (m.x[$1][$2] < 1e-6) {
+		m.x[$1][$2] = 1e-6
+	}
+	sch.set_rates($1, $2, m.x[$1][$2])
+	draw()
+}
+
+proc map() {
+	sprint(tstr, "%s", this)
+	if (numarg() > 1) {
+		vbox.map(tstr, $2, $3, $4, $5)
+	}else{
+		vbox.map(tstr)
+	}
+}
+
+proc resize() {
+	m.resize($1,$1)
+	cvec.resize($1)
+	ypos.resize($1)
+	xpos.resize($1)
+}
+
+proc save() {local i, j
+	vbox.save("load_file(\"kinbuild.hoc\")}\n{")
+	sprint(tstr, "ocbox_=new KineticBuild(0)")
+	vbox.save(tstr)
+	vbox.save("}\n{object_push(ocbox_)}\n{")
+	sprint(tstr, "build() resize(%d)", m.nrow)
+	vbox.save(tstr)
+	for i=0, m.nrow-1 {
+		sprint(tstr, "xpos.x[%d]=%g  ypos.x[%d]=%g  cvec.x[%d]=%g",\
+			i, xpos.x[i], i, ypos.x[i], i, cvec.x[i])
+		vbox.save(tstr)
+	}
+	for i=0, m.nrow-1 for j=0,m.ncol-1 if (m.x[i][j] > 0) {
+		sprint(tstr, "m.x[%d][%d] = %g", i, j, m.x[i][j])
+		vbox.save(tstr)
+	}
+	for i=0, hlist.count-1 {
+		tobj = hlist.object(i)
+		sprint(tstr, "maphist(new SChanHist(%g, %g, %g, %g, %g))",\
+			tobj.cond, tobj.nbin, tobj.tmax, tobj.plog, tobj.ltmin)
+		vbox.save(tstr)
+	}
+	objref tobj
+	objref tobj
+	g.erase_all()
+	vbox.save("sch.set_rates(m) setcond()\n}\n{object_pop()}\n{")
+	g.save_name("ocbox_.g", 1)
+	draw()
+}
+
+endtemplate KineticBuild
+
+objref tobj
+proc makekineticbuilder() {
+	tobj = new KineticBuild()
+	objref tobj
+}

@@ -1,0 +1,30 @@
+#!/bin/sh
+
+ARCH=@host_cpu@
+if test "x${NRNHOME}" = x ; then
+	prefix=@prefix@
+	exec_prefix=@exec_prefix@
+	NRNBIN=@bindir@/
+else
+        prefix="$NRNHOME"
+	exec_prefix="${prefix}/${ARCH}"
+	NRNBIN="${exec_prefix}/bin/"
+fi
+
+if test "@enable_carbon@" = "yes" ; then
+	NRNIV="${exec_prefix}/bin/nrniv.app/Contents/MacOS/nrniv"
+else
+	NRNIV="${NRNBIN}nrniv"
+fi
+
+NEURONHOME="${prefix}/share/nrn"
+export NEURONHOME
+
+if [ -x ${ARCH}/special ] ; then
+	program="./${ARCH}/special"
+else
+	program="${NRNIV}"
+fi
+
+exec "$program" "$NEURONHOME/lib/hoc/nrngui.hoc" "$@" -
+

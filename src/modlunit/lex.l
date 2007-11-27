@@ -1,0 +1,241 @@
+%{
+/* /local/src/master/nrn/src/modlunit/lex.l,v 1.3 1999/05/24 18:44:51 hines Exp */
+
+#undef output
+#undef unput
+
+#ifdef FLEX_SCANNER
+#undef YY_INPUT
+#define YY_INPUT(buf,result,max_size) \
+	{ \
+	int c = Getc(); \
+	result = (c==EOF) ? YY_NULL : (buf[0]=c, 1); \
+	}
+#else
+#undef input
+#endif
+
+#include <../../nmodlconf.h>
+#include "model.h"
+#include "parse1.h"
+
+static char linebuf[512], *cp;
+int lexcontext;
+
+#define debug(arg1,arg2) /*printf("lex:arg1|%s|\n", arg2);*/
+%}
+D	[0-9]
+E	[Ee][-+]?{D}+
+%START O to_eocom to_par to_eoverb to_eol
+%%
+<O>[a-zA-Z][a-zA-Z0-9_]*'+ { /*PRIME possibly high order*/
+	yylval.qp = putintoken(yytext, PRIME, 0);
+	return PRIME;
+}
+
+<O>[a-zA-Z][a-zA-Z0-9_]* { /*NAME*/
+	Symbol *s;
+
+	yylval.qp = putintoken(yytext, NAME, 0);
+	s = SYM(yylval.qp);
+	switch (s->type) {
+		case TITLE:
+			BEGIN to_eol;
+			cp = linebuf;
+			break;
+		case COMMENT:
+			BEGIN to_eocom;
+			cp = linebuf;
+			break;
+		case VERBATIM:
+			BEGIN to_eoverb;
+			cp = linebuf;
+			break;
+	}
+	return s->type;
+}
+
+<O>{D}+	{ /*INTEGER*/
+	yylval.qp = putintoken(yytext, INTEGER, INTEGER); /* Numbers are not looked for */
+	return INTEGER;
+}
+
+
+<O>{D}+"."{D}*({E})? |
+<O>{D}*"."{D}+({E})? |
+<O>{D}+{E} { /*REAL*/
+	yylval.qp = putintoken(yytext, REAL, REAL); /* Numbers are not looked for */
+	return REAL;
+}
+
+<O>\"[^\"]*\" { /* STRING */
+	yylval.qp = putintoken(yytext, STRING, STRING);
+	return STRING;
+		/* can't quote \" */
+}
+
+<O>\>	{ yylval.qp = putintoken(yytext, 0, GT); return GT;}
+<O>\>=	{ yylval.qp = putintoken(yytext, 0, GE); return GE;}
+<O>\<	{ yylval.qp = putintoken(yytext, 0, LT); return LT;}
+<O>\<=	{ yylval.qp = putintoken(yytext, 0, LE); return LE;}
+<O>==	{ yylval.qp = putintoken(yytext, 0, EQ); return EQ;}
+<O>!=	{ yylval.qp = putintoken(yytext, 0, NE); return NE;}
+<O>!	{ yylval.qp = putintoken(yytext, 0, NOT); return NOT;}
+<O>\&\&	{ yylval.qp = putintoken(yytext, 0, AND); return AND;}
+<O>\|\|	{ yylval.qp = putintoken(yytext, 0, OR); return OR;}
+
+<O>\<-\>	{ yylval.qp = putintoken(yytext, 0, REACT1); return REACT1;}
+
+<O>\~\+	{ /* syntactic sugar for equation addition */
+	yylval.qp = putintoken(yytext, 0, NONLIN1);
+	if (lexcontext == NONLINEAR) return NONLIN1;
+	if (lexcontext == LINEAR){yylval.qp->itemsubtype = LINEAR; return LIN1;}
+	diag("equation addition can't occur in this type of block", (char *)0);
+	}
+
+<O>\~	{ /* syntactic sugar for equations */
+	yylval.qp = putintoken(yytext, 0, 0);
+	if (lexcontext == PARTIAL) {
+		yylval.qp->itemsubtype = PARTEQN;
+		 return PARTEQN;
+	}else if (lexcontext == KINETIC) {
+		yylval.qp->itemsubtype = REACTION;
+		 return REACTION;
+	}else{
+		yylval.qp->itemsubtype = yytext[0];
+		return yytext[0];
+	}
+	}
+
+<O>[ \t]+	{ putintoken(yytext, SPACE, SPACE);}
+
+<O>\r\n	{ putintoken("\n", NEWLINE, 0);}
+<O>\r	{ putintoken("\n", NEWLINE, 0);}
+<O>\n	{ putintoken(yytext, NEWLINE, 0);}
+
+<O>[:\?].*	{ putintoken(yytext, STRING, STUFF);}
+
+<O>\{	{ yylval.qp = putintoken("{", 0, '{'); return yytext[0]; }
+<O>\}	{ yylval.qp = putintoken("}", 0, '}'); return yytext[0]; }
+<O>.	{ yylval.qp = putintoken(yytext, 0, yytext[0]); return yytext[0]; }
+
+<to_eocom>ENDCOMMENT {
+	if (cp != linebuf) {
+		*cp = '\0';
+		putintoken(linebuf, STRING, STUFF);
+	}
+	cp = linebuf;
+	BEGIN O;
+	yylval.qp = putintoken(yytext, NAME, 0);
+	return SYM(yylval.qp)->type;
+}
+
+<to_eoverb>ENDVERBATIM {
+	if (cp != linebuf) {
+		*cp = '\0';
+		putintoken(linebuf, STRING, STUFF);
+	}
+	cp = linebuf;
+	BEGIN O;
+	yylval.qp = putintoken(yytext, NAME, 0);
+	return SYM(yylval.qp)->type;
+}
+
+<to_par>\) {
+	*cp = '\0';
+	yylval.qp = putintoken(linebuf, STRING, UNITS);
+	cp = linebuf;
+	unput(')');
+	BEGIN O;
+	return UNITS;
+	}
+
+<to_par>\n {
+	diag("Units not terminated by ')'", (char *)0);
+}
+
+<to_eocom,to_eoverb>\n {
+	if (cp != linebuf) {
+		*cp = '\0';
+		putintoken(linebuf, STRING, STUFF);
+	}
+	cp = linebuf;
+	putintoken(yytext, NEWLINE, 0);
+	}
+
+<to_eol>\n {
+	*cp = '\0';
+	yylval.qp = putintoken(linebuf, STRING, TO_EOL);
+	cp = linebuf;
+	BEGIN O;
+	putintoken(yytext, NEWLINE, 0);
+	return TO_EOL;
+	}
+
+<to_eocom,to_eoverb,to_eol,to_par>. { *cp++ = yytext[0];}
+
+%%
+
+lex_start() {
+	BEGIN O;
+}
+
+lex_units() {
+	cp = linebuf;
+	BEGIN to_par;
+}
+
+#ifndef FLEX_SCANNER
+int input() {
+	int c;
+	c = Getc();
+	if (c == EOF) {
+		c = 0;
+	}
+	return c;
+}
+#endif
+
+int unput(c) int c; {
+	unGetc(c);
+}
+
+int output(c) int c; {
+#if LINT
+	IGNORE(c);
+#endif
+	diag("internal error: ", "called output");
+}
+
+int yywrap() {
+	if (YYSTATE == to_eoverb) {
+		diag("End of file while in VERBATIM mode.\n",
+			"Missing ENDVERBATIM?");
+	}
+	if (YYSTATE == to_eocom) {
+		diag("End of file while in COMMENT mode.\n",
+			"Missing ENDCOMMENT?");
+	}
+	return 1;
+}
+
+/* lex.l,v
+ * Revision 1.3  1999/05/24  18:44:51  hines
+ * modlunit lex can be translated by flex
+ *
+ * Revision 1.2  1997/11/05  17:58:02  hines
+ * unix, mac, dos new lines readable on any machine
+ *
+ * Revision 1.1.1.1  1994/10/12  17:22:52  hines
+ * NEURON 3.0 distribution
+ *
+ * Revision 1.3  1994/03/17  15:21:11  hines
+ * ? token same as comment : token
+ *
+ * Revision 1.2  1990/11/13  16:14:06  hines
+ * prototype units checking
+ *
+ * Revision 1.1  90/07/02  09:01:47  hines
+ * Initial revision
+ *  */
+

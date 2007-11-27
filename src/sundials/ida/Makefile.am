@@ -1,0 +1,25 @@
+noinst_LTLIBRARIES = libida.la
+
+nsrc=$(top_srcdir)/src
+INCLUDES = -I$(nsrc)/sundials/shared
+
+libida_la_SOURCES = \
+	idaband.c \
+	idabbdpre.c \
+	ida.c \
+	idadense.c \
+	idaic.c \
+	idaio.c \
+	idaspgmr.c
+
+noinst_HEADERS = \
+	idaband.h \
+	idaband_impl.h \
+	idabbdpre.h \
+	idabbdpre_impl.h \
+	idadense.h \
+	idadense_impl.h \
+	ida.h \
+	ida_impl.h \
+	idaspgmr.h \
+	idaspgmr_impl.h

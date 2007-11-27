@@ -1,0 +1,922 @@
+if (name_declared("ocbox_") == 0) { execute("~objref ocbox_") } // if it is a CellBuild then we can determine the version
+
+begintemplate GeoType
+public name
+strdef name
+proc init() {
+	name = $s1
+}
+endtemplate GeoType
+
+begintemplate GeoSpec
+public type, value, oldval, changed, set_default, chk
+// type 0 and 1 are L and diam distinct values over subset
+// all others are constant
+
+// for per section value in a section list. only maintained for type 0 and 1
+public snlist, update
+objref snlist
+
+// For <5.7 this is also a fake MechanismStandard in MechStanWrap for Ra and cm.
+external ocbox_, tstr, classname
+public name, panel, action
+objref mod_
+
+func oldver() {
+	classname(ocbox_, tstr)
+	if (strcmp(tstr, "CellBuild") == 0) {
+		if (ocbox_.file_version_ < 5.7) {
+//printf("GeoSpec constructor with type %d called with file_version_ %g\n", $1, ocbox_.file_version_)
+			return 1
+		}
+	}
+	if (strcmp(tstr, "NetReadyCellGUI") == 0) {
+		if (ocbox_.tobj.file_version_ < 5.7) {
+//printf("GeoSpec constructor with type %d called with file_version_ %g\n", $1, ocbox_.tobj.file_version_)
+			return 1
+		}
+	}
+	return 0
+}
+
+proc init() { local skip
+	skip = 0
+	// worry about whether the context is earlier than a 5.7 CellBuild session
+	// if so and calling from CellGeometry context then type should be
+	// increased by 2  and if calling from CellMemb then type 0,1 stands for
+	// Ra, cm and need to mimic a MechanismStandard.
+	if (oldver($1)) {
+		skip = 1
+		// was caller the  CellGeometry or CellMemb context
+//printf("object pushed %s\n", object_pushed(0))
+		classname(object_pushed(0), tstr)
+		if (strcmp(tstr, "CellGeometry") == 0) {
+			$1 = $1 + 2
+		}// Fortunately the CellMemb context implies a nil snlist
+		// and type of  0 or 1 so resuming 5.7 style works.
+	}
+	// ok, now resume 5.7 style
+	type = $1
+	if (type == 0 || type == 2) {
+		value = 100
+	}else{
+		value = 1
+	}
+	if (skip == 0) if (type < 2) {
+		snlist = $o2
+		update()
+	}
+	set_default()
+}
+proc update() {local i
+	if (object_id(snlist) == 0) { return }
+	for i=0, snlist.list.count-1 {
+		if (object_id(snlist.list.object(i).ldiaminfo) == 0) {
+			snlist.list.object(i).ldiaminfo = new LDiamInfo(100, 1)
+		}
+	}
+}
+proc set_default() {local i
+	oldval = value
+	if (object_id(snlist)) {
+		for i=0, snlist.list.count-1 {
+			snlist.list.object(i).ldiaminfo.oldx[type] = snlist.list.object(i).ldiaminfo.x[type]
+		}
+	}
+}
+func changed() {local i
+	if (object_id(snlist)) {
+		for i=0, snlist.list.count-1 {
+			if (snlist.list.object(i).ldiaminfo.oldx[type] != snlist.list.object(i).ldiaminfo.x[type]) {
+				return 1
+			}
+		}
+	}else if (oldval != value) {
+		return 1
+	}
+	return 0
+}
+
+proc chk() {
+	if (type == 6) { // nseg
+		if (value < 1) { value = 1 }
+		value = int(value)
+	}else{
+		if (value <= 0) { value = 1e-6 }
+	}
+}
+
+// following needed to mimic a MechanismStandard for <5.7 CellBuild version
+// From 5.7 on, we are supposed to use a FakeMechStan in the celmemb.hoc file.
+proc name() {
+	if (type == 0) $s1 = "Ra"
+	if (type == 1) $s1 = "cm"
+}
+
+proc panel() {
+	xpanel("")
+	xlabel($s1)
+	if (type == 0) xpvalue("Ra (ohm-cm)", &value, 1, "mod()")
+	if (type == 1) xpvalue("cm (uF/cm2)", &value, 1, "mod()")
+	xpanel()
+}
+proc action() {
+	mod_ = $o2
+}
+proc mod() {
+	chk()
+	mod_.modified()
+}
+
+endtemplate GeoSpec
+
+begintemplate CellGeometry
+public update, save_data, g, bild, changed, pr, consist, cexport, export
+public export_autonseg, xmlwrite, neuroml
+external GeoSpec, lambda_f
+objref g, this, setlist, tobj, hbox, bild, sf, vbox, d1,d2, vb2
+objref geolist, nil, tobj1
+strdef tstr, tstr2, tstr3, dstr
+double geostate[1]
+objref geotype[1]
+proc init() {local i
+	egeom = 0
+	ngeotype = 9
+	sepLtype = 0
+	sepdiamtype = 1
+	constLtype = 2	// earlir GeoSpec has separate value for each section
+	constdiamtype = 3
+	areatype = 4
+	cirtype = 5
+	nsegtype = 6 // begins a new type set. See geo_consist
+	dlambdatype = 7
+	dxtype = 8
+	double geostate[ngeotype]
+	objref geotype[ngeotype]
+	geotype[sepLtype] = new GeoType("L")
+	geotype[sepdiamtype] = new GeoType("diam")
+	geotype[constLtype] = new GeoType("L")
+	geotype[constdiamtype] = new GeoType("diam")
+	geotype[areatype] = new GeoType("area")
+	geotype[cirtype] = new GeoType("circuit")
+	geotype[nsegtype] = new GeoType("nseg")
+	geotype[dlambdatype] = new GeoType("d_lambda")
+	geotype[dxtype] = new GeoType("d_X")
+	first = 1
+	bild = $o1
+	g = bild.gtopol
+	setlist = new List()
+	geolist = new List()
+	sf = new StringFunctions()
+	panel()
+	sprint(tstr, "%s", this)
+	hbox.map(tstr)
+}
+
+proc hints() {   
+xpanel("CellBuild Geometry hints")
+xlabel("Usage Hints:")
+xlabel("First, use \"Specify Strategy\" to define a (compact)")
+xlabel("    strategy of which geometric assignments should be")
+xlabel("    associated with which subsets and individual sections.")
+xlabel("    If a subset or section is used for a geometric assignment")
+xlabel("    that fact is noted in its label.")
+xlabel("")
+xlabel("Next, unselect the strategy button to use the strategy.")
+xlabel("    Only the subsets and sections with assignments are shown.")
+xlabel("    If a subset or section has geometric values that differ")
+xlabel("    from the values when this tool was last saved in a session")
+xlabel("    file, an \"x\" is shown in front of its strategy label.")
+xlabel("")
+xlabel("The strategy order should be general to specific since the")
+xlabel("  specification will be executed in the order given.")
+xlabel("  Go back to \"Subsets\" if more subsets are needed or if the")
+xlabel("  order needs to be changed.")   
+xpanel()
+}
+
+proc cexport() {local i
+        egeom = $1
+        if (bild.continuous == 0) {
+                egeom = 0 
+        }
+	consist()
+}
+
+proc export() {local i, j, k, ii, type, x
+	if (egeom) {
+		is_auto = 0
+		for i=0, geolist.count - 1 {
+			tobj = geolist.object(i)
+			type = ltype(tobj)
+			tobj.name(tstr2)
+			if (type == 1) {
+				sprint(tstr2, "forsec %s {", tstr2)
+			}else if (type == 2) {
+				sprint(tstr2, "%s {", tstr2)
+			}else { continue }
+			tobj = tobj.geo
+			for j=0, tobj.count-1 {
+				k = tobj.object(j).type
+				if (k < constLtype) { continue }
+				if (k == areatype) {
+					x = tobj.object(j).value
+sprint(tstr2, "%s L = diam = %g ", tstr2, sqrt(x/PI))
+				}else if (k == cirtype) {
+sprint(tstr2, "%s L= 43.0127  diam=100/L/PI ", tstr2)
+				}else if (k == dlambdatype) {
+					is_auto = 1
+				}else if (k == dxtype) {
+					is_auto = 1
+				}else if (k == nsegtype) {
+					is_auto = 1
+				}else{
+sprint(tstr2,"%s %s = %g ", tstr2, geotype[tobj.object(j).type].name, tobj.object(j).value)
+				}
+			}			
+			sprint(tstr2, "%s }", tstr2)
+//print tstr2
+			execute(tstr2)
+			for j=0, tobj.count-1 {
+				tobj1 = tobj.object(j)
+				k = tobj1.type
+				if (k >= constLtype) { continue }
+				for ii = 0, tobj1.snlist.list.count-1 {
+					tobj1.snlist.list.object(ii).name(tstr)
+sprint(tstr2, "%s.%s = %g", tstr, geotype[k].name, tobj1.snlist.list.object(ii).ldiaminfo.x[k])
+					execute(tstr2)
+				}
+			}
+			tobj1 = nil
+		}
+		execute("area(.5)")
+	}
+	export_autonseg()
+}
+
+proc export_autonseg() {local i, j, type, b, k
+	if (egeom && is_auto) {
+		for i=0, geolist.count - 1 {
+			b = 0
+			tobj = geolist.object(i)
+			type = ltype(tobj)
+			tobj.name(tstr2)
+			if (type == 1) {
+				sprint(tstr2, "forsec %s {", tstr2)
+			}else if (type == 2) {
+				sprint(tstr2, "%s {", tstr2)
+			}else { continue }
+			tobj = tobj.geo
+			for j=0, tobj.count-1 {
+				k = tobj.object(j).type
+				if (k == areatype) {
+				}else if (k == cirtype) {
+				}else if (k == dlambdatype) {
+					b=1
+					x = tobj.object(j).value
+sprint(tstr2, "%s nseg = int((L/(%g*lambda_f(100))+.9)/2)*2 + 1 ", tstr2, x)
+				}else if (k == dxtype) {
+					b=1
+					x = tobj.object(j).value
+sprint(tstr2, "%s nseg = int((L/%g + .9)/2)*2 + 1 ", tstr2, x)
+				}else if (k == nsegtype) {
+					b=1
+					x = tobj.object(j).value
+sprint(tstr2, "%s nseg = %d ", tstr2, x)
+				}else{
+				}
+			}			
+			sprint(tstr2, "%s }", tstr2)
+//print tstr2
+			if (b) {
+				execute(tstr2)
+			}
+		}
+	}
+}
+
+func changed() { local i
+	for i=0, geolist.count - 1 {
+		if (ltype(geolist.object(i)) == 0) {
+			if (geolist.object(i).changed()) {
+				return 1
+			}
+		}
+	}
+	return 0
+}
+
+func ltype() { //0 GeoSpec, 1 SNList, 2 CellBuildSection
+	sprint(tstr, "%s", $o1)
+	if (sf.head(tstr, "GeoSpec", tstr2) >= 0) {
+		return 0
+	}else if (sf.head(tstr, "SNList", tstr2) >= 0) {
+		return 1
+	}
+	return 2
+}
+
+proc consist() {
+	setlist.remove_all()
+	geolist.remove_all()
+	for i=0, bild.subsets.snlist.count-1 {
+		tobj = bild.subsets.snlist.object(i)
+		setlist.append(tobj)
+		if (tobj.geo.count > 0) {
+			geolist.append(tobj)
+		}
+	}
+	for i=0, bild.topol.slist.count-1 {
+		tobj = bild.topol.slist.object(i)
+		setlist.append(tobj)
+		if (tobj.geo.count > 0) {
+			geolist.append(tobj)
+		}
+	}
+	if (geolist.count > geolist_selected) {
+		geolist.select(geolist_selected)
+	}else{
+		geolist.select(-1)
+	}
+	export()
+}
+
+proc update() {local i, j
+	bild.subsets.update()
+	if (geolist.count) {
+		inmode_ = 0
+		// if there are GeoSpec for separate L,diam, then the geobox
+		// may be invalid. i.e topology or subsets may have changed.
+		for i=0, geolist.count-1 {
+			for j=0, geolist.object(i).geo.count-1 {
+				tobj = geolist.object(i).geo.object(j)
+				if (tobj.type < constLtype) {
+					geolist.object(i).geobox = nil
+					tobj.update()
+				}
+			}
+		}
+	}else{
+		inmode_ = 1
+		consist()
+	}
+	if (setlist.count > 0) {
+		setlist.select(0)
+	}
+	inmode()			
+//	if (first) hints()
+	first = 0
+	g.exec_menu("Crosshair")
+}
+proc panel() { local i
+	hbox = new HBox(3)
+	hbox.intercept(1)
+	hbox.ref(this)
+	hbox.save("save()")
+
+	vbox = new VBox(3)
+	vbox.intercept(1)
+	xpanel("")
+	inmode_ = 1
+	xcheckbox("Specify Strategy", &inmode_, "inmode()")
+	xpanel()
+	d1 = new Deck(3)
+	d1.intercept(1)
+	setlist.browser("", tstr, "setlistname(hoc_ac_)")
+	setlist.select_action("selsub(hoc_ac_)")
+	setlist.accept_action("selsub(hoc_ac_)")
+	geolist.browser("", tstr, "geolistname(hoc_ac_)")
+	geolist.select_action("selgeo(hoc_ac_)")
+	geolist.accept_action("selgeo(hoc_ac_)")
+	d1.intercept(0)
+	d1.map()
+	d1.flip_to(0)
+	xpanel("")
+	xbutton("Hints", "hints()")
+	xpanel()
+	vbox.intercept(0)
+	vbox.map()
+vb2 = new VBox(3)
+vb2.intercept(1)
+	d2 = new Deck(3)
+	d2.intercept(1)
+	xpanel("")
+	double geostate[ngeotype]
+	for i=0, ngeotype-1 {
+		if (i == 0) {
+		xlabel("Distinct values over subset")
+		} else if (i == constLtype) {
+		xlabel("Constant value over subset")
+		} else if (i == nsegtype) {
+			xlabel("-------------")
+			xlabel("Spatial Grid")
+		}
+		sprint(tstr, "selgeotype(%d)", i)
+		xcheckbox(geotype[i].name, &geostate[i], tstr)
+	}
+	xpanel()
+	xpanel("")
+	xlabel("zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz")
+	xpanel()
+	d2.intercept(0)
+	d2.flip_to(0)
+	d2.map()
+vb2.intercept(0)
+vb2.map()
+	hbox.intercept(0)
+}
+
+proc neuroml() {localobj gs
+	gs = new GeoSpec(dlambdatype)
+	gs.value =  0.1
+	bild.subsets.snlist.object(0).geo.append(gs)
+	set_default()
+}
+
+proc inmode() {
+	if (inmode_ == 1) {
+		d1.flip_to(0)
+		d2.flip_to(0)
+		selsub(0)
+	}else{
+		consist()
+		d1.flip_to(1)
+		if (geolist.count > 0) {
+			geolist.select(0)
+			doNotify()
+			selgeo(0)
+		}else{
+			d2.flip_to(-1)
+		}
+	}
+}
+
+proc selgeo() {local i, j, k, l, scroll, sav
+	if ($1 == -1) return
+	if (in_selgeo_) { return }
+	in_selgeo_ = 1
+	scroll = 0
+	while ((l = ltype(geolist.object($1))) == 0) {
+		$1 -= 1
+	}
+	geolist.select($1)
+	geolist_selected = $1
+	d2.remove_last()
+	d2.intercept(1)
+	tobj = geolist.object($1)
+	if (tobj.geobox == nil) {
+		tobj.geobox = new VBox(3)
+		tobj.geobox.intercept(1)
+		xpanel("")
+		if (l == 1) {
+			sprint(tstr, "forsec %s { ...", tobj.name_)
+			scroll += 2
+		}else{
+			tobj.name(tstr2)
+			sprint(tstr, "%s { ...", tstr2)
+		}
+		xlabel(tstr)
+		for i=0, tobj.geo.count-1 {
+			j = tobj.geo.object(i).type
+			if (j <= 1) { continue } // handle distinct L,diam after this loop
+			if (j == cirtype) { // circuit
+				xlabel("  // area : (S, uF, mA)/cm2 == uS, pF, nA")
+				xlabel("  // Ra : ohm-cm == Mohm")
+				xlabel("  L = 43.0127   diam = 100/L/PI = .74 ")
+				scroll += 3
+			}else{
+				sprint(tstr, "%s.chk() modified() area2diam(\"%s\", %d)",  \
+				 tobj.geo.object(i), tobj.geo.object(i), tobj.geo.object(i).type)
+				if (j == areatype) {
+					sprint(tstr2, "%s (um2)", geotype[j].name)
+				}else if (j == dlambdatype) {
+xlabel("  // lambda_w(f)^2 = diam/(4*PI*f*Ra*cm)")
+xlabel("  // nseg = ~L/(d_lambda*lambda_w(100))")
+xlabel("  // fraction of space constant at 100Hz")
+scroll += 3					sprint(tstr2, "d_lambda", geotype[j].name)
+				}else if (j == dxtype) {
+xlabel("  // nseg = ~L/d_X")
+scroll += 1
+					sprint(tstr2, "d_X (um)", geotype[j].name)
+				}else if (j <= constdiamtype) {
+					sprint(tstr2, "%s (um)", geotype[j].name)
+				}else{
+					sprint(tstr2, "%s", geotype[j].name)
+				}
+				sav = tobj.geo.object(i).value
+				tobj.geo.object(i).value = tobj.geo.object(i).oldval
+				xpvalue(tstr2, &tobj.geo.object(i).value, 1, tstr)
+				tobj.geo.object(i).value = sav
+				scroll += 1
+				if (j == areatype) {
+					xvarlabel(dstr)
+				}
+			}
+		}
+		if (l == 1) {xlabel("}") for i=0, tobj.geo.count-1 { // handle distinct L,diam case
+			tobj1 = tobj.geo.object(i)
+			j = tobj1.type
+			if (j > 1) { continue }
+			// loop over all sections in section list
+			sprint(tstr, "%s.chk() modified()", tobj1)
+			scroll += tobj.list.count
+			for k=0, tobj.list.count - 1 {
+				tobj.list.object(k).name(tstr2)
+				sprint(tstr2, "%s.%s (um)", tstr2, geotype[j].name)
+				sav = tobj.list.object(k).ldiaminfo.x[j]
+tobj.list.object(k).ldiaminfo.x[j] = tobj.list.object(k).ldiaminfo.oldx[j]
+xpvalue(tstr2, &tobj.list.object(k).ldiaminfo.x[j], 1, tstr)
+				tobj.list.object(k).ldiaminfo.x[j] = sav
+			}
+		}}
+		tobj1 = nil
+		xpanel(2*(scroll > 8) - 1)
+		tobj.geobox.intercept(0)
+	}
+	for i=0, tobj.geo.count-1 {
+		sprint(tstr, "%s", tobj.geo.object(i))
+		area2diam(tstr, tobj.geo.object(i).type)
+	}
+	tobj.geobox.map()
+	d2.intercept(0)
+	d2.flip_to(1)
+	if (l == 1) { // SNList
+		for j=0, setlist.count-1 {
+			if (setlist.object(j) == tobj) {
+				bild.subsets.showsel(j, g)
+				in_selgeo_ = 0
+				return
+			}
+		}
+	}else if (l == 2) { //CellBuildSection
+		bild.topol.sel_only(geolist.object($1), g)
+		in_selgeo_ = 0
+		return
+	}
+	in_selgeo_ = 0
+}
+
+proc area2diam() {
+	if ($2 == areatype) {
+		sprint(tstr, "hoc_ac_ = %s.value", $s1)
+		execute(tstr)
+		x = sqrt(hoc_ac_/PI)
+		sprint(dstr, "  L = diam = %g", x)
+	}
+}
+
+proc modified() {local x
+	bild.geom_cnt_ += 1
+	i = geolist.selected()
+	if (i < 0) {
+		i = geolist_selected
+	}
+	tobj = geolist.object(i)
+	geolist.remove(i)
+	geolist.insrt(i, tobj)
+	geolist.select(i)
+	export()
+	bild.memb.inhomo_export()
+}
+
+proc geolistname() {
+	name($1, geolist)
+	if (chg) {
+		sprint(tstr, "x %s", tstr)
+	}else{
+		sprint(tstr, "  %s", tstr)
+	}
+}
+proc setlistname() {
+	name($1, setlist)
+}
+proc name() {local type, i, c
+	type = ltype($o2.object($1))
+	if (type == 0) {
+		sprint(tstr, "%s", geotype[$o2.object($1).type].name)
+		return		
+	}
+	$o2.object($1).name(tstr)
+	sprint(tstr3, " %s", tstr)
+	chg = 0
+	for i=0, $o2.object($1).geo.count-1 {
+		name(i, $o2.object($1).geo)
+		if ($o2.object($1).geo.object(i).changed() == 1) {
+			chg = 1
+		}
+		if (i == 0) {
+			sprint(tstr3, "%s:  %s", tstr3, tstr)
+		}else{
+			sprint(tstr3, "%s, %s", tstr3, tstr)
+		}
+	}
+	tstr = tstr3
+}
+
+proc selsub() {local i, j, l
+	i = $1
+	if (i > -1) {
+		l = ltype(setlist.object($1))
+		setlist.select($1)
+		for j=0, ngeotype-1 {
+			geostate[j] = 0
+		}
+		tobj = setlist.object(i).geo
+		for j=0, tobj.count-1 {
+			geostate[tobj.object(j).type] = 1
+		}
+		if (l == 1) {
+			bild.subsets.showsel(i, g)
+		}else{
+			bild.topol.sel_only(setlist.object(i), g)
+		}			
+	}else{
+//print "celgeom selsub(-1)"
+//		bild.topol.sel_all(0, g)
+	}
+}
+	
+proc selgeotype() {local i, j
+	i = setlist.selected()
+	bild.changed_ = 1
+	bild.geom_cnt_ += 1
+	if (i > -1) {
+		// do not allow sepLtype or sepdiamtype if not subset
+		if ($1 < constLtype && ltype(setlist.object(i)) != 1) {
+			geostate[$1] = 0
+			return
+		}
+		setlist.object(i).geobox = nil
+		tobj = setlist.object(i).geo
+		if (geostate[$1]) { // add to list
+			tobj1 = new GeoSpec($1, setlist.object(i))
+			tobj.append(tobj1)
+			if ($1 == areatype) {
+				tobj1.value = 100
+			}else if ($1 == dlambdatype) {
+				tobj1.value = .1
+			}else if ($1 == dxtype) {
+				tobj1.value = 50
+			}
+			tobj1.set_default()
+		}else{
+			for j=0, tobj.count-1 {
+				if (tobj.object(j).type == $1) {
+					tobj.remove(j)
+					break
+				}
+			}
+		}
+		if (geostate[$1]) {
+			geo_consist(i, $1)
+		}
+		tobj = setlist.object(i)
+		j = geolist.index(tobj)
+		if (j == -1 && tobj.geo.count > 0) {
+			geolist.append(tobj)
+		}else if (j != -1 && tobj.geo.count == 0) {
+			geolist.remove(j)
+		}
+		setlist.remove(i)
+		setlist.insrt(i,tobj)
+		setlist.select(i)
+		export()
+	}else{
+		geostate[$1] = 0
+	}
+}
+
+proc geo_consist() {local i, j, b
+	tobj = setlist.object($1).geo
+	for (i=tobj.count - 1; i >= 0; i -= 1) {
+		j = tobj.object(i).type
+		if (j == $2) continue
+		b = 0
+		if ($2 < nsegtype && j < nsegtype) { // remove other geom types but L,diam may be together
+			b = 1
+			if ($2 == constdiamtype || $2 == sepdiamtype) { //allow L
+				if (j == constLtype || j == sepLtype) {
+					b = 0
+				}
+			}else if ($2 == constLtype || $2 == sepLtype) { //allow diam
+				if (j == constdiamtype || j == sepdiamtype) {
+					b = 0
+				}
+			}
+		}else if ($2 >= nsegtype && j >= nsegtype) { // remove other compartmentization types
+			b = 1
+		}
+		if (b) {
+			tobj.remove(i)
+			geostate[j] = 0
+			export()
+		}
+	}
+}
+
+proc save_data() { local i, j, k, l, ii, type
+	consist()
+	sprint(tstr, "}\n{object_push(%s)}\n{\nfirst = 0", $s2)
+	$o1.save(tstr)
+	k = 1
+	for i=0, setlist.count-1 {
+		tobj = setlist.object(i)
+		l = ltype(tobj)
+		tobj = tobj.geo
+		for j=0, tobj.count-1 {
+			k += 1
+			if (k%25 == 0) {
+				$o1.save("}\n{")
+			}
+			type = tobj.object(j).type
+			if (type < 2) {
+				sprint(tstr, "tobj = new GeoSpec(%d, bild.subsets.snlist.object(%d))", type, i)
+				$o1.save(tstr)
+				sprint(tstr, "for i=0, %d {tobj.snlist.list.object(i).ldiaminfo.x[%d] = fscan()}}", tobj.object(j).snlist.list.count-1, type)
+				$o1.save(tstr)
+				for ii=0, tobj.object(j).snlist.list.count-1 {
+					sprint(tstr, "%g", tobj.object(j).snlist.list.object[ii].ldiaminfo.x[type])
+					$o1.save(tstr)
+				}
+				$o1.save("{")
+			}else{
+				sprint(tstr, "tobj = new GeoSpec(%d)", type)
+				$o1.save(tstr)
+				sprint(tstr, "tobj.value = %g", tobj.object(j).value)
+				$o1.save(tstr)
+			}
+			if (l == 1) {
+sprint(tstr2, "bild.subsets.snlist.object(%d).geo.append(tobj)", i)
+			}else{
+sprint(tstr2, "bild.topol.slist.object(%d).geo.append(tobj)", \
+  bild.topol.slist.index(setlist.object(i)))
+			}
+			$o1.save(tstr2)
+		}			
+	}
+	$o1.save("set_default()")
+	$o1.save("}\n{object_pop()}\n{")
+	sprint(tstr, "%s.g", $s2)
+	g.erase_all()
+	selsub(setlist.selected)
+	set_default()
+}
+	
+proc set_default() {local i, j
+	consist()
+	for i=0, setlist.count-1 {
+		tobj = setlist.object(i).geo
+		for j=0, tobj.count-1 {
+			tobj.object(j).set_default()
+		}
+		setlist.object(i).geobox = nil
+	}
+	export()
+	inmode()
+}
+
+proc pr() {local i, j, l, k, x, is_auto, ii
+	consist()
+	is_auto = 0
+	$o1.printf("proc geom() {\n")
+	for i=0, setlist.count-1{
+	    tobj = setlist.object(i)
+	    if (tobj.geo.count) {
+		l = ltype(tobj)
+		if (l == 1) {
+			$o1.printf("  forsec %s { ", tobj.name_)
+		}else{
+			tobj.name(tstr)
+			$o1.printf("  %s { ", tstr)
+		}
+		tobj = tobj.geo
+		for j=0, tobj.count-1 {
+			k = tobj.object(j).type
+			if (k < constLtype) { continue } // do distinct L,diam after the forsec
+			if (k == areatype) {
+				x = tobj.object(j).value
+				$o1.printf(" /*area = %g */ L = diam = %g ", x, sqrt(x/PI))
+			}else if (k == cirtype) {
+				$o1.printf(" /*circuit*/ L= 43.0127  diam=100/L/PI ")
+			}else if (k == dlambdatype) {
+				is_auto=1
+			}else if (k == dxtype) {
+				is_auto=1
+			}else if (k == nsegtype) {
+				is_auto=1
+			}else{
+				$o1.printf(" %s = %g ", geotype[tobj.object(j).type].name, tobj.object(j).value)
+			}
+		}			
+		$o1.printf(" }\n")
+		// the distinct L,diam
+		for j=0, tobj.count-1 {
+			k = tobj.object(j).type
+			if (k >= constLtype) { continue }
+			tobj1 = tobj.object(j).snlist.list
+			for ii=0, tobj1.count-1 {
+				tobj1.object(ii).name(tstr)
+				$o1.printf("   %s.%s = %g\n", tstr, geotype[k].name, tobj1.object(ii).ldiaminfo.x[k])
+			}
+		}
+		tobj1 = nil
+	    }
+	}
+	$o1.printf("}\n")
+	pr_autonseg($o1)
+}
+
+proc pr_autonseg() {local i, j, type, x, k
+		if (bild.manage.toplevel == 0) {
+	$o1.printf("external lambda_f\n")
+		}
+		$o1.printf("proc geom_nseg() {\n")
+// Do not need following line since lambda_f no longer needs diam from pt3d
+// This was a performance killer since every time a cell is created the entire
+// net is re-calculated.
+//		$o1.printf("  %s area(.5) // make sure diam reflects 3d points\n", bild.topol.slist.object(0).name_)
+		for i=0, geolist.count - 1 {
+			is_auto = 0
+			tobj = geolist.object(i)
+			type = ltype(tobj)
+			tobj.name(tstr2)
+			if (type == 1) {
+				sprint(tstr2, "  forsec %s {", tstr2)
+			}else if (type == 2) {
+				sprint(tstr2, "  %s {", tstr2)
+			}else { continue }
+			tobj = tobj.geo
+			for j=0, tobj.count-1 {
+				k = tobj.object(j).type
+				if (k == areatype) {
+				}else if (k == cirtype) {
+				}else if (k == dlambdatype) {
+					is_auto=1
+					x = tobj.object(j).value
+sprint(tstr2, "%s nseg = int((L/(%g*lambda_f(100))+.9)/2)*2 + 1 ", tstr2, x)
+				}else if (k == dxtype) {
+					is_auto=1
+					x = tobj.object(j).value
+sprint(tstr2, " %s nseg = int((L/x + .9)/2)*2 + 1 ", tstr2, x)
+				}else if (k == nsegtype) {
+					is_auto=1
+					x = tobj.object(j).value
+sprint(tstr2, " %s nseg = %d ", tstr2, x)
+				}else{
+				}
+			}			
+			sprint(tstr2, "%s }", tstr2)
+//print tstr2
+			if (is_auto) {
+				$o1.printf("%s\n", tstr2)
+			}
+		}
+	$o1.printf("}\n")
+}
+
+proc xmlwrite() {local i, j, l, k, x, is_auto
+	consist()
+	is_auto = 0
+	$o1.printf("  <geometry>\n")
+	for i=0, setlist.count-1{
+	    tobj = setlist.object(i)
+	    if (tobj.geo.count) {
+		l = ltype(tobj)
+		if (l == 1) {
+			$o1.printf("    <Path name=\"%s\">\n", tobj.name_)
+		}else{
+			tobj.name(tstr)
+			$o1.printf("    <section name=\"%s\">\n", tstr)
+		}
+		tobj = tobj.geo
+		for j=0, tobj.count-1 {
+			k = tobj.object[j].type
+			if (k == areatype) {
+				x = tobj.object(j).value
+				$o1.printf("    <area>%g</area>\n", x)
+			}else if (k == cirtype) {
+				$o1.printf("  <circuit/>\n")
+			}else if (k == autonseg1) {
+				is_auto=1
+			}else if (k == autonseg2) {
+				is_auto=1
+			}else if (k == nsegtype) {
+				is_auto=1
+			}else{
+				$o1.printf("     <param name=\"%s\" value=\"%g\"/>\n", geotype[tobj.object[j].type].name, tobj.object[j].value)
+			}
+		}			
+		if (l == 1) {
+			$o1.printf("    </Path>\n")
+		}else{
+			$o1.printf("    </section>\n")
+		}
+	    }
+	}
+	$o1.printf("  </geometry>\n")
+	xml_autonseg($o1)
+}
+proc xml_autonseg() {
+}
+
+endtemplate CellGeometry

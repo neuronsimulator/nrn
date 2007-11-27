@@ -1,0 +1,345 @@
+using_cvode_ = 0
+
+begintemplate NumericalMethodPanel
+public dae, ode, fixed, atoltool_, atoltool, refresh, rescale, restore
+public details, save, map, b1, varstep, localstep, prdetails
+public varstep, localstep // for backward compatibility with cvode_active and cvode_local
+external using_cvode_
+objref b, b1, this, cvode, atoltool_
+strdef smodel, smeth, smx, tstr
+proc init() {
+	saved = 0
+	cvode = CVode[0]
+	atol_ = cvode.atol()
+	variable_domain(&atol_, 1e-15, 1000)
+	b1 = this
+	refresh()
+}
+
+proc dae() {
+	isdaspk_ = $1
+	isdaspk()
+}
+
+proc ode() {
+	varstep(1)
+}
+
+proc fixed() {
+	varstep(0)
+}
+
+proc varstep() {
+	isvar_ = $1  isvar()
+}
+
+proc localstep() {
+	if ($1 == 1) {
+		islocal_ = 1  islocal()
+	}else{
+		isvar_=0 isvar()
+	}
+}
+
+proc details() {
+	b = new VBox()
+	b.save("")
+	b.ref(this)
+	b.intercept(1)
+	xpanel("")
+	xbutton("Refresh", "refresh()")
+	xvarlabel(smodel)
+	xlabel("ODE model allows any method")
+	xlabel("DAE model allows implicit fixed step or daspk")
+	xcheckbox("Implicit Fixed Step", &isfixed_, "isfixed()")
+	xcheckbox("C-N Fixed Step", &iscn_, "iscn()")
+	xcheckbox("Cvode", &iscvode_, "iscvode()")
+	xcheckbox("Daspk", &isdaspk_, "isdaspk()")
+	xcheckbox("Local step", &islocal_, "islocal()")
+	xlabel("DAE and daspk require sparse solver, cvode requires tree solver")
+	xcheckbox("Mx=b tree solver", &istree_, "istree()")
+	xcheckbox("Mx=b sparse solver", &issparse_, "issparse()")
+	xlabel("")
+	xcheckbox("2nd order threshold (for variable step)", &isco2_, "isco2()")
+	xpanel()
+	b.intercept(0)
+	b.map("Numerical Method Selection")
+}
+proc map() {
+	// unusual logic because we don't want this to be the first window
+	if (b1 == this) {
+		buildsmall()
+		refresh()
+	}
+	b1.unmap()
+	doNotify()
+	if (numarg() == 5) {
+		b1.map("VariableTimeStep", $2, $3, $4, $5)
+	}else{
+		b1.map("VariableTimeStep")
+	}
+}
+
+proc buildsmall() {
+	b1 = new VBox()
+	b1.save("save()")
+	b1.ref(this)
+	b1.intercept(1)
+	xpanel("")
+	xcheckbox("Use variable dt", &isvar_, "isvar()")
+	xpvalue("Absolute Tolerance", &atol_, 1, "CVode[0].atol(atol_)")
+	xpanel()
+	xpanel("",1)
+	xbutton("Atol Scale Tool", "atoltool()")
+	xbutton("Details", "details()")
+	xpanel()
+	b1.intercept(0)
+}
+
+proc atoltool1() {
+	if (object_id(atoltool_) == 0) {
+		atoltool_ = new AtolTool()
+	}
+	if (!CVode[0].active) {
+		varstep(1)
+	}
+}
+
+proc atoltool() {
+	atoltool1()
+	atoltool_.activate(1)
+	execute("init()")
+	atoltool_.analyse()
+	atoltool_.map()
+}
+
+proc rescale() {
+	atoltool1()
+	atoltool_.anrun()
+	atoltool_.rescale()
+	atoltool_.refresh()
+}
+
+func refresh() {local x
+	x = cvode.current_method()
+	refresh1(x)
+	return x
+}
+
+proc prdetails() {local model, gauss, method, lstep
+	model = $1%10
+	gauss = int($1/10)%10
+	method = int($1/100)%10
+	lstep = int($1/1000)%10
+	if (numarg() == 2) {
+		printf("%s: ", $s2)
+	}
+	if (model == 0) {
+		printf("no model, ")
+	}else if (model == 1) {
+		printf("ODE type, ")
+	}else{
+		printf("DAE type, ")
+	}
+	if (method == 0) {
+		printf("1st order fixed step, ")
+	}else if (method == 1) {
+		printf("2nd order fixed step (1st order currents), ")
+	}else if (method == 2) {
+		printf("2nd order fixed step and currents, ")
+	}else if (method == 3) {
+		printf("CVODES, ")
+	}else if (method == 4) {
+		printf("IDA, ")
+	}
+	if (lstep == 0) {
+		printf("global step, ")
+	}else{
+		printf("local step, ")
+	}
+	if (gauss == 0) {
+		printf("tree matrix solver\n")
+	}else{
+		printf("general sparse matrix solver\n")
+	}
+}
+proc refresh1() {local x
+	x = $1
+	isco2_ = cvode.condition_order() - 1
+	atol_ = cvode.atol()
+	model = x%10
+	gauss = int(x/10)%10
+	method = int(x/100)%10
+	lstep = int(x/1000)%10
+//	printf("model=%d gauss=%d method=%d local=%d\n", model, gauss, method, lstep)
+	if (model == 0) {
+		sprint(smodel, "current model type: <*no model*>   ")
+	}else if (model == 1) {
+		sprint(smodel, "current model type: <*ODE*>   DAE  ")
+	}else{
+		sprint(smodel, "current model type:   ODE   <*DAE*>")
+	}
+	iscn_ = (method == 2)
+	if (model == 2 && iscn_ == 1) {
+		secondorder = 0
+		iscn_ = 0
+		method = 0
+	}
+	isfixed_ = (method == 0)
+	iscvode_ = (method == 3 && lstep == 0)
+	isdaspk_ = (method == 4)
+	islocal_ = (lstep == 1)
+	istree_ = (gauss == 0)
+	issparse_ = (gauss == 1)
+	isvar_ = (method > 2)
+	using_cvode_ = isvar_
+}
+
+proc restore() {local i
+	if (dt > .0001) {
+		dtsav = dt
+	}else{
+		dtsav = .025
+	}
+	cvode.condition_order($2)
+	refresh1($1)
+	if (isfixed_) {isfixed()}
+	if (iscn_) {iscn()}
+	if (iscvode_) {iscvode()}
+	if (isdaspk_) {isdaspk()}
+	if (islocal_) {islocal()}
+	if (istree_) {istree()}
+	if (issparse_) {issparse()}
+	i = refresh()
+	if (i != $1) {
+		printf("Method details were not completely restored\n")
+		prdetails($1, "saved")
+		prdetails(i, "current")
+	}
+}
+
+proc sdt() {
+	if ($1 == 1 && method < 3 && saved == 0) {
+		dtsav = dt
+		saved = 1
+//print "dtsav = dt ", dt
+	}
+	if ($1 == 0 && method > 2) {
+		dt = dtsav
+		saved = 0
+//print "dt = dtsav ", dt
+	}
+}
+
+proc isvar() {
+	if (isvar_) {
+		if (!saved) { sdt(1) }
+		if (model == 2) {
+			isdaspk_ = 1
+			isdaspk()
+		}else{
+			iscvode_ = 1
+			iscvode()
+		}
+	}else{
+		sdt(0)
+		cvode.use_daspk(0)
+		cvode.active(0)
+		cvode.use_mxb(0)
+		refresh()
+	}
+}
+
+proc isfixed() {
+	if (isfixed_ == 1) {
+		secondorder = 0
+		cvode.use_daspk(0)
+		cvode.active(0)
+		sdt(0)
+	}
+	refresh()
+}
+proc iscn() {
+	if (iscn_ == 1 && model != 2) {
+		secondorder = 2
+		cvode.use_daspk(0)
+		cvode.active(0)
+		sdt(0)
+	}
+	refresh()
+}
+proc iscvode() {
+	if (iscvode_ == 1 && model != 2) {
+		sdt(1)
+		cvode.use_local_dt(0)
+		cvode.use_daspk(0)
+		cvode.use_mxb(0)
+		cvode.active(1)
+		dt = dtsav
+	}
+	refresh()
+}
+proc isdaspk() {
+	if (isdaspk_ == 1) {
+		sdt(1)
+		cvode.use_daspk(1)
+		cvode.active(1)
+		dt = dtsav
+	}
+	refresh()
+}
+proc islocal() {
+	if (islocal_ == 1 && model != 2) {
+		sdt(1)
+		cvode.use_daspk(0)
+		cvode.use_mxb(0)
+		cvode.use_local_dt(1)
+		cvode.active(1)
+		dt = dtsav
+	}
+	refresh()
+}
+proc istree() {
+	if (istree_ == 1 && model != 2) {
+		if (method < 3) {
+			cvode.use_daspk(0)
+			cvode.use_mxb(0)
+		}
+	}
+	refresh()
+}
+proc issparse() {
+	if (issparse_ == 1) {
+		if (method < 3) {
+			cvode.use_mxb(1)
+		}
+	}
+	refresh()
+}
+
+proc isco2() {
+	cvode.condition_order(isco2_ + 1)
+}
+
+proc ats() {
+	if ($2 > 0) {
+		CVode[0].atolscale($s1, $2)
+	}
+}
+
+proc save() {local i
+	b1.save("ocbox_ = NumericalMethodPanel[0]\n}")
+	b1.save("{object_push(ocbox_)}\n{")
+	sprint(tstr, "atol_ = %g  CVode[0].atol(atol_)", atol_)
+	b1.save(tstr)
+	sprint(tstr, "restore(%d, %d)", refresh(), cvode.condition_order())
+	b1.save(tstr)
+	if (object_id(atoltool_) != 0) {
+		b1.save(" atoltool_ = new AtolTool()")
+		atoltool_.save(b1)
+		b1.save(" atoltool_.scales()")
+	}
+	b1.save("}\n{object_pop()}\n{")
+}
+
+endtemplate NumericalMethodPanel

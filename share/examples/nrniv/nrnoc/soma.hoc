@@ -1,0 +1,80 @@
+/* HH soma membrane with passive dendrite */
+
+// physical properties of the cell
+celsius=10
+create soma, dend, axon
+{access soma nseg=1 diam=10 L=10 insert hh}
+connect dend (0), 1
+dend {nseg=10 diam=5 insert pas g_pas=.001 e_pas=-65}
+connect axon(0), 0
+axon {nseg=10 diam=2 L=1000 insert hh}
+lambda = sqrt(1e4/4*dend.diam/(dend.Ra*dend.g_pas))
+{printf("lambda=%g\n",lambda)}
+dend.L = lambda*1
+
+// experimental tools
+objref stim
+stim = new IClamp()
+
+// run parameters
+tstop=10
+// graphical interface appearance
+objref g
+g = new Graph()
+strdef s
+g.size(0,tstop,-80,60)
+proc label() {
+	g.vfixed(1)
+	g.label(0, .5, "mV")
+	g.label(.43, .07, "t (ms)")
+	g.label(.23, .01, "soma with dendrite action potential")
+	g.flush()
+}
+label()
+
+// simulation control
+proc init() {
+	finitialize(-65)
+	g.beginline()
+}
+
+proc step() {
+	g.line(t,v)
+	fadvance()
+}
+
+i=0
+proc run() {
+	g.label(.6,1,"")
+	axon stim.loc(1)
+	run1(.1)
+	run1(.5)
+	run1(1)
+	run1(1.5)
+	run1(2)
+}
+
+proc run1() {
+	dend.L = lambda*$1
+	sprint(s,"dend.L = %g lambda", dend.L/lambda)
+	g.label(s)
+	init()
+	stim.dur=tstim stim.amp=strength
+//	fstim(1) axon fstim(0, 1, 0, tstim,  strength)
+	while(t<tstop) { step()}
+	g.flush()
+}
+
+// run simulation
+strength = 30	/*namps*/
+tstim = .1
+
+topology()
+run()
+
+
+
+
+
+
+

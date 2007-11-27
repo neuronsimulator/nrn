@@ -1,0 +1,4 @@
+; WINDOS.RC - generic RC file for programs built with WINDOS
+
+winio_icon ICON windos.ico
+

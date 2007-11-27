@@ -1,0 +1,158 @@
+/*
+?0 GUI NEURONDemonstrations
+Switches between simulations. On a switch an attempt is made to destroy
+all windows pertaining to the previous simulation.
+
+? PatchHH
+Hodgkin Huxley Membrane patch (single compartment model)
+Pressing the "InitRun" button on the "RunControl" panel shows a membrane
+action potential.
+
+? Stylized
+soma, hillock, initial axon segment, 3 dendrites, and myelinated axon.
+Running this simulation shows voltage at soma and near end of axon as well
+as movie of voltage profile along the cable. Three AlphaSynapse's are used
+to elicit the action potential.
+
+? Pyramidal
+3-D reconstruction of neuron obtained as example from Eutectic.
+Passive everywhere but soma and dendrite_5[0] instead have normal density
+hh channels.
+
+? Release
+Fairly complicated transmitter release model in single compartment
+involving radial calcium diffusion, calcium pump, channel, and sodium-calcium
+exchange, etc. The models for these mechanisms are located in
+$NEURONHOME/demo/release
+
+? Sychronizing net (artificial cells)
+All to all inhibitory connections between cells that intrinsically fire
+at a specified interval between spikes. The intrinsic firing interval
+varies uniformly between the "Lowest natural interval" and the "Highest
+natural interval". With proper delay and inhibitory
+connection weight, the cells will synchronize to within the variation of
+the intervals.
+
+? LinearCircuit:DynamicClamp
+The soma contains HH k and leak channels. The synth model contains
+HH na channels and no capacitance. The soma is stimulated by an IClamp.
+The synth model is clamped to the voltage of the soma with amplifier Ac,
+VIc is proportional to the total membrane current through the synth model.
+This voltage is converted to a current by the Acmd amplfier (with help
+from Ai which measures the voltage across Ri) and is fed back through the
+current electrode Re2.
+
+? StochasticSingleChannels: HH 
+Several values for Nsingle are available to simulate an HH patch
+action potential
+
+? Nomodel
+Just destroys the windows of the previous simulation leaving only
+the main menus.
+
+?0 User HocCode NEURONDemonstrations
+*/
+
+help ?0
+
+create soma
+access soma
+//soma delete_section()
+strdef demolabel
+demolabel = "Choose one of the demonstrations       "
+objref tempobj
+{
+load_file("stdgui.hoc")
+load_file("electrod.hoc")
+load_file("pointman.hoc")
+load_file("showmech.hoc")
+//xopen("$(NRNDEMO)synchronize.hoc")
+//xopen("$(NRNDEMO)spkplot.hoc")
+nrnmainmenu()
+}
+
+
+proc demopanel() {
+	xpanel("NEURON Demonstrations")
+	xvarlabel(demolabel)
+	xradiobutton("Patch: HH", "demo(1)")
+	xradiobutton("Stylized", "demo(2)")
+	xradiobutton("Pyramidal", "demo(3)")
+	xradiobutton("Release", "demo(4)")
+	xradiobutton("Synchronizing net (artificial cells)", "demo(5)")
+	xradiobutton("LinearCircuit: Dynamic Clamp", "demo(6)")
+	xradiobutton("Stochastic Single Channels: HH", "demo(7)")
+	xradiobutton("No model", "demo(0)", 1)
+	xpanel()
+}
+
+proc destroy(){} // redefined by each subdemo
+
+proc destroy1() { local i // widgets the user may have created from the gui.
+	objectvar graphList[n_graph_lists], graphItem, flush_list, fast_flush_list
+	for i=0,n_graph_lists-1 graphList[i] = new List(1)
+	flush_list = new List(1)
+	fast_flush_list = new List(1)
+
+	tempobj = new List("Inserter")
+	while (tempobj.count()) {
+		tempobj.object(0).v1.unmap()
+	}
+	tempobj = new List("Electrode")
+	while (tempobj.count()) {
+		tempobj.object(0).v1.unmap()
+	}
+	tempobj = new List("PointProcessManager")
+	while (tempobj.count()) {
+		tempobj.object(0).v1.unmap()
+	}
+	tempobj = new List("ShowMechanism")
+	while (tempobj.count()) {
+		tempobj.object(0).v1.unmap()
+	}
+}
+
+proc demo() {
+	cvode_active(0)
+	destroy()
+	destroy1()
+	objectvar e, stim, menu_explore, pplocator, s
+	objectvar save_window_[1], rvp_[1], scene_vector_[1], ocbox_[1]
+	objectvar ocbox_list_[1], scene_list_[1], scene_[1]
+	doEvents()
+
+	forall delete_section()
+	if ($1 == 1) {
+		demolabel = "Patch with HH channels"
+		xopen("$(NRNDEMO)hh.hoc")
+		xopen("$(NRNDEMO)hh.ses")
+	}else if ($1 == 2) {
+		demolabel = "Stylized"
+		xopen("$(NRNDEMO)d3init.hoc")
+		xopen("$(NRNDEMO)dend3.ses")
+	}else if ($1 == 3) {
+		demolabel = "Pyramidal: HH soma, passive dendrites"
+		xopen("$(NRNDEMO)pyramid.nrn")
+		xopen("$(NRNDEMO)reconst.hoc")
+		xopen("$(NRNDEMO)pyramid.ses")
+	}else if ($1 == 4) {
+		demolabel = "Synaptic release"
+		xopen("$(NRNDEMO)release.hoc")
+		xopen("$(NRNDEMO)release.ses")
+	}else if ($1 == 5) {
+		demolabel = "Synchronizing net (artificial cells)"
+		load_file(1, "$(NRNDEMO)sync/demosync.hoc")
+	}else if ($1 == 6) {
+		demolabel = "LinearCircuit: Dynamic Clamp"
+		load_file(1, "$(NRNDEMO)dynclamp.hoc")
+	}else if ($1 == 7) {
+		demolabel = "Stochastic Single Channels: HH"
+		load_file(1, "$(NRNDEMO)singhh.hoc")
+	}else if ($1 == 0) {
+		demolabel = "Choose one of the demonstrations"
+		xopen("$(NRNDEMO)nomodel.hoc")
+	}
+	finitialize()
+}
+
+{xopen("$(NRNDEMO)demo.ses")}

@@ -1,0 +1,69 @@
+{load_file("nrngui.hoc")}
+objectvar save_window_, rvp_
+objectvar scene_vector_[2]
+objectvar ocbox_, ocbox_list_, scene_, scene_list_
+{ocbox_list_ = new List()  scene_list_ = new List()}
+{pwman_place(0,25,0)}
+{
+xpanel("Temperature", 0)
+celsius = 16.3
+xvalue("celsius","celsius", 1,"", 0, 1 )
+xpanel(383,204)
+}
+
+//Begin VariableTimeStep
+{
+ocbox_ = NumericalMethodPanel[0]
+}
+{object_push(ocbox_)}
+{
+atol_ = 0.001  CVode[0].atol(atol_)
+restore(1, 1)
+}
+{object_pop()}
+{
+ocbox_.map("VariableTimeStep", 377, 684, 280.32, 106.56)
+}
+objref ocbox_
+//End VariableTimeStep
+
+{
+xpanel("RunControl", 0)
+v_init = -65
+xvalue("Init","v_init", 1,"stdinit()", 1, 1 )
+xbutton("Init & Run","run()")
+xbutton("Stop","stoprun=1")
+runStopAt = 5
+xvalue("Continue til","runStopAt", 1,"{continuerun(runStopAt) stoprun=1}", 1, 1 )
+runStopIn = 1
+xvalue("Continue for","runStopIn", 1,"{continuerun(t + runStopIn) stoprun=1}", 1, 1 )
+xbutton("Single Step","steprun()")
+t = 0
+xvalue("t","t", 2 )
+tstop = 5
+xvalue("Tstop","tstop", 1,"tstop_changed()", 0, 1 )
+dt = 0.025
+xvalue("dt","dt", 1,"setdt()", 0, 1 )
+steps_per_ms = 40
+xvalue("Points plotted/ms","steps_per_ms", 1,"setdt()", 0, 1 )
+screen_update_invl = 0.05
+xvalue("Scrn update invl","screen_update_invl", 1,"", 0, 1 )
+realtime = 0
+xvalue("Real Time","realtime", 0,"", 0, 1 )
+xpanel(377,289)
+}
+{
+xpanel("NEURON Demonstrations", 0)
+xvarlabel(demolabel)
+xradiobutton("Patch: HH","demo(1)")
+xradiobutton("Stylized","demo(2)")
+xradiobutton("Pyramidal","demo(3)")
+xradiobutton("Release","demo(4)")
+xradiobutton("Synchronizing net (artificial cells)","demo(5)")
+xradiobutton("LinearCircuit: Dynamic Clamp","demo(6)")
+xradiobutton("Stochastic Single Channels: HH","demo(7)")
+xradiobutton("No model","demo(0)")
+xpanel(383,0)
+}
+objectvar scene_vector_[1]
+{doNotify()}

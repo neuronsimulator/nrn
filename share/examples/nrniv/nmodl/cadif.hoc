@@ -1,0 +1,25 @@
+load_file("nrngui.hoc")
+create cable
+access cable
+{
+	nseg = 10
+	L = 1
+	diam = 1
+	insert cadifus
+}
+proc init() {
+	finitialize(v_init)
+	ca_cadifus[0](.001) = 1e-2
+	cvode.re_init()
+}
+xopen("cadif.ses")
+tstop = .02
+run()
+
+objref ss
+ss = new SaveState()
+
+xpanel("test")
+xbutton("save and init", "ss.save() stdinit()")
+xbutton("restore", "ss.restore for i=0,2 Graph[i].flush()")
+xpanel()

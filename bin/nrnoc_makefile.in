@@ -1,0 +1,83 @@
+#
+# This makefile has the rules necessary for making the custom version of nrnoc
+# called "special" from various mod files.  The variable "MODOBJFILES" should
+# be set on the command line to list the .o files that are needed.
+#
+prefix = @prefix@
+exec_prefix = @exec_prefix@
+
+bindir = @bindir@
+sbindir = @sbindir@
+libexecdir = @libexecdir@
+datadir = @datadir@
+sysconfdir = @sysconfdir@
+sharedstatedir = @sharedstatedir@
+localstatedir = @localstatedir@
+libdir = @libdir@
+infodir = @infodir@
+mandir = @mandir@
+includedir = @includedir@
+
+pkgdatadir = $(datadir)/@PACKAGE@
+pkglibdir = $(libdir)/@PACKAGE@
+pkgincludedir = $(includedir)/@PACKAGE@
+libobjdir = $(libdir)
+
+DEFS = @DEFS@
+LDFLAGS = @LDFLAGS@
+LIBS = @LIBS@
+X_CFLAGS = @X_CFLAGS@
+X_LIBS = @X_LIBS@
+X_EXTRA_LIBS = @X_EXTRA_LIBS@
+X_PRE_LIBS = @X_PRE_LIBS@
+
+INCLUDES = -I. -I$(pkgincludedir) -I$(libdir)
+
+LIBTOOL = $(pkgdatadir)/libtool
+CC = @CC@
+CFLAGS = @CFLAGS@
+COMPILE = $(CC) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
+CCLD = $(CC)
+LINK = $(LIBTOOL) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(LDFLAGS)
+
+NRNOCLIBS = -L$(libdir) $(libdir)/libnrnoc.la -loc @MEMACSLIB@ \
+	-lscopmath -lsparse13 @READLINE_LIBS@ \
+	$(X_PRE_LIBS) $(X_LIBS) $(X_EXTRA_LIBS)
+
+NRNOCOBJS = $(libobjdir)/ocmain.o $(libobjdir)/nrnnoiv.o $(libobjdir)/ocnoiv.o
+
+.SUFFIXES:
+.SUFFIXES: .c .mod .o
+#
+# How to make a .o file from a .mod file.  Note that we have to delete the
+# .c file, or else make will get confused.  We have to go directly from
+# a .mod to a .o file because otherwise GNU make will try to use a rule
+# involving m2c.  Argh!!  Why did they have to build in so many implicit
+# rules?
+# 
+#.mod.o:
+#	$(bindir)/nocmodl $* || (rm -f $*.c; exit 1)
+#	$(COMPILE) -c $*.c
+#	rm -f $*.c
+#
+# some experimentation gave promising results for the following.
+# it remains to be seen how portable it is. It seems to work
+# for gnu make and the /usr/ccs/bin/make distributed with solaris.
+
+#%.o : %.mod
+
+.mod.c:
+	$(bindir)/nocmodl $*
+	
+.c.o:
+	$(COMPILE) -c $*.c
+
+.mod.o:
+	$(bindir)/nocmodl $*
+	$(COMPILE) -c $*.c
+
+mod_func.o: mod_func.c
+	$(COMPILE) -c $<
+
+special: $(MODOBJFILES) mod_func.o
+	$(LINK) -o special $(NRNOCOBJS) $(MODOBJFILES) mod_func.o $(NRNOCLIBS) $(LIBS)

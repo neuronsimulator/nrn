@@ -1,0 +1,156 @@
+#!/bin/sh
+
+ARCH=@host_cpu@
+if test "x${NRNHOME}" = x ; then
+	prefix=@prefix@
+	exec_prefix=@exec_prefix@
+	bindir=@bindir@
+	libdir=@libdir@
+else
+        prefix="$NRNHOME"
+	exec_prefix="${prefix}/${ARCH}"
+	bindir="${prefix}/${ARCH}/bin"
+	libdir="${prefix}/${ARCH}/lib"
+fi
+
+export prefix
+export exec_prefix
+export bindir
+export libdir
+
+LIBOBJDIR="${libdir}"
+MAKEFILEDIR="${bindir}"
+
+
+PURIFY="USEPURIFY=no"
+if [ "$1" = "-p" ] ; then
+	PURIFY="USEPURIFY=yes"
+	shift
+fi
+
+TRACE="BGTRACE_LIBS="
+if [ "$1" = "-trace" ] ; then
+	TRACE="BGTRACE_LIBS = -L/bgl/hpct_bgl/mp_profiler/lib -lmpitrace.rts -L/bgl/hpct_bgl/binutils-2.14/lib -lbfd -liberty -lhandle_MPID_Win_start_error.rts"
+	shift
+fi
+
+UserLDFLAGS=""
+if [ "$1" = "-loadflags" ] ; then
+       UserLDFLAGS="$2"
+       shift 
+       shift
+fi
+
+if [ ! -d $ARCH ] ; then
+	echo "Creating $ARCH directory for .o files."
+	echo
+	mkdir $ARCH
+fi
+
+pwd
+files=""
+if test $# -gt 0 ; then
+	for i in $* ; do
+		if test -d $i ; then
+			files="$files `echo $i/*.mod`"
+		else
+			files="$files $i"
+		fi
+	done
+else
+	files=`echo *.mod`
+fi
+
+mfiles=""
+for i in $files ; do
+	mfiles="$mfiles `basename $i`"
+done
+echo $files
+echo $mfiles
+
+files=`echo "$files" | sed 's/\.mod//g'`
+
+if test "$files" = '*' ; then
+	files=""
+fi
+
+cd $ARCH
+mdir=`pwd`
+for i in $files; do
+    rm -f "`basename $i`".mod
+    ln -s ../$i.mod .
+done
+bfiles=`echo "$mfiles" | sed 's/\.mod//g'`
+
+for i in $cfiles; do
+    rm -f $i
+    ln -s ../$i .
+done
+
+COBJS=
+MODOBJS=
+if [ `echo "\n"` ] ; then
+	newline="\n"
+else
+	newline="\\\\n"
+fi
+
+echo '#include <stdio.h>
+#include "hocdec.h"
+extern int nrnmpi_myid;
+extern int nrn_nobanner_;
+modl_reg(){
+  if (!nrn_nobanner_) if (nrnmpi_myid < 1) {
+    fprintf(stderr, "Additional mechanisms from files'$newline'");
+' > mod_func.c
+
+if true ; then # the standard order
+for i in $files
+	do
+		echo '    fprintf(stderr," '$i'.mod");' >>mod_func.c
+	done
+else
+	# use "ls -x" to sort alphabetically by lines
+	# use "ls -C" to sort alphabetically by columns
+	ls -C $mfiles | sed 's/\(.*\)/    fprintf(stderr,"\1\\n");/' >> mod_func.c
+fi
+echo '    fprintf(stderr, "'$newline'");
+  }' >>mod_func.c
+
+for i in $bfiles
+do
+	echo '  _'$i'_reg();' >> mod_func.c
+	MODOBJS="$MODOBJS $i.o"
+done
+echo "}" >> mod_func.c
+
+
+if test -n "$cfiles" ; then
+	COBJS=`echo "$cfiles" | sed 's/\.c/.o/g'`
+fi
+
+@NRNMECH_DLL_STYLE_FALSE@make -f "${MAKEFILEDIR}/nrniv_makefile" "$PURIFY" "$TRACE" "MODOBJFILES=$MODOBJS" "COBJFILES=$COBJS" "UserLDFLAGS=$UserLDFLAGS" special &&
+@NRNMECH_DLL_STYLE_FALSE@  echo "Successfully created $ARCH/special"
+
+@NRNMECH_DLL_STYLE_TRUE@MODLO=`echo "$MODOBJS" | sed 's/\.o/.lo/g'`
+@NRNMECH_DLL_STYLE_TRUE@CLO=`echo "$COBJS" | sed 's/\.o/.lo/g'`
+@NRNMECH_DLL_STYLE_TRUE@if test "${mdir}" = "${prefix}/share/nrn/demo/release/powerpc" ; then
+@NRNMECH_DLL_STYLE_TRUE@  mdir='${NRNHOME}'/share/nrn/demo/release/${ARCH}
+@NRNMECH_DLL_STYLE_TRUE@fi
+@NRNMECH_DLL_STYLE_TRUE@make -f "$MAKEFILEDIR/nrnmech_makefile" "MODOBJFILES=$MODLO" "COBJFILES=$CLO" "UserLDFLAGS=$UserLDFLAGS" libnrnmech.la &&
+@NRNMECH_DLL_STYLE_TRUE@  echo '#!/bin/sh
+@NRNMECH_DLL_STYLE_TRUE@if test "x${NRNHOME}" = "x" ; then
+@NRNMECH_DLL_STYLE_TRUE@	NRNHOME='"\"${prefix}\""'
+@NRNMECH_DLL_STYLE_TRUE@fi'> special &&
+@NRNMECH_DLL_STYLE_TRUE@  echo 'if test "x${NRNBIN}" = "x" ; then
+@NRNMECH_DLL_STYLE_TRUE@	NRNBIN='"\"${bindir}/\""'
+@NRNMECH_DLL_STYLE_TRUE@fi'>> special &&
+@NRNMECH_DLL_STYLE_TRUE@echo 'if test "@enable_carbon@" = "yes" ; then
+@NRNMECH_DLL_STYLE_TRUE@	NRNIV="${NRNBIN}nrniv.app/Contents/MacOS/nrniv"
+@NRNMECH_DLL_STYLE_TRUE@else
+@NRNMECH_DLL_STYLE_TRUE@	NRNIV="${NRNBIN}nrniv"
+@NRNMECH_DLL_STYLE_TRUE@fi' >> special &&
+@NRNMECH_DLL_STYLE_TRUE@  echo '"${NRNIV}"'" -dll \"${mdir}/.libs/libnrnmech.so\" \"\$@\"" >> special &&
+@NRNMECH_DLL_STYLE_TRUE@  chmod 755 special &&
+@NRNMECH_DLL_STYLE_TRUE@  echo "Successfully created $ARCH/special"
+

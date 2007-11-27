@@ -1,0 +1,15 @@
+doNotify()
+
+objref nda
+nda = new NrnDAQ()
+a = 0
+nda.ai_setup(1, 10)
+nda.ai_record(0, &a)
+for i=1,10000 {
+	nda.ai_start()
+	for j=0, 100 {
+		nda.ai_read()
+		print "read ", i, j, a
+	}
+	nda.ai_stop()
+}

@@ -1,0 +1,947 @@
+#include <../../nrnconf.h>
+/* /local/src/master/nrn/src/nrnoc/solve.c,v 1.15 1999/07/12 14:34:13 hines Exp */
+
+/* solve.c 15-Dec-88 */
+
+/* The data structures in section.h were developed primarily for the needs of
+     solving and setting up the matrix equations reasonably efficiently in
+     space and time. I am hypothesizing that they will also be convenient
+     for accessing parameters.
+     Important properties of the structures used here are:
+	Each section must have at least one node. There may be 0 sections.
+	The order for back substitution is given by section[i]->order.
+	The order of last node to first node is used in triangularization.
+	First node to last is used in back substitution.
+*/
+/* An equation is associated with each node. d and rhs are the diagonal and
+   right hand side respectively.  a is the effect of this node on the parent
+   node's equation.  b is the effect of the parent node on this node's
+   equation.
+   d is assumed to be non-zero.
+*/
+
+/* We have seen that it is best to have nodes generally denote the
+   centers of segments because most properties are most easily defined
+   at those points. The old problem then arises again of 2nd order correct
+   demands that a point be exactly at any branches. For this reason we
+   always allocate one extra node at the end with 0 length.  Sections
+   that connect at x=1 connect to this node.  Sections that connect
+   from 0<x<1 connect to nodes 0 to nnode-2 directly to the point
+   (no parent resistance, only a half segment resistance). It was an error
+   to try to connect a section to position 0.  Now we are going to allow
+   that by the following artifice.
+   
+   Section 0 is always special. Its nodes act as roots to the independent
+   trees.  They do not connect to each other. It has no properties.
+*/
+
+#if EXTRACELLULAR
+/* Two users (Padjen and Shrager) require that the extracellular potential
+be simulated.  To do this we introduce a new node structure into the
+section called extnode.  This points to a vector of extnodes containing
+the extracellular potential, the Node vector
+is interpreted as the internal potential. Thus the membrane potential is
+node[i].v - extnode[i].v[0]
+*/
+/*
+With vectorization, node.v is the membrane potential and node.rhs
+after solving is the internal potential. Thus internal potential is
+node.v + extnode.v[0]
+*/
+
+#endif
+
+#include	<stdio.h>
+#include	<math.h>
+#include	<nrnmpiuse.h>
+#include	"section.h"
+#include	"membdef.h"
+#include	"membfunc.h"
+#include 	"spmatrix.h"
+
+extern char	*secname();
+extern void	prop_free();
+extern void	nrn_node_destruct1(Node*);
+extern int	tree_changed;
+extern double nrn_connection_position();
+static void node_free();
+
+#if PARANEURON
+void (*nrnmpi_splitcell_compute_)();
+void (*nrn_multisplit_solve_)();
+#endif
+
+/* used for vectorization and distance calculations */
+int section_count;
+Section** secorder;
+
+/* nrn_solve() solves the matrix equations represented in "section"
+   rhs is replaced by the solution (delta v's).
+   d is destroyed.
+*/
+/* Section *sec_alloc(nsec) allocates a vector of nsec sections and returns a
+   pointer to the first one in the list. No nodes are allocated.
+   The usage is normally "section = sec_alloc(nsection)"
+   After allocation one must allocate nodes for each section with
+   node_alloc(sec, n).
+   After all this connect sections together using section indices.
+   Finally order the sections with section_order(section, nsec).
+   When the section vector is no longer needed (and before creating another
+   one) free the space with sec_free(section, nsection);
+*/
+
+#if DEBUGSOLVE
+double
+debugsolve()	/* returns solution error */
+{
+	void triang(), bksub();
+	short inode;
+	Section *sec, *psec, *ch;
+	Node *nd, *pnd, **ndP;
+	double err, sum;
+
+	/* save parts of matrix that will be destroyed */
+assert(0)
+	/* need to save the rootnodes too */
+	ForAllSections(sec)
+		assert(sec->pnode && sec->nnode);
+		for (inode = sec->nnode-1; inode >= 0; inode--) {
+			nd = sec->pnode[inode];
+			nd->savd = NODED(nd);
+			nd->savrhs = NODERHS(nd);
+		}
+	}
+
+	triang();
+	bksub();
+
+	err = 0.;
+/* need to check the rootnodes too */
+	ForAllSections(sec)
+		for (inode = sec->nnode-1; inode >= 0; inode--) {
+			ndP= sec->pnode + inode;
+			nd = sec->pnode[inode];
+			/* a single internal current equation */
+			sum = nd->savd * NODERHS(nd);
+			if (inode > 0) {
+				sum += NODEB(nd) * NODERHS(nd - 1);
+			}else{
+				pnd = sec->parentnode;
+				sum += NODEB(nd) * NODERHS(pnd);
+			}
+			if (inode < sec->nnode-1) {
+				sum += NODEA(ndP[1]) * NODERHS(ndP[1]);
+			}
+			for (ch = nd->child; ch; ch = ch->sibling){
+				psec = ch;
+				pnd = psec->pnode[0];
+				assert(pnd && psec->nnode);
+				sum += NODEA(pnd) * NODERHS(pnd);
+			}
+			sum -= nd->savrhs;
+			err += fabs(sum);
+		}
+	}
+
+	return err;
+}	
+#endif /*DEBUGSOLVE*/
+
+
+double
+node_dist(sec, node)
+	Section *sec;
+	Node* node;
+{
+	int inode;
+	double ratio;
+	
+	if (!sec || sec->parentnode == node) {
+		return 0.;
+	}else if ((inode = node->sec_node_index_) == sec->nnode-1) {
+		ratio = 1.;
+	}else{
+		ratio = ((double)inode+.5)/((double)sec->nnode - 1.);
+	}
+	return  section_length(sec)*ratio;
+}
+
+double
+topol_distance(sec1, node1, sec2, node2, prootsec, prootnode)
+	Section *sec1, *sec2, **prootsec;
+	Node* node1, *node2, **prootnode;
+{	/* returns the distance between the two nodes
+		Ie the sum of the appropriate length portions
+		of those sections connecting these two
+		nodes.
+	*/
+	double d, x1, x2;
+
+	d = 0;
+	v_setup_vectors();
+	/* keep moving toward a common node */
+	while (sec1 != sec2) {
+		if (!sec1) {
+			d += node_dist(sec2, node2);
+			node2 = sec2->parentnode;
+			sec2 = sec2->parentsec;
+		}else if (!sec2){
+			d += node_dist(sec1, node1);
+			node1 = sec1->parentnode;
+			sec1 = sec1->parentsec;
+		}else if (sec1->order > sec2->order) {
+			d += node_dist(sec1, node1);
+			node1 = sec1->parentnode;
+			sec1 = sec1->parentsec;
+		}else{
+			d += node_dist(sec2, node2);
+			node2 = sec2->parentnode;
+			sec2 = sec2->parentsec;
+		}
+	}
+	if (!sec1) {
+		if (node1 != node2) {
+			sec1 = 0;
+			d = 1e20;
+			node1 = (Node*)0;
+		}
+	} else if (node1 != node2) {
+		x1 = node_dist(sec1, node1);
+		x2 = node_dist(sec2, node2);
+		if (x1 < x2) {
+			d += x2 - x1;
+		}else{
+			node1 = node2;
+			d += x1 - x2;
+		}
+	}
+	*prootsec = sec1;
+	*prootnode = node1;
+	return d;
+}
+
+static Section *origin_sec;
+
+int distance() {
+	double d, chkarg();
+	int mode;
+	Node* node, *node_exact();
+	Section *sec;	
+	static Node* origin_node;
+	
+	v_setup_vectors();
+			
+	sec = chk_access();
+	if (ifarg(2)) {
+		d = chkarg(2, 0., 1.);
+		mode = (int) chkarg(1, 0., 1.);
+	}else if (ifarg(1)) {
+		d = chkarg(1, 0., 1.);
+		mode = 1;
+	}else{
+		d = 0.;
+		mode = 0;
+	}
+	node = node_exact(sec, d);
+	if (mode == 0) {
+		origin_node = node;
+		origin_sec = sec;
+	}else{
+		if (!origin_sec) {
+hoc_execerror("tree has changed.","Need to initialize origin with distance()");
+		}
+		d = topol_distance(origin_sec, origin_node, sec, node,
+			&sec, &node );
+	}
+	ret(d);
+}
+	
+int
+topology() /* print the topology of the branched cable */
+{
+	hoc_Item* q;
+
+	v_setup_vectors();
+	printf("\n");
+	ITERATE(q, section_list) {
+		Section* sec = (Section*)VOIDITM(q);
+		if (sec->parentsec == (Section*)0) {
+			Printf("|");
+			dashes(sec, 0, '-');
+		}
+	}
+	Printf("\n");
+	ret(1.);
+}
+
+dashes(sec, offset,first)
+	Section *sec;
+	int offset, first;
+{
+	int i, scnt;
+	Section* ch;
+	char direc[10];
+	extern double nrn_section_orientation();
+	
+	i = (int)nrn_section_orientation(sec);
+	sprintf(direc, "(%d-%d)", i, 1-i);
+	for (i=0; i<offset; i++) Printf(" ");
+	Printf("%c", first);
+	for (i=2; i<sec->nnode; i++) Printf("-");
+	if (sec->prop->dparam[4].val == 1) {
+		Printf("|       %s%s\n", secname(sec), direc);
+	}else{
+		Printf("|       %s%s with %g rall branches\n",
+			secname(sec), direc, sec->prop->dparam[4].val);
+	}
+	/* navigate the sibling list backwards */
+	/* note that the sibling list is organized monotonically by
+	  increasing distance from parent */
+	for (scnt=0, ch=sec->child; ch; ++scnt, ch = ch->sibling) {
+		hoc_pushobj((Object**)ch);
+	}
+	while(scnt--) {		
+		Object** hoc_objpop();
+		ch = (Section*)hoc_objpop();
+		i = node_index_exact(sec, nrn_connection_position(ch));
+		Printf(" ");
+		dashes(ch, i+offset+1, 0140); /* the ` char*/
+	}
+}
+
+/* solve the matrix equation */
+void
+nrn_solve() {
+	void triang(), bksub();
+	
+#if PARANEURON
+	if (nrn_multisplit_solve_) {
+		(*nrn_multisplit_solve_)();
+		return;
+	}
+#endif
+
+#if DEBUGSOLVE
+	double err;
+	err = debugsolve();
+	if (err > 1.e-10) {
+		Fprintf(stderr, "solve error = %g\n", err);
+	}
+#else
+	if (use_sparse13) {
+		int e;
+		e = spFactor(sp13mat_);
+		if (e != spOKAY) {
+			switch (e) {
+			case spZERO_DIAG:
+				hoc_execerror("spFactor error:", "Zero Diagonal");
+			case spNO_MEMORY:
+				hoc_execerror("spFactor error:", "No Memory");
+			case spSINGULAR:
+				hoc_execerror("spFactor error:", "Singular");
+			}
+		}
+		spSolve(sp13mat_, actual_rhs, actual_rhs);
+	}else{
+		triang();
+#if PARANEURON
+		if (nrnmpi_splitcell_compute_) {(*nrnmpi_splitcell_compute_)();}
+#endif
+		bksub();
+	}
+#endif
+}
+
+#if VECTORIZE && _CRAY
+extern Node*** v_node_depth_lists;
+extern Node*** v_parent_depth_lists; /* parents must be unique in each list */
+extern int* v_node_depth_count;
+extern int v_node_depth; /* so depth may be more than twice what you'd expect */
+#endif
+
+/* triangularization of the matrix equations */
+void
+triang()
+{
+	register Node *nd, *pnd;
+	double p;
+#if VECTORIZE
+#if _CRAY
+	int i, j;
+#else
+	int i;
+#endif
+#else
+	short isec, inode;
+	Section *sec, *psec;
+#endif
+
+#if VECTORIZE
+#if _CRAY
+	for (j = v_node_depth - 1; j > 0; --j) {
+		int count = v_node_depth_count[j];
+		Node** nodes = v_node_depth_lists[j];
+		Node** parents = v_parent_depth_lists[j];
+		/* next loop can be done in parallel */
+#pragma _CRI ivdep
+		for ( i = 0; i < count; ++i) {
+			nd = nodes[i];
+			pnd = parents[i];
+			p = NODEA(nd) / NODED(nd);
+			NODED(pnd) -= p * NODEB(nd);
+			NODERHS(pnd) -= p * NODERHS(nd);
+		}
+	}
+#else
+#if CACHEVEC
+    if (use_cachevec) {
+	for (i = v_node_count - 1; i >= rootnodecount; --i) {
+		p = VEC_A(i) / VEC_D(i);
+		VEC_D(v_parent_index[i]) -= p * VEC_B(i);
+		VEC_RHS(v_parent_index[i]) -= p * VEC_RHS(i);
+	}
+    }else
+#endif /* CACHEVEC */
+    {
+	for (i = v_node_count - 1; i >= rootnodecount; --i) {
+		nd = v_node[i];
+		pnd = v_parent[i];
+		p = NODEA(nd) / NODED(nd);
+		NODED(pnd) -= p * NODEB(nd);
+		NODERHS(pnd) -= p * NODERHS(nd);
+	}
+    }
+#endif /* !CRAY */
+#endif /* VECTORIZE */
+}
+
+/* back substitution to finish solving the matrix equations */
+void
+bksub()
+{
+	register Node *nd, *cnd;
+#if VECTORIZE
+#if _CRAY
+	Node** nodes;
+	Node** parents;
+	int i, j, count;
+#else
+	int i;
+#endif
+#else
+	short isec, inode, ch;
+	Section *sec, *csec;
+#endif
+
+#if VECTORIZE
+#if _CRAY
+	count = v_node_depth_count[0];
+	nodes = v_node_depth_lists[0];
+	/* following loop can be done in parallel */
+#pragma _CRI ivdep
+	for (i=0; i < count; ++i) { /* roots of unconnected cells */
+		NODERHS(nodes[i]) /= NODED(nodes[i]);
+	}
+	for (j = 1; j <  v_node_depth; ++j) {
+		count = v_node_depth_count[j];
+		nodes = v_node_depth_lists[j];
+		parents = v_parent_depth_lists[j];
+		/* note that since parent is read only don't require the depth
+			needed for triangularization */
+		/* next loop can be done in parallel */
+#pragma _CRI ivdep
+		for (i=0; i < count; ++i) {
+			cnd = nodes[i];
+			nd = parents[i];
+			NODERHS(cnd) -= NODEB(cnd) * NODERHS(nd);
+			NODERHS(cnd) /= NODED(cnd);
+		}
+	}
+#else
+#if CACHEVEC
+    if (use_cachevec) {
+	for (i = 0; i < rootnodecount; ++i) {
+		VEC_RHS(i) /= VEC_D(i);
+	}
+	for (i = rootnodecount; i < v_node_count; ++i) {
+		VEC_RHS(i) -= VEC_B(i) * VEC_RHS(v_parent_index[i]);
+		VEC_RHS(i) /= VEC_D(i);
+	}	
+    }else
+#endif /* CACHEVEC */
+    {
+	for (i = 0; i < rootnodecount; ++i) {
+		NODERHS(v_node[i]) /= NODED(v_node[i]);
+	}
+	for (i = rootnodecount; i < v_node_count; ++i) {
+		cnd = v_node[i];
+		nd = v_parent[i];
+		NODERHS(cnd) -= NODEB(cnd) * NODERHS(nd);
+		NODERHS(cnd) /= NODED(cnd);
+	}	
+    }
+#endif /* !CRAY */
+#endif /*Vectorize*/
+}
+
+nrn_clear_mark() {
+	hoc_Item* qsec;
+	ForAllSections(sec)
+		sec->volatile_mark = 0;
+	}
+}
+short nrn_increment_mark(sec) Section* sec; { return sec->volatile_mark++;}
+short nrn_value_mark(sec) Section* sec; { return sec->volatile_mark;}
+
+/* allocate space for sections (but no nodes) */
+Section *		/* returns pointer to Section */
+sec_alloc()
+{
+	Section  *sec;
+
+	sec = (Section *)emalloc(sizeof(Section));
+	sec->refcount = 0;
+	sec->nnode = 0;
+	sec->parentsec = sec->sibling = sec->child = (Section*)0;
+	sec->parentnode = (Node*)0;
+	sec->pnode = (Node **)0;
+#if DIAMLIST
+	sec->npt3d = 0;
+	sec->pt3d_bsize = 0;
+	sec->pt3d = (Pt3d *)0;
+	sec->logical_connection = (Pt3d*)0;
+#endif
+	sec->prop = (Prop *)0;
+	sec->recalc_area_ = 0;
+
+	return sec;
+}
+
+/* free everything about sections */
+void
+sec_free(secitem)
+	hoc_Item* secitem;
+{
+	Section *sec;
+	
+	if (!secitem) {
+		return;
+	}
+	sec = hocSEC(secitem);
+	assert(sec);
+/*printf("sec_free %s\n", secname(sec));*/
+	section_unlink(sec);
+	{Object* ob = sec->prop->dparam[6].obj;
+		if (ob && ob->secelm_ == secitem) { /* it is the last */
+			hoc_Item* q = secitem->prev;
+			if (q->itemtype && hocSEC(q)->prop && hocSEC(q)->prop->dparam[6].obj == ob) {
+				ob->secelm_ = q;
+			}else{
+				ob->secelm_ = (hoc_Item*)0;
+			}
+		}
+	}
+	hoc_l_delete(secitem);
+	prop_free(&(sec->prop));
+	node_free(sec);
+	if (!sec->parentsec && sec->parentnode) {
+		nrn_node_destruct1(sec->parentnode);
+	}
+#if DIAMLIST
+	if (sec->pt3d) {
+		free((char *)sec->pt3d);
+		sec->pt3d = (Pt3d*)0;
+		sec->npt3d = 0;
+		sec->pt3d_bsize = 0;
+	}
+	if (sec->logical_connection) {
+		free((char*)sec->logical_connection);
+		sec->logical_connection = (Pt3d*)0;
+	}
+#endif
+	section_unref(sec);
+}
+
+
+/* can't actually release the space till the refcount goes to 0 */
+section_unref(sec)
+	Section* sec;
+{
+/*printf("section_unref %lx %d\n", (long)sec, sec->refcount-1);*/
+	if (--sec->refcount <= 0) {
+#if 0
+printf("section_unref: freed\n");
+#endif
+		assert (!sec->parentsec);
+		free((char*)sec);
+	}
+}
+section_ref(sec)
+	Section* sec;
+{
+/*printf("section_ref %lx %d\n", (long)sec,sec->refcount+1);*/
+	++sec->refcount;
+}
+
+nrn_sec_ref(psec, sec)
+	Section** psec;
+	Section* sec;
+{
+	Section* s = *psec;
+	if (sec) {
+		section_ref(sec);
+	}
+	*psec = sec;
+	if (s) {
+		section_unref(s);
+	}
+}
+
+section_unlink(sec) /* other sections no longer reference this one */
+	Section* sec;
+{
+	/* only sections that are explicitly connected to this are disconnected */
+	Section* child;
+	tree_changed = 1;
+	/* disconnect the sections connected to this at the parent end */
+	for (child = sec->child; child; child = child->sibling) {
+		nrn_disconnect(child);
+	}
+	nrn_disconnect(sec);
+}
+
+Node**
+node_construct(n)
+int n;
+{
+	Node* nd, **pnode;
+	int i;
+	
+	pnode = (Node**)ecalloc((unsigned)n, sizeof(Node*));
+	for (i = n - 1; i >= 0; i--) {
+		nd = (Node *)ecalloc(1, sizeof(Node));
+#if CACHEVEC
+		nd->_v = &nd->_v_temp;
+		nd->_area = 100.;
+		nd->_rinv = 0.;
+#endif
+		nd->sec_node_index_ = i;
+		pnode[i] = nd;
+		nd->prop = (Prop *)0;
+		NODEV(nd) = DEF_vrest;
+#if EXTRACELLULAR
+		nd->extnode = (Extnode*)0;
+#endif
+#if EXTRAEQN
+		nd->eqnblock = (Eqnblock *)0;
+#endif
+	}
+	return pnode;
+}
+
+Node* nrn_node_construct1() {
+	Node* nd;
+	Node** ndp;
+	ndp = node_construct(1);
+	nd = ndp[0];
+	free((char*)ndp);
+	return nd;
+}
+
+void nrn_node_destruct1(nd) Node* nd; {
+	if (!nd) { return; }
+	prop_free(&(nd->prop));
+	notify_freed_val_array(&NODEV(nd), 2);
+#if EXTRACELLULAR
+	if (nd->extnode) {
+		notify_freed_val_array(nd->extnode->v, nlayer);
+	}
+#endif
+#if EXTRAEQN
+{
+	Eqnblock *e, *e1;
+	for (e = nd->eqnblock; e; e = e1) {
+		e1 = e->eqnblock_next;
+		free((char *)e);
+	}
+}
+#endif
+#if EXTRACELLULAR
+	if (nd->extnode) {
+		free((char *)nd->extnode);
+	}
+#endif
+	free((char*)nd);
+}
+
+node_destruct(pnode, n)
+	Node** pnode;
+	int n;
+{
+	int i;
+	Node* nd;
+
+	for (i = n - 1; i >= 0; i--) {
+		if (pnode[i]) {
+			nrn_node_destruct1(pnode[i]);
+		}
+	}
+	free((char *)pnode);
+}
+
+#if KEEP_NSEG_PARM
+
+extern int keep_nseg_parm_;
+
+static Node* node_clone(nd1) Node* nd1; {
+	Node* nd2;
+	Prop* p1, *p2, *prop_alloc();
+	int i, imax;
+	nd2 = (Node *)ecalloc(1, sizeof(Node));
+#if CACHEVEC
+	nd2->_v = &nd2->_v_temp;
+#endif
+	NODEV(nd2) = NODEV(nd1);
+	for (p1 = nd1->prop; p1; p1 = p1->next) {
+		if (!memb_func[p1->type].is_point) {
+			p2 = prop_alloc(&(nd2->prop), p1->type, nd2);
+			if (p2->ob) {
+				Symbol* s, *ps;
+				double* px, *py;
+				int j, jmax;
+				s = memb_func[p1->type].sym;
+				jmax = s->s_varn;
+				for (j=0; j < jmax; ++j) {
+					ps = s->u.ppsym[j];
+					px = p2->ob->u.dataspace[ps->u.rng.index].pval;
+					py = p1->ob->u.dataspace[ps->u.rng.index].pval;
+					imax = hoc_total_array_data(ps, 0);
+					for (i=0; i < imax; ++i) {
+						px[i] = py[i];
+					}
+				}
+			}else{
+				for (i=0; i < p1->param_size; ++i) {
+					p2->param[i] = p1->param[i];
+				}
+			}
+		}
+	}
+	/* in case the user defined an explicit ion_style, make sure
+	   the new node has the same style for all ions. */
+	for (p1 = nd1->prop; p1; p1 = p1->next) {
+		if (nrn_is_ion(p1->type)) {
+			p2 = nd2->prop;
+			while (p2 && p2->type != p1->type) { p2 = p2->next; }
+			assert(p2 && p1->type == p2->type);
+			p2->dparam[0].i = p1->dparam[0].i;
+		}
+	}
+
+	return nd2;
+}
+
+static Node* node_interp(nd1, nd2, frac)
+	Node* nd1, *nd2;
+	double frac;
+{
+	Node* nd;
+	if (frac > .5) {
+		nd = node_clone(nd2);
+	}else{
+		nd = node_clone(nd1);
+	}
+	return nd;
+}
+
+static node_realloc(sec, nseg)
+	Section* sec;
+	short nseg;
+{
+	Node** pn1, **pn2;
+	int n1, n2, i1, i2, i;
+	double x;
+	pn1 = sec->pnode;
+	n1 = sec->nnode;
+	pn2 = (Node**)ecalloc((unsigned)nseg, sizeof(Node*));
+	n2 = nseg;
+	sec->pnode = pn2;
+	sec->nnode = n2;
+
+	n1--; n2--;		/* number of non-zero area segments */
+	pn2[n2] = pn1[n1];	/* 0 area node at end of section */
+	pn1[n1] = (Node*)0;
+
+	/* sprinkle nodes from pn1 to pn2 */
+	if (n1 < n2) {
+		i = -1;
+		for (i1 = 0; i1 < n1; ++i1) {
+			x = (i1+.5)/(double)n1;
+			i2 = (int)(n2*x); /* because we want to round to n2*x-.5 */
+			pn2[i2] = pn1[i1];
+			if (i1 == 0) {
+				while(++i < i2) {
+					pn2[i] = node_clone(pn1[i1]);
+				}
+			}else{
+				while(++i < i2) {
+					double a, b;
+					a = 1./(double)n1;
+					b = ((i+.5)/(double)n2 ) - x;
+				   pn2[i] = node_interp(pn1[i1-1], pn1[i1], b/a);
+				}
+			}
+		}
+		while(++i < n2) {
+			pn2[i] = node_clone(pn1[n1-1]);
+		}
+		for (i1 = 0; i1 < n1; ++i1) {
+			pn1[i1] = (Node*)0;
+		}
+	}else{
+		for (i2 = 0; i2 < n2; ++i2) {
+			x = (i2+.5)/(double)n2;
+			i1 = (int)(n1*x);
+			pn2[i2] = pn1[i1];
+			pn1[i1] = (Node*)0;
+		}	
+		/* do not lose any point processes */
+		i1 = 0;
+		for (i2=0; i2 < n2; ++i2) {
+			double x1, x2;
+			x2 = (i2+1.)/(double)n2; /* far end of new segment */
+			for (; i1 < n1; ++i1) {
+				x1 = (i1+.5)/(double)n1;
+				if (x1 > x2) {
+					break;
+				}
+				if (pn1[i1] == (Node*)0) {
+					continue;
+				}
+#if 0
+printf("moving point processes from pn1[%d] to pn2[%d]\n", i1, i2);
+printf("i.e. x1=%g in the range %g to %g\n", x1, x2-1./n2, x2);
+#endif
+				nrn_relocate_old_points(sec, pn1[i1], sec, pn2[i2]);
+			}
+		}
+		/* Some of the pn1 were not used */
+	}
+	node_destruct(pn1, n1 + 1);
+	for (i2=0; i2 < nseg; ++i2) {
+		pn2[i2]->sec_node_index_ = i2;
+	}
+#if EXTRACELLULAR
+	if (sec->pnode[sec->nnode-1]->extnode) {
+		extcell_2d_alloc(sec);
+	}
+#endif
+}
+
+#endif
+
+/* allocate node vectors for a section list */
+void
+node_alloc(sec, nseg)
+	Section *sec;
+	short nseg;
+{
+	int i;
+#if KEEP_NSEG_PARM
+	if (keep_nseg_parm_ && (nseg > 0) && sec->pnode) {
+		node_realloc(sec, nseg);
+	}else
+#endif
+	{
+		node_free(sec);
+		if (nseg == 0) {
+			return;
+		}
+		sec->pnode = node_construct(nseg);
+		sec->nnode = nseg;
+	}
+	for (i=0; i < nseg; ++i) {
+		sec->pnode[i]->sec = sec;
+	}
+}
+
+/* free a node vector for one section */
+static void
+node_free(sec)
+	Section *sec;
+{
+	Node **pnd;
+
+	pnd = sec->pnode;
+	if (!pnd) {
+		sec->nnode = 0;
+	}
+	if (sec->nnode == 0) {
+		return;
+	}
+	node_destruct(sec->pnode, sec->nnode);
+	sec->pnode = (Node **)0;
+	sec->nnode = 0;
+}
+
+void
+section_order() /* create a section order consistent */
+		/* with connection info */
+{
+	int order, isec;
+	Section* ch;
+	Section *sec;
+	hoc_Item* qsec;
+
+	/* count the sections */
+	section_count = 0;
+	/*SUPPRESS 765*/
+	ForAllSections(sec)
+		sec->order = -1;
+		++section_count;
+	}
+	
+	origin_sec = (Section *)0;
+	if (secorder) {
+		free((char *)secorder);
+		secorder = (Section**)0;
+	}
+	if (section_count) {
+		secorder = (Section**)emalloc(section_count*sizeof(Section*));
+	}
+	order = 0;
+	ForAllSections(sec) /* all the roots first */
+		if (!sec->parentsec) {
+			secorder[order] = sec;
+			sec->order = order;
+			++order;
+		}
+	}
+
+	for (isec=0; isec<section_count; isec++) {
+		if (isec >= order) { /* there is a loop */
+			ForAllSections(sec)
+				Section* psec, *s = sec;
+				for (psec = sec->parentsec; psec; s = psec, psec = psec->parentsec) {
+					if (!psec || s->order >= 0) {
+						break;
+					}else if (psec == sec) {
+fprintf(stderr, "A loop exists consisting of:\n %s", secname(sec));
+for (s = sec->parentsec; s != sec; s = s->parentsec) {
+	fprintf(stderr, " %s", secname(s));
+}
+fprintf(stderr, " %s\nUse <section> disconnect() to break the loop\n ", secname(sec));
+hoc_execerror("A loop exists involving section", secname(sec));
+					}
+				}
+			}
+		}
+		sec = secorder[isec];
+		for (ch = sec->child; ch; ch = ch->sibling) {
+			secorder[order] = ch;
+			ch->order = order;
+			++order;
+		}
+	}
+	assert(order == section_count);
+}

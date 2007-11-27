@@ -1,0 +1,36 @@
+/* test of extracellular using 1 segment and current stimulus */
+/* time constant .5 msec, initial jump 1mV steady state 2mv */
+
+// physical properties of the cell
+create a
+{access a nseg=1 L=10 diam=10
+	insert pas g_pas=1 cm=.5e3*g_pas e_pas=0
+}
+{insert extracellular xraxial=1e9 xg=1 xc=0}
+
+// graphical interface appearance
+objref g
+g = new Graph()
+g.size(0,2,0,5)
+g.addexpr("vext(.5)")
+
+
+/*{cm=0 g=1e9 xraxial=1e9 xc=.5e3} /* test of xc scale. note xc/xg=.5msec*/
+tstop=2
+
+// simulation control
+proc run() {
+	v = 0 vext=0
+	t=0
+	g.begin()
+	g.beginline()
+	fstim(1) fstim(0,.5,0,1,1*(PI*diam*L/100))
+	while (t < tstop) {
+		g.line(t, v(.5) + vext(.5))
+		g.plot(t)
+		fadvance()
+	}
+	g.flush()
+}
+// run simulation
+run()

@@ -1,0 +1,39 @@
+// Physical properties
+create a
+access a
+nseg = 1
+insert Passive
+g_Passive=.001
+erev_Passive=0
+
+// graphical interface appearance
+objref g
+g = new Graph()
+
+// simulation control
+proc cur() {
+	g.size(0,1,0,.001)
+	g.beginline()
+	for (v=0; v < 1; v=v+.01) {
+		fcurrent()
+		g.line(v, i_Passive)
+	}
+	g.flush()
+}	
+
+proc run() {
+	g.size(0,3,0,1)
+	t = 0
+	v=1
+	g.beginline()
+	while (t < 3) {
+		g.line(t,v)
+		fadvance()
+	}
+}
+
+// run simulation
+run()
+
+
+

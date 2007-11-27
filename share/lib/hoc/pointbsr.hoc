@@ -1,0 +1,66 @@
+begintemplate PointBrowser
+
+objref plist, box, pp, this
+strdef tempstr, label
+
+proc init() {
+	plist = new List($s1) // the objects are not referenced by plist
+	box = new VBox()
+	box.ref(this)
+	box.intercept(1)
+	plist.browser("", label, "makelabel(hoc_ac_)")
+	plist.accept_action("accept(hoc_ac_)")
+	if (nrnglobalmechmenu($s1, 0)) {
+		xpanel("PointBrowser")
+		sprint(tempstr, "nrnglobalmechmenu(\"%s\")", $s1)
+		xbutton("Globals", tempstr)
+		xpanel()
+	}
+	box.intercept(0)
+	box.map($s1)
+}
+
+proc makelabel() {local x
+	pp = plist.object($1)
+	if (pp.has_loc()) {
+		x = pp.get_loc()
+		sectionname(tempstr)
+		pop_section()
+		sprint(label, "%s(%g)", tempstr, x)
+	}else{
+		label = "No Location"
+	}
+	objectvar pp	//make sure we are not retaining a reference
+}
+
+proc accept() {
+	pp = plist.object($1)
+	if (pp.has_loc()) {
+		nrnpointmenu(pp)
+	}else{
+		continue_dialog("Point process not located")
+	}
+	objectvar pp
+}
+
+endtemplate PointBrowser
+
+objref tempobj
+strdef tempstr1, tempstr2
+proc makePointBrowser() {
+	tempobj = new PointBrowser($s1)
+	objref tempobj
+}
+
+proc pointmenu() { local i
+	tempobj = new MechanismType(1)
+	xmenu("PointProcesses")
+	for i=0, tempobj.count() - 1 {
+		tempobj.select(i)
+		tempobj.selected(tempstr1)
+		sprint(tempstr2, "makePointBrowser(\"%s\")", tempstr1)
+		xbutton(tempstr1, tempstr2)
+	}
+	xmenu()
+	objref tempobj
+}

@@ -1,0 +1,104 @@
+/* cagk.hoc  test of calcium activated potassium channel */
+
+// Physical properties
+create a
+{access a nseg=1 insert cagk}
+{cao = 2 diam=10 L=10}
+
+// graphical interface appearance
+objref g
+g = new Graph()
+strdef s
+
+// simulation control
+proc prate() { local v,cai /*plot of cagk channel rate constants*/
+	g.erase_all()
+	i=0
+	g.label(.3,.95,"infcagk & tau vs. V")
+	g.label(.8,1,"")
+	g.size(-80,100,0,1)
+	g.vfixed
+	
+	//plt(1,100,450) plt(-2) print "infcagk & tau vs. V"
+	for (cai=1e-3; cai<1.1e-1; cai=cai*10) {
+		i=i+1 g.color(i)
+		sprint(s,"cai=%g",cai)
+		g.label(s)
+		g.beginline
+		for (v=-80; v<=100; v = v+1) {
+			rate_cagk(v, cai)
+			g.line(v,oinf_cagk)
+		}
+		g.beginline
+		for (v=-80; v<=100; v = v+1) {
+			rate_cagk(v, cai)
+			g.line(v,tau_cagk/10)
+		}
+	}
+	g.flush()
+}
+
+proc pcur20() { /*plot potassium current -- used in following proc*/
+	g.beginline
+	for (v=-80; v<=100; v=v+1) {
+		rate_cagk(v,cai)  o_cagk=oinf_cagk
+		fcurrent()
+		g.line(v,ik)
+	}
+}
+
+proc pcur2() { /*steady state channel current as function of v and ca*/
+	g.erase_all()
+	g.color(1)
+	g.size(-80,100,0,2)
+	g.label(.1,.35,"ik vs V")
+	i=0
+	g.label(.7,1,"")
+	for (cai=1e-3; cai<1.1e-1; cai=cai*10) {
+		i=i+1 g.color(i)
+		sprint(s,"cai=%g",cai)
+		g.label(s) 
+		pcur20()
+	}
+}
+
+proc runvc() { /* cagk current as function of time under voltage clamp*/
+	v=-65  t=0  rate_cagk(v,cai)  o_cagk=oinf_cagk /*initialize*/
+	fcurrent()
+	g.beginline
+	while (t < 15) { 
+		fadvance()
+		g.line(t,ik)
+	}
+}
+
+proc pvc() { /*voltage clamp of calcium activated potassium channel*/
+	g.erase_all()
+	dt=.2
+	g.size(0,10,0,1)
+	g.color(1)
+	g.label(.2,.95,"ik vs t  (V = 20 mV)")
+	i=0
+	g.label(.8,1,"")
+	fclamp(2,.5) fclamp(0,10,20) fclamp(1,1e9,-65)
+	for (cai=1e-3; cai<1.1e-1; cai=cai*10){
+		i=i+1 g.color(i) 
+		sprint(s,"cai=%g",cai)
+		g.label(s)
+		runvc()
+	}
+	g.flush()
+}
+
+proc menu(){
+	xpanel("cagk simulations")
+	xlabel("Default cagk properties in cagk.mod")
+	xlabel("For details see cagk.hoc and cagk.mod")
+	xbutton("rate","prate()")
+	xbutton("steady state current","pcur2()")
+	xbutton("voltage clamp","pvc()")
+	xpanel()
+}
+
+// run simulation
+menu()

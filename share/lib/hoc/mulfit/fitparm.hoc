@@ -1,0 +1,132 @@
+mulfit_optimizers_append("Praxis", "MulfitPraxWrap")
+
+begintemplate MulfitPraxWrap
+public prun, praxis_efun, minerr, nefun, time, nstep
+public saveflag, start, after_quad, nquad, showopt
+
+objref savepath, tl, pf, tobj
+objref start
+objref prin_origargs, prin_val, prin_fac, prin_ax
+strdef tstr
+
+proc init() {
+	nstep = 0
+	pf = $o1
+	start = new Vector()
+	savepath = new File()
+	nefun = 0
+	nquad = 0
+	st = 0
+	time = 0
+	currenterr = 1e9
+	attr_praxis(1e-4, .5, 0)
+	saveflag = 0
+	e = 0
+}
+
+func praxis_efun() {local i
+	nefun += 1
+	e =  pf.efun($1, &$&2)
+	if (!stoprun) {
+		if (minerr == -1 || e < minerr) {
+			minerr = e
+		}
+        }
+	doNotify()
+	return e
+}
+
+proc after_quad() {
+	time = startsw() - st
+	if (savepath.isopen) {
+		lines += 1
+	savepath.printf("%d %d %d %-12.8g ", nquad, nefun, time, e)
+		saveval()
+	}
+	printf("nquad=%d nefun=%d time=%d e=%-12.8g\n", nquad, nefun, time, e)
+	nquad += 1
+}
+
+proc saveval() {
+	if (numarg() == 1) savepath.printf("%s", $s1)
+	tl = pf.parmlist
+	for i=0, tl.count-1 {
+                savepath.printf("%-12.8g ", tl.object(i).val)
+	}
+	savepath.printf("\n")
+}
+
+func prun() {
+	minerr = -1
+	if (saveflag) {
+		savepath.wopen("savepath.tmp") // need to put in rank later
+		lines = 0
+	}
+	pf.doarg_get(start)
+	nefun = 0
+	nquad = 0
+	st = startsw()
+	time = st
+	if (start.size == 0) {
+		minerr = pf.efun(0, &time) // time is dummy here
+	}else{
+		minerr = praxis_efun(start.size, &start.x[0])
+		if (stoprun) {return minerr}
+		if (minerr > 10000) {return minerr}
+		stop_praxis(nstep)
+		after_quad()
+		minerr = fit_praxis(start.size, "praxis_efun", &start.x[0],"after_quad()\n")
+		minerr = praxis_efun(start.size, &start.x[0])
+	}
+	time = startsw() - st
+	if (savepath.isopen) {
+		savepath.close
+		savepath.aopen("savepath.fit")
+		savepath.printf("start\n")
+		savepath.printf("%d %d\n", lines, pf.parmlist.count + 2)
+		savepath.close
+		system("cat savepath.tmp >> savepath.fit")
+	}
+	return minerr
+}
+
+proc showopt() {
+	xpanel("")
+	xlabel("quad forms = 0 means praxis returns by itself")
+	xpvalue("# quad forms before return", &nstep, 1)
+	xbutton("Principal axis variation", "prin_panel()")
+	xpanel()
+}
+
+proc prin_panel() {local i, narg
+	prin_origargs = new Vector()
+	narg = pf.doarg_get(prin_origargs)
+	prin_val = new Vector(narg)
+	prin_fac = new Vector(narg)
+	prin_ax = new Matrix(narg, narg)
+	for i=0, narg-1 {
+		prin_val.x[i] = pval_praxis(i, &prin_ax.x[i][0])
+	}
+	prin_ax = prin_ax.transpose
+	xpanel("Principal Axis Variation")
+	for i=0, narg-1 {
+		sprint(tstr, "%d %g", i, prin_val.x[i])
+		xpvalue(tstr, &prin_fac.x[i], 1, "prin_dovar()")
+	}
+	xpanel()
+}
+
+proc prin_dovar() { local i, narg
+	narg = prin_val.size
+	tobj = prin_origargs.c
+	tobj.add(prin_ax.mulv(prin_fac))
+	pf.efun(narg, &tobj.x[0])
+print "prin_val"
+prin_val.printf
+print "prin_ax"
+prin_ax.printf
+print "prin_ax.mulv(prin_fac)"
+prin_ax.mulv(prin_fac).printf
+}
+
+endtemplate MulfitPraxWrap

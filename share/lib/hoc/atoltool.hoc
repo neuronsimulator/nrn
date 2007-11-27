@@ -1,0 +1,243 @@
+begintemplate AtolToolItem
+public name, max, acmax, scale, rescale, original
+external cvode
+strdef name
+
+proc init() {
+	name = $s1
+	max = -1e9
+	acmax = -1e9
+	scale = $2
+	if (scale > 0) {
+		original = cvode.atolscale(name)
+	}
+}
+
+proc rescale() {
+	if (scale == -1) { return }
+	if (numarg() == 0) {
+		if (max <= 0) { return }
+		scale = log10(max)
+		if (scale < 0) { scale -= .99 }
+		scale = 10^(int(scale))	
+	}else{
+		scale = $1
+	}
+	cvode.atolscale(name, scale)
+}
+endtemplate AtolToolItem
+
+begintemplate AtolTool
+public activate, analyse, rescale, states, anrun, refresh
+public pr, map, save, scales
+external cvode, hoc_sf_
+objref ms, mt, states, tobj, used
+strdef tstr, tstr1, mname
+
+objref box, this
+
+proc init() {
+	used = new List()
+	mkstates()
+}
+
+proc activate() {
+	activate_ = $1
+	cvode.state_magnitudes($1)
+}
+
+proc analyse() {local i
+	cvode.state_magnitudes(2)
+	for i=0, states.count-1 {
+		tobj = states.object(i)
+		tobj.max = cvode.state_magnitudes(tobj.name, &tobj.acmax)
+	}
+	activate(0)
+}
+
+proc rescale() { local i
+	for i=0, states.count-1 {
+		states.object(i).rescale()
+	}
+}
+
+proc original() { local i
+	for i=0, states.count-1 {
+		tobj = states.object(i)
+		tobj.rescale(tobj.original)
+	}
+}
+
+proc scales() {local i
+	for i=0, states.count-1 {
+		tobj = states.object(i)
+		if (tobj.scale != -1) {
+			tobj.scale = cvode.atolscale(tobj.name)
+		}
+	}
+}
+
+proc mkstates() {
+	states = new List()
+	tobj = new AtolToolItem("v", 1) states.append(tobj)
+	mkstates2(0)
+	mkstates2(1)
+	tobj = new AtolToolItem("Vector", -1) states.append(tobj)
+	scales()
+}
+
+proc mkstates2() {local i, it
+	mt = new MechanismType($1)
+	for it=1, mt.count-1 {
+		mt.select(it)
+		mt.selected(mname)
+		if (hoc_sf_.head(mname, "_ion", tstr) != -1) {
+			sprint(tstr1, "%si", tstr)
+			tobj = new AtolToolItem(tstr1, 1) states.append(tobj)
+			sprint(tstr1, "%so", tstr)
+			tobj = new AtolToolItem(tstr1, 1) states.append(tobj)
+		}else{
+			ms = new MechanismStandard(mname, 3)
+			for i=0, ms.count-1 {
+				ms.name(tstr, i)
+				if ($1 == 1) {
+					sprint(tstr, "%s.%s", mname, tstr)
+				}
+				tobj = new AtolToolItem(tstr, 1) states.append(tobj)
+			}
+		}
+	}
+}
+
+proc pr() {local i
+	for i=0, states.count-1 {
+		tobj = states.object(i)
+		if (tobj.max < 0) continue
+		printf("%-20s %-8.2g  %-8.2g %-8.2g\n", tobj.name, tobj.acmax, tobj.max, tobj.scale)
+	}
+}
+
+proc map() {
+	if (object_id(box) == 0) {
+		build()
+	}
+	box.map("Absolute Tolerance Scale Factors")
+}
+
+proc fill_used() {local i
+	used.remove_all()
+	for i=0, states.count-1 {
+		tobj = states.object(i)
+		if (tobj.max >= 0) {
+			used.append(tobj)
+		}
+	}
+	used.select(-1)
+}
+
+proc label() {
+	tobj = used.object($1)
+	sprint(tstr, "%-20s %-8.2g  %-8.2g %-8.2g", tobj.name, tobj.scale, tobj.max, tobj.acmax)
+//	sprint(tstr, "%.2e %-20s %.2e  %.2e", tobj.scale, tobj.name, tobj.max, tobj.amax)
+}
+
+proc anrun() {
+	if (!cvode.active()) {
+		execute("cvode_active(1)")
+	}
+	execute("init()")
+	activate(1)
+	execute("run()")
+	analyse()
+	fill_used()
+}
+
+proc refresh() {
+	fill_used()
+}
+
+proc scl() {local i, pos
+	i = used.selected()
+	if (i < 0) { return }
+	pos = used.scroll_pos
+	tobj = used.object(i)
+	tobj.rescale(tobj.scale *= $1)
+	used.remove(i)
+	used.insrt(i, tobj)
+	used.select(i)
+	used.scroll_pos(pos)
+}
+
+proc build() {
+	fill_used()
+	box = new VBox()
+	box.save("")
+	box.ref(this)
+	box.intercept(1)
+	xpanel("",1)
+	xbutton("Analysis Run", "anrun()")
+	xbutton("Rescale", "rescale() fill_used()")
+	xbutton("Original", "original() fill_used()")
+	xpanel()
+	xpanel("",1)
+	xbutton("*10", "scl(10)")
+	xbutton("/10", "scl(.1)")
+	xbutton("Hints", "hints()")
+	xpanel()
+	used.browser("", tstr, "label(hoc_ac_)")
+	box.intercept(0)
+}
+
+proc save() {local i
+	for i=0, states.count-1 {
+		tobj = states.object(i)
+		if (tobj.scale != tobj.original) {
+			sprint(tstr, "    ats(\"%s\", %g)", tobj.name, tobj.scale)
+			$o1.save(tstr)
+		}
+	}
+}
+
+proc hints() {
+xpanel("Hints for Absolute Tolerance Scale Factors")
+xlabel("The absolute error tolerance for each state is the product of the")
+xlabel("overall cvode.atol() and the cvode.atolscale(\"statename\"). Default")
+xlabel("atolscale is 1 unless specified explicitly in its state declaration")
+xlabel("in its model description. The default atolscale may be wildly")
+xlabel("inappropriate for states with very small values. e.g. a calcium pump")
+xlabel("may vary in the 1e-14 magnitude range and an error tolerance of 10-6")
+xlabel("essentially means the variation of the state can have no effect on")
+xlabel("the choice of time step. Visible symptoms of poor error control")
+xlabel("are oscillations in the state with a period equal to the time step")
+xlabel("and invisible symptoms are poor accuracy of the overall simulation.")
+xlabel("")
+xlabel("The list in the \"Absolute Tolerance Scale Factors\" panel shows the")
+xlabel("generic state types, e.g.  \"v\" which represents all the voltage states")
+xlabel("of all segments of all sections of all cells;")
+xlabel("the present value of the absolute tolerance scale factor of each type;")
+xlabel("the maximum magnitude of the states of each type (see \"Analysis Run\" below);")
+xlabel("and the maximum corrector error of the states of each type.")
+xlabel("")
+xlabel("When the AtolTool is created, the atolscale for each state type is saved")
+xlabel("and can be restored with the \"Original\" button. ")
+xlabel("")
+xlabel("When a state type is selected, the atolscale can be multiplied or")
+xlabel("divided by 10 with the \"*10\" or \"/10\" buttons. ")
+xlabel("")
+xlabel("The \"Rescale\" button sets the atolscale for each state type according")
+xlabel("to the order of magnitude of the maximum magnitude. ")
+xlabel("")
+xlabel("The \"Analysis Run\" makes cvode active (if it is not already active)")
+xlabel("and executes the top level \"run()\" procedure with \"maximum state")
+xlabel("recording\" activated.  At the end of the run (or when the StopRun button")
+xlabel("on the RunControl is pressed) the maximum state values and corrector")
+xlabel("errors are collected into columns 3 and 4 of the state type list. ")
+xlabel("")
+xlabel("The scale factors that differ from the default are saved in a session file")
+xlabel("when the \"VariableTimeStep\" panel is saved. ")
+xpanel()
+}
+
+endtemplate AtolTool
+
+

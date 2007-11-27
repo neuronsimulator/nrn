@@ -1,0 +1,128 @@
+1.  The NEURON Program Group and Start Menu contain the 
+    following icons.  You may find it helpful to place 
+    shortcuts to these items in a new folder on your desktop.
+
+    NEURON demo
+        launches the demonstration program.
+    nrngui
+        This is a refinement of "NEURON StdGui" which was 
+        provided in earlier releases of NEURON.
+        It is equivalent to nrngui under UNIX/Linux, i.e. 
+        it starts NEURON and brings up the NEURON Main Menu.
+        You can then use the Main Menu's File button to 
+        load a hoc, ses, or dll file, or change the working 
+        directory.
+    on-line help
+        is a quick way to get to NEURON's help files. 
+        To use this, you must have a WWW browser such as
+        Netscape Navigator.
+    mknrndll
+        brings up a tool for (1) navigating to a directory 
+        that contains mod files and (2) compiling them into 
+        a new nrnmech.dll
+        We don't miss the "mknrndll DOS box" and we doubt 
+        that anyone else will.
+    modlunit
+        brings up a tool for (1) navigating to a directory 
+        that contains mod files and (2) checking them for 
+        consistency of units.  Very advisable if you're 
+        developing your own mechanisms.
+
+2.  The gui expects a three button mouse.
+    To emulate the middle button, hold down the shift key 
+    and press the left mouse button. 
+    Some window managers intercept the right mouse button.  
+    If this happens, or if you only have a 1-button mouse, 
+    you can emulate the right mouse button by holding down 
+    the Control key while pressing the left mouse button.
+
+3.  Feature: since it is a pain to give the trailing '-' 
+    as the last file argument, the MSWindows version reads 
+    from the interpreter window after the last file is 
+    read, instead of exiting immediately.
+
+4.  If the
+        neuron ... -dll filename ...
+    argument pair exists, then NEURON will load the membrane
+    mechanism descriptions contained in "filename".
+    If no -dll argument is given, then NEURON searches the
+    current working directory for a nrnmech.dll file; if one is 
+    found, NEURON loads the mechanism descriptions it contains.
+
+5.  NEURON now tests nrnmech.dll and other dlls containing 
+    compiled mod files, and issues a warning message if the 
+    dll is not compatible with the installed neuron.exe.
+    If you receive such a message, delete all the .o files 
+    in the directory that contains the .mod files, and then 
+    use mknrndll to recompile the .mod files.
+
+6.  The "recent working directory" list is saved in the file
+    RecentWorkingDirs in $(NEURONHOME).  This is a plain text
+    file that you can edit if it becomes too cluttered.
+
+7.  When NEURON is first installed, scaling of GUI windows 
+    is specified by the statement 
+      *mswin_scale: 1.2
+    in the file $(NEURONHOME)/lib/nrn.def
+    This works well on a 1280 x 1024 monitor, but 1.5 is 
+    better for a 800 x 600 laptop.
+
+    If this statement is commented out, GUI windows will be 
+    scaled automatically according to this rule, where pw is 
+    the width of the screen in pixels:
+      the scale is 1 if pw > 1100 
+      otherwise it is 1200/pw
+
+    You can change scaling while running NEURON by using 
+    "Session / Virtual Screen" in the Print & File Window 
+    Manager, or by executing the hoc statement 
+      PWManager[0].scale(factor)
+    However, the only way to make a "permanent" change 
+    is to specify the default scale factor in 
+      $(NEURONHOME)/lib/nrn.def
+
+8.  The Print & File Window Manager shows all windows, even 
+    those that are off the screen.  To drag windows back onto 
+    the screen, click on "move" in the PFWM's menu bar, and 
+    then just click and drag on the windows you want to move.
+
+9.  The following problems are known:
+    a.  File and directory names that contain the space 
+        character " " can result in NEURON failing to run or 
+        to load your model files.  To avoid such problems, 
+          i. don't install NEURON on a path that includes a 
+              space character, e.g. C:\PROGRAM FILES
+          ii. don't save your hoc, mod, or ses files on a 
+              path that includes a space character, e.g. 
+              C:\MY DOCUMENTS
+        and
+          iii. don't give your hoc, mod, or ses files names 
+              that include the space character, e.g. 
+              SMALL NET.HOC, NA PUMP.MOD, or FIRST TRY.SES
+        If you need to improve the readability of paths 
+        or file names, try using the underscore character "_"
+        e.g. SMALL_NET.HOC, C:\PROJECTS\NET_SYNCH
+    b.  The interpreter window's "Help" button does nothing.
+        Use the on-line help files (see 1 above).
+    c.  No autorepeat functionality with steppers (the 
+        ends of sliders and the field editor steppers).
+    d.  In addition to quitting by ^d from the interpreter window,
+        you can also do any one of the following: 
+        --select File / Exit from interpreter window
+        --select Close from the interpreter's title bar menu
+        --click on the close button (X) at the right end 
+          of the interpreter's title bar
+        --type quit() in the interpreter's window
+    e.  Don't type long lines while in the command line 
+        mode.  Emacs-like command line editing will not show 
+        the line properly.
+    f.  system("command") runs command in a sh.exe.
+    g.  object_id() returns unuseful double.
+    h.  rubbertext doesn't xor.  Work around by using 
+        rubberrect for text movement and graphline cursor 
+        position shows up on title bar. Also press space bar 
+        to print location to winio.  3drotation xyz removed 
+        so it doesn't leave a trail.
+    i.  Slow text graphics worked around by allowing only 
+        one font.
+    j.  Instead of load_proc() use load_file()--it's much faster.

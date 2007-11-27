@@ -1,0 +1,278 @@
+begintemplate ModelViewGUI
+public b, sh, selsub, selsec, selpp, selected, grph, pgrph
+external nil
+
+objref modelview, this, b, sh, bsh, g, bg
+objref all, svec, xvec, psh, yvec, tobj, xpvec
+strdef tstr
+
+proc init() {
+	x = 0
+	j = 0
+	sh_map_ = 0
+	g_map_ = 0
+	spacepl_ = 0
+	modelview=$o1
+	build()
+	map()
+}
+
+proc destroy() {
+	if (sh_map_) { sh_dismiss() }
+	if (g_map_) { g_dismiss() }
+	modelview.destroy()
+	objref modelview, sh, bsh, g, bg
+	objref all, svec, xvec, psh, yvec, xpvec
+	b.unmap()
+}
+
+proc build() {
+	b = new VBox()
+	b.dismiss_action("destroy()")
+	b.save("")
+	b.ref(this)
+	b.intercept(1)
+	xpanel("")
+
+	    xmenu("File")
+        xbutton("Write text", "modelview.text()")
+
+        xmenu("Export to NeuroML (Warning: run define_shape() first!)")
+
+            xbutton("Write NeuroML Level 1 (anatomy only)", "modelview.xml.xportLevel1()")
+            xbutton("Write NeuroML Level 2 (anatomy and biophysics)", "modelview.xml.xportLevel2()")
+
+        xmenu()
+        xmenu()
+
+	xpanel()
+	modelview.display.browser("")
+	b.intercept(0)
+}
+
+proc map() {
+	sprint(tstr, "%s", modelview)
+	b.map(tstr, 200, 300, 600, 500)
+}
+
+proc shape() {
+	if (object_id(sh) == 0) {
+		build_sh()
+	}
+	if (sh_map_ == 0) {
+		sprint(tstr, "%s Shape", modelview)
+		bsh.map(tstr)
+		sh_map_ = 1
+		sh.point_mark_remove()
+		sh.color_all(9)
+	}
+}
+
+proc build_sh() {
+	bsh = new VBox()
+	bsh.save("")
+	bsh.ref(this)
+	bsh.intercept(1)
+	xpanel("")
+	xmenu("LengthScale")
+	xradiobutton("Normal", "ls(0)", 1)
+	xradiobutton("Topological", "ls(1)")
+	xradiobutton("Scale long sections", "ls(2)")
+	xmenu()
+	xpanel()
+	sh = new Shape()
+	bsh.intercept(0)
+	bsh.dismiss_action("sh_dismiss()")
+}
+
+proc ls() {
+	if ($1 == 1) {
+		sprint(tstr, "forall %s.len_scale(100/L)", sh)
+	}else if ($1 == 2) {
+		sprint(tstr, "forall if (L > 20*diam) %s.len_scale(.2) else %s.len_scale(1) ", sh, sh)
+	}else{
+		sprint(tstr, "forall %s.len_scale(1)", sh)
+	}	
+	execute(tstr)
+	doNotify()
+	sh.exec_menu("View = plot")
+}
+
+proc sh_sp() {
+	psh.exec_menu("Time Plot")
+	doNotify()
+	psh.exec_menu("View = plot")
+	if (spacepl_) {
+		psh.exec_menu("Space Plot")
+	}else{
+		psh.exec_menu("Shape Plot")
+	}
+}
+
+proc lspsh() {
+	if ($1 == 1) {
+		sprint(tstr, "forall %s.len_scale(100/L)", psh)
+	}else if ($1 == 2) {
+		sprint(tstr, "forall if (L > 20*diam) %s.len_scale(.2) else %s.len_scale(1) ", psh, psh)
+	}else{
+		sprint(tstr, "forall %s.len_scale(1)", psh)
+	}	
+	execute(tstr)
+	spacepl_ = 0
+	sh_sp()
+}
+
+proc sh_dismiss() {
+	sh_map_ = 0
+	bsh.unmap()
+}
+
+proc selsub() {
+	shape()
+	if (numarg() > 0) {
+		sh.color_list($o1, 2)
+	}
+}
+
+proc selsec() {
+	shape()
+	$o1.sec sh.color(2)
+}
+
+proc selpp() {local i
+	shape()
+	for i=0, $o1.pps.count-1 {
+		sh.point_mark($o1.pps.object(i), 1)
+	}
+	for i=0, $o2.size-1 {
+		sh.point_mark($o1.pps.object($o2.x[i]), 2)
+	}
+}
+
+proc selected() {
+	if ($1 == 0) {
+		if (sh_map_) {
+			sh.point_mark_remove()
+			sh.color_all(9)
+		}
+		if (g_map_) {
+			g.erase_all
+			psh.exec_menu("Time Plot")
+		}
+	}
+}
+
+proc mapbg() {
+	if (object_id(g) == 0) {
+		build_g()
+		yvec = new Vector()
+		xpvec = new Vector()
+	}
+	if (g_map_ == 0) {
+		sprint(tstr, "%s Range Graph", modelview)
+		bg.map(tstr)
+		g_map_ = 1
+	}
+}
+
+proc grph() { local i, min, max, del
+	if (strcmp($o1.name, "Ra") == 0) {
+//		if (g_map_) {g_dismiss()}
+		return
+	}
+	mapbg()
+	g.label(.5, .9, $o1.name, 2, 1, 0,0,1)
+	all = $o2.location.realcell.all
+	svec = $o2.location.subset
+	if (object_id($o2.location.xgrph) == 0) {
+		mk_xgrph($o2)
+	}
+	xvec = $o2.location.xgrph
+	yvec.resize(xvec.size)
+	yvec.resize(0)
+	j = 0
+	for i=0, svec.size - 1 all.object(svec.x[i]).sec {
+//		g.beginline()
+//		sprint(tstr, "for (x,0) { g.line(xvec.x[j], %s(x)) j+=1 }", $o1.name)
+		sprint(tstr, "for (x,0) {gcall(%s(x))}", $o1.name)
+		execute(tstr, this)
+		g.flush()
+	}
+	g.exec_menu("View = plot")
+	psh.variable($o1.name)
+	min = yvec.min
+	max = yvec.max
+//print min, max
+	del = 10^(int(log10(max - min)-.999))
+	min = int(min/del-.999)*del
+	max = int(max/del+.999)*del
+//print min, max, del
+	psh.scale(min, max)
+	spacepl_ = 0
+	sh_sp()
+}
+
+proc gcall() {
+	yvec.append($1)
+	g.mark(xvec.x[j], $1, "+", 5)
+	j += 1
+}
+
+proc pgrph() {
+	mapbg()
+	tobj = new List($o2.name)
+	xpvec.resize(tobj.count)
+	yvec.resize(tobj.count)	
+	for j=0, tobj.count-1 {
+		sprint(tstr, "yvec.x[j] = %s.%s", tobj.object(j), $o1.name)
+		execute(tstr, this)
+		xpvec.x[j] = object_id(tobj.object(j), 1)
+	}
+	sprint(tstr, "%s[x].%s", $o2.name, $o1.name)
+	g.label(.5, .9, tstr, 2, 1, 0,0,1)
+	yvec.mark(g, xpvec, "+", 5)
+	g.exec_menu("View = plot")
+}
+
+proc mk_xgrph() {local i, ns, x
+	ns = 0
+	for i=0, svec.size - 1  all.object(svec.x[i]).sec {
+		ns += nseg + 2
+	}
+	xvec = new Vector(ns)
+	$o1.location.xgrph = xvec
+	xvec.resize(0)
+	
+	all.object(0).root distance()
+	for i=0, svec.size - 1 all.object(svec.x[i]).sec {
+		for (x,0) {
+			xvec.append(distance(x))
+		}
+	}
+}
+
+proc build_g() {
+	bg = new VBox()
+	bg.save("")
+	bg.ref(this)
+	bg.intercept(1)
+	xpanel("", 1)
+	xmenu("LengthScale")
+	xradiobutton("Normal", "lspsh(0)", 1)
+	xradiobutton("Topological", "lspsh(1)")
+	xradiobutton("Scale long sections", "lspsh(2)")
+	xmenu()
+	xcheckbox("SpacePlot", &spacepl_, "sh_sp()")
+	xpanel()
+	psh = new PlotShape()
+	g = new Graph()
+	bg.intercept(0)
+	bg.dismiss_action("g_dismiss()")
+}
+
+proc g_dismiss() {
+	g_map_ = 0
+	bg.unmap()
+}
+
+endtemplate ModelViewGUI

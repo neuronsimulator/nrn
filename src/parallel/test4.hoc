@@ -1,0 +1,49 @@
+strdef s
+objref vec
+objref pc
+
+pc = new ParallelContext()
+
+proc plook() {local x
+	if (pc.look("plook")) {
+printf ("plook found %g , %s\n", pc.upkscalar, pc.upkstr(s))
+		pc.upkvec.printf
+	}
+}
+
+pc.runworker()
+
+vec = new Vector(10)
+vec.indgen
+pc.post("test1", "this is test1", 10, vec)
+pc.post("test2", "this is a test2", 20, vec.fill(20))
+pc.post("test3", "this is a test3", 30, vec.fill(30))
+pc.post("test4", "this is a test4", 40, vec.fill(40))
+pc.post("5test", "this is a 5test", 50, vec.fill(50))
+proc p() {
+	pc.take($s1)
+	print pc.upkstr(s)
+	print pc.upkscalar
+	pc.upkvec.printf
+}
+
+p("test1")
+p("5test")
+p("test3")
+p("test2")
+p("test4")
+
+
+pc.post("plook", 25, "another test", vec)
+
+print "nhost=", pc.nhost
+
+for i=1,100000 hoc_ac_ = i // waste some time
+for i=1, pc.nhost {
+	pc.submit("plook()\n")
+}
+while (pc.working()) {}
+
+pc.done()
+quit()
+

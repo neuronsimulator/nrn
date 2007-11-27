@@ -1,0 +1,815 @@
+#include <../../nrnconf.h>
+#include <nrnmpiuse.h>
+
+extern char* nrn_version();
+
+/* change this to correspond to the ../nmodl/nocpout nmodl_version_ string*/
+static char nmodl_version_[] =
+"6.0.2";
+
+static char banner[] =
+"Duke, Yale, and the BlueBrain Project -- Copyright 1984-2007\n\
+See http://www.neuron.yale.edu/credits.html\n";
+
+# include	<stdio.h>
+#include <stdlib.h>
+#include "section.h"
+#include "parse.h"
+#include "membfunc.h"
+#include "cabvars.h"
+#include "neuron.h"
+#include "membdef.h"
+#include "nrnmpi.h"
+
+#ifdef WIN32
+#if defined(HAVE_DLFCN_H) && !defined(__MINGW32__)
+#include <dlfcn.h>
+#else
+#define RTLD_NOW 0
+extern void* dlopen(char* name, int mode);
+extern void* dlsym(void* handle, char* name);
+extern int dlclose(void* handle);
+extern char* dlerror();
+#endif
+//#include "../mswin/windll/dll.h"
+//static struct DLL* dll;
+#endif
+#if defined(WIN32) || defined(NRNMECH_DLL_STYLE)
+extern char* nrn_mech_dll; /* declared in hoc_init.c so ivocmain.cpp can see it */
+#endif
+#if defined(WIN32)
+#define DLL_DEFAULT_FNAME "nrnmech.dll"
+#endif
+#if defined(NRNMECH_DLL_STYLE)
+#if defined(DARWIN)
+#ifndef DLL_DEFAULT_FNAME
+#define DLL_DEFAULT_FNAME "libnrnmech.dylib"
+#endif
+#if __GNUC__ < 4
+#include "osxdlfcn.h"
+#include "osxdlfcn.c"
+#else
+#include <dlfcn.h>
+#endif
+#else
+#include <dlfcn.h>
+#ifndef DLL_DEFAULT_FNAME
+#define DLL_DEFAULT_FNAME "./libnrnmech.so"
+#endif
+#endif
+#endif
+
+# define	CHECK(name)	if (hoc_lookup(name) != (Symbol *)0){\
+		IGNORE(fprintf(stderr, CHKmes, name));\
+		nrn_exit(1);}
+
+static char	CHKmes[] = "The user defined name, %s, already exists\n";
+
+extern Symlist	*hoc_symlist, *hoc_built_in_symlist;
+extern Symbol	*hoc_table_lookup();
+
+int secondorder=0;
+int state_discon_allowed_;
+extern int nrn_nobanner_;
+double t, dt, clamp_resist, celsius, htablemin, htablemax;
+hoc_List* section_list;
+int rootnodecount = 0;
+extern double hoc_default_dll_loaded_;
+extern int nrn_istty_;
+extern int nrn_nobanner_;
+
+#if FISHER
+#include <stdlib.h>
+#include "fisher.h"
+double id_number;              /* for rcs control, set in setup_id_info() */
+char login_name[20];           /* store user's login for sys.c & rcs.c    */
+char *pipe_filter = "more";    /* allow for running NEURON in emacs       */
+#endif
+
+static HocParmLimits _hoc_parm_limits[] = {
+	"Ra", 1e-6, 1e9,
+	"L", 1e-4, 1e20,
+	"diam", 1e-9, 1e9,
+	"cm", 0., 1e9,
+	"rallbranch", 1., 1e9,
+	"nseg", 1., 1e9,
+	"celsius", -273., 1e6,
+	"dt", 1e-9, 1e15,
+	0, 0., 0.
+};
+
+static HocParmUnits _hoc_parm_units[] = {
+	"Ra", "ohm-cm",
+	"L", "um",
+	"diam", "um",
+	"cm", "uF/cm2",
+	"celsius", "degC",
+	"dt", "ms",
+	"t", "ms",
+	0, 0
+};
+
+static int memb_func_size_;
+Memb_func* memb_func;
+Memb_list* memb_list;
+short* memb_order_;
+Symbol** pointsym;
+Point_process** point_process;
+char* pnt_map;		/* so prop_free can know its a point mech*/
+typedef void (*Pfrv)();
+BAMech** bamech_;
+
+Template** nrn_pnt_template_; /* for finding artificial cells */
+Pfrv* pnt_receive;	/* for synaptic events. */
+Pfrv* pnt_receive_init;
+short* pnt_receive_size;
+ /* values are type numbers of mechanisms which do net_send call */
+int nrn_has_net_event_cnt_;
+int* nrn_has_net_event_;
+int* nrn_prop_dparam_size_;
+int* nrn_dparam_ptr_start_;
+int* nrn_dparam_ptr_end_;
+
+void  add_nrn_has_net_event(type) int type; {
+	++nrn_has_net_event_cnt_;
+	nrn_has_net_event_ = (int*)erealloc(nrn_has_net_event_, nrn_has_net_event_cnt_*sizeof(int));
+	nrn_has_net_event_[nrn_has_net_event_cnt_ - 1] = type;
+}
+
+/* values are type numbers of mechanisms which have FOR_NETCONS statement */
+int nrn_fornetcon_cnt_; /* how many models have a FOR_NETCONS statement */
+int* nrn_fornetcon_type_; /* what are the type numbers */
+int* nrn_fornetcon_index_; /* what is the index into the ppvar array */
+
+void add_nrn_fornetcons(int type, int indx) {
+	int i = nrn_fornetcon_cnt_++;
+	nrn_fornetcon_type_ = (int*)erealloc(nrn_fornetcon_type_, (i+1)*sizeof(int));
+	nrn_fornetcon_index_ = (int*)erealloc(nrn_fornetcon_index_, (i+1)*sizeof(int));
+	nrn_fornetcon_type_[i] = type;
+	nrn_fornetcon_index_[i]= indx;
+}
+
+/* array is parallel to memb_func. All are 0 except 1 for ARTIFICIAL_CELL */
+short* nrn_is_artificial_;
+short* nrn_artcell_qindex_;
+
+void  add_nrn_artcell(type, qi) int type, qi; {
+	nrn_is_artificial_[type] = 1;
+	nrn_artcell_qindex_[type] = qi;
+}
+
+int nrn_is_artificial(pnttype) int pnttype; {
+	return (int)nrn_is_artificial_[pointsym[pnttype]->subtype];
+}
+
+int nrn_is_cable() {return 1;}
+
+#if 0 && defined(WIN32)
+int mswin_load_dll(cp1) char* cp1; {
+	if (nrnmpi_myid < 1) if (!nrn_nobanner_ && nrn_istty_) {
+		printf("loading membrane mechanisms from %s\n", cp1);
+	}
+	dll = dll_load(cp1);
+	if (dll) {
+		Pfri mreg = dll_lookup(dll, "_modl_reg");
+		if (mreg) {
+			(*mreg)();
+		}
+		return 1;
+	}
+	return 0;
+}
+#endif
+
+#if defined(WIN32) || defined(NRNMECH_DLL_STYLE)
+int mswin_load_dll(cp1) char* cp1; { /* actually linux dlopen */
+	void* handle;
+	if (nrnmpi_myid < 1) if (!nrn_nobanner_ && nrn_istty_) {
+		printf("loading membrane mechanisms from %s\n", cp1);
+	}
+	handle = dlopen(cp1, RTLD_NOW);
+	if (handle) {
+		Pfri mreg = (Pfri)dlsym(handle, "modl_reg");
+		if (mreg) {
+			(*mreg)();
+		}else{
+			printf("dlsym _modl_reg failed\n%s\n", dlerror());
+			dlclose(handle);
+			return 0;
+		}
+		return 1;
+	}else{
+		printf("dlopen failed - \n%s\n", dlerror());
+	}
+	return 0;
+}
+#endif
+
+#if !MAC
+hoc_nrn_load_dll() {
+#if defined(WIN32) || defined(NRNMECH_DLL_STYLE)
+	Symlist* sav;
+	int i;
+	FILE* f;
+	char* fn;
+	extern char* expand_env_var();
+	fn = expand_env_var(gargstr(1));
+	f = fopen(fn, "rb");
+	if (f) {
+		fclose(f);
+		sav = hoc_symlist;
+		hoc_symlist = hoc_built_in_symlist;
+		hoc_built_in_symlist = (Symlist*)0;
+		i = mswin_load_dll(fn);
+		hoc_built_in_symlist = hoc_symlist;
+		hoc_symlist = sav;
+		ret((double)i);
+	}else{
+		ret(0.);
+	}	
+#else
+	hoc_warning("nrn_load_dll not available on this machine", (char*)0);
+	ret(0.);
+#endif
+}
+#endif
+
+hoc_last_init()
+{
+	int i;
+	Pfri *m;
+	Symbol *s;
+
+ 	if (nrnmpi_myid < 1) if (nrn_nobanner_ == 0) { 
+	    Fprintf(stderr, "%s\n", nrn_version(1));
+	    Fprintf(stderr, "%s\n", banner);
+	    IGNORE(fflush(stderr));
+ 	} 
+	memb_func_size_ = 30;
+	memb_func = (Memb_func*)ecalloc(memb_func_size_, sizeof(Memb_func));
+	memb_list = (Memb_list*)ecalloc(memb_func_size_, sizeof(Memb_list));
+	pointsym = (Symbol**)ecalloc(memb_func_size_, sizeof(Symbol*));
+	point_process = (Point_process**)ecalloc(memb_func_size_, sizeof(Point_process*));
+	pnt_map = (char*)ecalloc(memb_func_size_, sizeof(char));
+	memb_func[1].alloc = cab_alloc;
+	nrn_pnt_template_ = (Template**)ecalloc(memb_func_size_, sizeof(Template*));
+	pnt_receive = (Pfrv*)ecalloc(memb_func_size_, sizeof(Pfrv));
+	pnt_receive_init = (Pfrv*)ecalloc(memb_func_size_, sizeof(Pfrv));
+	pnt_receive_size = (short*)ecalloc(memb_func_size_, sizeof(short));
+	nrn_is_artificial_ = (short*)ecalloc(memb_func_size_, sizeof(short));
+	nrn_artcell_qindex_ = (short*)ecalloc(memb_func_size_, sizeof(short));
+	nrn_prop_dparam_size_ = (int*)ecalloc(memb_func_size_, sizeof(int));
+	nrn_dparam_ptr_start_ = (int*)ecalloc(memb_func_size_, sizeof(int));
+	nrn_dparam_ptr_end_ = (int*)ecalloc(memb_func_size_, sizeof(int));
+	memb_order_ = (short*)ecalloc(memb_func_size_, sizeof(short));
+	bamech_ = (BAMech**)ecalloc(BEFORE_AFTER_SIZE, sizeof(BAMech*));
+	nrn_mk_prop_pools(memb_func_size_);
+	
+#if KEEP_NSEG_PARM
+	{extern int keep_nseg_parm_; keep_nseg_parm_ = 1; }
+#endif
+#if FISHER
+	/* get login_name from 'LOGNAME' */
+	strcpy(login_name, getenv("LOGNAME"));
+	
+	if (getenv("CAT_PIPE")) {
+	    pipe_filter = "cat";   /* preferred for emacs environment */
+	} else {
+	    pipe_filter = "more";  /* preferred for xterm environment */
+	}
+#endif
+
+	section_list = hoc_l_newlist();
+	
+	CHECK("v");
+	s = hoc_install("v", RANGEVAR, 0.0, &hoc_symlist);
+	s->u.rng.type = VINDEX;
+	
+	for (i = 0; usrprop[i].name; i++) {
+		CHECK(usrprop[i].name);
+		s = hoc_install(usrprop[i].name, UNDEF, 0.0, &hoc_symlist);
+		s->type = VAR;
+		s->subtype = USERPROPERTY;
+		s->u.rng.type = usrprop[i].type;
+		s->u.rng.index = usrprop[i].index;
+	}
+	SectionList_reg();
+	SectionRef_reg();
+	register_mech(morph_mech, morph_alloc, (Pfri)0, (Pfri)0, (Pfri)0, (Pfri)0, -1, 0);
+	for (m = mechanism; *m; m++) {
+		(*m)();
+	}
+#if !MAC
+	modl_reg();
+#endif
+	hoc_register_limits(0, _hoc_parm_limits);
+	hoc_register_units(0, _hoc_parm_units);
+#if defined(WIN32) || defined(NRNMECH_DLL_STYLE)
+	if (!nrn_mech_dll) { /* use the default if it exists */
+		FILE* ff = fopen(DLL_DEFAULT_FNAME, "r");
+		if (ff) {
+			fclose(ff);
+			nrn_mech_dll = DLL_DEFAULT_FNAME;
+		}
+	}
+	if (nrn_mech_dll) {
+		char *cp1, *cp2;
+		hoc_default_dll_loaded_ = 1.;
+		for (cp1 = nrn_mech_dll; *cp1; cp1 = cp2) {
+			for (cp2 = cp1; *cp2; ++cp2) {
+				if (*cp2 == ';') {
+					*cp2 = '\0';
+					++cp2;
+					break;
+				}
+			}
+			mswin_load_dll(cp1);
+		}
+	}
+#endif
+	s = hoc_lookup("section_owner");
+	s->type = OBJECTFUNC;
+}
+
+initnrn() {
+	secondorder = DEF_secondorder;	/* >0 means crank-nicolson. 2 means currents
+				   adjusted to t+dt/2 */
+	t = 0;		/* msec */
+	dt = DEF_dt;	/* msec */
+	clamp_resist = DEF_clamp_resist;	/*megohm*/
+	celsius = DEF_celsius;	/* degrees celsius */
+	ret(1.);
+}
+
+static int pointtype = 1; /* starts at 1 since 0 means not point in pnt_map*/
+int n_memb_func;
+
+register_mech(m, alloc, cur, jacob, stat, initialize, nrnpointerindex, vectorized)
+	char **m;
+	Pfri alloc;
+	Pfri cur;
+	Pfri jacob;
+	Pfri stat;
+	Pfri initialize;
+	int nrnpointerindex; /* if -1 then there are none */
+#if VECTORIZE
+	int vectorized;
+#endif
+{
+	static int type = 2;	/* 0 unused, 1 for cable section */
+	int j, k, modltype, pindx, modltypemax;
+	Symbol *s;
+	char **m2;
+
+	if (type >= memb_func_size_) {
+		memb_func_size_ += 20;
+		memb_func = (Memb_func*)erealloc(memb_func, memb_func_size_*sizeof(Memb_func));
+		memb_list = (Memb_list*)erealloc(memb_list, memb_func_size_*sizeof(Memb_list));
+		pointsym = (Symbol**)erealloc(pointsym, memb_func_size_*sizeof(Symbol*));
+		point_process = (Point_process**)erealloc(point_process, memb_func_size_*sizeof(Point_process*));
+		pnt_map = (char*)erealloc(pnt_map, memb_func_size_*sizeof(char));
+		nrn_pnt_template_ = (Template**)erealloc(nrn_pnt_template_, memb_func_size_*sizeof(Template*));
+		pnt_receive = (Pfrv*)erealloc(pnt_receive, memb_func_size_*sizeof(Pfrv));
+		pnt_receive_init = (Pfrv*)erealloc(pnt_receive_init, memb_func_size_*sizeof(Pfrv));
+		pnt_receive_size = (short*)erealloc(pnt_receive_size, memb_func_size_*sizeof(short));
+		nrn_is_artificial_ = (short*)erealloc(nrn_is_artificial_, memb_func_size_*sizeof(short));
+		nrn_artcell_qindex_ = (short*)erealloc(nrn_artcell_qindex_, memb_func_size_*sizeof(short));
+		nrn_prop_dparam_size_ = (int*)erealloc(nrn_prop_dparam_size_, memb_func_size_*sizeof(int));
+		nrn_dparam_ptr_start_ = (int*)erealloc(nrn_prop_dparam_size_, memb_func_size_*sizeof(int));
+		nrn_dparam_ptr_end_ = (int*)erealloc(nrn_prop_dparam_size_, memb_func_size_*sizeof(int));
+		memb_order_ = (short*)erealloc(memb_order_, memb_func_size_*sizeof(short));
+		for (j=memb_func_size_ - 20; j < memb_func_size_; ++j) {
+			pnt_map[j] = 0;
+			point_process[j] = (Point_process*)0;
+			pointsym[j] = (Symbol*)0;
+			nrn_pnt_template_[j] = (Template*)0;
+			pnt_receive[j] = (Pfrv)0;
+			pnt_receive_init[j] = (Pfrv)0;
+			pnt_receive_size[j] = 0;
+			nrn_is_artificial_[j] = 0;
+			nrn_artcell_qindex_[j] = 0;
+			memb_order_[j] = 0;
+		}
+		nrn_mk_prop_pools(memb_func_size_);
+	}
+
+	nrn_prop_dparam_size_[type] = 0; /* fill in later */
+	nrn_dparam_ptr_start_[type] = 0; /* fill in later */
+	nrn_dparam_ptr_end_[type] = 0; /* fill in later */
+	memb_func[type].current = cur;
+	memb_func[type].jacob = jacob;
+	memb_func[type].alloc = alloc;
+	memb_func[type].state = stat;
+	memb_func[type].initialize = initialize;
+	memb_func[type].destructor = (Pfri)0;
+#if VECTORIZE
+	memb_func[type].vectorized = vectorized;
+	memb_func[type].is_point = 0;
+	memb_func[type].hoc_mech = (void*)0;
+	memb_list[type].nodecount = 0;
+	memb_order_[type] = type;
+#endif
+#if CVODE
+	memb_func[type].ode_count = (Pfri)0;
+	memb_func[type].ode_map = (Pfri)0;
+	memb_func[type].ode_spec = (Pfri)0;
+	memb_func[type].ode_matsol = (Pfri)0;
+	memb_func[type].ode_synonym = (Pfri)0;
+	memb_func[type].singchan_ = (Pfri)0;
+#endif
+	/* as of 5.2 nmodl translates so that the version string
+	   is the first string in m. This allows the neuron application
+	   to determine if nmodl c files are compatible with this version
+	   Note that internal mechanisms have a version of "0" and are
+	   by nature consistent.
+	*/
+	
+/*printf("%s %s\n", m[0], m[1]);*/
+	if (strcmp(m[0], "0") == 0) { /* valid by nature */
+	}else if (m[0][0] != '6') { /* must be 5.1 or before */
+fprintf(stderr, "Mechanism %s needs to be re-translated.\n\
+It's pre version 6.0 \"c\" code is incompatible with this neuron version.\n", m[0]);
+		nrn_exit(1);
+	}else if (strcmp(m[0], nmodl_version_) != 0){
+fprintf(stderr, "Mechanism %s needs to be re-translated.\n\
+It's version %s \"c\" code is incompatible with this neuron version.\n",
+			m[1], m[0]);
+		nrn_exit(1);
+	}
+	CHECK(m[1]);
+	s = hoc_install(m[1], MECHANISM, 0.0, &hoc_symlist);
+	s->subtype = type;
+	memb_func[type].sym = s;
+/*	printf("%s type=%d\n", s->name, type);*/
+	m2 = m + 2;
+	if (nrnpointerindex == -1) {
+		modltypemax = STATE;
+	} else {
+		modltypemax = NRNPOINTER;
+	}
+	for (k=0, j=0, modltype=CONST; modltype<=modltypemax; modltype++, j++){
+		/*EMPTY*/
+		for (; m2[j]; j++, k++) {
+			;
+		}
+	}
+	s->s_varn = k;
+	s->u.ppsym = (Symbol **) emalloc((unsigned)(j*sizeof(Symbol *)));
+/* this is set up for the possiblility of overloading range variables.
+We are currently not allowing this. Hence the #if.
+If never overloaded then no reason for list of symbols for each mechanism.
+*/
+/* the indexing is confusing because k refers to index in the range indx list
+and j refers to index in mechanism list which has 0 elements to separate
+CONST, DEPENDENT, and STATE */
+/* variable pointers added on at end, if they exist */
+/* allowing range variable arrays. Must extract dimension info from name[%d]*/
+/* pindx refers to index into the p-array */
+	pindx = 0;
+	for (j=0, k=0, modltype=CONST; modltype <= modltypemax; modltype++, j++) {
+		for (; m2[j]; j++, k++) {
+			Symbol *s2;
+			char buf[200], *cp; int indx; unsigned nsub=0;
+			strcpy(buf, m2[j]); /* not allowed to change constant string */
+			indx = 1;
+			cp = strchr(buf, '[');
+			if (cp) {
+#if EXTRACELLULAR
+				if (cp[1] == 'N') {
+					indx = nlayer;
+				}else
+#endif
+				{
+					sscanf(cp+1, "%d", &indx);
+				}
+				nsub = 1;
+				*cp = '\0';
+			}
+			/*SUPPRESS 624*/
+			if ((s2 = hoc_lookup(buf))) {
+#if 0
+				if (s2->subtype != RANGEVAR) {
+					IGNORE(fprintf(stderr, CHKmes,
+					buf));
+				}
+#else
+IGNORE(fprintf(stderr, CHKmes, buf));
+#endif
+			}else{
+			  s2 = hoc_install(buf, RANGEVAR, 0.0, &hoc_symlist);
+				s2->subtype = modltype;
+				s2->u.rng.type = type;
+				s2->public = 1;
+				if (modltype == NRNPOINTER) { /* not in p array */
+					s2->u.rng.index = nrnpointerindex;
+				} else {
+					s2->u.rng.index = pindx;
+				}
+			  if (nsub) {
+				s2->arayinfo = (Arrayinfo *) emalloc(
+				  sizeof(Arrayinfo) + nsub * sizeof(int));
+				s2->arayinfo->a_varn = (unsigned *)0;
+				s2->arayinfo->refcount = 1;
+				s2->arayinfo->nsub = nsub;
+				s2->arayinfo->sub[0] = indx;
+			  }
+			  if (modltype == NRNPOINTER) {
+				if (nrn_dparam_ptr_end_[type] == 0) {
+					nrn_dparam_ptr_start_[type] = nrnpointerindex;
+				}
+				nrnpointerindex += indx;
+				nrn_dparam_ptr_end_[type] = nrnpointerindex;
+			  }else {
+				pindx += indx;
+			  }
+			}
+			s->u.ppsym[k] = s2;
+		}
+	}
+	++type;
+	n_memb_func = type;
+}
+
+nrn_writes_conc(type, unused) int type, unused; {
+	static int lastion = EXTRACELL+1;
+	int i;
+	for (i=n_memb_func - 2; i >= lastion; --i) {
+		memb_order_[i+1] = memb_order_[i];
+	}
+	memb_order_[lastion] = type;
+#if 0
+	printf("%s reordered from %d to %d\n", memb_func[type].sym->name, type, lastion);
+#endif
+	if (nrn_is_ion(type)) {
+		++lastion;
+	}
+}
+
+void hoc_register_dparam_size(int type, int size) {
+	nrn_prop_dparam_size_[type] = size;
+}
+
+#if CVODE
+hoc_register_cvode(i, cnt, map, spec, matsol)
+	int i; Pfri cnt,map,spec,matsol;
+{
+	memb_func[i].ode_count = cnt;
+	memb_func[i].ode_map = map;
+	memb_func[i].ode_spec = spec;
+	memb_func[i].ode_matsol = matsol;
+}
+hoc_register_synonym(i, syn)
+	int i; Pfri syn;
+{
+	memb_func[i].ode_synonym = syn;
+}
+#endif
+
+register_destructor(d) Pfri d; {
+	memb_func[n_memb_func - 1].destructor = d;
+}
+
+struct Member_func { char* _name; double (*_member)();};
+
+int point_reg_helper(s2) Symbol* s2; {
+	pointsym[pointtype] = s2;
+	s2->public = 0;
+	pnt_map[n_memb_func-1] = pointtype;
+	memb_func[n_memb_func-1].is_point = 1;
+	return pointtype++;
+}
+
+int
+#if VECTORIZE
+point_register_mech(m, alloc, cur, jacob, stat, initialize, nrnpointerindex,
+	constructor, destructor, fmember,
+	vectorized
+)
+	char **m;
+	Pfri alloc;
+	Pfri cur;
+	Pfri jacob;
+	Pfri stat;
+	Pfri initialize;
+	int nrnpointerindex;
+	int vectorized;
+
+	void* (*constructor)();
+	void (*destructor)();
+	struct Member_func* fmember;
+{
+	extern void steer_point_process();
+	Symlist* sl;
+	Symbol* s, *s2;
+	void class2oc();
+	CHECK(m[1]);
+	class2oc(m[1], constructor, destructor, fmember, (void*)0, (void*)0, (void*)0);
+	s = hoc_lookup(m[1]);
+	sl = hoc_symlist;
+	hoc_symlist = s->u.template->symtable;
+	s->u.template->steer = steer_point_process;
+	s->u.template->is_point_ = pointtype;
+	register_mech(m, alloc, cur, jacob, stat, initialize, nrnpointerindex, vectorized);
+	nrn_pnt_template_[n_memb_func-1] = s->u.template;
+	s2 = hoc_lookup(m[1]);
+	hoc_symlist = sl;
+	return point_reg_helper(s2);
+}
+#endif
+
+/* some stuff from scopmath needed for built-in models */
+ 
+#if 0
+double*
+makevector(nrows)
+        int nrows;
+{
+        double* v;
+        v = (double*)emalloc((unsigned)(nrows*sizeof(double)));
+        return v;
+}
+#endif
+  
+int _ninits;
+_modl_cleanup(){}
+
+#if 1
+_modl_set_dt(newdt) double newdt; {
+	dt = newdt;
+}
+#endif	
+
+int nrn_pointing(pd) double *pd; {
+	return pd ? 1 : 0;
+}
+
+int state_discon_flag_ = 0;
+state_discontinuity(i, pd, d) int i; double* pd; double d; {
+	if (state_discon_allowed_ && state_discon_flag_ == 0) {
+		*pd = d;
+/*printf("state_discontinuity t=%g pd=%lx d=%g\n", t, (long)pd, d);*/
+	}
+}
+
+hoc_register_limits(type, limits)
+	int type;
+	HocParmLimits* limits;
+{
+	int i;
+	Symbol* sym;
+	for (i=0; limits[i].name; ++i) {
+		sym = (Symbol*)0;
+		if (type && memb_func[type].is_point) {
+			Symbol* t;
+			t = hoc_lookup(memb_func[type].sym->name);
+			sym = hoc_table_lookup(
+				limits[i].name,
+				t->u.template->symtable
+			);
+		}
+		if (!sym) {
+			sym = hoc_lookup(limits[i].name);
+		}
+		hoc_symbol_limits(sym, limits[i].bnd[0], limits[i].bnd[1]);
+	}
+}
+
+hoc_register_units(type, units)
+	int type;
+	HocParmUnits* units;
+{
+	int i;
+	Symbol* sym;
+	for (i=0; units[i].name; ++i) {
+		sym = (Symbol*)0;
+		if (type && memb_func[type].is_point) {
+			Symbol* t;
+			t = hoc_lookup(memb_func[type].sym->name);
+			sym = hoc_table_lookup(
+				units[i].name,
+				t->u.template->symtable
+			);
+		}
+		if (!sym) {
+			sym = hoc_lookup(units[i].name);
+		}
+		hoc_symbol_units(sym, units[i].units);
+	}
+}
+
+hoc_reg_ba(mt, f, type)
+	int mt, type;
+	Pfri f;
+{
+	BAMech* bam;
+	switch (type) { /* see bablk in src/nmodl/nocpout.c */
+	case 11: type = BEFORE_BREAKPOINT; break;
+	case 22: type = AFTER_SOLVE; break;
+	case 13: type = BEFORE_INITIAL; break;
+	case 23: type = AFTER_INITIAL; break;
+	case 14: type = BEFORE_STEP; break;
+	default:
+printf("before-after processing type %d for %s not implemented\n", type, memb_func[mt].sym->name);
+		nrn_exit(1);
+	}
+	bam = (BAMech*)emalloc(sizeof(BAMech));
+	bam->f = f;
+	bam->type = mt;
+	bam->next = bamech_[type];
+	bamech_[type] = bam;
+}
+
+_cvode_abstol(s, tol, i)
+	Symbol** s;
+	double* tol;
+	int i;
+{
+#if CVODE
+	if (s && s[i]->extra) {
+		double x;
+		x = s[i]->extra->tolerance;
+		if (x != 0) {
+			tol[i] *= x;
+		}
+	}
+#endif
+}
+
+hoc_register_tolerance(type, tol, stol)
+	int type;
+	HocStateTolerance* tol;
+	Symbol*** stol;
+{
+#if CVODE
+	int i;
+	Symbol* sym;
+/*printf("register tolerance for %s\n", memb_func[type].sym->name);*/
+	for (i = 0; tol[i].name; ++i) {
+		if (memb_func[type].is_point) {
+			Symbol* t;
+			t = hoc_lookup(memb_func[type].sym->name);
+			sym = hoc_table_lookup(
+				tol[i].name,
+				t->u.template->symtable
+			);
+		}else{
+			sym = hoc_lookup(tol[i].name);
+		}
+		hoc_symbol_tolerance(sym, tol[i].tolerance);
+	}			
+
+	if (memb_func[type].ode_count) {
+		Symbol** psym, *msym, *vsym;
+		double **pv;
+		Node** pnode;
+		Prop* p;
+		extern Prop* prop_alloc();
+		extern Node** node_construct();
+		int i, j, k, n, na, index;
+		
+		n = (*memb_func[type].ode_count)();
+		if (n > 0) {
+			psym = (Symbol**)ecalloc(n, sizeof(Symbol*));
+			pv = (double**)ecalloc(2*n, sizeof(double*));
+			pnode = node_construct(1);
+prop_alloc(&(pnode[0]->prop), MORPHOLOGY, pnode[0]); /* in case we need diam */
+p = prop_alloc(&(pnode[0]->prop), type, pnode[0]); /* this and any ions */
+(*memb_func[type].ode_map)(0, pv, pv+n, p->param, p->dparam, (double*)0);
+			for (i=0; i < n; ++i) {
+				for (p = pnode[0]->prop; p; p = p->next) {
+					if (pv[i] >= p->param && pv[i] < (p->param + p->param_size)) {
+						index = pv[i] - p->param;
+						break;
+					}
+				}
+				
+				/* p is the prop and index is the index
+					into the p->param array */
+				assert(p);
+				/* need to find symbol for this */
+				msym = memb_func[p->type].sym;
+				for (j=0; j < msym->s_varn; ++j) {
+					vsym = msym->u.ppsym[j];
+					if (vsym->type == RANGEVAR && vsym->u.rng.index == index) {
+						psym[i] = vsym;
+/*printf("identified %s at index %d of %s\n", vsym->name, index, msym->name);*/
+						if (ISARRAY(vsym)) {
+							na = vsym->arayinfo->sub[0];
+							for (k=1; k < na; ++k) {
+								psym[++i] = vsym;
+							}
+						}
+						break;
+					} 
+				}
+				assert (j < msym->s_varn);
+			}
+					
+			node_destruct(pnode, 1);
+			*stol = psym;
+			free (pv);
+		}
+	}
+#endif
+}
+

@@ -1,0 +1,17 @@
+load_file("nrngui.hoc")
+create soma[2]
+access soma
+insert pas
+ii=1
+forall {insert order index_order = ii ii+=ii}
+tstop = .2
+print "fixed step"
+run()
+cvode_active(1)
+print "global variable"
+run()
+cvode_local(1)
+print "local variable"
+run()
+
+

@@ -1,0 +1,86 @@
+begintemplate ModelViewParmSubset
+// subset which has a bunch of constant parameters
+public subset, parmlist, selected, prependlocstr, realcell, xgrph, type
+// subset elements are indices into realcell all list
+// parmlist specifies parameters which are uniform over
+// this subset (and whose values are different in the complement to
+// the existence subset)
+objref subset, parmlist, realcell, xgrph
+
+proc init() {
+	subset = $o1
+	parmlist = new List()
+	realcell = $o2
+}
+proc selected() {
+	realcell.selsub(subset)
+}
+
+proc prependlocstr() {
+	sprint($s1, "%d %s", subset.size, $s1)
+}
+
+func type() { return 8 }
+
+endtemplate ModelViewParmSubset
+
+begintemplate ModelViewSubsetList // a list of ModelViewParmSubsets
+public subsets, isubset
+objref subsets
+proc init() {
+	subsets = new List()
+}
+func isubset() { local i //the ModelViewParmSubset associated with Vector $o1
+	for i=0, subsets.count-1 {
+		if ($o1.eq(subsets.object(i).subset)) {
+			return i
+		}
+	}
+	subsets.append(new ModelViewParmSubset($o1, $o2))
+	return subsets.count-1
+}
+endtemplate ModelViewSubsetList
+
+begintemplate ModelViewParmSec
+// Section which has a bunch of unique parameters
+public isec, parmlist, selected, prependlocstr, realcell, type
+// isec is the index into realcell all list
+// parmlist specifies parameters which are unique constants to
+// this section
+objref parmlist, realcell
+proc init() {
+	isec = $1
+	parmlist = new List()
+	realcell = $o2
+}
+proc selected() {
+	realcell.selsec(isec)
+}
+proc prependlocstr() {
+	realcell.prependname(isec, $s1)
+}
+
+func type() { return 9 }
+
+endtemplate ModelViewParmSec
+
+begintemplate ModelViewParmInhomo
+// Section which has inhomogeneous parameters
+public isec, parmlist, selected, prependlocstr, realcell
+// isec is the index into realcell all list
+// parmlist specifies parameters which are inhomogeneous in
+// this section
+objref parmlist, realcell
+proc init() {
+	isec = $1
+	parmlist = new List()
+	realcell = $o2
+}
+proc selected() {
+	realcell.selsec(isec)
+}
+proc prependlocstr() {
+	realcell.prependname(isec, $s1)
+}
+endtemplate ModelViewParmInhomo
+

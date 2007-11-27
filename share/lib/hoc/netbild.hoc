@@ -1,0 +1,23 @@
+{load_file("celbild.hoc")}
+{xopen("netbild/grstrlst.hoc")}
+{xopen("netbild/syntypes.hoc")}
+{xopen("netbild/netready.hoc")}
+{xopen("netbild/artcel.hoc")}
+{xopen("netbild/netdata.hoc")}
+{xopen("netbild/spkplot.hoc")}
+{xopen("netbild/edgegui.hoc")}
+{xopen("netbild/netgui.hoc")}
+objref tobj
+proc makenetreadycell() {
+	tobj = new NetReadyCellGUI()
+	objref tobj
+}
+proc makeartcelltype() {
+	tobj = new ArtCellGUI()
+	objref tobj
+}
+proc makenetbuilder() {
+	tobj = new NetGUI()
+	objref tobj
+}
+

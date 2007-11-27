@@ -1,0 +1,48 @@
+// Physical properties
+create a
+access a
+nseg=1
+
+// graphical interface appearance
+objref s[2]
+for i=0,1 s[i] = new stim1()
+{insert pas e_pas=0 g_pas=.001 diam=10 L=10}
+s[0].loc(.5)
+s[0].del=1
+s[0].dur=1
+s[0].amp=.01
+s[1].loc(.5)
+s[1].del=1
+s[1].dur=.2
+s[1].amp=.02
+objref g
+g = new Graph()
+
+// simulation control
+proc pcur() {
+	for (t=0; t<3; t=t+.1) {
+		fcurrent()
+		print t, s[0].i
+	}
+}
+
+proc prun() {
+	t=0
+	v=0
+	g.size(0,3,0,2.5)
+	g.beginline()
+	while (t < 3) {
+		g.line(t,v)
+		fadvance()
+	}
+	g.flush()
+}
+// run simulation
+pcur()
+prun()
+
+
+
+
+
+

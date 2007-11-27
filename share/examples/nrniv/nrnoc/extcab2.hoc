@@ -1,0 +1,104 @@
+/* test of extracellular cable such that extracellular replaces
+intracellular */
+/* hoc.pascab1 -- steady state infinite passive cable.
+   Test of cable using units of lambda and tau.
+   Compare steady state analytic solution, voltage clamp,
+   and current injection. */
+/* lambda = sqrt(1e4/4 * diam / (Ra * gl)) microns */
+/* tau    =  1e-3 * cm / gl msec */
+
+// physical properties of the cell
+create a
+{access a nseg = 20 }
+
+// graphical interface appearance
+length = 8
+objref g
+g = new Graph()
+g.size(0,length,0,1)
+g.color(0)
+g.color(1)
+proc labelaxis() {
+	g.vfixed
+	g.label(.3,.01, "x (Lambda)")
+	g.label(0, .5, "V")
+	g.label(0,.95,"Steady state voltage as function of distance for infinite cable")
+	g.label("  Compare current injection, voltage clamp, and analytic sol'n.")
+}
+labelaxis()
+
+// simulation control
+proc geometry() { local i
+	L = length
+	diam = 1
+	Ra = 1e7/4
+}
+
+proc membrane() { local i, temp
+	insert pas
+	g_pas = .001
+	e_pas = 0
+	insert extracellular
+	xg=.001
+	xgaxial=(PI*diam^2/4)/Ra * nseg/length * 100 
+	xraxial= Ra/(PI*diam^2/4 *1e-8)*1e-6
+	temp = xgaxial/(PI*diam*length/nseg/2*1e-2)
+	g_pas=1e-9 g_pas(.001)=temp
+	Ra=1
+	xc=1000 cm=0
+}
+
+proc analytic() {local x,y,z
+	g.beginline()
+	z = exp(length) + exp(-length)
+	for (x=0; x<=length; x=x+.1) {
+		y = (exp(length - x) + exp(x - length))/z
+		g.line(x,y)
+	}
+	g.flush()
+}
+
+proc plotvolt() { local x, i
+	g.beginline()
+	for (x) {
+		g.line(x*length, v(x))
+	}
+	g.flush()
+}
+proc run() {
+	geometry() membrane()
+	v = 0
+	t = 0 dt = 1e9
+	g.color(1)
+	g.vfixed(1)
+	g.label(.5,.8,"Analytic")
+	analytic()
+	g.color(2)
+	g.label("voltage clamp")
+	fstim(0) fclamp(1,0) fclamp(0,1e9, 1)
+	fadvance()
+	g.beginline()
+	for (x) g.line((x)*length, vext(x))
+	g.flush()
+	fclamp(0,0)
+	g.color(3)
+	g.label("Current injection")
+	fstim(1) fstim(0, 0, 0, 1e20, PI*1e-5)
+	fadvance()
+	g.beginline()
+	for (x) g.line((x)*length, vext(x))
+	g.flush()
+}
+
+// run simulation
+run()
+
+
+
+
+
+
+
+
+
+

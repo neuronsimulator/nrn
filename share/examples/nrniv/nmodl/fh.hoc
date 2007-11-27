@@ -1,0 +1,107 @@
+/* Frankenhaeuser-Huxley action potential, Fig 1 to Fig 6 */
+
+// Physical properties
+create node
+access node
+{ nseg=1  L=2  diam=8  cm=2
+  insert fh
+  nai=13.74  nao=114.5  ki=120 ko=2.5
+}
+areafac = PI*L*diam/100		/* mamps/cm^2 to namps (units of 1e-6 cm^2) */
+{celsius=20  secondorder=2 dt=.025}
+
+
+// experimental tools
+
+// run parameters
+
+// graphical interface appearance
+variable_domain(&dt,.0001,1)
+objref g
+g = new Graph()
+// simulation control
+proc init() {
+	t = 0
+	forall {
+		v = -70  mhnp_fh(v)
+		if (ismembrane("fh")) {
+			m_fh = inf_fh[0]
+			h_fh = inf_fh[1]
+			n_fh = inf_fh[2]
+			p_fh = inf_fh[3]
+		}
+	}
+	fcurrent()
+}
+
+proc run() { /*arg is tstop*/
+	init()
+	fstim(1) fstim(0, .5, 0, .12, 1*areafac)
+	g.begin()
+	finitialize()
+	while (t <= $1) {
+		g.plot(t+ddt)
+		/*plot(t, v+70)*/
+		fadvance()
+	}
+	g.flush()
+}
+
+proc fig1() {
+	g.erase_all()
+	g.size(0,2,0,100)
+	g.begin()
+	g.addexpr("v+70",2,1)
+	ddt=0 run(2)
+}
+
+proc fig3() {
+	g.erase_all()
+	g.size(0,3,0,1)
+	g.addexpr("m_fh",2,1)
+	g.addexpr("h_fh",3,1)
+	g.addexpr("n_fh",4,1)
+	g.addexpr("p_fh",5,1)
+	ddt=dt/2 run(3)
+}
+
+proc fig6() {
+	g.erase_all
+	printf("currents are inaccurate unless dt < .005. dt now %g\n",dt)
+	printf(" or unless secondorder=2. (secondorder now %d)\n", secondorder)
+	g.size(0,2,-10,5)
+	g.addexpr("ina",2,1)
+	g.addexpr("ik",3,1)
+	g.addexpr("ip_fh",4,1)
+	g.addexpr("il_fh",5,1)
+	ddt=-dt/2 run(2)
+}
+
+f=1
+proc runlast() {
+	g.erase_all()
+	if (f == 1) {
+		fig1()
+	}else if (f == 3) {
+		fig3()
+	}else if (f == 6) {
+		fig6()
+	}
+}
+
+proc menu() {
+	xpanel("Frankenhaeuser-Huxley action potential")
+	xbutton("fig 1", "f=1 fig1()")
+	xbutton("fig 3", "f=3 fig3()")
+	xbutton("fig 6", "f=6 fig6()")
+	xvalue("dt","dt",1,"runlast()")
+	xmenu("secondorder")
+	xradiobutton("0", "secondorder=0 runlast()")
+	xradiobutton("1", "secondorder=1 runlast()")
+	xradiobutton("2", "secondorder=2 runlast()")
+	xmenu()
+	xpanel()
+	
+}
+// run simulation
+menu()

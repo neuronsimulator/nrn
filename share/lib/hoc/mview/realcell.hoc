@@ -1,0 +1,59 @@
+begintemplate ModelViewRealCell
+
+public cellobj, analyse, root, name, mkdisplay
+public disp, sections, ppsappend
+public secanal, ppanal
+external hoc_sf_, nil, lambda_f
+objref this, tobj, tobj1, cellobj, allseclist, mview
+objref disp, ppanal, secanal
+strdef root, name, tstr
+
+proc init() {local i
+	mview = $o1
+	analysed = 0
+	sprint(root, "%s", secname())
+	if (hoc_sf_.head(root, "\\.", name) == -1) {
+			name = root
+	}else{
+		sprint(tstr, "%s.cellobj = %s", this, name)
+		execute(tstr)
+	}
+	allseclist = new SectionList()
+	allseclist.wholetree
+	secanal = new ModelViewSeclistAnalysis(mview, allseclist)
+	ppanal = new ModelViewPPAnalysis(mview)
+}
+
+iterator sections() {
+	forsec allseclist {
+		iterator_statement
+	}
+}
+
+proc ppsappend() {local i
+	ppanal.ppsappend($o1,$2)
+}
+
+proc analyse() {
+	analysed = 1
+	secanal.analyse()
+	ppanal.analyse()
+}
+
+proc mkdisplay() {local i, j, k, n
+	if (cellobj == nil) {
+		sprint(tstr, "root %s", root)
+	}else{
+		sprint(tstr, "%s root %s", cellobj, root)
+	}
+	disp = new TreeViewItem($o1, tstr, secanal, -1)
+
+	if (!analysed) {
+		analyse()
+	}
+
+	secanal.mkdisplay(disp)
+	ppanal.mkdisplay(disp)
+}
+
+endtemplate ModelViewRealCell

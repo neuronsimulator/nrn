@@ -1,0 +1,149 @@
+#ifndef dismiswin_h
+#define dismiswin_h
+
+#include <InterViews/window.h>
+
+#include <InterViews/action.h>
+#include <InterViews/handler.h>
+#include <InterViews/observe.h>
+#include <OS/string.h>
+#include <ivstream.h>
+
+class Menu;
+class MenuItem;
+class OcGlyph;
+class DismissableWindow;
+class TopLevelWindow;
+class OcGlyphContainer;
+class PolyGlyph;
+
+// action for dismissing
+class WinDismiss : public Handler { //dismiss a Window
+public:
+	WinDismiss(DismissableWindow*);
+	virtual ~WinDismiss();
+	virtual void execute();	//this can be replaced
+	virtual boolean event(Event&);
+	static void dismiss_defer();
+protected:
+	DismissableWindow* win_;
+private:
+	static DismissableWindow* win_defer_;
+	static DismissableWindow* win_defer_longer_;
+};
+
+// Can be dismissed by window manager without quitting.
+// The style determines dynamically if this is transient or toplevel
+class DismissableWindow : public TransientWindow {
+public:
+	DismissableWindow(Glyph*, boolean force_menubar = false);
+	virtual ~DismissableWindow();
+	virtual void dismiss();
+	virtual const char* name() const;
+	virtual void name(const char*);
+	virtual void replace_dismiss_action(WinDismiss*);
+	virtual Glyph* glyph() const {return glyph_;}
+	virtual void configure();
+	virtual void set_attributes();
+	MenuItem* append_menubar(const char*);	// return nil if no dismiss menubar
+	
+	static boolean is_transient() { return is_transient_; }
+private:
+	Glyph* glyph_;
+	WinDismiss* wd_;
+	Action* dbutton_;
+	static boolean is_transient_;
+	Menu* menubar_;
+};
+
+
+// If you want to place a screen window onto a piece of paper
+class PrintableWindow : public DismissableWindow , public Observable {
+public:
+	PrintableWindow(OcGlyph*);
+	virtual ~PrintableWindow();
+	virtual void map();
+	virtual void unmap();
+	virtual void hide();
+	virtual boolean receive(const Event&);
+	virtual void reconfigured();
+	// The glyph the user actually wants printed
+	virtual Glyph* print_glyph();
+	// for size of what actually gets printed
+	virtual Coord left_pw() const;
+	virtual Coord bottom_pw() const;
+	virtual Coord width_pw() const;
+	virtual Coord height_pw() const;
+	void type(const char*);
+	const char* type() const;
+	static OcGlyphContainer* intercept(OcGlyphContainer*); // instead of window put in a box
+	virtual void map_notify();
+	virtual void unmap_notify() {};
+	virtual Coord save_left() const;	// offset by window decoration
+	virtual Coord save_bottom() const; // see nrn.defaults
+	int xleft() const;
+	int xtop() const;
+	void xplace(int left, int top); // in x display pixel coords
+	void xmove(int left, int top);
+	void request_on_resize(boolean);
+	static PrintableWindow* leader() { return leader_; }
+	static void leader(PrintableWindow* w) { leader_ = w; }
+protected:
+	virtual void default_geometry();
+private:
+	CopyString type_;
+	static OcGlyphContainer* intercept_;
+	boolean mappable_;
+	boolean xplace_;
+	int xleft_;
+	int xtop_;
+	static PrintableWindow* leader_;
+};
+
+// canvas with hbox and menubar at top and left and right vboxes
+// the main glyph area resizes according to the window size.
+class StandardWindow : public PrintableWindow {
+public:
+    	StandardWindow(
+    	  Glyph* main, Glyph* info=nil, Menu* m=nil, Glyph* l=nil, Glyph* r=nil
+    	);
+	virtual ~StandardWindow();
+	Menu* menubar();
+	Glyph* canvas_glyph();
+	Glyph* info();
+	Glyph* lbox();
+	Glyph* rbox();
+private:
+	Menu* m_;
+	Glyph* can_;
+	Glyph* info_, *l_, *r_;
+};
+
+class PWMImpl;
+class JavaWindow;
+
+class PrintableWindowManager : public Observer {
+public:
+	PrintableWindowManager();
+	virtual ~PrintableWindowManager();
+	void psfilter(const char* filename);
+	void xplace(int, int, boolean map = true);
+	static PrintableWindowManager* current();
+
+	void append(PrintableWindow*);
+	void remove(PrintableWindow*);
+	void reconfigured(PrintableWindow*);
+	void append(JavaWindow*);
+	void remove(JavaWindow*);
+	void reconfigured(JavaWindow*);
+	void doprint();
+
+	virtual void update(Observable*);
+	virtual void disconnect(Observable*);
+public:
+	PWMImpl* pwmi_;
+private:
+	static PrintableWindowManager* current_;
+};
+
+#endif

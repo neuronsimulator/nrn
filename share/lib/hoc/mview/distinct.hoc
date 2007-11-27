@@ -1,0 +1,68 @@
+begintemplate ModelViewDistinctValues
+public ndistinct, dislist, sortx, scaled, pscl, min, max
+objref sortx, scaled
+
+proc init() {
+	scaled = new Vector()
+	sortx = new Vector()
+}
+
+//return number of distinct values
+// computed pscl is the scale factor
+// for comparison (in case values are very close to 0)
+// sortx is the sortindex
+func ndistinct() {local fe, i, j, val, distinct
+	distinct = 1
+	// do not allow the sentinals to affect the scale
+	if ($o1.indwhere("==", -1e50) == -1) {
+		min = $o1.min
+		max = $o1.max
+	}else{
+		scaled.index($o1, scaled.indvwhere($o1, "!=", -1e50))
+		if (scaled.size == 0) { return 0 }// only inhomogeneous
+		min = scaled.min
+		max = scaled.max
+	}
+	pscl = abs(min) + abs(max)
+	fe = float_epsilon
+	float_epsilon = 0
+	if (pscl == 0) { pscl = 1 } // value = 0 case
+	float_epsilon = fe
+	sortx = $o1.sortindex
+	scaled.copy($o1)
+	scaled.div(pscl)
+	j = sortx.x[0]
+	val = scaled.x[j]
+	for i=1, sortx.size-1 {
+		j = sortx.x[i]
+		if (scaled.x[j] != val) {
+			val = scaled.x[j]
+			distinct += 1
+		}
+	}
+	return distinct // not uniform
+}
+
+// assume ndistinct has been called so sortx is the sortindex and scaled
+// are scaled values. This builds a list
+// of vectors of subset indices each of which has constant parm value
+// argument must be a List
+proc dislist() {local i, j, dcnt, val // do not change tstr
+	$o1.remove_all()
+	$o1.append(new Vector())
+	j = sortx.x[0]
+	val = scaled.x[j]
+	dcnt = 0
+	$o1.object(dcnt).append(j)
+	for i=1, sortx.size-1 {
+		j = sortx.x[i]
+		if (scaled.x[j] != val) {
+			val = scaled.x[j]
+			$o1.append(new Vector())
+			dcnt += 1
+		}
+		$o1.object(dcnt).append(j)
+	}
+}
+
+endtemplate ModelViewDistinctValues

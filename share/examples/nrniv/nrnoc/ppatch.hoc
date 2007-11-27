@@ -1,0 +1,30 @@
+// physical properties of the cell
+create a
+{access a nseg=1 L=1 diam=1 insert pas g_pas=1e-3 e_pas=0}
+
+// graphical interface appearance
+objref g
+g = new Graph()
+
+// simulation control
+tstop=3
+
+proc run() {
+	v = 1
+	g.size(0,tstop,0,1)
+	g.beginline()
+	t = 0
+	while (t < tstop) {
+		g.line(t,v(.5))
+		fadvance()
+	}
+	g.flush()
+}
+
+// run simulation
+run()
+
+
+
+
+

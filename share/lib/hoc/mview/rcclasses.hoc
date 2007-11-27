@@ -1,0 +1,34 @@
+begintemplate ModelViewRCClasses
+public list, tname, mkdisplay, rcell
+objref list, disp, rcell, dall, sall, pall, mview
+strdef tname, tstr
+
+proc init() {
+	mview = $o1
+	tname = $s2
+	list = new List(tname)
+	rcell = new List()
+	rcell.append($o3)
+}
+
+proc mkdisplay() {local i
+	sprint(tstr, "%d %s", list.count, tname)
+	disp = new TreeViewItem($o1, tstr)
+	rcell.object(0).mkdisplay(disp)
+	sall = new SectionList()
+	for i=0, rcell.count-1 {
+		for rcell.object(i).sections {
+			sall.append()
+		}
+	}
+	dall = new ModelViewSeclistAnalysis(mview, sall)
+	disp = new TreeViewItem(disp, tname)
+	dall.mkdisplay(disp)
+	pall = new ModelViewPPAnalysis(mview)
+	for i=0, rcell.count-1 {
+		pall.merge(rcell.object(i).ppanal.pps)
+	}
+	pall.mkdisplay(disp)
+}
+
+endtemplate ModelViewRCClasses

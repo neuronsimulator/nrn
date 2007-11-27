@@ -1,0 +1,829 @@
+begintemplate SNList // Like a Section List
+public name, name_, list, differ, name_differ, add, del_all, ml, geo, geobox
+public domainparms, is_subset
+public export, sectionlist
+objref list, this, ml, geo, geobox, domainparms, sectionlist
+strdef name_, tstr
+proc init() {
+	name_ = $s1
+	parm_ = .5
+	list = new List()
+	ml = new List()
+	geo = new List()
+	differ = 0
+	name_differ = 0
+}
+func is_subset() { return 1 }
+proc add() {
+	list.append($o1)
+	$o1.sets.append(this)
+}
+proc del_all() { local i, j
+	for i=0, list.count-1 {
+		j = list.object(i).sets.index(this)
+		list.object(i).sets.remove(j)
+	}
+	list.remove_all()
+}
+proc name() {
+	$s1 = name_
+}
+
+proc export() {local i
+	sprint(tstr, "objref %s", name_)
+//print tstr
+	execute(tstr)
+	sprint(tstr, "%s = new SectionList()", name_)
+//print tstr
+	execute(tstr)
+	if (object_id(domainparms)) {
+		sprint(tstr, "%s.sectionlist = %s", this, name_)
+		execute(tstr)
+	}
+	for i=0, list.count-1 {
+		list.object(i).name(tstr)
+		sprint(tstr, "%s %s.append()", tstr, name_)
+//print tstr
+		execute(tstr)
+	}
+}
+
+endtemplate SNList
+
+// subset domain info display list item is either a subset or a 
+// subset domain info object
+begintemplate SDIDispListItem
+public name, item
+objref item
+proc init() {
+	item = $o1
+}
+proc name() {
+	item.name($s1)
+}
+endtemplate SDIDispListItem
+
+begintemplate SectionSubsets
+public topol, hbox, g, update, snlist, save_data, showsel, bild, pr
+public consist, esub, cexport, dpi, have_domainparm, xmlwrite
+public domain_iter, delsdi, neuroml
+objref g, this, snlist, tobj, tobj1, tobj2, bild, smap, imap
+objref hb1, hb2, vb1, vb2, vb3, dk1, dk2
+objref sdidisplist, nil, dpi
+strdef tstr, tstr1
+proc init() {
+	sdidisp_working_ = 0
+	parspecpage_=0
+	showcel_active = 1
+	esub = 0
+	first = 1
+	i=0
+	sdidisplist = new List()
+	snlist = new List()
+	oldsel = -1
+	bild = $o1
+	snlist.append(bild.all)
+	g = bild.gtopol
+	panel()
+	dk1.map()
+	dk1.flip_to(0)
+}
+
+func have_domainparm() {local i
+	for i = 0, snlist.count-1 {
+		if (object_id(snlist.object(i).domainparms) != 0) {
+			return 1
+		}
+	}
+	return 0
+}
+
+iterator domain_iter() {local i, j
+	for i=0, snlist.count-1 {
+		if (object_id(snlist.object(i).domainparms)) {
+			for j=0, snlist.object(i).domainparms.count-1 {
+				$o1 = snlist.object(i).domainparms.object(j)
+				iterator_statement
+			}
+		}
+	}
+}
+
+proc cexport() {local i
+	esub = $1
+	if (bild.continuous == 0) {
+		esub = 0
+	}
+	if (esub) {
+		for i=0, snlist.count - 1 {
+			snlist.object(i).export()
+		}
+	}
+}
+
+proc consist() {
+	for i=0, snlist.count-1 {
+		tobj = snlist.object(i).list
+		tobj.remove_all()
+	}
+	for i=0, bild.topol.slist.count-1 {
+		tobj = bild.topol.slist.object(i)
+		for j=0, tobj.sets.count-1 {
+			tobj.sets.object(j).list.append(tobj)
+		}
+	}
+}
+proc update() {local i, j
+	showsel_active = 1
+	consist()
+	bild.topol.sel_all(0)
+	snlist.select(oldsel)
+	if (snlist.count > 0 && snlist.selected < 0) {
+		snlist.select(0)
+	}
+	showsel1(snlist.selected)
+	bild.topol.draw(g)
+	name_differ()
+	if (first) {
+		first = 0
+	}
+	g.exec_menu("Crosshair")
+	subselpage(parspecpage_)
+	cexport(esub)
+}
+
+proc hints() {
+	if (parspecpage_ == 0) {
+xpanel("CellBuild Subsets hints")
+xlabel("Usage Hints:")
+xlabel("FIRST make a selection in the left Graph subwindow THEN press an action!")
+xlabel("  That is, start by selecting some sections and then pressing")
+xlabel("  the \"New SectionList\" button")
+xlabel("")
+xlabel("If the selection in this panel differs from the selected subset in the")
+xlabel("  middle panel, that fact is indicated next to the subset name")
+xlabel("")
+xlabel("In the Graph panel:")
+xlabel("  Add to selection by dragging mouse.")
+xlabel("  Add to selection by holding down shift key while pressing mouse.")
+xlabel("  Mouse press selects nearest section, not nearest name.")
+xlabel("")
+xlabel("If a section occurs in more than one section list then")
+xlabel("  the order of the list of section lists matters! They should")
+xlabel("  generally be ordered from general to specific. This determines")
+xlabel("  the order of execution of the Geometry and Membrane specification.")
+xlabel("")
+xlabel("Biophysical parameters will later be specified as constants over a subset.")
+xlabel("  Note: SubsetDomainIterators can be declared over the subset to allow")
+xlabel("  inhomogenous parameters. (See \"Hints\" in  \"Parameterized Domain Page\".)")
+xlabel("")
+xpanel(0)
+	}else{
+xpanel("CellBuild Parameterized Domain Subsets hints")
+xlabel("A \"new SubsetDomainIterator(subset)\" helps specify inhomogeneous")
+xlabel("\"Biophysics\" parameters by specifying a position function, p,")
+xlabel("which essentially carries out the idiom:")
+xlabel("    forsec subset for (x, 0) { rangevar_suffix(x) = f(p(x)) }")
+xlabel("(f will be specified in the \"Biophysics\" page).")
+xlabel("The default position function is arc path distance from the")
+		bild.topol.slist.object(0).name(tstr)
+sprint(tstr, "root section which presently has the name, \"%s\".", tstr)
+xlabel(tstr)
+xlabel("")
+xlabel("Note: For efficiency and flexibility the implementation of the")
+xlabel("  position function is enclosed in a class with an iterator")
+xlabel("  so that the domain iteration idiom is actually:")
+xlabel("     for subset_x.loop(&x, &p) { rangevar_suffix(x) = f(p) }")
+xlabel("  where: subset_x = new SubsetDomainIterator(subset)")
+xlabel("  After the cell has been created this domain iterator may be used")
+xlabel("  with any user defined body, e.g:")
+xlabel("     for subset_x.loop() {")
+xlabel("        printf(\"%s x=%g p=%g\\n\", secname(), subset_x.x, subset_x.p)")
+xlabel("     }")
+xlabel("")
+//xbutton("More Hints", "hints3()")
+xpanel(0)
+	}
+}
+
+proc hints3() {
+xpanel("CellBuild Parameterized Domain Type hints")
+xlabel("")
+xlabel("")
+xlabel("")
+xlabel("")
+xlabel("")
+xlabel("")
+xlabel("")
+xlabel("")
+xlabel("")
+xlabel("")
+xpanel(0)
+}
+
+proc panel() {
+	dk1 = new Deck()
+	dk1.intercept(1)
+
+	hb1 = new HBox(3)
+	hb1.intercept(1)
+
+	vb1 = new VBox(3)
+	vb1.intercept(1)
+	snlist.browser("",tstr, "list_label(hoc_ac_)")
+	snlist.select_action("showsel1(hoc_ac_)")
+	snlist.accept_action("showsel1(hoc_ac_)")
+	xpanel("")
+	xbutton("Hints", "hints()")
+	xpanel()
+	vb1.intercept(0)
+	vb1.map()
+	
+	xpanel("")
+	xlabel("First, select,")
+	xmenu("Select")  
+		xbutton("All", "sel_all(1)")
+		xbutton("None", "sel_all(0)")   
+		xbutton("Xor", "sel_xor(1)")  
+		xmenu("Union", "op_menu(1)")
+		xmenu("Intersection", "op_menu(2)")
+		xmenu("Subtract", "op_menu(3)")
+	xmenu()
+	g.menu_tool("Select One", "sel1")
+	g.menu_tool("Select Subtree", "sel2")
+	g.menu_tool("Select Basename", "sel3")
+	xlabel("then, act.")
+	xbutton("New SectionList", "newslist()")
+	xbutton("Selection->SecList", "sel2slist()")
+	xbutton("Delete SecList", "delslist() oldsel = -1")
+	xbutton("Change Name", "chslist()")
+	xbutton("Move up", "move(-1)")
+	xbutton("Move down", "move(1)")
+	xbutton("Parameterized Domain Page", "subselpage(1)")
+	xpanel()
+	hb1.intercept(0)
+	hb1.map()
+
+	hb2 = new HBox(3)
+	hb2.intercept(1)
+
+	vb2 = new VBox(3)
+	vb2.intercept(1)
+	sdidisplist.browser("",tstr, "sdidisplist_label(hoc_ac_)")
+	sdidisplist.select_action("sdidispsel1(hoc_ac_)")
+	sdidisplist.accept_action("sdidispsel1(hoc_ac_)")
+	xpanel("")
+	xbutton("Hints", "hints()")
+	xpanel()
+	vb2.intercept(0)
+	vb2.map()
+	
+	vb3 = new VBox(3)
+	vb3.intercept(1)
+	xpanel("")
+	xlabel("Parameterized Domain Specification")
+	xbutton("Return to Subset Selection Page", "subselpage(0)")
+	xpanel()
+	dk2 = new Deck()
+	dk2.intercept(1)
+	xpanel("")
+	xbutton("Create a SubsetDomainIterator", "newsdi()")
+	xpanel()
+	xpanel("")
+	xlabel("this is temporary")
+	xpanel()
+	dk2.intercept(0)
+	dk2.map()
+	vb3.intercept(0)
+	vb3.map()
+
+	hb2.intercept(0)
+	hb2.map()
+	dk1.intercept(0)
+}
+
+proc subselpage() {local i, j, i1, i2
+	parspecpage_ = $1
+	if ($1 == 1) {
+		g.exec_menu("Crosshair")
+		i1 = snlist.selected
+		dk1.flip_to($1)
+		doNotify()
+		i2 = -1
+		sdidisplist.remove_all()
+		for i=0, snlist.count-1 {
+			tobj = snlist.object(i)
+			sdidisplist.append(new SDIDispListItem(tobj))
+			if (object_id(tobj.domainparms)) for j=0, tobj.domainparms.count-1 {
+				sdidisplist.append(new SDIDispListItem(tobj.domainparms.object(j)))
+			}
+			if (i1 == i) {
+				i2 = sdidisplist.count-1
+			}
+		}
+		sdidisplist.select(i2)
+		if (i2 >= 0) {
+			dpi = sdidisplist.object(i2).item
+			if (dpi.is_subset) {
+				dk2.flip_to(0)
+				g.exec_menu("Crosshair")
+				dpi = nil
+			}else{
+				dpi.flip(dk2)
+				dpi.selih = nil
+			}
+		}else{
+			dk2.flip_to(-1)
+			g.exec_menu("Crosshair")
+		}
+	}else{
+		dk1.flip_to($1)
+		g.exec_menu("Crosshair")
+	}
+}
+
+proc op_menu() {local i
+	for i=0, snlist.count-1 {
+		sprint(tstr, "opsel(%d, %d)", $1, i)
+		xbutton(snlist.object(i).name_, tstr)
+	}
+}
+
+proc opsel() {local i
+	tobj = snlist.object($2)
+	for i=0, tobj.list.count-1 {
+		tobj1 = tobj.list.object(i)
+		if ($1 == 1) { //union
+			tobj1.selected = 1
+		}else if ($1 == 2) { // intersection
+			tobj1.selected += 1 // and look for the 2's below
+		}else if ($1 == 3) { // difference
+			tobj1.selected = 0
+		}
+	}
+	if ($1 == 2) { // finish up the intersection
+		tobj = bild.topol.slist
+		for i=0, tobj.count-1 {
+			tobj1 = tobj.object(i)
+			if (tobj1.selected == 2) {
+				tobj1.selected = 1
+			}else{
+				tobj1.selected = 0
+			}
+		}
+	}
+	bild.topol.draw(g)
+	differs(snlist.selected)
+}
+
+proc move() {local i, j
+	i = snlist.selected()
+	bild.changed_ = 1
+	bild.geom_cnt_ += 1
+	if (i > -1) {
+		j = i + $1
+		if (j > -1 && j < snlist.count) {
+			tobj1 = snlist.object(i)
+			snlist.select(-1)
+			snlist.remove(i)
+			snlist.insrt(j,tobj1)
+			snlist.select(j)
+			oldsel = -1
+			showsel1(j, g)
+		}
+	}
+}
+
+proc list_label() {local i
+	i = $1
+	if (snlist.object(i).name_differ) {
+		sprint(tstr, "%s differs from selection", snlist.object(i).name_)
+	}else{
+		if (object_id(snlist.object(i).domainparms)) {
+			sprint(tstr, "%s  (parameterized)", snlist.object(i).name_)
+		}else{
+			sprint(tstr, "%s", snlist.object(i).name_)
+		}
+	}
+}
+
+proc sdidisplist_label() {local i
+	i = $1
+	sdidisplist.object(i).name(tstr)
+	if (sdidisplist.object(i).item.is_subset() == 0) {
+		sprint(tstr, "   %s", tstr)
+	}
+}
+
+proc sdidispsel1() {local i
+	if (sdidisp_working_) { return }
+	sdidisp_working_ = 1
+	if ($1 >= 0) {
+		tobj = sdidisplist.object($1).item
+		if (tobj.is_subset()) {
+			i = snlist.index(tobj)
+			dk2.flip_to(0)
+			g.exec_menu("Crosshair")
+			showsel1(i)
+		}else{
+			dpi = tobj
+			i = snlist.index(tobj.subset)
+			showsel1(i)
+			dpi.flip(dk2)
+			dpi.selih = nil
+		}
+	}
+	sdidisp_working_ = 0
+}
+
+proc add_domainparm() {local i
+	i = snlist.index($o1)
+	if (object_id($o1.domainparms) == 0) {
+		$o1.domainparms = new List()
+	}
+	$o2 = new DomainParmInfo($o1, bild)
+	$o1.domainparms.append($o2)
+	tobj2 = $o1
+	snlist.remove(i)
+	$o1 = tobj2
+	snlist.insrt(i, $o1)
+}
+
+proc newsdi() {local i
+	i = sdidisplist.selected
+	if (i >= 0) {
+		tobj = sdidisplist.object(i).item
+		add_domainparm(tobj, tobj1)
+		sdidisplist.insrt(i+tobj.domainparms.count, new SDIDispListItem(tobj1))
+		sdidisplist.select(-1)
+		sdidisplist.select(i)
+		showsel1(snlist.index(tobj))
+	}
+}
+proc delsdi() {local i, iss
+	i = sdidisplist.selected
+	if (i >= 0) {
+		tobj1 = sdidisplist.object(i).item
+		sdidisplist.remove(i)
+		tobj2 = tobj1.subset
+		iss = snlist.index(tobj2)
+		tobj2.domainparms.remove(tobj2.domainparms.index(tobj1))
+		if (tobj2.domainparms.count == 0) {
+			tobj2.domainparms= nil
+			snlist.remove(iss)
+			snlist.insrt(iss, tobj2)
+		}
+		subselpage(0)
+	}
+}
+
+proc showsel1() {
+	if (showcel_active) showsel($1, g)
+}
+proc showsel() { local i
+	bild.topol.sel_all(0)
+	if ($1 > -1) {
+		tobj = snlist.object($1).list
+		for i=0, tobj.count - 1 {
+			tobj.object(i).selected = 1
+		}
+	}
+	bild.topol.draw($o2)
+	differs($1)
+	oldsel = $1
+}
+
+proc sel1() {
+	bild.topol.sel1($1,$2,$3,$4)
+	bild.topol.draw(g)
+	differs(snlist.selected)
+}
+proc sel2() {
+	bild.topol.sel2($1,$2,$3,$4)
+	bild.topol.draw(g)
+	differs(snlist.selected)
+}
+
+proc sel3() {local i, dmin, imin, d, x
+	if ($1 == 2) {
+		bild.topol.sel3($1,$2,$3,$4)
+		bild.topol.draw(g)
+		differs(snlist.selected)
+	}
+}
+
+proc sel_all() {
+	bild.topol.sel_all($1)
+	bild.topol.draw(g)
+	differs(snlist.selected)
+}
+
+proc sel_xor() {
+	bild.topol.sel_xor($1)
+	bild.topol.draw(g)
+	differs(snlist.selected)
+}
+
+func get_subname() {local in
+	if (string_dialog($s1, $s2) == 0) {
+		return 0
+	}
+	if (bild.topol.checkname($s2, bild.topol.slist, "Section", 1) == 0) {
+		return 0
+	}
+	i = name_declared($s2)
+	if (i != 0 && i != 2) {
+		sprint($s2, "%s is already declared and is not an objref", $s2)
+		continue_dialog($s2)
+		return 0
+	}
+	return 1
+}
+
+proc newslist() {local i
+	bild.changed_ = 1
+	tstr = ""
+	i = snlist.selected()
+	if (i >= 0) {
+		tstr = snlist.object(i).name_
+	}
+	if (get_subname("New SectionList name", tstr) == 0) {
+		return
+	}
+	for i=0, snlist.count-1 {
+		if (strcmp(tstr, snlist.object(i).name_) == 0) {
+			sprint(tstr, "%s is already a SectionList name", tstr)
+			continue_dialog(tstr)
+			return
+		}
+	}			
+	snlist.append(new SNList(tstr))
+	snlist.select(snlist.count-1)
+	name_differ()
+	oldsel = snlist.count-1
+	sel2slist()
+}
+
+proc chslist() { local i, j
+	bild.changed_ = 1
+	i = snlist.selected()
+	if (i >= 0) {
+		tstr = snlist.object(i).name_
+		
+		if (get_subname("Change SectionList name to", tstr) == 0) {
+			return
+		}
+
+		for j=0, snlist.count-1 {
+			if (i != j && strcmp(tstr, snlist.object(j).name_) == 0) {
+				sprint(tstr, "%s is already a SectionList name", tstr)
+				continue_dialog(tstr)
+				return
+			}
+		}
+		tobj1 = snlist.object(i)
+		if (esub) {
+			sprint(tstr1, "objref %s", tobj1.name_)
+//print tstr1
+			execute(tstr1)
+			bild.mech_export()
+		}
+		tobj1.name_ = tstr
+		snlist.select(-1)
+		snlist.remove(i)
+		snlist.insrt(i, tobj1)
+		snlist.select(i)
+		showsel1(i)
+//		name_differ()
+//		sel2slist()
+	}
+}
+
+proc delslist() {local i
+	bild.changed_ = 1
+	bild.geom_cnt_ += 1
+	i = snlist.selected()
+	if (i >= 0) {
+		snlist.object(i).del_all()
+		if (esub) {
+			sprint(tstr1, "objref %s", snlist.object(i).name_)
+//print tstr1
+			execute(tstr1)
+			bild.mech_export()
+		}
+		snlist.select(-1)
+		snlist.remove(i)
+		bild.topol.sel_all(0)
+	}
+}
+
+proc sel2slist() {local i, j
+	bild.changed_ = 1
+	bild.geom_cnt_ += 1
+	i = snlist.selected
+	if (i >= 0) {
+		tobj = snlist.object(i)
+		tobj.del_all()
+		for j=0, bild.topol.slist.count-1 {
+			tobj1 = bild.topol.slist.object(j)
+			if (tobj1.selected) {
+				tobj.add(tobj1)
+			}
+		}
+		if (esub) {tobj.export() bild.mech_export()}
+	}
+	differs(snlist.selected)
+}
+
+proc differs() {local i, j, k, b
+	i = $1
+	b = 1
+	if (i >= 0) {
+		tobj = snlist.object(i).list
+		k = 0
+		for j = 0, tobj.count-1 {
+			if (tobj.object(j).selected) {
+				tobj.object(j).selected += 1
+			}else{
+				b = 0
+			}
+		}
+		tobj = bild.topol.slist
+		for j=0, tobj.count-1 {
+			k = tobj.object(j).selected
+			if (k == 1) {
+				b = 0
+			}else if (k == 2) {
+				tobj.object(j).selected = 1
+			}
+		}
+		snlist.object(i).differ = (b == 0)
+		snlist.select(i)
+	}
+	name_differ()
+}
+proc name_differ() {local i, j
+	j = snlist.selected
+	for i=0, snlist.count-1 {
+		tobj = snlist.object(i)
+		if (i != j) {
+			tobj.differ = 0
+		}
+//printf("differ=%d name_differ=%d\n", tobj.differ, tobj.name_differ)
+		if (tobj.differ != tobj.name_differ) {
+			tobj.name_differ = tobj.differ
+			showcel_active = 0
+			snlist.remove(i)
+			snlist.insrt(i, tobj)
+			snlist.select(j)
+			showcel_active = 1
+		}
+	}
+}
+
+proc save_data() {local i, j
+	update()
+	sprint(tstr, "}\n{object_push(%s)}\n{first = 0}", $s2)
+	$o1.save(tstr)
+	for i=0,bild.topol.slist.count-1 {
+		bild.topol.slist.object(i).selected = i
+	}	
+	for i=0, snlist.count-1 {
+		tobj = snlist.object(i)
+	    if (tobj != bild.all) {
+		sprint(tstr, "{tobj = new SNList(\"%s\") snlist.append(tobj)}",tobj.name_)
+		$o1.save(tstr)
+		tobj = tobj.list
+		sprint(tstr, "for i=0,%d tobj.add(bild.topol.slist.object(fscan()))",tobj.count-1)
+		$o1.save(tstr)
+		for j=0,tobj.count-1 {
+			sprint(tstr, "%d", tobj.object(j).selected)
+			$o1.save(tstr)
+		}
+		tobj = snlist.object(i)
+	    }else{
+		sprint(tstr, "{ tobj = snlist.object(%d)}", i)
+		$o1.save(tstr)
+	    }
+		if (tobj.domainparms != nil) {
+			for j=0, tobj.domainparms.count-1 {
+				$o1.save("add_domainparm(tobj, tobj1)")
+				tobj.domainparms.object(j).save_data($o1, "tobj1")
+			}
+		}
+	}
+	$o1.save("{consist()}\n{object_pop()}\n{")
+}
+
+proc neuroml() {local i, j  localobj s, sl, snl, cbs, cg
+	s = new String()
+	sl = bild.topol.slist
+	for i = 0, $o1.cablegroups_.__len__() - 1 {
+		cg = $o1.cablegroups_[i]
+		if (strcmp(cg.name_, "all") == 0) { continue }
+		snl = new SNList(cg.name_)
+		snlist.append(snl)
+		for j=0, cg.cable_indices_.__len__() - 1 {
+			cbs = sl.object(cg.cable_indices_[j])
+			snl.add(cbs)
+		}
+	}	
+}
+
+proc pr() {local i, j
+	update()
+	prdec($o1, "")
+	$o1.printf("\nproc subsets() { local i")
+	prdec($o1,"  ")
+	$o1.printf("\n")
+	for i = 0, snlist.count - 1 {
+		tobj = snlist.object(i)
+		$o1.printf("  %s = new SectionList()\n", tobj.name_)
+		pr_subset($o1, tobj)
+		$o1.printf("\n")
+	}
+	$o1.printf("}\n")
+}
+
+proc prdec() {
+	for i = 0, snlist.count - 1 {
+		if (i%7 == 0) {
+			$o1.printf("\n%sobjref %s", $s2, snlist.object(i).name_)
+		}else{
+			$o1.printf(", %s", snlist.object(i).name_)
+		}
+	}
+}
+
+proc pr_subset() { local i, j, ni1, ni2, id1, id2
+	// To be a bit more compact in expressing
+	// the SectionList in hoc, we use for loops for contiguous indices.
+	// args are File and SNList
+	// topol.validname() has already been called and so
+	// topol.unique_name is a Vector
+	// that contains the object indices of the names with largest id.
+	// This vector thus gives us our order for the unique names.
+	// Furthermore the unique_name_index field of each section object
+	// gives the index into the unique_name Vector.
+
+	// construct Vector index map for subset of form
+	// uniquenameindex*1e6 + arayindex
+	imap = new Vector($o2.list.count)
+	for i=0, imap.size-1 {
+		tobj1 = $o2.list.object(i)
+		imap.x[i] = tobj1.unique_name_index*1e6 + tobj1.id
+	}
+	// index vector sort gives us easily findable contiguous sets of
+	// indices
+	smap = imap.sortindex()
+	for i=0, smap.size-1 {
+		j = imap.x[smap.x[i]]
+		ni1 = int(j/1e6)
+		id1 = j - ni1*1e6
+		id2 = id1
+		for i = i+1, smap.size-1 {
+			j = imap.x[smap.x[i]]
+			ni2 = int(j/1e6)
+			if ( ni2 > ni1 || id2 != j - ni2*1e6 - 1) {
+				break
+			}
+			id2 = j - ni2*1e6
+		}
+		i = i-1
+		tobj1 = bild.topol.slist.object(bild.topol.unique_name.x[ni1])
+		if (id2 > id1) {
+			$o1.printf("    for i=%d, %d %s[i] %s.append()\n",\
+				id1, id2, tobj1.name_, $o2.name_)
+		}else if (id1 > 0){
+			$o1.printf("    %s[%d] %s.append()\n",\
+				tobj1.name_, id1, $o2.name_)
+		}else{
+			$o1.printf("    %s %s.append()\n",\
+				tobj1.name_, $o2.name_)
+		}
+	}
+}
+
+proc xmlwrite() {local i, j
+	update()
+	$o1.printf("  <SetOfFeatures>\n")
+	for i = 0, snlist.count - 1 {
+		tobj = snlist.object(i)
+		$o1.printf("    <Path name=\"%s\">\n", tobj.name_)
+		$o1.printf("      <SetOfSegments>\n")
+		xmlwrite_subset($o1, tobj)
+		$o1.printf("      </SetOfSegments>\n")
+		$o1.printf("    </Path>\n")
+	}
+	$o1.printf("  </SetOfFeatures>\n")
+}
+
+proc xmlwrite_subset() { local i
+	for i=0, $o2.list.count-1 {
+		tobj1 = $o2.list.object(i)
+		$o1.printf("        <Segment id=\"%d\"/>\n", tobj1.id_)
+	}
+}
+
+endtemplate SectionSubsets
+

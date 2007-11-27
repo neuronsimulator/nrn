@@ -1,0 +1,62 @@
+Building linux with rtai
+see http://www.fdn.fr/~brouchou/rtai/rtai-doc-prj/installation-guide.html
+also extremely helpful, especially for the initial transformation of
+neuron was: http://people.mech.kuleuven.be/~psoetens/portingtolxrt.html
+
+using
+rtai-3.2
+linux-2.6.10
+patched with rtai-3.2/base/arch/i386/patches/hal-linux-2.6.10-i386-r9.patch
+
+cp /boot/config-2.6.12-1.1372_FC3 .config
+make oldconfig #accept default for everything
+make gconfig
+General setup
+	LOCALVERSION -adeos
+Loadable module support
+	Enable loadable module support
+	`	MODVERSIONS N
+Power management options
+	Power Management support PM (I left it on but ...)
+Processor type and features
+	REGPARM N (Y prevents testsuites/user tests from working)
+
+make
+su
+make modules_install
+make install
+
+I've been uninstalling my failures by removing /boot/*2.6.10*
+/lib/modules/2.6.10*
+and editing /boot/grub/grub.conf
+
+I'm not quite sure, but after the linux config is built and even before
+building, installing, and rebooting, I think it might be a good idea
+to configure rtai-3.2
+I created $HOME/rtlinux/rtaibuild and did
+make -f ../rtai-3.2/makefile srctree=../rtai-3.2 gconfig
+General
+	Installation directory /home/hines/rtlinux/realtime
+	Linux source tree /home/hines/rtlinux/linux-2.6.10
+    Machine
+	Number of CPUs 1 (my guess, I am not sure)
+      IPC support
+	I turned on Yes for Semaphores, Message, and Mailboxes.
+	I'm not sure if that was necessary, but I do not know what
+	M (Maybe?) means
+at any rate, after that, configure succeeded.
+
+Also it is not clear to me that it is necessary to reboot linux before
+building rtai but I generally have rebooted first and then in rtaibuild
+make
+su
+make install
+
+moved the realtime/lib files out of the way except for liblxrt.a to avoid
+some link warnings.
+
+One then tests with
+
+copy a tests .runinfo and run to a test directory and modify the
+.runinfo to read
+latency:lxrt+sem+mbx+msg:/home/hines/neuron/nrnrt/i686/bin/nrngui -realtime hhap.hoc

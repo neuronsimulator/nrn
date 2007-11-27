@@ -1,0 +1,25 @@
+/* how to use a POINTER in a Continuous mechanism */
+
+create a,b
+forall { nseg=10 insert t2}
+
+a.r_t2(0:1) = 10:19
+b.r_t2(0:1) = 40:49
+
+a for(x) if (x!=0 && x!=1) setpointer p_t2(x), b.r_t2(x)
+b for(x) if (x!=0 && x!=1) setpointer p_t2(x), a.r_t2(x)
+
+strdef sname
+
+proc pr() {
+	sectionname(sname)
+	for (x) if (x!=0 && x != 1) {
+		printf("%s   x=%g   r=%g   p=%g", sname, x,  r_t2(x), p_t2(x))
+		setdata_t2(x)
+		printf("   f()=%g\n", f_t2())
+	}
+	printf("\n")
+}
+
+a pr()
+b pr()

@@ -1,0 +1,42 @@
+objref pc
+pc = new ParallelContext()
+
+objref vec
+vec = new Vector(1000)
+index=0
+
+proc do() {local i, x
+	pc.take("task", &index, vec)
+print "index=", index
+	for i=1,100000 hoc_cross_x_ = i
+	pc.post("done", index, vec.add(vec))
+}
+
+strdef s
+s = "do()\n"
+
+proc submit() {
+	vec.fill($1)
+	pc.post("task", $1, vec)
+	pc.submit(s)
+}
+
+pc.runworker()
+
+
+for i=1,10 {
+	submit(i)
+}
+
+while (pc.working()) {
+	pc.take("done", &index, vec)
+	print index, vec.sum
+	if (i < 100) {
+		submit(i)
+		i += 1
+	}
+}
+
+pc.done()
+quit()
+

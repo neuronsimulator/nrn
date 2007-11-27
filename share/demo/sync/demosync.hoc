@@ -1,0 +1,31 @@
+tstopold = tstop
+cvactive = cvode_active()
+
+{
+load_file("init.hoc")
+load_file(1, "start.ses")
+}
+
+proc destroy() {local i
+	sp.unmap()
+	doNotify()
+	sp = nil
+	netcon = nil
+	nclist.remove_all()
+	cells.remove_all()
+	cvode_active(cvactive)
+	tstop = tstopold
+	tstop_changed()
+	for i=0, PWManager[0].count-1 {
+		if (strcmp(PWManager[0].name(i), "Synchronizing network parameters") == 0) {
+			PWManager[0].close(i)
+			break
+		}
+	}
+}
+
+tstop = 500
+tstop_changed()
+{cvode_active(1)}
+
+recreate(ncell)

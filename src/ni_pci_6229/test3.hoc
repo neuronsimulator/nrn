@@ -1,0 +1,10 @@
+doNotify()
+
+objref nda
+nda = new NrnDAQ()
+nda.ao_setup()
+xpanel("control")
+xbutton("start", "nda.ao_start()")
+xbutton("stop", "nda.ao_stop()")
+xpanel()
+

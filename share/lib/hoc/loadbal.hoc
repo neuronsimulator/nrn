@@ -1,0 +1,830 @@
+{load_file("stdgui.hoc")}
+if (name_declared("pc") != 2) { execute("~objref pc\n") }
+// utility to help compute computational complexity of a cell
+// and determine best split locations
+begintemplate LoadBalance
+public cell_complexity, subtree_complexity, secref, resolutions
+public ExperimentalMechComplex, distrib, multisplit, read_load_balance_info, cpu_complexity
+public sec_complex_, roots_complex_, cell_complexity_, m_complex_, cplx
+public srlist, backbone_cx_, mt, compute_roots, parent_vec_
+public host, gid, splitx, spliti, splitb, unsplitx, splitbit
+external hoc_obj_, hoc_sf_, pc, cvode
+objref srlist, sec_complex_, roots_complex_, parent_vec_, save_capac_
+objref mt[2], m_complex_[2], cplx, this
+strdef mname
+// temporaries for distrib
+objref cvec, splitxlist, splitixlist, cpu, splitcplx, splitindex, allocated, sorted, sp, si
+objref splitbrlist, splitbres, sb
+objref gid, splitx, spliti, splitb, host
+objref unsplitx
+
+
+proc init() {local i, j  localobj ms
+	backbone_cx_ = .6 // extra complexity due to backbone segments
+	splitbit = 2^28
+	sec_complex_ = new Vector()
+	roots_complex_ = new Vector()
+	parent_vec_ = new Vector()
+	for j=0, 1 {
+		mt[j] = new MechanismType(j)
+		m_complex_[j] = new Vector(mt[j].count)
+		for i=0, mt[j].count-1 {
+			mt[j].select(i)
+			mt[j].selected(mname)
+			ms = new MechanismStandard(mname, 3)
+			m_complex_[j].x[i] = 1 + ms.count
+//			printf("complexity %d for %s\n", m_complex_[j].x[i], mname)
+		}
+	}
+}
+
+iterator sections() {local i
+	for i=0, srlist.count-1 srlist.object(i).sec {
+		$&1 = i
+		iterator_statement
+	}
+}
+// complexity of currently accessed section
+func sec_complexity() {local c, i  localobj pp
+	c = 1
+	for i=2, mt[0].count-1 { // skip morphology and capacitance
+		mt[0].select(i)
+		mt[0].selected(mname)
+		if (ismembrane(mname)) {
+			c += m_complex_[0].x[i]
+		}
+	}
+	c *= nseg
+	for i=0, mt[1].count-1 {
+		mt[1].select(i)
+		for (pp = mt[1].pp_begin; object_id(pp); pp = mt[1].pp_next) {
+			c += m_complex_[1].x[i]
+		}
+	}
+	return c
+}
+
+// complexity of entire cell containing currently accessed section
+// or, if there is an arg, the complexity of the cell object.
+// keep the individual section complexities in a parallel vector
+// for split analysis
+func cell_complexity() {local x, i, c  localobj sl, sr
+	sl = new SectionList()
+	if (numarg() == 1) {
+		if (!execute1("{all}", $o1, 0)) {
+			srlist = new List()
+			sec_complex_.resize(0)
+			return 0
+		}
+		forsec $o1.all {
+			if (object_id(sr) == 0) {
+				sr = new SectionRef()
+			}
+		}
+		sr.sec { sl.wholetree() }
+	}else{
+		sl.wholetree() // note this is root to leaf order
+	}
+	return cplx_helper(sl)
+}
+func cpu_complexity() { localobj s
+	s = new String()
+	srlist = new SectionList()
+	sprint(s.s, "forall %s.srlist.append()", this)
+	execute(s.s)
+	return cplx_helper(srlist)
+}
+func cplx_helper() {local x, i, c  localobj sl
+	sl = $o1
+	srlist = new List()
+	forsec sl { srlist.append(new SectionRef()) }
+	sec_complex_.resize(srlist.count)
+	c = 0
+	for sections(&i) {
+		x = sec_complexity()	
+		sec_complex_.x[i] = x
+		c += x
+	}
+	cell_complexity_ = c
+	return c
+}
+
+proc compute_roots() {local i
+	// construct a trueparent index vector
+	save_capac()
+	for sections(&i) { cm(.0001) = i }
+	parent_vec_.resize(srlist.count)
+	for i=0, srlist.count-1 {
+		if (srlist.object(i).has_trueparent) {
+			srlist.object(i).trueparent {parent_vec_.x[i] = cm(.0001)}
+		}else if (srlist.object(i).has_parent) {
+			srlist.object(i).parent {parent_vec_.x[i] = cm(.0001)}
+		}else{
+			parent_vec_.x[i] = -1
+		}		
+	}
+	restore_capac()
+
+	// accumulate the subtree complexities
+	roots_complex_.copy(sec_complex_)
+	for (i = srlist.count-1; i > 0; i -= 1) {
+		if (parent_vec_.x[i] >= 0) {
+			roots_complex_.x[parent_vec_.x[i]] += roots_complex_.x[i]
+		}
+	}
+}
+
+// returns the index of the complexity that is closest to the desired
+// complexity (argument 1) but less than
+// or equal to the upper bound complexity (argument 2)
+// Note if scalar reference arg3 returns as 0 then the subtree
+// rooted at that section index is the one referred to. If 1, then
+// subtree rerooted at the parent is the on referred to.
+func subtree_complexity() {local i, j, k, min
+	compute_roots()
+	min = 1e9
+	for i = 0, srlist.count-1 {
+		c = roots_complex_.x[i]
+		if (c < $2 && abs(c - $1) < min) {
+			j = i  k = 0  min = abs(c - $1)
+		}
+		c = cell_complexity_ - c
+		if (c < $2 && abs(c - $1) < min) {
+			j = i  k = 1  min = abs(c - $1)
+		}
+	}
+	$&3 = k
+	return j
+}
+
+//returns the SectionRef of the section associated with index (arg1)
+obfunc secref() {
+	return srlist.object($1)
+}
+
+//returns a vector with the distinct possible resolutions
+//the indices of these resolutions are returned as a new parallel vector in $o1
+// and the branch set index as a vector in $o2.
+// note that at a branch point where n sections connect together
+// with m different complexities,
+// there are n!/(n - m)! - 1 potentially distinct complexity resolutions.
+// For complicated trees, e.g. 3d reconstructions, most often n = 3 and
+// so there are generally 5 resolutions available. The TCR Traub
+// cell has 10 subtrees each of weight 418 connected to a soma/axon
+// subtree of weight 4306 - 10*418 = 126 so there would be
+// 11*10 - 1 possible resolutions at the 1 end of the soma.
+
+obfunc resolutions() {local i, j, ibegin, pbegin, c, oldres \
+    localobj si, res, v1, v2, bres, corder
+	compute_roots()
+
+	v1 = new Vector()
+	v2 = new Vector()
+	res = new Vector()
+	bres = new Vector()
+	corder = new Vector()
+	if (srlist.count == 0) {
+		$o1 = v2
+		$o2 = bres
+		return v1
+	}
+
+	si = parent_vec_.sortindex
+	ibegin = 0
+	pbegin = parent_vec_.x[si.x[ibegin]]
+
+	for i=0, si.size-1 {
+		if (parent_vec_.x[si.x[i]] == pbegin) {continue}
+	    if (parent_vec_.x[si.x[ibegin]] >= 0) { // do not allow split at root
+		n = i - ibegin
+		res.resize(n)
+		corder.resize(n)
+		// child resolutions of the pbegin index
+		for j=0, n-1 {
+			res.x[j] = roots_complex_.x[si.x[j + ibegin]]
+			corder.x[j] = si.x[j + ibegin]
+		}
+		// want the res to be in child order
+		corder = corder.sortindex
+		res.index(res, corder)
+		// the parent tree is implicit with respect to the
+		// remainder
+
+		// for simplicity, instead of analyzing all the
+		// possiblities, just do all individual and the sums
+		// (and, of course, the remainders). Associate every
+		// resolution with ibegin and a index for the
+		// specific branch set. Note that this gets all of
+		// the binary branch combinations and is good
+		// for stylized multibranches where all are identical
+
+		// individuals
+		c = cell_complexity_
+		for j=0, n-1 {
+			v1.append(res.x[j])
+			v1.append(c - res.x[j])	
+			v2.append(si.x[ibegin])
+			v2.append(si.x[ibegin])
+			bres.append(j+1)
+			bres.append(-(j+1))
+		}
+		// sums
+		oldres = res.x[0]
+		for j=1, n-1 {
+			oldres += res.x[j]
+			if (oldres < c) {
+				v1.append(oldres)
+				v1.append(c - oldres)	
+				v2.append(si.x[ibegin])
+				v2.append(si.x[ibegin])
+				bres.append(n+j)
+				bres.append(-(n+j))
+			}
+		}
+	    }
+		ibegin = i
+		pbegin = parent_vec_.x[si.x[ibegin]]
+	}
+	// now only the distinct ones
+	si = v1.sortindex
+	v1.index(v1, si)
+	v2.index(v2, si)
+	bres.index(bres, si)
+	for (i=v1.size-1; i >= 1; i -= 1) {
+		if (v1.x[i] == v1.x[i-1]) {
+			v1.remove(i)
+			v2.remove(i)
+			bres.remove(i)
+		}
+	}
+	$o1 = v2
+	$o2 = bres
+	return v1
+}
+
+proc save_capac() {local i
+	save_capac_ = new Vector(sec_complex_.size)
+	for sections(&i) {
+		save_capac_.x[i] = cm(.0001)
+	}
+}
+
+proc restore_capac() {local i
+	for sections(&i) {
+		cm(.0001) = save_capac_.x[i]
+	}
+}
+
+proc ExperimentalMechComplex() {local i, j, k, b, cx, ts, ns, base  localobj s, cmd, sr, ms
+	pc = new ParallelContext()
+	s = new String()
+	cmd = new String()
+	ts = 100
+	ns = 100
+	base = dorun(ts)
+//	printf("empty run %g\n", base)
+	sr = makesec(ns)
+	base = dorun(10*ts)/10
+//	printf("base run %g\n", base)
+	for j=0, 1 for k = 0, mt[j].count-1 {
+		if (j == 0 && k < 2) { continue }
+		mt[j].select(k)
+		mt[j].selected(s.s)
+		sr = makesec(ns)
+		if (hoc_sf_.substr(s.s, "_ion") != -1) { continue }
+		b = 0
+		for i=1, numarg() {
+			if (hoc_sf_.substr(s.s, $si) != -1) { b = 1 }
+		}
+		if (b) { continue }
+		
+		if (j == 0) {
+			sprint(cmd.s, "insert %s", s.s)
+		}else{
+			hoc_obj_ = new List(ns)
+sprint(cmd.s, "for (hoc_ac_, 0) hoc_obj_.append(new %s(hoc_ac_))", s.s)
+		}
+		sr.sec execute(cmd.s)
+		cx = (dorun(ts)-base)/base
+		if (cx < 0) { cx = 0 }
+		m_complex_[j].x[k] = cx
+		if (cx == 1000) printf("mcomplex failed for %s\n", s.s)
+	}
+	// lastly, get some indication of time it takes to solve a backbone
+	if (0 && object_id(pc)) {
+		pc.gid_clear()
+		sr.sec delete_section()
+		sr = makesec(ns)	
+		sr.sec {
+			pc.multisplit(0, 1, 2)
+			pc.multisplit(1, 2, 2)
+		}		
+		pc.multisplit()
+		cx = (dorun(ts)-base)/base
+		if (cx < 0) { cx = 0 }
+		printf("backbone %g\n", cx)
+		pc.gid_clear()
+	}
+	sr.sec delete_section()
+}
+
+func dorun() {localobj s
+	s = new String()
+	xrun_ = $1
+	if (execute1("xrun()", this) == 0) { return 1000 }
+	return xrun_
+}
+
+proc xrun() {local tstop
+	tstop = xrun_
+	finitialize(-70)
+	xrun_ = startsw()
+	batch_run(tstop, tstop)
+	xrun_ = startsw() - xrun_
+}
+
+obfunc makesec() {
+	execute1("create tempsec\ntempsec hoc_obj_ = new SectionRef()\n")
+	hoc_obj_.sec { nseg = $1 }
+	cvode.use_mxb(0) // extracellular would turn this on
+	cvode.cache_efficient(1) // extracellular would turn this off
+	return hoc_obj_
+}
+
+
+//args
+//input $1=#ncpu, $o2=Vector of complexity values, $o3=List of Vectors of split point complexities
+//   $o4=List of Vectors of split point indices
+//   $o8 = List of Vectors of split point branch set indices
+//output (parallel to $o2) $o5 = Vector of cpu indices, $o6 = Vector of split point complexity
+//   $o7 = Vector of split point indices
+//   $o9 = Vector of split point branch set indices
+// if a return split point complexity is -1 then means it was not split
+// return % load balance error
+func distrib() {local i, n
+	$o5.resize($o2.size)
+	$o6.resize($o2.size)
+	$o7.resize($o2.size)
+	$o9.resize($o2.size)
+	cplx = new Vector()
+	for i = 0, 50 {
+		cvec = $o2
+		splitxlist = $o3
+		splitixlist = $o4
+		cpu = $o5
+		splitcplx = $o6
+		splitindex = $o7
+		splitbrlist = $o8
+		splitbres = $o9
+		n = distrib_trial($1, i+.5)
+//printf("i=%d n=%d\n", i, n)
+		if (n <= $1) { break }
+	}
+//print "distrib returning with i=",i
+	return int((cplx.max*$1/$o2.sum - 1)*100 + .5)
+}
+
+func distrib_trial() {local i, i1, j1, j2, j, k, c, cmax, cmin, climit, n, ncpu, margin
+	ncpu = $1
+	margin = (1 + $2/100)
+	
+	splitcplx.fill(-1)
+	splitindex.fill(0)
+	splitbres.fill(0)
+	allocated = new Vector(cvec.size)
+	sorted = cvec.sortindex
+	cplx.resize(0)
+	i = 0
+	j = sorted.size - 1		
+	n = 0
+	c = 0
+	climit = cvec.sum/ncpu
+//printf("climit = %g climit*margin = %g\n", climit, climit*margin)
+	while (i <= j) {
+		i1 = sorted.x[i] // smallest
+		j1 = sorted.x[j] // largest
+		if (allocated.x[i1]) { i += 1  continue }
+		if (allocated.x[j1]) { j -= 1 continue }
+		cmax = cvec.x[j1]
+		cmin = cvec.x[i1]
+		if (c + cmax <= climit*margin) { // largest whole cell fits into cpu
+			cpu.x[j1] = n    // hopefully the most common case
+//printf("largest fits j=%d j1=%d cold=%d cmax=%d cnew=%d n=%d\n", j, j1, c, cmax, c+cmax, n)
+			c += cmax
+			allocated.x[j1] = 1
+		}else{ // if (cmax > climit) { // must split
+			if (c + cmax > 2*climit) { // may want to defer til c==0
+				if (c == 0) { // no choice but to split as evenly as possible
+					// and put the largest part first
+					cpu.x[j1] = n
+					allocated.x[j1] = 1
+					sp = splitxlist.object(j1)
+					si = splitixlist.object(j1)
+					sb = splitbrlist.object(j1)
+					k = sp.indwhere(">=", cmax/2)
+					splitcplx.x[j1] = sp.x[k]
+					splitindex.x[j1] = si.x[k]
+					splitbres.x[j1] = sb.x[k]
+					c += sp.x[k]
+//printf("no choice even split j=%d j1=%d c=%d cmax=%d othersplit=%d", j, j1, c, cmax, cmax-c, n)
+					n = addone(n, ncpu, c)
+					c = cmax - c
+					if (c > climit) {
+						// satisfied if n is full
+						n = addone(n, ncpu, c)
+						c = 0
+					}else if ( greedy(i, j, c, climit, margin, &j2, &k) ) {
+		// see if there is a cell available which will fill this
+		// and the next cpu to within the margin.
+						cpu.x[j2] = n
+						allocated.x[j2] = 1
+						sp = splitxlist.object(j2)
+						si = splitixlist.object(j2)
+						sb = splitbrlist.object(j2)
+						splitcplx.x[j2] = sp.x[k]
+						splitindex.x[j2] = si.x[k]
+						splitbres.x[j2] = sb.x[k]
+						c += sp.x[k]
+						n = addone(n, ncpu, c)
+						c = cvec.x[j2] - sp.x[k]
+						n = addone(n, ncpu, c)
+						c = 0
+					}else{
+						// not clear what to do.
+						// attempt to fill more?
+						// probably pretty close to full
+//printf("fail %d %d\n", n, c)
+						n = addone(n, ncpu, c)
+						c = 0
+					}
+				}else if ( greedy(i, j, c, climit, margin, &j2, &k) ) {
+		// see if there is a cell available which will fill this
+		// and the next cpu to within the margin.
+					cpu.x[j2] = n
+					allocated.x[j2] = 1
+					sp = splitxlist.object(j2)
+					si = splitixlist.object(j2)
+					sb = splitbrlist.object(j2)
+					splitcplx.x[j2] = sp.x[k]
+					splitindex.x[j2] = si.x[k]
+					splitbres.x[j2] = sb.x[k]
+					c += sp.x[k]
+					n = addone(n, ncpu, c)
+					c = cvec.x[j2] - sp.x[k]
+					n = addone(n, ncpu, c)
+					c = 0
+				}else{
+//printf("leave as is, use next cpu c=%d n=%d\n", c, n)
+					n = addone(n, ncpu, c)
+					c = 0
+				}
+			}else{ //safe to split
+				// fill up n
+				cpu.x[j1] = n
+				sp = splitxlist.object(j1)
+				si = splitixlist.object(j1)
+				sb = splitbrlist.object(j1)
+				k = sp.indwhere(">=", climit - c)
+				if (k == -1) k = sp.size-1
+				if (k > 1 && c + sp.x[k] > climit*margin) k -= 1
+				if (c + sp.x[k] > climit*margin) {
+//printf("leave as is, use next cpu c=%d n=%d\n", c, n)
+					n = addone(n, ncpu, c)
+					c = 0
+					continue
+				}
+				allocated.x[j1] = 1
+				// should check if k-1 is better split point
+				splitcplx.x[j1] = sp.x[k]
+				splitindex.x[j1] = si.x[k]
+				splitbres.x[j1] = sb.x[k]
+//printf("safe split j=%d j1=%d cold=%d cmax=%d sp=%d cnew=%d remain=%d n=%d k=%d\n",\
+//j, j1, c, cmax, sp.x[k], c+sp.x[k], cmax-sp.x[k], n, k)
+				c += sp.x[k]
+				n = addone(n, ncpu, c)
+				c = cmax - sp.x[k]
+			}
+		}
+	}
+	if (c > 0) {
+		cplx.append(c)
+	}
+objref cvec, splitxlist, splitixlist, cpu, splitcplx, splitindex, allocated, sorted, sp, si
+objref splitbrlist, splitbres, sb
+//printf("trial %d ncpu=%d max=%g avg=%g min=%g %d\n", $2, cplx.size, cplx.max, cplx.mean, cplx.min, cplx.min_ind)
+	return cplx.size
+}
+
+//greedy(i, j, c, climit, margin, &j2, &k)
+func greedy() {local i, i1, k, c, climit, margin, rest, remain, max, min \
+  localobj sp
+	c = $3
+	climit = $4
+	margin = $5
+	rest = climit*margin
+	remain = rest - c
+	max = rest + remain
+	min = 2*climit - c
+	for i = $1, $2 {
+		i1 = sorted.x[i]
+		if (allocated.x[i1]) { continue }
+		if (max < cvec.x[i1]) { continue }
+		if (min > cvec.x[i1]) { continue }
+		sp = splitxlist.object(i1)
+		k = sp.indwhere(">=", climit - c)
+		if ( sp.x[k] <= remain && cvec.x[i1] - sp.x[k] <= rest) {
+			$&6 = i1
+			$&7 = k
+			return 1
+		}
+	}
+	return 0
+}
+
+func addone() {local n
+	cplx.append($3)
+	n = $1 + 1
+	if (n >= $2) {
+//		printf("Warning, increasing the cpu index past %d\n", $2)
+	}
+	return n
+}
+
+proc read_load_balance_info() {local i, n, h, g, si, sx, sb, cx, myid  localobj f
+	myid = $2
+	f = new File()
+	if (!f.ropen($s1)) {
+		execerror("could not open", $s1)
+	}
+	n = f.scanvar()
+	host = new Vector()
+	gid = new Vector()
+	splitx = new Vector()
+	spliti = new Vector()
+	splitb = new Vector()
+	unsplitx = new Vector()
+	for i=0, n-1 {
+		h = f.scanvar()
+		g = f.scanvar()
+		si = f.scanvar()
+		sb = f.scanvar()
+		sx = f.scanvar()
+		cx = f.scanvar()
+		if (h == myid) {
+			host.append(h)
+			gid.append(g)
+			spliti.append(si)
+			splitb.append(sb)
+			splitx.append(sx)
+			unsplitx.append(cx)
+		}else if (h == (myid - 1) && sx > -1) {
+			host.append(h)
+			gid.append(g)
+			spliti.append(si)
+			splitb.append(sb)
+			splitx.append(sx)
+			unsplitx.append(cx)
+		}
+	}
+	f.close()
+}
+
+// here we split a cell at the soma and at one other point (to form
+// a short backbone) so that the maximum size piece is as small as
+// possible. Return the index of the section which we will split
+// at the 1 end.
+
+// enhanced to try to split consistent with the optional second arg value for
+// maximum complexity
+
+// 12/24/2006 try again. several issues were revealed in the experience
+// with the first implementation. Need to divide into possibly many pieces,
+// not just 3 and each piece has to be < some max complexity.
+// Do not worry about adjacent backbone sizes since we plan on enhancing
+// ParallelContext.multisplit to solve exactly anyway. Sometimes branches
+// are at several locations on soma. Generally the user will coalesce these
+// and the problem will go away. But if not...
+// Usually choose a split point at the
+// largest branch, but the collection of (smaller) branches at the other point
+// may total > cmax. If the collections of branches at both points that do
+// not include our largest branch is still > cmax then we are forced to
+// have two split points in the soma.
+// With respect to returning a result, originally we used a String but that
+// is getting out of hand so switch to Vector with a suitable format where
+// the information is not too difficult to extract for use by mssel, msdiv,
+// and pmetis. Format is
+// gid
+// total complexity
+// how many split points, may be 0 if cell is not split
+// for the first split point, the number of subtrees
+//    Note, the first subtree of the first split point is assumed to contain
+//    the soma (parent). Therefore the sum of all the subtree complexities
+//    is the same as the total complexity.
+// for the first subtree: complexity, number of children, ids of children
+// ...
+
+iterator children() {local i   localobj p
+	p = srlist.object($1)
+	for i=0, p.nchild - 1  p.child[i] {
+		$&2 = cm(.0001)
+		iterator_statement
+	}
+}
+
+func x2iseg() { local x
+	if ($1 <= 0) { return -1 }
+	if ($1 >= 1) { return $2 }
+	return $1*$2 - .5	
+}
+
+// args: gid, cmax, result Vector
+// return number of pieces
+func multisplit() {local i, x, ilargest, cmax, c \
+ localobj root, cc, xcon
+	npiece = 1
+	cbk_soma = 0
+	cmax = $2
+	$o3.resize(0)
+	$o3.append($1)
+	compute_roots()
+if (0 && $1 == 79) {
+printf("compute_roots\n")
+for i=0, roots_complex_.size-1 {
+printf("  %d %d %g %g\n", i, parent_vec_.x[i], sec_complex_.x[i], roots_complex_.x[i])
+}
+}
+	$o3.append(roots_complex_.x[0])
+	$o3.append(0) // update later if we do, in fact, split
+	// maybe the cell is small enough that we do not have to split at all
+	if (roots_complex_.x[0] < cmax) {
+		return npiece
+	}
+	// map from section to srlist index
+	save_capac()
+	root = srlist.object(0)
+	for sections(&i) { cm(.0001) = i }
+
+	// what is the pattern of connection at the soma
+	// this helps us determine the best sid0 split point
+	xcon = new Vector()
+	root.sec for (x) xcon.append(x)
+	cc = new Vector(xcon.size) // complexity of child trees
+	for children(0, &i) {
+		x = x2iseg(parent_connection(), root.sec.nseg) + 1
+		c = roots_complex_.x[i]
+		cc.x[x] += c
+	}
+	// First splitpoint is on the soma. That is a mistake if
+	// the soma has only one branch...
+	// The first split subtree contains the soma.
+	// It must also contain the complexity of other branches
+	// at different locations (if they are not also at a split point).
+	// on the soma.
+	// The soma cannot have more than two split points.
+	// The first is the maximum cc.
+	// The second is the next largest if it is larger than the
+	// max.
+	c = sec_complex_.x[0]
+	if ((c + cc.sum - cc.max) < cmax) { // one split point at max point
+		c += cc.sum - cc.max // everything except max subtree
+		$o3.x[2] += 1
+		ms_split($o3, 0, xcon.x[cc.max_ind], c, cmax)
+	}else{ // two split points on soma
+		i = cc.max_ind
+		c += cc.sum - cc.max
+		cc.x[i] = 0
+		c -= cc.max // everything except max and next max subtree
+		$o3.x[2] += 1
+		ms_split($o3, 0, xcon.x[i], c, cmax)
+		if (cc.max > 0) { //another split point on soma
+			$o3.x[2] += 1
+			ms_split($o3, 0, xcon.x[cc.max_ind], 0, cmax)
+		}
+	}
+	// Note: if the root split point (contains the soma complexity) has
+	// a child piece count of $o3.x[3] == 1, then that split point does
+	// not have to be used.
+	if ($o3.x[3] == 1) {
+		$o3.x[4] -= cbk_soma
+	}
+	restore_capac()
+	return npiece - 1
+}
+
+// split at srlist.object($2).sec($3)
+// $o1 is result vector to append
+// $4 is extra complexity to be added to first subtree (for soma, otherwise 0)
+// $5 is max complexity of a subtree
+// return value is the total complexity of the subtree (includes complexity
+//  of that portion which was recursively split away.)
+func ms_split() {local i, j, cbk, ctotal, nsubtree_index, cx_index, nchild_index, c \
+    localobj cx, is, sort
+	cx = new Vector()  is = cx.c
+	for children($2, &i) if ($3 == parent_connection()) {
+		is.append(i)
+		cx.append(roots_complex_.x[i])
+	}
+	sort = cx.c.sortindex
+	is.index(sort)
+	cx.index(sort)
+	cx.x[0] += $4 // add to smallest
+	ctotal = cx.sum
+
+	nsubtree_index = $o1.size $o1.append(1) // number of subtrees
+	cx_index = $o1.size $o1.append(cx.x[0]) // subtree complexity
+	nchild_index = $o1.size $o1.append(1) // number of children in subtree
+	$o1.append(is.x[0])
+	for i=1, is.size-1 {
+		if ($o1.x[cx_index] + cx.x[i] < $5) {
+			$o1.x[cx_index] += cx.x[i]
+			$o1.x[nchild_index] += 1
+		}else{
+			$o1.x[nsubtree_index] += 1
+			cx_index = $o1.size $o1.append(cx.x[i])
+			nchild_index = $o1.size $o1.append(1)
+		}
+		$o1.append(is.x[i])
+	}
+	// some of the individuals may be large and need to be split themselves
+	// so the complexity added above may need to be updated
+	cx_index = nsubtree_index + 1
+	for i = 0, $o1.x[nsubtree_index] - 1 {
+		if ($o1.x[cx_index] > $5) { // needs splitting
+    if (srlist.object($o1.x[cx_index+2]).nchild > 0 ) {
+			j = ms_getsplit($o1.x[cx_index+2], $5)
+			$o1.x[2] += 1
+			c = ms_split($o1, j, 1, 0, $5)
+			$o1.x[cx_index] -= c
+			// but now this subtree has a backbone so there
+			// is extra complexity proportional to the number
+			// of segments on the backbone. Count from (j,1) to
+			// ($2,$3)
+			if (backbone_cx_) {
+				cbk = backbone_cx_ * cnt_bb_seg($2, $3, j, 1)
+				if ($2 == 0) {
+					// in case we do not in fact split
+					// cbk_soma = cbk
+				}
+				$o1.x[cx_index] += cbk
+			}
+    }else{
+//	printf("Piece %d with complexity %g cannot be split\n", cx_index, $o1.x[cx_index])
+    }
+		}
+		if (i < $o1.x[nsubtree_index] - 1) {
+			cx_index += 2 + $o1.x[cx_index + 1]
+		}
+	}
+	npiece += $o1.x[nsubtree_index]
+	
+	return ctotal
+}
+
+func cnt_bb_seg() {local i, j, ns, xp
+	ns = 0
+	// all segs until reach the first section
+	for (i = $3; i != $1; i = j) {
+		srlist.object(i).sec {
+			ns += nseg + 1 // include the 0 area node
+			xp = parent_connection()
+		}
+		srlist.object(i).parent {
+			j = cm(.0001)
+		}
+	}
+	// only the segs in first section from $2 to ...
+	srlist.object($1).sec { j = (nseg*abs($2-xp)) + 1 }
+	ns += j
+//	srlist.object($3).sec printf("%d segments from %s(%g) to ", ns, secname(), $4)
+//	srlist.object($1).sec printf("%s(%g)\n", secname(), $2)
+	return ns
+}
+
+// return a split parent index descending from srlist.object($1)
+// so the backbone is < $2
+// The only problem is that one or more of the children at the
+// split point should be allowed to be part of the parent backbone
+
+func ms_getsplit() {local i, id, idold, c, ctotal, clargest, ilargest
+	id = $1
+	idold = $1
+	ctotal = roots_complex_.x[id]
+	c = ctotal
+	while (ctotal - c < $2 && c > $2) {
+		c = 0
+		clargest = 0
+		for children(id, &i) {
+			c += roots_complex_.x[i]	
+			if (roots_complex_.x[i] > clargest) {
+				clargest = roots_complex_.x[i]
+				ilargest = i
+			}
+		}
+		if (ctotal - c > $2) { break }
+		idold = id
+		id = ilargest
+	}
+	return idold
+}
+
+endtemplate LoadBalance

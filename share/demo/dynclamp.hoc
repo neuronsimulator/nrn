@@ -1,0 +1,9 @@
+load_file("dynchan.ses")
+load_file(1, "dynclamp.ses")
+
+proc destroy() {local i
+	WindowMenu[0].groups.remove_all
+	while (PWManager[0].count > 6) {
+		PWManager[0].close(PWManager[0].count-1)
+	}
+}

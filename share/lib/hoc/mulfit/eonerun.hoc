@@ -1,0 +1,395 @@
+parmfitness_generator_append("FitnessGenerator")
+
+begintemplate FitnessGenerator
+public efun, fitnesslist, generator, yvarlist, yveclist, tvec, title
+public rfile, wfile, map, pelist, chtitle, gview, clone, add
+public save_context, restore_context
+external classname, tstop
+objref fitnesslist, generator, yvarlist, yveclist, tvec, tobj, tobj1, sf, this
+objref vbox, g, hb1, pelist
+objref dec, gdeck, fdeck, deck, symch_
+strdef title, tstr, tstr1, tag, cmd
+
+proc save_context() { local i
+	$o1.pack(tag, title, yvarlist.count)
+	for i=0, yvarlist.count - 1 {
+		$o1.pack(yvarlist.object(i).s)
+		classname(fitnesslist.object(i), tstr)
+		$o1.pack(tstr)
+		fitnesslist.object(i).save_context($o1)
+	}
+	classname(generator, tstr)
+	$o1.pack(tstr)
+	generator.save_context($o1)
+}
+
+proc restore_context() {local i, n
+	$o1.unpack(tag, title)
+	n = $o1.upkscalar
+	yvarlist.remove_all()
+	yveclist.remove_all()
+	fitnesslist.remove_all()
+	for i=0, n-1 {
+		yvarlist.append(new Pointer($o1.upkstr(tstr)))
+		yveclist.append(new Vector(1000))
+		$o1.upkstr(tstr)
+		sprint(tstr, "tobj = new %s()", tstr)
+		execute(tstr, this)
+		fitnesslist.append(tobj)
+		tobj.restore_context($o1)
+	}
+	$o1.upkstr(tstr)
+	sprint(tstr, "generator = new %s()", tstr)
+	execute(tstr, this)
+	generator.restore_context($o1)
+}
+
+func efun() {local i, e, use_t, tssav, mintstop
+	use_t = 0
+	mintstop = tstop
+	for i=0, yvarlist.count-1 {
+		tobj = fitnesslist.object(i)
+		tobj.before_run(yvarlist.object(i))
+		tssav = tobj.mintstop()
+		if (mintstop < tssav) {
+			mintstop = tssav
+		}
+		if (tobj.use_x) {
+			yveclist.object(i).record(&yvarlist.object(i).val,\
+			 tobj.xdat_)
+		}else{
+			yveclist.object(i).record(&yvarlist.object(i).val)
+			use_t = 1
+		}
+	}
+	if (use_t) {
+		tvec.record(&t)
+	}
+	tssav = tstop
+	tstop = mintstop + .1
+	generator.frun()
+	tstop = tssav
+	if (stoprun) {errval=0 return 0}
+	e = 0
+	for i=0, yvarlist.count-1 {
+		if (fitnesslist.object(i).use_x) {
+			e += fitnesslist.object(i).efun(yveclist.object(i),\
+				fitnesslist.object(i).xdat_)
+		}else{
+			e += fitnesslist.object(i).efun(yveclist.object(i),\
+				tvec)
+		}
+		yveclist.object(i).play_remove()
+	}
+	errval = e
+	return e
+}
+
+func gview() {local i, j, l,b,r,t
+	for i=0, fitnesslist.count - 1 {
+		j = i + .2
+		fitnesslist.object(i).build()
+		tobj = fitnesslist.object(i).g
+		l=tobj.size(1) r=tobj.size(2) b=tobj.size(3) t=tobj.size(4)
+		tobj.view(l,b,r-l,t-b,j*200,$1*150,200,150)
+		tobj.label(.1,.9,$s2)
+		tobj.label(title)
+		tobj.label(yvarlist.object(i).s)
+	}
+	return $1 + 1.2
+}
+
+proc init() {
+	title = "Unnamed single run protocol"
+	context_ = 1
+	sprint(tag, "%s", this)
+	sprint(tstr, "%s.pelist = parmfitness_efun_list_", this)
+	execute(tstr)
+	sscanf(tag, "%[^[]", tag)
+	generator = new FitnessRun()
+	fitnesslist = new List()
+	yvarlist = new List()
+	yveclist = new List()
+	tvec = new Vector(1000)
+	sf = new StringFunctions()
+	dshow=0
+}
+
+proc clone() {local i
+	$o1 = new FitnessGenerator()
+	$o1.title = title
+	for i=0, yvarlist.count-1 {
+		fitnesslist.object(i).clone(tobj)
+		$o1.add(yvarlist.object(i).s, tobj)
+	}
+	generator.clone($o1.generator)
+}
+
+proc chtitle() {
+	context_ += 1
+	title = $s1
+}
+
+proc add() { // variable string, fitness object
+	context_ += 1
+	tobj = new Pointer($s1)
+	yvarlist.append(tobj)
+	fitnesslist.append($o2)
+	tobj = new Vector(1000)
+	tobj.label($s1)
+	yveclist.append(tobj)
+}
+
+proc wfile() {local i
+	$o1.printf("\t%s: %s\n", tag, title)
+	generator.wfile($o1, $o2)
+	for i=0, fitnesslist.count-1 {
+		sprint(tstr, "%s", fitnesslist.object(i).tag)
+		$o1.printf("\t\t%s:\t%s\n", tstr, yvarlist.object(i).s)
+		if ($o2.isopen) fitnesslist.object(i).wfile($o2)
+	}
+	$o1.printf("\n")
+}
+
+proc rfile() {local i
+	context_ += 1
+	i = sscanf($s3, "%*[\t ]%[^:]:%*[\t ]%[^\n]", tag, title)
+	if (i == 0) {
+		i = sscanf($s3, "%[^:]:%*[\t ]%[^\n]", tag, title)
+	}
+	if (i == 0) {
+		printf("Invalid format for Fitness Generator\n%stag=|%s| title=|%s|\n", $s3, tag, title)
+	}
+	$o1.gets(tstr)
+	if (sf.substr(tstr, ":") > -1) {
+		generator.rfile($o1, tstr)
+	}
+	while (sf.substr(tstr, "Fitness") > -1) {
+		i = sscanf(tstr, "%*[\t ]%[^:]:%*[\t ]%[^\n]", tstr, tstr1)
+		if (i != 2) {
+			i = sscanf(tstr, "%[^:]:%*[\t ]%[^\n]", tstr, tstr1)
+		}
+		if (i != 2) {
+printf("Invalid format for Fitness line\n%s", tstr)
+		}
+		yvarlist.append(new Pointer(tstr1))
+		yveclist.append(new Vector(1000))
+		
+		sscanf(tstr, "%[^[]", tstr1)
+		sprint(tstr1, "tobj = new %s()", tstr1)
+		execute(tstr1, this)
+		tobj.tag = tstr
+		fitnesslist.append(tobj)
+		if ($o2.isopen) tobj.rfile($o2)
+		$o1.gets(tstr)
+	}
+	if (sf.len(tstr) > 1) {
+printf("Invalid format. Nonempty line that does not contain a Fitness substring.\n%s", tstr)
+	}
+}
+
+proc chfit() {local i
+	context_ += 1
+	deck.flip_to(-1)
+	if (dshow < 0) return
+	tobj1 = fitnesslist.object(dshow)
+	sprint(tstr, "tobj = new %s()", pelist.object($1).s)
+	execute(tstr, this)
+	if (tobj1.have_data) {
+		tobj.set_data(tobj1.xdat, tobj1.ydat)
+	}
+	for i=0, fitnesslist.count-1 {
+		deck.remove_last
+	}
+	fitnesslist.remove(dshow)
+	fitnesslist.insrt(dshow, tobj)
+	deck.intercept(1)
+	for i=0, fitnesslist.count-1 {
+		fitnesslist.object(i).map()
+	}
+	deck.intercept(0)
+	deck.flip_to(dshow)
+	objref tobj, tobj1
+}
+
+proc newconst() {
+	if (object_id(symch_) == 0 || symch_type_ != 1) {
+		symch_ = new SymChooser("Protocol constant")
+		symch_type_ = 1
+	}
+	if (symch_.run()) {
+		context_ += 1
+		symch_.text(tstr)
+		tobj = new RunConstant(tstr)
+		tobj.offval = tobj.p.val
+		tobj.onval = tobj.p.val
+		generator.constantlist.append(tobj)
+		gendeck(0)
+	}
+}
+
+proc newstmt() {
+	while (string_dialog("RunStatement to be executed before and after generator run (hoc_ac_=1 then 0)", cmd)){
+		if (execute1(cmd) == 0) {
+			continue_dialog("invalid statement")
+			continue
+		}
+		context_ += 1
+		tobj = new RunStatement(2,cmd)
+		generator.stmtlist.append(tobj)
+		gendeck(0)
+		break
+	}
+}
+
+proc newvar() {
+	if (object_id(symch_) == 0 || symch_type_ != 0) {
+		symch_ = new SymChooser("Dependent variable to fit")
+		symch_type_ = 0
+	}
+	if (symch_.run()) {
+		context_ += 1
+		symch_.text(tstr)
+		add(tstr, new RegionFitness())
+		fitdeck(0)
+	}
+}
+
+proc rmvar() {
+	yvarlist.browser("Double click to remove a fit variable", "s")
+	yvarlist.accept_action("rmvar1()")
+}
+proc rmvar1() {local i
+	context_ += 1
+	i = hoc_ac_
+	if (i < 0) return
+	yvarlist.remove(i)
+	yveclist.remove(i)
+	fitnesslist.remove(i)
+	deck.remove(i)
+	fitdeck(1)
+}
+proc chvar() {
+	yvarlist.browser("Double click to change a fit variable", "s")
+	yvarlist.accept_action("chvar1()")
+}
+proc chvar1() {
+	context_ += 1
+	i = hoc_ac_
+	if (i < 0) return
+	tstr = yvarlist.object(i).s
+	if (string_dialog("Change fit variable name", tstr)) {
+		yvarlist.remove(i)
+		yvarlist.insrt(i, new Pointer(tstr))
+		yveclist.object(i).label(tstr)
+	}
+	fitdeck(1)
+}
+proc rmconst() {
+	generator.constantlist.browser("Double click to remove a Protocol Constant","name")
+	generator.constantlist.accept_action("rmconst1(0)")
+	generator.stmtlist.browser("Double click to remove a Protocol Statement","stmt")
+	generator.stmtlist.accept_action("rmconst1(1)")
+}
+proc rmconst1() {
+	context_ += 1
+	if (hoc_ac_ < 0) return
+	if ($1 == 0) {
+		generator.constantlist.remove(hoc_ac_)
+	}else{
+		generator.stmtlist.remove(hoc_ac_)
+	}
+	gendeck(0)
+}
+proc gendeck() {
+	if ($1 == 0) {
+		gdeck.remove(0)
+	}
+	gdeck.intercept(1)
+	xpanel("")
+	for i=0, generator.constantlist.count-1 {
+		tobj = generator.constantlist.object(i)
+		xpvalue(tobj.p.s, &tobj.onval, 1)
+	}
+	for i=0, generator.stmtlist.count-1 {
+		tobj = generator.stmtlist.object(i)
+		if (tobj.do_before == 1) {
+			sprint(tstr, "Before: %s", tobj.stmt)
+		}else if (tobj.do_before == 2) {
+			sprint(tstr, "%s", tobj.stmt)
+		}else{
+			sprint(tstr, "After: %s\n", tobj.stmt)
+		}
+		xlabel(tstr)
+	}
+	xpanel()
+	gdeck.intercept(0)
+	gdeck.flip_to(0)
+}
+
+proc fitdeck() {
+	if ($1 >= 0) {
+		fdeck.remove(0)
+	}
+	fdeck.intercept(1)
+	xpanel("")
+	for i=0, fitnesslist.count-1 {
+		sprint(tstr, "dshow=%d deck.flip_to(dshow)", i)
+		xradiobutton(yvarlist.object(i).s, tstr, i == 0)
+	}
+	xpanel()
+	fdeck.intercept(0)
+	fdeck.flip_to(0)
+	if ($1 == 0) {
+		deck.intercept(1)
+		fitnesslist.object(fitnesslist.count-1).map()
+		deck.intercept(0)
+	}
+}
+
+proc map() {local i
+	vbox = new VBox(3)
+	vbox.intercept(1)
+	xpanel("",1)
+	xlabel(title)
+	xpvalue("Error Value", &errval, 0, "efun()")
+	xmenu("Fitness")
+		xmenu("Change Method to")
+		for i=0, pelist.count-1 {
+			sprint(tstr, "chfit(%d)", i)
+			xbutton(pelist.object(i).s, tstr)
+		}
+		xmenu()
+		xbutton("Variable to fit", "newvar()")
+		xbutton("Remove a fit Variable", "rmvar()")
+		xbutton("Change a fit Variable", "chvar()")
+		xbutton("Protocol Constant", "newconst()")
+		xbutton("Protocol Statement", "newstmt()")
+		xbutton("Remove a protocol", "rmconst()")
+	xmenu()
+	xpanel()
+	hb1 = new HBox(3)
+	hb1.intercept(1)
+	gdeck = new Deck(3)
+	gendeck(-1)
+	gdeck.map()
+	fdeck = new Deck(3)
+	fitdeck(-1)
+	fdeck.map()
+	hb1.intercept(0)
+	hb1.map()
+	deck = new Deck()
+	deck.intercept(1)
+	for i=0, fitnesslist.count-1 {
+		fitnesslist.object(i).map()
+	}
+	deck.intercept(0)
+	deck.map()
+	dshow = 0
+	if (fitnesslist.count == 0) { dshow = -1 }
+	deck.flip_to(dshow)
+	vbox.intercept(0)
+	vbox.map()
+}
+
+endtemplate FitnessGenerator

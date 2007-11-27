@@ -1,0 +1,108 @@
+xopen("$(NEURONHOME)/lib/hoc/noload.hoc")
+load_proc("nrnmainmenu")
+nrnmainmenu()
+
+create terminal
+access terminal
+
+{nseg=1 L=10 diam=1}
+
+celsius = 16.3
+
+{insert hh insert cachan  insert cadifpmp }
+
+proc default() {
+        k1_cadifpmp = 30e8
+        k2_cadifpmp = .25e6
+        k3_cadifpmp = 1.5e3
+        k4_cadifpmp = 5e0
+	pump0_cadifpmp = 1e-13
+
+	beta_cadifpmp = 100
+
+	pcabar_cachan=.00005
+	cao0_ca_ion=2
+	cai0_ca_ion = 2e-6
+	nao=115
+	nai=15
+	forall ion_style("na_ion", 1, 2, 1, 0, 0)
+}
+default()
+
+/*----------------------------*/
+PI=3.14159
+FARADAY=96520
+nann = 4 -1 /* change only when cadifpmp is changed */
+
+/* total calcium in cell */
+func tot_ca() {local i, c       /* picomoles */
+        c=0 
+  forall if(ismembrane("cadifpmp")) for(x) if(x > 0 && x < 1) {
+        for i=0,nann {
+                /* from units command
+                you have: micron3 milli/liter
+                you want: pico
+                        * 1.000000e-06 */
+
+         c = c + diam(x)^2*vol_cadifpmp[i]*(1 + beta_cadifpmp) \
+		*(ca_cadifpmp[i](x))*1e-6*L/nseg
+        }
+	c = c + PI*diam(x)*L/nseg*pumpca_cadifpmp*(1e4) /*in pump*/
+  }
+        return c
+}
+
+/* integrate ica throughout cell */
+tot_from_ica = 0
+tot_ca_init = 0
+proc integ_ica() {local ic, c	/* picomoles */
+	if (t == 0) {
+		tot_ca_init = tot_ca()
+		tot_from_ica = 0
+		last_ica_pmp_cadifpmp = ica_pmp_cadifpmp
+		return
+	}
+	c = 0
+	forall if (ismembrane("ca_ion")) for (x) if (x > 0 && x < 1) {
+		/* from units command
+		you have: mA/cm2 micron2 ms / coulomb
+		you want: pico
+			* 1.e-2
+		*/
+		ic = ica - last_ica_pmp_cadifpmp + ica_pmp_cadifpmp
+		c = c +  PI*diam(x)*L/nseg*ic/(2*FARADAY) * dt *(1.e-2)
+	}
+	tot_from_ica = tot_from_ica + c
+}
+
+func compare_ca() { local tot
+	tot = tot_ca() - tot_ca_init
+	printf("totca=%g tot_from_ica=%g\n", tot, tot_from_ica)
+	return tot + tot_from_ica
+}
+/*--------------------------*/
+proc init() {local ca
+	finitialize(-65)
+	fcurrent()
+	integ_ica()
+}
+
+proc advance() {
+	fadvance()
+	integ_ica()
+}
+
+objref stim
+stim = new IClamp(.5)
+stim.amp = .05
+stim.del = .25
+stim.dur = .1
+
+//xopen("cabpump.session")
+
+tstop=1.5
+run()
+compare_ca()
+tstop=5
+run()
+compare_ca()

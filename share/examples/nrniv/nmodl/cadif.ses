@@ -1,0 +1,127 @@
+objectvar save_window_, rvp_
+objectvar scene_vector_[5]
+objectvar ocbox_, ocbox_list_, scene_, scene_list_
+{ocbox_list_ = new List()  scene_list_ = new List()}
+{pwman_place(0,0,0)}
+{
+save_window_ = new Graph(0)
+save_window_.size(0,1,8.73115e-11,0.0025)
+scene_vector_[2] = save_window_
+{save_window_.view(0, 8.73115e-11, 1, 0.0025, 389, 28, 300.48, 200.32)}
+flush_list.append(save_window_)
+save_window_.save_name("flush_list.")
+objectvar rvp_
+rvp_ = new RangeVarPlot("ca_cadifus[0]")
+cable rvp_.begin(0)
+cable rvp_.end(1)
+rvp_.origin(0)
+save_window_.addobject(rvp_, 1, 1, 0.480511, 0.976677)
+objectvar rvp_
+rvp_ = new RangeVarPlot("ca_cadifus[1]")
+cable rvp_.begin(0)
+cable rvp_.end(1)
+rvp_.origin(0)
+save_window_.addobject(rvp_, 1, 1, 0.480511, 0.986262)
+objectvar rvp_
+rvp_ = new RangeVarPlot("ca_cadifus[2]")
+cable rvp_.begin(0)
+cable rvp_.end(1)
+rvp_.origin(0)
+save_window_.addobject(rvp_, 1, 1, 0.480511, 0.995847)
+objectvar rvp_
+rvp_ = new RangeVarPlot("ca_cadifus[3]")
+cable rvp_.begin(0)
+cable rvp_.end(1)
+rvp_.origin(0)
+save_window_.addobject(rvp_, 1, 1, 0.480511, 1.00543)
+}
+{
+save_window_ = new Graph(0)
+save_window_.size(0,1,0,0.0003)
+scene_vector_[3] = save_window_
+{save_window_.view(0, 0, 1, 0.0003, 388, 299, 300.48, 200.32)}
+flush_list.append(save_window_)
+save_window_.save_name("flush_list.")
+objectvar rvp_
+rvp_ = new RangeVarPlot("CaBuffer_cadifus[0]")
+cable rvp_.begin(0)
+cable rvp_.end(1)
+rvp_.origin(0)
+save_window_.addobject(rvp_, 1, 1, 0.343131, 1.05815)
+objectvar rvp_
+rvp_ = new RangeVarPlot("CaBuffer_cadifus[1]")
+cable rvp_.begin(0)
+cable rvp_.end(1)
+rvp_.origin(0)
+save_window_.addobject(rvp_, 1, 1, 0.346326, 1.06773)
+objectvar rvp_
+rvp_ = new RangeVarPlot("CaBuffer_cadifus[2]")
+cable rvp_.begin(0)
+cable rvp_.end(1)
+rvp_.origin(0)
+save_window_.addobject(rvp_, 1, 1, 0.349521, 1.07252)
+objectvar rvp_
+rvp_ = new RangeVarPlot("CaBuffer_cadifus[3]")
+cable rvp_.begin(0)
+cable rvp_.end(1)
+rvp_.origin(0)
+save_window_.addobject(rvp_, 1, 1, 0.352716, 1.08211)
+}
+{
+save_window_ = new Graph(0)
+save_window_.size(0,1,0.002,0.003)
+scene_vector_[4] = save_window_
+{save_window_.view(0, 0.002, 1, 0.001, 724, 27, 300.48, 200.32)}
+flush_list.append(save_window_)
+save_window_.save_name("flush_list.")
+objectvar rvp_
+rvp_ = new RangeVarPlot("Buffer_cadifus[0]")
+cable rvp_.begin(0)
+cable rvp_.end(1)
+rvp_.origin(0)
+save_window_.addobject(rvp_, 1, 1, 0.432588, 1.05335)
+objectvar rvp_
+rvp_ = new RangeVarPlot("Buffer_cadifus[1]")
+cable rvp_.begin(0)
+cable rvp_.end(1)
+rvp_.origin(0)
+save_window_.addobject(rvp_, 1, 1, 0.432588, 1.05815)
+objectvar rvp_
+rvp_ = new RangeVarPlot("Buffer_cadifus[2]")
+cable rvp_.begin(0)
+cable rvp_.end(1)
+rvp_.origin(0)
+save_window_.addobject(rvp_, 1, 1, 0.432588, 1.05815)
+objectvar rvp_
+rvp_ = new RangeVarPlot("Buffer_cadifus[3]")
+cable rvp_.begin(0)
+cable rvp_.end(1)
+rvp_.origin(0)
+save_window_.addobject(rvp_, 1, 1, 0.432588, 1.06294)
+}
+{
+xpanel("RunControl", 0)
+v_init = -65
+xvalue("Init","v_init", 1,"stdinit()", 1, 1 )
+xbutton("Init & Run","run()")
+xbutton("Stop","stoprun=1")
+runStopAt = 5
+xvalue("Continue til","runStopAt", 1,"{continuerun(runStopAt) stoprun=1}", 1, 1 )
+runStopIn = 1
+xvalue("Continue for","runStopIn", 1,"{continuerun(t + runStopIn) stoprun=1}", 1, 1 )
+xbutton("Single Step","steprun()")
+t = 0.025
+xvalue("t","t", 2 )
+tstop = 0.02
+xvalue("Tstop","tstop", 1,"tstop_changed()", 0, 1 )
+dt = 0.025
+xvalue("dt","dt", 1,"setdt()", 0, 1 )
+steps_per_ms = 40
+xvalue("Points plotted/ms","steps_per_ms", 1,"setdt()", 0, 1 )
+xcheckbox("Quiet",&stdrun_quiet,"")
+realtime = 0
+xvalue("Real Time","realtime", 0,"", 0, 1 )
+xpanel(5,123)
+}
+objectvar scene_vector_[1]
+{doNotify()}

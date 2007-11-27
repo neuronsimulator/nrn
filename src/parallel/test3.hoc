@@ -1,0 +1,37 @@
+load_file("stdgui.hoc")
+
+create soma
+access soma
+insert hh
+dt=.001
+
+objref pc
+pc = new ParallelContext()
+
+objref vec
+index=0
+
+strdef s
+s = "run()\n"
+
+proc submit() {
+	pc.submit(s)
+}
+
+pc.runworker()
+
+
+for i=1,10 {
+	submit(i)
+}
+
+while (pc.working()) {
+	print pc.retval
+	if (i < 100) {
+		submit(i)
+		i += 1
+	}
+}
+
+pc.done()
+quit()

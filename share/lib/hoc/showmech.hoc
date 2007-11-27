@@ -1,0 +1,102 @@
+/*
+?0 UserClasses ShowMechanism
+Show where a membrane mechanism exists on the cell and allow setting of
+parameters as constants whereever the mechanism exists.
+
+The currently displayed mechanism is named in the label at the top of the
+lower portion of the panel.
+
+The top part uses a Shape scene to color red all the sections that have
+insert'ed the mechanism.  Colors black all the sections where the
+mechanism does not exist.
+
+When a valueeditor showing a parmameter is changed in the lower portion
+the value is used to set the corresponding range variable to a constant
+forall sections that contain the mechanism. 
+
+? MechType
+Menu for selecting the currently displayed mechanism.
+?0 User HocCode ShowMechanism
+*/
+help ?0
+
+begintemplate ShowMechanism
+public v1
+objectvar deck, v1, mt, deck, mlist, mm, shape, sl
+strdef s
+
+proc init() {
+	sl = $o1
+	item=1
+	build()
+	if (numarg(2)) {
+		if ($2 == 1) {
+			v1.map("ShowMechanism")
+		}
+	}
+}
+proc build() {
+	mt = new MechanismType(0)
+	mt.action("change_mech()")
+	deck = new Deck()
+	mlist = new List()
+	build_deck()
+	build_box()
+	mt.select(item)
+hoc_ac_=item
+	change_mech()
+}
+proc build_deck() {local i
+	deck.intercept(1)
+	for i=0, mt.count() - 1 {
+		mt.select(i)
+		mt.selected(s)
+		mm = new MechanismStandard(s)
+		mm.action("change_prop()")
+		mlist.append(mm)
+		forsec sl if (ismembrane(s)) mm.in()	// last one is the default
+		mm.panel()
+	}
+	deck.intercept(0)
+}
+proc build_box() {
+	v1 = new VBox()
+	v1.save("")
+	v1.intercept(1)
+	shape = new Shape()
+	xpanel("ShowMechanism", 1)
+	mt.menu()
+//	xbutton("Help", "help ShowMechanism UserClasses")
+	xpanel()
+	deck.map("")
+	v1.intercept(0)
+}
+proc change_mech() {
+	item = hoc_ac_
+	mt.select(item)
+	item = mt.selected(s)
+	deck.flip_to(item)
+	shape.color_all(1)
+	forsec sl if (ismembrane(s)) {
+		shape.color(2)
+	}
+}
+proc change_prop() {
+	forsec sl if (ismembrane(s)) {
+		mlist.object(item).out()
+	}
+}
+
+endtemplate ShowMechanism
+
+objectvar showmech, showmechseclist
+
+proc makeshowmechanism() {
+	if(!execute1("v", 0)) {
+		continue_dialog("No accessed section: Can't start a ShowMechanism")
+		return
+	}
+	showmechseclist = new SectionList()
+	forall showmechseclist.append()
+	showmech = new ShowMechanism(showmechseclist, 1)
+}

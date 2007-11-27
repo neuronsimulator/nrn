@@ -1,0 +1,63 @@
+#include <../../nrnconf.h>
+/* /local/src/master/nrn/src/nrnoc/passive0.c,v 1.2 1997/03/13 14:18:02 hines Exp */
+
+#include	"section.h"
+#include	"membdef.h"
+#include	"nrnoc_ml.h"
+static char *mechanism[] = {
+	"0", "fastpas", "g_fastpas", "e_fastpas", 0,0,0
+};
+static pas_alloc(), pas_cur(), pas_jacob();
+passive0_reg_() {
+	register_mech(mechanism, pas_alloc, pas_cur, pas_jacob, (Pfri)0, (Pfri)0, -1, 1);
+}
+
+#define g vdata[i][0]
+#define e vdata[i][1]
+#define v NODEV(vnode[i])
+
+static pas_cur(Memb_list* ml, int type) {
+	int count = ml->nodecount;
+	Node **vnode = ml->nodelist;
+	double **vdata = ml->data;
+	Datum **vpdata = ml->pdata;
+	int i;
+#if _CRAY
+#pragma _CRI ivdep
+#endif
+	for (i=0; i < count; ++i) {
+		NODERHS(vnode[i]) -= g * (v - e);
+	}
+}
+
+static pas_jacob(Memb_list* ml, int type) {
+	int count = ml->nodecount;
+	Node **vnode = ml->nodelist;
+	double **vdata = ml->data;
+	Datum **vpdata = ml->pdata;
+	int i;
+#if _CRAY
+#pragma _CRI ivdep
+#endif
+	for (i=0; i < count; ++i) {
+		NODED(vnode[i]) += g;
+	}
+}
+
+/* the rest can be constructed automatically from the above info*/
+
+static pas_alloc(p)
+	Prop *p;
+{
+	double *pd;
+#define	nparm 2
+	pd = nrn_prop_data_alloc(p->type, nparm);
+	p->param_size = nparm;
+#if defined(__MWERKS__)
+	pd[0] = 5.e-4;//DEF_g;
+#else
+	pd[0] = DEF_g;
+#endif
+	pd[1] = DEF_e;
+	p->param = pd;
+}

@@ -1,0 +1,29 @@
+/* test of the simpler connect statement */
+
+print "old method"
+create a, b, c
+strdef s
+proc con() {local x
+	create a, b, c
+	a connect b($1), $2
+	b connect c(0), 1
+	forall nseg=2
+	topology()
+}
+proc docon() {
+	con(0,0)
+	con(0,1)
+	con(1,0)
+	con(1,1)
+}
+docon()
+
+print "new method"
+proc con() {local x
+	create a, b, c
+	connect b($1), a($2)
+	connect c(0), b(1)
+	forall nseg=2
+	topology()
+}
+docon()

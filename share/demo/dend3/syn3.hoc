@@ -1,0 +1,86 @@
+/*
+?0 GUI NEURONDemonstrations Stylized
+?1 SynapticParameters
+Three AlphaSynapse's with same conductance, one per dendrite.
+Value editors set the common conductance and separate onset times.
+Sliders specify the position along the dendrites.
+Synapse 1 is located on dendrite[0] colored black on the shape plot movie.
+Syanpse 3 is on the dedrite colored blue.
+
+?0 User HocCode SynapticParameters
+*/
+help ?0
+
+nsyn = ndend
+
+syndel = 1
+synamp = 1.68
+
+objectvar syn[nsyn]
+double locsyn[3]
+{
+	locsyn[0] = .5/3
+	locsyn[1] = .5
+	locsyn[2] = 2.5/3
+}
+
+for i=0,nsyn-1 {
+	dend[i] syn[i] = new AlphaSynapse(locsyn[i])
+	syn[i].tau = .1
+	syn[i].e = 0
+}
+syn[0].onset = 1
+syn[1].onset = .5
+syn[2].onset = 0
+
+proc synset() {local i
+	for i=0, nsyn-1 {
+		syn[i].gmax = synamp
+	}
+}
+
+synset()
+
+strdef synlocstr
+
+proc change_loc() {local x
+	syn[$1].get_loc()
+	syn[$1].loc(locsyn[$1])
+	pop_section()
+	locsyn[$1] = syn[$1].get_loc()
+	pop_section()
+	sprint(synlocstr, "Syn 1-3 Locations    %.3f    %.3f    %.3f",\
+		 locsyn[0], locsyn[1], locsyn[2])
+}
+
+change_loc(0)
+
+objectvar tempobj
+
+proc syn3menu() {
+	objectvar vbox
+	vbox = new VBox()
+	vbox.intercept(1)
+/*	doesn't notify
+	tempobj = new Shape()
+	tempobj.point_mark(syn[0], 1)
+	tempobj.point_mark(syn[1], 2)
+	tempobj.point_mark(syn[2], 3)
+*/
+	vbox.ref(tempobj)
+	xpanel("Synaptic Parameters")
+	xvalue("Conductance (umho), all", "synamp", 1, "synset() run()", 1)
+	xvalue("Delay (ms), Syn 0", "syn[0].onset", 1)
+	xvalue("Delay Syn 1", "syn[1].onset", 1)
+	xvalue("Delay Syn 2", "syn[2].onset", 1)
+	xvarlabel(synlocstr)
+	xslider(&locsyn[0],0, 1, "change_loc(0)")
+	xslider(&locsyn[1],0, 1, "change_loc(1)")
+	xslider(&locsyn[2],0, 1, "change_loc(2)")
+	xpanel()
+	vbox.intercept(0)
+	vbox.map("Synaptic Parameters")
+}
+
+//syn3menu()
+

@@ -1,0 +1,12 @@
+for i=0,29 { data_fit1[i] = 2*exp(-.9*i/10) }
+
+double parm[2]
+parm[0] = 1
+parm[1] = 1.5
+
+attr_praxis(1e-5, .1, 1)
+
+fit_praxis(2, "err_fit1", &parm[0])
+
+printf("Final value a=%g  k=%g\n", parm[0], parm[1])
+

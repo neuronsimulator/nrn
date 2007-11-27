@@ -1,0 +1,122 @@
+
+// Physical properties
+create a
+access a
+{nseg=1 insert capump}
+cao=2
+
+// run parameters
+tstop=40
+
+// graphical interface appearance
+objref g, g2
+g = new Graph()
+g2 = new Graph()
+strdef s
+
+// simulation control
+proc init() {local x
+	t=0
+	v=0
+	forall if(ismembrane("capump")) {
+	   pump_capump=3e-14  pumpca_capump=0
+	   for (x) if (x!=0 && x!=1) {
+		setdata_capump(x) /* tell capump functions where to get data */
+		parms_capump()	/* set up surface to volume ratio */
+	   }
+	}
+	fcurrent()
+}
+
+proc ss() {local ca
+	setdata_capump(.5)
+	parms_capump()
+	ca = ss_capump()
+	printf("cai=%g  pump=%g  pumpca=%g\n", ca, pump_capump, pumpca_capump)
+}
+
+proc pcur() {
+	g2.size(-5,1,0,3e-3)	
+	diam=1000
+	g2.beginline
+	for (cai0=1.e-5; cai0 < 10; cai0=cai0*1.1) {
+		cai=cai0
+		run()
+		g2.line(log10(cai0), ica)
+		g2.vfixed
+		g2.label(.03,.95,"calcium channel current")
+		g2.label(.85,.09,"log10(cai)")
+		g2.label(.8,.5,"ica")
+	}
+}
+	g2.flush()	
+
+proc run() {
+	init()
+	step(.1)
+}
+
+proc step() {local ts
+	ts = t + $1
+	while(t < ts) {
+		fadvance()
+	}
+}
+
+proc parm() {
+	k1_capump = 5e8
+	k2_capump = .25e6
+	k3_capump = .5e3
+	k4_capump = 5e0
+}
+
+diam=100
+parm()
+
+pcur()
+ss()
+
+proc run1() {local diamsave
+	cai = $1
+	init()
+	diamsave = diam
+	diam = 1000 /* initialized pump states with
+			large diam so cai doesn't change */
+	step(.1)
+	cai = $1
+	diam = diamsave
+	t = 0
+	g.size(0,tstop,0,$1)
+	g.beginline
+	while(t < tstop) {
+		g.line(t, cai)
+		step(.1)
+	}
+	g.flush()
+}
+proc run() {
+	run1(.01)
+}
+proc change_d(){
+g.color(1)
+g.label(.8,.8,"diam=100")
+diam=100
+run()
+g.color(2)
+g.label(.8,.7,"diam=1")
+diam=1
+run()
+g.color(3)
+g.label(.8,.6,"diam=.2")
+diam=.2
+run()
+}
+
+// run simulation
+change_d()
+
+
+
+
+
+

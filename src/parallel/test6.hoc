@@ -1,0 +1,42 @@
+begintemplate Test
+public f
+objref this
+func f() {local x, i, id
+	id = hoc_ac_
+	x = $1*$1
+	for i=1,100000 hoc_cross_x_ = i
+	printf("id=%d %s: %g = f(%g, \"%s\", %s)\n", id, this, x, $1, $s2, $o3)
+	$o3.printf
+	return x
+}
+endtemplate Test
+
+objref test[3]
+for i=0,2 test[i] = new Test() // better be exactly the same on all machines
+
+objref pc
+pc = new ParallelContext()
+
+pc.runworker()
+
+objref vec
+strdef s
+vec = new Vector(4)
+
+for i=1,10 {
+	pc.submit(test[i%3], "f", i, "hello", vec.fill(10*i))
+}
+
+x = 0
+while ((id = pc.working()) != 0) {
+	x += pc.retval
+	printf("id=%d i=%d retval=%g  x=%g\n", id, pc.upkscalar, pc.retval, x)
+	if (i < 20) {
+		pc.submit(test[i%3], "f", i, "goodbye", vec.fill(10*i))
+		i += 1
+	}
+}
+
+pc.done()
+quit()
+

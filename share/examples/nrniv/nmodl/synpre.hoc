@@ -1,0 +1,82 @@
+/*Two unconnected sections. Section a stimulated by depolarizing left end
+as initial condition. PAP moves right to presynaptic terminal at right end.
+The synapse is located at the middle of section b.
+Plotting voltage for sections a and b, presynaptic voltage, postsynaptic
+current and voltage
+*/
+
+// Physical properties
+create a, b
+access a
+forall {nseg=40 L=5000 diam=10 insert hh }
+
+// run parameters
+tstop=10
+
+// graphical interface appearance
+objref g
+g = new Graph()
+objref s
+b s = new synp(.5)
+setpointer s.vpre, a.v(1)
+deadtime_synp = 3
+{s.tau=.2  s.gmax=.4  s.e=0  s.vprethresh=0 }
+
+// simulation control
+proc init() {
+	finitialize(-65)
+}
+
+objref g1
+
+proc run() {
+	init()
+	a.v(0:.1)= -20:20	/*stimulus*/
+	g1.begin
+	while (t < 10) {
+		g.erase
+		a pl(0) /*snapshot of section voltage at instant of time*/
+		b pl(1)
+		padvance(.4)
+		doNotify()
+	}
+	g1.flush()
+}
+
+proc padvance() { local ts	/* simulate for $1 msecs */
+	ts = t + $1
+	while (t < ts) {
+		g1.plot(t)
+		fadvance()
+	}
+}
+
+proc gr() {
+	g1 = new Graph()
+	g1.size(0,10,-80,60)
+	g1.addexpr("b.v(.5)",3,1)
+	g1.addexpr("s.vpre",2,1)
+	g1.addexpr("s.i",4,1)
+}
+gr() /* plots of variables vs time ; sets up plot panels*/
+
+proc pl() {
+	if ($1 == 0) {
+		g.color(2)
+	}else{
+		g.color(3)
+	}
+	g.size(0,a.L,-80,60)
+	g.beginline()	
+	for (x) {
+		g.line(x*L, v(x))
+	}
+	g.flush()
+	g.color(1)
+}
+
+// run simulation
+run()
+xpanel("run")
+xbutton("run", "run()")
+xpanel()

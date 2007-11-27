@@ -1,0 +1,260 @@
+begintemplate ImpedanceRatio
+public measure, inject, ratio, input, transfer, logfmin, logfmax, extended,logres
+public box, move, imp, style, pl, shape, flush, view_count, begin
+objectvar imp, sec[2], shape, b1, this, move_callback
+objectvar g, imp, box, pbox
+double x[2], color[2]
+strdef s0, s1, stemp, sdist, fstyle, tstr
+
+// kludge to use graphline() in pl()
+f = 0
+
+
+proc init() {
+	extended = 0
+	deltafac = .001
+	logres = .2
+	logfmin = -1
+	logfmax = 3
+	style_ = 0
+	fstyle = "log(Attenuation)"
+	mark_ = 1
+	flush_ = 0
+	scale_ = 0
+	measure(.5)
+	inject(.5)
+	imp = new Impedance()
+	build()
+	doNotify()
+
+	style(1)
+	scale_ = 1
+	pl()
+	scale_ = 0
+}
+
+proc build(){
+	dist()
+	box = new VBox()
+	box.ref(this)
+	box.save("")
+	box.intercept(1)
+	xpanel("", 1)
+	xbutton("Redraw", "pl()")
+	xmenu("SelectLocation")
+		xradiobutton("Select Measure", "mark_=0")
+		xradiobutton("Select Inject", "mark_=1", 1)
+		xbutton("Swap Measure/Inject", "exchange()")
+	xmenu()
+	xmenu("Plot")
+		xradiobutton("log(Attenuation)", "style(0)")
+		xradiobutton("Zin (Mohm)", "style(1)", 1)
+		xradiobutton("Ztransfer (Mohm)", "style(2)")
+		xradiobutton("V(measure)/V(inject)", "style(3)")
+	xmenu()
+	xmenu("Extras")
+		xstatebutton("Movie mode", &flush_, "add_flush()")
+		xstatebutton("Auto Scale", &scale_, "pl()")
+		xbutton("Parameters", "parm()")
+	xmenu()
+	xpanel()
+	xpanel("")
+		xcheckbox("include dstate/dt contribution", &extended, "pl()")
+		xvarlabel(s0)
+		xvarlabel(s1)
+		xvarlabel(sdist)
+	xpanel()
+	shape = new Shape()
+	for i=0,1 color[i]=i+2
+	shapemark(2)
+	for i=0,1 {
+		color[i] = i+2	// red, blue
+		shapemark(i, sec[i], x[i], color[i])
+	}
+	shape.action("move()")
+	defgraph()
+	box.intercept(0)
+	sprint(tstr, "%s Impedance vs Frequency", this)
+	box.map(tstr)
+}
+
+proc parm() {
+	pbox = new VBox()
+	pbox.save("")
+	pbox.intercept(1)
+	xpanel("")
+	xlabel("x axis scale (press redraw after changes)")
+	xpvalue("log(fmin)", &logfmin, 2)
+	xpvalue("log(fmax)", &logfmax, 2)
+	xpvalue("x resolution)", &logres, 2)
+	xlabel("")
+	xlabel("dy for df/dy calculation of extended y' = f(y)")
+	xpvalue("delta factor", &deltafac, 2, "imp.deltafac(deltafac)")
+	xpanel()
+	pbox.intercept(0)
+	sprint(tstr, "Params for %s", this)
+	pbox.map(tstr)
+}
+
+proc defgraph() {
+	g = new Graph()
+	g.size(0,3,0,1)
+	style(0)
+}
+
+proc style() {
+	style_ = $1
+	g.erase_all()
+	g.label(-100, -100, "")
+	if ($1 == 0) {
+		g.addexpr("-log(ratio(f))")
+		fstyle="log(Attenuation)"
+	}else if ($1 == 1) {
+		g.addexpr("input(f)")
+		fstyle="Zin"
+	}else if ($1 == 2) {
+		g.addexpr("transfer(f)")
+		fstyle = "Ztransfer"
+	}else if ($1 == 3) {
+		g.addexpr("ratio(f)")
+		fstyle = "V(measure)/V(inject)"
+	}
+	g.label(.5, .9, "freq log10(Hz)")
+	g.label(fstyle)
+	sec[0].sec measure(x[0])
+	sec[1].sec inject(x[1])
+	pl()
+}
+
+proc move() {local i, xx
+	i = mark_
+	xx = hoc_ac_
+	if (i == 0) {
+		measure(xx)
+	}else{
+		inject(xx)
+	}
+	shapemark(i, sec[i], x[i], color[i])
+	dist()
+	pl()
+}
+
+objectvar etmp
+proc exchange() {local xx, i //swap inject and measure
+	etmp = sec[0]
+	xx = x[0]
+	sec[1].sec measure(x[1])
+	etmp.sec inject(xx)
+	objectvar etmp
+	for i=0,1 shapemark(i, sec[i], x[i], color[i])
+	pl()
+}
+
+double sz[4]
+proc pl() {local max, x, val
+	g.begin()
+	for (x=logfmin; x <= logfmax; x=x+logres) {
+		f = 10^x
+		g.plot(x)
+	}
+	if (scale_) {
+		g.size(&sz[0])
+		g.size(logfmin, logfmax, 0, sz[3])
+	}
+	g.flush()
+}
+
+proc measure() {
+	sec[0] = new SectionRef()
+	x[0] = $1
+	sectionname(stemp)
+	if (style_ == 1) {
+		sprint(s0, "unused (red): %s(%g)", stemp, $1)
+	}else{
+		sprint(s0, "measure (red): %s(%g)", stemp, $1)
+	}
+}
+
+proc inject() {
+	sec[1] = new SectionRef()
+	x[1] = $1
+	sectionname(stemp)
+	if (style_ == 1) {
+		sprint(s1, "measure/inject (blue): %s(%g)", stemp, $1)
+	}else{
+		sprint(s1, "inject (blue): %s(%g)", stemp, $1)
+	}
+}
+
+func ratio() {local y
+	compute($1)
+	sec[1].sec y = imp.ratio(x[1])
+	return y
+}
+func transfer() {local y
+	compute($1)
+	sec[1].sec y = imp.transfer(x[1]) // since v(x)/i(loc) == v(loc)/i(x)
+	return y
+}
+func input() {local y
+	compute($1)
+	sec[1].sec y = imp.input(x[1])
+	return y
+}
+proc compute() {
+	sec[0].sec imp.loc(x[0])
+	imp.compute($1, extended)
+}
+
+objectvar rvp
+proc dist() {local y
+	sec[0].sec distance(0,x[0])
+	sec[1].sec y = distance(x[1])
+	sprint(sdist, "distance(um) %g", y)
+}
+
+// should put this in plotshape class and avoid a meaningless point process
+objectvar stim[1]
+proc shapemark() {local i
+	if (numarg() == 1) {
+		objectvar stim[$1]
+		for i=0,1 sec[i].sec stim[i] = new PointProcessMark(x[i])	
+		for i=0,1 shape.point_mark(stim[i], color[i])
+	}else{
+		$o2.sec stim[$1].loc($3)
+	}
+}
+
+proc add_flush() {
+	if (flush_) {
+		sprint(tstr, "flush_list.append(%s)", this)
+		execute(tstr)
+	}
+}
+func view_count() {
+	if (flush_) {
+		return g.view_count()
+	}else{
+		return 0
+	}
+}
+proc begin() {
+}
+proc flush() {
+	pl()
+}
+
+proc save() {}
+
+endtemplate ImpedanceRatio
+
+
+proc makeImpRatio() {
+	if(!execute1("v", 0)) {
+		continue_dialog("No accessed section: Can't start an ImpedanceRatio")
+		return
+	}
+	hoc_obj_[0] = new ImpedanceRatio()
+	objref hoc_obj_[2]
+}
+

@@ -1,0 +1,25 @@
+begintemplate Cell
+public soma, x
+x=0
+create soma
+proc init () {
+soma {
+	L=10 diam=10 insert hh	
+}}	
+endtemplate Cell
+
+objectvar c
+c = new Cell()
+
+topology()
+c.soma { print gnabar_hh }
+
+c.soma.gnabar_hh = .2
+c.soma.gnabar_hh
+c.soma.L=20
+c.soma.L
+c.soma psection()
+c.soma.nseg=10
+c.soma.diam = 20
+c.soma.diam(.5) = 30
+c.soma for(x) print x, diam(x), c.soma.diam(x)

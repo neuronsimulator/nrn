@@ -1,0 +1,56 @@
+/* HH membrane action potential */
+
+// physical properties of the cell
+create a
+access a
+{nseg=1 diam=1 L=1 insert hh}
+
+// experimental tools
+objref stim, c
+stim = new IClamp(0)
+c = new APCount(.5)
+
+// run parameters
+tstop=5
+strength = .005	/*namps*/
+tstim = .1
+
+// graphical interface appearance
+objref g
+g = new Graph()
+g.size(0,tstop,-70,50)
+g.addexpr("v",1,1)
+g.addexpr("ina*80",2,1)
+proc label() {
+	g.color(1)
+	g.vfixed(1)
+	g.label(0, .5, "mV")
+	g.label(.4, .15, "t (ms)")
+	g.label(.1, .01, "HH membrane action potential")
+}
+
+label()
+
+// simulation control
+proc init() {
+	finitialize(-65)
+	g.begin()
+}
+
+proc step() {
+	g.plot(t)
+	fadvance()
+}
+
+
+proc run() {
+	stim.dur = tstim
+	stim.amp = $1
+	init()
+	while(t < tstop) { step() }
+	g.flush()
+	print "apcount = ",c.n
+}
+
+// run simulation
+{run(strength)}

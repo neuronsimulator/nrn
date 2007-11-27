@@ -1,0 +1,48 @@
+objectvar save_window_, rvp_
+objectvar scene_vector_[5]
+objectvar ocbox_, ocbox_list_, scene_, scene_list_
+{ocbox_list_ = new List()  scene_list_ = new List()}
+{pwman_place(5,24)}
+
+//Begin KineticBuild[1]
+{
+load_template("KineticBuild")}
+{
+ocbox_=new KineticBuild(0)
+}
+{object_push(ocbox_)}
+{
+build() resize(5)
+xpos.x[0]=-15.0788  ypos.x[0]=-1.21956  cvec.x[0]=0
+xpos.x[1]=112.64  ypos.x[1]=-6.6202  cvec.x[1]=1
+xpos.x[2]=-7.50838  ypos.x[2]=129.996  cvec.x[2]=0
+xpos.x[3]=-18.4865  ypos.x[3]=-126.159  cvec.x[3]=0
+xpos.x[4]=104.102  ypos.x[4]=-136.527  cvec.x[4]=1
+m.x[0][1] = 0.0666667
+m.x[0][2] = 0.0005
+m.x[0][3] = 0.02
+m.x[1][0] = 0.000333333
+m.x[1][4] = 0.02
+m.x[2][0] = 0.1
+m.x[3][0] = 0.00025
+m.x[3][4] = 6.66667e-05
+m.x[4][1] = 1.5
+m.x[4][3] = 0.002
+maphist(new SChanHist(0, 100, 100, 1, -7))
+sch.set_rates(m) setcond()
+}
+{object_pop()}
+{
+{
+save_window_=ocbox_.g
+save_window_.size(-114.794,214.794,-110,110)
+ocbox_.g = save_window_
+save_window_.save_name("ocbox_.g")
+}
+ocbox_.map("KineticBuild[1]", 155, 73, 356.16, 757.44)
+}
+objref ocbox_
+//End KineticBuild[1]
+
+objectvar scene_vector_[1]
+{doNotify()}

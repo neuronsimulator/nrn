@@ -1,0 +1,251 @@
+begintemplate ChannelBuildKSGate
+public transitions, states, power, pr, append_displist, save_data, i
+public set_gatestr, set_displaystr, gatestr, displaystr, remove, cb
+public begin_restore, set_state, set_trans, end_restore, ksg, clone
+public copygate, destroy, kshoc
+objref transitions, states, ksg
+objref tobj, tobj1, cb, this, nil
+strdef displaystr, gatestr, tstr
+
+proc init() {
+	i = -1
+	cb = $o1
+	transitions = new List()
+	states = new List()
+	power = 1
+}
+
+proc destroy() {
+objref transitions, states, ksg
+objref tobj, tobj1, cb
+}
+
+proc kshoc() {local i
+	if (states.count == 0) {
+		return
+	}
+	$o1.printf("// %s\n", displaystr)
+	if (states.count == 1) {
+		$o1.printf("{\n  ksstates.append(ks.add_hhstate(\"%s\"))\n  ksgate = ksstates.object(0).gate\n", states.object(0).kss.name)
+		$o1.printf("  ksgate.power(%g)\n", ksg.power)
+		$o1.printf("  kstransitions.append(ks.trans(ksstates.object(0), ksstates.object(0)))\n}\n")
+	}else{
+		$o1.printf("{\n  objref ksgate\n")
+		for i=0, states.count-1 {
+			$o1.printf("  ksstates.append(ks.add_ksstate(ksgate, \"%s\"))\n", states.object(i).kss.name)
+			if (i == 0) {
+				$o1.printf("  ksgate = ksstates.object(0).gate\n")
+			}
+			states.object(i).index = i
+			$o1.printf("  ksstates.object(%d).frac(%g)\n", i, states.object(i).kss.frac)
+		}
+		if (ksg.power != 1) {
+			$o1.printf("  ksgate.power(%g)\n", ksg.power)
+		}
+		$o1.printf("}\n{\n")
+		for i=0, transitions.count-1 {
+			tobj = transitions.object(i)
+			$o1.printf("  kstransitions.append(ks.add_transition(ksstates.object(%d), ksstates.object(%d)))\n", tobj.src.index, tobj.target.index)
+		}
+		$o1.printf("}\n")
+	}
+	for i=0, transitions.count-1 {
+		transitions.object(i).kshoc($o1, i)
+	}
+	$o1.printf("{ ksstates.remove_all  kstransitions.remove_all }\n")
+}
+
+proc remove() {local i
+	for i=0, transitions.count-1 {
+		transitions.object(i).src = nil
+		transitions.object(i).target = nil
+	}
+	for i=0, states.count-1 {
+		states.object(i).gate = nil
+	}
+	transitions.remove_all
+	states.remove_all
+	objref tobj, cb, ksg
+}
+
+proc clone() {local i, j
+	tobj1 = new ChannelBuildKSGate($o1)
+	$o1.gatelist.append(tobj1)
+	tobj1.begin_restore(power)
+	for i=0, states.count - 1 {
+		tobj = states.object(i)
+		tobj.i = i
+		tobj1.set_state(tobj.name, tobj.frac, tobj.x, tobj.y)
+	}
+	for i=0, transitions.count-1 {
+		tobj = transitions.object(i)
+		tobj1.set_trans(tobj.src.i, tobj.target.i, tobj.kst.type)
+		tobj = transitions.object(i)
+		tobj1.transitions.object(i).settype(tobj.kst.type, tobj.kst.ligand)
+		tobj1.transitions.object(i).set_f(0, tobj.kst.ftype(0), tobj.kst.parm(0).c)
+		tobj1.transitions.object(i).set_f(1, tobj.kst.ftype(1), tobj.kst.parm(1).c)
+	}
+	tobj1.end_restore()
+	objref tobj1
+}
+
+proc copygate() {local i, j, k
+	// $o1 is the source KSChan, $o2 is the source KSGate
+	begin_restore($o2.power)
+	for i=0, $o2.nstate-1 {
+		j = i + $o2.sindex
+		tobj = $o1.state(j)
+		tstr = tobj.name
+		cb.new_sname(tstr)
+		set_state(tstr, tobj.frac, j*50, 100)
+		// if the source state index is i then
+		// the new states index is i - $o2.sindex
+	}
+	for i=0, $o1.ntrans - 1 {
+		tobj1 = $o1.trans(i)
+		if (tobj1.src.gate == $o2) {
+			set_trans(tobj1.src.index - $o2.sindex, \
+			  tobj1.target.index - $o2.sindex, tobj1.type)
+			tobj = transitions.object(transitions.count-1)
+			tobj.settype(tobj1.type, tobj1.ligand)
+			for k=0, 1 {
+				vmin = vmax = 0
+				if (tobj1.ftype(k) == 7) {
+tobj.set_f(k, tobj1.ftype(k), tobj1.parm(k,&vmin,&vmax).c, vmin, vmax)
+				}else{
+tobj.set_f(k, tobj1.ftype(k), tobj1.parm(k,&vmin,&vmax).c)
+				}
+			}
+		}
+	}
+	end_restore()
+}
+
+proc pr() {local i
+	if (states.count == 1) {
+		tobj = transitions.object(0).kst
+		printf("    %-46s (%s)\n", displaystr, tobj)
+		cb.ksth.pr(tobj)
+		return
+	}
+	printf("    %s\n", displaystr)
+	printf("      states: %s", states.object(0).kss.name)
+	for i=1, states.count-1 {
+		printf(", %s", states.object(i).kss.name)
+	}
+	printf("\n")
+	for i=0, transitions.count-1 {
+		tobj = transitions.object(i)
+		tobj.traneqstr(tstr)
+//		sprint(tstr, "      %s <-> %s", tobj.kst.src.name, tobj.kst.target.name)
+		printf("     %-50s (%s)\n", tstr, tobj.kst)
+		cb.ksth.pr(tobj.kst)
+	}
+}
+
+proc append_displist() {local i
+	$o1.append(this)
+}
+
+proc set_gatestr() {
+	set_basic(tstr)
+	if (power != 1) {
+		sprint(tstr, "%s^%d", tstr, power)
+	}
+	gatestr = tstr
+}
+
+proc set_basic() {local i, enclose
+	enclose = 0
+	$s1 = ""
+	for i = 0, states.count-1 {
+		tobj = states.object(i)
+		if (tobj.frac == 1) {
+			if (strcmp($s1, "") == 0) {
+				sprint($s1, "%s", tobj.name)
+			}else{
+				enclose = 1
+				sprint($s1, "%s + %s", $s1, tobj.name)
+			}
+		}else if (tobj.frac > 0) {
+			if (strcmp($s1, "") == 0) {
+				sprint($s1, "%.4g*%s", tobj.frac, tobj.name)
+				enclose = 1
+			}else{
+				enclose = 1
+				sprint($s1, "%s + %.4g*%s", $s1, tobj.frac, tobj.name)
+			}
+		}
+	}
+	if (strcmp($s1, "") == 0) { $s1 = "0" }
+	if (enclose) {
+		sprint($s1, "(%s)", $s1)
+	}
+}
+
+proc set_displaystr() {
+	if (states.count == 1) {
+		hh_displaystr()
+		return
+	}
+	set_basic(tstr)
+	sprint(tstr, "%s: %d state, %d transitions", tstr, states.count, transitions.count)
+	displaystr = tstr
+}
+
+proc hh_displaystr() {
+	tobj = states.object(0)
+	if (transitions.object(0).type == 1) {
+		sprint(displaystr, "%s' = (%sinf - %s)/%stau",\
+tobj.name, tobj.name, tobj.name, tobj.name)
+	}else{
+		sprint(displaystr, "%s' = a%s*(1 - %s) - b%s*%s",\
+tobj.name, tobj.name, tobj.name, tobj.name, tobj.name)
+	}
+}
+
+proc save_data() {local i
+	$o1.save("tobj = new ChannelBuildKSGate(this)")
+	$o1.save("{gatelist.append(tobj)}")
+	sprint(tstr, "{tobj.begin_restore(%d)}", power)
+	$o1.save(tstr)
+	for i=0, states.count-1 {
+		tobj = states.object(i)
+		tobj.index = i
+		sprint(tstr, "{tobj.set_state(\"%s\", %g, %g, %g)}", tobj.name, tobj.frac, tobj.x, tobj.y)
+		$o1.save(tstr)
+	}
+	for i=0, transitions.count-1 {
+		tobj = transitions.object(i)
+		sprint(tstr, "{tobj.set_trans(%d, %d, %d)}", \
+		  tobj.src.index, tobj.target.index, tobj.type)
+		$o1.save(tstr)
+		
+		sprint(tstr, "tobj.transitions.object(%d)", i)
+		cb.ksth.kst = transitions.object(i).kst
+		cb.ksth.save_data($o1, tstr)
+	}
+	$o1.save("{tobj.end_restore()}")
+}
+
+proc begin_restore() {local i
+	power = $1
+}
+
+proc end_restore() {
+//	set_disp()
+}
+
+proc set_state() {
+	tobj = new ChannelBuildKSState($s1, $2, $3, $4)
+	states.append(tobj)
+	tobj.gate = this
+}
+
+proc set_trans() {
+	tobj = new ChannelBuildKSTrans(states.object($1), states.object($2), cb)
+	tobj.type = $3
+	transitions.append(tobj)
+}
+
+endtemplate ChannelBuildKSGate

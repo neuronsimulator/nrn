@@ -1,0 +1,550 @@
+// Assume that except for soma, the move and line items form a tree
+// where, generally, a move is at the same point of the line to which
+// it is connected. Under this assumption, all major codes except 1 and 2
+// can be ignored.
+// An exception is the [10,5] code for branch point. The next point
+// is generally a line (not a move) with the same x,y,z of the branch point.
+
+begintemplate Import3d_Neurolucida_read
+public input, pheader
+public type, x, y, z, d, iline, header, point2sec, sections, lines
+public label, id2pt, id2line, pt2id, pt2sec, sec2pt, file, filetype, err
+public points, pointtype, branchpoints, firstpoints
+public helptxt, iline2pt, mark, fillproblist
+external hoc_sf_
+objref major, minor, x, y, z, d, iline, header, lines, iline2sec
+objref type, pointtype, points, iline2pt
+objref file, vectors, sec2point, point2sec, sections
+objref firstpoints, branchpoints
+objref cursec, diam, nil, gm
+objref line_branch_err, parse_err, xyparent_err, xynotnearest_err, noparent_err
+objref line_coincide_err, line_branch_err_pt, somabbox_err
+strdef tstr, line, filetype
+double a[7]
+
+proc init() {
+	filetype = "Neurolucida"
+	vectors = new List()
+	header = new List()
+	lines = new List()
+	gm = new GUIMath()
+}
+
+proc input() {
+	err = 0
+	line_branch_err = new List()
+	parse_err = new List()
+	xyparent_err = new List()
+	xynotnearest_err = new List()
+	noparent_err = new List()
+	line_coincide_err = new List()
+	somabbox_err = new List()
+	line_branch_err_pt = new Vector()
+
+	rdfile($s1)
+	find_parents()
+	repair_diam()
+	connect2soma()
+	if (err) { errout() }
+}
+
+proc repair_diam() {local i  localobj sec
+	// I am told, and it seems the case, that
+	// the first point incorrectly always has the diameter of
+	// the last point of the previous branch. For this reason
+	// we set the diameter of the first point to the diameter
+	// of the second point in the section
+	for i=0, sections.count-1 {
+		sec = sections.object(i)
+		if (sec.parentsec != nil) {
+			if (sec.first < sec.d.size-1){
+				sec.d.x[sec.first] = sec.d.x[sec.first + 1]
+			}
+		}
+	}
+}
+
+proc rdfile() {local i, j
+	file = new File($s1)
+	// count lines for vector allocation space (not really necessary)
+	if (!file.ropen()) {
+		err = 1
+		printf("could not open %s\n", $s1)
+	}
+	for (i = 0; !file.eof(); i += 1) {
+		file.gets(line)
+	}
+	file.close()
+//	printf("%s has %d lines\n", $s1, i)
+	alloc(i, major, minor, x, y, z, d, iline, pointtype, points)
+	diam = d
+	file.ropen()
+	for (i = 1; !file.eof(); i += 1) {
+		file.gets(line)
+		parse(i, line)
+	}
+	file.close()
+	iline2pt = new Vector(iline.x[iline.size-1])
+	j = 0
+	for i=0, points.size-2 {
+		while(j <= iline.x[points.x[i]]) {
+			iline2pt.x[j] = i
+			j += 1
+		}
+	}
+	for j=j, iline2pt.size-1 {
+		iline2pt.x[j] = points.size-1
+	}
+}
+
+proc alloc() { local i // $oi.size = 0 but enough space for $1 elements
+	for i = 2, numarg() {
+		$oi = new Vector($1)
+		$oi.resize(0)
+		vectors.append($oi)
+	}
+}
+
+func dist() {local x1, y1, z1
+	x1 = ($1 - x.x[$4])
+	y1 = ($2 - y.x[$4])
+	z1 = ($3 - z.x[$4])
+	return sqrt(x1*x1 + y1*y1 + z1*z1)
+}
+
+func xydist() {local x1, y1
+	x1 = (x.x[$1] - x.x[$2])
+	y1 = (y.x[$1] - y.x[$2])
+	return sqrt(x1*x1 + y1*y1)
+}
+
+func xysame() {
+	if ($1 == x.x[$3]) {
+		if ($2 == y.x[$3]) {
+			return 1
+		}
+	}
+	return 0
+}
+
+proc parse() {local i, n, m
+	n = sscanf($s2, "[%d,%d] (%f,%f,%f) %f", &a[0], &a[1], &a[2],\
+		&a[3], &a[4], &a[5])
+	hoc_sf_.left($s2, hoc_sf_.len($s2)-1)
+	if (n == 6) {
+		a[5] *= 2
+		iline_ = major.size
+		if (a[0] == 1) { // line
+			m = major.x[iline_ - 1]
+			if (m == 10 && minor.x[iline_-1] == 5) {
+				pointtype.append(0)
+				points.append(iline_)
+				if (!xysame(a[2], a[3], iline_-1)) {
+					err = 1
+					line_branch_err_pt.append(points.size-1)
+sprint(tstr, "%d: %s separated by %g from branch",\
+$1, $s2, dist(a[2], a[3], a[4], iline_-1))
+line_branch_err.append(new String(tstr))
+				}
+			}else if (m == 1 || m == 2) {
+				pointtype.append(1)
+				points.append(iline_)
+			}else{
+				pointtype.append(1)
+				points.append(iline_)
+			}
+		}else if (a[0] == 2) { // move
+			pointtype.append(0)
+			points.append(iline_)
+		}else if (a[0] == 10 && a[1] == 5) { // branch
+			pointtype.append(2)
+			points.append(iline_)
+		}else{
+		}
+		for i=0, 5 {
+			vectors.object(i).append(a[i])
+		}
+		iline.append($1) // for error messages
+		lines.append(new String($s2))
+	} else if (n == 0) { // comment
+		header.append(new String($s2))
+	} else {
+		err = 1
+		sprint(tstr, "%d: %s  parse failure after item %d", $1, $s2, n)
+		parse_err.append(new String(tstr))
+	}
+}
+
+proc mark() {local i, a,b,c,d,e,f
+	print $o1, $2, iline, lines
+	i = iline.indwhere("==",$2)
+	printf("%d,%d: %s\n", i, iline.x[i], lines.object(i).s)
+	n = sscanf(lines.object(i).s, "[%d,%d] (%f,%f,%f) %f", &a,&b,&c,\
+		&d,&e,&f)
+	if (n == 6) {
+		print a,b,c,d,e,f
+		$o1.mark(c,d,"S",12,4,1)
+	}
+}
+
+proc pheader() {local i
+	for i=0, header.count-1 {
+		printf("%s", header.object(i).s)
+	}
+}
+
+proc find_parents() {local i, j, m, ip, jp, jpmin, d, dmin, xi,yi,zi, bp, ip1
+	// we need to associate all pointtype=0 with a branch point (except the
+	// ones conceptually connected to the soma
+	// assume the pid is earlier than the pointtype=0
+	point2sec = points.c.fill(-1)
+	branchpoints = pointtype.c.indvwhere("==", 2)
+	firstpoints = pointtype.c.indvwhere("==", 0)
+	sections = new List()
+	type = firstpoints.c.fill(0)
+	for i=0, firstpoints.size-1 {
+		ip = points.x[firstpoints.x[i]]
+		newsec(i)
+		type.x[i] = cursec.type
+		xi = x.x[ip]  yi = y.x[ip]  zi = z.x[ip]
+		dmin = 1e9
+		jpmin = -1
+		m = minor.x[ip]
+		if (m == 41) { // soma start (contour
+			continue
+/* some files use these as branch beginnings so check this after seeing if
+there are coincident points.
+		}else if (m == 1) { // dendrite start
+			continue
+		}else if (m == 21) { // axon start
+			continue
+		}else if (m == 61) { // apical dendrite start
+			continue
+*/
+		}
+		if (line_branch_err_pt.size) {
+			j = line_branch_err_pt.x[0]
+			if (ip == points.x[j]) {
+				physcon(i, ip, ip-1, j-1)
+				line_branch_err_pt.remove(0)
+				continue
+			}
+		}
+		for j=0, branchpoints.size-1 {
+			jp = points.x[branchpoints.x[j]]
+			if (ip <= jp) { break }
+			d = dist(xi, yi, zi, jp)
+			if (d < dmin) {
+				bp = branchpoints.x[j]
+				dmin = d
+				jpmin = jp
+			}
+		}
+		if (dmin <= 0) {
+			cursec.parentsec = sections.object(point2sec.x[bp])
+		}else if (m == 1) { // dendrite start
+			continue
+		}else if (m == 21) { // axon start
+			continue
+		}else if (m == 61) { // apical dendrite start
+			continue
+		}else{
+			err = 1
+sprint(tstr, "%d: %s branch at line %d is %.4g away",\
+iline.x[ip], lines.object(ip).s, iline.x[jpmin], dmin)
+			d = xydist(ip, jpmin)
+			if (d <= 0) { // overlay branch point in xy plane?
+				xyparent_err.append(new String(tstr))
+				physcon(i, ip, jpmin, bp)
+			}else if (ip > 0) {
+				// sometime it coincides with a previous LineTo
+				ip1 = firstpoints.x[i]-1
+				d = dist(xi, yi, zi, points.x[ip1])
+				if (d <= 0) {
+sprint(tstr, "%s\n      but coincides with line %d", tstr, iline.x[points.x[ip1]])
+					line_coincide_err.append(new String(tstr))
+					cursec.parentsec = sections.object(point2sec.x[ip1])
+				}else if (try_xy_coincide(i, ip)){
+					xynotnearest_err.append(new String(tstr))
+				}else{
+					noparent_err.append(new String(tstr))
+				}
+			}
+		}
+	}
+}
+
+func try_xy_coincide() {local j, jp, d
+	// sometimes it coincides in the xy plane with a branch point
+	// even though it is not the nearest point and therefore we
+	// assume that is the parent point
+	for j=0, branchpoints.size-1 {
+		jp = points.x[branchpoints.x[j]]
+		if ($2 <= jp) { break }
+		d = xydist($2, jp)
+		if (d <= 0) {
+sprint(tstr, "%s\n      but coincides with branch point at line %d", tstr, iline.x[jp])
+			bp = branchpoints.x[j]
+			physcon($1, $2, jp, bp)
+			return 1
+		}
+	}
+	return 0
+}
+
+proc physcon() {
+	cursec.parentsec = sections.object(point2sec.x[$4])
+	cursec.insrt(0, x.x[$3], y.x[$3], z.x[$3], d.x[$2])
+	cursec.id -= 1
+}
+
+proc newsec() {local i, ip, n, m, first, isec
+	first = firstpoints.x[$1]
+	ip = points.x[first]
+	if ($1 < firstpoints.size-1) {
+		n = firstpoints.x[$1+1] - first
+	}else{
+		n = points.size - first
+	}
+	cursec = new Import3d_Section(first, n)
+	isec = sections.count
+	sections.append(cursec)
+	for i = 0, n-1 {
+		cursec.append(i, points.x[i+first], 1, x, y, z, d)
+		point2sec.x[i+first] = isec
+	}
+	m = minor.x[ip]
+	if (m == 1 || m == 2) { // dendrite
+		cursec.type = 3
+	}else if (m == 21 || m == 22) { //axon
+		cursec.type = 2
+	}else if (m == 41 || m == 42) { // soma
+		cursec.type = 1
+		cursec.iscontour_ = 1
+	}else if (m == 61 || m == 62) { // apdendrite
+		cursec.type = 4
+	}else{
+		err = 1
+printf("%s line %d: don't know section type: %s\n",\
+ file.getname, iline.x[ip], lines.object(ip).s)
+	}
+}
+
+proc connect2soma() {local i, ip, j, jp, bp, jpmin, dmin, d, xmin, xmax, ymin, ymax localobj soma, sec, xc, yc, zc, c, psec, r
+	// find centroid of soma if outline and connect all dangling
+	// dendrites to that if inside the contour
+	for i=0, sections.count-1 {
+		sec = sections.object(i)
+		if (sec.type == 1 && sec.iscontour_ == 1) {
+			soma = sec
+			sections.remove(i)
+			sections.insrt(0, soma)
+			break
+		}
+	}
+	if (soma == nil) { return }
+	xc = soma.raw.getrow(0)
+	yc = soma.raw.getrow(1)
+	zc = soma.raw.getrow(2)
+	xmin = xc.min-.5  xmax = xc.max + .5
+	ymin = yc.min-.5  ymax = yc.max + .5
+	c = soma.contourcenter(xc, yc, zc)
+	for i=0, sections.count-1 {
+		sec = sections.object(i)
+		if (sec.parentsec == nil && sec != soma) {
+			if (gm.inside(sec.raw.x[0][0], sec.raw.x[1][0], xmin, ymin, xmax, ymax)) {
+				sec.parentsec = soma
+				sec.parentx = .5
+				sec.insrt(0, c.x[0], c.x[1], c.x[2], .01)
+				sec.id -= 1
+				sec.first = 1
+			}else{
+				// is same as end point of earlier section?
+				ip = points.x[sec2pt(i, 0)]
+				d = 1e9
+				for j=0, i-1 {
+					psec = sections.object(j)
+					jp = psec.d.size-1
+					r = psec.raw
+					d = dist(r.x[0][jp], r.x[1][jp], r.x[2][jp], ip)
+					if (d == 0) {
+						sec.parentsec = psec
+						break
+					}
+				}
+				if (d == 0) { continue }
+				ip = points.x[sec2pt(i, 0)]
+				dmin = dist(c.x[0], c.x[1], c.x[2], ip)
+				jpmin = -1
+				for j=0, branchpoints.size-1 {
+					jp = points.x[branchpoints.x[j]]
+					if (ip <= jp) { break }
+					d = dist(x.x[ip], y.x[ip], z.x[ip], jp)
+					if (d < dmin) {
+						bp = branchpoints.x[j]
+						dmin = d
+						jpmin = jp
+					}
+				}
+				err = 1
+sprint(tstr, "%d: %s is outside soma, logically connect to", iline.x[ip], lines.object(ip).s)
+				if (jpmin == -1) {
+					sprint(tstr, "%s soma", tstr)
+					sec.parentsec = soma
+					sec.insrt(0, c.x[0], c.x[1], c.x[2], .01)
+					sec.id -= 1
+				}else{
+					jp = jpmin
+					sprint(tstr, "%s %d", tstr, iline.x[jp])
+					sec.parentsec = sections.object(point2sec.x[bp])
+					sec.insrt(0, x.x[jp], y.x[jp], z.x[jp], .01)
+					sec.id -= 1
+				}
+				sec.first = 1
+				somabbox_err.append(new String(tstr))
+			}
+		}
+	}
+}
+
+// note selpoint defined in swc_gui.hoc as sec.id + j
+// selpoint is the points index
+// ie. the first points of the sections are firstpoints
+proc label() {local i
+	i = points.x[$1]
+	sprint($s2, "Line %d: %s", iline.x[i], lines.object(i).s)
+}
+func id2pt() {
+	if ($1 < 0) { return -1 }
+	if ($1 >= iline2pt.size) { return iline2pt.x[iline2pt.size-1]}
+	return iline2pt.x[$1]
+}
+func id2line() { return points.x[$1] }
+func pt2id() {
+	if ($1 < 0) {return -1}
+	return iline.x[points.x[$1]]
+}
+func pt2sec() {local i
+	i = firstpoints.indwhere(">", $1)
+	if (i == -1) {
+		i = firstpoints.size
+	}
+	$o2 = sections.object(i-1)
+	j = $1 - $o2.id
+	return j
+}
+func sec2pt() {
+//print "sec2pt ", $1, $2, sections.object($1).id
+	return sections.object($1).id + $2
+}
+
+proc helptxt() {
+	xpanel("Neurolucida file filter characteristics")
+xlabel("    The only lines utilized are [1,x], [2,x], and [5,10].  i.e , LineTo,")
+xlabel("MoveTo, and Branch lines. ")
+xlabel("    Sections generally consist of MoveTo followed by sequence of LineTo,")
+xlabel("and possibly ending with Branch.  Intervening lines of other major types")
+xlabel("are ignored. ")
+xlabel("    The type of the section (dendrite, axon, soma outline, or apical) is")
+xlabel("determined by the minor code of the first point in the branch. ")
+xlabel("    Coincidence of the first x,y,z point of a section with the last")
+xlabel("(branch) point of some section defines a connection between child and")
+xlabel("parent section.  However most files contain errors and the following")
+xlabel("heuristics are applied to the first points of problem sections when the")
+xlabel("parent is not obvious.  EACH PROBLEM POINT SHOULD BE EXAMINED to")
+xlabel("determine if the correction is suitable. ")
+xlabel("   1) The first point after a Branch point is a MoveTo which is")
+xlabel("coincident in the xy plane but not in the z axis.  A physical connection")
+xlabel("is made with the diam of the MoveTo. ")
+xlabel("   2) The nearest branch point is coincident in the xy plane. A physical")
+xlabel("connection is made with the diam of the MoveTo.")
+xlabel("   3) There is no coincident branchpoint in the xy plane but the MoveTo")
+xlabel("is 3-d coincident with the preceding LineTo point. A logical connection")
+xlabel("is made to the section containing the LineTo point.")
+xlabel("   4) There is an xy plane coincident branch point but it is not the")
+xlabel("nearest in a 3-d sense.  A physical connection is made to the section")
+xlabel("containing the xy plane coincident point. ")
+xlabel("   5) The first point of the branch is not a soma, dendrite, axon, or")
+xlabel("apical start point and there is no xy plane coincident branch point. ")
+xlabel("The branch remains unattached (but see heuristic 6). ")
+xlabel("   6) All unattached branches within 0.5 microns of the soma contour")
+xlabel("bounding box are logically connected to the soma contour section. ")
+xlabel("I am told, and it seems to be the case, that the first point in a")
+xlabel("branch always has a diameter value of the last point in the previous")
+xlabel("branch.  For this reason we set the first point to the diameter of")
+xlabel("of the second point in each section that has a parent branch.")
+xlabel("If this is not the right thing to do then comment out the call to")
+xlabel("repair_diam() in the input() procedure of read_nlcda.hoc")
+	xpanel(1)
+}
+
+proc errout() {local i
+	printf("\n%s problems and default fixes\n\n", file.getname)
+	if (parse_err.count) {
+		printf("  Following lines could not be parsed\n")
+		for i=0, parse_err.count-1 {
+			printf("    %s\n", parse_err.object(i).s)
+		}
+		printf("\n")
+	}
+	if (line_branch_err.count) {
+printf("  LINETO follows branch and does not coincide in the xy plane.\n")
+printf("  Make a physical connection using the LINETO diameter.\n")
+		for i = 0, line_branch_err.count-1 {
+			printf("    %s\n", line_branch_err.object(i).s)
+		}
+		printf("\n")
+	}
+	if (xyparent_err.count) {
+		printf("  Nearest branch point is coincident in xy plane.\n  Make a physical connection with diam of the MOVETO\n")
+		for i=0, xyparent_err.count-1 {
+			printf("    %s\n", xyparent_err.object(i).s)
+		}
+		printf("\n")
+	}
+	if (line_coincide_err.count) {
+		printf("  No coincident branchpoint in xy plane but 3-d coincident to previous LINETO.\n")
+		printf("  point. Make a logical connection to the section containing that LINETO\n")
+		for i=0, line_coincide_err.count-1 {
+			printf("    %s\n", line_coincide_err.object(i).s)
+		}
+		printf("\n")
+	}
+	if (xynotnearest_err.count) {
+		printf("  The xy plane coincident branch point is not the nearest in the 3-d sense.\n")
+		printf("  However we connect physically to the indicated xy coincident branch point\n")
+		for i=0, xynotnearest_err.count-1 {
+			printf("    %s\n", xynotnearest_err.object(i).s)
+		}
+		printf("\n")
+	}
+	if (noparent_err.count) {
+		printf("  Cannot figure out which is the parent\n")
+		printf("  No coincident (even in xy plane) branch point.\n")
+		for i=0, noparent_err.count-1 {
+			printf("    %s\n", noparent_err.object(i).s)
+		}
+		printf("\n")
+	}
+	if (somabbox_err.count) {
+		printf("  Unconnected branch is more than .5 microns outside the soma bounding box.\n")
+		printf("  Connect logically to nearest branch point\n")
+		for i=0, somabbox_err.count-1 {
+			printf("    %s\n", somabbox_err.object(i).s)
+		}
+		printf("\n")
+	}
+}
+
+proc fillproblist() {
+	fillproblist1($o1, parse_err, line_branch_err, xyparent_err, line_coincide_err, xynotnearest_err, noparent_err, somabbox_err)
+}
+proc fillproblist1() { local i, j
+	for i=2, numarg() {
+		for j=0, $oi.count-1 {
+			$o1.append($oi.object(j))
+		}
+	}
+}		
+
+endtemplate Import3d_Neurolucida_read

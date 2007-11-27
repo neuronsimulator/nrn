@@ -1,0 +1,1 @@
+#include "../parallel/bbs.cpp"

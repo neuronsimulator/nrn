@@ -1,0 +1,28 @@
+access soma
+x=0
+objectvar sg, g, sh
+proc spaceplot() {local i
+	g = new Graph()
+	sg = new RangeVarPlot("v")
+	node[nmyelin-1] sg.begin(1) dend[0] sg.end(1)
+	g.size(sg.left(), sg.right(), -80, 40)
+	g.yaxis()
+	g.addobject(sg)
+	for i=1,2 {
+		sg = new RangeVarPlot("v")
+		dend[i]  sg.begin(0) dend[i] sg.end(1)
+		sg.origin(soma.L)
+		g.color(i+1)
+		g.addobject(sg)
+	}
+	flush_list.append(g)
+	g.save_name("flush_list.")
+	sh = new PlotShape()
+	flush_list.append(sh)
+	sh.save_name("flush_list.")
+}
+
+//spaceplot()
+
+objectvar sg, g, sh
+

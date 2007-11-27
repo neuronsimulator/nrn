@@ -1,0 +1,1301 @@
+begintemplate LinearCircuit
+public box, g, map, elements, sel, lincirnodes, model, change_val
+public pr_singular, prnodes, toggle_xtrn, setalias
+public con, plotwhat, dismiss_graph, varptrname, simulate_, ystate, yinit
+external graph_menu_remove_most, LincirGraph, ElementBase, hoc_sf_
+external valid_name_syntax
+
+objref box, g, this, elements, nil, sel, tobj, parts, model, fih
+objref xends, yends, tobj1, groundnode, si, con, lincirnodes
+objref gmat, cmat, bvec, inmat, inb, umat, vmat, dvec, almat, alvec
+objref valbox, namebox, model, deck, b1, statebox, icbox, graphlist
+objref varnames, varname_indices, namelist, ystate, yinit, icptrs
+objref ic_name_indices_
+strdef tstr, tstr1
+
+proc init() {local i
+	noconsist_ = 0
+	parasitic_ = 0
+	show_parts_ = 1
+	simulate_ = 0
+	keepcon_ = 0
+	show_con_ = 1
+	res_ = 10
+	ystate = new Vector(50) // for persistence
+	yinit = new Vector(50) // for persistence
+	graphlist = new List()
+	lincirnodes = new List()
+	elements = new List()
+	xends = new Vector()
+	yends = new Vector()
+	ic_name_indices_ = new Vector(5)
+	con = new Vector()
+	parts = new List()
+	WIRE = parts.count
+	parts.append(new Wire(con))
+	parts.append(new Resistor(con))
+	parts.append(new Capacitor(con))
+	BAT = parts.count
+	parts.append(new Battery(con))
+	CUR = parts.count
+	parts.append(new Current(con))
+	GND = parts.count
+	parts.append(new Ground(con))
+	parts.append(new OpAmp(con))
+	// following must be last so that part>=CELL logic clause works
+	CELL = parts.count
+	parts.append(new InsideCell(con))
+	parts.append(new OutsideCell(con))
+	ncellnode = 0
+	build()
+	if (numarg() == 0) {
+		map()
+	}
+	mkelm(GND, -100, -100, 1, 0) // but don't save it if it has these coords
+	fih = new FInitializeHandler(3, "finit()", this)
+}
+
+proc hints_arrange() {
+xpanel("LinearCircuit Arrange Hints")
+xlabel(" This tool is used to construct the structure of the circuit.  The circuit")
+xlabel("is not actually in existence except when the \"Simulate\" radiobutton is active.")
+xlabel(" Selecting the center of one of the part types on the left of the scene")
+xlabel("creates an instance of the part which can be dragged to its desired position.")
+xlabel(" Selecting the center of an existing part allows moving it to a new position.")
+xlabel(" Moving a part off the scene destroys the part.")
+xlabel(" An unconnected end is denoted by a red circle. When the end of a part")
+xlabel("overlays the end of another part, its end is denoted by a black square.")
+xlabel(" Selecting the end of a part allows scaling and rotation of the part")
+xlabel("usually without changing the location of the other ends of the part.")
+xlabel("When \"Keep Connected\" is toggled on, moving of a part or end automatically")
+xlabel("rotates and scales the connecting parts to keep them connected.")
+xpanel()
+}
+proc hints_label() {
+xpanel("LinearCircuit Label Hints")
+xlabel(" Labels are used to construct parameter and state names.")
+xlabel(" While \"Move\" is selected, labels may be dragged to a new position")
+xlabel(" While \"Change\" is selected, selecting a label, center of a part,")
+xlabel("or an end connected to a part (GND and WIRE excluded) pops up")
+xlabel("a string chooser for entering a label for the part or end.")
+xlabel(" For, cell labels, a Shape Scene pops up for selecting the")
+xlabel("desired location of the circuit connection to the cell.")
+xlabel(" Since connection nodes involve multiple parts, they may have more")
+xlabel("than one label. The voltage state name will be determined by whichever")
+xlabel("part happens to be first in the list of parts.")
+xlabel(" Labels cannot be erased from the end of a part. Instead remove and")
+xlabel("recreate the part.")
+xlabel(" Grounds and Wires cannot be labeled.")
+xpanel()
+}
+proc hints_parm() {
+xpanel("LinearCircuit Parameters Hints")
+xlabel(" Parameter units are nF, Mohm, ms, mV, nA.")
+xlabel(" Parameter panels are destroyed when the simulate or parameters")
+xlabel("radio buttons are not chosen.")
+xlabel(" Battery and Current sources are defined in terms of three duration")
+xlabel("amplitude pairs.")
+xlabel(" This tool is useful for changing parameters when the Simulate")
+xlabel("tool cannot be chosen because the singular value test gives one or")
+xlabel("values < 1e-10 due not to an error in the circuit but only because")
+xlabel("of inappropriate parameter values.")
+xlabel(" The circuit can be forced to have a solution. Selecting the")
+xlabel("\"Parasitics\" checkbox connects each node to ground with a 1e-9 nF")
+xlabel("capacitance and gives each battery a 1e-9 MOhm series resistance.")
+xpanel()
+}
+proc hints_simulate() {
+xpanel("LinearCircuit Simulate Hints")
+xlabel(" The circuit exists only when the \"Simulate\" radiobutton is active.")
+xlabel(" Circuits can exist even if no cable sections exist but unlocated cell")
+xlabel("parts will have no capacitance or conductance to ground.")
+xlabel(" Extracellular cell nodes are ground if the extracellular mechanism is not")
+xlabel("inserted at the location.")
+xlabel("")
+xlabel(" Parameter units are nF, Mohm, ms, mV, nA.  State units are mV for nodes.")
+xlabel(" State panels are destroyed whenever the simulate")
+xlabel("radio button becomes inactive.")
+xlabel(" Battery and Current sources are defined in terms of three duration")
+xlabel("amplitude pairs.")
+xlabel(" Graphs are limited to the states listed in the \"PlotWhat?\" menu.")
+xpanel()
+}
+proc hints_solution() {
+xpanel("LinearCircuit No Solution Hints")
+xlabel(" (Sub)Circuits have no solution if they have no path to ground (e.g. through")
+xlabel("a cell location), or if Batteries are in parallel or shorted, or a current source")
+xlabel("is not in a circuit loop.")
+xlabel(" Cells with the \"no location\" label have no capacitance or conductance to ground.")
+xlabel(" Cell nodes (inside or outside) cannot be directly connected together or to")
+xlabel("ground. To make connections with 0 resistance, use a battery with 0 potential.")
+xlabel(" The system is considered not to have a solution when the g+c matrix has")
+xlabel("one or more singular values < 1e-10.  In some circumstances this")
+xlabel("test yields a false negative due to particular parameter values (e.g.")
+xlabel("op amp gain) and the circuit can be repaired simply by adjusting parameters.")
+xlabel(" See the Parameters Hints with regard to turning off consistency checking")
+xlabel("or forcing the existence of a solution by employing parasitic capacitance.")
+xpanel()
+}
+proc dismiss() {local i
+	for i=0, graphlist.count - 1 {
+		graphlist.object(i).box.unmap
+	}
+	for i=0, elements.count - 1 {
+		tobj = elements.object(i)
+		if (tobj.part == BAT || tobj.part == CUR) {
+			tobj.extra_info.box = nil
+		}
+	}
+	objref graphlist, statebox, valbox, namebox, icbox
+	box.unmap()
+}
+
+proc free_lincirnode() {
+	lincirnodes.object($1).elements = nil
+	lincirnodes.remove($1)
+}
+
+proc free_lincirnodes() {local i
+	for i = 0, lincirnodes.count - 1 {
+		lincirnodes.object(i).elements = nil
+	}
+	lincirnodes.remove_all
+}
+
+proc unref() {
+	if ($1 == 0) {
+		free_lincirnodes()
+//		print this, " freed"
+	}
+}
+
+proc plparts() {local x, y, a
+	a=0
+	for i=0, parts.count-1 {
+		x = .05
+		y = .95 - i*.1
+		if (i== CELL+1) a = -90
+		g.glyph(parts.object(i).g, x, y, 1,1,a,2)
+	}
+}
+proc pl() {local i
+	g.erase_all
+	if (show_parts_) plparts()
+	if (simulate_) plsim()
+	for i=0, elements.count-1 {
+		elements.object(i).pl(g)
+	}
+	if (show_con_) pl_connection()
+	g.flush
+}
+
+proc plsim() {
+	if (parasitic_) {
+		g.label(.1,.9,"Using Parasitics", 2,1,0,0,2)
+	}
+}
+
+proc def_con() {local i, xmax, xmin, n
+	xends.resize(0)
+	yends.resize(0)
+	for i=0, elements.count-1 {
+		elements.object(i).ends(xends, yends)
+	}
+	xmin = xends.min  xmax = xends.max
+	if (xmax - xmin < 1) { xmax = xmin + 1 }
+	tobj = yends.c.add(xends.c.add(xmin).mul(.5/(xmax - xmin + 1e-5)))
+	si = tobj.sortindex
+	tobj = tobj.index(tobj, si)
+	con.resize(xends.size).fill(0)
+	j = 1
+	n = tobj.size
+	fe = float_epsilon  float_epsilon = .01
+	nnode = 0
+	for i=1, n-1 {
+		if (tobj.x[i] == tobj.x[i-1]) {
+			nnode += 1
+			con.x[si.x[i]] = nnode
+			con.x[si.x[i-1]] = nnode
+			i+=1
+			while (i < n ) {
+				if (tobj.x[i] == tobj.x[i-1]) {
+					con.x[si.x[i]] = nnode
+					i += 1
+				}else {
+					break
+				}
+			}
+		}
+	}
+	float_epsilon = fe
+}
+
+proc pl_connection() { local i
+	def_con()
+	for i=0, con.size-1 {
+		if (con.x[i] > 0) {
+			g.mark(xends.x[i], yends.x[i], "s", 6, 1, 1)
+		}else{
+			g.mark(xends.x[i], yends.x[i], "o", 12, 2, 1)
+		}
+	}
+}
+
+proc build() {
+	box = new HBox(3)
+	box.save("save()")
+	box.ref(this)
+	box.dismiss_action("dismiss()")
+	box.intercept(1)
+
+	g = new Graph(0)
+	graph_menu_remove_most(g)
+	g.view(2)
+	g.xaxis(3)
+	b1 = new VBox(3)
+	b1.intercept(1)
+	xpanel("")
+	g.menu_tool("Arrange", "move", "tool(0)")
+	g.menu_tool("Label", "label", "tool(1)")
+	g.menu_tool("Parameters", "sim", "tool(3)")
+	g.menu_tool("Simulate", "sim", "tool(2)")
+	xpanel()
+	deck = new Deck(3)
+	deck.intercept(1)
+	xpanel("")
+	xcheckbox("Keep Connected", &keepcon_)
+	xbutton("Hints", "hints_arrange()")
+	xpanel()
+	xpanel("")
+	label_mode_ = 1
+	xradiobutton("Move", "label_mode_ = 1", 1)
+	xradiobutton("Change", "label_mode_ = 0")
+	xbutton("Hints", "hints_label()")
+	xpanel()
+	xpanel("")
+	xbutton("Parameters", "values()")
+	xmenu("Source f(t)", "srcmenu()")
+	xbutton("Initial Conditions", "ics()")
+	xbutton("States", "states()")
+	xbutton("New Graph", "newgraph()")
+	xbutton("Name map", "namemap()")
+	xbutton("Hints", "hints_simulate()")
+	xpanel()
+	xpanel("")
+	xbutton("Parameters", "values()")
+	xmenu("Source f(t)", "srcmenu()")
+	xcheckbox("Turn off consistency checking", &noconsist_)
+	xcheckbox("Parasitic aF/battery mOhm", &parasitic_)
+	xbutton("Print Matrix Info", "pr_singular()")
+	xbutton("Hints", "hints_parm()")
+	xpanel()
+	deck.intercept(0)
+	deck.map
+	b1.intercept(0)
+	b1.map()
+	g.exec_menu("Arrange")
+
+	box.intercept(0)
+}
+
+proc ng() {
+	sprint(tstr, "%s.x[%d]", model.y, $2)
+	$o3.g.addvar($s1,tstr)
+}
+
+func varptrname() {
+// return 1 and $s2 as the proper vector element if $s1 is a proper variable name
+	for i=0, varnames.count - 1 {
+		tobj = varnames.object(i)
+		if (strcmp($s1, tobj.s) == 0) {
+			sprint($s2, "%s.x[%d]", model.y, varname_indices.x[i])
+			return 1
+		}
+	}
+	return 0
+}
+
+proc tool() {local i  localobj tobj
+	tooltype_ = $1
+	deck.flip_to($1)
+	simulate_ = ($1 == 2)
+	show_parts_ = ($1 == 0)
+	show_con_ = ($1 == 0)
+	pl()
+//	print "remove all aliases"
+	hoc_sf_.alias(this) // wipe out any that are already there
+	if (simulate_) {
+		if (!simdef()) {
+			g.exec_menu("Parameters")
+		}else{
+			setalias()
+//			tobj = hoc_sf_.alias_list(this)
+//			for i = 0, tobj.count - 1 {
+//				print tobj.object(i).s
+//			}
+		}
+	}else{
+		if ($1 != 3) valbox = nil
+		statebox = nil
+		namebox = nil
+		model = nil
+		icbox = nil
+		for i=0, graphlist.count-1 {
+			graphlist.object(i).re_add()
+		}
+		if ($1 != 3) for i=0, elements.count - 1 {
+			tobj = elements.object(i)
+			if (tobj.part == BAT || tobj.part == CUR) {
+				tobj.extra_info.box = nil
+			}
+		}
+	}
+}
+
+proc values() {local i
+	valbox = new VBox()
+	valbox.intercept(1)
+	valbox.save("")
+	xpanel("")
+		sprint(tstr, "%s.change_val()", this)
+		for i=0, elements.count - 1 {
+			tobj = elements.object(i)
+			if (tobj.part != BAT && tobj.part != CUR) {
+				tobj.valedit(tstr)
+			}
+		}
+	xpanel()
+	valbox.intercept(0)
+	sprint(tstr, "Values for %s", this)
+	valbox.map(tstr)
+}
+
+proc finit() {
+	// e.g if mulrunfitter changes one or more parameters because an alias
+	// was used in the parameter list, then we need to update
+	// the LinearMechanism. At the beginning of finitialize() is a
+	// good place
+//	printf("finitialize called %s.finit()\n", this)
+	change_val()
+}
+
+proc setalias() {local i, j  localobj tobj, tobj1
+	for i=0, elements.count - 1 {
+		elements.object(i).setalias(this)
+	}
+	for i=0, varnames.count - 1 {
+		if (aname(varnames.object(i).s, tstr)) {
+			hoc_sf_.alias(this, tstr, &model.y.x[varname_indices.x[i]])
+		}
+	}
+	for i=0, elements.count - 1 {
+		tobj = elements.object(i)
+		if (tobj.part == BAT || tobj.part == CUR) {
+			tobj1 = tobj.extra_info
+		    if (tobj1.xtrn == 1) {
+			hoc_sf_.alias(this, tobj.names[0].s, &model.b.x[tobj.indices.x[2]-1])
+		    }else{
+			for j=0, tobj1.amp.size-1 {
+				sprint(tstr, "%s_dur%d", tobj.names[0].s, j)
+				hoc_sf_.alias(this, tstr, &tobj1.dur.x[j])
+				sprint(tstr, "%s_amp%d", tobj.names[0].s, j)
+				hoc_sf_.alias(this, tstr, &tobj1.amp.x[j])
+			}
+		    }
+		}
+	}
+	for i=0, ic_name_indices_.size-1 {
+		j = ic_name_indices_.x[i]
+		aname(varnames.object(j).s, tstr)
+		sprint(tstr, "%s_0", tstr)
+		hoc_sf_.alias(this, tstr, &yinit.x[varname_indices.x[j]])
+	}
+}
+
+func aname() {local i
+	if (sscanf($s1, "%[0-9]", $s2) == 1) { return 0 }
+	sscanf($s1, "%[^(]", $s2)
+	if (sscanf($s2, "%s %s", $s2, tstr1) == 2) {
+		sprint($s2, "%s_%s", $s2, tstr1)
+	}
+	return 1
+}
+
+proc namemap() {local i
+	namebox = new VBox()
+	namebox.intercept(1)
+	namebox.save("")
+	namelist = new List()
+	namelist.append(new String("Parameters..."))
+	for i=0, elements.count - 1 {
+		tobj = elements.object(i)
+		tobj.valmap(namelist)
+	}
+	namelist.append(new String("States..."))
+	for i=0, varnames.count - 1 {
+		sprint(tstr, "%s     %s.x[%d]", varnames.object(i).s, model.y, varname_indices.x[i])
+		namelist.append(new String(tstr))
+	}
+	namelist.browser("", "s")
+	namebox.intercept(0)
+	sprint(tstr, "Name map for %s", this)
+	namebox.map(tstr)
+}
+
+proc srcmenu() {local i
+	for i=0, elements.count - 1 {
+		tobj = elements.object(i)
+		if (tobj.part == BAT || tobj.part == CUR) {
+			sprint(tstr,"srcval(%s)", tobj)
+			xbutton(tobj.names[0].s, tstr)
+		}
+	}
+}
+
+proc toggle_xtrn() {
+	$o1.extra_info.set_xtrn()
+	$o2.unmap()
+	if (simulate_) {
+		setalias()
+	}
+}
+
+proc srcval() {local i
+	tobj = $o1.extra_info
+	tobj.box = new VBox()
+	tobj.box.save("")
+	tobj.box.intercept(1)
+	xpanel("")
+	sprint(tstr, "toggle_xtrn(%s, %s)", $o1, tobj.box)
+	xcheckbox("External Stim Pattern", &$o1.extra_info.xtrn, tstr)
+    if ($o1.extra_info.xtrn == 0) {
+	sprint(tstr1, "%s.extra_info.changed_dur()", $o1)
+	for i=0, tobj.amp.size-1 {
+		sprint(tstr, "dur%d (ms)", i)
+		xpvalue(tstr, &tobj.dur.x[i], 1, tstr1)
+		if ($o1.part == BAT) {
+			sprint(tstr, "amp%d (mV)", i)
+		}else{
+			sprint(tstr, "amp%d (nA)", i)
+		}
+		xpvalue(tstr, &tobj.amp.x[i], 1)
+	}
+	sprint(tstr, "tvec is %s", tobj.tvec)
+	xlabel(tstr)
+	sprint(tstr, "amp is %s", tobj.amp)
+	xlabel(tstr)
+    }else{
+	xlabel("... should play into the alias")
+	sprint(tstr, "%s.%s", this, $o1.names[0].s)
+    }
+	xlabel(tstr)
+	xpanel()
+	tobj.box.intercept(0)
+	sprint(tstr, "f(t) for %s of %s", $o1.names[0].s, this)
+	tobj.box.map(tstr)
+}
+
+proc states() {local i
+	statebox = new VBox()
+	statebox.intercept(1)
+	statebox.save("")
+	xpanel("")
+	xlabel("nodes...")
+	for i=0, varnames.count-1 {
+		if (i == varnames_internal_index) {
+			xlabel("internal...")
+		}
+		xpvalue(varnames.object(i).s, &model.y.x[varname_indices.x[i]])
+	}
+	xpanel()
+	statebox.intercept(0)
+	sprint(tstr, "States for %s", this)
+	statebox.map(tstr)
+}
+
+proc ic_name_indices() {local i, save
+	ic_name_indices_.resize(0)
+	for i=0, varnames.count-1 {
+		if (i == varnames_internal_index) {
+			break
+		}
+		if (is_cell_node(lincirnodes.object(varname_indices.x[i]+1))) { continue }
+		save = icptrs.object(i).val
+		icptrs.object(i).val = -999e9
+		if (yinit.x[varname_indices.x[i]] == -999e9) { //unnamed node
+			icptrs.object(i).val = save
+			continue
+		}
+		icptrs.object(i).val = save
+		ic_name_indices_.append(i)
+	}
+}
+
+proc ics() {local i, j
+	icbox = new VBox()
+	icbox.intercept(1)
+	icbox.save("")
+	xpanel("")
+	xlabel("Initial values for named")
+	xlabel(" voltage nodes not associated")
+	xlabel(" with potential of cells.")
+	for i=0, ic_name_indices_.size-1 {
+		j = ic_name_indices_.x[i]
+		yinit.x[varname_indices.x[j]] = icptrs.object(j).val
+		sprint(tstr, "change_ic(%d)", j)
+		xpvalue(varnames.object(j).s, &yinit.x[varname_indices.x[j]], 1, tstr)
+	}
+	xlabel("Note: Unnamed nodes are 0")
+	xlabel(" and cell nodes are v_init")
+	xpanel()
+	icbox.intercept(0)
+	sprint(tstr, "Initial Conditions for %s", this)
+	icbox.map(tstr)
+}
+
+func is_cell_node() {local i
+	for i=0, $o1.elements.count-1 {
+		if ($o1.elements.object(i).part >= CELL) {
+			return 1
+		}
+	}
+	return 0
+}
+
+proc change_ic() { // only for persistance under circuit modifications
+	//and saving in a session
+	icptrs.object($1).val = yinit.x[varname_indices.x[$1]]
+}
+
+proc newgraph() {
+	graphlist.append(new LincirGraph(this))
+}
+
+proc dismiss_graph() {local i
+	i = graphlist.index($o1)
+	if (i >= 0) {
+		graphlist.remove(i)
+	}
+}
+proc plotwhat() {local i
+	for i=0, varnames.count-1 {
+		if (i == varnames_internal_index) {
+			xlabel("internal...")
+		}
+		sprint(tstr, "ng(\"%s\", %d, %s)", varnames.object(i).s, varname_indices.x[i], $o1)
+		xbutton(varnames.object(i).s, tstr)
+	}
+}
+
+proc statemap() {local i, j, in
+	varnames = new List()
+	varname_indices = new Vector()
+	varnames_internal_index = 0
+	icptrs = new List()
+
+	for i=1, lincirnodes.count - 1 { // skip groundnode
+		tobj = lincirnodes.object(i)
+		in = tobj.index
+		k = -1
+		for j=0, tobj.elements.count-1 {
+			sel = tobj.elements.object(j)
+			k = tobj.ends.x(j) + 1
+			if (sel.names[k] == nil) {
+				k = -1
+			}else{
+				break
+			}
+		}
+		if (k != -1) {
+			sprint(tstr, "%s (mV)", sel.names[k].s)
+			// We really need a better representation of a persistent
+			// named node. The initial condition is hard to save
+			// if the circuit is re-arranged. So we parallel
+			// the node name
+			icptrs.append(new Pointer(&sel.ic.x[k]))
+			yinit.x[in-1] = icptrs.object(icptrs.count-1).val
+		}else{
+			sprint(tstr, "%d (mV)", in)
+			// must keep things in parallel with varnames
+			// unfortunately we can't add nil to a list
+			// so just use yinit itself
+			icptrs.append(new Pointer(&yinit.x[in-1]))
+		}
+		varnames.append(new String(tstr))
+		varname_indices.append(in-1)
+		varnames_internal_index += 1
+	}
+	for i=0, elements.count - 1 {
+		tobj = elements.object(i)
+		for j=0, tobj.pat.extra_eqn-1 {
+			if (tobj.names[0] != nil) {
+				tobj.pat.ename(tstr, j)
+				sprint(tstr, "%s %s", tobj.names[0].s, tstr)
+				varnames.append(new String(tstr))
+				varname_indices.append(tobj.indices.x[tobj.nnode+j]-1)
+			}
+		}
+	}
+	// update graphs
+	for i = 0, graphlist.count-1 {
+		graphlist.object(i).re_add()
+	}
+	ic_name_indices()
+}
+
+proc install() {
+	model.install(cmat, gmat, bvec, CELL, lincirnodes) 
+	statemap()
+	for i=0, elements.count - 1 {
+		tobj = elements.object(i)
+		if (tobj.part == BAT || tobj.part == CUR) {
+			tobj.extra_info.play(tobj, model.b)
+		}
+	}
+	if (statebox != nil) {
+		states()
+	}
+}
+
+proc change_val() {local i
+	if (simulate_) {
+		fill_eqn()
+		if (!model.change_val(cmat, gmat, bvec)){
+			install()
+		}
+	}
+}
+
+func res() {
+	return int($1/res_ + .5) * res_
+}
+
+proc move() {
+	if ($1 == 2) {
+		if (select($2, $3, 0) == -1) {
+			select_part($2, $3)
+		}else{
+			keepcon1()
+		}
+	}
+	if (selindex > -1) {
+		sel.move(selsub, $2, $3)
+		if ($1 == 3) {
+			if (!inside($2,$3)) {
+				elements.remove(selindex)
+				keepcondel()
+			}else{
+				keepcon2()
+			}
+		}
+		pl()
+	}
+}
+
+proc label() {local i
+	if (label_mode_ == 1) {
+		label_move($1,$2,$3)
+		return
+	}
+	if ($1 == 2) {
+		select_label($2, $3)
+		if (sel == nil) {
+			for (i=0; select($2, $3, i) != -1; i = selindex+1) {
+				if (sel != nil) {
+					if(sel.part != GND && sel.part != WIRE) {
+						break
+					}
+				}
+			}
+		}
+	} // dialog on press gives exception on mswin
+	if ($1 == 3) {
+		if (sel != nil) {
+			if (sel.names[selsub] == nil) {
+				sel.names[selsub] = new String("")
+			}
+			if (sel.names_x == nil) {
+				sel.names_x = new Vector(sel.nnode+1,15)
+				sel.names_y = new Vector(sel.nnode+1, 15)
+			}
+			tstr = sel.names[selsub].s
+			if (sel.part >= CELL && selsub == 0) {
+				tobj = sel.extra_info
+				tobj.select()
+				tobj.name(sel)
+			}else{
+				while (string_dialog("Enter Name", tstr)) {
+					if (valid_name_syntax(tstr, 1)) {
+						sel.names[selsub].s = tstr
+						break
+					}
+				}
+			}
+		}
+		pl()
+	}
+}
+
+proc label_move() {
+	if ($1 == 2) {
+		select_label($2, $3)
+	}
+	if (sel != nil) {
+		sel.move_label(selsub, $2, $3)
+		pl()
+	}
+}
+	
+proc sim() {}
+
+func near_label() {local x, y, h, i
+	x = sel.x + sel.names_x.x[selsub]
+	y = sel.y + sel.names_y.x[selsub]
+	if (selsub > 0) {
+		x += sel.nd.x[selsub-1][0]
+		y += sel.nd.x[selsub-1][1]
+	}
+	i = g.view_info()
+	x = g.view_info(i, 13, x) - g.view_info(i, 13, $1)
+	y = g.view_info(i, 14, y) - g.view_info(i, 14, $2)
+	h = g.view_info(i, 15)
+	if (abs(x) < h && abs(y) < h) {
+		return 1
+	}
+	return 0
+}
+
+proc select_label() {local i, j
+	for i=0, elements.count-1 {
+		sel = elements.object(i)
+		for selsub=0, sel.nnode { // really mean sel.nnode
+			if (sel.names[selsub] != nil) {
+				if (near_label($1,$2)) {
+					return
+				}
+			}
+		}
+	}
+	sel = nil
+}
+
+proc keepcon1() {
+	if (keepcon_ == 0) { return }
+	keepcon1_ = 1
+	def_nodes()
+}
+proc keepcon2() {local i, j, k, x, y
+	if (keepcon1_ == 0) { return }
+	keepcon1_ = 0
+	xends.resize(0)
+	yends.resize(0)
+	sel.ends(xends, yends)
+	if (selsub > 0) {
+		tobj = sel.lincirnodes[selsub-1]
+		x = xends.x[selsub-1]  y = yends.x[selsub-1]
+		for i=0, tobj.elements.count-1 {
+			j = tobj.ends.x[i]
+			tobj.elements.object(i).move(j+1, x, y)
+		}
+	}else{
+		for k=0, sel.nnode-1 {
+			tobj = sel.lincirnodes[k]
+			x = xends.x[k]  y = yends.x[k]
+			for i=0, tobj.elements.count-1 {
+				j = tobj.ends.x[i]
+				tobj.elements.object(i).move(j+1, x, y)
+			}
+		}
+	}
+}
+proc keepcondel() {local i, j, k
+	if (keepcon1_ == 0) { return }
+	keepcon1_ = 0
+	if (selsub > 0) {
+		tobj = sel.lincirnodes[selsub-1]
+		for i=0, tobj.elements.count-1 {
+			k = elements.index(tobj.elements.object(i))
+			if (k > -1) {
+				elements.remove(k)
+			}
+		}
+	}else{
+		for k=0, sel.nnode-1 {
+			tobj = sel.lincirnodes[k]
+			for i=0, tobj.elements.count-1 {
+				j = elements.index(tobj.elements.object(i))
+				if (j > -1) {
+					elements.remove(j)
+				}
+			}
+		}
+	}
+}
+
+proc setval() {
+	if ($1 == 3) {
+		if (select($2, $3, 0) > -1) {
+			sel.setval()
+		}
+	}
+}
+
+func simdef() {local b
+	b = 0
+	if (setup_matrix()) {
+		if (neq > 1) {
+			if (has_solution()) {
+				model = new Lincir2Linmech(ystate, yinit)
+				install()
+				return 1
+			}else{
+				return 0
+			}
+		}else{
+			b = 1
+		}
+	}
+	model = nil
+	statemap() // if we did not call install
+	return b
+}
+
+func select() {local i
+	for i = $3, elements.count-1 {
+		sel = elements.object(i)
+		selsub = sel.selected($1, $2)
+		if (selsub > -1) {
+//			elements.remove(i)
+//			elements.prepend(sel)
+			selindex = i
+			return selindex
+		}
+	}
+	selindex = -1
+	sel = nil
+	return selindex
+}
+proc select_part() {local cnt, iv, x, i
+	cnt = parts.count
+	iv = g.view_info()
+	$1 = g.view_info(iv, 11, $1)
+	$2 = g.view_info(iv, 12, $2)
+	i = int((1 - $2)/.1)
+	if (i < cnt && $1 < .1) {
+		sel = new ElementBase(parts.object(i), i)
+		elements.append(sel)
+		if (sel.part >= CELL) {
+			sel.extra_info.name(sel)
+			if (sel.part == CELL+1) {
+				sel.angle = -PI/2
+			}
+		}
+		selindex = elements.count-1
+		selsub = 0
+	}
+}
+func inside() {local iv
+	iv = g.view_info()
+	$1 = g.view_info(iv, 11, $1)
+	$2 = g.view_info(iv, 12, $2)
+	if ($1 < 1 && $1 > 0 && $2 > 0 && $2 < 1) {
+		return 1
+	}
+	return 0
+}
+
+proc def_nodes() {
+	def_con()
+	// From pl_connection(), the ends of elements have 1,nnode indices in con.
+	// con[] = 0 means unconnected.
+	// Due to wires, subsets of nodes may be identical
+	// number the 0 nodes
+	for i=0, con.size-1 {
+		if (con.x[i] == 0) {
+			nnode += 1
+			con.x[i] = nnode
+		}
+	}
+	free_lincirnodes()
+	for i = 0, nnode-1 {
+		lincirnodes.append(new LinearCircuitNode())
+	}
+	// let the elements know the nodes --- and the nodes their elements
+	j = 0
+	for i=0, elements.count - 1 {
+		tobj = elements.object(i)
+		for k = 0, tobj.nnode-1 {
+			lincirnodes.object(con.x[j+k]-1).add(elements.object(i), k)
+		}
+		j += tobj.nnode
+	}
+}
+
+func setup_matrix() {local i, j, k
+	def_nodes()
+	// merge the ground nodes
+	groundnode = nil
+	for i=0, elements.count-1 {
+		tobj = elements.object(i)
+		if (tobj.part == GND) {
+			if (groundnode == nil) {
+				groundnode = tobj.lincirnodes[0]
+//print "in loop groundnode = ", groundnode
+			}else{
+				groundnode.merge(tobj.lincirnodes[0])
+			}
+		}
+	}
+	for i = 0, elements.count - 1 {
+		tobj = elements.object(i)
+		if (tobj.part == WIRE) {
+			if (groundnode == tobj.lincirnodes[1]) {
+				groundnode = tobj.lincirnodes[0]
+			}
+			tobj.lincirnodes[0].merge(tobj.lincirnodes[1])
+		}
+	}
+	// clear away the irrelevant nodes, grounds, and wires.
+	for (i=lincirnodes.count - 1; i >= 0; i -= 1) {
+		tobj = lincirnodes.object(i)
+		if (tobj.elements.count == 0) {
+			free_lincirnode(i)
+		}else{
+			for (j = tobj.elements.count - 1; j >= 0 ; j -= 1) {
+				tobj1 = tobj.elements.object(j)
+				if (tobj1.part == GND) {
+					tobj.elements.remove(j)
+					tobj.ends.remove(j)
+				}else if (tobj1.part == WIRE){
+					tobj.elements.remove(j)
+					tobj.ends.remove(j)
+				}
+			}
+		}
+	}
+//print "groundnode ", groundnode
+	if (groundnode == nil) {
+		continue_dialog("No common ground, so voltages indeterminate")
+		// unless there is a cell connection
+		return 0
+	}
+	if (!valid_cell_con()) {
+		return 0
+	}
+	reorder()
+//	prnodes("non-trivial")
+	neq = lincirnodes.count
+if (0) {
+	print "node map"
+	for i=0, lincirnodes.count - 1 {
+		tobj = lincirnodes.object(i)
+		print tobj, "  ", tobj.index
+	}
+}
+	// no special
+	// handling of battery or op-amp output here. Each device can
+	// keep its own indices for internal states, such as current, if
+	// desired.
+	for i=0, elements.count - 1 {
+		neq = elements.object(i).extra_eqn(neq)
+	}
+	if (neq == 0) return 0
+	cmat = new Matrix(neq, neq)
+	gmat = new Matrix(neq, neq)
+	bvec = new Vector(neq)
+	yinit.resize(neq)
+	fill_eqn()
+	return 1
+}
+
+proc reorder() {local i, j, k
+	// order must be ground node then located cell nodes
+	j = 0
+	for i=0, lincirnodes.count - 1 {
+		tobj = lincirnodes.object(i)
+		if (tobj == groundnode) {
+			lincirnodes.remove(i)
+			lincirnodes.insrt(0, tobj)
+			j += 1
+		}else{
+			for k=0, tobj.elements.count-1 {
+				tobj1 = tobj.elements.object(k)
+				if (tobj1.part >= CELL) {
+					if (tobj1.extra_info.sec != nil) {
+						lincirnodes.remove(i)
+						lincirnodes.insrt(j, tobj)
+						j += 1
+					}
+				}
+			}
+		}
+	}
+	for i=0, lincirnodes.count - 1 {
+		lincirnodes.object(i).re_index(i)
+	}
+}
+
+proc fill_eqn() { local i, j, a, inode
+	cmat.zero
+	gmat.zero
+	bvec.fill(0)
+	for i=0, elements.count - 1 {
+		elements.object(i).setup_mat(cmat, gmat, bvec)
+	}
+	// the groundnode equation is just v[groundnode] = 0
+	i = groundnode.index
+	cmat.setrow(i, 0)
+	gmat.setrow(i, 0)
+	bvec.x[i] = 0
+	gmat.x[i][i] = 1
+	// multiply segment current balance equations by -100/area to satisfy our convention
+	// fac is 100 for since we must convert nanoamps/micron2 to millamp/cm2
+	// thus for our circuit, R is Megohm, v is mV, t is ms, C is nF
+	for i=0, elements.count-1 {
+		tobj = elements.object(i)
+		if (tobj.part >= CELL) {
+			if (tobj.extra_info.sec == nil) {
+				a = 0
+			}else{
+				tobj.extra_info.sec.sec { a = area(tobj.extra_info.x)}
+			}
+			if (a == 0) { a = 100 }
+			for j=0, tobj.nnode-1 {
+				inode = tobj.lincirnodes[j].index
+//print tobj.names[0].s, " inode=", inode, "a=", a
+				cmat.setrow(inode, cmat.getrow(inode).mul(-100/a))
+				gmat.setrow(inode, gmat.getrow(inode).mul(-100/a))
+				bvec.x[inode] *= -100/a
+			}
+		}
+	}
+	if (parasitic_) {
+		// connect every node to ground with an attofarad capacitor
+		for i=0, lincirnodes.count - 1 {
+			if (i != groundnode.index) {
+				cmat.x[i][i] -= 1e-9
+			}
+		}
+		// every battery has a 1e-9 Mohm series resistance
+		// thus instead of the ib row equation v2 - v1 = e
+		// we have v2 - v1 + R*ib = e
+		for i=0, elements.count - 1 {
+			tobj = elements.object(i)
+			if (tobj.part == BAT) {
+				j = tobj.indices.x[2]
+				gmat.x[j][j] += 1e-9
+			}
+		}
+	}
+//	print "cmat" cmat.printf
+//	print "gmat" gmat.printf
+//	print "bvec" bvec.printf
+}
+
+func n_singular() {local ns, i, j, k, nrow
+	// ensure c*y' + g*y is invertable with dt=1
+	nrow = bvec.size
+	if (nrow == 0) return 0
+	inmat = cmat.c.add(gmat)
+	// can consider cell nodes as resistors to ground
+	for i=0, elements.count-1 {
+		tobj = elements.object(i)
+		if (tobj.part >= CELL) {
+			if (tobj.extra_info.sec != nil) {
+				for k=0, tobj.nnode - 1 {
+					j = tobj.lincirnodes[k].index
+					inmat.x[j][j] -= 1
+				}
+			}
+		}
+	}
+	// find the singular values of inmat and the tranformation that makes it
+	// diagonal in order to determine the algebraic equations.
+	umat = new Matrix()  vmat = new Matrix()
+	dvec = inmat.svd(umat, vmat)
+	// is the system partly algebraic, if so how much
+	ns = dvec.indwhere("<", 1e-10)
+	if (ns >= 0) {
+		return nrow - ns
+	}
+	return 0
+}
+
+func has_solution() {local ns
+	ns = n_singular()
+	if (noconsist_ == 0 && ns > 0) {
+		prnodes("Matrix equations have no solution")
+		print "cmat" inmat.muls(-1).add(gmat).muls(-1).printf
+		print "gmat" gmat.printf
+		print "singular values" dvec.printf
+sprint(tstr, "Circuit equations have %d inconsistencies", ns)
+		if (boolean_dialog(tstr,"Hints","Continue")) hints_solution()
+		return 0
+	}
+	return 1
+}
+
+proc pr_singular() {local ns
+	setup_matrix()
+	ns = n_singular()
+	prnodes("Matrix equations")
+	print "cmat" inmat.muls(-1).add(gmat).muls(-1).printf
+	print "gmat" gmat.printf
+	print "singular values" dvec.printf
+	printf("Circuit equations have %d inconsistencies\n", ns)
+}
+
+
+
+func valid_cell_con() {local i
+	//make sure not directly connected to another cell node or ground
+	for i=0, elements.count-1 {
+		tobj = elements.object(i)
+		if (tobj.part >= CELL) {
+			if (!valid_cell_con1(elements.object(i))) {
+				return 0
+			}
+		}
+	}
+	return 1
+}
+func valid_cell_con1() {local i, j
+	for i=0, $o1.nnode-1 {
+		tobj = $o1.lincirnodes[i]
+		if (tobj == groundnode) {
+			tstr= "Cell nodes cannot be connected directly to Ground."
+			if (boolean_dialog(tstr,"Hints","Continue")) hints_solution()
+			return 0
+		}
+		for j=0, tobj.elements.count-1 {
+			tobj1 = tobj.elements.object(j)
+			if (tobj1.part >= CELL) {
+				if ($o1 != tobj1 || i != tobj.ends.x[j]) {
+					tstr = "Cell nodes cannot be connected directly together."
+					if (boolean_dialog(tstr,"Hints","Continue")) hints_solution()
+					return 0
+				}
+			}
+		}
+	}
+	return 1
+}
+
+proc prnodes() {
+	print $s1
+	for i=0,lincirnodes.count-1 {
+		tobj = lincirnodes.object(i)
+		print tobj
+		for j=0, tobj.elements.count-1 {
+			printf("   %s %s %d\n", tobj.elements.object(j),\
+			 tobj.elements.object(j).pat, tobj.ends.x[j])
+		}
+	}
+}
+
+proc map() {
+	sprint(tstr, "%s", this)
+	if (numarg() == 0) {
+		box.map(tstr)
+	}else{
+		box.map(tstr, $2, $3, $4, $5)
+	}
+	pl()
+}
+
+proc mkelm() {local i
+	sel = new ElementBase(parts.object($1), $1)
+	elements.append(sel)
+	sel.x = $2  sel.y = $3  sel.scale = $4  sel.angle = $5
+	tobj = sel.val
+	for i=0, tobj.size-1 {
+		tobj.x[i] = fscan()
+	}
+}
+
+proc mklabel() {local n
+	n = sel.nnode
+	if (sel.names_x == nil) {
+		sel.names_x = new Vector(n+1)
+		sel.names_y = new Vector(n+1)
+	}
+	sel.names[$1] = new String($s2)
+	sel.names_x.x[$1] = $3
+	sel.names_y.x[$1] = $4
+}
+
+proc restore_ic() {
+	sel.ic.x[$1] = $2
+}
+
+proc save() {local i, j
+	box.save("load_file(\"lincir.hoc\", \"LinearCircuit\")\n}\n{")
+	box.save("ocbox_ = new LinearCircuit(1)")
+	box.save("}\n{object_push(ocbox_)}")
+
+	for i=0, elements.count-1 {
+		sel = elements.object(i)
+		if (sel.part == GND && sel.x==-100 && sel.y==-100) {
+			if (sel.scale == 1 && sel.angle == 0) {
+				continue // created automatically
+			}
+		}
+sprint(tstr, "{mkelm(%d, %g, %g, %g, %g)}", sel.part, sel.x, sel.y, sel.scale,\
+sel.angle)
+		box.save(tstr)
+		// mkelm also reads the values
+		tobj = sel.val
+		for j = 0, tobj.size - 1 {
+			sprint(tstr, "%g", tobj.x[j])
+			box.save(tstr)
+		}
+		for j=0, sel.nnode {
+			if (sel.names[j] != nil) {
+sprint(tstr, "{mklabel(%d, \"%s\", %g, %g)}", j, sel.names[j].s, sel.names_x.x[j], sel.names_y.x[j])
+				box.save(tstr)
+				if (j > 0) {
+					if (sel.ic.x[j] != 0) { // save initial condition
+// note that initial conditions are only saved for named states
+sprint(tstr, "{restore_ic(%d, %g)}", j, sel.ic.x[j])
+						box.save(tstr)
+					}
+				}
+			}
+		}
+		if (sel.part >= CELL) {
+			tobj = sel.extra_info
+			if (tobj.sec != nil) {			
+tobj.sec.sec sprint(tstr, "{sel.extra_info.set(\"%s\", %g) sel.extra_info.name(sel)}", secname(), tobj.x)
+				box.save(tstr)
+			}
+		}
+		if (sel.part == BAT || sel.part == CUR) {
+			sprint(tstr, "{sel.extra_info.restore()}")
+			box.save(tstr)
+			sel.extra_info.save(box)
+		}
+	}
+	sel = nil
+	sprint(tstr, "{parasitic_ = %d  noconsist_ = %d}", parasitic_, noconsist_)
+	box.save(tstr)
+	// save the graphs
+	for i=0, graphlist.count-1 {
+		tobj = graphlist.object(i)
+		box.save("{graphlist.append(new LincirGraph(this, 1))}")
+		tobj.save(box)
+	}
+	if (tooltype_ == 1) {
+		box.save("{g.exec_menu(\"Label\")}")
+	}else if (tooltype_ == 2) {
+		// the explicit tool call ensures simulation mode in
+		// case no DISPLAY
+		box.save("{g.exec_menu(\"Simulate\")  tool(2)}")
+	}
+	box.save("{sel = nil}")
+
+	box.save("{object_pop()}\n{")
+	g.save_name("ocbox_.g", 1)
+}
+
+endtemplate LinearCircuit
+

@@ -1,0 +1,181 @@
+begintemplate ModelViewPPAnalysis
+
+public all, analyse, pr, name, mkdisplay
+public disp, selpp, merge, grph, unlink, mview
+public subsets, ppsappend, pps, prependname
+external hoc_sf_, nil
+objref this, all, tobj, tobj1, sh, mview
+objref mt, ms, subsets, dislist_
+objref pmat, psub
+objref disp, distinctvalues
+objref pps, pmech, typemap_
+strdef tstr, mname, pname
+
+proc init() {local i
+	mview = $o1
+	distinctvalues = mview.distinctvalues
+	analysed = 0
+	pps = new List()
+}
+
+proc unlink() {local i
+	for i=0, pps.count - 1 {
+		pps.object(i).unlink()
+	}
+	objref  all, tobj, tobj1, sh, mview
+	objref mt, ms, subsets, dislist_
+	objref pmat, psub
+	objref disp, pmech, typemap_
+	objref pps
+}
+
+proc prependname() {
+	all.object($1).sec sprint($s2, "%s.%s", secname(), $s2)
+}
+
+proc ppsappend() {local i
+	i = pps.count-1
+	if (i < 0) {
+		pps.append(new ModelViewPMech($2, this))
+		i = 0
+	}
+	if (pps.object(i).type != $2) {
+		pps.append(new ModelViewPMech($2, this))
+		i += 1
+	}
+	pps.object(i).pps.append($o1)
+}
+
+func typemap() {
+	if (object_id(typemap_) == 0) {
+		mt = new MechanismType(1)
+		typemap_ = new Vector(mt.count)
+		typemap_.fill(-1)
+	}
+	if (typemap_.x[$1] == -1) {
+		typemap_.x[$1] = pps.count
+		pps.append(new ModelViewPMech($1, this))
+	}
+	return typemap_.x[$1]
+}
+
+proc merge() {local i, tm
+	for i=0, $o1.count-1 {
+		tm = typemap($o1.object(i).type)
+		tobj = $o1.object(i).pps
+		for j=0, tobj.count-1 {
+			pps.object(tm).pps.append(tobj.object(j))
+		}
+	}
+}
+
+proc analyse() {
+	analysed = 1
+	dislist_ = new List()
+	mk_pmech()
+}
+
+proc mkdisplay() {local i, j, k
+	if (!analysed) {
+		analyse()
+	}
+	disp = $o1
+	mkdisppp()
+}
+
+proc selpp() {
+	mview.gui.selpp($o1, $o2)
+}
+
+func ppparm_assess() {local n
+	n = distinctvalues.ndistinct($o1)
+	if (n == 0) { return n }
+	if (n > 20) {
+		sprint(tstr, "%d values ranging from %g to %g", n, distinctvalues.min, distinctvalues.max)	
+		pmech.parms.object($2).parmelms.object($3).append(new ModelViewParmStr(tstr, pmech.subsets.subsets.object(0)))
+	}else{
+		distinctvalues.dislist(dislist_)
+		for i=0, dislist_.count-1 {
+			tobj1 = dislist_.object(i)
+			val = $o1.x[tobj1.x[0]]
+			addppparm2subset(tobj1, val, $2, $3)
+		}
+	}
+	if (n > 1) {
+		pmech.grph = this 
+		pmech.parms.object($2).parmelms.object($3).dmech = pmech
+	}
+
+	return n
+}
+
+proc addppparm2subset() {local i, val
+	tobj = $o1.c.index(pmech.subsets.subsets.object(0).subset, $o1).sort
+	i = pmech.subsets.isubset(tobj, pmech)
+	tobj = pmech.subsets.subsets.object(i)
+	tobj1=new ModelViewParmVal($2, tobj)
+	pmech.append($3, $4, tobj1)
+	tobj.parmlist.append(tobj1)
+}
+
+proc mk_pmech() {local i, j, icol, itype, ntype
+	mt = new MechanismType(1)
+	for i=0, pps.count-1 {
+		pmech = pps.object(i)
+		pmech.subsets.subsets.append(new ModelViewParmSubset(new Vector(pmech.pps.count), pmech))
+		pmech.subsets.subsets.object(0).subset.indgen
+		mt.select(pmech.type)
+		mt.selected(pname)
+		ms = new MechanismStandard(pname, 1)
+		icol = 0
+		for j=0, ms.count-1 {
+			icol += ms.name(tstr, j)
+		}
+		pmech.name = pname
+		if (icol == 0) { continue }
+		pmech.fill(ms)
+		pmat = new Matrix(pmech.pps.count, icol)
+		for j=0, pmech.pps.count-1 {
+			ms.in(pmech.pps.object(j))
+			icol = 0
+			for iname=0, ms.count-1 {
+				size = ms.name(tstr, iname)
+				for is=0, size-1 {
+					pmat.x[j][icol] = ms.get(tstr, is)
+					icol += 1
+				}
+			}
+		}
+		icol = 0
+		for iname=0, ms.count-1 {
+			size = ms.name(tstr, iname)
+			for is=0, size-1 {
+				ppparm_assess(pmat.getcol(icol), iname, is)
+				icol += 1
+			}
+		}
+	}
+}
+
+proc grph() {
+	mview.gui.pgrph($o1,$o2)
+}
+
+proc mkdisppp() {
+	if (pps.count == 1) {
+		psub = disp
+	}else{
+		psub = new TreeViewItem(disp, "")
+	}
+	j = 0
+	for i=0, pps.count - 1 {
+		pps.object(i).display(psub, tstr)
+		j += pps.object(i).pps.count
+	}
+	if (pps.count != 1) {
+		sprint(tstr, "%d Point Processes", j)
+		psub.str(tstr)
+	}
+}
+
+endtemplate ModelViewPPAnalysis

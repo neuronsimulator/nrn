@@ -1,0 +1,417 @@
+parmfitness_efun_append("ClampFitness")
+
+begintemplate ClampFitness
+public efun, g, boundary, weight, set_data, set_modelx, rfile, wfile, dw_,ydat_
+public unmap, map, vbox, use_x, tag, xvec, yvec, xdat, ydat, xdat_, have_data
+public before_run, sref, mintstop
+public clone, scale, build, get_stable_context
+public save_context, restore_context
+external stdrun_quiet
+
+objref boundary, weight
+
+objref xdat, vdat, ydat	// authoritative data, ydat a synonym for vdat
+objref xvec, yvec, xdat_, vdat_, dw_ // interpolated data consistent with model x values
+
+objref g, vbox, tobj, this, cur, clamp, zerovec, varptr, sf, sref, nil
+strdef tstr, mserrlabel, scalelabel, tag
+
+i=0
+x=0
+
+func efun() { local e // the least squares error function.
+	// if xdat_ does not correspond to $o1 x values then should
+	// re-interpolate vdat_, xdat_, and re-calculate dw_
+	if (have_data && vdat_.size > 0) {
+		e = cur.meansqerr(zerovec, dw_)
+	}else{
+		e = 0
+	}
+	if (use_gui) {
+		sprint(mserrlabel, "%g", e)
+		if (stdrun_quiet == 0) {
+			redraw(xdat_, cur)
+		}
+	}
+	after_run()
+	return scale*e
+}
+
+func mintstop() {
+	return clamp.off
+}
+
+proc before_run() {local x
+	if ($o1 != varptr) {
+		if (locate_clamp($o1) == 0) {
+			return
+		}
+	}
+	clamp.switched_on = 1
+	clamp.on = xdat_.x[0]
+	clamp.off = xdat_.x[xdat_.size-1]
+	cur.record(&clamp.i, xdat_)
+	vdat_.play(&clamp.vc, xdat_)
+}
+
+proc after_run() {
+	clamp.switched_on = 0
+	vdat_.play_remove
+	cur.play_remove
+}
+
+func locate_clamp() {
+	sf.tail($o1.s, "\\.v[^a-zA-Z0-9_]", tstr)
+	sscanf(tstr, "%f", &x)
+	sf.head($o1.s, "\\.v", tstr)
+	sprint(tstr, "%s %s.sref = new SectionRef()", tstr, this)
+	if(execute1(tstr) == 0) {
+		sprint(tstr, "%s is not in form section.v(x)", $o1.s)
+		continue_dialog(tstr)
+		return 0
+	}
+	varptr = $o1
+	sref.sec {
+		if (clamp == nil) {
+			clamp = new OClamp(x)
+		}else{
+			clamp.loc(x)
+		}
+	}
+	return 1
+}
+
+proc save_context() {
+	$o1.pack(tag, scale, vdat, vdat.label, xdat, boundary, weight)
+}
+
+proc restore_context() {
+	$o1.unpack(tag, &scale, vdat)
+	$o1.unpack(tstr, xdat)
+	vdat.label(tstr)
+	set_data(xdat, vdat)
+	$o1.unpack(boundary, weight)
+	set_w()
+}
+
+proc init() {local i
+	sf = new StringFunctions()
+	sprint(tag, "%s", this)
+	sscanf(tag, "%[^[]", tag)
+	use_x = 1
+	use_gui = 0
+	have_data = 0
+	have_modelx = 0
+	xdat = new Vector(0)
+	vdat = new Vector(0)
+	ydat = vdat
+	xvec = new Vector(0)
+	yvec = new Vector(0)
+	zerovec = new Vector(0)
+	cur = new Vector(0)
+	scale=1
+	init_weights(1)
+}
+
+proc clone() {
+	$o1 = new ClampFitness()
+	$o1.have_data = have_data
+	$o1.boundary = boundary.c
+	$o1.weight = weight.c
+	if (have_data) {
+		$o1.set_data(xdat, vdat)
+		ydat = vdat
+	}
+	$o1.scale = scale
+	sprint(scalelabel, "scale=%g ", scale)
+}
+
+proc redraw() {local ymin, ymax
+    if (use_gui) {
+	g.erase()
+	if (have_data) {
+		g.label(.8, .95)
+		vdat.plot(g, xdat, 2, 1)
+//		ymin = vdat.min()
+//		ymax = vdat.max()
+		for j=0, boundary.size() - 1 {
+			g.beginline(3, 1)
+			g.line(boundary.x[j], g.size(3))
+			g.line(boundary.x[j], g.size(4))
+		}
+		if (numarg() == 2) {
+			$o2.line(g, $o1)
+		}
+	}
+	g.flush()
+    }
+}
+
+proc set_data() {local i
+	have_data = 0
+	i = $o1.indwhere(">=", 0)
+	if (i < 0 || $o1.size < 1) return
+	xdat = $o1.c(i)
+	vdat = $o2.cl(i)
+	ydat = vdat
+	if (have_data == 0) {
+		have_data = 1
+		init_weights(1)
+	}
+	xdat_ = xdat.c
+	vdat_ = vdat.c
+	xvec = xdat
+	yvec = vdat
+	dw_ = new Vector(xdat.size)
+	have_modelx = 1
+	if (use_gui) {
+		g.size(xdat.min(), xdat.max(), vdat.min(), vdat.max())
+		redraw()
+	}
+	set_w()
+}
+proc set_modelx() {local n, i, j, theta
+	xdat_ = $o1
+	have_modelx = 1
+	n = xdat_.size
+	vdat_ = new Vector(n)
+	j = 0
+	//xdat's before and after xdat will have weight 0 anyway.
+	while(xdat_.x[j] < xdat.x[0]) {
+		j += 1
+		if (j >= n) break
+	}
+	for i=1, xdat.size-1 {
+		if (j >= n) break
+		while (xdat_.x[j] >= xdat.x[i-1] && xdat_.x[j] <= xdat.x[i]){
+			// linear interpolation
+			theta = (xdat.x[i] - xdat.x[i-1])
+			theta = (xdat_.x[j] - xdat_.x[i-1])/theta
+			vdat_.x[j] = (1-theta)*vdat.x[i-1] + theta*vdat.x[i]
+			j += 1
+			if (j >= n) break
+		}
+	}
+	set_w()
+}
+	
+proc clipboard_data() {
+	sprint(tstr, "%s.set_data(hoc_obj_[1], hoc_obj_[0])", this)
+	if(execute1(tstr) == 0) {
+continue_dialog("No data in the Vector clipboard. Select a Graph line first")
+	}
+}
+
+proc build() {
+	if (use_gui) return
+	use_gui = 1
+	vbox = new VBox()
+	vbox.ref(this)
+	sprint(tstr, "execute(\"%s.unmap()\")", this)
+	vbox.dismiss_action(tstr)
+	vbox.save("save()")
+	vbox.intercept(1)
+	xpanel("", 1)
+	xmenu("Regions")
+		xbutton("Data Weights", "weight_panel()")
+		xbutton("Copy data weights", "copy_weights()")
+		xmenu("Number of Data Regions")
+			xbutton("1", "init_weights(1)")
+			xbutton("2", "init_weights(2)")
+			xbutton("3", "init_weights(3)")
+			xbutton("4", "init_weights(4)")
+			xbutton("5", "init_weights(5)")
+			xbutton("one more", "init_weights(0)")
+			xbutton("one fewer", "init_weights(-1)")
+		xmenu()
+	xmenu()
+	mserrlabel="MeanSqErr xxxxxxxxxxx"
+	sprint(scalelabel, "scale=   %g  ", scale)
+	xvarlabel(scalelabel)
+	xvarlabel(mserrlabel)
+	xpanel()
+	g = new Graph()
+	if (have_data) {
+		g.size(xdat.min(), xdat.max(), vdat.min(), vdat.max())
+	}
+	g.menu_tool("Adjust Weight Regions", "adjust_weights")
+	g.menu_action("Data from Clipboard", "clipboard_data()")
+	vbox.intercept(0)
+}
+
+proc map() {
+	if (!use_gui) build()
+	if (numarg() > 1) {
+		vbox.map($s1, $2, $3, $4, $5)
+	}else if (numarg() == 1){
+		vbox.map($s1)
+	}else{
+		vbox.map()
+	}
+	redraw()
+}
+
+proc unmap() {
+}
+
+proc wfile() {local i
+	$o1.printf("ClampFitness xdat vdat boundary weight (lines=%d) %g\n",\
+		4 + 2*xdat.size + 2*boundary.size, scale)
+	$o1.printf("|%s|\n", vdat.label)
+	$o1.printf("%d\n", xdat.size)
+	xdat.printf($o1)
+	vdat.printf($o1)
+	$o1.printf("%d\n", boundary.size)
+	boundary.printf($o1)
+	weight.printf($o1)
+}
+
+proc rfile() {local i, n
+	scale = $o1.scanvar
+	sprint(scalelabel, "scale=%g", scale)
+	$o1.gets(tstr)
+	if (sscanf(tstr, "|%[^|]", tstr) == 1) {
+		vdat.label(tstr)
+	}
+	n = $o1.scanvar
+	if (n > 0) {
+		xdat.resize(n) vdat.resize(n)
+		xdat.scanf($o1, n)
+		vdat.scanf($o1, n)
+		set_data(xdat, vdat)
+	}
+	n = $o1.scanvar
+	boundary = new Vector(n)
+	boundary.scanf($o1, n)
+	weight = new Vector(n)
+	weight.scanf($o1, n)
+	set_w()
+}
+
+proc init_weights() {local i, n, min, max
+	if (numarg() == 1) {
+		if ($1 == 0) { // one more
+			n = boundary.size
+		}else if ($1 == -1) { // one fewer
+			n = boundary.size-2
+			if (n < 1) n = 1
+		}else{
+			n = $1
+		}
+	}else{
+		n = 1
+	}
+	boundary = new Vector(n+1)
+	weight = new Vector(n+1, 1)
+	if (have_data) {
+		min = xdat.x[0]
+		max = xdat.x[xdat.size-1]
+		boundary.indgen(min, (max-min)/n)
+		set_w()
+	}
+}
+	
+
+proc weight_panel() {local i
+	xpanel("data weights")
+	xpvalue("Total weight (scale)", &scale, 1, "sprint(scalelabel, \"scale=%g \", scale)")
+	xpvalue("interval 1 startpoint", &boundary.x[0], 1, "set_w()")
+	for i=1, boundary.size() - 1 {
+		sprint(tstr, "interval %d endpoint", i)
+		xpvalue(tstr, &boundary.x[i], 1, "set_w()")
+		sprint(tstr, "interval %d weight", i)
+		xpvalue(tstr, &weight.x[i], 1, "set_w()")
+	}
+	xpanel()
+}
+
+proc set_w() {local i, j, t, w, d, tmin, tmax, n, res
+    if (have_data){
+	// make sure weight regions are within boundaries
+	tmin = xdat.x[0]
+	tmax = xdat.x[xdat.size - 1]
+	n = boundary.size()
+	for i=0, n-1 {
+		t = boundary.x[i]
+		if (t < tmin) {
+			boundary.x[i] = tmin
+		}
+		if (t > tmax) {
+			boundary.x[i] = tmax
+		}
+	}
+    }
+    if (have_modelx) {
+	dw_.resize(xdat.size)
+	j = 0
+	tmax = boundary.x[0]
+	w = 0
+	for i=0, dw_.size - 1 {
+		t = xdat.x[i]
+		while ((t > tmax && j < n) || (t == tmax && i == 0)) {
+			j += 1
+			if (i > 0) {
+				boundary.x[j-1] = (t + xdat.x[i-1])/2
+			}else{
+				boundary.x[j-1] = t
+			}
+			if (j >= n) {
+				tmax = 1e9
+				w = 0
+				break
+			}
+			tmax = boundary.x[j]
+			d = boundary.x[j] - boundary.x[j-1]
+			if (d <= 0) {
+				continue
+			}
+			w = weight.x[j]/d
+		}
+		dw_.x[i] = w
+	}
+	// throw out the 0 weight points.
+	tobj = dw_.c.indvwhere(">", 0)
+	dw_.index(dw_.c, tobj)
+	xdat_.index(xdat, tobj)
+	vdat_.index(vdat, tobj)
+	zerovec.resize(xdat_.size).fill(0)
+	w = dw_.sum()
+	if (w > 0) {
+		dw_.mul(dw_.size/w)
+	}
+    }
+	redraw()
+}
+
+proc adjust_weights() {
+//print $1, $2, $3
+	if ($1 == 2) { // press
+		adjust = pick_weight($2)
+	}
+	if (adjust == -1) {
+		return
+	}
+	if ($1 == 1) { // drag
+		boundary.x[adjust] = $2
+		set_w()
+	}
+	if ($1 == 3) { // release
+		boundary.sort()
+		set_w()
+		adjust = -1
+	}
+}
+
+func pick_weight() {local i, j, x, m
+	m = 1e9
+	for i=0, boundary.size() - 1 {
+		x = abs($1 - boundary.x[i])
+		if (x < m) {
+			m = x
+			j = i
+		}
+	}
+	return j
+}
+
+endtemplate ClampFitness

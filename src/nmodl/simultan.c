@@ -1,0 +1,462 @@
+#include <../../nmodlconf.h>
+/* /local/src/master/nrn/src/nmodl/simultan.c,v 4.1 1997/08/30 20:45:35 hines Exp */
+/*
+simultan.c,v
+ * Revision 4.1  1997/08/30  20:45:35  hines
+ * cvs problem with branches. Latest nmodl stuff should now be a top level
+ *
+ * Revision 4.0.1.1  1997/08/08  17:24:02  hines
+ * nocmodl version 4.0.1
+ *
+ * Revision 4.0  1997/08/08  17:06:29  hines
+ * proper nocmodl version number
+ *
+ * Revision 1.2  1997/07/20  15:38:48  hines
+ * ion concentrations as states in cvode context now have cvode state
+ * map pointer to the actual concentration variable. This guarantees
+ * that the nernst calculations (done before any odes in models are called)
+ * use the correct concentrations (set by cvode)
+ *
+ * Revision 1.1.1.1  1994/10/12  17:21:37  hines
+ * NEURON 3.0 distribution
+ *
+ * Revision 9.167  1993/04/21  11:05:06  hines
+ * lineq blocks do not return error number
+ * nocpout point processes dparam element 2 reserved for a pointer to
+ * Point_process
+ *
+ * Revision 9.76  90/12/07  09:27:26  hines
+ * new list structure that uses unions instead of void *element
+ * 
+ * Revision 9.32  90/10/08  14:12:56  hines
+ * index vector instead of pointer vector for slist and dlist
+ * 
+ * Revision 9.5  90/07/18  07:59:46  hines
+ * define for arrays now (p + n) instead of &p[n]. This allows the c file
+ * to have arrays that look like a[i] instead of *(a + i).
+ * 
+ * Revision 8.4  90/04/09  08:41:37  mlh
+ * implicit method for derivative blocks (allows mixed equations also).
+ * The solve statement must precede the derivative block
+ * 
+ * Revision 8.3  90/01/18  11:46:32  mlh
+ * SOLVEFOR statement added
+ * syntax is 
+ *   blocktype blockname [SOLVEFOR name, name, ...] {statment}
+ * where blocktype is KINETIC, NONLINEAR, or LINEAR
+ * Only the states in the SOLVEFOR statement are solved
+ * in that block. If the statement is not present then
+ * all states are solved that appear in that block.
+ * 
+ * Revision 8.2  90/01/16  11:06:19  mlh
+ * error checking and cleanup after error and call to abort_run()
+ * 
+ * Revision 8.1  89/12/15  10:10:06  mlh
+ * newton's last arg changed to vector of double pointers.
+ * For nonlinear equations dlist holds the doubles andpdlist points to them individually.
+ * 
+ * Revision 8.0  89/09/22  17:26:59  nfh
+ * Freezing
+ * 
+ * Revision 7.0  89/08/30  13:32:36  nfh
+ * Rev 7 is now Experimental; Rev 6 is Testing
+ * 
+ * Revision 6.0  89/08/14  16:27:16  nfh
+ * Rev 6.0 is latest of 4.x; now the Experimental version
+ * 
+ * Revision 4.2  89/08/11  09:56:49  mlh
+ * simultaneous nonlinear equations allowed in DERIVATIVE block
+ * 
+ * Revision 4.1  89/08/07  15:35:33  mlh
+ * freelist now takes pointer to list pointer and 0's the list pointer.
+ * Not doing this is a bug for multiple sens blocks, etc.
+ * 
+ * Revision 4.0  89/07/24  17:03:45  nfh
+ * Freezing rev 3.  Rev 4 is now Experimental
+ * 
+ * Revision 3.1  89/07/07  16:55:12  mlh
+ * FIRST LAST START in independent SWEEP higher order derivatives
+ * 
+ * Revision 1.1  89/07/06  14:50:49  mlh
+ * Initial revision
+ * 
+*/
+
+#include "modl.h"
+#include "parse1.h"
+#include "symbol.h"
+
+extern int sens_parm;
+extern int numlist;
+static List *eqnq;
+
+solv_nonlin(qsol, fun, method, numeqn, listnum)
+	Item *qsol;
+	Symbol *fun, *method;
+	int numeqn, listnum;
+{
+	Sprintf(buf, "%s(%d,_slist%d, _p, %s, _dlist%d);\n",
+		method->name, numeqn, listnum, fun->name, listnum);
+	replacstr(qsol, buf);
+	/* if sens statement appeared in fun then the steadysens call list,
+	built during the massagenonlin phase
+	gets added after the call to newton */
+	sens_nonlin_out(qsol->next, fun);
+}
+
+solv_lineq(qsol, fun, method, numeqn, listnum)
+	Item *qsol;
+	Symbol *fun, *method;
+	int numeqn, listnum;
+{
+	Sprintf(buf, " 0; %s();\n error = %s(%d, _coef%d, _p, _slist%d);\n",
+		fun->name, method->name, numeqn, listnum, listnum);
+	replacstr(qsol, buf);
+	sens_nonlin_out(qsol->next, fun);
+}
+
+eqnqueue(q1)
+	Item *q1;
+{
+	Item *lq;
+
+	if (!eqnq) {
+		eqnq = newlist();
+	}
+	lq = lappendsym(eqnq, SYM0);
+	ITM(lq) = q1;
+	return;
+}
+
+static freeqnqueue()
+{
+	freelist(&eqnq);
+}
+
+/* args are --- nonlinblk: NONLINEAR NAME stmtlist '}' */
+massagenonlin(q1, q2, q3, q4, sensused)
+	Item *q1, *q2, *q3, *q4;
+	int sensused;
+{
+/* declare a special _counte variable to number the equations.
+before each equation we increment it by 1 during run time.  This
+gives us a current equation number */
+	Symbol *nonfun;
+	
+	/* all this junk is still in the intoken list */
+	Sprintf(buf, "static int %s();\n", SYM(q2)->name);
+	Linsertstr(procfunc, buf);
+	replacstr(q1, "\nstatic int"); Insertstr(q3, "()\n");
+	Insertstr(q3->next, " int _counte = -1;\n");
+	nonfun = SYM(q2);
+	if ((nonfun->subtype) & NLINF && nonfun->u.i) {
+		diag("NONLINEAR merging not implemented", (char *)0);
+	}
+	numlist++;
+	nonfun->subtype |= NLINF;
+	nonfun->u.i = numlist;
+	nonfun->used = nonlin_common(q4, sensused);
+	movelist(q1, q4, procfunc);
+	if (sensused) {
+		sensmassage(NONLINEAR, q2, numlist);
+	}
+}
+
+int
+nonlin_common(q4, sensused)	/* used by massagenonlin() and mixed_eqns() */
+	Item *q4;
+	int sensused;
+{
+	Item *lq, *qs;
+	int i, counts = 0, counte = 0, using_array;
+	Symbol *s;
+
+	using_array=0;
+	SYMITER_STAT {
+		if (s->used) {
+			s->varnum = counts;
+#if CVODE
+			slist_data(s, counts, numlist);
+#endif
+			if (s->subtype & ARRAY) {int dim = s->araydim;
+				using_array=1;
+		        	Sprintf(buf, "for(_i=0;_i<%d;_i++){_slist%d[%d+_i] = (%s + _i) - _p;}\n"
+			                ,dim, numlist , counts, s->name);
+				counts += dim;
+			}else{
+				Sprintf(buf, "_slist%d[%d] = &(%s) - _p;\n",
+					numlist, counts, s->name);
+				counts++;
+			}
+		        Lappendstr(initlist, buf);
+			s->used = 0;
+			if (sensused) {
+				add_sens_statelist(s);
+			}
+		}
+	}
+
+	ITERATE(lq, eqnq) {
+		char *eqtype = SYM(ITM(lq))->name;
+		if (strcmp(eqtype, "~+") == 0) { /* add equation to previous */
+			if (counte == -1) {
+				diag("no previous equation for adding terms", (char *)0);
+			}
+			Sprintf(buf, "_dlist%d[_counte] +=", numlist);
+		} else if (eqtype[0] == 'D') {
+			/* derivative equations using implicit method */
+			int count_deriv = SYM(ITM(lq))->araydim;
+			Sprintf(buf, "_dlist%d[++_counte] =", numlist);
+			counte += count_deriv;
+		}else{
+			Sprintf(buf, "_dlist%d[++_counte] =", numlist);
+			counte++;
+		}
+		replacstr(ITM(lq), buf);
+	}
+	if (!using_array) {
+		if(counte != counts) {
+Sprintf(buf ,"Number of equations, %d, does not equal number, %d", counte, counts);
+			diag(buf, " of states used");
+		}
+	} else {
+#if 1	/* can give message when running */
+Sprintf(buf, "if(_counte != %d) printf( \"Number of equations, %%d,\
+ does not equal number of states, %d\", _counte + 1);\n",
+			counts-1, counts);
+		Insertstr(q4, buf);
+#endif
+	}
+	if (counte == 0) {
+		diag("NONLINEAR contains no equations", (char *)0);
+	}
+	freeqnqueue();
+Sprintf(buf, "static int _slist%d[%d]; static double _dlist%d[%d];\n",
+	numlist, counts*(1 + sens_parm), numlist, counts);
+		Linsertstr(procfunc, buf);
+	return counts;
+}
+
+Item *
+mixed_eqns(q2, q3, q4)	/* name, '{', '}' */
+	Item *q2, *q3, *q4;
+{
+	int counts;
+	Item *qret;
+	
+	if (!eqnq) {
+		return ITEM0; /* no nonlinear algebraic equations */
+	}
+	/* makes use of old massagenonlin split into the guts and
+	the header stuff */
+	numlist++;
+	counts = nonlin_common(q4, 0);
+	Insertstr(q4, "}");
+	Insertstr(q3, "{ static int _recurse = 0;\n int _counte = -1;\n");
+	Insertstr(q3, "if (!_recurse) {\n _recurse = 1;\n");
+	Sprintf(buf, "error = newton(%d,_slist%d, _p, %s, _dlist%d);\n",
+		counts, numlist, SYM(q2)->name, numlist);
+	qret = insertstr(q3, buf);
+	Insertstr(q3, "_recurse = 0; if(error) {abort_run(error);}}\n");
+	return qret;
+}
+
+/* linear simultaneous equations */
+/* declare a _counte variable to dynamically contain the current
+equation number.  This is necessary to allow use of state vectors.
+It is no longer necessary to count equations here but we do it
+anyway in case of future move to named equations.
+It is this change which requires a varnum field in Symbols for states
+since the arraydim field cannot be messed with anymore.
+*/
+static int nlineq = -1; /* actually the current index of the equation */
+			/* is only good if there are no arrays */
+static int using_array;	/* 1 if vector state in equations */
+static int nstate = 0;
+static Symbol *linblk;
+static Symbol *statsym;
+
+init_linblk(q) /* NAME */
+	Item *q;
+{
+	using_array = 0;
+	nlineq = -1;
+	nstate = 0;
+	linblk = SYM(q);
+	numlist++;
+}
+
+init_lineq(q1) /* the colon */
+	Item *q1;
+{
+	if (strcmp(SYM(q1)->name, "~+") == 0) {
+		replacstr(q1, "");
+	}else {
+		nlineq++; /* current index will start at 0 */
+		replacstr(q1, " ++_counte;\n");
+	}
+}
+
+static char *indexstr;	/* set in lin_state_term, used in linterm */
+
+lin_state_term(q1, q2) /* term last*/
+	Item *q1, *q2;
+{
+	char *qconcat(); /* but puts extra ) at end */
+	
+	statsym = SYM(q1);
+	replacstr(q1, "1.0");
+	if (statsym->subtype & ARRAY) { 
+		indexstr = qconcat(q1->next->next, q2->prev);
+		deltokens(q1->next, q2->prev); /*can't erase lastok*/
+		replacstr(q2, "");
+	}
+	if (statsym->used == 1) {
+		statsym->varnum = nstate;
+		if (statsym->subtype & ARRAY) {int dim = statsym->araydim;
+			using_array=1;
+		        Sprintf(buf, "for(_i=0;_i<%d;_i++){_slist%d[%d+_i] = (%s + _i) - _p;}\n"
+		                ,dim, numlist , nstate, statsym->name);
+			nstate += dim;
+		}else{
+			Sprintf(buf, "_slist%d[%d] = &(%s) - _p;\n",
+				numlist, nstate, statsym->name);
+			nstate++;
+		}
+	        Lappendstr(initlist, buf);
+	}
+}
+
+linterm(q1, q2, pstate, sign) /*primary, last ,, */
+	Item *q1, *q2;
+	int pstate, sign;
+{
+	char *signstr;
+	
+	if (pstate == 0) {
+		sign *= -1;
+	}
+	if (sign == -1) {
+		signstr = " -= ";
+	} else {
+		signstr = " += ";
+	}
+	
+	if (pstate == 1) {
+		if (statsym->subtype & ARRAY) {
+			Sprintf(buf, "_coef%d[_counte][%d + %s]%s",
+				numlist, statsym->varnum, indexstr, signstr);
+		} else {
+			Sprintf(buf, "_coef%d[_counte][%d]%s",
+				numlist, statsym->varnum, signstr);
+		}
+		Insertstr(q1, buf);
+	} else if (pstate == 0) {
+		Sprintf(buf, "_RHS%d(_counte)%s", numlist, signstr);
+		Insertstr(q1, buf);
+	}else{
+		diag("more than one state in preceding term", (char *)0);
+	}
+	Insertstr(q2->next, ";\n");
+}
+	
+massage_linblk(q1, q2, q3, q4, sensused) /* LINEAR NAME stmtlist '}' */
+	Item *q1, *q2, *q3, *q4;
+	int sensused;
+{
+	Item *qs;
+	Symbol *s;
+	int i;
+	
+#if LINT
+assert(q2);
+#endif
+	if (++nlineq == 0) {
+		diag(linblk->name, " has no equations");
+	}
+	Sprintf(buf, "static int %s();\n", SYM(q2)->name);
+	Linsertstr(procfunc, buf);
+	replacstr(q1, "\nstatic int"); Insertstr(q3, "()\n");
+	Insertstr(q3->next, " int _counte = -1;\n");
+	linblk->subtype |= LINF;
+	linblk->u.i = numlist;
+	SYMITER(NAME){
+		if ((s->subtype &STAT) && s->used) {
+			if (sensused) {
+				add_sens_statelist(s);
+			}
+			s->used = 0;
+		}
+	}
+	if (!using_array) {
+		if (nlineq != nstate) {
+Sprintf(buf,"Number states, %d, unequal to equations, %d in ", nstate, nlineq);
+			diag(buf, linblk->name);
+		}
+	} else {
+#if 1	/* can give message when running */
+Sprintf(buf, "if(_counte != %d) printf( \"Number of equations, %%d,\
+ does not equal number of states, %d\", _counte + 1);\n",
+			nstate-1, nstate);
+		Insertstr(q4, buf);
+#endif
+	}
+	linblk->used = nstate;
+	Sprintf(buf, "static int _slist%d[%d];static double **_coef%d;\n",
+		numlist, nstate*(1 + sens_parm), numlist);
+	Linsertstr(procfunc, buf);
+	Sprintf(buf, "\n#define _RHS%d(arg) _coef%d[arg][%d]\n",
+		numlist, numlist, nstate);
+	Linsertstr(procfunc, buf);
+	Sprintf(buf, "if (_first) _coef%d = makematrix(%d, %d);\n",
+		numlist, nstate, nstate+1);
+	Lappendstr(initlist, buf);
+	Sprintf(buf, "zero_matrix(_coef%d, %d, %d);\n{\n",
+		numlist, nstate, nstate+1);
+	Insertstr(q3->next, buf);
+	Insertstr(q4, "\n}\n");
+	movelist(q1, q4, procfunc);
+	if (sensused) {
+		sensmassage(LINEAR, q2, numlist);
+	}
+	nstate = 0; nlineq = 0;
+}
+
+
+/* It is sometimes convenient to not use some states in solving equations.
+   We use the SOLVEFOR statement to list the states in LINEAR, NONLINEAR,
+   and KINETIC blocks that are to be treated as states in fact. States
+   not listed are treated in that block as assigned variables.
+   If the SOLVEFOR statement is absent all states are assumed to be in the
+   list.
+   
+   Syntax is:
+      blocktype blockname [SOLVEFOR name, name, ...] { statement }
+
+   The implementation uses the varname: production that marks the state->used
+   record. The old if statement was
+   	if (inequation && (SYM($1)->subtype & STAT)) { then mark states}
+   now we add && in_solvefor() to indicate that it Really should be marked.
+   The hope is that no further change to diagnostics for LINEAR or NONLINEAR
+   will be required.  Some more work on KINETIC is required since the checking
+   on whether a name is a STAT is done much later.
+   The solveforlist is freed at the end of each block.
+*/
+
+List *solveforlist = (List *)0;
+
+int in_solvefor(s)
+	Symbol *s;
+{
+	Item *q;
+	
+	if (!solveforlist) {
+		return 1;
+	}
+	ITERATE(q, solveforlist) {
+		if (s == SYM(q)) {
+			return 1;
+		}
+	}
+	return 0;
+}

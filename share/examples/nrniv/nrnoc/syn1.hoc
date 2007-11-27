@@ -1,0 +1,39 @@
+/* test of synapse */
+
+// physical properties of the cell
+create a,b
+a{nseg=1 diam=10 L=10 insert pas g_pas=.001 e_pas=0}
+b{nseg=1 diam=20 L=20 insert pas g_pas=.001 e_pas=0}
+
+// graphical interface appearance
+objref g
+g = new Graph()
+g.size(0,1,0,1)
+dt=.005
+g.addexpr("-fsyni(0)*100",6,1)
+g.addexpr(" -fsyni(1)*100",5,1)
+g.addexpr("a.v",1,1)
+g.addexpr("b.v",2,1)
+g.addexpr("fsyng(0)*100",4,1)
+g.addexpr("fsyng(1)*100",3,5)
+// simulation control
+proc run() {
+	finitialize(0)
+	fsyn(2)
+	a fsyn(0, .5, 0, .3, .01, 1)
+	b fsyn(1, .5, 0, .3, .01, 1)
+	g.begin()
+	t=0
+	while( t < 1) {
+		g.plot(t)
+		fadvance()
+	}
+		g.flush()
+}
+
+// run simulation
+run()
+
+
+
+

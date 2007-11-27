@@ -1,0 +1,22 @@
+#!/bin/sh
+# installed mpich2 from mpich2-1.0.3-1-win32-ia32.msi from
+# http://www-unix.mcs.anl.gov/mpi/mpich2/index.htm#download
+# Note: "This setup requires the .NET Framwork version 1.1.4322..." 
+# and they really mean 1.1, not 2.0 and not 1.0.
+# Installed in c:/mpich2 to avoid spaces in paths.
+# First get to the point where you can run cpi.exe example. May need to
+# give yourself a login password.
+
+export CFLAGS="-mwindows -I/cygdrive/c/mpich2/include"
+export CXXFLAGS="-mwindows -I/cygdrive/c/mpich2/include"
+export LIBS="-L/cygdrive/c/mpich2/lib -lmpi"
+export LDFLAGS="-e _mainCRTStartup"
+
+#build InterViews with above environment also
+
+./configure --prefix=`pwd` --with-paranrn --with-iv=$HOME/neuron/ivmpi
+
+# make
+# make mswin
+# in the src/parallel directory one can launch any of the tests with, e.g.
+# c:/mpich2/bin/mpiexec -np 1 c:\\marshalnrn\\nrn\\bin\\nrniv.exe -mpi test0.hoc

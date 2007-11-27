@@ -1,0 +1,301 @@
+/*
+?0 UserClasses Grapher
+	A widget for graphing any set of expressions as a function of
+	an independent variable.
+
+	To pop up the widget say:
+	load_file("grahper.hoc")	// reads this file
+	makegrapher()			// simple way to pop up a new grapher
+
+	
+	Graphers may be saved in a .session file.
+
+?1 Usage
+	To use the grapher widget:
+	1) enter the independent variable name (press the button) eg. x
+	2) specify the y variables:
+		in the graph panel press the left button and select "Plot What?"
+		and enter an expression or variable to plot. eg. sin(x)
+		You can do this several times to plot several expressions.
+	3) either
+		 press the Plot button.
+			the independent variable will range from the beginning
+			to the end of the x-axis
+	   or
+	----
+	3) Specify the view from the graph panel popup menu by selecting the
+		"Set View" item. You may also want to fix this as the
+		Scene size by subsequently selecting the "Scene=View" item
+	4) If the y variables are actual functions of the independent variable
+		press the Plot button to see the plot. If the y variables
+		are in fact just variables then you will need a generator
+		statement that tells how to compute the y variables given
+		a value of the independent variable. eg. Just for fun you can
+		try entering the generator statement:
+			print x, sin(x)
+
+?1 Examples
+	Example 1: plot sin(t)
+	1) PlotWhat: sin(t)
+	2) Plot
+
+	Example 2: plot of steady state m process in nrniv
+	1) Independent Var: x
+	2) Generator: rates_hh(x)
+	3) Set View: x: -100 50  y: 0 1
+	4) PlotWhat: minf_hh
+	5) Plot
+	
+	Example 3: In context of Neuron Main Menu simulation
+	0) pop up grapher by selecting appropriate "New Graph" submenu item.
+	1) Independent Var: v_init
+	2) Generator: init()
+	3) PlotWhat: <any set of variables in any section>
+	4) SetView: x: -100 50 y:cancel
+	5) Plot
+
+	Example 4: peak inward current during voltage clamp
+	Replace the standard: proc advance() {fadvance()} with a procedure
+	that stores the peak inward current (and possibly sets stoprun=1
+	when you are past the peak). Then in the Grapher set Steps to 20
+	the independent variable to the voltage clamp amplitude and the
+	generator to run().
+
+?1 abscissa
+	creating a grapher using
+	makegrapher(1)
+	will add an item for setting the x-expression and buttons
+	for specifying the limits of the independent variable
+
+?1 PanelUsage
+
+? Plot
+	For each value of the independent variable the generator statement
+	is executed (if it exists) and the PlotWhat expressions are plotted.
+? EraseAll
+	Removes all expressions from the graph.
+? Steps
+	Number of independent variable values used to make the graph.
+	For the small grapher, the range of the independent variable is
+	the length of the x-axis.
+? IndependentVar
+	Dialog appears requesting the variable to be used as the independent
+	variable (default t). If the variable is undefined it will
+	be created.
+? Generator
+	A statement to be executed after setting a value of the independent
+	variable but before plotting the expressions. This allows plotting
+	of variables that depend implicitly on the independent variable.
+? IndepBegin
+	For a grapher made with makegrapher(1), specifies initial value
+	of the independent variable.
+? IndepEnd
+	Specifies final value of independent variable.
+? Xexpr
+	A grapher made with makegrapher(1) allows separate specification of
+	independent variable and the x axis plot functions. This allows
+	phase plane plots. The Xexpr may be any function of the independent
+	variable or an implicit function if a generator statement exists.
+
+?0 User HocCode Grapher
+*/
+
+help ?0
+
+t = 0	// make sure it is defined if used in ivoc context
+
+strdef temp_string_
+objectvar grapherlist, temp_object_
+grapherlist = new List(1) 
+
+// grapher_doplt must be at top level for xexpr and plot to get the
+// right symbols. execute would work even inside a template
+
+proc grapher_doplt(){local x, i, j
+	j = 2
+	if ($2 > 100) {
+		j = sqrt($2)
+	}
+	stoprun = 0
+	for i=0, $2 {
+		x = $3 + $4*i
+		hoc_ac_ = x
+		if (!execute1($s5)) {
+			continue_dialog("Error in Generator statement")
+			break
+		}
+		if (i == 0) { // must be here in case valid expressions
+			/// depend on initial value of dependend variable
+			$o1.xexpr($s6)
+			$o1.begin()
+		}
+
+		$o1.plot(1)
+		if (i%j == 0) {
+			$o1.fastflush()
+			doEvents()
+		}
+		if (stoprun) break
+	}
+	$o1.flush()
+}
+
+begintemplate Grapher
+public vbox, info, save, g, doplt
+external grapher_doplt
+objectvar g, vbox, hbox, this
+strdef indep, xexpr, generate, body, temp
+{x1=0 x2=0 steps=0}
+proc init() {
+	indep = "t"
+	xexpr = "t"
+	generate = ""
+	x1 = 0
+	x2 = 10
+	steps = 100
+	vbox = new VBox()
+	vbox.ref(this)
+	vbox.save("save()")
+	vbox.intercept(1)
+	big = 0
+	if (numarg() == 1) {
+		big = $1
+	}
+	if (big == 1) {
+		initbig()
+	}else{
+		initsmall()
+	}
+	g = new Graph()
+	g.size(x1, x2, -10, 10)
+	change_x()
+	vbox.intercept(0)
+}
+proc initsmall() {
+	xpanel("PanelUsage", 1)
+	xbutton("Plot", "doplt_small()")
+	xbutton("Stop", "dostop()")
+	xpvalue("Steps", &steps)
+	xpanel()
+	exprval("Independent Var", indep, "change_indep()")
+	exprval("Generator", generate, "change_generate()")	
+}
+proc dostop() {
+	execute("stoprun = 1")
+}
+
+proc initbig() {
+	xpanel("PanelUsage", 1)
+	xbutton("Plot", "doplt()")
+	xbutton("Erase All", "g.erase_all()")
+	xpanel()
+	xpanel("")
+	xpvalue("Indep Begin", &x1, 0)
+	xpvalue("Indep End", &x2, 0)
+	xpvalue("Steps", &steps)
+	xpanel()
+	exprval("Independent Var", indep, "change_indep()")
+	exprval("X-expr", xexpr, "change_xexpr()")
+	exprval("Generator", generate, "change_generate()")	
+}
+
+proc doplt_small() {
+	x1 = g.size(1)
+	x2 = g.size(2)
+	doplt()
+}
+
+proc doplt() {local d
+	sprint(body, "{%s=hoc_ac_ %s}", indep, generate)
+	d = (x2 - x1)/steps
+	grapher_doplt(g, steps, x1, d, body, xexpr)
+}
+
+proc change_indep() {
+	temp = indep
+	while (string_dialog("Enter independent variable name", indep)) {
+		hoc_ac_ = x1
+		sprint(body, "%s = hoc_ac_", indep)
+		if (execute1(body) == 1) {
+			xexpr = indep
+//			g.erase_all()
+			return
+		}else{
+			continue_dialog("invalid independent variable")
+		}
+	}
+	indep = temp
+}
+
+proc change_xexpr() {
+	temp = xexpr
+	while (string_dialog("Enter x-axis expression", xexpr)) {
+		sprint(body, "hoc_ac = %s", xexpr)
+		if (execute1(body) == 1) {
+			return
+		}else{
+			continue_dialog("invalid expression")
+		}
+	}
+	xexpr = temp
+}
+proc change_x() {
+	if (x2 > x1) {
+		g.size(x1, x2, g.size(3), g.size(4))	
+	}else if (x2 < x1) {
+		g.size(x2, x1, g.size(3), g.size(4))	
+	}
+}
+proc change_generate() {
+	print "A generator statement is only required if x and y\
+ plot expressions are not explicit functions of the independent variable"
+
+	temp = generate
+	while (string_dialog("Enter Generator statement", generate)) {
+		return
+	}
+	generate = temp
+}
+
+proc exprval() {
+	xpanel("", 1)
+		xbutton($s1, $s3)
+		xvarlabel($s2)
+	xpanel()
+}
+
+proc save() {local i
+	vbox.save("load_file(\"grapher.hoc\")}\n{")
+	sprint(body, "ocbox_=new Grapher(%d)\n\
+ocbox_.info(\"%s\",\"%s\", \"%s\", %g, %g, %g, %g, %d, %g, %g)",\
+big, indep, xexpr, generate, g.size(1), g.size(2), g.size(3), g.size(4), steps,\
+x1, x2)
+	vbox.save(body)
+	g.save_name("ocbox_.g", 1)
+	vbox.save("ocbox_ = ocbox_.vbox")
+}
+
+proc info() {
+	indep = $s1
+	sprint(body, "%s = 0", indep)
+	execute(body)
+	xexpr = $s2
+	generate = $s3
+	g.size($4, $5, $6, $7)
+	steps = $8
+	x1 = $9
+	x2 = $10
+	doNotify()
+}
+
+endtemplate Grapher
+
+proc makegrapher() {local i
+	i=0
+	if (numarg()) {
+		i=$1
+	}
+        temp_object_ = new Grapher(i)
+        temp_object_.vbox.map("Grapher")
+        objectvar temp_object
+}

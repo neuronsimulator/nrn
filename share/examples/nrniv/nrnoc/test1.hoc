@@ -1,0 +1,40 @@
+create a
+topology()
+
+begintemplate B
+public a
+create a[2]
+endtemplate B
+
+objectvar b[3]
+for i=0,2 b[i] = new B()
+topology()
+
+begintemplate Null
+public dummy
+dummy=0
+endtemplate Null
+
+b[2] = new Null()
+topology()
+
+a psection()
+b[1].a[0] psection()
+
+a L=5
+b[1].a[0] L = 6
+a.L
+b[0].a[0] print L
+b[1].a[0] print L
+b[1].a[0] x = L
+b[0].a[0] L = x
+b[0].a[0] print L
+a.diam=3
+a x = diam
+b[0].a[0] diam = x
+b[0].a[0] print diam
+
+access b[0].a[1]
+a psection()
+psection()
+

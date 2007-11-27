@@ -1,0 +1,18 @@
+xopen("$(NEURONHOME)/lib/hoc/noload.hoc")
+// test of Longitudinal diffusion
+create source, cable1, cable2, sink
+access cable1
+source connect cable1(0), .5
+cable1 connect cable2(0), 1
+cable2 connect sink(0), 1
+forsec "cable" nseg = 20
+
+source { L=.5 diam=1 }
+sink { L=.5 diam=1 }
+forsec "cable" {L=10 diam=1}
+
+forall { insert nadifl insert ionleak insert pas g_pas = 2 e_pas=0}
+source { insert nacur }
+sink { gna_ionleak = 1 }
+
+xopen("nadifl2.ses")

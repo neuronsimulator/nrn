@@ -1,0 +1,16 @@
+forall nseg = L/50 + 1
+access soma
+proc membrane() {
+	forall {insert pas g_pas=.0001 e_pas=-65 }
+	soma uninsert pas
+	dendrite_5[0] uninsert pas
+	soma insert hh
+	dendrite_5[0] insert hh
+}
+global_ra = 100
+set_ra()
+celsius = 15
+membrane()
+
+proc destroy() {
+}

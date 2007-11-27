@@ -1,0 +1,632 @@
+begintemplate ChannelBuildGateGUI
+public name, displaystr, gatestr, power, set_data, dispsel
+public gid, cb, pl
+public remove, g_map_
+external graph_menu_remove_most, valid_name_syntax
+objref gates, tobj, tobj1, this, cb, stglyph, ksg, selgate, selstate, srcstate
+objref gate, state, trans
+strdef tstr, hint, name
+objref g, box, box2, box3, box4, math, rgui, deck, ks, nil, seltrans
+
+proc init() {
+	cb = $o1
+	ks = cb.ks
+	math = new GUIMath()
+	gates = cb.gatelist
+//	default()
+//	set_disp()
+}
+
+proc default() {
+	begin_restore(1)
+	power = 1
+	set_state("O", 1, 200, 100)
+	set_state("C", 0, 100, 100)
+	set_trans(1, 0, 0)
+	tobj.set_f(0, 1, new Vector(1))
+	tobj.set_f(1, 1, new Vector(1))
+}
+
+proc build() {
+	box = new VBox(3)
+	box.full_request(1)
+//print box
+	box.save("")
+	box.intercept(1)
+	box2 = new HBox(3)
+	box2.intercept(1)
+//	box2.adjuster(200)
+//print box2
+	box3 = new VBox(3)
+	box3.save("")
+	box3.intercept(1)
+	g = new Graph(0)
+	xpanel("", 1)
+	g.menu_tool("States", "st_tool", "tool(0)")
+	g.menu_tool("Transitions", "trans_tool", "tool(1)")
+	g.menu_tool("Properties", "properties_tool", "tool(2)")
+	xpanel()
+	g.view(2)
+	g.xaxis(3)
+	graph_menu_remove_most(g)
+	box3.intercept(0)
+	box3.map("",0,0,400,200)
+
+	deck = new Deck()
+	deck.intercept(1)
+	xpanel("")
+	xlabel("...............no gate selected....................................")
+	xpanel()
+	deck.intercept(0)
+	deck.flip_to(0)
+	deck.map
+
+	box2.intercept(0)
+	box.adjuster(200)
+	box2.map()
+	rgui = new KSTransGUI(this)
+	box.intercept(0)
+	box.dismiss_action("g_dismiss()")
+}
+
+proc gatepanel() {
+	deck.flip_to(-1)
+	deck.remove(0)
+	deck.intercept(1)
+	xpanel("")
+	if (selgate == nil || tooltype_ != 2) {
+		xlabel("no gate selected")
+	}else{
+		set_disp()
+		xvarlabel(selgate.gatestr)
+		xvarlabel(selgate.displaystr)
+		power = selgate.power
+		xpvalue("Power", &power, 1, "change_power()")
+		if (seltrans != nil) {
+			xlabel("Fractional Conductance")
+		        sprint(tstr, "%s fraction", seltrans.src.name)
+			frac0_ = seltrans.src.kss.frac
+		        xpvalue(tstr, &frac0_, 1, "set_frac(0)")
+		        xslider(&frac0_, 0, 1, "set_frac(0)")
+			if (seltrans.src != seltrans.target) {
+			        sprint(tstr, "%s fraction", seltrans.target.name)
+				frac1_ = seltrans.target.kss.frac
+			        xpvalue(tstr, &frac1_, 1, "set_frac(1)")
+			        xslider(&frac1_, 0, 1, "set_frac(1)")
+			}
+		}
+	}
+	xpanel()
+	deck.intercept(0)
+	deck.flip_to(0)
+}
+
+proc gui() {
+	if (object_id(g) == 0) {
+		build()
+	}
+	if (g_map_ == 0) {
+		g_map_ = 1
+		sprint(tstr, "%s for %s", this, cb)
+		box.map(tstr)
+	}
+	pl()
+}
+
+proc g_dismiss() {
+	g_map_ = 0
+	box.unmap()
+}
+
+proc tool() {
+	blacken()
+	tooltype_ = $1
+	if ($1 == 0) {
+		hint = "Drag new state from left. Drag off canvas to delete"
+	}else if ($1 == 1){
+		hint = "New transition pair: select source and drag to target"
+	}else {
+		hint = "Select hh state or ks transition to change properties"
+	}
+	pl()
+	rgui.set_cbt(nil)
+	selgate = nil  seltrans = nil  selstate = nil
+	gatepanel()
+}
+
+proc blacken() {local i, j
+	for j=0, gates.count-1 {
+		gate = gates.object(j)
+		for i=0, gate.states.count-1 { gate.states.object(i).color = 1 }
+		for i=0, gate.transitions.count-1 { gate.transitions.object(i).color = 1 }
+	}
+}
+
+proc st_tool() {
+	if ($1 == 2) {
+		cb.set_alias(0)
+		x0 = 1e9
+		y0 = 1e9
+		new_state($2, $3)
+		if (selstate == nil) {
+			select_state($2,$3)
+			if (selstate != nil) {
+				x0 = int(($2 + 5)/10)*10
+				y0 = int(($3 + 5)/10)*10
+			}
+		}
+		if (selstate != nil) {
+			selstate.color = 2
+		}
+	}
+	if (selstate == nil) {
+		return
+	}
+	selstate.x = int(($2 + 5)/10)*10
+	selstate.y = int(($3 + 5)/10)*10
+	if (x0 != selstate.x || y0 != selstate.y) {
+		x0 = 1e9  y0 = 1e9
+	}
+	if ($1 == 3) {
+		if (x0 == selstate.x && y0 == selstate.y) {
+			change_stname()
+		}
+		selstate.color = 1
+		if (!on_canvas($2,$3)) {
+			removestate(selstate)
+			cb.changegate()
+		}
+		selstate = nil
+		pl()
+	}
+	pl()
+}
+
+proc trans_tool() {
+	if ($1 == 2) {
+		cb.set_alias(0)
+		select_state($2,$3)
+		srcstate = nil
+		if (selstate != nil) {
+			srcstate = selstate
+			srcstate.color = 2
+		}
+	}
+	if (srcstate == nil) {
+		return
+	}
+	select_state($2,$3)
+	if (selstate == srcstate) { selstate = nil }
+	if (selstate != nil) {
+		selstate.color = 2
+	}
+	pl()
+	g.beginline(2,3*(selstate != nil))
+	g.line(srcstate.x, srcstate.y)
+	g.line($2, $3)
+	g.flush()
+	if (selstate != nil) {
+		selstate.color = 1
+	}
+	if ($1 == 3) {
+		srcstate.color = 1
+		if (selstate != nil) {
+			handle_trans(srcstate, selstate)
+			cb.changegate()
+		}
+		selstate = nil
+		srcstate = nil
+		pl()
+	}		
+}
+
+proc properties_tool() {
+	if ($1 == 3) {
+		if (in_properties_tool_) { return }
+		in_properties_tool_ = 1
+		select_state($2, $3)
+		if (selstate  != nil) {
+			st_dialog()
+		}else {
+			select_trans($2, $3)
+			if ( seltrans != nil) {
+				trans_dialog()
+			}
+		}
+		in_properties_tool_ = 0
+	}
+}
+
+proc st_dialog() {
+	if (selgate.states.count != 1) {
+		return
+	}
+
+	blacken()
+	selstate.color = 2
+	seltrans = selgate.transitions.object(0)
+	gatepanel()
+	pl()
+	rgui.set_cbt(seltrans)
+}
+
+proc set_frac() {
+	if ($1 == 0) {
+		if (frac0_ < 0) { frac0_ = 0 }
+		if (frac0_ > 1) { frac0_ = 1 }
+		seltrans.src.setfrac(frac0_)
+	}else{
+		if (frac1_ < 0) { frac1_ = 0 }
+		if (frac1_ > 1) { frac1_ = 1 }
+		seltrans.target.setfrac(frac1_)
+	}
+	set_disp()
+	rgui.ch_dorun()
+}
+
+proc trans_dialog() {local i, j
+	blacken()
+	gatepanel()
+	seltrans.color = 2
+	seltrans.src.color = 2
+	seltrans.target.color = 2
+	pl()
+	rgui.set_cbt(seltrans)
+/*
+if (0) {
+	for i = 0, transitions.count-1 {
+		tobj = transitions.object(i)
+		for j = 0, 1 {
+			if (i != $1 || j != $2) {
+				rgui.bglist.append(tobj.r[j].vr)
+			}
+		}
+			
+	}
+}
+*/
+	rgui.pl()
+}
+
+func select_trans() {local i, j, d, dmin, imin, xav, yav
+	dmin = 1e9
+    for j=0, gates.count-1 {
+	gate = gates.object(j)
+	for i=0, gate.transitions.count - 1 {
+		tobj = gate.transitions.object(i)
+		xav = (tobj.src.x + tobj.target.x)/2
+		yav = (tobj.src.y + tobj.target.y)/2
+		d = math.d2line_seg($1, $2, tobj.src.x, tobj.src.y, xav, yav)
+		if (d < dmin) {
+			dmin = d  imin = i
+			seltrans = tobj
+		}
+		d = math.d2line_seg($1, $2, xav, yav, tobj.target.x, tobj.target.y)
+		if (d < dmin) {
+			dmin = d  imin = i
+			seltrans = tobj
+		}
+	}
+    }
+	if (dmin < 10) {
+		selgate = seltrans.src.gate
+		return imin
+	}
+	seltrans = nil
+	selgate = nil
+	return -1
+}
+
+proc handle_trans() {local i, j
+	// if exists, remove
+	gate = $o1.gate
+	for (i= gate.transitions.count - 1; i >= 0; i -= 1) {
+		tobj = gate.transitions.object(i)
+		if (tobj.src == $o1 && tobj.target == $o2) {
+			removetrans(tobj)
+			return
+		}else if (tobj.target == $o1 && tobj.src == $o2) {
+			removetrans(tobj)
+			return
+		}
+	}
+	// otherwise add it
+	newtrans($o1, $o2)
+}
+
+proc set_disp() {
+	selgate.set_gatestr()
+	selgate.set_displaystr()
+	cb.set_gatestr()
+	cb.change(selgate)
+}
+
+proc change_stname() {local is
+	tstr = selstate.name
+	while (string_dialog("Change state name", tstr)) {
+	   if (valid_name_syntax(tstr, 1)) {
+		if (!cb.is_sname(tstr)) {
+			selstate.setname(tstr)
+			set_disp()
+		}else{
+			if (strcmp(tstr, selstate.name) != 0) {
+				sprint(tstr, "State name %s already in use", tstr)
+				continue_dialog(tstr)
+				continue
+			}
+		}
+		break
+	    }
+	}
+}
+
+func new_state() {
+	if (near(1, $1,$2, .05, .8)) {
+		tstr = "O"
+		cb.new_sname(tstr)
+		newstate(tstr, 1, $1, $2)
+	}else if (near(1, $1,$2, .05, .7)) {
+		tstr = "C"
+		cb.new_sname(tstr)
+		newstate(tstr, 0, $1, $2)
+	}else{
+		return 0
+	}
+	selstate = state
+	cb.changegate()
+	return 1
+}
+
+func near() { local x, y, h, x1, y1
+	iview = g.view_info()
+        x = g.view_info(iview, 13, $2)
+       	y = g.view_info(iview, 14, $3)
+        h = g.view_info(iview, 15)/2
+	if ($1 == 0) {
+		x1 = g.view_info(iview, 13, $4)
+		y1 = g.view_info(iview, 14, $5)
+	}else{
+		x1 = g.view_info(iview, 3)*$4
+		y1 = g.view_info(iview, 4)*(1-$5)
+	}
+	if (abs(x1 - x) < h) {
+        	if (abs(y1 - y) < h) {
+			return 1
+		}
+	}
+	return 0
+}
+
+proc select_state() {local x, y, h, i, j
+	for j = 0, gates.count-1 {
+		gate = gates.object(j)
+	        for i=0, gate.states.count - 1 {
+        	        tobj = gate.states.object(i)
+			if (near(0, $1, $2, tobj.x, tobj.y)) {
+                        	selstate = tobj
+				selgate = selstate.gate
+				return
+	                }
+	        }                
+	}
+	selstate = nil
+}
+
+func on_canvas() {
+        if (math.inside(g.view_info(iview, 11, $1), g.view_info(iview, 12, $2),\
+           0,0,1,1)) {
+		return 1
+	}
+	return 0
+}
+
+proc pl() {local i, j, color
+	g.erase_all
+	g.label(.1,.9,hint, 2, 1,0,0,1)
+	if (tooltype_ == 0) {plparts()}
+	for j=0, gates.count-1 {
+		gate = gates.object(j)
+		for i=0, gate.states.count-1 {
+			gate.states.object(i).pl(g)
+		}
+		for i=0, gate.transitions.count-1 {
+			gate.transitions.object(i).pl(g)
+		}
+	}
+}
+
+proc plparts() {
+	g.label(.05, .8, "O",2,1,.5,.5,1)
+	g.label(.05, .7, "C",2,1,.5,.5,1)
+}
+
+proc remove() {
+	begin_restore(1)
+}
+
+proc newstate() { local i
+	state = new ChannelBuildKSState($s1, $2, $3, $4)
+	trans = new ChannelBuildKSTrans(state, state, cb)
+	gate = new ChannelBuildKSGate(cb)
+	state.gate = gate
+	gates.append(gate)
+	gate.states.append(state)
+	gate.transitions.append(trans)
+	gate.power = 1
+	restruct()
+}
+proc removestate() {local i
+	state = $o1
+	gate = state.gate
+	gate.states.remove(gate.states.index(state))
+	for (i=gate.transitions.count-1; i >= 0; i -= 1) {
+		trans = gate.transitions.object(i)
+		if (trans.src == state || trans.target == state) {
+			gate.transitions.remove(i)
+		}
+	}
+	tobj = gate // because call by ref
+	regate(tobj)
+	restruct()
+}
+proc newtrans() {local i
+	trans = new ChannelBuildKSTrans($o1, $o2, cb)
+	gate = $o1.gate
+	tobj = $o2.gate // the gate that may be removed
+	if (tobj != gate) { // merge gates but not hh-transitions
+		// remove hh transitions if any
+		if(gate.states.count == 1) {
+			gate.transitions.remove_all
+		}
+		if (tobj.states.count == 1) {
+			tobj.transitions.remove_all
+		}
+		// merge what is left
+		for i=0, tobj.states.count-1 {
+			state = tobj.states.object(i)
+			gate.states.append(state)
+			state.gate = gate
+		}
+		for i=0, tobj.transitions.count - 1 {
+			gate.transitions.append(tobj.transitions.object(i))
+		}
+		tobj.states.remove_all
+		tobj.transitions.remove_all
+		gates.remove(gates.index(tobj))
+	}
+	gate.transitions.append(trans)
+	restruct()
+}
+proc removetrans() { // not for hh state gates
+	trans = $o1
+	gate = $o1.src.gate
+	gate.transitions.remove(gate.transitions.index(trans))
+	tobj = gate // because call by ref
+	regate(tobj)
+	restruct()
+}
+proc regate() {local gindex, i, j, min, max
+	// now how many gates are there. The single hh states do not
+	// have transitions
+	gindex = gates.index($o1) // remove and add back new gates here
+	gates.remove(gindex)
+	// first do the singles
+	// count the transitions to the states
+	for i=0, $o1.states.count - 1 {
+		$o1.states.object(i).i = 0
+	}
+	for i=0, $o1.transitions.count - 1 {
+		$o1.transitions.object(i).src.i += 1
+		$o1.transitions.object(i).target.i += 1
+	}
+	// all with count of 0 are new hh states
+	for (i=$o1.states.count - 1; i >= 0; i -= 1) {
+		state = $o1.states.object(i)
+		if (state.i > 0) { continue }
+		gate = new ChannelBuildKSGate(cb)
+		$o1.states.remove(i)
+		gates.insrt(gindex, gate)
+		state.gate = gate
+		gate.states.append(state)
+		trans = new ChannelBuildKSTrans(state, state, cb)
+		gate.transitions.append(trans)
+		gate.power = $o1.power
+	}
+	// any gates that remain have multiple states
+	// mark states in same gate with the same number
+	for i=0, $o1.states.count - 1 {
+		$o1.states.object(i).i = i
+	}
+	// now mark states with the lesser state of the transition
+	for i=0, $o1.transitions.count -1  {
+		trans = $o1.transitions.object(i)
+		if (trans.src.i < trans.target.i) {
+			max = trans.target.i
+			min = trans.src.i
+		}else{
+			max = trans.src.i
+			min = trans.target.i
+		}
+		// change all max to min
+		for j=0, $o1.states.count - 1 {
+			state = $o1.states.object(j)
+			if (state.i == max) {
+				state.i = min
+			}
+		}
+	}
+	// now all states with the same i are in a new gate
+	// iterate til empty
+	while ($o1.states.count > 0) {
+		min = $o1.states.object(0).i
+		gate = new ChannelBuildKSGate(cb)
+		gates.insrt(gindex, gate)
+		for (i=$o1.states.count-1; i >= 0; i -= 1) {
+			state = $o1.states.object(i)
+			if (state.i == min) {
+				gate.states.append(state)
+				state.gate = gate
+				$o1.states.remove(i)
+			}
+		}
+	}
+	// now put transitions in right gates
+	for i=0, $o1.transitions.count - 1 {
+		trans = $o1.transitions.object(i)
+		trans.src.gate.transitions.append(trans)
+	}
+	$o1.transitions.remove_all
+}
+
+proc cdebug() {local i, j
+	return
+	for i=0, gates.count - 1 {
+		gate = gates.object(i)
+		print gate
+		for j=0, gate.states.count-1 {
+			state = gate.states.object(j)
+			printf("  %s %s\n", state, state.gate)
+		}
+		for j=0, gate.transitions.count-1 {
+			trans = gate.transitions.object(j)
+			printf("  %s\n", trans)
+			state = trans.src
+			printf("    %s %s\n", state, state.gate)
+			state = trans.target
+			printf("    %s %s\n", state, state.gate)
+		}
+	}
+	print ""
+}
+
+proc restruct() {
+	cb.cb2ks()
+}
+
+proc dispsel() {
+	gui()
+	if ($1 >= 0 && $1 < gates.count) {
+		g.exec_menu("Properties")
+		tool(2)
+		selgate = gates.object($1)
+		if (selgate.states.count == 1) {
+			selstate = selgate.states.object(0)
+			st_dialog()
+		}else{
+			seltrans = selgate.transitions.object(0)
+			trans_dialog()
+		}
+	}else{
+		g.exec_menu("States")
+		tool(0)
+	}
+}
+
+proc change_power() { local igate
+	selgate.ksg.power(power)
+	selgate.power = power
+	selgate.set_gatestr()
+	cb.set_gatestr()
+	rgui.ch_dorun()
+}
+endtemplate ChannelBuildGateGUI

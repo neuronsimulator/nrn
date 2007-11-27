@@ -1,0 +1,94 @@
+/* hoc.pascab1 -- steady state infinite passive cable.
+   Test of cable using units of lambda and tau.
+   Compare steady state analytic solution, voltage clamp,
+   and current injection. */
+/* lambda = sqrt(1e4/4 * diam / (Ra * gl)) microns */
+/* tau    =  1e-3 * cm / gl msec */
+
+// physical properties of the cell
+create a
+{access a nseg = 100 }
+
+// experimental tools
+objref stim
+stim = new IClamp(0)
+
+// graphical interface appearance
+length = 8
+objref g
+g = new Graph()
+g.size(0,3,0,1)
+strdef s
+proc label() {
+	g.vfixed
+	g.label(.45,.01,"T (tau)")
+	g.label(0,.475,"V")
+	g.label(.01,.95,"Figure 3.23 of Jack, Noble, and Tsien Compare analytic sol'n and simulation.")
+}
+label()
+
+// simulation control
+proc geometry() { local i
+	L = length
+	diam = 1
+	Ra = 1e7/4
+}
+
+proc membrane() { local i
+	insert pas
+	g_pas = .001
+	e_pas = 0
+}
+
+func ancab() {	local X, T, coef, temp1, temp2
+	/* equation 3.24 of Jack, Noble, Tsien */
+	/* analytical v of infinite cable due to current injection */
+	/* args are X, T , ra*I*lambda*/
+	X=$1  T=$2  coef=$3
+	if (T <= 0 || X < 0) return 0
+	temp1 = sqrt(T)
+	temp2 = X/(2*temp1)
+
+	return coef/4*(exp(-X)*erfc(temp2 - temp1) - exp(X)*erfc(temp2 + temp1))
+}
+
+proc pancab() {local x	/* Figure 3.4 */
+	for (x=0; x<2.1; x=x+.5) {
+		g.beginline()
+		for (t=0; t < 3; t=t+dt) {
+			g.line(t, ancab(x, t, 2))
+		}
+		g.flush()
+		g.fixed(1)
+		sprint(s,"X=%g", x)
+		g.label(t,ancab(x,t,2),s)
+	}
+}
+proc run() {
+	geometry() membrane()
+	v = 0 t=0
+	dt = .025
+	g.color(1)
+	g.vfixed
+	g.label(.725,.8,"Analytic")
+	pancab()
+	g.vfixed
+	g.color(2)
+	g.label(.725,.7,"Current injection")
+	stim.dur=1e20 stim.amp=PI*1e-5
+	for (l1=0; l1 <= 2/length; l1 += .5/length) {
+		sprint(s, "v(%g)", l1)
+		g.addexpr(s)
+	}
+	secondorder = 0
+	t=0 v=0
+	g.begin()
+	while (t < 3) {
+		g.plot(t)
+		fadvance()
+	}
+	g.flush()
+}
+
+// run simulation
+run()

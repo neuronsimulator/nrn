@@ -1,0 +1,30 @@
+
+func f() {local x, i
+	x = $1*$1
+	for i=1,100000 hoc_cross_x_ = i
+	printf("%g = f(%g)\n", x, $1)
+	return x
+}
+
+objref pc
+pc = new ParallelContext()
+
+pc.runworker()
+
+for i=1,10 {
+	pc.submit("f", i)
+}
+
+x = 0
+while (pc.working()) {
+	x += pc.retval
+	printf("f(%d)=%g  x=%g\n", pc.upkscalar, pc.retval, x)
+	if (i < 20) {
+		pc.submit("f", i)
+		i += 1
+	}
+}
+
+pc.done()
+quit()
+

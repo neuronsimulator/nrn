@@ -1,0 +1,104 @@
+begintemplate Lincir2Linmech
+public install, c, g, y, y0, b, sl, xloc, model, ctopol, gtopol, change_val, layer
+
+objref c, g, y, y0, b, model, nil
+objref sl, xloc, tobj, tobj1, ctopol, gtopol, layer
+
+// the first row and column are for ground
+// the next rows and columns of type CELL are for membrane
+// current balance and membrane voltage
+
+proc init() {
+	nsec = 0
+	sl = new SectionList()
+	xloc = new Vector(0)
+	y = $o1
+	y0 = $o2
+}
+
+proc install() { // c, g, b, CELL, lincirnodes
+	copy2sparse($o1, c, ctopol)
+	copy2sparse($o2, g, gtopol)
+	b = $o3.c(1, $o3.size-1)
+	y0.resize(b.size)
+	y.resize(b.size)
+	y.copy(y0)
+	set_sl($4, $o5)
+	model = new LinearMechanism(c, g, y, y0, b, sl, xloc, layer)
+ if (0) {
+	print "LinearMechanism"
+	print "c"  c.printf
+	print "g"  g.printf
+	print "b"  b.printf
+	print "section list"
+	sl.printnames
+	xloc.printf
+	layer.printf
+ }
+}
+
+func change_val() { // c, g, b
+	if (!copycheck($o1, c, ctopol)) { return 0 }
+	if (!copycheck($o2, g, gtopol)) { return 0 }
+	b.copy($o3, 1, $o3.size-1)
+	return 1
+}
+
+proc copy2sparse() {local n, m, i, j, x
+	n = $o1.nrow
+	m = $o1.ncol
+	$o2 = new Matrix(n-1, m-1, 2)
+	$o3 = new Matrix(n-1, m-1, 2)
+	for i=1, n-1 for j=1, m-1 {
+		x = $o1.getval(i, j)
+		if (x != 0) {
+			$o2.x[i-1][j-1] = x
+			$o3.x[i-1][j-1] = 1
+		}
+	}
+}
+func copycheck() {local n, m, i, j, x, s
+	n = $o1.nrow
+	m = $o1.ncol
+	for i=1, n-1 for j=1, m-1 {
+		x = $o1.getval(i, j)
+		s = $o3.getval(i-1, j-1)
+		if (x != 0) {
+			if (s == 0) return 0
+			$o2.x[i-1][j-1] = x
+		}else{
+			if (s == 1) $o2.x[i-1][j-1] = 0
+		}
+	}
+	return 1
+}
+proc set_sl() {local i, j
+	xloc = new Vector()
+	layer = new Vector()
+	sl = new SectionList()
+	for i = 0, $o2.count-1 {
+		tobj = $o2.object(i)
+		for j = 0, tobj.elements.count-1 {
+			tobj1 = tobj.elements.object(j)
+			if (tobj1.part >= $1){
+				tobj1 = tobj1.extra_info
+				if (tobj1.sec != nil) {
+					if (i-1 == xloc.size) {
+						tobj1.sec.sec {sl.append()}
+						xloc.append(tobj1.x)
+						layer.append(tobj.ends.x[j])
+					}else{
+continue_dialog("Internal error: Cell node indices are not consistent.")
+						sl = new SectionList()
+						xloc.resize(0)
+						nsec = 0
+						return
+					}
+				}
+			}
+		}
+	}
+	nsec = xloc.size
+}
+
+endtemplate Lincir2Linmech

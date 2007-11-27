@@ -1,0 +1,99 @@
+#setup.py
+from distutils.core import setup, Extension
+
+import sys
+
+# NRNPYTHON_DEFINES which were enabled at configure time
+extern_defines = "@NRNPYTHON_DEFINES@"
+nrnpython_exec = "@NRNPYTHON_EXEC@"
+
+if nrnpython_exec!=sys.executable:
+    print "Error:"
+    print "NEURON configure time python: "+nrnpython_exec
+    print "Python presently executing setup.py: "+sys.executable
+    print "These do not match, and the should!"
+    sys.exit(1)
+
+
+ldefs = extern_defines.split('-D')
+
+# check for numpy+version
+
+with_numpy = False
+
+try:
+    import numpy
+except ImportError:
+    print "Warning: numpy not installed or not in import path."
+
+else:
+
+    # what version?
+    version = numpy.__version__.split('.')
+    if version[0] < '1' or (len(version[1]) > 1 and version[1] < '0rc1'):
+        print "Warning: Old numpy found and not being used.  Please upgrade your version of numpy to > 1.0rc1"
+        
+    else:
+        with_numpy = True
+
+
+include_dirs = []
+defines = []
+
+
+# check that options at configure time match the detected options now
+
+if 'WITH_NUMPY' in ldefs:
+    if with_numpy:
+        # Good, support was enabled in nrnpython.la at build time
+        # we can enable support here
+
+        include_dirs.append(numpy.__path__[0]+'/core/include')
+        defines.append(('WITH_NUMPY',None))
+
+    else:
+        print "Error: NEURON was build with support for numpy but"
+        print "no suitable installation of numpy could be found."
+        print "1) Check that your numpy version is at least 1.0rc1"
+        print "2) Check that you are using the same python executable"
+        print "to run this setup.py script as specified at configure time:"
+        print "--with-nrnpython[=python_bin] (defaults to 'python' in path)."
+        sys.exit(1)
+
+else:
+    if with_numpy:
+        print "Warning: NEURON was build without support for numpy."
+        print "A suitable installation for numpy was found, but cannot be used." 
+
+
+libdirs = ["@NRN_LIBDIR@",
+  "@IV_LIBDIR@"
+]
+epre='-Wl,-R'
+
+
+hoc_module = Extension(
+      "neuron.hoc",
+      ["inithoc.cpp"],
+      library_dirs=libdirs,
+      @setup_extra_link_args@ = [ epre+libdirs[0],epre+libdirs[1] ],
+      #extra_objects = [],
+      libraries = [
+	"nrnpython",
+        "nrnoc", "oc", "nrniv", "ivoc",
+        "memacs", "meschach", "neuron_gnu", "nrnmpi",
+        "scopmath", "sparse13", "sundials", "IVhines",
+	"readline"
+      ],
+      include_dirs = include_dirs,
+      define_macros=defines
+    )
+
+
+
+setup(name="NEURON", version="6.0",
+      description = "NEURON bindings for python",
+      packages=['neuron'],
+      ext_modules=[hoc_module]
+)
+

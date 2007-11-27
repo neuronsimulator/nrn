@@ -1,0 +1,418 @@
+/* 
+A primitive error function class for multiple run fitter must have a
+	func efun(y_vec, x_vec)
+which is the simulation result of the run. Also, it should register
+itself with a call to parmfitness_efun_append("classname").
+Finally it should supply rfile and wfile procedures for saving its
+state.
+*/
+
+/*
+fitness features useful for an action potential
+
+ we imagine that there is one point on the AP which is used to
+ locate the AP on the x-axis (eg the peak or some point on the rise)
+ and then there are a two sets of points
+ with relative-x values. In the first set the error is the relative
+x-difference between fixed y values and in the second set the error
+is the absolute y-difference between fixed relative x values.
+ y-values with absolute and a set of relative x-values
+ points
+
+ w = yvec.width(xvec, yval)
+ fitness = yvec.xfitness(xvec, xpeak, yval_list, xrel_list)
+ fitness = yvec.yfitness(xvec, xpeak, ydata_list, xrel_list)
+
+ peakindex = yvec.maxind
+ peak = yvec.max
+ xpeak = xvec.x[yvec.maxind]
+
+ xloc = xvec.x[yvec.where(">=", yval)]
+/*
+
+/* error is independent of position of Action potential peak */
+
+install_vector_fitness()
+
+parmfitness_efun_append("APFitness")
+
+begintemplate APFitness
+public efun, g, set_data, set_modelx, xdat, ydat, idx_, peak, have_data
+public unmap, map, vbox, rfile, wfile, use_x, peakscale, xscale, yscale, tag
+public clone, build, before_run, mintstop
+public save_context, restore_context
+
+objref xdat, ydat	// authoritative data
+objref xdat_[2], ydat_[2], idx_[2] // subset of data points to fit
+// 0 refers to error in y and 1 refers to error in x
+objref g, vbox, tobj, this
+strdef tstr, mserrlabel, modelabel, scalelabel, tag
+
+external clipboard_set, clipboard_get
+
+i=0
+
+proc before_run() {}
+
+func efun() { local e // the least squares error function.
+	peak = $o2.x[$o1.firstpeak]
+	e = peak - xpeak
+	e = peakscale*e*e
+
+	if (xdat_[0].size > 0) {
+		e += yscale*$o1.yfitness($o2, peak, ydat_[0], xdat_[0])
+	}
+	if (xdat_[1].size > 0) {
+		e += xscale*$o1.xfitness($o2, peak, ydat_[1], xdat_[1])
+	}
+	if (use_gui) {
+		sprint(mserrlabel, "%g", e)
+		redraw($o2, $o1)
+	}
+	return e
+}
+
+proc save_context() {
+	$o1.pack(tag, peakscale, xscale, yscale, ydat, ydat.label, xdat)
+	$o1.pack(idx_[0], idx_[1])
+}
+
+proc restore_context() {
+	$o1.unpack(tag, &peakscale, &xscale, &yscale, ydat)
+	$o1.unpack(tstr, xdat)
+	ydat.label(tstr)
+	set_data(xdat, ydat)
+	$o1.unpack(idx_[0], idx_[1])
+	setxy()
+}
+
+proc init() {local i
+	sprint(tag, "%s", this)
+	sscanf(tag, "%[^[]", tag)
+	use_x = 0
+	use_gui = 0
+	have_data = 0
+	xdat = new Vector(0)
+	ydat = new Vector(0)
+	for i=0,1 {
+		idx_[i] = new Vector(0)
+		xdat_[i] = new Vector(0)
+		ydat_[i] = new Vector(0)
+	}
+	xpeak = 0
+	setmode(0)
+	peakscale=1
+	xscale=1
+	yscale=.1
+	sprint(scalelabel, "peakscale=%g xscl=%g yscl=%g", peakscale, xscale, yscale)
+}
+
+proc clone() {
+	$o1 = new APFitness()
+	$o1.have_data = have_data
+	if (have_data) {
+		$o1.set_data(xdat, ydat)
+	}
+	$o1.set_modelx(idx_[0], idx_[1])
+	$o1.peakscale = peakscale
+	$o1.xscale = xscale
+	$o1.yscale = yscale
+	sprint(scalelabel, "peakscale=%g xscl=%g yscl=%g", peakscale, xscale, yscale)
+}
+
+proc redraw() {
+    if (use_gui) {
+	g.erase()
+	if (have_data) {
+		g.label(.8, .95)
+		ydat.plot(g, xdat, 2, 1)
+		ydat_[0].mark(g, xdat_[0].c.add(xpeak),"|",12, 3, 1)
+		ydat_[1].mark(g, xdat_[1].c.add(xpeak),"-", 14, 3, 1)
+	}
+	if (numarg() == 2) {
+		$o2.line(g, $o1)
+	}
+	g.flush()
+    }
+}
+
+proc set_data() {local i
+	have_data = 0
+	i = $o1.indwhere(">=", 0)
+	if (i < 0 || $o1.size < 1) return
+	xdat = $o1.c(i)
+	ydat = $o2.cl(i)
+	have_data = 1
+	xpeak = xdat.x[ydat.max_ind]
+	if (use_gui) {
+		g.size(xdat.min(), xdat.max(), ydat.min(), ydat.max())
+		redraw()
+	}
+}
+proc set_modelx() {local n, i, j, theta
+	idx_[0] = $o1.c
+	idx_[1] = $o2.c
+	setxy()
+}
+
+func mintstop() {
+	return mintstop_
+}
+
+proc setxy() {local i
+	mintstop_ = 0
+	for i=0, 1 {
+		xdat_[i].index(xdat, idx_[i])
+		xdat_[i].sub(xpeak)
+		ydat_[i].index(ydat, idx_[i])
+		if (mintstop_ < xdat_[i].x[xdat_[i].size-1]) {
+			mintstop_ = xdat_[i].x[xdat_[i].size-1]
+		}
+	}
+	mintstop_ += xpeak // not enough if the simulation peak is too past the data
+	// in that case should make tstop explicitly long enough in the RunControl
+	redraw()
+}
+	
+proc clipboard_data() {
+	sprint(tstr, "%s.set_data(hoc_obj_[1], hoc_obj_[0])", this)
+	if(execute1(tstr) == 0) {
+continue_dialog("No data in the Vector clipboard. Select a Graph line first")
+	}
+}
+
+proc build() {
+	if (use_gui) return
+	use_gui = 1
+	vbox = new VBox(3)
+	vbox.ref(this)
+	sprint(tstr, "execute(\"%s.unmap()\")", this)
+	vbox.dismiss_action(tstr)
+	vbox.save("save()")
+	vbox.intercept(1)
+	xpanel("", 1)
+	xmenu("Select")
+		xradiobutton("Error in X-direction", "setmode(1)")
+		xradiobutton("Error in Y-direction", "setmode(0)")
+		xbutton("Copy x,y subsets", "copy_points()")
+		xbutton("Paste x,y subsets", "paste_points()")
+		xbutton("peak, x and y error factors", "scale()")
+	xmenu()
+	xvarlabel(modelabel)
+	xvarlabel(scalelabel)
+	mserrlabel="MeanSqErr xxxxxxxxxxx"
+	xvarlabel(mserrlabel)
+	xpanel()
+	g = new Graph()
+	if (have_data) {
+		g.size(xdat.min(), xdat.max(), ydat.min(), ydat.max())
+		redraw()
+	}
+	g.menu_tool("Add Point","add_point")
+	g.menu_tool("Move Point","move_point")
+	g.menu_tool("Remove Point","remove_point")
+	g.menu_action("Data from Clipboard", "clipboard_data()")
+	vbox.intercept(0)
+}
+
+proc scale() {local x, y, ps
+	ps = peakscale
+	x = xscale
+	y = yscale
+	sprint(tstr, "%g %g %g", peakscale, xscale, yscale)
+	while (1) {
+if (string_dialog("Enter space separated peak x and y error scale factors",tstr)){
+			if (sscanf(tstr, "%g %g %g", &peakscale, &xscale, &yscale) == 3) {
+sprint(scalelabel, "peakscale=%g xscl=%g yscl=%g", peakscale, xscale, yscale)
+				return
+			}
+		}else{
+			break
+		}
+	}
+	peakscale = ps
+	xscale = x
+	yscale = y
+}
+
+proc copy_points() {
+	clipboard_set(xdat_[0], xdat_[1])
+}
+proc paste_points() {local i
+	clipboard_get(xdat_[0], xdat_[1])
+	for i=0,1 {
+		xdat_[i].add(xpeak)
+		idx_[i] = xdat.c.indgen
+		idx_[i].interpolate(xdat_[i], xdat).add(.5)
+	}	
+	setxy()
+}
+
+proc setmode() {
+	mode = $1
+	if (mode == 0) {
+		sprint(modelabel, "(Y subset)")
+	}else{
+		sprint(modelabel, "(X subset)")
+	}
+}
+
+
+proc map() {
+	if (!use_gui) build()
+	if (numarg() > 1) {
+		vbox.map($s1, $2, $3, $4, $5)
+	}else if (numarg() == 1){
+		vbox.map($s1)
+	}else{
+		vbox.map()
+	}
+}
+
+proc unmap() {
+}
+
+proc save() {local i
+	vbox.save("load_file(\"e_actpot.hoc\", \"APFitness\")}\n{")
+		vbox.save("ocbox_=new APFitness(1)")
+        vbox.save("}\n{object_push(ocbox_)}\n{build()")
+	if (object_id(xdat)) {
+		sprint(tstr, "xdat = new Vector(%d)", xdat.size)
+		vbox.save(tstr)
+		sprint(tstr, "ydat = new Vector(%d)", ydat.size)
+		vbox.save(tstr)
+		sprint(tstr, "ydat.label(\"%s\")", ydat.label)
+		vbox.save(tstr)
+sprint(tstr, "for i=0,%d { xdat.x[i]=fscan() ydat.x[i]=fscan()}}",\
+xdat.size - 1)
+		vbox.save(tstr)
+		for i=0,xdat.size-1 {
+			sprint(tstr, "%g %g", xdat.x[i], ydat.x[i])
+			vbox.save(tstr)
+		}
+		vbox.save("{set_data(xdat, ydat)}")
+	    if (idx_[0].size > 0) {
+		sprint(tstr, "idx_[0] = new Vector(%d)", idx_[0].size)
+		vbox.save(tstr)
+sprint(tstr, "for i=0,%d { idx_[0].x[i]=fscan()}", idx_[0].size - 1)
+		vbox.save(tstr)
+		for i=0,idx_[0].size-1 {
+			sprint(tstr, "%g", idx_[0].x[i])
+			vbox.save(tstr)
+		}
+		vbox.save("{setxy()}")
+	    }
+	    if (idx_[1].size > 0) {
+		sprint(tstr, "idx_[1] = new Vector(%d)", idx_[1].size)
+		vbox.save(tstr)
+sprint(tstr, "for i=0,%d { idx_[1].x[i]=fscan()}", idx_[1].size - 1)
+		vbox.save(tstr)
+		for i=0,idx_[1].size-1 {
+			sprint(tstr, "%g", idx_[1].x[i])
+			vbox.save(tstr)
+		}
+		vbox.save("{setxy()}")
+	    }
+	}else{
+		vbox.save("}")
+	}
+        vbox.save("{object_pop()}\n{")
+	g.save_name("ocbox_.g", 1)
+}
+
+proc add_point() {local i
+	if ($1 == 2) {
+		i = pick_x($2)
+		idx_[mode].append(i)
+		idx_[mode].sort()
+		setxy()
+	}
+}
+proc remove_point() {
+	if ($1 == 2) {
+		i = pick_point($2-xpeak)
+		if (i >= 0) {
+			idx_[mode].remove(i)
+			setxy()
+		}
+	}
+}
+proc move_point() {
+//print $1, $2, $3
+	if ($1 == 2) { // press
+		adjust = pick_point($2-xpeak)
+	}
+	if (adjust == -1) {
+		return
+	}
+	if ($1 == 1) { // drag
+		idx_[mode].x[adjust] = pick_x($2)
+		setxy()
+	}
+	if ($1 == 3) { // release
+		idx_[mode].x[adjust] = pick_x($2)
+		idx_[mode].sort()
+		adjust = -1
+		setxy()
+	}
+}
+func pick_x() {local i
+	i = xdat.indwhere(">=", $1)
+	if (i == -1) i = 0
+	return i
+}
+
+func pick_point() {local i, j, x, m
+	if (idx_[mode].size == 0) return -1
+	i = xdat_[mode].indwhere(">=", $1)
+	if (i == -1 && idx_[mode].size > 0) { return xdat_[mode].size-1 }
+	d = ($1-xdat_[mode].x[i])^2
+	if (i > 0) {
+		d1 = ($1-xdat_[mode].x[i-1])^2
+		if (d1 < d) { return i-1 }
+	}
+	if (i < xdat_[mode].size-1) {
+		d1 = ($1-xdat_[mode].x[i+1])^2
+		if (d1 < d) { return i+1 }
+	}
+	return i
+}
+
+proc wfile() {local i
+	$o1.printf("APFitness xdat ydat erry errx (lines=%d) %g %g %g\n",\
+		8 + 2*xdat.size + idx_[0].size + idx_[1].size, peakscale,xscale,yscale)
+	$o1.printf("|%s|\n", ydat.label)
+	$o1.printf("%d\n", xdat.size)
+	xdat.printf($o1)
+	ydat.printf($o1)
+	for i=0,1 {
+		$o1.printf("%d\n", idx_[i].size)
+		idx_[i].printf($o1)
+	}
+}
+
+proc rfile() {local i, n
+	peakscale = $o1.scanvar
+	xscale = $o1.scanvar
+	yscale = $o1.scanvar
+	sprint(scalelabel, "peakscale=%g xscl=%g yscl=%g", peakscale, xscale, yscale)
+	$o1.gets(tstr)
+	if (sscanf(tstr, "|%[^|]", tstr) == 1) {
+		ydat.label(tstr)
+	}
+	n = $o1.scanvar
+	if (n > 0) {
+		xdat.resize(n) ydat.resize(n)
+		xdat.scanf($o1, n)
+		ydat.scanf($o1, n)
+		set_data(xdat, ydat)
+	}
+	for j=0, 1 {
+		n = $o1.scanvar
+		idx_[j].resize(n)
+		idx_[j].scanf($o1, n)
+	}
+	setxy()
+}
+
+endtemplate APFitness

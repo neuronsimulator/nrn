@@ -1,0 +1,46 @@
+// Physical properties
+create a,b
+forall {nseg=10 L=1000 diam=10 insert hh}
+
+objref g[2]
+for i=0,1 g[i] = new gap()
+a g[0].loc(.9999)	/*distal end of a*/
+b g[1].loc(.0001)  /*proximal end of b*/
+setpointer g[0].vgap, b.v(.001)
+setpointer g[1].vgap, a.v(.999)
+
+
+// run parameters
+tstop=5
+
+// graphical interface appearance
+objref grph
+grph = new Graph()
+grph.size(0,tstop,-80,40)
+grph.addexpr("a.v(.001)",1,1)
+grph.addexpr("a.v(.999)",2,1)
+grph.addexpr("b.v(.001)",3,1)
+grph.addexpr("b.v(.999)",4,1)
+
+
+// simulation control
+objref stim
+a stim = new IClamp(.001)
+{stim.del=0 stim.dur=.1 stim.amp=40}
+
+proc run() {
+	for i=0,1 g[i].r=3
+	finitialize(-65)
+
+	grph.begin
+	while ( t < tstop) {
+		grph.plot(t)
+		fadvance()
+	}
+	grph.flush()
+}
+	
+// run simulation
+run()
+
+

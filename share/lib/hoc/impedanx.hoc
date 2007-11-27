@@ -1,0 +1,324 @@
+/*
+impedanx.hoc
+Modified 7/12/95 for space plot of natural log Atten vs. x
+Based on Imp1 (impedanc.hoc>
+
+A wrapper for the Impedance class that makes it convenient to
+define measuring electrode location, and current injection location
+This is useful for plotting impedance vs time and freq.
+
+usage:
+	imp = new Imp1([impedanceobject]) // if no arg then this creates one
+	section imp.measure(x)	//specify measurement location
+	section imp.inject(x)	//specify injection location
+	imp.ratio(freq)		// v(measure)/v(inject)
+	imp.input(freq)		// v(measure)/i(measure)
+	imp.transfer(freq)	// v(measure)/i(inject)
+
+	imp.map()		// a widget for setting measure and inject
+				// locations
+
+	imp.move_callback = object	// if you want object.move() called
+				// each time inject or measure is moved
+Notes:
+	Impedance objects are expensive in terms of storage but efficiently
+	calculate input impedances everywhere and
+	transfer impedances everywhere relative to a specific location.
+	For this reason the Imp1 constructor can use a pre-existing Impedance
+	object if you don't want it to construct its own instance.
+
+	This object calls Impedance.compute() everytime a ratio,etc is
+	requested.
+*/
+
+begintemplate Impx
+public measure, inject, ratio, input, transfer, extended, imp
+public begin, flush, view_count
+
+objectvar imp, sec[3], shape, b1, this
+objref seclist, g, rvp
+
+double x[3], color[3]
+
+strdef s0, s1, s2, stemp, sdist, fstyle, tstr
+
+proc init() {
+	style_ = 0
+	fstyle = "log(Attenuation)"
+	extended = 0
+	mark_ = 0
+	flush_ = 0
+	scale_ = 0
+	direct_ = 0
+	
+	freq = 0
+	variable_domain(&freq, 0, 1e9) units(&freq, "Hz")
+	
+/*
+	if (numarg() > 0) {
+		imp = $o1
+	}else{
+		imp = new Impedance()
+	}
+don't bother checking for pre-existing object of Impedance class
+this is called without argument, so always must create a new object
+that way won't get mixed up with stuff created by Imp1
+*/
+	imp = new Impedance()
+	imp.deltafac(.0001)
+	sec[0] = new SectionRef()
+	x[0] = .5
+	startpath(0)
+	endpath(1)
+	build()
+	measure(.5)
+}
+
+proc measure() {
+	sec[0] = new SectionRef()
+	x[0] = $1
+	setdir(direct_)
+}
+
+proc setdir() {
+    sec[0].sec {   
+        direct_ = $1
+        if (style_ == 1) { // input
+                sprint(s0, "(red) %s(%g)", secname(), x[0])
+        }else if (direct_ == 0) {
+                sprint(s0, "Measure (red) %s(%g)", secname(), x[0])
+        }else {
+                sprint(s0, "Inject (red) %s(%g)", secname(), x[0])
+        }
+    }           
+        draw()
+}
+
+proc startpath() {
+	sec[1] = new SectionRef()
+	x[1] = $1
+	sectionname(stemp)
+	sprint(s1, "path start (blue): %s(%g)", stemp, $1)
+}
+
+proc endpath() {
+	sec[2] = new SectionRef()
+	x[2] = $1
+	sectionname(stemp)
+	sprint(s2, "path end (green): %s(%g)", stemp, $1)
+}
+
+/*
+func ratio() {local y
+	compute($1)
+	sec[1].sec y = imp.ratio(x[1])
+	return y
+}
+func transfer() {local y
+	compute($1)
+	sec[1].sec y = imp.transfer(x[1]) // since v(x)/i(loc) == v(loc)/i(x)
+	return y
+}
+func input() {local y
+	compute($1)
+	sec[0].sec y = imp.input(x[0])
+	return y
+}
+*/
+
+proc compute() {  // calcs impedances, argument is freq (Hz)
+	sec[0].sec imp.loc(x[0])
+	imp.compute($1, extended)
+}
+
+double sz[4]
+proc draw() {  // MLH says this is the most inefficient way to do this
+		// but if it works fast enough, who cares?
+	// e.g. computing and setting path do not need to be linked
+	compute(freq)  // freq is set by a field editor
+	sec[1].sec rvp.begin(x[1])
+	sec[2].sec rvp.end(x[2])
+	seclist = new SectionList()
+	rvp.list(seclist)
+	shape.color_all(1)  // foreground color
+	shape.color_list(seclist, 2)  // color 2
+	g.flush()
+	if (scale_) {// only after the flush does a graph vector have info
+		g.size(&sz[0])
+		g.size(sz[0], sz[1], 0, sz[3])
+	}
+}
+
+proc dist() {local y
+//	sec[0].sec distance(0,x[0])
+	sec[1].sec distance(0,x[1])
+	sec[2].sec y = distance(x[2])
+	sprint(sdist, "path length (um) %g", y)
+}
+
+proc build() {local i
+	dist()
+
+	b1 = new VBox()
+	b1.ref(this)
+	b1.save("")
+	b1.intercept(1)
+
+	xpanel("", 1)
+	xbutton("Redraw", "draw()")
+	xmenu("SelectLocation")
+		xradiobutton("measure/inject", "mark_=0", 1)
+		xradiobutton("path start", "mark_=1")
+		xradiobutton("path end", "mark_=2")
+	xmenu()
+        xmenu("Plot")
+                xradiobutton("log(Attenuation", "style(0)", 1)
+                xradiobutton("Zin (Mohm)", "style(1)")
+                xradiobutton("Ztransfer (Mohm)", "style(2)")
+                xradiobutton("V(measure)/V(inject)", "style(3)")
+        xmenu()
+        xmenu("Extras")
+                xstatebutton("Movie mode", &flush_, "add_flush()")
+                xstatebutton("Auto Scale", &scale_, "draw()")
+	xmenu()
+        xpanel()
+
+	xpanel("")
+	xcheckbox("include dstate/dt contribution", &extended, "draw()")
+	// now a field editor for frequency
+	xpvalue("frequency", &freq, 1, "draw()")
+        xradiobutton("Vin", "setdir(0)", 1)
+        xradiobutton("Vout", "setdir(1)")
+ 
+	xvarlabel(s0)
+	xvarlabel(s1)
+	xvarlabel(s2) // new line here
+	xvarlabel(sdist)
+	xpanel()
+
+	shape = new Shape()
+
+	for i=0,2 {
+		color[i] = i+2	// red, blue
+	}
+	shapemark(3)
+	for i=0,2 {
+		shapemark(i, sec[i], x[i])
+	}
+
+	shape.action("move()")
+
+	g = new Graph()  // appends graph to box
+
+	b1.intercept(0)
+	sprint(stemp, "%s", this)
+	b1.map(stemp)
+
+	rvp = new RangeVarPlot("fun($1)")
+	add_rvp()
+	draw()
+}
+
+proc add_rvp() {
+	g.erase_all()
+	g.label(-100, -100, "")
+	g.addobject(rvp)
+	g.label(.5, .9, fstyle)
+}
+
+func fun() {local xx
+	if (style_ == 0) {
+		if (direct_ == 0) {
+			return -log(imp.ratio($1))
+		}else{
+			sec[0].sec xx = imp.input(x[0])
+			return -log(imp.transfer($1)/xx)
+		}
+	}else if (style_ == 1) {
+		return imp.input($1)
+	}else if (style_ == 2 ){
+		return imp.transfer($1)
+	}else{
+		if (direct_ == 0) {
+			return imp.ratio($1)
+		}else{
+			sec[0].sec xx = imp.input(x[0])
+			return imp.transfer($1)/xx
+		}
+	}
+}
+
+proc style() {
+        style_ = $1
+        if (style_ == 0) {
+                fstyle = "log(Attenuation)"
+        }else if (style_ == 1) {
+                fstyle = "Zin" 
+        }else if (style_ == 2) {
+                fstyle = "Ztransfer"
+        }else if (style_ == 3) {
+		fstyle = "V(measure)/V(inject)"
+	}
+        setdir(direct_)
+	add_rvp()
+        draw()
+}
+
+proc move() {local i, xx
+	i = mark_
+	xx = hoc_ac_
+	if (i == 0) {
+		measure(xx)
+	}else if (i == 1) {
+		startpath(xx)
+	}else {
+		endpath(xx)
+	}
+	shapemark(i, sec[i], x[i], color[i])
+	dist()
+	draw()
+}
+
+// should put this in plotshape class and avoid a meaningless point process
+objectvar stim[1]
+proc shapemark() {local i
+	if (numarg() == 1) {
+		objectvar stim[$1]
+		for i=0,$1-1 sec[i].sec stim[i] = new PointProcessMark(x[i])	
+		for i=0,$1-1 shape.point_mark(stim[i], color[i])
+	}else{
+		$o2.sec stim[$1].loc($3)
+	}
+}
+proc add_flush() {
+        if (flush_) {
+                sprint(tstr, "flush_list.append(%s)", this)
+                execute(tstr)
+        }
+}
+func view_count() {
+	if (flush_) {
+		return g.view_count()
+	}else{
+		return 0
+	}
+}
+proc begin() {
+}
+proc flush() {
+        draw()
+}       
+
+proc save() {}
+
+endtemplate Impx
+
+proc makeImpx() {
+	if(!execute1("v", 0)) {
+		continue_dialog("No accessed section: Can't start an Impx")
+		return
+	}
+	hoc_obj_[0] = new Impx()
+	hoc_obj_[0] = hoc_obj_[1]
+}
+

@@ -1,0 +1,343 @@
+// read swc file, create and verify that it is a single tree,
+// and identify the lists of unbranched points.
+
+begintemplate Import3d_SWC_read
+public input, pheader, instantiate
+public id, type, x, y, z, d, pid, iline, header, point2sec, sections, lines
+public idoffset, label, id2pt, id2line, pt2id, pt2sec, sec2pt, file, mark
+public filetype, err, helptxt
+external hoc_sf_
+objref id, type, x, y, z, d, pid, iline, header, lines
+objref file, vectors, sec2point, point2sec, sections
+strdef tstr, line, filetype
+double a[7]
+
+proc init() {
+	filetype = "SWC"
+	vectors = new List()
+	header = new List()
+	lines = new List()
+}
+
+proc input() {
+	err = 0
+	rdfile($s1)
+	shift_id()
+	check_pid()
+	sectionify() // create point2sec index map
+	mksections() // Import3dSection list
+//	instantiate()
+}
+
+proc rdfile() {local i
+	file = new File($s1)
+	// count lines for vector allocation space (not really necessary)
+	if (!file.ropen()) {
+		err = 1
+		printf("could not open %s\n", $s1)
+	}
+	for (i = 0; !file.eof(); i += 1) {
+		file.gets(line)
+	}
+	file.close()
+//	printf("%s has %d lines\n", $s1, i)
+	alloc(i, id, type, x, y, z, d, pid, iline)
+	file.ropen()
+	for (i = 1; !file.eof(); i += 1) {
+		file.gets(line)
+		parse(i, line)
+	}
+	file.close()
+}
+
+proc alloc() { local i // $oi.size = 0 but enough space for $1 elements
+	for i = 2, numarg() {
+		$oi = new Vector($1)
+		$oi.resize(0)
+		vectors.append($oi)
+	}
+}
+
+proc parse() {local i, n
+	n = sscanf($s2, "%f %f %f %f %f %f %f", &a[0], &a[1], &a[2],\
+		&a[3], &a[4], &a[5], &a[6])
+	if (n == 7) {
+		a[5] *= 2 // radius to diameter
+		for i=0, 6 {
+			vectors.object(i).append(a[i])
+		}
+		iline.append($1) // for error messages
+		hoc_sf_.left($s2, hoc_sf_.len($s2)-1)
+		lines.append(new String($s2))
+	} else if (hoc_sf_.head($s2, "#", tstr) == 0) { // comment
+		header.append(new String($s2))
+	} else {
+		err = 1
+		printf("error %s line %d: could not parse: %s", file.getname, $1, $s2)
+// Note: only swcdata/n120.swc and swcdata/n423.swc last lines are invalid
+	}
+}
+
+proc pheader() {local i
+	for i=0, header.count-1 {
+		printf("%s", header.object(i).s)
+	}
+}
+
+proc shift_id() { local i, ierr, imin
+	// Note: swcdata/*.swc have sequential id's
+	// shift id and pid so that id.x[0] == 0. Then verify that
+	// id.x[i] == i
+	if (id.size > 0) {
+		imin = id.min_ind
+		idoffset = id.x[imin]
+		// is the first one the smallest?
+		if (id.x[0] != idoffset) {
+			err = 1
+printf("error %s lines %d and %d: id's %d and %d are not sequential\n", \
+			file.getname, iline.x[0], iline.x[imin], \
+			id.x[0], idoffset)
+		}
+		id.sub(idoffset)
+		pid.sub(idoffset)
+	}		
+	ierr = 0
+	for i=0, id.size-1 {
+		if (id.x[i] != i ) {
+			err = 1
+printf("error %s line %d: id's shifted by %d are not sequential: id.x[%d] != %g\n", \
+			file.getname, iline.x[i], idoffset, i, id.x[i])
+			ierr += 1
+		}
+		if (ierr > 5) { break }
+	}
+}
+
+proc check_pid() {local i, ierr   localobj tobj
+	// if all pid.x[i] < i then we must be 1 or more trees with no loops
+	// Note: swcdata/*.swc conforms.
+	ierr = 0
+	for i=0, id.size-1 {
+		if (pid.x[i] >= i) {
+			err = 1
+printf("error %s line %d: pid.x[%d]=%d (shifted by %d) is not less its index\n",\
+			file.getname, iline.x[i], i, idoffset, pid.x[i])
+		}
+	}	
+	// the number of trees is just the number of pid's < 0
+	// Note: swcdata/*.swc have only one tree
+	tobj = new Vector()
+	tobj.indvwhere(pid, "<", 0)
+	if (tobj.size > 1) {
+		err = 1
+printf("warning %s: more than one tree:\n", file.getname)
+		for i=0, tobj.size-1 {
+			printf("  root at line %d\n", iline.x[tobj.x[i]])
+		}
+	}
+}
+
+proc sectionify() {local i, si  localobj tobj
+	// create point2sec map and sections list
+	// point2sec gives immediate knowledge of the section a point is in
+	// sections list is for display purposes
+	if (id.size < 2) { return }
+
+	// tobj stores the number of child nodes with pid equal to i
+	// actually every non-contiguous child adds 1.01 and a contiguous
+	// child adds 1
+	mark_branch(tobj)
+
+	point2sec = new Vector(id.size)
+	// first two points are definitely in section 0
+	point2sec.x[0] = 0
+	point2sec.x[1] = 0
+	si = 0
+	for i=2, id.size-1 {
+		if (tobj.x[pid.x[i]] > 1) {
+			si += 1
+		}
+		point2sec.x[i] = si
+	}
+	sec2point = new Vector(si)
+	tobj.x[0] = 1
+	sec2point.indvwhere(tobj, "!=", 1)
+	// sec2point.x[i] is the last point of section i
+	// 0 is the first point of section 0
+	// sec2point.x[i-1]+1 is the first point of section i
+}
+
+proc mark_branch() { local i, p
+	//$o1 is used to store the number of child nodes with pid equal to i
+	// actually add a bit more than 1
+	// if noncontiguous child and 1 if contiguous child
+	// this is the basic computation that defines sections, i.e.
+	// contiguous 1's with perhaps a final 0 (a leaf)
+	// As usual, the only ambiguity will be how to treat the soma
+
+	// Another wrinkle is that we do not want any sections that
+	// have multiple point types. E.g. point type 1 is often
+	// associated with the soma. Therefore we identify
+	// point type changes with branch points.
+
+	// however warn if the first two points do not have the same type
+	if ( type.x[0] != type.x[1]) {
+		err = 1
+printf("\nNotice: %s:\nThe first two points have different types (%d and %d) but\n    a single point root section is not allowed.\n    Changing point id %d so that it is type %d.\n    If this is an incorrect repair, then change the file.\n"\
+, file.getname, type.x[0], type.x[1], pt2id(1), type.x[0])
+		type.x[1] = type.x[0]
+	}
+
+	$o1 = new Vector(id.size)
+	for i=0, id.size-1 {
+		p = pid.x[i]
+		if (p >= 0) {
+			$o1.x[p] += 1
+			if ( pid.x[i] != i-1) {
+				$o1.x[p] += .01
+			}
+			if (type.x[p] != type.x[i]) {
+				// increment enough to get past 1
+				// so force end of section but
+				// not really a branch
+				$o1.x[p] += .01
+			}
+		}
+	}
+}
+
+proc mksections() {local i, isec, first
+	sections = new List()
+	isec = 0
+	first = 0
+	for i=0, id.size-1 {
+		if (point2sec.x[i] > isec) {
+			mksection(isec, first, i)
+			isec += 1
+			first = i
+		}
+	}
+	mksection(isec, first, i)
+}
+
+proc mksection() { local i, isec, first   localobj sec
+	isec = $1  first=$2  i=$3
+	if (isec > 0) {// branches have pid as first point
+		sec = new Import3d_Section(first, i-first+1)
+		pt2sec(pid.x[first], sec.parentsec)
+		if (pid.x[first] == 0) { sec.parentx = 0 }
+		sec.append(0, pid.x[first], 1, x, y, z, d)
+		sec.append(1, first, i-first, x, y, z, d)
+	}else{// pid not first point in root section
+		sec = new Import3d_Section(first, i-first)
+		sec.append(0, first, i-first, x, y, z, d)
+	}
+	sec.type = type.x[first]
+	sections.append(sec)
+	if (object_id(sec.parentsec)) {
+		if (sec.parentsec.type == 1 && sec.type != 1) {
+			sec.d.x[0] = sec.d.x[1]
+		}
+	}
+}
+
+func same() {
+	if ($2 < 0) return 0
+	if (x.x[$1] == x.x[$2]) {
+		if (y.x[$1] == y.x[$2]) {
+//			if (z.x[$1] == z.x[$2]) {
+				return 1
+//			}
+		}
+	}
+	return 0
+}
+
+proc instantiate() {local i, isec, psec, pp, si, px
+	if (id.size < 2) { return }
+
+	sprint(tstr, "~create K[%d]", sec2point.size)
+	execute(tstr)
+
+	// connect
+	for i = 2, id.size-1 {
+		if (point2sec.x[pid.x[i]] == point2sec.x[i]) { continue }
+		if (pid.x[i] == 0) { px = 0 } else { px = 1 }
+		sprint(tstr, "K[%d] connect K[%d](0), (%g)", \
+			point2sec.x[pid.x[i]], point2sec.x[i], px)
+		execute(tstr)
+	}
+
+	// 3-d point info
+	// needs some thought with regard to interior duplicate
+	// points, and whether it is appropriate to make the first
+	// point in the section the same location and diam as the
+	// pid point
+	isec = 0
+	for i=0, id.size-1 {
+		if (point2sec.x[i] > isec ) { // in next section
+			ptadd(pid.x[i], point2sec.x[i])
+		}
+		isec = point2sec.x[i]
+		ptadd(i, isec)
+	}
+}
+
+proc ptadd() {
+	sprint(tstr, "K[%d] { pt3dadd(%g, %g, %g, %g) }", \
+		$2, x.x[$1], y.x[$1], z.x[$1], d.x[$1])
+	execute(tstr)
+}
+
+proc label() {
+	sprint($s2, "Line %d: %s", iline.x[$1], lines.object($1).s)
+}
+func id2pt() {local i
+	i = int($1) - idoffset
+	if (i < 0) {
+		i = -1
+	}else if (i >= id.size) {
+		i = id.size-1
+	}
+	return i
+}
+func id2line() { return $1 }
+func pt2id() { return int($1) + idoffset }
+func pt2sec() { local i,j //from selpoint
+	i = point2sec.x[$1]
+	$o2 = sections.object(i)
+	j = $1 - $o2.id
+	if (i > 0) { j += 1 }
+	return j
+}
+func sec2pt() {local i
+	i = sections.object($1).id + $2
+	if ($1 > 0) {
+		i -= 1
+	}
+	return i
+}
+proc mark() {local i
+	print $o1, $2, iline, lines
+	i = $2 - idoffset
+	printf("%d %d %g %g: %s\n", i, iline.x[i], x.x[i], y.x[i], lines.object(i).s)
+	$o1.mark(x.x[i], y.x[i], "S", 12, 4, 1)
+}
+
+proc helptxt() {
+	xpanel("SWC file filter characteristics")
+xlabel("    Sections consist of unbranched sequences of points having")
+xlabel("the same type. All sections connect from 0 to 1")
+xlabel("(except those connecting to the first point")
+xlabel("of the root section connect from 0 to 0).")
+xlabel("With one exception, all child sections have as their first pt3d")
+xlabel("point a copy of the parent point and the diameter of that first")
+xlabel("point is the diameter of the parent point")
+xlabel("    The exception, so that the error in area is not so")
+xlabel("egregious, is that dendrite branches that connect to the soma")
+xlabel("get a copy of the parent point as their first pt3d point but")
+xlabel("the diameter of that point is the diameter of the second point")
+xlabel("    The root section does not contain an extra parent point.")
+	xpanel(0)
+}
+endtemplate Import3d_SWC_read

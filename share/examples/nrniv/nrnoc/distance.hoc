@@ -1,0 +1,37 @@
+strdef s
+proc d() {
+	sectionname(s)
+	print s, distance(0), distance(.5),distance(1)
+}
+
+create a, b
+
+proc run() {
+	forall nseg=11
+	topology()
+	a distance()
+	a d()
+	b d()
+	print ""
+}
+
+run()
+
+create a, b
+connect a(0), b(0)
+run()
+
+create a, b
+connect a(1), b(0)
+run()
+
+create a, b
+connect a(0), b(1)
+run()
+
+create a, b
+connect a(1), b(1)
+run()
+
+
+

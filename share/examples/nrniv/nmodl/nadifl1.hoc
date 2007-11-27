@@ -1,0 +1,54 @@
+xopen("$(NEURONHOME)/lib/hoc/noload.hoc")
+
+// compare cable voltage profile with equivalent sodium diffusion
+create cable
+access cable
+nseg=20
+insert nadifl
+insert nacur
+nao0_na_ion = 1
+nai0_na_ion = 1
+
+L=10
+diam = .1
+
+v_init = 1
+
+proc init() {
+	if (ismembrane("nadifl")) {
+		vcoef()
+	}
+	nai0_na_ion = v_init
+	finitialize(v_init)
+	fcurrent()
+}
+
+proc vcoef() {
+	// Ra and cm so nai has same solution as v
+	// Good only for uniform cable
+	// D in (um2/ms), amp_nacur = mA/cm2 over one segment
+	// Want v(mV) equivalent to nai (mM)
+	// From the diffusion and cable equation we need
+	// D_nadifl = diam/(4*Ra*cm)*(1e7)
+
+	// Charge injected is amp_nacur*dur_nacur*PI*diam*L/nseg
+	// Material injected is amp_nacur*dur_nacur/(FARADAY)*PI*diam*L/nseg
+	// Charge on cable is PI*diam*L*cm*v
+	// Material in cable is PI*(diam/2)^2*L*nai
+
+	// so steadystate v is amp_nacur*dur_nacur/(nseg*cm)*(1e3)
+	// nai = amp_nacur*dur_nacur/(nseg*diam/4)/(FARADAY)*(1e4)
+	
+	// so cm = diam*FARADAY/40
+	cm = diam*FARADAY/40
+	Ra = diam/D_nadifl/4/cm*1e7
+
+	// amp for 100 mV change
+	amp_nacur = -100*cm/dur_nacur*(1e-3)
+
+
+	amp_nacur = 0
+	amp_nacur(.0001) = -100*cm/dur_nacur*(1e-3)
+}
+	
+xopen("nadifl1.ses")

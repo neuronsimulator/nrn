@@ -1,0 +1,52 @@
+/* HH membrane clamp and release */
+
+// physical properties of the cell
+create a
+access a
+{nseg=1 diam=1 L=1 insert hh}
+
+// experimental tools
+objref clmp
+clmp = new VClamp(.5)
+
+// run parameters
+tstop=5
+strength = -20	/*namps*/
+dur=2
+
+// graphical interface appearance
+objref g
+g = new Graph()
+g.size(0,tstop,-80,60)
+strdef s
+proc label() {
+	g.label(0,.5,"mV")
+	g.label(.4, .15, "t (ms)")
+sprint(s, "HH membrane clamped at %g mV for %g ms",strength,dur)
+	g.label(.08,.01,s)
+}
+label()
+
+// simulation control
+proc init() {
+	finitialize(-65)
+	g.begin()
+}
+
+proc step() {
+	g.line(t,v)
+	fadvance()
+}
+
+proc run() {
+	init()
+	clmp.gain = 1e7
+	clmp.tau1 = 0
+	clmp.dur[0] = dur
+	clmp.amp[0] = strength
+	while(t<tstop) { step()}
+	g.flush
+}
+
+// run simulation
+{run() }

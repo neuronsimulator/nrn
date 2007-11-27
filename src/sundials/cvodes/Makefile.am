@@ -1,0 +1,33 @@
+noinst_LTLIBRARIES = libcvodes.la
+
+nsrc=$(top_srcdir)/src
+INCLUDES = -I$(nsrc)/sundials/shared
+
+libcvodes_la_SOURCES = \
+	cvband.c \
+	cvbandpre.c \
+	cvbbdpre.c \
+	cvdense.c \
+	cvdiag.c \
+	cvodea.c \
+	cvodes.c \
+	cvodesio.c \
+	cvspgmr.c
+
+noinst_HEADERS = \
+	cvband.h \
+	cvband_impl.h \
+	cvbandpre.h \
+	cvbandpre_impl.h \
+	cvbbdpre.h \
+	cvbbdpre_impl.h \
+	cvdense.h \
+	cvdense_impl.h \
+	cvdiag.h \
+	cvdiag_impl.h \
+	cvodea.h \
+	cvodea_impl.h \
+	cvodes.h \
+	cvodes_impl.h \
+	cvspgmr.h \
+	cvspgmr_impl.h

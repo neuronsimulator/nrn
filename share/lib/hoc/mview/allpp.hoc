@@ -1,0 +1,52 @@
+begintemplate ModelViewAllPP
+public mkdisplay, ppa
+objref mview, ppa, tobj, mt, disp, tobj1, nil
+strdef tstr, name
+
+proc init() {
+	mview = $o1
+	ppa = new ModelViewPPAnalysis(mview)
+}
+
+proc mkdisplay() {local i
+	for mview.artcell_types(mt, tobj, 0) {
+		for i = 0, tobj.count - 1 {
+			ppa.ppsappend(tobj.object(i), mt.selected())
+		}
+	}
+	ppa.analyse()
+	ppa.mkdisplay($o1)
+	disp = new TreeViewItem($o1, "Global parameters for Point Processes")
+	for mview.artcell_types(mt, tobj, 0) {
+		mt.selected(name)
+		mview.glob(disp, name)
+	}
+	disp = new TreeViewItem($o1, "KSChan definitions for Point Processes")
+	kschan($o1, disp)
+}
+
+proc kschan() {local i, j, size, sing
+	tobj = new List("KSChan")
+	sing = 0
+	if (tobj.count > 0) {
+		for i=0, tobj.count - 1 {
+			if (tobj.object(i).single) { sing = 1 }
+		}
+	}
+	if (sing) {
+		sprint(tstr, "%s.vres(%g)", tobj.object(0), tobj.object(0).vres)
+		$o2.append(tstr, nil, 0)
+	}
+	for mview.artcell_types(mt, tobj1, 0) {
+		for i=0, tobj.count - 1 {
+			mt.selected(name)
+			 if (strcmp(tobj.object(i).name, name) == 0) {
+				mview.kschan($o2, tobj.object(i))
+			 }
+		}
+	}
+	tobj = nil
+}
+
+endtemplate ModelViewAllPP
+

@@ -1,0 +1,135 @@
+begintemplate ModelViewDistinctParameters
+
+external nil, hoc_sf_
+objref this, tobj, tobj1, mt, dparm, allsec, modelview
+objref mlist, pvec, ms, inhomo, distinctvalues
+strdef tstr, mname, pname
+
+in=0
+x=0
+is_ion = 0
+
+proc init() {local i
+	modelview = $o1
+	distinctvalues = modelview.distinctvalues
+	allsec = modelview.allsec
+	dparm = new TreeViewItem(nil, "")
+	modelview.display.top.append(dparm)
+	mkdparm()
+	if (dparm.children != nil) {
+		i = dparm.children.count
+	}
+	sprint(tstr, "%d heterogeneous parameters", i)
+	dparm.str(tstr)
+	allsec = nil
+}
+
+proc mkdparm() {local i, j, k
+	i = 0
+	forsec allsec {i += nseg}
+	if (i<2) return
+	pvec = new Vector(i)
+
+	for modelview.strings(pname, "nseg", "Ra", "rallbranch", "L") {
+		pvec.resize(0)
+		sprint(tstr, "forsec allsec pvec.append(%s)", pname)
+		execute(tstr, this)	
+		distinct()
+	}
+
+	mt = new MechanismType(0)
+	for i = 0, mt.count - 1 {
+		mt.select(i)
+		mt.selected(mname)
+		mlist = new SectionList()
+		j = 0
+		forsec allsec if (ismembrane(mname)) {
+			j += 1
+			mlist.append()
+		}
+		if (j) {
+			if (hoc_sf_.tail(mname, "_ion", tstr) != -1) {
+				ms = new MechanismStandard(mname, 0)
+				is_ion = 1
+			}else{
+				ms = new MechanismStandard(mname, 1)
+				is_ion = 0
+			}
+			for j=0, ms.count-1 {
+				size = ms.name(pname, j)
+				for k=0, size-1 {
+					pvec.resize(0)			
+					if (size > 1) {
+						sprint(tstr, "forsec mlist if (doit(%d)) for(x,0) {pvec.append(%s[%d](x))}", j, pname, k)
+					}else{
+						sprint(tstr, "forsec mlist if (doit(%d)) for(x,0) {pvec.append(%s(x))}", j, pname)
+					}
+					execute(tstr, this)	
+					distinct()
+				}
+			}
+		}
+	}
+
+	mt = new MechanismType(1)
+	for i=0, mt.count-1 {
+		mt.select(i)
+		mt.selected(mname)
+		tobj = new List(mname)
+		if (tobj.count > 0) {
+			ms = new MechanismStandard(mname, 1)
+			for j=0, ms.count-1 {
+				size = ms.name(pname, j)
+				for k=0, size-1 {
+					pvec.resize(0)			
+					if (size > 1) {
+						sprint(tstr, "for in=0, tobj.count-1 {pvec.append(tobj.object(in).%s[%d])}", pname, k)
+					}else{
+						sprint(tstr, "for in=0, tobj.count-1 {pvec.append(tobj.object(in).%s)}", pname)
+					}
+					execute(tstr, this)	
+					distinct(mname)
+				}
+			}
+		}
+	}
+
+	mname = "NetCon"
+	tobj = new List(mname) if (tobj.count > 1) {
+		for modelview.strings(pname, "weight", "delay", "threshold") {
+			pvec.resize(0)
+			sprint(tstr, "for in=0, tobj.count-1 {pvec.append(tobj.object(in).%s)}", pname)
+			execute(tstr, this)	
+			distinct(mname)
+		}
+	}
+	printf("\n")
+}
+
+func doit() {local i, b
+	b = 1
+	if (is_ion) {
+		b = 0
+		i = ion_style(mname)
+		i = ((i%4) == 1) + 2*((int(i/8)%4) == 1)
+		if (i==1 &&($1 == 1 || $1 == 2)) { b = 1 }
+		if (i == 2 && $1 == 0) { b = 1 }
+	}
+	return b
+}
+
+proc distinct() {
+	if (pvec.size) {
+		n = distinctvalues.ndistinct(pvec)
+		if (n > 1) {
+			if (numarg() == 0) {
+				sprint(tstr, "%-3d %s", n, pname)
+			}else{
+				sprint(tstr, "%-3d %s.%s", n, $s1, pname)
+			}
+			dparm.append(tstr)
+		}
+	}
+}
+
+endtemplate ModelViewDistinctParameters

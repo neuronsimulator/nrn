@@ -1,0 +1,194 @@
+begintemplate ChannelBuildF
+public kst, dir, cb, displaystr, setdisp, dispsel, type, vec, ks2cb
+public set_f, vmin, vmax
+objref kst, cb, vec
+strdef displaystr
+
+proc init() {
+	cb = $o1
+	dir = $2
+	type = 1
+	vec = new Vector(1)
+	vmin = -100
+	vmax = 50
+}
+proc setdisp() {
+	cb.ksth.setdisp(kst, dir, displaystr)
+}
+proc dispsel() {
+}
+proc ks2cb() {
+	type = kst.ftype(dir)
+	if (type == 7) {
+		vec = kst.parm(dir, &vmin, &vmax)
+	}else{
+		vec = kst.parm(dir)
+	}
+}
+endtemplate ChannelBuildF
+
+begintemplate ChannelBuildKSTrans
+public src, target, pl, color, kst, cbf, type, ligand, i, kst
+public set_f, settype, traneqstr, stoichiom, stoichiometry
+public cb2ks, kshoc
+objref src, target, kst, cbf[2]
+strdef ligand, liglab
+
+proc init() {
+	stoichiom = 1
+	i = -1
+	color = 1
+	src = $o1
+	target = $o2
+	type = 0
+	cbf[0] = new ChannelBuildF($o3, 0)
+	cbf[1] = new ChannelBuildF($o3, 1)
+}
+
+proc kshoc() {local i, j  localobj tobj
+	$o1.printf("{\n  tobj = kstransitions.object(%d)\n", $2)
+	if (kst.type >= 2) {
+		$o1.printf("  tobj.type(%d, \"%s\")\n", kst.type, kst.ligand)
+		if (kst.stoichiometry != 1) {
+			$o1.printf("  tobj.stoichiometry(%d)\n", kst.stoichiometry)
+		}
+	}else{
+		$o1.printf("  tobj.type(%d)\n", kst.type)
+	}
+	for i=0, 1 {
+	    if (kst.ftype(i) == 7) { // the compound statement may grow too large
+		vmin = vmax = 0
+		tobj = kst.parm(i, &vmin, &vmax)
+		$o1.printf("  }\n  tobj.set_f(%d, %d, ksvec.c.resize(%d), %g, %g)\n", i, kst.ftype(i), tobj.size, vmin, vmax)
+		$o1.printf("  for i=0, %d {tobj.parm(%d).x[i] = fscan()}", tobj.size-1, i)
+		for j=0, tobj.size-1 {
+			if (j%10 == 0) { $o1.printf("\n") }
+			$o1.printf(" %g", tobj.x[j])
+		}
+		$o1.printf("\n  {")
+	    }else{
+		$o1.printf("  tobj.set_f(%d, %d, ksvec.c.append(", i, kst.ftype(i))
+		for j=0, kst.parm(i).size-1 {
+			if (j > 0) {
+				$o1.printf(", ")
+			}
+			$o1.printf("%g", kst.parm(i).x[j])
+		}
+		$o1.printf("))\n")
+	    }
+	}
+	$o1.printf("}\n")
+}
+
+proc traneqstr() {
+	if (kst.type < 2) {
+		sprint($s1, "%s <-> %s", kst.src.name, kst.target.name)
+	}else{
+		if (kst.stoichiometry == 1) {
+			sprint($s1, "%s + %s <-> %s", kst.src.name, kst.ligand, kst.target.name)
+		}else{
+			sprint($s1, "%s + %d%s <-> %s", kst.src.name, kst.stoichiometry, kst.ligand, kst.target.name)
+		}
+	}
+}
+
+proc cb2ks() { local i
+	kst.type(type, ligand)
+	for i=0, 1 {
+		cbf[i].kst = kst
+		kst.set_f(cbf[i].dir, cbf[i].type, cbf[i].vec, cbf[i].vmin, cbf[i].vmax)
+		stoichiometry(stoichiom)
+	}
+}
+
+proc settype() {
+	type = $1  ligand=$s2
+	if (object_id(kst)) {
+		kst.type($1, $s2)
+	}
+}
+
+proc stoichiometry() {
+	stoichiom = $1
+	if ($1 != 1) {
+		sprint(liglab, "%d%s", stoichiom, ligand)
+	}else{
+		liglab = ligand
+	}
+	if (object_id(kst)) {
+		kst.stoichiometry(stoichiom)
+	}
+}
+
+proc set_f() {
+	if (object_id(kst)) {
+		if (numarg() > 3) {
+			kst.set_f($1, $2, $o3, $4, $5)
+		}else{
+			kst.set_f($1, $2, $o3)
+		}
+	}
+	cbf[$1].type = $2
+	cbf[$1].vec = $o3
+	if (numarg() > 3) {
+		cbf[$1].vmin = $4
+		cbf[$1].vmax = $5
+	}	
+}
+	
+proc pl() {local i, x1, y1, x2, y2, i, dx, dy, pdx, pdy, pf, th, len
+	if (src == target) { return }
+	i = $o1.view_info()
+	if (i < 0) {i = 0}
+	pdx = $o1.view_info(i, 9)
+	pdy = $o1.view_info(i, 10)
+	pf = $o1.view_info(i, 15)
+	x1 = src.x  y1 = src.y  x2 = target.x  y2 = target.y
+	dx = x2 - x1
+	dy = y2 - y1
+	len = sqrt(dx^2 + dy^2)
+	th = atan2(dy, dx)
+	dx = 2*pdx*pf*cos(th)
+	dy = 2*pdy*pf*sin(th)
+	// only shorten if long enough
+	th = sqrt(dx^2 + dy^2)
+	if (len < 4*th) {
+		dx *= len/4/th  dy *= len/4/th
+	}
+	x1 = src.x + dx
+	y1 = src.y + dy
+	x2 = target.x - dx
+	y2 = target.y - dy
+
+	$o1.beginline(color,1)
+	$o1.line(x1, y1)
+	$o1.line(x2, y2)
+	$o1.flush
+	// source2target a arrowhead
+	pdx = (cos(PI/6)*dx + sin(PI/6)*dy)/2
+	pdy = (cos(PI/6)*dy - sin(PI/6)*dx)/2
+	if (type < 2) {
+		$o1.label(x2-dx/4-pdx, y2-dy/4-pdy, "v",1,1,.5,0,color)
+	}else{
+		$o1.label(x2-dx/4-pdx, y2-dy/4-pdy, liglab,1,1,.5,0,color)
+	}
+	$o1.beginline(color,1)
+	$o1.line(x2-pdx,y2-pdy)
+	$o1.line(x2, y2)
+	pdx = (cos(PI/6)*dx - sin(PI/6)*dy)/2
+	pdy = (cos(PI/6)*dy + sin(PI/6)*dx)/2
+	$o1.line(x2-pdx, y2-pdy)
+	$o1.flush
+	// target2source b arrowhead
+	$o1.beginline(color,1)	
+	pdx = (cos(PI/6)*dx + sin(PI/6)*dy)/2
+	pdy = (cos(PI/6)*dy - sin(PI/6)*dx)/2
+	$o1.line(x1+pdx,y1+pdy)
+	$o1.line(x1, y1)
+	pdx = (cos(PI/6)*dx - sin(PI/6)*dy)/2
+	pdy = (cos(PI/6)*dy + sin(PI/6)*dx)/2
+	$o1.line(x1+pdx, y1+pdy)
+	$o1.flush
+}
+endtemplate ChannelBuildKSTrans
+

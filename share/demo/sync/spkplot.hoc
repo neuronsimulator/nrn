@@ -1,0 +1,151 @@
+begintemplate SpikePlot1
+public cells, vecs, g, update
+public map, save_data, b, unmap
+public flush, begin, plot, size, view_count, fastflush, simgraph
+external addplot, tstop, graphList, graphItem
+objref cells, vecs[1], nc, g, this, y, tobj, b, outlist, nil
+strdef tstr, modestr
+proc init() {
+	fwindow = 100
+	binwidth = .1
+	modestr = "Spikes   "
+	mode=1
+	y = new Vector(1000)
+	cells = $o1
+	if (numarg() == 1) {
+		map()
+	}
+}
+proc map() {
+	build()
+	sprint(tstr, "%s for %s", this, cells)
+	if (numarg() > 1) {
+		b.map(tstr, $2,$3,$4,$5)
+	}else{
+		b.map(tstr)
+	}
+	update()
+	flush()
+}
+proc unmap() {local i
+	b.unmap()
+	g = nil
+	i = graphList[1].index(this)
+	if (i >= 0) {
+		graphList[1].remove(i)
+	}
+	graphItem = nil
+}
+proc build() {
+	b = new VBox(3)
+	b.priority(600)
+	b.save("")
+	b.ref(this)
+	b.dismiss_action("unmap()")
+	b.intercept(1)
+	xpanel("")
+	xmenu("Plot")
+	xbutton("Update", "update() flush()")
+	xradiobutton("Spikes", "pmode(1)", mode==1)
+	xradiobutton("Frequency", "pmode(2)", mode==2)
+	xradiobutton("Histogram", "pmode(3)", mode==3)
+	xmenu()
+	xvarlabel(modestr)
+	xpvalue("Freq Window (ms)", &fwindow, 1, "flush()")
+	xpvalue("Hist Bin (ms)", &binwidth, 1, "flush()")
+	xpanel()
+	g = new Graph()
+	b.intercept(0)
+	addplot(this, 1)
+	begin()
+	pmode(mode)
+}
+proc pmode() {
+	mode = $1
+	if (mode == 1) {
+		modestr = "Spikes   "
+	}else if (mode == 2) {
+		modestr = "Frequency"
+	}else if (mode == 3) {
+		modestr = "Histogram"
+	}
+	flush()
+}
+
+
+proc update() {local i localobj vec
+	n = cells.count
+	if (n == 0) return
+	objref vecs[n]
+	for i=0, n-1 {
+		vecs[i] = new Vector(0)
+		tobj = cells.object(i)
+		tobj.connect2target(nil, nc)
+		sprint(tstr, "%s", tobj)
+		vec=nc.get_recordvec()
+		
+		if(vec==nil){
+			nc.record(vecs[i])
+		}else{
+			vecs[i]=vec
+		}
+		
+		vecs[i].label(tstr)
+	}
+	objref nc, tobj
+}
+
+proc begin() {
+}
+
+func view_count() {
+	if (g == nil) {
+		return 0
+	}
+	return g.view_count()
+}
+proc plot() {
+}
+proc simgraph() {
+}
+func size() {
+	if (numarg() == 4) {
+		g.size($1,$2,0,cells.count+1)
+		return 1.
+	}else{
+		return g.size($1)
+	}
+}
+proc fastflush() {}
+
+proc flush() {local i
+	g.erase_all
+	g.vfixed(1)
+	g.label(.9,1)
+	if (mode == 1) {
+		for (i=n-1; i >= 0; i -= 1) {
+			y.resize(vecs[i].size).fill(i+1)
+			y.label(vecs[i].label)
+			y.mark(g, vecs[i], "|", 8, 1, 1)
+			y.line(g, vecs[i], 1, 0)
+		}
+	}else if (mode == 2) {
+		for (i=n-1; i >= 0; i -= 1) {
+			y = vecs[i].sumgauss(0, tstop, tstop/100, fwindow)
+			y.label(vecs[i].label)
+			y.mul(1000).line(g, y.c.indgen(0, tstop/100), 1,1)
+		}
+	}else if (mode == 3) {
+		for (i=n-1; i >= 0; i -= 1) if (vecs[i].size > 1){
+			y = vecs[i].c.deriv(1,1)
+			high = y.max
+			y = y.sumgauss(0, high, high/50, binwidth)
+			y.label(vecs[i].label)
+			y.line(g, y.c.indgen(0, high/50), 1,1)
+		}
+	}
+	g.flush()
+}
+
+endtemplate SpikePlot1
+

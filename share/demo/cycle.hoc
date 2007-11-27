@@ -1,0 +1,49 @@
+load_file("demo.hoc")
+load_file("electrod.hoc")
+
+xpanel("Demo Control")
+cycling = 1
+xbutton("Quit Cycle", "cycling = 0")
+xpanel()
+
+proc crun() {local i
+	for i=1,5 if (cycling) {
+		run()
+		doNotify()
+		system("sleep 2")
+		doEvents()
+	}
+}
+
+objectvar e
+
+proc cyc() {local cycle, i
+	cycling = 1
+	cycle = 0
+	while (cycling) {
+		cycle = cycle%4 + 1
+		demo(cycle)
+		doNotify()
+		crun()
+		if (cycle == 1) {
+			// switch to vc family
+			cyckeep()
+			e = Electrode[0]
+			execute("installFamily()", e)
+			execute("varyamp(1)", e)
+			system("sleep 5")
+			objref e
+		}
+	}
+}
+
+proc cyckeep() {local i, j
+	for i=0, n_graph_lists - 1 {
+		cnt = graphList[i].count()
+		for j=0, cnt - 1 {
+			graphList[i].object(j).family(1)
+		}
+	}
+}
+
+cyc()

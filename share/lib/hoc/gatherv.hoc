@@ -1,0 +1,219 @@
+begintemplate GatherVec
+public xvar, list, b, g
+
+	begintemplate GVItem
+	public v, add
+	strdef stmt
+	objref v
+	proc init() {
+		v = new Vector(100)
+		v.label($s1)
+		v.resize(0)
+		sprint(stmt, "%s.append(%s)", v, v.label)
+	}
+	proc add() {
+		execute(stmt)
+	}
+	
+	endtemplate GVItem
+
+objref list, sc, b, g, xvar
+objref tobj, tobj1, this
+strdef tstr, tstr1
+i=0
+
+iterator allitems() {local i
+	if (object_id(xvar)) {
+		$o1 = xvar
+		iterator_statement
+	}
+	for i=0, list.count - 1 {
+		$o1 = list.object(i)
+		iterator_statement
+	}
+}
+
+proc init() {
+	action = 0
+	list = new List()
+	sc = new SymChooser("Gather Variable into Vector")
+	build()
+	sprint(tstr, "%s", this)
+	if (numarg() == 0) {
+		b.map(tstr)
+	}
+}
+
+proc build() {
+	b = new VBox()
+	b.ref(this)
+	b.save("save()")
+	b.intercept(1)
+	xpanel("", 1)
+	xmenu("Variables")
+	xbutton("X variable", "x_var()")
+	xbutton("Y variable", "y_var()")
+	xbutton("Crosshair X value", "y_var(\"hoc_cross_x_\")")
+	xbutton("Crosshair Y value", "y_var(\"hoc_cross_y_\")")
+	xmenu()
+	xmenu("CrossAction")
+	xradiobutton("Nothing", "action=0")
+	xradiobutton("Remove Point", "action=1")
+	xradiobutton("Remove Variable", "action=2")
+	xradiobutton("Put Back", "action=3")
+	xmenu()
+	xbutton("SortX", "sort()")
+	xbutton("Record Val", "get_val()")
+	xpanel()
+	g = new Graph()
+	b.intercept(0)
+	g.crosshair_action("caction", 1)
+}
+
+proc x_var() {
+	if (sc.run()) {
+		sc.text(tstr)
+		xvar = new GVItem(tstr)
+	}
+	flush()
+}
+
+proc y_var() {
+	if (!object_id(xvar)) {
+		continue_dialog("Choose an x variable first")
+		return
+	}
+	if (numarg() == 1) {
+		listadd($s1)
+	}else if (sc.run()) {
+		sc.text(tstr)
+		listadd(tstr)
+	}
+	flush()
+}
+
+proc listadd() {
+	clear()
+	tobj = new GVItem($s1)
+	list.append(tobj)
+}	
+
+proc caction(){local i, x
+	if (action == 1) {
+		remove($1)
+	}
+	if (action == 2) {
+		for i=0, list.count - 1 {
+			x = $o4.c.sub(list.object(i).v).sumsq()
+			if (x < 1e-9) {
+				sprint(tstr, "Remove %s?", list.object(i).v.label)
+				if (boolean_dialog(tstr, "Yes", "No")) {
+					list.remove(i)
+				}
+				break
+			}
+		}
+		flush()
+	}
+	if (action == 3) {
+		for allitems(tobj) {
+			sprint(tstr, "%s = %g", tobj.v.label, tobj.v.x[$1])
+			execute(tstr)
+		}
+	}
+}
+
+proc sort() {
+	if (list.count == 0) return
+	tobj1 = xvar.v.sortindex
+	for allitems(tobj) {
+		tobj.v.index(tobj1)
+	}
+	flush()
+}
+
+proc remove() {
+	for allitems(tobj) {
+		tobj.v.remove($1)
+	}
+	flush()
+}
+	
+proc get_val() {
+	if (list.count == 0) {
+		continue_dialog("No y variables")
+		return
+	}
+	for allitems(tobj) {
+		tobj.add()
+	}
+	flush()
+}
+
+proc clear() {
+	for allitems(tobj) {
+		tobj.v.resize(0)
+	}
+}
+
+proc flush() {local i
+	g.erase_all()
+	sprint(tstr, "%s :x-axis", xvar.v.label)
+	g.label(.5, .8, tstr)
+	for i=0, list.count-1 {
+		g.color(i+1)
+		tobj = list.object(i)
+		tobj.v.line(g, xvar.v)
+		tobj.v.mark(g, xvar.v, "O", 10)
+	}
+	g.color(1)
+}
+
+proc save() {local i
+	b.save("load_file(\"gatherv.hoc\")\n}\n{")
+	b.save("ocbox_=new GatherVec(1)")
+	b.save("}\n{object_push(ocbox_)}")
+	if (object_id(xvar)) {
+		sprint(tstr, "{xvar = new GVItem(\"%s\")}", xvar.v.label)
+		b.save(tstr)
+	}
+	for i=0, list.count-1 {
+		sprint(tstr, "{listadd(\"%s\")}", list.object(i).v.label)
+		b.save(tstr)
+	}
+	if (object_id(xvar)) {
+		save1(xvar.v, "xvar.v")
+	}
+	for i=0, list.count-1 {
+		sprint(tstr, "list.object(%d).v", i)
+		save1(list.object(i).v, tstr)
+	}
+	if (object_id(xvar)) {
+		b.save("{flush()}")
+	}
+	b.save("{object_pop()}\n{")
+	g.erase_all()
+	g.save_name("ocbox_.g", 1)
+	b.save("ocbox_ = ocbox_.b")
+	flush()
+}
+
+proc save1() {local i
+	sprint(tstr1, "{%s.resize(%d) for i=0, %d { %s.x[i] = fscan() }}",\
+		$s2, $o1.size, $o1.size-1, $s2)
+	b.save(tstr1)
+	for i = 0, $o1.size - 1 {
+		sprint(tstr1, "%g", $o1.x[i])
+		b.save(tstr1)
+	}
+}
+
+endtemplate GatherVec
+
+objref tobj
+
+proc makeGatherVec() {
+	objref tobj
+	tobj = new GatherVec()
+	objref tobj
+}

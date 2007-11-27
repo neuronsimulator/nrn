@@ -1,0 +1,138 @@
+load_file("nrngui.hoc")
+objectvar save_window_, rvp_
+objectvar scene_vector_[3]
+objectvar ocbox_, ocbox_list_, scene_, scene_list_
+{ocbox_list_ = new List()  scene_list_ = new List()}
+{pwman_place(0,0,0)}
+{
+save_window_ = new Graph(0)
+save_window_.size(0,1,0,100)
+scene_vector_[2] = save_window_
+{save_window_.view(0, 0, 1, 100, 729, 24, 300.48, 200.32)}
+flush_list.append(save_window_)
+save_window_.save_name("flush_list.")
+objectvar rvp_
+rvp_ = new RangeVarPlot("nai")
+cable rvp_.begin(0)
+cable rvp_.end(1)
+rvp_.origin(0)
+save_window_.addobject(rvp_, 1, 1, 0.8, 0.9)
+}
+{
+xpanel("cable(0.25) (Parameters)", 0)
+xlabel("cable(0.25) (Parameters)")
+cable.cm(0.25) = 241.21
+xvalue("cm","cable.cm(0.25)", 1,"", 0, 1 )
+cable.D_nadifl(0.25) = 0.6
+xvalue("D_nadifl","cable.D_nadifl(0.25)", 1,"", 0, 1 )
+cable.diam(0.25) = 0.1
+xvalue("diam","cable.diam(0.25)", 1,"diam_changed=1", 0, 1 )
+cable.del_nacur(0.25) = 0
+xvalue("del_nacur","cable.del_nacur(0.25)", 1,"", 0, 1 )
+cable.dur_nacur(0.25) = 1
+xvalue("dur_nacur","cable.dur_nacur(0.25)", 1,"", 0, 1 )
+cable.amp_nacur(0.25) = -24.121
+xvalue("amp_nacur","cable.amp_nacur(0.25)", 1,"", 0, 1 )
+xpanel(42,111)
+}
+{
+xpanel("cable(0.25) (Assigned)", 0)
+xlabel("cable(0.25) (Assigned)")
+cable.v(0.25) = 1
+xvalue("v","cable.v(0.25)", 0,"", 0, 1 )
+cable.i_cap(0.25) = 0
+xvalue("i_cap","cable.i_cap(0.25)", 0,"", 0, 1 )
+cable.ena(0.25) = 0
+xvalue("ena","cable.ena(0.25)", 0,"", 0, 1 )
+cable.ina(0.25) = 0
+xvalue("ina","cable.ina(0.25)", 0,"", 0, 1 )
+xpanel(37,370)
+}
+{
+xpanel("cable(0.25) (States)", 0)
+xlabel("cable(0.25) (States)")
+cable.v(0.25) = 1
+xvalue("v","cable.v(0.25)", 0,"", 0, 1 )
+cable.nai(0.25) = 1
+xvalue("nai","cable.nai(0.25)", 0,"", 0, 1 )
+cable.nao(0.25) = 1
+xvalue("nao","cable.nao(0.25)", 0,"", 0, 1 )
+xpanel(41,565)
+}
+{
+xpanel("cable(0.75) (Parameters)", 0)
+xlabel("cable(0.75) (Parameters)")
+cable.cm(0.75) = 241.21
+xvalue("cm","cable.cm(0.75)", 1,"", 0, 1 )
+cable.D_nadifl(0.75) = 0.6
+xvalue("D_nadifl","cable.D_nadifl(0.75)", 1,"", 0, 1 )
+cable.diam(0.75) = 0.1
+xvalue("diam","cable.diam(0.75)", 1,"diam_changed=1", 0, 1 )
+cable.del_nacur(0.75) = 0
+xvalue("del_nacur","cable.del_nacur(0.75)", 1,"", 0, 1 )
+cable.dur_nacur(0.75) = 1
+xvalue("dur_nacur","cable.dur_nacur(0.75)", 1,"", 0, 1 )
+cable.amp_nacur(0.75) = 0
+xvalue("amp_nacur","cable.amp_nacur(0.75)", 1,"", 0, 1 )
+xpanel(387,28)
+}
+{
+xpanel("cable(0.75) (Assigned)", 0)
+xlabel("cable(0.75) (Assigned)")
+cable.v(0.75) = 1
+xvalue("v","cable.v(0.75)", 0,"", 0, 1 )
+cable.i_cap(0.75) = 0
+xvalue("i_cap","cable.i_cap(0.75)", 0,"", 0, 1 )
+cable.ena(0.75) = 0
+xvalue("ena","cable.ena(0.75)", 0,"", 0, 1 )
+cable.ina(0.75) = 0
+xvalue("ina","cable.ina(0.75)", 0,"", 0, 1 )
+xpanel(256,370)
+}
+{
+xpanel("cable(0.75) (States)", 0)
+xlabel("cable(0.75) (States)")
+cable.v(0.75) = 1
+xvalue("v","cable.v(0.75)", 0,"", 0, 1 )
+cable.nai(0.75) = 1
+xvalue("nai","cable.nai(0.75)", 0,"", 0, 1 )
+cable.nao(0.75) = 1
+xvalue("nao","cable.nao(0.75)", 0,"", 0, 1 )
+xpanel(241,568)
+}
+{
+xpanel("RunControl", 0)
+v_init = 1
+xvalue("Init","v_init", 1,"stdinit()", 1, 1 )
+xbutton("Init & Run","run()")
+xbutton("Stop","stoprun=1")
+runStopAt = 5
+xvalue("Continue til","runStopAt", 1,"{continuerun(runStopAt) stoprun=1}", 1, 1 )
+runStopIn = 1
+xvalue("Continue for","runStopIn", 1,"{continuerun(t + runStopIn) stoprun=1}", 1, 1 )
+xbutton("Single Step","steprun()")
+t = 0
+xvalue("t","t", 2 )
+tstop = 5
+xvalue("Tstop","tstop", 1,"tstop_changed()", 0, 1 )
+dt = 0.025
+xvalue("dt","dt", 1,"setdt()", 0, 1 )
+steps_per_ms = 40
+xvalue("Points plotted/ms","steps_per_ms", 1,"setdt()", 0, 1 )
+xcheckbox("Quiet",&stdrun_quiet,"")
+realtime = 0
+xvalue("Real Time","realtime", 0,"", 0, 1 )
+xpanel(473,303)
+}
+
+//Begin VariableTimeStep
+{
+ocbox_ = NumericalMethodPanel[0]
+ocbox_ = ocbox_.b1
+ocbox_.map("VariableTimeStep", 467, 703, 280.32, 106.56)
+}
+objref ocbox_
+//End VariableTimeStep
+
+objectvar scene_vector_[1]
+{doNotify()}

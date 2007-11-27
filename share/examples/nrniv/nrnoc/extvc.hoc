@@ -1,0 +1,52 @@
+// voltage clamp with extracellular series resistance
+
+// physical properties of the cell
+create a
+access a
+{insert extracellular  xg = .001}
+
+// experimental tools
+objref vc
+vc = new VClamp(.5)
+
+// run parameters
+tstop = 3
+
+// graphical interface appearance
+objref g
+g = new Graph()
+g.size(0,tstop,0,100)
+g.color(1)
+g.addexpr("v")
+g.color(2)
+g.addexpr("v + vext")
+g.color(3)
+g.addexpr("vc.i")
+
+// simulation control
+vc.amp[0] = 50
+vc.dur[0] = 1e9
+
+proc run() {
+	finitialize(0)
+	g.begin()
+	while (t < tstop) {
+		g.plot(t)
+		fadvance()
+	}
+	g.flush()
+}
+
+// run simulation
+run()
+
+
+
+
+
+
+
+
+
+
+

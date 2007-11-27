@@ -1,0 +1,179 @@
+/*
+A wrapper for the Impedance class that makes it convenient to
+define measuring electrode location, and current injection location
+This is useful for plotting impedance vs time and freq.
+
+usage:
+	imp = new Imp1([impedanceobject]) // if no arg then this creates one
+	section imp.measure(x)	//specify measurement location
+	section imp.inject(x)	//specify injection location
+	imp.ratio(freq)		// v(measure)/v(inject)
+	imp.input(freq)		// v(measure)/i(measure)
+	imp.transfer(freq)	// v(measure)/i(inject)
+
+	imp.map()		// a widget for setting measure and inject
+				// locations
+
+	imp.move_callback = object	// if you want object.move() called
+				// each time inject or measure is moved
+	imp.extended = 1 // if you want to perform the extended impedance
+	// calculation described in
+	// http://www.neuron.yale.edu/neuron/docs/help/neuron/neuron/classes/impedanc.html
+Notes:
+	Impedance objects are expensive in terms of storage but efficiently
+	calculate input impedances everywhere and
+	transfer impedances everywhere relative to a specific location.
+	For this reason the Imp1 constructor can use a pre-existing Impedance
+	object if you don't want it to construct its own instance.
+
+	This object calls Impedance.compute(freq, extended)
+	everytime a ratio, etc is requested.
+*/
+
+begintemplate Imp1
+public measure, inject, ratio, input, transfer, map, move_callback, extended
+
+objectvar imp, sec[2], shape, b1, this, move_callback
+
+double x[2], color[2]
+
+strdef s0, s1, stemp, sdist
+
+proc init() {
+	if (numarg() > 0) {
+		imp = $o1
+	}else{
+		imp = new Impedance()
+	}
+	measure(.5)
+	inject(.5)
+}
+
+proc measure() {
+	sec[0] = new SectionRef()
+	x[0] = $1
+	sectionname(stemp)
+	sprint(s0, "measure (red): %s(%g)", stemp, $1)
+}
+
+proc inject() {
+	sec[1] = new SectionRef()
+	x[1] = $1
+	sectionname(stemp)
+	sprint(s1, "inject (blue): %s(%g)", stemp, $1)
+}
+
+func ratio() {local y
+	compute($1)
+	sec[1].sec y = imp.ratio(x[1])
+	return y
+}
+func transfer() {local y
+	compute($1)
+	sec[1].sec y = imp.transfer(x[1]) // since v(x)/i(loc) == v(loc)/i(x)
+	return y
+}
+func input() {local y
+	compute($1)
+	sec[0].sec y = imp.input(x[0])
+	return y
+}
+proc compute() {
+	sec[0].sec imp.loc(x[0])
+	imp.compute($1, extended)
+}
+
+objectvar rvp
+proc dist() {local y
+	sec[0].sec distance(0,x[0])
+	sec[1].sec y = distance(x[1])
+	sprint(sdist, "distance(um) %g", y)
+}
+
+proc map() {local i
+	mark = 0
+	dist()
+
+	b1 = new VBox()
+	b1.ref(this)
+	b1.save("save()")
+	b1.intercept(1)
+
+	xpanel("")
+	xmenu("measure/inject")
+		xradiobutton("measure", "mark=0", 1)
+		xradiobutton("inject", "mark=1")
+		xbutton("Exchange", "exchange()")
+	xmenu()
+	xvarlabel(s0)
+	xvarlabel(s1)
+	xvarlabel(sdist)
+	xpanel()
+
+	shape = new Shape()
+for i=0,1 color[i]=i+2
+	shapemark(2)
+	for i=0,1 {
+		color[i] = i+2	// red, blue
+		shapemark(i, sec[i], x[i], color[i])
+	}
+	shape.action("move()")
+
+	b1.intercept(0)
+	sprint(stemp, "%s", this)
+	b1.map(stemp)
+}
+
+proc move() {local i, xx
+	i = mark
+	xx = hoc_ac_
+	if (i == 0) {
+		measure(xx)
+	}else{
+		inject(xx)
+	}
+	shapemark(i, sec[i], x[i], color[i])
+	dist()
+	if (object_id(move_callback)) {
+		move_callback.move()
+	}
+}
+
+objectvar etmp
+proc exchange() {local xx, i //swap inject and measure
+	etmp = sec[0]
+	xx = x[0]
+	sec[1].sec measure(x[1])
+	etmp.sec inject(xx)
+	objectvar etmp
+	for i=0,1 shapemark(i, sec[i], x[i], color[i])
+	if (object_id(move_callback)) {
+		move_callback.move()
+	}
+}
+
+// should put this in plotshape class and avoid a meaningless point process
+objectvar stim[1]
+proc shapemark() {local i
+	if (numarg() == 1) {
+		objectvar stim[$1]
+		for i=0,1 sec[i].sec stim[i] = new PointProcessMark(x[i])	
+		for i=0,1 shape.point_mark(stim[i], color[i])
+	}else{
+		$o2.sec stim[$1].loc($3)
+	}
+}
+
+proc save() {}
+
+endtemplate Imp1
+
+proc makeImp1() {
+	if(!execute1("v", 0)) {
+		continue_dialog("No accessed section: Can't start an Imp1")
+		return
+	}
+	hoc_obj_[0] = new Imp1()
+	hoc_obj_[0].map()
+}
+

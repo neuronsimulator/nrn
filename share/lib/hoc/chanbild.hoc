@@ -1,0 +1,30 @@
+objref nil, tobj
+
+{
+load_file("stdlib.hoc")
+xopen("chanbild/const.hoc")
+xopen("chanbild/exp.hoc")
+xopen("chanbild/sigmoid.hoc")
+xopen("chanbild/linoid.hoc")
+xopen("chanbild/kschanbg.hoc")
+xopen("chanbild/table.hoc")
+xopen("chanbild/ksstate.hoc")
+xopen("chanbild/kstrans.hoc")
+xopen("chanbild/ksgate.hoc")
+xopen("chanbild/kstgui.hoc")
+xopen("chanbild/gategui.hoc")
+xopen("chanbild/properties.hoc")
+xopen("chanbild/chanbild1.hoc")
+}
+
+proc chanbild() {
+	if (argtype(1) == 0) {
+		tobj = new ChannelBuild($1)
+	}else{
+		tobj = new ChannelBuild($o1)
+	}
+	tobj.map()
+	tobj = nil
+}
+
+

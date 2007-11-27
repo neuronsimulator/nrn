@@ -1,0 +1,83 @@
+/*------------------------------------------------------------
+/local/src/master/nrn/lib/hoc/rcs.hoc,v 1.2 1999/05/24 19:15:37 hines Exp
+------------------------------------------------------------*/
+
+/*------------------------------------------------------------
+Load templates and procedures
+------------------------------------------------------------*/
+
+xopen("$(NEURONHOME)/lib/hoc/rcs.iv")
+
+/*------------------------------------------------------------
+Create and initialize necessary strings
+------------------------------------------------------------*/
+
+strdef identifier, user_name, output_file, version_file, last_neuron_run
+output_file = "data.tmp"
+version_file = "version.hoc"
+last_neuron_run = ".last_neuron_run"
+
+setup_id_info(output_file, version_file, last_neuron_run) 
+
+/*------------------------------------------------------------
+Create file list
+------------------------------------------------------------*/
+
+objectvar fileList
+
+fileList = new List()
+
+appendFile("geometry", fileList)
+appendFile("parameters", fileList)
+appendFile("run", fileList)
+
+/*------------------------------------------------------------
+File Manager menu routines
+------------------------------------------------------------*/
+
+/* Contains title for "Update <version_file>" button,
+   and "Save output d<identifier>" */
+strdef version_title, output_title
+
+proc updateTitles() {
+	/* Update title for "Update <version_file>" button, 
+	   and "Save output d<identifier>" */
+	strdef ver
+
+	rcs_version(version_file, "ver")
+	sprint(version_title, "Update %s (%s):", version_file, ver)
+
+	sprint(output_title, "Save Output (d%s):", identifier)
+}
+
+proc menu() {
+	/* Display "File Manager" panel for file list $o1*/
+	strdef fb, svf, oa
+
+	sprint(fb, "fileBrowser(%s, \"%s\")", $s1, $s1)
+	sprint(svf, "saveVersionFile(%s)", $s1)
+	sprint(oa, "openAll(%s)", $s1)
+
+	updateTitles()
+
+	xpanel("File Manager")
+		xbutton("File Browser", fb)
+
+		xlabel("")
+		xvarlabel(version_title)
+		xbutton("Save", svf)
+
+		xlabel("")
+		xvarlabel(output_title)
+		xbutton("Save", "save_output_file(identifier, 0)")
+
+		xlabel("")
+		xlabel("Open All Files:")
+		xbutton("Open", oa)
+	xpanel()
+}
+
+menu("fileList")
+
+
+

@@ -1,0 +1,185 @@
+// a fitness generator that does a run
+
+begintemplate RunConstant
+public p, onval, offval, name, clone
+objref p
+strdef name
+proc init() {
+	name = $s1
+	p = new Pointer($s1)
+	onval = p.val
+	offval = p.val
+}
+proc clone() {
+	$o1 = new RunConstant(name)
+	$o1.onval = onval
+	$o1.offval = offval
+}
+endtemplate RunConstant
+
+// RunStatements are executed before the run, after the run, or both.
+// For all three cases, before the run, hoc_ac_ = 1, after the run hoc_ac=0
+begintemplate RunStatement
+public stmt, do_before, clone
+strdef stmt
+proc init() {
+	do_before = $1 // before run if 1 after run if 0, both if 2
+	stmt = $s2
+}
+proc clone() {
+	$o1 = new RunStatement(do_before, stmt)
+}
+endtemplate RunStatement
+
+begintemplate FitnessRun
+public frun, save_up, save_down, up, down, rfile, wfile, constantlist
+public stmtlist, clone
+public save_context, restore_context
+external run
+
+objref constantlist, stmtlist, rc, sf
+strdef tstr
+
+proc init(){
+	sf = new StringFunctions()
+	constantlist = new List()
+	stmtlist = new List()
+	on=0 off=0
+}
+
+proc save_context() {local i
+	$o1.pack(constantlist.count)
+	for i=0, constantlist.count-1 {
+		rc = constantlist.object(i)
+		$o1.pack(rc.p.s, rc.onval, rc.offval)
+	}
+	$o1.pack(stmtlist.count)
+	for i=0, stmtlist.count-1 {
+		rc = stmtlist.object(i)
+		$o1.pack(rc.do_before, rc.stmt)
+	}
+}
+
+proc restore_context() {local i, n
+	constantlist.remove_all
+	stmtlist.remove_all
+	n = $o1.upkscalar
+	for i=0, n-1 {
+		rc = new RunConstant($o1.upkstr(tstr))
+		$o1.unpack(&rc.onval, &rc.offval)
+		constantlist.append(rc)
+	}
+	n = $o1.upkscalar
+	for i=0, n-1 {
+		rc = new RunStatement($o1.upkscalar, $o1.upkstr(tstr))
+		stmtlist.append(rc)
+	}
+}
+
+proc clone() {local i
+	$o1 = new FitnessRun()
+	for i=0, constantlist.count-1 {
+		constantlist.object(i).clone(rc)
+		$o1.constantlist.append(rc)
+	}
+	for i=0, stmtlist.count-1 {
+		stmtlist.object(i).clone(rc)
+		$o1.stmtlist.append(rc)
+	}
+}
+
+proc frun() {
+	up()
+	run()
+	down()
+}
+
+proc up() {local i
+	for i=0, constantlist.count-1 {
+		rc = constantlist.object(i)
+		rc.p.val = rc.onval
+	}
+	for i=0, stmtlist.count-1 {
+		rc = stmtlist.object(i)
+		if (rc.do_before > 0) {
+			hoc_ac_ = 1
+			execute(rc.stmt)
+		}
+	}
+}
+proc down() {local i
+	for i=0, constantlist.count-1 {
+		rc = constantlist.object(i)
+		rc.p.val = rc.offval
+	}
+	for i=0, stmtlist.count-1 {
+		rc = stmtlist.object(i)
+		if (rc.do_before != 1) {
+			hoc_ac_ = 0
+			execute(rc.stmt)
+		}
+	}
+}
+proc save_up() {local i
+	for i=0, constantlist.count-1 {
+		rc = constantlist.object(i)
+		rc.onval = rc.p.val
+	}
+}
+proc save_down() {local i
+	for i=0, constantlist.count-1 {
+		rc = constantlist.object(i)
+		rc.offval = rc.p.val
+	}
+}
+
+proc wfile() {local i
+	for i=0, constantlist.count - 1 {
+		rc = constantlist.object(i)
+		if (i== 0) {
+			$o1.printf("\t\tRunConstant:\t")
+		}else{
+			$o1.printf("\t\t\t\t")
+		}
+		$o1.printf("%s %g %g\n", rc.p.s, rc.onval, rc.offval)
+	}
+	for i=0, stmtlist.count - 1 {
+		rc = stmtlist.object(i)
+		if (i== 0) {
+			$o1.printf("\t\tRunStatement:\t")
+		}else{
+			$o1.printf("\t\t\t\t")
+		}
+		$o1.printf("%d, %s\n", rc.do_before, rc.stmt)
+	}
+}
+proc rfile() {
+	while(1) {
+		if (sf.substr($s2, "RunConstant:") > -1) {
+			sscanf($s2, "%*[^:]:%s %g %g", tstr, &on, &off)
+		}else if (sf.substr($s2, ":") > -1) {
+			break
+		}else{
+			sscanf($s2, "%s %g %g", tstr, &on, &off)
+		}
+		rc = new RunConstant(tstr)
+		rc.onval = on
+		rc.offval = off
+		constantlist.append(rc)
+		$o1.gets($s2)
+	}
+	while(1) {
+		if (sf.substr($s2, "RunStatement:") > -1) {
+			sscanf($s2, "%*[^:]:%d, %[^\n]", &on, tstr)
+		}else if (sf.substr($s2, ":") > -1) {
+			break
+		}else{
+			sscanf($s2, "%d, %[^\n]", &on, tstr)
+		}
+		rc = new RunStatement(on, tstr)
+		stmtlist.append(rc)
+		$o1.gets($s2)
+	}
+}
+endtemplate FitnessRun
+

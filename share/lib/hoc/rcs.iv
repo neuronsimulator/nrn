@@ -1,0 +1,162 @@
+/*------------------------------------------------------------
+/local/src/master/nrn/lib/hoc/rcs.iv,v 1.1.1.1 1994/10/12 17:20:44 hines Exp
+------------------------------------------------------------*/
+
+/*------------------------------------------------------------
+Template for files maintained with RCS menu system
+------------------------------------------------------------*/
+
+begintemplate RcsFile 
+	public fname, ci, co, file_menu, name, open, view, write
+	strdef filename, fname, ver
+
+	proc init() {
+		/* Initialize all RcsFile variables */
+
+		diff = 0		/* File different from rcs version - (1 needs ci, 0 doesn't) */
+		exist = 0		/* Flag for valid instance - guard against empty array elements */
+		filename = ""	/* File name */
+		ver = ""		/* File's rcs version number */
+		fname = ""		/* File's name with version number */
+	}
+
+	proc ci() { 
+		/* Ci NAME */
+
+		if (exist) { 
+			if (rcs_ci_file(filename, diff)) { diff = 0 }
+			/* Only change diff if rcs_ci_file() worked */
+
+			set_version()
+		}
+	}
+
+	proc co() { 
+		/* Co NAME */
+
+		if (exist) { 
+			if (rcs_co_file(filename)) { diff = 0 }
+			/* Only change diff if rcs_co_file() worked */
+
+			set_version()
+		}
+	}
+
+	proc file_menu() {
+		set_version() 
+
+		xpanel(filename)
+			xvarlabel(fname)
+			xlabel("")
+	 		xbutton("Get New Version", "co()") 
+	 		xbutton("Save Version", "ci()") 
+	 		xbutton("Xopen File", "open()") 
+ 			xbutton("View File", "view()") 
+ 		xpanel() 
+	}
+
+	proc name() {
+		/* Get file's name, test if exist & reset file's variables */
+
+		if (file_exist($s1)) {
+			init()
+			filename = $s1
+			exist = 1
+
+			set_version() /* Also sets "fname" */
+
+		} else {
+			printf("name: file does not exist, please enter new file name or co file\n")
+		}
+	}			
+
+	proc open() {
+		/* Xopen() NAME and set DIFF for later reference */
+
+		if (exist) {
+			xopen(filename)
+			set_diff()
+		}
+	}
+
+	proc set_diff() { 
+		/* Test if NAME different then original rcs version and set DIFF accordingly */
+
+		if (diff == 0) {
+			diff = rcsdiff_file(filename)
+		}
+	}
+
+	proc set_version() { 
+		/* Set VER with file's rcs version number */
+
+		rcs_version(filename, "ver")
+
+		/* Need to redo fname with proper version number */
+		sprint(fname, "%s (%s)", filename, ver)
+	}
+
+	proc view() {
+		/* Cat NAME */
+
+		if (exist) { rcs_view_file(filename) }
+	}
+
+	proc write() {
+		/* If DIFF then ask to ci files, write VER into version_file */
+
+		if (exist) {
+			if (diff) {	ci() }
+
+			set_version()
+			add_version_entry($s1, filename)
+		}
+	}
+endtemplate RcsFile
+
+/*------------------------------------------------------------
+Procedures for handling a file list
+------------------------------------------------------------*/
+
+objectvar file
+proc appendFile() {
+	/* Add file $s1 to file list $o2 */
+
+	file = new RcsFile()
+	file.name($s1)
+	$o2.append(file)
+}
+
+proc fileBrowser() {
+	/* Display file manager browser for $o1, and uses $s2 to 
+	   set $o1.accept_action ($s2 should be the name of $o1
+	   as a string */
+	strdef ba
+
+	sprint(ba, "%s.object(hoc_ac_).file_menu()", $s2)
+
+	$o1.browser("RCS File Manager", "filename")
+	$o1.accept_action(ba)
+}
+
+proc openAll() {
+	/* Xopen() all files in list $o1 */
+
+ 	for i = 0, $o1.count() { 
+		$o1.object(i).open()
+	}
+}
+
+proc saveVersionFile() {
+	/* Create new version_file */
+
+	for i = 0, $o1.count() {
+		/* Write version numbers for all files in file list $o1 */
+		$o1.object(i).write(identifier)
+	}
+
+	update_id_info(identifier)
+	updateTitles()
+}
+
+

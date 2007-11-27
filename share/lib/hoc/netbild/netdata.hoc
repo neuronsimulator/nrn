@@ -1,0 +1,299 @@
+begintemplate NetCell
+public type, x, y // NetReadyCell or ArtCell, location
+//implementation
+public create1, real, replace
+objref real
+public name, pl, index
+objref type
+proc init() {
+	type = $o1
+	x = $2
+	y = $3
+	index = -1
+}
+proc name() {local i
+	sprint($s1, "%s%d", type.name, index)
+}
+proc pl() {local i
+	name($s2)
+	$o1.label(x, y, $s2, 1, 1, .5, .5, $3)
+}
+proc create1() {
+	type.create1(real)
+	real.position(x, y, 0)
+}
+proc replace() { //NetReadyCell or ArtCell
+	type = $o1
+	if (object_id(real)) {
+		create1()
+	}
+}
+endtemplate NetCell
+
+begintemplate NetSource
+public cell // NetCell
+//implementation
+public edges // list of NetEdge
+objref cell, edges
+
+proc init() {
+	cell = $o1
+	edges = new List()
+}
+
+endtemplate NetSource
+
+begintemplate NetTarget
+public cell, syn //NetCell, SynTypeInstance (or nil if NetCell is an ArtCell)
+// implementation
+public edges, synindex //list of NetEdge
+objref cell, syn, edges
+proc init() {
+	cell = $o1
+	synindex = $2
+	if (cell.type.is_art == 0) {
+		syn = cell.type.synlist.object(synindex)
+	}
+	edges = new List()
+}
+endtemplate NetTarget
+
+begintemplate NetEdge
+public source, target, w, d //NetCell, NetTarget, weight, delay
+//implementation
+public create1, netcon, w, d, name, change, namebar
+objref netcon
+objref source, target
+proc init() {
+	source = $o1
+	target = $o2
+	w = $3
+	d = $4
+}
+proc create1() {
+	if (target.cell.type.is_art) {
+		netcon = source.cell.real.connect2target(target.cell.real.pp)
+	}else{
+		netcon = source.cell.real.connect2target( \
+		   target.cell.real.synlist.object(target.synindex))
+	}
+	netcon.weight = w
+	netcon.delay = d
+}
+proc change() {
+	if (object_id(netcon) != 0) {
+		netcon.weight = w
+		netcon.delay = d
+	}
+}
+proc name() {
+	source.cell.name($s1)
+	if (target.cell.type.is_art) {
+		sprint($s1, "%s->%s%d", $s1, target.cell.type.name, \
+			target.cell.index)
+	}else{
+		sprint($s1, "%s->%s%d.%s%d", $s1, target.cell.type.name, \
+		 target.cell.index, target.syn.stype.name,target.syn.index)
+	}
+}
+proc namebar() {
+	source.cell.name($s1)
+	if (target.cell.type.is_art) {
+		sprint($s1, "%s__%s%d", $s1, target.cell.type.name, \
+			target.cell.index)
+	}else{
+		sprint($s1, "%s__%s%d_%s%d", $s1, target.cell.type.name, \
+		 target.cell.index, target.syn.stype.name,target.syn.index)
+	}
+}
+endtemplate NetEdge
+
+begintemplate NetData
+public sources, targets, edges // lists of NetCell, NetTarget, NetEdge
+public add_edge, remove_edge, edge_index
+public add_cell, remove_cell, replace_cell
+public cel2tar
+//implementation
+public create1, created_, abstract
+objref sources, targets, edges, cel2tar_
+objref tobj, nil, oldtype
+
+proc init() {
+	created_ = 0
+	sources = new List()
+	targets = new List()
+	edges = new List()
+	cel2tar_ = new Vector(0)
+}
+func add_edge() {
+	edges.append($o1)
+	$o1.source.edges.append($o1)
+	$o1.target.edges.append($o1)
+	if (created_) {$o1.create1()}
+	return edges.count-1
+}
+// room for elimination of one of the index searches in the following if
+// pass index to remove_edge or return object in edge_index
+func remove_edge() {local i
+	i = edges.index($o1)
+	edges.remove(i)
+	$o1.source.edges.remove($o1.source.edges.index($o1))
+	$o1.target.edges.remove($o1.target.edges.index($o1))
+	return i
+}
+func edge_index() {local i //NetSource, NetTarget -- return edges index
+	// in case of multiples it is the first one in source list
+	for i=0, $o1.edges.count-1 {
+		if ($o1.edges.object(i).target == $o2) {
+			return edges.index($o1.edges.object(i))
+		}
+	}
+	return -1
+}
+
+proc add_cell() {local i // NetCell
+	cel2tar_update_ = 1
+	sources.append(new NetSource($o1))
+	if ($o1.type.is_art) {
+		targets.append(new NetTarget($o1, 0))
+	}else{
+		for i=0, $o1.type.synlist.count-1 {
+		  targets.append(new NetTarget($o1, i))
+		}
+	}
+	$o1.index = sources.count - 1
+	if (created_) {
+		$o1.create1()
+	}
+}
+
+proc remove_cell() { local i // NetCell
+	cel2tar_update_ = 1
+	sources.remove($o1.index)
+	for i=$o1.index, sources.count-1 {
+		sources.object(i).cell.index = i
+	}
+	for (i=targets.count-1; i >= 0; i -= 1) {
+		if (targets.object(i).cell == $o1) {
+			targets.remove(i)
+		}
+	}
+	for (i=edges.count-1; i >= 0; i -= 1) {
+		if (edges.object(i).source.cell == $o1 || edges.object(i).target.cell == $o1) {
+			edges.object(i).netcon = nil
+			edges.remove(i)
+		}
+	}
+	$o1.real = nil
+}
+
+proc replace_cell() { local i, j, r //NetCell, NetReadyCell or ArtCell
+	if ($o1.type == $o2) {
+		return
+	}
+	cel2tar_update_ = 1
+	// get rid of NetCon first to avoid bug when real cell deleted
+	if (created_) for i=0, edges.count - 1 {
+		tobj = edges.object(i)
+		if (tobj.source.cell == $o1 || tobj.target.cell == $o1) {
+			tobj.netcon = nil
+		}
+	}
+
+	oldtype = $o1.type
+	$o1.replace($o2)
+
+	r = 1
+	if (oldtype.is_art == 0 && $o2.is_art == 0) {
+		if (oldtype.synlist.count != $o1.synlist.count) {
+			// incompatible target replacement
+			r = 0
+		}
+	}
+   if (r == 0) { // target list is must be made consistent
+	// must remove target edges since no unambiguous map from old to new
+	for (i=targets.count-1; i >= 0; i -= 1) {
+		if (targets.object(i).cell == $o1) {
+			targets.remove(i)
+		}
+	}
+	for (i=edges.count-1; i >= 0; i -= 1) {
+		if (edges.object(i).target.cell == $o1) {
+			edges.object(i).netcon = nil
+			edges.remove(i)
+		}
+	}
+	if ($o1.type.is_art) {
+		targets.append(new NetTarget($o1, 0))
+	}else{
+		for i=0, $o1.type.synlist.count-1 {
+		  targets.append(new NetTarget($o1, i))
+		}
+	}
+    }else{ // target list is consistent but synapses and netcon must be updated
+	for i=0, targets.count-1 {
+		tobj = targets.object(i)
+		if (tobj.cell == $o1) {
+			if ($o2.is_art == 0) {
+				tobj.syn = $o1.synlist.object(tobj.synindex)
+			}
+			if (created_) {
+				for j=0, tobj.edges.count-1 {
+					tobj.edges.object(j).create1()
+				}
+			}
+		}
+	}		
+    }
+	// in any case we can keep the source edges
+	if (created_) for i=0, edges.count - 1 {
+		if (edges.object(i).source.cell == $o1) {
+			edges.object(i).create1()
+		}
+	}
+}	
+
+func cel2tar() {
+	if (cel2tar_update_) { cel2tar_update() }
+	return cel2tar_.x[$1] + $2
+}
+
+proc cel2tar_update() { local n
+	cel2tar_.resize(sources.count)
+	if (sources.count > 0) {
+		cel2tar_.x[0] = 0
+	}
+	for i=0, sources.count-2 {
+		if (sources.object(i).cell.type.is_art) {
+			n = 1
+		}else{
+			n = sources.object(i).cell.type.synlist.count
+		}
+		cel2tar_.x[i+1] = cel2tar_.x[i] + n
+	}
+	cel2tar_update_ = 0
+}
+
+proc create1() {local i
+	created_ = 1
+	for i=0, sources.count-1 {
+		sources.object(i).cell.create1()
+	}
+	for i=0, edges.count-1 {
+		edges.object(i).create1()
+	}
+}
+
+proc abstract() { local i
+	created_ = 0
+	for i=0, edges.count-1 {
+		edges.object(i).netcon = nil
+	}
+	for i=0, sources.count-1 {
+		sources.object(i).cell.real = nil
+	}
+}
+
+endtemplate NetData
+
+

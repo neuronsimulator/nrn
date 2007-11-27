@@ -1,0 +1,154 @@
+<h1>Writing Java classes that communicate with NEURON</h1>
+
+<h2>Executing hoc statements</h2>
+<pre>
+import neuron.Neuron;
+Neuron.execute(new String("print \"Hello, World\""));
+</pre>
+<h2>References to hoc variables</h2>
+<pre>
+import neuron.HocVariable;
+HocVariable vs = new HocVariable(new String("soma.v(.5)"))
+double v = vs.getVal();
+vs.setVal(-65)
+</pre>
+<h2>References to hoc objects</h2>
+Argument lists are an array of objects of type Double, String, or Object
+<pre>
+import neuron.HocObject;
+HocObject ho = new HocObject(new String("Graph"));
+// following is a list of all Vectors
+// in hoc it would be
+// objref o
+// o = new List("Vector")
+HocObject ho = new HocObject(new String("List"),
+			new Object[] { new String("Vector")});
+</pre>
+Note that the Graph will not be destroyed until the first HocObject
+is garbage collected. This can be done explicitly with
+<pre>
+Runtime rt = Runtime.getRuntime();
+rt.runFinalization();
+rt.gc();
+</pre>
+Note that when hoc passes an objref as an argument to a java class method
+(or java class constructor) the object appears in java as
+a native java object (if its construction was as a java object, either
+registered with load_java or unregistered so that it appeared in hoc
+as a JavaObject), or a HocObject (or classes that extend HocObject
+such as HocVector).
+<h2>Calling methods of hoc objects</h2>
+Argument lists are an array of objects of type Double, String, or Object.
+Methods return double, String, or Object via the
+dMethod, sMethod, or oMethod call respectively.
+See the hoc vector example below.
+<h2>References to hoc Vectors</h2>
+HocVector extends HocObject
+<pre>
+import neuron.HocVector
+HocVector hv = new HocVector(10);
+hv.oMethod(new String("indgen"), null);
+double[] v = hv.fromHoc();
+for (int i; i < v.length; ++i) {
+	v[i] *= 2;
+}
+hv.toHoc(v);
+double size = hv.dMethod(new String("size"), null);
+String label = hv.sMethod(new String("label", null);
+System.out.println(hv);// prints Vector[25] or whatever the index is
+</pre>
+Note that when hoc passes a Vector as an argument to a java class method
+(or java class constructor) the Vector appears in java as a HocVector.
+
+<h2>Java Windows and the PrintAndFileWindowManager</h2>
+After a Frame title has been set and the frame has been shown on the
+screen, it is a good idea to call
+<pre>
+	Neuron.windowListen(Frame, this)
+</pre>
+This will allow the print and file window manager as well as the
+NEURONMainMenu/Window to manage the java Frame properly.
+Note that Iconify button on the title bar of the java window
+means "hide" in this case. Also, be aware that the default action of
+a JFrame when the close button is pressed is to "hide". This can
+be changed with Frame.setDefaultCloseOperation(int);
+
+The hoc window for this java frame references the hoc object for
+the java object. The hoc object is unreferenced when the window
+is closed (but not when it is hidden).
+
+The "this" reference is necessary for saving the java
+object that owns the window in a session file as well as the window's
+position and size. On retrieval
+the java object will be created and the java window will be moved and
+sized to the saved location. For most java objects this will not
+be sufficient information to reconstruct the object's data and the
+java class implementation will have to provide one or more of the
+special methods,
+<pre>
+public int hocSessionPriority()
+public char[] hocSessionSave(String sfname)
+</pre>
+
+If the hocSessionPriority method exists, it is called when the
+session file is saved and the return integer is used to help order
+the window information in the session file from highest to lowest
+priority. The default priority is 1. Priority must be lower than
+any tool which constructs information needed by the java object
+and higher than any tool which may use information provided by
+the java object. Some existing tool
+priorities are
+<pre>
+2000 Robert Cannon's catacomb channel builder
+1000 cell builder
+995 network builder
+990 point process manager
+100 multiple run fitter
+1 linear circuit builder
+</pre>
+The priority for the linear circuit builder is a
+mistake because one could not fit the parameters in a multiple run fitter
+since that would be created before the linear circuit builder.
+
+If the hocSessionSave method exists, it is called when the session file
+is saved. The argument is the name of the session file. The string
+returned by this method is copied into the session file just after the
+hoc statement that constructs the object.  The session file name can
+be used to construct associated file names that save the object data.
+The return string should use the "ocbox_" objref
+name to call methods on the newly constructed object.
+
+For example, the java interface to Robert Cannon's catacomb channel builder
+(see nrn-5.1/src/nrnjava/nrnccmb/Channels.java) uses the implementation
+<pre>
+        public int hocSessionPriority() {
+                return 2000;
+        }
+        public char[] hocSessionSave(String sfname) {
+                StringBuffer s;
+                s = new StringBuffer(sfname); s.append(".ccm");
+                save(s.toString());
+                s = new StringBuffer("{ocbox_.map() ocbox_.load(\"");
+                s.append(sfname).append(".ccm\")}\n");
+                return s.toString().toCharArray();
+        }
+</pre>
+When a session file, "temp.ses", is created with a channel builder window
+then the save("temp.ses.ccm") will be executed to construct a ccm file with
+all the channel specific information needed for later reconstruction
+of the object. The session file itself contains the statements
+<pre>
+/*Begin catacomb.channel.KSChannel */
+{load_java("nrnccmb.Channels", "nrnccmb_Channels")}
+ocbox_ = new nrnccmb_Channels()
+{ocbox_.map() ocbox_.load("./temp.ses.ccm")}
+{PWManager[0].jwindow(ocbox_, 1, 378, 1, 541, 574)}
+objref ocbox_
+/*End catacomb.channel.KSChannel */
+</pre>
+Notice that all the lines were automatically constructed by the
+internal session save code except for
+the statement involving ocbox_.load. That information was object specific
+in regard to its particular policy for constructing the view window
+for the object and which ccm file to load.
+

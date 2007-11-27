@@ -1,0 +1,37 @@
+load_file("$(NEURONHOME)/lib/hoc/noload.hoc", "nrnmainmenu")
+
+objref parmfitness_efun_list_, parmfitness_generator_list_
+objref mulfit_optimizers_, mulfit_optimizer_names_
+parmfitness_efun_list_ = new List()
+parmfitness_generator_list_ = new List()
+mulfit_optimizers_ = new List()
+mulfit_optimizer_names_ = new List()
+proc parmfitness_efun_append() {
+	parmfitness_efun_list_.append(new String($s1))
+}
+proc parmfitness_generator_append() {
+	parmfitness_generator_list_.append(new String($s1))
+}
+proc mulfit_optimizers_append() {
+	mulfit_optimizer_names_.append(new String($s1))
+	mulfit_optimizers_.append(new String($s2))
+}
+
+xopen("mulfit/protorun.hoc")
+xopen("mulfit/e_norm.hoc")
+xopen("mulfit/e_actpot.hoc")
+xopen("mulfit/e_y.hoc")
+xopen("mulfit/e_xy.hoc")
+xopen("mulfit/clampfit.hoc")
+xopen("mulfit/eonerun.hoc")
+xopen("mulfit/eonefunc.hoc")
+xopen("mulfit/eoneprim.hoc")
+xopen("mulfit/eparmlst.hoc")
+xopen("mulfit/fitparm.hoc")
+xopen("mulfit/mulfit1.hoc")
+
+objref tobj
+proc makemulrunfitter() {
+	tobj = new MulRunFitter()
+	objref tobj
+}

@@ -1,0 +1,6 @@
+load_file("nrngui.hoc")
+load_file("vecevent.ses")
+objref evec
+evec = new Vector(100)
+evec.indgen
+vs_VecStim[0].pp.play(evec)

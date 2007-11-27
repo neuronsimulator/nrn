@@ -1,0 +1,760 @@
+{load_file("shapebox.hoc")}
+
+begintemplate LinearCircuitNode
+public elements, ends, add, merge, index, re_index
+objref elements, ends, this, tobj
+proc init() {
+	index = -1
+	elements = new List()
+	ends = new Vector()
+}
+proc add() {
+	elements.append($o1)
+	ends.append($2)
+	$o1.lincirnodes[$2] = this
+}
+proc merge() { local i
+	tobj = $o1 // because $o1 will change!!!
+	if (tobj == this) return
+	for i = 0, tobj.elements.count - 1 {
+		add(tobj.elements.object(i), tobj.ends.x[i])
+	}
+	tobj.elements.remove_all()
+	tobj.ends.resize(0)
+}
+proc re_index() {local i
+	index = $1
+}
+endtemplate LinearCircuitNode
+
+// too bad there is no inheritance
+// patterns involve a set of nodes so that every node is at a grid point
+// as long as the location is at a grid point. This basically means that
+// angle and scale may be limited. ie the scale can be any integer if the
+// angle is nPI/2.
+// all patterns have nodes at integer coords relative to the origin.
+
+
+begintemplate ElementBase
+
+public indices, extra_eqn, setup_mat, extra_info
+public pat, scale, angle, selected, x, y, location, move, ends, pl, val
+public nodes, tr, nd, part, valedit, lincirnodes, nnode, setalias
+public move_label, names, names_x, names_y, valmap, ic
+external hoc_sf_
+
+objref pat, val, nd, tr, this, lincirnodes[1], indices, extra_info
+objref names[1], names_x, names_y, ic
+
+strdef tstr
+
+proc init() {
+	res_ = 10
+	val = new Vector()
+	pat = $o1
+	pat.default(val, extra_info)
+	nnode = pat.nodes.nrow
+	part = $2
+	scale = 2
+	angle = 0
+	tr = new Matrix(2,2)
+	x = 0
+	y = 0
+	objref lincirnodes[nnode]
+	objref names[nnode+1]
+	ic = new Vector(nnode+1)
+//print pat.name
+	if (strcmp(pat.name, "") != 0) {
+		sprint(tstr, "%s%d", pat.name, object_id(this, 1))
+		names[0] = new String(tstr)
+//print names[0].s
+		names_x = new Vector(nnode+1, 15)
+		names_y = new Vector(nnode+1, 15)
+	}
+	indices = new Vector(pat.extra_eqn + nnode)
+}
+
+proc move_label() {
+	names_x.x[$1] = $2 - x
+	names_y.x[$1] = $3 - y
+	if ($1 > 0) {
+		names_x.x[$1] -= nd.x[$1-1][0]
+		names_y.x[$1] -= nd.x[$1-1][1]
+	}
+}
+
+proc valedit() { local i
+	for i=0, val.size-1 {
+		pat.val(tstr, i)
+		sprint(tstr, "%s %s", names[0].s, tstr)
+		sprint(tstr, "xpvalue(\"%s\", &%s.val.x[%d], 1, \"%s\")",\
+			tstr, this, i, $s1)
+		execute(tstr)
+		//xpvalue(tstr, &val.x[i], 1, $s1)
+	}
+}
+
+proc valmap() {local i
+	for i=0, val.size-1 {
+		pat.val(tstr, i)
+		sprint(tstr, "%s %s     %s.val.x[%d]", names[0].s, tstr, this, i)
+		$o1.append(new String(tstr))
+	}
+}
+
+proc setalias() {local i
+	for i=0, val.size-1 {
+		pat.setalias(tstr, i)
+		sprint(tstr, "%s%s", names[0].s, tstr)
+		hoc_sf_.alias($o1, tstr, &val.x[i])
+	}
+}
+
+func extra_eqn() {
+	for i=0, nnode-1 {
+		indices.x[i] = lincirnodes[i].index
+	}
+	for i=0, pat.extra_eqn - 1 {
+		indices.x[nnode + i] = $1 + i
+	}
+	return $1 + pat.extra_eqn
+}
+
+proc setup_mat() {
+	pat.setup_matrix($o1, $o2, $o3, val, indices)
+}
+
+func res() {
+	return int($1/res_ + .5) * res_
+}
+
+proc pl() {local i, x1, y1
+	$o1.glyph(pat.g, x, y, scale, scale, angle*DEG)
+	if (object_id(nd) == 0) {
+		nodes()
+	}
+	if (object_id(names[0])) {
+		$o1.label(names_x.x[0] + x, names_y.x[0] + y, names[0].s, 1, 1, .5, .5, 1)
+	}
+	for i=1, nnode {
+		if (object_id(names[i])) {
+			x1 = nd.x[i-1][0] + x
+			y1 = nd.x[i-1][1] + y
+$o1.label(names_x.x[i] + x1, names_y.x[i] + y1, names[i].s, 1, 1, .5, .5, 1)
+		}
+	}
+}
+proc nodes() {local c, s
+	c = cos(angle)*scale  s = sin(angle)*scale
+	tr.set(c, s, -s, c)
+	nd = pat.nodes.mulm(tr)
+}
+
+proc old() {
+	x0 = x
+	y0 = y
+}
+
+func selected() {local i, x1, y1
+	nodes()
+	x1 = $1 - x
+	y1 = $2 - y
+	for i=0, nd.nrow-1 {
+		if ((nd.x[i][0] - x1)^2 < 100) {
+			if ((nd.x[i][1] - y1)^2 < 100) {
+				old()
+				return i + 1
+			}
+		}
+	}
+	if (x1^2 + y1^2 < 100) {
+		old()
+		return 0
+	}
+	return -1
+}
+proc location() {
+	x = x0 + res($1 - x0)
+	y = y0 + res($2 - y0)
+}
+proc move() {
+	if ($1 == 0) {
+		location($2, $3)
+	}else if (nd.nrow == 2){
+		consist2($2, $3, $1-1, $1%2)
+	}else if (nd.nrow == 1) {
+		consist1($2, $3)
+	}else{
+		consist3($2,$3,$1-1)
+	}
+}
+proc consist2() {local i, j
+	$1 = res($1)
+	$2 = res($2)
+	x = (($1 + nd.x[$4][0] + x)/2)
+	y = (($2 + nd.x[$4][1] + y)/2)
+	scale = sqrt(($1 - x)^2 + ($2 - y)^2)*2/pat.len
+	if (scale == 0) {
+		angle = 0
+		scale = 1
+	}else{
+		if ($3 == 1) {
+			angle = atan2($2 - y, $1 - x)
+		}else{
+			angle = atan2(y - $2, x - $1)
+		}
+	}
+}
+proc consist1() {
+	$1 = res($1)
+	$2 = res($2)
+//	x = ($1 - nd.x[0][0] + x)/2
+//	y = ($2 - nd.x[0][1] + y)/2
+	scale = sqrt(($1 - x)^2 + ($2 - y)^2)*2/pat.len
+	if (scale == 0) {
+		angle = 0
+		scale = 1
+	}else{
+		angle = atan2(x - $1, $2 - y)
+	}
+}
+proc consist3() {local fix
+//	if ($3 != 2) return
+	$1 = res($1)
+	$2 = res($2)
+	scale = sqrt(($1 - x)^2 + ($2 - y)^2)*2/pat.len
+	scale = int(scale + .5)
+	if (scale == 0) {
+		angle = 0
+		scale = 1
+	}else{
+		if ($3 == 0) {
+			angle = atan2(y - $2, x - $1)
+		}else if ($3 == 1) {
+			angle = atan2(y - $2, x - $1)
+		}else{
+			angle = atan2($2 - y, $1 - x)
+		}
+		angle = int(angle*DEG/45)*(45/DEG)
+	}
+}
+
+proc ends() {
+	nodes()
+	$o1.append(nd.getcol(0).add(x))
+	$o2.append(nd.getcol(1).add(y))
+}
+endtemplate ElementBase
+
+begintemplate Resistor
+public nodes, g, len, val, default, extra_eqn, setup_matrix, name
+public setalias
+objref nodes, g
+strdef name
+
+proc init() {
+	name = "R"
+	extra_eqn = 0
+	len = 20
+	nodes = new Matrix(2,2)
+	nodes.set(-10, 0, 10, 0)
+	g = new Glyph()
+	g.path.m(-10,0).l(-7,0).l(-5,2).l(-3,-2).l(-1,2).l(1,-2).l(3,2)
+	g.l(5,-2).l(7,0).l(10,0).s
+}
+
+proc setup_matrix() {local g, i, j // cmat, rmat, bvec, val, indices
+	if ($o4.x[0] <= 0) {
+		$o4.x[0] = 1e-9
+	}
+	g = 1/$o4.x[0]
+	i = $o5.x[0]
+	j = $o5.x[1]
+	$o2.x[i][i] -= g
+	$o2.x[i][j] += g
+	$o2.x[j][j] -= g
+	$o2.x[j][i] += g
+}
+
+proc default() {
+	$o1.append(1) //Mohm
+}
+
+proc val() {
+	sprint($s1, "(Mohm)")
+}
+proc setalias() {
+	$s1 = ""
+}
+endtemplate Resistor
+
+begintemplate Wire
+public nodes, g, len, val, default, extra_eqn, setup_matrix, name
+public setalias
+objref nodes, g
+strdef name
+
+proc init() {
+	extra_eqn = 0
+	len = 20
+	nodes = new Matrix(2,2)
+	nodes.set(-10, 0, 10, 0)
+	g = new Glyph()
+	g.path.m(-10,0).l(-5,0).s
+	g.path.m(-5,0).l(5,0).s(1,5)
+	g.path.m(5,0).l(10,0).s
+}
+
+proc setup_matrix(){}
+
+proc default() {
+}
+
+proc val() {
+}
+proc setalias() {
+	$s1 = ""
+}
+endtemplate Wire
+
+begintemplate Capacitor
+public nodes, g, len, val, default, extra_eqn, setup_matrix, name
+public setalias
+objref nodes, g
+strdef name
+
+proc init() {
+	name = "C"
+	extra_eqn = 0
+	$o1.append(1) // nanofarad
+	len = 20
+	nodes = new Matrix(2,2)
+	nodes.set(-10, 0, 10, 0)
+	g = new Glyph()
+	g.path.m(-10,0).l(-2,0).s
+	g.path.m(1,0).l(10,0).s
+	g.path.m(-2,5).l(-2,-5).s
+//	g.path.m(2,5).curve(2,-5, 1,2, 1,-2).s
+	g.path.m(2,5).curve(2,-5, .9,2, .9,-2).s
+}
+
+proc setup_matrix() {local c, i, j // cmat, rmat, bvec, val, indices
+	if ($o4.x[0] < 0) {
+		$o4.x[0] = 0
+	}
+	c = $o4.x[0]
+	i = $o5.x[0]
+	j = $o5.x[1]
+	$o1.x[i][i] -= c
+	$o1.x[i][j] += c
+	$o1.x[j][j] -= c
+	$o1.x[j][i] += c
+}
+proc default() {
+	$o1.append(1) // nanofarad
+}
+
+proc val() {
+	sprint($s1, "(nF)")
+}
+proc setalias() {
+	$s1 = ""
+}
+endtemplate Capacitor
+
+begintemplate SourceInfo
+public dur, amp, tvec, changed_dur, play, box, save, restore
+public setalias, xtrn, set_xtrn
+objref dur, amp, tvec, box
+strdef tstr
+proc init() {
+	xtrn = 0
+	dur = new Vector(3,1e9)
+	amp = new Vector(3,0)
+	tvec = new Vector(3)
+	changed_dur()
+}
+proc changed_dur() {
+	tvec.integral(dur).rotate(1,0)
+}
+proc play() {
+	if (xtrn == 0) {
+		amp.play(&$o2.x[$o1.indices.x[2]-1], tvec)
+	}
+}
+proc set_xtrn() {
+	if (numarg() == 0) { // toggled by xcheckbox so xtrn is correct
+		if (xtrn == 0) {
+			play()
+		}else{
+			amp.play_remove()
+		}
+	}else{
+		if (xtrn == 0 && $1 == 1) {
+			amp.play_remove()
+		}else if (xtrn == 1 && $1 == 0) {
+			play()
+		}
+		xtrn = $1
+	}
+}
+proc save() {local i
+	sprint(tstr, "%d", dur.size)
+	$o1.save(tstr)
+	for i=0, dur.size-1 {
+		sprint(tstr, "%g %g", dur.x[i], amp.x[i])
+		$o1.save(tstr)
+	}
+	if (xtrn == 1) {
+		$o1.save("{sel.extra_info.set_xtrn(1)}")
+	}
+}
+proc restore() {local i, n
+	n = fscan()
+	dur.resize(n)
+	amp.resize(n)
+	tvec.resize(n)
+	for i=0, n-1 {
+		dur.x[i] = fscan()  amp.x[i] = fscan()
+	}
+	changed_dur()
+}
+endtemplate SourceInfo
+
+begintemplate Battery
+public nodes, g, len, val, default, extra_eqn, setup_matrix, name, ename
+public setalias
+objref nodes, g
+strdef  name
+proc init() {
+	name = "B"
+	extra_eqn = 1
+	$o1.append(1) // 1 mV
+	len = 20
+	nodes = new Matrix(2,2)
+	nodes.set(-10, 0, 10, 0)
+	g = new Glyph()
+	g.path.m(-10,0).l(-1,0).s
+	g.path.m(1,0).l(10,0).s
+	g.path.m(1,5).l(1,-5).s
+	g.path.m(-1,2).l(-1,-2).s(1,3)
+	g.path.m(4,3).l(2,3).s
+	g.path.m(3,4).l(3,2).s
+}
+
+proc setup_matrix() {local e, i, j, k // cmat, rmat, bvec, val, indices
+	// since cy' + gy = b, we want vj - vi = e
+	// for the k equation. current leaves node i and enters node j.
+	i = $o5.x[0]
+	j = $o5.x[1]
+	k = $o5.x[2]
+	$o2.x[i][k] -= 1
+	$o2.x[j][k] += 1
+	$o3.x[k] = 0 // e
+	$o2.x[k][i] = -1
+	$o2.x[k][j] = 1
+}
+
+proc default() {
+	$o2 = new SourceInfo()
+}
+
+proc val() {
+}
+proc setalias() {
+	$s1 = ""
+}
+proc ename() {
+	sprint($s1, "I (nA)")
+}
+endtemplate Battery
+
+begintemplate Current
+public nodes, g, len, val, default, extra_eqn, setup_matrix, name, ename
+public setalias
+objref nodes, g
+strdef  name
+//the only reason for the extra_eqn, i = ival is to allow a time
+// dependent  i that changes only one rhs element
+// otherwise the value adds and subtracts from two rhs elements respectively
+proc init() {
+	name = "I"
+	extra_eqn = 1
+	$o1.append(0) //  nA
+	len = 20
+	nodes = new Matrix(2,2)
+	nodes.set(-10, 0, 10, 0)
+	g = new Glyph()
+	g.path.m(-10,0).l(10,0).s
+	g.path.m(-5,3).l(5,3).s
+	g.path.m(3,1).l(5,3).l(3,5).s
+}
+
+proc setup_matrix() {local cur, i, j, k // cmat, rmat, bvec, val, indices
+	// add and subtract current at the nodes
+	i = $o5.x[0]
+	j = $o5.x[1]
+	k = $o5.x[2]
+//print "Current ", cur, " to nodes ", i, j
+	$o3.x[k] = 0 //cur
+	$o2.x[k][k] = 1
+	$o2.x[i][k] -= 1
+	$o2.x[j][k] += 1
+}
+
+proc default() {
+	$o2 = new SourceInfo()
+}
+
+proc val() {
+}
+proc setalias() {
+	$s1 = ""
+}
+proc ename() {
+	sprint($s1, "(nA)")
+}
+endtemplate Current
+
+begintemplate Ground
+public nodes, g, len, val, default, extra_eqn, setup_matrix, name
+public setalias
+objref nodes, g
+strdef name
+
+proc init() {
+	extra_eqn = 0
+	len = 20
+	nodes = new Matrix(1,2)
+	nodes.set(0,10)
+	g = new Glyph()
+	g.path.m(0,10).l(0,0).s
+	g.path.m(5, 0).l(-5, 0).l(0, -5).close.fill
+}
+
+proc setup_matrix(){local i, j // cmat, rmat, bvec, val, indices
+	// no extra equation. the common ground equation is done elsewhere
+	return
+	// j equation is v[i] = 0   -  j variable is current and subtracted from node
+	i = $o5.x[0]
+	j = $o5.x[1]
+	$o2.x[i][j] = -1
+	$o2.x[j][i] = 1
+}
+
+proc default() {
+}
+
+proc val() {
+}
+proc setalias() {
+	$s1 = ""
+}
+endtemplate Ground
+
+begintemplate OpAmp
+public nodes, g, len, val, default, extra_eqn, setup_matrix, name, ename
+public setalias
+objref nodes, g
+strdef name
+
+proc init() {
+	name = "A"
+	extra_eqn = 1
+	len = 40
+	nodes = new Matrix(3,2)
+	nodes.set(-20, 10, -20, -10, 20, 0)
+
+	g = new Glyph()
+	g.path.m(-20,10).l(-14,10).s
+	g.path.m(-20,-10).l(-14,-10).s
+	g.path.m(20,0).l(14,0).s
+
+	g.path.m(-14,20).l(-14,-20).l(14,0).close.s
+	g.path.m(-10,10).l(-6,10).s
+	g.path.m(-10,-10).l(-6,-10).s g.path.m(-8,-12).l(-8,-8).s
+
+}
+
+proc setup_matrix() {local gain, tau, i, j, k, o // cmat, rmat, bvec, val, indices
+	// o is the current output and the row is the equation that determines vk
+	gain = $o4.x[0]
+	if ($o4.x[1] < 0) {
+		$o4.x[1] = 0
+	}
+	tau = $o4.x[1]
+	i = $o5.x[0] // - node
+	j = $o5.x[1] // + node
+	k = $o5.x[2] // output node
+	o = $o5.x[3] // current output
+//printf("i=%d j=%d k=%d o=%d\n", i, j, k, o)
+	// nothing for the input nodes
+	// the output node adds the o current
+	$o2.x[k][o] += 1
+	// now the o equation tau*dvk/dt + gain*(vi - vj) + vk = 0
+	$o1.x[o][k] = tau
+	$o2.x[o][i] = gain
+	$o2.x[o][j] = -gain
+	$o2.x[o][k] = 1
+}
+
+proc default() {
+	$o1.append(1e6, 0) // gain, tau (ms)
+}
+
+proc val() {
+	if ($2 == 0) {
+		sprint($s1, " Gain")
+	}else{
+		sprint($s1, "Tau (ms)")
+	}
+}
+proc setalias() {
+	if ($2 == 0) {
+		$s1 = "_Gain"
+	}else{
+		$s1 = "_Tau"
+	}
+}
+proc ename() {
+	sprint($s1, "I (nA)")
+}
+endtemplate OpAmp
+
+begintemplate InsideCell_Info
+public sec, x, select, set, name, has_loc
+public setalias
+objref sec, sh, this, pp
+strdef tstr
+
+proc init() {
+	has_loc()
+}
+func has_loc() {
+	if (execute1("sec.sec.v", this, 0)) {
+		return 1
+	}else if (execute1("v", 0)) {
+		sec = new SectionRef()
+		x = .5
+		pp = new PointProcessMark(x)
+		sh = new ShapeLocation(pp)
+		return 1
+	}else{
+		objref sec, sh, pp
+	}
+	return 0
+}
+func select() {local b
+	if (!has_loc()) {
+		continue_dialog("No accessed section and current location invalid")
+		return 0
+	}
+	b = sh.dialog()
+	if (b) {
+		x = pp.get_loc()
+		sec = new SectionRef()
+		pop_section()
+	}else{
+		sec.sec sh.move(x)
+	}
+	return b
+}
+proc set() {
+	sprint(tstr, "%s %s.sec = new SectionRef()", $s1, this)
+	execute(tstr)
+	x = $2
+	sec.sec {
+		pp = new PointProcessMark(x)
+		sh = new ShapeLocation(pp)
+	}
+}
+proc name() {
+	if (has_loc()) {
+		sec.sec sprint(tstr, "%s(%g)", secname(), x)
+		$o1.names[0].s = tstr
+	}else{
+		$o1.names[0].s = "no location"
+	}
+}
+endtemplate InsideCell_Info
+
+begintemplate InsideCell
+public nodes, g, len, val, default, extra_eqn, setup_matrix, name
+public setalias
+objref nodes, g, sloc
+strdef name
+
+proc init() {
+	name = "S"
+	extra_eqn = 0
+	len = 20
+	nodes = new Matrix(1,2)
+	nodes.set(0,10)
+	g = new Glyph()
+	g.path.m(-10,-5).l(0,0).s
+	g.path.m(-10,5).l(0,0).s
+	g.path.m(0,0).l(10,0).s
+	g.path.m(-2,10).l(0,0).l(2,10).close.fill(1)
+}
+
+proc setup_matrix(){local i, c, g // cmat, rmat, bvec, val, indices
+	//g = $o4.x[0]
+	//c = $o4.x[1]
+	//i = $o5.x[0]
+	//$o1.x[i][i] -= c
+	//$o2.x[i][i] -= g
+}
+
+proc default() {
+//	$o1.append(.001, 1) // S, uF
+	$o2 = new InsideCell_Info()
+}
+
+proc val() {
+}
+proc setalias() {
+	$s1 = ""
+}
+endtemplate InsideCell
+
+begintemplate OutsideCell // actually just InsideCell + 1 extracellular layer
+public nodes, g, len, val, default, extra_eqn, setup_matrix, name
+public setalias
+objref nodes, g, sloc
+strdef name
+
+proc init() {
+	name = "S"
+	extra_eqn = 0
+	len = 20
+	nodes = new Matrix(2,2)
+	nodes.set(-10,0,10,0)
+	g = new Glyph()
+	g.path.m(-5,-10).l(0,0).s
+	g.path.m(5,-10).l(0,0).s
+	g.path.m(0,0).l(0,10).s
+
+	g.path.m(-10,2).l(0,0).l(-10,-2).close.fill(1)
+	g.path.m(10,-2).l(3,0).l(10,2).close.fill(1)
+}
+
+proc setup_matrix(){local i, c, g // cmat, rmat, bvec, val, indices
+	//g = $o4.x[0]
+	//c = $o4.x[1]
+	//i = $o5.x[0]
+	//$o1.x[i][i] -= c
+	//$o2.x[i][i] -= g
+}
+
+proc default() {
+//	$o1.append(.001, 1) // S, uF
+	$o2 = new InsideCell_Info()
+}
+
+proc val() {
+}
+proc setalias() {
+	$s1 = ""
+}
+endtemplate OutsideCell
+

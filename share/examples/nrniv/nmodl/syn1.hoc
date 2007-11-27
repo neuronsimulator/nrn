@@ -1,0 +1,68 @@
+// Physical properties
+create a
+access a
+nseg=1
+
+// graphical interface appearance
+objref s
+s = new syn1(.5)
+{insert pas e_pas=-65 g_pas=.001 L=10 diam=10}
+{s.onset=1  s.tau=.5  s.gmax=.01  s.e=0 }
+objref g
+g = new Graph()
+
+// simulation control
+proc pcond() {
+	g.size(0,5,0,s.gmax)
+	g.beginline()
+	for (t=0; t<5; t=t+.1) {
+		fcurrent()
+		g.line(t,s.g)
+	}
+}
+
+proc pcur() {
+	g.size(0,5,-1,0)
+	g.beginline()
+	v=-65
+	for (t=0; t<5; t=t+.1) {
+		fcurrent()
+		g.line(t,s.i)
+	}
+}
+
+proc prun() {
+	t=0
+	v=-65
+	g.size(0,5,-70,0)
+	g.beginline()
+	while (t < 5) {
+		g.line(t,v)
+		fadvance()
+	}
+	g.flush()
+}
+
+proc comparerun() {local savg /* compare built-in synapse with fsyn.mod */
+	prun()
+	savg=s.gmax
+	fsyn(1)
+	fsyn(0,.5,s.onset, s.tau, s.gmax, s.e)
+	s.gmax=0
+	t=0
+	v=-65
+	g.color(2)
+	g.beginline()
+	while (t < 5) {
+		g.line(t,v)
+		fadvance()
+	}
+	g.flush()
+	g.color(1)
+	s.gmax=savg
+	fsyn(0)
+}
+	
+// run simulation
+comparerun()
+

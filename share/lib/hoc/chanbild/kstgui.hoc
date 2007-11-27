@@ -1,0 +1,625 @@
+begintemplate KSTransHelper
+public pr, save_data, form, aform, coef, pname, fstyle, setdisp
+public kst, chk
+objref kst, tobj, fstyle[1]
+strdef tstr, tstr1, tstr2, tstr3
+
+proc init(){local i
+	objref fstyle[8]
+	fstyle[1] = new VConstRate()
+	fstyle[2] = new VExpRate()
+	fstyle[3] = new VLinoidRate()
+	fstyle[4] = new VSigmoidRate()
+	fstyle[5] = new VKSChanBG(5)
+	fstyle[6] = new VKSChanBG(6)
+	fstyle[7] = new VTableRate()
+}
+
+proc setdisp() {
+	form($o1,$2,tstr)
+	coef($o1,$2,$o1.type, tstr1)
+	sprint($s3, "  %s = %s", tstr1, tstr)
+}
+
+proc pr() {local i
+	if ($o1.src == $o1.target) {
+		tstr3 = ""
+	}else{
+		tstr3 = "  "
+	}
+	for i=0, 1 {
+		form($o1, i, tstr)
+		coef($o1, i, $o1.type, tstr1)
+		sprint(tstr, "      %s%s = %s", tstr3, tstr1, tstr)
+		printf("%-55s (%s)\n", tstr, $o1.parm(i))
+	}
+}
+
+proc chk() {
+	fstyle[$o1.ftype(0)].chk($o1.type, 0, $o1.parm(0))
+	fstyle[$o1.ftype(1)].chk($o1.type, 1, $o1.parm(1))
+}
+
+proc pname() {//kst, dir, index, resultstr, flag if units in resultstr
+	if ($o1.ftype(0) == 5) {
+		fstyle[5].pname($o1, $2, $3, $s4, $5)
+		return
+	}	
+	if ($5 == 1) {
+		if ($3 == 1) {
+			$s4 = "k (/mV)"
+		}
+		if ($3 == 2) {
+			$s4 = "d (mV)"
+		}
+		if ($3 == 0) {
+			if ($o1.type >= 2) {
+				if ($2 == 0) {
+					if ($o1.stoichiometry == 1) {
+						$s4 = "A (/ms-mM)"
+					}else{
+sprint($s4, "A (/ms-mM%d)", $o1.stoichiometry)
+					}
+				}else{
+					$s4 = "A (/ms)"
+				}
+			}else if ($o1.type == 0) {
+				$s4 = "A (/ms)"
+			}else if ($o1.type == 1) {
+				if ($2 == 0) {
+					$s4 = "A (1)"
+				}else{
+					$s4 = "A (ms)"
+				}
+			}
+		}
+	}else{
+		if ($3 == 0) {$s4 = "A"}
+		if ($3 == 1) {$s4 = "k"}	
+		if ($3 == 2) {$s4 = "d"}
+	}
+}
+
+proc coef() {// kst, dir, type, resultstr
+	if ($o1.src == $o1.target) {
+		tstr2 = $o1.src.name
+	}else{
+		sprint(tstr2, "%s%s", $o1.src.name, $o1.target.name)
+	}
+	if ($3 != 1) {
+		if ($2 == 0) {
+			sprint($s4, "a%s", tstr2)
+		}else{
+			sprint($s4, "b%s", tstr2)
+		}
+	}else{
+		if ($2 == 0) {
+			sprint($s4, "inf%s", tstr2)
+		}else{
+			sprint($s4, "tau%s", tstr2)
+		}
+	}
+}
+
+proc save_data() { local i, n, k
+	sprint(tstr, "{%s.settype(%d, \"%s\")}", $s2, kst.type(), kst.ligand())
+	$o1.save(tstr)
+	if (kst.stoichiometry != 1) {
+		sprint(tstr, "{%s.stoichiometry(%d)}", $s2, kst.stoichiometry)
+		$o1.save(tstr)
+	}
+	vmin = vmax = 0
+	for k = 0, 1 {
+		tobj = kst.parm(k, &vmin, &vmax)
+		n = tobj.size
+	    if (kst.ftype(k) != 6) {
+		sprint(tstr, "{tobj1 = new Vector(%d)  for (i=0; i < %d; i += 1) tobj1.x[i] = fscan() }", n, n)
+		$o1.save(tstr)
+		for i=0, n-1 {
+			sprint(tstr, "%g", tobj.x[i])
+			$o1.save(tstr)
+		}
+	    }
+	    if (kst.ftype(k) == 7) {
+		sprint(tstr, "{%s.set_f(%d, %d, tobj1, %g, %g)}", $s2, k, kst.ftype(k), vmin, vmax)
+	    }else{
+		sprint(tstr, "{%s.set_f(%d, %d, tobj1)}", $s2, k, kst.ftype(k))
+	    }
+		$o1.save(tstr)
+	}
+}
+
+proc form() { // KSTrans, direction, strdef ... assume numeric style
+	fstyle[$o1.ftype($2)].vec2parm($o1.parm($2))
+	fstyle[$o1.ftype($2)].form($s3, 0)	
+}
+
+proc aform() { // KSTrans, direction, strdef ... assume algebraic style
+	fstyle[$o1.ftype($2)].vec2parm($o1.parm($2))
+	fstyle[$o1.ftype($2)].form($s3, 1, "")	
+}
+endtemplate KSTransHelper
+
+// Only one of these is necessary. Merely call set_kst to switch to a gui
+// for a different one
+// This is meant to be a part of a larger window so no window management
+// is implemented
+
+begintemplate KSTransGUI
+public cbt, kst, set_cbt, pl, ch_dorun
+external hoc_sf_, case, run, hoc_obj_
+objref kst, ksth, gate, cbt, pbox, cb
+objref g, box, vvec, avec, bvec, deck, tobj, nil, tobj1, gbox, psel, fstyle
+strdef tstr, tstr1, tstr2
+
+proc init() {
+	charge = 0
+	dorun_ = 0
+	running_ = 0
+	disp_inf_ = 0
+	gate = $o1
+	cb = gate.cb
+	ksth = cb.ksth
+	vvec = new Vector(100)
+	avec = vvec.c
+	bvec = vvec.c
+	build()
+	set_cbt(nil)
+}
+
+proc build() {local i
+	box = new HBox(3)
+	box.save("")
+	box.intercept(1)
+
+	g = new Graph(0)
+	gbox = new VBox(3)
+	gbox.intercept(1)
+		xpanel("", 1)
+		g.menu_tool("Adjust     ", "adjust")
+		xcheckbox("Run", &dorun_, "ch_dorun()")
+		g.menu_action("inf rescale", "scale(0)")
+		g.menu_action("tau rescale", "scale(1)")
+		xpanel()
+		g.view(0, 1, 2, 3, 0, 0, 300, 200)
+	gbox.intercept(0)
+	g.size(-80, 60, 0, 1)
+	gbox.map()
+
+	pbox = new VBox(3)
+	pbox.intercept(1)
+	deck = new Deck()
+	deck.intercept(1)
+	xpanel("")
+	xlabel("this is a test")
+	xpanel()
+	deck.intercept(0)
+	deck.map
+	pbox.intercept(0)
+	pbox.map()
+	box.intercept(0)
+	box.map()
+}
+
+proc sel_adjust() {
+	g.exec_menu("Crosshair")
+	if (kst != nil) if ( disp_inf_ == kst.type) {
+		g.exec_menu("Adjust     ")
+	}
+	if (kst != nil) {
+		ksth.coef(kst, 0, disp_inf_, tstr)
+		avec.label(tstr)
+		ksth.coef(kst, 1, disp_inf_, tstr)
+		bvec.label(tstr)
+	}
+}
+
+proc set_cbt() {
+	cbt = $o1
+	if (cbt != nil) {
+		kst = $o1.kst
+	}else{
+		kst = nil
+	}
+	build_panel()
+	sel_adjust()
+	pl()
+}
+
+proc build_panel() {
+	deck.remove(0)
+	deck.intercept(1)
+	xpanel("")
+	if (kst == nil) {
+		xlabel("no KSTrans selected")
+	}else{
+		name(tstr)
+		xlabel(tstr)
+		xcheckbox("Display inf, tau", &disp_inf_, "sel_adjust() pl()")
+		pmenu(0)
+		pmenu(1)
+		xlabel("")
+		xmenu("EquationType", "eqnmenu()")
+	}
+	xpanel(1)
+	deck.intercept(0)
+	deck.flip_to(0)
+	doNotify()
+}
+
+proc pmenu() {
+	xlabel("")
+	ksth.coef(kst, $1, kst.type, tstr)
+	ksth.aform(kst, $1, tstr1)
+	tobj = kst.parm($1)
+	sprint(tstr, "%s = %s", tstr, tstr1)
+	xlabel(tstr)
+	if (kst.ftype($1) == 6) { return }
+	if (kst.ftype($1) == 7) {
+		vmin = vmax = 0
+		tobj = kst.parm($1, &vmin, &vmax)
+		sprint(tstr, "   %s from %g (mV) to %g (mV)", tobj, vmin, vmax)
+		xlabel(tstr)
+		xmenu("  Fill")
+		sprint(tstr, "filltable(%d)", $1)
+		xbutton("from Clipboard", tstr)
+		xmenu()
+		return
+	}
+	for i=0, tobj.size-1 {
+		ksth.pname(kst, $1, i, tstr, 1)
+		xpvalue(tstr, &tobj.x[i], 1, "chval()")
+	}
+}
+proc chval() {
+	cb.usetable(0)
+	pl()
+}
+
+proc filltable() {localobj tobj
+	if (object_id(hoc_obj_) == 0) {
+		continue_dialog("Clipboard has no vector")
+		return
+	}
+	cb.usetable(0)
+	tobj = kst.parm($1)
+	tobj.copy(hoc_obj_)
+	kst.set_f($1, 7, tobj, hoc_obj_[1].x[0], hoc_obj_[1].x[hoc_obj_[1].size-1])
+	build_panel()
+	pl()
+}
+
+proc name() {
+	cbt.traneqstr($s1)
+	if (kst.type == 1) {
+		sprint($s1, "%s (inf, tau)", $s1)
+	}else{
+		sprint($s1, "%s (a, b)", $s1)
+	}
+	sprint($s1, "%-22s (%s)", $s1, kst)
+}
+
+proc ksttypestr() {
+	if (kst.type == 0) $s1 = "alpha,beta"
+	if (kst.type == 1) $s1 = "inf,tau"
+	if (kst.type >= 2) $s1 = kst.ligand
+
+}
+
+proc eqnmenu() {local i
+	j = 0
+	ksttypestr(tstr)
+	xmenu(tstr)
+	xbutton("a,b", "change_kst_type(0)")
+	xbutton("inf,tau", "change_kst_type(1)")
+	if (kst.src != kst.target) { // then can be ligand gated
+		xmenu("Ligand", "mkligandmenu()")
+	}
+	if (gate.cb.ks.ntrans > 1) {
+		xmenu("Copy", "mkcopymenu()")
+	}
+	xmenu()
+	for i=0, 1 {
+		ksth.coef(kst, i, kst.type, tstr)
+		if (kst.type == 0) {
+			xmenu(tstr)
+			if (i == 0) {
+				for case(&j, 1,2,3,4,7) abitem(i, j)
+			}else{
+				for case(&j, 1,2,3,4,7) abitem(i, j)
+			}
+			xmenu()
+		}else if (kst.type == 1) {
+			xmenu(tstr)
+			if (i == 0) {
+				for case(&j, 1, 4, 5, 7) abitem(i, j)
+			}else if (kst.ftype(0) != 5) {
+				for case(&j, 1, 2, 7) abitem(i, j)
+			}
+			xmenu()
+		}
+	}
+	if (kst.type > 1) {
+		xmenu("stoic coef")
+		for i=1, 4 {
+			sprint(tstr, "%d", i)
+			sprint(tstr1, "stoichiometry(%d)", i)
+			xbutton(tstr, tstr1)
+		}
+		xmenu()
+	}
+}
+
+proc stoichiometry() {
+	cbt.stoichiometry($1)
+	set_cbt(cbt)
+	gate.pl()
+}
+
+proc mkcopymenu() {local i
+	tobj = gate.cb.ks
+	for i = 0, tobj.ntrans-1 {
+		tobj1 = tobj.trans(i)
+		if (kst != tobj1) {
+			sprint(tstr, "%s <-> %s", tobj1.src.name, tobj1.target.name)
+			sprint(tstr1, "copytrans(%d)", i)
+			xbutton(tstr, tstr1)
+		}
+	}
+}
+
+proc copytrans() {local i
+	cb.usetable(0)
+	gate.cb.set_alias()
+	tobj = gate.cb.ks.trans($1)
+	cbt.settype(tobj.type, tobj.ligand)
+	for i=0, 1 {
+		cbt.set_f(i, tobj.ftype(i), tobj.parm(i).c)
+	}
+	set_cbt(cbt)
+}
+
+proc abitem() {
+	ksth.fstyle[$2].form(tstr, 1, "")
+	sprint(tstr1, "change_eqn(%d, %d)", $1, $2)
+	xbutton(tstr, tstr1)
+}
+
+proc mkligandmenu() {local i
+	tobj = new MechanismType(0)
+	for i=0, tobj.count-1 {
+		tobj.select(i)
+		tobj.selected(tstr)
+		if (hoc_sf_.head(tstr, "_ion", tstr2) != -1) {
+			sprint(tstr1, "%si", tstr2)
+			sprint(tstr, "selion(\"%s\", 3)", tstr1)
+			xbutton(tstr1, tstr)
+			sprint(tstr1, "%so", tstr2)
+			sprint(tstr, "selion(\"%s\", 2)", tstr1)
+			xbutton(tstr1, tstr)
+		}
+	}
+	xbutton("New Ligand", "newligand()")
+}
+
+proc newligand() {local i
+	tstr = "ca 2"
+	while (string_dialog("ionname charge --e.g. ca 2", tstr)) {
+		if (sscanf(tstr, "%s %d", tstr2, &charge) == 2) {
+			i = ion_register(tstr2, charge)
+			if (i != -1) {
+				sprint(tstr1, "%s_ion", tstr2)
+				if (ion_charge(tstr1) != charge) {
+sprint(tstr, "Warning: %s already exists and the charge is %d", tstr1, ion_charge(tstr1))
+					continue_dialog(tstr)
+				}
+				return
+			}else{
+sprint(tstr2, "One of the names associated with \"%s\" is already in use", tstr2)
+				continue_dialog(tstr2)
+			}
+		}else{
+			sprint(tstr2, "\"%s\" not in \"name integer\" format", tstr)
+			continue_dialog(tstr2)
+		}
+	}
+}
+
+proc selion() {
+	cbt.type = $2
+	cbt.ligand = $s1
+	kst.type($2, $s1)
+	stoichiometry(kst.stoichiometry)
+}
+
+proc change_kst_type() {
+	if ($1 == 0 && kst.ftype(0) == 5) { // a,b cant use bg functions
+		ksth.fstyle[1].kstset(kst, 0)
+		ksth.fstyle[1].kstset(kst, 1)
+	}
+	cb.set_alias(0)
+	cbt.type = $1
+	kst.type($1)
+	fconsist(kst.type, kst.ftype(0), kst.ftype(1))
+	cbt.src.gate.set_displaystr()
+	cb.usetable(0)
+	cb.change(cbt.src.gate)
+	gate.pl()
+	set_cbt(cbt)
+}
+
+proc fconsist() {
+	if ($1 == 1) {
+		if ($2 != 1 && $2 != 4 && $2 != 7) {
+			cbt.set_f(0, 4, kst.parm(0))
+		}
+		if ($3 != 1 && $3 != 2 && $3 != 7) {
+			cbt.set_f(1, 2, kst.parm(1))
+		}
+	}else if ($1 != 0) {
+		cbt.set_f(0, 1, kst.parm(0))
+		cbt.set_f(1, 1, kst.parm(1))
+	}
+}
+
+proc change_eqn() {
+	if ($2 != 5 && kst.ftype(1) == 6) { // parm(1) is same as parm(0) vector
+		// so set to constant
+		ksth.fstyle[1].kstset(kst, 1)
+	}
+	cb.usetable(0)
+	gate.cb.set_alias(0)
+	ksth.fstyle[$2].kstset(kst, $1)
+	cbt.cbf[0].ks2cb()
+	cbt.cbf[1].ks2cb()
+	set_cbt(cbt)
+}
+
+proc pl() {local x, x1, x2
+	g.erase_all
+	if (kst == nil) { return }
+	ksth.chk(kst)
+	x1 = g.size(1)
+	x2 = g.size(2)
+	vvec.indgen(x1, (x2 - x1)/100)
+	if (disp_inf_) {
+		kst.inftau(vvec, avec, bvec)
+	}else{
+		kst.ab(vvec, avec, bvec)
+	}
+	avec.line(g, vvec, 1, 1)
+	bvec.line(g, vvec, 2, 1)
+	mark()
+	ch_dorun()
+}
+
+proc scale() {local x0, x1, y0, y1 localobj tobj
+	if ($1 == 0) { tobj = avec } else { tobj = bvec }
+	y0 = tobj.min
+	y1 = tobj.max
+	if (y1 == 0) {
+		y0 = 0 y1 = 1
+	}else if (y0 == y1) {
+		y0 = 0
+	}else if (y0/(y1 - y0) < 1) {
+		y0 = 0
+	}
+	g.size(g.size(1), g.size(2), y0, y1)
+}
+
+proc ch_dorun() {
+	if (dorun_) { dorun() }
+}
+proc dorun() {
+	if (!running_) {
+		running_ = 1
+		run()
+		running_ = 0
+	}
+}
+
+proc mark() {local i,  d, x
+	if (disp_inf_ == kst.type) {
+		for i=0, 1 {
+			if (kst.ftype(i) == 7) { continue }
+			tobj = kst.parm(i)
+			if (tobj.size == 3) { d = tobj.x[2] } else { d = 0 }
+			if (tobj.size == 5) { // Borg-Graham
+				d = tobj.x[1]
+				if (i == 1) {
+					x = g.size(2)
+					g.mark(0, tobj.x[4], "-", 10, i+1, 3)
+				}
+			}
+			g.mark(d, kst.f(i, d), "s", 8, i+1, 1)
+		}
+	}
+}
+		
+proc adjust() {
+	if ($3 <= 0) {
+		$3 = 1e-6
+	}
+	if ($1 == 2) {
+		adjust_ = 0
+		// check marks first
+		for fsel=0, 1 {
+			if (kst.ftype(fsel) == 7) { continue }
+			psel = kst.parm(fsel)
+			fstyle = ksth.fstyle[kst.ftype(fsel)]
+			fstyle.vec2parm(psel)
+			if (psel.size == 3) { d = psel.x[2] } else { d = 0 }
+			if (psel.size == 5) { // Borg-Graham
+				d = psel.x[1]
+				if (fsel == 1) {
+					if (ptdist($2,$3, 0, psel.x[4]) < 100) {
+						adjust_ = 3+4 // tau0
+						break
+					}else if (ptdist($2,$3, d, kst.f(fsel,d)) < 100) {
+						adjust_ = 3+0 // K
+						break
+					}
+				}else{
+					if (ptdist($2,$3, d, kst.f(fsel,d)) < 100) {
+						adjust_ = 3+1 // vhalf
+						break
+					}
+				}
+			}
+			if (ptdist($2,$3, d, kst.f(fsel,d)) < 100) {
+				adjust_ = 1
+				break
+			}
+		}
+		if (adjust_ == 0) for fsel=0, 1 {
+			if (kst.ftype(fsel) == 7) { continue }
+			psel = kst.parm(fsel)
+			fstyle = ksth.fstyle[kst.ftype(fsel)]
+			fstyle.vec2parm(psel)
+			if (psel.size == 3) { d = psel.x[2] } else { d = 0 }
+			if (psel.size == 5) { // Borg-Graham
+				d = psel.x[1]
+			}
+			if (ptdist($2,$3, $2, kst.f(fsel,$2)) < 100 \
+				|| ptdist($2,$3,fstyle.inv($3),$3) < 100) {
+				if (psel.size == 5) {
+					if (fsel == 0) {
+						adjust_ = 3+2 // Borg-Graham z
+					}else{
+						adjust_ = 3+3 // Borg-Graham gam
+					}
+				}else{
+					adjust_ = 2
+				}
+				break
+			}
+		}
+		if (adjust_) { cb.usetable(0) }
+	}
+	if (adjust_ == 1) {
+		if (psel.size == 3) {
+			psel.x[2] = $2
+		}
+		psel.x[0] = fstyle.Asol($2,$3)
+	}else if (adjust_ == 2) {
+		if (psel.size == 3) {
+			psel.x[1] = fstyle.ksol($2, $3)
+		}
+	}else if (adjust_ > 2) { // Borg-Graham
+		fstyle.adjust(adjust_, psel, $2, $3, kst)
+	}
+	if (adjust_ || $1 == 3) {
+		pl()
+	}
+}
+
+func ptdist() {local i, x1, y1, x2, y2
+	i = g.view_info()
+	x1 = g.view_info(i, 13, $1)
+	y1 = g.view_info(i, 14, $2)
+	x2 = g.view_info(i, 13, $3)
+	y2 = g.view_info(i, 14, $4)
+	return (x1 - x2)^2 + (y1 - y2)^2
+}
+
+endtemplate KSTransGUI

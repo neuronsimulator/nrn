@@ -1,0 +1,183 @@
+* howtomake text
+This explains how to construct a development version of NEURON using
+anonymous cvs.
+
+1) create a neuron directory which will hold the entire development
+   tree and cd to it. On my machine it is $HOME/neuron
+
+2) you will always need this to do the original checkout and get the updates
+   export CVS_RSH=ssh (for bash)
+   setenv CVS_RSH ssh (for tcsh)
+   (best put in .bashrc or .tcshrc since you may forget this later)
+	If this is missing, then cvs commands will seem to hang for
+	a minute or so and then fail with the message:
+		miris.med.yale.edu: Connection refused
+
+
+3)
+Checkout and build the InterViews release branch (this is only done once)
+  
+   If you have a current version 15 of InterViews you can use it and skip
+this step (until and  unless interviews starts getting revised again).
+
+cvs -d :ext:anonymous@www.neuron.yale.edu:/home/cvsroot checkout \
+ -r iv-rel15 -d iv iv
+when the password is requested type "neuron" without the double quotes.
+	If the cvs command hangs for a minute and then fails with the
+	message:
+		miris.med.yale.edu: Connection refused
+	then your CVS_RSH environment variable is not ssh.
+	The first time cvs connects to www.neuron.yale.edu your machine
+	may respond with the message:
+The authenticity of host 'www.neuron.yale.edu (130.132.220.62)' can't be established.
+RSA key fingerprint is 5d:85:7c:b0:e2:4e:4f:13:d8:f0:b8:15:70:7d:db:2a.
+Are you sure you want to continue connecting (yes/no)?
+	type "yes" without the quotes and it will continue to the point
+	where it asks for the password. (Then type "neuron" without the quotes.)
+
+I build InterViews as follows (assuming that $IV is set to the source
+code location)
+    cd $IV
+    sh build.sh
+    make
+    make install
+Note that the above will install in $IV/i686 if you are on a linux machine.
+If the build.sh command fails, you may need more recent versions of
+autoconf and automake. Mine are
+[hines@NeuronDev nrn-5.4]$ automake --version
+automake (GNU automake) 1.6.3
+[hines@NeuronDev nrn-5.4]$ autoconf --version
+autoconf (GNU Autoconf) 2.53
+Any newer versions will also work. See more info below.
+
+4) Check out the neuron development branch
+cvs -d :ext:anonymous@www.neuron.yale.edu:/home/cvsroot checkout -r nrn-dev5_4 -d nrn nrn
+when the password is requested type "neuron" without the double quotes. 
+  
+
+    You may wish to rename this directory for clarity.
+
+You must construct some distribution files using the four commands:
+aclocal
+autoheader
+automake
+autoconf
+
+(There are some potential pitfalls in the installation of these programs
+  I recommend building
+from source obtained from www.gnu.org.  This will place things in /usr/local
+  Then make sure that
+the programs being run are in /usr/local/bin and not in /usr/bin.)
+
+5) It is useful to keep the source and build directories separate.  In
+this way one can readily 
+build neuron with different flags for the
+purposes of profiling, code coverage, static vs shared libraries, etc. without
+doing a "make clean" and losing all the compiled objects.
+Additionally, a separate build library allows you to build 
+for different architectures with the same source tree.
+In short, it is best not to build anything in the source tree.
+
+6) Let's assume that InterViews is installed in $IV and that neuron
+source is located in $NRNS
+These variables can be set using export (bash) or setenv (tcsh).
+Now you need to create a build directory with
+a name that indicates the purpose of this build (eg nrn-5.4) and cd
+to this directory.
+
+Now the configure command is:
+  $NRNS/configure --prefix=`pwd` --srcdir=$NRNS --with-iv=$IV
+you can use relative addressing (eg ..) for everything except -with-iv=
+since this will need to be accessed from deep within the tree
+
+Make is done in the usual way:
+  make
+  make install
+
+the path is then set to include $PWD/i686/bin
+
+If "make" fails or you don't seem to be getting the latest changes,
+it may be because your working copy is not using the
+nrn-dev5_4 branch. There should be a $NRNS/CVS/Tag file with the contents
+Tnrn-dev5_4
+If the file is missing or indicates you are using the wrong branch
+then switch to the nrn-dev5_4 branch with
+  cd $NRNS
+  cvs update -r nrn-dev5_4
+
+7) An example for profiling:
+
+Profiling (using bash)
+# create a 'profile' directory; cd profile; export NPROF=$PWD
+export CFLAGS="-pg"
+export CXXFLAGS="-pg"
+export linux_nrnmech=no
+$NRNS/configure --disable-shared --prefix=$NPROF --srcdir=$NRNS
+make
+make install
+# cd to some model to test
+$NPROF/i686/bin/nrnivmodl
+i686/special batch_.hoc
+gprof i686/special > temp
+
+
+How to make a neuron rpm.
+1) Install InterViews in /usr/local/iv
+./configure --prefix=/usr/local/iv
+make
+su
+make install
+
+2) Install NEURON in /usr/local/nrn
+../nrn/configure --prefix=/usr/local/nrn --with-iv=/usr/local/iv \
+  --srcdir=../nrn --enable-rpm-rules --with-nrnjava --disable-static
+make
+su
+make install
+make rpm
+This will create something like
+/usr/src/redhat/RPMS/i386/nrn-5.5-1.i386.rpm
+
+
+How to make a Mac dmg
+The following is out of date in some points. e.g. the CopyDisk refers to
+osx 10.2 and nowadays we use hdiutil to do everything under shell script control.
+See cvs2osx11dmg for a script that specifies the entire process from cvs to
+dmg. The x11 refers to the use of the xdarwin version of X11.
+
+1) Install InterViews in /Applications/NEURON-5.5/nrn
+./configure --prefix=/Applications/NEURON-5.5/iv
+
+2) Install NEURON in /Applications/NEURON-5.5/nrn
+./configure --prefix=/Applications/NEURON-5.5/nrn --with-iv=/Applications/NEURON-5.5/iv
+
+3) With a finder window view the directory
+/Applications/NEURON-5.5/nrn/powerpc/bin
+This is required for the applescript to find the macnrn.term file.
+Note: Don't bother, now done in the src/mac/after-install script
+
+4) The nrngui, mknrndll, neurondemo, mos2nrn, idraw applescripts should be
+in /Applications/NEURON-5.5 . Reuse the applescripts from a previous installation
+along with their icons.
+The applescript text is nrn/src/mac/prototype_applescript.txt .
+Note: Now done by "make install" when src/mac/launch_inst.sh script is called.
+
+5) sh nrn/src/mac/after-install.sh
+to clean up the installation directory, remove irrelevant executables,
+strip the important executables, and create the neurondemo. This will reduce
+the size of an installation package from more than 12MB to less than 4MB.
+
+6) Create a NEURON-5.5.dmg file using /Applications/Utilities/CopyDisk.
+It is a good idea to create a NEURON-5.5 folder somewhere and temporarily
+drag the /Applications/NEURON-5.5 folder to it and copy the former in order
+to get a dmg file which when opened shows the NEURON-5.5 folder instead of
+the contents. This makes it easier to install by dragging the NEURON-5.5
+folder to where the user wants it (/Applications).
+Note: now done by src/mac/mkdmg.sh .
+
+
+how2make ncsnrn
+unset PVM_ROOT
+../ncsnrn/configure --srcdir=../ncsnrn --prefix=`pwd` --without-x \
+ --enable-purify --disable-shared --without-memacs --without-readline \
+ --enable-ncs

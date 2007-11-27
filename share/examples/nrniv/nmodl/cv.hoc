@@ -1,0 +1,15 @@
+objref cvode
+cvode = new CVode()
+cv = 0
+dtsav_ = dt
+xpanel("CVODE")
+xstatebutton("Use CVode", &cv, "setcv()")
+xbutton("run", "run() if (cv) cvode.statistics")
+xpanel()
+
+proc setcv() {
+	cvode.active(cv)
+	if(!cv) {
+		dt = dtsav_
+	}
+}

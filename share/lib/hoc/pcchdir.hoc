@@ -1,0 +1,84 @@
+
+pwman_place(0,20)
+load_file("stdgui.hoc")
+
+// Selection of a starting directory changes to that working directory and
+// loads the nrnmech.dll if it exists.
+
+// First ask if one of the "Recent directories" should be used from a list browser.
+// If not,  "Select starting directory" from a file chooser.
+
+begintemplate StartingDirectory
+public load
+objref f, sf, list, box, tobj
+strdef start, tstr2, recent
+
+func load() {
+
+recent = "$(NEURONHOME)/rcentdir.txt"
+f = new File()
+sf = new StringFunctions()
+list = new List()
+
+if (f.ropen(recent)) {
+    while (!f.eof()) {
+        f.gets(tstr2)
+        sf.left(tstr2, sf.len(tstr2) - 1)
+        tobj = new String(tstr2)
+        list.append(tobj)
+    }
+    box = new VBox()
+    box.intercept(1)
+    list.browser("", "s")
+    box.intercept(0)
+    list.accept_action("box.unmap(1)")
+    if (box.dialog("Previously Used Starting Directories", "Chdir", "Not now")) {
+	if (list.selected() >= 0) {
+		tobj = list.object(list.selected())
+		list.remove(list.selected())
+		list.prepend(tobj)
+		start = tobj.s
+	}
+    }
+}    
+
+if (sf.len(start) == 0) {
+    f.chooser("d", "Select working directory", \
+        "nrnmech.dll", "Change Working Dir", "Not now", "C:/")
+    if (f.chooser()) {
+        f.getname(start)
+	for i=0, list.count-1 {
+		if (strcmp(list.object(i).s, start) == 0) {
+			list.remove(i)
+			break
+		}
+	}
+	tobj = new String(start)
+	list.prepend(tobj)
+    }
+}
+
+if (list.count() > 0) {
+	wopen(recent)
+	for i=0, list.count-1 {
+		fprint("%s\n", list.object(i).s)
+	}
+	wopen()
+}
+
+objref f, list, box, tobj
+
+if (sf.len(start) > 1) {
+    printf( "chdir(\"%s\")\n", start)
+    chdir(start)
+	if (ropen("nrnmech.dll")) {
+		ropen()
+		nrn_load_dll("nrnmech.dll")
+	}
+    return 1
+}
+    return 0
+} // end of proc load()
+endtemplate StartingDirectory
+
+

@@ -1,0 +1,459 @@
+begintemplate ModelView
+
+public rlist, display, selected, allsec, strings, artcell_types, realcells
+public glob, gui, destroy, distinctvalues, kschan, dparm, acview, xml
+public count_artcells, appv, text
+public seclists
+external nil, classname, hoc_sf_
+objref this, realcells_, tobj, tobj1, mt, rc_classes, dparm, allsec
+objref ms, display, storecm, cdis, adis, acview, ncv, appv, pdis, gui
+objref topcelldis, distinctvalues, tvi, tvi2, kst, ksth, xml
+objref seclists
+strdef tstr, tstr1, cond, name
+
+in=0
+x=0
+is_ion = 0
+
+proc destroy() {local i
+	display.unlink()
+	display = nil
+
+	destroy1(new List("ModelViewSeclistAnalysis"))
+	destroy1(new List("ModelViewPPAnalysis"))
+//	destroy1(new List("ModelViewArtCell"))
+
+	if (acview != nil) {acview.unlink()}
+	if (ncv != nil) {ncv.unlink()}
+
+	objref realcells_, tobj, tobj1, mt, rc_classes, dparm, allsec
+	objref ms, display, storecm, cdis, adis, acview, ncv, appv, pdis, gui
+	objref topcelldis, distinctvalues
+}
+
+proc destroy1() {local i
+	for (i = $o1.count-1; i >= 0; i -= 1) {
+		if ($o1.object(i).mview == this) {
+			$o1.object(i).unlink()
+		}
+	}
+}
+
+proc init() {local i, n, icdis, ntop
+	distinctvalues = new ModelViewDistinctValues()
+	ndrco = 0 // n distinct real cell objects
+	realcells_ = new List()
+	display = new TreeView()
+
+	what_are_the_sectionlists()
+	mkallsec()
+	mkrlist()
+
+	i = 0
+	n = 0
+	forsec allsec {i += nseg  n += 1}
+	sprint(tstr, "%d sections; %d segments", n, i)
+	display.top.append(new TreeViewItem(nil, tstr))
+	display.top.append(new TreeViewItem(nil, ""))
+
+	i = count_rco() // sets ndrco and rc_classes
+	if (i == 0) {
+		sprint(tstr, "%d real cells", realcells_.count)
+	}else{
+		sprint(tstr, "%d real cells (%d encapsulated in %d distinct objects of %d classes)", realcells_.count, i, ndrco, rc_classes.count)
+	}
+	cdis = new TreeViewItem(nil, tstr)
+	display.top.append(cdis)
+	icdis = display.top.count
+
+	i = count_artcells() // sets nc
+	if (i == 0) {
+		sprint(tstr, "%d artificial cells", i)
+	}else{
+		sprint(tstr, "%d artificial cells of %d base classes", i, nc)
+		
+	}
+	adis = new TreeViewItem(nil, tstr)
+	display.top.append(adis)
+	acview = new ModelViewArtCell(this, adis)
+
+	i = count_pps() // sets nc
+	if (i == 0) {
+		sprint(tstr, "%d point processes", i)
+	}else{
+		sprint(tstr, "%d point processes (%d can receive events) of %d base classes",i, count_nrs(), nc)
+	}
+	pdis = new TreeViewItem(nil, tstr)
+
+	ntop = 0
+	for i=0, realcells_.count-1 {
+		if (realcells_.object(i).cellobj == nil) {
+			ntop += 1
+		}
+	}
+	if (ntop > 1 && rc_classes.count > 0) {
+		sprint(tstr, "%d top level cells", ntop)
+		topcelldis = new TreeViewItem(cdis, tstr)
+	}else{
+		topcelldis = cdis
+	}
+
+	for i=0, realcells_.count-1 {
+		if (realcells_.object(i).cellobj == nil) {
+			realcells_.object(i).mkdisplay(topcelldis)
+		}
+	}
+	for i=0, rc_classes.count-1 {
+		rc_classes.object(i).mkdisplay(cdis)
+	}
+
+	tobj = new List("NetCon")
+	sprint(tstr, "%d NetCon objects", tobj.count)
+	display.top.append(new TreeViewItem(nil, tstr))
+	if (tobj.count != 0) {
+		ncv = new ModelViewNetCon(tobj, display.top.object(display.top.count - 1), this)
+	}		
+
+	tobj = new List("LinearMechanism")
+	sprint(tstr, "%d LinearMechanism objects", tobj.count)
+	display.top.append(new TreeViewItem(nil, tstr))
+
+	display.top.append(new TreeViewItem(nil, ""))
+	dparm = new ModelViewAllCell(this)
+	dparm.mkdisplay(this)
+
+	display.top.append(pdis)
+	appv = new ModelViewAllPP(this)
+	appv.mkdisplay(pdis)
+
+	if (numarg() == 1) if ( $1 == 0 ) { return }
+	gui = new ModelViewGUI(this)
+	display.before = gui
+
+//	display.top.append(new TreeViewItem(nil, ""))
+	xml = new ModelViewXML(this)
+//	tobj = new TreeViewItem(nil, "Export XML", xml, 2 )
+//	display.top.append(tobj)
+
+}
+
+proc text() {local i  localobj file
+print "inside text"
+	file = new File()
+	file.chooser("w", "Copy treeview to text file", "*.txt")
+	if (file.chooser()) {
+		file.wopen()
+		for i=0, display.top.count-1 {
+			textout(file, display.top.object(i))
+		}
+		file.close()
+	}
+}
+
+proc textout() { local i
+	$o1.printf("%s\n", $o2.s)
+	if ($o2.children != nil) {
+		for i=0, $o2.children.count-1 {
+			textout($o1, $o2.children.object(i))
+		}
+	}
+}
+
+proc mkallsec() {
+	allsec = new SectionList()
+	sprint(tstr, "forall %s.append()", allsec)
+	execute(tstr)
+}
+
+proc mkrlist() {
+	forsec allsec{
+		tobj = new SectionRef()
+		if (!tobj.has_parent) {
+			realcells_.append(new ModelViewRealCell(this))
+		}
+	}
+	tobj = nil
+}
+
+iterator artcell_types() {local i
+	$o1 = new MechanismType(1)
+	for i=0, $o1.count-1 {
+		if ($o1.is_artificial(i) == $3) {
+			$o1.select(i)
+			$o1.selected(tstr)
+			$o2 = new List(tstr)
+			if ($o2.count > 0) {
+				iterator_statement
+			}
+		}
+	}
+}
+
+iterator realcells() {local i
+	for i=0, realcells_.count - 1 {
+		$o1 = realcells_.object(i)
+		iterator_statement
+	}
+}
+
+iterator strings() {local i, n
+	n = numarg()
+	for i=2, n {
+		$s1 = $si
+		iterator_statement
+	}
+}
+
+func count_artcells() { local cnt
+	// and also return count of classes in nc
+	nc = 0
+	cnt = 0
+	for artcell_types(mt, tobj, 1) {
+		cnt += tobj.count
+		nc += 1
+	}
+	tobj = nil
+	return cnt
+}
+
+func count_pps() { local cnt, i
+	// and also return count of classes in nc
+	cnt = 0
+	nc = 0
+	storecm = new Vector(realcells_.count)
+	assoc_cell_number(1)
+	for artcell_types(mt, tobj, 0) {
+		cnt += tobj.count
+		nc += 1
+		rcell_pps(tobj)
+	}
+	assoc_cell_number(0)
+	tobj = nil
+	return cnt
+}
+
+// store cell number in cm of first seg of root of cell (and restore original cm
+proc assoc_cell_number() {local i, j
+	i = 0
+	forsec allsec {
+		tobj = new SectionRef()
+		if (!tobj.has_parent) {
+			if ($1 == 1) {
+				storecm.x[i] = cm(.00001)
+				cm(.00001) = i
+			}else{
+				cm(.00001) = storecm.x[i]
+			}
+			i += 1
+		}
+	}
+}
+
+proc rcell_pps() {local i, j
+	for i=0, $o1.count-1 {
+		$o1.object(i).get_loc()
+		tobj1 = new SectionRef()
+		pop_section()
+		j = tobj1.root.cm(.00001)
+		realcells_.object(j).ppsappend($o1.object(i), mt.selected)
+	}
+}
+
+func count_nrs() { local cnt
+	cnt = 0
+	for artcell_types(mt, tobj, 0) {
+		if (mt.is_netcon_target(mt.selected())) {
+			cnt += tobj.count
+		}
+	}
+	tobj = nil
+	return cnt
+}
+
+func count_rco() {local i, cnt, x
+	// and also makes list of classes and counts distinct objects
+	ndrco = 0 // n distinct real cell objects
+	cnt = 0
+	tobj1 = new Vector(realcells_.count)
+	tobj1.resize(0)
+	rc_classes = new List()
+	for i=0, realcells_.count-1 {
+		tobj = realcells_.object(i)
+		x = object_id(tobj.cellobj)
+		if (x) {
+			cnt += 1
+			tobj1.append(x)
+			add_type(rc_classes, tobj)
+		}
+	}
+	if (cnt > 0) {
+		tobj1.sort
+		ndrco = 1
+		x = tobj1.x[0]
+		for i=1, tobj1.size-1 {
+			if (x != tobj1.x[i]) {
+				ndrco += 1
+				x = tobj1.x[i]
+			}
+		}
+	}
+	tobj = nil
+	tobj1 = nil
+	return cnt
+}
+
+proc add_type() {local i
+	classname($o2.cellobj, tstr)
+	for i=0, $o1.count-1 {
+		if (strcmp($o1.object(i).tname, tstr) == 0) {
+			$o1.object(i).rcell.append($o2)
+			return
+		}
+	}
+	$o1.append(new ModelViewRCClasses(this, tstr, $o2))
+}
+
+proc glob() {local i, j, size
+	ms = new MechanismStandard($s2, -1)
+	if (ms.count == 0) { return }
+	tobj = new TreeViewItem($o1, $s2)
+	for i=0, ms.count -1 {
+		size = ms.name(name, i)
+		if (size == 1) {
+			sprint(tstr, "hoc_ac_ = %s", name)
+			execute(tstr)
+			sprint(tstr, "%s = %g", name, hoc_ac_)
+		tobj.append(tstr)
+		}else if (size < 20){
+			for j=0, size-1 {
+				sprint(tstr, "hoc_ac_ = %s[%d]", name, j)
+				execute(tstr)
+				sprint(tstr, "%s[%d] = %g", name, j, hoc_ac_)
+				tobj.append(tstr)
+			}
+		}else{
+			sprint(tstr, "%s[0 - %d]", name, size-1)
+			tobj.append(tstr)
+		}
+	}
+}
+
+proc kschan() { local i, it
+	sprint(tstr, "%-50s (%s)", $o2.name, $o2)
+	tvi = new TreeViewItem($o1, tstr)
+	cond = "g = gmax"
+	if (strcmp($o2.ion, "NonSpecific") == 0) {
+		sprint(tstr, "i = g*(v - e)")
+	}else if ($o2.iv_type == 0) {
+		sprint(tstr, "i = g*(v - e%s)", $o2.ion)
+	}else{
+		sprint(tstr1, "%s_ion", $o2.ion)
+		sprint(tstr, "i = p*ghk(v, %si, %so, %d)", $o2.ion, $o2.ion, ion_charge(tstr1))
+		cond = "p = pmax"
+	}
+	tvi.append(tstr, nil, 0)	
+	for i=0, $o2.ngate-1 {
+		ksgate1($o2, $o2.gate(i))
+		sprint(cond, "%s * %s", cond, tstr) 
+	}
+	tvi.append(cond, nil, 0)
+	it = 0
+	for i=0, $o2.ngate-1 {
+		ksgate1($o2, $o2.gate(i))
+		sprint(tstr, "%-52s (%s)", tstr, $o2.gate(i))
+		tvi2 = new TreeViewItem(tvi, tstr)
+		if ($o2.gate(i).nstate == 1) { // hh gate
+			kst = $o2.trans(it)  it += 1
+			tobj = kst.src()
+			if (kst.type == 1) {
+				sprint(tstr, "%s' = (inf - %s)/tau", tobj.name, tobj.name)
+			}else{
+				sprint(tstr, "%s' = a*(1 - %s) - b*%s", tobj.name, tobj.name, tobj.name)
+			}
+			sprint(tstr, "%-52s (%s)", tstr, kst)
+			tvi2.append(tstr, nil, 0)
+			kstrans2($o2, kst)
+		}else{
+			for it=0, $o2.ntrans-1 {
+				kst = $o2.trans(it)
+				if (kst.src.gate.index == i) {
+					kstrans1($o2, kst)
+					kstrans2($o2, kst)
+				}
+			}
+		}
+	}
+}
+proc ksgate1() { local i, enclose
+	enclose = 0
+	tstr = ""
+	for i = 0, $o2.nstate-1 {
+		tobj = $o1.state($o2.sindex + i)
+		if (tobj.frac == 1) {
+			if (strcmp(tstr, "") == 0) {
+				sprint(tstr, "%s", tobj.name)
+			}else{
+				enclose = 1
+				sprint(tstr, "%s + %s", tstr, tobj.name)
+			}
+		}else if (tobj.frac > 0) {
+			if (strcmp(tstr, "") == 0) {
+				sprint(tstr, "%.4g*%s", tobj.frac, tobj.name)
+				enclose = 1
+			}else{
+				enclose = 1
+				sprint(tstr, "%s + %.4g*%s", tstr, tobj.frac, tobj.name)
+			}
+		}
+	}
+	if (strcmp(tstr, "") == 0) { tstr = "0" }
+	if (enclose) {
+		sprint(tstr, "(%s)", tstr)
+	}
+	if ($o2.power != 1) {
+		sprint(tstr, "%s^%d", tstr, $o2.power)
+	}
+}
+proc kstrans1() {
+	tstr = $o2.src.name
+	if (strcmp($o2.ligand, "") != 0) {
+		sprint(tstr, "%s + %s", tstr, $o2.ligand)
+	}
+	sprint(tstr, "%s <-> %s", tstr, $o2.target.name)
+	if ($o2.type == 1) {
+		sprint(tstr, "%s (inf, tau)", tstr)
+	}else{
+		sprint(tstr, "%s (a, b)", tstr)
+	}
+	sprint(tstr, "%-52s (%s)", tstr, $o2)
+	tvi2.append(tstr, nil, 0)
+}
+
+proc kstrans2() { local i
+	if (ksth == nil) {
+		ksth = new KSTransHelper()
+	}
+	for i=0, 1 {
+		ksth.coef($o2, i, $o2.type, tstr1)
+		ksth.form($o2, i, tstr)
+		sprint(tstr, "  %s = %s", tstr1, tstr)
+		sprint(tstr, "%-55s (%s)", tstr, $o2.parm(i))
+		tvi2.append(tstr, nil, 0)
+	}
+}
+
+proc what_are_the_sectionlists() {local i
+	// must be called near the beginning in order so as not
+	// to count the ones we create in ModelView
+	// the reason we take the trouble to identify them is in order
+	// to reuse their existing names.
+	tobj = new List("SectionList") // but not referenced
+	seclists = new List()
+	for i=0, tobj.count-1 {
+		seclists.append(tobj.object(i))
+//		print tobj.object(i)
+	}
+	tobj = nil
+}
+endtemplate ModelView
+

@@ -1,0 +1,49 @@
+// Physical properties
+create soma, test
+access soma
+forall nseg=1
+{insert hh  test insert hh1}
+forall {L=10 diam=10}
+
+// run parameters
+tstop=5
+
+// graphical interface appearance
+objref g
+g = new Graph()
+objref s[2]
+
+
+// simulation control
+i=0
+forall {
+	s[i] = new IClamp(.5)
+	s[i].del=0
+	s[i].dur=.1
+	i = i+1
+}
+
+proc vinit() {
+	finitialize(-65)
+}
+proc run() {
+	g.size(0,tstop,-80,40)
+	g.addexpr("test.v",3,1)
+	for i=0,1 s[i].amp=$1
+	vinit()
+	g.color(2)
+	g.beginline
+	while (t < tstop) {
+		g.line(t, v)
+		g.plot(t)
+		fadvance()
+	}
+	g.flush()
+}
+
+// run simulation
+run(.5)
+
+
+
+

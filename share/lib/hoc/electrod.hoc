@@ -1,0 +1,340 @@
+/*
+?0 UserClasses Electrode
+
+An current injection electrode inserted in the middle of the
+current section which can be switched between current and voltage
+clamp modes and can do simple voltage clamp families.
+
+usage: section e = new Electrode([xplacement, yplacement])
+e.stim and e.vc can used to set parameters programatically.
+
+Electrode can be saved in a .session file and is best used
+anonymously so that it is dismissed and point processes deleted
+when the graphic is dismissed.
+
+?1 IClamp
+Switches the Electrode to single pulse current injection. Uses IClamp
+point process.
+
+? del
+Time (ms) of the onset of the current stimulus relative to t = 0.
+? dur
+Duration (ms) of the current stimulus
+? amp
+Amplitude (nA) of the current stimulus
+
+?1 VClamp
+Switches the Electrode to two electrode voltage clamp. Uses VClamp point
+process that allows up to three level changes. The clamp is set to be ideal.
+
+?2 dur0 dur1 dur2
+Duration in milliseconds of each level change starting at t=0. Each level
+is concatenated. At t = dur0+dur1+dur2 the clamp is switched off and
+no longer injects current.
+
+?2 amp0 amp1 amp2
+Amplitude in millivolts of each level.
+
+? VClampigraph
+Creates a currentgraph displaying the voltage clamp current. This button
+exists because, with the present implementation, it is generally not
+possible to reference the Electrode object from hoc because the only reference
+is held by a vbox which in turn is only referenced by this Electrode. In
+this way, when the Electrode window is dismissed, the Electrode is
+destroyed and the point processes are removed from the neuron.
+
+?1 VClampFamily
+Several common families for voltage clamp experiments. One should bring
+up a current graph (VClampigraph button in VClamp card) and select KeepLines
+in the graph popup menu. Only one clamp parameter is changed and the other
+duration and amplitude levels are given by the values set in the VClamp panel
+See User HocCode Electrode varyamp for the how the levels are varied.
+
+? Conditioning
+varies amp0 in 10 steps. Initialization is carried out at the value of amp0
+so it is equivalent to the holding potential.
+
+? Testlevel
+varies amp1 in 10 steps
+
+? Returnlevel
+varies amp2 in 10 steps.
+
+
+?1 Location
+Shows a Shape scene of the neuron with the Electrode location marked as
+a blue dot. The electrode location can be changed by making sure the
+Section item in the selection menu is selected (right mouse button) and
+pressing the left mouse button at any point on the picture of the neuron.
+The position of the electrode is also reflected in the varlabel in the panel
+just above the Shape.
+
+?0 User HocCode Electrode
+*/
+
+help ?0
+
+begintemplate Electrode
+public stim, vc, unmap, map, v1, installIclamp
+external run, set_v_init, stoppedrun, addplot
+
+objectvar stim, vc, v1, d1, this, shape, g
+strdef durstr, ampstr, tempstr, grname, string1,string2,string3
+double vdur[3]
+double vamp[3]
+
+proc set_vclamp() {
+	setstring()
+        for i=0,2 {vc.dur[i] = vdur[i]   vc.amp[i] = vamp[i]}
+}
+proc store_vclamp() {
+        for i=0,2 {vdur[i] = vc.dur[i]  vamp[i] = vc.amp[i]}
+}
+
+proc installVclamp() {local i
+	set_vclamp()
+	if (is_cl == 0) {
+		samp=stim.amp  stim.amp=0
+		is_cl = 1
+	}
+	d1.flip_to(0)
+}
+proc installIclamp() {local i
+	if (is_cl == 1) {
+	        stim.amp = samp
+	        for i=0,2 {vc.dur[i] = -1}
+		is_cl = 0
+	}
+	d1.flip_to(1)
+}
+proc installFamily() {
+	installVclamp()
+	d1.flip_to(2)
+	sprint(durstr, "dur %g %g %g", vdur[0], vdur[1], vdur[2])
+	sprint(ampstr, "amp %g %g %g", vamp[0], vamp[1], vamp[2])
+}
+
+strdef sec
+strdef location
+
+proc init() {local i
+	can_locate = 1
+	sectionname(sec)
+	xloc=.5
+	sprint(location, "%s(%g)", sec, xloc)
+	stim = new IClamp(.5)
+	stim.del=.1 stim.dur=.1 stim.amp=0
+	vc = new VClamp(.5)
+	sprint(grname, "%s Graph", vc)
+	vc.dur[0]=.1  vc.amp[0]=-65  vc.dur[1] = 2.5 vc.amp[1]=10
+	vc.dur[2]=100 vc.amp[2]=-65
+	vcincrement=10		//jwm added 7/24/97
+	vcsteps=5		//jwm added 7/24/97
+	if (numarg() == 1) {
+		if ($1 == 0) {
+			return
+		}
+	}
+	map()
+}
+
+proc locate() {
+	if ($1 == 1 && can_locate == 1) {
+		d1.flip_to(3)
+		return
+	}else{
+		push_section(sec)
+		hoc_ac_ = xloc
+		move()
+		pop_section()
+	}
+}
+
+proc move() {
+	xloc = hoc_ac_
+	if (object_id(shape)) {
+		shape.select()
+	}
+	stim.loc(xloc)
+	vc.loc(xloc)
+	sectionname(sec)
+	sprint(location, "%s(%g)", sec, xloc)
+}
+// setstring procedure added to provide text info for Vclamp Family Panel
+proc setstring(){
+	sprint(string1, " Starting at %g mV for %g ms",vamp[0],vdur[0])
+	sprint(string3, " starting at %g mV for %g ms",vamp[2],vdur[2])
+	sprint(string2, " starting at %g mV for %g ms",vamp[1],vdur[1])
+}
+proc glyph() {
+	// v1 is the main box and contains a panel and deck
+	v1 = new VBox()
+	v1.priority(990)
+	v1.ref(this)
+	v1.save("save()")
+	v1.intercept(1)
+	xpanel("Electrode")
+		xradiobutton("IClamp", "installIclamp()")
+		xradiobutton("VClamp", "installVclamp()")
+		xradiobutton("VClamp Family", "installFamily()")
+		if (can_locate) {
+			xradiobutton("Location", "locate(1)")
+		}
+		xvarlabel(location)
+	xpanel()
+	v1.intercept(0)
+	d1 = new Deck()
+	d1.intercept(1)
+		xpanel("VClamp")
+			sprint(tempstr, "%s pulses", vc)
+			xlabel(tempstr)
+			xlabel("Conditioning Level")
+			sprint(tempstr, "duration , ms", 0)
+			xpvalue(tempstr, &vdur[0], 1, "set_vclamp()")
+			sprint(tempstr, "amplitude %d, mV ", 0)
+			xpvalue(tempstr, &vamp[0], 1, "set_vclamp()")
+			xlabel("Testing Level")
+			sprint(tempstr, "duration , ms", 1)
+			xpvalue(tempstr, &vdur[1], 1, "set_vclamp()")
+			sprint(tempstr, "amplitude , mV ", 1)
+			xpvalue(tempstr, &vamp[1], 1, "set_vclamp()")
+			xlabel("Return Level")
+			sprint(tempstr, "duration , ms", 2)
+			xpvalue(tempstr, &vdur[2], 1, "set_vclamp()")
+			sprint(tempstr, "amplitude , mV ", 1)
+			xpvalue(tempstr, &vamp[2], 1, "set_vclamp()")
+			xbutton("VClamp.i graph", "mkgraph()")
+		xpanel()
+		xpanel("IClamp")
+			sprint(tempstr, "%s pulse", stim)
+			xlabel(tempstr)
+			xpvalue("delay in ms", &stim.del, 1)
+			xpvalue("duration, ms", &stim.dur, 1)
+			xpvalue("amplitude, nA", &stim.amp, 1)
+		xpanel()
+		xpanel("VClampFamily")
+			sprint(tempstr, "%s Families", vc)
+			xlabel(tempstr)
+			sprint(tempstr, "Set initial values in 'VClamp'", vc)
+			xlabel(tempstr)
+			xbutton("Vary Conditioning level","varyamp(0)")	
+			xvarlabel(string1)
+			xbutton("Vary Test level", "varyamp(1)")			
+			xvarlabel(string2)
+			xbutton("Vary Return level","varyamp(2)")			
+			xvarlabel(string3)
+			sprint(tempstr, " ")
+			xlabel(tempstr)
+			sprint(tempstr, "Family parameters", vc)
+			xlabel(tempstr)
+			xpvalue("# of steps ",&vcsteps,1)
+			xpvalue("# mV/step ",&vcincrement,1)
+		xpanel()
+		if (can_locate) {
+			shape = new Shape()
+			shape.point_mark(stim, 3)
+			shape.action("move()")
+			locate(0)
+		}
+	d1.intercept(0)
+	v1.intercept(1)
+	d1.map()
+	v1.intercept(0)
+	installVclamp()
+	installIclamp()
+	if (can_locate) {
+		d1.flip_to(3)
+	}
+}
+
+objectvar grbox
+proc mkgraph() {
+	grbox = new VBox()
+	grbox.save("")
+	grbox.intercept(1)
+	g = new Graph()
+	g.addvar("vc.i")
+	grbox.intercept(0)
+	grbox.map(grname)
+	addplot(g, 0)
+}
+
+proc varyamp() {local i, x, x1, x2, dx, old
+	dx=vcincrement
+	i = $1
+	set_vclamp()
+	old = set_v_init()
+	if (i == 0) {
+		x1 = vamp[0]     //jwm 10/10/97     -100
+	}else if (i == 1) {
+		x1 = vamp[1]     //jwm 10/10/97      -50 
+	}else{
+		x1=vamp[2]        //jwm 10/10/97     -100 
+	}
+	for j=0,vcsteps {
+		x=x1+j*dx
+		vc.amp[i] = x
+		if (i == 0) {
+			set_v_init(x)
+		}
+		run()
+		if (stoppedrun()) {
+			break
+		}
+		set_v_init(old)
+	}
+}
+
+proc varydur() {
+	set_vclamp()
+}
+
+proc map() {
+	samp = stim.amp
+	store_vclamp()
+	glyph()
+	if (numarg() == 2) {
+		v1.map("I/V Clamp Electrode", $1, $2, 100, 100)
+	}else{
+		v1.map("I/V Clamp Electrode")
+	}
+}
+
+proc unmap() {
+	v1.unmap()
+}
+
+proc save() {local i
+	v1.save("load_file(\"electrod.hoc\")\n}\n{") //has to be executed first
+	v1.save("ocbox_=new Electrode(0)")
+	sprint(tempstr, "can_locate=%d sec=\\\"%s\\\" xloc=%g locate(0)",\
+		can_locate, sec, xloc)
+	v1.save(tempstr, "ocbox_")	//execute in scope of the object
+	installVclamp()
+	for i=0,2 {
+		sprint(tempstr, "vc.dur[%d]=%g vc.amp[%d]=%g",\
+			 i, vc.dur[i], i, vc.amp[i])
+		v1.save(tempstr, "ocbox_")
+	}
+	installIclamp()
+	sprint(tempstr, "stim.del=%g stim.dur=%g stim.amp=%g",\
+		stim.del, stim.dur, stim.amp)
+	v1.save(tempstr, "ocbox_")
+	sprint(tempstr, "vcincrement=%g", vcincrement)
+	sprint(tempstr, "vcsteps=%g", vcsteps)
+	v1.save(tempstr, "ocbox_")
+	v1.save("samp=stim.amp  store_vclamp() glyph()", "ocbox_")
+	v1.save("ocbox_ = ocbox_.v1")
+}
+
+endtemplate Electrode
+
+objectvar tempobj
+proc makeelectrode() {
+	if(!execute1("v", 0)) {
+		continue_dialog("No accessed section: Can't start an Electrode")
+		return
+	}
+	tempobj = new Electrode()
+	objectvar tempobj
+}

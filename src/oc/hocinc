@@ -1,0 +1,169 @@
+: To echo, replace - with + on command line and insert ec1
+: /local/src/master/nrn/src/oc/hocinc,v 1.1.1.1 1994/10/12 17:22:17 hines Exp
+w
+:
+: 1 extern statement/line and save - not used now
+1i
+
+extern int tempppp, tempppp; extern double tempppp;
+.
+gs/;/;\n/g
+gs/^[ 	]*extern//
+gs/^[ 	]*double/extern double/
+gs/^[ 	]*int/extern int/
+gs/^[ 	]*float/extern float/
+g/^[ 	]*$/d
+g/tempppp/d
+g/^$/d
+w temp1hoc
+:
+: eliminate extraneous statements, words, and make one variable/line
+: assume the .h file has been run through the C preprocessor
+1i.# define
+g/#/d
+1i
+extern int tempppp, tempppp[1],tempppp[1]  	, 	 	tempppp();
+extern float tempppp,tempppp[1],tempppp[1];
+extern double tempppp,tempppp[1],tempppp[1];
+extern double tempppp,tempppp[1][1],tempppp[1][1];
+extern double tempppp[1][1][1], tempppp[1][1][1];
+.
+gs/;//
+gs/extern //g
+g/^int/s/,/\nint /g
+g/^float/s/,/\nfloat /g
+g/^double/s/,/\ndouble /g
+gs/ //g
+gs/	//g
+:
+: collect types together (functions, i, i[], f, f[], d, d[], d[][], d[][][])
+g/()/m$
+g/^int[^(]*$/m$
+g/^int.*\[/m$
+g/^float[^(]*$/m$
+g/^float.*\[/m$
+g/^double[^(]*$/m$
+g/^double.*\[/m$
+g/^double.*\]\[/m$
+g/^double.*\]\[.*\[/m$
+:
+: headers for each type
+gs/^int/IN%T/
+gs/^float/FL%T/
+gs/^double/DB%L/
+gs/.*/"&", &,/
+1i.FUNCTION
+/IN%T[^(]*$/i.SCALARINT
+/\[/i.VECTORINT
+/FL%T[^(]*$/i.SCALARFLOAT
+/\[/i.VECTORFLOAT
+/DB%L/i.SCALARDOUBLE
+/\[/i.VECTORDOUBLE
+/\]\[/i.ARRAYDOUBLE
+/\]\[[^,]*\[/i.THREEDIM
+$a.END
+:
+: remove punctuation - repeat words for structure and keep array info
+gs/IN%T//g
+gs/FL%T//g
+gs/DB%L//g
+gs/()//g
+/SCALARINT/,/VECTORINT/s/, /, \&/
+/SCALARFLOAT/,/VECTORFLOAT/s/, /, \&/
+/SCALARDOUBLE/,/VECTORDOUBLE/s/, /, \&/
+gs/\[.*, /", /
+gs/\[/,  /g
+gs/\]//g
+/ARRAYDOUBLE/,/^END/s/, /, \&/
+/ARRAYDOUBLE/,/^THREEDIM/s/,  /[0][0],  /
+/^THREEDIM/,/^END/s/,  /[0][0][0],  /
+:
+: expand headers to structure definitions
+/SCALARINT/c
+0,0
+};
+static struct {		/* Integer Scalars */
+	char 	*name;
+	int	*pint;
+} scint[] = {
+.
+/SCALARFLOAT/c
+0,0
+};
+static struct {		/* Integer Scalars */
+	char 	*name;
+	float	*pfloat;
+} scfloat[] = {
+.
+/SCALARDOUBLE/c
+0,0,0
+};
+static struct {		/* Double Scalars */
+	char 	*name;
+	double	*pdoub;
+} scdoub[] = {
+.
+/FUNCTION/c
+static struct {		/* Functions */
+	char 	*name;
+	int	(*func)();
+} function[] = {
+.
+/VECTORINT/c
+0, 0
+};
+static struct {		/* Vector integers */
+	char 	*name;
+	int	*pint;
+	int	index1;
+} vint[] = {
+.
+/VECTORFLOAT/c
+0, 0
+};
+static struct {		/* Vector integers */
+	char 	*name;
+	float	*pfloat;
+	int	index1;
+} vfloat[] = {
+.
+/VECTORDOUBLE/c
+0,0
+};
+static struct {		/* Vectors */
+	char 	*name;
+	double	*pdoub;
+	int	index1;
+} vdoub[] = {
+.
+/ARRAYDOUBLE/c
+0, 0, 0
+};
+static struct {		/* Arrays */
+	char 	*name;
+	double	*pdoub;
+	int	index1;
+	int 	index2;
+} ardoub[] = {
+.
+/THREEDIM/c
+0, 0, 0, 0
+};
+static struct {		/* triple dimensioned arrays */
+	char 	*name;
+	double	*pdoub;
+	int	index1;
+	int 	index2;
+	int	index3;
+} thredim[] = {
+.
+$a
+0, 0, 0, 0, 0
+};
+.
+/^END/d
+:
+: cleanup
+g/tempppp/d
+w temp2hoc
+q

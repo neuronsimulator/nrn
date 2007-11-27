@@ -1,0 +1,1 @@
+latency:lxrt+sem+mbx+msg:/home/hines/neuron/rt/i686/bin/nrngui -realtime test5.hoc

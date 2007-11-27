@@ -1,0 +1,43 @@
+doNotify()
+
+objref nda
+nda = new NrnDAQ()
+
+proc q() {
+	nda.ai_stop()
+	nda.ao_stop()
+	nda.finalize()
+	quit()
+}
+objref vec
+vec = new Vector(20)
+vec.indgen(-4,4,.1)
+idex = 0
+x = 0
+proc ao() {
+	x = vec.x[idex]
+	nda.ao_write()
+	idex = (idex+1)%vec.size
+}
+
+xpanel("NrnDAQ")
+xbutton("quit", "q()")
+xpanel()
+
+a = 0
+nda.ai_setup(1, 1)
+nda.ao_setup(1)
+nda.ai_record(0, &a)
+nda.ao_play(0,&x)
+nda.ao_start
+for i=1,10000 {
+	nda.ai_start()
+	for j=0, 50 {
+		nda.ai_read()
+		ao()
+//		print "read ", i, j, a
+	}
+	nda.ai_stop()
+	doNotify()
+}
+

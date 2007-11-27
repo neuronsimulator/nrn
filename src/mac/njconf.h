@@ -1,0 +1,1 @@
+#define USENRNJAVA 1

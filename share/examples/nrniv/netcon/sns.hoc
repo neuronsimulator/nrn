@@ -1,0 +1,83 @@
+load_file("nrngui.hoc")
+
+begintemplate NRN
+  public soma
+  public ampa // postsyn hook
+
+  objectvar ampa
+  create soma
+  proc init() {
+    soma ampa = new K2Syn(.5)
+  }
+endtemplate NRN
+
+objref ncl // netconlist
+ncl = new List()
+
+create nullseg
+nullseg.v = -100
+num = 50
+// num generators
+objectvar pg[num]
+
+for (i=0;i<num;i=i+1) {
+  nullseg pg[i] = new SpikeGenerator(0.5)
+  pg[i].fast_invl = 1+(i)/20
+  pg[i].slow_invl = 5+(i)/5
+  pg[i].burst_len = 4       
+//  pg[i].noise = 0.3+0.1*i   
+  pg[i].start= i/10
+}
+
+// create 3 neurons
+objectvar nrn[3]
+DELAY_AMPA = 3 // this global delay is only used if delays not given individually
+for (i=0;i<3;i=i+1) {
+  // create num+1 postsyns since will have 1 extra to connect between neurons
+  nrn[i] = new NRN()
+  // connect to all of the pg's
+  for (j=0;j<num;j=j+1) { 
+    // setting delay is unnecessary here since global is set
+//    nrn[i].ampa.setlink(j,pg[j].link)
+//    nrn[i].ampa.gmax(j,0.1*(j+1))
+//    nrn[i].ampa.delay(j,0.5*j)
+//	cvode.delivery(&pg[j].x, &nrn[i].ampa.gtrig, &nrn[i].ampa.onset,\
+//		-20, 0.5*j, 0.1*(j+1), \
+//		0, i+1)
+//		nullseg, nrn[i].soma \
+//	)
+//			src,  target,    thresh,delay,weight
+	ncl.append(new NetCon(pg[j], nrn[i].ampa, -20, .5*j, .1*(j+1)))
+  }
+}
+
+/*
+// this is a synapse from nrn[0] to nrn[1]
+// note that this won't do much unless you put some spiking
+// capability into the neurons
+nrn[1].ampa.setlink(nrn[0].p.link)
+// note that the -1 as an index refers to the final item in the array
+// in this case the one just set with setlink
+nrn[1].ampa.code(-1,15) // an arbitrary code here
+nrn[1].ampa.gmax(-1,1.0) 
+nrn[1].ampa.delay(-1,1.5)
+*/
+//cvode.delivery(&nrn[0].soma.v(.5), &nrn[1].ampa.gtrig, &nrn[1].ampa.onset,\
+//	-20, 1.5, 1.0, \
+//	1, 2)
+//	nrn[0].soma, nrn[1].soma \
+//)
+nrn[0].soma ncl.append(new NetCon(&v(.5), nrn[1].ampa,  -20, 1.5, 1.0))
+
+//****************************************************************
+// look at syns
+//****************************************************************
+
+//nrn[1].ampa.pre  // check presyn pointers
+//pg[3].post  // see where this generator projects to 
+
+//****************************************************************
+// graphics
+//****************************************************************
+
+  xopen("sns.ses")  // a couple of views

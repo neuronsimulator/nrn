@@ -1,0 +1,937 @@
+// Read neurolucida
+// ;       V3 text file written for MicroBrightField products.
+// file.
+// The format is given by a context free grammar that would be easy
+// to handle with lex/yacc but we can do reasonably well using  recursive descent
+// that more or less matches each production rules for the grammar.
+// Presently we only handle contours and trees but with spines ignored.
+
+begintemplate Branch2SomaInfo
+// info to carry out decision about which to connect to for
+// possible root branch mistakes
+// may have to split the parent
+public sec, sindex, pbranch, ipoint, d2p, d2s, connected2p
+objref sec, pbranch
+proc init() {
+	sec = $o1
+	pbranch = $o2
+	sindex = $3
+	d2p = $4
+	d2s = $5
+	ipoint = $6
+	connected2p = 0
+}
+endtemplate Branch2SomaInfo
+
+begintemplate Import3d_LexToken
+public token, x, s, itok, iline
+strdef s
+token = 0
+x = 0
+itok = 0
+iline = 0
+endtemplate Import3d_LexToken
+
+begintemplate Import3d_Neurolucida3
+public type
+public filetype, input, file, sections
+public label, id2pt, id2line, pt2id, pt2sec, sec2pt, helptxt, mark, err, b2spanel
+public x, y, z, d, iline, lines, quiet
+external hoc_sf_
+objref type, firstpoints, gm, plist
+objref current, look_ahead, look_ahead2
+objref file, tokens, sections, cursec, parentsec, nil
+objref x, y, z, d, iline, lines
+objref somas, centers, b2serr, b2sinfo
+strdef line, tstr, tstr2, filetype, fline
+
+proc init() {
+	quiet = 0
+	debug_on = 0
+	gm = new GUIMath()
+	filetype = "Neurolucida V3"
+	current = new Import3d_LexToken()
+	look_ahead = new Import3d_LexToken()
+	look_ahead2 = new Import3d_LexToken()
+	eof=0
+	number=1  leftpar=2  rightpar=3  comma=4  bar=5
+	set=6  rgb=7  string=8  label_=9  err_=10
+	leftsp=11  rightsp=12
+	tokens = new List()
+	tokensappend("eof", "number", "leftpar", "rightpar", "comma", "bar")
+	tokensappend("set", "rgb", "string", "label", "err")
+	tokensappend("leftsp", "rightsp")
+	plist = new List()
+}
+proc tokensappend() {local i
+	for i=1, numarg() {
+		tokens.append(new String($si))
+	}
+}
+
+proc input() {
+	b2serr = new List()
+	b2sinfo = new List()
+	nspine = 0
+	err = 0
+	type = new Vector()
+	sections = new List(1000)
+	alloc(25000, x, y, z, d, iline)
+	lines = new List(25000)
+	itoken = 0
+	depth = 0
+	rdfile($s1)
+	firstpoints = new Vector(sections.count)
+	set_firstpoints()
+	connect2soma()
+	if (err) { errout() }
+}
+
+proc set_firstpoints() {local i
+	firstpoints.resize(sections.count)
+	for i=0, sections.count-1 {
+		firstpoints.x[i] = sections.object(i).id
+	}	
+}
+
+proc alloc() {local i
+	for i=2, numarg() {
+		$oi = new Vector($1)
+		$oi.resize(0)
+	}
+}
+proc connect2soma() {local i, j, d, dmin  localobj sec, roots, xx
+	// first make sure all somas are at the beginning
+	centers = new List()
+	j = 0 // next soma index
+	somas = new List()
+	roots = new List()
+	for i=0, sections.count-1 {
+		sec = sections.object(i)
+		if (sec.iscontour_) {
+			if (i > j) {
+				sections.remove(i)
+				sections.insrt(j, sec)
+			}
+			somas.append(sec)
+			j += 1
+		}else if (sec.parentsec == nil) {
+			roots.append(sec)
+		}
+	}
+	if (somas.count == 0) { return }
+	// note that j is the number of soma's
+	for i = 0, somas.count-1 {
+		connect2soma_2(somas.object(i), roots)
+	}
+	for i=0, roots.count-1 {
+		sec = roots.object(i)
+		xx = sec.raw.getcol(0)
+		dmin = 1e9
+		for j=0, centers.count-1 {
+			d = xx.c.sub(centers.object(j)).mag	
+			if (d < dmin) {
+				imin = j
+				dmin = d
+			}
+		}
+		err = 1
+		xx = centers.object(imin)
+		sprint(tstr, "\nMain branch starting at line %d is outside the soma bounding boxes", pt2id(sec.id))
+		b2serr.append(new String(tstr))
+		sprint(tstr, "  Making a logical connection to center of nearest soma")
+		b2serr.append(new String(tstr))
+		sec.parentsec = somas.object(imin)
+		sec.parentx = .5
+		sec.insrt(0, xx.x[0], xx.x[1], xx.x[2], .01)
+		sec.first = 1
+		sec.fid = 1
+		opt_connect(sec, imin, dmin)
+	}
+}
+
+proc connect2soma_2() {local i, xmin, xmax, ymin, ymax localobj sec, xc, yc, zc, center
+	// find centroid of soma if outline and connect all dangling
+	// dendrites to that if inside the contour
+	xc = $o1.raw.getrow(0)
+	yc = $o1.raw.getrow(1)
+	zc = $o1.raw.getrow(2)
+	xmin = xc.min-.5  xmax = xc.max + .5
+	ymin = yc.min-.5  ymax = yc.max + .5
+	center = $o1.contourcenter(xc, yc, zc)
+	centers.append(center)
+	
+	for (i=$o2.count-1; i >= 0; i -= 1) {
+		sec = $o2.object(i)
+		if (gm.inside(sec.raw.x[0][0], sec.raw.x[1][0], xmin, ymin, xmax, ymax)) {
+			sec.parentsec = $o1
+			sec.parentx = .5
+			sec.insrt(0, center.x[0], center.x[1], center.x[2], .01)
+			sec.first = 1
+			sec.fid = 1
+			$o2.remove(i)
+		}
+	}
+}
+
+proc opt_connect() {local i, j, d, dmin, imin, n, ip   localobj psec, xx
+	dmin = 1e9
+	xx = $o1.raw.getcol(1)
+	for i=0, sections.count - 1 {
+		psec = sections.object(i)
+		if (psec == $o1) { break }
+		n = psec.raw.ncol
+		for j=0, n-1 {
+			d = xx.c.sub(psec.raw.getcol(j)).set(2,0).mag
+			if (d < dmin) {
+				dmin = d
+				imin = i
+				ip = j
+			}
+		}
+	}
+	if (dmin == 1e9) { return }
+	psec = sections.object(imin)
+//	if (dmin < psec.d.x[psec.d.size-1]) {
+	if (dmin < $3) {
+		b2sinfo.append(new Branch2SomaInfo($o1, psec, $2, dmin, $3, ip))
+	}
+}
+
+proc b2spanel() {local i  localobj b2s
+	if (b2sinfo.count == 0) { return }
+	xpanel("Possible root branch errors")
+	xlabel("Default logical connection to nearest soma.")
+	xlabel("Check to physically connect to closest parent")
+	xlabel(" in the xy plane.")
+	xlabel(" (Note: may split the parent into two sections)")
+	for i=0, b2sinfo.count -1 {
+		b2s = b2sinfo.object(i)
+sprint(tstr, "Line #%d connect to #%d %g (um) away", pt2id(sec2pto(b2s.sec, 1)), \
+pt2id(sec2pto(b2s.pbranch, b2s.ipoint)), b2s.d2p)
+sprint(tstr2, "b2soption_act(%d, \"%s\")", i, $o1)
+		xcheckbox(tstr, &b2s.connected2p(), tstr2)
+	}
+	xpanel()
+}
+
+proc b2soption_act() {local i  localobj b2s, sec, parent, soma, xx
+	b2s = b2sinfo.object($1)
+	sec = b2s.sec
+	soma = somas.object(b2s.sindex)
+	parent = b2s.pbranch
+	if (sec.parentsec == soma) { // connect to parent
+		if (b2s.ipoint != parent.raw.ncol-1) { // need to split
+			b2soption_split(b2s)
+			parent = b2s.pbranch
+			set_firstpoints()
+		}
+		xx = parent.raw.getcol(b2s.ipoint)
+		sec.parentsec = parent
+		sec.parentx = 1
+		sec.raw.setcol(0, xx)
+		sec.d.x[0] = sec.d.x[1]
+		sec.first = 0
+		sec.fid = 1
+	}else{ // connect to soma
+		xx = centers.object(b2s.sindex)
+		sec.parentsec = soma
+		sec.parentx = .5
+		sec.raw.setcol(0, xx)
+		sec.d.x[0] = .01
+		sec.first = 1
+		sec.fid = 1
+	}
+	sprint(tstr, "%s.redraw()", $s2)
+	execute(tstr)
+}
+
+proc b2soption_split() {local i, n, id, ip  localobj p, newsec, tobj
+	p = $o1.pbranch
+	ip = $o1.ipoint
+	id = sec2pto(p, ip)
+	n = p.raw.ncol
+	newsec = new Import3d_Section(p.id, ip+1)
+	p.id = id
+
+	tobj = p.raw.c
+	tobj.bcopy(0,0,3,ip+1,newsec.raw)
+	p.raw.resize(3, n - ip)
+	p.xyz.resize(3, n - ip)
+	tobj.bcopy(0, ip, 3, n - ip, p.raw)
+
+	tobj = p.d.c
+	newsec.d.copy(tobj, 0, ip)
+	p.d.resize(n - ip)
+	p.d.copy(tobj, ip, n-1)
+
+	newsec.parentsec = p.parentsec
+	p.parentsec = newsec
+	newsec.parentx = p.parentx
+	p.parentx = 1
+	newsec.type = p.type
+	newsec.first = p.first
+	newsec.fid = p.fid
+	p.first = 0
+	p.fid = 0
+	newsec.type = p.type
+	$o1.pbranch = newsec
+	$o1.ipoint = newsec.d.size-1
+	// now adjust any screwed up b2sinfo items that also reference p
+	for i=0, b2sinfo.count-1 {
+		tobj = b2sinfo.object(i)
+		if (tobj == $o1) { continue }
+		if (tobj.pbranch == p) {
+			if (tobj.ipoint <= ip) { // on newsec
+				tobj.pbranch = newsec
+			}else{ // still on p
+				tobj.ipoint -= ip
+			}
+		}
+	}
+	sections.insrt(sections.index(p), newsec)
+}
+
+func lex() {local n
+	$o1.x = 0
+	$o1.s = ""
+	while (hoc_sf_.len(line) <= 1 || sscanf(line, " ;%[^@]", line) == 1) {
+		if (!getline(fline)) {
+			$o1.token = eof
+			itoken += 1
+			$o1.itok = itoken
+			$o1.iline = iline_
+			return eof
+		}
+		line = fline
+		hoc_sf_.left(fline, hoc_sf_.len(fline)-1)
+	}
+	if (sscanf(line, " %lf%[^@]", &$o1.x, line) == 2) {
+		$o1.token = number
+	}else if (sscanf(line, " (%[^@]", line) == 1) {
+		$o1.token = leftpar
+	}else if (sscanf(line, " )%[^@]", line) == 1) {
+		$o1.token = rightpar
+	}else if (sscanf(line, " ,%[^@]", line) == 1) {
+		$o1.token = comma
+	}else if (sscanf(line, " |%[^@]", line) == 1) {
+		$o1.token = bar
+	}else if (sscanf(line, " <%[^@]", line) == 1) {
+		$o1.token = leftsp
+	}else if (sscanf(line, " >%[^@]", line) == 1) {
+		$o1.token = rightsp
+	}else if (sscanf(line, " set %[^@]", line) == 1) {
+		$o1.token = set
+	}else if (sscanf(line, " Set %[^@]", line) == 1) {
+		$o1.token = set
+	}else if (sscanf(line, " SET %[^@]", line) == 1) {
+		$o1.token = set
+	}else if (sscanf(line, " RGB %[^@]", line) == 1) {
+		$o1.token = rgb
+	}else if ((n = sscanf(line, " \"%[^\"]\"%[^@]", $o1.s, line)) > 0) {
+		// not allowing quotes in quote
+		$o1.token = string
+		if (n == 1) {
+			printf("Lexical error: no closing '\"' in string. The entire line %d in ||is\n", iline_)
+			printf("|%s|\n", fline)
+			line = ""
+			$o1.token = err_
+		}
+	}else if (sscanf(line, " %[A-Za-z0-9_]%[^@]", $o1.s, line) == 2) {
+		$o1.token = label_
+	}else{
+		$o1.token = err_
+	}
+	itoken += 1
+	$o1.itok = itoken
+	$o1.iline = iline_
+	return $o1.token
+}
+
+func getline() {
+	if (file.eof) {
+		if (!quiet) {
+			printf("\r%d lines read\n", iline_)
+		}
+		return 0
+	}
+	file.gets($s1)
+	iline_ += 1
+//	printf("%d: %s", iline_, $s1)
+	if ((iline_%1000) == 0) {
+		if (!quiet) {
+			printf("\r%d lines read", iline_)
+		}
+	}
+	return 1
+}
+
+proc rdfile() {local i
+	iline_ = 0
+	file = new File($s1)
+	if (!file.ropen()) {
+		err = 1
+		printf("could not open %s\n", $s1)
+	}
+	for (i=0; !file.eof(); i += 1) {
+		file.gets(line)
+	}
+	alloc(i, x, y, z, d, iline)
+	file.close
+	lines = new List(25000)
+	line=""
+	if (!quiet) {
+		printf("\n")
+	}
+	file.ropen()
+	p_file()
+	file.close
+}
+
+proc read_next_token() {localobj tobj
+	tobj = current
+	current = look_ahead
+	look_ahead = look_ahead2
+	look_ahead2 = tobj
+	if (look_ahead.token != eof) {
+		lex(look_ahead2)
+	}else{
+		look_ahead2.token = eof
+	}
+//	printf("current token=%s x=%g s=%s\n", tokens.object(current.token).s, current.x, current.s)
+}
+
+func need_extra() {local i, n  localobj m
+	if (parentsec == nil) { return 0 }
+	m = parentsec.raw
+	n = m.ncol-1
+	if ( m.x[0][n] == x.x[$1]) {
+		if ( m.x[1][n] == y.x[$1]) {
+			if ( m.x[2][n] == z.x[$1]) {
+				return 0
+			}
+		}
+	}
+	return 1
+}
+proc newsec() {local i, n, first, n1 localobj m
+	first = 0
+	n = $2 - $1
+	if (need_extra($1)) {
+		cursec = new Import3d_Section($1, n+1)
+		first = 1
+		cursec.fid = 1
+		m = parentsec.raw
+		n1 = m.ncol-1
+		cursec.set_pt(0, m.x[0][n1], m.x[1][n1], m.x[2][n1], d.x[$1])
+	}else{
+		cursec = new Import3d_Section($1, n)
+	}
+	cursec.type = sectype
+	type.append(sectype)
+	sections.append(cursec)
+	cursec.append(first, $1, n, x, y, z, d)
+}
+proc set_sectype() {localobj tobj
+	sectype = 0
+	if (plist.count) {
+		tobj = plist.object(plist.count-1)
+		if (strcmp(tobj.s, "Axon") == 0) {
+			sectype = 2
+		}else if (strcmp(tobj.s, "Dendrite") == 0) {
+			sectype = 3
+		}else if (strcmp(tobj.s, "Apical") == 0) {
+			sectype = 4
+		}
+	}
+}
+
+proc label() {
+	sprint($s2, "Line %d: %s", iline.x[$1], lines.object($1).s)
+}
+func id2pt() {local i
+	i = iline.indwhere(">=", $1)
+	if (i < 0) { i = iline.size-1 }
+	return i
+}
+func id2line() { return $1 }
+func pt2id() {local i
+	i = $1
+	if (i < 0) { i == 0 }
+	if (i >= iline.size) { i = iline.size-1 }
+	return iline.x[i]
+}
+func pt2sec() {local i, j
+	i = firstpoints.indwhere(">", $1)
+	if (i == -1) {
+		i = firstpoints.size
+	}
+	$o2 = sections.object(i-1)
+	j = $1 - $o2.id + $o2.fid
+	return j
+}
+func sec2pt() {local i  localobj sec
+	sec = sections.object($1)
+	i = sec.id + $2 - sec.fid
+	return i
+}
+func sec2pto() {local i  localobj sec
+	sec = $o1
+	i = sec.id + $2 - sec.fid
+	return i
+}
+proc mark() {local i
+	print $o1, $2, iline, lines
+	i = iline.indwhere("==", $2)
+	if (i != -1) {
+		printf("%d,%d,%d (%g,%g): %s\n", $2, iline.x[i], i, x.x[i], y.x[i], lines.object(i).s)
+		$o1.mark(x.x[i], y.x[i], "S",12,4,1)
+	}
+}
+
+proc helptxt() {
+	xpanel("Neurolucida V3 file filter characteristics")
+xlabel("The elaborate file format is handled by a reasonably complete")
+xlabel("recursive descent parser that more or less matches the production")
+xlabel("rules for the grammar. However, at present, only contours and trees")
+xlabel("are given any semantic actions (in particular, spines are ignored).")
+	xpanel(1)
+}
+
+proc chk() {
+	if (current.token != $1) { p_err() }
+}
+proc demand() {
+	read_next_token()
+	chk($1)
+}
+proc pcur() {
+	printf("itok=%d token=%s x=%g s=%s\n", current.itok, tokens.object(current.token).s, current.x, current.s)
+}
+proc plook() {
+//	printf("lookahead: itok=%d token=%s x=%g s=%s\n", look_ahead.itok, tokens.object(look_ahead.token).s, look_ahead.x, look_ahead.s)
+}
+proc enter() {local i
+	if (debug_on == 0) {return}
+	for i=1, depth {printf(" ")}
+	printf("enter %s: ", $s1)
+	pcur()
+	depth += 1
+}
+proc leave() {local i
+	if (debug_on == 0) {return}
+	depth -= 1
+	for i=1, depth {printf(" ")}
+	printf("leave %s: ", $s1)
+	pcur()
+}
+// p stands for production if needed to avoid conflict with variable
+proc p_file() {
+	look_ahead2.token = eof
+	look_ahead.token = eof
+	if (lex(current) != eof) {
+		if (lex(look_ahead) != eof) {
+			lex(look_ahead2)
+		}
+	}
+	enter("p_file")
+	objects()
+	leave("p_file")
+}
+proc objects() {
+	enter("objects")
+	object()
+	while(1) {
+		optionalcomma()
+		if (current.token != leftpar) {
+			break
+		}
+		object()
+	}
+	leave("objects")
+}
+proc object() {local i
+	i = current.itok
+	enter("object")
+	if (current.token == leftpar) {
+		plook()		
+		if (look_ahead.token == string) {
+			contour()
+		}else if (look_ahead.token == label_) {
+			marker_or_property()
+		}else if (look_ahead.token == leftpar) {
+			tree_or_text()
+		}else if (look_ahead.token == set) {
+			p_set()
+		}else{
+			p_err()
+		}
+	}else{
+		p_err()
+	}
+	leave("object")
+	if (i == current.itok) {
+		print "internal error: ", "object consumed no tokens"
+		stop
+	}
+}
+proc marker_or_property() {
+	enter("marker_or_property")
+	if (look_ahead2.token == leftpar) {
+		marker()
+	}else{
+		property()
+	}
+	leave("marker_or_property")
+}
+proc tree_or_text() {
+	// the tree and text productions are poorly conceived since they
+	// match each other for arbitrarily long sequences of Properties tokens.
+	// And after the properties they both have a Point.
+	// For now just assume it is a tree.
+	// It will be painful to consume the [ '(' Properties Point ] here
+	// and then disambiguate between Tree or Text and then more
+	// often than not, start the tree production after having already
+	// read the first point (Branch currently assumes it is supposed
+	// to read the first point of the tree.)
+	enter("tree_or_text")
+	tree()
+	leave("tree_or_text")
+}
+proc properties() {
+	enter("properties")
+	plist.remove_all()
+	if (current.token == leftpar && look_ahead.token == label_) {
+		property()
+		while (1) {
+			optionalcomma()
+			if (current.token != leftpar || look_ahead.token != label_) {
+				break
+			}
+			property()
+		}
+	}
+	leave("properties")
+}
+proc property() {
+	enter("property")
+	chk(leftpar)
+	demand(label_)
+	plist.append(new String(current.s))
+	read_next_token()
+	optionalvalues()
+	chk(rightpar)
+	read_next_token()
+	leave("property")
+}
+proc optionalvalues() {local c
+	enter("optionalvalues")
+	c = current.token
+	if (c == number || c == string || c == label_ || c == rgb) {
+		values()
+	}
+	leave("optionalvalues")
+}
+proc values() {local c
+	enter("values")
+	value()
+	while (1) {
+		c = current.token
+		if (c != number && c != string && c != label_ && c != rgb) {
+			break
+		}
+		value()
+	}
+	leave("values")
+}
+proc value() {local c
+	enter("value")
+	c = current.token
+	if (c == number) {
+	}else if (c == string) {
+	}else if (c == label_) {
+	}else if (c == rgb) {
+		demand(leftpar)
+		demand(number)
+		read_next_token()
+		optionalcomma()
+		chk(number)
+		read_next_token()
+		optionalcomma()
+		chk(number)
+		demand(rightpar)
+	}else{
+		p_err()
+	}
+	read_next_token()
+	leave("value")
+}
+proc p_set() {
+	enter("p_set")
+	chk(leftpar)
+	demand(set)
+	demand(string)
+	read_next_token()
+	objects()
+	chk(rightpar)
+	read_next_token()
+	leave("p_set")
+}
+proc contour() {local begin, end, keep
+	enter("contour")
+	chk(leftpar)
+	begin = x.size
+	keep = 0
+	demand(string)
+	if (strcmp(current.s, "CellBody") == 0) { keep = 1 }
+	read_next_token()
+	contourinfo()
+	if (keep) {
+		end = x.size
+		sectype = 1
+		newsec(begin, end)
+		cursec.iscontour_ = 1
+	}
+	chk(rightpar)
+	read_next_token() 
+	leave("contour")
+}
+proc contourinfo() {
+	enter("contourinfo")
+	properties()
+	points()
+	morepoints()
+	leave("contourinfo")
+}
+proc morepoints() {
+	enter("morepoints")
+	optmarkerlist()
+	leave("morepoints")
+}
+proc optmarkerlist() {
+	enter("optmarkerlist")
+	leave("optmarkerlist")
+}
+proc markerlist() {local pcnt
+	enter("markerlist")
+	chk(leftpar)
+	pcnt = 1
+	// not handling markers. when pcnt goes to 0 then leave
+	while (pcnt != 0) {
+		read_next_token()
+		if (current.token == rightpar) {
+			pcnt -= 1
+		}else if (current.token == leftpar) {
+			pcnt += 1
+		}
+	}
+	read_next_token()
+	leave("markerlist")
+}
+proc tree() {
+	enter("tree")
+	parentsec = nil
+	chk(leftpar)
+	read_next_token()
+	properties()
+	set_sectype()
+	branch()
+	chk(rightpar)
+	read_next_token()
+	parentsec = nil
+	leave("tree")
+}
+proc branch() {local begin, end  localobj psav
+	enter("branch")
+	psav = parentsec
+	begin = x.size
+	treepoints()
+	end = x.size
+	newsec(begin, end)
+	cursec.parentsec = parentsec
+	parentsec = cursec
+	branchend()
+	parentsec = psav
+	leave("branch")
+}
+proc treepoints() {
+	enter("treepoints")
+	treepoint()
+	while (1) {
+		optionalcomma()
+		if (current.token != leftpar || look_ahead.token != number) {
+			break
+		}
+		treepoint()
+	}
+	leave("treepoints")
+}
+proc treepoint() {
+	enter("treepoint")
+	point()
+	if (current.token == leftsp) {
+		spines()
+	}
+	leave("treepoint")
+}
+proc spines() {
+	enter("spines")
+	spine()
+	while(current.token == leftsp) {
+		spine()
+	}
+	leave("spines")
+}
+proc spine() {
+	enter("spine")
+	chk(leftsp) read_next_token()
+	nspine += 1  err = 1
+//	properties() points()
+	while (current.token != rightsp) {
+		read_next_token()
+	}
+	chk(rightsp) read_next_token()
+	leave("spine")
+}
+proc branchend() {
+	enter("branchend")
+	optionalcomma()
+	if (current.token == leftpar) {
+		while (look_ahead.token == label_) {
+			markerlist()
+		}
+	}
+	optionalcomma()
+	if (current.token == leftpar || current.token == label_) {
+		node()
+	}
+	leave("branchend")
+}
+proc node() {
+	enter("node")
+	if (current.token == leftpar) {
+		read_next_token() split()
+		chk(rightpar) read_next_token()
+	}else if (current.token == label_) {
+		read_next_token()
+	}else{
+		p_err()
+	}	
+	leave("node")
+}
+proc split() {
+	enter("split")
+	branch()
+	while (current.token == bar) {
+		read_next_token()
+		branch()
+	}
+	leave("split")
+}
+proc marker() {
+	enter("marker")
+	chk(leftpar)
+	demand(label_)
+	read_next_token()
+	properties() points()
+	chk(rightpar) read_next_token()
+	leave("marker")
+}
+proc text() {
+	enter("text")
+	chk(leftpar) read_next_token()
+	properties() point()
+	chk(string)
+	demand(rightpar)
+	read_next_token()
+	leave("text")
+}
+proc points() {
+	enter("points")
+	point()
+	while (1) {
+		optionalcomma()
+		if (current.token != leftpar) {
+			break
+		}
+		point()
+	}
+	leave("points")
+}
+proc point() {
+	enter("point")
+	chk(leftpar)
+	demand(number)
+	xval = current.x
+	iline.append(iline_)  lines.append(new String(fline))
+	read_next_token() optionalcomma()
+	chk(number)
+	yval = current.x
+	zval = dval = 0
+	read_next_token() optz()
+	x.append(xval) y.append(yval) z.append(zval) d.append(dval)
+	chk(rightpar) read_next_token()
+//printf("%g %g %g %g\n", xval, yval, zval, dval)
+	leave("point")
+}
+proc optz() {
+	enter("optz")
+	optionalcomma()
+	if (current.token == number) {
+		zval = current.x
+		read_next_token()
+		optmodifier()
+	}
+	leave("optz")
+}
+proc optmodifier() {
+	enter("optmodifier")
+	optionalcomma()
+	if (current.token == number) {
+		dval = current.x
+		read_next_token()
+		optionalcomma()
+		if (current.token == label_) {
+			read_next_token()
+		}
+		optbezier()
+	}
+	leave("optmodifier")
+}
+proc optbezier() {
+	enter("optbezier")
+	optionalcomma()
+	if (current.token == leftpar) {
+		demand(number)
+		read_next_token()
+		optionalcomma() chk(number) read_next_token()
+		optionalcomma() chk(number) read_next_token()
+		optionalcomma() chk(number) demand(rightpar)
+		read_next_token()
+	}
+	leave("optbezier")
+}
+proc optionalcomma() {
+	enter("optionalcomma")
+	if (current.token == comma) {
+		read_next_token()
+	}
+	leave("optionalcomma")
+}
+proc p_err() {
+	printf("\nparse error\n")
+	pcur()
+	printf("line %d: %s\n", iline_, fline)
+	stop
+}
+proc errout() {local i
+	if (quiet) { return }
+	printf("\n%s problems\n\n", file.getname)
+	if (nspine) {
+		printf("Ignored %d spines\n", nspine)
+	}
+	for i=0, b2serr.count-1 {
+		printf("%s\n", b2serr.object(i).s)
+	}
+}
+endtemplate Import3d_Neurolucida3

@@ -1,0 +1,203 @@
+// Usage:
+// tree = new TreeView()
+//
+// add top level items with
+// tree.top.append(new TreeViewItem(nil, "name", [obj]))
+// the obj is an optional argument and obj.selected(tree, currentindex, this)
+// will be called when the item is selected
+//
+// add branch items with
+// new TreeViewItem(parentTreeViewItem, "name", [obj])
+// or parent.append("name", [obj])
+//
+// map the browser with
+// tree.browser("title"
+//
+// because of mutual internal references, call TreeView.unlink() before
+// destroying the tree
+
+begintemplate TreeViewItem
+public s, saction, selected, parent, children, showing_children, browser
+public show, unshow, append, str, retval, unlink
+objref saction, this, parent, children, tobj
+strdef s, name
+proc init() {
+	showing_children = 0
+	parent = $o1
+	if (object_id(parent)) {
+		if (!object_id(parent.children)) {
+			parent.children = new List()
+			parent.str()
+		}
+		parent.children.append(this)
+	}
+	str($s2)
+	if (numarg() > 2) {
+		saction = $o3
+		retval = $4
+	}
+}
+
+proc unlink() { local i
+	if (object_id(children)) {
+		for i=0, children.count - 1 {
+			children.object(i).unlink()
+		}
+	}
+	objref tobj, parent, saction, children
+}
+
+proc append() {
+	tobj = new TreeViewItem(this, $s1)
+	if (numarg() > 1) {
+		tobj.saction = $o2
+		tobj.retval = $3
+	}
+}
+
+proc str() {
+	if (numarg() != 0) {
+		name = $s1
+	}
+	s = ""
+	str1(s, parent)
+	if (object_id(children) == 0) {
+		sprint(s, "%s%s", s, name)
+	}else{
+		sprint(s, "%s* %s", s, name)
+	}
+}
+
+proc str1() {
+	if (object_id($o2) != 0) {
+		sprint($s1, "    %s", $s1)
+		str1($s1, $o2.parent)
+	}
+}
+
+// TreeViewItem.selected(the tree view list, item number of tree view list)
+// The action is executed only if showing_children transitions from 0 to 1
+// A showing_children transition from 0 to 1 causes the children to be
+// displayed. A transition from 1 to 0 causes the children to be undisplayed
+proc selected() {local pos
+	// here is how an action can change the selection string
+	//sprint(s, "%s x", s)
+	//$o1.remove($2)
+	//$o1.insrt($2,this)
+	//$o1.select($2)
+	pos = $o1.scroll_pos
+	if (object_id(children)) {
+		if (showing_children == 0) {
+			showing_children = 1
+			show($o1, $2, 1)
+			$o1.select(-1)
+			$o1.select($2)
+			if (object_id(saction)) {
+				saction.selected($o1, $2, this, retval)
+			}
+		}else{
+			unshow($o1, $2, 1)
+			showing_children = 0
+			$o1.select($2)
+			if (object_id(saction)) {
+				saction.selected($o1, $2, this, retval)
+			}
+		}
+	}else{
+		if (object_id(saction)) {
+			saction.selected($o1, $2, this, retval)
+		}
+	}
+	$o1.scroll_pos(pos)
+}
+
+// TreeViewItem.show(treeview list, item, is root of show)
+proc show() {local i
+	if (object_id(children) && showing_children) {
+		for (i = children.count - 1; i >= 0; i -= 1) {
+			children.object(i).show($o1, $2, 0)
+		}
+	}
+	if ($3 == 0) {
+		$o1.insrt($2+1, this)
+	}
+}
+
+// TreeViewItem.unshow(treeview list, item, is root of unshow)
+proc unshow() {local i
+	if (object_id(children) && showing_children) {
+		for i = 0, children.count - 1 {
+			children.object(i).unshow($o1, $2+1, 0)
+		}
+	}
+	if ($3 == 0) {
+		$o1.remove($2)
+	}
+}
+
+endtemplate TreeViewItem
+
+begintemplate TreeView
+public top, browser, before, after, unlink
+objref top, before, after
+
+proc init() {
+	top = new List()
+}
+
+proc unlink() { local i
+	for i=0, top.count -1  {
+		top.object(i).unlink()
+	}
+	objref top, before, after
+}
+
+proc browser() {
+	top.browser($s1, "s")
+	top.select_action("action(hoc_ac_)", 1)
+}
+
+proc action() {
+	if ($1 > 0) { // avoid bug about always first selecting 0
+		if (object_id(before)) {
+			before.selected(0, $1)
+		}
+		top.object($1).selected(top, $1)
+		if (object_id(after)) {
+			after.selected(1, $1)
+		}
+	}
+}
+endtemplate TreeView
+
+/*
+// test of TreeView
+objref tree, nil, tobj
+proc add() {local i
+	for i=0, 5 {
+		sprint(tstr, "item %d level %d", i, $1)
+		tobj = new TreeViewItem($o2, tstr)
+	}
+	if ($1 < 4) {
+		for i=0, $o2.children.count-1 {
+			add($1+1, $o2.children.object(i))
+		}
+	}
+}
+	
+proc test() {local i, level
+	tree = new TreeView()
+	tree.top.append(new TreeViewItem(nil, ""))
+	for i= 1, 5 {
+		sprint(tstr, "item %d top", i)
+		tree.top.append(new TreeViewItem(nil, tstr))
+	}
+	for i = 1, tree.top.count-1 {
+		add(1, tree.top.object(i))
+	}
+	tree.browser("test")
+}
+
+test()
+
+*/

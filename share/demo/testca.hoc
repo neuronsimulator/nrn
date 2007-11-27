@@ -1,0 +1,50 @@
+PI=3.14159
+FARADAY=96520
+nann = 9
+
+/* total calcium in cell */
+func tot_ca() {local i, c       /* picomoles */
+        c=0 
+  forall if(ismembrane("cadifpmp")) for(x) if(x > 0 && x < 1) {
+        for i=0,nann {
+                /* from units command
+                you have: micron3 milli/liter
+                you want: pico
+                        * 1.000000e-06 */
+
+         c = c + diam(x)^2*vol_cadifpmp[i]*(1 + beta_cadifpmp) \
+		*(ca_cadifpmp[i](x))*1e-6*L/nseg
+        }
+	c = c + PI*diam(x)*L/nseg*pumpca_cadifpmp*(1e4) /*in pump*/
+  }
+        return c
+}
+
+/* integrate ica throughout cell */
+tot_from_ica = 0
+tot_ca_init = 0
+proc integ_ica() {local ic, c	/* picomoles */
+	if (t == 0) {
+		tot_ca_init = tot_ca()
+		tot_from_ica = 0
+		last_ica_pmp_cadifpmp = ica_pmp_cadifpmp
+		return
+	}
+	c = 0
+	forall if (ismembrane("ca_ion")) for (x) if (x > 0 && x < 1) {
+		/* from units command
+		you have: mA/cm2 micron2 ms / coulomb
+		you want: pico
+			* 1.e-2
+		*/
+		ic = ica - last_ica_pmp_cadifpmp + ica_pmp_cadifpmp
+		c = c +  PI*diam(x)*L/nseg*ic/(2*FARADAY) * dt *(1.e-2)
+	}
+	tot_from_ica = tot_from_ica + c
+}
+
+func compare_ca() { local tot
+	tot = tot_ca() - tot_ca_init
+	printf("totca=%g tot_from_ica=%g\n", tot, tot_from_ica)
+	return tot + tot_from_ica
+}

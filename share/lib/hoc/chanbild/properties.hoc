@@ -1,0 +1,265 @@
+begintemplate ChannelBuildSelectProperties
+public b, namestr, useionstr1, useionstr2, g_or_p, menu, single_
+public save_data, set_data, clone, save_ion, set_defstr, defstr, set_single
+external hoc_sf_, valid_name_syntax
+objref cb, b, this, mt, ks
+strdef tstr, tstr1, tstr2, ionstr, namestr, useionstr1, useionstr2, defstr
+strdef g_or_p, ionmech_
+charge=0
+
+proc init() {local i
+	cb = $o1
+	ks = cb.ks
+	single_ = 0
+	cb.genprop = this
+	tstr = ks.name
+	if ($2 == 0) {
+		set_data("leak", 1, 1, -1, "")
+		set_defstr(0,0)
+	}else{
+		if (strcmp(ks.ion, "NonSpecific") == 0) {i = -1}else{i=1}
+		set_data(ks.name, ks.is_point == 0, ks.iv_type != 2, i, ks.ion)
+		set_defstr(ks.gmax, ks.erev)
+	}
+}
+
+proc save_data() {
+	sprint(tstr, "{genprop.set_data(\"%s\", %d, %d, %d, \"%s\")}", ks.name, ks.is_point == 0, ohmictype_, iontype_, ks.ion)
+	$o1.save(tstr)
+	sprint(tstr, "{genprop.set_defstr(%g, %g)}", ks.gmax, ks.erev)
+	$o1.save(tstr)
+}
+
+proc save_ion() {local c
+	if (iontype_ != -1) {
+		sprint(tstr, "%s_ion", ks.ion)
+		c = ion_charge(tstr)
+		sprint(tstr, "{ion_register(\"%s\", %d)}", ks.ion, c)
+		$o1.save(tstr)
+	}
+}
+
+proc set_data() {
+	ks.name($s1)
+	ohmictype_ = $3
+	iontype_ = $4
+	if (iontype_ != -1) {
+		mt = new MechanismType(0)
+		sprint(tstr, "%s_ion", $s5)
+		mt.select(tstr)
+		iontype_ = mt.selected()
+	}
+	selion(iontype_, $s5)
+	set_namestr()
+	ohmictype(0)
+	set_useionstr()
+}
+
+proc clone() {
+	$o1.set_data(ks.name, ks.is_point, ohmictype_, iontype_, ks.ion)
+	$o1.set_defstr(ks.gmax, ks.erev)
+}
+
+proc menu() {
+	xbutton("Channel Name", "chname()")
+	xmenu("Selective for Ion...", "mkionmenu()")
+	if (ks.is_point) {
+		xcheckbox("Allow Single Channels", &single_, "set_single(single_)")
+	}
+	xcheckbox("Ohmic i=g*(v-e)", &ohmictype_, "ohmictype(0)")
+	xcheckbox("Goldman-Hodgkin-Katz", &ghktype_, "ohmictype(1)")
+	xbutton("Default gmax (or pmax)", "defpanel()")
+}
+
+proc defpanel() {
+	sprint(tstr, "Default gmax for %s", cb)
+	xpanel(tstr)
+	if (ohmictype_ == 1) {
+		if (ks.is_point) {
+			xpvalue("Default gmax (uS)", &gmax_, 1, "set_defstr(gmax_,erev_)")
+		}else{
+			xpvalue("Default gmax (S/cm2)", &gmax_, 1, "set_defstr(gmax_,erev_)")
+		}
+	}else{
+		if (ks.is_point) {
+			xpvalue("Default pmax (cm3/s)", &gmax_, 1, "set_defstr(gmax_,erev_)")
+		}else{
+			xpvalue("Default pmax (cm/s)", &gmax_, 1, "set_defstr(gmax_,erev_)")
+		}
+	}
+	if (iontype_ == -1) {
+		xpvalue("Default e (mV)", &erev_, 1, "set_defstr(gmax_,erev_)")
+	}
+	xpanel()
+}
+
+proc set_defstr() {
+	if (numarg() == 2) {
+		ks.gmax($1)
+		ks.erev($2)
+	}
+	gmax_ = ks.gmax
+	erev_ = ks.erev
+	tstr = "  Default"
+	if (ohmictype_ == 1) {
+		if (ks.is_point) {
+			sprint(tstr, "%s gmax = %g (uS)", tstr, ks.gmax)
+		}else{
+			sprint(tstr, "%s gmax = %g (S/cm2)", tstr, ks.gmax)
+		}
+	}else{
+		if (ks.is_point) {
+			sprint(tstr, "%s pmax = %g (cm3/s)", tstr, ks.gmax)
+		}else{
+			sprint(tstr, "%s pmax = %g (cm/s)", tstr, ks.gmax)
+		}
+	}
+	if (iontype_ == -1) {
+		sprint(tstr, "%s   e = %g (mV)", tstr, ks.erev)
+	}
+	defstr = tstr
+}
+
+proc set_single() {
+	if ($1 == ks.single) { return }
+	ks.single($1)
+	single_ = ks.single
+	set_namestr()
+}
+
+proc chname() {
+	tstr = ks.name
+	while (string_dialog("Channel Name", tstr)) {
+		if (valid_name_syntax(tstr, 1)) {
+			ks.name(tstr)
+			break
+		}
+	}
+	set_namestr()
+}
+
+proc set_namestr() {
+	if (ks.is_point == 0) {
+		sprint(namestr, "%s Density Mechanism", ks.name)
+	}else{
+		if (ks.single) {
+			sprint(namestr, "%s Point Process (Allow Single Channels)", ks.name)
+		}else{
+			sprint(namestr, "%s Point Process", ks.name)
+		}
+	}
+	set_useionstr()
+}
+
+proc hhtype() {
+	if ($1 == 0) { // hhtype changed
+		kstype_ = (hhtype_ == 0)
+	}else{
+		hhtype_ = (kstype_ == 0)
+	}
+}
+
+proc ohmictype() {
+	if ($1 == 0) { // ohmictype changed
+		ghktype_ = (ohmictype_ == 0)
+	}else{
+		ohmictype_ = (ghktype_ == 0)
+	}
+	if (iontype_ == -1) {
+		ohmictype_ = 1  ghktype_ = 0
+	}
+	if (ohmictype_ == 1) {
+		ks.iv_type(0)
+	}else if (ghktype_ == 1) {
+		ks.iv_type(2)
+	}
+	set_useionstr()
+}
+
+proc mkionmenu() {
+	mt = new MechanismType(0)
+	xbutton("NonSpecific", "selion(-1)")
+	for i=0, mt.count-1 {
+		mt.select(i)
+		mt.selected(tstr)
+		if (hoc_sf_.head(tstr, "_ion", tstr2) != -1) {
+			sprint(tstr, "selion(%d, \"%s\")", i, tstr2)
+			xbutton(tstr2, tstr)
+		}
+	}
+	xbutton("Create new type", "newion()")
+}
+
+proc selion() {
+	iontype_ = $1
+	if ($1 == -1) {
+		ks.ion("NonSpecific")
+		sprint(ionstr, "NonSpecific ion current/voltage relationship")
+		ohmictype_ = 1  ghktype_ = 0
+	}else{
+		mt.select($s2)
+		iontype_ = mt.selected()
+		ks.ion($s2)
+		sprint(ionstr, "%s current/voltage relationship", $s2)
+	}
+	set_useionstr()
+}
+
+proc newion() {local i
+	tstr = "ca 2"
+	while (string_dialog("ionname charge --e.g. ca 2", tstr)) {
+		if (sscanf(tstr, "%s %d", tstr2, &charge) == 2) {
+			i = ion_register(tstr2, charge)
+			if (i != -1) {
+				sprint(ionmech_, "%s_ion", tstr2)
+				mt.select(ionmech_)
+				i = mt.selected
+				selion(i, tstr2)
+				if (ion_charge(ionmech_) != charge) {
+sprint(tstr, "Warning: %s already exists and the charge is %d", ks.ion, ion_charge(ionmech_))
+					continue_dialog(tstr)
+				}
+				return
+			}else{
+sprint(tstr2, "One of the names associated with \"%s\" is already in use", tstr2)
+				continue_dialog(tstr2)
+			}
+		}else{
+			sprint(tstr2, "\"%s\" not in \"name integer\" format", tstr)
+			continue_dialog(tstr2)
+		}
+	}
+}
+
+proc set_useionstr() {
+	if (ohmictype_) {
+		g_or_p = "g"
+		sprint(useionstr1, "%s ohmic ion current", ks.ion)
+		tstr = ks.name
+		if (iontype_ == -1) {
+			if (ks.is_point == 0) {
+sprint(useionstr2, "    i_%s (mA/cm2) = g_%s * (v - e_%s)", tstr, tstr, tstr)
+			}else{
+sprint(useionstr2, "    %s.i (nA) = %s.g * (v - %s.e)", tstr, tstr, tstr)
+			}
+		}else{
+			if (ks.is_point == 0) {
+sprint(useionstr2, "    i%s (mA/cm2) = g_%s * (v - e%s)", ks.ion, tstr, ks.ion)
+			}else{
+sprint(useionstr2, "    i%s (mA/cm2) = %s.g * (v - e%s)*(0.01/area)", ks.ion, tstr, ks.ion)
+			}
+		}
+	}else{
+		sprint(tstr1, "%s_ion", ks.ion)
+		g_or_p = "p"
+		sprint(useionstr1, "%s Goldman-Hodgkin-Katz ion current", ks.ion)
+		if (ks.is_point == 0) {
+sprint(useionstr2, "    i%s (mA/cm2) = p_%s * ghk(v, %si, %so, %d)", ks.ion, ks.name, ks.ion, ks.ion, ion_charge(tstr1))
+		}else{
+sprint(useionstr2, "    i%s (mA/cm2) = (1e6)*%s.p * ghk(v, %si, %so, %d)*(0.01/area)", ks.ion, ks.name, ks.ion, ks.ion, ion_charge(tstr1))
+		}
+	}
+	cb.set_gatestr()
+}
+
+endtemplate ChannelBuildSelectProperties

@@ -1,0 +1,15 @@
+load_file("nrngui.hoc")
+create soma
+access soma
+
+objref nclist, syn, gen[3]
+
+xopen("expsyn.ses")
+
+syn = ExpSyn[0]
+nclist = new List()
+
+for i=0, 2 {
+	gen[i] = SpikeGenerator[i]
+	nclist.append(new NetCon(gen[i], syn, -20, i+1, (i+1)*.001))
+}

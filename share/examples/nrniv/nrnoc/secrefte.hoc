@@ -1,0 +1,19 @@
+create soma, axon
+access soma
+objectvar s1, s2
+
+axon s1 = new SectionRef()
+s1.sec.L
+s2 = s1
+s2.sec {psection()}
+
+soma s2 = new SectionRef()
+proc c() {
+	$o1.sec connect $o2.sec(0), 1
+}
+
+c(s2, s1)
+topology()
+
+objectvar s1
+

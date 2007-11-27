@@ -1,0 +1,283 @@
+begintemplate LogAvsX
+public measure, inject, ratio, input, transfer, move_callback, sl, extended, imp
+public flush, begin, view_count
+
+objectvar imp, sec, shape, b1, this, move_callback
+objref seclist, g, rvp[1], sl
+
+double orig[1]
+
+strdef s0, s1, s2, stemp, sdist, sname, fstyle, tstr
+
+proc init() {
+	extended = 0
+	direct_ = 0
+	style_ = 0
+	fstyle = "log(Attenuation)"
+	flush_ = 0
+	scale_ = 0
+	sel_act_ = 0
+	sec = new SectionRef()
+	x = .5
+	outside_sections()
+	nsec = 0
+	forsec sl { nsec += 1 }
+	objref rvp[nsec]
+	double orig[nsec]
+	freq = 0
+	variable_domain(&freq, 0, 1e9) units(&freq, "Hz")
+	imp = new Impedance()
+	build()
+	measure(.5)
+}
+
+proc outside_sections() {   
+	sl = new SectionList()
+	sl.wholetree()
+}
+
+proc measure() {
+	sec = new SectionRef()
+	x = $1
+	setdir(direct_)
+}
+
+proc setdir() {
+    sec.sec {
+	direct_ = $1
+	if (style_ == 1) { // input
+		sprint(s0, "unused (red) %s(%g)", secname(), x)
+	}else if (direct_ == 0) {
+		sprint(s0, "Measure (red) %s(%g)", secname(), x)
+	}else {
+		sprint(s0, "Inject (red) %s(%g)", secname(), x)
+	}
+    }
+	draw()
+}
+
+proc compute() {  // calcs impedances, argument is freq (Hz)
+	sec.sec imp.loc(x)
+	imp.compute($1, extended)
+}
+
+double sz[4]
+proc draw() { local i
+	compute(freq)  // freq is set by a field editor
+	g.flush()
+	if (scale_) {
+		g.size(&sz[0])
+		g.size(sz[0], sz[1], 0, sz[3])
+	}
+}
+
+proc build() {local i
+	b1 = new VBox()
+	b1.ref(this)
+	b1.save("")
+	b1.intercept(1)
+
+	xpanel("", 1)
+	xbutton("Redraw", "draw()")
+	xmenu("Shape Select Action")
+		xradiobutton("Move electrode", "sel_act_ = 0 gcolor()", 1)
+		xradiobutton("Show Position", "sel_act_ = 1")
+	xmenu()
+        xmenu("Plot")
+                xradiobutton("log(Attenuation)", "style(0)", 1)
+                xradiobutton("Zin (Mohm)", "style(1)")
+                xradiobutton("Ztransfer (Mohm)", "style(2)")
+                xradiobutton("V(measure)/V(inject)", "style(3)")
+        xmenu()   
+        xmenu("Extras")
+                xstatebutton("Movie mode", &flush_, "add_flush()")
+                xstatebutton("Auto Scale", &scale_, "draw()")
+	xmenu()
+        xpanel()
+	xpanel("")
+	xcheckbox("include dstate/dt contribution", &extended, "draw()")
+	xpvalue("frequency", &freq, 1, "draw()")
+	xradiobutton("Vin", "setdir(0)", 1)
+	xradiobutton("Vout", "setdir(1)")
+	s0 = "     Please Wait       "
+	xvarlabel(s0)
+	xpanel()
+
+	shape = new Shape()
+	g = new Graph()  // appends graph to box
+	g.menu_tool("Show position", "show_position")
+
+	color = 2
+	shapemark(1)
+	shapemark(0, sec, x)
+
+	shape.action("move()")
+
+	b1.intercept(0)
+	sprint(stemp, "%s", this)
+	b1.map(stemp)
+
+	compute(freq)
+	sec.root distance()
+	i=-1 forsec sl {i+=1 orig[i] = distance(0)}
+
+	i=-1 forsec sl {i+=1
+		rvp[i] = new RangeVarPlot("fun($1)")
+		rvp[i].begin(0)
+		rvp[i].end(1)
+		rvp[i].origin(orig[i])
+	}
+	add_rvp()
+}
+
+proc add_rvp() {local i
+	g.erase_all()
+	g.label(-100,-100, "")
+	for i=0, nsec-1 {
+		g.addobject(rvp[i])
+	}
+	g.label(.5, .9, fstyle)
+}
+
+func vmvi() {local xx, y, z
+	if (direct_ == 0) {
+		y = imp.ratio($1)
+	}else{
+		sec.sec xx = imp.input(x)
+		y = imp.transfer($1)/xx
+	}
+	if (y*1e20 <= 0) {
+		return 1e-30
+	}
+	return y
+}
+
+func fun() {
+	if (style_ == 0) {
+		return -log(vmvi($1))
+	}else if (style_ == 1) {
+		return imp.input($1)
+	}else if (style_ == 2) {
+		return imp.transfer($1)
+	}else{
+		return vmvi($1)
+	}
+}
+
+proc style() {
+	style_ = $1
+	if (style_ == 0) {
+		fstyle = "log(Attenuation)"
+	}else if (style_ == 1) {
+		fstyle = "Zin"
+	}else if (style_ == 2){
+		fstyle = "Ztransfer"
+	}else if (style_ == 3) {
+		fstyle = "V(measure)/V(inject)"
+	}
+	setdir(direct_)
+	add_rvp()
+	draw()
+}
+
+imin=0
+proc gcolor() {local i
+	i=-1 forsec sl { i+=1
+		rvp[i].color(1)
+	}
+}
+
+proc move() {local i, xx, ss
+	xx = hoc_ac_
+	rvp[imin].color(1)
+	if (sel_act_ == 0) {
+		measure(xx)
+		shapemark(0, sec, x, color)
+		shape.color_all(1)
+		draw()
+	}else{
+		ss = this_section(.5)
+		i=-1 forsec sl {i+=1
+			if (ss == this_section(.5)) {
+				rvp[i].color(2)
+			}else{
+				rvp[i].color(1)
+			}
+		}
+		g.flush()
+	}
+}
+
+// should put this in plotshape class and avoid a meaningless point process
+objectvar stim
+proc shapemark() {local i
+	if (numarg() == 1) {
+		objectvar stim
+		for i=0,$1-1 sec.sec stim = new PointProcessMark(x)	
+		for i=0,$1-1 shape.point_mark(stim, color)
+	}else{
+		$o2.sec stim.loc($3)
+	}
+}
+proc show_position() {local i, xx, min, x, xs, ys
+	if ($1 == 2) {
+		min = 1e9
+		imin= -1
+		xs = g.size(2) - g.size(1)
+		ys = g.size(4) - g.size(3)
+		i=-1 forsec sl {i+=1
+			x = rvp[i].left()
+			for (xx) {
+				f = ((x + xx*L - $2)/xs)^2 + ((fun(xx) - $3)/ys)^2
+				if (f < min) {
+					min = f
+					imin = i
+				}
+			}
+		}
+		shape.color_all(1)
+		i=-1 forsec sl {i+=1
+			if (i==imin) {
+				rvp[i].color(2)
+				shape.color(2)
+			}else{
+				rvp[i].color(1)
+			}
+		}
+		g.flush()
+		shape.flush()
+	}
+}
+
+proc add_flush() {
+        if (flush_) {
+                sprint(tstr, "flush_list.append(%s)", this)
+                execute(tstr)
+        }
+}
+func view_count() {
+	if (flush_) {
+		return g.view_count()
+	}else{
+		return 0
+	}
+}
+proc begin() {
+}
+proc flush() {
+        draw()
+}       
+ 
+proc save() {}
+
+endtemplate LogAvsX
+
+
+proc makelogax() {
+	if(!execute1("v", 0)) {
+		continue_dialog("No accessed section: Can't start an LogAvsX")
+		return
+	}
+	hoc_obj_[0] = new LogAvsX()
+}
+

@@ -1,0 +1,109 @@
+begintemplate LincirGraph
+public owner, box, g, re_add, getinfo, map, save, dismiss
+external addplot
+objref owner, box, g, this, p, info
+strdef tstr
+ 
+proc init() {
+	dummy=0
+	owner = $o1
+	build()
+	addplot(g, 0)
+	info = new List()
+	if (numarg() == 2) {
+		restore()
+	}else{
+		map()
+	}
+}
+proc map() {
+	sprint(tstr, "%s for %s", this, owner)
+	if (numarg() > 1) {
+		box.map(tstr, $2,$3,$4,$5)
+	}else{
+		box.map(tstr)
+	}
+}
+proc build() {
+	box = new VBox()
+	box.intercept(1)
+	box.save("")
+	box.dismiss_action("dismiss()")
+	xpanel("")
+	xmenu("PlotWhat?", "plotwhat()")
+	xpanel()
+	g = new Graph()
+	g.menu_remove("Plot what?")
+	g.menu_remove("Change Text")
+	box.intercept(0)
+}
+
+proc dismiss() {
+	box.unmap
+	owner.dismiss_graph(this)
+}
+
+proc plotwhat() {
+	owner.plotwhat(this)
+}
+
+proc getinfo() {local i
+	info.remove_all()
+	// save all the line information
+	p = new Vector(5)
+	for (i=-1; (i = g.line_info(i, p)) != -1;) {
+		info.append(p)
+		p = new Vector(5)
+	}
+}
+
+proc re_add() {local i
+	getinfo()
+	g.erase_all
+	// put back the lines if they still exist
+    if (owner.simulate_) {
+	for i=0, info.count-1 {
+		p = info.object(i)
+		if (owner.varptrname(p.label, tstr)) {
+		  g.addvar(p.label, tstr, p.x[0], p.x[1], p.x[2], p.x[3], p.x[4])
+		}
+	}
+    }else{
+	for i=0, info.count-1 {
+		p = info.object(i)
+		g.addvar(p.label, "dummy", p.x[0], p.x[1], p.x[2], p.x[3], p.x[4])
+	}
+    }
+}
+proc save() {local i
+	getinfo()
+	sprint(tstr, "%d", info.count)
+	$o1.save(tstr)
+	for i=0, info.count-1 {
+		p = info.object(i)
+		$o1.save(p.label)
+		sprint(tstr, "%d %d %g %g %g", p.x[0], p.x[1], p.x[2], p.x[3], p.x[4])
+		$o1.save(tstr)
+	}
+	sprint(tstr, "%g %g %g %g // graph size", g.size(1), g.size(2), g.size(3), g.size(4))
+	$o1.save(tstr)
+	p = new Vector(4)
+	box.size(&p.x[0])
+	sprint(tstr, "%g %g %g %g // box size", p.x[0], p.x[1], p.x[2], p.x[3])
+	$o1.save(tstr)
+	$o1.save("// end info")
+}
+proc restore() {local i, j, n
+	n = fscan()
+	for i=0, n-1 {
+		getstr(tstr)
+		sscanf(tstr, "%[^\n]", tstr)
+		// will be calling re_add() later
+//print "restore ", tstr
+		g.addvar(tstr, "dummy", fscan(), fscan(), fscan(), fscan(), fscan())
+	}
+	g.size(fscan(), fscan(), fscan(), fscan())
+	map("", fscan(), fscan(), fscan(), fscan())
+}
+
+endtemplate LincirGraph

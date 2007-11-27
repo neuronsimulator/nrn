@@ -1,0 +1,865 @@
+begintemplate FakeMechStan
+public type, value, oldval, changed, set_default, chk, count
+public name, panel, action // a fake MechanismStandard in MechStanWrap for Ra and cm
+objref mod_
+
+proc init() {
+	type = $1
+	if (type == 0) {
+		value = 35.4
+	}else{
+		value = 1
+	}
+	set_default()
+}
+proc set_default() {
+	oldval = value
+}
+func changed() {
+	if (oldval != value) {
+		return 1
+	}
+	return 0
+}
+
+func count() { return 1 }
+proc name() {
+	if (type == 0) $s1 = "Ra"
+	if (type == 1) $s1 = "cm"
+}
+
+proc panel() {
+	xpanel("")
+	xlabel($s1)
+	if (type == 0) xpvalue("Ra (ohm-cm)", &value, 1, "mod()")
+	if (type == 1) xpvalue("cm (uF/cm2)", &value, 1, "mod()")
+	xpanel()
+}
+proc action() {
+	mod_ = $o2
+}
+proc mod() {
+	chk()
+	mod_.modified()
+}
+proc chk() {
+	if (type == 4) { // nseg
+		if (value < 1) { value = 1 }
+		value = int(value)
+	}else{
+		if (value <= 0) { value = 1e-6 }
+	}
+}
+endtemplate FakeMechStan
+
+begintemplate MStanWrap
+public ms, msold, changed, set_default, box, is_ms
+objref ms, msold, box
+strdef tstr
+
+proc init() {
+	ms = $o1
+	is_ms = 1
+	if (numarg() == 2) {
+		is_ms = $2
+	}
+	if (is_ms) {
+		ms.name(tstr)
+		msold = new MechanismStandard(tstr)
+	}
+	set_default()
+}
+proc set_default() {
+	if (is_ms) {
+		ms.out(msold)
+	}else{
+		ms.set_default()
+	}
+}
+func changed() {local i, j
+	if (is_ms) {
+		for i = 0, ms.count-1 {
+			for j=0, ms.name(tstr, i) - 1 {
+				if (ms.get(tstr, j) != msold.get(tstr, j)) {
+					return 1
+				}
+			}
+		}
+	}else{
+		return ms.changed()
+	}
+	return 0
+}
+
+endtemplate MStanWrap
+
+begintemplate CellMembrane
+public update, mstate, save_data, g, bild, changed, pr, consist, modified
+public free, cexport, export, inhomo_export, xmlwrite, neuroml
+objref g, this, setlist, mt, tobj, hbox, bild, sf, ms[1], vbox, d1,d2
+objref mlist, tobj1, nil, inhomo, inhomonames
+double mstate[1]
+strdef tstr, tstr1, tstr2, lab1
+proc init() {
+	emem = 0
+	lab1 = "mmmmmmmmmmmmmmmmmmmmmmmmmmmmm"
+	inhomo = new Vector(100)
+	inhomonames = new List()
+	first = 1
+	bild = $o1
+	g = bild.gtopol
+	setlist = new List()
+	mlist = new List()
+	sf = new StringFunctions()
+	mt = new MechanismType(0)
+	panel()
+	sprint(tstr, "%s", this)
+	hbox.map(tstr)
+}
+
+proc hints() {
+xpanel("CellBuild Biophysics hints")
+xlabel("Usage Hints:")	
+xlabel("First, use \"Specify Strategy\" to define a (hopefully compact)")
+xlabel("    strategy of which membrane parameter sets should be")
+xlabel("    associated with which subsets and individual sections.")
+xlabel("    If a subset or section is used for a membrane spec that ")
+xlabel("    fact is noted in its label.")
+xlabel("")
+xlabel("Next, unselect the strategy button to use the strategy.")
+xlabel("    Only the subsets and sections with mechanisms are shown.")
+xlabel("    If a subset or section has mechanism values that differ")
+xlabel("    from the values when this tool was last saved in a session")
+xlabel("    file, an \"x\" is shown in front of its strategy label.")
+xlabel("")
+xlabel("The strategy order should be general to specific since the")
+xlabel("  specification will be executed in the order given.")
+xlabel("  Go back to \"Subsets\" if more subsets are needed or if the")
+xlabel("  order needs to be changed.")
+xpanel()
+}
+
+proc cexport() { local i
+	emem = $1
+	if (bild.continuous == 0) {
+		emem = 0
+	}
+	consist()
+}
+
+proc export() {local i, j, l, m, n, ii
+    if (emem) {
+	for i=0, setlist.count-1{
+	    tobj = setlist.object(i)
+	    l = ltype(tobj)
+	    if (l != 3) if(tobj.ml.count) {
+		if (l == 1) {
+			sprint(tstr2, "forsec %s {", tobj.name_)
+		}else{
+			tobj.name(tstr)
+			sprint(tstr2, "%s {", tstr)
+		}
+		tobj = tobj.ml
+		for j=0, tobj.count-1 {
+			tobj1 = tobj.object(j).ms
+			tobj1.name(tstr)
+		    if (tobj.object(j).is_ms) {
+			sprint(tstr, "%s insert %s }", tstr2, tstr)
+//print tstr
+			execute(tstr)
+			for m=0, tobj1.count-1 {
+				n = tobj1.name(tstr, m)
+				if (n == 1) {
+sprint(tstr, "%s %s = %g }", tstr2, tstr, tobj1.get(tstr))
+//print tstr
+					execute(tstr)
+				}else{
+					for ii=0, n-1 {
+sprint(tstr1, "%s %s[%d] = %g }", tstr2, tstr, ii, tobj1.get(tstr, ii))
+//print tstr1
+						execute(tstr1)
+					}
+				}
+			}
+		    }else{
+sprint(tstr, "%s %s = %g }", tstr2, tstr, tobj1.value)
+//print tstr
+			execute(tstr)
+		    }
+		}
+	    }
+	}
+    }
+}
+proc inhomo_export() {
+    if (emem) {
+	for i=0, setlist.count-1 {
+		tobj = setlist.object(i)
+		if (ltype(tobj) == 3) {
+			tobj.export()
+		}
+	}
+    }
+}
+
+proc free() {local i, j
+	for i = 0, mlist.count-1 {
+		tobj = mlist.object(i)
+		if (ltype(tobj) == 0) {
+			tobj.ms.action("modified()", nil)
+		}
+	}
+}
+		
+func changed() {local i
+	for i=0, mlist.count - 1 {
+		if (ltype(mlist.object(i)) == 0) {
+			if (mlist.object(i).changed()) {
+				return 1
+			}
+		}
+	}
+	return 0
+}
+
+func ltype() { //0 MechanismStandard, 1 SNList, 2 CellBuildSection,
+		// 3 DomainParmInfo
+	sprint(tstr, "%s", $o1)
+	if (sf.head(tstr, "MStanWrap", tstr2) >= 0) {
+		return 0
+	}else if (sf.head(tstr, "SNList", tstr2) >= 0) {
+		return 1
+	}else if (sf.head(tstr, "DomainParmInfo", tstr2) >= 0) {
+		return 3
+	}else if (sf.head(tstr, "InhomoParm", tstr2) >= 0) {
+		return 4
+	}
+	return 2
+}
+
+proc consist() { local i, j, k
+	setlist.remove_all()
+	mlist.remove_all()
+	for i=0, bild.subsets.snlist.count-1 {
+		tobj = bild.subsets.snlist.object(i)
+		setlist.append(tobj)
+		if (tobj.ml.count > 0) {
+			mlist.append(tobj)
+			for j=0, tobj.ml.count-1 {
+				tobj.ml.object(j).ms.action("modified()", this)
+				mlist.append(tobj.ml.object(j))
+			}
+		}
+		if (tobj.domainparms != nil) {
+			for j=0, tobj.domainparms.count-1 {
+				setlist.append(tobj.domainparms.object(j))
+			}
+		}
+	}
+	for i=0, bild.subsets.snlist.count-1 {
+		tobj = bild.subsets.snlist.object(i).domainparms
+		if (tobj != nil) for j=0, tobj.count-1 {
+			tobj1 = tobj.object(j)
+			if (tobj1.using_.count) {
+				mlist.append(tobj1)
+			}
+			for k=0, tobj1.using_.count-1 {
+				mlist.append(tobj1.using_.object(k))
+			}
+		}
+	}
+	for i=0, bild.topol.slist.count-1 {
+		tobj = bild.topol.slist.object(i)
+		setlist.append(tobj)
+		if (tobj.ml.count > 0) {
+			mlist.append(tobj)
+			for j=0, tobj.ml.count-1 {
+				tobj.ml.object(j).ms.action("modified()",this)
+				mlist.append(tobj.ml.object(j))
+			}
+		}
+	}
+	if (mlist.count > mlist_selected) {
+		mlist.select(mlist_selected)
+	}else{
+		mlist.select(-1)
+	}
+	export()
+}
+
+proc update() {local i, j
+	bild.subsets.update()
+	consist()
+	if (mlist.count) {
+		inmode_ = 0
+	}else{
+		inmode_ = 1
+	}
+	first = 0
+	if (setlist.count > 0) {
+		setlist.select(0)
+	}
+	inmode()			
+	g.exec_menu("Crosshair")
+}
+proc panel() { local i
+	hbox = new HBox(3)
+	hbox.intercept(1)
+	hbox.ref(this)
+	hbox.save("save()")
+
+	vbox = new VBox(3)
+	vbox.intercept(1)
+	xpanel("")
+	inmode_ = 1
+	xcheckbox("Specify Strategy", &inmode_, "inmode()")
+	xpanel()
+	d1 = new Deck(3)
+	d1.intercept(1)
+	setlist.browser("", tstr, "setlistname(hoc_ac_)")
+	setlist.select_action("selsub(hoc_ac_)")
+	setlist.accept_action("selsub(hoc_ac_)")
+	mlist.browser("", tstr, "mlistname(hoc_ac_)")
+	mlist.select_action("selms(hoc_ac_)")
+	mlist.accept_action("selms(hoc_ac_)")
+	d1.intercept(0)
+	d1.map()
+	d1.flip_to(0)
+	xpanel("")
+	xbutton("Hints", "hints()")
+	xpanel()
+	vbox.intercept(0)
+	vbox.map()
+	double mstate[mt.count]
+	objref ms[mt.count]
+	d2 = new Deck(3)
+	d2.intercept(1)
+	xpanel("")
+	xvarlabel(lab1)
+	for i=0, mt.count-1 {
+		mt.select(i)
+		mt.selected(tstr)
+		if (i == 4) { continue }
+		if (i == 0) tstr = "Ra"
+		if (i == 1) tstr = "cm"
+		if (sf.substr(tstr, "_ion") >= 0) { continue }
+		sprint(tstr2, "selmt(%d)", i)
+		xcheckbox(tstr, &mstate[i], tstr2)
+	}
+	xpanel()
+	xpanel("")
+	xlabel("zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz")
+	xpanel()
+	d2.intercept(0)
+	d2.flip_to(0)
+	d2.map()
+	hbox.intercept(0)
+}
+
+proc inmode() {
+	bild.leave()
+	if (inmode_ == 1) {
+		d1.flip_to(0)
+		selsub(setlist.selected)
+		g.exec_menu("Crosshair")
+
+	}else{
+		consist()
+		d1.flip_to(1)
+		if (mlist.count > 0) {
+			mlist.select(0)
+			doNotify()
+			selms(0)
+		}else{
+			d2.flip_to(-1)
+			g.exec_menu("Crosshair")
+		}
+	}
+}
+
+proc modified() {local i
+	i = mlist.selected()
+	if (i < 0) {
+		i = mlist_selected
+	}
+	tobj = mlist.object(i)
+	mlist.remove(i)
+	mlist.insrt(i, tobj)
+	mlist.select(i)
+	export()
+	if ( mlist.object(i).is_ms == 0 && emem) { //Ra or cm
+		bild.geom.export_autonseg()
+		inhomo_export()
+	}
+}
+
+proc selms() {local i, j, l, k
+	if (in_selms_) { return }
+	in_selms_ = 1
+	bild.leave()
+	if ($1 == -1) { in_selms_ = 0  return }
+	l = ltype(mlist.object($1))
+	if (l != 0 && l != 4) { //mechanism or inhomoparm
+		$1 += 1
+		mlist.select($1)
+	}
+	for (i=$1-1; i >= 0; i -= 1) {
+		tobj = mlist.object(i)
+		l = ltype(tobj)
+		if (l == 1) { // SNList
+			for j=0, setlist.count-1 {
+				if (setlist.object(j) == tobj) {
+					k = bild.subsets.snlist.index(tobj)
+					bild.subsets.showsel(k, g)
+					mspan(1, $1, tobj)
+					g.exec_menu("Crosshair")
+					in_selms_ = 0
+					return
+				}
+			}
+		}else if (l == 2) { //CellBuildSection
+			bild.topol.sel_only(tobj, g)
+			mspan(2, $1, tobj)
+			g.exec_menu("Crosshair")
+			in_selms_ = 0
+			return
+		}else if (l == 3) {
+			k = bild.subsets.snlist.index(tobj.subset)
+			bild.subsets.showsel(k, g)
+			mspan(3, $1, tobj)
+			in_selms_ = 0
+			return
+		}
+	}
+	in_selms_ = 0
+}
+
+proc mspan() {
+	name($o3)
+	tobj = mlist.object($2)
+	mlist_selected = $2
+	tobj.ms.name(tstr2)
+	if (tobj.is_ms) {
+		tstr1 = "insert "
+	}else{
+		tstr1 = "// specify "
+	}
+	if ($1 == 1) {
+		sprint(tstr, "forsec %s { %s%s", tstr, tstr1, tstr2)
+	}else if ($1 == 3) {
+		sprint(tstr, "for %s.loop(&x, &p) {", tstr)
+		// force rebuild of panel
+		tobj.box = nil
+	}else{
+		sprint(tstr, "%s { %s%s", tstr, tstr1, tstr2)
+	}
+	if (object_id(tobj.box) == 0) {
+		tobj.box = new VBox(3)
+		tobj.box.intercept(1)
+		tobj.ms.panel(tstr)
+		tobj.box.intercept(0)
+	}
+	d2.remove_last()
+	d2.intercept(1)
+	tobj.box.map()
+	d2.intercept(0)
+	d2.flip_to(1)
+}
+
+proc setlistname() {local type
+	type = name(setlist.object($1))
+	if (type == 2) { 
+		sprint(tstr, " %s", tstr)
+	}
+	if (type == 3) {
+		if (setlist.object($1).using_.count) {
+			sprint(tstr, "  %s: manage ...", tstr)
+		}else{
+			sprint(tstr, "  %s", tstr)
+		}
+		return
+	}
+	if (setlist.object($1).ml.count) {
+		sprint(tstr,"%s:    manage ...", tstr)
+	}
+}
+proc mlistname() {local type
+	type = name(mlist.object($1))
+	if (type == 0) { //mechanism
+		if (mlist.object($1).changed()) {
+			sprint(tstr, "x    %s", tstr)
+		}else{
+			sprint(tstr, "     %s", tstr)
+		}
+	}else if (type == 2) { // CellBuildSection
+		sprint(tstr, "  %s", tstr)
+	}else if (type == 3) {
+		sprint(tstr, " %s", tstr)
+	}else if (type == 4) {
+		sprint(tstr, "     %s", tstr)
+	}else{
+		sprint(tstr, " %s", tstr)
+	}
+}
+
+func name() {local type
+	type = ltype($o1)
+	if (type == 0) { //mechanism
+		$o1.ms.name(tstr)
+	}else{
+		$o1.name(tstr)
+	}
+	return type
+}
+
+proc selsub() {local i, j, l, k
+	if ($1 == -1) return
+	if (in_selsub_) { return }
+	in_selsub_ = 1
+	l = ltype(setlist.object($1))
+	i = $1
+	setlist.select($1)
+	for j=0, mt.count-1 {
+		mstate[j] = 0
+	}
+
+	if (i > -1 && l == 3) {
+		setlist.object(i).name(tstr)
+		sprint(lab1, "for %s.loop(&x,&p) { // specify", tstr)
+		k = bild.subsets.snlist.index(setlist.object(i).subset)
+		bild.subsets.showsel(k, g)
+		range_selector(i)
+		in_selsub_ = 0
+		return
+	}
+	d2.flip_to(0)
+	if (i > -1) {
+		tobj = setlist.object(i).ml
+		for j=0, tobj.count-1 {
+			if (tobj.object(j).is_ms) {
+				tobj.object(j).ms.name(tstr)
+				mt.select(tstr)
+				mstate[mt.selected] = 1
+			}else{
+				mstate[tobj.object(j).ms.type] = 1
+			}
+		}
+		name(setlist.object(i))
+		if (l == 1) {
+			sprint(lab1, "forsec %s { //specify", tstr)
+			k = bild.subsets.snlist.index(setlist.object(i))
+			bild.subsets.showsel(k, g)
+		}else{
+			sprint(lab1, "%s { //specify", tstr)
+			bild.topol.sel_only(setlist.object(i), g)
+		}			
+	}
+	in_selsub_ = 0
+}
+	
+proc range_selector() {local i, j, k, size
+	d2.remove_last()
+	d2.intercept(1)
+	xpanel("")
+	xlabel(lab1)
+	tobj = setlist.object($1).subset.list.object(0).sets
+	inhomo.resize(0)
+	inhomonames.remove_all
+	for i=0, tobj.count-1 {
+		for j=0, tobj.object(i).ml.count-1 {
+			tobj1 = tobj.object(i).ml.object(j).ms
+			tobj1.name(tstr)
+			for k=0, tobj1.count-1 {
+				tobj1.name(tstr, k)
+				if (strcmp(tstr, "Ra") == 0) {continue}
+				if (in_inhomonames(tstr)) {continue}
+				inhomonames.append(new String(tstr))
+				sprint(tstr1, "selinhomo(%d, \"%s\")", inhomo.size, tstr)
+				inhomo.append(setlist.object($1).is_using(tstr))
+				xcheckbox(tstr, &inhomo.x[inhomo.size-1], tstr1)
+			}
+		}
+	}
+	xpanel(1)
+	d2.intercept(0)
+	d2.flip_to(1)
+	// make sure not using anything not in list
+	tobj = setlist.object($1).using_
+	for (i=tobj.count-1; i >= 0; i -= 1) {
+		if (in_inhomonames(tobj.object(i).s) == 0) {
+			tobj.remove(i)
+		}
+	}
+}
+
+func in_inhomonames() {local i
+	for i=0, inhomonames.count-1 {
+		if (strcmp(inhomonames.object(i).s, $s1) == 0) {
+			return 1
+		}
+	}
+	return 0
+}
+
+proc selinhomo() {local i
+//	printf("%s is %d\n", $s2, $1)
+	i = setlist.selected
+	tobj = setlist.object(i)
+	tobj.using(inhomo.x[$1], $s2)
+	setlist.remove(i)
+	setlist.insrt(i, tobj)
+	setlist.select(i)
+	export()
+}
+
+proc unexport() {//can't use tobj or tstr, $3 is tstr2
+	if (emem) {
+		if ($2 == 1) {
+			sprint(tstr1, "forsec %s uninsert %s", $o1.name_,$s3)
+		}else{
+			$o1.name(tstr1)
+			sprint(tstr1, "%s uninsert %s", tstr1, $s3)
+		}
+		execute(tstr1)
+	}
+}
+
+proc selmt() {local i, j, l, b
+	i = setlist.selected()
+	bild.changed_ = 1
+	b = 0
+	if (i > -1) {
+		l = ltype(setlist.object(i))
+		tobj = setlist.object(i).ml
+		mt.select($1)
+		mt.selected(tstr)
+		if (mstate[$1]) { // add to list
+			if ($1 <= 1) {
+				tobj.append(new MStanWrap(new FakeMechStan($1), 0))
+				b = 1
+			}else{
+				tobj.append(new MStanWrap(new MechanismStandard(tstr)))
+			}
+		}else{
+			for j=0, tobj.count-1 {
+				if (tobj.object(j).is_ms) {
+					tobj.object(j).ms.name(tstr2)
+					if (strcmp(tstr, tstr2) == 0) {
+unexport(setlist.object(i), l, tstr2)
+						tobj.remove(j)
+						break
+					}
+				}else{
+					if (tobj.object(j).ms.type == $1){
+						tobj.remove(j)
+						break
+					}
+				}
+			}
+		}
+		tobj = setlist.object(i)
+		j = mlist.index(tobj)
+		if (j == -1 && tobj.ml.count > 0) {
+			mlist.append(tobj)
+		}else if (j != -1 && tobj.ml.count == 0) {
+			mlist.remove(j)
+		}
+		setlist.remove(i)
+		setlist.insrt(i, tobj)
+		setlist.select(i)
+		export()
+		if ( b == 1 && emem) { //Ra or cm
+			bild.geom.export_autonseg()
+			inhomo_export()
+		}
+	}else{
+		mstate[$1] = 0
+	}
+}
+
+proc set_default() {
+	if ($o1.changed()) {
+		$o1.set_default()
+		$o1.box = nil
+	}
+}
+
+proc neuroml() {local i, j, g_index  localobj bm, parm, ms
+	// NeuroML is in error with regard to having group a subitem of
+	// parm instead of biomech
+	for i = 0, $o1.biomechs_.__len__() - 1 {
+		bm = $o1.biomechs_[i]
+		//print bm.name_
+		g_index = bm.parms_[0].group_index_
+		if (strcmp("Ra", bm.name_) == 0) {
+			ms = new FakeMechStan(0)
+			ms.value = bm.parms_[0].value_
+			ms.set_default()
+		}else if (strcmp("cm", bm.name_) == 0) {
+			ms = new FakeMechStan(1)
+			ms.value = bm.parms_[0].value_
+			ms.set_default()
+		}else{
+			ms = new MechanismStandard(bm.name_)
+			for j=0, bm.parms_.__len__() - 1 {
+				parm = bm.parms_[j]
+				ms.set(parm.name_, parm.value_, 0)
+			}
+		}
+		ms = new MStanWrap(ms, g_index)
+		bild.subsets.snlist.object(g_index).ml.append(ms)
+	}
+}
+
+proc save_data() { local i, j, l, k
+	consist()
+	sprint(tstr, "}\n{object_push(%s)}\n{first=0}", $s2)
+	$o1.save(tstr)
+	for i=0, setlist.count-1 {
+		tobj = setlist.object(i)
+		l = ltype(tobj)
+		if (l == 3) {
+			continue
+		}
+		tobj = tobj.ml
+		for j=0, tobj.count-1 {
+			$o1.save("{")
+			if (tobj.object(j).is_ms) {
+				tobj.object(j).ms.save("tobj")
+			}else{
+sprint(tstr2, "tobj = new FakeMechStan(%d)", tobj.object(j).ms.type)
+				$o1.save(tstr2)
+				sprint(tstr2, "tobj.value = %g", tobj.object(j).ms.value)
+				$o1.save(tstr2)
+				$o1.save("tobj.set_default()")
+			}
+			set_default(tobj.object(j))
+			sprint(tstr2, "tobj = new MStanWrap(tobj, %d)", tobj.object(j).is_ms)
+			$o1.save(tstr2)
+			if (l == 1) {
+sprint(tstr2, "bild.subsets.snlist.object(%d).ml.append(tobj)", \
+  bild.subsets.snlist.index(setlist.object(i)))
+			}else{
+sprint(tstr2, "bild.topol.slist.object(%d).ml.append(tobj)", \
+  bild.topol.slist.index(setlist.object(i)))
+			}
+			$o1.save(tstr2)
+			$o1.save("}")
+		}			
+	}
+	$o1.save("{object_pop()}\n{")
+	inmode()
+}
+	
+proc pr() {local i, j, l, m, n, ii, have_inhomo
+	consist()
+	$o1.printf("proc biophys() {\n")
+	have_inhomo = 0
+	for i=0, setlist.count-1{
+	    tobj = setlist.object(i)
+	    l = ltype(tobj)
+	    if (l != 3 && l != 4) if (tobj.ml.count) {
+		if (l == 1) {
+			$o1.printf("  forsec %s {\n", tobj.name_)
+		}else{
+			tobj.name(tstr)
+			$o1.printf("  %s {\n", tstr)
+		}
+		tobj = tobj.ml
+		for j=0, tobj.count-1 {
+			tobj1 = tobj.object(j).ms
+			tobj1.name(tstr)
+		    if (tobj.object(j).is_ms) {
+			$o1.printf("    insert %s\n", tstr)
+			for m=0, tobj1.count-1 {
+				n = tobj1.name(tstr, m)
+				if (n == 1) {
+$o1.printf("      %s = %g\n", tstr, tobj1.get(tstr))
+				}else{
+					for ii=0, n-1 {
+$o1.printf("      %s[%d] = %g\n", tstr, ii, tobj1.get(tstr))
+					}
+				}
+			}
+		    }else{
+$o1.printf("    %s = %g\n", tstr, tobj1.value)
+		    }
+		}
+ 		$o1.printf("  }\n")
+	    }
+	    if( l == 3) {
+		have_inhomo = 1
+	    }
+	}
+	$o1.printf("}\n")
+	if (have_inhomo) {
+		j = 0
+		for bild.subsets.domain_iter(tobj) {
+			tobj.name(tstr)
+			if (j == 0) {
+				$o1.printf("objref %s", tstr)
+			}else{
+				$o1.printf(", %s", tstr)
+			}
+			j = 1
+		}
+		$o1.printf("\nproc biophys_inhomo() {\n")
+		for bild.subsets.domain_iter(tobj) {
+			tobj.prmemb1($o1)
+		}
+ 		$o1.printf("}\n")
+		for bild.subsets.domain_iter(tobj) {
+			tobj.prmemb2($o1)
+		}
+	}
+}
+
+proc xmlwrite() {local i, j, l, m, n, ii
+	consist()
+	$o1.printf("  <membrane_properties>\n")
+	for i=0, setlist.count-1{
+	    tobj = setlist.object(i)
+	    l = ltype(tobj)
+	    if (l != 3 && l != 4 ) if (tobj.ml.count) {
+		if (l == 1) {
+			$o1.printf("  <subset name=\"%s\">\n", tobj.name_)
+		}else{
+			tobj.name(tstr)
+			$o1.printf("  <section id=\"%d\">\n", tobj.id_)
+		}
+		tobj = tobj.ml
+		for j=0, tobj.count-1 {
+			tobj1 = tobj.object(j).ms
+			tobj1.name(tstr)
+		    if (tobj.object(j).is_ms) {
+			$o1.printf("    <mechanism name=\"%s\">\n", tstr)
+			for m=0, tobj1.count-1 {
+				n = tobj1.name(tstr, m)
+				if (n == 1) {
+$o1.printf("      <property name=\"%s\" value=\"%g\"/>\n", tstr, tobj1.get(tstr))
+				}else{
+					for ii=0, n-1 {
+$o1.printf("      <property name=\"%s[%d]\" value=\"%g\"/>\n", tstr, ii, tobj1.get(tstr))
+					}
+				}
+			}
+			$o1.printf("    </mechanism>\n")
+		    }else{
+$o1.printf("      <property name=\"%s\" value=\"%g\"/>\n", tstr, tobj1.value)
+		    }
+		}
+		if (l == 1) {
+			$o1.printf("  </subset>\n")
+		}else{
+			$o1.printf("  </section>\n")
+		}
+	    }
+	}
+	for bild.subsets.domain_iter(tobj) {
+		tobj.xmlwrite($o1)
+	}
+	$o1.printf("  </membrane_properties>\n")
+}
+
+endtemplate CellMembrane
+

@@ -1,0 +1,154 @@
+
+// Physical properties
+create a
+access a
+{nseg=1 insert cachan}
+
+// graphical interface appearance
+objref g
+g = new Graph()
+strdef tstr
+
+// simulation control
+proc pefun() {
+	g.size(-10,10,0,10)
+	g.beginline
+	for (z=-10; z<10; z=z+.1) {
+		g.line(z, efun_cachan(z))
+	}
+	g.flush()
+}
+
+proc pghk() {local i
+	g.vfixed
+	i=1
+	g.label(.6,1,"")
+	g.erase_all()
+	g.size(-100,100,-1.5e3,1.5e3)
+	for (co = 1e-3; co < 1e3; co = co*10) {
+		g.color(i)  i=i+1
+		g.beginline
+		for (v=-100; v<100; v=v+1) {
+			g.line(v, ghk_cachan(v, 1e-3, co)/co)
+		}
+		sprint(tstr, "co=%g", co)
+		g.label(tstr)
+		g.flush()
+	}
+}
+
+proc curca() {
+	g.erase_all()
+	g.color(1)
+	g.size(-80,100,-1,1) 
+	g.vfixed 
+	g.label(.37, .95, "current with oca=1")	
+	{
+		g.beginline
+		for (v=-80; v<100; v=v+1) {
+			fcurrent()
+			g.line(v,ica)
+		}
+	}
+	g.flush()
+}
+
+proc pica1() {
+	oca_cachan = 1
+	cao = 10
+	cai = cao  curca()
+	cai = cao/10 curca()
+	cai = cao/10000 curca()
+}
+
+proc prate() {
+	g.erase_all()
+	g.vfixed
+	g.color(0)
+	g.label(.6,.8,"")
+	g.color(1)
+	g.label("oca_ss_cachan(v)")
+	g.color(2)
+	g.label("oca_tau_cachan(v)")
+	g.size(-80,100,0,1)
+	g.beginline
+	for (v=-80; v<100; v=v+1) {
+		g.color(1)
+		g.line(v, oca_ss_cachan(v))
+	}
+	g.beginline
+	for (v=-80; v<100; v=v+1) {
+		g.color(2)
+		g.line(v, oca_tau_cachan(v))
+	}
+	g.flush()
+}
+
+proc pica() { /*steady state current*/
+	cao = 10
+	cai = cao  curca_oca()
+	cai = cao/10 curca_oca()
+	cai = cao/10000 curca_oca()
+}
+
+
+
+proc curca_oca() {
+	g.size(-80,100,-6,6) 	
+	{
+		g.beginline
+		for (v=-80; v<100; v=v+1) {
+			oca_cachan = oca_ss_cachan(v)
+			fcurrent()
+			g.line(v,ica)
+		}
+	}
+	g.flush()
+}
+
+proc runvc() {
+	g.beginline
+	v=-65 oca_cachan=oca_ss_cachan(v)
+	t=0
+	fcurrent() //plot(1, t, ica)
+	g.line(t, ica)
+	fclamp(2,.5)
+	fclamp(0, 5, $1)
+	fclamp(1,1e9,-65)
+	while (t < 7) {
+		fadvance()
+		g.line(t,ica)
+	}
+	g.flush()
+}
+proc pvc() {
+	g.erase_all()
+	g.color(1)
+	dt=.005
+	g.vfixed
+	g.label(.5,.5,"vc")
+	i=1
+	g.size(0,6,-2,.1)
+	cai=$1  cao=$2
+	g.label(.95,.9,"")
+	for (vc=-50; vc<=50; vc=vc+20) {
+		g.color(i)
+		sprint(tstr,"%g",vc)
+		g.label(tstr)
+		i=i+1
+		runvc(vc)
+	}
+}
+
+proc menu() {
+	xpanel("Select plot")
+	xbutton("G-H-K func", "pghk()")
+	xbutton("rate", "prate()")
+	xbutton("i-v (oca=1)", "pica1()")
+	xbutton("i-v (oca=ocainf)","pvc(.001,10)")
+	xpanel()
+}
+// run simulation
+menu()
+
+

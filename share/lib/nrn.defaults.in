@@ -1,0 +1,126 @@
+*double_buffered: on
+
+// with above at least there will not be flickering if InterViews
+// resource file is missing
+
+*Scene_background: #ffffff
+*Scene_foreground: #000000
+*FieldEditor*background: #ffffff
+*background: #cfffff
+*foreground: #000000
+*default_brush: 0
+*view_margin: .25
+
+*dismiss_button: Close
+*use_transient_windows: yes
+
+*mswin_scale: 1.2
+// above only applies to the mswin version. If the width of the screen in pixels
+// is pw, then the default scale is 1 if pw>1100 otherwise scale is 1200/pw
+// if above is uncommented then the value will take precedence.
+// scale can also be set at any time with PWManager[0].scale(factor)
+
+*nrn_library: $(NEURONHOME)/lib
+
+*view_pick_epsilon: 2
+
+*pwm_dismiss_button: Iconify
+*pwm_help: on
+*pwm_canvas_height: 120
+*pwm_paper_height: 11
+*pwm_paper_width: 8.5
+*pwm_paper_resolution: .5
+*pwm_screen_outline_color: red
+*pwm_window_outline_color: blue
+// windows on screen snap to grid
+*pwm_pixel_resolution: 0
+// nonzero value above will not work unless offsets are set correctly
+// for your window manager. I know of no portable way of determining
+// them automatically.
+*window_manager_offset_x: 5.
+*window_manager_offset_y: 26.
+
+*section_select_color: red
+*section_adjacent_color: green
+*show_adjacent_selection: off
+
+*disable_color: #808080
+
+// how many items in a panel before switching to scroll style
+*panel_scroll: 12
+
+// suffix for filenames to appear in browsers
+*pwm_print_file_filter: *.ps
+*pwm_idraw_file_filter: *.id
+*pwm_ascii_file_filter: *
+*pwm_save_file_filter: *.ses
+*pwm_idraw_prologue: $(NEURONHOME)/lib/prologue.id
+//setlinejoin is to prevent noisy looking wide lines when points are
+//very close together
+*pwm_postscript_filter: sed '/%%EndProlog/a\\\n2 setlinejoin\ns;/Adobe-;/;\ns;-Oblique;;'
+//following for mswin
+@nrndef_mswin@*pwm_postscript_filter: sed -f ${N}/lib/psfilt.sed
+@nrndef_mswin@*printer_command: Windows
+
+*SlowSlider*autorepeatStart: 0.
+
+//draw a box around a printed window
+*scene_print_border: 1
+
+*radioScale: 1.2
+*stepper_size: 20.
+*xvalue_field_size_increase: 10.
+
+// following is historical standard for unix.
+@nrndef_unix@*font: *helvetica-medium-r-normal*--14*
+//*MenuBar*font: *-helvetica-bold-o-normal--14-140-*
+//*MenuItem*font: *-helvetica-bold-o-normal--14-140-*
+// Mac and mswin internal default is
+@nrndef_mac@*font: *Arial*bold*--12*
+@nrndef_mswin@*font: *Arial*bold*--12*
+//*MenuBar*font: *Arial*bold*--12*
+//*MenuItem*font: *Arial*bold*--12*
+
+*xvalue_format: %.5g
+
+# according to xaxis(mode), 0 means view axis, 3 means nothing
+*graph_axis_default: 0
+
+//the color map for pseudocolor plotting for 3-D cells
+*shape_scale_file: $(NEURONHOME)/lib/shape.cm2
+// 1 means slower but more pleasing join
+*shape_beveljoin: 1
+
+// number of colors and brushes selectable in the graph ColorBrushWidget
+*CBWidget_ncolor: 10
+*CBWidget_nbrush: 10
+
+// most people do not like the "first instance" messages when loading
+// hoc files
+*first_instance_message: off
+
+// Value editor buttons show units if available
+*units_on_flag: on
+// Following useful for one button mouse. Mac has this as 10 by default
+*scene_menu_box_size: 10.
+
+// The full pathname for the Java VM dynamically loadable
+//   library is specified here
+// two examples for mswin on my machines are
+//*jvmdll: c:\Java\jre1.5.0_01\bin\client\jvm.dll
+//*jvmdll: c:\jdk1.3.1\jre\bin\classic\jvm.dll
+// for gnu-linux it should be set as below and the LD_LIBRARY_PATH set
+// so that libjvm.so can itself find other libraries. For example
+// export LD_LIBRARY_PATH=/usr/java/j2sdk1.4.0_01/jre/lib/i386/client:/usr/java/j2sdk1.4.0_01/jre/lib/i386
+//@nrndef_unix@*jvmdll: libjvm.so
+//@nrndef_mac@*jvmdll: /System/Library/Frameworks/JavaVM.framework/Versions/1.3.1/Libraries/libjvm.dylib
+
+// The default stack size is 1000 and the frame (recursion depth) size is 100 unless explicitly set nonzero below
+// One may also use the -NSTACK stacksize   -NFRAME framesize options at launch.
+*NSTACK: 0
+*NFRAME: 256
+
+// To ensure that all statements in this file take effect, do not remove this line.
+// It prevents the absence of a trailing newline for the last substantive
+// property for mswin.
+

@@ -1,0 +1,430 @@
+{load_file("stdlib.hoc")}
+
+begintemplate ParallelNetManager
+public register_cell, nc_append
+public splitcell
+public set_gid2node, gid_exists, create_cell, pc, maxstepsize
+public spikevec, idvec, gatherspikes, want_all_spikes, spike_record
+public graphout, wantgraph, set_maxstep, serialize
+public prun, pcontinue, pinit, psolve, ncell
+public round_robin //simplistic partitioning
+public tmpcell
+// mostly for debugging
+public cells, nclist, myid, nwork, nhost, prstat
+
+external stdinit, continuerun, cvode, tstop, hoc_sf_
+external cvode_active, cvode_local
+
+objref cells, nclist, tmpcell, nil, pc
+objref spikevec, idvec
+objref this
+objref wmat_
+strdef tstr
+
+proc init() {
+	pc = new ParallelContext()
+	nhost = pc.nhost
+	if (nhost < 2) { // for no PVM or MPI and for 1 host
+		nhost = 1
+		myid = 0
+	}else{
+		myid = pc.id
+	}
+	nwork = nhost
+	ncell = $1
+	
+	cells = new List() // the worker cells
+	nclist = new List() // the netcons connecting to cells in this subset
+
+	maxstepsize_called_ = 0
+	want_graph_ = 0
+	edgecount_ = 0
+	spikevec = new Vector(1000) spikevec.resize(0)
+	idvec = new Vector(1000) idvec.resize(0)
+}
+
+// originally
+// the gid <-> cell map was constructed in two phases.
+// first we specify which gids will exist on this machine.
+// Then, when create_cell is called we can decide if the cell
+// will actually be created and, if so, pc.presyn actually
+// creates the PreSyn, sets the gid, and makes the gid2PreSyn map.
+// that is deprecated.
+// Now it is best merely to call
+// register_cell(gid, cellobject) and that will both call gid_exists (if it
+// does not already exist), and make the mapping.
+
+proc set_gid2node() {
+	// allows the myid to be different from the pc.id
+	if ($2 == myid) {
+		pc.set_gid2node($1, pc.id)
+	}
+}
+
+proc round_robin() { local i // simplistic partitioning
+	for i=0, ncell - 1 {
+		set_gid2node(i, i%nwork)
+	}
+}
+
+func gid_exists() {
+	return pc.gid_exists($1)
+}
+
+proc want_all_spikes() {local i
+	for i=0, ncell-1 {
+		spike_record(i)
+	}
+}
+
+proc spike_record() {
+	if (gid_exists($1)) {
+		pc.spike_record($1, spikevec, idvec)
+	}
+}
+
+// arg is gid and string that creates a cell such as "new Cell(x, y, z)"
+// return the cell object (usually nil)
+// this is deprecated
+obfunc create_cell() { localobj cell
+	if (gid_exists($1)) {
+		sprint(tstr, "%s.tmpcell = %s", this, $s2)
+		execute(tstr)
+		register_cell($1, tmpcell)
+	}
+	cell = tmpcell
+	tmpcell = nil
+	return cell
+}
+
+proc register_cell() { localobj nc
+	if (!pc.gid_exists($1)) { pc.set_gid2node($1, pc.id) }
+	// all existing cells must have an associated gid which
+	// is stored in the cell's PreSyn. The nc below will be
+	// unreffed but the PreSyn will continue
+	// in existence and from the gid we will quickly be able
+	// to find the PreSyn and from that the Cell
+	// we force the cell to be an outputcell due to the danger of
+	// user error
+	cells.append($o2)
+	if (hoc_sf_.is_artificial($o2)) {
+		nc = new NetCon($o2, nil)
+	}else{
+		$o2.connect2target(nil, nc)
+	}
+	pc.cell($1, nc, 1)
+}
+
+func nc_append() {local i, se, lsrc, ltar, w, ww localobj nc
+	i = -1
+	if (gid_exists($2)) {
+		// target in this subset
+		// source may be on this or another machine
+		nc = cm2t($1, pc.gid2cell($2), $3, $4, $5)
+		i = nclist.count
+		nclist.append(nc)
+	} else if ((se = gid_exists($1)) > 0) {
+		// source exists but not the target
+		if (se != 3){ // output to another machine and it is
+			// not yet an outputcell
+			pc.outputcell($1)
+		}
+	}
+	if (want_graph_) {
+		if (wmat_ == nil) {
+			wmat_ = new Matrix(cells.count, cells.count, 2)
+		}
+		if ($1 != $2) {
+			w = wmat_.x[$1][$2]
+			if (w == 0) { edgecount_ += 1 }
+			ww = 100/$5
+			if (w < ww) {
+				wmat_.x[$1][$2] = ww
+				wmat_.x[$2][$1] = ww
+			}
+		}
+	}
+	return i
+}
+
+obfunc cm2t() { localobj nc
+	if ($3 < 0) {
+		nc = pc.gid_connect($1, $o2)
+	}else{
+		nc = pc.gid_connect($1, $o2.synlist.object($3))
+	}
+	nc.weight = $4
+	nc.delay = $5
+	return nc
+}
+
+proc set_maxstep() {
+	// arg is max allowed, return val is just for this subnet
+	localmaxstep_ = pc.set_maxstep(10) // arg is the maximum allowed
+//	printf("%d localmaxstep=%g\n", myid, localmaxstep_)
+}
+
+proc maxstepsize() {local i, m
+	if (!maxstepsize_called_) {
+		maxstepsize_called_ = 1
+		if (nwork > 1) {
+			pc.context(this, "set_maxstep")
+		}
+		set_maxstep()
+	}
+}
+
+// a safe way to get output sequentially on a per host basis
+// without using the bulletin board. A file should be opened
+// with File.aopen for appending at the beginning of the iterator_statement
+// and closed at the end.
+iterator serialize() {local rank
+	pc.barrier
+	for rank = 0, pc.nhost {
+		if (rank == pc.id) {
+			iterator_statement
+		}
+		pc.barrier
+	}
+}
+
+proc doinit() {
+	stdinit()
+}
+
+proc pinit() {
+	maxstepsize()
+	if (nwork > 1) {
+	        pc.context(this, "doinit")
+	}
+	doinit() // the master does one also
+}
+
+proc psolve() {
+	pc.psolve($1)
+}
+
+proc pcontinue() {
+	if (nwork > 1) {
+		pc.context(this, "psolve", $1)
+	}
+	psolve($1)
+}
+
+proc prun() {
+	pinit()
+	pcontinue(tstop)
+}
+
+proc postwait() {local w, sm, s, r, ru
+	if ($1 == 0) {
+		pc.post("waittime", myid, pc.wait_time())
+	}else{
+		w = pc.wait_time()
+		sm = pc.spike_statistics(&s, &r, &ru)
+		pc.post("poststat", myid, w, sm, s, r, ru)
+	}
+}
+
+proc prstat() { local i, id, w, sm, s, r, ru // print the wait time and statis
+	if (nwork > 1) {
+		pc.context(this, "postwait", $1)
+	}
+	postwait($1)
+	if ($1 == 0) {
+		for i = 0, nwork - 1 {
+			pc.take("waittime", &id, &w)
+			printf("%d wait time %g\n", id, w)
+		}
+	}else{
+		printf("id\t nsmax\t nsend\t nrecv\t nrused\t wait\n")
+		for i = 0, nwork - 1 {
+			pc.take("poststat", &id, &w, &sm, &s, &r, &ru)
+			printf("%d\t %d\t %d\t %d\t %d\t %g\n", id, sm,s,r,ru,w)
+		}
+		printf("end of prstat\n")
+	}
+}
+
+proc postspikes() {
+	pc.post("postspike", spikevec, idvec)
+}
+
+proc gatherspikes() {local i  localobj s, id
+	if (nwork > 1) {
+		s = new Vector()
+		id = new Vector()
+		pc.context(this, "postspikes")
+		for i=0, nwork-2 {
+			pc.take("postspike", s, id)
+			spikevec.append(s)
+			idvec.append(id)
+		}
+	}
+}
+
+proc wantgraph() {
+	want_graph_ = 1
+}
+
+// metis graph partitioning input file has nnode+1 line format
+// nnode  nedge 11
+// nodes range from 1-nnode and there are nnode lines of form
+// computationcost adjacentnode adjacentnodeweight adjacentnode w ...
+// where computationcost must be an integer > 0 and we use adjacentnodeweight
+// of 1000/mindelay.
+// Although the graph is undirected I do not know if weights must be
+// symetric but we force that. I do not know if
+// node weight and edge weight is independent and unrelated to partitioning.
+
+proc graphout() {local i, j, jx, x  localobj f, cw
+	if (!want_graph_) {
+		printf("%s.wantgraph() was not called before building\n", this)
+		return
+	}
+	f = new File($s1)
+	f.wopen()
+	f.printf("%d %d 11\n", cells.count, edgecount_)
+	cellweight(cw)
+	for i=0, cells.count-1 {
+		f.printf("%d", cw.x[i])
+		for jx=0, wmat_.sprowlen(i)-1 {
+			x = wmat_.spgetrowval(i, jx, &j)
+			f.printf(" %d %d", j+1, x)
+		}
+		f.printf("\n")
+	}
+	f.close()
+}
+
+proc cellweight() {local i, act, loc
+	$o1 = new Vector(cells.count)
+	act = cvode_active()
+	loc = cvode_local()
+	if (!loc) {
+		cvode_local(1)
+	}
+	stdinit()
+	cvode.solve(.01)
+	for i=0, cells.count-1 {
+		$o1.x[i] = cells.object(i).cellweight(cvode)
+	}
+$o1.mul(100000)
+$o1.printf
+	if (!act) {
+		cvode_active(0)
+	}else if (!loc) {
+		cvode_active(1)
+	}
+}
+
+// The cell is split at the currently accessed section and its parent into two
+// subtrees rooted at the old connection end of the cas and the old cas connection
+// point of the parent (latter must be 0 or 1). The cas subtree
+// will be preserved on the host id specified by $1 and the other subtree will be
+// is preserved on the host id specified by $2. $2 must be $1+1 or $1-1.
+// If $1 or $2 are not this host
+// then the appropriate subtree is destroyed. (The whole cell is
+// destroyed if neither subtree is on this host but that is a pointless case)
+// (The case where $1 == $1 is an error and can not be used for testing.)
+// Prior to this call the entire cell must exist on the $1 and $2 host.
+// $1 and $3 specify unique positive integers for these split cell subtrees and
+// Note that for spike exchange purposes
+// it is important not to associate the gid with the cell on the host that
+// gets the output location destroyed.
+
+proc splitcell() {local hostcas, hostp  localobj cas, p, tree
+	hostcas = $1
+	hostp = $2
+	cas = new SectionRef()
+	cas.parent p = new SectionRef() // error if cas is already a root section
+	reroot()
+	p.sec disconnect()
+	if (hostcas != myid) {
+		tree = new SectionList()
+		cas.sec tree.subtree()
+		forsec tree delete_section()
+	}
+	if (hostp != myid) {
+		tree = new SectionList()
+		p.sec tree.subtree()
+		forsec tree delete_section()
+	}
+	if (hostcas == myid) {
+		cas.sec pc.splitcell_connect(hostp)
+	}
+	if (hostp == myid) {
+		p.sec pc.splitcell_connect(hostcas)
+	}
+}
+
+// currently accessed section becomes the root of the cell
+// it is an error if the sections from here to the root are not connected
+// to the parent at 0 or 1
+proc reroot() {local p, s_pcon, s_orient, sp_pcon, sp_orient  localobj s, sp, spp
+	s = new SectionRef()
+	if (s.has_parent()) {
+		s.parent sp = new SectionRef()
+		s.sec s_pcon = parent_connection()
+		s.sec s_orient = section_orientation()
+		if (s_pcon != 0 && s_pcon != 1) {
+			s.sec printf("Warning, inexact re-root: %s(%g) connects to %g of ", secname(), s_orient, s_pcon)
+			if (s_pcon >= .5) { s_pcon = 1 } else { s_pcon = 0 }
+			sp.sec printf("%s parent.\n  %s will reroot at orientation %g\n", secname(), secname(), s_pcon)
+		}
+		s.sec disconnect()
+		sp.sec sp_pcon = parent_connection()
+		sp.sec sp_orient = section_orientation()
+		while (sp.has_parent) {
+			// parent gets disconnected from its parent,
+			// and gets connected  to s
+			// The old parent (sp) has a new parent connection to
+			// s at s's section orientation and sp's new orientation
+			// is the s's old parent connection (we demand that
+			// all old parent connections be at 0 or 1 and if not
+			// then the re-root will be inexact. Note that the
+			// 3d points get reversed only if the old sp orientation
+			// is opposite the new orientation
+			sp.parent spp = new SectionRef()
+			if (sp_pcon != 0 && sp_pcon != 1) {
+				sp.sec printf("Warning, inexact re-root: %s(%g) connects to %g of ", secname(), sp_orient, sp_pcon)
+				if (sp_pcon >= .5) { sp_pcon = 1 } else { sp_pcon = 0 }
+				spp.sec printf("%s parent.\n  %s will reroot at orientation %g\n", secname(), secname(), sp_pcon)
+			}
+			sp.sec disconnect()
+//			s.sec printf("%s connect", secname())
+//			sp.sec printf(" %s(%g), %g\n", secname(), s_pcon, s_orient)
+			s.sec connect sp.sec(s_pcon), s_orient
+			sp.sec if (section_orientation() != sp_orient) {
+				reverse3d()
+			}
+			s = sp
+			sp = spp
+			s_pcon = sp_pcon
+			s_orient = sp_orient
+			sp.sec sp_orient = section_orientation()
+			sp.sec sp_pcon = parent_connection()
+		}
+		// parent gets connected to s
+//		s.sec printf("%s connect", secname())
+//		sp.sec printf(" %s(%g), %g\n", secname(), s_pcon, s_orient)
+		s.sec connect sp.sec(s_pcon), s_orient
+		sp.sec if (section_orientation() != sp_orient) {
+			reverse3d()
+		}
+	}
+}
+
+proc reverse3d() {local i, j, x, y, z, d
+	i = 0
+	j = n3d()-1
+	while (i < j) {
+		x = x3d(i) y = y3d(i) z = z3d(i) d = diam3d(i)
+		pt3dchange(i, x3d(j), y3d(j), z3d(j), diam3d(j))
+		pt3dchange(j, x, y, z, d)
+		i += 1
+		j -= 1
+	}
+}
+
+endtemplate ParallelNetManager

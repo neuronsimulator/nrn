@@ -1,0 +1,71 @@
+The audit system will work with a variety of simulation styles but
+I hope it will prove very effective with the following:
+
+1) At some point you will want to switch from a very casual exploratory
+methodology to one which is carefully managed. When this occurs you
+can start the simulation in the audit mode and prior to doing any lengthy runs
+say:
+	saveaudit()
+This will store all the information up to that point so that in the future
+you can return to that point. More later about the database of audits
+and how you can return to any audit point.
+
+The information it stores will be very compact if you have already
+placed the files used in the simulation under RCS control. When a saveaudit
+is done only the differences between the working files and the latest RCS
+checkin is stored. (Note that the audit system never replaces working
+copies with RCS versions nor does it ever checkin anything outside of the
+AUDIT directory). This means that there are NO changes to the files you
+are using to carry out simulations. At the same time, if some files you
+are using are not under RCS control then they will be copied to the
+AUDIT directory.
+
+2) You can start again from any stored audit with the command:
+	nrnrunaudit
+executed in the same subdirectory from which you ran the original simulation.
+You will see a list of audits from which you can select one to execute.
+At the end of execution you should be in exactly the same state as when
+the original saveaudit() was executed.
+
+When doing something new, the general usage will be to start from the
+original audit that does no runs, change a few variables, do a run
+and, if you think you may ever want to reproduce this result,
+do a saveaudit(). When you make a postscript file from the print window
+manager and auditing is turned on, then you are asked if you want to save
+the audit and mark the page with the date and audit id.
+
+3) Audits are just an implicit list of all the commands executed by the
+interpreter and this generally implies space benefits and time liabilities.
+This methodology is at the other extreme from trying to save the state of
+the simulation (a core dump?) which is very fast but uses a lot of disk space.
+
+The space benefit comes from the fact that usually the text that defines
+a simulation is much smaller than the space required to store all the
+states, variables, and parameters (which, at any rate loses the programmed
+relationship among variables as well as the procedures used to analyze the
+results). In fact, in most cases, the save audit will just be a short list
+of xopen statements with the appropriate rcs version number. The command list
+can get lengthy ( for example when sliders are heavily used) but there may
+be some ways to work around this.
+
+The most serious problem is that the
+command list may involve lengthy runs that dont have anything to do with
+setting relevant state as in:
+	setup()
+	run()
+	setup()
+	diam=20
+	run()
+	saveaudit()
+Here one would want to throw away the first two statments but in general
+this can't be done by the computer because there is no guarantee against
+run() not incrementing a counter whose value needs to be correct for the
+second run(). This kind of programming practice is to be deplored but
+the user should probably edit the command list anyway to emphasize only
+what is important in the setting of the state. I would probably edit
+the above command list to:
+	setup()
+	diam=20
+and avoid the run overhead even of the saved audit. Of course, if
+the command list is changed nontrivially it is essential to verify that
+the nrnrunaudit produces the same result.

@@ -1,0 +1,291 @@
+/*
+error is sum of square differences of the selected points
+Usage:
+Same as RFitness except must supply the xdat indices (or
+use the gui to specify them)
+*/
+
+install_vector_fitness()
+
+parmfitness_efun_append("YFitness")
+
+begintemplate YFitness
+public efun, g, set_data, set_modelx, use_x, have_data, clone
+public xdat_, xdat, ydat, weight, tag, build
+public unmap, map, vbox, rfile, wfile, before_run, mintstop
+
+objref xdat, ydat	// authoritative data
+objref xdat_, ydat_, indx_ // subset of data points to fit
+objref g, vbox, tobj, this
+strdef tstr1, mserrlabel, tag
+
+external clipboard_set, clipboard_get
+
+i=0
+
+proc before_run() {}
+
+func efun() { local e // the least squares error function.
+	e = 0
+	if (xdat_.size > 0) {
+		e = $o1.yfitness($o2, 0, ydat_, xdat_)
+	}
+	if (use_gui) {
+		sprint(mserrlabel, "w=%g  e=%g", weight, e)
+		redraw($o2, $o1)
+	}
+	return weight*e
+}
+
+func mintstop() {
+	return xdat_.x[xdat_.size - 1]
+}
+
+proc init() {local i
+	sprint(tag, "%s", this)
+	sscanf(tag, "%[^[]", tag)
+	weight = 1
+	use_x = 1
+	use_gui = 0
+	have_data = 0
+	xdat = new Vector(0)
+	ydat = new Vector(0)
+	indx_ = new Vector(0)
+	xdat_ = new Vector(0)
+	ydat_ = new Vector(0)
+}
+
+proc clone() {
+	$o1 = new YFitness()
+	$o1.have_data = have_data
+	if (have_data) {
+		$o1.set_data(xdat, ydat)
+	}
+	$o1.set_modelx(indx_)
+}
+
+proc redraw() {
+    if (use_gui) {
+	g.erase()
+	if (have_data) {
+		g.label(.8, .95)
+		ydat.plot(g, xdat, 2, 1)
+		ydat_.mark(g, xdat_,"|",12, 3, 1)
+	}
+	if (numarg() == 2) {
+		$o2.line(g, $o1)
+	}
+	g.flush()
+    }
+}
+
+proc set_data() {local i
+	have_data = 0
+//	i = $o1.indwhere(">=", 0)
+//	if (i < 0 || $o1.size < 1) return
+	xdat = $o1.c(0)
+	ydat = $o2.cl(0)
+	have_data = 1
+	if (use_gui) {
+		g.size(xdat.min(), xdat.max(), ydat.min(), ydat.max())
+		redraw()
+	}
+}
+
+proc set_modelx() {
+	indx_ = $o1.c
+	setxy()
+}
+
+proc setxy() {
+	xdat_.index(xdat, indx_)
+	ydat_.index(ydat, indx_)
+	redraw()
+}
+	
+proc clipboard_data() {
+	sprint(tstr1, "%s.set_data(hoc_obj_[1], hoc_obj_[0])", this)
+	if(execute1(tstr1) == 0) {
+continue_dialog("No data in the Vector clipboard. Select a Graph line first")
+	}
+}
+
+proc build() {
+	if (use_gui) return
+	use_gui = 1
+	vbox = new VBox()
+	vbox.ref(this)
+	sprint(tstr1, "execute(\"%s.unmap()\")", this)
+	vbox.dismiss_action(tstr1)
+	vbox.save("save()")
+	vbox.intercept(1)
+	xpanel("", 1)
+	xmenu("Select")
+		xbutton("Copy points", "copy_points()")
+		xbutton("Paste points", "paste_points()")
+	xmenu()
+	mserrlabel="MeanSqErr xxxxxxxxxxx"
+	xvarlabel(mserrlabel)
+	xpanel()
+	g = new Graph()
+        if (have_data) {
+                g.size(xdat.min(), xdat.max(), ydat.min(), ydat.max())
+                redraw()
+        }
+ 	g.menu_tool("Add Point","add_point")
+	g.menu_tool("Move Point","move_point")
+	g.menu_tool("Remove Point","remove_point")
+	g.menu_action("Data from Clipboard", "clipboard_data()")
+	vbox.intercept(0)
+}
+
+proc map() {
+	if (!use_gui) build()
+	if (numarg() > 1) {
+		vbox.map($s1, $2, $3, $4, $5)
+	}else if (numarg() == 1){
+		vbox.map($s1)
+	}else{
+		vbox.map()
+	}
+	redraw()
+}
+
+proc unmap() {
+}
+
+proc copy_points() {
+	clipboard_set(xdat_, xdat_)
+}
+
+proc paste_points() {
+	clipboard_get(xdat_, xdat_)
+	indx_ = xdat.c.indgen
+	indx_.interpolate(xdat_, xdat).add(.5)
+	setxy()
+}
+
+proc save() {local i
+	vbox.save("load_file(\"e_y.hoc\", \"YFitness\")}\n{")
+		vbox.save("ocbox_=new YFitness(1)")
+        vbox.save("}\n{object_push(ocbox_)}\n{build()")
+	if (object_id(xdat)) {
+		sprint(tstr1, "xdat = new Vector(%d)", xdat.size)
+		vbox.save(tstr1)
+		sprint(tstr1, "ydat = new Vector(%d)", ydat.size)
+		vbox.save(tstr1)
+		sprint(tstr1, "ydat.label(\"%s\")", ydat.label)
+		vbox.save(tstr1)
+sprint(tstr1, "for i=0,%d { xdat.x[i]=fscan() ydat.x[i]=fscan()}}",\
+xdat.size - 1)
+		vbox.save(tstr1)
+		for i=0,xdat.size-1 {
+			sprint(tstr1, "%g %g", xdat.x[i], ydat.x[i])
+			vbox.save(tstr1)
+		}
+		vbox.save("{set_data(xdat, ydat)}")
+	    if (indx_.size > 0) {
+		sprint(tstr1, "indx_ = new Vector(%d)", indx_.size)
+		vbox.save(tstr1)
+sprint(tstr1, "for i=0,%d { indx_.x[i]=fscan()}", indx_.size - 1)
+		vbox.save(tstr1)
+		for i=0,indx_.size-1 {
+			sprint(tstr1, "%g", indx_.x[i])
+			vbox.save(tstr1)
+		}
+		vbox.save("{setxy()}")
+	    }
+	}else{
+		vbox.save("}")
+	}
+        vbox.save("{object_pop()}\n{")
+	g.save_name("ocbox_.g", 1)
+}
+
+proc add_point() {local i
+	if ($1 == 2) {
+		i = pick_x($2)
+		indx_.append(i)
+		indx_.sort()
+		setxy()
+	}
+}
+proc remove_point() {
+	if ($1 == 2) {
+		i = pick_point($2)
+		if (i >= 0) {
+			indx_.remove(i)
+			setxy()
+		}
+	}
+}
+proc move_point() {
+//print $1, $2, $3
+	if ($1 == 2) { // press
+		adjust = pick_point($2)
+	}
+	if (adjust == -1) {
+		return
+	}
+	if ($1 == 1) { // drag
+		indx_.x[adjust] = pick_x($2)
+		setxy()
+	}
+	if ($1 == 3) { // release
+		indx_.x[adjust] = pick_x($2)
+		indx_.sort()
+		adjust = -1
+		setxy()
+	}
+}
+func pick_x() {local i
+	i = xdat.indwhere(">=", $1)
+	if (i == -1) i = 0
+	return i
+}
+
+func pick_point() {local i, j, x, m
+	if (indx_.size == 0) return -1
+	i = xdat_.indwhere(">=", $1)
+	if (i == -1 && indx_.size > 0) { return xdat_.size-1 }
+	d = ($1-xdat_.x[i])^2
+	if (i > 0) {
+		d1 = ($1-xdat_.x[i-1])^2
+		if (d1 < d) { return i-1 }
+	}
+	if (i < xdat_.size-1) {
+		d1 = ($1-xdat_.x[i+1])^2
+		if (d1 < d) { return i+1 }
+	}
+	return i
+}
+
+proc wfile() {local i
+	$o1.printf("YFitness xdat ydat erry (lines=%d)\n",\
+		6 + 2*xdat.size + indx_.size)
+	$o1.printf("%d\n", xdat.size)
+	xdat.printf($o1)
+	ydat.printf($o1)
+	$o1.printf("%d\n", indx_.size)
+	indx_.printf($o1)
+}
+
+proc rfile() {local i, n
+	$o1.gets(tstr1)
+	if (sscanf(tstr1, "|%[^|]", tstr1) == 1) {
+		ydat.label(tstr1)
+	}
+	n = $o1.scanvar
+	if (n > 0) {
+		xdat.resize(n) ydat.resize(n)
+		xdat.scanf($o1, n)
+		ydat.scanf($o1, n)
+		set_data(xdat, ydat)
+	}
+	n = $o1.scanvar
+	indx_.resize(n)
+	indx_.scanf($o1, n)
+	setxy()
+}
+
+endtemplate YFitness

@@ -1,0 +1,430 @@
+#include <../../nmodlconf.h>
+/* /local/src/master/nrn/src/modlunit/list.c,v 1.3 1997/11/24 16:19:10 hines Exp */
+
+/* The following routines support the concept of a list.
+That is, one can insert at the head of a list or append to the tail of a
+list with linsert<type>() and lappend<type>().
+
+In addition, one can insert an item before a known item and it will be
+placed in the proper list.
+
+Items point to strings, symbols, etc. Note that more than one item in the
+same or several lists can point to the same string, symbol.
+
+Finally, knowing an item, one can determine the preceding and following
+items with next() and prev().
+
+Deletion, replacement and moving blocks of items is also supported.
+*/
+/* For model, makelist and append have been added */
+/* Implementation
+  The list is a doubly linked list. A special item with element 0 is
+  always at the tail of the list and is denoted as the List pointer itself.
+  list->next point to the first item in the list and
+  list->prev points to the last item in the list.
+	i.e. the list is circular
+  Note that in an empty list next and prev points to itself.
+
+It is intended that this implementation be hidden from the user via the
+following function calls.
+*/
+
+#include <stdlib.h>
+#include	"model.h"
+#include	"parse1.h"
+
+#define DEBUG 0
+#if DEBUG
+static debugtoken=1;
+#else
+static debugtoken=0;
+#endif
+
+static Item *
+newitem()
+{
+	return (Item *)emalloc(sizeof(Item));
+}
+
+List *
+newlist()
+{
+	Item *i;
+	i = newitem();
+	i->prev = i;
+	i->next = i;
+	i->element = (void *)0;
+	i->itemtype = 0;
+	return (List *)i;
+}
+
+freelist(plist)	/*free the list but not the elements*/
+	List **plist;
+{
+	Item *i1, *i2;
+	if (!(*plist)) {
+		return;
+	}
+	for (i1 = (*plist)->next; i1 != *plist; i1 = i2) {
+		i2 = i1->next;
+		Free(i1);
+	}
+	Free(*plist);
+	*plist = (List *)0;
+}
+
+static Item *
+linkitem(item)
+	Item *item;
+{
+	Item *i;
+
+	i = newitem();
+	i->prev = item->prev;
+	i->next = item;
+	item->prev = i;
+	i->prev->next = i;
+	return i;
+}
+
+Item *car(list)
+	List *list;
+{
+	Item *q = (Item *)list;
+	assert(q && q->itemtype == 0);
+	return next(q);
+}
+
+Item *next(item)
+	Item *item;
+{
+	assert(item->next->itemtype); /* never return the list item */
+	return item->next;
+}
+
+Item *prev(item)
+	Item *item;
+{
+	assert(item->prev->itemtype); /* never return the list item */
+	return item->prev;
+}
+
+Item *
+insertstr(item, str) /* insert a copy of the string before item */
+/* a copy is made because strings are often assembled into a reusable buffer*/
+	Item *item;
+	char *str;
+{
+	Item *i;
+
+	i = linkitem(item);
+	i->element = (void *)stralloc(str, (char *)0);
+	i->itemtype = STRING;
+	return i;
+}
+
+Item *
+insertitem(item, itm) /* insert a item pointer before item */
+	Item *item, *itm;
+{
+	Item *i;
+
+	i = linkitem(item);
+	i->element = (void *)itm;
+	i->itemtype = ITEM;
+	return i;
+}
+	
+Item *
+insertsym(item, sym) /* insert a symbol before item */
+/* a copy is not made because we need the same symbol in different lists */
+	Item *item;
+	Symbol *sym;
+{
+	Item *i;
+
+	i = linkitem(item);
+	i->element = (void *)sym;
+	i->itemtype = SYMBOL;
+	return i;
+}
+	
+Item *
+linsertstr(list, str)
+	List *list;
+	char *str;
+{
+	return insertstr(list->next, str);
+}
+
+Item *
+lappendstr(list, str)
+	List *list;
+	char *str;
+{
+	return insertstr(list, str);
+}
+
+Item *
+linsertsym(list, sym)
+	List *list;
+	Symbol *sym;
+{
+	return insertsym(list->next, sym);
+}
+
+Item *
+lappendsym(list, sym)
+	List *list;
+	Symbol *sym;
+{
+	return insertsym(list, sym);
+}
+
+Item *
+lappenditem(list, item)
+	List *list;
+	Item *item;
+{
+	return insertitem(list, item);
+}
+
+delete(item)
+	Item *item;
+{
+	assert(item->itemtype); /* can't delete list */
+	item->next->prev = item->prev;
+	item->prev->next = item->next;
+	Free(item);
+}
+
+static long mallocsize=0;
+static long mallocpieces=0;
+
+#if LINT
+double *emalloc(n) unsigned n; { /* check return from malloc */
+	assert(0);
+	return (double *)0;
+}
+#else
+char *emalloc(n) unsigned n; { /* check return from malloc */
+	char *p;
+
+	p = malloc(n);
+	if (p == (char *)0) {
+		memory_usage();
+		diag("out of memory", (char *)0);
+	}
+	mallocsize += n;
+	mallocpieces++;
+	return p;
+}
+#endif /*LINT*/
+
+memory_usage() {
+	Fprintf(stderr, "malloc'ed a total of %ld bytes in %ld pieces\n",
+		mallocsize, mallocpieces);
+}
+
+char *stralloc(buf, rel) char *buf,*rel; {
+	/* allocate space, copy buf, and free rel */
+	char *s;
+	s = (char *)emalloc((unsigned)(strlen(buf) + 1));
+	Strcpy(s, buf);
+	if (rel) {
+		Free(rel);
+	}
+	return s;
+}
+
+deltokens(q1, q2) /* delete tokens from q1 to q2 */
+	Item *q1, *q2;
+{
+	/* It is a serious error if q2 precedes q1 */
+	Item *q;
+	for (q = q1; q != q2;) {
+		q = q->next;
+		delete(q->prev);
+	}
+	delete(q2);
+		
+}
+
+move(q1, q2, q3)	/* move q1 to q2 and insert before q3*/
+	Item *q1, *q2, *q3;
+{
+	/* it is a serious error if q2 precedes q1 */
+	assert(q1 && q2);
+	assert(q1->itemtype && q2->itemtype);
+	q1->prev->next = q2->next; /* remove from first list */
+	q2->next->prev = q1->prev;
+
+	q1->prev = q3->prev;
+	q3->prev->next = q1;
+	q3->prev = q2;
+	q2->next = q3;
+}
+
+movelist(q1, q2, s)	/* move q1 to q2 from old list to end of list s*/
+	Item *q1, *q2;
+	List *s;
+{
+	move(q1, q2, s);
+}
+
+replacstr(q, s)
+	Item *q;
+	char *s;
+{
+	q->itemtype = STRING;
+	q->element = (void *)stralloc(s, (char *)0);
+
+}
+
+Item *
+putintoken(s, type, toktype)
+	char *s;
+	short type, toktype;
+{	/* make sure a symbol exists for s and
+	append to intoken list */
+	Symbol *sym;
+	Item *q;
+	static int linenum=0;
+
+	if (debugtoken) {
+		Fprintf(stderr, "%s|", s);
+	}
+	if (s == (char *)0)
+		diag("internal error"," in putintoken");
+	switch (type) {
+		
+	case STRING:
+	case REAL:
+	case INTEGER:
+		q = insertstr(intoken, s);
+		q->itemsubtype = toktype;
+		return q;
+	case NEWLINE:
+		q = insertsym(intoken, SYM0);
+		q->itemtype = NEWLINE;
+		q->itemsubtype = ++linenum;
+		return q;
+	default:
+		if ((sym = lookup(s)) == SYM0) {
+			sym = install(s, type);
+		}
+		break;
+	}
+	q = insertsym(intoken, sym);
+	if (toktype) {
+		q->itemsubtype = toktype;
+	}else{
+		q->itemsubtype = sym->type;
+	}
+	return q;
+}
+
+#if MAC || defined(__TURBOC__)
+#undef HAVE_STDARG_H
+#define HAVE_STDARG_H 1
+#endif
+
+#if HAVE_STDARG_H
+#include <stdarg.h>
+#else
+#include <varargs.h>
+#endif
+
+/* make a list of item pointers: notice that the items themselves remain
+in whatever list they happen to be in. */
+/* usage is q = makelist(n, q1, q2,..., qn); and q is of type LIST and
+   is not in any list */
+
+Item *
+#if HAVE_STDARG_H
+makelist(int narg, ...)
+{
+#else
+makelist(va_alist)
+	va_dcl
+{
+	int narg;
+#endif
+	va_list ap;
+	int i;
+	List *l;
+	Item *ql,*q;
+	
+	l = newlist();
+	ql = newitem();
+	ql->itemtype = LIST;
+	ql->element = (void *)l;
+#if HAVE_STDARG_H
+	va_start (ap, narg);
+#else
+	va_start (ap);
+	narg = va_arg(ap, int);
+#endif
+	for (i=0; i<narg; i++) {
+		q = va_arg(ap, Item *);
+		append(ql, q);
+	}
+	va_end (ap);
+
+	return ql;
+}
+
+append(ql, q)
+	Item *ql, *q;
+{
+	assert(ql->itemtype == LIST);
+	IGNORE(insertitem((Item *)(LST(ql)), q));
+}
+
+Item *
+prepend(ql, q)
+	Item *ql, *q;
+{
+	List *l;
+	
+	assert(ql->itemtype == LIST);
+	l = LST(ql);
+	IGNORE(insertitem((Item *)l->next, q));
+	return ql;
+}
+	
+/* An item which is an array of item pointers. Note where the size of
+the array is held. */
+
+Item *
+#if HAVE_STDARG_H
+itemarray(int narg, ...) {
+#else
+itemarray(va_alist)
+	va_dcl
+{
+	int narg;
+#endif
+	va_list ap;
+	int i;
+	Item *ql,*q, **qa;
+	
+	ql = newitem();
+#if HAVE_STDARG_H
+	va_start (ap, narg);
+#else
+	va_start (ap);
+	narg = va_arg(ap, int);
+#endif
+	ql->itemtype = ITEMARRAY;
+	qa = (Item **)emalloc((unsigned)(narg + 1)*sizeof(Item *));
+	qa++;
+	ql->element = (void *)qa;
+	for (i=0; i<narg; i++) {
+		q = va_arg(ap, Item *);
+		qa[i] = q;
+	}
+	va_end (ap);
+	ITMA(ql)[-1] = (Item *)((long)narg);
+	return ql;
+}

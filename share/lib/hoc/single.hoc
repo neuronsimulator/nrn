@@ -1,0 +1,57 @@
+{load_file("stdgui.hoc")}
+
+begintemplate SingleCompartment
+
+public vbox, inserter, vbox
+objref this, vbox, inserter
+strdef tstr
+
+proc init() {
+	if (!name_declared("soma")) {
+		execute("~create soma")
+	}else{
+		sprint(tstr, "%s warning: soma already exists at top level.", this)
+		continue_dialog(tstr)
+	}
+	execute("access soma")
+	diam=10  L=10/PI // area 100 um2 means mA/cm2 identical to nA 
+	startbox()
+	if (numarg() == 0) {
+		inserter = new Inserter()
+		endbox()
+		vbox.map("SingleCompartment")
+	}
+}
+
+proc startbox() {
+	vbox = new VBox()
+	vbox.priority(1000)
+	vbox.save("save()")
+	vbox.ref(this)
+	vbox.intercept(1)
+}
+
+proc endbox() {
+	vbox.intercept(0)
+}
+
+proc save() {
+	vbox.save("load_file(\"single.hoc\")\n}")
+	vbox.save("ocbox_ = new SingleCompartment(0)")
+	vbox.save("ocbox_.inserter = new Inserter(0)")
+	vbox.save("{object_push(ocbox_.inserter)}\n{")
+	inserter.dsave(vbox)
+	vbox.save("{object_push(ocbox_)}")
+	vbox.save("{inserter.v1.map()}")
+	vbox.save("{endbox()}")
+	vbox.save("{object_pop() doNotify()}\n{")
+	vbox.save("ocbox_ = ocbox_.vbox")
+}
+
+endtemplate SingleCompartment
+
+objref tobj
+proc makesinglecompartment() {
+	tobj = new SingleCompartment()
+	objref tobj
+}

@@ -1,0 +1,62 @@
+objref pc
+pc = new ParallelContext()
+
+objref vec
+strdef str
+context = 1
+vec = new Vector(5)
+str = "starting"
+
+proc save_context() {
+	context += 1
+	pc.look_take("context")
+	pc.post("context", context, str, vec)
+}
+
+proc restore_context() {
+	printf("oldcontext: %g %s %s\n", context, str, vec)
+	vec.printf
+	pc.look($s1, &context, str, vec)
+	printf("newcontext: %g %s %s\n", context, str, vec)
+	vec.printf
+	pc.post("restore done")
+}
+
+pc.post("hello")
+
+pc.runworker
+
+for i=0, pc.nhost-1 {
+	pc.take("hello")
+}
+
+vec.fill(1)
+str = "middle"
+save_context()
+pc.context("restore_context", "context")
+
+for i=1, pc.nhost-1 {
+	pc.take("restore done")
+}
+
+vec.fill(2)
+str = "end"
+save_context()
+pc.context("restore_context", "context")
+
+for i=1, pc.nhost-1 {
+	pc.take("restore done")
+}
+
+for j=1,50 {
+	vec.fill(j)
+	sprint(str, "test with j=%d", j)
+	save_context()
+	pc.context("restore_context", "context")
+	for i=1, pc.nhost-1 {
+		pc.take("restore done")
+	}
+}
+
+pc.done
+quit()

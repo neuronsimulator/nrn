@@ -1,0 +1,112 @@
+#
+# This makefile has the rules necessary for making the custom version of nrniv
+# called "special" from various mod files.  The variable "MODOBJFILES" should
+# be set on the command line to list the .o files that are needed.
+#
+prefix = @prefix@
+exec_prefix = @exec_prefix@
+
+bindir = @bindir@
+sbindir = @sbindir@
+libexecdir = @libexecdir@
+datadir = @datadir@
+sysconfdir = @sysconfdir@
+sharedstatedir = @sharedstatedir@
+localstatedir = @localstatedir@
+libdir = @libdir@
+infodir = @infodir@
+mandir = @mandir@
+includedir = @includedir@
+
+pkgdatadir = $(datadir)/@PACKAGE@
+pkglibdir = $(libdir)/@PACKAGE@
+pkgincludedir = $(includedir)/@PACKAGE@
+libobjdir = $(libdir)
+
+DEFS = @DEFS@
+LDFLAGS = $(UserLDFLAGS) @LDFLAGS@
+LIBS = $(BGTRACE_LIBS) @LIBS@
+X_CFLAGS = @X_CFLAGS@
+X_LIBS = @X_LIBS@
+X_EXTRA_LIBS = @X_EXTRA_LIBS@
+X_PRE_LIBS = @X_PRE_LIBS@
+IV_LIBS = @IV_LIBS_LIBTOOL@ $(X_PRE_LIBS) $(X_LIBS) $(X_EXTRA_LIBS)
+IVOS_LIB = @IVOS_LIB@
+PVM_LIBS = @PVM_LIBS@ @PVM_XTRA_LIBS@
+NJ_LIBS = @NRNJAVA_LIBS@
+PY_LIBS = @NRNPYTHON_LIBS@
+NRNNI_LIBS = @NRNNI_LIBS@
+
+INCLUDES = -I. -I.. -I$(pkgincludedir) -I$(libdir)
+
+LIBTOOL = $(pkgdatadir)/libtool @LIBTOOLTAG@
+CC = @CC@
+CXX = @CXX@
+CFLAGS = @CFLAGS@
+CXXFLAGS = @CXXFLAGS@
+COMPILE = $(CC) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
+CXXCOMPILE = $(CXX) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
+CCLD = $(CC)
+CXXLD = $(CXX)
+
+CXXLINK = $(LIBTOOL) --mode=link $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(LDFLAGS)
+@NRNPURIFY_TRUE@CXXPURELINK = $(LIBTOOL) --tag=purify --mode=link purify $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(LDFLAGS)
+LINK = $(LIBTOOL) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(LDFLAGS)
+
+NRNLIBS = -L$(libdir) -lnrnoc -loc \
+	-lnrniv -livoc \
+	-lneuron_gnu -lscopmath -lsparse13 -lsundials -lnrnmpi \
+	@MEMACSLIB@ -lmeschach \
+	$(IVOS_LIB) $(IV_LIBS) \
+	@READLINE_LIBS@ \
+	$(NJ_LIBS) $(PY_LIBS) $(NRNNI_LIBS) $(PVM_LIBS)
+
+NRNOCOBJS = $(libobjdir)/ocmain.o $(libobjdir)/nrnnoiv.o $(libobjdir)/ocnoiv.o
+NRNIVOBJS = $(libobjdir)/nrnmain.o $(libobjdir)/ivocmain.o $(libobjdir)/nvkludge.o
+
+.SUFFIXES:
+.SUFFIXES: .c .mod .o
+#
+# How to make a .o file from a .mod file.  Note that we have to delete the
+# .c file, or else make will get confused.  We have to go directly from
+# a .mod to a .o file because otherwise GNU make will try to use a rule
+# involving m2c.  Argh!!  Why did they have to build in so many implicit
+# rules?
+# 
+#.mod.o:
+#	$(bindir)/nocmodl $* || (rm -f $*.c; exit 1)
+#	$(COMPILE) -c $*.c
+#	rm -f $*.c
+#
+# some experimentation gave promising results for the following.
+# it remains to be seen how portable it is. It seems to work
+# for gnu make and the /usr/ccs/bin/make distributed with solaris.
+
+#%.o : %.mod
+
+.mod.c:
+	$(bindir)/nocmodl $*
+	
+.c.o:
+	$(COMPILE) -c $*.c
+
+.mod.o:
+	$(bindir)/nocmodl $*
+	$(COMPILE) -c $*.c
+
+
+mod_func.o: mod_func.c
+	$(COMPILE) -c $<
+
+@NRNPURIFY_FALSE@special: $(MODOBJFILES) $(COBJFILES) mod_func.o
+@NRNPURIFY_FALSE@	$(CXXLINK) -o special $(NRNIVOBJS) $(MODOBJFILES) mod_func.o $(COBJFILES) $(NRNLIBS) $(LIBS)
+
+@NRNPURIFY_TRUE@special: $(MODOBJFILES) $(COBJFILES) mod_func.o
+@NRNPURIFY_TRUE@	if test "$(USEPURIFY)" = "yes" ; then \
+@NRNPURIFY_TRUE@	$(CXXPURELINK) -o special $(NRNIVOBJS) $(MODOBJFILES) mod_func.o $(COBJFILES) $(NRNLIBS) $(LIBS) ;\
+@NRNPURIFY_TRUE@	echo "if there is an error perhaps you need '/opt/Rational/config/start_lmgrd_on_NeuronDev'"; \
+@NRNPURIFY_TRUE@	echo 'if you cannot run then perhaps you need a LD_LIBRARY_PATH as in:'; \
+@NRNPURIFY_TRUE@	echo 'export LD_LIBRARY_PATH=/home/hines/pcache/home/hines/neuron/iv/i686/lib:/home/hines/pcache/home/hines/neuron/purify/i686/lib:/home/hines/neuron/iv/i686/lib:/home/hines/neuron/purify/i686/lib:/usr/X11R6/lib:/usr/X11R6/lib/modules'; \
+@NRNPURIFY_TRUE@	else \
+@NRNPURIFY_TRUE@	$(CXXLINK) -o special $(NRNIVOBJS) $(MODOBJFILES) mod_func.o $(COBJFILES) $(NRNLIBS) $(LIBS) ;\
+@NRNPURIFY_TRUE@	fi

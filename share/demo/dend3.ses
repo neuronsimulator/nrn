@@ -1,0 +1,78 @@
+objectvar save_window_, rvp_
+objectvar scene_vector_[5]
+objectvar ocbox_, ocbox_list_, scene_, scene_list_
+{ocbox_list_ = new List()  scene_list_ = new List()}
+{
+ocbox_ = new VBox()
+ocbox_list_.prepend(ocbox_)
+ocbox_.intercept(1)
+}
+{
+xpanel("Synaptic Parameters", 0)
+synamp = 1.68
+xvalue("Conductance (umho), all","synamp", 1,"synset() run()", 1, 0 )
+syn[0].onset = 1
+xvalue("Delay (ms), Syn 0","syn[0].onset", 1,"", 0, 0 )
+syn[1].onset = 0.5
+xvalue("Delay Syn 1","syn[1].onset", 1,"", 0, 0 )
+syn[2].onset = 0
+xvalue("Delay Syn 2","syn[2].onset", 1,"", 0, 0 )
+xvarlabel(synlocstr)
+xslider(&locsyn[0], 0, 1, "change_loc(0)", 0, 0)
+xslider(&locsyn[1], 0, 1, "change_loc(1)", 0, 0)
+xslider(&locsyn[2], 0, 1, "change_loc(2)", 0, 0)
+xpanel()
+}
+{
+ocbox_ = ocbox_list_.object(0)
+ocbox_.intercept(0)
+ocbox_.map("Synaptic Parameters", 33, 137, 326.4, 224.64)
+}
+objref ocbox_
+{
+save_window_ = new PlotShape(0)
+save_window_.size(-4764.64,1847.78,-3397.16,3397.16)
+save_window_.variable("v")
+scene_vector_[2] = save_window_
+{save_window_.view(-4764.64, -3397.16, 6612.42, 6794.31, 128, 416, 197.76, 203.2)}
+flush_list.append(save_window_)
+save_window_.save_name("flush_list.")
+}
+{
+save_window_ = new Graph(0)
+save_window_.size(0,5,-80,40)
+scene_vector_[3] = save_window_
+{save_window_.view(0, -80, 5, 120, 712, 30, 303.36, 203.2)}
+graphList[0].append(save_window_)
+save_window_.save_name("graphList[0].")
+save_window_.addvar("soma.v(.5)", 2, 1, 1.98734, 34.5243, 1)
+save_window_.addexpr("node[5].v( 0.5 )", 3, 1, 2.00633, 33.1262, 1)
+}
+{
+save_window_ = new Graph(0)
+save_window_.size(-5059.2,2136.29,-80,40)
+scene_vector_[4] = save_window_
+{save_window_.view(-5059.2, -80, 7195.49, 120, 714, 305, 303.36, 203.2)}
+flush_list.append(save_window_)
+save_window_.save_name("flush_list.")
+objectvar rvp_
+rvp_ = new RangeVarPlot("v")
+node[5] rvp_.begin(1)
+dend[0] rvp_.end(1)
+rvp_.origin(0)
+save_window_.addobject(rvp_, 1, 1, 0.8, 0.9)
+objectvar rvp_
+rvp_ = new RangeVarPlot("v")
+dend[1] rvp_.begin(0)
+dend[1] rvp_.end(1)
+rvp_.origin(100)
+save_window_.addobject(rvp_, 2, 1, 0.8, 0.9)
+objectvar rvp_
+rvp_ = new RangeVarPlot("v")
+dend[2] rvp_.begin(0)
+dend[2] rvp_.end(1)
+rvp_.origin(100)
+save_window_.addobject(rvp_, 3, 1, 0.8, 0.9)
+}
+objectvar scene_vector_[1]
+{doNotify()}

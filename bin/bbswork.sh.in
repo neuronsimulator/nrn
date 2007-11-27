@@ -1,0 +1,23 @@
+#!/bin/sh
+
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+NRNBIN=@bindir@
+ARCH=@host_cpu@
+NEURONHOME=@prefix@/share/nrn
+
+cd $1
+
+if [ -x ${ARCH}/special ] ; then
+	program="./${ARCH}/special"
+else
+	program="${NRNBIN}/nrniv"
+fi
+
+hostname
+pwd
+shift
+shift
+echo "time $program $*"
+time $program $*
+

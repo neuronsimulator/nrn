@@ -1,0 +1,1595 @@
+{load_file("stdlib.hoc")} // need object_index
+
+begintemplate P3D
+public x, y, z, d, init, sesstr, sesstr1, set
+public setid, id, xmlwrite
+objref x, y, z, d, idvec
+
+proc init() {
+	x = new Vector($1)
+	y = new Vector($1)
+	z = new Vector($1)
+	d = new Vector($1)
+	idvec = new Vector($1)
+}
+proc set() {
+	x.x[$1] = $2  y.x[$1] = $3  z.x[$1] = $4  d.x[$1] = $5
+}
+proc sesstr() {
+	sprint($s2, "%g %g %g %g", x.x[$1], y.x[$1], z.x[$1], d.x[$1])
+}
+proc sesstr1() {
+	sprint($s2, "pt3dadd(%g, %g, %g, %g)", x.x[$1], y.x[$1], z.x[$1], d.x[$1])
+}
+func id() {
+	return idvec.x($1)
+}
+proc setid() {
+	idvec.x($1) = $2
+}
+proc xmlwrite() {
+	sprint($s2, "<Point id=\"%d\"><x value=\"%g\"/><y value=\"%g\"/><z value=\"%g\"/><diam value=\"%g\"/></Point>", idvec.x($1), x.x[$1], y.x[$1], z.x[$1], d.x[$1])
+}
+endtemplate P3D
+
+// LDiamInfo used by the GeoSpec for separate length and diameter specs
+// as opposed to constant values for subsets. GeoSpec cannot
+// use a space efficient Vector for this because of the difficulty
+// of maintaining a Vector when the topology and subsets change.
+// Hence we associate this info with individual sections.
+begintemplate LDiamInfo
+public x, oldx
+double x[2], oldx[2]
+proc init() {
+	oldx[0] = x[0] = $1
+	oldx[1] = x[1] = $2
+}
+endtemplate LDiamInfo
+
+// difference between id and id_: id is an index for multiple sections
+// having the same base name, e.g. dend_1[1], dend_1[2],...
+// id_ is a unique identifier given to each section.
+
+begintemplate CellBuildSection
+public name_, id, id_, name, parent, xparent, x0,y0, x1,y1, lx, ly, selected, proximal
+public clone, ml, index, ldiaminfo, tmp1, tmp2, tmp3, xml3d, xmlready
+public logstyle, logpt, neuroml
+public export, export_topol, export_3d, export_rm, i3d, p3d, get3d, rdses
+public panel, this, position, sets, geo, geobox, unique_name_index, sref
+objref parent, sets, ml, geo, geobox, sref, p3d, ldiaminfo, xml3d, logpt
+strdef name_, tstr
+proc init() {
+	tmp1 = tmp2 = tmp3 = 0
+	name_ = $s1
+	id = $2
+	id_ = $2
+	proximal = $3
+	parent = $o4
+	xparent = $5
+	selected = 0
+	sets = new List() // the sets this section is in
+	ml = new List() // as a singleton, the mechanisms
+	geo = new List() // as a singleton, the shape
+	unique_name_index = 0
+	i3d = 0
+	index = -1
+	xmlready = 0
+}
+
+proc logstyle() {
+	logpt = new Vector()
+	logpt.append($1, $2, $3)
+}
+
+proc position() {
+	x0=$1  y0=$2  x1=$3  y1=$4
+	lx = (x0+x1)/2
+	ly = (y0+y1)/2
+}
+proc name() {
+	if (id > 0) {
+		sprint($s1, "%s[%d]", name_, id)
+	}else{
+		$s1 = name_
+	}
+}
+proc panel() {
+}
+proc clone() { //shallow copy
+	$o1 = new CellBuildSection(name_, id, proximal, parent, xparent)
+	$o1.selected = selected
+	$o1.position(x0,y0,x1,y1)
+	$o1.lx = lx  $o1.ly = ly
+	$o1.sets = sets
+	$o1.ml = ml
+	$o1.geo = geo
+	$o1.i3d = i3d
+	$o1.sref = sref
+	$o1.p3d = p3d
+	$o1.logpt = logpt
+}
+proc export_topol() {
+	sref.sec disconnect()
+	if (object_id(parent) == 0) return
+	parent.sref.sec connect sref.sec (proximal), (xparent)
+}
+proc export_3d() {local l, d, i
+	sref.sec {
+		l = L
+		d = diam
+//		print tstr, " 3d ", x0, y0, 0, d, " and ", x1,y1,0,d
+		pt3dclear()
+		if (i3d > 0) {
+			for i=0, i3d-1 {
+				pt3dadd(p3d.x.x[i], p3d.y.x[i], p3d.z.x[i], p3d.d.x[i])
+			}
+			if (object_id(logpt)) {
+				pt3dstyle(1, logpt.x[0], logpt.x[1], logpt.x[2])
+			}
+		}else{
+			pt3dadd(x0, y0, 0, d)
+			pt3dadd(x1, y1, 0, d)
+			L = l
+		}
+	}
+}
+proc export() {
+	export_topol()
+	export_3d()
+}
+proc export_rm() {
+		sref.sec delete_section()
+}
+proc get3d() {local i, x, y, z
+	sref.sec {
+		i3d = n3d()
+		p3d = new P3D(i3d)
+		for i=0, i3d-1 {
+			p3d.set(i, x3d(i), y3d(i), z3d(i), diam3d(i))
+		}
+		if (pt3dstyle() == 1) {
+			pt3dstyle(1, &x, &y, &z)
+			logstyle(x, y, z)
+		}
+	}
+}
+
+proc neuroml() {local i, i0  localobj pt
+	i3d = $o2.pcnt_
+	p3d = new P3D($o2.pcnt_)
+	i0 = $o2.first_
+	for i=0, $o2.pcnt_ - 1 {
+		pt = $o1.points_[i0 + i]
+		p3d.set(i, pt.x_, pt.y_, pt.z_, pt.d_)
+	}
+}
+
+proc rdses() {local i
+	if (i3d > 0) {
+		p3d = new P3D(i3d)
+		for i=0, i3d-1 {
+			p3d.set(i, fscan(), fscan(), fscan(), fscan())
+		}
+	}
+}
+
+endtemplate CellBuildSection
+
+begintemplate CellBuildTopology
+public slist, g, hbox, save, map, pr, save_data, pl, bild, consist, iport
+public draw, sel_only, sel_all, sel_xor, sel1, sel2, sel3, update, names_off
+public nameindex, unique_name, cexport, iport3d, checkname, gridres, circles_off
+public nearest_sec, setindex, xmlwrite, make3d, neuroml
+external object_index, valid_name_syntax
+objref slist, this, hbox, g, parent, tobj, tobj1, tobj2, math, undo_, nil
+objref vbox, sf, bild, unique_name, smap, lists[1]
+strdef tstr, tstr1, sname, debugstr
+create dummy
+proc init() {
+	gridres = 15
+	dummy delete_section()
+	etop = 0
+	names_off = 0
+	circles_off = 0
+	bild = $o1
+	g = bild.gtopol
+	first = 1
+	math = new GUIMath()
+	sf = new StringFunctions()
+	sname = "soma"
+	nameindex = 0
+	slist = new List()
+	undo_ = new List()
+	panel()
+	sprint(tstr, "%s", this)
+	hbox.map(tstr)
+	mksection(2,0,0,0)
+	mksection(3,19,0,0)
+	sname = "dend"
+	i=0
+}
+
+proc all_init() { local i
+	for i=0, slist.count-1 {
+			bild.all.add(slist.object(i))
+	}
+}
+
+proc mech_export() {
+	bild.subsets.cexport(bild.manage.esub)
+	bild.mech_export()
+}
+
+proc cexport() {local i
+	etop = $1
+	if (bild.continuous == 0) {
+		etop = 0
+	}
+	if (etop) {
+		consist()
+		for i=0, slist.count - 1 {
+			slist.object(i).export()
+		}
+		if (slist.count > 0) {
+			slist.object(0).name(tstr)
+			sprint(tstr, "access %s", tstr)
+//			print tstr
+			execute(tstr)
+		}
+	}
+}
+
+proc consist() {
+	validname()
+	validposition()
+}
+
+proc setindex() { local i
+	for i=0,slist.count-1 {
+		slist.object(i).index = i
+	}
+}
+
+proc update() {
+	sel_all(0)
+	if (first) {
+		first = 0
+	}
+	g.exec_menu("Make Section")
+}
+
+proc hints() {
+xpanel("CellBuild Topology Hints")
+xlabel("Usage Hints: Radio buttons in the panel on the right determine left button")
+xlabel("    mouse action in the left Graph subwindow.")
+xlabel("Start building with \"Make Section\". Drag lines to make a tree.")
+xlabel("    Short sections are drawn as circles.")
+xlabel("This only builds ONE cell type. (single tree)")
+xlabel("You can only connect to the distal (1) end of a section. The")
+xlabel("    root section (first created section) is an exception in that")
+xlabel("    you can also connect to its proximal (0) end.")
+xlabel("Won't delete root unless all others deleted first.")
+xlabel("When creating a lot of sections of same type, change the")
+xlabel("    default name first with \"Basename\".")
+xlabel("")
+xlabel("Except for \"Move Label\" the selection is the nearest line, not the nearest label")
+xlabel("")
+xpanel()
+}
+proc map() {
+	sprint(tstr, "%s", this)
+	hbox.map(tstr, $2,$3,$4,$5)
+	copy(slist, undo_)
+	pl()
+}
+proc panel() {
+	hbox = new HBox(3)
+	hbox.intercept(1)
+	hbox.ref(this)
+	hbox.save("save()")
+
+	vbox = new VBox(3)
+	vbox.intercept(1)
+	xpanel("", 1)
+		xbutton("Basename:", "basename()")
+		xvarlabel(sname)
+	xpanel()
+	xpanel("")
+		xbutton("Undo Last", "undo()")
+		xlabel("Click and drag to")
+		g.menu_tool("Make Section", "mksection")
+		g.menu_tool("Copy Subtree", "copysub")
+		g.menu_tool("Reconnect Subtree", "reconsub")
+		g.menu_tool("Reposition", "move")
+		g.menu_tool("Move Label", "movelabel")
+		xlabel("Click to")
+		g.menu_tool("Insert Section", "inser")
+		g.menu_tool("Delete Section", "del1")
+		g.menu_tool("Delete Subtree", "delsub")
+		g.menu_tool("Change Name", "rename")
+		xlabel("")
+		xbutton("Hints", "hints()")
+	xpanel()
+	vbox.intercept(0)
+	vbox.map()
+	hbox.intercept(0)
+}
+
+
+proc copy() {local i
+	$o2.remove_all()
+	for i=0, $o1.count-1 {
+		$o1.object(i).clone(tobj)
+		$o2.append(tobj)
+		if (i > 0) {
+			tobj.parent = $o2.object($o1.index(tobj.parent))
+		}
+	}
+}
+
+proc undo() {local i, nu, ns
+	if (etop) {
+		// unref sections in undo_ that are not in slist
+		// delete sections in slist that are not in undo_
+		// sort the sref indices of both lists
+		nu = undo_.count
+		ns = slist.count
+		tobj1 = new Vector(nu + ns)
+		for i=0, nu-1 {
+			tobj1.x[i] = object_index(undo_.object(i).sref)
+		}
+		for i=0, ns-1 {
+			tobj1.x[nu+i] = object_index(slist.object(i).sref)
+		}
+//print "nu=",nu, "  ns=",ns
+//print "sref indices"
+//tobj1.printf
+		tobj2 = tobj1.sortindex()
+//print "sort index"
+//tobj2.printf
+		// most are now pairs, if not then < nu means unique to
+		// undo_, otherwise unique to slist
+		for i=0, tobj2.size-1 {
+			if (i < tobj2.size-1) {
+				if (tobj1.x[tobj2.x[i]] == tobj1.x[tobj2.x[i+1]]) {
+					// a pair. skip one
+					i += 1
+					continue
+				}
+			}
+			if  (tobj2.x[i] < nu) { // alone in undo
+//undo_.object(tobj2.x[i]).name(tstr)
+//printf("%s alone in undo_\n", tstr)
+				undo_.object(tobj2.x[i]).sref = nil
+			}else{ // alone in slist
+//slist.object(tobj2.x[i]-nu).name(tstr)
+//printf("%s alone in slist\n", tstr)
+				slist.object(tobj2.x[i]-nu).sref.sec delete_section()
+			}
+		}
+	}
+	copy(undo_, slist)
+	pl()
+	cexport(etop)
+	if (etop) { mech_export() }
+}
+
+proc save() {local i
+	hbox.save("load_file(\"celtopol.hoc\", \"CellBuildTopology\")\n}\n{")
+	hbox.save("ocbox_ = new CellBuildTopology(1)")
+	save_data(hbox, "ocbox_")
+}
+
+proc save_data() {
+	sprint(tstr, "}\n{object_push(%s)}\n{", $s2)
+	$o1.save(tstr)
+	sprint(tstr, "first = 0\nslist.remove_all()\nsname = \"%s\"", sname)
+	$o1.save(tstr)
+
+	$o1.save("objref tobj")
+	for i=0, slist.count-1 {
+		if (i%25 == 0) {
+			$o1.save("}\n{")
+		}
+		tobj = slist.object(i)
+sprint(tstr, "tobj = new CellBuildSection(\"%s\",%d, %g, tobj, %g) slist.append(tobj)", tobj.name_,tobj.id,tobj.proximal,tobj.xparent)
+		$o1.save(tstr)
+		if (i > 0) {
+sprint(tstr, "tobj.parent=slist.object(%d)", slist.index(tobj.parent))
+			$o1.save(tstr)
+		}
+sprint(tstr, "  tobj.position(%g,%g,%g,%g) tobj.lx=%g tobj.ly=%g tobj.i3d=%d",\
+tobj.x0,tobj.y0,tobj.x1,tobj.y1, tobj.lx, tobj.ly, tobj.i3d)
+		$o1.save(tstr)
+		if (object_id(tobj.logpt)) {
+sprint(tstr, "  tobj.logstyle(%g, %g, %g)", tobj.logpt.x[0], tobj.logpt.x[1], tobj.logpt.x[2])
+			$o1.save(tstr)
+		}
+	}
+	$o1.save("all_init()\n}")
+	save3d($o1)
+	$o1.save("{object_pop()}\n{")
+}
+
+proc save3d() { local i,j // tobj is the CellBuildSection and $o1 is the Vbox for saving
+	$o1.save("for i=0, slist.count-1 {slist.object(i).rdses()}")
+	for i=0, slist.count-1 {
+		tobj = slist.object(i)
+		for j=0, tobj.i3d - 1 {
+			tobj.p3d.sesstr(j, tstr)
+			$o1.save(tstr)
+		}
+	}
+}
+
+proc inser() {local i, x, y
+    if ($1 == 2) {
+	sel_all(0)
+	sel1($1,$2,$3,0)
+	copy(slist, undo_)
+	bild.changed_ = 1
+	bild.geom_cnt_ += 1
+	for (i=1; i < slist.count; i += 1) {
+		tobj = slist.object(i)
+		if (tobj.selected == 1) {
+			nameindex += 1
+			slist.insrt(i, new CellBuildSection(sname, nameindex,\
+				tobj.proximal, tobj.parent, tobj.xparent))
+			bild.all.add(slist.object(i))
+			tobj.parent = slist.object(i)
+			tobj.xparent = 1
+			x = (2*tobj.x0+tobj.x1)/3
+			y = (2*tobj.y0+tobj.y1)/3
+			slist.object(i).position(tobj.x0, tobj.y0,x, y)
+			tobj.position(x, y, tobj.x1, tobj.y1)
+			tobj2 = tobj
+			validname()
+			if (etop) {
+				tobj2.export()
+				tobj2.parent.export()
+				mech_export()
+			}
+			sel_only(slist.object(i), g)
+			break
+		}
+	}
+    }
+    if ($1 == 3) {
+	sel_all(0)
+    }
+}
+
+proc del1() {
+	if ($1 == 2) {
+		sel1($1,$2,$3,0)
+		del()
+	}
+}
+proc delsub() {
+	if ($1 == 2) {
+		sel2($1,$2,$3,0)
+		del()
+	}
+}
+
+proc del() {local i
+	copy(slist, undo_)
+	bild.geom_cnt_ += 1
+	bild.changed_ = 1
+	//if only one section and it is selected then delete it
+	if (slist.count == 1) {
+		if (slist.object(0).selected == 1) {
+			if (etop) slist.object(0).export_rm()
+			slist.remove(0)
+		}
+	}
+	if (slist.count > 0) slist.object(0).selected = 0
+	for i=1,slist.count - 1 {
+		tobj = slist.object(i)
+		if (tobj.parent.selected == 1) {
+			tobj.parent = tobj.parent.parent
+			if (etop) tobj.export_topol()
+		}
+	}
+	for (i=slist.count-1; i >= 1; i -=1) {// can't delete root
+		tobj = slist.object(i)
+		if (tobj.selected == 1) {
+			if (etop) tobj.export_rm()
+			slist.remove(i)
+		}
+	}
+	validposition()
+	validname()
+	pl()
+	if (etop) { mech_export() }
+}
+
+proc validposition() {local i
+	for i=1, slist.count-1 {
+		tobj = slist.object(i)
+		if (tobj.xparent == 1) {
+			tobj.x0 = tobj.parent.x1
+			tobj.y0 = tobj.parent.y1
+		}else if (tobj.xparent == 0){
+			tobj.x0 = tobj.parent.x0
+			tobj.y0 = tobj.parent.y0
+		}else{
+			tobj.x0 = (tobj.parent.x0 + tobj.parent.x1)/2
+			tobj.y0 = (tobj.parent.y0 + tobj.parent.y1)/2
+		}
+		if (etop) tobj.export_3d()
+	}
+}
+
+func checkname() {local i
+	if (!valid_name_syntax($s1, $4)) {
+		return 0
+	}
+	if (object_id($o2)) {
+	    for i=0, $o2.count-1 {
+		if (strcmp($s1, $o2.object(i).name_) == 0) {
+			sprint(tstr1, "%s is already used as a %s", $s1,$s3)
+			if ($4 == 1) continue_dialog(tstr1)
+			return 0
+		}
+	    }
+		if ($o2 == slist) {
+		    if (strcmp($s1, sname) == 0) {
+			sprint(tstr1, "%s is the basename for new sections",$s1)
+			if ($4 == 1) continue_dialog(tstr1)
+			return 0
+		    }
+		}
+	}
+	return 1
+}
+
+proc basename() { local l, i
+	tstr = sname
+	while (string_dialog("Section name prefix:", tstr)) {
+		l = sf.len(tstr)
+		if (checkname(tstr, bild.subsets.snlist, "SectionList", 1)) {
+			i = name_declared(tstr)
+			if (i != 0 && i != 3) {
+continue_dialog("Already declared and not a Section")
+				continue
+			}
+			sname = tstr
+// following turned out to be a bad idea. Stick with last selected mode.
+//			g.exec_menu("Change Name")
+			break
+		}
+	}
+}
+
+proc rename() {local i, j
+	if ($1 == 2) {
+		nearestline($2, $3)
+		if (parent == nil) return
+		copy(slist, undo_)
+		bild.changed_ = 1
+		parent.name_ = sname
+		validname()
+		pl()
+	}
+}
+
+proc validname() {local i, j, found
+	nameindex = 0
+	unique_name = new Vector()
+	for i=0, slist.count-1 {
+		tobj = slist.object(i)
+		tobj.id = 0
+		nameindex += 1
+		tobj.id_ = nameindex
+		found = 0
+		for j=0, unique_name.size-1 {
+			if (strcmp(slist.object(unique_name.x[j]).name_, tobj.name_)==0){
+				tobj.id = slist.object(unique_name.x[j]).id + 1
+				tobj.unique_name_index = j
+				unique_name.x[j] = i
+				found = 1
+			}
+		}
+		if (!found){
+			unique_name.append(i)
+			tobj.unique_name_index = unique_name.size-1
+			tobj.id = 0
+		}
+	}
+	if (etop && slist.count > 0) {
+		for i=0, slist.count-1 {
+			tobj = slist.object(i)
+			if (object_id(tobj.sref) == 0) {
+				create dummy
+				dummy tobj.sref = new SectionRef()
+			}
+//printf("unname %s %s\n", tobj.sref, tobj.name_)
+			tobj.sref.unname
+		}
+		objref lists[unique_name.size]
+		for i=0, unique_name.size-1 {
+			lists[i] = new List()
+		}
+		for i=0, slist.count-1 {
+			tobj = slist.object(i)
+			lists[tobj.unique_name_index].append(tobj.sref)
+		}
+		for i=0, unique_name.size-1 {
+			tobj = slist.object(unique_name.x[i])
+			if (tobj.id == 0) {
+//printf("rename %s to %s\n", tobj.sref, tobj.name_)
+				tobj.sref.rename(tobj.name_)
+			}else{
+//printf("rename %s to %s\n", lists[i], tobj.name_)
+				tobj.sref.rename(tobj.name_, lists[i])
+			}
+		}
+		objref lists[1]
+	}
+}
+
+proc gridRes() {
+	if (gridres > 0) {
+		if ( $1 > 0) {
+			x1 = int($1/gridres + .5)*gridres
+		}else{
+			x1 = int($1/gridres - .5)*gridres
+		}
+		if ( $2 > 0) {
+			y1 = int($2/gridres + .5)*gridres
+		}else{
+			y1 = int($2/gridres - .5)*gridres
+		}
+	}else{
+		x1 = $1
+		y1 = $2
+	}
+}
+
+proc mksection() {local l
+	if ($1 == 2) {
+		copy(slist, undo_)
+		bild.geom_cnt_ += 1
+		bild.changed_ = 1
+		nearest($2, $3)
+		sel_all(0)
+	}
+	if ($1 == 2 || $1 == 1) {
+		gridRes($2,$3)
+		pl()
+		g.beginline(2,2)
+		draw1(g, x0,y0,x1,y1)
+		g.flush()
+	}else{
+		gridRes($2,$3)
+		l = sqrt((x1-x0)^2 + (y1-y0)^2)
+		if (l < 3) {
+			if (object_id(parent)) {
+l = sqrt((parent.x1 - parent.x0)^2 + (parent.y1 - parent.y0)^2)
+				x1 = x0 + (parent.x1 - parent.x0)*3/l
+				y1 = y0 + (parent.y1 - parent.y0)*3/l
+			}
+		}
+		nameindex += 1
+		tobj = new CellBuildSection(sname,nameindex, 0, parent, xparent)
+		bild.all.add(tobj)
+		tobj.position(x0, y0, x1, y1)
+		slist.append(tobj)
+		validname()
+		pl()
+		if(etop) {
+			tobj.export()
+			if (slist.count == 1) {
+				slist.object(0).name(tstr)
+				sprint(tstr, "access %s", tstr)
+				print tstr
+				execute(tstr)
+			}
+			mech_export()
+		}
+	}
+}
+proc sel1() {
+	nearestline($2, $3)
+	if (parent == nil) return
+	if ($1 == 2) {
+		copy(slist, undo_)
+		if ($4 == 0) {
+			sel_all(0)
+		}
+		sel_one(parent)
+		newselstate = parent.selected
+	} else if ($1 == 1) {
+		parent.selected = newselstate
+		pl()
+	}
+}
+proc sel2() {
+	if ($1 == 2) {
+		copy(slist, undo_)
+		nearestline($2, $3)
+		if ($4 == 0) {
+			sel_all(0)
+		}
+		sel_subtree(parent)
+	}
+}
+proc sel3() {local i, dmin, imin, d, x
+	if ($1 == 2) {
+		if ($4 == 0) {
+			sel_all(0)
+		}
+		dmin = 1e9
+		imin = -1
+		for i=0, slist.count - 1 {
+			tobj = slist.object(i)
+			d = ($2-tobj.lx)^2 + ($3-tobj.ly)^2
+			if (d < dmin) {
+				dmin = d
+				imin = i
+			}
+		}
+		if (imin >= 0) {
+			tstr = slist.object(imin).name_
+			x = (slist.object(imin).selected == 0)
+			for i=0, slist.count - 1 {
+				tobj = slist.object(i)
+				if (strcmp(tstr, tobj.name_) == 0) {
+					tobj.selected = x
+				}
+			}
+		}
+		pl()
+	}
+}
+
+proc copysub() {local i
+	if ($1 == 2) {
+		copy(slist, undo_)
+		bild.changed_ = 1
+		bild.geom_cnt_ += 1
+		nearestline($2, $3)
+		if (parent == nil) return
+		if (parent == slist.object(0)) {
+			parent = slist.object(1)
+			if (parent == nil) return
+		}
+		sel_all(0)
+		sel_subtree(parent)
+		slist.object(0).selected = 0 // can't copy root
+		tobj2 = new List()
+		copy(slist, tobj2)
+		for (i = tobj2.count -1; i >= 0; i -= 1) {
+			tobj = tobj2.object(i)
+			tobj.sref = nil
+			tobj.p3d = nil
+			tobj.i3d = 0
+			if (tobj.selected == 0) {
+				tobj2.remove(i)
+			}
+		}
+		tobj2.object(0).parent = parent.parent
+		parent = tobj2.object(0)
+		sel_all(0)
+		for i=0, tobj2.count-1 {
+			slist.append(tobj2.object(i))
+			tobj2.object(i).selected = 1
+		}
+		validname()	
+		if (etop) for i=0, tobj2.count-1 {
+			tobj2.object(i).export()
+		}
+		tobj2 = tobj2.object(0)
+		if (etop) { mech_export() }
+	}
+	reconsub1($1,$2,$3)
+}
+
+proc reconsub() {local i
+	if ($1 == 2) {
+		bild.changed_ = 1
+		bild.geom_cnt_ += 1
+		sel2($1, $2, $3, 0)
+		if (parent == nil) return
+		if (parent == slist.object(0)) {
+			parent = slist.object(1)
+			if (parent == nil) return
+		}
+		slist.object(0).selected = 0 // can't copy root
+	}
+	reconsub1($1,$2,$3)
+}
+
+proc reconsub1() {
+	if (parent == nil) return	
+	tobj2 = parent
+	nearest($2,$3,0) //nearest unselected
+	tobj2.parent = parent
+	if (parent == slist.object(0) && xparent < 1) {
+		if (xparent == 0) {
+			tobj2.x0 = parent.x0
+			tobj2.y0 = parent.y0
+			tobj2.xparent = 0
+		}else{
+			tobj2.x0 = (parent.x0 + parent.x1)/2
+			tobj2.y0 = (parent.y0 + parent.y1)/2
+			tobj2.xparent = .5
+		}
+	}else{
+		tobj2.x0 = parent.x1
+		tobj2.y0 = parent.y1
+		tobj2.xparent = 1
+	}
+	parent = tobj2
+	if ($1 == 2) $1 = 1
+	move($1,$2,$3)
+	if ($1 == 3) {
+		consistency()
+		if (etop) parent.export_topol()
+	}
+}
+
+proc consistency() {local i, j
+// reorder so connections are all to earlier indices
+	for (i=0; i < slist.count(); i += 1) {
+		tobj = slist.object(i)
+		j = slist.index(tobj.parent)		
+		if (j > i) {
+			slist.remove(i)
+			slist.insrt(j, tobj)
+			i -= 1
+		}
+	}
+	validname()
+	pl()
+}
+
+proc move() {local i, dx, dy
+	if ($1 == 2) {
+		copy(slist, undo_)
+		bild.changed_ = 1
+		bild.geom_cnt_ += 1
+		unsel()
+		nearest($2, $3)
+		if (parent == nil) return
+		if (parent == slist.object(0) && xparent == 0) {
+			sel_all(1)
+			moveall_ = 1
+		}else{
+			sel_subtree(parent)
+			moveall_ = 0
+		}
+	}
+	if (parent == nil) return
+	if ($1 == 1 || $1 == 2) {
+		gridRes($2,$3)
+		if (moveall_) {
+			dx = x1 - parent.x0
+			dy = y1 - parent.y0
+			parent.x0 = x1
+			parent.y0 = y1
+			parent.x1 += dx
+			parent.y1 += dy
+		}else{
+			dx = x1 - parent.x1
+			dy = y1 - parent.y1
+			parent.x1 = x1
+			parent.y1 = y1
+		}
+		parent.lx += dx
+		parent.ly += dy
+		for i=slist.index(parent)+1, slist.count-1 {
+			tobj = slist.object(i)
+			if (tobj.selected == 1) {
+				tobj.x0 += dx
+				tobj.y0 += dy
+				tobj.x1 += dx
+				tobj.y1 += dy
+				tobj.lx += dx
+				tobj.ly += dy
+			}
+		}
+	}else{
+		validposition()
+		moveall_ = 0
+		unsel()
+		if (etop) parent.export_3d()
+	}
+	pl()
+}
+proc unsel() {local i
+	for i =0, slist.count-1 {
+		slist.object(i).selected = 0
+	}
+}
+
+proc movelabel() {
+	if ($1 == 2) {
+		copy(slist, undo_)
+		bild.changed_ = 1
+		unsel()
+		nearest_label($2,$3)
+		if (parent != nil) sel_one(parent)
+	}
+	if (parent == nil) return
+	if ($1 == 1 || $1 == 2) {
+		parent.lx = $2
+		parent.ly = $3
+	}else{
+		unsel()
+	}
+	pl()
+}
+
+proc pl() {
+	draw(g)
+}
+proc draw() {local i, color
+	$o1.erase_all
+	$o1.fixed(1)
+	for i=0, slist.count - 1 {
+		tobj = slist.object(i)
+		if (tobj.selected == 1) { color = 2} else {color = 1}
+		$o1.beginline(color, 2)
+		draw1($o1, tobj.x0, tobj.y0, tobj.x1, tobj.y1)
+		if (names_off == 0 || tobj.id == 0) {
+			tobj.name(tstr)
+			$o1.label(tobj.lx, tobj.ly, tstr,\
+				1, 1, .5, .5, color)
+		}
+	}
+	$o1.flush()
+}
+
+func len() {
+	return sqrt(($1- $3)^2 + ($2 - $4)^2)
+}
+
+proc draw1() {local l
+	l = len($2,$3,$4,$5)
+	if (l < 20 && circles_off == 0) {
+		circle($o1, ($2+$4)/2, ($3 + $5)/2, l/2)
+	}else{
+		$o1.line($2, $3)
+		$o1.line($4, $5)
+	}
+}
+
+proc circle() { local i, x, y
+	for i=0, 20 {
+		x = $4*sin(PI*i/10) y = $4*cos(PI*i/10)
+		$o1.line($2+x, $3 + y)
+	}
+}
+
+proc sel_all() { local i
+	for i=0, slist.count-1 {
+		slist.object(i).selected = $1
+	}
+	if (numarg() == 2) {
+		draw($o2)
+	}else{
+		pl()
+	}
+}
+proc sel_xor() { local i
+	for i=0, slist.count-1 {
+		slist.object(i).selected = slist.object(i).selected == 0
+	}
+	pl()
+}
+proc sel_one() {local i
+	if ($o1.selected == 0) {
+		$o1.selected = 1
+	}else{
+		$o1.selected = 0
+	}
+	pl()
+}
+proc sel_only() {local i
+	for i=0, slist.count -1	{
+		slist.object(i).selected = 0
+	}
+	$o1.selected = 1
+	draw($o2)
+}
+proc sel_subtree() {local i, old
+	old = $o1.selected
+	$o1.selected = 2
+	for i=1, slist.count-1 { // only 0 does not have parent
+		tobj = slist.object(i)
+		// don't include children connected to 0
+		if (tobj.parent.selected == 2 && tobj.xparent == 1) {
+			tobj.selected = 2
+		}
+	}
+	old = old==0
+	for i=0, slist.count-1 {
+		tobj = slist.object(i)
+		if (tobj.selected == 2) {
+			tobj.selected = old
+		}
+	}
+	pl()
+}	
+
+proc nearestline() {
+	nearest_sec($1,$2,parent)
+}
+
+func nearest_sec() { local i, dmin, d
+	dmin = 1e9
+	for i=0, slist.count - 1 {
+		tobj = slist.object(i)
+		d = math.d2line_seg($1,$2,tobj.x0,tobj.y0,tobj.x1,tobj.y1)
+		if (d < dmin) {
+			dmin = d
+			$o3 = tobj
+		}
+	}
+	return dmin
+}
+	
+proc nearest() {local i, dmin, d
+	objref parent
+	x0 = $1
+	y0 = $2
+	dmin = 1e9
+	for i=0, slist.count -1 {
+		tobj = slist.object(i)
+		if (numarg() == 3) {
+			if ($3 != tobj.selected) {
+				continue
+			}
+		}
+		d = ($1-tobj.x0)^2 + ($2-tobj.y0)^2
+		if (d < dmin) {
+			dmin = d
+			parent = tobj
+			xparent = 0
+			x0 = tobj.x0
+			y0 = tobj.y0
+		}
+		d = ($1-tobj.x1)^2 + ($2-tobj.y1)^2
+		if (d < dmin) {
+			dmin = d
+			parent = tobj
+			xparent = 1
+			x0 = tobj.x1
+			y0 = tobj.y1
+		}
+//connecting to .5 location of soma causes confusion for beginners.
+continue
+	    if (i == 0) {
+			d = ($1 - (tobj.x0 + tobj.x1)/2)^2 + ($2 - (tobj.y0 + tobj.y1)/2)^2
+		if (d < dmin) {
+			dmin = d
+			parent = tobj
+			xparent = .5
+			x0 = (tobj.x0 + tobj.x1)/2
+			y0 = (tobj.y0 + tobj.y1)/2
+		}
+	    }
+	}
+}
+				
+proc nearest_label() {local i, dmin, d
+	objref parent
+	dmin = 1e9
+	for i=0, slist.count - 1 {
+		tobj = slist.object(i)
+		d = ($1-tobj.lx)^2 + ($2-tobj.ly)^2
+		if (d < dmin) {
+			dmin = d
+			parent = tobj
+		}
+	}
+}
+
+proc pr() {local i, j, x0, y0, x1, y1, is3d, nline
+	// create names
+	validname() //unique_name contains object indices of names with largest id
+	j = 0
+	for i=0, unique_name.size-1 {
+		tobj = slist.object(unique_name.x[i])
+		if (tobj.id ==0) {
+			sprint(tstr, "%s", tobj.name_)
+		}else{
+			sprint(tstr, "%s[%d]", tobj.name_, tobj.id + 1)
+		}
+		if (j%7 == 0) {
+			$o1.printf("\ncreate %s", tstr)
+		}else{
+			$o1.printf(", %s", tstr)
+		}
+		j += 1
+	}
+	$o1.printf("\n\nproc topol() { local i\n")
+	// connect
+	pr_connect($o1)
+	$o1.printf("  basic_shape()\n}\n")
+	is3d = 0
+	nline = 0
+	for i=0, slist.count - 1 {
+		tobj = slist.object(i)
+	    if (tobj.i3d > 0) {
+		tobj.name(tstr)
+		if (nline == 0) {
+			is3d += 1
+			$o1.printf("proc shape3d_%d() {\n", is3d)
+		}
+		$o1.printf("  %s {pt3dclear()\n", tstr)
+		if (object_id(tobj.logpt)) {
+			nline += 1
+$o1.printf("\tpt3dstyle(1, %g, %g, %g)\n", tobj.logpt.x[0], tobj.logpt.x[1], tobj.logpt.x[2])
+		}
+		for j=0, tobj.i3d-1 {
+			tobj.p3d.sesstr1(j, tstr1)
+			$o1.printf("	%s\n", tstr1)
+			nline += 1
+			if (nline%200 == 0) {
+				is3d += 1
+$o1.printf("  }\n}\nproc shape3d_%d() {\n  %s {", is3d, tstr)
+			}
+		}
+		$o1.printf("  }\n")
+	    }
+	}
+	if (is3d) { $o1.printf("}\n")}
+	$o1.printf("proc basic_shape() {\n")
+	if (is3d) {
+		for i=1, is3d {
+			$o1.printf("  shape3d_%d()\n", i)
+		}
+	}
+	for i=0, slist.count-1 {
+		tobj = slist.object(i)
+	    if (tobj.i3d == 0) {
+		tobj.name(tstr)
+		// rounding to nearest integer (micron)is only in order to
+		// make the hoc code more compact
+		x0 = tobj.x0  y0 = tobj.y0  x1 = tobj.x1  y1 = tobj.y1
+		if (((x0-x1)^2 + (y0-y1)^2) > 16) {
+			x0 = int(x0 + .5)  y0 = int(y0 + .5)
+			x1 = int(x1 + .5)  y1 = int(y1 + .5)
+		}
+		$o1.printf("  %s {pt3dclear() pt3dadd(%g, %g, 0, 1) pt3dadd(%g, %g, 0, 1)}\n",\
+			tstr, x0, y0, x1, y1)
+	    }
+	}
+	$o1.printf("}\n")
+}
+
+proc iport() {local i, ps, ncell
+	slist = new List()
+	tobj = new SectionList()
+	if (object_id(section_owner()) != 0) {
+sprint(tstr, "Can only import a top level cell. Currently accessed\
+ section is in %s", section_owner())
+		continue_dialog(tstr)
+		return
+	}
+	tobj.wholetree()		
+	i = 0
+	forsec tobj {
+		tobj1 = new CellBuildSection(secname(), 0, Ra, nil, 0)
+		bild.all.add(tobj1)
+		Ra = i
+		i += 1
+		slist.append(tobj1)
+	}
+	i = 0
+	forsec tobj {
+		tobj1 = slist.object(i)
+		i += 1
+		ps = parent_section(.5)
+		if (ps) {
+			push_section(ps)
+			tobj1.parent = slist.object(Ra)
+			pop_section()
+			tobj1.xparent = parent_connection()
+		}
+	}
+	i = 0
+	forsec tobj {
+		tobj1 = slist.object(i)
+		i += 1
+		Ra = tobj1.proximal
+		tobj1.proximal = 0
+		tobj1.position(x3d(0), y3d(0), x3d(n3d()-1), y3d(n3d()-1))
+	}
+	consistency()
+	ncell = 0
+	for i=0, slist.count-1 {
+		tobj = slist.object(i)
+		tobj.selected = 0
+		if (tobj.parent == nil) {
+			ncell += 1
+			if (ncell > 1) {
+				tobj.selected = 1
+			}
+		}else if (tobj.parent.selected == 1) {
+			tobj.selected = 1
+		}
+	}
+	if (ncell > 1) {
+		for (i=slist.count - 1; i >= 0; i -= 1) {
+			tobj = slist.object(i)
+			if (tobj.selected == 1) {
+				slist.remove(i)
+			}
+		}
+		objref tobj
+		slist.object(0).name(tstr)
+sprint(tstr, "There were %d top level cells. Only the cell rooted by %s was imported",ncell,tstr)
+		continue_dialog(tstr)
+	}else if (ncell == 0) {
+		continue_dialog("There are no top level cells")
+	}
+	validposition()
+	bild.changed_ = 1
+	bild.geom_cnt_ += 1
+	tobj = nil
+}
+
+proc iport3d() {local i, oldetop
+	for i=0, slist.count-1 {
+		tobj = slist.object(i)
+		sprint(tstr, "%s %s.sref = new SectionRef()", tobj.name_, tobj)
+		execute(tstr)
+		if (sf.head(tobj.name_, "\\[", tstr) > 0) {
+			tobj.name_ = tstr
+		}
+		tobj.get3d()
+	}
+	oldetop = etop
+	etop = 1
+	validname()
+	etop = oldetop
+	pl()
+}
+
+proc neuroml() {local i, ip, nx, oldetop  localobj cab, cbs, s, pcbs, pt, pt2
+	slist = new List()
+	s = new String()
+	for i=0, $o1.cables_.__len__() - 1 {
+		cab = $o1.cables_[i]
+		if ( cab.parent_cable_id_ >= 0) {
+			ip = $o1.cableid2index_[cab.parent_cable_id_]
+			pcbs = slist.object(ip)
+		}else{
+			ip = -1
+			pcbs = nil
+		}
+		nx = 0
+		sscanf(cab.name_, "%s[%d]", s.s, &nx)
+		//printf("i=%d id=%d %s[%d]\n", i, cab.id_, s.s, nx)
+		cbs = new CellBuildSection("d", i, 0, pcbs, cab.px_)
+		bild.all.add(cbs)
+		slist.append(cbs)
+		pt = $o1.points_[cab.first_]
+		pt2 = $o1.points_[cab.first_ + cab.pcnt_ - 1]
+		cbs.position(pt.x_, pt.y_, pt2.x_, pt2.y_)
+		cbs.neuroml($o1, cab)
+	}
+	consistency()
+	validposition()
+	bild.changed_ = 1
+	bild.geom_cnt_ += 1
+
+	oldetop = etop
+	etop = 1
+	validname()
+	etop = oldetop
+	pl()
+}
+
+proc pr_connect() { local i,j,j1,ni1,ni2,id1,id2,kind,nip1,nip2,idp1,idp2,x,xp,lcnt,pcnt,icnt
+	// To be a bit more compact in expressing
+	// the connect statements in hoc,
+	// we use for loops for contiguous indices.
+	// arg is the File
+	// validname() has already been called and so
+	// unique_name is a Vector
+	// that contains the object indices of the names with largest id.
+	// This vector thus gives us our order for the unique names.
+	// Furthermore the unique_name_index field of each section object
+	// gives the index into the unique_name Vector.
+
+	// construct Vector index map for subset of form
+	// uniquenameindex*1e6 + arayindex
+	smap = new Vector(slist.count)
+	for i=0, smap.size-1 {
+		tobj1 = slist.object(i)
+		smap.x[i] = tobj1.unique_name_index*1e6 + tobj1.id
+	}
+	// index vector sort gives us easily findable contiguous sets of
+	// indices
+//print "before sort"
+//smap.printf
+	smap = smap.sortindex()
+//print "after sort"
+//smap.printf
+	lcnt = 0 // separate procedure into 200 line blocks
+	pcnt = 0 // procedure name suffix
+	for i=1, smap.size-1 {
+		j1 = smap.x[i]
+		ni1 = slist.object(j1).unique_name_index
+		id1 = slist.object(j1).id
+		nip1 = slist.object(j1).parent.unique_name_index
+		idp1 = slist.object(j1).parent.id
+		x = slist.object(j1).proximal
+		xp = slist.object(j1).xparent
+		kind = idp1 - id1
+//printf("base %d %s[%d] to %s[%d] kind=%g\n", i, slist.object(j1).name_,\
+// id1, slist.object(j1).parent.name_, idp1, kind)
+		icnt = 0
+		for i = i+1, smap.size-1 {
+			j = smap.x[i]
+			ni2 = slist.object(j).unique_name_index
+			id2 = slist.object(j).id
+			nip2 = slist.object(j).parent.unique_name_index
+			idp2 = slist.object(j).parent.id
+			if (x != slist.object(j).proximal || xp != slist.object(j).xparent){
+				break
+			}
+			if (ni1 == ni2 && nip1 == nip2) {
+				if (idp1 == idp2) {
+					if (icnt > 0 && kind != 1e9) {
+						break
+					}
+					kind = 1e9 // constant
+				}else if (kind != (idp2 - id2)) {
+					break
+				}
+			}else{
+				break
+			}
+			icnt += 1
+//printf("  also %d %s[%d] to %s[%d] kind=%g\n", i, slist.object(j).name_,\
+// id2, slist.object(j).parent.name_, idp2, kind)
+		}
+		i = i-1
+		j = smap.x[i]
+		id2 = slist.object(j).id
+		idp2 = slist.object(j).parent.id
+		tstr = slist.object(unique_name.x[ni1]).name_
+		tstr1 = slist.object(unique_name.x[nip1]).name_
+		if (id1 == id2) {
+			slist.object(j1).name(tstr)
+			if (idp1 == 0) {
+$o1.printf("  connect %s(%d), %s(%g)\n", tstr, x, tstr1, xp)
+			}else{
+$o1.printf("  connect %s(%d), %s[%d](%g)\n", tstr, x, tstr1, idp1, xp)
+			}
+		}else if (kind == 1e9) {
+			if (idp1 == 0) {
+$o1.printf("  for i = %d, %d connect %s[i](%d), %s(%g)\n", \
+ id1, id2, tstr, x, tstr1, xp)
+			}else{
+$o1.printf("  for i = %d, %d connect %s[i](%d), %s[%d](%g)\n", \
+ id1, id2, tstr, x, tstr1, idp1, xp)
+			}
+		}else if (kind == 0) {
+$o1.printf("  for i = %d, %d connect %s[i](%d), %s[i](%g)\n", \
+ id1, id2, tstr, x, tstr1, xp)
+		}else if (kind > 0) {
+$o1.printf("  for i = %d, %d connect %s[i](%d), %s[i+%d](%g)\n", \
+ id1, id2, tstr, x, tstr1, kind, xp)
+		}else{ // kind < 0
+$o1.printf("  for i = %d, %d connect %s[i](%d), %s[i%d](%g)\n", \
+ id1, id2, tstr, x, tstr1, kind, xp)
+		}
+		lcnt = (lcnt + 1)%200
+		if (lcnt == 0) { // each procedure cannot have more than 200 lines
+			pcnt += 1
+			$o1.printf("   topol_%d()\n}\nproc topol_%d() {\n", pcnt, pcnt)
+		}
+	}
+}
+
+proc xmlsegment () {local proximalPoint, distalPoint
+	proximalPoint = $o2.id($3)
+	distalPoint = $o2.id($3 + 1)
+	$o1.printf("    <Segment id=\"%d\"><Parent value=\"%d\"/><Child value=\"%d\"/></Segment>\n", $4, proximalPoint, distalPoint)
+}
+
+proc xmlwrite() {local i, j, x0, y0, x1, y1, is3d, nline, pointcount, pointid, diam, lastpoint, segcount
+	// create names
+	validname() //unique_name contains object indices of names with largest id
+	make3d()
+	j = 0
+	$o1.printf("    <SetOfPoints>\n")
+	is3d = 0
+	pointcount = 0
+	segcount = 0
+	for i=0, slist.count - 1 {
+		tobj = slist.object(i)
+		tobj.name(tstr)
+	    if (tobj.i3d > 0) {
+		for j=0, tobj.i3d-1 {
+	    		pointcount += 1
+			tobj.p3d.setid(j, pointcount)
+			tobj.p3d.xmlwrite(j, tstr1)
+			$o1.printf("	  %s\n", tstr1)
+		}
+	    } else {
+		for j=0, 1 {
+	    		pointcount += 1
+			tobj.xml3d.setid(j, pointcount)
+			tobj.xml3d.xmlwrite(j, tstr1)
+			$o1.printf("	  %s\n", tstr1)
+		}
+		// rounding to nearest integer (micron)is only in order to
+		// make the hoc code more compact
+		x0 = tobj.x0  y0 = tobj.y0  x1 = tobj.x1  y1 = tobj.y1
+		if (((x0-x1)^2 + (y0-y1)^2) > 16) {
+			x0 = int(x0 + .5)  y0 = int(y0 + .5)
+			x1 = int(x1 + .5)  y1 = int(y1 + .5)
+		}
+//		if (tobj.parent == nil) {
+//		   $o1.printf("    <Point id=\"%d\">", tobj.id_)
+//		   $o1.printf("<x value=\"%g\"/><y value=\"%g\"/><z value=\"%g\"/>",\
+//			 x0, y0, 0)
+//		   $o1.printf("<diam value=\"%g\"/>", diam)
+//		   $o1.printf("</Point>\n")
+//		}
+//		pointid = tobj.id_ + 1
+//		$o1.printf("    <Point id=\"%d\">", pointid)
+//		$o1.printf("<x value=\"%g\"/><y value=\"%g\"/><z value=\"%g\"/>",\
+//			 x1, y1, 0)
+//		$o1.printf("<diam value=\"%g\"/>", diam)
+//		$o1.printf("</Point>\n")
+	    }
+//	    pointcount += 1
+	}
+	$o1.printf("    </SetOfPoints>\n")
+	$o1.printf("    <SetOfCells>\n")
+	$o1.printf("      <Cell>\n")
+	for i=0, slist.count-1 {
+		tobj = slist.object(i)
+		if (tobj.id == 0) {
+			sprint(tstr, "%s", tobj.name_)
+		}else{
+			sprint(tstr, "%s__%d__", tobj.name_, tobj.id + 1)
+		}
+	    $o1.printf("      <SetOfSegments name=\"%s\">\n", tstr)
+	    if (tobj.i3d > 0) {
+		tobj.name(tstr)
+		if (tobj.parent != nil) {
+		    segcount += 1
+		    $o1.printf("<Segment id=\"%d\"><Parent value=\"%d\"/><Child value=\"%d\"/></Segment>", segcount, tobj.parent.p3d.id[tobj.parent.i3d - 1], tobj.p3d.id[0])
+		}
+		for j=0, tobj.i3d-2 {
+			segcount += 1
+			xmlsegment($o1, tobj.p3d, j, segcount)
+		}
+	    } else {
+		if (tobj.parent != nil) {
+			if (tobj.xparent == 0) {
+			   pointid = tobj.parent.xml3d.id(0)
+			} else {
+//			   pointid = tobj.parent.xml3d.id(tobj.parent.xml3d.count - 1)
+			   pointid = tobj.parent.xml3d.id(1)
+			}
+//		    $o1.printf("        <Segment id=\"%d\" parent=\"%d\" name=\"%s\">\n", tobj.id_, tobj.parent.id_, tstr)
+		} else {
+		    pointid = tobj.xml3d.id(0)
+		}
+		$o1.printf("        <Segment id=\"%d\" name=\"%s\">\n", tobj.id_, tstr)
+		$o1.printf("          <Parent value=\"%d\"/>\n", pointid)
+		$o1.printf("          <Child value=\"%d\"/>\n", tobj.xml3d.id(1))
+		$o1.printf("        </Segment>\n")
+	    }
+	    $o1.printf("      </SetOfSegments>\n")
+        }
+	$o1.printf("      </Cell>\n")
+	$o1.printf("    </SetOfCells>\n")
+//	$o1.printf("%s ", debugstr)
+}
+
+// if an imported cell is changed, this is not reflected in the
+// xml export.  This mimics the current behavior, because the
+// hoc export doesn't reflect the change either.
+proc make3d () { local L, diam, len, x0, y0, x1, y1, i, j, k, defd, defL
+    // first pass -- scale the points
+    for i = 0, slist.count - 1 {
+	tobj = slist.object(i)
+	if (tobj.i3d == 0) {  // is it possible to have a mix?
+	    defd = defL = 0 // not defined
+	    L = 80
+	    diam = 1
+	    if (tobj.geo.count > 0) {
+		for j = 0, tobj.geo.count - 1 {
+		    if (tobj.geo.object(j).type == 2) {
+			L = tobj.geo.object(j).value
+			defL += 1
+		    } else if (tobj.geo.object(j).type == 3) {
+			diam = tobj.geo.object(j).value
+			defd += 1
+		    } else if (tobj.geo.object(j).type ==  4) {
+			L = diam = sqrt(tobj.geo.object(j).value)/PI
+			defd += 1  defL += 1
+		    } else if (tobj.geo.object(j).type ==  5) {
+			L = 43.0127  diam = 100/L/PI
+			defd += 1  defL += 1
+		    }
+		}
+	    } else {
+		// there will be at least one set: all
+		for j = 0, tobj.sets.count - 1 {
+		    tobj1 = tobj.sets.object(j)
+		    for k = 0, tobj1.geo.count - 1 {
+			if (tobj1.geo.object(k).type == 2) {
+			    L = tobj1.geo.object(k).value
+			    defL += 1
+			} else if (tobj1.geo.object(k).type == 3) {
+			    diam = tobj1.geo.object(k).value
+			    defd += 1
+			} else if (tobj1.geo.object(k).type == 0) {
+			    L = tobj.ldiaminfo.x[0]
+			    defL += 1
+			} else if (tobj1.geo.object(k).type == 1) {
+			    diam = tobj.ldiaminfo.x[1]
+			    defd += 1
+			} else if (tobj1.geo.object(k).type ==  4) {
+			    L = diam = sqrt(tobj1.geo.object(k).value)/PI
+			    defd += 1  defL += 1
+			} else if (tobj1.geo.object(k).type ==  5) {
+			    L = 43.0127  diam = 100/L/PI
+			    defd += 1  defL += 1
+			}
+		    }
+		}
+	    }
+	    if (!defd || !defL) {
+		tobj.name(tstr)
+		printf("L and/or diam is not defined for %s\n", tstr)
+	    }
+//tobj.name(tstr)
+//print tstr, " ", L, diam
+		x0 = tobj.x0  y0 = tobj.y0  x1 = tobj.x1  y1 = tobj.y1
+		len = ((x0-x1)^2 + (y0-y1)^2)^.5 
+		x1 = int(1.0 * (x1 - x0) * L / len) + x0
+		y1 = int(1.0 * (y1 - y0) * L / len) + y0
+		tobj.xml3d = new P3D(2)
+		tobj.xml3d.set(0, x0, y0, 0, diam)
+		tobj.xml3d.set(1, x1, y1, 0, diam)
+	}
+    }
+    // second pass -- translate points
+    for i = 0, slist.count - 1 {
+	tobj = slist.object(i)
+	if (tobj.i3d == 0) {  // is it possible to have a mix?
+	    if (tobj.xmlready == 0) {
+		makeready(tobj)
+	    }
+	}
+    }
+}
+
+proc makeready () { local x0, y0, x1, y1, px0, py0, z, d
+    if ($o1.parent != nil) {
+	if ($o1.parent.xmlready != 1) {
+	    makeready($o1.parent)
+    	}
+	x0 = $o1.xml3d.x.x[0]
+	y0 = $o1.xml3d.y.x[0]
+	z0 = $o1.xml3d.z.x[0]
+	d0 = $o1.xml3d.d.x[0]
+	x1 = $o1.xml3d.x.x[1]
+	y1 = $o1.xml3d.y.x[1]
+	z1 = $o1.xml3d.z.x[1]
+	d1 = $o1.xml3d.d.x[1]
+	px1 = $o1.parent.xml3d.x.x[1]
+	py1 = $o1.parent.xml3d.y.x[1]
+	$o1.xml3d.set(0,  px1, py1, z0, d0)
+	$o1.xml3d.set(1,  x1 + px1 - x0, y1 + py1 - y0, z1, d1)
+    }
+   $o1.xmlready = 1
+}
+
+
+endtemplate CellBuildTopology
+

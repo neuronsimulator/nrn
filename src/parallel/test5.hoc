@@ -1,0 +1,35 @@
+func f() {local x, i
+	x = $1*$1
+	for i=1,100000 hoc_cross_x_ = i
+	printf("%g = f(%g, \"%s\", %s)\n", x, $1, $s2, $o3)
+	$o3.add(1).printf
+	return x
+}
+
+objref pc
+pc = new ParallelContext()
+
+pc.runworker()
+
+objref vec
+strdef s
+vec = new Vector(4)
+
+for i=1,10 {
+	pc.submit("f", i, "hello", vec.fill(10*i))
+}
+
+x = 0
+while (pc.working()) {
+	x += pc.retval
+	printf("userid=%d retval=%g  x=%g args: %g %s\n", \
+	 pc.userid, pc.retval, x, pc.upkscalar, pc.upkstr(s))
+	pc.upkvec.printf
+	if (i < 20) {
+		pc.submit("f", i, "goodbye", vec.fill(10*i))
+		i += 1
+	}
+}
+
+pc.done()
+quit()

@@ -1,0 +1,268 @@
+.....2<HTML>
+<HEAD>
+  <!-- installunix.html -->
+  <!-- version 1.2b 3:10 PM 3/7/2002 -->
+  <TITLE>NEURON Installation for UNIX and Linux</TITLE>
+</HEAD>
+<BODY BGCOLOR="#ffffff">
+<H1>
+NEURON Installation for UNIX and Linux
+</H1>
+
+This version of InterViews and NEURON 
+uses autoconf and should
+be much easier to install than with the older Imake installation method
+(e.g. 4.2.1 and earlier).
+I (Michael Hines) am extremely grateful to Gary Holt (holt@LNC.usc.edu)
+for writing the original autoconf scripts for this package.
+I have modified these scripts in several ways and all bugs should be
+considered my own. Please notify me (michael.hines@yale.edu) if this
+package does not install properly on your machine.
+<p>
+In general there should no longer be any requirement for CPU, NEURONHOME,
+or LD_LIBRARY_PATH environment variables. However, if you have trouble
+launching NEURON it may be because I am not using libtool generically in
+the configuration files and need an explicit LD_LIBRARY_PATH for interviews
+or for the compiler libraries.
+<p>
+A very important addition to NEURON is the
+<a href="#java">ability to use JAVA.</a> At this time, installation of
+this feature requires the explicit invocation of the
+<a href="#withnrnjava">--with-nrnjava</a>
+argument to the configure command when configuring nrn-5.3.
+I am very grateful to Fred Howell (fwh@anc.ed.ac.uk) of Nigel Goddard's lab
+for designing and providing a sample implementation of the NEURON to Java
+interface.
+
+<H2> Quick Installation Instructions </H2>
+
+Note: Neuron may be installed in its extraction directory. Use
+--prefix=`pwd` in the ./configure command.
+
+<H3>Full installation with InterViews (strongly recommended)</H3>
+Download
+<a href="ftp://ftp.neuron.yale.edu/neuron/unix/iv-15.tar.gz">iv-15.tar.gz</a>
+into home directory and then
+<pre>
+cd $HOME
+gunzip -c iv-15.tar.gz | tar xf -
+cd iv-15
+./config.guess #your hostcpu is printed in the form hostcpu-vendor-osversion
+./configure --prefix=$HOME/iv
+make
+make install
+</pre>
+
+Download
+<a href="ftp://ftp.neuron.yale.edu/neuron/unix/nrn-5.3.tar.gz">
+nrn-5.3.tar.gz</a>
+into home directory and then
+<pre>
+cd $HOME
+gunzip -c nrn-5.3.tar.gz | tar xf -
+cd nrn-5.3
+./configure --prefix=$HOME/nrn --with-iv=$HOME/iv <a href="#withnrnjava">--with-nrnjava</a>
+
+make
+make install
+</pre>
+
+Finally, test NEURON by running its "demonstration" program.
+<pre>
+#hostcpu is the output of config.guess in the form hostcpu-vendor-osversion
+$HOME/nrn/hostcpu/bin/neurondemo
+</pre>
+
+If the last instruction fails, try the last instruction again after
+<pre>
+setenv LD_LIBRARY_PATH "${HOME}/nrn/hostcpu/lib:${HOME}/iv/hostcpu/lib"
+</pre>
+
+<H3>Installation of NRNIV without GUI classes (no GUI) </H3>
+Download
+<a href="ftp://ftp.neuron.yale.edu/neuron/unix/nrn-5.3.tar.gz">
+nrn-5.3.tar.gz</a>
+into home directory and then
+<pre>
+cd $HOME
+gunzip -c nrn-5.3.tar.gz | tar xf -
+cd nrn-5.3
+./configure --prefix=$HOME/nrn --without-iv
+make
+make install
+cd $HOME/nrn/share/nrn/demo/release
+$HOME/nrn/hostcpu/bin/nrnivmodl
+hostcpu/special
+</pre>
+
+If the last command fails you may need a
+<pre>
+setenv LD_LIBRARY_PATH "${HOME}/nrn/hostcpu/lib"
+</pre>
+
+<H3>NRNOC only (no c++ classes)</H3>
+Download
+<a href="ftp://ftp.neuron.yale.edu/neuron/unix/nrn-5.3.tar.gz">
+nrn-5.3.tar.gz</a>
+into home directory and then
+<pre>
+cd $HOME
+gunzip -c nrn-5.3.tar.gz | tar xf -
+cd nrn-5.3
+./configure --prefix=$HOME/nrn --without-nrniv
+make
+make install
+cd $HOME/nrn/share/nrn/demo/release
+$HOME/nrn/hostcpu/bin/nrnocmodl
+hostcpu/special
+</pre>
+
+If the last command fails you may need a
+<pre>
+setenv LD_LIBRARY_PATH "${HOME}/nrn/hostcpu/lib"
+</pre>
+
+<H2> More details </H2>
+To install the package first download
+<pre>
+<a href="ftp://ftp.neuron.yale.edu/neuron/unix/iv-15.tar.gz">iv-15.tar.gz</a>
+</pre>
+and then download
+<pre>
+<a href="ftp://ftp.neuron.yale.edu/neuron/unix/nrn-5.3.tar.gz">nrn-5.3.tar.gz</a>
+</pre>
+
+In most cases the following should be sufficient for a complete installation
+<pre>
+gunzip -c iv-15.tar.gz | tar xf -
+cd iv-15
+#read the <a href="iv15-install">INSTALL</a> file.
+./configure --prefix=/where/you/want/it
+make
+make install
+cd ..
+rm -r -f iv-15
+</pre>
+<p>
+
+If you don't specify a prefix it defaults to /usr/local/iv<br>
+I use:
+<pre>
+./configure --prefix=$HOME/iv
+</pre>
+<p>
+
+To install the NEURON part
+<pre>
+gunzip -c nrn-5.3.tar.gz | tar xf -
+cd nrn-5.3
+#read the <a href="nrn-install">INSTALL</a> file
+./configure --prefix=/where/you/want/it --with-iv=/where/you/installed/interviews
+make
+make install
+cd ..
+rm -r -f nrn-5.3
+</pre>
+<p>
+
+If you don't specify a prefix it defaults to /usr/local/nrn<br>
+If you don't specify a --with-iv it first looks in prefix/../iv and then
+in /usr/local/iv
+<br>
+I use:
+<pre>
+./configure --prefix=$HOME/nrn --with-iv=$HOME/iv
+</pre>
+Notice that in my case
+<pre>
+./configure --prefix=$HOME/nrn
+</pre>
+would suffice because interviews was installed in $HOME/iv
+<p>
+
+In general there should no longer be any requirement for CPU, NEURONHOME,
+or LD_LIBRARY_PATH environment variables. However, if you have trouble
+launching NEURON it may be because I am not using libtool generically in
+the configuration files and need an explicit LD_LIBRARY_PATH for interviews
+or for the compiler libraries.
+Installation is successful if
+<pre>
+/where/you/want/it/hostcpu/bin/neurondemo
+</pre>
+creates /where/you/want/it/share/nrn/demo/neuron
+(if it doesn't already exist) and launches the demo.
+
+<P>
+<a name="java"></a>
+<h1>NEURON and Java together</h1>
+When Java is built into NEURON, launching NEURON (with nrniv, special,
+nrngui, etc) also initializes the java virtual machine.
+With load_java("java.class.name") or load_java("java.class.name", "HocName")
+one loads and registers Java classes
+and their methods with the hoc interpreter. From the
+hoc interpreter, one can then instantiate and use java objects.
+Furthermore, user developed java classes
+can obtain information from NEURON and execute
+NEURON statements. It is likely that all future GUI development
+for NEURON will take place in java.
+<br>
+<a href="src/nrnjava/nrnjava.html">src/nrnjava/nrnjava.html</a>
+<p>
+<a name="withnrnjava"></a>
+<h1>Building Java into NEURON</h1>
+Configure makes some half hearted attempts to figure out where
+the java development environment, include files, and libjvm are
+located but may not always be successful. We assume
+<br>
+1) jni.h is in $JDKDIR/include and that may include a file in
+$JDKDIR/include/$JDKINCLUDEARCH. Generally, java, javac, etc.
+are located in $JDKDIR/bin.
+<br>
+2) libjvm... is in $JDKDIR/jre/lib/$JDKLIBARCH
+<p>
+<a href="#important">Important Note!! README!</a>
+<p>
+If this is not the case then set these environment variables
+manually. After configuration, these environment variables
+are no longer needed.
+<p>
+On my machine these end up as
+<pre>
+JDKDIR=/usr/j2se
+JDKLIBARCH=sparc
+JDKINCLUDEARECH=solaris
+</pre>
+After building NEURON, you may need a LD_LIBRARY_PATH
+addition to tell where to find this library at run time. On my machine
+I use:
+<pre>
+setenv LD_LIBRARY_PATH $HOME/iv/sparc/lib:/local/gnu/lib
+setenv LD_LIBRARY_PATH $JDKDIR/jre/lib/sparc:$LD_LIBRARY_PATH
+</pre>
+<p>
+Your PATH should be set so that it can find java, javac, and javah.
+On my machine I use:
+<pre>
+set path=($JDKDIR/bin $path)
+</pre>
+<p>
+<a name="important"></a>
+<h1> Important Note </h1>
+You must have a relatively recent version of Java installed.
+Mine is
+<pre>
+hines <~>% java -version
+java version "1.3.0_02"
+Java(TM) 2 Runtime Environment, Standard Edition (build 1.3.0_02)
+Java HotSpot(TM) Client VM (build 1.3.0_02, mixed mode)
+hines <~>% 
+</pre>
+The key is for jni.h to have
+<pre>
+#define JNI_VERSION_1_2 0x00010002
+</pre>
+
+  <hr>
+<FONT size = -1><EM> Page and graphics copyright &copy; 1999-2002 N.T. Carnevale and M.L. Hines,
+All Rights Reserved.</EM></FONT>
+</BODY></HTML>

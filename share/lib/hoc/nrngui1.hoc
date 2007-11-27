@@ -1,0 +1,9 @@
+load_file("pcchdir.hoc")
+// except for StartingDirectory, this should be safe no matter what is
+// subsequently loaded
+{
+hoc_obj_ = new StartingDirectory()
+hoc_obj_.load()
+objref hoc_obj_[2]
+nrnmainmenu()
+}

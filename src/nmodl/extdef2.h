@@ -1,0 +1,3 @@
+"romberg",
+"legendre",
+"deflate",

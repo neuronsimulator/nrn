@@ -1,0 +1,17 @@
+create a
+topology()
+create b
+topology()
+a connect b(0), 1
+topology()
+a connect b(0), 0
+topology()
+
+forall delete_section()
+create a,b,c,d
+a connect b(0), 1
+b connect c(0), 1
+c connect d(0), 1
+d connect b(0), 1
+//above connected in loop so following produces an error message
+topology()

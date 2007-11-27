@@ -1,0 +1,54 @@
+/* HH propagated action potential */
+// physical properties of the cell
+create a
+access a
+{nseg=25 diam=250 L=40000 insert hh}
+
+// experimental tools
+objref stim
+stim = new IClamp(0)
+
+// run parameters
+tstop=5
+strength = 10000	/*namps*/
+tstim = .1
+
+// graphical interface appearance
+objref g
+g = new Graph()
+g.size(0,tstop,-80,40)
+strdef s
+g.label(2,0.,"")
+for (x=.1; x < .99; x=x+.1) {
+	sprint(s, "v(%g)", x)
+	g.addexpr(s)
+}
+proc label() {
+	g.vfixed(1)
+	g.label(0, .5, "mV")
+	g.label(.43, .07, "t (ms)")
+	g.label(.23, .01, "HH propagated action potential")
+}
+label()
+
+// simulation control
+proc init() {
+	finitialize(-65)
+	g.begin()
+}
+
+proc step() {
+	g.plot(t)
+	fadvance()
+}
+
+proc run() {
+	init()
+	stim.dur = tstim
+	stim.amp = strength
+	while(t<tstop) { step()}
+	g.flush()
+}
+
+// run simulation
+{run() }

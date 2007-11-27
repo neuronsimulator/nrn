@@ -1,0 +1,303 @@
+if (!name_declared("scene_vector_")) {
+	execute("~objref scene_vector_[1]")
+	execute("~objref save_window_")
+}
+
+begintemplate CellBuild
+public vbox, map, topol, geom, subsets, memb, changed_, consist, changed
+public version, gtopol, continuous, manage, save_data, all, mech_export
+public file_version_, append_inhomofun, inhomofuns, geom_cnt_, page
+public leave, leave_
+external graph_menu_remove_most
+external scene_vector_, save_window_ // only for sessions prior to 5.1
+objref this, vbox, deck1, deck2, topol, geom, subsets, memb, manage
+objref gtopol, hbox, all, inhomofuns, leave_
+strdef tstr
+proc init() {
+	geom_cnt_ = 0
+	inhomofuns = new List()
+	leave_ = new List()
+	// first three are boltzmann, ramp, and exp
+	append_inhomofun("A0 A k d", "A0 + A/(1 + exp(k*(d - p)))", "Boltzmann")
+	append_inhomofun("b m","b + m*p/(p1 - p0)", "Ramp")
+	append_inhomofun("A0 A k","A0 + A*exp(-k*(p - p0))", "Exponential")
+	version_ = 5.7
+	file_version_ = version_
+	continuous = 0
+	all = new SNList("all")
+	build()
+	if (numarg() == 0) {
+		sprint(tstr,"%s", this)
+		vbox.map(tstr)
+	}
+	changed_ = 0
+}
+
+func version() {
+	file_version_ = $1
+	if (file_version_ > version_) {
+printf("Data format version %g is incompatible with this version %g tool\n",\
+ $1, version_)
+		stop
+		return 0
+	}
+	if (file_version_ < 5.7) {
+		// 5.7 uses GeoSpec type 0 and 1 for specifying distinct
+		// L and diam values for each section in a section list
+		// and no longer uses GeoSpec for Ra and Cm
+		// Thus for celgeom, increase each GeoSpec arg by 2.
+		// and for celmemb replace GeoSpec by FakeMechStan
+printf("CellBuild data format version %g is compatible with this version %g\n but an update to the session file is recommended and will\n prevent this message.\n",\
+ $1, version_)
+	}
+	if (file_version_ < 5) {
+		// versions prior to 5 declare the all subset explicitly
+		// in the session file. So
+		// remove the default "all" subset from subsets list.
+		// The all variable will be updated when cexport is
+		// execute
+		all.del_all()
+		subsets.snlist.remove(0)
+	}
+	return 1
+}
+
+proc leave() {local i
+	for (i=leave_.count-1; i >= 0; i -= 1) {
+		leave_.object(i).leave()
+		leave_.remove(i)
+	}
+}
+
+proc mech_export() { // if topol or subsets change then...
+	memb.cexport(manage.emem)
+	geom.cexport(manage.egeom)
+}
+
+proc map() {
+	if (vbox.ismapped) return
+	vbox.ref(this)
+	sprint(tstr, "%s", this)
+	if (numarg() > 1) {
+		vbox.map(tstr, $2,$3,$4,$5)
+	}else{
+		vbox.map(tstr)
+	}
+	topol.pl()
+}
+
+proc page() {
+	leave()
+	page_ = $1
+	deck1.flip_to($1 != 0)
+	if ($1 == 1) {
+		topol.update()
+	}else if ($1 == 2) {
+		subsets.update()
+	}else if ($1 == 3) {
+		geom.update()
+	}else if ($1 == 4) {
+		memb.update()
+	}else if ($1 == 5) {
+		manage.update()
+	}
+	if ($1 > 0) {
+		deck1.flip_to(1)
+		deck2.flip_to($1-1)
+	}
+}
+
+proc build() {local i
+	vbox = new VBox(3)
+	vbox.priority(1000)
+	vbox.intercept(1)
+	vbox.full_request(1)
+	vbox.ref(this)
+	vbox.dismiss_action("dismiss()")
+	vbox.save("save()")
+	xpanel("",1)
+	xradiobutton("About   ", "page(0)", 1)
+	xradiobutton("Topology   ", "page(1)")
+	xradiobutton("Subsets   ", "page(2)")
+	xradiobutton("Geometry   ", "page(3)")
+	xradiobutton("Biophysics   ", "page(4)")
+	xradiobutton("Management   ", "page(5)")
+	xcheckbox("Continuous Create", &continuous, "cexport(1)")
+	xpanel()
+	deck1 = new Deck(3)
+	deck1.intercept(1)
+	xpanel("")
+xlabel("Topology refers to section names, connections, and 2d orientation")
+xlabel("     without regard to section length or diameter.")
+xlabel("     Short sections are represented in that tool as circles, longer ones as lines.")
+xlabel("Subsets allows one to define named section subsets as functional")
+xlabel("     groups for the purpose of specifying membrane properties.")
+xlabel("Geometry refers to specification of L and diam (microns), and nseg")
+xlabel("     for each section (or subset) in the topology of the cell.")
+xlabel("Biophysics is used to insert membrane density mechanisms and specify their parameters.")
+xlabel("Management specifies how to actually bring the cell into existence for simulation.")
+xlabel("     The default is to first build the entire cell and export it to the top level")
+xlabel("     Or else specify it as a cell type for use in networks,")
+xlabel("     It also allows you to import the existing top level cell into this builder")
+xlabel("       for modification.")
+xlabel("If \"Continuous Create\" is checked, the spec is continuously instantiated")
+xlabel("     at the top level as it is changed.")
+	xpanel()
+	hbox = new HBox(3)
+	hbox.intercept(1)
+	hbox.adjuster(300)
+	gtopol = new Graph(0)
+	graph_menu_remove_most(gtopol)
+	gtopol.size(-200,200,-150,150)
+	gtopol.yaxis(3)
+	gtopol.view(2)
+	deck2 = new Deck(3)
+	deck2.intercept(1)
+	topol = new CellBuildTopology(this)
+	subsets = new SectionSubsets(this)
+	geom = new CellGeometry(this)
+	memb = new CellMembrane(this)
+	manage = new CellManage(this)
+	deck2.intercept(0)
+	deck2.map()
+	hbox.intercept(0)
+	hbox.map()
+	deck1.intercept(0)
+	deck1.flip_to(0)
+	deck1.map
+	vbox.intercept(0)
+	consist()
+}
+
+proc consist() {
+	topol.consist()  subsets.consist()  geom.consist() memb.consist()
+	
+}
+
+func changed() {
+	if (memb.changed()) {
+		changed_ = 1
+	}
+	if (geom.changed()) {
+		changed_ = 1
+	}
+	return changed_
+}
+
+proc fixall() {
+	// we throw away the default all subset now (it is not in the subset
+	// list)
+	all.del_all()
+	// and make the first one the "all" subset
+	if (subsets.snlist.count > 0) {
+		if (strcmp(subsets.snlist.object(0).name_, "all") == 0) {
+			file_version_ = version_
+			all = subsets.snlist.object(0)
+			subsets.consist()
+			return
+		}
+	}
+print "The version ", file_version_, " session file did not have as the first of"
+print " its subsets, the \"all\" subset and therefore the attempted"
+print " fixup to version 5.1 failed. It can be repaired manually."
+print " Either send the session file to michael.hines@yale.edu or"
+print " try changing the version number in the session file to 5.1"
+	continue_dialog("Could not update the session file to version 5.1")
+}
+
+proc cexport() {
+	// the last thing done in old versions so take care of
+	// the all subset and update the version number
+	if (file_version_ < 5) {
+		fixall()
+	}
+	if (continuous) {
+		topol.cexport(manage.etop)
+		// need to recalculate subsets in case there is no soma
+		if (numarg() == 0) {subsets.consist()}
+		subsets.cexport(manage.esub)
+		memb.cexport(manage.emem)
+		geom.cexport(manage.egeom)
+		if (manage.esub && manage.emem && manage.egeom) {
+			memb.inhomo_export()
+		}
+	}else{
+		topol.cexport(0)
+		subsets.cexport(0)
+		memb.cexport(0)
+		geom.cexport(0)
+	}
+}
+
+proc unref() {
+	//print this, "refcount=", $1
+	if ($1 == 5) {
+		for i=0, topol.slist.count-1 {
+			topol.slist.object(i).sets.remove_all
+		}
+		memb.free()
+		objref topol, geom, subsets, memb, manage
+	}
+}
+
+proc dismiss() {local i, b, kill
+	if (changed()) {
+		sprint(tstr, "%s has changed since last save", this)
+		if (boolean_dialog(tstr, "Close anyway", "Don't Close")) {
+			b = 1
+		}else{
+			b = 0
+		}
+	}else{
+		b = 1
+	}
+	if (b) {
+		vbox.unmap()
+	}
+}
+
+proc save() {
+	vbox.save("load_file(\"celbild.hoc\", \"CellBuild\")\n}") // the one in ..
+	save_data(vbox, "ocbox_")
+	vbox.save("{")
+}
+
+proc save_data() {local i
+	sprint(tstr, "{%s = new CellBuild(1)}", $s2)
+	$o1.save(tstr)
+	sprint(tstr, "{object_push(%s)}\n{", $s2)
+	$o1.save(tstr)
+	sprint(tstr, "version(%g)", version_)
+	$o1.save(tstr)
+	sprint(tstr, "continuous = %d", continuous)
+	$o1.save(tstr)
+	for i=3, inhomofuns.count-1 {
+		sprint(tstr, "append_inhomofun(\"%s\", \"%s\")", \
+			 inhomofuns.object(i).argstr, inhomofuns.object(i).expr)
+		$o1.save(tstr)
+	}
+	topol.save_data($o1, "topol")
+	subsets.save_data($o1, "subsets")
+	geom.save_data($o1, "geom")
+	memb.save_data($o1, "memb")
+	manage.save_data($o1, "manage")
+	$o1.save("cexport()")
+	$o1.save("}")
+	gtopol.erase_all
+	$o1.save("{object_pop()}")
+	sprint(tstr, "%s.gtopol", $s2)
+	gtopol.save_name(tstr, 1)
+	topol.pl()
+ 	changed_ = 0
+	page(page_)
+}
+
+proc append_inhomofun() {
+	if (numarg() == 3) {
+		inhomofuns.append(new InhomoFun($s1, $s2, $s3))
+	}else{
+		inhomofuns.append(new InhomoFun($s1, $s2, $s2))
+	}
+}
+endtemplate CellBuild
+

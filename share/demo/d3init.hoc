@@ -1,0 +1,40 @@
+objectvar vbox
+{
+xopen("$(NRNDEMO)dend3/dend3.nrn")
+xopen("$(NRNDEMO)dend3/syn3.hoc")
+xopen("$(NRNDEMO)dend3/control.hoc")
+}
+
+movie_frame_dur_ = .01
+{variable_domain(&movie_frame_dur_, .001, 1e9) units(&movie_frame_dur_, "s")}
+objref movie_timer
+movie_timer = new Timer("moviestep()")
+proc moviestep() {
+	steprun()
+	realtime = startsw() - rtstart
+	if (t >= tstop || stoprun) {
+		movie_timer.end
+		running_ = 0
+	}
+}
+proc movierun() {
+	realtime = 0  rtstart = startsw()
+	running_ = 1 // run button checkbox
+	stoprun = 0
+	stdinit()
+	movie_timer.seconds(movie_frame_dur_)
+	movie_timer.start
+}
+
+xpanel("Movie Run")
+xbutton("Init & Run", "movierun()")
+xpvalue("Seconds per step", &movie_frame_dur_, 1)
+xpanel(400, 300)
+
+
+proc destroy() {
+	objref vbox, syn[1], movie_timer
+	while (PWManager[0].count > 6) {
+		PWManager[0].close(PWManager[0].count-1)
+	}
+}

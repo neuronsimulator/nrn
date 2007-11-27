@@ -1,0 +1,59 @@
+/*radial and longitudinal diffusion of calcium using model in cadifusl*/
+/* This verifies the longitudinal time course of calcium diffusion
+   by comparing with the voltage time course of a cable. */
+
+nann = 4 - 1
+create a,b
+access a
+Dt = 2
+dt=.025
+a {nseg = 4 L=10 diam(0:1)=10:10 insert cadifus} /* longitudinal diffusion */
+b {nseg = 1 L=10  diam=20 insert cadifus}  /* radial diffusion */
+
+objref g
+g = new Graph()
+g.size(0,1,0,1)
+
+proc init() {local i
+	t = 0
+	forall v = 0
+	coord_cadifus()
+	forall for i=0,nann {
+		ca_cadifus[i] = 0
+		CaBuffer_cadifus[i] = 0
+		Buffer_cadifus[i] = 0
+	}
+}
+
+proc run() { local next
+	init()
+	for i=0,nann ca_cadifus[i](.001) = 1 /* first seg uniform */
+	b {ca_cadifus[0] = 1}
+	startsw()
+	while (t < 10) {
+		plotca()
+		b plotcarad()
+		next = t + Dt
+		while (t < next) {
+			fadvance()
+		}
+	}
+	printf("elapsed time = %g\n", stopsw())
+}
+
+proc plotca() {local i
+	g.beginline(1,1)	
+	for(x) if (x >0 && x < 1) {
+		g.line(x, ca_cadifus[0](x))
+	}
+	g.flush
+}
+proc plotcarad() {local i
+	g.beginline(2,1)
+	for i=0,nann {
+		g.line(i/nann, ca_cadifus[i])
+	}
+	g.flush
+}
+
+run()

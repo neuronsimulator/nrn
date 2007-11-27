@@ -1,0 +1,112 @@
+parmfitness_generator_append("FitnessPrimitive")
+
+begintemplate FitnessPrimitive
+public efun, title, yexpr, errval, clone
+public rfile, wfile, map, pelist, chtitle, gview
+public save_context, restore_context
+
+objref tobj, tobj1, sf, this
+objref vbox, g, hb1, pelist
+strdef title, tstr, tstr1, tag, cmd, yexpr, fname, callfname
+external object_index
+
+func efun() {
+	execute(callfname)
+	return errval
+}
+
+func gview() {
+	return $1
+}
+
+proc init() {
+	title = "Unnamed Fitness Primitive"
+	errval = 0
+	sf = new StringFunctions()
+	sprint(fname, "FitnessPrimitive_%d", object_index(this))
+	yexpr = "0"
+	newexpr1()
+	sprint(callfname, "%s.errval = %s()", this, fname)
+	sprint(tag, "%s", this)
+	sscanf(tag, "%[^[]", tag)
+}
+
+proc clone() {
+	$o1 = new FitnessPrimitive()
+	$o1.title = title
+	$o1.yexpr = yexpr
+	newexpr1()
+}
+
+proc save_context() {
+	$o1.pack(tag, title, yexpr)
+}
+
+proc restore_context() {
+	$o1.unpack(tag, title, yexpr)
+	newexpr1()
+}
+
+proc chtitle() {
+	title = $s1
+}
+
+proc newexpr() {
+	while (string_dialog("Expression", yexpr)){
+		if (newexpr1() == 0) {
+			sprint(tstr, "%s is an invalid expression or function body", yexpr)
+			continue_dialog(tstr)
+		}else{
+			break
+		}
+	}
+}
+
+func newexpr1() {
+	if (sf.head(yexpr, "return ", tstr) > -1) {
+		sprint(tstr, "func %s() { %s }", fname, yexpr)
+	}else{
+		sprint(tstr, "func %s() { return %s }", fname, yexpr)
+	}
+	return execute1(tstr)
+}
+
+proc wfile() {local i
+	$o1.printf("\t%s: %s\n", tag, title)
+	$o1.printf("\t\t%s\n", yexpr)
+	$o1.printf("\n")
+}
+
+proc rfile() {local i
+	i = sscanf($s3, "%*[\t ]%[^:]:%*[\t ]%[^\n]", tag, title)
+	if (i != 2) {
+		i = sscanf($s3, "%[^:]:%*[\t ]%[^\n]", tag, title)
+	}
+	if (i != 2) {
+		printf("Invalid format for Fitness Function\n%stag=|%s| title=|%s|\n", $s3, tag, title)
+	}
+	$o1.gets(tstr)
+	sscanf(tstr, "%*[\t ]%[^\n]", yexpr)
+	newexpr1()
+	$o1.gets(tstr)
+}
+
+proc map() {local i
+	vbox = new VBox(3)
+	vbox.intercept(1)
+	xpanel("",1)
+	xlabel(title)
+	xpvalue("Error Value", &errval, 0, "efun()")
+	xmenu("Fitness")
+xbutton("Expression", "newexpr()")
+xbutton("Or function body", "newexpr()")
+	xmenu()
+	xpanel()
+	xpanel("")
+	xvarlabel(yexpr)
+	xpanel()
+	vbox.intercept(0)
+	vbox.map()
+}
+
+endtemplate FitnessPrimitive

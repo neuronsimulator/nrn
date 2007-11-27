@@ -1,0 +1,59 @@
+{load_file("nrngui.hoc")}
+objectvar save_window_, rvp_
+objectvar scene_vector_[4]
+objectvar ocbox_, ocbox_list_, scene_, scene_list_
+{ocbox_list_ = new List()  scene_list_ = new List()}
+{pwman_place(0,0,0)}
+
+//Begin PointProcessManager
+{
+load_file("pointman.hoc")
+}
+{
+soma ocbox_ = new PointProcessManager(0)
+}
+{object_push(ocbox_)}
+{
+mt.select("IClamp") i = mt.selected()
+ms[i] = new MechanismStandard("IClamp")
+ms[i].set("del", 0.5, 0)
+ms[i].set("dur", 0.1, 0)
+ms[i].set("amp", 0.3, 0)
+mt.select("IClamp") i = mt.selected() maction(i)
+hoc_ac_ = 0.5
+sec.sec move() d1.flip_to(0)
+}
+{object_pop() doNotify()}
+{
+ocbox_ = ocbox_.v1
+ocbox_.map("PointProcessManager", 126, 268, 208.32, 326.4)
+}
+objref ocbox_
+//End PointProcessManager
+
+{
+xpanel("AP with a set of single channels", 0)
+xradiobutton("Continuous","nsing(0)")
+xradiobutton("1 channel","nsing(1)")
+xradiobutton("10 channels","nsing(10)")
+xradiobutton("100 channels","nsing(100)")
+xradiobutton("1000 channels","nsing(1000)", 1)
+xradiobutton("10000 channels","nsing(10000)")
+xpanel(100,100)
+}
+{
+save_window_ = new Graph(0)
+save_window_.size(0,5,-80,40)
+scene_vector_[3] = save_window_
+{save_window_.view(0, -80, 5, 120, 617, 3, 300.48, 200.32)}
+graphList[0].append(save_window_)
+save_window_.save_name("graphList[0].")
+save_window_.addexpr("v(.5)", 1, 1, 0.8, 0.9, 2)
+}
+{
+xpanel("Run", 0)
+xcheckbox("Init & Run",&running_,"runbutton()")
+xpanel(266,87)
+}
+objectvar scene_vector_[1]
+{doNotify()}

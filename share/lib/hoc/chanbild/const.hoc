@@ -1,0 +1,68 @@
+{load_file("nrngui.hoc")}
+
+begintemplate VConstRate
+
+public A, f, inv, Asol, ksol, form, parms, restore, save_data, type
+public kstset, parm2vec, vec2parm, chk
+
+proc init() {
+	parms(.1)
+}
+
+proc kstset() {
+	parms(.1)
+	$o1.set_f($2, type(), new Vector(1))
+	parm2vec($o1.parm($2))
+}	
+
+proc chk() {
+	if ($o3.x[0] < 0) { $o3.x[0] = 0 }
+	if ($1 == 1) if ($2 == 0) if ($o3.x[0] > 1) $o3.x[0] = 1
+}
+
+proc parm2vec() {
+	$o1.resize(0)
+	$o1.append(A)
+}
+
+proc vec2parm() {
+	A = $o1.x[0]
+}
+
+func type() { return 1 }
+
+proc parms() {
+	A = $1
+}
+
+proc save_data() {
+	sprint($s2, "%g", A)
+	$o1.save($s2)
+}
+proc restore() {
+	parms(fscan())
+}
+
+proc form() {
+	if ($2 == 1) {
+		sprint($s1, "A%s", $s3)
+	}else{
+		sprint($s1, "%.4g", A)
+	}
+}
+
+func f() {
+	return A
+}
+
+func inv() {
+	return 1e6
+}
+
+func Asol() { return $2 }
+
+func ksol() {
+	return 0
+}
+
+endtemplate VConstRate

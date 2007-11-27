@@ -1,0 +1,208 @@
+{load_file("nrngui.hoc")}
+
+begintemplate VKSChanBG
+
+public K, vhalf, z, gam, tau0, adjust
+public f, inv, Asol, ksol, form, parms, restore, save_data, type
+public kstset, parm2vec, vec2parm, chk, pname
+objref kst, nil
+
+proc init() {
+	type_ = $1
+	parms(1, -20, 4, .5 , .1)
+}
+
+proc kstset() {
+	if (type_ == 5 && $o1.ftype(0) != 5) {
+		parms(1, -20, 4, .5 , .1)
+		$o1.set_f(0, 5, new Vector(5))
+		$o1.set_f(1, 6, $o1.parm(0))	
+		parm2vec($o1.parm(0))
+	}
+}	
+
+proc chk() {
+	if ($o3.x[0] < 1e-9) { $o3.x[0] = 1e-9 }
+	if ($o3.x[3] < 0) { $o3.x[3] = 0 }
+	if ($o3.x[3] > 1) { $o3.x[3] = 1 }
+	if ($o3.x[4] < 0) { $o3.x[4] = 0 }
+}
+
+proc pname() {
+	if ($5 == 1) {
+		if ($3 == 0) {
+			$s4 = "K (/ms)"
+		}else if ($3 == 1) {
+			$s4 = "vhalf (mV)"
+		}else if ($3 == 2) {
+			$s4 = "z"
+		}else if ($3 == 3) {
+			$s4 = "gam"
+		}else if ($3 == 4) {
+			$s4 = "tau0 (ms)"
+		}
+	}else{
+		if ($3 == 0) {
+			$s4 = "K"
+		}else if ($3 == 1) {
+			$s4 = "vhalf"
+		}else if ($3 == 2) {
+			$s4 = "z"
+		}else if ($3 == 3) {
+			$s4 = "gam"
+		}else if ($3 == 4) {
+			$s4 = "tau0"
+		}
+	}
+}
+
+proc parm2vec() {
+	$o1.resize(0)
+	$o1.append(K, vhalf, z, gam, tau0)
+}
+
+proc vec2parm() {
+	K = $o1.x[0]
+	vhalf = $o1.x[1]
+	z = $o1.x[2]
+	gam = $o1.x[3]
+	tau0 = $o1.x[4]
+}
+
+func type() { return type_ }
+
+proc parms() {
+	K = $1
+	vhalf = $2
+	z = $3
+	gam = $4
+	tau0 = $5
+}
+
+proc save_data() {
+	if (type() == 5) {
+		sprint($s2, "%g %g %g %g %g", K, vhalf, z, gam , tau0)
+		$o1.save($s2)
+	}
+}
+proc restore() {
+	if (type() == 5) {
+		parms(fscan(), fscan(), fscan(), fscan(), fscan())
+	}
+}
+
+proc form() {
+	if ($2 == 1) {
+		if (type_ == 5) {
+			sprint($s1, "KSChanBGinf")
+		}else{
+			sprint($s1, "KSChanBGtau")
+		}
+	}else{
+		sprint($s1, "KSChanBG")
+	}
+}
+
+func f() {
+	return 0
+}
+
+func inv() {
+	if (type_ == 5) {
+		return invz($1)
+	}else{
+		return invgam($1 - tau0)
+	}
+}
+
+func invz() {local x, fac
+	if ($1 >= 1) {
+		x = 700
+	}else if ($1 <= 0){
+		x = -700
+	}else{
+		x = log(1/$1 - 1)
+	}
+	if (z == 0) {
+		return 1e9
+	}
+	fac = -(273+celsius)/11.605
+	x = vhalf + x/(fac*z)
+	return x
+}
+	
+func invgam() {
+	return 1e5
+}
+
+func fgam() {
+	kst.parm(1).x[3] = $1
+	return kst.f(1, $2)
+}
+
+func gamsearch() {local i, x, g, g0, g1, f, f0, f1
+	// search gam so that abs(f($1)- $2) is minimum
+	g0 = 0  g1 = 1
+	f0 = fgam(g0, $1) - $2
+	f1 = fgam(g1, $1) - $2
+	if (f0*f1 < 0) { // then there must be a solution
+		// binary seems to work more robustly than newton chord search
+		for i=1, 10 {
+			//x = -f0/(f1-f0) // between 0 and 1
+			// try to avoid staying on one side of the ordinate
+			//if (x < .1) {x += .1}else if (x > .9) {	x -= .1 }
+			x = .5
+			g = (g1-g0)*x + g0
+			f = fgam(g, $1) - $2
+			if (abs(f) < 1e-4) { break }
+			if (f0*f > 0) { // same sign
+				f0 = f  g0 = g
+			}else{
+				f1 = f  g1 = g
+			}
+		}
+		return g
+	}else{ // no solution and return best
+		if (abs(f0) == abs(f1)) {
+			return (g0+g1)/2
+		}else if (abs(f0) < abs(f1)) {
+			return g0
+		}else{
+			return g1
+		}
+	}
+}
+
+func ksol() {
+	if ($1 > $2) {
+		return .5/($1-$2)
+	}else{
+		return 1e6
+	}
+}
+
+func zsol() {local x
+        x = $1 - $o3.x[1]
+        if (abs(x) < 1e-6) { x = 1e-6 }
+	if ($2 < 0) { $2 = 1e-6 } else if ($2 > 1) {$2 = 1 - 1e-6}
+        x = log(1/$2 - 1)/x
+        return -(273+celsius)/11.605*x
+}
+
+proc adjust() {local a // adjust_, parm, x, y, kst
+	a = $1 - 3
+	if (a == 0) { // K
+		$o2.x[a] = ksol($4, $o2.x[4])
+	}else if (a == 1) { // vhalf
+		$o2.x[a] = $3
+	}else if (a == 2) { // z
+		$o2.x[2] = zsol($3,$4,$o2)
+	}else if (a == 3) { // gam
+		kst = $o5
+		$o2.x[3] = gamsearch($3,$4)
+		kst = nil
+	}else if (a == 4) { // tau0
+		$o2.x[a] = $4
+	}
+}
+endtemplate VKSChanBG

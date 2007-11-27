@@ -1,0 +1,21 @@
+#!/bin/sh
+
+ARCH=@host_cpu@
+if test "x${NRNHOME}" = x ; then
+        prefix="@prefix@"
+	exec_prefix=@exec_prefix@
+	NRNBIN=@bindir@/
+	NRNDEMO=@prefix@/share/@PACKAGE@/demo/
+else
+        prefix="$NRNHOME"
+	exec_prefix="${prefix}/${ARCH}"
+	NRNBIN="${exec_prefix}/bin/"
+	NRNDEMO="${prefix}/share/@PACKAGE@/demo/"
+fi
+export NRNDEMO
+
+if [ ! -f "${NRNDEMO}neuron" ] ; then
+	(cd "${NRNDEMO}release" ; "${NRNBIN}nrnivmodl" ; cd .. ; ln -s release/${ARCH}/special neuron)
+fi
+
+"${NRNDEMO}neuron" "${NRNDEMO}demo.hoc" "$@" -

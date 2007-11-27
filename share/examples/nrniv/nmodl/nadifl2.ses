@@ -1,0 +1,112 @@
+load_file("nrngui.hoc")
+objectvar save_window_, rvp_
+objectvar scene_vector_[4]
+objectvar ocbox_, ocbox_list_, scene_, scene_list_
+{ocbox_list_ = new List()  scene_list_ = new List()}
+{pwman_place(0,0,0)}
+{
+save_window_ = new Graph(0)
+save_window_.size(0,20.75,0,100)
+scene_vector_[2] = save_window_
+{save_window_.view(0, 0, 20.75, 100, 698, 31, 300.48, 200.32)}
+flush_list.append(save_window_)
+save_window_.save_name("flush_list.")
+objectvar rvp_
+rvp_ = new RangeVarPlot("nai")
+source rvp_.begin(0)
+sink rvp_.end(1)
+rvp_.origin(0)
+save_window_.addobject(rvp_, 1, 1, 0.8, 0.9)
+}
+{
+xpanel("na_ion (Globals)", 0)
+nai0_na_ion = 1
+xvalue("nai0_na_ion","nai0_na_ion", 1,"", 0, 0 )
+nao0_na_ion = 1
+xvalue("nao0_na_ion","nao0_na_ion", 1,"", 0, 0 )
+xpanel(79,618)
+}
+{
+xpanel("source(0 - 1) (Parameters)", 0)
+xlabel("source(0 - 1) (Parameters)")
+xlabel("nseg = 1")
+source.L = 0.5
+xvalue("L","source.L", 1,"define_shape()", 0, 0 )
+source.cm = 1
+xvalue("cm","source.cm", 1,"", 0, 0 )
+source.D_nadifl = 0.6
+xvalue("D_nadifl","source.D_nadifl", 1,"", 0, 0 )
+source.diam = 1
+xvalue("diam","source.diam", 1,"", 0, 0 )
+source.gna_ionleak = 0
+xvalue("gna_ionleak","source.gna_ionleak", 1,"", 0, 0 )
+source.gk_ionleak = 0
+xvalue("gk_ionleak","source.gk_ionleak", 1,"", 0, 0 )
+source.gca_ionleak = 0
+xvalue("gca_ionleak","source.gca_ionleak", 1,"", 0, 0 )
+source.ek = -77
+xvalue("ek","source.ek", 1,"", 0, 0 )
+source.eca = 132.46
+xvalue("eca","source.eca", 1,"", 0, 0 )
+source.g_pas = 2
+xvalue("g_pas","source.g_pas", 1,"", 0, 0 )
+source.e_pas = 0
+xvalue("e_pas","source.e_pas", 1,"", 0, 0 )
+source.del_nacur = 0
+xvalue("del_nacur","source.del_nacur", 1,"", 0, 0 )
+source.dur_nacur = 1e+09
+xvalue("dur_nacur","source.dur_nacur", 1,"", 0, 0 )
+source.amp_nacur = -10
+xvalue("amp_nacur","source.amp_nacur", 1,"", 0, 0 )
+xpanel(23,110)
+}
+{
+save_window_ = new Graph(0)
+save_window_.size(-1,21,-1,1)
+scene_vector_[3] = save_window_
+{save_window_.view(-1, -1, 22, 2, 701, 304, 300.48, 200.32)}
+flush_list.append(save_window_)
+save_window_.save_name("flush_list.")
+objectvar rvp_
+rvp_ = new RangeVarPlot("v")
+source rvp_.begin(1)
+sink rvp_.end(1)
+rvp_.origin(0)
+save_window_.addobject(rvp_, 1, 1, 0.8, 0.9)
+}
+{
+xpanel("RunControl", 0)
+v_init = 0
+xvalue("Init","v_init", 1,"stdinit()", 1, 1 )
+xbutton("Init & Run","run()")
+xbutton("Stop","stoprun=1")
+runStopAt = 5
+xvalue("Continue til","runStopAt", 1,"{continuerun(runStopAt) stoprun=1}", 1, 1 )
+runStopIn = 1
+xvalue("Continue for","runStopIn", 1,"{continuerun(t + runStopIn) stoprun=1}", 1, 1 )
+xbutton("Single Step","steprun()")
+t = 10103.3
+xvalue("t","t", 2 )
+tstop = 10000
+xvalue("Tstop","tstop", 1,"tstop_changed()", 0, 1 )
+dt = 0.025
+xvalue("dt","dt", 1,"setdt()", 0, 1 )
+steps_per_ms = 40
+xvalue("Points plotted/ms","steps_per_ms", 1,"setdt()", 0, 1 )
+xcheckbox("Quiet",&stdrun_quiet,"")
+realtime = 6
+xvalue("Real Time","realtime", 0,"", 0, 1 )
+xpanel(393,27)
+}
+
+//Begin VariableTimeStep
+{
+ocbox_ = NumericalMethodPanel[0]
+ocbox_ = ocbox_.b1
+ocbox_.map("VariableTimeStep", 395, 423, 280.32, 106.56)
+}
+objref ocbox_
+//End VariableTimeStep
+
+objectvar scene_vector_[1]
+{doNotify()}

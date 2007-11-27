@@ -1,0 +1,57 @@
+/* calcium  membrane action potential */
+/* derived from the hhmemb.hoc file in examples directory. */
+/* needs a special version with cachan and cadifus */
+/* generate special version of NEURON with: nrnmodl cachan cadifus */
+/* Illustrative only, because buffering parameters are not realistic (0) */
+
+// Physical properties
+create a
+access a
+nann = 4-1
+{nseg=1 diam=1 L=1 insert cachan insert cadifus}
+diam = 3
+{insert hh gnabar_hh=0 /* but normal k and leakage*/}
+
+cao0_ca_ion = 10
+cai0_cadifus = 1e-5
+
+// run parameters
+tstop = 5
+strength = .005	/*namps*/
+tstim = .1
+
+// graphical interface appearance
+objref g
+g = new Graph()
+g.size(0,tstop,-80,60)
+g.color(1)
+g.vfixed
+g.label(0,.5,"mV")
+g.label(.325,.09,"t (ms)")
+g.label(.2,.01,"Ca membrane action potential")
+g.label(.6,1,"")
+g.addexpr("v",1,1)
+g.addexpr("ica*80",2,1)
+g.addexpr("ca_cadifus[0]*100",3,1)
+
+// simulation control
+proc init() {
+	finitialize(-65)
+	fcurrent()
+	g.begin()
+}
+
+proc step() {
+	g.plot(t)
+	fadvance()
+}
+proc run() {
+	init()
+	t=0
+	fstim(1) fstim(0, 0, 0, tstim, strength)
+	while(t<tstop) { step()}
+	g.flush()
+}
+
+// run simulation
+{run()}

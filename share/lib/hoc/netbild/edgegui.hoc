@@ -1,0 +1,163 @@
+begintemplate NetEdgeGUI
+public remove, insrt
+public l1, l2
+objref net, l1, l2 , dummy, this, b, hb, vfe, old
+strdef tstr
+proc init() {local i, x
+	dummy = new String("")
+	val = 0
+	old = new Vector()
+	net = $o1
+	type = $2
+	l1 = new List()
+	l2 = new List()
+	for i=0, net.edges.count-1 {
+		l2.append(dummy)
+		old.append(vecval(i))
+	}
+	old.sort()
+	if (old.size > 1) {
+		x = old.x[old.size-1]
+		for (i=old.size-2; i >= 0; i -= 1) {
+			if (x == old.x[i]) {
+				old.remove(i+1)
+			}
+			x = old.x[i]
+		}
+	}
+	for i=0, old.size-1 {
+		l1.append(dummy)
+	}
+	build()
+	sprint(tstr, "%s for %s", this, net)
+	b.map(tstr)
+}
+
+proc remove() {
+	l2.remove($1)
+	l1.select(-1)
+	l2.select(-1)
+}
+
+proc insrt() {
+	l2.insrt($1, dummy)
+	l2.select(-1)
+}
+
+proc build() {
+	b = new VBox()
+	b.save("")
+	b.intercept(1)
+	xpanel("",1)
+	xlabel("----->")
+	if (type == 0) {
+		vfe = new ValueFieldEditor("Weight", &val, 1, "valentry()")
+	}else{
+		vfe = new ValueFieldEditor("Delay", &val, 1, "valentry()")
+	}
+	xlabel("----->")
+	xpanel()
+	hb = new HBox()
+	hb.intercept(1)
+	l1.browser("", tstr, "oldvalname(hoc_ac_)")
+	l2.browser("", tstr, "name(hoc_ac_)")
+	if (type == 0) {
+		l1.select_action("selw1(hoc_ac_)")
+		l2.select_action("selw2(hoc_ac_)")
+	}else{
+		l1.select_action("seld1(hoc_ac_)")
+		l2.select_action("seld2(hoc_ac_)")
+	}
+	hb.intercept(0)
+	hb.map()	
+	b.intercept(0)
+}
+
+proc name() {
+	net.edges.object($1).name(tstr)
+	if (type == 0) {
+		sprint(tstr, "%-12s %g", tstr, net.edges.object($1).w)
+	}else{
+		sprint(tstr, "%-12s %g", tstr, net.edges.object($1).d)
+	}
+}
+
+func vecval() {
+	if (type == 0) {
+		return net.edges.object($1).w
+	}
+	return net.edges.object($1).d
+}
+
+proc oldvalname() {
+	sprint(tstr, "%g", old.x[$1])
+}
+
+proc selw1() {
+	if ($1 != -1) {
+		val = old.x[$1]
+	}
+	l2.select(-1)
+}
+
+proc selw2() {local w, j, i
+	if($1 != -1) {
+		w = val
+		val = net.edges.object($1).w
+		net.edges.object($1).w = w
+		vfe.default
+		val = w
+		net.edges.object($1).change()
+		i = l2.scroll_pos()
+		l2.remove($1)
+		l2.insrt($1,dummy)
+		l2.select($1)
+		l2.scroll_pos(i)
+		update_oldval()
+	}
+}
+
+proc seld1() {
+	if ($1 != -1) {
+		val = old.x[$1]
+	}
+	l2.select(-1)
+}
+
+proc seld2() {local w, j, i
+	if($1 != -1) {
+		w = val
+		val = net.edges.object($1).d
+		net.edges.object($1).d = w
+		vfe.default
+		val = w
+		net.edges.object($1).change()
+		i = l2.scroll_pos()
+		l2.remove($1)
+		l2.insrt($1,dummy)
+		l2.select($1)
+		l2.scroll_pos(i)
+		update_oldval()
+	}
+}
+
+proc update_oldval() {local i, x, scr
+	i = old.indwhere(">=", val)
+	if (i == -1) {
+		old.append(val)
+		i = old.size-1
+	}else if (old.x[i] > val) {
+		old.insrt(i, val)
+	}else{
+		return
+	}
+	l1.insrt(i, dummy)
+	l1.select(-1)
+}
+
+proc valentry() {
+	l1.select(-1)
+	l2.select(-1)
+}
+
+endtemplate NetEdgeGUI

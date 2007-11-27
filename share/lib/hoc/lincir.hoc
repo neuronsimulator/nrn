@@ -1,0 +1,11 @@
+{load_file("stdlib.hoc")}
+{xopen("lincir/elmbase.hoc")}
+{xopen("lincir/linmech.hoc")}
+{xopen("lincir/lingraph.hoc")}
+{xopen("lincir/lincir1.hoc")}
+
+objref tobj
+proc makeCircuit() {
+	tobj = new LinearCircuit()
+	objref tobj
+}

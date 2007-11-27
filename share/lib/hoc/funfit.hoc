@@ -1,0 +1,960 @@
+/*
+funfit.hoc
+?0 UserClasses FunctionFitter
+A widget for graphing a parameterized function while exploring parameter
+variations. Also can adjust the parameters automatically to fit data.
+Function, parameters, independent variable can be specified by the user.
+This widget may be saved in a session.
+
+?1 Usage
+The FunctionFitter starts out with entries for graphing a single exponential
+with two parameters.  When a parameter value is changed the graph is replotted.
+
+?0 UserClasses FunctionFitter PanelUsage
+? Plot		Replots function with current arg values
+? Steps		Number of values of independent variable used in plot
+? IndependentVar	Enter the name of independent variable in a
+	string dialog
+? Args
+	Enter space separated names of parameters in a string dialog.
+	Default value editors for these parameters will appear in the rightmost
+	box.
+? Yexpr
+	Enter an expression involving the independent variable and the
+	parameters (args). Any valid top level hoc expression is acceptable.
+? PraxisFit
+	Starts fitting the function to the data with respect to the DataWeights
+	by adjusting the checked argument values.
+? StopAtNextQuadForm
+	Stop the praxis fitter when it finishes its current/next cycle.
+At this point it contains a computation of the quadratic form of the parameter
+phase space (printed in the terminal window).
+? Running
+	Checked when the praxis fitter is executing.
+? WatchTheFit
+	Plot the function on each call to the error function during fitting.
+	Things are slower if this box is checked.
+? RoughFit
+	Instead of fitting all the data according to the data weights, use
+	only 5 equally spaced points in each of the two central data regions.
+	Things can be much faster if this box is checked.
+?1 ArgValues
+	The values of the arguments are used in the plot. When a value
+	is changed the function is replotted. When fit data is present, a
+checkbox is added to the left of each argument button. When the box is checked
+then the fitter adjusts the value for a best fit. When not checked the parameter
+is treated as a constant.
+? CurrentValuesAsDefault
+Resets the default values of the parameter field editors to their current values.
+
+?1 FittoData
+? ReadDataFile
+	Get data from a file. The format is the number of data points followed
+	by pairs of x,y data.
+? CommonFunctionalForms
+? FitCriterion
+	not implemented
+? ParameterRangeLimits
+	Pops up a panel of parameters with their range limits. When
+	the fitter calls the error function and one of the parameters is
+	outside its range the error function will return a value of 1e6.
+? DataWeights
+	Pops up a panel of data weight intervals and weights. The first interval
+ranges from the beginning of the data to the interval 1 endpoint. From
+the interval3 endpoint to the end of the data, the weight is 0. The entire
+interval is given the weight indicated. Intervals can be manipulated directly
+by the AdjustWeightRegions tool of the Graph menu.
+? SaveRestoreFunction
+Arg values and the y-expression can be saved in a list and restored by selection
+with a browser.
+?0 User HocCode FunctionFitter
+*/
+help ?0
+
+begintemplate FunFitModel
+public indep, yexpr, args, argstr, arglow, arghigh, doargfit
+strdef indep, yexpr, argstr
+objref args, arglow, arghigh, doargfit
+proc init() {
+	args = new Vector()
+	arglow = new Vector()
+	arghigh = new Vector()
+	doargfit = new Vector()
+}
+endtemplate FunFitModel
+
+t = 0	// make sure it is defined if used in ivoc context
+
+strdef temp_string_
+objectvar grapherlist, temp_object_
+{
+grapherlist = new List(1) 
+load_file("stdlib.hoc", "String")
+}
+
+// fitter_apply must be at top level for xexpr and plot to get the
+// right symbols. execute would work even inside a template
+
+proc fitter_addexpr() { $o1.addexpr($s2) }
+
+strdef tempstr
+proc fitter_apply() {local i, argcnt
+	argcnt = $o3.count()
+		for i=0, argcnt-1 {
+		hoc_ac_ = $o4.x[i]
+		sprint(tempstr, "%s = hoc_ac_", $o3.object(i).s)
+		execute(tempstr)		
+	}
+	$o1.apply($s2)
+}
+func fitter_fit() {return 0}
+
+begintemplate FunctionFitter
+public vbox, info, save, g, set_datavec, setfun, args, doplt, make_vec
+public get_argname, yexpr, argstr, err, w_boundary, w_weight
+public dweight, xdatavec_, ydatavec_
+external fitter_apply, fitter_addexpr, fitter_fit
+// this class was modified from Grapher and has a lot of vestigial
+// variables and functions.
+objectvar g, vbox, hbox, this, hb1, vb2, d1, tobj, sf, tobj2
+strdef indep, xexpr, generate, body, temp, yexpr, argstr, func_yexpr
+strdef tstr1, temp1, temp2, temp3, fitfunname
+{x1=0 x2=0 steps=0 err=0 running=0 stopstate=0 watch=0 rough_=0}
+objref xvec, yvec, args, argnames, arglow, arghigh, pvbox, doargfit
+objref xdatavec, ydatavec, ansvec
+objref savfunlist, dfile
+objref dweight, w_boundary, w_weight, xdatavec_, ydatavec_
+
+objref prin_val, prin_fac, prin_origargs, prin_axis[1], prin_index
+
+proc init() {
+	i=0
+	savfunlist = new List()
+	sf = new StringFunctions()
+	indep = "t"
+	xexpr = "t"
+	generate = ""
+	x1 = 0
+	x2 = 10
+	steps = 100
+	vbox = new VBox()
+	vbox.priority(100)
+	vbox.ref(this)
+	vbox.save("save()")
+	vbox.intercept(1)
+	initparms()
+	g = new Graph()
+	g.size(x1, x2, -10, 10)
+	g.menu_tool("Adjust Weight Regions", "adjust_weights")
+	g.menu_action("Data from Clipboard", "clipboard_data()")
+	change_x()
+	vbox.intercept(0)
+	init1()
+	make_vec()
+	init_weights()
+	doplt()
+}
+
+proc init1() {
+	sprint(func_yexpr, "fitter_yexpr_%x", object_id(this))
+	expon(1)
+}
+
+func defargs() {local i, n
+	argnames.remove_all()
+	argstr2argname($s1)
+	n = argnames.count()
+	tobj = new Vector(n)
+	for i=0, n-1 {
+		sprint(temp, "hoc_ac_ = %s", argnames.object(i).s)
+		if (execute1(temp, 0)) {
+			tobj.x[i] = hoc_ac_
+		}else{
+			tobj.x[i] = 1
+		}
+		sprint(temp, "%s = %g", argnames.object(i).s, tobj.x[i])
+		if (!execute1(temp)) {
+print "defargs"
+			defargs(argstr)
+			return 0
+		}
+	}
+	argstr = $s1
+	args = tobj
+	arglow = new Vector(args.size(), -1e6)
+	arghigh = new Vector(args.size(), 1e6)
+	doargfit = new Vector(args.size(), 1)
+	objref prin_fac
+	argpanel()
+	return 1
+}
+proc argstr2argname() {
+	if (sf.len($s1) > 0) {
+		if (sf.head($s1, " ", temp) <= 0) { // wish functions could return strings
+			temp = $s1
+		}
+		tobj = new String(temp)
+		argnames.append(tobj)
+		sf.tail($s1, " ", temp2)
+		argstr2argname(temp2)
+	}
+}
+
+proc get_argname() {
+	$s2 = argnames.object($1).s
+}
+
+proc initparms() {
+	hb1 = new HBox()
+	hb1.intercept(1)
+	vb2 = new VBox()
+	vb2.intercept(1)
+	xpanel("PanelUsage", 1)
+	xbutton("Plot", "doplt()")
+	xmenu("Fit to Data")
+	xbutton("Read Data File", "read_data()")
+//	xbutton("Fit to Data", "fit_data()")
+	xmenu("Common Functional Forms")
+		xbutton("Nth order Lag", "lag()")
+		xbutton("Linear", "linear()")
+		xbutton("Single Exponential", "expon(1)")
+		xbutton("Double Exponential", "expon(2)")
+		xbutton("Two state Boltzmann", "bolz(1)")
+		xbutton("Three state Boltzmann", "bolz(2)")
+		xbutton("Michaelis-Menton", "michael()")
+		xbutton("Remove data", "valid_data = 0  argpanel()")
+	xmenu()
+	xbutton("Fit criterion", "fit_criterion()")
+	xbutton("Parameter Range Limits", "parm_range()")
+	xbutton("data weights", "weight_panel()")
+	 xmenu("Save/Restore function")
+	  xbutton("Save function info", "savfun()")
+	  xbutton("Saved function browser", "rfunbsr()")
+	 xmenu()
+	 xbutton("Principal Axis Variation", "prin_panel()") 
+		xmenu("Number of Data Regions")
+			xbutton("1", "init_weights(1)")
+			xbutton("2", "init_weights(2)")
+			xbutton("3", "init_weights(3)")
+			xbutton("4", "init_weights(4)")
+			xbutton("5", "init_weights(5)")
+			xbutton("one more", "init_weights(0)")
+			xbutton("one fewer", "init_weights(-1)")
+		xmenu()
+	xmenu()
+	xpvalue("Steps", &steps,0, "make_vec() doplt()")
+	xpanel()
+	exprval("Independent Var", indep, "change_indep()")
+	exprval("Args", argstr, "change_args()")
+	exprval("Y-expr", yexpr, "change_yexpr()")
+	xpanel("PraxisFit")	
+	xbutton("Praxis fit", "fit_data2()")
+	xcheckbox("Stop at next Quad Form", &stopstate, "stopstate=1 stop_praxis()")
+	xcheckbox("Running", &running, "running = (running == 0)")
+	xcheckbox("Watch the fit", &watch)
+	xcheckbox("Rough fit", &rough_, "weight()")
+	xpanel()
+	vb2.intercept(0)
+	vb2.map()
+	d1 = new Deck()
+	d1.intercept(1)
+	xpanel("dummy")
+	xlabel("dummy")
+	xpanel()
+	d1.intercept(0)
+	d1.map()
+	argnames = new List()
+	args = new Vector(1)
+	argpanel()
+	hb1.intercept(0)
+	hb1.map()
+}
+
+proc prin_panel() {local i, narg
+	prin_index = doargfit.c.indvwhere("==", 1)
+	narg = prin_index.size
+	prin_origargs = args.ind(prin_index)
+	prin_val = new Vector(narg)
+	prin_fac = new Vector(narg)
+	objref prin_axis[narg]
+	for i=0, narg-1 {
+		prin_axis[i] = new Vector(narg)
+		prin_val.x[i] = pval_praxis(i, &prin_axis[i].x[0])
+	}
+	xpanel("Principal Axis Variation")
+	for i=0, narg-1 {
+		sprint(tstr1, "%d  %g", i, prin_val.x[i])
+		xpvalue(tstr1, &prin_fac.x[i], 1, "prin_dovar()")
+	}
+	xpanel()
+}
+
+proc prin_dovar() {local  i, narg
+	narg = prin_index.size
+	tobj = prin_origargs.c
+	for i=0,narg-1 {
+		tobj.add(prin_axis[i].c.mul(prin_fac.x[i]))
+	}
+	for i=0, narg-1 {
+		args.x[prin_index.x[i]] = tobj.x[i]
+	}
+	redraw()
+}
+
+proc import() {local i
+	for i=0, argnames.count - 1 {
+		sprint(tstr1, "%s.x[%d] = %s", args, i, argnames.object(i).s)
+		execute(tstr1)
+	}
+	doplt()
+}
+
+proc argpanel() {local i
+	d1.remove_last()
+	d1.intercept(1)
+	if (valid_data) {
+		tobj = new VBox()
+		tobj.intercept(1)
+		xpanel("ArgValues")
+		xmenu("Current Values")
+		xbutton("Current Values as default", "argpanel()")
+		xbutton("Import values", "import()")
+		xmenu()
+		xpanel()
+		for i=0, argnames.count()-1 {
+			xpanel("ArgValues", 1)
+			xcheckbox("", &doargfit.x[i])
+			xpvalue(argnames.object(i).s, &args.x[i], 1, "doplt()")
+			xpanel()
+		}
+		xpanel("")
+		xpvalue("Mean Sq Error", &err)
+		xpanel()
+		tobj.intercept(0)
+		tobj.map()
+	}else{
+		xpanel("ArgValues")
+		xbutton("Current Values as default", "argpanel()")
+		for i=0, argnames.count()-1 {
+			xpvalue(argnames.object(i).s, &args.x[i], 1, "doplt()")
+		}
+		xpanel()
+	}
+	d1.intercept(0)
+	d1.flip_to(0)
+}
+
+proc doplt() {local i
+	if (x1 != g.size(1) || x2 != g.size(2)) {
+		make_vec()
+	}
+	yvec.copy(xvec)
+	fitter_apply(yvec, func_yexpr, argnames, args)
+	g.flush()
+	if (valid_data) {
+		err = errfun()
+	}
+}
+
+proc change_indep() {
+	temp = indep
+	while (string_dialog("Enter independent variable name", indep)) {
+		hoc_ac_ = x1
+		sprint(body, "%s = hoc_ac_", indep)
+		if (execute1(body)) {
+			xexpr = indep
+			er()
+			return
+		}else{
+			continue_dialog("invalid independent variable")
+		}
+	}
+	indep = temp
+}
+
+proc change_xexpr() {
+	temp = xexpr
+	while (string_dialog("Enter x-axis expression", xexpr)) {
+		sprint(body, "hoc_ac = %s", xexpr)
+		if (execute1(body)) {
+			return
+		}else{
+			continue_dialog("invalid expression")
+		}
+	}
+	xexpr = temp
+}
+proc change_x() {
+	if (x2 > x1) {
+		g.size(x1, x2, g.size(3), g.size(4))	
+	}else if (x2 < x1) {
+		g.size(x2, x1, g.size(3), g.size(4))	
+	}
+}
+proc change_generate() {
+	print "A generator statement is only required if x and y\
+ plot expressions are not explicit functions of the independent variable"
+
+	temp = generate
+	while (string_dialog("Enter Generator statement", generate)) {
+		if (execute1(generate)) {
+			return
+		}else{
+			continue_dialog("invalid statement")
+		}
+	}
+	generate = temp
+}
+
+proc change_args() {
+	temp3 = argstr
+	while (string_dialog("Enter arg names separated by spaces", temp3)) {
+		if (defargs(temp3)) {
+			er()
+			return
+		}
+	}
+}
+
+proc redraw() {
+	make_vec()
+	doplt()
+}
+
+proc make_vec() {
+	er()
+	xvec = new Vector(steps+1)
+	yvec = new Vector(steps+1)
+	x1 = g.size(1)
+	x2 = g.size(2)
+	xvec.indgen(x1, x2, (x2 - x1)/steps)
+	yvec.plot(g, xvec)
+}
+
+proc make_func() {
+	sprint(temp2,"~func %s() {local %s  %s=$1 return %s }", func_yexpr, indep, indep,yexpr)
+	execute(temp2)
+}
+
+proc new_yexpr() {
+	argpanel()
+	yexpr = $s1
+	make_func()
+	make_vec()
+	doplt()
+}
+
+proc change_yexpr() {
+	temp = yexpr
+	while (string_dialog("Enter expression involving independent variable and args", temp)) {
+		if (execute1(temp)) {
+			new_yexpr(temp)
+			return
+		}
+	}
+}
+
+proc exprval() {
+	xpanel("", 1)
+		xbutton($s1, $s3)
+		xvarlabel($s2)
+	xpanel()
+}
+
+proc save() {local i
+	vbox.save("load_file(\"funfit.hoc\")\n}\n{")
+	sprint(body, "ocbox_=new FunctionFitter()\n\
+ocbox_.info(\"%s\",\"%s\", \"%s\", %g, %g, %g, %g, %d, %g, %g)",\
+indep, argstr, yexpr, g.size(1), g.size(2), g.size(3), g.size(4), steps,\
+x1, x2)
+	vbox.save(body)
+	vbox.save("}\n{object_push(ocbox_)}\n{")
+	for i=0, args.size()-1 {
+		sprint(body, "args.x[%d] = %g", i, args.x[i])
+		vbox.save(body)
+		sprint(body, "arglow.x[%d] = %g", i, arglow.x[i])
+		vbox.save(body)
+		sprint(body, "arghigh.x[%d] = %g", i, arghigh.x[i])
+		vbox.save(body)
+		sprint(body, "doargfit.x[%d] = %g", i, doargfit.x[i])
+		vbox.save(body)
+	}
+	sprint(tstr1, "init_weights(%d)", w_boundary.size()-1)
+	vbox.save(tstr1)
+	for i=0, w_boundary.size() - 1 {
+		sprint(body, "w_boundary.x[%d] = %g", i, w_boundary.x[i])
+		vbox.save(body)
+		sprint(body, "w_weight.x[%d] = %g", i, w_weight.x[i])
+		vbox.save(body)
+	}
+	if (object_id(dfile) != 0) {
+		dfile.getname(tempstr)
+		sprint(tstr1, "read_data1(\"%s\")\n}", tempstr)
+		vbox.save(tstr1)
+	}else if (object_id(xdatavec)) {
+		sprint(tstr1, "xdatavec_ = new Vector(%d)", xdatavec.size)
+		vbox.save(tstr1)
+		sprint(tstr1, "ydatavec_ = new Vector(%d)", ydatavec.size)
+		vbox.save(tstr1)
+		sprint(tstr1, "ydatavec_.label(\"%s\")", ydatavec.label)
+		vbox.save(tstr1)
+sprint(tstr1, "for i=0,%d { xdatavec_.x[i]=fscan() ydatavec_.x[i]=fscan()}\n}",\
+xdatavec.size - 1)
+		vbox.save(tstr1)
+		for i=0,xdatavec.size-1 {
+			sprint(tstr1, "%g %g", xdatavec.x[i], ydatavec.x[i])
+			vbox.save(tstr1)
+		}
+		vbox.save("set_datavec(xdatavec_, ydatavec_)")
+	}else{
+		vbox.save("}")
+	}
+	vbox.save("{doplt() argpanel()}\n{object_pop()}\n{")
+	g.save_name("ocbox_.g", 1)
+	vbox.save("ocbox_ = ocbox_.vbox")
+}
+
+proc info() {
+	indep = $s1
+	sprint(body, "%s = 0", indep)
+	execute(body)
+	defargs($s2)
+	new_yexpr($s3)
+	g.size($4, $5, $6, $7)
+	steps = $8
+	x1 = $9
+	x2 = $10
+}
+proc set_datavec() {//xvec, yvec
+	valid_data = 0
+	xdatavec = $o1.c
+	ydatavec = $o2.c
+	ydatavec.label($o2.label)
+	xdatavec_ = xdatavec
+	ydatavec_ = ydatavec
+	ansvec = new Vector(ydatavec.size())
+	ydatavec.line(g, xdatavec, 2, 1)
+	valid_data = 1
+	g.size(xdatavec.min(), xdatavec.max(), ydatavec.min(), ydatavec.max())
+	argpanel()
+	dweight = new Vector(xdatavec.size())
+	weight()
+}
+	
+proc clipboard_data() {
+	sprint(tstr1, "%s.set_datavec(hoc_obj_[1], hoc_obj_[0])", this)
+	if(execute1(tstr1) == 0) {
+continue_dialog("No data in the Vector clipboard. Select a Graph line first")
+	}
+}
+
+proc read_data() {local i, n
+	if (object_id(dfile) == 0) {
+		dfile = new File()
+		dfile.chooser("r", "Read Data File", "*.dat", "Read")
+	}
+	if (dfile.chooser()) {
+		dfile.ropen()
+		n = dfile.scanvar()
+		xdatavec = new Vector(n)
+		ydatavec = new Vector(n)
+		for i=0, n-1 {
+			xdatavec.x[i] = dfile.scanvar()
+			ydatavec.x[i] = dfile.scanvar()
+		}
+		dfile.close()
+		dfile.getname(tstr1)
+		ydatavec.label(tstr1)
+		set_datavec(xdatavec, ydatavec)
+	}
+}
+
+proc er() { local j, ymin, ymax
+	g.erase()
+	if (valid_data) {
+		g.label(.6,.95)
+		ydatavec_.line(g, xdatavec_, 2, 1)
+		ymin = ydatavec_.min()
+		ymax = ydatavec_.max()
+		for j=0, w_boundary.size()-1 {
+			g.beginline(3, 1)
+			g.line(w_boundary.x[j], ymin)
+			g.line(w_boundary.x[j], ymax)
+		}
+	}
+}
+
+proc fit_criterion() {
+}
+
+proc parm_range() {local i
+	pvbox = new VBox()
+	pvbox.save("")
+	pvbox.intercept(1)
+	xpanel("FunFitter")
+	for i=0,argnames.count()-1 {
+		sprint(tstr1, "xpvalue(\"%s low\", &arglow.x[%d], 1)",\
+			 argnames.object(i).s, i)
+		execute(tstr1, this)
+		sprint(tstr1, "xpvalue(\"%s high\", &arghigh.x[%d], 1)",\
+			 argnames.object(i).s, i)
+		execute(tstr1, this)
+	}
+	xpanel()
+	sprint(tstr1, "Parameter Ranges for %s", this)
+	pvbox.intercept(0)
+	pvbox.map(tstr1)
+}
+
+func chklimits() {local i
+	for i=0, $o1.size()-1 {
+		if ($o1.x[i] < arglow.x[i] || $o1.x[i] > arghigh.x[i]) {
+			return 1
+		}
+	}
+	return 0
+}
+
+func errfun() {
+	if (chklimits(args)) { return 1e6 }
+	ansvec.copy(xdatavec_)
+	fitter_apply(ansvec, func_yexpr, argnames, args)
+	return ansvec.meansqerr(ydatavec_, dweight)
+}
+
+func praxis_errfun() {local i, j, e
+	doNotify()
+	i = 0
+	for j = 0, args.size()-1 {
+		if (doargfit.x[j] == 1) {
+			args.x[j] = ($&2[i])
+			i += 1
+		}
+	}
+	if (chklimits(tobj)) { return 1e10 }
+	ansvec.copy(xdatavec_)
+	fitter_apply(ansvec, func_yexpr, argnames, args)
+	e = ansvec.meansqerr(ydatavec_, dweight)
+	if (e < emin) {
+		emin = e
+		if (watch) { doplt() }
+	}
+	return e
+}
+
+proc fit_data() {local terr
+	if (valid_data == 0) {
+		continue_dialog("Must first select Read Data")
+		return
+	}
+	create_fitfun()
+	terr = 0
+	err = errfun()
+	while (abs(terr - err) > 1e-8) {
+		terr = err
+		err = fitter_fit(ydatavec, ansvec, fitfunname, xdatavec, args)
+		doplt()
+		doNotify()
+	}
+}
+
+proc fit_data2() {local i, n
+	if (valid_data == 0) {
+		continue_dialog("Must first select Read Data")
+		return
+	}
+	if (running) {
+		if (boolean_dialog("Running flag is on, Turn it off?")) {
+			running = 0
+		}
+		return
+	}
+	running = 1
+	tobj = args.c
+	n = 0
+	tobj2 = new Vector(args.size())
+	for i=0, args.size() - 1 {
+		if (doargfit.x[i] == 1) {
+			tobj2.x[n] = (args.x[i])
+			n += 1
+		}
+	}
+	attr_praxis(1e-6, .5, 1)
+	stoprun=0
+	emin = 1e9
+	fit_praxis(n, "praxis_errfun", &tobj2.x[0])
+	stopstate = 0
+	doplt()
+	running = 0
+}
+
+proc create_fitfun() {local i
+	sprint(fitfunname, "fitfun_%x", object_id(this))
+	sprint(temp, "~func %s() {local %s ", fitfunname, indep)
+	for i=0, argnames.count()-1 {
+		sprint(temp, "%s, %s", temp, argnames.object(i).s)
+	}
+	sprint(temp, "%s %s=$1", temp, indep)
+	for i=0, argnames.count()-1 {
+		sprint(temp, "%s %s=$%d", temp,  argnames.object(i).s, i+2)
+	}
+	sprint(temp, "%s return %s }", temp, yexpr)
+	execute(temp)
+	sprint(temp, "~func fitter_fit() { return $o1.fit($o2,$s3,$o4")
+	for i=0, argnames.count()-1 {
+		sprint(temp, "%s, &$o5.x[%d]", temp, i)
+	}
+	sprint(temp, "%s)}", temp)
+	execute(temp)
+}
+
+proc linear() {
+	xexpr = "t"
+	defargs("m b")
+	new_yexpr("m*t + b")
+}
+proc expon() {
+	xexpr = "t"
+	if ($1 == 1) {
+		defargs("A k1")
+		new_yexpr("A*exp(-k1*t)")
+	}else{
+		defargs("A k1 B k2")
+		new_yexpr("A*exp(-k1*t) + B*exp(-k2*t)")
+	}
+}
+proc bolz() {
+	xexpr = "t"
+	if ($1 == 1) {
+		defargs("A d1 k1")
+		new_yexpr("A/(1 + exp(k1*(d1-t)))")
+	}else{
+		defargs("A d1 k1 d2 k2")
+		new_yexpr("A/(1 + exp(k1*(d1-t)) + exp(k2*(d2-t)))")
+	}
+}
+proc michael() {
+	xexpr = "t"
+	defargs("A k1")
+	new_yexpr("A*k1*t/(1 + k1*t)")
+}
+
+proc lag() {
+	xexpr = "t"
+	defargs("A k1 n")
+	new_yexpr("A*(1 - exp(-k1*t))^n")
+}
+
+proc rfunbsr() {
+	savfunlist.browser("", "yexpr")
+	savfunlist.accept_action("restorefun()")
+}
+
+proc savfun() {
+	tobj = new FunFitModel()
+	tobj.indep = indep
+	tobj.yexpr = yexpr
+	tobj.argstr = argstr
+	tobj.args.copy(args)
+	tobj.arglow.copy(arglow)
+	tobj.arghigh.copy(arghigh)
+	tobj.doargfit.copy(doargfit)
+	savfunlist.append(tobj)
+}
+
+proc restorefun() {local i
+	i = hoc_ac_
+	tobj2 = savfunlist.object(i)
+	setfun(tobj2)
+}
+
+proc setfun() {
+	defargs($o1.argstr)
+	args.copy($o1.args)
+	arglow.copy($o1.arglow)
+	arghigh.copy($o1.arghigh)
+	doargfit.copy($o1.doargfit)
+	indep = $o1.indep
+	new_yexpr($o1.yexpr)
+}
+
+proc init_weights() {local i, n, min, max
+	if (numarg() == 1) {
+		if ($1 == 0) { // one more
+			n = w_boundary.size
+		}else if ($1 == -1) { // one fewer
+			n = w_boundary.size-2
+			if (n < 1) n = 1
+		}else{
+			n = $1
+		}
+	}else{
+		n = 1
+	}
+	w_boundary = new Vector(n+1)
+	w_weight = new Vector(n+1, 1)
+	if (valid_data) {
+		min = xdatavec.x[0]
+		max = xdatavec.x[xdatavec.size-1]
+		w_boundary.indgen(min, (max-min)/n)
+		weight()
+	}else{
+		w_boundary.indgen(-1e6,1e7)
+	}
+}
+
+proc weight_panel() {local i
+	xpanel("data weights")
+	xpvalue("interval 1 startpoint", &w_boundary.x[0], 1, "weight()")
+	for i=1, w_boundary.size() - 1 {
+		sprint(tstr1, "interval %d endpoint", i)
+		xpvalue(tstr1, &w_boundary.x[i], 1, "weight()")
+		sprint(tstr1, "interval %d weight", i)
+		xpvalue(tstr1, &w_weight.x[i], 1, "weight()")
+	}
+	xpanel()
+}
+
+proc weight() {local i, j, t, w, d, tmin, tmax, n
+	// make sure weight regions are within boundaries
+	tmin = xdatavec.x[0]
+	tmax = xdatavec.x[xdatavec.size - 1]
+	n = w_boundary.size()
+	for i=0, n-1 {
+		t = w_boundary.x[i]
+		if (t < tmin) {
+			w_boundary.x[i] = tmin
+		}
+		if (t > tmax) {
+			w_boundary.x[i] = tmax
+		}
+	}
+
+	if (rough_) {
+		rough()
+		return
+	}
+	xdatavec_ = xdatavec
+	ydatavec_ = ydatavec
+	dweight.resize(xdatavec_.size())
+	j = 0
+	tmax = w_boundary.x[0]
+	w = 0
+	for i=0, dweight.size() - 1 {
+		t = xdatavec.x[i]
+		while (t >= tmax && j < n) {
+			j += 1
+			w_boundary.x[j-1] = t
+			if (j >= n) {
+				tmax = 1e9
+				w = 0
+				break
+			}
+			tmax = w_boundary.x[j]
+			d = w_boundary.x[j] - w_boundary.x[j-1]
+			if (d <= 0) {
+				continue
+			}
+			w = w_weight.x[j]/d
+		}
+		dweight.x[i] = w
+	}
+	tobj = new Vector(xdatavec.size())
+	errnorm = ydatavec.meansqerr(tobj, dweight)
+	if (errnorm > 0) {
+		dweight.div(errnorm)
+	}
+	redraw()
+}
+
+proc rough() {local i, j, n, x, dx, nb
+	// one data point on each boundary with three points equally spaced
+	// in the interior of each region
+
+	nb = w_boundary.size()
+	n =  (nb-1)*4 + 1 
+	xdatavec_ = new Vector(n)
+	ydatavec_ = new Vector(n)
+	ydatavec_.label(ydatavec.label)
+	dweight.resize(n)
+
+	tobj = new Vector(n)
+	tobj.x[0] = w_boundary.x[0]
+	dweight.x[0] = w_weight.x[0]
+	for i=1, nb - 1 {
+		x = w_boundary.x[i-1]
+		dx = (w_boundary.x[i] - x)/4
+		for j = 1, 4 {
+			tobj.x[(i-1)*4 + j] = x + j*dx
+			if (dx <= 0) {
+				dweight.x[(i-1)*4 + j] = 0
+			}else{
+				dweight.x[(i-1)*4 + j] = w_weight.x[i]
+			}
+		}
+	}
+
+	j=0
+	for i=0, xdatavec.size() - 1 {
+		t = xdatavec.x[i]
+		if (t >= tobj.x[j]) {
+			xdatavec_.x[j] = t
+			ydatavec_.x[j] = ydatavec.x[i]
+			j += 1
+			if (j >= n) {
+				break
+			}
+		}
+	}
+	tobj.fill(0)
+	errnorm = ydatavec_.meansqerr(tobj, dweight)
+	if (errnorm > 0) {
+		dweight.div(errnorm)
+	}
+	redraw()
+}
+
+proc adjust_weights() {
+//print $1, $2, $3
+	if ($1 == 2) { // press
+		adjust = pick_weight($2)
+	}
+	if (adjust == -1) {
+		return
+	}
+	if ($1 == 1) { // drag
+		w_boundary.x[adjust] = $2
+		weight()
+		er()
+		g.flush()
+	}
+	if ($1 == 3) { // release
+		w_boundary.sort()
+		weight()
+		adjust = -1
+	}
+}
+
+func pick_weight() {local i, j, x, m
+	m = 1e9
+	for i=0, w_boundary.size() - 1 {
+		x = abs($1 - w_boundary.x[i])
+		if (x < m) {
+			m = x
+			j = i
+		}
+	}
+	return j
+}
+
+endtemplate FunctionFitter
+
+proc makefitter() {local i
+	i=0
+	if (numarg()) {
+		i=$1
+	}
+        temp_object_ = new FunctionFitter(i)
+        temp_object_.vbox.map("FunctionFitter")
+        objectvar temp_object_
+}

@@ -1,0 +1,81 @@
+
+begintemplate Import3d_MorphML
+public input, filetype, type, sections, err, parsed
+public pt2id, id2pt, pt2sec, sec2pt, label, id2line
+objref type, sections, this, p, nil
+objref cables, points, cableid2index
+strdef filetype, tstr
+proc init() {
+	nrnpython("import rdxml")
+	//print "Import3d_MorphML"
+	filetype = "MorphML"
+	p = new PythonObject()
+}
+proc input() {
+	//print "Import3d_MorphML.input"
+	type = new Vector()
+	sections = new List(1000)
+	err = 0
+	p.rdxml.__setattr__("i3d", this)
+	sprint(tstr, "rdxml.rdxml('%s')", $s1)
+	nrnpython(tstr)
+	p.rdxml.__setattr__("i3d", nil)
+}
+proc parsed() {local i, j, ip, jp  localobj cab, sec, pt
+	cables = $o1.cables_
+	points = $o1.points_
+	cableid2index = $o1.cableid2index_
+	// ptid2pt = $o1.ptid2pt_
+	//print $o1, cables.__len__()
+	for i=0, cables.__len__() - 1 {
+		cab = cables._[i]
+		sec = new Import3d_Section(cab.first_, cab.pcnt_)
+		sections.append(sec)
+		if (cab.parent_cable_id_ >= 0) {
+			ip = $o1.cableid2index_[cab.parent_cable_id_]
+			sec.parentsec = sections.object(ip)
+			sec.parentx = cab.px_
+		}
+		//print i, cab.id_, cab.name_
+		for j=0, cab.pcnt_ - 1 {
+			jp = cab.first_ + j
+			pt = points._[jp]
+			sec.set_pt(j, pt.x_, pt.y_, pt.z_, pt.d_)
+		}
+	}
+}
+func pt2id() {
+	//print "pt2id ", $1
+	if ($1 < 0) { return 0 }
+	if ($1 >= points.__len__()) { return points.__len__() - 1 }
+	return $1
+}
+func id2pt() {
+	//print "id2pt ", $1
+	return $1
+}
+func pt2sec() {local cid, cindex
+	//print "pt2sec ", $1, " cid=", points._[$1].cid_
+	cid = points._[$1].cid_
+	cindex = cableid2index._[cid]
+	//print "    cindex=", cindex, " first=", cables._[cindex].first_
+	$o2 = sections.object(cindex)
+	//printf("pt2sec %s\n", $o2)
+	return $1 - cables._[cindex].first_
+}
+func sec2pt() {local i  localobj sec
+	sec = sections.object($1)
+	//print "sec2pnt ", $1, $2, " secid=", sec.id, " cabid=", cables._[$1].id_
+	i = sec.id + $2 - sec.fid
+	return i
+}
+func id2line() {
+	//print "id2line ", $1
+	return $1
+}
+proc label() {localobj pt
+	pt = points._[$1]
+	sprint($s2, "pt[%d] Line %d   x=%g  y=%g  z=%g  d=%g", $1, pt.lineno_, pt.x_, pt.y_, pt.z_, pt.d_)
+}
+endtemplate Import3d_MorphML
+

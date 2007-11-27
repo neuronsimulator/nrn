@@ -1,0 +1,277 @@
+// A Mechanism standard defines a list of parameters along with a structure
+// of values associated with a subset, section, or inhomogeneous section
+
+begintemplate ModelViewParmVal
+public value, location, valstr, parmelm, type, unlink
+objref location, parmelm
+proc init() {
+	value = $1
+	location = $o2
+}
+
+proc unlink() {
+	objref location, parmelm
+}
+
+func type() { return 1 }
+
+proc valstr() {
+	sprint($s1, "%g", value)
+}
+
+endtemplate ModelViewParmVal
+
+begintemplate ModelViewParmVec
+public vec, location, valstr, parmelm, type, unlink
+objref vec, location, parmelm
+proc init() {
+	vec = $o1
+	location = $o2
+}
+
+proc unlink() {
+	objref vec, location, parmelm
+}
+
+func type() { return 2 }
+
+proc valstr() {local i
+	if (vec.size < 5) {
+		sprint($s1, "%g", vec.x[0])
+		for i=1, vec.size-1 {
+			sprint($s1, "%s %g", $s1, vec.x[i])
+		}
+	}else{
+		sprint($s1, "%d distinct values", vec.size)
+	}
+}
+
+endtemplate ModelViewParmVec
+
+begintemplate ModelViewParmStr
+public str, location, valstr, parmelm, type, unlink
+objref location, parmelm
+strdef str
+proc init() {
+	str = $s1
+	location = $o2
+}
+
+proc unlink() {
+	objref location, parmelm
+}
+
+func type() { return 3 }
+
+proc valstr() {
+	$s1 = str
+}
+
+endtemplate ModelViewParmStr
+
+begintemplate ModelViewDParmElm
+public name, parms, append, display, selected, dmech, unlink
+objref parms, tobj, this, o4, grph, dmech
+strdef name
+proc init() {local i
+	if ($3 == 1) {
+		name = $s1
+	}else{
+		sprint(name, "%s[%d]", $s1, $2)
+	}
+	parms = new List()
+}
+
+proc unlink() {local i
+	for i=0, parms.count - 1 {
+		parms.object(i).unlink
+	}
+	objref parms, tobj, o4, grph, dmech
+}
+
+proc display() {local i, n
+	n = parms.count
+	if (n == 0) { return }
+	if (n > 1) {
+		sprint($s2, "%d %s", parms.count, name)
+//		tobj = new TreeViewItem($o1, $s2, $o4, 0)
+		o4 = $o4
+		tobj = new TreeViewItem($o1, $s2, this, -1)
+	}else{
+		tobj = $o1
+	}
+
+	if (n > 40) {
+		sprint($s2, "%d or more distinct values", n)
+		tobj.append($s2, this, -1)
+		return
+	}
+
+	for i=0, n-1 {
+		parms.object(i).valstr($s2)
+		if (n > 1) {
+			sprint($s2, "%s = %s", name, $s2)
+			parms.object(i).location.prependlocstr($s2)
+		}else{
+			sprint($s2, "%s = %s", name, $s2)
+		}
+//		tobj.append($s2, parms.object(i).location, 0)
+		tobj.append($s2, this, i)
+	}
+}
+
+proc selected() {
+	if ($4 == -1) {
+		o4.selected($o1, $2, $o3, 0)
+	}else{
+		parms.object($4).location.selected($o1, $2, $o3,0)
+	}
+	if (object_id(dmech)) {
+		dmech.grph.grph(this, dmech)
+	}
+}
+
+// ModelViewParmStr, ModelViewParmVal, or ModelViewParmVec
+// finally a subset vector
+proc append() {local i
+	parms.append($o1)
+	$o1.parmelm = this
+}
+
+endtemplate ModelViewDParmElm
+
+begintemplate ModelViewDParm
+public name, parmelms, display, parmiter, unlink
+objref parmelms
+strdef name
+proc init() {local i
+	parmelms = new List()
+	if (object_id($o1) != 0) {
+		size = $o1.name(name, $2)
+		for i=0, size-1 {
+			parmelms.append(new ModelViewDParmElm(name, i, size))
+		}
+	}else{
+		parmelms.append(new ModelViewDParmElm($s3, 0, 1))
+	}
+}
+
+proc unlink() {local i
+	for i=0, parmelms.count - 1 {
+		parmelms.object(i).unlink()
+	}
+	objref parmelms
+}
+
+iterator parmiter() {local i
+	for i=0, parmelms.count -1  {
+		$o1 = parmelms.object(i)
+		iterator_statement
+	}
+}
+
+proc display() {local i
+	for i=0, parmelms.count-1 {
+		parmelms.object(i).display($o1, $s2, $3, $o4)
+	}
+}
+endtemplate ModelViewDParm
+
+begintemplate ModelViewDMech
+public name, location, parms, display, append, fill, parmiter, grph, unlink
+public kschan
+objref location, parms, tobj, grph, kschan
+strdef name
+proc init() {
+	name = $s1
+	parms = new List()
+}
+
+proc unlink() {local i
+	for i=0, parms.count -1 {
+		parms.object(i).unlink()
+	}
+	objref location, parms, tobj, grph
+}
+
+proc fill() {local i
+	for i=0, $o1.count - 1 {
+		parms.append(new ModelViewDParm($o1, i))
+	}
+}
+proc append() {
+	parms.object($1).parmelms.object($2).append($o3)
+}
+
+iterator parmiter() {local i
+	for i=0, parms.count -1  {
+		$o1 = parms.object(i)
+		iterator_statement
+	}
+}
+
+proc display() {local i, j, n
+	n = 0
+	for i=0, parms.count-1 {
+		for j=0, parms.object(i).parmelms.count-1{
+			n += parms.object(i).parmelms.object(j).parms.count
+		}
+	}
+	if (n != 1) {
+		tobj = new TreeViewItem($o1, name, location, 0)
+	}else{
+		tobj = $o1
+	}
+	for i=0, parms.count - 1 {
+		parms.object(i).display(tobj, $s2, n, location)
+	}
+}
+endtemplate ModelViewDMech
+
+begintemplate ModelViewPMech
+public selsub, realcell, grph, unlink
+public type, name, location, parms, display, append, fill, pps, subsets
+objref location, parms, pps, subsets, tobj, this, realcell, grph
+strdef name
+proc init() {
+	type = $1
+	realcell = $o2
+	pps = new List()
+	subsets = new ModelViewSubsetList()
+	parms = new List()
+}
+
+proc unlink() {local i
+	for i=0, parms.count -1 {
+		parms.object(i).unlink()
+	}
+	objref location, parms, pps, subsets, tobj, realcell, grph
+}
+
+proc fill() {local i
+	$o1.name(name)
+	for i=0, $o1.count - 1 {
+		parms.append(new ModelViewDParm($o1, i))
+	}
+}
+proc append() {
+	parms.object($1).parmelms.object($2).append($o3)
+}
+
+proc display() {local i, j, n
+	n = 0
+	for i=0, parms.count-1 {
+		for j=0, parms.object(i).parmelms.count-1{
+			n += parms.object(i).parmelms.object(j).parms.count
+		}
+	}
+	sprint($s2, "%d %s", pps.count, name)
+	tobj = new TreeViewItem($o1, $s2, subsets.subsets.object(0), 0)
+	for i=0, parms.count - 1 {
+		parms.object(i).display(tobj, $s2, n, subsets.subsets.object(0))
+	}
+}
+proc selsub() {
+	realcell.selpp(this, $o1)	
+}
+endtemplate ModelViewPMech

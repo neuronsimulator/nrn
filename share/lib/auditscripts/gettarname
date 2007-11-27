@@ -1,0 +1,16 @@
+# look in tardir and print the next available id number as a name
+tardir=$1
+if [ ! -d $tardir ] ; then
+	mkdir $tardir
+	echo "" > $tardir/1000.
+fi
+
+cd $tardir
+
+
+# wish I knew how to lock
+n=`ls | sed -n '$s/\..*//p'`
+n=`expr $n + 1`
+echo "$n" >  $n.tar
+rm lockgettarname
+echo $tardir/$n.tar

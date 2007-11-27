@@ -1,0 +1,59 @@
+ncell = 2
+
+begintemplate Cell
+public soma, dend, axon, syn, strength
+create soma, axon
+create dend[3]
+objectvar syn[3]
+
+proc init() {local i
+	soma connect axon(0), 0
+	for i=0,2 soma connect dend[i](0), 1
+	geometry()
+	membrane()
+	dend[0] for i=0,2 {
+		syn[i] = new AlphaSynapse(.5)
+		syn[i].onset = i*.2
+	}
+	strength(.1)
+}
+
+proc geometry() {
+	soma { nseg=1 L=30 diam=30 }
+	axon { nseg=10 L=1000 diam=5 }
+	forsec "dend" {nseg=5 L=200 diam(0:1) = 5:1 }
+	forall Ra = 100
+}
+
+proc membrane() {
+	soma {insert hh}
+	axon {insert hh}
+	forsec "dend" {insert pas  g_pas=.001  e_pas=-65}
+}
+
+proc strength() {local i
+	for i=0,2 {
+		syn[i].gmax = $1
+	}
+}
+endtemplate Cell
+
+objectvar cell[ncell]
+for i=0,ncell-1 {
+	cell[i] = new Cell()
+	cell[i].strength(.05 + i*.4/ncell)
+}
+
+/*-------------------------------------------------------*/
+
+proc brun() {local i
+	finitialize(-65)
+	batch_save()
+	for i=0,ncell-1 {
+		batch_save(&cell[i].dend[0].v(.5))
+		batch_save(&cell[i].axon.v(.5))
+	}
+	batch_run(2, dt, "craytest.batch.new")
+}
+
+brun()

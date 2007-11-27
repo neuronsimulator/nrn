@@ -1,0 +1,537 @@
+/*
+A class is network ready if it has the public list "synlist" and a
+connection procedure
+ "obfunc connect2target() //$o1 target point process, returns NetCon
+The synlist contains POINT_PROCESSES which can be a target of a NetCon.
+The connect2target obfunc knows the presyn info to build the NetCon
+
+Classes constructed by the CellBuilder and written to a file are
+network ready. It may be possible in the future to create network ready
+cells directly from a CellBuilder instance and have all cells dynamically
+track user changes to cellbuilder instance parameters. The can of worms
+there mostly involves the question of matching the overall data dependency
+to the user desire.
+*/
+
+/*
+NetReady has enough data to be able to create network connectable
+cell instances from a network ready class.
+*/
+
+//SynType instances have a location
+begintemplate SynTypeInstance
+public stype, cbs, x, index
+public x0, y0, ax, ay// volatile name coords
+strdef secstr, tstr
+objref stype, cbs
+proc init() {
+	index = -1
+	stype = $o1
+	cbs = $o2
+	x = $3
+	if (numarg() == 5) {
+		ax=$4 ay=$5
+	}else{
+		ax=.5 ay=-1
+	}
+	x0=0 y0=0
+}
+proc instantiate() {// object is the cell instance
+	cbs.name(secstr)
+	stype.ms.name(tstr)
+	sprint(tstr, "%s synlist.append(new %s(%g))", \
+		secstr, tstr, x)
+	execute(tstr, $o1)
+	stype.ms.out($o1.synlist.object($o1.synlist.count-1))
+}
+
+endtemplate SynTypeInstance
+
+/*
+cell builder data + stype list allow a spec of a netready cell
+*/
+
+begintemplate NetReadyCell
+public name, cb, stype, synlist, consist, index, plcell
+public classname, save_class, is_art
+public create1, tobj, changems, changeloc
+objref cb, stype, synlist
+objref tobj, nil, this, all
+strdef name, tstr
+
+proc init() {local i
+	created_ = 0
+	cb = $o1 // cell builder
+	stype = $o2
+	synlist = new List()
+	name = $o1.manage.classname
+	index = -1
+	is_art = 0
+}
+
+proc classname() {
+	sprint($s1, "%s_%s", name, cb.manage.classname)
+}
+
+proc consist() {local i
+	// remove all synlist that are no longer in stype or cell section
+	for i = 0, synlist.count-1 {
+		synlist.object(i).stype.index = -1
+		synlist.object(i).cbs.index = -1
+	}
+	cb.topol.setindex()
+	for i = 0, stype.count-1 {
+		stype.object(i).index = i
+	}
+	for (i = synlist.count - 1; i >= 0; i -= 1) {
+		if (synlist.object(i).stype.index == -1 || synlist.object(i).cbs.selected == -1) {
+			synlist.remove(i)
+		}
+	}
+	for i=0, synlist.count - 1 {
+		synlist.object(i).index = i
+	}
+	cb.topol.sel_all(0)
+}
+
+proc save_class() {local i
+	classname(tstr)
+	$o1.printf("\nbegintemplate %s\n", tstr)
+	$o1.printf("public is_art\n")
+	cb.manage.save_classbody($o1)
+	$o1.printf("objref syn_\nproc synapses() {\n")
+
+	for i=0, synlist.count-1 {
+		if ((i+1)%20 == 0) {
+			$o1.printf("  synapses%d()\n}\nproc synapses%d() {\n",i,i)
+		}
+		synbody($o1, synlist.object(i))
+	}
+
+	$o1.printf("}\n")
+	$o1.printf("func is_art() { return 0 }\n")
+	classname(tstr)
+	$o1.printf("\nendtemplate %s\n", tstr)
+}
+
+proc synbody() {local i, j, size
+	$o1.printf("  /* %s%d */ ", $o2.stype.name, $o2.index)
+	$o2.cbs.name(tstr)
+	$o1.printf("  %s ", tstr)
+	tobj = $o2.stype.ms
+	tobj.name(tstr)
+	$o1.printf("syn_ = new %s(%g)  synlist.append(syn_)\n", tstr, $o2.x)
+	tobj = new MechanismStandard(tstr)
+	for i=0,tobj.count-1 {
+		size = tobj.name(tstr, i)
+		for j=0, size-1 {
+			if (tobj.get(tstr, j) != $o2.stype.ms.get(tstr, j)) {
+				if (size == 1) {
+$o1.printf("    syn_.%s = %g\n", tstr, $o2.stype.ms.get(tstr, j))
+				}else{
+$o1.printf("    syn_.%s[%d] = %g\n", tstr, j, $o2.stype.ms.get(tstr, j))
+				}
+			}
+		}
+	}
+}
+
+proc create1() {local i
+	created_ = 1
+	classname(tstr)
+	sprint(tstr, "%s.tobj = new %s()", this, tstr)
+	execute(tstr)
+	for i=0, synlist.count-1 {
+		synlist.object(i).stype.created_ = 1
+		synlist.object(i).stype.ms.out(tobj.synlist.object(i))
+	}
+	$o1 = tobj
+	tobj = nil
+}
+
+proc changems() {local i
+	if (created_) {
+		if (all == nil) {
+			classname(tstr)
+			all = new List(tstr)
+		}
+		for i=0, synlist.count -1 {
+			if (synlist.object(i).stype == $o1) {
+				for j=0, all.count-1 {
+$o1.ms.out(all.object(j).synlist.object(i))
+				}
+			}
+		}
+	}
+}
+proc changeloc() {local i
+	loc_changed_ = 1
+	if (created_) {
+		if (all == nil) {
+			classname(tstr)
+			all = new List(tstr)
+		}
+		tobj = synlist.object($1)
+		for i=0, all.count-1 {
+			tobj.cbs.name(tstr)
+			sprint(tstr, "%s.%s %s.loc(%g)", \
+all.object(i), tstr, all.object(i).synlist.object($1), tobj.x)
+			execute(tstr)
+		}
+	}
+}
+	
+endtemplate NetReadyCell
+
+begintemplate NetReadyCellGlyph
+public pl, select
+objref tobj, nil
+strdef tstr
+
+proc pl() { //Graph, NetReadyCell
+	$o2.cb.topol.draw($o1)
+	for i=0, $o2.synlist.count-1 {
+		tobj = $o2.synlist.object(i)
+		$o1.mark(tobj.x0, tobj.y0, "O", 6, 3, 1)
+		sprint(tstr, "%s%d", tobj.stype.name, tobj.index)
+		$o1.label(tobj.x0,tobj.y0,tstr, 1, 1, tobj.ax, tobj.ay, 3)
+	}
+	tobj = nil
+}
+
+func select() {local  x, y, x1, y1, i, h
+	// x, y, NetReadyCell, Graph, View
+	x1 = $o4.view_info($5,13,$1)
+	y1 = $o4.view_info($5,14,$2)
+        h = $o4.view_info($5, 15) + 1
+	for i=0, $o3.synlist.count - 1 {
+		tobj = $o3.synlist.object(i)
+		x = $o4.view_info($5,13,tobj.x0)
+		y = $o4.view_info($5,14,tobj.y0)
+		x = (x1 - x)/h + .5
+        	y = (y1 - y)/h + .5
+		// now x and y are distance in chars from pointer to mark
+//print tobj, abs(x - tobj.ax) < .25, abs(y - tobj.ay)<.25
+		if (abs(x - tobj.ax) < .5 && abs(y - tobj.ay)<.5) {
+			return i
+		}
+	}
+	return -1
+}
+
+endtemplate NetReadyCellGlyph
+
+begintemplate NetReadyCellGUI
+public nrc, pl, save_data, map, name, stgui, tobj
+external graph_menu_remove_most, CellBuild, SynTypeGUI, valid_name_syntax
+objref nrc, b, this, g, tobj, tobj1, st, nil, sec, sti, stgui, lig
+strdef tstr, selstr, name
+
+proc init() {
+	zero=0
+	name = "............."
+	if (numarg() == 2) {
+		stgui = $o2
+		nrc = new NetReadyCell($o1, $o2.stypelist)
+	}
+	if (numarg() == 0) {
+		if (dialog() == 0) {
+			return
+		}
+	}
+	lig = new ListInGraph()
+	build()
+	if (numarg() != 1) {
+		map()
+	}
+}
+func dialog() {
+	//use whatever objref names at hand
+	sti = new List("SynTypeGUI")
+	sec = new List("CellBuild")
+	
+	tobj = new HBox()
+	tobj.intercept(1)
+	sti.browser("Synapse type sets")
+	sec.browser("CellBuild types")
+	sti.select(-1)
+	sec.select(-1)
+	tobj.intercept(0)
+	if (!tobj.dialog("Select Synapse type set and CellBuild type",\
+ "Use Selection (or create new)", "Cancel")) {
+		return 0
+//		sti.select(-1)
+//		sec.select(-1)
+	}
+
+	if (sti.selected == -1) {
+		stgui = new SynTypeGUI()
+	}else{
+		stgui = sti.object(sti.selected)
+	}
+	if (sec.selected == -1) {
+		st = new CellBuild()
+	}else{
+		st = sec.object(sec.selected)
+	}
+	nrc = new NetReadyCell(st, stgui.stypelist)
+	objref tobj, sti, sec, st
+	return 1
+}
+
+proc map() {
+	nrc.cb.topol.sel_all(0)
+	sprint(tstr, "%s", this)
+	if (numarg() > 1) {
+		b.map(tstr, $2,$3,$4,$5)
+	}else{
+		b.map(tstr)
+	}
+	nrc.consist()
+	name = nrc.name
+	pl()
+}
+
+proc build() {
+	b = new VBox(3)
+	b.priority(997)
+	b.save("save()")
+	b.intercept(1)
+	g = new Graph(0)
+	graph_menu_remove_most(g)
+	g.size(-200,200,-150,150)
+	g.yaxis(3)
+	xpanel("",1)
+	xmenu("Info")
+	xbutton("Synapse Types", "stgui.map()")
+	xbutton("CellBuilder", "nrc.cb.map()")
+	xmenu()
+	xcheckbox("Refresh   ", &zero, "zero=0 pl()")
+	xcheckbox("Cell Name: ", &zero, "zero=0 setname()")
+	xvarlabel(name)
+	g.menu_tool("Locate     ", "locate")
+//	xcheckbox("Synapse Types   ", &zero, "zero=0 stgui.map()")
+	xpanel()
+	g.view(2)
+	g.exec_menu("Locate")
+	b.ref(this)
+	b.intercept(0)
+}
+proc setname() {
+	doNotify()
+	tstr = name
+	while (string_dialog("Change Net Ready Cell Name", tstr)) {
+		if (valid_name_syntax(tstr, 1)) {
+			name = tstr
+			break
+		}
+	}
+	nrc.name = name
+}
+proc pl() {local i
+	nrc.cb.topol.draw(g)
+	tobj = nrc.stype
+	lig.pl(g, 3, tobj)
+	tobj = nrc.synlist
+	for i=0, tobj.count-1 {
+		pl_syn(tobj.object(i))
+	}
+}
+proc pl_syn() {local x, y, a
+	a = $o1.x
+	x = (a)*$o1.cbs.x1 + (1-a)*$o1.cbs.x0
+	y = (a)*$o1.cbs.y1 + (1-a)*$o1.cbs.y0
+	g.mark(x, y, "O", 6, 3, 1)
+	sprint(tstr, "%s%d", $o1.stype.name, $o1.index)
+	g.label(x,y,tstr, 1, 1, $o1.ax, $o1.ay, 3)
+	$o1.x0 = x   $o1.y0 = y
+}
+
+proc locate() {
+	if ($1 == 2) {
+		iview = g.view_info()
+		replace = -1
+		nrc.consist()
+		if (sel_stype($2, $3) == 0) {
+			sel_synlist($2,$3)
+		}
+		pl()
+		if (st != nil) {
+			pl_st($2, $3)
+		}else{
+			g.label(.5, .9, "Nothing selected", 2, 1, .5, .5, 1)
+		}
+	}else if ($1 == 1) {
+		pl()
+		if (st != nil) {
+			pl_st($2,$3)
+		}else{
+			g.label(.5, .9, "Nothing selected", 2, 1, .5, .5, 1)
+		}
+	}else if ($1 == 3) {
+		if (st != nil) {
+			if (attached) {
+				if (replace != -1) {
+					nrc.synlist.object(replace).stype = st
+				}else if (sti != nil) {
+					nrc.synlist.insrt(sti_index, sti)
+					sti.cbs = sec
+					sti.x = a
+					align($2, $3, sti)
+					nrc.changeloc(sti_index)
+				}else{
+					sti = new SynTypeInstance(st, sec, a)
+					nrc.synlist.append(sti)
+					align($2, $3, sti)
+				}
+			}
+			sti = nil
+			nrc.consist()
+		}
+		st = nil
+		pl()
+	}
+}
+
+proc align() {local x, y, h, a
+	a = $o3.x
+	sec = $o3.cbs
+	x = (a)*sec.x1 + (1-a)*sec.x0
+	y = (a)*sec.y1 + (1-a)*sec.y0
+	objref sec
+        h = g.view_info(iview, 15) + 1
+        x = (g.view_info(iview, 13, $1) - g.view_info(iview,13,x))/h + .5
+       	y = (g.view_info(iview, 14, $2) - g.view_info(iview,14,y))/h +.5
+	// now x and y are distance in chars from pointer to mark
+	$o3.ax = .5
+	$o3.ay = int(y)
+}
+
+func sel_stype() {local x, y, i, h
+	i = lig.grsel(g, iview, $1, $2, nrc.stype)
+	if (i != -1) {
+		st = nrc.stype.object(i)
+		return 1
+	}			
+	return 0
+}
+/*
+func sel_synlist() {local i, j, dmin, d
+	dmin = 1e9
+	for i=0, nrc.synlist.count - 1 {
+		tobj = nrc.synlist.object(i)
+		d = ($1-tobj.x0)^2 + ($2-tobj.y0)^2
+		if (d < dmin) {
+			dmin = d
+			j = i
+		}
+	}
+	if (dmin < 10) {
+		sti_index = j
+		sti = nrc.synlist.object(j)
+		st = sti.stype
+		nrc.synlist.remove(j)
+		return 1
+	}
+	return 0
+}
+*/
+
+func sel_synlist() {local  x, y, x1, y1, i, h
+	x1 = g.view_info(iview,13,$1)
+	y1 = g.view_info(iview,14,$2)
+        h = g.view_info(iview, 15) + 1
+	for i=0, nrc.synlist.count - 1 {
+		tobj1 = nrc.synlist.object(i)
+		x = g.view_info(iview,13,tobj1.x0)
+		y = g.view_info(iview,14,tobj1.y0)
+		x = (x1 - x)/h + .5
+        	y = (y1 - y)/h + .5
+		// now x and y are distance in chars from pointer to mark
+//print tobj, abs(x - tobj1.ax) < .25, abs(y - tobj1.ay)<.25
+		if (abs(x - tobj1.ax) < .5 && abs(y - tobj1.ay)<.5) {
+			sti_index = i
+			sti = tobj1
+			st = sti.stype
+			nrc.synlist.remove(i)
+			return 1
+		}
+	}
+	return 0
+}
+
+proc pl_st() {local d, size, x, y, i, h
+	// how close is the nearest CellBuildSection	
+	d = nrc.cb.topol.nearest_sec($1,$2,sec)
+	//a.b = |a||b|cos
+	a = ($1-sec.x0)*(sec.x1-sec.x0) + ($2-sec.y0)*(sec.y1 - sec.y0)
+	a /= (sec.x1 - sec.x0)^2 + (sec.y1 - sec.y0)^2
+	if (a < 0) a = 0
+	if (a > 1) a = 1
+	if (d/g.view_info(iview, 9) > 50) { // greater than 50 pixels away
+		sprint(selstr, "Synapse %s  (Unattached)", st.name)
+		attached = 0
+	}else{
+		a += .05
+		a -= a%.1
+		x = (a)*sec.x1 + (1-a)*sec.x0
+		y = (a)*sec.y1 + (1-a)*sec.y0
+		g.mark(x, y, "O", 8, 2, 1)
+		attached = 1
+		sec.name(tstr)		
+		replace = -1
+	        h = g.view_info(iview, 15) + 1
+	        x = (g.view_info(iview, 13, $1) - g.view_info(iview,13,x))/h + .5
+        	y = (g.view_info(iview, 14, $2) - g.view_info(iview,14,y))/h +.5
+		// now x and y are distance in chars from pointer to mark
+		if (sti == nil) for i=0, nrc.synlist.count-1 {
+			tobj1 = nrc.synlist.object(i)
+			if (tobj1.cbs == sec) {
+				if (tobj1.x == a) {
+//check overlap with name (one char only so far)
+//print tobj, abs(x - tobj1.ax) < .25, abs(y - tobj1.ay)<.25
+if (abs(x - tobj1.ax) < .5 && abs(y - tobj1.ay)<.5) {
+sprint(selstr, "%s replaces %s%d at %s(%g)", st.name, tobj1.stype.name, i, tstr, a)
+					replace = i
+					break
+}
+				}
+			}
+		}
+		tobj1 = nil
+		if (replace == -1) {
+			sprint(selstr, "Synapse %s at %s(%g)", st.name, tstr, a)
+		}
+	}
+	g.label(.5, .9, selstr, 2, 1, .5, .5, 1)
+	g.label($1,$2,st.name, 1, 1, .5, 0, 2)
+}
+proc save() {
+	b.save("load_file(\"netbild.hoc\")\n}")
+	save_data(b, "ocbox_")
+	b.save("{")
+}
+
+proc save_data() {local i
+	sprint(tstr, "{%s = new NetReadyCellGUI(1)}", $s2) $o1.save(tstr)
+	// cell builder must be saved at top level because of save_window
+	sprint(tstr, "%s.tobj", $s2)
+	nrc.cb.save_data($o1, tstr)
+	sprint(tstr, "{object_push(%s)}", $s2) $o1.save(tstr)
+	stgui.save_data($o1, "stgui")
+	$o1.save("nrc = new NetReadyCell(tobj, stgui.stypelist)")
+	sprint(tstr, "nrc.name = \"%s\"", name) $o1.save(tstr)
+	nrc.consist()
+	for i=0, nrc.synlist.count-1 {
+		tobj = nrc.synlist.object(i)
+sprint(tstr, "tobj = nrc.cb.topol.slist.object(%d)", tobj.cbs.index) $o1.save(tstr)
+sprint(tstr, "{nrc.synlist.append(new SynTypeInstance(nrc.stype.object[%d],tobj,%g,%g,%g))}", \
+tobj.stype.index, tobj.x, tobj.ax, tobj.ay) $o1.save(tstr)
+	}
+	sprint(tstr, "{g.size(%g,%g,%g,%g)}",g.size(1), g.size(2), g.size(3), g.size(4))
+	$o1.save(tstr)
+	$o1.save("{object_pop()}")
+	nrc.cb.topol.sel_all(0)
+}
+endtemplate NetReadyCellGUI
+

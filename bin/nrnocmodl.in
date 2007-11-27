@@ -1,0 +1,63 @@
+#!/bin/sh
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+bindir=@bindir@
+libdir=@libdir@
+LIBOBJDIR=${libdir}
+MAKEFILEDIR=${bindir}
+ARCH=@host_cpu@
+
+if [ ! -d $ARCH ]
+then
+	echo "Creating $ARCH directory for .o files."
+	echo
+	mkdir $ARCH
+fi
+
+if test $# -gt 0 ; then
+	files=$*
+else
+	files=`echo *.mod`
+fi
+
+files=`echo "$files" | sed s/\.mod//g`
+
+if test "$files" = '*' ; then
+	files=""
+fi
+
+cd $ARCH
+for i in $files; do
+    rm -f $i.mod
+    ln -s ../$i.mod .
+done
+
+MODOBJS=
+if [ `echo "\n"` ]
+then
+	newline="\n"
+else
+	newline="\\\\n"
+fi
+
+echo '#include <stdio.h>
+#include "hocdec.h"
+modl_reg(){
+	NOT_PARALLEL_SUB(fprintf(stderr, "Additional mechanisms from files'$newline'");)
+' > mod_func.c
+
+for i in $files
+do
+	echo 'NOT_PARALLEL_SUB(fprintf(stderr," '$i'.mod");)' >>mod_func.c
+done
+echo 'NOT_PARALLEL_SUB(fprintf(stderr, "'$newline'");)' >>mod_func.c
+
+for i in $files
+do
+	echo _"$i"_reg"();" >> mod_func.c
+	MODOBJS="$MODOBJS $i.o"
+done
+echo "}" >> mod_func.c
+
+make -f $MAKEFILEDIR/nrnoc_makefile "MODOBJFILES=$MODOBJS" special &&
+  echo "Successfully created $ARCH/special"

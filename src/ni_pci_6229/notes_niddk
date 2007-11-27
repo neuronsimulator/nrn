@@ -1,0 +1,293 @@
+Driver Development Kit (DDK)
+http://forums.ni.com/ni/board?board.id=90
+----------------
+Knowledge base MH_DDK
+http://search.ni.com/nisearch/nisearchservlet?nistype=default&ddown=2&filter=%2Btaxonomy:knowledgebase+%2Blanguage:en&q=MH_DDK
+
+--------------------
+compiling niddk
+unzip ../nimhddk_linux.zip
+unzip ../nimseries.zip
+cd 100a2/osinterface
+rm -r -f *
+mv ../../Linux/OSinterface/* .
+cd ../make
+#edit line 6 of Makefile to refer to linux.mak
+make
+#deal with
+../examples/main.cpp:18: error: invalid conversion from const char*' to `u32'
+This requires knowing the devicePCI_ID for the board. See below
+#deal with
+/usr/bin/ld: cannot find -lvisa
+get rid of that in linux.mak
+#easy to get rid of warnings.
+../osinterface/osiTypes.h:39:1: warning: "NULL" redefined
+by enclosing with #define NULL ... #endif
+-------------------
+The devicePCI_ID
+After installing the PCI-6229 and the software
+/usr/local/bin/nilsdev -a
+NI PCI-6229: "Dev1"
+    Serial Number:                      0x1195482
+    Bus Type:                           PCI
+    PCI Bus:                            0x2
+    PCI Device:                         0x8
+    IRQ Level:                          0xB
+    Memory Range:                       0xFF6FE000-0xFF6FEFFF
+    Memory Range:                       0xFF6FD000-0xFF6FDFFF
+The PCI Bus and PCI Device can be looked for in
+cat /proc/pci
+...
+  Bus  2, device   8, function  0:
+    Class ff00: PCI device 1093:70aa (rev 0).
+      IRQ 11.
+      Master Capable.  Latency=64.
+      Non-prefetchable 32 bit memory at 0xff6fe000 [0xff6fefff].
+      Non-prefetchable 32 bit memory at 0xff6fd000 [0xff6fdfff].
+...
+Then the devicePCI_ID is 0x109370aa
+-------------------
+The best test is to become root and in this source directory launch with
+nrngui test5.hoc
+and use the hardware timed checkbox. This can be done in normal linux.
+Then, with the rtai patched linux booted, and as root,
+./run
+and use the realtime checkbox
+see the run script and the .runinfo script in this directory. This runs
+test5.hoc
+-------------
+Some messages:
+--------------
+http://forums.ni.com/ni/board/message?board.id=90&message.id=301
+
+	
+	Re: What is the required order of operations for the M-series DAQ (PCI-6229)? 	
+Options 	   	Options 	 
+DiegoF
+Trusted Active Regular
+
+
+DiegoF
+
+Reply 6 of 6
+
+Viewed 208 times
+1 rating - 5.0 average
+	
+	Hi Aaron,
+
+The calibration constants won't change.  These are store when the board is externally calibrated at the factory.  Any temperature correction is done by the driver.  In DAQmx this is what's called self-calibration.  At the moment, MHDDK doesn't have any examples on self-calibration.
+
+Regarding your application, it seems that you are trying to do some sort of control loop where you get 1 point from each channel, process (pid or something) and output the response.  If that's the case, you don't need to reconfigure the hardware for each point.  It's all one big task!.  Here's an outline of what you would do for AI and AO:
+
+- Put the device in a known state: reset AI, AO
+- Configure AO for on-demand output.  In this mode when you write a value to the DACs it goes out inmediately.
+- Configure AI for continuous acquisition.  Set up a interrupt source to determine when there's data avaliable.  You can use the FIFO condition interrupt or the scan clock interrupt.
+- How you handle the interrupt and where you proccess the data depends on you system.  Assuming you process everything in the ISR:
+    - Get the latest sample(s) from the FIFO by emptying it
+    - Process the data point
+    - Write the response to the DAC(s).  Output is generated inmediately
+- Goes on forever...
+
+In DAQmx terminology you would be doing a Hardware-Timed Single Point acquisition.
+
+If you are using static DIO, just configure the port and use it.  It's pretty much independent of AI and AO.
+
+For a 1kHz loop is not worth setting up DMA.  Most systems can handle that rate easily.  You'll probably get less performance trying to determine where the DMA is at.
+
+Hope it helps!,
+Diego. 
+---------------------
+
+	
+	control loop - HardwareTimed Single Point Acquisition 	
+Options 	   	Options 	 
+neuron
+Member
+
+
+neuron
+
+Reply 1 of 4
+
+Viewed 73 times
+	
+	
+I was reading the " What is the required order of operations for the M
+series DAQ (PCI-6229)?" thread and saw a reply which is closely
+analogous to what I want to do:
+"
+- Put the device in a known state: reset AI, AO
+- Configure AO for on-demand output.  In this mode when you write a
+value to the DACs it goes out inmediately.
+- Configure AI for continuous acquisition.  Set up a interrupt source to
+determine when there's data avaliable.  You can use the FIFO condition
+interrupt or the scan clock interrupt.
+- How you handle the interrupt and where you proccess the data depends
+on you system.  Assuming you process everything in the ISR:
+    - Get the latest sample(s) from the FIFO by emptying it
+    - Process the data point
+    - Write the response to the DAC(s).  Output is generated inmediately
+- Goes on forever...
+
+In DAQmx terminology you would be doing a Hardware-Timed Single Point acquisition.
+"
+I have a PCI-6229 and BNC-2120 and am having difficulty making sense of
+the 13 thousand  line chipobjects/tMSeries.h file. The examples contain
+a lot of useful idioms but are just a bit too non-parallel to my goal
+and I wonder if someone has some example code more similar to the
+following or advice on whether I am being foolishly fastidious. I
+imagined setting up a continuous pulse stream on the 6229 available on
+one of the digital output lines. The interval between the rising edges
+is my time step and the pulse width is wide enough so that the on chip
+ADC portion of ai was initiated on the rising edge and would not be
+affected by the on chip DAC ao initiated on the falling edge. The
+interrupt would occur on the falling edge and by then the computer could
+read the ai buffer. Some computation would occur which fills the ao buffer
+ ready for transfer atthe next falling edge. I'd also like DI and DO to
+be synchronized to the rising and falling edges.
+By the way, before I bought the 6229, I verified that with RTAI linux I
+could work comfortably with a time step of 0.025 ms (those interrupts
+came from the computer clock). In practice, I'll be working somewhere
+between that and 1 ms steps.
+01-28-2006 08:14 AM
+	
+	
+	Re: control loop - HardwareTimed Single Point Acquisition 	
+Options 	   	Options 	 
+DiegoF
+Trusted Active Regular
+
+
+DiegoF
+
+Reply 2 of 4
+
+Viewed 35 times
+	
+	Check out this post  Clocked M-Series DIO.  It seems you are
+trying to do something very similar. 
+
+
+The tMSeries class is just a description of the registers available in
+the device.  Each register is an object that manages a soft-copy of the register
+  Each register class defines some methods to read and write to the
+register as a whole or to the bitfiled of the register.  Using the a
+tMSeries object you don't need to worry about register offsets or
+shifting bitfields. 
+
+Diego
+
+
+
+	Re: control loop - HardwareTimed Single Point Acquisition 	
+Options 	   	Options 	 
+neuron
+Member
+
+
+neuron
+
+Reply 3 of 4
+
+Viewed 29 times
+	
+	
+I was partly mistaken about the examples not being parallel to my goals.
+Beginning with aiex2.cpp,  dividing it into several functions, and
+adding the http://forums.ni.com/ni/board/message?board.id=90&message.id
+387 "Clocked M-Series DIO" fragment, have gotten me a fair ways along
+the path toward a prototype control loop. But I'm having trouble merging
+in the aoex4.cpp example and I guess need to experiment with that part
+in isolation. Since the fundamental clock for my control loop is (I'm guessing
+ given by the aiex2
+   aiTrigger (board,
+               tMSeries::tAI_Trigger_Select::kAI_START1_SelectPulse,
+               tMSeries::tAI_Trigger_Select::kAI_START1_PolarityRising_Edge,
+               tMSeries::tAI_Trigger_Select::kAI_START2_SelectPulse,
+               tMSeries::tAI_Trigger_Select::kAI_START2_PolarityRising_Edge);
+I am curious, why that pulse does not appear on my BNC block at the "AI
+CONV CLK" output (PFI 2)?
+Nevertheless, with the Clocked M-Series DIO example I am able to see a
+pulse train on P0.0.
+My main question is how to get the AO triggered by the aiTrigger instead
+of the <independent?>
+   aoTrigger (board,
+               tMSeries::tAO_Trigger_Select::kAO_START1_SelectPulse,
+               tMSeries::tAO_Trigger_Select::kAO_START1_PolarityRising_Edge);
+or do I need to externally trigger from P0.0?
+
+02-01-2006 05:43 PM
+	
+  	Reply 	  	Reply 	 
+	
+	Re: control loop - HardwareTimed Single Point Acquisition 	
+Options 	   	Options 	 
+neuron
+Member
+
+
+neuron
+
+Reply 4 of 4
+
+Viewed 8 times
+	
+	
+My control loop is working well using the idioms for AO on demand output
+from aoex2.cpp and AI continuous acquisition from aiex1.cpp. However the
+interrupt follows the LXRT extension to RTAI example for processor
+generated periodic interrupts using
+
+        start_rt_timer(period_);
+        rt_make_hard_real_time();
+        nrn_fake_step(); // get as much as possible into the cache
+                        // saves up to 10 us on the first step
+        rt_task_make_periodic(rtrun_task_, rt_get_time() + period_, period_);
+        rt_task_wait_period();
+        while (t < tstop_) {
+                t1 = rt_get_cpu_time_ns();
+                nrn_fixed_step(); // start ai scan, compute, ai read, ao write
+                nrn_rtstep_time_ = (double)(rt_get_cpu_time_ns() - t1);
+                ovrn += rt_task_wait_period();
+                if (stoprun) { break; }
+        }
+        rt_make_soft_real_time();
+        stop_rt_timer();
+
+Now I'd like to have the 6229 generate the interrupt and I wonder if
+anyone can give advice on how to carry out the transformation. There was
+some mention about using the FIFO condition interrupt or the scan clock
+interrupt and there are some intriguing lines in
+http://forums.ni.com/ni/board/message?board.id=90&message.id=287&query.id=4559#M287
+but I have to admit to being somewhat at a loss as to how this connects
+to the rtai api. The only thing I've found that is remotely analogous is
+http://www.captain.at/programming/rtai/parportintlxrt-magma2.php
+that gives an example using things like rt_request_irq_task, rt_startup_irq
+ rt_enable_irq, rt_irq_wait, rt_ack_irq,... Is that the avenue I should explore?
+
+I should mention that my experiments with AO on demand and AI hardware
+time acquisition from aiex2.cpp also worked nicely and I expect to use
+that idiom after I get this interrupt driven. However I was unable to
+get the AO hardware timed generation from aiex4.cpp to work hardly at all
+ Sometimes it hung in aoArm at
+    while (board->Joint_Status_2.readAO_TMRDACWRs_In_Progress_St ())
+    {
+        // Wait
+    }
+and could only get it going again by running the aoex4 example itself,
+More often no output I was writing appeared at the BNC connector, and
+when I did see output it was delayed by a dozen or so steps. Obviously I
+do not know how to manage the fifo. The serious conceptual error, though
+ was using kCDO_Update_Source_SelectAI_Convert to toggle P0.0 and then
+connecting that to AI CONV CLK and using kAO_START1_SelectAI_START_1 for
+the trigger and kAO_UPDATE_Source_SelectPFI2 for the aoUpdate. The
+problem is that the rising edge is every two steps so my output is half
+the rate I want.
+
+Sorry for the long message and my glaring naivety. I suspect that a few
+minutes from someone with experience will save days of my flailing around.
+
+Thanks!
+Michael
+

@@ -1,0 +1,12 @@
+#ifndef ivstream_h
+#define ivstream_h
+
+/* The standard is <iostream> */
+#undef HAVE_SSTREAM
+
+/* Define if the openmodes output,append,input are not defined */
+#undef NO_OUTPUT_OPENMODE
+
+#include <ivstrm.h>
+
+#endif

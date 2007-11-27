@@ -1,0 +1,353 @@
+// originally created by Michael Hines
+
+// Modified      June 9, 2006   Added spikeplot styles, subset selection
+// and new plot styles.  Ronald A.J. van Elburg
+
+begintemplate SpikePlot
+public net, vecs, g, update
+public map, save_data, save, b
+public flush, begin, plot, size, view_count, fastflush, simgraph
+external addplot, tstop
+objref net, vecs[1], nc, g, this, y, tobj, b, outlist, nil
+strdef tstr, modestr
+proc init() {
+	outlist = new List()
+	fwindow = 100
+	binwidth = 1
+	modestr = "Spikes   "
+	mode=1
+	spikeplotstyle=0
+	marksize=4
+	markcolor=1
+	useline=1
+	
+	y = new Vector(1000)
+	net = $o1
+	subset_start=-1
+	subset_end=-1
+	lsubset_start=0
+	lsubset_end=0
+	
+	
+	if (numarg() == 1) {
+		build()
+		map()
+	}
+}
+proc map() {
+	sprint(tstr, "%s for %s", this, net)
+	if (numarg() > 1) {
+		b.map(tstr, $2,$3,$4,$5)
+	}else{
+		b.map(tstr)
+	}
+	update()
+	flush()
+}
+proc unmap() {
+	b.unmap()
+	g = nil
+}
+proc build() {
+	b = new VBox(3)
+	b.priority(600)
+	b.save("save()")
+	b.ref(this)
+	b.dismiss_action("unmap()")
+	b.intercept(1)
+	xpanel("")
+	xmenu("Plot")
+	xbutton("Update", "update() flush()")
+		xmenu("Plot Style")
+			xradiobutton("Spikes", "pmode(1)", mode==1)
+			xradiobutton("Frequency (Gaussian Window)", "pmode(2)", mode==2)
+			xradiobutton("ISI Histogram (Gaussian Window)", "pmode(3)", mode==3)
+			xradiobutton("ISI Histogram (Binned)", "pmode(4)", mode==4)
+			xradiobutton("Cumulative Frequency (Gaussian Window)", "pmode(5)", mode==5)
+			xradiobutton("Cumulative Frequency (Binned)", "pmode(6)", mode==6)
+			xradiobutton("Cumulative ISI Histogram (Gaussian Window)", "pmode(7)", mode==7)
+			xradiobutton("Cumulative ISI Histogram (Binned)", "pmode(8)", mode==8)
+		xmenu()	
+		xmenu("Spike Plot Style")
+			xradiobutton("Pipe", "pspikeplotstyle(0)", spikeplotstyle==0)
+			xradiobutton("Filled Circle", "pspikeplotstyle(1)", spikeplotstyle==1)
+			xradiobutton("Filled Triangle", "pspikeplotstyle(2)", spikeplotstyle==2)
+			xradiobutton("Filled Square", "pspikeplotstyle(3)", spikeplotstyle==3)
+			xradiobutton("Open Circle", "pspikeplotstyle(4)", spikeplotstyle==4)
+			xradiobutton("Open Triangle", "pspikeplotstyle(5)", spikeplotstyle==5)
+			xradiobutton("Open Square", "pspikeplotstyle(6)", spikeplotstyle==6)
+			xbutton("Pick Size and Color","EditMark()")
+			xstatebutton("Use Line",&useline ,"flush()")
+		xmenu()
+		
+		xbutton("Select Subset","selectSubset()")
+		
+	xmenu()
+	xvarlabel(modestr)
+	xpvalue("Frequency Window (ms)", &fwindow, 1, "flush()")
+	xpvalue("Hist Bin (ms)        ", &binwidth, 1, "flush()")
+	xpanel()
+	g = new Graph()
+	b.intercept(0)
+	addplot(this, 1)
+	begin()
+	pmode(mode)
+}
+
+
+proc pmode() {
+	mode = $1
+	if (mode == 1) {
+		modestr = "Spikes   "
+	}else if (mode == 2) {
+		modestr = "Frequency (Gaussian Window)"
+	}else if (mode == 3) {
+		modestr = "ISI Histogram (Gaussian Window)"
+	}else if (mode == 4) {
+		modestr = "ISI Histogram (Binned)"
+	}else if (mode == 5) {
+		modestr = "Cumulative Frequency (Gaussian Window)"
+	}else if (mode == 6) {
+		modestr = "Cumulative Frequency (Binned)"
+	}if (mode == 7) {
+		modestr = "Cumulative ISI Histogram (Gaussian Window)"
+	}else if (mode == 8) {
+		modestr = "Cumulative ISI Histogram (Binned)"
+	}
+	flush()
+}
+
+proc pspikeplotstyle(){
+	spikeplotstyle=$1
+	flush()
+}
+
+proc EditMark(){
+	xpanel("Edit Mark Size and Color")
+		xpvalue("Mark size",  &marksize  , 0, "flush()")
+		xpvalue("Mark color", &markcolor , 0, "flush()")
+	xpanel()
+}
+
+proc selectSubset(){
+	lsubset_start=subset_start
+	lsubset_end=subset_end
+	
+	xpanel("Select Subset")
+		xpvalue("Subset Start",  &lsubset_start , 0, "setSubset()")
+		xpvalue("Subset End", &lsubset_end , 0, "setSubset()")
+	xpanel()
+	
+	
+}
+
+proc setSubset(){
+	//print "setSubset start: ",  lsubset_start, " end: ", lsubset_end , " n: ", n
+	if(0 <= lsubset_start && lsubset_start <= lsubset_end && lsubset_end <= n){
+		subset_start=lsubset_start
+		subset_end=lsubset_end
+		flush()
+	}
+	lsubset_start=subset_start
+	lsubset_end=subset_end
+}
+
+proc update() {local i localobj vec
+	//print "Update start: ",  lsubset_start, " end: ", lsubset_end , " n: ", n
+	if (net.created_) {
+		n = net.sources.count
+	}else{
+		n = 0
+	}
+	
+	if(n<subset_end || subset_end==-1) {
+		subset_end=n
+	}
+	
+	if(n<subset_start|| subset_start==-1) {
+		subset_start=0
+	}
+	
+	if (n == 0) return
+	objref vecs[n]
+	for (i=outlist.count-1; i >= 0; i -= 1) {
+		if (outlist.object(i).valid == 0) {
+			outlist.remove(i)
+		}
+	}
+	for i=0, n-1 {
+		vecs[i] = new Vector(0)
+		tobj = net.sources.object(i).cell
+		nc = tobj.real.connect2target(nil)
+		tobj.name(tstr)
+		if (tobj.type.is_art == 0) {
+			if (nc.precelllist.count < 2) {
+				outlist.append(nc)
+			}
+		}
+	
+		vec=nc.get_recordvec()
+		if(vec==nil){
+			nc.record(vecs[i])
+		}else{
+			vecs[i]=vec
+		}
+		vecs[i].label(tstr)
+	}
+	objref nc, tobj
+}
+
+proc simgraph() {}
+proc begin() {}
+
+func view_count() {
+	if (g == nil) {
+		return 0
+	}
+	return g.view_count()
+}
+proc plot() {}
+func size() {
+	if (numarg() == 4) {
+		g.size($1,$2,0,subset_end+1-subset_start)
+		return 1.
+	}else{
+		return g.size($1)
+	}
+}
+proc fastflush() {}
+
+
+proc flush() {local i
+	g.erase_all
+	g.vfixed(1)
+	g.label(.9,1)
+	if (mode == 1) {			//"Spikes   "
+		for (i=subset_end-1; i >= subset_start; i -= 1) {
+			y.resize(vecs[i].size).fill(i+1-subset_start)
+			y.label(vecs[i].label)
+			if (spikeplotstyle==0){
+				y.mark(g, vecs[i], "|", marksize, markcolor, 1)  //	Pipe"
+			}else if (spikeplotstyle==1){
+				y.mark(g, vecs[i], "O", marksize, markcolor, 1)  //	"Filled Circle"
+			}else if (spikeplotstyle==2){
+				y.mark(g, vecs[i], "T", marksize, markcolor, 1)	 // "Filled Triangle"
+			}else if (spikeplotstyle==3){
+				y.mark(g, vecs[i], "S", marksize, markcolor, 1)	 // "Filled Square" 
+			}else if (spikeplotstyle==4){
+				y.mark(g, vecs[i], "o", marksize, markcolor, 1)  //	"Open Circle"
+			}else if (spikeplotstyle==5){
+				y.mark(g, vecs[i], "t", marksize, markcolor, 1)	 // "Open Triangle"
+			}else if (spikeplotstyle==6){
+				y.mark(g, vecs[i], "s", marksize, markcolor, 1)	 // "Open Square" 
+			}
+			if(1==useline){	
+				y.line(g, vecs[i], markcolor, 0)
+			}
+		}
+		size(0,tstop,0,0)
+	}else if (mode == 2) { //"Frequency (Gaussian Window)"
+		for (i=subset_end-1; i >= subset_start; i -= 1) {
+			y = vecs[i].sumgauss(0, tstop, tstop/100, fwindow)
+			y.label(vecs[i].label)
+			y.mul(1000).line(g, y.c.indgen(0, tstop/100), 1,1)
+			g.exec_menu("View = plot")
+		}
+	}else if (mode == 3) {//"ISI Histogram (Gaussian Window)"
+		for (i=subset_end-1; i >= subset_start; i -= 1) if (vecs[i].size > 1){
+			y = vecs[i].c.deriv(1,1)
+			high = y.max
+			y = y.sumgauss(0, high, high/50, binwidth)
+			y.label(vecs[i].label)
+			y.line(g, y.c.indgen(0, high/50), 1,1)
+			g.exec_menu("View = plot")
+		}
+	}else if (mode == 4) {//"ISI Histogram (Binned)"
+		for (i=subset_end-1; i >= subset_start; i -= 1) if (vecs[i].size > 1){
+			y = vecs[i].c.deriv(1,1)
+			high = y.max
+			y = y.histogram(0, high, binwidth)
+			y=y.c(1)
+			y.label(vecs[i].label)
+			y.line(g, y.c.indgen(0, high/50), 1,1)
+			g.exec_menu("View = plot")
+		}
+	}else if (mode == 5) {//"Cumulative Frequency (Gaussian Window)"
+		y  = new Vector ()
+		for (i=subset_end-1; i >= subset_start; i -= 1) {
+			y = y.append(vecs[i])
+		}
+		y = y.sumgauss(0, tstop, tstop/100, fwindow)
+		y.label(modestr)
+		y.mul(1000).line(g, y.c.indgen(0, tstop/100), 1,1)
+		g.exec_menu("View = plot")
+	}else if (mode == 6) {//"Cumulative Frequency (Binned)"
+
+		y  = new Vector ()
+		for (i=subset_end-1; i >= subset_start; i -= 1) {
+			y = y.append(vecs[i])
+		}
+		high = y.max
+		y = y.histogram(0, tstop, binwidth)
+		y=y.c(1)
+		y.label(modestr)
+		y.line(g, y.c.indgen(0, binwidth), 1,1)
+		g.exec_menu("View = plot")
+	}else if (mode == 7) {//"Cumulative ISI Histogram (Gaussian Window)"
+		y  = new Vector ()
+		for (i=subset_end-1; i >= subset_start; i -= 1) {
+			y = y.append(vecs[i])
+		}
+		if (y.size > 1){
+			y = y.c.deriv(1,1)
+			high = y.max
+			y = y.sumgauss(0, high, high/50, binwidth)
+			y.label(modestr)
+			y.line(g, y.c.indgen(0, high/50), 1,1)
+			g.exec_menu("View = plot")
+		}
+	}else if (mode == 8) {//"Cumulative ISI Histogram (Binned)"
+		y  = new Vector ()
+		for (i=subset_end-1; i >= subset_start; i -= 1) {
+			y = y.append(vecs[i])
+		}
+		if (y.size > 1){
+			y = y.c.deriv(1,1)
+			high = y.max
+			y = y.histogram(0, high, binwidth)
+			y=y.c(1)
+			y.label(modestr)
+			y.line(g, y.c.indgen(0, high/50), 1,1)
+			g.exec_menu("View = plot")
+		}	
+	}
+	g.flush()
+}
+
+proc save() {
+	b.save("load_file(\"netbild.hoc\")\n}")
+	save_data(b, "ocbox_")
+	b.save("{")
+}
+
+proc save_data() {
+	sprint(tstr, "{%s = new SpikePlot(%s,1)}", $s2, net) $o1.save(tstr)
+	sprint(tstr, "{object_push(%s)}", $s2) $o1.save(tstr)
+	sprint(tstr, "mode = %g", mode) $o1.save(tstr)
+	sprint(tstr, "spikeplotstyle= %g", spikeplotstyle) $o1.save(tstr)
+	sprint(tstr, "marksize= %g",  marksize ) $o1.save(tstr)
+	sprint(tstr, "markcolor= %g", markcolor) $o1.save(tstr)
+	sprint(tstr, "useline= %g",  useline) $o1.save(tstr)
+	sprint(tstr, "fwindow = %g", fwindow) $o1.save(tstr)
+	sprint(tstr, "binwidth = %g", binwidth) $o1.save(tstr)
+	$o1.save("build()")
+	sprint(tstr, "subset_start=%g",subset_start) $o1.save(tstr)
+	sprint(tstr, "subset_end = %g",subset_end) $o1.save(tstr)
+	sprint(tstr, "{g.size(%g,%g,%g,%g)}", \
+		g.size(1), g.size(2), g.size(3), g.size(4))
+	$o1.save(tstr)
+	$o1.save("{object_pop()}")
+}
+
+endtemplate SpikePlot
+

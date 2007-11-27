@@ -1,0 +1,10 @@
+{
+load_file("stdlib.hoc")
+load_file("family.hoc")
+load_file("shapebox.hoc")
+load_file("pointbsr.hoc", "PointBrowser")
+load_file("wingroup.hoc")
+load_file("stdrun.hoc")
+load_file("inserter.hoc")
+load_file("pointman.hoc")
+}

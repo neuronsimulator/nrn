@@ -1,0 +1,15 @@
+xopen("$(NEURONHOME)/lib/hoc/noload.hoc")
+create cable
+access cable
+
+nseg=50
+L=50
+diam=1
+insert nadifl
+insert nacur
+
+xopen("nadifl4.ses")
+
+diam(0:.41) = 10:10
+amp_nacur==0
+amp_nacur(.49) == -200

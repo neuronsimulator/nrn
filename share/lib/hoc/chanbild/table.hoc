@@ -1,0 +1,51 @@
+{load_file("nrngui.hoc")}
+
+begintemplate VTableRate
+
+public f, inv, Asol, ksol, form, parms, type
+public kstset, parm2vec, vec2parm, chk
+
+proc init() {
+}
+
+proc kstset() {
+	$o1.set_f($2, type(), new Vector(10))
+	$o1.parm($2).fill(.5)
+}	
+
+proc chk() {
+}
+
+proc parm2vec() {
+}
+
+proc vec2parm() {
+}
+
+func type() { return 7 }
+
+proc parms() {
+}
+
+proc form() {
+	$s1 = "KSChanTable"
+}
+
+func f() {
+    return 0
+}
+
+func inv() {local x
+	return 0
+}
+	
+func Asol() {
+	return 0
+}
+
+func ksol() {local x
+	return 0
+}
+
+endtemplate VTableRate
+

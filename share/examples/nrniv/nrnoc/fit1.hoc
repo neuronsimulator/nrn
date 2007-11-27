@@ -1,0 +1,21 @@
+double x[2]
+attr_praxis(1e-5, 1, 1)
+
+func f() {local t1, t2, t3
+        return ($1-1)^2 + 2*($2 - 2)^4
+}
+
+fit_praxis(2, "f", &x[0])
+
+double a[2]
+
+{
+  printf( "f(%g,%g)=%g\n", x[0], x[1], f(x[0],x[1]))
+
+  for i=0,1 {
+	pval = pval_praxis(i, &a)
+	printf("i=%d principal value = %g ", i, pval)
+	printf("axis = (%g, %g)", a[0], a[1])
+	printf("\n")
+  }
+}

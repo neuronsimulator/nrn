@@ -1,0 +1,94 @@
+objectvar save_window_, rvp_
+objectvar scene_vector_[6]
+objectvar ocbox_, ocbox_list_, scene_, scene_list_
+{ocbox_list_ = new List()  scene_list_ = new List()}
+
+//Begin I/V Clamp Electrode
+{
+load_file("electrod.hoc")
+}
+{
+ocbox_=new Electrode(0)
+execute("can_locate=1 sec=\"terminal\" xloc=0.5 locate(0)", ocbox_)
+execute("vc.dur[0]=0.1 vc.amp[0]=-65", ocbox_)
+execute("vc.dur[1]=3 vc.amp[1]=10", ocbox_)
+execute("vc.dur[2]=100 vc.amp[2]=-65", ocbox_)
+execute("stim.del=0 stim.dur=0.1 stim.amp=0.05", ocbox_)
+execute("vcsteps=5", ocbox_)
+execute("samp=stim.amp  store_vclamp() glyph()", ocbox_)
+ocbox_ = ocbox_.v1
+ocbox_.map("I/V Clamp Electrode", 18, 118, 273.6, 412.8)
+}
+objref ocbox_
+//End I/V Clamp Electrode
+
+{
+ocbox_ = new VBox()
+ocbox_list_.prepend(ocbox_)
+ocbox_.intercept(1)
+}
+{
+xpanel("ion fluxes", 0)
+pump0_cadifpmp = 1e-13
+xvalue("kinetic pmp","pump0_cadifpmp", 1,"", 0, 0 )
+beta_cadifpmp = 100
+xvalue("beta","beta_cadifpmp", 1,"", 0, 0 )
+kmp_capump = 0.2
+xvalue("kmp","kmp_capump", 1,"", 0, 0 )
+vmax_capump = 0
+xvalue("vmax","vmax_capump", 1,"", 0, 0 )
+pcabar_cachan = 2.5e-05
+xvalue("pcabar","pcabar_cachan", 1,"", 0, 0 )
+gnabar_HHna = 0.12
+xvalue("gnabar","gnabar_HHna", 1,"", 0, 0 )
+gkbar_HHk = 0.036
+xvalue("gkbar","gkbar_HHk", 1,"", 0, 0 )
+k_nacax = 0.00015
+xvalue("k exchange","k_nacax", 1,"", 0, 0 )
+nao = 115
+xvalue("nao","nao", 1,"init()", 0, 0 )
+cai0_ca_ion = 3e-06
+xvalue("cai init","cai0_ca_ion", 1,"init()", 0, 0 )
+xpanel()
+}
+{
+ocbox_ = ocbox_list_.object(0)
+ocbox_.intercept(0)
+ocbox_.map("Ion Fluxes", 62, 348, 298.56, 307.2)
+}
+objref ocbox_
+{
+save_window_ = new Graph(0)
+save_window_.size(0,5,-80,40)
+scene_vector_[3] = save_window_
+{save_window_.view(0, -80, 5, 120, 704, 25, 303.36, 203.2)}
+graphList[0].append(save_window_)
+save_window_.save_name("graphList[0].")
+save_window_.addexpr("terminal.v( 0.5 )", 1, 1, 0.553797, 0.873786, 2)
+}
+{
+save_window_ = new Graph(0)
+save_window_.size(0,5,-0.04,0.02)
+scene_vector_[4] = save_window_
+{save_window_.view(0, -0.04, 5, 0.06, 706, 298, 303.36, 203.2)}
+graphList[0].append(save_window_)
+save_window_.save_name("graphList[0].")
+save_window_.addexpr("ica", 1, 1, 0.49214, 0.971132, 2)
+save_window_.addexpr("ica_nacax", 2, 1, 0.496598, 0.980711, 2)
+save_window_.addexpr("ica_capump", 3, 1, 0.50973, 0.692392, 2)
+save_window_.addexpr("ica_cachan", 4, 1, 2.50949, 0.00180314, 1)
+save_window_.addexpr("ica_pmp_cadifpmp", 5, 1, 2.44857, 0.0350366, 1)
+}
+{
+save_window_ = new Graph(0)
+save_window_.size(0,5,0,0.5)
+scene_vector_[5] = save_window_
+{save_window_.view(0, 0, 5, 0.5, 707, 573, 303.36, 203.2)}
+graphList[0].append(save_window_)
+save_window_.save_name("graphList[0].")
+save_window_.addexpr("cai*1e4", 2, 1, 0.367087, 0.966017, 2)
+save_window_.addexpr("ca_cadifpmp[5]*1e4", 1, 1, 0.367089, 0.876387, 2)
+save_window_.addexpr("ca_cadifpmp[2]*1e4", 3, 1, 0.366456, 1.03701, 2)
+}
+objectvar scene_vector_[1]
+{doNotify()}

@@ -1,0 +1,113 @@
+begintemplate ModelViewArtCell
+public selpp, selsub, grph, unlink, alist
+objref mview, disp, mt, alist, tobj, tobj1, amech, ms, pmat
+objref distinctvalues, dislist, this
+strdef tstr
+
+proc init() {
+	mview = $o1
+	distinctvalues = mview.distinctvalues
+	disp = $o2
+	analyse()
+	display()
+}
+
+proc unlink() {local i
+	if (object_id(alist)) for i=0, alist.count - 1 {
+		alist.object(i).unlink()
+	}
+	objref mview, disp, mt, alist, tobj, tobj1, amech, ms, pmat
+	objref distinctvalues, dislist
+}
+
+proc analyse() {
+	dislist = new List()
+	alist = new List()
+	for mview.artcell_types(mt, tobj, 1) {
+		amech = new ModelViewPMech(mt.selected(tstr), this)
+		alist.append(amech)
+		amech.pps = tobj
+		ms = new MechanismStandard(tstr)
+		amech.fill(ms)
+		amech.subsets.subsets.append(new ModelViewParmSubset(new Vector(amech.pps.count), amech))
+		amech.subsets.subsets.object(0).subset.indgen
+		mk_amech()
+	}
+}
+
+proc mk_amech() {local i, iname, is, size, icol
+	if (amech.parms.count == 0) { return }
+	pmat = new Matrix(amech.pps.count, amech.parms.count)
+	for i=0, amech.pps.count-1 {
+		ms.in(amech.pps.object(i))
+		icol = 0
+		for iname=0, ms.count-1 {
+			size = ms.name(tstr, iname)
+			for is = 0, size-1 {
+				pmat.x[i][icol] = ms.get(tstr, is)
+				icol += 1
+			}
+		}
+	}
+	icol = 0
+	for iname=0, ms.count-1 {
+		size = ms.name(tstr, iname)
+		for is=0, size-1 {
+			parm_assess(pmat.getcol(icol), iname, is)
+			icol += 1
+		}
+	}
+}
+
+func parm_assess() {local n, i, val
+	n = distinctvalues.ndistinct($o1)
+	if (n == 0) { return n }
+	if (n > 20) {
+		sprint(tstr, "%d values ranging from %g to %g", n, distinctvalues.min, distinctvalues.max)	
+		amech.parms.object($2).parmelms.object($3).append(new ModelViewParmStr(tstr, amech.subsets.subsets.object(0)))
+	}else{
+		distinctvalues.dislist(dislist)
+		for i=0, dislist.count-1 {
+			tobj1 = dislist.object(i)
+			val = $o1.x[tobj1.x[0]]
+			addparm2subset(tobj1, val, $2, $3)
+		}
+	}
+	if (n > 1) {
+		amech.grph = this
+		amech.parms.object($2).parmelms.object($3).dmech = amech
+	}
+	return n
+}
+
+proc grph() {
+	mview.gui.pgrph($o1,$o2)
+}
+
+proc addparm2subset() {local i
+	i = amech.subsets.isubset($o1.c.index(amech.subsets.subsets.object(0).subset, $o1).sort, amech)
+	tobj1 = new ModelViewParmVal($2, amech.subsets.subsets.object(i))
+	amech.append($3,$4,tobj1)
+	amech.subsets.subsets.object(i).parmlist.append(tobj1)
+}
+
+proc selpp() {
+//	printf("ModelViewArtCell selpp\n")
+}
+
+proc selsub() {
+//	printf("ModelViewArtCell selsub\n")
+}
+
+proc display() {local i
+	for i=0, alist.count - 1 {
+		alist.object(i).display(disp, tstr)
+	}
+	if (alist.count == 0) { return }
+	tobj1 = new TreeViewItem(disp, "Global parameters for Artificial Cells")
+	for i=0, alist.count - 1 {
+		mview.glob(tobj1, alist.object(i).name)
+	}
+}
+
+endtemplate ModelViewArtCell

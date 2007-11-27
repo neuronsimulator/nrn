@@ -1,0 +1,206 @@
+parmfitness_generator_append("FitnessFunction")
+
+begintemplate FitnessFunction
+public efun, fitness, yvec, title, yexpr, clone
+public rfile, wfile, map, pelist, chtitle, gview, newexpr1
+public save_context, restore_context
+external classname
+
+objref fitness, yvec, tobj, tobj1, sf, this
+objref vbox, g, hb1, pelist
+objref deck
+strdef title, tstr, tstr1, tstr2, tag, cmd, yexpr, fname
+external object_index
+
+func efun() {local i, e, use_t
+	use_t = 0
+	if (fitness.use_x) {
+		yvec.copy(fitness.xdat_)
+	}else{
+		yvec.copy(fitness.xdat)
+	}
+	yvec.apply(fname)
+	e = 0
+	if (fitness.use_x) {
+		e += fitness.efun(yvec, fitness.xdat_)
+	}else{
+		e += fitness.efun(yvec, fitness.xdat)
+	}
+	errval = e
+	return e
+}
+
+func gview() {local i, l,b,r,t
+	i = 0	
+		tobj = fitness.g
+		l=tobj.size(1) r=tobj.size(2) b=tobj.size(3) t=tobj.size(4)
+		tobj.view(l,b,r-l,t-b,i*200,$1*150,200,150)
+		tobj.label(.1,.9,$s2)
+		tobj.label(title)
+		tobj.label(yexpr)
+	return $1 + 1.2
+}
+
+
+proc init() {
+	title = "Unnamed Function Fitness"
+	sf = new StringFunctions()
+	sprint(fname, "FitnessFunction_%d", object_index(this))
+	newexpr1("exp(-$1)")
+	sprint(tag, "%s", this)
+	sprint(tstr, "%s.pelist = parmfitness_efun_list_", this)
+	execute(tstr)
+	sscanf(tag, "%[^[]", tag)
+	yvec = new Vector()
+	fitness = new RegionFitness()
+}
+
+proc save_context() {
+	$o1.pack(tag, title, yexpr)
+	classname(fitness, tstr)
+	$o1.pack(tstr)
+	fitness.save_context($o1)
+}
+
+proc restore_context() {
+	$o1.unpack(tag, title, yexpr)
+	$o1.upkstr(tstr)
+	sprint(tstr, "fitness = new %s()", tstr)
+	execute(tstr, this)
+}
+
+proc clone() {
+	$o1 = new FitnessFunction()
+	$o1.title = title
+	fitness.clone($o1.fitness)
+	$o1.newexpr1(yexpr)
+}
+
+proc chtitle() {
+	title = $s1
+}
+
+proc newexpr() {local i
+	tstr = $s1
+	while (string_dialog("Expression involving the independent variable, $1 ", tstr)){
+		if (newexpr1(tstr) == 0) {
+			sprint(tstr1, "%s is an invalid expression or function body", tstr)
+			continue_dialog(tstr1)
+		}else{
+			for i=2, numarg() {
+				if (name_declared($si) != 5) {
+					sprint(tstr1, "%s = 1", $si)
+					execute(tstr1)
+				}
+			}
+			break
+		}
+	}
+}
+
+func newexpr1() {local b
+	if (sf.head($s1, "return ", tstr2) > -1) {
+		sprint(tstr2, "func %s() { %s }", fname, $s1)
+	}else{
+		sprint(tstr2, "func %s() { return %s }", fname, $s1)
+	}
+	b =  execute1(tstr2)
+	if (b) {
+		yexpr = $s1
+	}
+	return b
+}
+
+proc wfile() {local i
+	$o1.printf("\t%s: %s\n", tag, title)
+	$o1.printf("\t\t%s\n", yexpr)
+	sprint(tstr, "%s", fitness.tag)
+	$o1.printf("\t\t%s:\n", tstr)
+	if ($o2.isopen) fitness.wfile($o2)
+	$o1.printf("\n")
+}
+
+proc rfile() {local i
+	i = sscanf($s3, "%*[\t ]%[^:]:%*[\t ]%[^\n]", tag, title)
+	if (i != 2) {
+		i = sscanf($s3, "%[^:]:%*[\t ]%[^\n]", tag, title)
+	}
+	if (i != 2) {
+		printf("Invalid format for Fitness Function\n%stag=|%s| title=|%s|\n", $s3, tag, title)
+	}
+	$o1.gets(tstr)
+	sscanf(tstr, "%*[\t ]%[^\n]", tstr1)
+	newexpr1(tstr1)
+	$o1.gets(tstr)
+	while (sf.substr(tstr, "Fitness") > -1) {
+		i = sscanf(tstr, "%*[\t ]%[^:]", tstr)
+		if (i != 1) {
+			i = sscanf(tstr, "%[^:]", tstr)
+		}
+		if (i != 1) {
+printf("Invalid format for Fitness line\n%s", tstr)
+		}
+		sscanf(tstr, "%[^[]", tstr1)
+		sprint(tstr1, "tobj = new %s()", tstr1)
+		execute(tstr1, this)
+		tobj.tag = tstr
+		fitness = tobj
+		if ($o2.isopen) tobj.rfile($o2)
+		$o1.gets(tstr)
+	}
+}
+
+proc chfit() {local i
+	deck.flip_to(-1)
+	sprint(tstr, "tobj = new %s()", pelist.object($1).s)
+	execute(tstr, this)
+	tobj.set_data(fitness.xdat, fitness.ydat)
+	deck.remove_last
+	fitness = tobj
+	deck.intercept(1)
+	fitness.map()
+	deck.intercept(0)
+	deck.flip_to(0)
+	objref tobj, tobj1
+}
+
+proc map() {local i
+	vbox = new VBox(3)
+	vbox.intercept(1)
+	xpanel("",1)
+	xlabel(title)
+	xpvalue("Error Value", &errval, 0, "efun()")
+	xmenu("Fitness")
+		xmenu("Change Method to")
+		for i=0, pelist.count-1 {
+			sprint(tstr, "chfit(%d)", i)
+			xbutton(pelist.object(i).s, tstr)
+		}
+		xmenu()
+xbutton("Expression with $1", "newexpr(yexpr)")
+xbutton("Or function body", "newexpr(yexpr)")
+		xmenu("Common Functional Forms")
+xbutton("Nth order Lag", "newexpr(\"A*(1 - exp(-k1*$1))^n\", \"A\", \"k1\")")
+xbutton("Linear", "newexpr(\"m*$1 + b\", \"m\", \"b\")")
+xbutton("Single Exponential", "newexpr(\"A*exp(-k1*$1)\", \"A\", \"k1\")")
+xbutton("Double Exponential", "newexpr(\"A*exp(-k1*$1) + B*exp(-k2*$1)\", \"A\",\"k1\",\"B\",\"k2\")")
+xbutton("Two state Boltzmann", "newexpr(\"A/(1 + exp(k1*(d1-$1)))\", \"A\",\"k1\",\"d1\")")
+xbutton("Three state Boltzmann", "newexpr(\"A/(1 + exp(k1*(d1-$1)) + exp(k2*(d2-$1)))\", \"A\",\"k1\",\"d1\",\"k2\",\"d2\")")
+xbutton("Michaelis-Menton", "newexpr(\"A*k1*$1/(1 + k1*$1)\", \"A\",\"k1\")")
+		xmenu()
+	xmenu()
+	xpanel()
+	xpanel("")
+	xvarlabel(yexpr)
+	xpanel()
+	deck = new Deck()
+	deck.intercept(1)
+	fitness.map()
+	deck.intercept(0)
+	deck.map()
+	deck.flip_to(0)
+	vbox.intercept(0)
+	vbox.map()
+}
+
+endtemplate FitnessFunction

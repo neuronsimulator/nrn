@@ -1,0 +1,1125 @@
+{load_file("celbild.hoc")}
+
+begintemplate Import3d_GUI
+public swc, diam_glyph, box, plrot, readfile, redraw, name
+public origin, rotmatold, raworigin, g, rotraw, instantiate
+external hoc_sf_
+objref swc, g, box, this, rotmat, m2, origin, tobj, rotmatold
+objref raworigin, rotsav, viewsec, rawsel, deck
+objref file, nil, problist, types, editbox
+strdef tstr, tstr1, typelabel_, filename
+
+proc init() {
+	if (numarg() == 2) if ($2 == 0) {
+		swc = $o1
+		return
+	}
+	if ($o1 == nil) {
+		file = new File()
+		filename = "choose a file                          "
+	}else{
+		file = $o1.file
+		hoc_sf_.head(file.getname(), "[^/]*$", tstr)
+		file.chooser("r", "Import 3-D Reconstruction File", "*", "Read", "Cancel", tstr)
+		filename =file.getname()
+	}
+	ztrans_ = 0
+	dummy_ = 0
+	undo_type_ = 0
+	show_point_ = 1
+	show_diam_ = 1
+	if ($o1 == nil) { build() map() return }
+	init1($o1)
+	build()
+	map()
+	init2()
+	
+}
+
+proc map() {
+	sprint(tstr, "%s", this)
+	if (numarg() == 0) {
+		box.map(tstr)
+	}else{
+		box.map(tstr, $2, $3, $4, $5)
+	}
+}
+
+proc init1() {
+	i=0 j=0
+	swc = $o1
+	selpoint_ = -1
+	selid_ = swc.pt2id(selpoint_)
+	viewsec = new List()
+	showtype(-10000)
+	rotated_ = 0
+	rotmat = new Matrix(3,3)
+	rotmatold = rotmat.c.ident
+	rotsav = rotmat.c.ident
+	origin = new Vector(3)
+	raworigin = new Vector(3)
+	rawsel = new Vector(3)
+	m2 = new Matrix(3,3)
+}
+proc init2() {
+	rot(0,0)
+	pl()
+	g.exec_menu("View = plot")
+	g.exec_menu("Zoom")
+}
+
+proc build() {local i
+	box = new HBox(3)
+	box.full_request(1)
+	box.save("")
+	box.ref(this)
+	box.intercept(1)
+	box.adjuster(400)
+	g = new Graph(0)
+	g.view(2)
+	g.xaxis(3)
+	deck = new Deck(3)
+	build_panel()
+	deck.map
+	box.intercept(0)
+}
+
+proc build_panel() {local i
+	deck.intercept(1)
+	xpanel("")
+	xcheckbox(filename, &readfile_, "readfile()")
+	if (swc == nil) {
+		xlabel("    accepted file formats:")
+		xlabel("        SWC")
+		xlabel("        Neurolucida (v1 and v3)")
+		xlabel("        Eutectic")
+		if (nrnpython("")) xlabel("        MorphML")
+		for i = 0, 15 { xlabel("") }
+		xpanel(0)
+		deck.intercept(0)
+		deck.flip_to(0)
+		return
+	}
+	sprint(tstr, "File format: %s", swc.filetype)
+	xlabel(tstr)
+	xlabel("-------------------------------")
+	g.menu_remove("Zoom")
+	g.menu_tool("Zoom", "zoom")
+	g.menu_remove("Translate ")
+	g.menu_tool("Translate ", "translate")
+	g.menu_remove("Rotate")
+	g.menu_tool("Rotate (about axis in plane)", "rotate")
+	xcheckbox("Rotate 45deg about y axis", &dummy_, "rot45()")
+	xcheckbox("Rotated (vs Raw view)", &rotated_, "rotraw()")
+	xcheckbox("Show Points", &show_point_, "pl()")
+	xcheckbox("Show Diam", &show_diam_, "pl()")
+	xvarlabel(typelabel_)
+	xmenu("View type")
+	xradiobutton("All", "showtype(-10000) pl()", 1)
+	xradiobutton("Section containing selected point", "showsec() pl()")
+	xradiobutton("Distal (tree) from selected point", "showdistal() pl()")
+	xradiobutton("Proximal (path to root) from selected point", "showprox() pl()")
+	xradiobutton("Root sections", "showroot() pl()")
+		if (swc.type.min != swc.type.max) {
+			for i = swc.type.min, swc.type.max {
+				if (swc.type.indwhere("==", i) != -1) {
+					sprint(tstr, "type %d", i)
+					sprint(tstr1, "showtype(%d) pl()", i)
+					xradiobutton(tstr, tstr1)
+				}
+			}
+		}
+	xmenu()
+	g.menu_remove("Select point")
+	g.menu_tool("Select point", "selpoint", "selpoint1(1)")
+	if (strcmp(swc.filetype, "Neurolucida") == 0) {
+		xpvalue("Line#", &selid_, 1, "selid(1)")
+		if (swc.err) {
+			xbutton("Problem points", "probpointpanel()")
+		}
+	}else if (strcmp(swc.filetype, "Neurolucida V3") == 0) {
+		xpvalue("Line#", &selid_, 1, "selid(1)")
+	}else{
+		xpvalue("Select id", &selid_, 1, "selid(1)")
+	}
+	xlabel("-------------------------------")
+	xbutton("Edit", "map_edit()")
+	xmenu("Export")
+		xbutton("CellBuilder", "cbexport()")
+		xbutton("Instantiate", "instantiate(nil)")
+	xmenu()
+	sprint(tstr, "%s filter facts", swc.filetype)
+	xbutton(tstr, "swc.helptxt()")
+	xpanel(0)
+	deck.intercept(0)
+	deck.flip_to(0)
+}
+
+
+proc map_edit() {
+	if (editbox == nil) {
+		build_edit()
+	}
+	if (editbox.ismapped) { return }
+	sprint(tstr, "Edit %s", this)
+	editbox.map(tstr)
+}
+proc build_edit() {
+	editbox = new VBox()
+	editbox.intercept(1)
+	editbox.save("")
+	xpanel("")
+	ztransitem()
+	xlabel("Select point:")
+	xcheckbox("Largest z change", &dummy_, "sel_largest_dz()")
+	xlabel("then action:")
+	xcheckbox("z-translate rest of tree to parent point", &dummy_, "edit2()")
+	xcheckbox("z-translate to average of adjacent points", &dummy_, "edit1()")
+	xcheckbox("undo last", &dummy_, "edit0()")
+	xlabel("-------------------")
+	xcheckbox("3 point filter of all z values (no undo)", &dummy_, "edit3()")
+	xpanel()
+	editbox.intercept(0)
+}
+
+proc sel_largest_dz() {local i, j, dz, dzmax, imax, jmax  localobj sec, tobj
+	dummy_ = 0
+	dzmax = -1
+	for i = 0, swc.sections.count-1 {
+		sec = swc.sections.object(i)
+		tobj = sec.raw.getrow(2).deriv(1,1).abs
+		j = tobj.max_ind
+		dz = tobj.x[j]
+		if (dz > dzmax) {
+			jmax = j+1
+			imax = i
+			dzmax = dz
+		}
+	}
+	if (dzmax > 0) {
+		selpoint_ = swc.sec2pt(imax, jmax)
+		selpoint_dependent_show()
+		swc.sections.object(imax).raw.getcol(jmax, rawsel)
+		selid_ = swc.pt2id(selpoint_)
+		pl()
+	}
+}
+
+proc ztransitem() {local i, n  localobj raw
+	n = 0
+	for i = 0, swc.sections.count-1 {
+		raw = swc.sections.object(i).raw
+		if (abs(raw.x[2][0] - raw.x[2][1]) > 10) {
+			n += 1
+		}
+	}
+	if (n > 0) {
+		sprint(tstr, "z translation for %d abrupt branch backlash", n)
+		xcheckbox(tstr, &ztrans_, "ztrans()")
+	}
+}
+
+proc ztrans() { local i, zd, pn  localobj sec
+	if (ztrans_) {
+		for i = 0, swc.sections.count-1 {
+			sec = swc.sections.object(i)
+			if (object_id(sec.parentsec) == 0) { continue }
+			if (object_id(sec.parentsec.parentsec) == 0) { continue }
+			zd = sec.raw.x[2][1] - sec.raw.x[2][0]
+			if (abs(zd) > 5) {
+				zd +=  sec.parentsec.ztrans
+			}else{
+				zd = sec.parentsec.ztrans
+			}
+			sec.ztrans = zd
+			sec.raw.setrow(2, sec.raw.getrow(2).sub(sec.ztrans))
+			pn = sec.parentsec.raw.ncol
+			sec.raw.x[2][0] = sec.parentsec.raw.x[2][pn-1]
+		}
+	}else{
+		for i = 0, swc.sections.count-1 {
+			sec = swc.sections.object(i)
+			if (sec.ztrans) {
+sec.raw.setrow(2, sec.raw.getrow(2).add(sec.ztrans))
+				pn = sec.parentsec.raw.ncol
+				sec.raw.x[2][0] = sec.parentsec.raw.x[2][pn-1]
+				sec.ztrans = 0
+			}
+		}
+	}
+	redraw()
+}
+
+proc edit0() {local i, n  localobj sec
+	dummy_ = 0
+	if (undo_type_ == 1) {
+		i = swc.pt2sec(undo_selpoint_, sec)
+		sec.raw.x[2][i] = undo_z_
+		sec.raw.getcol(i, rawsel)
+	}else if (undo_type_ == 2) {
+		i = swc.pt2sec(undo_selpoint_, sec)
+		n = sec.raw.ncol
+		for i=i, n-1 {
+			sec.raw.x[2][i] += undo_z_
+		}
+		sec.raw.getcol(i, rawsel)
+		for i=0, swc.sections.count-1 { swc.sections.object(i).volatile = 0 }
+		sec.volatile = 1
+		for i=0, swc.sections.count-1 {
+			sec = swc.sections.object(i)
+			if (object_id(sec.parentsec)) if (sec.parentsec.volatile) {
+				sec.volatile = 1
+				sec.raw.setrow(2, sec.raw.getrow(2).add(undo_z_))
+			}
+		}
+	}
+	undo_type_ = 0
+	redraw()
+}
+
+proc edit1() {local i, z1, z2  localobj sec
+	// z translate to average of adjacent points
+	dummy_ = 0
+	if (selpoint_ >= 0) {
+		i = swc.pt2sec(selpoint_, sec)
+		if (i > 0) {
+			z1 = sec.raw.x[2][i-1]
+		}else{
+			return
+		}
+		if (i < sec.raw.ncol-1) {
+			z2 = sec.raw.x[2][i+1]
+		}else{
+			return
+		}
+		undo_selpoint_ = selpoint_
+		undo_type_ = 1
+		undo_z_ = sec.raw.x[2][i]
+		sec.raw.x[2][i] = (z1 + z2)/2
+		sec.raw.getcol(i, rawsel)
+	}
+	redraw()
+}
+
+proc edit2() {local i, ip, z1, n  localobj sec
+	// z-translate rest of tree to parent point
+	dummy_ = 0
+	if (selpoint_ >= 0) {
+		ip = swc.pt2sec(selpoint_, sec)
+		if (ip > 0) {
+			z1 = sec.raw.x[2][ip] - sec.raw.x[2][ip-1]
+		}else{
+			return
+		}
+		undo_selpoint_ = selpoint_
+		undo_type_ = 2
+		undo_z_ = z1
+		n = sec.raw.ncol
+		for i=ip, n-1 {
+			sec.raw.x[2][i] -= z1
+		}
+		sec.raw.getcol(ip, rawsel)
+		for i=0, swc.sections.count-1 { swc.sections.object(i).volatile = 0 }
+		sec.volatile = 1
+		for i=0, swc.sections.count-1 {
+			sec = swc.sections.object(i)
+			if (object_id(sec.parentsec)) if (sec.parentsec.volatile) {
+				sec.volatile = 1
+				sec.raw.setrow(2, sec.raw.getrow(2).sub(z1))
+			}
+		}
+	}
+	redraw()
+}
+
+proc edit3() {local i  localobj sec
+	dummy_ = 0
+	for i=0, swc.sections.count-1 {
+		sec = swc.sections.object(i)
+		sec.raw.setrow(2, sec.raw.getrow(2).medfltr)
+	}
+	if (selpoint_ >= 0) {
+		i = swc.pt2sec(selpoint_, sec)
+		sec.raw.getcol(i, rawsel)
+	}
+	redraw()
+}
+
+proc probpointpanel() {
+	problist = new List()
+	problist.browser("Problem points", "s")
+	problist.select_action("probpoint(hoc_ac_)")
+	swc.fillproblist(problist)
+	problist.select(-1)
+}
+
+proc probpoint() {local i
+	if ($1 < 0) {return}
+	sscanf(problist.object($1).s, "%d:", &i)
+	selid_ = i
+	selid(0)
+}
+
+proc readfile() {
+	readfile_ = 0
+	if (numarg() == 0) {
+		file.chooser("r", "Import 3-D Reconstruction File", "*", "Read", "Cancel")
+		if (file.chooser()) {
+			if (!some_format()) {
+				return
+			}
+		}else{
+			return
+		}
+	}else{
+		file = new File($s1)
+		if (!some_format()) {
+			return
+		}
+	}
+	// if new file
+	problist = nil
+	deck.flip_to(-1)
+	build_panel()
+	deck.move_last(0)
+	deck.flip_to(0)
+	init1(swc)
+	init2()
+	doNotify()
+	if (swc.err) {
+		printf("\n")
+		sprint(tstr, "%s: File translation problems. See the messages on the terminal", file.getname)
+		continue_dialog(tstr)
+		if (strcmp(swc.filetype, "Neurolucida V3") == 0) {
+			swc.b2spanel(this)
+		}
+	}
+	deck.remove_last()
+}
+
+func some_format() {local i, a,b,c,d,e,f,g, n
+	if (!file.ropen()) {
+		sprint(tstr, "Can't read %s", file.getname)
+		continue_dialog(tstr)
+		return 0
+	}
+	for i=1, 200 {
+		if (i > 100 || file.eof) {
+			file.close
+			sprint(tstr, "Can't figure out file format for %s", file.getname)
+			continue_dialog(tstr)
+			return 0
+		}
+		file.gets(tstr)
+		if (hoc_sf_.head(tstr, "^\\<\\?xml", tstr1) != -1) {
+			if (nrnpython("")) {
+				swc = new Import3d_MorphML() break
+			}else{
+				file.close
+				sprint(tstr, "Can't read MorphML: Python not available.")
+				continue_dialog(tstr)
+				return 0
+			}
+		}
+		n = sscanf(tstr, "%f %f %f %f %f %f %f", &a, &b, &c, &d, &e, &f, &g)
+		if (n == 7) { swc = new Import3d_SWC_read() break }
+		n = sscanf(tstr, "[%d,%d] (%f,%f,%f) %f", &a, &b, &c, &d, &e, &f)
+		if (n == 6) { swc = new Import3d_Neurolucida_read() break }
+		n = sscanf(tstr, "%d %s %d %f %f %f %f", &a, tstr, &b, &c, &d, &e, &f)
+		if (n == 7) { swc = new Import3d_Eutectic_read() break }
+		if (hoc_sf_.tail(tstr, "^[ \t]*", tstr1) != -1) {
+			//unfortunately regexp does not allow an explicit "("
+			hoc_sf_.left(tstr1, 1)
+			if (strcmp(tstr1, "(") == 0) {
+				swc = new Import3d_Neurolucida3() break
+			}
+		}
+		if (hoc_sf_.head(tstr, "^;[ \t]*V3", tstr1) != -1) {
+			swc = new Import3d_Neurolucida3() break
+		}
+	}
+	file.close
+	filename = file.getname
+	swc.input(filename)
+	return 1
+}
+
+proc pl_point() { local i, j, i1    localobj  m, m0
+	if (viewsec.count) {m0 = swc.sections.object(0).xyz}
+	for i=0, viewsec.count-1 {
+		viewsec.object(i).pl_point(g)
+	}
+}
+
+proc pl_centroid() {local i   localobj sec
+	for i=0, swc.sections.count-1 {
+		sec = swc.sections.object(i)
+		sec.xyz.getrow(1).line(g, sec.xyz.getrow(0), sec.centroid_color, 1)
+	}
+}
+proc pl_diam() {local i   localobj sec
+	for i=0, viewsec.count-1 {
+		sec = viewsec.object(i)
+		sec.mkglyph()	
+		g.glyph(sec.g, 0, 0)
+	}
+}
+proc pl() { localobj tobj
+	g.erase_all
+	if (show_diam_) {pl_diam()}
+	pl_centroid()
+	if (show_point_) {pl_point()}
+	if (selpoint_ >= 0) {
+		tobj = m2.mulv(rawsel)
+		g.mark(tobj.x[0], tobj.x[1], "O", 12, 2, 1)
+		swc.label(selpoint_, tstr)
+		g.label(.1, .05, tstr, 2, 1, 0, 0, 1)
+	}
+}
+
+proc redraw() { local i  localobj sec
+	if (selpoint_ >= 0) {
+		i = swc.pt2sec(selpoint_, sec)
+		sec.raw.getcol(i, rawsel)
+	}
+	showtype(viewtype_)
+	rot(0,0)
+	pl()
+}
+
+proc showtype() {
+	viewtype_ = $1
+	viewsec.remove_all
+	if ($1 == -10000) {
+		typelabel_ = "View all types"
+		for i=0, swc.sections.count - 1 {
+			viewsec.append(swc.sections.object(i))
+			swc.sections.object(i).centroid_color = 2
+		}
+	}else{
+		sprint(typelabel_, "View type %d", viewtype_)
+		for i=0, swc.sections.count - 1 {
+			if (swc.sections.object(i).type == viewtype_) {
+				viewsec.append(swc.sections.object(i))
+				swc.sections.object(i).centroid_color = 2
+			}else{
+				swc.sections.object(i).centroid_color = 9
+			}
+		}
+	}
+}
+
+proc selpoint_dependent_show() {
+	if (viewtype_ == -20000) {
+		showdistal()
+	}else if (viewtype_ == -30000) {
+		showprox()
+	}else if (viewtype_ == -40000) {
+		showsec()
+	}else if (viewtype_ == -50000) {
+		showroot()
+	}
+}
+
+proc showdistal() {local i localobj sec
+	viewtype_ = -20000
+	typelabel_ = "Show distal (tree) from selected point"
+	viewsec.remove_all
+	for i=0, swc.sections.count - 1 {
+		swc.sections.object(i).centroid_color = 9
+	}
+	if (selpoint_ < 0) { return }
+	swc.pt2sec(selpoint_, sec)
+	// recursion is trivial but I want to avoid the depth so use the
+	// fact that children are after the parent in the sections list
+	sec.centroid_color = 2
+	viewsec.append(sec)
+	for i=0, swc.sections.count - 1 {
+		if (swc.sections.object(i).centroid_color == 2) {
+			break
+		}
+	}
+	for i=i+1, swc.sections.count - 1 {
+		sec = swc.sections.object(i)
+		if (sec.parentsec != nil) if (sec.parentsec.centroid_color == 2) {
+			sec.centroid_color = 2
+			viewsec.append(sec)
+		}
+	}
+}
+
+proc showprox() {localobj sec
+	viewtype_ = -30000
+	typelabel_ = "Show proximal (path to root) from selected point"
+	viewsec.remove_all
+	for i=0, swc.sections.count - 1 {
+		swc.sections.object(i).centroid_color = 9
+	}
+	if (selpoint_ < 0) { return }
+	for (swc.pt2sec(selpoint_, sec); sec != nil; sec = sec.parentsec) {
+		viewsec.append(sec)
+		sec.centroid_color = 2
+	}
+}
+
+proc showsec() {localobj sec
+	viewtype_ = -40000
+	typelabel_ = "Show section containing selected point"
+	viewsec.remove_all
+	for i=0, swc.sections.count - 1 {
+		swc.sections.object(i).centroid_color = 9
+	}
+	if (selpoint_ < 0) { return }
+	swc.pt2sec(selpoint_, sec)
+	if (sec != nil) {
+		viewsec.append(sec)
+		sec.centroid_color = 2
+	}
+}
+
+proc showroot() {localobj sec
+	viewtype_ = -50000
+	typelabel_ = "Show root sections"
+	viewsec.remove_all
+	for i=0, swc.sections.count - 1 {
+		sec = swc.sections.object(i)
+		sec.centroid_color = 9
+		if (sec.parentsec == nil) {
+			sec.centroid_color = 2
+			viewsec.append(sec)
+		}
+	}
+}
+
+proc selpoint1() { // deselection not supported by menu_tool
+	if ($1 == 0) {
+		selpoint_ = -1
+	}
+}
+proc selpoint() {local i, j
+	if ($1 == 2) {
+		nearest_point($2, $3, &i, &j)
+		selpoint_ = swc.sec2pt(i, j)
+		selpoint_dependent_show()
+		swc.sections.object(i).raw.getcol(j, rawsel)
+		selid_ = swc.pt2id(selpoint_)
+		pl()
+	}
+}
+
+proc selid() {local i, j localobj sec
+	selpoint_ = swc.id2pt(selid_)
+	selid_ = swc.pt2id(selpoint_)
+	if (selpoint_ >= 0) {
+		i = swc.pt2sec(selpoint_, sec)
+		sec.raw.getcol(i, rawsel)
+	}
+	selpoint_dependent_show()
+	pl()
+	if ($1 == 1) {
+		swc.label(selpoint_, tstr)
+		print tstr
+	}
+}
+
+proc zoom() {local x1,y1,scale,w,h,x0,y0
+	if ($1 == 2) {
+		i = g.view_info()
+		x = $2
+		y = $3
+		xrel=g.view_info(i, 11, $2)
+		yrel=g.view_info(i, 12, $3)
+		width=g.view_info(i,1)
+		height=g.view_info(i,2)
+	}
+	if ($1 == 1) {
+		x1 = g.view_info(i, 11, $2)
+		y1 = g.view_info(i, 12, $3)
+		y1 = (y1 - yrel) + (x1 - xrel)
+		if(y1 > 2) { y1 = 2 } else if (y1 < -2) { y1 = -2 }
+		scale = 10^(y1)
+		w = width/scale
+		h = height/scale
+		x0 = x - w*xrel
+		y0 = y - h*yrel
+		g.view_size(i, x0, x0+w, y0, y0+h)
+	}
+}
+
+proc translate() {local x0,y0
+	if ($1 == 2) {
+		i = g.view_info()
+		x = g.view_info(i, 5)
+		y = g.view_info(i, 7)
+		xrel=g.view_info(i, 11, $2)
+		yrel=g.view_info(i, 12, $3)
+		width=g.view_info(i,1)
+		height=g.view_info(i,2)
+	}
+	if ($1 == 1) {
+		x1 = g.view_info(i, 11, $2)
+		y1 = g.view_info(i, 12, $3)
+		x0 = x - width*(x1 - xrel)
+		y0 = y - height*(y1 - yrel)
+		g.view_size(i, x0, x0 + width, y0, y0 + height)
+	}
+}
+
+func nearest_point() { local i, j, xmin    localobj m, v1
+	// return section index and sectionpoint index in $3 and $4
+	xmin = 1e9
+	for i=0, swc.sections.count-1 {
+		m = swc.sections.object(i).xyz
+		v1 = m.getrow(0).sub($1).pow(2).add(m.getrow(1).sub($2).pow(2))
+		j = v1.min_ind
+		if (v1.x[j] < xmin) {
+			xmin = v1.x[j]
+			$&3 = i
+			$&4 = j
+		}
+	}
+	return xmin
+}
+
+proc rotate() {local x, y, x0, y0, len, a
+	if ($1 == 2) {
+		rotated_ = 1
+		nearest_point($2, $3, &i, &j)
+		swc.sections.object(i).xyz.getcol(j, origin)
+		swc.sections.object(i).raw.getcol(j, raworigin)
+//print i, j  origin.printf
+		i = g.view_info()
+		xpix = g.view_info(i,13, $2)
+		ypix = g.view_info(i, 14, $3) // from top
+		left = g.view_info(i, 5)
+		bottom = g.view_info(i, 7)
+		width=g.view_info(i,1)
+		height=g.view_info(i,2)
+	}else{
+		x = g.view_info(i,13, $2) - xpix
+		y = ypix - g.view_info(i, 14, $3)
+		// rotation axis is normal to the line, rotation magnitude
+		// proportional to length of line
+		len = sqrt(x*x + y*y)
+		// rotation axis angle
+		if (len > 0) {
+			a = atan2(x, y)
+			b = len/50
+		}else{
+			a = 0
+			b = 0
+		}
+		rot(a, b)
+		pl()
+		tobj = rotmat.mulv(origin)
+		//tobj.x[0] should be at same place as origin.x[0]
+		x0 = left - origin.x[0] + tobj.x[0]
+		y0 = bottom - origin.x[1] + tobj.x[1]
+		g.view_size(i, x0, x0 + width, y0, y0 + height)
+
+	}
+	if ($1 == 3) {
+		m2.c(rotmatold)
+//rotmatold.printf
+	}
+}
+
+proc rotraw() {local x0, y0
+	width = g.view_info(0, 1)
+	height = g.view_info(0, 2)
+	left = g.view_info(0,5)
+	bottom = g.view_info(0,7)
+	if (rotated_ == 0) { //turn off
+		rotmatold.c(rotsav)
+		tobj = rotmatold.mulv(raworigin)
+		//tobj.x[0] should be at same place as origin.x[0]
+		x0 = left + raworigin.x[0] - tobj.x[0]
+		y0 = bottom + raworigin.x[1] - tobj.x[1]
+		rotmatold.ident
+	}else{ // back to previous rotation
+		rotsav.c(rotmatold)
+		tobj = rotmatold.mulv(raworigin)
+		//tobj.x[0] should be at same place as origin.x[0]
+		x0 = left - raworigin.x[0] + tobj.x[0]
+		y0 = bottom - raworigin.x[1] + tobj.x[1]
+	}
+	rot(0,0)
+	pl()
+	g.view_size(0, x0, x0 + width, y0, y0 + height)
+}
+
+proc rot45() {
+	rot(PI/2, PI/4)
+	rotated_=1
+	m2.c(rotmatold)
+	pl()
+	dummy_ = 0
+}
+
+proc rot() {local s, c, i   localobj sec
+	s = sin($1)  c = cos($1)
+	m2.zero
+	m2.x[2][2] = 1
+	m2.x[1][1] = m2.x[0][0] = c
+	m2.x[1][0] = -s
+	m2.x[0][1] = s	
+//m2.printf	
+	s = sin($2)  c = cos($2)
+	rotmat.zero
+	rotmat.x[0][0] = 1
+	rotmat.x[1][1] = rotmat.x[2][2] = c
+	rotmat.x[1][2] = s
+	rotmat.x[2][1] = -s	
+//rotmat.printf
+	
+	m2.mulm(rotmat).mulm(m2.transpose(m2), rotmat)
+	rotmat.mulm(rotmatold, m2)
+//rotmat.printf
+	for i=0, swc.sections.count-1 {
+		sec = swc.sections.object(i)
+		sec.rotate(m2)
+	}
+}
+
+proc cbexport() {local i, j, k  localobj sec, cell
+	chk_valid()
+	j = 0
+	for i=0, swc.sections.count-1 {
+		sec = swc.sections.object(i)
+		if (sec.parentsec == nil) {
+			sec.volatile2 = j			
+			j += 1
+		}else{
+			sec.volatile2 = sec.parentsec.volatile2
+		}
+	}
+	if (j == 1) {
+		cbexport1(swc.sections)
+	}else if (j > 1) {
+//		continue_dialog("Cannot export to CellBuild due to multiple root sections")
+		cell = new List()
+		for k=0, j-1 {
+			cell.remove_all()
+			for i=0, swc.sections.count-1 {
+				sec = swc.sections.object(i)
+				if (sec.volatile2 == k) {
+					cell.append(sec)
+				}
+			}
+			cbexport1(cell)
+		}
+	}
+}
+
+proc cbexport1() {local i, j, k, min  localobj cb, sec, psec, cbsec, slist, m, subsetindex, xx, yy, zz, dd
+	for i=0, $o1.count-1 {
+		sec = $o1.object(i)
+		sec.volatile = i
+	}
+	min = set_nameindex($o1)
+	cb = new CellBuild()
+	cb.topol.names_off = 1
+	cb.topol.circles_off = 1
+	slist = cb.topol.slist
+	slist.remove_all()
+	for i=0, $o1.count-1 {
+		sec = $o1.object(i)
+		psec = nil
+		if (sec.parentsec != nil) {
+			psec = slist.object(sec.parentsec.volatile)
+		}
+		type2name(sec.type, tstr)
+		cbsec = new CellBuildSection(tstr, sec.nameindex, 0, psec, sec.parentx)
+		slist.append(cbsec)
+		m = sec.raw
+		j = sec.first
+		xx = m.getrow(0).c(j)
+		yy = m.getrow(1).c(j)
+		zz = m.getrow(2).c(j)
+		dd = sec.d.c(j)
+		if (sec.iscontour_) {
+			contour2centroid(xx, yy, zz, dd)
+		}
+		k = dd.size-1
+		cbsec.position(xx.x[0], yy.x[0], xx.x[k], yy.x[k])
+		cbsec.i3d = k+1
+		cbsec.p3d = new P3D(k + 1)
+		cbsec.p3d.x = xx
+		cbsec.p3d.y = yy
+		cbsec.p3d.z = zz
+		cbsec.p3d.d = dd
+		if (sec.first == 1) {
+			cbsec.logstyle(m.x[0][0], m.x[1][0], m.x[2][0])
+		}
+		cb.all.add(cbsec)
+	}
+	cb.topol.consist()
+	cb.topol.update()
+	cb.subsets.update()
+	subsetindex = types.c.fill(0)
+	k = 0
+	for i=0, types.size-1 {
+		if (types.x[i] > 0) {
+			k += 1 // after all
+			subsetindex.x[i] = k
+			j = i + min
+			if (j == 1) {
+				tstr = "somatic"
+			}else if (j == 2) {
+				tstr = "axonal"
+			}else if (j == 3) {
+				tstr = "basal"
+			}else if (j == 4) {
+				tstr = "apical"
+			}else if (j < 0) {
+				sprint(tstr, "minus_%dset", -j)
+			}else{
+				sprint(tstr, "dendritic_%d", j)
+			}
+			m = new SNList(tstr)
+			cb.subsets.snlist.append(m)
+		}
+	}
+	for i=0, slist.count-1 {
+		sec = $o1.object(i)
+		cbsec = slist.object(i)
+		cb.subsets.snlist.object(subsetindex.x[sec.type-min]).add(cbsec)
+	}
+	//cb.page(2) //unfortunately not able to blacken the radiobutton
+}
+
+func set_nameindex() {local i, min  localobj sec
+	min = swc.type.min
+	types = new Vector(swc.type.max - min + 1)
+	for i = 0, $o1.count-1 {
+		sec = $o1.object(i)
+		sec.nameindex = types.x[sec.type - min]
+		types.x[sec.type-min] += 1
+	}
+	return min
+}
+
+proc instantiate() {local i, j, min  localobj sec, xx, yy, zz, dd
+	chk_valid()
+	min = set_nameindex(swc.sections)
+	// create
+	for i = 0, types.size-1 {
+		type2name(i+min, tstr)
+		if (types.x[i] == 1) {
+			sprint(tstr1, "~create %s[1]\n", tstr)
+			execute(tstr1, $o1)
+		}else if (types.x[i] > 1) {
+			sprint(tstr1, "~create %s[%d]\n", tstr, types.x[i])
+			execute(tstr1, $o1)
+		}
+		if ($o1 != nil) { mksubset($o1, i+min, tstr) }
+	}
+	if ($o1 != nil) {execute("forall all.append", $o1) }
+	// connect
+	for i = 0, swc.sections.count-1 {
+		sec = swc.sections.object(i)
+		name(sec, tstr)
+		if (i == 0) {
+			sprint(tstr1, "access %s", tstr)
+			if ($o1 == nil) {
+				execute(tstr1, $o1)
+			}
+		}
+		if (sec.parentsec != nil) {
+			name(sec.parentsec, tstr1)
+			sprint(tstr1, "%s connect %s(0), %g", tstr1, tstr, sec.parentx)
+			execute(tstr1, $o1)
+		}
+		// 3-d point info
+		if (sec.first == 1) {
+			sprint(tstr1, "%s { pt3dstyle(1, %g, %g, %g) }", tstr, sec.raw.x[0][0], sec.raw.x[1][0], sec.raw.x[2][0])
+			execute(tstr1, $o1)
+		}
+		j = sec.first
+		xx = sec.raw.getrow(0).c(j)
+		yy = sec.raw.getrow(1).c(j)
+		zz = sec.raw.getrow(2).c(j)
+		dd = sec.d.c(j)
+		if (sec.iscontour_) {
+			contour2centroid(xx, yy, zz, dd)
+		}
+		for j = 0, dd.size-1 {
+			sprint(tstr1, "%s { pt3dadd(%g, %g, %g, %g) }",\
+			  tstr,xx.x[j], yy.x[j], zz.x[j], dd.x[j])
+			execute(tstr1, $o1)
+		}
+	}
+}
+
+proc chk_valid() {local i, x, replot  localobj sec
+	replot = 0
+	// some validity checks added in response to experienced file errors
+	// sometimes we can work around them
+
+	// two point sections with 0 length, remove
+	for (i=swc.sections.count-1; i >= 0; i -= 1) {
+		sec = swc.sections.object(i)
+		if ((sec.raw.ncol - sec.first) <= 1) {
+			printf("One point section %s ending at line %d has been removed\n", sec, swc.iline.x[swc.id2line(sec.id)])
+			rm0len(i, sec)
+			replot = 1
+		}else if ((sec.raw.ncol - sec.first) <= 2) {
+			if (sec.raw.getcol(sec.first).eq(sec.raw.getcol(sec.first + 1))) {
+				printf("Two point section ending at line %d with 0 length has been removed\n", swc.iline.x[swc.id2line(sec.id)])
+				rm0len(i, sec)
+				replot = 1
+			}
+		}
+	}
+	if (replot && g != nil) {
+		redraw()
+	}
+}
+
+proc rm0len() {local i  localobj sec
+	swc.sections.remove($1)
+	for i=$1, swc.sections.count-1 {
+		sec = swc.sections.object(i)
+		if (sec.parentsec == $o2) {
+			sec.parentsec = $o2.parentsec
+			sec.parentx = $o2.parentx
+			printf("\tand child %s reattached\n", sec)
+		}
+	}
+}
+
+proc mksubset() {
+	if ($2 == 1) {
+		tstr1 = "somatic"
+	}else if ($2 == 2) {
+		tstr1 = "axonal"
+	}else if ($2 == 3) {
+		tstr1 = "basal"
+	}else if ($2 == 4) {
+		tstr1 = "apical"
+	}else if ($2 < 0) {
+		sprint(tstr1, "minus_%dset", -$2)
+	}else{
+		sprint(tstr1, "dendritic_%d", $2)
+	}
+	sprint(tstr1, "forsec \"%s\" %s.append", $s3, tstr1)
+	execute(tstr1, $o1)	
+}
+
+proc contour2centroid() {local i, j, imax, imin, ok  localobj mean, pts, d, max, min, tobj, rad, rad2, side2, pt, major, m, minor
+	mean = swc.sections.object(0).contourcenter($o1, $o2, $o3)
+    if (g != nil) {
+	g.beginline(6,1)
+	for i=0, $o1.size-1 {
+		g.line($o1.x[i], $o2.x[i])
+	}
+	g.flush()
+    }
+	pts = new Matrix(3, $o1.size)
+	for i=1,3 { pts.setrow(i-1, $oi.c.sub(mean.x[i-1])) }
+	// find the major axis of the ellipsoid that best fits the shape
+	// assuming (falsely in general) that the center is the mean
+	
+	m = new Matrix(3,3)
+	for i=0, 2 {
+		for j=i, 2 {
+			m.x[i][j] = pts.getrow(i).mul(pts.getrow(j)).sum
+			m.x[j][i] = m.x[i][j]
+		}
+	}
+	tobj = m.symmeig(m)
+	// major axis is the one with largest eigenvalue
+	major = m.getcol(tobj.max_ind)
+	// minor is normal and in xy plane
+	minor = m.getcol(3-tobj.min_ind-tobj.max_ind)
+	minor.x[2] = 0
+	minor.div(minor.mag)
+if (g != nil) {
+g.beginline(4, 3) g.line(mean.x[0], mean.x[1])
+g.line(mean.x[0] + 20*major.x[0], mean.x[1] + 20*major.x[1]) g.flush
+}
+	d = new Vector(pts.ncol)
+	rad = new Vector(pts.ncol)
+	for i=0, pts.ncol-1 {
+		pt = pts.getcol(i)
+		d.x[i] = pt.dot(major) // position on the line
+		tobj = major.c.mul(d.x[i])
+		rad.x[i] = pt.dot(minor)
+	}
+	imax = d.max_ind
+	d.rotate(-imax)
+	rad.rotate(-imax)
+	imin = d.min_ind
+	side2 = d.c(imin)
+	rad2 = rad.c(imin)
+	d.resize(imin).reverse
+	rad.resize(imin).reverse
+	// now we have the two sides without the min and max points (rad=0)
+	// we hope both sides now monotonically increase, i.e. convex
+	// make it convex
+	for (j = d.size-1; j > 0; j -= 1) {
+		if (d.x[j] <= d.x[j-1]) {
+//printf("removed d %d %g\n", j, d.x[j])
+			d.remove(j)
+			rad.remove(j)
+		}
+	}
+	for (j = side2.size-1; j > 0; j -= 1) {
+		if (side2.x[j] <= side2.x[j-1]) {
+//printf("removed side2 %d %g\n", j, side2.x[j])
+			side2.remove(j)
+			rad2.remove(j)
+		}
+	}
+	// can interpolate so diams on either side of major have same d
+	tobj = d.c.append(side2)
+	tobj.sort
+	i = tobj.x[1]  j = tobj.x[tobj.size-2]
+	tobj.indgen(i, j, (j-i)/20)
+	rad.interpolate(tobj, d)
+	rad2.interpolate(tobj,side2)
+	d = tobj
+	pts.resize(3, d.size)
+	$o4.resize(d.size)
+	for i = 0, d.size-1 {
+		pt = major.c.mul(d.x[i]).add(mean)
+		$o4.x[i] = abs(rad.x[i] - rad2.x[i])
+		tobj = pt.c.add(minor.c.mul(rad.x[i]))
+if (g != nil) g.beginline(5,1) g.line(tobj.x[0], tobj.x[1])
+		tobj = pt.c.add(minor.c.mul(rad2.x[i]))
+if (g != nil) g.line(tobj.x[0], tobj.x[1]) g.flush
+//		pt.add(minor.c.mul(rad2.x[i])).add(minor.c.mul(rad.x[i]))
+		pts.setcol(i, pt)
+	}
+	// avoid 0 diameter ends
+	$o4.x[0] = ($o4.x[0]+$o4.x[1])/2
+	i = $o4.size-1
+	$o4.x[i] = ($o4.x[i]+$o4.x[i-1])/2
+	for i=1,3 { $oi = pts.getrow(i-1) }
+//	print d  d.printf  print rad rad.printf
+//	print side2 side2.printf  print rad2  rad2.printf
+}
+
+proc name() {
+	type2name($o1.type, $s2)
+	if ($o1.nameindex > 0) {
+		sprint($s2, "%s[%d]", $s2, $o1.nameindex)
+	}
+}
+
+proc type2name() {
+	if ($1 == 1) {
+		$s2 = "soma"
+	}else if ($1 == 2) {
+		$s2 = "axon"
+	}else if ($1 == 3) {
+		$s2 = "dend"
+	}else if ($1 == 4) {
+		$s2 = "apic"
+	}else if ($1 < 0) {
+		sprint($s2, "minus_%d", -$1)
+	}else{
+		sprint($s2, "dend_%d", $1)
+	}
+}
+endtemplate Import3d_GUI

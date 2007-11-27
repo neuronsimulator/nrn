@@ -1,0 +1,1168 @@
+/*
+?0  RunFitter
+A tool for fitting the output of a simulation to data.
+Simulation output variable(s), and parameters can be specified by the user.
+This tool may be saved in a session. This tool uses the @afit_praxis
+method and the least squares error function calls run().
+
+The minimization function used by the fitter calls the hoc "run"
+procedure (see @aInitRun ).
+The output simulation variable data is stored using the
+Vector.record() function, ie values are copied from the variable to the
+vector at the end of finitialize() and at the end of fadvance() whenever
+t passes the x values of the data.  Fitting parameters are varied using
+one element vectors registered with Vector.play(), ie the value is
+copied from the vector to the parameter at the beginning of
+finitialize(). The notion of a fitting parameter has been extended so
+that one can call an arbitrary statement so that the fit value can
+be used to assign values to a collection of hoc variables. Eg.
+globally setting a range variable.
+
+Any number of data weight regions can be specified in order to ignore
+artifacts weight critical regions more heavily.
+
+Fitting parameters and output parameters are
+registered with the play/record lists only when the "Running" checkbox shows
+that the widget is executing.
+
+@hbugs
+Multiple instances of the RunFitter widget can be present. But make sure
+you are not Running more than one at a time. When saving a session involving
+it is necessary that on retrieval the necessary variables exist that
+are used by the fitter. In the case of extra fit variables this means
+that the master fitter should be selected prior to the slave fitters
+when using the @aPrintWindowManager.
+
+When a parameter is very close to 0, its limited resolution in
+a field editor may cause problems. In this case define
+the parameter to be a scaled version of the actual desired value, eg
+@code
+g_pas = .0001*$1
+@endcode
+
+Only change morphology parameters such as diam and L using a statement
+involving $1. Otherwise the system will not be notified that diameter
+is changing.
+@h
+
+
+?1 ReadData
+Pops up a filechooser for reading the data file. The first number in the file is
+the number of points. Subsequent pairs of numbers are x and y values of
+the data. Alternativly the Graph menu can be used to invoke the
+"DataFromClipboard" item ( see @aClipboard.Miscellaneous ).
+
+When data is read from the clipboard, that data is saved when the
+tool is saved in a session. However, if the ReadData button is used
+the filename is saved.
+
+?1 CurrentValuesAsDefault
+Any checkmarks are removed from the default field editors in the
+parameter list.
+?1 Variabletofit
+Pops up symbol chooser. The syntax of the variable must be in a form which
+is a valid argument to a Vector.record(var) function. Practically speaking,
+this means that if the variable happens to be a density range variable then the 
+entry string must contain an explicit section arc length parameter. eg.
+soma.v(.5) . Point process variables can use either an objref prefix or the
+internal object name, eg SEClamp[0].i . Navigating to a variable name
+with the chooser generally yields a valid name. If more than one variable
+is to be fit to separate data curves, invoke a slave RunFitter with
+from the Extras/AnotherVariableToFit menu item.
+
+?1 Parameterstovary
+Every time this button is pressed it pops up a symbol chooser for appending
+a variable to the list of parameters to be varied in order to least
+squares fit the "Variabletofit" to the data. DefaultFieldEditor's for these
+parameters appear in the top right box of the widget. These parameters must
+be in a form acceptable to the Vector.play(var) function. ie density
+range variables must contain an explicit arc length parameter.
+
+In the case of a simulation consisting of more than one compartment, it
+is often necessary to identify a parameter with a set of values. In that
+case one can enter an arbitrary statement involving the parameter "$1", eg
+@code
+forall g_pas = $1
+@endcode
+
+Each parameter has a checkbox to the left of its name. When checked,
+the value will be adjusted during a fit to optimize the model to the
+data. If not checked the parameter will be held constant during the
+fit.
+
+?1 Extras
+? DataWeights
+Pops up a panel showing the boundaries and weight values for each
+data region. The boundaries can also be manipulated by selecting the
+AdjustWeightRegions tool from the Graph menu (right button) and then
+dragging the boundary lines. Weights are defined so that data points
+a small region will have a total weight equal to the data points in
+a large region when the interval weight values are the same.
+The weight for each curve is always normalized to N (the size of the
+data vector) so that the displayed error is the mean square error (average
+square difference between model and data FOR THAT CURVE)
+
+The "Total Curve Weight" specifies how this curve in the
+set of master/slave curves are to be relatively weighted for minimizing
+the error.
+ie for each curve the mean sq error between data and model is
+sum( dweight*(ydatavec - ymodel)^2 )/ydatavec.size
+where sum(dweight) = ydatavec.size. If we call this value "mserr" then
+praxis attempts to minimize
+sum (normweight*mserr) and this value is displayed in the master fitter
+under "Total Praxis Error"
+
+? ParameterRanges
+Allows specification of the allowable parameter range for a fitting parameter.
+If praxis uses a parameter outside this range, the least squares error function
+will return 1e9 without calling the run procedure. Default parameter ranges
+for all fitting parameters are initialized to -1e6 to 1e6
+
+? Changeparmfromlist
+Pops up a browser with all parameter names. Double clicking on a name
+will pop up a string chooser from which one can change the parameter name
+or statement.
+? Removeparmfromlist
+Pops up a browser with all parameter names. Double clicking on a name
+will remove that parameter from the list.
+? SaveRestoreFitParams
+The SaveFitParms menu item
+saves the current values of parameters, parameter range limits, and
+and whether the parameter is to be held constant during a fit.
+
+The SaveFitBrowser menu item pops up a list browser. Double clicking
+on these items will copy the saved parameters etc, back into the current
+parameter panel.
+
+? NumberOfDataRegions
+Select the number of data regions to use in weighting the data.
+
+? AnotherVariableToFit
+Pop up a slave RunFitter to allow simultaneous fitting of several
+sets of data to several fit variables. A RunFitter Slave does not
+have a parameter panel but has independent selection of data,
+variable to fit, and data weight regions.
+
+When saving a RunFitter Slave to a session, it must be placed on the
+paper icon of the PrintWindowManager AFTER its master.
+
+?1 Dofit
+Calls praxis to do the fit. During a fit, intermediate results are
+occasionally printed to the xterm window showing the progress of the
+fit. While the widget is working the Running checkbox is checked.
+If the StopatnextQuadForm button is pressed while the fit is running,
+the fit will stop at at the end of its current main loop returning its
+current best fit along with a print of the principal axes and principal
+values. Left alone, praxis will return when it is within 1e-5 of the local
+minimum. If "Dofit" is pressed while the "StopatnextQuadForm" is checked
+praxis will stop after one main loop (calculate principal axes and values)
+
+?1 SingleRunFit
+Call the least squares error function once. This results in a single
+simulation run with the parameter values displayed in the panel. The 
+"Error of fit" field editor shows the square norm of the data - outputvariable.
+
+?1 StopatnextQuadForm
+Cause praxis to stop after it finishes its current principal axis/value
+computation. Be patient, it may be necessary to wait for several runs
+before the computation completes. Only do a ^C if necessity demands and then
+remove the check by pressing SingleRunFit.
+
+?1 Running
+Checked when in the process of doing a Dofit or SingleRunFit. When checked
+one should not try to change the widget by changing parameters or doing
+a recursive run. The check may not be accurate if the previous run generated
+a runtime error since the check is removed only if the call to praxis
+returns normally. In this case one may press the SingleRunFit button and
+follow the instructions to remove the check.
+
+?1 BeQuiet
+Turns off printing by the praxis function and does not flush
+the graphs after "run()" is called. 
+
+?0 User HocCode RunFitter
+*/
+help ?0
+
+{load_file("stdlib.hoc", "String")}
+
+begintemplate RunFitArg
+public name, val, low, high, doargfit, invalid, copy, set, play_one
+strdef name, tstr
+objref val
+
+proc init() {
+	val = new Vector(1)
+	set($s1, 1, -1e6, 1e6, 1)
+}
+	
+proc set() {
+	name = $s1
+	val.x[0] = $2
+	low = $3
+	high = $4
+	doargfit = $5
+}
+proc copy() {
+	set($o1.name, $o1.val.x[0], $o1.low, $o1.high, $o1.doargfit)
+}
+func invalid() {
+	if (val.x[0] < low || val.x[0] > high) {
+		return 1
+	}
+	return 0
+}
+
+proc play_one() {
+	val.play(name, 1e9)
+	val.play(0)
+	val.play_remove()
+}
+
+endtemplate RunFitArg
+
+begintemplate RunFitModel
+public arglist, first, getvals, setvals
+objref arglist, tobj
+strdef first
+proc init() {
+	arglist = new List()
+	for i=0, $o1.count-1 {
+		tobj = new RunFitArg("")
+		tobj.copy($o1.object(i))
+		arglist.append(tobj)
+	}
+	sprint(first, "%s = %g", arglist.object(0).name, arglist.object(0).val.x[0])
+}
+proc getvals() {local i
+	$o1 = new Vector(arglist.count)
+	for i=0, arglist.count {
+		$o1.x[i] = arglist.object(i).val.x[0]
+	}
+}
+proc setvals() {local i
+	for i=0, arglist.count {
+		arglist.object(i).val.x[0] = $o1.x[i]
+	}
+}
+endtemplate RunFitModel
+
+objref runfit_instance	// gets set before call to fit_praxis
+objref runfit_master	// for saving in a session. Sadly, the
+			// master must be first and then the slaves
+			// when selecting the windows for session save.
+
+func runfit_efun() {local i
+	for i=0, $1-1 {
+		runfit_instance.set_xarg(i, $&2[i])
+	}
+	return runfit_instance.efun()
+}
+
+begintemplate RunFitter
+
+public sim, vbox, g, efun, arglow, arghigh, tobj, set_xarg, redraw, fit
+external runfit_efun, run
+
+public arglist, errval, fit, single
+public addarg, removearg, fitness_name
+
+public set_datavec, mserr, w_boundary, w_weight, xdatavec, ydatavec
+public dweight, xdatavec_, ydatavec_, parm_start, tolerance, normweight
+public restore_model, import
+
+public slave_efun, slaves_, slave_dismissed, slave_setup, set_master, quiet_
+public map, unmap
+
+objref sim, this, dfile, tobj, tobj1, pvbox, lvbox, parm_start, arglist
+objref savfunlist
+objref slaves_, master_
+
+objref xdatavec, ydatavec
+objref dweight, w_boundary, w_weight, xdatavec_, ydatavec_
+
+objref arglow, arghigh, doargfit, argindx
+
+objref sf
+
+{
+n=0
+np=0
+valid_data = 0
+valid_output = 0
+running = 0
+stopstate = 0
+err=0
+rough_=0
+quiet_ = 0
+i=0
+errmin=0
+}
+	
+strdef tempstr, tstr1, tstr2, output_str, mserrlabel, slaveid
+strdef fitness_name
+objref var_choose, parm_choose, tempobj
+objref vbox,b2,d1,g
+
+proc set_xarg() {
+	arglist.object(argindx.x[$1]).val.x[0] = $2
+}
+
+func efun() { local i, cnt // the least squares error function.
+	for i=0,n-1 {
+		if (arglist.object[i].invalid()) {
+			mserr = 1e9
+			errval = 1e9
+if (errmin > 1e8) {
+	sprint(mserrlabel, "MeanSqErr %g  TotalErr %8.3g", mserr, errval)
+}
+printf("%s out of range\n", arglist.object[i].name)
+			return errval
+		}
+	}
+	run()	// sim is the record vector
+
+	errval = slave_efun()
+
+	cnt = slaves_.count()
+	for i=0, cnt - 1 {
+		errval += slaves_.object(i).slave_efun()
+	}
+	if(errval < errmin) {
+		sprint(mserrlabel, "MeanSqErr %g  TotalErr %8.3g", mserr, errval)
+		errmin = errval
+		if (!master_.quiet_) {
+			g.flush()
+			for i=0, cnt - 1 {
+				slaves_.object(i).g.flush()
+			}
+		}
+	}
+	doNotify()
+	return errval
+}
+
+
+func slave_efun() {
+	if (sf.len(fitness_name) > 0) {
+sprint(tstr1, "%s.mserr = %s(%s,%s,%s,%s,%s)", this, fitness_name, this, xdatavec,sim,ydatavec_,dweight)
+		execute(tstr1)
+	}else{
+		mserr =  sim.meansqerr(ydatavec_, dweight)
+	}
+	if (!is_master) sprint(mserrlabel, "MeanSqErr %g", mserr)
+	return mserr*normweight
+}
+
+proc slave_dismissed() {local i
+	i = slaves_.index($o1)
+	slaves_.remove(i)
+}
+
+proc redraw() {local ymin, ymax
+	g.erase()
+	if (valid_data) {
+		g.label(.8, .95)
+		ydatavec_.plot(g, xdatavec_, 2, 1)
+		ymin = ydatavec_.min()
+		ymax = ydatavec_.max()
+		for j=0, w_boundary.size() - 1 {
+			g.beginline(3, 1)
+			g.line(w_boundary.x[j], ymin)
+			g.line(w_boundary.x[j], ymax)
+		}
+	}
+	g.flush()
+}
+
+func slave_setup() {
+	if (!valid_data) {
+		continue_dialog("Must first read a data file")
+		return 0
+	}
+	if (!valid_output) {
+continue_dialog("Must specify a simulation output variable for fitting to data")
+		return 0
+	}
+	sim = new Vector(xdatavec_.size())
+	sim.plot(g, xdatavec_)
+	sprint(tempstr, "%s.sim.record(&%s,%s.xdatavec_)", this, output_str, this)
+	execute(tempstr)
+	return 1
+}
+
+func setup() {local i, j
+	if (n < 2) {
+		continue_dialog("Must specify at least two fitting parameters")
+		return 0
+	}
+	if (slave_setup() == 0) return 0
+	for i=0, slaves_.count()-1 {
+		if (slaves_.object(i).slave_setup() == 0) return 0
+	}
+	sprint(tempstr, "runfit_instance = %s", this)
+	execute(tempstr)
+	j = 0
+	argindx.resize(n)
+	for i=0,n-1 {
+		tobj = arglist.object(i)
+		if (sf.substr(tobj.name, "$1")!= -1) {
+			tobj.play_one()
+		}else{
+			sprint(tempstr, "%s.val.x[0] = %s", tobj, tobj.name)
+			execute(tempstr)
+		}
+		if (tobj.doargfit == 1) {
+			parm_start.x[j] =tobj.val.x[0]
+			if (sf.substr(tobj.name, "$1")!= -1) {
+				tobj.val.play(tobj.name, 1e9)
+			}else{
+				sprint(tempstr, "%s.val.play(&%s, 1e9)", tobj, tobj.name)
+				execute(tempstr)
+			}
+			argindx.x[j] = i
+			j += 1
+		}
+	}
+	argindx.resize(j)
+	return 1
+}
+
+proc takedown() { local i
+	execute("objref runfit_instance")
+	for i=0, n-1 {
+		arglist.object(i).val.play_remove()
+	}
+	sim.play_remove()
+	for i=0, slaves_.count() -1 {
+		slaves_.object(i).sim.play_remove()
+	}
+}
+
+proc fit() {
+	if (running) {
+		if (boolean_dialog("Running flag is on, Turn it off?")) {
+			running = 0
+		}
+		return
+	}
+	running = 1
+	if (!setup()) {
+		return
+	}
+	attr_praxis(tolerance, .8, quiet_==0)
+/*
+	for i=0,argindx.size()-1 {
+		printf ("starting with %d %g\n", i, parm_starta.x[i])
+	}
+*/
+	errmin = 1e9
+	errval = fit_praxis(argindx.size(), "runfit_efun", &parm_start.x[0])
+	for i=0, argindx.size() - 1 {
+		arglist.object(argindx.x[i]).val.x[0] = parm_start.x[i]
+		arglist.object(argindx.x[i]).play_one()
+	}
+	if (!stoprun) {
+		errval = efun()
+	}
+	takedown()
+	running = 0
+	stopstate = 0
+	if (master_.quiet_) g.flush
+}
+proc single() {
+	if (running) {
+		if (boolean_dialog("Running flag is on, Turn it off?")) {
+			running = 0
+		}
+		return
+	}
+	running = 1
+	if (!setup()) {
+		return
+	}
+	errmin = 1e9
+	errval = efun()
+	if (master_.quiet_) g.flush
+	takedown()
+	running = 0
+}
+	
+proc init() {local i
+	normweight = 1
+	maxarg = 40
+	tolerance = 1e-5
+	sf = new StringFunctions()
+	arglow = new Vector(maxarg, 0)
+	arghigh = new Vector(maxarg, 1e6)
+	doargfit = new Vector(maxarg, 1)
+	argindx = new Vector(maxarg)
+	parm_start = new Vector(maxarg)
+	arglist = new List()
+	dweight = new Vector()
+	sim = new Vector()
+	savfunlist = new List()
+	slaves_ = new List()
+	if (numarg() == 0) {
+		is_master = 1
+	}
+	master_ = this
+	build()
+}
+
+proc set_master() {
+	master_ = $o1
+	sprint(slaveid, "This %s is slave to %s", this, master_)
+}
+
+proc read_data1() {
+        if (object_id(dfile) == 0) {
+                dfile = new File()
+                dfile.chooser("r", "Read Data File", "*.dat", "Read")
+        }
+                if (!dfile.ropen($s1)) {
+sprint(tstr2, "Couldn't open data file: %s", $s1)
+			continue_dialog(tstr2)
+			return
+		}
+                ndat = dfile.scanvar()
+                xdatavec = new Vector(ndat)
+                ydatavec = new Vector(ndat)
+                for i=0, ndat-1 {
+                        xdatavec.x[i] = dfile.scanvar()
+                        ydatavec.x[i] = dfile.scanvar()
+                }
+                dfile.close()
+                valid_data=1
+                g.size(xdatavec.min(), xdatavec.max(), ydatavec.min(), ydatavec.max())
+		weight()
+}
+
+proc read_data() {local ndat
+        if (object_id(dfile) == 0) {
+                dfile = new File()
+                dfile.chooser("r", "Read Data File", "*.dat", "Read")
+        }
+        if (dfile.chooser()) {
+		dfile.getname(tempstr)
+		read_data1(tempstr)
+        }
+}
+
+proc set_datavec() {local i
+	objref dfile, xdatavec, ydatavec
+	valid_data = 0
+	i = $o1.indwhere(">=", 0)
+	xdatavec = $o1.c(i)
+	ydatavec = $o2.c(i)
+	ydatavec.label($o2.label)
+	valid_data = 1
+	g.size(xdatavec.min(), xdatavec.max(), ydatavec.min(), ydatavec.max())
+	weight()
+}
+	
+proc clipboard_data() {
+	sprint(tstr1, "%s.set_datavec(hoc_obj_[1], hoc_obj_[0])", this)
+	if(execute1(tstr1) == 0) {
+continue_dialog("No data in the Vector clipboard. Select a Graph line first")
+	}
+}
+
+proc import() {local i
+	for i=0, n - 1 {
+		tobj1 = arglist.object(i)
+		sprint(tstr1, "%s.val.x[0] = %s", tobj1, tobj1.name)
+		execute(tstr1)
+	}
+}
+
+func ckvar() {local ret
+	tobj = new Vector(1)
+	sprint(tstr2, "runfit_instance = %s", this)
+	execute(tstr2)
+	if ($2 == 1 && sf.substr($s1, "$1")!= -1) {
+		sprint(tstr2, "runfit_instance.tobj.play(\"%s\", 1e9)", $s1)
+	}else{
+		sprint(tstr2, "runfit_instance.tobj.play(&%s, 1e9)", $s1)
+	}
+	if (execute1(tstr2)) {
+		ret = 1
+	}else {
+		sprint(tstr1, "%s is non-existent or has invalid syntax for a record/play variable", $s1)
+		continue_dialog(tstr1)
+		ret = 0
+	}
+	objref tobj
+	execute("objref runfit_instance")
+	return ret
+}
+
+proc spec_fit_var() {
+	if (ckvar($s1, 0)) {
+		output_str = $s1
+		valid_output = 1
+		doNotify()
+	}
+}
+
+proc ask_fit_var() {
+	if (!object_id(var_choose)) {
+		var_choose = new SymChooser(\
+"Enter variable to record during simulation and compare with data")
+	}
+	while (var_choose.run()) {
+		var_choose.text(tempstr)
+		if (ckvar(tempstr, 0)) {
+			valid_output = 1
+			output_str = tempstr
+			break
+		}		
+	}
+}
+			
+proc build_deck() {
+	d1.remove_last()
+	d1.intercept(1)
+	if (n > 5) { //scrollbox
+		tobj = new VBox(3,1)
+	}else{
+		tobj = new VBox()
+	}
+	tobj.intercept(1)
+	for i=0, n-1 {
+		tobj1 = arglist.object(i)
+		xpanel("ArgValues", 1)
+		xcheckbox("", &tobj1.doargfit)
+		tempstr = tobj1.name
+		if (sf.substr(tempstr, "$1")!= -1) {
+			sprint(tstr1, "arglist.object(%d).play_one()", i)
+			xpvalue(tobj1.name, &tobj1.val.x[0], 1, tstr1)
+		}else{
+			sprint(tstr1, "xvalue(\"%s\", \"%s\", 1)", tempstr, tempstr)
+			execute(tstr1)
+		}
+		xpanel()
+	}
+	if (n > 5) {// used scrollbox
+		tobj.intercept(0)
+		tobj1 = tobj
+		tobj = new VBox()
+		tobj.intercept(1)
+		tobj1.map()
+	}
+	mserr = 1e9
+	xpanel("ArgValues")
+	mserrlabel = "MeanSqErr xxxxxxxxxxx  TotalErr xxxxxxxx"
+	xvarlabel(mserrlabel)
+	xpanel()
+	tobj.intercept(0)
+	tobj.map()
+	d1.intercept(0)
+	d1.flip_to(0)
+}
+
+proc spec_parms() {
+	if (! ckvar($s1, 1)) {
+		return
+	}
+	tobj = new RunFitArg("")
+	arglist.append(tobj)
+	tobj.set($s1, $2, $3, $4, $5)
+	tobj.play_one()
+	n = n + 1
+}
+
+proc addarg() {
+	spec_parms($s1, $2, $3, $4, $5)
+	build_deck()
+}
+proc removearg() {
+	for i=0, arglist.count-1 {
+		if (strcmp($s1, arglist.object(i).name) == 0) {
+			arglist.remove(i)
+			n -= 1
+			objref pvbox
+			break
+		}
+	}
+	build_deck()
+}
+proc ask_parms() {
+	objref pvbox	// dismisses old panel if any
+	if (!object_id(parm_choose)) {
+		parm_choose = new SymChooser(\
+"Enter another variable (or statement involving $1) to vary during fit process.")
+	}
+	while (parm_choose.run()) {
+		parm_choose.text(tempstr)
+		if (ckvar(tempstr, 1)) {
+			tempobj = new RunFitArg(tempstr)
+			arglist.append(tempobj)
+			n = n + 1
+			break
+		}		
+	}
+	build_deck()
+}
+
+proc build() {
+	vbox = new VBox()
+	vbox.priority(100)
+	vbox.ref(this)
+	sprint(tstr1, "execute(\"%s.unmap()\")", this)
+	vbox.dismiss_action(tstr1)
+	vbox.save("save()")
+	vbox.intercept(1)
+	b2 = new HBox()
+	b2.intercept(1)
+	build_panel()
+   if (is_master) {
+	d1 = new Deck()
+	d1.intercept(1)
+	xpanel("RunFitter")	// just to get some space for now
+	xlabel("This area will contain parameter field editors")
+	xlabel("  when the parameter names are entered with the")
+	xlabel("  \"Parameters to vary\" button.")
+	xpanel()
+	d1.intercept(0)
+	d1.flip_to(0)
+	d1.map()
+    }else{
+	xpanel("RunFitter")
+	sprint(slaveid, "This %s is slave to %s", this, master_)
+	xvarlabel(slaveid)
+	mserr = 1e9
+	mserrlabel="MeanSqErr xxxxxxxxxxx"
+	xvarlabel(mserrlabel)
+	xpanel()
+    }
+	b2.intercept(0)
+	b2.map()
+	g = new Graph()
+	g.menu_tool("Adjust Weight Regions", "adjust_weights")
+	g.menu_action("Data from Clipboard", "clipboard_data()")
+	init_weights(1)
+	vbox.intercept(0)
+}
+	
+proc build_panel() {
+	xpanel("RunFitter")
+		xbutton("Read Data", "read_data()")
+if (is_master) {xmenu("Current Values")
+		xbutton("Current Values as default", "err=errval build_deck() errval=err")
+		xbutton("Import values", "import()")
+		xmenu()
+}
+		xbutton("Variable to fit", "ask_fit_var()")
+		xvarlabel(output_str)
+		xvarlabel(fitness_name)
+if (is_master)	xbutton("Parameters to vary", "ask_parms()")
+		xmenu("Extras...")
+			xbutton("Data Weights", "weight_panel()")
+if (is_master){		xbutton("Parameter Ranges", "parm_range()")
+			xbutton("Change parm", "change_parm()")
+			xbutton("Remove parm", "remove_parm()")
+			xmenu("Save/Restore fit parms")
+				xbutton("Save fit parms", "savfun()")
+				xbutton("Save fit browser", "rfunbsr()")
+			xmenu()
+}else{
+			xbutton("Copy data weights from Master", "master_weights()")
+}
+			xmenu("Number of Data Regions")
+			xbutton("1", "init_weights(1)")
+			xbutton("2", "init_weights(2)")
+			xbutton("3", "init_weights(3)")
+			xbutton("4", "init_weights(4)")
+			xbutton("5", "init_weights(5)")
+			xbutton("one more", "init_weights(0)")
+			xbutton("one fewer", "init_weights(-1)")
+			xmenu()
+if (is_master)		xbutton("Another variable to fit", "another()")
+		xmenu()
+if (is_master){	xbutton("Do fit", "fit()")
+		xbutton("Single Run Fit", "single()")
+		xcheckbox("Stop at next Quad Form", &stopstate, "stopstate=1 stop_praxis()")
+		xcheckbox("Running", &running, "running = (running == 0)")
+		xcheckbox("Rough fit", &rough_, "weight()")
+		xcheckbox("Be quiet", &quiet_)
+}
+	xpanel()
+}
+
+proc master_weights() {
+	w_weight = master_.w_weight.c
+	w_boundary = master_.w_boundary.c
+	weight()
+}
+
+proc another() {
+	tobj = new RunFitter(1)
+	tobj.set_master(this)
+	slaves_.append(tobj)
+	sprint(tstr1, "%s slave to %s", tobj, this)
+	tobj.vbox.map(tstr1)
+	tobj = xdatavec_
+}
+
+proc map() {
+	if (is_master) {
+		sprint(tstr1, "%s", this)
+	}else{
+		sprint(tstr1, "%s slave to %s", master_, this)
+	}
+	if (numarg() > 1) {
+		vbox.map(tstr1, $2, $3, $4, $5)
+	}else{
+		vbox.map(tstr1)
+	}
+}
+
+proc unmap() {local i
+	if (is_master) {
+		while(slaves_.count) {
+			slaves_.object(0).unmap()
+		}
+	}else{
+		master_.slave_dismissed(this)
+	}
+	objref master_
+	execute("objref runfit_master")
+	vbox.unmap()
+}
+
+proc parm_range() {local i
+	pvbox = new VBox()
+	pvbox.save("")
+	pvbox.intercept(1)
+	xpanel("RunFitter")
+	for i=0,n-1 {
+		tobj =  arglist.object(i)
+		sprint(tstr1, "%s low", tobj.name)
+		xpvalue(tstr1, &tobj.low, 1)
+		sprint(tstr1, "%s high", tobj.name)
+		xpvalue(tstr1, &tobj.high, 1)
+	}
+	xpanel()
+	sprint(tstr1, "Parameter Ranges for %s", this)
+	pvbox.intercept(0)
+	pvbox.map(tstr1)
+}
+
+proc remove_parm() {
+	arglist.browser("Double click to remove parameters", "name")
+	arglist.accept_action("remove_parm1()")
+}
+
+proc remove_parm1() {local i, sel
+	sel = hoc_ac_
+	if (sel < 0) { return }
+	objref pvbox
+	n = n-1
+	arglist.remove(sel)
+	build_deck()
+}
+
+proc change_parm() {
+	arglist.browser("Double click to remove parameters", "name")
+	arglist.accept_action("change_parm1()")
+}
+
+proc change_parm1() {local i, sel
+	sel = hoc_ac_
+	if (sel < 0) { return }
+	objref pvbox
+	tempobj = arglist.object(sel)
+	tempstr = tempobj.name
+	while (string_dialog("Change parameter", tempstr)) {
+		if (ckvar(tempstr, 1)) {
+			objref pvbox
+			tempobj.name = tempstr
+			build_deck()
+			break
+		}
+	}			
+}
+
+proc save() {local i
+	vbox.save("load_file(\"runfit.hoc\")\n}\n{")
+	if (is_master) {
+		vbox.save("ocbox_=new RunFitter()")
+		vbox.save("runfit_master = ocbox_")
+	}else{
+		vbox.save("ocbox_=new RunFitter(1)")
+		vbox.save("runfit_master.slaves_.append(ocbox_)")
+		vbox.save("ocbox_.set_master(runfit_master)")
+	}
+        vbox.save("}\n{object_push(ocbox_)}\n{")
+	sprint(tstr1, "fitness_name = \"%s\"", fitness_name)
+	vbox.save(tstr1)
+	if (sf.len(output_str) > 0) {
+		sprint(tstr1, "spec_fit_var(\"%s\")", output_str)
+		vbox.save(tstr1)
+	}
+        if (is_master) for i=0, n-1 {
+		tobj = arglist.object(i)
+                sprint(tstr1, "spec_parms(\"%s\", %g, %g, %g, %g)",tobj.name, tobj.val.x[0], tobj.low, tobj.high, tobj.doargfit)
+                vbox.save(tstr1)
+		sprint(tstr1, "tolerance = %g", tolerance)
+		vbox.save(tstr1)
+        }
+	sprint(tstr1, "init_weights(%d)", w_boundary.size()-1)
+	vbox.save(tstr1)
+	sprint(tstr1, "quiet_ = %d", quiet_)
+	if (is_master) vbox.save(tstr1)
+	sprint(tstr1, "normweight = %g", normweight)
+	vbox.save(tstr1)
+	for i=0, w_boundary.size() - 1 {
+		sprint(tstr1, "w_boundary.x[%d] = %g", i, w_boundary.x[i])
+		vbox.save(tstr1)
+		sprint(tstr1, "w_weight.x[%d] = %g", i, w_weight.x[i])
+		vbox.save(tstr1)
+	}
+	if (is_master) vbox.save("build_deck()")
+	if (object_id(dfile) != 0) {
+		dfile.getname(tempstr)
+		sprint(tstr1, "read_data1(\"%s\")\n}", tempstr)
+		vbox.save(tstr1)
+	}else if (object_id(xdatavec)) {
+		sprint(tstr1, "xdatavec_ = new Vector(%d)", xdatavec.size)
+		vbox.save(tstr1)
+		sprint(tstr1, "ydatavec_ = new Vector(%d)", ydatavec.size)
+		vbox.save(tstr1)
+		sprint(tstr1, "ydatavec_.label(\"%s\")", ydatavec.label)
+		vbox.save(tstr1)
+sprint(tstr1, "for i=0,%d { xdatavec_.x[i]=fscan() ydatavec_.x[i]=fscan()}\n}",\
+xdatavec.size - 1)
+		vbox.save(tstr1)
+		for i=0,xdatavec.size-1 {
+			sprint(tstr1, "%g %g", xdatavec.x[i], ydatavec.x[i])
+			vbox.save(tstr1)
+		}
+		vbox.save("set_datavec(xdatavec_, ydatavec_)")
+	}else{
+		vbox.save("}")
+	}
+        vbox.save("{object_pop()}\n{")
+	g.save_name("ocbox_.g", 1)
+}
+
+proc rfunbsr() {
+	savfunlist.browser("", "first")
+	savfunlist.accept_action("restorefun()")
+}
+
+
+proc savfun() {local i
+	tobj = new RunFitModel(arglist)
+	savfunlist.append(tobj)
+}
+
+proc restorefun() {local i
+	i = hoc_ac_
+	tobj1 = savfunlist.object(i)
+	for i=0, n-1 {
+		tobj = tobj1.arglist.object(i)
+		arglist.object(i).copy(tobj)
+	}
+}
+proc restore_model() {
+	arglist.remove_all()
+	tobj = new RunFitModel($o1.arglist)
+	for i=0, $o1.arglist.count() {
+		arglist.append(tobj.arglist.object(i))
+	}
+	n = arglist.count()
+	build_deck()
+}
+
+proc init_weights() {local i, n, min, max
+	if (numarg() == 1) {
+		if ($1 == 0) { // one more
+			n = w_boundary.size
+		}else if ($1 == -1) { // one fewer
+			n = w_boundary.size-2
+			if (n < 1) n = 1
+		}else{
+			n = $1
+		}
+	}else{
+		n = 1
+	}
+	w_boundary = new Vector(n+1)
+	w_weight = new Vector(n+1, 1)
+	if (valid_data) {
+		min = xdatavec.x[0]
+		max = xdatavec.x[xdatavec.size-1]
+		w_boundary.indgen(min, (max-min)/n)
+		weight()
+	}else{
+		w_boundary.indgen(0, 1e9)
+	}
+}
+	
+
+proc weight_panel() {local i
+	xpanel("data weights")
+	xpvalue("Total curve weight", &normweight, 1, "weight()")
+	xpvalue("interval 1 startpoint", &w_boundary.x[0], 1, "weight()")
+	for i=1, w_boundary.size() - 1 {
+		sprint(tstr1, "interval %d endpoint", i)
+		xpvalue(tstr1, &w_boundary.x[i], 1, "weight()")
+		sprint(tstr1, "interval %d weight", i)
+		xpvalue(tstr1, &w_weight.x[i], 1, "weight()")
+	}
+	xpanel()
+}
+
+proc weight() {local i, j, t, w, d, tmin, tmax, n, res
+	// make sure weight regions are within boundaries
+	tmin = xdatavec.x[0]
+	tmax = xdatavec.x[xdatavec.size - 1]
+	n = w_boundary.size()
+	for i=0, n-1 {
+		t = w_boundary.x[i]
+		if (t < tmin) {
+			w_boundary.x[i] = tmin
+		}
+		if (t > tmax) {
+			w_boundary.x[i] = tmax
+		}
+	}
+
+	if (rough_) {
+		rough()
+		return
+	}
+	xdatavec_ = xdatavec
+	ydatavec_ = ydatavec
+	dweight.resize(xdatavec_.size())
+	sim.resize(xdatavec.size())
+	j = 0
+	tmax = w_boundary.x[0]
+	w = 0
+	for i=0, dweight.size() - 1 {
+		t = xdatavec.x[i]
+		while (t >= tmax && j < n) {
+			j += 1
+			if (i > 0 && i < dweight.size()-1) {
+				w_boundary.x[j-1] = (t + xdatavec.x[i-1])/2
+			}else{
+				w_boundary.x[j-1] = t
+			}
+			if (j >= n) {
+				tmax = 1e9
+				w = 0
+				break
+			}
+			tmax = w_boundary.x[j]
+			d = w_boundary.x[j] - w_boundary.x[j-1]
+			if (d <= 0) {
+				continue
+			}
+			w = w_weight.x[j]/d
+		}
+		dweight.x[i] = w
+	}
+	tobj = new Vector(xdatavec.size())
+//	errnorm = ydatavec.meansqerr(tobj, dweight)
+//	if (errnorm > 0) {
+//		dweight.div(errnorm)
+//	}
+	w = dweight.sum()
+	if (w > 0) {
+		dweight.mul(dweight.size/w)
+	}
+//	dweight.mul(normweight) // done later
+	redraw()
+}
+
+proc rough() {local i, j, n, x, dx, nb
+	// one data point on each boundary with three points equally spaced
+	// in the interior of each region
+
+	nb = w_boundary.size()
+	n =  (nb-1)*4 + 1 
+	xdatavec_ = new Vector(n)
+	ydatavec_ = new Vector(n)
+	ydatavec_.label(ydatavec.label)
+	dweight.resize(n)
+	sim.resize(n)
+
+	tobj = new Vector(n)
+	tobj.x[0] = w_boundary.x[0]
+	dweight.x[0] = w_weight.x[0]
+	for i=1, nb - 1 {
+		x = w_boundary.x[i-1]
+		dx = (w_boundary.x[i] - x)/4
+		for j = 1, 4 {
+			tobj.x[(i-1)*4 + j] = x + j*dx
+			if (dx <= 0) {
+				dweight.x[(i-1)*4 + j] = 0
+			}else{
+				dweight.x[(i-1)*4 + j] = w_weight.x[i]
+			}
+		}
+	}
+
+	j=0
+	for i=0, xdatavec.size() - 1 {
+		t = xdatavec.x[i]
+		if (t >= tobj.x[j]) {
+			xdatavec_.x[j] = t
+			ydatavec_.x[j] = ydatavec.x[i]
+			j += 1
+			if (j >= n) {
+				break
+			}
+		}
+	}
+	tobj.fill(0)
+	errnorm = ydatavec_.meansqerr(tobj, dweight)
+	if (errnorm > 0) {
+		dweight.div(errnorm)
+	}
+	redraw()
+}
+
+proc adjust_weights() {
+//print $1, $2, $3
+	if ($1 == 2) { // press
+		adjust = pick_weight($2)
+	}
+	if (adjust == -1) {
+		return
+	}
+	if ($1 == 1) { // drag
+		w_boundary.x[adjust] = $2
+		weight()
+		g.flush()
+	}
+	if ($1 == 3) { // release
+		w_boundary.sort()
+		weight()
+		adjust = -1
+	}
+}
+
+func pick_weight() {local i, j, x, m
+	m = 1e9
+	for i=0, w_boundary.size() - 1 {
+		x = abs($1 - w_boundary.x[i])
+		if (x < m) {
+			m = x
+			j = i
+		}
+	}
+	return j
+}
+
+endtemplate RunFitter
+
+objref temp_object_
+
+proc makerunfitter() {local i
+        temp_object_ = new RunFitter()
+        temp_object_.map()
+        objref temp_object_
+}

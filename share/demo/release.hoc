@@ -1,0 +1,131 @@
+/*
+?0 GUI NEURONDemonstrations Release Code
+*/
+help ?0
+
+create terminal
+access terminal
+
+{nseg=1 L=10 diam=1}
+
+celsius = 16.3
+
+{insert HHna  insert HHk  insert cachan  insert cadifpmp }
+{insert nacax  insert trel insert capump insert pas}
+
+proc set_al() {
+	al_trel = alnorm*1e4^(power_trel - 2)
+}
+
+proc default() {
+	g_pas = .0003
+	e_pas = -53.1
+
+        k1_cadifpmp = 30e8
+        k2_cadifpmp = .25e6
+        k3_cadifpmp = 1.5e3
+        k4_cadifpmp = 5e0
+	pump0_cadifpmp = 1e-13
+
+	beta_cadifpmp = 100
+
+	kmp_capump=.2  vmax_capump=.0667*0
+
+	pcabar_cachan=2.5e-5
+	gnabar_HHna=.120
+	gkbar_HHk=.036
+	k_nacax=.00015
+	cao0_ca_ion = 2		// these global variables initialize cao/cai
+	cai0_ca_ion = 3e-6
+	nao=115
+	nai=15
+	ion_style("na_ion", 1, 2, 1, 0, 0)	// ena initialized from constant nai/nao
+        GenVes_trel=.0004
+        tauGen_trel=10
+        al_trel= 7.5e5
+        power_trel=2
+	alnorm = 75
+	set_al()
+}
+default()
+
+proc releasemenubody() {
+/*
+? Releasevariables
+*/
+        xpanel("Release variables")
+        xvalue("tauGen","tauGen_trel",1)
+        xvalue("Ach Gen rate","Agen_trel",1)
+        xvalue("Ach Split rate","Aase_trel",1)   
+        xvalue("power","power_trel",1, "set_al()")   
+        xvalue("al (norm)","alnorm",1, "set_al()")
+        xvalue("Kd","Kd_trel",1)
+        xpanel()
+}
+
+proc fluxmenubody() {
+/*
+? ionfluxes
+*/
+	xpanel("ion fluxes")
+	xvalue("kinetic pmp", "pump0_cadifpmp",1)
+
+	xvalue("beta","beta_cadifpmp", 1)
+
+	xvalue("kmp","kmp_capump", 1)
+	xvalue("vmax","vmax_capump", 1)
+
+	xvalue("pcabar","pcabar_cachan", 1)
+	xvalue("gnabar","gnabar_HHna", 1)
+	xvalue("gkbar","gkbar_HHk", 1)
+	xvalue("k exchange","k_nacax", 1)
+	xvalue("nao", "nao", 1, "init()")
+	xvalue("cai init","cai0_ca_ion", 1, "init()")
+	xpanel()
+}
+
+objectvar relmenu
+/*
+relmenu = new VBox()
+relmenu.intercept(1)
+releasemenubody()
+relmenu.intercept(0)
+relmenu.map("Release Variables", 5, 650, 100, 100)
+*/
+
+objectvar fluxmenu
+/*
+fluxmenu = new VBox()
+fluxmenu.intercept(1)
+fluxmenubody()
+fluxmenu.intercept(0)
+fluxmenu.map("Ion Fluxes", 250, 130, 100, 100)
+*/
+{xopen("$(NRNDEMO)testca.hoc")}
+
+proc init() {local ca
+	finitialize(v_init)
+	fcurrent()
+	integ_ica()
+}
+
+proc advance() {
+	fadvance()
+	integ_ica()
+}
+
+/*
+objectvar e
+e = new Electrode(0)
+e.stim.amp=.05
+e.stim.del=.25
+e.vc.dur[1]=3
+e.map(5, 50)
+e.installIclamp()
+*/
+proc destroy() {
+	objectvar relmenu, fluxmenu
+	execute("~proc init(){finitialize(v_init) fcurrent()}")
+	execute("~proc advance(){fadvance()}")
+}
+

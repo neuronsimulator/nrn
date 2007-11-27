@@ -1,0 +1,492 @@
+begintemplate CellManage
+public save_data, pr, update, classname, save_classbody
+public etop, esub, egeom, emem, toplevel, xmlwrite, neuroml
+external valid_name_syntax, hoc_sf_
+objref bild, hbox, g, vbox, ewarn, deck
+objref tobj, tobj1, this, f, fc, nil
+strdef tstr, classname, output_str
+
+proc init() {
+	thresh = 10
+	first = 1
+	etop = 1 esub = 1 egeom = 1 emem = 1 no_warn_ = 0
+	itop = 1 i3d = 1 isub = 0 igeom = 0 imem = 0
+	xml_ = 0
+	classname = "Cell"
+	output_index = 0
+	output_str = "***********************"
+	output_x = 1
+	bild = $o1
+	g = bild.gtopol
+	panel()
+	sprint(tstr, "%s", this)
+	hbox.map(tstr)
+}
+
+proc hints() {
+xpanel("CellBuild Management hints")
+xlabel("Usage Hints:")   
+xlabel("\"Cell Type\" is used to declare a type for use in networks.")
+xlabel("")
+xlabel("\"Export\" saves the current cell specification in a hoc")
+xlabel("  file without encapsulating the cell in")
+xlabel("  an object. Most common usage is to export all the information")
+xlabel("  but in the case where a 3-d cell with valid geometry has been")
+xlabel("  imported (see below), do not export the \"topology\"")
+xlabel("  unless you have also imported the 3-d info.")
+xlabel("When \"Continuous Create\" is checked, the cell is built at the")
+xlabel("  top level as it is changed.")
+xlabel("")
+xlabel("\"Import\" discards the existing specification in this tool")
+xlabel("  and copies the indicated information from the interpreter,")
+xlabel("  or the full information from a NeuroML file,")
+xlabel("  into this tool.  This is most useful for 3-d reconstructions")
+xlabel("  for which one wishes to specify membrane properties (and Ra)")
+xlabel("")
+xlabel("It is a good idea to save this builder in a session file before")
+xlabel("  executing the exported file since the interpreter may not accept")
+xlabel("  the spec due to section name and subset name conflicts with")
+xlabel("  keywords or existing interpreter variables. If this happens you")
+xlabel("  may lose the changes since the last session save.")
+xpanel()
+}
+
+proc update() {
+	bild.consist()
+	if (output_index < 0) {
+		output_index = 0
+	}
+	output_draw(output_index)
+	if (output_index >= 0) {
+		bild.topol.sel_only(bild.topol.slist.object(output_index), g)
+	}
+//	if (first) hints(g)
+	first = 0
+	g.exec_menu("Crosshair")
+}
+
+proc output_draw() {
+	output_index = $1
+	tobj = bild.topol.slist
+	if (output_index >= tobj.count) {
+		output_index = tobj.count-1
+	}
+	if (output_index >= 0) {
+		tobj = tobj.object(output_index)
+		tobj.name(tstr)
+		sprint(output_str, "%s.v(%g)", tstr, output_x)
+	}else{
+		output_str = "****"
+	}
+	objref tobj
+}
+
+proc panel() {
+	hbox = new HBox(3)
+	hbox.intercept(1)
+	hbox.ref(this)
+	hbox.save("save()")
+
+	vbox = new VBox(3)
+	vbox.intercept(1)
+
+	xpanel("", 1)
+	xradiobutton("Cell Type   ", "deck.flip_to(0)")
+	xradiobutton("Export   ", "deck.flip_to(1)")
+	xradiobutton("Import      ", "deck.flip_to(2)")
+	xbutton("Hints", "hints()")
+	xpanel()
+
+	deck = new Deck(3)
+	deck.intercept(1)
+	xpanel("cell type")
+	xlabel("This is necessary only if the cell is used in a network")
+	xlabel("")
+	xlabel("This creates a file that declares a cell type")
+	xlabel("   with the current specification")
+	xlabel("Such a cell class is usable in networks and")
+	xlabel("  can be employed by the network builder tool.")
+	xbutton("Classname", "set_class()")
+	xvarlabel(classname)
+	xlabel("")
+	g.menu_tool("Select Output", "seloutput")
+	xvarlabel(output_str)
+	xpvalue("threshold (mV)", &thresh, 1)
+	xlabel("")
+	xbutton("Save hoc code in file", "save_class()")
+	xpanel()
+
+	xpanel("export")
+	xlabel("Export to file (or top level with \"Continuous\")")
+	xlabel("  i.e. does not encapsulate the cell in an object.")
+	xlabel("Kind of information exported")
+	xcheckbox("Topology (Destroys all existing top level sections)", &etop)
+	xcheckbox("Subsets", &esub)
+	xcheckbox("Geometry", &egeom)
+	xcheckbox("Membrane", &emem)
+	xlabel("")
+	xcheckbox("xml", &xml_, "f = nil")
+	xbutton("Export to file", "xport()")
+	xpanel()
+
+	xpanel("import")
+	xlabel("Import from top level of interpreter.")
+	xlabel("  This works only if there is one cell in the interpreter.")
+	xlabel("Or import from NeuroML (Level 2) file.")
+	xlabel("")
+	xlabel("From top level, imports: Topology, 3-D info.")
+	xlabel("From NeuroML file: Topology, 3-D info, Subsets, Biophysics.")
+	xlabel("   Don't forget to specify compartmentalization in Geometry.")
+	//xcheckbox("Topology", &itop)
+	//xcheckbox("3-D info", &i3d)
+	//xcheckbox("Subsets (only for NeuroML)", &isub, "isub = 0")
+	//xcheckbox("Geometry (not implemented)", &igeom, "igeom = 0")
+	//xcheckbox("Membrane(only for NeuroML)", &imem, "imem = 0")
+	xlabel("")
+	xmenu("Import")
+	xbutton("Top Level", "iport()")
+	xbutton("NeuroML", "neuroml1()")
+	xmenu()
+	xcheckbox("Turn off indexed name display.", &bild.topol.names_off, "bild.topol.draw(g)")
+	xcheckbox("Don't draw short sections as circles.", &bild.topol.circles_off, "bild.topol.draw(g)")
+	xpanel()
+
+	deck.intercept(0)
+	deck.map()
+	deck.flip_to(-1)
+	vbox.intercept(0)
+	vbox.map()
+	hbox.intercept(0)
+}
+
+proc seloutput() {local i
+	if ($1 == 2) {
+		tobj = bild.topol
+		tobj.sel1($1,$2,$3,0)
+		tobj = tobj.slist
+		for i=0, tobj.count-1 {
+			if (tobj.object(i).selected) {
+				output_draw(i)
+				break
+			}
+		}
+	}
+}
+
+proc set_class() {
+	tstr = classname
+	while (string_dialog("Classname", tstr)) {
+		if (valid_name_syntax(tstr, 1)) {
+			classname = tstr
+			break
+		}
+	}
+}
+
+proc save_class() {local i, j, dp
+	if (object_id(fc) == 0) {
+		fc = new File()
+		fc.chooser("w", "Save cell class in file", "*.hoc")
+	}
+	if (fc.chooser()) {
+		fc.wopen()
+		fc.printf("//execute1(\"celltypes.element(\\\"%s\\\")\")\n\n",classname)
+		dp = bild.subsets.have_domainparm()
+		if (dp) { fc.printf("load_file(\"subiter.hoc\")\n\n") }
+		fc.printf("begintemplate %s\n", classname)
+		save_classbody(fc)
+		fc.printf("proc synapses() {}\n")
+		fc.printf("endtemplate %s\n", classname)
+		fc.close()
+	}
+}
+
+proc save_classbody() {local dp
+		toplevel = 0
+		bild.consist()
+		dp = bild.subsets.have_domainparm()
+		$o1.printf("public init, topol, basic_shape, subsets, geom, biophys, geom_nseg, biophys_inhomo\n")
+		$o1.printf("public synlist, x, y, z, position, connect2target\n")
+		j = 0
+		for i=0, bild.topol.unique_name.size-1 {
+			tstr = bild.topol.slist.object(bild.topol.unique_name.x[i]).name_
+			if (j%7 == 0) {
+				$o1.printf("\npublic %s", tstr)
+			}else{
+				$o1.printf(", %s", tstr)
+			}
+			j += 1
+		}
+		j = 0
+		for i=0, bild.subsets.snlist.count-1 {
+			tstr = bild.subsets.snlist.object(i).name_
+			if (j%7 == 0) {
+				$o1.printf("\npublic %s", tstr)
+			}else{
+				$o1.printf(", %s", tstr)
+			}
+			j += 1
+		}
+		$o1.printf("\n\nobjref synlist\n\n")
+
+		$o1.printf("proc init() {\n")
+		$o1.printf("  topol()\n")
+		$o1.printf("  subsets()\n")
+		$o1.printf("  geom()\n")
+		$o1.printf("  biophys()\n")
+		$o1.printf("  geom_nseg()\n")
+		if (dp) { $o1.printf("  biophys_inhomo()\n") }
+		$o1.printf("  synlist = new List()\n")
+		$o1.printf("  synapses()\n")
+		$o1.printf("  x = y = z = 0 // only change via position\n")
+		$o1.printf("}\n")
+		bild.topol.pr($o1)
+		bild.subsets.pr($o1)
+		bild.geom.pr($o1)
+		bild.memb.pr($o1)
+		if (!dp) { $o1.printf("proc biophys_inhomo(){}\n") }
+
+		$o1.printf("proc position() { local i\n")
+		bild.topol.slist.object(0).name(tstr)
+		$o1.printf("  %s for i = 0, n3d()-1 {\n", tstr)
+		$o1.printf("    pt3dchange(i, $1-x+x3d(i), $2-y+y3d(i), $3-z+z3d(i), diam3d(i))\n  }\n")
+		$o1.printf("  x = $1  y = $2  z = $3\n")
+		$o1.printf("}\n")
+
+		$o1.printf("obfunc connect2target() { localobj nc //$o1 target point process, optional $o2 returned NetCon\n")
+		bild.topol.slist.object(output_index).name(tstr)
+		$o1.printf("  %s nc = new NetCon(&v(%g), $o1)\n", tstr, output_x)
+		$o1.printf("  nc.threshold = %g\n", thresh)
+		$o1.printf("  if (numarg() == 2) { $o2 = nc } // for backward compatibility\n")
+		$o1.printf("  return nc\n")
+		$o1.printf("}\n")
+}
+
+
+proc iport() {
+	define_shape()
+	if (i3d) {
+		if (!warn3d()) {
+			return
+		}
+	}
+	if (itop) {bild.topol.iport()}
+	if (i3d) {bild.topol.iport3d()}
+	if (isub) {bild.subsets.iport()}
+	if (igeom) {bild.geom.iport()}
+	if (imem) {bild.memb.iport()}
+	bild.consist()
+	g.exec_menu("View = plot")
+	g.exec_menu("Scene=View")
+	bild.topol.draw(g)
+}
+
+proc neuroml() {localobj s, p
+	s = new String()
+	nrnpython("import rdxml")
+	p = new PythonObject()
+	p.rdxml.__setattr__("i3d", this)
+	sprint(s.s, "rdxml.rdxml('%s')", $s1)
+	nrnpython(s.s)
+	p.rdxml.__setattr__("i3d", nil)
+	bild.consist()
+	bild.page(5)
+	deck.flip_to(2)
+	g.exec_menu("View = plot")
+	g.exec_menu("Scene=View")
+	bild.topol.names_off = 1
+	bild.topol.circles_off = 1
+	bild.topol.draw(g)
+}
+
+proc neuroml1() {localobj f, s, p
+	if (nrnpython("") == 0) {
+		continue_dialog("Can't read NeuroML: Python not available.")
+		return
+	}
+	f = new File()
+	f.chooser("r", "Import NeuroML file", "*.xml")
+	s = new String()
+	while(f.chooser()) {
+		f.gets(s.s)
+		f.close()
+		if (hoc_sf_.head(s.s, "^\\<\\?xml", s.s) != -1) {
+			neuroml(f.getname())
+			break
+		}else{
+			sprint(s.s, "%s is not a NeuroML file", f.getname())
+			continue_dialog(s.s)
+			continue
+		}
+	}
+}
+
+proc parsed() {
+	//print "parsed ", $o1, $o1.cables_.__len__()
+	bild.topol.neuroml($o1)	
+	bild.subsets.neuroml($o1)
+	bild.geom.neuroml($o1)
+	bild.memb.neuroml($o1)
+}
+
+func warn3d() {
+	tobj = new VBox()
+	tobj.intercept(1)
+	xpanel("")
+	xlabel("Importing 3-D geometry will change the names of")
+	xlabel("indexed sections to conform to the")
+	xlabel("CellBuilder's indexing policy.")
+	xlabel("(Section names without indices will stay the same.)")
+	xlabel("This means that most section names at the top level")
+	xlabel("will change RIGHT NOW!")
+	xpanel()
+	tobj.intercept(0)
+	return tobj.dialog("Warning:", "Go ahead and import", "Cancel")
+}
+
+proc xport() {
+	if (object_id(f) == 0) {
+		f = new File()
+		if (xml_) {
+			f.chooser("w", "Save cell in file", "*.xml")
+		}else{
+			f.chooser("w", "Save cell in file", "*.hoc")
+		}
+	}
+//	if (warn() == 0) return
+    if (f.chooser()) {
+	f.wopen()
+	if (xml_) {
+		xmlwrite(f)
+	}else{
+		toplevel=1
+		pr(f)
+		if (bild.topol.slist.count > 0) {
+			bild.topol.slist.object(0).name(tstr)
+			f.printf("access %s\n", tstr)
+		}
+		f.printf("\ncelldef()\n")
+	}
+	f.close()
+    }
+//	if (check_names()) {
+//		if (execute1("xopen(\"tmpxxx.tmp\")") == 0) {
+//			continue_dialog("the hoc spec saved in tmpxxx.tmp failed")
+//		}
+//	}else{
+//		continue_dialog("The hoc spec saved in tmpxxx.tmp was not exported")
+//	}
+}
+
+func check_names() {local b, i, j
+	b = 1
+	tobj =  bild.topol.unique_name
+    if (etop) {
+	for i=0, tobj.size-1 {
+		tstr = bild.topol.slist.object(tobj.x[i]).name_
+		j = name_declared(tstr)
+		if (j != 0 && j != 3) {
+			b = 0
+			sprint(tstr, "%s already exists and can't be re-declared as a Section",tstr)
+			continue_dialog(tstr)
+		}else{
+			sprint(tstr, "create %s", tstr)
+			execute(tstr)
+		}
+	}
+    }
+	tobj =  bild.subsets.snlist
+	for i=0, tobj.count-1 {
+		tstr = tobj.object(i).name_
+		j = name_declared(tstr)
+		if (j != 0 && j != 2) {
+			b = 0
+			sprint(tstr, "%s already exists and can't be re-declared as a SectionList",tstr)
+			continue_dialog(tstr)
+		}else{
+			sprint(tstr, "objref %s", tstr)
+			execute(tstr)
+		}
+	}
+	return b
+}
+
+func warn() {
+
+	if (no_warn_==0 && bild.changed()) {
+		if (object_id(ewarn) == 0) {
+			ewarn = new VBox()
+			ewarn.intercept(1)
+			xpanel("")
+xlabel("Warning: existing cell spec has changed since the last session save")
+xlabel("  and this implementation does not know if the names")
+xlabel("  of the sections and subsets are syntactically valid.")
+xlabel("  If not, the interpreter may crash which will lose those cell changes.")
+xlabel("  It is recommended that you Cancel and save the session before exporting.")
+xcheckbox("Do not give this warning again", &no_warn_)
+			xpanel()
+			ewarn.intercept(0)
+		}
+		return ewarn.dialog("CellBuilder Export Warning", "Export anyway", "Cancel")
+	}
+	return 1
+}
+
+proc save_data() {
+	sprint(tstr, "}\n{object_push(%s)}\n{\nfirst = 0", $s2)
+	$o1.save(tstr)
+	sprint(tstr, "classname = \"%s\"", classname)
+	$o1.save(tstr)
+	sprint(tstr, "etop=%d esub=%d egeom=%d emem=%g", etop,esub,egeom,emem)
+	$o1.save(tstr)
+	sprint(tstr, "itop=%d isub=%d igeom=%d imem=%g", itop,isub,igeom,imem)
+	$o1.save(tstr)
+	sprint(tstr, "bild.topol.names_off = %d", bild.topol.names_off)
+	$o1.save(tstr)
+	sprint(tstr, "bild.topol.circles_off = %d", bild.topol.circles_off)
+	$o1.save(tstr)
+	sprint(tstr, "output_index = %d  output_x = %g", output_index, output_x)
+	$o1.save(tstr)
+	sprint(tstr, "thresh = %g", thresh)
+	$o1.save(tstr)
+	$o1.save("}\n{object_pop()}\n{")
+}
+
+proc pr() {local dp
+	dp = bild.subsets.have_domainparm()
+	if (dp) { $o1.printf("load_file(\"subiter.hoc\")\n\n") }
+	$o1.printf("proc celldef() {\n")
+	if (etop) $o1.printf("  topol()\n")
+	if (esub) $o1.printf("  subsets()\n")
+	if (egeom) $o1.printf("  geom()\n")
+	if (emem) $o1.printf("  biophys()\n")
+	if (egeom) $o1.printf("  geom_nseg()\n")
+	if (emem) if (dp) $o1.printf("  biophys_inhomo()\n")
+	$o1.printf("}\n")
+
+	if (etop) bild.topol.pr($o1)
+	if (esub) bild.subsets.pr($o1)
+	if (egeom) bild.geom.pr($o1)
+	if (emem) bild.memb.pr($o1)
+}
+
+proc xmlwrite() {
+	strdef date
+       	$o1.printf("<!-- %s -->\n", $o1.getname())
+	$o1.printf("<!-- XML file generated by NEURON 5.6 CellBuilder -->\n")
+       	$o1.printf("<!-- Authors: Michael Hines and Sushil Kambampati -->\n")
+       	$o1.printf("<!-- Yale University -->\n")
+        system("date ", date)
+        $o1.printf("<!-- Date: %s -->\n", date)
+
+	$o1.printf("<celldef name=\"%s\">\n", classname)
+	$o1.printf("  <Morphology>\n")
+	bild.topol.xmlwrite($o1)
+	bild.subsets.xmlwrite($o1)
+	$o1.printf("  </Morphology>\n")
+//	bild.geom.xmlwrite($o1)
+	bild.memb.xmlwrite($o1)
+	$o1.printf("</celldef>\n")
+}
+
+endtemplate CellManage

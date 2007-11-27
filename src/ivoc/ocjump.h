@@ -1,0 +1,37 @@
+#ifndef ocjump_h
+#define ocjump_h
+
+union Inst;
+class OcJumpImpl;
+struct Symlist;
+struct Object;
+union Objectdata;
+
+class ObjectContext {
+public:
+	ObjectContext(Object*);
+	virtual ~ObjectContext();
+	void restore();
+private:
+	Object* a1;
+	Objectdata* a2;
+	int* a3;
+	int a4;
+	Symlist* a5;
+	boolean restored_;
+};
+
+class OcJump {
+public:
+	OcJump();
+	virtual ~OcJump();
+	boolean execute(Inst* p);
+	boolean execute(const char*, Object* ob = nil);
+	void* fpycall(void*(*)(void*, void*), void*, void*);
+	static void save_context(ObjectContext*);
+	static void restore_context(ObjectContext*);
+private:
+	OcJumpImpl* impl_;
+};
+
+#endif

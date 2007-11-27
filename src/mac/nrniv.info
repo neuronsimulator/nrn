@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist SYSTEM "file://localhost/System/Library/DTDs/PropertyList.dtd">
+<plist version="0.9">
+<dict>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>English</string>
+	<key>CFBundleDocumentTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeExtensions</key>
+			<array>
+				<string>hoc</string>
+				<string>ses</string>
+				<string>nrc</string>
+				<string>*</string>
+			</array>
+			<key>CFBundleTypeOSTypes</key>
+			<array>
+				<string>****</string>
+			</array>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+		</dict>
+	</array>
+<key>CFBundleIdentifier</key>
+<string>edu.yale.neuron.nrniv</string>
+	<key>CFBundleExecutable</key>
+	<string>nrniv</string>
+	<key>CFBundleIconFile</key>
+	<string>nrniv</string>
+	<key>CFBundleSignature</key>
+	<string>NRN4</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>LSPrefersCarbon</key>
+	<true/>
+</dict>
+</plist>

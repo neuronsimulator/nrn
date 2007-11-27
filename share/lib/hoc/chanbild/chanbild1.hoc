@@ -1,0 +1,611 @@
+if (!name_declared("EmptyClass")) { // for aliases unpolluted by other names
+	execute1("begintemplate EmptyClass\nendtemplate EmptyClass\n")
+}
+
+begintemplate ChannelBuild
+public aliases
+public box, save, gatelist, mkgatemenu, map, genprop, change, ggui
+public newgate, gatestr, changegate, set_gatestr, pr, clone, nahh, khh
+public rgui, newrate, ks, ksth, displaystr, dispsel, ks2cb, cb2ks, end_restore
+public is_sname, new_sname, destroy, kshoc, set_alias, usetable
+external hoc_sf_
+objref genprop, this, box, gatelist, displist, tobj, tobj1, clone_, rgui, ks
+objref ksth, ggui, gvec, ksvec, gate, kst, hf, aliases
+strdef tstr, gatestr, displaystr
+
+proc init() {local den, imp, sin
+	// 5.6 compatible, all old session files should be density and they
+	// either had no arg from the main menu or had an arg of 1 from
+	// the session save. Now the map is handled completely separately
+	// (see proc chanbild()) and the arg refers to boolean density
+	// note that density vs point process cannot be changed after KSChan
+	// is constructed.
+	// If the arg is a KSChan then this becomes a controller for it.
+	aliases = new EmptyClass()
+	use_alias_ = 0
+	usetable_ = 0
+	usetable_disp = 0
+	den = 1
+	imp = 0
+	if (numarg() != 0) {
+		if (argtype(1) == 0) {
+			den = $1
+		}else{
+			imp = 1
+			den = $o1.is_point != 1
+			ks = $o1
+			sin = ks.single
+		}
+	}
+	if (object_id(ks) == 0) {
+		ks = new KSChan( den != 1 )
+	}
+	ksth = new KSTransHelper()
+	gvec = new Vector(3)
+	ksvec = new Vector(20)
+	gatelist = new List()
+	displist = new List()
+	displaystr = "Select here to construct gates"
+	displist.append(this)
+	genprop = new ChannelBuildSelectProperties(this, imp)
+	if (imp) { import() }
+	set_gatestr()
+	build()
+	i = 0
+	if ( imp && sin) {
+		genprop.set_single(sin)
+	}
+}
+
+proc import() {local i, j, k, srcindex, tarindex, ut
+	ut = ks.usetable
+	for i=0, ks.ngate-1 {
+		tobj = new ChannelBuildKSGate(this)
+		gatelist.append(tobj)
+		gate = ks.gate(i)
+		tobj.ksg = gate
+		tobj.power = gate.power
+		for j=0, gate.nstate-1 {
+			tobj1 = ks.state(gate.sindex + j)
+			tobj.set_state(tobj1.name, tobj1.frac, 50+j*50, 100 - i*20)
+			tobj.states.object(tobj.states.count-1).kss = tobj1
+		}
+		for j=0, ks.ntrans-1 {
+			kst = ks.trans(j)		
+			srcindex = kst.src.index - gate.sindex
+			if (srcindex >= 0 && srcindex < gate.nstate) {
+				tarindex = kst.target.index - gate.sindex
+				tobj.set_trans(srcindex, tarindex, kst.type)
+				tobj1 = tobj.transitions.object(tobj.transitions.count-1)
+				tobj1.kst = kst
+				tobj1.settype(kst.type, kst.ligand)
+				tobj1.stoichiometry(kst.stoichiometry)
+				for k=0, 1 {
+					tobj1.cbf[k].kst = kst
+					tobj1.cbf[k].ks2cb()
+				}
+			}
+		}
+		tobj.end_restore()
+	}
+	end_restore()
+	usetable(ut)
+	objref gate, kst, tobj,tobj1
+}
+
+proc destroy() {local i
+	objref genprop, displist, tobj, tobj1, clone_, rgui, ks
+	objref ksth, ggui, gvec, ksvec, gate, aliases
+	for i=0, gatelist.count-1 { gatelist.object(i).destroy() }
+	objref gatelist
+	box.unmap()
+}
+
+proc map() {
+	if (box.ismapped) return
+	sprint(tstr, "%s managed %s", this, ks)
+	if (numarg() > 1) {
+		box.map(tstr, $2, $3, $4, $5)
+	}else{
+		box.map(tstr)
+	}
+}
+
+proc build() {
+	box = new VBox(3)
+	box.priority(2000)
+	box.dismiss_action("destroy()")
+	box.intercept(1)
+	box.ref(this)
+	box.save("save()")
+	xpanel("")
+	xmenu("Properties")
+		genprop.menu()
+//		xbutton("General Properties", "genprop.map()")
+		xbutton("  HH sodium channel", "nahh()")
+		xbutton("  HH potassium channel","khh()")
+		xmenu("Clone channel type")
+		xbutton("As Density channel", "clone(1)")
+		xbutton("As Point Process", "clone(0)")
+		xbutton("Hoc file for KSChan", "kshoc()")
+		xmenu()
+		xmenu("Copy gates from", "mkcgmenu()")
+		xbutton("Text to stdout", "pr()")
+		xcheckbox("Provide transition aliases", &use_alias_, "set_alias(use_alias_)")
+		xcheckbox("Use fixed step HH rate tables", &usetable_, "usetable(usetable_)")
+		xbutton("Gate Constructor", "dispsel(1000)")
+	xmenu()
+	xvarlabel(genprop.namestr)
+	xvarlabel(genprop.useionstr1)
+	xvarlabel(genprop.useionstr2)
+	xvarlabel(gatestr)
+	xvarlabel(genprop.defstr)
+	xpanel()
+	displist.browser("", "displaystr")
+	displist.select_action("dispsel(hoc_ac_)", 1)
+	box.intercept(0)
+}
+
+proc kshoc() {local i, n
+	if (object_id(hf) == 0) {
+		sprint(tstr, "./%s.hoc", ks.name)
+		hf = new File()
+		hf.chooser("w", "Write Hoc description of KSChan (no GUI)", "*.hoc", "Write", "Cancel", tstr)
+	}
+	if (numarg() == 1) {
+		hf.wopen($s1)
+	}else if (hf.chooser) {
+		hf.wopen()
+	}else{
+		return
+	}
+
+	if (strcmp(ks.ion, "NonSpecific") != 0) {
+		sprint(tstr, "%s_ion", ks.ion)
+		hf.printf("{ ion_register(\"%s\", %d) }\n", ks.ion, ion_charge(tstr))
+	}
+	for i = 0, ks.nligand-1 {
+		hoc_sf_.head(ks.ligand(i), "_ion", tstr)
+		hf.printf("{ ion_register(\"%s\", %d) }\n", tstr, ion_charge(ks.ligand(i)))
+	}
+	
+	hf.printf("objref ks, ksvec, ksgate, ksstates, kstransitions, tobj\n")
+	hf.printf("{\n  ksvec = new Vector()\n  ksstates = new List()\n  kstransitions = new List()\n")
+	hf.printf("  ks = new KSChan(%d)\n}\n", ks.is_point)
+	hf.printf("// %s\n", genprop.namestr)
+	hf.printf("// %s\n", genprop.useionstr1)
+	hf.printf("// %s\n", genprop.useionstr2)
+	hf.printf("{\n  ks.name(\"%s\")\n", ks.name)
+	if (strcmp(ks.ion, "NonSpecific") != 0) {
+		hf.printf("  ks.ion(\"%s\")\n", ks.ion)
+	}
+	hf.printf("  ks.iv_type(%d)\n", ks.iv_type)
+	hf.printf("  ks.gmax(%g)\n", ks.gmax)
+	if (ks.iv_type == 0) {
+		hf.printf("  ks.erev(%g)\n", ks.erev)
+	}
+	hf.printf("}\n")
+	hf.printf("// %s\n", gatestr)
+	for i=0, gatelist.count-1 {
+		gatelist.object(i).kshoc(hf)
+	}
+	if (ks.single) {
+		hf.printf("{ ks.single(1) }\n")
+	}
+	n = ks.usetable(&vmin, &vmax)
+	if (ks.usetable()) {
+		vmin = vmax = 0
+		n = ks.usetable(&vmin, &vmax)
+		hf.printf("{ ks.usetable(%d, %d, %g, %g) }\n", ks.usetable(), n, vmin, vmax)
+	}
+	hf.printf("{objref ks, ksvec, ksgate, ksstates, kstransitions, tobj}\n")
+	hf.close
+}
+
+func is_sname() {local i, j
+	for j=0, gatelist.count-1 {
+		gate = gatelist.object(j)
+		for i=0, gate.states.count-1 {
+			if (strcmp(gate.states.object(i).name, $s1) == 0) {
+				return 1
+			}
+		}
+	}
+	return 0
+}
+
+proc new_sname() {local i
+	if (!is_sname($s1)) {
+		return
+	}
+	for (i = 2; 1; i += 1) {
+		sprint(tstr, "%s%d", $s1, i)
+		if (!is_sname(tstr)) {
+			$s1 = tstr
+			return
+		}
+	}
+}
+	
+proc mkcgmenu() {
+	tobj = new List("KSChan")
+	for i=0, tobj.count - 1 {
+		sprint(tstr, "copygates(%s)", tobj.object(i))
+		xbutton(tobj.object(i).name, tstr)
+	}
+}
+
+proc copygates() {local i
+	set_alias(0)
+	for i=0, $o1.ngate-1 {
+		tobj = new ChannelBuildKSGate(this)
+		gatelist.append(tobj)
+		tobj.copygate($o1, $o1.gate(i))
+	}
+	end_restore()
+}
+
+proc pr() {local i
+	printf("\n%s\n", genprop.namestr)
+	printf("  %s\n", genprop.useionstr1)
+	printf("  %s\n", genprop.useionstr2)
+	printf("  %s\n", gatestr)
+	printf("  %s\n", genprop.defstr)
+	for i=0, gatelist.count - 1 {
+		gatelist.object(i).pr()
+	}
+}
+
+proc newrate() {
+	if ($1 == 2) {
+		$o2 = new VExpRate()
+	}else if ($1 == 3) {
+		$o2 = new VLinoidRate()
+	}else if ($1 == 4) {
+		$o2 = new VSigmoidRate()
+	}else{
+		$o2 = new VExpRate()
+	}
+}
+
+proc set_gatestr() {local i
+	sprint(tstr, "%s = %smax", genprop.g_or_p, genprop.g_or_p)
+	for i=0, gatelist.count-1 {
+		sprint(tstr, "%s * %s", tstr, gatelist.object(i).gatestr)
+	}
+	gatestr = tstr
+	genprop.set_defstr()
+}
+
+proc dispsel() {local i  localobj ob
+	if ($1 < displist.count) {
+		if ($1 >= 0) {
+			ob = displist.object($1)
+		}
+		if (ks.usetable) {
+			usetable_ = 1
+			if (ob == this) {
+				tablewarn()
+				return
+			}
+		}
+		i = gatelist.index(ob)
+	}else{
+		i = $1
+	}
+	if (object_id(ggui) == 0) {
+		ggui = new ChannelBuildGateGUI(this)
+	}
+	ggui.dispsel(i)
+}
+
+proc changegate() { local i
+	for i=0, gatelist.count - 1 {
+		tobj = gatelist.object(i)
+		tobj.set_gatestr()
+		tobj.set_displaystr()
+	}
+	set_gatestr()
+	mk_displist()
+}
+
+proc mk_displist() { local i
+	//print "mk_displist"
+	displist.remove_all()
+	usetable_ = ks.usetable
+	if (usetable_) {
+		displist.append(this)	
+	}
+	for i=0, gatelist.count - 1 {
+		gatelist.object(i).append_displist(displist)
+	}
+	displist.select(-1)
+}
+
+func change() {local i
+	i = displist.index($o1)
+	if (i >= 0) {
+		displist.remove(i)
+		displist.insrt(i, $o1)	
+		displist.select(i)
+	}
+	return i
+}
+
+proc end_restore() {local i
+	cb2ks()
+	changegate()
+	set_alias()
+}
+
+proc set_alias() {local i, j, k  localobj kst, tobj, tobj1
+	hoc_sf_.alias(aliases)
+	if (numarg() == 1) { use_alias_ = $1 }
+	if (use_alias_ == 0) { return }
+	for i=0, ks.ntrans-1 {
+		kst = ks.trans(i)
+		for j=0, 1 {
+			ksth.coef(kst, j, kst.type, tstr)
+			tobj = new EmptyClass()
+			hoc_sf_.alias(aliases, tstr, tobj)
+			tobj1 = kst.parm(j)
+			if (kst.ftype(j) == 6) { continue }
+			if (kst.ftype(j) == 7) {
+				hoc_sf_.alias(tobj, "table", tobj1)
+				continue
+			}
+			for k=0, tobj1.size-1 {
+				ksth.pname(kst, j, k, tstr, 0)
+				hoc_sf_.alias(tobj, tstr, &tobj1.x[k])
+			}
+		}
+	}
+}
+
+func usetable() {local old
+	old = usetable_disp_
+	if (displist.count > 0) {
+		old = old && (displist.object(0) == this)
+	}
+	if (numarg() > 0) {
+		usetable_ = ks.usetable($1)
+		if ($1 == 0 && old == 0) { return 0 }// since this gets called a lot
+	}else{
+		usetable_ = ks.usetable(usetable_)
+	}
+	if (usetable_) {
+		displaystr = "Warning: Using hh rate tables (for fixed step method)"
+		usetable_disp_ = 1
+	}else{
+		displaystr =  "Select here to construct gates"
+		usetable_disp_ = 0
+	}
+	if (usetable_ != old) {
+		mk_displist()
+	}
+	return usetable_
+}
+
+proc tablewarn() {
+xpanel("HH rate table warning")
+xlabel("Warning: Using fixed step rate tables for the hh style gates.")
+xlabel("These tables do NOT get automatically updated when the rate parameters change.")
+xlabel("They are used only for the fixed step method and are updated only when")
+xlabel(" dt changes. If parameters are changed externally, be sure to call")
+sprint(tstr, "    %s.usetable() or %s.usetable(1)", this, ks)
+xlabel(tstr)
+xpanel(200, 200)
+}
+
+proc save() {local i
+	box.save("load_file(\"chanbild.hoc\", \"ChannelBuild\")\n}")
+	genprop.save_ion(box)
+	for i=0, ks.nligand-1 { save_ligand(box, ks.ligand(i)) }
+	sprint(tstr, "{ocbox_ = new ChannelBuild(%d)}", ks.is_point == 0)
+	box.save(tstr)
+	box.save("{object_push(ocbox_)}")
+	genprop.save_data(box, "ocbox_")
+	for i=0, gatelist.count-1 {
+		gatelist.object(i).save_data(box, "ocbox_")
+	}
+	box.save("end_restore()")
+	sprint(tstr, "{genprop.set_single(%d)}", genprop.single_)
+	box.save(tstr)
+	sprint(tstr, "{set_alias(%d)}", use_alias_)
+	box.save(tstr)
+	sprint(tstr, "{usetable(%d)}", usetable_)
+	box.save(tstr)
+	box.save("{object_pop()}")
+	box.save("{")
+}
+
+proc save_ligand() {local c
+	c = ion_charge($s2)
+	hoc_sf_.head($s2, "_ion", tstr)
+	sprint(tstr, "{ion_register(\"%s\", %d)}", tstr, c)
+	$o1.save(tstr)
+}
+
+proc clone() {local i
+	clone_ = new ChannelBuild($1)
+	genprop.clone(clone_.genprop)
+	for i=0, gatelist.count-1 {
+		gatelist.object(i).clone(clone_)
+	}
+	clone_.end_restore()
+	clone_.map()
+	objref clone_
+}
+
+proc nahh() {local i
+	set_alias(0)
+	for i=0, gatelist.count-1 { gatelist.object(i).remove() }
+	gatelist.remove_all()
+	genprop.set_data("nahh", 1, 1, 0, "na")
+	tobj = new ChannelBuildKSGate(this)
+	gatelist.append(tobj)
+	tobj.begin_restore(3)
+	tobj.set_state("m", 1, 140, 140)
+	tobj.set_trans(0, 0, 0)
+	tobj.transitions.object(0).settype(0, "")
+	tobj1 = new Vector() tobj1.append(1, .1, -40)
+	tobj.transitions.object(0).set_f(0, 3, tobj1)
+	tobj1 = new Vector() tobj1.append(4, -1/18, -65)
+	tobj.transitions.object(0).set_f(1, 2, tobj1)
+	tobj.end_restore()
+
+	tobj = new ChannelBuildKSGate(this)
+	gatelist.append(tobj)
+	tobj.begin_restore(1)
+	tobj.set_state("h", 1, 140, 110)
+	tobj.set_trans(0, 0, 0)
+	tobj.transitions.object(0).settype(0, "")
+	tobj1 = new Vector() tobj1.append(.07, -1/20, -65)
+	tobj.transitions.object(0).set_f(0, 2, tobj1)
+	tobj1 = new Vector() tobj1.append(1, -1/10, -35)
+	tobj.transitions.object(0).set_f(1, 4, tobj1)
+	tobj.end_restore()
+	end_restore()
+	if (object_id(ggui) != 0) if (ggui.g_map_ == 1) {
+		dispsel(0)
+	}
+}
+
+proc khh() {local i
+	set_alias(0)
+	for i=0, gatelist.count-1 { gatelist.object(i).remove() }
+	gatelist.remove_all()
+	genprop.set_data("khh", 1, 1, 0, "k")
+	tobj = new ChannelBuildKSGate(this)
+	gatelist.append(tobj)
+	tobj.begin_restore(4)
+	tobj.set_state("n", 1, 140, 140)
+	tobj.set_trans(0, 0, 0)
+	tobj.transitions.object(0).settype(0, "")
+	tobj1 = new Vector() tobj1.append(.1, .1, -55)
+	tobj.transitions.object(0).set_f(0, 3, tobj1)
+	tobj1 = new Vector() tobj1.append(.125, -1/80, -65)
+	tobj.transitions.object(0).set_f(1, 2, tobj1)
+	tobj.end_restore()
+	end_restore()
+	if (object_id(ggui) != 0) if (ggui.g_map_ == 1) {
+		dispsel(0)
+	}
+}
+
+proc ks2cb() {
+}
+
+proc cb2ks() {local i, is, it, nstate, ntrans, ngate, nhhstate, iligtrans
+	gvec.resize(0) // order gates so hh gates first
+	ksvec.resize(0)
+	ksvec.append(ks.iv_type)
+	ngate = gatelist.count
+	nstate = 0
+	nhhstate = 0
+	ntrans = 0
+	iligtrans = 0
+	nligand = 0
+	it = 0
+	for i=0, ngate - 1 {
+		tobj = gatelist.object(i)
+		nstate += tobj.states.count
+		if (tobj.states.count == 1) {
+			tobj.states.object(0).i = nhhstate
+			gvec.append(i)
+			nhhstate += 1
+		}
+		ntrans += tobj.transitions.count
+		for j=0, tobj.transitions.count -1 {
+			if (tobj.transitions.object(j).type >= 2) {
+				iligtrans += 1
+			}
+		}
+	}
+	// index the remaining states and gates
+	is = nhhstate
+	for i=0, ngate - 1 {
+		tobj = gatelist.object(i)
+		if (tobj.states.count > 1) {
+			gvec.append(i)
+			for j=0, tobj.states.count-1 {
+				tobj.states.object(j).i = is
+				is += 1
+			}
+		}
+	}
+	// actually, forget the ligands and let the future kst objects
+	// take care of it. i.e. we continue to assume nligand = 0
+	iligtrans = ntrans
+	nligand = 0
+
+	ksvec.append(ngate, nstate, nhhstate, ntrans, nligand, iligtrans)
+	for i=0, ngate-1 {
+		tobj = gatelist.object(gvec.x[i])
+		ksvec.append(tobj.states.object(0).i, tobj.states.count)
+		ksvec.append(tobj.power)
+		for j=0, tobj.states.count-1 {
+			ksvec.append(tobj.states.object(j).frac)
+		}
+	}
+	// twice, first for non-ligand and then for ligand
+	it = 0
+	// actually only use the first and late future kst take care of it
+	for i=0, ngate-1 {
+		tobj = gatelist.object(gvec.x[i])
+		for j=0, tobj.transitions.count-1 {
+			tobj1 = tobj.transitions.object(j)
+//			if (tobj1.type < 2) {
+				ksvec.append(tobj1.src.i, tobj1.target.i)
+//				ksvec.append(tobj1.type, -1)
+				ksvec.append(0, -1)
+				tobj1.i = it
+				it += 1
+//			}
+		}
+	}
+	// assert (it == iligtrans)
+    if (0) {
+	for i=0, ngate-1 {
+		tobj = gatelist.object(gvec.x[i])
+		for j=0, tobj.transitions.count-1 {
+			tobj1 = tobj.transitions.object(j)
+			if (tobj1.type >= 2) {
+				ksvec.append(tobj1.src.i, tobj1.target.i)
+				ksvec.append(tobj1.type, tobj1.ligdex)
+				tobj1.i = it
+				it += 1
+			}
+		}
+	}
+    }
+
+	ks.setstructure(ksvec)
+
+	// get the ks objects
+	for i=0, ngate-1 {
+		tobj = gatelist.object(i)
+		tobj.ksg = ks.gate(gvec.x[i])
+		for j=0, tobj.states.count-1 {
+			tobj1 = tobj.states.object(j)
+			tobj1.kss = ks.state(tobj1.i)
+		}
+		for j=0, tobj.transitions.count-1 {
+			tobj1 = tobj.transitions.object(j)
+			tobj1.kst = ks.trans(tobj1.i)
+		}
+	}
+	// do the rest of the cb2ks, note that because of ligands the
+	// transition indices are volatile but kst are not
+	for i=0, ngate-1 {
+		tobj = gatelist.object(i) // nothing to do, already have power
+		for j=0, tobj.states.count-1 {
+			tobj.states.object(j).cb2ks() // only the name
+		}
+		for j=0, tobj.transitions.count-1 {
+			tobj.transitions.object(j).cb2ks() // type, ligand, and f0,f1
+		}
+	}
+//	ks.pr
+}
+endtemplate ChannelBuild

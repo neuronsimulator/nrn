@@ -1,0 +1,44 @@
+load_file("singhhchan.hoc")
+
+create soma
+access soma
+{diam=10 L=100/PI/diam}
+{insert leak}
+objref nachan, kchan, stim
+nachan = new nahh0(.5)
+kchan = new khh0(.5)
+
+gmaxna = .12
+gmaxk = .036
+proc nsing() {
+	nachan.gmax = gmaxna
+	kchan.gmax = gmaxk
+	nachan.Nsingle = $1
+	kchan.Nsingle = $1
+	if ($1 > 0) {
+		nachan.gmax /= nachan.Nsingle
+		kchan.gmax /= kchan.Nsingle
+	}
+	stdinit()
+}
+nsing(1000)
+
+/*
+xpanel("AP with a set of single channels")
+xradiobutton("Continuous", "nsing(0)", 1)
+xradiobutton("1 channel", "nsing(1)")
+xradiobutton("10 channels", "nsing(10)")
+xradiobutton("100 channels", "nsing(100)")
+xradiobutton("1000 channels", "nsing(1000), 1")
+xradiobutton("10000 channels", "nsing(10000)")
+xpanel(100, 100)
+*/
+
+load_file(1, "singhh.ses")
+
+proc destroy() {
+	objref nachan, kchan, stim
+	while (PWManager[0].count > 6) {
+		PWManager[0].close(PWManager[0].count-1)
+	}
+}

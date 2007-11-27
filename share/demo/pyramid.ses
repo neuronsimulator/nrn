@@ -1,0 +1,51 @@
+objectvar save_window_, rvp_
+objectvar scene_vector_[5]
+objectvar ocbox_, ocbox_list_, scene_, scene_list_
+{ocbox_list_ = new List()  scene_list_ = new List()}
+
+//Begin PointProcessManager
+{
+load_file("pointman.hoc")
+}
+{
+soma ocbox_ = new PointProcessManager(0)
+}
+{object_push(ocbox_)}
+{
+mt.select("IClamp") i = mt.selected()
+ms[i] = new MechanismStandard("IClamp")
+ms[i].set("del", 0, 0)
+ms[i].set("dur", 0.5, 0)
+ms[i].set("amp", 10, 0)
+mt.select("IClamp") i = mt.selected() maction(i)
+hoc_ac_ = 0.5
+sec.sec move() d1.flip_to(0)
+}
+{object_pop() doNotify()}
+{
+ocbox_ = ocbox_.v1
+ocbox_.map("PointProcessManager", 135, 141, 217.92, 264)
+}
+objref ocbox_
+//End PointProcessManager
+
+{
+save_window_ = new PlotShape(0)
+save_window_.size(-513.704,547.706,-228.057,831.661)
+save_window_.variable("v")
+scene_vector_[3] = save_window_
+{save_window_.view(-513.704, -228.057, 1061.41, 1059.72, 139, 456, 200.64, 200.32)}
+fast_flush_list.append(save_window_)
+save_window_.save_name("fast_flush_list.")
+}
+{
+save_window_ = new Graph(0)
+save_window_.size(0,5,-80,40)
+scene_vector_[4] = save_window_
+{save_window_.view(0, -80, 5, 120, 697, 31, 303.36, 203.2)}
+graphList[0].append(save_window_)
+save_window_.save_name("graphList[0].")
+save_window_.addvar("soma.v(.5)", 2, 1, 4, 28, 1)
+}
+objectvar scene_vector_[1]
+{doNotify()}

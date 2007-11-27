@@ -1,0 +1,106 @@
+#!/bin/sh
+# all the way from the cvs sources to the dmg
+carbon=yes # comment out if want x11 instead
+
+if test "$carbon" = "yes" ; then
+NSRC=$HOME/neuron/nrn
+IVSRC=$HOME/neuron/ivcarbon
+NOBJ=$HOME/neuron/nrncarbon
+else
+NSRC=$HOME/neuron/nrn
+IVSRC=$HOME/neuron/ivx
+NOBJ=$HOME/nrnx11dmg
+fi
+export NSRC
+export IVSRC
+export NOBJ
+
+cd $HOME/neuron
+
+#clean up manually. I don't like rm -r of important directories in scripts
+#rm -r -f nrn ivx nrnx11dmg
+
+#rm -r -f /Applications/NEURON-5.5
+# or whatever the NEURON installed version was called
+
+# assume the original checkout used ivx and nrn as source directories
+#cvs -d :ext:hines@www.neuron.yale.edu:/home/cvsroot checkout -d ivx iv
+#cvs -d :ext:hines@www.neuron.yale.edu:/home/cvsroot checkout nrn
+
+cd $IVSRC
+cvs update
+cd $NSRC
+cvs update
+
+# the name of the install directory contains a version number that
+# comes from nrnversion.c
+cd $NSRC
+NVER="`sh $NSRC/nrnversion.sh`"
+export NVER
+IDIR=/Applications/NEURON-$NVER
+export IDIR
+echo "Will install into $IDIR"
+
+cd $IVSRC
+sh build.sh
+# at this point it as if we extracted iv-16.tar.gz
+# and did a mv ../iv-16 ../ivx
+if test "$carbon" = "yes" ; then
+	./configure --prefix=$IDIR/iv --enable-carbon
+else
+	./configure --prefix=$IDIR/iv
+fi
+make
+# because of the include files the following will cause all nrn cpp
+#files to recompile
+make install
+
+cd $NSRC
+sh build.sh
+# at this point it as if we extracted nrn-5.6.tar.gz
+# and did a mv ../nrn-5.6 ../nrn
+
+#note: currently the configuration cannot determine the location of jni.h
+# on the particular updates of my 10.3.2 (7D24) and 10.3.3 (7F44) system
+JNI_INCLUDE_FLAGS=\
+"-I/System/Library/Frameworks/JavaVM.framework/Versions/1.3.1/Headers"
+export JNI_INCLUDE_FLAGS
+
+cd $HOME/neuron
+mkdir nrnx11dmg
+cd nrnx11dmg
+if test "$carbon" = "yes" ; then
+	$NSRC/configure --prefix=$IDIR/nrn --srcdir=$NSRC \
+	  --with-iv=$IDIR/iv --with-nrnjava --enable-carbon
+else
+	$NSRC/configure --prefix=$IDIR/nrn --srcdir=$NSRC \
+	  --with-iv=$IDIR/iv --with-nrnjava
+fi
+
+#note: the nrnjava is necessary if one wants to later do a make dist
+
+make
+make install
+
+# the "make install" above
+# creates the applescript bundle apps, attaches icons, and sets
+# the creator codes and associates file extensions by executing
+# (cd src/mac ; sh launch_inst.sh /Applications/NEURON-5.5/nrn)
+
+#the following cleans up the installation, builds neurondemo, and
+# strips binaries so that the dmg file will be around 4MB in size
+# instead of 15.
+#It also "notify"s the finder that macnrn.term is a term file
+# otherwise, the applescripts may not be able to launch it
+
+make after_install
+
+#now create the dmg
+make dmg
+#sh $NSRC/src/mac/mkdmg.sh NEURON-$NVER
+
+#copy it to the ftp site with the proper name
+ftpname="`sh $NSRC/nrnversion.sh 2`"
+ftpname=nrn-${ftpname}-OSX10.3.dmg
+scp $HOME/NEURON-$NVER.dmg \
+ hines@www.neuron.yale.edu:/home/ftp/neuron/versions/alpha/$ftpname

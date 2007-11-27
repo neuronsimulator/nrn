@@ -1,0 +1,194 @@
+// A NetCon target type with specific parameters
+// presumably many instances of this will be located at different positions
+begintemplate SynType
+public name, ms, index, change, created_
+strdef name
+objref ms, all, this, nil
+proc init() {
+	created_ = 0
+	index = -1
+	// index used only for session saves so that syntype info can be
+	// remapped to proper this object when index into stypelist is known
+	$o1.name(name)
+	ms = new MechanismStandard(name)
+	if (numarg() == 2) {
+		name = $s2
+	}else{
+		ms.name(name)
+	}
+	ms.in($o1)
+}
+
+proc change() {local i
+	if (created_) {
+		if (all == nil) {
+			all = new List("NetReadyCell")
+		}
+		for i=0, all.count-1 {
+			all.object(i).changems(this)
+		}
+	}
+}
+endtemplate SynType
+
+// A list of SynTypes
+begintemplate SynTypeGUI
+public name, save, save_data, map, stypelist, hb
+external SynType, valid_name_syntax
+strdef name, tstr, tstr1
+objref this, tobj, tobj1, mslist, stypelist, vb, hb, d
+
+proc init() {local i
+	stypelist = new List()
+	possible_targets() // mslist is a list of MechanismStandards
+	build()
+	if (numarg() == 0) {
+		map()
+	}
+}
+
+proc map() {
+	sprint(tstr, "%s", this)
+	if (numarg() > 1) {
+		hb.map(tstr, $2,$3,$4,$5)
+	}else{
+		hb.map(tstr)
+	}
+}
+
+proc possible_targets() {
+	mslist = new List()
+	//figure out which PointProcesses can be targets of a NetCon
+	tobj = new MechanismType(1) // all point processes
+	for i=0, tobj.count-1 {
+		if (tobj.is_netcon_target(i) && tobj.has_net_event(i) == 0) {
+			tobj.select(i)
+			tobj.selected(tstr)
+			mslist.append(new MechanismStandard(tstr))
+		}
+	}
+}
+
+proc build() {
+	hb = new HBox(3)
+	hb.priority(998)
+	hb.save("save()")
+	hb.intercept(1)
+	hb.ref(this)
+	vb = new VBox(3)
+	vb.intercept(1)
+	xpanel("")
+	xmenu("New")
+		for i=0, mslist.count-1 {
+			mslist.object(i).name(tstr)
+			sprint(tstr1, "newstype(%d)", i)
+			xbutton(tstr, tstr1)
+		}
+	xmenu()
+	xlabel("Using Current Selection...")
+	xbutton("Rename", "rename()")
+	xbutton("Clone", "clone()")
+	xbutton("Remove", "remove()")
+	xlabel("Synapse types")
+	xpanel()
+	stypelist.browser("", "name")
+	stypelist.select_action("selstype(hoc_ac_)")
+	vb.intercept(0)
+	vb.map()
+	d = new Deck(3)
+	d.intercept(1)
+	xpanel("")
+	xlabel("Variables for selected Synapse type appear here")
+	xpanel()
+	d.intercept(0)
+	d.map()
+	d.flip_to(0)
+	hb.intercept(0)
+}
+
+proc append() {local i
+	stypelist.append(new SynType($o1, $s2))
+	dinsert(stypelist.count-1)
+	selstype(stypelist.count-1)
+}
+
+proc newstype() {local i
+	stypelist.append(new SynType(mslist.object($1)))
+	dinsert(stypelist.count-1)
+	selstype(stypelist.count-1)
+}
+
+proc dinsert() {
+	d.intercept(1)
+	tobj = stypelist.object($1)
+	sprint(tstr, "%s.change()", tobj)
+	tobj.ms.action(tstr)
+	tobj.ms.name(tstr)
+	sprint(tstr, "%s  -- %s", tobj.name, tstr)
+	tobj.ms.panel(tstr)
+	d.intercept(0)
+	d.move_last($1)
+}
+proc rename() { local i
+	i = stypelist.selected
+	if (i == -1) return
+	tobj = stypelist.object(i)
+	tstr = tobj.name
+	while (string_dialog("Rename the synapse type", tstr)) {
+		if (valid_name_syntax(tstr, 1)) {
+			tobj.name = tstr
+			break
+		}
+	}
+	stypelist.remove(i)
+	stypelist.insrt(i, tobj)
+	d.remove(i)
+	dinsert(i)
+	selstype(i)
+}
+
+proc clone() {local i
+	i = stypelist.selected
+	if (i == -1) return
+	tobj = stypelist.object(i)
+	stypelist.append(new SynType(tobj.ms, tobj.name))
+	dinsert(stypelist.count-1)
+	selstype(stypelist.count-1)
+}
+
+proc remove() {local i
+	i = stypelist.selected
+	if (i == -1) return
+	stypelist.remove(i)
+	d.remove(i)
+	selstype(-1)
+}
+proc selstype() {
+	if ($1 == -1) {
+		d.flip_to(-1)
+		return
+	}
+	d.flip_to($1)
+	stypelist.select($1)
+}
+
+proc save() {
+	hb.save("load_file(\"netbild.hoc\")\n}")
+	save_data(hb, "ocbox_")
+	hb.save("{")
+}
+proc save_data() {
+	sprint(tstr, "%s = new SynTypeGUI(1)", $s2)  $o1.save(tstr)
+	sprint(tstr, "{object_push(%s)}", $s2) $o1.save(tstr)
+	for i = 0, stypelist.count -1 {
+		tobj = stypelist.object(i)
+		tobj.index = i
+		$o1.save("{")
+		tobj.ms.save("tobj")
+		$o1.save("}")
+		sprint(tstr, "{append(tobj, \"%s\")}", tobj.name)
+		$o1.save(tstr)
+	}
+	$o1.save("{object_pop()}")
+}
+endtemplate SynTypeGUI

@@ -1,0 +1,32 @@
+#!sh
+
+rm -f nrnmech.dll
+
+cp_if_newer() {
+	base=`basename "$1"`
+	prefix=`echo $base | sed 's/\..*//'`
+	fp="i686cygwin/$prefix"
+	if test ! -f "$fp.c" -o "$1" -nt "$fp.c" ; then
+		cp "$1" "$fp.mod"
+		echo "cp $1 $fp.mod"
+	fi
+}
+
+if test -d "$1" ; then
+	if test ! -d i686cygwin ; then
+		mkdir i686cygwin
+	fi
+	for i in $* ; do
+		for j in `ls $i/*.[Mm][Oo][Dd]` ; do
+			cp_if_newer "$j"
+		done
+	done
+	cd i686cygwin
+	sh $N/lib/mknrndl2.sh
+	if test -f nrnmech.dll ; then
+		mv nrnmech.dll ..
+	fi
+	cd ..
+else
+	sh $N/lib/mknrndl2.sh $*
+fi

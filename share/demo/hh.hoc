@@ -1,0 +1,16 @@
+create soma
+access soma
+nseg=1
+{L=10/PI  diam=10} //100 um2 area (i_vc graphs on same scale as ina)
+insert hh
+global_ra = 35.4
+set_ra()
+celsius = 6.3
+
+{
+ion_style("na_ion", 1, 2, 1, 0, 0)
+ion_style("k_ion", 1, 2, 1, 0, 0)
+}
+
+proc destroy() {
+}

@@ -1,0 +1,218 @@
+/* modified 3/19/96 NTC to give access to Ra
+   and to include spines via diameter correction
+   as per Cauller & Connors */
+
+begintemplate ImpShape
+public out, in, imp, run, sl, extended
+public view_count, begin, flush	// allow this in flush_list
+
+double att[1]
+objref imp, sl, sh, b, this, sec, shmorph, mark
+strdef sname, tstr
+
+i = 0
+nsec = 0
+hz = 0
+
+iterator sections() {
+	$&1 = 0
+	forsec $o2 {
+		iterator_statement
+		$&1 += 1
+	}
+}
+
+proc outside_sections() {
+	sl = new SectionList()
+	sl.wholetree()
+}
+
+proc init() {
+	variable_domain(&hz, 0, 1e9) units(&hz, "Hz")
+	extended = 0
+	direct = 0
+	scale_ = 1
+	sec = new SectionRef()
+	loc = .5
+	if (numarg() == 1) {
+		sl = $o1
+	}else{
+		outside_sections()
+	}
+	for sections(&nsec, sl) {}
+	double att[nsec]
+	
+	finitialize()
+	imp = new Impedance()
+	build()
+	changesec(loc)
+}
+
+flush_ = 0
+
+proc build() {
+	b = new VBox()
+	b.ref(this)
+	b.save("")
+	b.intercept(1)
+	sec.sec sprint(sname, "Measure (red) %s(%g)", secname(), loc)
+	xpanel("", 1)
+		xbutton("Redraw", "run()")
+ 		xmenu("Extras")
+			xstatebutton("Movie Mode", &flush_, "add_flush()")
+			xstatebutton("Auto Scale", &scale_, "run()")
+		xmenu()
+	xpanel()
+	xpanel("")
+		xcheckbox("include dstate/dt contribution", &extended, "run()")
+ 		xpvalue("Frequency", &hz, 1, "run()")
+		xradiobutton("Vin", "setdir(0)", 1)
+		xradiobutton("Vout", "setdir(1)")
+		xvarlabel(sname)
+	xpanel()
+	shmorph = new Shape(sl)
+	sh = new Shape(sl)
+	shmorph.action("changesec(hoc_ac_)")
+	mark = new PointProcessMark(loc)
+	shmorph.point_mark(mark, 2)
+	sh.point_mark(mark, 2, 4)
+	b.intercept(0)
+	sprint(tstr, "%s", this)
+	b.map(tstr)
+}
+
+proc changesec() {local x
+	loc = $1
+	sec = new SectionRef()
+	setmark()
+	sh.select()
+	x = this_section(.5)
+	for sections(&i, sl) {
+		if (x == this_section(.5)) {
+			iloc = i
+		}
+	}
+	setdir(direct)
+	run()
+}
+
+proc setmark(){
+	mark.loc(loc)
+}
+
+proc run() {
+	if (direct == 0) {
+		sec.sec in(hz)
+	}else{
+		sec.sec out(hz)
+	}
+	flush1()
+}
+
+proc flush1() {local x, y
+	x = log(rmin)*1000/4
+	y = x/2
+	sh.erase()
+	sh.beginline() sh.line(x, y) sh.line(x,y+1000)
+	sh.beginline() sh.line(-100+x,y) sh.line(100+x,y)
+	sh.beginline() sh.line(-100+x,1000+y) sh.line(100+x,1000+y)
+	if (scale_) {
+		sh.exec_menu("View = plot")
+	}
+	doNotify()
+}
+
+proc setdir() {
+	direct = $1
+   sec.sec {
+	if (direct == 0) {
+		sprint(sname, "Measure (red) %s(%g)", secname(), loc)
+	}else{
+		sprint(sname, "Inject (red) %s(%g)", secname(), loc)
+	}
+   }
+	run()
+}
+
+proc in() {local d, r1, r2
+	imp.loc(loc)
+	imp.compute($1, extended)
+	rmin = 1
+	for sections(&i, sl){
+		r1 = imp.ratio(0)
+		r2 = imp.ratio(1)
+		if (rmin > r2) rmin = r2
+		if (r1 > 1e-10 && r2 > 1e-10) {
+			if (iloc == i) {
+				d = log(r1) + log(r2)
+			}else{
+				d = log(r1) - log(r2)
+			}
+		}else{
+			rmin = 1e-10
+			d = 20
+		}
+		d = abs(d)
+		if (d < .0001) d = .0001
+		sh.len_scale(d/L*1000)
+	}
+	sh.flush()
+}
+
+proc out() {local r, d, r1, r2
+	imp.loc(loc)
+	imp.compute($1, extended)
+	r = imp.input(loc)
+	rmin = 1
+	for sections(&i, sl){
+		r1 = imp.transfer(0)/r
+		r2 = imp.transfer(1)/r
+		if (rmin > r2) rmin = r2
+		if (r1 > 1e-10 && r2 > 1e-10) {
+			if (iloc == i) {
+				d = log(r1) + log(r2)
+			}else{
+				d = log(r1) - log(r2)
+			}
+		}else{
+			rmin = 1e-10
+			d = 20
+		}
+		d = abs(d)
+		if (d < .0001) d = .0001
+		sh.len_scale(d/L*1000)
+	}
+	sh.flush()
+}
+
+proc add_flush() {
+	if (flush_) {
+		sprint(tstr, "flush_list.append(%s)", this)
+		execute(tstr)
+	}		
+}
+
+func view_count() {
+	if (flush_) {
+		return sh.view_count()
+	}else{
+		return 0
+	}
+}
+proc begin() {
+}
+proc flush() {
+	run()
+}
+
+endtemplate ImpShape
+
+proc makeImpShape() {
+	if(!execute1("v", 0)) {
+		continue_dialog("No accessed section: Can't start an ImpShape")
+		return
+	}
+	hoc_obj_[0] = new ImpShape()
+	objref hoc_obj_[2]
+}
+

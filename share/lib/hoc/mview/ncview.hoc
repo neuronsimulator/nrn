@@ -1,0 +1,85 @@
+begintemplate ModelViewNetCon
+public display, selsub, unlink, selected, name
+objref nclist, disp, valvec, dpe, parms, dv, this, tobj, subsets, dislist, mview
+strdef tstr, name
+
+proc init() {
+	nclist = $o1
+	disp = $o2
+	mview = $o3
+	analyse()
+	display()
+	name = "NetCon"
+}
+
+proc unlink() {local i
+	if (object_id(parms)) for i=0, parms.count - 1 {
+		parms.object(i).unlink()
+	}
+	objref nclist, disp, valvec, dpe, parms, dv, tobj, subsets, dislist, mview
+}
+
+proc analyse() {
+	dislist = new List()
+	dv = new ModelViewDistinctValues()
+	parms = new List()
+	subsets = new ModelViewSubsetList()
+	subsets.subsets.append(new ModelViewParmSubset(new Vector(nclist.count), this))
+	subsets.subsets.object(0).subset.indgen
+
+	valvec = new Vector(nclist.count)
+
+	parms.append(new ModelViewDParmElm("weight", 0, 1))
+	for i=0, nclist.count-1 {
+		valvec.x[i] = nclist.object(i).weight
+	}
+	parm_assess(valvec, parms.object(parms.count-1))
+
+	parms.append(new ModelViewDParmElm("delay", 0, 1))
+	for i=0, nclist.count-1 {
+		valvec.x[i] = nclist.object(i).delay
+	}
+	parm_assess(valvec, parms.object(parms.count-1))
+
+	parms.append(new ModelViewDParmElm("threshold", 0, 1))
+	for i=0, nclist.count-1 {
+		valvec.x[i] = nclist.object(i).threshold
+	}
+	parm_assess(valvec, parms.object(parms.count-1))
+}
+
+proc display() {local i
+	for i=0, parms.count-1 {
+		parms.object(i).display(disp, tstr, subsets.subsets.count, subsets.subsets.object(0))
+	}
+}
+
+func parm_assess(){local n, i, val
+	n = dv.ndistinct($o1)
+	if (n == 0) {return n}
+	if (n > 20) {
+		sprint(tstr, "%d values ranging from %g to %g", n, dv.min, dv.max)
+		$o2.append(new ModelViewParmStr(tstr, this))
+	}else{
+		dv.dislist(dislist)
+		for i=0, dislist.count-1 {
+			addparm2subset(dislist.object(i), $o1.x[dislist.object(i).x[0]], $o2)
+		}
+	}
+	return n
+}
+proc addparm2subset() {local i
+	i = subsets.isubset($o1.sort, this)
+	tobj = new ModelViewParmVal($2, subsets.subsets.object(i))
+	$o3.append(tobj)
+	subsets.subsets.object(i).parmlist.append(tobj)
+}
+
+proc selsub() {
+}
+
+proc selected() {
+	mview.gui.pgrph($o3.saction, this)
+}
+
+endtemplate ModelViewNetCon

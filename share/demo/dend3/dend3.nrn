@@ -1,0 +1,224 @@
+func eq_diam() { return  (($1^(3/2))/$2)^(2/3) }
+/*
+	eq_diam() calculates the equivalent diameter of $2 children
+	according to the 3/2 power constraint of rall.
+
+	Parameters
+	----------------
+	$1   diameter of bp ( eq. cylinder )
+	$2   degree of branching
+	assumes equivalent electrotonic distances
+*/
+
+func eq_leng() { return  $2 * sqrt(1e4*$1/4/global_ra/$3) }
+/*
+	Calculates the equivalent length, L, for a section from diameter,
+	conductance and equivalent electronic length, Z.
+
+	Parameters
+	----------------
+	$1   diameter of section
+	$2   Z, eletrotonic distance section is to have
+	$3   conductance of passive section
+	Ra in a global constant 
+*/
+
+func eq_z() { return $2 / sqrt(1e4*$1/4/global_ra/$3) }
+/*
+	Returns the equivalent electrotonic distance, Z, from
+	diameter, length and number of children. 
+
+	$1	?
+	$2	length of eq cylinder
+	$3	?
+	returns z for $1, $2, & $3
+*/
+
+func Q() { return 3^(($1-16.3)/10) }
+/* computes the Q(10)=3 for a base temp of 16.3 C */
+
+
+strdef nrnname
+nrnname		= "MH5"
+
+/*
+	MH6, Revised from MH5 in densities, hillock and myelin lengths
+	for best fit to vc and antidromic expts.    July '93
+	MH5.NRN a NEURON program, Revised from mh4  Aug 1991
+	(c) John Moore, Mike Hines 
+	* nmyelin=6, five node-myelin pairs
+	* Dendrites now each have nseg=9
+	* Hillock now tapered in geometry and channel density
+	* Axon now tapered in channel density - previous uniformity made Vclamp
+		currents almost linear with GNa in axon
+	to add:
+	* a dynamic dendritic tree
+	* a coefficent for nseg ( a segmentation factor ).
+*/
+
+proc model_globals() {
+
+/* membrane defaults */
+celsius		= 15
+v_init		= -70		/* initial voltage; v at rest */
+g_passive	= .0003		/* the standard pas conductance */
+erev_passive	= -70		/* the pas reversal potential */
+global_ra	= 200		/* the axial resistance */
+set_ra()
+gnaHH		= .12
+gkHH		= .036
+glHH		= .0003
+
+
+/* Conductance coefficients for various sections */
+/* gfhillock = tapered from gfsoma to gfaxon */
+gfsoma		= .5	
+gfhill		= 2
+gfaxon		= 4	
+gfnode		= 10	/*I soma independent of this */
+gfdend		= 0
+
+/* dendritic tree description */
+num_of_levels	= 1		/* number of levels in the dendritic tree */
+root_diam	= 46		/* diameter of the equiv. cylinder of tree */
+z		= 1.5		/* electrotonic length of tree */
+
+/* Motoneuron */
+nmyelin		= 6 		/* the number of myelin-node pairs */
+ndend		= 3		/* the # of dendrites connected to the soma */
+br_degree	= 2		/* degree of branching @ every level of tree */
+
+/* shape parameters */
+mlen0 = 250
+mlen1 = 500
+mlen2 = 1000
+hlen = 10
+alen = 100
+
+}
+model_globals()
+
+create soma, hillock, axon, myelin[nmyelin], node[nmyelin], \
+       dend[ndend]
+
+access soma                        /* set soma as default section */
+
+
+proc mhg() {
+	/* TOPOLOGY
+		connect sections such that all indices radiate out from the soma.
+	*/
+	soma      connect hillock(0), 0
+	hillock   connect axon(0), 1
+	if (nmyelin>0) {
+		axon      connect myelin[0](0), 1
+		myelin[0] connect node[0](0), 1
+		if (nmyelin>1) {
+			for i=1,nmyelin-1 {
+				node[i-1]   connect myelin[i](0),1
+				myelin[i] connect node[i](0), 1
+			}
+		}
+	}
+
+	for i=0,ndend-1 {
+		soma connect dend[i](0), 1
+	}
+
+	/* compartmentalization */
+	soma      { nseg= 1 }
+	axon      { nseg= 5 }
+
+	hillock   { nseg= 4 }
+
+	for i=0, nmyelin-1 {
+		myelin[i].nseg = 5
+		node[i].nseg = 1
+	}
+
+	dz= z/num_of_levels	/* electrotonic length of each level */
+	for i=0,ndend-1 {
+		dend[i]  { nseg = 27 }
+	}
+
+	set_ra()
+	morphol()
+	membrane()
+}
+
+proc morphol() {
+	
+	/* MORPHOLOGY */
+	soma      { L= 100   diam= 100 }
+	axon      { L= alen   diam= 10 }
+
+	/* put axon before hillock, since hillock uses diam.axon(.5) */
+	hillock   {
+		L= hlen
+		/*  linearly tapering hillock */
+		dsoma		= soma.diam(0)
+		daxon		= axon.diam(0)
+		diam(0:1) = dsoma:daxon
+	}
+	mdiam=20
+	myelin[0] { L= mlen0   diam= mdiam }
+	node[0]   { L= 6   diam= 7 }
+	myelin[1] { L= mlen1   diam= mdiam }
+	node[1]   { L= 6   diam= 7 }
+	if (nmyelin > 2)  for i=2,nmyelin-1 {
+		myelin[i] { L= mlen2  diam= mdiam }
+		node[i]   { L= 6   diam= 7 }
+	}
+
+	dz= z/num_of_levels	/* electrotonic length of each level */
+	for i=0,ndend-1 {
+		dend[i]  { 
+			diam	= eq_diam(root_diam,ndend)
+			L	= eq_leng(diam,dz,g_passive)
+		}
+	}
+}
+
+proc membrane() {
+
+	/* MEMBRANE */
+	soma      {  insert hh  gnabar_hh= gfsoma*gnaHH gkbar_hh= gfsoma*gkHH gl_hh= gfsoma*glHH }
+	hillock   { 
+		insert hh
+		gnabar_hh(0:1) = gfsoma*gnaHH:gfhill*gnaHH
+		gkbar_hh(0:1) = gfsoma*gkHH:gfhill*gkHH
+		gl_hh(0:1) = gfsoma*glHH:gfhill*glHH
+	}
+	axon	{
+		insert hh	/* with tapering density */
+		gnabar_hh(0:1) = gfhill*gnaHH:gfaxon*gnaHH
+		gkbar_hh(0:1) = gfhill*gkHH:gfaxon*gkHH
+		gl_hh(0:1) = gfhill*glHH:gfaxon*glHH
+	}
+
+	for i=0,nmyelin-1 {
+		/* check whether g_pas.myelin should = g_passive/200 */
+		myelin[i] { insert pas  g_pas= .003/200 e_pas= v_init cm= .005}
+		node[i]   { insert hh  gnabar_hh= gfnode*gnaHH 
+				gkbar_hh= gfnode*gkHH gl_hh= gfnode*glHH }
+	}
+
+	for i=0,ndend-1 {
+		dend[i]  { insert pas  g_pas= g_passive  e_pas= erev_passive }
+	}
+
+	/* set el_hh for compatibility with FRED3.NRN */
+	finitialize(v_init)
+	fcurrent()
+	forall {
+		if (ismembrane("hh")) { el_hh= v + (ina +ik)/gl_hh }
+	}
+}
+
+mhg()
+
+proc model_defaults() {
+	model_globals()
+	morphol()
+	membrane()
+}

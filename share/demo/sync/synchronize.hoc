@@ -1,0 +1,68 @@
+{load_file("cell.hoc")}
+
+//Network specification interface
+
+objref cells, nclist, netcon, nil
+{cells = new List()  nclist = new List()}
+
+func cell_append() {cells.append($o1)  $o1.position($2,$3,$4) return cells.count - 1 }
+proc cell_append() {cells.append($o1)  $o1.position($2,$3,$4) }
+
+func nc_append() {//srcindex, tarcelindex, synindex
+  if ($3 >= 0) {
+    cells.object($1).connect2target(cells.object($2).synlist.object($3),netcon)
+    netcon.weight = $4   netcon.delay = $5
+  }else{
+    cells.object($1).connect2target(cells.object($2).pp,netcon)
+    netcon.weight = $4   netcon.delay = $5
+  }
+  nclist.append(netcon)
+  return nclist.count - 1
+}
+
+proc createnet() {local i, j
+	ncell = $1
+	netcon = nil
+	nclist.remove_all()
+	cells.remove_all()
+	for i=0, $1-1 {
+		cell_append(new Cell(), i, 0, 0)
+	}
+	for i=0, $1-1 for j=0, $1-1 if (i != j) {
+		nc_append(i, j, -1, 0, 1)
+	}
+}
+
+proc weight() {local i
+	w = $1
+	for i=0, nclist.count-1 {
+		nclist.object(i).weight = $1
+	}
+}
+
+proc delay() {local i
+	del = $1
+	for i=0, nclist.count-1 {
+		nclist.object(i).delay = $1
+	}
+}
+
+proc tau() {local i
+	ta = $1
+	for i=0, cells.count-1 {
+		cells.object(i).pp.tau = $1
+	}
+}
+
+proc interval() {local i, x, dx // args are low and high
+	low = $1
+	high = $2
+	x = low
+	dx = (high - low)/cells.count
+	for i=0, cells.count-1 {
+		cells.object(i).pp.invl = x
+		x += dx
+	}
+}
+
+

@@ -1,0 +1,12 @@
+create utility
+objref o, ob
+utility { o = new ObjectExample(.5) ob=new ObjectExample(.5) }
+
+o.a = 5
+ob.a = 6
+o.aval()
+ob.aval()
+for i=0,2 o.x[i] = i+10
+for i=0,2 ob.x[i] = i+20
+o.prx()
+ob.prx()

@@ -1,0 +1,117 @@
+{load_file("nrngui.hoc")}
+
+begintemplate VLinoidRate
+
+public A, k, d, f, inv, Asol, ksol, form, parms, save_data, restore, type
+public kstset, parm2vec, vec2parm, chk
+
+proc init() {
+	parms(.5, .1, -40)
+}
+
+proc kstset() {
+	parms(.5, .1, -40)
+	$o1.set_f($2, type(), new Vector(3))
+	parm2vec($o1.parm($2))
+}	
+
+proc chk() {
+	if ($o3.x[0] < 0) { $o3.x[0] = 0 }
+}
+
+proc parm2vec() {
+	$o1.resize(0)
+	$o1.append(A, k, d)
+}
+
+proc vec2parm() {
+	A = $o1.x[0]
+	k = $o1.x[1]
+	d = $o1.x[2]
+}
+
+func type() { return 3 }
+
+proc parms() {
+	A = $1  k = $2  d=$3
+}
+
+proc save_data() {
+	sprint($s2, "%g %g %g", A, k, d)
+	$o1.save($s2)
+}
+proc restore() {
+	parms(fscan(), fscan(), fscan())
+}
+
+proc form() {
+	if ($2 == 1) {
+		sprint($s1, "A%s*x/(1 - exp(-x)) where x = k%s*(v - d%s)", $s3, $s3, $s3)
+	}else{
+		if (d < 0) {$s1 = "+"} else {$s1 = "-"}
+		sprint($s1, "%.4g*x/(1 - exp(-x)) where x = %.4g*(v %s %.4g)", A, k, $s1, abs(d))
+//		sprint($s1, "%.4g*(v - %.4d)/(1 - exp(%.4g*(v - %.4g)))", A*k, d, -k, d)
+	}
+}
+
+func Exp() {
+	if ($1 > 100) {
+		return exp(100)
+	}
+	return exp($1)
+}
+
+func f() {local x
+	if (abs(k) <  1e-6) {
+	k = 1e-6*(2*(k < 0)-1)
+	}
+	x = k*($1 - d)
+	return A*linoid(x)
+}
+
+func inv() { local x
+	x = sol($1/A)
+	return x/k + d
+}
+
+func Asol() { return $2 }
+
+func ksol() {local x
+	x = sol($2/A)
+	if (abs($1 - d) < 1e-6) {
+		x = 1e6
+	}else{
+		x /= ($1 - d)
+	}
+	return x
+}
+
+func linoid() {
+	if (abs($1) < 1e-4) {
+		return 1 + $1/2
+	}
+	return $1/(1 - Exp(-$1))
+}
+
+func sol() {local x, dx, i, y, y2, yp
+	// find x so that $1 = f(x)
+	x = 1
+	i = 0
+	while (1) {
+		i += 1
+		y = linoid(x) -  $1
+		y2 = linoid(x + .001) - $1
+		yp = (y2 - y)/.001
+		if (abs(yp) < 1e-6) {
+			yp = 1e-6
+		}
+		dx = -y/yp
+		x += dx
+		if (abs(dx) < 1e-6) {
+			break
+		}
+	}
+	return x
+}
+
+endtemplate VLinoidRate

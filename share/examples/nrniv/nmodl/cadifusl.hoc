@@ -1,0 +1,84 @@
+/*radial and longitudinal diffusion of calcium using model in cadifusl*/
+/* this verifies conservation of calcium but the time dependent aspects
+of calcium diffusion have not yet been verified. */
+nann = 4 - 1
+create a,b,c
+access a
+a connect b(0),1
+a connect c(0),.5
+dt=.025
+forall{nseg = 3 diam=6 L=3 insert cadifus} /* note width is 1 x 1 */
+topology()	/* initlong_cadifus will crash unless internal tree made */
+		/* fcurrent() or fadvance() will also build the tree */
+strdef sec
+proc printca() {
+	sectionname(sec)
+	printf("section %s  x horizontal, nann vertical\n", sec)
+	for i=0,nann {
+		for (x) if(x > 0 && x < 1) {
+			printf(" %10g", ca_cadifus[i](x))
+		}
+		printf("\n")
+	}
+}
+
+proc init() {local i
+	t = 0
+/*	v = 0
+	coord_cadifus()
+	forall for i=0,nann {
+		ca_cadifus[i] = 0
+		CaBuffer_cadifus[i] = 0
+		Buffer_cadifus[i] = 0
+	}
+*/
+forall ion_style("ca_ion", 2,2,0,0,0) // no auto computation of cai/cao/eca
+forall cai=0
+finitialize(0)
+}
+
+proc run() {
+	init()
+	b icabar_cadifus(.5:.51) = 0:0	/* minus means inward */
+	b ca_cadifus[2](.5:.51) = 1:1
+	startsw()
+	while (t < 5) {
+/*		b {print "t=", t  printca()} xred("continue",0,0,0)*/
+		fadvance()
+	}
+	printf("elapsed time = %g\n", stopsw())
+	printf("total internal calcium = %g (pmole)\n", tot_ca())
+	/*you have: ms milliamp micron micron/cm2-coulomb
+	  you want: pico
+	  	  * 1.000000e-02 */
+b printf("total output = %g (pmole)\n",\
+ t*icabar_cadifus(.5)*PI*diam(.5)/96520/2*1e-2*L/nseg)
+	b printca()
+}
+
+axis(0, nann, nann, 0,1,1)
+proc plotca() {local i
+	plot(1)
+	for i=0,nann {
+		plot(i, ca_cadifus[i])
+	}
+	plt(-1)
+}
+
+func tot_ca() {local i, c	/* picomoles */
+	c=0
+  forall if(ismembrane("cadifus")) for(x) if(x > 0 && x < 1) {
+	for i=0,nann {
+		/* from units command
+		you have: micron3 milli/liter
+		you want: pico
+		        * 1.000000e-06 */
+	
+	 c = c + diam(x)^2*vol_cadifus[i]*(CaBuffer_cadifus[i](x)+ca_cadifus[i](x))\
+		*1e-6*L/nseg
+	}
+  }
+	return c
+}
+run()
+run()

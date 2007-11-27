@@ -1,0 +1,22 @@
+objectvar save_window_, rvp_
+objectvar scene_vector_[5]
+objectvar ocbox_, ocbox_list_, scene_, scene_list_
+{ocbox_list_ = new List()  scene_list_ = new List()}
+{
+xpanel("Synchronizing network parameters", 0)
+ncell = 10
+xvalue("Number of all to all cells","ncell", 1,"recreate(ncell)", 0, 0 )
+w = -0.3
+xvalue("All to all connection weight","w", 1,"weight(w)", 0, 0 )
+del = 4
+xvalue("Delay (ms)","del", 1,"delay(del)", 0, 0 )
+ta = 10
+xvalue("Cell time constant (ms)","ta", 1,"tau(ta)", 0, 0 )
+low = 10
+xvalue("Lowest natural interval","low", 1,"interval(low, high)", 0, 0 )
+high = 15
+xvalue("Highest natural interval","high", 1,"interval(low, high)", 0, 0 )
+xpanel(700,400)
+}
+objectvar scene_vector_[1]
+{doNotify()}

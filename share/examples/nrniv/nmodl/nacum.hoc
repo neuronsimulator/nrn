@@ -1,0 +1,39 @@
+// Physical properties
+create a
+access a
+{nseg=1 L=1 diam=1 insert inatest insert na}
+
+// run parameters
+area1 = PI*diam*L
+vol = PI*diam^2/4*L
+
+// graphical interface appearance
+objref g
+g = new Graph()
+
+// simulation control
+proc run() {
+	diam=.001
+	fhspace_na=2
+	inabar_inatest = -1e-2
+	nai0_na_ion = 1
+	nao0_na_ion = 10
+	finitialize(0)
+	fcurrent()
+	g.color(1)
+	g.size(0,1,0,10)
+	g.beginline()
+	g.addexpr("nai",2,1)
+	g.addexpr("nao",3,1)
+	while (t < 1) {
+		g.line(t,v)
+		g.plot(t)
+		fadvance()
+	}
+	g.flush()
+}
+
+// run simulation
+run()
+
+

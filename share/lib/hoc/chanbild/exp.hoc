@@ -1,0 +1,76 @@
+{load_file("nrngui.hoc")}
+
+begintemplate VExpRate
+
+public A, k, d, f, inv, Asol, ksol, form, parms, restore, save_data, type
+public kstset, parm2vec, vec2parm, chk
+
+proc init() {
+	parms(.5, .1, -40)
+}
+
+proc kstset() {
+	parms(.5, .1, -40)
+	$o1.set_f($2, type(), new Vector(3))
+	parm2vec($o1.parm($2))
+}	
+
+proc chk() {
+	if ($o3.x[0] < 0) { $o3.x[0] = 0 }
+}
+
+proc parm2vec() {
+	$o1.resize(0)
+	$o1.append(A, k, d)
+}
+
+proc vec2parm() {
+	A = $o1.x[0]
+	k = $o1.x[1]
+	d = $o1.x[2]
+}
+
+func type() { return 2 }
+
+proc parms() {
+	A = $1  k = $2  d=$3
+}
+
+proc save_data() {
+	sprint($s2, "%g %g %g", A, k, d)
+	$o1.save($s2)
+}
+proc restore() {
+	parms(fscan(), fscan(), fscan())
+}
+
+proc form() {
+	if ($2 == 1) {
+		sprint($s1, "A%s*exp(k%s*(v - d%s)))", $s3, $s3, $s3)
+	}else{
+		if (d < 0) {$s1 = "+"} else {$s1 = "-"}
+		sprint($s1, "%.4g*exp(%.4g*(v %s %.4g)))", A, k, $s1, abs(d))
+	}
+}
+
+func f() {local x
+	x = k*($1 - d)
+	if (x > 700) { x = 700 }
+	return A*exp(x)
+}
+
+func inv() {local x
+	x = log($1/A)
+	if (k == 0) { return 1e6 }
+	return x/k + d
+}
+
+func Asol() { return $2 }
+
+func ksol() {local x
+	x = $1 - d
+	if (abs(x) < 1e-6) { x = 1e-6 }
+	return log($2/A)/x
+}
+
+endtemplate VExpRate

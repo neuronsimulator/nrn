@@ -1,0 +1,77 @@
+/* hoc.pascab4 -- test multiple branching at end of cable
+   Compare this with hoc.pascab3.
+      Notice that the voltage profile is that of a uniform cable up to
+      the branch point
+      since the 8 branches have the same total input impedance as a
+      continuation of the cable.  From then on, since the diameter is 1/4 of
+      its former value, the space constant is 1/2 of its former value. */
+
+// physical properties of the cell
+create a,b[8]
+access a
+a.nseg = 5	
+for i=0,7 b[i].nseg = 20
+a {for i=0,7 connect b[i](0), 1}
+a {diam = 1  L = 1  insert pas g_pas=.001 e_pas=0}
+for i=0,7 b[i] {diam = 8^(-2/3)  L = 4  insert pas g_pas=.001 e_pas=0 rallbranch=1}
+forall Ra = 1e7/4
+
+// experimental tools
+objref stim
+stim = new VClamp(0)
+ 
+// graphical interface appearance
+length = a.L + b[0].L
+objref g
+g = new Graph()
+g.size(0,length,0,1)
+g.color(0)
+g.color(1)
+proc label() {
+	g.vfixed
+	g.label(.25,.01, "x (Lambda)")
+	g.label(0, .5, "V")
+	g.label(0,.95,"Steady state voltage as function of distance for infinite cable")
+	g.label("Compare current injection, voltage clamp, and analytic sol'n.")
+}
+label()
+
+// simulation control
+
+proc plotvolt() { local x
+	g.beginline()
+	a for (x) {
+		g.line(x*a.L, v(x))
+	}
+	b[0] for (x) {
+		g.line(x*L + a.L, v(x))
+	}	
+}
+
+proc run() {
+	a.v = 0  for i=0,7 b[i].v = 0
+	dt = 1e9 t=0
+	stim.dur[0]=1e20 stim.amp[0]=1
+//	fclamp(1,0) fclamp(0,1e20, 1)
+	g.color(1)
+	g.vfixed
+	g.label(.5,.8,"8 physical branches")
+	fadvance() plotvolt()
+	g.beginline()
+	g.flush()
+}
+// run simulation
+run()
+
+
+
+
+
+
+
+
+	
+
+
+
+

@@ -1,0 +1,42 @@
+
+begintemplate Cell
+public soma, dend, axon, pr
+create soma, axon
+create dend[3]
+
+proc init() {
+	soma connect axon(0), 0
+	for i=0,2 soma connect dend[i](0), 1
+	geometry()
+	membrane()
+}
+
+proc geometry() {
+	soma { nseg=1 L=30 diam=30 }
+	axon { nseg=10 L=1000 diam=5 }
+	forsec "dend" {nseg=5 L=200 diam(0:1) = 5:1 }
+}
+
+proc membrane() {
+	soma {insert hh}
+	axon {insert hh}
+	forsec "dend" {insert pas  g_pas=.001  e_pas=-65}
+}
+
+proc pr() {
+	forall psection()
+}
+
+endtemplate Cell
+
+objectvar cell[3]
+for i=0,2 cell[i] = new Cell()
+
+topology()
+
+cell[1].pr()
+
+objectvar allsoma
+allsoma = new SectionList()
+forall ifsec "soma" allsoma.append()
+forsec allsoma psection()

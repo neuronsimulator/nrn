@@ -1,0 +1,50 @@
+#include <../../nrnconf.h>
+/* must get some things linked from nrniv which otherwise would be gotten
+	from ivoc. Needed only if linked statically */
+	
+#include <OS/string.h>
+#include <InterViews/resource.h>
+#include "symdir.h"
+#include "datapath.h"
+#include <nrnmpiuse.h>
+#if HAVE_IV
+#include "ivoc.h"
+#endif
+
+#if defined(CYGWIN)
+extern "C" {
+extern double hoc_func_table(); // needed by dll.cpp
+extern double hoc_spec_table(); // needed by dll.cpp
+extern int ncyg_fprintf();
+}
+#endif
+#if NRNMPI
+extern "C" {
+	extern void nrn_timeout(int);
+}
+#endif
+
+extern void nrn_vecsim_add(void*, boolean);
+extern void nrn_vecsim_remove(void*);
+
+void nrn_nvkludge_dummy() {
+	SymDirectory* s1 = new SymDirectory(-1);
+	HocDataPaths* hp = new HocDataPaths();
+#if HAVE_IV
+	Oc::valid_stmt(0, 0);
+#endif
+#if defined(CYGWIN)
+#if HAVE_IV
+	Oc::valid_expr(0);
+#endif
+	hoc_func_table();
+	hoc_spec_table();
+	ncyg_fprintf();
+#endif
+	nrn_vecsim_add(nil, false);
+	nrn_vecsim_remove(nil);
+#if NRNMPI
+	nrn_timeout(0);
+#endif
+}
+

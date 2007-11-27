@@ -1,0 +1,203 @@
+load_file("nrngui.hoc")
+
+{ ion_register("na", 1) }
+objref ks, ksvec, ksgate, ksstates, kstransitions, tobj
+{
+  ksvec = new Vector()
+  ksstates = new List()
+  kstransitions = new List()
+  ks = new KSChan(1)
+}
+// nahh0 Point Process (Allow Single Channels)
+// na ohmic ion current
+//     ina (mA/cm2) = nahh0.g * (v - ena)*(0.01/area)
+{
+  ks.name("nahh0")
+  ks.ion("na")
+  ks.iv_type(0)
+  ks.gmax(0.12)
+  ks.erev(0)
+}
+// g = gmax * m3h1
+// m3h1: 8 state, 10 transitions
+{
+  objref ksgate
+  ksstates.append(ks.add_ksstate(ksgate, "m0h0"))
+  ksgate = ksstates.object(0).gate
+  ksstates.object(0).frac(0)
+  ksstates.append(ks.add_ksstate(ksgate, "m1h0"))
+  ksstates.object(1).frac(0)
+  ksstates.append(ks.add_ksstate(ksgate, "m2h0"))
+  ksstates.object(2).frac(0)
+  ksstates.append(ks.add_ksstate(ksgate, "m3h0"))
+  ksstates.object(3).frac(0)
+  ksstates.append(ks.add_ksstate(ksgate, "m0h1"))
+  ksstates.object(4).frac(0)
+  ksstates.append(ks.add_ksstate(ksgate, "m1h1"))
+  ksstates.object(5).frac(0)
+  ksstates.append(ks.add_ksstate(ksgate, "m2h1"))
+  ksstates.object(6).frac(0)
+  ksstates.append(ks.add_ksstate(ksgate, "m3h1"))
+  ksstates.object(7).frac(1)
+}
+{
+  kstransitions.append(ks.add_transition(ksstates.object(0), ksstates.object(1)))
+  kstransitions.append(ks.add_transition(ksstates.object(1), ksstates.object(2)))
+  kstransitions.append(ks.add_transition(ksstates.object(2), ksstates.object(3)))
+  kstransitions.append(ks.add_transition(ksstates.object(4), ksstates.object(5)))
+  kstransitions.append(ks.add_transition(ksstates.object(5), ksstates.object(6)))
+  kstransitions.append(ks.add_transition(ksstates.object(6), ksstates.object(7)))
+  kstransitions.append(ks.add_transition(ksstates.object(0), ksstates.object(4)))
+  kstransitions.append(ks.add_transition(ksstates.object(1), ksstates.object(5)))
+  kstransitions.append(ks.add_transition(ksstates.object(2), ksstates.object(6)))
+  kstransitions.append(ks.add_transition(ksstates.object(3), ksstates.object(7)))
+}
+{
+  tobj = kstransitions.object(0)
+  tobj.type(0)
+  tobj.set_f(0, 3, ksvec.c.append(3, 0.1, -40))
+  tobj.set_f(1, 2, ksvec.c.append(4, -0.055556, -65))
+}
+{
+  tobj = kstransitions.object(1)
+  tobj.type(0)
+  tobj.set_f(0, 3, ksvec.c.append(2, 0.1, -40))
+  tobj.set_f(1, 2, ksvec.c.append(8, -0.055556, -65))
+}
+{
+  tobj = kstransitions.object(2)
+  tobj.type(0)
+  tobj.set_f(0, 3, ksvec.c.append(1, 0.1, -40))
+  tobj.set_f(1, 2, ksvec.c.append(12, -0.055556, -65))
+}
+{
+  tobj = kstransitions.object(3)
+  tobj.type(0)
+  tobj.set_f(0, 3, ksvec.c.append(3, 0.1, -40))
+  tobj.set_f(1, 2, ksvec.c.append(4, -0.055556, -65))
+}
+{
+  tobj = kstransitions.object(4)
+  tobj.type(0)
+  tobj.set_f(0, 3, ksvec.c.append(2, 0.1, -40))
+  tobj.set_f(1, 2, ksvec.c.append(8, -0.055556, -65))
+}
+{
+  tobj = kstransitions.object(5)
+  tobj.type(0)
+  tobj.set_f(0, 3, ksvec.c.append(1, 0.1, -40))
+  tobj.set_f(1, 2, ksvec.c.append(12, -0.055556, -65))
+}
+{
+  tobj = kstransitions.object(6)
+  tobj.type(0)
+  tobj.set_f(0, 2, ksvec.c.append(0.07, -0.05, -65))
+  tobj.set_f(1, 4, ksvec.c.append(1, -0.1, -35))
+}
+{
+  tobj = kstransitions.object(7)
+  tobj.type(0)
+  tobj.set_f(0, 2, ksvec.c.append(0.07, -0.05, -65))
+  tobj.set_f(1, 4, ksvec.c.append(1, -0.1, -35))
+}
+{
+  tobj = kstransitions.object(8)
+  tobj.type(0)
+  tobj.set_f(0, 2, ksvec.c.append(0.07, -0.05, -65))
+  tobj.set_f(1, 4, ksvec.c.append(1, -0.1, -35))
+}
+{
+  tobj = kstransitions.object(9)
+  tobj.type(0)
+  tobj.set_f(0, 2, ksvec.c.append(0.07, -0.05, -65))
+  tobj.set_f(1, 4, ksvec.c.append(1, -0.1, -35))
+}
+{ ksstates.remove_all  kstransitions.remove_all }
+{ ks.single(1) }
+{objref ks, ksvec, ksgate, ksstates, kstransitions, tobj}
+{ ion_register("k", 1) }
+objref ks, ksvec, ksgate, ksstates, kstransitions, tobj
+{
+  ksvec = new Vector()
+  ksstates = new List()
+  kstransitions = new List()
+  ks = new KSChan(1)
+}
+// khh0 Point Process (Allow Single Channels)
+// k ohmic ion current
+//     ik (mA/cm2) = khh0.g * (v - ek)*(0.01/area)
+{
+  ks.name("khh0")
+  ks.ion("k")
+  ks.iv_type(0)
+  ks.gmax(0.036)
+  ks.erev(0)
+}
+// g = gmax * n4
+// n4: 5 state, 4 transitions
+{
+  objref ksgate
+  ksstates.append(ks.add_ksstate(ksgate, "n0"))
+  ksgate = ksstates.object(0).gate
+  ksstates.object(0).frac(0)
+  ksstates.append(ks.add_ksstate(ksgate, "n1"))
+  ksstates.object(1).frac(0)
+  ksstates.append(ks.add_ksstate(ksgate, "n2"))
+  ksstates.object(2).frac(0)
+  ksstates.append(ks.add_ksstate(ksgate, "n3"))
+  ksstates.object(3).frac(0)
+  ksstates.append(ks.add_ksstate(ksgate, "n4"))
+  ksstates.object(4).frac(1)
+}
+{
+  kstransitions.append(ks.add_transition(ksstates.object(0), ksstates.object(1)))
+  kstransitions.append(ks.add_transition(ksstates.object(1), ksstates.object(2)))
+  kstransitions.append(ks.add_transition(ksstates.object(2), ksstates.object(3)))
+  kstransitions.append(ks.add_transition(ksstates.object(3), ksstates.object(4)))
+}
+{
+  tobj = kstransitions.object(0)
+  tobj.type(0)
+  tobj.set_f(0, 3, ksvec.c.append(0.4, 0.1, -55))
+  tobj.set_f(1, 2, ksvec.c.append(0.125, -0.0125, -65))
+}
+{
+  tobj = kstransitions.object(1)
+  tobj.type(0)
+  tobj.set_f(0, 3, ksvec.c.append(0.3, 0.1, -55))
+  tobj.set_f(1, 2, ksvec.c.append(0.25, -0.0125, -65))
+}
+{
+  tobj = kstransitions.object(2)
+  tobj.type(0)
+  tobj.set_f(0, 3, ksvec.c.append(0.2, 0.1, -55))
+  tobj.set_f(1, 2, ksvec.c.append(0.375, -0.0125, -65))
+}
+{
+  tobj = kstransitions.object(3)
+  tobj.type(0)
+  tobj.set_f(0, 3, ksvec.c.append(0.1, 0.1, -55))
+  tobj.set_f(1, 2, ksvec.c.append(0.5, -0.0125, -65))
+}
+{ ksstates.remove_all  kstransitions.remove_all }
+{ ks.single(1) }
+{objref ks, ksvec, ksgate, ksstates, kstransitions, tobj}
+objref ks, ksvec, ksgate, ksstates, kstransitions, tobj
+{
+  ksvec = new Vector()
+  ksstates = new List()
+  kstransitions = new List()
+  ks = new KSChan(0)
+}
+// leak Density Mechanism
+// NonSpecific ohmic ion current
+//     i_leak (mA/cm2) = g_leak * (v - e_leak)
+{
+  ks.name("leak")
+  ks.iv_type(0)
+  ks.gmax(0.0003)
+  ks.erev(-54.3)
+}
+// g = gmax
+{objref ks, ksvec, ksgate, ksstates, kstransitions, tobj}
+

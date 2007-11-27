@@ -1,0 +1,245 @@
+strdef tstr
+//used by cell builder
+
+// currently accessed section, $1 == frequency
+// this is a misnomer since it returns the length in microns of 1 lambda
+func lambda_f() { local i, x1, x2, d1, d2, lam
+	if (cm == 0) { return 1e10 }
+	if (n3d() < 2) {
+		return 1e5*sqrt(diam/(4*PI*$1*Ra*cm))
+	}
+// above was too inaccurate with large variation in 3d diameter
+// so now we use all 3-d points to calculate the actual length of
+// the section in units of lambda
+	x1 = arc3d(0)
+	d1 = diam3d(0)
+	lam = 0
+	for i=1, n3d()-1 {
+		if (d1 == 0) {
+			sprint(tstr, "0 diameter for 3d point %d of %s.", i-1, secname())
+			execerror("lambda_f error:", tstr)
+		}
+		x2 = arc3d(i)
+		d2 = diam3d(i)
+		lam += (x2 - x1)/sqrt(d1 + d2)
+		x1 = x2   d1 = d2
+	}
+	//  length of the section in units of lambda
+	lam *= sqrt(2) * 1e-5*sqrt(4*PI*$1*Ra*cm)
+
+	return L/lam
+}
+
+if (nrnpython("")) {
+	nrnpython("import sys")
+	sprint(tstr, "sys.path.append('%s/lib/python')", neuronhome())
+	nrnpython(tstr)
+}
+
+/*
+?0 UserClasses String
+*/
+help ?0
+
+begintemplate String
+public s
+strdef s
+ proc init() {	// the first space prevents this proc from being a context
+		// in the help system
+	if (numarg() == 1) {
+		s = $s1
+	}
+}
+endtemplate String
+
+iterator case() { local i
+	for i = 2, numarg() {
+		$&1 = $i
+		iterator_statement
+	}
+}
+
+
+/*
+?0 User Functions Clipboard
+*/
+
+proc clipboard_set() {
+	hoc_obj_[1] = $o1.c
+	hoc_obj_[0] = $o2.c
+}
+
+proc clipboard_get() {
+	$o1 = hoc_obj_[1].c
+	$o2 = hoc_obj_[0].c
+}
+
+objref hoc_sf_
+hoc_sf_ = new StringFunctions()
+strdef tstr
+objref clipboard_file[2]
+proc clipboard_save() {local i
+	if (!object_id(clipboard_file[0])) {
+		clipboard_file = new File()
+		clipboard_file.chooser("w", "Write clipboard vectors to file", "*.dat", "Save", "Cancel")
+	}
+	if (clipboard_file[0].chooser()) {
+		if (clipboard_file[0].wopen()) {
+			clipboard_file[0].printf("label:%s\n%d\n", hoc_obj_[0].label, hoc_obj_[0].size)
+			for i=0, hoc_obj_[0].size-1 {
+				clipboard_file[0].printf("%g\t%g\n", hoc_obj_[1].x[i], hoc_obj_[0].x[i])
+			}
+			clipboard_file[0].close()
+		}else{
+			continue_dialog("Clipboard Save failed")
+		}
+	}
+}
+
+proc clipboard_retrieve() {local i, size, bsize, b
+	bsize = 200
+	for i=0, 1 {
+		hoc_obj_[i] = new Vector(200)
+		hoc_obj_[i].resize(1)
+	}
+	if (!object_id(clipboard_file[1])) {
+		clipboard_file[1] = new File()
+		clipboard_file[1].chooser("r", "Read clipboard vectors from file", "*.dat", "Read", "Cancel")
+	}
+	if (numarg() > 0) {
+		b = clipboard_file[1].ropen($s1)	
+	}else{
+		if (clipboard_file[1].chooser()) {
+			b = clipboard_file[1].ropen()
+		}else{
+			return
+		}
+	}
+		if (b) {
+			// first line may be label:str or single number
+			// otherwise start the data immediately
+			clipboard_file[1].gets(tstr)
+			if (hoc_sf_.substr(tstr, "label") != -1) {
+				if (sscanf(tstr, "label:%s\n", tstr) == 1) {
+					hoc_obj_[0].label(tstr)
+				}
+				clipboard_file[1].gets(tstr)
+			}
+			i = sscanf(tstr, "%g %g", &hoc_obj_[1].x[0], &hoc_obj_[0].x[0])
+			j = 1
+			if (i == 1) {
+				size = hoc_obj_[1].x[0]
+				for i=0, 1 {
+					hoc_obj_[i].buffer_size(size)
+					hoc_obj_[i].resize(0)
+				}
+				j = 0
+			}else{
+				size = 1e20
+			}
+			while(!clipboard_file[1].eof()) {
+				if (j >= bsize) {
+					bsize *= 2
+					for i=0, 1 {hoc_obj_[i].buffer_size(bsize)}
+				}
+				for i=0,1 {
+					hoc_obj_[1-i].append(clipboard_file[1].scanvar())
+				}
+				j += 1
+				if (j > size) { break }
+			}
+			clipboard_file[1].close()
+		}else{
+			continue_dialog("Clipboard Retrieve failed")
+		}
+}
+
+func valid_name_syntax() { localobj str
+	str = new String()
+	if (hoc_sf_.len($s1) == 0 || hoc_sf_.head($s1, "[^A-Za-z0-9_]", str.s) > -1) {
+		if ($2 == 1) {
+			continue_dialog("Valid names begin with an alpha character and contain only A-Za-z0-9_")
+		}
+		return 0
+	}
+	return 1
+}
+
+begintemplate ExecCommand
+public b
+objref b, this
+strdef cmd, tstr
+proc init() {
+	cmd = "for case(&) {run()}"
+	if (numarg() > 0) {
+		cmd = $s1
+	}
+	b = new VBox()
+	b.ref(this)
+	b.save("save()")
+	b.intercept(1)
+	xpanel("", 1)
+	xbutton("Exec", "execute(cmd)")
+	xvarlabel(cmd)
+	xmenu("Modify")
+	xbutton("Modify", "change()")
+	xbutton("Clone", "clone()")
+	xmenu()
+	xpanel()
+	b.intercept(0)
+	sprint(tstr, "%s", this)
+	if (numarg() < 2) {
+		b.map(tstr)
+	}
+	if (numarg() == 0) {
+		change()
+	}
+}
+
+proc change() {
+string_dialog("New Command                                                 ", cmd)
+}
+proc clone() {
+	sprint(tstr, "newcommand(\"%s\")", cmd)
+	execute(tstr)
+}
+proc save() {
+	sprint(tstr, "ocbox_=new ExecCommand(\"%s\", 1)", cmd)
+	b.save(tstr)
+	b.save("ocbox_=ocbox_.b")
+}
+endtemplate ExecCommand
+proc newcommand() {
+	if (numarg() == 1) {
+		hoc_obj_[1] = new ExecCommand($s1)
+	}else{
+		hoc_obj_[1] = new ExecCommand()
+	}
+	hoc_obj_[1] = hoc_obj_[0]
+}
+
+{itmp = 0}
+
+func object_index() {
+	return object_id($o1, 1)
+}	
+
+proc classname() {
+	sprint(tstr, "%s", $o1)
+	sscanf(tstr, "%[^[]", $s2)
+//	printf("classname |%s|%s|\n", tstr, $s2)
+}
+
+proc graph_menu_remove_most() {
+	$o1.menu_remove("Plot what?")
+	$o1.menu_remove("Pick Vector")
+	$o1.menu_remove("Color/Brush")
+	$o1.menu_remove("Keep Lines")
+	$o1.menu_remove("Family Label?")
+	$o1.menu_remove("Erase")
+	$o1.menu_remove("Move Text")
+	$o1.menu_remove("Change Text")
+	$o1.menu_remove("Delete")
+}
+
+

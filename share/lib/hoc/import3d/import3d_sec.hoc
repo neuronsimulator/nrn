@@ -1,0 +1,131 @@
+begintemplate Import3d_Section
+// primarily for display. Allows gui without instantiating sections
+// fid refers to the raw index of the point that id refers to.
+// For a root section fid is normally 0. For sections that have
+// parents, fid is normally 1 since the first point is often a copy of
+// the last point of the parent.
+// The variable first=0 means that when diam is shown, there
+// should be a glyph drawn defined by raw indices 0 and 1.
+public raw, xyz, d, id, append, g, mkglyph, rotate, type, centroid_color
+public iscontour_, pid, parentsec, parentx, volatile, nameindex, first, fid
+public volatile2, contourcenter, ztrans
+public pl_point, insrt, set_pt
+objref raw, xyz, d, g, parentsec
+proc init() {
+	ztrans = 0
+	first = 0
+	fid = 0
+	nameindex=0
+	parentx = 1
+	volatile = 0
+	volatile2 = 0
+	pid = -1
+	iscontour_ = 0
+	type = 0
+	centroid_color = 2
+	id = $1
+	raw = new Matrix(3, $2)
+	xyz = new Matrix(3, $2)
+	d = new Vector($2)
+}
+proc set_pt() {
+	raw.x[0][$1] = $2
+	raw.x[1][$1] = $3
+	raw.x[2][$1] = $4
+	d.x[$1] = $5
+}
+
+proc append() {local i, j
+	for i=0, $3-1 {
+		j = $1 + i
+		k = $2 + i
+		set_pt(j, $o4.x[k], $o5.x[k], $o6.x[k], $o7.x[k])
+	}
+}
+
+proc insrt() {local i, nr, nc
+	nr = raw.nrow  nc = raw.ncol
+	d.resize(nc+1)
+	raw.resize(nr, nc+1)
+	xyz.resize(nr, nc+1)
+	for (i=nc-1; i >= $1; i -= 1) {
+		raw.setcol(i+1, raw.getcol(i))
+		d.x[i+1] = d.x[i]
+	}
+	set_pt($1, $2, $3, $4, $5)
+}
+
+proc pl_point() {local i
+	for i=first, xyz.ncol-1 {
+		$o1.mark(xyz.x[0][i], xyz.x[1][i], "s", 5, 3, 1)
+	}
+	if (object_id(parentsec) == 0) {
+		$o1.mark(xyz.x[0][0], xyz.x[1][0], "S", 8, 3, 1)
+	}
+}
+
+proc mkglyph() {local i, d1, d2   localobj x, y, norm, x1, y1, i1
+	g = new Glyph()
+	if (xyz.ncol - first < 2) { return }
+	// normal
+	x1 = xyz.getrow(0)
+	y1 = xyz.getrow(1)
+	// may or may not want to include parent point in glyph
+	x = x1.c(first).deriv(1,1)
+	y = y1.c(first).deriv(1,1)
+	// point separations
+	norm = x.c.mul(x).add(y.c.mul(y)).sqrt.mul(2) // d is diam, need radius
+	// only want frustra for the non-zero separations
+	i1=norm.c.indvwhere("!=", 0)
+	if (i1.size == 0) {
+//		printf("Section with id=%d has 0 length in this projection\n", id)
+		return
+	}
+	norm.index(norm, i1)
+	x.index(x, i1).div(norm)
+	y.index(y, i1).div(norm)
+	
+	// but take care of the possible index offset due to missing parent point
+	if (first) { i1.add(first) }
+	i1.append(x1.size-1)
+	x1.index(x1, i1)
+	y1.index(y1, i1)
+
+	for i = 0, x.size-1 {
+		d1 = d.x[i1.x[i]]  d2=d.x[i1.x[i]+1]
+		g.path()
+		g.m(x1.x[i]+y.x[i]*d1, y1.x[i]-x.x[i]*d1)
+		g.l(x1.x[i+1]+y.x[i]*d2, y1.x[i+1]-x.x[i]*d2)
+		g.l(x1.x[i+1]-y.x[i]*d2, y1.x[i+1]+x.x[i]*d2)
+		g.l(x1.x[i]-y.x[i]*d1, y1.x[i]+x.x[i]*d1)
+		g.close()
+		g.fill(1)
+	}
+}
+
+proc rotate() {
+	$o1.mulm(raw, xyz)
+}
+
+
+// a utility function
+obfunc contourcenter() {local i localobj mean, pts, perim, d
+	// convert contour defined by $o1, $o2, $o3 vectors to
+	// 100 uniform points around perimeter
+	// and return the center coordinates as well as the uniform contour
+	// vectors (in $o1, $o2, $o3)
+	pts = new Matrix(3, $o1.size)
+	for i=1,2 { pts.setrow(i-1, $oi) }
+	for i=0,2 {pts.setrow(i, pts.getrow(i).append(pts.x[i][0]).deriv(1,1)) }
+	perim = new Vector(pts.ncol)
+	for i=1, pts.ncol-1 { perim.x[i] = perim.x[i-1] + pts.getcol(i-1).mag }
+	d = new Vector(101)
+	d.indgen(perim.x(perim.size-1)/100)
+	for i=1,3 $oi.interpolate(d, perim)
+	mean = new Vector(3)
+	for i=1, 3 { mean.x[i-1] = $oi.mean }
+	return mean
+}
+
+endtemplate Import3d_Section
+

@@ -1,0 +1,122 @@
+/* test diamlist extension */
+/* This addition is primarily intended when one has detailed morphological
+information. 3 dimensional position, diameter information can be attached
+to a section.
+When a 3-D info for a section exists, the range variable diam for each
+segment is set to the average value of the diameter. area and resistance from
+the center of the segment to the parent is also set. All values are computed
+from the diameter list via trapezoidal integration. The length variable L
+is set to the sum of the distances between points. The first point is
+assumed to be at arc length 0 and the last point is at arc length 1.
+Note that the 3-D info does not depend on the number of segments
+and the points do not have to be uniformly spaced in arc length.
+area(x) and ri(x) are not range variables but functions.  Therefore area
+and ri cannot be set directly at the user level. They are determined by
+the diam.  In turn, changing diam(x) or L at the user level will have no effect
+if 3-D info is attached to the section---diam(x) and L will be reset by
+the 3-D points.
+
+The effect of taper, ds^2 == dx^2 + dr^2, is taken into account in the
+computation of area. This can be changed back to the normal approximation
+ds^2 ~ dx^2 by changing  two #if statements near the end of c.treeset
+
+This addition is present when c.treeset is compiled with the -DDIAMLIST=1
+option.
+*/
+objref g
+g = new Graph()
+create a
+access a
+L = 10
+
+proc newdiam1() {
+	pt3dclear()
+	for (i=0; i<10; i=i+1) {
+		pt3dadd(10*i, 0,0, 1+i)
+	}
+	for i=0,n3d()-1 print i, x3d(i), y3d(i), z3d(i), diam3d(i)
+}
+
+proc tst() {local a, r, max
+	nseg=$1
+	fcurrent()
+	for (x) print x, diam(x), area(x), ri(x)
+	g.size(100,400,100,300)
+	g.vfixed(1)
+	g.label(.15, .5, "diameter")
+	g.size(0,1,0,30)
+	g.beginline
+	for (x) g.line(x, diam(x))
+	g.flush
+	g.color(1)
+
+	max=0 for(x) if(x!=0 && x!=1) if(max < area(x)) max = area(x)
+	g.vfixed(1)
+	g.label(.15,.8,"area/x")
+	g.beginline
+	for (x) if(x!=0 && x!=1)  g.line(x, area(x)/(L/nseg))
+
+	g.vfixed(1)
+	g.label(.6, .5, "ri/x")
+	g.beginline
+	for (x) if (x > 0) g.line(x, ri(x)/(L/nseg))
+	
+	a=0 for(x) a=a+area(x) print "total area = ", a
+	r=0 for(x) if(x!=0) r=r+ri(x) print "resist 0-1 = ", r
+	g.flush()
+}
+proc newdiam2() {local x, d
+	pt3dclear()
+	ndiam = 20
+	for i=0,ndiam-1 {
+		x = (i/(ndiam-1))^2
+		d = 1 + 5*sin(PI*x/2)
+		pt3dadd(1, 10*x, 2, d)
+	}
+	for i=0,ndiam-1 print i, y3d(i), diam3d(i)
+}
+proc newdiam3() {local x, d
+	pt3dclear()
+	ndiam = 20
+	for i=0,ndiam-1 {
+		x = i/(ndiam-1)
+		if (i%2) d=2 else d=1
+		pt3dadd(1,2, 10*x, d)
+	}
+	for i=0,ndiam-1 print i, z3d(i), diam3d(i)
+}
+
+proc newdiam4() {local x, d, dx
+	/* if the area plot has spikes on it, it is because the segments
+		that overlap the change in diameter have additional area
+		due to the diameter change itself which is taken into
+		account in the implementation of diam_from_list() in
+		c.treeset at the lines dealing with taking taper into
+		account. One can remove this option the by changing
+		the  #if at the indicated location
+	*/
+	pt3dclear()
+	ndiam = 10
+	dx=1
+	x=0
+	for i=0,ndiam-1 {
+		pt3dadd(1,2, x, 1)
+		pt3dadd(1,2, x=x+1, 1 )
+		pt3dadd(1,2, x=x+.001, 2)
+		pt3dadd(1,2, x=x+1,2)
+		x=x+.001
+	}
+	for i=0,n3d()-1 print i, z3d(i), diam3d(i)
+}
+
+proc newdiam5() {local x, d
+	ndiam = 3
+	pt3dclear()
+	pt3dadd(0,0,0,01)
+	pt3dadd(.48,0,0, 10)
+	pt3dadd(1,0,0,10)
+	for i=0,ndiam-1 print i, x3d(i), diam3d(i)
+}
+
+newdiam1()
+tst(5)

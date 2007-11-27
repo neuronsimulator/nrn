@@ -1,0 +1,399 @@
+#ifndef graph_h
+#define graph_h
+
+#include <ivstream.h>
+#include <OS/list.h>
+#include <OS/string.h>
+#include <InterViews/observe.h>
+#include "scenevie.h"
+
+class DataVec;
+class Color;
+class Brush;
+struct Symbol;
+class Symlist;
+class GraphLine;
+class GLabel;
+class GPolyLine;
+class SymChooser;
+class Event;
+class GraphVector;
+class HocCommand;
+class LineExtension;
+class TelltaleState;
+struct Object;
+
+declarePtrList(LineList, GraphLine);
+
+//all Glyphs added to Graph must be enclosed in a GraphItem
+class GraphItem : public MonoGlyph {
+public:
+	enum { ERASE_LINE=1, ERASE_AXIS };
+	GraphItem(Glyph* g, boolean = true, boolean pick = true);
+	virtual ~GraphItem();
+	virtual void pick(Canvas*, const Allocation&, int depth, Hit&);
+	virtual void save(ostream&, Coord, Coord);
+	virtual void erase(Scene*, GlyphIndex, int erase_type);
+	boolean save() { return save_; }
+	void save(boolean s) {save_ = s;}
+	virtual boolean is_polyline();
+	virtual boolean is_mark();
+	virtual boolean is_fast() { return false;}
+	virtual boolean is_graphVector() { return false;}
+private:
+	boolean save_;
+	boolean pick_;
+};
+
+class Graph : public Scene {	// Scene of GraphLines labels and polylines
+public:
+	enum {CROSSHAIR = Scene::EXTRATOOL, CHANGELABEL, PICK, EXTRAGRAPHTOOL};
+	Graph(boolean = true); //true means map a new default view
+	virtual ~Graph();
+	void axis(DimensionName, float min, float max, float pos = 0.,
+		int ntics = -1, int nminor=0,
+		int invert = 0, boolean number = true);
+	GraphLine* add_var(const char*, const Color*, const Brush*,
+	    boolean usepointer, int fixtype = 1, double* p = nil,
+	    const char* lab = nil, Object* obj = nil);
+	void x_expr(const char*, boolean usepointer);
+	void add_polyline(GPolyLine*);
+	void add_graphVector(GraphVector*);
+	void begin();
+	void plot(float);
+	void flush();
+	void fast_flush();
+	void begin_line(const char* s = nil);
+	void begin_line(const Color*, const Brush*, const char* s = nil);
+	void line(Coord x, Coord y);
+	void mark(Coord x, Coord y, char style='+', float size=12,
+		const Color* =nil, const Brush* =nil);
+	void erase();
+	virtual void erase_all();
+	void erase_lines(); // all GPolylines
+	virtual void delete_label(GLabel*);
+	virtual boolean change_label(GLabel*, const char*, GLabel* gl=nil);
+	virtual void help();
+	void keep_lines();
+	void keep_lines_toggle();
+	void family(boolean);
+	void family(const char*);
+	void family_label_chooser();
+	void new_axis();
+	void erase_axis();
+	void view_axis();
+	void view_box();
+	void change_prop();
+	void color(int);
+	void brush(int);
+	const Color* color() const {return color_;}
+	const Brush* brush() const {return brush_;}
+	void set_cross_action(const char*, boolean vectorcopy=false);
+	void cross_action(char, GPolyLine*, int);
+	void cross_action(char, Coord, Coord);
+	void simgraph();// faintly analogous to Vector.record for localstep plotting
+
+	virtual void draw(Canvas*, const Allocation&) const;
+	virtual void pick(Canvas*, const Allocation&, int depth, Hit&);
+	virtual GlyphIndex glyph_index(const Glyph*);
+	virtual void new_size(Coord x1, Coord y1, Coord x2, Coord y2);
+	virtual void wholeplot(Coord &x1, Coord& y1, Coord& x2, Coord& y2)const;
+	
+	//label info
+	GLabel* label(float x, float y, const char* s, int fixtype,
+		float scale, float x_align, float y_align, const Color*);
+	GLabel* label(float x, float y, const char* s, float n=0, int fixtype = -1);
+	GLabel* label(const char* s, int fixtype = -1);
+	GLabel* new_proto_label() const;
+	void fixed(float scale);
+	void vfixed(float scale);
+	void relative(float scale);
+	void align(float x, float y);
+	void choose_sym();
+	void name(char*);
+	void change_label_color(GLabel*);
+	void change_line_color(GPolyLine*);
+	void update_ptrs(int, double**, double*);
+
+	virtual void save_phase1(ostream&);
+	virtual void save_phase2(ostream&);
+	int labeltype() const { return label_fixtype_; }
+	static boolean label_chooser(const char*, char*, GLabel*, Coord x = 400., Coord y = 400.);
+
+	virtual void see_range_plot(GraphVector*);
+	static void ascii(ostream*);
+	static ostream* ascii();
+private:
+	void extension_start();
+	void extension_continue();
+	void ascii_save(ostream& o) const;
+	void family_value();
+private:
+	Symlist* symlist_;
+	LineList line_list_;
+	int loc_;
+	DataVec* x_;
+	boolean extension_flushed_;
+	SymChooser* sc_;
+	static SymChooser* fsc_;
+	CopyString* var_name_;
+	GPolyLine* current_polyline_;
+
+	const Color* color_;
+	const Brush* brush_;
+	int label_fixtype_;
+	float label_scale_;
+	float label_x_align_, label_y_align_;
+	float label_x_, label_y_, label_n_;
+	TelltaleState* keep_lines_toggle_;
+	boolean family_on_;
+	GLabel* family_label_;
+	double family_val_;
+	int family_cnt_;
+	HocCommand* cross_action_;
+	boolean vector_copy_;
+
+	Symbol* x_expr_;
+	double* x_pval_;
+
+	GraphVector* rvp_;
+	static ostream* ascii_;
+};
+
+class DataVec :public Resource { // info for single dimension
+public:
+	DataVec(int size);
+	DataVec(const DataVec*);
+	virtual ~DataVec();
+	void add(float);
+	float max() const, min() const;
+	float max(int low, int high), min(int, int);
+	int loc_max() const, loc_min() const;
+	void erase();
+	int count() const { return count_;}
+	void write();
+	float get_val(int i) const {return y_[i];} //y[(i<count_)?i:count_-1)];
+	int size() const { return size_; }
+	const Coord* vec() { return y_;}
+	void running_start();
+	float running_max();
+	float running_min();
+	Object** new_vect(GLabel* g = nil)const;
+private:
+	int count_, size_, iMinLoc_, iMaxLoc_;
+	int running_min_loc_, running_max_loc_;
+	float* y_;
+};
+	
+class DataPointers : public Resource { // vector of pointers
+public:
+	DataPointers(int size = 50);
+	virtual ~DataPointers();
+	void add(double*);
+	void erase() { count_ = 0; }
+	int size() { return size_;}
+	int count() {return count_;}
+	double* p(int i) { return px_[i]; }
+	void update_ptrs(int, double**, double*);
+private:
+	int count_, size_;
+	double** px_;
+};
+
+class GPolyLine : public Glyph {
+public:
+	GPolyLine(DataVec* x, const Color* = nil, const Brush* = nil);
+	GPolyLine(DataVec* x, DataVec* y, const Color* = nil, const Brush* = nil);
+	GPolyLine(GPolyLine*);
+	virtual ~GPolyLine();
+	
+	virtual void request(Requisition&) const;
+	virtual void allocate(Canvas*, const Allocation&, Extension&);
+	virtual void draw(Canvas*, const Allocation&) const;
+	virtual void draw_specific(Canvas*, const Allocation&, int, int) const;
+	virtual void print(Printer*, const Allocation&) const;
+	virtual void pick(Canvas*, const Allocation&, int depth, Hit&);
+	virtual void save(ostream&);
+	virtual void pick_vector();
+
+	void plot(Coord x, Coord y);
+	void erase() { y_->erase();}
+	virtual void erase_line(Scene*, GlyphIndex); // Erase by menu command
+
+	void color(const Color*);
+	void brush(const Brush*);
+	const Color* color() const {return color_;}
+	const Brush* brush() const {return brush_;}
+
+	Coord x(int index) const { return x_->get_val(index); }
+	Coord y(int index) const { return y_->get_val(index); }
+	const DataVec* x_data() const {return x_;}
+	const DataVec* y_data() const {return y_;}
+
+	GLabel* label() const { return glabel_; }
+	void label(GLabel*);
+	void label_loc(Coord& x, Coord& y)const;
+	
+	// screen coords
+	boolean near(Coord, Coord, float, const Transformer&) const;
+	// model coords input but checking relative to screen coords
+	int nearest(Coord, Coord, const Transformer&, int index = -1) const;
+	boolean keepable() { return keepable_;}
+private:
+	void init(DataVec*, DataVec*, const Color*, const Brush*);
+protected:
+	DataVec* y_;
+	DataVec* x_;
+	const Color* color_;
+	const Brush* brush_;
+	GLabel* glabel_;
+	boolean keepable_;
+};
+
+class GraphLine : public GPolyLine , public Observer {  // An oc variable to plot
+public:
+	GraphLine(const char*, DataVec* x, Symlist**, const Color* = nil, const Brush* = nil,
+		boolean usepointer=0, double* pd = nil, Object* obj = nil);
+	virtual ~GraphLine();
+
+	virtual void pick(Canvas*, const Allocation&, int depth, Hit&);
+	virtual void save(ostream&);
+
+	void plot();
+
+	const char* name() const;
+	LineExtension* extension() { return extension_; }
+	void extension_start();
+	void extension_continue();
+	const Color* save_color() const { return save_color_;}
+	const Brush* save_brush() const { return save_brush_;}
+	void save_color(const Color*);
+	void save_brush(const Brush*);
+	boolean change_expr(const char*, Symlist**);
+	virtual void update(Observable*);
+	boolean valid(boolean check = false);
+	virtual void erase_line(Scene*, GlyphIndex) {erase();} // Erase by menu command
+	void simgraph_activate(boolean);
+	void simgraph_init();
+	void simgraph_continuous(double);
+	void update_ptrs(int, double**, double*);
+private:
+	Symbol* expr_;
+	double* pval_;
+	LineExtension* extension_;
+	const Color* save_color_;
+	const Brush* save_brush_;
+	boolean valid_;
+	Object* obj_;
+	DataVec* simgraph_x_sav_;
+};
+
+class GraphVector : public GPolyLine , public Observer{ // fixed x and vector of pointers
+public:
+	GraphVector(const char*, const Color* = nil, const Brush* = nil);
+	virtual ~GraphVector();
+	virtual void request(Requisition&) const;
+	void begin();
+	void add(float, double*);
+	virtual void save(ostream&);
+	const char* name() const;
+	boolean trivial() const;
+
+	virtual boolean choose_sym(Graph*);
+	virtual void update(Observable*);
+	DataPointers* py_data() { return dp_; }
+	void update_ptrs(int, double**, double*);
+private:
+	DataPointers* dp_;
+	CopyString name_;
+	boolean disconnect_defer_;
+};
+
+class GPolyLineItem : public GraphItem {
+public:
+	GPolyLineItem(Glyph* g) : GraphItem(g){}
+	virtual ~GPolyLineItem(){};
+	virtual boolean is_polyline();
+	virtual void save(ostream& o, Coord, Coord){
+		((GPolyLine*)body())->save(o);}
+	virtual void erase(Scene* s, GlyphIndex i, int type) {
+		if (type & GraphItem::ERASE_LINE) {
+			s->remove(i);
+		}
+	}
+};
+
+class GLabel : public Glyph {
+public:
+	GLabel(const char* s, const Color*, int fixtype = 1, float size = 12,
+	   float x_align = 0., float y_align = 0.);
+	virtual ~GLabel();
+	virtual Glyph* clone() const;
+	
+	virtual void request(Requisition&) const;
+	virtual void allocate(Canvas*, const Allocation&, Extension&);
+	virtual void draw(Canvas*, const Allocation&) const;
+	virtual void save(ostream&, Coord, Coord);
+	virtual void pick(Canvas*, const Allocation&, int depth, Hit&);
+
+	void text(const char*);
+	void fixed(float scale);
+	void vfixed(float scale);
+	void relative(float scale);
+	void align(float x, float y);
+	void color(const Color*);
+
+	boolean fixed() const {return fixtype_ == 1;}
+	float scale() const { return scale_;}
+	const char* text() const { return text_.string();}
+	int fixtype() const {return fixtype_;}
+	float x_align() const {return x_align_;}
+	float y_align() const {return y_align_;}
+	const Color* color() const { return color_;}
+	boolean erase_flag() { return erase_flag_; }
+	void erase_flag(boolean b) { erase_flag_ = b; }
+
+	GPolyLine* labeled_line() const { return gpl_; }
+private:
+	void need(Canvas*, const Allocation&, Extension&)const;
+	friend void GPolyLine::label(GLabel*);
+private:
+	int fixtype_;
+	float scale_;
+	float x_align_, y_align_;
+	CopyString text_;
+	Glyph* label_;
+	const Color* color_;
+	GPolyLine* gpl_;
+	boolean erase_flag_;
+};
+
+class ColorPalette {
+public:
+	ColorPalette();
+	virtual ~ColorPalette();
+	const Color* color(int)const;
+	const Color* color(int, char*);
+	const Color* color(int, const Color*);
+	int color(const Color*)const;
+//	enum {COLOR_SIZE = 20};
+// ZFM: changed to allow more colors
+	enum {COLOR_SIZE = 100};
+private:	
+	const Color* color_palette[COLOR_SIZE];
+};
+class BrushPalette {
+public:
+	BrushPalette();
+	virtual ~BrushPalette();
+	const Brush* brush(int)const;
+	const Brush* brush(int index, int pattern, Coord width);
+	int brush(const Brush*)const;
+	enum {BRUSH_SIZE = 25};
+private:
+	const Brush* brush_palette[BRUSH_SIZE];
+};
+extern ColorPalette* colors;
+extern BrushPalette* brushes;
+
+#endif

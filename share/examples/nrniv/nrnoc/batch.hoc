@@ -1,0 +1,26 @@
+/* HH propagated action potential */
+create a
+access a
+{nseg=25 diam=250 L=40000 insert hh}
+
+proc init() {
+	finitialize(-65)
+}
+
+objectvar stim
+tstop=5
+proc run() {local x
+	init()
+	stim = new IClamp(0)
+	stim.dur = tstim
+	stim.amp = strength
+	batch_save()
+	for (x=.1; x < .99; x=x+.2) {
+		batch_save(&v(x))
+	}
+	batch_save(&m_hh(.5))
+	batch_run(tstop, 2*dt, "temp.batch")
+}
+
+strength = 10000	/*namps*/
+tstim = .1

@@ -1,0 +1,44 @@
+objectvar save_window_, rvp_
+objectvar scene_vector_[5]
+objectvar ocbox_, ocbox_list_, scene_, scene_list_
+{ocbox_list_ = new List()  scene_list_ = new List()}
+
+//Begin I/V Clamp Electrode
+{
+load_file("electrod.hoc")
+}
+{
+ocbox_=new Electrode(0)
+execute("can_locate=1 sec=\"soma\" xloc=0.5 locate(0)", ocbox_)
+execute("vc.dur[0]=0.1 vc.amp[0]=-65", ocbox_)
+execute("vc.dur[1]=4 vc.amp[1]=10", ocbox_)
+execute("vc.dur[2]=100 vc.amp[2]=-65", ocbox_)
+execute("stim.del=0 stim.dur=0.1 stim.amp=0.25", ocbox_)
+execute("vcsteps=5", ocbox_)
+execute("samp=stim.amp  store_vclamp() glyph()", ocbox_)
+ocbox_ = ocbox_.v1
+ocbox_.map("I/V Clamp Electrode", 82, 123, 273.6, 412.8)
+}
+objref ocbox_
+//End I/V Clamp Electrode
+
+{
+save_window_ = new Graph(0)
+save_window_.size(0,5,-80,60)
+scene_vector_[2] = save_window_
+{save_window_.view(0, -80, 5, 140, 712, 32, 303.36, 203.2)}
+graphList[0].append(save_window_)
+save_window_.save_name("graphList[0].")
+save_window_.addexpr("v", 1, 1, 0.756329, 0.735899, 2)
+}
+{
+save_window_ = new Graph(0)
+save_window_.size(0,5,-3,5)
+scene_vector_[4] = save_window_
+{save_window_.view(0, -3, 5, 8, 714, 307, 303.36, 203.2)}
+graphList[0].append(save_window_)
+save_window_.save_name("graphList[0].")
+save_window_.addexpr("Electrode[0].vc.i", 1, 1, 0.273629, 0.959715, 2)
+}
+objectvar scene_vector_[1]
+{doNotify()}

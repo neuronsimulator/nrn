@@ -1,0 +1,92 @@
+/* test of two sections forming single cable */
+/* hoc.pascab1 -- steady state infinite passive cable.
+   Test of cable using units of lambda and tau.
+   Compare steady state analytic solution, voltage clamp,
+   and current injection. */
+/* lambda = sqrt(1e4/4 * diam / (Ra * gl)) microns */
+/* tau    =  1e-3 * cm / gl msec */
+
+// physical properties of the cell
+create a, b
+access a
+forall nseg = 10
+connect b(0), 1
+
+// experimental tools
+objref ic,vc
+vc = new VClamp(0)
+ic = new IClamp(0)
+
+// graphical interface appearance
+length = 8
+objref g
+g = new Graph()
+g.size(0,length,0,1)
+g.color(0)
+g.color(1)
+proc label() {
+	g.vfixed
+	g.label(.315,.01, "x (Lambda)")
+	g.label(0, .5, "V")
+	g.label(0,.95,"Steady state voltage as function of distance for infinite cable")
+	g.label("Compare current injection, voltage clamp, and analytic sol'n.")
+}
+label()
+
+// simulation control
+proc geometry() { local i
+	L = length/2
+	diam = 1
+	Ra = 1e7/4
+}
+
+proc membrane() { local i
+	insert pas
+	g_pas = .001
+	e_pas = 0
+}
+
+proc analytic() {local x,y,z
+	g.beginline()
+	z = exp(length) + exp(-length)
+	for (x=0; x<=length; x=x+.1) {
+		y = (exp(length - x) + exp(x - length))/z
+		g.line(x,y)
+	}
+}
+
+proc plotvolt() { local x, i
+	g.beginline()
+	a for (x) {
+		g.line(x*length/2, v(x))
+	}
+	b for (x) {
+		g.line((1+x)*length/2, v(x))
+	}
+	g.flush()
+}
+proc run() {
+	forall {geometry() membrane()} analytic() plotvolt()
+	forall v = 0
+	dt = 1e9
+	g.color(1)
+	g.vfixed(1)
+	g.label(.5,.8,"Analytic")
+	g.color(2)
+	g.label("voltage clamp")
+	vc.dur[0]=1e20 vc.amp[0]=1
+	fadvance() plotvolt()
+	vc.dur(0) = 0
+	g.color(3)
+	g.label("Current injection")
+	ic.dur=1e20 ic.amp=PI*1e-5
+	fadvance()  plotvolt()
+}
+// run simulation
+run()
+
+
+
+	
+
+

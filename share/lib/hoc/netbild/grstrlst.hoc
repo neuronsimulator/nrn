@@ -1,0 +1,45 @@
+// a list browser implemented in a Graph
+// the list item strings must be called 'name'
+
+begintemplate ListInGraph
+public pl, select, grsel
+proc init() {
+	selected_ = -1
+}
+
+proc select() {
+	selected_ = $1
+}
+
+proc pl() {local i, j //Graph, color, List, [list](of objects with name as strdef)
+	for i=0, $o3.count-1 {
+		j = $2 if (i == selected_) j = 2
+		$o1.label(0, 1,$o3.object(i).name,2, 1, 0, i+2, j)
+	}
+	if (numarg() == 4) {
+		k = $o3.count+1
+		for i=0, $o4.count-1 {
+			j = $2 if (i == selected_) j = 2
+			$o1.label(0, 1,$o4.object(i).name,2, 1, 0, k+=1, j)
+		}
+	}
+}
+
+func grsel() {local x, y, i, h, n //Graph, iView, x, y, List, [List]
+	n = $o5.count
+	if (numarg() == 6) {
+		n += $o6.count
+	}
+	x = $o1.view_info($2, 13, $3)	
+	y = $o1.view_info($2, 14, $4)	
+	h = $o1.view_info($2, 15)
+	if (abs(x) < 20) {      
+		i =  int(y/h + .5) - 2 // since each char has y align i+2
+		if (i >= 0 && i < n) {
+			return i
+		}
+	}
+return -1
+}
+
+endtemplate ListInGraph

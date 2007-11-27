@@ -1,0 +1,983 @@
+if (!name_declared("EmptyClass")) { // for aliases unpolluted by other names
+	execute1("begintemplate EmptyClass\nendtemplate EmptyClass\n")
+}
+
+begintemplate NetGUI
+public net, aliases
+public save_data, map, create1
+external graph_menu_remove_most, hoc_sf_, SpikePlot
+objref actypes, nrctypes, net
+objref b, g, ct, cell, tobj, this, nil, math, src1_, tar1_, src2_, tar2_
+objref tarcel2_, wman, dman, cmap_, aliases
+objref mapold2new, missing, lig, nrcg, fh, tobj1
+strdef tstr, premesg, plnet_mesg, srcname, tarname, ncappend
+
+proc init() {
+	aliases = new EmptyClass()
+	use_alias_ = 0
+	create_ = 0
+	created_ = 0
+	show_edges_ = 1
+	nrcg = new NetReadyCellGlyph()
+	math = new GUIMath()
+	actypes = new List("ArtCell")
+	nrctypes = new List("NetReadyCell")
+	net = new NetData()
+	lig = new ListInGraph()
+	build()
+	if (numarg() == 0) {
+		map()
+	}
+}
+proc map() {
+	sprint(tstr, "%s", this)
+	if (numarg() > 1) {
+		b.map(tstr, $2,$3,$4,$5)
+	}else{
+		b.map(tstr)
+	}
+	g.exec_menu("Locate")
+	if (oldnodecnt > 0) notice() // call here so dialog  can come up
+}
+
+proc build() {
+	b = new HBox(3)
+	b.priority(995)
+	b.save("save()")
+	b.intercept(1)
+	g = new Graph(0)
+	graph_menu_remove_most(g)
+	g.size(-200,200,-150,150)
+	g.yaxis(3)
+	xpanel("")
+	g.menu_tool("Locate", "locate", "locmenu()" )
+	g.menu_tool("Src -> Tar", "src2tar", "src2tarmenu()")
+	g.menu_tool("Source", "src1", "src1menu()")
+	g.menu_tool("   Targets", "tar2", "tar2menu()")
+	g.menu_tool("Target", "tar1", "tar1menu()")
+	g.menu_tool("   Sources", "src2", "src2menu()")
+	xcheckbox("Show all edges", &show_edges_, "pledges(show_edges_)")
+	xbutton("Weights", "wman = new NetEdgeGUI(net, 0)")
+	xbutton("Delays", "dman = new NetEdgeGUI(net, 1)")
+	xbutton("Hoc File", "hocfile()")
+	xcheckbox("Create",&create_,"create1()")
+	xbutton("SpikePlot", "spikeplt()")
+	xmenu("Net Variables")
+	xbutton("Show Map", "cellmap()")
+	sprint(tstr, "Provide %s.aliases", this)
+	xcheckbox(tstr, &use_alias_, "set_alias(use_alias_)")
+	xmenu()
+	xpanel()
+	g.view(2)
+	b.ref(this)
+	b.intercept(0)
+}
+
+proc set_alias() {local i, j  localobj tobj, tobj1
+	hoc_sf_.alias(aliases)
+	if (numarg() == 1) { use_alias_ = $1 }
+	if (create_ == 0) { use_alias_ = 0 }
+	if (use_alias_ == 0) { return }
+	for i=0, net.sources.count-1 {
+		tobj = net.sources.object(i).cell
+		tobj.name(tstr)
+		if (tobj.type.is_art == 0) {
+			hoc_sf_.alias(aliases, tstr, tobj.real)
+			tobj1 = tobj.type.synlist
+			for j=0, tobj1.count-1 {
+				tobj.name(tstr)
+sprint(tstr, "%s_%s%d", tstr, tobj1.object(j).stype.name, j)
+hoc_sf_.alias(aliases, tstr, tobj.real.synlist.object(j))
+			}
+		}else{
+			hoc_sf_.alias(aliases, tstr, tobj.real.pp)
+		}
+	}
+	for i=0, net.edges.count-1 {
+		tobj = net.edges.object(i)		
+		tobj.namebar(tstr)
+		hoc_sf_.alias(aliases, tstr, tobj.netcon)
+	}
+}
+
+proc spikeplt() {
+	tobj = new SpikePlot(net)
+	objref tobj
+}
+
+proc cellmap() {local i, j
+	if (create_) {
+		cmap_ = new List()
+		for i= 0, net.sources.count-1 {
+			tobj = net.sources.object(i).cell
+			tobj.name(tstr)
+			sprint(tstr, "%-12s %s", tstr, tobj.real)
+			cmap_.append(new String(tstr))
+			if (tobj.type.is_art == 0) {
+				tobj1 = tobj.type.synlist
+				for j=0, tobj1.count-1 {
+					tobj.name(tstr)
+sprint(tstr, "%s_%s%d", tstr, tobj1.object(j).stype.name, j)
+sprint(tstr, "%-12s %s", tstr, tobj.real.synlist.object(j))
+					cmap_.append(new String(tstr))
+				}
+			}			
+		}
+		if (net.edges.count) { cmap_.append(new String("")) }
+		for i=0, net.edges.count-1 {
+			tobj = net.edges.object(i)		
+			tobj.namebar(tstr)
+			sprint(tstr, "%-15s %s", tstr, tobj.netcon)
+			cmap_.append(new String(tstr))
+		}
+		sprint(tstr, "%s name <-> Instance Name", this)
+		cmap_.browser(tstr, "s")
+		objref tobj, tobj1
+	}
+}
+
+proc locmenu() {
+	pl()
+	g.align(0,0)
+	g.vfixed(1)
+	g.label(.2,1)
+	g.label("Create a new cell by dragging from the list on the left")
+	g.label("Place a new cell over another to replace the old one")
+	g.label("Move a cell to a new location")
+	g.label("Cells dragged off the view are discarded")
+	g.flush
+}
+
+proc src1menu() {
+	clear()
+	plnet_mesg="Select a source cell for connection to targets"
+	plnet()
+}
+
+proc src1() { local i
+	// select source for future targets (tar2)		
+	if ($1 == 2) {
+		clear()
+	}
+	i = sel_cell($2,$3)
+	if (i != -1) {
+		src1_ = net.sources.object(i)
+		src1_.cell.name(srcname)
+		sprint(plnet_mesg, "Source %s selected", srcname)
+	}else{
+		src1_ = nil
+		plnet_mesg = "No source selected"
+	}
+	if ($1 == 3) {
+		if (src1_ == nil) {
+	plnet_mesg="Select a source cell for connection to targets"
+		}
+	}
+	plnet()
+}
+
+proc tar2menu() {
+	if (src1_ == nil) {
+		g.exec_menu("Source")
+		plnet_mesg = "\"Targets\" requires a prior Source selection"
+		plnet()
+	}else{
+sprint(plnet_mesg, "Select Targets to (dis)connect to Source %s", srcname)
+	}
+	plnet()
+}
+
+proc tar2() {local i
+	// attach(detach) target for current source
+	if ($1 == 2) {
+		tarcel2_ = nil
+		tar2_ = nil
+	}
+	if (tarcel2_ == nil){
+		i = sel_cell($2,$3)
+		if (i != -1) {
+			tarcelindex_ = i
+			tarcel2_ = net.sources.object(i).cell
+			tarcel2_.name(tarname)
+			if (tarcel2_.type.is_art == 0) {
+				tar2detail($1,$2,$3)
+				return
+			}else{
+				tar2_ = net.targets.object(net.cel2tar(tarcelindex_, 0))
+				acmesg("", src1_, tar2_)
+				tarcel2_ = nil
+			}
+		}else{
+			tar2_ = nil
+			plnet_mesg = "No Target Cell selected"
+		}
+	}else{
+		tar2detail($1,$2,$3)
+		if ($1 != 3) {
+			return
+		}
+	}
+	if ($1 == 3) {
+		if (tar2_ == nil) {
+sprint(plnet_mesg, "Select Targets to (dis)connect to Source %s", srcname)
+		}else if (tar2_.cell.type.is_art) {
+			tarcel2_ = tar2_.cell
+			acmesg("ed", src1_, tar2_)
+			if (detach == -1) {
+				add_edge(new NetEdge(src1_, tar2_, 0, 1))
+			}else{
+				remove_edge(net.edges.object(detach))
+			}
+			print plnet_mesg
+		}
+	}
+	plnet()
+	if ($1 != 3) {
+		plline($2,$3,src1_.cell)
+	}
+}
+
+proc acmesg() {
+	detach = net.edge_index($o2, $o3)
+	if (detach == -1) {
+sprint(plnet_mesg, "Attach%s Target %s to Source %s", $s1, tarname, srcname)
+	}else{
+sprint(plnet_mesg, "Detach%s Target %s from Source %s", $s1, tarname, srcname)
+	}
+}
+
+proc tar2detail() {
+	// attach(detach) target for current source
+	i = sel_tar($2,$3)
+	if (i != -1) {
+		tar2_ = net.targets.object(i)
+		detach = net.edge_index(src1_, tar2_)
+if (detach == -1) {
+sprint(plnet_mesg, "Attach Target %s%d on cell %s to Source %s", \
+ tar2_.syn.stype.name, tar2_.syn.index, tarname, srcname)
+			attach = 1
+}else{
+sprint(plnet_mesg, "Detach Target %s%d on cell %s from Source %s", \
+ tar2_.syn.stype.name, tar2_.syn.index, tarname, srcname)
+			attach = 0
+}
+	}else{
+		tar2_ = nil
+sprint(plnet_mesg, "No Target selected on cell %s from Source %s", \
+ tarname, srcname)
+	}
+	if ($1 == 3) {
+		if (tar2_ != nil) {
+			if (detach == -1) {
+sprint(plnet_mesg, "Attached Target %s%d on cell %s to Source %s", \
+ tar2_.syn.stype.name, tar2_.syn.index, tarname, srcname)
+				add_edge(new NetEdge(src1_, tar2_, 0, 1))
+			}else{
+sprint(plnet_mesg, "Detached Target %s%d on cell %s from Source %s", \
+ tar2_.syn.stype.name, tar2_.syn.index, tarname, srcname)
+				remove_edge(net.edges.object(detach))
+			}
+			print plnet_mesg			
+		}
+	}
+	if ($1 != 3) {
+		plnetdetail()
+	}
+}
+
+proc tar1menu() {
+	clear()
+	plnet_mesg = "Select a target synapse for connection to sources."
+	plnet()
+}
+proc tarselect() {local i
+	if ($1 == 2) {
+		tarcelindex_ = -1
+		tarcel2_ = nil
+		tar2_ = nil
+	}		
+	if (tarcel2_ == nil) {
+		i = sel_cell($2,$3)
+		if (i != -1) {
+			tarcelindex_ = i
+			tarcel2_ = net.sources.object(i).cell
+			tarcel2_.name(tarname)
+			if (tarcel2_.type.is_art == 0) {
+				sprint(plnet_mesg, "Target cell %s selected", tarname)
+			}else{
+				tar2_ = net.targets.object(net.cel2tar(tarcelindex_, 0))
+				tarcel2_ = nil
+				sprint(plnet_mesg, "Target %s selected", tarname)
+			}
+		}else{
+			plnet_mesg = "No target cell or target selected"
+			tarcel2_ = nil
+			tarcelindex_ = -1
+		}
+		plnet()
+	}
+	if (tarcel2_ != nil) {
+		i = sel_tar($2,$3)
+		if (i != -1) {
+			tar2_ = net.targets.object(i)
+			sprint(plnet_mesg, "Target %s%d on cell %s selected", \
+				tar2_.syn.stype.name, tar2_.syn.index, tarname)
+		}else{
+			sprint(plnet_mesg, "No target on cell %s selected", \
+				tarname)
+			tar2_ = nil
+		}
+		plnetdetail()
+	}
+}
+	
+proc clear() {
+	src1_ = nil
+	tar2_ = nil
+	tarcel2_ = nil
+}
+
+proc tar1() {
+// select target for future sources
+	if ($1 == 2) {
+		clear()
+	}
+	tarselect($1,$2,$3)
+	if ($1 == 3) {
+		if (tar2_ == nil) {
+plnet_mesg = "Select a target synapse for connection to sources."
+		}
+		plnet()
+	}
+}
+
+proc src2menu() {
+	src1_ = nil
+	if (tar2_ == nil) {
+		g.exec_menu("Target")
+		plnet_mesg = "\"Sources\" requires a prior Target selection"
+	}else{
+sprint(plnet_mesg, "Select Sources to (dis)connect to Target %s", tarname)
+	}
+	plnet()
+}
+
+proc src2() {local i
+// attach(detach) source for current target
+	if ($1 == 2) {
+		tar2_.cell.name(tstr)
+		if (tar2_.cell.type.is_art == 0) {
+		  sprint(tarname, "%s%d on Cell %s", tar2_.syn.stype.name, \
+				tar2_.syn.index, tstr)
+		}else{
+		  tar2_.cell.name(tarname)
+		}
+	}
+	i = sel_cell($2,$3)
+	if (i != -1) {
+		src1_ = net.sources.object(i)
+		src1_.cell.name(srcname)
+		detach = net.edge_index(src1_, tar2_)
+		if (detach == -1) {
+sprint(plnet_mesg, "Attach Source %s to Target %s", srcname, tarname)
+		}else{
+sprint(plnet_mesg, "Detach Source %s to Target %s", srcname, tarname)
+		}
+	}else{
+		plnet_mesg = "No Source cell selected"
+		src1_ = nil
+	}
+	if ($1 == 3) {
+		if (src1_ != nil) {
+			if (detach == -1) {
+sprint(plnet_mesg, "Attached Source %s to Target %s", srcname, tarname)
+				add_edge(new NetEdge(src1_, tar2_, 0, 1))
+			}else{
+sprint(plnet_mesg, "Detached Source %s to Target %s", srcname, tarname)
+				remove_edge(net.edges.object(detach))
+			}
+			print plnet_mesg
+		}else{
+sprint(plnet_mesg, "Select Sources to (dis)connect to Target %s", tarname)
+		}
+	}
+	plnet()
+	if ($1 != 3) {
+		plline($2,$3,tar2_.cell)
+	}
+}
+
+proc add_edge() {local i
+	set_alias(0)
+	i = net.add_edge($o1)
+	if (wman != nil) {
+		wman.insrt(i)
+	}
+	if (dman != nil) {
+		dman.insrt(i)
+	}
+}
+
+proc remove_edge() {local i
+	set_alias(0)
+	i = net.remove_edge($o1)
+	if (wman != nil) {
+		wman.remove(i)
+	}
+	if (dman != nil) {
+		dman.remove(i)
+	}
+}
+	
+proc plline() {
+	if (src1_ == nil || tar2_ == nil) {
+		g.beginline(1,1)
+	}else{
+		if (detach == -1) {
+			g.beginline(1,3)
+		}else{
+			g.beginline(1,7)
+		}
+	}
+	g.line($1,$2)
+	g.line($o3.x, $o3.y)
+}
+
+proc src2tarmenu() {
+	plnet_mesg = "Select Source and drag mouse to Target"
+	clear()
+	plnet()
+}
+
+proc src2tar() {local i
+	if ($1 == 2) { // press must be src
+		src2tar_state = 0	
+		clear()
+	}
+	if (src2tar_state == 0) { // no src selected
+		src1($1,$2,$3)
+		if (src1_ != nil) {
+			src2tar_state = 1
+		}
+	}else if (src2tar_state == 1) { // src selected
+		i = sel_cell($2,$3)
+		if (i == -1) {
+			src2tar_state = 2
+		}
+	}else if (src2tar_state == 2) { // not in src region, tarcel not selected
+		tar2($1,$2,$3)		
+	}
+	if ($1 == 3) {
+		if (tar2_ == nil) {
+			plnet_mesg = "Select Source and drag mouse to Target"
+			plnet()
+		}
+	}else{
+		if (src1_ != nil) {
+			plline($2,$3, src1_.cell)
+		}
+	}
+}
+
+proc plnet() {local i, x, y
+	if (numarg() == 1) {
+		for i=0, net.sources.count-1 {
+			net.sources.object(i).cell.pl(g, tstr, 9)
+		}
+	}else{
+		plnodes()
+	}
+	if (show_edges_) {
+		pledges(1)
+	}
+	if (src1_ != nil) {
+		src1_.cell.pl(g, tstr, 2)
+		if (!show_edges_) for i=0, src1_.edges.count-1 {
+			tobj = src1_.edges.object(i).target.cell
+			g.beginline(2, 2)
+			g.line(src1_.cell.x, src1_.cell.y)
+			g.line(tobj.x, tobj.y)
+		}
+	}
+	if (tar2_ != nil) {
+		tar2_.cell.pl(g, tstr, 3)
+		if(!show_edges_) for i=0, tar2_.edges.count-1 {
+			tobj = tar2_.edges.object(i).source.cell
+			g.beginline(3,1)
+			g.line(tar2_.cell.x, tar2_.cell.y)
+			g.line(tobj.x, tobj.y)
+		}
+	}
+	g.label(.5,.9,plnet_mesg,2,1,.5,.5,1)
+}
+
+proc pledges() {local i, j, x0, y0, x1, y1, x, y
+	for i=0, net.edges.count - 1 {
+		tobj = net.edges.object(i)
+		g.beginline($1,1)
+		x0 = tobj.source.cell.x  y0 = tobj.source.cell.y
+		x1 = tobj.target.cell.x y1 = tobj.target.cell.y
+		if (tobj.target.cell.type.is_art) {
+			j = 1
+		}else{
+			j = tobj.target.syn.index + 1
+		}
+		g.line(x0, y0)
+		x = -.05*j*(y1 - y0)  y = .05*j*(x1 - x0)
+		if (x == 0 && y == 0) {
+			x = (g.size(2) - g.size(1))/20
+			g.line(x0+j*x/2, y0-x)
+			g.line(x0, y0-2*x)
+			g.line(x0-j*x/2, y0-x)
+			g.line(x1,y1)
+		}else{
+			x += (x0+x1)/2
+			y += (y0 + y1)/2
+			g.line(x, y)
+			g.line(x1,y1)
+			g.mark((x+2*x1)/3, (y+2*y1)/3, "o",8, $1,1)
+		}
+	}
+}
+
+proc plnetdetail() {local i, j, x, y, n
+	nrcg.pl(g, tarcel2_.type)
+	plnet(1)
+	tarcel2_.pl(g,tstr,3)
+	i = net.cel2tar(tarcel2_.index, 0)
+	for i=i,i+tarcel2_.type.synlist.count-1 {
+		tobj = net.targets.object(i)
+		n = tobj.edges.count
+		if (n > 0) {
+			x = tobj.syn.x0
+			y = tobj.syn.y0
+			for j=0, n-1 {
+				g.beginline(3,1)
+				g.line(x, y)
+				tobj1 = tobj.edges.object(j).source.cell
+				g.line(tobj1.x, tobj1.y)
+			}
+		}
+	}
+}
+
+proc plnodes() { local i
+	g.erase_all
+	for i=0, net.sources.count-1 {
+		net.sources.object(i).cell.pl(g, tstr, 1)
+	}
+}
+proc pl() {local i
+	plnodes()
+	if (show_edges_) { pledges(1) }
+	lig.pl(g, 1, nrctypes, actypes)
+}
+
+proc pl_ct() {
+	g.label($1, $2, ct.name, 1, 1, .5, .5, 1)
+	sprint(tstr, "%s%s at (%g,%g)", premesg, ct.name, $1, $2)
+	g.label(.5,.9,tstr,2,1,.5,.5,1)
+}
+
+proc locate() {local i, x, y
+	if ($1 == 2) {
+		iview = g.view_info()
+		for i=0, net.sources.count-1 {
+			net.sources.object(i).cell.index = i
+		}
+		i = sel_type($2,$3)
+		if (i != -1) {
+			if (i < nrctypes.count) {
+				ct = nrctypes.object(i)
+			}else{
+				ct = actypes.object(i-nrctypes.count)
+			}
+		}else{
+			i = sel_cell($2,$3)
+			if (i > -1) {
+				cell = net.sources.object(i).cell
+			}
+		}
+		replace = -1
+		// ct or cell or both nil
+	}
+	// if ct then moves around, destroyed if outside view, replaces if over a cell
+	// and becomes a cell otherwise. if cell then moves around, destroyed if outside
+	// view.
+	destroy = 1
+	if (math.inside(g.view_info(iview, 11, $2), g.view_info(iview, 12, $3), 0,0,1,1)) {
+		destroy = 0
+	}
+	x = $2 - ($2)%1  y = $3 - ($3)%1
+	if ($1 != 3) {
+		pl()
+		if (ct != nil) {
+			premesg = "Create "
+			if (destroy) {
+				premesg = "Discard "
+			}
+			replace = sel_cell($2,$3)
+			if (replace > -1) {
+				net.sources.object(replace).cell.name(tstr)
+				sprint(premesg, "%s replaced by ", tstr)
+			}
+			pl_ct(x, y)
+		}else if (cell != nil){
+			cell.x = x
+			cell.y = y
+			cell.name(tstr)
+			if (destroy) {
+				sprint(tstr, "Destroy %s", tstr)
+			}else{
+				sprint(tstr, "Move %s to (%g,%g)", tstr, x, y)
+			}
+			g.label(.5,.9,tstr,2,1,.5,.5,1)
+		}else{
+			g.label(.5, .9, "Nothing selected", 2, 1, .5, .5, 1)
+		}
+	}else{
+		if (ct != nil) {
+			if (!destroy) {
+				set_alias(0)
+				if (replace > -1) {
+					net.replace_cell(net.sources.object(replace).cell, ct)
+					wman = nil
+					dman = nil
+				}else{
+					cell = new NetCell(ct, x, y)
+					net.add_cell(cell)
+				}
+				cmap_ = nil
+			}
+		}else if (cell != nil && destroy) {
+			set_alias(0)
+			net.remove_cell(cell)
+			cell = nil
+			cmap_ = nil
+			wman = nil
+			dman = nil
+		}
+		if (cell != nil && create_) {
+			cell.real.position(x, y, 0)
+		}
+		ct = nil
+		cell = nil
+		for i=0, net.sources.count-1 {
+			net.sources.object(i).cell.index = i
+		}
+		pl()
+	}
+}
+
+func sel_type() {local x, y, i, h
+	return lig.grsel(g, iview, $1, $2, nrctypes, actypes)
+}
+
+func sel_tar() {local i
+	i = nrcg.select($1,$2,tarcel2_.type,g,iview)
+	if (i != -1) {
+//		print tarname, "  ", tarcel2_.type.synlist.object(i).stype.name, "  ", i
+		return net.cel2tar(tarcelindex_,i)
+	}
+	return -1
+}
+
+func sel_cell() {local x, y, h, i
+	x = g.view_info(iview, 13, $1)
+	y = g.view_info(iview, 14, $2)
+	h = g.view_info(iview, 15)/2
+	for i=0, net.sources.count - 1 {
+		tobj = net.sources.object(i).cell
+		if (abs(g.view_info(iview, 13, tobj.x) - x) < h) {
+		if (abs(g.view_info(iview, 14, tobj.y) - y) < h) {
+			return i
+		}}
+	}
+	return -1
+}
+
+/*
+func nearest_node() {local i, j, d, dmin
+	dmin = 1e9
+	j = -1
+	for i=0, nodelist.count - 1 {
+		tobj = nodelist.object(i)
+		d = ($1-tobj.x)^2 + ($2-tobj.y)^2
+		if (d < dmin) {
+			dmin = d
+			j = i
+		}
+	}
+	nearest_index = j
+	dmin = sqrt(dmin)
+	return dmin
+}
+*/
+
+proc original_type() {local i, n
+	n = nrctypes.count
+	for i=0, n-1 {
+		if (strcmp(nrctypes.object(i).name, $s1) == 0) {
+			mapold2new.append(i)
+			return
+		}
+	}
+	for i=0, actypes.count-1 {
+		if (strcmp(actypes.object(i).name, $s1) == 0) {
+			mapold2new.append(i+n)
+			return
+		}
+	}
+	mapold2new.append(-1)
+	missing.append(new String($s1))
+}
+
+proc newnode() {local i
+	oldnodecnt += 1
+	i = mapold2new.x[$1]
+	if (i > -1) {
+		if (i < nrctypes.count) {
+			tobj = nrctypes.object(i)
+		}else{
+			tobj = actypes.object(i - nrctypes.count)
+		}
+		net.add_cell(new NetCell(tobj, $2,$3))
+	}
+}
+
+proc newedge() {local i, j
+	if (oldnodecnt != net.sources.count) {
+		return
+	}
+	i = $1
+	j = net.cel2tar($2,$3)
+net.add_edge(new NetEdge(net.sources.object(i), net.targets.object(j), $4,$5))
+}
+
+proc notice() {
+	if (oldnodecnt != net.sources.count) {
+sprint(tstr, "%d of %d cells restored. All connections lost. Missing types are:", net.sources.count, oldnodecnt)
+		tobj = new VBox()
+		tobj.intercept(1)
+		missing.browser("","s")
+		tobj.intercept(0)
+		tobj.dialog(tstr)
+		objref tobj
+	}
+	objref mapold2new, missing
+	oldnodecnt = 0
+}
+
+proc save() {
+	b.save("load_file(\"netbild.hoc\")\n}")
+	save_data(b, "ocbox_")
+	b.save("{")
+}
+
+proc save_data() { local i, j, n
+	sprint(tstr, "{%s = new NetGUI(1)}", $s2) $o1.save(tstr)
+	sprint(tstr, "{object_push(%s)}", $s2) $o1.save(tstr)
+	$o1.save("{mapold2new = new Vector()  missing = new List()}")
+	n = nrctypes.count
+	for i=0, n-1 {
+		nrctypes.object(i).index = i
+		sprint(tstr, "original_type(\"%s\")", nrctypes.object(i).name)
+		$o1.save(tstr)
+	}
+	for i=0, actypes.count-1 {
+		actypes.object(i).index = i + n
+		sprint(tstr, "original_type(\"%s\")", actypes.object(i).name)
+		$o1.save(tstr)
+	}
+	
+	for i=0, net.sources.count - 1 {
+		tobj = net.sources.object(i).cell
+		sprint(tstr, "newnode(%d, %g, %g)", tobj.type.index, tobj.x, tobj.y)
+		$o1.save(tstr)
+	}
+	for i=0, net.edges.count - 1 {
+		tobj = net.edges.object(i)
+		if (tobj.target.cell.type.is_art) {
+sprint(tstr, "newedge(%d, %d, 0, %g, %g)", tobj.source.cell.index, \
+ tobj.target.cell.index, tobj.w, tobj.d)
+		}else{
+sprint(tstr, "newedge(%d, %d, %d, %g, %g)", tobj.source.cell.index, \
+ tobj.target.cell.index, tobj.target.syn.index, tobj.w, tobj.d)
+		}
+		$o1.save(tstr)
+	}
+	if (create_) {
+		$o1.save("{create_ = 1  create1()}")
+	}
+	sprint(tstr, "{g.size(%g,%g,%g,%g)}",g.size(1), g.size(2), g.size(3), g.size(4))
+	$o1.save(tstr)
+	sprint(tstr, "{set_alias(%d)}", use_alias_)
+	$o1.save(tstr)
+	$o1.save("{object_pop()}")
+}
+
+func hocfile() {
+	if (fh == nil) {
+		fh = new File()
+		fh.chooser("w", "Save network in file", "*.hoc")
+	}
+	if (fh.chooser()) {
+		fh.wopen()
+		save_hoc_templates(fh)
+		save_hoc_data(fh)
+		fh.close()
+		return 1
+	}
+	return 0
+}
+
+proc save_hoc_templates() {local i
+	$o1.printf("// Artificial cells no longer need a default section.\n")
+	$o1.printf("//Network cell templates\n")
+	for i = 0, nrctypes.count-1 {
+		nrctypes.object(i).classname(tstr)
+		$o1.printf("//   %s\n", tstr)
+	}
+	if (actypes.count > 0) {
+		$o1.printf("//Artificial cells\n")
+	}
+	for i = 0, actypes.count-1 {
+		actypes.object(i).classname(tstr)
+		$o1.printf("//   %s\n", tstr)
+	}
+	$o1.printf("\n")
+	for i = 0, nrctypes.count-1 {
+		nrctypes.object(i).save_class($o1)
+	}
+	if (actypes.count > 0) {
+	}
+	for i = 0, actypes.count-1 {
+		actypes.object(i).save_class($o1)
+	}
+}
+
+proc save_hoc_data() { local i, j, hasneo
+	$o1.printf("\n//Network specification interface\n\n")
+	$o1.printf("objref cells, nclist, netcon\n")
+	$o1.printf("{cells = new List()  nclist = new List()}\n\n")
+	$o1.printf("func cell_append() {cells.append($o1)  $o1.position($2,$3,$4)\n\treturn cells.count - 1\n}\n\n")
+	$o1.printf("func nc_append() {//srcindex, tarcelindex, synindex\n")
+$o1.printf("  if ($3 >= 0) {\n")
+$o1.printf("    netcon = cells.object($1).connect2target(cells.object($2).synlist.object($3))\n")
+$o1.printf("    netcon.weight = $4   netcon.delay = $5\n")
+$o1.printf("  }else{\n")
+$o1.printf("    netcon = cells.object($1).connect2target(cells.object($2).pp)\n")
+$o1.printf("    netcon.weight = $4   netcon.delay = $5\n")
+$o1.printf("  }\n")
+	$o1.printf("  nclist.append(netcon)\n  return nclist.count - 1\n}\n\n")
+
+	if (name_declared("NeoSim")) {
+		hasneo = 1
+	}else{
+		hasneo = 0
+	}
+	if (hasneo) {
+		ncappend = "ns.new_connection"
+		$o1.printf("//Network instantiation through the NeoSim Interface\n")
+		$o1.printf("objref ns\n")
+		$o1.printf("{ns = new NeoSim()}\n\n")
+	}else{
+		ncappend = "nc_append"
+		$o1.printf("//Network instantiation\n\n")
+	}
+
+	for i=0, net.sources.count-1 {
+		tobj = net.sources.object(i).cell
+		tobj.name(tstr)
+		$o1.printf("  /* %s */", tstr)
+		tobj.type.classname(tstr)
+		if (hasneo) {
+			$o1.printf("  ns.new_cell(\"%s\",\t%g,\t %g, 0)\n",\
+				tstr, tobj.x, tobj.y)
+		}else{
+			$o1.printf("  cell_append(new %s(),\t%g,\t %g, 0)\n",\
+				tstr, tobj.x, tobj.y)
+		}
+	}
+		
+	for i=0, net.targets.count-1 {
+		tobj = net.targets.object(i)
+		if (tobj.cell.type.is_art == 0) {
+			for j=0, tobj.edges.count - 1 {
+				tobj.edges.object(j).source.cell.name(tstr)
+$o1.printf("  /* %s -> ", tstr)
+				tobj.cell.name(tstr)
+$o1.printf("%s.%s%d */", tstr, tobj.syn.stype.name, tobj.syn.index)
+$o1.printf("  %s(%d,   %d, %d,  %g,%g)\n", ncappend,\
+ tobj.edges.object(j).source.cell.index, tobj.cell.index, tobj.syn.index, \
+	tobj.edges.object(j).w, tobj.edges.object(j).d)
+			}
+		}else{
+			for j=0, tobj.edges.count - 1 {
+				tobj.edges.object(j).source.cell.name(tstr)
+$o1.printf("  /* %s -> ", tstr)
+				tobj.cell.name(tstr)
+$o1.printf("%s    */", tstr)
+$o1.printf("  %s(%d, %d, -1,  %g,%g)\n", ncappend,\
+ tobj.edges.object(j).source.cell.index, tobj.cell.index, \
+ tobj.edges.object(j).w, tobj.edges.object(j).d)
+			}
+		}
+	}
+}
+
+proc create1() {local i
+	if (create_ == 0) {
+		set_alias(0)
+		if (created_) {
+if (boolean_dialog("\"Create\" cannot be turned back on without exiting NEURON", "Stay on", "Turn off")) {
+				create_ = 1
+			}else{
+				net.abstract()
+				// types can be augmented now
+				actypes = new List("ArtCell")
+				nrctypes = new List("NetReadyCell")
+				// and a number of things are no longer valid
+				cmap_ = nil
+				tobj = new List("SpikePlot")
+				for i=0, tobj.count-1 {
+					tobj.object(i).update()
+					tobj.object(i).flush()
+				}
+				tobj = nil
+			}
+		}
+		return
+	}
+	if (created_) {
+continue_dialog("A NetGUI tool can only instantiate a network once. Save, exit,  and reload.")
+		create_ = 0
+		return
+	}
+	// types can't be augmented anymore
+	tobj = actypes
+	actypes = new List()
+	for i=0, tobj.count-1 {
+		actypes.append(tobj.object(i))
+	}
+	tobj = nrctypes
+	nrctypes = new List()
+	for i=0, tobj.count-1 {
+		nrctypes.append(tobj.object(i))
+	}
+
+	fh = new File()
+	fh.mktemp
+	fh.wopen()
+	save_hoc_templates(fh)
+	fh.close()
+	fh.getname(tstr)
+	sprint(tstr, "xopen(\"%s\")", tstr)
+	execute(tstr)
+	fh.unlink
+	created_ = 1
+	net.create1()
+	fh = nil
+}
+
+endtemplate NetGUI

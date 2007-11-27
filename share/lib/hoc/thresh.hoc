@@ -1,0 +1,46 @@
+// Determine strength of argument to within epsilon, that excites cell.
+
+// This function requires an existing APCount[0] at the user desired location
+// returns 1 if the voltage passed the APCount[0].thresh
+func thresh_excited() {
+	run()
+	return APCount[0].n > 0
+}
+
+// do a binary search for threshold
+func threshold() { local low, high, epsilon
+	// the "call by reference" arg $&1 is the independent variable
+
+	// bounding the threshold first can save several iterations
+	low = 0 	high = 1e5
+	if ($&1 == 0) { $&1 = 1 }
+	while (low == 0 || high == 1e5) {
+		if (thresh_excited()) {
+			high = $&1
+			$&1 = high/2
+		} else {
+			low = $&1
+			$&1 = 2*low
+		}
+		if (stoprun) return $&1
+		if (low > high) return high
+	}
+
+	// at this point high is not more than twice the theshold and
+	// low is not less than half the threshold
+
+	epsilon = 1e-7 + 1e-3 * high	// three decimal places accuracy
+	/* now narrow the bounds */
+	$&1 = (high + low)/2
+	while ( (high - low) > epsilon) {
+		if (thresh_excited()) {
+			high = $&1
+		} else {
+			low = $&1
+		}
+		$&1 = (high + low)/2
+		if (stoprun) break
+	}
+	return $&1
+}
+

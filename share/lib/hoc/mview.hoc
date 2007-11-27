@@ -1,0 +1,27 @@
+objref nil, tobj
+
+{load_file("chanbild.hoc")} // need KSTransHelper
+
+{
+xopen("mview/treeview.hoc")
+xopen("mview/mviewgui.hoc")
+xopen("mview/distinct.hoc")
+xopen("mview/parmsets.hoc")
+xopen("mview/parmvals.hoc")
+xopen("mview/secanal.hoc")
+xopen("mview/ppanal.hoc")
+xopen("mview/artview.hoc")
+xopen("mview/realcell.hoc")
+xopen("mview/distinctparm.hoc")
+xopen("mview/ncview.hoc")
+xopen("mview/rcclasses.hoc")
+xopen("mview/allcell.hoc")
+xopen("mview/allpp.hoc")
+xopen("mview/mviewxml.hoc")
+xopen("mview/mview1.hoc")
+}
+
+proc mview() {
+	tobj = new ModelView()
+	tobj = nil
+}

@@ -1,0 +1,330 @@
+// translation of ntscable's read_nts.c file for importing
+// eutectic files. After reading and parsing lines, the logic
+// follows that in nlcda_read.hoc
+
+begintemplate Import3d_Eutectic_read
+public filetype, sections, input, type, file, err
+public label, id2pt, id2line, pt2id, pt2sec, sec2pt, mark
+external hoc_sf_
+public id, ptype, tag, x, y, z, d, iline, pointtype, points, type
+public firstpoints, lastpoints
+objref sections, file, stack, cursec, firstpoints, lastpoints, gm
+objref id, ptype, tag, x, y, z, d, iline, pointtype, points, type
+objref iline2pt, vectors, header, lines, diam, parse_err, nil, soma
+strdef tstr, tstr1, point_type_names, filetype, line
+
+proc init() {
+	filetype = "Eutectic"
+	vectors = new List()
+	header = new List()
+	lines = new List()
+	gm = new GUIMath()
+	MTO =     0
+	TTO =     3
+	BTO =     6
+	CP  =     9+1
+	FS  =     12+1
+	SB  =     15+1
+	BP  =     18+1
+	NE  =     21+1
+	ES  =     24+1
+	MAE =     27
+	TAE =     30
+	BAE =     33
+	SOS =     36
+	SCP =     39
+	SOE =     42
+	OS  =     45+1
+	OCP =     48
+	OE  =     51+1
+	DS  =     54+1
+	DCP =     57
+	DE  =     60+1
+	point_type_names = \
+"MTOTTOBTO CP FS SB BP NE ESMAETAEBAESOSSCPSOE OSOCP OE DSDCP DE"
+// note numbering for two char item is 1 more than in read_nts.c
+// since space is not included in first char
+}
+
+proc input() {local i
+	nspine = 0
+	err = 0
+	parse_err = new List()
+	sections = new List()
+	stack = new List()
+	lastpoints = new Vector()
+	firstpoints = new Vector()
+
+	rdfile($s1)
+	parse2()
+	type = new Vector(sections.count)
+	for i=0, sections.count-1 {
+		type.x[i] = tag.x[sections.object(i).id]
+	}
+	connect2soma()
+	if (err) { errout() }
+}
+
+proc rdfile() {local i, j
+	file = new File($s1)
+	// count lines for vector allocation space (not really necessary)
+	if (!file.ropen()) {
+		err = 1
+		printf("could not open %s\n", $s1)
+	}
+	for (i = 0; !file.eof(); i += 1) {
+		file.gets(line)
+	}
+	file.close()
+//	printf("%s has %d lines\n", $s1, i)
+	alloc(i, id, ptype, tag, x, y, z, d, iline, pointtype, points)
+	tag
+	diam = d
+	file.ropen()
+	for (i = 1; !file.eof(); i += 1) {
+		file.gets(line)
+		parse(i, line)
+	}
+	file.close()
+}
+
+proc alloc() { local i // $oi.size = 0 but enough space for $1 elements
+	for i = 2, numarg() {
+		$oi = new Vector($1)
+		$oi.resize(0)
+		vectors.append($oi)
+	}
+}
+
+proc parse() {local a1 ,a2, a3, a4, a5, a6, a7
+	n = sscanf($s2, "%d %s %d %f %f %f %f", &a1, tstr, &a3, &a4, &a5, &a6, &a7)
+	hoc_sf_.left($s2, hoc_sf_.len($s2)-1)
+	if (n <= 0) {
+		header.append(new String($s2))
+		return
+	}
+	if (n != 7) {
+		err = 1
+		sprint(tstr, "%d: %s  parse failure after item %d", $1, $s2, n)
+		parse_err.append(new String(tstr))
+		return
+	}
+	a2 = hoc_sf_.head(point_type_names, tstr, tstr1)
+//	print tstr, " ", a2
+	// first points of branches (before physical connection) is 1
+	// continuation points are 2
+	// branch are 3
+	// ends are 4
+	// a branch point can also be a first point
+	// so easiest to accumulate them here
+	if (a2 == MTO) {
+		last = 1
+		firstpoints.append(id.size)
+	}else if (a2 == BP ){
+		if (last == 3 || last == 4){
+			firstpoints.append(id.size)
+		}
+		last = 3
+	}else if (a2 == FS || a2 == SB || a2 == CP){
+		if (a2 == SB) { err = 1  nspine += 1 }
+		if (last == 3 || last == 4){
+			firstpoints.append(id.size)
+			last = 1
+		}else{
+			last = 2
+		}
+	}else if (a2 == NE || a2 == ES || a2 == MAE || a2 == TAE || a2 == BAE){
+		if (last == 3 || last == 4){
+			firstpoints.append(id.size)
+		}
+		last = 4
+	}else if (a2 == SOS){
+		last = 10
+	}else if (a2 == SCP){
+		last = 10
+	}else if (a2 == SOE){
+		last = 10
+	}else if (a2 == OS){
+		return
+	}else if (a2 == DS){
+		return
+	}else if (a2 == DCP || OCP){
+		return
+	}else if (a2 == DE || a2 == OE){
+		return
+	}else{
+		return
+	}
+	pointtype.append(last)
+	id.append(a1)
+	ptype.append(a2)
+	tag.append(a3)
+	x.append(a4)
+	y.append(a5)
+	z.append(a6)
+	d.append(a7)
+	iline.append($1)
+	lines.append(new String($s2))
+}
+proc parse2() {local i, j, k  localobj parent
+	i = ptype.indwhere("==", SOS)
+	j = ptype.indwhere("==", SOE)
+	if (i > -1 && j > i) {
+		mksec(i, j, nil)
+		cursec.iscontour_ = 1
+//		cursec.type=1
+		soma = cursec
+	}
+	for i=0, firstpoints.size-1 {
+		j = firstpoints.x[i]
+		for (k=j; pointtype.x[k] <= 2; k += 1) {
+		}
+		parent = pop()
+		if (parent != nil) {
+			if (parent.volatile < 1) {
+				push(parent)
+				parent.volatile += 1
+			}
+		}
+		mksec(j, k, parent)
+//printf("%s %d %d: %s | %s\n", cursec, j, k, lines.object(j).s, lines.object(k).s)
+		cursec.parentsec = parent
+//		logic_connect(cursec, parent)
+		if (pointtype.x[k] == 3) {
+			push(cursec)
+		}
+	}
+	if (stack.count > 0) {
+		err = 1
+	}
+}
+
+proc push() {
+	stack.append($o1)
+}
+obfunc pop() {localobj p
+	if (stack.count > 0) {
+		p = stack.object(stack.count-1)
+		stack.remove(stack.count-1)
+	}else{
+		p = nil
+	}
+	return p
+}
+
+proc mksec() {local i, x1, y1, z1, d1
+	if ($o3 == nil) {
+		cursec = new Import3d_Section($1, $2-$1+1)
+		cursec.append(0, $1, $2-$1+1, x, y, z, d)
+	}else{
+		cursec = new Import3d_Section($1, $2-$1+2)
+		cursec.append(1, $1, $2-$1+1, x, y, z, d)
+		cursec.first = 0 // physical connection
+		i = $o3.raw.ncol-1
+		x1 = $o3.raw.x[0][i]
+		y1 = $o3.raw.x[1][i]
+		z1 = $o3.raw.x[2][i]
+		//d1 = $o3.d.x[i]
+		cursec.set_pt(0, x1, y1, z1, cursec.d.x[1])
+		cursec.fid = 1
+	}
+	cursec.volatile = 0
+	cursec.type = tag.x[$1]
+	sections.append(cursec)
+	lastpoints.append($2)
+}
+
+proc logic_connect() {local i, x1, y1, z1, d1
+	if ($o2 == nil) { return }
+	i = $o2.raw.ncol-1
+	x1 = $o2.raw.x[0][i]
+	y1 = $o2.raw.x[1][i]
+	z1 = $o2.raw.x[2][i]
+	d1 = $o2.d.x[i]
+	$o1.insrt(0, x1, y1, z1, $o1.d.x[0])
+	$o1.first = 1
+}
+
+proc connect2soma() {local i, ip, j, jp, bp, jpmin, dmin, d, xmin, xmax, ymin, ymax localobj sec, xc, yc, zc, c
+	// find centroid of soma if outline and connect all dangling
+	// dendrites to that if inside the contour
+	if (soma == nil) { return }
+	xc = soma.raw.getrow(0)
+	yc = soma.raw.getrow(1)
+	zc = soma.raw.getrow(2)
+	xmin = xc.min-.5  xmax = xc.max + .5
+	ymin = yc.min-.5  ymax = yc.max + .5
+	c = soma.contourcenter(xc, yc, zc)
+	for i=0, sections.count-1 {
+		sec = sections.object(i)
+		if (sec.parentsec == nil && sec != soma) {
+			if (gm.inside(sec.raw.x[0][0], sec.raw.x[1][0], xmin, ymin, xmax, ymax)) {
+				sec.parentsec = soma
+				sec.parentx = .5
+				sec.insrt(0, c.x[0], c.x[1], c.x[2], .01)
+				sec.first = 1
+				sec.fid = 1
+			}
+		}
+	}
+}
+
+proc label(){
+	sprint($s2, "Line %d: %s", iline.x[$1], lines.object($1).s)
+}
+func id2pt() {
+	i = id.indwhere(">=", $1)
+//print "id2pt ", $1, i, id.x[i]
+	return i
+}
+func id2line() { return points.x[$1] }
+func pt2id() {local i
+//print "pt2id ", $1, id.x[$1]
+	return id.x[$1]
+}
+func pt2sec(){local i, j
+	i = lastpoints.indwhere(">=", $1)
+	if (i == -1) {
+		i = lastpoints.size-1
+	}
+	$o2 = sections.object(i)
+	j = $1 - $o2.id + $o2.fid
+//print "pt2sec ", $1, $o2, $o2.id, j
+	return j
+}
+func sec2pt(){local i localobj sec
+	sec = sections.object($1)
+	i = sec.id + $2 - sec.fid
+//print "sec2pt ", $1, $2, sec.id, sec.first, i
+	return i
+}
+
+proc mark() {local i, a,b,c,d,e,f
+	print $o1, $2, iline, lines
+	i = id.indwhere("==",$2)
+	printf("%d,%d,%d: %s\n", i, id.x[i], iline.x[i], lines.object(i).s)
+	n = sscanf(lines.object(i).s, "%d %s %d %f %f %f %f", &a, tstr, &b, &c, &d, &e, &f)
+	if (n == 7) {
+		print a," ",tstr," ",b,c,d,e,f
+		$o1.mark(c,d,"S",12,4,1)
+	}
+}
+
+proc errout() {
+	printf("\n%s problems and default fixes\n\n", file.getname)
+	if (parse_err.count) {
+		printf("  Following lines could not be parsed\n")
+		for i=0, parse_err.count-1 {
+			printf("    %s\n", parse_err.object(i).s)
+		}
+		printf("\n")
+	}
+	if (stack.count > 0) {
+		printf("    stack.count = %d\n", stack.count)
+	}
+	if (nspine > 0) {
+		printf("    Ignore %d spines\n", nspine)
+	}
+}
+
+endtemplate Import3d_Eutectic_read

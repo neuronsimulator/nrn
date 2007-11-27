@@ -1,0 +1,73 @@
+xopen("$(NEURONHOME)/lib/hoc/noload.hoc")
+
+proc advance() {
+	batch_run(t+1, 1)
+print t
+}
+cvode.debug_event(1)
+
+begintemplate Cell
+public soma, connect_pre, nclist, syn
+
+create soma
+objref nclist, syn
+
+proc init() {
+	nclist = new List()
+	create soma
+	soma {
+		nseg=10
+		L=10
+		diam = 100/(PI*L)
+		insert hh
+		syn = new ExpSyn(0)
+	}
+	
+}
+
+proc connect_pre() {// arg is presynaptic Cell
+	$o1.soma nclist.append( new NetCon(&v(1), syn, -20, 1, .002))
+}
+
+endtemplate Cell
+
+ncell = 100
+objref cell[ncell]
+for i=0, ncell - 1 {
+	cell[i] = new Cell()
+}
+
+access cell[0].soma
+
+
+for i=1, ncell-1 {
+	cell[i].connect_pre(cell[i-1])
+}
+
+xopen("line.ses")
+
+nplt = 15
+objref vx[nplt], vy[nplt], g
+for i=0,nplt-1 {
+	vx[i] = new Vector()  vy[i] = new Vector()
+	cvode.record(&Cell[i].soma.v(.5), vy[i], vx[i])
+}
+
+proc p() {local i
+	g = new Graph()
+	for i=0, nplt-1 {
+		vy[i].plot(g, vx[i])
+	}
+}
+
+objref s, sl
+sl = new SectionList()
+s = new PlotShape(sl)
+fast_flush_list.append(s)
+
+for i=0, ncell-1 {
+	s.hinton(&cell[i].soma.v(.5), i%10, int(i/10), .25)
+}
+s.size(-3,11,0,10)
+//s.exec_menu("Shape Plot")
+

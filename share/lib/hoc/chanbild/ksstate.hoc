@@ -1,0 +1,32 @@
+begintemplate ChannelBuildKSState
+public index, x, y, pl, color, gate, i, frac, name, kss, setfrac, setname, cb2ks
+objref gate, kss
+strdef name
+proc init() {
+	i = -1
+	name = $s1
+	frac = $2
+	color = 1
+	index = -1
+	x = $3
+	y = $4
+}
+proc pl() {
+	$o1.label(x, y, name,1,1,.5,.5,color)
+}
+
+proc setfrac() {
+	frac = $1
+	kss.frac($1)
+}
+
+proc setname() {
+	name = $s1
+	kss.name($s1)
+}
+
+proc cb2ks() {
+	kss.name(name)
+}
+endtemplate ChannelBuildKSState
+

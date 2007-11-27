@@ -1,0 +1,76 @@
+Below is the original Readme from the sundials/README file.
+The orginal sundials package was obtained from
+http://www.llnl.gov/CASC/sundials/
+For purposes of incorporating cvodes and ida into NEURON I have
+simplified the directory structure by combining source and include
+files into the cvodes, and ida directories and combined
+nvec_ser, nvec_par, shared/include, and shared/src *.[ch] files
+into the shared subdirectory, eliminated
+the doc, kinsol, cvode directories and other subdirectories, and
+replaced the
+Makefile.in files with Makefile.am files.
+The reason that the sensitivity version of cvode is used is that the
+previous version of cvode did not
+support the tstop functionality needed by at_time.
+
+Note that the version 2.0 now has tstop functionality for cvode but
+due to inertia we still use cvodes. Also version 2.0 incorporates
+autoconf (although configure.in is not distributed in the sundials.tar.gz
+file) so we make use of config.hin. It is conceivable that the
+sundials.tar.gz with all its subdirectory structure along with configure
+could be used now. But for least porting, cvs, Makefile.am
+and distribution difficulty we retain the previous subdirectory structure.
+-----------------------------------------------------------------------------
+
+                            SUNDIALS 
+    SUite of Nonlinear and DIfferential/ALgebraic equation Solvers
+                   Release 2.0.1, January 2005
+     Peter Brown, Aaron Collier, Keith Grant, Alan Hindmarsh, 
+      Steve Lee, Radu Serban, Dan Shumaker, Carol Woodward
+          Center for Applied Scientific Computing, LLNL
+
+
+The family of solvers referred to as SUNDIALS consists of solvers CVODE 
+(for ODE systems), CVODES (ODE with sensitivity analysis capabilities),
+IDA (for differential-algebraic systems), and KINSOL (for nonlinear 
+algebraic systems), 
+
+The various solvers of this family share many subordinate modules.
+For this reason, it is organized as a family, with a directory structure 
+that exploits that sharing. Each individual solver includes documentation 
+on installation, along with full usage documentation.
+
+The following is a list of the solver packages presently available.
+
+CVODE:  A solver for stiff and nonstiff ODE systems y' = f(t,y),
+        with serial and parallel versions.
+
+CVODES: A solver for stiff and non-stiff ODE systems with sensitivity
+        analysis capabilities, with serial and parallel versions.
+
+IDA:    A solver for differential-algebraic systems F(t,y,y') = 0, with
+        serial and parallel versions.
+
+KINSOL: A solver for nonlinear algebraic systems F(u) = 0, with serial
+        and parallel versions.
+
+Warning to users who receive more than one of these individual solvers
+at different times: The mixing of old and new versions SUNDIALS may fail.  
+To avoid such failures, obtain all desired solvers at the same time.
+
+For installation directions see the file INSTALL_NOTES.
+
+For additional information on a particular solver, see the README file in
+the solver directory.
+
+                        Release history
+
++----------+------------------------------------------------------+
+|          | SUNDIALS |            Solver version                 |
+|   Date   |          +----------+----------+----------+----------+
+|          | release  |   CVODE  | CVODES   |   IDA    |  KINSOL  |
++----------+----------+----------+----------+----------+----------+
+| Jul 2002 |   1.0    |    2.0   |    1.0   |    2.0   |    2.0   |
+| Dec 2004 |   2.0    |  2.2.0   |  2.1.0   |  2.2.0   |  2.2.0   |
+| Jan 2005 |   2.0.1  |  2.2.1   |  2.1.1   |  2.2.1   |  2.2.1   |
++----------+----------+----------+----------+----------+----------+

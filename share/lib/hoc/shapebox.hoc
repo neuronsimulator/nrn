@@ -1,0 +1,252 @@
+/*
+?0 UserClasses MenuExplore
+?2 Type x
+Shape and browser for creating a section panel
+usage: ob = MenuExplore()
+
+Pressing the left mouse button on a section in the Shape scene (make
+sure the "Section" popup menu item is selected) colors the section red and
+highlights the corresponding section name in the browser.
+
+Pressing the left mouse button once on a name in the browser colors
+the corresponding section in the Shape Scene (you can drag the mouse as well).
+
+Double clicking the left mouse button on a name in the browser pops up
+a panel showing the parameters associated with that section.
+
+This assumes homogeneous sections by default. So Parameters which are not
+initialized as constants along the section get a label to that effect instead
+of a field editor.  If this is not desired specify a position, 0<x<1,
+for the location.
+
+?0 UserClasses PointProcessLocator
+shape, browser, and menu for a point process
+usage: ob = PointProcessLocator(pointprocess)
+
+In the shape scene there is a blue dot showing the location of the
+pointprocess.  Press the left mouse button at any point on the neuron to
+relocate the point process. Parameters of the point process are
+displayed in the lower part of the window.
+
+?0 ShapeBrowser
+Pressing the left mouse button on a section in the Shape scene (make
+sure the "Section" popup menu item is selected) colors the section red and
+highlights the corresponding section name in the browser.
+
+Pressing the left mouse button once on a name in the browser colors
+the corresponding section in the Shape Scene (you can drag the mouse as well).
+
+This class is useful as a part of a larger class and as a dialog for
+selecting a section.
+*/
+
+help ?0
+
+/*
+?0 User HocCode ShapeBrowser
+*/
+
+begintemplate ShapeBrowser
+public s, b,  hbox, dialog, sec
+objectvar s, b, hbox, this, sec
+strdef callback
+proc init() {
+	hbox = new HBox()
+	hbox.ref(this)
+	hbox.intercept(1)
+	s = new Shape()
+	b = new SectionBrowser()
+	hbox.intercept(0)
+	hbox.save("")
+	s.action("b.select()  sec = new SectionRef()")
+	b.select_action("s.select()  sec = new SectionRef()")
+	if (numarg() > 0) {
+		sprint(callback, "execute(\"%s\")", $s1)
+		b.accept_action(callback)
+	}
+	sec = new SectionRef()
+	s.select()
+	b.select()
+}
+
+func dialog() {
+	return hbox.dialog("Select a Section")
+}
+
+endtemplate ShapeBrowser
+
+/*
+?0 User HocCode MenuExplore
+*/
+
+begintemplate MenuExplore
+public s, unmap, hbox
+objectvar s, b, hbox, this, vbox
+strdef str
+x=0
+proc init() {
+	hbox = new HBox()
+	hbox.ref(this)
+	hbox.intercept(1)
+	s = new Shape()
+
+	vbox = new VBox()
+	vbox.intercept(1)	
+	xpanel("MenuExplore",1)
+	x = -1
+	xmenu("Type")
+	type = 1
+	xradiobutton("Parameters", "type=1")
+	xradiobutton("Assigned", "type=2")
+	xradiobutton("State", "type=3")
+	xradiobutton("all types", "type=0")
+	xmenu()
+	xlabel ("(-1 means 0-1)")
+	xpanel()
+	xpanel("MenuExplore")
+	xpvalue("x", &x, 0, "changex()")
+	xpanel()
+	b = new SectionBrowser()
+	vbox.intercept(0)
+	vbox.map()
+	hbox.intercept(0)
+	if (numarg() == 2) {
+		hbox.map("Section Parameters (double click)", $1, $2, 1,1)
+	}else{
+		hbox.map("Section Parameters (double click)")
+	}
+	hbox.save("")
+	s.action("b.select()")
+	b.select_action("s.select()")
+	b.accept_action("make_menu()")
+}
+proc changex() {
+	if (x < 0 || x > 1) {
+		x = -1
+	}
+}
+
+proc make_menu() {local i, arc
+   /* must be executed at the top level since it parses section names */
+	arc = x
+	if (type > 0) {
+		if (type > 1 && arc < 0) { arc = .5 }
+		sprint(str, "nrnsecmenu(%g,%d)", arc, type)
+		execute(str)
+	}else{
+		for i=1,3 {
+			arc = x
+			if (i > 1 && arc < 0) { arc = .5}
+			sprint(str, "nrnsecmenu(%g,%d)", arc, i)
+			execute(str)
+		}
+	}
+}
+proc unmap() {
+	hbox.unmap()
+}
+
+endtemplate MenuExplore
+
+/*
+?0 User HocCode PointProcessLocator
+*/
+
+begintemplate PointProcessLocator
+public st, unmap
+objectvar s, b, pp, hbox, this
+strdef st, sec
+
+proc init() {
+	pp = $o1
+	hbox = new VBox()
+	hbox.intercept(1)
+	s = new Shape()
+	s.point_mark($o1, 3)
+	b = new SectionBrowser()
+	xpanel("")
+	st = "mmmmmmmmmmmmmmmmmmm"
+	xvarlabel(st)
+	xpanel()
+	nrnpointmenu(pp, 0)
+	hbox.intercept(0)
+	if (numarg() == 3) {
+		hbox.map("Point Process Mover", $2, $3, 1, 1)
+	}else{
+		hbox.map("Point Process Mover")
+	}
+	hbox.save("")
+	s.action("move()")
+	b.select_action("move()")
+	b.accept_action("pan()")
+	doEvents()
+	hoc_ac_ = pp.get_loc()
+	move()
+	pop_section()
+
+}
+proc move() {local x
+	s.select()
+	b.select()
+	x =hoc_ac_
+	pp.loc(x)
+	sectionname(sec)
+	sprint(st, "%s at %s(%g)", pp, sec, x)
+}
+proc pan() {
+/*	nrnpointmenu(pp)*/
+}
+
+proc unmap() {
+	hbox.unmap()
+}
+
+endtemplate PointProcessLocator
+
+objectvar tempobj
+proc makeMenuExplore() {
+	if(!execute1("v", 0)) {
+		continue_dialog("No accessed section: Can't start a MenuExplore")
+		return
+	}
+	tempobj = new MenuExplore()
+	objectvar tempobj
+}
+
+begintemplate ShapeLocation
+public dialog, move
+objectvar s, pp, hbox, this
+strdef st, sec
+
+proc init() {
+	pp = $o1
+	hbox = new VBox()
+	hbox.intercept(1)
+	xpanel("")
+	st = "mmmmmmmmmmmmmmmmmmm"
+	xvarlabel(st)
+	xpanel()
+	s = new Shape()
+	s.point_mark($o1, 3)
+	hbox.intercept(0)
+	hbox.save("")
+	s.action("move(hoc_ac_)")
+	doEvents()
+	hoc_ac_ = pp.get_loc()
+	move(hoc_ac_)
+	pop_section()
+
+}
+proc move() {local x
+	s.select()
+	x = $1
+	pp.loc(x)
+	sectionname(sec)
+	sprint(st, "%s(%g)",sec, x)
+}
+
+func dialog() {
+	return hbox.dialog("Select a Section")
+}
+
+endtemplate ShapeLocation

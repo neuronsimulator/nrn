@@ -1,0 +1,208 @@
+/*
+?0 UserClasses PointProcessManager
+
+Select location and type of Point Process.
+Each instance manages a single point process.
+Default is a current injection electrode inserted in the middle of the
+current section that supplies a short current pulse of sufficient amplitude
+to elicit an action potential in a 100 um2 hh patch.
+
+usage: section p = new PointProcessManager([xplacement, yplacement])
+p.pp is the point process currently installed in the cell.
+
+Note that when one point process is replaced by another
+the parameters are saved in a MechanismStandard. When
+the point process is re-installed, those parameters are restored.
+
+If the  panel is saved in a session, the MechanismStandard's are
+saved as well.
+
+?1 SelectPointProcess
+
+?0 User HocCode PointProcessManager
+*/
+help ?0
+
+begintemplate PointProcessManager
+
+public dist, v1, pp, move, maction
+
+external hoc_sf_
+objectvar pp
+objref mt, sec, ms[1], sf, v1, this
+objref shape, d1
+strdef mname, tempstr, ppname, sloc
+double mstate[1]
+
+proc init() {
+	i = 0
+	ppindex = -1
+	sec = new SectionRef()
+	xloc = .5
+	build()
+	maction(-1)
+	make_sloc()
+	if (numarg() == 1) if ($1 == 0) return
+	v1.map("PointProcessManager")
+}
+proc make_sloc() {
+	sec.sec sectionname(tempstr)
+	sprint(sloc, "at: %s(%g)", tempstr, xloc)
+}
+
+func dist() {local x // return arc length between sloc and rootsection(0)
+	sec.root distance(0, 0)
+	sec.sec x = distance(1, xloc)
+	return x
+}
+
+proc build() { local i
+	v1 = new VBox()
+	v1.priority(990)
+	v1.ref(this)
+	v1.full_request(1)
+	v1.save("save()")
+	v1.intercept(1)
+	sf = new StringFunctions()
+
+	xpanel("PointProcessManager")
+	build_menu()
+
+	xmenu("Show")
+	xradiobutton("Shape", "d1.flip_to(0)")
+//	xbutton("Section Browser", "show_browser()")
+	xradiobutton("Parameters", "if (object_id(pp)) d1.flip_to(1)")
+	xmenu()
+
+	xvarlabel(ppname)
+	xvarlabel(sloc)
+	xpanel()
+	d1 = new Deck()
+	d1.intercept(1)
+	show_shape()
+	d1.intercept(0)
+	d1.map()
+	v1.intercept(0)
+	d1.flip_to(0)
+}
+proc build_menu() {
+	mt = new MechanismType(1)
+	objectvar ms[mt.count()]
+	xmenu("SelectPointProcess")
+	xradiobutton("none", "maction(-1)")
+	for i=0,mt.count()-1 {
+		mt.select(i)
+		mt.selected(mname)
+		sprint(tempstr, "maction(%d)", i)
+		xradiobutton(mname, tempstr)
+	}
+	xmenu()
+}
+
+proc show_shape() {
+//print "show_shape\n"
+//	v2.clear()
+//	v2.intercept(1)
+	shape = new Shape()
+	shape.action("move()")
+	if (object_id(pp)) {
+		shape.point_mark(pp, 3)
+	}
+//	v2.intercept(0)
+	hoc_ac_ = xloc
+	sec.sec move()
+}
+
+proc move() {xloc = hoc_ac_
+	if(object_id(shape)) {
+		shape.select()
+	}
+	sec = new SectionRef()
+	if (object_id(pp)) {
+		if (hoc_sf_.is_artificial(pp) == 0) {
+			pp.loc(xloc)
+		}
+	}
+	make_sloc()
+//	shape.mark(0, xloc, 2)
+}
+
+proc maction() { local i
+	i = $1
+	if (ppindex != -1) { // save parameters and remove old one
+		ms[ppindex].in(pp)
+		objectvar pp
+		if (object_id(shape)) {
+			shape.point_mark_remove(pp)
+		}
+		d1.remove_last()
+	}
+	if (i != -1) { // make a new one and put in the previous params
+		mt.select(i)
+		mt.selected(mname)
+		if (object_id(ms[i]) == 0) {
+			ms[i] = new MechanismStandard(mname)
+		}
+		sprint(tempstr, "pp = new %s(%g)", mname, xloc)
+		sec.sec execute(tempstr, this)
+		ms[i].out(pp)
+		sprint(ppname, "%s", pp)
+		d1.intercept(1)
+		nrnpointmenu(pp, 0)
+		d1.intercept(0)
+		d1.flip_to(1)
+		if (object_id(shape)) {
+			shape.point_mark(pp, 3)
+		}
+	}else{
+		sprint(ppname, "None")
+	}
+	ppindex = i
+	doNotify()
+}
+
+proc save() { local i
+	v1.save("load_file(\"pointman.hoc\")\n}\n{")
+	sec.sec sectionname(tempstr)
+	sprint(tempstr, "%s ocbox_ = new PointProcessManager(0)", tempstr)
+	v1.save(tempstr)
+	v1.save("}\n{object_push(ocbox_)}\n{")
+
+	for i=0, mt.count()-1 {
+		if (object_id(ms[i])) {
+			if (ppindex == i) {
+				ms[i].in(pp)
+			}
+			mt.select(i)
+			mt.selected(tempstr)			
+			sprint(tempstr, "mt.select(\"%s\") i = mt.selected()", tempstr)
+			v1.save(tempstr)
+			sprint(tempstr, "ms[i]")
+			ms[i].save(tempstr)
+		}
+	}
+	if (ppindex != -1) {
+		mt.select(ppindex)
+		mt.selected(tempstr)
+		sprint(tempstr, "mt.select(\"%s\") i = mt.selected() maction(i)", tempstr)
+		v1.save(tempstr)
+	}
+	sprint(tempstr, "hoc_ac_ = %g", xloc)
+	v1.save(tempstr)
+	v1.save("sec.sec move() d1.flip_to(0)")
+	v1.save("}\n{object_pop() doNotify()}\n{")
+	v1.save("ocbox_ = ocbox_.v1")
+}
+
+endtemplate PointProcessManager
+
+objectvar tempobj
+
+proc makeppm() {
+	if(!execute1("v", 0)) {
+		continue_dialog("No accessed section: Can't start a PointProcessManager")
+		return
+	}
+	tempobj = new PointProcessManager()
+	objectvar tempobj
+}

@@ -1,0 +1,70 @@
+/* Comparison of implicit and crank-nicholson */
+/* showing that C-N can have error oscillations */
+
+/* lambda = sqrt(1e4/4 * diam / (Ra * gl)) microns */
+/* tau    =  1e-3 * cm / gl msec */
+
+// physical properties of the cell
+create a
+{access a nseg = 21}
+
+double vt[nseg], vt1[nseg]
+
+// graphical interface appearance
+length = 8
+objref g
+g = new Graph()
+g.size(0,length,-.6,1)
+proc label() {
+	g.vfixed(1)
+	g.label(.315,.01, "x (Lambda)")
+	g.label(.0,.4, "V")
+}
+label()
+// simulation control
+proc init() {
+	geometry() membrane()
+	v = 0
+	v(.5)=1 plotvolt()
+}
+proc geometry() { local i
+	L = length
+	diam = 1
+	Ra = 1e7/4
+}
+
+proc membrane() { local i
+	insert pas
+	g_pas = .001
+	e_pas = 0
+}
+
+proc plotvolt() { local x, i
+	g.beginline()
+	for (x) {
+		g.line(x*length, v(x))
+	}
+	g.flush()
+}
+proc run() {
+	init()
+	dt = 1
+	g.color($1)
+	fadvance() plotvolt() fadvance() plotvolt()
+	g.flush()
+}
+// run simulation
+{secondorder=0 run(1) secondorder=2 run(2)}
+
+
+
+
+
+
+
+
+
+
+
+
+

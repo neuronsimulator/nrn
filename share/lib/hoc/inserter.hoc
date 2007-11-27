@@ -1,0 +1,140 @@
+/*
+?0 UserClasses Inserter
+
+Insert and remove mechanisms.  Keep default parameters between removal
+and re-insertion.  Most useful in context of single compartment
+simulations. 
+
+Note that when a mechanism is removed by clicking on a checkmarked
+mechanism, the parameters are saved in a MechanismStandard. When
+the Mechanism is re-installed, those parameters are restored.
+
+If the Inserter panel is saved in a session, the MechanismStandards are
+saved as well.
+
+?0 User HocCode Inserter
+*/
+help ?0
+
+begintemplate Inserter
+public v1, dsave
+objectvar mt, sec, ms[1], sf, v1, this
+strdef mname, tempstr
+double mstate[1]
+
+proc init() {
+	sec = new SectionRef()
+	build()
+	if (numarg() == 1) if ($1 == 0) return
+	v1.map("Insert/Remove Mechanisms")
+}
+proc build() { local i
+	v1 = new VBox()
+	v1.priority(900)
+	v1.ref(this)
+	v1.save("save()")
+	v1.intercept(1)
+	sf = new StringFunctions()
+	mt = new MechanismType(0)
+	double mstate[mt.count()]
+	objectvar ms[mt.count()]
+	xpanel("Inserter")
+	sec.sec sectionname(tempstr)
+	xlabel(tempstr)
+	for i=0,mt.count-1 {
+		mt.select(i)
+		mt.selected(mname)
+		// don't do certain ones
+		if (i < 7 && i != 2) { continue }
+		if (sf.substr(mname, "_ion") >= 0) { continue }
+		sprint(tempstr, "maction(%d)", i)
+		xcheckbox(mname, &mstate[i], tempstr)
+		sec.sec if(ismembrane(mname)) {
+			mstate[i] = 1
+			ms[i] = new MechanismStandard(mname)
+			ms[i].in()
+		}
+	}
+	xpanel()
+	v1.intercept(0)
+}
+proc maction() { local i
+	i = $1
+	mt.select(i)
+	mt.selected(mname)
+	if (object_id(ms[i]) == 0) {
+		ms[i] = new MechanismStandard(mname)
+	}
+	sec.sec {
+		if (mstate[i]) {
+			sprint(tempstr, "insert %s", mname)
+			execute(tempstr)
+			ms[i].out()
+		}else{
+			ms[i].in()
+			mt.remove()
+		}
+	}
+}
+
+proc save() {
+	v1.save("load_file(\"inserter.hoc\", \"Inserter\")\n}\n{")
+	sec.sec sectionname(tempstr)
+	sprint(tempstr, "%s ocbox_ = new Inserter(0)", tempstr)
+	v1.save(tempstr)
+	v1.save("}\n{object_push(ocbox_)}\n{")
+	dsave(v1)
+	v1.save("{\nocbox_ = ocbox_.v1")
+}
+
+proc dsave() {
+	for i = 0, mt.count() - 1 {
+		if (object_id(ms[i])) {
+			ms[i].in()
+			ms[i].name(tempstr)
+sprint(tempstr, "mt.select(\"%s\") i = mt.selected()", tempstr)
+			$o1.save(tempstr)
+			ms[i].save("ms[i]")
+			sprint(tempstr, "mstate[i]= %d", mstate[i])
+			$o1.save(tempstr)
+			if (mstate[i]) {
+				$o1.save("maction(i)")
+			}
+		}
+	}
+
+	$o1.save("}\n{object_pop() doNotify()}")
+}
+
+endtemplate Inserter
+
+objectvar tempobj
+objectvar tempobj2
+
+{load_file("shapebox.hoc","ShapeBrowser")}
+
+proc makeinserter() {local single
+	if(!execute1("v", 0)) {
+		continue_dialog("No accessed section: Can't start an Inserter")
+		return
+	}
+	if (numarg()) {
+		single = $1
+	}else{
+		single = 0
+		forall {
+			single = single + 1
+			if (single > 1) {
+				single = 0
+				break
+			}
+		}
+	}
+	if (single == 0) {
+		tempobj = new ShapeBrowser("makeinserter(1)")
+		tempobj.hbox.map()
+	}else{
+		tempobj = new Inserter()
+	}
+	objectvar tempobj
+}

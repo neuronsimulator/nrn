@@ -1,0 +1,18 @@
+/* How to use a POINTER in a POINT_PROCESS mechanism */
+
+create a
+access a
+nseg=1
+
+double d[10]
+for i=0,9 d[i]=i+100
+objectvar tp[10]
+for i=0,9 tp[i] = new t1(.5)
+v = 10
+
+tp[2].f1()
+
+setpointer tp[0].p1, v(.5)
+for i=1,9 setpointer tp[i].p1, d[i]
+for i=0,9 print i, tp[i].p1
+for i=0,9 { print i, tp[i].f1()}

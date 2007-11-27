@@ -1,0 +1,93 @@
+load_file("nrngui.hoc")
+create soma
+access soma
+{
+L = 10  diam=100/PI/L
+insert hh
+}
+objref stim
+stim = new IClamp(.5)
+stim.dur = .1
+stim.amp = .3
+
+
+objref nda, nrt
+nda = new NrnDAQ()
+nrt = new RealTime()
+
+proc q() {
+	nda.ai_stop()
+	nda.ao_stop()
+	nda.finalize()
+	quit()
+}
+
+objref aivec, aovec, vvec, tvec, rtstep
+aivec = new Vector(1000)
+aovec = new Vector(1000)
+tvec = new Vector(1000)
+rtstep = new Vector(1000)
+
+realtime = 0
+ai_hard_timed_ = 1
+proc ai_hard_timed() {
+	nda.ai_ondemand(ai_hard_timed_ == 0)
+	if (ai_hard_timed_) {
+		realtime = 0
+	}
+}
+ai_hard_timed()
+
+xpanel("NrnDAQ")
+xbutton("one run", "go()")
+xbutton("continuous", "stoprun=0 while(stoprun==0) { go() }")
+xbutton("stop", "stoprun=1")
+xcheckbox("realtime", &realtime, "ai_hard_timed()")
+xcheckbox("AI hardware timed", &ai_hard_timed_, "ai_hard_timed()")
+xbutton("quit", "q()")
+xpanel()
+
+a = 0
+aivec.record(&a)
+soma aovec.record(&v(.5))
+tvec.record(&t)
+rtstep.record(&nrt.steptime)
+
+objref g
+g = new Graph()
+g.size(0,tstop, -80, 40)
+
+dt = .025
+nda.ai_setup(1, dt)
+nda.ao_setup(1)
+soma nda.ai_record(0, &a, 10)
+soma nda.ao_play(0,&v(.5), .1)
+
+proc go() {
+	stoprun = 0
+	finitialize(-65)
+	nda.ao_write()
+	nda.ai_start()
+	nda.ai_read()
+	frecord_init()
+	if (realtime) {
+		rtrun()
+	}else{
+		nrt.softrun(tstop)
+	}
+	nda.ai_stop()
+	g.erase()
+	aivec.line(g, tvec)
+	aovec.line(g, tvec)
+	doNotify()
+}
+
+proc rtrun() {local ovrn
+        ovrn = nrt.run(tstop)
+printf("maximum step time = %g    mean step time = %g\n", rtstep.max, rtstep.mean)
+        if (ovrn) {
+                printf("%d overruns\n", ovrn)
+		stoprun = 1
+        }
+}
+

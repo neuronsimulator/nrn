@@ -1,0 +1,283 @@
+inhomofun_template_index_ = 0
+
+begintemplate InhomoFun
+public argstr, expr, name, args, fobj, f
+objref this, fobj
+external hoc_sf_, object_index, inhomofun_template_index_
+strdef argstr, expr, name, tstr, tstr1, tstr2, xfname
+proc init() {
+	argstr = $s1
+	expr = $s2
+	name = $s3
+	sprint(xfname, "InhomoFun%dfun", inhomofun_template_index_)
+	mkfobj()
+	sprint(tstr, "fobj = new %s()", xfname)
+	execute(tstr, this)
+	inhomofun_template_index_ += 1
+}
+
+func f() {
+	return fobj.f($1,$2,$3,$&4)
+}
+
+iterator args() {local i
+	if (numarg() == 1) {
+		tstr = argstr
+	}else{
+		tstr = $s2
+	}
+	if (hoc_sf_.head(tstr, ",", $s1) >= 0) {
+		$s1 = "commas$not$allowed"
+		iterator_statement
+		return
+	}
+	while (hoc_sf_.len(tstr) > 0) {
+		if (hoc_sf_.head(tstr, "  *", $s1) <= 0) {
+			$s1 = tstr
+		}
+		iterator_statement
+		hoc_sf_.tail(tstr, "  *", tstr)
+	}
+}
+
+proc mkfobj() {local i
+	sprint(tstr1, "begintemplate %s\npublic f\nfunc f() {local p, p0, p1", xfname)
+	for args(tstr2) { sprint(tstr1, "%s,%s", tstr1, tstr2) }
+	i=0
+	for args(tstr2) {
+		sprint(tstr1, "%s %s=$&4[%d]", tstr1, tstr2, i)
+		i += 1
+	}
+	sprint(tstr1, "%s p=$1 p0=$2 p1=$3 return %s}\nendtemplate %s\n", tstr1, expr, xfname)
+//print "mkfobj ", tstr1
+	execute1(tstr1)
+}
+
+endtemplate InhomoFun
+
+func dummy_inhomo() { return 0 }
+
+begintemplate InhomoParm
+public s, name, ms, is_ms, box, panel, findex, leave
+public save_data, restore, selpos, prmemb, export, xmlwrite
+external hoc_sf_, dummy_inhomo
+objref ms, this, box, dpi, dk1, argvec, fun, g
+strdef s, tstr1, tstr2, tstr3, tstr4, targstr
+strdef fdef
+proc init() {
+	need_update_ = 1
+	geom_cnt_ = 0
+	argvec = new Vector(20)
+	dpi = $o1
+	s = $s2
+	ms = this
+	is_ms = 0
+	dk1 = new Deck()
+	dk1.intercept(1)
+	xpanel("")
+	xpanel()
+	dk1.intercept(0)
+	ufun(0)
+}
+proc leave() {
+	objref g
+}
+proc name() {
+	$s1 = s
+}
+proc panel() {
+	dpi.update()
+	xpanel("")
+	dpi.display(tstr1, tstr2, tstr3, tstr4)
+	sprint(tstr1, "/* p is %s", tstr1)
+	xlabel(tstr1)
+	if (dpi.proxstyle_ != 0) {xlabel(tstr2)}
+	if (dpi.distalstyle_ != 0) { xlabel(tstr3) }
+	sprint(tstr1, "and %s */", tstr4)
+	xlabel(tstr1)
+	xlabel($s1)
+	sprint(tstr1, "    %s(x) = f(p)", s)
+	xlabel(tstr1)
+	xlabel("}")
+	xmenu("f(p)", "fpmenu()")
+	xmenu("show", 1)
+	xbutton("Graph", "gshow()")
+	xbutton("Show f(p) on shape", "showf()")
+	xmenu()
+	xpanel()
+	dk1.map
+	showf()
+}
+
+proc showf() {
+	dpi.selih = this
+	dpi.bild.subsets.dpi = dpi
+	dpi.showdomain()
+	selpos(dpi.parm)
+}
+
+proc selpos() {local y
+	y = fun.fobj.f($1, dpi.p0, dpi.p1, &argvec.x[0])
+	sprint(tstr1, "f(p)=%g", y)
+	dpi.bild.topol.g.label(.7,.15, tstr1, 2, 1, 0, 0, 1)
+	export()
+}
+
+proc gshow() {
+	if (object_id(g) == 0) {
+		g = new Graph()
+		dpi.bild.leave_.append(this)
+	}else if (g.view_count == 0) {
+		g = new Graph()
+		dpi.bild.leave_.append(this)
+	}
+	g.size(dpi.p0, dpi.p1, 0, 1)
+	pl()
+}
+proc pl() {local  p, dp
+	if (object_id(g) == 0) { return }
+	if (g.view_count == 0) { return }
+	g.erase()
+	dp = (dpi.p1 - dpi.p0)/100
+	g.beginline(1,1)
+	for (p = dpi.p0; p <= dpi.p1; p += dp) {
+		g.line(p, fun.fobj.f(p, dpi.p0, dpi.p1, &argvec.x[0]))
+	}
+	g.flush()
+}
+
+proc fpmenu() {local i
+	for i=0, dpi.bild.inhomofuns.count-1 {
+		sprint(tstr1, "ufun(%d)", i)
+		xbutton(dpi.bild.inhomofuns.object(i).name, tstr1)
+	}
+	xbutton("New", "usrdef()")
+}
+
+proc ufun() {
+	findex = $1
+	fun = dpi.bild.inhomofuns.object($1)
+	sprint(fdef, "f(p) = %s", fun.expr)
+	mkdeck(fun.argstr)
+	if (object_id(dpi.subset.sectionlist)) {
+		export()
+	}
+}
+proc usrdef() {
+	tstr1 = fun.argstr
+	while (string_dialog("Step 1 of 2: Enter parameter names separated by spaces", tstr1)) {
+		tstr2 = "func dummy_inhomo() {local p, p0, p1"
+		add_local(tstr2, tstr1)
+		sprint(tstr2, "%s p=$1 return p}", tstr2)
+		if (execute1(tstr2) == 1) {
+			targstr = tstr1
+			fdef = "f(p) = p"
+			mkdeck(targstr)
+			usrdef2()
+			break
+		}
+		sprint(tstr2, "Invalid test function: %s", tstr2)
+		continue_dialog(tstr2)
+	}
+}
+
+proc usrdef2() {
+	tstr1 = "p"
+	while (string_dialog("Step 2 of 2: Enter expression involving p and parameter names", tstr1)) {
+		tstr2 = "func dummy_inhomo() {local p, p0, p1"
+		add_local(tstr2, targstr)
+		sprint(tstr2, "%s p=$1 return %s}", tstr2, tstr1)
+		if (execute1(tstr2) == 1) {
+			dpi.bild.append_inhomofun(targstr, tstr1)
+			ufun(dpi.bild.inhomofuns.count-1)
+			break
+		}
+		sprint(tstr2, "Invalid test function: %s", tstr2)
+		continue_dialog(tstr2)
+	}
+}
+
+proc add_local() {
+	tstr3 = $s2
+	for fun.args(tstr4, $s2) {
+		sprint($s1, "%s, %s", $s1, tstr4)
+	}
+}
+
+proc argchange() {
+	dpi.pl()
+	selpos(dpi.parm)
+	pl()
+}
+proc mkdeck() {
+	size=0
+	dk1.remove_last()
+	dk1.intercept(1)
+	xpanel("")
+	xlabel(fdef)
+	for fun.args(tstr2, $s1) {
+		sprint(tstr3, "argchange(%d)", size)
+		xpvalue(tstr2, &argvec.x[size], 1, tstr3)
+		size += 1
+	}
+	xpanel()
+	dk1.intercept(0)
+	dk1.flip_to(0)
+}
+
+proc save_data() {local i, size
+	size=0
+	for fun.args(tstr1) { size += 1 }
+	sprint(tstr1, "{%s.restore(%d, %d)}", $s2, findex, size)
+	$o1.save(tstr1)
+	for i=0, size-1 {
+		sprint(tstr1, "%g", argvec.x[i])
+		$o1.save(tstr1)
+	}
+}
+
+proc restore() {local i
+	for i=0, $2-1 {
+		argvec.x[i] = fscan()
+	}
+	ufun($1)
+}
+
+proc prmemb() {local i
+	i = 0
+	$o1.printf("proc %s_%s() {local x, p, p0, p1", s, $s2)
+	for fun.args(tstr1) {
+		$o1.printf(", %s", tstr1)
+	}
+	$o1.printf("\n  %s.update()\n  p0 = %s.p0  p1 = %s.p1\n", $s2, $s2, $s2)
+	for fun.args(tstr1) {
+		$o1.printf("  %s = %g\n", tstr1, argvec.x[i])
+		i += 1
+	}
+	$o1.printf("  for %s.loop() {\n    x = %s.x  p = %s.p\n    %s(x) = %s\n  }\n}\n", $s2, $s2, $s2, s, fun.expr)
+}
+
+proc export() {
+	if (!dpi.bild.continuous) return
+	sprint(tstr1, "func dummy_inhomo() { for $o1.loop() { %s($o1.x) = $o2.f($o1.p, $o1.p0, $o1.p1, &$&3)} return 0}", s)
+	execute1(tstr1)
+	dpi.update()
+//printf("%s.export\n", this)
+	dummy_inhomo(dpi, fun.fobj, &argvec.x[0])
+}
+
+proc xmlwrite() {local i
+	$o1.printf("    <property name=\"%s\">\n", s)
+	$o1.printf("      <property_function>\n")
+	i = 0
+	for  fun.args(tstr1) {
+$o1.printf("        <parameter name=\"%s\" value=\"%g\"/>\n", tstr1, argvec.x[i])
+		i += 1
+	}
+	$o1.printf("        <expression name=\"%s\"/>\n", fun.expr)
+	$o1.printf("      </property_function>\n")
+	$o1.printf("    </property>\n")
+}
+
+endtemplate InhomoParm
+

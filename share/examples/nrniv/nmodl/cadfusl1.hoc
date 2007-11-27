@@ -1,0 +1,82 @@
+/*radial and longitudinal diffusion of calcium using model in cadifusl*/
+/* This verifies the longitudinal time course of calcium diffusion
+   by comparing with the voltage time course of a cable. */
+/* also checks two sections with different segment lengths */
+nann = 4 - 1
+create a, b, c
+b connect c(0),1
+access a
+
+Dt = 2
+dt=.025
+forall{nseg = 10 diam=10 L=10 insert cadifus}
+b{nseg = 2 diam=10 L=2 insert cadifus}
+c{nseg = 20 diam=10 L=8 insert cadifus}
+
+objref g
+g = new Graph()
+g.size(0,1,0,1)
+
+proc init() {local i
+	t = 0
+	forall v = 0
+	coord_cadifus()
+	forall for i=0,nann {
+		ca_cadifus[i] = 0
+		CaBuffer_cadifus[i] = 0
+		Buffer_cadifus[i] = 0
+	}
+}
+
+proc run() { local next
+	/* diam/(4*Ra*cm) is equivalent to DFree_cadifus. Units are
+		you have: micron cm/ohm microfarad
+		you want: micron2/ms
+		        * 1.000000e+07
+	*/
+	init()
+	cm = diam/(4*Ra*DFree_cadifus*1e-7)
+	for i=0,nann ca_cadifus[i](.001) = 1 /* first seg uniform */
+	b for i=0,nann ca_cadifus[i](.001) = 1 /* first seg uniform */
+	v(.001) = 1
+	startsw()
+	while (t < 10) {
+		plotca()
+		plotv()
+		plotca2()
+		next = t + Dt
+		while (t < next) {
+			fadvance()
+		}
+	}
+	printf("elapsed time = %g\n", stopsw())
+}
+
+proc plotca() {local i, x
+	g.beginline(1,1)
+	for(x) if (x >0 && x < 1) {
+		g.line(x, ca_cadifus[0](x))
+	}
+	g.flush
+}
+proc plotv() {local i, x
+	g.beginline(2,1)
+	for(x) if (x > 0 && x < 1){
+		g.line(x, v(x))
+	}
+	g.flush
+}
+
+proc plotca2() {local i, lrat, x
+	lrat = b.L/(b.L+c.L)
+	g.beginline(3,1)
+	b for(x) if (x > 0 && x < 1){
+		g.line(x*lrat, ca_cadifus[0](x))
+	}
+	c for(x) if (x > 0 && x < 1){
+		g.line(lrat+x*(1-lrat), ca_cadifus[0](x))
+	}
+	g.flush
+}
+
+run()
