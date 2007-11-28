@@ -24,8 +24,6 @@ find . -name \*.o -print | sed '
 /\/oc\/\.libs\/spinit\.o/d
 /\/oc\/\.libs\/spinit1\.o/d
 /\/oc\/\.libs\/spinit2\.o/d
-/\/oc\/\.libs\/modlreg\.o/d
-/\/oc\/modlreg\.o/d
 /\/memacs\/\.libs\/termio\.o/d
 /\/memacs\/main\.o/d
 /\/nvkludge\.o/d
@@ -34,6 +32,7 @@ find . -name \*.o -print | sed '
 /\/ockludge\.o/d
 /\/ocnoiv\.o/d
 /\/ocmain\.o/d
+/\/inithoc\.o/d
 ' > temp
 #sed 's,^.*/,,' temp |sort|uniq -d
 obj=`cat temp`
@@ -50,6 +49,15 @@ g++ -shared -nostdlib $obj \
   $LIBS \
   -L/usr/bin -lpython2.5 \
   -lgdi32 -lcomdlg32 -lncurses -lm \
+  -o mswin/nrniv.dll \
+  -Wl,--enable-auto-image-base \
+  -Xlinker --out-implib -Xlinker mswin/libnrniv.dll.a
+
+g++ -shared \
+  nrnpython/.libs/inithoc.o \
+  -L/cygdrive/c/Python25/libs -lpython25 \
+  -Lmswin -lnrniv \
+  -L/usr/bin -lpython2.5 \
   -o mswin/hocmodule.dll \
   -Wl,--enable-auto-image-base \
   -Xlinker --out-implib -Xlinker mswin/libhocmodule.dll.a
@@ -57,7 +65,7 @@ g++ -shared -nostdlib $obj \
 cd mswin
 g++ -g -O2 -mwindows -e _mainCRTStartup -o nrniv.exe \
   ../ivoc/nrnmain.o ../oc/modlreg.o \
-  -L. -lhocmodule \
+  -L. -lnrniv -lhocmodule \
   -lncurses \
   -L${IVLIBDIR} -lIVhines \
   -lgdi32 -lcomdlg32 \
@@ -67,7 +75,15 @@ else
 
 g++ -shared -mno-cygwin $obj \
   $LIBS \
-  -L/cygdrive/c/Python24/libs -lpython24 \
+  -L/cygdrive/c/Python25/libs -lpython25 \
+  -o mswin/nrniv.dll \
+  -Wl,--enable-auto-image-base \
+  -Xlinker --out-implib -Xlinker mswin/libnrniv.dll.a
+
+g++ -shared -mno-cygwin \
+  nrnpython/.libs/inithoc.o \
+  -L/cygdrive/c/Python25/libs -lpython25 \
+  -Lmswin -lnrniv \
   -o mswin/hocmodule.dll \
   -Wl,--enable-auto-image-base \
   -Xlinker --out-implib -Xlinker mswin/libhocmodule.dll.a
@@ -75,8 +91,8 @@ g++ -shared -mno-cygwin $obj \
 cd mswin
 g++ -g -O2 -mno-cygwin -e _mainCRTStartup -o nrniv.exe \
   ../ivoc/nrnmain.o ../oc/modlreg.o \
-  -L. -lhocmodule \
-  -L/cygdrive/c/Python24/libs -lpython24
+  -L. -lnrniv \
+  -L/cygdrive/c/Python25/libs -lpython25
 
 fi
 

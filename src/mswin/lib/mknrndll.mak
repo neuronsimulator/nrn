@@ -1,11 +1,11 @@
+#one or the other
+#NOCYGWIN = -mno-cygwin
+NOCYGWIN = -I$N/lib -I$N/gccinc -I$N/gcc3inc -L$N/gcclib
 
-#CFLAGS = -mno-cygwin
-CFLAGS = \
+CFLAGS = $(NOCYGWIN) \
 -DDLL_EXPORT -DPIC \
--I$N/src/scopmath -I$N/src/nrnoc -I$N/src/oc \
--I$N/lib -I$N/gccinc -I$N/gcc3inc
+-I$N/src/scopmath -I$N/src/nrnoc -I$N/src/oc
 
-#CFLAGS = -I$N/../program\ files/metrowerks/codewarrior/msl/msl_c/msl_common -I$N/src/scopmath -I$N/src/nrnoc -I$N/src/oc
 
 # to handle variations of filename extensions
 .SUFFIXES: .o .mod .moD .mOd .mOD .Mod .MoD .MOd .MOD
@@ -59,10 +59,8 @@ mod_func.o: mod_func.c
 #	ld -d -S -x -r -o nrnmech.dll mod_func.o $(MODOBJFILES) -L$N/lib -lscpmt
 
 nrnmech.dll: mod_func.o $(MODOBJFILES)
-	gcc -shared -o nrnmech.dll mod_func.o $(MODOBJFILES) \
-  -L$N/bin -lhocmodule \
-  -L$N/gcclib
-
+	gcc $(NOCYGWIN) -shared -o nrnmech.dll mod_func.o $(MODOBJFILES) \
+  -L$N/bin -lnrniv
 
 #nm nrnmech.dll | mkdll -u > nrnmech.h #will give a list of neuron.exe names
 #required by nrnmech.dll

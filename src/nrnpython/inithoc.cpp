@@ -33,7 +33,4 @@ void inithoc() {
 	nrnpy_hoc();
 }
 
-void modl_reg() {}
-
 }
-

@@ -39,6 +39,8 @@ cp $S/src/nrniv/neuron.exe $D/bin/neuron.exe
 strip $D/bin/neuron.exe
 cp $S/src/mswin/nrniv.exe $D/bin/nrniv.exe
 strip $D/bin/nrniv.exe
+cp $S/src/mswin/nrniv.dll $D/bin/nrniv.dll
+strip $D/bin/nrniv.dll
 cp $S/src/mswin/hocmodule.dll $D/bin/hocmodule.dll
 strip $D/bin/hocmodule.dll
 cp $ivbindir/cygIVhines-3.dll $D/bin/cygIVhines-3.dll
@@ -99,7 +101,7 @@ cp /usr/share/terminfo/x/xterm $D/lib/x/xterm
 
 cp $S/src/mswin/*.ico $D/bin
 
-if 0 ; then
+if false ; then
 mkdir $D/mingw
 mkdir $D/mingw/sys
 cp /usr/i686-pc-mingw32/include/*.h $D/mingw
