@@ -30,6 +30,7 @@ void work_around() {
 	MPI_Iprobe(0,0,c,0,0);
 	MPI_Irecv(0,0,0,0,0,c,0);
 	MPI_Isend(0,0,0,0,0,c,0);
+	MPI_Op_create(0, 0, 0);
 	MPI_Pack(0, 0, 0, 0, 0, 0, c);
 	MPI_Pack_size(0, 0, c, 0);
 	MPI_Probe(0, 0, c, 0);
