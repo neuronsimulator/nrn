@@ -2,6 +2,7 @@ lib_LTLIBRARIES = libnrnmpi.la
 
 nsrc=$(top_srcdir)/src
 INCLUDES = -I$(nsrc)/oc @NRN_REALTIME_INCLUDE@
+AM_CFLAGS = @MINGW_CFLAG@
 
 libnrnmpi_la_SOURCES = nrnmpi.c bbsmpipack.c mpispike.c nrnrt.c
 

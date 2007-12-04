@@ -51,6 +51,7 @@ BBS_INCLUDES = -I$(nsrc)/parallel -I$(nsrc)/nrnmpi $(PVM_INCLUDES)
 
 INCLUDES = $(windll) -I$(nsrc)/sundials -I$(nsrc)/sundials/shared -I$(nsrc)/nrncvode -I$(nsrc)/sparse13 -I$(nsrc)/gnu -I. -I$(nsrc)/ivoc -I$(nsrc)/nrnoc -I$(top_builddir)/src/oc -I$(nsrc)/oc  $(IV_INCLUDES) $(BBS_INCLUDES)
 AM_CPPFLAGS = -DOOP=1 -DCABLE=1 -DUSECVODE=1 -DUSEMATRIX=1 -DUSEBBS=1
+AM_CXXFLAGS = @MINGW_CFLAG@
 
 if NRNMECH_DLL_STYLE
 libnrniv_la_LDFLAGS = -export-dynamic

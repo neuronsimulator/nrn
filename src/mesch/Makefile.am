@@ -1,6 +1,8 @@
 ## The library that we make:
 lib_LTLIBRARIES = libmeschach.la
 
+AM_CFLAGS = @MINGW_CFLAG@
+
 libmeschach_la_SOURCES = arnoldi.c bdfactor.c bkpfacto.c chfactor.c \
 	conjgrad.c copy.c dmacheps.c err.c extras.c fft.c givens.c hessen.c \
 	hsehldr.c init.c iter0.c iternsym.c itersym.c ivecop.c lanczos.c \

@@ -5,6 +5,8 @@ SUBDIRS = shared cvodes ida
 #SUBLIBS = shared/libshared.la cvodes/libcvodes.la ida/libida.la
 SUBLIBS = shared/*.lo cvodes/*.lo ida/*.lo
 
+AM_CFLAGS = @MINGW_CFLAG@
+
 lib_LTLIBRARIES = libsundials.la
 libsundials_la_SOURCES =
 libsundials_la_LIBADD = $(SUBLIBS)

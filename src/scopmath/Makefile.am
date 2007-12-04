@@ -20,3 +20,4 @@ EXTRA_DIST = scpmth.mak
 pkginclude_HEADERS = scoplib.h
 
 AM_CPPFLAGS = -DHOC=1
+AM_CFLAGS = @MINGW_CFLAG@ 

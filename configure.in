@@ -4,8 +4,10 @@ dnl disable caching. When configure fails, it is best to start from scratch.
 define([AC_CACHE_LOAD], )dnl
 define([AC_CACHE_SAVE], )dnl
 
-dnl when you change following also update src/mswin/nrnsetup.nsi and svn2nrn_h.sh
+dnl when you change following also update svn2nrn_h.sh
 AC_INIT([nrn],[6.2])
+PACKAGE_VERSION_MAJOR=`echo "$PACKAGE_VERSION" | sed 's/\..*//'`
+PACKAGE_VERSION_MINOR=`echo "$PACKAGE_VERSION" | sed 's/^.*\.//'`
 AC_CONFIG_SRCDIR(src/memacs/main.c)
 AM_INIT_AUTOMAKE
 
@@ -200,6 +202,8 @@ AM_CONDITIONAL(BUILD_CARBON, test x$enable_carbon = xyes)
 dnl use the --enable-rpm-rules=yes
 RPM_RELEASE="`sh $srcdir/nrnversion.sh commit`"
 AC_SUBST(RPM_RELEASE)
+AC_SUBST(PACKAGE_VERSION_MAJOR)
+AC_SUBST(PACKAGE_VERSION_MINOR)
 if test "$rpm_extra_args" = "" ; then
 	rpm_extra_args="-ba nrnrpm.spec"
 fi
@@ -240,6 +244,30 @@ dnl although it is now obsolete.  We used to leave it in here, and then define
 dnl AM_PROG_LIBTOOL to call AC_PROG_LIBTOOL, which is the modern
 dnl way of doing it.
 AM_PROG_LIBTOOL
+
+dnl Checks for libraries
+AC_CHECK_LIBM
+LIBS="$LIBS $LIBM"
+
+dnl Python for cygwin and mingw has to be done early because later tests may
+dnl have to be done with a CFLAGS="-mno-cygwin"
+dnl What to do about Python
+AC_NRN_PYTHON
+
+MINGW_CFLAG=""
+EXTRA_CYGWIN_FLAGS='$(EXTRA_CYGWIN)'
+if test "$CYGWIN" = "yes" ; then
+	if test "$ac_nrn_cygwin" = no ; then
+		AC_MSG_NOTICE([Build using MinGW.])
+		MINGW_CFLAG="-mno-cygwin"
+		EXTRA_CYGWIN_FLAGS=''
+		// following will be put back at end
+		CFLAGS="-mno-cygwin $CFLAGS"
+		CXXFLAGS="-mno-cygwin $CXXFLAGS"
+	fi
+fi
+AC_SUBST(MINGW_CFLAG)
+AC_SUBST(EXTRA_CYGWIN_FLAGS)
 
 AC_NRN_PARANEURON
 AC_NRN_WITH_MPI
@@ -308,10 +336,6 @@ if test x${addlibdl} = xyes ; then
 	LIBS="$LIBS -ldl"
 fi
 
-dnl Checks for libraries
-AC_CHECK_LIBM
-LIBS="$LIBS $LIBM"
-
 dnl what to do with the readline library and memacs
 AC_NRN_READLINE
 
@@ -341,9 +365,6 @@ else
 	fi
 fi
 AC_SUBST(enable_carbon)
-
-dnl What to do about Python
-AC_NRN_PYTHON
 
 dnl Real time dynamic clamp
 AC_NRN_REALTIME
@@ -409,6 +430,14 @@ AC_NRN_InterViews
 
 if test "$nrndef_mac" = "//" -a "$nrndef_mswin" = "//" ; then
 	nrndef_unix=""
+fi
+
+dnl put back the flags if mingw
+if test "$CYGWIN" = "yes" ; then
+	if test "$ac_nrn_cygwin" = no ; then
+		CFLAGS="$mlh_CFLAGS"
+		CXXFLAGS="$mlh_CXXFLAGS"
+	fi
 fi
 
 AC_DEFINE_UNQUOTED(NRNHOSTCPU,"$host_cpu",[cpu type consistent with nrnivmodl])
@@ -499,6 +528,7 @@ AC_CONFIG_FILES([
 	src/nrnjava/neuron/Makefile
 	src/nrnpython/Makefile src/nrnpython/setup.py src/ni_pci_6229/Makefile
 	src/mac/Makefile src/mswin/Makefile src/mswin/batch/Makefile
+	src/mswin/nrnsetup.nsi src/mswin/nrncygso.sh src/mswin/lib/mknrndll.mak
 	src/mswin/extra/Makefile src/mswin/rdln/Makefile
 	src/mswin/windll/Makefile src/mswin/winio/Makefile
 	src/mswin/wnrnbbs/Makefile src/mswin/lib/Makefile

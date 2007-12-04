@@ -2,6 +2,7 @@ noinst_LTLIBRARIES = libcvodes.la
 
 nsrc=$(top_srcdir)/src
 INCLUDES = -I$(nsrc)/sundials/shared
+AM_CFLAGS = @MINGW_CFLAG@
 
 libcvodes_la_SOURCES = \
 	cvband.c \

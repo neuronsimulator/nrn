@@ -2,6 +2,7 @@ noinst_LTLIBRARIES = libida.la
 
 nsrc=$(top_srcdir)/src
 INCLUDES = -I$(nsrc)/sundials/shared
+AM_CFLAGS = @MINGW_CFLAG@
 
 libida_la_SOURCES = \
 	idaband.c \

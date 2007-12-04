@@ -1,10 +1,12 @@
-#one or the other
-#NOCYGWIN = -mno-cygwin
-NOCYGWIN = -I$N/lib -I$N/gccinc -I$N/gcc3inc -L$N/gcclib
 
-CFLAGS = $(NOCYGWIN) \
+
+EXTRA_CYGWIN = -I$N/lib -I$N/gccinc -I$N/gcc3inc -L$N/gcclib
+EXTRA_FLAGS = @MINGW_CFLAG@ @EXTRA_CYGWIN_FLAGS@
+
+CFLAGS = \
 -DDLL_EXPORT -DPIC \
--I$N/src/scopmath -I$N/src/nrnoc -I$N/src/oc
+-I$N/src/scopmath -I$N/src/nrnoc -I$N/src/oc \
+$(EXTRA_FLAGS)
 
 
 # to handle variations of filename extensions
@@ -59,7 +61,7 @@ mod_func.o: mod_func.c
 #	ld -d -S -x -r -o nrnmech.dll mod_func.o $(MODOBJFILES) -L$N/lib -lscpmt
 
 nrnmech.dll: mod_func.o $(MODOBJFILES)
-	gcc $(NOCYGWIN) -shared -o nrnmech.dll mod_func.o $(MODOBJFILES) \
+	gcc $(EXTRA_FLAGS) -shared -o nrnmech.dll mod_func.o $(MODOBJFILES) \
   -L$N/bin -lnrniv
 
 #nm nrnmech.dll | mkdll -u > nrnmech.h #will give a list of neuron.exe names

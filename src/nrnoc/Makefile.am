@@ -41,6 +41,7 @@ EXTRA_DIST = $(MODFILES)
 HOC_E = ../e_editor/hoc_e
 HOC_E_DEP = ../e_editor/hoc_e
 
+AM_CFLAGS = @MINGW_CFLAG@
 AM_CPPFLAGS = -DCABLE=1 -DOOP=1
 nsrc=$(top_srcdir)/src
 INCLUDES = -I$(top_builddir)/src/oc -I$(nsrc)/oc -I$(nsrc)/scopmath -I$(nsrc)/sparse13

@@ -13,6 +13,7 @@ INCLUDES = -I$(nsrc)/gnu -I$(nsrc)/mesch -I$(top_builddir)/src/oc -I$(nsrc)/oc $
 
 IV_LIBS = @IV_LIBS_LIBTOOL@
 IVOS_DIR = @IVOS_DIR@
+AM_CXXFLAGS = @MINGW_CFLAG@
 
 # sometime multiple definitions are an error
 nrniv_iv_sources = classreg.cpp datapath.cpp ocjump.cpp symdir.cpp

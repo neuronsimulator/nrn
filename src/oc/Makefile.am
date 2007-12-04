@@ -2,6 +2,7 @@
 lib_LTLIBRARIES = liboc.la libocxt.la
 
 AM_CPPFLAGS = -DOOP=1 -DINTERVIEWS=1 -DHOC=1
+AM_CFLAGS = @MINGW_CFLAG@
 
 nsrc=$(top_srcdir)/src
 INCLUDES = -I$(nsrc)/memacs -I$(nsrc)/sparse $(X_CFLAGS)

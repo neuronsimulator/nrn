@@ -432,7 +432,10 @@ int ivocmain (int argc, char** argv, char** env) {
 	}
 
 #else // Not unix:
-	setneuronhome((argc > 0)?argv[0]:0);
+	neuron_home = getenv("NEURONHOME");
+	if (!neuron_home) {
+		setneuronhome((argc > 0)?argv[0]:0);
+	}
 	if (!neuron_home) {
 #if defined(WIN32) && HAVE_IV
 		MessageBox(0, "No NEURONHOME environment variable.", "NEURON Incomplete Installation", MB_OK);

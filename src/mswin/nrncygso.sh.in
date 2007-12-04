@@ -47,7 +47,7 @@ g++ -shared -nostdlib $obj \
   -L/usr/lib/gcc/i686-pc-cygwin/3.4.4 -lstdc++ -lgcc \
   -lcygwin -luser32 -lkernel32 -ladvapi32 -lshell32 \
   $LIBS \
-  -L/usr/bin -lpython2.5 \
+  @NRNPYTHON_PYLIBLINK@ \
   -lgdi32 -lcomdlg32 -lncurses -lm \
   -o mswin/nrniv.dll \
   -Wl,--enable-auto-image-base \
@@ -57,7 +57,7 @@ g++ -shared \
   nrnpython/.libs/inithoc.o \
   -L/cygdrive/c/Python25/libs -lpython25 \
   -Lmswin -lnrniv \
-  -L/usr/bin -lpython2.5 \
+  @NRNPYTHON_PYLIBLINK@ \
   -o mswin/hocmodule.dll \
   -Wl,--enable-auto-image-base \
   -Xlinker --out-implib -Xlinker mswin/libhocmodule.dll.a
@@ -69,20 +69,20 @@ g++ -g -O2 -mwindows -e _mainCRTStartup -o nrniv.exe \
   -lncurses \
   -L${IVLIBDIR} -lIVhines \
   -lgdi32 -lcomdlg32 \
-  -L/usr/lib/python2.5/config -lpython2.5 -ldl
+  @NRNPYTHON_PYLIBLINK@
 
 else
 
 g++ -shared -mno-cygwin $obj \
   $LIBS \
-  -L/cygdrive/c/Python25/libs -lpython25 \
+  @NRNPYTHON_PYLIBLINK@ \
   -o mswin/nrniv.dll \
   -Wl,--enable-auto-image-base \
   -Xlinker --out-implib -Xlinker mswin/libnrniv.dll.a
 
 g++ -shared -mno-cygwin \
   nrnpython/.libs/inithoc.o \
-  -L/cygdrive/c/Python25/libs -lpython25 \
+  @NRNPYTHON_PYLIBLINK@ \
   -Lmswin -lnrniv \
   -o mswin/hocmodule.dll \
   -Wl,--enable-auto-image-base \
@@ -92,7 +92,7 @@ cd mswin
 g++ -g -O2 -mno-cygwin -e _mainCRTStartup -o nrniv.exe \
   ../ivoc/nrnmain.o ../oc/modlreg.o \
   -L. -lnrniv \
-  -L/cygdrive/c/Python25/libs -lpython25
+  @NRNPYTHON_PYLIBLINK@
 
 fi
 

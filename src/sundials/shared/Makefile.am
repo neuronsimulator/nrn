@@ -13,6 +13,8 @@ PARINC1 =
 EXTRA_DIST = $(PARSRC) $(PARINC)
 endif
 
+AM_CFLAGS = @MINGW_CFLAG@
+
 libshared_la_SOURCES = band.c dense.c iterative.c \
 	nvector.c nvector_serial.c smalldense.c spgmr.c sundialsmath.c \
 	$(PARSRC1)

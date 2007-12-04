@@ -5,8 +5,14 @@
 if test "$top_srcdir" = "" ; then
 	echo "instal.sh should be executed at top level with make mswin"
 else
-	S=`cygpath -u -a $top_srcdir`
+	S=`cygpath -u -a $top_srcdir | sed 's/\/$//'`
 	export S
+fi
+if test "$top_builddir" = "" ; then
+	echo "instal.sh should be executed at top level with make mswin"
+else
+	B=`cygpath -u -a $top_builddir | sed 's/\/$//'`
+	export B
 fi
 if test "$marshall_dir" = "" ; then
 	echo "instal.sh should be executed at top level with make mswin"
@@ -20,37 +26,34 @@ if test "$ivbindir" = "" ; then
 	echo "instal.sh should be executed at top level with make mswin"
 	exit 1
 fi
-
-echo "MSWIN install from $S to $D"
+echo "MSWIN install from $S and $B to $D"
 
 set -v
 
 if true ; then # false means skip the entire marshalling of nrn
 
-rm -r $D
+rm -r -f $D
 mkdir $D
 mkdir $D/bin
 mkdir $D/lib
 
 # copy and strip the various executables we built
-cp $S/src/nrniv/mos2nrn.exe $D/bin/mos2nrn.exe
+cp $B/src/nrniv/mos2nrn.exe $D/bin/mos2nrn.exe
 strip $D/bin/mos2nrn.exe
-cp $S/src/nrniv/neuron.exe $D/bin/neuron.exe
+cp $B/src/nrniv/neuron.exe $D/bin/neuron.exe
 strip $D/bin/neuron.exe
-cp $S/src/mswin/nrniv.exe $D/bin/nrniv.exe
+cp $B/src/mswin/nrniv.exe $D/bin/nrniv.exe
 strip $D/bin/nrniv.exe
-cp $S/src/mswin/nrniv.dll $D/bin/nrniv.dll
+cp $B/src/mswin/nrniv.dll $D/bin/nrniv.dll
 strip $D/bin/nrniv.dll
-cp $S/src/mswin/hocmodule.dll $D/bin/hocmodule.dll
+cp $B/src/mswin/hocmodule.dll $D/bin/hocmodule.dll
 strip $D/bin/hocmodule.dll
 cp $ivbindir/cygIVhines-3.dll $D/bin/cygIVhines-3.dll
 strip $D/bin/cygIVhines-3.dll
-cp $S/src/nmodl/nocmodl.exe $D/bin
+cp $B/src/nmodl/nocmodl.exe $D/bin
 strip $D/bin/nocmodl.exe
-cp $S/src/modlunit/modlunit.exe $D/bin
+cp $B/src/modlunit/modlunit.exe $D/bin
 strip $D/bin/modlunit.exe
-#following could be a problem since it was not compiled -mno-cygwin
-#cp $S/src/scopmath/.libs/libscopmath.a $D/lib/libscpmt.a
 
 # copy the essential cygwin programs
 for i in \
@@ -83,6 +86,8 @@ done
 for i in ` sort $D/bin/temp.tmp | uniq | sed '
 	/WINDOWS/d
 	/\.exe/d
+	/cygIVhines/d
+	/nrniv/d
 ' ` ; do
 	echo $i
 	cp `cygpath -u $i` $D/bin
@@ -140,16 +145,21 @@ Z=d2ufiles.zip
 
 if true ; then
 cd $S/share
+rm -f $Z
+zip -l -r $Z examples lib demo -x \*.svn\*
+zip -d $Z \*,v \*.svn\* \*.in \*Makefile\* \*.o \*.c \*.dll \*/auditscripts\*
+unzip -d $D -o $Z 
 rm $Z
-zip -l -r $Z examples lib demo
-zip -d $Z \*CVS\* \*.svn* \*Makefile\* \*.o \*.c \*.dll \*/auditscripts*
+cd $B/share
+rm -f $Z
+zip -l $Z lib/nrn.defaults
 unzip -d $D -o $Z 
 rm $Z
 fi
 
 if true ; then
 cd $S
-rm $Z
+rm -f $Z
 zip -l $Z src/oc/*.h src/nrnoc/*.mod src/nrnoc/*.h src/scopmath/*.h
 unzip -d $D -o $Z
 rm $Z
@@ -157,10 +167,16 @@ fi
 
 if true ; then
 cd $S/src/mswin
-rm $Z
+rm -f $Z
 zip -l $Z notes.txt
 #do the lib shell scripts in unix format
-zip $Z bin/mknrndll lib/*.sh lib/*.mak lib/*.sed
+zip $Z bin/mknrndll lib/*.sh lib/*.sed
+unzip -d $D -o $Z
+rm $Z
+cd $B/src/mswin
+rm -f $Z
+#do the lib shell scripts in unix format
+zip $Z lib/*.mak
 unzip -d $D -o $Z
 rm $Z
 fi
@@ -213,7 +229,7 @@ hparent=$S/..
 if test -d "$hparent/html" ; then
 	cd $hparent
 	rm html.zip
-	zip -r html.zip html
+	zip -r html.zip html -x \*.svn\*
 	rm -r -f $marshall_dir/html
 	unzip -d $marshall_dir html.zip
 	rm html.zip
@@ -223,9 +239,9 @@ fi # end of html marshalling
 
 set +v
 echo "Will now complete the creation of the installer by launching"
-echo "    $S/src/mswin/nrnsetup.nsi ."
+echo "    $B/src/mswin/nrnsetup.nsi ."
 echo " The installer will be located in $S/src/mswin/nrnxxsetup.exe"
 
-cd $S/src/mswin
+cd $B/src/mswin
 #c:/Program\ Files/NSIS/makensisw nrnsetup.nsi
 c:/Program\ Files/NSIS/makensis nrnsetup.nsi

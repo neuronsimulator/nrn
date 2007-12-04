@@ -7,8 +7,8 @@
 
 ;Configuration
 
-!define Version "6.2"
-!define VerNoDot "62"
+!define Version "@PACKAGE_VERSION@"
+!define VerNoDot "@PACKAGE_VERSION_MAJOR@@PACKAGE_VERSION_MINOR@"
 
 ; The name of the installer
 Name "NEURON ${Version}"
