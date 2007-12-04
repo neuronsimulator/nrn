@@ -46,7 +46,8 @@ void XYView::rebind(){
 void PrintableWindow::hide() {
 	if (bound()) {
 		if (is_mapped()) {
-//printf("hide %lx\n", (long)this);
+			xplace(xleft(), xtop());
+//printf("hide %lx %d %d\n", (long)this, xleft_, xtop_);
 			WindowRep& w = *((Window*)this)->rep();
 			XWithdrawWindow(display()->rep()->display_, w.xwindow_, display()->rep()->screen_);
 		}

@@ -462,9 +462,12 @@ if (xplace_) {
 			break;
 		case UnmapNotify:
 //printf("UnMapNotify %lx xleft=%d xtop=%d\n", (long)this, xleft(), xtop());
-xplace_ = true;
-xleft_ = xleft();
-xtop_ = xtop();
+//having trouble with remapping after a "hide" that the left and top are
+// set to incorrect values. i.e.the symptom is that xleft() and xtop() are
+// wrong by the time we get this event.
+//xplace_ = true;
+//xleft_ = xleft();
+//xtop_ = xtop();
 			unmap_notify();
 			notify();
 			break;
