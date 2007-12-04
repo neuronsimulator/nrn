@@ -137,7 +137,8 @@ static void hocobj_dealloc(PyHocObject* self) {
 		hoc_obj_unref(self->ho_);
 	}
 	if (self->type_ == 5 && self->u.s_) {
-		delete [] self->u.s_;
+		//delete [] self->u.s_;
+		free(self->u.s_);
 	}
 	if (self->type_ == 6 && self->u.ho_) {
 		hoc_obj_unref(self->u.ho_);
@@ -324,7 +325,6 @@ PyObject* nrnpy_ho2po(Object* o) {
 		Py_INCREF(po);
 	}else{
 		po = hocobj_new(hocobject_type, 0, 0);
-		Py_INCREF(po);
 		((PyHocObject*)po)->ho_ = o;
 		((PyHocObject*)po)->type_ = 1;
 		hoc_obj_ref(o);
@@ -458,9 +458,10 @@ static void* fcall(void* vself, void* vargs) {
 		double d = hoc_call_func(self->sym_, 1);
 		hoc_pushx(d);
 	}else{
-		Inst fc[2];
+		Inst fc[3];
 		fc[0].sym = self->sym_;
 		fc[1].i = narg;
+		fc[2].in = STOP;
 		Inst* pcsav = save_pc(fc);
 		hoc_call();
 		hoc_pc = pcsav;

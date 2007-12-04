@@ -838,17 +838,17 @@ static PyTypeObject nrnpy_MechanismType = {
 
 PyObject* nrnpy_cas(PyObject* self, PyObject* args) {
 	Section* sec = chk_access();
+	section_ref(sec);
 	NPySecObj* pysec = NULL;
 	if (sec->prop->dparam[9]._pvoid) {
 		pysec = (NPySecObj*)sec->prop->dparam[9]._pvoid;
+		Py_INCREF(pysec);
 		assert(pysec->sec_ == sec);
 	}else{
 		pysec = (NPySecObj*)psection_type->tp_alloc(psection_type, 0);
 		pysec->sec_ = sec;
 		sec->prop->dparam[9]._pvoid;
 	}
-	section_ref(sec);
-	Py_INCREF(pysec);
 	return (PyObject*)pysec;
 }
 
