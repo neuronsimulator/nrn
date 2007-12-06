@@ -261,7 +261,7 @@ if test "$CYGWIN" = "yes" ; then
 		AC_MSG_NOTICE([Build using MinGW.])
 		MINGW_CFLAG="-mno-cygwin"
 		EXTRA_CYGWIN_FLAGS=''
-		// following will be put back at end
+		dnl following will be put back at end
 		CFLAGS="-mno-cygwin $CFLAGS"
 		CXXFLAGS="-mno-cygwin $CXXFLAGS"
 	fi
