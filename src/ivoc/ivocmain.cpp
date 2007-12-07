@@ -418,7 +418,9 @@ int ivocmain (int argc, char** argv, char** env) {
 	neuron_home = getenv("NEURONHOME");
 	if (!neuron_home) {
 #if defined(HAVE_PUTENV)
-		char buffer[256];
+		// the only reason the following is static is to prevent valgrind
+		// from complaining it is a memory leak.
+		static char* buffer = new char[strlen(NEURON_DATA_DIR) + 12];
 		sprintf(buffer, "NEURONHOME=%s", NEURON_DATA_DIR);
 		putenv(buffer);
 		neuron_home = NEURON_DATA_DIR;

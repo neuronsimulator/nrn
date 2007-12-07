@@ -33,4 +33,7 @@ void inithoc() {
 	nrnpy_hoc();
 }
 
+#if !defined(CYGWIN)
+void modl_reg() {}
+#endif
 }

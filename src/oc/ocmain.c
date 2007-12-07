@@ -39,7 +39,7 @@ static void setnrnhome(arg) char* arg; {
 	neuron_home = getenv("NEURONHOME");
 	if (!neuron_home) {
 #if defined(HAVE_PUTENV)
-	 char buffer[256];
+	 static char buffer[256];
 	 sprintf(buffer, "NEURONHOME=%s", NEURON_DATA_DIR);
 	 putenv(buffer);
 	 neuron_home = NEURON_DATA_DIR;
