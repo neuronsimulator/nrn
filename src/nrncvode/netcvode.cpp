@@ -1935,7 +1935,11 @@ void _nrn_watch_activate(Datum* d, double (*c)(Point_process*), int i, Point_pro
 void _nrn_free_watch(Datum* d, int offset, int n) {
 	int i;
 	int nn = offset + n;
-	for (i=offset; i < nn; ++i) {
+	if (d[offset]._pvoid) {
+		WatchList* wl = (WatchList*)d[offset]._pvoid;
+		delete wl;
+	}
+	for (i=offset+1; i < nn; ++i) {
 		if (d[i]._pvoid) {
 			WatchCondition* wc = (WatchCondition*)d[i]._pvoid;
 			wc->Remove();
@@ -4033,7 +4037,7 @@ WatchCondition::WatchCondition(Point_process* pnt, double(*c)(Point_process*))
 }
 
 WatchCondition::~WatchCondition() {
-printf("~WatchCondition\n");
+//printf("~WatchCondition\n");
 	Remove();
 }
 

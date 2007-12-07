@@ -106,14 +106,19 @@ double* nrn_prop_data_alloc(int type, int count) {
 }
 
 Datum* nrn_prop_datum_alloc(int type, int count) {
+	int i;
 	if (!datumpools_[type]) {
 		datumpools_[type] = new DatumArrayPool(APSIZE, count);
 	}
 #if NRN_MECH_REORDER
-	if (force && order[type]) { return datumpools_[type]->element(order[type][i2[type]++]); }
+	if (force && order[type]) {
+		Datum* ppd = datumpools_[type]->element(order[type][i2[type]++]); }
+//		for (i=0; i < count; ++i) { ppd[i]._pvoid = 0; }
+		return ppd;
 #endif
 	Datum* ppd = datumpools_[type]->alloc();
 //if (type > 1) printf("nrn_prop_datum_alloc %d %s %d %lx\n", type, memb_func[type].sym->name, count, (long)ppd);
+	for (i=0; i < count; ++i) { ppd[i]._pvoid = 0; }
 	return ppd;
 }
 
