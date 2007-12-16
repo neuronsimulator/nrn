@@ -192,6 +192,9 @@ if test ! -f $pz ; then
 	for i in bsddb email encodings idlelib test ; do
 		zip -d $pz \*/${i}*
 	done
+	for i in __init__ aliases ascii ; do
+		zip $pz $pd/encodings/$i.py
+	done
 fi
 unzip -d $D/lib -o $pz
 fi
