@@ -6,12 +6,17 @@ begintemplate Import3d_Section
 // the last point of the parent.
 // The variable first=0 means that when diam is shown, there
 // should be a glyph drawn defined by raw indices 0 and 1.
+// if this is a contour it may also contain a list of contours that
+// define a 3-d object
 public raw, xyz, d, id, append, g, mkglyph, rotate, type, centroid_color
 public iscontour_, pid, parentsec, parentx, volatile, nameindex, first, fid
-public volatile2, contourcenter, ztrans
-public pl_point, insrt, set_pt
-objref raw, xyz, d, g, parentsec
+public contour_list, pl_centroid, pl_diam
+public stk_triang_vec, stk_triang_area, is_subsidiary
+public volatile2, contourcenter, ztrans, approximate_contour_by_circle
+public pl_point, insrt, set_pt, stk_center, accurate_triangle_area
+objref raw, xyz, d, g, parentsec, contour_list, this, stk_triang_vec
 proc init() {
+	is_subsidiary = 0
 	ztrans = 0
 	first = 0
 	fid = 0
@@ -55,6 +60,43 @@ proc insrt() {local i, nr, nc
 	set_pt($1, $2, $3, $4, $5)
 }
 
+proc pl_centroid() {local i, n
+	xyz.getrow(1).line($o1, xyz.getrow(0), centroid_color, 1)
+	if (iscontour_) {
+		n = xyz.ncol - 1
+		$o1.beginline(centroid_color, 1)
+		$o1.line(xyz.x[0][0], xyz.x[1][0])
+		$o1.line(xyz.x[0][n], xyz.x[1][n])
+	}
+    if (0) {
+	if (object_id(contour_list)) {
+		for i=0, contour_list.count-1 {
+			contour_list.object(i).pl_centroid($o1)
+		}
+	}
+    }
+}
+
+proc pl_diam() {local i
+	if (!iscontour_) {
+		mkglyph()
+		$o1.glyph(g, 0, 0)
+	}else{
+		if (object_id(contour_list)) {
+			if (!object_id(contour_list.object(0).stk_triang_vec)) {
+				mk_stk_triang_vec(this, contour_list.object(0))
+				for i=1, contour_list.count-1 {
+					mk_stk_triang_vec(contour_list.object(i-1), contour_list.object(i))
+				}
+			}
+			pl_stk_triang($o1, this, contour_list.object(0))
+			for i=1, contour_list.count-1 {
+				pl_stk_triang($o1, contour_list.object(i-1), contour_list.object(i))
+			}
+		}
+	}
+}
+
 proc pl_point() {local i
 	for i=first, xyz.ncol-1 {
 		$o1.mark(xyz.x[0][i], xyz.x[1][i], "s", 5, 3, 1)
@@ -62,6 +104,13 @@ proc pl_point() {local i
 	if (object_id(parentsec) == 0) {
 		$o1.mark(xyz.x[0][0], xyz.x[1][0], "S", 8, 3, 1)
 	}
+    if (0) {
+	if (object_id(contour_list)) {
+		for i=0, contour_list.count-1 {
+			contour_list.object(i).pl_point($o1)
+		}
+	}
+    }
 }
 
 proc mkglyph() {local i, d1, d2   localobj x, y, norm, x1, y1, i1
@@ -105,6 +154,13 @@ proc mkglyph() {local i, d1, d2   localobj x, y, norm, x1, y1, i1
 
 proc rotate() {
 	$o1.mulm(raw, xyz)
+    if (1) {
+	if (object_id(contour_list)) {
+		for i=0, contour_list.count-1 {
+			contour_list.object(i).rotate($o1)
+		}
+	}
+    }
 }
 
 
@@ -127,5 +183,200 @@ obfunc contourcenter() {local i localobj mean, pts, perim, d
 	return mean
 }
 
-endtemplate Import3d_Section
+// return center (Vector.size=3) and average diameter in $&1
+obfunc approximate_contour_by_circle() {local i,n, perim localobj center, x, y, z
+	x=raw.getrow(0)
+	y=raw.getrow(1)
+	z=raw.getrow(2)	
+	perim = 0
+	n = x.size
+	for i = 0, n-1 {
+		perim += edgelen(raw.getcol(i), raw.getcol((i+1)%n))
+	}
+	center = contourcenter(x, y, z)
+	if (0) {
+		$&1 = perim/PI
+	}else{
+		x.sub(center.x[0]).mul(x)
+		y.sub(center.x[1]).mul(y)
+		z.sub(center.x[2]).mul(z)
+//		$&1 = 2*x.add(y).add(z).sqrt.mean
+		// average of radius based on perim and mean radius of all points
+		$&1 = x.add(y).add(z).sqrt.mean + perim/(2*PI)
+	}
+//	printf("%g %g %g %g\n", center.x[0], center.x[1], center.x[2], $&1)
+//	printf("perimeter approx = %g    actual = %g\n", PI*$&1, perim)
+	return center
+}
 
+proc mk_stk_triang_vec() {local i, j, n1, n2, d1, d2  localobj i1, i2, trv
+	trv = new Vector()
+	$o2.stk_triang_vec = trv
+	// contour indices are chosen so points 0 cross 1 of a contour from center
+	// are in +z direction and points 0 between the two contours are
+	// guaranteed to be an edge. An extra index added to end to close the polygon
+	// I suppose this could fail if angle does not increase monotonically
+	stk_contour_indices($o1, i1, $o1.raw.getcol(0))
+	stk_contour_indices($o2, i2, $o1.raw.getcol(0))
+	i = 0 j = 0
+	n1 = i1.size-1
+	n2 = i2.size-1
+	while(i < n1 || j < n2) {
+		trv.append(i1.x[i], i2.x[j])
+	    if (i < n1 && j < n2) {
+		// which next one is shorter
+		d1 = ($o1.raw.x[0][i1.x[i]] - $o2.raw.x[0][i2.x[j+1]])^2 + ($o1.raw.x[1][i1.x[i]] - $o2.raw.x[1][i2.x[j+1]])^2
+		d2 = ($o1.raw.x[0][i1.x[i+1]] - $o2.raw.x[0][i2.x[j]])^2 + ($o1.raw.x[1][i1.x[i+1]] - $o2.raw.x[1][i2.x[j]])^2
+		if (d2 < d1) {
+			i += 1
+		}else{
+			j += 1
+		}
+	    }else{
+		if (i < n1) {
+			i += 1
+		}else{
+			j += 1
+		}
+	    }
+	}
+	trv.append(i1.x[i], i2.x[j])
+}
+
+proc stk_contour_indices() {local i, d, dmin, imin localobj c, x, y, z
+	$o2 = new Vector($o1.raw.ncol)
+	$o2.indgen()
+	// order the points counterclockwise. ie 0 cross 1 in -z direction
+	x = $o1.raw.getrow(0)
+	y = $o1.raw.getrow(1)
+	z = $o1.raw.getrow(2)
+	c = contourcenter(x, y, z)
+	x = $o1.raw.getcol(0).sub(c)
+	y = $o1.raw.getcol(1).sub(c)
+	if (x.x[0]*y.x[1] - x.x[1]*y.x[0] > 0) {
+		$o2.reverse()
+	}
+
+	// which point is closest to $o3
+	imin = -1
+	dmin = 1e9
+	for i=0, $o2.size - 1 {
+		d = edgelen($o1.raw.getcol($o2.x[i]), $o3)
+		if (d < dmin) {
+			dmin = d
+			imin = i		
+		}
+	}
+	$o2.rotate(-imin)
+
+	$o2.append($o2.x[0])
+}
+
+proc pl_stk_triang() {local i, j  localobj g, m1, m2, trv
+	g = $o1
+	m1 = $o2.xyz
+	m2 = $o3.xyz
+	trv = $o3.stk_triang_vec
+	for i=0, trv.size-1 {
+		g.beginline(centroid_color, 1)
+		j = trv.x[i]
+		g.line(m1.x[0][j], m1.x[1][j])
+		i += 1
+		j = trv.x[i]
+		g.line(m2.x[0][j], m2.x[1][j])
+	}
+}
+
+func edgelen() {
+	return sqrt($o1.c.sub($o2).sumsq)
+}
+
+func stk_triang_area1() {local area, i, i1, i2, j1, j2, a, b, c, na  localobj m1, m2, trv
+	area = 0
+	m1 = $o1.raw
+	m2 = $o2.raw
+	trv = $o2.stk_triang_vec
+	i1 = trv.x[0]
+	i2 = trv.x[1]
+	a = edgelen(m1.getcol(i1), m2.getcol(i2))
+	na = 0
+	for i=2, trv.size-1 {
+		j1 = trv.x[i]
+		i += 1
+		j2 = trv.x[i]
+		b = edgelen(m1.getcol(j1), m2.getcol(j2))
+
+		// which contour for side c
+		if (i1 == j1) {
+			c = edgelen(m2.getcol(i2), m2.getcol(j2))
+		}else{
+			c = edgelen(m1.getcol(i1), m1.getcol(j1))
+		}
+
+		area += accurate_triangle_area(a, b, c)
+		na += 1
+		i1 = j1
+		i2 = j2
+		a = b
+	}
+//printf("stk_triang_area1 na=%d npoints=%d\n", na, m1.ncol+m2.ncol)
+	// missing one triangle
+	return area
+}
+
+func stk_triang_area() {local area, i
+	area = stk_triang_area1(this, contour_list.object(0))
+	for i=1, contour_list.count-1 {
+		area += stk_triang_area1(contour_list.object(i-1), contour_list.object(i))
+	}
+	return area
+}
+
+// the center of the centroid of the contour stack
+obfunc stk_center() {local i, len, th  localobj c, centroid, x, y, z, r, lenvec
+	centroid = new Matrix(3, 1 + contour_list.count)
+	lenvec = new Vector(centroid.ncol)  lenvec.resize(1)
+	x = raw.getrow(0)
+	y = raw.getrow(1)
+	z = raw.getrow(2)
+	c = contourcenter(x, y, z)
+	centroid.setcol(0, c)
+	len = 0
+	for i=0, contour_list.count-1 {
+		r = contour_list.object(i).raw
+		x = r.getrow(0)
+		y = r.getrow(1)
+		z = r.getrow(2)
+		c = contourcenter(x, y, z)
+		centroid.setcol(i+1, c)
+			
+		len += sqrt(c.sub(centroid.getcol(i)).sumsq)
+		lenvec.append(len)
+	}
+	len = len/2
+	i = lenvec.indwhere(">", len)
+	th = (len - lenvec.x[i-1])/(lenvec.x[i] - lenvec.x[i-1])
+	for j=0, 2 {
+		c.x[j] = th*centroid.x[j][i] + (1 - th)*centroid.x[j][i-1]
+	}	
+	return c
+}
+
+func accurate_triangle_area() {local x  localobj a
+	// from http://http.cs.berkeley.edu/~wkahan/Triangle.pdf
+	// W. Kahan
+	x = float_epsilon
+	float_epsilon = 0
+	a = new Vector(3) a.resize(0)
+	a.append($1, $2, $3).sort
+	if ((a.x[0] - (a.x[2] - a.x[1])) < 0) {
+		float_epsilon = x
+		execerror("accurate_triangle_area:","not a triangle")
+	}
+	float_epsilon = x
+	x = .25*sqrt((a.x[2]+(a.x[1]+a.x[0])) * (a.x[0]-(a.x[2]-a.x[1])) \
+	  * (a.x[0]+(a.x[2]-a.x[1])) * (a.x[2]+(a.x[1]-a.x[0])))
+	return x
+}
+
+endtemplate Import3d_Section

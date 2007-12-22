@@ -451,17 +451,14 @@ proc pl_point() { local i, j, i1    localobj  m, m0
 	}
 }
 
-proc pl_centroid() {local i   localobj sec
+proc pl_centroid() {local i
 	for i=0, swc.sections.count-1 {
-		sec = swc.sections.object(i)
-		sec.xyz.getrow(1).line(g, sec.xyz.getrow(0), sec.centroid_color, 1)
+		swc.sections.object(i).pl_centroid(g)
 	}
 }
 proc pl_diam() {local i   localobj sec
 	for i=0, viewsec.count-1 {
-		sec = viewsec.object(i)
-		sec.mkglyph()	
-		g.glyph(sec.g, 0, 0)
+		viewsec.object(i).pl_diam(g)
 	}
 }
 proc pl() { localobj tobj
@@ -786,6 +783,7 @@ proc cbexport() {local i, j, k  localobj sec, cell
 	j = 0
 	for i=0, swc.sections.count-1 {
 		sec = swc.sections.object(i)
+		if (sec.is_subsidiary) { continue }
 		if (sec.parentsec == nil) {
 			sec.volatile2 = j			
 			j += 1
@@ -793,21 +791,17 @@ proc cbexport() {local i, j, k  localobj sec, cell
 			sec.volatile2 = sec.parentsec.volatile2
 		}
 	}
-	if (j == 1) {
-		cbexport1(swc.sections)
-	}else if (j > 1) {
-//		continue_dialog("Cannot export to CellBuild due to multiple root sections")
-		cell = new List()
-		for k=0, j-1 {
-			cell.remove_all()
-			for i=0, swc.sections.count-1 {
-				sec = swc.sections.object(i)
-				if (sec.volatile2 == k) {
-					cell.append(sec)
-				}
+	cell = new List()
+	for k=0, j-1 {
+		cell.remove_all()
+		for i=0, swc.sections.count-1 {
+			sec = swc.sections.object(i)
+			if (sec.is_subsidiary) { continue }
+			if (sec.volatile2 == k) {
+				cell.append(sec)
 			}
-			cbexport1(cell)
 		}
+		cbexport1(cell)
 	}
 }
 
@@ -838,7 +832,7 @@ proc cbexport1() {local i, j, k, min  localobj cb, sec, psec, cbsec, slist, m, s
 		zz = m.getrow(2).c(j)
 		dd = sec.d.c(j)
 		if (sec.iscontour_) {
-			contour2centroid(xx, yy, zz, dd)
+			contour2centroid(xx, yy, zz, dd, sec)
 		}
 		k = dd.size-1
 		cbsec.position(xx.x[0], yy.x[0], xx.x[k], yy.x[k])
@@ -893,6 +887,7 @@ func set_nameindex() {local i, min  localobj sec
 	types = new Vector(swc.type.max - min + 1)
 	for i = 0, $o1.count-1 {
 		sec = $o1.object(i)
+		if (sec.is_subsidiary) { continue }
 		sec.nameindex = types.x[sec.type - min]
 		types.x[sec.type-min] += 1
 	}
@@ -918,6 +913,7 @@ proc instantiate() {local i, j, min  localobj sec, xx, yy, zz, dd
 	// connect
 	for i = 0, swc.sections.count-1 {
 		sec = swc.sections.object(i)
+		if (sec.is_subsidiary) { continue }
 		name(sec, tstr)
 		if (i == 0) {
 			sprint(tstr1, "access %s", tstr)
@@ -941,7 +937,7 @@ proc instantiate() {local i, j, min  localobj sec, xx, yy, zz, dd
 		zz = sec.raw.getrow(2).c(j)
 		dd = sec.d.c(j)
 		if (sec.iscontour_) {
-			contour2centroid(xx, yy, zz, dd)
+			contour2centroid(xx, yy, zz, dd, sec)
 		}
 		for j = 0, dd.size-1 {
 			sprint(tstr1, "%s { pt3dadd(%g, %g, %g, %g) }",\
@@ -1007,6 +1003,10 @@ proc mksubset() {
 }
 
 proc contour2centroid() {local i, j, imax, imin, ok  localobj mean, pts, d, max, min, tobj, rad, rad2, side2, pt, major, m, minor
+	if (object_id($o5.contour_list)) {
+		contourstack2centroid($o1, $o2, $o3, $o4, $o5)
+		return
+	}
 	mean = swc.sections.object(0).contourcenter($o1, $o2, $o3)
     if (g != nil) {
 	g.beginline(6,1)
@@ -1098,6 +1098,18 @@ if (g != nil) g.line(tobj.x[0], tobj.x[1]) g.flush
 	for i=1,3 { $oi = pts.getrow(i-1) }
 //	print d  d.printf  print rad rad.printf
 //	print side2 side2.printf  print rad2  rad2.printf
+}
+
+proc contourstack2centroid() {local i, j, area, d  localobj c
+	area = $o5.stk_triang_area()
+	printf("stk_triang_area = %g\n", area)
+	for i=1,4 { $oi.resize(0) }		
+	c = $o5.approximate_contour_by_circle(&d)
+	$o4.append(d) for i=1,3 { $oi.append(c.x[i-1]) }
+	for j=0, $o5.contour_list.count-1 {
+		c = $o5.contour_list.object(j).approximate_contour_by_circle(&d)
+		$o4.append(d) for i=1,3 { $oi.append(c.x[i-1]) }
+	}
 }
 
 proc name() {
