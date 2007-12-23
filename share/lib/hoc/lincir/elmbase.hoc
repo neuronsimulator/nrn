@@ -362,6 +362,62 @@ proc setalias() {
 }
 endtemplate Capacitor
 
+begintemplate Inductor
+public nodes, g, len, val, default, extra_eqn, setup_matrix, name, ename
+public setalias
+objref nodes, g
+strdef name
+
+proc init() {local x, y, loops, wirelen
+	name = "L"
+	extra_eqn = 1
+	$o1.append(1000) // 1 kiloHenry
+	len = 20
+	nodes = new Matrix(2,2)
+	nodes.set(-10, 0, 10, 0)
+	x=-10 y=0 loops=2
+	wirelen = (len - (4.1*(loops+1) - 2.15*loops))/2
+	g = new Glyph()
+	g.path.m(x,y).l(x+=wirelen,y)
+	for idx=1,loops {
+		g.curve(x+4.1,y-0.75,x+3,12,x+=4.1,y-=0.75)
+		g.curve(x-2.15,y+0.75,x-1.125,y-.3,x-=2.15,y+=.75)
+	}
+	g.curve(x+4.1,y,x+3,12,x+=4.1,y)
+	g.l(10,y).s
+}
+
+proc setup_matrix() {local ell, i, j, k // cmat, rmat, bvec, val, indices
+	// since cy' + gy = b we want vj - vi = LI'
+	// equations are analogous to both a battery and a capacitor
+	if ($o4.x[0] < 0) {
+		$o4.x[0] = 0
+	}
+	ell = $o4.x[0] // Henry
+	i = $o5.x[0]
+	j = $o5.x[1]
+	k = $o5.x[2]
+	$o2.x[i][k] -= 1
+	$o2.x[j][k] += 1
+	$o2.x[k][i] -= 1
+	$o2.x[k][j] += 1
+	$o1.x[k][k] += 0.001*ell //kiloHenry
+}
+proc default() {
+	$o1.append(1000) // 1 kiloHenry
+}
+
+proc val() {
+	sprint($s1, "(H)")
+}
+proc setalias() {
+	$s1 = ""
+}
+proc ename() {
+	sprint($s1, "I (nA)")
+}
+endtemplate Inductor
+
 begintemplate SourceInfo
 public dur, amp, tvec, changed_dur, play, box, save, restore
 public setalias, xtrn, set_xtrn
@@ -757,4 +813,5 @@ proc setalias() {
 	$s1 = ""
 }
 endtemplate OutsideCell
+
 

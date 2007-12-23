@@ -35,6 +35,8 @@ proc init() {local i
 	parts.append(new Wire(con))
 	parts.append(new Resistor(con))
 	parts.append(new Capacitor(con))
+	INDUCT = parts.count
+	parts.append(new Inductor(con))
 	BAT = parts.count
 	parts.append(new Battery(con))
 	CUR = parts.count
@@ -90,7 +92,7 @@ xpanel()
 }
 proc hints_parm() {
 xpanel("LinearCircuit Parameters Hints")
-xlabel(" Parameter units are nF, Mohm, ms, mV, nA.")
+xlabel(" Parameter units are nF, MOhm, H, ms, mV, nA.")
 xlabel(" Parameter panels are destroyed when the simulate or parameters")
 xlabel("radio buttons are not chosen.")
 xlabel(" Battery and Current sources are defined in terms of three duration")
@@ -112,7 +114,7 @@ xlabel("parts will have no capacitance or conductance to ground.")
 xlabel(" Extracellular cell nodes are ground if the extracellular mechanism is not")
 xlabel("inserted at the location.")
 xlabel("")
-xlabel(" Parameter units are nF, Mohm, ms, mV, nA.  State units are mV for nodes.")
+xlabel(" Parameter units are nF, MOhm, H, ms, mV, nA.  State units are mV for nodes.")
 xlabel(" State panels are destroyed whenever the simulate")
 xlabel("radio button becomes inactive.")
 xlabel(" Battery and Current sources are defined in terms of three duration")
