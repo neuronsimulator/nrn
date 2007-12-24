@@ -1,6 +1,6 @@
 begintemplate LinearCircuit
 public box, g, map, elements, sel, lincirnodes, model, change_val
-public pr_singular, prnodes, toggle_xtrn, setalias
+public pr_singular, prnodes, toggle_xtrn, setalias, version
 public con, plotwhat, dismiss_graph, varptrname, simulate_, ystate, yinit
 external graph_menu_remove_most, LincirGraph, ElementBase, hoc_sf_
 external valid_name_syntax
@@ -53,8 +53,22 @@ proc init() {local i
 	if (numarg() == 0) {
 		map()
 	}
+	version_ = 2
+	version(version_)
 	mkelm(GND, -100, -100, 1, 0) // but don't save it if it has these coords
+	version(1) // assume absence of specific version command in session file
 	fih = new FInitializeHandler(3, "finit()", this)
+}
+
+func version() {
+	if (numarg() > 0) {
+		if ($1 > 1) {
+			part_offset = 0
+		}else{
+			part_offset = 1
+		}
+	}
+	return version_
 }
 
 proc hints_arrange() {
@@ -1206,6 +1220,7 @@ proc map() {
 }
 
 proc mkelm() {local i
+	if ($1 >= INDUCT) { $1 += part_offset }
 	sel = new ElementBase(parts.object($1), $1)
 	elements.append(sel)
 	sel.x = $2  sel.y = $3  sel.scale = $4  sel.angle = $5
@@ -1234,6 +1249,8 @@ proc save() {local i, j
 	box.save("load_file(\"lincir.hoc\", \"LinearCircuit\")\n}\n{")
 	box.save("ocbox_ = new LinearCircuit(1)")
 	box.save("}\n{object_push(ocbox_)}")
+	sprint(tstr, "{version(%d)}", version_)
+	box.save(tstr)
 
 	for i=0, elements.count-1 {
 		sel = elements.object(i)
