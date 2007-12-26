@@ -3531,6 +3531,7 @@ NetCon::NetCon(PreSyn* src, Object* target) {
 	NetConSave::invalid();
 	obj_ = nil;
 	src_ = src;
+	delay_ = 1.0;
 	if (src_) {
 		src_->dil_.append((NetCon*)this);
 		src_->use_min_delay_ = 0;
