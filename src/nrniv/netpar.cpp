@@ -624,7 +624,7 @@ void nrnmpi_gid_clear() {
 	NrnHashIterate(Gid2PreSyn, gid2out_, PreSyn*, ps) {
 		if (ps && !gid2in_->find(ps->gid_, psi)) {
 			ps->gid_ = -1;
-			ps->output_index_ == -1;
+			ps->output_index_ = -1;
 			if (ps->dil_.count() == 0) {
 				delete ps;
 			}
@@ -632,7 +632,7 @@ void nrnmpi_gid_clear() {
 	}}}
 	NrnHashIterate(Gid2PreSyn, gid2in_, PreSyn*, ps) {
 		ps->gid_ = -1;
-		ps->output_index_ == -1;
+		ps->output_index_ = -1;
 		if (ps->dil_.count() == 0) {
 			delete ps;
 		}
