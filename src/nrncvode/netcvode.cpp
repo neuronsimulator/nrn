@@ -3477,13 +3477,18 @@ void NetCvode::presyn_disconnect(PreSyn* ps) {
 	if (ps == unused_presyn) {
 		unused_presyn = nil;
 	}
-	hoc_l_delete(ps->hi_);
+	if (ps->hi_) {
+		hoc_l_delete(ps->hi_);
+		ps->hi_ = nil;
+	}
 	if (ps->hi_th_) {
 		hoc_l_delete(ps->hi_th_);
+		ps->hi_th_ = nil;
 	}
 	if (ps->thvar_) {
 		--pst_cnt_;
 		pst_->remove(ps->thvar_);
+		ps->thvar_ = nil;
 	}
 	for (int i=0; i < nlist_; ++i) {
 		PreSynList* psl = list_[i].psl_th_;
@@ -3681,6 +3686,7 @@ NetCon* NetConSave::index2netcon(long id) {
 }
 
 PreSyn::PreSyn(double* src, Object* osrc, Section* ssrc) {
+//	printf("Presyn %x %s\n", (long)this, osrc?hoc_object_name(osrc):"nil");
 	PreSynSave::invalid();
 	hi_index_ = -1;
 	hi_th_ = nil;
@@ -3715,7 +3721,7 @@ PreSyn::PreSyn(double* src, Object* osrc, Section* ssrc) {
 
 PreSyn::~PreSyn() {
 	PreSynSave::invalid();
-//	printf("~PreSyn\n");
+//	printf("~PreSyn %lx\n", (long)this);
 #if BGPDMA
 	bgpdma_cleanup_presyn(this);
 #endif
@@ -3746,7 +3752,10 @@ PreSyn::~PreSyn() {
 			}
 		}
 	}
-	update(nil);
+	for (int i=0; i < dil_.count(); ++i) {
+		dil_.item(i)->src_ = nil;
+	}
+	net_cvode_instance->presyn_disconnect(this);
 }
 
 DiscreteEvent* PreSyn::savestate_save() {
@@ -3920,6 +3929,7 @@ if (dil_.item(i)->obj_) {
 	net_cvode_instance->presyn_disconnect(this);
 	thvar_ = nil;	
 	osrc_ = nil;
+	delete this;
 }
 
 void PreSyn::update_ptr(double* pd) {
