@@ -5,7 +5,7 @@ echo -e "\033]0;mknrndll\007"
 NRNIVMODL="nrnivmodl"
 CPU="i686"
 
-DYLD_LIBRARY_PATH="${NRNHOME}/${CPU}c/lib:${NRNHOME}/../iv/${CPU}/lib:${DYLD_LIBRARY_PATH}"
+DYLD_LIBRARY_PATH="${NRNHOME}/${CPU}/lib:${NRNHOME}/../iv/${CPU}/lib:${DYLD_LIBRARY_PATH}"
 export DYLD_LIBRARY_PATH
 
 if test "x$1" != x ; then
