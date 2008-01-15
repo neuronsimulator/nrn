@@ -482,6 +482,9 @@ if (type == DERF) {
 		/* fix up initmodel as per 3) above.
 		In cout.c _save is declared */
 #if NMODL
+		Sprintf(buf, " _save = %s;\n %s = 0.0;\n",
+			indepsym->name, indepsym->name);
+		saveindep = stralloc(buf, (char *)0);
 #else
 		Sprintf(buf, "%s0", indepsym->name);
 		IGNORE(ifnew_parminstall(buf, STR(indeplist->prev->prev),
