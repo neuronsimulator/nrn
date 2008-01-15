@@ -220,9 +220,9 @@ c_out()
 #endif
 #if !NMODL
 	P("_initlists();\n");
-#endif
 	P("_ninits++;\n");
 	P(saveindep); /*see solve.c; blank if not a time dependent process*/
+#endif
 	P("{\n");
 	initstates();
 	printlist(initfunc);

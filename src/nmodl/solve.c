@@ -481,12 +481,15 @@ if (type == DERF) {
 	if (!called) {
 		/* fix up initmodel as per 3) above.
 		In cout.c _save is declared */
+#if NMODL
+#else
 		Sprintf(buf, "%s0", indepsym->name);
 		IGNORE(ifnew_parminstall(buf, STR(indeplist->prev->prev),
 			STR(indeplist->prev), ""));
 		Sprintf(buf, " _save = %s;\n %s = %s0;\n",
 			indepsym->name, indepsym->name, indepsym->name);
 		saveindep = stralloc(buf, (char *)0);
+#endif
 		/* Assert no more additions to initfunc involving
 		the value of time */
 		Sprintf(buf, " _sav_indep = %s; %s = _save;\n",
