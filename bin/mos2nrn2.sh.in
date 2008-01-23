@@ -102,7 +102,7 @@ if [ -f moslocal.tmp ] ; then
 	askread="no"
 fi
 
-moddirs="`sed -n '1s;^//moddir;;p' < $first`"
+moddirs="`sed -n '1s;^//moddir;;p' < $first | tr -d '\r'`"
 if test "$moddirs" != "" ; then
 	modfiles='yes'
 else

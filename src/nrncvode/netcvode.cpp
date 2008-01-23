@@ -2775,6 +2775,7 @@ int NetCvode::pgvts(double tstop) {
 	while (tt < tstop && !stoprun && err == NVI_SUCCESS) {
 		err = pgvts_event(tt);
 	}
+	return err;
 }
 	
 // parallel global variable time-step event handling
