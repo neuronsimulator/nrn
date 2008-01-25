@@ -219,7 +219,7 @@ proc cexport() {
 		memb.cexport(manage.emem)
 		geom.cexport(manage.egeom)
 		if (manage.esub && manage.emem && manage.egeom) {
-			memb.inhomo_export()
+			memb.cexport(manage.emem)
 		}
 	}else{
 		topol.cexport(0)
