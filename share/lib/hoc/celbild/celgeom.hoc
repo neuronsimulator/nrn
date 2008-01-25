@@ -775,10 +775,12 @@ proc set_default() {local i, j
 	inmode()
 }
 
-proc pr() {local i, j, l, k, x, is_auto, ii
+proc pr() {local i, j, l, k, x, is_auto, ii, nline, isg
 	consist()
 	is_auto = 0
 	$o1.printf("proc geom() {\n")
+	nline = 0
+	isg = 0
 	for i=0, setlist.count-1{
 	    tobj = setlist.object(i)
 	    if (tobj.geo.count) {
@@ -809,6 +811,11 @@ proc pr() {local i, j, l, k, x, is_auto, ii
 			}
 		}			
 		$o1.printf(" }\n")
+		nline += 1
+		if (nline%200 == 0) {
+			isg += 1
+$o1.printf(" geom_%d()\n}\nproc geom_%d() {\n", isg, isg)
+		}
 		// the distinct L,diam
 		for j=0, tobj.count-1 {
 			k = tobj.object(j).type
@@ -817,6 +824,11 @@ proc pr() {local i, j, l, k, x, is_auto, ii
 			for ii=0, tobj1.count-1 {
 				tobj1.object(ii).name(tstr)
 				$o1.printf("   %s.%s = %g\n", tstr, geotype[k].name, tobj1.object(ii).ldiaminfo.x[k])
+				nline += 1
+				if (nline%200 == 0) {
+					isg += 1
+$o1.printf(" geom_%d()\n}\nproc geom_%d() {\n", isg, isg)
+				}
 			}
 		}
 		tobj1 = nil
@@ -826,10 +838,12 @@ proc pr() {local i, j, l, k, x, is_auto, ii
 	pr_autonseg($o1)
 }
 
-proc pr_autonseg() {local i, j, type, x, k
+proc pr_autonseg() {local i, j, type, x, k, nline, isa
 		if (bild.manage.toplevel == 0) {
 	$o1.printf("external lambda_f\n")
 		}
+		nline = 0
+		isa = 0
 		$o1.printf("proc geom_nseg() {\n")
 // Do not need following line since lambda_f no longer needs diam from pt3d
 // This was a performance killer since every time a cell is created the entire
@@ -869,6 +883,11 @@ sprint(tstr2, " %s nseg = %d ", tstr2, x)
 //print tstr2
 			if (is_auto) {
 				$o1.printf("%s\n", tstr2)
+				nline += 1
+				if (nline%100 == 0) {
+					isa += 1
+$o1.printf("  geom_nseg_%d()\n}\nproc geom_nseg_%d() {\n", isa, isa)
+				}
 			}
 		}
 	$o1.printf("}\n")

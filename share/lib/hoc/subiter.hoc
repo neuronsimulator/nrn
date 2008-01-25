@@ -17,7 +17,7 @@ proc init() {
 	path_style_ = $2
 	if (path_style_ == 1 || path_style_ > 3) {
 		printf("path_style_ %d not implemented\n", path_style_)
-		1/0
+		execerror("this path_style not implemented", "")
 	}
 	
 	// no origin translation, 0 at most proximal end,
@@ -26,7 +26,7 @@ proc init() {
 	proximal_style_ = $3
 	if (proximal_style_ == 2) {
 		printf("proximal_style_ %d not implemented\n", proximal_style_)
-		1/0
+		execerror("this path_style not implemented", "")
 	}
 
 	// no distal end normalization, 1 at most distal end,
@@ -35,7 +35,7 @@ proc init() {
 	distal_style_ = $4
 	if (distal_style_ == 2) {
 		printf("distal_style_ %d not implemented\n", distal_style_)
-		1/0
+		execerror("this path_style not implemented", "")
 	}
 	if (path_style_ == 2) {
 		xo_ = $5

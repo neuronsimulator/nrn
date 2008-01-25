@@ -751,9 +751,11 @@ sprint(tstr2, "bild.topol.slist.object(%d).ml.append(tobj)", \
 	inmode()
 }
 	
-proc pr() {local i, j, l, m, n, ii, have_inhomo
+proc pr() {local i, j, l, m, n, ii, have_inhomo, nline, isb
 	consist()
 	$o1.printf("proc biophys() {\n")
+	nline = 0
+	isb = 0
 	have_inhomo = 0
 	for i=0, setlist.count-1{
 	    tobj = setlist.object(i)
@@ -761,9 +763,11 @@ proc pr() {local i, j, l, m, n, ii, have_inhomo
 	    if (l != 3 && l != 4) if (tobj.ml.count) {
 		if (l == 1) {
 			$o1.printf("  forsec %s {\n", tobj.name_)
+			nline += 1
 		}else{
 			tobj.name(tstr)
 			$o1.printf("  %s {\n", tstr)
+			nline += 1
 		}
 		tobj = tobj.ml
 		for j=0, tobj.count-1 {
@@ -775,17 +779,26 @@ proc pr() {local i, j, l, m, n, ii, have_inhomo
 				n = tobj1.name(tstr, m)
 				if (n == 1) {
 $o1.printf("      %s = %g\n", tstr, tobj1.get(tstr))
+					nline += 1
 				}else{
 					for ii=0, n-1 {
 $o1.printf("      %s[%d] = %g\n", tstr, ii, tobj1.get(tstr))
+						nline += 1
 					}
 				}
 			}
 		    }else{
 $o1.printf("    %s = %g\n", tstr, tobj1.value)
+			nline += 1
 		    }
 		}
  		$o1.printf("  }\n")
+			nline += 1
+	    }
+	    if (nline > 200) {
+		nline = 0
+		isb += 1
+$o1.printf("  biophys_%d()\n}\nproc biophys_%d() {\n", isb, isb)
 	    }
 	    if( l == 3) {
 		have_inhomo = 1
@@ -803,9 +816,11 @@ $o1.printf("    %s = %g\n", tstr, tobj1.value)
 			}
 			j = 1
 		}
+		nline = 0
+		isb = 0
 		$o1.printf("\nproc biophys_inhomo() {\n")
 		for bild.subsets.domain_iter(tobj) {
-			tobj.prmemb1($o1)
+			tobj.prmemb1($o1, &nline, &isb)
 		}
  		$o1.printf("}\n")
 		for bild.subsets.domain_iter(tobj) {

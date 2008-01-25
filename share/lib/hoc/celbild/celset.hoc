@@ -730,16 +730,23 @@ proc neuroml() {local i, j  localobj s, sl, snl, cbs, cg
 	}	
 }
 
-proc pr() {local i, j
+proc pr() {local i, j, nline, isss
 	update()
 	prdec($o1, "")
 	$o1.printf("\nproc subsets() { local i")
 	prdec($o1,"  ")
 	$o1.printf("\n")
+	nline = 0
+	isss = 0
 	for i = 0, snlist.count - 1 {
 		tobj = snlist.object(i)
 		$o1.printf("  %s = new SectionList()\n", tobj.name_)
-		pr_subset($o1, tobj)
+		nline += 1
+		if (nline%200 == 0) {
+			isss += 1
+$o1.printf("  subsets_%d()\n}\nproc subsets_%d(){\n", isss, isss)
+		}
+		pr_subset($o1, tobj, &nline, &isss)
 		$o1.printf("\n")
 	}
 	$o1.printf("}\n")
@@ -800,6 +807,11 @@ proc pr_subset() { local i, j, ni1, ni2, id1, id2
 		}else{
 			$o1.printf("    %s %s.append()\n",\
 				tobj1.name_, $o2.name_)
+		}
+		$&3 += 1
+		if ($&3%200 == 0) {
+			$&4 += 1
+$o1.printf("  subsets_%d()\n}\nproc subsets_%d(){\n", $&4, $&4)
 		}
 	}
 }

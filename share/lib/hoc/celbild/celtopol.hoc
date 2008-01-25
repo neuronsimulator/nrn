@@ -1087,7 +1087,7 @@ proc nearest_label() {local i, dmin, d
 	}
 }
 
-proc pr() {local i, j, x0, y0, x1, y1, is3d, nline
+proc pr() {local i, j, x0, y0, x1, y1, is3d, nline, isba
 	// create names
 	validname() //unique_name contains object indices of names with largest id
 	j = 0
@@ -1137,10 +1137,17 @@ $o1.printf("  }\n}\nproc shape3d_%d() {\n  %s {", is3d, tstr)
 	    }
 	}
 	if (is3d) { $o1.printf("}\n")}
+	nline = 0
+	isba = 0
 	$o1.printf("proc basic_shape() {\n")
 	if (is3d) {
 		for i=1, is3d {
 			$o1.printf("  shape3d_%d()\n", i)
+			nline += 1
+			if (nline%100 == 0) {
+				isba += 1
+$o1.printf("  basic_shape_%d()\n}\nproc basic_shape_%d() {\n", isba, isba)
+			}
 		}
 	}
 	for i=0, slist.count-1 {
@@ -1156,6 +1163,11 @@ $o1.printf("  }\n}\nproc shape3d_%d() {\n  %s {", is3d, tstr)
 		}
 		$o1.printf("  %s {pt3dclear() pt3dadd(%g, %g, 0, 1) pt3dadd(%g, %g, 0, 1)}\n",\
 			tstr, x0, y0, x1, y1)
+			nline += 1
+			if (nline%100 == 0) {
+				isba += 1
+$o1.printf("  basic_shape_%d()\n}\nproc basic_shape_%d() {\n", isba, isba)
+			}
 	    }
 	}
 	$o1.printf("}\n")
@@ -1384,7 +1396,7 @@ $o1.printf("  for i = %d, %d connect %s[i](%d), %s[i%d](%g)\n", \
 		lcnt = (lcnt + 1)%200
 		if (lcnt == 0) { // each procedure cannot have more than 200 lines
 			pcnt += 1
-			$o1.printf("   topol_%d()\n}\nproc topol_%d() {\n", pcnt, pcnt)
+			$o1.printf("  topol_%d()\n}\nproc topol_%d() {\n", pcnt, pcnt)
 		}
 	}
 }

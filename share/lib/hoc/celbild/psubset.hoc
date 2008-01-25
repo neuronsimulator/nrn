@@ -622,6 +622,7 @@ proc prmemb1() {local i
 	display(tstr1, tstr2, tstr3, tstr4)
 	$o1.printf("  // %s %s\n", tstr1, tstr2)
 	$o1.printf("  //   %s %s\n", tstr3, tstr4)
+	$&2 += 2
 	name(tstr)
 $o1.printf("  %s = new SubsetDomainIterator(%s, %d, %d, %d", tstr, subset.name_, dstyle_, proxstyle_, distalstyle_)
 	if (dstyle_ == 2) {
@@ -633,6 +634,12 @@ $o1.printf("  %s = new SubsetDomainIterator(%s, %d, %d, %d", tstr, subset.name_,
 $o1.printf(")\n")
 	for i=0, using_.count-1 {
 		$o1.printf("  %s_%s()\n", using_.object(i).s, tstr)
+		$&2 += 1
+		if ($&2 > 200) {
+			$&2 = 0
+			$&3 += 1
+$o1.printf("  biophys_inhomo_%d()\n}\nproc biophys_inhomo_%d() {\n", $&3, $&3)
+		}
 	}
 }
 
