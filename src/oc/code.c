@@ -1502,8 +1502,8 @@ hoc_Argtype()
 	if (f == frame) {
 		execerror("argtype can only be called in a func or proc", 0);
 	}
-	iarg = (int)chkarg(1, 1., 100000.);
-	if (iarg > f->nargs) {
+	iarg = (int)chkarg(1, -1000., 100000.);
+	if (iarg > f->nargs || iarg < 1) {
 		itype = -1;
 	}else{
 		type = (f->argn[(iarg - f->nargs)*2 + 1].i);
