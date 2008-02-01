@@ -94,7 +94,7 @@ extern int lexcontext;
 %token	<qp>	NEURON SUFFIX NONSPECIFIC READ WRITE USEION VALENCE
 %token	<qp>	GLOBAL SECTION RANGE POINTER EXTERNAL BEFORE AFTER
 %token	<qp>	ELECTRODE_CURRENT CONSTRUCTOR DESTRUCTOR NETRECEIVE
-%token	<qp>	FOR_NETCONS WATCH
+%token	<qp>	FOR_NETCONS WATCH THREADSAFE
 %type	<qp>	neuronblk nrnuse nrnlist valence constructblk destructblk
 %type	<qp>	initstmt bablk
 
@@ -838,6 +838,7 @@ nrnstmt: /*nothing*/
                 { P1{nrn_list($2, $3);}}
         | nrnstmt EXTERNAL nrnlist
                 { P1{nrn_list($2, $3);}}
+	| nrnstmt THREADSAFE
 	;
 nrnuse: USEION NAME READ nrnlist valence
 		{P1{nrn_use($2, $4, ITEM0);}}

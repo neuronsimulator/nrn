@@ -100,6 +100,7 @@ static struct {			/* Keywords */
 			"AFTER", AFTER, /* after NEURON solves cy' = f(y, t) */
 			"WATCH", WATCH,
 			"FOR_NETCONS", FOR_NETCONS,
+			"THREADSAFE", THREADSAFE,
 	                0, 0
 };
 
