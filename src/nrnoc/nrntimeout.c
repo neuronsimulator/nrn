@@ -33,14 +33,14 @@ printf("nrn_timeout %d\n", seconds);
 #endif
 #if BLUEGENE
 	if (seconds) {
-		t = told;
+		told = t;
 		signal(SIGALRM, timed_out);
 	}else{
 		signal(SIGALRM, SIG_DFL);
 	}
 #else
 	if (seconds) {
-		t = told;
+		told = t;
 		act.sa_handler = timed_out;
 		act.sa_flags = SA_RESTART;
 		if(sigaction(SIGALRM, &act, &oact)) {
