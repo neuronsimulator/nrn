@@ -1,7 +1,6 @@
 movie_frame_dur_ = .01
 {variable_domain(&movie_frame_dur_, .001, 1e9) units(&movie_frame_dur_, "s")}
 objref movie_timer
-movie_timer = new Timer("moviestep()")
 proc moviestep() {
 	steprun()
 	realtime = startsw() - rtstart
@@ -20,6 +19,7 @@ proc movierun() {
 }
 
 proc movierunpanel() {
+	movie_timer = new Timer("moviestep()")
 	xpanel("Movie Run")
 	xbutton("Init & Run", "movierun()")
 	xpvalue("Seconds per step", &movie_frame_dur_, 1)
