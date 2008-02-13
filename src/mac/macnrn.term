@@ -64,7 +64,7 @@
 			<key>Shell</key>
 			<string>sh</string>
 			<key>ShellExitAction</key>
-			<string>2</string>
+			<string>0</string>
 			<key>StrictEmulation</key>
 			<string>NO</string>
 			<key>StringEncoding</key>

@@ -7,6 +7,7 @@
 #include <math.h>
 #include <ivstream.h>
 #include <ctype.h>
+#include <errno.h>
 
 #include <InterViews/box.h>
 #include <InterViews/resource.h>
@@ -898,6 +899,7 @@ HocPanel::HocPanel(const char* name, boolean h) : OcGlyph(nil) {
 	item_append(new HocItem(name));
 	left_ = -1000.;
 	bottom_ = -1000.;
+	errno = 0;
 }
 
 HocPanel::~HocPanel() {
