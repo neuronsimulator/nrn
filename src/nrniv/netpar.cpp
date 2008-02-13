@@ -103,6 +103,9 @@ void NetParEvent::deliver(double tt, NetCvode* nc){
 	if (nrn_use_selfqueue_) { //first handle pending flag=1 self events
 		nrn_pending_selfqueue(tt);
 	}
+	// has to be the last event at this time in order to avoid a race
+	// condition with HocEvent that may call things such as pc.barrier
+	net_cvode_instance->deliver_events(tt);
 	t = tt;
 #if BGPDMA
 	if (use_bgpdma_) {
