@@ -53,7 +53,8 @@ NVER="`sh nrnversion.sh`"
 
 #mswin
 if test "$ostype" = "cygwin" ; then
-./configure --prefix=`pwd` --with-nrnpython
+cd ../nrnobj
+../nrn/configure --prefix=`pwd` --with-nrnpython --srcdir=../nrn
 make
 if test $? != 0 ; then
 	echo "make failed"
