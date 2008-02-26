@@ -189,14 +189,20 @@ char* hoc_back2forward(char* s) {
 }
 
 /* d must be full path starting with x: */
+/* if d does not start with x: then only change \ to / */
 /* u must be enough space to hold the unix path */
 void hoc_dos2unixpath(char* d, char* u) {
 	char* cu;
 	char* cd = d;
-	strcpy(u, "/cygdrive/");
-	cu = u + strlen(u);
-	*cu++ = *cd++;
-	assert(*cd++ == ':');
+	if (strlen(d) < 2 || d[1] != ':') {
+		u[0] = '\0';
+		cu = u;
+	}else{
+		strcpy(u, "/cygdrive/");
+		cu = u + strlen(u);
+		*cu++ = *cd++;
+		assert(*cd++ == ':');
+	}
 	while (*cd) {
 		*cu = *cd++;
 		if (*cu == '\\') {
