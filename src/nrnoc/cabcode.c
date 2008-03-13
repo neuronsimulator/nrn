@@ -52,7 +52,7 @@ in one section is set but no others. But only the first time through treeset.
 int nrn_ra_set = 0;
 #endif
 
-#define NSECSTACK 20
+#define NSECSTACK 200
 static Section *secstack[NSECSTACK + 1];
 static int isecstack = 0; /* stack index */
 /* don't do section stack auto correction
