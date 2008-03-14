@@ -612,11 +612,11 @@ ENDGUI
 	if (session && session->style()->value_is_on("python")) {
 		use_python_interpreter = 1;
 	}
-#else
+#endif
 	if (nrn_optarg_on("-python", &our_argc, our_argv)) {
 		use_python_interpreter = 1;
 	}
-#endif
+
 	if (nrn_is_python_extension) { return 0; }
 #if defined(CYGWIN) && defined(HAVE_SETENV)
 	if (!isdir("/usr/lib/python2.5")) {
