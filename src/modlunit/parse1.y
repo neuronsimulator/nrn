@@ -58,7 +58,7 @@ extern int lexcontext;
 %token	<qp>	PROCEDURE PARTIAL DEL DEL2 DEFINE1 IFERROR
 %token	<qp>	DERFUNC EQUATION TERMINAL LINEAR NONLINEAR FUNCTION1 LOCAL
 %token	<qp>	METHOD LIN1 NONLIN1 PUTQ GETQ FUNCTION_TABLE
-%token	<qp>	INCLUDE1
+%token	<qp>	INCLUDE1 PROTECT
 %token	<qp>	'{' '}' '(' ')' '[' ']' '@' '+' '*' '-' '/' '=' '^' ':' ','
 %token	<qp>	'~'
 %token	<qp>	OR AND GT GE LT LE EQ NE NOT
@@ -378,6 +378,7 @@ stmtlist1: /*nothing*/
 	| stmtlist1 stmt
 	;
 stmt:	asgn
+	| PROTECT asgn
 	| fromstmt
 	| whilestmt
 	| ifstmt

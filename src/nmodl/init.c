@@ -101,6 +101,7 @@ static struct {			/* Keywords */
 			"WATCH", WATCH,
 			"FOR_NETCONS", FOR_NETCONS,
 			"THREADSAFE", THREADSAFE,
+			"PROTECT", PROTECT,
 	                0, 0
 };
 

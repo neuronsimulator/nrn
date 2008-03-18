@@ -75,7 +75,7 @@ static int nr_argcnt_, argcnt_; /* for matching number of args in NET_RECEIVE
 %token	<qp>	PROCEDURE PARTIAL DEL DEL2 DEFINE1 IFERROR PARAMETER
 %token	<qp>	DERFUNC EQUATION TERMINAL LINEAR NONLINEAR FUNCTION1 LOCAL
 %token	<qp>	METHOD LIN1 NONLIN1 PUTQ GETQ TABLE DEPEND BREAKPOINT
-%token	<qp>	INCLUDE1 FUNCTION_TABLE
+%token	<qp>	INCLUDE1 FUNCTION_TABLE PROTECT
 %token	<qp>	'{' '}' '(' ')' '[' ']' '@' '+' '*' '-' '/' '=' '^' ':' ','
 %token	<qp>	'~'
 %token	<qp>	OR AND GT LT LE EQ NE NOT
@@ -441,6 +441,10 @@ ostmt:	fromstmt
 astmt:	asgn
 		/* ';' is added when relevant */
 		{astmt_end_ = insertsym(lastok->next, semi);}
+	| PROTECT asgn
+		{replacstr($1, "/* PROTECT */");
+		 astmt_end_ = insertsym(lastok->next, semi);
+		}
 	| {inequation = 1;} reaction {
 		$$ = $2; inequation = 0;
 		astmt_end_ = insertstr(lastok->next->next->next, "");}
