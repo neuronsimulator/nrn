@@ -30,12 +30,6 @@ func lambda_f() { local i, x1, x2, d1, d2, lam
 	return L/lam
 }
 
-if (nrnpython("")) {
-	nrnpython("import sys")
-	sprint(tstr, "sys.path.append('%s/lib/python')", neuronhome())
-	nrnpython(tstr)
-}
-
 /*
 ?0 UserClasses String
 */

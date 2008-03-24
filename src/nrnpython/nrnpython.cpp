@@ -15,6 +15,7 @@ extern int hoc_get_line();
 extern HocStr* hoc_cbufstr;
 extern FILE* hoc_fin;
 extern char* hoc_promptstr;
+extern char* neuron_home;
 //extern char*(*PyOS_ReadlineFunctionPointer)(FILE*, FILE*, char*);
 # if (PY_MAJOR_VERSION >= 2 && PY_MINOR_VERSION > 2)
 static char* nrnpython_getline(FILE*, FILE*, char*);
@@ -24,6 +25,18 @@ static char* nrnpython_getline(char*);
 extern void rl_stuff_char(int);
 extern int nrn_global_argc;
 extern char** nrn_global_argv;
+}
+
+static void augment_path() {
+	static int augmented = 0;
+	char buf[1024];
+	if (!augmented && strlen(neuron_home) > 0) {
+		//printf("augment_path\n");
+		augmented = 1;
+		sprintf(buf, "sys.path.append('%s/lib/python')", neuron_home);
+		assert(PyRun_SimpleString("import sys") == 0);
+		assert(PyRun_SimpleString(buf) == 0);	
+	}
 }
 
 void nrnpython_start(int b) {
@@ -38,6 +51,7 @@ void nrnpython_start(int b) {
 		for (i=0; nrnpy_reg_[i]; ++i) {
 			(*nrnpy_reg_[i])();
 		}
+		augment_path();
 	}
 	if (b == 0 && started) {
 		Py_Finalize();
@@ -45,6 +59,7 @@ void nrnpython_start(int b) {
 	}
 	if (b == 2 && started) {
 		int i;
+		augment_path();
 		PyOS_ReadlineFunctionPointer = nrnpython_getline;
 		// Is there a -c "command" or file.py arg.
 		for (i=1; i < nrn_global_argc; ++i) {

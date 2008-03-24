@@ -22,7 +22,6 @@ libnrnpython_la_SOURCES = nrnpython.cpp nrnpy_hoc.cpp nrnpy_nrn.cpp \
 	nrnpy_p2h.cpp $(EXTEND)
 
 noinst_HEADERS = nrnpython.h nrnpy_reg.h
-EXTRA_DIST = inithoc.cpp neuron/__init__.py
 
 if BUILD_NRNPYTHON
 pysrc = __init__.py
@@ -35,7 +34,11 @@ force:
 		mkdir neuron ; \
 	fi
 	for i in $(pysrc) ; do \
-		if test neuron/$$i -ot $(nsrc)/nrnpython/neuron/$$i ; then \
+		if test "$$i" = "__init__.py" ; then \
+			if test neuron/$$i -ot $(nsrc)/../share/lib/python/neuron.py ; then \
+cp $(nsrc)/../share/lib/python/neuron.py neuron/$$i ; \
+			fi ; \
+		elif test neuron/$$i -ot $(nsrc)/nrnpython/neuron/$$i ; then \
 			cp $(nsrc)/nrnpython/neuron/$$i neuron/$$i ; \
 		fi \
 	done

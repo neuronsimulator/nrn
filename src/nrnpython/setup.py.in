@@ -21,6 +21,34 @@ ldefs = extern_defines.split('-D')
 
 with_numpy = False
 
+# if using MPI then at least for linking need special paths and libraries
+mpicc_bin = "@CC@"
+mpicxx_bin = "@CXX@"
+import os
+os.environ["CC"]=mpicc_bin
+os.environ["CXX"]=mpicxx_bin
+
+# apparently we do not need the following
+#################################
+## following http://code.google.com/p/maroonmpi/wiki/Installation
+## hack into distutils to replace the compiler in "linker_so" with mpicxx_bin
+#
+#import distutils
+#import distutils.unixccompiler
+#
+#class MPI_UnixCCompiler(distutils.unixccompiler.UnixCCompiler):
+#    __set_executable = distutils.unixccompiler.UnixCCompiler.set_executable
+#
+#    def set_executable(self,key,value):
+#	print "MPI_UnixCCompiler ", key, " | ", value
+#        if key == 'linker_so' and type(value) == str:
+#            value = mpicxx_bin + ' ' + ' '.join(value.split()[1:])
+#
+#        return self.__set_executable(key,value)
+#    
+#distutils.unixccompiler.UnixCCompiler = MPI_UnixCCompiler
+#################################
+
 try:
     import numpy
 except ImportError:
