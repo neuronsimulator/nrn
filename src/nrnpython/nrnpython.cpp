@@ -15,7 +15,7 @@ extern int hoc_get_line();
 extern HocStr* hoc_cbufstr;
 extern FILE* hoc_fin;
 extern char* hoc_promptstr;
-extern char* neuron_home;
+extern char* neuronhome_forward();
 //extern char*(*PyOS_ReadlineFunctionPointer)(FILE*, FILE*, char*);
 # if (PY_MAJOR_VERSION >= 2 && PY_MINOR_VERSION > 2)
 static char* nrnpython_getline(FILE*, FILE*, char*);
@@ -30,10 +30,10 @@ extern char** nrn_global_argv;
 static void augment_path() {
 	static int augmented = 0;
 	char buf[1024];
-	if (!augmented && strlen(neuron_home) > 0) {
+	if (!augmented && strlen(neuronhome_forward()) > 0) {
 		//printf("augment_path\n");
 		augmented = 1;
-		sprintf(buf, "sys.path.append('%s/lib/python')", neuron_home);
+		sprintf(buf, "sys.path.append('%s/lib/python')", neuronhome_forward());
 		assert(PyRun_SimpleString("import sys") == 0);
 		assert(PyRun_SimpleString(buf) == 0);	
 	}

@@ -126,6 +126,23 @@ hoc_Symbol_units() {
 	hoc_pushstr(&units);
 }
 
+char* neuronhome_forward() {
+	extern char* neuron_home;
+#if defined(WIN32)
+	static char* buf;
+	extern char* hoc_back2forward();
+	extern void hoc_forward2back();
+	if (!buf) {
+		buf = emalloc(strlen(neuron_home)+1);
+		strcpy(buf, neuron_home);
+	}
+	hoc_back2forward(buf);
+	return buf;
+#else
+	return neuron_home;
+#endif
+}
+
 hoc_neuronhome() {
 	extern char* neuron_home;
 #if defined(WIN32)
