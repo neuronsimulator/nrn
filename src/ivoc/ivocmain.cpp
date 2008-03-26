@@ -527,9 +527,7 @@ ENDGUI
 #if defined(WIN32) && HAVE_IV
 IFGUI
 	double scale = 1.;
-	HDC hdc = GetDC(0);
-	int pw = GetDeviceCaps(hdc, HORZRES); 
-	ReleaseDC(0, hdc);
+	int pw = GetSystemMetrics(SM_CXVIRTUALSCREEN);
 	if (pw < 1100) {
 		scale = 1200./double(pw);
 	}
