@@ -55,8 +55,11 @@ showcpos(f, n)
         register int    cac;
         register int    ratio;
         register int    col;
+	register int	nline;
+	char buf[200];
 
 	LINTUSE(f) LINTUSE(n)
+	nline = 0;
         clp = lforw(curbp->b_linep);            /* Grovel the data.     */
         cbo = 0;
         nch = 0;
@@ -77,12 +80,16 @@ showcpos(f, n)
                         ++cbo;
                 ++nch;
         }
+	for (clp = curbp->b_linep; clp != curwp->w_dotp; clp = lforw(clp)){
+		++nline;
+	}
         col = getccol(FALSE);                   /* Get real column.     */
         ratio = 0;                              /* Ratio before dot.    */
         if (nch != 0)
                 ratio = (100L*nbc) / nch;
-        mlwrite("X=%d Y=%d CH=0x%x .=%D (%d%% of %D)",
-                col+1, currow+1, cac, nbc, ratio, nch);
+        sprintf(buf, "line=%d X=%d Y=%d CH=0x%x .=%ld (%d%% of %ld)",
+                nline, col+1, currow+1, cac, nbc, ratio, nch);
+        mlwrite(buf);
         return (TRUE);
 }
 
