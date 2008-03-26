@@ -64,6 +64,7 @@ public:
 	void print_event_queue();
 	void event_queue_info();
 	void vec_event_store();
+	void local_retreat(double, Cvode*);
 	void retreat(double, Cvode*);
 	Object** netconlist();
 	PlayRecord* playrec_uses(void*);

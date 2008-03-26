@@ -1712,7 +1712,12 @@ int NetCvode::local_microstep() {
 
 int NetCvode::global_microstep() {
 	int err = NVI_SUCCESS;
-	if (tqe_->least_t() <= list_->t_) {
+	double tdiff = tqe_->least_t() - list_->t_;
+	if (tdiff <= 0) {
+		// since events do not internally retreat with the
+		// global step, we should already be at the event time
+		// if this is too strict, we could use eps(list_->t_).
+		assert(tdiff == 0.0);
 		deliver_events(tqe_->least_t());
 	}else{
 		err = list_->handle_step(this, tqe_->least_t());
@@ -2354,7 +2359,7 @@ void NetCon::deliver(double tt, NetCvode* ns) {
 		}	
 	}
 	if (cvode_active_ && cv) {
-		ns->retreat(tt, cv);
+		ns->local_retreat(tt, cv);
 		cv->set_init_flag();
 	}else{
 // no interpolation necessary for local step method and ARTIFICIAL_CELL
@@ -2612,7 +2617,7 @@ void SelfEvent::deliver(double tt, NetCvode* ns) {
 		}
 	}
 	if (cvode_active_ && cv) {
-		ns->retreat(tt, cv);
+		ns->local_retreat(tt, cv);
 		cv->set_init_flag();
 	}else{
 		t = tt;
@@ -2646,7 +2651,7 @@ void PlayRecordEvent::frecord_init(TQItem* q) {
 
 void PlayRecordEvent::deliver(double tt, NetCvode* ns) {
 	if (plr_->cvode_) {
-		ns->retreat(tt, plr_->cvode_);
+		ns->local_retreat(tt, plr_->cvode_);
 	}
 	STATISTICS(playrecord_deliver_);
 	plr_->deliver(tt, ns);
@@ -2698,12 +2703,12 @@ void TstopEvent::savestate_write(FILE* f) {
 
 #include <hocevent.cpp>
 
-void NetCvode::retreat(double t, Cvode* cv) {
+void NetCvode::local_retreat(double t, Cvode* cv) {
 	if (!cvode_active_) { return; }
 	if (tq_) {
 #if PRINT_EVENT
 		if (print_event_) {
-printf("microstep retreat from %g (cvode_%lx is at %g) for event onset=%g\n", cv->tqitem_->t_, (long)cv, cv->t_, t);
+printf("microstep local retreat from %g (cvode_%lx is at %g) for event onset=%g\n", cv->tqitem_->t_, (long)cv, cv->t_, t);
 		}
 #endif
 		cv->interpolate(t);
@@ -2714,6 +2719,25 @@ printf("after target solve time for %lx is %g , dt=%g\n", (long)cv, cv->time(), 
 		}
 #endif
 	}
+}
+
+void NetCvode::retreat(double t, Cvode* cv) {
+	if (!cvode_active_) { return; }
+#if PRINT_EVENT
+	if (print_event_) {
+printf("microstep retreat from %g (cvode_%lx is at %g) for event onset=%g\n",
+ tq_ ? cv->tqitem_->t_ : cv->t_, (long)cv, cv->t_, t);
+	}
+#endif
+	cv->interpolate(t);
+	if (tq_) {
+		tq_->move(cv->tqitem_, t);
+	}
+#if PRINT_EVENT
+	if (print_event_ > 1) {
+printf("after target solve time for %lx is %g , dt=%g\n", (long)cv, cv->time(), dt);
+	}
+#endif
 }
 
 #if USENEOSIM
