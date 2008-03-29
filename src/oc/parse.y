@@ -70,6 +70,7 @@ extern Symlist *symlist;	/* This list is permanent */
 extern Symlist *p_symlist; /* Constants, strings, auto variables */
 extern Symbol* hoc_decl();
 extern Symbol* hoc_which_template();
+extern Symbol* hoc_table_lookup();
 
 extern arayinstal();
 extern int indef;
@@ -877,6 +878,9 @@ local1:	LOCAL anyname
 		{
 		Symbol *sp;
 		$$ = $1 + 1; localcnt = $$;
+		if (hoc_table_lookup($3->name, p_symlist)) {
+			acterror($3->name, "already declared local");
+		}
 		sp = install($3->name, AUTO, 0.0, &p_symlist);
 		sp->u.u_auto = $$;
 		}
@@ -889,6 +893,9 @@ local2:	LOCALOBJ anyname
 		{
 		Symbol *sp;
 		$$ = 1;
+		if (hoc_table_lookup($2->name, p_symlist)) {
+			acterror($2->name, "already declared local");
+		}
 		sp = install($2->name, AUTOOBJ, 0.0, &p_symlist);
 		sp->u.u_auto = $$ + localcnt;
 		}
@@ -896,6 +903,9 @@ local2:	LOCALOBJ anyname
 		{
 		Symbol *sp;
 		$$ = $1 + 1;
+		if (hoc_table_lookup($3->name, p_symlist)) {
+			acterror($3->name, "already declared local");
+		}
 		sp = install($3->name, AUTOOBJ, 0.0, &p_symlist);
 		sp->u.u_auto = $$ + localcnt;
 		}
