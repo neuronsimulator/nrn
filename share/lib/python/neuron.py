@@ -31,10 +31,9 @@ class Vector(object):
     def __init__(self,arg=10):
         if isinstance(arg,int):
             self.hoc_obj = h.newvec(arg)
-        elif isinstance(arg,list):
+        else:
             self.hoc_obj = h.newvec(len(arg))
-            for i,x in enumerate(arg):
-                self.x[i] = x
+	    self.hoc_obj.from_python(arg)
         
     def __getattr__(self,name):
         return getattr(self.hoc_obj, name)
@@ -52,7 +51,7 @@ class Vector(object):
 
 
     # allow array(Vector())
-    # Need Vector().toarray for speed though
+    # Use Vector().to_python for speed though
     def __getitem__(self,i):
         return self.x[i]
     

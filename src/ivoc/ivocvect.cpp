@@ -104,6 +104,8 @@ extern "C" {
 extern Object* hoc_thisobject;
 extern Symlist* hoc_top_level_symlist;
 extern void nrn_exit(int);
+Object** (*nrnpy_vec_from_python_p_)(void*);
+Object** (*nrnpy_vec_to_python_p_)(void*);
 };
 
 
@@ -3539,6 +3541,20 @@ static Object** v_index(void* v)
   return ans->temp_objvar();
 }
 
+Object** v_from_python(void* v) {
+	if (!nrnpy_vec_from_python_p_) {
+		hoc_execerror("Python not available", 0);
+	}
+	return (*nrnpy_vec_from_python_p_)(v);
+}
+
+Object** v_to_python(void* v) {
+	if (!nrnpy_vec_to_python_p_) {
+		hoc_execerror("Python not available", 0);
+	}
+	return (*nrnpy_vec_to_python_p_)(v);
+}
+
 static Member_func v_members[] = {
 
 	"x",		v_size,	// will be changed below
@@ -3653,6 +3669,8 @@ static Member_ret_obj_func v_retobj_members[] = {
 	"mark",         v_mark,
 	"ploterr",      v_ploterr,
 
+	"from_python",	v_from_python,
+	"to_python",	v_to_python,
 	0,0
 };
 

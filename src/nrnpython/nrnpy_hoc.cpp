@@ -46,6 +46,8 @@ PyObject* nrnpy_ho2po(Object*);
 Object* nrnpy_po2ho(PyObject*);
 extern Object* nrnpy_pyobject_in_obj(PyObject*);
 static void pyobject_in_objptr(Object**, PyObject*);
+extern Object** (*nrnpy_vec_from_python_p_)(void*);
+extern Object** (*nrnpy_vec_to_python_p_)(void*);
 /*
 Because python types have so many methods, attempt to do all set and get
 using a PyHocObject which has different amounts filled in as the information
@@ -1043,6 +1045,83 @@ static PySequenceMethods hocobj_seqmeth = {
 	NULL, NULL
 };
 
+static Object** nrnpy_vec_from_python(void* v) {
+	Vect* hv = (Vect*)v;
+//	printf("%s.from_array\n", hoc_object_name(hv->obj_));
+	Object* ho = *hoc_objgetarg(1);
+	if (ho->ctemplate->sym != nrnpy_pyobj_sym_) {
+		hoc_execerror(hoc_object_name(ho), " is not a PythonObject");
+	}
+	PyObject* po = nrnpy_hoc2pyobject(ho);
+	if (!PySequence_Check(po)) {
+		hoc_execerror(hoc_object_name(ho), " does not support the Python Sequence protocol");
+	}
+	int size = PySequence_Size(po);
+//	printf("size = %d\n", size);
+	hv->resize(size);
+	double* x = vector_vec(hv);
+	for (int i=0; i < size; ++i) {
+		PyObject* p = PySequence_GetItem(po, i);
+		if (!PyNumber_Check(p)) {
+			char buf[50];
+			sprintf(buf, "item %d not a number", i);
+			hoc_execerror(buf, 0);
+		}
+		x[i] = PyFloat_AsDouble(p);
+	}
+	return hv->temp_objvar();
+}
+static Object** nrnpy_vec_to_python(void* v) {
+	Vect* hv = (Vect*)v;
+	int size = hv->capacity();
+	double* x = vector_vec(hv);
+//	printf("%s.to_array\n", hoc_object_name(hv->obj_));
+	PyObject* po;
+	Object* ho = 0;
+	if (ifarg(1)) {
+		ho = *hoc_objgetarg(1);
+		if (ho->ctemplate->sym != nrnpy_pyobj_sym_) {
+			hoc_execerror(hoc_object_name(ho), " is not a PythonObject");
+		}
+		po = nrnpy_hoc2pyobject(ho);
+		if (!PySequence_Check(po)) {
+			hoc_execerror(hoc_object_name(ho), " is not a Python Sequence");
+		}
+		if (size != PySequence_Size(po)) {
+			hoc_execerror(hoc_object_name(ho), "Python Sequence not same size as Vector");
+		}
+		Py_INCREF(po);
+	}else{
+		if ((po = PyList_New(size)) == NULL) {
+			hoc_execerror("Could not create new Python List with correct size.", 0);
+		}
+		ho = nrnpy_po2ho(po);
+		--ho->refcount;
+	}
+//	printf("size = %d\n", size);
+	if (PyList_Check(po)) { // PySequence_SetItem does DECREF of old items
+		for (int i=0; i < size; ++i) {
+			PyObject* pn = PyFloat_FromDouble(x[i]);
+			if (!pn || PyList_SetItem(po, i, pn) == -1) {
+				char buf[50];
+				sprintf(buf, "%d of %d", i, size);
+hoc_execerror("Could not set a Python Sequence item", buf);
+			}
+		}
+	}else{ // assume PySequence_SetItem works
+		for (int i=0; i < size; ++i) {
+			PyObject* pn = PyFloat_FromDouble(x[i]);
+			if (!pn || PySequence_SetItem(po, i, pn) == -1) {
+				char buf[50];
+				sprintf(buf, "%d of %d", i, size);
+hoc_execerror("Could not set a Python Sequence item", buf);
+			}
+			Py_DECREF(pn);
+		}
+	}
+	return hoc_temp_objptr(ho);
+}
+
 #ifdef WITH_NUMPY
 
 
@@ -1281,6 +1360,8 @@ static PyTypeObject nrnpy_HocObjectType = {
 
 myPyMODINIT_FUNC nrnpy_hoc() {
 	PyObject* m;
+	nrnpy_vec_from_python_p_ = nrnpy_vec_from_python;
+	nrnpy_vec_to_python_p_ = nrnpy_vec_to_python;
 	m = Py_InitModule3("hoc", HocMethods,
 		"HOC interaction with Python");
 
