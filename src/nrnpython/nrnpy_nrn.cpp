@@ -55,8 +55,9 @@ extern int can_change_morph(Section*);
 extern void nrn_length_change(Section*, double);
 extern int diam_changed;
 extern void mech_insert1(Section*, int);
+void nrnpy_reg_mech(int);
+void nrnpy_unreg_mech(int);
 
-static void nrnpy_reg_mech(Symbol*, PyObject*, int);
 
 static void NPySecObj_dealloc(NPySecObj* self) {
 //printf("NPySecObj_dealloc %lx\n", (long)self);
@@ -857,6 +858,8 @@ static PyMethodDef nrnpy_methods[] = {
 	{NULL}
 };
 	
+static PyObject* nrnmodule_;
+
 myPyMODINIT_FUNC nrnpy_nrn(void) 
 {
     int i;
@@ -882,7 +885,7 @@ myPyMODINIT_FUNC nrnpy_nrn(void)
 
     m = Py_InitModule3("nrn", nrnpy_methods,
                        "NEURON interaction with Python");
-
+    nrnmodule_ = m;	
     PyModule_AddObject(m, "Section", (PyObject *)psection_type);
     PyModule_AddObject(m, "Segment", (PyObject *)psegment_type);
 
@@ -895,28 +898,29 @@ myPyMODINIT_FUNC nrnpy_nrn(void)
     PyModule_AddObject(m, "Mechanism", (PyObject *)pmech_generic_type);
     pmech_types = PyDict_New();
     for (i=4; i < n_memb_func; ++i) { // start at pas
-	Memb_func* mf = memb_func + i;
-	Symbol* s = mf->sym;
-	if (s && !mf->is_point) {
-		nrnpy_reg_mech(s, m, i);
-	}
+	nrnpy_reg_mech(i);
     }
 #endif
 }
 
-void nrnpy_reg_mech(Symbol* s, PyObject* m, int type) {
+void nrnpy_reg_mech(int type) {
 	int i;
-//	printf("%s %d\n", s->name, type);
-//	printf("%s %d\n", s->name, s->subtype);
-#if 0
-	for (i=0; i < s->s_varn; ++i) {
-		Symbol* sv = s->u.ppsym[i];
-		printf("    %s\n", sv->name);
+	char* s;
+	Memb_func* mf = memb_func + type;
+	if (mf->is_point) { return; }
+	if (!nrnmodule_) { return; }
+	s = mf->sym->name;
+//printf("nrnpy_reg_mech %s %d\n", s, type); 
+	if (PyDict_GetItemString(pmech_types, s)) {
+		hoc_execerror(s, "mechanism already exists");
 	}
-#endif
 	Py_INCREF(&nrnpy_MechanismType);
-	PyModule_AddObject(m, s->name, (PyObject *)pmech_generic_type);
-	PyDict_SetItemString(pmech_types, s->name, Py_BuildValue("i", type));
+	PyModule_AddObject(nrnmodule_, s, (PyObject *)pmech_generic_type);
+	PyDict_SetItemString(pmech_types, s, Py_BuildValue("i", type));
+}
+
+void nrnpy_unreg_mech(int type) {
+	// not implemented but needed when KSChan name changed.
 }
 
 } // end of extern c

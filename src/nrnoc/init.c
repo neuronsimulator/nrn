@@ -67,6 +67,7 @@ static char	CHKmes[] = "The user defined name, %s, already exists\n";
 
 extern Symlist	*hoc_symlist, *hoc_built_in_symlist;
 extern Symbol	*hoc_table_lookup();
+extern void nrnpy_reg_mech(int);
 
 int secondorder=0;
 int state_discon_allowed_;
@@ -525,6 +526,9 @@ IGNORE(fprintf(stderr, CHKmes, buf));
 			}
 			s->u.ppsym[k] = s2;
 		}
+	}
+	if (!memb_func[type].is_point) {
+		nrnpy_reg_mech(type);
 	}
 	++type;
 	n_memb_func = type;
