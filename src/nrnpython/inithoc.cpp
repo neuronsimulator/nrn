@@ -8,6 +8,7 @@ extern "C" {
 //int nrn_global_argc;
 //char** nrn_global_argv;
 
+extern void nrnpy_augment_path();
 extern void nrnpy_hoc();
 
 extern int nrn_is_python_extension;
@@ -30,6 +31,7 @@ void inithoc() {
 #endif
 	nrn_is_python_extension = 1;
 	ivocmain(argc, argv, env);
+	nrnpy_augment_path();
 	nrnpy_hoc();
 }
 

@@ -25,9 +25,10 @@ static char* nrnpython_getline(char*);
 extern void rl_stuff_char(int);
 extern int nrn_global_argc;
 extern char** nrn_global_argv;
+void nrnpy_augment_path();
 }
 
-static void augment_path() {
+void nrnpy_augment_path() {
 	static int augmented = 0;
 	char buf[1024];
 	if (!augmented && strlen(neuronhome_forward()) > 0) {
@@ -51,7 +52,7 @@ void nrnpython_start(int b) {
 		for (i=0; nrnpy_reg_[i]; ++i) {
 			(*nrnpy_reg_[i])();
 		}
-		augment_path();
+		nrnpy_augment_path();
 	}
 	if (b == 0 && started) {
 		Py_Finalize();
@@ -59,7 +60,7 @@ void nrnpython_start(int b) {
 	}
 	if (b == 2 && started) {
 		int i;
-		augment_path();
+		nrnpy_augment_path();
 		PyOS_ReadlineFunctionPointer = nrnpython_getline;
 		// Is there a -c "command" or file.py arg.
 		for (i=1; i < nrn_global_argc; ++i) {
