@@ -75,7 +75,6 @@ void nrn_fake_fire(i,x,j)int i, j; double x;{}
 void nrn_daq_ao() {}
 void nrn_daq_ai() {}
 void nrn_daq_scanstart(){}
-void nrnpy_reg_mech(int i){}
 
 #if PARANEURON
 double* nrn_classicalNodeA(Node* n) {return (double*)0;}

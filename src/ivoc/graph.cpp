@@ -722,6 +722,15 @@ IFGUI
 			t.scale(x/r.x_requirement().natural(), y/r.y_requirement().natural());
 			i =  new TransformSetter(i, t);
 		}
+		if (!ifarg(2)) { // resize if smaller than gif
+			Requisition r;
+			i->request(r);
+			if (r.x_requirement().natural() > (g->x2() - g->x1())
+			  || r.y_requirement().natural() > (g->y2() - g->y1())) {
+				g->new_size(0, 0, r.x_requirement().natural(),
+				  r.y_requirement().natural());
+			}
+		}
 		g->append(new GraphItem(i, false, false));
 		if (ifarg(2)) {
 			g->move(g->count() - 1, *getarg(2), *getarg(3));

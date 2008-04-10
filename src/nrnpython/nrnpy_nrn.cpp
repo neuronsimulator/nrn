@@ -55,8 +55,9 @@ extern int can_change_morph(Section*);
 extern void nrn_length_change(Section*, double);
 extern int diam_changed;
 extern void mech_insert1(Section*, int);
-void nrnpy_reg_mech(int);
-void nrnpy_unreg_mech(int);
+static void nrnpy_reg_mech(int);
+extern void (*nrnpy_reg_mech_p_)(int);
+static void nrnpy_unreg_mech(int);
 
 
 static void NPySecObj_dealloc(NPySecObj* self) {
@@ -900,6 +901,7 @@ myPyMODINIT_FUNC nrnpy_nrn(void)
     for (i=4; i < n_memb_func; ++i) { // start at pas
 	nrnpy_reg_mech(i);
     }
+    nrnpy_reg_mech_p_ = nrnpy_reg_mech;
 #endif
 }
 
