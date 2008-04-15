@@ -136,7 +136,7 @@ proc set_f() {
 	}	
 }
 	
-proc pl() {local i, x1, y1, x2, y2, i, dx, dy, pdx, pdy, pf, th, len
+proc pl() {local i, x1, y1, x2, y2, dx, dy, pdx, pdy, pf, th, len
 	if (src == target) { return }
 	i = $o1.view_info()
 	if (i < 0) {i = 0}
