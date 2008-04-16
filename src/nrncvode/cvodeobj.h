@@ -152,6 +152,7 @@ public:
 	int event_flag_;
 	double next_at_time_;
 	double tstop_;
+	double tstop_begin_, tstop_end_;
 
 	double** pv_;
 	double** pvdot_;

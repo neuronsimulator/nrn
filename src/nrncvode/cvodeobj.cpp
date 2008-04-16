@@ -547,6 +547,8 @@ void Cvode::cvode_constructor() {
 	
 	initialize_ = false;
 	can_retreat_ = false;
+	tstop_begin_ = 0.;
+	tstop_end_ = 0.;
 	use_daspk_ = false;
 	daspk_ = nil;
 
@@ -890,7 +892,9 @@ int Cvode::advance_tn() {
 	if (t_ >= tstop_ - NetCvode::eps(t_)) {
 //printf("init\n");
 		++ts_inits_;
-		err = init(tstop_ + 1.5*NetCvode::eps(tstop_));
+		tstop_begin_ = tstop_;
+		tstop_end_ = tstop_ + 1.5*NetCvode::eps(tstop_);
+		err = init(tstop_end_);
 		// the above 1.5 is due to the fact that at_time will check
 		// to see if the time is greater but not greater than eps*t0_
 		// of the at_time for a return of 1.
@@ -923,7 +927,9 @@ int Cvode::solve() {
 	if (initialize_) {
 		if (t_ >= tstop_ - NetCvode::eps(t_)) {
 			++ts_inits_;
-			err = init(tstop_ + 1.5*NetCvode::eps(tstop_));
+			tstop_begin_ = tstop_;
+			tstop_end_ = tstop_ + 1.5*NetCvode::eps(tstop_);
+			err = init(tstop_end_);
 			can_retreat_ = false;
 		}else{
 			err = init(t_);

@@ -1717,7 +1717,7 @@ int NetCvode::global_microstep() {
 		// since events do not internally retreat with the
 		// global step, we should already be at the event time
 		// if this is too strict, we could use eps(list_->t_).
-		assert(tdiff == 0.0);
+		assert(tdiff == 0.0 || ( list_[0].tstop_begin_ <= tqe_->least_t() && tqe_->least_t() <= list_[0].tstop_end_));
 		deliver_events(tqe_->least_t());
 	}else{
 		err = list_->handle_step(this, tqe_->least_t());
@@ -2718,6 +2718,8 @@ printf("microstep local retreat from %g (cvode_%lx is at %g) for event onset=%g\
 printf("after target solve time for %lx is %g , dt=%g\n", (long)cv, cv->time(), dt);
 		}
 #endif
+	}else{
+		assert(t == cv->t_ || ( cv->tstop_begin_ <= t && t <= cv->tstop_end_));
 	}
 }
 
