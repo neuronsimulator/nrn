@@ -3103,7 +3103,7 @@ void NetCvode::fornetcon_prepare() {
 	// two loops over all netcons. one to count, one to fill in argslist
 	// count
 	hoc_Item* q;
-	ITERATE(q, psl_) {
+	if (psl_) ITERATE(q, psl_) {
 		PreSyn* ps = (PreSyn*)VOIDITM(q);
 		NetConPList& dil = ps->dil_;
 		for (int i=0; i < dil.count(); ++i) {
@@ -3130,7 +3130,7 @@ ForNetConsInfo* fnc = (ForNetConsInfo*)pnt->prop->dparam[t2i[pnt->prop->type]]._
 		}
 	}
 	// fill in argslist and count again
-	ITERATE(q, psl_) {
+	if (psl_) ITERATE(q, psl_) {
 		PreSyn* ps = (PreSyn*)VOIDITM(q);
 		NetConPList& dil = ps->dil_;
 		for (int i=0; i < dil.count(); ++i) {
