@@ -210,6 +210,8 @@ void VecPlayContinuous::init(IvocVect* y, IvocVect* t, IvocVect* discon) {
 	y_ = y;
 	t_ = t;
 	discon_indices_ = discon;
+	ubound_index_ = 0;
+	last_index_ = 0;
 	ObjObservable::Attach(y_->obj_, this);
 	if (t_) {
 		ObjObservable::Attach(t_->obj_, this);
@@ -273,6 +275,8 @@ void VecPlayContinuous::deliver(double tt, NetCvode* ns) {
 			ubound_index_ = (int)discon_indices_->elem(discon_index_++);
 //printf("after deliver:send %d %g\n", ubound_index_, t_->elem(ubound_index_));
 			e_->send(t_->elem(ubound_index_), ns);
+		}else{
+			ubound_index_ = t_->capacity() - 1;
 		}
 	}else{
 		if (ubound_index_ < t_->capacity() - 1) {
@@ -295,9 +299,13 @@ void VecPlayContinuous::continuous(double tt) {
 double VecPlayContinuous::interpolate(double tt) {
 	if (tt >= t_->elem(ubound_index_)) {
 		last_index_ = ubound_index_;
-		return y_->elem(last_index_);
+		if (last_index_ == 0) {
+//printf("return last tt=%g ubound=%g y=%g\n", tt, t_->elem(ubound_index_), y_->elem(last_index_));
+			return y_->elem(last_index_);
+		}
 	}else if (tt <= t_->elem(0)) {
 		last_index_ = 0;
+//printf("return elem(0) tt=%g t0=%g y=%g\n", tt, t_->elem(0), y_->elem(0));
 		return y_->elem(0);
 	}else{
 		search(tt);
@@ -307,6 +315,7 @@ double VecPlayContinuous::interpolate(double tt) {
 	double t0 = t_->elem(last_index_ - 1);
 	double t1 = t_->elem(last_index_);
 //printf("IvocVectRecorder::continuous tt=%g t0=%g t1=%g theta=%g x0=%g x1=%g\n", tt, t0, t1, (tt - t0)/(t1 - t0), x0, x1);
+	if (t0 == t1) { return (x0 + x1)/2.; }
 	return interp((tt - t0)/(t1 - t0), x0, x1);
 #if 0
 	// dt
