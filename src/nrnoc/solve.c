@@ -313,7 +313,10 @@ dashes(sec, offset,first)
 void
 nrn_solve() {
 	void triang(), bksub();
-	
+#if 0
+	printf("\nnrn_solve enter\n");
+	nrn_print_matrix();
+#endif	
 #if PARANEURON
 	if (nrn_multisplit_solve_) {
 		(*nrn_multisplit_solve_)();
@@ -350,6 +353,10 @@ nrn_solve() {
 		bksub();
 	}
 #endif
+#if 0
+	printf("\nnrn_solve leave\n");
+	nrn_print_matrix();
+#endif	
 }
 
 #if VECTORIZE && _CRAY

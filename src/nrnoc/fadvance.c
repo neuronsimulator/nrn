@@ -357,7 +357,7 @@ fcurrent()
 	ret(1.);
 }
 
-fmatrix() {
+nrn_print_matrix() {
 	extern int section_count;
 	extern Section** secorder;
 	int isec, inode;
@@ -382,6 +382,9 @@ printf("%d %d %g %g %g %g\n", isec, inode, ClassicalNODEB(nd), ClassicalNODEA(nd
 		}
 	}
     }
+}
+fmatrix() {
+	nrn_print_matrix();
 	ret(1.);
 }
 nonvint()
