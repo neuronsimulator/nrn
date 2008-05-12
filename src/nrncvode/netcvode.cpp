@@ -627,6 +627,7 @@ static double nc_active(void* v) {
 static double nc_event(void* v) {
 	NetCon* d = (NetCon*)v;
 	double td = chkarg(1,t,1e20);
+	if (d->active_ == 0) { return 0.0; }
 	d->chktar();
 	if (ifarg(2)) {
 		double flag = *getarg(2);
