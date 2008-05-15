@@ -34,9 +34,6 @@
 #include <OS/list.h>
 #endif
 
-#if defined(HAVE_MALLOC_H)
-#include <malloc.h>
-#endif
 #if defined(SVR4)
 extern "C" {extern void exit(int status);};
 #endif

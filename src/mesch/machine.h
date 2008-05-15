@@ -246,8 +246,8 @@ malloc.h and stdlib.h so prefer stdlib.h if it exists
 #endif
 
 
-#ifdef ANSI_C
-extern	int	isatty(int);
+#if HAVE_UNISTD_H
+#include <unistd.h>
 #endif
 
 #endif
