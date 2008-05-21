@@ -7,7 +7,7 @@ begintemplate CellBuild
 public vbox, map, topol, geom, subsets, memb, changed_, consist, changed
 public version, gtopol, continuous, manage, save_data, all, mech_export
 public file_version_, append_inhomofun, inhomofuns, geom_cnt_, page
-public leave, leave_
+public leave, leave_, cexport
 external graph_menu_remove_most
 external scene_vector_, save_window_ // only for sessions prior to 5.1
 objref this, vbox, deck1, deck2, topol, geom, subsets, memb, manage
@@ -122,7 +122,7 @@ proc build() {local i
 	xradiobutton("Geometry   ", "page(3)")
 	xradiobutton("Biophysics   ", "page(4)")
 	xradiobutton("Management   ", "page(5)")
-	xcheckbox("Continuous Create", &continuous, "cexport(1)")
+	xcheckbox("Continuous Create", &continuous, "cexport()")
 	xpanel()
 	deck1 = new Deck(3)
 	deck1.intercept(1)
@@ -206,6 +206,9 @@ print " try changing the version number in the session file to 5.1"
 }
 
 proc cexport() {
+	if (numarg() == 1) {
+		continuous = $1
+	}
 	// the last thing done in old versions so take care of
 	// the all subset and update the version number
 	if (file_version_ < 5) {
