@@ -3594,6 +3594,18 @@ hoc_execerror("No NET_RECEIVE in target PointProcess:", hoc_object_name(target))
 NetCon::~NetCon() {
 //printf("~NetCon\n");
 	NetConSave::invalid();
+	rmsrc();
+	if (cnt_) {
+		delete [] weight_;
+	}
+#if DISCRETE_EVENT_OBSERVER
+	if (target_) {
+		ObjObservable::Detach(target_->ob, this);
+	}
+#endif
+}
+
+void NetCon::rmsrc() {
 	if (src_) {
 		for (int i=0; i < src_->dil_.count(); ++i) {
 			if (src_->dil_.item(i) == this) {
@@ -3609,14 +3621,16 @@ NetCon::~NetCon() {
 			}
 		}
 	}
-	if (cnt_) {
-		delete [] weight_;
+	src_ = nil;
+}
+
+void NetCon::replace_src(PreSyn* p) {
+	rmsrc();
+	src_ = p;
+	if (src_) {
+		src_->dil_.append((NetCon*)this);
+		src_->use_min_delay_ = 0;
 	}
-#if DISCRETE_EVENT_OBSERVER
-	if (target_) {
-		ObjObservable::Detach(target_->ob, this);
-	}
-#endif
 }
 
 DiscreteEvent* NetCon::savestate_save() {

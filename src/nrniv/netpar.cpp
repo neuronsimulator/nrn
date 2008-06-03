@@ -762,9 +762,23 @@ Object** BBS::gid_connect(int gid) {
 		(*gid2in_)[gid] = ps;
 		ps->gid_ = gid;
 	}
-	NetCon* nc = new NetCon(ps, target);
-	Object** po = hoc_temp_objvar(netcon_sym_, nc);
-	nc->obj_ = *po;
+	NetCon* nc;
+	Object** po;
+	if (ifarg(3)) {
+		po = hoc_objgetarg(3);
+		if (!*po || (*po)->ctemplate != netcon_sym_->u.ctemplate) {
+			check_obj_type(*po, "NetCon");
+		}
+		nc = (NetCon*)((*po)->u.this_pointer);
+		if (nc->target_ != ob2pntproc(target)) {
+			hoc_execerror("target is different from 3rd arg NetCon target", 0);
+		}
+		nc->replace_src(ps);
+	}else{
+		nc = new NetCon(ps, target);
+		po = hoc_temp_objvar(netcon_sym_, nc);
+		nc->obj_ = *po;
+	}
 	return po;
 }
 

@@ -88,6 +88,8 @@ public:
 
 	void chksrc();
 	void chktar();
+	void rmsrc();
+	void replace_src(PreSyn*);
 	virtual void disconnect(Observable*);
 
 	double delay_;
