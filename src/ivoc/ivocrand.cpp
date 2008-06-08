@@ -325,8 +325,10 @@ Rand* nrn_random_arg(int i) {
 static double r_uniform(void* r)
 {
   Rand* x = (Rand*)r;
+  double a1 = *getarg(1);
+  double a2 = *getarg(2);
   delete x->rand;
-  x->rand = new Uniform(*getarg(1),*getarg(2),x->gen);
+  x->rand = new Uniform(a1, a2, x->gen);
   return (*(x->rand))();
 }
 
@@ -337,8 +339,10 @@ static double r_uniform(void* r)
 static double r_discunif(void* r)
 {
   Rand* x = (Rand*)r;
+  long a1 = long(*getarg(1));
+  long a2 = long(*getarg(2));
   delete x->rand;
-  x->rand = new DiscreteUniform(long(*getarg(1)),long(*getarg(2)),x->gen);
+  x->rand = new DiscreteUniform(a1, a2, x->gen);
   return (*(x->rand))();
 }
 
@@ -350,8 +354,10 @@ static double r_discunif(void* r)
 static double r_normal(void* r)
 {
   Rand* x = (Rand*)r;
+  double a1 = *getarg(1);
+  double a2 = *getarg(2);
   delete x->rand;
-  x->rand = new Normal(*getarg(1),*getarg(2),x->gen);
+  x->rand = new Normal(a2, a2, x->gen);
   return (*(x->rand))();
 }
 
@@ -363,8 +369,10 @@ static double r_normal(void* r)
 static double r_lognormal(void* r)
 {
   Rand* x = (Rand*)r;
+  double a1 = *getarg(1);
+  double a2 = *getarg(2);
   delete x->rand;
-  x->rand = new LogNormal(*getarg(1),*getarg(2),x->gen);
+  x->rand = new LogNormal(a1, a2, x->gen);
   return (*(x->rand))();
 }
 
@@ -376,8 +384,9 @@ static double r_lognormal(void* r)
 static double r_poisson(void* r)
 {
   Rand* x = (Rand*)r;
+  double a1 = *getarg(1);
   delete x->rand;
-  x->rand = new Poisson(*getarg(1),x->gen);
+  x->rand = new Poisson(a1, x->gen);
   return (*(x->rand))();
 }
 
@@ -391,8 +400,10 @@ static double r_poisson(void* r)
 static double r_binomial(void* r)
 {
   Rand* x = (Rand*)r;
+  int a1 = int(chkarg(1, 0, 1e99));
+  double a2 = chkarg(2, 0, 1);
   delete x->rand;
-  x->rand = new Binomial(int(chkarg(1,0,1e99)),chkarg(2,0,1),x->gen);
+  x->rand = new Binomial(a1, a2, x->gen);
   return (*(x->rand))();
 }
 
@@ -407,8 +418,9 @@ static double r_binomial(void* r)
 static double r_geometric(void* r)
 {
   Rand* x = (Rand*)r;
+  double a1 = chkarg(1, 0, 1);
   delete x->rand;
-  x->rand = new Geometric(chkarg(1,0,1),x->gen);
+  x->rand = new Geometric(a1, x->gen);
   return (*(x->rand))();
 }
 
@@ -421,8 +433,10 @@ static double r_geometric(void* r)
 static double r_hypergeo(void* r)
 {
   Rand* x = (Rand*)r;
+  double a1 = *getarg(1);
+  double a2 = *getarg(2);
   delete x->rand;
-  x->rand = new HyperGeometric(*getarg(1),*getarg(2),x->gen);
+  x->rand = new HyperGeometric(a1, a2, x->gen);
   return (*(x->rand))();
 }
 
@@ -434,8 +448,9 @@ static double r_hypergeo(void* r)
 static double r_negexp(void* r)
 {
   Rand* x = (Rand*)r;
+  double a1 = *getarg(1);
   delete x->rand;
-  x->rand = new NegativeExpntl(*getarg(1),x->gen);
+  x->rand = new NegativeExpntl(a1, x->gen);
   return (*(x->rand))();
 }
 
@@ -448,8 +463,10 @@ static double r_negexp(void* r)
 static double r_erlang(void* r)
 {
   Rand* x = (Rand*)r;
+  double a1 = *getarg(1);
+  double a2 = *getarg(2);
   delete x->rand;
-  x->rand = new Erlang(*getarg(1),*getarg(2),x->gen);
+  x->rand = new Erlang(a1, a2, x->gen);
   return (*(x->rand))();
 }
 
@@ -461,8 +478,10 @@ static double r_erlang(void* r)
 static double r_weibull(void* r)
 {
   Rand* x = (Rand*)r;
+  double a1 = *getarg(1);
+  double a2 = *getarg(2);
   delete x->rand;
-  x->rand = new Weibull(*getarg(1),*getarg(2),x->gen);
+  x->rand = new Weibull(a1, a2, x->gen);
   return (*(x->rand))();
 }
 
