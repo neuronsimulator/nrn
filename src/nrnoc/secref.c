@@ -205,16 +205,20 @@ static double s_rename(v) void* v; {
 	return 1;
 }
 
-static double s_nchild(void* v) {
+int nrn_secref_nchild(Section* sec) {
 	int n;
-	Section* sec = (Section*)v;
 	if (!sec->prop) {
 		hoc_execerror("Section was deleted", (char*)0);
 	}
 	for (n=0, sec = sec->child; sec; sec = sec->sibling) {
 		++n;
 	}
-	return (double)n;
+	return n;
+}
+
+static double s_nchild(void* v) {
+	int n;
+	return (double)nrn_secref_nchild((Section*)v);
 }
 
 static double s_has_parent(void* v) {
@@ -326,6 +330,11 @@ SectionRef_reg() {
 	s = hoc_table_lookup("child", sr->u.template->symtable);
 	s->type = SECTIONREF;
 	nrn_child_sym = s;
+	s->arayinfo = (Arrayinfo*)emalloc(sizeof(Arrayinfo));;
+	s->arayinfo->refcount = 1;
+	s->arayinfo->a_varn = (void*)0;
+	s->arayinfo->nsub = 1;
+	s->arayinfo->sub[0] = 0;
 }
 
 

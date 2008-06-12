@@ -19,6 +19,7 @@ Inst *inlint;
 #else
 #define code	Code
 #endif
+extern Inst* codei(int i);
 
 #define paction(arg) fprintf(stderr, "%s\n", arg)
 
@@ -120,7 +121,7 @@ static Inst* argcode(), *argrefcode();
 %token	<narg>	OBJECTARG STRINGARG ROP
 %type	<sym>	template publiclist externallist
 %type	<sym>	obvarname
-%type	<inst>	ob objvarlist object
+%type	<inst>	ob ob1 objvarlist object
 %type	<narg>	func_or_range_array_case argrefdim
 /* END OOP */
 
@@ -181,11 +182,17 @@ asgn:	varname ROP expr
 		{ TPD; code(range_const); codesym(spop()); codei($2); PN;}
 /* END NEWCABLE */
 /* OOP */
-	|ob ROP NEW anyname '(' arglist ')'
-		{ hoc_opasgn_invalid($2);
-		 code(hoc_newobj); codesym(hoc_which_template($4)); codei($6);}
-	| ob ROP expr
-		{TPDYNAM; code(hoc_object_asgn); codei($2);}
+	|ob1 ROP NEW anyname '(' arglist ')'
+		{ Inst* p; hoc_opasgn_invalid($2);
+		 code(hoc_newobj); codesym(hoc_which_template($4)); codei($6);
+		 p = (Inst*)spop();
+		 if (p) { p->i += 2; }
+		}
+	| ob1 ROP expr
+		{Inst* p; TPDYNAM; code(hoc_object_asgn); codei($2);
+		 p = (Inst*)spop();
+		 if (p) { p->i += 2; }
+		}
 /* END OOP */
 	| varname ROP error {myerr("assignment to variable, make sure right side is a number");}
 	;
@@ -206,14 +213,20 @@ object:	OBJECTVAR {pushi(OBJECTVAR);pushs($1); pushi(CHECK);} wholearray
 		{ $$ = $2; code(call); codesym($1); codei($4);
 		  code(hoc_known_type); codei(OBJECTVAR); pushi(OBJECTVAR);}
 	;
-ob:	object
-	| ob '.' anyname {pushs($3);pushi(NOCHECK);} wholearray func_or_range_array_case
-		{int isfunc;
+
+ob: ob1 { spop(); }
+	;
+
+ob1:	object { pushs((Symbol*)0); }
+	| ob1 '.' anyname {pushs($3);pushi(NOCHECK);} wholearray func_or_range_array_case
+		{int isfunc; Inst* p;
 		 isfunc = ipop();
 		 code(hoc_object_component); codesym(spop()); codei(ipop());
 		 codei($6);
 		 codei(0); codesym(0);
-		 codei(isfunc); /* for USE_PYTHON */
+		 p = codei(isfunc); /* for USE_PYTHON */
+		 spop();
+		 pushs((Symbol*)p); /* in case assigning to a PythonObject we will want to update isfunc to 2 */
 		}
 	| OBJECTVAR error {myerr("object syntax is o1.o2.o3.");}
 	;
@@ -264,9 +277,10 @@ externallist: EXTERNALDECL VAR
 
 strnasgn: string2 ROP string1
 		{hoc_opasgn_invalid($2); code(assstr);}
-	| ob ROP string1
-		{pushi(STRING); TPDYNAM; code(hoc_object_asgn);
+	| ob1 ROP string1
+		{Inst* p = (Inst*) spop(); pushi(STRING); TPDYNAM; code(hoc_object_asgn);
 		 hoc_opasgn_invalid($2); codei($2); hoc_ob_check(-1); code(nopop);
+		 if (p) { p->i += 2; }
 		}
 	| string2 ROP ob
 		{code(hoc_asgn_obj_to_str); hoc_opasgn_invalid($2); }

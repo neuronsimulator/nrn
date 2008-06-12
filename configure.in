@@ -199,6 +199,8 @@ SHOULD_TRUE_BE_DECLARED
 
 AM_CONDITIONAL(BUILD_CARBON, test x$enable_carbon = xyes)
 
+NRN_SRCDIR=$srcdir
+AC_SUBST(NRN_SRCDIR)
 dnl use the --enable-rpm-rules=yes
 RPM_RELEASE="`sh $srcdir/nrnversion.sh commit`"
 AC_SUBST(RPM_RELEASE)
@@ -455,6 +457,7 @@ AM_CONDITIONAL(BUILD_IVOS, test x$use_ivos = xyes)
 AM_CONDITIONAL(BUILD_PARANEURON, test x$use_paranrn = xyes)
 AM_CONDITIONAL(BUILD_CYGWIN, test x$build_cygwin = xyes)
 AM_CONDITIONAL(BUILD_NRNPYTHON, test x$build_nrnpython = xyes)
+AM_CONDITIONAL(BUILD_NRNPYTHON_DYNAMIC, test x$build_nrnpython_dynamic = xyes)
 
 dnl special problem work arounds
 AC_NRN_ODDITIES
@@ -535,6 +538,7 @@ AC_CONFIG_FILES([
 	src/mswin/bin/Makefile
 	share/Makefile bin/nrnoc_makefile bin/nrniv_makefile bin/nrnmech_makefile
 	share/lib/Makefile share/lib/hoc/Makefile share/lib/python/Makefile
+	share/lib/python/neuron/Makefile
 	share/lib/hoc/celbild/Makefile share/lib/hoc/mulfit/Makefile
 	share/lib/hoc/netbild/Makefile share/lib/hoc/lincir/Makefile
 	share/lib/hoc/mview/Makefile share/lib/hoc/chanbild/Makefile

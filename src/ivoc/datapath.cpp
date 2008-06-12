@@ -25,7 +25,6 @@ extern "C" {
 int bbs_poll_;
 void bbs_done(){}
 void bbs_handle(){}
-void nrnpython_start(int) {}
 void nrnbbs_context_wait(){}
 }
 

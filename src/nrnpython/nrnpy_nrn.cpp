@@ -55,6 +55,8 @@ extern int can_change_morph(Section*);
 extern void nrn_length_change(Section*, double);
 extern int diam_changed;
 extern void mech_insert1(Section*, int);
+PyObject* nrn_hocobj_ptr(double*);
+PyObject* nrnpy_forall(PyObject* self, PyObject* args);
 static void nrnpy_reg_mech(int);
 extern void (*nrnpy_reg_mech_p_)(int);
 static void nrnpy_unreg_mech(int);
@@ -267,6 +269,14 @@ static PyObject* NPySecObj_insert(NPySecObj* self, PyObject*  args) {
 	return (PyObject*)self;
 }
 
+PyObject* nrnpy_pushsec(PyObject* sec) {
+	if (PyObject_TypeCheck(sec, psection_type)) {
+		nrn_pushsec(((NPySecObj*)sec)->sec_);
+		return sec;
+	}
+	return NULL;
+}
+
 static PyObject* NPySecObj_push(NPySecObj* self, PyObject*  args) {
 	nrn_pushsec(self->sec_);
 	Py_INCREF(self);
@@ -447,10 +457,12 @@ static PyObject* segment_getattro(NPySegObj* self, PyObject* name) {
 		Prop* p = nrn_mechanism(type, nd);
 		if (!p) {
 			rv_noexist(self->pysec_->sec_, n, self->x_, 1);
+			Py_DECREF(name);
 			return NULL;
 		}	
 		NPyMechObj* m = PyObject_New(NPyMechObj, pmech_generic_type);
 		if (m == NULL) {
+			Py_DECREF(name);
 			return NULL;
 		}
 		m->pyseg_ = self;
@@ -469,9 +481,35 @@ static PyObject* segment_getattro(NPySegObj* self, PyObject* name) {
 			double* d = nrnpy_rangepointer(self->pysec_->sec_, sym, self->x_, &err);
 			if (!d) {
 				rv_noexist(self->pysec_->sec_, n, self->x_, err);
-				return NULL;
+				result = NULL;
+			}else{
+				result = Py_BuildValue("d", *d);
 			}
-			result = Py_BuildValue("d", *d);
+		}
+	}else if (strncmp(n, "_ref_", 5) == 0) {
+		if (strcmp(n+5, "v") == 0) {
+			Node* nd = node_exact(self->pysec_->sec_, self->x_);
+			result = nrn_hocobj_ptr(&(NODEV(nd)));
+		}else if ((sym = hoc_table_lookup(n+5, hoc_built_in_symlist)) != 0 && sym->type == RANGEVAR) {
+			if (ISARRAY(sym)) {
+				NPyRangeVar* r = PyObject_New(NPyRangeVar, range_type);
+				r->pyseg_ = self;
+				Py_INCREF(r->pyseg_);
+				r->sym_ = sym;
+				result = (PyObject*)r;
+			}else{
+				int err;
+				double* d = nrnpy_rangepointer(self->pysec_->sec_, sym, self->x_, &err);
+				if (!d) {
+					rv_noexist(self->pysec_->sec_, n+5, self->x_, err);
+					result = NULL;
+				}else{
+					result = nrn_hocobj_ptr(d);
+				}
+			}
+		}else{
+			rv_noexist(self->pysec_->sec_, n, self->x_, 2);
+			result = NULL;
 		}
 	}else{
 		result = PyObject_GenericGetAttr((PyObject*)self, name);
@@ -531,12 +569,17 @@ static PyObject* mech_getattro(NPyMechObj* self, PyObject* name) {
 	PyObject* result = 0;
 	NrnProperty np(self->prop_);	
 	char buf[200];
-	sprintf(buf, "%s_%s", n, memb_func[self->prop_->type].sym->name);
+	int isptr = (strncmp(n, "_ref_", 5) == 0);
+	sprintf(buf, "%s_%s", isptr?n+5:n, memb_func[self->prop_->type].sym->name);
 	Symbol* sym = np.find(buf);
 	if (sym) {
 //printf("mech_getattro sym %s\n", sym->name);
-		double x = *np.prop_pval(sym, 0);
-		result = Py_BuildValue("d", x);
+		double* px = np.prop_pval(sym, 0);
+		if (isptr) {
+			result = nrn_hocobj_ptr(px);
+		}else{
+			result = Py_BuildValue("d", *px);
+		}
 	}else{
 		result = PyObject_GenericGetAttr((PyObject*)self, name);
 	}
@@ -855,7 +898,8 @@ PyObject* nrnpy_cas(PyObject* self, PyObject* args) {
 }
 
 static PyMethodDef nrnpy_methods[] = {
-	{"cas", nrnpy_cas, METH_VARARGS, "Return the currently accesses section." },
+	{"cas", nrnpy_cas, METH_VARARGS, "Return the currently accessed section." },
+	{"all", nrnpy_forall, METH_VARARGS, "Return iterator over all sections." },
 	{NULL}
 };
 	

@@ -1,6 +1,7 @@
 neuronhomedir = $(prefix)/share/@PACKAGE@/lib
 neuronhomepythondir = $(neuronhomedir)/python
 
-neuronhomepython_DATA = neuron.py rdxml.py
+neuronhomepython_DATA = rdxml.py
 
+SUBDIRS = neuron
 EXTRA_DIST = $(neuronhomepython_DATA)

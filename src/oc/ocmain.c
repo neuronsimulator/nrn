@@ -110,7 +110,6 @@ void hoc_single_event_run() { /* for interviews, ivoc make use of own main */
 
 int run_til_stdin() {return 1;}
 void hoc_notify_value(){}
-void nrnpython_start(b) int b; {}
 
 #ifdef WIN32
 void ivcleanup() {}

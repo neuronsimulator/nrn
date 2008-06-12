@@ -67,6 +67,7 @@ int tstkchk_actual(i, j) int i, j; {
 			}
 		}
 		fprintf(stderr, "bad stack access: expecting %s; really %s\n", s[1], s[0]);
+abort();
 		execerror("interpreter stack type error", (char *)0);
 	}
 	return 0;
@@ -2611,7 +2612,7 @@ Code(f)		/* install one instruction or operand */
 	return codechk();
 }
 
-codei(f)
+Inst* codei(f)
 	int f;
 {
 	progp->i = f;

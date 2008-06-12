@@ -9,7 +9,7 @@
 
 extern "C" {
 #include <hocstr.h>
-void nrnpython();
+void nrnpython_real();
 void nrnpython_start(int);
 extern int hoc_get_line();
 extern HocStr* hoc_cbufstr;
@@ -37,6 +37,8 @@ void nrnpy_augment_path() {
 		sprintf(buf, "sys.path.append('%s/lib/python')", neuronhome_forward());
 		assert(PyRun_SimpleString("import sys") == 0);
 		assert(PyRun_SimpleString(buf) == 0);	
+		sprintf(buf, "sys.path.prepend('')");
+		assert(PyRun_SimpleString("sys.path.insert(0, '')") == 0);	
 	}
 }
 
@@ -93,7 +95,7 @@ void nrnpython_start(int b) {
 #endif
 }
 
-void nrnpython() {
+void nrnpython_real() {
 	int retval = 0;
 #if USE_PYTHON
 	retval = PyRun_SimpleString(gargstr(1)) == 0;

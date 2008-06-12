@@ -34,7 +34,7 @@ libnrniv_la_SOURCES = nrnmenu.cpp shape.cpp classreg.cpp rotate3d.cpp \
 	bbsrcli.cpp bbsdirect.cpp bbslsrv2.cpp bbssrv.cpp \
 	linmod.cpp linmod1.cpp cachevec.cpp \
 	kschan.cpp kssingle.cpp nonlinz.cpp finithnd.cpp nrnste.cpp \
-	nrnrtime.cpp \
+	nrnrtime.cpp nrnpy.cpp \
 	netpar.cpp partrans.cpp splitcell.cpp multisplit.cpp
 
 # The interviews includes must be before the X includes so that if a

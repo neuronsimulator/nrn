@@ -147,7 +147,7 @@ extern "C" {
 #endif
 #if defined(USE_PYTHON)
 	extern int use_python_interpreter;
-	extern void nrnpython_start(int);
+	extern void (*p_nrnpython_start)(int);
 #endif
 }
 
@@ -631,7 +631,12 @@ ENDGUI
 		//printf("PYTHONHOME %s\n", getenv("PYTHONHOME"));
 	}
 #endif
-	nrnpython_start(1);
+	//printf("p_nrnpython_start = %lx\n", p_nrnpython_start);
+	if (p_nrnpython_start) { (*p_nrnpython_start)(1); }
+	if (use_python_interpreter && !p_nrnpython_start) {
+		fprintf(stderr, "Python not available\n");
+		exit(1);
+	}
 #endif
 #if NRN_REALTIME
 	nrn_maintask_init();
@@ -653,9 +658,10 @@ ENDGUI
 PR_PROFILE
 #if defined(USE_PYTHON)
 	if (use_python_interpreter) {
-		nrnpython_start(2); // process the .py files and an interactive interpreter
+		// process the .py files and an interactive interpreter
+		if (p_nrnpython_start) {(*p_nrnpython_start)(2);}
 	}
-	nrnpython_start(0);
+	if (p_nrnpython_start) { (*p_nrnpython_start)(0); }
 #endif
 	hoc_final_exit();
 	ivoc_final_exit();

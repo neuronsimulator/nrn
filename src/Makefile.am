@@ -57,6 +57,20 @@ else
 nrnpythonbuild =
 endif
 
+if BUILD_NRNPYTHON_DYNAMIC
+#does not work with parallel make (-j)
+
+nrnpydynam = npy23 npy24 npy25
+
+all-recursive: npy25/Makefile
+
+npy25/Makefile: nrnpython/Makefile
+	sh $(srcdir)/nrnpython/nrnpydynam.sh $(srcdir) $(DEPDIR) $(host)
+
+else
+nrnpydynam =
+endif
+
 if BUILD_CYGWIN
 mos2nrnbuild =
 else
@@ -73,7 +87,7 @@ if NMODL_ONLY
 SUBDIRS = $(nmodlbuild)
 else
 SUBDIRS = $(readlinebuild) $(memacsbuild) $(nmodlbuild) $(NRNOC_SUBDIRS) \
-	$(nrnjavabuild) $(ivosbuild) $(nrnpythonbuild) \
+	$(nrnjavabuild) $(ivosbuild) $(nrnpythonbuild) $(nrnpydynam) \
 	$(build_6229) $(nrnivbuild) $(mos2nrnbuild) \
 	mac mswin
 endif

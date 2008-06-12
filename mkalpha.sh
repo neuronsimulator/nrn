@@ -71,6 +71,9 @@ fi
 #linux
 if test "$ostype" = "linux" ; then
 NOBJ=$HOME/neuron/nrn${type}rpm
+if ! -d $NOBJ ; then
+	mkdir $NOBJ
+fi
 cd $NOBJ
 which javac ; a=$?
 jarg=""
@@ -80,7 +83,7 @@ if test "$a" = 0 ; then
 fi
 $NSRC/configure --prefix=/usr/local/nrn --with-iv=/usr/local/iv \
 	--srcdir=$NSRC --enable-rpm-rules --disable-static \
-	--with-nrnpython $jarg
+	--with-nrnpython=dynamic $jarg
 make
 if test $? != 0 ; then
 	echo "make failed"
@@ -102,10 +105,16 @@ fi
 if test "$ostype" = "darwin" ; then
 NOBJ=$HOME/neuron/nrn${type}carbon
 IDIR=/Applications/NEURON-$NVER
+if ! -d $NOBJ ; then
+	mkdir $NOBJ
+fi
 cd $NOBJ
+#$NSRC/configure --prefix=$IDIR/nrn --srcdir=$NSRC \
+#	--with-iv=$IDIR/iv --enable-carbon --with-nrnpython \
+#	PYLIB=-lpython PYLIBLINK=-lpython --enable-UniversalMacBinary
 $NSRC/configure --prefix=$IDIR/nrn --srcdir=$NSRC \
-	--with-iv=$IDIR/iv --enable-carbon --with-nrnpython \
-	PYLIB=-lpython PYLIBLINK=-lpython --enable-UniversalMacBinary
+	--with-iv=$IDIR/iv --enable-carbon --with-nrnpython=dynamic \
+	--enable-UniversalMacBinary
 make
 if test $? != 0 ; then
 	echo "make failed"

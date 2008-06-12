@@ -38,6 +38,7 @@ Pfro p_java2nrn_ometh;
 #if USE_PYTHON
 Symbol* nrnpy_pyobj_sym_;
 void (*nrnpy_py2n_component)(Object* o, Symbol* s, int nindex, int isfunc);
+void (*nrnpy_hpoasgn)(Object* o, int type);
 #endif
 
 #if CABLE
@@ -605,12 +606,22 @@ hoc_newobj() { /* template at pc+1 */
 	
 	sym = (pc++)->sym;
 	narg = (pc++)->i;
-	obp = hoc_look_inside_stack(narg, OBJECTVAR)->pobj;
-	ob = hoc_newobj1(sym, narg);
-	hoc_nopop(); /* the object pointer */
-	hoc_dec_refcount(obp);
-	*(obp) = ob;
-	hoc_pushobj(obp);
+	/* look inside stack because of limited number of temporary objects? */
+	/* whatever. we will keep the strategy */
+	if (hoc_inside_stacktype(narg) == OBJECTVAR) {
+		obp = hoc_look_inside_stack(narg, OBJECTVAR)->pobj;
+		ob = hoc_newobj1(sym, narg);
+		hoc_nopop(); /* the object pointer */
+		hoc_dec_refcount(obp);
+		*(obp) = ob;
+		hoc_pushobj(obp);
+	}else{ /* PythonObject assignment */
+		Object* o = hoc_obj_look_inside_stack(narg);
+		assert(o->template->sym == nrnpy_pyobj_sym_);
+		ob = hoc_newobj1(sym, narg);
+		hoc_push_object(ob);
+		(*nrnpy_hpoasgn)(o, OBJECTTMP);
+	}
 }
 
 static call_constructor(ob, sym, narg)
@@ -1000,7 +1011,24 @@ hoc_execerror("[...](...) syntax only allowed for array range variables:", sym0-
 	if (obp) {
 #if USE_PYTHON
 		if (obp->template->sym == nrnpy_pyobj_sym_) {
-			(*nrnpy_py2n_component)(obp, sym0, nindex, isfunc);
+			extern int hoc_object_asgn();
+			if (isfunc & 2) {
+				/* this is the final left hand side of an
+				assignment to the method of a PythonObject
+				and we need to put the PythonObject and the
+				method with all its info onto the stack so that
+				a proper __setattro__ or __setitem__ can be
+				accomplished in the next hoc_object_asgn
+				*/
+				if (isfunc&1) {
+hoc_execerror("Cannot assign to a PythonObject function call:", sym0->name);
+				}
+				pushi(nindex);
+				pushs(sym0);
+				hoc_push_object(obp);
+			}else{
+				(*nrnpy_py2n_component)(obp, sym0, nindex, isfunc);
+			}
 			return;
 		}
 #endif
@@ -1368,6 +1396,18 @@ hoc_object_asgn() {
 		hoc_pushstr(pd);
 		}
 		break;
+#if USE_PYTHON
+	case OBJECTTMP: {   /* should be PythonObject */
+		Object* o;
+		o = hoc_obj_look_inside_stack(1);
+		assert(o->template->sym == nrnpy_pyobj_sym_);
+		if (op) {
+			hoc_execerror("Invalid assignment operator for PythonObject", (char*)0);
+		}
+		(*nrnpy_hpoasgn)(o, type1);
+		}
+		break;
+#endif
 	default:
 		hoc_execerror("Cannot assign to left hand side", (char*)0);
 	}

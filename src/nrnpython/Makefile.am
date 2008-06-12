@@ -1,5 +1,7 @@
 lib_LTLIBRARIES = libnrnpython.la
 
+EXTRA_DIST = nrnpydynam.sh
+
 nsrc=$(top_srcdir)/src
 DEFS = @DEFS@ @NRNPYTHON_DEFINES@
 NRNPYTHON_INCLUDES = @NRNPYTHON_INCLUDES@
@@ -24,22 +26,9 @@ libnrnpython_la_SOURCES = nrnpython.cpp nrnpy_hoc.cpp nrnpy_nrn.cpp \
 noinst_HEADERS = nrnpython.h nrnpy_reg.h
 
 if BUILD_NRNPYTHON
-pysrc = __init__.py
 BUILT_SOURCES = force setup.py
 force:
 	if test inithoc.cpp -ot $(nsrc)/nrnpython/inithoc.cpp ; then \
 		cp $(nsrc)/nrnpython/inithoc.cpp inithoc.cpp ; \
 	fi
-	if test ! -d neuron ; then \
-		mkdir neuron ; \
-	fi
-	for i in $(pysrc) ; do \
-		if test "$$i" = "__init__.py" ; then \
-			if test neuron/$$i -ot $(nsrc)/../share/lib/python/neuron.py ; then \
-cp $(nsrc)/../share/lib/python/neuron.py neuron/$$i ; \
-			fi ; \
-		elif test neuron/$$i -ot $(nsrc)/nrnpython/neuron/$$i ; then \
-			cp $(nsrc)/nrnpython/neuron/$$i neuron/$$i ; \
-		fi \
-	done
 endif

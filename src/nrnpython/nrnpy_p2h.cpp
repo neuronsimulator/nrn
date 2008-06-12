@@ -12,15 +12,29 @@ extern void hoc_nopop();
 extern void hoc_pop_defer();
 extern Object* hoc_new_object(Symbol*, void*);
 extern int hoc_stack_type();
+extern char** hoc_strpop();
+extern Object** hoc_objpop();
+extern Object* hoc_pop_object();
+extern void hoc_stkobj_unref(Object*);
+extern void hoc_tobj_unref(Object**);
+extern int hoc_ipop();
 PyObject* nrnpy_hoc2pyobject(Object*);
 Object* nrnpy_pyobject_in_obj(PyObject*);
 extern Symbol* nrnpy_pyobj_sym_;
 extern void (*nrnpy_py2n_component)(Object*, Symbol*, int, int);
+extern void (*nrnpy_hpoasgn)(Object*, int);
+
+void nrnpython_reg_real();
 PyObject* nrnpy_ho2po(Object*);
+void nrnpy_decref_defer(PyObject*);
+void nrnpy_decref_clear();
+
 Object* nrnpy_po2ho(PyObject*);
 static void py2n_component(Object*, Symbol*, int, int);
+static void hpoasgn(Object*, int);
 static PyObject* main_module;
 static PyObject* main_namespace;
+static hoc_List* dlist;
 }
 
 class Py2Nrn {
@@ -42,12 +56,14 @@ static void p_destruct(void* v) {
 
 Member_func p_members[] = {0,0};
 
-void nrnpython_reg() {
-//	printf("nrnpython_reg()\n");
+void nrnpython_reg_real() {
+	//printf("nrnpython_reg_real()\n");
 	class2oc("PythonObject", p_cons, p_destruct, p_members);
 	Symbol* s = hoc_lookup("PythonObject");
 	nrnpy_pyobj_sym_ = s;
 	nrnpy_py2n_component = py2n_component;
+	nrnpy_hpoasgn = hpoasgn;
+	dlist = hoc_l_newlist();
 }
 
 Py2Nrn::Py2Nrn() {
@@ -62,7 +78,15 @@ Py2Nrn::~Py2Nrn() {
 
 PyObject* nrnpy_hoc2pyobject(Object* ho) {
 	PyObject* po = ((Py2Nrn*)ho->u.this_pointer)->po_;
-	if (!po) { po = main_module; }
+	if (!po) {
+		if (!main_module) {
+			main_module = PyImport_AddModule("__main__");
+			main_namespace = PyModule_GetDict(main_module);
+			Py_INCREF(main_module);
+			Py_INCREF(main_namespace);
+		}
+		po = main_module;
+	}
 	return po;
 }
 
@@ -161,6 +185,7 @@ void py2n_component(Object* ob, Symbol* sym, int nindex, int isfunc) {
 		hoc_pop_defer();
 		hoc_pushstr(ts);
 		// how can we defer the result unref til the string is popped
+		nrnpy_decref_defer(result);
 	}else{
 //PyObject_Print(result, stdout, 0);
 //printf("\n");
@@ -178,3 +203,53 @@ void py2n_component(Object* ob, Symbol* sym, int nindex, int isfunc) {
 	Py_DECREF(tail);
 }
 
+static void hpoasgn(Object* o, int type) {
+	int nindex; Symbol* sym;
+	PyObject* poleft;
+	PyObject* poright;
+	if (type == NUMBER) {
+		poright = PyFloat_FromDouble(hoc_xpop());
+	}else if (type == STRING) {
+		poright = Py_BuildValue("s", *hoc_strpop());
+	}else if (type == OBJECTVAR || type == OBJECTTMP) {
+		Object** po2 = hoc_objpop();
+		poright = nrnpy_ho2po(*po2);
+		hoc_tobj_unref(po2);
+	}else{
+		hoc_execerror("Cannot assign that type to PythonObject", (char*)0);
+	}
+	assert(o == hoc_pop_object());
+	poleft = nrnpy_hoc2pyobject(o);
+	sym = hoc_spop();
+	nindex = hoc_ipop();
+//printf("hpoasgn %s %s %d\n", hoc_object_name(o), sym->name, nindex);
+	if (nindex == 0) {
+		PyObject_SetAttrString(poleft, sym->name, poright);
+	}
+	Py_DECREF(poright);
+	hoc_push_object(o);
+	hoc_stkobj_unref(o);
+}
+
+void nrnpy_decref_defer(PyObject* po) {
+	if (po) {
+#if 1
+		PyObject* ps = PyObject_Str(po);
+		printf("defer %s\n", PyString_AsString(ps));
+		Py_DECREF(ps);
+#endif
+		hoc_l_lappendvoid(dlist, (void*)po);
+	}
+}
+void nrnpy_decref_clear() {
+	while(dlist->next != dlist) {
+		PyObject* po = (PyObject*)VOIDITM(dlist->next);
+#if 1
+		PyObject* ps = PyObject_Str(po);
+		printf("decref %s\n", PyString_AsString(ps));
+		Py_DECREF(ps);
+#endif
+		Py_DECREF(po);
+		hoc_l_delete(dlist->next);
+	}
+}

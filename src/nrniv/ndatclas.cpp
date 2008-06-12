@@ -1,15 +1,8 @@
 #include <../../nrnconf.h>
-#include <../nrnpython/nrnpython_config.h>
 #include <stdio.h>
 #include <InterViews/resource.h>
 #include "nrnoc2iv.h"
 #include "classreg.h"
-
-#if !defined(USE_PYTHON)
-extern "C" {
-void nrnpython(){ret(0.);}
-}
-#endif
 
 extern "C" {
 #include "membfunc.h"
@@ -24,19 +17,6 @@ extern Symlist* hoc_top_level_symlist;
 extern void push_frame(Symbol*, int);
 extern void pop_frame();
 }
-
-// Stub class for when Python does not exist
-#if !defined(USE_PYTHON)
-static void* p_cons(Object*) {
-	return 0;
-}
-static void p_destruct(void* v) {
-}
-static Member_func p_members[] = {0,0};
-void nrnpython_reg() {
-	class2oc("PythonObject", p_cons, p_destruct, p_members);
-}
-#endif
 
 //----------------------------------------------------
 /* static */ class NrnPropertyImpl {

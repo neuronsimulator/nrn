@@ -6,6 +6,9 @@ import sys
 # NRNPYTHON_DEFINES which were enabled at configure time
 extern_defines = "@NRNPYTHON_DEFINES@"
 nrnpython_exec = "@NRNPYTHON_EXEC@"
+nrn_srcdir = "@NRN_SRCDIR@"
+if nrn_srcdir[0] != '/' :
+    nrn_srcdir = '../../' + nrn_srcdir
 
 if nrnpython_exec!=sys.executable:
     print "Error:"
@@ -121,6 +124,7 @@ hoc_module = Extension(
 
 setup(name="NEURON", version="6.0",
       description = "NEURON bindings for python",
+      package_dir = {'':nrn_srcdir+'/share/lib/python'},
       packages=['neuron'],
       ext_modules=[hoc_module]
 )

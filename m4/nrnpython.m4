@@ -65,9 +65,10 @@ AC_DEFUN([AC_NRN_PYTHON],[
 	NRNPYTHON_INCLUDES=""
 	NRNPYTHON_PYLIBLINK=""
 	build_nrnpython=no
+	build_nrnpython_dynamic=no
 
 	AC_ARG_WITH([nrnpython],
-		AC_HELP_STRING([--with-nrnpython=[desired python binary]],
+		AC_HELP_STRING([--with-nrnpython=[desired python binary or 'dynamic']],
 			[Python interpreter can be used (default is NO)
 Probably need to set PYLIBDIR to find libpython...
 and PYINCDIR to find Python.h
@@ -92,8 +93,11 @@ enabled.
 		ac_nrn_python="python"
 	fi
 
-	if test "$ac_nrn_python" != "no" ; then
-		
+	if test "$ac_nrn_python" = "dynamic" ; then
+		NRN_DEFINE(USE_PYTHON,1,[Define if Python available])
+		NRN_DEFINE(NRNPYTHON_DYNAMICLOAD,1,[Define if dynamic loading desired])
+		build_nrnpython_dynamic="yes"
+	elif test "$ac_nrn_python" != "no" ; then
 		ac_nrn_python=`which ${ac_nrn_python}`
 
 		if test "$ac_nrn_python" = "" ; then

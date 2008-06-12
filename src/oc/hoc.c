@@ -18,6 +18,7 @@
 
 #if defined(USE_PYTHON)
 int use_python_interpreter = 0;
+void (*p_nrnpython_start)();
 #endif
 
 #if carbon
@@ -996,14 +997,6 @@ hoc_quit() {
 #endif
 	hoc_final_exit();
 	ivoc_final_exit();
-#if defined(USE_PYTHON)
-	if (0 && (1 || use_python_interpreter)) {
-		nrnpython_start(3);
-		ret();
-		pushx(0.);
-		return;
-	}
-#endif
 	exit(0);
 }
 
