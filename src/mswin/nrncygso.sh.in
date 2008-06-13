@@ -34,6 +34,12 @@ find . -name \*.o -print | sed '
 /\/ocmain\.o/d
 /\/inithoc\.o/d
 ' > temp
+
+@BUILD_NRNPYTHON_TRUE@nrnpy='yes'
+@BUILD_NRNPYTHON_FALSE@nrnpy='no'
+@BUILD_NRNJAVA_TRUE@nrnjvm='yes'
+@BUILD_NRNJAVA_FALSE@nrnjvm='no'
+
 #sed 's,^.*/,,' temp |sort|uniq -d
 obj=`cat temp`
 
@@ -53,6 +59,7 @@ g++ -shared -nostdlib $obj \
   -Wl,--enable-auto-image-base \
   -Xlinker --out-implib -Xlinker mswin/libnrniv.dll.a
 
+if test $nrnpy = 'yes' ; then
 g++ -shared \
   nrnpython/.libs/inithoc.o \
   -L/cygdrive/c/Python25/libs -lpython25 \
@@ -62,10 +69,16 @@ g++ -shared \
   -Wl,--enable-auto-image-base \
   -Xlinker --out-implib -Xlinker mswin/libhocmodule.dll.a
 
+LHOCMODULE='-lhocmodule'
+else
+LHOCMODULE=''
+fi
+
 cd mswin
 g++ -g -O2 -mwindows -e _mainCRTStartup -o nrniv.exe \
   ../ivoc/nrnmain.o ../oc/modlreg.o \
-  -L. -lnrniv -lhocmodule \
+  -L. -lnrniv \
+  $LHOCMODULE \
   -lncurses \
   -L${IVLIBDIR} -lIVhines \
   -lgdi32 -lcomdlg32 \

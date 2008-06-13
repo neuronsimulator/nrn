@@ -53,7 +53,11 @@ NVER="`sh nrnversion.sh`"
 
 #mswin
 if test "$ostype" = "cygwin" ; then
-cd ../nrnobj
+NOBJ=$HOME/neuron/nrn${type}setup
+if ! -d $NOBJ ; then
+	mkdir $NOBJ
+fi
+cd $NOBJ
 ../nrn/configure --prefix=`pwd` --with-nrnpython --srcdir=../nrn
 make
 if test $? != 0 ; then
