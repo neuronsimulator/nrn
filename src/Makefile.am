@@ -57,10 +57,12 @@ else
 nrnpythonbuild =
 endif
 
+npydir = npy23 npy24 npy25
+
 if BUILD_NRNPYTHON_DYNAMIC
 #does not work with parallel make (-j)
 
-nrnpydynam = npy23 npy24 npy25
+nrnpydynam = $(npydir)
 
 all-recursive: npy25/Makefile
 
@@ -95,3 +97,10 @@ endif
 DIST_SUBDIRS = $(MEMACS_SUBDIRS) $(READLINE_SUBDIRS) $(NMODL_SUBDIRS) $(NRNOC_SUBDIRS) \
 	$(NRNJAVA_SUBDIRS) $(NRNIV_SUBDIRS) $(IVOS_SUBDIRS) \
 	$(NRNPYTHON_SUBDIRS) mswin uxnrnbbs mac ni_pci_6229
+
+dist-hook: $(npydir)
+	for subdir in $(npydir) ; do \
+		test -d "$(distdir)/$$subdir" \
+		|| $(mkdir_p) "$(distdir)/$$subdir" \
+		|| exit 1; \
+	done
