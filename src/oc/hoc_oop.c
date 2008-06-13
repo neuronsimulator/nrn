@@ -606,15 +606,18 @@ hoc_newobj() { /* template at pc+1 */
 	
 	sym = (pc++)->sym;
 	narg = (pc++)->i;
+#if USE_PYTHON
 	/* look inside stack because of limited number of temporary objects? */
 	/* whatever. we will keep the strategy */
 	if (hoc_inside_stacktype(narg) == OBJECTVAR) {
+#endif
 		obp = hoc_look_inside_stack(narg, OBJECTVAR)->pobj;
 		ob = hoc_newobj1(sym, narg);
 		hoc_nopop(); /* the object pointer */
 		hoc_dec_refcount(obp);
 		*(obp) = ob;
 		hoc_pushobj(obp);
+#if USE_PYTHON
 	}else{ /* PythonObject assignment */
 		Object* o = hoc_obj_look_inside_stack(narg);
 		assert(o->template->sym == nrnpy_pyobj_sym_);
@@ -622,6 +625,7 @@ hoc_newobj() { /* template at pc+1 */
 		hoc_push_object(ob);
 		(*nrnpy_hpoasgn)(o, OBJECTTMP);
 	}
+#endif
 }
 
 static call_constructor(ob, sym, narg)
