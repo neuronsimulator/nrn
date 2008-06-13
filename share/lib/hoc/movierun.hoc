@@ -1,6 +1,6 @@
 movie_frame_dur_ = .01
 {variable_domain(&movie_frame_dur_, .001, 1e9) units(&movie_frame_dur_, "s")}
-objref movie_timer
+objref movie_timer, movierunbox
 proc moviestep() {
 	steprun()
 	realtime = startsw() - rtstart
@@ -18,10 +18,27 @@ proc movierun() {
 	movie_timer.start
 }
 
-proc movierunpanel() {
+proc movierunpanel() {localobj b
 	movie_timer = new Timer("moviestep()")
+	b = new VBox(3)
+	movierunbox = b
+	b.save("movierunsave()")
+	b.intercept(1)
 	xpanel("Movie Run")
 	xbutton("Init & Run", "movierun()")
 	xpvalue("Seconds per step", &movie_frame_dur_, 1)
-	xpanel(400, 300)
+	xpanel()
+	b.intercept(0)
+	if (numarg() == 0) {
+		b.map("Movie Run", 400, 300, 280, 85)
+	}
+}
+
+proc movierunsave() {localobj b, s
+	b = movierunbox
+	s = new String()
+	sprint(s.s, "movie_frame_dur_ = %g\n", movie_frame_dur_)
+	b.save(s.s)
+	b.save("movierunpanel(0)")
+	b.save("ocbox_ = movierunbox")	
 }
