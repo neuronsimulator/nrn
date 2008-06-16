@@ -43,6 +43,7 @@ extern int tree_changed;
 extern int diam_changed;
 extern int state_discon_allowed_;
 extern double hoc_epsilon;
+extern void nrncvode_set_t(double t);
 #if 0
 /*
   1 to save space, but must worry about other uses of the memb_list
@@ -487,6 +488,9 @@ finitialize() {
 #else
 	t = 0.;
 #endif
+	if (cvode_active_) {
+		nrncvode_set_t(t);
+	}
 	clear_event_queue();
 #if NRNMPI
 	nrn_spike_exchange_init();

@@ -15,6 +15,7 @@ class Cvode;
 extern "C" {
 void cvode_fadvance(double);
 void cvode_finitialize();
+void nrncvode_set_t(double);
 boolean at_time(double);
 
 extern double dt, t;
@@ -129,3 +130,13 @@ boolean at_time(double te) {
 	}
 	return 0;
 }
+
+void nrncvode_set_t(double tt) {
+	NetCvode* nc = net_cvode_instance;
+	int n = nc->nlist();
+	for (int i=0; i < n; ++i) {
+		Cvode& cv = nc->list()[i];
+		cv.tn_ = cv.t_ = cv.t0_ = tt;
+	}
+}
+
