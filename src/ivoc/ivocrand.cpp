@@ -357,7 +357,7 @@ static double r_normal(void* r)
   double a1 = *getarg(1);
   double a2 = *getarg(2);
   delete x->rand;
-  x->rand = new Normal(a2, a2, x->gen);
+  x->rand = new Normal(a1, a2, x->gen);
   return (*(x->rand))();
 }
 
