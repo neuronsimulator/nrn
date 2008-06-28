@@ -391,6 +391,7 @@ objref gengui_, genguibox_
 objref usepanelbox_
 
 proc init() {
+	busy = 0
 	pf = $o1
 	mulfit = $o2
 	build()
@@ -669,11 +670,13 @@ proc addarg() {
 }
 
 proc gensel() {local i
+	if (busy) { return }
+	busy = 1
 	i = $1
 	if (gmode == 1) { // display
 		gengui(i)
 	}
-	if ($2 == 0) return
+	if ($2 == 0) { busy = 0 return}
 	if (gmode == 2) { // use toggle
 		tobj = pf.generatorlist.object(i)
 		tobj.toggle()
@@ -705,6 +708,7 @@ proc gensel() {local i
 		pf.generatorlist.insrt(i+1, new GenInfo(tobj))
 		dgen()
 	}
+	busy = 0
 }
 
 proc gengui() {local i
