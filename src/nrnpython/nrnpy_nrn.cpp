@@ -55,8 +55,8 @@ extern int can_change_morph(Section*);
 extern void nrn_length_change(Section*, double);
 extern int diam_changed;
 extern void mech_insert1(Section*, int);
-PyObject* nrn_hocobj_ptr(double*);
-PyObject* nrnpy_forall(PyObject* self, PyObject* args);
+extern PyObject* nrn_hocobj_ptr(double*);
+extern PyObject* nrnpy_forall(PyObject* self, PyObject* args);
 static void nrnpy_reg_mech(int);
 extern void (*nrnpy_reg_mech_p_)(int);
 static void nrnpy_unreg_mech(int);
@@ -101,7 +101,7 @@ static void NPyMechObj_dealloc(NPyMechObj* self) {
 // (with a filled in Symbol) the nrnoc section will continue to exist as long
 // as 
 // 
-static PyObject* NPySecObj_new(PyTypeObject* type, PyObject* args, PyObject* kwds) {
+PyObject* NPySecObj_new(PyTypeObject* type, PyObject* args, PyObject* kwds) {
 	NPySecObj* self;
 	self = (NPySecObj*)type->tp_alloc(type, 0);
 //printf("NPySecObj_new %lx\n", (long)self);
@@ -109,6 +109,10 @@ static PyObject* NPySecObj_new(PyTypeObject* type, PyObject* args, PyObject* kwd
 		self->sec_ = nrnpy_newsection(self);
 	}
 	return (PyObject*)self;
+}
+
+PyObject* nrnpy_newsecobj(PyObject* args, PyObject* kwds) {
+	return NPySecObj_new(psection_type, args, kwds);
 }
 
 static PyObject* NPySegObj_new(PyTypeObject* type, PyObject* args, PyObject* kwds) {
@@ -899,7 +903,7 @@ PyObject* nrnpy_cas(PyObject* self, PyObject* args) {
 
 static PyMethodDef nrnpy_methods[] = {
 	{"cas", nrnpy_cas, METH_VARARGS, "Return the currently accessed section." },
-	{"all", nrnpy_forall, METH_VARARGS, "Return iterator over all sections." },
+	{"allsec", nrnpy_forall, METH_VARARGS, "Return iterator over all sections." },
 	{NULL}
 };
 	

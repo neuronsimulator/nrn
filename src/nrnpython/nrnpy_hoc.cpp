@@ -43,6 +43,8 @@ extern PyObject* nrnpy_pushsec(PyObject*);
 extern boolean hoc_valid_stmt(const char*, Object*);
 myPyMODINIT_FUNC nrnpy_nrn();
 extern PyObject* nrnpy_cas(PyObject*, PyObject*);
+extern PyObject* nrnpy_forall(PyObject*, PyObject*);
+extern PyObject* nrnpy_newsecobj(PyObject*, PyObject*);
 extern int section_object_seen;
 extern Symbol* nrnpy_pyobj_sym_;
 extern Symbol* nrn_child_sym;
@@ -1102,7 +1104,7 @@ PyObject* nrnpy_forall(PyObject* self, PyObject* args) {
 }
 
 static PyObject* hocobj_iter(PyObject* self) {
-	//printf("hocobj_iter %lx\n", (long)self);
+//	printf("hocobj_iter %lx\n", (long)self);
 	PyHocObject* po = (PyHocObject*)self;
 	if (po->type_ == 1) {
 		if (po->ho_->ctemplate == hoc_vec_template_) {
@@ -1651,26 +1653,22 @@ static int hocobj_tonumpy(PyObject* self, PyObject* args) {
   }
 
 }
+#endif //WITH_NUMPY
 
-
-
-
-static PyMethodDef hocobj_methods[] = {
-  {"toarray",hocobj_tonumpy,METH_VARARGS,"toarray(self) returns a numpy array of self."},
-  {NULL, NULL, 0, NULL}
-};
-
-
-#else
 
 static PyMethodDef hocobj_methods[] = {
 	{"ref", mkref, METH_VARARGS, "Wrap to allow call by reference in a hoc function"},
 	{"baseattr", hocobj_baseattr, METH_VARARGS, "To allow use of an overrided base method"},
+	{"cas", nrnpy_cas, METH_VARARGS, "Return the currently accessed section." },
+	{"allsec", nrnpy_forall, METH_VARARGS, "Return iterator over all sections." },
+	{"Section", nrnpy_newsecobj, METH_VARARGS, "Return a new Section" },
+#if WITH_NUMPY
+	{"toarray",hocobj_tonumpy,METH_VARARGS,"toarray(self) returns a numpy array of self."},
+#endif
 	{NULL, NULL, 0, NULL}
 };
 
 
-#endif //WITH_NUMPY
 
 
 static PyMemberDef hocobj_members[] = {
