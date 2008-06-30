@@ -46,7 +46,7 @@ int main(int argc, char** argv) {
 	mkfile(farg);
 
 	termcmd = (char*)malloc(strlen(instdir) + 100);
-	sprintf(termcmd, "open \"%s/nrn/%s/bin/macnrn.term\"", instdir, cpu);
+	sprintf(termcmd, "/usr/bin/open \"%s/nrn/%s/bin/macnrn.term\"", instdir, cpu);
 	system(termcmd);
 
 	return 0;
