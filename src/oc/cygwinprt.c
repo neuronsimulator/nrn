@@ -1,5 +1,6 @@
 #include <../../nrnconf.h>
 #include <errno.h>
+#include <unistd.h>
 #if defined(CYGWIN)
 
 #if !defined(__MINGW32__)
@@ -7,6 +8,11 @@
 #endif
 
 #include "mswinprt.c"
+
+loff_t lseek64(int fd, loff_t offset, int whence) {
+	fprintf(stderr, "called lseek64\n");
+	abort();
+}
 
 /* mingw does not have dlfcn.h */
 #if !defined(HAVE_DLFCN_H) || defined(__MINGW32__)

@@ -76,6 +76,14 @@ gspec=`gcc -v 2>&1 | sed -n '/^Reading specs/{
 }'`
 cp $gspec/cc1.exe $D/bin
 
+# in case this is an mpi version distribute the appropriate adminsitrative tools.
+mpichbin=/home/hines/mpich2-1.0.7/bin
+if grep '^mpicc=mpicc' $B/src/mswin/nrncygso.sh ; then
+	for i in mpdboot mpdtrace mpdexit mpdallexit mpdcleanup mpd mpiexec mpdlib.py ; do
+		cp $mpichbin/$i $D/bin
+	done
+fi
+
 # figure out which dll's need to be distributed
 (cd $D/bin
 rm -f temp.tmp

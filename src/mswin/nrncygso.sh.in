@@ -35,6 +35,35 @@ find . -name \*.o -print | sed '
 /\/inithoc\.o/d
 ' > temp
 
+mpicc=@MPICC@
+
+if test "$mpicc" = "mpicc" ; then
+mpich=/home/Hines/mpich2-1.0.7
+# mpich configured and made with
+#./configure '--prefix=/home/Hines/mpich2' '--with-device=ch3:nemesis' \
+#  'pac_cv_f77_sizeof_integer=4' 'pac_cv_f77_sizeof_double_precision=8' \
+#  'CFLAGS=-DDLL_EXPORT -DPIC' 'CXXFLAGS=-DDLL_EXPORT -DPIC'
+#make >& build.stdout
+# did not do a make install
+
+awk '
+/Entering directory/ { d = $4 }
+/ar cr/ { for (i=4; i <= NF; ++i) {
+	printf("%s/%s\n", d, $i)
+}}
+' $mpich/build.stdout | sed "s/'//
+	s/\`//
+	/\.no$/d
+	/\.po$/d
+	/\/c++\//d
+	/\/mpe2\//d
+	/\/binding\/f77\//d
+	"'$a \
+/home/Hines/mpich2-1.0.7/src/binding/f77/setbot.o
+' >> temp
+
+fi
+
 @BUILD_NRNPYTHON_TRUE@nrnpy='yes'
 @BUILD_NRNPYTHON_FALSE@nrnpy='no'
 @BUILD_NRNJAVA_TRUE@nrnjvm='yes'
@@ -43,12 +72,14 @@ find . -name \*.o -print | sed '
 #sed 's,^.*/,,' temp |sort|uniq -d
 obj=`cat temp`
 
+CXX=gcc
+
 echo ${IVLIBDIR}
 echo ${CFLAGS}
 
 if test "$CFLAGS" != "-mno-cygwin" ; then
 
-g++ -shared -nostdlib $obj \
+$CXX -shared -nostdlib $obj \
   -L${IVLIBDIR} -lIVhines \
   -L/usr/lib/gcc/i686-pc-cygwin/3.4.4 -lstdc++ -lgcc \
   -lcygwin -luser32 -lkernel32 -ladvapi32 -lshell32 \
@@ -60,7 +91,7 @@ g++ -shared -nostdlib $obj \
   -Xlinker --out-implib -Xlinker mswin/libnrniv.dll.a
 
 if test $nrnpy = 'yes' ; then
-g++ -shared \
+$CXX -shared \
   nrnpython/.libs/inithoc.o \
   -L/cygdrive/c/Python25/libs -lpython25 \
   -Lmswin -lnrniv \
@@ -75,25 +106,25 @@ LHOCMODULE=''
 fi
 
 cd mswin
-g++ -g -O2 -mwindows -e _mainCRTStartup -o nrniv.exe \
+$CXX -g -O2 -mwindows -e _mainCRTStartup -o nrniv.exe \
   ../ivoc/nrnmain.o ../oc/modlreg.o \
   -L. -lnrniv \
   $LHOCMODULE \
   -lncurses \
   -L${IVLIBDIR} -lIVhines \
-  -lgdi32 -lcomdlg32 \
+  -lstdc++ -lgdi32 -lcomdlg32 \
   @NRNPYTHON_PYLIBLINK@
 
 else
 
-g++ -shared -mno-cygwin $obj \
+$CXX -shared -mno-cygwin $obj \
   $LIBS \
   @NRNPYTHON_PYLIBLINK@ \
   -o mswin/nrniv.dll \
   -Wl,--enable-auto-image-base \
   -Xlinker --out-implib -Xlinker mswin/libnrniv.dll.a
 
-g++ -shared -mno-cygwin \
+$CXX -shared -mno-cygwin \
   nrnpython/.libs/inithoc.o \
   @NRNPYTHON_PYLIBLINK@ \
   -Lmswin -lnrniv \
@@ -102,7 +133,7 @@ g++ -shared -mno-cygwin \
   -Xlinker --out-implib -Xlinker mswin/libhocmodule.dll.a
 
 cd mswin
-g++ -g -O2 -mno-cygwin -e _mainCRTStartup -o nrniv.exe \
+$CXX -g -O2 -mno-cygwin -e _mainCRTStartup -o nrniv.exe \
   ../ivoc/nrnmain.o ../oc/modlreg.o \
   -L. -lnrniv \
   @NRNPYTHON_PYLIBLINK@
