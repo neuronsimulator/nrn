@@ -79,9 +79,14 @@ cp $gspec/cc1.exe $D/bin
 # in case this is an mpi version distribute the appropriate adminsitrative tools.
 mpichbin=/home/hines/mpich2-1.0.7/bin
 if grep '^mpicc=mpicc' $B/src/mswin/nrncygso.sh ; then
-	for i in mpdboot mpdtrace mpdexit mpdallexit mpdcleanup mpd mpiexec mpdlib.py ; do
-		cp $mpichbin/$i $D/bin
+	cp /bin/python2.5 $D/bin
+	for i in mpdboot mpdtrace mpdexit mpdallexit mpdcleanup mpd \
+	  mpiexec mpdman.py mpdlib.py ; do
+		sed '1s/\/usr\/bin\/env //' $mpichbin/$i > $D/bin/$i
+		chmod 755 $D/bin/$i
 	done
+	echo 'MPD_SECRETWORD=neuron' > $D/mpd.conf
+	chmod 600 $D/mpd.conf
 fi
 
 # figure out which dll's need to be distributed
@@ -91,6 +96,14 @@ for i in *.exe ; do
 	cygcheck ./$i | sed 's/^ *//' >> temp.tmp
 done
 )
+# do not forget the ones used by the python dlls
+if false ; then
+# too many, putting duplicates in bin, setup is 13.69MB, only cygcrypto below
+for i in /lib/python2.5/lib-dynload/*.dll ; do
+	cygcheck $i | sed 's/^ *//' >> $D/bin/temp.tmp
+done
+fi
+
 for i in ` sort $D/bin/temp.tmp | uniq | sed '
 	/WINDOWS/d
 	/\.exe/d
@@ -107,6 +120,11 @@ for i in \
  libW11.dll \
  ; do
  cp /usr/bin/$i $D/bin/$i
+done
+for i in \
+ /usr/bin/cygcrypto-0.9.8.dll \
+ ; do
+ cp $i $D/bin
 done
 
 mkdir $D/lib/x
