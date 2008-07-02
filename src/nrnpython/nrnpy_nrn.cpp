@@ -57,8 +57,12 @@ extern int diam_changed;
 extern void mech_insert1(Section*, int);
 extern PyObject* nrn_hocobj_ptr(double*);
 extern PyObject* nrnpy_forall(PyObject* self, PyObject* args);
+extern Symbol* nrnpy_pyobj_sym_;
+extern PyObject* nrnpy_hoc2pyobject(Object*);
 static void nrnpy_reg_mech(int);
 extern void (*nrnpy_reg_mech_p_)(int);
+static void o2loc(Object*, Section**, double*);
+extern void (*nrnpy_o2loc_p_)(Object*, Section**, double*);
 static void nrnpy_unreg_mech(int);
 
 
@@ -191,6 +195,19 @@ static int NPySegObj_init(NPySegObj* self, PyObject* args, PyObject* kwds) {
 	self->pysec_ = pysec;
 	self->x_ = x;
 	return 0;
+}
+
+static void o2loc(Object* o, Section** psec, double* px) {
+	if (o->ctemplate->sym != nrnpy_pyobj_sym_) {
+		hoc_execerror("not a Python nrn.Segment", 0);
+	}
+	PyObject* po = nrnpy_hoc2pyobject(o);
+	if (!PyObject_TypeCheck(po, psegment_type)) {
+		hoc_execerror("not a Python nrn.Segment", 0);
+	}
+	NPySegObj* pyseg = (NPySegObj*)po;
+	*psec = pyseg->pysec_->sec_;
+	*px =  pyseg->x_;
 }
 
 static int NPyMechObj_init(NPyMechObj* self, PyObject* args, PyObject* kwds) {
@@ -690,6 +707,7 @@ static PyMethodDef NPySegObj_methods[] = {
 static PyMemberDef NPySegObj_members[] = {
 	{"x", T_DOUBLE, offsetof(NPySegObj, x_), 0, 
 	 "location in the section (segment containing x)"},
+	{"sec", T_OBJECT_EX, offsetof(NPySegObj, pysec_), 0, "Section"},
 	{NULL}
 };
 
@@ -950,6 +968,7 @@ myPyMODINIT_FUNC nrnpy_nrn(void)
 	nrnpy_reg_mech(i);
     }
     nrnpy_reg_mech_p_ = nrnpy_reg_mech;
+    nrnpy_o2loc_p_ = o2loc;
 #endif
 }
 

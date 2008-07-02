@@ -22,6 +22,7 @@ static free_one_point();
 static void create_artcell_prop(Point_process* pnt, short type);
 
 Prop* nrn_point_prop_;
+void (*nrnpy_o2loc_p_)(Object*, Section**, double*);
 
 void* create_point_process(pointtype, ho)
 	int pointtype;
@@ -189,18 +190,31 @@ double loc_point_process(pointtype, v)
 	int pointtype;
 	void* v;
 {
+	extern int hoc_is_double_arg();
+	extern double chkarg();
+	extern Object** hoc_objgetarg();
 	Point_process* pnt = (Point_process*)v;
-	double x, chkarg();
+	double x;
 	Section *sec;
 	Node *node, *node_exact();
 	
 	if (nrn_is_artificial_[pointsym[pointtype]->subtype]) {
 		hoc_execerror("ARTIFICIAL_CELLs are not located in a section", (char*)0);
 	}
-	x = chkarg(1, 0., 1.);
-	sec = chk_access();
+	if (hoc_is_double_arg(1)) {
+		x = chkarg(1, 0., 1.);
+		sec = chk_access();
+	}else{
+		Object* o = *hoc_objgetarg(1);			
+		sec = (Section*)0;
+		if (nrnpy_o2loc_p_) {
+			(*nrnpy_o2loc_p_)(o, &sec, &x);
+		}
+		if (!sec) {
+			assert(0);
+		}
+	}
 	node = node_exact(sec, x);
-	
 	nrn_loc_point_process(pointtype, pnt, sec, node);
 	return x;
 }
