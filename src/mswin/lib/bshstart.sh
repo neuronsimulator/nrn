@@ -1,8 +1,10 @@
 #!/bin/sh
 N=`pwd`
 PATH=$N/bin:$PATH
+MPD_CONF_FILE=$N/mpd.conf
 export N
 export PATH
+export MPD_CONF_FILE
 #to avoid bash warning, create /tmp if it does not exist
 if test ! -e /tmp ; then
 	a=`cygpath --mixed /tmp`
