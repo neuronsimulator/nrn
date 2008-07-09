@@ -748,6 +748,7 @@ Object** BBS::gid_connect(int gid) {
 	if (!is_point_process(target)) {
 		hoc_execerror("arg 2 must be a point process", 0);
 	}
+	alloc_space();
 	PreSyn* ps;
 	if (gid2out_->find(gid, ps)) {
 		// the gid is owned by this machine so connect directly
