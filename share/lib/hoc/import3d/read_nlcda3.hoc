@@ -24,12 +24,21 @@ proc init() {
 endtemplate Branch2SomaInfo
 
 begintemplate Import3d_LexToken
-public token, x, s, itok, iline
+public token, x, s, itok, iline, clone
 strdef s
 token = 0
 x = 0
 itok = 0
 iline = 0
+obfunc clone() { localobj r
+	r = new Import3d_LexToken()
+	r.s = s
+	r.token = token
+	r.x = x
+	r.itok = itok
+	r.iline = iline
+	return r
+}
 endtemplate Import3d_LexToken
 
 begintemplate Import3d_Neurolucida3
@@ -544,7 +553,48 @@ proc rdfile() {local i
 	file.close
 }
 
-proc read_next_token() {localobj tobj
+objref rollback
+
+proc save_for_rollback() {
+	if (object_id(rollback)) {
+		printf("rollback in use\n")
+		p_err()
+	}
+	rollback = new List()
+	rollback.append(current.clone())
+	rollback.append(look_ahead.clone())
+	rollback.append(look_ahead2.clone())
+	use_rollback_ = 0
+}
+proc use_rollback() {
+	use_rollback_ = 1
+	current = rollback.o(0) rollback.remove(0)
+	look_ahead = rollback.o(0) rollback.remove(0)
+	look_ahead2 = rollback.o(0) rollback.remove(0)
+	if (rollback.count == 0) {clear_rollback()}
+}
+proc clear_rollback() {localobj nil
+	rollback = nil
+	use_rollback_ = 0
+}
+
+proc read_next_token() {
+	if (use_rollback_) {
+		current = look_ahead
+		look_ahead = look_ahead2
+		look_ahead2 = rollback.o(0)
+		rollback.remove(0)
+		if (rollback.count == 0) {
+			clear_rollback()
+		}
+	}else{
+		read_next_token_lex()
+		if (object_id(rollback)){
+			rollback.append(look_ahead2.clone())
+		}
+	}
+}
+proc read_next_token_lex() {localobj tobj
 	tobj = current
 	current = look_ahead
 	look_ahead = look_ahead2
@@ -751,7 +801,13 @@ proc tree_or_text() {
 	// read the first point (Branch currently assumes it is supposed
 	// to read the first point of the tree.)
 	enter("tree_or_text")
-	tree()
+	save_for_rollback()
+	if (text()) {
+		clear_rollback()
+	}else{
+		use_rollback()
+		tree()
+	}
 	leave("tree_or_text")
 }
 proc properties() {
@@ -846,20 +902,26 @@ proc p_set() {
 	read_next_token()
 	leave("p_set")
 }
-proc contour() {local begin, end, keep
+proc contour() {local begin, end, keep, il
 	enter("contour")
 	chk(leftpar)
 	begin = x.size
 	keep = 0
 	demand(string)
 	if (strcmp(current.s, "CellBody") == 0) { keep = 1 }
+	il = current.iline
 	read_next_token()
 	contourinfo()
 	if (keep) {
 		end = x.size
+	    if (end - begin > 2) {
 		sectype = 1
 		newsec(begin, end)
 		cursec.iscontour_ = 1
+	    }else{
+sprint(tstr, "CellBody contour has less than three points at line %d. Ignoring.", il)
+		b2serr.append(new String(tstr))
+	    }
 	}
 	chk(rightpar)
 	read_next_token() 
@@ -1006,14 +1068,26 @@ proc marker() {
 	chk(rightpar) read_next_token()
 	leave("marker")
 }
-proc text() {
+func text() {
+	// if text fails then it may be a tree
 	enter("text")
 	chk(leftpar) read_next_token()
 	properties() point()
+	if (current.token != string) {
+		leave("text invalid --- expect string")
+		return 0
+	}
 	chk(string)
-	demand(rightpar)
+//	demand(rightpar)
+	read_next_token()
+	if (current.token != rightpar) {
+		leave("text invalid --- expect rightpar")
+		return 0
+	}
+	chk(rightpar)
 	read_next_token()
 	leave("text")
+	return 1
 }
 proc points() {
 	enter("points")
