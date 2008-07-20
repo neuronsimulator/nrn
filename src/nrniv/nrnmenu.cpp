@@ -1033,19 +1033,14 @@ Point_process* MechanismType::pp_begin() {
 		hoc_execerror("Not a MechanismType(1)", 0);
 	}
 	mti_->sec_iter_ = chk_access();
-	if (mti_->sec_iter_->parentsec) {
+	mti_->p_iter_ = 0;
+	if (mti_->sec_iter_->parentnode) {
+		mti_->inode_iter_ = -1;
+		mti_->p_iter_ = mti_->sec_iter_->parentnode->prop;
+	}
+	if (!mti_->p_iter_) {
 		mti_->inode_iter_ = 0;
 		mti_->p_iter_ = mti_->sec_iter_->pnode[0]->prop;
-	}else{
-		mti_->p_iter_ = 0;
-		if (mti_->sec_iter_->parentnode) {
-			mti_->inode_iter_ = -1;
-			mti_->p_iter_ = mti_->sec_iter_->parentnode->prop;
-		}
-		if (!mti_->p_iter_) {
-			mti_->inode_iter_ = 0;
-			mti_->p_iter_ = mti_->sec_iter_->pnode[0]->prop;
-		}
 	}
 	Point_process* pp = pp_next(); // note that p_iter is the one looked at and then incremented
 	return pp;
@@ -1058,6 +1053,11 @@ Point_process* MechanismType::pp_next() {
 		if (mti_->p_iter_->type == mti_->type_[mti_->select_]) {
 			pp = (Point_process*)mti_->p_iter_->dparam[1]._pvoid;
 			done = true;
+			// but if it does not belong to this section
+			if (pp->sec != mti_->sec_iter_) {
+				pp = nil;
+				done = false;
+			}
 		}
 		mti_->p_iter_ = mti_->p_iter_->next;
 		while (!mti_->p_iter_) {
