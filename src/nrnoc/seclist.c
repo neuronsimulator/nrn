@@ -102,6 +102,21 @@ static double wholetree(v) void* v;
 	return 1.;
 }
 
+static double allroots(v) void* v;
+{
+	List* sl;
+	Item* qsec;
+	sl = (List*)v;
+	ForAllSections(sec)
+		if (!sec->parentsec) {
+			lappendsec(sl, sec);
+			section_ref(sec);
+		}
+	}
+
+	return 1.;
+}
+
 static double seclist_remove(v) void* v;
 {
 	Section* sec, *s;
@@ -206,6 +221,7 @@ static struct Member_func {char* name; double (*func)();} members[] = {
 	"unique", unique,
 	"printnames", printnames,
 	"contains", contains,
+	"allroots", allroots,
 	0,0
 };
 
