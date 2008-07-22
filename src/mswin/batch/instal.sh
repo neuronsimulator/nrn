@@ -61,7 +61,7 @@ for i in \
  cpp.exe cygpath.exe dirname.exe echo.exe find.exe gcc.exe \
  grep.exe ld.exe ls.exe make.exe mkdir.exe \
  nm.exe rm.exe mv.exe sed.exe bash.exe unzip.exe \
- rxvt.exe \
+ rxvt.exe rebase.exe \
  ; do
  cp /usr/bin/$i $D/bin/$i
 done

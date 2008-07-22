@@ -63,6 +63,7 @@ mod_func.o: mod_func.c
 nrnmech.dll: mod_func.o $(MODOBJFILES)
 	gcc $(EXTRA_FLAGS) -shared -o nrnmech.dll mod_func.o $(MODOBJFILES) \
   -L$N/bin -lnrniv
+	rebase -b 0x64000000 -v nrnmech.dll
 
 #nm nrnmech.dll | mkdll -u > nrnmech.h #will give a list of neuron.exe names
 #required by nrnmech.dll
