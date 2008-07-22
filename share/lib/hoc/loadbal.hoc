@@ -38,6 +38,7 @@ proc init() {local i, j  localobj ms
 		m_complex_[j] = new Vector(mt[j].count)
 		if (j == 0) {ion_complex_ = new Vector(mt[0].count)}
 		for i=0, mt[j].count-1 {
+			if (j == 1) if(mt[j].is_artificial(i) == 1) continue
 			mt[j].select(i)
 			mt[j].selected(mname)
 			ms = new MechanismStandard(mname, 3)
