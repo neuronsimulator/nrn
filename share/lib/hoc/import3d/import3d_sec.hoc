@@ -354,6 +354,10 @@ obfunc stk_center() {local i, len, th  localobj c, centroid, x, y, z, r, lenvec
 		lenvec.append(len)
 	}
 	len = len/2
+	if (len == 0) {
+		c = centroid.getcol(0)
+		return c
+	}
 	i = lenvec.indwhere(">", len)
 	th = (len - lenvec.x[i-1])/(lenvec.x[i] - lenvec.x[i-1])
 	for j=0, 2 {
