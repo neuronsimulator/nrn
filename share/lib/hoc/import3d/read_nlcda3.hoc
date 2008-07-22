@@ -712,7 +712,7 @@ proc demand() {
 	chk($1)
 }
 proc pcur() {
-	printf("itok=%d token=%s x=%g s=%s\n", current.itok, tokens.object(current.token).s, current.x, current.s)
+	printf("itok=%d on line %d token=%s x=%g s=%s\n", current.itok, current.iline, tokens.object(current.token).s, current.x, current.s)
 }
 proc plook() {
 //	printf("lookahead: itok=%d token=%s x=%g s=%s\n", look_ahead.itok, tokens.object(look_ahead.token).s, look_ahead.x, look_ahead.s)
