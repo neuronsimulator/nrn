@@ -9,6 +9,7 @@
 #include "bbsimpl.h"
 #include "ivocvect.h"
 #include "parse.h"
+#include "membfunc.h"
 #include <nrnmpi.h>
 #include <errno.h>
 
@@ -39,6 +40,8 @@ extern "C" {
 	void nrnmpi_char_broadcast(char*, int, int);
 	void nrnmpi_dbl_broadcast(double*, int, int);
 #endif
+
+	extern double* nrn_mech_wtime_;
 }
 
 class OcBBS : public BBS , public Resource {
@@ -338,6 +341,23 @@ static double vtransfer_time(void* v) {
 #else
 	return 0;
 #endif
+}
+
+static double mech_time(void* v) {
+	if (ifarg(1)) {
+		if (nrn_mech_wtime_) {
+			int i = (int)chkarg(1, 0, n_memb_func-1);
+			return nrn_mech_wtime_[i];
+		}
+	}else{
+		if (!nrn_mech_wtime_) {
+			nrn_mech_wtime_ = new double[n_memb_func];
+		}
+		for (int i=0; i < n_memb_func; ++i) {
+			nrn_mech_wtime_[i] = 0.0;
+		}
+	}
+	return 0;
 }
 
 static double wait_time(void* v) {
@@ -640,6 +660,7 @@ static Member_func members[] = {
 	"event_time", event_time,
 	"integ_time", integ_time,
 	"vtransfer_time", vtransfer_time,
+	"mech_time", mech_time,
 
 	"set_gid2node", set_gid2node,
 	"gid_exists", gid_exists,

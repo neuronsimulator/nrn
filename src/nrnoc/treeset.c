@@ -21,11 +21,13 @@ int nrn_cvode_; /* used by some models in case READandWRITE currents need updati
 #endif
 
 int nrn_shape_changed_;	/* for notifying Shape class in nrniv */
+double* nrn_mech_wtime_;
 
 extern int	diam_changed;
 extern int	tree_changed;
 extern double	chkarg();
 extern double	nrn_ra();
+extern double   nrnmpi_wtime();
 extern char* secname();
 extern double nrn_arc_position();
 extern Symlist* hoc_built_in_symlist;
@@ -371,7 +373,10 @@ This is a common operation for fixed step, cvode, and daspk methods
 
 void nrn_rhs() {
 	int i;
+	double w;
+	int measure = 0;
 
+	if (nrn_mech_wtime_) { measure = 1; }
 	if (diam_changed) {
 		recalc_diam();
 	}
@@ -399,7 +404,9 @@ void nrn_rhs() {
 	nrn_ba(BEFORE_BREAKPOINT);
 	for (i=CAP+1; i < n_memb_func; ++i) if (memb_func[i].current && memb_list[i].nodecount) {
 		Pfri s = memb_func[i].current;
+		if (measure) { w = nrnmpi_wtime(); }
 		(*s)(memb_list + i, i);
+		if (measure) { nrn_mech_wtime_[i] += nrnmpi_wtime() - w; }
 		if (errno) {
 			if (nrn_errno_check(i)) {
 hoc_warning("errno set during calculation of currents", (char*)0);

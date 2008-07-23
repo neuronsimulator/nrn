@@ -37,6 +37,8 @@
  is present, v for all segments are set to that value.
  */
  
+extern double nrnmpi_wtime();
+extern double* nrn_mech_wtime_;
 extern double chkarg();
 extern void setup_tree_matrix(), nrn_solve();
 extern int tree_changed;
@@ -392,6 +394,8 @@ nonvint()
 {
 #if VECTORIZE
 	int i;
+	double w;
+	int measure = 0;
 #else
 	int isec, inode;
 	Section *sec;
@@ -407,10 +411,13 @@ nonvint()
 #if 1 || PARANEURON
 	if (nrnmpi_v_transfer_) {(*nrnmpi_v_transfer_)();}
 #endif
+	if (nrn_mech_wtime_) { measure = 1; }
 	errno = 0;
 	for (i=0; i < n_memb_func; ++i) if (memb_func[i].state && memb_list[i].nodecount){
 		Pfri s = memb_func[i].state;
+		if (measure) { w = nrnmpi_wtime(); }
 		(*s)(memb_list + i, i);
+		if (measure) { nrn_mech_wtime_[i] += nrnmpi_wtime() - w; }
 		if (errno) {
 			if (nrn_errno_check(i)) {
 hoc_warning("errno set during calculation of states", (char*)0);
