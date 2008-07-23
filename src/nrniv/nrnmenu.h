@@ -31,6 +31,7 @@ public:
 	double get(const char*, int arrayindex=0);
 
 	void save(const char*, ostream*); // for session files
+	NrnProperty* np() { return np_; }
 private:
 	NrnProperty* np_;
 	int name_cnt_;
@@ -59,6 +60,7 @@ public:
 
 	int count();
 	int selected_item();
+	int internal_type();
 	void select(int);
 
 	Point_process* pp_begin();

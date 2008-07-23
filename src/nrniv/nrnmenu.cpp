@@ -888,6 +888,10 @@ static double mt_selected(void* v) {
 	}
 	return double(i);
 }
+static double mt_internal_type(void* v) {
+	MechanismType* mt = (MechanismType*)v;
+	return double(mt->internal_type());
+}
 static double mt_make(void* v) {
 	MechanismType* mt = (MechanismType*)v;
 	if (mt->is_point()) {
@@ -972,6 +976,7 @@ static Member_func mt_members[] = {
 	"is_netcon_target", mt_is_target,
 	"has_net_event", mt_has_net_event,
 	"is_artificial", mt_is_artificial,
+	"internal_type", mt_internal_type,
 	0,0
 };
 static Member_ret_obj_func mt_retobj_members[] = {
@@ -1105,6 +1110,9 @@ void MechanismType::select(const char* name){
 const char* MechanismType::selected(){
 	Symbol* sym = memb_func[mti_->type_[selected_item()]].sym;
 	return sym->name;
+}
+int MechanismType::internal_type() {
+	return mti_->type_[selected_item()];
 }
 extern "C" {
 extern void mech_insert1(Section*, int);
