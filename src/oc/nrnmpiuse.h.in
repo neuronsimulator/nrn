@@ -16,8 +16,11 @@
 /* Number of times to retry a failed open */
 #undef FILE_OPEN_RETRY
 
-/* define if IBM BlueGene (activates BGLCheckPoint functionality) */
+/* define if IBM BlueGene L or P (activates BGLCheckPoint functionality) */
 #undef BLUEGENE
+
+/* define if IBM BlueGene/P
+#undef BLUEGENEP
 
 /* define BlueGene with checkpointing */
 #undef BLUEGENE_CHECKPOINT

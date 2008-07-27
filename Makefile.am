@@ -26,7 +26,7 @@ libobj_DATA = nrnconf.h
 CONFIGURE_DEPENDENCIES = m4/acx_mpi.m4 m4/ivcheck.m4 m4/java_support.m4 \
 	m4/nrnjava.m4 m4/nrnpython.m4 m4/nrnrt.m4 \
 	m4/oddities.m4 m4/parcon.m4 m4/readline.m4 \
-	m4/withmpi.m4
+	m4/withmpi.m4 m4/nrnbg.m4
 
 EXTRA_DIST = $(CONFIGURE_DEPENDENCIES) installunix.html build.sh \
 	nrnversion.sh mysvnversion.sh
