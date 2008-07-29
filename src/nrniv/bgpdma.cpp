@@ -1,9 +1,63 @@
 // included by netpar.cpp
+
 extern "C" {
 extern void nrnmpi_int_allgatherv(int*, int*, int*, int*);
 extern void nrnmpi_int_gather(int*, int*, int, int);
 extern void nrnmpi_int_gatherv(int*, int, int*, int*, int*, int);
+}
 
+// static int bgpdma_nsend_, bgpdma_nrecv_; // declared earlier for initialization
+
+#if BGPDMA == 2
+
+#include <structpool.h>
+#include <dcmf.h>
+
+declareStructPool(SpkPool, NRNMPI_Spike)
+implementStructPool(SpkPool, NRNMPI_Spike)
+static SpkPool* recv_spike_pool;
+
+#define PIPEWIDTH 16
+
+static DCMF_Opcode_t* hints_;
+static DCMF_Protocol_t msend_registration;
+static DCMF_MultiSend_Configuration_t mconfig;
+
+// client done callback 
+static void spk_ready (void *arg) {
+	PreSyn* ps;
+	NRNMPI_Spike* spk = (NRNMPI_Spike*)arg;
+//printf("%d spk_ready %d %g\n", nrnmpi_myid, spk->gid, spk->spiketime);
+	assert(gid2in_->find(spk->gid, ps));
+	ps->send(spk->spiketime, net_cvode_instance);
+	++bgpdma_nrecv_;
+	++nrecv_;
+	recv_spike_pool->hpfree(spk);
+}
+
+// async callback for receiver's side of multisend  
+static DCMF_Request_t * msend_recv(const DCQuad  * info,
+			    unsigned          count,
+			    unsigned          peer,
+			    const unsigned          sndlen,
+			    unsigned          conn_id,
+			    void            * arg,
+			    unsigned        * rcvlen,
+			    char           ** rcvbuf,
+			    unsigned        * pipewidth,
+			    DCMF_Callback_t * cb_done)
+{
+  assert ( sndlen == sizeof(NRNMPI_Spike) );
+  * rcvlen          = sndlen;
+  * rcvbuf          = (char*)recv_spike_pool->alloc();
+  cb_done->function = spk_ready;
+  cb_done->clientdata = *rcvbuf;
+
+  return NULL;
+}
+#endif // USEBGP == 2
+
+extern "C" {
 extern void nrnmpi_bgp_comm();
 extern void nrnmpi_bgp_multisend(NRNMPI_Spike*, int, int*);
 extern int nrnmpi_bgp_single_advance(NRNMPI_Spike*);
@@ -18,9 +72,18 @@ public:
 	int ntarget_hosts_;
 	int* target_hosts_;
 	NRNMPI_Spike spk_;
+#if BGPDMA == 2
+	DCMF_Request_t req_;
+	boolean req_in_use_;
+#endif
 };
 
-// static int bgpdma_nsend_, bgpdma_nrecv_; // declared earlier for initialization
+
+// Multisend_multicast callback
+static void  multicast_done(void* arg) {
+	boolean* a = (boolean*)arg;
+	*a = false;
+}
 
 static int bgp_advance() {
 	NRNMPI_Spike spk_;
@@ -38,6 +101,12 @@ static int bgp_advance() {
 BGP_DMASend::BGP_DMASend() {
 	ntarget_hosts_ = 0;
 	target_hosts_ = nil;
+#if BGPDMA == 2
+	req_in_use_ = false;
+	mconfig.protocol = DCMF_MEMFIFO_DMA_MSEND_PROTOCOL;
+	mconfig.cb_recv = msend_recv;
+	mconfig.nconnections = nrnmpi_numprocs;
+#endif
 }
 
 BGP_DMASend::~BGP_DMASend() {
@@ -49,10 +118,47 @@ BGP_DMASend::~BGP_DMASend() {
 void BGP_DMASend::send(int gid, double t) {
 	spk_.gid = gid;
 	spk_.spiketime = t;
+#if BGPDMA == 2
+	assert(req_in_use_ == false);
+	req_in_use_ = true;
+	DCMF_Callback_t cb_done = { multicast_done, (void*)&req_in_use_ };
+//printf("%d multisend %d %g\n", nrnmpi_myid, gid, t);
+#if 0
+	DCMF_MultiSend_multicast( &msend_registration,
+		&req_, //how many needed? one for each possible send within an interval?
+		cb_done, // no callback required? using my own conserve.
+		DCMF_MATCH_CONSISTENCY,
+		(unsigned)nsend_, //connId_, // just a unique identifier
+		sizeof(NRNMPI_Spike),
+		(const char*)(&spk_),
+		(unsigned int)ntarget_hosts_,
+		(unsigned int*)target_hosts_,
+		hints_,
+		NULL
+	);
+#else
+	DCMF_MultiSend_multicast( &msend_registration,
+		&req_, //how many needed? one for each possible send within an interval?
+		cb_done, // no callback required? using my own conserve.
+		DCMF_MATCH_CONSISTENCY,
+		(unsigned)nsend_, //connId_, // just a unique identifier
+		sizeof(NRNMPI_Spike),
+		(const char*)(&spk_),
+		(unsigned int)ntarget_hosts_,
+		(unsigned int*)target_hosts_,
+		hints_,
+		NULL,			//const DCQuad* msginfo
+		1,			// unsigned count
+		DCMF_UNDEFINED_OP,	// DCMF_Op op
+		DCMF_UNDEFINED_DT	// DCMF_Dt dt
+	);
+#endif
+#else
 	nrnmpi_bgp_multisend(&spk_, ntarget_hosts_, target_hosts_);
+	bgpdma_nrecv_ += bgp_advance();
+#endif
 	bgpdma_nsend_ += ntarget_hosts_;
 	nsend_ += 1;
-	bgpdma_nrecv_ += bgp_advance();
 }
 
 
@@ -68,10 +174,17 @@ static int gathersrcgid(int hostbegin, int totalngid, int* ngid,
 
 void bgp_dma_receive() {
 //	nrn_spike_exchange();
+#if BGPDMA == 2
+	while (nrnmpi_bgp_conserve(bgpdma_nsend_, bgpdma_nrecv_) != 0) {
+//		Multisend_advance(&msend_registration);
+		DCMF_Messager_advance();
+	}
+#else
 	bgpdma_nrecv_ += bgp_advance();
 	while (nrnmpi_bgp_conserve(bgpdma_nsend_, bgpdma_nrecv_) != 0) {
 		bgpdma_nrecv_ += bgp_advance();
 	}
+#endif
 	bgpdma_nrecv_ = 0; bgpdma_nsend_ = 0;
 }
 
@@ -86,6 +199,14 @@ void bgp_dma_send(PreSyn* ps, double t) {
 	ps->bgp.dma_send_->send(ps->output_index_, t);
 }
 
+void bgpdma_send_init(PreSyn* ps) {
+#if BGPDMA == 2
+	if (ps->output_index_ >= 0 && ps->bgp.dma_send_) {
+		ps->bgp.dma_send_->req_in_use_ = false;
+	}
+#endif
+}
+
 void bgpdma_cleanup_presyn(PreSyn* ps) {
 	if (ps->output_index_ >= 0 && ps->bgp.dma_send_) {
 		delete ps->bgp.dma_send_;
@@ -95,6 +216,18 @@ void bgpdma_cleanup_presyn(PreSyn* ps) {
 
 void bgp_dma_setup() {
 	nrnmpi_bgp_comm();
+
+#if BGPDMA == 2
+	recv_spike_pool = new SpkPool(100);
+	// I'm guessing everyone can use the same hints and so they
+	// really should be allocated according to the maximum ntarget_hosts_.
+	hints_ = new DCMF_Opcode_t[nrnmpi_numprocs];
+	for (int i = 0; i < nrnmpi_numprocs; ++i) {
+		hints_[i] = DCMF_PT_TO_PT_SEND;
+	}
+	DCMF_MultiSend_multicast_register ( &msend_registration, &mconfig);
+#endif
+
 	// although we only care about the set of hosts that gid2out_
 	// sends spikes to (source centric). We do not want to send
 	// the entire list of gid2in (which may be 10000 times larger
@@ -110,6 +243,8 @@ void bgp_dma_setup() {
 
 	// gid2out_ sends spikes to which hosts
 	determine_target_hosts();
+
+
 }
 
 void determine_source_hosts() {

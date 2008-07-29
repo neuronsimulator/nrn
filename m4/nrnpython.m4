@@ -28,13 +28,12 @@ AC_DEFUN([AC_NRN_RUNPYTHON], [
 	zzzLIBS="$LIBS"
 	CFLAGS="$CFLAGS -I${PYINCDIR}"
 	LIBS="${PYLIBLINK} $LIBS"
-	AC_TRY_RUN([
+	AC_TRY_LINK([
 #include <Python.h>
-int main() {
+	],[
 	Py_Initialize();
 	Py_Finalize();
 	return 0;
-}
 	],[
 		AC_MSG_RESULT(yes)
 	],[

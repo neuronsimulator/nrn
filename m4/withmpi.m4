@@ -59,11 +59,16 @@ AC_HELP_STRING([--without-paranrn],[default. No parallel integration])
 
 AC_ARG_WITH(multisend,
 AC_HELP_STRING([--with-multisend],[Allow optional MPI_ISend/Recv for spike transfer])
+AC_HELP_STRING([--with-multisend=bgp],[Use BlueGene/P style dma spike transfer])
 ,[
 	if test "$with_multisend" = "yes" ; then
 		with_mpi=yes
 		use_bgpdma=yes
 		NRN_DEFINE(BGPDMA,1,[Define if you want the framework supporting BlueGene/P style direct dma spike transfer])
+	elif test "$with_multisend" = "bgp" ; then
+		with_mpi=yes
+		use_bgpdma=yes
+		NRN_DEFINE(BGPDMA,2,[Define if you want the framework supporting BlueGene/P style direct dma spike transfer])
 	else
 		use_bgpdma=no
 	fi

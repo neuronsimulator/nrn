@@ -83,7 +83,7 @@ AC_ARG_ENABLE([bluegeneP],
 				LDFLAGS=-qnostaticlink
 			fi
 			if test "$with_multisend" = "" ; then
-				with_multisend=yes
+				with_multisend=bgp
 			fi
 			if test "$CC" = "" ; then
 				CC=mpixlc_r

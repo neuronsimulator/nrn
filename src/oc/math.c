@@ -143,6 +143,10 @@ int hoc_errno_check() {
 	static parallel_eagain = 0;
 #endif
 
+#if 1
+	errno = 0;
+	return 0;
+#else
 	if (errno) {
 		if (errno == EAGAIN) {
 			/* Ubiquitous on many systems and it seems not to matter */
@@ -198,4 +202,5 @@ fprintf(stderr, "No more errno warnings during this execution\n");
 	ierr = errno;
 	errno = 0;
 	return ierr;
+#endif
 }

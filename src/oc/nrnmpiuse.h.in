@@ -19,7 +19,7 @@
 /* define if IBM BlueGene L or P (activates BGLCheckPoint functionality) */
 #undef BLUEGENE
 
-/* define if IBM BlueGene/P
+/* define if IBM BlueGene/P */
 #undef BLUEGENEP
 
 /* define BlueGene with checkpointing */
