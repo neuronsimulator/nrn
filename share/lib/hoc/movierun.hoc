@@ -10,6 +10,7 @@ proc moviestep() {
 	}
 }
 proc movierun() {
+	if (object_id(movie_timer) == 0) { movie_timer = new Timer("moviestep()")}
 	realtime = 0  rtstart = startsw()
 	running_ = 1 // run button checkbox
 	stoprun = 0
