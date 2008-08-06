@@ -479,6 +479,7 @@ PyObject* nrnpy_hoc_pop() {
 			result = Py_BuildValue("");
 		}else if (ho->ctemplate->sym == nrnpy_pyobj_sym_) {
 			result = nrnpy_hoc2pyobject(ho);
+			Py_INCREF(result);
 		}else{
 			result = hocobj_new(hocobject_type, 0, 0);
 			((PyHocObject*)result)->ho_ = ho;
@@ -1415,22 +1416,43 @@ static Object** nrnpy_vec_from_python(void* v) {
 		hoc_execerror(hoc_object_name(ho), " is not a PythonObject");
 	}
 	PyObject* po = nrnpy_hoc2pyobject(ho);
+	Py_INCREF(po);
 	if (!PySequence_Check(po)) {
-		hoc_execerror(hoc_object_name(ho), " does not support the Python Sequence protocol");
-	}
-	int size = PySequence_Size(po);
-//	printf("size = %d\n", size);
-	hv->resize(size);
-	double* x = vector_vec(hv);
-	for (int i=0; i < size; ++i) {
-		PyObject* p = PySequence_GetItem(po, i);
-		if (!PyNumber_Check(p)) {
-			char buf[50];
-			sprintf(buf, "item %d not a number", i);
-			hoc_execerror(buf, 0);
+		if (!PyIter_Check(po)) {
+			hoc_execerror(hoc_object_name(ho), " does not support the Python Sequence or Iterator protocol");
 		}
-		x[i] = PyFloat_AsDouble(p);
+		PyObject* iterator = PyObject_GetIter(po);
+		assert(iterator != NULL);
+		int i = 0;
+		PyObject* p;
+		while ((p = PyIter_Next(iterator)) != NULL) {
+			if (!PyNumber_Check(p)) {
+				char buf[50];
+				sprintf(buf, "item %d not a number", i);
+				hoc_execerror(buf, 0);
+			}
+			hv->resize_chunk(i+1);
+			hv->elem(i++) = PyFloat_AsDouble(p);
+			Py_DECREF(p);
+		}
+		Py_DECREF(iterator);
+	}else{
+		int size = PySequence_Size(po);
+//		printf("size = %d\n", size);
+		hv->resize(size);
+		double* x = vector_vec(hv);
+		for (int i=0; i < size; ++i) {
+			PyObject* p = PySequence_GetItem(po, i);
+			if (!PyNumber_Check(p)) {
+				char buf[50];
+				sprintf(buf, "item %d not a number", i);
+				hoc_execerror(buf, 0);
+			}
+			x[i] = PyFloat_AsDouble(p);
+			Py_DECREF(p);
+		}
 	}
+	Py_DECREF(po);
 	return hv->temp_objvar();
 }
 static Object** nrnpy_vec_to_python(void* v) {
