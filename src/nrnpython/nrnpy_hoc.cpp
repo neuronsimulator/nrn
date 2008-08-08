@@ -350,7 +350,9 @@ static int hocobj_pushargs(PyObject* args) {
 		}else{ // make a hoc PythonObject and push that?
 			Object* ob;
 			ob = 0;
-			pyobject_in_objptr(&ob, po);
+			if (po != Py_None) {
+				pyobject_in_objptr(&ob, po);
+			}
 			hoc_push_object(ob);
 			hoc_obj_unref(ob);
 		}
