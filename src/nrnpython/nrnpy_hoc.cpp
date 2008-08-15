@@ -769,9 +769,9 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* name) {
 		if (!sym) {
 			return PyObject_GenericGetAttr((PyObject*)subself, name);
 		}
-		if (sym->type != VAR) {
+		if (sym->type != VAR && sym->type != RANGEVAR) {
 			char buf[200];
-			sprintf(buf, "Hoc pointer error, %s is not a hoc variable", sym->name);
+			sprintf(buf, "Hoc pointer error, %s is not a hoc variable or range variable", sym->name);
 			PyErr_SetString(PyExc_TypeError, buf);
 			return NULL;
 		}
