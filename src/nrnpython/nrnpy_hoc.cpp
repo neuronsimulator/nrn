@@ -760,6 +760,13 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* name) {
 			Py_DECREF(nn);
 			return dict;
 		}
+		else {
+		  // EM: We seem to arriving here if subself is the toplevel h object
+		  // Thus here we should build a dictionary of all available hoc variables
+
+		  // Presently, just return an empty dictionary to fix the segfault
+		  return Py_BuildValue("{}");
+		}
 	    }else if (strncmp(n, "_ref_", 5) == 0) {
 		if (self->type_ > 1) {
 			PyErr_SetString(PyExc_TypeError, "not a HocTopLevelInterpreter or HocObject");
