@@ -479,17 +479,12 @@ verify_structure() {
 	nrn_solver_prepare(); /* cvode ready to be used */
 }
 	
-finitialize() {
-	int iord, i, setv=0;
-	double v;
+void nrn_finitialize(int setv, double v) {
+	int iord, i;
 	extern int _ninits;
 	++_ninits;
 
 	nrn_fihexec(3); /* model structure changes can be made */
-	if (ifarg(1)) {
-		v = *getarg(1);
-		setv = 1;
-	}
 #if ELIMINATE_T_ROUNDOFF
 	nrn_ndt_ = 0.; nrn_dt_ = dt; nrn_tbase_ = 0.;
 #else
@@ -593,9 +588,19 @@ hoc_warning("errno set during call to INITIAL block", (char*)0);
 	nrn_spike_exchange();
 #endif
 	nrn_fihexec(2); /* just before return */
-	ret(1.);
 }
 	
+finitialize() {
+	int setv;
+	double v = 0.0;
+	setv = 0;
+	if (ifarg(1)) {
+		v = *getarg(1);
+		setv = 1;
+	}
+	nrn_finitialize(setv, v);
+	ret(1.);
+}
 
 static FILE* batch_file;
 static int batch_size;
