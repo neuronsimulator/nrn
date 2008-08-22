@@ -717,6 +717,20 @@ PyObject* nrn_hocobj_ptr(double* pd) {
 	return result;
 }
 
+static void symlist2dict(Symlist* sl, PyObject* dict) {
+	PyObject* nn = Py_BuildValue("");
+	for (Symbol* s = sl->first; s; s = s->next) {
+		if (s->cpublic == 1 || sl == hoc_built_in_symlist || sl == hoc_top_level_symlist) {
+			if (strcmp(s->name, "del") == 0) {
+				PyDict_SetItemString(dict, "delay", nn);
+			}else{
+				PyDict_SetItemString(dict, s->name, nn);
+			}
+		}
+	}
+	Py_DECREF(nn);
+}
+
 static PyObject* hocobj_getattr(PyObject* subself, PyObject* name) {
 	PyObject* result = 0;
 	Inst fc, *pcsav;
@@ -745,21 +759,14 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* name) {
 		}else if (self->sym_ && self->sym_->type == TEMPLATE) {
 			sl = self->sym_->u.ctemplate->symtable;
 		}
+		PyObject* dict = PyDict_New();
 		if (sl) {
-			PyObject* nn = Py_BuildValue("");
-			PyObject* dict = PyDict_New();
-			for (Symbol* s = sl->first; s; s = s->next) {
-				if (s->cpublic == 1) {
-					if (strcmp(s->name, "del") == 0) {
-						PyDict_SetItemString(dict, "delay", nn);
-					}else{
-						PyDict_SetItemString(dict, s->name, nn);
-					}
-				}
-			}
-			Py_DECREF(nn);
-			return dict;
+			symlist2dict(sl, dict);
+		}else{
+			symlist2dict(hoc_built_in_symlist, dict);
+			symlist2dict(hoc_top_level_symlist, dict);
 		}
+		return dict;
 	    }else if (strncmp(n, "_ref_", 5) == 0) {
 		if (self->type_ > 1) {
 			PyErr_SetString(PyExc_TypeError, "not a HocTopLevelInterpreter or HocObject");
