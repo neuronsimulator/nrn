@@ -13,12 +13,14 @@ double* nrnpy_rangepointer(Section*, Symbol*, double, int*);
 typedef struct {
 	PyObject_HEAD
 	Section* sec_;
+	int allseg_iter_;
 } NPySecObj;
 
 typedef struct {
 	PyObject_HEAD
 	NPySecObj* pysec_;
 	double x_;
+	int alliter_;
 } NPySegObj;
 
 typedef struct {
@@ -111,6 +113,7 @@ PyObject* NPySecObj_new(PyTypeObject* type, PyObject* args, PyObject* kwds) {
 //printf("NPySecObj_new %lx\n", (long)self);
 	if (self != NULL) {
 		self->sec_ = nrnpy_newsection(self);
+		self->allseg_iter_ = 0;
 	}
 	return (PyObject*)self;
 }
@@ -305,15 +308,25 @@ static PyObject* NPySecObj_push(NPySecObj* self, PyObject*  args) {
 }
 
 static PyObject* section_iter(NPySecObj* self) {
+	//printf("section_iter %d\n", self->allseg_iter_);
 	NPySegObj* seg;
 	seg = PyObject_New(NPySegObj, psegment_type);
 	if (seg == NULL) {
 		return NULL;
 	}
 	seg->x_ = -1.;
+	seg->alliter_ = self->allseg_iter_;
+	self->allseg_iter_ = 0;
 	seg->pysec_ = self;
 	Py_INCREF(self);
 	return (PyObject*)seg;
+}
+
+static PyObject* allseg(NPySecObj* self, PyObject* args) {
+	//printf("allseg\n");
+	Py_INCREF(self);
+	self->allseg_iter_ = 1;
+	return (PyObject*)self;
 }
 
 static PyObject* segment_iter(NPySegObj* self) {
@@ -403,10 +416,15 @@ static int section_setattro(NPySecObj* self, PyObject* name, PyObject* value) {
 }
 
 static PyObject* segment_next(NPySegObj* self) {
+//printf("segment_next enter x=%g\n", self->x_);
 	double dx = 1./((double)self->pysec_->sec_->nnode-1);
 	double x = self->x_;
 	if (x < -1e-9) {
-		x = 0.;
+		if (self->alliter_) {
+			x = 0.;
+		}else{
+			x = dx/2.;
+		}
 	}else if (x < 1e-9) {
 		x = dx/2.;
 	}else{
@@ -416,7 +434,11 @@ static PyObject* segment_next(NPySegObj* self) {
 		return NULL;
 	}
 	if (x > 1. + 1e-9) {
-		x = 1.0;
+		if (self->alliter_) {
+			x = 1.0;
+		}else{
+			return NULL;
+		}
 	}
 	self->x_ = x;
 	Py_INCREF(self);
@@ -696,6 +718,9 @@ static PyMethodDef NPySecObj_methods[] = {
 	},
 	{"push", (PyCFunction)NPySecObj_push, METH_VARARGS,
 	 "section.push() makes it the currently accessed section. Should end with a corresponding hoc.pop_section()"
+	},
+	{"allseg", (PyCFunction)allseg, METH_VARARGS,
+	 "iterate over segments. Includes x=0 and x=1 zero-area nodes in the iteration."
 	},
 	{NULL}
 };
