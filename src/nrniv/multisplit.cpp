@@ -1877,6 +1877,7 @@ i, area_node_indices_[i], buf_area_indices_[i]);
 	for (i=0; i < narea2buf_; ++i) {
 		Area2Buf& ab = area2buf_[i];
 		double afac = 0.01 * VEC_AREA(ab.inode);
+		tbuf = tsendbuf_;
 		for (j = 0; j < ab.n; ++j) {
 			tbuf[ab.ibuf[j]] *= afac;
 #if 0
