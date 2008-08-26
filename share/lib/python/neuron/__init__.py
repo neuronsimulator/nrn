@@ -1,11 +1,47 @@
 """
-This is an updated version of the file neuron/__init__.py which is distributed
-with the NEURON distribution. The original file should be replaced with
-(a symlink to) this one.
 
-An attempt to make use of HocObjects more Pythonic, by wrapping them in Python
-classes with the same names as the Hoc classes, and adding various typical
-Python methods, such as __len__().
+neuron
+======
+
+For empirically-based simulations of neurons and networks of neurons in Python.
+
+This is the top-level module of the official python interface to
+the NEURON simulation environment (http://www.neuron.yale.edu/neuron/).
+
+Documentation is available in the docstrings.
+
+For a list of available names, try dir(neuron).
+
+Example:
+
+$ ipython
+In [1]: import neuron
+NEURON -- VERSION 6.2 2008-08-22
+Duke, Yale, and the BlueBrain Project -- Copyright 1984-2007
+See http://www.neuron.yale.edu/credits.html
+
+
+In [2]: neuron.h ?
+
+
+Important names and subpackages
+---------------------
+
+neuron.h
+
+   The top-level hoc interpreter.
+
+   Execute hoc commands by calling h with a string arguement:
+   h('objref myobj')
+   h('myobj = new Vector(10)')
+
+   All hoc defined variables are accesible by attribute access to h.
+   
+   Example:
+
+   print h.myobj.x[9]
+   
+  
 
 $Id: __init__.py,v 1.1 2008/05/26 11:39:44 hines Exp hines $
 """
@@ -48,6 +84,55 @@ def hclass(c):
     setattr(hc, 'htype', c)
     return hc
 
+
+# global list of paths already loaded by load_mechanisms
+nrn_dll_loaded = []
+
+def load_mechanisms(path):
+    """
+    load_mechanisms(path)
+
+    Search for and load NMODL mechanisms from the path given.
+
+    This function will not load a mechanism path twice.
+
+    The path should specify the directory in which nrnmodliv was run,
+    and in which the directory 'i686' (or 'x86_64' or 'powerpc' depending on your platform)
+    was created"""
+
+    import platform
+    
+    global nrn_dll_loaded
+    if path in nrn_dll_loaded:
+        print "Mechanisms already loaded from path: %s.  Aborting." % path
+        return
+    
+    # in case NEURON is assuming a different architecture to Python,
+    # we try multiple possibilities
+
+    arch_list = [platform.machine(), 'i686', 'x86_64', 'powerpc']
+
+    for arch in arch_list:
+        lib_path = os.path.join(path, arch, '.libs', 'libnrnmech.so')
+        if os.path.exists(lib_path):
+            h.nrn_load_dll(lib_path)
+            nrn_dll_loaded.append(path)
+            return
+    print "NEURON mechanisms not found in %s." % path
+
+
+import os
+if 'NRN_NMODL_PATH' in os.environ:
+    nrn_nmodl_path = os.environ['NRN_NMODL_PATH'].split(':')
+    print 'NRN_NMODL_PATH=%s' % os.environ['NRN_NMODL_PATH']
+    print 'Loading mechanisms...'
+    for x in nrn_nmodl_path:
+        print "From path: %s ..." % x
+        load_mechanisms(x)
+        print "Done."
+    
+
+
 # ------------------------------------------------------------------------------
 # Python classes and functions without a Hoc equivalent, mainly for internal
 # use within this file.
@@ -72,13 +157,16 @@ class Wrapper(object):
         except LookupError:
             object.__setattr__(self, name, value)
 
-def new_point_process(name):
+def new_point_process(name,doc=None):
     """
     Returns a Python-wrapped hoc class where the object needs to be associated
     with a section.
+
+    doc - specify a docstring for the new pointprocess class
     """
     h('obfunc new_%s() { return new %s($1) }' % (name, name))
     class someclass(Wrapper):
+        __doc__ = doc
         def __init__(self, section, position=0.5):
             assert 0 <= position <= 1
             section.push()
@@ -87,13 +175,16 @@ def new_point_process(name):
     someclass.__name__ = name
     return someclass
 
-def new_hoc_class(name):
+def new_hoc_class(name,doc=None):
     """
     Returns a Python-wrapped hoc class where the object does not need to be
     associated with a section.
+
+    doc - specify a docstring for the new hoc class
     """
     h('obfunc new_%s() { return new %s() }' % (name, name))
     class someclass(Wrapper):
+        __doc__ = doc
         def __init__(self, **kwargs):
             self.__dict__['hoc_obj'] = getattr(h, 'new_%s' % name)()
             for k,v in kwargs.items():
@@ -122,14 +213,41 @@ def hoc_comment(comment):
     logging.debug(comment)
 
 def psection(section):
+    """
+    function psection(section):
+
+    Print info about section in a hoc format which is executable.
+    (length, parent, diameter, membrane information)
+
+    See:
+
+    http://www.neuron.yale.edu/neuron/docs/help/neuron/neuron/nrnoc.html#psection
+
+    """
     section.push()
     h.psection()
     h.pop_section()
 
 def init():
+    """
+    function init():
+
+    Initialize the simulation kernel.  This should be called before a run(tstop) call.
+
+    Equivalent to hoc finitialize():
+
+    http://www.neuron.yale.edu/neuron/docs/help/neuron/neuron/nrnoc.html#finitialize
+    
+    """
     h.finitialize()
     
 def run(tstop):
+    """
+    function run(tstop)
+    
+    Run the simulation (advance the solver) until tstop [ms]
+
+    """
     h('tstop = %g' % tstop)
     h('while (t < tstop) { fadvance() }')
     # what about pc.psolve(tstop)?
@@ -141,16 +259,232 @@ def run(tstop):
 #   we write an explicit Python class.
 # ------------------------------------------------------------------------------
 
-ExpSyn = new_point_process('ExpSyn')
-Exp2Syn = new_point_process('Exp2Syn')
-VClamp = new_point_process('VClamp')
-SEClamp = new_point_process('SEClamp')
-APCount = new_point_process('APCount')
+doc = """
 
-ParallelContext = new_hoc_class('ParallelContext')
-NetStim = new_hoc_class('NetStim')
-Random = new_hoc_class('Random')
-CVode = new_hoc_class('CVode')
+class ExpSyn
+
+pointprocesses
+
+syn = ExpSyn(section, position=0.5)
+syn.tau --- ms decay time constant
+syn.e -- mV reversal potential
+syn.i -- nA synaptic current
+
+Description:
+    
+Synapse with discontinuous change in conductance at an event followed by an
+exponential decay with time constant tau.
+
+    i = G * (v - e)      i(nanoamps), g(micromhos);
+      G = weight * exp(-t/tau)
+
+The weight is specified by the weight field of a NetCon object.
+
+This synapse summates. 
+
+See:
+
+http://www.neuron.yale.edu/neuron/docs/help/neuron/neuron/mech.html#ExpSyn
+
+"""
+ExpSyn = new_point_process('ExpSyn',doc=doc)
+
+
+doc = """
+
+class Exp2Syn
+
+pointprocess
+
+syn = Exp2Syn(section, position=0.5)
+syn.tau1 --- ms rise time
+syn.tau2 --- ms decay time
+syn.e -- mV reversal potential
+syn.i -- nA synaptic current
+
+Description:
+    
+Two state kinetic scheme synapse described by rise time tau1, and decay time
+constant tau2. The normalized peak condductance is 1. Decay time MUST be greater than rise time.
+
+The kinetic scheme
+
+    A    ->   G   ->   bath
+       1/tau1   1/tau2
+
+produces a synaptic current with alpha function like conductance (if tau1/tau2 is appoximately 1) defined by
+
+    i = G * (v - e)      i(nanoamps), g(micromhos);
+      G = weight * factor * (exp(-t/tau2) - exp(-t/tau1))
+
+The weight is specified by the weight field of a NetCon object. The factor is defined so that
+the normalized peak is 1. If tau2 is close to tau1 this has the property that the maximum value
+is weight and occurs at t = tau1.
+
+Because the solution is a sum of exponentials, the coupled equations for the kinetic
+scheme can be solved as a pair of independent equations by the more efficient cnexp method.
+
+This synapse summates. 
+
+See:
+
+http://www.neuron.yale.edu/neuron/docs/help/neuron/neuron/mech.html#Exp2Syn
+
+
+"""
+Exp2Syn = new_point_process('Exp2Syn',doc=doc)
+
+doc = """
+
+class VClamp
+
+pointprocess
+
+obj = VClamp(section,position=0.5)
+dur[3]
+amp[3]
+gain, rstim, tau1, tau2
+i
+
+Description:
+    
+Two electrode voltage clamp. 
+
+See:
+
+http://www.neuron.yale.edu/neuron/docs/help/neuron/neuron/mech.html#VClamp
+
+"""
+VClamp = new_point_process('VClamp',doc=doc)
+
+doc = """
+
+class SEClamp
+
+pointprocess
+
+clampobj = SEClamp(section,position=0.5)
+dur1 dur2 dur3 -- ms
+amp1 amp2 amp3 -- mV
+rs -- MOhm
+
+vc -- mV
+i -- nA
+
+Description:
+    
+Single electrode voltage clamp with three levels. 
+
+See:
+
+http://www.neuron.yale.edu/neuron/docs/help/neuron/neuron/mech.html#SEClamp
+
+"""
+SEClamp = new_point_process('SEClamp',doc=doc)
+
+
+doc = """
+
+class APCount
+
+pointprocess
+
+apc = APCount(section, position=0.5)
+apc.thresh --- mV
+apc.n -- 
+apc.time --- ms
+apc.record(vector)
+
+Description:
+    
+Counts the number of times the voltage at its location crosses a
+threshold voltage in the positive direction. n contains the count and
+time contains the time of last crossing.
+
+If a Vector is attached to the apc, then it is resized to 0 when the
+INITIAL block is called and the times of threshold crossing are
+appended to the Vector. apc.record() will stop recording into the
+vector. The apc is not notified if the vector is freed but this can be
+fixed if it is convenient to add this feature.
+
+See:
+
+http://www.neuron.yale.edu/neuron/docs/help/neuron/neuron/mech.html#APcount
+
+"""
+APCount = new_point_process('APCount',doc=doc)
+
+
+doc = """
+
+class ParallelContext
+
+"Embarrassingly" parallel computations using a Bulletin board style analogous to LINDA.
+
+See:
+
+http://www.neuron.yale.edu/neuron/docs/help/neuron/neuron/classes/parcon.html
+
+"""
+ParallelContext = new_hoc_class('ParallelContext',doc=doc)
+
+
+doc = """
+
+class NetStim
+
+pointprocess
+
+Generates a train of presynaptic stimuli. Can serve as the source for
+a NetCon. This NetStim can also be be triggered by an input event. i.e
+serve as the target of a NetCon.
+
+See:
+
+http://www.neuron.yale.edu/neuron/docs/help/neuron/neuron/mech.html#NetStim
+
+"""
+NetStim = new_hoc_class('NetStim',doc=doc)
+
+
+doc = """
+
+class Random
+
+r = Random()
+r.normal(0,5)
+r.uniform(10,20)
+
+The Random class provides commonly used random distributions which
+are useful for stochastic simulations. The default distribution is
+normal with mean = 0 and standard deviation = 1. 
+
+
+See:
+    
+http://www.neuron.yale.edu/neuron/docs/help/neuron/general/classes/random.html#Random
+
+Note:
+
+For python based random number generation, numpy.random is an alternative to be considered.
+
+"""
+Random = new_hoc_class('Random',doc=doc)
+
+
+doc = """
+
+class CVode
+
+Multi order variable time step integration method which may be
+used in place of the default staggered fixed time step method.
+
+See:
+
+http://www.neuron.yale.edu/neuron/docs/help/neuron/neuron/classes/cvode.html
+
+"""
+CVode = new_hoc_class('CVode',doc=doc)
 
 h('obfunc new_IClamp() { return new IClamp($1) }')
 h('obfunc newlist() { return new List() }')
@@ -163,6 +497,11 @@ h('obfunc new_NetConP_nil() { return new NetCon(&v($1), nil) }')
 h('obfunc new_File() { return new File() }')
 
 class List(Wrapper):
+    """
+    class List()
+    
+    A wrapper class for hoc List objects.
+    """
     
     def __init__(self):
         self.hoc_obj = h.newlist()
@@ -172,6 +511,14 @@ class List(Wrapper):
     
     
 class Vector(Wrapper):
+    """
+    class Vector(arg=10)
+    
+    A wrapper class for hoc Vector objects.
+
+    arg - the length of the vector
+    
+    """
     n = 0
     
     def __init__(self,arg=10):
@@ -254,6 +601,33 @@ class Vector(Wrapper):
         h.pop_section()                      
 
 class IClamp(object):
+    """
+
+    class IClamp(section,position=0.5,delay=0,dur=0,amp=0)
+
+    A wrapper class for the IClamp pointprocess
+
+    Single pulse current clamp point process. This is an electrode current so positive
+    amp depolarizes the cell. The current (i) is set to amp when t is within the closed
+    interval delay to delay+dur. Time varying current stimuli can be simulated by setting delay=0,
+    amp=1e9 and playing a vector into amp with the play Vector method.
+
+    delay -- ms
+    dur -- ms
+    amp -- nA
+    i -- nA
+
+    See:
+
+        http://www.neuron.yale.edu/neuron/docs/help/neuron/neuron/mech.html#IClamp
+
+        http://www.neuron.yale.edu/neuron/docs/help/neuron/neuron/mech.html#pointprocesses
+
+    Note:
+
+        del was renamed to delay in Python to avoid name collision with the Python keyword "del".
+
+    """
       
     def __init__(self, section, position=0.5, delay=0, dur=0, amp=0):
         assert 0 <= position <= 1
@@ -282,6 +656,17 @@ class IClamp(object):
 
 
 class NetCon(Wrapper):
+    """
+
+    class NetCon(source, target, threshold=10, delay=1, weight=0, section=None, position=0.5)
+
+    A wrapper class for hoc NetCon objects.
+
+    See:
+
+    http://www.neuron.yale.edu/neuron/docs/help/neuron/neuron/classes/netcon.html#NetCon
+
+    """
     
     def __init__(self, source, target, threshold=10, delay=1, weight=0, section=None, position=0.5):
         # What about generalising to obtain the NetCon object via pc.gid_connect(), if source is
