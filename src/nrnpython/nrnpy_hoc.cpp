@@ -477,17 +477,7 @@ PyObject* nrnpy_hoc_pop() {
 		d = hoc_objpop();
 		ho = *d;
 //printf("Py2Nrn %lx %lx\n", (long)ho->ctemplate->sym, (long)nrnpy_pyobj_sym_);
-		if (!ho) {
-			result = Py_BuildValue("");
-		}else if (ho->ctemplate->sym == nrnpy_pyobj_sym_) {
-			result = nrnpy_hoc2pyobject(ho);
-			Py_INCREF(result);
-		}else{
-			result = hocobj_new(hocobject_type, 0, 0);
-			((PyHocObject*)result)->ho_ = ho;
-			((PyHocObject*)result)->type_ = 1;
-			hoc_obj_ref(ho);
-		}
+		result = nrnpy_ho2po(ho);
 		hoc_tobj_unref(d);
 		break;
 	default:

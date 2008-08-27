@@ -346,9 +346,9 @@ static PyObject* segment_iter(NPySegObj* self) {
 		p = p->next;
 	}
 	m->pyseg_ = self;
+	Py_INCREF(m->pyseg_);
 	m->prop_ = p;
 	m->first_iter_ = 1;
-	Py_INCREF(self);
 	return (PyObject*)m;
 }
 
@@ -466,8 +466,8 @@ static PyObject* mech_next(NPyMechObj* self) {
 	if (m == NULL) { return NULL; }
 	self->prop_  = p;
 	m->pyseg_ = self->pyseg_;
+	Py_INCREF(m->pyseg_);
 	m->prop_ = p;
-	Py_INCREF(m);
 	return (PyObject*)m;
 }
 
