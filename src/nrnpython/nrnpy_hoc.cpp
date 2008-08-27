@@ -1095,6 +1095,25 @@ static Py_ssize_t hocobj_len(PyObject* self) {
 	return 0;
 }
 
+static int hocobj_nonzero(PyObject* self) {
+//printf("hocobj_nonzero\n");
+	PyHocObject* po = (PyHocObject*)self;
+	int b = 1;
+	if (po->type_ == 1) {
+		if (po->ho_->ctemplate == hoc_vec_template_) {
+			b = vector_capacity((Vect*)po->ho_->u.this_pointer) > 0;
+		}else if (po->ho_->ctemplate == hoc_list_template_) {
+			b =  ivoc_list_count(po->ho_) > 0;
+		}	
+	}else if (po->type_ == 3) {
+		Arrayinfo* a = hocobj_aray(po->sym_, po->ho_);
+		b =  araylen(a, po) > 0;
+	}else if (po->sym_ && po->sym_->type == TEMPLATE) {
+		b = po->sym_->u.ctemplate->count > 0;
+	}
+	return b;// ? Py_True : Py_False;
+}
+
 PyObject* nrnpy_forall(PyObject* self, PyObject* args) {
 	PyObject* po = hocobj_new(hocobject_type, 0, 0);
 	PyHocObject* pho = (PyHocObject*)po;
@@ -1689,8 +1708,50 @@ static PyMethodDef hocobj_methods[] = {
 	{NULL, NULL, 0, NULL}
 };
 
-
-
+// ugh. all this just for proper bool(hocobject)
+// there has to be a better way to get working __nonzero__
+// but putting it into hocobj_methods did not work.
+static PyNumberMethods hocobj_as_number = {
+        0,                   /* nb_add */
+        0,                   /* nb_subtract */
+        0,                   /* nb_multiply */
+        0,                   /* nb_divide */
+        0,                   /* nb_remainder */
+        0,                /* nb_divmod */
+        0,                   /* nb_power */
+        0,        /* nb_negative */
+        0,        /* nb_positive */
+        0,        /* nb_absolute */
+        (inquiry)hocobj_nonzero,      /* nb_nonzero */
+        0,     /* nb_invert */
+        0,                /* nb_lshift */
+        0,                /* nb_rshift */
+        0,                   /* nb_and */
+        0,                   /* nb_xor */
+        0,                    /* nb_or */
+        0,                /* nb_coerce */
+        0,        /* nb_int */
+        0,       /* nb_long */
+        0,      /* nb_float */
+        0,        /* nb_oct */
+        0,        /* nb_hex */
+        0,                  /* nb_inplace_add */
+        0,                  /* nb_inplace_subtract */
+        0,                  /* nb_inplace_multiply */
+        0,                  /* nb_inplace_divide */
+        0,                  /* nb_inplace_remainder */
+        0,                  /* nb_inplace_power */
+        0,               /* nb_inplace_lshift */
+        0,               /* nb_inplace_rshift */
+        0,                  /* nb_inplace_and */
+        0,                  /* nb_inplace_xor */
+        0,                   /* nb_inplace_or */
+        0,              /* nb_floor_divide */
+        0,               /* nb_true_divide */
+        0,             /* nb_inplace_floor_divide */
+        0,              /* nb_inplace_true_divide */
+        0,      /* nb_index */
+};
 
 static PyMemberDef hocobj_members[] = {
 	{NULL, 0, 0, 0, NULL}
@@ -1708,7 +1769,7 @@ static PyTypeObject nrnpy_HocObjectType = {
     0,                         /*tp_setattr*/
     0,                         /*tp_compare*/
     0,                         /*tp_repr*/
-    0,                         /*tp_as_number*/
+    &hocobj_as_number,                         /*tp_as_number*/
     &hocobj_seqmeth,                         /*tp_as_sequence*/
     0,                         /*tp_as_mapping*/
     0,                         /*tp_hash */
