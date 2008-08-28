@@ -68,10 +68,11 @@ class MetaHocObject(type):
     m = []
     for b in bases:
       if issubclass(b, hoc.HocObject):
-        m.append(b)
+        m.append(b.__name__)
     if (len(m) > 1):
       raise TypeError('Multiple Inheritance of HocObject in %s' % name
-        + ' through %s not allowed' % ','.join(b.__name__ for b in m))
+        + ' through %s not allowed' % ','.join(m))
+      #note that join(b.__name__ for b in m) is not valid for Python 2.3
     return type.__new__(cls, name, bases, attrs)
 
 def hclass(c):

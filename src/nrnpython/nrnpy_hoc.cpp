@@ -1750,7 +1750,9 @@ static PyNumberMethods hocobj_as_number = {
         0,               /* nb_true_divide */
         0,             /* nb_inplace_floor_divide */
         0,              /* nb_inplace_true_divide */
+#if PYTHON_API_VERSION > 1012
         0,      /* nb_index */
+#endif
 };
 
 static PyMemberDef hocobj_members[] = {
