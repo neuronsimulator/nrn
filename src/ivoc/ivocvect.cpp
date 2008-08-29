@@ -101,7 +101,7 @@ extern "C" {
 extern Object* hoc_thisobject;
 extern Symlist* hoc_top_level_symlist;
 extern void nrn_exit(int);
-Object** (*nrnpy_vec_from_python_p_)(void*);
+IvocVect* (*nrnpy_vec_from_python_p_)(void*);
 Object** (*nrnpy_vec_to_python_p_)(void*);
 };
 
@@ -235,11 +235,24 @@ public:
 #endif
 
 static void* v_cons(Object* o) {
-	  double fill_value = 0.;
-	  int n = 0;
-	  if (ifarg(1)) n = int(chkarg(1,0,1e10));
-	  if (ifarg(2)) fill_value = *getarg(2);
-	  return new Vect(n,fill_value, o);
+	double fill_value = 0.;
+	int n = 0;
+	Vect* vec;
+	if (ifarg(1)) {
+		if (hoc_is_double_arg(1)) {
+			n = int(chkarg(1,0,1e10));
+			if (ifarg(2)) fill_value = *getarg(2);
+			vec =  new Vect(n,fill_value, o);
+		}else{
+			if (!nrnpy_vec_from_python_p_) {
+				hoc_execerror("Python not available", 0);
+			}
+			vec = (*nrnpy_vec_from_python_p_)(new Vect(0, 0, o));
+		}
+	}else{
+		vec = new Vect(0, 0, o);
+	}
+	return vec;
 }
 
 
@@ -3542,7 +3555,8 @@ Object** v_from_python(void* v) {
 	if (!nrnpy_vec_from_python_p_) {
 		hoc_execerror("Python not available", 0);
 	}
-	return (*nrnpy_vec_from_python_p_)(v);
+	Vect* vec = (*nrnpy_vec_from_python_p_)(v);
+	return vec->temp_objvar();
 }
 
 Object** v_to_python(void* v) {

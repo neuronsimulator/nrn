@@ -54,7 +54,7 @@ PyObject* nrnpy_ho2po(Object*);
 Object* nrnpy_po2ho(PyObject*);
 extern Object* nrnpy_pyobject_in_obj(PyObject*);
 static void pyobject_in_objptr(Object**, PyObject*);
-extern Object** (*nrnpy_vec_from_python_p_)(void*);
+extern IvocVect* (*nrnpy_vec_from_python_p_)(void*);
 extern Object** (*nrnpy_vec_to_python_p_)(void*);
 
 static cTemplate* hoc_vec_template_;
@@ -1426,7 +1426,7 @@ static PySequenceMethods hocobj_seqmeth = {
 	NULL, NULL
 };
 
-static Object** nrnpy_vec_from_python(void* v) {
+static IvocVect* nrnpy_vec_from_python(void* v) {
 	Vect* hv = (Vect*)v;
 //	printf("%s.from_array\n", hoc_object_name(hv->obj_));
 	Object* ho = *hoc_objgetarg(1);
@@ -1471,7 +1471,7 @@ static Object** nrnpy_vec_from_python(void* v) {
 		}
 	}
 	Py_DECREF(po);
-	return hv->temp_objvar();
+	return hv;
 }
 static Object** nrnpy_vec_to_python(void* v) {
 	Vect* hv = (Vect*)v;
