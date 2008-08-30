@@ -1426,6 +1426,18 @@ static PySequenceMethods hocobj_seqmeth = {
 	NULL, NULL
 };
 
+static double* double_array_interface(PyObject* po) {
+	long idata = 0;
+	if (PyObject_HasAttrString(po, "__array_interface__")) {
+		PyObject* ai = PyObject_GetAttrString(po, "__array_interface__");
+		if (strcmp(PyString_AsString(PyDict_GetItemString(ai, "typestr")), "<f8") == 0) {
+			idata = PyLong_AsLong(PyTuple_GetItem(PyDict_GetItemString(ai, "data"), 0));
+			//printf("double_array_interface idata = %ld\n", idata);
+		}
+	}
+	return (double*)idata;
+}
+
 static IvocVect* nrnpy_vec_from_python(void* v) {
 	Vect* hv = (Vect*)v;
 //	printf("%s.from_array\n", hoc_object_name(hv->obj_));
@@ -1459,6 +1471,12 @@ static IvocVect* nrnpy_vec_from_python(void* v) {
 //		printf("size = %d\n", size);
 		hv->resize(size);
 		double* x = vector_vec(hv);
+		double* y = double_array_interface(po);
+	    if (y) {
+		for (int i = 0; i < size; ++i) {
+			x[i] = y[i];
+		}
+	    }else{
 		for (int i=0; i < size; ++i) {
 			PyObject* p = PySequence_GetItem(po, i);
 			if (!PyNumber_Check(p)) {
@@ -1469,6 +1487,7 @@ static IvocVect* nrnpy_vec_from_python(void* v) {
 			x[i] = PyFloat_AsDouble(p);
 			Py_DECREF(p);
 		}
+	    }
 	}
 	Py_DECREF(po);
 	return hv;
