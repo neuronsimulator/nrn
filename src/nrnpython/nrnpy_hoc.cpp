@@ -1430,7 +1430,9 @@ static double* double_array_interface(PyObject* po) {
 	long idata = 0;
 	if (PyObject_HasAttrString(po, "__array_interface__")) {
 		PyObject* ai = PyObject_GetAttrString(po, "__array_interface__");
-		if (strcmp(PyString_AsString(PyDict_GetItemString(ai, "typestr")), "<f8") == 0) {
+		if (strcmp(PyString_AsString(PyDict_GetItemString(ai, "typestr"))+1, "f8") == 0
+		    && PyDict_GetItemString(ai, "strides") == Py_None
+		) {
 			idata = PyLong_AsLong(PyTuple_GetItem(PyDict_GetItemString(ai, "data"), 0));
 			//printf("double_array_interface idata = %ld\n", idata);
 		}
@@ -1492,6 +1494,7 @@ static IvocVect* nrnpy_vec_from_python(void* v) {
 	Py_DECREF(po);
 	return hv;
 }
+
 static Object** nrnpy_vec_to_python(void* v) {
 	Vect* hv = (Vect*)v;
 	int size = hv->capacity();
@@ -1520,7 +1523,12 @@ static Object** nrnpy_vec_to_python(void* v) {
 		--ho->refcount;
 	}
 //	printf("size = %d\n", size);
-	if (PyList_Check(po)) { // PySequence_SetItem does DECREF of old items
+	double* y = double_array_interface(po);
+	if (y) {
+		for (int i = 0; i < size; ++i) {
+			y[i] = x[i];
+		}
+	}else if (PyList_Check(po)) { // PySequence_SetItem does DECREF of old items
 		for (int i=0; i < size; ++i) {
 			PyObject* pn = PyFloat_FromDouble(x[i]);
 			if (!pn || PyList_SetItem(po, i, pn) == -1) {
