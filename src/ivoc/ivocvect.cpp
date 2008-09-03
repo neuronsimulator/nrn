@@ -3693,9 +3693,7 @@ static Member_ret_obj_func v_retobj_members[] = {
 	"from_python",	v_from_python,
 	"to_python",	v_to_python,
 
-#ifdef WITH_NUMPY
-	"__array__",    v_to_array,
-#endif
+	"__array_interface__",    v_to_array,
 
 	0,0
 };

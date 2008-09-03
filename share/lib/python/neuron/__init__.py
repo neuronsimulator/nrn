@@ -554,12 +554,6 @@ class Vector(Wrapper):
     def __len__(self):
         return self.size()
 
-    # define the __array__ method
-    # if numpy support is available
-    if not hoc.test_numpy()==None:
-        def __array__(self):
-            return self.x.__array__()
-   
     def __str__(self):
         tmp = self.printf()
         return ''
@@ -590,19 +584,10 @@ class Vector(Wrapper):
     def tolist(self):
         return [self.x[i] for i in range(int(self.size()))]
 
-    def toarray_slow(self):
+    def toarray(self):
         import numpy
         return numpy.array(self)
 
-    def toarray_numpy(self):
-        return self.x.toarray()
-
-    # for array conversion,
-    # use numpy support if available
-    if hoc.test_numpy()==None:
-        toarray = toarray_slow
-    else:
-        toarray = toarray_numpy
 
     def record(self, section, variable, position=0.5):
         #ref = h.ref(variable)

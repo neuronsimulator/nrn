@@ -6,17 +6,6 @@
 #include "ivocvect.h"
 #include "oclist.h"
 
-#ifdef WITH_NUMPY
-
-// needed for C extension using NumPy
-#define PY_ARRAY_UNIQUE_SYMBOL _nrnpy_arrayu
-
-
-// Numeric Python header
-#include "numpy/arrayobject.h"
-
-#endif // WITH_NUMPY
-
 
 extern "C" {
 
@@ -116,39 +105,11 @@ static  PyObject* hoc_ac(PyObject* self, PyObject* args) {
 }
 
 
-static PyObject* test_numpy(PyObject* self, PyObject* args) {
-
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
-	}
-
-	#ifdef WITH_NUMPY
-
-	PyArrayObject *po = NULL;
-	int dims = 1;
-
-	po = (PyArrayObject*)PyArray_FromDims(1,&dims,PyArray_DOUBLE);
-	*(double*)(po->data) = 0.0;
-	return Py_BuildValue("N",po);
-
-	#else
-
-	// return None
-	return Py_BuildValue("");
-
-	#endif // WITH_NUMPY
-
-
-
-}
-
-
 
 static PyMethodDef HocMethods[] = {
 	{"execute", nrnexec, METH_VARARGS, "Execute a hoc command, return 1 on success, 0 on failure." },
 	{"hoc_ac", hoc_ac, METH_VARARGS, "Get (or set) the scalar hoc_ac_." },
 
-	{"test_numpy", test_numpy, METH_VARARGS, "If numpy support is available, returns an array containing 1 zero, otherwize None." },
 
 
 	{NULL, NULL, 0, NULL}
@@ -1524,22 +1485,20 @@ static Object** nrnpy_vec_to_python(void* v, bool as_numpy_array) {
 
                 if (as_numpy_array) {
 
-		// We should not get here unless numpy support was enabled at build time,
-		// since only the ivocvect __array__ calls with as_numpy_array=True,
-		// and it is only available if WITH_NUMPY is defined.
+			// Construct array interface dictionary version 3
+			// http://numpy.scipy.org/array_interface.shtml
 
-#ifdef WITH_NUMPY
+			// For testing purposes, I'm hardcoding little endian byteorder
+			// this needs to be improved later.
+	      		po = Py_BuildValue("{s:(i),s:s,s:i,s:(l,O)}","shape",size,"typestr","<f8","version",3,"data",(long)x,Py_True);
+			//po = Py_BuildValue("{s:(i),s:s}","shape",1,"typestr","<f8");
 
-			po = (PyObject*)PyArray_FromDims(1,&size,PyArray_DOUBLE);
-			if (po==NULL) {
-				hoc_execerror("Could not create new numpy array with correct size.", 0);
-			}
+			//po = Py_BuildValue("{s:s}","typestr","<f8");			
 
+			ho = nrnpy_po2ho(po);
+			--ho->refcount;
+			return hoc_temp_objptr(ho);
 
-#else
-			hoc_execerror("Internal requested for numpy array without numpy support enabled at build-time. \n This should not happen.  Please file a bug report.", 0); 
-
-#endif
 
                 }
 		else {
@@ -1714,13 +1673,6 @@ myPyMODINIT_FUNC nrnpy_hoc() {
 	hoc_sectionlist_template_ = s->u.ctemplate;
 	s = hoc_lookup("Matrix"); assert(s);
 	sym_mat_x = hoc_table_lookup("x", s->u.ctemplate->symtable); assert(sym_mat_x);
-
-#ifdef WITH_NUMPY
-
-	// setup for numpy
-	import_array();
-
-#endif // WITH_NUMPY
 
 
 	nrnpy_nrn();
