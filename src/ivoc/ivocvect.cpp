@@ -102,7 +102,7 @@ extern Object* hoc_thisobject;
 extern Symlist* hoc_top_level_symlist;
 extern void nrn_exit(int);
 IvocVect* (*nrnpy_vec_from_python_p_)(void*);
-Object** (*nrnpy_vec_to_python_p_)(void*);
+Object** (*nrnpy_vec_to_python_p_)(void*,bool);
 };
 
 
@@ -3563,8 +3563,18 @@ Object** v_to_python(void* v) {
 	if (!nrnpy_vec_to_python_p_) {
 		hoc_execerror("Python not available", 0);
 	}
-	return (*nrnpy_vec_to_python_p_)(v);
+	return (*nrnpy_vec_to_python_p_)(v, false);
 }
+
+Object** v_to_array(void* v) {
+	if (!nrnpy_vec_to_python_p_) {
+		hoc_execerror("Python not available", 0);
+	}
+	return (*nrnpy_vec_to_python_p_)(v, true);
+}
+
+
+
 
 static Member_func v_members[] = {
 
@@ -3682,6 +3692,11 @@ static Member_ret_obj_func v_retobj_members[] = {
 
 	"from_python",	v_from_python,
 	"to_python",	v_to_python,
+
+#ifdef WITH_NUMPY
+	"__array__",    v_to_array,
+#endif
+
 	0,0
 };
 

@@ -55,7 +55,7 @@ Object* nrnpy_po2ho(PyObject*);
 extern Object* nrnpy_pyobject_in_obj(PyObject*);
 static void pyobject_in_objptr(Object**, PyObject*);
 extern IvocVect* (*nrnpy_vec_from_python_p_)(void*);
-extern Object** (*nrnpy_vec_to_python_p_)(void*);
+extern Object** (*nrnpy_vec_to_python_p_)(void*, bool);
 
 static cTemplate* hoc_vec_template_;
 static cTemplate* hoc_list_template_;
@@ -1495,13 +1495,18 @@ static IvocVect* nrnpy_vec_from_python(void* v) {
 	return hv;
 }
 
-static Object** nrnpy_vec_to_python(void* v) {
+static Object** nrnpy_vec_to_python(void* v, bool as_numpy_array) {
 	Vect* hv = (Vect*)v;
 	int size = hv->capacity();
 	double* x = vector_vec(hv);
 //	printf("%s.to_array\n", hoc_object_name(hv->obj_));
 	PyObject* po;
 	Object* ho = 0;
+
+	// as_numpy_array=True is the case where this function is being called by the ivocvect __array__ member
+	// as such perhaps we should check here that no arguments were passed
+ 	// although this should be the case unless the function is erroneously called by the user.
+
 	if (ifarg(1)) {
 		ho = *hoc_objgetarg(1);
 		if (ho->ctemplate->sym != nrnpy_pyobj_sym_) {
@@ -1516,9 +1521,36 @@ static Object** nrnpy_vec_to_python(void* v) {
 		}
 		Py_INCREF(po);
 	}else{
-		if ((po = PyList_New(size)) == NULL) {
-			hoc_execerror("Could not create new Python List with correct size.", 0);
+
+                if (as_numpy_array) {
+
+		// We should not get here unless numpy support was enabled at build time,
+		// since only the ivocvect __array__ calls with as_numpy_array=True,
+		// and it is only available if WITH_NUMPY is defined.
+
+#ifdef WITH_NUMPY
+
+			po = (PyObject*)PyArray_FromDims(1,&size,PyArray_DOUBLE);
+			if (po==NULL) {
+				hoc_execerror("Could not create new numpy array with correct size.", 0);
+			}
+
+
+#else
+			hoc_execerror("Internal requested for numpy array without numpy support enabled at build-time. \n This should not happen.  Please file a bug report.", 0); 
+
+#endif
+
+                }
+		else {
+
+			if ((po = PyList_New(size)) == NULL) {
+				hoc_execerror("Could not create new Python List with correct size.", 0);
+			}
+
 		}
+
+	
 		ho = nrnpy_po2ho(po);
 		--ho->refcount;
 	}
@@ -1551,176 +1583,9 @@ hoc_execerror("Could not set a Python Sequence item", buf);
 	return hoc_temp_objptr(ho);
 }
 
-#ifdef WITH_NUMPY
-
-
-static PyObject* PyObj_FromNrnObj(Object* obj) {
-
-  if (obj==NULL) {
-    printf("Warning: PyObj_FromNrnObj obj NULL\n");
-    //return null;
-    Py_INCREF(Py_None);
-    return Py_None;
-  }
-  
-
-  if (is_obj_type(obj,"Vector")) {
-    // we can deal with vectors
-    Vect* v = (Vect*)obj->u.this_pointer;
-    PyArrayObject*array = NULL;
-    int i,n = v->capacity();
-
-    array = (PyArrayObject*)PyArray_FromDims(1,&n,PyArray_DOUBLE);
-    for (i=0;i<n;i++) {
-      *(double*)(array->data + i*array->strides[0]) = (*v)[i];
-    }
-
-    return (PyObject*)array;
-
-  }
-
-  printf("Warning: PyObj_FromNrnObj cannot handle obj type, returning NULL\n");
-  //return NULL;
-  Py_INCREF(Py_None);
-  return Py_None;
-  
-}
 
 
 
-
-
-static int hocobj_tonumpy(PyObject* self, PyObject* args) {
-
-
-  if (!PyArg_ParseTuple(args, "")) {
-    return NULL;
-  }
-
-  PyArrayObject* array = NULL;
-
-
-  if (self->type_ == 2 || self->type_ == 3) {
-
-    Symbol* sym = self->sym_;
-
-    if (!sym) {
-      PyErr_SetString(PyExc_RuntimeError, "sym==NULL");
-      return NULL;
-    }
-
-    if (sym->type == VAR) {
-
-      if (ISARRAY(sym)) {
-
-	// Make a numpy array from an ndim NEURON array
-
-	int total = hoc_total_array(sym);
-	PyArrayObject* array = NULL;
-	int i;
-
-	Arrayinfo* a = sym->arayinfo;
-	double* p = OPVAL(sym);
-	  
-	if (a) {
-	  PyObject* pDims = PyList_New(a->nsub);
-
-	  for (i= a->nsub-1;i>=0;--i) {
-	    PyList_SetItem(pDims,i,PyInt_FromLong(a->sub[i]));
-	  }
-
-	  // first contiguous, then reshape
-	  array = (PyArrayObject*)PyArray_FromDims(1,&total,PyArray_DOUBLE);
-	  if (array==NULL) {
-	    PyErr_SetString(PyExc_RuntimeError,"hoc.get hoc error allocating array.");
-	    return NULL;
-	  }
-
-	  // fill array memory
-
-	  for (i=0;i<total;i++) {
-	    *(double*)(array->data + i*array->strides[0]) = p[i];
-	  }
-
-	  // return shaped array
-
-	  pObj = (PyObject*)PyArray_Reshape(array,pDims);
-	  // throw away pDims
-	  Py_DECREF(pDims);
-
-	}
-
-      }
-      else {
-	// VAR is not an array
-
-	pObj = PyFloat_FromDouble(*OPVAL(sym));
-      }
-
-    }
-    else if (sym->type == OBJECTVAR) {
-
-      if (ISARRAY(sym)) {
-
-	// create numpy array of type 'O' (PyObjects) from NEURON OBJREF array
-
-	int total = hoc_total_array(sym);
-	PyArrayObject* array = NULL;
-	int i;
-
-	Arrayinfo* a = sym->arayinfo;
-
-	if (a) {
-	  PyObject* pDims = PyList_New(a->nsub);
-
-	  for (i= a->nsub-1;i>=0;--i) {
-	    PyList_SetItem(pDims,i,PyInt_FromLong(a->sub[i]));
-	  }
-
-
-	  // first contiguous, then reshape
-
-	  array = (PyArrayObject*)PyArray_FromDims(1,&total,PyArray_OBJECT);
-	  if (array==NULL) {
-	    PyErr_SetString(PyExc_RuntimeError,"hoc.get hoc error allocating array.");
-	    return NULL;
-	  }
-
-	  // fill array memory
-
-	  for (i=0;i<total;i++) {
-	    *(PyObject**)(array->data + i*array->strides[0]) = PyObj_FromNrnObj(OPOBJ(sym)[i]);
-	  }
-
-	  // return shaped array
-
-	  pObj = (PyObject*)PyArray_Reshape(array,pDims);
-	  // throw away pDims
-	  Py_DECREF(pDims);
-	      
-	  if (pObj==NULL) {
-	    PyErr_SetString(PyExc_RuntimeError,"hoc.get hoc error reshaping array.");
-	    return NULL;
-	  }
-
-
-	}
-
-      }
-      else {
-	// return single object
-	pObj = PyObj_FromNrnObj(OPOBJ(sym)[0]);
-      }
-
-
-  }
-  else {
-    PyErr_SetString(PyExc_TypeError, "not a compound type");
-    return NULL;
-  }
-
-}
-#endif //WITH_NUMPY
 
 
 static PyMethodDef hocobj_methods[] = {
@@ -1729,9 +1594,6 @@ static PyMethodDef hocobj_methods[] = {
 	{"cas", nrnpy_cas, METH_VARARGS, "Return the currently accessed section." },
 	{"allsec", nrnpy_forall, METH_VARARGS, "Return iterator over all sections." },
 	{"Section", nrnpy_newsecobj, METH_VARARGS, "Return a new Section" },
-#if WITH_NUMPY
-	{"toarray",hocobj_tonumpy,METH_VARARGS,"toarray(self) returns a numpy array of self."},
-#endif
 	{NULL, NULL, 0, NULL}
 };
 
