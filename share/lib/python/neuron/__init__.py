@@ -55,6 +55,16 @@ except ImportError:
 import nrn
 h  = hoc.HocObject()
 
+
+def test():
+    """ Runs a battery of unit tests on the neuron module."""
+    import neuron.tests
+    import unittest
+
+    runner = unittest.TextTestRunner(verbosity=2)
+    runner.run(neuron.tests.suite())
+
+
 # ------------------------------------------------------------------------------
 # class factory for subclassing h.anyclass
 # h.anyclass methods may be overridden. If so the base method can be called

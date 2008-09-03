@@ -125,7 +125,7 @@ hoc_module = Extension(
 setup(name="NEURON", version="6.2",
       description = "NEURON bindings for python",
       package_dir = {'':nrn_srcdir+'/share/lib/python'},
-      packages=['neuron'],
+      packages=['neuron','neuron.tests'],
       ext_modules=[hoc_module]
 )
 
