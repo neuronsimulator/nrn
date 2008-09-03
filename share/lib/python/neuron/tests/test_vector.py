@@ -37,9 +37,17 @@ class VectorTestCase(unittest.TestCase):
         print "\n"
         bench('l = range(1000000)')
         bench('v = h.Vector(l)')
+        print "inplace:",
+        bench('v.from_python(l)')
         bench('a = numpy.array(v)')
+        print "inplace:",
+        bench('v.to_python(a)')
         bench('v2 = h.Vector(a)')
+        print "inplace:",
+        bench('v2.from_python(a)')
         bench('l2 = list(v2)')
+        print "inplace:",
+        bench('v.to_python(l2)')
         bench('v2 = h.Vector(a[::-1])')
         bench('a2 = numpy.array(v2)')
 
@@ -57,6 +65,10 @@ class VectorTestCase(unittest.TestCase):
         assert alltrue(a==a1), 'numpy array "a" not equal to array(Vector(a))' 
         v = h.Vector(a[::-1])
         assert alltrue(array(v)[::-1] == a), 'Vector(a) malfuctions when a is a sliced array' 
+
+        # inplace operations
+
+        # todo
 
 
 def suite():
