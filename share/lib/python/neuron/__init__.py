@@ -132,15 +132,16 @@ def load_mechanisms(path):
     print "NEURON mechanisms not found in %s." % path
 
 
-import os
+import os,sys
 if 'NRN_NMODL_PATH' in os.environ:
     nrn_nmodl_path = os.environ['NRN_NMODL_PATH'].split(':')
+    print 'Auto-loading mechanisms:'
     print 'NRN_NMODL_PATH=%s' % os.environ['NRN_NMODL_PATH']
-    print 'Loading mechanisms...'
     for x in nrn_nmodl_path:
-        print "From path: %s ..." % x
+        #print "from path %s:" % x
         load_mechanisms(x)
-        print "Done."
+        #print "\n"
+    print "Done.\n"
     
 
 
