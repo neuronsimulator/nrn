@@ -50,6 +50,11 @@ static cTemplate* hoc_vec_template_;
 static cTemplate* hoc_list_template_;
 static cTemplate* hoc_sectionlist_template_;
 
+// typestr returned by Vector.__array_interface__
+// byteorder (first element) is modified at import time
+// to reflect the system byteorder
+static char array_interface_typestr[] = "|f8";
+
 /*
 Because python types have so many methods, attempt to do all set and get
 using a PyHocObject which has different amounts filled in as the information
@@ -746,8 +751,9 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* name) {
 		Vect* v = (Vect*)self->ho_->u.this_pointer;
 		int size = v->capacity();
 		double* x = vector_vec(v);
+
 		
-	     	return Py_BuildValue("{s:(i),s:s,s:i,s:(l,O)}","shape",size,"typestr","<f8","version",3,"data",(long)x,Py_True);
+	     	return Py_BuildValue("{s:(i),s:s,s:i,s:(l,O)}","shape",size,"typestr",array_interface_typestr,"version",3,"data",(long)x,Py_True);
 
 
 	    }else{
@@ -1646,6 +1652,9 @@ static PyTypeObject nrnpy_HocObjectType = {
 
 myPyMODINIT_FUNC nrnpy_hoc() {
 	PyObject* m;
+	PyObject* psys;
+	PyObject* pbo;
+	char *byteorder;
 	nrnpy_vec_from_python_p_ = nrnpy_vec_from_python;
 	nrnpy_vec_to_python_p_ = nrnpy_vec_to_python;
 	m = Py_InitModule3("hoc", HocMethods,
@@ -1669,8 +1678,47 @@ myPyMODINIT_FUNC nrnpy_hoc() {
 	s = hoc_lookup("Matrix"); assert(s);
 	sym_mat_x = hoc_table_lookup("x", s->u.ctemplate->symtable); assert(sym_mat_x);
 
-
 	nrnpy_nrn();
+
+
+	// Get python sys.byteorder and configure array_interface_byteorder string appropriately
+
+	psys = PyImport_ImportModule("sys");
+	if (psys==NULL)	 {
+		PyErr_SetString(PyExc_ImportError, "Failed to import sys to determine system byteorder.");
+		return;
+	}
+
+
+	pbo = PyObject_GetAttrString(psys, "byteorder");
+
+	if (pbo==NULL) {
+		PyErr_SetString(PyExc_AttributeError, "sys module does not have attribute 'byteorder'!");
+		return;
+	}
+
+	byteorder = PyString_AsString(pbo); 
+
+	if (byteorder==NULL) {
+		// type error already raised
+		return;
+	}
+
+
+	if (strcmp(byteorder,"little")==0) {
+
+		array_interface_typestr[0]='<';
+
+	} else if (strcmp(byteorder,"big")==0) {
+
+		array_interface_typestr[0]='>';
+
+	} else {
+		PyErr_SetString(PyExc_RuntimeError, "Unknown system native byteorder.");
+		return;
+	}
+
+
 }
 
 }//end of extern c

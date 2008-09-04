@@ -27,6 +27,17 @@ class Bench(object):
 
 class VectorTestCase(unittest.TestCase):
     """Tests of the hoc.Vector"""
+
+    def testEndian(self):
+        """Test that Vector.__array_interface__ returns the proper byteorder (endian)"""
+
+        endian_map = {'little':'<','big':'>'}
+
+        import sys
+        sys_endian = endian_map[sys.byteorder]
+        v = h.Vector(10)
+        assert sys_endian == v.__array_interface__['typestr'][0]
+
     
     def testPerformance(self):
         """Test performance of Vector<->list,array"""
