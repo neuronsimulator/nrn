@@ -3,7 +3,7 @@ lib_LTLIBRARIES = libivoc.la
 bin_PROGRAMS = ivoc
 
 DEFS = -Dmotif_kit -Dsgi_motif_kit -Dopenlook_kit -Dbw_kit \
-	-Ddefault_kit=SMFKit -DUSEGNU=1 -DUSEMATRIX @NRNPYTHON_DEFINES@
+	-Ddefault_kit=SMFKit -DUSEGNU=1 -DUSEMATRIX
 
 # The interviews libraries must be before the X libraries so that if a
 # vanilla interviews is also installed, we don't use it.

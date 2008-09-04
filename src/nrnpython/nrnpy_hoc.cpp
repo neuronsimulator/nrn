@@ -44,7 +44,7 @@ Object* nrnpy_po2ho(PyObject*);
 extern Object* nrnpy_pyobject_in_obj(PyObject*);
 static void pyobject_in_objptr(Object**, PyObject*);
 extern IvocVect* (*nrnpy_vec_from_python_p_)(void*);
-extern Object** (*nrnpy_vec_to_python_p_)(void*, bool);
+extern Object** (*nrnpy_vec_to_python_p_)(void*);
 
 static cTemplate* hoc_vec_template_;
 static cTemplate* hoc_list_template_;
@@ -717,6 +717,12 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* name) {
 			symlist2dict(hoc_built_in_symlist, dict);
 			symlist2dict(hoc_top_level_symlist, dict);
 		}
+
+		// Is the self->ho_ a Vector?  If so, add the __array_interface__ symbol
+		
+		if (is_obj_type(self->ho_, "Vector")) {
+			PyDict_SetItemString(dict,"__array_interface__",Py_None);
+		}
 		return dict;
 	    }else if (strncmp(n, "_ref_", 5) == 0) {
 		if (self->type_ > 1) {
@@ -734,6 +740,16 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* name) {
 			return NULL;
 		}
 		isptr = 1;
+	    }else if (is_obj_type(self->ho_, "Vector") && strcmp(n, "__array_interface__")==0) {
+		// return __array_interface__
+		//printf("building array interface\n");
+		Vect* v = (Vect*)self->ho_->u.this_pointer;
+		int size = v->capacity();
+		double* x = vector_vec(v);
+		
+	     	return Py_BuildValue("{s:(i),s:s,s:i,s:(l,O)}","shape",size,"typestr","<f8","version",3,"data",(long)x,Py_True);
+
+
 	    }else{
 		// ipython wants to know if there is a __getitem__
 		// even though it does not use it.
@@ -1456,7 +1472,7 @@ static IvocVect* nrnpy_vec_from_python(void* v) {
 	return hv;
 }
 
-static Object** nrnpy_vec_to_python(void* v, bool as_numpy_array) {
+static Object** nrnpy_vec_to_python(void* v) {
 	Vect* hv = (Vect*)v;
 	int size = hv->capacity();
 	double* x = vector_vec(hv);
@@ -1483,30 +1499,9 @@ static Object** nrnpy_vec_to_python(void* v, bool as_numpy_array) {
 		Py_INCREF(po);
 	}else{
 
-                if (as_numpy_array) {
 
-			// Construct array interface dictionary version 3
-			// http://numpy.scipy.org/array_interface.shtml
-
-			// For testing purposes, I'm hardcoding little endian byteorder
-			// this needs to be improved later.
-	      		po = Py_BuildValue("{s:(i),s:s,s:i,s:(l,O)}","shape",size,"typestr","<f8","version",3,"data",(long)x,Py_True);
-			//po = Py_BuildValue("{s:(i),s:s}","shape",1,"typestr","<f8");
-
-			//po = Py_BuildValue("{s:s}","typestr","<f8");			
-
-			ho = nrnpy_po2ho(po);
-			--ho->refcount;
-			return hoc_temp_objptr(ho);
-
-
-                }
-		else {
-
-			if ((po = PyList_New(size)) == NULL) {
-				hoc_execerror("Could not create new Python List with correct size.", 0);
-			}
-
+		if ((po = PyList_New(size)) == NULL) {
+			hoc_execerror("Could not create new Python List with correct size.", 0);
 		}
 
 	
