@@ -756,9 +756,13 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* name) {
 	     	return Py_BuildValue("{s:(i),s:s,s:i,s:(l,O)}","shape",size,"typestr",array_interface_typestr,"version",3,"data",(long)x,Py_True);
 
 	    }else if (strcmp(n, "__doc__") == 0) {
-
-		return Py_BuildValue("s","test of __doc__ override");
-
+		if (self->ho_) {
+			return Py_BuildValue("s s", self->ho_->ctemplate->sym->name, self->sym_ ? self->sym_->name : "");
+		}else if (self->sym_) {
+			return Py_BuildValue("s s", "", self->sym_->name);
+		}else{
+			return Py_BuildValue("s s", "", "");
+		}
 	    }else{
 		// ipython wants to know if there is a __getitem__
 		// even though it does not use it.
