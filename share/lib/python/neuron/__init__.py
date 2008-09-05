@@ -271,7 +271,7 @@ def run(tstop):
 #   we write an explicit Python class.
 # ------------------------------------------------------------------------------
 
-doc = """
+docstring ="""
 
 class ExpSyn
 
@@ -299,10 +299,10 @@ See:
 http://www.neuron.yale.edu/neuron/docs/help/neuron/neuron/mech.html#ExpSyn
 
 """
-ExpSyn = new_point_process('ExpSyn',doc=doc)
+ExpSyn = new_point_process('ExpSyn',doc=docstring)
 
 
-doc = """
+docstring ="""
 
 class Exp2Syn
 
@@ -344,9 +344,9 @@ http://www.neuron.yale.edu/neuron/docs/help/neuron/neuron/mech.html#Exp2Syn
 
 
 """
-Exp2Syn = new_point_process('Exp2Syn',doc=doc)
+Exp2Syn = new_point_process('Exp2Syn',doc=docstring)
 
-doc = """
+docstring ="""
 
 class VClamp
 
@@ -367,9 +367,9 @@ See:
 http://www.neuron.yale.edu/neuron/docs/help/neuron/neuron/mech.html#VClamp
 
 """
-VClamp = new_point_process('VClamp',doc=doc)
+VClamp = new_point_process('VClamp',doc=docstring)
 
-doc = """
+docstring ="""
 
 class SEClamp
 
@@ -392,10 +392,10 @@ See:
 http://www.neuron.yale.edu/neuron/docs/help/neuron/neuron/mech.html#SEClamp
 
 """
-SEClamp = new_point_process('SEClamp',doc=doc)
+SEClamp = new_point_process('SEClamp',doc=docstring)
 
 
-doc = """
+docstring ="""
 
 class APCount
 
@@ -424,10 +424,10 @@ See:
 http://www.neuron.yale.edu/neuron/docs/help/neuron/neuron/mech.html#APcount
 
 """
-APCount = new_point_process('APCount',doc=doc)
+APCount = new_point_process('APCount',doc=docstring)
 
 
-doc = """
+docstring ="""
 
 class ParallelContext
 
@@ -438,10 +438,10 @@ See:
 http://www.neuron.yale.edu/neuron/docs/help/neuron/neuron/classes/parcon.html
 
 """
-ParallelContext = new_hoc_class('ParallelContext',doc=doc)
+ParallelContext = new_hoc_class('ParallelContext',doc=docstring)
 
 
-doc = """
+docstring ="""
 
 class NetStim
 
@@ -456,10 +456,10 @@ See:
 http://www.neuron.yale.edu/neuron/docs/help/neuron/neuron/mech.html#NetStim
 
 """
-NetStim = new_hoc_class('NetStim',doc=doc)
+NetStim = new_hoc_class('NetStim',doc=docstring)
 
 
-doc = """
+docstring ="""
 
 class Random
 
@@ -481,10 +481,10 @@ Note:
 For python based random number generation, numpy.random is an alternative to be considered.
 
 """
-Random = new_hoc_class('Random',doc=doc)
+Random = new_hoc_class('Random',doc=docstring)
 
 
-doc = """
+docstring ="""
 
 class CVode
 
@@ -496,7 +496,7 @@ See:
 http://www.neuron.yale.edu/neuron/docs/help/neuron/neuron/classes/cvode.html
 
 """
-CVode = new_hoc_class('CVode',doc=doc)
+CVode = new_hoc_class('CVode',doc=docstring)
 
 h('obfunc new_IClamp() { return new IClamp($1) }')
 h('obfunc newlist() { return new List() }')
@@ -507,6 +507,8 @@ h('objref nil')
 h('obfunc new_NetConO_nil() { return new NetCon($o1, nil) }')
 h('obfunc new_NetConP_nil() { return new NetCon(&v($1), nil) }')
 h('obfunc new_File() { return new File() }')
+
+del docstring
 
 class List(Wrapper):
     """

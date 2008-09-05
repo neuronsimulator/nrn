@@ -55,6 +55,10 @@ static cTemplate* hoc_sectionlist_template_;
 // to reflect the system byteorder
 static char array_interface_typestr[] = "|f8";
 
+// static pointer to neurons.doc.get_docstring function initialized at import time
+static PyObject* pfunc_get_docstring = NULL;
+
+
 /*
 Because python types have so many methods, attempt to do all set and get
 using a PyHocObject which has different amounts filled in as the information
@@ -689,6 +693,7 @@ static void symlist2dict(Symlist* sl, PyObject* dict) {
 
 static PyObject* hocobj_getattr(PyObject* subself, PyObject* name) {
 	PyObject* result = 0;
+	PyObject* docobj = 0;
 	Inst fc, *pcsav;
 	int isptr = 0;
 	PyHocObject* self = (PyHocObject*)subself;
@@ -756,13 +761,23 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* name) {
 	     	return Py_BuildValue("{s:(i),s:s,s:i,s:(l,O)}","shape",size,"typestr",array_interface_typestr,"version",3,"data",(long)x,Py_True);
 
 	    }else if (strcmp(n, "__doc__") == 0) {
+
+		if (pfunc_get_docstring==NULL)
+			return Py_BuildValue("s", "NEURON documentation system unavailable.");
+
 		if (self->ho_) {
-			return Py_BuildValue("s s", self->ho_->ctemplate->sym->name, self->sym_ ? self->sym_->name : "");
+			docobj = Py_BuildValue("s s", self->ho_->ctemplate->sym->name, self->sym_ ? self->sym_->name : "");
 		}else if (self->sym_) {
-			return Py_BuildValue("s s", "", self->sym_->name);
+		  // Symbol
+			docobj = Py_BuildValue("s s", "", self->sym_->name);
 		}else{
-			return Py_BuildValue("s s", "", "");
+		  // Base HocObject
+
+			docobj = Py_BuildValue("s s", "", "");
 		}
+
+		return PyObject_CallObject(pfunc_get_docstring,docobj);
+
 	    }else{
 		// ipython wants to know if there is a __getitem__
 		// even though it does not use it.
@@ -1661,6 +1676,7 @@ myPyMODINIT_FUNC nrnpy_hoc() {
 	PyObject* m;
 	PyObject* psys;
 	PyObject* pbo;
+	PyObject* pdoc;
 	char *byteorder;
 	nrnpy_vec_from_python_p_ = nrnpy_vec_from_python;
 	nrnpy_vec_to_python_p_ = nrnpy_vec_to_python;
@@ -1724,6 +1740,22 @@ myPyMODINIT_FUNC nrnpy_hoc() {
 		PyErr_SetString(PyExc_RuntimeError, "Unknown system native byteorder.");
 		return;
 	}
+
+	// Setup documentation system
+
+	pdoc = PyImport_ImportModule("neuron.doc");
+	if (pdoc==NULL)	 {
+		PyErr_SetString(PyExc_ImportError, "Failed to import neuron.doc documentation module.");
+		return;
+	}
+
+	pfunc_get_docstring = PyObject_GetAttrString(pdoc, "get_docstring");
+
+	if (pfunc_get_docstring==NULL) {
+		PyErr_SetString(PyExc_AttributeError, "neuron.doc module does not have attribute 'get_docstring'!");
+		return;
+	}
+
 
 
 }
