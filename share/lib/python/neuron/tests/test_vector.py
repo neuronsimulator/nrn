@@ -38,6 +38,16 @@ class VectorTestCase(unittest.TestCase):
         v = h.Vector(10)
         assert sys_endian == v.__array_interface__['typestr'][0]
 
+    def testBytesize(self):
+        """Test that Vector.__array_interface__ returns the proper bytesize (of a double)"""
+
+        import numpy
+        
+        v = h.Vector(10)
+        a = numpy.array([],dtype=float)
+        assert a.__array_interface__['typestr'] == v.__array_interface__['typestr']
+
+
     
     def testPerformance(self):
         """Test performance of Vector<->list,array"""
@@ -70,7 +80,7 @@ class VectorTestCase(unittest.TestCase):
 
 
         a = numpy.random.normal(size=10000)
-        b = numpy.random.normal(size=10000)
+        #b = numpy.random.normal(size=10000)
         v = h.Vector(a)
         a1 = array(v)
         assert alltrue(a==a1), 'numpy array "a" not equal to array(Vector(a))' 

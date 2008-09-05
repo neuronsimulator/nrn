@@ -53,7 +53,9 @@ static cTemplate* hoc_sectionlist_template_;
 // typestr returned by Vector.__array_interface__
 // byteorder (first element) is modified at import time
 // to reflect the system byteorder
-static char array_interface_typestr[] = "|f8";
+// Allocate one extra character space in case we have a two character integer of bytes per double
+// i.e. 16 
+static char array_interface_typestr[5] = "|f8";
 
 // static pointer to neurons.doc.get_docstring function initialized at import time
 static PyObject* pfunc_get_docstring = NULL;
@@ -1437,7 +1439,7 @@ static char* double_array_interface(PyObject* po,long& stride) {
 	PyObject *psize;
 	if (PyObject_HasAttrString(po, "__array_interface__")) {
 		PyObject* ai = PyObject_GetAttrString(po, "__array_interface__");
-		if (strcmp(PyString_AsString(PyDict_GetItemString(ai, "typestr"))+1, "f8") == 0) {
+		if (strcmp(PyString_AsString(PyDict_GetItemString(ai, "typestr")), array_interface_typestr) == 0) {
 			idata = PyLong_AsLong(PyTuple_GetItem(PyDict_GetItemString(ai, "data"), 0));
 			//printf("double_array_interface idata = %ld\n", idata);
 
@@ -1766,6 +1768,11 @@ myPyMODINIT_FUNC nrnpy_hoc() {
 		PyErr_SetString(PyExc_RuntimeError, "Unknown system native byteorder.");
 		return;
 	}
+
+	// Setup bytesize in typestr
+
+	snprintf(array_interface_typestr+2,3,"%d",sizeof(double));
+
 
 	// Setup documentation system
 
