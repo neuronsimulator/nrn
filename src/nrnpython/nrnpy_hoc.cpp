@@ -1431,18 +1431,42 @@ static PySequenceMethods hocobj_seqmeth = {
 	NULL, NULL
 };
 
-static double* double_array_interface(PyObject* po) {
+static char* double_array_interface(PyObject* po,long& stride) {
 	long idata = 0;
+	PyObject *pstride;
+	PyObject *psize;
 	if (PyObject_HasAttrString(po, "__array_interface__")) {
 		PyObject* ai = PyObject_GetAttrString(po, "__array_interface__");
-		if (strcmp(PyString_AsString(PyDict_GetItemString(ai, "typestr"))+1, "f8") == 0
-		    && PyDict_GetItemString(ai, "strides") == Py_None
-		) {
+		if (strcmp(PyString_AsString(PyDict_GetItemString(ai, "typestr"))+1, "f8") == 0) {
 			idata = PyLong_AsLong(PyTuple_GetItem(PyDict_GetItemString(ai, "data"), 0));
 			//printf("double_array_interface idata = %ld\n", idata);
+
+			pstride = PyDict_GetItemString(ai, "strides");
+		  	if (pstride == Py_None) {
+				stride=8;
+			} else if (PyTuple_Check(pstride)) {
+				if (PyTuple_Size(pstride)==1) {
+					psize = PyTuple_GetItem(pstride, 0);
+					if PyInt_Check(psize) {
+						stride = PyInt_AS_LONG(psize);
+
+					} else if (PyLong_Check(psize)) {
+						stride = PyLong_AsLong(psize);
+					} else {
+						PyErr_SetString(PyExc_TypeError, "array_interface stride element of invalid type.");
+						idata=0;
+					}
+					
+				} else idata=0; //don't handle >1 dimensions
+			} else {
+
+				PyErr_SetString(PyExc_TypeError, "array_interface stride object of invalid type.");
+				idata=0;
+			}
+
 		}
 	}
-	return (double*)idata;
+	return (char*)idata;
 }
 
 static IvocVect* nrnpy_vec_from_python(void* v) {
@@ -1478,10 +1502,11 @@ static IvocVect* nrnpy_vec_from_python(void* v) {
 //		printf("size = %d\n", size);
 		hv->resize(size);
 		double* x = vector_vec(hv);
-		double* y = double_array_interface(po);
+		long stride;
+		char* y = double_array_interface(po,stride);
 	    if (y) {
-		for (int i = 0; i < size; ++i) {
-			x[i] = y[i];
+		for (int i = 0,j = 0; i < size; ++i,j+=stride) {
+			x[i] = *(double*)(y+j);
 		}
 	    }else{
 		for (int i=0; i < size; ++i) {
@@ -1537,10 +1562,11 @@ static Object** nrnpy_vec_to_python(void* v) {
 		--ho->refcount;
 	}
 //	printf("size = %d\n", size);
-	double* y = double_array_interface(po);
+	long stride;
+	char* y = double_array_interface(po,stride);
 	if (y) {
-		for (int i = 0; i < size; ++i) {
-			y[i] = x[i];
+		for (int i = 0,j = 0; i < size; ++i,j+=stride) {
+			*(double*)(y+j) = x[i];
 		}
 	}else if (PyList_Check(po)) { // PySequence_SetItem does DECREF of old items
 		for (int i=0; i < size; ++i) {
