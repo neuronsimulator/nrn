@@ -693,6 +693,23 @@ static void symlist2dict(Symlist* sl, PyObject* dict) {
 	Py_DECREF(nn);
 }
 
+static int setup_doc_system() {
+	PyObject* pdoc;
+	if (pfunc_get_docstring) { return 1; }
+	pdoc = PyImport_ImportModule("neuron.doc");
+	if (pdoc==NULL)	 {
+		PyErr_SetString(PyExc_ImportError, "Failed to import neuron.doc documentation module.");
+		return 0;
+	}
+	pfunc_get_docstring = PyObject_GetAttrString(pdoc, "get_docstring");
+
+	if (pfunc_get_docstring==NULL) {
+		PyErr_SetString(PyExc_AttributeError, "neuron.doc module does not have attribute 'get_docstring'!");
+		return 0;
+	}
+	return 1;
+}
+
 static PyObject* hocobj_getattr(PyObject* subself, PyObject* name) {
 	PyObject* result = 0;
 	PyObject* docobj = 0;
@@ -764,9 +781,7 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* name) {
 
 	    }else if (strcmp(n, "__doc__") == 0) {
 
-		if (pfunc_get_docstring==NULL)
-			return Py_BuildValue("s", "NEURON documentation system unavailable.");
-
+	      if (setup_doc_system()) {
 		if (self->ho_) {
 			docobj = Py_BuildValue("s s", self->ho_->ctemplate->sym->name, self->sym_ ? self->sym_->name : "");
 		}else if (self->sym_) {
@@ -779,6 +794,9 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* name) {
 		}
 
 		return PyObject_CallObject(pfunc_get_docstring,docobj);
+	      }else{
+		return NULL;
+	      }
 
 	    }else{
 		// ipython wants to know if there is a __getitem__
@@ -1704,7 +1722,6 @@ myPyMODINIT_FUNC nrnpy_hoc() {
 	PyObject* m;
 	PyObject* psys;
 	PyObject* pbo;
-	PyObject* pdoc;
 	char *byteorder;
 	nrnpy_vec_from_python_p_ = nrnpy_vec_from_python;
 	nrnpy_vec_to_python_p_ = nrnpy_vec_to_python;
@@ -1772,25 +1789,6 @@ myPyMODINIT_FUNC nrnpy_hoc() {
 	// Setup bytesize in typestr
 
 	snprintf(array_interface_typestr+2,3,"%d",sizeof(double));
-
-
-	// Setup documentation system
-
-	pdoc = PyImport_ImportModule("neuron.doc");
-	if (pdoc==NULL)	 {
-		PyErr_SetString(PyExc_ImportError, "Failed to import neuron.doc documentation module.");
-		return;
-	}
-
-	pfunc_get_docstring = PyObject_GetAttrString(pdoc, "get_docstring");
-
-	if (pfunc_get_docstring==NULL) {
-		PyErr_SetString(PyExc_AttributeError, "neuron.doc module does not have attribute 'get_docstring'!");
-		return;
-	}
-
-
-
 }
 
 }//end of extern c
