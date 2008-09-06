@@ -6,17 +6,6 @@
 #include "ivocvect.h"
 #include "oclist.h"
 
-#ifdef WITH_NUMPY
-
-// needed for C extension using NumPy
-#define PY_ARRAY_UNIQUE_SYMBOL _nrnpy_arrayu
-
-
-// Numeric Python header
-#include "numpy/arrayobject.h"
-
-#endif // WITH_NUMPY
-
 
 extern "C" {
 
@@ -54,12 +43,23 @@ PyObject* nrnpy_ho2po(Object*);
 Object* nrnpy_po2ho(PyObject*);
 extern Object* nrnpy_pyobject_in_obj(PyObject*);
 static void pyobject_in_objptr(Object**, PyObject*);
-extern Object** (*nrnpy_vec_from_python_p_)(void*);
+extern IvocVect* (*nrnpy_vec_from_python_p_)(void*);
 extern Object** (*nrnpy_vec_to_python_p_)(void*);
 
 static cTemplate* hoc_vec_template_;
 static cTemplate* hoc_list_template_;
 static cTemplate* hoc_sectionlist_template_;
+
+// typestr returned by Vector.__array_interface__
+// byteorder (first element) is modified at import time
+// to reflect the system byteorder
+// Allocate one extra character space in case we have a two character integer of bytes per double
+// i.e. 16 
+static char array_interface_typestr[5] = "|f8";
+
+// static pointer to neurons.doc.get_docstring function initialized at import time
+static PyObject* pfunc_get_docstring = NULL;
+
 
 /*
 Because python types have so many methods, attempt to do all set and get
@@ -116,39 +116,11 @@ static  PyObject* hoc_ac(PyObject* self, PyObject* args) {
 }
 
 
-static PyObject* test_numpy(PyObject* self, PyObject* args) {
-
-	if (!PyArg_ParseTuple(args, "")) {
-		return NULL;
-	}
-
-	#ifdef WITH_NUMPY
-
-	PyArrayObject *po = NULL;
-	int dims = 1;
-
-	po = (PyArrayObject*)PyArray_FromDims(1,&dims,PyArray_DOUBLE);
-	*(double*)(po->data) = 0.0;
-	return Py_BuildValue("N",po);
-
-	#else
-
-	// return None
-	return Py_BuildValue("");
-
-	#endif // WITH_NUMPY
-
-
-
-}
-
-
 
 static PyMethodDef HocMethods[] = {
 	{"execute", nrnexec, METH_VARARGS, "Execute a hoc command, return 1 on success, 0 on failure." },
 	{"hoc_ac", hoc_ac, METH_VARARGS, "Get (or set) the scalar hoc_ac_." },
 
-	{"test_numpy", test_numpy, METH_VARARGS, "If numpy support is available, returns an array containing 1 zero, otherwize None." },
 
 
 	{NULL, NULL, 0, NULL}
@@ -721,8 +693,26 @@ static void symlist2dict(Symlist* sl, PyObject* dict) {
 	Py_DECREF(nn);
 }
 
+static int setup_doc_system() {
+	PyObject* pdoc;
+	if (pfunc_get_docstring) { return 1; }
+	pdoc = PyImport_ImportModule("neuron.doc");
+	if (pdoc==NULL)	 {
+		PyErr_SetString(PyExc_ImportError, "Failed to import neuron.doc documentation module.");
+		return 0;
+	}
+	pfunc_get_docstring = PyObject_GetAttrString(pdoc, "get_docstring");
+
+	if (pfunc_get_docstring==NULL) {
+		PyErr_SetString(PyExc_AttributeError, "neuron.doc module does not have attribute 'get_docstring'!");
+		return 0;
+	}
+	return 1;
+}
+
 static PyObject* hocobj_getattr(PyObject* subself, PyObject* name) {
 	PyObject* result = 0;
+	PyObject* docobj = 0;
 	Inst fc, *pcsav;
 	int isptr = 0;
 	PyHocObject* self = (PyHocObject*)subself;
@@ -756,6 +746,12 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* name) {
 			symlist2dict(hoc_built_in_symlist, dict);
 			symlist2dict(hoc_top_level_symlist, dict);
 		}
+
+		// Is the self->ho_ a Vector?  If so, add the __array_interface__ symbol
+		
+		if (is_obj_type(self->ho_, "Vector")) {
+			PyDict_SetItemString(dict,"__array_interface__",Py_None);
+		}
 		return dict;
 	    }else if (strncmp(n, "_ref_", 5) == 0) {
 		if (self->type_ > 1) {
@@ -773,6 +769,35 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* name) {
 			return NULL;
 		}
 		isptr = 1;
+	    }else if (is_obj_type(self->ho_, "Vector") && strcmp(n, "__array_interface__")==0) {
+		// return __array_interface__
+		//printf("building array interface\n");
+		Vect* v = (Vect*)self->ho_->u.this_pointer;
+		int size = v->capacity();
+		double* x = vector_vec(v);
+
+		
+	     	return Py_BuildValue("{s:(i),s:s,s:i,s:(l,O)}","shape",size,"typestr",array_interface_typestr,"version",3,"data",(long)x,Py_True);
+
+	    }else if (strcmp(n, "__doc__") == 0) {
+
+	      if (setup_doc_system()) {
+		if (self->ho_) {
+			docobj = Py_BuildValue("s s", self->ho_->ctemplate->sym->name, self->sym_ ? self->sym_->name : "");
+		}else if (self->sym_) {
+		  // Symbol
+			docobj = Py_BuildValue("s s", "", self->sym_->name);
+		}else{
+		  // Base HocObject
+
+			docobj = Py_BuildValue("s s", "", "");
+		}
+
+		return PyObject_CallObject(pfunc_get_docstring,docobj);
+	      }else{
+		return NULL;
+	      }
+
 	    }else{
 		// ipython wants to know if there is a __getitem__
 		// even though it does not use it.
@@ -1426,7 +1451,45 @@ static PySequenceMethods hocobj_seqmeth = {
 	NULL, NULL
 };
 
-static Object** nrnpy_vec_from_python(void* v) {
+static char* double_array_interface(PyObject* po,long& stride) {
+	long idata = 0;
+	PyObject *pstride;
+	PyObject *psize;
+	if (PyObject_HasAttrString(po, "__array_interface__")) {
+		PyObject* ai = PyObject_GetAttrString(po, "__array_interface__");
+		if (strcmp(PyString_AsString(PyDict_GetItemString(ai, "typestr")), array_interface_typestr) == 0) {
+			idata = PyLong_AsLong(PyTuple_GetItem(PyDict_GetItemString(ai, "data"), 0));
+			//printf("double_array_interface idata = %ld\n", idata);
+
+			pstride = PyDict_GetItemString(ai, "strides");
+		  	if (pstride == Py_None) {
+				stride=8;
+			} else if (PyTuple_Check(pstride)) {
+				if (PyTuple_Size(pstride)==1) {
+					psize = PyTuple_GetItem(pstride, 0);
+					if PyInt_Check(psize) {
+						stride = PyInt_AS_LONG(psize);
+
+					} else if (PyLong_Check(psize)) {
+						stride = PyLong_AsLong(psize);
+					} else {
+						PyErr_SetString(PyExc_TypeError, "array_interface stride element of invalid type.");
+						idata=0;
+					}
+					
+				} else idata=0; //don't handle >1 dimensions
+			} else {
+
+				PyErr_SetString(PyExc_TypeError, "array_interface stride object of invalid type.");
+				idata=0;
+			}
+
+		}
+	}
+	return (char*)idata;
+}
+
+static IvocVect* nrnpy_vec_from_python(void* v) {
 	Vect* hv = (Vect*)v;
 //	printf("%s.from_array\n", hoc_object_name(hv->obj_));
 	Object* ho = *hoc_objgetarg(1);
@@ -1459,6 +1522,13 @@ static Object** nrnpy_vec_from_python(void* v) {
 //		printf("size = %d\n", size);
 		hv->resize(size);
 		double* x = vector_vec(hv);
+		long stride;
+		char* y = double_array_interface(po,stride);
+	    if (y) {
+		for (int i = 0,j = 0; i < size; ++i,j+=stride) {
+			x[i] = *(double*)(y+j);
+		}
+	    }else{
 		for (int i=0; i < size; ++i) {
 			PyObject* p = PySequence_GetItem(po, i);
 			if (!PyNumber_Check(p)) {
@@ -1469,10 +1539,12 @@ static Object** nrnpy_vec_from_python(void* v) {
 			x[i] = PyFloat_AsDouble(p);
 			Py_DECREF(p);
 		}
+	    }
 	}
 	Py_DECREF(po);
-	return hv->temp_objvar();
+	return hv;
 }
+
 static Object** nrnpy_vec_to_python(void* v) {
 	Vect* hv = (Vect*)v;
 	int size = hv->capacity();
@@ -1480,6 +1552,11 @@ static Object** nrnpy_vec_to_python(void* v) {
 //	printf("%s.to_array\n", hoc_object_name(hv->obj_));
 	PyObject* po;
 	Object* ho = 0;
+
+	// as_numpy_array=True is the case where this function is being called by the ivocvect __array__ member
+	// as such perhaps we should check here that no arguments were passed
+ 	// although this should be the case unless the function is erroneously called by the user.
+
 	if (ifarg(1)) {
 		ho = *hoc_objgetarg(1);
 		if (ho->ctemplate->sym != nrnpy_pyobj_sym_) {
@@ -1494,14 +1571,24 @@ static Object** nrnpy_vec_to_python(void* v) {
 		}
 		Py_INCREF(po);
 	}else{
+
+
 		if ((po = PyList_New(size)) == NULL) {
 			hoc_execerror("Could not create new Python List with correct size.", 0);
 		}
+
+	
 		ho = nrnpy_po2ho(po);
 		--ho->refcount;
 	}
 //	printf("size = %d\n", size);
-	if (PyList_Check(po)) { // PySequence_SetItem does DECREF of old items
+	long stride;
+	char* y = double_array_interface(po,stride);
+	if (y) {
+		for (int i = 0,j = 0; i < size; ++i,j+=stride) {
+			*(double*)(y+j) = x[i];
+		}
+	}else if (PyList_Check(po)) { // PySequence_SetItem does DECREF of old items
 		for (int i=0; i < size; ++i) {
 			PyObject* pn = PyFloat_FromDouble(x[i]);
 			if (!pn || PyList_SetItem(po, i, pn) == -1) {
@@ -1524,176 +1611,9 @@ hoc_execerror("Could not set a Python Sequence item", buf);
 	return hoc_temp_objptr(ho);
 }
 
-#ifdef WITH_NUMPY
-
-
-static PyObject* PyObj_FromNrnObj(Object* obj) {
-
-  if (obj==NULL) {
-    printf("Warning: PyObj_FromNrnObj obj NULL\n");
-    //return null;
-    Py_INCREF(Py_None);
-    return Py_None;
-  }
-  
-
-  if (is_obj_type(obj,"Vector")) {
-    // we can deal with vectors
-    Vect* v = (Vect*)obj->u.this_pointer;
-    PyArrayObject*array = NULL;
-    int i,n = v->capacity();
-
-    array = (PyArrayObject*)PyArray_FromDims(1,&n,PyArray_DOUBLE);
-    for (i=0;i<n;i++) {
-      *(double*)(array->data + i*array->strides[0]) = (*v)[i];
-    }
-
-    return (PyObject*)array;
-
-  }
-
-  printf("Warning: PyObj_FromNrnObj cannot handle obj type, returning NULL\n");
-  //return NULL;
-  Py_INCREF(Py_None);
-  return Py_None;
-  
-}
 
 
 
-
-
-static int hocobj_tonumpy(PyObject* self, PyObject* args) {
-
-
-  if (!PyArg_ParseTuple(args, "")) {
-    return NULL;
-  }
-
-  PyArrayObject* array = NULL;
-
-
-  if (self->type_ == 2 || self->type_ == 3) {
-
-    Symbol* sym = self->sym_;
-
-    if (!sym) {
-      PyErr_SetString(PyExc_RuntimeError, "sym==NULL");
-      return NULL;
-    }
-
-    if (sym->type == VAR) {
-
-      if (ISARRAY(sym)) {
-
-	// Make a numpy array from an ndim NEURON array
-
-	int total = hoc_total_array(sym);
-	PyArrayObject* array = NULL;
-	int i;
-
-	Arrayinfo* a = sym->arayinfo;
-	double* p = OPVAL(sym);
-	  
-	if (a) {
-	  PyObject* pDims = PyList_New(a->nsub);
-
-	  for (i= a->nsub-1;i>=0;--i) {
-	    PyList_SetItem(pDims,i,PyInt_FromLong(a->sub[i]));
-	  }
-
-	  // first contiguous, then reshape
-	  array = (PyArrayObject*)PyArray_FromDims(1,&total,PyArray_DOUBLE);
-	  if (array==NULL) {
-	    PyErr_SetString(PyExc_RuntimeError,"hoc.get hoc error allocating array.");
-	    return NULL;
-	  }
-
-	  // fill array memory
-
-	  for (i=0;i<total;i++) {
-	    *(double*)(array->data + i*array->strides[0]) = p[i];
-	  }
-
-	  // return shaped array
-
-	  pObj = (PyObject*)PyArray_Reshape(array,pDims);
-	  // throw away pDims
-	  Py_DECREF(pDims);
-
-	}
-
-      }
-      else {
-	// VAR is not an array
-
-	pObj = PyFloat_FromDouble(*OPVAL(sym));
-      }
-
-    }
-    else if (sym->type == OBJECTVAR) {
-
-      if (ISARRAY(sym)) {
-
-	// create numpy array of type 'O' (PyObjects) from NEURON OBJREF array
-
-	int total = hoc_total_array(sym);
-	PyArrayObject* array = NULL;
-	int i;
-
-	Arrayinfo* a = sym->arayinfo;
-
-	if (a) {
-	  PyObject* pDims = PyList_New(a->nsub);
-
-	  for (i= a->nsub-1;i>=0;--i) {
-	    PyList_SetItem(pDims,i,PyInt_FromLong(a->sub[i]));
-	  }
-
-
-	  // first contiguous, then reshape
-
-	  array = (PyArrayObject*)PyArray_FromDims(1,&total,PyArray_OBJECT);
-	  if (array==NULL) {
-	    PyErr_SetString(PyExc_RuntimeError,"hoc.get hoc error allocating array.");
-	    return NULL;
-	  }
-
-	  // fill array memory
-
-	  for (i=0;i<total;i++) {
-	    *(PyObject**)(array->data + i*array->strides[0]) = PyObj_FromNrnObj(OPOBJ(sym)[i]);
-	  }
-
-	  // return shaped array
-
-	  pObj = (PyObject*)PyArray_Reshape(array,pDims);
-	  // throw away pDims
-	  Py_DECREF(pDims);
-	      
-	  if (pObj==NULL) {
-	    PyErr_SetString(PyExc_RuntimeError,"hoc.get hoc error reshaping array.");
-	    return NULL;
-	  }
-
-
-	}
-
-      }
-      else {
-	// return single object
-	pObj = PyObj_FromNrnObj(OPOBJ(sym)[0]);
-      }
-
-
-  }
-  else {
-    PyErr_SetString(PyExc_TypeError, "not a compound type");
-    return NULL;
-  }
-
-}
-#endif //WITH_NUMPY
 
 
 static PyMethodDef hocobj_methods[] = {
@@ -1702,9 +1622,6 @@ static PyMethodDef hocobj_methods[] = {
 	{"cas", nrnpy_cas, METH_VARARGS, "Return the currently accessed section." },
 	{"allsec", nrnpy_forall, METH_VARARGS, "Return iterator over all sections." },
 	{"Section", nrnpy_newsecobj, METH_VARARGS, "Return a new Section" },
-#if WITH_NUMPY
-	{"toarray",hocobj_tonumpy,METH_VARARGS,"toarray(self) returns a numpy array of self."},
-#endif
 	{NULL, NULL, 0, NULL}
 };
 
@@ -1803,6 +1720,9 @@ static PyTypeObject nrnpy_HocObjectType = {
 
 myPyMODINIT_FUNC nrnpy_hoc() {
 	PyObject* m;
+	PyObject* psys;
+	PyObject* pbo;
+	char *byteorder;
 	nrnpy_vec_from_python_p_ = nrnpy_vec_from_python;
 	nrnpy_vec_to_python_p_ = nrnpy_vec_to_python;
 	m = Py_InitModule3("hoc", HocMethods,
@@ -1826,15 +1746,49 @@ myPyMODINIT_FUNC nrnpy_hoc() {
 	s = hoc_lookup("Matrix"); assert(s);
 	sym_mat_x = hoc_table_lookup("x", s->u.ctemplate->symtable); assert(sym_mat_x);
 
-#ifdef WITH_NUMPY
-
-	// setup for numpy
-	import_array();
-
-#endif // WITH_NUMPY
-
-
 	nrnpy_nrn();
+
+
+	// Get python sys.byteorder and configure array_interface_byteorder string appropriately
+
+	psys = PyImport_ImportModule("sys");
+	if (psys==NULL)	 {
+		PyErr_SetString(PyExc_ImportError, "Failed to import sys to determine system byteorder.");
+		return;
+	}
+
+
+	pbo = PyObject_GetAttrString(psys, "byteorder");
+
+	if (pbo==NULL) {
+		PyErr_SetString(PyExc_AttributeError, "sys module does not have attribute 'byteorder'!");
+		return;
+	}
+
+	byteorder = PyString_AsString(pbo); 
+
+	if (byteorder==NULL) {
+		// type error already raised
+		return;
+	}
+
+
+	if (strcmp(byteorder,"little")==0) {
+
+		array_interface_typestr[0]='<';
+
+	} else if (strcmp(byteorder,"big")==0) {
+
+		array_interface_typestr[0]='>';
+
+	} else {
+		PyErr_SetString(PyExc_RuntimeError, "Unknown system native byteorder.");
+		return;
+	}
+
+	// Setup bytesize in typestr
+
+	snprintf(array_interface_typestr+2,3,"%d",sizeof(double));
 }
 
 }//end of extern c

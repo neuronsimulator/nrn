@@ -75,13 +75,6 @@ and PYINCDIR to find Python.h
 		[ac_nrn_python=$withval], [ac_nrn_python=no]
 	)
 	nrn_temp_cflags="$CFLAGS"
-	AC_ARG_ENABLE([numpy],
-		AC_HELP_STRING([--enable-numpy],
-			[allow use of numpy (disabled by default) if python
-enabled.
-]),
-		[ac_nrn_numpy=$enableval], [ac_nrn_numpy=no]
-	)
 	AC_ARG_ENABLE([cygwin],
 		AC_HELP_STRING([--disable-cygwin],
 			[build as MINGW program. Only for mswin.]),
@@ -193,25 +186,6 @@ PYLIB="${PYLIBLINK} ${PYLINKFORSHARED} -R${PYLIBDIR}"
 		NRNPYTHON_DEP="../nrnpython/libnrnpython.la"
 		NRNPYTHON_INCLUDES="-I${PYINCDIR}"
 		NRNPYTHON_PYLIBLINK="$PYLIBLINK"
-
-		if test "$ac_nrn_numpy" = "yes" ; then
-			AC_MSG_CHECKING([numpy availability])
-			CMD="import numpy;print numpy.__path__@<:@0@:>@ + '''/core/include''' "
-			PYTHON_NUMPY_INCLUDE=`${ac_nrn_python} -c "${CMD}"`
-			if test "$PYTHON_NUMPY_INCLUDE" != ""; then
-				HAVE_NUMPY="yes"
-				NRNPYTHON_INCLUDES="${NRNPYTHON_INCLUDES} -I${PYTHON_NUMPY_INCLUDE}"
-				NRNPYTHON_DEFINES="-DWITH_NUMPY"
-			else
-				AC_MSG_ERROR([Python cannot import numpy (numpy not installed?).])
-			fi
-		else
-			echo "numpy not enabled. If desired add --enable-numpy to configure."
-			HAVE_NUMPY="no"
-			NRNPYTHON_DEFINES="-UWITH_NUMPY"
-		fi
-
-
 		NRNPYTHON_EXEC="${ac_nrn_python}"
 		build_nrnpython=yes
 		if test "$CYGWIN" = "yes" ; then

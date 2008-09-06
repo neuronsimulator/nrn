@@ -55,6 +55,16 @@ except ImportError:
 import nrn
 h  = hoc.HocObject()
 
+
+def test():
+    """ Runs a battery of unit tests on the neuron module."""
+    import neuron.tests
+    import unittest
+
+    runner = unittest.TextTestRunner(verbosity=2)
+    runner.run(neuron.tests.suite())
+
+
 # ------------------------------------------------------------------------------
 # class factory for subclassing h.anyclass
 # h.anyclass methods may be overridden. If so the base method can be called
@@ -122,15 +132,16 @@ def load_mechanisms(path):
     print "NEURON mechanisms not found in %s." % path
 
 
-import os
+import os,sys
 if 'NRN_NMODL_PATH' in os.environ:
     nrn_nmodl_path = os.environ['NRN_NMODL_PATH'].split(':')
+    print 'Auto-loading mechanisms:'
     print 'NRN_NMODL_PATH=%s' % os.environ['NRN_NMODL_PATH']
-    print 'Loading mechanisms...'
     for x in nrn_nmodl_path:
-        print "From path: %s ..." % x
+        #print "from path %s:" % x
         load_mechanisms(x)
-        print "Done."
+        #print "\n"
+    print "Done.\n"
     
 
 
@@ -260,7 +271,7 @@ def run(tstop):
 #   we write an explicit Python class.
 # ------------------------------------------------------------------------------
 
-doc = """
+docstring ="""
 
 class ExpSyn
 
@@ -288,10 +299,10 @@ See:
 http://www.neuron.yale.edu/neuron/docs/help/neuron/neuron/mech.html#ExpSyn
 
 """
-ExpSyn = new_point_process('ExpSyn',doc=doc)
+ExpSyn = new_point_process('ExpSyn',doc=docstring)
 
 
-doc = """
+docstring ="""
 
 class Exp2Syn
 
@@ -333,9 +344,9 @@ http://www.neuron.yale.edu/neuron/docs/help/neuron/neuron/mech.html#Exp2Syn
 
 
 """
-Exp2Syn = new_point_process('Exp2Syn',doc=doc)
+Exp2Syn = new_point_process('Exp2Syn',doc=docstring)
 
-doc = """
+docstring ="""
 
 class VClamp
 
@@ -356,9 +367,9 @@ See:
 http://www.neuron.yale.edu/neuron/docs/help/neuron/neuron/mech.html#VClamp
 
 """
-VClamp = new_point_process('VClamp',doc=doc)
+VClamp = new_point_process('VClamp',doc=docstring)
 
-doc = """
+docstring ="""
 
 class SEClamp
 
@@ -381,10 +392,10 @@ See:
 http://www.neuron.yale.edu/neuron/docs/help/neuron/neuron/mech.html#SEClamp
 
 """
-SEClamp = new_point_process('SEClamp',doc=doc)
+SEClamp = new_point_process('SEClamp',doc=docstring)
 
 
-doc = """
+docstring ="""
 
 class APCount
 
@@ -413,10 +424,10 @@ See:
 http://www.neuron.yale.edu/neuron/docs/help/neuron/neuron/mech.html#APcount
 
 """
-APCount = new_point_process('APCount',doc=doc)
+APCount = new_point_process('APCount',doc=docstring)
 
 
-doc = """
+docstring ="""
 
 class ParallelContext
 
@@ -427,10 +438,10 @@ See:
 http://www.neuron.yale.edu/neuron/docs/help/neuron/neuron/classes/parcon.html
 
 """
-ParallelContext = new_hoc_class('ParallelContext',doc=doc)
+ParallelContext = new_hoc_class('ParallelContext',doc=docstring)
 
 
-doc = """
+docstring ="""
 
 class NetStim
 
@@ -445,10 +456,10 @@ See:
 http://www.neuron.yale.edu/neuron/docs/help/neuron/neuron/mech.html#NetStim
 
 """
-NetStim = new_hoc_class('NetStim',doc=doc)
+NetStim = new_hoc_class('NetStim',doc=docstring)
 
 
-doc = """
+docstring ="""
 
 class Random
 
@@ -470,10 +481,10 @@ Note:
 For python based random number generation, numpy.random is an alternative to be considered.
 
 """
-Random = new_hoc_class('Random',doc=doc)
+Random = new_hoc_class('Random',doc=docstring)
 
 
-doc = """
+docstring ="""
 
 class CVode
 
@@ -485,7 +496,7 @@ See:
 http://www.neuron.yale.edu/neuron/docs/help/neuron/neuron/classes/cvode.html
 
 """
-CVode = new_hoc_class('CVode',doc=doc)
+CVode = new_hoc_class('CVode',doc=docstring)
 
 h('obfunc new_IClamp() { return new IClamp($1) }')
 h('obfunc newlist() { return new List() }')
@@ -496,6 +507,8 @@ h('objref nil')
 h('obfunc new_NetConO_nil() { return new NetCon($o1, nil) }')
 h('obfunc new_NetConP_nil() { return new NetCon(&v($1), nil) }')
 h('obfunc new_File() { return new File() }')
+
+del docstring
 
 class List(Wrapper):
     """
@@ -544,12 +557,6 @@ class Vector(Wrapper):
     def __len__(self):
         return self.size()
 
-    # define the __array__ method
-    # if numpy support is available
-    if not hoc.test_numpy()==None:
-        def __array__(self):
-            return self.x.__array__()
-   
     def __str__(self):
         tmp = self.printf()
         return ''
@@ -580,19 +587,10 @@ class Vector(Wrapper):
     def tolist(self):
         return [self.x[i] for i in range(int(self.size()))]
 
-    def toarray_slow(self):
+    def toarray(self):
         import numpy
         return numpy.array(self)
 
-    def toarray_numpy(self):
-        return self.x.toarray()
-
-    # for array conversion,
-    # use numpy support if available
-    if hoc.test_numpy()==None:
-        toarray = toarray_slow
-    else:
-        toarray = toarray_numpy
 
     def record(self, section, variable, position=0.5):
         #ref = h.ref(variable)
