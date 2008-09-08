@@ -1,7 +1,7 @@
 /*
  * -----------------------------------------------------------------
- * $Revision: 855 $
- * $Date: 2005-02-10 00:15:46 +0100 (Thu, 10 Feb 2005) $
+ * $Revision: 2212 $
+ * $Date: 2008-09-08 16:32:26 +0200 (Mon, 08 Sep 2008) $
  * ----------------------------------------------------------------- 
  * Programmer(s): Scott D. Cohen, Alan C. Hindmarsh, Radu Serban,
  *                and Aaron Collier @ LLNL
@@ -15,6 +15,14 @@
  * of the NVECTOR package.
  * -----------------------------------------------------------------
  */
+
+#include <../../../nrnconf.h>
+#if HAVE_POSIX_MEMALIGN
+#define HAVE_MEMALIGN 1
+#endif
+#if HAVE_MEMALIGN
+#define _XOPEN_SOURCE 600
+#endif
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -130,7 +138,11 @@ N_Vector N_VNew_Serial(long int length)
   if (length > 0) {
 
     /* Allocate memory */
+#if HAVE_MEMALIGN
+    posix_memalign((void**)&data, 64, length*sizeof(realtype));
+#else
     data = (realtype *) malloc(length * sizeof(realtype));
+#endif
     if(data == NULL) {N_VDestroy_Serial(v);return(NULL);}
 
     /* Attach data */
@@ -330,7 +342,11 @@ N_Vector N_VClone_Serial(N_Vector w)
   if (length > 0) {
 
     /* Allocate memory */
+#if HAVE_MEMALIGN
+    posix_memalign((void**)&data, 64, length*sizeof(realtype));
+#else
     data = (realtype *) malloc(length * sizeof(realtype));
+#endif
     if(data == NULL) {N_VDestroy_Serial(v);return(NULL);}
 
     /* Attach data */

@@ -55,11 +55,11 @@ INITIAL {
 BREAKPOINT {
      SOLVE states METHOD sparse
      ina = gnabar*N*(v - ena)
-	cnt1 = cnt1 + 1
+	PROTECT cnt1 = cnt1 + 1
 }
 
 KINETIC states {
-	cnt2 = cnt2 + 1
+	PROTECT cnt2 = cnt2 + 1
      rate(v*1(/mV))
 :     CONSERVE P + L + M + N + O = 1
      ~ P <-> L (am, lp*bm)    :back reaction in original = 3.5   

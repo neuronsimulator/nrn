@@ -21,7 +21,12 @@ extern int net_event_seen_;
 extern int watch_seen_;
 #endif
 
+int protect_;
+int protect_include_;
+extern Item* vectorize_replacement_item(Item*);
 extern int artificial_cell;
+extern int vectorize;
+extern int assert_threadsafe;
 
 static type_change();
 
@@ -114,7 +119,7 @@ type_change(sym, level) /*return 1 if type change, 0 otherwise*/
 
 	if (s && c) {
 		sym->subtype &= ~c;
-Fprintf(stderr, "NOTICE: %s is promoted from a PARAMETER to a STATE\n", sym->name);
+Fprintf(stderr, "Notice: %s is promoted from a PARAMETER to a STATE\n", sym->name);
 		if (previous_subtype & STAT) {
 			sym->u.str = previous_str;
 		}
@@ -126,7 +131,7 @@ Fprintf(stderr, "WARNING: %s is promoted from an ASSIGNED to a STATE\n", sym->na
 		}
 	}else if (d && c) {
 		sym->subtype &= ~c;
-Fprintf(stderr, "NOTICE: %s is promoted from a PARAMETER to an ASSIGNED\n", sym->name);
+Fprintf(stderr, "Notice: %s is promoted from a PARAMETER to an ASSIGNED\n", sym->name);
 		if (previous_subtype & DEP) {
 			sym->u.str = previous_str;
 		}
@@ -370,6 +375,48 @@ statdefault(n, index, units, qs, makeconst)
 	}
 }
 
+/* the problem is that qpar->next may already have a _p, ..., _nt
+vectorize_substitute, and qpar->next is often normally "" instead of ')'
+for the no arg case.
+*/
+static int func_arg_examine(Item* qpar, Item* qend) {
+	Item* q;
+	int b = 1; /* real args exist case */
+	q = qpar->next;
+	if (q->itemtype == SYMBOL && strcmp(SYM(q)->name, ")") == 0) {
+		b = 0; /* definitely no arg */
+	}
+	if (q->itemtype == STRING && strcmp(STR(q), "") == 0) {
+		if (vectorize_replacement_item(q)) {
+			b = 2; /* _p,..._nt already there */
+		} else if (q->next->itemtype == SYMBOL && strcmp(SYM(q->next)->name, ")") == 0) {
+			b = 0; /* definitely no arg */
+		}
+	}
+	return b;
+}
+
+vectorize_scan_for_func(Item* q1, Item* q2) {
+	Item* q, *qq;
+	int b;
+	return;
+	for (q = q1; q != q2; q = q->next) {
+		if (q->itemtype == SYMBOL) {
+			Symbol* s = SYM(q);
+			if ((s->usage & FUNCT) && !(s->subtype & (EXTDEF))) {
+				if (q->next->itemtype == SYMBOL && strcmp(SYM(q->next)->name, "(") == 0) {
+					int b = func_arg_examine(q->next, q2);
+					if (b == 0) { /* no args */
+						vectorize_substitute(q->next, "(_p, _ppvar, _thread, _nt");
+					}else if (b == 1) { /* real args */
+						vectorize_substitute(q->next, "(_p, _ppvar, _thread, _nt,");
+					} /* else no _p.._nt already there */
+				}
+			}
+		}
+	}
+}
+
 defarg(q1, q2)			/* copy arg list and define as doubles */
 	Item           *q1, *q2;
 {
@@ -377,8 +424,8 @@ defarg(q1, q2)			/* copy arg list and define as doubles */
 
 	if (q1->next == q2) {
 #if VECTORIZE
-		vectorize_substitute(insertstr(q2, ""), "_ix");
-		vectorize_substitute(insertstr(q2->next, ""), "int _ix;");
+		vectorize_substitute(insertstr(q2, ""), "_p, _ppvar, _thread, _nt");
+		vectorize_substitute(insertstr(q2->next, ""), "double* _p; Datum* _ppvar; Datum* _thread; _NrnThread* _nt;");
 #endif
 		return;
 	}
@@ -388,8 +435,8 @@ defarg(q1, q2)			/* copy arg list and define as doubles */
 	replacstr(q2->next, "\n\tdouble");
 	Insertstr(q3, ";\n");
 #if VECTORIZE
-		vectorize_substitute(insertstr(q1->next, ""), "_ix,");
-		vectorize_substitute(insertstr(q2->next, ""), "int _ix;");
+		vectorize_substitute(insertstr(q1->next, ""), "_p, _ppvar, _thread, _nt,");
+		vectorize_substitute(insertstr(q2->next, ""), "double* _p; Datum* _ppvar; Datum* _thread; _NrnThread* _nt;");
 #endif
 }
 
@@ -486,6 +533,12 @@ add_reset_args(q)
 	Lappendstr(firstlist, buf);
 }
 
+add_nrnthread_arg(q)
+	Item *q;
+{
+	vectorize_substitute(insertstr(q->next, "nrn_threads,"), "_nt,");
+}
+
 /* table manipulation */
 /* arglist must have exactly one argument
    tablist contains 1) list of names to be looked up (must be empty if
@@ -513,11 +566,38 @@ static List* check_table_statements;
 static Symbol* last_func_using_table;
 
 check_tables() {
+	/* for threads do this differently */
 	if (check_table_statements) {
-		fprintf(fcout, "\n#if _CRAY\n");
+		fprintf(fcout, "\n#if %d\n", 0);
 		printlist(check_table_statements);
 		fprintf(fcout, "#endif\n");
 	}
+}
+
+/* this way we can make sure the tables are up to date in the main thread
+at critical points in the finitialize, nrn_fixed_step, etc. The only
+requirement is that the function that generates the table not use
+any except GLOBAL parameters and assigned vars not requiring
+an initial value, because we are probably going to
+call this with nonsense _p, _ppvar, and _thread
+*/
+static List* check_table_thread_list;
+int check_tables_threads(List* p) {
+	Item* q;
+	if (check_table_thread_list) {
+		ITERATE(q, check_table_thread_list) {
+			sprintf(buf, "\nstatic void %s(double*, Datum*, Datum*, _NrnThread*);", STR(q));
+			lappendstr(p, buf);
+		}
+		lappendstr(p, "\nstatic void _check_table_thread(double* _p, Datum* _ppvar, Datum* _thread, _NrnThread* _nt, int _type) {\n");
+		ITERATE(q, check_table_thread_list) {
+			sprintf(buf, "  %s(_p, _ppvar, _thread, _nt);\n", STR(q));
+			lappendstr(p, buf);
+		}
+		lappendstr(p, "}\n");
+		return 1;
+	}
+	return 0;
 }
 
 table_massage(tablist, qtype, qname, arglist)
@@ -548,7 +628,9 @@ table_massage(tablist, qtype, qname, arglist)
 		check_table_statements = newlist();
 	}
 	sprintf(buf, "_check_%s();\n", fname);
-	Lappendstr(check_table_statements, buf);
+	q = lappendstr(check_table_statements, buf);
+	sprintf(buf, "_check_%s(_p, _ppvar, _thread, _nt);\n", fname);
+	vectorize_substitute(q, buf);
 	/*checking*/
 	if (type == FUNCTION1) {
 		if (table) {
@@ -593,17 +675,25 @@ diag("FUNCTION or PROCEDURE containing a TABLE stmt\n",
 	Lappendstr(procfunc, buf);
 
 	/* create the check function */
+	if (!check_table_thread_list) {
+		check_table_thread_list = newlist();
+	}
+	sprintf(buf, "_check_%s", fname);
+	lappendstr(check_table_thread_list, buf);
 	Sprintf(buf, "static _check_%s();\n", fname);
-	Linsertstr(procfunc, buf);
+	q = insertstr(procfunc, buf);
+	vectorize_substitute(q, "");
 	Sprintf(buf, "static _check_%s() {\n", fname);
-	Lappendstr(procfunc, buf);
+	q = lappendstr(procfunc, buf);
+	Sprintf(buf, "static void _check_%s(double* _p, Datum* _ppvar, Datum* _thread, _NrnThread* _nt) {\n", fname);
+	vectorize_substitute(q, buf);
 	Lappendstr(procfunc, " static int _maktable=1; int _i, _j, _ix = 0;\n");
 	Lappendstr(procfunc, " double _xi, _tmax;\n");
 	ITERATE(q, depend) {
 		Sprintf(buf, " static double _sav_%s;\n", SYM(q)->name);
 		Lappendstr(procfunc, buf);
 	}
-	Lappendstr(procfunc, " if (!usetable) {return;}\n");
+	lappendstr(procfunc, " if (!usetable) {return;}\n");
 	/*allocation*/
 	ITERATE(q, table) {
 		s = SYM(q);
@@ -643,7 +733,7 @@ diag("FUNCTION or PROCEDURE containing a TABLE stmt\n",
 			Sprintf(buf, "   _t_%s[_i] = _f_%s(_x);\n", s->name, fname);
 			Lappendstr(procfunc, buf);
 #if VECTORIZE
-			Sprintf(buf, "   _t_%s[_i] = _f_%s(_ix, _x);\n", s->name, fname);
+			Sprintf(buf, "   _t_%s[_i] = _f_%s(_p, _ppvar, _thread, _nt, _x);\n", s->name, fname);
 			vectorize_substitute(procfunc->prev, buf);
 #endif
 		}
@@ -651,7 +741,7 @@ diag("FUNCTION or PROCEDURE containing a TABLE stmt\n",
 		Sprintf(buf, "   _f_%s(_x);\n", fname);
 		Lappendstr(procfunc, buf);
 #if VECTORIZE
-		Sprintf(buf, "   _f_%s(_ix, _x);\n", fname);
+		Sprintf(buf, "   _f_%s(_p, _ppvar, _thread, _nt, _x);\n", fname);
 		vectorize_substitute(procfunc->prev, buf);
 #endif
 		ITERATE(q, table) {
@@ -687,20 +777,20 @@ Sprintf(buf, "   _t_%s[_i] = %s;\n", s->name, s->name);
 	}else{
 		Lappendstr(procfunc, "static");
 	}
-	Sprintf(buf, "%s(%s) double %s;{",
-			fname, arg->name, arg->name);
+	Sprintf(buf, "%s(double %s){",
+			fname, arg->name);
 	Lappendstr(procfunc, buf);		
 #if VECTORIZE
-	Sprintf(buf, "%s(_ix, %s) int _ix; double %s;{",
-		fname, arg->name, arg->name);
+	Sprintf(buf, "%s(double* _p, Datum* _ppvar, Datum* _thread, _NrnThread* _nt, double %s) {",
+		fname, arg->name);
 	vectorize_substitute(procfunc->prev, buf);
 #endif
 	/* check the table */
 	Sprintf(buf, "_check_%s();\n", fname);
-	Lappendstr(procfunc, buf);
+	q = lappendstr(procfunc, buf);
 #if VECTORIZE
-	Sprintf(buf, "\n#ifndef _CRAY\n_check_%s();\n#endif\n", fname);
-	vectorize_substitute(procfunc->prev, buf);
+	Sprintf(buf, "\n#if 0\n_check_%s(_p, _ppvar, _thread, _nt);\n#endif\n", fname);
+	vectorize_substitute(q, buf);
 #endif
 	if (type == FUNCTION1) {
 		Lappendstr(procfunc, "return");
@@ -708,7 +798,7 @@ Sprintf(buf, "   _t_%s[_i] = %s;\n", s->name, s->name);
 	Sprintf(buf, "_n_%s(%s);\n", fname, arg->name);
 	Lappendstr(procfunc, buf);
 #if VECTORIZE
-	Sprintf(buf, "_n_%s(_ix, %s);\n", fname, arg->name);
+	Sprintf(buf, "_n_%s(_p, _ppvar, _thread, _nt, %s);\n", fname, arg->name);
 	vectorize_substitute(procfunc->prev, buf);
 #endif
 	if (type != FUNCTION1) {
@@ -722,12 +812,12 @@ Sprintf(buf, "   _t_%s[_i] = %s;\n", s->name, s->name);
 	}else{
 		Lappendstr(procfunc, "static");
 	}
-	Sprintf(buf, "_n_%s(%s) double %s;{",
-			fname, arg->name, arg->name);
+	Sprintf(buf, "_n_%s(double %s){",
+			fname, arg->name);
 	Lappendstr(procfunc, buf);		
 #if VECTORIZE
-	Sprintf(buf, "_n_%s(_ix, %s) int _ix; double %s;{",
-		fname, arg->name, arg->name);
+	Sprintf(buf, "_n_%s(double* _p, Datum* _ppvar, Datum* _thread, _NrnThread* _nt, double %s){",
+		fname, arg->name);
 	vectorize_substitute(procfunc->prev, buf);
 #endif
 	Lappendstr(procfunc, "int _i, _j;\n");
@@ -741,7 +831,7 @@ Sprintf(buf, "   _t_%s[_i] = %s;\n", s->name, s->name);
 	Sprintf(buf, "_f_%s(%s);", fname, arg->name);
 	Lappendstr(procfunc, buf);
 #if VECTORIZE
-	Sprintf(buf, "_f_%s(_ix, %s);", fname, arg->name);
+	Sprintf(buf, "_f_%s(_p, _ppvar, _thread, _nt, %s);", fname, arg->name);
 	vectorize_substitute(procfunc->prev, buf);
 #endif
 	if (type != FUNCTION1) {
@@ -848,19 +938,33 @@ hocfunc(n, qpar1, qpar2) /*interface between modl and hoc for proc and func */
 	Item* qp;
 #endif
 	
-#if NOCMODL
    if (point_process) {
-	Sprintf(buf, "static double _hoc_%s(_vptr) void* _vptr; {\n double _r;\n", n->name);
+	Sprintf(buf, "\nstatic double _hoc_%s(_vptr) void* _vptr; {\n double _r;\n", n->name);
+   }else{
+	Sprintf(buf, "\nstatic int _hoc_%s() {\n  double _r;\n", n->name);
+   }
 	Lappendstr(procfunc, buf);
-	Sprintf(buf, "	_hoc_setdata(_vptr);\n");
-   }else
-#endif
-	Sprintf(buf, "static int _hoc_%s() {\n double _r;\n", n->name);
-	Lappendstr(procfunc, buf);
+	vectorize_substitute(lappendstr(procfunc, ""), "\
+  double* _p; Datum* _ppvar; Datum* _thread; _NrnThread* _nt;\n\
+");
+	if (point_process) {
+		vectorize_substitute(lappendstr(procfunc, "  _hoc_setdata(_vptr);\n"), "\
+  _p = ((Point_process*)_vptr)->_prop->param;\n\
+  _ppvar = ((Point_process*)_vptr)->_prop->dparam;\n\
+  _thread = _extcall_thread;\n\
+  _nt = (_NrnThread*)((Point_process*)_vptr)->_vnt;\n\
+");
+	}else{
+		vectorize_substitute(lappendstr(procfunc, ""), "\
+  if (_extcall_prop) {_p = _extcall_prop->param; _ppvar = _extcall_prop->dparam;}else{ _p = (double*)0; _ppvar = (Datum*)0; }\n\
+  _thread = _extcall_thread;\n\
+  _nt = nrn_threads;\n\
+");
+	}
 #if VECTORIZE
 	if (n == last_func_using_table) {
 		qp = lappendstr(procfunc, "");
-		sprintf(buf,"\n#if _CRAY\n _check_%s();\n#endif\n", n->name);
+		sprintf(buf,"\n#if 1\n _check_%s(_p, _ppvar, _thread, _nt);\n#endif\n", n->name);
 		vectorize_substitute(qp, buf);
 	}
 #endif
@@ -892,9 +996,9 @@ hocfunc(n, qpar1, qpar2) /*interface between modl and hoc for proc and func */
 	Lappendstr(procfunc, ";\n ret(_r);\n}\n");
 #if VECTORIZE
 	if (i) {
-		vectorize_substitute(qp, "0,");
+		vectorize_substitute(qp, "_p, _ppvar, _thread, _nt,");
 	}else{
-		vectorize_substitute(qp, "0");
+		vectorize_substitute(qp, "_p, _ppvar, _thread, _nt");
 	}
 #endif
 }
@@ -911,6 +1015,11 @@ vectorize_use_func(qname, qpar1, qexpr, qpar2, blocktype)
 			Insertstr(qpar1->next, "&");
 		}else if (strcmp(SYM(qname)->name, "state_discontinuity") == 0) {
 #if CVODE
+fprintf(stderr, "Notice: Use of state_discontinuity is not thread safe");
+			vectorize = 0;
+			if (blocktype == NETRECEIVE) {
+Fprintf(stderr, "Notice: Use of state_discontinuity in a NET_RECEIVE block is unnecessary and prevents use of this mechanism in a multithreaded simulation.\n");
+			}
 			if (!state_discon_list_) {
 				state_discon_list_ = newlist();
 				Linsertstr(procfunc, "extern int state_discon_flag_;\n");
@@ -923,6 +1032,7 @@ vectorize_use_func(qname, qpar1, qexpr, qpar2, blocktype)
 			if (artificial_cell) {
 				replacstr(qname, "artcell_net_send");
 			}
+			Insertstr(qexpr, "t + ");
 			if (blocktype == NETRECEIVE) {
 				Insertstr(qpar1->next, "_tqitem, _args, _pnt,");
 			}else if (blocktype == INITIAL1){
@@ -949,12 +1059,20 @@ diag("net_move", " only allowed in NET_RECEIVE block");
 		}
 		return;
 	}
+#if 1
+	if (qexpr) {
+		q = insertstr(qpar1->next, "_threadargscomma_");
+	}else{
+		q = insertstr(qpar1->next, "_threadargs_");
+	}
+#else
 	q = insertstr(qpar1->next, "");
 	if (qexpr) {
-		vectorize_substitute(q, "_ix,");
+		vectorize_substitute(q, "_p, _ppvar, _thread, _nt,");
 	}else{
-		vectorize_substitute(q, "_ix");
+		vectorize_substitute(q, "_p, _ppvar, _thread, _nt");
 	}
+#endif
 }
 #endif
 
@@ -991,6 +1109,8 @@ function_table(s, qpar1, qpar2, qb1, qb2) /* s ( ... ) { ... } */
 	insertstr(qb1->next, buf);
 	sprintf(buf, "return hoc_func_table(_ptable_%s, %d, _arg);\n", s->name, i);
 	insertstr(qb2, buf);
+	insertstr(qb2, "}\n/* "); /* kludge to avoid a bad vectorize_substitute */
+	insertstr(qb2->next, " */\n");
 
 	sprintf(buf, "table_%s", s->name);
 	t = install(buf, NAME);
@@ -1018,7 +1138,11 @@ watchstmt(par1, dir, par2, flag, blocktype )Item *par1, *dir, *par2, *flag;
 	if (blocktype != NETRECEIVE) {
 		diag("\"WATCH\" statement only allowed in NET_RECEIVE block", (char*)0);
 	}
-	sprintf(buf, "\nstatic double _watch%d_cond(_pnt) Point_process* _pnt; {\n	_p = _pnt->_prop->param; _ppvar = _pnt->_prop->dparam; v = NODEV(_pnt->node);\n	return ",
+	sprintf(buf, "\nstatic double _watch%d_cond(_pnt) Point_process* _pnt; {\n",
+		watch_seen_);
+	lappendstr(procfunc, buf);
+	vectorize_substitute(lappendstr(procfunc, ""),"\tdouble* _p; Datum* _ppvar; Datum* _thread; _NrnThread* _nt;\n\t_thread= (Datum*)0; _nt = (_NrnThread*)_pnt->_vnt;\n");
+	sprintf(buf, "\t_p = _pnt->_prop->param; _ppvar = _pnt->_prop->dparam;\n\tv = NODEV(_pnt->node);\n	return ",
 		watch_seen_);
 	lappendstr(procfunc, buf);
 	movelist(par1, par2, procfunc);
@@ -1035,4 +1159,20 @@ watchstmt(par1, dir, par2, flag, blocktype )Item *par1, *dir, *par2, *flag;
 		watch_seen_, watch_seen_, STR(flag));
 	replacstr(flag, buf);
 	++watch_seen_;
+}
+
+void threadsafe(char* s) {
+	if (!assert_threadsafe) {
+		fprintf(stderr, "Notice: %s\n", s);
+		vectorize = 0;
+	}
+}
+
+
+Item* protect_astmt(Item* q1, Item* q2) { /* PROTECT, ';' */
+	Item* q;
+	replacstr(q1, "/* PROTECT */_NMODLMUTEXLOCK\n");
+	q = insertstr(q2->next, "\n _NMODLMUTEXUNLOCK /* end PROTECT */\n");
+	protect_include_ = 1;
+	return q;
 }

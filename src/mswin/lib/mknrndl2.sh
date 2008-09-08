@@ -25,9 +25,6 @@ fi
 
 echo '#include <stdio.h>
 #include "hocdec.h"
-/* change name when structures in neuron.exe change*/
-/* and also change the mos2nrn1.sh script */
-int nocmodl5_5;
 #define IMPORT extern __declspec(dllimport)
 IMPORT int nrnmpi_myid, nrn_nobanner_;
 

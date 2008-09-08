@@ -1,6 +1,7 @@
 NEURON {
 	POINT_PROCESS APCount
 	RANGE n, thresh, time, firing
+	THREADSAFE : if APCount.record uses distinct instances of Vector
 }
 
 UNITS {

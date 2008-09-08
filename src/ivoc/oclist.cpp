@@ -566,6 +566,7 @@ OcListBrowser::OcListBrowser(OcList* ocl, char** pstr, const char* action)
 	select_action_ = nil;
 	accept_action_ = nil;
 	on_release_ = false;
+	ignore_ = false;
 	plabel_ = pstr;
 	items_ = nil;
 	label_action_ = new HocCommand(action);

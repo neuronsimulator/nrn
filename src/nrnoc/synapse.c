@@ -37,6 +37,8 @@ fsyng(i)
 #include "neuron.h"
 #include "section.h"
 
+#define nt_t nrn_threads->_t
+
 /* impress the stimulus code to do synapses */
 typedef struct Stimulus {
 	double loc;	/* parameter location (0--1) */
@@ -100,6 +102,9 @@ static stim_record();
 fsyn() {
 	int i;
 
+	if (nrn_nthread > 1) {
+		hoc_execerror("fsyn does not allow threads", "");
+	}
 	i = chkarg(1, 0., 10000.);
 	if (ifarg(2)) {
 		if (i >= maxstim) {
@@ -186,9 +191,9 @@ stimulus(i)
 		return 0.0;
 	}
 #if CVODE
-	at_time(pstim[i].delay);
+	at_time(nrn_threads, pstim[i].delay);
 #endif
-	x = (t - pstim[i].delay)/pstim[i].duration;
+	x = (nt_t - pstim[i].delay)/pstim[i].duration;
 	pstim[i].g = g * alpha(x);
 	return pstim[i].g * (NODEV(pstim[i].pnd) - pstim[i].erev);
 }

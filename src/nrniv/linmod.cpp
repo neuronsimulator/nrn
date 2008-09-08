@@ -38,7 +38,6 @@ extern void linmod_dkmap(double**, double**);
 extern void linmod_dkres(double*, double*, double*);
 extern void linmod_dkpsol(double);
 extern void linmod_update();
-extern double nrn_get_cj();
 extern void nrn_matrix_node_free();
 extern int cvode_active_;
 extern int nrn_use_daspk_;
@@ -67,7 +66,12 @@ int linmod_extra_eqn_count() {
 
 void linmod_alloc() {
 	int i, cnt, neqn;
-	neqn = v_node_count + memb_list[EXTRACELL].nodecount * nlayer;
+	NrnThread* _nt = nrn_threads;
+	nrn_thread_error("LinearMechanism only one thread allowed");
+	neqn = _nt->end;
+	if (_nt->_ecell_memb_list) {
+		neqn += _nt->_ecell_memb_list->nodecount * nlayer;
+	}
 	cnt = linmod_list->count();
 	for (i=0; i < cnt; ++i) {
 		LinearModelAddition* m = linmod_list->item(i);
@@ -301,29 +305,31 @@ void LinearModelAddition::rhs() {
 //printf("LinearModelAddition::rhs %lx\n", (long)this);
 	//right side portion of (c/dt +g)*[dy] =  -g*y + b
 	int i;
+	NrnThread* _nt = nrn_threads;
 	// vm,vext may be reinitialized between fixed steps and certainly
 	// has been adjusted by daspk
 	v2y();
 	g_->m_->mulv(y_, gy_);
 	for (i = 0; i < size_; ++i) {
-		actual_rhs[bmap_[i]] += b_->elem(i) - gy_->elem(i);
+		_nt->_actual_rhs[bmap_[i]] += b_->elem(i) - gy_->elem(i);
 	}
 }
 
 void LinearModelAddition::lhs() {
 //printf("LinearModelAddition::lhs %lx\n", (long)this);
 	//left side portion of (c/dt +g)*[dy] =  -g*y + b
-	c_->add(nrn_get_cj());
+	c_->add(nrn_threads[0].cj);
 	g_->add(1.);
 }
 
 void LinearModelAddition::dkmap(double** pv, double** pvdot) {
 //printf("LinearModelAddition::dkmap\n");
 	int i;
+	NrnThread* _nt = nrn_threads;
 	for (i=nnode_; i < size_; ++i) {
 //printf("bmap_[%d] = %d\n", i, bmap_[i]);
 		pv[bmap_[i]-1] = y_->vec() + i;
-		pvdot[bmap_[i]-1] = actual_rhs + bmap_[i];
+		pvdot[bmap_[i]-1] = _nt->_actual_rhs + bmap_[i];
 	}
 }
 
@@ -384,10 +390,11 @@ void LinearModelAddition::dkpsol(double cj) {
 void LinearModelAddition::update() {
 //printf("LinearModelAddition::update %lx\n", (long)this);
 	int i;
+	NrnThread* _nt = nrn_threads;
 	// note that the following is correct also for states that refer
 	// to the internal potential of a segment. i.e rhs is v + vext[0]
 	for (i = 0; i < size_; ++i) {
-		y_->elem(i) += actual_rhs[bmap_[i]];
+		y_->elem(i) += _nt->_actual_rhs[bmap_[i]];
 	}
 //for (i=0; i < size_; ++i) printf(" i=%d bmap_[i]=%d y_[i]=%g\n", i, bmap_[i], y_->elem(i));
 }
@@ -421,6 +428,7 @@ void MatrixMap::add(double fac) {
 }
 
 void MatrixMap::alloc(int start, int nnode, Node** nodes, int* layer) {
+	NrnThread* _nt = nrn_threads;
 	mmfree();
 	// how many elements
 	int nrow = m_->nrow();
@@ -460,7 +468,7 @@ void MatrixMap::alloc(int start, int nnode, Node** nodes, int* layer) {
 					jt = start + j - nnode;
 				}
 //printf("MatrixMap::alloc getElement(%d,%d)\n", it, jt);
-				ptree_[plen_] = spGetElement(sp13mat_, it, jt);
+				ptree_[plen_] = spGetElement(_nt->_sp13mat, it, jt);
 				++plen_;
 			}
 		}

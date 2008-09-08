@@ -15,6 +15,7 @@
 
 #define COLLECT_TQueue_STATISTICS 1
 struct SPTREE;
+class TQItemPool;
 
 class TQItem {
 public:
@@ -58,16 +59,21 @@ private:
 
 class TQueue {
 public:
-	TQueue();
+	TQueue(TQItemPool*, int mkmut = 0);
 	virtual ~TQueue();
 	
 #if FAST_LEAST
 	TQItem* least() {return least_;}
+#if USE_PTHREAD
+	double least_t(){double tt; MUTLOCK; if (least_) { tt = least_->t_;}else{tt = 1e15;} MUTUNLOCK; return tt;}
+#else
 	double least_t(){if (least_) { return least_->t_;}else{return 1e15;}}
+#endif
 #else
 	TQItem* least(); // does not remove from TQueue
 	double least_t();
 #endif
+	TQItem* atomic_dq(double til);
 	TQItem* insert(double t, void* data);
 	TQItem* enqueue_bin(double t, void* data);
 	TQItem* dequeue_bin() { return binq_->dequeue(); }
@@ -85,10 +91,15 @@ public:
 	void spike_stat(double*);
 	void forall_callback(void (*)(const TQItem*, int));
 	int nshift_;
+	void deleteitem(TQItem*);
 private:
+	double least_t_nolock(){if (least_) { return least_->t_;}else{return 1e15;}}
+	void move_least_nolock(double tnew);
 	SPTREE* sptree_;
 	BinQ* binq_;
 	TQItem* least_;
+	TQItemPool* tpool_;
+	MUTDEC
 #if COLLECT_TQueue_STATISTICS
 	unsigned long ninsert, nrem, nleast, nbal, ncmplxrem;
 	unsigned long ncompare, nleastsrch, nfind, nfindsrch, nmove, nfastmove;

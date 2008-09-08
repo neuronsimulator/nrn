@@ -160,7 +160,7 @@ static char    *extdef2[] = {	/* external function names that can be used
 			    0
 };
 
-static char	*extdef3[] = {	/* function names that get two reet arguments
+static char	*extdef3[] = {	/* function names that get two reset arguments
 				 * added */
 	"threshold",
 	"squarewave",
@@ -174,6 +174,16 @@ static char	*extdef3[] = {	/* function names that get two reet arguments
 	"stepforce",
 	"schedule",
 	0
+};
+
+static char *extdef4[] = { /* functions that need a first arg of NrnThread* */
+	"at_time",
+	0
+};
+
+static char    *extdef5[] = {	/* the extdef names that are not threadsafe */
+#include "extdef5.h"
+			    0
 };
 
 List *constructorfunc, *destructorfunc;
@@ -210,6 +220,16 @@ init()
 		s = lookup(extdef3[i]);
 		assert(s && (s->subtype & EXTDEF));
 		s->subtype |= EXTDEF3;
+	}
+	for (i = 0; extdef4[i]; i++) {
+		s = lookup(extdef4[i]);
+		assert(s && (s->subtype & EXTDEF));
+		s->subtype |= EXTDEF4;
+	}
+	for (i = 0; extdef5[i]; i++) {
+		s = lookup(extdef5[i]);
+		assert(s);
+		s->subtype |= EXTDEF5;
 	}
 	intoken = newlist();
 	initfunc = newlist();

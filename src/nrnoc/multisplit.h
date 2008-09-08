@@ -32,7 +32,7 @@ parent. One of the present parents may or may not be its classical parent.
 extern "C" {
 #endif
 
-#if PARANEURON
+#if 1 || PARANEURON
 extern double* nrn_classicalNodeA(Node* n);
 extern double* nrn_classicalNodeB(Node* n);
 #define ClassicalNODEA(n) (*nrn_classicalNodeA(n))

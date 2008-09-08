@@ -51,7 +51,9 @@ BREAKPOINT {
 }
 
 DERIVATIVE castate {
-	oca' = (oca_ss(v) - oca)/oca_tau(v)
+	LOCAL inf, tau
+	inf = oca_ss(v)  tau = oca_tau(v)
+	oca' = (inf - oca)/tau
 }
 
 FUNCTION ghk(v(mV), ci(mM), co(mM)) (.001 coul/cm3) {

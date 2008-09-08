@@ -45,7 +45,8 @@ hocdec.h: hoc.h hoc2dec.sh
 	./hoc2dec.sh
 	
 ## Header files that need to be installed:
-pkginclude_HEADERS = hoc.h hoclist.h hocdec.h hocassrt.h nrnisaac.h
+pkginclude_HEADERS = hoc.h hoclist.h hocdec.h hocassrt.h nrnisaac.h \
+	nrnpthread.h
 
 ## Header files that need to be copied into the distribution but do not need
 ## to be installed:

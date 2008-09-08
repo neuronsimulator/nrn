@@ -9,6 +9,7 @@
 #include "bbsimpl.h"
 #include "ivocvect.h"
 #include "parse.h"
+#include "section.h"
 #include "membfunc.h"
 #include <nrnmpi.h>
 #include <errno.h>
@@ -42,6 +43,12 @@ extern "C" {
 #endif
 
 	extern double* nrn_mech_wtime_;
+	extern int nrn_nthread;
+	extern void nrn_threads_create(int, int);
+	extern void nrn_thread_partition(int, Object*);
+	extern void nrn_thread_stat();
+	extern int nrn_allow_busywait(int);
+	extern int nrn_how_many_processors();
 }
 
 class OcBBS : public BBS , public Resource {
@@ -620,6 +627,70 @@ static double checkpoint(void*) {
 #endif
 }
 
+static double nthrd(void*) {
+	int ip = 1;
+	if (ifarg(1)) {
+		if (ifarg(2)) { ip = int(chkarg(2, 0, 1)); }
+		nrn_threads_create(int(chkarg(1, 1, 1e5)), ip);
+	}
+	return double(nrn_nthread);
+}
+
+static double partition(void*) {
+	Object* ob = 0;
+	int it;
+	if (ifarg(2)) {
+		ob = *hoc_objgetarg(2);
+		if (ob) {
+			check_obj_type(ob, "SectionList");
+		}
+	}
+	if (ifarg(1)) {
+		it = (int)chkarg(1, 0, nrn_nthread - 1);
+		nrn_thread_partition(it, ob);
+	}else{
+		for (it = 0; it < nrn_nthread; ++it) {
+			nrn_thread_partition(it, ob);
+		}
+	}
+	return 0.0;
+}
+
+static double thread_stat(void*) {
+	nrn_thread_stat();
+	return 0.0;
+}
+
+static double thread_busywait(void*) {
+	int old = nrn_allow_busywait(int(chkarg(1,0,1)));
+	return double(old);
+}
+
+static double thread_how_many_proc(void*) {
+	int i = nrn_how_many_processors();
+	return double(i);
+}
+
+static double sec_in_thread(void*) {
+	Section* sec = chk_access();
+	return double(sec->pnode[0]->_nt->id);
+}
+
+static double thread_ctime(void*) {
+	int i;
+#if 1
+	if (ifarg(1)) {
+		i = int(chkarg(1, 0, nrn_nthread));
+		return nrn_threads[i]._ctime;
+	}else{
+		for (i=0; i < nrn_nthread; ++i) {
+			nrn_threads[i]._ctime = 0.0;
+		}
+	}
+#endif
+	return 0.0;
+}
+
 static Object** gid2obj(void* v) {
 	OcBBS* bbs = (OcBBS*)v;
 	return bbs->gid2obj(int(chkarg(1, 0, 1e9)));
@@ -686,6 +757,15 @@ static Member_func members[] = {
 	"allreduce", allreduce,
 	"allgather", allgather,
 	"broadcast", broadcast,
+
+	"nthread", nthrd,
+	"partition", partition,
+	"thread_stat", thread_stat,
+	"thread_busywait", thread_busywait,
+	"thread_how_many_proc", thread_how_many_proc,
+	"sec_in_thread", sec_in_thread,
+	"thread_ctime", thread_ctime,
+
 	0,0
 };
 

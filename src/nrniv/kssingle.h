@@ -21,7 +21,7 @@ public:
 	virtual ~KSSingleNodeData();	
 
 	// subclassed DiscreteEvent methods
-	virtual void deliver(double t, NetCvode*);
+	virtual void deliver(double t, NetCvode*, NrnThread*);
 	virtual void pr(const char*, double t, NetCvode*);
 
 	// specific to KSSingleNodeData
@@ -43,14 +43,14 @@ public:
 	virtual ~KSSingle();
 
 	void alloc(Prop*, int sindex);
-	void init(double v, double* s, KSSingleNodeData* snd);
+	void init(double v, double* s, KSSingleNodeData* snd, NrnThread*);
 
-	void state(Node*, double*, Datum*);
-	void cv_update(Node*, double*, Datum*);
-	void one(double, KSSingleNodeData*);
+	void state(Node*, double*, Datum*, NrnThread*);
+	void cv_update(Node*, double*, Datum*, NrnThread*);
+	void one(double, KSSingleNodeData*, NrnThread*);
 	void do1trans(KSSingleNodeData*);
 	void next1trans(KSSingleNodeData*);
-	void multi(double, KSSingleNodeData*);
+	void multi(double, KSSingleNodeData*, NrnThread*);
 	void doNtrans(KSSingleNodeData*);
 	void nextNtrans(KSSingleNodeData*);
 

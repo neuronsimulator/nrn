@@ -28,6 +28,11 @@ typedef struct Memb_func {
 	Pfri	singchan_; /* managed by kschan for variable step methods */
 #endif
 	int vectorized;
+	int thread_size_; /* how many Datum needed in Memb_list if vectorized */
+	void (*thread_mem_init_)(Datum*); /* after Memb_list._thread is allocated */
+	void (*thread_cleanup_)(Datum*); /* before Memb_list._thread is freed */
+	void (*thread_table_check_)(double*, Datum*, Datum*, void*, int);
+	void (*_update_ion_pointers)(Datum*);
 	int is_point;
 	void* hoc_mech;
 } Memb_func;

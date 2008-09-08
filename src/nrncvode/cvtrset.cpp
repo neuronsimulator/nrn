@@ -20,27 +20,28 @@ extern void recalc_diam();
 extern int nrn_errno_check(int);
 extern void activstim_rhs(), activclamp_rhs(), activsynapse_rhs();
 extern void activclamp_lhs(), activsynapse_lhs();
-extern void nrn_cap_jacob(Memb_list*);
+extern void nrn_cap_jacob(NrnThread*, Memb_list*);
 }
 
-void Cvode::rhs() {
+void Cvode::rhs(NrnThread* _nt) {
 	int i;
 
+	CvodeThreadData& z = CTD(_nt->id);
 	if (diam_changed) {
 		recalc_diam();
 	}
-	for (i = 0; i < v_node_count_; ++i) {
-		NODERHS(v_node_[i]) = 0.;
+	for (i = 0; i < z.v_node_count_; ++i) {
+		NODERHS(z.v_node_[i]) = 0.;
 	}
 
-	rhs_memb(cv_memb_list_);
+	rhs_memb(z.cv_memb_list_, _nt);
 	/* at this point d contains all the membrane conductances */
 	/* now the internal axial currents.
 		rhs += ai_j*(vi_j - vi)
 	*/
-	for (i = rootnodecount_; i < v_node_count_; ++i) {
-		Node* nd = v_node_[i];
-		Node* pnd = v_parent_[i];
+	for (i = z.rootnodecount_; i < z.v_node_count_; ++i) {
+		Node* nd = z.v_node_[i];
+		Node* pnd = z.v_parent_[i];
 		double dv = NODEV(pnd) - NODEV(nd);
 		/* our connection coefficients are negative so */
 		NODERHS(nd) -= NODEB(nd)*dv;
@@ -48,7 +49,7 @@ void Cvode::rhs() {
 	}
 }
 
-void Cvode::rhs_memb(CvMembList* cmlist) {
+void Cvode::rhs_memb(CvMembList* cmlist, NrnThread* _nt) {
 	CvMembList* cml;
 	errno = 0;
 	for (cml = cmlist; cml; cml = cml->next) {
@@ -56,7 +57,7 @@ void Cvode::rhs_memb(CvMembList* cmlist) {
 		Pfridot s = (Pfridot)mf->current;
 		if (s) {
 			Memb_list* ml = cml->ml;
-			(*s)(ml, cml->index);
+			(*s)(_nt, ml, cml->index);
 			if (errno) {
 				if (nrn_errno_check(cml->index)) {
 hoc_warning("errno set during calculation of currents", (char*)0);
@@ -69,26 +70,27 @@ hoc_warning("errno set during calculation of currents", (char*)0);
 	activclamp_rhs();
 }
 
-void Cvode::lhs() {
+void Cvode::lhs(NrnThread* _nt) {
 	int i;
 
-	for (i = 0; i < v_node_count_; ++i) {
-		NODED(v_node_[i]) = 0.;
+	CvodeThreadData& z = CTD(_nt->id);
+	for (i = 0; i < z.v_node_count_; ++i) {
+		NODED(z.v_node_[i]) = 0.;
 	}
 
-	lhs_memb(cv_memb_list_);
-	nrn_cap_jacob(cmlcap_->ml);
+	lhs_memb(z.cv_memb_list_, _nt);
+	nrn_cap_jacob(_nt, z.cmlcap_->ml);
 
 	/* now add the axial currents */
-	for (i = 0; i < v_node_count_; ++i) {
-		NODED(v_node_[i]) -= NODEB(v_node_[i]);
+	for (i = 0; i < z.v_node_count_; ++i) {
+		NODED(z.v_node_[i]) -= NODEB(z.v_node_[i]);
 	}
-        for (i=rootnodecount_; i < v_node_count_; ++i) {
-                NODED(v_parent_[i]) -= NODEA(v_node_[i]);
+        for (i=z.rootnodecount_; i < z.v_node_count_; ++i) {
+                NODED(z.v_parent_[i]) -= NODEA(z.v_node_[i]);
         }
 }
 
-void Cvode::lhs_memb(CvMembList* cmlist) {
+void Cvode::lhs_memb(CvMembList* cmlist, NrnThread* _nt) {
 	CvMembList* cml;
 	for (cml = cmlist; cml; cml = cml->next) {
 		Memb_func* mf = memb_func + cml->index;
@@ -96,7 +98,7 @@ void Cvode::lhs_memb(CvMembList* cmlist) {
 		Pfridot s = (Pfridot)mf->jacob;
 		if (s) {
 			Pfridot s = (Pfridot)mf->jacob;
-			(*s)(ml, cml->index);
+			(*s)(_nt, ml, cml->index);
 			if (errno) {
 				if (nrn_errno_check(cml->index)) {
 hoc_warning("errno set during calculation of di/dv", (char*)0);
@@ -109,14 +111,15 @@ hoc_warning("errno set during calculation of di/dv", (char*)0);
 }
 
 /* triangularization of the matrix equations */
-void Cvode::triang() {
+void Cvode::triang(NrnThread* _nt) {
 	register Node *nd, *pnd;
 	double p;
 	int i;
+	CvodeThreadData& z = CTD(_nt->id);
 
-	for (i = v_node_count_ - 1; i >= rootnodecount_; --i) {
-		nd = v_node_[i];
-		pnd = v_parent_[i];
+	for (i = z.v_node_count_ - 1; i >= z.rootnodecount_; --i) {
+		nd = z.v_node_[i];
+		pnd = z.v_parent_[i];
 		p = NODEA(nd) / NODED(nd);
 		NODED(pnd) -= p * NODEB(nd);
 		NODERHS(pnd) -= p * NODERHS(nd);
@@ -124,16 +127,17 @@ void Cvode::triang() {
 }
 
 /* back substitution to finish solving the matrix equations */
-void Cvode::bksub() {
+void Cvode::bksub(NrnThread* _nt) {
 	register Node *nd, *cnd;
 	int i;
+	CvodeThreadData& z = CTD(_nt->id);
 
-	for (i = 0; i < rootnodecount_; ++i) {
-		NODERHS(v_node_[i]) /= NODED(v_node_[i]);
+	for (i = 0; i < z.rootnodecount_; ++i) {
+		NODERHS(z.v_node_[i]) /= NODED(z.v_node_[i]);
 	}
-	for (i = rootnodecount_; i < v_node_count_; ++i) {
-		cnd = v_node_[i];
-		nd = v_parent_[i];
+	for (i = z.rootnodecount_; i < z.v_node_count_; ++i) {
+		cnd = z.v_node_[i];
+		nd = z.v_parent_[i];
 		NODERHS(cnd) -= NODEB(cnd) * NODERHS(nd);
 		NODERHS(cnd) /= NODED(cnd);
 	}	

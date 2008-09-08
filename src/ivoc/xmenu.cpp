@@ -151,6 +151,7 @@ extern "C" {
 extern int units_on_flag_;
 extern Symbol* hoc_get_symbol(const char*);
 extern Symbol* hoc_get_last_pointer_symbol();
+extern double* nrn_recalc_ptr(double*);
 
 void hoc_notify_value() {
 	Oc oc;
@@ -789,13 +790,13 @@ void HocPanel::save_all(ostream&) {
 	delete data_paths;
 }
 
-void HocPanel::update_ptrs(int n, double** oldp, double* newp) {
+void HocPanel::update_ptrs() {
 	if (!hoc_panel_list) return;
 	int i, j;
 	for (i=0; i < hoc_panel_list->count(); ++i) {
 		HocUpdateItemList& ul = hoc_panel_list->item(i)->elist_;
 		for (j=0; j < ul.count(); ++j) {
-			ul.item(j)->update_ptrs(n, oldp, newp);
+			ul.item(j)->update_ptrs();
 		}		
 	}
 }
@@ -2910,28 +2911,26 @@ void ValueFieldEditor_reg() {
 	class2oc("ValueFieldEditor", vfe_cons, vfe_destruct, vfe_members);
 }
 
-void HocValEditor::update_ptrs(int n, double** oldp, double* newp) {
-	update_ptrs_helper(&pval_, n, oldp, newp);
+void HocValEditor::update_ptrs() {
+	update_ptrs_helper(&pval_);
 }
 
-void OcSlider::update_ptrs(int n, double** oldp, double* newp) {
-	update_ptrs_helper(&pval_, n, oldp, newp);
+void OcSlider::update_ptrs() {
+	update_ptrs_helper(&pval_);
 }
 
-void HocStateButton::update_ptrs(int n, double** oldp, double* newp) {
-	update_ptrs_helper(&pval_, n, oldp, newp);
+void HocStateButton::update_ptrs() {
+	update_ptrs_helper(&pval_);
 }
 
-void HocStateMenuItem::update_ptrs(int n, double** oldp, double* newp) {
-	update_ptrs_helper(&pval_, n, oldp, newp);
+void HocStateMenuItem::update_ptrs() {
+	update_ptrs_helper(&pval_);
 }
 
-void HocUpdateItem::update_ptrs_helper(double** p, int n, double** oldp, double* newp) {
-	if (*p && nrn_isdouble(*p, 0, n-1)) {
-		int k = (int)(**p);
-		if (*p == oldp[k]) {
-			*p = newp + k;
-		}
+void HocUpdateItem::update_ptrs_helper(double** p) {
+	if (*p) {
+		double* pd = nrn_recalc_ptr(*p);
+		*p = pd;
 	}
 }
 

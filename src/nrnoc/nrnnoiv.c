@@ -34,11 +34,12 @@ nrn_play_init(){}
 fixed_record_continuous(){}
 fixed_play_continuous(){}
 nrniv_recalc_ptrs(){}
+void nrn_update_ion_pointer(int type, Datum* d, int i, int j) {}
+nrn_update_ps2nt(){}
 
-int at_time(te) double te; {
-	extern double t, dt;
+int at_time(NrnThread* nt, double te) {
 	double x = te - 1e-11;
-	if (x > (t - dt)  && x <= t) {
+	if (x > (nt->_t - nt->_dt)  && x <= nt->_t) {
 		return 1;
 	}else{
 		return 0;
@@ -77,7 +78,16 @@ void nrn_daq_ao() {}
 void nrn_daq_ai() {}
 void nrn_daq_scanstart(){}
 
-#if PARANEURON
+void nrn_multisplit_ptr_update(){}
+void nrn_multisplit_bksub(){assert(0);}
+void nrn_multisplit_reduce_solve(){assert(0);}
+void nrn_multisplit_triang(){assert(0);}
+#if 1 || PARANEURON
 double* nrn_classicalNodeA(Node* n) {return (double*)0;}
 double* nrn_classicalNodeB(Node* n) {return (double*)0;}
 #endif
+void* nrn_pool_create(long count, int itemsize){assert(0);}
+void nrn_pool_delete(void* pool){assert(0);}
+void nrn_pool_freeall(void* pool){assert(0);}
+void* nrn_pool_alloc(void* pool){assert(0);}
+

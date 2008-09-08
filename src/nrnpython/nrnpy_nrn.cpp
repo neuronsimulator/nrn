@@ -71,7 +71,7 @@ static void nrnpy_unreg_mech(int);
 static void NPySecObj_dealloc(NPySecObj* self) {
 //printf("NPySecObj_dealloc %lx\n", (long)self);
 	if (self->sec_) {
-		self->sec_->prop->dparam[9]._pvoid = 0;
+		self->sec_->prop->dparam[PROP_PY_INDEX]._pvoid = 0;
 		if (!self->sec_->prop->dparam[0].sym) {
 			sec_free(self->sec_->prop->dparam[8].itm);
 		}else{
@@ -932,14 +932,14 @@ PyObject* nrnpy_cas(PyObject* self, PyObject* args) {
 	Section* sec = chk_access();
 	section_ref(sec);
 	NPySecObj* pysec = NULL;
-	if (sec->prop->dparam[9]._pvoid) {
-		pysec = (NPySecObj*)sec->prop->dparam[9]._pvoid;
+	if (sec->prop->dparam[PROP_PY_INDEX]._pvoid) {
+		pysec = (NPySecObj*)sec->prop->dparam[PROP_PY_INDEX]._pvoid;
 		Py_INCREF(pysec);
 		assert(pysec->sec_ == sec);
 	}else{
 		pysec = (NPySecObj*)psection_type->tp_alloc(psection_type, 0);
 		pysec->sec_ = sec;
-		sec->prop->dparam[9]._pvoid;
+		sec->prop->dparam[PROP_PY_INDEX]._pvoid;
 	}
 	return (PyObject*)pysec;
 }

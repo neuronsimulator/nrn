@@ -39,13 +39,32 @@
  
 extern double nrnmpi_wtime();
 extern double* nrn_mech_wtime_;
+extern double t, dt;
 extern double chkarg();
-extern void setup_tree_matrix(), nrn_solve();
+extern void nrn_fixed_step();
+extern void nrn_fixed_step_group(int);
+extern void* nrn_fixed_step_thread(NrnThread*);
+extern void* setup_tree_matrix(NrnThread*);
+extern void nrn_solve(NrnThread*);
+extern void nonvint(NrnThread* nt);
+extern void nrncvode_set_t(double t);
+
+static void* nrn_ms_treeset_through_triang(NrnThread*);
+static void* nrn_ms_reduce_solve(NrnThread*);
+static void* nrn_ms_bksub(NrnThread*);
+static void* nrn_ms_bksub_through_triang(NrnThread*);
+extern void* nrn_multisplit_triang(NrnThread*);
+extern void* nrn_multisplit_reduce_solve(NrnThread*);
+extern void* nrn_multisplit_bksub(NrnThread*);
+extern void (*nrn_multisplit_setup_)();
+
 extern int tree_changed;
 extern int diam_changed;
 extern int state_discon_allowed_;
 extern double hoc_epsilon;
-extern void nrncvode_set_t(double t);
+
+static void update(NrnThread*);
+
 #if 0
 /*
   1 to save space, but must worry about other uses of the memb_list
@@ -58,6 +77,15 @@ extern Template** nrn_pnt_template_;
 extern void nrn_daq_scanstart();
 extern void nrn_daq_ai();
 extern void nrn_daq_ao();
+#endif
+
+#define NRNCTIME 1
+#if NRNCTIME
+#define CTBEGIN double wt = nrnmpi_wtime();
+#define CTADD nth->_ctime += nrnmpi_wtime() - wt;
+#else
+#define CTBEGIN /**/
+#define CTADD /**/
 #endif
 
 #define ELIMINATE_T_ROUNDOFF 0
@@ -83,7 +111,7 @@ t, dt, nrn_tbase_, nrn_ndt_, nrn_dt_);
 #endif /* ELIMINATE_T_ROUNDOFF */
 
 #if 1 || PARANEURON
-void (*nrnmpi_v_transfer_)();
+void (*nrnmpi_v_transfer_)(NrnThread* nt);
 #endif
 
 #if VECTORIZE
@@ -97,66 +125,29 @@ extern cvode_finitialize();
 #endif
 
 int stoprun;
-static update();
 
 #define PROFILE 0
 #include "profile.h"
 
 fadvance()
 {
-PSTART(0)
 #if CVODE
 	if (cvode_active_) {
 		cvode_fadvance(-1.);
-PSTOP(0)
 		ret(1.);
 		return;
 	}
 #endif
-#if ELIMINATE_T_ROUNDOFF
-	nrn_chk_ndt();
-#endif
 	if (tree_changed) {
 		setup_topology();
 	}
-#if VECTORIZE
 	if (v_structure_change) {
 		v_setup_vectors();
 	}
-#endif
-	deliver_net_events(); /* up to tentry + dt/2 */
-	nrn_random_play();
-#if ELIMINATE_T_ROUNDOFF
-	nrn_ndt_ += .5;
-	t = nrn_tbase_ + nrn_ndt_ * nrn_dt_;
-#else
-	t += .5*dt;
-#endif
-	fixed_play_continuous();
-	setup_tree_matrix(); /* currents ambiguous between t and t+dt/2
-				ie. v at tentry and states at tentry+dt/2 */
-	nrn_solve();		/* rhs = v(texit) */
-	second_order_cur();	/*ion currents adjusted to t(entry)+dt/2
-				but individual mechanism currents not adjusted
-				 */
-	update();		/* v at texit */
-#if ELIMINATE_T_ROUNDOFF
-	nrn_ndt_ += .5;
-	t = nrn_tbase_ + nrn_ndt_ * nrn_dt_;		/* t = texit */
-#else
-	t += .5*dt;
-#endif
-	fixed_play_continuous();
-	nonvint();	/* m,h,n go to t+dt/2, concentrations go to t */
-#if METHOD3
-	if (_method3 == 3) {
-		method3_axial_current();
+	if (diam_changed) {
+		recalc_diam();
 	}
-#endif
-	nrn_ba(AFTER_SOLVE);
-	fixed_record_continuous();
-	nrn_deliver_events(t) ; /* up to but not past texit */
-PSTOP(0)
+	nrn_fixed_step();
 	ret(1.);
 }
 
@@ -219,58 +210,181 @@ batch_run() /* avoid interpreter overhead */
 	ret(1.);
 }
 
-nrn_daspk_init_step(dteps, upd) double dteps; int upd;{
-	double dtsav = dt;
-	int so = secondorder;
-	dt = dteps;
-	secondorder = 0;
-	setup_tree_matrix();
-	nrn_solve();
-	if (upd) {
-		update();
+static void dt2thread(double adt) {
+    if (adt != nrn_threads[0]._dt) {
+	int i;
+	for (i=0; i < nrn_nthread; ++i) {
+		NrnThread* nt = nrn_threads + i;
+		nt->_t = t;
+		nt->_dt = dt;
+		if (secondorder) {
+			nt->cj = 2.0/dt;
+		}else{
+			nt->cj = 1.0/dt;
+		}
 	}
-	dt = dtsav;
-	secondorder = so;
+    }
 }
 
-nrn_fixed_step() {
-	static double dtsav;
+static int _upd;
+static void* daspk_init_step_thread(NrnThread* nt) {
+	setup_tree_matrix(nt);
+	nrn_solve(nt);
+	if (_upd) {
+		update(nt);
+	}
+}
+
+nrn_daspk_init_step(double tt, double dteps, int upd){
+	int i;
+	double dtsav = nrn_threads->_dt;
+	dt = dteps;
+	t = tt;
+	int so = secondorder;
+	secondorder = 0;
+	dt2thread(dteps);
+	nrn_thread_table_check();
+	_upd = upd;
+	nrn_multithread_job(daspk_init_step_thread);
+	dt = dtsav;
+	secondorder = so;
+	dt2thread(dtsav);
+	nrn_thread_table_check();
+}
+
+void nrn_fixed_step() {
+	int i;
 #if ELIMINATE_T_ROUNDOFF
 	nrn_chk_ndt();
 #endif
-	deliver_net_events();
-	nrn_random_play();
+	dt2thread(dt);
+	nrn_thread_table_check();
+	if (nrn_multisplit_setup_) {
+		nrn_multithread_job(nrn_ms_treeset_through_triang);
+		nrn_multithread_job(nrn_ms_reduce_solve);
+		nrn_multithread_job(nrn_ms_bksub);
+	}else{
+		nrn_multithread_job(nrn_fixed_step_thread);
+	}
+	t = nrn_threads[0]._t;
+}
+
+void nrn_fixed_step_group(int n) {
+	int i;
 #if ELIMINATE_T_ROUNDOFF
-	nrn_ndt_ += .5;
-	t = nrn_tbase_ + nrn_ndt_ * nrn_dt_;
-#else
-	t += .5*dt;
+	nrn_chk_ndt();
 #endif
-	fixed_play_continuous();
-	setup_tree_matrix();
-	nrn_solve();
-	second_order_cur();
-	update();
+	dt2thread(dt);
+	nrn_thread_table_check();
+	if (nrn_multisplit_setup_) {
+		nrn_multithread_job(nrn_ms_treeset_through_triang);
+		for (i=1; i < n; ++i) {
+		nrn_multithread_job(nrn_ms_reduce_solve);
+		nrn_multithread_job(nrn_ms_bksub_through_triang);
+		}
+		nrn_multithread_job(nrn_ms_reduce_solve);
+		nrn_multithread_job(nrn_ms_bksub);
+	}else{
+		for (i=0; i < n; ++i) {
+			nrn_multithread_job(nrn_fixed_step_thread);
+		}
+	}
+	t = nrn_threads[0]._t;
+}
+
+void* nrn_fixed_step_thread(NrnThread* nth) {
+	deliver_net_events(nth);
+	CTBEGIN
+	nrn_random_play(nth);
+#if ELIMINATE_T_ROUNDOFF
+	nth->nrn_ndt_ += .5;
+	nth->_t = nrn_tbase_ + nth->nrn_ndt_ * nrn_dt_;
+#else
+	nth->_t += .5 * nth->_dt;
+#endif
+	fixed_play_continuous(nth);
+	setup_tree_matrix(nth);
+	nrn_solve(nth);
+	second_order_cur(nth);
+	update(nth);
 #if NRN_DAQ
 	nrn_daq_ao();
 #endif
 #if ELIMINATE_T_ROUNDOFF
-	nrn_ndt_ += .5;
-	t = nrn_tbase_ + nrn_ndt_ * nrn_dt_;
+	nth->nrn_ndt_ += .5;
+	nth->_t = nrn_tbase_ + nth->nrn_ndt_ * nrn_dt_;
 #else
-	t += .5*dt;
+	nth->_t += .5 * nth->_dt;
 #endif
-	fixed_play_continuous();
+	fixed_play_continuous(nth);
 #if NRN_DAQ
 	nrn_daq_scanstart();
 #endif
-	nonvint();
-	nrn_ba(AFTER_SOLVE);
+	nonvint(nth);
+	nrn_ba(nth, AFTER_SOLVE);
 #if NRN_DAQ
 	nrn_daq_ai();
 #endif
-	fixed_record_continuous();
-	nrn_deliver_events(t) ; /* up to but not past texit */
+	fixed_record_continuous(nth);
+	CTADD
+	nrn_deliver_events(nth) ; /* up to but not past texit */
+	return (void*)0;
+}
+
+/* nrn_fixed_step_thread is split into three pieces */
+
+void* nrn_ms_treeset_through_triang(NrnThread* nth) {
+	deliver_net_events(nth);
+	CTBEGIN
+	nrn_random_play(nth);
+#if ELIMINATE_T_ROUNDOFF
+	nth->nrn_ndt_ += .5;
+	nth->_t = nrn_tbase_ + nth->nrn_ndt_ * nrn_dt_;
+#else
+	nth->_t += .5 * nth->_dt;
+#endif
+	fixed_play_continuous(nth);
+	setup_tree_matrix(nth);
+	nrn_multisplit_triang(nth);
+	CTADD
+	return (void*)0;
+}
+void* nrn_ms_reduce_solve(NrnThread* nth) {
+	nrn_multisplit_reduce_solve(nth);
+	return (void*)0;
+}
+void* nrn_ms_bksub(NrnThread* nth) {
+	CTBEGIN
+	nrn_multisplit_bksub(nth);
+	second_order_cur(nth);
+	update(nth);
+#if NRN_DAQ
+	nrn_daq_ao();
+#endif
+#if ELIMINATE_T_ROUNDOFF
+	nth->nrn_ndt_ += .5;
+	nth->_t = nrn_tbase_ + nth->nrn_ndt_ * nrn_dt_;
+#else
+	nth->_t += .5 * nth->_dt;
+#endif
+	fixed_play_continuous(nth);
+#if NRN_DAQ
+	nrn_daq_scanstart();
+#endif
+	nonvint(nth);
+	nrn_ba(nth, AFTER_SOLVE);
+#if NRN_DAQ
+	nrn_daq_ai();
+#endif
+	fixed_record_continuous(nth);
+	CTADD
+	nrn_deliver_events(nth) ; /* up to but not past texit */
+	return (void*)0;
+}
+void* nrn_ms_bksub_through_triang(NrnThread* nth) {
+	nrn_ms_bksub(nth);
+	nrn_ms_treeset_through_triang(nth);
+	return (void*)0;
 }
 
 #if NRN_REALTIME
@@ -287,19 +401,20 @@ void nrn_fake_step() { /* get as much into cache as possible */
 }
 #endif
 
-static update()
+static void update(NrnThread* _nt)
 {
-	int i;
-
+	int i, i1, i2;
+	i1 = 0;
+	i2 = _nt->end;
 #if CACHEVEC
     if (use_cachevec) {
 	/* do not need to worry about linmod or extracellular*/
 	if (secondorder) {
-		for (i=0; i < v_node_count; ++i) {
+		for (i=i1; i < i2; ++i) {
 			VEC_V(i) += 2.*VEC_RHS(i);
 		}
 	}else{
-		for (i=0; i < v_node_count; ++i) {
+		for (i=i1; i < i2; ++i) {
 			VEC_V(i) += VEC_RHS(i);
 		}
 	}
@@ -310,15 +425,15 @@ static update()
 #if _CRAY
 #pragma _CRI ivdep
 #endif
-		for (i=0; i < v_node_count; ++i) {
-			NODEV(v_node[i]) += 2.*NODERHS(v_node[i]);
+		for (i=i1; i < i2; ++i) {
+			NODEV(_nt->_v_node[i]) += 2.*NODERHS(_nt->_v_node[i]);
 		}
 	}else{
 #if _CRAY
 #pragma _CRI ivdep
 #endif
-		for (i=0; i < v_node_count; ++i) {
-			NODEV(v_node[i]) += NODERHS(v_node[i]);
+		for (i=i1; i < i2; ++i) {
+			NODEV(_nt->_v_node[i]) += NODERHS(_nt->_v_node[i]);
 		}
 		if (use_sparse13) {
 			linmod_update();
@@ -327,40 +442,40 @@ static update()
     } /* end of non-vectorized update */
 
 #if EXTRACELLULAR
-	nrn_update_2d();
+	nrn_update_2d(_nt);
 #endif
 
 #if I_MEMBRANE
-	nrn_capacity_current(memb_list + CAP);
+	if (_nt->tml) {
+		assert(_nt->tml->index == CAP);
+		nrn_capacity_current(_nt, _nt->tml->ml);
+	}
 #endif
 
 }
 
 fcurrent()
 {
-
+	int i;
 	if (tree_changed) {
 		setup_topology();
 	}
-#if VECTORIZE
 	if (v_structure_change) {
 		v_setup_vectors();
 	}
-#endif
+	if (diam_changed) {
+		recalc_diam();
+	}
 
-#if 0	/* doesn't work for all possible models. */
-	savdt = dt;
-	dt = -1e-9;
-	nonvint();	/* no states computed when dt <= 0 */
-	dt = savdt;
-#endif
+	dt2thread(dt);
+	nrn_thread_table_check();
 	state_discon_allowed_ = 0;
-	setup_tree_matrix();
+	nrn_multithread_job(setup_tree_matrix);
 	state_discon_allowed_ = 1;
 	ret(1.);
 }
 
-nrn_print_matrix() {
+void nrn_print_matrix(NrnThread* _nt) {
 	extern int section_count;
 	extern Section** secorder;
 	int isec, inode;
@@ -368,14 +483,19 @@ nrn_print_matrix() {
 	Node* nd;
     if (use_sparse13) {
 	if(ifarg(1) && chkarg(1, 0., 1.) == 0.) {
-		spPrint(sp13mat_, 1, 0, 1);
+		spPrint(_nt->_sp13mat, 1, 0, 1);
 	}else{
-		int i, n = spGetSize(sp13mat_, 0);
-		spPrint(sp13mat_, 1, 1, 1);
+		int i, n = spGetSize(_nt->_sp13mat, 0);
+		spPrint(_nt->_sp13mat, 1, 1, 1);
 		for (i=1; i <= n; ++i) {
-			printf("%d %g\n", i, actual_rhs[i]);
+			printf("%d %g\n", i, _nt->_actual_rhs[i]);
 		}
 	}
+    }else if (_nt) {
+	for (inode = 0; inode <  _nt->end; ++inode) {
+		nd = _nt->_v_node[inode];
+printf("%d %g %g %g %g\n", inode, ClassicalNODEB(nd), ClassicalNODEA(nd), NODED(nd), NODERHS(nd));
+	}		
     }else{
 	for (isec = 0; isec < section_count; ++isec) {
 		sec = secorder[isec];
@@ -386,45 +506,36 @@ printf("%d %d %g %g %g %g\n", isec, inode, ClassicalNODEB(nd), ClassicalNODEA(nd
 	}
     }
 }
+
 fmatrix() {
-	nrn_print_matrix();
+	nrn_print_matrix(nrn_threads);
 	ret(1.);
 }
-nonvint()
+
+void nonvint(NrnThread* _nt)
 {
 #if VECTORIZE
 	int i;
 	double w;
 	int measure = 0;
-#else
-	int isec, inode;
-	Section *sec;
-	Node *nd;
-	Prop *p;
-	double vm;
-#endif
-
-#if VECTORIZE
-#if _CRAY
-	cray_node_init();
-#endif
+	NrnThreadMembList* tml;
 #if 1 || PARANEURON
-	if (nrnmpi_v_transfer_) {(*nrnmpi_v_transfer_)();}
+	if (nrnmpi_v_transfer_) {(*nrnmpi_v_transfer_)(_nt);}
 #endif
-	if (nrn_mech_wtime_) { measure = 1; }
+	if (_nt->id == 0 && nrn_mech_wtime_) { measure = 1; }
 	errno = 0;
-	for (i=0; i < n_memb_func; ++i) if (memb_func[i].state && memb_list[i].nodecount){
-		Pfri s = memb_func[i].state;
+	for (tml = _nt->tml; tml; tml = tml->next) if (memb_func[tml->index].state) {
+		Pfri s = memb_func[tml->index].state;
 		if (measure) { w = nrnmpi_wtime(); }
-		(*s)(memb_list + i, i);
-		if (measure) { nrn_mech_wtime_[i] += nrnmpi_wtime() - w; }
+		(*s)(_nt, tml->ml, tml->index);
+		if (measure) { nrn_mech_wtime_[tml->index] += nrnmpi_wtime() - w; }
 		if (errno) {
 			if (nrn_errno_check(i)) {
 hoc_warning("errno set during calculation of states", (char*)0);
 			}
 		}
 	}
-	long_difus_solve(0); /* if any longitudinal diffusion */
+	long_difus_solve(0, _nt); /* if any longitudinal diffusion */
 #endif
 }
 
@@ -459,9 +570,12 @@ nrnmpi_myid, t, memb_func[p->type].sym->name, inode, secname(sec));
 #endif
 
 frecord_init() { /* useful when changing states after an finitialize() */
+	int i;
 	nrn_record_init();
 	if (!cvode_active_) {
-		fixed_record_continuous();
+		for (i=0; i < nrn_nthread; ++i) {
+			fixed_record_continuous(nrn_threads + i);
+		}
 	}
 	ret(1.);
 }
@@ -481,40 +595,50 @@ verify_structure() {
 	
 void nrn_finitialize(int setv, double v) {
 	int iord, i;
+	NrnThread* _nt;
 	extern int _ninits;
+	extern short* nrn_is_artificial_;
 	++_ninits;
 
 	nrn_fihexec(3); /* model structure changes can be made */
+	verify_structure();
 #if ELIMINATE_T_ROUNDOFF
 	nrn_ndt_ = 0.; nrn_dt_ = dt; nrn_tbase_ = 0.;
 #else
 	t = 0.;
+	dt2thread(-1.);
 #endif
 	if (cvode_active_) {
 		nrncvode_set_t(t);
 	}
+	nrn_thread_table_check();
 	clear_event_queue();
 #if NRNMPI
 	nrn_spike_exchange_init();
 #endif
 	nrn_random_play();
-	verify_structure();
 #if VECTORIZE
 	nrn_play_init(); /* Vector.play */
-	nrn_deliver_events(0.); /* The play events at t=0 */
+	for (i=0; i < nrn_nthread; ++i) {
+		nrn_deliver_events(nrn_threads + i); /* The play events at t=0 */
+	}
 	if (setv) {
 #if _CRAY
 #pragma _CRI ivdep
 #endif
-		for (i=0; i < v_node_count; ++i) {
-			NODEV(v_node[i]) = v;
+		FOR_THREADS(_nt) for (i=0; i < _nt->end; ++i) {
+			NODEV(_nt->_v_node[i]) = v;
 		}
 	}
 #if 1 || PARANEURON
-	if (nrnmpi_v_transfer_) {(*nrnmpi_v_transfer_)();}
+	if (nrnmpi_v_transfer_) FOR_THREADS(_nt){
+		(*nrnmpi_v_transfer_)(_nt);
+	}
 #endif
 	nrn_fihexec(0); /* after v is set but before INITIAL blocks are called*/
-	nrn_ba(BEFORE_INITIAL);
+	for (i=0; i < nrn_nthread; ++i) {
+		nrn_ba(nrn_threads + i, BEFORE_INITIAL);
+	}
 #if _CRAY
 	cray_node_init();
 #endif
@@ -522,9 +646,23 @@ void nrn_finitialize(int setv, double v) {
 	   concentrations are after ions and before mechanisms that read
 	   concentrations.
 	*/
+	/* the memblist list in NrnThread is already so ordered */
+#if MULTICORE
+	for (i=0; i < nrn_nthread; ++i) {
+		NrnThread* nt = nrn_threads + i;
+		NrnThreadMembList* tml;
+		for (tml = nt->tml; tml; tml = tml->next) {
+			Pfri s = memb_func[tml->index].initialize;
+			if (s) {
+				(*s)(nt, tml->ml, tml->index);
+			}
+		}
+	}
+#endif
 	for (iord=0; iord < n_memb_func; ++iord) {
 	  i = memb_order_[iord];
-	  if (memb_func[i].initialize) {
+	  /* first clause due to MULTICORE */
+	  if (nrn_is_artificial_[i]) if (memb_func[i].initialize) {
 	    Pfri s = memb_func[i].initialize;
 #if 0
 	    if (nrn_is_artificial_[i]) {
@@ -548,7 +686,7 @@ void nrn_finitialize(int setv, double v) {
 #else
 	    if (memb_list[i].nodecount){
 #endif
-		(*s)(memb_list + i, i);
+		(*s)(nrn_threads, memb_list + i, i);
 	    }
 		if (errno) {
 			if (nrn_errno_check(i)) {
@@ -563,17 +701,22 @@ hoc_warning("errno set during call to INITIAL block", (char*)0);
 	}
 
 	init_net_events();
-	nrn_ba(AFTER_INITIAL);
+	for (i = 0; i < nrn_nthread; ++i) {
+		nrn_ba(nrn_threads + i, AFTER_INITIAL);
+	}
 	nrn_fihexec(1); /* after INITIAL blocks, before fcurrent*/
 
-	nrn_deliver_events(0.); /* The INITIAL sent events at t=0 */
-
+	for (i=0; i < nrn_nthread; ++i) {
+		nrn_deliver_events(nrn_threads + i); /* The INITIAL sent events at t=0 */
+	}
 	if (cvode_active_) {
 		cvode_finitialize();
 		nrn_record_init();
 	}else{
 		state_discon_allowed_ = 0;
-		setup_tree_matrix();
+		for (i=0; i < nrn_nthread; ++i) {
+			setup_tree_matrix(nrn_threads + i);
+		}
 		state_discon_allowed_ = 1;
 #if 0 && NRN_DAQ
 		nrn_daq_ao();
@@ -581,9 +724,13 @@ hoc_warning("errno set during call to INITIAL block", (char*)0);
 		nrn_daq_ai();
 #endif
 		nrn_record_init();
-		fixed_record_continuous();
+		for (i=0; i < nrn_nthread; ++i) {
+			fixed_record_continuous(nrn_threads + i);
+		}
 	}
-	nrn_deliver_events(0.); /* The record events at t=0 */
+	for (i=0; i < nrn_nthread; ++i) {
+		nrn_deliver_events(nrn_threads + i); /* The record events at t=0 */
+	}
 #if NRNMPI
 	nrn_spike_exchange();
 #endif
@@ -683,17 +830,15 @@ batch_save() {
 	ret(1.);
 }
 
-/* BEFORE and AFTER functions of mechanisms are executed globally */
-/* the BEFORE BREAKPOINT, AFTER SOLVE, and BEFORE STEP for the local step method
-requires special handling */
-nrn_ba(bat) int bat; {
-	int i, j;
-	BAMech* bam;
-	for (bam = bamech_[bat]; bam; bam = bam->next) {
-		Memb_list* ml = memb_list + bam->type;
+nrn_ba(NrnThread* nt, int bat){
+	NrnThreadBAList* tbl;
+	int i;
+	for (tbl = nt->tbl[bat]; tbl; tbl = tbl->next) {
+		Pfri f = tbl->bam->f;
+		int type = tbl->bam->type;
+		Memb_list* ml = tbl->ml;
 		for (i=0; i < ml->nodecount; ++i) {
-			(*bam->f)(ml->nodelist[i], ml->data[i], ml->pdata[i]);
+			(*f)(ml->nodelist[i], ml->data[i], ml->pdata[i], ml->_thread, nt);
 		}
 	}
 }
-

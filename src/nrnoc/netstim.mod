@@ -1,10 +1,11 @@
-: $Id: netstim.mod 1887 2007-11-19 12:34:00Z hines $
+: $Id: netstim.mod 2212 2008-09-08 14:32:26Z hines $
 : comments at end
 
 NEURON	{ 
   ARTIFICIAL_CELL NetStim
   RANGE interval, number, start
   RANGE noise
+  THREADSAFE : only true if every instance has its own distinct Random
   POINTER donotuse
 }
 
@@ -81,6 +82,10 @@ VERBATIM
 		*/
 		_lerand = nrn_random_pick(_p_donotuse);
 	}else{
+		/* only can be used in main thread */
+		if (_nt != nrn_threads) {
+hoc_execerror("multithread random in NetStim"," only via hoc Random");
+		}
 ENDVERBATIM
 		: the old standby. Cannot use if reproducible parallel sim
 		: independent of nhost or which host this instance is on

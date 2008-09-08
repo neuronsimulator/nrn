@@ -41,6 +41,8 @@ static Stimulus *pstim;		/* pointer to stimulus array */
 extern double *getarg(), chkarg();
 extern char *secname();
 
+#define nt_t nrn_threads->_t
+
 print_stim() {
 	int i;
 	
@@ -72,6 +74,9 @@ static stim_record();
 fstim() {
 	int i;
 
+	if (nrn_nthread > 1) {
+		hoc_execerror("fstim does not allow threads", "");
+	}
 	i = chkarg(1, 0., 10000.);
 	if (ifarg(2)) {
 		if (i >= maxstim) {
@@ -148,11 +153,11 @@ stimulus(i)
 	int i;
 {
 #if CVODE
-	at_time(pstim[i].delay);
-	at_time(pstim[i].delay + pstim[i].duration);
+	at_time(nrn_threads, pstim[i].delay);
+	at_time(nrn_threads, pstim[i].delay + pstim[i].duration);
 #endif
-	if (t < pstim[i].delay-1e-9
-	  || t > pstim[i].delay + pstim[i].duration - 1e-9) {
+	if (nt_t < pstim[i].delay-1e-9
+	  || nt_t > pstim[i].delay + pstim[i].duration - 1e-9) {
 		return 0.0;
 	}
 	return pstim[i].mag_seg;

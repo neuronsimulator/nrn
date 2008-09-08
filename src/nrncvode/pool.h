@@ -11,10 +11,12 @@
 // the pool doubles in size every time a chain Pool is added.
 // maxget() tells the most number of pool items used at once.
 
+#include <nrnmutdec.h>
+
 #define declarePool(Pool,T) \
 class Pool { \
 public: \
-	Pool(long count); \
+	Pool(long count, int mkmut = 0); \
 	~Pool(); \
 	T* alloc(); \
 	void hpfree(T*); \
@@ -32,21 +34,23 @@ private: \
 	long nget_; \
 	long maxget_; \
 	Pool* chain_; \
+	MUTDEC \
 }; \
  \
 
 #define implementPool(Pool,T) \
-Pool::Pool(long count) { \
+Pool::Pool(long count, int mkmut) { \
 	count_ = count; \
 	pool_ = new T[count_]; \
 	pool_size_ = count; \
 	items_ = new T*[count_]; \
-	for (long i = 0; i < count_; ++i) items_[i] = pool_ + i; \
+	{for (long i = 0; i < count_; ++i) items_[i] = pool_ + i;} \
 	get_ = 0; \
 	put_ = 0; \
 	nget_ = 0; \
 	maxget_ = 0; \
 	chain_ = 0; \
+	MUTCONSTRUCT(mkmut) \
 } \
  \
 void Pool::grow() { \
@@ -58,15 +62,15 @@ void Pool::grow() { \
 	T** itms = new T*[newcnt]; \
 	long i, j; \
 	put_ += count_; \
-	for (i = 0; i < get_; ++i) { \
+	{for (i = 0; i < get_; ++i) { \
 		itms[i] = items_[i]; \
-	} \
-	for (i = get_, j = 0; j < count_; ++i, ++j) { \
+	}} \
+	{for (i = get_, j = 0; j < count_; ++i, ++j) { \
 		itms[i] = p->items_[j]; \
-	} \
-	for (i = put_, j = get_; j < count_; ++i, ++j) { \
+	}} \
+	{for (i = put_, j = get_; j < count_; ++i, ++j) { \
 		itms[i] = items_[j]; \
-	} \
+	}} \
 	delete [] items_; \
 	delete [] p->items_; \
 	p->items_ = 0; \
@@ -75,45 +79,52 @@ void Pool::grow() { \
 } \
  \
 Pool::~Pool() { \
-	if (chain_) { \
+	{if (chain_) { \
 		delete chain_; \
-	} \
+	}} \
 	delete [] pool_; \
-	if (items_) { \
+	{if (items_) { \
 		delete [] items_; \
-	} \
+	}} \
+	MUTDESTRUCT \
 } \
  \
 T* Pool::alloc() { \
-	if (nget_ >= count_) { grow(); } \
+	MUTLOCK \
+	{if (nget_ >= count_) { grow(); }} \
 	T* item = items_[get_]; \
 	get_ = (get_+1)%count_; \
 	++nget_; \
-	if (nget_ > maxget_) { maxget_ = nget_; } \
+	{if (nget_ > maxget_) { maxget_ = nget_; }} \
+	MUTUNLOCK \
 	return item; \
 } \
  \
 void Pool::hpfree(T* item) { \
+	MUTLOCK \
 	assert(nget_ > 0); \
 	items_[put_] = item; \
 	put_ = (put_ + 1)%count_; \
 	--nget_; \
+	MUTUNLOCK \
 } \
 \
 void Pool::free_all() { \
+	MUTLOCK \
 	Pool* pp; \
 	long i; \
 	nget_ = 0; \
 	get_ = 0; \
 	put_ = 0; \
-	for(pp = this; pp; pp = pp->chain_) { \
+	{for(pp = this; pp; pp = pp->chain_) { \
 		for (i=0; i < pp->pool_size_; ++i) { \
 			items_[put_++] = pp->pool_ + i; \
 			pp->pool_[i].clear(); \
 		} \
-	} \
+	}} \
 	assert(put_ == count_); \
 	put_ = 0; \
+	MUTUNLOCK \
 } \
 \
 

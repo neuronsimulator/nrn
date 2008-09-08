@@ -15,12 +15,13 @@ public:
 	const char* name() const;
 	int type() const;
 	boolean is_point() const;
+	boolean deleteable();
 
 	Symbol* first_var();
 	boolean more_var();
 	Symbol* next_var();
 	Symbol* find(const char* rangevar);
-   Symbol* var(int);
+	Symbol* var(int);
 	int prop_index(const Symbol*)const;
 	double* prop_pval(const Symbol*, int arrayindex=0)const;
 

@@ -14,20 +14,21 @@ void nrnmpi_source_var();
 void nrnmpi_target_var();
 void nrnmpi_setup_transfer();
 void nrn_partrans_clear();
-static void var_transfer();
+static void var_transfer(NrnThread*);
 extern double t;
 extern void nrnmpi_int_allgather(int*, int*, int);
 extern void nrnmpi_int_allgatherv(int*, int*, int*, int*);
 extern void nrnmpi_dbl_allgatherv(double*, double*, int*, int*);
+extern double* nrn_recalc_ptr(double*);
 #if 1 || PARANEURON
-extern void (*nrnmpi_v_transfer_)(); // before nonvint and BEFORE INITIAL
+extern void (*nrnmpi_v_transfer_)(NrnThread*); // before nonvint and BEFORE INITIAL
 #endif
 #if PARANEURON
 extern double nrnmpi_transfer_wait_;
 #endif
 }
 
-void nrn_partrans_update_ptrs(int, double**, double*);
+void nrn_partrans_update_ptrs();
 
 declareNrnHash(MapInt2Int, int, int);
 implementNrnHash(MapInt2Int, int, int);
@@ -75,22 +76,14 @@ void nrnmpi_target_var() {
 //	printf("nrnmpi_target_var target_val=%g sgid=%d\n", *ptv, sgid);
 }
 
-void nrn_partrans_update_ptrs(int ncnt, double** oldvp, double* newv) {
+void nrn_partrans_update_ptrs() {
 	int i, n;
 	if (sources_) {
 		n = sources_->count();
 		DblPList* newsrc = new DblPList(n);
 		for (i=0; i < n; ++i) {
-			if (nrn_isdouble(sources_->item(i), 0, ncnt-1)) {
-				int k = (int)(*sources_->item(i));
-				if (sources_->item(i) == oldvp[k]) {
-					newsrc->append(newv + k);
-				}else{
-					newsrc->append(sources_->item(i));
-				}
-			}else{ // not v
-				newsrc->append(sources_->item(i));
-			}
+			double* pd = nrn_recalc_ptr(sources_->item(i));
+			newsrc->append(pd);
 		}
 		delete sources_;
 		sources_ = newsrc;
@@ -99,16 +92,8 @@ void nrn_partrans_update_ptrs(int ncnt, double** oldvp, double* newv) {
 		n = targets_->count();
 		DblPList* newtar = new DblPList(n);
 		for (i=0; i < n; ++i) {
-			if (nrn_isdouble(targets_->item(i), 0, ncnt-1)) {
-				int k = (int)(*targets_->item(i));
-				if (targets_->item(i) == oldvp[k]) {
-					newtar->append(newv + k);
-				}else{
-					newtar->append(targets_->item(i));
-				}
-			}else{ // not v
-				newtar->append(targets_->item(i));
-			}
+			double* pd = nrn_recalc_ptr(targets_->item(i));
+			newtar->append(pd);
 		}
 		delete targets_;
 		targets_ = newtar;
@@ -117,11 +102,39 @@ void nrn_partrans_update_ptrs(int ncnt, double** oldvp, double* newv) {
 
 //static FILE* xxxfile;
 
-void var_transfer() {
+void var_transfer(NrnThread* _nt) {
 	if (!is_setup_) {
 		hoc_execerror("ParallelContext.setup_transfer()", "needs to be called.");
 	}
 //	fprintf(xxxfile, "%g\n", t);
+	if (nrn_nthread > 1) {
+		// threads and nhost is tangential to the main purpose and
+		// can be thought about further if needed
+		assert(nrnmpi_numprocs == 1);
+		// for threads we do direct transfers under the assumption
+		// that v is being transferred and they were set in a
+		// previous multithread job. For the fixed step method this
+		// call is from nonvint which in the same thread job as update
+		// and that is the case even with multisplit. So we really
+		// need to break the job between update and nonvint. Too bad.
+		// For global cvode, things are ok except if the source voltage
+		// is in at a zero area node since nocap_v_part2 is a part
+		// of this job and in fact the v does not get updated til
+		// the next job in nocap_v_part3. Again, too bad. But it is
+		// quite ambiguous, stability wise,
+		// to have a gap junction in a zero area node, anyway, since
+		// the system is then truly a DAE.
+		// For now we presume we have dealt with these matters and
+		// do the transfer.
+		hoc_execerror("parallel transfer not fully implemented", "with threads");
+#if 0		
+		TransferThreadData& ttd = transfer_thread_data_[_nt->id];
+		for (int i = 0; i < ttd.cnt; ++i) {
+			*targets_->item(ttd.ti[i]) = *sources_->item(ttd.si[i]);
+		}
+#endif
+		return;
+	}
 	int i, n = sources_->count();
 	for (i=0; i < n; ++i) {
 		outgoing_source_buf_[i] = *sources_->item(i);

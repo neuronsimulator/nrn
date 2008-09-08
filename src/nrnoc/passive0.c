@@ -7,7 +7,7 @@
 static char *mechanism[] = {
 	"0", "fastpas", "g_fastpas", "e_fastpas", 0,0,0
 };
-static pas_alloc(), pas_cur(), pas_jacob();
+static void pas_alloc(), pas_cur(), pas_jacob();
 passive0_reg_() {
 	register_mech(mechanism, pas_alloc, pas_cur, pas_jacob, (Pfri)0, (Pfri)0, -1, 1);
 }
@@ -16,7 +16,7 @@ passive0_reg_() {
 #define e vdata[i][1]
 #define v NODEV(vnode[i])
 
-static pas_cur(Memb_list* ml, int type) {
+static void pas_cur(NrnThread* nt, Memb_list* ml, int type) {
 	int count = ml->nodecount;
 	Node **vnode = ml->nodelist;
 	double **vdata = ml->data;
@@ -30,7 +30,7 @@ static pas_cur(Memb_list* ml, int type) {
 	}
 }
 
-static pas_jacob(Memb_list* ml, int type) {
+static void pas_jacob(NrnThread* nt, Memb_list* ml, int type) {
 	int count = ml->nodecount;
 	Node **vnode = ml->nodelist;
 	double **vdata = ml->data;
@@ -46,15 +46,15 @@ static pas_jacob(Memb_list* ml, int type) {
 
 /* the rest can be constructed automatically from the above info*/
 
-static pas_alloc(p)
+static void pas_alloc(p)
 	Prop *p;
 {
 	double *pd;
 #define	nparm 2
-	pd = nrn_prop_data_alloc(p->type, nparm);
+	pd = nrn_prop_data_alloc(p->type, nparm, p);
 	p->param_size = nparm;
 #if defined(__MWERKS__)
-	pd[0] = 5.e-4;//DEF_g;
+	pd[0] = 5.e-4;/*DEF_g;*/
 #else
 	pd[0] = DEF_g;
 #endif

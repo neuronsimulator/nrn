@@ -29,7 +29,6 @@ extern int issection(), ismembrane(), sectionname(), psection();
 extern int pop_section(), push_section(), section_exists();
 extern int delete_section();
 extern int secondorder, diam_changed, nrn_shape_changed_;
-extern double t, dt;
 extern double clamp_resist;
 extern double celsius;
 extern int stoprun;

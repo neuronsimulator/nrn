@@ -28,11 +28,14 @@ extern Symlist* hoc_symlist;
 extern Symlist* hoc_built_in_symlist;
 extern Symlist* hoc_top_level_symlist;
 extern void notify_freed_val_array(double*, int);
+extern void nrn_mk_table_check();
 }
 
 static Symbol* ksstate_sym;
 static Symbol* ksgate_sym;
 static Symbol* kstrans_sym;
+
+#define nt_dt nrn_threads->_dt
 
 static void check_objtype(Object* o, Symbol* s) {
 	if (o->ctemplate->sym != s) {
@@ -58,23 +61,28 @@ static void chkobj(void* v) {
 	}
 }
 
+static void check_table_thread_(double* p, Datum* ppvar, Datum* thread, void* vnt, int type) {
+	KSChan* c = channels->item(type);
+	c->check_table_thread((NrnThread*)vnt);
+}
+
 static void nrn_alloc(Prop* prop) {
 	KSChan* c = channels->item(prop->type);
 	c->alloc(prop);
 }
 
-static void nrn_init(Memb_list* ml, int type) {
+static void nrn_init(NrnThread* nt, Memb_list* ml, int type) {
 //printf("nrn_init\n");
 	KSChan* c = channels->item(type);
-	c->init(ml->nodecount, ml->nodelist, ml->data, ml->pdata);
+	c->init(ml->nodecount, ml->nodelist, ml->data, ml->pdata, nt);
 }
 
-static void nrn_cur(Memb_list* ml, int type) {
+static void nrn_cur(NrnThread* nt, Memb_list* ml, int type) {
 //printf("nrn_cur\n");
 	KSChan* c = channels->item(type);
 #if CACHEVEC
 	if (use_cachevec) {
-		c->cur(ml->nodecount, ml->nodeindices, ml->data, ml->pdata);
+		c->cur(ml->nodecount, ml->nodeindices, ml->data, ml->pdata, nt);
 	}else
 #endif /* CACHEVEC */
 	{
@@ -82,12 +90,12 @@ static void nrn_cur(Memb_list* ml, int type) {
 	}
 }
 
-static void nrn_jacob(Memb_list* ml, int type) {
+static void nrn_jacob(NrnThread* nt, Memb_list* ml, int type) {
 //printf("nrn_jacob\n");
 	KSChan* c = channels->item(type);
 #if CACHEVEC
 	if (use_cachevec) {
-		c->jacob(ml->nodecount, ml->nodeindices, ml->data, ml->pdata);
+		c->jacob(ml->nodecount, ml->nodeindices, ml->data, ml->pdata, nt);
 	}else
 #endif /* CACHEVEC */
 	{
@@ -95,17 +103,17 @@ static void nrn_jacob(Memb_list* ml, int type) {
 	}
 }
 
-static void nrn_state(Memb_list* ml, int type) {
+static void nrn_state(NrnThread* nt, Memb_list* ml, int type) {
 //printf("nrn_state\n");
 	KSChan* c = channels->item(type);
 #if CACHEVEC
 	if (use_cachevec) {
 		c->state(ml->nodecount, ml->nodeindices, ml->nodelist, ml->data,
-				ml->pdata);
+				ml->pdata, nt);
 	}else
 #endif /* CACHEVEC */
 	{
-		c->state(ml->nodecount, ml->nodelist, ml->data, ml->pdata);
+		c->state(ml->nodecount, ml->nodelist, ml->data, ml->pdata, nt);
 	}
 }
 
@@ -121,22 +129,22 @@ static int ode_map(int ieq, double** pv, double** pvdot,
 	c->map(ieq, pv, pvdot, p, pd, atol);
 	return 0;
 }
-static int ode_spec(Memb_list* ml, int type){
+static int ode_spec(NrnThread*, Memb_list* ml, int type){
 //printf("ode_spec\n");
 	KSChan* c = channels->item(type);
 	c->spec(ml->nodecount, ml->nodelist, ml->data, ml->pdata);
 	return 0;
 }
-static int ode_matsol(Memb_list* ml, int type){
+static int ode_matsol(NrnThread* nt, Memb_list* ml, int type){
 //printf("ode_matsol\n");
 	KSChan* c = channels->item(type);
-	c->matsol(ml->nodecount, ml->nodelist, ml->data, ml->pdata);
+	c->matsol(ml->nodecount, ml->nodelist, ml->data, ml->pdata, nt);
 	return 0;
 }
-static int singchan(Memb_list* ml, int type){
+static int singchan(NrnThread* nt, Memb_list* ml, int type){
 //printf("singchan_\n");
 	KSChan* c = channels->item(type);
-	c->cv_sc_update(ml->nodecount, ml->nodelist, ml->data, ml->pdata);
+	c->cv_sc_update(ml->nodecount, ml->nodelist, ml->data, ml->pdata, nt);
 	return 0;
 }
 static void* hoc_create_pnt(Object* ho) {
@@ -871,6 +879,7 @@ KSChan::KSChan(Object* obj, boolean is_p) {
 //printf("KSChan created\n");
 	int i;
 	nhhstate_ = 0;
+	mechtype_ = -1;
 	usetable(false, 0, 1., 0.);;
 	is_point_ = is_p;
 	is_single_ = false;
@@ -2149,7 +2158,7 @@ void KSChan::alloc(Prop* prop) {
 	prop->param = nrn_point_prop_->param;
 	prop->dparam = nrn_point_prop_->dparam;
     }else{
-	prop->param = nrn_prop_data_alloc(prop->type, prop->param_size);
+	prop->param = nrn_prop_data_alloc(prop->type, prop->param_size, prop);
 	prop->param[gmaxoffset_] = gmax_deflt_;
 	if (is_point()) {
 		prop->param[NSingleIndex] = 1.;
@@ -2166,7 +2175,7 @@ void KSChan::alloc(Prop* prop) {
 	}
     if (!is_point() || nrn_point_prop_ == 0) {
 	if (ppsize > 0) {
-		prop->dparam = nrn_prop_datum_alloc(prop->type, ppsize);
+		prop->dparam = nrn_prop_datum_alloc(prop->type, ppsize, prop);
 		if (is_point()) {
 			prop->dparam[2]._pvoid = nil;
 		}
@@ -2356,7 +2365,7 @@ void KSChan::alloc_schan_node_data() {
 	}
 }
 
-void KSChan::init(int n, Node** nd, double** pp, Datum** ppd) {
+void KSChan::init(int n, Node** nd, double** pp, Datum** ppd, NrnThread* nt) {
 	int i, j;
 	if (nstate_) for (i=0; i < n; ++i) {
 		double v = NODEV(nd[i]);
@@ -2382,7 +2391,7 @@ void KSChan::init(int n, Node** nd, double** pp, Datum** ppd) {
 			pp[i][NSingleIndex] = double(snd->nsingle_);
 			if (snd->nsingle_ > 0) {
 				// replace population fraction with integers.
-				single_->init(v, s, snd);
+				single_->init(v, s, snd, nt);
 			}
 		}
 //printf("KSChan::init\n");
@@ -2393,19 +2402,18 @@ void KSChan::init(int n, Node** nd, double** pp, Datum** ppd) {
 	}
 }
 
-void KSChan::state(int n, Node** nd, double** pp, Datum** ppd) {
+void KSChan::state(int n, Node** nd, double** pp, Datum** ppd, NrnThread* nt) {
 	int i, j;
 	double* s;
 	if (nstate_) {
 	    for (i=0; i < n; ++i) {
 		if (is_single() && pp[i][NSingleIndex] > .999) {
-			single_->state(nd[i], pp[i], ppd[i]);
+			single_->state(nd[i], pp[i], ppd[i], nt);
 			continue;
 		}
 		double v = NODEV(nd[i]);
 		s = pp[i] + soffset_;
 		if (usetable_) {
-			if (dt != dtsav_) { usetable(true); }
 			double inf, tau;
 			int k; double x, y;
 			x = (v - vmin_)*dvinv_;
@@ -2432,14 +2440,14 @@ void KSChan::state(int n, Node** nd, double** pp, Datum** ppd) {
 			for (j = 0; j < nhhstate_; ++j) {
 				double inf, tau;
 				trans_[j].inftau(v, inf, tau);
-				tau = 1. - KSChanFunction::Exp(-dt/tau);
+				tau = 1. - KSChanFunction::Exp(-nt->_dt/tau);
 				s[j] += (inf - s[j])*tau;
 			}
 		}
 		if (nksstate_) {
 			s += nhhstate_;
 			fillmat(v, ppd[i]);
-			mat_dt(dt, s);
+			mat_dt(nt->_dt, s);
 			solvemat(s);
 		}
 	    }
@@ -2447,19 +2455,18 @@ void KSChan::state(int n, Node** nd, double** pp, Datum** ppd) {
 }
 
 #if CACHEVEC
-void KSChan::state(int n, int *ni, Node** nd, double** pp, Datum** ppd) {
+void KSChan::state(int n, int *ni, Node** nd, double** pp, Datum** ppd, NrnThread* _nt) {
 	int i, j;
 	double* s;
 	if (nstate_) {
 	    for (i=0; i < n; ++i) {
 		if (is_single() && pp[i][NSingleIndex] > .999) {
-			single_->state(nd[i], pp[i], ppd[i]);
+			single_->state(nd[i], pp[i], ppd[i], _nt);
 			continue;
 		}
 		double v = VEC_V(ni[i]);
 		s = pp[i] + soffset_;
 		if (usetable_) {
-			if (dt != dtsav_) { usetable(true); }
 			double inf, tau;
 			int k; double x, y;
 			x = (v - vmin_)*dvinv_;
@@ -2486,14 +2493,14 @@ void KSChan::state(int n, int *ni, Node** nd, double** pp, Datum** ppd) {
 			for (j = 0; j < nhhstate_; ++j) {
 				double inf, tau;
 				trans_[j].inftau(v, inf, tau);
-				tau = 1. - KSChanFunction::Exp(-dt/tau);
+				tau = 1. - KSChanFunction::Exp(-_nt->_dt/tau);
 				s[j] += (inf - s[j])*tau;
 			}
 		}
 		if (nksstate_) {
 			s += nhhstate_;
 			fillmat(v, ppd[i]);
-			mat_dt(dt, s);
+			mat_dt(_nt->_dt, s);
 			solvemat(s);
 		}
 	    }
@@ -2512,7 +2519,7 @@ void KSChan::cur(int n, Node** nd, double** pp, Datum** ppd) {
 }
 
 #if CACHEVEC
-void KSChan::cur(int n, int *nodeindices, double** pp, Datum** ppd) {
+void KSChan::cur(int n, int *nodeindices, double** pp, Datum** ppd, NrnThread* _nt) {
 	int i;
 	for (i=0; i < n; ++i) {
 		double g, ic;
@@ -2532,7 +2539,7 @@ void KSChan::jacob(int n, Node** nd, double** pp, Datum** ppd) {
 }
 
 #if CACHEVEC
-void KSChan::jacob(int n, int *nodeindices, double** pp, Datum** ppd) {
+void KSChan::jacob(int n, int *nodeindices, double** pp, Datum** ppd, NrnThread* _nt) {
 	int i;
 	for (i=0; i < n; ++i) {
 		int ni = nodeindices[i];
@@ -2680,7 +2687,7 @@ KSTransition::~KSTransition(){
 	if (f1) {
 		delete f1;
 	}
-	hh_table_make(0);
+	hh_table_make(0., 0);
 }
 
 void KSTransition::setf(int i, int type, Vect* vec, double vmin, double vmax) {
@@ -2873,7 +2880,7 @@ void KSChan::spec(int n, Node** nd, double** p, Datum** ppd){
 	}
 }
 
-void KSChan::matsol(int n, Node** nd, double** p, Datum** ppd){
+void KSChan::matsol(int n, Node** nd, double** p, Datum** ppd, NrnThread* nt){
 	int i, j;
 	double* p2;
 	if (nstate_) for (i=0; i < n; ++i) {
@@ -2885,25 +2892,25 @@ void KSChan::matsol(int n, Node** nd, double** p, Datum** ppd){
 		for (j = 0; j < nhhstate_; ++j) {
 			double tau;
 			tau = trans_[j].tau(v);
-			p2[j] /= (1 + dt/tau);
+			p2[j] /= (1 + nt->_dt/tau);
 		}
 		if (nksstate_) {
 			p2 += nhhstate_;
 			fillmat(v, ppd[i]);
-			mat_dt(dt, p2);
+			mat_dt(nt->_dt, p2);
 			solvemat(p2);
 		}
 	}
 }
 
 // from Cvode::do_nonode
-void KSChan::cv_sc_update(int n, Node** nd, double** pp, Datum** ppd) {
+void KSChan::cv_sc_update(int n, Node** nd, double** pp, Datum** ppd, NrnThread* nt) {
 	int i, j;
 	double* s;
 	if (nstate_) {
 		for (i=0; i < n; ++i) {
 			if (pp[i][NSingleIndex] > .999) {
-				single_->cv_update(nd[i], pp[i], ppd[i]);
+				single_->cv_update(nd[i], pp[i], ppd[i], nt);
 			}
 		}
 	}
@@ -2975,7 +2982,7 @@ double KSChanTable::f(double v) {
 	return x;
 }
 
-void KSTransition::hh_table_make(int size, double vmin, double vmax) {
+void KSTransition::hh_table_make(double dt, int size, double vmin, double vmax) {
 	int i;
 	double dv, tau;
 	if (size < 1 || vmin >= vmax || size - size1_ != 1) {
@@ -3023,11 +3030,23 @@ void KSChan::usetable(boolean use) {
 	int i;
 	if (nhhstate_ == 0) { use = false; }
 	usetable_ = use;
+	if (mechtype_ == -1) { return; }
 	if (usetable_) {
-		for (i = 0; i < nhhstate_; ++i) {
-			trans_[i].hh_table_make(hh_tab_size_, vmin_, vmax_);
+		dtsav_ = -1.0;
+		check_table_thread(nrn_threads);
+		if (memb_func[mechtype_].thread_table_check_ != check_table_thread_) {
+			memb_func[mechtype_].thread_table_check_ = check_table_thread_;
+			if (memb_list[mechtype_].nodecount) {
+				nrn_mk_table_check();
+			}
 		}
-		dtsav_ = dt;
+	}else{
+		if (memb_func[mechtype_].thread_table_check_) {
+			memb_func[mechtype_].thread_table_check_ = 0;
+			if (memb_list[mechtype_].nodecount) {
+				nrn_mk_table_check();
+			}
+		}
 	}
 }
 
@@ -3037,3 +3056,12 @@ int KSChan::usetable(double* vmin, double* vmax) {
 	return hh_tab_size_;
 }
 
+void KSChan::check_table_thread(NrnThread* nt) {
+	int i;
+	if (usetable_ && nt->_dt != dtsav_) {
+		for (i = 0; i < nhhstate_; ++i) {
+			trans_[i].hh_table_make(nt->_dt, hh_tab_size_, vmin_, vmax_);
+		}
+		dtsav_ = nt->_dt;
+	}	
+}

@@ -10,10 +10,11 @@ libscopmath_la_SOURCES = abort.c adams.c adeuler.c adrunge.c advance.c \
 	revhyper.c revsawto.c revsigmo.c romberg.c runge.c \
 	sawtooth.c schedule.c seidel.c sigmoid.c simeq.c simplex.c \
 	sparse.c vsparse.c spline.c squarewa.c ssimplic.c step.c \
-	threshol.c tridiag.c
+	threshol.c tridiag.c sparse_thread.c newton_thread.c crout_thread.c \
+	ssimplic_thread.c
 
 ## Header files that need to be included in the distribution:
-noinst_HEADERS = errcodes.h f2c.h scopenv.h
+noinst_HEADERS = errcodes.h f2c.h scopenv.h newton_struct.h
 
 EXTRA_DIST = scpmth.mak
 

@@ -38,6 +38,8 @@ static double clampval();
 extern double *getarg(), chkarg();
 extern char *secname();
 
+#define nt_t nrn_threads->_t
+
 print_clamp() {
 	int i;
 	
@@ -77,6 +79,9 @@ fclampi() {
 fclamp() {
 	int i;
 
+	if (nrn_nthread > 1) {
+		hoc_execerror("fsyn does not allow threads", "");
+	}
 	/* two args are maxlevel, loc */
 	/* three args are level, duration, vc */
 	i = chkarg(1, 0., 10000.);
@@ -178,9 +183,9 @@ clampval() {
 	gtemp = 1.e2/clamp_resist/NODEAREA(pnd);
 	for (;;) {
 #if CVODE
-		at_time(tswitch[oldsw]);
+		at_time(nrn_threads, tswitch[oldsw]);
 #endif
-		if (t < tswitch[oldsw]) {
+		if (nt_t < tswitch[oldsw]) {
 			if (oldsw == 0) {
 				break;
 			}
@@ -191,7 +196,7 @@ clampval() {
 			oldsw = 0;
 #endif
 		}else{
-			if (t < tswitch[oldsw + 1]) {
+			if (nt_t < tswitch[oldsw + 1]) {
 				break;
 			} else {
 				if (++oldsw == maxlevel) {

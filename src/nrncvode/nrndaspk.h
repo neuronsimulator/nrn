@@ -2,6 +2,8 @@
 #define daspk_h
 
 #include "shared/nvector_serial.h"
+#include "nvector_nrnthread.h"
+
 class Cvode;
 
 class Daspk {
@@ -12,8 +14,8 @@ public:
 	int advance_tn(double tstop);
 	int interpolate(double tout); // has strict precondition
 	void statistics();
-	double* ewtvec();
-	double* acorvec();
+	N_Vector ewtvec();
+	N_Vector acorvec();
 private:
 	void ida_init();
 	void info();

@@ -34,7 +34,7 @@ libnrniv_la_SOURCES = nrnmenu.cpp shape.cpp classreg.cpp rotate3d.cpp \
 	bbsrcli.cpp bbsdirect.cpp bbslsrv2.cpp bbssrv.cpp \
 	linmod.cpp linmod1.cpp cachevec.cpp \
 	kschan.cpp kssingle.cpp nonlinz.cpp finithnd.cpp nrnste.cpp \
-	nrnrtime.cpp nrnpy.cpp \
+	nrnrtime.cpp nvector_nrnthread.c nrnpy.cpp \
 	netpar.cpp partrans.cpp splitcell.cpp multisplit.cpp
 
 # The interviews includes must be before the X includes so that if a
@@ -49,9 +49,13 @@ BBS_LIBS = $(PVM_LIBS)
 PVM_INCLUDES = @PVM_INCLUDES@
 BBS_INCLUDES = -I$(nsrc)/parallel -I$(nsrc)/nrnmpi $(PVM_INCLUDES)
 
+PTHREAD_CC=@PTHREAD_CC@
+PTHREAD_CFLAGS=@PTHREAD_CFLAGS@
+PTHREAD_LIBS=@PTHREAD_LIBS@
+
 INCLUDES = $(windll) -I$(nsrc)/sundials -I$(nsrc)/sundials/shared -I$(nsrc)/nrncvode -I$(nsrc)/sparse13 -I$(nsrc)/gnu -I. -I$(nsrc)/ivoc -I$(nsrc)/nrnoc -I$(top_builddir)/src/oc -I$(nsrc)/oc  $(IV_INCLUDES) $(BBS_INCLUDES)
 AM_CPPFLAGS = -DOOP=1 -DCABLE=1 -DUSECVODE=1 -DUSEMATRIX=1 -DUSEBBS=1
-AM_CXXFLAGS = @MINGW_CFLAG@
+AM_CXXFLAGS = @MINGW_CFLAG@ $(PTHREAD_CFLAGS)
 
 if NRNMECH_DLL_STYLE
 libnrniv_la_LDFLAGS = -export-dynamic
@@ -96,7 +100,7 @@ noinst_HEADERS = ndatclas.h nrnclass.h nrnmenu.h nrnoc2iv.h ppshape.h \
 	rot3band.h rotate3d.h secbrows.h shape.h shapeplt.h singlech.h \
 	linmod.h nrniv_mf.h nrnste.h arraypool.h \
 	kschan.h kssingle.h nonlinz.h nrnhash.h \
-	bgpdma.cpp
+	bgpdma.cpp multisplitcontrol.h nvector_nrnthread.h
 
 ## We have to play a trick on automake to get it to install the .o files in
 ## an architecture-dependent subdirectory.  (Apparently automake's authors

@@ -1,0 +1,94 @@
+#ifndef multicore_h
+#define multicore_h
+
+/*
+Starts from Hubert Eichner's modifications but incorporates a
+significant refactorization. The best feature of Hubert's original
+code is retained. I.e. the user level structures remain unchanged
+and the vectors, e.g v_node, are ordered so that each thread uses
+a contiguous region. We take this even further by changing rootnodecount
+to nrn_global_ncell and ordering the rootnodes so they appear in the proper
+place in the lists instead of all at the beginning. This means
+most of the user level for i=0,rootnode-1 loops have to be
+changed to iterate over all the nrn_thread_t.ncell. But underneath the
+VECTORIZE part, most functions are given an ithread argument and none ever
+get outside the array portions specified by the nrn_thread_t.
+This means that the thread parallelization can be handled at the level
+of fadvance() and a network sim can take advantage of the minimum
+netcon delay interval
+
+The main caveat with threads is that mod files should not use pointers
+that cross thread data boundaries. ie. gap junctions should use the
+ParallelContext methods.
+
+*/
+
+/* now included by section.h since this has take over the v_node,
+actual_v, etc.
+*/
+
+#include <membfunc.h>
+
+#if defined(__cplusplus)
+extern "C" {
+#endif
+
+typedef struct NrnThreadMembList{ /* patterned after CvMembList in cvodeobj.h */
+	struct NrnThreadMembList* next;
+	Memb_list* ml;
+	int index;
+} NrnThreadMembList;
+
+typedef struct NrnThreadBAList {
+	Memb_list* ml; /* an item in the NrnThreadMembList */
+	BAMech* bam;
+	struct NrnThreadBAList* next;
+} NrnThreadBAList;
+
+typedef struct NrnThread {
+	double _t;
+	double _dt;
+	double cj;
+	NrnThreadMembList* tml;
+        int ncell; /* analogous to old rootnodecount */
+	int end;    /* 1 + position of last in v_node array. Now v_node_count. */
+	int id; /* this is nrn_threads[id] */
+
+	double* _actual_rhs;
+	double* _actual_d;
+	double* _actual_a;
+	double* _actual_b;
+	double* _actual_v;
+	double* _actual_area;
+	int* _v_parent_index;
+	Node** _v_node;
+	Node** _v_parent;
+	char* _sp13mat; /* handle to general sparse matrix */
+	Memb_list* _ecell_memb_list; /* normally nil */
+	void* _vcv; /* replaces old cvode_instance and nrn_cvode_ */
+
+#if 1
+	double _ctime; /* computation time in seconds (using nrnmpi_wtime) */
+#endif
+
+	NrnThreadBAList* tbl[BEFORE_AFTER_SIZE]; /* wasteful since almost all empty */
+	hoc_List* roots; /* ncell of these */
+	Object* userpart; /* the SectionList if this is a user defined partition */
+
+} NrnThread;
+
+extern int nrn_nthread;
+extern NrnThread* nrn_threads;
+extern void nrn_thread_error(char*);
+extern void nrn_multithread_job(void*(*)(NrnThread*));
+extern void nrn_onethread_job(int, void*(*)(NrnThread*));
+extern void nrn_wait_for_threads();
+extern void nrn_thread_table_check();
+
+#define FOR_THREADS(nt) for (nt = nrn_threads; nt < nrn_threads + nrn_nthread; ++nt)
+
+#if defined(__cplusplus)
+}
+#endif
+
+#endif

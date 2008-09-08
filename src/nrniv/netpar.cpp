@@ -31,7 +31,7 @@ extern double t, dt;
 extern int cvode_active_;
 extern Point_process* ob2pntproc(Object*);
 extern int nrn_use_selfqueue_;
-extern void nrn_pending_selfqueue(double);
+extern void nrn_pending_selfqueue(double, NrnThread*);
 extern int vector_capacity(IvocVect*); //ivocvect.h conflicts with STL
 extern double* vector_vec(IvocVect*);
 extern void ncs2nrn_integrate(double tstop);
@@ -42,9 +42,11 @@ void nrnmpi_gid_clear();
 extern void nrn_partrans_clear();
 #if PARANEURON
 extern void nrnmpi_split_clear();
-extern void nrnmpi_multisplit_clear();
 #endif
+extern void nrnmpi_multisplit_clear();
 }
+
+static double set_mindelay(double maxdelay);
 
 #if BGPDMA
 int use_bgpdma_;
@@ -82,31 +84,35 @@ static IvocVect* max_histogram_;
 
 static int active_;
 static int ocapacity_; // for spikeout_
-static double mindelay_;
+static double mindelay_, usable_mindelay_;
 static double wt_; // wait time for nrnmpi_spike_exchange
 static double wt1_; // time to find the PreSyns and send the spikes.
 static boolean use_compress_;
 static int spfixout_capacity_;
 static int idxout_;
 static void nrn_spike_exchange_compressed();
-static NetParEvent* npe_;
+static NetParEvent* npe_; // nrn_nthread of them
+static int n_npe_; // just to compare with nrn_nthread
 
 NetParEvent::NetParEvent(){
 	wx_ = ws_ = 0.;
+	ithread_ = -1;
 }
 NetParEvent::~NetParEvent(){
 }
-void NetParEvent::send(double tt, NetCvode* nc){
-	nc->event(tt + mindelay_, this);
+void NetParEvent::send(double tt, NetCvode* nc, NrnThread* nt){
+	nc->event(tt + usable_mindelay_, this, nt);
 }
-void NetParEvent::deliver(double tt, NetCvode* nc){
+void NetParEvent::deliver(double tt, NetCvode* nc, NrnThread* nt){
 	if (nrn_use_selfqueue_) { //first handle pending flag=1 self events
-		nrn_pending_selfqueue(tt);
+		nrn_pending_selfqueue(tt, nt);
 	}
 	// has to be the last event at this time in order to avoid a race
 	// condition with HocEvent that may call things such as pc.barrier
-	net_cvode_instance->deliver_events(tt);
-	t = tt;
+	net_cvode_instance->deliver_events(tt, nt);
+	net_cvode_instance->p[nt->id].netparevent_seen_ = 1;
+	nt->_t = tt;
+    if (nt->id == 0) {
 #if BGPDMA
 	if (use_bgpdma_) {
 		wt_ = nrnmpi_wtime();
@@ -120,14 +126,16 @@ void NetParEvent::deliver(double tt, NetCvode* nc){
 #endif
 	wx_ += wt_;
 	ws_ += wt1_;
-	send(tt, nc);
+   }
+	send(tt, nc, nt);
 }
 void NetParEvent::pgvts_deliver(double tt, NetCvode* nc){
-	deliver(tt, nc);
+	assert(0);
+	deliver(tt, nc, 0);
 }
 
 void NetParEvent::pr(const char* m, double tt, NetCvode* nc){
-	printf("%s NetParEvent %.15g t-tt=%g\n", m, tt, t - tt);
+	printf("%s NetParEvent %d t=%.15g tt-t=%g\n", m, ithread_, tt, tt - nrn_threads[ithread_]._t);
 }
 
 DiscreteEvent* NetParEvent::savestate_save(){
@@ -149,7 +157,8 @@ void NetParEvent::savestate_restore(double tt, NetCvode* nc){
 	if (use_compress_) {
 		t_exchange_ = t;
 	}
-	nc->event(tt, npe_);
+	assert(0);
+	nc->event(tt, npe_, 0);
 }
 
 inline static void sppk(unsigned char* c, int gid) {
@@ -225,14 +234,39 @@ void nrn2ncs_outputevent(int gid, double firetime) {
 //printf("%d cell %d in slot %d fired at %g\n", nrnmpi_myid, gid, i, firetime);
 }
 
+static int nrn_need_npe() {
+	
+	int b = 0;
+	if (active_) { b = 1; }
+	if (nrn_use_selfqueue_) { b = 1; }
+	if (nrn_nthread > 1 && net_cvode_instance->localstep()) { b = 1; }
+	if (b) {
+		if (mindelay_ == 0) {
+			set_mindelay(100.);
+		}
+	}else{
+		if (npe_) {
+			delete [] npe_;
+			npe_ = nil;
+			n_npe_ = 0;
+		}
+	}
+	return b;
+}
+
 void nrn_spike_exchange_init() {
 //printf("nrn_spike_exchange_init\n");
-	if (!active_ && !nrn_use_selfqueue_) { return; }
+	if (!nrn_need_npe()) { return; }
+//	if (!active_ && !nrn_use_selfqueue_) { return; }
 	alloc_space();
 //printf("nrnmpi_use=%d active=%d\n", nrnmpi_use, active_);
-	if ((mindelay_ < 1e-9) || (cvode_active_ == 0 && mindelay_ < dt)) {
+	usable_mindelay_ = mindelay_;
+	if (cvode_active_ == 0 && nrn_nthread > 1) {
+		usable_mindelay_ -= dt;
+	}
+	if ((usable_mindelay_ < 1e-9) || (cvode_active_ == 0 && usable_mindelay_ < dt)) {
 		if (nrnmpi_myid == 0) {
-			hoc_execerror("mindelay is 0", "(or less than dt for fixed step method)");
+			hoc_execerror("usable mindelay is 0", "(or less than dt for fixed step method)");
 		}else{
 			return;
 		}
@@ -243,15 +277,17 @@ void nrn_spike_exchange_init() {
 	bgpdma_nsend_ = 0; bgpdma_nrecv_ = 0;
 #endif
 
-	if (!npe_) { npe_ = new NetParEvent(); }
-	npe_->wx_ = 0.;
-	npe_->ws_ = 0.;
+	if (n_npe_ != nrn_nthread) {
+		if (npe_) { delete [] npe_; }
+		npe_ = new NetParEvent[nrn_nthread];
+		n_npe_ = nrn_nthread;
+	}
     if (use_compress_) {
 	idxout_ = 2;
 	t_exchange_ = t;
 	dt1_ = 1./dt;
-	mindelay_ = floor(mindelay_ * dt1_ + 1e-9) * dt;
-	assert (mindelay_ >= dt && (mindelay_ * dt1_) < 255);
+	usable_mindelay_ = floor(mindelay_ * dt1_ + 1e-9) * dt;
+	assert (usable_mindelay_ >= dt && (usable_mindelay_ * dt1_) < 255);
     }else{
 #if nrn_spikebuf_size > 0
 	if (spbufout_) {
@@ -259,7 +295,13 @@ void nrn_spike_exchange_init() {
 	}
 #endif
     }
-	npe_->send(t, net_cvode_instance);
+    for (int i = 0; i < nrn_nthread; ++i) {
+	npe_[i].ithread_ = i;
+	npe_[i].wx_ = 0.;
+	npe_[i].ws_ = 0.;
+	net_cvode_instance->p[i].netparevent_seen_ = 0;
+	npe_->send(t, net_cvode_instance, nrn_threads + i);
+    }
 	nsend_ = nsendmax_ = nrecv_ = nrecv_useful_ = 0;
 }
 
@@ -321,7 +363,7 @@ void nrn_spike_exchange() {
 		for (j=0; j < nn; ++j) {
 			PreSyn* ps;
 			if (gid2in_->find(spbufin_[i].gid[j], ps)) {
-				ps->send(spbufin_[i].spiketime[j], net_cvode_instance);
+				ps->send(spbufin_[i].spiketime[j], net_cvode_instance, nrn_threads);
 #if NRNSTAT
 				++nrecv_useful_;
 #endif
@@ -333,7 +375,7 @@ void nrn_spike_exchange() {
 	for (i = 0; i < n; ++i) {
 		PreSyn* ps;
 		if (gid2in_->find(spikein_[i].gid, ps)) {
-			ps->send(spikein_[i].spiketime, net_cvode_instance);
+			ps->send(spikein_[i].spiketime, net_cvode_instance, nrn_threads);
 #if NRNSTAT
 			++nrecv_useful_;
 #endif
@@ -369,7 +411,7 @@ void nrn_spike_exchange_compressed() {
 #if NRNSTAT
 		if (max_histogram_) { vector_vec(max_histogram_)[0] += 1.; }
 #endif
-		t_exchange_ = t;
+		t_exchange_ = nrn_threads->_t;
 		return;
 	}
 #if NRNSTAT
@@ -414,7 +456,7 @@ void nrn_spike_exchange_compressed() {
 			idx += localgid_size_;
 			PreSyn* ps;
 			if (gps->find(lgid, ps)) {
-				ps->send(firetime + 1e-10, net_cvode_instance);
+				ps->send(firetime + 1e-10, net_cvode_instance, nrn_threads);
 #if NRNSTAT
 				++nrecv_useful_;
 #endif
@@ -426,7 +468,7 @@ void nrn_spike_exchange_compressed() {
 			idxov += localgid_size_;
 			PreSyn* ps;
 			if (gps->find(lgid, ps)) {
-				ps->send(firetime+1e-10, net_cvode_instance);
+				ps->send(firetime+1e-10, net_cvode_instance, nrn_threads);
 #if NRNSTAT
 				++nrecv_useful_;
 #endif
@@ -447,7 +489,7 @@ void nrn_spike_exchange_compressed() {
 			idx += localgid_size_;
 			PreSyn* ps;
 			if (gid2in_->find(gid, ps)) {
-				ps->send(firetime+1e-10, net_cvode_instance);
+				ps->send(firetime+1e-10, net_cvode_instance, nrn_threads);
 #if NRNSTAT
 				++nrecv_useful_;
 #endif
@@ -462,14 +504,14 @@ void nrn_spike_exchange_compressed() {
 		idx += localgid_size_;
 		PreSyn* ps;
 		if (gid2in_->find(gid, ps)) {
-			ps->send(firetime+1e-10, net_cvode_instance);
+			ps->send(firetime+1e-10, net_cvode_instance, nrn_threads);
 #if NRNSTAT
 			++nrecv_useful_;
 #endif
 		}
 	}
     }
-	t_exchange_ = t;
+	t_exchange_ = nrn_threads->_t;
 	wt1_ = nrnmpi_wtime() - wt;
 }
 
@@ -567,14 +609,14 @@ void nrn_fake_fire(int gid, double spiketime, int fake_out) {
 	if (gid2in_->find(gid, ps)) {
 		assert(ps);
 //printf("nrn_fake_fire %d %g\n", gid, spiketime);
-		ps->send(spiketime, net_cvode_instance);
+		ps->send(spiketime, net_cvode_instance, nrn_threads);
 #if NRNSTAT
 		++nrecv_useful_;
 #endif
 	}else if (fake_out && gid2out_->find(gid, ps)) {
 		assert(ps);
 //printf("nrn_fake_fire fake_out %d %g\n", gid, spiketime);
-		ps->send(spiketime, net_cvode_instance);
+		ps->send(spiketime, net_cvode_instance, nrn_threads);
 #if NRNSTAT
 		++nrecv_useful_;
 #endif
@@ -620,8 +662,8 @@ void nrnmpi_gid_clear() {
 	nrn_partrans_clear();
 #if PARANEURON
 	nrnmpi_split_clear();
-	nrnmpi_multisplit_clear();
 #endif
+	nrnmpi_multisplit_clear();
 	if (!gid2out_) { return; }
 	PreSyn* ps, *psi;
 	NrnHashIterate(Gid2PreSyn, gid2out_, PreSyn*, ps) {
@@ -800,8 +842,6 @@ void BBS::netpar_solve(double tstop) {
 	}
 	double wt;
 
-	if (!npe_) { npe_ = new NetParEvent(); }
-
 	nrn_timeout(20);
 	wt = nrnmpi_wtime();
 	if (cvode_active_) {
@@ -810,7 +850,7 @@ void BBS::netpar_solve(double tstop) {
 		ncs2nrn_integrate(tstop+1e-11);
 	}
 	impl_->integ_time_ += nrnmpi_wtime() - wt;
-	impl_->integ_time_ -= npe_->wx_ + npe_->ws_;
+	impl_->integ_time_ -= (npe_ ? (npe_[0].wx_ + npe_[0].ws_) : 0.);
 #if BGPDMA
 	if (use_bgpdma_) {
 		wt_ = nrnmpi_wtime();
@@ -823,20 +863,24 @@ void BBS::netpar_solve(double tstop) {
 	nrn_spike_exchange();
 #endif
 	nrn_timeout(0);
-	impl_->wait_time_ += wt_ + npe_->wx_;
-	impl_->send_time_ += wt1_ + npe_->ws_;
-	npe_->wx_ = npe_->ws_ = 0.;
+	impl_->wait_time_ += wt_;
+	impl_->send_time_ += wt1_;
+	if (npe_) {
+		impl_->wait_time_ += npe_[0].wx_;
+		impl_->send_time_ += npe_[0].ws_;
+		npe_[0].wx_ = npe_[0].ws_ = 0.;
+	};
 //printf("%d netpar_solve exit t=%g tstop=%g mindelay_=%g\n",nrnmpi_myid, t, tstop, mindelay_);
 #else // not NRNMPI
 	ncs2nrn_integrate(tstop);
 #endif
 }
 
-double BBS::netpar_mindelay(double maxdelay) {
+static double set_mindelay(double maxdelay) {
 #if NRNMPI
 	if (nrnmpi_use) {active_ = 1;}
 	double mindelay = maxdelay;
-    if (nrn_use_selfqueue_) {
+    if (nrn_use_selfqueue_ || net_cvode_instance->localstep()) {
 	hoc_Item* q;
 	ITERATE(q, net_cvode_instance->psl_) {
 		PreSyn* ps = (PreSyn*)VOIDITM(q);
@@ -860,14 +904,14 @@ double BBS::netpar_mindelay(double maxdelay) {
 	}
 
 //printf("%d netpar_mindelay local %g now calling nrnmpi_mindelay\n", nrnmpi_myid, mindelay);
-	double st = time();
+//	double st = time();
 	mindelay_ = nrnmpi_mindelay(mindelay);
-	add_wait_time(st);
+//	add_wait_time(st);
 //printf("%d local min=%g  global min=%g\n", nrnmpi_myid, mindelay, mindelay_);
 	if (mindelay_ < 1e-9 && nrn_use_selfqueue_) {
 		nrn_use_selfqueue_ = 0;
 		double od = mindelay_;
-		mindelay = netpar_mindelay(maxdelay);
+		mindelay = set_mindelay(maxdelay);
 		if (nrnmpi_myid == 0) {
 printf("Notice: The global minimum NetCon delay is %g, so turned off the cvode.queue_mode\n", od);
 printf("   use_self_queue option. The interprocessor minimum NetCon delay is %g\n", mindelay);
@@ -883,6 +927,10 @@ printf("   use_self_queue option. The interprocessor minimum NetCon delay is %g\
 #else
 	return maxdelay;
 #endif
+}
+
+double BBS::netpar_mindelay(double maxdelay) {
+	return set_mindelay(maxdelay);
 }
 
 void BBS::netpar_spanning_statistics(int* nsend, int* nsendmax, int* nrecv, int* nrecv_useful) {

@@ -1,0 +1,311 @@
+{load_file("loadbal.hoc")}
+{load_file("binfo.hoc")}
+
+begintemplate ParallelComputeToolSplitInfo
+public sec, psec, x, px, spsec, spx, sid, first
+objref sec, psec, spsec
+proc init() {
+	sec = new SectionRef()
+	sec.parent { psec = new SectionRef() }
+	x = section_orientation()
+	px = parent_connection()
+	// after splitting  spsec connect sec(x), spx if spsec not nil
+	spx = -1
+	sid = -1
+	first = 0 // 1 if supposed to call multisplit on psec
+}
+endtemplate ParallelComputeToolSplitInfo
+
+begintemplate ParallelComputeTool
+public nthread, pthread, cache, busywait, multisplit, pinfo
+public pct, box, map, np, save, nthread_, lb, printpart, move2part
+external cvode
+objref this, pct, box, pc, lb, splitinfo_
+strdef tstr, nprocstr, cxtotalstr, ldbalstr, npiecestr
+proc init() {
+	pinfo = 0
+	np = 0
+	ispar_ = 1
+	multisplit_ = 0
+	ldbal_ = 1.0
+	cxtotal_ = 0
+	pc = new ParallelContext()
+	lb = new LoadBalance(pc)
+	nthread_ = pc.nthread()
+	pct = this
+	cacheeffic_ = cvode.cache_efficient()
+	busywait_ = 0
+	
+	nprocstr = "?? useful processors"
+	totalcx()
+	ldbal()
+
+	build()
+}
+proc build() {
+	box = new VBox()
+	box.intercept(1)
+	box.ref(this)
+	box.save("save()")
+	xpanel("")
+	xvarlabel(nprocstr)
+	xvarlabel(cxtotalstr)
+	xvarlabel(npiecestr)
+	xvarlabel(ldbalstr)
+	xpvalue("# threads", &nthread_, 1, "change_nthread(nthread_, ispar_)")
+	xcheckbox("Thread Parallel", &ispar_, "change_nthread(nthread_, ispar_)")
+	xcheckbox("Cache Efficient", &cacheeffic_, "cacheeffic(cacheeffic_)")
+	xcheckbox("Use busy waiting", &busywait_, "busywait(busywait_)")
+	xcheckbox("Multisplit", &multisplit_, "multisplit(multisplit_)")
+	xbutton("Refresh", "howmany() totalcx() ldbal()")
+	xpanel()
+	box.intercept(0)
+}
+
+proc map() {
+	if (box.ismapped) return
+	sprint(tstr, "%s", this)
+	if (numarg() > 1) {
+		box.map(tstr, $2, $3, $4, $5)
+	}else{
+		box.map(tstr)
+	}
+}
+proc save() {
+	box.save("load_file(\"parcom.hoc\", \"ParallelComputeTool\")\n}")
+	box.save("{ocbox_ = ParallelComputeTool[0]}")
+	box.save("{object_push(ocbox_)}")
+	sprint(tstr, "{change_nthread(%d, %d)}", nthread_, ispar_)
+	box.save(tstr)
+	if (multisplit_) {box.save("{multisplit(1)}")}
+	if (multisplit_ == 0 && cacheeffic_) {box.save("{cacheeffic(1)}")}
+	if (busywait_) {box.save("{busywait(1)}")}
+	box.save("{object_pop()}")
+	box.save("{\n")
+}
+
+proc printpart() {local i
+	for i=0, pc.nthread - 1 {
+		forsec lb.slthread[i] print secname(), " ", pc.sec_in_thread
+	}
+}
+
+proc move2part() {local i
+	i = pc.sec_in_thread
+	lb.slthread[i].remove()
+	lb.slthread[$1].append()
+	for i=0, pc.nthread-1 {
+		pc.partition(i, lb.slthread[i])
+	}
+}
+
+proc howmany() {
+	np = pc.thread_how_many_proc()
+	if (np == 1) {
+		sprint(nprocstr, "%d useful processor", np)
+	}else{
+		sprint(nprocstr, "%d useful processors", np)
+	}
+}
+proc totalcx() {
+	cxtotal_ = lb.cpu_complexity()
+	sprint(cxtotalstr, "Total model complexity: %g", cxtotal_)
+}
+proc ldbal() {
+	lb.thread_partition(pinfo)
+	ldbal_ = lb.thread_cxbal_
+	sprint(npiecestr, "%d pieces", lb.npiece_)
+	sprint(ldbalstr, "Load imbalance: %.1f%%", (ldbal_ - 1)*100)
+}
+proc cacheeffic() {
+	if (!multisplit_) {
+		cvode.cache_efficient($1)
+	}
+	cacheeffic_ = cvode.cache_efficient()
+}
+
+proc busywait() {
+	if (!ispar_) {$1 = 0}
+	if ($1 == 1 && np == 0) { howmany() }
+	if (nthread_ > np) {
+		$1 = 0
+	}
+	pc.thread_busywait($1)
+	busywait_ = $1
+}
+
+func nthread() {
+	if (numarg()) {
+		change_nthread($1, ispar_)
+	}
+	return nthread_
+}
+
+func pthread() {
+	if (numarg()) {
+		change_nthread(nthread_, $1)
+	}
+	return ispar_
+}
+
+func cache() {
+	if (numarg()) {
+		cache_effic($1)
+	}
+	return cacheeffic_
+}
+
+proc change_nthread() {local ms
+	ms = multisplit_
+	if (ms) {
+		unsplit()
+	}
+	nthread_ = $1
+	ispar_ = $2
+	pc.nthread(nthread_, ispar_)
+	if (ms) {
+		multisplit(ms)
+	}
+	totalcx()
+	ldbal()
+	busywait(busywait_)
+}
+proc multisplit() {
+	multisplit_ = $1
+	if (multisplit_) {
+		use_thread()
+	}else{
+		unsplit()
+		lb = new LoadBalance(pc)
+		totalcx()
+		ldbal()
+	}
+}
+
+proc use_thread() {local cx, cellx  localobj b, ms, vs, cb, nc, nil, roots
+	pc.partition()
+	lb = new LoadBalance(pc)
+	cxtotal_ = lb.cpu_complexity()
+	cx = cxtotal_*0.3/nthread_
+	ms = new Vector(100)
+	roots = new SectionList()
+	roots.allroots()
+	splitinfo_ = new List() // list of list of ParallelComputeToolSplitInfo
+	forsec roots {
+		cellx = lb.cell_complexity()
+		lb.multisplit(0, cx, ms)
+		vs = new VectorStream(ms)
+		splitinfo(vs, lb.srlist)
+		split()
+	}
+	cxtotal_ = lb.cpu_complexity()
+	ldbal()
+	pc.multisplit()
+	cacheeffic_ = cvode.cache_efficient()
+	multisplit_ = 1
+}
+
+proc splitinfo() {local gid, cx, nsid, isid, nsub, isub, n, i, id \
+    localobj si, si0, sil
+	sil = new List()
+	splitinfo_.append(sil)
+	gid = $o1.scanvar
+	cx = $o1.scanvar
+	nsid = $o1.scanvar
+//	printf("%d %g %d\n", gid, cx, nsid)
+	for isid = 0, nsid - 1 {
+//		printf("  %d\n", isid)
+		nsub = $o1.scanvar
+		for isub = 0, nsub - 1 {
+			cx = $o1.scanvar
+			n = $o1.scanvar
+//			printf("    %g %d\n     ", cx, n)
+			for i=0, n - 1 {
+				id = $o1.scanvar
+//				printf(" %d", id)
+$o2.object(id).sec { si = new ParallelComputeToolSplitInfo() }
+				si.sid = isid + 1
+				sil.append(si)
+				if (i == 0) {
+					si0 = si
+					if (isub == 0) {
+						si.first = 1
+					}
+				}else{
+					si.spsec = si0.sec
+					si.spx = si0.x
+				}
+			}
+//			printf("\n")
+		}
+	}
+	if (0) for i=0, sil.count-1 {
+		si = sil.object(i)
+		si.sec.sec printf("original: connect %s(%g),", secname(), si.x)
+		si.psec.sec printf(" %s(%g)\n", secname(), si.px)
+		if (si.spx < 0) { 
+			printf("  new: disconnect()\n")
+		}else{
+		si.sec.sec printf("new: connect %s(%g),", secname(), si.x)
+		si.spsec.sec printf(" %s(%g)\n", secname(), si.spx)
+		}
+	}
+}
+
+proc split() {local i, j, sidoff  localobj si, sil
+	sidoff = 100*splitinfo_.count-1
+	sil = splitinfo_.o(splitinfo_.count-1)
+	for i=0, sil.count-1 {
+		si = sil.o(i)
+		si.sec.sec {
+			disconnect()
+//			printf("%s disconnect()\n", secname())
+		}
+		if (si.spx >= 0) {
+			si.spsec.sec connect si.sec.sec(si.x), si.spx
+//			si.sec.sec printf("connect %s(%g),", secname(), si.x)
+//			si.spsec.sec printf(" %s(%g)\n", secname(), si.spx)
+		}
+	}
+	for i=0, sil.count-1 {
+		si = sil.o(i)
+		if (si.first) {
+			si.psec.sec {
+				pc.multisplit(si.px, si.sid + sidoff)
+//				printf("%s pc.multisplit(%g, %d)\n", secname(), si.px, si.sid + sidoff)
+			}
+		}
+		if (si.spx < 0) {
+			si.sec.sec {
+				pc.multisplit(si.x, si.sid + sidoff)
+//				printf("%s pc.multisplit(%g, %d)\n", secname(), si.x, si.sid + sidoff)
+			}
+		}
+	}
+}
+
+proc unsplit() {local i, j  localobj si, sil
+	pc.partition()
+	pc.gid_clear()
+    for j=0, splitinfo_.count - 1 {
+	sil = splitinfo_.o(j)
+	for i=0, sil.count - 1 {
+		si = sil.o(i)
+		si.sec.sec disconnect()
+		si.psec.sec connect si.sec.sec(si.x), si.px
+		if (0) {
+			si.sec.sec printf("connect %s(%g),", secname(), si.x)
+			si.psec.sec printf(" %s(%g)\n", secname(), si.px)
+		}
+	}
+    }
+	cacheeffic_ = cvode.cache_efficient(0)
+	multisplit_ = 0
+}
+
+endtemplate ParallelComputeTool
+
+objref tobj
+tobj = new ParallelComputeTool()
+objref tobj
+

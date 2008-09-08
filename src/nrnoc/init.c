@@ -5,10 +5,10 @@ extern char* nrn_version();
 
 /* change this to correspond to the ../nmodl/nocpout nmodl_version_ string*/
 static char nmodl_version_[] =
-"6.0.2";
+"6.2.0";
 
 static char banner[] =
-"Duke, Yale, and the BlueBrain Project -- Copyright 1984-2007\n\
+"Duke, Yale, and the BlueBrain Project -- Copyright 1984-2008\n\
 See http://www.neuron.yale.edu/credits.html\n";
 
 # include	<stdio.h>
@@ -31,8 +31,8 @@ extern void* dlsym(void* handle, char* name);
 extern int dlclose(void* handle);
 extern char* dlerror();
 #endif
-//#include "../mswin/windll/dll.h"
-//static struct DLL* dll;
+/*#include "../mswin/windll/dll.h"*/
+/*static struct DLL* dll;*/
 #endif
 #if defined(WIN32) || defined(NRNMECH_DLL_STYLE)
 extern char* nrn_mech_dll; /* declared in hoc_init.c so ivocmain.cpp can see it */
@@ -74,7 +74,7 @@ int state_discon_allowed_;
 extern int nrn_nobanner_;
 double t, dt, clamp_resist, celsius, htablemin, htablemax;
 hoc_List* section_list;
-int rootnodecount = 0;
+int nrn_global_ncell = 0; /* used to be rootnodecount */
 extern double hoc_default_dll_loaded_;
 extern int nrn_istty_;
 extern int nrn_nobanner_;
@@ -235,11 +235,22 @@ hoc_nrn_load_dll() {
 }
 #endif
 
+extern void nrn_threads_create(int);
+
+static DoubScal scdoub[] = {
+	"t", &t,
+	"dt", &dt,
+	0,0
+};
+
 hoc_last_init()
 {
 	int i;
 	Pfri *m;
 	Symbol *s;
+
+	hoc_register_var(scdoub, (DoubVec*)0, (IntFunc*)0);
+	nrn_threads_create(1);
 
  	if (nrnmpi_myid < 1) if (nrn_nobanner_ == 0) { 
 	    Fprintf(stderr, "%s\n", nrn_version(1));
@@ -345,6 +356,7 @@ initnrn() {
 static int pointtype = 1; /* starts at 1 since 0 means not point in pnt_map*/
 int n_memb_func;
 
+/* if vectorized then thread_data_size added to it */
 register_mech(m, alloc, cur, jacob, stat, initialize, nrnpointerindex, vectorized)
 	char **m;
 	Pfri alloc;
@@ -376,8 +388,8 @@ register_mech(m, alloc, cur, jacob, stat, initialize, nrnpointerindex, vectorize
 		nrn_is_artificial_ = (short*)erealloc(nrn_is_artificial_, memb_func_size_*sizeof(short));
 		nrn_artcell_qindex_ = (short*)erealloc(nrn_artcell_qindex_, memb_func_size_*sizeof(short));
 		nrn_prop_dparam_size_ = (int*)erealloc(nrn_prop_dparam_size_, memb_func_size_*sizeof(int));
-		nrn_dparam_ptr_start_ = (int*)erealloc(nrn_prop_dparam_size_, memb_func_size_*sizeof(int));
-		nrn_dparam_ptr_end_ = (int*)erealloc(nrn_prop_dparam_size_, memb_func_size_*sizeof(int));
+		nrn_dparam_ptr_start_ = (int*)erealloc(nrn_dparam_ptr_start_, memb_func_size_*sizeof(int));
+		nrn_dparam_ptr_end_ = (int*)erealloc(nrn_dparam_ptr_end_, memb_func_size_*sizeof(int));
 		memb_order_ = (short*)erealloc(memb_order_, memb_func_size_*sizeof(short));
 		for (j=memb_func_size_ - 20; j < memb_func_size_; ++j) {
 			pnt_map[j] = 0;
@@ -404,10 +416,16 @@ register_mech(m, alloc, cur, jacob, stat, initialize, nrnpointerindex, vectorize
 	memb_func[type].initialize = initialize;
 	memb_func[type].destructor = (Pfri)0;
 #if VECTORIZE
-	memb_func[type].vectorized = vectorized;
+	memb_func[type].vectorized = vectorized ? 1:0;
+	memb_func[type].thread_size_ = vectorized ? (vectorized - 1) : 0;
+	memb_func[type].thread_mem_init_ = (void*)0;
+	memb_func[type].thread_cleanup_ = (void*)0;
+	memb_func[type].thread_table_check_ = (void*)0;
+	memb_func[type]._update_ion_pointers = (void*)0;
 	memb_func[type].is_point = 0;
 	memb_func[type].hoc_mech = (void*)0;
 	memb_list[type].nodecount = 0;
+	memb_list[type]._thread = (Datum*)0;
 	memb_order_[type] = type;
 #endif
 #if CVODE
@@ -640,6 +658,13 @@ _modl_cleanup(){}
 #if 1
 _modl_set_dt(newdt) double newdt; {
 	dt = newdt;
+	nrn_threads->_dt = newdt;
+}
+_modl_set_dt_thread(double newdt, NrnThread* nt) {
+	nt->_dt = newdt;
+}
+double _modl_get_dt_thread(NrnThread* nt) {
+	return nt->_dt;
 }
 #endif	
 
@@ -817,3 +842,16 @@ p = prop_alloc(&(pnode[0]->prop), type, pnode[0]); /* this and any ions */
 #endif
 }
 
+void _nrn_thread_reg(int i, int cons, void(*f)(Datum*)) {
+	if (cons == 1) {
+		memb_func[i].thread_mem_init_ = f;
+	}else if (cons == 0) {
+		memb_func[i].thread_cleanup_ = f;
+	}else if (cons == 2) {
+		memb_func[i]._update_ion_pointers = f;
+	}
+}
+
+void _nrn_thread_table_reg(int i, void(*f)(double*, Datum*, Datum*, void*, int)) {
+	memb_func[i].thread_table_check_ = f;
+}

@@ -1,125 +1,4 @@
 #include <../../nmodlconf.h>
-/* /local/src/master/nrn/src/nmodl/modl.c,v 4.5 1998/01/22 18:50:33 hines Exp */
-/*
-modl.c,v
- * Revision 4.5  1998/01/22  18:50:33  hines
- * allow stralloc with null string (creates empty string)
- *
- * Revision 4.4  1997/12/01  14:51:44  hines
- * mac port to codewarrior pro2 more complete
- *
- * Revision 4.3  1997/11/26  14:04:49  hines
- * port of nmodl to MAC
- *
- * Revision 4.2  1997/10/20  14:59:32  hines
- * nocmodl file.mod allowed (ie suffix is allowed)
- *
- * Revision 4.1  1997/08/30  20:45:26  hines
- * cvs problem with branches. Latest nmodl stuff should now be a top level
- *
- * Revision 4.0.1.1  1997/08/08  17:23:51  hines
- * nocmodl version 4.0.1
- *
- * Revision 4.0  1997/08/08  17:06:17  hines
- * proper nocmodl version number
- *
- * Revision 1.1.1.1  1994/10/12  17:21:36  hines
- * NEURON 3.0 distribution
- *
- * Revision 9.186  1994/08/04  20:03:55  hines
- * forgot to remove 1 && from kinetic vectorize testbed
- *
- * Revision 9.182  1994/07/21  13:11:16  hines
- * allow vectorization of kinetic blocks on cray when using sparse method.
- * not tested yet
- *
- * Revision 9.180  1994/05/18  18:11:56  hines
- * INCLUDE "file"
- * tries originalpath/file ./file MODL_INCLUDEpaths/file
- *
- * Revision 9.157  1993/02/01  15:17:47  hines
- * static functions should be declared before use.
- * inline is keyword for some compilers.
- *
- * Revision 9.142  92/08/05  16:23:09  hines
- * can vectorize hh. need work on tables though.
- * 
- * Revision 9.128  92/02/05  14:47:50  hines
- * saber warning free
- * FUNCTION made global for use by other models. #define GLOBFUNC 1
- * 
- * Revision 9.76  90/12/07  09:27:16  hines
- * new list structure that uses unions instead of void *element
- * 
- * Revision 9.73  90/12/04  12:00:13  hines
- * model version displayed only as comment in generated c file
- * format of plot lines for scalar in .var file is
- * name nl vindex pindex 1 nl
- * for vector with specific index:
- * name[index] vindex pindex 1
- * for vector without index
- * name[size] vindex pindex size
- * 
- * Revision 9.31  90/10/08  11:34:00  hines
- * simsys prototype
- * 
- * Revision 9.22  90/08/17  08:14:58  hines
- * HMODL change define from HOC to HMODL, ensure all .c files compiled
- * 
- * Revision 9.11  90/07/30  11:51:10  hines
- * NMODL getting better, almost done
- * 
- * Revision 9.10  90/07/27  13:58:04  hines
- * nmodl handles declarations about right for first pass at this.
- * 
- * Revision 9.8  90/07/26  07:58:38  hines
- * interface modl to hoc and call the translator hmodl
- * 
- * Revision 3.73  90/07/19  08:29:50  hines
- * doesn't produce .var file
- * 
- * Revision 8.3  90/02/15  10:08:51  mlh
- * calls to parout and cout reversed so that parout can put defs.h defines
- * at beginning
- * 
- * Revision 8.2  90/02/15  08:56:18  mlh
- * first check for .mrg file and translate if it exists
- * if not the check for .mor file and translate that.
- * This is done if there is only one argument.
- * If two arguments then use first as basename and
- * second as input file
- * print message about what it is doing
- * 
- * Revision 8.1  89/11/01  10:17:40  mlh
- * consist moved after solvehandler to avoid warning that delta_indep is
- * undeclared.
- * 
- * Revision 8.0  89/09/22  17:26:34  nfh
- * Freezing
- * 
- * Revision 7.0  89/08/30  13:32:04  nfh
- * Rev 7 is now Experimental; Rev 6 is Testing
- * 
- * Revision 6.0  89/08/14  16:26:49  nfh
- * Rev 6.0 is latest of 4.x; now the Experimental version
- * 
- * Revision 4.0  89/07/24  17:03:16  nfh
- * Freezing rev 3.  Rev 4 is now Experimental
- * 
- * Revision 3.2  89/07/12  16:33:08  mlh
- * 2nd optional argument gives input file.  First arg is prefix to .var
- * and .c files (and .mod input file if 2nd arg not present).
- * 
- * Revision 3.1  89/07/07  16:54:23  mlh
- * FIRST LAST START in independent SWEEP higher order derivatives
- * 
- * Revision 1.2  89/07/06  15:34:50  mlh
- * inteface with version.c
- * 
- * Revision 1.1  89/07/06  14:49:52  mlh
- * Initial revision
- * 
-*/
 
 /*
  * int main(int argc, char *argv[]) --- returns 0 if translation is
@@ -268,13 +147,14 @@ main(argc, argv)
 	 *
 	 */
 	consistency();
-#if !_CRAY && NMODL && VECTORIZE
+#if 0 && !_CRAY && NMODL && VECTORIZE
 /* allowing Kinetic models to be vectorized on cray. So nonzero numlist is
 no longer adequate for saying we can not */
 	if (numlist) {
 		vectorize = 0;
 	}
 #endif
+	chk_thread_safe();
 	parout();		/* print .var file.
 				 * Also #defines which used to be in defs.h
 				 * are printed into .c file at beginning.
@@ -292,7 +172,7 @@ no longer adequate for saying we can not */
 
 #if NMODL && VECTORIZE
 	if (vectorize) {
-		Fprintf(stderr, "VECTORIZED\n");
+		Fprintf(stderr, "Thread Safe\n");
 	}
 #endif
 

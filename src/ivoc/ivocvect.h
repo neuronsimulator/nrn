@@ -3,6 +3,7 @@
 
 // definition of vector classes from the gnu c++ class library
 #include <d_avec.h>  
+#include <nrnmutdec.h>
 
 #define ParentVect doubleAVec
 #define Vect IvocVect
@@ -28,10 +29,18 @@ public:
 	void buffer_size(int);
 	void label(const char*);
 
+#if USE_PTHREAD
+	void mutconstruct(int mkmut) {if (!mut_) MUTCONSTRUCT(mkmut)}
+#else
+	void mutconstruct(int) {}
+#endif
+	void lock() {MUTLOCK}
+	void unlock() {MUTUNLOCK}
 public:
 	//intended as friend static Object** temp_objvar(IvocVect*);
 	Object* obj_;	// so far only needed by record and play; not reffed
 	char* label_;
+	MUTDEC
 };
 
 

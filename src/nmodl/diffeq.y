@@ -131,6 +131,12 @@ arglist: /*nothing*/ {
 		$$ = list4("", "0.0", "0.0", "");
 		}
 	| arg { $$ = $1; }
+	| arglist arg {
+		$$ = $2;
+		b1 "%s %s", expr($1), expr($2));
+		b4 "%s %s", expr($1), expr($2));
+		free4($1); replace($$);
+		}
 	| arglist ',' arg {
 		$$ = $3;
 		b1 "%s , %s", expr($1), expr($3));

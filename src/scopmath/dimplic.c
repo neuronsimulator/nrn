@@ -25,3 +25,11 @@ int (*fun)();
     return 0;
 }
 
+int derivimplicit_thread(int n, int* slist, int* dlist, double* p,
+  int(*fun)(double*, void*, void*, void*),
+  void* ppvar, void* thread, void* nt) {
+    (*fun)(p, ppvar, thread, nt);
+    return 0;
+}
+
+

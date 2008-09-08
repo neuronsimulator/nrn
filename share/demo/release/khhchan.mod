@@ -7,6 +7,7 @@ NEURON {
 	USEION k READ ek WRITE ik
 	RANGE gkbar, ik
 	GLOBAL inf, tau
+	THREADSAFE
 }
 
 UNITS {

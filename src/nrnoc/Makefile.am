@@ -41,7 +41,10 @@ EXTRA_DIST = $(MODFILES)
 HOC_E = ../e_editor/hoc_e
 HOC_E_DEP = ../e_editor/hoc_e
 
-AM_CFLAGS = @MINGW_CFLAG@
+PTHREAD_CC=@PTHREAD_CC@
+PTHREAD_CFLAGS=@PTHREAD_CFLAGS@
+PTHREAD_LIBS=@PTHREAD_LIBS@
+AM_CFLAGS = @MINGW_CFLAG@ $(PTHREAD_CFLAGS)
 AM_CPPFLAGS = -DCABLE=1 -DOOP=1
 nsrc=$(top_srcdir)/src
 INCLUDES = -I$(top_builddir)/src/oc -I$(nsrc)/oc -I$(nsrc)/scopmath -I$(nsrc)/sparse13
@@ -171,11 +174,11 @@ hocusr.h: $(nsrc)/nrnoc/neuron.h $(nsrc)/oc/hocinc $(HOC_E_DEP)
 ## Header files that need to be installed:
 pkginclude_HEADERS = neuron.h md1redef.h md2redef.h section.h nrnoc_ml.h \
 	cabvars.h membdef.h membfunc.h \
-	options.h nrnredef.h multisplit.h
+	options.h nrnredef.h multisplit.h multicore.h nmodlmutex.h
 
 ## Header files that need to be included in the distribution but not installed:
 noinst_HEADERS = hocusr.h \
-	osxdlfcn.h osxdlfcn.c
+	osxdlfcn.h osxdlfcn.c multicore.c
 
 ## We have to play a trick on automake to get it to install the .o files in
 ## an architecture-dependent subdirectory.  (Apparently automake's authors

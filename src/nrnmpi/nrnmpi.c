@@ -7,6 +7,7 @@ int nrnmpi_myid = 0; /* rank */
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+extern double nrn_timeus();
 
 #if NRNMPI
 
@@ -108,7 +109,7 @@ double nrnmpi_wtime() {
 		return MPI_Wtime();
 	}
 #endif
-	return 0.;
+	return nrn_timeus();
 }
 
 void nrnmpi_terminate() {

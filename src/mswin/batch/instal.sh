@@ -167,7 +167,7 @@ fi
 # copy the dos formatted files to the classical positions.
 # use zip to do the translation from unix to dos format
 
-Z=d2ufiles.zip
+Z=$B/d2ufiles.zip
 
 if true ; then
 cd $S/share
@@ -187,6 +187,7 @@ if true ; then
 cd $S
 rm -f $Z
 zip -l $Z src/oc/*.h src/nrnoc/*.mod src/nrnoc/*.h src/scopmath/*.h
+(cd $B ; zip -l $Z src/oc/*.h src/nrnoc/*.mod src/nrnoc/*.h src/scopmath/*.h)
 unzip -d $D -o $Z
 rm $Z
 fi
@@ -197,6 +198,9 @@ rm -f $Z
 zip -l $Z notes.txt
 #do the lib shell scripts in unix format
 zip $Z bin/mknrndll lib/*.sh lib/*.sed
+#do the specified unix bin shell scripts in unix format
+cd $S
+zip $Z bin/mkthreadsafe
 unzip -d $D -o $Z
 rm $Z
 cd $B/src/mswin

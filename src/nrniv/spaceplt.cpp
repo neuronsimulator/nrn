@@ -17,6 +17,7 @@
 #include "ivoc.h"
 
 extern "C" {
+extern int nrn_multisplit_active_;
 extern int hoc_execerror_messages;
 extern int node_index(Section*, double);
 extern int structure_change_cnt, nrn_shape_changed_;
@@ -213,7 +214,8 @@ RangeVarPlot::~RangeVarPlot() {
 
 void RangeVarPlot::update(Observable* o) {
 	if (o) { // must be Oc::notify_change_ because free is nil
-		if (shape_changed_ != nrn_shape_changed_) {
+		// but do not update if multisplit active
+		if (shape_changed_ != nrn_shape_changed_ && !nrn_multisplit_active_) {
 //printf("RangeVarPlot::update shape_changed %d %d\n", shape_changed_, nrn_shape_changed_);
 			shape_changed_ = nrn_shape_changed_;
 			set_x();
@@ -475,7 +477,7 @@ void RangeVarPlot::set_x() {
 			sec = nrn_trueparent(sec);
 			d += node_dist(sec, nd);
 		}
-		nd = v_parent[nd->v_node_index];
+		nd = nrn_parent_node(nd);
 	}
 
 	if (sec) {
@@ -503,7 +505,7 @@ void RangeVarPlot::set_x() {
 			sec = nrn_trueparent(sec);
 			d -= node_dist(sec, nd);
 		}
-		nd = v_parent[nd->v_node_index];
+		nd = nrn_parent_node(nd);
 	}
 	for (sec = rootsec; sec->parentsec; sec = sec->parentsec){}
 	nd = sec->parentnode;

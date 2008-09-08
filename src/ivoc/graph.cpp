@@ -1374,6 +1374,7 @@ picker()->add_menu("Erase Axis", new ActionCallback(Graph)(this, &Graph::erase_a
 
 extern "C" {
 	extern void hoc_free_list(Symlist**);
+	extern double* nrn_recalc_ptr(double*);
 };
 
 Graph::~Graph() {
@@ -3358,53 +3359,42 @@ void Graph::change_prop() {
 	}
 }
 
-void Graph::update_ptrs(int n, double** oldvp, double* newv) {
-	if (x_pval_ && nrn_isdouble(x_pval_, 0, n-1)) {
-		int k = (int)(*x_pval_);
-		if (x_pval_ == oldvp[k]) {
-			x_pval_ = newv + k;
-		}
+void Graph::update_ptrs() {
+	if (x_pval_) {
+		x_pval_ = nrn_recalc_ptr(x_pval_);
 	}
-	if (rvp_) { rvp_->update_ptrs(n, oldvp, newv); }
+	if (rvp_) { rvp_->update_ptrs(); }
 	GlyphIndex i, cnt = count();
 	for (i=0; i < cnt; ++i) {
 		GraphItem* gi = (GraphItem*)component(i);
 		if (gi->is_graphVector()) {
 			GraphVector* gv = (GraphVector*)(gi->body());
 			if (gv) {
-				gv->update_ptrs(n, oldvp, newv);
+				gv->update_ptrs();
 			}
 		}
 	}
 	cnt = line_list_.count();
 	for (i=0; i < line_list_.count(); ++i) {
-		line_list_.item(i)->update_ptrs(n, oldvp, newv);
+		line_list_.item(i)->update_ptrs();
 	}
 }
 
-void DataPointers::update_ptrs(int n, double** oldvp, double* newv) {
+void DataPointers::update_ptrs() {
 	int i;
 	for (i=0; i < count_; ++i) {
-		if (nrn_isdouble(px_[i], 0, n-1)) {
-			int k = (int)(*px_[i]);
-			if (px_[i] == oldvp[k]) {
-				px_[i] = newv + k;
-			}
-		}
+		px_[i] = nrn_recalc_ptr(px_[i]);
 	}
 }
 
-void GraphLine::update_ptrs(int n, double** oldvp, double* newv) {
-	if (pval_ && nrn_isdouble(pval_, 0, n-1)) {
-		int k = (int)(*pval_);
-		if (pval_ == oldvp[k]) {
-			pval_ = newv + k;
-		}
+void GraphLine::update_ptrs() {
+	if (pval_) {
+		pval_ = nrn_recalc_ptr(pval_);
 	}
 }
 
-void GraphVector::update_ptrs(int n, double** oldvp, double* newv) {
-	if (dp_) { dp_->update_ptrs(n, oldvp, newv); }
+void GraphVector::update_ptrs() {
+	if (dp_) { dp_->update_ptrs(); }
 }
 
 #endif  /* HAVE_IV */

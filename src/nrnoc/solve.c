@@ -65,11 +65,13 @@ extern void	nrn_node_destruct1(Node*);
 extern int	tree_changed;
 extern double nrn_connection_position();
 static void node_free();
+static void triang(NrnThread*), bksub(NrnThread*);
 
 #if PARANEURON
 void (*nrnmpi_splitcell_compute_)();
-void (*nrn_multisplit_solve_)();
 #endif
+
+void (*nrn_multisplit_solve_)();
 
 /* used for vectorization and distance calculations */
 int section_count;
@@ -94,8 +96,8 @@ Section** secorder;
 double
 debugsolve()	/* returns solution error */
 {
-	void triang(), bksub();
 	short inode;
+	int i;
 	Section *sec, *psec, *ch;
 	Node *nd, *pnd, **ndP;
 	double err, sum;
@@ -112,8 +114,8 @@ assert(0)
 		}
 	}
 
-	triang();
-	bksub();
+	triang(nrn_threads);
+	bksub(nrn_threads);
 
 	err = 0.;
 /* need to check the rootnodes too */
@@ -178,7 +180,9 @@ topol_distance(sec1, node1, sec2, node2, prootsec, prootnode)
 	double d, x1, x2;
 
 	d = 0;
-	v_setup_vectors();
+	if (tree_changed) {
+		setup_topology();
+	}
 	/* keep moving toward a common node */
 	while (sec1 != sec2) {
 		if (!sec1) {
@@ -229,7 +233,9 @@ int distance() {
 	Section *sec;	
 	static Node* origin_node;
 	
-	v_setup_vectors();
+	if (tree_changed) {
+		setup_topology();
+	}
 			
 	sec = chk_access();
 	if (ifarg(2)) {
@@ -247,8 +253,8 @@ int distance() {
 		origin_node = node;
 		origin_sec = sec;
 	}else{
-		if (!origin_sec) {
-hoc_execerror("tree has changed.","Need to initialize origin with distance()");
+		if (!origin_sec || !origin_sec->prop) {
+hoc_execerror("Distance origin not valid.","Need to initialize origin with distance()");
 		}
 		d = topol_distance(origin_sec, origin_node, sec, node,
 			&sec, &node );
@@ -311,29 +317,33 @@ dashes(sec, offset,first)
 
 /* solve the matrix equation */
 void
-nrn_solve() {
-	void triang(), bksub();
+nrn_solve(NrnThread* _nt) {
 #if 0
-	printf("\nnrn_solve enter\n");
-	nrn_print_matrix();
-#endif	
+	printf("\nnrn_solve enter %lx\n", (long)_nt);
+	nrn_print_matrix(_nt);
+#endif
 #if PARANEURON
 	if (nrn_multisplit_solve_) {
+		nrn_thread_error("nrn_multisplit_solve");
 		(*nrn_multisplit_solve_)();
 		return;
 	}
 #endif
 
 #if DEBUGSOLVE
+    {
 	double err;
+	nrn_thread_error("debugsolve");
 	err = debugsolve();
 	if (err > 1.e-10) {
 		Fprintf(stderr, "solve error = %g\n", err);
 	}
+    }
 #else
 	if (use_sparse13) {
 		int e;
-		e = spFactor(sp13mat_);
+		nrn_thread_error("solve use_sparse13");
+		e = spFactor(_nt->_sp13mat);
 		if (e != spOKAY) {
 			switch (e) {
 			case spZERO_DIAG:
@@ -344,19 +354,22 @@ nrn_solve() {
 				hoc_execerror("spFactor error:", "Singular");
 			}
 		}
-		spSolve(sp13mat_, actual_rhs, actual_rhs);
+		spSolve(_nt->_sp13mat, _nt->_actual_rhs, _nt->_actual_rhs);
 	}else{
-		triang();
+		triang(_nt);
 #if PARANEURON
-		if (nrnmpi_splitcell_compute_) {(*nrnmpi_splitcell_compute_)();}
+		if (nrnmpi_splitcell_compute_) {
+			nrn_thread_error("nrnmpi_splitcell_compute");
+			(*nrnmpi_splitcell_compute_)();
+		}
 #endif
-		bksub();
+		bksub(_nt);
 	}
 #endif
 #if 0
-	printf("\nnrn_solve leave\n");
-	nrn_print_matrix();
-#endif	
+	printf("\nnrn_solve leave %lx\n", (long)_nt);
+	nrn_print_matrix(_nt);
+#endif
 }
 
 #if VECTORIZE && _CRAY
@@ -368,127 +381,64 @@ extern int v_node_depth; /* so depth may be more than twice what you'd expect */
 
 /* triangularization of the matrix equations */
 void
-triang()
+triang(NrnThread* _nt)
 {
 	register Node *nd, *pnd;
 	double p;
-#if VECTORIZE
-#if _CRAY
-	int i, j;
-#else
-	int i;
-#endif
-#else
-	short isec, inode;
-	Section *sec, *psec;
-#endif
-
-#if VECTORIZE
-#if _CRAY
-	for (j = v_node_depth - 1; j > 0; --j) {
-		int count = v_node_depth_count[j];
-		Node** nodes = v_node_depth_lists[j];
-		Node** parents = v_parent_depth_lists[j];
-		/* next loop can be done in parallel */
-#pragma _CRI ivdep
-		for ( i = 0; i < count; ++i) {
-			nd = nodes[i];
-			pnd = parents[i];
-			p = NODEA(nd) / NODED(nd);
-			NODED(pnd) -= p * NODEB(nd);
-			NODERHS(pnd) -= p * NODERHS(nd);
-		}
-	}
-#else
+	int i, i2, i3;
+	i2 = _nt->ncell;
+	i3 = _nt->end;
 #if CACHEVEC
     if (use_cachevec) {
-	for (i = v_node_count - 1; i >= rootnodecount; --i) {
+	for (i = i3 - 1; i >= i2; --i) {
 		p = VEC_A(i) / VEC_D(i);
-		VEC_D(v_parent_index[i]) -= p * VEC_B(i);
-		VEC_RHS(v_parent_index[i]) -= p * VEC_RHS(i);
+		VEC_D(_nt->_v_parent_index[i]) -= p * VEC_B(i);
+		VEC_RHS(_nt->_v_parent_index[i]) -= p * VEC_RHS(i);
 	}
     }else
 #endif /* CACHEVEC */
     {
-	for (i = v_node_count - 1; i >= rootnodecount; --i) {
-		nd = v_node[i];
-		pnd = v_parent[i];
+	for (i = i3 - 1; i >= i2; --i) {
+		nd = _nt->_v_node[i];
+		pnd = _nt->_v_parent[i];
 		p = NODEA(nd) / NODED(nd);
 		NODED(pnd) -= p * NODEB(nd);
 		NODERHS(pnd) -= p * NODERHS(nd);
 	}
     }
-#endif /* !CRAY */
-#endif /* VECTORIZE */
 }
 
 /* back substitution to finish solving the matrix equations */
 void
-bksub()
+bksub(NrnThread* _nt)
 {
 	register Node *nd, *cnd;
-#if VECTORIZE
-#if _CRAY
-	Node** nodes;
-	Node** parents;
-	int i, j, count;
-#else
-	int i;
-#endif
-#else
-	short isec, inode, ch;
-	Section *sec, *csec;
-#endif
-
-#if VECTORIZE
-#if _CRAY
-	count = v_node_depth_count[0];
-	nodes = v_node_depth_lists[0];
-	/* following loop can be done in parallel */
-#pragma _CRI ivdep
-	for (i=0; i < count; ++i) { /* roots of unconnected cells */
-		NODERHS(nodes[i]) /= NODED(nodes[i]);
-	}
-	for (j = 1; j <  v_node_depth; ++j) {
-		count = v_node_depth_count[j];
-		nodes = v_node_depth_lists[j];
-		parents = v_parent_depth_lists[j];
-		/* note that since parent is read only don't require the depth
-			needed for triangularization */
-		/* next loop can be done in parallel */
-#pragma _CRI ivdep
-		for (i=0; i < count; ++i) {
-			cnd = nodes[i];
-			nd = parents[i];
-			NODERHS(cnd) -= NODEB(cnd) * NODERHS(nd);
-			NODERHS(cnd) /= NODED(cnd);
-		}
-	}
-#else
+	int i, i1, i2, i3;
+	i1 = 0;
+	i2 = i1 + _nt->ncell;
+	i3 = _nt->end;
 #if CACHEVEC
     if (use_cachevec) {
-	for (i = 0; i < rootnodecount; ++i) {
+	for (i = i1; i < i2; ++i) {
 		VEC_RHS(i) /= VEC_D(i);
 	}
-	for (i = rootnodecount; i < v_node_count; ++i) {
-		VEC_RHS(i) -= VEC_B(i) * VEC_RHS(v_parent_index[i]);
+	for (i = i2; i < i3; ++i) {
+		VEC_RHS(i) -= VEC_B(i) * VEC_RHS(_nt->_v_parent_index[i]);
 		VEC_RHS(i) /= VEC_D(i);
 	}	
     }else
 #endif /* CACHEVEC */
     {
-	for (i = 0; i < rootnodecount; ++i) {
-		NODERHS(v_node[i]) /= NODED(v_node[i]);
+	for (i = i1; i < i2; ++i) {
+		NODERHS(_nt->_v_node[i]) /= NODED(_nt->_v_node[i]);
 	}
-	for (i = rootnodecount; i < v_node_count; ++i) {
-		cnd = v_node[i];
-		nd = v_parent[i];
+	for (i = i2; i < i3; ++i) {
+		cnd = _nt->_v_node[i];
+		nd = _nt->_v_parent[i];
 		NODERHS(cnd) -= NODEB(cnd) * NODERHS(nd);
 		NODERHS(cnd) /= NODED(cnd);
 	}	
     }
-#endif /* !CRAY */
-#endif /*Vectorize*/
 }
 
 nrn_clear_mark() {
@@ -908,7 +858,6 @@ section_order() /* create a section order consistent */
 		++section_count;
 	}
 	
-	origin_sec = (Section *)0;
 	if (secorder) {
 		free((char *)secorder);
 		secorder = (Section**)0;

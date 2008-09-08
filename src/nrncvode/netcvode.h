@@ -6,11 +6,15 @@
 #include "mymath.h"
 #include "tqueue.h"
 
+struct NrnThread;
 class PreSyn;
 class HocDataPaths;
 class PreSynTable;
 class NetCon;
 class DiscreteEvent;
+class TQItemPool;
+class SelfEventPool;
+class SelfEvent;
 class hoc_Item;
 class PlayRecord;
 class PlayRecList;
@@ -19,8 +23,35 @@ class BAMechList;
 class MaxStateTable;
 class HTList;
 class HTListList;
+class NetCvode;
+class MaxStateItem;
+class CvodeThreadData;
 struct BAMech;
 struct Section;
+struct InterThreadEvent;
+
+class NetCvodeThreadData {
+public:
+	NetCvodeThreadData();
+	virtual ~NetCvodeThreadData();
+	void interthread_send(double, DiscreteEvent*, NrnThread*);
+	void enqueue(NetCvode*, NrnThread*);
+	TQueue* tq_; // for lvardt
+	Cvode* lcv_; // for lvardt
+	TQueue* tqe_;
+	hoc_Item* psl_thr_; //for presyns with fixed step threshold checking
+	SelfEventPool* sepool_;
+	TQItemPool* tpool_;
+	InterThreadEvent* inter_thread_events_;
+	SelfQueue* selfqueue_;
+	MUTDEC
+	int nlcv_;
+	int ite_cnt_;
+	int ite_size_;
+	int unreffed_event_cnt_;
+	int netparevent_seen_;
+	double immediate_deliver_;
+};
 
 class NetCvode {
 public:
@@ -38,26 +69,28 @@ public:
 	const char* statename(int, int style=1);
 	void localstep(boolean); boolean localstep();
 	void use_daspk(boolean); boolean use_daspk();
-	void move_event(TQItem*, double);
-	void remove_event(TQItem*);
-	TQItem* event(double tdeliver, DiscreteEvent*);
+	void move_event(TQItem*, double, NrnThread*);
+	void remove_event(TQItem*, int threadid);
+	TQItem* event(double tdeliver, DiscreteEvent*, NrnThread*);
 #if BBTQ == 3 || BBTQ == 4
-	TQItem* fifo_event(double tdeliver, DiscreteEvent*);
+	TQItem* fifo_event(double tdeliver, DiscreteEvent*, NrnThread*);
 #endif
 #if BBTQ == 5
-	TQItem* bin_event(double tdeliver, DiscreteEvent*);
+	TQItem* bin_event(double tdeliver, DiscreteEvent*, NrnThread*);
 #endif
+	void send2thread(double, DiscreteEvent*, NrnThread*);
 	void null_event(double);
 	void tstop_event(double);
-	void handle_tstop_event(double);
+	void handle_tstop_event(double, NrnThread* nt);
 	void hoc_event(double, const char* hoc_stmt);
 	NetCon* install_deliver(double* psrc, Section* ssrc, Object* osrc,
 		Object* target,	double threshold, double delay,
 		double weight
 	);
 	void presyn_disconnect(PreSyn*);
-	void deliver_net_events(); // for default staggered time step method
-	void deliver_events(double til); // for initialization events
+	void check_thresh(NrnThread*);
+	void deliver_net_events(NrnThread*); // for default staggered time step method
+	void deliver_events(double til, NrnThread*); // for initialization events
 	void solver_prepare();
 	void clear_events();
 	void init_events();
@@ -67,6 +100,7 @@ public:
 	void local_retreat(double, Cvode*);
 	void retreat(double, Cvode*);
 	Object** netconlist();
+	int owned_by_thread(double*);
 	PlayRecord* playrec_uses(void*);
 	void playrec_add(PlayRecord*);
 	void playrec_remove(PlayRecord*);
@@ -81,16 +115,16 @@ public:
 	void vec_remove();
 	void record_init();
 	void play_init();
-	void fixed_record_continuous();
-	void fixed_play_continuous();
+	void fixed_record_continuous(NrnThread*);
+	void fixed_play_continuous(NrnThread*);
 	void stelist_change();
 	void ste_check(); // for fixed step;
 	static double eps(double x) { return eps_*Math::abs(x); }
 	int condition_order() { return condition_order_; }
 	void condition_order(int i) { condition_order_ = i; }
-	TQueue* event_queue() { return tqe_; }
+	TQueue* event_queue(NrnThread* nt);
 	void psl_append(PreSyn*);
-	void recalc_ptrs(int, double**, double*);
+	void recalc_ptrs();
 public:
 	void rtol(double); double rtol(){return rtol_;}
 	void atol(double); double atol(){return atol_;}
@@ -102,44 +136,53 @@ public:
 	void maxstep(double); double maxstep(){return maxstep_;}
 	void jacobian(int); int jacobian(){return jacobian_;}
 	void structure_change();
-	int unreffed_event_cnt_;
 	int print_event_;
-	int nlist() { return nlist_; }
-	Cvode* list() { return list_; }
+//	int nlist() { return nlist_; }
+//	Cvode* list() { return list_; }
 	boolean initialized_; // for global step solve.
 	void consist_sec_pd(const char*, Section*, double*);
 	double state_magnitudes();
 	Symbol* name2sym(const char*);
 	const char* sym2name(Symbol*);
 	int pgvts(double tstop);
-private:
+	void update_ps2nt();
+	void point_receive(int, Point_process*, double*, double);
+	boolean deliver_event(double til, NrnThread*); //uses TQueue atomically
+	boolean empty_;
+	void delete_list();
+	void delete_list(Cvode*);
+//private:
+public:
 	static double eps_;
-	int local_microstep();
+	int local_microstep(NrnThread*);
 	int global_microstep();
-	void deliver_least_event();
+	void deliver_least_event(NrnThread*);
 	void evaluate_conditions();
 	int condition_order_;
 	
 	int pgvts_event(double& tt);
 	DiscreteEvent* pgvts_least(double& tt, int& op, int& init);
 	int pgvts_cvode(double tt, int op);
-	
+
 	boolean init_global();
-	void delete_list();
 	void alloc_list();
 	void del_cv_memb_list();
-	void distribute_dinfo(int*);
+	void del_cv_memb_list(Cvode*);
+	void distribute_dinfo(int*, NetCvodeThreadData*);
 	void playrec_setup();
-	void fill_global_ba(int, BAMechList**);
-	void fill_local_ba(int*);
-	void fill_local_ba_cnt(int, int*);
-	void fill_local_ba_alloc();
-	void fill_local_ba_indices(int, int*);
+	void fill_global_ba(NrnThread*, int, BAMechList**);
+	void fill_local_ba(int*, NetCvodeThreadData&);
+	void fill_local_ba_cnt(int, int*, NetCvodeThreadData&);
+	void fill_local_ba_alloc(NetCvodeThreadData&);
+	void fill_local_ba_indices(int, int*, NetCvodeThreadData&);
 	BAMechList* cvbml(int, BAMech*, Cvode*);
 	void maxstate_analyse();
+	void maxstate_analyze_1(int, Cvode&, MaxStateItem*, CvodeThreadData&);
 	void fornetcon_prepare();
 	int fornetcon_change_cnt_;
 	double maxstate_analyse(Symbol*, double*);
+	void p_construct(int);
+	void ps_thread_link(PreSyn*);
 	MaxStateTable* mst_;
 private:
 	int maxorder_, jacobian_, stiff_;
@@ -148,11 +191,6 @@ private:
 	int structure_change_cnt_;
 	int matrix_change_cnt_;
 	boolean single_;
-	int nlist_;
-	Cvode* list_;
-	TQueue* tq_;
-	TQueue* tqe_;
-	TQueue* tqr_;
 	PreSynTable* pst_;
 	int pst_cnt_;
 	int playrec_change_cnt_;
@@ -160,9 +198,19 @@ private:
 	IvocVect* vec_event_store_;
 	HocDataPaths* hdp_;
 public:
+	Cvode* gcv_;
+	void set_CVRhsFn();
+	boolean use_partrans();
 	hoc_Item* psl_; //actually a hoc_List
-	hoc_Item* psl_th_; //for presyns with fixed step threshold checking
 	HTListList* wl_list_; // for faster deliver_net_events when many cvode
+	int pcnt_;
+	NetCvodeThreadData* p;
+	int enqueueing_;
+public:
+	double allthread_least_t(int& tid);
+	int solve_when_threads(double);
+	void deliver_events_when_threads(double);
+	int global_microstep_when_threads();
 };	
 	
 #endif

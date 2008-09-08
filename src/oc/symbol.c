@@ -1,8 +1,18 @@
 #include <../../nrnconf.h>
 /* /local/src/master/nrn/src/oc/symbol.c,v 1.9 1999/02/25 18:01:58 hines Exp */
 /* version 7.2.1 2-jan-89 */
+
+#if HAVE_POSIX_MEMALIGN
+#define HAVE_MEMALIGN 1
+#endif
+
+#if HAVE_MEMALIGN
+#define _XOPEN_SOURCE 600
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "hoc.h"
 #include "parse.h"
 #include "hoclist.h"
@@ -224,6 +234,25 @@ hoc_Ecalloc(n, size)	/* check return from calloc */
 #endif
 }
 
+void* nrn_cacheline_alloc(void** memptr, size_t size) {
+#if HAVE_MEMALIGN
+	assert(posix_memalign(memptr, 64, size) == 0);
+#else
+	*memptr = hoc_Emalloc(size); hoc_malchk();
+#endif
+	return *memptr;
+}
+
+void* nrn_cacheline_calloc(void** memptr, size_t nmemb, size_t size) {
+	int i, n;
+#if HAVE_MEMALIGN
+	nrn_cacheline_alloc(memptr, nmemb*size);
+	memset(*memptr, 0, nmemb*size);
+#else
+	*memptr = hoc_Ecalloc(nmemb, size); hoc_malchk();
+#endif
+	return *memptr;
+}
 #if LINT
 double *
 #else

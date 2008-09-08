@@ -18,6 +18,8 @@ order.  Here is the C code from a kinetic block:
 #include "parse1.h"
 #include "symbol.h"
 extern int numlist;
+extern int thread_data_index;
+extern List* thread_cleanup_list;
 #if VECTORIZE
 extern int vectorize;
 #endif
@@ -54,6 +56,7 @@ typedef struct Reaction {
 static Reaction *reactlist = (Reaction *)0;
 static Reaction *conslist = (Reaction *)0;
 static List *done_list;		/* list of already translated blocks */
+static List *done_list1;	/* do not emit definitions more than once */
 typedef struct Rlist {
 	Reaction *reaction;
 	Symbol *sym;	/* the kinetic block symbol */
@@ -320,13 +323,12 @@ massagekinetic(q1, q2, q3, q4, sensused) /*KINETIC NAME stmtlist '}'*/
 #if VECTORIZE
 if (vectorize) {
 	kin_vect1(q1, q2, q4);
-vectorize_substitute(qv, "(_base, _bound) int _base, _bound;\n");
+vectorize_substitute(qv, "(void* _so, double* _rhs, double* _p, Datum* _ppvar, Datum* _thread, _NrnThread* _nt)\n");
 }
 #endif
-#if VECTORIZE
 	qv = insertstr(q3, "{_reset=0;\n");
-Sprintf(buf, "{int _ix = _base;\n\
-_reset=0;\n");
+#if VECTORIZE
+Sprintf(buf, "{int _reset=0;\n");
 	vectorize_substitute(qv, buf);
 #endif
 	afterbrace = q3->next;
@@ -346,7 +348,7 @@ _reset=0;\n");
 
 #endif
 	qv = insertstr(afterbrace, "double b_flux, f_flux, _term; int _i;\n");
-#if VECTORIZE
+#if 0 && VECTORIZE
 	vectorize_substitute(qv, "int _i;\n");
 #endif
 	/* also after these declarations will go initilization statements */
@@ -700,9 +702,10 @@ kinetic_implicit(fun, dt, mname)
 	Item* qv;
 	Reaction *r1;
 	Rlist *rlst, *clst;
-	int i, nstate, flag, sparsedec, firsttrans;
+	int i, nstate, flag, sparsedec, firsttrans, firsttrans1;
 	
 	firsttrans = 0; /* general declarations done only for NOT_CVODE_FLAG */
+	firsttrans1 = 0;
 	cvode_kin_remove();
 
 	nstate = number_states(fun, &rlst, &clst);
@@ -710,22 +713,38 @@ kinetic_implicit(fun, dt, mname)
     CVODE_FLAG {
 	ncons = 0;
 	Sprintf(buf, "static void* _cvsparseobj%d;\n", fun->u.i);
-	Linsertstr(procfunc, buf);
+	q = linsertstr(procfunc, buf);
+	sprintf(buf, "static int _cvspth%d = %d;\n", fun->u.i, thread_data_index++);
+	vectorize_substitute(q, buf);
+	sprintf(buf, "  _nrn_destroy_sparseobj_thread(_thread[_cvspth%d]._pvoid);\n", fun->u.i);
+	lappendstr(thread_cleanup_list, buf);
     }else{
 
 	if (!done_list) {
 		done_list = newlist();
+		done_list1 = newlist();
 	}
 	firsttrans = 1; /* declare the sparseobj and linflag*/
+	firsttrans1 = 1;
 	ITERATE(q, done_list) {
 		if (SYM(q) == fun) {
 			firsttrans = 0; /* already declared */
 		}
 	}
-	if (firsttrans) {
+	ITERATE(q, done_list1) {
+		if (SYM(q) == fun) {
+			firsttrans1 = 0; /* already declared */
+		}
+	}
+	if (firsttrans1) {
 		Lappendsym(done_list, fun);
+		Lappendsym(done_list1, fun);
 		Sprintf(buf, "static void* _sparseobj%d;\n", fun->u.i);
-		Linsertstr(procfunc, buf);
+		q = linsertstr(procfunc, buf);
+		sprintf(buf, "static int _spth%d = %d;\n", fun->u.i, thread_data_index++);
+		vectorize_substitute(q, buf);
+		sprintf(buf, "  _nrn_destroy_sparseobj_thread(_thread[_spth%d]._pvoid);\n", fun->u.i);
+		lappendstr(thread_cleanup_list, buf);
 	}
     }	
 	if (rlst->sens_parm) {
@@ -747,7 +766,7 @@ for(_i=%d;_i<%d;_i++){\n",
 
 	qv = insertstr(rlst->position, "");
 	
-#if VECTORIZE
+#if 0 && VECTORIZE
 	vectorize_substitute(qv, instance_loop());
 #endif
     NOT_CVODE_FLAG {
@@ -756,7 +775,7 @@ for(_i=%d;_i<%d;_i++){\n",
 	_MATELM%d(_i, _i) = _dt1;\n",
 		fun->u.i, fun->u.i, fun->u.i, fun->u.i);
 	qv = insertstr(rlst->position, buf);
-#if VECTORIZE
+#if 0 && VECTORIZE
 	Sprintf(buf, "\
 	_RHS%d(_i) = -_dt1*(_p[_ix][_slist%d[_i]] - _p[_ix][_dlist%d[_i]]);\n\
 	_MATELM%d(_i, _i) = _dt1;\n",
@@ -770,7 +789,7 @@ for(_i=%d;_i<%d;_i++){\n",
 	_MATELM%d(_i, _i) = _dt1;\n",
 		fun->u.i, fun->u.i, fun->u.i);
 	qv = insertstr(rlst->position, buf);
-#if VECTORIZE
+#if 0 && VECTORIZE
 	Sprintf(buf, "\
 	_RHS%d(_i) = _dt1*(_p[_ix][_dlist%d[_i]]);\n\
 	_MATELM%d(_i, _i) = _dt1;\n",
@@ -779,7 +798,7 @@ for(_i=%d;_i<%d;_i++){\n",
 #endif
     }
 	qv = insertstr(rlst->position, "");
-#if VECTORIZE
+#if 0 && VECTORIZE
 	vectorize_substitute(qv, "    } /* ILOOPEND */\n");
 #endif
 	Sprintf(buf,"    \n}");
@@ -794,7 +813,7 @@ for(_i=%d;_i<%d;_i++){\n",
 				if (! flag) {
 					flag = 1;
 					qv = insertstr(rlst->position, "");
-#if VECTORIZE
+#if 0 && VECTORIZE
 					vectorize_substitute(qv, instance_loop());
 #endif
 				}
@@ -808,7 +827,7 @@ Insertstr(rlst->position, buf);
 	}
 	if (flag) {
 		qv = insertstr(rlst->position, "");
-#if VECTORIZE
+#if 0 && VECTORIZE
 		vectorize_substitute(qv, "    } /* ILOOPEND */\n");
 #endif
 	}
@@ -819,7 +838,7 @@ Insertstr(rlst->position, buf);
 Sprintf(buf, "\nfor (_i=0; _i < %d; _i++) {\n",	rlst->symorder[i]->araydim);
 Insertstr(rlst->position, buf);
 					qv = insertstr(rlst->position, "");
-#if VECTORIZE
+#if 0 && VECTORIZE
 					vectorize_substitute(qv, instance_loop());
 #endif
 
@@ -830,7 +849,7 @@ Sprintf(buf, ";\n_MATELM%d(_i + %d, _i + %d) *= %s;", fun->u.i, rlst->symorder[i
 	rlst->symorder[i]->varnum, rlst->capacity[i]);
 Insertstr(rlst->position, buf);
 		qv = insertstr(rlst->position, "");
-#if VECTORIZE
+#if 0 && VECTORIZE
 		vectorize_substitute(qv, "    } /* ILOOPEND */\n");
 #endif
 
@@ -852,12 +871,14 @@ Insertstr(rlst->position, "}");
 	for (i = 0, r1=clst->reaction; r1; r1 = r1->reactnext) {
 		i = genconservterms(i, r1, fun->u.i, rlst);
 	}
-     if (firsttrans) {
+     if (firsttrans1) {
 	Sprintf(buf, "\n#define _linmat%d  %d\n", fun->u.i, linmat);
 	Linsertstr(procfunc, buf);
+     }
+     if (firsttrans) {
 	kinlist(fun, rlst);
 		
-#if VECTORIZE
+#if 0 && VECTORIZE
 	if (vectorize) {
 		Sprintf(buf, "static _vector_%s();\n", fun->name);
 		qv = linsertstr(procfunc, "");
@@ -880,31 +901,21 @@ Insertstr(rlst->position, "}");
 	Sprintf(buf, "static double *_coef%d;\n", fun->u.i);
 	qv = linsertstr(procfunc, buf);
 #if VECTORIZE
-	Sprintf(buf, "static double **_coef%d;\n", fun->u.i);
-	vectorize_substitute(qv, buf);
+	vectorize_substitute(qv, "");
 #endif
-	Sprintf(buf, "\n#define _RHS%d(arg) _coef%d[arg + 1]\n",
+	Sprintf(buf, "\n#define _RHS%d(_arg) _coef%d[_arg + 1]\n",
 		fun->u.i, fun->u.i);
 	qv = linsertstr(procfunc, buf);
 #if VECTORIZE
-	Sprintf(buf, "\n#define _RHS%d(arg) _coef%d[arg][_ix]\n",
-		fun->u.i, fun->u.i);
+	Sprintf(buf, "\n#define _RHS%d(_arg) _rhs[_arg+1]\n",
+		fun->u.i);
 	vectorize_substitute(qv, buf);
 #endif
-	Sprintf(buf, "\n#define _MATELM%d(row,col)\
-	*(_getelm(row + 1, col + 1))\n", fun->u.i);
+	Sprintf(buf, "\n#define _MATELM%d(_row,_col)\
+	*(_getelm(_row + 1, _col + 1))\n", fun->u.i);
 	qv = linsertstr(procfunc, buf);
 #if VECTORIZE
-	Sprintf(buf, "\nstatic double **_jacob%d, **_space%d;\n#\
-define _INSTANCE_LOOP /**/\n#undef WANT_PRAGMA\n#\
-define _MATELM%d(row,col) \
-*(_vector_getelm(row, col))\n",
-fun->u.i, fun->u.i, fun->u.i, fun->u.i);
-	vectorize_substitute(qv, buf);
-	qv = insertstr(qv, "");
-	Sprintf(buf, "\nextern nrn_instance_count();\n#\
-define f_flux _space%d[0][_ix]\n#define b_flux _space%d[1][_ix]\n#define _term \
-_space%d[2][_ix]\n", fun->u.i, fun->u.i, fun->u.i);
+	Sprintf(buf, "\n#define _MATELM%d(_row,_col) *(_nrn_thread_getelm(_so, _row + 1, _col + 1))\n", fun->u.i);
 	vectorize_substitute(qv, buf);
 #endif
 	{static int first = 1; if (first) {
@@ -912,7 +923,7 @@ _space%d[2][_ix]\n", fun->u.i, fun->u.i, fun->u.i);
 		Sprintf(buf,"extern double *_getelm();\n");
 		qv = linsertstr(procfunc, buf);
 #if VECTORIZE
-		Sprintf(buf,"extern double *_vector_getelm();\n");
+		Sprintf(buf,"extern double *_nrn_thread_getelm();\n");
 		vectorize_substitute(qv, buf);
 #endif
 	}}
@@ -1021,14 +1032,14 @@ massageconserve(q1, q3, q5) /* CONSERVE react '=' expr */
 	/*SUPPRESS 440*/
 	replacstr(q1, "/*");
 	qv = insertstr(q1, "");
-#if VECTORIZE
+#if 0 && VECTORIZE
 	vectorize_substitute(qv, instance_loop());
 #endif
 	/*SUPPRESS 440*/
 	Insertstr(q5->next, "*/\n");
 	/*SUPPRESS 440*/
 	conslist->position = insertstr(q5->next->next, "/*CONSERVATION*/\n");
-#if VECTORIZE
+#if 0 && VECTORIZE
 	vectorize_substitute(conslist->position, "/*CONSERVATION*/\n\
 } /*ILOOPEND*/\n");
 #endif
@@ -1164,7 +1175,7 @@ if (s->subtype & ARRAY) { int dim = s->araydim;
 	Sprintf(buf, "for(_i=0;_i<%d;_i++){_slist%d[%d+_i] = (%s + _i) - _p;"
 		,dim, fun->u.i , s->varnum, s->name);
 	qv = lappendstr(initlist, buf);
-#if VECTORIZE
+#if 0 && VECTORIZE
 if (vectorize){
 	Sprintf(buf, "for(_i=0;_i<%d;_i++){_slist%d[%d+_i] = (%s + _i) - _p[_ix];"
 		,dim, fun->u.i , s->varnum, s->name);
@@ -1174,7 +1185,7 @@ if (vectorize){
 	Sprintf(buf, " _dlist%d[%d+_i] = (D%s + _i) - _p;}\n"
 		, fun->u.i, s->varnum, s->name);
 	qv = lappendstr(initlist, buf);
-#if VECTORIZE
+#if 0 && VECTORIZE
 if (vectorize){
 	Sprintf(buf, " _dlist%d[%d+_i] = (D%s + _i) - _p[_ix];}\n"
 		, fun->u.i, s->varnum, s->name);
@@ -1185,7 +1196,7 @@ if (vectorize){
 		Sprintf(buf, "_slist%d[%d] = &(%s) - _p;",
 			fun->u.i, s->varnum, s->name);
 		qv = lappendstr(initlist, buf);
-#if VECTORIZE
+#if 0 && VECTORIZE
 if (vectorize){
 		Sprintf(buf, "_slist%d[%d] = &(%s) - _p[_ix];",
 			fun->u.i, s->varnum, s->name);
@@ -1195,7 +1206,7 @@ if (vectorize){
 		Sprintf(buf, " _dlist%d[%d] = &(D%s) - _p;\n",
 			fun->u.i, s->varnum, s->name);
 		qv = lappendstr(initlist, buf);
-#if VECTORIZE
+#if 0 && VECTORIZE
 if (vectorize){
 		Sprintf(buf, " _dlist%d[%d] = &(D%s) - _p[_ix];\n",
 			fun->u.i, s->varnum, s->name);
@@ -1359,6 +1370,7 @@ kin_vect1(q1, q2, q4)
 
 kin_vect2() {
 	Item *q, *q1, *q2, *q4;
+	return;
 	if (kvect) {
 		ITERATE(q, kvect) {
 			q1 = ITM(q);
@@ -1409,7 +1421,7 @@ ostmt_start() {
 }
 
 see_ostmt() {
-#if VECTORIZE
+#if 0 && VECTORIZE
 	if (vectorize) {
 		if (astmt_state) {
 			astmt_state = 0;
@@ -1422,7 +1434,7 @@ see_ostmt() {
 see_astmt(q1, q2)
 	Item *q1, *q2;
 {
-#if VECTORIZE
+#if 0 && VECTORIZE
 	Item* q;
 	if (vectorize) {
 		if (!astmt_state) {
@@ -1436,7 +1448,7 @@ see_astmt(q1, q2)
 }
 
 vectorize_if_else_stmt(blocktype) int blocktype; {
-#if VECTORIZE
+#if 0 && VECTORIZE
 	if (blocktype == KINETIC && vectorize) {
 		vectorize = 0;
 fprintf(stderr, "Notice: Can't vectorize a kinetic block if it contains\n\
@@ -1511,11 +1523,15 @@ cvode_kinetic(qsol, fun, numeqn, listnum)
 	Lappendstr(procfunc, "\n/*CVODE ode begin*/\n");
 	sprintf(buf, "static int _ode_spec%d() {_reset=0;{\n", fun->u.i);
 	Lappendstr(procfunc, buf);
+	sprintf(buf, "static int _ode_spec%d(double* _p, Datum* _ppvar, Datum* _thread, _NrnThread* _nt) {int _reset=0;{\n", fun->u.i);
+	vectorize_substitute(procfunc->prev, buf);
 	copyitems(cvode_sbegin, cvode_send, procfunc->prev);
 
 	Lappendstr(procfunc, "\n/*CVODE matsol*/\n");
 	sprintf(buf, "static int _ode_matsol%d() {_reset=0;{\n", fun->u.i);
 	Lappendstr(procfunc, buf);
+	sprintf(buf, "static int _ode_matsol%d(void* _so, double* _rhs, double* _p, Datum* _ppvar, Datum* _thread, _NrnThread* _nt) {int _reset=0;{\n", fun->u.i);
+	vectorize_substitute(procfunc->prev, buf);
 	cvode_flag = 1;
 	kinetic_implicit(fun, "dt", "ZZZ");
 	cvode_flag = 0;
@@ -1579,6 +1595,7 @@ single_channel(qsol, fun, numeqn, listnum)
 	
 	Reaction* r1;
 	
+return;
 	nstate = number_states(fun, &rlst, &clst);
 	
 	for (r1 = rlst->reaction; r1; r1 = r1->reactnext) {

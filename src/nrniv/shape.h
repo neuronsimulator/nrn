@@ -116,7 +116,7 @@ public:
 	virtual void size(Coord& l, Coord& b, Coord& r, Coord& t) const;
 	void scale(Coord x) { len_scale_ = x; }
 	Coord scale() { return len_scale_; }
-	void update_ptrs(int, double**, double*);
+	void update_ptrs();
 private:
 	void trapezoid(Canvas*, const Color*, int i) const;
 	void trapezoid(Canvas*, const Color*, float, float, float, float,float, float) const;

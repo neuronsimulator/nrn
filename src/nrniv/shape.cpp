@@ -48,6 +48,7 @@ extern int structure_change_cnt;
 extern int section_count;
 extern Section** secorder;
 extern Point_process* ob2pntproc(Object*);
+extern double* nrn_recalc_ptr(double*);
 }
 
 #if BEVELJOIN
@@ -1382,16 +1383,11 @@ boolean ShapeSection::good() const {
 	return sec_->prop != 0;
 }
 
-void ShapeSection::update_ptrs(int ni, double** oldpv, double* newv) {
+void ShapeSection::update_ptrs() {
 	if (!pvar_) { return; }
 	int i, n = section()->nnode-1;
 	for (i=0; i < n; ++i) {
-		if (nrn_isdouble(pvar_[i], 0, ni-1)) {
-			int k = (int)(*pvar_[i]);
-			if (pvar_[i] ==  oldpv[k]) {
-				pvar_[i] = newv + k;
-			}
-		}
+		pvar_[i] = nrn_recalc_ptr(pvar_[i]);
 	}
 }
 

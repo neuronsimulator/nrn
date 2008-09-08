@@ -47,9 +47,10 @@ void HocEvent::clear() {
         }
 }               
 
-void HocEvent::deliver(double tt, NetCvode*) {
+void HocEvent::deliver(double tt, NetCvode*, NrnThread*) {
+	extern double t;
 	if (stmt_) {
-		t = tt;
+		t = nt_t = tt;
 #if carbon
 		stmt_->execute((unsigned int)0);
 #else
@@ -59,7 +60,7 @@ void HocEvent::deliver(double tt, NetCvode*) {
         hefree();
 }
 void HocEvent::pgvts_deliver(double tt, NetCvode*) {
-	deliver(tt, nil);
+	deliver(tt, nil, nil);
 }
 
 void HocEvent::reclaim() {
@@ -83,7 +84,7 @@ void HocEvent::savestate_restore(double tt, NetCvode* nc) {
 	if (stmt_) {
 		he->stmt_ = new HocCommand(stmt_->name(), stmt_->object());
 	}
-	nc->event(tt, he);
+	nc->event(tt, he, nrn_threads);
 }
 
 DiscreteEvent* HocEvent::savestate_read(FILE* f) {

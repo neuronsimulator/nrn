@@ -17,7 +17,6 @@
 
 #if CVODE
 extern int cvode_active_;
-int nrn_cvode_; /* used by some models in case READandWRITE currents need updating*/
 #endif
 
 int nrn_shape_changed_;	/* for notifying Shape class in nrniv */
@@ -36,25 +35,18 @@ extern int* nrn_prop_dparam_size_;
 extern int* nrn_dparam_ptr_start_;
 extern int* nrn_dparam_ptr_end_;
 
-#if PARANEURON
+#if 1 || PARANEURON
 void (*nrn_multisplit_setup_)();
 #endif
-
-double* actual_d;
-double *actual_rhs;
 
 #if CACHEVEC
 /* a, b, d and rhs are, from now on, all stored in extra arrays, to improve
  * cache efficiency in nrn_lhs() and nrn_rhs(). Formerly, three levels of
  * indirection were necessary for accessing these elements, leading to lots
  * of L2 misses.  2006-07-05/Hubert Eichner */
-double *actual_a;
-double *actual_b;
-double *actual_v;
-double *actual_area;
-static int actual_v_size;
+/* these are now thread instance arrays */
 static void nrn_recalc_node_ptrs();
-#define UPDATE_VEC_AREA(nd) if (actual_area) { actual_area[(nd)->v_node_index] = NODEAREA(nd);}
+#define UPDATE_VEC_AREA(nd) if (nd->_nt && nd->_nt->_actual_area) { nd->_nt->_actual_area[(nd)->v_node_index] = NODEAREA(nd);}
 #endif /* CACHEVEC */
 int use_cachevec;
 extern void nrn_cachevec();
@@ -67,7 +59,6 @@ about a factor of 3 in space and 2 in time even for a tree.
 int nrn_matrix_cnt_ = 0;
 int use_sparse13 = 0;
 int nrn_use_daspk_ = 0;
-char* sp13mat_;			/* handle to the general sparse matrix */
 extern int linmod_extra_eqn_count();
 extern void linmod_alloc(), linmod_rhs(), linmod_lhs();
 
@@ -79,26 +70,6 @@ set to 1. This means that the mechanism vectors need to be re-determined.
 int v_structure_change;
 int structure_change_cnt;
 int diam_change_cnt;
-int v_node_count;
-Node** v_node;
-Node** v_parent;
-#if CACHEVEC
-int *v_parent_index;
-#endif /* CACHEVEC */
-
-#if _CRAY
-/* in case several instance of point process at same node */
-static struct CrayNodes {
-	int cnt;
-	Node** pnd1;
-	Node* nd2;
-} cray_nodes;
-
-Node*** v_node_depth_lists;
-Node*** v_parent_depth_lists;
-int* v_node_depth_count;
-int v_node_depth;
-#endif
 
 #endif
 extern int section_count;
@@ -371,44 +342,51 @@ cx*dvx/dt - cm*dvm/dt = -gx*(vx - ex) + i(vm) + ax_j*(vx_j - vx)
 This is a common operation for fixed step, cvode, and daspk methods
 */
 
-void nrn_rhs() {
-	int i;
+void nrn_rhs(NrnThread* _nt) {
+	int i, i1, i2, i3;
 	double w;
 	int measure = 0;
-
-	if (nrn_mech_wtime_) { measure = 1; }
+	NrnThreadMembList* tml;
+	
+	i1 = 0;
+	i2 = i1 + _nt->ncell;
+	i3 = _nt->end;
+	if (_nt->id == 0 && nrn_mech_wtime_) { measure = 1; }
+	
 	if (diam_changed) {
-		recalc_diam();
+		nrn_thread_error("need recalc_diam()");
 	}
 	if (use_sparse13) {
+		nrn_thread_error("nrn_rhs use_sparse13");
 		int i, neqn;
-		neqn = spGetSize(sp13mat_, 0);
+		neqn = spGetSize(_nt->_sp13mat, 0);
 		for (i=1; i <= neqn; ++i) {
-			actual_rhs[i] = 0.;
+			_nt->_actual_rhs[i] = 0.;
 		}
 	}else{
 #if CACHEVEC
 	    if (use_cachevec) {
-		for (i = 0; i < v_node_count; ++i) {
+		for (i = i1; i < i3; ++i) {
 			VEC_RHS(i) = 0.;
 		}
 	    }else
 #endif /* CACHEVEC */
 	    {
-		for (i = 0; i < v_node_count; ++i) {
-			NODERHS(v_node[i]) = 0.;
+		for (i = i1; i < i3; ++i) {
+			NODERHS(_nt->_v_node[i]) = 0.;
 		}
 	    }
 	}
 
-	nrn_ba(BEFORE_BREAKPOINT);
-	for (i=CAP+1; i < n_memb_func; ++i) if (memb_func[i].current && memb_list[i].nodecount) {
-		Pfri s = memb_func[i].current;
+	nrn_ba(_nt, BEFORE_BREAKPOINT);
+	/* note that CAP has no current */
+	for (tml = _nt->tml; tml; tml = tml->next) if (memb_func[tml->index].current) {
+		Pfri s = memb_func[tml->index].current;
 		if (measure) { w = nrnmpi_wtime(); }
-		(*s)(memb_list + i, i);
-		if (measure) { nrn_mech_wtime_[i] += nrnmpi_wtime() - w; }
+		(*s)(_nt, tml->ml, tml->index);
+		if (measure) { nrn_mech_wtime_[tml->index] += nrnmpi_wtime() - w; }
 		if (errno) {
-			if (nrn_errno_check(i)) {
+			if (nrn_errno_check(tml->index)) {
 hoc_warning("errno set during calculation of currents", (char*)0);
 			}
 		}
@@ -418,7 +396,7 @@ hoc_warning("errno set during calculation of currents", (char*)0);
 #if EXTRACELLULAR
 	/* Cannot have any axial terms yet so that i(vm) can be calculated from
 	i(vm)+is(vi) and is(vi) which are stored in rhs vector. */
-	nrn_rhs_ext();
+	nrn_rhs_ext(_nt);
 	/* nrn_rhs_ext has also computed the the internal axial current
 	for those nodes containing the extracellular mechanism
 	*/
@@ -437,18 +415,18 @@ hoc_warning("errno set during calculation of currents", (char*)0);
 	*/
 #if CACHEVEC
     if (use_cachevec) {
-	for (i = rootnodecount; i < v_node_count; ++i) {
-		double dv = VEC_V(v_parent_index[i]) - VEC_V(i);
+	for (i = i2; i < i3; ++i) {
+		double dv = VEC_V(_nt->_v_parent_index[i]) - VEC_V(i);
 		/* our connection coefficients are negative so */
 		VEC_RHS(i) -= VEC_B(i)*dv;
-		VEC_RHS(v_parent_index[i]) += VEC_A(i)*dv;
+		VEC_RHS(_nt->_v_parent_index[i]) += VEC_A(i)*dv;
 	}
     }else
 #endif /* CACHEVEC */
     {
-	for (i = rootnodecount; i < v_node_count; ++i) {
-		Node* nd = v_node[i];
-		Node* pnd = v_parent[i];
+	for (i = i2; i < i3; ++i) {
+		Node* nd = _nt->_v_node[i];
+		Node* pnd = _nt->_v_parent[i];
 		double dv = NODEV(pnd) - NODEV(nd);
 		/* our connection coefficients are negative so */
 		NODERHS(nd) -= NODEB(nd)*dv;
@@ -465,38 +443,43 @@ hand side after solving.
 This is a common operation for fixed step, cvode, and daspk methods
 */
 
-void nrn_lhs() {
-	int i;
+void nrn_lhs(NrnThread* _nt) {
+	int i, i1, i2, i3;
+	NrnThreadMembList* tml;
+
+	i1 = 0;
+	i2 = i1 + _nt->ncell;
+	i3 = _nt->end;
 
 	if (diam_changed) {
-		recalc_diam();
+		nrn_thread_error("need recalc_diam()");
 	}
 
 	if (use_sparse13) {
 		int i, neqn;
-		neqn = spGetSize(sp13mat_, 0);
-		spClear(sp13mat_);
+		neqn = spGetSize(_nt->_sp13mat, 0);
+		spClear(_nt->_sp13mat);
 	}else{
 #if CACHEVEC
 	    if (use_cachevec) {
-		for (i = 0; i < v_node_count; ++i) {
+		for (i = i1; i < i3; ++i) {
 			VEC_D(i) = 0.;
 		}
 	    }else
 #endif /* CACHEVEC */
 	    {
-		for (i = 0; i < v_node_count; ++i) {
-			NODED(v_node[i]) = 0.;
+		for (i = i1; i < i3; ++i) {
+			NODED(_nt->_v_node[i]) = 0.;
 		}
 	    }
 	}
 
-	for (i=CAP+1; i < n_memb_func; ++i) if (memb_func[i].jacob && memb_list[i].nodecount) {
-		int j, count;
-		Pfri s = memb_func[i].jacob;
-		(*s)(memb_list + i, i);
+	/* note that CAP has no jacob */
+	for (tml = _nt->tml; tml; tml = tml->next) if (memb_func[tml->index].jacob) {
+		Pfri s = memb_func[tml->index].jacob;
+		(*s)(_nt, tml->ml, tml->index);
 		if (errno) {
-			if (nrn_errno_check(i)) {
+			if (nrn_errno_check(tml->index)) {
 hoc_warning("errno set during calculation of jacobian", (char*)0);
 			}
 		}
@@ -504,14 +487,17 @@ hoc_warning("errno set during calculation of jacobian", (char*)0);
 /* now the cap current can be computed because any change to cm by another model
 has taken effect
 */
-	i = CAP;
-	nrn_cap_jacob(memb_list + i);
+	/* note, the first is CAP */
+	if (_nt->tml) {
+		assert(_nt->tml->index == CAP);
+		nrn_cap_jacob(_nt, _nt->tml->ml);
+	}
 
 	activsynapse_lhs();
 
 #if EXTRACELLULAR
 	 /* nde->_d[0] contains the -ELECTRODE_CURRENT contribution to nd->_d */
-	nrn_setup_ext();
+	nrn_setup_ext(_nt);
 #endif
 	if (use_sparse13) {
 		 /* must be after nrn_setup_ext so that whatever is put in
@@ -527,46 +513,38 @@ has taken effect
 	/* now add the axial currents */
 
 	if (use_sparse13) {
-		for (i = rootnodecount; i < v_node_count; ++i) {
-			Node* nd = v_node[i];
+		for (i = i2; i < i3; ++i) {
+			Node* nd = _nt->_v_node[i];
 			*(nd->_a_matelm) += NODEA(nd);
 			*(nd->_b_matelm) += NODEB(nd); /* b may have value from lincir */
 			NODED(nd) -= NODEB(nd);
 		}
-        	for (i=rootnodecount; i < v_node_count; ++i) {
-			NODED(v_parent[i]) -= NODEA(v_node[i]);
+        	for (i=i2; i < i3; ++i) {
+			NODED(_nt->_v_parent[i]) -= NODEA(_nt->_v_node[i]);
  		}
 	} else {
 #if CACHEVEC
 	    if (use_cachevec) {
-		for (i = 0; i < v_node_count; ++i) {
+	        for (i=i2; i < i3; ++i) {
 			VEC_D(i) -= VEC_B(i);
-		}
-	        for (i=rootnodecount; i < v_node_count; ++i) {
-			VEC_D(v_parent_index[i]) -= VEC_A(i);
+			VEC_D(_nt->_v_parent_index[i]) -= VEC_A(i);
 	        }
 	    }else
 #endif /* CACHEVEC */
 	    {
-		for (i = 0; i < v_node_count; ++i) {
-			NODED(v_node[i]) -= NODEB(v_node[i]);
-		}
-	        for (i=rootnodecount; i < v_node_count; ++i) {
-        	        NODED(v_parent[i]) -= NODEA(v_node[i]);
+	        for (i=i2; i < i3; ++i) {
+			NODED(_nt->_v_node[i]) -= NODEB(_nt->_v_node[i]);
+        	        NODED(_nt->_v_parent[i]) -= NODEA(_nt->_v_node[i]);
 	        }
 	    }
 	}
 }
 
 /* for the fixed step method */
-void setup_tree_matrix(){
-	if (secondorder == 0) {
-		nrn_set_cj(1./dt);
-	}else{
-		nrn_set_cj(2./dt);
-	}
-	nrn_rhs();
-	nrn_lhs();
+void* setup_tree_matrix(NrnThread* _nt){
+	nrn_rhs(_nt);
+	nrn_lhs(_nt);
+	return (void*)0;
 }
 
 /* membrane mechanisms needed by other mechanisms (such as Eion by HH)
@@ -633,6 +611,7 @@ prop_alloc(pp, type, nd)	/* link in new property at head of list */
 	p->type = type;
 	p->next = *pp;
 	p->ob = (Object*)0;
+	p->_alloc_seq = -1;
 	*pp = p;
 	assert(memb_func[type].alloc);
 	p->dparam = (Datum *)0;
@@ -764,6 +743,10 @@ hoc_execerror(secname(sec), "diameter diam = 0. Setting to 1e-6");
 	diam_changed = 1;
 }
 
+Node* nrn_parent_node(Node* nd) {
+	return nd->_classical_parent;
+}
+
 connection_coef()	/* setup a and b */
 {
 	int j;
@@ -805,6 +788,16 @@ connection_coef()	/* setup a and b */
 	/* for the near future we always have a last node at x=1 with
 	no properties */
 	ForAllSections(sec)
+#if 1 /* unnecessary because they are unused, but help when looking at fmatrix */
+		if (!sec->parentsec) {
+			if (nrn_classicalNodeA(sec->parentnode)) {
+				ClassicalNODEA(sec->parentnode) = 0.0;
+			}
+			if (nrn_classicalNodeB(sec->parentnode)) {
+				ClassicalNODEB(sec->parentnode) = 0.0;
+			}
+		}
+#endif
 		/* convert to siemens/cm^2 for all nodes except last
 		and microsiemens for last.  This means that a*V = mamps/cm2
 		and a*v in last node = nanoamps. Note that last node
@@ -856,11 +849,6 @@ void nrn_shape_update() {
 }
 
 int recalc_diam() {
-#if METHOD3
-	if (_method3) {
-		method3_connection_coef();
-	}else
-#endif
 	v_setup_vectors();
 	nrn_matrix_node_alloc();
 	connection_coef();
@@ -1509,6 +1497,8 @@ static double diam_from_list(sec, inode, p, rparent)
 
 #endif /*DIAMLIST*/
 
+#include "multicore.c"
+
 #if VECTORIZE
 v_setup_vectors() {
 	int inode, i;
@@ -1516,9 +1506,10 @@ v_setup_vectors() {
 	Section* sec;
 	Node* nd;
 	Prop* p;
+	NrnThread* _nt;
 	
 	if (tree_changed) {
-		setup_topology();
+		setup_topology(); /* now classical secorder */
 		v_structure_change = 1;
 		++nrn_shape_changed_;
 	}
@@ -1526,20 +1517,11 @@ v_setup_vectors() {
 	if (!v_structure_change) {
 		return;
 	}
-	if (v_node) {
-		free((char*) v_node);
-		free((char*) v_parent);
-		v_node = 0;
-		v_parent = 0;
-		v_node_count = 0;
-	}
-#if CACHEVEC
-	if (v_parent_index) {
-		free((void*)v_parent_index);
-	}
-#endif /* CACHEVEC */
+
+	nrn_threads_free();
+
 	for (i=0; i < n_memb_func; ++i)
-	  if (memb_func[i].current || memb_func[i].state || memb_func[i].initialize) {
+	  if (nrn_is_artificial_[i] && memb_func[i].initialize) {
 		if (memb_list[i].nodecount) {
 			memb_list[i].nodecount = 0;
 			free((char*)memb_list[i].nodelist);
@@ -1555,31 +1537,6 @@ v_setup_vectors() {
 		}
 	}
 		
-	/* count up what we need */
-
-	for (isec = 0; isec < section_count; ++isec) {
-		sec = secorder[isec];
-		for (inode = -1; inode < sec->nnode; ++inode) {
-			if (inode == -1) {
-				if (sec->parentsec) {
-					continue;
-				}else{
-					nd = sec->parentnode;
-				}
-			}else {
-				nd = sec->pnode[inode];
-			}
-			++v_node_count;
-			for (p = nd->prop; p; p = p->next) {
-				if (memb_func[p->type].current
-				   || memb_func[p->type].state
-				   || memb_func[p->type].initialize
-				   ) {
-					++memb_list[p->type].nodecount;
-				}
-			}
-		}
-	}
 #if 1 /* see finitialize */
 	/* and count the artificial cells */
 	for (i=0; i < n_memb_func; ++i) if (nrn_is_artificial_[i] && memb_func[i].initialize) {
@@ -1590,13 +1547,8 @@ v_setup_vectors() {
 	
 	/* allocate it*/
 
-	if (v_node_count) {
-		v_node = (Node**) emalloc(v_node_count*sizeof(Node*));
-		v_parent = (Node**) emalloc(v_node_count*sizeof(Node*));
-		v_node_count = 0; /* counted again below */
-	}
 	for (i=0; i < n_memb_func; ++i)
-	  if (memb_func[i].current || memb_func[i].state || memb_func[i].initialize) {
+	  if (nrn_is_artificial_[i] &&  memb_func[i].initialize) {
 		if (memb_list[i].nodecount) {
 			memb_list[i].nodelist = (Node**) emalloc(memb_list[i].nodecount * sizeof(Node*));
 #if CACHEVEC
@@ -1612,91 +1564,61 @@ v_setup_vectors() {
 		}
 	}
 
-	/* setup the pointers */
-	/* setup the node order (classical follows the section order) */
-	/* put the nodes in an order suitable for vectorizing the elimination */
-	for (isec = 0; isec < rootnodecount; ++isec) {
-		sec = secorder[isec];
-		assert(!sec->parentsec);
-		nd = sec->parentnode;
-		v_node[isec] = nd;
-		v_parent[isec] = (Node*)0;
-		v_node[v_node_count]->v_node_index = v_node_count;
-		++v_node_count;
-	}
-	for (isec = 0; isec < section_count; ++isec) {
-		sec = secorder[isec];
-		for (inode = 0; inode < sec->nnode; ++inode) {
-			nd = sec->pnode[inode];
-			v_node[v_node_count] = nd;
-			if (inode) {
-				v_parent[v_node_count] = sec->pnode[inode-1];
-			}else{
-				v_parent[v_node_count] = sec->parentnode;
+#if MULTICORE
+	if (!nrn_user_partition()) {
+		/* does not depend on memb_list */
+		int ith, j;
+		NrnThread* _nt;
+		section_order(); /* could be already reordered */
+		/* round robin distribution */
+		for (ith=0; ith < nrn_nthread; ++ith) {
+			_nt = nrn_threads + ith;
+			_nt->roots = hoc_l_newlist();
+			_nt->ncell = 0;
+		}
+		j = 0;
+		for (ith=0; ith < nrn_nthread; ++ith) {
+			_nt = nrn_threads + ith;
+			for (i=ith; i < nrn_global_ncell; i += nrn_nthread) {
+				hoc_l_lappendsec(_nt->roots, secorder[j]);
+				++_nt->ncell;
+				++j;
 			}
-			v_node[v_node_count]->v_node_index = v_node_count;
-			++v_node_count;
 		}
 	}
-
-#if PARANEURON
-	for (inode=0; inode < v_node_count; ++inode) {
-		v_node[inode]->_classical_parent = v_parent[inode];	
-	}
-	if (nrn_multisplit_setup_) {
-		/* classical order abandoned */
-		(*nrn_multisplit_setup_)();
-	}
+	/* reorder. also fill NrnThread node indices, v_node, and v_parent */
+	reorder_secorder();
 #endif
 
 #if CACHEVEC
-	v_parent_index = (int *)malloc(sizeof(int)*v_node_count);
-	for (inode=0; inode<v_node_count; inode++) {
-		if (v_parent[inode]!=NULL) {
-			v_parent_index[inode]=v_parent[inode]->v_node_index;
+    FOR_THREADS(_nt) {
+	for (inode=0; inode < _nt->end; inode++) {
+		if (_nt->_v_parent[inode]!=NULL) {
+			_nt->_v_parent_index[inode]=_nt->_v_parent[inode]->v_node_index;
 		}
 	}
+    }
 	
 #endif /* CACHEVEC */
 
-	/* setup node prop vectors */
-	for (inode=0; inode < v_node_count; inode++) {
-		nd = v_node[inode];
-		for (p = nd->prop; p; p = p->next) {
-			i = p->type;
-			if (memb_func[i].current
-			   || memb_func[i].state
-			   || memb_func[i].initialize
-			   ) {
-				if (memb_func[i].is_point) {
-					Point_process* pnt = (Point_process*)p->dparam[1]._pvoid;
-					pnt->iml_ = memb_list[i].nodecount;
-				}
-				memb_list[i].nodelist[memb_list[i].nodecount] = nd;
-#if CACHEVEC
-				memb_list[i].nodeindices[memb_list[i].nodecount] = inode;
-#endif /* CACHEVEC */
-				if (memb_func[i].hoc_mech) {
-					memb_list[i].prop[memb_list[i].nodecount] = p;
-				}else{
-					memb_list[i].data[memb_list[i].nodecount] = p->param;
-					memb_list[i].pdata[memb_list[i].nodecount] = p->dparam;
-				}
-				++memb_list[i].nodecount;
-			}
-		}
-	}
+	nrn_thread_memblist_setup();
 
 #if 1 /* see finitialize */
 	/* fill in artificial cell info */
 	for (i=0; i < n_memb_func; ++i) if (nrn_is_artificial_[i] && memb_func[i].initialize) {
 		hoc_Item* q;
 		hoc_List* list;
-		int j;
+		int j, nti;
 		Template* tmp = nrn_pnt_template_[i];
 		memb_list[i].nodecount = tmp->count;
+		nti = 0;
 		j = 0;
 		list = tmp->olist;
+#if 0
+		if (memb_func[i].vectorized == 0 && list->next != list) {
+hoc_execerror(memb_func[i].sym->name, "is not thread safe");
+		}
+#endif
 		ITERATE(q, list) {
 			Object* obj = OBJ(q);
 			Point_process* pnt = (Point_process*)obj->u.this_pointer;
@@ -1705,180 +1627,34 @@ v_setup_vectors() {
 			memb_list[i].nodelist[j] = (Node*)0;
 			memb_list[i].data[j] = p->param;
 			memb_list[i].pdata[j] = p->dparam;
+/* for now, round robin all the artificial cells */	
+/* but put the non-threadsafe ones in thread 0 */
+/* 
+ Note that artficial cells are assumed not to need a thread specific
+ Memb_list. But this implies that they do not have thread specific
+ data. For this reason, for now, an otherwise thread-safe artificial
+ cell model is declared by nmodl as thread-unsafe.
+*/
+   
+			if (memb_func[i].vectorized == 0) {
+				pnt->_vnt = (void*)(nrn_threads);
+			}else{
+				pnt->_vnt = (void*)(nrn_threads + nti);
+				nti = (nti + 1)%nrn_nthread;
+			}
 			++j;			
 		}
 	}
 #endif
+	nrn_recalc_node_ptrs();
 	v_structure_change = 0;
+	nrn_update_ps2nt();
 	++structure_change_cnt;
-#if _CRAY
-	cray_solve();
-	cray_node_setup();
-#endif
+	long_difus_solve(3, nrn_threads);
+	diam_changed = 1;
 }
 
-#if _CRAY
-
-cray_solve() {
-	int i, id, max_depth;
-	int* nchild, *depth;
-	/* free the old stuff */
-	if (v_node_depth) {
-		free((char*)v_node_depth_count);
-		for (i = 0; i < v_node_depth; i++) {
-			free((char*)v_node_depth_lists[i]);
-			free((char*)v_parent_depth_lists[i]);
-		}
-		free((char*)v_node_depth_lists);
-		free((char*)v_parent_depth_lists);
-		v_node_depth = 0;
-		v_node_depth_lists = 0;
-		v_parent_depth_lists = 0;
-		v_node_depth_count = 0;
-	}
-	
-	/*
-	  The bad thing is when we have one long
-	  cable. Then the depth increases and there aren't many other nodes
-	  that can share the depth.
-	*/
-	/*
-	  We require that
-	  no nodes at the same depth can share the same parent. Otherwise
-	  during triangularizaton several nodes may try to change the same
-	  parent at the same time. The curious fact is that a node may
-	  increase its depth as long as it does not go to a depth that
-	  has a node with the same parent and remains at a depth which is
-	  less than any of its children.
-	*/
-  	depth = (int*)ecalloc(v_node_count, sizeof(int));
-	nchild = (int*)ecalloc(v_node_count, sizeof(int));
-	max_depth = 0;
-	for (i=rootnodecount; i < v_node_count; ++i){
-		int pindex = v_parent[i]->v_node_index;
-		++nchild[pindex];
-		depth[i] = depth[pindex] + nchild[pindex];
-		if (depth[i] > max_depth) {
-			max_depth = depth[i];
-		}
-	}
-		
-	/*allocate memory*/
-	v_node_depth = max_depth + 1;
-	v_node_depth_count = (int*)ecalloc(v_node_depth, sizeof(int));
-	/* count the list sizes */
-	for (i=0; i < v_node_count; ++i) {
-		++v_node_depth_count[depth[i]];
-	}
-	v_node_depth_lists = (Node***)ecalloc(v_node_depth, sizeof(Node**));
-	v_parent_depth_lists = (Node***)ecalloc(v_node_depth, sizeof(Node**));
-	for (i=0; i < v_node_depth; ++i) {
-v_node_depth_lists[i] = (Node**)ecalloc(v_node_depth_count[i], sizeof(Node*));
-v_parent_depth_lists[i] = (Node**)ecalloc(v_node_depth_count[i], sizeof(Node*));
-	}
-	/* set up the lists */
-	for (i=0; i < v_node_depth; ++i) {
-		v_node_depth_count[i] = 0;
-	}
-	for (i = 0; i < v_node_count; ++i) {
-		id = depth[i];
-		v_node_depth_lists[id][v_node_depth_count[id]] = v_node[i];
-		v_parent_depth_lists[id][v_node_depth_count[id]] = v_parent[i];
-		++v_node_depth_count[id];
-	}
-
-#if 0
-	/* for debugging so we can know which node is which place the
-		section index in NODED(nd) */
-	for (i=0; i < section_count; ++i) {
-		sec = secorder[i];
-		for (j=0; j < sec->nnode; ++j) {
-			NODED(sec->pnode[j]) = (double)i;
-		}
-	}
-	printf("v_node_depth = %d\n", v_node_depth);
-	for (i=0; i < v_node_depth; ++i) {
-		count = v_node_depth_count[i];
-		printf("  depth = %d  count = %d\n", i, count);
-		for (j = 0; j < count; ++j) {
-			nd = v_node_depth_lists[i][j];
-			pnd = v_parent_depth_lists[i][j];
-			sec = secorder[(int)(NODED(nd))];
-			psec = secorder[(int)(NODED(pnd))];
-printf("    %d node %s[%d]", j, secname(sec), nd->sec_node_index_);
-printf("  parent %s[%d]\n", secname(psec), pnd->sec_node_index_);
-  		}
-	}
-#endif
-	free((char*)depth);
-	free((char*)nchild);
-}
-
-static cray_node_setup() {
-	int i, j, k;
-	cray_nodes.cnt = 0;
-	if (cray_nodes.pnd1) {
-		free((char*) cray_nodes.pnd1);
-		free((char*) cray_nodes.nd2);
-	}
-
-	for (i=0; i < n_memb_func; ++i) if (
-	   memb_func[i].is_point
-	   && memb_func[i].vectorized
-	   && memb_func[i].current
-	   && memb_list[i].nodecount > 1)
-	{
-		for (j =  memb_list[i].nodecount - 1; j; --j) {
-			if (memb_list[i].nodelist[j] == memb_list[i].nodelist[j-1]) {
-				++cray_nodes.cnt;
-			}
-		}
-	}
-
-	if (cray_nodes.cnt) {
-		cray_nodes.pnd1 = (Node**)ecalloc(cray_nodes.cnt, sizeof(Node*));
-		cray_nodes.nd2 = (Node*)ecalloc(cray_nodes.cnt, sizeof(Node));
-		k = 0;
-		for (i=0; i < n_memb_func; ++i) if (
-		   memb_func[i].is_point
-		   && memb_func[i].vectorized
-		   && memb_func[i].current
-		   && memb_list[i].nodecount > 1)
-		{
-			for (j =  memb_list[i].nodecount - 1; j; --j) {
-				if (memb_list[i].nodelist[j] == memb_list[i].nodelist[j-1]) {
-cray_nodes.pnd1[k] = memb_list[i].nodelist[j];
-cray_nodes.nd2[k].area = memb_list[i].nodelist[j]->area;
-#if 1
-/* the following should not be necessary */
-cray_nodes.nd2[k].prop = memb_list[i].nodelist[j]->prop;
-cray_nodes.nd2[k].child = memb_list[i].nodelist[j]->child;
-#endif
-memb_list[i].nodelist[j] = cray_nodes.nd2 + k;
-					++k;
-				}
-			}
-		}
-	}
-}
-
-cray_node_init() {
-	if (cray_nodes.cnt){
-		int i;
-		Node* nd1, *nd2;
-#pragma _CRI ivdep
-		for (i=0; i < cray_nodes.cnt; ++i) {
-			nd1 = cray_nodes.pnd1[i];
-			nd2 = cray_nodes.nd2 + i;
-			nd2->v = nd1->v;
-		}
-	}
-		
-}
-
-#endif
-
-#endif
+#endif /*VECTORIZE*/
 
 #define NODE_DATA 0
 #if NODE_DATA
@@ -1905,9 +1681,10 @@ node_data_scaffolding() {
 
 node_data_structure() {
 	int i, j;
+	nrn_thread_error("node_data_structure");
 	Pd(v_node_count);
 	
-	Pd(rootnodecount);
+	Pd(nrn_global_ncell);
 /*	P "Indices of node parents\n");*/
 	for (i=0; i < v_node_count; ++i) {
 		Pd(v_parent[i]->v_node_index);
@@ -2002,36 +1779,40 @@ fprintf(stderr, "Error at section location %s(%g)\n", secname(sec),
 }
 
 nrn_matrix_node_free() {
-	if (actual_rhs) {
-		free((char*)actual_rhs);
-		actual_rhs = (double*)0;
+	NrnThread* nt;
+    FOR_THREADS(nt) {
+	if (nt->_actual_rhs) {
+		free((char*)nt->_actual_rhs);
+		nt->_actual_rhs = (double*)0;
 	}
-	if (actual_d) {
-		free((char*)actual_d);
-		actual_d = (double*)0;
+	if (nt->_actual_d) {
+		free((char*)nt->_actual_d);
+		nt->_actual_d = (double*)0;
 	}
 #if CACHEVEC
-	if (actual_a) {
-		free((char*)actual_a);
-		actual_a = (double*)0;
+	if (nt->_actual_a) {
+		free((char*)nt->_actual_a);
+		nt->_actual_a = (double*)0;
 	}
-	if (actual_b) {
-		free((char*)actual_b);
-		actual_b = (double*)0;
+	if (nt->_actual_b) {
+		free((char*)nt->_actual_b);
+		nt->_actual_b = (double*)0;
 	}
 	/* because actual_v and actual_area have pointers to them from many
 	   places, defer the freeing until nrn_recalc_node_ptrs is called
 	*/
 #endif /* CACHEVEC */
-	if (sp13mat_) {
-		spDestroy(sp13mat_);
-		sp13mat_ = (char*)0;
+	if (nt->_sp13mat) {
+		spDestroy(nt->_sp13mat);
+		nt->_sp13mat = (char*)0;
 	}
+    }
 	diam_changed = 1;
 }
 
 /* 0 means no model, 1 means ODE, 2 means DAE */
 int nrn_modeltype() {
+	NrnThread* nt;
 	static Template* lm = (Template*)0;
 	int type;
 	if (!lm) {
@@ -2042,9 +1823,12 @@ int nrn_modeltype() {
 	}
 	v_setup_vectors();
 	type = 0;
-	if (rootnodecount > 0) {
+	if (nrn_global_ncell > 0) {
 		type = 1;
-		if ((lm && lm->count > 0) || memb_list[EXTRACELL].nodecount > 0) {
+		if ((lm && lm->count > 0)) {
+			type = 2;
+		}
+		FOR_THREADS(nt) if (nt->_ecell_memb_list) {
 			type = 2;
 		}
 	}
@@ -2099,21 +1883,36 @@ and therefore is passed to spSolve as actual_rhs intead of actual_rhs-1.
 */
 
 nrn_matrix_node_alloc() {
-	int i;
+	int i, b;
 	Node* nd;
-	static int sp13_ = 0;
-	
+	NrnThread* nt;
+
 	nrn_method_consistent();
-	if (sp13_ != use_sparse13) {
-		nrn_matrix_node_free();
-		sp13_ = use_sparse13;
+	nt = nrn_threads;
+/*printf("use_sparse13=%d sp13mat=%lx rhs=%lx\n", use_sparse13, (long)nt->_sp13mat, (long)nt->_actual_rhs);*/
+	if (use_sparse13) {
+		if (nt->_sp13mat) {
+			return;
+		}else{
+			nrn_matrix_node_free();
+		}
+	}else{
+		if (nt->_sp13mat) {
+			v_structure_change = 1;
+			v_setup_vectors();
+			return;
+		}else{
+			if (nt->_actual_rhs != (double*)0) {
+				return;
+			}
+		}	
 	}
-	if (actual_rhs != (double*)0) {
-		return;
-	}
+/*printf("nrn_matrix_node_alloc does its work\n");*/
 #if CACHEVEC
-	actual_a = (double*)ecalloc(v_node_count, sizeof(double));
-	actual_b = (double*)ecalloc(v_node_count, sizeof(double));
+    FOR_THREADS(nt) {
+	nt->_actual_a = (double*)ecalloc(nt->end, sizeof(double));
+	nt->_actual_b = (double*)ecalloc(nt->end, sizeof(double));
+    }
 	nrn_recalc_node_ptrs();
 #endif /* CACHEVEC */
 
@@ -2123,49 +1922,53 @@ printf("nrn_matrix_node_alloc use_sparse13=%d cvode_active_=%d nrn_use_daspk_=%d
 	++nrn_matrix_cnt_;
 	if (use_sparse13) {
 		int in, err, extn, neqn, j;
-		neqn = v_node_count + linmod_extra_eqn_count();
-		extn =  memb_list[EXTRACELL].nodecount * nlayer;
+		nt = nrn_threads;
+		neqn = nt->end + linmod_extra_eqn_count();
+		extn = 0;
+		if (nt->_ecell_memb_list) {
+			extn =  nt->_ecell_memb_list->nodecount * nlayer;
+		}
 /*printf(" %d extracellular nodes\n", extn);*/
 		neqn += extn;
-		actual_rhs = (double*)ecalloc(neqn+1, sizeof(double));
-		sp13mat_ = spCreate(neqn, 0, &err);
+		nt->_actual_rhs = (double*)ecalloc(neqn+1, sizeof(double));
+		nt->_sp13mat = spCreate(neqn, 0, &err);
 		if (err != spOKAY) {
 			hoc_execerror("Couldn't create sparse matrix", (char*)0);
 		}
-		for (in=0, i=1; in < v_node_count; ++in, ++i) {
-			v_node[in]->eqn_index_ = i;
-			if (v_node[in]->extnode) {
+		for (in=0, i=1; in < nt->end; ++in, ++i) {
+			nt->_v_node[in]->eqn_index_ = i;
+			if (nt->_v_node[in]->extnode) {
 				i += nlayer;
 			}
 		}
-		for (in = 0; in < v_node_count; ++in) {
+		for (in = 0; in < nt->end; ++in) {
 			int ie, k;
 			Node* nd, *pnd;
 			Extnode* nde;
-			nd = v_node[in];
+			nd = nt->_v_node[in];
 			nde = nd->extnode;
-			pnd = v_parent[in];
+			pnd = nt->_v_parent[in];
 			i = nd->eqn_index_;
-			nd->_rhs = actual_rhs + i;
-			nd->_d = spGetElement(sp13mat_, i, i);
+			nd->_rhs = nt->_actual_rhs + i;
+			nd->_d = spGetElement(nt->_sp13mat, i, i);
 			if (nde) {
 			    for (ie = 0; ie < nlayer; ++ie) {
 				k = i + ie + 1;
-				nde->_d[ie] = spGetElement(sp13mat_, k, k);
-				nde->_rhs[ie] = actual_rhs + k;
-				nde->_x21[ie] = spGetElement(sp13mat_, k, k-1);
-				nde->_x12[ie] = spGetElement(sp13mat_, k-1, k);
+				nde->_d[ie] = spGetElement(nt->_sp13mat, k, k);
+				nde->_rhs[ie] = nt->_actual_rhs + k;
+				nde->_x21[ie] = spGetElement(nt->_sp13mat, k, k-1);
+				nde->_x12[ie] = spGetElement(nt->_sp13mat, k-1, k);
 			    }
 			}
 			if (pnd) {
 				j = pnd->eqn_index_;
-				nd->_a_matelm = spGetElement(sp13mat_, j, i);
-				nd->_b_matelm = spGetElement(sp13mat_, i, j);
+				nd->_a_matelm = spGetElement(nt->_sp13mat, j, i);
+				nd->_b_matelm = spGetElement(nt->_sp13mat, i, j);
 			    if (nde && pnd->extnode) for (ie = 0; ie < nlayer; ++ie) {
 				int kp = j + ie + 1;
 				k = i + ie + 1;
-				nde->_a_matelm[ie] = spGetElement(sp13mat_, kp, k);
-				nde->_b_matelm[ie] = spGetElement(sp13mat_, k, kp);
+				nde->_a_matelm[ie] = spGetElement(nt->_sp13mat, kp, k);
+				nde->_b_matelm[ie] = spGetElement(nt->_sp13mat, k, kp);
 			    }
 			}else{ /* not needed if index starts at 1 */
 				nd->_a_matelm = (double*)0;
@@ -2174,15 +1977,17 @@ printf("nrn_matrix_node_alloc use_sparse13=%d cvode_active_=%d nrn_use_daspk_=%d
 		}
 		linmod_alloc();
 	}else{
+	    FOR_THREADS(nt) {
 		assert(linmod_extra_eqn_count() == 0);
-		assert(memb_list[EXTRACELL].nodecount == 0);
-		actual_d = (double*)ecalloc(v_node_count, sizeof(double));
-		actual_rhs = (double*)ecalloc(v_node_count, sizeof(double));
-		for (i = 0; i < v_node_count; ++i) {
-			Node* nd = v_node[i];
-			nd->_d = actual_d + i;
-			nd->_rhs = actual_rhs + i;
+		assert(!nt->_ecell_memb_list || nt->_ecell_memb_list->nodecount == 0);
+		nt->_actual_d = (double*)ecalloc(nt->end, sizeof(double));
+		nt->_actual_rhs = (double*)ecalloc(nt->end, sizeof(double));
+		for (i = 0; i < nt->end; ++i) {
+			Node* nd = nt->_v_node[i];
+			nd->_d = nt->_actual_d + i;
+			nd->_rhs = nt->_actual_rhs + i;
 		}
+	    }
 	}
 }
 
@@ -2207,18 +2012,44 @@ All Vector record and play pointers that deal with v.
 All PreSyn threshold detectors that watch v.
 */
 
-extern void nrniv_recalc_ptrs(int, double**, double*);
+extern void nrniv_recalc_ptrs();
 extern int nrn_isdouble(double*, double, double);
 static int n_recalc_ptr_callback;
 static void (*recalc_ptr_callback[20])();
-static double *recalc_ptr_new_v_, **recalc_ptr_old_vp_;
+static int recalc_cnt_;
+static double **recalc_ptr_new_vp_, **recalc_ptr_old_vp_;
+static int n_old_thread_;
+static int* old_actual_v_size_;
+static double** old_actual_v_;
+static double** old_actual_area_;
+
+/* defer freeing a few things which may have pointers to them
+until ready to update those pointers */
+void nrn_old_thread_save() {
+	int i;
+	int n = nrn_nthread;
+	if (old_actual_v_){return;} /* one is already outstanding */
+	n_old_thread_ = n;
+	old_actual_v_size_ = (int*)ecalloc(n, sizeof(int));	
+	old_actual_v_ = (double**)ecalloc(n, sizeof(double*));	
+	old_actual_area_ = (double**)ecalloc(n, sizeof(double*));	
+	for (i=0; i < n; ++i) {
+		NrnThread* nt = nrn_threads + i;
+		old_actual_v_size_[i] = nt->end;
+		old_actual_v_[i] = nt->_actual_v;
+		old_actual_area_[i] = nt->_actual_area;
+	}
+}
+
+static double* (*recalc_ptr_)(double*);
 
 double* nrn_recalc_ptr(double* old) {
+	if (recalc_ptr_) { return (*recalc_ptr_)(old); }
 	if (!recalc_ptr_old_vp_) { return old; }
-	if (nrn_isdouble(old, 0.0, (double)v_node_count)) {
+	if (nrn_isdouble(old, 0.0, (double)recalc_cnt_)) {
 		int k = (int)(*old);
 		if (old == recalc_ptr_old_vp_[k]) {
-			return recalc_ptr_new_v_ + k;
+			return recalc_ptr_new_vp_[k];
 		}
 	}
 	return old;
@@ -2232,79 +2063,99 @@ void nrn_register_recalc_ptr_callback(void (*f)()) {
 	recalc_ptr_callback[n_recalc_ptr_callback++] = f;
 }
 
+void nrn_recalc_ptrs(double*(*r)(double*)) {
+	int i;
+
+	recalc_ptr_ = r;
+
+	/* update pointers managed by c++ */
+	nrniv_recalc_ptrs();
+
+	/* user callbacks to update pointers */
+	for (i=0; i < n_recalc_ptr_callback; ++i) {
+		(*recalc_ptr_callback[i])();
+	}
+	recalc_ptr_ = (void*)0;
+}
+
 void nrn_recalc_node_ptrs() {
-	int i, j, k;
-	double *new_area;
+	int i, ii, j, k;
+	NrnThread* nt;
 	if (use_cachevec == 0) { return; }
-	recalc_ptr_new_v_ = (double*)ecalloc(v_node_count, sizeof(double));
-	recalc_ptr_old_vp_ = (double**)ecalloc(v_node_count, sizeof(double*));
-	new_area = (double*)ecalloc(v_node_count, sizeof(double));
+/*printf("nrn_recalc_node_ptrs\n");*/
+	recalc_cnt_ = 0;
+	FOR_THREADS(nt) { recalc_cnt_ += nt->end; }
+	recalc_ptr_new_vp_ = (double**)ecalloc(recalc_cnt_, sizeof(double*));
+	recalc_ptr_old_vp_ = (double**)ecalloc(recalc_cnt_, sizeof(double*));
 	/* first update the pointers without messing with the old NODEV,NODEAREA */
 	/* to prepare for the update, copy all the v and area values into the */
 	/* new arrays are replace the old values by index value. */
 	/* a pointer dereference value of i allows us to easily check */
 	/* if the pointer points to what v_node[i]->_v points to. */
-	for (i = 0; i < v_node_count; ++i) {
-		Node* nd = v_node[i];
-		recalc_ptr_new_v_[i] = *nd->_v;
-		recalc_ptr_old_vp_[i] = nd->_v;
-		new_area[i] = nd->_area;
-		*nd->_v = (double)i;
+	ii = 0;
+	FOR_THREADS(nt) {
+		nt->_actual_v = (double*)ecalloc(nt->end, sizeof(double));
+		nt->_actual_area = (double*)ecalloc(nt->end, sizeof(double));
+	}
+	FOR_THREADS(nt) for (i = 0; i < nt->end; ++i) {
+		Node* nd = nt->_v_node[i];
+		nt->_actual_v[i] = *nd->_v;
+		recalc_ptr_new_vp_[ii] = nt->_actual_v + i;
+		recalc_ptr_old_vp_[ii] = nd->_v;
+		nt->_actual_area[i] = nd->_area;
+		*nd->_v = (double)ii;
+		++ii;
 	}
 	/* update POINT_PROCESS pointers to NODEAREA */
 	/* and relevant POINTER pointers to NODEV */
-	for (i=0; i < v_node_count; ++i) {
-		Node* nd = v_node[i];
+	FOR_THREADS(nt) for (i=0; i < nt->end; ++i) {
+		Node* nd = nt->_v_node[i];
 		Prop* p;
 		Datum* d;
 		int dpend;
 		for (p = nd->prop; p; p = p->next) {
 			if (memb_func[p->type].is_point && !nrn_is_artificial_[p->type]) {
-				p->dparam[0].pval = new_area + i;
+				p->dparam[0].pval = nt->_actual_area + i;
 			}
 			dpend = nrn_dparam_ptr_end_[p->type];
 			for (j=nrn_dparam_ptr_start_[p->type]; j < dpend; ++j) {
 				double* pval = p->dparam[j].pval;
-				if (nrn_isdouble(pval, 0., (double)v_node_count)) {
+				if (nrn_isdouble(pval, 0., (double)recalc_cnt_)) {
 					/* possible pointer to v */
 					k = (int)(*pval);
-					if (pval == v_node[k]->_v) {
-					    p->dparam[j].pval = recalc_ptr_new_v_ + k;
+					if (pval == recalc_ptr_old_vp_[k]) {
+					    p->dparam[j].pval = recalc_ptr_new_vp_[k];
 					}
 				}
 			}
 		}
 	}
 
-	/* update pointers managed by c++ */
-	nrniv_recalc_ptrs(v_node_count, recalc_ptr_old_vp_, recalc_ptr_new_v_);
-
-	/* user callbacks to update pointers */
-	for (i=0; i < n_recalc_ptr_callback; ++i) {
-		(*recalc_ptr_callback[i])();
-	}
+	nrn_recalc_ptrs((void*)0);
 
 	/* now that all the pointers are updated we update the NODEV */
-	for (i = 0; i < v_node_count; ++i) {
-		Node* nd = v_node[i];
-		nd->_v = recalc_ptr_new_v_ + i;
-	}
-	/* and free the old arrays */
-	if (actual_v) {
-		hoc_free_val_array(actual_v, actual_v_size);
-		actual_v = (double*)0;
-		actual_v_size = 0;
-	}
-	if (actual_area) {
-		free((char*)actual_area);
-		actual_area = (double*)0;
+	ii = 0;
+	FOR_THREADS(nt) for (i = 0; i < nt->end; ++i) {
+		Node* nd = nt->_v_node[i];
+		nd->_v = recalc_ptr_new_vp_[ii];
+		++ii;
 	}
 	free((char*)recalc_ptr_old_vp_);
-	actual_v_size = v_node_count;
-	actual_v = recalc_ptr_new_v_;
-	actual_area = new_area;
+	free((char*)recalc_ptr_new_vp_);
 	recalc_ptr_old_vp_ = (double**)0;
-	recalc_ptr_new_v_ = (double*)0;
+	recalc_ptr_new_vp_ = (double**)0;
+	/* and free the old thread arrays if new ones were allocated */
+	for (i = 0; i < n_old_thread_; ++i) {
+		if (old_actual_v_[i]) hoc_free_val_array(old_actual_v_[i], old_actual_v_size_[i]);
+		if (old_actual_area_[i]) free((char*)old_actual_area_[i]);
+	}
+	free((char*)old_actual_v_size_);
+	free((char*)old_actual_v_);
+	free((char*)old_actual_area_);
+	old_actual_v_size_ = 0;
+	old_actual_v_ = 0;
+	old_actual_area_ = 0;
+	n_old_thread_ = 0;
 
 	nrn_cache_prop_realloc();
 }

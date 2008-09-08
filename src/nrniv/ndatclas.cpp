@@ -111,6 +111,10 @@ NrnProperty::~NrnProperty(){
 	delete npi_;
 }
 
+boolean NrnProperty::deleteable() {
+	return npi_->del_;
+}
+
 const char* NrnProperty::name() const {
 	return npi_->sym_->name;
 }

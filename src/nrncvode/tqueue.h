@@ -2,6 +2,12 @@
 #define tqueue_h
 #undef check
 
+#include <nrnmutdec.h>
+#include <pool.h>
+
+class TQItem;
+declarePool(TQItemPool, TQItem)
+
 // 0 use bbtqueue, 1 use rbtqueue, 2 use sptqueue, 3 use sptfifoq
 #define BBTQ 5
 
@@ -54,7 +60,7 @@
 
 class SelfQueue { // not really a queue but a doubly linked list for fast
 public:		  // insertion, deletion, iteration
-	SelfQueue();
+	SelfQueue(TQItemPool*, int mkmut = 0);
 	virtual ~SelfQueue();
 	TQItem* insert(void*);
 	void* remove(TQItem*);
@@ -63,6 +69,8 @@ public:		  // insertion, deletion, iteration
 	TQItem* next(TQItem* q) { return q->right_; }
 private:
 	TQItem* head_;
+	TQItemPool* tpool_;
+	MUTDEC
 };
 
 #endif

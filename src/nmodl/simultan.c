@@ -1,87 +1,4 @@
 #include <../../nmodlconf.h>
-/* /local/src/master/nrn/src/nmodl/simultan.c,v 4.1 1997/08/30 20:45:35 hines Exp */
-/*
-simultan.c,v
- * Revision 4.1  1997/08/30  20:45:35  hines
- * cvs problem with branches. Latest nmodl stuff should now be a top level
- *
- * Revision 4.0.1.1  1997/08/08  17:24:02  hines
- * nocmodl version 4.0.1
- *
- * Revision 4.0  1997/08/08  17:06:29  hines
- * proper nocmodl version number
- *
- * Revision 1.2  1997/07/20  15:38:48  hines
- * ion concentrations as states in cvode context now have cvode state
- * map pointer to the actual concentration variable. This guarantees
- * that the nernst calculations (done before any odes in models are called)
- * use the correct concentrations (set by cvode)
- *
- * Revision 1.1.1.1  1994/10/12  17:21:37  hines
- * NEURON 3.0 distribution
- *
- * Revision 9.167  1993/04/21  11:05:06  hines
- * lineq blocks do not return error number
- * nocpout point processes dparam element 2 reserved for a pointer to
- * Point_process
- *
- * Revision 9.76  90/12/07  09:27:26  hines
- * new list structure that uses unions instead of void *element
- * 
- * Revision 9.32  90/10/08  14:12:56  hines
- * index vector instead of pointer vector for slist and dlist
- * 
- * Revision 9.5  90/07/18  07:59:46  hines
- * define for arrays now (p + n) instead of &p[n]. This allows the c file
- * to have arrays that look like a[i] instead of *(a + i).
- * 
- * Revision 8.4  90/04/09  08:41:37  mlh
- * implicit method for derivative blocks (allows mixed equations also).
- * The solve statement must precede the derivative block
- * 
- * Revision 8.3  90/01/18  11:46:32  mlh
- * SOLVEFOR statement added
- * syntax is 
- *   blocktype blockname [SOLVEFOR name, name, ...] {statment}
- * where blocktype is KINETIC, NONLINEAR, or LINEAR
- * Only the states in the SOLVEFOR statement are solved
- * in that block. If the statement is not present then
- * all states are solved that appear in that block.
- * 
- * Revision 8.2  90/01/16  11:06:19  mlh
- * error checking and cleanup after error and call to abort_run()
- * 
- * Revision 8.1  89/12/15  10:10:06  mlh
- * newton's last arg changed to vector of double pointers.
- * For nonlinear equations dlist holds the doubles andpdlist points to them individually.
- * 
- * Revision 8.0  89/09/22  17:26:59  nfh
- * Freezing
- * 
- * Revision 7.0  89/08/30  13:32:36  nfh
- * Rev 7 is now Experimental; Rev 6 is Testing
- * 
- * Revision 6.0  89/08/14  16:27:16  nfh
- * Rev 6.0 is latest of 4.x; now the Experimental version
- * 
- * Revision 4.2  89/08/11  09:56:49  mlh
- * simultaneous nonlinear equations allowed in DERIVATIVE block
- * 
- * Revision 4.1  89/08/07  15:35:33  mlh
- * freelist now takes pointer to list pointer and 0's the list pointer.
- * Not doing this is a bug for multiple sens blocks, etc.
- * 
- * Revision 4.0  89/07/24  17:03:45  nfh
- * Freezing rev 3.  Rev 4 is now Experimental
- * 
- * Revision 3.1  89/07/07  16:55:12  mlh
- * FIRST LAST START in independent SWEEP higher order derivatives
- * 
- * Revision 1.1  89/07/06  14:50:49  mlh
- * Initial revision
- * 
-*/
-
 #include "modl.h"
 #include "parse1.h"
 #include "symbol.h"
@@ -167,7 +84,7 @@ nonlin_common(q4, sensused)	/* used by massagenonlin() and mixed_eqns() */
 	Item *q4;
 	int sensused;
 {
-	Item *lq, *qs;
+	Item *lq, *qs, *q;
 	int i, counts = 0, counte = 0, using_array;
 	Symbol *s;
 
@@ -232,8 +149,11 @@ Sprintf(buf, "if(_counte != %d) printf( \"Number of equations, %%d,\
 	}
 	freeqnqueue();
 Sprintf(buf, "static int _slist%d[%d]; static double _dlist%d[%d];\n",
-	numlist, counts*(1 + sens_parm), numlist, counts);
-		Linsertstr(procfunc, buf);
+numlist, counts*(1 + sens_parm), numlist, counts);
+	q = linsertstr(procfunc, buf);
+Sprintf(buf, "static int _slist%d[%d];\n",
+numlist, counts*(1 + sens_parm));
+	vectorize_substitute(q, buf);	
 	return counts;
 }
 
@@ -243,6 +163,7 @@ mixed_eqns(q2, q3, q4)	/* name, '{', '}' */
 {
 	int counts;
 	Item *qret;
+	Item* q;
 	
 	if (!eqnq) {
 		return ITEM0; /* no nonlinear algebraic equations */
@@ -252,11 +173,19 @@ mixed_eqns(q2, q3, q4)	/* name, '{', '}' */
 	numlist++;
 	counts = nonlin_common(q4, 0);
 	Insertstr(q4, "}");
-	Insertstr(q3, "{ static int _recurse = 0;\n int _counte = -1;\n");
+	q = insertstr(q3, "{ static int _recurse = 0;\n int _counte = -1;\n");
+	sprintf(buf, "{ double* _savstate%d = _thread[_dith%d]._pval;\n\
+ double* _dlist%d = _thread[_dith%d]._pval + %d;\n int _counte = -1;\n",
+numlist-1, numlist-1,
+numlist, numlist-1, counts);
+	vectorize_substitute(q, buf);
 	Insertstr(q3, "if (!_recurse) {\n _recurse = 1;\n");
 	Sprintf(buf, "error = newton(%d,_slist%d, _p, %s, _dlist%d);\n",
 		counts, numlist, SYM(q2)->name, numlist);
 	qret = insertstr(q3, buf);
+	Sprintf(buf, "error = nrn_newton_thread(_newtonspace%d, %d,_slist%d, _p, %s, _dlist%d, _ppvar, _thread, _nt);\n",
+		numlist-1, counts, numlist, SYM(q2)->name, numlist);
+	vectorize_substitute(qret, buf);
 	Insertstr(q3, "_recurse = 0; if(error) {abort_run(error);}}\n");
 	return qret;
 }

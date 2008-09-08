@@ -91,7 +91,8 @@ static Member_func members[] = {
 };
 
 static void* cons(Object*) {
-	TQueue* q = new TQueue();
+	assert(0);
+	TQueue* q = new TQueue(0);
 	return (void*)q;
 }
 
@@ -106,10 +107,7 @@ void TQueue_reg() {
 
 //----------------
 
-declarePool(TQItemPool, TQItem)
 implementPool(TQItemPool, TQItem)
-
-static TQItemPool* tpool_;
 
 #if BBTQ == 0
 #include <bbtqueue.cpp>
@@ -135,32 +133,41 @@ static TQItemPool* tpool_;
 #include <sptbinq.cpp>
 #endif
 
-SelfQueue::SelfQueue() {
+SelfQueue::SelfQueue(TQItemPool* tp, int mkmut) {
+	MUTCONSTRUCT(mkmut)
+	tpool_ = tp;
 	head_ = nil;
 }
 SelfQueue::~SelfQueue() {
 	remove_all();
+	MUTDESTRUCT
 }
 TQItem* SelfQueue::insert(void* d) {
+	MUTLOCK
 	TQItem* q = tpool_->alloc();
 	q->left_ = nil;
 	q->right_ = head_;
 	if (head_) { head_->left_ = q; }
 	head_ = q;
 	q->data_ = d;
+	MUTUNLOCK
 	return q;
 }
 void* SelfQueue::remove(TQItem* q) {
+	MUTLOCK
 	if (q->left_) { q->left_->right_ = q->right_; }
 	if (q->right_) { q->right_->left_ = q->left_; }
 	if (q == head_) { head_ = q->right_; }
 	tpool_->hpfree(q);
+	MUTUNLOCK
 	return q->data_;
 }
 void SelfQueue::remove_all() {
+	MUTLOCK
 	for (TQItem* q = first(); q; q = next(q)) {
 		tpool_->hpfree(q);
 	}
+	MUTUNLOCK
 }
 
 

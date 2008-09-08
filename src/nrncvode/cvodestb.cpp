@@ -16,42 +16,44 @@ extern "C" {
 void cvode_fadvance(double);
 void cvode_finitialize();
 void nrncvode_set_t(double);
-boolean at_time(double);
+boolean at_time(NrnThread*, double);
 
-extern double dt, t;
-extern int nrn_cvode_;
+//extern double dt, t;
+#define nt_t nrn_threads->_t
+#define nt_dt nrn_threads->_dt
 extern void nrn_random_play();
 extern int cvode_active_;
 extern int nrn_use_daspk_;
 
-Cvode* cvode_instance;
 NetCvode* net_cvode_instance;
-void deliver_net_events();
-void nrn_deliver_events(double);
+void deliver_net_events(NrnThread*);
+void nrn_deliver_events(NrnThread*);
 void clear_event_queue();
 void init_net_events();
 void nrn_record_init();
 void nrn_play_init();
-void fixed_record_continuous();
-void fixed_play_continuous();
+void fixed_record_continuous(NrnThread* nt);
+void fixed_play_continuous(NrnThread* nt);
 void nrn_solver_prepare();
+static void check_thresh(NrnThread*);
 }
 
-
-// for fixed step fadvance
-void deliver_net_events() {
+// for fixed step thread
+void deliver_net_events(NrnThread* nt) {
+	int i;
 	if (net_cvode_instance) {
-		net_cvode_instance->deliver_net_events();
+		net_cvode_instance->check_thresh(nt);
+		net_cvode_instance->deliver_net_events(nt);
 	}
 }
 
 // handle events during finitialize()
-void nrn_deliver_events(double til) {
-	double tsav = t;
+void nrn_deliver_events(NrnThread* nt) {
+	double tsav = nt->_t;
 	if (net_cvode_instance) {
-		net_cvode_instance->deliver_events(til);
+		net_cvode_instance->deliver_events(tsav, nt);
 	}
-	t = tsav;
+	nt->_t = tsav;
 }
 
 void clear_event_queue() {
@@ -78,15 +80,15 @@ void nrn_play_init() {
 	}
 }
 
-void fixed_play_continuous() {
+void fixed_play_continuous(NrnThread* nt) {
 	if (net_cvode_instance) {
-		net_cvode_instance->fixed_play_continuous();
+		net_cvode_instance->fixed_play_continuous(nt);
 	}
 }
 
-void fixed_record_continuous() {
+void fixed_record_continuous(NrnThread* nt) {
 	if (net_cvode_instance) {
-		net_cvode_instance->fixed_record_continuous();
+		net_cvode_instance->fixed_record_continuous(nt);
 	}
 }
 
@@ -118,14 +120,14 @@ void cvode_finitialize(){
 #endif
 }
 
-boolean at_time(double te) {
+boolean at_time(NrnThread* nt, double te) {
 #if USECVODE
-	if (cvode_active_ && cvode_instance) {
-		return cvode_instance->at_time(te);
+	if (cvode_active_ && nt->_vcv) {
+		return ((Cvode*)nt->_vcv)->at_time(te, nt);
 	}
 #endif
 	double x = te - 1e-11;
-	if (x <= t && x > (t - dt)) {
+	if (x <= nt->_t && x > (nt->_t - nt->_dt)) {
 		return 1;
 	}
 	return 0;
@@ -133,10 +135,16 @@ boolean at_time(double te) {
 
 void nrncvode_set_t(double tt) {
 	NetCvode* nc = net_cvode_instance;
-	int n = nc->nlist();
-	for (int i=0; i < n; ++i) {
-		Cvode& cv = nc->list()[i];
-		cv.tn_ = cv.t_ = cv.t0_ = tt;
+	if (nc->gcv_) {
+		Cvode& cv = *nc->gcv_;
+		cv.tn_ = cv.t_ = cv.t0_ = tt;	
+	}else{
+		for (int i=0; i < nc->pcnt_; ++i) {
+			NetCvodeThreadData& p = nc->p[i];
+			for (int j=0; j < p.nlcv_; ++j) {
+				Cvode& cv = p.lcv_[j];
+				cv.tn_ = cv.t_ = cv.t0_ = tt;	
+			}
+		}
 	}
 }
-

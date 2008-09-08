@@ -1,0 +1,42 @@
+#!/bin/sh
+
+if test $# = 0 ; then
+	files="`ls *.mod`"
+else
+	files="$*"
+fi
+echo $files
+
+t=temp
+
+for i in $files ; do
+	f="`echo $i | sed 's/\.mod//'`"
+	nocmodl $f.mod >& $t
+	rm $f.c
+	if grep -q 'Assignment to the GLOBAL' $t ; then
+		sed -n '/NEURON *{/,/}/p' $f.mod
+		sed -n '/VERBATIM/,/ENDVERBATIM/p' $f.mod
+		cat $t
+		a="n"
+		echo "Force THREADSAFE? [y][n]: $a"
+		read a
+		if test "$a" = "y" ; then
+			sed '/NEURON *{/a \
+    THREADSAFE
+' $f.mod > $t
+			mv $t $f.mod
+		fi
+	elif grep -q 'VERBATIM' $t ; then
+		sed -n '/VERBATIM/,/ENDVERBATIM/p' $f.mod
+		cat $t
+		a="n"
+		echo "Force THREADSAFE? [y][n]: $a"
+		read a
+		if test "$a" = "y" ; then
+			sed '/NEURON *{/a \
+    THREADSAFE
+' $f.mod > $t
+			mv $t $f.mod
+		fi
+	fi
+done

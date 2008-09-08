@@ -266,7 +266,7 @@ static Section* new_section(ob, sym, i)
 		prop->dparam[6].obj = (Object*)0;
 	}
 #if USE_PYTHON
-	prop->dparam[9]._pvoid = (void*)0;
+	prop->dparam[PROP_PY_INDEX]._pvoid = (void*)0;
 #endif
 	nrn_pushsec(sec);
 	d = (double)DEF_nseg;
@@ -304,7 +304,7 @@ Section* nrnpy_newsection(void* v) {
 	Item* itm;
 	Section* sec;
 	sec = new_section((Object*)0, (Symbol*)0, 0);
-	sec->prop->dparam[9]._pvoid = v;
+	sec->prop->dparam[PROP_PY_INDEX]._pvoid = v;
 	itm = lappendsec(section_list, sec);
 	sec->prop->dparam[8].itm = itm;
 	return sec;
@@ -347,7 +347,8 @@ section[i].prop->dparam[0].sym 	pointer to section symbol
 			[6].obj pointer to the object pointer
 			[7].val Ra
 			[8].itm hoc_Item* with Section* as element
-			[9].pyobj pointer to the Python Section object
+			[9]._pvoid NrnThread*
+			[PROP_PY_INDEX].pvoid pointer to the Python Section object
 The first element allows us to find the symbol when we know the section number.
 If an array section the index can be computed with
 i - (section[i].sym)->u.u_auto
@@ -357,6 +358,9 @@ double section_length(sec)
 	Section* sec;
 {
 	double x;
+	if (sec->recalc_area_ && sec->npt3d) {
+		sec->prop->dparam[2].val = sec->pt3d[sec->npt3d - 1].arc;
+	}
 	x = sec->prop->dparam[2].val;
 	if (x <= 1e-9) {
 		x = sec->prop->dparam[2].val = 1e-9;
@@ -381,11 +385,11 @@ cab_alloc(p)
 {
 	Datum *pd;
 #if USE_PYTHON
-#define CAB_SIZE 10
+#define CAB_SIZE 11
 #else
-#define CAB_SIZE 9
+#define CAB_SIZE 10
 #endif
-	pd = nrn_prop_datum_alloc(CABLESECTION, CAB_SIZE);
+	pd = nrn_prop_datum_alloc(CABLESECTION, CAB_SIZE, p);
 	pd[1].val = pd[3].val = 0.;
 	pd[2].val = DEF_L;
 	pd[4].val = DEF_rallbranch;
@@ -399,7 +403,7 @@ morph_alloc(p)
 {
 	
 	double *pd;
-	pd = nrn_prop_data_alloc(MORPHOLOGY, 1);
+	pd = nrn_prop_data_alloc(MORPHOLOGY, 1, p);
 	pd[0] = DEF_diam; /* microns */
 	diam_changed = 1;
 	p->param = pd;
@@ -1051,18 +1055,15 @@ nrn_mechanism_check(type, sec, inode)
 }
 	
 Prop *
-hoc_getdata_range(mechname)
-	char *mechname;
+hoc_getdata_range(type)
+	int type;
 {
-	Symbol *s;
 	int inode;
 	Section *sec;
 	
-	s = hoc_lookup(mechname);
-	assert(s && s->type == MECHANISM);
 	sec = chk_access();
 	inode = node_index(sec, *getarg(1));
-	return nrn_mechanism_check(s->subtype, sec, inode);
+	return nrn_mechanism_check(type, sec, inode);
 }
 
 static Datum *
@@ -1693,7 +1694,7 @@ setup_topology()
 		if it is invalid.
 	*/
 	
-	rootnodecount = 0;
+	nrn_global_ncell = 0;
 
 	ForAllSections(sec)
 #if 0
@@ -1706,7 +1707,7 @@ setup_topology()
 #endif
 		nrn_parent_info(sec);
 		if (!sec->parentsec) {
-			++rootnodecount;
+			++nrn_global_ncell;
 		}
 	}
 
@@ -1721,7 +1722,6 @@ setup_topology()
 		}
 #endif
 	section_order();
-	nrn_matrix_node_free();
 	tree_changed = 0;
 	diam_changed = 1;
 	v_structure_change = 1;
@@ -1752,8 +1752,8 @@ secname(sec) /* name of section (for use in error messages) */
 				hoc_araystr(s, indx, hoc_top_level_data));
 		}
 #if USE_PYTHON	
-	    }else if (sec->prop->dparam[9]._pvoid) {
-	    	Sprintf(name, "PySec_%lx", (long)sec->prop->dparam[9]._pvoid);
+	    }else if (sec->prop->dparam[PROP_PY_INDEX]._pvoid) {
+	    	Sprintf(name, "PySec_%lx", (long)sec->prop->dparam[PROP_PY_INDEX]._pvoid);
 #endif
 	    }else{
 		name[0] = '\0';

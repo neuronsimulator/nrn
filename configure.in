@@ -326,7 +326,31 @@ AC_HEADER_STDC
 AC_HEADER_SYS_WAIT
 AC_CHECK_HEADERS(fcntl.h limits.h malloc.h sgtty.h strings.h sys/file.h)
 AC_CHECK_HEADERS(sys/ioctl.h sys/time.h termio.h unistd.h stdarg.h varargs.h)
-AC_CHECK_HEADERS(stropts.h sys/conf.h locale.h fenv.h)
+AC_CHECK_HEADERS(stropts.h sys/conf.h locale.h fenv.h pthread.h)
+
+dnl but sometimes pthreads does not work so we use USE_PTHREAD
+if test "$use_pthread" != "no" ; then
+AC_TRY_COMPILE(
+	[#include <pthread.h>],
+	[
+		pthread_cond_t cond;
+		pthread_cond_init(&cond, (void*)0);
+	],
+	NRN_DEFINE(USE_PTHREAD,1,[Configure with use_pthead=no if you have pthread but do not want to use it])
+		AC_MSG_NOTICE([Using pthreads.])
+	,
+	AC_MSG_NOTICE([Have pthread.h but not using threads.])
+)
+dnl here is a better way
+ACX_PTHREAD([
+	AC_MSG_NOTICE([successful.])
+	echo "PTHREAD_LIBS=$PTHREAD_LIBS"
+	echo "PTHREAD_CFLAGS=$PTHREAD_CFLAGS"
+	echo "PTHREAD_CC=$PTHREAD_CC"
+],[
+	AC_MSG_NOTICE([did not succeed.])
+])
+fi
 
 AC_CHECK_HEADERS(float.h math.h)
 AC_DEFINE(SUNDIALS_DOUBLE_PRECISION, 1, [Define SUNDIALS data type 'realtype' as 'long double'])
@@ -357,7 +381,7 @@ AC_FUNC_MEMCMP
 AC_TYPE_SIGNAL
 AC_FUNC_VPRINTF
 AC_CHECK_FUNCS(ftime getcwd getpw gethostname gettimeofday mkdir putenv setenv select strdup strstr index bzero bcopy stty lockf isatty mkstemp)
-AC_CHECK_FUNCS(setitimer sigaction fesetround)
+AC_CHECK_FUNCS(setitimer sigaction fesetround posix_memalign)
 NRN_CHECK_SIGNAL(SIGBUS)
 NRN_CHECK_SIGNAL(SIGSEGV)
 dnl Do this after the above checks, so they're run with the C compiler rather
@@ -453,6 +477,7 @@ if test "$with_nmodl_only" != "yes" ; then
 AC_CONFIG_HEADERS([nrnconf.h])
 AC_CONFIG_HEADERS([src/oc/nrnmpiuse.h])
 AC_CONFIG_HEADERS([src/oc/nrnrtuse.h])
+AC_CONFIG_HEADERS([src/oc/nrnpthread.h])
 AC_CONFIG_HEADERS([src/parallel/bbsconf.h])
 AC_CONFIG_HEADERS([src/nrnjava/njconf.h])
 AC_CONFIG_HEADERS([src/nrncvode/nrnneosm.h])

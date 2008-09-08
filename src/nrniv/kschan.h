@@ -11,13 +11,14 @@ extern "C" {
 }
 
 extern "C" {
-	extern double dt;
+	//extern double dt;
 	extern double celsius;
 }
 
 class KSState;
 class KSChan;
 class KSSingle;
+struct NrnThread;
 
 class KSChanFunction {
 public:
@@ -137,7 +138,7 @@ public:
 	// hh tables
 	// easily out of date!!
 	// in anything about f0 or f1 changes then must call hh_table_make;
-	void hh_table_make(int size=200, double vmin=-100., double vmax=50.);
+	void hh_table_make(double dt, int size=200, double vmin=-100., double vmax=50.);
 	boolean usehhtable() { return (size1_ > 0); }
 	void inftau_hh_table(int i, double& inf, double& tau) {
 		inf = inftab_[i];
@@ -241,22 +242,22 @@ public:
 	KSChan(Object*, boolean is_point = false);
 	virtual ~KSChan();
 	virtual void alloc(Prop*);
-	virtual void init(int, Node**, double**, Datum**);
+	virtual void init(int, Node**, double**, Datum**, NrnThread*);
 	virtual void cur(int, Node**, double**, Datum**);
 	virtual void jacob(int, Node**, double**, Datum**);
-	virtual void state(int, Node**, double**, Datum**);
+	virtual void state(int, Node**, double**, Datum**, NrnThread*);
 #if CACHEVEC != 0
-	virtual void cur(int, int *, double**, Datum**);
-	virtual void jacob(int, int *, double**, Datum**);
-	virtual void state(int, int *, Node**, double**, Datum**);
+	virtual void cur(int, int *, double**, Datum**, NrnThread*);
+	virtual void jacob(int, int *, double**, Datum**, NrnThread*);
+	virtual void state(int, int *, Node**, double**, Datum**, NrnThread*);
 #endif /* CACHEVEC */
 	void add_channel(char**);
 	//for cvode
 	virtual int count();
 	virtual void map(int, double**, double**, double*, Datum*, double*);
 	virtual void spec(int, Node**, double**, Datum**);
-	virtual void matsol(int, Node**, double**, Datum**);
-	virtual void cv_sc_update(int, Node**, double**, Datum**);
+	virtual void matsol(int, Node**, double**, Datum**, NrnThread*);
+	virtual void cv_sc_update(int, Node**, double**, Datum**, NrnThread*);
 	double conductance(double gmax, double* state);
 public:
 	// hoc accessibilty
@@ -294,6 +295,7 @@ public:
 	void usetable(boolean);
 	int usetable(double* vmin, double* vmax);// get info
 	boolean usetable() { return usetable_; }
+	void check_table_thread(NrnThread*);
 private:
 	void free1();
 	void build();

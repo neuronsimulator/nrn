@@ -271,6 +271,7 @@ proc toolmenu() {
 //	xbutton("RunButton", "xpanel(\"Run\") xbutton(\"Init & Run\", \"run()\") xpanel()")
 	xbutton("RunButton", "xpanel(\"Run\") xcheckbox(\"Init & Run\", &running_,\"runbutton()\") xpanel()")
 	xbutton("VariableStepControl", "numericalmethodpanel.map()")
+	xbutton("Parallel Computing", "load_file(\"parcom.hoc\", \"ParallelComputeTool\") execute(\"ParallelComputeTool[0].map()\")")
 	pointprocessesmenu()
 	distmechmenu()
 	fittingmenu()

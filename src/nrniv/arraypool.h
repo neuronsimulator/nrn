@@ -6,8 +6,17 @@
 
 // the chain of ArrayPool
 // is only for extra items in a pool_ and no other fields are used.
-// the arraypool doubles in size every time a chain ArrayPool is added.
+// The arraypool can be inceased in size by calling grow(ninc) which
+// will chain a new ArrayPool of that size. Note that threads using
+// distinct ArrayPool chain items will not have a problem with cache
+// line sharing.
+// When the arraypool needs to grow itself then it
+// doubles in size every time a chain ArrayPool is added.
 // maxget() tells the most number of arraypool items used at once.
+// note that grow_(ninc) implicitly assumes all existing space is in use
+// (i.e. put == get) and hence put ends up as put+ninc. On the other
+// hand the user callable grow(ninc) assumes NO space is in use,
+// so also put == get and put is set back to get.
 
 #define declareArrayPool(ArrayPool,T) \
 class ArrayPool { \
@@ -23,10 +32,15 @@ public: \
 	long get() { return get_; } \
 	long put() { return put_; } \
 	long nget() { return nget_; } \
+	long ntget() { return ntget_; } \
 	long d2() { return d2_; } \
 	T* element(long i) { return pool_ + i*d2_; } \
+	T** items() { return items_; } \
+	void grow(long ninc); \
+	ArrayPool* chain() { return chain_; } \
+	long chain_size() { return pool_size_; } \
 private: \
-	void grow(); \
+	void grow_(long ninc); \
 private: \
 	T** items_; \
 	T* pool_; \
@@ -35,9 +49,11 @@ private: \
 	long get_; \
 	long put_; \
 	long nget_; \
+	long ntget_; \
 	long maxget_; \
 	long d2_; \
 	ArrayPool* chain_; \
+	ArrayPool* chainlast_; \
 }; \
  \
 
@@ -45,30 +61,39 @@ private: \
 ArrayPool::ArrayPool(long count, long d2) { \
 	count_ = count; \
 	d2_ = d2; \
-	pool_ = (T*)hoc_Ecalloc(count_*d2_, sizeof(T)); hoc_malchk(); \
+	pool_ = (T*)nrn_cacheline_calloc((void**)&pool_, count_*d2_, sizeof(T)); \
 	pool_size_ = count; \
 	items_ = new T*[count_]; \
-	for (long i = 0; i < count_; ++i) items_[i] = pool_ + i*d2_; \
+	for (long i = 0; i < count_; ++i) { \
+		items_[i] = pool_ + i*d2_; \
+	} \
 	get_ = 0; \
 	put_ = 0; \
 	nget_ = 0; \
+	ntget_ = 0; \
 	maxget_ = 0; \
 	chain_ = 0; \
+	chainlast_ = this; \
 } \
  \
-void ArrayPool::grow() { \
+void ArrayPool::grow(long ninc) { \
+	grow_(ninc); \
+	put_ = get_; \
+} \
+ \
+void ArrayPool::grow_(long ninc) { \
 	assert(get_ == put_); \
-	ArrayPool* p = new ArrayPool(count_, d2_); \
-	p->chain_ = chain_; \
-	chain_ = p; \
-	long newcnt = 2*count_; \
+	ArrayPool* p = new ArrayPool(ninc, d2_); \
+	chainlast_->chain_ = p; \
+	chainlast_ = p; \
+	long newcnt = count_ + ninc; \
 	T** itms = new T*[newcnt]; \
 	long i, j; \
-	put_ += count_; \
+	put_ += ninc; \
 	for (i = 0; i < get_; ++i) { \
 		itms[i] = items_[i]; \
 	} \
-	for (i = get_, j = 0; j < count_; ++i, ++j) { \
+	for (i = get_, j = 0; j < ninc; ++i, ++j) { \
 		itms[i] = p->items_[j]; \
 	} \
 	for (i = put_, j = get_; j < count_; ++i, ++j) { \
@@ -92,10 +117,11 @@ ArrayPool::~ArrayPool() { \
 } \
  \
 T* ArrayPool::alloc() { \
-	if (nget_ >= count_) { grow(); } \
+	if (nget_ >= count_) { grow_(count_); } \
 	T* item = items_[get_]; \
 	get_ = (get_+1)%count_; \
 	++nget_; \
+	++ntget_; \
 	if (nget_ > maxget_) { maxget_ = nget_; } \
 	return item; \
 } \
@@ -106,7 +132,7 @@ void ArrayPool::hpfree(T* item) { \
 	put_ = (put_ + 1)%count_; \
 	--nget_; \
 } \
-\
+ \
 void ArrayPool::free_all() { \
 	ArrayPool* pp; \
 	long i; \
@@ -121,6 +147,6 @@ void ArrayPool::free_all() { \
 	assert(put_ == count_); \
 	put_ = 0; \
 } \
-\
+ \
 
 #endif

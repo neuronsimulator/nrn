@@ -113,7 +113,7 @@ public:
 	void name(char*);
 	void change_label_color(GLabel*);
 	void change_line_color(GPolyLine*);
-	void update_ptrs(int, double**, double*);
+	void update_ptrs();
 
 	virtual void save_phase1(ostream&);
 	virtual void save_phase2(ostream&);
@@ -194,7 +194,7 @@ public:
 	int size() { return size_;}
 	int count() {return count_;}
 	double* p(int i) { return px_[i]; }
-	void update_ptrs(int, double**, double*);
+	void update_ptrs();
 private:
 	int count_, size_;
 	double** px_;
@@ -276,7 +276,7 @@ public:
 	void simgraph_activate(boolean);
 	void simgraph_init();
 	void simgraph_continuous(double);
-	void update_ptrs(int, double**, double*);
+	void update_ptrs();
 private:
 	Symbol* expr_;
 	double* pval_;
@@ -302,7 +302,7 @@ public:
 	virtual boolean choose_sym(Graph*);
 	virtual void update(Observable*);
 	DataPointers* py_data() { return dp_; }
-	void update_ptrs(int, double**, double*);
+	void update_ptrs();
 private:
 	DataPointers* dp_;
 	CopyString name_;

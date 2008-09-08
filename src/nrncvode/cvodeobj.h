@@ -7,12 +7,20 @@
 #include "shared/nvector.h"
 #include "membfunc.h"
 
+// when USE_NVSERIAL is 0 then N_VNew_NrnThread is used even for single thread
+// Then, (with USELONGDOUBLE in nvector_nrnthread.c), one should obtain
+// quantitative double precision results independent of number of threads.
+// Note that USE_NVSERIAL 1 should give double precision identity for
+// the serial version and this version with nrn_nthread = 1
+#define USE_NVSERIAL 1
+
 class NetCvode;
 class Daspk;
 class TQItem;
 class TQueue;
 class PreSynList;
 struct BAMech;
+struct NrnThread;
 class PlayRecList;
 class PlayRecord;
 class STEList;
@@ -32,10 +40,45 @@ public:
 	BAMechList(BAMechList** first);
 	BAMechList* next;
 	BAMech* bam;
-	int* indices; // if nil then all in memb_list of bam->type
+	Memb_list* ml;
+	int* indices; // if nil then all in ml
 	int cnt; // number of indices if non nil
 	static void destruct(BAMechList** first);
 	static void alloc(BAMechList* first);
+};
+
+#define CTD(i) ctd_[((nctd_ > 1) ? (i) : 0)]
+class CvodeThreadData {
+public:
+	CvodeThreadData();
+	virtual ~CvodeThreadData();
+	void delete_memb_list(CvMembList*);
+
+	int no_cap_count_; // number of nodes with no capacitance
+	int no_cap_child_count_;
+	Node** no_cap_node_;
+	Node** no_cap_child_; // connected to nodes that have no capacitance
+	CvMembList* cv_memb_list_;
+	CvMembList* cmlcap_;
+	CvMembList* cmlext_; // used only by daspk
+	CvMembList* no_cap_memb_; // used only by cvode, point processes in the no cap nodes
+	BAMechList* before_breakpoint_;
+	BAMechList* after_solve_;
+	BAMechList* before_step_;
+	int rootnodecount_;
+	int v_node_count_;
+	Node** v_node_;
+	Node** v_parent_;
+	PreSynList* psl_th_; // with a threshold
+	HTList* watch_list_;
+	STEList* ste_list_;
+	double** pv_;
+	double** pvdot_;
+	int nvoffset_;
+	int nvsize_;
+	int neq_v_; //for daspk
+	PlayRecList* record_;
+	PlayRecList* play_;
 };
 
 class Cvode {
@@ -67,7 +110,6 @@ public:
 	void stat_init();
 	int advance_calls_, interpolate_calls_, init_calls_;
 	int f_calls_, mxb_calls_, jac_calls_, ts_inits_;
-	HTList* watch_list_;
 private:
 	void alloc_cvode();
 	void alloc_daspk();
@@ -79,13 +121,19 @@ private:
 	int daspk_interpolate(double);
 public:
 	N_Vector nvnew(long);
-	int setup(double* ypred, double* fpred);
-	int solvex(double* b, double* y);
-	void fun(double t, double* y, double* ydot);
-	boolean at_time(double);
+	int setup(N_Vector ypred, N_Vector fpred);
+	int solvex_thread(double* b, double* y, NrnThread* nt);
+	int solvex_thread_part1(double* b, NrnThread* nt);
+	int solvex_thread_part2(NrnThread* nt);
+	int solvex_thread_part3(double* b, NrnThread* nt);
+	void fun_thread(double t, double* y, double* ydot, NrnThread* nt);
+	void fun_thread_part1(double t, double* y, NrnThread* nt);
+	void fun_thread_part2(NrnThread* nt);
+	void fun_thread_part3(double* ydot, NrnThread* nt);
+	boolean at_time(double, NrnThread*);
 	void set_init_flag();
-	void check_deliver();
-	void evaluate_conditions();
+	void check_deliver(NrnThread* nt = 0);
+	void evaluate_conditions(NrnThread* nt = 0);
 	void ste_check();
 	void states(double*);
 	void dstates(double*);
@@ -96,79 +144,81 @@ public:
 	void delete_prl();
 	void record_add(PlayRecord*);
 	void record_continuous();
+	void record_continuous_thread(NrnThread*);
 	void play_add(PlayRecord*);
 	void play_continuous(double t);
-	void delete_memb_list(CvMembList*);
-	void do_ode();
+	void play_continuous_thread(double t, NrnThread*);
+	void do_ode(NrnThread*);
+	void do_nonode(NrnThread* nt = 0);
+	double* n_vector_data(N_Vector, int);
 private:
 	void cvode_constructor();
 	boolean init_global();
 	void init_eqn();
 	void daspk_init_eqn();
 	void matmeth();
-	void nocap_v();
-	void do_nonode();
-	void solvemem();
+	void nocap_v(NrnThread*);
+	void nocap_v_part1(NrnThread*);
+	void nocap_v_part2(NrnThread*);
+	void nocap_v_part3(NrnThread*);
+	void solvemem(NrnThread*);
 	void atolvec_alloc(int);
 	double h();
-	double* ewtvec();
-	double* acorvec();
-	void new_no_cap_memb();
-	void before_after(BAMechList*);
+	N_Vector ewtvec();
+	N_Vector acorvec();
+	void new_no_cap_memb(CvodeThreadData&, NrnThread*);
+	void before_after(BAMechList*, NrnThread*);
 public:
 	// daspk
 	boolean use_daspk_;
 	Daspk* daspk_;
-	int res(double, double*, double*, double*);
-	int jac(double, double*, double*, double);
-	int psol(double, double*, double*, double);
-	void daspk_scatter_y(double*); // daspk solves vi,vx instead of vm,vx
-	void daspk_gather_y(double*);
-	void scatter_y(double*);
-	void gather_y(double*);
-	void scatter_ydot(double*);
-	void gather_ydot(double*);
+	int res(double, double*, double*, double*, NrnThread*);
+	int psol(double, double*, double*, double, NrnThread*);
+	void daspk_scatter_y(N_Vector); // daspk solves vi,vx instead of vm,vx
+	void daspk_gather_y(N_Vector);
+	void daspk_scatter_y(double*, int);
+	void daspk_gather_y(double*, int);
+	void scatter_y(double*, int);
+	void gather_y(N_Vector);
+	void gather_y(double*, int);
+	void scatter_ydot(double*, int);
+	void gather_ydot(N_Vector);
+	void gather_ydot(double*, int);
 public:
 	void activate_maxstate(boolean);
 	void maxstate(double*);
-	void maxstate(boolean);
+	void maxstate(boolean, NrnThread* nt = 0);
 	void maxacor(double*);
 public:
 	void* mem_;
 	N_Vector y_;
 	N_Vector atolnvec_;
-	double* maxstate_;
-	double* maxacor_;
+	N_Vector maxstate_;
+	N_Vector maxacor_;
 public:
-	double* atolvec_; // lives in e_->atolnvec_
 	boolean structure_change_;
 #if USENEOSIM
 	TQueue* neosim_self_events_;
 #endif
 public:
+	CvodeThreadData* ctd_;
+	NrnThread* nth_; // for lvardt
+	int nctd_;
+	long int* nthsizes_; // N_Vector_NrnThread uses this copy of ctd_[i].nvsize_
 	NetCvode* ncv_;
 	int neq_;
-	int neq_v_; //for daspk
 	int event_flag_;
 	double next_at_time_;
 	double tstop_;
 	double tstop_begin_, tstop_end_;
 
-	double** pv_;
-	double** pvdot_;
-	double* scattered_y_;
 private:
-	int no_cap_count; // number of nodes with no capacitance
-	int no_cap_child_count;
-	Node** no_cap_node;
-	Node** no_cap_child; // connected to nodes that have no capacitance
-private:
-	void rhs();
-	void rhs_memb(CvMembList*);
-	void lhs();
-	void lhs_memb(CvMembList*);
-	void triang();
-	void bksub();
+	void rhs(NrnThread*);
+	void rhs_memb(CvMembList*, NrnThread*);
+	void lhs(NrnThread*);
+	void lhs_memb(CvMembList*, NrnThread*);
+	void triang(NrnThread*);
+	void bksub(NrnThread*);
 private:
 	// segregation of old vectorized information to per cell info
 	friend class NetCvode;
@@ -176,23 +226,8 @@ private:
 	boolean local_;
 	void daspk_setup1_tree_matrix(); //unused
 	void daspk_setup2_tree_matrix(); //unused
-	CvMembList* cv_memb_list_;
-	CvMembList* cmlcap_;
-	CvMembList* cmlext_; // used only by daspk
-	CvMembList* no_cap_memb_; // used only by cvode, point processes in the no cap nodes
-	BAMechList* before_breakpoint_;
-	BAMechList* after_solve_;
-	BAMechList* before_step_;
-	int rootnodecount_;
-	int v_node_count_;
-	Node** v_node_;
-	Node** v_parent_;
 	TQItem* tqitem_;
-	PreSynList* psl_th_; // with a threshold
-	STEList* ste_list_;
 private:
-	PlayRecList* record_;
-	PlayRecList* play_;
 	int prior2init_;
 #if PARANEURON
 public:

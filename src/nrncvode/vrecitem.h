@@ -12,6 +12,7 @@ class VecRecordDiscreteSave;
 class VecPlayStepSave;
 class VecPlayContinuousSave;
 class StmtInfo;
+struct NrnThread;
 struct Section;
 
 // SaveState subtypes for PlayRecordType
@@ -25,9 +26,10 @@ class PlayRecordEvent : public DiscreteEvent {
 public:
 	PlayRecordEvent();
 	virtual ~PlayRecordEvent();
-	virtual void deliver(double, NetCvode*);
+	virtual void deliver(double, NetCvode*, NrnThread*);
 	virtual void pr(const char*, double t, NetCvode*);
 	virtual void frecord_init(TQItem* q);
+	virtual NrnThread* thread();
 	PlayRecord* plr_;
 	static unsigned long playrecord_send_;
 	static unsigned long playrecord_deliver_;
@@ -70,6 +72,7 @@ public:
 
 	double* pd_;
 	Cvode* cvode_;
+	int ith_; // The thread index
 };
 
 declarePtrList(PlayRecList, PlayRecord)

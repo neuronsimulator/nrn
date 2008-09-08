@@ -171,9 +171,8 @@ inline Complex  polar(double r, double t)
 #include <stdio.h>
 extern "C" {
 #include "membfunc.h"
-extern void nrn_rhs();
-extern void nrn_lhs();
-extern void nrn_set_cj(double);
+extern void nrn_rhs(NrnThread*);
+extern void nrn_lhs(NrnThread*);
 extern int tree_changed;
 extern int v_structure_change;
 extern void setup_topology();
@@ -325,6 +324,8 @@ void Imp::impfree(){
 }
 
 void Imp::check() {
+	NrnThread* _nt = nrn_threads;
+	nrn_thread_error("Impedance works with only one thread");
 	if (sloc_ && !sloc_->prop) {
 		section_unref(sloc_);
 		sloc_ = nil;
@@ -335,14 +336,15 @@ void Imp::check() {
 	if (v_structure_change) {
 		recalc_diam();
 	}
-	if (n != v_node_count) {
+	if (n != _nt->end) {
 		alloc();
 	}
 }
 
 void Imp::alloc(){
+	NrnThread* _nt = nrn_threads;
 	impfree();
-	n = v_node_count;
+	n = _nt->end;
 	d = new Complex[n];
 	transfer = new Complex[n];
 	input = new Complex[n];
@@ -420,13 +422,14 @@ void Imp::compute(double freq, boolean nonlin){
 }
 
 void Imp::setmat(double omega) {
+	NrnThread* _nt = nrn_threads;
 	int i;
 	setmat1();
 	for (i=0; i < n; ++i) {
-		d[i] = Complex(NODED(v_node[i]), NODERHS(v_node[i]) * omega);
+		d[i] = Complex(NODED(_nt->_v_node[i]), NODERHS(_nt->_v_node[i]) * omega);
 		transfer[i] = 0.;
 	}
-	transfer[istim] = 1.e2/NODEAREA(v_node[istim]); // injecting 1nA
+	transfer[istim] = 1.e2/NODEAREA(_nt->_v_node[istim]); // injecting 1nA
 	// rhs returned is then in units of mV or MegOhms
 }
 
@@ -437,46 +440,63 @@ void Imp::setmat1() {
 		The calculated g is good til someone else
 		changes something having to do with the matrix.
 	*/
+	NrnThread* _nt = nrn_threads;
+	Memb_list* mlc = _nt->tml->ml;
 	int i;
-	nrn_set_cj(0);
-	nrn_rhs(); // not useful except that many model description set g while
+	assert(_nt->tml->index == CAP);
+	for (i=0; i < nrn_nthread; ++i) {
+		nrn_threads[i].cj = 0;
+		nrn_rhs(nrn_threads+i); // not useful except that many model description set g while
 			// computing i
-	nrn_lhs();
-	for (i=0; i < n; ++i) {
-		NODERHS(v_node[i]) = 0;
+		nrn_lhs(nrn_threads+i);
 	}
-	for (i=0; i < memb_list[CAP].nodecount; ++i) {
-		NODERHS(memb_list[CAP].nodelist[i]) = memb_list[CAP].data[i][0];
+	for (i=0; i < n; ++i) {
+		NODERHS(_nt->_v_node[i]) = 0;
+	}
+	for (i=0; i < mlc->nodecount; ++i) {
+		NODERHS(mlc->nodelist[i]) = mlc->data[i][0];
 	}
 }
 
 void Imp::LUDecomp() {
 	int i, ip;
-	for (i=n-1; i >= rootnodecount; --i) {
-		ip = v_parent[i]->v_node_index;
-		pivot[i] = NODEA(v_node[i]) / d[i];
-		d[ip] -= pivot[i] * NODEB(v_node[i]);
+	NrnThread* _nt = nrn_threads;
+	int i1, i2, i3;
+	i1 = 0;
+	i2 = i1 + _nt->ncell;
+	i3 = _nt->end;
+	for (i=i3-1; i >= i2; --i) {
+		ip = _nt->_v_parent[i]->v_node_index;
+		pivot[i] = NODEA(_nt->_v_node[i]) / d[i];
+		d[ip] -= pivot[i] * NODEB(_nt->_v_node[i]);
 	}
 }
 
 void Imp::solve() {
-	int i, ip;
-	for (i=istim; i >= rootnodecount; --i) {
-		ip = v_parent[i]->v_node_index;
+	int i, ip, j;
+    for (j=0; j < nrn_nthread; ++j) {
+	NrnThread* _nt = nrn_threads + j;
+	int i1, i2, i3;
+	i1 = 0;
+	i2 = i1 + _nt->ncell;
+	i3 = _nt->end;
+	for (i=istim; i >= i2; --i) {
+		ip = _nt->_v_parent[i]->v_node_index;
 		transfer[ip] -= transfer[i] * pivot[i];
 	}
-	for (i=0; i < rootnodecount; ++i) {
+	for (i=i1; i < i2; ++i) {
 		transfer[i] /= d[i];
 		input[i] = 1./d[i];
 	}
-	for (i=rootnodecount; i < n; ++i) {
-		ip = v_parent[i]->v_node_index;
-		transfer[i] -= NODEB(v_node[i]) * transfer[ip];
+	for (i=i2; i < i3; ++i) {
+		ip = _nt->_v_parent[i]->v_node_index;
+		transfer[i] -= NODEB(_nt->_v_node[i]) * transfer[ip];
 		transfer[i] /= d[i];
-		input[i] = (1 + input[ip]*pivot[i]*NODEB(v_node[i]))/d[i];
+		input[i] = (1 + input[ip]*pivot[i]*NODEB(_nt->_v_node[i]))/d[i];
 	}
 	// take into account area
-	for (i=rootnodecount; i < n; ++i) {
-		input[i] *= 1e2/NODEAREA(v_node[i]);
+	for (i=i2; i < i3; ++i) {
+		input[i] *= 1e2/NODEAREA(_nt->_v_node[i]);
 	}
+    }
 }

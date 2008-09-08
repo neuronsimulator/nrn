@@ -13,11 +13,11 @@ greater cache efficiency
 void nrn_mk_prop_pools(int n) {}
 void nrn_cache_prop_realloc() {}
 
-double* nrn_prop_data_alloc(int type, int count) {
+double* nrn_prop_data_alloc(int type, int count, Prop* p) {
 	double* pd = (double*)hoc_Ecalloc(count, sizeof(double)); hoc_malchk();
 	return pd;
 }
-Datum* nrn_prop_datum_alloc(int type, int count) {
+Datum* nrn_prop_datum_alloc(int type, int count, Prop* p) {
 	Datum* ppd = (Datum*)hoc_Ecalloc(count, sizeof(Datum)); hoc_malchk();
 	return ppd;
 }

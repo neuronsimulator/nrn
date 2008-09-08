@@ -87,7 +87,7 @@ public:
 	static void keep_updated();
 	static void keep_updated(HocUpdateItem*, boolean);
 	static void paneltool(const char* name, const char* procname, const char* action, ScenePicker*);
-	static void update_ptrs(int, double**, double*);
+	static void update_ptrs();
 private:
 	PolyGlyph* box_;
 	HocUpdateItemList elist_;
@@ -160,8 +160,8 @@ public:
 	virtual void update_hoc_item();
 	virtual void check_pointer(void*, int vector_size);
 	virtual void data_path(HocDataPaths*, boolean);
-	virtual void update_ptrs(int, double**, double*){}
-	void update_ptrs_helper(double**, int, double**, double*);
+	virtual void update_ptrs(){}
+	void update_ptrs_helper(double**);
 };
 
 class HocLabel : public HocItem {
@@ -280,7 +280,7 @@ public:
 	virtual void setlimits(float*);
 	virtual double domain_limits(double);
 	boolean active() { return active_;}
-	virtual void update_ptrs(int, double**, double*);
+	virtual void update_ptrs();
 private:
 	friend class HocEditorForItem;
 	friend class HocValStepper;
@@ -362,7 +362,7 @@ public:
 	virtual void check_pointer(void*, int vector_size);
 	virtual void data_path(HocDataPaths*, boolean);
 	virtual double slider_val();
-	virtual void update_ptrs(int, double**, double*);
+	virtual void update_ptrs();
 private:
 	void audit();
 private:
@@ -391,7 +391,7 @@ class HocStateButton : public HocUpdateItem, public Observer {
   virtual void check_pointer(void*, int);
   virtual void data_path(HocDataPaths*, boolean);
   virtual void print(Printer*, const Allocation&) const;
-  virtual void update_ptrs(int, double**, double*);
+  virtual void update_ptrs();
   enum { CHECKBOX,PALETTE };
 
  private:
@@ -417,7 +417,7 @@ class HocStateMenuItem : public HocUpdateItem, public Observer {
   virtual void check_pointer(void*, int);
   virtual void data_path(HocDataPaths*, boolean);
   virtual void print(Printer*, const Allocation&) const;
-  virtual void update_ptrs(int, double**, double*);
+  virtual void update_ptrs();
 
  private:
   CopyString* variable_;

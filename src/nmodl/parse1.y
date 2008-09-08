@@ -33,8 +33,14 @@ if (!(ierr++))yyerror(arg); --yyps; --yypv; YYERROR
 #endif
 
 int brkpnt_exists;
+int assert_threadsafe;
+extern int protect_;
+extern int vectorize;
 extern int in_comment_; /* allow non-ascii in a COMMENT */
 extern char *modelline;
+extern Item* protect_astmt(Item*, Item*);
+extern List* toplocal_;
+static List* toplocal1_;
 extern List *firstlist; /* NAME symbols in order that they appear in file */
 extern int lexcontext; /* ':' can return 3 different tokens */
 extern List *solveforlist; /* List of symbols that are actually to be solved
@@ -124,8 +130,17 @@ all:	/*nothing*/
 	| all model
 	| all locallist
 		/* move the declarations into firstlist */
-		{replacstr($2, "static double");
-		movelist($2, lastok->next, firstlist);}
+		{Item* q; replacstr($2, "static double");
+		vectorize_substitute($2, "/*Top LOCAL");
+		vectorize_substitute(lastok->next, "*/\n");
+		movelist($2, lastok->next, firstlist);
+		if (!toplocal_) {toplocal_ = newlist();}
+		ITERATE(q, toplocal1_) {
+			assert(SYM(q)->name[0] == '_' && SYM(q)->name[1] == 'l');
+			SYM(q)->name[1] = 'z';
+		}
+		movelist(toplocal1_->next, toplocal1_->prev, toplocal_);
+		}
 	| all define1
 	| all declare
 	| all MODEL_LEVEL INTEGER {model_level = atoi(STR($3));}
@@ -139,6 +154,10 @@ all:	/*nothing*/
 	| all VERBATIM 
 		/* read everything and move as is to end of procfunc */
 		{inblock(SYM($2)->name); replacstr($2, "\n/*VERBATIM*/\n");
+		if (!assert_threadsafe) {
+ 		 fprintf(stderr, "Notice: A VERBATIM block is not thread safe\n");
+		 vectorize = 0;
+		}
 		movelist($2,intoken->prev, procfunc);}
 	| all COMMENT
 		/* read everything and delete */
@@ -367,7 +386,12 @@ stmtlist: '{' {pushlocal();} stmtlist1 {poplocal();}
 	| '{' locallist stmtlist1
 		{poplocal();}
 	;
-locallist: LOCAL locallist1
+locallist: LOCAL
+		{
+		  if (toplocal1_) {freelist(&toplocal1_);}
+		  toplocal1_ = newlist();
+		}
+	   locallist1
 		{ replacstr($1, "double");
 		  Insertstr(lastok->next, ";\n");
 		}
@@ -378,6 +402,7 @@ locallist1: NAME locoptarray
 			the prefix _l */
 		{pushlocal();
 		 SYM($1) = copylocal(SYM($1));
+		 lappendsym(toplocal1_, SYM($1));
 		 if ($2) {
 			SYM($1)->araydim = $2;
 			SYM($1)->subtype |= ARRAY;
@@ -387,6 +412,7 @@ locallist1: NAME locoptarray
 		}
 	| locallist1 ',' NAME locoptarray
 		{SYM($3) = copylocal(SYM($3));
+		 lappendsym(toplocal1_, SYM($3));
 		 if ($4) {
 			SYM($3)->araydim = $4;
 			SYM($3)->subtype |= ARRAY;
@@ -413,7 +439,12 @@ ostmt:	fromstmt
 	| solveblk
 	| VERBATIM 
 		{inblock(SYM($1)->name);
-		replacstr($1, "\n/*VERBATIM*/\n");}
+		replacstr($1, "\n/*VERBATIM*/\n");
+		if (!assert_threadsafe) {
+ 		 fprintf(stderr, "Notice: A VERBATIM block is not thread safe\n");
+		 vectorize = 0;
+		}
+		}
 		
 	| COMMENT
 		{inblock(SYM($1)->name); deltokens($1, intoken->prev);}
@@ -441,9 +472,9 @@ ostmt:	fromstmt
 astmt:	asgn
 		/* ';' is added when relevant */
 		{astmt_end_ = insertsym(lastok->next, semi);}
-	| PROTECT asgn
-		{replacstr($1, "/* PROTECT */");
-		 astmt_end_ = insertsym(lastok->next, semi);
+	| PROTECT {protect_ = 1;} asgn
+		{protect_ = 0; astmt_end_ = insertsym(lastok->next, semi);
+			astmt_end_ = protect_astmt($1, astmt_end_);
 		}
 	| {inequation = 1;} reaction {
 		$$ = $2; inequation = 0;
@@ -626,6 +657,13 @@ funccall: NAME '('
 		{lastok = $5; SYM($1)->usage |= FUNCT;
 		 if (SYM($1)->subtype & EXTDEF2) { extdef2 = 0;}
 		 if (SYM($1)->subtype & EXTDEF3) { add_reset_args($2);}
+		 if (SYM($1)->subtype & EXTDEF4) { add_nrnthread_arg($2);}
+		 if (SYM($1)->subtype & EXTDEF5) {
+			if (!assert_threadsafe) {
+fprintf(stderr, "Notice: %s is not thread safe\n", SYM($1)->name);
+				vectorize = 0;
+			}
+		 }
 #if VECTORIZE
 		 vectorize_use_func($1,$2,$4,$5,blocktype);
 #endif
@@ -1136,6 +1174,7 @@ nrnstmt: /*nothing*/
 	| nrnstmt EXTERNAL nrnlist
 		{ nrn_list($2, $3);}
 	| nrnstmt THREADSAFE
+		{ assert_threadsafe = 1; }
 	;
 nrnuse: USEION NAME READ nrnlist valence
 		{nrn_use($2, $4, ITEM0, $5);}

@@ -162,14 +162,15 @@ void VecPlayStep::play_init() {
 	current_index_ = 0;
 	if (t_) {
 		if (t_->capacity() > 0) {
-			e_->send(t_->elem(0), net_cvode_instance);
+			e_->send(t_->elem(0), net_cvode_instance, nrn_threads);
 		}
 	}else{
-			e_->send(0., net_cvode_instance);
+			e_->send(0., net_cvode_instance, nrn_threads);
 	}
 }
 
 void VecPlayStep::deliver(double tt, NetCvode* ns) {
+	NrnThread* nt = nrn_threads;
 	if (cvode_) {
 		cvode_->set_init_flag();
 	}
@@ -181,10 +182,10 @@ void VecPlayStep::deliver(double tt, NetCvode* ns) {
 	if (current_index_ < y_->capacity()) {
 		if (t_) {
 			if (current_index_ < t_->capacity()) {
-				e_->send(t_->elem(current_index_), ns);
+				e_->send(t_->elem(current_index_), ns, nt);
 			}
 		}else{
-			e_->send(tt + dt_, ns);
+			e_->send(tt + dt_, ns, nt);
 		}
 	}
 }
@@ -248,23 +249,25 @@ void VecPlayContinuous::install(Cvode* cv) {
 }
 
 void VecPlayContinuous::play_init() {
+	NrnThread* nt = nrn_threads;
 	last_index_ = 0;
 	discon_index_ = 0;
 	if (discon_indices_) {
 		if (discon_indices_->capacity() > 0) {
 			ubound_index_ = (int)discon_indices_->elem(discon_index_++);
 //printf("play_init %d %g\n", ubound_index_, t_->elem(ubound_index_));
-			e_->send(t_->elem(ubound_index_), net_cvode_instance);
+			e_->send(t_->elem(ubound_index_), net_cvode_instance, nt);
 		}else{
 			ubound_index_ = t_->capacity()-1;
 		}
 	}else{
 		ubound_index_ = 0;
-		e_->send(t_->elem(ubound_index_), net_cvode_instance);
+		e_->send(t_->elem(ubound_index_), net_cvode_instance, nt);
 	}
 }
 
 void VecPlayContinuous::deliver(double tt, NetCvode* ns) {
+	NrnThread* nt = nrn_threads;
 //printf("deliver %g\n", tt);
 	if (cvode_) {
 		cvode_->set_init_flag();
@@ -274,14 +277,14 @@ void VecPlayContinuous::deliver(double tt, NetCvode* ns) {
 		if (discon_index_ < discon_indices_->capacity()) {
 			ubound_index_ = (int)discon_indices_->elem(discon_index_++);
 //printf("after deliver:send %d %g\n", ubound_index_, t_->elem(ubound_index_));
-			e_->send(t_->elem(ubound_index_), ns);
+			e_->send(t_->elem(ubound_index_), ns, nt);
 		}else{
 			ubound_index_ = t_->capacity() - 1;
 		}
 	}else{
 		if (ubound_index_ < t_->capacity() - 1) {
 			ubound_index_++;
-			e_->send(t_->elem(ubound_index_), ns);
+			e_->send(t_->elem(ubound_index_), ns, nt);
 		}
 	}
 	continuous(tt);

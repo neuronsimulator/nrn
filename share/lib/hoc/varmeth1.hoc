@@ -30,6 +30,7 @@ proc fixed() {
 }
 
 proc varstep() {
+	refresh()
 	isvar_ = $1  isvar()
 }
 

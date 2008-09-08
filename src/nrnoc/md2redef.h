@@ -12,6 +12,7 @@
 #undef i
 #undef sec
 
+#undef NrnThread
 #undef Memb_list
 #undef nodelist
 #undef nodeindices
@@ -19,7 +20,9 @@
 #undef pdata
 #undef prop
 #undef nodecount
+#undef pval
 
 #undef type
+#undef id
 
 #endif

@@ -260,6 +260,7 @@ proc pl_connection() { local i
 proc build() {
 	box = new HBox(3)
 	box.save("save()")
+	box.priority(900)
 	box.ref(this)
 	box.dismiss_action("dismiss()")
 	box.intercept(1)

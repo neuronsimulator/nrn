@@ -24,6 +24,10 @@
    d and rhs is calculated from the property list.
 */
 
+#if defined(__cplusplus)
+extern "C" {
+#endif
+
 #include "nrnredef.h"
 #include "options.h"
 #include "hoclist.h"
@@ -99,9 +103,6 @@ typedef struct Info3Val {	/* storage to help build matrix efficiently */
 the notify_free_val parameter in node_free in solve.c
 */
 
-#define actual_d nrn_actual_d
-#define actual_rhs nrn_actual_rhs
-extern double *actual_d, *actual_rhs;
 #define NODED(n) (*((n)->_d))
 #define NODERHS(n) (*((n)->_rhs))
 
@@ -114,23 +115,16 @@ extern double *actual_d, *actual_rhs;
 #define NODEV(n) (*((n)->_v))
 #define NODEAREA(n) ((n)->_area)
 #define NODERINV(n) ((n)->_rinv)
-#define actual_a nrn_actual_a
-#define actual_b nrn_actual_b
-#define actual_v nrn_actual_v
-#define actual_area nrn_actual_area
-extern double *actual_a, *actual_b, *actual_v, *actual_area;
-extern int *v_parent_index;
-#define VEC_A(i) (actual_a[(i)])
-#define VEC_B(i) (actual_b[(i)])
-#define VEC_D(i) (actual_d[(i)])
-#define VEC_RHS(i) (actual_rhs[(i)])
-#define VEC_V(i) (actual_v[(i)])
-#define VEC_AREA(i) (actual_area[(i)])
+#define VEC_A(i) (_nt->_actual_a[(i)])
+#define VEC_B(i) (_nt->_actual_b[(i)])
+#define VEC_D(i) (_nt->_actual_d[(i)])
+#define VEC_RHS(i) (_nt->_actual_rhs[(i)])
+#define VEC_V(i) (_nt->_actual_v[(i)])
+#define VEC_AREA(i) (_nt->_actual_area[(i)])
 #define NODEA(n) (VEC_A((n)->v_node_index))
 #define NODEB(n) (VEC_B((n)->v_node_index))
 #endif /* CACHEVEC */
 
-extern char* sp13mat_; /* handle to general sparse matrix */
 extern int use_sparse13;
 extern int use_cachevec;
 
@@ -159,6 +153,7 @@ typedef struct Node {
 	Section* sec;		/* section this node is in */
 /* #if PARANEURON */
 	struct Node* _classical_parent; /* needed for multisplit */
+	struct NrnThread* _nt;
 /* #endif */
 #if EXTRACELLULAR
 	struct Extnode* extnode;
@@ -214,6 +209,8 @@ typedef struct Extnode {
 #include "hocdec.h"		/* Prop needs Datum and Datum needs Symbol */
 #endif
 
+#define PROP_PY_INDEX 10
+
 typedef struct Prop {
 	struct Prop	*next;	/* linked list of properties */
 	short	type;		/* type of membrane, e.g. passive, HH, etc. */
@@ -224,11 +221,12 @@ typedef struct Prop {
 			    of other properties but maybe other things as well
 			    for example one cable section property is a
 			    symbol */
+	long _alloc_seq; /* for cache efficiency */
 	Object* ob;	/* nil if normal property, otherwise the object containing the data*/
 } Prop;
 
-extern double* nrn_prop_data_alloc(int type, int count);
-extern Datum* nrn_prop_datum_alloc(int type, int count);
+extern double* nrn_prop_data_alloc(int type, int count, Prop* p);
+extern Datum* nrn_prop_datum_alloc(int type, int count, Prop* p);
 extern void nrn_prop_data_free(int type, double* pd);
 extern void nrn_prop_datum_free(int type, Datum* ppd);
 
@@ -258,6 +256,7 @@ typedef struct Point_process {
 	Object* ob;	/* object that owns this process */
 	void* presyn_;	/* non-threshold presynapse for NetCon */
 	void* nvi_;	/* NrnVarIntegrator (for local step method) */
+	void* _vnt;	/* NrnThread* (for NET_RECEIVE and multicore) */
 	int iml_;	/* index into the Memb_list (used by SaveState) */
 } Point_process;
 
@@ -294,7 +293,7 @@ typedef struct Eqnblock {
 } Eqnblock;
 #endif /*EXTRAEQN*/
 
-extern int rootnodecount;
+extern int nrn_global_ncell; /* note that for multiple threads all the rootnodes are no longer contiguous */
 extern hoc_List* section_list;	/* Where the Sections live */
 
 extern Section* chk_access();
@@ -308,20 +307,22 @@ extern void	node_alloc();		/* Allocates node vectors in a section*/
 extern double section_length(), nrn_diameter();
 extern double nrn_ghk();
 #endif
-
-/* vectorization no longer optional since change to section list */
-#if VECTORIZE
-extern int v_node_count;
-extern Node** v_node;
-extern Node** v_parent;
-#endif
+extern Node* nrn_parent_node(Node*);
 
 /* loop over sections. Must previously declare Item* qsec. Contains the {! */
 #define ForAllSections(sec) \
 	ITERATE(qsec, section_list) { Section* sec = hocSEC(qsec);
 
-#endif
-
 #if METHOD3
 extern int _method3;
 #endif
+
+#include <multicore.h>
+
+#if defined(__cplusplus)
+}
+#endif
+
+#endif
+
+

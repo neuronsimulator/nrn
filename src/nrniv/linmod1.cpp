@@ -8,6 +8,9 @@
 #include "linmod.h"
 #include "nrnoc2iv.h"
 
+extern "C" {
+extern double* nrn_recalc_ptr(double*);
+}
 //hoc interface to a LinearModelAddition
 // remember that the policy for equation additions to the tree matrix is
 // cmat*y' + gmat*y = b and where the first nnode rows specify
@@ -27,7 +30,7 @@ public:
 	void create();
 	void lmfree();
 	boolean valid() { return model_ != nil; }
-	void update_ptrs(int, double**, double*);
+	void update_ptrs();
 
 	LinearModelAddition* model_;
 	Matrix* c_;
@@ -40,10 +43,10 @@ public:
 	Vect* elayer_;
 };
 
-extern void nrn_linmod_update_ptrs(void*, int, double**, double*);
-void nrn_linmod_update_ptrs(void* p, int ncnt, double** oldvp, double* newv) {
+extern void nrn_linmod_update_ptrs(void*);
+void nrn_linmod_update_ptrs(void* p) {
 	LinearMechanism* lm = (LinearMechanism*)p;
-	lm->update_ptrs(ncnt, oldvp, newv);
+	lm->update_ptrs();
 }
 
 static double valid(void* v) {
@@ -98,14 +101,16 @@ void LinearMechanism::lmfree() {
 	}
 }
 
-void LinearMechanism::update_ptrs(int, double**, double* newv) {
+void LinearMechanism::update_ptrs() {
 	if (nodes_) {
 #if HAVE_IV
 		Oc oc;
 		oc.notify_pointer_disconnect(this);
 		for (int i=0; i < nnode_; ++i) {
-			int k = (int)NODEV(nodes_[i]);
-			oc.notify_when_freed(newv + k, this);
+			double* pd = nrn_recalc_ptr(&(NODEV(nodes_[i])));
+			if (pd != &(NODEV(nodes_[i]))) {
+				oc.notify_when_freed(pd, this);
+			}
 		}
 #endif
 	}

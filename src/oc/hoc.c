@@ -706,9 +706,6 @@ hoc_main1_init(pname, envp)
 	static int inited = 0;
 	
 	hoc_promptstr = "oc>";
-#if NRN_FLOAT_EXCEPTION
-nrn_fpsetmask();
-#endif
 	yystart = 1;
 	lineno = 0;
 	if (inited) {
@@ -753,6 +750,9 @@ nrn_fpsetmask();
 	initplot(envp);
 #if defined(__GO32__)
 	setcbrk(0);
+#endif
+#if NRN_FLOAT_EXCEPTION
+nrn_fpsetmask();
 #endif
 }
 

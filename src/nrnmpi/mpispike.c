@@ -60,7 +60,7 @@ static void make_spike_type() {
 	MPI_Type_struct(2, block_lengths, displacements, typelist, &spike_type);
 	MPI_Type_commit(&spike_type);
 
-	MPI_Op_create(pgvts_op, 1, &mpi_pgvts_op);
+	MPI_Op_create((MPI_User_function*)pgvts_op, 1, &mpi_pgvts_op);
 }
 
 void nrnmpi_spike_initialize() {

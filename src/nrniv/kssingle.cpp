@@ -129,7 +129,6 @@
 //----------------
 
 extern "C" {
-extern double t, dt;
 extern int cvode_active_;
 }
 extern NetCvode* net_cvode_instance;
@@ -221,28 +220,28 @@ KSSingleNodeData::KSSingleNodeData() {
 KSSingleNodeData::~KSSingleNodeData() {
 }
 
-void KSSingleNodeData::deliver(double tt, NetCvode* nc) {
+void KSSingleNodeData::deliver(double tt, NetCvode* nc, NrnThread* nt) {
 	++KSSingle::singleevent_deliver_;
 	Cvode* cv = (Cvode*)((*ppnt_)->nvi_);
 	if (cv) {
 		nc->retreat(tt, cv);
 		cv->set_init_flag();
 	}
-	assert(t == tt);
+	assert(nt->_t == tt);
 	vlast_ = NODEV((*ppnt_)->node);
 	if (nsingle_ == 1) {
 		kss_->do1trans(this);
 	}else{
 		kss_->doNtrans(this);
 	}
-	qi_ = nc->event(t1_, this);
+	qi_ = nc->event(t1_, this, nt);
 }
 
 void KSSingleNodeData::pr(const char* s, double tt, NetCvode* nc) {
 	printf("%s %s %.15g\n", s, hoc_object_name((*ppnt_)->ob), tt);
 }
 
-void KSSingle::state(Node* nd, double* p, Datum* pd) {
+void KSSingle::state(Node* nd, double* p, Datum* pd, NrnThread* nt) {
 	// integrate from t-dt to t
 	int i;
 	double v = NODEV(nd);
@@ -251,28 +250,28 @@ void KSSingle::state(Node* nd, double* p, Datum* pd) {
 	// then follow the one populated state. Otherwise do the
 	// general case
 	if (snd->nsingle_ == 1) {
-		one(v, snd);
+		one(v, snd, nt);
 	}else{
-		multi(v, snd);
+		multi(v, snd, nt);
 	}
 }
 
-void KSSingle::cv_update(Node* nd, double* p, Datum* pd) {
+void KSSingle::cv_update(Node* nd, double* p, Datum* pd, NrnThread* nt) {
 	// if v changed then need to move the outstanding
 	// single channel event time to a recalculated time
 	int i;
 	double v = NODEV(nd);
 	KSSingleNodeData* snd = (KSSingleNodeData*)pd[sndindex_]._pvoid;
 	if (uses_ligands_ || !vsame(v, snd->vlast_)) {
-		assert(t < snd->t1_);
+		assert(nt->_t < snd->t1_);
 		snd->vlast_ = v;
-		snd->t0_ = t;
+		snd->t0_ = nt->_t;
 		if (snd->nsingle_ == 1) {
 			next1trans(snd);
 		}else{
 			nextNtrans(snd);
 		}
-		net_cvode_instance->move_event(snd->qi_, snd->t1_);
+		net_cvode_instance->move_event(snd->qi_, snd->t1_, nt);
 		++KSSingle::singleevent_move_;
 	}
 }
@@ -289,13 +288,13 @@ int KSSingle::rvalrand(int n) {
 	return n; 
 }
 
-void KSSingle::one(double v, KSSingleNodeData* snd) {
+void KSSingle::one(double v, KSSingleNodeData* snd, NrnThread* nt) {
 	if (uses_ligands_ || !vsame(v, snd->vlast_)) {
 		snd->vlast_ = v;
-		snd->t0_ = t - dt;
+		snd->t0_ = nt->_t - nt->_dt;
 		next1trans(snd);
 	}
-	while (snd->t1_ <= t) {
+	while (snd->t1_ <= nt->_t) {
 		snd->vlast_ = v;
 		do1trans(snd);
 	}
@@ -330,13 +329,13 @@ void KSSingle::next1trans(KSSingleNodeData* snd) {
 //printf("KSSingle::next1trans v=%g t1_=%g %d (%d, %d)\n", snd->vlast_, snd->t1_, snd->next_trans_,
 //transitions_[snd->next_trans_].src_, transitions_[snd->next_trans_].target_);
 }
-void KSSingle::multi(double v, KSSingleNodeData* snd) {
+void KSSingle::multi(double v, KSSingleNodeData* snd, NrnThread* nt) {
 	if (uses_ligands_ || !vsame(v, snd->vlast_)) {
 		snd->vlast_ = v;
-		snd->t0_ = t - dt;
+		snd->t0_ = nt->_t - nt->_dt;
 		nextNtrans(snd);
 	}
-	while (snd->t1_ <= t) {
+	while (snd->t1_ <= nt->_t) {
 		snd->vlast_ = v;
 		doNtrans(snd);
 	}
@@ -382,13 +381,13 @@ void KSSingle::alloc(Prop* p, int sindex) { // and discard old if not nil
 	snd->statepop_ = p->param + sindex;
 }
 
-void KSSingle::init(double v, double* s, KSSingleNodeData* snd) {
+void KSSingle::init(double v, double* s, KSSingleNodeData* snd, NrnThread* nt) {
 	// assuming 1-1 correspondence between KSChan and KSSingle states
 	// place steady state population intervals end to end
 	int i;
 	double x = 0;
 	snd->qi_ = nil;
-	snd->t0_ = t;
+	snd->t0_ = nt->_t;
 	snd->vlast_ = v;
 	for (i=0; i < nstate_; ++i) {
 		x += s[i];	
@@ -413,7 +412,7 @@ void KSSingle::init(double v, double* s, KSSingleNodeData* snd) {
 //}
 	}
 	if (cvode_active_) {
-		snd->qi_ = net_cvode_instance->event(snd->t1_, snd);
+		snd->qi_ = net_cvode_instance->event(snd->t1_, snd, nrn_threads);
 	}
 }
 

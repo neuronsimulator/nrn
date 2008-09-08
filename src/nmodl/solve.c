@@ -187,15 +187,14 @@ solvhandler()
 		switch (fun->subtype) {
 
 		case DERF:
-#if VECTORIZE
-			vectorize = 0;
-#endif
 			if (method == SYM0) {
 				method = lookup("adrunge");
 			}
 			if (btype == BREAKPOINT && !steadystate) {
 				/* derivatives recalculated after while loop */
-		if (strcmp(method->name, "cnexp") != 0 ) {
+if (strcmp(method->name, "cnexp") != 0 && strcmp(method->name, "derivimplicit") != 0) {
+fprintf(stderr, "Notice: %s is not thread safe. Complain to Hines\n", method->name);
+				vectorize = 0;
 				Sprintf(buf, " %s();\n", fun->name);
 				Insertstr(follow, buf);
 		}
@@ -214,6 +213,7 @@ solvhandler()
 			}
 			if (btype == BREAKPOINT && (method->subtype & DERF)) {
 #if VECTORIZE
+fprintf(stderr, "Notice: KINETIC with is thread safe only with METHOD sparse. Complain to Hines\n");
 				vectorize = 0;
 #endif
 				/* derivatives recalculated after while loop */
@@ -236,6 +236,7 @@ solvhandler()
 			break;
 		case NLINF:
 #if VECTORIZE
+fprintf(stderr, "Notice: NONLINEAR is not thread safe.\n");
 			vectorize = 0;
 #endif
 			if (method == SYM0) {
@@ -245,6 +246,7 @@ solvhandler()
 			break;
 		case LINF:
 #if VECTORIZE
+fprintf(stderr, "Notice: LINEAR is not thread safe.\n");
 			vectorize = 0;
 #endif
 			if (method == SYM0) {
@@ -254,10 +256,11 @@ solvhandler()
 			break;
 		case DISCF:
 #if VECTORIZE
+fprintf(stderr, "Notice: DISCRETE is not thread safe.\n");
 			vectorize = 0;
 #endif
 			if (btype == BREAKPOINT) whileloop(qsol, (long)DISCRETE, 0);
-			Sprintf(buf, "0; %s += delta_%s; %s();\n",
+			Sprintf(buf, "0; %s += d%s; %s();\n",
 				indepsym->name, indepsym->name, fun->name);
 			replacstr(qsol, buf);
 			break;
@@ -286,14 +289,15 @@ solvhandler()
 			Sprintf(buf, " %s();\n", fun->name);
 			replacstr(qsol, buf);
 #if VECTORIZE
-	Sprintf(buf, "%s for (_ix = 0; _ix < _count; ++_ix) { %s(_ix); }\n",
-		cray_pragma(), fun->name);
+	Sprintf(buf, "{ %s(_p, _ppvar, _thread, _nt); }\n",
+		fun->name);
 	vectorize_substitute(qsol, buf);
 #endif
 			break;
 #endif
 		case PARF:
 #if VECTORIZE
+fprintf(stderr, "Notice: PARTIAL is not thread safe.\n");
 			vectorize = 0;
 #endif
 			if (btype == BREAKPOINT) whileloop(qsol, (long)DERF, 0);
@@ -316,6 +320,7 @@ solvhandler()
 		vectorize_substitute(qsol->next, "");
 		vectorize_substitute(qsol->prev, "");
 	}else{
+fprintf(stderr, "Notice: SOLVE with ERROR is not thread safe.\n");
 		vectorize = 0;
 	}
 #endif
@@ -412,7 +417,7 @@ Sprintf(buf, "_modl_set_dt(_dt) double _dt; { %s = _dt;}\n",
 #endif
 		}
 		if (type == DERF) {
-			cp = deltaindep->name;
+			cp = "dt";
 		}else if (type == DISCRETE) {
 			cp = "0.0";
 		}
@@ -453,17 +458,17 @@ at a time.\n");
 /* ensure that there are an integer number of steps / break */
 if (type == DERF) {
 	Sprintf(buf, " { int _nstep; double _dt, _y;\n\
-	_y = _break - %s; _dt = %s;\n", indepsym->name, deltaindep->name);
+	_y = _break - %s; _dt = %s;\n", indepsym->name, "dt");
  	Insertstr(qsol, buf);
  	Insertstr(qsol, "_nstep = (int)(_y/_dt + .9);\n if (_nstep==0) _nstep = 1;\n");
- 	Sprintf(buf, "%s = _y/((double)_nstep);\n", deltaindep->name);
+ 	Sprintf(buf, "%s = _y/((double)_nstep);\n", "dt");
  	Insertstr(qsol, buf);
 	Sprintf(buf, "\n  }\n");
 	Insertstr(qsol, buf);
 }
  
 	if (type == DERF) {
-		Sprintf(buf, "_break -= .5* %s;\n", deltaindep->name);
+		Sprintf(buf, "_break -= .5* %s;\n", "dt");
 		Insertstr(qsol, buf);
 	}
 #endif

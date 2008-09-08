@@ -18,7 +18,7 @@ EXTRA_DIST = cout.c lex.c nmodl.mak
 AM_YFLAGS = -d
 
 ## The list of .h files that are needed in the distribution.
-noinst_HEADERS = extdef.h extdef2.h modl.h symbol.h parse1.h \
+noinst_HEADERS = extdef.h extdef2.h extdef5.h modl.h symbol.h parse1.h \
 	difeqdef.h macnmodl.h carbonnmodl.h
 
 

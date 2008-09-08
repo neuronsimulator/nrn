@@ -275,6 +275,9 @@ extern	double *getarg();
 extern	char	*gargstr();
 #endif
 
+extern void* nrn_cacheline_alloc(void** memptr, size_t size);
+extern void* nrn_cacheline_calloc(void** memptr, size_t nmemb, size_t size);
+
 #define emalloc(arg)	hoc_Emalloc(arg), hoc_malchk()
 #define ecalloc(arg1,arg2)	hoc_Ecalloc(arg1,arg2), hoc_malchk()
 #define erealloc(arg1,arg2)	hoc_Erealloc(arg1,arg2), hoc_malchk()

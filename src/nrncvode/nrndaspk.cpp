@@ -33,24 +33,24 @@ extern "C" {
 	
 extern void linmod_dkres(double*, double*, double*);
 extern void linmod_dkpsol(double);
-extern void nrn_rhs();
-extern void nrn_lhs();
-extern void nrn_solve();
-extern void nrn_set_cj(double);
-void nrn_daspk_init_step(double, int);
+extern void nrn_rhs(NrnThread*);
+extern void nrn_lhs(NrnThread*);
+extern void nrn_solve(NrnThread*);
+void nrn_daspk_init_step(double, double, int);
 // this is private in ida.c but we want to check if our initialization
 // is good. Unfortunately ewt is set on the first call to solve which
 // is too late for us.
 extern booleantype IDAEwtSet(IDAMem IDA_mem, N_Vector ycur);
 
-extern double t, dt;
-extern int nrn_cvode_;
+//extern double t, dt;
+#define nt_dt nrn_threads->_dt
+#define nt_t nrn_threads->_t
 
-static void daspk_nrn_solve() {
-	nrn_solve();
+static void daspk_nrn_solve(NrnThread* nt) {
+	nrn_solve(nt);
 }
 
-static int res(
+static int res_gvardt(
 	realtype t, N_Vector y, N_Vector yp, N_Vector delta,
 	void* rdata
 );
@@ -69,14 +69,40 @@ static int mfree(IDAMem);
 
 }
 
+
+// at least in DARWIN the following is already declared so avoid conflict
+#define thread_t nrn_thread_t
+
 // residual
-static int res(
+static N_Vector nvec_y;
+static N_Vector nvec_yp;
+static N_Vector nvec_delta;
+static double thread_t;
+static double thread_cj;
+static int thread_ier;
+static Cvode* thread_cv;
+static void* res_thread(NrnThread* nt) {
+	int i = nt->id;
+	Cvode* cv = thread_cv;
+	int ier = cv->res(thread_t, cv->n_vector_data(nvec_y, i),
+		cv->n_vector_data(nvec_yp, i), cv->n_vector_data(nvec_delta, i), nt);
+	if (ier != 0) {
+		thread_ier = ier;
+	}
+	return 0;
+}
+static int res_gvardt(
 	realtype t, N_Vector y, N_Vector yp, N_Vector delta,
 	void* rdata
 ){
-	Cvode* cv = (Cvode*)rdata;
-	int ier = cv->res(t, N_VGetArrayPointer(y), N_VGetArrayPointer(yp), N_VGetArrayPointer(delta));
-	return ier;
+	thread_cv = (Cvode*)rdata;
+	nvec_y = y;
+	nvec_yp = yp;
+	nvec_delta = delta;
+	thread_t = t;
+	thread_ier = 0;
+	nrn_multithread_job(res_thread);
+	return thread_ier;
 }
 
 // linear solver specific allocation and initialization
@@ -90,18 +116,29 @@ static int msetup(IDAMem mem, N_Vector y, N_Vector yp, N_Vector,
 	N_Vector, N_Vector, N_Vector
 ){
 	Cvode* cv = (Cvode*)mem->ida_rdata;
-	dt = mem->ida_hh;
-	int ier = cv->jac(mem->ida_tn, N_VGetArrayPointer(y), N_VGetArrayPointer(yp),
-		mem->ida_cj);
-	return ier;
+	++cv->jac_calls_;
+	return 0;
 }
 
 /* solve P*x = b */
+static void* msolve_thread(NrnThread* nt) {
+	int i = nt->id;
+	Cvode* cv = thread_cv;
+	int ier = cv->psol(thread_t, cv->n_vector_data(nvec_y, i),
+		cv->n_vector_data(nvec_yp, i), thread_cj, nt);
+	if (ier != 0) {
+		thread_ier = ier;
+	}
+	return 0;
+}
 static int msolve(IDAMem mem, N_Vector b, N_Vector w, N_Vector ycur, N_Vector, N_Vector){
-	Cvode* cv = (Cvode*)mem->ida_rdata;
-	int ier = cv->psol(mem->ida_tn, N_VGetArrayPointer(ycur), N_VGetArrayPointer(b),
-		mem->ida_cj);
-	return ier;
+	thread_cv = (Cvode*)mem->ida_rdata;
+	thread_t = mem->ida_tn;
+	nvec_y = ycur;
+	nvec_yp = b;
+	thread_cj = mem->ida_cj;
+	nrn_multithread_job(msolve_thread);
+	return thread_ier;
 }
 
 static int mfree(IDAMem) {return IDA_SUCCESS;}
@@ -129,7 +166,7 @@ Daspk::~Daspk() {
 void Daspk::ida_init() {
 	int ier;
 	if (mem_) {
-		ier = IDAReInit(mem_, res, cv_->t_, cv_->y_, yp_,
+		ier = IDAReInit(mem_, res_gvardt, cv_->t_, cv_->y_, yp_,
 			IDA_SV, &cv_->ncv_->rtol_, cv_->atolnvec_
 		);
 		if (ier < 0) {
@@ -141,7 +178,7 @@ void Daspk::ida_init() {
 			hoc_execerror("IDAMalloc error", 0);
 		}
 		IDASetRdata(mem, cv_);
-		ier = IDAMalloc(mem, res, cv_->t_, cv_->y_, yp_,
+		ier = IDAMalloc(mem, res_gvardt, cv_->t_, cv_->y_, yp_,
 			IDA_SV, &cv_->ncv_->rtol_, cv_->atolnvec_
 		);
 		mem->ida_linit = minit;
@@ -163,6 +200,18 @@ int Daspk::init_failure_style_;
 int Daspk::init_try_again_;
 int Daspk::first_try_init_failures_;
 
+static void* do_ode_thread(NrnThread* nt) {
+	int i;
+	Cvode* cv = thread_cv;
+	cv->do_ode(nt);
+	CvodeThreadData& z = cv->ctd_[nt->id];
+	double* yp = cv->n_vector_data(nvec_yp, nt->id);
+	for (i=z.neq_v_; i < z.nvsize_; ++i) {
+		yp[i] = *(z.pvdot_[i]);
+	}
+	return 0;
+}
+
 int Daspk::init() {
 	int i;
 #if 0
@@ -176,50 +225,44 @@ cv_->t_, t-cv_->t_, cv_->t0_-cv_->t_);
 	// start the following initial condition calculation with a "valid"
 	// (in a linear system sense) initial state.
 
-	t = cv_->t_;
+	double tt = cv_->t_;
 	double dtinv = 1./dteps_;
-	double* yp;
     if (init_failure_style_ & 010) {
-	cv_->play_continuous(t);
-	nrn_daspk_init_step(dteps_, 1);
-	nrn_daspk_init_step(dteps_, 1);
-	yp = N_VGetArrayPointer(yp_);
-	cv_->daspk_gather_y(yp);
-	t = cv_->t_ + dteps_;
-	cv_->play_continuous(t);
-	nrn_daspk_init_step(dteps_, 1);
-	cv_->daspk_gather_y(N_VGetArrayPointer(cv_->y_));
+	cv_->play_continuous(tt);
+	nrn_daspk_init_step(tt, dteps_, 1);
+	nrn_daspk_init_step(tt, dteps_, 1);
+	cv_->daspk_gather_y(yp_);
+	cv_->play_continuous(tt);
+	nrn_daspk_init_step(tt, dteps_, 1);
+	cv_->daspk_gather_y(cv_->y_);
 	N_VLinearSum(dtinv, cv_->y_, -dtinv, yp_, yp_);
     }else{
 #if 0
-	cv_->play_continuous(t);
-	nrn_daspk_init_step(dteps_, 1);
-	cv_->daspk_gather_y(N_VGetArrayPointer(cv_->y_));
-	t = cv_->t_ + dteps_;
-	cv_->play_continuous(t);
-	nrn_daspk_init_step(dteps_, 1);
-	yp = N_VGetArrayPointer(yp_);
-	cv_->daspk_gather_y(yp);
+	cv_->play_continuous(tt);
+	nrn_daspk_init_step(tt, dteps_, 1);
+	cv_->daspk_gather_y(cv_->y_);
+	tt = cv_->t_ + dteps_;
+	cv_->play_continuous(tt);
+	nrn_daspk_init_step(tt, dteps_, 1);
+	cv_->daspk_gather_y(yp_);
 	N_VLinearSum(dtinv, yp_, -dtinv, cv_->y_, yp_);
-	cv_->daspk_scatter_y(N_VGetArrayPointer(cv_->y_));
+	cv_->daspk_scatter_y(cv_->y_);
 #else
-	cv_->play_continuous(t);
-	nrn_daspk_init_step(dteps_, 1); // first approx to y (and maybe good enough)
-	nrn_daspk_init_step(dteps_, 1); // 2nd approx to y (trouble with 2sramp.hoc)
-	cv_->daspk_gather_y(N_VGetArrayPointer(cv_->y_));
-	t = cv_->t_ + dteps_;
-	cv_->play_continuous(t);
-	nrn_daspk_init_step(dteps_, 0); // rhs contains delta y (for v, vext, linmod
-	cv_->gather_ydot(N_VGetArrayPointer(yp_));
+	cv_->play_continuous(tt);
+	nrn_daspk_init_step(tt, dteps_, 1); // first approx to y (and maybe good enough)
+	nrn_daspk_init_step(tt, dteps_, 1); // 2nd approx to y (trouble with 2sramp.hoc)
+
+	cv_->daspk_gather_y(cv_->y_);
+	tt = cv_->t_ + dteps_;
+	cv_->play_continuous(tt);
+	nrn_daspk_init_step(tt, dteps_, 0); // rhs contains delta y (for v, vext, linmod
+	cv_->gather_ydot(yp_);
 	N_VScale(dtinv, yp_, yp_);
-	yp = N_VGetArrayPointer(yp_);
 #endif
     }
-	t=cv_->t_;
-	cv_->do_ode();
-	for (i=cv_->neq_v_; i < cv_->neq_; ++i) {
-		yp[i] = *(cv_->pvdot_[i]);
-	}
+	thread_cv = cv_;
+	nvec_yp = yp_;
+	nrn_multithread_job(do_ode_thread);
 	ida_init();
 #if 1
 	// test
@@ -228,7 +271,7 @@ cv_->t_, t-cv_->t_, cv_->t0_-cv_->t_);
 		hoc_execerror("Bad Ida error weight vector", 0);
 	}
 	use_parasite_ = false;
-	cv_->res(t, N_VGetArrayPointer(cv_->y_), N_VGetArrayPointer(yp_), N_VGetArrayPointer(parasite_));
+	res_gvardt(tt, cv_->y_, yp_, parasite_, cv_);
 	double norm = N_VWrmsNorm(parasite_, ((IDAMem)mem_)->ida_ewt);
 //printf("norm=%g at t=%g\n", norm, t);
 	if (norm > 1.) {
@@ -243,13 +286,13 @@ cv_->t_, t-cv_->t_, cv_->t0_-cv_->t_);
 	    case 2:
 		printf("IDA initialization warning, weighted norm of residual=%g\n", norm);
 		use_parasite_ = true;
-		t_parasite_ = t;
-		printf("  subtracting (for next 1e-6 ms): f(y', y, %g)*exp(-1e7*(t-%g))\n", t, t);
+		t_parasite_ = nt_t;
+		printf("  subtracting (for next 1e-6 ms): f(y', y, %g)*exp(-1e7*(t-%g))\n", nt_t, nt_t);
 		break;
 	    }
 #if 0
 for (i=0; i < cv_->neq_; ++i) {
-	printf("   %d %g %g %g %g\n", i, t, N_VGetArrayPointer(cv_->y_)[i], N_VGetArrayPointer(yp_)[i], N_VGetArrayPointer(delta_)[i]);
+	printf("   %d %g %g %g %g\n", i, nt_t, N_VGetArrayPointer(cv_->y_)[i], N_VGetArrayPointer(yp_)[i], N_VGetArrayPointer(delta_)[i]);
 }
 #endif
 		if (init_try_again_ < 0) {
@@ -284,7 +327,7 @@ int Daspk::advance_tn(double tstop) {
 #else
 	// this is very bad, performance-wise. However ida modifies its states
 	// after a call to fun with the proper t.
-	cv_->res(cv_->t_, N_VGetArrayPointer(cv_->y_), N_VGetArrayPointer(yp_), N_VGetArrayPointer(delta_));
+	res_gvardt(cv_->t_, cv_->y_, yp_, delta_, cv_);
 #endif
 	cv_->t0_ = tn;
 	cv_->tn_ = cv_->t_;
@@ -303,7 +346,7 @@ int Daspk::interpolate(double tt) {
 	}
 	assert(MyMath::eq(tt, cv_->t_, NetCvode::eps(cv_->t_)));
 	// interpolation does not call res. So we have to.
-	cv_->res(cv_->t_, N_VGetArrayPointer(cv_->y_), N_VGetArrayPointer(yp_), N_VGetArrayPointer(delta_));
+	res_gvardt(cv_->t_, cv_->y_, yp_, delta_, cv_);
 //if(MyMath::eq(t, cv_->t_, NetCvode::eps(cv_->t_))) {
 //printf("t=%.15g t_=%.15g\n", t, cv_->t_);
 //}
@@ -331,17 +374,27 @@ void Daspk::statistics() {
 	}
 }
 
-void Cvode::daspk_scatter_y(double* y) {
+static void* daspk_scatter_thread(NrnThread* nt) {
+	thread_cv->daspk_scatter_y(thread_cv->n_vector_data(nvec_y, nt->id), nt->id);
+	return 0;
+}
+void Cvode::daspk_scatter_y(N_Vector y) {
+	thread_cv = this;
+	nvec_y = y;
+	nrn_multithread_job(daspk_scatter_thread);
+}
+void Cvode::daspk_scatter_y(double* y, int tid) {
 	// the dependent variables in daspk are vi,vx,etc
 	// whereas in the node structure we need vm, vx
 	// note that a corresponding transformation for gather_ydot is
 	// not needed since the matrix solve is already with respect to vi,vx
 	// in all cases. (i.e. the solution vector is in the right hand side
 	// and refers to vi, vx.
-	scatter_y(y);
+	scatter_y(y, tid);
 	// transform the vm+vext to vm
-	if (cmlext_) {
-		Memb_list* ml = cmlext_->ml;
+	CvodeThreadData& z = ctd_[tid];
+	if (z.cmlext_) {
+		Memb_list* ml = z.cmlext_->ml;
 		int i, n = ml->nodecount;
 		for (i=0; i < n; ++i) {
 			Node* nd = ml->nodelist[i];
@@ -349,11 +402,21 @@ void Cvode::daspk_scatter_y(double* y) {
 		}
 	}
 }
-void Cvode::daspk_gather_y(double* y) {
-	gather_y(y);
+static void* daspk_gather_thread(NrnThread* nt) {
+	thread_cv->daspk_gather_y(thread_cv->n_vector_data(nvec_y, nt->id), nt->id);
+	return 0;
+}
+void Cvode::daspk_gather_y(N_Vector y) {
+	thread_cv = this;
+	nvec_y = y;
+	nrn_multithread_job(daspk_gather_thread);
+}
+void Cvode::daspk_gather_y(double* y, int tid) {
+	gather_y(y, tid);
 	// transform vm to vm+vext
-	if (cmlext_) {
-		Memb_list* ml = cmlext_->ml;
+	CvodeThreadData& z = ctd_[tid];
+	if (z.cmlext_) {
+		Memb_list* ml = z.cmlext_->ml;
 		int i, n = ml->nodecount;
 		for (i=0; i < n; ++i) {
 			Node* nd = ml->nodelist[i];
@@ -372,27 +435,28 @@ void Cvode::daspk_gather_y(double* y) {
 // psol and also why all the non-voltage odes are scaled by dt at the
 // end of it.
 
-int Cvode::res(double tt, double* y, double* yprime, double* delta) {
+int Cvode::res(double tt, double* y, double* yprime, double* delta, NrnThread* nt) {
+	CvodeThreadData& z = ctd_[nt->id];
 	++f_calls_;
 	static int res_;
 	int i;
-	t = tt;
+	nt->_t = tt;
 	res_++;
 
 #if 0
 printf("Cvode::res enter tt=%g\n", tt);
-for (i=0; i < neq_; ++i) {
+for (i=0; i < z.nvsize_; ++i) {
 	printf("   %d %g %g %g\n", i, y[i], yprime[i], delta[i]);
 }
 #endif
-	nrn_cvode_ = 1; // some models may need to know this
-	daspk_scatter_y(y); // vi, vext, channel states, linmod non-node y.
+	nt->_vcv = this; // some models may need to know this
+	daspk_scatter_y(y, nt->id); // vi, vext, channel states, linmod non-node y.
 	// rhs of cy' = f(y)
-	play_continuous(tt);
-	nrn_rhs();
-	do_ode();
+	play_continuous_thread(tt, nt);
+	nrn_rhs(nt);
+	do_ode(nt);
 	// accumulate into delta
-	gather_ydot(delta);
+	gather_ydot(delta, nt->id);
 
 	// now calculate -c*yp. i.e.
 	// cm*vm' + c_linmod*vi' internal current balance
@@ -407,7 +471,7 @@ for (i=0; i < neq_; ++i) {
 
 #if 0
 printf("Cvode::res after ode and gather_ydot into delta\n");
-for (i=0; i < neq_; ++i) {
+for (i=0; i < z.nvsize_; ++i) {
 	printf("   %d %g %g %g\n", i, y[i], yprime[i], delta[i]);
 }
 #endif
@@ -417,8 +481,8 @@ for (i=0; i < neq_; ++i) {
 	// therefore we use the Node.eqn_index to calculate the delta index.
 //	assert(use_sparse13 == true && nlayer <= 1);
 	assert(use_sparse13 == true);
-	if (cmlcap_) {
-		Memb_list* ml = cmlcap_->ml;
+	if (z.cmlcap_) {
+		Memb_list* ml = z.cmlcap_->ml;
 		int n = ml->nodecount;
 		for (i=0; i < n; ++i) {
 			double* cd = ml->data[i];
@@ -444,8 +508,8 @@ for (i=0; i < neq_; ++i) {
 		}
 	}
 	// See nrnoc/excelln.c for location of cx.
-	if (cmlext_) {
-		Memb_list* ml = cmlext_->ml;
+	if (z.cmlext_) {
+		Memb_list* ml = z.cmlext_->ml;
 		int n = ml->nodecount;
 		for (i=0; i < n; ++i) {
 			double* cd = ml->data[i];
@@ -483,31 +547,31 @@ for (i=0; i < neq_; ++i) {
 	linmod_dkres(y, yprime, delta);
 
 	// the ode's
-	for (i=neq_v_; i < neq_; ++i) {
+	for (i=z.neq_v_; i < z.nvsize_; ++i) {
 		delta[i] -= yprime[i];
 	}
 
-	for (i=0; i < neq_; ++i) {
+	for (i=0; i < z.nvsize_; ++i) {
 		delta[i] *= -1.;
 	}
 	if (daspk_->use_parasite_ && tt - daspk_->t_parasite_ < 1e-6) {
 		double fac = exp(1e7*(daspk_->t_parasite_ - tt));
-		double* tps = N_VGetArrayPointer(daspk_->parasite_);
-		for (i=0; i < neq_; ++i) {
+		double* tps = n_vector_data(daspk_->parasite_, nt->id);
+		for (i=0; i < z.nvsize_; ++i) {
 			delta[i] -= tps[i]*fac;
 		}
 	}
-	before_after(after_solve_);
+	before_after(z.after_solve_, nt);
 #if 0
 printf("Cvode::res exit res_=%d tt=%20.12g\n", res_, tt);
-for (i=0; i < neq_; ++i) {
+for (i=0; i < z.nvsize_; ++i) {
 	printf("   %d %g %g %g\n", i, y[i], yprime[i], delta[i]);
 }
 #endif
-	nrn_cvode_ = 0;
+	nt->_vcv = 0;
 #if 0
 double e = 0;
-for (i=0; i < neq_; ++i) {
+for (i=0; i < z.nvsize_; ++i) {
 	e += delta[i]*delta[i];
 }
 printf("Cvode::res %d e=%g t=%.15g\n", res_, e, tt);
@@ -515,48 +579,43 @@ printf("Cvode::res %d e=%g t=%.15g\n", res_, e, tt);
 	return 0;
 }
 
-int Cvode::jac(double tt, double* y, double* yprime, double cj) {
-//printf("Cvode::jac is not used\n");
-	++jac_calls_;
-	return 0;
-}
-
-int Cvode::psol(double tt, double* y, double* b, double cj) {
+int Cvode::psol(double tt, double* y, double* b, double cj, NrnThread* _nt) {
+	CvodeThreadData& z = ctd_[_nt->id];
 	++mxb_calls_;
 	int i;
-	t = tt;
+	_nt->_t = tt;
 
 #if 0
 printf("Cvode::psol tt=%g solvestate=%d \n", tt, solve_state_);
-for (i=0; i < neq_; ++i) {
+for (i=0; i < z.nvsize_; ++i) {
 printf(" %g", b[i]);
 }
 printf("\n");
 #endif
 
-	nrn_set_cj(cj);
-	dt = 1./cj;
+	_nt->cj = cj;
+	_nt->_dt = 1./cj;
 
-	nrn_cvode_ = 1;
-	daspk_scatter_y(y); // I'm not sure this is necessary.
+	_nt->_vcv = this;
+	daspk_scatter_y(y, _nt->id); // I'm not sure this is necessary.
 	if (solve_state_ == INVALID) {
-		nrn_lhs(); // designed to setup M*[dvm+dvext, dvext, dy] = ...
+		nrn_lhs(_nt); // designed to setup M*[dvm+dvext, dvext, dy] = ...
 		solve_state_ = SETUP;
 	}
 	if (solve_state_ == SETUP) {
 		// if using sparse 13 then should factor
 		solve_state_ = FACTORED;
 	}
-	scatter_ydot(b);
+	scatter_ydot(b, _nt->id);
 #if 0
 printf("before nrn_solve matrix cj=%g\n", cj);
 spPrint((char*)sp13mat_, 1,1,1);
 printf("before nrn_solve actual_rhs=\n");
-for (i=0; i < neq_v_; ++i) {
+for (i=0; i < z.neq_v_; ++i) {
 	printf("%d %g\n", i+1, actual_rhs[i+1]);
 }
 #endif
-	daspk_nrn_solve(); // not the cvode one
+	daspk_nrn_solve(_nt); // not the cvode one
 #if 0
 //printf("after nrn_solve matrix\n");
 //spPrint((char*)sp13mat_, 1,1,1);
@@ -566,30 +625,30 @@ for (i=0; i < neq_v_; ++i) {
 }
 #endif
 	solve_state_ = INVALID; // but not if using sparse13
-	solvemem();
-	gather_ydot(b);
+	solvemem(_nt);
+	gather_ydot(b, _nt->id);
 	// the ode's of the form m' = (minf - m)/mtau in model descriptions compute
 	// b = b/(1 + dt*mtau) since cvode required J = 1 - gam*df/dy
 	// so we need to scale those results by 1/cj.
-	for (i=neq_v_; i < neq_; ++i) {
-		b[i] *= dt;
+	for (i=z.neq_v_; i < z.nvsize_; ++i) {
+		b[i] *= _nt->_dt;
 	}
 #if 0
-for (i=0; i < neq_; ++i) {
+for (i=0; i < z.nvsize_; ++i) {
 printf(" %g", b[i]);
 }
 printf("\n");
 #endif
-	nrn_cvode_ = 0;
+	_nt->_vcv = 0;
 	return 0;
 }
 
-double* Daspk::ewtvec() {
-	return N_VGetArrayPointer(((IDAMem)mem_)->ida_ewt);
+N_Vector Daspk::ewtvec() {
+	return ((IDAMem)mem_)->ida_ewt;
 }
 
-double* Daspk::acorvec() {
-	return N_VGetArrayPointer(((IDAMem)mem_)->ida_delta);
+N_Vector Daspk::acorvec() {
+	return ((IDAMem)mem_)->ida_delta;
 }
 
 

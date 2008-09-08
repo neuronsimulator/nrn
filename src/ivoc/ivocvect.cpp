@@ -137,12 +137,13 @@ extern "C" {
         extern int nrn_mlh_gsort (double* vec, int *base_ptr, int total_elems, doubleComparator cmp);
 };
 
-IvocVect::IvocVect(Object* o) : ParentVect(){obj_ = o; label_ = nil;}
-IvocVect::IvocVect(int l, Object* o) : ParentVect(l){obj_ = o; label_ = nil;}
-IvocVect::IvocVect(int l, double fill_value, Object* o) : ParentVect(l, fill_value){obj_ = o; label_ = nil;}
-IvocVect::IvocVect(IvocVect& v, Object* o) : ParentVect(v) {obj_ = o; label_ = nil;}
+IvocVect::IvocVect(Object* o) : ParentVect(){obj_ = o; label_ = nil; MUTCONSTRUCT(0)}
+IvocVect::IvocVect(int l, Object* o) : ParentVect(l){obj_ = o; label_ = nil; MUTCONSTRUCT(0)}
+IvocVect::IvocVect(int l, double fill_value, Object* o) : ParentVect(l, fill_value){obj_ = o; label_ = nil; MUTCONSTRUCT(0)}
+IvocVect::IvocVect(IvocVect& v, Object* o) : ParentVect(v) {obj_ = o; label_ = nil; MUTCONSTRUCT(0)}
 
 IvocVect::~IvocVect(){
+	MUTDESTRUCT
 	if (label_) {
 		delete [] label_;
 	}

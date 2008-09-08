@@ -12,7 +12,7 @@
 #include "nrnneosm.h"
 #include "nrnmpi.h"
 
-#if 1
+#if 0
 #define STATISTICS(arg) ++arg
 #else
 #define STATISTICS /**/
@@ -23,8 +23,8 @@ class PlayRecord;
 class Cvode;
 class TQueue;
 class TQItem;
+struct NrnThread;
 class NetCvode;
-class SelfEventPool;
 class HocEventPool;
 class HocCommand;
 class NetConSaveWeightTable;
@@ -51,12 +51,13 @@ class DiscreteEvent {
 public:
 	DiscreteEvent();
 	virtual ~DiscreteEvent();
-	virtual void send(double deliverytime, NetCvode*);
-	virtual void deliver(double t, NetCvode*);
+	virtual void send(double deliverytime, NetCvode*, NrnThread*);
+	virtual void deliver(double t, NetCvode*, NrnThread*);
 	virtual void pr(const char*, double t, NetCvode*);
 	virtual void disconnect(Observable*) {};
 	virtual int pgvts_op(int& i) { i = 0; return 2; }
 	virtual void pgvts_deliver(double t, NetCvode*);
+	virtual NrnThread* thread();
 
 	virtual int type() { return DiscreteEventType; }
 	virtual DiscreteEvent* savestate_save();
@@ -76,11 +77,12 @@ public:
 	NetCon();
 	NetCon(PreSyn* src, Object* target);
 	virtual ~NetCon();
-	virtual void send(double sendtime, NetCvode*);
-	virtual void deliver(double, NetCvode*);
+	virtual void send(double sendtime, NetCvode*, NrnThread*);
+	virtual void deliver(double, NetCvode*, NrnThread*);
 	virtual void pr(const char*, double t, NetCvode*);
 	virtual int pgvts_op(int& i) { i = 1; return 2; }
 	virtual void pgvts_deliver(double t, NetCvode*);
+	virtual NrnThread* thread();
 
 	virtual int type() { return NetConType; }
 	virtual DiscreteEvent* savestate_save();
@@ -124,9 +126,8 @@ class SelfEvent : public DiscreteEvent {
 public:
 	SelfEvent();
 	virtual ~SelfEvent();
-	virtual void deliver(double, NetCvode*);
+	virtual void deliver(double, NetCvode*, NrnThread*);
 	virtual void pr(const char*, double t, NetCvode*);
-	void sefree();
 	void clear(){} // called by sepool_->free_all
 	virtual int pgvts_op(int& i) { i = 1; return 2; }
 	virtual void pgvts_deliver(double t, NetCvode*);
@@ -136,20 +137,18 @@ public:
 	virtual void savestate_restore(double deliverytime, NetCvode*);
 	virtual void savestate_write(FILE*);
 	static DiscreteEvent* savestate_read(FILE*);
+	virtual NrnThread* thread();
 
 	double flag_;
 	Point_process* target_;
 	double* weight_;
 	void** movable_; // actually a TQItem**
 
-	static SelfEvent* alloc();
-	static void reclaim();
 	static unsigned long selfevent_send_;
 	static unsigned long selfevent_move_;
 	static unsigned long selfevent_deliver_;
 private:
 	void call_net_receive(NetCvode*);
-	static SelfEventPool* sepool_;
 };
 
 declarePtrList(NetConPList, NetCon)
@@ -159,7 +158,7 @@ public:
 	// condition detection factored out of PreSyn for re-use
 	ConditionEvent();
 	virtual ~ConditionEvent();
-	virtual void check(double teps = 0.0);
+	virtual void check(NrnThread*, double sendtime, double teps = 0.0);
 	virtual double value() { return -1.; }
 	void condition(Cvode*);
 	void abandon_statistics(Cvode*);
@@ -186,13 +185,14 @@ public:
 	WatchCondition(Point_process*, double(*)(Point_process*));
 	virtual ~WatchCondition();
 	virtual double value() { return (*c_)(pnt_); }
-	virtual void send(double, NetCvode*);
-	virtual void deliver(double, NetCvode*);
+	virtual void send(double, NetCvode*, NrnThread*);
+	virtual void deliver(double, NetCvode*, NrnThread*);
 	virtual void pr(const char*, double t, NetCvode*);
 	void activate(double flag);
 	virtual void asf_err();
 	virtual int pgvts_op(int& i) { i = 1; return 2; }
 	virtual void pgvts_deliver(double t, NetCvode*);
+	virtual NrnThread* thread();
 	
 	double nrflag_;
 	Point_process* pnt_;
@@ -206,12 +206,13 @@ class PreSyn : public ConditionEvent {
 public:
 	PreSyn(double* src, Object* osrc, Section* ssrc = nil);
 	virtual ~PreSyn();
-	virtual void send(double sendtime, NetCvode*);
-	virtual void deliver(double, NetCvode*);
+	virtual void send(double sendtime, NetCvode*, NrnThread*);
+	virtual void deliver(double, NetCvode*, NrnThread*);
 	virtual void pr(const char*, double t, NetCvode*);
 	virtual void asf_err();
 	virtual int pgvts_op(int& i) { i = 0; return 0; }
 	virtual void pgvts_deliver(double t, NetCvode*);
+	virtual NrnThread* thread();
 
 	virtual int type() { return PreSynType; }
 	virtual DiscreteEvent* savestate_save();
@@ -237,6 +238,7 @@ public:
 	IvocVect* tvec_;
 	IvocVect* idvec_;
 	HocCommand* stmt_;
+	NrnThread* nt_;
 	hoc_Item* hi_; // in the netcvode psl_
 	hoc_Item* hi_th_; // in the netcvode psl_th_
 	long hi_index_; // for SaveState read and write
@@ -285,7 +287,7 @@ public:
 	static HocEvent* alloc(const char* stmt);
 	void hefree();
 	void clear(); // called by hepool_->free_all
-	virtual void deliver(double, NetCvode*);
+	virtual void deliver(double, NetCvode*, NrnThread*);
 	static void reclaim();
 	virtual int pgvts_op(int& i) { i = 0; return 2; }
 	virtual void pgvts_deliver(double t, NetCvode*);
@@ -308,7 +310,7 @@ class TstopEvent : public DiscreteEvent {
 public:
 	TstopEvent();
 	virtual ~TstopEvent();
-	virtual void deliver(double t, NetCvode*);
+	virtual void deliver(double t, NetCvode*, NrnThread*);
 	virtual void pr(const char*, double t, NetCvode*);
 	virtual int pgvts_op(int& i) { i = 0; return 2; }
 	virtual void pgvts_deliver(double t, NetCvode*);
@@ -325,8 +327,8 @@ class NetParEvent : public DiscreteEvent {
 public:
 	NetParEvent();
 	virtual ~NetParEvent();
-	virtual void send(double, NetCvode*);
-	virtual void deliver(double, NetCvode*);
+	virtual void send(double, NetCvode*, NrnThread*);
+	virtual void deliver(double, NetCvode*, NrnThread*);
 	virtual void pr(const char*, double t, NetCvode*);
 	virtual int pgvts_op(int& i) { i = 0; return 4; }
 	virtual void pgvts_deliver(double t, NetCvode*);
@@ -338,6 +340,7 @@ public:
 	static DiscreteEvent* savestate_read(FILE*);
 public:
 	double wx_, ws_; // exchange time and "spikes to Presyn" time
+	int ithread_; // for pr()
 };
 #endif
 

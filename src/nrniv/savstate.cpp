@@ -19,7 +19,7 @@ extern int section_count;
 extern Section** secorder;
 extern ReceiveFunc* pnt_receive;
 extern NetCvode* net_cvode_instance;
-extern TQueue* net_cvode_instance_event_queue();
+extern TQueue* net_cvode_instance_event_queue(NrnThread*);
 extern void clear_event_queue();
 extern hoc_Item* net_cvode_instance_psl();
 extern PlayRecList* net_cvode_instance_prl();
@@ -47,6 +47,7 @@ public:
 		Section* sec;
 		int nnode;
 		struct NodeState* ns;
+		struct NodeState* root; // non-zero for rootnode
 	};
 	struct StateStructInfo {
 		int offset;
@@ -84,8 +85,7 @@ private:
 	void fwrite_SecState(SecState*, int, FILE*);
 private:
 	double t_;
-	int nrootnode_;
-	NodeState* ns_;
+	int nroot_;
 	int nsec_;
 	SecState* ss_;
 	int nacell_; // number of types
@@ -146,8 +146,7 @@ cTemplate* SaveState::nct;
 SaveState::SaveState() {
 	int i, j;
 	ssi_def();
-	ns_ = nil;
-	nrootnode_ = 0;
+	nroot_ = 0;
 	ss_ = nil;
 	nsec_ = 0;
 	nncs_ = 0;
@@ -194,13 +193,23 @@ void SaveState::fwrite_NodeState(NodeState* ns, int cnt, FILE* f){
 	}
 }
 void SaveState::fread_SecState(SecState* ss, int cnt, FILE* f){
+	int b;
 	for (int i=0; i < cnt; ++i) {
 		fread(&ss[i].nnode, sizeof(int), 1, f);
+		fread(&b, sizeof(int), 1, f);
+		if (b) {
+			ss[i].root = new NodeState;
+		}else{
+			ss[i].root = 0;
+		}
 	}
 }
 void SaveState::fwrite_SecState(SecState* ss, int cnt, FILE* f){
+	int b;
 	for (int i=0; i < cnt; ++i) {
 		fwrite(&ss[i].nnode, sizeof(int), 1, f);
+		b = ss[i].root ? 1 : 0;
+		fwrite(&b, sizeof(int), 1, f);
 	}
 }
 
@@ -245,6 +254,8 @@ void SaveState::ssi_def() {
 }
 
 boolean SaveState::check(boolean warn) {
+	hoc_Item* qsec;
+	int isec;
 	if (nsec_ != section_count) {
 		if (warn) {
 fprintf(stderr, "SaveState warning: %d sections exist but saved %d\n",
@@ -252,22 +263,18 @@ fprintf(stderr, "SaveState warning: %d sections exist but saved %d\n",
 		}
 		return false;
 	}
-	if (nrootnode_ != rootnodecount) {
+	if (nroot_ != nrn_global_ncell) {
 		if (warn) {
 fprintf(stderr, "SaveState warning: %d cells exist but saved %d\n",
-			rootnodecount, nrootnode_);
+			nrn_global_ncell, nroot_);
 		}
 		return false;
 	}
 	if (nsec_ && ss_[0].sec == nil) { // got the data from a read
-		for (int isec=0; isec < nsec_; ++isec) {
-			ss_[isec].sec = secorder[isec];
+		isec = 0; ForAllSections(sec)
+			ss_[isec].sec = sec;
 			section_ref(ss_[isec].sec);
-		}
-	}
-	for (int irn = 0; irn < nrootnode_; ++irn) {
-		if (!checknode(ns_[irn], v_node[irn], warn)) {
-			return false;
+			++isec;
 		}
 	}
 	for (int i=0, j=0; i < n_memb_func; ++i) if (nrn_is_artificial_[i]) {
@@ -325,6 +332,17 @@ fprintf(stderr, "SaveState warning: more mechanisms saved than exist at node %d 
 				return false;
 			}
 		}
+		if (!sec->parentsec || ss.root) {
+			if (sec->parentsec || !ss.root) {
+if (warn) {
+fprintf(stderr, "SaveState warning: Saved section and %s are not both root sections.\n",
+	secname(sec));
+}
+			}
+			if (!checknode(*ss.root, sec->parentnode, warn)) {
+				return false;
+			}
+		}
 
 	}
 	if (!checknet(warn)) { return false; }
@@ -377,17 +395,15 @@ memb_func[type].sym->name);
 
 void SaveState::alloc() {
 	ssfree();
-	int inode;
-	nrootnode_ = rootnodecount;
-	ns_ = new NodeState[nrootnode_];
-	for (inode = 0; inode < nrootnode_; ++inode) {
-		allocnode(ns_[inode], v_node[inode]);
-	}
+	int inode, isec;
+	hoc_Item* qsec;
 	nsec_ = section_count;
 	ss_ = new SecState[nsec_];
-	for (int isec=0; isec < nsec_; ++isec) {
+	nroot_ = 0;
+	isec = 0;
+	ForAllSections(sec)
 		SecState& ss = ss_[isec];
-		ss.sec = secorder[isec];
+		ss.sec = sec;
 		section_ref(ss.sec);
 		ss.nnode = ss.sec->nnode;
 		ss.ns = new NodeState[ss.nnode];
@@ -396,7 +412,18 @@ void SaveState::alloc() {
 			NodeState& ns = ss.ns[inode];
 			allocnode(ns, nd);
 		}
+		if (!sec->parentsec) {
+			assert(sec->parentnode);
+			ss.root = new NodeState;
+			allocnode(*ss.root, sec->parentnode);
+			++nroot_;
+		}else{
+			ss.root = 0;
+		}
+		++isec;
 	}
+	assert(isec = section_count);	
+	assert(nroot_ == nrn_global_ncell);
 	for (int i=0, j=0; i < n_memb_func; ++i) if (nrn_is_artificial_[i]) {
 		allocacell(acell_[j], i);
 		++j;
@@ -447,18 +474,6 @@ void SaveState::allocacell(ACellState& ac, int type) {
 
 void SaveState::ssfree() {
 	int i, isec, inode;
-	for (inode=0; inode < nrootnode_; ++inode) {
-		NodeState& ns = ns_[inode];
-		if (ns.nmemb) {
-			delete [] ns.type;
-		}
-		if (ns.nstate) {
-			delete [] ns.state;
-		}
-	}
-	if (nrootnode_) {
-		delete [] ns_;
-	}
 	for (isec=0; isec < nsec_; ++isec) {
 		SecState& ss = ss_[isec];
 		for (inode = 0; inode < ss.nnode; ++inode) {
@@ -469,6 +484,16 @@ void SaveState::ssfree() {
 			if (ns.nstate) {
 				delete [] ns.state;
 			}
+		}
+		if (ss.root) {
+			NodeState& ns = *ss.root;
+			if (ns.nmemb) {
+				delete [] ns.type;
+			}
+			if (ns.nstate) {
+				delete [] ns.state;
+			}
+			delete ss.root;
 		}
 		if (ss.nnode) {
 			delete [] ss.ns;
@@ -515,20 +540,26 @@ void SaveState::ssfree() {
 }
 
 void SaveState::save() {
+	NrnThread* nt;
 	if (!check(false)) {
 		alloc();
 	}
+	FOR_THREADS(nt) {
+		assert(t == nt->_t);
+	}
 	t_ = t;
 	int inode;
-	for (inode=0; inode < nrootnode_; ++inode) {
-		savenode(ns_[inode], v_node[inode]);
-	}
 	for (int isec=0; isec < nsec_; ++isec) {
 		SecState& ss = ss_[isec];
 		Section* sec = ss.sec;
 		for (inode = 0; inode < ss.nnode; ++inode) {
 			NodeState& ns = ss.ns[inode];
 			Node* nd = sec->pnode[inode];
+			savenode(ns, nd);
+		}
+		if (ss.root) {
+			NodeState& ns = *ss.root;
+			Node* nd = sec->parentnode;
 			savenode(ns, nd);
 		}
 	}
@@ -585,21 +616,27 @@ void SaveState::saveacell(ACellState& ac, int type) {
 }
 
 void SaveState::restore(int type) {
+	NrnThread* nt;
 	if (!check(true)) {
 		hoc_execerror("SaveState:",
 		"Stored state inconsistent with current neuron structure");
 	}
 	t = t_;
-	int inode;
-	for (inode=0; inode < nrootnode_; ++inode) {
-		restorenode(ns_[inode], v_node[inode]);
+	FOR_THREADS(nt) {
+		nt->_t = t_;
 	}
+	int inode;
 	for (int isec=0; isec < nsec_; ++isec) {
 		SecState& ss = ss_[isec];
 		Section* sec = ss.sec;
 		for (inode = 0; inode < ss.nnode; ++inode) {
 			NodeState& ns = ss.ns[inode];
 			Node* nd = sec->pnode[inode];
+			restorenode(ns, nd);
+		}
+		if (ss.root) {
+			NodeState& ns = *ss.root;
+			Node* nd = sec->parentnode;
 			restorenode(ns, nd);
 		}
 	}
@@ -674,24 +711,10 @@ void SaveState::read(OcFile* ocf, boolean close) {
 // on some os's fscanf leaves file pointer at wrong place for next fread
 //	can check it with ftell(f)
 	fgets(buf, 200, f);
-	sscanf(buf, "%d %d\n", &nsec_, &nrootnode_);
-	ns_ = new NodeState[nrootnode_];
+	sscanf(buf, "%d %d\n", &nsec_, &nroot_);
 	// to enable comparison of SaveState files, we avoid
 	// putting pointers in the files and instead explicitly read/write
 	// structure elements.
-	// fread((char*)ns_, sizeof(NodeState), nrootnode_, f);
-	fread_NodeState(ns_, nrootnode_, f);
-	for (int inode = 0; inode < nrootnode_; ++inode) {
-		NodeState& ns = ns_[inode];
-		if (ns.nmemb) {
-			ns.type = new int[ns.nmemb];
-			fread((char*)ns.type, sizeof(int), ns.nmemb, f);
-		}
-		if (ns.nstate) {
-			ns.state = new double[ns.nstate];
-			fread((char*)ns.state, sizeof(double), ns.nstate, f);
-		}
-	}
 	ss_ = new SecState[nsec_];
 	fread_SecState(ss_, nsec_, f);
 	for (int isec=0; isec < nsec_; ++isec) {
@@ -701,6 +724,18 @@ void SaveState::read(OcFile* ocf, boolean close) {
 		fread_NodeState(ss.ns, ss.nnode, f);
 		for (int inode = 0; inode < ss.nnode; ++inode) {
 			NodeState& ns = ss.ns[inode];
+			if (ns.nmemb) {
+				ns.type = new int[ns.nmemb];
+				fread((char*)ns.type, sizeof(int), ns.nmemb, f);
+			}
+			if (ns.nstate) {
+				ns.state = new double[ns.nstate];
+				fread((char*)ns.state, sizeof(double), ns.nstate, f);
+			}
+		}
+		if (ss.root) {
+			fread_NodeState(ss.root, 1, f);
+			NodeState& ns = *ss.root;
 			if (ns.nmemb) {
 				ns.type = new int[ns.nmemb];
 				fread((char*)ns.type, sizeof(int), ns.nmemb, f);
@@ -748,23 +783,23 @@ void SaveState::write(OcFile* ocf, boolean close) {
 	FILE* f = ocf->file();
 	fprintf(f, "SaveState binary file version 6.0\n");
 	fwrite((char*)&t_, sizeof(double), 1, f);
-	fprintf(f, "%d %d\n", nsec_, nrootnode_);
-	fwrite_NodeState(ns_, nrootnode_, f);
-	for (int inode = 0; inode < nrootnode_; ++inode) {
-		NodeState& ns = ns_[inode];
-		if (ns.nmemb) {
-			fwrite((char*)ns.type, sizeof(int), ns.nmemb, f);
-		}
-		if (ns.nstate) {
-			fwrite((char*)ns.state, sizeof(double), ns.nstate, f);
-		}
-	}
+	fprintf(f, "%d %d\n", nsec_, nroot_);
 	fwrite_SecState(ss_, nsec_, f);
 	for (int isec=0; isec < nsec_; ++isec) {
 		SecState& ss = ss_[isec];
 		fwrite_NodeState(ss.ns, ss.nnode, f);
 		for (int inode = 0; inode < ss.nnode; ++inode) {
 			NodeState& ns = ss.ns[inode];
+			if (ns.nmemb){
+				fwrite((char*)ns.type, sizeof(int), ns.nmemb, f);
+			}
+			if (ns.nstate) {
+				fwrite((char*)ns.state, sizeof(double), ns.nstate, f);
+			}
+		}
+		if (ss.root) {
+			fwrite_NodeState(ss.root, 1, f);
+			NodeState& ns = *ss.root;
 			if (ns.nmemb){
 				fwrite((char*)ns.type, sizeof(int), ns.nmemb, f);
 			}
@@ -820,10 +855,13 @@ void SaveState::savenet() {
 		++i;
 	}
 	alloc_tq();
-	TQueue* tq = net_cvode_instance_event_queue();
 	tqcnt_ = 0;
-	this_savestate = this; callback_mode = 1;
-	tq->forall_callback(tqcallback);
+	NrnThread* nt;
+	FOR_THREADS(nt) {
+		TQueue* tq = net_cvode_instance_event_queue(nt);
+		this_savestate = this; callback_mode = 1;
+		tq->forall_callback(tqcallback);
+	}
 }
 
 void SaveState::tqcount(const TQItem*, int) {
@@ -1077,10 +1115,13 @@ void SaveState::free_tq() {
 void SaveState::alloc_tq() {
 	int n;
 	free_tq();
-	TQueue* tq = net_cvode_instance_event_queue();
 	tqcnt_ = 0;
-	this_savestate = this; callback_mode = 0;
-	tq->forall_callback(tqcallback);
+	NrnThread* nt;
+	FOR_THREADS(nt) {
+		TQueue* tq = net_cvode_instance_event_queue(nt);
+		this_savestate = this; callback_mode = 0;
+		tq->forall_callback(tqcallback);
+	}
 	n = tqcnt_;	
 	tqs_->nstate = n;
 	if (n) {

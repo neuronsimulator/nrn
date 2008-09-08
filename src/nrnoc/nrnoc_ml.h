@@ -1,3 +1,6 @@
+#ifndef nrnoc_ml_h
+#define nrnoc_ml_h
+
 typedef struct Memb_list {
 	Node** nodelist;
 #if CACHEVEC != 0
@@ -11,6 +14,8 @@ typedef struct Memb_list {
 	double** data;
 	Datum** pdata;
 	Prop** prop;
+	Datum* _thread; /* thread specific data (when static is no good) */
 	int nodecount;
 } Memb_list;
 
+#endif

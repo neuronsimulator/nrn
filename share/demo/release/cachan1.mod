@@ -7,6 +7,7 @@ NEURON {
 	USEION ca READ cao,cai WRITE ica
 	RANGE K, ica, imax
 	GLOBAL inf, tau, rfac
+	THREADSAFE
 }
 
 UNITS {

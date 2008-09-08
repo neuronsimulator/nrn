@@ -471,7 +471,7 @@ nrn_promote(p, conc, rev)
 }
 
 /* Must be called prior to any channels which update the currents */
-static ion_cur(Memb_list* ml, int type) {
+static ion_cur(NrnThread* nt, Memb_list* ml, int type) {
 	int count = ml->nodecount;
 	Node** vnode = ml->nodelist;
 	double **pd = ml->data;
@@ -493,7 +493,7 @@ static ion_cur(Memb_list* ml, int type) {
 /* Must be called prior to other models which possibly also initialize
 	concentrations based on their own states
 */
-static ion_init(Memb_list* ml, int type) {
+static ion_init(NrnThread* nt, Memb_list* ml, int type) {
 	int count = ml->nodecount;
 	Node** vnode = ml->nodelist;
 	double **pd = ml->data;
@@ -526,7 +526,7 @@ static ion_alloc(p)
 	int i=0;
 	
 #define	nparm 5
-	pd[0] = nrn_prop_data_alloc(p->type, nparm);
+	pd[0] = nrn_prop_data_alloc(p->type, nparm, p);
 	p->param_size = nparm;
 
 	cur = 0.;
@@ -550,20 +550,24 @@ static ion_alloc(p)
 	}
 	p->param = pd[0];
 	
-	p->dparam = nrn_prop_datum_alloc(p->type, 1);
+	p->dparam = nrn_prop_datum_alloc(p->type, 1, p);
 	p->dparam->i = 0;
 }
 
-second_order_cur() {
+second_order_cur(NrnThread* nt) {
 	extern int secondorder;
-	int j, i;
+	NrnThreadMembList* tml;
+	Memb_list* ml;
+	int j, i, i2;
 #define c 3
 #define dc 4
   if (secondorder == 2) {
-	for (j = 0; j < n_memb_func; ++j) if (memb_func[j].alloc == ion_alloc) {
-		for (i = 0; i < memb_list[j].nodecount; ++i) {
-			memb_list[j].data[i][c] += memb_list[j].data[i][dc]
-			   * ( NODERHS(memb_list[j].nodelist[i]) )
+	for (tml = nt->tml; tml; tml = tml->next) if (memb_func[tml->index].alloc == ion_alloc) {
+		ml = tml->ml;
+		i2 = ml->nodecount;
+		for (i = 0; i < i2; ++i) {
+			ml->data[i][c] += ml->data[i][dc]
+			   * ( NODERHS(ml->nodelist[i]) )
 			;
 		}
 	}

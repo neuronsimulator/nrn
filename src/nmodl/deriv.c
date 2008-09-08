@@ -1,204 +1,4 @@
 #include <../../nmodlconf.h>
-/* /local/src/master/nrn/src/nmodl/deriv.c,v 4.4 1999/01/25 01:10:20 hines Exp */
-/*
-deriv.c,v
- * Revision 4.4  1999/01/25  01:10:20  hines
- * (1-exp(dt*0))/0 is not 1 but -dt
- *
- * Revision 4.3  1999/01/22  18:43:06  hines
- * y' = expression independent of y now works with cnexp
- *
- * Revision 4.2  1997/11/28  15:11:39  hines
- * absolute tolerance for CVODE on a per state basis.
- * Interface is a spec of absolute tolerance within a .mod file for the
- * declaration of a STATE as in
- * 	state (units) <tolerance>
- * Within nrniv, one specifies tolerance via
- * tol = cvode.abstol(&var, tolerance) where var is any variable whose address
- * can be taken (although only STATEs make use of a tolerance).
- * The address aspect of the above is misleading since tolerances are the
- * same for any single name, eg cvode.abstol(&v(.5)) changes tolerances for
- * ALL membrane potentials globally. The only purpose of the address is
- * to unambiguously identify the Symbol for the name. Perhaps string spec
- * such as "TrigKSyn.G" will be incorporated in the future.
- * when an absolute tolerance is changed, cvode will re-initialize the
- * tolerances next time Cvode.re_init is called. The tolerance actually
- * used for a STATE is the  minimum between the value specified in the second
- * arg of cvode.accuracy and the tolerance stored in the Symbol.
- *
- * Revision 4.1  1997/08/30  20:45:17  hines
- * cvs problem with branches. Latest nmodl stuff should now be a top level
- *
- * Revision 4.0.1.1  1997/08/08  17:23:40  hines
- * nocmodl version 4.0.1
- *
- * Revision 4.0  1997/08/08  17:06:05  hines
- * proper nocmodl version number
- *
- * Revision 1.10  1997/07/20  15:38:44  hines
- * ion concentrations as states in cvode context now have cvode state
- * map pointer to the actual concentration variable. This guarantees
- * that the nernst calculations (done before any odes in models are called)
- * use the correct concentrations (set by cvode)
- *
- * Revision 1.9  1997/07/08  11:28:24  hines
- * better handling of ion concentration. Still not completely adequate.
- *
- * Revision 1.8  1997/07/01  12:56:02  hines
- * matsol1 must have intervening statements from derivative blocks or else
- * the rates in hh will be from a different segment.
- *
- * Revision 1.7  1997/06/23  13:49:00  hines
- * cneqn method for DERIVATIVE block emits code for staggered time step method
- * in which linear dstate/dt with respect to state is analytically computed.
- * Also, for cvode, the matsol jacobian is analytic except if state appears
- * in denominator or function.
- * Tested only for m'= (minf - m)/mtau
- *
- * Revision 1.6  1997/06/22  19:18:17  hines
- * beginning of symbolic differentiation of Derivative block expressions
- * to construct cvode jacobian matsol function. Also symbolically solves
- * 0 = f(s) for functions linear in s to construct exponential method
- * (which used to be implemented by user in PROCEDURE block)
- *
- * Revision 1.5  1997/06/20  14:04:49  hines
- * nmodl cvode SOLVE procedure handled better. ie called once after cvode.solve
- * is finished.
- *
- * Revision 1.4  1997/06/19  15:52:10  hines
- * CVODE: DERIVATIVE block translates a matsol with numerical differencing.
- * Next step is to handle simple linear diffeq's
- *
- * Revision 1.3  1997/06/18  15:12:26  hines
- * Beginning of CVODE translation of model descriptions. KINETIC almost done.
- * DERIVATIVE missing a matsol implementation.
- *
- * Revision 1.2  1995/09/05  17:57:47  hines
- * allow domain limit in parameter spec. the syntax is of the form
- * name '=' number units '[' number ',' number ']'
- * The brackets may be changed to <...> if the syntax for arrays is ambiguous
- *
- * Revision 1.1.1.1  1994/10/12  17:21:34  hines
- * NEURON 3.0 distribution
- *
- * Revision 9.191  1994/09/20  14:45:44  hines
- * port to dec alpha
- *
- * Revision 9.182  1994/07/21  13:11:16  hines
- * allow vectorization of kinetic blocks on cray when using sparse method.
- * not tested yet
- *
- * Revision 9.168  1993/04/23  11:11:53  hines
- * model keeps sparse method state in its own static area so sparse
- * can solve different sets of equations
- *
- * Revision 9.157  93/02/01  15:17:42  hines
- * static functions should be declared before use.
- * inline is keyword for some compilers.
- * 
- * Revision 9.128  92/02/05  14:47:47  hines
- * saber warning free
- * FUNCTION made global for use by other models. #define GLOBFUNC 1
- * 
- * Revision 9.76  90/12/07  09:25:51  hines
- * new list structure that uses unions instead of void *element
- * 
- * Revision 9.61  90/11/23  10:01:42  hines
- * STEADYSTATE of kinetic and derivative blocks
- * 
- * Revision 9.60  90/11/21  10:46:49  hines
- * _ninits is first argument in call to integrators
- * 
- * Revision 9.58  90/11/20  17:23:51  hines
- * CONSTANT changed to PARAMETER
- * CONSTANT now refers to variables that don't get put in .var file
- * 
- * Revision 9.45  90/10/30  13:56:52  hines
- * derivative blocks (this impacts kinetic and sens as well) now return
- * _reset which can be set with RESET statement.  _reset is static in the
- * file and set to 0 on entry to a derivative or kinetic block.
- * 
- * Revision 9.41  90/10/30  08:37:01  hines
- * saber warning free except for ytab.c and lex.c
- * 
- * Revision 9.33  90/10/11  15:44:59  hines
- * bugs fixed with respect to conversion from pointer vector to index vector.
- * 
- * Revision 9.32  90/10/08  14:12:45  hines
- * index vector instead of pointer vector for slist and dlist
- * 
- * Revision 8.6  90/04/09  08:39:58  mlh
- * implicit method for derivative blocks (allows mixed equations also).
- * The solve statement must precede the derivative block
- * 
- * Revision 8.5  90/02/07  10:22:48  mlh
- * It is important that blocks for derivative and sensitivity also
- * be declared static before their possible use as arguments to other
- * functions and that their body also be static to avoid multiple
- * declaration errors.
- * 
- * Revision 8.4  90/01/19  07:38:03  mlh
- * _modl_cleanup() called by abort_run()
- * 
- * Revision 8.3  90/01/16  11:06:04  mlh
- * error checking and cleanup after error and call to abort_run()
- * 
- * Revision 8.2  89/10/30  15:03:22  mlh
- * error message when no derivative equations in DERIVATIVE block
- * 
- * Revision 8.1  89/09/29  16:24:22  mlh
- * ifdef for VMS and SYSV and some fixing of assert
- * 
- * Revision 8.0  89/09/22  17:26:02  nfh
- * Freezing
- * 
- * Revision 7.2  89/09/20  11:18:42  mdf
- * VMS compiler problem parsing assert(sscanf() == 2) fixed by
- * int i; i = sscanf(); assert(i == 2);
- * 
- * Revision 7.1  89/09/07  07:39:38  mlh
- * was failing to initialize time after match
- * 
- * Revision 7.0  89/08/30  13:31:28  nfh
- * Rev 7 is now Experimental; Rev 6 is Testing
- * 
- * Revision 6.2  89/08/24  12:07:44  mlh
- * failed to declare reprime(), make lint free
- * 
- * Revision 6.1  89/08/23  10:31:36  mlh
- * derivative variables in .var file have names like var' instead of Dvar
- * 
- * Revision 6.0  89/08/14  16:26:13  nfh
- * Rev 6.0 is latest of 4.x; now the Experimental version
- * 
- * Revision 4.3  89/08/11  09:55:53  mlh
- * simultaneous nonlinear equations allowed in DERIVATIVE block
- * 
- * Revision 4.2  89/08/05  11:37:04  mlh
- * axis units info now in .var file
- * units for higher order derivatives auto generated
- * .var syntax for higher order derivative states now a:b
- * 
- * Revision 4.1  89/07/25  19:20:23  mlh
- * fixed error in copying string into too small a space in
- * section handling higher order derivatives.
- * 
- * Revision 4.0  89/07/24  17:02:41  nfh
- * Freezing rev 3.  Rev 4 is now Experimental
- * 
- * Revision 3.4  89/07/19  15:04:55  mlh
- * pass t by value introduces bug, return to version before that.
- * 
- * Revision 3.2  89/07/18  11:54:59  mlh
- * first_time removed and MODEL_LEVEL used for declaration precedence
- * 
- * Revision 1.2  89/07/18  11:22:12  mlh
- * eliminate first_time, etc.
- * 
- * Revision 1.1  89/07/06  14:47:43  mlh
- * Initial revision
- * 
-*/
 
 #include "modl.h"
 #include "symbol.h"
@@ -218,6 +18,10 @@ List* massage_list_;
 
 #if VECTORIZE
 extern int vectorize;
+extern int assert_threadsafe;
+extern int thread_data_index;
+extern List* thread_mem_init_list;
+extern List* thread_cleanup_list;
 #endif
 
 #if CVODE
@@ -241,6 +45,8 @@ solv_diffeq(qsol, fun, method, numeqn, listnum, steadystate, btype)
 	if (method && strcmp(method->name, "cnexp") == 0) {
 		sprintf(buf, " %s();\n", fun->name);
 		replacstr(qsol, buf);
+		sprintf(buf, " %s(_p, _ppvar, _thread, _nt);\n", fun->name);
+		vectorize_substitute(qsol, buf); 
 		return;
 	}
 	if (steadystate) {
@@ -248,7 +54,7 @@ solv_diffeq(qsol, fun, method, numeqn, listnum, steadystate, btype)
 	}else{
 		Strcpy(ssprefix, "");
 	}
-	Sprintf(dindepname, "delta_%s", indepsym->name);
+	Sprintf(dindepname, "d%s", indepsym->name);
 	if (fun->subtype & KINF) { /* translate the kinetic equations */
 		/* can be standard integrator, full matrix advancec, or
 		   sparse matrix advance */
@@ -283,7 +89,21 @@ if (deriv_imp_list) {	/* make sure deriv block translation matches method */
 	Sprintf(deriv1_advance, "0; _deriv%d_advance = 1;\n", listnum);
 	Sprintf(deriv2_advance, "_deriv%d_advance = 0;\n", listnum);
 	Sprintf(buf, "static int _deriv%d_advance = 0;\n", listnum);
-	Linsertstr(procfunc, buf);
+	q = linsertstr(procfunc, buf);
+	Sprintf(buf, "\n#define _deriv%d_advance _thread[%d]._i\n\
+#define _dith%d %d\n#define _recurse _thread[%d]._i\n#define _newtonspace%d _thread[%d]._pvoid\nextern void* nrn_cons_newtonspace(int);\n\
+", listnum, thread_data_index, listnum, thread_data_index+1, thread_data_index+2,
+listnum, thread_data_index+3);
+	vectorize_substitute(q, buf);
+	Sprintf(buf, "  _thread[_dith%d]._pval = (double*)ecalloc(%d, sizeof(double));\n", listnum, 2*numeqn);
+	lappendstr(thread_mem_init_list, buf);
+	Sprintf(buf, "  _newtonspace%d = nrn_cons_newtonspace(%d);\n", listnum, numeqn);
+	lappendstr(thread_mem_init_list, buf);
+	Sprintf(buf, "  free((void*)(_thread[_dith%d]._pval));\n", listnum);
+	lappendstr(thread_cleanup_list, buf);
+	Sprintf(buf, "  nrn_destroy_newtonspace(_newtonspace%d);\n", listnum);
+	lappendstr(thread_cleanup_list, buf);
+	thread_data_index += 4;
 }else{
 	Strcpy(deriv1_advance, "");
 	Strcpy(deriv2_advance, "");
@@ -292,9 +112,6 @@ Sprintf(buf,"%s %s%s(_ninits, %d, _slist%d, _dlist%d, _p, &%s, %s, %s, &_temp%d%
 deriv1_advance, ssprefix,
 method->name, numeqn, listnum, listnum, indepsym->name, dindepname, fun->name, listnum, maxerr_str,
 deriv2_advance);
-#if VECTORIZE
-	vectorize = 0;
-#endif
 	}else{
 Sprintf(buf, "%s%s(&_sparseobj%d, %d, _slist%d, _dlist%d, _p, &%s, %s, %s\
 ,&_coef%d, _linmat%d);\n",
@@ -303,27 +120,22 @@ dindepname, fun->name, listnum, listnum);
 	}
 	replacstr(qsol, buf);
 #if VECTORIZE
+	if (method->subtype & DERF) { /* derivimplicit */
+Sprintf(buf,"%s %s%s_thread(%d, _slist%d, _dlist%d, _p, %s, _ppvar, _thread, _nt);\n%s",
+deriv1_advance, ssprefix, method->name,
+numeqn, listnum, listnum, fun->name,
+deriv2_advance);
+	vectorize_substitute(qsol, buf);
+	}else{ /* kinetic */
    if (vectorize) {
-	if (btype == BREAKPOINT) {
-Sprintf(buf, "_vector_%s%s(0, _count, nrn_instance_count(_mechtype), \
-&_jacob%d, &_space%d, \
-&_sparseobj%d, %d, _slist%d, _dlist%d,\n\
-_p, &%s, %s, _vector_%s, %s, &_coef%d, _linmat%d);\n",
-ssprefix, method->name,listnum, listnum,
-listnum, numeqn, listnum, listnum,
-indepsym->name, dindepname, fun->name, fun->name, listnum, listnum);
-	}else{
-Sprintf(buf, "_vector_%s%s(_ix, _ix+1, nrn_instance_count(_mechtype), \
-&_jacob%d, &_space%d, \
-&_sparseobj%d, %d, _slist%d, _dlist%d,\n\
-_p, &%s, %s, _vector_%s, %s, &_coef%d, _linmat%d);\n",
-ssprefix, method->name, listnum, listnum,
-listnum, numeqn, listnum, listnum,
-indepsym->name, dindepname, fun->name, fun->name, listnum, listnum);
-	}
+Sprintf(buf, "%s%s_thread(&_thread[_spth%d]._pvoid, %d, _slist%d, _dlist%d, _p, &%s, %s, %s\
+, _linmat%d, _ppvar, _thread, _nt);\n",
+ssprefix, method->name, listnum, numeqn, listnum, listnum, indepsym->name,
+dindepname, fun->name, listnum);
 	vectorize_substitute(qsol, buf);
    }
 #endif
+	}
 }
 
 /* addition of higher order derivatives
@@ -548,7 +360,7 @@ Sprintf(units, "%s/%s^%d", base_units, STR(indeplist->prev), indx);
    equations may be 0.  The substantive change is that now the number
    of equations is the sum of the derivatives and the nonlinears and the
    extra equations added into the block are of the form
-	dlist2[++_counte] = Dstate - (state - statesave1[0])/delta_t;
+	dlist2[++_counte] = Dstate - (state - statesave1[0])/dt;
    The administrative needs are that newton is called with the total number
    of equations and that we can match state and statesave. Notice that we
    already have two sets of slists floating around and one dlist,
@@ -619,8 +431,9 @@ massagederiv(q1, q2, q3, q4, sensused)
 	/* all this junk is still in the intoken list */
 	Sprintf(buf, "static int %s();\n", SYM(q2)->name);
 	Linsertstr(procfunc, buf);
-	replacstr(q1, "\nstatic int"); Insertstr(q3, "() {_reset=0;\n");
+	replacstr(q1, "\nstatic int"); q = insertstr(q3, "() {_reset=0;\n");
 	derfun = SYM(q2);
+	vectorize_substitute(q, "(double* _p, Datum* _ppvar, Datum* _thread, _NrnThread* _nt) {int _reset=0; int error = 0;\n");
 
 	if (derfun->subtype & DERF && derfun->u.i) {
 		diag("DERIVATIVE merging not implemented", (char *)0);
@@ -696,14 +509,21 @@ Sprintf(buf, "static int _slist%d[%d], _dlist%d[%d];\n",
 	Lappendstr(procfunc, "\n/*CVODE*/\n");
 	Sprintf(buf, "static int _ode_spec%d", numlist);
 	Lappendstr(procfunc, buf);
+	{Item* qq = procfunc->prev;
 	copyitems(q1->next, q4, procfunc->prev);
-	Lappendstr(procfunc, "return _reset;\n}\n");
+	vectorize_substitute(qq->next, "(double* _p, Datum* _ppvar, Datum* _thread, _NrnThread* _nt) {int _reset = 0;");
+	vectorize_scan_for_func(qq->next, procfunc);
+	}
+	lappendstr(procfunc, "return _reset;\n}\n");
 
 /* don't emit _ode_matsol if the user has defined cvodematsol */
   if (!lookup("cvodematsol")) {
+	Item* qq;
 	Item* qextra = q1->next->next->next->next;
-	Sprintf(buf, "static int _ode_matsol%d() {\n", numlist);
+	Sprintf(buf, "static int _ode_matsol%d", numlist);
 	Lappendstr(procfunc, buf);
+	vectorize_substitute(lappendstr(procfunc, "() {\n"), "(double* _p, Datum* _ppvar, Datum* _thread, _NrnThread* _nt) {\n");
+	qq = procfunc->next;
 	cvode_cnexp_possible = 1;
 	ITERATE(q, cvode_diffeq_list) {
 		Symbol* s; Item* q1, *q2;
@@ -725,6 +545,7 @@ Sprintf(buf, "static int _slist%d[%d], _dlist%d[%d];\n",
 		qextra = q2->next;
 	}
 	Lappendstr(procfunc, ";\n}\n");
+	vectorize_scan_for_func(qq, procfunc);
   }
 
 	Lappendstr(procfunc, "/*END CVODE*/\n");
@@ -737,10 +558,12 @@ Sprintf(buf, "static int _slist%d[%d], _dlist%d[%d];\n",
 	if (deriv_implicit) {
 		Sprintf(buf, "static double _savstate%d[%d], *_temp%d = _savstate%d;\n",
 			 numlist, count*(1 + 2*sens_parm), numlist, numlist);
+		q = linsertstr(procfunc, buf);
+		vectorize_substitute(q, "");
 	}else{
 		Sprintf(buf, "static double *_temp%d;\n", numlist);
+		Linsertstr(procfunc, buf);
 	}
-	Linsertstr(procfunc, buf);
 	movelist(q1, q4, procfunc);
 	Lappendstr(procfunc, "return _reset;}\n");
 	if (sensused)
@@ -767,7 +590,7 @@ if (_deriv%d_advance) {\n", count, numlist);
 		q = insertsym(q4, sp);
 		eqnqueue(q);
 Sprintf(buf,
-"_p[_dlist%d[_id]] - (_p[_slist%d[_id]] - _savstate%d[_id])/delta_%s;\n",
+"_p[_dlist%d[_id]] - (_p[_slist%d[_id]] - _savstate%d[_id])/d%s;\n",
    numlist, numlist, numlist, indepsym->name);
 		Insertstr(q4, buf);
 Sprintf(buf,
@@ -785,7 +608,7 @@ Sprintf(buf,
 	q = mixed_eqns(q2, q3, q4); /* numlist now incremented */
 	if (deriv_implicit) {
 		Sprintf(buf,
-"{int _id; for(_id=0; _id < %d; _id++) { _savstate%d[_id] = _p[_slist%d[_id]];}}",
+"{int _id; for(_id=0; _id < %d; _id++) { _savstate%d[_id] = _p[_slist%d[_id]];}}\n",
 		count, derfun->u.i, derfun->u.i);
 		Insertstr(q, buf);
 	}
@@ -972,7 +795,7 @@ Sprintf(buf, "for (_i=0; _i<%d; _i++) _found_init[_i] = _p[_state_get[_i]];\n",
 		nunknown);
 	setup = lappendstr(procfunc, buf);
 Sprintf(buf, "error=shoot(%d, &(%s) - _p, _pmatch_time, _pmatch_value, _state_match,\
- _found_init, _p, &(delta_%s));\n if(error){abort_run(error);}; %s = _save;",
+ _found_init, _p, &(d%s));\n if(error){abort_run(error);}; %s = _save;",
 		nunknown, indepsym->name, indepsym->name, indepsym->name);
 		/*deltaindep may not be declared yet */
 	Lappendstr(procfunc, buf);
@@ -1234,7 +1057,12 @@ sprintf(buf," %s = %s + (1. - exp(dt*(%s)))*(%s - %s)",
 		}
 		
 		lappendstr(procfunc, "static int");
+		{ Item* qq = procfunc->prev;
 		copyitems(q1, q2, procfunc->prev);
+		/* more or less redundant with massagederiv */
+		vectorize_substitute(qq->next->next, "(double* _p, Datum* _ppvar, Datum* _thread, _NrnThread* _nt) {");
+		vectorize_scan_for_func(qq->next->next, procfunc);
+		}
 		lappendstr(procfunc, " return 0;\n}\n");
 		return 1;
 	}

@@ -19,21 +19,22 @@
 #include <ocpointer.h>
 
 extern "C" {
-void nrniv_recalc_ptrs(int, double**, double*);
+void nrniv_recalc_ptrs();
+extern double* nrn_recalc_ptr(double*);
 extern NetCvode* net_cvode_instance;
 }
 
-extern void nrn_linmod_update_ptrs(void*, int, double**, double*);
-extern void nrn_partrans_update_ptrs(int, double**, double*);
+extern void nrn_linmod_update_ptrs(void*);
+extern void nrn_partrans_update_ptrs();
 
 static Symbol* grsym_;
 static Symbol* ptrsym_;
 static Symbol* lmsym_;
 static Symbol* pshpsym_;
 
-void nrniv_recalc_ptrs(int ncnt, double** oldvp, double* newv) {
+void nrniv_recalc_ptrs() {
 	// PlayRecord and PreSyn pointers
-        net_cvode_instance->recalc_ptrs(ncnt, oldvp, newv);
+        net_cvode_instance->recalc_ptrs();
 	hoc_List* hl;
 	hoc_Item* q;
 #if HAVE_IV
@@ -46,7 +47,7 @@ void nrniv_recalc_ptrs(int ncnt, double** oldvp, double* newv) {
 	ITERATE(q, hl) {
 		Object* obj = OBJ(q);
 		Graph* g = (Graph*)obj->u.this_pointer;
-		if (g) {g->update_ptrs(ncnt, oldvp, newv);}
+		if (g) {g->update_ptrs();}
 	}
 	// update pointers used by PlotShape
 	if (!pshpsym_) {
@@ -57,10 +58,10 @@ void nrniv_recalc_ptrs(int ncnt, double** oldvp, double* newv) {
 	ITERATE(q, hl) {
 		Object* obj = OBJ(q);
 		ShapePlot* ps = (ShapePlot*)obj->u.this_pointer;
-		if (ps) {ps->update_ptrs(ncnt, oldvp, newv);}
+		if (ps) {ps->update_ptrs();}
 	}
 	// update pointers used by xpanel
-	HocPanel::update_ptrs(ncnt, oldvp, newv);
+	HocPanel::update_ptrs();
 #endif
 	// update pointers used by Pointer
 	if (!ptrsym_) {
@@ -71,16 +72,16 @@ void nrniv_recalc_ptrs(int ncnt, double** oldvp, double* newv) {
 	ITERATE(q, hl) {
 		Object* obj = OBJ(q);
 		OcPointer* op = (OcPointer*)obj->u.this_pointer;
-		if (op && op->p_ && nrn_isdouble(op->p_, 0, ncnt-1)) {
-			int k = (int)(*op->p_);
-			if (op->p_ == oldvp[k]) {
+		if (op && op->p_) {
+			double* pd = nrn_recalc_ptr(op->p_);
+			if (op->p_ != pd ) {
 #if HAVE_IV
 				Oc oc;
 				oc.notify_pointer_disconnect(op);
-				op->p_ = newv + k;
+				op->p_ = pd;
 				oc.notify_when_freed(op->p_, op);
 #else
-				op->p_ = newv + k;
+				op->p_ = pd;
 #endif
 			}
 		}
@@ -94,10 +95,10 @@ void nrniv_recalc_ptrs(int ncnt, double** oldvp, double* newv) {
 	ITERATE(q, hl) {
 		Object* obj = OBJ(q);
 		void* pt = (void*)obj->u.this_pointer;
-		if (pt) {nrn_linmod_update_ptrs(pt, ncnt, oldvp, newv);}
+		if (pt) {nrn_linmod_update_ptrs(pt);}
 	}
 	// update pointers used by parallel transfer
-	nrn_partrans_update_ptrs(ncnt, oldvp, newv);
+	nrn_partrans_update_ptrs();
 }
 
 

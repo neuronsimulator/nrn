@@ -9,7 +9,6 @@
 
 extern int cvode_active_;
 extern int nrn_use_daspk_;
-extern double nrn_get_cj();
 
 #if EXTRACELLULAR
 
@@ -39,8 +38,11 @@ static HocParmUnits units[] = {
 	0,0
 };
 
-static extcell_alloc();
+static void extcell_alloc();
 static extcell_init();
+#if 0
+static printnode();
+#endif
 
 static int _ode_count(type) int type; {
 /*	hoc_execerror("extracellular", "cannot be used with CVODE");*/
@@ -80,7 +82,7 @@ extracell_reg_() {
 we only need to update extracellular
 nodes and base the corresponding nd->v on dvm (dvm = dvi - dvx)
 */
-nrn_update_2d()
+void nrn_update_2d(NrnThread* nt)
 {
 	int i, cnt, il;
 	extern int secondorder;
@@ -88,10 +90,11 @@ nrn_update_2d()
 	Extnode *nde;
 	double* pd;
 	double cfac;
-	
-	cfac = .001*nrn_get_cj();
-	cnt = memb_list[EXTRACELL].nodecount;
-	ndlist = memb_list[EXTRACELL].nodelist;
+	Memb_list* ml = nt->_ecell_memb_list;
+	if (!ml) { return; }
+	cfac = .001 * nt->cj;
+	cnt = ml->nodecount;
+	ndlist = ml->nodelist;
 	
 	for (i=0; i < cnt; ++i) {
 		nd = ndlist[i];
@@ -104,7 +107,7 @@ nrn_update_2d()
 
 #if I_MEMBRANE
 	for (i=0; i < cnt; ++i) {
-		pd = memb_list[EXTRACELL].data[i];
+		pd = ml->data[i];
 		nd = ndlist[i];
 		NODERHS(nd) -= *nd->extnode->_rhs[0];
 i_membrane = sav_g * (NODERHS(nd)) + sav_rhs;
@@ -140,7 +143,7 @@ i_membrane = sav_g * (NODERHS(nd)) + sav_rhs;
 #endif
 }
 
-static extcell_alloc(p)
+static void extcell_alloc(p)
 	Prop *p;
 {
 	double *pd;
@@ -151,7 +154,7 @@ static extcell_alloc(p)
 #else
 #define	nparm (3*(nlayer) + 1)
 #endif
-	pd = nrn_prop_data_alloc(EXTRACELL, nparm);
+	pd = nrn_prop_data_alloc(EXTRACELL, nparm, p);
 	p->param_size = nparm;
 
 	for (i=0; i < nlayer; ++i) {
@@ -166,11 +169,10 @@ static extcell_alloc(p)
 	sav_rhs = 0.;
 #endif
 	p->param = pd;
-	nrn_matrix_node_free();/* do not need to call on freeing since tree_change wil ensure call */
 }
 
 /*ARGSUSED*/
-static extcell_init(Memb_list* ml, int type) {
+static extcell_init(NrnThread* nt, Memb_list* ml, int type) {
 	int ndcount = ml->nodecount;
 	Node** ndlist = ml->nodelist;
 	double** data = ml->data;
@@ -232,14 +234,16 @@ extcell_2d_alloc(sec)
 static set_extnode_lhs();
 
 /* from treesetup.c */
-nrn_rhs_ext()
+void nrn_rhs_ext(NrnThread* _nt)
 {
 	int i, j, cnt;
 	Node *nd, *pnd, **ndlist;
 	double* pd;
 	Extnode *nde, *pnde;
-	cnt = memb_list[EXTRACELL].nodecount;
-	ndlist = memb_list[EXTRACELL].nodelist;
+	Memb_list* ml = _nt->_ecell_memb_list;
+	if (!ml) { return; }
+	cnt = ml->nodecount;
+	ndlist = ml->nodelist;
 	
 	/* nd rhs contains -membrane current + stim current */
 	/* nde rhs contains stim current */
@@ -248,7 +252,7 @@ nrn_rhs_ext()
 		nde = nd->extnode;
 		*nde->_rhs[0] -= NODERHS(nd);
 #if I_MEMBRANE
-		pd = memb_list[EXTRACELL].data[i];
+		pd = ml->data[i];
 		sav_rhs = *nde->_rhs[0];
 		/* and for daspk this is the ionic current which can be
 		   combined later with i_cap before return from solve. */
@@ -257,7 +261,7 @@ nrn_rhs_ext()
 	for (i=0; i < cnt; ++i) {
 		nd = ndlist[i];
 		nde = nd->extnode;
-		pnd = v_parent[nd->v_node_index];
+		pnd = _nt->_v_parent[nd->v_node_index];
 		if (pnd) {
 			pnde = pnd->extnode;
 			pd = nde->param;
@@ -289,18 +293,19 @@ nrn_rhs_ext()
 	}
 }
 
-nrn_setup_ext()
+void nrn_setup_ext(NrnThread* _nt)
 {
 	int i, j, cnt;
 	Node *nd, *pnd, **ndlist;
-	extern double nrn_get_cj();
 	double* pd;
 	double d, cfac, mfac;
 	Extnode *nde, *pnde;
+	Memb_list* ml = _nt->_ecell_memb_list;
+	if (!ml) { return; }
 /*printnode("begin setup");*/
-	cnt = memb_list[EXTRACELL].nodecount;
-	ndlist = memb_list[EXTRACELL].nodelist;
-	cfac = .001*nrn_get_cj();
+	cnt = ml->nodecount;
+	ndlist = ml->nodelist;
+	cfac = .001 * _nt->cj;
 	
 	/* d contains all the membrane conductances (and capacitance) */
 	/* i.e. (cm/dt + di/dvm - dis/dvi)*[dvi] and
@@ -316,7 +321,7 @@ nrn_setup_ext()
 		*nde->_x12[0] -= d;
 		*nde->_x21[0] -= d;
 #if I_MEMBRANE
-		pd = memb_list[EXTRACELL].data[i];
+		pd = ml->data[i];
 		sav_g = d;
 #endif
 	}
@@ -324,7 +329,7 @@ nrn_setup_ext()
 	for (i=0; i < cnt; ++i) {
 		nd = ndlist[i];
 		nde = nd->extnode;
-		pnd = v_parent[nd->v_node_index];
+		pnd = _nt->_v_parent[nd->v_node_index];
 		if (pnd) {
 			pd = nde->param;
 			/* series resistance and capacitance to ground */
@@ -357,7 +362,7 @@ nrn_setup_ext()
 }
 
 /* based on treeset.c */
-ext_con_coef()	/* setup a and b */
+void ext_con_coef()	/* setup a and b */
 {
 	int j,k;
 	double dx, area;
@@ -461,18 +466,19 @@ ext_con_coef()	/* setup a and b */
 
 }
 
-#if 1
+#if 0
 /* needs to be fixed to deal with rootnodes having this property */
 
-printnode(s) char* s; {
+static printnode(s) char* s; {
 	int in, i, j, k;
 	hoc_Item* qsec;
 	Section* sec;
 	Node* nd;
 	Extnode* nde;	
 	double *pd;
-	for (in=0; in < v_node_count; ++in) {
-		nd = v_node[in];
+	NrnThread* _nt;
+	FOR_THREADS(_nt) for (in=0; in < _nt->end; ++in) {
+		nd = _nt->_v_node[in];
 		if (nd->extnode) {
 			sec = nd->sec;
 			j = nd->sec_node_index_;
@@ -571,7 +577,7 @@ check2mat() {
 	/* rhs - M*V accomplished by subtracting every term from rhs */
 	for (i=0; i < v_node_count; ++i) {
 DBG("work on node %d\n", i);
-		if (i >= rootnodecount) {
+		if (v_parent[i]) {
 			ip = v_parent[i]->v_node_index;
 			/* effect of parent on node */
 DBG(" effect of parent %d on node %d\n", ip, i);

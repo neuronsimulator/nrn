@@ -6,6 +6,7 @@ NEURON {
 	USEION na READ ena WRITE ina
 	RANGE gnabar, ina
 	GLOBAL minf, hinf, mtau, htau
+	THREADSAFE
 }
 
 UNITS {

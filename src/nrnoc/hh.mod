@@ -27,6 +27,7 @@ NEURON {
         NONSPECIFIC_CURRENT il
         RANGE gnabar, gkbar, gl, el, gna, gk
         GLOBAL minf, hinf, ninf, mtau, htau, ntau
+	THREADSAFE : assigned GLOBALs will be per thread
 }
  
 PARAMETER {
@@ -55,8 +56,6 @@ ASSIGNED {
 	mtau (ms) htau (ms) ntau (ms)
 }
  
-LOCAL mexp, hexp, nexp        
- 
 ? currents
 BREAKPOINT {
         SOLVE states METHOD cnexp
@@ -83,13 +82,13 @@ DERIVATIVE states {
         n' = (ninf-n)/ntau
 }
  
-LOCAL q10
+:LOCAL q10
 
 
 ? rates
 PROCEDURE rates(v(mV)) {  :Computes rate and other constants at current v.
                       :Call once from HOC to initialize inf at resting v.
-        LOCAL  alpha, beta, sum
+        LOCAL  alpha, beta, sum, q10
         TABLE minf, mtau, hinf, htau, ninf, ntau DEPEND celsius FROM -100 TO 100 WITH 200
 
 UNITSOFF

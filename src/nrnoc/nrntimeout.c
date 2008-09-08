@@ -6,8 +6,8 @@
 #include <stdio.h>
 #include <signal.h>
 #include <sys/time.h>
+#include <section.h>
 
-extern double t;
 extern void nrnmpi_abort(int errcode);
 static double told;
 static struct itimerval value;
@@ -19,11 +19,11 @@ static void timed_out(int sig) {
 #if 0
 printf("timed_out told=%g t=%g\n", told, t);
 #endif
-	if (t == told) { /* nothing has been accomplished since last signal*/
-		printf("nrn_timeout t=%g\n", t);
+	if (nrn_threads->_t == told) { /* nothing has been accomplished since last signal*/
+		printf("nrn_timeout t=%g\n", nrn_threads->_t);
 		nrnmpi_abort(0);
 	}
-	told = t;
+	told = nrn_threads->_t;
 }
 
 void nrn_timeout(int seconds) {
@@ -33,14 +33,14 @@ printf("nrn_timeout %d\n", seconds);
 #endif
 #if BLUEGENE
 	if (seconds) {
-		told = t;
+		told = nrn_threads->_t;
 		signal(SIGALRM, timed_out);
 	}else{
 		signal(SIGALRM, SIG_DFL);
 	}
 #else
 	if (seconds) {
-		told = t;
+		told = nrn_threads->_t;
 		act.sa_handler = timed_out;
 		act.sa_flags = SA_RESTART;
 		if(sigaction(SIGALRM, &act, &oact)) {

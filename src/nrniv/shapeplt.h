@@ -26,7 +26,7 @@ public:
 	virtual void make_space_plot(Section* s1, float x1, Section* s2, float x2);
 	virtual void flush();
 	virtual void fast_flush();
-	void update_ptrs(int, double**, double*);
+	void update_ptrs();
 private:
 	ShapePlotImpl* spi_;
 };

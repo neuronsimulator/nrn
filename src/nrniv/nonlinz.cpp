@@ -138,6 +138,7 @@ void NonLinImp::compute(double omega, double deltafac) {
 }
 
 void NonLinImp::solve(int curloc) {
+	NrnThread* _nt = nrn_threads;
 	if (!rep_) {
 		hoc_execerror("Must call Impedance.compute first", 0);
 	}
@@ -147,7 +148,7 @@ void NonLinImp::solve(int curloc) {
 			rep_->rv_[i] = 0;
 			rep_->jv_[i] = 0;
 		}
-		rep_->rv_[curloc] = 1.e2/NODEAREA(v_node[curloc]);
+		rep_->rv_[curloc] = 1.e2/NODEAREA(_nt->_v_node[curloc]);
 		cmplx_spSolve(rep_->m_, rep_->rv_-1, rep_->rv_-1, rep_->jv_-1, rep_->jv_-1);
 		rep_->iloc_ = curloc;
 	}
@@ -159,6 +160,7 @@ void NonLinImp::solve(int curloc) {
 NonLinImpRep::NonLinImpRep() {
 	int err;
 	int i, j, ieq, cnt;
+	NrnThread* _nt = nrn_threads;
 
 	vsymtol_ = nil;
 	Symbol* vsym = hoc_table_lookup("v", hoc_built_in_symlist);
@@ -171,15 +173,17 @@ NonLinImpRep::NonLinImpRep() {
 
 	
 	// how many equations
-	n_v_ = v_node_count;
+	n_v_ = _nt->end;
 	n_ext_ = memb_list[EXTRACELL].nodecount*nlayer;
 	n_lin_ = linmod_extra_eqn_count();
 	n_ode_ = 0;
-	for (i=0; i < n_memb_func; ++i) {
+	for (NrnThreadMembList* tml = _nt->tml; tml; tml = tml->next) {
+		Memb_list* ml = tml->ml;
+		i = tml->index;
 		Pfridot s = (Pfridot)memb_func[i].ode_count;
 		if (s) {
 			cnt = (*s)(i);
-			n_ode_ += cnt * memb_list[i].nodecount;
+			n_ode_ += cnt * ml->nodecount;
 		}
 	}
 	neq_v_ = n_v_ + n_ext_ + n_lin_;
@@ -198,7 +202,7 @@ NonLinImpRep::NonLinImpRep() {
 
 	for (i=0; i < n_v_; ++i) {
 		// utilize nd->eqn_index in case of use_sparse13 later
-		Node* nd = v_node[i];
+		Node* nd = _nt->_v_node[i];
 		pv_[i] = &NODEV(nd);
 		pvdot_[i] = nd->_rhs;
 		v_index_[i] = i+1;
@@ -248,10 +252,11 @@ void NonLinImpRep::delta(double deltafac){ // also defines pv_,pvdot_ map for od
 void NonLinImpRep::didv() {
 	int i, j, ip;
 	Node* nd;
+	NrnThread* _nt = nrn_threads;
 	// d2v/dv2 terms
-	for (i=rootnodecount; i < n_v_; ++i) {
-		nd = v_node[i];
-		ip = v_parent[i]->v_node_index;
+	for (i=_nt->ncell; i < n_v_; ++i) {
+		nd = _nt->_v_node[i];
+		ip = _nt->_v_parent[i]->v_node_index;
 		double* a = cmplx_spGetElement(m_, v_index_[ip], v_index_[i]);
 		double* b = cmplx_spGetElement(m_, v_index_[i], v_index_[ip]);
 		*a += NODEA(nd);
@@ -260,10 +265,11 @@ void NonLinImpRep::didv() {
 		*diag_[ip] -= NODEA(nd);
 	}
 	// jwC term
-	int n = memb_list[CAP].nodecount;
+	Memb_list* mlc = _nt->tml->ml;
+	int n = mlc->nodecount;
 	for (i=0; i < n; ++i) {
-		double* cd = memb_list[CAP].data[i];
-		j = memb_list[CAP].nodelist[i]->v_node_index;
+		double* cd = mlc->data[i];
+		j = mlc->nodelist[i]->v_node_index;
 		diag_[v_index_[j]-1][1] += .001 * cd[0] * omega_;
 	}
 	// di/dv terms
@@ -277,8 +283,10 @@ void NonLinImpRep::didv() {
 	// would not be handled in any case without computing a full jacobian.
 	// i.e. calling nrn_rhs varying every state one at a time (that would
 	// give the d2v/dv2 terms as well), but the expense is unwarranted.
-	for (i=CAP+1; i < n_memb_func; ++i) if (memb_func[i].current && memb_list[i].nodecount) {
-		Memb_list* ml = memb_list + i;
+	for (NrnThreadMembList* tml = _nt->tml; tml; tml = tml->next) {
+		i = tml->index;
+		if (i == CAP) { continue; }
+		Memb_list* ml = tml->ml;
 		double* x1 = rv_; // use as temporary storage
 		double* x2 = jv_;
 		for (j = 0; j < ml->nodecount; ++j) { Node* nd = ml->nodelist[j];

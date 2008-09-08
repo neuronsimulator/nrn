@@ -13,6 +13,7 @@ of struct _spblk, we are really using TQItem
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
+#include <section.h>
 
 #define SPBLK TQItem
 #define leftlink left_
@@ -23,7 +24,8 @@ of struct _spblk, we are really using TQItem
 #include <sptree.h>
 
 extern "C" {
-extern double dt;
+//extern double dt;
+#define nt_dt nrn_threads->_dt
 }
 
 TQItem::TQItem() {
@@ -33,11 +35,6 @@ TQItem::TQItem() {
 }
 
 TQItem::~TQItem() {
-}
-
-static void deleteitem(TQItem* i) { // only one, semantics changed
-	assert(i);
-	tpool_->hpfree(i);
 }
 
 boolean TQItem::check() {
@@ -60,10 +57,9 @@ static void chk(TQItem* b, int level) {
 	}
 }
 
-TQueue::TQueue() {
-	if (!tpool_) {
-		tpool_ = new TQItemPool(1000);
-	}
+TQueue::TQueue(TQItemPool* tp, int mkmut) {
+	MUTCONSTRUCT(mkmut)
+	tpool_ = tp;
 	nshift_ = 0;
 	sptree_ = new SPTREE;
 	spinit(sptree_);
@@ -87,9 +83,15 @@ TQueue::~TQueue() {
 		remove(q);
 	}
 	delete binq_;
+	MUTDESTRUCT
 }
 	
+void TQueue::deleteitem(TQItem* i) {
+	tpool_->hpfree(i);
+}
+
 void TQueue::print() {
+	MUTLOCK
 #if FAST_LEAST
 	if (least_) {
 		prnt(least_, 0);
@@ -99,9 +101,11 @@ void TQueue::print() {
 	for (TQItem* q = binq_->first(); q; q = binq_->next(q)) {
 		prnt(q, 0);
 	}
+	MUTUNLOCK
 }
 
 void TQueue::forall_callback(void(*f)(const TQItem*, int)) {
+	MUTLOCK
 #if FAST_LEAST
 	if (least_) {
 		f(least_, 0);
@@ -111,12 +115,19 @@ void TQueue::forall_callback(void(*f)(const TQItem*, int)) {
 	for (TQItem* q = binq_->first(); q; q = binq_->next(q)) {
 		f(q, 0);
 	}
+	MUTUNLOCK
 }
 
 void TQueue::check(const char* mes) {
 }
 
 void TQueue::move_least(double tnew) {
+	MUTLOCK
+	move_least_nolock(tnew);
+	MUTUNLOCK
+}
+
+void TQueue::move_least_nolock(double tnew) {
 	TQItem* b = least();
 	if (b) {
 		b->t_ = tnew;
@@ -131,9 +142,10 @@ void TQueue::move_least(double tnew) {
 }
 
 void TQueue::move(TQItem* i, double tnew) {
+	MUTLOCK
 	STAT(nmove)
 	if (i == least_) {
-		move_least(tnew);
+		move_least_nolock(tnew);
 	}else if (tnew < least_->t_) {
 		spdelete(i, sptree_);
 		i->t_ = tnew;
@@ -144,6 +156,7 @@ void TQueue::move(TQItem* i, double tnew) {
 		i->t_ = tnew;
 		spenq(i, sptree_);
 	}
+	MUTUNLOCK
 }
 
 void TQueue::statistics() {
@@ -169,12 +182,13 @@ void TQueue::spike_stat(double* d) {
 }
 
 TQItem* TQueue::insert(double t, void* d) {
+	MUTLOCK
 	STAT(ninsert);
 	TQItem* i = tpool_->alloc();
 	i->data_ = d;
 	i->t_ = t;
 	i->cnt_ = -1;
-	if (t < least_t()) {
+	if (t < least_t_nolock()) {
 		if (least()) {
 			spenq(least(), sptree_);
 		}
@@ -182,22 +196,27 @@ TQItem* TQueue::insert(double t, void* d) {
 	}else{
 		spenq(i, sptree_);
 	}
+	MUTUNLOCK
 	return i;
 }
 
 TQItem* TQueue::enqueue_bin(double td, void* d) {
+	MUTLOCK
 	STAT(ninsert);
 	TQItem* i = tpool_->alloc();
 	i->data_ = d;
 	binq_->enqueue(td, i);
+	MUTUNLOCK
 	return i;
 }
 
 void TQueue::release(TQItem* q) {
+	// if lockable then the pool is internally handles locking
 	tpool_->hpfree(q);
 }
 
 void TQueue::remove(TQItem* q) {
+	MUTLOCK
 	STAT(nrem);
 	if (q) {
 		if (q == least_) {
@@ -213,16 +232,36 @@ void TQueue::remove(TQItem* q) {
 		}
 		tpool_->hpfree(q);
 	}
+	MUTUNLOCK
+}
+
+TQItem* TQueue::atomic_dq(double tt) {
+	TQItem* q = 0;
+	MUTLOCK
+	if (least_ && least_->t_ <= tt) {
+		q = least_;
+		STAT(nrem);
+		if (sptree_->root) {
+			least_ = spdeq(&sptree_->root);
+		}else{
+			least_ = nil;
+		}
+	}
+	MUTUNLOCK
+	return q;
 }
 
 TQItem* TQueue::find(double t) {
+	TQItem* q;
+	MUTLOCK
 	// search only in the  splay tree. if this is a bug then fix it.
 	STAT(nfind)
-	if (t == least_t()) {
-		return least();
+	if (t == least_t_nolock()) {
+		q = least();
+	}else{
+		q = splookup(t, sptree_);
 	}
-	TQItem* q;
-	q = splookup(t, sptree_);
+	MUTUNLOCK
 	return(q);
 }
 
@@ -264,7 +303,7 @@ void BinQ::resize(int size) {
 	qpt_ = 0;
 }
 void BinQ::enqueue(double td, TQItem* q) {
-	int idt = (int)((td - tt_)/dt + 1.e-10);
+	int idt = (int)((td - tt_)/nt_dt + 1.e-10);
 	assert(idt >= 0);
 	if (idt >= nbin_) {
 		resize(idt + 100);

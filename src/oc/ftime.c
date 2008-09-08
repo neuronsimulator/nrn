@@ -57,3 +57,14 @@ int hoc_stopsw()
 	return;
 }
 
+double nrn_timeus()
+{
+#if defined(HAVE_GETTIMEOFDAY)
+	struct timeval x;
+	gettimeofday(&x, (struct timezone*)0);
+	return ((double)x.tv_sec + .000001*((double)x.tv_usec));
+#else
+	return 0.;
+#endif
+}
+

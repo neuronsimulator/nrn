@@ -3,7 +3,9 @@
 
 #include "classreg.h"
 #include "membfunc.h"
-typedef void(*Pvmi)(Memb_list*, int);
+struct NrnThread;
+
+typedef void(*Pvmi)(NrnThread*, Memb_list*, int);
 
 #if defined(__cplusplus)
 extern "C" {
@@ -14,8 +16,8 @@ extern int point_register_mech(char**, void(*)(Prop*), Pvmi, Pvmi, Pvmi, Pvmi, i
 	void*(*)(Object*), void(*)(void*), Member_func*, int);
 extern void hoc_register_cvode(int, int(*)(int),
 	int(*)(int, double**, double**, double*, Datum*, double*, int),
-	int(*)(Memb_list*, int),
-	int(*)(Memb_list*, int)
+	int(*)(NrnThread*, Memb_list*, int),
+	int(*)(NrnThread*, Memb_list*, int)
 );
 
 extern int nrn_get_mechtype(const char*);

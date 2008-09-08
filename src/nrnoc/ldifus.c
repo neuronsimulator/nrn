@@ -7,6 +7,9 @@
 #include        "neuron.h"
 #include        "parse.h"
 
+#define nt_t nrn_threads->_t
+#define nt_dt nrn_threads->_dt
+
 extern char* secname(), *hoc_Erealloc(); 
 extern int diam_change_cnt;
 extern int structure_change_cnt;
@@ -27,11 +30,17 @@ typedef struct LongDifus {
 			   area from LONGITUDINAL_DIFFUSION */
 }LongDifus;
 
+typedef struct LongDifusThreadData {
+	int nthread;
+	LongDifus** ldifus;
+	Memb_list** ml;
+}LongDifusThreadData;
+
 typedef void (*Pfrv)();
 
 static int ldifusfunccnt;
 static Pfrv* ldifusfunc;
-static void stagger(), ode(), matsol();
+static void stagger(), ode(), matsol(), overall_setup();
 
 hoc_register_ldifus1( f ) Pfrv f; {
 	ldifusfunc = (Pfrv*)erealloc(ldifusfunc, (ldifusfunccnt + 1)*sizeof(Pfrv) );
@@ -43,18 +52,19 @@ hoc_register_ldifus1( f ) Pfrv f; {
 /* this avoids a missing _ptrgl12 in the mac library that was called by
 the MrC compiled object
 */
-void mac_difusfunc(f, m, diffunc, v, ai, sindex, dindex)
+void mac_difusfunc(f, m, diffunc, v, ai, sindex, dindex, nt)
 	Pfrv f;
 	int m;
 	double (*diffunc)();
 	void** v;
 	int ai, sindex, dindex;
+	NrnThread* _nt;
 {
-	(*f)(m, diffunc, v, ai, sindex, dindex);
+	(*f)(m, diffunc, v, ai, sindex, dindex, nt);
 }
 #endif
 
-long_difus_solve(method) int method; {
+void long_difus_solve(int method, NrnThread* nt) {
 	Pfrv f;
 	int i;
 	if (ldifusfunc) {
@@ -68,11 +78,14 @@ long_difus_solve(method) int method; {
 		case 2: /* solve (1 + dt*jacobian)*x = b */
 			f = matsol;
 			break;
+		case 3: /* setup only called by thread 0 */
+			f = overall_setup;
+			break;
 		}
 		assert(f);
 		
 		for (i=0; i < ldifusfunccnt; ++i) {
-			(*ldifusfunc[i])(f);
+			(*ldifusfunc[i])(f, nt);
 		}
 	}
 }	
@@ -101,18 +114,19 @@ printf("free longdifus structure_change=%d %d\n", pld->schange, structure_change
 	*ppld = (LongDifus*)0;
 }
 
-static longdifusalloc(ppld, m, sindex)
- LongDifus** ppld; int m, sindex;
+static longdifusalloc(ppld, m, sindex, ml, _nt)
+ LongDifus** ppld; int m, sindex; Memb_list* ml; NrnThread* _nt;
 {
 	LongDifus* pld;
-	int i, n, mi, mpi, j, index, pindex;
+	int i, n, mi, mpi, j, index, pindex, vnodecount;
 	int* map, *omap;
 	Node* nd, *pnd;
 	hoc_Item* qsec;
 	double rall, dxp, dxc;
 	
+	vnodecount = _nt->end;
 	*ppld = pld = (LongDifus*)emalloc(sizeof(LongDifus));
-	n = memb_list[m].nodecount;
+	n = ml->nodecount;
 
 	pld->mindex = (int*)ecalloc(n, sizeof(int));
 	pld->pindex = (int*)ecalloc(n, sizeof(int));
@@ -127,16 +141,16 @@ static longdifusalloc(ppld, m, sindex)
 	pld->dc = (double*)ecalloc(n, sizeof(double));
 
 	/* make a map from node_index to memb_list index. -1 means no exist*/
-	map = (int*)ecalloc(v_node_count, sizeof(int));
+	map = (int*)ecalloc(vnodecount, sizeof(int));
 	omap = (int*)ecalloc(n, sizeof(int));
-	for (i=0; i < v_node_count; ++i) {
+	for (i=0; i < vnodecount; ++i) {
 		map[i] = -1;
 	}
 	for (i=0; i < n; ++i) {
-		map[memb_list[m].nodelist[i]->v_node_index] = i;
+		map[ml->nodelist[i]->v_node_index] = i;
 	}
 #if 0
-for (i=0; i < v_node_count; ++i) {
+for (i=0; i < vnodecount; ++i) {
 	printf("%d index=%d\n", i, map[i]);
 }
 #endif
@@ -145,25 +159,25 @@ for (i=0; i < v_node_count; ++i) {
 	/* But if parent of parent does not have diffusion mechanism
 	   check the parent section */
 	/* And watch out for root. Use first node of root section */
-	for (i=0, j=0; i < v_node_count; ++i) {
+	for (i=0, j=0; i < vnodecount; ++i) {
 		if (map[i] > -1) {
 			pld->mindex[j] = map[i];
 			omap[map[i]] = j; /* from memb list index to order */
-			pnd = v_parent[i];
+			pnd = _nt->_v_parent[i];
 			pindex = map[pnd->v_node_index];
 			if (pindex == -1) {/* maybe this was zero area node */
-				pnd = v_parent[pnd->v_node_index];
+				pnd = _nt->_v_parent[pnd->v_node_index];
 				if (pnd) {
 					pindex = map[pnd->v_node_index];
 					if (pindex < 0) { /* but what about the	parent section */
-						Section* psec = v_node[i]->sec->parentsec;
+						Section* psec = _nt->_v_node[i]->sec->parentsec;
 						if (psec) {
 							pnd = psec->pnode[0];
 							pindex = map[pnd->v_node_index];
 						}
 					}
 				}else{ /* maybe this section is not the root */
-					Section* psec = v_node[i]->sec->parentsec;
+					Section* psec = _nt->_v_node[i]->sec->parentsec;
 					if (psec) {
 						pnd = psec->pnode[0];
 						pindex = map[pnd->v_node_index];
@@ -183,15 +197,15 @@ for (i=0; i < v_node_count; ++i) {
 	/* Also child may butte end to end with parent or attach to middle */
 		mi = pld->mindex[i];
 		if (sindex < 0) {
-			pld->state[i] = memb_list[m].pdata[mi][-sindex - 1].pval;
+			pld->state[i] = ml->pdata[mi][-sindex - 1].pval;
 		}else{
-			pld->state[i] = memb_list[m].data[mi] + sindex;
+			pld->state[i] = ml->data[mi] + sindex;
 		}
-		nd = memb_list[m].nodelist[mi];
+		nd = ml->nodelist[mi];
 		pindex = pld->pindex[i];
 		if (pindex > -1) {
 			mpi = pld->mindex[pindex];
-			pnd = memb_list[m].nodelist[mpi];
+			pnd = ml->nodelist[mpi];
 			if (nd->sec_node_index_ == 0) {
 				rall = nd->sec->prop->dparam[4].val;
 			}else{
@@ -208,8 +222,8 @@ for (i=0; i < v_node_count; ++i) {
 #if 0
 	for (i=0; i < n; ++i) {
 printf("i=%d pin=%d mi=%d :%s node %d state[(%i)]=%g\n", i, pld->pindex[i],
-	pld->mindex[i], secname(memb_list[m].nodelist[pld->mindex[i]]->sec),
-	memb_list[m].nodelist[pld->mindex[i]]->sec_node_index_
+	pld->mindex[i], secname(ml->nodelist[pld->mindex[i]]->sec),
+	ml->nodelist[pld->mindex[i]]->sec_node_index_
 	, sindex, pld->state[i][0]);
 	}
 #endif
@@ -217,49 +231,91 @@ printf("i=%d pin=%d mi=%d :%s node %d state[(%i)]=%g\n", i, pld->pindex[i],
 	free(omap);
 }
 
-static LongDifus* check(v, m, sindex) void** v; int m, sindex; {
-	LongDifus** ppld, *pld;
-	if (memb_list[m].nodecount == 0) {
-		return (LongDifus*)0;
-	}
-	ppld = (LongDifus**)v;
-	pld = *ppld;
-	/* watch out for diam and structure change */
-	if (!pld || pld->schange != structure_change_cnt) {
-		longdifusfree(ppld);
-		longdifusalloc(ppld, m, sindex);
-		pld = *ppld;
-		pld->schange = structure_change_cnt;
-	}
-	return pld;
-}
-
-static void stagger(m, diffunc, v, ai, sindex, dindex)
+/* called at end of v_setup_vectors only for thread 0 */
+/* only v makes sense and the purpose is to free the old, allocate space */
+/* for the new, and setup the tml field */
+/* the args used are m and v */
+static void overall_setup(m, diffunc, v, ai, sindex, dindex, _nt)
 	int m;
 	double (*diffunc)();
 	void** v;
 	int ai, sindex, dindex;
+	NrnThread* _nt;
+{
+	int i;
+	LongDifusThreadData** ppldtd = (LongDifusThreadData**)v;
+	LongDifusThreadData* ldtd = *ppldtd;
+	if (ldtd) { /* free the whole thing */
+		free((char*)ldtd->ml);
+		for (i=0; i < ldtd->nthread; ++i) {
+			if (ldtd->ldifus[i]) {
+				longdifusfree(ldtd->ldifus + i);
+			}
+		}
+		free((char*)ldtd->ldifus);
+		free((char*)ldtd);
+		*ppldtd = (LongDifusThreadData*)0;
+	}
+	/* new overall space */
+	*ppldtd = (LongDifusThreadData*)emalloc(sizeof(LongDifusThreadData));
+	ldtd = *ppldtd;
+	ldtd->nthread = nrn_nthread;
+	ldtd->ldifus = (LongDifus**)ecalloc(nrn_nthread, sizeof(LongDifus*));
+	ldtd->ml = (Memb_list**)ecalloc(nrn_nthread, sizeof(Memb_list*));
+	/* which have memb_list pointers */
+	for (i=0; i < nrn_nthread; ++i) {
+		NrnThreadMembList* tml;
+		for (tml = nrn_threads[i].tml; tml; tml = tml->next) {
+			if (tml->index == m) {
+				ldtd->ml[i] = tml->ml;
+				longdifusalloc(ldtd->ldifus + i, m, sindex, tml->ml, nrn_threads + i);
+				break;
+			}
+		}
+	}
+}
+
+static LongDifus* v2ld(v, tid) void** v; int tid; {
+	LongDifusThreadData** ppldtd = (LongDifusThreadData**)v;
+	return (*ppldtd)->ldifus[tid];
+}
+
+static Memb_list* v2ml(v, tid) void** v; int tid; {
+	LongDifusThreadData** ppldtd = (LongDifusThreadData**)v;
+	return (*ppldtd)->ml[tid];
+}
+
+static void stagger(m, diffunc, v, ai, sindex, dindex, _nt)
+	int m;
+	double (*diffunc)();
+	void** v;
+	int ai, sindex, dindex;
+	NrnThread* _nt;
 {
 	LongDifus* pld;
 	int i, n, di;
 	double dc, vol, dfdi, dx;
 	double** data;
 	Datum** pdata;
+	Datum* thread;
+	Memb_list* ml;
 
 	di = dindex + ai;
 
-	pld = check(v, m, sindex);
+	pld = v2ld(v, _nt->id);
 	if(!pld) return;
+	ml = v2ml(v, _nt->id);
 
-	n = memb_list[m].nodecount;
-	data = memb_list[m].data;
-	pdata = memb_list[m].pdata;
+	n = ml->nodecount;
+	data = ml->data;
+	pdata = ml->pdata;
+	thread = ml->_thread;
 
 	/*flux and volume coefficients (if dc is constant this is too often)*/
 	for (i=0; i < n; ++i) {
 		int pin = pld->pindex[i];
 		int mi = pld->mindex[i];
-		pld->dc[i] = (*diffunc)(ai, data[mi], pdata[mi], pld->vol+i, &dfdi);
+		pld->dc[i] = (*diffunc)(ai, data[mi], pdata[mi], pld->vol+i, &dfdi, thread, _nt);
 		pld->d[i] = 0.;
 #if 0
 		if (dfdi) {
@@ -278,8 +334,8 @@ static void stagger(m, diffunc, v, ai, sindex, dindex)
 	for (i=0; i < n; ++i) {
 		int pin = pld->pindex[i];
 		int mi = pld->mindex[i];
-		pld->d[i] += 1./dt;
-		pld->rhs[i] = pld->state[i][ai]/dt;
+		pld->d[i] += 1./nt_dt;
+		pld->rhs[i] = pld->state[i][ai]/nt_dt;
 		if (pin > -1) {
 			pld->d[i] -= pld->b[i];
 			pld->d[pin] -= pld->a[i];
@@ -319,32 +375,37 @@ for (i=0; i < n; ++i) { double a,b;
 	}
 }
 
-static void ode(m, diffunc, v, ai, sindex, dindex)
+static void ode(m, diffunc, v, ai, sindex, dindex, _nt)
 	int m;
 	double (*diffunc)();
 	void** v;
 	int ai, sindex, dindex;
+	NrnThread* _nt;
 {
 	LongDifus* pld;
 	int i, n, di;
 	double dc, vol, dfdi;
 	double** data;
 	Datum** pdata;
+	Datum* thread;
+	Memb_list* ml;
 
 	di = dindex + ai;
 
-	pld = check(v, m, sindex);
+	pld = v2ld(v, _nt->id);
 	if(!pld) return;
+	ml = v2ml(v, _nt->id);
 
-	n = memb_list[m].nodecount;
-	data = memb_list[m].data;
-	pdata = memb_list[m].pdata;
+	n = ml->nodecount;
+	data = ml->data;
+	pdata = ml->pdata;
+	thread = ml->_thread;
 	
 	/*flux and volume coefficients (if dc is constant this is too often)*/
 	for (i=0; i < n; ++i) {
 		int pin = pld->pindex[i];
 		int mi = pld->mindex[i];
-		pld->dc[i] = (*diffunc)(ai, data[mi], pdata[mi], pld->vol+i, &dfdi);
+		pld->dc[i] = (*diffunc)(ai, data[mi], pdata[mi], pld->vol+i, &dfdi, thread, _nt);
 		if (pin > -1) {
 			/* D * area between compartments */
 			dc = (pld->dc[i] + pld->dc[pin])/2.;
@@ -376,26 +437,30 @@ static void ode(m, diffunc, v, ai, sindex, dindex)
 }
 
 
-static void matsol(m, diffunc, v, ai, sindex, dindex)
+static void matsol(m, diffunc, v, ai, sindex, dindex, _nt)
 	int m;
 	double (*diffunc)();
 	void** v;
 	int ai, sindex, dindex;
+	NrnThread* _nt;
 {
 	LongDifus* pld;
 	int i, n, di;
 	double dc, vol, dfdi;
 	double** data;
 	Datum** pdata;
+	Datum* thread;
+	Memb_list* ml;
 
 	di = dindex + ai;
 
-	pld = check(v, m, sindex);
+	pld = v2ld(v, _nt->id);
 	if(!pld) return;
+	ml = v2ml(v, _nt->id);
 
-	n = memb_list[m].nodecount;
-	data = memb_list[m].data;
-	pdata = memb_list[m].pdata;
+	n = ml->nodecount;
+	data = ml->data;
+	pdata = ml->pdata;
 	
 	/*flux and volume coefficients (if dc is constant this is too often)*/
 	for (i=0; i < n; ++i) {
@@ -421,8 +486,8 @@ printf("i=%d state=%g vol=%g dfdc=%g\n", i, pld->state[i][ai],pld->vol[i], pld->
 	for (i=0; i < n; ++i) {
 		int pin = pld->pindex[i];
 		int mi = pld->mindex[i];
-		pld->d[i] += 1./dt;
-		pld->rhs[i] = data[mi][di]/dt;
+		pld->d[i] += 1./nt_dt;
+		pld->rhs[i] = data[mi][di]/nt_dt;
 		if (pin > -1) {
 			pld->d[i] -= pld->b[i];
 			pld->d[pin] -= pld->a[i];
