@@ -6,41 +6,124 @@ extern void nrnmpi_int_gather(int*, int*, int, int);
 extern void nrnmpi_int_gatherv(int*, int, int*, int*, int*, int);
 }
 
-// static int bgpdma_nsend_, bgpdma_nrecv_; // declared earlier for initialization
-
-#if BGPDMA == 2
-
 #include <structpool.h>
-#include <dcmf.h>
 
 declareStructPool(SpkPool, NRNMPI_Spike)
 implementStructPool(SpkPool, NRNMPI_Spike)
 static SpkPool* recv_spike_pool;
 
+#define BGP_RECEIVEBUFFER_SIZE 100
+class BGP_ReceiveBuffer {
+public:
+	BGP_ReceiveBuffer();
+	virtual ~BGP_ReceiveBuffer();
+	void init();
+	void incoming(NRNMPI_Spike*);
+	void enqueue();
+	int size_;
+	int count_;
+	int maxcount_;
+	int busy_;
+	int nsend_, nrecv_; // for checking conservation
+	NRNMPI_Spike** buffer_;
+};
+static BGP_ReceiveBuffer* bgp_receive_buffer[BGP_INTERVAL];
+static int current_rbuf, next_rbuf;
+#if BGP_INTERVAL == 2
+// note that if a spike is supposed to be received by bgp_receive_buffer[1]
+// then during transmission its gid is complemented.
+#endif
+
+BGP_ReceiveBuffer::BGP_ReceiveBuffer() {
+	busy_ = 0;
+	count_ = 0;
+	size_ = BGP_RECEIVEBUFFER_SIZE;
+	buffer_ = new NRNMPI_Spike*[size_];
+}
+BGP_ReceiveBuffer::~BGP_ReceiveBuffer() {
+	assert(busy_ == 0);
+	for (int i = 0; i < count_; ++i) {
+		recv_spike_pool->hpfree(buffer_[i]);
+	}
+	delete [] buffer_;
+}
+void BGP_ReceiveBuffer::init() {
+	nsend_ = nrecv_ = busy_ = 0;
+	for (int i = 0; i < count_; ++i) {
+		recv_spike_pool->hpfree(buffer_[i]);
+	}
+	count_ = 0;
+}
+void BGP_ReceiveBuffer::incoming(NRNMPI_Spike* spk) {
+//printf("%d %lx.incoming %g %g %d\n", nrnmpi_myid, (long)this, t, spk->spiketime, spk->gid);
+	assert(busy_ == 0);
+	busy_ = 1;
+	if (count_ >= size_) {
+		size_ *= 2;
+		NRNMPI_Spike** newbuf = new NRNMPI_Spike*[size_];
+		for (int i = 0; i < count_; ++i) {
+			newbuf[i] = buffer_[i];
+		}
+		delete [] buffer_;
+		buffer_ = newbuf;
+	}
+	++nrecv_;
+	buffer_[count_++] = spk;
+	if (maxcount_ < count_) { maxcount_ = count_; }
+	busy_ = 0;	
+}
+void BGP_ReceiveBuffer::enqueue() {
+//printf("%d %lx.enqueue count=%d t=%g nrecv=%d nsend=%d\n", nrnmpi_myid, (long)this, t, count_, nrecv_, nsend_);
+	assert(busy_ == 0);
+	busy_ = 1;
+	for (int i; i < count_; ++i) {
+		NRNMPI_Spike* spk = buffer_[i];
+		PreSyn* ps;
+		assert(gid2in_->find(spk->gid, ps));
+		ps->send(spk->spiketime, net_cvode_instance);
+		recv_spike_pool->hpfree(spk);
+	}
+	count_ = 0;
+	nrecv_ = 0;
+	nsend_ = 0;
+	busy_ = 0;
+}
+
+#if BGPDMA == 2
+
+#include <dcmf.h>
+#include <dcmf_multisend.h>
+
 #define PIPEWIDTH 16
 
 static DCMF_Opcode_t* hints_;
-static DCMF_Protocol_t msend_registration;
-static DCMF_MultiSend_Configuration_t mconfig;
+static DCMF_Protocol_t protocol;
+static DCMF_Multicast_Configuration_t mconfig;
 
 // client done callback 
 static void spk_ready (void *arg) {
-	PreSyn* ps;
 	NRNMPI_Spike* spk = (NRNMPI_Spike*)arg;
 //printf("%d spk_ready %d %g\n", nrnmpi_myid, spk->gid, spk->spiketime);
-	assert(gid2in_->find(spk->gid, ps));
-	ps->send(spk->spiketime, net_cvode_instance);
-	++bgpdma_nrecv_;
+	// to avoid a race condition (since we may be in the middle of
+	// retrieving an item from the event queue) store the incoming
+	// events in a receive buffer
+	int i = 0;
+#if BGP_INTERVAL == 2
+	if (spk->gid < 0) {
+		spk->gid = ~spk->gid;
+		i = 1;
+	}
+#endif
+	bgp_receive_buffer[i]->incoming(spk);
 	++nrecv_;
-	recv_spike_pool->hpfree(spk);
 }
 
 // async callback for receiver's side of multisend  
-static DCMF_Request_t * msend_recv(const DCQuad  * info,
-			    unsigned          count,
-			    unsigned          peer,
-			    const unsigned          sndlen,
-			    unsigned          conn_id,
+static DCMF_Request_t * msend_recv(const DCQuad  * msginfo,
+			    unsigned          nquads,
+			    unsigned          senderID,
+			    const unsigned    sndlen,
+			    unsigned          connid,
 			    void            * arg,
 			    unsigned        * rcvlen,
 			    char           ** rcvbuf,
@@ -50,6 +133,7 @@ static DCMF_Request_t * msend_recv(const DCQuad  * info,
   assert ( sndlen == sizeof(NRNMPI_Spike) );
   * rcvlen          = sndlen;
   * rcvbuf          = (char*)recv_spike_pool->alloc();
+  * pipewidth       = PIPEWIDTH;
   cb_done->function = spk_ready;
   cb_done->clientdata = *rcvbuf;
 
@@ -78,6 +162,7 @@ public:
 #endif
 };
 
+static int max_ntarget_host;
 
 // Multisend_multicast callback
 static void  multicast_done(void* arg) {
@@ -85,14 +170,31 @@ static void  multicast_done(void* arg) {
 	*a = false;
 }
 
+static void bgp_dma_init() {
+	for (int i = 0; i < BGP_INTERVAL; ++i) {
+		bgp_receive_buffer[i]->init();
+	}
+	current_rbuf = 0;
+	next_rbuf = 1;
+}
+
 static int bgp_advance() {
-	NRNMPI_Spike spk_;
+	NRNMPI_Spike spk;
 	PreSyn* ps;
 	int i = 0;
-	while(nrnmpi_bgp_single_advance(&spk_)) {
+	while(nrnmpi_bgp_single_advance(&spk)) {
 		i += 1;
-		assert(gid2in_->find(spk_.gid, ps));
-		ps->send(spk_.spiketime, net_cvode_instance);
+		NRNMPI_Spike* s = recv_spike_pool->alloc();
+		s->gid = spk.gid;
+		s->spiketime = spk.spiketime;
+		int j = 0;
+#if BGP_INTERVAL == 2
+		if (s->gid < 0) {
+			s->gid = ~s->gid;
+			j = 1;
+		}
+#endif
+		bgp_receive_buffer[j]->incoming(s);
 	}
 	nrecv_ += i;
 	return i;
@@ -103,9 +205,6 @@ BGP_DMASend::BGP_DMASend() {
 	target_hosts_ = nil;
 #if BGPDMA == 2
 	req_in_use_ = false;
-	mconfig.protocol = DCMF_MEMFIFO_DMA_MSEND_PROTOCOL;
-	mconfig.cb_recv = msend_recv;
-	mconfig.nconnections = nrnmpi_numprocs;
 #endif
 }
 
@@ -118,47 +217,42 @@ BGP_DMASend::~BGP_DMASend() {
 void BGP_DMASend::send(int gid, double t) {
 	spk_.gid = gid;
 	spk_.spiketime = t;
+#if BGP_INTERVAL == 2
+	bgp_receive_buffer[next_rbuf]->nsend_ += ntarget_hosts_;
+	if (next_rbuf == 1) {
+		spk_.gid = ~spk_.gid;
+	}
+#else
+	bgp_receive_buffer[0]->nsend_ += ntarget_hosts_;
+#endif
+	nsend_ += 1;
 #if BGPDMA == 2
 	assert(req_in_use_ == false);
 	req_in_use_ = true;
+	DCMF_Request_t sender;
 	DCMF_Callback_t cb_done = { multicast_done, (void*)&req_in_use_ };
 //printf("%d multisend %d %g\n", nrnmpi_myid, gid, t);
-#if 0
-	DCMF_MultiSend_multicast( &msend_registration,
-		&req_, //how many needed? one for each possible send within an interval?
-		cb_done, // no callback required? using my own conserve.
-		DCMF_MATCH_CONSISTENCY,
-		(unsigned)nsend_, //connId_, // just a unique identifier
-		sizeof(NRNMPI_Spike),
-		(const char*)(&spk_),
-		(unsigned int)ntarget_hosts_,
-		(unsigned int*)target_hosts_,
-		hints_,
-		NULL
-	);
-#else
-	DCMF_MultiSend_multicast( &msend_registration,
-		&req_, //how many needed? one for each possible send within an interval?
-		cb_done, // no callback required? using my own conserve.
-		DCMF_MATCH_CONSISTENCY,
-		(unsigned)nsend_, //connId_, // just a unique identifier
-		sizeof(NRNMPI_Spike),
-		(const char*)(&spk_),
-		(unsigned int)ntarget_hosts_,
-		(unsigned int*)target_hosts_,
-		hints_,
-		NULL,			//const DCQuad* msginfo
-		1,			// unsigned count
-		DCMF_UNDEFINED_OP,	// DCMF_Op op
-		DCMF_UNDEFINED_DT	// DCMF_Dt dt
-	);
-#endif
+	DCQuad msginfo;
+	DCMF_Multicast_t msend;
+	msend.registration = &protocol;
+	msend.request = &sender;
+	msend.cb_done = cb_done;
+	msend.consistency = DCMF_MATCH_CONSISTENCY;
+	msend.connection_id = nsend_;
+	msend.bytes = sizeof(NRNMPI_Spike);
+	msend.src = (const char*)&spk_;
+	msend.nranks = (unsigned int)ntarget_hosts_;
+	msend.ranks = (unsigned int*) target_hosts_;
+	msend.opcodes = hints_;
+	msend.msginfo = NULL;
+	msend.count = 1;
+	msend.op = DCMF_UNDEFINED_OP;
+	msend.dt = DCMF_UNDEFINED_DT;
+	
+	DCMF_Multicast(&msend);
 #else
 	nrnmpi_bgp_multisend(&spk_, ntarget_hosts_, target_hosts_);
-	bgpdma_nrecv_ += bgp_advance();
 #endif
-	bgpdma_nsend_ += ntarget_hosts_;
-	nsend_ += 1;
 }
 
 
@@ -180,12 +274,19 @@ void bgp_dma_receive() {
 		DCMF_Messager_advance();
 	}
 #else
-	bgpdma_nrecv_ += bgp_advance();
-	while (nrnmpi_bgp_conserve(bgpdma_nsend_, bgpdma_nrecv_) != 0) {
-		bgpdma_nrecv_ += bgp_advance();
+	bgp_advance();
+	int& s = bgp_receive_buffer[current_rbuf]->nsend_;
+	int& r = bgp_receive_buffer[current_rbuf]->nrecv_;
+	while (nrnmpi_bgp_conserve(s, r) != 0) {
+		bgp_advance();
 	}
 #endif
-	bgpdma_nrecv_ = 0; bgpdma_nsend_ = 0;
+	bgp_receive_buffer[current_rbuf]->enqueue();
+#if BGP_INTERVAL == 2
+//printf("%d reverse buffers %g\n", nrnmpi_myid, t);
+	current_rbuf = next_rbuf;
+	next_rbuf = ((next_rbuf + 1)&1);
+#endif
 }
 
 void bgp_dma_send(PreSyn* ps, double t) {
@@ -217,22 +318,11 @@ void bgpdma_cleanup_presyn(PreSyn* ps) {
 void bgp_dma_setup() {
 	nrnmpi_bgp_comm();
 
-#if BGPDMA == 2
-	recv_spike_pool = new SpkPool(100);
-	// I'm guessing everyone can use the same hints and so they
-	// really should be allocated according to the maximum ntarget_hosts_.
-	hints_ = new DCMF_Opcode_t[nrnmpi_numprocs];
-	for (int i = 0; i < nrnmpi_numprocs; ++i) {
-		hints_[i] = DCMF_PT_TO_PT_SEND;
-	}
-	DCMF_MultiSend_multicast_register ( &msend_registration, &mconfig);
-#endif
-
 	// although we only care about the set of hosts that gid2out_
 	// sends spikes to (source centric). We do not want to send
 	// the entire list of gid2in (which may be 10000 times larger
 	// than gid2out) from every machine to every machine.
-	// so we accomplish the task it two phases the first of which
+	// so we accomplish the task in two phases the first of which
 	// involves allgather with a total receive buffer size of number
 	// of cells (even that is too large and we will split it up
 	// into chunks). And the second, an
@@ -243,6 +333,35 @@ void bgp_dma_setup() {
 
 	// gid2out_ sends spikes to which hosts
 	determine_target_hosts();
+
+	recv_spike_pool = new SpkPool(100);
+	bgp_receive_buffer[0] = new BGP_ReceiveBuffer();
+#if BGP_INTERVAL == 2
+	bgp_receive_buffer[1] = new BGP_ReceiveBuffer();
+#endif
+#if BGPDMA == 2
+	// I'm guessing everyone can use the same hints and so they
+	// can be allocated according to the maximum ntarget_hosts_.
+	if (hints_) {
+		delete [] hints_;
+		hints_ = 0;
+	}
+	if (max_ntarget_host) {
+		hints_ = new DCMF_Opcode_t[max_ntarget_host];
+	}
+	for (int i = 0; i < max_ntarget_host; ++i) {
+		hints_[i] = DCMF_PT_TO_PT_SEND;
+	}
+	// I am also guessing everyone can use the same mconfig.
+	mconfig.protocol = DCMF_MEMFIFO_DMA_MSEND_PROTOCOL;
+	mconfig.cb_recv = msend_recv;
+//	mconfig.nconnections = nrnmpi_numprocs;
+//	mconfig.connectionlist = (void**)malloc(sizeof(void*) * nrnmpi_numprocs);
+	mconfig.nconnections = 1;
+	mconfig.connectionlist = (void**)malloc(sizeof(void*) * 1);
+	mconfig.clientdata = NULL;
+	DCMF_MultiCast_register (&protocol, &mconfig);
+#endif
 
 
 }
@@ -436,9 +555,13 @@ for (i=0; i < nrnmpi_numprocs; ++i) {
 		++ps->bgp.dma_send_->ntarget_hosts_;
 	}
 	// allocate and set to 0 for recount
+	max_ntarget_host = 0;
 	NrnHashIterate(Gid2PreSyn, gid2out_, PreSyn*, ps) {
 		BGP_DMASend* s = ps->bgp.dma_send_;
 		s->target_hosts_ = new int[s->ntarget_hosts_];
+		if (max_ntarget_host < s->ntarget_hosts_) {
+			max_ntarget_host = s->ntarget_hosts_;
+		}
 		s->ntarget_hosts_ = 0;
 	}}}
 	if (gid2out_) for (i=0; i < nrnmpi_numprocs; ++i) {
