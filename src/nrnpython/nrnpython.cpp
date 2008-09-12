@@ -62,6 +62,7 @@ void nrnpython_start(int b) {
 	}
 	if (b == 2 && started) {
 		int i;
+                PySys_SetArgv(nrn_global_argc, nrn_global_argv);
 		nrnpy_augment_path();
 		PyOS_ReadlineFunctionPointer = nrnpython_getline;
 		// Is there a -c "command" or file.py arg.
