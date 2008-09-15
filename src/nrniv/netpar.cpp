@@ -18,6 +18,8 @@ implementNrnHash(Gid2PreSyn, int, PreSyn*)
 #include <cvodeobj.h>
 #include <netcvode.h>
 
+#define BGP_INTERVAL 2
+
 static Symbol* netcon_sym_;
 static Gid2PreSyn* gid2out_;
 static Gid2PreSyn* gid2in_;
@@ -51,10 +53,10 @@ static double set_mindelay(double maxdelay);
 #if BGPDMA
 int use_bgpdma_;
 static void bgp_dma_setup();
+static void bgp_dma_init();
 static void bgp_dma_receive();
 extern void bgp_dma_send(PreSyn*, double t);
 extern void bgpdma_cleanup_presyn(PreSyn*);
-static int bgpdma_nsend_, bgpdma_nrecv_; // for conservation of messages
 #endif
 
 #if NRNMPI
@@ -84,7 +86,10 @@ static IvocVect* max_histogram_;
 
 static int active_;
 static int ocapacity_; // for spikeout_
-static double mindelay_, usable_mindelay_;
+static double usable_mindelay_;
+static double min_interprocessor_delay_;
+static double mindelay_; // the one actually used. Some of our optional algorithms
+// require it to be smaller than  min_interprocessor_delay.
 static double wt_; // wait time for nrnmpi_spike_exchange
 static double wt1_; // time to find the PreSyns and send the spikes.
 static boolean use_compress_;
@@ -254,12 +259,25 @@ static int nrn_need_npe() {
 	return b;
 }
 
+static void calc_actual_mindelay() {
+	//reasons why mindelay_ can be smaller than min_interprocessor_delay
+	// are use_bgpdma when BGP_INTERVAL == 2
+#if BGPDMA && (BGP_INTERVAL == 2)
+	if (use_bgpdma_) {
+		mindelay_ = min_interprocessor_delay_ / 2.;
+	}else{
+		mindelay_ = min_interprocessor_delay_;
+	}
+#endif
+}
+
 void nrn_spike_exchange_init() {
 //printf("nrn_spike_exchange_init\n");
 	if (!nrn_need_npe()) { return; }
 //	if (!active_ && !nrn_use_selfqueue_) { return; }
 	alloc_space();
 //printf("nrnmpi_use=%d active=%d\n", nrnmpi_use, active_);
+	calc_actual_mindelay();	
 	usable_mindelay_ = mindelay_;
 	if (cvode_active_ == 0 && nrn_nthread > 1) {
 		usable_mindelay_ -= dt;
@@ -274,7 +292,9 @@ void nrn_spike_exchange_init() {
 	nout_ = 0;
 
 #if BGPDMA
-	bgpdma_nsend_ = 0; bgpdma_nrecv_ = 0;
+	if (use_bgpdma_) {
+		bgp_dma_init();
+	}
 #endif
 
 	if (n_npe_ != nrn_nthread) {
@@ -906,6 +926,7 @@ static double set_mindelay(double maxdelay) {
 //printf("%d netpar_mindelay local %g now calling nrnmpi_mindelay\n", nrnmpi_myid, mindelay);
 //	double st = time();
 	mindelay_ = nrnmpi_mindelay(mindelay);
+	min_interprocessor_delay_ = mindelay_;
 //	add_wait_time(st);
 //printf("%d local min=%g  global min=%g\n", nrnmpi_myid, mindelay, mindelay_);
 	if (mindelay_ < 1e-9 && nrn_use_selfqueue_) {
