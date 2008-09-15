@@ -4939,7 +4939,8 @@ void WatchCondition::activate(double flag) {
 	nrflag_ = flag;
 	Cvode* cv = (Cvode*)pnt_->nvi_;
 	assert(cv);
-	HTList*& wl = cv->ctd_[thread()->id].watch_list_;
+	int id = (cv->nctd_ > 1) ? thread()->id : 0;
+	HTList*& wl = cv->ctd_[id].watch_list_;
 	if (!wl) {
 		wl = new HTList(nil);
 		net_cvode_instance->wl_list_->append(wl);
