@@ -10,7 +10,6 @@ int nrnmpi_myid = 0; /* rank */
 extern double nrn_timeus();
 
 #if NRNMPI
-
 #include <mpi.h>
 #define USE_HPM 0
 #if USE_HPM
@@ -70,9 +69,12 @@ for (i=0; i < *pargc; ++i) {
 			return;
 		}
 #endif
-		if (MPI_Init(pargc, pargv) != MPI_SUCCESS) {
-			printf("MPI_INIT failed\n");
-		}
+		int flag;
+		MPI_Initialized(&flag);
+
+		if (flag || MPI_Init(pargc, pargv) == MPI_SUCCESS) ;
+		else printf("MPI_INIT failed\n");
+
 		MPI_Comm_dup(MPI_COMM_WORLD, &nrnmpi_comm);
 	}
 	MPI_Comm_dup(nrnmpi_comm, &nrn_bbs_comm);

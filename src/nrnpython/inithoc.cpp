@@ -5,6 +5,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#ifdef NRNMPI
+
+#undef SEEK_SET
+#undef SEEK_END
+#undef SEEK_CUR
+
+#include <mpi.h>
+
+#endif
+
+
 extern "C" {
 
 //int nrn_global_argc;
@@ -15,16 +26,39 @@ extern void nrnpy_hoc();
 
 extern int nrn_is_python_extension;
 extern int ivocmain(int, char**, char**);
-#if NRNMPI
-static char* argv[] = {"NEURON", "-mpi","-dll", 0};
-static int argc = 2;
-#else
-static char* argv[] = {"NEURON", "-dll", 0};
-static int argc = 1;
-#endif
+
+static char* argv_mpi[] = {"NEURON", "-mpi","-dll", 0};
+static int argc_mpi = 2;
+
+static char* argv_nompi[] = {"NEURON", "-dll", 0};
+static int argc_nompi = 1;
+
 static char* env[] = {0};
 void inithoc() {
 	char buf[200];
+	
+	int argc = argc_nompi;
+	char** argv = argv_nompi;
+
+#ifdef NRNMPI
+
+	int flag;
+
+	MPI_Initialized(&flag);
+
+	if (flag) {
+	  printf("MPI_Initialized==true, enabling MPI funtionality.\n");
+
+	  argc = argc_mpi;
+	  argv = argv_mpi;
+	}
+	else {
+	  printf("MPI_Initialized==false, disabling MPI funtionality.\n");
+	}
+
+#endif
+	
+
 #if !defined(__CYGWIN__)
 	sprintf(buf, "%s/.libs/libnrnmech.so", NRNHOSTCPU);
 	//printf("buf = |%s|\n", buf);
