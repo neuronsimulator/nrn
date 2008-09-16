@@ -27,8 +27,12 @@ extern void nrnpy_hoc();
 extern int nrn_is_python_extension;
 extern int ivocmain(int, char**, char**);
 
+#ifdef NRNMPI
+
 static char* argv_mpi[] = {"NEURON", "-mpi","-dll", 0};
 static int argc_mpi = 2;
+
+#endif
 
 static char* argv_nompi[] = {"NEURON", "-dll", 0};
 static int argc_nompi = 1;
@@ -72,8 +76,7 @@ void inithoc() {
 #endif
 	nrn_is_python_extension = 1;
 #if NRNMPI
-	char **myargv = argv;
-	nrnmpi_init(1, &argc, &myargv); // may change argc and argv
+	nrnmpi_init(1, &argc, &argv); // may change argc and argv
 #endif		
 	ivocmain(argc, argv, env);
 	nrnpy_augment_path();

@@ -386,7 +386,28 @@ int ivocmain (int argc, char** argv, char** env) {
 		hoc_usegui = 0;
 		hoc_print_first_instance = 0;
 	}
-#endif		
+#else
+
+// check if user is trying to use -mpi or -p4 when it was not
+// enabled at build time.  If so, issue a warning.
+
+	int b;
+	b = 0;
+	for (i=0; i < argc; ++i) {
+	  if (strncmp("-p4", (argv)[i], 3) == 0) {
+	    b = 1;
+	    break;
+	  }
+	  if (strcmp("-mpi", (argv)[i]) == 0) {
+	    b = 1;
+	    break;
+	  }
+	}
+	if (b) {
+	  printf("Warning: detected user attempt to enable MPI, but MPI support was disabled at build time.\n");
+	}
+
+#endif 		
 #if NRN_REALTIME
 	if (nrn_optarg_on("-realtime", &argc, argv)) {
 		nrn_realtime_ = 1;

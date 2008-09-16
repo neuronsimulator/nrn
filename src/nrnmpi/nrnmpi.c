@@ -31,6 +31,8 @@ static int nrnmpi_under_nrncontrol_;
 #endif
 
 void nrnmpi_init(int nrnmpi_under_nrncontrol, int* pargc, char*** pargv) {
+
+
 #if NRNMPI
 	nrnmpi_use = 1;
 	nrnmpi_under_nrncontrol_ = nrnmpi_under_nrncontrol;
@@ -72,8 +74,9 @@ for (i=0; i < *pargc; ++i) {
 		int flag;
 		MPI_Initialized(&flag);
 
-		if (flag || MPI_Init(pargc, pargv) == MPI_SUCCESS) ;
-		else printf("MPI_INIT failed\n");
+		if (!flag && MPI_Init(pargc, pargv) != MPI_SUCCESS) {
+		  printf("MPI_INIT failed\n");
+		}
 
 		MPI_Comm_dup(MPI_COMM_WORLD, &nrnmpi_comm);
 	}
@@ -102,7 +105,11 @@ for (i=0; i < *pargc; ++i) {
 		printf("numprocs=%d\n", nrnmpi_numprocs);
 	}
 #endif
+
 #endif /* NRNMPI */
+
+
+
 }
 
 double nrnmpi_wtime() {
