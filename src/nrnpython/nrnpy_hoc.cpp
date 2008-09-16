@@ -262,7 +262,7 @@ static int hocobj_print(PyHocObject* self, FILE* f, int i) {
 			ALT_fprintf(ALT_f, "all section iterator");
 			ALT_ws;
 		}else if (self->type_ == 8) {
-			ALT_fprintf(ALT_f, "pointer to hoc scalar %g", self->u.px_?*self->u.px_:NAN);
+			ALT_fprintf(ALT_f, "pointer to hoc scalar %g", self->u.px_?*self->u.px_:-1e100);
 			ALT_ws;
 		}else if (self->type_ == 9) {
 			ALT_fprintf(ALT_f, "incomplete pointer to hoc array %s", self->sym_->name);

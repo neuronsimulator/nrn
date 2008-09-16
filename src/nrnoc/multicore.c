@@ -1055,8 +1055,9 @@ sprintf(buf, "The total number of cells, %d, is different than the number of use
 }
 
 void nrn_thread_partition(int it, Object* sl) {
+	NrnThread* nt;
 	assert(it >= 0 && it < nrn_nthread);
-	NrnThread* nt = nrn_threads + it;
+	nt = nrn_threads + it;
 	if (nt->userpart == (Object*)0 && nt->roots) {
 		hoc_l_freelist(&nt->roots);
 	}

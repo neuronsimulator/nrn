@@ -357,8 +357,8 @@ void nrn_rhs(NrnThread* _nt) {
 		nrn_thread_error("need recalc_diam()");
 	}
 	if (use_sparse13) {
-		nrn_thread_error("nrn_rhs use_sparse13");
 		int i, neqn;
+		nrn_thread_error("nrn_rhs use_sparse13");
 		neqn = spGetSize(_nt->_sp13mat, 0);
 		for (i=1; i <= neqn; ++i) {
 			_nt->_actual_rhs[i] = 0.;

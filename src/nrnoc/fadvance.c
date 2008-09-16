@@ -238,9 +238,9 @@ static void* daspk_init_step_thread(NrnThread* nt) {
 nrn_daspk_init_step(double tt, double dteps, int upd){
 	int i;
 	double dtsav = nrn_threads->_dt;
+	int so = secondorder;
 	dt = dteps;
 	t = tt;
-	int so = secondorder;
 	secondorder = 0;
 	dt2thread(dteps);
 	nrn_thread_table_check();
@@ -293,8 +293,9 @@ void nrn_fixed_step_group(int n) {
 }
 
 void* nrn_fixed_step_thread(NrnThread* nth) {
+	double wt;
 	deliver_net_events(nth);
-	CTBEGIN
+	wt = nrnmpi_wtime();
 	nrn_random_play(nth);
 #if ELIMINATE_T_ROUNDOFF
 	nth->nrn_ndt_ += .5;
@@ -334,8 +335,9 @@ void* nrn_fixed_step_thread(NrnThread* nth) {
 /* nrn_fixed_step_thread is split into three pieces */
 
 void* nrn_ms_treeset_through_triang(NrnThread* nth) {
+	double wt;
 	deliver_net_events(nth);
-	CTBEGIN
+	wt = nrnmpi_wtime();
 	nrn_random_play(nth);
 #if ELIMINATE_T_ROUNDOFF
 	nth->nrn_ndt_ += .5;
