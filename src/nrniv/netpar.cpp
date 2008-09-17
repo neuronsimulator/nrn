@@ -902,7 +902,7 @@ static double set_mindelay(double maxdelay) {
 	double mindelay = maxdelay;
     if (nrn_use_selfqueue_ || net_cvode_instance->localstep()) {
 	hoc_Item* q;
-	ITERATE(q, net_cvode_instance->psl_) {
+	if (net_cvode_instance->psl_) ITERATE(q, net_cvode_instance->psl_) {
 		PreSyn* ps = (PreSyn*)VOIDITM(q);
 		double md = ps->mindelay();
 		if (mindelay > md) {
