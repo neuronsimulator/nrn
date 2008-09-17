@@ -15,7 +15,7 @@ import unittest
 def suite():
     
     suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(test_vector.VectorTestCase,'test'))
+    suite.addTest(test_vector.suite())
     # add additional test cases here
     return suite
 

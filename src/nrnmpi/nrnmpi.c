@@ -10,7 +10,6 @@ int nrnmpi_myid = 0; /* rank */
 extern double nrn_timeus();
 
 #if NRNMPI
-
 #include <mpi.h>
 #define USE_HPM 0
 #if USE_HPM
@@ -32,6 +31,8 @@ static int nrnmpi_under_nrncontrol_;
 #endif
 
 void nrnmpi_init(int nrnmpi_under_nrncontrol, int* pargc, char*** pargv) {
+
+
 #if NRNMPI
 	nrnmpi_use = 1;
 	nrnmpi_under_nrncontrol_ = nrnmpi_under_nrncontrol;
@@ -70,9 +71,13 @@ for (i=0; i < *pargc; ++i) {
 			return;
 		}
 #endif
-		if (MPI_Init(pargc, pargv) != MPI_SUCCESS) {
-			printf("MPI_INIT failed\n");
+		int flag;
+		MPI_Initialized(&flag);
+
+		if (!flag && MPI_Init(pargc, pargv) != MPI_SUCCESS) {
+		  printf("MPI_INIT failed\n");
 		}
+
 		MPI_Comm_dup(MPI_COMM_WORLD, &nrnmpi_comm);
 	}
 	MPI_Comm_dup(nrnmpi_comm, &nrn_bbs_comm);
@@ -100,7 +105,11 @@ for (i=0; i < *pargc; ++i) {
 		printf("numprocs=%d\n", nrnmpi_numprocs);
 	}
 #endif
+
 #endif /* NRNMPI */
+
+
+
 }
 
 double nrnmpi_wtime() {
