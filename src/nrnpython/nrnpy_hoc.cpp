@@ -61,6 +61,9 @@ static char array_interface_typestr[5] = "|f8";
 static PyObject* pfunc_get_docstring = NULL;
 
 
+  static char* hocobj_docstring = "class neuron.hoc.HocObject - Hoc Object wrapper\n\n  This is the base-class docstring.  For more informative help, see the object docstring, either by \n\n>>> print obj.__doc__\n\n or\n\n In [1]: ? obj \n\n in IPython.";
+
+
 /*
 Because python types have so many methods, attempt to do all set and get
 using a PyHocObject which has different amounts filled in as the information
@@ -1698,7 +1701,7 @@ static PyTypeObject nrnpy_HocObjectType = {
     hocobj_setattro,                         /*tp_setattro*/
     0,                         /*tp_as_buffer*/
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,        /*tp_flags*/
-    "Hoc Object wrapper",         /* tp_doc */
+    hocobj_docstring,         /* tp_doc */
     0,		               /* tp_traverse */
     0,		               /* tp_clear */
     0,		               /* tp_richcompare */
