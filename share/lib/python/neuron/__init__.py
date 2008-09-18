@@ -84,8 +84,25 @@ import nrn
 h  = hoc.HocObject()
 
 
+# As a workaround to importing doc at neuron import time
+# (which leads to chicken and egg issues on some platforms)
+# define a dummy help function which imports doc,
+# calls the real help function, and reassigns neuron.help to doc.help
+# (thus replacing the dummy)
+def help(request):
+    global help
+    print "Enabling NEURON+Python help system."
+    from neuron import doc
+    doc.help(request)
+    help = doc.help
+
+import pydoc
+pydoc.help = help
+
+# Global test-suite function
+
 def test():
-    """ Runs a battery of unit tests on the neuron module."""
+    """ Runs a global battery of unit tests on the neuron module."""
     import neuron.tests
     import unittest
 
