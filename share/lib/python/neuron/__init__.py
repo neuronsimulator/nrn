@@ -28,7 +28,7 @@ In [2]: neuron.h ?
 
 
 
-Important names and subpackages
+Important names and sub-packages
 ---------------------
 
 For help on these useful functions, see their docstrings:
@@ -40,12 +40,12 @@ neuron.h
 
    The top-level Hoc interpreter.
 
-   Execute hoc commands by calling h with a string arguement:
+   Execute Hoc commands by calling h with a string argument:
 
    >>> h('objref myobj')
    >>> h('myobj = new Vector(10)')
 
-   All hoc defined variables are accesible by attribute access to h.
+   All Hoc defined variables are accessible by attribute access to h.
    
    Example:
 
