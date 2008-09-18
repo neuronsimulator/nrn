@@ -114,23 +114,17 @@ is available using ipython's online help feature
 
 In []: ? h.Section
 
-or in standard python by displaying the object docstring:
-
->>> print h.Section.__doc__
-
-Using the python help system
+or in standard python by python help system
 
 >>> help(h.Vector)
-
-yields only generic information about the HocObject class.
-
-
 
 For a list of symbols defined in neuron.h try:
 
 >>> dir(neuron.h)
 
-Several hoc symbols are not useful in python, and thus raise an exception when accesed, for example:
+
+
+NOTE: Several hoc symbols are not useful in python, and thus raise an exception when accesed, for example:
 
 In []: h.objref
 ---------------------------------------------------------------------------

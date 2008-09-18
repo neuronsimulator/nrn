@@ -58,7 +58,7 @@ neuron.h
 
    More help is available for the respective class by looking in the object docstring:
 
-   >>> print h.Vector.__doc__
+   >>> help(h.Vector)
    
 
 

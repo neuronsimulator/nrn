@@ -61,7 +61,7 @@ static char array_interface_typestr[5] = "|f8";
 static PyObject* pfunc_get_docstring = NULL;
 
 
-  static char* hocobj_docstring = "class neuron.hoc.HocObject - Hoc Object wrapper\n\n  This is the base-class docstring.  For more informative help, see the object docstring, either by \n\n>>> print obj.__doc__\n\n or\n\n In [1]: ? obj \n\n in IPython.";
+  static char* hocobj_docstring = "class neuron.hoc.HocObject - Hoc Object wrapper";
 
 
 /*
