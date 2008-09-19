@@ -86,9 +86,9 @@ doc_h = """
 neuron.h
 ========
 
-neuron.h is the top-level HocObject, allowing interaction between python and hoc.
+neuron.h is the top-level HocObject, allowing interaction between python and Hoc.
 
-It is callable like a function, and takes Hoc code as an argument to be exectuted.
+It is callable like a function, and takes Hoc code as an argument to be executed.
 
 The top-level Hoc namespace is exposed as attributes to the h object.
 
@@ -124,7 +124,7 @@ For a list of symbols defined in neuron.h try:
 
 
 
-NOTE: Several hoc symbols are not useful in python, and thus raise an exception when accesed, for example:
+NOTE: Several Hoc symbols are not useful in python, and thus raise an exception when accessed, for example:
 
 In []: h.objref
 ---------------------------------------------------------------------------
@@ -148,7 +148,7 @@ class ExpSyn
 
 pointprocesses
 
-syn = ExpSyn(section, position=0.5)
+syn = ExpSyn(segment)
 syn.tau --- ms decay time constant
 syn.e -- mV reversal potential
 syn.i -- nA synaptic current
@@ -176,7 +176,7 @@ class Exp2Syn
 
 pointprocess
 
-syn = Exp2Syn(section, position=0.5)
+syn = Exp2Syn(segment)
 syn.tau1 --- ms rise time
 syn.tau2 --- ms decay time
 syn.e -- mV reversal potential
@@ -185,14 +185,14 @@ syn.i -- nA synaptic current
 Description:
     
 Two state kinetic scheme synapse described by rise time tau1, and decay time
-constant tau2. The normalized peak condductance is 1. Decay time MUST be greater than rise time.
+constant tau2. The normalized peak conductance is 1. Decay time MUST be greater than rise time.
 
 The kinetic scheme
 
     A    ->   G   ->   bath
        1/tau1   1/tau2
 
-produces a synaptic current with alpha function like conductance (if tau1/tau2 is appoximately 1) defined by
+produces a synaptic current with alpha function like conductance (if tau1/tau2 is approximately 1) defined by
 
     i = G * (v - e)      i(nanoamps), g(micromhos);
       G = weight * factor * (exp(-t/tau2) - exp(-t/tau1))
@@ -218,7 +218,7 @@ class SEClamp
 
 pointprocess
 
-clampobj = SEClamp(section,position=0.5)
+clampobj = SEClamp(segment)
 dur1 dur2 dur3 -- ms
 amp1 amp2 amp3 -- mV
 rs -- MOhm
@@ -229,6 +229,11 @@ i -- nA
 Description:
     
 Single electrode voltage clamp with three levels. 
+
+Example:
+
+>>> soma = h.Section()
+>>> se = h.SEClamp(soma(0.5))
 
 See:
 
@@ -241,7 +246,7 @@ class VClamp
 
 pointprocess
 
-obj = VClamp(section,position=0.5)
+obj = VClamp(segment)
 dur[3]
 amp[3]
 gain, rstim, tau1, tau2
@@ -250,6 +255,11 @@ i
 Description:
     
 Two electrode voltage clamp. 
+
+Example:
+
+>>> soma = h.Section()
+>>> v = h.VClamp(soma(0.5))
 
 See:
 
@@ -262,7 +272,7 @@ class APCount
 
 pointprocess
 
-apc = APCount(section, position=0.5)
+apc = APCount(segment)
 apc.thresh --- mV
 apc.n -- 
 apc.time --- ms
@@ -279,6 +289,12 @@ INITIAL block is called and the times of threshold crossing are
 appended to the Vector. apc.record() will stop recording into the
 vector. The apc is not notified if the vector is freed but this can be
 fixed if it is convenient to add this feature.
+
+Example:
+
+>>> soma = h.Section()
+>>> ap = h.APCount(soma(0.5))
+
 
 See:
 
@@ -302,7 +318,7 @@ class NetStim
 
 pointprocess
 
-Generates a train of presynaptic stimuli. Can serve as the source for
+Generates a train of pre-synaptic stimuli. Can serve as the source for
 a NetCon. This NetStim can also be be triggered by an input event. i.e
 serve as the target of a NetCon.
 
@@ -337,7 +353,7 @@ For python based random number generation, numpy.random is an alternative to be 
 
 class CVode
 
-Multi order variable time step integration method which may be
+Multi-order variable time step integration method which may be
 used in place of the default staggered fixed time step method.
 
 See:
@@ -472,7 +488,7 @@ See:
 """,
     IClamp = """
 
-class IClamp(section,position=0.5,delay=0,dur=0,amp=0)
+class IClamp(segment)
 
 A wrapper class for the IClamp pointprocess
 
@@ -485,6 +501,11 @@ delay -- ms
 dur -- ms
 amp -- nA
 i -- nA
+
+Example:
+
+>>> soma = h.Section()
+>>> i = h.IClamp(soma(0.5))
 
 See:
 
@@ -499,9 +520,70 @@ Note:
 """,
     NetCon = """
 
-class NetCon(source, target, threshold=10, delay=1, weight=0, section=None, position=0.5)
 
-A wrapper class for hoc NetCon objects.
+class NetCon
+
+
+SYNTAX
+
+netcon = new NetCon(source section, target section, [threshold, delay, weight])
+
+Example:
+    
+soma1 = h.Section()
+soma2 = h.Section()
+syn = h.ExpSyn(soma2(0.5))
+netcon = h.NetCon(soma1(0.5)._ref_v, syn)
+ or
+netcon = h.NetCon(soma1(0.5)._ref_v, syn, threshold, delay, weight)
+
+DESCRIPTION
+
+Network Connection object that defines a synaptic connection between a
+source and target. When the source variable passes threshold in the
+positive direction at time t-delay, the target will receive an event
+at time t along with weight information. There is no limit on delay
+except that it be >= 0 and there is no limit on the number of events
+pending delivery.
+
+If the optional threshold, delay, and weight arguments are not
+specified, their default values are 10, 1, and 0 respectively. In any
+case, their values can be specified after the netcon has been
+constructed, see threshold weight and delay .
+
+Note that prior to 12-Jul-2006, when the first form of the constructor
+was used, (i.e. a NetCon having a pointer to a source variable was
+created, but having no threshold argument) the threshold was reset to
+the default 10 (mV) even if the threshold for that source location had
+been explicitly set earlier. That behavior caused confusion and has
+been changed so that if there is no threshold argument and the
+threshold location already exists, the previous threshold is retained.
+
+The target must be a PointProcess that defines a NET_RECEIVE
+procedure. The number of NET_RECEIVE procedure arguments define a
+weight vector whose elements can be accessed with through the
+NetCon.weight ( weight )variable but the weight argument in the above
+constructors specify the value of the first argument, with the normal
+interpretation of weight or maximum conductance. On initialization,
+all weight elements with index > 0 are set to 0 unless the NET_RECEIVE
+block contains an INITIAL block. In the latter case, that block is
+executed on a call to finitialize and allows non-zero initialization
+of netcon "states" --- args not initialized in the INITIAL block would
+be analogous to a Parameter except that it can have a different value
+for different NetCon instances and can be set to a desired value with
+weight .
+
+The target is allowed to be nil (NULLObject) in which case the NetCon
+is always inactive. However this can be useful for recording (see
+record ) the spike train from an output cell.
+
+The source is normally a reference to a membrane potential which is
+watched during simulation for passage past threshold. The currently
+accessed section is required by the local variable time step method in
+order to determine the source "cell". Any range variable may be a
+source variable but I suspect that membrane potential is the only
+practical one.
+
 
 See:
 

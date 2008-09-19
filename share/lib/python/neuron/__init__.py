@@ -28,7 +28,7 @@ In [2]: neuron.h ?
 
 
 
-Important names and subpackages
+Important names and sub-packages
 ---------------------
 
 For help on these useful functions, see their docstrings:
@@ -40,12 +40,12 @@ neuron.h
 
    The top-level Hoc interpreter.
 
-   Execute hoc commands by calling h with a string arguement:
+   Execute Hoc commands by calling h with a string argument:
 
    >>> h('objref myobj')
    >>> h('myobj = new Vector(10)')
 
-   All hoc defined variables are accesible by attribute access to h.
+   All Hoc defined variables are accessible by attribute access to h.
    
    Example:
 
@@ -84,8 +84,25 @@ import nrn
 h  = hoc.HocObject()
 
 
+# As a workaround to importing doc at neuron import time
+# (which leads to chicken and egg issues on some platforms)
+# define a dummy help function which imports doc,
+# calls the real help function, and reassigns neuron.help to doc.help
+# (thus replacing the dummy)
+def help(request):
+    global help
+    print "Enabling NEURON+Python help system."
+    from neuron import doc
+    doc.help(request)
+    help = doc.help
+
+import pydoc
+pydoc.help = help
+
+# Global test-suite function
+
 def test():
-    """ Runs a battery of unit tests on the neuron module."""
+    """ Runs a global battery of unit tests on the neuron module."""
     import neuron.tests
     import unittest
 
