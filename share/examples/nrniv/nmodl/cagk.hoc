@@ -1,4 +1,5 @@
 /* cagk.hoc  test of calcium activated potassium channel */
+// initialization and graph updates work with NEURON 6.x
 
 // Physical properties
 create a
@@ -19,7 +20,6 @@ proc prate() { local v,cai /*plot of cagk channel rate constants*/
 	g.size(-80,100,0,1)
 	g.vfixed
 	
-	//plt(1,100,450) plt(-2) print "infcagk & tau vs. V"
 	for (cai=1e-3; cai<1.1e-1; cai=cai*10) {
 		i=i+1 g.color(i)
 		sprint(s,"cai=%g",cai)
@@ -63,7 +63,7 @@ proc pcur2() { /*steady state channel current as function of v and ca*/
 }
 
 proc runvc() { /* cagk current as function of time under voltage clamp*/
-	v=-65  t=0  rate_cagk(v,cai)  o_cagk=oinf_cagk /*initialize*/
+	finitialize(v_init)
 	fcurrent()
 	g.beginline
 	while (t < 15) { 
@@ -75,6 +75,8 @@ proc runvc() { /* cagk current as function of time under voltage clamp*/
 proc pvc() { /*voltage clamp of calcium activated potassium channel*/
 	g.erase_all()
 	dt=.2
+	tstop = 15
+	v_init = -65
 	g.size(0,10,0,1)
 	g.color(1)
 	g.label(.2,.95,"ik vs t  (V = 20 mV)")

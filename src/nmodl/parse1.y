@@ -81,7 +81,7 @@ static int nr_argcnt_, argcnt_; /* for matching number of args in NET_RECEIVE
 %token	<qp>	PROCEDURE PARTIAL DEL DEL2 DEFINE1 IFERROR PARAMETER
 %token	<qp>	DERFUNC EQUATION TERMINAL LINEAR NONLINEAR FUNCTION1 LOCAL
 %token	<qp>	METHOD LIN1 NONLIN1 PUTQ GETQ TABLE DEPEND BREAKPOINT
-%token	<qp>	INCLUDE1 FUNCTION_TABLE PROTECT
+%token	<qp>	INCLUDE1 FUNCTION_TABLE PROTECT NRNMUTEXLOCK NRNMUTEXUNLOCK
 %token	<qp>	'{' '}' '(' ')' '[' ']' '@' '+' '*' '-' '/' '=' '^' ':' ','
 %token	<qp>	'~'
 %token	<qp>	OR AND GT LT LE EQ NE NOT
@@ -466,6 +466,8 @@ ostmt:	fromstmt
 	| initstmt
 	| watchstmt
 	| fornetcon
+	| NRNMUTEXLOCK { nrnmutex(1,$1); }
+	| NRNMUTEXUNLOCK { nrnmutex(0,$1); }
 	| error
 		{myerr("Illegal statement");}
 	;	

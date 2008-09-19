@@ -1176,3 +1176,27 @@ Item* protect_astmt(Item* q1, Item* q2) { /* PROTECT, ';' */
 	protect_include_ = 1;
 	return q;
 }
+
+void nrnmutex(int on, Item* q) { /* MUTEXLOCK or MUTEXUNLOCK */
+	static int toggle = 0;
+	if (on == 1) {
+		if (toggle != 0) {
+			diag("MUTEXLOCK invoked after MUTEXLOCK", (char*)0);
+		}
+		toggle = 1;
+		replacstr(q, "_NMODLMUTEXLOCK\n");
+		protect_include_ = 1;
+	}else if (on == 0) {
+		if (toggle != 1) {
+			diag("MUTEXUNLOCK invoked with no earlier MUTEXLOCK", (char*)0);
+		}
+		toggle = 0;
+		replacstr(q, "_NMODLMUTEXUNLOCK\n");
+		protect_include_ = 1;
+	}else{
+		if (toggle != 0) {
+			diag("MUTEXUNLOCK not invoked after MUTEXLOCK", (char*)0);
+		}
+		toggle = 0;
+	}
+}

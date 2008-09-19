@@ -102,6 +102,8 @@ static struct {			/* Keywords */
 			"FOR_NETCONS", FOR_NETCONS,
 			"THREADSAFE", THREADSAFE,
 			"PROTECT", PROTECT,
+			"MUTEXLOCK", NRNMUTEXLOCK,
+			"MUTEXUNLOCK", NRNMUTEXUNLOCK,
 	                0, 0
 };
 

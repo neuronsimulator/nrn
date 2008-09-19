@@ -1,5 +1,6 @@
 : Calcium activated K channel.
 : From Moczydlowski and Latorre (1983) J. Gen. Physiol. 82
+: Made THREADSAFE 9/16/08
 
 UNITS {
 	(molar) = (1/liter)
@@ -16,6 +17,7 @@ NEURON {
 	USEION k READ ek WRITE ik
 	RANGE gkbar
 	GLOBAL oinf, tau
+        THREADSAFE : assigned GLOBALs will be per thread
 }
 
 PARAMETER {

@@ -18,6 +18,7 @@ NEURON {
 	USEION ca READ cai, ica WRITE cai
 	GLOBAL vol, TotalBuffer
 	RANGE cai0
+	THREADSAFE
 }
 
 DEFINE NANN  4
@@ -63,10 +64,12 @@ BREAKPOINT {
 LOCAL factors_done
 
 INITIAL {
+	MUTEXLOCK
 	if (factors_done == 0) {
 		factors_done = 1
 		factors()
 	}
+	MUTEXUNLOCK
 
 	cai = cai0
 	Kd = k1buf/k2buf
