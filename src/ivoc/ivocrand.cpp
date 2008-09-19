@@ -77,8 +77,8 @@ public:
 	unsigned int orig_;
 private:
 	static unsigned int cnt_;
-	static double ran_vec[1];
-	static unsigned int iran_vec[1];
+	double ran_vec[1];
+	unsigned int iran_vec[1];
 };
 
 MCellRan4::MCellRan4(unsigned int idum) {
@@ -93,8 +93,6 @@ MCellRan4::MCellRan4(unsigned int idum) {
 MCellRan4::~MCellRan4() {}
 
 unsigned int MCellRan4::cnt_ = 0;
-double MCellRan4::ran_vec[1];
-unsigned int MCellRan4::iran_vec[1];
 
 class Isaac64 : public RNG {
 public:

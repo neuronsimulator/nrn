@@ -160,12 +160,16 @@ void VecPlayStep::install(Cvode* cv) {
 
 void VecPlayStep::play_init() {
 	current_index_ = 0;
+	NrnThread* nt = nrn_threads;
+	if (cvode_ && cvode_->nth_) {
+		nt = cvode_->nth_;
+	}
 	if (t_) {
 		if (t_->capacity() > 0) {
-			e_->send(t_->elem(0), net_cvode_instance, nrn_threads);
+			e_->send(t_->elem(0), net_cvode_instance, nt);
 		}
 	}else{
-			e_->send(0., net_cvode_instance, nrn_threads);
+			e_->send(0., net_cvode_instance, nt);
 	}
 }
 
@@ -173,6 +177,7 @@ void VecPlayStep::deliver(double tt, NetCvode* ns) {
 	NrnThread* nt = nrn_threads;
 	if (cvode_) {
 		cvode_->set_init_flag();
+		if (cvode_->nth_) { nt = cvode_->nth_; }
 	}
 	if (si_) {
 		si_->play_one(y_->elem(current_index_++));
@@ -250,6 +255,9 @@ void VecPlayContinuous::install(Cvode* cv) {
 
 void VecPlayContinuous::play_init() {
 	NrnThread* nt = nrn_threads;
+	if (cvode_ && cvode_->nth_) {
+		nt = cvode_->nth_;
+	}
 	last_index_ = 0;
 	discon_index_ = 0;
 	if (discon_indices_) {
@@ -271,6 +279,7 @@ void VecPlayContinuous::deliver(double tt, NetCvode* ns) {
 //printf("deliver %g\n", tt);
 	if (cvode_) {
 		cvode_->set_init_flag();
+		if (cvode_->nth_) { nt = cvode_->nth_; }
 	}
 	last_index_ = ubound_index_;
 	if (discon_indices_) {

@@ -2193,7 +2193,7 @@ int Cvode::handle_step(NetCvode* ns, double te) {
 	}
 	if (initialize_) {
 		err = init(t_);
-		ns->initialized_ = true;
+		if (ns->gcv_) { ns->initialized_ = true; }
 		// second order correct condition evaluation goes here
 		if (ns->condition_order() == 2) {
 			evaluate_conditions(nth_);
@@ -3205,6 +3205,7 @@ void PlayRecordEvent::frecord_init(TQItem* q) {
 
 void PlayRecordEvent::deliver(double tt, NetCvode* ns, NrnThread* nt) {
 	if (plr_->cvode_) {
+		assert(nt == plr_->cvode_->nth_);
 		ns->local_retreat(tt, plr_->cvode_);
 	}
 	STATISTICS(playrecord_deliver_);
