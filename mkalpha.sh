@@ -11,9 +11,13 @@ export NSRC
 cd $NSRC
 
 lastalpha="`sh nrnversion.sh 2`"
-svn update
+hg pull ssh://hines@www.neuron.yale.edu//home/hg/neuron/nrn
+hg update
+if test $? != 0 ; then
+	exit 1
+fi
 srcdir=$NSRC/src/nrnoc
-sh $NSRC/svn2nrn_h.sh > $srcdir/nrnversion.h.tmp
+sh $NSRC/hg2nrnversion_h.sh > $srcdir/nrnversion.h.tmp
 cmp $srcdir/nrnversion.h $srcdir/nrnversion.h.tmp || cp $srcdir/nrnversion.h.tmp $srcdir/nrnversion.h
 rm $srcdir/nrnversion.h.tmp
 
@@ -43,7 +47,7 @@ if test "$a" = "0" ; then
 fi
 
 currentalpha="`sh nrnversion.sh 2`"
-base="`sh nrnversion.sh base`"
+base="`sh nrnversion.sh global`"
 type="`sh nrnversion.sh type`"
 echo "$old"
 echo "$ostype old="$lastalpha" new=$currentalpha"
@@ -64,7 +68,7 @@ if test $? != 0 ; then
 	echo "make failed"
 	exit 1
 fi
-newver=`src/nrniv/nrniv --version | sed 's/[^(]*(\([0-9]*\).*/\1/'`
+newver=`src/nrniv/nrniv --version | sed 's/[^(]*.*:\(.*\)).*/\1/'`
 if "$newver" != "$base" ; then
 	exit 1
 fi
@@ -93,7 +97,7 @@ if test $? != 0 ; then
 	echo "make failed"
 	exit 1
 fi
-newver=`src/nrniv/nrniv --version | sed 's/[^(]*(\([0-9]*\).*/\1/'`
+newver=`src/nrniv/nrniv --version | sed 's/[^(]*.*:\(.*\)).*/\1/'`
 if "$newver" != "$base" ; then
 	exit 1
 fi
@@ -130,7 +134,7 @@ host_cpu="`echo $host | sed 's/-.*//'`"
 if test -d "$IDIR/nrn/umac" ; then
 	host_cpu=umac
 fi
-newver=`${IDIR}/nrn/${host_cpu}/bin/nrniv --version | sed 's/[^(]*(\([0-9]*M*\).*/\1/'`
+newver=`${IDIR}/nrn/${host_cpu}/bin/nrniv --version | sed 's/[^(]*.*:\(.*\)).*/\1/'`
 if test "$newver" != "$base" ; then
 	exit 1
 fi

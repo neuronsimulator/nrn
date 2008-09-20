@@ -4,6 +4,37 @@
 
 static char buf[256];
 
+#if defined(HG_BRANCH)
+char* nrn_version(int i) {
+	char head[50];
+	char *cp;
+	int b;
+	buf[0] = '\0';
+	if (strncmp(HG_TAG, "Release", 7) == 0) {
+		sprintf(head, "%s", HG_TAG);
+	}else{
+		sprintf(head, "VERSION %s.%s %s%s(%s:%s)",
+			NRN_MAJOR_VERSION, NRN_MINOR_VERSION,
+			strcmp("trunk", HG_BRANCH) ? HG_BRANCH : "",
+			strcmp("trunk", HG_BRANCH) ? " " : "",
+			HG_LOCAL, HG_CHANGESET);
+	}
+	if (i == 0) {
+		sprintf(buf, "%s.%s", NRN_MAJOR_VERSION, NRN_MINOR_VERSION);
+	}else if (i == 2) {
+		sprintf(buf, "%s", head);
+	}else if (i == 3) {
+		sprintf(buf, "%s", HG_CHANGESET);
+	}else if (i == 4) {
+		sprintf(buf, "%s", HG_DATE);
+	}else if (i == 5) {
+		sprintf(buf, "%s", HG_LOCAL);
+	}else{
+		sprintf(buf, "NEURON -- %s %s", head, HG_DATE); 
+	}
+	return buf;
+}
+#else
 char* nrn_version(int i) {
 	char head[50];
 	char tail[50];
@@ -49,3 +80,4 @@ char* nrn_version(int i) {
 	}
 	return buf;
 }
+#endif
