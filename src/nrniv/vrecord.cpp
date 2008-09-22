@@ -19,6 +19,7 @@
 extern "C" {
 extern double t;
 extern NetCvode* net_cvode_instance;
+extern Point_process* ob2pntproc(Object*);
 }
 
 //Vector.play_remove()
@@ -31,21 +32,33 @@ void nrn_vecsim_remove(void* v) {
 
 void nrn_vecsim_add(void* v, boolean record) {
 	IvocVect* yvec, *tvec, *dvec;
+	extern short* nrn_is_artificial_;
 	double* pvar = nil;
 	char* s = nil;
 	double ddt;
+	Object* ppobj = nil;
+	int iarg = 0;
 
 	yvec = (IvocVect*)v;
 	
-	if (record == false && hoc_is_str_arg(1)) {//statement involving $1
+	if (hoc_is_object_arg(1)) {
+		iarg = 1;
+		ppobj = *hoc_objgetarg(1);
+		if (!ppobj || ppobj->ctemplate->is_point_ <= 0
+		    || nrn_is_artificial_[ob2pntproc(ppobj)->prop->type]
+		    ) {
+			hoc_execerror("Optional first arg is not a POINT_PROCESS", 0);
+		}
+	}
+	if (record == false && hoc_is_str_arg(iarg+1)) {//statement involving $1
 		// Vector.play("proced($1)", ...)
-		s = gargstr(1);
-	}else if (record == false && hoc_is_double_arg(1)) {// play that element
+		s = gargstr(iarg+1);
+	}else if (record == false && hoc_is_double_arg(iarg+1)) {// play that element
 		// Vector.play(index)
 		// must be a VecPlayStep and nothing else
 			VecPlayStep* vps = (VecPlayStep*)net_cvode_instance->playrec_uses(v);
 		if (vps) {
-			int j = (int)chkarg(1, 0., yvec->capacity()-1);
+			int j = (int)chkarg(iarg+1, 0., yvec->capacity()-1);
 			if (vps->si_) {
 				vps->si_->play_one(yvec->elem(j));
 			}
@@ -54,25 +67,25 @@ void nrn_vecsim_add(void* v, boolean record) {
 	}else{
 		// Vector.play(&SEClamp[0].amp1, ...)
 		// Vector.record(&SEClamp[0].i, ...)
-		pvar = hoc_pgetarg(1);
+		pvar = hoc_pgetarg(iarg+1);
 	}
 	tvec = nil;
 	dvec = nil;
 	ddt = -1.;
 	int con = 0;
-	if (ifarg(2)) {
-		if (hoc_is_object_arg(2)) {
+	if (ifarg(iarg+2)) {
+		if (hoc_is_object_arg(iarg+2)) {
 			// Vector...(..., tvec)
-			tvec = vector_arg(2);
+			tvec = vector_arg(iarg+2);
 		}else{
 			// Vector...(..., Dt)
-			ddt = chkarg(2, 1e-9, 1e10);
+			ddt = chkarg(iarg+2, 1e-9, 1e10);
 		}
-		if (ifarg(3)) {
-			if (hoc_is_double_arg(3)) {
-				con = (int)chkarg(3, 0., 1.);
+		if (ifarg(iarg+3)) {
+			if (hoc_is_double_arg(iarg+3)) {
+				con = (int)chkarg(iarg+3, 0., 1.);
 			}else{
-				dvec = vector_arg(3);
+				dvec = vector_arg(iarg+3);
 				con = 1;
 			}
 		}
@@ -84,40 +97,40 @@ void nrn_vecsim_add(void* v, boolean record) {
 		// yvec can be used only for one record (but many play)
 		if (yvec) { nrn_vecsim_remove(yvec); }
 		if (tvec) {
-			new VecRecordDiscrete(pvar, yvec, tvec);
+			new VecRecordDiscrete(pvar, yvec, tvec, ppobj);
 		} else if (ddt > 0.) {
-			new VecRecordDt(pvar, yvec, ddt);
+			new VecRecordDt(pvar, yvec, ddt, ppobj);
 		} else if (pvar == &t) {
-			new TvecRecord(chk_access(), yvec);
+			new TvecRecord(chk_access(), yvec, ppobj);
 		} else {
-			new YvecRecord(pvar, yvec);
+			new YvecRecord(pvar, yvec, ppobj);
 		}
 	}else{
 		if (con) {
 			if (s) {
-				new VecPlayContinuous(s, yvec, tvec, dvec);
+				new VecPlayContinuous(s, yvec, tvec, dvec, ppobj);
 			}else{
-				new VecPlayContinuous(pvar, yvec, tvec, dvec);
+				new VecPlayContinuous(pvar, yvec, tvec, dvec, ppobj);
 			}
 		}else{
 			if (!tvec && ddt == -1.) {
-				chkarg(2, 1e-9, 1e10);
+				chkarg(iarg+2, 1e-9, 1e10);
 			}
 			if (s) {
-				new VecPlayStep(s, yvec, tvec, ddt);
+				new VecPlayStep(s, yvec, tvec, ddt, ppobj);
 			}else{
-				new VecPlayStep(pvar, yvec, tvec, ddt);
+				new VecPlayStep(pvar, yvec, tvec, ddt, ppobj);
 			}
 		}
 	}
 }
 
-VecPlayStep::VecPlayStep(double* pd, IvocVect* y, IvocVect* t, double dt) : PlayRecord(pd) {
+VecPlayStep::VecPlayStep(double* pd, IvocVect* y, IvocVect* t, double dt, Object* ppobj) : PlayRecord(pd, ppobj) {
 //printf("VecPlayStep\n");
 	init(y, t, dt);
 }
 
-VecPlayStep::VecPlayStep(const char* s, IvocVect* y, IvocVect* t, double dt) : PlayRecord(&NODEV(chk_access()->pnode[0])) {
+VecPlayStep::VecPlayStep(const char* s, IvocVect* y, IvocVect* t, double dt, Object* ppobj) : PlayRecord(&NODEV(chk_access()->pnode[0]), ppobj) {
 //printf("VecPlayStep\n");
 	init(y, t, dt);
 	si_ = new StmtInfo(s);
@@ -201,12 +214,12 @@ void VecPlayStep::pr() {
 	printf("%s.x[%d]\n", hoc_object_name(y_->obj_), current_index_);
 }
 
-VecPlayContinuous::VecPlayContinuous(double* pd, IvocVect* y, IvocVect* t, IvocVect* discon) : PlayRecord(pd) {
+VecPlayContinuous::VecPlayContinuous(double* pd, IvocVect* y, IvocVect* t, IvocVect* discon, Object* ppobj) : PlayRecord(pd, ppobj) {
 //printf("VecPlayContinuous\n");
 	init(y, t, discon);
 }
 
-VecPlayContinuous::VecPlayContinuous(const char* s, IvocVect* y, IvocVect* t, IvocVect* discon) : PlayRecord(&NODEV(chk_access()->pnode[0])) {
+VecPlayContinuous::VecPlayContinuous(const char* s, IvocVect* y, IvocVect* t, IvocVect* discon, Object* ppobj) : PlayRecord(&NODEV(chk_access()->pnode[0]), ppobj) {
 //printf("VecPlayContinuous\n");
 	init(y, t, discon);
 	si_ = new StmtInfo(s);
@@ -409,5 +422,3 @@ void VecPlayContinuousSave::savestate_read(FILE* f) {
 	fgets(buf, 100, f);
 	assert(sscanf(buf, "%d %d %d\n", &last_index_, &discon_index_, &ubound_index_) == 3);
 }
-
-

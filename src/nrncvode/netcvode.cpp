@@ -5293,7 +5293,7 @@ PlayRecord* NetCvode::playrec_uses(void* v) {
 	return nil;
 }
 
-PlayRecord::PlayRecord(double* pd) {
+PlayRecord::PlayRecord(double* pd, Object* ppobj) {
 //printf("PlayRecord::PlayRecord %lx\n", (long)this);
 	pd_ = pd;
 	cvode_ = nil;
@@ -5304,6 +5304,10 @@ PlayRecord::PlayRecord(double* pd) {
 		oc.notify_when_freed(pd_, this);
 	}
 #endif
+	ppobj_ = ppobj;
+	if (ppobj_) {
+		ObjObservable::Attach(ppobj_, this);
+	}
 	net_cvode_instance->playrec_add(this);
 }
 
@@ -5313,6 +5317,9 @@ PlayRecord::~PlayRecord() {
 	Oc oc;
 	oc.notify_pointer_disconnect(this);
 #endif
+	if (ppobj_) {
+		ObjObservable::Detach(ppobj_, this);
+	}
 	net_cvode_instance->playrec_remove(this);
 }
 
@@ -5350,7 +5357,7 @@ void PlayRecord::pr() {
 	printf("PlayRecord\n");
 }
 
-TvecRecord::TvecRecord(Section* sec, IvocVect* t) : PlayRecord(&NODEV(sec->pnode[0])) {
+TvecRecord::TvecRecord(Section* sec, IvocVect* t, Object* ppobj) : PlayRecord(&NODEV(sec->pnode[0]), ppobj) {
 //printf("TvecRecord\n");
 	t_ = t;
 	ObjObservable::Attach(t_->obj_, this);
@@ -5380,7 +5387,7 @@ void TvecRecord::continuous(double tt) {
 	t_->elem(j) = tt;
 }
 
-YvecRecord::YvecRecord(double* pd, IvocVect* y) : PlayRecord(pd) {
+YvecRecord::YvecRecord(double* pd, IvocVect* y, Object* ppobj) : PlayRecord(pd, ppobj) {
 //printf("YvecRecord\n");
 	y_ = y;
 	ObjObservable::Attach(y_->obj_, this);
@@ -5410,7 +5417,7 @@ void YvecRecord::continuous(double tt) {
 	y_->elem(j) = *pd_;
 }
 
-VecRecordDiscrete::VecRecordDiscrete(double* pd, IvocVect* y, IvocVect* t) : PlayRecord(pd) {
+VecRecordDiscrete::VecRecordDiscrete(double* pd, IvocVect* y, IvocVect* t, Object* ppobj) : PlayRecord(pd, ppobj) {
 //printf("VecRecordDiscrete\n");
 	y_ = y;
 	t_ = t;
@@ -5481,7 +5488,7 @@ void VecRecordDiscrete::deliver(double tt, NetCvode* nc) {
 	}
 }
 
-VecRecordDt::VecRecordDt(double* pd, IvocVect* y, double dt) : PlayRecord(pd) {
+VecRecordDt::VecRecordDt(double* pd, IvocVect* y, double dt, Object* ppobj) : PlayRecord(pd, ppobj) {
 //printf("VecRecordDt\n");
 	y_ = y;
 	dt_ = dt;
@@ -5583,6 +5590,10 @@ void NetCvode::playrec_setup() {
 			pr->install(gcv_);
 			b = true;
 		}else{
+		    if (pr->ppobj_ && ob2pntproc(pr->ppobj_)->nvi_) {
+			pr->install((Cvode*)ob2pntproc(pr->ppobj_)->nvi_);
+			b = true;
+		    }else{
 			lvardtloop(i, j) {
 				Cvode& cv= p[i].lcv_[j];
 				if (cv.is_owner(pr->pd_)) {
@@ -5591,12 +5602,17 @@ void NetCvode::playrec_setup() {
 					break;
 				}
 			}
+		    }
 		}
 		if (b == false) {
 hoc_execerror("We were unable to associate a PlayRecord item with a RANGE variable", nil);
 		}
 		// and need to know the thread owners
-		i = owned_by_thread(pr->pd_);
+		if (pr->ppobj_) {
+			i = PP2NT(ob2pntproc(pr->ppobj_))->id;
+		}else{
+			i = owned_by_thread(pr->pd_);
+		}
 		if (i < 0) {
 hoc_execerror("We were unable to associate a PlayRecord item with a thread", nil);
 		}

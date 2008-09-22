@@ -43,7 +43,7 @@ public:
 // common interface for Play and Record for all integration methods.
 class PlayRecord : public Observer {
 public:
-	PlayRecord(double* pd);
+	PlayRecord(double* pd, Object* ppobj = nil);
 	virtual ~PlayRecord();
 	virtual void install(Cvode* cv){ cvode_ = cv; }	// cvode play or record list?
 	virtual void play_init(){}	// called near beginning of finitialize
@@ -71,6 +71,7 @@ public:
 	static PlayRecordSave* savestate_read(FILE*);
 
 	double* pd_;
+	Object* ppobj_;
 	Cvode* cvode_;
 	int ith_; // The thread index
 };
@@ -92,7 +93,7 @@ public:
 
 class TvecRecord: public PlayRecord {
 public:
-	TvecRecord(Section*, IvocVect* tvec);
+	TvecRecord(Section*, IvocVect* tvec, Object* ppobj = nil);
 	virtual ~TvecRecord();
 	virtual void install(Cvode*);
 	virtual void record_init();
@@ -107,7 +108,7 @@ public:
 
 class YvecRecord : public PlayRecord {
 public:
-	YvecRecord(double*, IvocVect* y);
+	YvecRecord(double*, IvocVect* y, Object* ppobj = nil);
 	virtual ~YvecRecord();
 	virtual void install(Cvode*);
 	virtual void record_init();
@@ -121,7 +122,7 @@ public:
 
 class VecRecordDiscrete : public PlayRecord {
 public:
-	VecRecordDiscrete(double*, IvocVect* y, IvocVect* t);
+	VecRecordDiscrete(double*, IvocVect* y, IvocVect* t, Object* ppobj = nil);
 	virtual ~VecRecordDiscrete();
 	virtual void install(Cvode*);
 	virtual void record_init();
@@ -153,7 +154,7 @@ public:
 
 class VecRecordDt : public PlayRecord {
 public:
-	VecRecordDt(double*, IvocVect* y, double dt);
+	VecRecordDt(double*, IvocVect* y, double dt, Object* ppobj = nil);
 	virtual ~VecRecordDt();
 	virtual void install(Cvode*);
 	virtual void record_init();
@@ -181,8 +182,8 @@ public:
 
 class VecPlayStep : public PlayRecord {
 public:
-	VecPlayStep(double*, IvocVect* y, IvocVect* t, double dt);
-	VecPlayStep( const char* s, IvocVect* y, IvocVect* t, double dt);
+	VecPlayStep(double*, IvocVect* y, IvocVect* t, double dt, Object* ppobj = nil);
+	VecPlayStep( const char* s, IvocVect* y, IvocVect* t, double dt, Object* ppobj = nil);
 	void init(IvocVect* y, IvocVect* t, double dt);
 	virtual ~VecPlayStep();
 	virtual void install(Cvode*);
@@ -216,8 +217,8 @@ public:
 
 class VecPlayContinuous : public PlayRecord {
 public:
-	VecPlayContinuous(double*, IvocVect* y, IvocVect* t, IvocVect* discon);
-	VecPlayContinuous( const char* s, IvocVect* y, IvocVect* t, IvocVect* discon);
+	VecPlayContinuous(double*, IvocVect* y, IvocVect* t, IvocVect* discon, Object* ppobj = nil);
+	VecPlayContinuous( const char* s, IvocVect* y, IvocVect* t, IvocVect* discon, Object* ppobj = nil);
 	virtual ~VecPlayContinuous();
 	void init(IvocVect* y, IvocVect* t, IvocVect* tdiscon);
 	virtual void install(Cvode*);
