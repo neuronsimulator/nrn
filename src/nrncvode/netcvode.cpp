@@ -3204,7 +3204,7 @@ void PlayRecordEvent::frecord_init(TQItem* q) {
 }
 
 void PlayRecordEvent::deliver(double tt, NetCvode* ns, NrnThread* nt) {
-	if (plr_->cvode_) {
+	if (plr_->cvode_ && plr_->cvode_->nth_) {
 		assert(nt == plr_->cvode_->nth_);
 		ns->local_retreat(tt, plr_->cvode_);
 	}
