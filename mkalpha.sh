@@ -58,7 +58,7 @@ NVER="`sh nrnversion.sh`"
 #mswin
 if test "$ostype" = "cygwin" ; then
 NOBJ=$HOME/neuron/nrn${type}setup
-if ! -d $NOBJ ; then
+if test ! -d $NOBJ ; then
 	mkdir $NOBJ
 fi
 cd $NOBJ
@@ -79,7 +79,7 @@ fi
 #linux
 if test "$ostype" = "linux" ; then
 NOBJ=$HOME/neuron/nrn${type}rpm
-if ! -d $NOBJ ; then
+if test ! -d $NOBJ ; then
 	mkdir $NOBJ
 fi
 cd $NOBJ
@@ -113,7 +113,7 @@ fi
 if test "$ostype" = "darwin" ; then
 NOBJ=$HOME/neuron/nrn${type}carbon
 IDIR=/Applications/NEURON-$NVER
-if ! -d $NOBJ ; then
+if test ! -d $NOBJ ; then
 	mkdir $NOBJ
 fi
 cd $NOBJ
