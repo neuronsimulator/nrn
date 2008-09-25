@@ -2851,10 +2851,11 @@ void GPolyLine::print(Printer* c, const Allocation&)const {
 }
 
 void GraphLine::plot(){
-	Oc oc;
 	if ( pval_ ) {
 		y_->add(*pval_);
 	}else{
+		nrn_hoc_lock();
+		Oc oc;
 		if (obj_) {
 			ObjectContext obc(obj_);
 			y_->add(oc.runExpr(expr_));
@@ -2862,6 +2863,7 @@ void GraphLine::plot(){
 		}else if (valid()) {
 			y_->add(oc.runExpr(expr_));
 		}
+		nrn_hoc_unlock();
 	}
 //printf("GPolyLine::plot(%d) value = %g\n", loc, y_->value(loc));
 }

@@ -82,6 +82,7 @@ static void* nulljob(NrnThread* nt) {
 	return (void*)0;
 }
 
+int nrn_inthread_;
 #if USE_PTHREAD
 
 #include <pthread.h>
@@ -93,7 +94,6 @@ static void* nulljob(NrnThread* nt) {
 #include <malloc.h>
 
 static int nrn_malloc_protected_;
-static int inthread_;
 static void my_init_hook();
 static void *(*old_malloc_hook) (size_t, const void*);
 static void *(*old_memalign_hook) (size_t, size_t, const void*);
@@ -107,7 +107,7 @@ void (*__malloc_initialize_hook)(void) = my_init_hook;
 
 static void* my_malloc_hook(size_t size, const void* caller) {
 	void* result;
-	if (inthread_ && !nrn_malloc_protected_) {
+	if (nrn_inthread_ && !nrn_malloc_protected_) {
 		abort();
 	}
 	__malloc_hook = old_malloc_hook;
@@ -127,7 +127,7 @@ static void* my_malloc_hook(size_t size, const void* caller) {
 }
 static void* my_memalign_hook(size_t alignment, size_t size, const void* caller) {
 	void* result;
-	if (inthread_ && !nrn_malloc_protected_) {
+	if (nrn_inthread_ && !nrn_malloc_protected_) {
 		abort();
 	}
 	__malloc_hook = old_malloc_hook;
@@ -147,7 +147,7 @@ static void* my_memalign_hook(size_t alignment, size_t size, const void* caller)
 }
 static void* my_realloc_hook(void* ptr, size_t size, const void* caller) {
 	void* result;
-	if (inthread_ && !nrn_malloc_protected_) {
+	if (nrn_inthread_ && !nrn_malloc_protected_) {
 		abort();
 	}
 	__malloc_hook = old_malloc_hook;
@@ -166,7 +166,7 @@ static void* my_realloc_hook(void* ptr, size_t size, const void* caller) {
 	return result;
 }
 static void my_free_hook(void* ptr, const void* caller) {
-	if (inthread_ && !nrn_malloc_protected_) {
+	if (nrn_inthread_ && !nrn_malloc_protected_) {
 		abort();
 	}
 	__malloc_hook = old_malloc_hook;
@@ -197,6 +197,10 @@ static void my_init_hook() {
 	__free_hook = my_free_hook;
 }
 #endif
+
+static int interpreter_locked;
+static pthread_mutex_t interpreter_lock_;
+static pthread_mutex_t* _interpreter_lock;
 
 static pthread_mutex_t nmodlmutex_;
 pthread_mutex_t* _nmodlmutex;
@@ -356,6 +360,11 @@ static void threads_create_pthread(){
 		pthread_mutex_init(mut + i, (void*)0);
 		pthread_create(slave_threads + i, (void*)0, slave_main, (void*)(wc+i));
 	}
+	if (!_interpreter_lock) {
+		interpreter_locked = 0;
+		_interpreter_lock = &interpreter_lock_;
+		pthread_mutex_init(_interpreter_lock, (void*)0);
+	}
 	if (!_nmodlmutex) {
 		_nmodlmutex = &nmodlmutex_;
 		pthread_mutex_init(_nmodlmutex, (void*)0);
@@ -391,6 +400,11 @@ static void threads_free_pthread(){
 		cond = (pthread_cond_t*)0;
 		mut = (pthread_mutex_t*)0;
 		wc = (slave_conf_t*)0;
+	}
+	if (_interpreter_lock) {
+		pthread_mutex_destroy(_interpreter_lock);
+		_interpreter_lock = (pthread_mutex_t*)0;
+		interpreter_locked = 0;
 	}
 	if (_nmodlmutex) {
 		pthread_mutex_destroy(_nmodlmutex);
@@ -928,14 +942,31 @@ void nrn_thread_table_check() {
 	}
 }
 
+/* if it is possible for more than one thread to get into the
+   interpreter, lock it. */
+void nrn_hoc_lock() {
+#if USE_PTHREAD
+	if (nrn_inthread_) {
+		pthread_mutex_lock(_interpreter_lock);
+		interpreter_locked = 1;
+	}
+#endif
+}
+void nrn_hoc_unlock() {
+#if USE_PTHREAD
+	if (interpreter_locked) {
+		interpreter_locked = 0;
+		pthread_mutex_unlock(_interpreter_lock);
+	}
+#endif
+}
+
 void nrn_multithread_job(void*(*job)(NrnThread*)) {
 	int i;
 #if USE_PTHREAD
 	BENCHDECLARE
 	if (nrn_thread_parallel_) {
-#if use_malloc_hook
-inthread_ = 1;
-#endif
+		nrn_inthread_ = 1;
 		for (i=1; i < nrn_nthread; ++i) {
 			send_job_to_slave(i, job);
 		}
@@ -943,9 +974,7 @@ inthread_ = 1;
 		(*job)(nrn_threads);
 		BENCHADD(nrn_nthread)
 		WAIT();
-#if use_malloc_hook
-inthread_ = 0;
-#endif
+		nrn_inthread_ = 0;
 	}else{ /* sequential */
 #else
 	{

@@ -61,6 +61,8 @@ extern HocSymExtension* hoc_var_extra(const char*);
 extern double check_domain_limits(float*, double);
 extern Object* hoc_obj_get(int i);
 extern void hoc_obj_set(int i, Object*);
+extern void nrn_hoc_lock();
+extern void nrn_hoc_unlock();
 }
 
 //xmenu

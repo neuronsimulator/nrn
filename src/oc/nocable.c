@@ -56,3 +56,5 @@ char *nrn_tree_version;
 char *nrn_version_changeset;
 char *nrn_version_date;
 double* nrn_recalc_ptr(double* pd) { return pd; }
+void nrn_hoc_lock() {}
+void nrn_hoc_unlock() {}
