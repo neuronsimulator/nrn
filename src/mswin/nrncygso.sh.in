@@ -79,6 +79,7 @@ echo ${CFLAGS}
 
 if test "$CFLAGS" != "-mno-cygwin" ; then
 
+echo 'make nrniv.dll'
 $CXX -shared -nostdlib $obj \
   -L${IVLIBDIR} -lIVhines \
   -L/usr/lib/gcc/i686-pc-cygwin/3.4.4 -lstdc++ -lgcc \
@@ -91,9 +92,9 @@ $CXX -shared -nostdlib $obj \
   -Xlinker --out-implib -Xlinker mswin/libnrniv.dll.a
 
 if test $nrnpy = 'yes' ; then
+echo 'make hocmodule.dll'
 $CXX -shared \
   nrnpython/.libs/inithoc.o \
-  -L/cygdrive/c/Python25/libs -lpython25 \
   -Lmswin -lnrniv \
   @NRNPYTHON_PYLIBLINK@ \
   -o mswin/hocmodule.dll \
@@ -106,6 +107,7 @@ LHOCMODULE=''
 fi
 
 cd mswin
+echo 'make nrniv.exe'
 $CXX -g -O2 -mwindows -e _mainCRTStartup -o nrniv.exe \
   ../ivoc/nrnmain.o ../oc/modlreg.o \
   -L. -lnrniv \
