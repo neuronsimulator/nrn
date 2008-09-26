@@ -20,3 +20,23 @@ export LDFLAGS="-e _mainCRTStartup"
 # make mswin
 # in the src/parallel directory one can launch any of the tests with, e.g.
 # c:/mpich2/bin/mpiexec -np 1 c:\\marshalnrn\\nrn\\bin\\nrniv.exe -mpi test0.hoc
+
+
+if false
+#notes about building with mpich2 under cygwin.
+#I have used it with multicore desktops.
+#In my $HOME
+curl -O http://www.mcs.anl.gov/research/projects/mpich2/downloads/tarballs/1.0.7/mpich2-1.0.7.tar.gz
+tar xzf mpich*gz
+cd mpich*7
+./configure --prefix=$HOME/mpich2 --with-device=ch3:nemesis \
+  'pac_cv_f77_sizeof_integer=4' 'pac_cv_f77_sizeof_double_precision=8' \
+  'CFLAGS=-DDLL_EXPORT -DPIC' 'CXXFLAGS=-DDLL_EXPORT -DPIC'
+make >& build.stdout
+#did not do a "make install"
+# note that the build.stdout is needed by src/mswin/nrncygso.sh
+# and also /home/hines/mpich2-1.0.7
+# is hardwired in there as well in two places as well as in
+# src/mswin/batch/instal.sh
+
+fi
