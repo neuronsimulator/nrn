@@ -1195,6 +1195,8 @@ boolean NetCvode::localstep(){
 	return !single_;
 }
 
+boolean NetCvode::is_local() { return (cvode_active_ && localstep()); }
+
 void NetCvode::localstep(boolean b) {
 	// due to possibility of gap junctions and until the complete matrix
 	// is analysed for block structure localstep and daspk are incompatible
@@ -2527,18 +2529,29 @@ void NetCvode::tstop_event(double tt) {
 #endif
 }
 
-void NetCvode::hoc_event(double tt, const char* stmt) {
-	if (tt - nt_t < 0) { return; }
-	TQItem* q;
+void NetCvode::hoc_event(double tt, const char* stmt, Object* ppobj, int reinit) {
+	if (!ppobj && tt - nt_t < 0) { return; }
 #if USENEOSIM
 	if (neosim_entity_) {
 		// ignore for neosim. There is no appropriate cvode_instance
 		// cvode_instance->neosim_self_events_->insert(nt_t + delay, null_event_);
 	}else{
-		event(tt, HocEvent::alloc(stmt), nrn_threads);
+		NrnThread* nt = nrn_threads;
+		if (nrn_nthread > 1 && ppobj) {
+			int i = PP2NT(ob2pntproc(ppobj))->id;
+			p[i].interthread_send(tt, HocEvent::alloc(stmt, ppobj, reinit), nt+i);
+		}else{
+			event(tt, HocEvent::alloc(stmt, ppobj, reinit), nt);
+		}
 	}
 #else
-	event(tt,  HocEvent::alloc(stmt), nrn_threads);
+	NrnThread* nt = nrn_threads;
+	if (nrn_nthread > 1 && ppobj) {
+		int i = PP2NT(ob2pntproc(ppobj))->id;
+		p[i].interthread_send(tt, HocEvent::alloc(stmt, ppobj, reinit), nt+i);
+	}else{
+		event(tt, HocEvent::alloc(stmt, ppobj, reinit), nt);
+	}
 #endif
 }
 

@@ -284,7 +284,7 @@ public:
 	HocEvent();
 	virtual ~HocEvent();
 	virtual void pr(const char*, double t, NetCvode*);
-	static HocEvent* alloc(const char* stmt);
+	static HocEvent* alloc(const char* stmt, Object*, int);
 	void hefree();
 	void clear(); // called by hepool_->free_all
 	virtual void deliver(double, NetCvode*, NrnThread*);
@@ -302,6 +302,8 @@ public:
 	static unsigned long hocevent_deliver_;
 private:
 	HocCommand* stmt_;
+	Object* ppobj_;
+	int reinit_;
 	static HocEvent* next_del_;
 	static HocEventPool* hepool_;
 };

@@ -60,9 +60,11 @@ extern int nrn_modeltype();
 extern int nrn_use_selfqueue_;
 extern int use_cachevec;
 extern void nrn_cachevec(int);
+extern Point_process* ob2pntproc(Object*);
 
 extern int cvode_active_;
 extern NetCvode* net_cvode_instance;
+extern short* nrn_is_artificial_;
 #if USENCS
 extern void nrn2ncs_netcons();
 #endif //USENCS
@@ -372,7 +374,18 @@ static double tstop_event(void* v) {
 	NetCvode* d = (NetCvode*)v;
 	double x = *getarg(1);
 	if (ifarg(2)) {
-		d->hoc_event(x, gargstr(2));
+		Object* ppobj = nil;
+		int reinit = 0;
+		if (ifarg(3)) {
+			ppobj = *hoc_objgetarg(3);
+			if (!ppobj || ppobj->ctemplate->is_point_ <= 0
+			    || nrn_is_artificial_[ob2pntproc(ppobj)->prop->type]
+			){
+				hoc_execerror(hoc_object_name(ppobj), "is not a POINT_PROCESS");
+			}
+			reinit = int(chkarg(4, 0, 1));
+		}
+		d->hoc_event(x, gargstr(2), ppobj, reinit);
 	}else{
 		d->tstop_event(x);
 	}

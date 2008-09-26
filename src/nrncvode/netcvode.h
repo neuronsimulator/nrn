@@ -68,6 +68,7 @@ public:
 	void acor();
 	const char* statename(int, int style=1);
 	void localstep(boolean); boolean localstep();
+	boolean is_local();
 	void use_daspk(boolean); boolean use_daspk();
 	void move_event(TQItem*, double, NrnThread*);
 	void remove_event(TQItem*, int threadid);
@@ -82,7 +83,7 @@ public:
 	void null_event(double);
 	void tstop_event(double);
 	void handle_tstop_event(double, NrnThread* nt);
-	void hoc_event(double, const char* hoc_stmt);
+	void hoc_event(double, const char* hoc_stmt, Object* ppobj = nil, int reinit = 0);
 	NetCon* install_deliver(double* psrc, Section* ssrc, Object* osrc,
 		Object* target,	double threshold, double delay,
 		double weight

@@ -1,6 +1,11 @@
 #include <objcmd.h>
 #include <pool.h>
 #include <netcon.h>
+#include <oc2iv.h>
+
+extern "C" {
+extern int cvode_active_;
+}
 
 declarePool(HocEventPool, HocEvent)
 implementPool(HocEventPool, HocEvent)
@@ -8,6 +13,8 @@ HocEventPool* HocEvent::hepool_;
 
 HocEvent::HocEvent() {
         stmt_ = nil;
+	ppobj_ = nil;
+	reinit_ = 0;
 }
 
 HocEvent::~HocEvent() {
@@ -20,12 +27,14 @@ void HocEvent::pr(const char* s, double tt, NetCvode* ns) {
 	printf("%s HocEvent %s %.15g\n", s, stmt_ ? stmt_->name() : "", tt);
 }
 
-HocEvent* HocEvent::alloc(const char* stmt) {
+HocEvent* HocEvent::alloc(const char* stmt, Object* ppobj, int reinit) {
         if (!hepool_) {
                 hepool_ = new HocEventPool(100);
         }
         HocEvent* he = hepool_->alloc();
         he->stmt_ = nil;
+	he->ppobj_ = ppobj;
+	he->reinit_ = reinit;
         if (stmt) {
                 he->stmt_ = new HocCommand(stmt);
         }
@@ -47,15 +56,34 @@ void HocEvent::clear() {
         }
 }               
 
-void HocEvent::deliver(double tt, NetCvode*, NrnThread*) {
+void HocEvent::deliver(double tt, NetCvode* nc, NrnThread* nt) {
 	extern double t;
 	if (stmt_) {
-		t = nt_t = tt;
+		if (nrn_nthread > 1 || nc->is_local()) {
+			if (!ppobj_) {
+hoc_execerror("multiple threads and/or local variable time step method require an appropriate POINT_PROCESS arg to CVode.event to safely execute:", stmt_->name());
+			}
+			Cvode* cv = (Cvode*)ob2pntproc(ppobj_)->nvi_;
+			if (cv && cvode_active_) {
+				nc->local_retreat(tt, cv);
+				if (reinit_) {
+					cv->set_init_flag();
+				}
+				nt->_t = cv->t_;
+			}
+			nrn_hoc_lock();
+			t = tt;
+		}else{
+			t = nt_t = tt;
+		}
 #if carbon
 		stmt_->execute((unsigned int)0);
 #else
 		stmt_->execute(false);
 #endif
+		if (nrn_nthread > 1 || nc->is_local()) {
+			nrn_hoc_unlock();
+		}
 	}
         hefree();
 }
@@ -80,7 +108,8 @@ DiscreteEvent* HocEvent::savestate_save() {
 
 void HocEvent::savestate_restore(double tt, NetCvode* nc) {
 //	pr("HocEvent::savestate_restore", tt, nc);
-	HocEvent* he = alloc(nil);
+	hoc_execerror("cannot restore a cvode.event, complain to Hines",0);
+	HocEvent* he = alloc(nil, nil, 0);
 	if (stmt_) {
 		he->stmt_ = new HocCommand(stmt_->name(), stmt_->object());
 	}
