@@ -38,7 +38,7 @@ find . -name \*.o -print | sed '
 mpicc=@MPICC@
 
 if test "$mpicc" = "mpicc" ; then
-mpich=/home/Hines/mpich2-1.0.7
+mpich=/home/hines/mpich2-1.0.7
 # mpich configured and made with
 #./configure '--prefix=/home/Hines/mpich2' '--with-device=ch3:nemesis' \
 #  'pac_cv_f77_sizeof_integer=4' 'pac_cv_f77_sizeof_double_precision=8' \
@@ -59,7 +59,7 @@ awk '
 	/\/mpe2\//d
 	/\/binding\/f77\//d
 	"'$a \
-/home/Hines/mpich2-1.0.7/src/binding/f77/setbot.o
+/home/hines/mpich2-1.0.7/src/binding/f77/setbot.o
 ' >> temp
 
 fi
