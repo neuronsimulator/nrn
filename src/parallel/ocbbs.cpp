@@ -27,10 +27,10 @@ extern "C" {
 	extern int nrnmpi_splitcell_connect(int that_host);
 	extern int nrnmpi_multisplit(double x, int sid, int backbonestyle);
 	extern void nrnmpi_gid_clear();
+	double nrnmpi_rtcomp_time_;
 #if PARANEURON
 	double nrnmpi_transfer_wait_;
 	double nrnmpi_splitcell_wait_;
-	double nrnmpi_rtcomp_time_;
 #endif
 #if NRNMPI
 	void nrnmpi_barrier();
@@ -336,16 +336,17 @@ static double pctime(void* v) {
 }
 
 static double vtransfer_time(void* v) {
-#if PARANEURON
 	int mode = ifarg(1) ? int(chkarg(1, 0., 2.)) : 0;
-	if (mode == 1) {
-		return nrnmpi_splitcell_wait_;
-	}else if (mode == 2) {
+	if (mode == 2) {
 		return nrnmpi_rtcomp_time_;
+#if PARANEURON
+	}else if (mode == 1) {
+		return nrnmpi_splitcell_wait_;
 	}else{
 		return nrnmpi_transfer_wait_;
 	}
 #else
+	}
 	return 0;
 #endif
 }

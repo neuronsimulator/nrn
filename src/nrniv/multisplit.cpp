@@ -34,9 +34,14 @@ extern void (*nrn_multisplit_solve_)();
 static void multisplit_v_setup();
 static void multisplit_solve();
 
+extern double nrnmpi_rtcomp_time_;
 #if PARANEURON
-	extern double nrnmpi_rtcomp_time_;
-	extern double nrnmpi_splitcell_wait_;
+extern double nrnmpi_splitcell_wait_;
+#else
+static double nrnmpi_splitcell_wait_;
+#endif
+
+#if NRNMPI
 	extern void nrnmpi_int_allgather(int*, int*, int);
 	extern void nrnmpi_int_allgatherv(int*, int*, int*, int*);
 	extern void nrnmpi_postrecv_doubles(double*, int, int, int, void**);
@@ -52,8 +57,6 @@ static void nrnmpi_send_doubles(double*, int, int, int){}
 static void nrnmpi_wait(void**){}
 static void nrnmpi_barrier(){}
 static double nrnmpi_wtime() { return 0.0; }
-static double nrnmpi_rtcomp_time_;
-static double nrnmpi_splitcell_wait_;
 #endif
 }
 

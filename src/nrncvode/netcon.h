@@ -324,7 +324,6 @@ public:
 	static DiscreteEvent* savestate_read(FILE*);
 };
 
-#if NRNMPI
 class NetParEvent : public DiscreteEvent {
 public:
 	NetParEvent();
@@ -344,6 +343,5 @@ public:
 	double wx_, ws_; // exchange time and "spikes to Presyn" time
 	int ithread_; // for pr()
 };
-#endif
 
 #endif

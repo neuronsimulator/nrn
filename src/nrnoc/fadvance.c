@@ -615,9 +615,7 @@ void nrn_finitialize(int setv, double v) {
 	}
 	nrn_thread_table_check();
 	clear_event_queue();
-#if NRNMPI
 	nrn_spike_exchange_init();
-#endif
 	nrn_random_play();
 #if VECTORIZE
 	nrn_play_init(); /* Vector.play */
