@@ -53,7 +53,7 @@ for (i=0; i < *pargc; ++i) {
 	   directory and so when not invoked under mpirun we would like to
 	   NOT call MPI_Init.
 	*/
-		int i, b;
+		int i, b, flag;
 		b = 0;
 		for (i=0; i < *pargc; ++i) {
 			if (strncmp("-p4", (*pargv)[i], 3) == 0) {
@@ -71,7 +71,6 @@ for (i=0; i < *pargc; ++i) {
 			return;
 		}
 #endif
-		int flag;
 		MPI_Initialized(&flag);
 
 		if (!flag && MPI_Init(pargc, pargv) != MPI_SUCCESS) {
