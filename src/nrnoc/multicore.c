@@ -228,7 +228,9 @@ void nrn_malloc_unlock() {
 
 /* when PERMANENT is 0, we avoid false warnings with helgrind, but a bit slower */
 /* when 0, create/join instead of wait on condition. */
+#ifndef PERMANENT
 #define PERMANENT 1
+#endif
 
 typedef volatile struct {
         int flag;
@@ -344,11 +346,11 @@ static void* slave_main(void* arg) {
 	return (void*)0;
 }
 
-#if PERMANENT
 static void threads_create_pthread(){
     setaffinity(nrnmpi_myid);
     if (nrn_nthread > 1) {
 	int i;
+#if PERMANENT
 	CACHELINE_ALLOC(wc, slave_conf_t, nrn_nthread);
 	slave_threads = (pthread_t *)emalloc(sizeof(pthread_t)*nrn_nthread);
 	cond = (pthread_cond_t *)emalloc(sizeof(pthread_cond_t)*nrn_nthread);
@@ -360,6 +362,9 @@ static void threads_create_pthread(){
 		pthread_mutex_init(mut + i, (void*)0);
 		pthread_create(slave_threads + i, (void*)0, slave_main, (void*)(wc+i));
 	}
+#else
+	slave_threads = (pthread_t *)emalloc(sizeof(pthread_t)*nrn_nthread);
+#endif /* PERMANENT */
 	if (!_interpreter_lock) {
 		interpreter_locked = 0;
 		_interpreter_lock = &interpreter_lock_;
@@ -382,6 +387,7 @@ static void threads_create_pthread(){
 static void threads_free_pthread(){
 	int i;
 	if (slave_threads) {
+#if PERMANENT
 		wait_for_workers();
 		for (i=1; i < nrn_nthread; ++i) {
 			pthread_mutex_lock(mut + i);
@@ -400,6 +406,10 @@ static void threads_free_pthread(){
 		cond = (pthread_cond_t*)0;
 		mut = (pthread_mutex_t*)0;
 		wc = (slave_conf_t*)0;
+#else
+		free((char*)slave_threads);
+		slave_threads = (pthread_t*)0;
+#endif /*PERMANENT*/
 	}
 	if (_interpreter_lock) {
 		pthread_mutex_destroy(_interpreter_lock);
@@ -416,24 +426,6 @@ static void threads_free_pthread(){
 	}
 	nrn_thread_parallel_ = 0;
 }
-#else /* Not PERMANENT */
-static void threads_create_pthread(){
-    if (nrn_nthread > 1) {
-	slave_threads = (pthread_t *)emalloc(sizeof(pthread_t)*nrn_nthread);
-	nrn_thread_parallel_ = 1;
-    }else{
-    	nrn_thread_parallel_ = 0;
-    }
-}
-
-static void threads_free_pthread(){
-	if (slave_threads) {
-		free((char*)slave_threads);
-		slave_threads = (pthread_t*)0;
-	}
-	nrn_thread_parallel_ = 0;
-}
-#endif /* Not PERMANENT */
 
 #else /* USE_PTHREAD */
 
