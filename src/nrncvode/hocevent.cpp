@@ -2,6 +2,7 @@
 #include <pool.h>
 #include <netcon.h>
 #include <oc2iv.h>
+#include <nrnmutdec.h>
 
 extern "C" {
 extern int cvode_active_;
@@ -10,6 +11,7 @@ extern int cvode_active_;
 declarePool(HocEventPool, HocEvent)
 implementPool(HocEventPool, HocEvent)
 HocEventPool* HocEvent::hepool_;  
+MUTDEC
 
 HocEvent::HocEvent() {
         stmt_ = nil;
@@ -29,7 +31,11 @@ void HocEvent::pr(const char* s, double tt, NetCvode* ns) {
 
 HocEvent* HocEvent::alloc(const char* stmt, Object* ppobj, int reinit) {
         if (!hepool_) {
-                hepool_ = new HocEventPool(100);
+		nrn_hoc_lock();
+		if (!hepool_) {
+	                hepool_ = new HocEventPool(100, 1);
+		}
+		nrn_hoc_unlock();
         }
         HocEvent* he = hepool_->alloc();
         he->stmt_ = nil;

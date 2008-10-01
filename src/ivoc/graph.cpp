@@ -2854,8 +2854,8 @@ void GraphLine::plot(){
 	if ( pval_ ) {
 		y_->add(*pval_);
 	}else{
-		nrn_hoc_lock();
 		Oc oc;
+		nrn_hoc_lock();
 		if (obj_) {
 			ObjectContext obc(obj_);
 			y_->add(oc.runExpr(expr_));

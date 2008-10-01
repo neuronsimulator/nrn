@@ -8,6 +8,7 @@
 #include <IV-look/kit.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <nrnmutdec.h>
 
 #include "oc2iv.h"
 #include "ivoc.h"
@@ -121,8 +122,12 @@ void winio_key_press() {
 }
 
 #endif
+static MUTDEC
+
 Oc::Oc() {
+	MUTLOCK
 	++refcnt_;
+	MUTUNLOCK
 }
 
 boolean Oc::helpmode_;
@@ -159,10 +164,12 @@ Oc::Oc(Session *s, char* pname, char** env) {
 			}
 		}
 	}
+	MUTCONSTRUCT(1)
 	hoc_main1_init(pname, env);
 }
 
 Oc::~Oc() {
+	MUTLOCK
 	if (--refcnt_ == 0) {
 #if !defined(WIN32) && !defined(MAC) && !defined(CYGWIN) && !defined(carbon)
 		if (reqerr1 && reqerr1->count()) {
@@ -170,6 +177,7 @@ Oc::~Oc() {
 		}
 #endif
 	}
+	MUTUNLOCK
 }
 	
 
@@ -227,6 +235,7 @@ static PList* p_list;
 static PList* pd_list;
 
 void Oc::notify_when_freed(void* p, Observer* ob) {
+	MUTLOCK
 	if (!p_list) {
 		p_list = new PList(30);
 	}
@@ -234,9 +243,11 @@ void Oc::notify_when_freed(void* p, Observer* ob) {
 	pob.p = p;
 	pob.observer = ob;
 	p_list->append(pob);
+	MUTUNLOCK
 }
 
 void Oc::notify_when_freed(double* p, Observer* ob) {
+	MUTLOCK
 	if (!pd_list) {
 		pd_list = new PList(10);
 	}
@@ -244,10 +255,12 @@ void Oc::notify_when_freed(double* p, Observer* ob) {
 	pob.p = (void*)p;
 	pob.observer = ob;
 	pd_list->append(pob);
+	MUTUNLOCK
 }
 
 void Oc::notify_pointer_disconnect(Observer* ob) {
 	PList* pl = p_list;
+	MUTLOCK
    for(pl = p_list;;pl = pd_list) {
 	if (pl) {
 		long i, n = pl->count() - 1;
@@ -261,12 +274,14 @@ void Oc::notify_pointer_disconnect(Observer* ob) {
 		break;
 	}
    }
+	MUTUNLOCK
 }
 
 extern "C" {
 void notify_pointer_freed(void* pt) {
 	if (p_list) {
 		boolean removed = false;
+		MUTLOCK
 		long i, n = p_list->count();
 		for (i = 0; i < n ; ++i) {
 			if (p_list->item(i).p == pt) {
@@ -277,6 +292,7 @@ void notify_pointer_freed(void* pt) {
 				break;		
 			}
 		}
+		MUTUNLOCK
 		if (removed) { // maybe there is another one
 			notify_pointer_freed(pt);
 		}
