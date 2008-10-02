@@ -172,7 +172,7 @@ void ncs2nrn_integrate(double tstop);
 void nrn_fixed_step();
 void nrn_fixed_step_group(int);
 extern void (*nrn_allthread_handle)();
-static void allthread_handle() {
+static void allthread_handle_callback() {
 	net_cvode_instance->allthread_handle();
 }
 
@@ -428,6 +428,8 @@ declarePool(SelfEventPool, SelfEvent)
 implementPool(SelfEventPool, SelfEvent)
 declarePtrList(TQList, TQItem)
 implementPtrList(TQList, TQItem)
+declarePtrList(HocEventList, HocEvent)
+implementPtrList(HocEventList, HocEvent)
 
 // allows marshalling of all items in the event queue that need to be
 // removed to avoid duplicates due to frecord_init after finitialize
@@ -1035,7 +1037,6 @@ NetCvodeThreadData::NetCvodeThreadData() {
 	ite_size_ = ITE_SIZE;
 	ite_cnt_ = 0;
 	unreffed_event_cnt_ = 0;
-	netparevent_seen_ = 0;
 	immediate_deliver_ = -1e100;
 	inter_thread_events_ = new InterThreadEvent[ite_size_];
 	nlcv_ = 0;
@@ -1129,6 +1130,7 @@ NetCvode::NetCvode(boolean single) {
 	nrn_use_daspk_ = false;
 	gcv_ = nil;
 	wl_list_ = new HTListList();
+	allthread_hocevents_ = new HocEventList();
 	pcnt_ = 0;
 	p = nil;
 	p_construct(1);
@@ -1193,6 +1195,7 @@ NetCvode::~NetCvode() {
 	delete prl_;
 	unused_presyn = nil;
 	delete wl_list_;		
+	delete allthread_hocevents_;
 }
 
 boolean NetCvode::localstep(){
@@ -2006,6 +2009,7 @@ int NetCvode::solve(double tout) {
 			while (p[0].tqe_->least_t() <= tout && stoprun==0) {
 				deliver_least_event(nt);
 			}
+			if (nrn_allthread_handle) { (*nrn_allthread_handle)(); }
 			if (stoprun==0) { nt_t = tout; }
 		} else {
 			if (p[0].tqe_->least()) {
@@ -2014,11 +2018,13 @@ int NetCvode::solve(double tout) {
 			}else{
 				nt_t += 1e6;
 			}
+			if (nrn_allthread_handle) { (*nrn_allthread_handle)(); }
 		}
 	}else if (single_) {
 		if (tout >= 0.) {
 			while (gcv_->t_ < tout || p[0].tqe_->least_t() < tout) {
 				err = global_microstep();
+				if (nrn_allthread_handle) { (*nrn_allthread_handle)(); }
 				if (err != NVI_SUCCESS || stoprun) { return err; }
 			}
 			retreat(tout, gcv_);
@@ -2028,7 +2034,8 @@ int NetCvode::solve(double tout) {
 			initialized_ = false;
 			while (gcv_->t_ <= tc && !initialized_) {
 				err = global_microstep();
-				if (err != NVI_SUCCESS) { return err; }
+				if (nrn_allthread_handle) { (*nrn_allthread_handle)(); }
+				if (err != NVI_SUCCESS || stoprun) { return err; }
 			}
 		}
 	}else if (!gcv_) { // lvardt
@@ -2040,6 +2047,7 @@ int NetCvode::solve(double tout) {
 			NrnThread* nt = nrn_threads;
 			while (tq->least_t() < tout || tqe->least_t() <= tout) {
 				err = local_microstep(nt);
+				if (nrn_allthread_handle) { (*nrn_allthread_handle)(); }
 				if (err != NVI_SUCCESS || stoprun) { return err; }
 #if HAVE_IV
 IFGUI
@@ -2068,7 +2076,8 @@ ENDGUI
 			double te = p[0].tqe_->least_t();
 			while (tq->least_t() <= tc && p[0].tqe_->least_t() <= te){
 				err = local_microstep(nrn_threads);
-				if (err != NVI_SUCCESS) { return err; }
+				if (nrn_allthread_handle) { (*nrn_allthread_handle)(); }
+				if (err != NVI_SUCCESS || stoprun) { return err; }
 			}
 			// But make sure t is not past the least time.
 			// fadvance and local step do not coexist seamlessly.
@@ -2086,6 +2095,8 @@ ENDGUI
 }
 
 void NetCvode::handle_tstop_event(double tt, NrnThread* nt) {
+	nt->_stop_stepping = 1;
+	if (nt->id == 0) { stoprun = 1; }
 	if (cvode_active_) {
 		if (gcv_) {
 			retreat(tt, gcv_);
@@ -2098,10 +2109,6 @@ void NetCvode::handle_tstop_event(double tt, NrnThread* nt) {
 				lcv[i].record_continuous();
 			}
 		}
-		if (nt->id == 0) {
-			initialized_ = true; // not really but we want to return from
-		}
-		// fadvance after handling this.
 	}
 }
 
@@ -2566,13 +2573,20 @@ void NetCvode::hoc_event(double tt, const char* stmt, Object* ppobj, int reinit)
 }
 
 void NetCvode::allthread_handle() {
-	printf("allthread_handle()\n");
 	nrn_allthread_handle = nil;
+	while (allthread_hocevents_->count()) {
+		HocEvent* he = allthread_hocevents_->item(0);
+		allthread_hocevents_->remove(0);
+		he->allthread_handle();
+	}
 }
 
 void NetCvode::allthread_handle(double tt, HocEvent* he, NrnThread* nt) {
-	nrn_hoc_lock();
-	nrn_hoc_unlock();
+	nt->_stop_stepping = 1;
+	if (nt->id == 0) {
+		nrn_allthread_handle = allthread_handle_callback;
+		allthread_hocevents_->append(he);
+	}
 }
 
 #if 0
@@ -2653,6 +2667,8 @@ void NetCvode::clear_events() {
 	// already have gone out of existence so the tqe_ may contain many
 	// invalid item data pointers
 	HocEvent::reclaim();
+	allthread_hocevents_->remove_all();
+	nrn_allthread_handle = nil;
 #if USENEOSIM
 	if (p_nrn2neosim_send) for (i=0; i < nlist_; ++i) {
 		TQueue* tq = p.lcv_[i].neosim_self_events_;
@@ -5926,10 +5942,11 @@ static void* lvardt_integrate(NrnThread* nt) {
 	TQueue* tq = p.tq_;
 	TQueue* tqe = p.tqe_;
 	double tout = lvardt_tout_;
+	nt->_stop_stepping = 0;
 	while (tq->least_t() < tout || tqe->least_t() <= tout) {
 		err = nc->local_microstep(nt);
-		if (p.netparevent_seen_) {
-			p.netparevent_seen_ = 0;
+		if (nt->_stop_stepping) {
+			nt->_stop_stepping = 0;
 			return (void*)err;
 		}
 		if (err != NVI_SUCCESS || stoprun) { return (void*)err; }
@@ -5951,6 +5968,7 @@ int NetCvode::solve_when_threads(double tout) {
 	if (empty_) {
 		if (tout >= 0.) {
 			deliver_events_when_threads(tout);
+			if (nrn_allthread_handle) { (*nrn_allthread_handle)(); }
 			if (stoprun==0) {
 				nt_t = tout;
 			}
@@ -5961,11 +5979,13 @@ int NetCvode::solve_when_threads(double tout) {
 			}else{
 				nt_t += 1e6;
 			}
+			if (nrn_allthread_handle) { (*nrn_allthread_handle)(); }
 		}
 	}else if (gcv_) {
 		if (tout >= 0.) {
 			while (gcv_->t_ < tout || allthread_least_t(tid) < tout) {
 				err = global_microstep_when_threads();
+				if (nrn_allthread_handle) { (*nrn_allthread_handle)(); }
 				if (err != NVI_SUCCESS || stoprun) { return err; }
 			}
 			retreat(tout, gcv_);
@@ -5975,7 +5995,8 @@ int NetCvode::solve_when_threads(double tout) {
 			initialized_ = false;
 			while (gcv_->t_ <= tc && !initialized_) {
 				err = global_microstep_when_threads();
-				if (err != NVI_SUCCESS) { return err; }
+				if (nrn_allthread_handle) { (*nrn_allthread_handle)(); }
+				if (err != NVI_SUCCESS || stoprun) { return err; }
 			}
 		}
 	}else{ // lvardt
@@ -5987,6 +6008,7 @@ int NetCvode::solve_when_threads(double tout) {
 			lvardt_tout_ = tout;
 			while(nt_t < tout) {
 				nrn_multithread_job(lvardt_integrate);
+				if (nrn_allthread_handle) { (*nrn_allthread_handle)(); }
 				if (err != NVI_SUCCESS || stoprun) { return err; }
 				int tid;
 				allthread_least_t(tid);

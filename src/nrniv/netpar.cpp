@@ -117,7 +117,7 @@ void NetParEvent::deliver(double tt, NetCvode* nc, NrnThread* nt){
 	// has to be the last event at this time in order to avoid a race
 	// condition with HocEvent that may call things such as pc.barrier
 	net_cvode_instance->deliver_events(tt, nt);
-	net_cvode_instance->p[nt->id].netparevent_seen_ = 1;
+	nt->_stop_stepping = 1;
 	nt->_t = tt;
 #if NRNMPI
     if (nt->id == 0) {
@@ -137,7 +137,6 @@ void NetParEvent::deliver(double tt, NetCvode* nc, NrnThread* nt){
    }
 #endif
 	send(tt, nc, nt);
-	nt->_stop_stepping = 1;
 }
 void NetParEvent::pgvts_deliver(double tt, NetCvode* nc){
 	assert(0);
@@ -314,7 +313,6 @@ void nrn_spike_exchange_init() {
 		npe_[i].ithread_ = i;
 		npe_[i].wx_ = 0.;
 		npe_[i].ws_ = 0.;
-		net_cvode_instance->p[i].netparevent_seen_ = 0;
 		npe_->send(t, net_cvode_instance, nrn_threads + i);
 	}
 #if NRNMPI

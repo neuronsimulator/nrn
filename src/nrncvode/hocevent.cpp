@@ -96,6 +96,15 @@ hoc_execerror("multiple threads and/or local variable time step method require a
         hefree();
 }
 
+void HocEvent::allthread_handle() {
+#if carbon
+		stmt_->execute((unsigned int)0);
+#else
+		stmt_->execute(false);
+#endif
+	hefree();
+}
+
 void HocEvent::pgvts_deliver(double tt, NetCvode*) {
 	deliver(tt, nil, nil);
 }
