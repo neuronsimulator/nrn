@@ -43,7 +43,8 @@ extern double t, dt;
 extern double chkarg();
 extern void nrn_fixed_step();
 extern void nrn_fixed_step_group(int);
-extern void* nrn_fixed_step_thread(NrnThread*);
+static void* nrn_fixed_step_thread(NrnThread*);
+static void* nrn_fixed_step_group_thread(NrnThread* nth);
 extern void* setup_tree_matrix(NrnThread*);
 extern void nrn_solve(NrnThread*);
 extern void nonvint(NrnThread* nt);
@@ -57,6 +58,7 @@ extern void* nrn_multisplit_triang(NrnThread*);
 extern void* nrn_multisplit_reduce_solve(NrnThread*);
 extern void* nrn_multisplit_bksub(NrnThread*);
 extern void (*nrn_multisplit_setup_)();
+void (*nrn_allthread_handle)();
 
 extern int tree_changed;
 extern int diam_changed;
@@ -204,6 +206,7 @@ batch_run() /* avoid interpreter overhead */
 				batch_out();
 				tnext = t + tstep;
 			}
+			if (stoprun) { break; }
 		}
 	}
 	batch_close();
@@ -261,13 +264,23 @@ void nrn_fixed_step() {
 	nrn_thread_table_check();
 	if (nrn_multisplit_setup_) {
 		nrn_multithread_job(nrn_ms_treeset_through_triang);
-		nrn_multithread_job(nrn_ms_reduce_solve);
-		nrn_multithread_job(nrn_ms_bksub);
+		if (!nrn_allthread_handle) {
+			nrn_multithread_job(nrn_ms_reduce_solve);
+			nrn_multithread_job(nrn_ms_bksub);
+		}
 	}else{
 		nrn_multithread_job(nrn_fixed_step_thread);
 	}
+	if (nrn_allthread_handle) { (*nrn_allthread_handle)(); }
 	t = nrn_threads[0]._t;
 }
+
+/* better cache efficiency since a thread can do an entire minimum delay
+integation interval before joining
+*/
+static int step_group_n;
+static int step_group_begin;
+static int step_group_end;
 
 void nrn_fixed_step_group(int n) {
 	int i;
@@ -277,19 +290,55 @@ void nrn_fixed_step_group(int n) {
 	dt2thread(dt);
 	nrn_thread_table_check();
 	if (nrn_multisplit_setup_) {
+		int b = 0;
 		nrn_multithread_job(nrn_ms_treeset_through_triang);
 		for (i=1; i < n; ++i) {
-		nrn_multithread_job(nrn_ms_reduce_solve);
-		nrn_multithread_job(nrn_ms_bksub_through_triang);
+			nrn_multithread_job(nrn_ms_reduce_solve);
+			nrn_multithread_job(nrn_ms_bksub_through_triang);
+			if (nrn_allthread_handle) {
+				(*nrn_allthread_handle)();
+				// aborted step at bksub, so if not stopped
+				// must do the triang
+				b = 1;
+				if (!stoprun) {
+					nrn_multithread_job(nrn_ms_treeset_through_triang);
+				}
+			}
+			if (stoprun) { break; }
+			b = 0;
 		}
-		nrn_multithread_job(nrn_ms_reduce_solve);
-		nrn_multithread_job(nrn_ms_bksub);
+		if (!b) {
+			nrn_multithread_job(nrn_ms_reduce_solve);
+			nrn_multithread_job(nrn_ms_bksub);
+		}
+		if (nrn_allthread_handle) { (*nrn_allthread_handle)(); }
 	}else{
-		for (i=0; i < n; ++i) {
-			nrn_multithread_job(nrn_fixed_step_thread);
+		step_group_n = n;
+		step_group_begin = 0;
+		step_group_end = 0;
+		while(step_group_end < step_group_n) {
+/*printf("step_group_end=%d step_group_n=%d\n", step_group_end, step_group_n);*/
+			nrn_multithread_job(nrn_fixed_step_group_thread);
+			if (nrn_allthread_handle) { (*nrn_allthread_handle)(); }
+			if (stoprun) { break; }
+			step_group_begin = step_group_end;
 		}
 	}
 	t = nrn_threads[0]._t;
+}
+
+void* nrn_fixed_step_group_thread(NrnThread* nth) {
+	int i;
+	nth->_stop_stepping = 0;
+	for (i = step_group_begin; i < step_group_n; ++i) {
+		nrn_fixed_step_thread(nth);
+		if (nth->_stop_stepping) {
+			if (nth->id == 0) { step_group_end = i; }
+			return (void*)0;
+		}
+	}
+	if (nth->id == 0) { step_group_end = step_group_n; }
+	return (void*)0;
 }
 
 void* nrn_fixed_step_thread(NrnThread* nth) {

@@ -137,6 +137,7 @@ void NetParEvent::deliver(double tt, NetCvode* nc, NrnThread* nt){
    }
 #endif
 	send(tt, nc, nt);
+	nt->_stop_stepping = 1;
 }
 void NetParEvent::pgvts_deliver(double tt, NetCvode* nc){
 	assert(0);
@@ -252,7 +253,7 @@ static int nrn_need_npe() {
 	int b = 0;
 	if (active_) { b = 1; }
 	if (nrn_use_selfqueue_) { b = 1; }
-	if (nrn_nthread > 1 && net_cvode_instance->localstep()) { b = 1; }
+	if (nrn_nthread > 1) { b = 1; }
 	if (b) {
 		if (mindelay_ == 0) {
 			set_mindelay(100.);

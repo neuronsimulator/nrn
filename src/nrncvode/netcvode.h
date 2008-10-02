@@ -26,6 +26,7 @@ class HTListList;
 class NetCvode;
 class MaxStateItem;
 class CvodeThreadData;
+class HocEvent;
 struct BAMech;
 struct Section;
 struct InterThreadEvent;
@@ -212,6 +213,8 @@ public:
 	int solve_when_threads(double);
 	void deliver_events_when_threads(double);
 	int global_microstep_when_threads();
+	void allthread_handle(double, HocEvent*, NrnThread*);
+	void allthread_handle();
 };	
 	
 #endif

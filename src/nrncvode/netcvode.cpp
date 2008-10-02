@@ -171,6 +171,10 @@ static void* neosim_entity_;
 void ncs2nrn_integrate(double tstop);
 void nrn_fixed_step();
 void nrn_fixed_step_group(int);
+extern void (*nrn_allthread_handle)();
+static void allthread_handle() {
+	net_cvode_instance->allthread_handle();
+}
 
 #if USENCS
 // As a subroutine for NCS, NEURON simulates the cells of a subnet
@@ -2514,10 +2518,9 @@ void NetCvode::tstop_event(double tt) {
 	if (neosim_entity_) {
 		// ignore for neosim. There is no appropriate cvode_instance
 		// cvode_instance->neosim_self_events_->insert(nt_t + delay, tstop_event_);
-	}else{
-		event(tt, tstop_event_);
-	}
-#else
+	}else
+#endif
+    {
 	if (gcv_) {
 		event(tt, tstop_event_, nrn_threads);
 	}else{
@@ -2526,7 +2529,7 @@ void NetCvode::tstop_event(double tt) {
 			event(tt, tstop_event_, nt);
 		}
 	}
-#endif
+    }
 }
 
 void NetCvode::hoc_event(double tt, const char* stmt, Object* ppobj, int reinit) {
@@ -2535,24 +2538,41 @@ void NetCvode::hoc_event(double tt, const char* stmt, Object* ppobj, int reinit)
 	if (neosim_entity_) {
 		// ignore for neosim. There is no appropriate cvode_instance
 		// cvode_instance->neosim_self_events_->insert(nt_t + delay, null_event_);
-	}else{
-		NrnThread* nt = nrn_threads;
-		if (nrn_nthread > 1 && ppobj) {
-			int i = PP2NT(ob2pntproc(ppobj))->id;
-			p[i].interthread_send(tt, HocEvent::alloc(stmt, ppobj, reinit), nt+i);
-		}else{
-			event(tt, HocEvent::alloc(stmt, ppobj, reinit), nt);
-		}
-	}
-#else
+	}else
+#endif
+    {
 	NrnThread* nt = nrn_threads;
-	if (nrn_nthread > 1 && ppobj) {
+	if (nrn_nthread > 1) {
+	    if (ppobj) {
 		int i = PP2NT(ob2pntproc(ppobj))->id;
 		p[i].interthread_send(tt, HocEvent::alloc(stmt, ppobj, reinit), nt+i);
+	    }else{
+		HocEvent* he = HocEvent::alloc(stmt, nil, 0);
+		// put on each queue. The first thread to execute the deliver
+		// for he will set the nrn_allthread_handle
+		// callback which will cause all threads to rejoin at the
+		// end of the current fixed step or, for var step methods,
+		// after all events at this time are delivered. It is up
+		// to the callers of the multithread_job functions
+		// to do the right thing.
+		for (int i; i < nrn_nthread; ++i) {
+			p[i].interthread_send(tt, he, nt + i);
+		}
+	    }
 	}else{
 		event(tt, HocEvent::alloc(stmt, ppobj, reinit), nt);
 	}
-#endif
+    }
+}
+
+void NetCvode::allthread_handle() {
+	printf("allthread_handle()\n");
+	nrn_allthread_handle = nil;
+}
+
+void NetCvode::allthread_handle(double tt, HocEvent* he, NrnThread* nt) {
+	nrn_hoc_lock();
+	nrn_hoc_unlock();
 }
 
 #if 0

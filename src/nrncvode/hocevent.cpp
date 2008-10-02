@@ -2,7 +2,6 @@
 #include <pool.h>
 #include <netcon.h>
 #include <oc2iv.h>
-#include <nrnmutdec.h>
 
 extern "C" {
 extern int cvode_active_;
@@ -11,7 +10,6 @@ extern int cvode_active_;
 declarePool(HocEventPool, HocEvent)
 implementPool(HocEventPool, HocEvent)
 HocEventPool* HocEvent::hepool_;  
-MUTDEC
 
 HocEvent::HocEvent() {
         stmt_ = nil;
@@ -64,6 +62,10 @@ void HocEvent::clear() {
 
 void HocEvent::deliver(double tt, NetCvode* nc, NrnThread* nt) {
 	extern double t;
+	if (!ppobj_) {
+		nc->allthread_handle(tt, this, nt);
+		return;
+	}
 	if (stmt_) {
 		if (nrn_nthread > 1 || nc->is_local()) {
 			if (!ppobj_) {
@@ -93,6 +95,7 @@ hoc_execerror("multiple threads and/or local variable time step method require a
 	}
         hefree();
 }
+
 void HocEvent::pgvts_deliver(double tt, NetCvode*) {
 	deliver(tt, nil, nil);
 }
