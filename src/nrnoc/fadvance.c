@@ -271,8 +271,8 @@ void nrn_fixed_step() {
 	}else{
 		nrn_multithread_job(nrn_fixed_step_thread);
 	}
-	if (nrn_allthread_handle) { (*nrn_allthread_handle)(); }
 	t = nrn_threads[0]._t;
+	if (nrn_allthread_handle) { (*nrn_allthread_handle)(); }
 }
 
 /* better cache efficiency since a thread can do an entire minimum delay

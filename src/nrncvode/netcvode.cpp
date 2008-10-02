@@ -2562,7 +2562,7 @@ void NetCvode::hoc_event(double tt, const char* stmt, Object* ppobj, int reinit)
 		// after all events at this time are delivered. It is up
 		// to the callers of the multithread_job functions
 		// to do the right thing.
-		for (int i; i < nrn_nthread; ++i) {
+		for (int i=0; i < nrn_nthread; ++i) {
 			p[i].interthread_send(tt, he, nt + i);
 		}
 	    }
@@ -2586,6 +2586,7 @@ void NetCvode::allthread_handle(double tt, HocEvent* he, NrnThread* nt) {
 	if (nt->id == 0) {
 		nrn_allthread_handle = allthread_handle_callback;
 		allthread_hocevents_->append(he);
+		t = nt_t;
 	}
 }
 
