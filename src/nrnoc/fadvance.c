@@ -652,6 +652,7 @@ void nrn_finitialize(int setv, double v) {
 	extern short* nrn_is_artificial_;
 	++_ninits;
 
+	stoprun = 0;
 	nrn_fihexec(3); /* model structure changes can be made */
 	verify_structure();
 #if ELIMINATE_T_ROUNDOFF
@@ -808,7 +809,7 @@ static batch_open(name, tstop, tstep, comment)
 	char* name, *comment;
 	double tstop, tstep;
 {
-
+	stoprun = 0;
 	if (batch_file) {
 		batch_close();
 	}

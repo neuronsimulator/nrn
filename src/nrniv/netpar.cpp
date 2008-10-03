@@ -297,6 +297,7 @@ void nrn_spike_exchange_init() {
 			return;
 		}
 	}
+	//printf("usable_mindelay_ = %g\n", usable_mindelay_);
 
 #if BGPDMA
 	if (use_bgpdma_) {
@@ -858,6 +859,7 @@ Object** BBS::gid_connect(int gid) {
 void BBS::netpar_solve(double tstop) {
 #if NRNMPI
 	double mt, md;
+	stoprun = 0;
 	if (cvode_active_) {
 		mt = 1e-9 ; md = mindelay_;
 	}else{

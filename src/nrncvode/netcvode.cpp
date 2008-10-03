@@ -2549,10 +2549,11 @@ void NetCvode::hoc_event(double tt, const char* stmt, Object* ppobj, int reinit)
 #endif
     {
 	NrnThread* nt = nrn_threads;
-	if (nrn_nthread > 1) {
+	if (nrn_nthread > 1 && (!cvode_active_ || localstep())) {
 	    if (ppobj) {
 		int i = PP2NT(ob2pntproc(ppobj))->id;
 		p[i].interthread_send(tt, HocEvent::alloc(stmt, ppobj, reinit), nt+i);
+		nrn_interthread_enqueue(nt + i);
 	    }else{
 		HocEvent* he = HocEvent::alloc(stmt, nil, 0);
 		// put on each queue. The first thread to execute the deliver
@@ -2565,6 +2566,7 @@ void NetCvode::hoc_event(double tt, const char* stmt, Object* ppobj, int reinit)
 		for (int i=0; i < nrn_nthread; ++i) {
 			p[i].interthread_send(tt, he, nt + i);
 		}
+		nrn_multithread_job(nrn_interthread_enqueue);
 	    }
 	}else{
 		event(tt, HocEvent::alloc(stmt, ppobj, reinit), nt);
@@ -2574,6 +2576,7 @@ void NetCvode::hoc_event(double tt, const char* stmt, Object* ppobj, int reinit)
 
 void NetCvode::allthread_handle() {
 	nrn_allthread_handle = nil;
+	t = nt_t;
 	while (allthread_hocevents_->count()) {
 		HocEvent* he = allthread_hocevents_->item(0);
 		allthread_hocevents_->remove(0);
@@ -2583,10 +2586,16 @@ void NetCvode::allthread_handle() {
 
 void NetCvode::allthread_handle(double tt, HocEvent* he, NrnThread* nt) {
 	nt->_stop_stepping = 1;
+	if (is_local()) {
+		int i, n = p[nt->id].nlcv_;
+		Cvode* lcv = p[nt->id].lcv_;
+		for (i = 0; i < n; ++i) {
+			local_retreat(tt, lcv + i);
+		}
+	}
 	if (nt->id == 0) {
 		nrn_allthread_handle = allthread_handle_callback;
 		allthread_hocevents_->append(he);
-		t = nt_t;
 	}
 }
 
