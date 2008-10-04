@@ -123,7 +123,7 @@ void NetParEvent::deliver(double tt, NetCvode* nc, NrnThread* nt){
 	nt->_stop_stepping = 1;
 	nt->_t = tt;
 #if NRNMPI
-    if (nt->id == 0) {
+    if (nrnmpi_numprocs > 0 && nt->id == 0) {
 #if BGPDMA
 	if (use_bgpdma_) {
 		wt_ = nrnmpi_wtime();

@@ -294,11 +294,15 @@ void nrn_fixed_step_group(int n) {
 	if (nrn_multisplit_setup_) {
 		int b = 0;
 		nrn_multithread_job(nrn_ms_treeset_through_triang);
+		step_group_n = 0; // abort at bksub flag
 		for (i=1; i < n; ++i) {
 			nrn_multithread_job(nrn_ms_reduce_solve);
 			nrn_multithread_job(nrn_ms_bksub_through_triang);
-			if (nrn_allthread_handle) {
-				(*nrn_allthread_handle)();
+			if (step_group_n) {
+				step_group_n = 0;
+				if (nrn_allthread_handle) {
+					(*nrn_allthread_handle)();
+				}
 				// aborted step at bksub, so if not stopped
 				// must do the triang
 				b = 1;
@@ -437,6 +441,13 @@ void* nrn_ms_bksub(NrnThread* nth) {
 }
 void* nrn_ms_bksub_through_triang(NrnThread* nth) {
 	nrn_ms_bksub(nth);
+	if (nth->_stop_stepping) {
+		nth->_stop_stepping = 0;
+		if (nth == nrn_threads) {
+			step_group_n = 1;
+		}
+		return (void*)0;
+	}
 	nrn_ms_treeset_through_triang(nth);
 	return (void*)0;
 }
