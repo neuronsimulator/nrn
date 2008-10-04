@@ -375,6 +375,14 @@ static double state_magnitudes(void* v) {
 static double tstop_event(void* v) {
 	NetCvode* d = (NetCvode*)v;
 	double x = *getarg(1);
+	if (!cvode_active_) { // watch out for fixed step roundoff if x
+		// close to n*dt
+		double y = x/nrn_threads->_dt;
+		if (fabs(floor(y + 1e-6) - y) < 1e-6) {
+			//printf("reduce %g to avoid fixed step roundoff\n", x);
+			x -= nrn_threads->_dt/4.;
+		}
+	}
 	if (ifarg(2)) {
 		Object* ppobj = nil;
 		int reinit = 0;

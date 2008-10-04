@@ -916,7 +916,7 @@ void BBS::netpar_solve(double tstop) {
 static double set_mindelay(double maxdelay) {
 	double mindelay = maxdelay;
 	last_maxstep_arg_ = maxdelay;
-    if (nrn_use_selfqueue_ || net_cvode_instance->localstep()) {
+    if (nrn_use_selfqueue_ || net_cvode_instance->localstep() || nrn_nthread > 1 ) {
 	hoc_Item* q;
 	if (net_cvode_instance->psl_) ITERATE(q, net_cvode_instance->psl_) {
 		PreSyn* ps = (PreSyn*)VOIDITM(q);

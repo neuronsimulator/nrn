@@ -335,7 +335,7 @@ void* nrn_fixed_step_group_thread(NrnThread* nth) {
 	for (i = step_group_begin; i < step_group_n; ++i) {
 		nrn_fixed_step_thread(nth);
 		if (nth->_stop_stepping) {
-			if (nth->id == 0) { step_group_end = i; }
+			if (nth->id == 0) { step_group_end = i + 1; }
 			nth->_stop_stepping = 0;
 			return (void*)0;
 		}
