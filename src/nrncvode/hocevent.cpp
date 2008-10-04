@@ -1,7 +1,7 @@
 #include <objcmd.h>
 #include <pool.h>
 #include <netcon.h>
-#include <oc2iv.h>
+#include <nrnoc2iv.h>
 
 extern "C" {
 extern int cvode_active_;
@@ -97,11 +97,15 @@ hoc_execerror("multiple threads and/or local variable time step method require a
 }
 
 void HocEvent::allthread_handle() {
+	if (stmt_) {
 #if carbon
 		stmt_->execute((unsigned int)0);
 #else
 		stmt_->execute(false);
 #endif
+	}else{
+		tstopset;
+	}
 	hefree();
 }
 

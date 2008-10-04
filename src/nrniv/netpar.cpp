@@ -38,7 +38,6 @@ extern int vector_capacity(IvocVect*); //ivocvect.h conflicts with STL
 extern double* vector_vec(IvocVect*);
 extern void ncs2nrn_integrate(double tstop);
 extern void nrn_fake_fire(int gid, double firetime, int fake_out);
-extern int stoprun;
 int nrnmpi_spike_compress(int nspike, boolean gid_compress, int xchng_meth);
 void nrnmpi_gid_clear();
 extern void nrn_partrans_clear();
@@ -83,7 +82,7 @@ static boolean use_compress_;
 static int spfixout_capacity_;
 static int idxout_;
 static void nrn_spike_exchange_compressed();
-#endif
+#endif // NRNMPI
 
 #if BGPDMA
 int use_bgpdma_;
@@ -98,6 +97,7 @@ static int active_;
 static double usable_mindelay_;
 static double min_interprocessor_delay_;
 static double mindelay_; // the one actually used. Some of our optional algorithms
+static double last_maxstep_arg_;
 static NetParEvent* npe_; // nrn_nthread of them
 static int n_npe_; // just to compare with nrn_nthread
 
@@ -254,9 +254,10 @@ static int nrn_need_npe() {
 	if (nrn_use_selfqueue_) { b = 1; }
 	if (nrn_nthread > 1) { b = 1; }
 	if (b) {
-		if (mindelay_ == 0) {
-			set_mindelay(100.);
+		if (last_maxstep_arg_ == 0) {
+			last_maxstep_arg_ =   100.;
 		}
+		set_mindelay(last_maxstep_arg_);
 	}else{
 		if (npe_) {
 			delete [] npe_;
@@ -859,7 +860,7 @@ Object** BBS::gid_connect(int gid) {
 void BBS::netpar_solve(double tstop) {
 #if NRNMPI
 	double mt, md;
-	stoprun = 0;
+	tstopunset;
 	if (cvode_active_) {
 		mt = 1e-9 ; md = mindelay_;
 	}else{
@@ -906,10 +907,12 @@ void BBS::netpar_solve(double tstop) {
 #else // not NRNMPI
 	ncs2nrn_integrate(tstop);
 #endif
+	tstopunset;
 }
 
 static double set_mindelay(double maxdelay) {
 	double mindelay = maxdelay;
+	last_maxstep_arg_ = maxdelay;
     if (nrn_use_selfqueue_ || net_cvode_instance->localstep()) {
 	hoc_Item* q;
 	if (net_cvode_instance->psl_) ITERATE(q, net_cvode_instance->psl_) {

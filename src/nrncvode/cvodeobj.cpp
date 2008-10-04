@@ -90,7 +90,9 @@ static double solve(void* v) {
 	if (ifarg(1)) {
 		tstop = *getarg(1);
 	}
+	tstopunset;
 	int i = d->solve(tstop);
+	tstopunset;
 	if (i != SUCCESS) {
 		hoc_execerror("variable step integrator error", 0);
 	}
@@ -387,7 +389,8 @@ static double tstop_event(void* v) {
 		}
 		d->hoc_event(x, gargstr(2), ppobj, reinit);
 	}else{
-		d->tstop_event(x);
+		//d->tstop_event(x);
+		d->hoc_event(x, 0, 0, 0);
 	}
 	return x;
 }

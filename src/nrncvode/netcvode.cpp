@@ -60,7 +60,6 @@ extern void setup_topology(), v_setup_vectors();
 extern int structure_change_cnt, v_structure_change, tree_changed, nrn_matrix_cnt_;
 extern int diam_changed;
 extern int nrn_errno_check(int);
-extern int stoprun;
 extern void nrn_ba(NrnThread*, int);
 extern int cvode_active_;
 extern NetCvode* net_cvode_instance;
@@ -2095,8 +2094,8 @@ ENDGUI
 }
 
 void NetCvode::handle_tstop_event(double tt, NrnThread* nt) {
+#if 0 // now a HocEvent is used to do this
 	nt->_stop_stepping = 1;
-	if (nt->id == 0) { stoprun = 1; }
 	if (cvode_active_) {
 		if (gcv_) {
 			retreat(tt, gcv_);
@@ -2110,6 +2109,7 @@ void NetCvode::handle_tstop_event(double tt, NrnThread* nt) {
 			}
 		}
 	}
+#endif
 }
 
 void NetCvode::deliver_least_event(NrnThread* nt) {
@@ -2585,6 +2585,7 @@ void NetCvode::allthread_handle() {
 }
 
 void NetCvode::allthread_handle(double tt, HocEvent* he, NrnThread* nt) {
+	//printf("allthread_handle tt=%g nt=%d nt_t=%g\n", tt, nt->id, nt->_t);
 	nt->_stop_stepping = 1;
 	if (is_local()) {
 		int i, n = p[nt->id].nlcv_;

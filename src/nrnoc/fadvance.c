@@ -1,5 +1,4 @@
 #include <../../nrnconf.h>
-/* /local/src/master/nrn/src/nrnoc/fadvance.c,v 1.19 1999/03/24 18:38:48 hines Exp */
 
 #include <nrnmpi.h>
 #include <nrnrt.h>
@@ -133,6 +132,7 @@ int stoprun;
 
 fadvance()
 {
+	tstopunset;
 #if CVODE
 	if (cvode_active_) {
 		cvode_fadvance(-1.);
@@ -150,6 +150,7 @@ fadvance()
 		recalc_diam();
 	}
 	nrn_fixed_step();
+	tstopunset;
 	ret(1.);
 }
 
@@ -168,6 +169,7 @@ batch_run() /* avoid interpreter overhead */
 	char* filename;
 	char* comment;
 
+	tstopunset;
 	tstop = chkarg(1,0.,1e20);
 	tstep = chkarg(2, 0., 1e20);
 	if (ifarg(3)) {
@@ -206,7 +208,7 @@ batch_run() /* avoid interpreter overhead */
 				batch_out();
 				tnext = t + tstep;
 			}
-			if (stoprun) { break; }
+			if (stoprun) { tstopunset; break; }
 		}
 	}
 	batch_close();
@@ -652,7 +654,6 @@ void nrn_finitialize(int setv, double v) {
 	extern short* nrn_is_artificial_;
 	++_ninits;
 
-	stoprun = 0;
 	nrn_fihexec(3); /* model structure changes can be made */
 	verify_structure();
 #if ELIMINATE_T_ROUNDOFF
@@ -796,7 +797,9 @@ finitialize() {
 		v = *getarg(1);
 		setv = 1;
 	}
+	tstopunset;
 	nrn_finitialize(setv, v);
+	tstopunset;
 	ret(1.);
 }
 
@@ -809,7 +812,6 @@ static batch_open(name, tstop, tstep, comment)
 	char* name, *comment;
 	double tstop, tstep;
 {
-	stoprun = 0;
 	if (batch_file) {
 		batch_close();
 	}

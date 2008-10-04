@@ -319,6 +319,14 @@ extern int _method3;
 
 #include <multicore.h>
 
+extern int stoprun;
+#define tstopbit (1 << 15)
+#define tstopset stoprun |= tstopbit
+#define tstopunset stoprun &= (~tstopbit)
+/* cvode.event(tevent) sets this. Reset at beginning */
+/* of any hoc call for integration and before returning to hoc */
+
+
 #if defined(__cplusplus)
 }
 #endif

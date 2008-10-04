@@ -3,7 +3,6 @@
 #include <nrnrtuse.h>
 #if NRN_REALTIME
 double t, dt;
-int stoprun;
 void nrn_fixed_step(){}
 void nrn_fake_step() {}
 #endif
