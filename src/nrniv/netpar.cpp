@@ -116,6 +116,9 @@ void NetParEvent::deliver(double tt, NetCvode* nc, NrnThread* nt){
 	}
 	// has to be the last event at this time in order to avoid a race
 	// condition with HocEvent that may call things such as pc.barrier
+	// actually allthread HocEvent (cvode.event(tev) and cvode.event(tev,stmt)
+	// will be executed last after a thread join when nrn_allthread_handle
+	// is called.
 	net_cvode_instance->deliver_events(tt, nt);
 	nt->_stop_stepping = 1;
 	nt->_t = tt;
