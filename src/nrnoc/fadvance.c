@@ -797,6 +797,7 @@ hoc_warning("errno set during call to INITIAL block", (char*)0);
 #if NRNMPI
 	nrn_spike_exchange();
 #endif
+	if (nrn_allthread_handle) { (*nrn_allthread_handle)(); }
 	nrn_fihexec(2); /* just before return */
 }
 	

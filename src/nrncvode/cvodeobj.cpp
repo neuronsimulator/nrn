@@ -378,7 +378,7 @@ static double tstop_event(void* v) {
 	if (!cvode_active_) { // watch out for fixed step roundoff if x
 		// close to n*dt
 		double y = x/nrn_threads->_dt;
-		if (fabs(floor(y + 1e-6) - y) < 1e-6) {
+		if (y > 1 && fabs(floor(y + 1e-6) - y) < 1e-6) {
 			//printf("reduce %g to avoid fixed step roundoff\n", x);
 			x -= nrn_threads->_dt/4.;
 		}
