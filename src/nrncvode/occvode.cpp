@@ -564,6 +564,7 @@ int Cvode::solvex_thread_part1(double* b, NrnThread* nt){
 	CvodeThreadData& z = ctd_[nt->id];
 	nt->cj = 1./gam();
 	nt->_dt = gam();
+	if (z.nvsize_ == 0) { return 0; }
 	lhs(nt); // special version for cvode.
 	scatter_ydot(b, nt->id);
 	nrn_mul_capacity(nt, z.cmlcap_->ml);
@@ -690,6 +691,7 @@ void Cvode::fun_thread_part2(NrnThread* nt){
 void Cvode::fun_thread_part3(double* ydot, NrnThread* nt){
 	nocap_v_part3(nt);
 	CvodeThreadData& z = ctd_[nt->id];
+	if (z.nvsize_ == 0) { return; }
 	before_after(z.before_breakpoint_, nt);
 	rhs(nt); // similar to nrn_rhs in treeset.c
 	nrn_multisplit_adjust_rhs(nt);

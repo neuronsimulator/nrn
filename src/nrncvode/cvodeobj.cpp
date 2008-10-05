@@ -622,10 +622,10 @@ double Cvode::h() {
 
 boolean Cvode::at_time(double te, NrnThread* nt) {
 	if (initialize_) {
-//printf("at_time initialize te=%g te-t0_=%g next_at_time_=%g\n", te, te-t0_, next_at_time_);
+//printf("%d at_time initialize te=%g te-t0_=%g next_at_time_=%g\n", nt->id, te, te-t0_, next_at_time_);
 		MUTLOCK
 		if (t0_ < te && te < next_at_time_) {
-//printf("next_at_time_=%g since te-t0_=%15.10g and next_at_time_-te=%g\n", te, te-t, next_at_time_-te);
+//printf("%d next_at_time_=%g since te-t0_=%15.10g and next_at_time_-te=%g\n", nt->id, te, te-nt->_t, next_at_time_-te);
 			next_at_time_ = te;
 		}
 		MUTUNLOCK
