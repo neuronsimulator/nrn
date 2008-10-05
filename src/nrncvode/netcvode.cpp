@@ -2590,8 +2590,10 @@ void NetCvode::allthread_handle(double tt, HocEvent* he, NrnThread* nt) {
 	if (is_local()) {
 		int i, n = p[nt->id].nlcv_;
 		Cvode* lcv = p[nt->id].lcv_;
-		for (i = 0; i < n; ++i) {
+		if (n) for (i = 0; i < n; ++i) {
 			local_retreat(tt, lcv + i);
+		}else{
+			nt->_t = tt;
 		}
 	}
 	if (nt->id == 0) {
@@ -5964,9 +5966,11 @@ static void* lvardt_integrate(NrnThread* nt) {
 	}
 	int n = p.nlcv_;
 	Cvode* lcv = p.lcv_;
-	for (int i=0; i < n; ++i) {
+	if (n) for (int i=0; i < n; ++i) {
 		nc->retreat(tout, lcv + i);
 		lcv[i].record_continuous();
+	}else{
+		nt->_t = tout;
 	}
 	return (void*)err;
 }
