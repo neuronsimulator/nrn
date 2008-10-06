@@ -35,6 +35,7 @@ libnrniv_la_SOURCES = nrnmenu.cpp shape.cpp classreg.cpp rotate3d.cpp \
 	linmod.cpp linmod1.cpp cachevec.cpp \
 	kschan.cpp kssingle.cpp nonlinz.cpp finithnd.cpp nrnste.cpp \
 	nrnrtime.cpp nvector_nrnthread.c nrnpy.cpp \
+	nvector_nrnthread_ld.c nvector_nrnserial_ld.c \
 	netpar.cpp partrans.cpp splitcell.cpp multisplit.cpp
 
 # The interviews includes must be before the X includes so that if a
@@ -100,6 +101,7 @@ noinst_HEADERS = ndatclas.h nrnclass.h nrnmenu.h nrnoc2iv.h ppshape.h \
 	rot3band.h rotate3d.h secbrows.h shape.h shapeplt.h singlech.h \
 	linmod.h nrniv_mf.h nrnste.h arraypool.h \
 	kschan.h kssingle.h nonlinz.h nrnhash.h \
+	nvector_nrnthread_ld.h nvector_nrnserial_ld.h \
 	bgpdma.cpp multisplitcontrol.h nvector_nrnthread.h
 
 ## We have to play a trick on automake to get it to install the .o files in

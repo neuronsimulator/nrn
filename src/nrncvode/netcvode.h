@@ -208,6 +208,7 @@ public:
 	int pcnt_;
 	NetCvodeThreadData* p;
 	int enqueueing_;
+	int use_long_double_;
 public:
 	double allthread_least_t(int& tid);
 	int solve_when_threads(double);

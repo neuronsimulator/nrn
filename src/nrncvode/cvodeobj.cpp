@@ -331,6 +331,16 @@ static double cache_efficient(void* v) {
 	return (double) use_cachevec;
 }
 
+static double use_long_double(void* v) {
+	NetCvode* d = (NetCvode*)v;
+	if (ifarg(1)) {
+		int i = (int)chkarg(1,0,1);
+		d->use_long_double_ = i;
+		recalc_diam();
+	}
+	return (double)d->use_long_double_;
+}
+
 static double condition_order(void* v) {
 	NetCvode* d = (NetCvode*)v;
 	if (ifarg(1)) {
@@ -502,6 +512,7 @@ static Member_func members[] = {
 	"spike_stat", spikestat,
 	"queue_mode", queue_mode,
 	"cache_efficient", cache_efficient,
+	"use_long_double", use_long_double,
 	"use_parallel", use_parallel,
 	0,0
 };
@@ -667,7 +678,7 @@ N_Vector Cvode::nvnew(long int n) {
 		return N_VNew_Parallel(mpicomm_, n, global_neq_);
 	}
 #endif
-	if (nctd_ > USE_NVSERIAL) {
+	if (nctd_ > 1) {
 		assert(n == neq_);
 		if (!nthsizes_) {
 			nthsizes_ = new long int[nrn_nthread];
@@ -680,9 +691,17 @@ N_Vector Cvode::nvnew(long int n) {
 		for (int i=0; i < nctd_; ++i) { sum += nthsizes_[i];}
 		assert(sum == neq_);
 #endif
-		return N_VNew_NrnThread(n, nctd_, nthsizes_);
+		if (net_cvode_instance->use_long_double_) {
+			return N_VNew_NrnThreadLD(n, nctd_, nthsizes_);
+		}else{
+			return N_VNew_NrnThread(n, nctd_, nthsizes_);
+		}
 	}
-	return N_VNew_Serial(n);
+	if (net_cvode_instance->use_long_double_) {
+		return N_VNew_NrnSerialLD(n);
+	}else{
+		return N_VNew_Serial(n);
+	}
 }
 
 void Cvode::atolvec_alloc(int i) {
