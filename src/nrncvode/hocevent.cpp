@@ -2,6 +2,7 @@
 #include <pool.h>
 #include <netcon.h>
 #include <nrnoc2iv.h>
+#include <mymath.h>
 
 extern "C" {
 extern int cvode_active_;
@@ -80,6 +81,12 @@ hoc_execerror("multiple threads and/or local variable time step method require a
 				nt->_t = cv->t_;
 			}
 			nrn_hoc_lock();
+			t = tt;
+		}else if (cvode_active_ && reinit_) {
+			nc->retreat(tt, nc->gcv_);
+			assert(MyMath::eq(tt, nc->gcv_->t_, NetCvode::eps(tt)));
+			assert(tt == nt->_t);
+			nc->gcv_->set_init_flag();
 			t = tt;
 		}else{
 			t = nt_t = tt;

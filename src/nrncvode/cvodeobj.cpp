@@ -654,7 +654,7 @@ printf("te-t0_=%g  tstop_-te=%g\n", te - t0_, tstop_ - te);
 }
 
 void Cvode::set_init_flag() {
-//printf("set_init_flag t=%g t-t_=%g\n", t, t-t_);
+//printf("set_init_flag t_=%g prior2init_=%d\n", t_, prior2init_);
 	initialize_ = true;
 	if (cvode_active_ && ++prior2init_ == 1) {
 		record_continuous();
