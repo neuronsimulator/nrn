@@ -7,13 +7,6 @@
 #include "shared/nvector.h"
 #include "membfunc.h"
 
-// when USE_NVSERIAL is 0 then N_VNew_NrnThread is used even for single thread
-// Then, (with USELONGDOUBLE in nvector_nrnthread.c), one should obtain
-// quantitative double precision results independent of number of threads.
-// Note that USE_NVSERIAL 1 should give double precision identity for
-// the serial version and this version with nrn_nthread = 1
-#define USE_NVSERIAL 1
-
 class NetCvode;
 class Daspk;
 class TQItem;

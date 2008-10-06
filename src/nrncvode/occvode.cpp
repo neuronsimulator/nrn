@@ -427,7 +427,7 @@ void Cvode::daspk_init_eqn(){
 
 double* Cvode::n_vector_data(N_Vector v, int tid) {
 	if (!v) { return 0; }
-	if (nctd_ > USE_NVSERIAL) {
+	if (nctd_ > 1) {
 		N_Vector subvec = ((N_Vector*)N_VGetArrayPointer(v))[tid];
 		return N_VGetArrayPointer(subvec);
 	}
