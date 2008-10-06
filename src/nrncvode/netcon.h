@@ -292,6 +292,7 @@ public:
 	static void reclaim();
 	virtual int pgvts_op(int& i) { i = 0; return 2; }
 	virtual void pgvts_deliver(double t, NetCvode*);
+	HocCommand* stmt() { return stmt_; }
 
 	virtual int type() { return HocEventType; }
 	virtual DiscreteEvent* savestate_save();

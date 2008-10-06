@@ -2027,6 +2027,7 @@ int NetCvode::solve(double tout) {
 				if (err != NVI_SUCCESS || stoprun) { return err; }
 			}
 			retreat(tout, gcv_);
+			gcv_->record_continuous();
 		} else {
 			// advance or initialized
 			double tc = gcv_->t_;
@@ -2592,9 +2593,15 @@ void NetCvode::allthread_handle(double tt, HocEvent* he, NrnThread* nt) {
 		Cvode* lcv = p[nt->id].lcv_;
 		if (n) for (i = 0; i < n; ++i) {
 			local_retreat(tt, lcv + i);
+			if (!he->stmt()) {
+				lcv[i].record_continuous();
+			}
 		}else{
 			nt->_t = tt;
 		}
+	} else if (!he->stmt() && cvode_active_ && gcv_) {
+		assert(tt == gcv_->t_);
+		gcv_->record_continuous();
 	}
 	if (nt->id == 0) {
 		nrn_allthread_handle = allthread_handle_callback;
@@ -6004,6 +6011,7 @@ int NetCvode::solve_when_threads(double tout) {
 				if (err != NVI_SUCCESS || stoprun) { return err; }
 			}
 			retreat(tout, gcv_);
+			gcv_->record_continuous();
 		} else {
 			// advance or initialized
 			double tc = gcv_->t_;
