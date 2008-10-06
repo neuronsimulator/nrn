@@ -18,7 +18,7 @@
 
 #define USELONGDOUBLE 1
 
-#include <../../../nrnconf.h>
+#include <../../nrnconf.h>
 #if HAVE_POSIX_MEMALIGN
 #define HAVE_MEMALIGN 1
 #endif
