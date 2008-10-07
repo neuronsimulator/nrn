@@ -1,8 +1,8 @@
 #include <objcmd.h>
 #include <pool.h>
 #include <netcon.h>
-#include <oc2iv.h>
-#include <nrnmutdec.h>
+#include <nrnoc2iv.h>
+#include <mymath.h>
 
 extern "C" {
 extern int cvode_active_;
@@ -11,7 +11,6 @@ extern int cvode_active_;
 declarePool(HocEventPool, HocEvent)
 implementPool(HocEventPool, HocEvent)
 HocEventPool* HocEvent::hepool_;  
-MUTDEC
 
 HocEvent::HocEvent() {
         stmt_ = nil;
@@ -64,6 +63,10 @@ void HocEvent::clear() {
 
 void HocEvent::deliver(double tt, NetCvode* nc, NrnThread* nt) {
 	extern double t;
+	if (!ppobj_) {
+		nc->allthread_handle(tt, this, nt);
+		return;
+	}
 	if (stmt_) {
 		if (nrn_nthread > 1 || nc->is_local()) {
 			if (!ppobj_) {
@@ -79,6 +82,12 @@ hoc_execerror("multiple threads and/or local variable time step method require a
 			}
 			nrn_hoc_lock();
 			t = tt;
+		}else if (cvode_active_ && reinit_) {
+			nc->retreat(tt, nc->gcv_);
+			assert(MyMath::eq(tt, nc->gcv_->t_, NetCvode::eps(tt)));
+			assert(tt == nt->_t);
+			nc->gcv_->set_init_flag();
+			t = tt;
 		}else{
 			t = nt_t = tt;
 		}
@@ -93,6 +102,20 @@ hoc_execerror("multiple threads and/or local variable time step method require a
 	}
         hefree();
 }
+
+void HocEvent::allthread_handle() {
+	if (stmt_) {
+#if carbon
+		stmt_->execute((unsigned int)0);
+#else
+		stmt_->execute(false);
+#endif
+	}else{
+		tstopset;
+	}
+	hefree();
+}
+
 void HocEvent::pgvts_deliver(double tt, NetCvode*) {
 	deliver(tt, nil, nil);
 }

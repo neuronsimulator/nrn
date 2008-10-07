@@ -3,6 +3,8 @@
 
 #include "shared/nvector_serial.h"
 #include "nvector_nrnthread.h"
+#include "nvector_nrnthread_ld.h"
+#include "nvector_nrnserial_ld.h"
 
 class Cvode;
 

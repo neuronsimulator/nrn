@@ -26,6 +26,8 @@ class HTListList;
 class NetCvode;
 class MaxStateItem;
 class CvodeThreadData;
+class HocEvent;
+class HocEventList;
 struct BAMech;
 struct Section;
 struct InterThreadEvent;
@@ -49,7 +51,6 @@ public:
 	int ite_cnt_;
 	int ite_size_;
 	int unreffed_event_cnt_;
-	int netparevent_seen_;
 	double immediate_deliver_;
 };
 
@@ -207,11 +208,15 @@ public:
 	int pcnt_;
 	NetCvodeThreadData* p;
 	int enqueueing_;
+	int use_long_double_;
 public:
 	double allthread_least_t(int& tid);
 	int solve_when_threads(double);
 	void deliver_events_when_threads(double);
 	int global_microstep_when_threads();
+	void allthread_handle(double, HocEvent*, NrnThread*);
+	void allthread_handle();
+	HocEventList* allthread_hocevents_;
 };	
 	
 #endif

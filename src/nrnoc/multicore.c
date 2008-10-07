@@ -506,6 +506,7 @@ void nrn_threads_create(int n, int parallel) {
 				nt->_t = 0.;
 				nt->_dt = -1e9;
 				nt->id = i;
+				nt->_stop_stepping = 0;
 				nt->tml = (NrnThreadMembList*)0;
 				nt->roots = (hoc_List*)0;
 				nt->userpart = 0;

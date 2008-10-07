@@ -90,7 +90,9 @@ static double solve(void* v) {
 	if (ifarg(1)) {
 		tstop = *getarg(1);
 	}
+	tstopunset;
 	int i = d->solve(tstop);
+	tstopunset;
 	if (i != SUCCESS) {
 		hoc_execerror("variable step integrator error", 0);
 	}
@@ -329,6 +331,16 @@ static double cache_efficient(void* v) {
 	return (double) use_cachevec;
 }
 
+static double use_long_double(void* v) {
+	NetCvode* d = (NetCvode*)v;
+	if (ifarg(1)) {
+		int i = (int)chkarg(1,0,1);
+		d->use_long_double_ = i;
+		recalc_diam();
+	}
+	return (double)d->use_long_double_;
+}
+
 static double condition_order(void* v) {
 	NetCvode* d = (NetCvode*)v;
 	if (ifarg(1)) {
@@ -373,6 +385,14 @@ static double state_magnitudes(void* v) {
 static double tstop_event(void* v) {
 	NetCvode* d = (NetCvode*)v;
 	double x = *getarg(1);
+	if (!cvode_active_) { // watch out for fixed step roundoff if x
+		// close to n*dt
+		double y = x/nrn_threads->_dt;
+		if (y > 1 && fabs(floor(y + 1e-6) - y) < 1e-6) {
+			//printf("reduce %g to avoid fixed step roundoff\n", x);
+			x -= nrn_threads->_dt/4.;
+		}
+	}
 	if (ifarg(2)) {
 		Object* ppobj = nil;
 		int reinit = 0;
@@ -387,7 +407,8 @@ static double tstop_event(void* v) {
 		}
 		d->hoc_event(x, gargstr(2), ppobj, reinit);
 	}else{
-		d->tstop_event(x);
+		//d->tstop_event(x);
+		d->hoc_event(x, 0, 0, 0);
 	}
 	return x;
 }
@@ -491,6 +512,7 @@ static Member_func members[] = {
 	"spike_stat", spikestat,
 	"queue_mode", queue_mode,
 	"cache_efficient", cache_efficient,
+	"use_long_double", use_long_double,
 	"use_parallel", use_parallel,
 	0,0
 };
@@ -611,10 +633,10 @@ double Cvode::h() {
 
 boolean Cvode::at_time(double te, NrnThread* nt) {
 	if (initialize_) {
-//printf("at_time initialize te=%g te-t0_=%g next_at_time_=%g\n", te, te-t0_, next_at_time_);
+//printf("%d at_time initialize te=%g te-t0_=%g next_at_time_=%g\n", nt->id, te, te-t0_, next_at_time_);
 		MUTLOCK
 		if (t0_ < te && te < next_at_time_) {
-//printf("next_at_time_=%g since te-t0_=%15.10g and next_at_time_-te=%g\n", te, te-t, next_at_time_-te);
+//printf("%d next_at_time_=%g since te-t0_=%15.10g and next_at_time_-te=%g\n", nt->id, te, te-nt->_t, next_at_time_-te);
 			next_at_time_ = te;
 		}
 		MUTUNLOCK
@@ -643,7 +665,7 @@ printf("te-t0_=%g  tstop_-te=%g\n", te - t0_, tstop_ - te);
 }
 
 void Cvode::set_init_flag() {
-//printf("set_init_flag t=%g t-t_=%g\n", t, t-t_);
+//printf("set_init_flag t_=%g prior2init_=%d\n", t_, prior2init_);
 	initialize_ = true;
 	if (cvode_active_ && ++prior2init_ == 1) {
 		record_continuous();
@@ -656,7 +678,7 @@ N_Vector Cvode::nvnew(long int n) {
 		return N_VNew_Parallel(mpicomm_, n, global_neq_);
 	}
 #endif
-	if (nctd_ > USE_NVSERIAL) {
+	if (nctd_ > 1) {
 		assert(n == neq_);
 		if (!nthsizes_) {
 			nthsizes_ = new long int[nrn_nthread];
@@ -669,9 +691,17 @@ N_Vector Cvode::nvnew(long int n) {
 		for (int i=0; i < nctd_; ++i) { sum += nthsizes_[i];}
 		assert(sum == neq_);
 #endif
-		return N_VNew_NrnThread(n, nctd_, nthsizes_);
+		if (net_cvode_instance->use_long_double_) {
+			return N_VNew_NrnThreadLD(n, nctd_, nthsizes_);
+		}else{
+			return N_VNew_NrnThread(n, nctd_, nthsizes_);
+		}
 	}
-	return N_VNew_Serial(n);
+	if (net_cvode_instance->use_long_double_) {
+		return N_VNew_NrnSerialLD(n);
+	}else{
+		return N_VNew_Serial(n);
+	}
 }
 
 void Cvode::atolvec_alloc(int i) {

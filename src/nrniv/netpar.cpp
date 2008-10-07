@@ -38,7 +38,6 @@ extern int vector_capacity(IvocVect*); //ivocvect.h conflicts with STL
 extern double* vector_vec(IvocVect*);
 extern void ncs2nrn_integrate(double tstop);
 extern void nrn_fake_fire(int gid, double firetime, int fake_out);
-extern int stoprun;
 int nrnmpi_spike_compress(int nspike, boolean gid_compress, int xchng_meth);
 void nrnmpi_gid_clear();
 extern void nrn_partrans_clear();
@@ -83,7 +82,7 @@ static boolean use_compress_;
 static int spfixout_capacity_;
 static int idxout_;
 static void nrn_spike_exchange_compressed();
-#endif
+#endif // NRNMPI
 
 #if BGPDMA
 int use_bgpdma_;
@@ -98,6 +97,7 @@ static int active_;
 static double usable_mindelay_;
 static double min_interprocessor_delay_;
 static double mindelay_; // the one actually used. Some of our optional algorithms
+static double last_maxstep_arg_;
 static NetParEvent* npe_; // nrn_nthread of them
 static int n_npe_; // just to compare with nrn_nthread
 
@@ -116,11 +116,14 @@ void NetParEvent::deliver(double tt, NetCvode* nc, NrnThread* nt){
 	}
 	// has to be the last event at this time in order to avoid a race
 	// condition with HocEvent that may call things such as pc.barrier
+	// actually allthread HocEvent (cvode.event(tev) and cvode.event(tev,stmt)
+	// will be executed last after a thread join when nrn_allthread_handle
+	// is called.
 	net_cvode_instance->deliver_events(tt, nt);
-	net_cvode_instance->p[nt->id].netparevent_seen_ = 1;
+	nt->_stop_stepping = 1;
 	nt->_t = tt;
 #if NRNMPI
-    if (nt->id == 0) {
+    if (nrnmpi_numprocs > 0 && nt->id == 0) {
 #if BGPDMA
 	if (use_bgpdma_) {
 		wt_ = nrnmpi_wtime();
@@ -252,11 +255,12 @@ static int nrn_need_npe() {
 	int b = 0;
 	if (active_) { b = 1; }
 	if (nrn_use_selfqueue_) { b = 1; }
-	if (nrn_nthread > 1 && net_cvode_instance->localstep()) { b = 1; }
+	if (nrn_nthread > 1) { b = 1; }
 	if (b) {
-		if (mindelay_ == 0) {
-			set_mindelay(100.);
+		if (last_maxstep_arg_ == 0) {
+			last_maxstep_arg_ =   100.;
 		}
+		set_mindelay(last_maxstep_arg_);
 	}else{
 		if (npe_) {
 			delete [] npe_;
@@ -297,6 +301,7 @@ void nrn_spike_exchange_init() {
 			return;
 		}
 	}
+	//printf("usable_mindelay_ = %g\n", usable_mindelay_);
 
 #if BGPDMA
 	if (use_bgpdma_) {
@@ -313,7 +318,6 @@ void nrn_spike_exchange_init() {
 		npe_[i].ithread_ = i;
 		npe_[i].wx_ = 0.;
 		npe_[i].ws_ = 0.;
-		net_cvode_instance->p[i].netparevent_seen_ = 0;
 		npe_->send(t, net_cvode_instance, nrn_threads + i);
 	}
 #if NRNMPI
@@ -859,6 +863,7 @@ Object** BBS::gid_connect(int gid) {
 void BBS::netpar_solve(double tstop) {
 #if NRNMPI
 	double mt, md;
+	tstopunset;
 	if (cvode_active_) {
 		mt = 1e-9 ; md = mindelay_;
 	}else{
@@ -905,11 +910,13 @@ void BBS::netpar_solve(double tstop) {
 #else // not NRNMPI
 	ncs2nrn_integrate(tstop);
 #endif
+	tstopunset;
 }
 
 static double set_mindelay(double maxdelay) {
 	double mindelay = maxdelay;
-    if (nrn_use_selfqueue_ || net_cvode_instance->localstep()) {
+	last_maxstep_arg_ = maxdelay;
+    if (nrn_use_selfqueue_ || net_cvode_instance->localstep() || nrn_nthread > 1 ) {
 	hoc_Item* q;
 	if (net_cvode_instance->psl_) ITERATE(q, net_cvode_instance->psl_) {
 		PreSyn* ps = (PreSyn*)VOIDITM(q);

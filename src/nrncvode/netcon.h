@@ -288,9 +288,11 @@ public:
 	void hefree();
 	void clear(); // called by hepool_->free_all
 	virtual void deliver(double, NetCvode*, NrnThread*);
+	virtual void allthread_handle();
 	static void reclaim();
 	virtual int pgvts_op(int& i) { i = 0; return 2; }
 	virtual void pgvts_deliver(double t, NetCvode*);
+	HocCommand* stmt() { return stmt_; }
 
 	virtual int type() { return HocEventType; }
 	virtual DiscreteEvent* savestate_save();
