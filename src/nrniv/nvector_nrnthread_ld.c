@@ -70,11 +70,11 @@ static booleantype bretval;
 #define apass a_ = a;
 #define bpass b_ = b;
 #define cpass c_ = c;
-#define xarg(i) NV_SUBVEC_NT(x_, i)
-#define yarg(i) NV_SUBVEC_NT(y_, i)
-#define zarg(i) NV_SUBVEC_NT(z_, i)
-#define warg(i) NV_SUBVEC_NT(w_, i)
-#define idarg(i) NV_SUBVEC_NT(id_, i)
+#define xarg(i) NV_SUBVEC_NT_LD(x_, i)
+#define yarg(i) NV_SUBVEC_NT_LD(y_, i)
+#define zarg(i) NV_SUBVEC_NT_LD(z_, i)
+#define warg(i) NV_SUBVEC_NT_LD(w_, i)
+#define idarg(i) NV_SUBVEC_NT_LD(id_, i)
 #define aarg a_
 #define barg b_
 #define carg c_
@@ -179,11 +179,11 @@ N_Vector N_VNew_NrnThreadLD(long int length, int nthread, long int* sizes)
   if (length > 0) {
 
     /* Allocate memory */
-    NV_OWN_DATA_NT(v) = TRUE;
+    NV_OWN_DATA_NT_LD(v) = TRUE;
     for (i=0; i < nthread; ++i) {
     	data = N_VNew_Serial(sizes[i]);
         if(data == NULL) {N_VDestroy_NrnThreadLD(v);return(NULL);}
-        NV_SUBVEC_NT(v, i) = data;
+        NV_SUBVEC_NT_LD(v, i) = data;
     }
   }
 
@@ -241,8 +241,8 @@ N_Vector N_VCloneEmpty_NrnThreadLD(N_Vector w)
   content = (N_VectorContent_NrnThreadLD) malloc(sizeof(struct _N_VectorContent_NrnThreadLD));
   if (content == NULL) {free(ops);free(v);return(NULL);}
 
-  wcontent = NV_CONTENT_NT(w);
-  content->length = NV_LENGTH_NT(w);
+  wcontent = NV_CONTENT_NT_LD(w);
+  content->length = NV_LENGTH_NT_LD(w);
   content->own_data = FALSE;
   content->nt = wcontent->nt;
   content->data = (N_Vector*) malloc(sizeof(N_Vector) * content->nt);
@@ -273,8 +273,8 @@ N_Vector N_VMake_NrnThreadLD(long int length, realtype *v_data)
 
   if (length > 0) {
     /* Attach data */
-    NV_OWN_DATA_NT(v) = FALSE;
-    NV_DATA_NT(v) = v_data;
+    NV_OWN_DATA_NT_LD(v) = FALSE;
+    NV_DATA_NT_LD(v) = v_data;
   }
 #endif
   return(v);
@@ -352,10 +352,10 @@ void N_VPrint_NrnThreadLD(N_Vector x)
   int i;
   int nt;
 
-  nt  = NV_NT_NT(x);
+  nt  = NV_NT_NT_LD(x);
 
   for (i=0; i < nt; i++) {
-    N_VPrint_Serial(NV_SUBVEC_NT(x, i));
+    N_VPrint_Serial(NV_SUBVEC_NT_LD(x, i));
   }
   printf("\n");
 }
@@ -378,17 +378,17 @@ N_Vector N_VClone_NrnThreadLD(N_Vector w)
   v = N_VCloneEmpty_NrnThreadLD(w);
   if (v == NULL) return(NULL);
 
-  length = NV_LENGTH_NT(w);
-  nt = NV_NT_NT(w);
+  length = NV_LENGTH_NT_LD(w);
+  nt = NV_NT_NT_LD(w);
 
   /* Create data */
   if (length > 0) {
-    NV_OWN_DATA_NT(v) = TRUE;
+    NV_OWN_DATA_NT_LD(v) = TRUE;
     for (i=0; i < nt; ++i) {
-      wdata = NV_SUBVEC_NT(w, i);
+      wdata = NV_SUBVEC_NT_LD(w, i);
       data = N_VClone(wdata);
       if(data == NULL) {N_VDestroy_NrnThreadLD(v);return(NULL);}
-      NV_SUBVEC_NT(v, i) = data;
+      NV_SUBVEC_NT_LD(v, i) = data;
     }
     /* Attach data */
   
@@ -401,14 +401,14 @@ void N_VDestroy_NrnThreadLD(N_Vector v)
 {
   int i, nt;
   N_Vector data;
-  nt = NV_NT_NT(v);
-  if (NV_OWN_DATA_NT(v) == TRUE) {
-    if (NV_CONTENT_NT(v)->data) {
+  nt = NV_NT_NT_LD(v);
+  if (NV_OWN_DATA_NT_LD(v) == TRUE) {
+    if (NV_CONTENT_NT_LD(v)->data) {
       for (i = 0; i < nt; ++i) {
-        data = NV_SUBVEC_NT(v, i);
+        data = NV_SUBVEC_NT_LD(v, i);
         if (data) { N_VDestroy(data); }
       }
-      free(NV_CONTENT_NT(v)->data);
+      free(NV_CONTENT_NT_LD(v)->data);
     }
   }
   free(v->content);
@@ -418,7 +418,7 @@ void N_VDestroy_NrnThreadLD(N_Vector v)
 
 void N_VSpace_NrnThreadLD(N_Vector v, long int *lrw, long int *liw)
 {
-  *lrw = NV_LENGTH_NT(v);
+  *lrw = NV_LENGTH_NT_LD(v);
   *liw = 1;
 }
 
@@ -429,7 +429,7 @@ data is nthread NVector. so when you get the realtype* cast it back to
 realtype *N_VGetArrayPointer_NrnThreadLD(N_Vector v)
 {
   N_Vector *v_data;
-  v_data = NV_DATA_NT(v);
+  v_data = NV_DATA_NT_LD(v);
 
   return((realtype*)v_data);
 }
@@ -438,7 +438,7 @@ void N_VSetArrayPointer_NrnThreadLD(realtype *v_data, N_Vector v)
 {
   assert(0);
 #if 0
-  if (NV_LENGTH_NT(v) > 0) NV_DATA_NT(v) = v_data;
+  if (NV_LENGTH_NT_LD(v) > 0) NV_DATA_NT_LD(v) = v_data;
 #endif
 }
 
@@ -600,7 +600,7 @@ static void* vwrmsnorm(NrnThread* nt) {
 realtype N_VWrmsNorm_NrnThreadLD(N_Vector x, N_Vector w)
 {
   long int N;
-  N  = NV_LENGTH_NT(x);
+  N  = NV_LENGTH_NT_LD(x);
 #if USELONGDOUBLE
   longdretval = ZERO;
 #else
@@ -644,7 +644,7 @@ static void* vwrmsnormmask(NrnThread* nt) {
 realtype N_VWrmsNormMask_NrnThreadLD(N_Vector x, N_Vector w, N_Vector id)
 {
   long int N;
-  N  = NV_LENGTH_NT(x);
+  N  = NV_LENGTH_NT_LD(x);
   retval = ZERO;
   xpass wpass idpass
   nrn_multithread_job(vwrmsnormmask);
@@ -699,7 +699,7 @@ realtype N_VWL2Norm_NrnThreadLD(N_Vector x, N_Vector w)
   retval = ZERO;
   xpass wpass
   nrn_multithread_job(vwl2norm);
-  N  = NV_LENGTH_NT(x);
+  N  = NV_LENGTH_NT_LD(x);
 mydebug2("vwl2norm %.20g\n", RSqrt(retval));
   return(RSqrt(retval));
 }
