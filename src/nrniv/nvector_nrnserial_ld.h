@@ -4,6 +4,13 @@
 * modifying relevant method implementations to allow long double
 * accumulation.
 */
+/*
+Macros changed with
+sed 's/NV_\([A-Za-z_]*\)_S/NV_\1_S_LD/g' nvector_nrnserial_ld.h >temp
+mv temp nvector_nrnserial_ld.h
+sed 's/NV_\([A-Za-z_]*\)_S/NV_\1_S_LD/g' nvector_nrnserial_ld.c >temp
+mv temp nvector_nrnserial_ld.c
+*/
 
 /*
  * -----------------------------------------------------------------
@@ -84,8 +91,8 @@ typedef struct _N_VectorContent_NrnSerialLD *N_VectorContent_NrnSerialLD;
 
 /*
  * -----------------------------------------------------------------
- * PART II: macros NV_CONTENT_S, NV_DATA_S, NV_OWN_DATA_S,
- *          NV_LENGTH_S, and NV_Ith_S
+ * PART II: macros NV_CONTENT_S_LD, NV_DATA_S_LD, NV_OWN_DATA_S_LD,
+ *          NV_LENGTH_S_LD, and NV_Ith_S_LD
  * -----------------------------------------------------------------
  * In the descriptions below, the following user declarations
  * are assumed:
@@ -93,53 +100,53 @@ typedef struct _N_VectorContent_NrnSerialLD *N_VectorContent_NrnSerialLD;
  * N_Vector v;
  * long int i;
  *
- * (1) NV_CONTENT_S
+ * (1) NV_CONTENT_S_LD
  *
  *     This routines gives access to the contents of the serial
  *     vector N_Vector.
  *
- *     The assignment v_cont = NV_CONTENT_S(v) sets v_cont to be
+ *     The assignment v_cont = NV_CONTENT_S_LD(v) sets v_cont to be
  *     a pointer to the serial N_Vector content structure.
  *
- * (2) NV_DATA_S NV_OWN_DATA_S and NV_LENGTH_S
+ * (2) NV_DATA_S_LD NV_OWN_DATA_S_LD and NV_LENGTH_S_LD
  *
  *     These routines give access to the individual parts of
  *     the content structure of a serial N_Vector.
  *
- *     The assignment v_data = NV_DATA_S(v) sets v_data to be
+ *     The assignment v_data = NV_DATA_S_LD(v) sets v_data to be
  *     a pointer to the first component of v. The assignment
- *     NV_DATA_S(v) = data_V sets the component array of v to
+ *     NV_DATA_S_LD(v) = data_V sets the component array of v to
  *     be data_v by storing the pointer data_v.
  *
- *     The assignment v_len = NV_LENGTH_S(v) sets v_len to be
- *     the length of v. The call NV_LENGTH_S(v) = len_v sets
+ *     The assignment v_len = NV_LENGTH_S_LD(v) sets v_len to be
+ *     the length of v. The call NV_LENGTH_S_LD(v) = len_v sets
  *     the length of v to be len_v.
  *
- * (3) NV_Ith_S
+ * (3) NV_Ith_S_LD
  *
  *     In the following description, the components of an
  *     N_Vector are numbered 0..n-1, where n is the length of v.
  *
- *     The assignment r = NV_Ith_S(v,i) sets r to be the value of
- *     the ith component of v. The assignment NV_Ith_S(v,i) = r
+ *     The assignment r = NV_Ith_S_LD(v,i) sets r to be the value of
+ *     the ith component of v. The assignment NV_Ith_S_LD(v,i) = r
  *     sets the value of the ith component of v to be r.
  *
  * Note: When looping over the components of an N_Vector v, it is
  * more efficient to first obtain the component array via
- * v_data = NV_DATA_S(v) and then access v_data[i] within the
- * loop than it is to use NV_Ith_S(v,i) within the loop.
+ * v_data = NV_DATA_S_LD(v) and then access v_data[i] within the
+ * loop than it is to use NV_Ith_S_LD(v,i) within the loop.
  * -----------------------------------------------------------------
  */
 
-#define NV_CONTENT_S(v)  ( (N_VectorContent_NrnSerialLD)(v->content) )
+#define NV_CONTENT_S_LD(v)  ( (N_VectorContent_NrnSerialLD)(v->content) )
 
-#define NV_LENGTH_S(v)   ( NV_CONTENT_S(v)->length )
+#define NV_LENGTH_S_LD(v)   ( NV_CONTENT_S_LD(v)->length )
 
-#define NV_OWN_DATA_S(v) ( NV_CONTENT_S(v)->own_data )
+#define NV_OWN_DATA_S_LD(v) ( NV_CONTENT_S_LD(v)->own_data )
 
-#define NV_DATA_S(v)     ( NV_CONTENT_S(v)->data )
+#define NV_DATA_S_LD(v)     ( NV_CONTENT_S_LD(v)->data )
 
-#define NV_Ith_S(v,i)    ( NV_DATA_S(v)[i] )
+#define NV_Ith_S_LD(v,i)    ( NV_DATA_S_LD(v)[i] )
 
 /*
  * -----------------------------------------------------------------

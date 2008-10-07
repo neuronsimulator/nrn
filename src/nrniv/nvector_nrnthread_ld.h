@@ -4,7 +4,13 @@
 * cases and then modifying the relevant prototypes.
 * We only re-implement the ones that are used by cvodes and ida
 */
-
+/*
+Macros changed with
+sed 's/NV_\([A-Za-z_]*\)_NT/NV_\1_NT_LD/g' nvector_nrnthread_ld.c > temp
+mv temp nvector_nrnthread_ld.c
+sed 's/NV_\([A-Za-z_]*\)_NT/NV_\1_NT_LD/g' nvector_nrnthread_ld.h >temp
+mv temp nvector_nrnthread_ld.h
+*/
 /*
  * -----------------------------------------------------------------
  * $Revision: 855 $
@@ -98,29 +104,29 @@ typedef struct _N_VectorContent_NrnThreadLD *N_VectorContent_NrnThreadLD;
  * N_Vector v;
  * long int i;
  *
- * (1) NV_CONTENT_NT
+ * (1) NV_CONTENT_NT_LD
  *
  *     This routines gives access to the contents of the nrnthread
  *     vector N_Vector.
  *
- *     The assignment v_cont = NV_CONTENT_NT(v) sets v_cont to be
+ *     The assignment v_cont = NV_CONTENT_NT_LD(v) sets v_cont to be
  *     a pointer to the nrnthread N_Vector content structure.
  *
- * (2) NV_SUBVEC_NT and NV_LENGTH_NT
+ * (2) NV_SUBVEC_NT_LD and NV_LENGTH_NT_LD
  *
  *     These routines give access to the individual parts of
  *     the content structure of a nrnthread N_Vector.
  *
- *     The assignment v_data = NV_SUBVEC_NT(v, i) sets v_data to be
+ *     The assignment v_data = NV_SUBVEC_NT_LD(v, i) sets v_data to be
  *     a pointer to the ith N_Vector of v. The assignment
- *     NV_SUBVEC_NT(v, i) = data_V sets the ith component N_Vector of v to
+ *     NV_SUBVEC_NT_LD(v, i) = data_V sets the ith component N_Vector of v to
  *     be data_v by storing the pointer data_v.
  *
- *     The assignment v_llen = NV_SIZE_NT(v,i) sets v_llen to be
- *     the length of the ith component of v. The call NV_LENGTH_NT(v) = len_v sets
+ *     The assignment v_llen = NV_SIZE_NT_LD(v,i) sets v_llen to be
+ *     the length of the ith component of v. The call NV_LENGTH_NT_LD(v) = len_v sets
  *     the length of v to be len_v.
  *
- * (3) NV_Ith_NT
+ * (3) NV_Ith_NT_LD
  *
  *     In the following description, the components of an
  *     N_Vector are numbered 0..n-1, where n is the length of v.
@@ -136,19 +142,19 @@ typedef struct _N_VectorContent_NrnThreadLD *N_VectorContent_NrnThreadLD;
  * -----------------------------------------------------------------
  */
 
-#define NV_CONTENT_NT(v)  ( (N_VectorContent_NrnThreadLD)(v->content) )
+#define NV_CONTENT_NT_LD(v)  ( (N_VectorContent_NrnThreadLD)(v->content) )
 
-#define NV_LENGTH_NT(v)   ( NV_CONTENT_NT(v)->length )
+#define NV_LENGTH_NT_LD(v)   ( NV_CONTENT_NT_LD(v)->length )
 
-#define NV_NT_NT(v)   ( NV_CONTENT_NT(v)->nt )
+#define NV_NT_NT_LD(v)   ( NV_CONTENT_NT_LD(v)->nt )
 
-#define NV_OWN_DATA_NT(v) ( NV_CONTENT_NT(v)->own_data )
+#define NV_OWN_DATA_NT_LD(v) ( NV_CONTENT_NT_LD(v)->own_data )
 
-#define NV_DATA_NT(v)     ( NV_CONTENT_NT(v)->data )
+#define NV_DATA_NT_LD(v)     ( NV_CONTENT_NT_LD(v)->data )
 
-#define NV_SUBVEC_NT(v, i)     ( NV_CONTENT_NT(v)->data[i] )
+#define NV_SUBVEC_NT_LD(v, i)     ( NV_CONTENT_NT_LD(v)->data[i] )
 
-#define NV_Ith_NT(v,i)    ( NV_DATA_NT(v)[i] ) /* wrong but not needed */
+#define NV_Ith_NT_LD(v,i)    ( NV_DATA_NT_LD(v)[i] ) /* wrong but not needed */
 
 /*
  * -----------------------------------------------------------------
