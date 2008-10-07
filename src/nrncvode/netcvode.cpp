@@ -1620,6 +1620,7 @@ boolean NetCvode::init_global() {
 	    for (int id = 0; id < nrn_nthread; ++id) {
 		NrnThread* _nt = nrn_threads + id;
 		NetCvodeThreadData& d = p[id];
+		if (_nt->end == 0) { continue; }
 		int* cellnum = new int[_nt->end];
 		for (i=0; i < _nt->ncell; ++i) {
 			cellnum[i] = i;
