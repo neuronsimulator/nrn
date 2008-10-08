@@ -1419,7 +1419,7 @@ void CvodeThreadData::delete_memb_list(CvMembList* cmlist) {
 	}
 }
 
-void NetCvode::distribute_dinfo(int* cellnum, NetCvodeThreadData* p) {
+void NetCvode::distribute_dinfo(int* cellnum, int tid) {
 	int i, j;
 //printf("distribute_dinfo %d\n", pst_cnt_);
     if (psl_) {
@@ -1458,7 +1458,8 @@ void NetCvode::distribute_dinfo(int* cellnum, NetCvodeThreadData* p) {
 				j = 0;
 				nt = nrn_threads;
 			}
-			cvsrc = p->lcv_ + cellnum[j];
+		    if (tid == nt->id) {
+			cvsrc = p[tid].lcv_ + cellnum[j];
 			z = cvsrc->ctd_;
 			if (nt == cvsrc->nth_) {
 				if (!z->psl_th_) {
@@ -1466,6 +1467,7 @@ void NetCvode::distribute_dinfo(int* cellnum, NetCvodeThreadData* p) {
 				}
 				z->psl_th_->append(ps);
 			}
+		    }
 		}
 	    }
 	}
@@ -1533,7 +1535,7 @@ boolean NetCvode::init_global() {
 		}
 		del_cv_memb_list();
 		Cvode& cv = *gcv_;
-		distribute_dinfo(nil, nil);
+		distribute_dinfo(nil, 0);
 		// share the main stelist
 		cv.ctd_->ste_list_ = StateTransitionEvent::stelist_;
 	    FOR_THREADS(_nt) {
@@ -1744,7 +1746,7 @@ boolean NetCvode::init_global() {
 		// do the above for the BEFORE/AFTER functions
 		fill_local_ba(cellnum, d);
 
-		distribute_dinfo(cellnum, &d);
+		distribute_dinfo(cellnum, id);
 		// If a point process is not an artificial cell, fill its nvi_ field.
 		// artifical cells have no integrator
 		for (NrnThreadMembList* tml = _nt->tml; tml; tml = tml->next) {

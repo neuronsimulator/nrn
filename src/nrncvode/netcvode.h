@@ -170,7 +170,7 @@ public:
 	void alloc_list();
 	void del_cv_memb_list();
 	void del_cv_memb_list(Cvode*);
-	void distribute_dinfo(int*, NetCvodeThreadData*);
+	void distribute_dinfo(int*, int);
 	void playrec_setup();
 	void fill_global_ba(NrnThread*, int, BAMechList**);
 	void fill_local_ba(int*, NetCvodeThreadData&);
