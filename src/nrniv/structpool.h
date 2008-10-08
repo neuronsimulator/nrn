@@ -1,5 +1,5 @@
-#ifndef pool_h
-#define pool_h
+#ifndef structpool_h
+#define structpool_h
 
 // same as ../nrncvode/pool.h but items do not require a clear method.
 

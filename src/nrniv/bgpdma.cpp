@@ -76,11 +76,11 @@ void BGP_ReceiveBuffer::enqueue() {
 //printf("%d %lx.enqueue count=%d t=%g nrecv=%d nsend=%d\n", nrnmpi_myid, (long)this, t, count_, nrecv_, nsend_);
 	assert(busy_ == 0);
 	busy_ = 1;
-	for (int i; i < count_; ++i) {
+	for (int i=0; i < count_; ++i) {
 		NRNMPI_Spike* spk = buffer_[i];
 		PreSyn* ps;
 		assert(gid2in_->find(spk->gid, ps));
-		ps->send(spk->spiketime, net_cvode_instance);
+		ps->send(spk->spiketime, net_cvode_instance, nrn_threads);
 		recv_spike_pool->hpfree(spk);
 	}
 	count_ = 0;
@@ -268,15 +268,15 @@ static int gathersrcgid(int hostbegin, int totalngid, int* ngid,
 
 void bgp_dma_receive() {
 //	nrn_spike_exchange();
+	int& s = bgp_receive_buffer[current_rbuf]->nsend_;
+	int& r = bgp_receive_buffer[current_rbuf]->nrecv_;
 #if BGPDMA == 2
-	while (nrnmpi_bgp_conserve(bgpdma_nsend_, bgpdma_nrecv_) != 0) {
+	while (nrnmpi_bgp_conserve(s, r) != 0) {
 //		Multisend_advance(&msend_registration);
 		DCMF_Messager_advance();
 	}
 #else
 	bgp_advance();
-	int& s = bgp_receive_buffer[current_rbuf]->nsend_;
-	int& r = bgp_receive_buffer[current_rbuf]->nrecv_;
 	while (nrnmpi_bgp_conserve(s, r) != 0) {
 		bgp_advance();
 	}
@@ -360,7 +360,7 @@ void bgp_dma_setup() {
 	mconfig.nconnections = 1;
 	mconfig.connectionlist = (void**)malloc(sizeof(void*) * 1);
 	mconfig.clientdata = NULL;
-	DCMF_MultiCast_register (&protocol, &mconfig);
+	DCMF_Multicast_register (&protocol, &mconfig);
 #endif
 
 

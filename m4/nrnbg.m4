@@ -69,15 +69,17 @@ AC_ARG_ENABLE([bluegeneP],
 		linux_nrnmech="no"
 		if test x$with_nmodl_only != xyes ; then
 			nmodl_build="no"
-			BG_BASE="/bgsys/drivers/ppcfloor"
+			if test "$BG_BASE" = "" ; then
+				BG_BASE="/bgsys/drivers/ppcfloor"
+			fi
 			BG_INCLUDE="-I$BG_BASE/comm/include -I$BG_BASE/arch/include"
 			if test "$PYINCDIR" = "" ; then
-				PYINCDIR='/bgsys/drivers/ppcfloor/gnu-linux/include/python2.5'
+				PYINCDIR="$BG_BASE/gnu-linux/include/python2.5"
 			fi
 			if test "$PYLIB" = "" ; then
-				PYLIB='-L/bgsys/drivers/ppcfloor/gnu-linux/lib -lpython2.5'
-				PYLIBDIR='/bgsys/drivers/ppcfloor/gnu-linux/lib'
-				PYLIBLINK='-L/bgsys/drivers/ppcfloor/gnu-linux/lib -lpython2.5'
+				PYLIB="-L$BG_BASE/gnu-linux/lib -lpython2.5"
+				PYLIBDIR="$BG_BASE/gnu-linux/lib"
+				PYLIBLINK="-L$BG_BASE/gnu-linux/lib -lpython2.5"
 			fi
 			if test "$LDFLAGS" = "" ; then
 				LDFLAGS=-qnostaticlink
