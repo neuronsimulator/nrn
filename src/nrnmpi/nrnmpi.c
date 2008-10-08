@@ -34,6 +34,7 @@ void nrnmpi_init(int nrnmpi_under_nrncontrol, int* pargc, char*** pargv) {
 
 
 #if NRNMPI
+	int i, b, flag;
 	nrnmpi_use = 1;
 	nrnmpi_under_nrncontrol_ = nrnmpi_under_nrncontrol;
 	if( nrnmpi_under_nrncontrol_ ) {
@@ -53,7 +54,6 @@ for (i=0; i < *pargc; ++i) {
 	   directory and so when not invoked under mpirun we would like to
 	   NOT call MPI_Init.
 	*/
-		int i, b, flag;
 		b = 0;
 		for (i=0; i < *pargc; ++i) {
 			if (strncmp("-p4", (*pargv)[i], 3) == 0) {
