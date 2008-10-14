@@ -2011,8 +2011,8 @@ int NetCvode::solve(double tout) {
 		if (tout >= 0.) {
 			while (p[0].tqe_->least_t() <= tout && stoprun==0) {
 				deliver_least_event(nt);
+				if (nrn_allthread_handle) { (*nrn_allthread_handle)(); }
 			}
-			if (nrn_allthread_handle) { (*nrn_allthread_handle)(); }
 			if (stoprun==0) { nt_t = tout; }
 		} else {
 			if (p[0].tqe_->least()) {
@@ -5993,8 +5993,10 @@ int NetCvode::solve_when_threads(double tout) {
 	nrn_use_busywait(1); // just a possibility
 	if (empty_) {
 		if (tout >= 0.) {
-			deliver_events_when_threads(tout);
-			if (nrn_allthread_handle) { (*nrn_allthread_handle)(); }
+			while (nt_t < tout && !stoprun) {
+				deliver_events_when_threads(tout);
+				if (nrn_allthread_handle) { (*nrn_allthread_handle)(); }
+			}
 			if (stoprun==0) {
 				nt_t = tout;
 			}
@@ -6075,7 +6077,7 @@ void NetCvode::deliver_events_when_threads(double til) {
 	while(allthread_least_t(tid) <= til) {
 		STATISTICS(deliver_cnt_);
 		nrn_onethread_job(tid, deliver_for_thread);
-		if (stoprun) { return; }
+		if (stoprun || nrn_allthread_handle) { return; }
 	}
 }
 
