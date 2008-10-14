@@ -1,5 +1,5 @@
-#include "../oc/nrnmpiuse.h"
-#include "../oc/nrnmpi.h"
+#include "nrnmpiuse.h"
+#include "nrnmpi.h"
 #include "nrnpython_config.h"
 #include <Python.h>
 #include <stdio.h>

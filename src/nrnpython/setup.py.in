@@ -48,7 +48,7 @@ os.environ["CXX"]=mpicxx_bin
 #distutils.unixccompiler.UnixCCompiler = MPI_UnixCCompiler
 #################################
 
-include_dirs = []
+include_dirs = [nrn_srcdir+'/src/oc', '../oc']
 defines = []
 
 libdirs = ["@NRN_LIBDIR@",
