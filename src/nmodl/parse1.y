@@ -47,6 +47,7 @@ extern List *solveforlist; /* List of symbols that are actually to be solved
 				for in a block. See in_solvefor() */
 static int stateblock; /* 0 if dependent, 1 if state */
 static int blocktype;
+static int saw_verbatim_; /* only print the notice once */
 static int inequation; /* inside an equation?*/
 static int nstate;	/* number of states seen in an expression */
 static int leftside;	/* inside left hand side of equation? */
@@ -154,8 +155,9 @@ all:	/*nothing*/
 	| all VERBATIM 
 		/* read everything and move as is to end of procfunc */
 		{inblock(SYM($2)->name); replacstr($2, "\n/*VERBATIM*/\n");
-		if (!assert_threadsafe) {
- 		 fprintf(stderr, "Notice: A VERBATIM block is not thread safe\n");
+		if (!assert_threadsafe && !saw_verbatim_) {
+ 		 fprintf(stderr, "Notice: VERBATIM blocks are not thread safe\n");
+		 saw_verbatim_ = 1;
 		 vectorize = 0;
 		}
 		movelist($2,intoken->prev, procfunc);}
@@ -440,8 +442,9 @@ ostmt:	fromstmt
 	| VERBATIM 
 		{inblock(SYM($1)->name);
 		replacstr($1, "\n/*VERBATIM*/\n");
-		if (!assert_threadsafe) {
- 		 fprintf(stderr, "Notice: A VERBATIM block is not thread safe\n");
+		if (!assert_threadsafe && !saw_verbatim_) {
+ 		 fprintf(stderr, "Notice: VERBATIM blocks are not thread safe\n");
+		 saw_verbatim_ = 1;
 		 vectorize = 0;
 		}
 		}
