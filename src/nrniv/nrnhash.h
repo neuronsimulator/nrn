@@ -1,6 +1,6 @@
 #ifndef nrnhash_h
 #define nrnhash_h
-// hash table where buckets are binary search maps and key is an int
+// hash table where buckets are binary search maps and key is castable to unsigned long
 
 #include <ivstream.h>
 
@@ -14,42 +14,44 @@
 
 #define __NrnHashEntry(Table) Table##_Entry
 #define NrnHashEntry(Table) __NrnHashEntry(Table)
-
-struct nrnhash_ltint {
-	int operator() (int i, int j) const {
-		return i < j;
-	}
-};
+#define __NrnHashLT(Table) nrnhash_lt_##Table
+#define NrnHashLT(Table) __NrnHashLT(Table)
 
 	// note that more recent STL versions (But not gcc2.95) supply 
-	// at(int) to get the vector element. My version contains some
+	// at(long) to get the vector element. My version contains some
 	// confusion with regard to how to handle issues involving const
 	// in this classes implementation of the find method.
 	// [] creates key value association if does not exist
 
 #define declareNrnHash(Table,Key,Value) \
-class NrnHashEntry(Table) : public map <int, Value, nrnhash_ltint>{}; \
+struct NrnHashLT(Table) { \
+	int operator() (Key i, Key j) const { \
+		return ((unsigned long)i) < ((unsigned long)j); \
+	} \
+}; \
+\
+class NrnHashEntry(Table) : public map <Key, Value, NrnHashLT(Table)>{}; \
 \
 class Table : public vector<NrnHashEntry(Table)> { \
 public: \
-	Table(int size); \
+	Table(long size); \
 	virtual ~Table(); \
-	boolean find(int, Value&)const; \
-	NrnHashEntry(Table)& at(Key key){ return *(begin() + key); } \
+	boolean find(Key, Value&)const; \
+	NrnHashEntry(Table)& at(unsigned long bucket){ return *(begin() + bucket); } \
 	Value& operator[](Key key) { return at(hash(key))[key]; } \
-	int hash(Key key)const { return key%size_; } \
-	int size_; \
+	unsigned long hash(Key key)const { return ((unsigned long)key)%size_; } \
+	long size_; \
 };
 
 #define implementNrnHash(Table,Key,Value) \
-Table::Table(int size) { \
+Table::Table(long size) { \
 	resize(size+1); \
 	size_ = size; \
 } \
 \
 Table::~Table() {} \
 \
-boolean Table::find(int key, Value& ps)const { \
+boolean Table::find(Key key, Value& ps)const { \
 	NrnHashEntry(Table)::const_iterator itr; \
 	const NrnHashEntry(Table)& gm = ((Table*)this)->at(hash(key)); \
 	if ((itr = gm.find(key)) == gm.end()) { \
@@ -60,11 +62,11 @@ boolean Table::find(int key, Value& ps)const { \
 }
 
 // for iteration, if you have 
-// declareNrnHash(Table,int,Object)
+// declareNrnHash(Table,Key,Object)
 // Table* table;
 // then you can iterate with
 #define NrnHashIterate(Table,table,Value,value) \
-	if (table) for (int i__ = table->size_ - 1; i__ >= 0; --i__) { \
+	if (table) for (long i__ = table->size_ - 1; i__ >= 0; --i__) { \
 		NrnHashEntry(Table)::const_iterator p__ = table->at(i__).begin(); \
 		NrnHashEntry(Table)::const_iterator pe__ = table->at(i__).end(); \
 		while(p__ != pe__) { \

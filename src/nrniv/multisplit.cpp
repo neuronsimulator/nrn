@@ -303,8 +303,8 @@ struct MultiSplitTransferInfo {
 	int rthost_; // host id where the reduced tree is located (normally -1)
 };
 
-declareNrnHash(MultiSplitTable, int, MultiSplit*)
-implementNrnHash(MultiSplitTable, int, MultiSplit*)
+declareNrnHash(MultiSplitTable, Node*, MultiSplit*)
+implementNrnHash(MultiSplitTable, Node*, MultiSplit*)
 declarePtrList(MultiSplitList, MultiSplit)
 implementPtrList(MultiSplitList, MultiSplit)
 
@@ -386,7 +386,7 @@ void MultiSplitControl::multisplit(double x, int sid, int backbone_style) {
 		hoc_execerror("only backbone_style 2 is now supported", 0);
 	}
 	if (!classical_root_to_multisplit_) {
-		classical_root_to_multisplit_ = new MultiSplitTable(100);
+		classical_root_to_multisplit_ = new MultiSplitTable(97);
 		multisplit_list_ = new MultiSplitList();
 	}
 	Section* sec = chk_access();
@@ -399,7 +399,7 @@ void MultiSplitControl::multisplit(double x, int sid, int backbone_style) {
 	assert(root);
 //	printf("is %s\n", secname(root->sec));
 	MultiSplit* ms;
-	if (classical_root_to_multisplit_->find((long)root, ms)) {
+	if (classical_root_to_multisplit_->find(root, ms)) {
 		if (backbone_style == 2) {
 			if(ms->backbone_style != 2) {
 hoc_execerror("earlier call for this cell did not have a backbone style = 2", 0);
@@ -427,7 +427,7 @@ hoc_execerror("earlier call for this cell did not have a backbone style = 2", 0)
 		ms->rt_ = 0;
 		ms->rmap_index_ = -1;
 		ms->smap_index_ = -1;
-		(*classical_root_to_multisplit_)[(long)root] = ms;
+		(*classical_root_to_multisplit_)[root] = ms;
 		multisplit_list_->append(ms);
 	}
 }
@@ -528,16 +528,10 @@ void MultiSplitControl::multisplit_clear() {
 		NrnHashIterate(MultiSplitTable, classical_root_to_multisplit_, MultiSplit*, ms) {
 			delete ms;
 		}}}
-#if 0
-		for (i = classical_root_to_multisplit_->size_ - 1; i >=0; --i) {
-			classical_root_to_multisplit_->at(i).clear();
-		}
-#else
 		delete classical_root_to_multisplit_;
 		delete multisplit_list_;
 		classical_root_to_multisplit_ = 0;
 		multisplit_list_ = 0;
-#endif
 	}
 }
 
@@ -3066,7 +3060,7 @@ for (i=i1; i < i3; ++i) {
 	for (i = i1; i < i2; ++i) {
 		Node* oldroot = nt->_v_node[i];
 		MultiSplit* ms;
-		if (classical_root_to_multisplit_->find((long)oldroot, ms)) {
+		if (classical_root_to_multisplit_->find(oldroot, ms)) {
 			nd = ms->nd[0];
 			if (nd == oldroot) { // the cell tree is fine
 				// the way it is (the usual case)
@@ -3111,7 +3105,7 @@ for (i=i1; i < i3; ++i) {
 	for (i = i1; i < i2; ++i) {
 		nd = nt->_v_node[i];
 		MultiSplit* ms;
-		if (classical_root_to_multisplit_->find((long)nd, ms)) {
+		if (classical_root_to_multisplit_->find(nd, ms)) {
 			if (ms->nd[1]) {
 				ib = ms->backbone_style >= 1 ? ibs : ibl;
 				node[ib-i1] = ms->nd[0];
@@ -3171,7 +3165,7 @@ for (i=i1; i < i3; ++i) {
 	for (i = i1; i < i2; ++i) {
 		nd = nt->_v_node[i];
 		MultiSplit* ms;
-		if (classical_root_to_multisplit_->find((long)nd, ms)) {
+		if (classical_root_to_multisplit_->find(nd, ms)) {
 			ms->ithread = nt->id;
 			if (ms->nd[1]) {
 				if (ms->backbone_style >= 1) {
