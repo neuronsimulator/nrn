@@ -27,6 +27,7 @@ struct NrnThread;
 class NetCvode;
 class HocEventPool;
 class HocCommand;
+class SelfEventPPTable;
 class NetConSaveWeightTable;
 class NetConSaveIndexTable;
 class PreSynSaveIndexTable;
@@ -147,8 +148,11 @@ public:
 	static unsigned long selfevent_send_;
 	static unsigned long selfevent_move_;
 	static unsigned long selfevent_deliver_;
+	static void savestate_free();
 private:
 	void call_net_receive(NetCvode*);
+	static Point_process* index2pp(int type, int oindex);
+	static SelfEventPPTable* sepp_;
 };
 
 declarePtrList(NetConPList, NetCon)

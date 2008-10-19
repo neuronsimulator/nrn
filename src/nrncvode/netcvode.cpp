@@ -10,6 +10,7 @@
 #include <OS/list.h>
 #include <OS/math.h>
 #include <OS/table.h>
+#include <nrnhash.h>
 #include <InterViews/regexp.h>
 #include "classreg.h"
 #include "nrnoc2iv.h"
@@ -63,6 +64,7 @@ extern int nrn_errno_check(int);
 extern void nrn_ba(NrnThread*, int);
 extern int cvode_active_;
 extern NetCvode* net_cvode_instance;
+extern cTemplate** nrn_pnt_template_;
 extern double t, dt;
 #define nt_dt nrn_threads->_dt
 #define nt_t nrn_threads->_t
@@ -2318,6 +2320,7 @@ void net_send(void** v, double* weight, Point_process* pnt, double td, double fl
 		char buf[100];
 		sprintf(buf, "net_send td-t = %g", td - nt->_t);
 		se->pr(buf, td, net_cvode_instance);
+		abort();
 		hoc_execerror("net_send delay < 0", 0);
 	}
 	TQItem* q;
@@ -3158,7 +3161,7 @@ DiscreteEvent* SelfEvent::savestate_save() {
 
 void SelfEvent::savestate_restore(double tt, NetCvode* nc) {
 //	pr("savestate_restore", tt, nc);
-	net_send(movable_, weight_, target_, tt - nt_t, flag_);
+	net_send(movable_, weight_, target_, tt, flag_);
 }
 
 DiscreteEvent* SelfEvent::savestate_read(FILE* f) {
@@ -3169,16 +3172,12 @@ DiscreteEvent* SelfEvent::savestate_read(FILE* f) {
 	double flag;
 	Object* obj;
 	fgets(buf, 300, f);
-	assert(sscanf(buf, "%s %d %d %d %d %d %lf\n", ppname, &ppindex, &pptype, &iml, &ncindex, &moff, &flag) == 7);
+	assert(sscanf(buf, "%s %d %d %d %d %lf\n", ppname, &ppindex, &pptype, &ncindex, &moff, &flag) == 6);
 #if 0
 	// use of hoc_name2obj is way too inefficient
 	se->target_ = ob2pntproc(hoc_name2obj(ppname, ppindex));
 #else
-	if (memb_func[pptype].hoc_mech) { // actually, this case does not exist
-		se->target_ = (Point_process*)memb_list[pptype].prop[iml]->dparam[1]._pvoid;
-	}else{
-		se->target_ = (Point_process*)memb_list[pptype].pdata[iml][1]._pvoid;
-	}
+	se->target_ = SelfEvent::index2pp(pptype, ppindex);
 #endif
 	se->weight_ = nil;
 	if (ncindex >= 0) {	
@@ -3200,6 +3199,40 @@ DiscreteEvent* SelfEvent::savestate_read(FILE* f) {
 	return se;
 }
 
+
+// put following here to avoid conflict with gnu vector
+declareNrnHash(SelfEventPPTable, long, Point_process*)
+implementNrnHash(SelfEventPPTable, long, Point_process*)
+SelfEventPPTable* SelfEvent::sepp_;
+
+Point_process* SelfEvent::index2pp(int type, int oindex) {
+	// code the type and object index together
+	Point_process* pp;
+	if (!sepp_) {
+		int i;
+		sepp_ = new SelfEventPPTable(211);
+		// should only be the ones that call net_send
+		for (i=0; i < n_memb_func; ++i) if (pnt_receive[i]) {
+			hoc_List* hl = nrn_pnt_template_[i]->olist;
+			hoc_Item* q;
+			ITERATE (q, hl) {
+				Object* o = OBJ(q);
+				pp = ob2pntproc(o);
+				(*sepp_)[i + n_memb_func * o->index] = pp;
+			}
+		}
+	}
+	assert(sepp_->find(type + n_memb_func*oindex, pp));
+	return pp;
+}
+
+void SelfEvent::savestate_free() {
+	if (sepp_) {
+		delete sepp_;
+		sepp_ = 0;
+	}
+}
+
 void SelfEvent::savestate_write(FILE* f) {
 	fprintf(f, "%d\n", SelfEventType);
 	int moff = -1;
@@ -3216,9 +3249,9 @@ void SelfEvent::savestate_write(FILE* f) {
 		ncindex = nc->obj_->index;
 	}
 
-	fprintf(f, "%s %d %d %d %d %d %g\n",
+	fprintf(f, "%s %d %d %d %d %g\n",
 		target_->ob->ctemplate->sym->name, target_->ob->index,
-		target_->prop->type, target_->iml_,
+		target_->prop->type,
 		ncindex,
 		moff, flag_
 	);

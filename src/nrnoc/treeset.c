@@ -1622,7 +1622,6 @@ hoc_execerror(memb_func[i].sym->name, "is not thread safe");
 		ITERATE(q, list) {
 			Object* obj = OBJ(q);
 			Point_process* pnt = (Point_process*)obj->u.this_pointer;
-			pnt->iml_ = j;
 			p = pnt->prop;
 			memb_list[i].nodelist[j] = (Node*)0;
 			memb_list[i].data[j] = p->param;
