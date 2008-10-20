@@ -131,18 +131,25 @@ DiscreteEvent* HocEvent::savestate_save() {
 	HocEvent* he = new HocEvent();
 	if (stmt_) {
 		he->stmt_ = new HocCommand(stmt_->name(), stmt_->object());
+		he->reinit_ = reinit_;
+		he->ppobj_ = ppobj_;
 	}
 	return he;
 }
 
 void HocEvent::savestate_restore(double tt, NetCvode* nc) {
 //	pr("HocEvent::savestate_restore", tt, nc);
-	hoc_execerror("cannot restore a cvode.event, complain to Hines",0);
 	HocEvent* he = alloc(nil, nil, 0);
+	NrnThread* nt = nrn_threads;
 	if (stmt_) {
 		he->stmt_ = new HocCommand(stmt_->name(), stmt_->object());
+		he->reinit_ = reinit_;
+		he->ppobj_ = ppobj_;
+		if (ppobj_) {
+			nt = (NrnThread*)ob2pntproc(ppobj_)->_vnt;
+		}
 	}
-	nc->event(tt, he, nrn_threads);
+	nc->event(tt, he, nt);
 }
 
 DiscreteEvent* HocEvent::savestate_read(FILE* f) {
