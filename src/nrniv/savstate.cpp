@@ -422,7 +422,7 @@ void SaveState::alloc() {
 		}
 		++isec;
 	}
-	assert(isec = section_count);	
+	assert(isec == section_count);	
 	assert(nroot_ == nrn_global_ncell);
 	for (int i=0, j=0; i < n_memb_func; ++i) if (nrn_is_artificial_[i]) {
 		allocacell(acell_[j], i);

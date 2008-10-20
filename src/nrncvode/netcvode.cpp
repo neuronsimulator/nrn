@@ -4749,8 +4749,7 @@ PreSynSave::~PreSynSave() {}
 
 void PreSynSave::savestate_restore(double tt, NetCvode* nc) {
 //	presyn_->pr("savestate_restore", tt, nc);
-	assert(0);
-	nc->event(tt, presyn_, 0);
+	nc->event(tt, presyn_, presyn_->nt_);
 }
 
 DiscreteEvent* PreSyn::savestate_read(FILE* f) {
