@@ -309,8 +309,7 @@ DiscreteEvent* PlayRecordEvent::savestate_save() {
 	return pre;
 }
 void PlayRecordEvent::savestate_restore(double tt, NetCvode* nc) {
-	assert(0);
-	nc->event(tt, plr_->event(), 0);
+	nc->event(tt, plr_->event(), nrn_threads + plr_->ith_);
 }
 void PlayRecordEvent::savestate_write(FILE* f) {
 	fprintf(f, "%d\n", PlayRecordEventType);
@@ -4749,8 +4748,7 @@ PreSynSave::~PreSynSave() {}
 
 void PreSynSave::savestate_restore(double tt, NetCvode* nc) {
 //	presyn_->pr("savestate_restore", tt, nc);
-	assert(0);
-	nc->event(tt, presyn_, 0);
+	nc->event(tt, presyn_, presyn_->nt_);
 }
 
 DiscreteEvent* PreSyn::savestate_read(FILE* f) {

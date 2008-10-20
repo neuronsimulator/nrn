@@ -151,27 +151,37 @@ void NetParEvent::pr(const char* m, double tt, NetCvode* nc){
 }
 
 DiscreteEvent* NetParEvent::savestate_save(){
-//	pr("savestate_save", 0, net_cvode_instance);
-	return new NetParEvent();
+	//pr("savestate_save", 0, net_cvode_instance);
+	NetParEvent* npe =  new NetParEvent();
+	npe->ithread_ = ithread_;
+	return npe;
 }
 
 DiscreteEvent* NetParEvent::savestate_read(FILE* f){
-//printf("NetParEvent::savestate_read\n");
-	return new NetParEvent();
+	int i;
+	assert(fscanf(f, "%d", &i) == 1);
+	//printf("NetParEvent::savestate_read %d\n", i);
+	NetParEvent* npe = new NetParEvent();
+	npe->ithread_ = i;
+	return npe;
 }
 
 void NetParEvent::savestate_write(FILE* f){
-	fprintf(f, "%d\n", NetParEventType);
+	//pr("savestate_write", 0, net_cvode_instance);
+	fprintf(f, "%d %d\n", NetParEventType, ithread_);
 }
 
 void NetParEvent::savestate_restore(double tt, NetCvode* nc){
-//	npe_->pr("savestate_restore", tt, nc);
 #if NRNMPI
 	if (use_compress_) {
 		t_exchange_ = t;
 	}
-	assert(0);
-	nc->event(tt, npe_, 0);
+	if (ithread_ == 0) {
+		//npe_->pr("savestate_restore", tt, nc);
+		for (int i=0; i < nrn_nthread; ++i) {
+			nc->event(tt, npe_+i, nrn_threads + i);
+		}
+	}
 #endif
 }
 
@@ -318,7 +328,7 @@ void nrn_spike_exchange_init() {
 		npe_[i].ithread_ = i;
 		npe_[i].wx_ = 0.;
 		npe_[i].ws_ = 0.;
-		npe_->send(t, net_cvode_instance, nrn_threads + i);
+		npe_[i].send(t, net_cvode_instance, nrn_threads + i);
 	}
 #if NRNMPI
     if (use_compress_) {
