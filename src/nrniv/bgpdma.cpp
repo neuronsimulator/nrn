@@ -355,10 +355,8 @@ void bgp_dma_setup() {
 	// I am also guessing everyone can use the same mconfig.
 	mconfig.protocol = DCMF_MEMFIFO_DMA_MSEND_PROTOCOL;
 	mconfig.cb_recv = msend_recv;
-//	mconfig.nconnections = nrnmpi_numprocs;
-//	mconfig.connectionlist = (void**)malloc(sizeof(void*) * nrnmpi_numprocs);
-	mconfig.nconnections = 1;
-	mconfig.connectionlist = (void**)malloc(sizeof(void*) * 1);
+	mconfig.nconnections = nrnmpi_numprocs;
+	mconfig.connectionlist = (void**)malloc(sizeof(void*) * nrnmpi_numprocs);
 	mconfig.clientdata = NULL;
 	DCMF_Multicast_register (&protocol, &mconfig);
 #endif
