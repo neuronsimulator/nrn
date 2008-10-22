@@ -1,0 +1,106 @@
+// Physical properties
+create a
+access a
+// {nseg=1 insert capump}
+{nseg=1 insert capr}
+cao=2
+
+// run parameters
+tstop=40
+
+// simulation control
+proc init() { local tausav, done
+  done = 0
+  forall if (ismembrane("capr") && done==0) {
+    tausav = tau_capr
+    tau_capr = 1e-6  // so cai tracks car closely during initialization
+    car_capr = cai0
+    done = 1
+  }
+  finitialize(0)
+
+  done = 0
+  forall if (ismembrane("capr") && done==0) {
+    tau_capr = tausav
+    done = 1
+  }
+
+  // must re-initialize cvode after abrupt parameter change
+  // if cvode is not being used, just call fcurrent()
+  if (cvode.active()) {
+    cvode.re_init()
+  } else {
+    fcurrent()
+  }
+}
+
+// plot relationship between cai and ica_capmp
+
+CAIMIN = 1e-5  // lowest and highest cai to test
+CAIMAX = 0.1
+INCREMENT = 10^0.1 // multiplier
+
+objref caivec, icavec  // to record the data that will be plotted
+caivec = new Vector()
+icavec = new Vector()
+
+cai0 = CAIMIN
+
+while (cai0<=CAIMAX) {
+  init()
+  caivec.append(cai(0.5))
+  icavec.append(ica(0.5))
+  cai0 *= INCREMENT
+}
+
+objref g
+{
+g = new Graph(0)
+g.size(-5,-1,0,0.003)
+g.view(-5, 0, 4, 0.003, 292, 109, 300.48, 200.32)
+g.label(0.115016, 0.814697, "ica_capmp", 2, 1, 0, 0, 1)
+g.label(0.69968, 0.177316, "log10(cai)", 2, 1, 0, 0, 1)
+
+icavec.plot(g, caivec.c.log10())
+}
+
+// generate plot of cai vs. t
+
+objref g1
+g1 = new Graph()
+
+proc run1() {
+	cai0 = $1
+
+	init()
+
+	g1.size(0,tstop,0,$1)
+	g1.beginline
+	while(t < tstop) {
+		g1.line(t, cai)
+		step(.1)
+	}
+	g1.flush()
+}
+
+proc run() {
+	run1(.01)
+}
+
+proc change_d(){
+  g1.color(1)
+  g1.label(.8,.8,"diam=100")
+  diam=100
+  run()
+  g1.color(2)
+  g1.label(.8,.7,"diam=1")
+  diam=1
+  run()
+  g1.color(3)
+  g1.label(.8,.6,"diam=.2")
+  diam=.2
+  run()
+}
+
+// run simulations that show time course of cai for different diameters
+change_d()

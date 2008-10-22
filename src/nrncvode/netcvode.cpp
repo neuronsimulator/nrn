@@ -10,6 +10,7 @@
 #include <OS/list.h>
 #include <OS/math.h>
 #include <OS/table.h>
+#include <nrnhash.h>
 #include <InterViews/regexp.h>
 #include "classreg.h"
 #include "nrnoc2iv.h"
@@ -63,6 +64,7 @@ extern int nrn_errno_check(int);
 extern void nrn_ba(NrnThread*, int);
 extern int cvode_active_;
 extern NetCvode* net_cvode_instance;
+extern cTemplate** nrn_pnt_template_;
 extern double t, dt;
 #define nt_dt nrn_threads->_dt
 #define nt_t nrn_threads->_t
@@ -307,8 +309,7 @@ DiscreteEvent* PlayRecordEvent::savestate_save() {
 	return pre;
 }
 void PlayRecordEvent::savestate_restore(double tt, NetCvode* nc) {
-	assert(0);
-	nc->event(tt, plr_->event(), 0);
+	nc->event(tt, plr_->event(), nrn_threads + plr_->ith_);
 }
 void PlayRecordEvent::savestate_write(FILE* f) {
 	fprintf(f, "%d\n", PlayRecordEventType);
@@ -1419,7 +1420,7 @@ void CvodeThreadData::delete_memb_list(CvMembList* cmlist) {
 	}
 }
 
-void NetCvode::distribute_dinfo(int* cellnum, NetCvodeThreadData* p) {
+void NetCvode::distribute_dinfo(int* cellnum, int tid) {
 	int i, j;
 //printf("distribute_dinfo %d\n", pst_cnt_);
     if (psl_) {
@@ -1458,7 +1459,8 @@ void NetCvode::distribute_dinfo(int* cellnum, NetCvodeThreadData* p) {
 				j = 0;
 				nt = nrn_threads;
 			}
-			cvsrc = p->lcv_ + cellnum[j];
+		    if (tid == nt->id) {
+			cvsrc = p[tid].lcv_ + cellnum[j];
 			z = cvsrc->ctd_;
 			if (nt == cvsrc->nth_) {
 				if (!z->psl_th_) {
@@ -1466,6 +1468,7 @@ void NetCvode::distribute_dinfo(int* cellnum, NetCvodeThreadData* p) {
 				}
 				z->psl_th_->append(ps);
 			}
+		    }
 		}
 	    }
 	}
@@ -1533,7 +1536,7 @@ boolean NetCvode::init_global() {
 		}
 		del_cv_memb_list();
 		Cvode& cv = *gcv_;
-		distribute_dinfo(nil, nil);
+		distribute_dinfo(nil, 0);
 		// share the main stelist
 		cv.ctd_->ste_list_ = StateTransitionEvent::stelist_;
 	    FOR_THREADS(_nt) {
@@ -1744,7 +1747,7 @@ boolean NetCvode::init_global() {
 		// do the above for the BEFORE/AFTER functions
 		fill_local_ba(cellnum, d);
 
-		distribute_dinfo(cellnum, &d);
+		distribute_dinfo(cellnum, id);
 		// If a point process is not an artificial cell, fill its nvi_ field.
 		// artifical cells have no integrator
 		for (NrnThreadMembList* tml = _nt->tml; tml; tml = tml->next) {
@@ -2009,8 +2012,8 @@ int NetCvode::solve(double tout) {
 		if (tout >= 0.) {
 			while (p[0].tqe_->least_t() <= tout && stoprun==0) {
 				deliver_least_event(nt);
+				if (nrn_allthread_handle) { (*nrn_allthread_handle)(); }
 			}
-			if (nrn_allthread_handle) { (*nrn_allthread_handle)(); }
 			if (stoprun==0) { nt_t = tout; }
 		} else {
 			if (p[0].tqe_->least()) {
@@ -2316,6 +2319,7 @@ void net_send(void** v, double* weight, Point_process* pnt, double td, double fl
 		char buf[100];
 		sprintf(buf, "net_send td-t = %g", td - nt->_t);
 		se->pr(buf, td, net_cvode_instance);
+		abort();
 		hoc_execerror("net_send delay < 0", 0);
 	}
 	TQItem* q;
@@ -3156,7 +3160,7 @@ DiscreteEvent* SelfEvent::savestate_save() {
 
 void SelfEvent::savestate_restore(double tt, NetCvode* nc) {
 //	pr("savestate_restore", tt, nc);
-	net_send(movable_, weight_, target_, tt - nt_t, flag_);
+	net_send(movable_, weight_, target_, tt, flag_);
 }
 
 DiscreteEvent* SelfEvent::savestate_read(FILE* f) {
@@ -3167,16 +3171,12 @@ DiscreteEvent* SelfEvent::savestate_read(FILE* f) {
 	double flag;
 	Object* obj;
 	fgets(buf, 300, f);
-	assert(sscanf(buf, "%s %d %d %d %d %d %lf\n", ppname, &ppindex, &pptype, &iml, &ncindex, &moff, &flag) == 7);
+	assert(sscanf(buf, "%s %d %d %d %d %lf\n", ppname, &ppindex, &pptype, &ncindex, &moff, &flag) == 6);
 #if 0
 	// use of hoc_name2obj is way too inefficient
 	se->target_ = ob2pntproc(hoc_name2obj(ppname, ppindex));
 #else
-	if (memb_func[pptype].hoc_mech) { // actually, this case does not exist
-		se->target_ = (Point_process*)memb_list[pptype].prop[iml]->dparam[1]._pvoid;
-	}else{
-		se->target_ = (Point_process*)memb_list[pptype].pdata[iml][1]._pvoid;
-	}
+	se->target_ = SelfEvent::index2pp(pptype, ppindex);
 #endif
 	se->weight_ = nil;
 	if (ncindex >= 0) {	
@@ -3198,6 +3198,40 @@ DiscreteEvent* SelfEvent::savestate_read(FILE* f) {
 	return se;
 }
 
+
+// put following here to avoid conflict with gnu vector
+declareNrnHash(SelfEventPPTable, long, Point_process*)
+implementNrnHash(SelfEventPPTable, long, Point_process*)
+SelfEventPPTable* SelfEvent::sepp_;
+
+Point_process* SelfEvent::index2pp(int type, int oindex) {
+	// code the type and object index together
+	Point_process* pp;
+	if (!sepp_) {
+		int i;
+		sepp_ = new SelfEventPPTable(211);
+		// should only be the ones that call net_send
+		for (i=0; i < n_memb_func; ++i) if (pnt_receive[i]) {
+			hoc_List* hl = nrn_pnt_template_[i]->olist;
+			hoc_Item* q;
+			ITERATE (q, hl) {
+				Object* o = OBJ(q);
+				pp = ob2pntproc(o);
+				(*sepp_)[i + n_memb_func * o->index] = pp;
+			}
+		}
+	}
+	assert(sepp_->find(type + n_memb_func*oindex, pp));
+	return pp;
+}
+
+void SelfEvent::savestate_free() {
+	if (sepp_) {
+		delete sepp_;
+		sepp_ = 0;
+	}
+}
+
 void SelfEvent::savestate_write(FILE* f) {
 	fprintf(f, "%d\n", SelfEventType);
 	int moff = -1;
@@ -3214,9 +3248,9 @@ void SelfEvent::savestate_write(FILE* f) {
 		ncindex = nc->obj_->index;
 	}
 
-	fprintf(f, "%s %d %d %d %d %d %g\n",
+	fprintf(f, "%s %d %d %d %d %g\n",
 		target_->ob->ctemplate->sym->name, target_->ob->index,
-		target_->prop->type, target_->iml_,
+		target_->prop->type,
 		ncindex,
 		moff, flag_
 	);
@@ -4714,8 +4748,7 @@ PreSynSave::~PreSynSave() {}
 
 void PreSynSave::savestate_restore(double tt, NetCvode* nc) {
 //	presyn_->pr("savestate_restore", tt, nc);
-	assert(0);
-	nc->event(tt, presyn_, 0);
+	nc->event(tt, presyn_, presyn_->nt_);
 }
 
 DiscreteEvent* PreSyn::savestate_read(FILE* f) {
@@ -5991,8 +6024,10 @@ int NetCvode::solve_when_threads(double tout) {
 	nrn_use_busywait(1); // just a possibility
 	if (empty_) {
 		if (tout >= 0.) {
-			deliver_events_when_threads(tout);
-			if (nrn_allthread_handle) { (*nrn_allthread_handle)(); }
+			while (nt_t < tout && !stoprun) {
+				deliver_events_when_threads(tout);
+				if (nrn_allthread_handle) { (*nrn_allthread_handle)(); }
+			}
 			if (stoprun==0) {
 				nt_t = tout;
 			}
@@ -6073,7 +6108,7 @@ void NetCvode::deliver_events_when_threads(double til) {
 	while(allthread_least_t(tid) <= til) {
 		STATISTICS(deliver_cnt_);
 		nrn_onethread_job(tid, deliver_for_thread);
-		if (stoprun) { return; }
+		if (stoprun || nrn_allthread_handle) { return; }
 	}
 }
 

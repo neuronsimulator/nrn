@@ -985,6 +985,7 @@ void nrn_multithread_job(void*(*job)(NrnThread*)) {
 
 
 void nrn_onethread_job(int i, void*(*job)(NrnThread*)) {
+	BENCHDECLARE
 	assert(i >= 0 && i < nrn_nthread);
 #if USE_PTHREAD
 	if (nrn_thread_parallel_) {

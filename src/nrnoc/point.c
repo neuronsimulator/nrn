@@ -37,7 +37,6 @@ void* create_point_process(pointtype, ho)
 	pp->presyn_ = 0;
 	pp->nvi_ = 0;
 	pp->_vnt = 0;
-	pp->iml_ = -1;
 	
 	if (nrn_is_artificial_[pointsym[pointtype]->subtype]) {
 		create_artcell_prop(pp, pointsym[pointtype]->subtype);
