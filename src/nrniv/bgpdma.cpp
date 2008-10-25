@@ -99,6 +99,7 @@ void BGP_ReceiveBuffer::enqueue() {
 static DCMF_Opcode_t* hints_;
 static DCMF_Protocol_t protocol;
 static DCMF_Multicast_Configuration_t mconfig;
+static DCMF_Request_t* g_receivers_;
 
 // client done callback 
 static void spk_ready (void *arg) {
@@ -130,7 +131,6 @@ static DCMF_Request_t * msend_recv(const DCQuad  * msginfo,
 			    unsigned        * pipewidth,
 			    DCMF_Callback_t * cb_done)
 {
-  printf("msend_recv\n");
   assert ( sndlen == sizeof(NRNMPI_Spike) );
   * rcvlen          = sndlen;
   * rcvbuf          = (char*)recv_spike_pool->alloc();
@@ -138,7 +138,7 @@ static DCMF_Request_t * msend_recv(const DCQuad  * msginfo,
   cb_done->function = spk_ready;
   cb_done->clientdata = *rcvbuf;
 
-  return NULL;
+  return g_receivers_ + senderID;
 }
 #endif // USEBGP == 2
 
@@ -252,9 +252,11 @@ void BGP_DMASend::send(int gid, double t) {
 	msend.op = DCMF_UNDEFINED_OP;
 	msend.dt = DCMF_UNDEFINED_DT;
 	
-printf("call DCMF_Multicast %d\n", msend.connection_id);
+//printf("%d DCMF_Multicast %d %g %d\n", nrnmpi_myid, msend.connection_id, t, gid);
 	DCMF_Multicast(&msend);
-printf("return from  DCMF_Multicast\n");
+	// do not want to do this here, want to compute
+	if (req_in_use_) { printf("%d multicast %d not done\n", nrnmpi_myid, msend.connection_id);}
+	while (req_in_use_) DCMF_Messager_advance();
 #else
 	nrnmpi_bgp_multisend(&spk_, ntarget_hosts_, target_hosts_);
 #endif
@@ -277,7 +279,6 @@ void bgp_dma_receive() {
 	int& r = bgp_receive_buffer[current_rbuf]->nrecv_;
 #if BGPDMA == 2
 	while (nrnmpi_bgp_conserve(s, r) != 0) {
-//		Multisend_advance(&msend_registration);
 		DCMF_Messager_advance();
 	}
 #else
@@ -355,11 +356,13 @@ void bgp_dma_setup() {
 		delete [] hints_;
 		hints_ = 0;
 		delete [] mconfig.connectionlist;
+		delete [] g_receivers_;
 	}
 	hints_ = new DCMF_Opcode_t[max_ntarget_host];
 	for (int i = 0; i < max_ntarget_host; ++i) {
 		hints_[i] = DCMF_PT_TO_PT_SEND;
 	}
+	g_receivers_ = new DCMF_Request_t[nrnmpi_numprocs];
 	// I am also guessing everyone can use the same mconfig.
 	mconfig.protocol = DCMF_MEMFIFO_DMA_MSEND_PROTOCOL;
 	mconfig.cb_recv = msend_recv;
