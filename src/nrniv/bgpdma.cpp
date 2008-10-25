@@ -94,7 +94,7 @@ void BGP_ReceiveBuffer::enqueue() {
 #include <dcmf.h>
 #include <dcmf_multisend.h>
 
-#define PIPEWIDTH 16
+#define PIPEWIDTH 240
 
 static DCMF_Opcode_t* hints_;
 static DCMF_Protocol_t protocol;
@@ -130,6 +130,7 @@ static DCMF_Request_t * msend_recv(const DCQuad  * msginfo,
 			    unsigned        * pipewidth,
 			    DCMF_Callback_t * cb_done)
 {
+  printf("msend_recv\n");
   assert ( sndlen == sizeof(NRNMPI_Spike) );
   * rcvlen          = sndlen;
   * rcvbuf          = (char*)recv_spike_pool->alloc();
@@ -229,11 +230,13 @@ void BGP_DMASend::send(int gid, double t) {
 #if BGPDMA == 2
 	assert(req_in_use_ == false);
 	req_in_use_ = true;
-	DCMF_Request_t sender;
+	DCMF_Request_t sender __attribute__((__aligned__(16)));
 	DCMF_Callback_t cb_done = { multicast_done, (void*)&req_in_use_ };
 //printf("%d multisend %d %g\n", nrnmpi_myid, gid, t);
 	DCQuad msginfo;
+
 	DCMF_Multicast_t msend;
+
 	msend.registration = &protocol;
 	msend.request = &sender;
 	msend.cb_done = cb_done;
@@ -244,12 +247,14 @@ void BGP_DMASend::send(int gid, double t) {
 	msend.nranks = (unsigned int)ntarget_hosts_;
 	msend.ranks = (unsigned int*) target_hosts_;
 	msend.opcodes = hints_;
-	msend.msginfo = NULL;
+	msend.msginfo = &msginfo;
 	msend.count = 1;
 	msend.op = DCMF_UNDEFINED_OP;
 	msend.dt = DCMF_UNDEFINED_DT;
 	
+printf("call DCMF_Multicast %d\n", msend.connection_id);
 	DCMF_Multicast(&msend);
+printf("return from  DCMF_Multicast\n");
 #else
 	nrnmpi_bgp_multisend(&spk_, ntarget_hosts_, target_hosts_);
 #endif
@@ -316,6 +321,7 @@ void bgpdma_cleanup_presyn(PreSyn* ps) {
 }
 
 void bgp_dma_setup() {
+	static once = 0;
 	nrnmpi_bgp_comm();
 
 	// although we only care about the set of hosts that gid2out_
@@ -340,25 +346,28 @@ void bgp_dma_setup() {
 	bgp_receive_buffer[1] = new BGP_ReceiveBuffer();
 #endif
 #if BGPDMA == 2
+    if (0 || !once) { once = 1;
+	//if (max_ntarget_host = 0) { max_ntarget_host = 1; }
+	max_ntarget_host = nrnmpi_numprocs;
 	// I'm guessing everyone can use the same hints and so they
 	// can be allocated according to the maximum ntarget_hosts_.
 	if (hints_) {
 		delete [] hints_;
 		hints_ = 0;
+		delete [] mconfig.connectionlist;
 	}
-	if (max_ntarget_host) {
-		hints_ = new DCMF_Opcode_t[max_ntarget_host];
-	}
+	hints_ = new DCMF_Opcode_t[max_ntarget_host];
 	for (int i = 0; i < max_ntarget_host; ++i) {
 		hints_[i] = DCMF_PT_TO_PT_SEND;
 	}
 	// I am also guessing everyone can use the same mconfig.
 	mconfig.protocol = DCMF_MEMFIFO_DMA_MSEND_PROTOCOL;
 	mconfig.cb_recv = msend_recv;
-	mconfig.nconnections = nrnmpi_numprocs;
-	mconfig.connectionlist = (void**)malloc(sizeof(void*) * nrnmpi_numprocs);
+	mconfig.nconnections = max_ntarget_host;
+	mconfig.connectionlist = new void*[max_ntarget_host];
 	mconfig.clientdata = NULL;
-	DCMF_Multicast_register (&protocol, &mconfig);
+	assert(DCMF_Multicast_register (&protocol, &mconfig) == DCMF_SUCCESS);
+    }
 #endif
 
 
