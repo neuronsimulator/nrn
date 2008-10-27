@@ -1001,6 +1001,10 @@ func ms_split() {local i, j, cbk, ctotal, nsubtree_index, cx_index, nchild_index
 		is.append(i)
 		cx.append(roots_complex_.x[i])
 	}
+	if (cx.size == 0) {
+srlist.object($2).sec printf("No children of %s(%g)\n", secname(), $3)
+execerror("LoadBalance failure:")
+	}
 	sort = cx.c.sortindex
 	is.index(sort)
 	cx.index(sort)
