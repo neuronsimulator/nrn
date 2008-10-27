@@ -46,7 +46,8 @@ static PyTypeObject* psection_type;
 static PyTypeObject* psegment_type;
 static PyTypeObject* pmech_generic_type;
 static PyTypeObject* range_type;
-static PyObject* pmech_types;
+static PyObject* pmech_types; // Python map for name to Mechanism
+static PyObject* rangevars_; // Python map for name to Symbol
 
 extern Section* nrnpy_newsection(NPySecObj*);
 extern void simpleconnectsection();
@@ -352,8 +353,21 @@ static PyObject* segment_iter(NPySegObj* self) {
 	return (PyObject*)m;
 }
 
+static void rv_noexist(Section* sec, const char* n, double x, int err) {
+	char buf[200];
+	if (err == 2) {
+		sprintf(buf, "%s was not made to point to anything at %s(%g)", n, secname(sec), x);
+	}else if (err == 1) {
+		sprintf(buf, "%s, the mechanism does not exist at %s(%g)", n, secname(sec), x);
+	}else{
+		sprintf(buf, "%s does not exist at %s(%g)", n, secname(sec), x);
+	}
+	PyErr_SetString(PyExc_NameError, buf);
+}
+
 static PyObject* section_getattro(NPySecObj* self, PyObject* name) {
 	Py_INCREF(name);
+	PyObject* rv;
 	char* n = PyString_AsString(name);
 //printf("section_getattr %s\n", n);
 	PyObject* result = 0;
@@ -363,6 +377,26 @@ static PyObject* section_getattro(NPySecObj* self, PyObject* name) {
 		result = Py_BuildValue("d", nrn_ra(self->sec_));
 	}else if (strcmp(n, "nseg") == 0) {
 		result = Py_BuildValue("i", self->sec_->nnode - 1);
+	}else if ((rv = PyDict_GetItemString(rangevars_, n)) != NULL) {
+		Symbol* sym = ((NPyRangeVar*)rv)->sym_;
+		if (ISARRAY(sym)) {
+			NPyRangeVar* r = PyObject_New(NPyRangeVar, range_type);
+			r->pyseg_ = PyObject_New(NPySegObj, psegment_type);
+			r->pyseg_->pysec_ = self;
+			Py_INCREF(self);
+			r->pyseg_->x_ = 0.5;
+			r->sym_ = sym;
+			result = (PyObject*)r;
+		}else{
+			int err;
+			double* d = nrnpy_rangepointer(self->sec_, sym, 0.5, &err);
+			if (!d) {
+				rv_noexist(self->sec_, n, 0.5, err);
+				result = NULL;
+			}else{
+				result = Py_BuildValue("d", *d);
+			}
+		}
 	}else{
 		result = PyObject_GenericGetAttr((PyObject*)self, name);
 	}
@@ -371,6 +405,7 @@ static PyObject* section_getattro(NPySecObj* self, PyObject* name) {
 }
 
 static int section_setattro(NPySecObj* self, PyObject* name, PyObject* value) {
+	PyObject* rv;
 	int err = 0;
 	Py_INCREF(name);
 	char* n = PyString_AsString(name);
@@ -408,6 +443,26 @@ static int section_setattro(NPySecObj* self, PyObject* name, PyObject* value) {
 			err = -1;
 		}
 //printf("section_setattro err=%d nseg=%d nnode\n", err, nseg, self->sec_->nnode);
+	}else if ((rv = PyDict_GetItemString(rangevars_, n)) != NULL) {
+		Symbol* sym = ((NPyRangeVar*)rv)->sym_;
+		if (ISARRAY(sym)) {
+			assert(0);
+		}else{
+			int errp;
+			double* d = nrnpy_rangepointer(self->sec_, sym, 0.5, &errp);
+			if (!d) {
+				rv_noexist(self->sec_, n, 0.5, errp);
+				Py_DECREF(name);
+				return -1;
+			}
+			if (!PyArg_Parse(value, "d", d)) {
+				PyErr_SetString(PyExc_ValueError, "bad value");
+				Py_DECREF(name);
+				return -1;
+			}
+			//only need to do following if nseg > 1, VINDEX, or EXTRACELL
+			nrn_rangeconst(self->sec_, sym, d, 0);
+		}
 	}else{
 		err = PyObject_GenericSetAttr((PyObject*)self, name, value);
 	}
@@ -471,18 +526,6 @@ static PyObject* mech_next(NPyMechObj* self) {
 	return (PyObject*)m;
 }
 
-static void rv_noexist(Section* sec, const char* n, double x, int err) {
-	char buf[200];
-	if (err == 2) {
-		sprintf(buf, "%s was not made to point to anything at %s(%g)", n, secname(sec), x);
-	}else if (err == 1) {
-		sprintf(buf, "%s, the mechanism does not exist at %s(%g)", n, secname(sec), x);
-	}else{
-		sprintf(buf, "%s does not exist at %s(%g)", n, secname(sec), x);
-	}
-	PyErr_SetString(PyExc_NameError, buf);
-}
-
 static PyObject* segment_getattro(NPySegObj* self, PyObject* name) {
 	Symbol* sym;
 	Py_INCREF(name);
@@ -490,6 +533,7 @@ static PyObject* segment_getattro(NPySegObj* self, PyObject* name) {
 //printf("segment_getattr %s\n", n);
 	PyObject* result = 0;
 	PyObject* otype;
+	PyObject* rv;
 	if (strcmp(n, "v") == 0) {
 		Node* nd = node_exact(self->pysec_->sec_, self->x_);
 		result = Py_BuildValue("d", NODEV(nd));
@@ -512,7 +556,8 @@ static PyObject* segment_getattro(NPySegObj* self, PyObject* name) {
 		m->prop_ = p;
 		Py_INCREF(m->pyseg_);
 		result = (PyObject*)m;
-	}else if ((sym = hoc_table_lookup(n, hoc_built_in_symlist)) != 0 && sym->type == RANGEVAR) {
+	}else if ((rv = PyDict_GetItemString(rangevars_, n)) != NULL) {
+		sym = ((NPyRangeVar*)rv)->sym_;
 		if (ISARRAY(sym)) {
 			NPyRangeVar* r = PyObject_New(NPyRangeVar, range_type);
 			r->pyseg_ = self;
@@ -562,6 +607,7 @@ static PyObject* segment_getattro(NPySegObj* self, PyObject* name) {
 }
 
 static int segment_setattro(NPySegObj* self, PyObject* name, PyObject* value) {
+	PyObject* rv;
 	Symbol* sym;
 	int err = 0;
 	Py_INCREF(name);
@@ -583,7 +629,8 @@ static int segment_setattro(NPySegObj* self, PyObject* name, PyObject* value) {
 				"x must be in range 0. to 1.");
 			err = -1;
 		}
-	}else if ((sym = hoc_table_lookup(n, hoc_built_in_symlist)) != 0 && sym->type == RANGEVAR) {
+	}else if ((rv = PyDict_GetItemString(rangevars_, n)) != NULL) {
+		sym = ((NPyRangeVar*)rv)->sym_;
 		if (ISARRAY(sym)) {
 			assert(0);
 		}else{
@@ -591,11 +638,13 @@ static int segment_setattro(NPySegObj* self, PyObject* name, PyObject* value) {
 			double* d = nrnpy_rangepointer(self->pysec_->sec_, sym, self->x_, &errp);
 			if (!d) {
 				rv_noexist(self->pysec_->sec_, n, self->x_, errp);
+				Py_DECREF(name);
 				return -1;
 			}
-			if (!PyArg_Parse(value, "d", d)) {
+			if (!PyArg_Parse(value, "d", &d)) {
 				PyErr_SetString(PyExc_ValueError, "bad value");
-				err = -1;
+				Py_DECREF(name);
+				return -1;
 			}
 		}
 	}else{
@@ -989,6 +1038,7 @@ myPyMODINIT_FUNC nrnpy_nrn(void)
     Py_INCREF(&nrnpy_MechanismType);
     PyModule_AddObject(m, "Mechanism", (PyObject *)pmech_generic_type);
     pmech_types = PyDict_New();
+    rangevars_ = PyDict_New();
     for (i=4; i < n_memb_func; ++i) { // start at pas
 	nrnpy_reg_mech(i);
     }
@@ -1011,6 +1061,14 @@ void nrnpy_reg_mech(int type) {
 	Py_INCREF(&nrnpy_MechanismType);
 	PyModule_AddObject(nrnmodule_, s, (PyObject *)pmech_generic_type);
 	PyDict_SetItemString(pmech_types, s, Py_BuildValue("i", type));
+	for (i = 0; i < mf->sym->s_varn; ++i) {
+		Symbol* sym = mf->sym->u.ppsym[i];
+		assert(sym->type == RANGEVAR);
+		NPyRangeVar* r = PyObject_New(NPyRangeVar, range_type);
+		//printf("%s\n", sym->name);
+		r->sym_ = sym;
+		PyDict_SetItemString(rangevars_, sym->name, (PyObject*)r);
+	}
 }
 
 void nrnpy_unreg_mech(int type) {
