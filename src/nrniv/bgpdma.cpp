@@ -237,6 +237,7 @@ static	DCMF_Callback_t cb_done = { multicast_done, (void*)&req_in_use };
 static	DCQuad msginfo;
 
 void BGP_DMASend::send(int gid, double t) {
+  if (ntarget_hosts_) {
 	spk_.gid = gid;
 	spk_.spiketime = t;
 #if BGP_INTERVAL == 2
@@ -281,11 +282,12 @@ void BGP_DMASend::send(int gid, double t) {
 #else
 	nrnmpi_bgp_multisend(&spk_, ntarget_hosts_, target_hosts_);
 #endif
+    }
 	// I am given to understand that multisend cannot send to itself
 	if (send2self_) {
 		PreSyn* ps;
 		assert(gid2in_->find(gid, ps));
-		ps->send(spiketime, net_cvode_instance, nrn_threads);
+		ps->send(t, net_cvode_instance, nrn_threads);
 	}
 }
 
