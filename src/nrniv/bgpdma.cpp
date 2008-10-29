@@ -240,12 +240,12 @@ void BGP_DMASend::send(int gid, double t) {
 	spk_.gid = gid;
 	spk_.spiketime = t;
 #if BGP_INTERVAL == 2
-	bgp_receive_buffer[next_rbuf]->nsend_ += ntarget_hosts_ + send2self_;
+	bgp_receive_buffer[next_rbuf]->nsend_ += ntarget_hosts_;
 	if (next_rbuf == 1) {
 		spk_.gid = ~spk_.gid;
 	}
 #else
-	bgp_receive_buffer[0]->nsend_ += ntarget_hosts_ + send2self_;
+	bgp_receive_buffer[0]->nsend_ += ntarget_hosts_;
 #endif
 	nsend_ += 1;
 #if BGPDMA == 2
@@ -281,7 +281,12 @@ void BGP_DMASend::send(int gid, double t) {
 #else
 	nrnmpi_bgp_multisend(&spk_, ntarget_hosts_, target_hosts_);
 #endif
-	if (send2self_) { spk_ready(spk_.gid, spk_.spiketime); }
+	// I am given to understand that multisend cannot send to itself
+	if (send2self_) {
+		PreSyn* ps;
+		assert(gid2in_->find(gid, ps));
+		ps->send(spiketime, net_cvode_instance, nrn_threads);
+	}
 }
 
 
@@ -600,7 +605,7 @@ for (i=0; i < nrnmpi_numprocs; ++i) {
 			s->target_hosts_[s->ntarget_hosts_++] = i;
 			if (i == nrnmpi_myid) {
 				--s->ntarget_hosts_;
-				s->send2self_ = 0; // really 1
+				s->send2self_ = 1;
 			}
 		}
 	}
