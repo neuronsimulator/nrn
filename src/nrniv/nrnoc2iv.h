@@ -17,7 +17,7 @@ char* secname(Section*);
 void nrn_pushsec(Section*);
 void nrn_popsec();
 Section* chk_access();
-void nrn_rangeconst(Section*, Symbol*, double value);
+void nrn_rangeconst(Section*, Symbol*, double* value, int op = 0);
 Prop* nrn_mechanism(int type, Node*);
 boolean nrn_exists(Symbol*, Node*);
 double* nrn_rangepointer(Section*, Symbol*, double x);
