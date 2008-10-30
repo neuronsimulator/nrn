@@ -221,7 +221,7 @@ BGP_DMASend::BGP_DMASend() {
 	target_hosts_ = nil;
 	send2self_ = 0;
 #if BGPDMA == 2
-	req_in_use = false;
+	req_in_use_ = false;
 #endif
 }
 
@@ -231,10 +231,12 @@ BGP_DMASend::~BGP_DMASend() {
 	}
 }
 
-static	DCMF_Multicast_t msend;
-static	DCMF_Request_t sender __attribute__((__aligned__(16)));
-static	DCMF_Callback_t cb_done = { multicast_done, (void*)&req_in_use };
-static	DCQuad msginfo;
+#define NSEND 2
+static	DCMF_Multicast_t msend1[NSEND];
+static	DCMF_Request_t sender1[NSEND] __attribute__((__aligned__(16)));
+static	DCMF_Callback_t cb_done1[NSEND];// = { multicast_done, (void*)&req_in_use };
+static	DCQuad msginfo1[NSEND];
+static	int isend;
 
 void BGP_DMASend::send(int gid, double t) {
   if (ntarget_hosts_) {
@@ -250,6 +252,13 @@ void BGP_DMASend::send(int gid, double t) {
 #endif
 	nsend_ += 1;
 #if BGPDMA == 2
+	DCMF_Multicast_t& msend = msend1[isend];
+	DCMF_Request_t& sender = sender1[isend];
+	DCMF_Callback_t& cb_done = cb_done1[isend];
+	DCQuad& msginfo = msginfo1[isend];
+	cb_done.clientdata = (void*)&req_in_use;
+	cb_done.function = multicast_done;
+	isend = (++isend)%NSEND;
 	int acnt = 0;
 	while (req_in_use) {
 		++acnt;
