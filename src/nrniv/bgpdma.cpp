@@ -172,15 +172,12 @@ public:
 	int ntarget_hosts_;
 	int* target_hosts_;
 	NRNMPI_Spike spk_;
-#if BGPDMA == 2
-	DCMF_Request_t req_;
-	boolean req_in_use_;
-#endif
 	int send2self_; // if 1 then send spikes to this host also
 };
 
 static int max_ntarget_host;
-static int req_in_use;
+#define NSEND 10
+static boolean req_in_use[NSEND];
 
 // Multisend_multicast callback
 static void  multicast_done(void* arg) {
@@ -194,7 +191,9 @@ static void bgp_dma_init() {
 	}
 	current_rbuf = 0;
 	next_rbuf = 1;
-	req_in_use = false;
+	for (int i=0; i < NSEND; ++i) {
+		req_in_use[i] = false;
+	}
 }
 
 static int bgp_advance() {
@@ -220,9 +219,6 @@ BGP_DMASend::BGP_DMASend() {
 	ntarget_hosts_ = 0;
 	target_hosts_ = nil;
 	send2self_ = 0;
-#if BGPDMA == 2
-	req_in_use_ = false;
-#endif
 }
 
 BGP_DMASend::~BGP_DMASend() {
@@ -231,10 +227,9 @@ BGP_DMASend::~BGP_DMASend() {
 	}
 }
 
-#define NSEND 2
 static	DCMF_Multicast_t msend1[NSEND];
 static	DCMF_Request_t sender1[NSEND] __attribute__((__aligned__(16)));
-static	DCMF_Callback_t cb_done1[NSEND];// = { multicast_done, (void*)&req_in_use };
+static	DCMF_Callback_t cb_done1[NSEND];
 static	DCQuad msginfo1[NSEND];
 static	int isend;
 
@@ -252,20 +247,22 @@ void BGP_DMASend::send(int gid, double t) {
 #endif
 	nsend_ += 1;
 #if BGPDMA == 2
+
 	DCMF_Multicast_t& msend = msend1[isend];
 	DCMF_Request_t& sender = sender1[isend];
 	DCMF_Callback_t& cb_done = cb_done1[isend];
 	DCQuad& msginfo = msginfo1[isend];
-	cb_done.clientdata = (void*)&req_in_use;
+	boolean& riu = req_in_use[isend];
+
+	cb_done.clientdata = (void*)&riu;
 	cb_done.function = multicast_done;
-	isend = (++isend)%NSEND;
 	int acnt = 0;
-	while (req_in_use) {
+	while (riu) {
 		++acnt;
 		DCMF_Messager_advance();
 	}
-	if (acnt > 10) { printf("%d multicast %d not done\n", nrnmpi_myid, msend.connection_id);}
-	req_in_use = true;
+//	if (acnt > 10) { printf("%d multicast %d not done\n", nrnmpi_myid, msend.connection_id);}
+	riu = true;
 //printf("%d multisend %d %g\n", nrnmpi_myid, gid, t);
 	*((double*)&msginfo.w0) = spk_.spiketime;
 	*((int*)&msginfo.w2) = spk_.gid;
@@ -275,7 +272,7 @@ void BGP_DMASend::send(int gid, double t) {
 	msend.request = &sender;
 	msend.cb_done = cb_done;
 	msend.consistency = DCMF_MATCH_CONSISTENCY;
-	msend.connection_id = 0;
+	msend.connection_id = isend;
 	msend.bytes = 0;
 	msend.src = NULL;
 	msend.nranks = (unsigned int)ntarget_hosts_;
@@ -298,6 +295,7 @@ void BGP_DMASend::send(int gid, double t) {
 		assert(gid2in_->find(gid, ps));
 		ps->send(t, net_cvode_instance, nrn_threads);
 	}
+	isend = (++isend)%NSEND;
 }
 
 
@@ -345,11 +343,6 @@ void bgp_dma_send(PreSyn* ps, double t) {
 }
 
 void bgpdma_send_init(PreSyn* ps) {
-#if BGPDMA == 2
-	if (ps->output_index_ >= 0 && ps->bgp.dma_send_) {
-		ps->bgp.dma_send_->req_in_use_ = false;
-	}
-#endif
 }
 
 void bgpdma_cleanup_presyn(PreSyn* ps) {
@@ -401,8 +394,8 @@ void bgp_dma_setup() {
 	// I am also guessing everyone can use the same mconfig.
 	mconfig.protocol = DCMF_MEMFIFO_DMA_MSEND_PROTOCOL;
 	mconfig.cb_recv = msend_recv;
-	mconfig.nconnections = 1; //max_ntarget_host;
-	mconfig.connectionlist = new void*[1];//max_ntarget_host];
+	mconfig.nconnections = NSEND; //max_ntarget_host;
+	mconfig.connectionlist = new void*[NSEND];//max_ntarget_host];
 	mconfig.clientdata = NULL;
 	assert(DCMF_Multicast_register (&protocol, &mconfig) == DCMF_SUCCESS);
     }
