@@ -126,9 +126,7 @@ void NetParEvent::deliver(double tt, NetCvode* nc, NrnThread* nt){
     if (nrnmpi_numprocs > 0 && nt->id == 0) {
 #if BGPDMA
 	if (use_bgpdma_) {
-		wt_ = nrnmpi_wtime();
 		bgp_dma_receive();
-		wt_ = nrnmpi_wtime() - wt_;
 	}else{
 		nrn_spike_exchange();
 	}
@@ -899,9 +897,7 @@ void BBS::netpar_solve(double tstop) {
 	impl_->integ_time_ -= (npe_ ? (npe_[0].wx_ + npe_[0].ws_) : 0.);
 #if BGPDMA
 	if (use_bgpdma_) {
-		wt_ = nrnmpi_wtime();
 		bgp_dma_receive();
-		wt_ = nrnmpi_wtime() - wt_;
 	}else{
 		nrn_spike_exchange();
 	}

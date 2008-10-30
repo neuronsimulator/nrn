@@ -311,8 +311,10 @@ static int gathersrcgid(int hostbegin, int totalngid, int* ngid,
 
 void bgp_dma_receive() {
 //	nrn_spike_exchange();
+	double w1, w2;
 	int& s = bgp_receive_buffer[current_rbuf]->nsend_;
 	int& r = bgp_receive_buffer[current_rbuf]->nrecv_;
+	w1 = nrnmpi_wtime();
 #if BGPDMA == 2
 	while (nrnmpi_bgp_conserve(s, r) != 0) {
 		DCMF_Messager_advance();
@@ -323,7 +325,11 @@ void bgp_dma_receive() {
 		bgp_advance();
 	}
 #endif
+	w1 = nrnmpi_wtime() - w1;
+	w2 = nrnmpi_wtime();
 	bgp_receive_buffer[current_rbuf]->enqueue();
+	wt1_ = nrnmpi_wtime() - w2;
+	wt_ = w1;
 #if BGP_INTERVAL == 2
 //printf("%d reverse buffers %g\n", nrnmpi_myid, t);
 	current_rbuf = next_rbuf;
