@@ -100,10 +100,10 @@ AC_ARG_ENABLE([bluegeneP],
 				MPICXX=$CXX
 			fi
 			if test "$OPTFLAGS" = "" ; then
-				OPTFLAGS="-O3 -qarch=450 $BG_INCLUDE"
+				OPTFLAGS="-O3 -qarch=450"
 			fi
 			if test "$CFLAGS" = "" ; then
-				CFLAGS="$OPTFLAGS"
+				CFLAGS="$OPTFLAGS $BG_INCLUDE"
 			fi
 			if test "$CXXFLAGS" = "" ; then
 				CXXFLAGS=$CFLAGS
@@ -112,8 +112,10 @@ AC_ARG_ENABLE([bluegeneP],
                         	NRN_DEFINE(BLUEGENE_CHECKPOINT,1,[enable the checkpointing on BlueGene hardware])
                         	BGL_LIBS = "-lchkpt.rts $BGL_LIBS"
                 	fi
-			am_cv_CC_dependencies_compiler_type=xlc
-			am_cv_CXX_dependencies_compiler_type=xlc
+			if test "$deptype" = "" ; then
+				am_cv_CC_dependencies_compiler_type=xlc
+				am_cv_CXX_dependencies_compiler_type=xlc
+			fi
 		else
 			nmodl_build="yes"
 		fi

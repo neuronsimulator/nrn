@@ -60,6 +60,7 @@ void BGP_ReceiveBuffer::incoming(int gid, double spiketime) {
 //printf("%d %lx.incoming %g %g %d\n", nrnmpi_myid, (long)this, t, spk->spiketime, spk->gid);
 	assert(busy_ == 0);
 	busy_ = 1;
+#if 1
 	if (count_ >= size_) {
 		size_ *= 2;
 		NRNMPI_Spike** newbuf = new NRNMPI_Spike*[size_];
@@ -69,18 +70,20 @@ void BGP_ReceiveBuffer::incoming(int gid, double spiketime) {
 		delete [] buffer_;
 		buffer_ = newbuf;
 	}
-	++nrecv_;
 	NRNMPI_Spike* spk = pool_->alloc();
 	spk->gid = gid;
 	spk->spiketime = spiketime;
 	buffer_[count_++] = spk;
 	if (maxcount_ < count_) { maxcount_ = count_; }
+#endif
+	++nrecv_;
 	busy_ = 0;	
 }
 void BGP_ReceiveBuffer::enqueue() {
 //printf("%d %lx.enqueue count=%d t=%g nrecv=%d nsend=%d\n", nrnmpi_myid, (long)this, t, count_, nrecv_, nsend_);
 	assert(busy_ == 0);
 	busy_ = 1;
+#if 1
 	for (int i=0; i < count_; ++i) {
 		NRNMPI_Spike* spk = buffer_[i];
 		PreSyn* ps;
@@ -88,6 +91,7 @@ void BGP_ReceiveBuffer::enqueue() {
 		ps->send(spk->spiketime, net_cvode_instance, nrn_threads);
 		pool_->hpfree(spk);
 	}
+#endif
 	count_ = 0;
 	nrecv_ = 0;
 	nsend_ = 0;
@@ -177,7 +181,7 @@ public:
 
 static int max_ntarget_host;
 #define NSEND 10
-#define NSEND2 5
+#define NSEND2 1
 static boolean req_in_use[NSEND2];
 
 // Multisend_multicast callback
@@ -360,7 +364,7 @@ void bgpdma_cleanup_presyn(PreSyn* ps) {
 }
 
 void bgp_dma_setup() {
-	static once = 0;
+	static int once = 0;
 	nrnmpi_bgp_comm();
 
 	// although we only care about the set of hosts that gid2out_
