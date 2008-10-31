@@ -177,7 +177,8 @@ public:
 
 static int max_ntarget_host;
 #define NSEND 10
-static boolean req_in_use[NSEND];
+#define NSEND2 5
+static boolean req_in_use[NSEND2];
 
 // Multisend_multicast callback
 static void  multicast_done(void* arg) {
@@ -191,7 +192,7 @@ static void bgp_dma_init() {
 	}
 	current_rbuf = 0;
 	next_rbuf = 1;
-	for (int i=0; i < NSEND; ++i) {
+	for (int i=0; i < NSEND2; ++i) {
 		req_in_use[i] = false;
 	}
 }
@@ -252,7 +253,7 @@ void BGP_DMASend::send(int gid, double t) {
 	DCMF_Request_t& sender = sender1[isend];
 	DCMF_Callback_t& cb_done = cb_done1[isend];
 	DCQuad& msginfo = msginfo1[isend];
-	boolean& riu = req_in_use[isend];
+	boolean& riu = req_in_use[isend%NSEND2];
 
 	cb_done.clientdata = (void*)&riu;
 	cb_done.function = multicast_done;
@@ -272,7 +273,7 @@ void BGP_DMASend::send(int gid, double t) {
 	msend.request = &sender;
 	msend.cb_done = cb_done;
 	msend.consistency = DCMF_MATCH_CONSISTENCY;
-	msend.connection_id = isend;
+	msend.connection_id = isend%NSEND2;
 	msend.bytes = 0;
 	msend.src = NULL;
 	msend.nranks = (unsigned int)ntarget_hosts_;
@@ -400,8 +401,8 @@ void bgp_dma_setup() {
 	// I am also guessing everyone can use the same mconfig.
 	mconfig.protocol = DCMF_MEMFIFO_DMA_MSEND_PROTOCOL;
 	mconfig.cb_recv = msend_recv;
-	mconfig.nconnections = NSEND; //max_ntarget_host;
-	mconfig.connectionlist = new void*[NSEND];//max_ntarget_host];
+	mconfig.nconnections = NSEND2; //max_ntarget_host;
+	mconfig.connectionlist = new void*[NSEND2];//max_ntarget_host];
 	mconfig.clientdata = NULL;
 	assert(DCMF_Multicast_register (&protocol, &mconfig) == DCMF_SUCCESS);
     }
