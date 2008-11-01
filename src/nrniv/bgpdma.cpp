@@ -1,5 +1,32 @@
 // included by netpar.cpp
 
+/*
+Overall exchange strategy
+
+When a cell spikes, it immediately does a DCMF_Multicast of
+(int gid, double spiketime) to all the target machines that have
+cells that need to receive this spike by spiketime + delay
+I'd like to cycle through a list of mconfig.nconnections so that
+I don't have to wait for my single connection to complete the previous
+broadcast when there is a high density of generated spikes but I need
+to take care of my bus error issues first.
+
+In order to minimize the number of nrnmpi_bgp_conserve tests
+(and potentially abandon them altogether if I can ever guarantee
+that exchange time is less than half the computation time), I divide the
+minimum delay integration intervals into two equal subintervals.
+So if a spike is generated in an even subinterval, I do not have
+to include it in the conservation check until the end of the next even
+subinterval.
+
+When a spike is received (DMA interrupt) it is placed in even or odd
+buffers (depending on whether the coded gid is positive or negative)
+
+At the end of a computation subinterval the even or odd buffer spikes
+are enqueued in the priority queue after checking that the number
+of spikes sent is equal to the number of spikes sent.
+*/
+
 extern "C" {
 extern void nrnmpi_int_allgatherv(int*, int*, int*, int*);
 extern void nrnmpi_int_gather(int*, int*, int, int);
@@ -11,7 +38,7 @@ extern void nrnmpi_int_gatherv(int*, int, int*, int*, int*, int);
 declareStructPool(SpkPool, NRNMPI_Spike)
 implementStructPool(SpkPool, NRNMPI_Spike)
 
-#define BGP_RECEIVEBUFFER_SIZE 100
+#define BGP_RECEIVEBUFFER_SIZE 10000
 class BGP_ReceiveBuffer {
 public:
 	BGP_ReceiveBuffer();
@@ -24,6 +51,7 @@ public:
 	int maxcount_;
 	int busy_;
 	int nsend_, nrecv_; // for checking conservation
+	unsigned long long timebase_;
 	NRNMPI_Spike** buffer_;
 	SpkPool* pool_;
 };
@@ -50,6 +78,7 @@ BGP_ReceiveBuffer::~BGP_ReceiveBuffer() {
 	delete pool_;
 }
 void BGP_ReceiveBuffer::init() {
+	timebase_ = 0;
 	nsend_ = nrecv_ = busy_ = 0;
 	for (int i = 0; i < count_; ++i) {
 		pool_->hpfree(buffer_[i]);
@@ -139,6 +168,7 @@ static DCMF_Request_t * msend_recv(const DCQuad  * msginfo,
 			    unsigned        * pipewidth,
 			    DCMF_Callback_t * cb_done)
 {
+  unsigned long long tb = DCMF_Timebase();
   *rcvlen = 0;
   *rcvbuf = 0;
   * pipewidth       = PIPEWIDTH;
@@ -157,9 +187,19 @@ static DCMF_Request_t * msend_recv(const DCQuad  * msginfo,
 #endif
 	bgp_receive_buffer[i]->incoming(gid, t);
 	++nrecv_;
+  bgp_receive_buffer[i]->timebase_ += DCMF_Timebase() - tb;
   return NULL;
 }
-#endif // USEBGP == 2
+
+double nrn_bgp_receive_time(int) {
+	double rt = 0;
+	for (int i = 0; i < BGP_INTERVAL; ++i) {
+		rt += bgp_receive_buffer[i]->timebase_ * DCMF_Tick();
+	}
+	return rt;
+}
+
+#endif //BGPDMA == 2
 
 extern "C" {
 extern void nrnmpi_bgp_comm();

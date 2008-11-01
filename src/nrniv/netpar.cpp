@@ -42,6 +42,12 @@ int nrnmpi_spike_compress(int nspike, boolean gid_compress, int xchng_meth);
 void nrnmpi_gid_clear();
 extern void nrn_partrans_clear();
 void nrn_spike_exchange_init();
+extern double nrn_bgp_receive_time(int);
+
+#if !defined(BGPDMA) || BGPDMA != 2
+double nrn_bgp_receive_time(int) { return 0.; }
+#endif
+
 #if PARANEURON
 extern void nrnmpi_split_clear();
 #endif
@@ -59,7 +65,6 @@ void nrn_timeout(int);
 void nrn_spike_exchange();
 extern int nrnmpi_int_allmax(int);
 extern void nrnmpi_int_allgather(int*, int*, int);
-
 void nrn2ncs_outputevent(int netcon_output_index, double firetime);
 }
 

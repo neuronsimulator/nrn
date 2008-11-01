@@ -28,6 +28,7 @@ extern "C" {
 	extern int nrnmpi_multisplit(double x, int sid, int backbonestyle);
 	extern void nrnmpi_gid_clear();
 	double nrnmpi_rtcomp_time_;
+	extern double nrn_bgp_receive_time(int);
 #if PARANEURON
 	double nrnmpi_transfer_wait_;
 	double nrnmpi_splitcell_wait_;
@@ -382,6 +383,10 @@ static double step_time(void* v) {
 }
 
 static double send_time(void* v) {
+	int arg = ifarg(1) ? int(chkarg(1, 0, 10)) : 0;
+	if (arg) {
+		return nrn_bgp_receive_time(arg);
+	}
 	return ((OcBBS*)v)->send_time();
 }
 
