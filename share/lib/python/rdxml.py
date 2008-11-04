@@ -7,8 +7,6 @@
 import xml
 import xml.sax
 
-i3d = 1
-
 # 1 for verbose debug mode 
 debug = 0
 
@@ -75,8 +73,9 @@ class BioMech:
 
 class MyContentHandler(xml.sax.ContentHandler):
 
-  def __init__(self):
+  def __init__(self, ho):
     if debug: print "Starting parsing of NeuroML file... "
+    self.i3d = ho
     self.in_biogroup_ = False
     self.in_paramgroup_ = False
     self.locator = None
@@ -92,7 +91,7 @@ class MyContentHandler(xml.sax.ContentHandler):
 
   def endDocument(self):
     if debug: print "endDocument"
-    i3d.parsed(self)
+    self.i3d.parsed(self)
 
   def prattrs(self, attrs):
     for i in attrs.getNames():
@@ -367,6 +366,5 @@ class MyContentHandler(xml.sax.ContentHandler):
     'bio:specificCapacitance':biocm,
   }
 
-def rdxml(fname) :
-  xml.sax.parse(fname, MyContentHandler())
-
+def rdxml(fname, ho) :
+  xml.sax.parse(fname, MyContentHandler(ho))

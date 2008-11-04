@@ -16,10 +16,7 @@ proc input() {
 	type = new Vector()
 	sections = new List(1000)
 	err = 0
-	p.rdxml.__setattr__("i3d", this)
-	sprint(tstr, "rdxml.rdxml('%s')", $s1)
-	nrnpython(tstr)
-	p.rdxml.__setattr__("i3d", nil)
+	p.rdxml.rdxml($s1, this)
 }
 proc parsed() {local i, j, ip, jp  localobj cab, sec, pt
 	cables = $o1.cables_
