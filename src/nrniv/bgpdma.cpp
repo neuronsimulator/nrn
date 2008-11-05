@@ -191,10 +191,19 @@ static DCMF_Request_t * msend_recv(const DCQuad  * msginfo,
   return NULL;
 }
 
-double nrn_bgp_receive_time(int) {
+static unsigned long long dmasend_time_;
+
+double nrn_bgp_receive_time(int type) { // and others
 	double rt = 0;
-	for (int i = 0; i < BGP_INTERVAL; ++i) {
-		rt += bgp_receive_buffer[i]->timebase_ * DCMF_Tick();
+	switch(type) {
+	case 2: //in msend_recv
+		for (int i = 0; i < BGP_INTERVAL; ++i) {
+			rt += bgp_receive_buffer[i]->timebase_ * DCMF_Tick();
+		}
+		break;
+	case 3: // in BGP_DMAsend::send
+		rt = dmasend_time_ * DCMF_Tick();
+		break;
 	}
 	return rt;
 }
@@ -239,6 +248,7 @@ static void bgp_dma_init() {
 	for (int i=0; i < NSEND2; ++i) {
 		req_in_use[i] = false;
 	}
+	dmasend_time_ = 0;
 }
 
 static int bgp_advance() {
@@ -283,6 +293,7 @@ void BGP_DMASend::send(int gid, double t) {
 	spk_.gid = gid;
 	spk_.spiketime = t;
 #if BGP_INTERVAL == 2
+	unsigned long long tb = DCMF_Timebase();
 	bgp_receive_buffer[next_rbuf]->nsend_ += ntarget_hosts_;
 	if (next_rbuf == 1) {
 		spk_.gid = ~spk_.gid;
@@ -330,6 +341,7 @@ void BGP_DMASend::send(int gid, double t) {
 	
 //printf("%d DCMF_Multicast %d %g %d\n", nrnmpi_myid, msend.connection_id, t, gid);
 	DCMF_Multicast(&msend);
+	dmasend_time_ += DCMF_Timebase() - tb;
 #else
 	nrnmpi_bgp_multisend(&spk_, ntarget_hosts_, target_hosts_);
 #endif
