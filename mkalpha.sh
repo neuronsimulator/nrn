@@ -123,6 +123,7 @@ cd $NOBJ
 $NSRC/configure --prefix=$IDIR/nrn --srcdir=$NSRC \
 	--with-iv=$IDIR/iv --enable-carbon --with-nrnpython=dynamic \
 	--enable-UniversalMacBinary
+make clean
 make
 if test $? != 0 ; then
 	echo "make failed"
