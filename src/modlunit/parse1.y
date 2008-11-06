@@ -839,7 +839,10 @@ nrnstmt: /*nothing*/
                 { P1{nrn_list($2, $3);}}
         | nrnstmt EXTERNAL nrnlist
                 { P1{nrn_list($2, $3);}}
-	| nrnstmt THREADSAFE
+	| nrnstmt THREADSAFE optnamelist
+	;
+optnamelist: /* nothing */
+	| namelist
 	;
 nrnuse: USEION NAME READ nrnlist valence
 		{P1{nrn_use($2, $4, ITEM0);}}

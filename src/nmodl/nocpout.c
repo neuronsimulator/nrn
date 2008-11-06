@@ -105,6 +105,7 @@ not thread safe and _p and _ppvar are static.
 #define IONCUR	3	/* assigned */
 #define IONDCUR 4
 
+extern int assert_threadsafe;
 extern int brkpnt_exists;
 static char* brkpnt_str_;
 extern Symbol *indepsym;
@@ -428,15 +429,18 @@ Sprintf(buf, "\"%s%s\", _hoc_%s,\n", s->name, rsuffix, s->name);
 	}
 
 	/* per thread top LOCAL */
+	/* except those that are marked assigned_to_ == 2 stay static double */
 	if (vectorize && toplocal_) {
 		int cnt;
 		cnt = 0;
 		ITERATE(q, toplocal_) {
+		    if (SYM(q)->assigned_to_ != 2) {
 			if (SYM(q)->subtype & ARRAY) {
 				cnt += SYM(q)->araydim;
 			}else{
 				++cnt;
 			}
+		    }
 		}
 		sprintf(buf, "  _thread[%d]._pval = (double*)ecalloc(%d, sizeof(double));\n", thread_data_index, cnt);
 		lappendstr(thread_mem_init_list, buf);
@@ -444,6 +448,7 @@ Sprintf(buf, "\"%s%s\", _hoc_%s,\n", s->name, rsuffix, s->name);
 		lappendstr(thread_cleanup_list, buf);
 		cnt = 0;
 		ITERATE(q, toplocal_) {
+		    if (SYM(q)->assigned_to_ != 2) {
 			if (SYM(q)->subtype & ARRAY) {
 sprintf(buf, "#define %s (_thread[%d]._pval + %d)\n", SYM(q)->name, thread_data_index, cnt);
 				cnt += SYM(q)->araydim;
@@ -451,6 +456,13 @@ sprintf(buf, "#define %s (_thread[%d]._pval + %d)\n", SYM(q)->name, thread_data_
 sprintf(buf, "#define %s _thread[%d]._pval[%d]\n", SYM(q)->name, thread_data_index, cnt);
 				++cnt;
 			}
+		    }else{ /* stay file static */
+			if (SYM(q)->subtype & ARRAY) {
+sprintf(buf, "static double %s[%d];\n", SYM(q)->name, SYM(q)->araydim);
+			}else{
+sprintf(buf, "static double %s;\n", SYM(q)->name);
+			}
+		    }
 			lappendstr(defs_list, buf);
 		}
 		++thread_data_index;
@@ -2543,6 +2555,17 @@ void chk_thread_safe() {
 		if (s->nrntype & (NRNGLOBAL) && s->assigned_to_ == 1) {
 	sprintf(buf, "Assignment to the GLOBAL variable, \"%s\", is not thread safe", s->name);
 			threadsafe(buf);
+		}
+	}
+}
+
+
+void threadsafe_seen(Item* q1, Item* q2) {
+	Item* q;
+	assert_threadsafe = 1;
+	if (q2) {
+		for (q = q1->next; q != q2->next; q = q->next) {
+			SYM(q)->assigned_to_ = 2;
 		}
 	}
 }
