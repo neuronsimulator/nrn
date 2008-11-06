@@ -20,8 +20,8 @@ cadifusl.hoc \
 cadifusl.mod \
 cagk.hoc \
 cagk.mod \
-capump.hoc \
-capump.mod \
+capmp.hoc \
+capmp.mod \
 cv.hoc \
 fh.hoc \
 fh.mod \
