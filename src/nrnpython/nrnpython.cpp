@@ -28,6 +28,8 @@ extern char** nrn_global_argv;
 void nrnpy_augment_path();
 }
 
+static PyThreadState* main_threadstate_;
+
 void nrnpy_augment_path() {
 	static int augmented = 0;
 	char buf[1024];
@@ -55,6 +57,7 @@ void nrnpython_start(int b) {
 			(*nrnpy_reg_[i])();
 		}
 		nrnpy_augment_path();
+		main_threadstate_ = PyThreadState_GET();
 	}
 	if (b == 0 && started) {
 		Py_Finalize();
@@ -99,6 +102,10 @@ void nrnpython_start(int b) {
 void nrnpython_real() {
 	int retval = 0;
 #if USE_PYTHON
+	if (!PyThreadState_GET()) {
+		//printf("no threadstate\n");
+		PyThreadState_Swap(main_threadstate_);
+	}
 	retval = PyRun_SimpleString(gargstr(1)) == 0;
 #endif
 	ret(double(retval));

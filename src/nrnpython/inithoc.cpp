@@ -57,7 +57,7 @@ void inithoc() {
 	  argv = argv_mpi;
 	}
 	else {
-	  printf("MPI_Initialized==false, disabling MPI funtionality.\n");
+	  printf("MPI_Initialized==false, disabling MPI functionality.\n");
 	}
 
 #endif
