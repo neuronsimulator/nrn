@@ -1,6 +1,7 @@
 #include <../../nrnconf.h>
 #include <nrnmpi.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <math.h>
 #include <InterViews/resource.h>
 #include <nrnoc2iv.h>

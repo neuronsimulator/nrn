@@ -3,6 +3,7 @@
 //define to 0 if do not wish use_min_delay_ to ever be 1
 #define USE_MIN_DELAY 1
 
+#include <stdlib.h>
 #include <nrnmpi.h>
 #include <errno.h>
 #include <time.h>

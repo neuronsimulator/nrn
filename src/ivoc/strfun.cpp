@@ -2,6 +2,7 @@
 #include <OS/string.h>
 #include <InterViews/regexp.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include "classreg.h"
 #include "oc2iv.h"
 #include <string.h>
