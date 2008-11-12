@@ -69,26 +69,26 @@ extern void nrn_hoc_unlock();
 #define CChar const char
 extern void hoc_ivpanel(CChar*, boolean h = false);
 extern void hoc_ivpanelmap(int scroll = -1);
-extern void hoc_ivbutton(CChar* name, CChar* action);
-extern void hoc_ivradiobutton(CChar* name, CChar* action, boolean activate = false);
+extern void hoc_ivbutton(CChar* name, CChar* action, Object* pyact = 0);
+extern void hoc_ivradiobutton(CChar* name, CChar* action, boolean activate = false, Object* pyact = 0);
 extern void hoc_ivmenu(CChar*, boolean add2menubar = false);
-extern void hoc_ivvarmenu(CChar*, CChar*, boolean add2menubar = false);
-extern void hoc_ivvalue(CChar* name, CChar* variable, boolean deflt=false);
+extern void hoc_ivvarmenu(CChar*, CChar*, boolean add2menubar = false, Object* pyvar = nil);
+extern void hoc_ivvalue(CChar* name, CChar* variable, boolean deflt=false, Object* pyvar = 0);
 extern void hoc_ivfixedvalue(CChar* name, CChar* variable,
 		boolean deflt=false, boolean usepointer=false);
-extern void hoc_ivvalue_keep_updated(CChar* name, CChar* variable);
+extern void hoc_ivvalue_keep_updated(CChar* name, CChar* variable, Object* pyvar = 0);
 extern void hoc_ivpvalue(CChar* name, double*, boolean deflt=false, HocSymExtension* extra=nil);
 extern void hoc_ivvaluerun(CChar* name, CChar* variable, CChar* action,
-	boolean deflt=false, boolean canrun=false, boolean usepointer=false);
+	boolean deflt=false, boolean canrun=false, boolean usepointer=false, Object* pyvar = 0, Object* pyact = 0);
 extern void hoc_ivpvaluerun(CChar* name, double*, CChar* action,
 	boolean deflt=false, boolean canrun=false, HocSymExtension* extra=nil);
 
 extern void hoc_ivlabel(CChar*);
-extern void hoc_ivvarlabel(char**);
-extern void hoc_ivstatebutton(double*, CChar* name, CChar* action, int style);
+extern void hoc_ivvarlabel(char**, Object* pyvar = 0);
+extern void hoc_ivstatebutton(double*, CChar* name, CChar* action, int style, Object* pyvar = 0, Object* pyact = 0);
 extern void hoc_ivslider(double*, float low=0, float high=100,
 	float resolution=1, int steps=10,
-	const char* send_cmd=nil, boolean vert=false, boolean slow = false);
+	const char* send_cmd=nil, boolean vert=false, boolean slow = false, Object* pyvar = 0, Object* pyact = 0);
 
 inline double* object_pval(Symbol* sym, Objectdata* od) {
 	return od[sym->u.oboff].pval;
