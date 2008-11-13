@@ -31,6 +31,7 @@ extern "C" {
 extern void nrnmpi_int_allgatherv(int*, int*, int*, int*);
 extern void nrnmpi_int_gather(int*, int*, int, int);
 extern void nrnmpi_int_gatherv(int*, int, int*, int*, int*, int);
+extern void nrnmpi_barrier();
 }
 
 #include <structpool.h>
@@ -135,7 +136,7 @@ void BGP_ReceiveBuffer::enqueue() {
 #define PIPEWIDTH 16
 
 static DCMF_Opcode_t* hints_;
-static DCMF_Protocol_t protocol;
+static DCMF_Protocol_t protocol __attribute__((__aligned__(16)));
 static DCMF_Multicast_Configuration_t mconfig;
 
 // maybe we will use this when a rank sends to itself.
@@ -194,7 +195,8 @@ static DCMF_Request_t * msend_recv(const DCQuad  * msginfo,
 static unsigned long long dmasend_time_;
 
 double nrn_bgp_receive_time(int type) { // and others
-	double rt = 0;
+	double rt = 0.;
+	if (!use_bgpdma_) { return rt; }
 	switch(type) {
 	case 2: //in msend_recv
 		for (int i = 0; i < BGP_INTERVAL; ++i) {
@@ -230,7 +232,7 @@ public:
 
 static int max_ntarget_host;
 #define NSEND 10
-#define NSEND2 1
+#define NSEND2 5
 static boolean req_in_use[NSEND2];
 
 // Multisend_multicast callback
@@ -417,6 +419,7 @@ void bgpdma_cleanup_presyn(PreSyn* ps) {
 
 void bgp_dma_setup() {
 	static int once = 0;
+	double wt = nrnmpi_wtime();
 	nrnmpi_bgp_comm();
 
 	// although we only care about the set of hosts that gid2out_
@@ -431,9 +434,15 @@ void bgp_dma_setup() {
 
 	// gid2in_ gets spikes from which hosts.
 	determine_source_hosts();
+nrnmpi_barrier();
+if (nrnmpi_myid == 0) printf("%d barrier after source hosts %g\n", nrnmpi_myid, nrnmpi_wtime() - wt);
+wt = nrnmpi_wtime();
 
 	// gid2out_ sends spikes to which hosts
 	determine_target_hosts();
+nrnmpi_barrier();
+if (nrnmpi_myid == 0) printf("%d barrier after target hosts %g\n", nrnmpi_myid, nrnmpi_wtime() - wt);
+wt = nrnmpi_wtime();
 
 	bgp_receive_buffer[0] = new BGP_ReceiveBuffer();
 #if BGP_INTERVAL == 2
@@ -463,8 +472,6 @@ void bgp_dma_setup() {
 	assert(DCMF_Multicast_register (&protocol, &mconfig) == DCMF_SUCCESS);
     }
 #endif
-
-
 }
 
 void determine_source_hosts() {
