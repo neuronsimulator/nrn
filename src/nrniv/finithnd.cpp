@@ -25,7 +25,7 @@ implementPtrList(FIHList, FInitialHandler)
 
 class FInitialHandler {
 public:
-	FInitialHandler(int, const char*, Object*);
+	FInitialHandler(int, const char*, Object*, Object* pyact=nil);
 	virtual ~FInitialHandler();
 	HocCommand* stmt_;
 	int type_;
@@ -56,7 +56,9 @@ static double allprint(void* v) {
 			printf("Type %d FInitializeHandler statements\n", type);
 			for (i=0; i < cnt; ++i) {
 				FInitialHandler* f = fl->item(i);
-				if (f->stmt_->object()) {
+				if (f->stmt_->pyobject()) {
+printf("\t%s\n", hoc_object_name(f->stmt_->pyobject()));
+				}else if (f->stmt_->object()) {
 printf("\t%s.%s\n", hoc_object_name(f->stmt_->object()), f->stmt_->name());
 				}else{
 					printf("\t%s\n", f->stmt_->name());
@@ -79,13 +81,19 @@ static void* finithnd_cons(Object*) {
 		type = (int)chkarg(ia, 0, 3);
 		++ia;
 	}
-	char* s = gargstr(ia);
+	char* s = nil;
+	Object* pyact = nil;
+	if (hoc_is_object_arg(ia)) {
+		pyact = *hoc_objgetarg(ia);
+	}else{
+		s =gargstr(ia);
+	}
 	++ia;
 	Object* obj = nil;
 	if (ifarg(ia)) {
 		obj = *hoc_objgetarg(ia);
 	}
-	FInitialHandler* f = new FInitialHandler(type, s, obj);
+	FInitialHandler* f = new FInitialHandler(type, s, obj, pyact);
 	return f;
 }
 
@@ -101,12 +109,16 @@ void FInitializeHandler_reg() {
 
 FIHList* FInitialHandler::fihlist_[4];
 
-FInitialHandler::FInitialHandler(int i, const char* s, Object* obj) {
+FInitialHandler::FInitialHandler(int i, const char* s, Object* obj, Object* pyact) {
 	if (!fihlist_[i]) {
 		fihlist_[i] = new FIHList(10);
 	}
 	type_ = i;
-	stmt_ = new HocCommand(s, obj);
+	if (pyact) {
+		stmt_ = new HocCommand(pyact);
+	}else{
+		stmt_ = new HocCommand(s, obj);
+	}
 	fihlist_[i]->append(this);
 }
 

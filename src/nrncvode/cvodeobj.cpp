@@ -405,7 +405,11 @@ static double tstop_event(void* v) {
 			}
 			reinit = int(chkarg(4, 0, 1));
 		}
+	    if (hoc_is_object_arg(2)) {
+		d->hoc_event(x, nil, ppobj, reinit, *hoc_objgetarg(2));
+	    }else{		
 		d->hoc_event(x, gargstr(2), ppobj, reinit);
+	    }
 	}else{
 		//d->tstop_event(x);
 		d->hoc_event(x, 0, 0, 0);

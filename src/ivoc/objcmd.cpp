@@ -14,6 +14,7 @@
 extern "C" {
 extern Object* hoc_thisobject;
 int (*nrnpy_hoccommand_exec)(Object*);
+int (*nrnpy_hoccommand_exec_strret)(Object*, char*, int);
 void (*nrnpy_cmdtool)(Object*, int type, double x, double y, int kd);
 }
 
@@ -115,6 +116,17 @@ int HocCommand::execute(boolean notify) {
 		sprintf(buf, "{%s}\n", s_->string());
 		err = hoc_obj_run(buf, obj_);
 	}
+#if HAVE_IV
+	if (notify) {
+		Oc oc;
+		oc.notify();
+	}
+#endif
+	return err;
+}
+int HocCommand::exec_strret(char* buf, int size, boolean notify) {
+	assert (po_)
+	int err = (*nrnpy_hoccommand_exec_strret)(po_, buf, size);
 #if HAVE_IV
 	if (notify) {
 		Oc oc;

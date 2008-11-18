@@ -24,6 +24,7 @@ extern Symbol* nrnpy_pyobj_sym_;
 extern void (*nrnpy_py2n_component)(Object*, Symbol*, int, int);
 extern void (*nrnpy_hpoasgn)(Object*, int);
 extern int (*nrnpy_hoccommand_exec)(Object*);
+extern int (*nrnpy_hoccommand_exec_strret)(Object*, char*, int);
 extern void (*nrnpy_cmdtool)(Object*, int, double, double, int);
 extern double (*nrnpy_guigetval)(Object*);
 extern void (*nrnpy_guisetval)(Object*, double);
@@ -39,6 +40,7 @@ Object* nrnpy_po2ho(PyObject*);
 static void py2n_component(Object*, Symbol*, int, int);
 static void hpoasgn(Object*, int);
 static int hoccommand_exec(Object*);
+static int hoccommand_exec_strret(Object*, char*, int);
 static void grphcmdtool(Object*, int, double, double, int);
 static double guigetval(Object*);
 static void guisetval(Object*, double);
@@ -75,6 +77,7 @@ void nrnpython_reg_real() {
 	nrnpy_py2n_component = py2n_component;
 	nrnpy_hpoasgn = hpoasgn;
 	nrnpy_hoccommand_exec = hoccommand_exec;
+	nrnpy_hoccommand_exec_strret = hoccommand_exec_strret;
 	nrnpy_cmdtool = grphcmdtool;
 	nrnpy_guigetval = guigetval;
 	nrnpy_guisetval = guisetval;
@@ -270,16 +273,16 @@ void nrnpy_decref_clear() {
 	}
 }
 
-static int hoccommand_exec(Object* ho) {
+static PyObject* hoccommand_exec_help(Object* ho) {
 	PyObject* po = ((Py2Nrn*)ho->u.this_pointer)->po_;
 //printf("%s\n", hoc_object_name(ho));
 	PyObject* r;
 	nrnpython_ensure_threadstate();
 	// should we use this instead?
 	//PyGILState_STATE s = PyGILState_Ensure();
-	if (PyTuple_Check(po)) {
 //PyObject_Print(po, stdout, 0);
 //printf("\n");
+	if (PyTuple_Check(po)) {
 		PyObject* args = PyTuple_GetItem(po, 1);
 		if (!PyTuple_Check(args)) {
 			args = PyTuple_Pack(1, args);
@@ -294,6 +297,25 @@ static int hoccommand_exec(Object* ho) {
 		r = PyObject_CallObject(po, PyTuple_New(0));
 	}
 	//PyGILState_Release(s);
+	return r;
+}
+
+static int hoccommand_exec(Object* ho) {
+	PyObject* r = hoccommand_exec_help(ho);
+	Py_XDECREF(r);
+	return (r != NULL);
+}
+
+static int hoccommand_exec_strret(Object* ho, char* buf, int size) {
+	PyObject* r = hoccommand_exec_help(ho);
+	if (r) {
+		PyObject* pn = PyObject_Str(r);
+		const char* cp = PyString_AsString(pn);
+		strncpy(buf, cp, size);
+		buf[size-1] = '\0';
+		Py_XDECREF(pn);
+		Py_XDECREF(r);
+	}
 	return (r != NULL);
 }
 

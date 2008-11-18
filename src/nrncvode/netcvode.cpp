@@ -2547,7 +2547,7 @@ void NetCvode::tstop_event(double tt) {
     }
 }
 
-void NetCvode::hoc_event(double tt, const char* stmt, Object* ppobj, int reinit) {
+void NetCvode::hoc_event(double tt, const char* stmt, Object* ppobj, int reinit, Object* pyact) {
 	if (!ppobj && tt - nt_t < 0) { return; }
 #if USENEOSIM
 	if (neosim_entity_) {
@@ -2560,10 +2560,10 @@ void NetCvode::hoc_event(double tt, const char* stmt, Object* ppobj, int reinit)
 	if (nrn_nthread > 1 && (!cvode_active_ || localstep())) {
 	    if (ppobj) {
 		int i = PP2NT(ob2pntproc(ppobj))->id;
-		p[i].interthread_send(tt, HocEvent::alloc(stmt, ppobj, reinit), nt+i);
+		p[i].interthread_send(tt, HocEvent::alloc(stmt, ppobj, reinit, pyact), nt+i);
 		nrn_interthread_enqueue(nt + i);
 	    }else{
-		HocEvent* he = HocEvent::alloc(stmt, nil, 0);
+		HocEvent* he = HocEvent::alloc(stmt, nil, 0, pyact);
 		// put on each queue. The first thread to execute the deliver
 		// for he will set the nrn_allthread_handle
 		// callback which will cause all threads to rejoin at the
@@ -2577,7 +2577,7 @@ void NetCvode::hoc_event(double tt, const char* stmt, Object* ppobj, int reinit)
 		nrn_multithread_job(nrn_interthread_enqueue);
 	    }
 	}else{
-		event(tt, HocEvent::alloc(stmt, ppobj, reinit), nt);
+		event(tt, HocEvent::alloc(stmt, ppobj, reinit, pyact), nt);
 	}
     }
 }

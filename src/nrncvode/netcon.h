@@ -288,7 +288,7 @@ public:
 	HocEvent();
 	virtual ~HocEvent();
 	virtual void pr(const char*, double t, NetCvode*);
-	static HocEvent* alloc(const char* stmt, Object*, int);
+	static HocEvent* alloc(const char* stmt, Object*, int, Object* pyact=nil);
 	void hefree();
 	void clear(); // called by hepool_->free_all
 	virtual void deliver(double, NetCvode*, NrnThread*);

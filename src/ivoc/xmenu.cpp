@@ -1958,7 +1958,8 @@ void HocValEditor::updateField() {
 	if (active_) return;
 	char buf[200];
 	if (pyvar_) {
-		sprintf(buf, xvalue_format->string(), get_val());
+		hoc_ac_ = get_val();
+		sprintf(buf, xvalue_format->string(), hoc_ac_);
 	}else if (pval_) {
 		sprintf(buf, xvalue_format->string(), *pval_);
 		hoc_ac_ = *pval_;

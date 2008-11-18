@@ -20,6 +20,7 @@ public:
 	virtual ~HocCommand();
 	int execute(boolean notify = true);
 	int execute(const char*, boolean notify = true);
+	int exec_strret(char* buf, int size, boolean notify = true); // for python callback returning a string
 	const char* name();
 	virtual void update(Observable*);
 	virtual void audit();
