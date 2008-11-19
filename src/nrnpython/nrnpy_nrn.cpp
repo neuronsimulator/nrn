@@ -40,6 +40,7 @@ typedef struct {
 	PyObject_HEAD
 	NPySegObj* pyseg_;
 	Symbol* sym_;
+	int isptr_;
 }NPyRangeVar;
 
 static PyTypeObject* psection_type;
@@ -167,6 +168,7 @@ static PyObject* NPyRangeVar_new(PyTypeObject* type, PyObject* args, PyObject* k
 	if (self != NULL) {
 		self->pyseg_ = NULL;
 		self->sym_ = NULL;
+		self->isptr_ = 0;
 	}
 	return (PyObject*)self;
 }
@@ -247,7 +249,13 @@ static PyObject* NPyMechObj_name(NPyMechObj* self) {
 static PyObject* NPyRangeVar_name(NPyRangeVar* self) {
 	PyObject* result = NULL;
 	if (self->sym_) {
-		result = PyString_FromString(self->sym_->name);
+		if (self->isptr_) {
+			char buf[256];
+			sprintf(buf, "_ref_%s", self->sym_->name);
+			result = PyString_FromString(buf);
+		}else{
+			result = PyString_FromString(self->sym_->name);
+		}
 	}
 	return result;
 }
@@ -584,6 +592,7 @@ static PyObject* segment_getattro(NPySegObj* self, PyObject* name) {
 				r->pyseg_ = self;
 				Py_INCREF(r->pyseg_);
 				r->sym_ = sym;
+				r->isptr_ = 1;
 				result = (PyObject*)r;
 			}else{
 				int err;
@@ -666,11 +675,20 @@ static PyObject* mech_getattro(NPyMechObj* self, PyObject* name) {
 	Symbol* sym = np.find(buf);
 	if (sym) {
 //printf("mech_getattro sym %s\n", sym->name);
-		double* px = np.prop_pval(sym, 0);
-		if (isptr) {
-			result = nrn_hocobj_ptr(px);
+		if (ISARRAY(sym)) {
+			NPyRangeVar* r = PyObject_New(NPyRangeVar, range_type);
+			r->pyseg_ = self->pyseg_;
+			Py_INCREF(r->pyseg_);
+			r->sym_ = sym;
+			r->isptr_ = isptr;
+			result = (PyObject*)r;
 		}else{
-			result = Py_BuildValue("d", *px);
+			double* px = np.prop_pval(sym, 0);
+			if (isptr) {
+				result = nrn_hocobj_ptr(px);
+			}else{
+				result = Py_BuildValue("d", *px);
+			}
 		}
 	}else{
 		result = PyObject_GenericGetAttr((PyObject*)self, name);
@@ -732,7 +750,11 @@ static PyObject* rv_getitem(PyObject* self, Py_ssize_t ix) {
 		return NULL;
 	}
 	d += ix;
-	result = Py_BuildValue("d", *d);
+	if (r->isptr_) {
+		result = nrn_hocobj_ptr(d);
+	}else{
+		result = Py_BuildValue("d", *d);
+	}
 	return result;
 }
 static int rv_setitem(PyObject* self, Py_ssize_t ix, PyObject* value) {
