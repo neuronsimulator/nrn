@@ -194,6 +194,7 @@ static DCMF_Request_t * msend_recv(const DCQuad  * msginfo,
 }
 
 static unsigned long long dmasend_time_;
+static int n_xtra_cons_check_;
 
 double nrn_bgp_receive_time(int type) { // and others
 	double rt = 0.;
@@ -206,6 +207,9 @@ double nrn_bgp_receive_time(int type) { // and others
 		break;
 	case 3: // in BGP_DMAsend::send
 		rt = dmasend_time_ * DCMF_Tick();
+		break;
+	case 4: // number of extra conservation checks
+		rt = double(n_xtra_cons_check_);
 		break;
 	}
 	return rt;
@@ -252,6 +256,7 @@ static void bgp_dma_init() {
 		req_in_use[i] = false;
 	}
 	dmasend_time_ = 0;
+	n_xtra_cons_check_ = 0;
 }
 
 static int bgp_advance() {
@@ -378,6 +383,7 @@ void bgp_dma_receive() {
 #if BGPDMA == 2
 	while (nrnmpi_bgp_conserve(s, r) != 0) {
 		DCMF_Messager_advance();
+		++n_xtra_cons_check_;
 	}
 #else
 	bgp_advance();
