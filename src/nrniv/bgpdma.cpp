@@ -29,6 +29,7 @@ of spikes sent is equal to the number of spikes sent.
 
 extern "C" {
 extern void nrnmpi_int_allgatherv(int*, int*, int*, int*);
+extern void nrnmpi_int_alltoallv(int*, int*, int*, int*, int*, int*);
 extern void nrnmpi_int_gather(int*, int*, int, int);
 extern void nrnmpi_int_gatherv(int*, int, int*, int*, int*, int);
 extern void nrnmpi_barrier();
@@ -434,15 +435,9 @@ void bgp_dma_setup() {
 
 	// gid2in_ gets spikes from which hosts.
 	determine_source_hosts();
-nrnmpi_barrier();
-if (nrnmpi_myid == 0) printf("%d barrier after source hosts %g\n", nrnmpi_myid, nrnmpi_wtime() - wt);
-wt = nrnmpi_wtime();
 
 	// gid2out_ sends spikes to which hosts
 	determine_target_hosts();
-nrnmpi_barrier();
-if (nrnmpi_myid == 0) printf("%d barrier after target hosts %g\n", nrnmpi_myid, nrnmpi_wtime() - wt);
-wt = nrnmpi_wtime();
 
 	bgp_receive_buffer[0] = new BGP_ReceiveBuffer();
 #if BGP_INTERVAL == 2
@@ -721,6 +716,7 @@ printf("%d gather i=%d j=%d tarcounts=%d\n", nrnmpi_myid, i, j, tarcounts[j]);
 
 void determine_targids_on_srchost(int* s, int* scnt, int* sdispl,
     int* r, int* rcnt, int* rdispl) {
+#if 0
 	int i;
 	for (i=0; i< nrnmpi_numprocs; ++i) {
 		nrnmpi_int_gatherv(
@@ -729,5 +725,8 @@ void determine_targids_on_srchost(int* s, int* scnt, int* sdispl,
 			i
 		);
 	}
+#else
+	nrnmpi_int_alltoallv(s, scnt, sdispl, r, rcnt, rdispl);
+#endif
 }
 
