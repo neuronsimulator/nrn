@@ -1,5 +1,13 @@
 
 #include <../../nrnconf.h>
+
+#include <InterViews/resource.h>
+#include "oc2iv.h"
+extern "C" {
+double (*nrnpy_guigetval)(Object*);
+void (*nrnpy_guisetval)(Object*, double);
+int (*nrnpy_guigetstr)(Object*, char**);
+}
 #if HAVE_IV // to end of file
 
 #include <stdio.h>
@@ -10,7 +18,6 @@
 #include <errno.h>
 
 #include <InterViews/box.h>
-#include <InterViews/resource.h>
 #include <IV-look/kit.h>
 #include <InterViews/event.h>
 #include <InterViews/layout.h>
@@ -27,7 +34,6 @@
 #include <InterViews/hit.h>
 
 #include <InterViews/display.h>
-#include "oc2iv.h"
 #include "mymath.h"
 #include "xmenu.h"
 #include "datapath.h"
@@ -148,9 +154,6 @@ static String* xvalue_format;
 
 extern "C" {
 
-double (*nrnpy_guigetval)(Object*);
-void (*nrnpy_guisetval)(Object*, double);
-int (*nrnpy_guigetstr)(Object*, char**);
 extern int units_on_flag_;
 extern Symbol* hoc_get_symbol(const char*);
 extern Symbol* hoc_get_last_pointer_symbol();
