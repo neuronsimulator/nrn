@@ -990,7 +990,7 @@ Sprintf(buf, "\"%s\", %g,\n", s->name, d1);
 	if (vectorize && thread_cleanup_list->next != thread_cleanup_list) {
 		lappendstr(defs_list, "    _nrn_thread_reg(_mechtype, 0, _thread_cleanup);\n");
 	}
-	if (vectorize && uip) {
+	if (uip) {
 		lappendstr(defs_list, "    _nrn_thread_reg(_mechtype, 2, _update_ion_pointer);\n");
 	}
 	if (emit_check_table_thread) {
@@ -1109,7 +1109,7 @@ sprintf(buf1, "\tivoc_help(\"help ?1 %s %s/%s\\n\");\n", mechname, buf, finname)
 		move(thread_cleanup_list->next, thread_cleanup_list->prev, procfunc);
 		Lappendstr(procfunc, "}\n");
 	}
-	if (vectorize && uip) {
+	if (uip) {
 		move(uip->next, uip->prev, procfunc);
 	}
 	if (destructorfunc->next != destructorfunc) {
