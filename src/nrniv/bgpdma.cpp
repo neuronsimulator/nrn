@@ -381,6 +381,7 @@ void bgp_dma_receive() {
 	int& r = bgp_receive_buffer[current_rbuf]->nrecv_;
 	w1 = nrnmpi_wtime();
 #if BGPDMA == 2
+	DCMF_Messager_advance();
 	while (nrnmpi_bgp_conserve(s, r) != 0) {
 		DCMF_Messager_advance();
 		++n_xtra_cons_check_;
