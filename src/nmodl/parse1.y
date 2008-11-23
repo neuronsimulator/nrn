@@ -112,7 +112,7 @@ static int nr_argcnt_, argcnt_; /* for matching number of args in NET_RECEIVE
 %token	<qp>	NEURON SUFFIX NONSPECIFIC READ WRITE USEION VALENCE THREADSAFE
 %token	<qp>	GLOBAL SECTION RANGE POINTER EXTERNAL BEFORE AFTER WATCH
 %token	<qp>	ELECTRODE_CURRENT CONSTRUCTOR DESTRUCTOR NETRECEIVE FOR_NETCONS
-%type	<qp>	neuronblk nrnuse nrnlist valence initstmt bablk
+%type	<qp>	neuronblk nrnuse nrnlist optnrnlist valence initstmt bablk
 
 /* precedence in expressions--- low to high */
 %left   OR
@@ -403,7 +403,9 @@ locallist1: NAME locoptarray
 		/* locals are placed in a stack of symbol lists and given
 			the prefix _l */
 		{pushlocal();
+		 int a2 = SYM($1)->assigned_to_; /* in case marked threadsafe */
 		 SYM($1) = copylocal(SYM($1));
+		 SYM($1)->assigned_to_ = a2;
 		 lappendsym(toplocal1_, SYM($1));
 		 if ($2) {
 			SYM($1)->araydim = $2;
@@ -413,7 +415,10 @@ locallist1: NAME locoptarray
 		 }
 		}
 	| locallist1 ',' NAME locoptarray
-		{SYM($3) = copylocal(SYM($3));
+		{
+		 int a2 = SYM($3)->assigned_to_; /* in case marked threadsafe */
+		 SYM($3) = copylocal(SYM($3));
+		 SYM($3)->assigned_to_ = a2;
 		 lappendsym(toplocal1_, SYM($3));
 		 if ($4) {
 			SYM($3)->araydim = $4;
@@ -1178,8 +1183,8 @@ nrnstmt: /*nothing*/
 		{ nrn_list($2, $3);}
 	| nrnstmt EXTERNAL nrnlist
 		{ nrn_list($2, $3);}
-	| nrnstmt THREADSAFE
-		{ assert_threadsafe = 1; }
+	| nrnstmt THREADSAFE optnrnlist
+		{ threadsafe_seen($2, $3); }
 	;
 nrnuse: USEION NAME READ nrnlist valence
 		{nrn_use($2, $4, ITEM0, $5);}
@@ -1187,7 +1192,7 @@ nrnuse: USEION NAME READ nrnlist valence
 		{nrn_use($2, ITEM0, $4, $5);}
 	|USEION NAME READ nrnlist WRITE nrnlist valence
 		{nrn_use($2, $4, $6, $7);}
-	| error
+	|USEION error
 		{myerr("syntax is: USEION ion READ list WRITE list");}
 	;
 nrnlist: NAME
@@ -1195,6 +1200,10 @@ nrnlist: NAME
 		{ delete($2); $$ = $3;}
 	| error
 		{myerr("syntax is: keyword name , name, ..., name");}
+	;
+optnrnlist: /*nothing*/
+		{$$ = NULL;}
+	| nrnlist
 	;
 valence: /*nothing*/
 		{$$ = ITEM0;}

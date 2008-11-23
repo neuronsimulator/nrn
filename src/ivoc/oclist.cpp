@@ -35,14 +35,14 @@ void handle_old_focus();
 #if HAVE_IV
 /*static*/ class OcListBrowser : public OcBrowser {
 public:
-	OcListBrowser(OcList*, const char* = nil);
+	OcListBrowser(OcList*, const char* = nil, Object* pystract=nil);
 	OcListBrowser(OcList*, char**, const char*);
 	virtual ~OcListBrowser();
 	virtual void select(GlyphIndex);
 	virtual void reload();
 	virtual void reload(GlyphIndex);
-	virtual void set_select_action(const char*, boolean on_rel = false);
-	virtual void set_accept_action(const char*);
+	virtual void set_select_action(const char*, boolean on_rel = false, Object* pyact=nil);
+	virtual void set_accept_action(const char*, Object* pyact=nil);
 	virtual void accept();
 	virtual void release(const Event&);
 	virtual InputHandler* focus_in();
@@ -56,6 +56,7 @@ private:
 	HocCommand* select_action_;
 	HocCommand* accept_action_;
 	HocCommand* label_action_;
+	HocCommand* label_pystract_;
 	boolean on_release_;
 	char** plabel_;
 	CopyString* items_;
@@ -258,6 +259,10 @@ IFGUI
 		return 1.;
 	}
 	if (ifarg(2)) {
+		if (hoc_is_object_arg(2)) {
+			o->create_browser(s, nil, *hoc_objgetarg(2));
+			return 1.;
+		}
 		i = gargstr(2);
 	}
 	o->create_browser(s, i);
@@ -287,7 +292,11 @@ IFGUI
 		if (ifarg(2)) {
 			on_rel = (boolean)chkarg(2, 0, 1);
 		}
-		b->set_select_action(gargstr(1), on_rel);
+		if (hoc_is_object_arg(1)) {
+			b->set_select_action(nil, on_rel, *hoc_objgetarg(1));
+		}else{
+			b->set_select_action(gargstr(1), on_rel);
+		}
 	}
 ENDGUI
 #endif
@@ -314,7 +323,11 @@ static double l_accept_action(void* v) {
 IFGUI
 	OcListBrowser* b = ((OcList*)v)->browser();
 	if (b) {
-		b->set_accept_action(gargstr(1));
+		if (hoc_is_object_arg(1)) {
+			b->set_accept_action(nil, *hoc_objgetarg(1));
+		}else{
+			b->set_accept_action(gargstr(1));
+		}
 	}
 ENDGUI
 #endif
@@ -502,13 +515,13 @@ boolean ivoc_list_look(Object* ob, Object* oblook, char* path, int) {
 }	
 }
 
-void OcList::create_browser(const char* name, const char* items) {
+void OcList::create_browser(const char* name, const char* items, Object* pystract) {
 #if HAVE_IV
 	if (b_) {
 		b_->ocglyph_unmap();
 	}
 	Resource::unref(b_);
-	b_ = new OcListBrowser(this, items);
+	b_ = new OcListBrowser(this, items, pystract);
 	b_->ref();
 	PrintableWindow* w = new StandardWindow(b_->standard_glyph());
 	b_->ocglyph(w);
@@ -541,13 +554,17 @@ OcListBrowser* OcList::browser() { return b_;}
 //-----------------------------------------
 #if HAVE_IV
 
-OcListBrowser::OcListBrowser(OcList* ocl, const char* items) : OcBrowser() {
+OcListBrowser::OcListBrowser(OcList* ocl, const char* items, Object* pystract) : OcBrowser() {
 	ocl_ = ocl; // not reffed because this is reffed by ocl
 	ocg_ = nil; // do not ref
 	select_action_ = nil;
 	accept_action_ = nil;
 	plabel_ = nil;
 	label_action_ = nil;
+	label_pystract_ = nil;
+	if (pystract) {
+		label_pystract_ = new HocCommand(pystract);
+	}	
 	on_release_ = false;
 	ignore_ = false;
 	if (items) {
@@ -570,6 +587,7 @@ OcListBrowser::OcListBrowser(OcList* ocl, char** pstr, const char* action)
 	plabel_ = pstr;
 	items_ = nil;
 	label_action_ = new HocCommand(action);
+	label_pystract_ = nil;
 	reload();
 }
 
@@ -582,6 +600,9 @@ OcListBrowser::~OcListBrowser(){
 	}
 	if (label_action_) {
 		delete label_action_;
+	}
+	if (label_pystract_) {
+		delete label_pystract_;
 	}
 	if (items_) {
 		delete items_;
@@ -644,7 +665,15 @@ void OcListBrowser::load_item(GlyphIndex i) {
 }
 
 void OcListBrowser::change_name(GlyphIndex i) {
-	if (plabel_) {
+	if (label_pystract_) {
+		hoc_ac_ = i;
+		char buf[256];
+		if (label_pystract_->exec_strret(buf, 256, boolean(false))) {
+			change_item(i, buf);
+		}else{
+			change_item(i, "label error");
+		}
+	}else if (plabel_) {
 		hoc_ac_ = i;
 		if (label_action_->execute(boolean(false)) == 0) {
 			change_item(i, *plabel_);
@@ -663,18 +692,26 @@ void OcListBrowser::change_name(GlyphIndex i) {
 	}
 }
 
-void OcListBrowser::set_select_action(const char* s, boolean on_rel) {
+void OcListBrowser::set_select_action(const char* s, boolean on_rel, Object* pyact) {
 	if (select_action_) {
 		delete select_action_;
 	}
-	select_action_ = new HocCommand(s);
+	if (pyact) {
+		select_action_ = new HocCommand(pyact);
+	}else{
+		select_action_ = new HocCommand(s);
+	}
 	on_release_ = on_rel;
 }
-void OcListBrowser::set_accept_action(const char* s) {
+void OcListBrowser::set_accept_action(const char* s, Object* pyact) {
 	if (accept_action_) {
 		delete accept_action_;
 	}
-	accept_action_ = new HocCommand(s);
+	if (pyact) {
+		accept_action_ = new HocCommand(pyact);
+	}else{
+		accept_action_ = new HocCommand(s);
+	}
 }
 void OcListBrowser::accept() {
 	if (accept_action_) {

@@ -50,10 +50,12 @@ public:
 	PolyGlyph* box_;
 	Object* oc_ref_;		// reference to oc "this"
 	CopyString* save_action_;
+	Object* save_pyact_;
 	int type_;
 	ostream* o_;
 	Object* keep_ref_;
 	CopyString* dis_act_;
+	Object* dis_pyact_;
 	boolean dismissing_;
 	Coord next_map_adjust_;
 	PolyGlyph* ba_list_;
@@ -76,26 +78,32 @@ public:
 
 /*static*/ class BoxDismiss : public WinDismiss {
 public:
-	BoxDismiss(DismissableWindow*, String*, OcBox*);
+	BoxDismiss(DismissableWindow*, String*, OcBox*, Object* pyact=nil);
 	virtual ~BoxDismiss();
 	virtual void execute();
 private:
-	HocCommand hc_;
+	HocCommand* hc_;
 	OcBox* b_;
 };
 
-BoxDismiss::BoxDismiss(DismissableWindow* w, String* s, OcBox* b)
-   : WinDismiss(w), hc_(s->string())
+BoxDismiss::BoxDismiss(DismissableWindow* w, String* s, OcBox* b, Object* pyact)
+   : WinDismiss(w)
 {
+	if (pyact) {
+		hc_ = new HocCommand(pyact);
+	}else{
+		hc_ = new HocCommand(s->string());
+	}
 	b_ = b;
 }
 BoxDismiss::~BoxDismiss() {
+	delete hc_;
 }
 void BoxDismiss::execute() {
 	if (b_->dismissing() == true) {
 		WinDismiss::execute();
 	}else{
-		hc_.execute();
+		hc_->execute();
 	}
 
 }
@@ -312,7 +320,10 @@ static double save(void* v) {
 IFGUI
 	OcBox* b = (OcBox*)v;
 	char buf[256];
-	if (ifarg(2)) {
+	if (hoc_is_object_arg(1)) {
+		b->save_action(0, *hoc_objgetarg(1));
+		return 1.;
+	}else if (ifarg(2)) {
 		if (hoc_is_double_arg(2)) { // return save session file name
 			hoc_assign_str(hoc_pgargstr(1), pwm_session_filename());
 			return 1.;
@@ -358,7 +369,11 @@ static double dismiss_action(void* v) {
 #if HAVE_IV
 IFGUI
 	OcBox* b = (OcBox*)v;
-	b->dismiss_action(gargstr(1));
+	if(hoc_is_object_arg(1)) {
+		b->dismiss_action(0, *hoc_objgetarg(1));
+	}else{
+		b->dismiss_action(gargstr(1));
+	}
 ENDGUI
 	return 0.;
 #else 
@@ -482,9 +497,11 @@ ENDGUI
 	bi_->type_ = type;
 	bi_->oc_ref_ = nil;
 	bi_->save_action_ = nil;
+	bi_->save_pyact_ = nil;
 	bi_->o_ = nil;
 	bi_->keep_ref_ = nil;
 	bi_->dis_act_ = nil;
+	bi_->dis_pyact_ = nil;
 }
 
 OcBox::~OcBox() {
@@ -498,10 +515,16 @@ OcBox::~OcBox() {
 	Resource::unref(bi_->ba_list_);
 	hoc_obj_unref(bi_->oc_ref_);
 	if (bi_->save_action_) {
-		delete(bi_->save_action_);
+		delete bi_->save_action_;
+	}
+	if (bi_->save_pyact_) {
+		hoc_obj_unref(bi_->save_pyact_);
 	}
 	if (bi_->dis_act_) {
-		delete(bi_->dis_act_);
+		delete bi_->dis_act_;
+	}
+	if (bi_->dis_pyact_) {
+		hoc_obj_unref(bi_->dis_pyact_);
 	}
 	assert(!bi_->keep_ref_);
 	delete bi_;
@@ -644,35 +667,51 @@ void BoxAdjust::release(const Event& e) {
 	drag(e);
 }
 
-void OcBox::save_action(const char* creat, Object*) {
+void OcBox::save_action(const char* creat, Object* pyact) {
 	if (bi_->o_) {
 		// old endl cause great slowness on remote filesystem
 		// with gcc version 3.3 20030226 (prerelease) (SuSE Linux)
 		//*bi_->o_ << creat << endl;
 		*bi_->o_ << creat << "\n";
 	}else{
-		bi_->save_action_ = new CopyString(creat);
+		if (pyact) {
+			bi_->save_pyact_ = pyact;
+			hoc_obj_ref(pyact);
+		}else{
+			bi_->save_action_ = new CopyString(creat);
+		}
 	}
 }
 
-void OcBox::dismiss_action(const char* act) {
-	if (act) {
+void OcBox::dismiss_action(const char* act, Object* pyact) {
+	if (pyact) {
+		hoc_obj_ref(pyact);
+		bi_->dis_pyact_ = pyact;
+		if (bi_->dis_act_) {
+			delete bi_->dis_act_;
+			bi_->dis_act_ = nil;
+		}
+	}else if (act) {
+		if (bi_->dis_pyact_) {
+			hoc_obj_unref(bi_->dis_pyact_);
+			bi_->dis_pyact_ = nil;
+		}
 		if (bi_->dis_act_) {
 			*bi_->dis_act_ = act;
 		}else{
 			bi_->dis_act_ = new CopyString(act);
 		}
 	}
-	if (bi_->dis_act_ && has_window()) {
+	if ((bi_->dis_act_ || bi_->dis_pyact_) && has_window()) {
 		window()->replace_dismiss_action(
-				new BoxDismiss(window(), bi_->dis_act_, this));
+				new BoxDismiss(window(), bi_->dis_act_, this, bi_->dis_pyact_));
 	}
 }
 		
 void OcBox::save(ostream& o){
 	char buf[256];
-	if (bi_->save_action_) {
-		if (strcmp(bi_->save_action_->string(), "") == 0) {
+	if (bi_->save_action_ || bi_->save_pyact_) {
+		if (bi_->save_action_ && strcmp(bi_->save_action_->string(), "") == 0) {
 			return;
 		}
 		if (has_window()) {
@@ -681,9 +720,13 @@ void OcBox::save(ostream& o){
 		}
 		o << "{" << endl;
 		bi_->o_ = &o;
-//printf("HocCommand %s\n", bi_->save_action_->string());
+	    if (bi_->save_pyact_) {
+		HocCommand hc(bi_->save_pyact_);
+		hc.execute();
+	    }else{
 		HocCommand hc(bi_->save_action_->string(), bi_->keep_ref_);
 		hc.execute();
+	    }
 		bi_->o_ = nil;
 	}else{
 		if (bi_->type_ == H) {

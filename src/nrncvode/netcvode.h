@@ -84,7 +84,7 @@ public:
 	void null_event(double);
 	void tstop_event(double);
 	void handle_tstop_event(double, NrnThread* nt);
-	void hoc_event(double, const char* hoc_stmt, Object* ppobj = nil, int reinit = 0);
+	void hoc_event(double, const char* hoc_stmt, Object* ppobj = nil, int reinit = 0, Object* pyact=nil);
 	NetCon* install_deliver(double* psrc, Section* ssrc, Object* osrc,
 		Object* target,	double threshold, double delay,
 		double weight

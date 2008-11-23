@@ -308,11 +308,13 @@ ENDGUI
 double ivoc_gr_menu_tool(void* v) {
 #if HAVE_IV
 IFGUI
-	char* select_tool_action = nil;
-	if (ifarg(3)) {
-		select_tool_action = gargstr(3);
-	}
-	HocPanel::paneltool(gargstr(1), gargstr(2), select_tool_action,((Scene*)v)->picker());
+    if (hoc_is_object_arg(2)) { // python style
+	HocPanel::paneltool(gargstr(1), nil, nil, ((Scene*)v)->picker(),
+		*hoc_objgetarg(2), ifarg(3) ? *hoc_objgetarg(3) : nil);
+    }else{
+	HocPanel::paneltool(gargstr(1), gargstr(2),
+		ifarg(3) ? gargstr(3) : nil, ((Scene*)v)->picker());
+    }
 ENDGUI
 	return 1.;
 #else 

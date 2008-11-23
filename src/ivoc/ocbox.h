@@ -25,7 +25,7 @@ public:
 	void full_request(boolean);
 
 	virtual void premap();
-	virtual void dismiss_action(const char*);
+	virtual void dismiss_action(const char*, Object* pyact=nil);
 	virtual void no_parents();
 	void keep_ref(Object*);
 	Object* keep_ref();

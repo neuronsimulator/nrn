@@ -23,6 +23,13 @@ Object* nrnpy_pyobject_in_obj(PyObject*);
 extern Symbol* nrnpy_pyobj_sym_;
 extern void (*nrnpy_py2n_component)(Object*, Symbol*, int, int);
 extern void (*nrnpy_hpoasgn)(Object*, int);
+extern int (*nrnpy_hoccommand_exec)(Object*);
+extern int (*nrnpy_hoccommand_exec_strret)(Object*, char*, int);
+extern void (*nrnpy_cmdtool)(Object*, int, double, double, int);
+extern double (*nrnpy_guigetval)(Object*);
+extern void (*nrnpy_guisetval)(Object*, double);
+extern int (*nrnpy_guigetstr)(Object*, char**);
+extern void nrnpython_ensure_threadstate();
 
 void nrnpython_reg_real();
 PyObject* nrnpy_ho2po(Object*);
@@ -32,6 +39,12 @@ void nrnpy_decref_clear();
 Object* nrnpy_po2ho(PyObject*);
 static void py2n_component(Object*, Symbol*, int, int);
 static void hpoasgn(Object*, int);
+static int hoccommand_exec(Object*);
+static int hoccommand_exec_strret(Object*, char*, int);
+static void grphcmdtool(Object*, int, double, double, int);
+static double guigetval(Object*);
+static void guisetval(Object*, double);
+static int guigetstr(Object*, char**);
 static PyObject* main_module;
 static PyObject* main_namespace;
 static hoc_List* dlist;
@@ -63,6 +76,12 @@ void nrnpython_reg_real() {
 	nrnpy_pyobj_sym_ = s;
 	nrnpy_py2n_component = py2n_component;
 	nrnpy_hpoasgn = hpoasgn;
+	nrnpy_hoccommand_exec = hoccommand_exec;
+	nrnpy_hoccommand_exec_strret = hoccommand_exec_strret;
+	nrnpy_cmdtool = grphcmdtool;
+	nrnpy_guigetval = guigetval;
+	nrnpy_guisetval = guisetval;
+	nrnpy_guigetstr = guigetstr;
 	dlist = hoc_l_newlist();
 }
 
@@ -252,4 +271,98 @@ void nrnpy_decref_clear() {
 		Py_DECREF(po);
 		hoc_l_delete(dlist->next);
 	}
+}
+
+static PyObject* hoccommand_exec_help(Object* ho) {
+	PyObject* po = ((Py2Nrn*)ho->u.this_pointer)->po_;
+//printf("%s\n", hoc_object_name(ho));
+	PyObject* r;
+	nrnpython_ensure_threadstate();
+	// should we use this instead?
+	//PyGILState_STATE s = PyGILState_Ensure();
+//PyObject_Print(po, stdout, 0);
+//printf("\n");
+	if (PyTuple_Check(po)) {
+		PyObject* args = PyTuple_GetItem(po, 1);
+		if (!PyTuple_Check(args)) {
+			args = PyTuple_Pack(1, args);
+		}
+//PyObject_Print(PyTuple_GetItem(po, 0), stdout, 0);
+//printf("\n");
+//PyObject_Print(args, stdout, 0);
+//printf("\n");
+//printf("threadstate %lx\n", PyThreadState_GET());
+		r = PyObject_CallObject(PyTuple_GetItem(po, 0), args);
+	}else{
+		r = PyObject_CallObject(po, PyTuple_New(0));
+	}
+	//PyGILState_Release(s);
+	return r;
+}
+
+static int hoccommand_exec(Object* ho) {
+	PyObject* r = hoccommand_exec_help(ho);
+	Py_XDECREF(r);
+	return (r != NULL);
+}
+
+static int hoccommand_exec_strret(Object* ho, char* buf, int size) {
+	PyObject* r = hoccommand_exec_help(ho);
+	if (r) {
+		PyObject* pn = PyObject_Str(r);
+		const char* cp = PyString_AsString(pn);
+		strncpy(buf, cp, size);
+		buf[size-1] = '\0';
+		Py_XDECREF(pn);
+		Py_XDECREF(r);
+	}
+	return (r != NULL);
+}
+
+static void grphcmdtool(Object* ho, int type, double x, double y, int key) {
+	PyObject* po = ((Py2Nrn*)ho->u.this_pointer)->po_;
+	PyObject* r;
+	nrnpython_ensure_threadstate();
+	// should we use this instead?
+	//PyGILState_STATE s = PyGILState_Ensure();
+	PyObject* args = PyTuple_Pack(4, PyInt_FromLong(type),
+		PyFloat_FromDouble(x), PyFloat_FromDouble(y), PyInt_FromLong(key));
+	r = PyObject_CallObject(po, args);
+	//PyGILState_Release(s);
+	Py_XDECREF(args);
+	Py_XDECREF(r);
+}
+
+static double guigetval(Object* ho){
+	PyObject* po = ((Py2Nrn*)ho->u.this_pointer)->po_;
+	PyObject* r = PyObject_GetAttr(PyTuple_GetItem(po, 0), PyTuple_GetItem(po, 1));
+	PyObject* pn = PyNumber_Float(r);
+	double x = PyFloat_AsDouble(pn);
+	Py_XDECREF(pn);
+	return x;
+}
+
+static void guisetval(Object* ho, double x) {
+	PyObject* po = ((Py2Nrn*)ho->u.this_pointer)->po_;
+	PyObject* pn = PyFloat_FromDouble(x);
+	if (PyObject_SetAttr(PyTuple_GetItem(po, 0), PyTuple_GetItem(po, 1), pn)){
+		;
+	}
+	Py_XDECREF(pn);
+}
+
+static int guigetstr(Object* ho, char** cpp){
+	PyObject* po = ((Py2Nrn*)ho->u.this_pointer)->po_;
+	PyObject* r = PyObject_GetAttr(PyTuple_GetItem(po, 0), PyTuple_GetItem(po, 1));
+	PyObject* pn = PyObject_Str(r);
+	const char* cp = PyString_AsString(pn);
+	if (*cpp && strcmp(*cpp, cp) == 0) {
+		Py_XDECREF(pn);
+		return 0;
+	}
+	if (*cpp) { delete [] *cpp; }
+	*cpp = new char[strlen(cp) + 1];
+	strcpy(*cpp, cp);
+	Py_XDECREF(pn);
+	return 1;
 }

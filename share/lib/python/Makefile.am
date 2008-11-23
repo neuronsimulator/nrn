@@ -1,7 +1,16 @@
 neuronhomedir = $(prefix)/share/@PACKAGE@/lib
 neuronhomepythondir = $(neuronhomedir)/python
 
-neuronhomepython_DATA = rdxml.py
+nobase_neuronhomepython_DATA = rdxml.py \
+\
+neuron/doc.py \
+neuron/gui.py \
+neuron/__init__.py \
+neuron/sections.py \
+\
+neuron/tests/__init__.py \
+neuron/tests/test_all.py \
+neuron/tests/test_vector.py
 
-SUBDIRS = neuron
-EXTRA_DIST = $(neuronhomepython_DATA)
+
+EXTRA_DIST = $(nobase_neuronhomepython_DATA)

@@ -28,7 +28,7 @@ void HocEvent::pr(const char* s, double tt, NetCvode* ns) {
 	printf("%s HocEvent %s %.15g\n", s, stmt_ ? stmt_->name() : "", tt);
 }
 
-HocEvent* HocEvent::alloc(const char* stmt, Object* ppobj, int reinit) {
+HocEvent* HocEvent::alloc(const char* stmt, Object* ppobj, int reinit, Object* pyact) {
         if (!hepool_) {
 		nrn_hoc_lock();
 		if (!hepool_) {
@@ -40,7 +40,9 @@ HocEvent* HocEvent::alloc(const char* stmt, Object* ppobj, int reinit) {
         he->stmt_ = nil;
 	he->ppobj_ = ppobj;
 	he->reinit_ = reinit;
-        if (stmt) {
+	if (pyact) {
+		he->stmt_ = new HocCommand(pyact);
+	}else if (stmt) {
                 he->stmt_ = new HocCommand(stmt);
         }
         return he; 
@@ -130,7 +132,11 @@ DiscreteEvent* HocEvent::savestate_save() {
 //	pr("HocEvent::savestate_save", 0, net_cvode_instance);
 	HocEvent* he = new HocEvent();
 	if (stmt_) {
+	    if (stmt_->pyobject()) {
+		he->stmt_ = new HocCommand(stmt_->pyobject());
+	    }else{
 		he->stmt_ = new HocCommand(stmt_->name(), stmt_->object());
+	    }
 		he->reinit_ = reinit_;
 		he->ppobj_ = ppobj_;
 	}
@@ -142,7 +148,11 @@ void HocEvent::savestate_restore(double tt, NetCvode* nc) {
 	HocEvent* he = alloc(nil, nil, 0);
 	NrnThread* nt = nrn_threads;
 	if (stmt_) {
+	    if (stmt_->pyobject()) {
+		he->stmt_ = new HocCommand(stmt_->pyobject());
+	    }else{
 		he->stmt_ = new HocCommand(stmt_->name(), stmt_->object());
+	    }
 		he->reinit_ = reinit_;
 		he->ppobj_ = ppobj_;
 		if (ppobj_) {

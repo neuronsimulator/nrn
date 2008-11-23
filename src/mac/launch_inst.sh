@@ -38,11 +38,6 @@ mkapp() {
 }
 
 cd ${srcdir}
-mkapp nrngui
-mkapp mknrndll
-mkapp modlunit
-mkapp neurondemo
-mkapp mos2nrn
 if test "$carbon" = "yes" ; then
 	rm -r -f $bindir/nrniv.app
 	mkapp nrniv
@@ -52,5 +47,8 @@ if test "$carbon" = "yes" ; then
 else
 	mkapp idraw
 fi
-
-
+mkapp nrngui
+mkapp mknrndll
+mkapp modlunit
+mkapp neurondemo
+mkapp mos2nrn

@@ -3,6 +3,7 @@
 // definition of random number generation from the g++ library
 
 #include <stdio.h>
+#include <stdlib.h>
 #include "random1.h"
 
 #include <InterViews/resource.h>

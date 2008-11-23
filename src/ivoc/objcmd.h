@@ -16,20 +16,24 @@ class HocCommand : public Observer{
 public:
 	HocCommand(const char*);
 	HocCommand(const char*, Object*);
+	HocCommand(Object* paction); // Python method call or tuple with args
 	virtual ~HocCommand();
 	int execute(boolean notify = true);
 	int execute(const char*, boolean notify = true);
+	int exec_strret(char* buf, int size, boolean notify = true); // for python callback returning a string
 	const char* name();
 	virtual void update(Observable*);
 	virtual void audit();
 	virtual void help();
 	double func_call(int narg);
 	Object* object() { return obj_; }
+	Object* pyobject() { return po_; }
 private:
 	void init(const char*, Object*);
 private:
 	Object* obj_;
 	CopyString* s_;
+	Object* po_;
 };
 
 #if HAVE_IV

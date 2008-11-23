@@ -507,7 +507,6 @@ AC_CONFIG_FILES([
 	src/mswin/bin/Makefile
 	share/Makefile bin/nrnoc_makefile bin/nrniv_makefile bin/nrnmech_makefile
 	share/lib/Makefile share/lib/hoc/Makefile share/lib/python/Makefile
-	share/lib/python/neuron/Makefile share/lib/python/neuron/tests/Makefile
 	share/lib/hoc/celbild/Makefile share/lib/hoc/mulfit/Makefile
 	share/lib/hoc/netbild/Makefile share/lib/hoc/lincir/Makefile
 	share/lib/hoc/mview/Makefile share/lib/hoc/chanbild/Makefile

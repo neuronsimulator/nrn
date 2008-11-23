@@ -8,6 +8,8 @@ external using_cvode_
 objref b, b1, this, cvode, atoltool_
 strdef smodel, smeth, smx, tstr
 proc init() {
+	dtsav = dt
+	if (dtsav < 1e-6) { dtsav = 0.025 }
 	saved = 0
 	cvode = CVode[0]
 	atol_ = cvode.atol()

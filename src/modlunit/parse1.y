@@ -86,7 +86,7 @@ extern int lexcontext;
 %type	<qp>	solvefor1 solvefor netrecblk fornetcon
 %type	<qp>	watchstmt watch1
 %type	<qp>	eqnblk terminalblk sens compartlist ldifuslist longdifus
-%type	<qp>	conserve compart namelist kineticblk reaction react consreact
+%type	<qp>	conserve compart namelist optnamelist kineticblk reaction react consreact
 %type	<qp>	lagstmt queuestmt matchblk matchlist match matchname
 %type	<qp>	unitblk unitflag unitbody unitdef Units factordef include1
 
@@ -839,7 +839,11 @@ nrnstmt: /*nothing*/
                 { P1{nrn_list($2, $3);}}
         | nrnstmt EXTERNAL nrnlist
                 { P1{nrn_list($2, $3);}}
-	| nrnstmt THREADSAFE
+	| nrnstmt THREADSAFE optnamelist
+	;
+optnamelist: /* nothing */
+		{$$ = NULL;}
+	| namelist
 	;
 nrnuse: USEION NAME READ nrnlist valence
 		{P1{nrn_use($2, $4, ITEM0);}}

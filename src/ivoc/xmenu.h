@@ -52,25 +52,29 @@ public:
 	virtual ~HocPanel();
 	virtual void map_window(int scroll = -1); // -1 leave up to panel_scroll attribute
 
-	void pushButton(const char* name, const char* action, boolean activate = false);
-	void stateButton(double *pd, const char* name, const char* action, int style);
+	void pushButton(const char* name, const char* action, boolean activate = false, Object* pyact = 0);
+	void stateButton(double *pd, const char* name, const char* action, int style, Object* pyvar = nil, Object* pyact = nil);
 	HocMenu* menu(const char* name, boolean add2menubar = false);
-	MenuItem* menuItem(const char* name, const char* action, boolean activate = false);
-	MenuItem* menuStateItem(double *pd, const char* name, const char* action);
+	MenuItem* menuItem(const char* name, const char* action, boolean activate = false, Object* pyact = 0);
+	MenuItem* menuStateItem(double *pd, const char* name, const char* action, Object* pyvar = nil, Object* pyact = nil);
 	void valueEd(const char* prompt, const char* variable, const char* action=0,
 		boolean canrun=false, double* pd=nil, boolean deflt=false,
-		boolean keep_updated=false, HocSymExtension* extra=nil);
+		boolean keep_updated=false, HocSymExtension* extra=nil,
+		Object* pyvar=nil, Object* pyact=nil);
+	void valueEd(const char* prompt, Object* pyvar, Object* pyact=0,
+		boolean canrun=false, boolean deflt=false,
+		boolean keep_updated=false);
 
 // ZFM added vert
 	void slider(double*, float low = 0, float high = 100,
 		float resolution = 1, int steps = 10,
 		const char* send_cmd = nil, boolean vert = false,
-		boolean slow = false);
+		boolean slow = false, Object* pyvar=nil, Object* pysend=nil);
 	virtual void write(ostream&);
 	virtual void save(ostream&);
 	virtual HocItem* hoc_item();
 	void label(const char*);
-	void var_label(char**);
+	void var_label(char**, Object* pyvar = nil);
 	PolyGlyph* box();
 	const char* getName();
 	void itemAppend(const char*);
@@ -86,7 +90,7 @@ public:
 #endif
 	static void keep_updated();
 	static void keep_updated(HocUpdateItem*, boolean);
-	static void paneltool(const char* name, const char* procname, const char* action, ScenePicker*);
+	static void paneltool(const char* name, const char* procname, const char* action, ScenePicker*, Object* pycallback = nil, Object* pyselact = nil);
 	static void update_ptrs();
 private:
 	PolyGlyph* box_;
@@ -173,7 +177,7 @@ public:
 
 class HocVarLabel : public HocUpdateItem {
 public:
-	HocVarLabel(char**, PolyGlyph*);
+	HocVarLabel(char**, PolyGlyph*, Object* pyvar = nil);
 	virtual ~HocVarLabel();
 	virtual void write(ostream&);
 	virtual void update_hoc_item();
@@ -184,11 +188,12 @@ private:
 	char** cpp_;
 	char* cp_;
 	CopyString* variable_;
+	Object* pyvar_;
 };
 
 class HocAction : public Action {
 public:
-	HocAction(const char* action);
+	HocAction(const char* action, Object* pyact = nil);
 	virtual ~HocAction();
 	virtual void execute();
 	const char* name() const;
@@ -260,7 +265,7 @@ class HocValEditor : public HocUpdateItem {
 public:
 	HocValEditor(const char* name, const char* variable, ValEdLabel*,
 		HocValAction*, double* pd=0, boolean canrun=false,
-		HocItem* parent = nil);
+		HocItem* parent = nil, Object* pvar = nil);
 	virtual ~HocValEditor();
 	FieldSEditor* field_editor() { return fe_; }
 	virtual Stepper* stepper() { return nil; }
@@ -292,13 +297,14 @@ private:
 	double* pval_;
 	ValEdLabel* prompt_;
 	float* domain_limits_;
+	Object* pyvar_;
 };
 
 class HocDefaultValEditor : public HocValEditor {
 public:
 	HocDefaultValEditor(const char* name, const char* variable, ValEdLabel*,
 		HocValAction*, double* pd=0, boolean canrun=false,
-		HocItem* parent = nil);
+		HocItem* parent = nil, Object* pyvar=nil);
 	virtual ~HocDefaultValEditor();
 	virtual Stepper* stepper() { return vs_; }
 	virtual void updateField();
@@ -317,14 +323,15 @@ private:
 class HocValEditorKeepUpdated : public HocValEditor {
 public:
 	HocValEditorKeepUpdated(const char* name, const char* variable, ValEdLabel*,
-		HocValAction*, double*, HocItem* parent = nil);
+		HocValAction*, double*, HocItem* parent = nil, Object* pyvar=nil);
 	virtual ~HocValEditorKeepUpdated();
 	virtual void write(ostream&);
 };
 
 class HocValAction : public HocAction {
 public:
-	HocValAction(const char* action);
+	HocValAction(const char* action, Object* pyact = 0);
+	HocValAction(Object* pyaction);
 	virtual ~HocValAction();
 	void accept(FieldSEditor*);
 	void execute();
@@ -350,7 +357,7 @@ public:
 	OcSlider(double*, float low, float high,
 		float resolution, int nsteps,
 		const char* send_cmd, boolean vert,
-		boolean slow = false);
+		boolean slow = false, Object* pyvar=nil, Object* pysend=nil);
 	virtual ~OcSlider();
 	virtual void write(ostream&);
 
@@ -370,6 +377,7 @@ private:
 	BoundedValue* bv_;
 	HocCommand* send_;
 	double *pval_;
+	Object* pyvar_;
 	CopyString* variable_;
 	boolean scrolling_;
 	boolean vert_;
@@ -380,7 +388,7 @@ private:
 
 class HocStateButton : public HocUpdateItem, public Observer {
  public:
-  HocStateButton(double*, const char*, Button*, HocAction*, int, HocItem* parent = nil);
+  HocStateButton(double*, const char*, Button*, HocAction*, int, HocItem* parent = nil, Object* pyvar = nil);
   virtual ~HocStateButton();
   virtual void write(ostream&);
 
@@ -399,6 +407,7 @@ class HocStateButton : public HocUpdateItem, public Observer {
   CopyString* variable_;
   CopyString* name_;
   double* pval_;
+  Object* pyvar_;
   Button* b_;
   HocAction* action_;
 };
@@ -406,7 +415,7 @@ class HocStateButton : public HocUpdateItem, public Observer {
 
 class HocStateMenuItem : public HocUpdateItem, public Observer {
  public:
-  HocStateMenuItem(double*, const char*, MenuItem*, HocAction*, HocItem* parent = nil);
+  HocStateMenuItem(double*, const char*, MenuItem*, HocAction*, HocItem* parent = nil, Object* pyvar = nil);
   virtual ~HocStateMenuItem();
   virtual void write(ostream&);
 
@@ -423,6 +432,7 @@ class HocStateMenuItem : public HocUpdateItem, public Observer {
   CopyString* variable_;
   CopyString* name_;
   double* pval_;
+  Object* pyvar_;
   MenuItem* b_;
   HocAction* action_;
 };

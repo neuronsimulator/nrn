@@ -7,11 +7,15 @@
 #endif
 
 #include <stdio.h>
+#include <stdlib.h>
 #include "objcmd.h"
 #include "oc2iv.h"
 
 extern "C" {
 extern Object* hoc_thisobject;
+int (*nrnpy_hoccommand_exec)(Object*);
+int (*nrnpy_hoccommand_exec_strret)(Object*, char*, int);
+void (*nrnpy_cmdtool)(Object*, int type, double x, double y, int kd);
 }
 
 HocCommand::HocCommand(const char* cmd) {
@@ -21,9 +25,22 @@ HocCommand::HocCommand(const char* cmd, Object* obj) {
 	init(cmd, obj);
 }
 
+HocCommand::HocCommand(Object* pobj) {
+	// must wrap a PyObject method or tuple of (method, arg1, ...)
+	// hold a reference to the wrapped PyObject
+	if (strcmp(pobj->ctemplate->sym->name, "PythonObject") != 0) {
+		hoc_execerror(hoc_object_name(pobj), "not a PythonObject");
+	}
+	po_ = pobj;
+	hoc_obj_ref(po_);
+	s_ = nil;
+	obj_ = nil;
+}
+
 void HocCommand::init(const char* cmd, Object* obj) {
 	s_ = new CopyString(cmd);
 	obj_ = obj;
+	po_ = nil;
 #if HAVE_IV
 	if (obj_) {
 		Oc oc;
@@ -45,7 +62,12 @@ HocCommand::~HocCommand() {
 		oc.notify_pointer_disconnect(this);
 	}
 #endif
-	delete s_;
+	if (s_) {
+		delete s_;
+	}
+	if (po_) {
+		hoc_obj_unref(po_);
+	}
 }
 
 void HocCommand::help() {
@@ -64,6 +86,7 @@ void HocCommand::help() {
 }
 
 const char* HocCommand::name() {
+	assert(po_ == nil);
 	return s_->string();
 }
 
@@ -81,12 +104,29 @@ void HocCommand::audit() {
 }
 
 int HocCommand::execute(boolean notify) {
-	if (!s_) {
-		return 0;
+	int err;
+	if (po_) {
+		assert(nrnpy_hoccommand_exec);
+		err = (*nrnpy_hoccommand_exec)(po_);
+	}else{
+		if (!s_) {
+			return 0;
+		}
+		char buf[256];
+		sprintf(buf, "{%s}\n", s_->string());
+		err = hoc_obj_run(buf, obj_);
 	}
-	char buf[256];
-	sprintf(buf, "{%s}\n", s_->string());
-	int err = hoc_obj_run(buf, obj_);
+#if HAVE_IV
+	if (notify) {
+		Oc oc;
+		oc.notify();
+	}
+#endif
+	return err;
+}
+int HocCommand::exec_strret(char* buf, int size, boolean notify) {
+	assert (po_)
+	int err = (*nrnpy_hoccommand_exec_strret)(po_, buf, size);
 #if HAVE_IV
 	if (notify) {
 		Oc oc;
@@ -96,6 +136,7 @@ int HocCommand::execute(boolean notify) {
 	return err;
 }
 int HocCommand::execute(const char* s, boolean notify) {
+	assert(po_ == nil);
 	char buf[256];
 	sprintf(buf, "{%s}\n", s);
 	int err = hoc_obj_run(buf, obj_);
@@ -109,6 +150,7 @@ int HocCommand::execute(const char* s, boolean notify) {
 }
 
 double HocCommand::func_call(int narg) {
+	assert(po_ == nil);
 	Symbol* s = nil;
 	if (obj_ && obj_->ctemplate) {
 		s = hoc_table_lookup(name(), obj_->ctemplate->symtable);
@@ -163,7 +205,6 @@ boolean HocCommandTool::event(Event& e) {
 //	the hoc callback may change the size of the view
 	const Transformer& t = XYView::current_pick_view()->s2o();
 	t.transform(e.pointer_x(), e.pointer_y(), x, y);
-	sprintf(buf, "%s(%d, %g, %g, %d)", hc_->name(), e.type(), x, y, kd);
 //printf("%g %g %g %g\n", e.pointer_x(), e.pointer_y(), x, y);
 	if (e.type() == Event::up) {
 		e.ungrab(this);
@@ -171,7 +212,14 @@ boolean HocCommandTool::event(Event& e) {
 		e.window()->ungrab_pointer();
 #endif
 	}
-	hc_->execute(buf, true);
+	if (hc_->pyobject()) {
+		(*nrnpy_cmdtool)(hc_->pyobject(), e.type(), x, y, kd);
+		Oc oc;
+		oc.notify();
+	}else{
+		sprintf(buf, "%s(%d, %g, %g, %d)", hc_->name(), e.type(), x, y, kd);
+		hc_->execute(buf, true);
+	}
 	if (e.type() == Event::up) {
 		Resource::unref(this);
 	}
