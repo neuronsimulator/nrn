@@ -81,8 +81,11 @@ AC_ARG_ENABLE([bluegeneP],
 				PYLIBDIR="$BG_BASE/gnu-linux/lib"
 				PYLIBLINK="-L$BG_BASE/gnu-linux/lib -lpython2.5"
 			fi
+			if test "$LIBS" = "" ; then
+				LIBS='-lmass'
+			fi
 			if test "$LDFLAGS" = "" ; then
-				LDFLAGS=-qnostaticlink
+				LDFLAGS='-qsmp -qnostaticlink'
 			fi
 			if test "$with_multisend" = "" ; then
 				with_multisend=bgp
@@ -100,7 +103,7 @@ AC_ARG_ENABLE([bluegeneP],
 				MPICXX=$CXX
 			fi
 			if test "$OPTFLAGS" = "" ; then
-				OPTFLAGS="-O3 -qarch=450"
+				OPTFLAGS="-O3 -qarch=450d"
 			fi
 			if test "$CFLAGS" = "" ; then
 				CFLAGS="$OPTFLAGS $BG_INCLUDE"
