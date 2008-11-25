@@ -650,7 +650,7 @@ static int segment_setattro(NPySegObj* self, PyObject* name, PyObject* value) {
 				Py_DECREF(name);
 				return -1;
 			}
-			if (!PyArg_Parse(value, "d", &d)) {
+			if (!PyArg_Parse(value, "d", d)) {
 				PyErr_SetString(PyExc_ValueError, "bad value");
 				Py_DECREF(name);
 				return -1;
