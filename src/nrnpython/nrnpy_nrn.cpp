@@ -1023,6 +1023,14 @@ static PyMethodDef nrnpy_methods[] = {
 	
 static PyObject* nrnmodule_;
 
+static void rangevars_add(Symbol* sym) {
+	assert(sym && sym->type == RANGEVAR);
+	NPyRangeVar* r = PyObject_New(NPyRangeVar, range_type);
+	//printf("%s\n", sym->name);
+	r->sym_ = sym;
+	PyDict_SetItemString(rangevars_, sym->name, (PyObject*)r);
+}
+
 myPyMODINIT_FUNC nrnpy_nrn(void) 
 {
     int i;
@@ -1061,6 +1069,9 @@ myPyMODINIT_FUNC nrnpy_nrn(void)
     PyModule_AddObject(m, "Mechanism", (PyObject *)pmech_generic_type);
     pmech_types = PyDict_New();
     rangevars_ = PyDict_New();
+    rangevars_add(hoc_table_lookup("diam", hoc_built_in_symlist));
+    rangevars_add(hoc_table_lookup("cm", hoc_built_in_symlist));
+    rangevars_add(hoc_table_lookup("v", hoc_built_in_symlist));
     for (i=4; i < n_memb_func; ++i) { // start at pas
 	nrnpy_reg_mech(i);
     }
@@ -1085,11 +1096,7 @@ void nrnpy_reg_mech(int type) {
 	PyDict_SetItemString(pmech_types, s, Py_BuildValue("i", type));
 	for (i = 0; i < mf->sym->s_varn; ++i) {
 		Symbol* sym = mf->sym->u.ppsym[i];
-		assert(sym->type == RANGEVAR);
-		NPyRangeVar* r = PyObject_New(NPyRangeVar, range_type);
-		//printf("%s\n", sym->name);
-		r->sym_ = sym;
-		PyDict_SetItemString(rangevars_, sym->name, (PyObject*)r);
+		rangevars_add(sym);
 	}
 }
 
