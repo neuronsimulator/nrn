@@ -273,7 +273,7 @@ void nrnpy_decref_clear() {
 	}
 }
 
-#if PYTHON_API_VERSION <= 1012 // 2.3
+#if (PY_MAJOR_VERSION == 2 && PY_MINOR_VERSION == 3)
 // copied from /Modules/_ctypes/_ctypes.c
 static PyObject* PyTuple_Pack(int n, ...) {
         int i;
