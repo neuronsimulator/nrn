@@ -56,6 +56,7 @@ extern void nrn_change_nseg(Section*, int);
 extern double section_length(Section*);
 extern double nrn_ra(Section*);
 extern int can_change_morph(Section*);
+extern void nrn_diam_change(Section*);
 extern void nrn_length_change(Section*, double);
 extern int diam_changed;
 extern void mech_insert1(Section*, int);
@@ -425,6 +426,7 @@ static int section_setattro(NPySecObj* self, PyObject* name, PyObject* value) {
 				self->sec_->prop->dparam[2].val = x;
 				nrn_length_change(self->sec_, x);
 				diam_changed = 1;
+				self->sec_->recalc_area_ = 1;
 			}
 		}else{
 			PyErr_SetString(PyExc_ValueError,
@@ -436,6 +438,7 @@ static int section_setattro(NPySecObj* self, PyObject* name, PyObject* value) {
 		if (PyArg_Parse(value, "d", &x) == 1 &&  x > 0.) {
 			self->sec_->prop->dparam[7].val = x;
 			diam_changed = 1;
+			self->sec_->recalc_area_ = 1;
 		}else{
 			PyErr_SetString(PyExc_ValueError,
 				"Ra must be > 0.");
@@ -654,6 +657,12 @@ static int segment_setattro(NPySegObj* self, PyObject* name, PyObject* value) {
 				PyErr_SetString(PyExc_ValueError, "bad value");
 				Py_DECREF(name);
 				return -1;
+			}else if (sym->u.rng.type == MORPHOLOGY) {
+				diam_changed = 1;
+				self->pysec_->sec_->recalc_area_ = 1;
+				nrn_diam_change(self->pysec_->sec_);
+			}else if (sym->u.rng.type == EXTRACELL && sym->u.rng.index == 0) {
+				diam_changed = 1;
 			}
 		}
 	}else{
