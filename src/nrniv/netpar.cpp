@@ -350,7 +350,7 @@ void nrn_spike_exchange_init() {
 	nout_ = 0;
 	nsend_ = nsendmax_ = nrecv_ = nrecv_useful_ = 0;
 #endif // NRNMPI
-	if (nrnmpi_myid == 0){printf("usable_mindelay_ = %g\n", usable_mindelay_);}
+	//if (nrnmpi_myid == 0){printf("usable_mindelay_ = %g\n", usable_mindelay_);}
 }
 
 #if NRNMPI
