@@ -11,6 +11,13 @@
 #include "ivoc.h"
 #endif
 
+#include "oc2iv.h"
+extern "C" {
+extern double (*nrnpy_guigetval)(Object*);
+extern void (*nrnpy_guisetval)(Object*, double);
+extern int (*nrnpy_guigetstr)(Object*, char**);
+}
+
 #if defined(CYGWIN)
 extern "C" {
 extern double hoc_func_table(); // needed by dll.cpp
@@ -46,5 +53,8 @@ void nrn_nvkludge_dummy() {
 #if NRNMPI
 	nrn_timeout(0);
 #endif
+	nrnpy_guigetval = 0;
+	nrnpy_guisetval = 0;
+	nrnpy_guigetstr = 0;
 }
 

@@ -69,18 +69,23 @@ AC_ARG_ENABLE([bluegeneP],
 		linux_nrnmech="no"
 		if test x$with_nmodl_only != xyes ; then
 			nmodl_build="no"
-			BG_BASE="/bgsys/drivers/ppcfloor"
+			if test "$BG_BASE" = "" ; then
+				BG_BASE="/bgsys/drivers/ppcfloor"
+			fi
 			BG_INCLUDE="-I$BG_BASE/comm/include -I$BG_BASE/arch/include"
 			if test "$PYINCDIR" = "" ; then
-				PYINCDIR='/bgsys/drivers/ppcfloor/gnu-linux/include/python2.5'
+				PYINCDIR="$BG_BASE/gnu-linux/include/python2.5"
 			fi
 			if test "$PYLIB" = "" ; then
-				PYLIB='-L/bgsys/drivers/ppcfloor/gnu-linux/lib -lpython2.5'
-				PYLIBDIR='/bgsys/drivers/ppcfloor/gnu-linux/lib'
-				PYLIBLINK='-L/bgsys/drivers/ppcfloor/gnu-linux/lib -lpython2.5'
+				PYLIB="-L$BG_BASE/gnu-linux/lib -lpython2.5"
+				PYLIBDIR="$BG_BASE/gnu-linux/lib"
+				PYLIBLINK="-L$BG_BASE/gnu-linux/lib -lpython2.5"
+			fi
+			if test "$LIBS" = "" ; then
+				LIBS='-lmass'
 			fi
 			if test "$LDFLAGS" = "" ; then
-				LDFLAGS=-qnostaticlink
+				LDFLAGS='-qsmp -qnostaticlink'
 			fi
 			if test "$with_multisend" = "" ; then
 				with_multisend=bgp
@@ -98,10 +103,10 @@ AC_ARG_ENABLE([bluegeneP],
 				MPICXX=$CXX
 			fi
 			if test "$OPTFLAGS" = "" ; then
-				OPTFLAGS="-O3 -qarch=450 $BG_INCLUDE"
+				OPTFLAGS="-O3 -qarch=450d"
 			fi
 			if test "$CFLAGS" = "" ; then
-				CFLAGS="$OPTFLAGS"
+				CFLAGS="$OPTFLAGS $BG_INCLUDE"
 			fi
 			if test "$CXXFLAGS" = "" ; then
 				CXXFLAGS=$CFLAGS
@@ -110,8 +115,76 @@ AC_ARG_ENABLE([bluegeneP],
                         	NRN_DEFINE(BLUEGENE_CHECKPOINT,1,[enable the checkpointing on BlueGene hardware])
                         	BGL_LIBS = "-lchkpt.rts $BGL_LIBS"
                 	fi
-			am_cv_CC_dependencies_compiler_type=xlc
-			am_cv_CXX_dependencies_compiler_type=xlc
+			if test "$deptype" = "" ; then
+				am_cv_CC_dependencies_compiler_type=xlc
+				am_cv_CXX_dependencies_compiler_type=xlc
+			fi
+		else
+			nmodl_build="yes"
+		fi
+		always_call_mpi_init=yes
+		if test "$file_open_retry" = "" ; then
+			file_open_retry=1
+		fi
+		NRN_DEFINE(BLUEGENE,1,[define if cross compiling for IBM BlueGene L or P])
+		NRN_DEFINE(BLUEGENEP,1,[define if cross compiling for IBM BlueGene/P])
+	fi
+])
+
+AC_ARG_ENABLE([bgPlinux],
+	AC_HELP_STRING([--enable-bgPlinux],[For BlueGene/P mpicc, supplies many extra configuration options]),[
+	if test "$enable_bgPlinux" = "yes" ; then
+		with_x="no"
+		with_memacs="no"
+#		enable_shared="no"
+		with_readline="no"
+		java_dlopen="no"
+		linux_nrnmech="no"
+		if test x$with_nmodl_only != xyes ; then
+			nmodl_build="no"
+			if test "$BG_BASE" = "" ; then
+				BG_BASE="/bgsys/drivers/ppcfloor"
+			fi
+			BG_INCLUDE="-I$BG_BASE/comm/include -I$BG_BASE/arch/include"
+			if test "$PYINCDIR" = "" ; then
+				PYINCDIR="$BG_BASE/gnu-linux/include/python2.5"
+			fi
+			if test "$PYLIB" = "" ; then
+				PYLIB="-L$BG_BASE/gnu-linux/lib -lpython2.5"
+				PYLIBDIR="$BG_BASE/gnu-linux/lib"
+				PYLIBLINK="-L$BG_BASE/gnu-linux/lib -lpython2.5"
+			fi
+			if test "$with_multisend" = "" ; then
+				with_multisend=bgp
+			fi
+			if test "$CC" = "" ; then
+				CC=mpicc
+			fi
+			if test "$CXX" = "" ; then
+				CXX=mpicxx
+			fi
+			if test "$MPICC" = "" ; then
+				MPICC=$CC
+			fi
+			if test "$MPICXX" = "" ; then
+				MPICXX=$CXX
+			fi
+			if test "$OPTFLAGS" = "" ; then
+				OPTFLAGS="-O3 -g"
+			fi
+			if test "$CFLAGS" = "" ; then
+				CFLAGS="$OPTFLAGS $BG_INCLUDE"
+			fi
+			if test "$CXXFLAGS" = "" ; then
+				CXXFLAGS=$CFLAGS
+			fi
+			if test "$BG_CHECKPOINT" = "yes" ; then
+                        	NRN_DEFINE(BLUEGENE_CHECKPOINT,1,[enable the checkpointing on BlueGene hardware])
+                        	BGL_LIBS = "-lchkpt.rts $BGL_LIBS"
+                	fi
+#			if test "$LDFLAGS" = "" ; then
+#				LDFLAGS="-shared"
+#			fi
 		else
 			nmodl_build="yes"
 		fi

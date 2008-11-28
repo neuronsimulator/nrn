@@ -43,6 +43,12 @@ int nrnmpi_spike_compress(int nspike, boolean gid_compress, int xchng_meth);
 void nrnmpi_gid_clear();
 extern void nrn_partrans_clear();
 void nrn_spike_exchange_init();
+extern double nrn_bgp_receive_time(int);
+
+#if !defined(BGPDMA) || BGPDMA != 2
+double nrn_bgp_receive_time(int) { return 0.; }
+#endif
+
 #if PARANEURON
 extern void nrnmpi_split_clear();
 #endif
@@ -60,7 +66,6 @@ void nrn_timeout(int);
 void nrn_spike_exchange();
 extern int nrnmpi_int_allmax(int);
 extern void nrnmpi_int_allgather(int*, int*, int);
-
 void nrn2ncs_outputevent(int netcon_output_index, double firetime);
 }
 
@@ -127,9 +132,7 @@ void NetParEvent::deliver(double tt, NetCvode* nc, NrnThread* nt){
     if (nrnmpi_numprocs > 0 && nt->id == 0) {
 #if BGPDMA
 	if (use_bgpdma_) {
-		wt_ = nrnmpi_wtime();
 		bgp_dma_receive();
-		wt_ = nrnmpi_wtime() - wt_;
 	}else{
 		nrn_spike_exchange();
 	}
@@ -312,7 +315,6 @@ void nrn_spike_exchange_init() {
 			return;
 		}
 	}
-	//printf("usable_mindelay_ = %g\n", usable_mindelay_);
 
 #if BGPDMA
 	if (use_bgpdma_) {
@@ -348,6 +350,7 @@ void nrn_spike_exchange_init() {
 	nout_ = 0;
 	nsend_ = nsendmax_ = nrecv_ = nrecv_useful_ = 0;
 #endif // NRNMPI
+	//if (nrnmpi_myid == 0){printf("usable_mindelay_ = %g\n", usable_mindelay_);}
 }
 
 #if NRNMPI
@@ -900,9 +903,7 @@ void BBS::netpar_solve(double tstop) {
 	impl_->integ_time_ -= (npe_ ? (npe_[0].wx_ + npe_[0].ws_) : 0.);
 #if BGPDMA
 	if (use_bgpdma_) {
-		wt_ = nrnmpi_wtime();
 		bgp_dma_receive();
-		wt_ = nrnmpi_wtime() - wt_;
 	}else{
 		nrn_spike_exchange();
 	}
