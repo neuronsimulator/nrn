@@ -56,6 +56,7 @@ extern void nrn_change_nseg(Section*, int);
 extern double section_length(Section*);
 extern double nrn_ra(Section*);
 extern int can_change_morph(Section*);
+extern void nrn_diam_change(Section*);
 extern void nrn_length_change(Section*, double);
 extern int diam_changed;
 extern void mech_insert1(Section*, int);
@@ -425,6 +426,7 @@ static int section_setattro(NPySecObj* self, PyObject* name, PyObject* value) {
 				self->sec_->prop->dparam[2].val = x;
 				nrn_length_change(self->sec_, x);
 				diam_changed = 1;
+				self->sec_->recalc_area_ = 1;
 			}
 		}else{
 			PyErr_SetString(PyExc_ValueError,
@@ -436,6 +438,7 @@ static int section_setattro(NPySecObj* self, PyObject* name, PyObject* value) {
 		if (PyArg_Parse(value, "d", &x) == 1 &&  x > 0.) {
 			self->sec_->prop->dparam[7].val = x;
 			diam_changed = 1;
+			self->sec_->recalc_area_ = 1;
 		}else{
 			PyErr_SetString(PyExc_ValueError,
 				"Ra must be > 0.");
@@ -650,10 +653,16 @@ static int segment_setattro(NPySegObj* self, PyObject* name, PyObject* value) {
 				Py_DECREF(name);
 				return -1;
 			}
-			if (!PyArg_Parse(value, "d", &d)) {
+			if (!PyArg_Parse(value, "d", d)) {
 				PyErr_SetString(PyExc_ValueError, "bad value");
 				Py_DECREF(name);
 				return -1;
+			}else if (sym->u.rng.type == MORPHOLOGY) {
+				diam_changed = 1;
+				self->pysec_->sec_->recalc_area_ = 1;
+				nrn_diam_change(self->pysec_->sec_);
+			}else if (sym->u.rng.type == EXTRACELL && sym->u.rng.index == 0) {
+				diam_changed = 1;
 			}
 		}
 	}else{
@@ -1023,6 +1032,14 @@ static PyMethodDef nrnpy_methods[] = {
 	
 static PyObject* nrnmodule_;
 
+static void rangevars_add(Symbol* sym) {
+	assert(sym && sym->type == RANGEVAR);
+	NPyRangeVar* r = PyObject_New(NPyRangeVar, range_type);
+	//printf("%s\n", sym->name);
+	r->sym_ = sym;
+	PyDict_SetItemString(rangevars_, sym->name, (PyObject*)r);
+}
+
 myPyMODINIT_FUNC nrnpy_nrn(void) 
 {
     int i;
@@ -1061,6 +1078,9 @@ myPyMODINIT_FUNC nrnpy_nrn(void)
     PyModule_AddObject(m, "Mechanism", (PyObject *)pmech_generic_type);
     pmech_types = PyDict_New();
     rangevars_ = PyDict_New();
+    rangevars_add(hoc_table_lookup("diam", hoc_built_in_symlist));
+    rangevars_add(hoc_table_lookup("cm", hoc_built_in_symlist));
+    rangevars_add(hoc_table_lookup("v", hoc_built_in_symlist));
     for (i=4; i < n_memb_func; ++i) { // start at pas
 	nrnpy_reg_mech(i);
     }
@@ -1085,11 +1105,7 @@ void nrnpy_reg_mech(int type) {
 	PyDict_SetItemString(pmech_types, s, Py_BuildValue("i", type));
 	for (i = 0; i < mf->sym->s_varn; ++i) {
 		Symbol* sym = mf->sym->u.ppsym[i];
-		assert(sym->type == RANGEVAR);
-		NPyRangeVar* r = PyObject_New(NPyRangeVar, range_type);
-		//printf("%s\n", sym->name);
-		r->sym_ = sym;
-		PyDict_SetItemString(rangevars_, sym->name, (PyObject*)r);
+		rangevars_add(sym);
 	}
 }
 

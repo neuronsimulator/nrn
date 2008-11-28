@@ -273,6 +273,30 @@ void nrnpy_decref_clear() {
 	}
 }
 
+#if (PY_MAJOR_VERSION == 2 && PY_MINOR_VERSION == 3)
+// copied from /Modules/_ctypes/_ctypes.c
+static PyObject* PyTuple_Pack(int n, ...) {
+        int i;
+        PyObject *o;
+        PyObject *result;
+        PyObject **items;
+        va_list vargs;
+
+        va_start(vargs, n);
+        result = PyTuple_New(n);
+        if (result == NULL)
+                return NULL;
+        items = ((PyTupleObject *)result)->ob_item;
+        for (i = 0; i < n; i++) {
+                o = va_arg(vargs, PyObject *);
+                Py_INCREF(o);
+                items[i] = o;
+        }
+        va_end(vargs);
+        return result;
+}
+#endif
+
 static PyObject* hoccommand_exec_help(Object* ho) {
 	PyObject* po = ((Py2Nrn*)ho->u.this_pointer)->po_;
 //printf("%s\n", hoc_object_name(ho));
