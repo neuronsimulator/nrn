@@ -35,6 +35,9 @@ extern void nrnmpi_int_gatherv(int*, int, int*, int*, int*, int);
 extern void nrnmpi_barrier();
 }
 
+static unsigned long long dmasend_time_;
+static int n_xtra_cons_check_;
+
 #include <structpool.h>
 
 declareStructPool(SpkPool, NRNMPI_Spike)
@@ -129,6 +132,9 @@ void BGP_ReceiveBuffer::enqueue() {
 	busy_ = 0;
 }
 
+#define NSEND 10
+#define NSEND2 5
+
 #if BGPDMA == 2
 
 #include <dcmf.h>
@@ -139,6 +145,10 @@ void BGP_ReceiveBuffer::enqueue() {
 static DCMF_Opcode_t* hints_;
 static DCMF_Protocol_t protocol __attribute__((__aligned__(16)));
 static DCMF_Multicast_Configuration_t mconfig;
+static DCMF_Multicast_t msend1[NSEND];
+static DCMF_Request_t sender1[NSEND] __attribute__((__aligned__(16)));
+static DCMF_Callback_t cb_done1[NSEND];
+static DCQuad msginfo1[NSEND];
 
 // maybe we will use this when a rank sends to itself.
 static void spk_ready (int gid, double spiketime) {
@@ -193,9 +203,6 @@ static DCMF_Request_t * msend_recv(const DCQuad  * msginfo,
   return NULL;
 }
 
-static unsigned long long dmasend_time_;
-static int n_xtra_cons_check_;
-
 double nrn_bgp_receive_time(int type) { // and others
 	double rt = 0.;
 	if (!use_bgpdma_) { return rt; }
@@ -236,8 +243,6 @@ public:
 };
 
 static int max_ntarget_host;
-#define NSEND 10
-#define NSEND2 5
 static boolean req_in_use[NSEND2];
 
 // Multisend_multicast callback
@@ -290,10 +295,6 @@ BGP_DMASend::~BGP_DMASend() {
 	}
 }
 
-static	DCMF_Multicast_t msend1[NSEND];
-static	DCMF_Request_t sender1[NSEND] __attribute__((__aligned__(16)));
-static	DCMF_Callback_t cb_done1[NSEND];
-static	DCQuad msginfo1[NSEND];
 static	int isend;
 
 void BGP_DMASend::send(int gid, double t) {
@@ -301,7 +302,6 @@ void BGP_DMASend::send(int gid, double t) {
 	spk_.gid = gid;
 	spk_.spiketime = t;
 #if BGP_INTERVAL == 2
-	unsigned long long tb = DCMF_Timebase();
 	bgp_receive_buffer[next_rbuf]->nsend_ += ntarget_hosts_;
 	if (next_rbuf == 1) {
 		spk_.gid = ~spk_.gid;
@@ -311,6 +311,7 @@ void BGP_DMASend::send(int gid, double t) {
 #endif
 	nsend_ += 1;
 #if BGPDMA == 2
+	unsigned long long tb = DCMF_Timebase();
 
 	DCMF_Multicast_t& msend = msend1[isend];
 	DCMF_Request_t& sender = sender1[isend];
