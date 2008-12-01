@@ -33,10 +33,17 @@ extern void nrnmpi_int_alltoallv(int*, int*, int*, int*, int*, int*);
 extern void nrnmpi_int_gather(int*, int*, int, int);
 extern void nrnmpi_int_gatherv(int*, int, int*, int*, int*, int);
 extern void nrnmpi_barrier();
+
+extern IvocVect* vector_arg(int);
+extern void vector_resize(IvocVect*, int);
 }
 
 static unsigned long long dmasend_time_;
 static int n_xtra_cons_check_;
+#define MAXNCONS 10
+#if MAXNCONS
+static xtra_cons_hist_[MAXNCONS+1];
+#endif
 
 #include <structpool.h>
 
@@ -203,6 +210,15 @@ static DCMF_Request_t * msend_recv(const DCQuad  * msginfo,
   return NULL;
 }
 
+#define TBUFSIZE (1<<15)
+#if TBUFSIZE
+static unsigned long tbuf_[TBUFSIZE];
+static int itbuf_;
+#define TBUF tbuf_[itbuf_++] = (unsigned long)DCMF_Timebase();
+#else
+#define TBUF /**/
+#endif
+
 double nrn_bgp_receive_time(int type) { // and others
 	double rt = 0.;
 	if (!use_bgpdma_) { return rt; }
@@ -217,6 +233,26 @@ double nrn_bgp_receive_time(int type) { // and others
 		break;
 	case 4: // number of extra conservation checks
 		rt = double(n_xtra_cons_check_);
+		// and if there is second vector arg then also return the histogram
+#if MAXNCONS
+		if (ifarg(2)) {
+			IvocVect* vec = vector_arg(2);
+			vector_resize(vec, MAXNCONS+1);
+			for (int i=0; i <= MAXNCONS; ++i) {
+				vector_vec(vec)[i] = double(xtra_cons_hist_[i]);
+			}
+		}
+#endif // MAXNCONS
+#if TBUFSIZE
+		if (ifarg(3)) {
+			IvocVect* vec = vector_arg(3);
+			vector_resize(vec, itbuf_+1);
+			for (int i=0; i <= itbuf_; ++i) {
+				vector_vec(vec)[i] = double(tbuf_[i]);
+			}
+			vector_vec(vec)[itbuf_] = DCMF_Tick();
+		}
+#endif
 		break;
 	}
 	return rt;
@@ -262,6 +298,11 @@ static void bgp_dma_init() {
 	}
 	dmasend_time_ = 0;
 	n_xtra_cons_check_ = 0;
+#if MAXNCONS
+	for (int i=0; i <= MAXNCONS; ++i) {
+		xtra_cons_hist_[i] = 0;
+	}
+#endif // MAXNCONS
 }
 
 static int bgp_advance() {
@@ -377,16 +418,25 @@ static int gathersrcgid(int hostbegin, int totalngid, int* ngid,
 
 void bgp_dma_receive() {
 //	nrn_spike_exchange();
+	TBUF
 	double w1, w2;
+	int ncons = 0;
 	int& s = bgp_receive_buffer[current_rbuf]->nsend_;
 	int& r = bgp_receive_buffer[current_rbuf]->nrecv_;
 	w1 = nrnmpi_wtime();
 #if BGPDMA == 2
 	DCMF_Messager_advance();
+	TBUF
 	while (nrnmpi_bgp_conserve(s, r) != 0) {
 		DCMF_Messager_advance();
-		++n_xtra_cons_check_;
+		++ncons;
 	}
+	TBUF
+	n_xtra_cons_check_ += ncons;
+#if MAXNCONS
+	if (ncons > MAXNCONS) { ncons = MAXNCONS; }
+	++xtra_cons_hist_[ncons];
+#endif // MAXNCONS
 #else
 	bgp_advance();
 	while (nrnmpi_bgp_conserve(s, r) != 0) {
@@ -395,6 +445,11 @@ void bgp_dma_receive() {
 #endif
 	w1 = nrnmpi_wtime() - w1;
 	w2 = nrnmpi_wtime();
+#if TBUFSIZE
+	tbuf_[itbuf_++] = (unsigned long)ncons;
+	tbuf_[itbuf_++] = (unsigned long)s;
+	tbuf_[itbuf_++] = (unsigned long)r;
+#endif
 	bgp_receive_buffer[current_rbuf]->enqueue();
 	wt1_ = nrnmpi_wtime() - w2;
 	wt_ = w1;
@@ -403,6 +458,7 @@ void bgp_dma_receive() {
 	current_rbuf = next_rbuf;
 	next_rbuf = ((next_rbuf + 1)&1);
 #endif
+	TBUF
 }
 
 void bgp_dma_send(PreSyn* ps, double t) {
