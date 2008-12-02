@@ -427,16 +427,15 @@ void bgp_dma_receive() {
 #if BGPDMA == 2
 	DCMF_Messager_advance();
 	TBUF
+	// demonstrates that most of the time here is due to load imbalance
+	nrnmpi_barrier();
+	TBUF
 	while (nrnmpi_bgp_conserve(s, r) != 0) {
 		DCMF_Messager_advance();
 		++ncons;
 	}
 	TBUF
 	n_xtra_cons_check_ += ncons;
-#if MAXNCONS
-	if (ncons > MAXNCONS) { ncons = MAXNCONS; }
-	++xtra_cons_hist_[ncons];
-#endif // MAXNCONS
 #else
 	bgp_advance();
 	while (nrnmpi_bgp_conserve(s, r) != 0) {
@@ -450,6 +449,10 @@ void bgp_dma_receive() {
 	tbuf_[itbuf_++] = (unsigned long)s;
 	tbuf_[itbuf_++] = (unsigned long)r;
 #endif
+#if BGPMDA == 2 && MAXNCONS
+	if (ncons > MAXNCONS) { ncons = MAXNCONS; }
+	++xtra_cons_hist_[ncons];
+#endif // MAXNCONS
 	bgp_receive_buffer[current_rbuf]->enqueue();
 	wt1_ = nrnmpi_wtime() - w2;
 	wt_ = w1;
