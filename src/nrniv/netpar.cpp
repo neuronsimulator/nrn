@@ -20,6 +20,9 @@ implementNrnHash(Gid2PreSyn, int, PreSyn*)
 #include <netcvode.h>
 
 #define BGP_INTERVAL 2
+#if BGP_INTERVAL == 2
+static int n_bgp_interval;
+#endif
 
 static Symbol* netcon_sym_;
 static Gid2PreSyn* gid2out_;
@@ -289,7 +292,7 @@ static void calc_actual_mindelay() {
 	//reasons why mindelay_ can be smaller than min_interprocessor_delay
 	// are use_bgpdma when BGP_INTERVAL == 2
 #if BGPDMA && (BGP_INTERVAL == 2)
-	if (use_bgpdma_) {
+	if (use_bgpdma_ && n_bgp_interval == 2) {
 		mindelay_ = min_interprocessor_delay_ / 2.;
 	}else{
 		mindelay_ = min_interprocessor_delay_;
@@ -352,6 +355,14 @@ void nrn_spike_exchange_init() {
 #endif // NRNMPI
 	//if (nrnmpi_myid == 0){printf("usable_mindelay_ = %g\n", usable_mindelay_);}
 }
+
+
+#if BGPDMA
+#include "bgpdma.cpp"
+#else
+#define TBUFSIZE 0
+#define TBUF /**/
+#endif
 
 #if NRNMPI
 void nrn_spike_exchange() {
@@ -435,6 +446,12 @@ void nrn_spike_exchange() {
 		
 void nrn_spike_exchange_compressed() {
 	if (!active_) { return; }
+	TBUF
+	TBUF
+#if TBUFSIZE
+	nrnmpi_barrier();
+#endif
+	TBUF
 	assert(!cvode_active_);
 	double wt;
 	int i, n, idx;
@@ -450,6 +467,12 @@ void nrn_spike_exchange_compressed() {
 	n = nrnmpi_spike_exchange_compressed();
 	wt_ = nrnmpi_wtime() - wt;
 	wt = nrnmpi_wtime();
+	TBUF
+#if TBUFSIZE             
+        tbuf_[itbuf_++] = (unsigned long)0;
+        tbuf_[itbuf_++] = (unsigned long)nout_;
+        tbuf_[itbuf_++] = (unsigned long)n;
+#endif
 	errno = 0;
 //if (n > 0) {
 //printf("%d nrn_spike_exchange sent %d received %d\n", nrnmpi_myid, nout_, n);
@@ -461,6 +484,7 @@ void nrn_spike_exchange_compressed() {
 		if (max_histogram_) { vector_vec(max_histogram_)[0] += 1.; }
 #endif
 		t_exchange_ = nrn_threads->_t;
+		TBUF
 		return;
 	}
 #if NRNSTAT
@@ -562,6 +586,7 @@ void nrn_spike_exchange_compressed() {
     }
 	t_exchange_ = nrn_threads->_t;
 	wt1_ = nrnmpi_wtime() - wt;
+	TBUF
 }
 
 static void mk_localgid_rep() {
@@ -1015,8 +1040,11 @@ IvocVect* BBS::netpar_max_histogram(IvocVect* mh) {
 int nrnmpi_spike_compress(int nspike, boolean gid_compress, int xchng_meth) {
 #if NRNMPI
 	if (nrnmpi_numprocs < 2) { return 0; }
+#if BGP_INTERVAL == 2
+	n_bgp_interval = (xchng_meth == 2) ? 2 : 1;
+#endif
 #if BGPDMA
-	use_bgpdma_ = (xchng_meth == 1) ? 1 : 0;
+	use_bgpdma_ = (xchng_meth > 0) ? 1 : 0;
 	if (nrnmpi_myid == 0) {printf("use_bgpdma_ = %d\n", use_bgpdma_);}
 #endif
 	if (nspike >= 0) {
@@ -1068,6 +1096,3 @@ printf("Notice: gid compression did not succeed. Probably more than 255 cells on
 #endif
 }
 
-#if BGPDMA
-#include "bgpdma.cpp"
-#endif

@@ -292,7 +292,7 @@ static void bgp_dma_init() {
 		bgp_receive_buffer[i]->init();
 	}
 	current_rbuf = 0;
-	next_rbuf = 1;
+	next_rbuf = n_bgp_interval - 1;
 	for (int i=0; i < NSEND2; ++i) {
 		req_in_use[i] = false;
 	}
@@ -428,7 +428,9 @@ void bgp_dma_receive() {
 	DCMF_Messager_advance();
 	TBUF
 	// demonstrates that most of the time here is due to load imbalance
+#if TBUFSIZE
 	nrnmpi_barrier();
+#endif
 	TBUF
 	while (nrnmpi_bgp_conserve(s, r) != 0) {
 		DCMF_Messager_advance();
@@ -458,8 +460,10 @@ void bgp_dma_receive() {
 	wt_ = w1;
 #if BGP_INTERVAL == 2
 //printf("%d reverse buffers %g\n", nrnmpi_myid, t);
-	current_rbuf = next_rbuf;
-	next_rbuf = ((next_rbuf + 1)&1);
+	if (n_bgp_interval == 2) {
+		current_rbuf = next_rbuf;
+		next_rbuf = ((next_rbuf + 1)&1);
+	}
 #endif
 	TBUF
 }
@@ -506,9 +510,13 @@ void bgp_dma_setup() {
 	// gid2out_ sends spikes to which hosts
 	determine_target_hosts();
 
-	bgp_receive_buffer[0] = new BGP_ReceiveBuffer();
+	if (!bgp_receive_buffer[0]) {
+		bgp_receive_buffer[0] = new BGP_ReceiveBuffer();
+	}
 #if BGP_INTERVAL == 2
-	bgp_receive_buffer[1] = new BGP_ReceiveBuffer();
+	if (n_bgp_interval == 2 && !bgp_receive_buffer[1]) {
+		bgp_receive_buffer[1] = new BGP_ReceiveBuffer();
+	}
 #endif
 #if BGPDMA == 2
     if (0 || !once) { once = 1;

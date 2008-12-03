@@ -431,7 +431,7 @@ static double spcompress(void* v) {
 		gid_compress = (chkarg(2, 0, 1) ? true : false);
 	}
 	if (ifarg(3)) {
-		xchng_meth = (int)chkarg(3, 0, 1);
+		xchng_meth = (int)chkarg(3, 0, 2);
 	}
 	return (double)nrnmpi_spike_compress(nspike, gid_compress, xchng_meth);
 }
