@@ -221,21 +221,22 @@ static int itbuf_;
 
 double nrn_bgp_receive_time(int type) { // and others
 	double rt = 0.;
-	if (!use_bgpdma_) { return rt; }
 	switch(type) {
 	case 2: //in msend_recv
-		for (int i = 0; i < BGP_INTERVAL; ++i) {
+		if (!use_bgpdma_) { return rt; }
+		for (int i = 0; i < n_bgp_interval; ++i) {
 			rt += bgp_receive_buffer[i]->timebase_ * DCMF_Tick();
 		}
 		break;
 	case 3: // in BGP_DMAsend::send
+		if (!use_bgpdma_) { return rt; }
 		rt = dmasend_time_ * DCMF_Tick();
 		break;
 	case 4: // number of extra conservation checks
 		rt = double(n_xtra_cons_check_);
 		// and if there is second vector arg then also return the histogram
 #if MAXNCONS
-		if (ifarg(2)) {
+		if (ifarg(2) && use_bgpdma_) {
 			IvocVect* vec = vector_arg(2);
 			vector_resize(vec, MAXNCONS+1);
 			for (int i=0; i <= MAXNCONS; ++i) {
@@ -288,7 +289,7 @@ static void  multicast_done(void* arg) {
 }
 
 static void bgp_dma_init() {
-	for (int i = 0; i < BGP_INTERVAL; ++i) {
+	for (int i = 0; i < n_bgp_interval; ++i) {
 		bgp_receive_buffer[i]->init();
 	}
 	current_rbuf = 0;
