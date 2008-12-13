@@ -255,6 +255,17 @@ double nrn_bgp_receive_time(int type) { // and others
 		}
 #endif
 		break;
+#if ALTHASH
+	case 5:
+		rt = double(gid2in_->max_chain_length());
+		break;
+	case 6:
+		rt = double(gid2in_->nclash());
+		break;
+	case 7:
+		rt = double(gid2in_->nfind());
+		break;
+#endif
 	}
 	return rt;
 }

@@ -5,7 +5,12 @@
 #include <math.h>
 #include <InterViews/resource.h>
 #include <nrnoc2iv.h>
+#define ALTHASH 1
+#if ALTHASH
+#include <nrnhash_alt.h>
+#else
 #include <nrnhash.h>
+#endif
 #include <bbs.h>
 
 class PreSyn;
@@ -369,6 +374,12 @@ void nrn_spike_exchange() {
 	if (!active_) { return; }
 
 	if (use_compress_) { nrn_spike_exchange_compressed(); return; }
+	TBUF
+	TBUF
+#if TBUFSIZE
+	nrnmpi_barrier();
+#endif
+	TBUF
 	double wt;
 	int i, n;
 #if NRNSTAT
@@ -382,6 +393,13 @@ void nrn_spike_exchange() {
 	n = nrnmpi_spike_exchange();
 	wt_ = nrnmpi_wtime() - wt;
 	wt = nrnmpi_wtime();
+	TBUF
+#if TBUFSIZE
+	tbuf_[itbuf_++] = (unsigned long)0;
+	tbuf_[itbuf_++] = (unsigned long)nout_;
+	tbuf_[itbuf_++] = (unsigned long)n;
+#endif
+
 	errno = 0;
 //if (n > 0) {
 //printf("%d nrn_spike_exchange sent %d received %d\n", nrnmpi_myid, nout_, n);
@@ -391,6 +409,7 @@ void nrn_spike_exchange() {
 #if NRNSTAT
 		if (max_histogram_) { vector_vec(max_histogram_)[0] += 1.; }
 #endif
+		TBUF
 		return;
 	}
 #if NRNSTAT
@@ -442,6 +461,7 @@ void nrn_spike_exchange() {
 		}
 	}
 	wt1_ = nrnmpi_wtime() - wt;
+	TBUF
 }
 		
 void nrn_spike_exchange_compressed() {
@@ -655,7 +675,11 @@ static void mk_localgid_rep() {
 		ngid = *(sbuf++);
 		for (k=0; k < ngid; ++k) {
 			if (gid2in_ && gid2in_->find(int(sbuf[k]), ps)) {
+#if ALTHASH
+				localmaps_[i]->insert(k, ps);
+#else
 				(*localmaps_[i])[k] = ps;
+#endif
 			}
 		}
 	}
@@ -701,8 +725,8 @@ void nrn_fake_fire(int gid, double spiketime, int fake_out) {
 static void alloc_space() {
 	if (!gid2out_) {
 		netcon_sym_ = hoc_lookup("NetCon");
-		gid2out_ = new Gid2PreSyn(211);
-		gid2in_ = new Gid2PreSyn(2311);
+		gid2out_ = new Gid2PreSyn(1000);
+		gid2in_ = new Gid2PreSyn(50000);
 #if NRNMPI
 		ocapacity_  = 100;
 		spikeout_ = (NRNMPI_Spike*)hoc_Emalloc(ocapacity_*sizeof(NRNMPI_Spike)); hoc_malchk();
@@ -727,7 +751,11 @@ void BBS::set_gid2node(int gid, int nid) {
 //printf("gid %d defined on %d\n", gid, nrnmpi_myid);
 		PreSyn* ps;
 		assert(!(gid2in_->find(gid, ps)));
+#if ALTHASH
+		gid2out_->insert(gid, nil);
+#else
 		(*gid2out_)[gid] = nil;
+#endif
 //		gid2out_->insert(pair<const int, PreSyn*>(gid, nil));
 	}
 }
@@ -748,6 +776,9 @@ void nrnmpi_gid_clear() {
 				delete ps;
 			}
 		}
+#if ALTHASH
+                gid2out_->remove(i__.cur_key());
+#endif
 	}}}
 	NrnHashIterate(Gid2PreSyn, gid2in_, PreSyn*, ps) {
 		ps->gid_ = -1;
@@ -755,7 +786,11 @@ void nrnmpi_gid_clear() {
 		if (ps->dil_.count() == 0) {
 			delete ps;
 		}
+#if ALTHASH
+                gid2in_->remove(i__.cur_key());
+#endif
 	}}}
+#if !ALTHASH
 	int i;
 	for (i = gid2out_->size_ - 1; i >= 0; --i) {
 		gid2out_->at(i).clear();
@@ -763,6 +798,7 @@ void nrnmpi_gid_clear() {
 	for (i = gid2in_->size_ - 1; i >= 0; --i) {
 		gid2in_->at(i).clear();
 	}
+#endif
 }
 
 int BBS::gid_exists(int gid) {
@@ -801,7 +837,11 @@ void BBS::cell() {
 	NetCon* nc = (NetCon*)ob->u.this_pointer;
 	ps = nc->src_;
 //printf("%d cell %d %s\n", nrnmpi_myid, gid, hoc_object_name(ps->ssrc_ ? ps->ssrc_->prop->dparam[6].obj : ps->osrc_));
+#if ALTHASH
+	gid2out_->insert(gid, ps);
+#else
 	(*gid2out_)[gid] = ps;
+#endif
 	ps->gid_ = gid;
 	if (ifarg(3) && !chkarg(3, 0., 1.)) {
 		ps->output_index_ = -2; //prevents destruction of PreSyn
@@ -876,7 +916,11 @@ Object** BBS::gid_connect(int gid) {
 //printf("%d connect %s from new PreSyn for %d\n", nrnmpi_myid, hoc_object_name(target), gid);
 		ps = new PreSyn(nil, nil, nil);
 		net_cvode_instance->psl_append(ps);
+#if ALTHASH
+		gid2in_->insert(gid, ps);
+#else
 		(*gid2in_)[gid] = ps;
+#endif
 		ps->gid_ = gid;
 	}
 	NetCon* nc;
