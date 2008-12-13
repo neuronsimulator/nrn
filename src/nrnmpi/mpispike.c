@@ -255,9 +255,15 @@ extern void nrnmpi_int_gatherv(int* s, int scnt,
 }
 
 extern void nrnmpi_int_alltoallv(int* s, int* scnt, int* sdispl,
-    int* r, int* rcnt, int* rdispl, int root) {
+    int* r, int* rcnt, int* rdispl) {
 	MPI_Alltoallv(s, scnt, sdispl, MPI_INT,
 		r, rcnt, rdispl, MPI_INT, nrnmpi_comm);
+}
+
+extern void nrnmpi_dbl_alltoallv(double* s, int* scnt, int* sdispl,
+    double* r, int* rcnt, int* rdispl) {
+	MPI_Alltoallv(s, scnt, sdispl, MPI_DOUBLE,
+		r, rcnt, rdispl, MPI_DOUBLE, nrnmpi_comm);
 }
 
 /* following are for the partrans */

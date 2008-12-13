@@ -14,6 +14,9 @@
 #include <nrnmpi.h>
 #include <errno.h>
 
+#undef MD
+#define MD 2147483648.
+
 extern "C" {
 	extern int vector_arg_px(int, double**);
 	Symbol* hoc_which_template(Symbol*);
@@ -37,6 +40,8 @@ extern "C" {
 	void nrnmpi_barrier();
 	double nrnmpi_dbl_allreduce(double, int);
 	void nrnmpi_dbl_allgather(double*, double*, int);
+	void nrnmpi_int_alltoallv(int*, int*, int*, int*, int*, int*);
+	void nrnmpi_dbl_alltoallv(double*, int*, int*, double*, int*, int*);
 	double nrmpi_wtime();
 	void nrnmpi_int_broadcast(int*, int, int);
 	void nrnmpi_char_broadcast(char*, int, int);
@@ -400,13 +405,13 @@ static double integ_time(void* v) {
 
 static double set_gid2node(void* v) {
 	OcBBS* bbs = (OcBBS*)v;
-	bbs->set_gid2node(int(chkarg(1, 0, 1e9)), int(chkarg(2, 0, 1e9)));
+	bbs->set_gid2node(int(chkarg(1, 0, MD)), int(chkarg(2, 0, MD)));
 	return 0.;
 }
 
 static double gid_exists(void* v) {
 	OcBBS* bbs = (OcBBS*)v;
-	return int(bbs->gid_exists(int(chkarg(1, 0, 1e9))));
+	return int(bbs->gid_exists(int(chkarg(1, 0, MD))));
 }
 
 static double cell(void* v) {
@@ -425,7 +430,7 @@ static double spcompress(void* v) {
 	boolean gid_compress = true;
 	int xchng_meth = 0;
 	if (ifarg(1)) {
-		nspike = (int)chkarg(1, -1, 1e9);
+		nspike = (int)chkarg(1, -1, MD);
 	}
 	if (ifarg(2)) {
 		gid_compress = (chkarg(2, 0, 1) ? true : false);
@@ -467,14 +472,14 @@ static double gid_clear(void* v) {
 
 static double outputcell(void* v) {
 	OcBBS* bbs = (OcBBS*)v;
-	int gid = int(chkarg(1, 0., 1e9));
+	int gid = int(chkarg(1, 0., MD));
 	bbs->outputcell(gid);
 	return 0.;
 }
 
 static double spike_record(void* v) {
 	OcBBS* bbs = (OcBBS*)v;
-	int gid = int(chkarg(1, 0., 1e9));
+	int gid = int(chkarg(1, 0., MD));
 	IvocVect* spikevec = vector_arg(2);
 	IvocVect* gidvec = vector_arg(3);	
 	bbs->spike_record(gid, spikevec, gidvec);
@@ -577,6 +582,58 @@ static double allgather(void*) {
 #else
 	px[0] = val;
 #endif
+	return 0.;
+}
+
+static double alltoall(void*) {
+	int i, ns, np = nrnmpi_numprocs;
+	Vect* vsrc = vector_arg(1);
+	Vect* vscnt = vector_arg(2);
+	ns = vector_capacity(vsrc);
+	double* s = vector_vec(vsrc);
+	if (vector_capacity(vscnt) != np) {
+		hoc_execerror("size of source counts vector is not nhost", 0);
+	}
+	double* x = vector_vec(vscnt);
+	int* scnt = new int[np];
+	int* sdispl = new int[np+1];
+	sdispl[0] = 0;
+	for (i=0; i < np; ++i) {
+		scnt[i] = int(x[i]);
+		sdispl[i+1] = sdispl[i] + scnt[i];
+	}
+	if (ns != sdispl[np]) {
+		hoc_execerror("sum of source counts is not the size of the src vector", 0);
+	}
+	Vect* vdest = vector_arg(3);
+#if NRNMPI
+	int* rcnt = new int[np];
+	int* rdispl = new int[np + 1];
+	int* c = new int[np];
+	rdispl[0] = 0;
+	for (i=0; i < np; ++i) {
+		c[i] = 1;
+		rdispl[i+1] = i+1;
+	}
+	nrnmpi_int_alltoallv(scnt, c, rdispl, rcnt, c, rdispl);
+	delete [] c;
+	for (i=0; i < np; ++i) {
+		rdispl[i+1] = rdispl[i] + rcnt[i];
+	}
+	vector_resize(vdest, rdispl[np]);
+	double* r = vector_vec(vdest);
+	nrnmpi_dbl_alltoallv(s, scnt, sdispl, r, rcnt, rdispl);
+	delete [] rcnt;
+	delete [] rdispl;
+#else
+	vector_resize(vdest, ns);
+	double* r = vector_vec(vdest);
+	for (i=0; i < ns; ++i) {
+		r[i] = s[i];
+	}
+#endif
+	delete [] scnt;
+	delete [] sdispl;
 	return 0.;
 }
 
@@ -699,17 +756,17 @@ static double thread_ctime(void*) {
 
 static Object** gid2obj(void* v) {
 	OcBBS* bbs = (OcBBS*)v;
-	return bbs->gid2obj(int(chkarg(1, 0, 1e9)));
+	return bbs->gid2obj(int(chkarg(1, 0, MD)));
 }
 
 static Object** gid2cell(void* v) {
 	OcBBS* bbs = (OcBBS*)v;
-	return bbs->gid2cell(int(chkarg(1, 0, 1e9)));
+	return bbs->gid2cell(int(chkarg(1, 0, MD)));
 }
 
 static Object** gid_connect(void* v) {
 	OcBBS* bbs = (OcBBS*)v;
-	return bbs->gid_connect(int(chkarg(1, 0, 1e9)));
+	return bbs->gid_connect(int(chkarg(1, 0, MD)));
 }
 
 static Member_func members[] = {
@@ -762,6 +819,7 @@ static Member_func members[] = {
 	"barrier", barrier,
 	"allreduce", allreduce,
 	"allgather", allgather,
+	"alltoall", alltoall,
 	"broadcast", broadcast,
 
 	"nthread", nthrd,

@@ -1,19 +1,12 @@
 #include "nrnmpiuse.h"
+#ifdef NRNMPI
+#include <mpi.h>
+#endif
+#include <stdio.h>
 #include "nrnmpi.h"
 #include "nrnpython_config.h"
 #include <Python.h>
-#include <stdio.h>
 #include <stdlib.h>
-
-#ifdef NRNMPI
-
-#undef SEEK_SET
-#undef SEEK_END
-#undef SEEK_CUR
-
-#include <mpi.h>
-
-#endif
 
 
 extern "C" {

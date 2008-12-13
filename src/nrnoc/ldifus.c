@@ -15,7 +15,7 @@ extern int diam_change_cnt;
 extern int structure_change_cnt;
 
 typedef struct LongDifus {
-	int schange;
+	int dchange;
 	int* mindex;	/* index into memb_list[m] */
 	int* pindex;	/* parent in this struct */
 	double** state;
@@ -114,6 +114,48 @@ printf("free longdifus structure_change=%d %d\n", pld->schange, structure_change
 	*ppld = (LongDifus*)0;
 }
 
+static longdifus_diamchange(pld, m, sindex, ml, _nt)
+ LongDifus* pld; int m, sindex; Memb_list* ml; NrnThread* _nt;
+{
+	int i, n, mi, mpi, j, index, pindex, vnodecount;
+	Node* nd, *pnd;
+	double rall, dxp, dxc;
+	
+	if (pld->dchange == diam_change_cnt) { return; }
+	/*printf("longdifus_diamchange %d %d\n", pld->dchange, diam_change_cnt);*/
+	vnodecount = _nt->end;
+	n = ml->nodecount;
+
+	for (i=0; i < n; ++i) {
+	/* For every child with a parent having this mechanism */
+	/* Also child may butte end to end with parent or attach to middle */
+		mi = pld->mindex[i];
+		if (sindex < 0) {
+			pld->state[i] = ml->pdata[mi][-sindex - 1].pval;
+		}else{
+			pld->state[i] = ml->data[mi] + sindex;
+		}
+		nd = ml->nodelist[mi];
+		pindex = pld->pindex[i];
+		if (pindex > -1) {
+			mpi = pld->mindex[pindex];
+			pnd = ml->nodelist[mpi];
+			if (nd->sec_node_index_ == 0) {
+				rall = nd->sec->prop->dparam[4].val;
+			}else{
+				rall = 1.;
+			}
+			dxc = section_length(nd->sec)
+					/ ((double)(nd->sec->nnode - 1));
+			dxp = section_length(pnd->sec)
+					/ ((double)(pnd->sec->nnode - 1));
+			pld->af[i] = 2*rall/dxp/(dxc + dxp);
+			pld->bf[i] = 2/dxc/(dxc + dxp);
+		}
+	}
+	pld->dchange = diam_change_cnt;
+}
+
 static longdifusalloc(ppld, m, sindex, ml, _nt)
  LongDifus** ppld; int m, sindex; Memb_list* ml; NrnThread* _nt;
 {
@@ -122,12 +164,12 @@ static longdifusalloc(ppld, m, sindex, ml, _nt)
 	int* map, *omap;
 	Node* nd, *pnd;
 	hoc_Item* qsec;
-	double rall, dxp, dxc;
 	
 	vnodecount = _nt->end;
 	*ppld = pld = (LongDifus*)emalloc(sizeof(LongDifus));
 	n = ml->nodecount;
 
+	pld->dchange = 0;
 	pld->mindex = (int*)ecalloc(n, sizeof(int));
 	pld->pindex = (int*)ecalloc(n, sizeof(int));
 	pld->state = (double**)ecalloc(n, sizeof(double*));
@@ -192,33 +234,7 @@ for (i=0; i < vnodecount; ++i) {
 			++j;
 		}
 	}
-	for (i=0; i < n; ++i) {
-	/* For every child with a parent having this mechanism */
-	/* Also child may butte end to end with parent or attach to middle */
-		mi = pld->mindex[i];
-		if (sindex < 0) {
-			pld->state[i] = ml->pdata[mi][-sindex - 1].pval;
-		}else{
-			pld->state[i] = ml->data[mi] + sindex;
-		}
-		nd = ml->nodelist[mi];
-		pindex = pld->pindex[i];
-		if (pindex > -1) {
-			mpi = pld->mindex[pindex];
-			pnd = ml->nodelist[mpi];
-			if (nd->sec_node_index_ == 0) {
-				rall = nd->sec->prop->dparam[4].val;
-			}else{
-				rall = 1.;
-			}
-			dxc = section_length(nd->sec)
-					/ ((double)(nd->sec->nnode - 1));
-			dxp = section_length(pnd->sec)
-					/ ((double)(pnd->sec->nnode - 1));
-			pld->af[i] = 2*rall/dxp/(dxc + dxp);
-			pld->bf[i] = 2/dxc/(dxc + dxp);
-		}
-	}
+	longdifus_diamchange(pld, m, sindex, ml, _nt);
 #if 0
 	for (i=0; i < n; ++i) {
 printf("i=%d pin=%d mi=%d :%s node %d state[(%i)]=%g\n", i, pld->pindex[i],
@@ -311,6 +327,7 @@ static void stagger(m, diffunc, v, ai, sindex, dindex, _nt)
 	pdata = ml->pdata;
 	thread = ml->_thread;
 
+	longdifus_diamchange(pld, m, sindex, ml, _nt);
 	/*flux and volume coefficients (if dc is constant this is too often)*/
 	for (i=0; i < n; ++i) {
 		int pin = pld->pindex[i];
@@ -401,6 +418,7 @@ static void ode(m, diffunc, v, ai, sindex, dindex, _nt)
 	pdata = ml->pdata;
 	thread = ml->_thread;
 	
+	longdifus_diamchange(pld, m, sindex, ml, _nt);
 	/*flux and volume coefficients (if dc is constant this is too often)*/
 	for (i=0; i < n; ++i) {
 		int pin = pld->pindex[i];

@@ -37,13 +37,17 @@ NJ_LIBS = @NRNJAVA_LIBS@
 PY_LIBS = @NRNPYTHON_LIBS@
 NRNNI_LIBS = @NRNNI_LIBS@
 
+PTHREAD_CC=@PTHREAD_CC@
+PTHREAD_CFLAGS=@PTHREAD_CFLAGS@
+PTHREAD_LIBS=@PTHREAD_LIBS@
+
 INCLUDES = -I. -I.. -I$(pkgincludedir) -I$(libdir)
 
 LIBTOOL = $(pkgdatadir)/libtool @LIBTOOLTAG@
 CC = @CC@
 CXX = @CXX@
-CFLAGS = @CFLAGS@
-CXXFLAGS = @CXXFLAGS@
+CFLAGS = @CFLAGS@ $(PTHREAD_CFLAGS)
+CXXFLAGS = @CXXFLAGS@ $(PTHREAD_CFLAGS)
 COMPILE = $(CC) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CXXCOMPILE = $(CXX) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CCLD = $(CC)
@@ -59,7 +63,7 @@ NRNLIBS = -L$(libdir) -lnrnoc -loc \
 	@MEMACSLIB@ -lmeschach \
 	$(IVOS_LIB) $(IV_LIBS) \
 	@READLINE_LIBS@ \
-	$(NJ_LIBS) $(PY_LIBS) $(NRNNI_LIBS) $(PVM_LIBS)
+	$(NJ_LIBS) $(PY_LIBS) $(NRNNI_LIBS) $(PVM_LIBS) $(PTHREAD_LIBS)
 
 NRNOCOBJS = $(libobjdir)/ocmain.o $(libobjdir)/nrnnoiv.o $(libobjdir)/ocnoiv.o
 NRNIVOBJS = $(libobjdir)/nrnmain.o $(libobjdir)/ivocmain.o $(libobjdir)/nvkludge.o

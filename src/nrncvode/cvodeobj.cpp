@@ -50,7 +50,7 @@ static MUTDEC
 #include "ida/ida.h"
 
 extern "C" {
-//extern double dt, t;
+extern double dt, t;
 #define nt_dt nrn_threads->_dt
 #define nt_t nrn_threads->_t
 extern int diam_changed;
@@ -140,7 +140,7 @@ static double queue_mode(void* v) {
 static double re_init(void* v) {
 	if (cvode_active_) {
 		NetCvode* d = (NetCvode*)v;
-		d->re_init(nt_t);
+		d->re_init(t);
 	}
 	return 0.;
 }

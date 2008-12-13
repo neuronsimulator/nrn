@@ -40,7 +40,7 @@ extern "C" {
 #include "hocdec.h"
 
 typedef struct Section {
-	short refcount;		/* may be in more than one list */
+	int refcount;		/* may be in more than one list */
 	short 	nnode;		/* Number of nodes for ith section */
 	struct Section*	parentsec;	/* parent section of node 0 */
 	struct Section* child;		/* root of the list of children
