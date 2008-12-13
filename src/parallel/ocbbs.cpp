@@ -14,6 +14,9 @@
 #include <nrnmpi.h>
 #include <errno.h>
 
+#undef MD
+#define MD 2147483648.
+
 extern "C" {
 	extern int vector_arg_px(int, double**);
 	Symbol* hoc_which_template(Symbol*);
@@ -402,13 +405,13 @@ static double integ_time(void* v) {
 
 static double set_gid2node(void* v) {
 	OcBBS* bbs = (OcBBS*)v;
-	bbs->set_gid2node(int(chkarg(1, 0, 1e9)), int(chkarg(2, 0, 1e9)));
+	bbs->set_gid2node(int(chkarg(1, 0, MD)), int(chkarg(2, 0, MD)));
 	return 0.;
 }
 
 static double gid_exists(void* v) {
 	OcBBS* bbs = (OcBBS*)v;
-	return int(bbs->gid_exists(int(chkarg(1, 0, 1e9))));
+	return int(bbs->gid_exists(int(chkarg(1, 0, MD))));
 }
 
 static double cell(void* v) {
@@ -427,7 +430,7 @@ static double spcompress(void* v) {
 	boolean gid_compress = true;
 	int xchng_meth = 0;
 	if (ifarg(1)) {
-		nspike = (int)chkarg(1, -1, 1e9);
+		nspike = (int)chkarg(1, -1, MD);
 	}
 	if (ifarg(2)) {
 		gid_compress = (chkarg(2, 0, 1) ? true : false);
@@ -469,14 +472,14 @@ static double gid_clear(void* v) {
 
 static double outputcell(void* v) {
 	OcBBS* bbs = (OcBBS*)v;
-	int gid = int(chkarg(1, 0., 1e9));
+	int gid = int(chkarg(1, 0., MD));
 	bbs->outputcell(gid);
 	return 0.;
 }
 
 static double spike_record(void* v) {
 	OcBBS* bbs = (OcBBS*)v;
-	int gid = int(chkarg(1, 0., 1e9));
+	int gid = int(chkarg(1, 0., MD));
 	IvocVect* spikevec = vector_arg(2);
 	IvocVect* gidvec = vector_arg(3);	
 	bbs->spike_record(gid, spikevec, gidvec);
@@ -753,17 +756,17 @@ static double thread_ctime(void*) {
 
 static Object** gid2obj(void* v) {
 	OcBBS* bbs = (OcBBS*)v;
-	return bbs->gid2obj(int(chkarg(1, 0, 1e9)));
+	return bbs->gid2obj(int(chkarg(1, 0, MD)));
 }
 
 static Object** gid2cell(void* v) {
 	OcBBS* bbs = (OcBBS*)v;
-	return bbs->gid2cell(int(chkarg(1, 0, 1e9)));
+	return bbs->gid2cell(int(chkarg(1, 0, MD)));
 }
 
 static Object** gid_connect(void* v) {
 	OcBBS* bbs = (OcBBS*)v;
-	return bbs->gid_connect(int(chkarg(1, 0, 1e9)));
+	return bbs->gid_connect(int(chkarg(1, 0, MD)));
 }
 
 static Member_func members[] = {
