@@ -8,6 +8,9 @@
 #include <nrnhash.h>
 #include <bbs.h>
 
+#undef MD
+#define MD 2147483648.
+
 class PreSyn;
 
 // hash table where buckets are binary search maps
@@ -755,7 +758,7 @@ int BBS::gid_exists(int gid) {
 }
 
 double BBS::threshold() {
-	int gid = int(chkarg(1, 0., 1e9));
+	int gid = int(chkarg(1, 0., MD));
 	PreSyn* ps;
 	assert(gid2out_->find(gid, ps));
 	assert(ps);
@@ -766,7 +769,7 @@ double BBS::threshold() {
 }
 
 void BBS::cell() {
-	int gid = int(chkarg(1, 0., 1e9));
+	int gid = int(chkarg(1, 0., MD));
 	PreSyn* ps;
 	assert(gid2out_->find(gid, ps));
 	Object* ob = *hoc_objgetarg(2);
