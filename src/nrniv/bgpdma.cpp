@@ -42,7 +42,21 @@ static unsigned long long dmasend_time_;
 static int n_xtra_cons_check_;
 #define MAXNCONS 10
 #if MAXNCONS
-static xtra_cons_hist_[MAXNCONS+1];
+static int xtra_cons_hist_[MAXNCONS+1];
+#endif
+
+#if BGPDMA == 2
+#define TBUFSIZE (1<<15)
+#else
+#define TBUFSIZE 0
+#endif
+
+#if TBUFSIZE
+static unsigned long tbuf_[TBUFSIZE];
+static int itbuf_;
+#define TBUF tbuf_[itbuf_++] = (unsigned long)DCMF_Timebase();
+#else
+#define TBUF /**/
 #endif
 
 #include <structpool.h>
@@ -209,15 +223,6 @@ static DCMF_Request_t * msend_recv(const DCQuad  * msginfo,
   bgp_receive_buffer[i]->timebase_ += DCMF_Timebase() - tb;
   return NULL;
 }
-
-#define TBUFSIZE (1<<15)
-#if TBUFSIZE
-static unsigned long tbuf_[TBUFSIZE];
-static int itbuf_;
-#define TBUF tbuf_[itbuf_++] = (unsigned long)DCMF_Timebase();
-#else
-#define TBUF /**/
-#endif
 
 double nrn_bgp_receive_time(int type) { // and others
 	double rt = 0.;

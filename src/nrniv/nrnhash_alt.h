@@ -118,7 +118,7 @@ static u_int32_t nrn_uint32hash( u_int32_t a) {
 //inline unsigned long key_to_hash(long k) { return (unsigned long)k; }
 //inline unsigned long key_to_hash(const void* k) { return (unsigned long)k; }
 inline u_int32_t nrn_key_to_hash(long k) { return nrn_uint32hash((u_int32_t)k); }
-inline u_int32_t nrn_key_to_hash(const void* k) { return nrn_uint32hash((u_int32_t)k); }
+inline u_int32_t nrn_key_to_hash(const void* k) { return nrn_uint32hash((u_int32_t)((long)k)); }
 
 /*
  * NrnHash implementation
