@@ -728,8 +728,13 @@ void nrn_fake_fire(int gid, double spiketime, int fake_out) {
 static void alloc_space() {
 	if (!gid2out_) {
 		netcon_sym_ = hoc_lookup("NetCon");
+#if ALTHASH
 		gid2out_ = new Gid2PreSyn(1000);
 		gid2in_ = new Gid2PreSyn(50000);
+#else
+		gid2out_ = new Gid2PreSyn(211);
+		gid2in_ = new Gid2PreSyn(2311);
+#endif
 #if NRNMPI
 		ocapacity_  = 100;
 		spikeout_ = (NRNMPI_Spike*)hoc_Emalloc(ocapacity_*sizeof(NRNMPI_Spike)); hoc_malchk();

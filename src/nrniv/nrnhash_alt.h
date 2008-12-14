@@ -152,7 +152,14 @@ inline NrnHashEntry(NrnHash)*& NrnHash::probe(Key i) { \
 } \
 \
 void NrnHash::insert(Key k, Value v) { \
-    register NrnHashEntry(NrnHash)* e = new NrnHashEntry(NrnHash); \
+    register NrnHashEntry(NrnHash)* e; \
+    for (e = probe(k); e != nil; e = e->chain_) { \
+	if (e->key_ == k) { \
+	    e->value_ = v; \
+	    return; \
+	} \
+    } \
+    e = new NrnHashEntry(NrnHash); \
     e->key_ = k; \
     e->value_ = v; \
     register NrnHashEntry(NrnHash)** a = &probe(k); \
