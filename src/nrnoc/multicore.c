@@ -718,7 +718,7 @@ hoc_execerror(memb_func[i].sym->name, "is not thread safe");
 				tbl->bam = bamap[tml->index];
 				tbl->ml = ml;
 				*ptbl = tbl;
-				ptbl = &tbl;
+				ptbl = &(tbl->next);
 			}
 		}
 	}
