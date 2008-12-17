@@ -136,6 +136,7 @@ fadvance()
 #if CVODE
 	if (cvode_active_) {
 		cvode_fadvance(-1.);
+		tstopunset;
 		ret(1.);
 		return;
 	}
