@@ -80,7 +80,12 @@ public:
 	unsigned long long timebase_;
 	NRNMPI_Spike** buffer_;
 	SpkPool* pool_;
+
+	void enqueue1();
+	void enqueue2();
+	PreSyn** psbuf_;
 };
+#define ENQUEUE 1 // 0 use psbuf_
 static BGP_ReceiveBuffer* bgp_receive_buffer[BGP_INTERVAL];
 static int current_rbuf, next_rbuf;
 #if BGP_INTERVAL == 2
@@ -94,6 +99,11 @@ BGP_ReceiveBuffer::BGP_ReceiveBuffer() {
 	size_ = BGP_RECEIVEBUFFER_SIZE;
 	buffer_ = new NRNMPI_Spike*[size_];
 	pool_ = new SpkPool(BGP_RECEIVEBUFFER_SIZE);
+#if ENQUEUE
+	psbuf_ = new PreSyn*[size_];
+#else
+	psbuf_ = 0;
+#endif
 }
 BGP_ReceiveBuffer::~BGP_ReceiveBuffer() {
 	assert(busy_ == 0);
@@ -102,6 +112,7 @@ BGP_ReceiveBuffer::~BGP_ReceiveBuffer() {
 	}
 	delete [] buffer_;
 	delete pool_;
+	if (psbuf_) delete [] psbuf_;
 }
 void BGP_ReceiveBuffer::init() {
 	timebase_ = 0;
@@ -124,6 +135,10 @@ void BGP_ReceiveBuffer::incoming(int gid, double spiketime) {
 		}
 		delete [] buffer_;
 		buffer_ = newbuf;
+		if (psbuf_) {
+			delete [] psbuf_;
+			psbuf_ = new PreSyn*[size_];
+		}
 	}
 	NRNMPI_Spike* spk = pool_->alloc();
 	spk->gid = gid;
@@ -143,6 +158,39 @@ void BGP_ReceiveBuffer::enqueue() {
 		NRNMPI_Spike* spk = buffer_[i];
 		PreSyn* ps;
 		assert(gid2in_->find(spk->gid, ps));
+		ps->send(spk->spiketime, net_cvode_instance, nrn_threads);
+		pool_->hpfree(spk);
+	}
+#endif
+	count_ = 0;
+	nrecv_ = 0;
+	nsend_ = 0;
+	busy_ = 0;
+}
+
+void BGP_ReceiveBuffer::enqueue1() {
+//printf("%d %lx.enqueue count=%d t=%g nrecv=%d nsend=%d\n", nrnmpi_myid, (long)this, t, count_, nrecv_, nsend_);
+	assert(busy_ == 0);
+	busy_ = 1;
+#if 1
+	for (int i=0; i < count_; ++i) {
+		NRNMPI_Spike* spk = buffer_[i];
+		PreSyn* ps;
+		assert(gid2in_->find(spk->gid, ps));
+		psbuf_[i] = ps;
+	}
+#endif
+	busy_ = 0;
+}
+
+void BGP_ReceiveBuffer::enqueue2() {
+//printf("%d %lx.enqueue count=%d t=%g nrecv=%d nsend=%d\n", nrnmpi_myid, (long)this, t, count_, nrecv_, nsend_);
+	assert(busy_ == 0);
+	busy_ = 1;
+#if 1
+	for (int i=0; i < count_; ++i) {
+		NRNMPI_Spike* spk = buffer_[i];
+		PreSyn* ps = psbuf_[i];
 		ps->send(spk->spiketime, net_cvode_instance, nrn_threads);
 		pool_->hpfree(spk);
 	}
@@ -472,7 +520,13 @@ void bgp_dma_receive() {
 	if (ncons > MAXNCONS) { ncons = MAXNCONS; }
 	++xtra_cons_hist_[ncons];
 #endif // MAXNCONS
+#if ENQUEUE
 	bgp_receive_buffer[current_rbuf]->enqueue();
+#else
+	bgp_receive_buffer[current_rbuf]->enqueue1();
+	TBUF
+	bgp_receive_buffer[current_rbuf]->enqueue2();
+#endif
 	wt1_ = nrnmpi_wtime() - w2;
 	wt_ = w1;
 #if BGP_INTERVAL == 2

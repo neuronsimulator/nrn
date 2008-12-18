@@ -730,7 +730,7 @@ static void alloc_space() {
 		netcon_sym_ = hoc_lookup("NetCon");
 #if ALTHASH
 		gid2out_ = new Gid2PreSyn(1000);
-		gid2in_ = new Gid2PreSyn(50000);
+		gid2in_ = new Gid2PreSyn(500000);
 #else
 		gid2out_ = new Gid2PreSyn(211);
 		gid2in_ = new Gid2PreSyn(2311);
