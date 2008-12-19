@@ -102,7 +102,8 @@ noinst_HEADERS = ndatclas.h nrnclass.h nrnmenu.h nrnoc2iv.h ppshape.h \
 	linmod.h nrniv_mf.h nrnste.h arraypool.h \
 	kschan.h kssingle.h nonlinz.h nrnhash.h \
 	nvector_nrnthread_ld.h nvector_nrnserial_ld.h \
-	bgpdma.cpp multisplitcontrol.h nvector_nrnthread.h
+	bgpdma.cpp multisplitcontrol.h nvector_nrnthread.h \
+	structpool.h nrnhash_alt.h
 
 ## We have to play a trick on automake to get it to install the .o files in
 ## an architecture-dependent subdirectory.  (Apparently automake's authors
