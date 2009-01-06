@@ -102,6 +102,10 @@ static void nrn_spike_exchange_compressed();
 #endif // NRNMPI
 
 #if BGPDMA
+#define HAVE_DCMF_RECORD_REPLAY 1
+#if HAVE_DCMF_RECORD_REPLAY
+static int use_dcmf_record_replay;
+#endif
 int use_bgpdma_;
 static void bgp_dma_setup();
 static void bgp_dma_init();
@@ -1093,11 +1097,15 @@ int nrnmpi_spike_compress(int nspike, boolean gid_compress, int xchng_meth) {
 #if NRNMPI
 	if (nrnmpi_numprocs < 2) { return 0; }
 #if BGP_INTERVAL == 2
-	n_bgp_interval = (xchng_meth == 2) ? 2 : 1;
+	n_bgp_interval = (xchng_meth & 2) ? 2 : 1;
 #endif
 #if BGPDMA
 	use_bgpdma_ = (xchng_meth > 0) ? 1 : 0;
 	if (nrnmpi_myid == 0) {printf("use_bgpdma_ = %d\n", use_bgpdma_);}
+#if HAVE_DCMF_RECORD_REPLAY
+	use_dcmf_record_replay = (xchng_meth & 4) ? 1 : 0;
+	if (nrnmpi_myid == 0) {printf("use_dcmf_record_replay = %d\n", use_dcmf_record_replay);}
+#endif
 #endif
 	if (nspike >= 0) {
 		ag_send_nspike_ = 0;

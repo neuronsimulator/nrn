@@ -46,6 +46,7 @@ static int xtra_cons_hist_[MAXNCONS+1];
 #endif
 
 #if BGPDMA == 2
+
 #define TBUFSIZE (1<<15)
 #else
 #define TBUFSIZE 0
@@ -341,6 +342,9 @@ public:
 	int* target_hosts_;
 	NRNMPI_Spike spk_;
 	int send2self_; // if 1 then send spikes to this host also
+#if HAVE_DCMF_RECORD_REPLAY
+	unsigned persist_id_;
+#endif
 };
 
 static int max_ntarget_host;
@@ -448,6 +452,9 @@ void BGP_DMASend::send(int gid, double t) {
 	msend.src = NULL;
 	msend.nranks = (unsigned int)ntarget_hosts_;
 	msend.ranks = (unsigned int*) target_hosts_;
+#if HAVE_DCMF_RECORD_REPLAY
+	msend.persist_id = persist_id_;
+#endif
 	msend.opcodes = hints_;
 	msend.msginfo = &msginfo;
 	msend.count = 1;
@@ -605,7 +612,26 @@ void bgp_dma_setup() {
 		hints_[i] = DCMF_PT_TO_PT_SEND;
 	}
 	// I am also guessing everyone can use the same mconfig.
+#if HAVE_DCMF_RECORD_REPLAY
+	unsigned max_persist_ids = 0;
+	if (use_dcmf_record_replay) {
+		PreSyn* ps;
+		NrnHashIterate(Gid2PreSyn, gid2out_, PreSyn*, ps) {
+			if (ps->output_index_ >= 0 && ps->bgp.ntarget_hosts > 0) {
+				ps->bgp.persist_id_ = max_persist_ids++;
+			}
+		}}}
+	if (max_persist_ids > 0) { // may want to check for too many as well
+		mconfig.protocol = DCMF_MEMFIFO_MCAST_RECORD_REPLAY_PROTOCOL;
+		mconfig.max_persist_ids = max_persist_ids
+	}else{
+		mconfig.protocol = DCMF_MEMFIFO_DMA_MSEND_PROTOCOL;
+		mconfig.max_persist_ids = 0;
+	}
+	mconfig.max_msgs = NSEND2;
+#else
 	mconfig.protocol = DCMF_MEMFIFO_DMA_MSEND_PROTOCOL;
+#endif
 	mconfig.cb_recv = msend_recv;
 	mconfig.nconnections = NSEND2; //max_ntarget_host;
 	mconfig.connectionlist = new void*[NSEND2];//max_ntarget_host];
