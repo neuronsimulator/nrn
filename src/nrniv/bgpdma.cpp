@@ -617,13 +617,14 @@ void bgp_dma_setup() {
 	if (use_dcmf_record_replay) {
 		PreSyn* ps;
 		NrnHashIterate(Gid2PreSyn, gid2out_, PreSyn*, ps) {
-			if (ps->output_index_ >= 0 && ps->bgp.ntarget_hosts > 0) {
-				ps->bgp.persist_id_ = max_persist_ids++;
+			if (ps->output_index_ >= 0 && ps->bgp.dma_send_->ntarget_hosts_ > 0) {
+				ps->bgp.dma_send_->persist_id_ = max_persist_ids++;
 			}
 		}}}
+	}
 	if (max_persist_ids > 0) { // may want to check for too many as well
 		mconfig.protocol = DCMF_MEMFIFO_MCAST_RECORD_REPLAY_PROTOCOL;
-		mconfig.max_persist_ids = max_persist_ids
+		mconfig.max_persist_ids = max_persist_ids;
 	}else{
 		mconfig.protocol = DCMF_MEMFIFO_DMA_MSEND_PROTOCOL;
 		mconfig.max_persist_ids = 0;
