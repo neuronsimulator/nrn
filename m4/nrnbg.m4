@@ -70,7 +70,7 @@ AC_ARG_ENABLE([bluegeneP],
 		if test x$with_nmodl_only != xyes ; then
 			nmodl_build="no"
 			if test "$BG_BASE" = "" ; then
-				BG_BASE="/bgsys/drivers/ppcfloor"
+				BG_BASE="/bgsys/drivers/ppcfloor/"
 			fi
 			if test "$BG_INCLUDE" = "" ; then
 				BG_INCLUDE="-I$BG_BASE/comm/include -I$BG_BASE/arch/include"

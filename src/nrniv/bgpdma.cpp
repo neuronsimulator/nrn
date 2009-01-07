@@ -203,7 +203,7 @@ void BGP_ReceiveBuffer::enqueue2() {
 }
 
 // number of DCMF_Multicast_t to cycle through when not using recordreplay
-#define NSEND 5
+#define NSEND 10
 
 #if BGPDMA == 2
 
@@ -218,12 +218,12 @@ static DCMF_Multicast_Configuration_t mconfig;
 
 struct MyMulticastInfo {
 	DCMF_Request_t request __attribute__((__aligned__(16)));
+        DCQuad msginfo __attribute__((__aligned__(16)));
 	DCMF_Multicast_t msend;
 	DCMF_Callback_t cb_done;
-	DCQuad msginfo;
 	boolean req_in_use;
 	boolean record; // when recordreplay, first time Multicast, thereafter  Restart
-};
+}__attribute__((__aligned__(16)));
 // NSEND of them for cycling, or, if recordreplay, max_persist_ids of them
 static int n_mymulticast_; // NSEND or max_persist_ids
 static struct MyMulticastInfo* mci_;
@@ -359,7 +359,7 @@ public:
 static int max_ntarget_host;
 
 // Multisend_multicast callback
-#if HAVE_DCMF_RECORD_REPLAY
+#if DCMF_VERSION_MAJOR >= 2
 static void  multicast_done(void* arg, DCMF_Error_t *) {
 #else
 static void  multicast_done(void* arg) {
@@ -665,7 +665,7 @@ void bgp_dma_setup() {
 		mci->msend.registration = &protocol;
 		mci->msend.request = &mci->request;
 		mci->msend.cb_done = mci->cb_done;
-		mci->msend.consistency = DCMF_MATCH_CONSISTENCY;
+		mci->msend.consistency = DCMF_MATCH_CONSISTENCY; //DCMF_RELAXED_CONSISTENCY; 
 		mci->msend.connection_id = i;
 		mci->msend.bytes = 0;
 		mci->msend.src = NULL;
