@@ -351,7 +351,7 @@ static int max_ntarget_host;
 static boolean req_in_use[NSEND2];
 
 // Multisend_multicast callback
-static void  multicast_done(void* arg) {
+static void  multicast_done(void* arg, DCMF_Error_t *) {
 	boolean* a = (boolean*)arg;
 	*a = false;
 }
@@ -625,11 +625,12 @@ void bgp_dma_setup() {
 	if (max_persist_ids > 0) { // may want to check for too many as well
 		mconfig.protocol = DCMF_MEMFIFO_MCAST_RECORD_REPLAY_PROTOCOL;
 		mconfig.max_persist_ids = max_persist_ids;
+		mconfig.max_msgs = 10000; //NSEND2;
 	}else{
 		mconfig.protocol = DCMF_MEMFIFO_DMA_MSEND_PROTOCOL;
 		mconfig.max_persist_ids = 0;
+		mconfig.max_msgs = 0;		
 	}
-	mconfig.max_msgs = NSEND2;
 #else
 	mconfig.protocol = DCMF_MEMFIFO_DMA_MSEND_PROTOCOL;
 #endif
