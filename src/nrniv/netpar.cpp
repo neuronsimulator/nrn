@@ -101,8 +101,13 @@ static int idxout_;
 static void nrn_spike_exchange_compressed();
 #endif // NRNMPI
 
-#if BGPDMA
+#if BGPDMA == 2
 #define HAVE_DCMF_RECORD_REPLAY 1
+#else
+#define HAVE_DCMF_RECORD_REPLAY 0
+#endif
+
+#if BGPDMA
 #if HAVE_DCMF_RECORD_REPLAY
 static int use_dcmf_record_replay;
 #endif
