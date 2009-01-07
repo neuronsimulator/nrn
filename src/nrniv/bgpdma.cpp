@@ -207,8 +207,8 @@ void BGP_ReceiveBuffer::enqueue2() {
 
 #if BGPDMA == 2
 
-#include <dcmf.h>
 #include <dcmf_multisend.h>
+#include <dcmf.h>
 
 #define PIPEWIDTH 16
 
@@ -217,13 +217,13 @@ static DCMF_Protocol_t protocol __attribute__((__aligned__(16)));
 static DCMF_Multicast_Configuration_t mconfig;
 
 struct MyMulticastInfo {
-	DCMF_Request_t sender __attribute__((__aligned__(16)));
+	DCMF_Request_t request __attribute__((__aligned__(16)));
 	DCMF_Multicast_t msend;
-	DCMF_Callback_t cb_done1;
+	DCMF_Callback_t cb_done;
 	DCQuad msginfo;
 	boolean req_in_use;
 	boolean record; // when recordreplay, first time Multicast, thereafter  Restart
-}
+};
 // NSEND of them for cycling, or, if recordreplay, max_persist_ids of them
 static int n_mymulticast_; // NSEND or max_persist_ids
 static struct MyMulticastInfo* mci_;
@@ -438,9 +438,13 @@ void BGP_DMASend::send(int gid, double t) {
 	unsigned long long tb = DCMF_Timebase();
 
 	MyMulticastInfo* mci;
+#if HAVE_DCMF_RECORD_REPLAY
 	if (use_dcmf_record_replay) {
 		mci = mci_ + persist_id_;
 	}else{
+#else
+	{
+#endif
 		mci = mci_ + isend;
 	}
 
@@ -450,27 +454,27 @@ void BGP_DMASend::send(int gid, double t) {
 		DCMF_Messager_advance();
 	}
 //	if (acnt > 10) { printf("%d multicast %d not done\n", nrnmpi_myid, msend.connection_id);}
-	mic->req_in_use = true;
+	mci->req_in_use = true;
 //printf("%d multisend %d %g\n", nrnmpi_myid, gid, t);
-	*((double*)&(mic->msginfo.w0)) = spk_.spiketime;
-	*((int*)&(mic->msginfo.w2)) = spk_.gid;
+	*((double*)&(mci->msginfo.w0)) = spk_.spiketime;
+	*((int*)&(mci->msginfo.w2)) = spk_.gid;
 	mci->msend.nranks = (unsigned int)ntarget_hosts_;
 	mci->msend.ranks = (unsigned int*) target_hosts_;
 
 //printf("%d DCMF_Multicast %d %g %d\n", nrnmpi_myid, msend.connection_id, t, gid);
 #if HAVE_DCMF_RECORD_REPLAY
-	if (use_dcmf_record_replay_) {
+	if (use_dcmf_record_replay) {
 		if (mci->record) {
 			DCMF_Multicast(&mci->msend);
 			mci->record = false;
 		}else{
-			DCMF_Restart(mci->request);
+			DCMF_Restart(&mci->request);
 		}
 	}else{
 #else
 	{
 #endif
-		DCMF_Multicast(&mci->msend)
+		DCMF_Multicast(&mci->msend);
 	}
 	dmasend_time_ += DCMF_Timebase() - tb;
 #else
@@ -640,7 +644,7 @@ void bgp_dma_setup() {
 		mconfig.protocol = DCMF_MEMFIFO_DMA_MSEND_PROTOCOL;
 		mconfig.max_persist_ids = 0;
 		mconfig.max_msgs = 0;		
-		n_mymulticast_ = NSEND
+		n_mymulticast_ = NSEND;
 	}
 #else
 	mconfig.protocol = DCMF_MEMFIFO_DMA_MSEND_PROTOCOL;
@@ -659,7 +663,7 @@ void bgp_dma_setup() {
 		mci->cb_done.clientdata = (void*)&mci->req_in_use;
 		mci->cb_done.function = multicast_done;
 		mci->msend.registration = &protocol;
-		mci->msend.request = &mci->sender;
+		mci->msend.request = &mci->request;
 		mci->msend.cb_done = mci->cb_done;
 		mci->msend.consistency = DCMF_MATCH_CONSISTENCY;
 		mci->msend.connection_id = i;
