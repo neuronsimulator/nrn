@@ -102,7 +102,7 @@ static void nrn_spike_exchange_compressed();
 #endif // NRNMPI
 
 #if BGPDMA == 2
-#define HAVE_DCMF_RECORD_REPLAY 1
+#define HAVE_DCMF_RECORD_REPLAY 0
 #else
 #define HAVE_DCMF_RECORD_REPLAY 0
 #endif
