@@ -648,6 +648,7 @@ void bgp_dma_setup() {
 	}
 #else
 	mconfig.protocol = DCMF_MEMFIFO_DMA_MSEND_PROTOCOL;
+	n_mymulticast_ = NSEND;
 #endif
 	mci_ = new MyMulticastInfo[n_mymulticast_];
 	mconfig.cb_recv = msend_recv;
