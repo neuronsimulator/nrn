@@ -13,6 +13,9 @@ extern "C" {
 }
 #endif
 
+#include <stdio.h>
+#include <stdlib.h>
+
 #if HAVE_IV
 #ifdef WIN32
 #include <IV-Win/MWlib.h>
@@ -21,8 +24,6 @@ void iv_display_scale(float);
 
 #include <ivstream.h>
 #include <assert.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include "ivoc.h"
 #include "idraw.h"
 #include <InterViews/style.h>

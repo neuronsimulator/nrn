@@ -25,6 +25,7 @@
  * OF THIS SOFTWARE.
  */
 
+#include <stdlib.h>
 #include <math.h>
 #include <OS/math.h>
 
