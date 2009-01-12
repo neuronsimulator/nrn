@@ -1930,7 +1930,7 @@ static Object** v_indgen(void* v)
       start = *getarg(1);
       end = *getarg(2);
       step = chkarg(3,EPSILON,end-start);
-      double xn = floor((end-start)/step + .5)+1.;
+      double xn = floor((end-start)/step + EPSILON)+1.;
       if (xn > dmaxint_) {
 	hoc_execerror("size too large", 0);
       }
