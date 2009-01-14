@@ -203,6 +203,7 @@ int Daspk::first_try_init_failures_;
 static void* do_ode_thread(NrnThread* nt) {
 	int i;
 	Cvode* cv = thread_cv;
+	nt->_t = cv->t_;
 	cv->do_ode(nt);
 	CvodeThreadData& z = cv->ctd_[nt->id];
 	double* yp = cv->n_vector_data(nvec_yp, nt->id);
@@ -213,6 +214,7 @@ static void* do_ode_thread(NrnThread* nt) {
 }
 
 int Daspk::init() {
+	extern double t;
 	int i;
 #if 0
 printf("Daspk_init t_=%20.12g t-t_=%g t0_-t_=%g\n",
@@ -264,6 +266,7 @@ cv_->t_, t-cv_->t_, cv_->t0_-cv_->t_);
 	nvec_yp = yp_;
 	nrn_multithread_job(do_ode_thread);
 	ida_init();
+	t = cv_->t_;
 #if 1
 	// test
 //printf("test\n");
