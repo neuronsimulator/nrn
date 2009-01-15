@@ -193,7 +193,10 @@ void VecPlayStep::deliver(double tt, NetCvode* ns) {
 		if (cvode_->nth_) { nt = cvode_->nth_; }
 	}
 	if (si_) {
+		t = tt;
+		nrn_hoc_lock();
 		si_->play_one(y_->elem(current_index_++));
+		nrn_hoc_unlock();
 	}else{
 		*pd_ = y_->elem(current_index_++);
 	}
@@ -315,7 +318,10 @@ void VecPlayContinuous::deliver(double tt, NetCvode* ns) {
 	
 void VecPlayContinuous::continuous(double tt) {
 	if (si_) {
+		t = tt;
+		nrn_hoc_lock();
 		si_->play_one(interpolate(tt));
+		nrn_hoc_unlock();
 	}else{
 		*pd_ = interpolate(tt);
 	}
