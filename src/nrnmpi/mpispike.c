@@ -287,7 +287,6 @@ void nrnmpi_dbl_broadcast(double* buf, int cnt, int root) {
 }
 
 void nrnmpi_int_broadcast(int* buf, int cnt, int root) {
-//printf("%d nrnmpi_int_broadcast %d buf[0]=%d\n", nrnmpi_myid, cnt, nrnmpi_myid == root ? buf[0]: -1);
 	MPI_Bcast(buf, cnt,  MPI_INT, root, nrnmpi_comm);
 }
 
@@ -330,7 +329,7 @@ static void pgvts_op(double* in, double* inout, int* len, MPI_Datatype* dptr){
 		if (in[0] < inout[0]) {
 			for (i=0; i < 4; ++i) { inout[i] = in[i]; }	
 		}else if (in[3] < inout[3]) {
-			// NetParEvent done last, init next to last.
+			/* NetParEvent done last, init next to last.*/
 			for (i=0; i < 4; ++i) { inout[i] = in[i]; }	
 		}
 	}
@@ -410,10 +409,7 @@ void nrnmpi_bgp_multisend(NRNMPI_Spike* spk, int n, int* hosts) {
 	MPI_Status status;
 	for (i=0; i < n; ++i) {
 		MPI_Isend(spk, 1, spike_type, hosts[i], 1, bgp_comm, &r);
-//printf("%d multisend n=%d i=%d host=%d gid=%d t=%g\n",
-//nrnmpi_myid, n, i, hosts[i], spk->gid, spk->spiketime);
 		MPI_Request_free(&r);
-//		MPI_Wait(&r, &status);
 	}
 }
 
@@ -423,8 +419,6 @@ int nrnmpi_bgp_single_advance(NRNMPI_Spike* spk) {
 	MPI_Iprobe(MPI_ANY_SOURCE, 1, bgp_comm, &flag, &status);
 	if (flag) {
 		MPI_Recv(spk, 1, spike_type, MPI_ANY_SOURCE, 1, bgp_comm, &status);
-//printf("%d advance receive gid=%d t=%g\n",
-//nrnmpi_myid, spk->gid, spk->spiketime);
 	}
 	return flag;
 }
@@ -434,7 +428,6 @@ int nrnmpi_bgp_conserve(int nsend, int nrecv) {
 	int tcnts[2];
 	tcnts[0] = nsend - nrecv;
 	MPI_Allreduce(tcnts, tcnts+1, 1, MPI_INT, MPI_SUM, bgp_comm);
-//printf("%d conserve %d %d %d\n", nrnmpi_myid, nsend, nrecv, tcnts[1]);
 	return tcnts[1];
 }
 

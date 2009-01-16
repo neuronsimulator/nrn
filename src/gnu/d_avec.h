@@ -92,7 +92,7 @@ protected:
 
 // redundant but necesssary
   friend doubleAVec&        concat(doubleAVec& a, doubleAVec& b);
-  friend doubleAVec&        map(doubleMapper f, doubleAVec& a);
+  friend doubleAVec&        mymap(doubleMapper f, doubleAVec& a);
   friend doubleAVec&        merge(doubleAVec& a, doubleAVec& b, doubleComparator f);
   friend doubleAVec&        combine(doubleCombiner f, doubleAVec& a, doubleAVec& b);
   friend doubleAVec&        reverse(doubleAVec& a);

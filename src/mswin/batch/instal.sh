@@ -50,9 +50,14 @@ cp $B/src/mswin/hocmodule.dll $D/bin/hocmodule.dll
 strip $D/bin/hocmodule.dll
 cp $ivbindir/cygIVhines-3.dll $D/bin/cygIVhines-3.dll
 strip $D/bin/cygIVhines-3.dll
-cp $B/src/nmodl/nocmodl.exe $D/bin
+if test -f $B/src/nmodl/.libs/nocmodl.exe ; then
+	cp $B/src/nmodl/.libs/nocmodl.exe $D/bin
+	cp $B/src/modlunit/.libs/modlunit.exe $D/bin
+else
+	cp $B/src/nmodl/nocmodl.exe $D/bin
+	cp $B/src/modlunit/modlunit.exe $D/bin
+fi
 strip $D/bin/nocmodl.exe
-cp $B/src/modlunit/modlunit.exe $D/bin
 strip $D/bin/modlunit.exe
 
 # copy the essential cygwin programs

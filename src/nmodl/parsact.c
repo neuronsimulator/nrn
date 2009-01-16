@@ -925,9 +925,7 @@ s->name, s->name, s->name, s->name);
 }
 
 #if HMODL || NMODL
-hocfunc(n, qpar1, qpar2) /*interface between modl and hoc for proc and func */
-	Item *qpar1, *qpar2;
-	Symbol *n;
+void hocfunchack(Symbol* n, Item* qpar1, Item* qpar2, int hack)
 {
 #if NOCMODL
 	extern int point_process;
@@ -997,10 +995,19 @@ hocfunc(n, qpar1, qpar2) /*interface between modl and hoc for proc and func */
 #if VECTORIZE
 	if (i) {
 		vectorize_substitute(qp, "_p, _ppvar, _thread, _nt,");
-	}else{
+	}else if (!hack) {
 		vectorize_substitute(qp, "_p, _ppvar, _thread, _nt");
 	}
 #endif
+}
+
+hocfunc(n, qpar1, qpar2) /*interface between modl and hoc for proc and func */
+	Item *qpar1, *qpar2;
+	Symbol *n;
+{
+	/* Hack prevents FUNCTION_TABLE bug of 'double table_name()' extra args
+	   replacing the double in 'double name(...) */
+	hocfunchack(n, qpar1, qpar2, 0);
 }
 
 #if VECTORIZE
@@ -1086,7 +1093,6 @@ function_table(s, qpar1, qpar2, qb1, qb2) /* s ( ... ) { ... } */
 	int i;
 	Item* q, *q1, *q2;
 	static int first = 1;
-	
 	if (first) {
 		first = 0;
 		linsertstr(procfunc, "\nextern double hoc_func_table();\n");
@@ -1126,7 +1132,7 @@ function_table(s, qpar1, qpar2, qb1, qb2) /* s ( ... ) { ... } */
 	lappendstr(procfunc, buf);
 	sprintf(buf, "\nstatic void* _ptable_%s = (void*)0;\n", s->name);
 	linsertstr(procfunc, buf);
-	hocfunc(t, q1, q2);
+	hocfunchack(t, q1, q2, 1);
 }
 
 watchstmt(par1, dir, par2, flag, blocktype )Item *par1, *dir, *par2, *flag;

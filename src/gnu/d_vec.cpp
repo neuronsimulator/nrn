@@ -216,7 +216,7 @@ int doubleVec::index(double  targ)
   return -1;
 }
 
-doubleVec& map(doubleMapper f, doubleVec& a)
+doubleVec& mymap(doubleMapper f, doubleVec& a)
 {
   doubleVec* news = new doubleVec(a.len);
   double* p = news->s;

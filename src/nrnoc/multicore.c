@@ -718,7 +718,7 @@ hoc_execerror(memb_func[i].sym->name, "is not thread safe");
 				tbl->bam = bamap[tml->index];
 				tbl->ml = ml;
 				*ptbl = tbl;
-				ptbl = &tbl;
+				ptbl = &(tbl->next);
 			}
 		}
 	}
@@ -1031,8 +1031,8 @@ hoc_execerror("some threads have a user defined partition", "and some do not");
 	}
 	if (!b) { return 0; }
 	
-	// discard partition if any section mentioned has been deleted. The
-	// model has changed
+	/* discard partition if any section mentioned has been deleted. The
+	    model has changed */
 	FOR_THREADS(nt) {
 		sl = nt->roots;
 		ITERATE(qsec, sl) {

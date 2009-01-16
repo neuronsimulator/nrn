@@ -11,7 +11,9 @@ char* nrn_version(int i) {
 	int b;
 	buf[0] = '\0';
 	if (strncmp(HG_TAG, "Release", 7) == 0) {
-		sprintf(head, "%s", HG_TAG);
+		sprintf(head, "%s (%s:%s)", HG_TAG, HG_LOCAL, HG_CHANGESET);
+	}else if (strncmp(HG_BRANCH, "Release", 7) == 0) {
+		sprintf(head, "%s (%s:%s)", HG_BRANCH, HG_LOCAL, HG_CHANGESET);
 	}else{
 		sprintf(head, "VERSION %s.%s %s%s(%s:%s)",
 			NRN_MAJOR_VERSION, NRN_MINOR_VERSION,

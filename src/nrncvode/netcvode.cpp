@@ -2607,7 +2607,7 @@ void NetCvode::allthread_handle(double tt, HocEvent* he, NrnThread* nt) {
 			nt->_t = tt;
 		}
 	} else if (!he->stmt() && cvode_active_ && gcv_) {
-		assert(tt == gcv_->t_);
+		assert(MyMath::eq(tt, gcv_->t_, NetCvode::eps(tt)));
 		gcv_->record_continuous();
 	}
 	if (nt->id == 0) {

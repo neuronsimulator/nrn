@@ -93,7 +93,7 @@ doubleAVec& reverse(doubleAVec& a)
   return *news;
 }
 
-doubleAVec& map(doubleMapper f, doubleAVec& a)
+doubleAVec& mymap(doubleMapper f, doubleAVec& a)
 {
   doubleAVec* news = new doubleAVec(a.capacity());
   double* p = news->s;

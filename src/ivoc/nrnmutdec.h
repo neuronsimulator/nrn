@@ -15,8 +15,8 @@
 #endif
 #define MUTLOCK {if (mut_) {pthread_mutex_lock(mut_);}}
 #define MUTUNLOCK {if (mut_) {pthread_mutex_unlock(mut_);}}
-//#define MUTLOCK {if (mut_) {printf("lock %lx\n", mut_); pthread_mutex_lock(mut_);}}
-//#define MUTUNLOCK {if (mut_) {printf("unlock %lx\n", mut_); pthread_mutex_unlock(mut_);}}
+/*#define MUTLOCK {if (mut_) {printf("lock %lx\n", mut_); pthread_mutex_lock(mut_);}}*/
+/*#define MUTUNLOCK {if (mut_) {printf("unlock %lx\n", mut_); pthread_mutex_unlock(mut_);}}*/
 #else
 #define MUTDEC /**/
 #define MUTCONSTRUCTED (0)

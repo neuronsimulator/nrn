@@ -1232,6 +1232,7 @@ static Object** v_ind(void* v) {
 	int yv;
 	int ztop = 0;
 	int top = x->capacity();
+	z->resize(y->capacity()); z->resize(0);
 	for (int i=0;i<y->capacity();i++) {
 	  yv = int(y->elem(i));
 	  if ((yv < top) && (yv >= 0)) {
@@ -1335,13 +1336,13 @@ static Object** v_insert(void* v) {
 	x->resize(indx);
         while (ifarg(i)) {
 	  if (hoc_argtype(i) == NUMBER) {
-	    x->resize(x->capacity()+1);
+	    x->resize_chunk(x->capacity()+1);
 	    x->elem(x->capacity()-1) = *getarg(i);
 	  } else if (hoc_is_object_arg(i)) {
 	    Vect* y = vector_arg(i);
 	    same_err("insrt", x, y);
 	    n = x->capacity();
-	    x->resize(n+y->capacity());
+	    x->resize_chunk(n+y->capacity());
 	    for (j=0;j<y->capacity();j++) {
 	      x->elem(n+j) = y->elem(j);
 	    }
@@ -1635,42 +1636,42 @@ static Object** v_where(void* v) {
 	if (!strcmp(op,"==")) {
 	  for (i=0; i<n; i++) {
 	    if (Math::equal(x->elem(i), value, hoc_epsilon)) {
-	      y->resize(++m);
+	      y->resize_chunk(++m);
 	      y->elem(m-1) = x->elem(i);
 	    }
 	  }
 	} else if (!strcmp(op,"!=")) {
 	  for (i=0; i<n; i++) {
 	    if (!Math::equal(x->elem(i), value, hoc_epsilon)) {
-	      y->resize(++m);
+	      y->resize_chunk(++m);
 	      y->elem(m-1) = x->elem(i);
 	    }
 	  }
 	} else if (!strcmp(op,">")) {
 	  for (i=0; i<n; i++) {
 	    if (x->elem(i) > value + hoc_epsilon) {
-	      y->resize(++m);
+	      y->resize_chunk(++m);
 	      y->elem(m-1) = x->elem(i);
 	    }
 	  }
 	} else if (!strcmp(op,"<")) {
 	  for (i=0; i<n; i++) {
 	    if (x->elem(i) < value - hoc_epsilon) {
-	      y->resize(++m);
+	      y->resize_chunk(++m);
 	      y->elem(m-1) = x->elem(i);
 	    }
 	  }
 	} else if (!strcmp(op,">=")) {
 	  for (i=0; i<n; i++) {
 	    if (x->elem(i) >= value - hoc_epsilon) {
-	      y->resize(++m);
+	      y->resize_chunk(++m);
 	      y->elem(m-1) = x->elem(i);
 	    }
 	  }
 	} else if (!strcmp(op,"<=")) {
 	  for (i=0; i<n; i++) {
 	    if (x->elem(i) <= value + hoc_epsilon) {
-	      y->resize(++m);
+	      y->resize_chunk(++m);
 	      y->elem(m-1) = x->elem(i);
 	    }
 	  }
@@ -1678,7 +1679,7 @@ static Object** v_where(void* v) {
 	  value2 = *getarg(iarg);
 	  for (i=0; i<n; i++) {
 	    if ((x->elem(i) > value + hoc_epsilon) && (x->elem(i) < value2 - hoc_epsilon)) {
-	      y->resize(++m);
+	      y->resize_chunk(++m);
 	      y->elem(m-1) = x->elem(i);
 	    }
 	  }
@@ -1686,7 +1687,7 @@ static Object** v_where(void* v) {
 	  value2 = *getarg(iarg);
 	  for (i=0; i<n; i++) {
 	    if ((x->elem(i) >= value - hoc_epsilon) && (x->elem(i) <= value2 + hoc_epsilon)) {
-	      y->resize(++m);
+	      y->resize_chunk(++m);
 	      y->elem(m-1) = x->elem(i);
 	    }
 	  }
@@ -1694,7 +1695,7 @@ static Object** v_where(void* v) {
 	  value2 = *getarg(iarg);
 	  for (i=0; i<n; i++) {
 	    if ((x->elem(i) >= value - hoc_epsilon) && (x->elem(i) < value2 - hoc_epsilon)) {
-	      y->resize(++m);
+	      y->resize_chunk(++m);
 	      y->elem(m-1) = x->elem(i);
 	    }
 	  }
@@ -1702,7 +1703,7 @@ static Object** v_where(void* v) {
 	  value2 = *getarg(iarg);
 	  for (i=0; i<n; i++) {
 	    if ((x->elem(i) > value + hoc_epsilon) && (x->elem(i) <= value2 + hoc_epsilon)) {
-	      y->resize(++m);
+	      y->resize_chunk(++m);
 	      y->elem(m-1) = x->elem(i);
 	    }
 	  }
@@ -1819,42 +1820,42 @@ static Object** v_indvwhere(void* v) {
 	if (!strcmp(op,"==")) {
 	  for (i=0; i<n; i++) {
 	    if (Math::equal(x->elem(i), value, hoc_epsilon)) {
-	      y->resize(++m);
+	      y->resize_chunk(++m);
 	      y->elem(m-1) = i;
 	    }
 	  }
 	} else if (!strcmp(op,"!=")) {
 	  for (i=0; i<n; i++) {
 	    if (!Math::equal(x->elem(i), value, hoc_epsilon)) {
-	      y->resize(++m);
+	      y->resize_chunk(++m);
 	      y->elem(m-1) = i;
 	    }
 	  }
 	} else if (!strcmp(op,">")) {
 	  for (i=0; i<n; i++) {
 	    if (x->elem(i) > value + hoc_epsilon) {
-	      y->resize(++m);
+	      y->resize_chunk(++m);
 	      y->elem(m-1) = i;
 	    }
 	  }
 	} else if (!strcmp(op,"<")) {
 	  for (i=0; i<n; i++) {
 	    if (x->elem(i) < value - hoc_epsilon) {
-	      y->resize(++m);
+	      y->resize_chunk(++m);
 	      y->elem(m-1) = i;
 	    }
 	  }
 	} else if (!strcmp(op,">=")) {
 	  for (i=0; i<n; i++) {
 	    if (x->elem(i) >= value - hoc_epsilon) {
-	      y->resize(++m);
+	      y->resize_chunk(++m);
 	      y->elem(m-1) = i;
 	    }
 	  }
 	} else if (!strcmp(op,"<=")) {
 	  for (i=0; i<n; i++) {
 	    if (x->elem(i) <= value + hoc_epsilon) {
-	      y->resize(++m);
+	      y->resize_chunk(++m);
 	      y->elem(m-1) = i;
 	    }
 	  }
@@ -1862,7 +1863,7 @@ static Object** v_indvwhere(void* v) {
 	  value2 = *getarg(iarg);
 	  for (i=0; i<n; i++) {
 	    if ((x->elem(i) > value + hoc_epsilon) && (x->elem(i) < value2 - hoc_epsilon)) {
-	      y->resize(++m);
+	      y->resize_chunk(++m);
 	      y->elem(m-1) = i;
 	    }
 	  }
@@ -1870,7 +1871,7 @@ static Object** v_indvwhere(void* v) {
 	  value2 = *getarg(iarg);
 	  for (i=0; i<n; i++) {
 	    if ((x->elem(i) >= value - hoc_epsilon) && (x->elem(i) <= value2 + hoc_epsilon)) {
-	      y->resize(++m);
+	      y->resize_chunk(++m);
 	      y->elem(m-1) = i;
 	    }
 	  }
@@ -1878,7 +1879,7 @@ static Object** v_indvwhere(void* v) {
 	  value2 = *getarg(iarg);
 	  for (i=0; i<n; i++) {
 	    if ((x->elem(i) >= value - hoc_epsilon) && (x->elem(i) < value2 - hoc_epsilon)) {
-	      y->resize(++m);
+	      y->resize_chunk(++m);
 	      y->elem(m-1) = i;
 	    }
 	  }
@@ -1886,7 +1887,7 @@ static Object** v_indvwhere(void* v) {
 	  value2 = *getarg(iarg);
 	  for (i=0; i<n; i++) {
 	    if ((x->elem(i) > value + hoc_epsilon) && (x->elem(i) <= value2 + hoc_epsilon)) {
-	      y->resize(++m);
+	      y->resize_chunk(++m);
 	      y->elem(m-1) = i;
 	    }
 	  }
@@ -1929,7 +1930,7 @@ static Object** v_indgen(void* v)
       start = *getarg(1);
       end = *getarg(2);
       step = chkarg(3,EPSILON,end-start);
-      double xn = floor((end-start)/step + .5)+1.;
+      double xn = floor((end-start)/step + EPSILON)+1.;
       if (xn > dmaxint_) {
 	hoc_execerror("size too large", 0);
       }
