@@ -1031,8 +1031,8 @@ hoc_execerror("some threads have a user defined partition", "and some do not");
 	}
 	if (!b) { return 0; }
 	
-	// discard partition if any section mentioned has been deleted. The
-	// model has changed
+	/* discard partition if any section mentioned has been deleted. The
+	    model has changed */
 	FOR_THREADS(nt) {
 		sl = nt->roots;
 		ITERATE(qsec, sl) {

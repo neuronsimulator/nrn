@@ -61,7 +61,7 @@ public:
   double&                  elem(int n);
 
   friend doubleVec&         concat(doubleVec & a, doubleVec & b);
-  friend doubleVec&         map(doubleMapper f, doubleVec & a);
+  friend doubleVec&         mymap(doubleMapper f, doubleVec & a);
   friend doubleVec&         merge(doubleVec & a, doubleVec & b, doubleComparator f);
   friend doubleVec&         combine(doubleCombiner f, doubleVec & a, doubleVec & b);
   friend doubleVec&         reverse(doubleVec & a);

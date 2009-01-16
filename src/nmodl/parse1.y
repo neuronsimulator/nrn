@@ -402,8 +402,8 @@ locallist: LOCAL
 locallist1: NAME locoptarray
 		/* locals are placed in a stack of symbol lists and given
 			the prefix _l */
-		{pushlocal();
-		 int a2 = SYM($1)->assigned_to_; /* in case marked threadsafe */
+		{int a2; pushlocal();
+		 a2 = SYM($1)->assigned_to_; /* in case marked threadsafe */
 		 SYM($1) = copylocal(SYM($1));
 		 SYM($1)->assigned_to_ = a2;
 		 lappendsym(toplocal1_, SYM($1));
