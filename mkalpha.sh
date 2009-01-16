@@ -11,7 +11,7 @@ export NSRC
 cd $NSRC
 
 lastalpha="`sh nrnversion.sh 2`"
-hg pull ssh://hines@www.neuron.yale.edu//home/hg/neuron/nrn
+hg pull
 hg update
 if test $? != 0 ; then
 	exit 1
