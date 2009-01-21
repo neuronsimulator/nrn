@@ -226,6 +226,10 @@ extern void bgp_dma_send(PreSyn*, double t);
 extern void bgpdma_cleanup_presyn(PreSyn*);
 extern int use_bgpdma_;
 #endif
+#if BGPDMA == 2
+extern int use_bgpdma_record_replay;
+extern void nrnbgp_messager_advance();
+#endif
 
 boolean nrn_use_fifo_queue_;
 
@@ -2131,6 +2135,11 @@ void NetCvode::deliver_least_event(NrnThread* nt) {
 	de->deliver(tt, this, nt);
 }
 
+#if BGPDMA == 2
+#define RP_COUNT 50
+static int rp_count;
+#endif
+
 boolean NetCvode::deliver_event(double til, NrnThread* nt) {
 	TQItem* q;
 	if ((q = p[nt->id].tqe_->atomic_dq(til)) != 0) {
@@ -2142,6 +2151,12 @@ boolean NetCvode::deliver_event(double til, NrnThread* nt) {
 #endif
 		STATISTICS(deliver_cnt_);
 		de->deliver(tt, this, nt);
+#if BGPDMA == 2
+		if (use_dcmf_record_replay) if (--rp_count < 0) {
+			nrnbgp_messager_advance();
+			rp_count = RP_COUNT;
+		}
+#endif
 		return true;
 	}else{
 		return false;

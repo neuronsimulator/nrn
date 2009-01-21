@@ -108,9 +108,7 @@ static void nrn_spike_exchange_compressed();
 #endif
 
 #if BGPDMA
-#if HAVE_DCMF_RECORD_REPLAY
-static int use_dcmf_record_replay;
-#endif
+int use_dcmf_record_replay;
 int use_bgpdma_;
 static void bgp_dma_setup();
 static void bgp_dma_init();

@@ -210,6 +210,14 @@ void BGP_ReceiveBuffer::enqueue2() {
 #include <dcmf_multisend.h>
 #include <dcmf.h>
 
+#extern "C" {
+void nrnbgp_messager_advance() {
+#if HAVE_DCMF_RECORD_REPLAY
+	DCMF_Messager_advance();
+#endif
+}
+}
+
 #define PIPEWIDTH 16
 
 static DCMF_Opcode_t* hints_;
