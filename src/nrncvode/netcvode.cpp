@@ -227,7 +227,7 @@ extern void bgpdma_cleanup_presyn(PreSyn*);
 extern int use_bgpdma_;
 #endif
 #if BGPDMA == 2
-extern int use_bgpdma_record_replay;
+extern int use_dcmf_record_replay;
 extern void nrnbgp_messager_advance();
 #endif
 
