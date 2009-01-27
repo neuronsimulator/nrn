@@ -29,7 +29,7 @@ extern "C" {
 	extern int nrnmpi_spike_compress(int nspike, boolean gid_compress, int xchng_meth);
 	extern int nrnmpi_splitcell_connect(int that_host);
 	extern int nrnmpi_multisplit(double x, int sid, int backbonestyle);
-	extern void nrnmpi_gid_clear();
+	extern void nrnmpi_gid_clear(int);
 	double nrnmpi_rtcomp_time_;
 	extern double nrn_bgp_receive_time(int);
 #if PARANEURON
@@ -466,7 +466,11 @@ static double multisplit(void* v) {
 }
 
 static double gid_clear(void* v) {
-	nrnmpi_gid_clear();
+	int arg = 0;
+	if (ifarg(1)){
+		arg = int(chkarg(1, 0, 3));
+	}
+	nrnmpi_gid_clear(arg);
 	return 0.;
 }
 

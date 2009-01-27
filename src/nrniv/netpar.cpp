@@ -43,7 +43,7 @@ extern double* vector_vec(IvocVect*);
 extern void ncs2nrn_integrate(double tstop);
 extern void nrn_fake_fire(int gid, double firetime, int fake_out);
 int nrnmpi_spike_compress(int nspike, boolean gid_compress, int xchng_meth);
-void nrnmpi_gid_clear();
+void nrnmpi_gid_clear(int);
 extern void nrn_partrans_clear();
 void nrn_spike_exchange_init();
 extern double nrn_bgp_receive_time(int);
@@ -710,12 +710,13 @@ void BBS::set_gid2node(int gid, int nid) {
 	}
 }
 
-void nrnmpi_gid_clear() {
-	nrn_partrans_clear();
+void nrnmpi_gid_clear(int arg) {
+	if (arg == 0 || arg == 3) nrn_partrans_clear();
 #if PARANEURON
-	nrnmpi_split_clear();
+	if (arg == 0 || arg == 3) nrnmpi_split_clear();
 #endif
-	nrnmpi_multisplit_clear();
+	if (arg == 0 || arg == 2) nrnmpi_multisplit_clear();
+	if (arg != 0 && arg != 1) { return; }
 	if (!gid2out_) { return; }
 	PreSyn* ps, *psi;
 	NrnHashIterate(Gid2PreSyn, gid2out_, PreSyn*, ps) {

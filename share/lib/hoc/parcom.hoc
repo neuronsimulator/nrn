@@ -286,7 +286,7 @@ proc split() {local i, j, sidoff  localobj si, sil
 
 proc unsplit() {local i, j  localobj si, sil
 	pc.partition()
-	pc.gid_clear()
+	pc.gid_clear(2)
     for j=0, splitinfo_.count - 1 {
 	sil = splitinfo_.o(j)
 	for i=0, sil.count - 1 {
