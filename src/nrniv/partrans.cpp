@@ -90,11 +90,6 @@ void nrnmpi_target_var() {
 	}
 	double* ptv = hoc_pgetarg(iarg++);
 	int sgid = (int)(*getarg(iarg++));
-	if (!pp) {
-fprintf(stderr, "Do not know the POINT_PROCESS target for source id %d\n", sgid);
-hoc_execerror("For multiple threads, the target pointer must reference a range variable of a POINT_PROCESS.",
-"Note that is is fastest to supply a reference to the POINT_PROCESS as the first arg.");
-	}
 	targets_->append(ptv);
 	target_pntlist_->append(pp);
 	sgid2targets_->append(sgid);
@@ -145,6 +140,15 @@ static void mk_ttd() {
 	if (nrn_nthread == 1) { return; }
 	if (!targets_ || targets_->count() == 0) { return; }
 	n = targets_->count();
+    for (i=0; i < n; ++i) {
+	Point_process* pp = target_pntlist_->item(i);
+	int sgid = sgid2targets_->item(i);
+	if (!pp) {
+fprintf(stderr, "Do not know the POINT_PROCESS target for source id %d\n", sgid);
+hoc_execerror("For multiple threads, the target pointer must reference a range variable of a POINT_PROCESS.",
+"Note that it is fastest to supply a reference to the POINT_PROCESS as the first arg.");
+	}
+    }
 	transfer_thread_data_ = new TransferThreadData[nrn_nthread];
 	for (tid = 0; tid < nrn_nthread; ++tid) {
 		transfer_thread_data_[tid].cnt = 0;
