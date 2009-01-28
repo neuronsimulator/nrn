@@ -642,8 +642,9 @@ void Cvode::fun_thread(double tt, double* y, double* ydot, NrnThread* nt){
 	}
 #endif
 	nocap_v(nt);  // vm at nocap nodes consistent with adjacent vm
-#if PARANEURON
+#if 1 || PARANEURON
 	if (nrnmpi_v_transfer_) {
+		assert(nrn_nthread == 1);
 		(*nrnmpi_v_transfer_)(nt);
 	}
 #endif
@@ -682,14 +683,15 @@ void Cvode::fun_thread_part1(double tt, double* y, NrnThread* nt){
 }
 void Cvode::fun_thread_part2(NrnThread* nt){
 	nocap_v_part2(nt);  // vm at nocap nodes consistent with adjacent vm
-#if PARANEURON
+}
+void Cvode::fun_thread_part3(double* ydot, NrnThread* nt){
+	nocap_v_part3(nt); // should be by itself in fun_thread_part2_5 if
+			// following is true and a gap is in 0 area node
+#if 1 || PARANEURON
 	if (nrnmpi_v_transfer_) {
 		(*nrnmpi_v_transfer_)(nt);
 	}
 #endif
-}
-void Cvode::fun_thread_part3(double* ydot, NrnThread* nt){
-	nocap_v_part3(nt);
 	CvodeThreadData& z = ctd_[nt->id];
 	if (z.nvsize_ == 0) { return; }
 	before_after(z.before_breakpoint_, nt);

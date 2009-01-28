@@ -44,6 +44,7 @@ extern void nrn_fixed_step();
 extern void nrn_fixed_step_group(int);
 static void* nrn_fixed_step_thread(NrnThread*);
 static void* nrn_fixed_step_group_thread(NrnThread* nth);
+static void* nrn_fixed_step_lastpart(NrnThread*);
 extern void* setup_tree_matrix(NrnThread*);
 extern void nrn_solve(NrnThread*);
 extern void nonvint(NrnThread* nt);
@@ -270,9 +271,15 @@ void nrn_fixed_step() {
 		if (!nrn_allthread_handle) {
 			nrn_multithread_job(nrn_ms_reduce_solve);
 			nrn_multithread_job(nrn_ms_bksub);
+			if (nrn_nthread > 1 && nrnmpi_v_transfer_) {
+				nrn_multithread_job(nrn_fixed_step_lastpart);
+			}
 		}
 	}else{
 		nrn_multithread_job(nrn_fixed_step_thread);
+		if (nrn_nthread > 1 && nrnmpi_v_transfer_) {
+			nrn_multithread_job(nrn_fixed_step_lastpart);
+		}
 	}
 	t = nrn_threads[0]._t;
 	if (nrn_allthread_handle) { (*nrn_allthread_handle)(); }
@@ -365,6 +372,15 @@ void* nrn_fixed_step_thread(NrnThread* nth) {
 	nrn_solve(nth);
 	second_order_cur(nth);
 	update(nth);
+	CTADD
+	if (nrn_nthread == 1 || !nrnmpi_v_transfer_) {
+		nrn_fixed_step_lastpart(nth);
+	}
+	return (void*)0;
+}
+
+void* nrn_fixed_step_lastpart(NrnThread* nth) {
+	CTBEGIN
 #if NRN_DAQ
 	nrn_daq_ao();
 #endif
@@ -417,27 +433,10 @@ void* nrn_ms_bksub(NrnThread* nth) {
 	nrn_multisplit_bksub(nth);
 	second_order_cur(nth);
 	update(nth);
-#if NRN_DAQ
-	nrn_daq_ao();
-#endif
-#if ELIMINATE_T_ROUNDOFF
-	nth->nrn_ndt_ += .5;
-	nth->_t = nrn_tbase_ + nth->nrn_ndt_ * nrn_dt_;
-#else
-	nth->_t += .5 * nth->_dt;
-#endif
-	fixed_play_continuous(nth);
-#if NRN_DAQ
-	nrn_daq_scanstart();
-#endif
-	nonvint(nth);
-	nrn_ba(nth, AFTER_SOLVE);
-#if NRN_DAQ
-	nrn_daq_ai();
-#endif
-	fixed_record_continuous(nth);
 	CTADD
-	nrn_deliver_events(nth) ; /* up to but not past texit */
+	if (nrn_nthread == 1 || !nrnmpi_v_transfer_) {
+		nrn_fixed_step_lastpart(nth);
+	}
 	return (void*)0;
 }
 void* nrn_ms_bksub_through_triang(NrnThread* nth) {

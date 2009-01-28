@@ -42,6 +42,8 @@ the handling of v_structure_change as long as possible.
 
 int nrn_nthread;
 NrnThread* nrn_threads;
+void (*nrn_mk_transfer_thread_data_)();
+
 static int busywait_;
 static int busywait_main_;
 extern void nrn_thread_error(char*);
@@ -743,6 +745,7 @@ static void nrn_thread_memblist_setup() {
 	free((char*)vmap);
 	free((char*)mlcnt);
 	nrn_mk_table_check();
+	if (nrn_mk_transfer_thread_data_) { (*nrn_mk_transfer_thread_data_)(); }
 }
 
 /* secorder needs to correspond to cells in NrnThread with roots */

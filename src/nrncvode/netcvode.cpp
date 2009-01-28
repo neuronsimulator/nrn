@@ -102,6 +102,7 @@ extern void nrn_update_ps2nt();
 extern void nrn_use_busywait(int);
 extern double* nrn_recalc_ptr(double*);
 void* nrn_interthread_enqueue(NrnThread*);
+extern void (*nrnmpi_v_transfer_)(NrnThread*);
 
 extern int nrn_fornetcon_cnt_;
 extern int* nrn_fornetcon_index_;
@@ -3578,7 +3579,7 @@ void ncs2nrn_integrate(double tstop) {
 	}else{
 #if 1
 	    int n = (int)((tstop - nt_t)/dt + 1e-9);
-	    if (n > 3) {
+	    if (n > 3 && !nrnmpi_v_transfer_) {
 		nrn_fixed_step_group(n);
 	    }else
 #endif
