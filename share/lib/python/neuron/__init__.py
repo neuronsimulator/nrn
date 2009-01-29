@@ -132,6 +132,8 @@ class MetaHocObject(type):
 
 def hclass(c):
     """Class factory for subclassing h.anyclass. E.g. class MyList(hclass(h.List)):..."""
+    if c == h.Section :
+	return nrn.Section
     class hc(hoc.HocObject):
         __metaclass__ = MetaHocObject
         def __new__(cls, *args, **kwds):

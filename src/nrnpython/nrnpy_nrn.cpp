@@ -176,7 +176,7 @@ static PyObject* NPyRangeVar_new(PyTypeObject* type, PyObject* args, PyObject* k
 
 static int NPySecObj_init(NPySecObj* self, PyObject* args, PyObject* kwds) {
 //printf("NPySecObj_init %lx %lx\n", (long)self, (long)self->sec_);
-	if (self != NULL) {
+	if (self != NULL && !self->sec_) {
 		self->sec_ = nrnpy_newsection(self);
 	}
 	return 0;
