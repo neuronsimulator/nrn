@@ -5655,14 +5655,14 @@ void NetCvode::vecrecord_add() {
 	if (pr) {
 		delete pr;
 	}
-	pr = playrec_uses(t);
-	if (pr) {
-		delete pr;
-	}
 	boolean discrete = ( (ifarg(4) && (int)chkarg(4,0,1) == 1) ? true : false);
 	if (discrete) {
 		pr = new VecRecordDiscrete(pd, y, t);
 	}else{
+		pr = playrec_uses(t);
+		if (pr) {
+			delete pr;
+		}
 		pr = new TvecRecord(chk_access(), t);
 		pr = new YvecRecord(pd, y);
 	}
