@@ -2615,7 +2615,7 @@ Inst* codei(f)
 	int f;
 {
 	progp->i = f;
-	IGNORE(codechk());
+	return codechk();
 }
 
 codesym(f)
