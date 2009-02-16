@@ -18,6 +18,7 @@ void nrn_partrans_clear();
 static void var_transfer(NrnThread*);
 static void mk_ttd();
 extern double t;
+extern int v_structure_change;
 extern void nrnmpi_int_allgather(int*, int*, int);
 extern void nrnmpi_int_allgatherv(int*, int*, int*, int*);
 extern void nrnmpi_dbl_allgatherv(double*, double*, int*, int*);
@@ -325,7 +326,9 @@ void nrnmpi_setup_transfer() {
 	delete mi2;
 	nrnmpi_v_transfer_ = var_transfer;
 	nrn_mk_transfer_thread_data_ = mk_ttd;
-	mk_ttd();
+	if (!v_structure_change) {
+		mk_ttd();
+	}
 }
 
 void alloclists() {
