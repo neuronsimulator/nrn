@@ -437,6 +437,8 @@ dnl This, in conjunction with a line in acconfig.h, causes the preprocessor
 dnl symbol NEURON_DATA_DIR to point to the neuron data directory.
 AC_DEFINE_UNQUOTED(NEURON_DATA_DIR, "$prefix/share/$PACKAGE", where the lib hoc is)
 
+NRN_DEFINE_UNQUOTED(NRN_CONFIG_ARGS, "${ac_configure_args}", args given to configure)
+
 NRNOC_X11=1
 if test "$with_nrnoc_x11" = "" ; then
 	with_nrnoc_x11=yes
@@ -475,6 +477,7 @@ AC_CONFIG_FILES([
 fi	
 if test "$with_nmodl_only" != "yes" ; then
 AC_CONFIG_HEADERS([nrnconf.h])
+AC_CONFIG_HEADERS([src/nrnoc/nrnconfigargs.h])
 AC_CONFIG_HEADERS([src/oc/nrnmpiuse.h])
 AC_CONFIG_HEADERS([src/oc/nrnrtuse.h])
 AC_CONFIG_HEADERS([src/oc/nrnpthread.h])
