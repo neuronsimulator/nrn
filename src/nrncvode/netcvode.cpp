@@ -2614,6 +2614,7 @@ void NetCvode::allthread_handle(double tt, HocEvent* he, NrnThread* nt) {
 	if (nt->id == 0) {
 		nrn_allthread_handle = allthread_handle_callback;
 		allthread_hocevents_->append(he);
+		nt->_t = tt;
 	}
 }
 
