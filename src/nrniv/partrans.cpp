@@ -46,6 +46,7 @@ declareNrnHash(MapInt2Int, int, int);
 implementNrnHash(MapInt2Int, int, int);
 declarePtrList(DblPList, double)
 implementPtrList(DblPList, double)
+#define PPList partrans_PPList
 declarePtrList(PPList, Point_process)
 implementPtrList(PPList, Point_process)
 declareList(IntList, int)

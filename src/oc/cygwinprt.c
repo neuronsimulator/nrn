@@ -5,11 +5,14 @@
 
 #if !defined(__MINGW32__)
 #include "system.c"
+#define my_off64_t loff_t
+#else
+#define my_off64_t off64_t
 #endif
 
 #include "mswinprt.c"
 
-loff_t lseek64(int fd, loff_t offset, int whence) {
+my_off64_t lseek64(int fd, my_off64_t offset, int whence) {
 	fprintf(stderr, "called lseek64\n");
 	abort();
 }

@@ -120,7 +120,7 @@ $CXX -g -O2 -mwindows -e _mainCRTStartup -o nrniv.exe \
 else
 
 $CXX -shared -mno-cygwin $obj \
-  $LIBS \
+  $LIBS -lstdc++ \
   @NRNPYTHON_PYLIBLINK@ \
   -o mswin/nrniv.dll \
   -Wl,--enable-auto-image-base \
@@ -129,7 +129,7 @@ $CXX -shared -mno-cygwin $obj \
 $CXX -shared -mno-cygwin \
   nrnpython/.libs/inithoc.o \
   @NRNPYTHON_PYLIBLINK@ \
-  -Lmswin -lnrniv \
+  -Lmswin -lnrniv -lstdc++ \
   -o mswin/hocmodule.dll \
   -Wl,--enable-auto-image-base \
   -Xlinker --out-implib -Xlinker mswin/libhocmodule.dll.a
@@ -137,7 +137,7 @@ $CXX -shared -mno-cygwin \
 cd mswin
 $CXX -g -O2 -mno-cygwin -e _mainCRTStartup -o nrniv.exe \
   ../ivoc/nrnmain.o ../oc/modlreg.o \
-  -L. -lnrniv \
+  -L. -lnrniv -lstdc++ \
   @NRNPYTHON_PYLIBLINK@
 
 fi
