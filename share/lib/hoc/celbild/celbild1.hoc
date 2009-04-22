@@ -27,8 +27,7 @@ proc init() {
 	all = new SNList("all")
 	build()
 	if (numarg() == 0) {
-		sprint(tstr,"%s", this)
-		vbox.map(tstr)
+		map()
 	}
 	changed_ = 0
 }

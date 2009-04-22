@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 if test $# = 0 ; then
 	files="`ls *.mod`"
