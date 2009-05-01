@@ -15,10 +15,11 @@ case "$host" in
 	inc25=-I/usr/local/include/python2.5
 	;;
   x86_64*linux-gnu)
-	pyver='23 24 25'
+	pyver='23 24 25 26'
 	inc23=-I/home/hines/python/python23/include/python2.3
 	inc24=-I/usr/include/python2.4
 	inc25=-I/usr/include/python2.5
+	inc26=-I/home/hines/python/python26/include/python2.6
 	;;
   *darwin*)
 	pyver='23 24 25'

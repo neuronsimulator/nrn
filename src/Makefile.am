@@ -57,7 +57,7 @@ else
 nrnpythonbuild =
 endif
 
-npydir = npy23 npy24 npy25
+npydir = npy23 npy24 npy25 npy26
 
 if BUILD_NRNPYTHON_DYNAMIC
 #does not work with parallel make (-j)
