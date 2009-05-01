@@ -908,7 +908,11 @@ void Cvode::minstep(double x) {
 	}
 }
 void Cvode::maxstep(double x) {
-	if (mem_) { CVodeSetMaxStep(mem_, x); }
+	if (use_daspk_) {
+		if (daspk_->mem_) { IDASetMaxStep(daspk_->mem_, x); }
+	}else{
+		if (mem_) { CVodeSetMaxStep(mem_, x); }
+	}
 }
 
 void Cvode::free_cvodemem() {
