@@ -2616,6 +2616,12 @@ void NetCvode::allthread_handle(double tt, HocEvent* he, NrnThread* nt) {
 		allthread_hocevents_->append(he);
 		nt->_t = tt;
 	}
+	// deliver any other events at this time (in particular, a possible NetParEvent)
+	// to guarantee consistency of the NetParEvent for all threads
+	// Otherwise, if some threads do a NetParEvent and others not, then
+	// the interthread enqueue can put an earlier event onto the thread queue
+	// than the last delivered event
+	deliver_events(tt, nt);
 }
 
 #if 0
