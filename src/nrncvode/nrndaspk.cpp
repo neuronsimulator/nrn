@@ -213,6 +213,21 @@ static void* do_ode_thread(NrnThread* nt) {
 	return 0;
 }
 
+static double check(double t, Daspk* ida) {
+	res_gvardt(t, ida->cv_->y_, ida->yp_, ida->delta_, ida->cv_);
+	double norm =  N_VWrmsNorm(ida->delta_, ((IDAMem)(ida->mem_))->ida_ewt);
+	printf("ida check t=%.15g norm=%g\n", t, norm);
+#if 0
+	for (int i=0; i < ida->cv_->neq_; ++i) {
+		printf(" %3d %22.15g %22.15g %22.15g\n", i,
+N_VGetArrayPointer(ida->cv_->y_)[i],
+N_VGetArrayPointer(ida->yp_)[i],
+N_VGetArrayPointer(ida->delta_)[i]);
+	}
+#endif
+	return norm;
+}
+
 int Daspk::init() {
 	extern double t;
 	int i;
@@ -274,7 +289,8 @@ cv_->t_, t-cv_->t_, cv_->t0_-cv_->t_);
 		hoc_execerror("Bad Ida error weight vector", 0);
 	}
 	use_parasite_ = false;
-	res_gvardt(tt, cv_->y_, yp_, parasite_, cv_);
+//	check(cv_->t_, this);
+	res_gvardt(cv_->t_, cv_->y_, yp_, parasite_, cv_);
 	double norm = N_VWrmsNorm(parasite_, ((IDAMem)mem_)->ida_ewt);
 //printf("norm=%g at t=%g\n", norm, t);
 	if (norm > 1.) {
