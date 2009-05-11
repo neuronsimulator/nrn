@@ -532,7 +532,7 @@ fcurrent()
 		recalc_diam();
 	}
 
-	dt2thread(dt);
+	dt2thread(-1.);
 	nrn_thread_table_check();
 	state_discon_allowed_ = 0;
 	nrn_multithread_job(setup_tree_matrix);
@@ -636,6 +636,7 @@ nrnmpi_myid, t, memb_func[p->type].sym->name, inode, secname(sec));
 
 frecord_init() { /* useful when changing states after an finitialize() */
 	int i;
+	dt2thread(-1);
 	nrn_record_init();
 	if (!cvode_active_) {
 		for (i=0; i < nrn_nthread; ++i) {
