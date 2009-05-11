@@ -1139,7 +1139,7 @@ static Object** v_sumgauss(void* v) {
 	double scale = 1./hoc_Sqrt(2.*PI*var);
 	
 	for (int i=0;i<x->capacity();i++) {
-	  int xv = int((x->elem(i)-low)/step);
+	  double xv = int((x->elem(i)-low)/step);
 	  for (int j=0; j<points;j++) {
 	    double arg = -(j-xv)*(j-xv)/(2.*svar);
 	    if (arg > -20.) sum->elem(j) += hoc_Exp(arg) * scale * w->elem(i);
