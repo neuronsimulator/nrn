@@ -1336,7 +1336,9 @@ double* nrnpy_rangepointer(sec, s, d, err)
 		double* pd;
 		nd = node_ptr(sec, d, (double*)0);
 		pd = nrn_vext_pd(s, 0, nd);
-		return pd;
+		if (pd) {
+			return pd;
+		}
 	}
 #endif
 	i = node_index(sec, d);

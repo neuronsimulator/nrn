@@ -395,6 +395,7 @@ static PyObject* section_getattro(NPySecObj* self, PyObject* name) {
 			Py_INCREF(self);
 			r->pyseg_->x_ = 0.5;
 			r->sym_ = sym;
+			r->isptr_ = 0;
 			result = (PyObject*)r;
 		}else{
 			int err;
@@ -574,6 +575,7 @@ static PyObject* segment_getattro(NPySegObj* self, PyObject* name) {
 			r->pyseg_ = self;
 			Py_INCREF(r->pyseg_);
 			r->sym_ = sym;
+			r->isptr_ = 0;
 			result = (PyObject*)r;
 		}else{
 			int err;
@@ -644,7 +646,10 @@ static int segment_setattro(NPySegObj* self, PyObject* name, PyObject* value) {
 	}else if ((rv = PyDict_GetItemString(rangevars_, n)) != NULL) {
 		sym = ((NPyRangeVar*)rv)->sym_;
 		if (ISARRAY(sym)) {
-			assert(0);
+			char s[200];
+			sprintf(s, "%s needs an index for assignment", sym->name);
+			PyErr_SetString(PyExc_IndexError, s);
+			err = -1;
 		}else{
 			int errp;
 			double* d = nrnpy_rangepointer(self->pysec_->sec_, sym, self->x_, &errp);
@@ -1037,6 +1042,7 @@ static void rangevars_add(Symbol* sym) {
 	NPyRangeVar* r = PyObject_New(NPyRangeVar, range_type);
 	//printf("%s\n", sym->name);
 	r->sym_ = sym;
+	r->isptr_ = 0;
 	PyDict_SetItemString(rangevars_, sym->name, (PyObject*)r);
 }
 
