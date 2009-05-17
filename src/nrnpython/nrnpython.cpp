@@ -17,7 +17,7 @@ extern FILE* hoc_fin;
 extern char* hoc_promptstr;
 extern char* neuronhome_forward();
 //extern char*(*PyOS_ReadlineFunctionPointer)(FILE*, FILE*, char*);
-# if (PY_MAJOR_VERSION >= 2 && PY_MINOR_VERSION > 2)
+#if ((PY_MAJOR_VERSION >= 3) || (PY_MAJOR_VERSION == 2 && PY_MINOR_VERSION > 2))
 static char* nrnpython_getline(FILE*, FILE*, char*);
 #else
 static char* nrnpython_getline(char*);
@@ -47,8 +47,8 @@ void nrnpy_augment_path() {
 
 void nrnpython_start(int b) {
 #if USE_PYTHON
-//	printf("nrnpython_start %d\n", b);
 	static int started = 0;
+//	printf("nrnpython_start %d started=%d\n", b, started);
 	if (b == 1 && !started) {
 		Py_Initialize();
 		started = 1;
@@ -66,7 +66,39 @@ void nrnpython_start(int b) {
 	}
 	if (b == 2 && started) {
 		int i;
+#if (PY_MAJOR_VERSION >= 3)
+		// basically a copy of code from Modules/python.c
+		wchar_t **argv_copy = (wchar_t**)PyMem_Malloc(sizeof(wchar_t*)*nrn_global_argc);
+		if (!argv_copy) {
+			fprintf(stderr, "out of memory\n");
+			exit(1);
+		}
+		for (i=0; i < nrn_global_argc; ++i) {
+#ifdef HAVE_BROKEN_MBSTOWCS
+			size_t argsize = strlen(argv[i]);
+#else
+			size_t argsize = mbstowcs(NULL, nrn_global_argv[i], 0);
+#endif
+			size_t count;
+			if (argsize == (size_t)-1) {
+				fprintf(stderr, "Could not convert argument %d to string\n", i);
+				exit(1);
+			}
+			argv_copy[i] = (wchar_t*)PyMem_Malloc((argsize+1)*sizeof(wchar_t));
+			if (!argv_copy[i]) {
+				fprintf(stderr, "out of memory\n");
+				exit(1);
+			}
+			count = mbstowcs(argv_copy[i], nrn_global_argv[i], argsize+1);
+			if (count == (size_t)-1) {
+				fprintf(stderr, "Could not convert argument %d to string\n", i);
+				exit(1);
+			}
+		}
+                PySys_SetArgv(nrn_global_argc, argv_copy);
+#else
                 PySys_SetArgv(nrn_global_argc, nrn_global_argv);
+#endif
 		nrnpy_augment_path();
 		PyOS_ReadlineFunctionPointer = nrnpython_getline;
 		// Is there a -c "command" or file.py arg.
@@ -116,7 +148,7 @@ void nrnpython_real() {
 	ret(double(retval));
 }
 
-# if (PY_MAJOR_VERSION >= 2 && PY_MINOR_VERSION > 2)
+#if ((PY_MAJOR_VERSION >= 3) || (PY_MAJOR_VERSION == 2 && PY_MINOR_VERSION > 2))
 static char* nrnpython_getline(FILE*, FILE*, char* prompt) {
 #else
 static char* nrnpython_getline(char* prompt) {
@@ -126,7 +158,7 @@ static char* nrnpython_getline(char* prompt) {
 	int r = hoc_get_line();
 //printf("r=%d c=%d\n", r, hoc_cbufstr->buf[0]);
 	if (r == 1) {
-		int n = strlen(hoc_cbufstr->buf) + 1;
+		size_t n = strlen(hoc_cbufstr->buf) + 1;
 		char* p = (char*)PyMem_MALLOC(n);
 		if (p == 0) { return 0; }
 		strcpy(p, hoc_cbufstr->buf);
