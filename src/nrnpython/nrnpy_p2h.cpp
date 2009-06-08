@@ -321,6 +321,10 @@ static PyObject* hoccommand_exec_help(Object* ho) {
 		r = PyObject_CallObject(po, PyTuple_New(0));
 	}
 	//PyGILState_Release(s);
+	if (r == NULL) {
+		PyErr_Print();
+		hoc_execerror("Python Callback failed", 0);
+	}
 	return r;
 }
 

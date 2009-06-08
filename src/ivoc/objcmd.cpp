@@ -85,9 +85,13 @@ void HocCommand::help() {
 #endif
 }
 
+const char* ccc = "PythonObject";
 const char* HocCommand::name() {
-	assert(po_ == nil);
-	return s_->string();
+	if (po_ == nil) {
+		return s_->string();
+	}else{
+		return ccc;
+	}
 }
 
 void HocCommand::audit() {
