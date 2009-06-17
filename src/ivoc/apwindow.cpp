@@ -12,8 +12,8 @@
 #include <IV-Win/window.h>
 #else
 #ifdef MAC
-#include <IV-MAC/event.h>
-#include <IV-MAC/window.h>
+#include <IV-Mac/event.h>
+#include <IV-Mac/window.h>
 #else
 #include <IV-X11/xevent.h>
 #include <IV-X11/xwindow.h>

@@ -16,6 +16,7 @@ typedef void (*ReceiveFunc)(Point_process*, double*, double);
 extern "C" {
 #include "membfunc.h"
 extern int section_count;
+extern void nrn_shape_update();
 extern Section** secorder;
 extern ReceiveFunc* pnt_receive;
 extern NetCvode* net_cvode_instance;
@@ -697,6 +698,7 @@ void SaveState::read(OcFile* ocf, boolean close) {
 	if (!ocf->open(ocf->get_name(), "r")) {
 		hoc_execerror("Couldn't open file for reading:", ocf->get_name());
 	}
+	nrn_shape_update();	
 	BinaryMode(ocf)
 	FILE* f = ocf->file();
 	ssfree();

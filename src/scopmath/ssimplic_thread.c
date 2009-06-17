@@ -38,7 +38,7 @@ if (linflag) { /*iterate linear solution*/
 	}
 }
 
-	_modl_set_dt_thread(ss_dt, nt);
+	_modl_set_dt_thread(dt, nt);
 	return err;
 }
 
