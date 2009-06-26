@@ -10,7 +10,7 @@ objref xends, yends, tobj1, groundnode, si, con, lincirnodes
 objref gmat, cmat, bvec, inmat, inb, umat, vmat, dvec, almat, alvec
 objref valbox, namebox, model, deck, b1, statebox, icbox, graphlist
 objref varnames, varname_indices, namelist, ystate, yinit, icptrs
-objref ic_name_indices_
+objref ic_name_indices_, csx, csy, csp
 strdef tstr, tstr1
 
 proc init() {local i
@@ -21,6 +21,7 @@ proc init() {local i
 	keepcon_ = 0
 	show_con_ = 1
 	res_ = 10
+	csx = new Vector(3)  csy = new Vector(3) // for coloring marks during label move
 	ystate = new Vector(50) // for persistence
 	yinit = new Vector(50) // for persistence
 	graphlist = new List()
@@ -32,22 +33,22 @@ proc init() {local i
 	con = new Vector()
 	parts = new List()
 	WIRE = parts.count
-	parts.append(new Wire(con))
-	parts.append(new Resistor(con))
-	parts.append(new Capacitor(con))
+	parts.append(new Wire(1, con))
+	parts.append(new Resistor(1, con))
+	parts.append(new Capacitor(1, con))
 	INDUCT = parts.count
-	parts.append(new Inductor(con))
+	parts.append(new Inductor(1, con))
 	BAT = parts.count
-	parts.append(new Battery(con))
+	parts.append(new Battery(1, con))
 	CUR = parts.count
-	parts.append(new Current(con))
+	parts.append(new Current(1, con))
 	GND = parts.count
-	parts.append(new Ground(con))
-	parts.append(new OpAmp(con))
+	parts.append(new Ground(1, con))
+	parts.append(new OpAmp(1, con))
 	// following must be last so that part>=CELL logic clause works
 	CELL = parts.count
-	parts.append(new InsideCell(con))
-	parts.append(new OutsideCell(con))
+	parts.append(new InsideCell(1, con))
+	parts.append(new OutsideCell(1, con))
 	ncellnode = 0
 	build()
 	if (numarg() == 0) {
@@ -337,7 +338,7 @@ proc tool() {local i  localobj tobj
 	deck.flip_to($1)
 	simulate_ = ($1 == 2)
 	show_parts_ = ($1 == 0)
-	show_con_ = ($1 == 0)
+	show_con_ = ($1 <= 1)
 	pl()
 //	print "remove all aliases"
 	hoc_sf_.alias(this) // wipe out any that are already there
@@ -760,9 +761,31 @@ proc label_move() {
 	if (sel != nil) {
 		sel.move_label(selsub, $2, $3)
 		pl()
+		color_sel($1)
+	}
+	if ($1 == 3) {
+		pl()
 	}
 }
 	
+proc color_sel() {
+	if (selsub > 0) {
+		if ($1 == 2) {
+			csx.resize(0)  csy.resize(0)
+			sel.ends(csx, csy)
+		}
+		g.mark(csx.x[selsub-1], csy.x[selsub-1], "S", 10, 2, 1)
+	}else{
+		if ($1 == 2) {
+			sprint(tstr, "%s", sel.pat)
+			sscanf(tstr, "%[^[]", tstr)
+			sprint(tstr, "csp = new %s(2)", tstr)
+			execute(tstr, this)
+		}
+		sel.plc(g, csp)
+	}
+}
+
 proc sim() {}
 
 func near_label() {local x, y, h, i
