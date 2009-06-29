@@ -150,6 +150,7 @@ char* expand_env_var(s) char* s; {
 	int n;
 	int begin = 1; /* only needed for mac when necessary to prepend a : */
 	if (!hs) { hs = hocstr_create(256); }
+	hocstr_resize(hs, strlen(s));
 	for (cp1=s, cp2 = hs->buf + begin; *cp1; ++cp1) {
 		if (*cp1 == '$' && cp1[1] == '(') {
 			char* cp3;
