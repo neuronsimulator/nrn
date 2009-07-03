@@ -163,6 +163,7 @@ int NrnProperty::var_type(Symbol* sym) const{
 
 boolean NrnProperty::assign(Prop* src, Prop* dest, int vartype) {
 	int n;
+	assert(vartype != NRNPOINTER);
 	if (src && dest && src != dest && src->type == dest->type) {
 		if (src->ob) {
 			Symbol* msym = memb_func[src->type].sym;
@@ -230,7 +231,11 @@ double* NrnProperty::prop_pval(const Symbol* s, int index)const {
 	if (npi_->p_->ob) {
 		return npi_->p_->ob->u.dataspace[prop_index(s)].pval + index;
 	}else{
-		return npi_->p_->param + prop_index(s) + index;
+		if (s->subtype == NRNPOINTER) {
+			return npi_->p_->dparam[prop_index(s) + index].pval;
+		}else{
+			return npi_->p_->param + prop_index(s) + index;
+		}
 	}
 }
 
