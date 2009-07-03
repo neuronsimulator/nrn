@@ -5,6 +5,7 @@
 #include <ocjump.h>
 #include "ivocvect.h"
 #include "oclist.h"
+#include "nrniv_mf.h"
 
 
 extern "C" {
@@ -45,6 +46,7 @@ extern Object* nrnpy_pyobject_in_obj(PyObject*);
 static void pyobject_in_objptr(Object**, PyObject*);
 extern IvocVect* (*nrnpy_vec_from_python_p_)(void*);
 extern Object** (*nrnpy_vec_to_python_p_)(void*);
+extern double** nrnpy_setpointer_helper(PyObject*, PyObject*);
 
 static cTemplate* hoc_vec_template_;
 static cTemplate* hoc_list_template_;
@@ -910,6 +912,8 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* name) {
 //printf("function %s\n", po->sym_->name);
 		break;
 	    }
+	case SETPOINTERKEYWORD:
+		return PyObject_GenericGetAttr((PyObject*)subself, name);
 	default: // otherwise
 	    {
 		char e[200];
@@ -1448,6 +1452,32 @@ static PyObject* mkref(PyObject* self, PyObject* args) {
 	return NULL;
 }
 
+static PyObject* setpointer(PyObject* self, PyObject* args) {
+	PyObject *ref, *name, *pp, *result = NULL;
+	if (PyArg_ParseTuple(args, "O!SO", hocobject_type, &ref, &name, &pp) == 1) {
+		PyHocObject* href = (PyHocObject*)ref;
+		double** ppd = 0;
+		if (href->type_ != 8) {	goto done; }
+		if (PyObject_TypeCheck(pp, hocobject_type)) {
+			PyHocObject* hpp = (PyHocObject*)pp;
+			if (hpp->type_ != 1) { goto done; }
+			Symbol* sym = getsym(PyString_AsString(name), hpp->ho_, 0);
+			if (!sym || sym->type != RANGEVAR || sym->subtype != NRNPOINTER) { goto done; }
+			ppd = &ob2pntproc(hpp->ho_)->prop->dparam[sym->u.rng.index].pval;
+		}else{
+			ppd = nrnpy_setpointer_helper(name, pp);
+			if (!ppd) { goto done; }
+		}		
+		*ppd = href->u.px_;
+		result = Py_None;
+	}
+    done:
+	if (!result) {
+		PyErr_SetString(PyExc_TypeError, "setpointer(_ref_hocvar, 'POINTER_name', point_process or nrn.Mechanism))");
+	}
+	return result;
+}
+
 static PySequenceMethods hocobj_seqmeth = {
 	hocobj_len, NULL, NULL, hocobj_getitem,
 	NULL, hocobj_setitem, NULL, NULL,
@@ -1615,16 +1645,13 @@ hoc_execerror("Could not set a Python Sequence item", buf);
 }
 
 
-
-
-
-
 static PyMethodDef hocobj_methods[] = {
 	{"ref", mkref, METH_VARARGS, "Wrap to allow call by reference in a hoc function"},
 	{"baseattr", hocobj_baseattr, METH_VARARGS, "To allow use of an overrided base method"},
 	{"cas", nrnpy_cas, METH_VARARGS, "Return the currently accessed section." },
 	{"allsec", nrnpy_forall, METH_VARARGS, "Return iterator over all sections." },
 	{"Section", nrnpy_newsecobj, METH_VARARGS, "Return a new Section" },
+	{"setpointer", setpointer, METH_VARARGS, "Assign hoc variable address to NMODL POINTER"},
 	{NULL, NULL, 0, NULL}
 };
 

@@ -736,6 +736,17 @@ static int mech_setattro(NPyMechObj* self, PyObject* name, PyObject* value) {
 	return err;
 }
 
+double** nrnpy_setpointer_helper(PyObject* name, PyObject* mech) {
+	if (PyObject_TypeCheck(mech, pmech_generic_type) == 0) { return 0; }
+	NPyMechObj* m = (NPyMechObj*)mech;
+	NrnProperty np(m->prop_);
+	char buf[200];
+	sprintf(buf, "%s_%s", PyString_AsString(name), memb_func[m->prop_->type].sym->name);
+	Symbol* sym = np.find(buf);
+	if (!sym || sym->type != RANGEVAR || sym->subtype != NRNPOINTER) { return 0; }
+	return &m->prop_->dparam[np.prop_index(sym)].pval;
+}
+
 static PyObject* NPySecObj_call(NPySecObj* self, PyObject* args) {
 	double x = 0.5;
 	PyArg_ParseTuple(args, "|d", &x);
