@@ -546,6 +546,9 @@ varname: name
 		}
 	| name '[' intexpr ']'
 		{lastok = $4;
+		if (SYM($1)->type == PRIME) {
+			myerr("Derivatives of STATE array variables not allowed");
+		}
 		SYM($1)->usage |= DEP;
 		if ((SYM($1)->subtype & ARRAY) == 0)
 			{myerr("variable is not an array");}
