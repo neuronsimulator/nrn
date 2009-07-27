@@ -65,6 +65,7 @@ Item           *qlint;
 extern int vectorize;
 extern int numlist;
 extern char* nmodl_version_;
+extern usederivstatearray;
 #endif
 
 /*SUPPRESS 763*/
@@ -173,6 +174,10 @@ no longer adequate for saying we can not */
 #if NMODL && VECTORIZE
 	if (vectorize) {
 		Fprintf(stderr, "Thread Safe\n");
+	}
+	if (usederivstatearray) {
+fprintf(stderr, "Derivatives of STATE array variables are not translated correctly and compile time errors will be generated.\n");
+fprintf(stderr, "The %s.c file may be manually edited to fix these errors.\n", modprefix);
 	}
 #endif
 

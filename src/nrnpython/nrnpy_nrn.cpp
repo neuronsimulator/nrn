@@ -262,10 +262,22 @@ static PyObject* NPyRangeVar_name(NPyRangeVar* self) {
 }
 
 static PyObject* NPySecObj_connect(NPySecObj* self, PyObject*  args) {
+	PyObject* p;
 	NPySecObj* parent;
 	double parentx, childend;
-	parentx = 1.; childend = 0.;
-	if (!PyArg_ParseTuple(args, "O!|dd", psection_type, &parent, &parentx, &childend)) {
+	parentx = -1000.; childend = 0.;
+	if (!PyArg_ParseTuple(args, "O|dd", &p, &parentx, &childend)) {
+		return NULL;
+	}
+	if (PyObject_TypeCheck(p, psection_type)) {
+		parent = (NPySecObj*)p;
+		if (parentx == -1000.) { parentx = 1.; }
+	}else if (PyObject_TypeCheck(p, psegment_type)) {
+		parent = ((NPySegObj*)p)->pysec_;
+		if (parentx != -1000.) { childend = parentx; }
+		parentx = ((NPySegObj*)p)->x_;
+	}else{
+		PyErr_SetString(PyExc_TypeError, "first arg not a nrn.Section or nrn.Segment");
 		return NULL;
 	}
 //printf("NPySecObj_connect %s %g %g\n", parent, parentx, childend);
@@ -736,6 +748,17 @@ static int mech_setattro(NPyMechObj* self, PyObject* name, PyObject* value) {
 	return err;
 }
 
+double** nrnpy_setpointer_helper(PyObject* name, PyObject* mech) {
+	if (PyObject_TypeCheck(mech, pmech_generic_type) == 0) { return 0; }
+	NPyMechObj* m = (NPyMechObj*)mech;
+	NrnProperty np(m->prop_);
+	char buf[200];
+	sprintf(buf, "%s_%s", PyString_AsString(name), memb_func[m->prop_->type].sym->name);
+	Symbol* sym = np.find(buf);
+	if (!sym || sym->type != RANGEVAR || sym->subtype != NRNPOINTER) { return 0; }
+	return &m->prop_->dparam[np.prop_index(sym)].pval;
+}
+
 static PyObject* NPySecObj_call(NPySecObj* self, PyObject* args) {
 	double x = 0.5;
 	PyArg_ParseTuple(args, "|d", &x);
@@ -796,7 +819,7 @@ static PyMethodDef NPySecObj_methods[] = {
 	 "Section name (same as hoc secname())"
 	},
 	{"connect", (PyCFunction)NPySecObj_connect, METH_VARARGS,
-	 "childSection.connect(parentSection, [parentX], [childEnd])"
+	 "childSection.connect(parentSection, [parentX], [childEnd]) or\nchildSection.connect(parentSegment, [childEnd])"
 	},
 	{"insert", (PyCFunction)NPySecObj_insert, METH_VARARGS,
 	 "section.insert(densityMechanismType) e.g. soma.insert(hh)"

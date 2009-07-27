@@ -49,10 +49,12 @@ fi
 
 pwd
 files=""
+incs=""
 if test $# -gt 0 ; then
 	for i in $* ; do
 		if test -d $i ; then
 			files="$files `echo $i/*.mod`"
+			incs="$incs `echo $i/*.inc`"
 		else
 			files="$files $i"
 		fi
@@ -80,6 +82,13 @@ for i in $files; do
     rm -f "`basename $i`".mod
     ln -s ../$i.mod .
 done
+if test "$incs" != "" ; then
+	for i in $incs ; do
+	    rm -f "`basename $i`"
+	    ln -s ../$i .
+	done
+fi
+
 bfiles=`echo "$mfiles" | sed 's/\.mod//g'`
 
 for i in $cfiles; do
