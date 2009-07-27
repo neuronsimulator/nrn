@@ -34,6 +34,7 @@ if (!(ierr++))yyerror(arg); --yyps; --yypv; YYERROR
 
 int brkpnt_exists;
 int assert_threadsafe;
+int usederivstatearray;
 extern int protect_;
 extern int vectorize;
 extern int in_comment_; /* allow non-ascii in a COMMENT */
@@ -547,7 +548,7 @@ varname: name
 	| name '[' intexpr ']'
 		{lastok = $4;
 		if (SYM($1)->type == PRIME) {
-			myerr("Derivatives of STATE array variables not allowed");
+			usederivstatearray = 1;
 		}
 		SYM($1)->usage |= DEP;
 		if ((SYM($1)->subtype & ARRAY) == 0)
