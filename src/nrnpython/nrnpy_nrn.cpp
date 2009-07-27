@@ -262,10 +262,22 @@ static PyObject* NPyRangeVar_name(NPyRangeVar* self) {
 }
 
 static PyObject* NPySecObj_connect(NPySecObj* self, PyObject*  args) {
+	PyObject* p;
 	NPySecObj* parent;
 	double parentx, childend;
-	parentx = 1.; childend = 0.;
-	if (!PyArg_ParseTuple(args, "O!|dd", psection_type, &parent, &parentx, &childend)) {
+	parentx = -1000.; childend = 0.;
+	if (!PyArg_ParseTuple(args, "O|dd", &p, &parentx, &childend)) {
+		return NULL;
+	}
+	if (PyObject_TypeCheck(p, psection_type)) {
+		parent = (NPySecObj*)p;
+		if (parentx == -1000.) { parentx = 1.; }
+	}else if (PyObject_TypeCheck(p, psegment_type)) {
+		parent = ((NPySegObj*)p)->pysec_;
+		if (parentx != -1000.) { childend = parentx; }
+		parentx = ((NPySegObj*)p)->x_;
+	}else{
+		PyErr_SetString(PyExc_TypeError, "first arg not a nrn.Section or nrn.Segment");
 		return NULL;
 	}
 //printf("NPySecObj_connect %s %g %g\n", parent, parentx, childend);
@@ -807,7 +819,7 @@ static PyMethodDef NPySecObj_methods[] = {
 	 "Section name (same as hoc secname())"
 	},
 	{"connect", (PyCFunction)NPySecObj_connect, METH_VARARGS,
-	 "childSection.connect(parentSection, [parentX], [childEnd])"
+	 "childSection.connect(parentSection, [parentX], [childEnd]) or\nchildSection.connect(parentSegment, [childEnd])"
 	},
 	{"insert", (PyCFunction)NPySecObj_insert, METH_VARARGS,
 	 "section.insert(densityMechanismType) e.g. soma.insert(hh)"
