@@ -14,6 +14,8 @@ typedef struct {
 	PyObject_HEAD
 	Section* sec_;
 	int allseg_iter_;
+	char* name_;
+	PyObject* cell_;
 } NPySecObj;
 
 typedef struct {
@@ -62,19 +64,61 @@ extern int diam_changed;
 extern void mech_insert1(Section*, int);
 extern PyObject* nrn_hocobj_ptr(double*);
 extern PyObject* nrnpy_forall(PyObject* self, PyObject* args);
+extern Object* nrnpy_po2ho(PyObject*);
 extern Symbol* nrnpy_pyobj_sym_;
+extern int nrnpy_ho_eq_po(Object*, PyObject*);
 extern PyObject* nrnpy_hoc2pyobject(Object*);
 static void nrnpy_reg_mech(int);
 extern void (*nrnpy_reg_mech_p_)(int);
 static void o2loc(Object*, Section**, double*);
 extern void (*nrnpy_o2loc_p_)(Object*, Section**, double*);
 static void nrnpy_unreg_mech(int);
+extern char* (*nrnpy_pysec_name_p_)(Section*);
+static char* pysec_name(Section*);
+extern Object* (*nrnpy_pysec_cell_p_)(Section*);
+static Object* pysec_cell(Section*);
+extern int (*nrnpy_pysec_cell_equals_p_)(Section*, Object*);
+static int pysec_cell_equals(Section*, Object*);
 
+static char* pysec_name(Section* sec) {
+	static char buf[512];
+	if (sec->prop) {
+		NPySecObj* ps = (NPySecObj*)sec->prop->dparam[PROP_PY_INDEX]._pvoid;
+		buf[0] = '\0';
+		if (ps->cell_) {
+			sprintf(buf, "%s.", PyString_AsString(PyObject_Str(ps->cell_)));
+		}
+		char* cp = buf + strlen(buf);
+		if (ps->name_) {
+			sprintf(cp, "%s", ps->name_);
+		}else{
+			sprintf(cp, "PySec_%lx", (long)ps);
+		}
+		return buf;
+	}
+	return 0;
+}
+
+static Object* pysec_cell(Section* sec) {
+	if (sec->prop && sec->prop->dparam[PROP_PY_INDEX]._pvoid) {
+		PyObject* cell = ((NPySecObj*)sec->prop->dparam[PROP_PY_INDEX]._pvoid)->cell_;
+		if (cell) {
+			return nrnpy_po2ho(cell);
+		}
+	}
+	return 0;
+}
+
+static int pysec_cell_equals(Section* sec, Object* obj) {
+	PyObject* po = ((NPySecObj*)sec->prop->dparam[PROP_PY_INDEX]._pvoid)->cell_;
+	return nrnpy_ho_eq_po(obj, po);
+}
 
 static void NPySecObj_dealloc(NPySecObj* self) {
-//printf("NPySecObj_dealloc %lx\n", (long)self);
+//printf("NPySecObj_dealloc %lx %s\n", (long)self, secname(self->sec_));
 	if (self->sec_) {
 		self->sec_->prop->dparam[PROP_PY_INDEX]._pvoid = 0;
+		if (self->name_) { delete [] self->name_; }
 		if (!self->sec_->prop->dparam[0].sym) {
 			sec_free(self->sec_->prop->dparam[8].itm);
 		}else{
@@ -107,21 +151,36 @@ static void NPyMechObj_dealloc(NPyMechObj* self) {
 // has no hoc Symbol but the Python Section pointer is filled in
 // and secname(sec) returns the Python Section object name from the hoc section.
 // If a Python Section object is created from an existing nrnoc section
-// (with a filled in Symbol) the nrnoc section will continue to exist as long
-// as 
+// (with a filled in Symbol) the nrnoc section will continue to exist untill
+// the hoc delete_section() is called on it.
 // 
 PyObject* NPySecObj_new(PyTypeObject* type, PyObject* args, PyObject* kwds) {
+	static char* kwlist[] = {"cell", "name", NULL};
 	NPySecObj* self;
 	self = (NPySecObj*)type->tp_alloc(type, 0);
 //printf("NPySecObj_new %lx\n", (long)self);
 	if (self != NULL) {
 		self->sec_ = nrnpy_newsection(self);
 		self->allseg_iter_ = 0;
+		self->name_ = 0;
+		self->cell_ = 0;
+		char* name = 0;
+		PyObject* cell = 0;
+		if (!PyArg_ParseTupleAndKeywords(args, kwds, "|Os", kwlist,
+		  &self->cell_, &name)) {
+			NPySecObj_dealloc(self);
+			return NULL;
+		}
+		// note that we are NOT referencing the cell
+		if (name) {
+			self->name_ = new char[strlen(name) + 1];
+			strcpy(self->name_, name);
+		}
 	}
 	return (PyObject*)self;
 }
 
-PyObject* nrnpy_newsecobj(PyObject* args, PyObject* kwds) {
+PyObject* nrnpy_newsecobj(PyObject* self, PyObject* args, PyObject* kwds) {
 	return NPySecObj_new(psection_type, args, kwds);
 }
 
@@ -1038,6 +1097,7 @@ static PyTypeObject nrnpy_MechanismType = {
 
 PyObject* nrnpy_cas(PyObject* self, PyObject* args) {
 	Section* sec = chk_access();
+	//printf("nrnpy_cas %s\n", secname(sec));
 	section_ref(sec);
 	NPySecObj* pysec = NULL;
 	if (sec->prop->dparam[PROP_PY_INDEX]._pvoid) {
@@ -1047,7 +1107,8 @@ PyObject* nrnpy_cas(PyObject* self, PyObject* args) {
 	}else{
 		pysec = (NPySecObj*)psection_type->tp_alloc(psection_type, 0);
 		pysec->sec_ = sec;
-		sec->prop->dparam[PROP_PY_INDEX]._pvoid;
+		pysec->name_ = 0;
+		pysec->cell_ = 0;
 	}
 	return (PyObject*)pysec;
 }
@@ -1115,6 +1176,9 @@ myPyMODINIT_FUNC nrnpy_nrn(void)
     }
     nrnpy_reg_mech_p_ = nrnpy_reg_mech;
     nrnpy_o2loc_p_ = o2loc;
+    nrnpy_pysec_name_p_ = pysec_name;
+    nrnpy_pysec_cell_p_ = pysec_cell;
+    nrnpy_pysec_cell_equals_p_ = pysec_cell_equals;
 #endif
 }
 

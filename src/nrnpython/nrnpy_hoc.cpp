@@ -34,7 +34,7 @@ extern boolean hoc_valid_stmt(const char*, Object*);
 myPyMODINIT_FUNC nrnpy_nrn();
 extern PyObject* nrnpy_cas(PyObject*, PyObject*);
 extern PyObject* nrnpy_forall(PyObject*, PyObject*);
-extern PyObject* nrnpy_newsecobj(PyObject*, PyObject*);
+extern PyObject* nrnpy_newsecobj(PyObject*, PyObject*, PyObject*);
 extern int section_object_seen;
 extern Symbol* nrnpy_pyobj_sym_;
 extern Symbol* nrn_child_sym;
@@ -900,6 +900,7 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* name) {
 	case HOCOBJFUNCTION:
 	case STRINGFUNC:
 	case TEMPLATE:
+	case OBJECTFUNC:
 	    {
 		result = hocobj_new(hocobject_type, 0, 0);
 		po = (PyHocObject*)result;
@@ -1650,7 +1651,7 @@ static PyMethodDef hocobj_methods[] = {
 	{"baseattr", hocobj_baseattr, METH_VARARGS, "To allow use of an overrided base method"},
 	{"cas", nrnpy_cas, METH_VARARGS, "Return the currently accessed section." },
 	{"allsec", nrnpy_forall, METH_VARARGS, "Return iterator over all sections." },
-	{"Section", nrnpy_newsecobj, METH_VARARGS, "Return a new Section" },
+	{"Section", (PyCFunction)nrnpy_newsecobj, METH_VARARGS|METH_KEYWORDS, "Return a new Section" },
 	{"setpointer", setpointer, METH_VARARGS, "Assign hoc variable address to NMODL POINTER"},
 	{NULL, NULL, 0, NULL}
 };
