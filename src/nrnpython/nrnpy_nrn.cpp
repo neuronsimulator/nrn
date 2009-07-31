@@ -823,6 +823,7 @@ static PyObject* NPySecObj_call(NPySecObj* self, PyObject* args) {
 	PyArg_ParseTuple(args, "|d", &x);
 	PyObject* segargs = Py_BuildValue("(O,d)", self, x);
 	PyObject* seg = NPySegObj_new(psegment_type, segargs, 0);
+	Py_DECREF(segargs);
 	return seg;
 }
 

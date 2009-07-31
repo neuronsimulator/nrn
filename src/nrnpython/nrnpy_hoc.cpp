@@ -798,7 +798,9 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* name) {
 			docobj = Py_BuildValue("s s", "", "");
 		}
 
-		return PyObject_CallObject(pfunc_get_docstring,docobj);
+		result = PyObject_CallObject(pfunc_get_docstring,docobj);
+		Py_DECREF(docobj);
+		return result;
 	      }else{
 		return NULL;
 	      }
