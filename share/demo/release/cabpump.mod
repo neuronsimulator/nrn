@@ -11,7 +11,7 @@ TITLE Calcium ion accumulation and diffusion with pump
 NEURON {
 	SUFFIX cadifpmp
 	USEION ca READ cao, ica WRITE cai, ica
-	RANGE ica_pmp, last_ica_pmp
+	RANGE ica_pmp, ica_pmp_last
 	GLOBAL vol, pump0
 }
 
