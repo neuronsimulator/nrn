@@ -117,9 +117,11 @@ static int pysec_cell_equals(Section* sec, Object* obj) {
 static void NPySecObj_dealloc(NPySecObj* self) {
 //printf("NPySecObj_dealloc %lx %s\n", (long)self, secname(self->sec_));
 	if (self->sec_) {
-		self->sec_->prop->dparam[PROP_PY_INDEX]._pvoid = 0;
+		if (self->sec_->prop) {
+			self->sec_->prop->dparam[PROP_PY_INDEX]._pvoid = 0;
+		}
 		if (self->name_) { delete [] self->name_; }
-		if (!self->sec_->prop->dparam[0].sym) {
+		if (self->sec_->prop && !self->sec_->prop->dparam[0].sym) {
 			sec_free(self->sec_->prop->dparam[8].itm);
 		}else{
 			section_unref(self->sec_);
