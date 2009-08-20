@@ -1473,6 +1473,7 @@ static PyObject* setpointer(PyObject* self, PyObject* args) {
 		}		
 		*ppd = href->u.px_;
 		result = Py_None;
+		Py_INCREF(result);
 	}
     done:
 	if (!result) {
