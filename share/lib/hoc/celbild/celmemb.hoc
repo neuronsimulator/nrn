@@ -684,13 +684,15 @@ proc set_default() {
 	}
 }
 
-proc neuroml() {local i, j, g_index  localobj bm, parm, ms
+proc neuroml() {local i, j, g_index, isms  localobj bm, parm, ms
 	// NeuroML is in error with regard to having group a subitem of
 	// parm instead of biomech
 	for i = 0, $o1.biomechs_.__len__() - 1 {
 		bm = $o1.biomechs_[i]
 		//print bm.name_
+		if (bm.parms_.__len__() == 0) { continue }
 		g_index = bm.parms_[0].group_index_
+		isms = 0
 		if (strcmp("Ra", bm.name_) == 0) {
 			ms = new FakeMechStan(0)
 			ms.value = bm.parms_[0].value_
@@ -700,13 +702,14 @@ proc neuroml() {local i, j, g_index  localobj bm, parm, ms
 			ms.value = bm.parms_[0].value_
 			ms.set_default()
 		}else{
+			isms = 1
 			ms = new MechanismStandard(bm.name_)
 			for j=0, bm.parms_.__len__() - 1 {
 				parm = bm.parms_[j]
 				ms.set(parm.name_, parm.value_, 0)
 			}
 		}
-		ms = new MStanWrap(ms, g_index)
+		ms = new MStanWrap(ms, isms)
 		bild.subsets.snlist.object(g_index).ml.append(ms)
 	}
 }
