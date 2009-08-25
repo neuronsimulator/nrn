@@ -781,8 +781,7 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* name) {
 		int size = v->capacity();
 		double* x = vector_vec(v);
 
-		
-	     	return Py_BuildValue("{s:(i),s:s,s:i,s:(l,O)}","shape",size,"typestr",array_interface_typestr,"version",3,"data",(long)x,Py_True);
+	     	return Py_BuildValue("{s:(i),s:s,s:i,s:(N,O)}","shape",size,"typestr",array_interface_typestr,"version",3,"data",PyLong_FromVoidPtr(x),Py_True);
 
 	    }else if (strcmp(n, "__doc__") == 0) {
 
@@ -1489,15 +1488,17 @@ static PySequenceMethods hocobj_seqmeth = {
 };
 
 static char* double_array_interface(PyObject* po,long& stride) {
-	long idata = 0;
+	void* data = 0;
 	PyObject *pstride;
 	PyObject *psize;
 	if (PyObject_HasAttrString(po, "__array_interface__")) {
 		PyObject* ai = PyObject_GetAttrString(po, "__array_interface__");
 		if (strcmp(PyString_AsString(PyDict_GetItemString(ai, "typestr")), array_interface_typestr) == 0) {
-			idata = PyLong_AsLong(PyTuple_GetItem(PyDict_GetItemString(ai, "data"), 0));
+			data = PyLong_AsVoidPtr(PyTuple_GetItem(PyDict_GetItemString(ai, "data"), 0));
 			//printf("double_array_interface idata = %ld\n", idata);
-
+			if (PyErr_Occurred()) {
+				data=0;
+			}
 			pstride = PyDict_GetItemString(ai, "strides");
 		  	if (pstride == Py_None) {
 				stride=8;
@@ -1511,19 +1512,19 @@ static char* double_array_interface(PyObject* po,long& stride) {
 						stride = PyLong_AsLong(psize);
 					} else {
 						PyErr_SetString(PyExc_TypeError, "array_interface stride element of invalid type.");
-						idata=0;
+						data=0;
 					}
 					
-				} else idata=0; //don't handle >1 dimensions
+				} else data=0; //don't handle >1 dimensions
 			} else {
 
 				PyErr_SetString(PyExc_TypeError, "array_interface stride object of invalid type.");
-				idata=0;
+				data=0;
 			}
 
 		}
 	}
-	return (char*)idata;
+	return (char*)data;
 }
 
 static IvocVect* nrnpy_vec_from_python(void* v) {
