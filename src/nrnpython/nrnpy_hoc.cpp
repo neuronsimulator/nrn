@@ -929,7 +929,7 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* name) {
 
 static PyObject* hocobj_baseattr(PyObject* subself, PyObject* args) {
 	PyObject* name;
-	if (!PyArg_ParseTuple(args, "S", &name)) {
+	if (!PyArg_ParseTuple(args, "O", &name)) {
 		return NULL;
 	}
 	return hocobj_getattr(subself, name);
@@ -1456,7 +1456,7 @@ static PyObject* mkref(PyObject* self, PyObject* args) {
 
 static PyObject* setpointer(PyObject* self, PyObject* args) {
 	PyObject *ref, *name, *pp, *result = NULL;
-	if (PyArg_ParseTuple(args, "O!SO", hocobject_type, &ref, &name, &pp) == 1) {
+	if (PyArg_ParseTuple(args, "O!OO", hocobject_type, &ref, &name, &pp) == 1) {
 		PyHocObject* href = (PyHocObject*)ref;
 		double** ppd = 0;
 		if (href->type_ != 8) {	goto done; }
