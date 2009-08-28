@@ -52,17 +52,17 @@ static PyTypeObject nrnpy_HocObjectType = {
     sizeof(PyHocObject), /*tp_basicsize*/
     0,                         /*tp_itemsize*/
     (destructor)hocobj_dealloc,                        /*tp_dealloc*/
-    (printfunc)hocobj_print,                         /*tp_print*/
+    0,                         /*tp_print*/
     0,                         /*tp_getattr*/
     0,                         /*tp_setattr*/
     0,                         /*tp_compare*/
-    0,                         /*tp_repr*/
+    (reprfunc)hocobj_repr,     /*tp_repr*/
     &hocobj_as_number,                         /*tp_as_number*/
     &hocobj_seqmeth,                         /*tp_as_sequence*/
     0,                         /*tp_as_mapping*/
     0,                         /*tp_hash */
     (ternaryfunc)hocobj_call,                         /*tp_call*/
-    0,                         /*tp_str*/
+    0,                          /*tp_str*/
     hocobj_getattro,                         /*tp_getattro*/
     hocobj_setattro,                         /*tp_setattro*/
     0,                         /*tp_as_buffer*/

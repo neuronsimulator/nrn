@@ -216,71 +216,43 @@ static void pyobject_in_objptr(Object** op, PyObject* po) {
 	*op = o;
 }
 
-#if defined(__MINGW32__)
-#define ALT_fprintf sprintf
-#define ALT_f (buf+strlen(buf))
-#define ALT_ws PyFile_WriteString(buf, po)
-#else
-#define ALT_fprintf fprintf
-#define ALT_f f
-#define ALT_ws /**/
-#endif
-
-static int hocobj_print(PyHocObject* self, FILE* f, int i) {
-#if defined(__MINGW32__)
-	char buf[256];
+static PyObject* hocobj_repr(PyHocObject* self) {
+	char buf[512], *cp;
 	buf[0] = '\0';
-	PyObject* po = PyFile_FromFile(f, "what",  "w", 0);
-#endif
-	// ALT_fprintf(ALT_f, "hocobj_print f=%lx i=%d\n", (long)f, i);
-	if (f) {
-		if (self->type_ == 1) {
-			ALT_fprintf(ALT_f, "%s", hoc_object_name(self->ho_));
-			ALT_ws;
-		}else if (self->type_ == 2 || self->type_ == 3) {
-			ALT_fprintf(ALT_f, "%s%s%s",
-				self->ho_ ? hoc_object_name(self->ho_) : "",
-				self->ho_ ? "." : "",
-				self->sym_->name);
-			ALT_ws;
-			if (self->type_ == 3) {
-				for (int i = 0; i < self->nindex_; ++i) {
-					ALT_fprintf(ALT_f, "[%d]", self->indices_[i]);
-					ALT_ws;
-				}
-				ALT_fprintf(ALT_f, "[?]");
-				ALT_ws;
-			}else{
-				ALT_fprintf(ALT_f, "()");
-				ALT_ws;
+	cp = buf;
+	PyObject* po;
+	if (self->type_ == 1) {
+		sprintf(cp, "%s", hoc_object_name(self->ho_));
+	}else if (self->type_ == 2 || self->type_ == 3) {
+		sprintf(cp, "%s%s%s",
+			self->ho_ ? hoc_object_name(self->ho_) : "",
+			self->ho_ ? "." : "",
+			self->sym_->name);
+		if (self->type_ == 3) {
+			for (int i = 0; i < self->nindex_; ++i) {
+				sprintf(cp += strlen(cp), "[%d]", self->indices_[i]);
 			}
-		}else if (self->type_ == 4) {
-			ALT_fprintf(ALT_f, "hoc ref value %g", self->u.x_);
-			ALT_ws;
-		}else if (self->type_ == 5) {
-			ALT_fprintf(ALT_f, "hoc ref value \"%s\"", self->u.s_);
-			ALT_ws;
-		}else if (self->type_ == 6) {
-			ALT_fprintf(ALT_f, "hoc ref value \"%s\"", hoc_object_name(self->u.ho_));
-			ALT_ws;
-		}else if (self->type_ == 7) {
-			ALT_fprintf(ALT_f, "all section iterator");
-			ALT_ws;
-		}else if (self->type_ == 8) {
-			ALT_fprintf(ALT_f, "pointer to hoc scalar %g", self->u.px_?*self->u.px_:-1e100);
-			ALT_ws;
-		}else if (self->type_ == 9) {
-			ALT_fprintf(ALT_f, "incomplete pointer to hoc array %s", self->sym_->name);
-			ALT_ws;
+			sprintf(cp += strlen(cp), "[?]");
 		}else{
-			ALT_fprintf(ALT_f, "TopLevelHocInterpreter");
-			ALT_ws;
+			sprintf(cp += strlen(cp), "()");
 		}
+	}else if (self->type_ == 4) {
+		sprintf(cp, "hoc ref value %g", self->u.x_);
+	}else if (self->type_ == 5) {
+		sprintf(cp, "hoc ref value \"%s\"", self->u.s_);
+	}else if (self->type_ == 6) {
+		sprintf(cp, "hoc ref value \"%s\"", hoc_object_name(self->u.ho_));
+	}else if (self->type_ == 7) {
+		sprintf(cp, "all section iterator");
+	}else if (self->type_ == 8) {
+		sprintf(cp, "pointer to hoc scalar %g", self->u.px_?*self->u.px_:-1e100);
+	}else if (self->type_ == 9) {
+		sprintf(cp, "incomplete pointer to hoc array %s", self->sym_->name);
+	}else{
+		sprintf(cp, "TopLevelHocInterpreter");
 	}
-#if defined(__MINGW32__)
-	Py_DECREF(po);
-#endif
-	return 0;
+	po = Py_BuildValue("s", buf);
+	return po;
 }
 
 static Inst* save_pc(Inst* newpc) {
