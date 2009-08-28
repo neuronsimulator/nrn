@@ -40,6 +40,7 @@ extern int nrn_use_selfqueue_;
 extern void nrn_pending_selfqueue(double, NrnThread*);
 extern int vector_capacity(IvocVect*); //ivocvect.h conflicts with STL
 extern double* vector_vec(IvocVect*);
+extern Object* nrn_sec2cell(Section*);
 extern void ncs2nrn_integrate(double tstop);
 extern void nrn_fake_fire(int gid, double firetime, int fake_out);
 int nrnmpi_spike_compress(int nspike, boolean gid_compress, int xchng_meth);
@@ -779,7 +780,7 @@ void BBS::cell() {
 	}
 	NetCon* nc = (NetCon*)ob->u.this_pointer;
 	ps = nc->src_;
-//printf("%d cell %d %s\n", nrnmpi_myid, gid, hoc_object_name(ps->ssrc_ ? ps->ssrc_->prop->dparam[6].obj : ps->osrc_));
+//printf("%d cell %d %s\n", nrnmpi_myid, gid, hoc_object_name(ps->ssrc_ ? nrn_sec2cell(ps->ssrc_) : ps->osrc_));
 	(*gid2out_)[gid] = ps;
 	ps->gid_ = gid;
 	if (ifarg(3) && !chkarg(3, 0., 1.)) {
@@ -811,7 +812,7 @@ Object** BBS::gid2obj(int gid) {
 	assert(gid2out_->find(gid, ps));
 //printf(" found\n");
 	assert(ps);
-	cell = ps->ssrc_ ? ps->ssrc_->prop->dparam[6].obj : ps->osrc_;
+	cell = ps->ssrc_ ? nrn_sec2cell(ps->ssrc_) : ps->osrc_;
 //printf(" return %s\n", hoc_object_name(cell));
 	return hoc_temp_objptr(cell);
 }
@@ -824,14 +825,14 @@ Object** BBS::gid2cell(int gid) {
 //printf(" found\n");
 	assert(ps);
 	if (ps->ssrc_) {
-		cell = ps->ssrc_->prop->dparam[6].obj;
+		cell = nrn_sec2cell(ps->ssrc_);
 	}else{
 		cell = ps->osrc_;
 		// but if it is a POINT_PROCESS in a section
 		// that is inside an object ... (probably has a WATCH statement)
 		Section* sec = ob2pntproc(cell)->sec;
-		if (sec && sec->prop->dparam[6].obj) {
-			cell = sec->prop->dparam[6].obj;
+		if (sec && nrn_sec2cell(sec)) {
+			cell = nrn_sec2cell(sec);
 		}			
 	}
 //printf(" return %s\n", hoc_object_name(cell));

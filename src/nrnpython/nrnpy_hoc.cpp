@@ -34,7 +34,7 @@ extern boolean hoc_valid_stmt(const char*, Object*);
 myPyMODINIT_FUNC nrnpy_nrn();
 extern PyObject* nrnpy_cas(PyObject*, PyObject*);
 extern PyObject* nrnpy_forall(PyObject*, PyObject*);
-extern PyObject* nrnpy_newsecobj(PyObject*, PyObject*);
+extern PyObject* nrnpy_newsecobj(PyObject*, PyObject*, PyObject*);
 extern int section_object_seen;
 extern Symbol* nrnpy_pyobj_sym_;
 extern Symbol* nrn_child_sym;
@@ -781,8 +781,7 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* name) {
 		int size = v->capacity();
 		double* x = vector_vec(v);
 
-		
-	     	return Py_BuildValue("{s:(i),s:s,s:i,s:(l,O)}","shape",size,"typestr",array_interface_typestr,"version",3,"data",(long)x,Py_True);
+	     	return Py_BuildValue("{s:(i),s:s,s:i,s:(N,O)}","shape",size,"typestr",array_interface_typestr,"version",3,"data",PyLong_FromVoidPtr(x),Py_True);
 
 	    }else if (strcmp(n, "__doc__") == 0) {
 
@@ -798,7 +797,9 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* name) {
 			docobj = Py_BuildValue("s s", "", "");
 		}
 
-		return PyObject_CallObject(pfunc_get_docstring,docobj);
+		result = PyObject_CallObject(pfunc_get_docstring,docobj);
+		Py_DECREF(docobj);
+		return result;
 	      }else{
 		return NULL;
 	      }
@@ -900,6 +901,7 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* name) {
 	case HOCOBJFUNCTION:
 	case STRINGFUNC:
 	case TEMPLATE:
+	case OBJECTFUNC:
 	    {
 		result = hocobj_new(hocobject_type, 0, 0);
 		po = (PyHocObject*)result;
@@ -1470,6 +1472,7 @@ static PyObject* setpointer(PyObject* self, PyObject* args) {
 		}		
 		*ppd = href->u.px_;
 		result = Py_None;
+		Py_INCREF(result);
 	}
     done:
 	if (!result) {
@@ -1485,15 +1488,17 @@ static PySequenceMethods hocobj_seqmeth = {
 };
 
 static char* double_array_interface(PyObject* po,long& stride) {
-	long idata = 0;
+	void* data = 0;
 	PyObject *pstride;
 	PyObject *psize;
 	if (PyObject_HasAttrString(po, "__array_interface__")) {
 		PyObject* ai = PyObject_GetAttrString(po, "__array_interface__");
 		if (strcmp(PyString_AsString(PyDict_GetItemString(ai, "typestr")), array_interface_typestr) == 0) {
-			idata = PyLong_AsLong(PyTuple_GetItem(PyDict_GetItemString(ai, "data"), 0));
+			data = PyLong_AsVoidPtr(PyTuple_GetItem(PyDict_GetItemString(ai, "data"), 0));
 			//printf("double_array_interface idata = %ld\n", idata);
-
+			if (PyErr_Occurred()) {
+				data=0;
+			}
 			pstride = PyDict_GetItemString(ai, "strides");
 		  	if (pstride == Py_None) {
 				stride=8;
@@ -1507,19 +1512,19 @@ static char* double_array_interface(PyObject* po,long& stride) {
 
 					} else {
 						PyErr_SetString(PyExc_TypeError, "array_interface stride element of invalid type.");
-						idata=0;
+						data=0;
 					}
 					
-				} else idata=0; //don't handle >1 dimensions
+				} else data=0; //don't handle >1 dimensions
 			} else {
 
 				PyErr_SetString(PyExc_TypeError, "array_interface stride object of invalid type.");
-				idata=0;
+				data=0;
 			}
 
 		}
 	}
-	return (char*)idata;
+	return (char*)data;
 }
 
 static IvocVect* nrnpy_vec_from_python(void* v) {
@@ -1650,7 +1655,7 @@ static PyMethodDef hocobj_methods[] = {
 	{"baseattr", hocobj_baseattr, METH_VARARGS, "To allow use of an overrided base method"},
 	{"cas", nrnpy_cas, METH_VARARGS, "Return the currently accessed section." },
 	{"allsec", nrnpy_forall, METH_VARARGS, "Return iterator over all sections." },
-	{"Section", nrnpy_newsecobj, METH_VARARGS, "Return a new Section" },
+	{"Section", (PyCFunction)nrnpy_newsecobj, METH_VARARGS|METH_KEYWORDS, "Return a new Section" },
 	{"setpointer", setpointer, METH_VARARGS, "Assign hoc variable address to NMODL POINTER"},
 	{NULL, NULL, 0, NULL}
 };

@@ -20,6 +20,7 @@ extern void hoc_tobj_unref(Object**);
 extern int hoc_ipop();
 PyObject* nrnpy_hoc2pyobject(Object*);
 Object* nrnpy_pyobject_in_obj(PyObject*);
+int nrnpy_ho_eq_po(Object*, PyObject*);
 extern Symbol* nrnpy_pyobj_sym_;
 extern void (*nrnpy_py2n_component)(Object*, Symbol*, int, int);
 extern void (*nrnpy_hpoasgn)(Object*, int);
@@ -93,6 +94,13 @@ Py2Nrn::Py2Nrn() {
 Py2Nrn::~Py2Nrn() {
 	Py_XDECREF(po_);
 //	printf("~Py2Nrn() %lx\n", (long)this);
+}
+
+int nrnpy_ho_eq_po(Object* ho, PyObject* po) {
+	if (ho->ctemplate->sym == nrnpy_pyobj_sym_) {
+		return ((Py2Nrn*)ho->u.this_pointer)->po_ == po;
+	}
+	return 0;
 }
 
 PyObject* nrnpy_hoc2pyobject(Object* ho) {

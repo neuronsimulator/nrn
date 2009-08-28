@@ -43,6 +43,12 @@ int	diam_changed = 1;	/* changing diameter, length set this flag
 extern int nrn_shape_changed_;
 extern int v_structure_change;
 
+char* (*nrnpy_pysec_name_p_)(Section*);
+Object* (*nrnpy_pysec_cell_p_)(Section*);
+int (*nrnpy_pysec_cell_equals_p_)(Section*, Object*);
+extern Object* nrn_sec2cell(Section*);
+extern int nrn_sec2cell_equals(Section*, Object*);
+
 /* switching from Ra being a global variable to it being a section variable
 opens up the possibility of a great deal of confusion and inadvertant wrong
 results. To help avoid this we print a warning message whenever the value
@@ -240,6 +246,28 @@ printf("%s", s->name);
 for (i=0; i<ndim; i++) {printf("[%d]",s->arayinfo->sub[i]);}
 printf(" is a section name\n");
 #endif
+}
+
+Object* nrn_sec2cell(Section* sec) {
+	if (sec->prop) {
+		if (sec->prop->dparam[6].obj) {
+			return sec->prop->dparam[6].obj;
+		}else if (nrnpy_pysec_cell_p_) {
+			return (*nrnpy_pysec_cell_p_)(sec);
+		}
+	}
+	return (Object*)0;
+}
+
+int nrn_sec2cell_equals(Section* sec, Object* obj) {
+	if (sec->prop) {
+		if (sec->prop->dparam[6].obj) {
+			return sec->prop->dparam[6].obj == obj;
+		}else if (nrnpy_pysec_cell_equals_p_) {
+			return (*nrnpy_pysec_cell_equals_p_)(sec, obj);
+		}
+	}
+	return 0;
 }
 
 static Section* new_section(ob, sym, i)
@@ -1735,7 +1763,7 @@ secname(sec) /* name of section (for use in error messages) */
 	Section *sec;
 {
 	extern char* hoc_araystr();
-	static char name[200];
+	static char name[512];
 	Symbol *s;
 	int indx;
 	Object* ob;
@@ -1755,7 +1783,8 @@ secname(sec) /* name of section (for use in error messages) */
 		}
 #if USE_PYTHON	
 	    }else if (sec->prop->dparam[PROP_PY_INDEX]._pvoid) {
-	    	Sprintf(name, "PySec_%lx", (long)sec->prop->dparam[PROP_PY_INDEX]._pvoid);
+		assert(nrnpy_pysec_name_p_);
+		return (*nrnpy_pysec_name_p_)(sec);
 #endif
 	    }else{
 		name[0] = '\0';
@@ -1770,7 +1799,7 @@ int section_owner() {
 	Section* sec;
 	Object* ob;
 	sec = chk_access();
-	ob = sec->prop->dparam[6].obj;
+	ob = nrn_sec2cell(sec);
 	hoc_ret();
 	hoc_push_object(ob);	
 }

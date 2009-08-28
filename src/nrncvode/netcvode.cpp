@@ -70,6 +70,8 @@ extern double t, dt;
 #define nt_dt nrn_threads->_dt
 #define nt_t nrn_threads->_t
 extern void nrn_parent_info(Section*);
+extern Object* nrn_sec2cell(Section*);
+extern int nrn_sec2cell_equals(Section*, Object*);
 extern ReceiveFunc* pnt_receive;
 extern ReceiveFunc* pnt_receive_init;
 extern short* pnt_receive_size;
@@ -546,7 +548,7 @@ static Object** nc_postcelllist(void* v) {
 	hoc_Item* q;
 	Object* cell = nil;
 	if (d->target_ && d->target_->sec) {
-		cell = d->target_->sec->prop->dparam[6].obj;
+		cell = nrn_sec2cell(d->target_->sec);
 	}
 	if (cell && net_cvode_instance->psl_) ITERATE(q, net_cvode_instance->psl_) {
 		PreSyn* ps = (PreSyn*)VOIDITM(q);
@@ -554,7 +556,7 @@ static Object** nc_postcelllist(void* v) {
 		for (int i=0; i < dil.count(); ++i) {
 			NetCon* d1 = dil.item(i);
 			if (d1->obj_ && d1->target_
-				&& d1->target_->sec->prop->dparam[6].obj == cell) {
+				&& nrn_sec2cell_equals(d1->target_->sec, cell)) {
 				o->append(d1->obj_);
 			}
 		}
@@ -568,14 +570,14 @@ static Object** nc_precelllist(void* v) {
 	Object** po = newoclist(1, o);
 	hoc_Item* q;
 	Object* cell = nil;
-	if (d->src_ && d->src_->ssrc_) { cell = d->src_->ssrc_->prop->dparam[6].obj;}
+	if (d->src_ && d->src_->ssrc_) { cell = nrn_sec2cell(d->src_->ssrc_);}
 	if (cell && net_cvode_instance->psl_) ITERATE(q, net_cvode_instance->psl_) {
 		PreSyn* ps = (PreSyn*)VOIDITM(q);
 		NetConPList& dil = ps->dil_;
 		for (int i=0; i < dil.count(); ++i) {
 			NetCon* d1 = dil.item(i);
 			if (d1->obj_ && d1->src_ && ps->ssrc_
-				&& ps->ssrc_->prop->dparam[6].obj == cell) {
+				&& nrn_sec2cell_equals(ps->ssrc_, cell)) {
 				o->append(d1->obj_);
 			}
 		}
@@ -586,7 +588,7 @@ static Object** nc_precelllist(void* v) {
 static Object** nc_precell(void* v) {
 	NetCon* d = (NetCon*)v;
 	if (d->src_ && d->src_->ssrc_) {
-		return hoc_temp_objptr(d->src_->ssrc_->prop->dparam[6].obj);
+		return hoc_temp_objptr(nrn_sec2cell(d->src_->ssrc_));
 	}else{
 		return hoc_temp_objptr(0);
 	}
@@ -596,7 +598,7 @@ static Object** nc_postcell(void* v) {
 	NetCon* d = (NetCon*)v;
 	Object* ob = nil;
 	if (d->target_ && d->target_->sec) {
-		ob = d->target_->sec->prop->dparam[6].obj;
+		ob = nrn_sec2cell(d->target_->sec);
 	}
 	return hoc_temp_objptr(ob);
 }
@@ -935,7 +937,7 @@ Object** NetCvode::netconlist() {
 		PreSyn* ps = (PreSyn*)VOIDITM(q);
 		b = false;
 		if (ps->ssrc_) {
-			Object* precell = ps->ssrc_->prop->dparam[6].obj;
+			Object* precell = nrn_sec2cell(ps->ssrc_);
 			if (opre) {
 				if (precell == opre) {
 					b = true;
@@ -979,7 +981,7 @@ Object** NetCvode::netconlist() {
 					Point_process* p = d->target_;
 					target = p->ob;
 					if (p->sec) {
-						postcell =  p->sec->prop->dparam[6].obj;
+						postcell =  nrn_sec2cell(p->sec);
 					}
 				}
 				if (opost) {
