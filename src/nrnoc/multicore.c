@@ -910,7 +910,9 @@ void nrn_mk_table_check() {
 			}
 		}
 	}
-	table_check_ = (Datum*)emalloc(table_check_cnt_*sizeof(Datum));
+	if (table_check_cnt_) {
+		table_check_ = (Datum*)emalloc(table_check_cnt_*sizeof(Datum));
+	}
 	i=0;
 	for (id=0; id < nrn_nthread; ++id) {
 		NrnThread* nt = nrn_threads + id;
