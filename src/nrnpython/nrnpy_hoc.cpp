@@ -216,7 +216,8 @@ static void pyobject_in_objptr(Object** op, PyObject* po) {
 	*op = o;
 }
 
-static PyObject* hocobj_repr(PyHocObject* self) {
+static PyObject* hocobj_name(PyObject* pself, PyObject* args) {
+	PyHocObject* self = (PyHocObject*)pself;
 	char buf[512], *cp;
 	buf[0] = '\0';
 	cp = buf;
@@ -1629,6 +1630,7 @@ static PyMethodDef hocobj_methods[] = {
 	{"allsec", nrnpy_forall, METH_VARARGS, "Return iterator over all sections." },
 	{"Section", (PyCFunction)nrnpy_newsecobj, METH_VARARGS|METH_KEYWORDS, "Return a new Section" },
 	{"setpointer", setpointer, METH_VARARGS, "Assign hoc variable address to NMODL POINTER"},
+	{"hname", hocobj_name, METH_NOARGS, "More specific than __str__() or __attr__()."},
 	{NULL, NULL, 0, NULL}
 };
 
