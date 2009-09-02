@@ -3987,7 +3987,7 @@ void NetCvode::states() {
 	vp = vector_vec(v);
 	k = 0;
 	if (gcv_) {
-		gcv_->states(vp + j);
+		gcv_->states(vp);
 	}else{
 		lvardtloop(i, j) {
 			p[i].lcv_[j].states(vp+k);
@@ -4016,7 +4016,7 @@ void NetCvode::dstates() {
 	vp = vector_vec(v);
 	k = 0;
 	if (gcv_) {
-		gcv_->states(vp + j);
+		gcv_->dstates(vp);
 	}else{
 		lvardtloop(i, j) {
 			p[i].lcv_[j].dstates(vp+k);
