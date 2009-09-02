@@ -31,4 +31,7 @@ force:
 	if test inithoc.cpp -ot $(nsrc)/nrnpython/inithoc.cpp ; then \
 		cp $(nsrc)/nrnpython/inithoc.cpp inithoc.cpp ; \
 	fi
+
+clean-local:
+	-rm -rf build
 endif
