@@ -65,6 +65,7 @@ public:
 	int cellindex();
 	void states();
 	void dstates();
+	int fun(double t, double* y, double* ydot);
 	void error_weights();
 	void acor();
 	const char* statename(int, int style=1);

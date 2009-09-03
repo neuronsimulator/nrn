@@ -67,6 +67,7 @@ extern int cvode_active_;
 extern NetCvode* net_cvode_instance;
 extern cTemplate** nrn_pnt_template_;
 extern double t, dt;
+extern void nrn_cvfun(double t, double* y, double* ydot);
 #define nt_dt nrn_threads->_dt
 #define nt_t nrn_threads->_t
 extern void nrn_parent_info(Section*);
@@ -4023,6 +4024,24 @@ void NetCvode::dstates() {
 			k += p[i].lcv_[j].neq_;
 		}
 	}
+}
+
+void nrn_cvfun(double t, double* y, double* ydot) {
+	NetCvode* d = net_cvode_instance;
+	d->gcv_->fun_thread(t, y, ydot, nrn_threads);
+}
+
+double nrn_hoc2fun(void* v) {
+	NetCvode* d = (NetCvode*)v;
+	double tt = *getarg(1);
+	Vect* s = vector_arg(2);
+	Vect* ds = vector_arg(3);
+	if (!d->gcv_){hoc_execerror("not global variable time step", 0);}
+	if (s->capacity() != d->gcv_->neq_) { hoc_execerror("size of state vector != number of state equations", 0); }
+	if (nrn_nthread > 1) {hoc_execerror("only one thread allowed", 0);}
+	ds->resize(s->capacity());
+	nrn_cvfun(tt, vector_vec(s), vector_vec(ds));
+	return 0.;
 }
 
 void NetCvode::error_weights() {
