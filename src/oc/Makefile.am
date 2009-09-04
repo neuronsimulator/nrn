@@ -61,9 +61,9 @@ noinst_HEADERS = code.h equation.h hocmodl.h hocstr.h \
 ## nrniv directories so we hope that parse.h is created before
 ## make -v gets into those.
 
-code2.lo code.lo fileio.lo getsym.lo hoc_init.lo hoc_oop.lo \
-hoc.lo list.lo nonlin.lo parallel.lo symbol.lo: parse.h
+code2.lo code.lo fileio.lo getsym.lo hoc.lo hoc_init.lo hoc_oop.lo \
+list.lo nonlin.lo parallel.lo symbol.lo: parse.h
 
-code2.o code.o fileio.o getsym.o hoc_init.o hoc_oop.o \
-hoc.o list.o nonlin.o parallel.o symbol.o: parse.h
+code2.o code.o fileio.o getsym.o hoc.o hoc_init.o hoc_oop.o \
+list.o nonlin.o parallel.o symbol.o: parse.h
 

@@ -131,7 +131,7 @@ HocStr* hoc_tmpbuf;
 HocStr* hoc_cbufstr;
 char* hoc_promptstr;
 static CHAR	*cbuf;
-static CHAR	*ctp;
+CHAR	*ctp;
 int hoc_ictp;
 extern Symlist *symlist;	/* This list is permanent */
 extern Symlist *p_symlist; /* Constants, strings, auto variables */

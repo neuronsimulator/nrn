@@ -13,6 +13,7 @@ void nrnpython_real();
 void nrnpython_start(int);
 extern int hoc_get_line();
 extern HocStr* hoc_cbufstr;
+extern char* hoc_ctp;
 extern FILE* hoc_fin;
 extern char* hoc_promptstr;
 extern char* neuronhome_forward();
@@ -127,6 +128,7 @@ static char* nrnpython_getline(char* prompt) {
 //printf("r=%d c=%d\n", r, hoc_cbufstr->buf[0]);
 	if (r == 1) {
 		int n = strlen(hoc_cbufstr->buf) + 1;
+		hoc_ctp = hoc_cbufstr->buf + n - 1;
 		char* p = (char*)PyMem_MALLOC(n);
 		if (p == 0) { return 0; }
 		strcpy(p, hoc_cbufstr->buf);
