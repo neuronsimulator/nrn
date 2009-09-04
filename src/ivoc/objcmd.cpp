@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include "objcmd.h"
 #include "oc2iv.h"
+#include "utility.h"
 
 extern "C" {
 extern Object* hoc_thisobject;
@@ -198,6 +199,7 @@ boolean HocCommandTool::event(Event& e) {
 	}
 #endif
 	if (e.type() == Event::down) {
+		handle_old_focus();
 		Resource::ref(this);
 		e.grab(this);
 #ifdef WIN32
