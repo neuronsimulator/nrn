@@ -350,9 +350,10 @@ static Symbol* getsym(char* name, Object* ho, int fail) {
 			sym = hoc_table_lookup(name, hoc_built_in_symlist);
 		}
 	}
+	if (sym && sym->type == UNDEF) { sym = 0; }
 	if (!sym && fail) {
 		char e[200];
-		sprintf(e, "'%s' is not a hoc variable name.", name);
+		sprintf(e, "'%s' is not a defined hoc variable name.", name);
 		PyErr_SetString(PyExc_LookupError, e);
 	}
 	return sym;
