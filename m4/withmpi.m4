@@ -78,6 +78,26 @@ AC_HELP_STRING([--with-multisend=bgp],[Use BlueGene/P style dma spike transfer])
 
 ])dnl end of AC_NRN_PARANEURON
 
+AC_DEFUN([AC_NRN_MUSIC],[
+AC_ARG_WITH(music,
+AC_HELP_STRING([--with-music=/prefix/of/music/installation],[Want to use the  MUSIC - MUlti SImulation Coordinator])
+,[
+	if test ! -f "$with_music/bin/music" ; then
+		AC_MSG_ERROR([MUSIC is not installed at the indicated location])
+	fi
+	with_mpi=yes
+	with_paranrn=yes
+	use_music=yes
+	NRN_DEFINE(NRNMUSIC,1,[Define if you want the MUSIC - MUlti SImulation Coordinator])
+	MUSIC_LIBLA="$with_music/lib/libmusic.la"
+	MUSIC_INCLUDE="-I$with_music/include"
+],[
+	use_music=no
+])
+AC_SUBST(MUSIC_LIBLA)
+AC_SUBST(MUSIC_INCLUDE)
+])dnl end of AC_NRN_MUSIC
+
 AC_DEFUN([AC_NRN_WITH_METIS],[
 
 AC_ARG_WITH(metis,
