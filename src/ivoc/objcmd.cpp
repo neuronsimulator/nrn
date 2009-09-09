@@ -4,13 +4,13 @@
 #include <InterViews/window.h>
 #include "ivoc.h"
 #include "scenevie.h"
+#include "utility.h"
 #endif
 
 #include <stdio.h>
 #include <stdlib.h>
 #include "objcmd.h"
 #include "oc2iv.h"
-#include "utility.h"
 
 extern "C" {
 extern Object* hoc_thisobject;

@@ -246,7 +246,7 @@ static int max_ntarget_host;
 static boolean req_in_use[NSEND2];
 
 // Multisend_multicast callback
-static void  multicast_done(void* arg) {
+static void  multicast_done(void* arg, DCMF_Error_t*) {
 	boolean* a = (boolean*)arg;
 	*a = false;
 }
