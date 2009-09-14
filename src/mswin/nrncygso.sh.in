@@ -72,23 +72,32 @@ fi
 #sed 's,^.*/,,' temp |sort|uniq -d
 obj=`cat temp`
 
-CXX=gcc
+CXX=@CXX@
 
-echo ${IVLIBDIR}
-echo ${CFLAGS}
+echo IVLIBDIR=\"${IVLIBDIR}\"
+echo CFLAGS=\"${CFLAGS}\"
+echo LDFLAGS=\"${LDFLAGS}\"
 
 if test "$CFLAGS" != "-mno-cygwin" ; then
 
+gcclibdir=`$CXX -print-libgcc-file-name|sed 's,/libgcc.*$,,'`
+gcclibs="-L${gcclibdir} -lstdc++ -lgcc"
+  if test $CXX = "g++-4" ; then
+gcclibs="-L${gcclibdir} -lstdc++ -lgcc_s -lgcc"
+  fi
+
+echo gcclibs=\"$gcclibs\"
 echo 'make nrniv.dll'
 $CXX -shared -nostdlib $obj \
   -L${IVLIBDIR} -lIVhines \
-  -L/usr/lib/gcc/i686-pc-cygwin/3.4.4 -lstdc++ -lgcc \
+  $gcclibs \
   -lcygwin -luser32 -lkernel32 -ladvapi32 -lshell32 \
   $LIBS \
   @NRNPYTHON_PYLIBLINK@ \
   -lgdi32 -lcomdlg32 -lncurses -lm \
   -o mswin/nrniv.dll \
   -Wl,--enable-auto-image-base \
+  ${LDFLAGS} \
   -Xlinker --out-implib -Xlinker mswin/libnrniv.dll.a
 
 if test $nrnpy = 'yes' ; then
@@ -99,6 +108,7 @@ $CXX -shared \
   @NRNPYTHON_PYLIBLINK@ \
   -o mswin/hocmodule.dll \
   -Wl,--enable-auto-image-base \
+  ${LDFLAGS} \
   -Xlinker --out-implib -Xlinker mswin/libhocmodule.dll.a
 
 LHOCMODULE='-lhocmodule'
@@ -115,6 +125,7 @@ $CXX -g -O2 -mwindows -e _mainCRTStartup -o nrniv.exe \
   -lncurses \
   -L${IVLIBDIR} -lIVhines \
   -lstdc++ -lgdi32 -lcomdlg32 \
+  ${LDFLAGS} \
   @NRNPYTHON_PYLIBLINK@
 
 else
@@ -124,6 +135,7 @@ $CXX -shared -mno-cygwin $obj \
   @NRNPYTHON_PYLIBLINK@ \
   -o mswin/nrniv.dll \
   -Wl,--enable-auto-image-base \
+  ${LDFLAGS} \
   -Xlinker --out-implib -Xlinker mswin/libnrniv.dll.a
 
 $CXX -shared -mno-cygwin \
@@ -132,12 +144,14 @@ $CXX -shared -mno-cygwin \
   -Lmswin -lnrniv -lstdc++ \
   -o mswin/hocmodule.dll \
   -Wl,--enable-auto-image-base \
+  ${LDFLAGS} \
   -Xlinker --out-implib -Xlinker mswin/libhocmodule.dll.a
 
 cd mswin
 $CXX -g -O2 -mno-cygwin -e _mainCRTStartup -o nrniv.exe \
   ../ivoc/nrnmain.o ../oc/modlreg.o \
   -L. -lnrniv -lstdc++ \
+  ${LDFLAGS} \
   @NRNPYTHON_PYLIBLINK@
 
 fi
