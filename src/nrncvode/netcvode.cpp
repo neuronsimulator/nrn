@@ -4044,6 +4044,15 @@ double nrn_hoc2fun(void* v) {
 	return 0.;
 }
 
+double nrn_hoc2scatter_y(void* v) {
+	NetCvode* d = (NetCvode*)v;
+	Vect* s = vector_arg(1);
+	if (!d->gcv_){hoc_execerror("not global variable time step", 0);}
+	if (s->capacity() != d->gcv_->neq_) { hoc_execerror("size of state vector != number of state equations", 0); }
+	if (nrn_nthread > 1) {hoc_execerror("only one thread allowed", 0);}
+	d->gcv_->scatter_y(vector_vec(s), 0);
+}
+
 void NetCvode::error_weights() {
 	int i, j, k, n;
 	Vect* v = vector_arg(1);
