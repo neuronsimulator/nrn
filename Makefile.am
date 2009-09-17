@@ -37,7 +37,9 @@ if BUILD_CYGWIN
 mswin:
 	top_srcdir=$(top_srcdir) marshall_dir=$(marshall_dir) \
 	top_builddir=$(top_builddir) \
-	ivbindir=$(IV_LIBDIR)/../bin $(top_srcdir)/src/mswin/batch/instal.sh
+	ivbindir=$(IV_LIBDIR)/../bin \
+	CC=$(CC) \
+	$(top_srcdir)/src/mswin/batch/instal.sh
 
 endif
 

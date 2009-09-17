@@ -298,6 +298,9 @@ if test "$CYGWIN" = "yes" ; then
 		#do not change without changing instal.sh and nrnsetup.nsi
 		marshall_dir=/cygdrive/c/marshalnrn
 	fi
+	if  test "$LDFLAGS" = "" ; then
+		LDFLAGS='-Wl,--enable-auto-import'
+	fi
 	AC_MSG_NOTICE(['make mswin' will marshal for building the installer in the marshall_dir = $marshall_dir])
 	AC_SUBST(marshall_dir)
 elif test "$enable_carbon" = "yes" ; then

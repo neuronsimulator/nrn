@@ -1,10 +1,9 @@
 #!/bin/sh
 
-set -v
-cd ..
+set -x
 
 #all the .o files
-find . -name \*.o -print | sed '
+find .. -name \*.o -print | sed '
 /\/modlunit\//d
 /\/nmodl\//d
 /\/e_editor\//d
@@ -38,7 +37,8 @@ find . -name \*.o -print | sed '
 mpicc=@MPICC@
 
 if test "$mpicc" = "mpicc" ; then
-mpich=/home/hines/mpich2-1.0.7
+mpich=`which $mpicc | sed "s,/bin/.*,,"`
+echo "mpich=$mpich"
 # mpich configured and made with
 #./configure '--prefix=/home/Hines/mpich2' '--with-device=ch3:nemesis' \
 #  'pac_cv_f77_sizeof_integer=4' 'pac_cv_f77_sizeof_double_precision=8' \
@@ -59,7 +59,7 @@ awk '
 	/\/mpe2\//d
 	/\/binding\/f77\//d
 	"'$a \
-/home/hines/mpich2-1.0.7/src/binding/f77/setbot.o
+'$mpich/src/binding/f77/setbot.o'
 ' >> temp
 
 fi
@@ -80,43 +80,34 @@ echo LDFLAGS=\"${LDFLAGS}\"
 
 if test "$CFLAGS" != "-mno-cygwin" ; then
 
-gcclibdir=`$CXX -print-libgcc-file-name|sed 's,/libgcc.*$,,'`
-gcclibs="-L${gcclibdir} -lstdc++ -lgcc"
-  if test $CXX = "g++-4" ; then
-gcclibs="-L${gcclibdir} -lstdc++ -lgcc_s -lgcc"
-  fi
-
-echo gcclibs=\"$gcclibs\"
 echo 'make nrniv.dll'
-$CXX -shared -nostdlib $obj \
+$CXX -shared $obj \
   -L${IVLIBDIR} -lIVhines \
-  $gcclibs \
   -lcygwin -luser32 -lkernel32 -ladvapi32 -lshell32 \
   $LIBS \
   @NRNPYTHON_PYLIBLINK@ \
   -lgdi32 -lcomdlg32 -lncurses -lm \
-  -o mswin/nrniv.dll \
+  -o nrniv.dll \
   -Wl,--enable-auto-image-base \
   ${LDFLAGS} \
-  -Xlinker --out-implib -Xlinker mswin/libnrniv.dll.a
+  -Xlinker --out-implib -Xlinker libnrniv.dll.a
 
 if test $nrnpy = 'yes' ; then
 echo 'make hocmodule.dll'
 $CXX -shared \
-  nrnpython/.libs/inithoc.o \
-  -Lmswin -lnrniv \
+  ../nrnpython/.libs/inithoc.o \
+  -L. -lnrniv \
   @NRNPYTHON_PYLIBLINK@ \
-  -o mswin/hocmodule.dll \
+  -o hocmodule.dll \
   -Wl,--enable-auto-image-base \
   ${LDFLAGS} \
-  -Xlinker --out-implib -Xlinker mswin/libhocmodule.dll.a
+  -Xlinker --out-implib -Xlinker libhocmodule.dll.a
 
 LHOCMODULE='-lhocmodule'
 else
 LHOCMODULE=''
 fi
 
-cd mswin
 echo 'make nrniv.exe'
 $CXX -g -O2 -mwindows -e _mainCRTStartup -o nrniv.exe \
   ../ivoc/nrnmain.o ../oc/modlreg.o \
@@ -133,21 +124,20 @@ else
 $CXX -shared -mno-cygwin $obj \
   $LIBS -lstdc++ \
   @NRNPYTHON_PYLIBLINK@ \
-  -o mswin/nrniv.dll \
+  -o nrniv.dll \
   -Wl,--enable-auto-image-base \
   ${LDFLAGS} \
-  -Xlinker --out-implib -Xlinker mswin/libnrniv.dll.a
+  -Xlinker --out-implib -Xlinker libnrniv.dll.a
 
 $CXX -shared -mno-cygwin \
   nrnpython/.libs/inithoc.o \
   @NRNPYTHON_PYLIBLINK@ \
-  -Lmswin -lnrniv -lstdc++ \
-  -o mswin/hocmodule.dll \
+  -L. -lnrniv -lstdc++ \
+  -o hocmodule.dll \
   -Wl,--enable-auto-image-base \
   ${LDFLAGS} \
-  -Xlinker --out-implib -Xlinker mswin/libhocmodule.dll.a
+  -Xlinker --out-implib -Xlinker libhocmodule.dll.a
 
-cd mswin
 $CXX -g -O2 -mno-cygwin -e _mainCRTStartup -o nrniv.exe \
   ../ivoc/nrnmain.o ../oc/modlreg.o \
   -L. -lnrniv -lstdc++ \

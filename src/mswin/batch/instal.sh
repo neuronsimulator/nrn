@@ -28,7 +28,7 @@ if test "$ivbindir" = "" ; then
 fi
 echo "MSWIN install from $S and $B to $D"
 
-set -v
+set -x
 
 if true ; then # false means skip the entire marshalling of nrn
 
@@ -63,7 +63,7 @@ strip $D/bin/modlunit.exe
 # copy the essential cygwin programs
 for i in \
  as.exe basename.exe cat.exe cp.exe \
- cpp.exe cygpath.exe dirname.exe echo.exe find.exe gcc.exe \
+ cpp.exe cygpath.exe dirname.exe echo.exe find.exe $LTCC.exe \
  grep.exe ld.exe ls.exe make.exe mkdir.exe \
  nm.exe rm.exe mv.exe sed.exe bash.exe unzip.exe \
  rxvt.exe rebase.exe \
@@ -74,16 +74,13 @@ done
 cp /usr/bin/ash.exe $D/bin/sh.exe
 
 # and there is also one in a gcc version specific place
-gspec=`gcc -v 2>&1 | sed -n '/^Reading specs/{
-	s;^[^/]*;;
-	s;/specs;;
-	p
-}'`
-cp $gspec/cc1.exe $D/bin
+cc1=`$CC -print-prog-name=cc1`
+cp $cc1 $D/bin
 
 # in case this is an mpi version distribute the appropriate adminsitrative tools.
-mpichbin=/home/hines/mpich2-1.0.7/bin
 if grep '^mpicc=mpicc' $B/src/mswin/nrncygso.sh ; then
+	mpichbin=`which mpicc | sed 's,\(/bin\)/.*,\1,'`
+	echo "mpichbin=$mpichbin"
 	cp /bin/python2.5 $D/bin
 	for i in mpdboot mpdtrace mpdexit mpdallexit mpdcleanup mpd \
 	  mpiexec mpdman.py mpdlib.py ; do
