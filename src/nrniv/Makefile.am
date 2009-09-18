@@ -80,7 +80,7 @@ nrniv_LDADD = ../ivoc/nrnmain.o ../ivoc/ivocmain.o ../oc/modlreg.o \
 	../sundials/libsundials.la \
 	@MEMACSLIBLA@ ../mesch/libmeschach.la $(IVOS_DIR) \
 	$(IV_LIBS) @NRN_READLINE_LIBS@ @NRNJAVA_LIBLA@ \
-	$(BBS_LIBS) @NRNPYTHON_LIBLA@ @NRNNI_LIBLA@
+	$(BBS_LIBS) @NRNPYTHON_LIBLA@ @NRNNI_LIBLA@ @PTHREAD_LIBS@
 
 nrniv_DEPENDENCIES = \
 	../ivoc/nrnmain.o ../ivoc/ivocmain.o ../oc/modlreg.o \

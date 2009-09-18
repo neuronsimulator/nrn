@@ -6,7 +6,7 @@ nrnoc_SOURCES = ocmain.c nrnnoiv.c ocnoiv.c cprop.c
 nrnoc_LDADD = ../oc/modlreg.o libnrnoc.la ../oc/liboc.la @MEMACSLIBLA@ \
 	../scopmath/libscopmath.la ../sparse13/libsparse13.la \
 	../nrnmpi/libnrnmpi.la \
-	@NRN_READLINE_LIBS@
+	@NRN_READLINE_LIBS@ @PTHREAD_LIBS@
 
 ## The shared library that we make from this directory.
 lib_LTLIBRARIES = libnrnoc.la 
