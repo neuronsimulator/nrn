@@ -89,7 +89,7 @@ AC_HELP_STRING([--with-music=/prefix/of/music/installation],[Want to use the  MU
 	with_paranrn=yes
 	use_music=yes
 	NRN_DEFINE(NRNMUSIC,1,[Define if you want the MUSIC - MUlti SImulation Coordinator])
-	MUSIC_LIBLA="$with_music/lib/libmusic.la"
+	MUSIC_LIBLA="$with_music/lib/libmusic-c.la"
 	MUSIC_INCLUDE="-I$with_music/include"
 ],[
 	use_music=no

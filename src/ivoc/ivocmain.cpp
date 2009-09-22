@@ -348,6 +348,7 @@ int ivocmain (int argc, char** argv, char** env) {
     -isatty          unbuffered stdout, print prompt when waiting for stdin\n\
     -mpi             launched by mpirun or mpiexec, in parallel environment\n\
     -mswin_scale float   scales gui on screen\n\
+    -music           launched as a process of the  MUlti SImulator Coordinator\n\
     -NSTACK integer  size of stack (default 1000)\n\
     -NFRAME integer  depth of function call nesting (default 200)\n\
     -nobanner        do not print startup banner\n\
@@ -409,6 +410,15 @@ int ivocmain (int argc, char** argv, char** env) {
 	}
 
 #endif 		
+
+#if NRNMUSIC
+	nrn_optarg_on("-music", &argc, argv);
+#else
+	if (nrn_optarg_on("-music", &argc, argv)) {
+	  printf("Warning: attempt to enable MUSIC but MUSIC support was disabled at build time.\n");
+	}
+#endif
+
 #if NRN_REALTIME
 	if (nrn_optarg_on("-realtime", &argc, argv)) {
 		nrn_realtime_ = 1;
