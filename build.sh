@@ -4,13 +4,23 @@
 # must still run a ./configure commmand (see examples after autoconf command)
 ########################################
 ########################################
-# the following five commands must be executed in this directory
+# the following commands must be executed in this directory
+
 aclocal -I m4
+
+ltarg="-i"
 if test -f /usr/bin/glibtoolize ; then
-	glibtoolize -c -f
+	ltver=`glibtoolize --version | sed -n '1s/.* \([0-9]\).*/\1/p'`
+	if test "${ltver}" = 1 ; then ltarg="" ; fi
+	echo "glibtoolize -c -f $ltarg"
+	glibtoolize -c -f $ltarg
 else
-	libtoolize -c -f
+	ltver=`libtoolize --version | sed -n '1s/.* \([0-9]\).*/\1/p'`
+	if test "${ltver}" = 1 ; then ltarg="" ; fi
+	echo "libtoolize -c -f $ltarg"
+	libtoolize -c -f $ltarg
 fi
+    
 autoheader
 
 #autoheader constructs config.h.in. From that, construct nrnconf.h.in
