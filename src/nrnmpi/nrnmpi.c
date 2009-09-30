@@ -55,6 +55,9 @@ for (i=0; i < *pargc; ++i) {
 #endif
 
 #if NRNMUSIC
+	if (strlen((*pargv)[0]) >= 5 && strcmp((*pargv)[0] + strlen((*pargv)[0]) - 5, "music") == 0) {
+		nrnmusic = 1;
+	}
 	for (i=0; i < *pargc; ++i) {
 		if (strcmp((*pargv)[i], "-music") == 0) {
 			nrnmusic = 1;
