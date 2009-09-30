@@ -180,7 +180,7 @@ def load_mechanisms(path):
     # in case NEURON is assuming a different architecture to Python,
     # we try multiple possibilities
 
-    arch_list = [platform.machine(), 'i686', 'x86_64', 'powerpc']
+    arch_list = [platform.machine(), 'i686', 'x86_64', 'powerpc', 'umac']
 
     for arch in arch_list:
         lib_path = os.path.join(path, arch, '.libs', 'libnrnmech.so')
