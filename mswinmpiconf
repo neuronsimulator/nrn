@@ -36,5 +36,9 @@ cd mpich*7
 make >& build.stdout
 #did not do a "make install"
 # note that the build.stdout is needed by src/mswin/nrncygso.sh
+#For mpich2-1.1.1p1 I configured with:
+./configure --prefix=$HOME/mpich2 --with-device=ch3:nemesis \
+  'CFLAGS=-DDLL_EXPORT -DPIC' 'CXXFLAGS=-DDLL_EXPORT -DPIC' \
+  'LDFLAGS=-Wl,--enable-auto-import' --enable-timer-type=gettimeofday
 
 fi
