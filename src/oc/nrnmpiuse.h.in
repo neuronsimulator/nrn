@@ -8,7 +8,7 @@
 #undef PARANEURON
 
 /* define to 1 if you want the MUSIC - MUlti SImulation Coordinator */
-#undef NRNMUSIC
+#undef NRN_MUSIC
 
 /* define to the dll path if you want to load automatically */
 #undef DLL_DEFAULT_FNAME

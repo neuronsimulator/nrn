@@ -253,6 +253,9 @@ public:
 #if NRNMPI
 	unsigned char localgid_; // compressed gid for spike transfer
 #endif
+#if NRN_MUSIC
+	void* music_port_;
+#endif
 #if BGPDMA
 	union { // A PreSyn cannot be both a source spike generator
 		// and a receiver of off-host spikes.

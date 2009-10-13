@@ -17,11 +17,10 @@ extern double nrn_timeus();
 #endif
 
 int nrnmusic;
-#if NRNMUSIC
-#include <music-c.h>
+#if NRN_MUSIC
 MPI_Comm nrnmusic_comm;
-MUSIC_Setup* nrnmusic_setup;
-MUSIC_Runtime* nrnmusic_runtime;
+extern void nrnmusic_init(int* parg, char*** pargv);
+extern void nrnmusic_terminate();
 #endif
 
 int nrnmpi_use; /* NEURON does MPI init and terminate?*/
@@ -54,19 +53,8 @@ for (i=0; i < *pargc; ++i) {
 }
 #endif
 
-#if NRNMUSIC
-	if (strlen((*pargv)[0]) >= 5 && strcmp((*pargv)[0] + strlen((*pargv)[0]) - 5, "music") == 0) {
-		nrnmusic = 1;
-	}
-	for (i=0; i < *pargc; ++i) {
-		if (strcmp((*pargv)[i], "-music") == 0) {
-			nrnmusic = 1;
-		}
-	}
-	if (nrnmusic) {
-		nrnmusic_setup = MUSIC_createSetup(pargc, pargv);
-		nrnmusic_comm = MUSIC_setupCommunicator(nrnmusic_setup);
-	}
+#if NRN_MUSIC
+	nrnmusic_init(pargc, pargv); /* see src/nrniv/nrnmusic.cpp */
 #endif
 
 #if !ALWAYS_CALL_MPI_INIT
@@ -101,9 +89,13 @@ for (i=0; i < *pargc; ++i) {
 		  printf("MPI_INIT failed\n");
 		}
 
+#if NRN_MUSIC
 		if (nrnmusic) {
 			MPI_Comm_dup(nrnmusic_comm, &nrnmpi_comm);
 		}else{
+#else
+		{
+#endif
 			MPI_Comm_dup(MPI_COMM_WORLD, &nrnmpi_comm);
 		}
 	}
@@ -158,12 +150,9 @@ void nrnmpi_terminate() {
 		hpmTerminate( nrnmpi_myid );
 #endif
 		if( nrnmpi_under_nrncontrol_ ) {
-#if NRNMUSIC
+#if NRN_MUSIC
 			if (nrnmusic) {
-				if (!nrnmusic_runtime) {
-					nrnmusic_runtime = MUSIC_createRuntime(nrnmusic_setup, 1.);
-				}
-				MUSIC_destroyRuntime(nrnmusic_runtime);
+				nrnmusic_terminate();
 			}
 #endif
 			MPI_Finalize();
