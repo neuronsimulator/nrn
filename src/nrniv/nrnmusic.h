@@ -16,6 +16,8 @@ namespace NRNMUSIC {
     
     // Connect a gid to a MUSIC global index in this port
     void gid2index (int gid, int gi);
+
+    Gi2PreSynTable* gi_table;
   };
 
   class EventInputPort : public MUSIC::EventInputPort {
@@ -24,7 +26,7 @@ namespace NRNMUSIC {
     
     // Connect a MUSIC global index to a gid in this port
     PyObject* index2target (int gi, PyObject* target);
-  private:
+
     Gi2PreSynTable* gi_table;
   };
 

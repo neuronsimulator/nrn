@@ -66,7 +66,8 @@ static NetParMusicEvent* npme;
 #include <OS/table.h>
 declareTable(PortTable, void*, int) // used as set
 implementTable(PortTable, void*, int)
-static PortTable*  music_ports;
+static PortTable* music_input_ports;
+static PortTable* music_output_ports;
 
 declareTable(Gi2PreSynTable, int, PreSyn*)
 implementTable(Gi2PreSynTable, int, PreSyn*)
@@ -84,8 +85,9 @@ void NetParMusicEvent::deliver(double t, NetCvode* nc, NrnThread* nt) {
 }
 
 void alloc_music_space() {
-	if (music_ports) { return; }
-	music_ports = new PortTable(64);
+	if (music_input_ports) { return; }
+	music_input_ports = new PortTable(64);
+	music_output_ports = new PortTable(64);
 }
 
 void nrnmusic_injectlist(void* vp, double tt) {
@@ -112,11 +114,23 @@ void NRNMUSIC::EventOutputPort::gid2index(int gid, int gi) {
 	// analogous to pc.cell
 	// except pc.cell(gid, nc) has already been called and this
 	// will add this to the PreSyn.music_out_ list.
+	alloc_music_space();
 	PreSyn* ps;
 	if (!gid2out_->find(gid, ps)) {
 		return;
 	}	
 	ps->music_port_ = new MusicPortPair((void*)this, gi, ps->music_port_);
+
+	// to create an IndexList for a later map, need to
+	// save the indices used for each port
+	int i = 0;
+	if (!music_output_ports->find(i, (void*)this)) {
+		music_output_ports->insert((void*)this, i);
+		gi_table = new Gi2PreSynTable(1024);
+	}
+	PreSyn* ps2;
+	assert(!gi_table->find(ps2, gi));
+	gi_table->insert(gi, ps);
 }
 
 NRNMUSIC::EventInputPort::EventInputPort(MUSIC::Setup* s, std::string id)
@@ -133,8 +147,8 @@ PyObject* NRNMUSIC::EventInputPort::index2target(int gi, PyObject* ptarget) {
 	alloc_music_space();
 	PreSyn* ps;
 	int i = 0;
-	if (!music_ports->find(i, (void*)this)) {
-		music_ports->insert((void*)this, i);
+	if (!music_input_ports->find(i, (void*)this)) {
+		music_input_ports->insert((void*)this, i);
 	}
 	assert (!gi_table->find(ps, gi));
 	ps = new PreSyn(nil, nil, nil);
@@ -183,8 +197,32 @@ static void nrnmusic_runtime_phase() {
 	assert(!called);
 	called = 1;
 
-	// call map on all the ports
-	
+	// call map on all the input ports
+	for (TableIterator(PortTable) i(*music_input_ports); i.more(); i.next()) {
+		NRNMUSIC::EventInputPort* eip = (NRNMUSIC::EventInputPort*)i.cur_key();
+		NrnMusicEventHandler* eh = new NrnMusicEventHandler();
+		Gi2PreSynTable* pst = eip->gi_table;
+		//iterate over pst and create indices
+		for (TableIterator(Gi2PreSynTable) j(*pst); j.more(); j.next()) {
+			int gi = j.cur_key();
+		}
+		//eip->map(indices, eh, usable_mindelay_);
+		delete eip->gi_table;
+	}
+	delete music_input_ports;
+
+	// call map on all the output ports
+	for (TableIterator(PortTable) i(*music_output_ports); i.more(); i.next()) {
+		NRNMUSIC::EventOutputPort* eop = (NRNMUSIC::EventOutputPort*)i.cur_key();
+		Gi2PreSynTable* pst = eop->gi_table;
+		//iterate over pst and create indices
+		for (TableIterator(Gi2PreSynTable) j(*pst); j.more(); j.next()) {
+			int gi = j.cur_key();
+		}
+		//eop->map(indices, GlobalIndexType);
+		delete eop->gi_table;
+	}
+	delete music_output_ports;
 
 	//switch to the runtime phase
 	nrnmusic_runtime = new MUSIC::Runtime(nrnmusic_setup, usable_mindelay_);
