@@ -1,4 +1,5 @@
 #include <nrnmusic.h>
+#include <music/index_map_factory.hh>
 
 extern "C" {
 extern int nrnmusic;
@@ -202,11 +203,15 @@ static void nrnmusic_runtime_phase() {
 		NRNMUSIC::EventInputPort* eip = (NRNMUSIC::EventInputPort*)i.cur_key();
 		NrnMusicEventHandler* eh = new NrnMusicEventHandler();
 		Gi2PreSynTable* pst = eip->gi_table;
+		MUSIC::IndexMapFactory indices;
+		int li = 0;
 		//iterate over pst and create indices
 		for (TableIterator(Gi2PreSynTable) j(*pst); j.more(); j.next()) {
 			int gi = j.cur_key();
+			indices.add(gi, gi + 1, li);
+			++li;
 		}
-		//eip->map(indices, eh, usable_mindelay_);
+		eip->map(&indices, eh, usable_mindelay_);
 		delete eip->gi_table;
 	}
 	delete music_input_ports;
@@ -215,11 +220,15 @@ static void nrnmusic_runtime_phase() {
 	for (TableIterator(PortTable) i(*music_output_ports); i.more(); i.next()) {
 		NRNMUSIC::EventOutputPort* eop = (NRNMUSIC::EventOutputPort*)i.cur_key();
 		Gi2PreSynTable* pst = eop->gi_table;
+		MUSIC::IndexMapFactory indices;
+		int li = 0;
 		//iterate over pst and create indices
 		for (TableIterator(Gi2PreSynTable) j(*pst); j.more(); j.next()) {
 			int gi = j.cur_key();
+			indices.add(gi, gi + 1, li);
+			++li;
 		}
-		//eop->map(indices, GlobalIndexType);
+		eop->map(&indices, MUSIC::Index::GLOBAL);
 		delete eop->gi_table;
 	}
 	delete music_output_ports;
