@@ -3,7 +3,7 @@
 
 extern "C" {
 extern int nrnmusic;
-extern MPI::Intracomm nrnmusic_comm;
+extern MPI_Comm nrnmusic_comm;
 
 void nrnmusic_init(int*, char***);
 void nrnmusic_terminate();

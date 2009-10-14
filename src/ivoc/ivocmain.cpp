@@ -411,7 +411,7 @@ int ivocmain (int argc, char** argv, char** env) {
 
 #endif 		
 
-#if NRNMUSIC
+#if NRN_MUSIC
 	nrn_optarg_on("-music", &argc, argv);
 #else
 	if (nrn_optarg_on("-music", &argc, argv)) {
