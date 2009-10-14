@@ -133,6 +133,7 @@ void NRNMUSIC::EventOutputPort::gid2index(int gid, int gi) {
 	}
 	PreSyn* ps2;
 	assert(!gi_table->find(ps2, gi));
+printf("gid2index insert %lx %d\n", (long)this, gi);
 	gi_table->insert(gi, ps);
 }
 
@@ -230,6 +231,7 @@ static void nrnmusic_runtime_phase() {
 		//iterate over pst and create indices
 		for (TableIterator(Gi2PreSynTable) j(*pst); j.more(); j.next()) {
 			int gi = j.cur_key();
+printf("output port eop=%lx gi = %d\n", (long)eop, gi);
 			gindices.push_back (gi);
 		}
 		MUSIC::PermutationIndex indices (&gindices.front (),
