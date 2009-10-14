@@ -11,7 +11,10 @@ void nrnmusic_injectlist(void* vp, double tt);
 void nrnmusic_inject(void* port, int gindex, double tt);
 void nrnmusic_spikehandle(void* vport, double tt, int gindex);
 
-extern Object* nrnpy_po2ho(void*); //PyObject*
+struct PyObject;
+extern Object* nrnpy_po2ho(PyObject*);
+extern PyObject* nrnpy_ho2po(Object*);
+extern Object* hoc_new_object(Symbol*, void*);
 }
 
 MUSIC::Setup* nrnmusic_setup;
@@ -20,6 +23,7 @@ MUSIC::Runtime* nrnmusic_runtime;
 class NrnMusicEventHandler : public MUSIC::EventHandlerLocalIndex {
  public:
   void operator() (double t, MUSIC::LocalIndex id);
+  void filltable(NRNMUSIC::EventInputPort*);
   PreSyn** table;
 };
 
@@ -49,14 +53,39 @@ void MusicPortPair::clear() {
 	}
 }
 
-#include <OS/table2.h>
-declareTable2(Port2PS, void*, long, PreSyn*)
-implementTable2(Port2PS, void*, long, PreSyn*)
-static Port2PS*  music_in_table;
+class NetParMusicEvent: public DiscreteEvent {
+public:
+	NetParMusicEvent();
+	virtual ~NetParMusicEvent();
+	virtual void send(double, NetCvode*, NrnThread*);
+	virtual void deliver(double, NetCvode*, NrnThread*);
+	virtual int type() { return 100; }
+};
+static NetParMusicEvent* npme;
+
+#include <OS/table.h>
+declareTable(PortTable, void*, int) // used as set
+implementTable(PortTable, void*, int)
+static PortTable*  music_ports;
+
+declareTable(Gi2PreSynTable, int, PreSyn*)
+implementTable(Gi2PreSynTable, int, PreSyn*)
+
+NetParMusicEvent::NetParMusicEvent() {
+}
+NetParMusicEvent::~NetParMusicEvent() {
+}
+void NetParMusicEvent::send(double t, NetCvode* nc, NrnThread* nt) {
+	nc->event(t + usable_mindelay_, this, nt);
+}
+void NetParMusicEvent::deliver(double t, NetCvode* nc, NrnThread* nt) {
+	nrnmusic_runtime->tick();
+	send(t, nc, nt);
+}
 
 void alloc_music_space() {
-	if (music_in_table) { return; }
-	music_in_table = new Port2PS(1024);
+	if (music_ports) { return; }
+	music_ports = new PortTable(64);
 }
 
 void nrnmusic_injectlist(void* vp, double tt) {
@@ -69,6 +98,9 @@ void nrnmusic_injectlist(void* vp, double tt) {
 void nrnmusic_inject(void* vport, int gi, double tt) {
 	((MUSIC::EventOutputPort*)vport)->
 	  insertEvent(tt, (MUSIC::GlobalIndex)gi);
+}
+
+void NrnMusicEventHandler::filltable(NRNMUSIC::EventInputPort* port) {
 }
 
 void NrnMusicEventHandler::operator () (double t, MUSIC::LocalIndex id) {
@@ -87,23 +119,35 @@ void NRNMUSIC::EventOutputPort::gid2index(int gid, int gi) {
 	ps->music_port_ = new MusicPortPair((void*)this, gi, ps->music_port_);
 }
 
-void NRNMUSIC::EventInputPort::index2netcon(int gi, PyObject* pnetcon) {
+NRNMUSIC::EventInputPort::EventInputPort(MUSIC::Setup* s, std::string id)
+  : MUSIC::EventInputPort(s, id) {
+	gi_table = new Gi2PreSynTable(1024);	
+}
+
+PyObject* NRNMUSIC::EventInputPort::index2target(int gi, PyObject* ptarget) {
 	// analogous to pc.gid_connect
-	Object* onetcon = nrnpy_po2ho(pnetcon);
-	if (onetcon && onetcon->ctemplate && onetcon->ctemplate->sym == netcon_sym_) {
-		hoc_execerror("netcon arg must be a NetCon", 0);
+	Object* target = nrnpy_po2ho(ptarget);
+	if (!is_point_process(target)) {
+		hoc_execerror("target arg must be a Point_process", 0);
 	}
 	alloc_music_space();
 	PreSyn* ps;
-	if (!music_in_table->find(ps, (void*)this, gi)) {
-		ps = new PreSyn(nil, nil, nil);
-		net_cvode_instance->psl_append(ps);
-		music_in_table->insert((void*)this, gi, ps);
-		ps->gid_ = -2;
-		ps->output_index_ = -2;
+	int i = 0;
+	if (!music_ports->find(i, (void*)this)) {
+		music_ports->insert((void*)this, i);
 	}
-	NetCon* nc = (NetCon*)onetcon->u.this_pointer;
-	nc->replace_src(ps);
+	assert (!gi_table->find(ps, gi));
+	ps = new PreSyn(nil, nil, nil);
+	net_cvode_instance->psl_append(ps);
+	gi_table->insert(gi, ps);
+	ps->gid_ = -2;
+	ps->output_index_ = -2;
+
+	NetCon* nc = new NetCon(ps, target);
+	Object* o = hoc_new_object(netcon_sym_, nc);
+	nc->obj_ = o;
+	PyObject* po = nrnpy_ho2po(o);
+	return po;
 }
 
 void nrnmusic_init(int* pargc, char*** pargv) {
@@ -132,5 +176,18 @@ void nrnmusic_terminate() {
 	delete nrnmusic_runtime;
 }
 
+// Called from nrn_spike_exchange_init so usable_mindelay is ready to use
+// For now, can only be called once.
 static void nrnmusic_runtime_phase() {
+	static int called = 0;
+	assert(!called);
+	called = 1;
+
+	// call map on all the ports
+	
+
+	//switch to the runtime phase
+	nrnmusic_runtime = new MUSIC::Runtime(nrnmusic_setup, usable_mindelay_);
+	npme = new NetParMusicEvent();
+	npme->send(0, net_cvode_instance, nrn_threads);
 }
