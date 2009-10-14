@@ -1,7 +1,7 @@
 #include <string>
 #include <music.hh>
 
-struct PyObject;
+typedef struct _object PyObject;
 class PreSyn;
 class Gi2PreSynTable;
 

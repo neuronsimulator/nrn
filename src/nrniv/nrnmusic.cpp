@@ -1,5 +1,4 @@
 #include <nrnmusic.h>
-#include <music/index_map_factory.hh>
 
 extern "C" {
 extern int nrnmusic;
@@ -12,7 +11,6 @@ void nrnmusic_injectlist(void* vp, double tt);
 void nrnmusic_inject(void* port, int gindex, double tt);
 void nrnmusic_spikehandle(void* vport, double tt, int gindex);
 
-struct PyObject;
 extern Object* nrnpy_po2ho(PyObject*);
 extern PyObject* nrnpy_ho2po(Object*);
 extern Object* hoc_new_object(Symbol*, void*);
@@ -111,6 +109,10 @@ void NrnMusicEventHandler::operator () (double t, MUSIC::LocalIndex id) {
 	ps->send(t, net_cvode_instance, nrn_threads);
 }
 
+NRNMUSIC::EventOutputPort* NRNMUSIC::publishEventOutput (std::string id) {
+  return new NRNMUSIC::EventOutputPort (nrnmusic_setup, id);
+}
+
 void NRNMUSIC::EventOutputPort::gid2index(int gid, int gi) {
 	// analogous to pc.cell
 	// except pc.cell(gid, nc) has already been called and this
@@ -137,6 +139,10 @@ void NRNMUSIC::EventOutputPort::gid2index(int gid, int gi) {
 NRNMUSIC::EventInputPort::EventInputPort(MUSIC::Setup* s, std::string id)
   : MUSIC::EventInputPort(s, id) {
 	gi_table = new Gi2PreSynTable(1024);	
+}
+
+NRNMUSIC::EventInputPort* NRNMUSIC::publishEventInput (std::string id) {
+  return new NRNMUSIC::EventInputPort (nrnmusic_setup, id);
 }
 
 PyObject* NRNMUSIC::EventInputPort::index2target(int gi, PyObject* ptarget) {
@@ -203,14 +209,14 @@ static void nrnmusic_runtime_phase() {
 		NRNMUSIC::EventInputPort* eip = (NRNMUSIC::EventInputPort*)i.cur_key();
 		NrnMusicEventHandler* eh = new NrnMusicEventHandler();
 		Gi2PreSynTable* pst = eip->gi_table;
-		MUSIC::IndexMapFactory indices;
-		int li = 0;
+		std::vector<MUSIC::GlobalIndex> gindices;
 		//iterate over pst and create indices
 		for (TableIterator(Gi2PreSynTable) j(*pst); j.more(); j.next()) {
 			int gi = j.cur_key();
-			indices.add(gi, gi + 1, li);
-			++li;
+			gindices.push_back (gi);
 		}
+		MUSIC::PermutationIndex indices (&gindices.front (),
+						 gindices.size ());
 		eip->map(&indices, eh, usable_mindelay_);
 		delete eip->gi_table;
 	}
@@ -220,14 +226,14 @@ static void nrnmusic_runtime_phase() {
 	for (TableIterator(PortTable) i(*music_output_ports); i.more(); i.next()) {
 		NRNMUSIC::EventOutputPort* eop = (NRNMUSIC::EventOutputPort*)i.cur_key();
 		Gi2PreSynTable* pst = eop->gi_table;
-		MUSIC::IndexMapFactory indices;
-		int li = 0;
+		std::vector<MUSIC::GlobalIndex> gindices;
 		//iterate over pst and create indices
 		for (TableIterator(Gi2PreSynTable) j(*pst); j.more(); j.next()) {
 			int gi = j.cur_key();
-			indices.add(gi, gi + 1, li);
-			++li;
+			gindices.push_back (gi);
 		}
+		MUSIC::PermutationIndex indices (&gindices.front (),
+						 gindices.size ());
 		eop->map(&indices, MUSIC::Index::GLOBAL);
 		delete eop->gi_table;
 	}
