@@ -22,7 +22,7 @@ MUSIC::Runtime* nrnmusic_runtime;
 class NrnMusicEventHandler : public MUSIC::EventHandlerLocalIndex {
  public:
   void operator() (double t, MUSIC::LocalIndex id);
-  void filltable(NRNMUSIC::EventInputPort*);
+  void filltable(NRNMUSIC::EventInputPort*, int);
   PreSyn** table;
 };
 
@@ -101,7 +101,14 @@ void nrnmusic_inject(void* vport, int gi, double tt) {
 	  insertEvent(tt, (MUSIC::GlobalIndex)gi);
 }
 
-void NrnMusicEventHandler::filltable(NRNMUSIC::EventInputPort* port) {
+void NrnMusicEventHandler::filltable(NRNMUSIC::EventInputPort* port, int cnt) {
+	table = new PreSyn*[cnt];
+	int j = 0;
+	for (TableIterator(Gi2PreSynTable) i(*port->gi_table); i.more(); i.next()) {
+		PreSyn* ps = i.cur_value();
+		table[j] = ps;
+		++j;
+	}
 }
 
 void NrnMusicEventHandler::operator () (double t, MUSIC::LocalIndex id) {
@@ -212,10 +219,13 @@ static void nrnmusic_runtime_phase() {
 		Gi2PreSynTable* pst = eip->gi_table;
 		std::vector<MUSIC::GlobalIndex> gindices;
 		//iterate over pst and create indices
+		int cnt = 0;
 		for (TableIterator(Gi2PreSynTable) j(*pst); j.more(); j.next()) {
 			int gi = j.cur_key();
 			gindices.push_back (gi);
+			++cnt;
 		}
+		eh->filltable(eip, cnt);
 		MUSIC::PermutationIndex indices (&gindices.front (),
 						 gindices.size ());
 		eip->map(&indices, eh, usable_mindelay_);
