@@ -145,7 +145,7 @@ printf("gid2index insert %lx %d\n", (long)this, gi);
 }
 
 NRNMUSIC::EventInputPort::EventInputPort(MUSIC::Setup* s, std::string id)
-  : MUSIC::EventInputPort(s, id) {
+  : MUSIC::Port (s, id), MUSIC::EventInputPort(s, id) {
 	gi_table = new Gi2PreSynTable(1024);	
 }
 
@@ -202,6 +202,7 @@ void nrnmusic_terminate() {
 	if (!nrnmusic_runtime) {
 		nrnmusic_runtime = new MUSIC::Runtime(nrnmusic_setup, 1);
 	}
+	nrnmusic_runtime->finalize ();
 	delete nrnmusic_runtime;
 }
 

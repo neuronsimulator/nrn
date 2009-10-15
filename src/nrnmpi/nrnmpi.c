@@ -153,7 +153,7 @@ void nrnmpi_terminate() {
 #if NRN_MUSIC
 			if (nrnmusic) {
 				nrnmusic_terminate();
-			}
+			}else
 #endif
 			MPI_Finalize();
 		}
