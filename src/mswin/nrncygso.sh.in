@@ -55,6 +55,7 @@ awk '
 	s/\`//
 	/\.no$/d
 	/\.po$/d
+	/\/hydra\/d
 	/\/c++\//d
 	/\/mpe2\//d
 	/\/binding\/f77\//d
@@ -130,7 +131,7 @@ $CXX -shared -mno-cygwin $obj \
   -Xlinker --out-implib -Xlinker libnrniv.dll.a
 
 $CXX -shared -mno-cygwin \
-  nrnpython/.libs/inithoc.o \
+  ../nrnpython/.libs/inithoc.o \
   @NRNPYTHON_PYLIBLINK@ \
   -L. -lnrniv -lstdc++ \
   -o hocmodule.dll \
