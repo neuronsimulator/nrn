@@ -97,7 +97,7 @@ void nrnmusic_injectlist(void* vp, double tt) {
 }
 
 void nrnmusic_inject(void* vport, int gi, double tt) {
-	printf("nrnmusic_inject %lx %d %g\n", (long)vport, gi, tt);
+	//printf("nrnmusic_inject %lx %d %g\n", (long)vport, gi, tt);
 	((MUSIC::EventOutputPort*)vport)->
 	  insertEvent(tt, (MUSIC::GlobalIndex)gi);
 }
@@ -115,7 +115,7 @@ void NrnMusicEventHandler::filltable(NRNMUSIC::EventInputPort* port, int cnt) {
 void NrnMusicEventHandler::operator () (double t, MUSIC::LocalIndex id) {
 	PreSyn* ps = table[id];
 	ps->send(t, net_cvode_instance, nrn_threads);
-printf("event handler t=%g id=%d\n ps=%lx\n", t, int(id), (long)ps);
+//printf("event handler t=%g id=%d ps=%lx\n", t, int(id), (long)ps);
 }
 
 NRNMUSIC::EventOutputPort* NRNMUSIC::publishEventOutput (std::string id) {
@@ -142,7 +142,7 @@ void NRNMUSIC::EventOutputPort::gid2index(int gid, int gi) {
 	}
 	PreSyn* ps2;
 	assert(!gi_table->find(ps2, gi));
-printf("gid2index insert %lx %d\n", (long)this, gi);
+//printf("gid2index insert %lx %d\n", (long)this, gi);
 	gi_table->insert(gi, ps);
 }
 
@@ -178,7 +178,7 @@ PyObject* NRNMUSIC::EventInputPort::index2target(int gi, PyObject* ptarget) {
 	Object* o = hoc_new_object(netcon_sym_, nc);
 	nc->obj_ = o;
 	PyObject* po = nrnpy_ho2po(o);
-printf("index2target %d %s\n", gi, hoc_object_name(target));
+//printf("index2target %d %s\n", gi, hoc_object_name(target));
 	return po;
 }
 
@@ -226,7 +226,7 @@ static void nrnmusic_runtime_phase() {
 		int cnt = 0;
 		for (TableIterator(Gi2PreSynTable) j(*pst); j.more(); j.next()) {
 			int gi = j.cur_key();
-printf("input port eip=%lx gi=%d\n", (long)eip, gi);
+//printf("input port eip=%lx gi=%d\n", (long)eip, gi);
 			gindices.push_back (gi);
 			++cnt;
 		}
@@ -246,7 +246,7 @@ printf("input port eip=%lx gi=%d\n", (long)eip, gi);
 		//iterate over pst and create indices
 		for (TableIterator(Gi2PreSynTable) j(*pst); j.more(); j.next()) {
 			int gi = j.cur_key();
-printf("output port eop=%lx gi = %d\n", (long)eop, gi);
+//printf("output port eop=%lx gi = %d\n", (long)eop, gi);
 			gindices.push_back (gi);
 		}
 		MUSIC::PermutationIndex indices (&gindices.front (),
@@ -257,9 +257,8 @@ printf("output port eop=%lx gi = %d\n", (long)eop, gi);
 	delete music_output_ports;
 
 	//switch to the runtime phase
-printf("usable_mindelay = %g\n", usable_mindelay_);
+//printf("usable_mindelay = %g\n", usable_mindelay_);
 	nrnmusic_runtime = new MUSIC::Runtime(nrnmusic_setup, usable_mindelay_);
-printf("two\n");
 	npme = new NetParMusicEvent();
 	npme->send(0, net_cvode_instance, nrn_threads);
 }
