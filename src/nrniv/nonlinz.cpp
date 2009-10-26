@@ -14,7 +14,7 @@ typedef int (*Pfridot)(...);
 extern "C" {
 extern int structure_change_cnt;
 extern void v_setup_vectors();
-extern void nrn_rhs();
+extern void nrn_rhs(NrnThread*);
 extern int linmod_extra_eqn_count();
 extern Symlist *hoc_built_in_symlist;
 }
@@ -41,8 +41,8 @@ public:
 	double** diag_;
 	double* deltavec_; // just like cvode.atol*cvode.atolscale for ode's
 	double delta_; // slightly more efficient and easier for v.
-	void current(int, int);
-	void ode(int);
+	void current(int, Memb_list*, int);
+	void ode(int, Memb_list*);
 
 	double omega_;
 	int iloc_; // current injection site of last ztransfer calculation
@@ -95,7 +95,7 @@ double NonLinImp::ratio_amp(int clmploc, int vloc) {
 }
 void NonLinImp::compute(double omega, double deltafac) {
 	v_setup_vectors();
-	nrn_rhs();
+	nrn_rhs(nrn_threads);
 	if (rep_ && rep_->scnt_ != structure_change_cnt) {
 		delete rep_;
 		rep_ = nil;
@@ -106,7 +106,7 @@ void NonLinImp::compute(double omega, double deltafac) {
 	if (linmod_extra_eqn_count() > 0) {
 		hoc_execerror("Impedance calculation with LinearMechanism not implemented", 0);
 	}
-	if (memb_list[EXTRACELL].nodecount > 0) {
+	if (nrn_threads->_ecell_memb_list) {
 		hoc_execerror("Impedance calculation with extracellular not implemented", 0);
 	}
 	rep_->omega_ = 1000.* omega;
@@ -120,10 +120,10 @@ void NonLinImp::compute(double omega, double deltafac) {
 	rep_->dsdv();
 #endif
 	
-//	cmplx_spPrint(rep_->m_, 0, 1, 1);
-//	for (int i=0; i < rep_->neq_; ++i) {
-//		printf("i=%d %g %g\n", i, rep_->diag_[i][0], rep_->diag_[i][1]);
-//	}
+	cmplx_spPrint(rep_->m_, 0, 1, 1);
+	for (int i=0; i < rep_->neq_; ++i) {
+		printf("i=%d %g %g\n", i, rep_->diag_[i][0], rep_->diag_[i][1]);
+	}
 	int e = cmplx_spFactor(rep_->m_);
 	switch (e) {
 	case spZERO_DIAG:
@@ -174,7 +174,10 @@ NonLinImpRep::NonLinImpRep() {
 	
 	// how many equations
 	n_v_ = _nt->end;
-	n_ext_ = memb_list[EXTRACELL].nodecount*nlayer;
+	n_ext_ = 0;
+	if (_nt->_ecell_memb_list) {
+		n_ext_ = _nt->_ecell_memb_list->nodecount*nlayer;
+	}
 	n_lin_ = linmod_extra_eqn_count();
 	n_ode_ = 0;
 	for (NrnThreadMembList* tml = _nt->tml; tml; tml = tml->next) {
@@ -229,17 +232,20 @@ NonLinImpRep::~NonLinImpRep() {
 
 void NonLinImpRep::delta(double deltafac){ // also defines pv_,pvdot_ map for ode
 	int i, j, nc, cnt, ieq;
+	NrnThread* nt = nrn_threads;
 	for (i=0; i < neq_; ++i) {
 		deltavec_[i] = deltafac; // all v's wasted but no matter.
 	}
 	ieq = neq_v_;
-	for (i=0; i < n_memb_func; ++i) {
-		nc = memb_list[i].nodecount;
+	for (NrnThreadMembList* tml = nt->tml; tml; tml = tml->next) {
+		Memb_list* ml = tml->ml;
+		i = tml->index;
+		nc = ml->nodecount;
 		Pfridot s = (Pfridot)memb_func[i].ode_count;
 		if (s && (cnt = (*s)(i)) > 0) {
 			s = (Pfridot)memb_func[i].ode_map;
 			for (j=0; j < nc; ++j) {
-(*s)(ieq, pv_ + ieq, pvdot_ + ieq, memb_list[i].data[j], memb_list[i].pdata[j], deltavec_ + ieq, i);
+(*s)(ieq, pv_ + ieq, pvdot_ + ieq, ml->data[j], ml->pdata[j], deltavec_ + ieq, i);
 				ieq += cnt;
 			}
 		}
@@ -286,6 +292,7 @@ void NonLinImpRep::didv() {
 	for (NrnThreadMembList* tml = _nt->tml; tml; tml = tml->next) {
 		i = tml->index;
 		if (i == CAP) { continue; }
+		if (!memb_func[i].current) { continue; }
 		Memb_list* ml = tml->ml;
 		double* x1 = rv_; // use as temporary storage
 		double* x2 = jv_;
@@ -296,14 +303,14 @@ void NonLinImpRep::didv() {
 			x1[j] = NODEV(nd);
 			// v+dv
 			NODEV(nd) += delta_;
-			current(i, j);
+			current(i, ml, j);
 			// save rhs
 			// zero rhs
 			// restore v
 			x2[j] = NODERHS(nd);
 			NODERHS(nd) = 0;
 			NODEV(nd) = x1[j];
-			current(i, j);
+			current(i, ml, j);
 			// conductance
 			// add to matrix
 			*diag_[v_index_[nd->v_node_index]-1] -= (x2[j] - NODERHS(nd))/delta_;
@@ -316,20 +323,23 @@ void NonLinImpRep::dids() {
 	// every state but just for that compartment
 	// outer loop over ode mechanisms in same order as we created the pv_ map	// so we can eas
 	int ieq, i, in, is, iis;
+	NrnThread* nt = nrn_threads;
 	ieq = neq_ - n_ode_;
-	for (i=0; i < n_memb_func; ++i) if (memb_func[i].ode_count && memb_list[i].nodecount) {
-		int nc = memb_list[i].nodecount;
+	for (NrnThreadMembList* tml = nt->tml; tml; tml = tml->next) {
+	  Memb_list* ml = tml->ml;
+	  i = tml->index;
+	  if (memb_func[i].ode_count && ml->nodecount) {
+		int nc = ml->nodecount;
 		Pfridot s = (Pfridot)memb_func[i].ode_count;
 		int cnt = (*s)(i);
 	    if (memb_func[i].current) {
-		Memb_list* ml = memb_list + i;
 		double* x1 = rv_; // use as temporary storage
 		double* x2 = jv_;
 		for (in = 0; in < ml->nodecount; ++in) { Node* nd = ml->nodelist[in];
 			// zero rhs
 			NODERHS(nd) = 0;
 			// compute rhs
-			current(i, in);
+			current(i, ml, in);
 			// save rhs
 			x2[in] = NODERHS(nd);
 			// each state incremented separately and restored
@@ -340,7 +350,7 @@ void NonLinImpRep::dids() {
 				// increment s and zero rhs
 				*pv_[is] += deltavec_[is];
 				NODERHS(nd) = 0;
-				current(i, in);
+				current(i, ml, in);
 				*pv_[is] = x1[is]; // restore s
 				double g = (NODERHS(nd) - x2[in])/deltavec_[is];
 				if (g != 0.) {
@@ -350,22 +360,26 @@ void NonLinImpRep::dids() {
 			}
 			// don't know if this is necessary but make sure last
 			// call with respect to original states
-			current(i, in);
+			current(i, ml, in);
 		}
 	    }
 		ieq += cnt*nc;
+	  }
 	}
 }
 
 void NonLinImpRep::dsdv() {
 	int ieq, i, in, is, iis;
+	NrnThread* nt = nrn_threads;
 	ieq = neq_ - n_ode_;
-	for (i=0; i < n_memb_func; ++i) if (memb_func[i].ode_count && memb_list[i].nodecount) {
-		int nc = memb_list[i].nodecount;
+	for (NrnThreadMembList* tml = nt->tml; tml; tml = tml->next) {
+	  Memb_list* ml = tml->ml;
+	  i = tml->index;
+	  if (memb_func[i].ode_count && ml->nodecount) {
+		int nc = ml->nodecount;
 		Pfridot s = (Pfridot)memb_func[i].ode_count;
 		int cnt = (*s)(i);
 	    if (memb_func[i].current) {
-		Memb_list* ml = memb_list + i;
 		double* x1 = rv_; // use as temporary storage
 		double* x2 = jv_;
 		// zero rhs, save v
@@ -383,7 +397,7 @@ void NonLinImpRep::dsdv() {
 			}
 		}
 		// compute rhs. this is the rhs(v+dv)
-		ode(i);
+		ode(i, ml);
 		// save rhs, restore v, and zero rhs
 		for (in = 0; in < ml->nodecount; ++in) { Node* nd = ml->nodelist[in];
 			for (is = ieq + in*cnt, iis = 0; iis < cnt; ++iis, ++is) {
@@ -393,7 +407,7 @@ void NonLinImpRep::dsdv() {
 			NODEV(nd) = x1[in];
 		}
 		// compute the rhs(v)
-		ode(i);
+		ode(i, ml);
 		// fill the ds/dv elements
 		for (in = 0; in < ml->nodecount; ++in) { Node* nd = ml->nodelist[in];
 			for (is = ieq + in*cnt, iis = 0; iis < cnt; ++iis, ++is) {
@@ -406,21 +420,25 @@ void NonLinImpRep::dsdv() {
 		}
 	    }
 		ieq += cnt*nc;
+	  }
 	}
 }
 
 void NonLinImpRep::dsds() {
 	int ieq, i, in, is, iis, ks, kks;
+	NrnThread* nt = nrn_threads;
 	// jw term
 	for (i = neq_v_; i < neq_; ++i) {
 		diag_[i][1] += omega_;
 	}
 	ieq = neq_v_;
-	for (i=0; i < n_memb_func; ++i) if (memb_func[i].ode_count && memb_list[i].nodecount) {
-		int nc = memb_list[i].nodecount;
+	for (NrnThreadMembList* tml = nt->tml; tml; tml = tml->next) {
+	  Memb_list* ml = tml->ml;
+	  i = tml->index;
+	  if (memb_func[i].ode_count && ml->nodecount) {
+		int nc = ml->nodecount;
 		Pfridot s = (Pfridot)memb_func[i].ode_count;
 		int cnt = (*s)(i);
-		Memb_list* ml = memb_list + i;
 		double* x1 = rv_; // use as temporary storage
 		double* x2 = jv_;
 		// zero rhs, save s
@@ -431,7 +449,7 @@ void NonLinImpRep::dsds() {
 			}
 		}
 		// compute rhs. this is the rhs(s)
-		ode(i);
+		ode(i, ml);
 		// save rhs
 		for (in = 0; in < ml->nodecount; ++in) {
 			for (is = ieq + in*cnt, iis = 0; iis < cnt; ++iis, ++is) {
@@ -448,7 +466,7 @@ void NonLinImpRep::dsds() {
 			}
 			*pv_[ks] += deltavec_[ks];
 		}
-		ode(i);
+		ode(i, ml);
 		// store element and restore s
 		// fill the ds/dv elements
 		for (in = 0; in < ml->nodecount; ++in) { Node* nd = ml->nodelist[in];
@@ -464,14 +482,14 @@ void NonLinImpRep::dsds() {
 		}
 		// perhaps not necessary but ensures the last computation is with
 		// the base states.
-		ode(i);
+		ode(i, ml);
 	    }
 		ieq += cnt*nc;
+	  }
 	}
 }
 
-void NonLinImpRep::current(int im, int in) { // assume there is in fact a current method
-	Memb_list* ml = memb_list + im;
+void NonLinImpRep::current(int im, Memb_list* ml, int in) { // assume there is in fact a current method
 	Pfridot s = (Pfridot)memb_func[im].current;
 	// fake a 1 element memb_list
 	Memb_list mfake;
@@ -483,24 +501,22 @@ void NonLinImpRep::current(int im, int in) { // assume there is in fact a curren
 	mfake.pdata = ml->pdata + in;
 	mfake.prop = ml->prop + in;
 	mfake.nodecount = 1;
-	(*s)(&mfake, im);
+	(*s)(nrn_threads, &mfake, im);
 }
 
-void NonLinImpRep::ode(int im) { // assume there is in fact an ode method
+void NonLinImpRep::ode(int im, Memb_list* ml) { // assume there is in fact an ode method
 	int i, nc;
-	Memb_list* ml = memb_list + im;
 	Pfridot s = (Pfridot)memb_func[im].ode_spec;
 	nc = ml->nodecount;
-	if (memb_func[im].vectorized) {
-		(*s)(nc, ml->nodelist, ml->data, ml->pdata, im);
-	}else if (memb_func[im].hoc_mech) {
-		for (i=0; i < nc; ++i) {
-			(*s)(ml->nodelist[i], ml->prop[i]);
+	if (memb_func[im].hoc_mech) {
+		int j, count;
+		count = ml->nodecount;
+		for (j=0; j < count; ++j) {
+			Node* nd = ml->nodelist[j];
+			(*s)(nd, ml->prop[j]);
 		}
 	}else{
-		for (i=0; i < nc; ++i) {
-			(*s)(ml->nodelist[i], ml->data[i], ml->pdata[i]);
-		}			
+		(*s)(nrn_threads, ml, im);
 	}
 }
 
