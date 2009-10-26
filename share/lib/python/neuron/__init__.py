@@ -108,8 +108,11 @@ def help(request):
     doc.help(request)
     help = doc.help
 
-import pydoc
-pydoc.help = help
+try:
+  import pydoc
+  pydoc.help = help
+except:
+  pass
 
 # Global test-suite function
 
