@@ -3026,6 +3026,17 @@ void KSChan::usetable(boolean use, int size, double vmin, double vmax) {
 	usetable(use);
 }
 
+static int ksusing(int type) {
+	for (int i=0; i < nrn_nthread; ++i) {
+		for (NrnThreadMembList* tml = nrn_threads[i].tml; tml; tml = tml->next) {
+			if (tml->index == type) {
+				return 1;
+			}
+		}
+	}
+	return 0;
+}
+
 void KSChan::usetable(boolean use) {
 	int i;
 	if (nhhstate_ == 0) { use = false; }
@@ -3036,14 +3047,14 @@ void KSChan::usetable(boolean use) {
 		check_table_thread(nrn_threads);
 		if (memb_func[mechtype_].thread_table_check_ != check_table_thread_) {
 			memb_func[mechtype_].thread_table_check_ = check_table_thread_;
-			if (memb_list[mechtype_].nodecount) {
+			if (ksusing(mechtype_)) {
 				nrn_mk_table_check();
 			}
 		}
 	}else{
 		if (memb_func[mechtype_].thread_table_check_) {
 			memb_func[mechtype_].thread_table_check_ = 0;
-			if (memb_list[mechtype_].nodecount) {
+			if (ksusing(mechtype_)) {
 				nrn_mk_table_check();
 			}
 		}
