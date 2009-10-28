@@ -5,6 +5,7 @@
 
 #include "ivocvect.h"
 #include "oc2iv.h"
+#include <OS/math.h>
 
 #undef error
 
@@ -262,6 +263,51 @@ void OcFullMatrix::solv(Vect* in, Vect* out, boolean use_lu) {
 		LUfactor(lu_factor_, lu_pivot_);
 	}
 	LUsolve(lu_factor_, lu_pivot_, &v1, &v2);
+}
+
+double OcFullMatrix::det(int* e) {
+	int n = nrow();
+	MAT* lu = m_get(n, n);
+	PERM* piv = px_get(n);
+	m_copy(m_, lu);
+	LUfactor(lu, piv);
+#if 0
+printf("LU\n");
+for (int i = 0; i < n; ++i) {
+	for (int j = 0; j < n; ++j) {
+		printf(" %g", lu->me[i][j]);
+	}
+	printf("\t%d\n", piv->pe[i]);
+}
+#endif
+	double m = 1.0;
+	*e = 0;
+	for (int i = 0; i < n; ++i) {
+		m *= lu->me[i][i];
+		if (m == 0.0) { break; }
+		while(Math::abs(m) >= 1e12) {
+			m *= 1e-12;
+			*e += 12;
+		}
+		while(Math::abs(m) < 1e-12) {
+			m *= 1e12;
+			*e -= 12;
+		}
+	}
+	if (m) {
+		while(Math::abs(m) >= 10.0) {
+			m *= 0.1;
+			*e += 1;
+		}
+		while(Math::abs(m) < 1.0) {
+			m *= 10.0;
+			*e -= 1;
+		}
+	}
+	m *= double(px_sign(piv));
+	M_FREE(lu_factor_);
+	PX_FREE(lu_pivot_);
+	return m;
 }
 
 //--------------------------

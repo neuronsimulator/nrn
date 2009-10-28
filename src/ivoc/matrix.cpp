@@ -536,6 +536,15 @@ static Object** m_inverse(void* v) {
 	return out->temp_objvar();
 }
 
+static double m_det(void* v) {
+	Matrix* m = (Matrix*)v;
+	int e;
+	double a =  m->det(&e);
+	double* pe = hoc_pgetarg(1);
+	*pe = double(e);
+	return a;
+}
+
 static Object** m_solv(void* v) {
 	Matrix* m = (Matrix*)v;
 	check_capac(m->nrow(), m->ncol());
@@ -652,6 +661,7 @@ static Member_func m_members[] = {
 	"getval", m_getval,
 	"sprowlen", m_sprowlen,
 	"spgetrowval", m_spgetrowval,
+	"det", m_det,
 
 	"printf", m_printf,
 	"fprint", m_fprint,

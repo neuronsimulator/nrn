@@ -51,6 +51,7 @@ public:
 	virtual void transpose(Matrix* out){unimp();}
 	virtual void symmeigen(Matrix* mout, Vect* vout){unimp();}
 	virtual void svd1(Matrix* u, Matrix* v, Vect* d){unimp();}
+	virtual double det(int* e){unimp();}
 	virtual int sprowlen(int){unimp(); return 0;}
 	virtual double spgetrowval(int i, int jindx, int* j){unimp(); return 0.;}
 
@@ -103,6 +104,7 @@ public:
 	virtual void transpose(Matrix* out);
 	virtual void symmeigen(Matrix* mout, Vect* vout);
 	virtual void svd1(Matrix* u, Matrix* v, Vect* d);
+	virtual double det(int* exponent);
 private:
 	MAT* m_;
 	MAT* lu_factor_;
