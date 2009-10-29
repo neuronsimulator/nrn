@@ -1950,15 +1950,15 @@ node_exact(sec, x)
 #endif
    {
 	if (x <= 0. || x >= 1.) {
-		if (tree_changed) {
-			setup_topology();
-		}
 		x = (x < 0.)?0.:x;
 		x = (x > 1.)?1.:x;
 		if(sec->prop->dparam[3].val) {
 		 x = 1. - x;
 		}
 		if (x == 0.) {
+			if (tree_changed) {
+				setup_topology();
+			}
 			node = sec->parentnode;
 		} else {
 			node = sec->pnode[sec->nnode - 1];
