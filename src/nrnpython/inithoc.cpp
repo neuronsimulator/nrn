@@ -12,7 +12,7 @@
 extern "C" {
 
 //int nrn_global_argc;
-//char** nrn_global_argv;
+extern char** nrn_global_argv;
 
 extern void nrnpy_augment_path();
 extern void nrnpy_hoc();
@@ -37,6 +37,10 @@ void inithoc() {
 	int argc = argc_nompi;
 	char** argv = argv_nompi;
 
+	if (nrn_global_argv) { //ivocmain was already called so already loaded
+		nrnpy_hoc();
+		return;
+	}
 #ifdef NRNMPI
 
 	int flag;
