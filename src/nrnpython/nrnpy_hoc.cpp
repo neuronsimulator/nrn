@@ -15,8 +15,6 @@ extern void hoc_pushs(Symbol*);
 extern double* hoc_evalpointer();
 extern Symlist* hoc_top_level_symlist;
 extern Symlist* hoc_built_in_symlist;
-extern Object* hoc_thisobject;
-extern Symlist* hoc_symlist;
 extern Inst* hoc_pc;
 extern void hoc_push_string();
 extern char** hoc_strpop();
@@ -853,12 +851,6 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* name) {
 		}
 	}
 	// top level interpreter fork
-	Object* objsave = hoc_thisobject;
-	Objectdata* obdsave = hoc_objectdata_save();
-	Symlist* slsave = hoc_symlist;
-	hoc_thisobject = 0;
-	hoc_objectdata = hoc_top_level_data;
-	hoc_symlist = hoc_top_level_symlist;
 	switch (sym->type) {
 	case VAR: // double*
 		if (!ISARRAY(sym)) {
@@ -924,8 +916,7 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* name) {
 		break;
 	    }
 	case SETPOINTERKEYWORD:
-		result = PyObject_GenericGetAttr((PyObject*)subself, name);
-		break;
+		return PyObject_GenericGetAttr((PyObject*)subself, name);
 	default: // otherwise
 	    {
 		char e[200];
@@ -934,9 +925,6 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* name) {
 		break;
 	    }
 	}
-	hoc_thisobject = objsave;
-	hoc_objectdata = hoc_objectdata_restore(obdsave);
-	hoc_symlist = slsave;
 	return result;
 }
 

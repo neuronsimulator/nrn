@@ -32,10 +32,16 @@ extern void (*nrnpy_guisetval)(Object*, double);
 extern int (*nrnpy_guigetstr)(Object*, char**);
 extern void nrnpython_ensure_threadstate();
 
+extern Object* hoc_thisobject;
+extern Symlist* hoc_symlist;
+extern Objectdata* hoc_top_level_data;
+extern Symlist* hoc_top_level_symlist;
+
 void nrnpython_reg_real();
 PyObject* nrnpy_ho2po(Object*);
 void nrnpy_decref_defer(PyObject*);
 void nrnpy_decref_clear();
+PyObject* nrnpy_pyCallObject(PyObject*, PyObject*);
 
 Object* nrnpy_po2ho(PyObject*);
 static void py2n_component(Object*, Symbol*, int, int);
@@ -127,6 +133,32 @@ Object* nrnpy_pyobject_in_obj(PyObject* po) {
 	return on;
 }
 
+PyObject* nrnpy_pyCallObject(PyObject* callable, PyObject* args) {
+	// When hoc calls a PythonObject method, then in case python
+	// calls something back in hoc, the hoc interpreter must be
+	// at the top level
+	Object* objsave = 0;
+	Objectdata* obdsave;
+	Symlist* slsave;
+	if (hoc_thisobject) {
+		objsave = hoc_thisobject;
+		obdsave = hoc_objectdata_save();
+		slsave = hoc_symlist;
+		hoc_thisobject = 0;
+		hoc_objectdata = hoc_top_level_data;
+		hoc_symlist = hoc_top_level_symlist;
+	}
+
+	PyObject* p = PyObject_CallObject(callable, args);
+
+	if (objsave) {
+		hoc_thisobject = objsave;
+		hoc_objectdata = hoc_objectdata_restore(obdsave);
+		hoc_symlist = slsave;
+	}
+	return p;
+}
+
 void py2n_component(Object* ob, Symbol* sym, int nindex, int isfunc) {
 #if 0
 	if (isfunc) {
@@ -174,7 +206,7 @@ void py2n_component(Object* ob, Symbol* sym, int nindex, int isfunc) {
 			}
 		}
 //printf("PyObject_CallObject %s %lx\n", sym->name, (long)tail);
-		result = PyObject_CallObject(tail, args);
+		result = nrnpy_pyCallObject(tail, args);
 		Py_DECREF(args);
 //PyObject_Print(result, stdout, 0);
 //printf("  result of call\n");
@@ -324,9 +356,9 @@ static PyObject* hoccommand_exec_help(Object* ho) {
 //PyObject_Print(args, stdout, 0);
 //printf("\n");
 //printf("threadstate %lx\n", PyThreadState_GET());
-		r = PyObject_CallObject(PyTuple_GetItem(po, 0), args);
+		r = nrnpy_pyCallObject(PyTuple_GetItem(po, 0), args);
 	}else{
-		r = PyObject_CallObject(po, PyTuple_New(0));
+		r = nrnpy_pyCallObject(po, PyTuple_New(0));
 	}
 	//PyGILState_Release(s);
 	if (r == NULL) {
@@ -363,7 +395,7 @@ static void grphcmdtool(Object* ho, int type, double x, double y, int key) {
 	//PyGILState_STATE s = PyGILState_Ensure();
 	PyObject* args = PyTuple_Pack(4, PyInt_FromLong(type),
 		PyFloat_FromDouble(x), PyFloat_FromDouble(y), PyInt_FromLong(key));
-	r = PyObject_CallObject(po, args);
+	r = nrnpy_pyCallObject(po, args);
 	//PyGILState_Release(s);
 	Py_XDECREF(args);
 	Py_XDECREF(r);
