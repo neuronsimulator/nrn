@@ -149,6 +149,7 @@ PyObject* nrnpy_pyCallObject(PyObject* callable, PyObject* args) {
 		hoc_symlist = hoc_top_level_symlist;
 	}
 
+	nrnpython_ensure_threadstate();
 	PyObject* p = PyObject_CallObject(callable, args);
 
 	if (objsave) {
