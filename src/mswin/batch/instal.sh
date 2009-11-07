@@ -60,6 +60,10 @@ fi
 strip $D/bin/nocmodl.exe
 strip $D/bin/modlunit.exe
 
+if test "$LTCC" = "" ; then
+	LTCC=gcc
+fi
+
 # copy the essential cygwin programs
 for i in \
  as.exe basename.exe cat.exe cp.exe \
