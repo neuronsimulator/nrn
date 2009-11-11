@@ -4051,6 +4051,7 @@ double nrn_hoc2scatter_y(void* v) {
 	if (s->capacity() != d->gcv_->neq_) { hoc_execerror("size of state vector != number of state equations", 0); }
 	if (nrn_nthread > 1) {hoc_execerror("only one thread allowed", 0);}
 	d->gcv_->scatter_y(vector_vec(s), 0);
+	return 0.;
 }
 
 void NetCvode::error_weights() {

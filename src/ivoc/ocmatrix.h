@@ -51,7 +51,7 @@ public:
 	virtual void transpose(Matrix* out){unimp();}
 	virtual void symmeigen(Matrix* mout, Vect* vout){unimp();}
 	virtual void svd1(Matrix* u, Matrix* v, Vect* d){unimp();}
-	virtual double det(int* e){unimp();}
+	virtual double det(int* e){unimp(); return 0.0;}
 	virtual int sprowlen(int){unimp(); return 0;}
 	virtual double spgetrowval(int i, int jindx, int* j){unimp(); return 0.;}
 
