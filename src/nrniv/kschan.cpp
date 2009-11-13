@@ -2077,6 +2077,9 @@ void KSChan::setupmat() {
 	if (err != spOKAY) {
 		hoc_execerror("Couldn't create sparse matrix", 0);
 	}
+	spFactor(mat_); // will fail but creates an internal vector needed by
+			// mulmat which might be called prior to initialization
+			// when switching to cvode active.
 	elms_ = new double*[4*(ntrans_ - ivkstrans_)];
 	diag_ = new double*[nksstate_];
 	for (i=ivkstrans_, j=0; i < ntrans_; ++i) {

@@ -106,6 +106,8 @@ the notify_free_val parameter in node_free in solve.c
 #define NODED(n) (*((n)->_d))
 #define NODERHS(n) (*((n)->_rhs))
 
+#undef NODEV /* sparc-sun-solaris2.9 */
+
 #if CACHEVEC == 0
 #define NODEA(n) ((n)->_a)
 #define NODEB(n) ((n)->_b)
