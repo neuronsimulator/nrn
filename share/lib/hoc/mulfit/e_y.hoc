@@ -5,7 +5,7 @@ Same as RFitness except must supply the xdat indices (or
 use the gui to specify them)
 */
 
-install_vector_fitness()
+{install_vector_fitness()}
 
 parmfitness_efun_append("YFitness")
 

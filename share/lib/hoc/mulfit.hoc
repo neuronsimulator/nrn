@@ -1,4 +1,4 @@
-load_file("$(NEURONHOME)/lib/hoc/noload.hoc", "nrnmainmenu")
+{load_file("$(NEURONHOME)/lib/hoc/stdgui.hoc", "nrnmainmenu")}
 
 objref parmfitness_efun_list_, parmfitness_generator_list_
 objref mulfit_optimizers_, mulfit_optimizer_names_
@@ -17,6 +17,7 @@ proc mulfit_optimizers_append() {
 	mulfit_optimizers_.append(new String($s2))
 }
 
+{
 xopen("mulfit/protorun.hoc")
 xopen("mulfit/e_norm.hoc")
 xopen("mulfit/e_actpot.hoc")
@@ -29,6 +30,7 @@ xopen("mulfit/eoneprim.hoc")
 xopen("mulfit/eparmlst.hoc")
 xopen("mulfit/fitparm.hoc")
 xopen("mulfit/mulfit1.hoc")
+}
 
 objref tobj
 proc makemulrunfitter() {

@@ -369,7 +369,8 @@ proc rfile() {local use
 // this is probably not necessary because the Pointer will do it automatically
 proc declare() { // function fitters often declare their own variables
 	if (sf.substr($o1.name, "$") == -1) {
-		if(!execute1($o1.name, 0)) {
+		sprint(tstr, "{%s}", $o1.name)
+		if(!execute1(tstr, 0)) {
 			sprint(tstr, "%s = %g", $o1.name, $o1.val)
 			execute1(tstr)
 		}
