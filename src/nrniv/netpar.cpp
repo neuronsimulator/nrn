@@ -167,7 +167,9 @@ DiscreteEvent* NetParEvent::savestate_save(){
 
 DiscreteEvent* NetParEvent::savestate_read(FILE* f){
 	int i;
-	assert(fscanf(f, "%d", &i) == 1);
+	char buf[100];
+	fgets(buf, 100, f);
+	assert(sscanf(buf, "%d\n", &i) == 1);
 	//printf("NetParEvent::savestate_read %d\n", i);
 	NetParEvent* npe = new NetParEvent();
 	npe->ithread_ = i;
@@ -176,7 +178,7 @@ DiscreteEvent* NetParEvent::savestate_read(FILE* f){
 
 void NetParEvent::savestate_write(FILE* f){
 	//pr("savestate_write", 0, net_cvode_instance);
-	fprintf(f, "%d %d\n", NetParEventType, ithread_);
+	fprintf(f, "%d\n%d\n", NetParEventType, ithread_);
 }
 
 void NetParEvent::savestate_restore(double tt, NetCvode* nc){

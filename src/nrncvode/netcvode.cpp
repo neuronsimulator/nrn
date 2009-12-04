@@ -4794,17 +4794,18 @@ void PreSynSave::savestate_restore(double tt, NetCvode* nc) {
 DiscreteEvent* PreSyn::savestate_read(FILE* f) {
 	PreSyn* ps = nil;
 	char buf[200];
-	int index;
+	int index, tid;
 	fgets(buf, 200, f);
-	assert(sscanf(buf, "%d\n", &index));
+	assert(sscanf(buf, "%d %d\n", &index, &tid) == 2);
 	ps = PreSynSave::hindx2presyn(index);
 	assert(ps);
+	ps->nt_ = nrn_threads + tid;
 	return new PreSynSave(ps);
 }
 
 void PreSynSave::savestate_write(FILE* f) {
 	fprintf(f, "%d\n", PreSynType);
-	fprintf(f, "%d\n", presyn_->hi_index_);
+	fprintf(f, "%d %d\n", presyn_->hi_index_, presyn_->nt_?presyn_->nt_->id:0);
 }
 
 declareTable(PreSynSaveIndexTable, long, PreSyn*)
