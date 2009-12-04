@@ -45,8 +45,8 @@ static double efun();
 static Symbol* hoc_efun_sym;
 
 static double tolerance, machep, maxstepsize;
-static int printmode;
-static int nvar;
+static long int printmode;
+static long int nvar;
 
 int stop_praxis() {
 	int i = 1;
@@ -68,7 +68,7 @@ int fit_praxis() {
 	double err, fmin;
 	double* px;
 	double minerrsav, *minargsav, maxstepsizesav, tolerancesav;
-	int printmodesav;
+	long int printmodesav;
 	Symbol* funsav;
 	fmin = 0.;
 	nvar = (int)chkarg(1, 0., 1e6);
