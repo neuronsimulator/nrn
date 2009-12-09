@@ -61,6 +61,7 @@ public:
 	double netpar_mindelay(double maxdelay);
 	void netpar_spanning_statistics(int*, int*, int*, int*);
 	IvocVect* netpar_max_histogram(IvocVect*);
+	Object** pyret();
 protected:
 	void init(int);
 protected:

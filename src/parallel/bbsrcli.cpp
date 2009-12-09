@@ -235,13 +235,15 @@ int BBSClient::look_take_todo() {
 
 int BBSClient::take_todo() {
 	int type;
+	char* rs;
 	while((type = get(0, TAKE_TODO)) == CONTEXT) {
 		upkint(); // throw away userid
 #if debug
 printf("execute context\n");
 fflush(stdout);
 #endif
-		execute_helper();
+		rs = execute_helper();
+		if (rs) { delete [] rs; }
 	}
 	return type;
 }

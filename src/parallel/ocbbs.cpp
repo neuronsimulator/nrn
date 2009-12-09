@@ -32,6 +32,9 @@ extern "C" {
 	extern void nrnmpi_gid_clear(int);
 	double nrnmpi_rtcomp_time_;
 	extern double nrn_bgp_receive_time(int);
+	char* (*nrnpy_po2pickle)(Object*);
+	Object* (*nrnpy_pickle2po)(char*);
+	char* (*nrnpy_callpicklef)(char*, int);
 #if PARANEURON
 	double nrnmpi_transfer_wait_;
 	double nrnmpi_splitcell_wait_;
@@ -106,6 +109,7 @@ void bbs_done() {
 
 static int submit_help(OcBBS* bbs) {
 	int id, i, firstarg, style;
+	char* pname = 0; // if using Python callable
 	posting_ = true;
 	bbs->pkbegin();
 	i = 1;
@@ -121,33 +125,54 @@ static int submit_help(OcBBS* bbs) {
 		if (hoc_is_str_arg(i)) {
 			style = 1;
 			bbs->pkint(style); // "fname", arg1, ... style
+			bbs->pkstr(gargstr(i++));
 		}else{
-			style = 2;
-			bbs->pkint(style); // [object],"fname", arg1, ... style
 			Object* ob = *hoc_objgetarg(i++);
-			bbs->pkstr(ob->ctemplate->sym->name);
-			bbs->pkint(ob->index);
+			if (nrnpy_po2pickle) {
+				pname = (*nrnpy_po2pickle)(ob);
+			}
+			if (pname) {
+				style = 3;
+				bbs->pkint(style); // pyfun, arg1, ... style
+				bbs->pkstr(pname);
+				delete [] pname;
+			}else{
+				style = 2;
+				bbs->pkint(style); // [object],"fname", arg1, ... style
+				bbs->pkstr(ob->ctemplate->sym->name);
+				bbs->pkint(ob->index);
 //printf("ob=%s\n", hoc_object_name(ob));
+				bbs->pkstr(gargstr(i++));
+
+			}
 		}
-		bbs->pkstr(gargstr(i++));
 		firstarg = i;
 		for (; ifarg(i); ++i) { // first is least significant
 			if (hoc_is_double_arg(i)) {
 				argtypes += 1*ii;
 			}else if (hoc_is_str_arg(i)) {
 				argtypes += 2*ii;
-			}else{ // must be a Vector
+			}else if (is_vector_arg(i)) { //hoc Vector
 				argtypes += 3*ii;
+			}else{ // must be a PythonObject
+				argtypes += 4*ii;
 			}
-			ii *= 4;
+			ii *= 5;
 		}
 //printf("submit style %d %s argtypes=%o\n", style, gargstr(firstarg-1), argtypes);
 		bbs->pkint(argtypes);
 		pack_help(firstarg, bbs);
 #endif
 	}else{
-		bbs->pkint(0); // hoc statement style
-		bbs->pkstr(gargstr(i));
+		if (hoc_is_str_arg(i)) {
+			bbs->pkint(0); // hoc statement style
+			bbs->pkstr(gargstr(i));
+		}else if (nrnpy_po2pickle) {
+			pname = (*nrnpy_po2pickle)(*hoc_objgetarg(i));
+			bbs->pkint(3); // pyfun with no arg style
+			bbs->pkstr(pname);
+			delete [] pname;
+		}
 	}
 	posting_ = false;
 	return id;
@@ -221,11 +246,15 @@ static void pack_help(int i, OcBBS* bbs) {
 			bbs->pkdouble(*getarg(i));
 		}else if (hoc_is_str_arg(i)) {
 			bbs->pkstr(gargstr(i));
-		}else{
+		}else if (is_vector_arg(i)){
 			int n; double* px;
 			n = vector_arg_px(i, &px);
 			bbs->pkint(n);
 			bbs->pkvec(n, px);
+		}else{ // must be a PythonObject
+			char* s = nrnpy_po2pickle(*hoc_objgetarg(i));
+			bbs->pkstr(s);
+			delete [] s;
 		}
 	}
 }
@@ -259,11 +288,14 @@ static void unpack_help(int i, OcBBS* bbs) {
 			char** ps = hoc_pgargstr(i);
 			hoc_assign_str(ps, s);
 			delete [] s;
-		}else{
+		}else if (is_vector_arg(i)){
 			Vect* vec = vector_arg(i);
 			int n = bbs->upkint();
 			vec->resize(n);
 			bbs->upkvec(n, vec->vec());
+		}else{
+hoc_execerror("pc.unpack can only unpack str, scalar, or Vector.",
+"use pc.upkpyobj to unpack a Python Object");
 		}
 	}
 }
@@ -300,6 +332,28 @@ static Object** upkvec(void* v) {
 	}
 	bbs->upkvec(n, vec->vec());
 	return vec->temp_objvar();
+}
+
+static Object** upkpyobj(void* v) {
+	OcBBS* bbs = (OcBBS*)v;
+	char* s = bbs->upkstr();
+	assert(nrnpy_pickle2po);
+	Object* po = (*nrnpy_pickle2po)(s);
+	delete [] s;
+	return hoc_temp_objptr(po);
+}
+
+static Object** pyret(void* v) {
+	OcBBS* bbs = (OcBBS*)v;
+	return bbs->pyret();
+}
+Object** BBS::pyret() {
+	assert(impl_->pickle_ret_);
+	assert(nrnpy_pickle2po);
+	Object* po = (*nrnpy_pickle2po)(impl_->pickle_ret_);
+	delete [] impl_->pickle_ret_;
+	impl_->pickle_ret_ = 0;
+	return hoc_temp_objptr(po);
 }
 
 static char* key_help() {
@@ -847,6 +901,8 @@ static Member_ret_obj_func retobj_members[] = {
 	"gid2obj", gid2obj,
 	"gid2cell", gid2cell,
 	"gid_connect", gid_connect,
+	"upkpyobj", upkpyobj,
+	"pyret", pyret,
 	0,0
 };
 
@@ -871,20 +927,20 @@ void ParallelContext_reg() {
 		retobj_members, retstr_members);
 }
 
-void BBSImpl::execute_helper() {
+char* BBSImpl::execute_helper() {
 	char* s;
 	int style = upkint();
+	char* rs = 0;
 	switch (style) {
 	case 0:
 		s = upkstr();
 		hoc_obj_run(s, nil);
 		delete [] s;
 		break;
-	case 1:
-	case 2: {
+	default: {
 #if 1
 		int i, j;
-		Symbol* fname;
+		Symbol* fname = 0;
 		Object* ob = nil;
 		char* sarg[20]; // upto 20 argument may be strings
 		int ns = 0; // number of args that are strings
@@ -916,17 +972,19 @@ hoc_execerror("ParallelContext execution error", 0);
 			delete [] s;
 			s = upkstr();
 			fname = hoc_table_lookup(s, sym->u.ctemplate->symtable);
+		}else if (style == 3) { // Python callable
+			s = upkstr();
 		}else{
 			s = upkstr();
 			fname = hoc_lookup(s);
 		}
 //printf("execute helper style %d fname=%s obj=%s\n", style, fname->name, hoc_object_name(ob));
-		if (!fname) {
+		if (style != 3 && !fname) {
 fprintf(stderr, "%s not a function in %s\n", s, hoc_object_name(ob));
 hoc_execerror("ParallelContext execution error", 0);
 		}
 		int argtypes = upkint(); // first is least signif
-		for (j = argtypes; (i = j%4) != 0; j /= 4) {
+		for (j = argtypes; (i = j%5) != 0; j /= 5) {
 			++narg;
 			if (i == 1) {
 				double x = upkdouble();
@@ -937,16 +995,32 @@ hoc_execerror("ParallelContext execution error", 0);
 //printf("arg %d string |%s|\n", narg, sarg[ns]);
 				hoc_pushstr(sarg+ns);
 				ns++;
-			}else{
+			}else if (i == 3) {
 				int n;
 				n = upkint();
 				Vect* vec = new Vect(n);
 //printf("arg %d vector size=%d\n", narg, n);
 				upkvec(n, vec->vec());
 				hoc_pushobj(vec->temp_objvar());
+			}else{ //PythonObject
+				char* s = upkstr();
+				assert(nrnpy_pickle2po);
+				Object* po = nrnpy_pickle2po(s);
+				delete [] s;
+				hoc_pushobj(hoc_temp_objptr(po));
 			}
 		}
-		hoc_ac_ = hoc_call_objfunc(fname, narg, ob);
+		if (style == 3) {
+			assert(nrnpy_callpicklef);
+			if (pickle_ret_) {
+				delete [] pickle_ret_;
+				pickle_ret_ = 0;
+			}
+			rs = (*nrnpy_callpicklef)(s, narg);
+			hoc_ac_ = 0.;
+		}else{
+			hoc_ac_ = hoc_call_objfunc(fname, narg, ob);
+		}
 		delete [] s;
 		for (i=0; i < ns; ++i) {
 			delete [] sarg[i];
@@ -955,6 +1029,7 @@ hoc_execerror("ParallelContext execution error", 0);
 	    }
 		break;
 	}
+	return rs;
 }
 
 void BBSImpl::return_args(int id) {
@@ -986,8 +1061,11 @@ void BBSImpl::return_args(int id) {
 //printf("fname=|%s| manifest=%o\n", s, i);
 		delete [] s;
 		break;
+	case 3:
+		s = upkstr(); //pickled callable
+		i = upkint(); // arg manifest
+		delete [] s;
+		break;
 	}
 	// now only args are left and ready to unpack.
 }
-
-

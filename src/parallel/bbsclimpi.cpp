@@ -229,6 +229,7 @@ int BBSClient::look_take_todo() {
 
 int BBSClient::take_todo() {
 	int type;
+	char* rs;
 	while((type = get(0, TAKE_TODO)) == CONTEXT) {
 		upkbegin();
 		upkint(); // throw away userid
@@ -236,7 +237,8 @@ int BBSClient::take_todo() {
 printf("%d execute context\n", nrnmpi_myid);
 fflush(stdout);
 #endif
-		execute_helper();
+		rs = execute_helper();
+		if (rs) { delete [] rs; }
 	}
 	upkbegin();
 	return type;

@@ -30,6 +30,9 @@ extern void (*nrnpy_cmdtool)(Object*, int, double, double, int);
 extern double (*nrnpy_guigetval)(Object*);
 extern void (*nrnpy_guisetval)(Object*, double);
 extern int (*nrnpy_guigetstr)(Object*, char**);
+extern char* (*nrnpy_po2pickle)(Object*);
+extern Object* (*nrnpy_pickle2po)(char*);
+extern char* (*nrnpy_callpicklef)(char*, int);
 extern void nrnpython_ensure_threadstate();
 
 extern Object* hoc_thisobject;
@@ -52,6 +55,9 @@ static void grphcmdtool(Object*, int, double, double, int);
 static double guigetval(Object*);
 static void guisetval(Object*, double);
 static int guigetstr(Object*, char**);
+static char* po2pickle(Object*);
+static Object* pickle2po(char*);
+static char* call_picklef(char*, int);
 static PyObject* main_module;
 static PyObject* main_namespace;
 static hoc_List* dlist;
@@ -89,6 +95,9 @@ void nrnpython_reg_real() {
 	nrnpy_guigetval = guigetval;
 	nrnpy_guisetval = guisetval;
 	nrnpy_guigetstr = guigetstr;
+	nrnpy_po2pickle = po2pickle;
+	nrnpy_pickle2po = pickle2po;
+	nrnpy_callpicklef = call_picklef;
 	dlist = hoc_l_newlist();
 }
 
@@ -434,4 +443,108 @@ static int guigetstr(Object* ho, char** cpp){
 	strcpy(*cpp, cp);
 	Py_XDECREF(pn);
 	return 1;
+}
+
+static PyObject* loads;
+static PyObject* dumps;
+
+static void setpickle() {
+	if (!dumps) {
+		PyObject* pickle = PyImport_ImportModule("cPickle");
+		if (pickle == NULL) {
+			pickle = PyImport_ImportModule("pickle");
+		}
+		if (pickle) {
+			Py_INCREF(pickle);
+			dumps = PyObject_GetAttrString(pickle, "dumps");
+			loads = PyObject_GetAttrString(pickle, "loads");
+			if (dumps) {
+				Py_INCREF(dumps);
+				Py_INCREF(loads);
+			}
+		}
+	}
+	if (!dumps || !loads) {
+		hoc_execerror("Neither Python cPickle nor pickle are available", 0);
+	}
+}
+
+static char* pickle(PyObject* p) {
+	PyObject* arg = PyTuple_Pack(1, p);
+	PyObject* r = nrnpy_pyCallObject(dumps, arg);
+	Py_XDECREF(arg);
+	assert(r);
+	char* buf1 = PyString_AsString(r);
+	int size = PyString_Size(r);
+	char* buf = new char[size+1];
+	for (int i = 0; i < size; ++i) {
+		buf[i] = buf1[i];
+	}
+	buf[size] = '\0';
+	Py_XDECREF(r);
+	return buf;
+}
+
+static char* po2pickle(Object* ho) {
+	setpickle();
+	if (ho && ho->ctemplate->sym ==	nrnpy_pyobj_sym_) {
+		PyObject* po = nrnpy_hoc2pyobject(ho);
+		char* buf = pickle(po);
+		return buf;
+	}else{
+		return 0;
+	}
+}
+
+static Object* pickle2po(char* s) {
+	setpickle();
+	PyObject* ps = PyString_FromString(s);
+	PyObject* arg = PyTuple_Pack(1, ps);
+	PyObject* po = nrnpy_pyCallObject(loads, arg);
+	assert(po);
+	Py_XDECREF(arg);
+	Py_XDECREF(ps);
+	Object* ho = nrnpy_pyobject_in_obj(po);
+	Py_XDECREF(po);
+	return ho;
+}
+
+
+char* call_picklef(char *fname, int narg) {
+	// fname is a pickled callable, narg is the number of args on the
+	// hoc stack with types double, char*, hoc Vector, and PythonObject
+	// callable return must be pickleable.
+	PyObject* args = 0;
+	PyObject* result = 0;
+	PyObject* callable;
+
+	setpickle();
+	PyObject* ps = PyString_FromString(fname);
+	args = PyTuple_Pack(1, ps);
+	callable = nrnpy_pyCallObject(loads, args);
+	assert(callable);
+	Py_XDECREF(args);
+	Py_XDECREF(ps);
+
+	args = PyTuple_New(narg);
+	for (int i = 0; i < narg; ++i) {
+		PyObject* arg = nrnpy_hoc_pop();
+		if (PyTuple_SetItem(args, narg - 1 - i, arg)) {
+			assert(0);
+		}
+		//Py_XDECREF(arg);
+	}
+	result = nrnpy_pyCallObject(callable, args);
+	Py_DECREF(args);
+	if (!result) {
+		PyErr_Print();
+		hoc_execerror("PyObject method call failed:", 0);
+	}
+	char* rs = pickle(result);
+	//PyObject* pn = PyNumber_Float(result);
+	// double x = PyFloat_AsDouble(pn);
+	// Py_XDECREF(pn);
+	Py_XDECREF(result);
+	//return x;
+	return rs;
 }

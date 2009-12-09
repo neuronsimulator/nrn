@@ -50,13 +50,14 @@ public:
 	double wait_time_;
 	double integ_time_;
 	double send_time_;
+	char* pickle_ret_;
 	static boolean is_master_;
 	static boolean started_, done_;
 	static boolean use_pvm_;
 	static int mytid_;
 	static int debug_;
 protected:
-	void execute_helper(); // involves hoc specific details in ocbbs.c
+	char* execute_helper(); // involves hoc specific details in ocbbs.c
 };
 
 #endif
