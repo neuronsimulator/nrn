@@ -103,7 +103,7 @@ h  = hoc.HocObject()
 # (thus replacing the dummy)
 def help(request):
     global help
-    print ("Enabling NEURON+Python help system.")
+    print "Enabling NEURON+Python help system."
     from neuron import doc
     doc.help(request)
     help = doc.help
@@ -177,7 +177,7 @@ def load_mechanisms(path):
     
     global nrn_dll_loaded
     if path in nrn_dll_loaded:
-        print ("Mechanisms already loaded from path: %s.  Aborting." % path)
+        print "Mechanisms already loaded from path: %s.  Aborting." % path
         return
     
     # in case NEURON is assuming a different architecture to Python,
@@ -191,19 +191,19 @@ def load_mechanisms(path):
             h.nrn_load_dll(lib_path)
             nrn_dll_loaded.append(path)
             return
-    print ("NEURON mechanisms not found in %s." % path)
+    print "NEURON mechanisms not found in %s." % path
 
 
 import os,sys
 if 'NRN_NMODL_PATH' in os.environ:
     nrn_nmodl_path = os.environ['NRN_NMODL_PATH'].split(':')
-    print ('Auto-loading mechanisms:')
-    print ('NRN_NMODL_PATH=%s' % os.environ['NRN_NMODL_PATH'])
+    print 'Auto-loading mechanisms:'
+    print 'NRN_NMODL_PATH=%s' % os.environ['NRN_NMODL_PATH']
     for x in nrn_nmodl_path:
-        #print ("from path %s:" % x)
+        #print "from path %s:" % x
         load_mechanisms(x)
-        #print ("\n")
-    print ("Done.\n")
+        #print "\n"
+    print "Done.\n"
     
 
 
@@ -270,7 +270,7 @@ def new_hoc_class(name,doc=None):
 # Python equivalents to Hoc functions
 # ------------------------------------------------------------------------------
 
-#xopen = h.xopen
+xopen = h.xopen
 quit = h.quit
 
 def hoc_execute(hoc_commands, comment=None):

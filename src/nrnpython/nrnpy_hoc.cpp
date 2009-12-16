@@ -1656,16 +1656,30 @@ static PyMemberDef hocobj_members[] = {
 #if (PY_MAJOR_VERSION >= 3)
 #include "nrnpy_hoc_3.h"
 char* nrnpy_PyString_AsString(PyObject* po) {
-	assert(PyUnicode_Check(po));
-	PyUnicodeObject* p = (PyUnicodeObject*)po;
-	Py_UNICODE* pu = ((PyUnicodeObject*)po)->str;
-	char* str = (char*)pu;
-	str = (char*)PyMem_Malloc(p->length + 1);
-	for (int i=0; i < p->length; ++i) {
-		assert(pu[i] < 256);
-		str[i] = pu[i];
+#if 0
+printf("nrnpy_PyString_AsString\n");
+PyObject_Print(po, stdout, 0);
+printf("\n");
+#endif
+	char* str = 0;
+	if (PyUnicode_Check(po)) {
+		PyUnicodeObject* p = (PyUnicodeObject*)po;
+		Py_UNICODE* pu = ((PyUnicodeObject*)po)->str;
+		str = (char*)PyMem_Malloc(p->length + 1);
+		for (int i=0; i < p->length; ++i) {
+			assert(pu[i] < 256);
+			str[i] = pu[i];
+		}
+		str[p->length] = '\0';
+	}else if (PyBytes_Check(po)) {
+		size_t n = PyBytes_Size(po);
+		char* s = PyBytes_AsString(po);		
+		str = (char*)PyMem_Malloc(n + 1);
+		for (int i = 0; i < n; ++i) {
+			str[i] = s[i];
+		}
+		str[n] = '\0';
 	}
-	str[p->length] = '\0';
 	//printf("nrnpy_PyString_AsString %s\n", str);
 	return str;
 }

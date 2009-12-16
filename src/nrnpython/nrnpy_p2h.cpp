@@ -475,7 +475,7 @@ static char* pickle(PyObject* p) {
 	Py_XDECREF(arg);
 	assert(r);
 	char* buf1 = PyString_AsString(r);
-	int size = PyString_Size(r);
+	size_t size = strlen(buf1);
 	char* buf = new char[size+1];
 	for (int i = 0; i < size; ++i) {
 		buf[i] = buf1[i];
