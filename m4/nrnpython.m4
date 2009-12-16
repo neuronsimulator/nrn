@@ -5,7 +5,7 @@ AC_DEFUN([AC_NRN_PYCONF],[
 	dnl determine configuration if able to  run python
 	ac_nrn_pyconf_val=""
 	ac_nrn_pyconf_val=`$4 -c "import distutils.sysconfig
-print distutils.sysconfig.$2" | tr -d '\r'`
+print (distutils.sysconfig.$2)" | tr -d '\r'`
 	if test $? != 0 ; then
 		AC_MSG_ERROR([could not run python in order to determine a
 configuration variable.])
