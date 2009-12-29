@@ -64,6 +64,7 @@ AC_DEFUN([AC_NRN_PYTHON],[
 	NRNPYTHON_INCLUDES=""
 	NRNPYTHON_PYLIBLINK=""
 	NRNPYTHON_PYMAJOR=2
+	PY2TO3="2to3"
 	build_nrnpython=no
 	build_nrnpython_dynamic=no
 
@@ -206,6 +207,13 @@ PYLIB="${PYLIBLINK} ${PYLINKFORSHARED} -R${PYLIBDIR}"
 		fi
 	fi
 
+	if test $NRNPYTHON_PYMAJOR -gt 2 ; then
+		pypath=`dirname $NRNPYTHON_EXEC`
+		if test -x $pypath/2to3 ; then
+			PY2TO3=$pypath/2to3
+		fi
+	fi
+
 	AC_SUBST(NRNPYTHON_LIBLA)
 	AC_SUBST(NRNPYTHON_LIBS)
 	AC_SUBST(NRNPYTHON_DEP)
@@ -215,4 +223,5 @@ PYLIB="${PYLIBLINK} ${PYLINKFORSHARED} -R${PYLIBDIR}"
 	AC_SUBST(NRNPYTHON_PYLIBLINK)
 	AC_SUBST(setup_extra_link_args)
 	AC_SUBST(NRNPYTHON_PYMAJOR)
+	AC_SUBST(PY2TO3)
 ]) dnl end of AC_NRN_PYTHON

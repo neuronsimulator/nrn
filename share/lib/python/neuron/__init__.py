@@ -75,22 +75,10 @@ $Id: __init__.py,v 1.1 2008/05/26 11:39:44 hines Exp hines $
 """
 
 try:
-    import hoc
-except ImportError, e:
-    raise ImportError, """
-Can't import neuron.hoc module.
-
-In case you are importing neuron from within
-a directory containing neuron/__init__.py
-which is not the installed neuron package for python,
-move out of this directory and try again.
-
-The original error message was: 
-
-%s
-
-"""%e.message
-    
+  import hoc
+except:
+  #Python3.1 extending needs to look into the module explicitly
+  import neuron.hoc
 
 import nrn
 h  = hoc.HocObject()
