@@ -85,6 +85,11 @@ char* BBSClient::upkstr() {
 	return s;
 }
 
+char* BBSClient::upkpickle(size_t* n) {
+	assert(0);
+	return s;
+}
+
 void BBSClient::pkbegin() {
 	if( pvm_initsend(PvmDataDefault) < 0 ) { perror("pkbegin"); }
 }
@@ -107,6 +112,10 @@ void BBSClient::pkstr(const char* s) {
 	int len = strlen(s);
 	if( pvm_pkint(&len, 1, 1)) { perror("pkstr length"); }
 	if( pvm_pkstr((char*)s)) { perror("pkstr string"); }
+}
+
+void BBSClient::pkpickle(const char* s, size_t n) {
+	assert(0);
 }
 
 void BBSClient::post(const char* key) {
@@ -236,13 +245,14 @@ int BBSClient::look_take_todo() {
 int BBSClient::take_todo() {
 	int type;
 	char* rs;
+	size_t n;
 	while((type = get(0, TAKE_TODO)) == CONTEXT) {
 		upkint(); // throw away userid
 #if debug
 printf("execute context\n");
 fflush(stdout);
 #endif
-		rs = execute_helper();
+		rs = execute_helper(&n);
 		if (rs) { delete [] rs; }
 	}
 	return type;

@@ -134,6 +134,7 @@ BBSImpl::BBSImpl() {
 	working_id_ = 0;
 	n_ = 0;
 	pickle_ret_ = 0;
+	pickle_ret_size_ = 0;
 }
 
 BBS::~BBS() {
@@ -229,6 +230,14 @@ char* BBS::upkstr() {
 	return s;
 }
 
+char* BBS::upkpickle(size_t* n) {
+	char* s = impl_->upkpickle(n);
+	if (debug) {
+		printf("upkpickle %d |%s|\n", *n, s);
+	}
+	return s;
+}
+
 void BBS::pkbegin() {
 	if (debug) {
 		printf("pkbegin\n");
@@ -262,6 +271,13 @@ void BBS::pkstr(const char* s) {
 		printf("pkstr |%s|\n", s);
 	}
 	impl_->pkstr(s);
+}
+
+void BBS::pkpickle(const char* s, size_t n) {
+	if (debug) {
+		printf("pkpickle %d |%s|\n", n, s);
+	}
+	impl_->pkpickle(s, n);
 }
 
 #if 0
@@ -307,6 +323,7 @@ void BBSImpl::execute(int id) { // assumes a "_todo" message in receive buffer
 		int userid;
 		char* rs;
 		char* s;
+		size_t n;
 		int i;
 		int save_id = working_id_;
 		working_id_ = id;
@@ -316,7 +333,7 @@ printf("execute begin %g: working_id_=%d\n",st, working_id_);
 		}
 		userid = upkint();
 		hoc_ac_ = double(id);
-		rs = execute_helper(); //builds and execute hoc statement
+		rs = execute_helper(&n); //builds and execute hoc statement
 		et = time() - st;
 		total_exec_time += et;
 		if (debug) {
@@ -329,7 +346,7 @@ et, working_id_, hoc_ac_);
 		if (!rs) {
 			pkdouble(hoc_ac_);
 		}else{
-			pkstr(rs);
+			pkpickle(rs, n);
 			delete [] rs;
 		}
 		post_result(working_id_);
@@ -393,7 +410,7 @@ boolean BBSImpl::working(int& id, double& x, int& userid) {
 				if (pickle_ret_) {
 					delete [] pickle_ret_;
 				}
-				pickle_ret_ = upkstr();
+				pickle_ret_ = upkpickle(&pickle_ret_size_);
 			}
 			--n_;
 			if (debug) {

@@ -63,6 +63,7 @@ AC_DEFUN([AC_NRN_PYTHON],[
 	NRNPYTHON_DEP=""
 	NRNPYTHON_INCLUDES=""
 	NRNPYTHON_PYLIBLINK=""
+	NRNPYTHON_PYMAJOR=2
 	build_nrnpython=no
 	build_nrnpython_dynamic=no
 
@@ -120,6 +121,8 @@ That is, build a version suitable mostly as a Python extension.])
 		if test "$PYVER" = "" ; then
 			AC_NRN_PYCONF(xxx,get_python_version(),2.4,$ac_nrn_python)
 			PYVER=python${xxx}
+			AC_NRN_PYCONF(xxx,sys.version_info.major,2,$ac_nrn_python)
+			NRNPYTHON_PYMAJOR=${xxx}
 		fi
 		if test "$PYINCDIR" = "" ; then
 			AC_NRN_PYCONF(xxx,get_python_inc(1),"",$ac_nrn_python)
@@ -211,4 +214,5 @@ PYLIB="${PYLIBLINK} ${PYLINKFORSHARED} -R${PYLIBDIR}"
 	AC_SUBST(NRNPYTHON_EXEC)
 	AC_SUBST(NRNPYTHON_PYLIBLINK)
 	AC_SUBST(setup_extra_link_args)
+	AC_SUBST(NRNPYTHON_PYMAJOR)
 ]) dnl end of AC_NRN_PYTHON

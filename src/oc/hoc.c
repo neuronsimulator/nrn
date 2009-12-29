@@ -956,6 +956,9 @@ printf("Discarding input til Dialog is closed.\n");
 
 hoc_final_exit() {
 	char buf[256];
+#if defined(USE_PYTHON)
+	if (p_nrnpython_start) { (*p_nrnpython_start)(0);}
+#endif
 	bbs_done();
 	hoc_audit_from_final_exit();
 	hoc_edit_quit();

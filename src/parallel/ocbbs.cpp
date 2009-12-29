@@ -32,9 +32,9 @@ extern "C" {
 	extern void nrnmpi_gid_clear(int);
 	double nrnmpi_rtcomp_time_;
 	extern double nrn_bgp_receive_time(int);
-	char* (*nrnpy_po2pickle)(Object*);
-	Object* (*nrnpy_pickle2po)(char*);
-	char* (*nrnpy_callpicklef)(char*, int);
+	char* (*nrnpy_po2pickle)(Object*, size_t*);
+	Object* (*nrnpy_pickle2po)(char*, size_t);
+	char* (*nrnpy_callpicklef)(char*, size_t, int, size_t*);
 #if PARANEURON
 	double nrnmpi_transfer_wait_;
 	double nrnmpi_splitcell_wait_;
@@ -128,13 +128,14 @@ static int submit_help(OcBBS* bbs) {
 			bbs->pkstr(gargstr(i++));
 		}else{
 			Object* ob = *hoc_objgetarg(i++);
+			size_t size;
 			if (nrnpy_po2pickle) {
-				pname = (*nrnpy_po2pickle)(ob);
+				pname = (*nrnpy_po2pickle)(ob, &size);
 			}
 			if (pname) {
 				style = 3;
 				bbs->pkint(style); // pyfun, arg1, ... style
-				bbs->pkstr(pname);
+				bbs->pkpickle(pname, size);
 				delete [] pname;
 			}else{
 				style = 2;
@@ -168,9 +169,10 @@ static int submit_help(OcBBS* bbs) {
 			bbs->pkint(0); // hoc statement style
 			bbs->pkstr(gargstr(i));
 		}else if (nrnpy_po2pickle) {
-			pname = (*nrnpy_po2pickle)(*hoc_objgetarg(i));
+			size_t size;
+			pname = (*nrnpy_po2pickle)(*hoc_objgetarg(i), &size);
 			bbs->pkint(3); // pyfun with no arg style
-			bbs->pkstr(pname);
+			bbs->pkpickle(pname, size);
 			delete [] pname;
 		}
 	}
@@ -252,8 +254,9 @@ static void pack_help(int i, OcBBS* bbs) {
 			bbs->pkint(n);
 			bbs->pkvec(n, px);
 		}else{ // must be a PythonObject
-			char* s = nrnpy_po2pickle(*hoc_objgetarg(i));
-			bbs->pkstr(s);
+			size_t size;
+			char* s = nrnpy_po2pickle(*hoc_objgetarg(i), &size);
+			bbs->pkpickle(s, size);
 			delete [] s;
 		}
 	}
@@ -336,9 +339,10 @@ static Object** upkvec(void* v) {
 
 static Object** upkpyobj(void* v) {
 	OcBBS* bbs = (OcBBS*)v;
-	char* s = bbs->upkstr();
+	size_t n;
+	char* s = bbs->upkpickle(&n);
 	assert(nrnpy_pickle2po);
-	Object* po = (*nrnpy_pickle2po)(s);
+	Object* po = (*nrnpy_pickle2po)(s, n);
 	delete [] s;
 	return hoc_temp_objptr(po);
 }
@@ -350,9 +354,10 @@ static Object** pyret(void* v) {
 Object** BBS::pyret() {
 	assert(impl_->pickle_ret_);
 	assert(nrnpy_pickle2po);
-	Object* po = (*nrnpy_pickle2po)(impl_->pickle_ret_);
+	Object* po = (*nrnpy_pickle2po)(impl_->pickle_ret_, impl_->pickle_ret_size_);
 	delete [] impl_->pickle_ret_;
 	impl_->pickle_ret_ = 0;
+	impl_->pickle_ret_size_ = 0;
 	return hoc_temp_objptr(po);
 }
 
@@ -927,10 +932,11 @@ void ParallelContext_reg() {
 		retobj_members, retstr_members);
 }
 
-char* BBSImpl::execute_helper() {
+char* BBSImpl::execute_helper(size_t* size) {
 	char* s;
 	int style = upkint();
 	char* rs = 0;
+	*size = 0;
 	switch (style) {
 	case 0:
 		s = upkstr();
@@ -940,6 +946,7 @@ char* BBSImpl::execute_helper() {
 	default: {
 #if 1
 		int i, j;
+		size_t npickle;
 		Symbol* fname = 0;
 		Object* ob = nil;
 		char* sarg[20]; // upto 20 argument may be strings
@@ -973,7 +980,7 @@ hoc_execerror("ParallelContext execution error", 0);
 			s = upkstr();
 			fname = hoc_table_lookup(s, sym->u.ctemplate->symtable);
 		}else if (style == 3) { // Python callable
-			s = upkstr();
+			s = upkpickle(&npickle);
 		}else{
 			s = upkstr();
 			fname = hoc_lookup(s);
@@ -1003,9 +1010,10 @@ hoc_execerror("ParallelContext execution error", 0);
 				upkvec(n, vec->vec());
 				hoc_pushobj(vec->temp_objvar());
 			}else{ //PythonObject
-				char* s = upkstr();
+				size_t n;
+				char* s = upkpickle(&n);
 				assert(nrnpy_pickle2po);
-				Object* po = nrnpy_pickle2po(s);
+				Object* po = nrnpy_pickle2po(s, n);
 				delete [] s;
 				hoc_pushobj(hoc_temp_objptr(po));
 			}
@@ -1015,8 +1023,9 @@ hoc_execerror("ParallelContext execution error", 0);
 			if (pickle_ret_) {
 				delete [] pickle_ret_;
 				pickle_ret_ = 0;
+				pickle_ret_size_ = 0;
 			}
-			rs = (*nrnpy_callpicklef)(s, narg);
+			rs = (*nrnpy_callpicklef)(s, npickle, narg, size);
 			hoc_ac_ = 0.;
 		}else{
 			hoc_ac_ = hoc_call_objfunc(fname, narg, ob);
@@ -1062,7 +1071,8 @@ void BBSImpl::return_args(int id) {
 		delete [] s;
 		break;
 	case 3:
-		s = upkstr(); //pickled callable
+		size_t n;
+		s = upkpickle(&n); //pickled callable
 		i = upkint(); // arg manifest
 		delete [] s;
 		break;

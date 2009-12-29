@@ -30,9 +30,9 @@ extern void (*nrnpy_cmdtool)(Object*, int, double, double, int);
 extern double (*nrnpy_guigetval)(Object*);
 extern void (*nrnpy_guisetval)(Object*, double);
 extern int (*nrnpy_guigetstr)(Object*, char**);
-extern char* (*nrnpy_po2pickle)(Object*);
-extern Object* (*nrnpy_pickle2po)(char*);
-extern char* (*nrnpy_callpicklef)(char*, int);
+extern char* (*nrnpy_po2pickle)(Object*, size_t* size);
+extern Object* (*nrnpy_pickle2po)(char*, size_t size);
+extern char* (*nrnpy_callpicklef)(char*, size_t size, int narg, size_t* retsize);
 extern void nrnpython_ensure_threadstate();
 
 extern Object* hoc_thisobject;
@@ -55,9 +55,9 @@ static void grphcmdtool(Object*, int, double, double, int);
 static double guigetval(Object*);
 static void guisetval(Object*, double);
 static int guigetstr(Object*, char**);
-static char* po2pickle(Object*);
-static Object* pickle2po(char*);
-static char* call_picklef(char*, int);
+static char* po2pickle(Object*, size_t* size);
+static Object* pickle2po(char*, size_t size);
+static char* call_picklef(char*, size_t size, int narg, size_t* retsize);
 static PyObject* main_module;
 static PyObject* main_namespace;
 static hoc_List* dlist;
@@ -160,6 +160,14 @@ PyObject* nrnpy_pyCallObject(PyObject* callable, PyObject* args) {
 
 	nrnpython_ensure_threadstate();
 	PyObject* p = PyObject_CallObject(callable, args);
+#if 0
+printf("PyObject_CallObject callable\n");
+PyObject_Print(callable, stdout, 0);
+printf("\nargs\n");
+PyObject_Print(args, stdout, 0);
+printf("\nreturn %lx\n", (long)p);
+if (p) { PyObject_Print(p, stdout, 0); printf("\n");}
+#endif
 
 	if (objsave) {
 		hoc_thisobject = objsave;
@@ -469,36 +477,46 @@ static void setpickle() {
 	}
 }
 
-static char* pickle(PyObject* p) {
+// note that *size includes the null terminating character if it exists
+static char* pickle(PyObject* p, size_t* size) {
 	PyObject* arg = PyTuple_Pack(1, p);
 	PyObject* r = nrnpy_pyCallObject(dumps, arg);
 	Py_XDECREF(arg);
 	assert(r);
+#if PY_MAJOR_VERSION >= 3
+	assert(PyBytes_Check(r));
+	*size = PyBytes_Size(r);
+	char* buf1 = PyBytes_AsString(r);
+#else
 	char* buf1 = PyString_AsString(r);
-	size_t size = strlen(buf1);
-	char* buf = new char[size+1];
-	for (int i = 0; i < size; ++i) {
+	*size  = PyString_Size(r) + 1;
+#endif
+	char* buf = new char[*size];
+	for (int i = 0; i < *size; ++i) {
 		buf[i] = buf1[i];
 	}
-	buf[size] = '\0';
 	Py_XDECREF(r);
 	return buf;
 }
 
-static char* po2pickle(Object* ho) {
+static char* po2pickle(Object* ho, size_t* size) {
 	setpickle();
 	if (ho && ho->ctemplate->sym ==	nrnpy_pyobj_sym_) {
 		PyObject* po = nrnpy_hoc2pyobject(ho);
-		char* buf = pickle(po);
+		char* buf = pickle(po, size);
 		return buf;
 	}else{
 		return 0;
 	}
 }
 
-static Object* pickle2po(char* s) {
+static Object* pickle2po(char* s, size_t size) {
 	setpickle();
+#if PY_MAJOR_VERSION >= 3
+	PyObject* ps = PyBytes_FromStringAndSize(s, size);
+#else
 	PyObject* ps = PyString_FromString(s);
+#endif
 	PyObject* arg = PyTuple_Pack(1, ps);
 	PyObject* po = nrnpy_pyCallObject(loads, arg);
 	assert(po);
@@ -510,7 +528,7 @@ static Object* pickle2po(char* s) {
 }
 
 
-char* call_picklef(char *fname, int narg) {
+char* call_picklef(char *fname, size_t size, int narg, size_t* retsize) {
 	// fname is a pickled callable, narg is the number of args on the
 	// hoc stack with types double, char*, hoc Vector, and PythonObject
 	// callable return must be pickleable.
@@ -519,7 +537,11 @@ char* call_picklef(char *fname, int narg) {
 	PyObject* callable;
 
 	setpickle();
+#if PY_MAJOR_VERSION >= 3
+	PyObject* ps= PyBytes_FromStringAndSize(fname, size);
+#else
 	PyObject* ps = PyString_FromString(fname);
+#endif
 	args = PyTuple_Pack(1, ps);
 	callable = nrnpy_pyCallObject(loads, args);
 	assert(callable);
@@ -535,16 +557,17 @@ char* call_picklef(char *fname, int narg) {
 		//Py_XDECREF(arg);
 	}
 	result = nrnpy_pyCallObject(callable, args);
+	Py_DECREF(callable);
 	Py_DECREF(args);
+#if PY_MAJOR_VERSION >= 3
+	if (PyBytes_Check(result)) {
+#else
 	if (!result) {
+#endif
 		PyErr_Print();
 		hoc_execerror("PyObject method call failed:", 0);
 	}
-	char* rs = pickle(result);
-	//PyObject* pn = PyNumber_Float(result);
-	// double x = PyFloat_AsDouble(pn);
-	// Py_XDECREF(pn);
+	char* rs = pickle(result, retsize);
 	Py_XDECREF(result);
-	//return x;
 	return rs;
 }
