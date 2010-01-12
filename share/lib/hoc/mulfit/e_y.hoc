@@ -97,7 +97,12 @@ proc set_modelx() {
 	setxy()
 }
 
-proc setxy() {
+proc setxy() {local i
+	for (i = indx_.size-1; i > 0; i -= 1) {
+		if (indx_.x[i] == indx_.x[i-1]) {
+			indx_.remove(i)
+		}
+	}
 	xdat_.index(xdat, indx_)
 	ydat_.index(ydat, indx_)
 	redraw()
