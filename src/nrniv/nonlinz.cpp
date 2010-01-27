@@ -120,10 +120,10 @@ void NonLinImp::compute(double omega, double deltafac) {
 	rep_->dsdv();
 #endif
 	
-	cmplx_spPrint(rep_->m_, 0, 1, 1);
-	for (int i=0; i < rep_->neq_; ++i) {
-		printf("i=%d %g %g\n", i, rep_->diag_[i][0], rep_->diag_[i][1]);
-	}
+//	cmplx_spPrint(rep_->m_, 0, 1, 1);
+//	for (int i=0; i < rep_->neq_; ++i) {
+//		printf("i=%d %g %g\n", i, rep_->diag_[i][0], rep_->diag_[i][1]);
+//	}
 	int e = cmplx_spFactor(rep_->m_);
 	switch (e) {
 	case spZERO_DIAG:
