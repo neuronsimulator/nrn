@@ -122,6 +122,9 @@ MessageItem::~MessageItem() {
 	case VECTOR:
 		delete [] u.pd;
 		break;
+	case PICKLE:
+		delete [] u.s;
+		break;
 	}
 }
 

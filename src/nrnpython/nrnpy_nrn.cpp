@@ -538,7 +538,8 @@ static int section_setattro(NPySecObj* self, PyObject* name, PyObject* value) {
 	}else if ((rv = PyDict_GetItemString(rangevars_, n)) != NULL) {
 		Symbol* sym = ((NPyRangeVar*)rv)->sym_;
 		if (ISARRAY(sym)) {
-			assert(0);
+			PyErr_SetString(PyExc_IndexError, "missing index");
+			err = -1;
 		}else{
 			int errp;
 			double* d = nrnpy_rangepointer(self->sec_, sym, 0.5, &errp);
@@ -747,6 +748,7 @@ static int segment_setattro(NPySegObj* self, PyObject* name, PyObject* value) {
 				self->pysec_->sec_->recalc_area_ = 1;
 				nrn_diam_change(self->pysec_->sec_);
 			}else if (sym->u.rng.type == EXTRACELL && sym->u.rng.index == 0) {
+				// cannot execute because xraxial is an array
 				diam_changed = 1;
 			}
 		}
@@ -778,7 +780,9 @@ static PyObject* mech_getattro(NPyMechObj* self, PyObject* name) {
 			result = (PyObject*)r;
 		}else{
 			double* px = np.prop_pval(sym, 0);
-			if (isptr) {
+			if (!px) {
+				rv_noexist(self->pyseg_->pysec_->sec_, sym->name, self->pyseg_->x_, 2);
+			}else if (isptr) {
 				result = nrn_hocobj_ptr(px);
 			}else{
 				result = Py_BuildValue("d", *px);
@@ -803,7 +807,13 @@ static int mech_setattro(NPyMechObj* self, PyObject* name, PyObject* value) {
 	if (sym) {
 		double x;
 		if (PyArg_Parse(value, "d", &x) == 1) {
-			*np.prop_pval(sym, 0) = x;
+			double* pd = np.prop_pval(sym, 0);
+			if (pd) {
+				*pd = x;
+			}else{
+				rv_noexist(self->pyseg_->pysec_->sec_, sym->name, self->pyseg_->x_, 2);
+				err = 1;
+			}
 		}else{
 			PyErr_SetString(PyExc_ValueError,
 				"must be a double");
@@ -879,6 +889,9 @@ static int rv_setitem(PyObject* self, Py_ssize_t ix, PyObject* value) {
 	if (!PyArg_Parse(value, "d", d)) {
 		PyErr_SetString(PyExc_ValueError, "bad value");
 		return -1;
+	}
+	if (r->sym_->u.rng.type == EXTRACELL && r->sym_->u.rng.index == 0) {
+		diam_changed = 1;
 	}
 	return 0;
 }
