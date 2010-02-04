@@ -97,7 +97,12 @@ proc set_modelx() {
 	setxy()
 }
 
-proc setxy() {
+proc setxy() {local i
+	for (i = indx_.size-1; i > 0; i -= 1) {
+		if (indx_.x[i] == indx_.x[i-1]) {
+			indx_.remove(i)
+		}
+	}
 	xdat_.index(xdat, indx_)
 	ydat_.index(ydat, indx_)
 	redraw()
@@ -123,6 +128,7 @@ proc build() {
 	xmenu("Select")
 		xbutton("Copy points", "copy_points()")
 		xbutton("Paste points", "paste_points()")
+		xbutton("# equally spaced points", "npoints()")
 	xmenu()
 	mserrlabel="MeanSqErr xxxxxxxxxxx"
 	xvarlabel(mserrlabel)
@@ -160,6 +166,27 @@ proc copy_points() {
 
 proc paste_points() {
 	clipboard_get(xdat_, xdat_)
+	indx_ = xdat.c.indgen
+	indx_.interpolate(xdat_, xdat).add(.5)
+	setxy()
+}
+
+proc npoints() {local n, xn  localobj s
+	if (numarg() == 0) {
+		s = new String("5")
+		while(1) {
+			if (string_dialog("#equidistant points", s.s) == 0) {
+				return
+			}
+			if (sscanf(s.s, "%d", &n) == 1) if (n > 1 && n < xdat.size) {
+				break
+			}
+		}
+	}else{
+		n = $1
+	}
+	xn = xdat.x[xdat.size-1]
+	xdat_.indgen(xdat.x[0], xn, (xn-xdat.x[0])/(n-1))
 	indx_ = xdat.c.indgen
 	indx_.interpolate(xdat_, xdat).add(.5)
 	setxy()

@@ -67,8 +67,9 @@ else
 endif
 
 if MAC_DARWIN
+ivlibdir = @IV_LIBDIR@
 after_install:
-	carbon="@enable_carbon@" sh $(srcdir)/src/mac/after-install.sh "$(host_cpu)" "$(prefix)" "$(top_srcdir)"
+	carbon="@enable_carbon@" sh $(srcdir)/src/mac/after-install.sh "$(host_cpu)" "$(prefix)" "$(top_srcdir)" "$(ivlibdir)"
 
 dmg:
 	carbon="@enable_carbon@" sh $(srcdir)/src/mac/mkdmg.sh NEURON-"`sh $(srcdir)/nrnversion.sh`"
