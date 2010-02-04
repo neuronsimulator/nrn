@@ -153,8 +153,10 @@ static void* hoc_create_pnt(Object* ho) {
 static void hoc_destroy_pnt(void* v) {
 	// first free the KSSingleNodeData if it exists.
 	Point_process* pp = (Point_process*)v;
-	KSChan* c = channels->item(pp->prop->type);
-	c->destroy_pnt(pp);
+	if (pp->prop) {
+		KSChan* c = channels->item(pp->prop->type);
+		c->destroy_pnt(pp);
+	}
 }
 
 void KSChan::destroy_pnt(Point_process* pp) {
