@@ -881,7 +881,7 @@ IFGUI
 	GraphVector* gv = new GraphVector("");
 
 	if (ifarg(5)) {
-		hoc_execerror("Vector.plot:", "too many arguments");
+		hoc_execerror("Vector.line:", "too many arguments");
 	}
 	if (narg() == 3) {
 	  gv->color((colors->color(int(*getarg(2)))));
