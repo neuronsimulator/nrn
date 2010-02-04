@@ -305,8 +305,8 @@ for (int i = 0; i < n; ++i) {
 		}
 	}
 	m *= double(px_sign(piv));
-	M_FREE(lu_factor_);
-	PX_FREE(lu_pivot_);
+	M_FREE(lu);
+	PX_FREE(piv);
 	return m;
 }
 
