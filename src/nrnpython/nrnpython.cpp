@@ -62,6 +62,7 @@ void nrnpython_start(int b) {
 		main_threadstate_ = PyThreadState_GET();
 	}
 	if (b == 0 && started) {
+		nrnpython_ensure_threadstate();
 		Py_Finalize();
 		started = 0;
 	}
