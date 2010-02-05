@@ -1510,6 +1510,7 @@ static char* double_array_interface(PyObject* po,long& stride) {
 			}
 
 		}
+		Py_DECREF(ai);
 	}
 	return (char*)data;
 }

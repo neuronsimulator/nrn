@@ -107,6 +107,7 @@ Py2Nrn::Py2Nrn() {
 //	printf("Py2Nrn() %lx\n", (long)this);
 }
 Py2Nrn::~Py2Nrn() {
+	nrnpython_ensure_threadstate();
 	Py_XDECREF(po_);
 //	printf("~Py2Nrn() %lx\n", (long)this);
 }
@@ -265,16 +266,13 @@ void py2n_component(Object* ob, Symbol* sym, int nindex, int isfunc) {
 		nrnpy_decref_defer(result);
 	}else{
 //PyObject_Print(result, stdout, 0);
-//printf("\n");
 		on = nrnpy_po2ho(result);
 		hoc_pop_defer();
 		hoc_push_object(on);
 		if (on) { 
 			on->refcount--;
-		}else{
-			Py_XDECREF(result);
 		}
-//printf("%s refcount = %d\n", hoc_object_name(on), on->refcount);
+		Py_XDECREF(result);
 	}
 	Py_XDECREF(head);
 	Py_DECREF(tail);
