@@ -52,7 +52,6 @@ BBSLocal::~BBSLocal() {
 void BBSLocal::context() { }
 
 void BBSLocal::perror(const char* s) {
-	abort();
 	hoc_execerror("BBSLocal error in ", s);
 }
 
