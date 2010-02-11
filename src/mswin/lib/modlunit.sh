@@ -7,6 +7,7 @@ NEURONHOME=$N
 export NEURONHOME
 fname="`cygpath -u $2|sed 's/\.[mM][oO][dD]$/.mod/'`"
 if modlunit $fname ; then
+echo ""
 else
 echo ""
 echo "Press Return key to exit"

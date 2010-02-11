@@ -7,6 +7,9 @@
 #include	"units.h"
 #include	<assert.h>
 
+#if defined(CYGWIN)
+#include "../mswin/extra/d2upath.c"
+#endif
 #if defined(WIN32)
 #include <windows.h>
 #endif
@@ -123,6 +126,13 @@ static char* neuronhome() {
 	//      printf("setneuronhome |%s|\n", buf);
 	for (i=strlen(buf); i >= 0 && buf[i] != '\\'; --i) {;}
 	buf[i] = '\0'; // /bin gone
+#if defined(CYGWIN)
+	{
+	char* u = hoc_dos2unixpath(buf);
+	strcpy(buf, hoc_dos2unixpath(u));
+	free(u);
+	}
+#endif
 	return buf;
 #else
 	return getenv("NEURONHOME");

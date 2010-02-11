@@ -81,7 +81,7 @@ cp /usr/bin/ash.exe $D/bin/sh.exe
 cc1=`$CC -print-prog-name=cc1`
 cp $cc1 $D/bin
 
-# in case this is an mpi version distribute the appropriate adminsitrative tools.
+# in case this is an mpi version distribute the appropriate administrative tools.
 if grep '^mpicc=mpicc' $B/src/mswin/nrncygso.sh ; then
 	mpichbin=`which mpicc | sed 's,\(/bin\)/.*,\1,'`
 	echo "mpichbin=$mpichbin"
@@ -149,21 +149,30 @@ cp float.h stdarg.h stddef.h varargs.h $D/mingw
 )
 fi
 
+gclib=`$CC -print-libgcc-file-name`
+gclib=`echo $gclib|sed 's,/usr/lib/\(.*\)/[^/].*,\1,'`
+echo $gclib
+(cd /usr/lib ; zip -r $D/lib/temp.tmp $gclib -x \*ada\* \*c++\* \*fortran\* \*libobj\* \*libgcj\* \*install-tools\* \*libff\* \*libgomp\* \*libgij\* \*finclude\*)
+(cd $D/lib ; unzip temp.tmp ; rm temp.tmp ; cd $gclib ; rm -f cc1.exe *obj* *plus* e* j* f* gnat* *ssp* )
+
 mkdir $D/gccinc
-mkdir $D/gcc3inc
-mkdir $D/gcclib
 cp /usr/include/*.h $D/gccinc
 for i in sys machine cygwin ; do
   mkdir $D/gccinc/$i
   cp /usr/include/$i/*.h $D/gccinc/$i
 done
-cp /usr/lib/gcc/i686-pc-cygwin/3.4.4/include/*.h $D/gcc3inc
-cp /usr/lib/gcc/i686-pc-cygwin/3.4.4/libgcc.a $D/gcclib
+
+mkdir $D/gcclib
 cp /usr/lib/libcygwin.a $D/gcclib
 for i in libuser32.a libkernel32.a libadvapi32.a libshell32.a ; do
   cp /usr/lib/w32api/$i $D/gcclib
 done
 
+if false ; then
+mkdir $D/gcc3inc
+cp /usr/lib/gcc/i686-pc-cygwin/3.4.4/include/*.h $D/gcc3inc
+cp /usr/lib/gcc/i686-pc-cygwin/3.4.4/libgcc.a $D/gcclib
+fi
 
 if test -f "$S/src/nrnjava/neuron.jar" ; then
 	mkdir $D/classes

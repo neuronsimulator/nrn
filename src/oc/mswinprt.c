@@ -8,8 +8,10 @@
 #include <string.h>
 #include <errno.h>
 #include "hoc.h"
+#include "../mswin/extra/d2upath.c"
 
 extern char* neuron_home;
+extern char* neuron_home_dos;
 extern char* expand_env_var();
 extern double chkarg();
 
@@ -45,8 +47,9 @@ setneuronhome(p) char* p; {
 //	printf("setneuronhome |%s|\n", buf);
    for (j=strlen(buf); j >= 0 && buf[j] != '\\'; --j) {;}
    buf[j] = '\0'; // /bin gone
-   neuron_home = emalloc(strlen(buf) + 1);
-   strcpy(neuron_home, buf);
+   neuron_home_dos = emalloc(strlen(buf) + 1);
+   strcpy(neuron_home_dos, buf);
+   neuron_home = hoc_dos2unixpath(buf);
    return;
 #if 0
    // but make sure it was bin Bin or BIN -- damn you bill gates
@@ -187,31 +190,6 @@ char* hoc_back2forward(char* s) {
 	}
 	return s;
 }
-
-/* d must be full path starting with x: */
-/* if d does not start with x: then only change \ to / */
-/* u must be enough space to hold the unix path */
-void hoc_dos2unixpath(char* d, char* u) {
-	char* cu;
-	char* cd = d;
-	if (strlen(d) < 2 || d[1] != ':') {
-		u[0] = '\0';
-		cu = u;
-	}else{
-		strcpy(u, "/cygdrive/");
-		cu = u + strlen(u);
-		*cu++ = *cd++;
-		assert(*cd++ == ':');
-	}
-	while (*cd) {
-		*cu = *cd++;
-		if (*cu == '\\') {
-			*cu = '/';
-		}
-		cu++;
-	}		
-	*cu = '\0';
-}	
 
 #if HAVE_IV
 void ivoc_win32_cleanup();
