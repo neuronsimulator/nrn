@@ -9,11 +9,12 @@ These are set with
 	
 Minimise an interpreted hoc function or compiled hoc function with 
 	double x[n]
-	fit_praxis(n, "funname", x, "afterquad statement")
+	fit_praxis(n, "funname", &x[0], "afterquad statement")
 where n is the number of variables on which funname depends and
 x is a vector containing on entry a guess of the point of minimum
 and on exit contains the estimated point of minimum.
-Funname will be called with n args.
+(The third arg may be a Vector)
+Funname will be called with 2 args to be retrieved by $1 and $&2[i].
 afterquad statement (if the arg exists , will be executed
 at the end of each main loop iteration (complete conjugate gradient search
 followed by calculation of quadratic form)
@@ -31,6 +32,8 @@ one can retrieve the i'th principal value
 with pval_praxis(i). If you also want the i'th principal axis then use
 double a[n]
 pval = pval_praxis(i, &a)
+also can use
+pval = pval_praxis(i, Vector)
 */
 
 #include "hocdec.h"
@@ -40,6 +43,12 @@ extern int stoprun;
 extern double praxis(), praxis_pval(), *praxis_paxis(), chkarg();
 extern double *hoc_pgetarg();
 extern Object* hoc_thisobject;
+
+extern int hoc_is_pdouble_arg(int);
+extern void vector_resize(void*, int);
+extern double* vector_vec(void*);
+extern void* vector_arg(int);
+extern int vector_capacity(void*);
 
 static double efun();
 static Symbol* hoc_efun_sym;
@@ -85,8 +94,15 @@ int fit_praxis() {
 	}
 	machep = 1e-15;
 		
-	px = hoc_pgetarg(3);
-
+	if (!hoc_is_pdouble_arg(3)) {
+		void* vec = vector_arg(3);
+		if (vector_capacity(vec) != nvar) {
+			hoc_execerror("first arg not equal to size of Vector",0);
+		}
+		px = vector_vec(vec);
+	}else{
+		px = hoc_pgetarg(3);
+	}
 	if (ifarg(4)) {
 		after_quad = gargstr(4);
 	}else{
@@ -136,7 +152,13 @@ int pval_praxis() {
 		int j;
 		double *p1, *p2;
 		p1 = praxis_paxis(i);
-		p2 = hoc_pgetarg(2);
+		if (!hoc_is_pdouble_arg(2)) {
+			void* vec = vector_arg(2);
+			vector_resize(vec, nvar);
+			p2 = vector_vec(vec);
+		}else{
+			p2 = hoc_pgetarg(2);
+		}
 		for (j = 0; j < nvar; ++j) {
 			p2[j] = p1[j];
 		}
