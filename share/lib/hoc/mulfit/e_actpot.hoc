@@ -32,7 +32,7 @@ is the absolute y-difference between fixed relative x values.
 
 /* error is independent of position of Action potential peak */
 
-install_vector_fitness()
+{install_vector_fitness()}
 
 parmfitness_efun_append("APFitness")
 

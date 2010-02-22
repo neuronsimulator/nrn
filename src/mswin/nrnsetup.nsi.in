@@ -24,6 +24,7 @@ var "myCygVer2"
 var "myCygVer3"
 var "myCygVer"
 var "cpCygwin"
+var "uINSTDIR" ; posix version of $INSTDIR
 
 ; The basic program group name
 !define NEURON  "NEURON ${Version}"
@@ -102,6 +103,9 @@ FunctionEnd
 ; The primary neuron  install
 Section "${NEURON} (required)"
   SectionIn 1 RO
+  Push $INSTDIR
+  Call d2u
+  Pop $uINSTDIR
   ; Set output path to the installation directory.
   SetOutPath $INSTDIR
   ; Put file there
@@ -147,16 +151,16 @@ Section "Start Menu Shortcuts"
   SetOutPath "C:\" ; does not work, ends up as C
   StrCpy $OUTDIR "C:\"
   CreateShortCut "$SMPROGRAMS\${NEURON}\Uninstall.lnk" "$INSTDIR\uninstall.exe" "" "$INSTDIR\uninstall.exe" 0
-  CreateShortCut "$SMPROGRAMS\${NEURON}\nrngui.lnk" "$INSTDIR\bin\neuron.exe" "$INSTDIR\lib\hoc\nrngui.hoc" "$INSTDIR\bin\nrniv10.ico" 0
-  CreateShortCut "$SMPROGRAMS\${NEURON}\nrngui_python.lnk" "$INSTDIR\bin\neuron.exe" "-python $INSTDIR\lib\hoc\nrngui.hoc" "$INSTDIR\bin\nrniv10.ico" 0
-  CreateShortCut "$SMPROGRAMS\${NEURON}\mknrndll.lnk" "$INSTDIR\bin\nrniv.exe" "$INSTDIR\lib\hoc\mknrndll.hoc" "$INSTDIR\bin\nmodl2a.ico" 0
-  CreateShortCut "$SMPROGRAMS\${NEURON}\modlunit.lnk" "$INSTDIR\bin\nrniv.exe" "$INSTDIR\lib\hoc\modlunit.hoc" "$INSTDIR\bin\nmodl2a.ico" 0
+  CreateShortCut "$SMPROGRAMS\${NEURON}\nrngui.lnk" "$INSTDIR\bin\neuron.exe" "$uINSTDIR/lib/hoc/nrngui.hoc" "$INSTDIR\bin\nrniv10.ico" 0
+  CreateShortCut "$SMPROGRAMS\${NEURON}\nrngui_python.lnk" "$INSTDIR\bin\neuron.exe" "-python $uINSTDIR/lib/hoc/nrngui.hoc" "$INSTDIR\bin\nrniv10.ico" 0
+  CreateShortCut "$SMPROGRAMS\${NEURON}\mknrndll.lnk" "$INSTDIR\bin\nrniv.exe" "$uINSTDIR/lib/hoc/mknrndll.hoc" "$INSTDIR\bin\nmodl2a.ico" 0
+  CreateShortCut "$SMPROGRAMS\${NEURON}\modlunit.lnk" "$INSTDIR\bin\nrniv.exe" "$uINSTDIR/lib/hoc/modlunit.hoc" "$INSTDIR\bin\nmodl2a.ico" 0
   CreateShortCut "$SMPROGRAMS\${NEURON}\Notes.lnk" "notepad.exe" "$INSTDIR\notes.txt"
   WriteINIStr "$SMPROGRAMS\${NEURON}\NEURON Home Page.url" "InternetShortcut" "URL" "http://www.neuron.yale.edu/"
   SetOutPath "$INSTDIR\demo"
-  CreateShortCut "$SMPROGRAMS\${NEURON}\NEURON Demo.lnk" "$INSTDIR\bin\neuron.exe" "-dll $INSTDIR\demo\release\nrnmech.dll demo.hoc" "$INSTDIR\bin\nrniv10.ico" 0
+  CreateShortCut "$SMPROGRAMS\${NEURON}\NEURON Demo.lnk" "$INSTDIR\bin\neuron.exe" "-dll $uINSTDIR/demo/release/nrnmech.dll demo.hoc" "$INSTDIR\bin\nrniv10.ico" 0
   SetOutPath "$INSTDIR"
-  CreateShortCut "$SMPROGRAMS\${NEURON}\rxvt sh.lnk" "$INSTDIR\bin\rxvt.exe" "-fn 16 -fg black -bg white -sl 1000 -e $INSTDIR\bin\bash --rcfile $INSTDIR\lib\bshstart.sh -i" "$INSTDIR\bin\rxvt.exe" 0
+  CreateShortCut "$SMPROGRAMS\${NEURON}\rxvt sh.lnk" "$INSTDIR\bin\rxvt.exe" "-cd $uINSTDIR -fn 16 -fg black -bg white -sl 1000 -e $uINSTDIR/bin/bash --rcfile $uINSTDIR/lib/bshstart.sh -i" "$INSTDIR\bin\rxvt.exe" 0
   FileOpen $r1 "$INSTDIR\lib\smsinst.dat" "w"
   FileWrite $r1 "If $INSTDIR\lib\smsinst.dat exists then, on uninstall, the ${NEURON} Start Menu Shortcuts will be removed."
   FileClose $r1
@@ -167,16 +171,16 @@ Section "Desktop ${NEURON} folder with Shortcuts"
   CreateDirectory "$DESKTOP\${NEURON}"
   SetOutPath "C:\" ; does not work, ends up as C
   StrCpy $OUTDIR "C:\"
-  CreateShortCut "$DESKTOP\${NEURON}\nrngui.lnk" "$INSTDIR\bin\neuron.exe" "$INSTDIR\lib\hoc\nrngui.hoc" "$INSTDIR\bin\nrniv10.ico" 0
-  CreateShortCut "$DESKTOP\${NEURON}\nrngui_python.lnk" "$INSTDIR\bin\neuron.exe" "-python $INSTDIR\lib\hoc\nrngui.hoc" "$INSTDIR\bin\nrniv10.ico" 0
-  CreateShortCut "$DESKTOP\${NEURON}\mknrndll.lnk" "$INSTDIR\bin\nrniv.exe" "$INSTDIR\lib\hoc\mknrndll.hoc" "$INSTDIR\bin\nmodl2a.ico" 0
-  CreateShortCut "$DESKTOP\${NEURON}\modlunit.lnk" "$INSTDIR\bin\nrniv.exe" "$INSTDIR\lib\hoc\modlunit.hoc" "$INSTDIR\bin\nmodl2a.ico" 0
+  CreateShortCut "$DESKTOP\${NEURON}\nrngui.lnk" "$INSTDIR\bin\neuron.exe" "$uINSTDIR/lib/hoc/nrngui.hoc" "$INSTDIR\bin\nrniv10.ico" 0
+  CreateShortCut "$DESKTOP\${NEURON}\nrngui_python.lnk" "$INSTDIR\bin\neuron.exe" "-python $uINSTDIR/lib/hoc/nrngui.hoc" "$INSTDIR\bin\nrniv10.ico" 0
+  CreateShortCut "$DESKTOP\${NEURON}\mknrndll.lnk" "$INSTDIR\bin\nrniv.exe" "$uINSTDIR/lib/hoc/mknrndll.hoc" "$INSTDIR\bin\nmodl2a.ico" 0
+  CreateShortCut "$DESKTOP\${NEURON}\modlunit.lnk" "$INSTDIR\bin\nrniv.exe" "$uINSTDIR/lib/hoc/modlunit.hoc" "$INSTDIR\bin\nmodl2a.ico" 0
   CreateShortCut "$DESKTOP\${NEURON}\Notes.lnk" "notepad.exe" "$INSTDIR\notes.txt"
   WriteINIStr "$DESKTOP\${NEURON}\NEURON Home Page.url" "InternetShortcut" "URL" "http://www.neuron.yale.edu/"
   SetOutPath "$INSTDIR\demo"
-  CreateShortCut "$DESKTOP\${NEURON}\NEURON Demo.lnk" "$INSTDIR\bin\neuron.exe" "-dll $INSTDIR\demo\release\nrnmech.dll demo.hoc" "$INSTDIR\bin\nrniv10.ico" 0
+  CreateShortCut "$DESKTOP\${NEURON}\NEURON Demo.lnk" "$INSTDIR\bin\neuron.exe" "-dll $uINSTDIR/demo/release/nrnmech.dll demo.hoc" "$INSTDIR\bin\nrniv10.ico" 0
   SetOutPath "$INSTDIR"
-  CreateShortCut "$DESKTOP\${NEURON}\rxvt sh.lnk" "$INSTDIR\bin\rxvt.exe" "-fn 16 -fg black -bg white -sl 1000 -e $INSTDIR\bin\bash --rcfile $INSTDIR\lib\bshstart.sh -i" "$INSTDIR\bin\rxvt.exe" 0
+  CreateShortCut "$DESKTOP\${NEURON}\rxvt sh.lnk" "$INSTDIR\bin\rxvt.exe" "-cd $uINSTDIR -fn 16 -fg black -bg white -sl 1000 -e $uINSTDIR/bin/bash --rcfile $uINSTDIR/lib/bshstart.sh -i" "$INSTDIR\bin\rxvt.exe" 0
   FileOpen $r1 "$INSTDIR\lib\deskinst.dat" "w"
   FileWrite $r1 "If $INSTDIR\lib\deskinst.dat exists then, on uninstall, the ${NEURON} Desktop folder will be removed."
   FileClose $r1
@@ -277,5 +281,40 @@ SectionEnd
    Exch $R1
  FunctionEnd
 
+; cygwin 7 needs a posix version of InstallDir
+; d2u
+ ; input, top of stack = dos path
+ ; output, top of stack = posix path
+ ; modifies no other variables
+ ;
+ ; Usage:
+ ;  Push "c:\foo\bar"
+ ;  Call d2u
+ ;  Pop $R0
+ ;  ($R0 at this point is "/cygdrive/c/foo/bar")
+
+Function d2u
+  Exch $R1 ; st=old$R1, $R1 = dospath
+  Push $R2
+  Push $R3
+  Push $R4
+  StrLen $R3 $R1
+  StrCpy $R4 "/cygdrive/"
+  loop:
+    StrCpy $R2 "$R1" 1 ; first char remaining in R1
+    StrCmp $R2 "" done
+    StrCpy $R1 "$R1" $R3 1 ; replace with everythin except first char
+    StrCmp $R2 ":" loop ; discard
+    StrCmp $R2 "\" +1 +2 ; only reverse backslash, all others pass through
+    StrCpy $R2 "/"
+    StrCpy $R4 "$R4$R2" ; append char
+    Goto loop
+ done:
+  StrCpy $R1 $R4
+  Pop $R4
+  Pop $R3
+  Pop $R2
+  Exch $R1
+FunctionEnd
 ; eof
 

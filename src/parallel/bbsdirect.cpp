@@ -107,6 +107,12 @@ char* BBSDirect::upkstr() {
 	return s;
 }
 
+char* BBSDirect::upkpickle(size_t* n) {
+	char* s = 0;
+	assert(0);
+	return s;
+}
+
 void BBSDirect::pkbegin() {
 	if( pvm_initsend(PvmDataDefault) < 0 ) { perror("pkbegin"); }
 //	printf("pkbegin into sbuf %d\n", pvm_getsbuf());
@@ -133,6 +139,10 @@ void BBSDirect::pkstr(const char* s) {
 //	printf("pkstr |%s| into %d\n", s,  pvm_getsbuf());
 	if( pvm_pkint(&len, 1, 1)) { perror("pkstr length"); }
 	if( pvm_pkstr((char*)s)) { perror("pkstr string"); }
+}
+
+void BBSDirect::pkpickle(const char* s, size_t n) {
+	assert(0);
 }
 
 void BBSDirect::post(const char* key) {

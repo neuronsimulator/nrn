@@ -4,8 +4,8 @@ dnl disable caching. When configure fails, it is best to start from scratch.
 define([AC_CACHE_LOAD], )dnl
 define([AC_CACHE_SAVE], )dnl
 
-dnl when you change following also update svn2nrn_h.sh and hg2nrnversion.sh
-AC_INIT([nrn],[7.1])
+dnl when you change following also update svn2nrn_h.sh and hg2nrnversion_h.sh
+AC_INIT([nrn],[7.2])
 PACKAGE_VERSION_MAJOR=`echo "$PACKAGE_VERSION" | sed 's/\..*//'`
 PACKAGE_VERSION_MINOR=`echo "$PACKAGE_VERSION" | sed 's/^.*\.//'`
 AC_CONFIG_SRCDIR(src/memacs/main.c)
@@ -505,7 +505,7 @@ AC_CONFIG_FILES([
 	src/ivos/Makefile src/ivos/InterViews/Makefile src/ivos/OS/Makefile
 	src/nrnjava/Makefile src/nrnjava/nrnccmb/Makefile
 	src/nrnjava/neuron/Makefile
-	src/nrnpython/Makefile src/nrnpython/setup.py src/ni_pci_6229/Makefile
+	src/nrnpython/Makefile src/ni_pci_6229/Makefile
 	src/mac/Makefile src/mswin/Makefile src/mswin/batch/Makefile
 	src/mswin/nrnsetup.nsi src/mswin/nrncygso.sh src/mswin/lib/mknrndll.mak
 	src/mswin/extra/Makefile src/mswin/rdln/Makefile
@@ -533,6 +533,10 @@ AC_CONFIG_FILES([
 	share/demo/Makefile share/demo/release/Makefile share/demo/dend3/Makefile
 	share/demo/sync/Makefile
 	])
+AC_CONFIG_FILES([src/nrnpython/setup.py],
+  [if test $NRNPYTHON_PYMAJOR -gt 2 ; then $PY2TO3 -w src/nrnpython/setup.py ; fi],
+  [NRNPYTHON_PYMAJOR=$NRNPYTHON_PYMAJOR PY2TO3=$PY2TO3]
+)
 fi
 
 AC_OUTPUT

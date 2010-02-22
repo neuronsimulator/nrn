@@ -4059,6 +4059,7 @@ double nrn_hoc2scatter_y(void* v) {
 	if (s->capacity() != d->gcv_->neq_) { hoc_execerror("size of state vector != number of state equations", 0); }
 	if (nrn_nthread > 1) {hoc_execerror("only one thread allowed", 0);}
 	d->gcv_->scatter_y(vector_vec(s), 0);
+	return 0.;
 }
 
 void NetCvode::error_weights() {
@@ -4804,17 +4805,18 @@ void PreSynSave::savestate_restore(double tt, NetCvode* nc) {
 DiscreteEvent* PreSyn::savestate_read(FILE* f) {
 	PreSyn* ps = nil;
 	char buf[200];
-	int index;
+	int index, tid;
 	fgets(buf, 200, f);
-	assert(sscanf(buf, "%d\n", &index));
+	assert(sscanf(buf, "%d %d\n", &index, &tid) == 2);
 	ps = PreSynSave::hindx2presyn(index);
 	assert(ps);
+	ps->nt_ = nrn_threads + tid;
 	return new PreSynSave(ps);
 }
 
 void PreSynSave::savestate_write(FILE* f) {
 	fprintf(f, "%d\n", PreSynType);
-	fprintf(f, "%d\n", presyn_->hi_index_);
+	fprintf(f, "%d %d\n", presyn_->hi_index_, presyn_->nt_?presyn_->nt_->id:0);
 }
 
 declareTable(PreSynSaveIndexTable, long, PreSyn*)

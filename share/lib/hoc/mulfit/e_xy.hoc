@@ -1,6 +1,6 @@
 /* error is independent of position of Action potential peak */
 
-install_vector_fitness()
+{install_vector_fitness()}
 
 parmfitness_efun_append("XYFitness")
 

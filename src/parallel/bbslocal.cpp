@@ -80,6 +80,16 @@ char* BBSLocal::upkstr() {
 	return s;
 }
 
+char* BBSLocal::upkpickle(size_t* n) {
+	int len;
+	char* s;
+	if( !taking_ || taking_->upkint(&len)) { perror("upkpickle length"); }
+	s = new char[len];
+	if (taking_->upkpickle(s, n)) { perror("upkpickle data"); }
+	assert(*n == len);
+	return s;
+}
+
 void BBSLocal::pkbegin() {
 	Resource::unref(posting_);
 	posting_ = new MessageValue();
@@ -101,6 +111,11 @@ void BBSLocal::pkvec(int n, double* x) {
 void BBSLocal::pkstr(const char* s) {
 	if ( !posting_ || posting_->pkint(strlen(s))) { perror("pkstr length"); }
 	if ( !posting_ || posting_->pkstr(s)) { perror("pkstr string"); }
+}
+
+void BBSLocal::pkpickle(const char* s, size_t n) {
+	if ( !posting_ || posting_->pkint(n)) { perror("pkpickle size"); }
+	if ( !posting_ || posting_->pkpickle(s, n)) { perror("pkpickle data"); }
 }
 
 void BBSLocal::post(const char* key) {

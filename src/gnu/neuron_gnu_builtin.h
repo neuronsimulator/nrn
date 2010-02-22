@@ -107,7 +107,7 @@ inline double abs(double arg)
 #endif
 #endif
 
-#if !defined(WIN32) && !defined(__MWERKS__)
+#if INLINE_FLOAT_ABS
 inline float abs(float arg) 
 {
   return (arg < 0.0)? -arg : arg;
@@ -119,10 +119,13 @@ inline short abs(short arg)
   return (arg < 0)? -arg : arg;
 }
 
+#if INLINE_LONG_ABS
 inline long abs(long arg) 
 {
   return (arg < 0)? -arg : arg;
 }
+#endif
+
 #endif // not  __xlC__
 
 inline int sign(long arg)

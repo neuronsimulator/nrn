@@ -20,6 +20,7 @@ public:
 	double upkdouble();
 	void upkvec(int n, double* px); // n input px space must exist
 	char* upkstr(); // delete [] char* when finished
+	char* upkpickle(size_t* size); // delete [] char* when finished
 
 	// before posting use these
 	void pkbegin();
@@ -27,6 +28,7 @@ public:
 	void pkdouble(double);
 	void pkvec(int n, double* px); // doesn't pack n
 	void pkstr(const char*);
+	void pkpickle(const char*, size_t size);
 	void post(const char*);
 
 	int submit(int userid);
@@ -61,6 +63,7 @@ public:
 	double netpar_mindelay(double maxdelay);
 	void netpar_spanning_statistics(int*, int*, int*, int*);
 	IvocVect* netpar_max_histogram(IvocVect*);
+	Object** pyret();
 protected:
 	void init(int);
 protected:

@@ -1,4 +1,5 @@
 #include <../../nrnconf.h>
+#include "../nrnpython/nrnpython_config.h"
 #include <nrnmpi.h>
 #include "../nrnmpi/bbsmpipack.h"
 #include "bbsconf.h"
@@ -14,6 +15,10 @@
 #include "bbssrv.h"
 
 #define debug 0
+
+#if defined(USE_PYTHON)
+void (*p_nrnpython_start)(int);
+#endif
 
 #if defined(HAVE_STL)
 #if defined(HAVE_SSTREAM) // the standard ...
@@ -87,6 +92,10 @@ char* BBSClient::upkstr() {
 	return nrnmpi_upkstr(recvbuf_); // do not forget to free(string)
 }
 
+char* BBSClient::upkpickle(size_t* n) {
+	return nrnmpi_upkpickle(n, recvbuf_); // do not forget to free(string)
+}
+
 void BBSClient::pkbegin() {
 	if (!sendbuf_) {
 		sendbuf_ = nrnmpi_newbuf(100);
@@ -109,6 +118,10 @@ void BBSClient::pkvec(int n, double* x) {
 
 void BBSClient::pkstr(const char* s) {
 	nrnmpi_pkstr(s, sendbuf_);
+}
+
+void BBSClient::pkpickle(const char* s, size_t n) {
+	nrnmpi_pkpickle(s, n, sendbuf_);
 }
 
 void BBSClient::post(const char* key) {
@@ -229,6 +242,8 @@ int BBSClient::look_take_todo() {
 
 int BBSClient::take_todo() {
 	int type;
+	char* rs;
+	size_t n;
 	while((type = get(0, TAKE_TODO)) == CONTEXT) {
 		upkbegin();
 		upkint(); // throw away userid
@@ -236,7 +251,8 @@ int BBSClient::take_todo() {
 printf("%d execute context\n", nrnmpi_myid);
 fflush(stdout);
 #endif
-		execute_helper();
+		rs = execute_helper(&n);
+		if (rs) { delete [] rs; }
 	}
 	upkbegin();
 	return type;
@@ -280,6 +296,9 @@ void BBSClient::done() {
 #if debug
 printf("%d BBSClient::done\n", nrnmpi_myid);
 fflush(stdout);
+#endif
+#if defined(USE_PYTHON)
+	if (p_nrnpython_start) { (*p_nrnpython_start)(0);}
 #endif
 	BBSImpl::done();
 	nrnmpi_terminate();

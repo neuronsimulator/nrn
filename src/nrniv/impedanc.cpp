@@ -445,10 +445,12 @@ void Imp::setmat1() {
 	int i;
 	assert(_nt->tml->index == CAP);
 	for (i=0; i < nrn_nthread; ++i) {
+		double cj = nrn_threads[i].cj;
 		nrn_threads[i].cj = 0;
 		nrn_rhs(nrn_threads+i); // not useful except that many model description set g while
 			// computing i
 		nrn_lhs(nrn_threads+i);
+		nrn_threads[i].cj = cj;
 	}
 	for (i=0; i < n; ++i) {
 		NODERHS(_nt->_v_node[i]) = 0;

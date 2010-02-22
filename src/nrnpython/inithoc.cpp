@@ -12,10 +12,15 @@
 extern "C" {
 
 //int nrn_global_argc;
-//char** nrn_global_argv;
+extern char** nrn_global_argv;
 
 extern void nrnpy_augment_path();
+
+#if PY_MAJOR_VERSION >= 3
+extern PyObject* nrnpy_hoc();
+#else
 extern void nrnpy_hoc();
+#endif
 
 extern int nrn_is_python_extension;
 extern int ivocmain(int, char**, char**);
@@ -31,12 +36,24 @@ static char* argv_nompi[] = {"NEURON", "-dll", 0};
 static int argc_nompi = 1;
 
 static char* env[] = {0};
+#if PY_MAJOR_VERSION >= 3
+PyObject* PyInit_hoc() {
+#else
 void inithoc() {
+#endif
 	char buf[200];
 	
 	int argc = argc_nompi;
 	char** argv = argv_nompi;
 
+	if (nrn_global_argv) { //ivocmain was already called so already loaded
+#if PY_MAJOR_VERSION >= 3
+	return nrnpy_hoc();
+#else
+		nrnpy_hoc();
+		return;
+#endif
+	}
 #ifdef NRNMPI
 
 	int flag;
@@ -73,7 +90,11 @@ void inithoc() {
 #endif		
 	ivocmain(argc, argv, env);
 	nrnpy_augment_path();
+#if PY_MAJOR_VERSION >= 3
+	return nrnpy_hoc();
+#else
 	nrnpy_hoc();
+#endif
 }
 
 #if !defined(CYGWIN)

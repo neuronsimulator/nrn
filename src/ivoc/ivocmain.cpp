@@ -249,7 +249,6 @@ static void force_load() {
 
 #if defined(CYGWIN)
 // see iv/src/OS/directory.cpp
-extern "C" { extern void hoc_dos2unixpath(char*, char*); }
 #include <sys/stat.h>
 static boolean isdir(const char* p) {
 	struct stat st;
@@ -521,7 +520,11 @@ ENDGUI
 			fclose(f);
 			session->style()->load_file(String(nrn_props), -5);
 		}else{
+#if defined(CYGWIN)
+			sprintf(nrn_props, "%s/%s", neuron_home, "lib/nrn.def");
+#else
 			sprintf(nrn_props, "%s\\%s", neuron_home, "lib\\nrn.def");
+#endif
 			if ((f = fopen(nrn_props, "r")) != (FILE*)0) {
 				fclose(f);
 				session->style()->load_file(String(nrn_props), -5);
@@ -650,17 +653,13 @@ ENDGUI
 	if (nrn_is_python_extension) { return 0; }
 #if defined(CYGWIN) && defined(HAVE_SETENV)
 	if (!isdir("/usr/lib/python2.5")) {
-		char* path;
-		path = new char[strlen(neuron_home) + 20];
-		hoc_dos2unixpath(neuron_home, path);
-		char* buf = new char[strlen(path) + 20];
-		sprintf(buf, "%s/lib/%s", path, "python2.5");
+		char* buf = new char[strlen(neuron_home) + 20];
+		sprintf(buf, "%s/lib/%s", neuron_home, "python2.5");
 		if (isdir(buf)) {
-			setenv("PYTHONHOME", path, 0);
+			setenv("PYTHONHOME", neuron_home, 0);
 		}
 		delete [] buf;
-		delete [] path;
-		//printf("PYTHONHOME %s\n", getenv("PYTHONHOME"));
+
 	}
 #endif
 	//printf("p_nrnpython_start = %lx\n", p_nrnpython_start);

@@ -27,6 +27,7 @@ public:
 	virtual double upkdouble();
 	virtual void upkvec(int, double*);
 	virtual char* upkstr(); // delete [] char* when finished
+	virtual char* upkpickle(size_t*); // delete [] char* when finished
 
 	// before posting use these
 	virtual void pkbegin();
@@ -34,6 +35,7 @@ public:
 	virtual void pkdouble(double);
 	virtual void pkvec(int, double*);
 	virtual void pkstr(const char*);
+	virtual void pkpickle(const char*, size_t);
 	virtual void post(const char*);
 
 	virtual void post_todo(int parentid);

@@ -143,23 +143,17 @@ char* neuronhome_forward() {
 #endif
 }
 
+char *neuron_home_dos;
 hoc_neuronhome() {
 	extern char* neuron_home;
-#if defined(WIN32)
-	static char* buf;
-	extern char* hoc_back2forward();
-	extern void hoc_forward2back();
-	if (!buf) {
-		buf = emalloc(strlen(neuron_home)+1);
-		strcpy(buf, neuron_home);
-	}
+#if defined(WIN32)||defined(CYGWIN)
 	if (ifarg(1) && (int)chkarg(1, 0., 1.) == 1) {
-		hoc_forward2back(buf);
+		hoc_ret();
+		hoc_pushstr(&neuron_home_dos);
 	}else{
-		hoc_back2forward(buf);
+		hoc_ret();
+		hoc_pushstr(&neuron_home);
 	}
-	hoc_ret();
-	hoc_pushstr(&buf);
 #else
 	hoc_ret();
 	hoc_pushstr(&neuron_home);

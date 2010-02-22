@@ -14,6 +14,7 @@ public:
 	virtual ~MessageItem();
 	MessageItem* next_;
 	int type_;
+	size_t size_; // for pickle type
 	union {
 		int i;
 		double d;
@@ -32,11 +33,13 @@ public:
 	int upkdouble(double*);
 	int upkvec(int, double*);
 	int upkstr(char*);
+	int upkpickle(char*, size_t*);
 
 	int pkint(int);
 	int pkdouble(double);
 	int pkvec(int, double*);
 	int pkstr(const char*);
+	int pkpickle(const char*, size_t);
 private:
 	MessageItem* link();
 private:

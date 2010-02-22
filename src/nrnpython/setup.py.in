@@ -7,6 +7,7 @@ import sys
 extern_defines = "@NRNPYTHON_DEFINES@"
 nrnpython_exec = "@NRNPYTHON_EXEC@"
 nrn_srcdir = "@NRN_SRCDIR@"
+instdir = "@prefix@"
 if nrn_srcdir[0] != '/' :
     nrn_srcdir = '../../' + nrn_srcdir
 
@@ -76,9 +77,9 @@ hoc_module = Extension(
 
 
 
-setup(name="NEURON", version="7.0",
+setup(name="NEURON", version="@PACKAGE_VERSION@",
       description = "NEURON bindings for python",
-      package_dir = {'':nrn_srcdir+'/share/lib/python'},
+      package_dir = {'':instdir+'/share/nrn/lib/python'},
       packages=['neuron','neuron.tests'],
       ext_modules=[hoc_module]
 )

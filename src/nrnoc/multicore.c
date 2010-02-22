@@ -291,9 +291,9 @@ return;
 	cpu_set_t mask;
 	CPU_ZERO(&mask);
 	CPU_SET(i, &mask);
-#endif
 	mask = (1 << i);
 	sched_setaffinity(0, 4, &mask);
+#endif
 }
 
 static void* slave_main(void* arg) {

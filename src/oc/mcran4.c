@@ -14,8 +14,9 @@ void mcell_ran4_init(idum)
 	return;
 }
 
-double mcell_ran4(idum,ran_vec,n,range)
+double mcell_ran4_64(idum, ilow, ran_vec,n,range)
   unsigned int *idum,n;
+  unsigned int ilow;
   double *ran_vec,range;
 {
 	unsigned int irword,lword;
@@ -27,7 +28,7 @@ double mcell_ran4(idum,ran_vec,n,range)
                 0x4b0f3b58L, 0xe874f0c3L, 0x6955c5a6L, 0x55a7ca46L};
 
         range=range*2.3283064365386963e-10;
-	lword=idums;
+	lword=ilow;
 
 	for (i=0;i<n;i++) {
 	  irword=(*idum);
@@ -56,10 +57,15 @@ double mcell_ran4(idum,ran_vec,n,range)
         return(ran_vec[0]);
 }
 
+double mcell_ran4(idum, ran_vec,n,range)
+  unsigned int *idum,n;
+  double *ran_vec,range;
+{
+	return mcell_ran4_64(idum, idums, ran_vec, n, range);
+}
 
-
-unsigned int mcell_iran4(idum,iran_vec,n)
-  unsigned int *idum,*iran_vec,n;
+unsigned int mcell_iran4_64(idum, ilow, iran_vec,n)
+  unsigned int *idum, ilow, *iran_vec,n;
 {
 	unsigned int irword,lword;
         unsigned int i,j,ia,ib,iswap,itmph=0,itmpl=0;
@@ -68,7 +74,7 @@ unsigned int mcell_iran4(idum,iran_vec,n)
         static unsigned int c2[4]={
                 0x4b0f3b58L, 0xe874f0c3L, 0x6955c5a6L, 0x55a7ca46L};
 
-	lword=idums;
+	lword=ilow;
 
 	for (i=0;i<n;i++) {
 	  irword=(*idum);
@@ -95,6 +101,12 @@ unsigned int mcell_iran4(idum,iran_vec,n)
 	  ++(*idum);
         }
         return(iran_vec[0]);
+}
+
+unsigned int mcell_iran4(idum,iran_vec,n)
+  unsigned int *idum,*iran_vec,n;
+{
+	return mcell_iran4_64( idum, idums, iran_vec, n);
 }
 
 #undef NITER

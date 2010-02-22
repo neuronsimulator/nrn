@@ -72,7 +72,7 @@ func prun() {
 	}else{
 		minerr = praxis_efun(start.size, &start.x[0])
 		if (stoprun) {return minerr}
-		if (minerr > 10000) {return minerr}
+		//if (minerr > 10000) {return minerr}
 		stop_praxis(nstep)
 		after_quad()
 		minerr = fit_praxis(start.size, "praxis_efun", &start.x[0],"after_quad()\n")
