@@ -13,6 +13,7 @@ begintemplate YFitness
 public efun, g, set_data, set_modelx, use_x, have_data, clone
 public xdat_, xdat, ydat, weight, tag, build
 public unmap, map, vbox, rfile, wfile, before_run, mintstop
+public n_chdat
 
 objref xdat, ydat	// authoritative data
 objref xdat_, ydat_, indx_ // subset of data points to fit
@@ -42,6 +43,7 @@ func mintstop() {
 }
 
 proc init() {local i
+	n_chdat = 0
 	sprint(tag, "%s", this)
 	sscanf(tag, "%[^[]", tag)
 	weight = 1
@@ -98,6 +100,7 @@ proc set_modelx() {
 }
 
 proc setxy() {local i
+	n_chdat += 1
 	for (i = indx_.size-1; i > 0; i -= 1) {
 		if (indx_.x[i] == indx_.x[i-1]) {
 			indx_.remove(i)
