@@ -1,5 +1,10 @@
 #include <string>
+
+#if defined(NO_PYTHON_H)
+typedef struct _object PyObject;
+#else
 #include <Python.h>
+#endif
 #include <music.hh>
 
 class PreSyn;
@@ -12,7 +17,7 @@ namespace NRNMUSIC {
   class EventOutputPort : public MUSIC::EventOutputPort {
   public:
     EventOutputPort (MUSIC::Setup* s, std::string id)
-      : MUSIC::EventOutputPort (s, id) { }
+      : MUSIC::Port (s, id), MUSIC::EventOutputPort (s, id) { }
     
     // Connect a gid to a MUSIC global index in this port
     void gid2index (int gid, int gi);

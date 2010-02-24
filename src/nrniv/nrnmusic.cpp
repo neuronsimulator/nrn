@@ -1,4 +1,5 @@
-#include <nrnmusic.h>
+#define NO_PYTHON_H 1
+#include <../neuronmusic/nrnmusic.h>
 
 extern "C" {
 extern int nrnmusic;
