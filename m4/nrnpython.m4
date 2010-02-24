@@ -101,6 +101,7 @@ and PYINCDIR to find Python.h
 		fi
 
 		echo "Python binary found ($ac_nrn_python)"
+		PYTHON=$ac_nrn_python
 
 		if test "$CYGWIN" = "yes" ; then
 			dnl if python does not use cygwin then neither should we
@@ -224,4 +225,5 @@ PYLIB="${PYLIBLINK} ${PYLINKFORSHARED} -R${PYLIBDIR}"
 	AC_SUBST(setup_extra_link_args)
 	AC_SUBST(NRNPYTHON_PYMAJOR)
 	AC_SUBST(PY2TO3)
+	AC_SUBST(PYTHON)
 ]) dnl end of AC_NRN_PYTHON
