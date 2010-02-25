@@ -111,6 +111,10 @@ static double last_maxstep_arg_;
 static NetParEvent* npe_; // nrn_nthread of them
 static int n_npe_; // just to compare with nrn_nthread
 
+#if NRN_MUSIC
+#include "nrnmusic.cpp"
+#endif
+
 NetParEvent::NetParEvent(){
 	wx_ = ws_ = 0.;
 	ithread_ = -1;
@@ -321,6 +325,12 @@ void nrn_spike_exchange_init() {
 			return;
 		}
 	}
+
+#if NRN_MUSIC
+	if (nrnmusic) {
+		nrnmusic_runtime_phase();
+	}
+#endif
 
 #if BGPDMA
 	if (use_bgpdma_) {
@@ -1078,3 +1088,5 @@ printf("Notice: gid compression did not succeed. Probably more than 255 cells on
 #if BGPDMA
 #include "bgpdma.cpp"
 #endif
+
+

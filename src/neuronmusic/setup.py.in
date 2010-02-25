@@ -1,0 +1,30 @@
+#setup.py for neuronmusic extension
+from distutils.core import setup, Extension
+
+nrn_srcdir = "@NRN_SRCDIR@"
+instdir = "@prefix@"
+if nrn_srcdir[0] != '/' :
+    nrn_srcdir = '../../' + nrn_srcdir
+
+mpicc_bin = "@CC@"
+mpicxx_bin = "@CXX@"
+import os
+os.environ["CC"]=mpicc_bin
+os.environ["CXX"]=mpicxx_bin
+
+include_dirs = ['@MUSIC_INCDIR@', nrn_srcdir+'/src/neuronmusic', '.']
+libdirs = ['@MUSIC_LIBDIR@']
+
+neuronmusic_module = Extension(
+    'neuronmusic',
+    ['neuronmusic.cpp'],
+    library_dirs = libdirs,
+    libraries = ['music'],
+    include_dirs = include_dirs
+)
+
+setup(name="neuronmusic", version="@PACKAGE_VERSION@",
+    description = "NEURON+MUSIC python interface",
+    package_dir = {'':instdir+'/share/nrn/lib/python'},
+    ext_modules=[neuronmusic_module]
+)

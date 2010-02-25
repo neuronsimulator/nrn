@@ -106,6 +106,9 @@ extern void nrn_use_busywait(int);
 extern double* nrn_recalc_ptr(double*);
 void* nrn_interthread_enqueue(NrnThread*);
 extern void (*nrnmpi_v_transfer_)(NrnThread*);
+#if NRN_MUSIC
+extern void nrnmusic_injectlist(void*, double);
+#endif
 
 extern int nrn_fornetcon_cnt_;
 extern int* nrn_fornetcon_index_;
@@ -3084,6 +3087,11 @@ void PreSyn::send(double tt, NetCvode* ns, NrnThread* nt) {
 #if BGPDMA
 	    }
 #endif //BGPDMA
+#if NRN_MUSIC
+		if (music_port_) {
+			nrnmusic_injectlist(music_port_, tt);
+		}
+#endif // NRN_MUSIC
 	}
 #endif //USENCS || NRNMPI
 }
@@ -4724,6 +4732,9 @@ PreSyn::PreSyn(double* src, Object* osrc, Section* ssrc) {
 #endif
 #if BGPDMA
 	bgp.dma_send_ = 0;
+#endif
+#if NRN_MUSIC
+	music_port_ = 0;
 #endif
 #if DISCRETE_EVENT_OBSERVER
 #if HAVE_IV

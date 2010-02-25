@@ -215,6 +215,7 @@ fi
 AC_SUBST(MINGW_CFLAG)
 AC_SUBST(EXTRA_CYGWIN_FLAGS)
 
+AC_NRN_MUSIC
 AC_NRN_PARANEURON
 AC_NRN_WITH_MPI
 AC_NRN_WITH_METIS
@@ -510,7 +511,7 @@ AC_CONFIG_FILES([
 	src/mswin/extra/Makefile src/mswin/rdln/Makefile
 	src/mswin/windll/Makefile src/mswin/winio/Makefile
 	src/mswin/wnrnbbs/Makefile src/mswin/lib/Makefile
-	src/mswin/bin/Makefile
+	src/mswin/bin/Makefile src/neuronmusic/Makefile src/neuronmusic/setup.py
 	share/Makefile bin/nrnoc_makefile bin/nrniv_makefile bin/nrnmech_makefile
 	share/lib/Makefile share/lib/hoc/Makefile share/lib/python/Makefile
 	share/lib/hoc/celbild/Makefile share/lib/hoc/mulfit/Makefile

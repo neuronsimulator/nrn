@@ -57,6 +57,12 @@ else
 nrnpythonbuild =
 endif
 
+if BUILD_NEURONMUSIC
+neuronmusicbuild = neuronmusic
+else
+neuronmusicbuild =
+endif
+
 npydir = npy23 npy24 npy25 npy26 npy30
 
 if BUILD_NRNPYTHON_DYNAMIC
@@ -90,13 +96,13 @@ SUBDIRS = $(nmodlbuild)
 else
 SUBDIRS = $(readlinebuild) $(memacsbuild) $(nmodlbuild) $(NRNOC_SUBDIRS) \
 	$(nrnjavabuild) $(ivosbuild) $(nrnpythonbuild) $(nrnpydynam) \
-	$(build_6229) $(nrnivbuild) $(mos2nrnbuild) \
+	$(build_6229) $(nrnivbuild) $(mos2nrnbuild) $(neuronmusicbuild) \
 	mac mswin
 endif
 
 DIST_SUBDIRS = $(MEMACS_SUBDIRS) $(READLINE_SUBDIRS) $(NMODL_SUBDIRS) $(NRNOC_SUBDIRS) \
 	$(NRNJAVA_SUBDIRS) $(NRNIV_SUBDIRS) $(IVOS_SUBDIRS) \
-	$(NRNPYTHON_SUBDIRS) mswin uxnrnbbs mac ni_pci_6229
+	$(NRNPYTHON_SUBDIRS) mswin uxnrnbbs mac ni_pci_6229 neuronmusic
 
 dist-hook: $(npydir)
 	for subdir in $(npydir) ; do \
