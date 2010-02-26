@@ -738,3 +738,107 @@ void determine_targids_on_srchost(int* s, int* scnt, int* sdispl,
 #endif
 }
 
+#ifdef USENCS
+
+//give me data on which gids of this node send out APs
+int ncs_bgp_sending_info( int **sendlist2build )
+{
+	int nsrcgid = 0;
+	NrnHashIterate(Gid2PreSyn, gid2out_, PreSyn*, ps) {
+		if (ps->output_index_ >= 0) {
+			++nsrcgid;
+		}
+	}}}
+
+	*sendlist2build = nsrcgid ? new int[nsrcgid] : 0;
+	int i = 0;
+	NrnHashIterate(Gid2PreSyn, gid2out_, PreSyn*, ps) {
+		if (ps->output_index_ >= 0) {
+			(*sendlist2build)[i] = ps->gid_;
+			++i;
+		}
+	}}}
+    
+    //printf( "Node %d sees first hand %d gids send\n", nrnmpi_myid, nsrcgid );
+    return nsrcgid;
+}
+
+
+//function to access the sending information of a presyn
+int ncs_bgp_target_hosts( int gid, int** targetnodes )
+{
+    PreSyn* ps;
+    assert(gid2out_->find(gid, ps));
+    if( ps->bgp.dma_send_ ) {
+        (*targetnodes) = ps->bgp.dma_send_->ntarget_hosts_? new int[ps->bgp.dma_send_->ntarget_hosts_] : 0;
+        return ps->bgp.dma_send_->ntarget_hosts_;
+    }
+    
+    return 0;
+}
+
+//iterate over gid2in_ just so I can see what is in there
+int ncs_bgp_target_info( int **presyngids )
+{
+    //(*presyngids) = 0;
+
+	int i, nsrcgid;
+	PreSyn* ps;
+    nsrcgid = 0;
+
+	// some target PreSyns may not have any input
+	// so initialize all to -1
+	NrnHashIterate(Gid2PreSyn, gid2in_, PreSyn*, ps) {
+		assert(ps->output_index_ < 0);
+		if( ps->bgp.srchost_ != -1 )  //has input
+        {
+            ++nsrcgid;
+            //printf( "Node %d: Presyn for gid %d has src %d\n", nrnmpi_myid, ps->gid_, ps->bgp.srchost_ );
+        }
+	}}}
+    
+    (*presyngids) = nsrcgid ? new int[nsrcgid] : 0;
+    
+    i=0;
+    NrnHashIterate(Gid2PreSyn, gid2in_, PreSyn*, ps) {
+		assert(ps->output_index_ < 0);
+		if( ps->bgp.srchost_ != -1 )  //has input
+        {
+            (*presyngids)[i] = ps->gid_;
+            ++i;
+        }
+	}}}
+    
+    return nsrcgid;
+}
+
+int ncs_bgp_mindelays( int **srchost, double **delays )
+{
+    int i, nsrcgid=0;
+
+	NrnHashIterate(Gid2PreSyn, gid2in_, PreSyn*, ps) {
+        assert(ps->output_index_ < 0);
+        if( ps->bgp.srchost_ != -1 )  //has input
+        {
+            ++nsrcgid;
+        }
+	}}}
+
+    (*delays) = nsrcgid ? new double[nsrcgid] : 0;
+    (*srchost) = nsrcgid ? new int[nsrcgid] : 0;
+    
+    i=0;
+    NrnHashIterate(Gid2PreSyn, gid2in_, PreSyn*, ps) {
+		assert(ps->output_index_ < 0);
+		if( ps->bgp.srchost_ != -1 )  //has input
+        {
+            (*delays)[i] = ps->mindelay();
+            (*srchost)[i] = ps->bgp.srchost_;
+            ++i;
+        }
+	}}}
+    
+    return nsrcgid;
+}
+
+#endif

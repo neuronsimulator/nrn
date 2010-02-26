@@ -73,6 +73,88 @@ extern void nrnmpi_int_allgather(int*, int*, int);
 void nrn2ncs_outputevent(int netcon_output_index, double firetime);
 }
 
+#ifdef USENCS
+extern int ncs_bgp_sending_info( int ** );
+extern int ncs_bgp_target_hosts( int, int** );
+extern int ncs_bgp_target_info( int ** );
+extern int ncs_bgp_mindelays( int **, double ** );
+
+//get minimum delays for all presyn objects in gid2in_
+int ncs_netcon_mindelays( int**hosts, double **delays )
+{
+    return ncs_bgp_mindelays(hosts, delays);
+}
+
+double ncs_netcon_localmindelay( int srcgid )
+{
+    PreSyn *ps;
+    gid2out_->find( srcgid, ps );
+    assert(ps);
+    
+    return ps->mindelay();
+}
+
+//get the number of netcons for an object, if it sends here
+int ncs_netcon_count( int srcgid, bool localNetCons )
+{
+    PreSyn *ps;
+    int flag = false;
+    if( localNetCons )
+        gid2out_->find( srcgid, ps );
+    else
+        gid2in_->find( srcgid, ps );
+    if( !ps ) {  //no cells on this cpu receive from the given gid
+        fprintf( stderr, "should never happen!\n" );
+        return 0;
+    }
+    
+    return ps->dil_.count();
+}
+
+//inject a spike into the appropriate netcon
+void ncs_netcon_inject( int srcgid, int netconIndex, double spikeTime, bool localNetCons )
+{
+    PreSyn *ps;
+    NetCvode* ns = net_cvode_instance;
+    if( localNetCons )
+        gid2out_->find( srcgid, ps );
+    else
+        gid2in_->find( srcgid, ps );
+    if( !ps ) {  //no cells on this cpu receive from the given gid
+        return;
+    }
+    
+    //fprintf( stderr, "gid %d index %d!\n", srcgid, netconIndex );
+    NetCon* d = ps->dil_.item(netconIndex);
+    NrnThread* nt = nrn_threads;
+    if (d->active_ && d->target_) {
+#if BBTQ == 5
+        ns->bin_event(spikeTime + d->delay_, d, nt);
+#else
+        ns->event(spikeTime + d->delay_, d, nt);
+#endif
+    }
+}
+
+int ncs_gid_receiving_info( int **presyngids ) {
+    return ncs_bgp_target_info( presyngids );
+}
+
+//given the gid of a cell, retrieve its target count
+int ncs_gid_sending_count( int **sendlist2build ) {
+    if( !gid2out_ ) {
+        fprintf( stderr, "gid2out_ not allocated\n" );
+        return -1;
+    }
+    return ncs_bgp_sending_info( sendlist2build );
+}
+
+int ncs_target_hosts( int gid, int** targetnodes ) {
+    return ncs_bgp_target_hosts( gid, targetnodes );
+}
+
+#endif
+
 // for compressed gid info during spike exchange
 boolean nrn_use_localgid_;
 void nrn_outputevent(unsigned char localgid, double firetime);
@@ -214,6 +296,7 @@ inline static int spupk(unsigned char* c) {
 	}
 	return gid;
 }
+
 void nrn_outputevent(unsigned char localgid, double firetime) {
 	if (!active_) { return; }
 	nout_++;
@@ -228,6 +311,7 @@ void nrn_outputevent(unsigned char localgid, double firetime) {
 //printf("%d idx=%d lgid=%d firetime=%g t_exchange_=%g [0]=%d [1]=%d\n", nrnmpi_myid, i, (int)localgid, firetime, t_exchange_, (int)spfixout_[i-1], (int)spfixout_[i]);
 }
 
+#ifndef USENCS
 void nrn2ncs_outputevent(int gid, double firetime) {
 	if (!active_) { return; }
     if (use_compress_) {
@@ -272,6 +356,7 @@ void nrn2ncs_outputevent(int gid, double firetime) {
     }
 //printf("%d cell %d in slot %d fired at %g\n", nrnmpi_myid, gid, i, firetime);
 }
+#endif //USENCS
 #endif // NRNMPI
 
 static int nrn_need_npe() {
@@ -308,6 +393,10 @@ static void calc_actual_mindelay() {
 }
 
 void nrn_spike_exchange_init() {
+#ifdef USENCS
+    bgp_dma_setup();
+    return;
+#endif
 //printf("nrn_spike_exchange_init\n");
 	if (!nrn_need_npe()) { return; }
 //	if (!active_ && !nrn_use_selfqueue_) { return; }

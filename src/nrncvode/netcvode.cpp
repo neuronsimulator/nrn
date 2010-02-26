@@ -3035,6 +3035,7 @@ void NetCon::pr(const char* s, double tt, NetCvode* ns) {
 void PreSyn::send(double tt, NetCvode* ns, NrnThread* nt) {
 	int i;
 	record(tt);
+#ifndef USENCS
 	if (use_min_delay_) {
 		STATISTICS(presyn_send_mindelay_);
 #if BBTQ == 3 || BBTQ == 4
@@ -3070,6 +3071,7 @@ void PreSyn::send(double tt, NetCvode* ns, NrnThread* nt) {
 			}
 		}
 	}
+#endif //ndef USENCS
 #if USENCS || NRNMPI
 	if (output_index_ >= 0) {
 #if BGPDMA
@@ -3602,7 +3604,7 @@ void ncs2nrn_integrate(double tstop) {
 	    }else
 #endif
 	{
-#if NRNMPI
+#if NRNMPI && !defined(USENCS)
 		ts = tstop - dt;
 		assert(nt_t <= tstop);
 		// It may very well be the case that we do not advance at all
@@ -3669,7 +3671,8 @@ static void all_pending_selfqueue(double tt) {
 #if USENCS
 
 void ncs2nrn_inputevent(int i, double tdeliver) {
-	net_cvode_instance->event(tdeliver, ncs2nrn_input_->item(i));
+    NrnThread* nt = nrn_threads;
+	net_cvode_instance->event(tdeliver, ncs2nrn_input_->item(i), nt);
 }
 
 // hoc tells us which are the input NetCons and which are the
