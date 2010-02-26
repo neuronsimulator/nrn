@@ -133,8 +133,14 @@ for i in \
  cp $i $D/bin
 done
 
-mkdir $D/lib/x
-cp /usr/share/terminfo/x/xterm $D/lib/x/xterm
+#mkdir $D/lib/x
+#cp /usr/share/terminfo/x/xterm $D/lib/x/xterm
+#as of cygwin 7 it is here
+mkdir $D/usr
+mkdir $D/usr/share
+mkdir $D/usr/share/terminfo
+mkdir $D/usr/share/terminfo/78
+cp /usr/share/terminfo/78/xterm $D/usr/share/terminfo/78/xterm
 
 cp $S/src/mswin/*.ico $D/bin
 
