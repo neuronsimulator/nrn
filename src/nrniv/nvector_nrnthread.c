@@ -47,7 +47,9 @@
 #define ldrealtype realtype
 #endif
 
+#if USE_PTHREAD
 static MUTDEC
+#endif
 /* argument passing between NrnThread and Serial */
 static N_Vector x_;
 static N_Vector y_;

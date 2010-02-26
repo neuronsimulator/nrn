@@ -31,8 +31,9 @@ static int nrnmpi_bufcnt_;
 #define my_MPI_DOUBLE 1
 #define my_MPI_CHAR 2
 #define my_MPI_PACKED 3
+#define my_MPI_PICKLE 4
 
-static MPI_Datatype mytypes[] = {MPI_INT, MPI_DOUBLE, MPI_CHAR, MPI_PACKED};
+static MPI_Datatype mytypes[] = {MPI_INT, MPI_DOUBLE, MPI_CHAR, MPI_PACKED, MPI_CHAR};
 
 static void unpack(void* buf, int count, int my_datatype, bbsmpibuf* r, const char* errmes) {
 	int type[2];
@@ -135,6 +136,16 @@ char* nrnmpi_upkstr(bbsmpibuf* r) {
 	return s;
 }
 
+char* nrnmpi_upkpickle(size_t* size, bbsmpibuf* r) {
+	int len;
+	char* s;
+	unpack(&len, 1, my_MPI_INT, r, "upkpickle length");
+	*size = len;
+	s = (char*) hoc_Emalloc(len * sizeof(char)); hoc_malchk();
+	unpack(s, len, my_MPI_PICKLE, r, "upkpickle data");
+	return s;
+}
+
 static void resize(bbsmpibuf* r, int size) {
 	int newsize;
 	if (r->size < size) {
@@ -223,6 +234,12 @@ void nrnmpi_pkstr(const char* s, bbsmpibuf* r) {
 	len = strlen(s);
 	pack(&len, 1, my_MPI_INT, r, "pkstr length");
 	pack((char*)s, len, my_MPI_CHAR, r, "pkstr string");
+}
+
+void nrnmpi_pkpickle(const char* s, size_t size, bbsmpibuf* r) {
+	int len = size;
+	pack(&len, 1, my_MPI_INT, r, "pkpickle length");
+	pack((char*)s, len, my_MPI_PICKLE, r, "pkpickle data");
 }
 
 void nrnmpi_bbssend(int dest, int tag, bbsmpibuf* r) {

@@ -13,6 +13,7 @@ fi
 CPU=$1
 prefix=$2
 srcdir=$3
+ivlibdir=$4
 export CPU
 
 NSRC="$3"
@@ -77,9 +78,8 @@ fi
 
 
 # only after an iv installation
-#if test "$1" = "iv" ; then
-if true ; then
-	cd ${N}/../iv/${CPU}/lib
+if test -d "$ivlibdir" ; then
+	cd "${ivlibdir}"
 	for i in *.dylib ; do
 		if test ! -L $i ; then
 			strip -x $i

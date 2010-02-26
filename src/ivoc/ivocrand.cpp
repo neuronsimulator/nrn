@@ -58,32 +58,42 @@ Rand* nrn_random_arg(int);
 
 void mcell_ran4_init(unsigned int* idum);
 double mcell_ran4(unsigned int* idum, double* ran_vec, int n, double range);
+double mcell_ran4_64(unsigned int* idum, unsigned int ilow, double* ran_vec, int n, double range);
 unsigned int mcell_iran4(unsigned int* idum, unsigned int* iran_vec, int n);
+unsigned int mcell_iran4_64(unsigned int* idum, unsigned int ilow, unsigned int* iran_vec, int n);
 }
 
 // The decision that has to be made is whether each generator instance
 // should have its own seed or only one seed for all. We choose separate
 // seed for each but if arg not present or 0 then seed chosen by system.
 
+// the addition of ilow > 0 means that value is used for the lowindex
+// instead of the mcell_ran4_init global 32 bit lowindex.
+
 class MCellRan4 : public RNG {
 public:
-	MCellRan4(unsigned int idum = 0);
+	MCellRan4(unsigned int idum = 0, unsigned int ilow = 0);
 	virtual ~MCellRan4();
 	virtual _G_uint32_t asLong() {
-		return (_G_uint32_t)mcell_iran4(&idum_, iran_vec, 1);
+		return (_G_uint32_t)(ilow_ == 0 ? mcell_iran4(&idum_, iran_vec, 1) :
+			mcell_iran4_64(&idum_, ilow_, iran_vec, 1));
 	}
 	virtual void reset() { idum_ = orig_; }
-	virtual double asDouble() { return mcell_ran4(&idum_, ran_vec, 1, 1.); }
+	virtual double asDouble() {
+		return (ilow_ == 0 ? mcell_ran4(&idum_, ran_vec, 1, 1.) :
+			 mcell_ran4_64(&idum_, ilow_, ran_vec, 1, 1.)); }
 	unsigned int idum_;
 	unsigned int orig_;
+	unsigned int ilow_;
 private:
 	static unsigned int cnt_;
 	double ran_vec[1];
 	unsigned int iran_vec[1];
 };
 
-MCellRan4::MCellRan4(unsigned int idum) {
+MCellRan4::MCellRan4(unsigned int idum, unsigned int ilow) {
 	++cnt_;
+	ilow_ = ilow;
 	idum_ = idum;
 	if (idum_ == 0) {
 		idum_ = cnt_;
@@ -257,9 +267,11 @@ static double r_MCellRan4(void* r) {
   Rand* x = (Rand*)r;
 
   unsigned long seed1 = 0;
+  unsigned long ilow = 0;
 
   if (ifarg(1)) seed1 = long(*getarg(1));
-  MCellRan4* mcr = new MCellRan4(seed1);
+  if (ifarg(2)) ilow = long(*getarg(2));
+  MCellRan4* mcr = new MCellRan4(seed1, ilow);
   x->rand->generator(mcr);
   delete x->gen;
   x->gen = x->rand->generator();

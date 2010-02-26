@@ -361,6 +361,37 @@ AC_DEFUN([NRN_FABS],[
  if test "$ivos_fabs" != "" ; then
 	AC_DEFINE_UNQUOTED(IVOS_FABS,$ivos_fabs,[undefined or ::fabs or std::fabs])
  fi
+
+ AC_TRY_COMPILE([
+#include <stdlib.h>
+#include <stddef.h>
+#include <math.h>
+float abs(float arg);
+inline float abs(float arg)
+{
+  return (arg < 0.0)? -arg : arg;
+}
+ ],[
+	return 0;
+ ],
+	AC_DEFINE(INLINE_FLOAT_ABS,1,[define if can declare inline float abs(float)])
+ )
+
+ AC_TRY_COMPILE([
+#include <stdlib.h>
+#include <stddef.h>
+#include <math.h>
+long abs(long arg);
+inline long abs(long arg)
+{
+  return (arg < 0.0)? -arg : arg;
+}
+ ],[
+	return 0;
+ ],
+	AC_DEFINE(INLINE_LONG_ABS,1,[define if can declare inline long abs(long)])
+ )
+
  AC_LANG_RESTORE
 ])dnl
 

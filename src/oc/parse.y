@@ -376,7 +376,7 @@ if (0){YYERROR;}
 #endif
 			}
 	| FOR varname
-		  { Symbol *s; $$ = Code(varpush); codesym(s = spop());
+		  { Symbol *s; $<inst>$ = Code(varpush); codesym(s = spop());
 			hoc_obvar_declare(s, VAR, 1);
 		  }
 		ROP expr ',' expr
@@ -387,7 +387,7 @@ if (0){YYERROR;}
 			   ($<inst>8)[2].i = relative($10, $<inst>8, 2); /* exit */
 		  }
 	| PARALLEL FOR varname
-		  { Symbol *s; $$ = Code(varpush); codesym(s = spop());
+		  { Symbol *s; $<inst>$ = Code(varpush); codesym(s = spop());
 			hoc_obvar_declare(s, VAR, 1);
 		  }
 		ROP expr ',' expr
@@ -523,7 +523,7 @@ section: SECTION {pushs($1); pushi(CHECK);} wholearray
 	;
 
 section_or_ob: section '(' expr ')' {TPD;}
-	| {$$ = progp; code(connect_obsec_syntax);} ob
+	| {$<inst>$ = progp; code(connect_obsec_syntax);} ob
 		{
 #if 0
 		 acterror("Sorry. The \"connect ob.sec...\" syntax ",

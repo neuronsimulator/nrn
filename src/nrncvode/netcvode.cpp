@@ -67,9 +67,12 @@ extern int cvode_active_;
 extern NetCvode* net_cvode_instance;
 extern cTemplate** nrn_pnt_template_;
 extern double t, dt;
+extern void nrn_cvfun(double t, double* y, double* ydot);
 #define nt_dt nrn_threads->_dt
 #define nt_t nrn_threads->_t
 extern void nrn_parent_info(Section*);
+extern Object* nrn_sec2cell(Section*);
+extern int nrn_sec2cell_equals(Section*, Object*);
 extern ReceiveFunc* pnt_receive;
 extern ReceiveFunc* pnt_receive_init;
 extern short* pnt_receive_size;
@@ -102,6 +105,10 @@ extern void nrn_update_ps2nt();
 extern void nrn_use_busywait(int);
 extern double* nrn_recalc_ptr(double*);
 void* nrn_interthread_enqueue(NrnThread*);
+extern void (*nrnmpi_v_transfer_)(NrnThread*);
+#if NRN_MUSIC
+extern void nrnmusic_injectlist(void*, double);
+#endif
 
 extern int nrn_fornetcon_cnt_;
 extern int* nrn_fornetcon_index_;
@@ -549,7 +556,7 @@ static Object** nc_postcelllist(void* v) {
 	hoc_Item* q;
 	Object* cell = nil;
 	if (d->target_ && d->target_->sec) {
-		cell = d->target_->sec->prop->dparam[6].obj;
+		cell = nrn_sec2cell(d->target_->sec);
 	}
 	if (cell && net_cvode_instance->psl_) ITERATE(q, net_cvode_instance->psl_) {
 		PreSyn* ps = (PreSyn*)VOIDITM(q);
@@ -557,7 +564,7 @@ static Object** nc_postcelllist(void* v) {
 		for (int i=0; i < dil.count(); ++i) {
 			NetCon* d1 = dil.item(i);
 			if (d1->obj_ && d1->target_
-				&& d1->target_->sec->prop->dparam[6].obj == cell) {
+				&& nrn_sec2cell_equals(d1->target_->sec, cell)) {
 				o->append(d1->obj_);
 			}
 		}
@@ -571,14 +578,14 @@ static Object** nc_precelllist(void* v) {
 	Object** po = newoclist(1, o);
 	hoc_Item* q;
 	Object* cell = nil;
-	if (d->src_ && d->src_->ssrc_) { cell = d->src_->ssrc_->prop->dparam[6].obj;}
+	if (d->src_ && d->src_->ssrc_) { cell = nrn_sec2cell(d->src_->ssrc_);}
 	if (cell && net_cvode_instance->psl_) ITERATE(q, net_cvode_instance->psl_) {
 		PreSyn* ps = (PreSyn*)VOIDITM(q);
 		NetConPList& dil = ps->dil_;
 		for (int i=0; i < dil.count(); ++i) {
 			NetCon* d1 = dil.item(i);
 			if (d1->obj_ && d1->src_ && ps->ssrc_
-				&& ps->ssrc_->prop->dparam[6].obj == cell) {
+				&& nrn_sec2cell_equals(ps->ssrc_, cell)) {
 				o->append(d1->obj_);
 			}
 		}
@@ -589,7 +596,7 @@ static Object** nc_precelllist(void* v) {
 static Object** nc_precell(void* v) {
 	NetCon* d = (NetCon*)v;
 	if (d->src_ && d->src_->ssrc_) {
-		return hoc_temp_objptr(d->src_->ssrc_->prop->dparam[6].obj);
+		return hoc_temp_objptr(nrn_sec2cell(d->src_->ssrc_));
 	}else{
 		return hoc_temp_objptr(0);
 	}
@@ -599,7 +606,7 @@ static Object** nc_postcell(void* v) {
 	NetCon* d = (NetCon*)v;
 	Object* ob = nil;
 	if (d->target_ && d->target_->sec) {
-		ob = d->target_->sec->prop->dparam[6].obj;
+		ob = nrn_sec2cell(d->target_->sec);
 	}
 	return hoc_temp_objptr(ob);
 }
@@ -938,7 +945,7 @@ Object** NetCvode::netconlist() {
 		PreSyn* ps = (PreSyn*)VOIDITM(q);
 		b = false;
 		if (ps->ssrc_) {
-			Object* precell = ps->ssrc_->prop->dparam[6].obj;
+			Object* precell = nrn_sec2cell(ps->ssrc_);
 			if (opre) {
 				if (precell == opre) {
 					b = true;
@@ -982,7 +989,7 @@ Object** NetCvode::netconlist() {
 					Point_process* p = d->target_;
 					target = p->ob;
 					if (p->sec) {
-						postcell =  p->sec->prop->dparam[6].obj;
+						postcell =  nrn_sec2cell(p->sec);
 					}
 				}
 				if (opost) {
@@ -2628,7 +2635,14 @@ void NetCvode::allthread_handle(double tt, HocEvent* he, NrnThread* nt) {
 	if (nt->id == 0) {
 		nrn_allthread_handle = allthread_handle_callback;
 		allthread_hocevents_->append(he);
+		nt->_t = tt;
 	}
+	// deliver any other events at this time (in particular, a possible NetParEvent)
+	// to guarantee consistency of the NetParEvent for all threads
+	// Otherwise, if some threads do a NetParEvent and others not, then
+	// the interthread enqueue can put an earlier event onto the thread queue
+	// than the last delivered event
+	deliver_events(tt, nt);
 }
 
 #if 0
@@ -3036,6 +3050,7 @@ void NetCon::pr(const char* s, double tt, NetCvode* ns) {
 void PreSyn::send(double tt, NetCvode* ns, NrnThread* nt) {
 	int i;
 	record(tt);
+#ifndef USENCS
 	if (use_min_delay_) {
 		STATISTICS(presyn_send_mindelay_);
 #if BBTQ == 3 || BBTQ == 4
@@ -3071,6 +3086,7 @@ void PreSyn::send(double tt, NetCvode* ns, NrnThread* nt) {
 			}
 		}
 	}
+#endif //ndef USENCS
 #if USENCS || NRNMPI
 	if (output_index_ >= 0) {
 #if BGPDMA
@@ -3088,6 +3104,11 @@ void PreSyn::send(double tt, NetCvode* ns, NrnThread* nt) {
 #if BGPDMA
 	    }
 #endif //BGPDMA
+#if NRN_MUSIC
+		if (music_port_) {
+			nrnmusic_injectlist(music_port_, tt);
+		}
+#endif // NRN_MUSIC
 	}
 #endif //USENCS || NRNMPI
 }
@@ -3593,12 +3614,12 @@ void ncs2nrn_integrate(double tstop) {
 	}else{
 #if 1
 	    int n = (int)((tstop - nt_t)/dt + 1e-9);
-	    if (n > 3) {
+	    if (n > 3 && !nrnmpi_v_transfer_) {
 		nrn_fixed_step_group(n);
 	    }else
 #endif
 	{
-#if NRNMPI
+#if NRNMPI && !defined(USENCS)
 		ts = tstop - dt;
 		assert(nt_t <= tstop);
 		// It may very well be the case that we do not advance at all
@@ -3665,7 +3686,8 @@ static void all_pending_selfqueue(double tt) {
 #if USENCS
 
 void ncs2nrn_inputevent(int i, double tdeliver) {
-	net_cvode_instance->event(tdeliver, ncs2nrn_input_->item(i));
+    NrnThread* nt = nrn_threads;
+	net_cvode_instance->event(tdeliver, ncs2nrn_input_->item(i), nt);
 }
 
 // hoc tells us which are the input NetCons and which are the
@@ -3992,7 +4014,7 @@ void NetCvode::states() {
 	vp = vector_vec(v);
 	k = 0;
 	if (gcv_) {
-		gcv_->states(vp + j);
+		gcv_->states(vp);
 	}else{
 		lvardtloop(i, j) {
 			p[i].lcv_[j].states(vp+k);
@@ -4021,13 +4043,41 @@ void NetCvode::dstates() {
 	vp = vector_vec(v);
 	k = 0;
 	if (gcv_) {
-		gcv_->states(vp + j);
+		gcv_->dstates(vp);
 	}else{
 		lvardtloop(i, j) {
 			p[i].lcv_[j].dstates(vp+k);
 			k += p[i].lcv_[j].neq_;
 		}
 	}
+}
+
+void nrn_cvfun(double t, double* y, double* ydot) {
+	NetCvode* d = net_cvode_instance;
+	d->gcv_->fun_thread(t, y, ydot, nrn_threads);
+}
+
+double nrn_hoc2fun(void* v) {
+	NetCvode* d = (NetCvode*)v;
+	double tt = *getarg(1);
+	Vect* s = vector_arg(2);
+	Vect* ds = vector_arg(3);
+	if (!d->gcv_){hoc_execerror("not global variable time step", 0);}
+	if (s->capacity() != d->gcv_->neq_) { hoc_execerror("size of state vector != number of state equations", 0); }
+	if (nrn_nthread > 1) {hoc_execerror("only one thread allowed", 0);}
+	ds->resize(s->capacity());
+	nrn_cvfun(tt, vector_vec(s), vector_vec(ds));
+	return 0.;
+}
+
+double nrn_hoc2scatter_y(void* v) {
+	NetCvode* d = (NetCvode*)v;
+	Vect* s = vector_arg(1);
+	if (!d->gcv_){hoc_execerror("not global variable time step", 0);}
+	if (s->capacity() != d->gcv_->neq_) { hoc_execerror("size of state vector != number of state equations", 0); }
+	if (nrn_nthread > 1) {hoc_execerror("only one thread allowed", 0);}
+	d->gcv_->scatter_y(vector_vec(s), 0);
+	return 0.;
 }
 
 void NetCvode::error_weights() {
@@ -4701,6 +4751,9 @@ PreSyn::PreSyn(double* src, Object* osrc, Section* ssrc) {
 #if BGPDMA
 	bgp.dma_send_ = 0;
 #endif
+#if NRN_MUSIC
+	music_port_ = 0;
+#endif
 #if DISCRETE_EVENT_OBSERVER
 #if HAVE_IV
 	Oc oc;
@@ -4770,17 +4823,18 @@ void PreSynSave::savestate_restore(double tt, NetCvode* nc) {
 DiscreteEvent* PreSyn::savestate_read(FILE* f) {
 	PreSyn* ps = nil;
 	char buf[200];
-	int index;
+	int index, tid;
 	fgets(buf, 200, f);
-	assert(sscanf(buf, "%d\n", &index));
+	assert(sscanf(buf, "%d %d\n", &index, &tid) == 2);
 	ps = PreSynSave::hindx2presyn(index);
 	assert(ps);
+	ps->nt_ = nrn_threads + tid;
 	return new PreSynSave(ps);
 }
 
 void PreSynSave::savestate_write(FILE* f) {
 	fprintf(f, "%d\n", PreSynType);
-	fprintf(f, "%d\n", presyn_->hi_index_);
+	fprintf(f, "%d %d\n", presyn_->hi_index_, presyn_->nt_?presyn_->nt_->id:0);
 }
 
 declareTable(PreSynSaveIndexTable, long, PreSyn*)
@@ -5669,14 +5723,14 @@ void NetCvode::vecrecord_add() {
 	if (pr) {
 		delete pr;
 	}
-	pr = playrec_uses(t);
-	if (pr) {
-		delete pr;
-	}
 	boolean discrete = ( (ifarg(4) && (int)chkarg(4,0,1) == 1) ? true : false);
 	if (discrete) {
 		pr = new VecRecordDiscrete(pd, y, t);
 	}else{
+		pr = playrec_uses(t);
+		if (pr) {
+			delete pr;
+		}
 		pr = new TvecRecord(chk_access(), t);
 		pr = new YvecRecord(pd, y);
 	}

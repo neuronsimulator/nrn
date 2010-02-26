@@ -5,6 +5,7 @@
 #include <InterViews/resource.h>
 #include <OS/list.h>
 #include <nrnoc2iv.h>
+#include <nrniv_mf.h>
 #include <nrnmpi.h>
 #include <nrnhash.h>
 #include <mymath.h>
@@ -15,18 +16,29 @@ void nrnmpi_target_var();
 void nrnmpi_setup_transfer();
 void nrn_partrans_clear();
 static void var_transfer(NrnThread*);
+static void mk_ttd();
 extern double t;
+extern int v_structure_change;
 extern void nrnmpi_int_allgather(int*, int*, int);
 extern void nrnmpi_int_allgatherv(int*, int*, int*, int*);
 extern void nrnmpi_dbl_allgatherv(double*, double*, int*, int*);
 extern double* nrn_recalc_ptr(double*);
 #if 1 || PARANEURON
 extern void (*nrnmpi_v_transfer_)(NrnThread*); // before nonvint and BEFORE INITIAL
+extern void (*nrn_mk_transfer_thread_data_)();
 #endif
 #if PARANEURON
 extern double nrnmpi_transfer_wait_;
 #endif
 }
+
+struct TransferThreadData {
+	int cnt;
+	int* ti;
+	int* si;
+};
+static TransferThreadData* transfer_thread_data_;
+static int n_transfer_thread_data_;
 
 void nrn_partrans_update_ptrs();
 
@@ -34,11 +46,15 @@ declareNrnHash(MapInt2Int, int, int);
 implementNrnHash(MapInt2Int, int, int);
 declarePtrList(DblPList, double)
 implementPtrList(DblPList, double)
+#define PPList partrans_PPList
+declarePtrList(PPList, Point_process)
+implementPtrList(PPList, Point_process)
 declareList(IntList, int)
 implementList(IntList, int)
 static int src_buf_size_, *srccnt_, *srcdspl_;
 static DblPList* targets_;
 static IntList* sgid2targets_;
+static PPList* target_pntlist_;
 static DblPList* sources_;
 static IntList* sgids_;
 static MapInt2Int* sgid2srcindex_;
@@ -67,11 +83,17 @@ void nrnmpi_source_var() {
 }
 
 void nrnmpi_target_var() {
+	Point_process* pp = 0;
 	alloclists();
+	int iarg = 1;
 	is_setup_ = false;
-	double* ptv = hoc_pgetarg(1);
-	int sgid = (int)(*getarg(2));
+	if (hoc_is_object_arg(iarg)) {
+		pp = ob2pntproc(*hoc_objgetarg(iarg++));
+	}
+	double* ptv = hoc_pgetarg(iarg++);
+	int sgid = (int)(*getarg(iarg++));
 	targets_->append(ptv);
+	target_pntlist_->append(pp);
 	sgid2targets_->append(sgid);
 //	printf("nrnmpi_target_var target_val=%g sgid=%d\n", *ptv, sgid);
 }
@@ -102,6 +124,59 @@ void nrn_partrans_update_ptrs() {
 
 //static FILE* xxxfile;
 
+static void rm_ttd() {
+	if (!transfer_thread_data_){ return; }
+	for (int i=0; i < n_transfer_thread_data_; ++ i) {
+		TransferThreadData& ttd = transfer_thread_data_[i];
+		if (ttd.ti) delete [] ttd.ti;
+		if (ttd.si) delete [] ttd.si;
+	}
+	delete [] transfer_thread_data_;
+	transfer_thread_data_ = 0;
+	n_transfer_thread_data_ = 0;
+}
+
+static void mk_ttd() {
+	int i, j, k, tid, n;
+	rm_ttd();
+	if (nrn_nthread == 1) { return; }
+	if (!targets_ || targets_->count() == 0) { return; }
+	n = targets_->count();
+    for (i=0; i < n; ++i) {
+	Point_process* pp = target_pntlist_->item(i);
+	int sgid = sgid2targets_->item(i);
+	if (!pp) {
+fprintf(stderr, "Do not know the POINT_PROCESS target for source id %d\n", sgid);
+hoc_execerror("For multiple threads, the target pointer must reference a range variable of a POINT_PROCESS.",
+"Note that it is fastest to supply a reference to the POINT_PROCESS as the first arg.");
+	}
+    }
+	transfer_thread_data_ = new TransferThreadData[nrn_nthread];
+	for (tid = 0; tid < nrn_nthread; ++tid) {
+		transfer_thread_data_[tid].cnt = 0;
+	}
+	n_transfer_thread_data_ = nrn_nthread;
+	for (i=0; i < n; ++i) {
+		assert(target_pntlist_->item(i));
+		tid = ((NrnThread*)target_pntlist_->item(i)->_vnt)->id;
+		++transfer_thread_data_[tid].cnt;
+	}
+	for (tid = 0; tid < nrn_nthread; ++tid) {
+		TransferThreadData& ttd = transfer_thread_data_[tid];
+		ttd.ti = new int[ttd.cnt];
+		ttd.si = new int[ttd.cnt];
+		ttd.cnt = 0;
+	}
+	for (i=0; i < n; ++i) {
+		tid = ((NrnThread*)target_pntlist_->item(i)->_vnt)->id;
+		TransferThreadData& ttd = transfer_thread_data_[tid];
+		j = ttd.cnt++;
+		ttd.ti[j] = i;
+		assert(sgid2srcindex_->find(sgid2targets_->item(i), k));
+		ttd.si[j] = k;
+	}
+}
+
 void var_transfer(NrnThread* _nt) {
 	if (!is_setup_) {
 		hoc_execerror("ParallelContext.setup_transfer()", "needs to be called.");
@@ -118,7 +193,7 @@ void var_transfer(NrnThread* _nt) {
 		// and that is the case even with multisplit. So we really
 		// need to break the job between update and nonvint. Too bad.
 		// For global cvode, things are ok except if the source voltage
-		// is in at a zero area node since nocap_v_part2 is a part
+		// is at a zero area node since nocap_v_part2 is a part
 		// of this job and in fact the v does not get updated til
 		// the next job in nocap_v_part3. Again, too bad. But it is
 		// quite ambiguous, stability wise,
@@ -126,13 +201,12 @@ void var_transfer(NrnThread* _nt) {
 		// the system is then truly a DAE.
 		// For now we presume we have dealt with these matters and
 		// do the transfer.
-		hoc_execerror("parallel transfer not fully implemented", "with threads");
-#if 0		
+
+		assert(n_transfer_thread_data_ == nrn_nthread);
 		TransferThreadData& ttd = transfer_thread_data_[_nt->id];
 		for (int i = 0; i < ttd.cnt; ++i) {
 			*targets_->item(ttd.ti[i]) = *sources_->item(ttd.si[i]);
 		}
-#endif
 		return;
 	}
 	int i, n = sources_->count();
@@ -252,11 +326,16 @@ void nrnmpi_setup_transfer() {
 	delete [] sgid;
 	delete mi2;
 	nrnmpi_v_transfer_ = var_transfer;
+	nrn_mk_transfer_thread_data_ = mk_ttd;
+	if (!v_structure_change) {
+		mk_ttd();
+	}
 }
 
 void alloclists() {
 	if (!targets_) {
 		targets_ = new DblPList(100);
+		target_pntlist_ = new PPList(100);
 		sgid2targets_ = new IntList(100);
 		sources_ = new DblPList(100);
 		sgids_ = new IntList(100);
@@ -273,5 +352,8 @@ void nrn_partrans_clear() {
 	delete sources_;
 	delete sgid2targets_;
 	delete targets_;
+	delete target_pntlist_;
 	targets_ = 0;
+	rm_ttd();
+	nrn_mk_transfer_thread_data_ = 0;
 }

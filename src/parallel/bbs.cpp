@@ -133,6 +133,8 @@ BBSImpl::BBSImpl() {
 	integ_time_ = 0.;
 	working_id_ = 0;
 	n_ = 0;
+	pickle_ret_ = 0;
+	pickle_ret_size_ = 0;
 }
 
 BBS::~BBS() {
@@ -140,6 +142,9 @@ BBS::~BBS() {
 }
 
 BBSImpl::~BBSImpl() {
+	if (pickle_ret_) {
+		delete [] pickle_ret_;
+	}
 }
 
 boolean BBS::is_master() {
@@ -225,6 +230,14 @@ char* BBS::upkstr() {
 	return s;
 }
 
+char* BBS::upkpickle(size_t* n) {
+	char* s = impl_->upkpickle(n);
+	if (debug) {
+		printf("upkpickle %d |%s|\n", *n, s);
+	}
+	return s;
+}
+
 void BBS::pkbegin() {
 	if (debug) {
 		printf("pkbegin\n");
@@ -260,6 +273,13 @@ void BBS::pkstr(const char* s) {
 	impl_->pkstr(s);
 }
 
+void BBS::pkpickle(const char* s, size_t n) {
+	if (debug) {
+		printf("pkpickle %d |%s|\n", n, s);
+	}
+	impl_->pkpickle(s, n);
+}
+
 #if 0
 // for now all todo messages are of the three item form
 // tid
@@ -273,6 +293,11 @@ void BBS::pkstr(const char* s) {
 // although it may makes sense to send the result directly to the
 // tid for now we just put it back onto the mailbox in the form
 // message: "result tid gid" with two items, i.e. id, hoc_ac_
+// Modified 11/30/09. To allow a return of a (pickled) PythonObject
+// for the case when the execution is for a Python Callable the return
+// message result now has three items, i.e. id, rtype, hoc_ac or pickled
+// PyObject. rtype = 0 means hoc_ac, rtype = 1 means pickled PyObject.
+// execute_helper returns the pickle string or (char*)0.
 #endif
 #if 0
 // the todo management has been considerably modified to support
@@ -296,7 +321,9 @@ void BBSImpl::execute(int id) { // assumes a "_todo" message in receive buffer
 		++etaskcnt;
 		double st, et;
 		int userid;
+		char* rs;
 		char* s;
+		size_t n;
 		int i;
 		int save_id = working_id_;
 		working_id_ = id;
@@ -306,7 +333,7 @@ printf("execute begin %g: working_id_=%d\n",st, working_id_);
 		}
 		userid = upkint();
 		hoc_ac_ = double(id);
-		execute_helper(); //builds and execute hoc statement
+		rs = execute_helper(&n); //builds and execute hoc statement
 		et = time() - st;
 		total_exec_time += et;
 		if (debug) {
@@ -315,7 +342,13 @@ et, working_id_, hoc_ac_);
 		}
 		pkbegin();
 		pkint(userid);
-		pkdouble(hoc_ac_);
+		pkint(rs?1:0);
+		if (!rs) {
+			pkdouble(hoc_ac_);
+		}else{
+			pkpickle(rs, n);
+			delete [] rs;
+		}
 		post_result(working_id_);
 		working_id_ = save_id;
 }
@@ -353,6 +386,7 @@ boolean BBS::working(int& id, double& x, int& userid) {
 
 boolean BBSImpl::working(int& id, double& x, int& userid) {
 	int cnt=0;
+	int rtype;
 	double t;
 	if (n_ <= 0) {
 		if (debug) {
@@ -367,7 +401,17 @@ boolean BBSImpl::working(int& id, double& x, int& userid) {
 		++cnt;
 		if ((id = look_take_result(working_id_)) != 0) {
 			userid = upkint();
-			x = upkdouble();
+			rtype = upkint();
+			if (rtype == 0) {
+				x = upkdouble();
+			}else{
+				assert(rtype == 1);
+				x = 0.0;
+				if (pickle_ret_) {
+					delete [] pickle_ret_;
+				}
+				pickle_ret_ = upkpickle(&pickle_ret_size_);
+			}
 			--n_;
 			if (debug) {
 printf("working n_=%d: after %d try elapsed %g sec got result for %d id=%d x=%g\n",

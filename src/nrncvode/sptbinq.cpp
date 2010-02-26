@@ -205,6 +205,7 @@ TQItem* TQueue::enqueue_bin(double td, void* d) {
 	STAT(ninsert);
 	TQItem* i = tpool_->alloc();
 	i->data_ = d;
+	i->t_ = td;
 	binq_->enqueue(td, i);
 	MUTUNLOCK
 	return i;

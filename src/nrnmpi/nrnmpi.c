@@ -16,6 +16,13 @@ extern double nrn_timeus();
 #include <libhpm.h>
 #endif
 
+int nrnmusic;
+#if NRN_MUSIC
+MPI_Comm nrnmusic_comm;
+extern void nrnmusic_init(int* parg, char*** pargv);
+extern void nrnmusic_terminate();
+#endif
+
 int nrnmpi_use; /* NEURON does MPI init and terminate?*/
 MPI_Comm nrnmpi_comm;
 MPI_Comm nrn_bbs_comm;
@@ -31,10 +38,11 @@ static int nrnmpi_under_nrncontrol_;
 #endif
 
 void nrnmpi_init(int nrnmpi_under_nrncontrol, int* pargc, char*** pargv) {
-
-
 #if NRNMPI
 	int i, b, flag;
+	static int called = 0;
+	if (called) { return; }
+	called = 1;
 	nrnmpi_use = 1;
 	nrnmpi_under_nrncontrol_ = nrnmpi_under_nrncontrol;
 	if( nrnmpi_under_nrncontrol_ ) {
@@ -46,6 +54,11 @@ for (i=0; i < *pargc; ++i) {
 }
 }
 #endif
+
+#if NRN_MUSIC
+	nrnmusic_init(pargc, pargv); /* see src/nrniv/nrnmusic.cpp */
+#endif
+
 #if !ALWAYS_CALL_MPI_INIT
 	/* this is not good. depends on mpirun adding at least one
 	   arg that starts with -p4 but that probably is dependent
@@ -65,6 +78,7 @@ for (i=0; i < *pargc; ++i) {
 				break;
 			}
 		}
+		if (nrnmusic) { b = 1; }
 		if (!b) {
 			nrnmpi_use = 0;
 			nrnmpi_under_nrncontrol_ = 0;
@@ -77,7 +91,15 @@ for (i=0; i < *pargc; ++i) {
 		  printf("MPI_INIT failed\n");
 		}
 
-		MPI_Comm_dup(MPI_COMM_WORLD, &nrnmpi_comm);
+#if NRN_MUSIC
+		if (nrnmusic) {
+			MPI_Comm_dup(nrnmusic_comm, &nrnmpi_comm);
+		}else{
+#else
+		{
+#endif
+			MPI_Comm_dup(MPI_COMM_WORLD, &nrnmpi_comm);
+		}
 	}
 	MPI_Comm_dup(nrnmpi_comm, &nrn_bbs_comm);
 	if (MPI_Comm_rank(nrnmpi_comm, &nrnmpi_myid) != MPI_SUCCESS) {
@@ -130,6 +152,11 @@ void nrnmpi_terminate() {
 		hpmTerminate( nrnmpi_myid );
 #endif
 		if( nrnmpi_under_nrncontrol_ ) {
+#if NRN_MUSIC
+			if (nrnmusic) {
+				nrnmusic_terminate();
+			}else
+#endif
 			MPI_Finalize();
 		}
 		nrnmpi_use = 0;

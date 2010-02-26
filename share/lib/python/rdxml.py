@@ -293,7 +293,7 @@ class MyContentHandler(xml.sax.ContentHandler):
     return
 
   def endbiogroup(self):
-	self.in_biogroup_ = False
+    self.in_biogroup_ = False
 
   def biora(self, attrs):
     self.biomechs_.append(BioMech('Ra'))

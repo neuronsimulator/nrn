@@ -91,3 +91,8 @@ void nrn_pool_delete(void* pool){assert(0);}
 void nrn_pool_freeall(void* pool){assert(0);}
 void* nrn_pool_alloc(void* pool){assert(0);}
 
+#if NRN_MUSIC
+void nrnmusic_init(int* parg, char*** pargv){}      
+void nrnmusic_terminate(){}      
+#endif
+

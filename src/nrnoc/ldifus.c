@@ -479,12 +479,13 @@ static void matsol(m, diffunc, v, ai, sindex, dindex, _nt)
 	n = ml->nodecount;
 	data = ml->data;
 	pdata = ml->pdata;
+	thread = ml->_thread;
 	
 	/*flux and volume coefficients (if dc is constant this is too often)*/
 	for (i=0; i < n; ++i) {
 		int pin = pld->pindex[i];
 		int mi = pld->mindex[i];
-		pld->dc[i] = (*diffunc)(ai, data[mi], pdata[mi], pld->vol+i, &dfdi);
+		pld->dc[i] = (*diffunc)(ai, data[mi], pdata[mi], pld->vol+i, &dfdi, thread, _nt);
 		pld->d[i] = 0.;
 		if (dfdi) {
 			pld->d[i] += fabs(dfdi)/pld->vol[i]/pld->state[i][ai];

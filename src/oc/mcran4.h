@@ -1,6 +1,8 @@
 void mcell_ran4_init();
 double mcell_ran4();
 unsigned int mcell_iran4();
+double mcell_ran4_64();
+unsigned int mcell_iran4_64();
 
 /*
 Michael Hines added the prefix mcell to the global names.

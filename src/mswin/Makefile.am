@@ -12,5 +12,5 @@ all-am: nrniv.exe
 FORCE:
 
 nrniv.exe: FORCE
-	IVLIBDIR="$(IV_LIBDIR)" CFLAGS="$(AM_CFLAGS)" sh nrncygso.sh
+	IVLIBDIR="$(IV_LIBDIR)" CFLAGS="$(AM_CFLAGS)" LDFLAGS="$(LDFLAGS)" sh nrncygso.sh
 endif

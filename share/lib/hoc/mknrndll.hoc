@@ -104,7 +104,7 @@ proc recent_working_dirs() {local i
 
 proc exec() {
 	chdir(path)
-	sprint(tstr, "%s/bin/rxvt -e %s/bin/sh %s/lib/mknrndll.sh %s", neuronhome(), neuronhome(), neuronhome(), neuronhome())
+	sprint(tstr, "%s\\bin\\rxvt -e %s/bin/sh %s/lib/mknrndll.sh %s", neuronhome(1), neuronhome(), neuronhome(), neuronhome())
 	print tstr
 
 	WinExec(tstr)

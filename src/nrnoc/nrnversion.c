@@ -1,8 +1,10 @@
 #include <stdio.h>
 #include <string.h>
 #include <nrnversion.h>
+#include <nrnconfigargs.h>
 
 static char buf[256];
+static char configargs[] = NRN_CONFIG_ARGS;
 
 #if defined(HG_BRANCH)
 char* nrn_version(int i) {
@@ -31,6 +33,8 @@ char* nrn_version(int i) {
 		sprintf(buf, "%s", HG_DATE);
 	}else if (i == 5) {
 		sprintf(buf, "%s", HG_LOCAL);
+	}else if (i == 6) {
+		return configargs;
 	}else{
 		sprintf(buf, "NEURON -- %s %s", head, HG_DATE); 
 	}

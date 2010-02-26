@@ -25,6 +25,6 @@ noinst_HEADERS = extdef.h extdef2.h extdef5.h modl.h symbol.h parse1.h \
 ## files that depend on the existence of parse1.h or diffeq.h (none do)
 ## this allows parallel make -j to work at the beginning when those
 ## do not exist and dependencies have not yet been determined
-consist.o deriv.o discrete.o init.o io.o kinetic.o lex.o \
+consist.o cout.o deriv.o discrete.o init.o io.o kinetic.o lex.o \
 list.o noccout.o nocpout.o parsact.o partial.o sens.o simultan.o \
 solve.o symbol.o: parse1.h

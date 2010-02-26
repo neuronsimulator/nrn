@@ -37,7 +37,9 @@ if BUILD_CYGWIN
 mswin:
 	top_srcdir=$(top_srcdir) marshall_dir=$(marshall_dir) \
 	top_builddir=$(top_builddir) \
-	ivbindir=$(IV_LIBDIR)/../bin $(top_srcdir)/src/mswin/batch/instal.sh
+	ivbindir=$(IV_LIBDIR)/../bin \
+	CC=$(CC) \
+	$(top_srcdir)/src/mswin/batch/instal.sh
 
 endif
 
@@ -65,8 +67,9 @@ else
 endif
 
 if MAC_DARWIN
+ivlibdir = @IV_LIBDIR@
 after_install:
-	carbon="@enable_carbon@" sh $(srcdir)/src/mac/after-install.sh "$(host_cpu)" "$(prefix)" "$(top_srcdir)"
+	carbon="@enable_carbon@" sh $(srcdir)/src/mac/after-install.sh "$(host_cpu)" "$(prefix)" "$(top_srcdir)" "$(ivlibdir)"
 
 dmg:
 	carbon="@enable_carbon@" sh $(srcdir)/src/mac/mkdmg.sh NEURON-"`sh $(srcdir)/nrnversion.sh`"

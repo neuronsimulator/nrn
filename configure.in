@@ -4,8 +4,8 @@ dnl disable caching. When configure fails, it is best to start from scratch.
 define([AC_CACHE_LOAD], )dnl
 define([AC_CACHE_SAVE], )dnl
 
-dnl when you change following also update svn2nrn_h.sh and hg2nrnversion.sh
-AC_INIT([nrn],[7.1])
+dnl when you change following also update svn2nrn_h.sh and hg2nrnversion_h.sh
+AC_INIT([nrn],[7.2])
 PACKAGE_VERSION_MAJOR=`echo "$PACKAGE_VERSION" | sed 's/\..*//'`
 PACKAGE_VERSION_MINOR=`echo "$PACKAGE_VERSION" | sed 's/^.*\.//'`
 AC_CONFIG_SRCDIR(src/memacs/main.c)
@@ -215,6 +215,7 @@ fi
 AC_SUBST(MINGW_CFLAG)
 AC_SUBST(EXTRA_CYGWIN_FLAGS)
 
+AC_NRN_MUSIC
 AC_NRN_PARANEURON
 AC_NRN_WITH_MPI
 AC_NRN_WITH_METIS
@@ -297,6 +298,9 @@ if test "$CYGWIN" = "yes" ; then
 	if test "$marshall_dir" = "" ; then
 		#do not change without changing instal.sh and nrnsetup.nsi
 		marshall_dir=/cygdrive/c/marshalnrn
+	fi
+	if  test "$LDFLAGS" = "" ; then
+		LDFLAGS='-Wl,--enable-auto-import'
 	fi
 	AC_MSG_NOTICE(['make mswin' will marshal for building the installer in the marshall_dir = $marshall_dir])
 	AC_SUBST(marshall_dir)
@@ -437,6 +441,8 @@ dnl This, in conjunction with a line in acconfig.h, causes the preprocessor
 dnl symbol NEURON_DATA_DIR to point to the neuron data directory.
 AC_DEFINE_UNQUOTED(NEURON_DATA_DIR, "$prefix/share/$PACKAGE", where the lib hoc is)
 
+NRN_DEFINE_UNQUOTED(NRN_CONFIG_ARGS, "${ac_configure_args}", args given to configure)
+
 NRNOC_X11=1
 if test "$with_nrnoc_x11" = "" ; then
 	with_nrnoc_x11=yes
@@ -475,6 +481,7 @@ AC_CONFIG_FILES([
 fi	
 if test "$with_nmodl_only" != "yes" ; then
 AC_CONFIG_HEADERS([nrnconf.h])
+AC_CONFIG_HEADERS([src/nrnoc/nrnconfigargs.h])
 AC_CONFIG_HEADERS([src/oc/nrnmpiuse.h])
 AC_CONFIG_HEADERS([src/oc/nrnrtuse.h])
 AC_CONFIG_HEADERS([src/oc/nrnpthread.h])
@@ -498,13 +505,13 @@ AC_CONFIG_FILES([
 	src/ivos/Makefile src/ivos/InterViews/Makefile src/ivos/OS/Makefile
 	src/nrnjava/Makefile src/nrnjava/nrnccmb/Makefile
 	src/nrnjava/neuron/Makefile
-	src/nrnpython/Makefile src/nrnpython/setup.py src/ni_pci_6229/Makefile
+	src/nrnpython/Makefile src/ni_pci_6229/Makefile
 	src/mac/Makefile src/mswin/Makefile src/mswin/batch/Makefile
 	src/mswin/nrnsetup.nsi src/mswin/nrncygso.sh src/mswin/lib/mknrndll.mak
 	src/mswin/extra/Makefile src/mswin/rdln/Makefile
 	src/mswin/windll/Makefile src/mswin/winio/Makefile
 	src/mswin/wnrnbbs/Makefile src/mswin/lib/Makefile
-	src/mswin/bin/Makefile
+	src/mswin/bin/Makefile src/neuronmusic/Makefile src/neuronmusic/setup.py
 	share/Makefile bin/nrnoc_makefile bin/nrniv_makefile bin/nrnmech_makefile
 	share/lib/Makefile share/lib/hoc/Makefile share/lib/python/Makefile
 	share/lib/hoc/celbild/Makefile share/lib/hoc/mulfit/Makefile
@@ -526,6 +533,10 @@ AC_CONFIG_FILES([
 	share/demo/Makefile share/demo/release/Makefile share/demo/dend3/Makefile
 	share/demo/sync/Makefile
 	])
+AC_CONFIG_FILES([src/nrnpython/setup.py],
+  [if test $NRNPYTHON_PYMAJOR -gt 2 ; then $PY2TO3 -w src/nrnpython/setup.py ; fi],
+  [NRNPYTHON_PYMAJOR=$NRNPYTHON_PYMAJOR PY2TO3=$PY2TO3]
+)
 fi
 
 AC_OUTPUT

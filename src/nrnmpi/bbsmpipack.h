@@ -27,6 +27,7 @@ extern int nrnmpi_upkint(bbsmpibuf* buf);
 extern double nrnmpi_upkdouble(bbsmpibuf* buf);
 extern void nrnmpi_upkvec(int n, double* x, bbsmpibuf* buf);
 extern char* nrnmpi_upkstr(bbsmpibuf* buf);
+extern char* nrnmpi_upkpickle(size_t* size, bbsmpibuf* buf);
 
 extern void nrnmpi_pkbegin(bbsmpibuf* buf);
 extern void nrnmpi_enddata(bbsmpibuf* buf);
@@ -34,6 +35,7 @@ extern void nrnmpi_pkint(int i, bbsmpibuf* buf);
 extern void nrnmpi_pkdouble(double x, bbsmpibuf* buf);
 extern void nrnmpi_pkvec(int n, double* x, bbsmpibuf* buf);
 extern void nrnmpi_pkstr(const char* s, bbsmpibuf* buf);
+extern void nrnmpi_pkpickle(const char* s, size_t size, bbsmpibuf* buf);
 
 extern int nrnmpi_iprobe(int* size, int* tag, int* source);
 extern void nrnmpi_bbssend(int dest, int tag, bbsmpibuf* r);

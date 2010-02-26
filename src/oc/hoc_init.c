@@ -383,7 +383,7 @@ hoc_nrnversion() {
 	int i;
 	i = 1;
 	if (ifarg(1)) {
-		i = (int)chkarg(1, 0., 5.);
+		i = (int)chkarg(1, 0., 10.);
 	}
 	hoc_ret();
 	p = nrn_version(i);

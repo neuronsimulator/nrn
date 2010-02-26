@@ -1,0 +1,7 @@
+#ifndef nrnconfigargs_h
+#define nrnconfigargs_h
+
+/* define to the args passed to configure */
+#define NRN_CONFIG_ARGS ""
+
+#endif

@@ -29,6 +29,17 @@
 #include <math.h>
 #include <OS/math.h>
 
-int Math::abs(int x) { return abs(x); }
+/* would that these lived in a standard place ... */
+#if defined(IVOS_FABS)
+#define myfabs IVOS_FABS
+#else
+extern "C" {
+    extern int abs(int);
+    extern double fabs(double);
+}
+#define myfabs ::fabs
+#endif
+
+int Math::abs(int x) { return ::abs(x); }
 long Math::abs(long x) { return x >= 0 ? x : -x; }
-double Math::abs(double x) { return fabs(x); }
+double Math::abs(double x) { return myfabs(x); }

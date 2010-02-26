@@ -61,6 +61,7 @@ extern int nrn_use_selfqueue_;
 extern int use_cachevec;
 extern void nrn_cachevec(int);
 extern Point_process* ob2pntproc(Object*);
+extern void (*nrnmpi_v_transfer_)(NrnThread*);
 
 extern int cvode_active_;
 extern NetCvode* net_cvode_instance;
@@ -256,6 +257,9 @@ static double dstates(void* v) {
 	d->dstates();
 	return 0.;
 }
+
+extern double nrn_hoc2fun(void* v);
+extern double nrn_hoc2scatter_y(void* v);
 
 static double error_weights(void* v) {
 	NetCvode* d = (NetCvode*)v;
@@ -518,6 +522,8 @@ static Member_func members[] = {
 	"cache_efficient", cache_efficient,
 	"use_long_double", use_long_double,
 	"use_parallel", use_parallel,
+	"f", nrn_hoc2fun,
+	"yscatter", nrn_hoc2scatter_y,
 	0,0
 };
 
@@ -575,10 +581,13 @@ static void* msolve_thread_part1(NrnThread*);
 static void* msolve_thread_part2(NrnThread*);
 static void* msolve_thread_part3(NrnThread*);
 static void* f_thread(NrnThread*);
-static void* f_thread_part1(NrnThread*);
-static void* f_thread_part2(NrnThread*);
-static void* f_thread_part3(NrnThread*);
-
+static void* f_thread_transfer_part1(NrnThread*);
+static void* f_thread_transfer_part2(NrnThread*);
+static void* f_thread_ms_part1(NrnThread*);
+static void* f_thread_ms_part2(NrnThread*);
+static void* f_thread_ms_part3(NrnThread*);
+static void* f_thread_ms_part4(NrnThread*);
+static void* f_thread_ms_part34(NrnThread*);
 
 Cvode::Cvode(NetCvode* ncv) {
 	cvode_constructor();
@@ -904,7 +913,11 @@ void Cvode::minstep(double x) {
 	}
 }
 void Cvode::maxstep(double x) {
-	if (mem_) { CVodeSetMaxStep(mem_, x); }
+	if (use_daspk_) {
+		if (daspk_->mem_) { IDASetMaxStep(daspk_->mem_, x); }
+	}else{
+		if (mem_) { CVodeSetMaxStep(mem_, x); }
+	}
 }
 
 void Cvode::free_cvodemem() {
@@ -1375,10 +1388,22 @@ static void f_gvardt(realtype t, N_Vector y, N_Vector ydot, void *f_data) {
 	f_t_ = t;
 	f_y_ = y;
 	f_ydot_ = ydot;
-	if (nrn_multisplit_setup_ && nrn_nthread > 1) {
-		nrn_multithread_job(f_thread_part1);
-		nrn_multithread_job(f_thread_part2);
-		nrn_multithread_job(f_thread_part3);
+	if (nrn_nthread > 1) {
+		if (nrn_multisplit_setup_) {
+			nrn_multithread_job(f_thread_ms_part1);
+			nrn_multithread_job(f_thread_ms_part2);
+			if (nrnmpi_v_transfer_) {
+				nrn_multithread_job(f_thread_ms_part3);
+				nrn_multithread_job(f_thread_ms_part4);
+			}else{
+				nrn_multithread_job(f_thread_ms_part34);
+			}
+		}else if (nrnmpi_v_transfer_) {
+			nrn_multithread_job(f_thread_transfer_part1);
+			nrn_multithread_job(f_thread_transfer_part2);
+		}else{
+			nrn_multithread_job(f_thread);
+		}
 	}else{
 		nrn_multithread_job(f_thread);
 	}
@@ -1401,24 +1426,49 @@ static void* f_thread(NrnThread* nt) {
 	nt->_vcv = 0;
 	return 0;
 }
-static void* f_thread_part1(NrnThread* nt) {
+static void* f_thread_transfer_part1(NrnThread* nt) {
 	int i = nt->id;
 	Cvode* cv = f_cv_;
 	nt->_vcv = cv;
-	cv->fun_thread_part1(f_t_, cv->n_vector_data(f_y_, i), nt);
+	cv->fun_thread_transfer_part1(f_t_, cv->n_vector_data(f_y_, i), nt);
 	return 0;
 }
-static void* f_thread_part2(NrnThread* nt) {
+static void* f_thread_transfer_part2(NrnThread* nt) {
 	int i = nt->id;
 	Cvode* cv = f_cv_;
-	cv->fun_thread_part2(nt);
-	return 0;
-}
-static void* f_thread_part3(NrnThread* nt) {
-	int i = nt->id;
-	Cvode* cv = f_cv_;
-	cv->fun_thread_part3(cv->n_vector_data(f_ydot_, i), nt);
+	cv->fun_thread_transfer_part2(cv->n_vector_data(f_ydot_, i), nt);
 	nt->_vcv = 0;
 	return 0;
 }
-
+static void* f_thread_ms_part1(NrnThread* nt) {
+	int i = nt->id;
+	Cvode* cv = f_cv_;
+	nt->_vcv = cv;
+	cv->fun_thread_ms_part1(f_t_, cv->n_vector_data(f_y_, i), nt);
+	return 0;
+}
+static void* f_thread_ms_part2(NrnThread* nt) {
+	int i = nt->id;
+	Cvode* cv = f_cv_;
+	cv->fun_thread_ms_part2(nt);
+	return 0;
+}
+static void* f_thread_ms_part3(NrnThread* nt) {
+	int i = nt->id;
+	Cvode* cv = f_cv_;
+	cv->fun_thread_ms_part3(nt);
+	return 0;
+}
+static void* f_thread_ms_part4(NrnThread* nt) {
+	int i = nt->id;
+	Cvode* cv = f_cv_;
+	cv->fun_thread_ms_part4(cv->n_vector_data(f_ydot_, i), nt);
+	return 0;
+}
+static void* f_thread_ms_part34(NrnThread* nt) {
+	int i = nt->id;
+	Cvode* cv = f_cv_;
+	cv->fun_thread_ms_part34(cv->n_vector_data(f_ydot_, i), nt);
+	nt->_vcv = 0;
+	return 0;
+}

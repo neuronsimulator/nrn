@@ -8,6 +8,7 @@
 #define DOUBLE 2
 #define STRING 3
 #define VECTOR 4
+#define PICKLE 5
 
 #if defined(HAVE_STL)
 #if defined(HAVE_SSTREAM) // the standard ...
@@ -121,6 +122,9 @@ MessageItem::~MessageItem() {
 	case VECTOR:
 		delete [] u.pd;
 		break;
+	case PICKLE:
+		delete [] u.s;
+		break;
 	}
 }
 
@@ -187,6 +191,15 @@ int MessageValue::pkstr(const char* str) {
 	return 0;
 }
 
+int MessageValue::pkpickle(const char* bytes, size_t n) {
+	MessageItem* m = link();
+	m->type_ = PICKLE;
+	m->u.s = new char[n];
+	m->size_ = n;
+	memcpy(m->u.s, bytes, n);
+	return 0;
+}
+
 int MessageValue::upkint(int* i) {
 	if (!unpack_ || unpack_->type_ != INT) {
 		return -1;
@@ -222,6 +235,16 @@ int MessageValue::upkstr(char* s) {
 		return -1;
 	}
 	strcpy(s, unpack_->u.s);
+	unpack_ = unpack_->next_;
+	return 0;
+}
+
+int MessageValue::upkpickle(char* s, size_t* n) {
+	if (!unpack_ || unpack_->type_ != PICKLE) {
+		return -1;
+	}
+	*n = unpack_->size_;
+	memcpy(s, unpack_->u.s, *n);
 	unpack_ = unpack_->next_;
 	return 0;
 }

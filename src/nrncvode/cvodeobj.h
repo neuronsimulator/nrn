@@ -120,9 +120,13 @@ public:
 	int solvex_thread_part2(NrnThread* nt);
 	int solvex_thread_part3(double* b, NrnThread* nt);
 	void fun_thread(double t, double* y, double* ydot, NrnThread* nt);
-	void fun_thread_part1(double t, double* y, NrnThread* nt);
-	void fun_thread_part2(NrnThread* nt);
-	void fun_thread_part3(double* ydot, NrnThread* nt);
+	void fun_thread_transfer_part1(double t, double* y, NrnThread* nt);
+	void fun_thread_transfer_part2(double* ydot, NrnThread* nt);
+	void fun_thread_ms_part1(double t, double* y, NrnThread* nt);
+	void fun_thread_ms_part2(NrnThread* nt);
+	void fun_thread_ms_part3(NrnThread* nt);
+	void fun_thread_ms_part4(double* ydot, NrnThread* nt);
+	void fun_thread_ms_part34(double* ydot, NrnThread* nt);
 	boolean at_time(double, NrnThread*);
 	void set_init_flag();
 	void check_deliver(NrnThread* nt = 0);

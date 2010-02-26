@@ -625,6 +625,11 @@ hoc_warning("errno set during ode jacobian solve", (char*)0);
 }
 
 void Cvode::fun_thread(double tt, double* y, double* ydot, NrnThread* nt){
+	fun_thread_transfer_part1(tt, y, nt);
+	fun_thread_transfer_part2(ydot, nt);
+}
+
+void Cvode::fun_thread_transfer_part1(double tt, double* y, NrnThread* nt){
 	CvodeThreadData& z = CTD(nt->id);
 	nt->_t = tt;
 
@@ -642,8 +647,13 @@ void Cvode::fun_thread(double tt, double* y, double* ydot, NrnThread* nt){
 	}
 #endif
 	nocap_v(nt);  // vm at nocap nodes consistent with adjacent vm
-#if PARANEURON
+}
+
+void Cvode::fun_thread_transfer_part2(double* ydot, NrnThread* nt){
+	CvodeThreadData& z = CTD(nt->id);
+#if 1 || PARANEURON
 	if (nrnmpi_v_transfer_) {
+		assert(nrn_nthread == 1);
 		(*nrnmpi_v_transfer_)(nt);
 	}
 #endif
@@ -662,7 +672,7 @@ void Cvode::fun_thread(double tt, double* y, double* ydot, NrnThread* nt){
 //for (int i=0; i < z.neq_; ++i) { printf("\t%d %g %g\n", i, y[i], ydot?ydot[i]:-1e99);}
 }
 
-void Cvode::fun_thread_part1(double tt, double* y, NrnThread* nt){
+void Cvode::fun_thread_ms_part1(double tt, double* y, NrnThread* nt){
 	CvodeThreadData& z = ctd_[nt->id];
 	nt->_t = tt;
 
@@ -680,16 +690,23 @@ void Cvode::fun_thread_part1(double tt, double* y, NrnThread* nt){
 #endif
 	nocap_v_part1(nt);  // vm at nocap nodes consistent with adjacent vm
 }
-void Cvode::fun_thread_part2(NrnThread* nt){
+void Cvode::fun_thread_ms_part2(NrnThread* nt){
 	nocap_v_part2(nt);  // vm at nocap nodes consistent with adjacent vm
-#if PARANEURON
+}
+void Cvode::fun_thread_ms_part34(double* ydot, NrnThread* nt) {
+	fun_thread_ms_part3(nt);
+	fun_thread_ms_part4(ydot, nt);
+}
+void Cvode::fun_thread_ms_part3(NrnThread* nt){
+	nocap_v_part3(nt); // should be by itself in fun_thread_part2_5 if
+			// following is true and a gap is in 0 area node
+}
+void Cvode::fun_thread_ms_part4(double* ydot, NrnThread* nt) {
+#if 1 || PARANEURON
 	if (nrnmpi_v_transfer_) {
 		(*nrnmpi_v_transfer_)(nt);
 	}
 #endif
-}
-void Cvode::fun_thread_part3(double* ydot, NrnThread* nt){
-	nocap_v_part3(nt);
 	CvodeThreadData& z = ctd_[nt->id];
 	if (z.nvsize_ == 0) { return; }
 	before_after(z.before_breakpoint_, nt);

@@ -303,9 +303,9 @@ printf("i=%d px.x[i]=%d v=%g sids.x[i]=%g\n", i, px.x[i], v(px.x[i]), sids.x[i])
 endtemplate CellBalanceInfo
 
 begintemplate BalanceInfo
-public bilist, cx, npiece, metis_weight, run_metis, metis_hosts, distinct_hosts
+public bilist, cx, npiece, locality_balance
 public nhost, stat, basename, write_balhost, msgid, write_hostcontext
-public items, gids, sindices, mymetis, mymetis2, mybal, cbindex
+public items, gids, sindices, mymetis2, mybal, cbindex
 public base_gid, thishost_gid, gid2cx, write_colgid, ihost
 objref bilist
 strdef basename
@@ -411,286 +411,109 @@ print "sindices" sindices.printf
 	f.close()
 }
 
-proc metis_weight() {local i, j, c  localobj cb, f, s
-	f = new File()
-	s = new String()
-	sprint(s.s, "%s.wt.dat", basename)
-	f.wopen(s.s)
-	f.printf("%d 0 10\n", npiece())
-	for i = 0, bilist.count - 1 {
-		cb = bilist.object(i)
-		if (cb.subtrees.count == 0) {
-			f.printf("%g\n", cb.cx)
-		} else for j=0, cb.subtrees.count-1 {
-			f.printf("%g\n", cb.subtrees.object(j).cx)
-		}
-	}
-	f.close
-}
-proc run_metis() {localobj s
-	s = new String()
-	sprint(s.s, "pmetis %s.wt.dat %d", basename, $1)
-	system(s.s)
-}
-proc metis_hosts() {local i, j  localobj f, s, cb
-	s = new String()
-	f = new File()
-	sprint(s.s, "%s.wt.dat.part.%d", basename, $1)
-	if (f.ropen(s.s) == 0) {
-		run_metis($1)
-		f.ropen(s.s)
-	}
-	for i = 0, bilist.count - 1 {
-		cb = bilist.object(i)
-		if (cb.subtrees.count == 0) {
-			cb.host = f.scanvar
-		}else for j=0, cb.subtrees.count - 1 {
-			cb.subtrees.object(j).host = f.scanvar
-		}
-	}
+// legacy name
+proc mymetis2() {
 	nhost = $1
+	balance($1, 0, bilist)
 }
 
-// Metis seems to be quite order dependent. In fact ordering from greatest
-// to least can improve things considerably. I wonder if we can do this
-// "simple" problem just as well with a trivial algorithm
-proc mymetis() {local i, j, k, ncpu, th  localobj wt, cb, cpu, wcpu, icell
+// $1 total number of cpus
+// $2 cpu group size
+// Return balance
+// whole cells are used to balance the $1/$2 group partitions
+// and then the cpus in the groups are balanced using the cell
+// pieces.
+func locality_balance() {local i, j, gsize, ngroup, pw, mw, cavg \
+  localobj clist, cb, wt, ipart, wpart, indices
+	nhost = $1
+	gsize = $2
+	ngroup = $1/$2
 	wt = new Vector()
-	icell = new Vector()
 	for i=0, bilist.count-1 {
-		cb = bilist.object(i)
+		cb = bilist.o(i)
 		if (cb.subtrees.count == 0) {
 			wt.append(cb.cx)
-			icell.append(i)
-		} else for j=0, cb.subtrees.count-1 {
-			wt.append(cb.subtrees.object(j).cx)
-			icell.append(i)
-		}
-	}
-	cpu = new Vector(wt.size)
-	wcpu = new Vector($1)
-	ncpu = 1e9
-	// do some trials with increasing threshold til it fits into $1
-	for (th = wt.sum/$1; ncpu > $1; th += th/100) {
-		ncpu = trial(th, wt, cpu, wcpu, icell)
-		//printf("wt.sum=%g wcpu.sum=%g\n", wt.sum, wcpu.sum)
-		//printf("balance = %d %% ncpu=%d\n", (wcpu.max/(wt.sum/$1) - 1)*100, ncpu)
-	}
-
-	k = -1
-	for i=0, bilist.count-1 {
-		cb = bilist.object(i)
-		if (cb.subtrees.count == 0) {
-			cb.host = cpu.x[k += 1]
-		} else for j=0, cb.subtrees.count-1 {
-			cb.subtrees.object(j).host = cpu.x[k += 1]
-		}
-	}
-	nhost = $1
-}
-
-proc mymetis2() {local i, j, k, ncpu, th, nsrt \
-  localobj wt, cb, cpu, wcpu, icell, srt, wsrt, pcnt, cells, pindex
-	wt = new Vector()
-	icell = new Vector()
-	pindex = new Vector()
-	for i=0, bilist.count-1 {
-		cb = bilist.object(i)
-		cb.host = -1
-		if (cb.subtrees.count == 0) {
-			wt.append(cb.cx)
-			icell.append(i)
-			pindex.append(-1)
-		} else for j=0, cb.subtrees.count-1 {
-			cb.subtrees.object(j).host = -1
-			wt.append(cb.subtrees.object(j).cx)
-			icell.append(i)
-			pindex.append(j)
-		}
-	}
-	srt = wt.sortindex.reverse
-//	printf("%d pieces  size max=%g min=%g\n", wt.size, wt.x[srt.x[0]], wt.x[srt.x[wt.size-1]])
-	// always put the next piece in the least filled cpu
-	ncpu = $1
-	cpu = new Vector(wt.size)
-	cpu.fill(-1)
-	wcpu = new Vector($1)
-	pcnt = new Vector($1)
-	for i=0, wt.size-1 { // i is cell index
-		j = wcpu.min_ind
-		//if j already has a piece from this cell, choose another
-		// No. allow multiple pieces on same cpu
-		if (0) j = distinct_piece(j, wcpu, bilist.object(icell.x[srt.x[i]]))
-		wcpu.x[j] += wt.x[srt.x[i]]
-		cpu.x[srt.x[i]] = j
-		pcnt.x[j] += 1
-		if (pindex.x[srt.x[i]] == -1) {
-			bilist.object(icell.x[srt.x[i]]).host = j
 		}else{
-			bilist.object(icell.x[srt.x[i]]).subtrees.object(pindex.x[srt.x[i]]).host = j
+			wt.append(0)
+			for j=0, cb.subtrees.count-1 {
+				wt.x[i] += cb.subtrees.object(j).cx
+			}
 		}
 	}
-//printf("ncell = %d   nhost = %d\n", i, $1)
-//printf("max and min complexity %g %g   avg = %g\n", wcpu.max, wcpu.min, wcpu.mean)
-//printf("load balance %g\n", wcpu.max/wcpu.mean)
-//printf("# max and min # cells on cpu %d %d\n", pcnt.max, pcnt.min)
-	k = -1
-	for i=0, bilist.count-1 {
-		cb = bilist.object(i)
-		if (cb.subtrees.count == 0) {
-			cb.host = cpu.x[k += 1]
-		} else for j=0, cb.subtrees.count-1 {
-			cb.subtrees.object(j).host = cpu.x[k += 1]
+	cavg = wt.sum/nhost
+	lpt(wt, ngroup, ipart, wpart)
+	indices = new Vector()
+	clist = new List()
+	mw = 0
+	for i=0, ngroup-1 { // should parallelize this
+		indices.indvwhere(ipart, "==", i)
+		clist.remove_all()
+		for j=0, indices.size-1 {
+			clist.append(bilist.o(indices.x[j]))
 		}
+		pw = balance(gsize, i*gsize, clist)
+		if (pw > mw) { mw = pw }
 	}
-	nhost = $1
+	return mw/cavg
 }
 
-func distinct_piece() {local i, j, savx  localobj piece
-	j = $1
-	for i=0, $o3.subtrees.count-1 {
-		piece = $o3.subtrees.object(i)
-		if (piece.host == j) { // choose another
-			printf("not distinct on %d, choose another\n", $1)
-			savx = $o2.x[$1]
-			$o2.x[$1] = 1e9
-			j = distinct_piece($o2.min_ind, $o2, $o3)
-			$o2.x[$1] = savx
-			return j
-		}
-	}
-	return j
-}
-
-// read a weight file in metis format and do our own balance
-// $s1 weight file name, $2 fits into that size nhost
-proc mybal() { local i, ncpu, th  localobj wt, cb, cpu, wcpu, f
-	execerror("no longer works. implement icell", "")
-	f = new File()
-	f.ropen($s1)
+// $1 is the number of cpus in the group
+// $2 is the cpu offset for the group
+// $o3 is the list of CellBalance objects
+// Returns the max partition weight
+// and fills the CellBalance objects (or pieces if they
+// exist, with the hostid (cpu index + offset)
+func balance() {local i, j, k, ncpu, mw, coff \
+  localobj wt, cb, cpu, wcpu
+	ncpu = $1
+	coff = $2
 	wt = new Vector()
-	wt.resize(f.scanvar()) f.scanvar() f.scanvar()
-	for i = 0, wt.size-1 {
-		wt.x[i] = f.scanvar()
-	}
-	cpu = new Vector(wt.size)
-	wcpu = new Vector($2)
-	ncpu = 1e9
-	// do some trials with increasing threshold til it fits into $2
-	for (th = wt.max; ncpu > $2; th += th/100) {
-		ncpu = trial(th, wt, cpu, wcpu)
-	}
-	printf("wt.sum=%g wcpu.sum=%g\n", wt.sum, wcpu.sum)
-	printf("balance = %.2f ncpu=%d\n", wcpu.max/(wt.sum/$2), ncpu)
-}
-
-// return number of cpus filled based on first threshold arg
-// $o2 is the sorted wt vector
-// $o3 is returned as the vector of cpu#
-// $o4 is returned as the weight on each cpu
-// $o5 is parallel to wt and gives the index into bilist
-//   for purposes of avoiding more than one cell piece on a cpu
-func trial() {local iwt, icpu, w, wcpu, i \
-  localobj tobj, filled, wt, srt, cpu, cand, wcand, icell
-	th = $1
-	wt = $o2.c
-	srt = wt.sortindex.reverse
-	cpu = $o3
-	$o4.resize(0)
-	icell = $o5
-	for i=0, bilist.count-1 { bilist.object(i).tmphost = -1 }
-	// minimum threshold is the largest weight
-	if (th < wt.x[srt.x[0]]) { th = wt.x[srt.x[0]] }
-	cpu.resize(wt.size)
-	filled = wt.c.fill(0)
-	icpu = 0
-	iwt = 0
-	wcpu = 0 // weight on icpu
-	while (iwt < wt.size) {
-		if (filled.x[srt.x[iwt]]) { iwt += 1  continue }
-		w = wt.x[srt.x[iwt]]
-		if (trial_large(wcpu + w <= th, icpu, bilist.object(icell.x[srt.x[iwt]]).tmphost)) {
-//printf("fill iwt=%d wcpu=%g w=%g icpu=%d\n", iwt, wcpu, w, icpu)
-			tobj = bilist.object(icell.x[srt.x[iwt]])
-			if (tobj.tmphost == icpu) {
-				printf("can fill problem with %d\n", icell.x[srt.x[iwt]])
-			}
-			tobj.tmphost = icpu
-			wcpu += w
-			filled.x[srt.x[iwt]] = 1	
-			wt.x[srt.x[iwt]] = 1e9 // do not use again
-			cpu.x[srt.x[iwt]] = icpu
-			iwt += 1
-		}else{ // does not fit
-			// is a smaller one available
-			cand = wt.c.indvwhere("<=", th - wcpu)
-			if (trial_small(wt, cand, icpu, &i, tobj, icell)) {
-				tobj = bilist.object(icell.x[i])
-				if (tobj.tmphost == icpu) {
-					printf("smaller problem with %d\n", icell.x[i])
-				}
-				tobj.tmphost = icpu
-//printf("max i=%d size=%d wcpu=%g max=%g\n", i, cand.size, wcpu, wcand.max)
-				wcpu += wt.x[i]
-				wt.x[i] = 1e9
-				cpu.x[i] = icpu
-				filled.x[i] = 1
-			}else{
-				// guess that cpu is filled as much as feasible
-//printf("filled iwt=%d wcpu=%g icpu=%d\n", iwt, wcpu, icpu)
-if(wcpu == 0) { execerror("error in trial", "") }
-				$o4.append(wcpu)
-				wcpu = 0
-				icpu += 1
-			}
+	for i=0, $o3.count-1 {
+		cb = $o3.object(i)
+		if (cb.subtrees.count == 0) {
+			wt.append(cb.cx)
+		} else for j=0, cb.subtrees.count-1 {
+			wt.append(cb.subtrees.object(j).cx)
 		}
 	}
-	// may be a last one that did not get into wcpu
-	if (wcpu) {
-		$o4.append(wcpu)
-		icpu += 1
-	}
-//	printf("trial $1=%g th=%g ncpu=%d\n", $1, th, icpu)
-	return icpu
-}
-
-func trial_large() {
-	if ($1 == 0) { return 0 }
-	if ($2 == $3) {
-//		printf("trial_large problem fixed\n")
-		return 0
-	}
-	return 1
-}
-
-func trial_small() {local i, icpu  localobj wt, cand, tobj, wcand, icell
-	wt = $o1
-	cand = $o2
-	icpu = $3
-	tobj = $o5
-	icell = $o6
-	while (cand.size) {
-		wcand = cand.c.index(wt, cand)
-		i = cand.x[wcand.max_ind]
-		tobj = bilist.object(icell.x[i])
-		if (tobj.tmphost == icpu) {
-//			printf("trial_small problem with %d, fixed\n", icell.x[i])
-			cand.remove(wcand.max_ind)
-			continue
-		}
-		$&4 = i
-		return 1
-	}
-	return 0
-}
-
-proc distinct_hosts() { local i
-	for i=0, bilist.count-1 {
-		if (bilist.object(i).distinct_hosts == 0) {
-			printf("hosts for bilist[%d] not distinct\n", i)
+//	printf("%d pieces  size max=%g min=%g\n", wt.size, wt.max, wt.min)
+	mw = lpt(wt, ncpu, cpu, wcpu)
+//printf("npiece = %d   npart = %d\n", wt.size, $1)
+//printf("max and min complexity %g %g   avg = %g\n", wcpu.max, wcpu.min, wcpu.mean)
+//printf("load balance %g\n", b)
+	k = -1
+	for i=0, $o3.count-1 {
+		cb = $o3.object(i)
+		if (cb.subtrees.count == 0) {
+			cb.host = cpu.x[k += 1] + coff
+		} else for j=0, cb.subtrees.count-1 {
+			cb.subtrees.object(j).host = cpu.x[k += 1] + coff
 		}
 	}
+	return mw
 }
+
+// least processing time algorithm
+// $o1 is vector of weights  $2 is number of partitions
+// return value is the max partition weight, return in $o3 a
+// partition indices parallel to weights($o1), return in $o4
+// a vector of partition weights
+func lpt() {local i, j  localobj wx, ix, pw
+	wx = $o1.sortindex.reverse
+	ix = new Vector($o1.size)
+	pw = new Vector($2)
+	for i=0, $o1.size-1 {
+		j = wx.x[i]
+		w = $o1.x[j]
+		ip = pw.min_ind
+		pw.x[ip] += w
+		ix.x[j] = ip
+	}
+	$o3 = ix
+	$o4 = pw
+	return pw.max
+}
+
 func cx() {local i, c, j
 	j = 0
 	if (numarg() == 1) {
@@ -941,32 +764,6 @@ func gid2cx() {local i localobj cb
 }
 endtemplate BalanceInfo
 
-/*
-proc mkbalinfo() { localobj bi
-	bi = new BalanceInfo($s1)
-	if (0) {
-		bi.metis_weight()
-		bi.run_metis($2)
-		bi.metis_hosts($2)
-	}else{
-		bi.mymetis($2)
-	}
-	bi.distinct_hosts()
-	bi.stat()
-	bi.write_balhost()
-}
-*/
-
-/*
-proc mkcolgid() { localobj bi
-	bi = new BalanceInfo($s1)
-	bi.mymetis($2)
-	bi.distinct_hosts()
-	bi.stat()
-	bi.write_colgid()
-}
-*/
-
 proc mymetis2() { localobj bi
 	bi = new BalanceInfo($s1)
 	bi.mymetis2($2)
@@ -981,50 +778,15 @@ proc mymetis3() { localobj bi
 	bi.write_balhost()
 }
 
+proc locality_balance() { localobj bi
+	bi = new BalanceInfo($s1)
+	bi.locality_balance($2, $3)
+	bi.stat()
+	bi.write_balhost()
+}
+
 /*
 objref bi
-if (0) {
-bi = new BalanceInfo("balinfo")
-print "total cell complexity = ", bi.cx()
-print "total piece complexity = ", bi.cx(1)
-print bi.npiece(), " pieces"
-print bi.bilist.count, " cells"
-
-bi.metis_weight()
-//bi.run_metis(1024)
-bi.metis_hosts(1024)
-bi.distinct_hosts()
-bi.stat()
-bi.write_balhost()
-}
-
-if (0) {
-objref bi
-bi = new BalanceInfo("balinfo", 21, 1024)
-}
-
-if (0) {
-objref bi
-bi = new BalanceInfo("balinfo")
-bi.write_hostcontext(860, 1024, 5)
-}
-
-if (0) {
-bi = new BalanceInfo("balbb520")
-bi.metis_weight()
-bi.run_metis(1024)
-bi.metis_hosts(1024)
-bi.distinct_hosts()
-bi.stat()
-}
-
-if (0) {
-bi = new BalanceInfo("bi")
-bi.mymetis(8192)
-bi.distinct_hosts()
-bi.stat()
-bi.write_balhost()
-}
 
 if (0) {
 bi = new BalanceInfo("cx")

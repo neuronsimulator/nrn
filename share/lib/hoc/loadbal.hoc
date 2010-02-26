@@ -371,11 +371,14 @@ proc setcol() {local i
 	}
 }
 
-proc ExperimentalMechComplex() {local i, j, k, b, ts, ns, baseindex, irun \
-  localobj s, cmd, sr, ionindices, ct, names, ninstance, pc, ionname, f
+proc ExperimentalMechComplex() {local i, j, k, b, ts, ns, baseindex, irun, par \
+  localobj s, cmd, sr, ionindices, ct, names, ninstance, pc, ionname, f, dvec, vcnts, dvec1
 	//if something uses a mechanism of type i then if ionindices.x[i] > 0 then
 	// the mechanism is an ion and if the eadvance bit is set for the ionstyle
 	// then the index for the element is ionindices.x[i]
+	pc = new ParallelContext()
+	par = 0 if (pc.nhost > 1) { par = 1 dvec = new Vector() }
+//printf("id=%d nhost=%d\n", pc.id, pc.nhost)
 	baseindex = mt[0].count + mt[1].count
 	j = baseindex + 1
 	ionindices = new Vector(mt[0].count)
@@ -434,6 +437,15 @@ proc ExperimentalMechComplex() {local i, j, k, b, ts, ns, baseindex, irun \
 		mt[j].select(k)
 		mt[j].selected(s.s)
 		names.o(kk).s = s.s
+		// parallelism added on top of working version
+		// ions must be done on id 0 (because names for
+		// ionindices.x[k] needs to be assigned )
+		if (j == 0 && ionindices.x[k] > 0 && pc.id > 0) {
+			continue
+		}else if (kk%pc.nhost != pc.id) {
+			continue
+		}
+//printf("%d %s\n", pc.id, s.s)
 		sr = makesec(1, ns)
 		b = 0
 		for i=1, numarg() {
@@ -454,8 +466,10 @@ sprint(cmd.s, "for (hoc_ac_, 0) hoc_obj_.append(new %s(hoc_ac_))", s.s)
 			continue
 		}
 		
+		if (par) { dvec.append(kk) }
 		for irun=0, ct.ncol-1 {
 			ct.x[kk][irun] = dorun(ts)
+			if (par) { dvec.append(ct.x[kk][irun]) }
 		}
 //		ninstance.x[kk][kk] = ns
 		// if it is an ion, do again with style eadvance
@@ -483,9 +497,27 @@ sprint(cmd.s, "for (hoc_ac_, 0) hoc_obj_.append(new %s(hoc_ac_))", s.s)
 			}
 		}
 	}
+	execute("objref hoc_obj_[2]")
+	if (object_id(sr)) sr.sec delete_section()
+	if (par) {// now do an alltoall so id 0 has all the info
+		vcnts = new Vector(pc.nhost)
+		if (pc.id == 0) {dvec.resize(0)}
+		vcnts.x[0] = dvec.size
+		dvec1 = new Vector()
+		pc.alltoall(dvec, vcnts, dvec1)
+		for (i=0; i < dvec1.size; i += ct.ncol+1) {
+			kk = dvec1.x[i]
+			for irun=0, ct.ncol-1 {
+				ct.x[kk][irun] = dvec1.x[i+irun+1]
+			}
+		}
+		if (pc.id > 0) { // the id==0 barrier is at the end
+			pc.barrier()
+			return
+		}
+	}
 	// lastly, get some indication of time it takes to solve a backbone
 	if (0) {
-		pc = new ParallelContext()
 		pc.gid_clear()
 		sr.sec delete_section()
 		sr = makesec(ns)	
@@ -498,8 +530,8 @@ sprint(cmd.s, "for (hoc_ac_, 0) hoc_obj_.append(new %s(hoc_ac_))", s.s)
 		if (cx < 0) { cx = 0 }
 		printf("backbone %g\n", cx)
 		pc.gid_clear()
+		sr.sec delete_section()
 	}
-	sr.sec delete_section()
 	// subtract the overhead
 	f = ct.getrow(baseindex)
 	for i=0, ct.nrow-1 if (i != baseindex) {
@@ -537,6 +569,7 @@ sprint(cmd.s, "for (hoc_ac_, 0) hoc_obj_.append(new %s(hoc_ac_))", s.s)
 		f.printf("%g %s\n", k/j, names.o(i).s)
 	}
 	f.close()
+	if (par) { pc.barrier() }
 }
 
 proc read_mcomplex() {local i, j, k, c  localobj f, s, s2, pc
@@ -601,9 +634,9 @@ obfunc makesec() {localobj s, sr
 	execute(s.s)
 	sprint(s.s, "for i=1, %d { connect tempsec[i](0), tempsec[i-1](1) }", $1-1)
 	execute(s.s)
-	sprint(s.s, "tempsec[0] hoc_obj_ = new SectionRef()")
+	sprint(s.s, "tempsec[0] hoc_obj_[1] = new SectionRef()")
 	execute(s.s)
-	sr = hoc_obj_
+	sr = hoc_obj_[1]
 	cvode.use_mxb(0) // extracellular would turn this on
 	cvode.cache_efficient(1) // extracellular would turn this off
 	return sr

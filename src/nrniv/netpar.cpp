@@ -48,10 +48,11 @@ extern int nrn_use_selfqueue_;
 extern void nrn_pending_selfqueue(double, NrnThread*);
 extern int vector_capacity(IvocVect*); //ivocvect.h conflicts with STL
 extern double* vector_vec(IvocVect*);
+extern Object* nrn_sec2cell(Section*);
 extern void ncs2nrn_integrate(double tstop);
 extern void nrn_fake_fire(int gid, double firetime, int fake_out);
 int nrnmpi_spike_compress(int nspike, boolean gid_compress, int xchng_meth);
-void nrnmpi_gid_clear();
+void nrnmpi_gid_clear(int);
 extern void nrn_partrans_clear();
 void nrn_spike_exchange_init();
 extern double nrn_bgp_receive_time(int);
@@ -79,6 +80,88 @@ extern int nrnmpi_int_allmax(int);
 extern void nrnmpi_int_allgather(int*, int*, int);
 void nrn2ncs_outputevent(int netcon_output_index, double firetime);
 }
+
+#ifdef USENCS
+extern int ncs_bgp_sending_info( int ** );
+extern int ncs_bgp_target_hosts( int, int** );
+extern int ncs_bgp_target_info( int ** );
+extern int ncs_bgp_mindelays( int **, double ** );
+
+//get minimum delays for all presyn objects in gid2in_
+int ncs_netcon_mindelays( int**hosts, double **delays )
+{
+    return ncs_bgp_mindelays(hosts, delays);
+}
+
+double ncs_netcon_localmindelay( int srcgid )
+{
+    PreSyn *ps;
+    gid2out_->find( srcgid, ps );
+    assert(ps);
+    
+    return ps->mindelay();
+}
+
+//get the number of netcons for an object, if it sends here
+int ncs_netcon_count( int srcgid, bool localNetCons )
+{
+    PreSyn *ps;
+    int flag = false;
+    if( localNetCons )
+        gid2out_->find( srcgid, ps );
+    else
+        gid2in_->find( srcgid, ps );
+    if( !ps ) {  //no cells on this cpu receive from the given gid
+        fprintf( stderr, "should never happen!\n" );
+        return 0;
+    }
+    
+    return ps->dil_.count();
+}
+
+//inject a spike into the appropriate netcon
+void ncs_netcon_inject( int srcgid, int netconIndex, double spikeTime, bool localNetCons )
+{
+    PreSyn *ps;
+    NetCvode* ns = net_cvode_instance;
+    if( localNetCons )
+        gid2out_->find( srcgid, ps );
+    else
+        gid2in_->find( srcgid, ps );
+    if( !ps ) {  //no cells on this cpu receive from the given gid
+        return;
+    }
+    
+    //fprintf( stderr, "gid %d index %d!\n", srcgid, netconIndex );
+    NetCon* d = ps->dil_.item(netconIndex);
+    NrnThread* nt = nrn_threads;
+    if (d->active_ && d->target_) {
+#if BBTQ == 5
+        ns->bin_event(spikeTime + d->delay_, d, nt);
+#else
+        ns->event(spikeTime + d->delay_, d, nt);
+#endif
+    }
+}
+
+int ncs_gid_receiving_info( int **presyngids ) {
+    return ncs_bgp_target_info( presyngids );
+}
+
+//given the gid of a cell, retrieve its target count
+int ncs_gid_sending_count( int **sendlist2build ) {
+    if( !gid2out_ ) {
+        fprintf( stderr, "gid2out_ not allocated\n" );
+        return -1;
+    }
+    return ncs_bgp_sending_info( sendlist2build );
+}
+
+int ncs_target_hosts( int gid, int** targetnodes ) {
+    return ncs_bgp_target_hosts( gid, targetnodes );
+}
+
+#endif
 
 // for compressed gid info during spike exchange
 boolean nrn_use_localgid_;
@@ -124,6 +207,10 @@ static double mindelay_; // the one actually used. Some of our optional algorith
 static double last_maxstep_arg_;
 static NetParEvent* npe_; // nrn_nthread of them
 static int n_npe_; // just to compare with nrn_nthread
+
+#if NRN_MUSIC
+#include "nrnmusic.cpp"
+#endif
 
 NetParEvent::NetParEvent(){
 	wx_ = ws_ = 0.;
@@ -181,7 +268,9 @@ DiscreteEvent* NetParEvent::savestate_save(){
 
 DiscreteEvent* NetParEvent::savestate_read(FILE* f){
 	int i;
-	assert(fscanf(f, "%d", &i) == 1);
+	char buf[100];
+	fgets(buf, 100, f);
+	assert(sscanf(buf, "%d\n", &i) == 1);
 	//printf("NetParEvent::savestate_read %d\n", i);
 	NetParEvent* npe = new NetParEvent();
 	npe->ithread_ = i;
@@ -190,7 +279,7 @@ DiscreteEvent* NetParEvent::savestate_read(FILE* f){
 
 void NetParEvent::savestate_write(FILE* f){
 	//pr("savestate_write", 0, net_cvode_instance);
-	fprintf(f, "%d %d\n", NetParEventType, ithread_);
+	fprintf(f, "%d\n%d\n", NetParEventType, ithread_);
 }
 
 void NetParEvent::savestate_restore(double tt, NetCvode* nc){
@@ -222,6 +311,7 @@ inline static int spupk(unsigned char* c) {
 	}
 	return gid;
 }
+
 void nrn_outputevent(unsigned char localgid, double firetime) {
 	if (!active_) { return; }
 	nout_++;
@@ -236,6 +326,7 @@ void nrn_outputevent(unsigned char localgid, double firetime) {
 //printf("%d idx=%d lgid=%d firetime=%g t_exchange_=%g [0]=%d [1]=%d\n", nrnmpi_myid, i, (int)localgid, firetime, t_exchange_, (int)spfixout_[i-1], (int)spfixout_[i]);
 }
 
+#ifndef USENCS
 void nrn2ncs_outputevent(int gid, double firetime) {
 	if (!active_) { return; }
     if (use_compress_) {
@@ -280,6 +371,7 @@ void nrn2ncs_outputevent(int gid, double firetime) {
     }
 //printf("%d cell %d in slot %d fired at %g\n", nrnmpi_myid, gid, i, firetime);
 }
+#endif //USENCS
 #endif // NRNMPI
 
 static int nrn_need_npe() {
@@ -316,6 +408,10 @@ static void calc_actual_mindelay() {
 }
 
 void nrn_spike_exchange_init() {
+#ifdef USENCS
+    bgp_dma_setup();
+    return;
+#endif
 //printf("nrn_spike_exchange_init\n");
 	if (!nrn_need_npe()) { return; }
 //	if (!active_ && !nrn_use_selfqueue_) { return; }
@@ -333,6 +429,12 @@ void nrn_spike_exchange_init() {
 			return;
 		}
 	}
+
+#if NRN_MUSIC
+	if (nrnmusic) {
+		nrnmusic_runtime_phase();
+	}
+#endif
 
 #if BGPDMA
 	if (use_bgpdma_) {
@@ -775,12 +877,13 @@ void BBS::set_gid2node(int gid, int nid) {
 	}
 }
 
-void nrnmpi_gid_clear() {
-	nrn_partrans_clear();
+void nrnmpi_gid_clear(int arg) {
+	if (arg == 0 || arg == 3) nrn_partrans_clear();
 #if PARANEURON
-	nrnmpi_split_clear();
+	if (arg == 0 || arg == 3) nrnmpi_split_clear();
 #endif
-	nrnmpi_multisplit_clear();
+	if (arg == 0 || arg == 2) nrnmpi_multisplit_clear();
+	if (arg != 0 && arg != 1) { return; }
 	if (!gid2out_) { return; }
 	PreSyn* ps, *psi;
 	NrnHashIterate(Gid2PreSyn, gid2out_, PreSyn*, ps) {
@@ -851,7 +954,7 @@ void BBS::cell() {
 	}
 	NetCon* nc = (NetCon*)ob->u.this_pointer;
 	ps = nc->src_;
-//printf("%d cell %d %s\n", nrnmpi_myid, gid, hoc_object_name(ps->ssrc_ ? ps->ssrc_->prop->dparam[6].obj : ps->osrc_));
+//printf("%d cell %d %s\n", nrnmpi_myid, gid, hoc_object_name(ps->ssrc_ ? nrn_sec2cell(ps->ssrc_) : ps->osrc_));
 #if ALTHASH
 	gid2out_->insert(gid, ps);
 #else
@@ -887,7 +990,7 @@ Object** BBS::gid2obj(int gid) {
 	assert(gid2out_->find(gid, ps));
 //printf(" found\n");
 	assert(ps);
-	cell = ps->ssrc_ ? ps->ssrc_->prop->dparam[6].obj : ps->osrc_;
+	cell = ps->ssrc_ ? nrn_sec2cell(ps->ssrc_) : ps->osrc_;
 //printf(" return %s\n", hoc_object_name(cell));
 	return hoc_temp_objptr(cell);
 }
@@ -900,14 +1003,14 @@ Object** BBS::gid2cell(int gid) {
 //printf(" found\n");
 	assert(ps);
 	if (ps->ssrc_) {
-		cell = ps->ssrc_->prop->dparam[6].obj;
+		cell = nrn_sec2cell(ps->ssrc_);
 	}else{
 		cell = ps->osrc_;
 		// but if it is a POINT_PROCESS in a section
 		// that is inside an object ... (probably has a WATCH statement)
 		Section* sec = ob2pntproc(cell)->sec;
-		if (sec && sec->prop->dparam[6].obj) {
-			cell = sec->prop->dparam[6].obj;
+		if (sec && nrn_sec2cell(sec)) {
+			cell = nrn_sec2cell(sec);
 		}			
 	}
 //printf(" return %s\n", hoc_object_name(cell));
@@ -1158,4 +1261,3 @@ printf("Notice: gid compression did not succeed. Probably more than 255 cells on
 	return 0;
 #endif
 }
-

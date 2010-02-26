@@ -153,8 +153,10 @@ static void* hoc_create_pnt(Object* ho) {
 static void hoc_destroy_pnt(void* v) {
 	// first free the KSSingleNodeData if it exists.
 	Point_process* pp = (Point_process*)v;
-	KSChan* c = channels->item(pp->prop->type);
-	c->destroy_pnt(pp);
+	if (pp->prop) {
+		KSChan* c = channels->item(pp->prop->type);
+		c->destroy_pnt(pp);
+	}
 }
 
 void KSChan::destroy_pnt(Point_process* pp) {
@@ -2077,6 +2079,9 @@ void KSChan::setupmat() {
 	if (err != spOKAY) {
 		hoc_execerror("Couldn't create sparse matrix", 0);
 	}
+	spFactor(mat_); // will fail but creates an internal vector needed by
+			// mulmat which might be called prior to initialization
+			// when switching to cvode active.
 	elms_ = new double*[4*(ntrans_ - ivkstrans_)];
 	diag_ = new double*[nksstate_];
 	for (i=ivkstrans_, j=0; i < ntrans_; ++i) {
@@ -3026,6 +3031,17 @@ void KSChan::usetable(boolean use, int size, double vmin, double vmax) {
 	usetable(use);
 }
 
+static int ksusing(int type) {
+	for (int i=0; i < nrn_nthread; ++i) {
+		for (NrnThreadMembList* tml = nrn_threads[i].tml; tml; tml = tml->next) {
+			if (tml->index == type) {
+				return 1;
+			}
+		}
+	}
+	return 0;
+}
+
 void KSChan::usetable(boolean use) {
 	int i;
 	if (nhhstate_ == 0) { use = false; }
@@ -3036,14 +3052,14 @@ void KSChan::usetable(boolean use) {
 		check_table_thread(nrn_threads);
 		if (memb_func[mechtype_].thread_table_check_ != check_table_thread_) {
 			memb_func[mechtype_].thread_table_check_ = check_table_thread_;
-			if (memb_list[mechtype_].nodecount) {
+			if (ksusing(mechtype_)) {
 				nrn_mk_table_check();
 			}
 		}
 	}else{
 		if (memb_func[mechtype_].thread_table_check_) {
 			memb_func[mechtype_].thread_table_check_ = 0;
-			if (memb_list[mechtype_].nodecount) {
+			if (ksusing(mechtype_)) {
 				nrn_mk_table_check();
 			}
 		}

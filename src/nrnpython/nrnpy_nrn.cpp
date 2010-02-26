@@ -14,6 +14,8 @@ typedef struct {
 	PyObject_HEAD
 	Section* sec_;
 	int allseg_iter_;
+	char* name_;
+	PyObject* cell_;
 } NPySecObj;
 
 typedef struct {
@@ -62,44 +64,89 @@ extern int diam_changed;
 extern void mech_insert1(Section*, int);
 extern PyObject* nrn_hocobj_ptr(double*);
 extern PyObject* nrnpy_forall(PyObject* self, PyObject* args);
+extern Object* nrnpy_po2ho(PyObject*);
 extern Symbol* nrnpy_pyobj_sym_;
+extern int nrnpy_ho_eq_po(Object*, PyObject*);
 extern PyObject* nrnpy_hoc2pyobject(Object*);
 static void nrnpy_reg_mech(int);
 extern void (*nrnpy_reg_mech_p_)(int);
 static void o2loc(Object*, Section**, double*);
 extern void (*nrnpy_o2loc_p_)(Object*, Section**, double*);
 static void nrnpy_unreg_mech(int);
+extern char* (*nrnpy_pysec_name_p_)(Section*);
+static char* pysec_name(Section*);
+extern Object* (*nrnpy_pysec_cell_p_)(Section*);
+static Object* pysec_cell(Section*);
+extern int (*nrnpy_pysec_cell_equals_p_)(Section*, Object*);
+static int pysec_cell_equals(Section*, Object*);
+static void remake_pmech_types();
 
+static char* pysec_name(Section* sec) {
+	static char buf[512];
+	if (sec->prop) {
+		NPySecObj* ps = (NPySecObj*)sec->prop->dparam[PROP_PY_INDEX]._pvoid;
+		buf[0] = '\0';
+		if (ps->cell_) {
+			sprintf(buf, "%s.", PyString_AsString(PyObject_Str(ps->cell_)));
+		}
+		char* cp = buf + strlen(buf);
+		if (ps->name_) {
+			sprintf(cp, "%s", ps->name_);
+		}else{
+			sprintf(cp, "PySec_%lx", (long)ps);
+		}
+		return buf;
+	}
+	return 0;
+}
+
+static Object* pysec_cell(Section* sec) {
+	if (sec->prop && sec->prop->dparam[PROP_PY_INDEX]._pvoid) {
+		PyObject* cell = ((NPySecObj*)sec->prop->dparam[PROP_PY_INDEX]._pvoid)->cell_;
+		if (cell) {
+			return nrnpy_po2ho(cell);
+		}
+	}
+	return 0;
+}
+
+static int pysec_cell_equals(Section* sec, Object* obj) {
+	PyObject* po = ((NPySecObj*)sec->prop->dparam[PROP_PY_INDEX]._pvoid)->cell_;
+	return nrnpy_ho_eq_po(obj, po);
+}
 
 static void NPySecObj_dealloc(NPySecObj* self) {
-//printf("NPySecObj_dealloc %lx\n", (long)self);
+//printf("NPySecObj_dealloc %lx %s\n", (long)self, secname(self->sec_));
 	if (self->sec_) {
-		self->sec_->prop->dparam[PROP_PY_INDEX]._pvoid = 0;
-		if (!self->sec_->prop->dparam[0].sym) {
+		if (self->sec_->prop) {
+			self->sec_->prop->dparam[PROP_PY_INDEX]._pvoid = 0;
+		}
+		if (self->name_) { delete [] self->name_; }
+		if (self->sec_->prop && !self->sec_->prop->dparam[0].sym) {
 			sec_free(self->sec_->prop->dparam[8].itm);
 		}else{
 			section_unref(self->sec_);
 		}
 	}
-	self->ob_type->tp_free((PyObject*)self);
+	((PyObject*)self)->ob_type->tp_free((PyObject*)self);
 }
 
 static void NPySegObj_dealloc(NPySegObj* self) {
 //printf("NPySegObj_dealloc %lx\n", (long)self);
 	Py_XDECREF(self->pysec_);
-	self->ob_type->tp_free((PyObject*)self);
+	((PyObject*)self)->ob_type->tp_free((PyObject*)self);
 }
 
 static void NPyRangeVar_dealloc(NPyRangeVar* self) {
 //printf("NPyRangeVar_dealloc %lx\n", (long)self);
 	Py_XDECREF(self->pyseg_);
-	self->ob_type->tp_free((PyObject*)self);
+	((PyObject*)self)->ob_type->tp_free((PyObject*)self);
 }
 
 static void NPyMechObj_dealloc(NPyMechObj* self) {
 //printf("NPyMechObj_dealloc %lx %s\n", (long)self, self->ob_type->tp_name);
 	Py_XDECREF(self->pyseg_);
-	self->ob_type->tp_free((PyObject*)self);
+	((PyObject*)self)->ob_type->tp_free((PyObject*)self);
 }
 
 // A new (or inited) python Section object with no arg creates a nrnoc section
@@ -107,21 +154,36 @@ static void NPyMechObj_dealloc(NPyMechObj* self) {
 // has no hoc Symbol but the Python Section pointer is filled in
 // and secname(sec) returns the Python Section object name from the hoc section.
 // If a Python Section object is created from an existing nrnoc section
-// (with a filled in Symbol) the nrnoc section will continue to exist as long
-// as 
+// (with a filled in Symbol) the nrnoc section will continue to exist untill
+// the hoc delete_section() is called on it.
 // 
 PyObject* NPySecObj_new(PyTypeObject* type, PyObject* args, PyObject* kwds) {
+	static char* kwlist[] = {"cell", "name", NULL};
 	NPySecObj* self;
 	self = (NPySecObj*)type->tp_alloc(type, 0);
 //printf("NPySecObj_new %lx\n", (long)self);
 	if (self != NULL) {
 		self->sec_ = nrnpy_newsection(self);
 		self->allseg_iter_ = 0;
+		self->name_ = 0;
+		self->cell_ = 0;
+		char* name = 0;
+		PyObject* cell = 0;
+		if (!PyArg_ParseTupleAndKeywords(args, kwds, "|Os", kwlist,
+		  &self->cell_, &name)) {
+			NPySecObj_dealloc(self);
+			return NULL;
+		}
+		// note that we are NOT referencing the cell
+		if (name) {
+			self->name_ = new char[strlen(name) + 1];
+			strcpy(self->name_, name);
+		}
 	}
 	return (PyObject*)self;
 }
 
-PyObject* nrnpy_newsecobj(PyObject* args, PyObject* kwds) {
+PyObject* nrnpy_newsecobj(PyObject* self, PyObject* args, PyObject* kwds) {
 	return NPySecObj_new(psection_type, args, kwds);
 }
 
@@ -155,7 +217,7 @@ static PyObject* NPyMechObj_new(PyTypeObject* type, PyObject* args, PyObject* kw
 	}
 	NPyMechObj* self;
 	self = (NPyMechObj*)type->tp_alloc(type, 0);
-//printf("NPyMechObj_new %lx %s\n", (long)self, self->ob_type->tp_name);
+//printf("NPyMechObj_new %lx %s\n", (long)self, ((PyObject*)self)->ob_type->tp_name);
 	if (self != NULL) {
 		self->pyseg_ = pyseg;
 		Py_INCREF(self->pyseg_);
@@ -176,7 +238,7 @@ static PyObject* NPyRangeVar_new(PyTypeObject* type, PyObject* args, PyObject* k
 
 static int NPySecObj_init(NPySecObj* self, PyObject* args, PyObject* kwds) {
 //printf("NPySecObj_init %lx %lx\n", (long)self, (long)self->sec_);
-	if (self != NULL) {
+	if (self != NULL && !self->sec_) {
 		self->sec_ = nrnpy_newsection(self);
 	}
 	return 0;
@@ -218,7 +280,7 @@ static void o2loc(Object* o, Section** psec, double* px) {
 }
 
 static int NPyMechObj_init(NPyMechObj* self, PyObject* args, PyObject* kwds) {
-//printf("NPyMechObj_init %lx %lx %s\n", (long)self, (long)self->pyseg_, self->ob_type->tp_name);
+//printf("NPyMechObj_init %lx %lx %s\n", (long)self, (long)self->pyseg_, ((PyObject*)self)->ob_type->tp_name);
 	NPySegObj* pyseg;
 	if (!PyArg_ParseTuple(args, "O!", psegment_type, &pyseg)) {
 		return -1;
@@ -262,10 +324,22 @@ static PyObject* NPyRangeVar_name(NPyRangeVar* self) {
 }
 
 static PyObject* NPySecObj_connect(NPySecObj* self, PyObject*  args) {
+	PyObject* p;
 	NPySecObj* parent;
 	double parentx, childend;
-	parentx = 1.; childend = 0.;
-	if (!PyArg_ParseTuple(args, "O!|dd", psection_type, &parent, &parentx, &childend)) {
+	parentx = -1000.; childend = 0.;
+	if (!PyArg_ParseTuple(args, "O|dd", &p, &parentx, &childend)) {
+		return NULL;
+	}
+	if (PyObject_TypeCheck(p, psection_type)) {
+		parent = (NPySecObj*)p;
+		if (parentx == -1000.) { parentx = 1.; }
+	}else if (PyObject_TypeCheck(p, psegment_type)) {
+		parent = ((NPySegObj*)p)->pysec_;
+		if (parentx != -1000.) { childend = parentx; }
+		parentx = ((NPySegObj*)p)->x_;
+	}else{
+		PyErr_SetString(PyExc_TypeError, "first arg not a nrn.Section or nrn.Segment");
 		return NULL;
 	}
 //printf("NPySecObj_connect %s %g %g\n", parent, parentx, childend);
@@ -293,8 +367,14 @@ static PyObject* NPySecObj_insert(NPySecObj* self, PyObject*  args) {
 	}
 	PyObject* otype = PyDict_GetItemString(pmech_types, tname);
 	if (!otype) {
-		PyErr_SetString(PyExc_ValueError, "argument not a density mechanism name.");
-		return NULL;
+		// check first to see if the pmech_types needs to be
+		// augmented by any new KSChan
+		remake_pmech_types();
+		otype = PyDict_GetItemString(pmech_types, tname);
+		if (!otype) {
+			PyErr_SetString(PyExc_ValueError, "argument not a density mechanism name.");
+			return NULL;
+		}
 	}
 	int type = PyInt_AsLong(otype);
 //printf("NPySecObj_insert %s %d\n", tname, type);
@@ -395,6 +475,7 @@ static PyObject* section_getattro(NPySecObj* self, PyObject* name) {
 			Py_INCREF(self);
 			r->pyseg_->x_ = 0.5;
 			r->sym_ = sym;
+			r->isptr_ = 0;
 			result = (PyObject*)r;
 		}else{
 			int err;
@@ -457,7 +538,8 @@ static int section_setattro(NPySecObj* self, PyObject* name, PyObject* value) {
 	}else if ((rv = PyDict_GetItemString(rangevars_, n)) != NULL) {
 		Symbol* sym = ((NPyRangeVar*)rv)->sym_;
 		if (ISARRAY(sym)) {
-			assert(0);
+			PyErr_SetString(PyExc_IndexError, "missing index");
+			err = -1;
 		}else{
 			int errp;
 			double* d = nrnpy_rangepointer(self->sec_, sym, 0.5, &errp);
@@ -574,6 +656,7 @@ static PyObject* segment_getattro(NPySegObj* self, PyObject* name) {
 			r->pyseg_ = self;
 			Py_INCREF(r->pyseg_);
 			r->sym_ = sym;
+			r->isptr_ = 0;
 			result = (PyObject*)r;
 		}else{
 			int err;
@@ -644,7 +727,10 @@ static int segment_setattro(NPySegObj* self, PyObject* name, PyObject* value) {
 	}else if ((rv = PyDict_GetItemString(rangevars_, n)) != NULL) {
 		sym = ((NPyRangeVar*)rv)->sym_;
 		if (ISARRAY(sym)) {
-			assert(0);
+			char s[200];
+			sprintf(s, "%s needs an index for assignment", sym->name);
+			PyErr_SetString(PyExc_IndexError, s);
+			err = -1;
 		}else{
 			int errp;
 			double* d = nrnpy_rangepointer(self->pysec_->sec_, sym, self->x_, &errp);
@@ -662,6 +748,7 @@ static int segment_setattro(NPySegObj* self, PyObject* name, PyObject* value) {
 				self->pysec_->sec_->recalc_area_ = 1;
 				nrn_diam_change(self->pysec_->sec_);
 			}else if (sym->u.rng.type == EXTRACELL && sym->u.rng.index == 0) {
+				// cannot execute because xraxial is an array
 				diam_changed = 1;
 			}
 		}
@@ -693,7 +780,9 @@ static PyObject* mech_getattro(NPyMechObj* self, PyObject* name) {
 			result = (PyObject*)r;
 		}else{
 			double* px = np.prop_pval(sym, 0);
-			if (isptr) {
+			if (!px) {
+				rv_noexist(self->pyseg_->pysec_->sec_, sym->name, self->pyseg_->x_, 2);
+			}else if (isptr) {
 				result = nrn_hocobj_ptr(px);
 			}else{
 				result = Py_BuildValue("d", *px);
@@ -718,7 +807,13 @@ static int mech_setattro(NPyMechObj* self, PyObject* name, PyObject* value) {
 	if (sym) {
 		double x;
 		if (PyArg_Parse(value, "d", &x) == 1) {
-			*np.prop_pval(sym, 0) = x;
+			double* pd = np.prop_pval(sym, 0);
+			if (pd) {
+				*pd = x;
+			}else{
+				rv_noexist(self->pyseg_->pysec_->sec_, sym->name, self->pyseg_->x_, 2);
+				err = 1;
+			}
 		}else{
 			PyErr_SetString(PyExc_ValueError,
 				"must be a double");
@@ -731,11 +826,23 @@ static int mech_setattro(NPyMechObj* self, PyObject* name, PyObject* value) {
 	return err;
 }
 
+double** nrnpy_setpointer_helper(PyObject* name, PyObject* mech) {
+	if (PyObject_TypeCheck(mech, pmech_generic_type) == 0) { return 0; }
+	NPyMechObj* m = (NPyMechObj*)mech;
+	NrnProperty np(m->prop_);
+	char buf[200];
+	sprintf(buf, "%s_%s", PyString_AsString(name), memb_func[m->prop_->type].sym->name);
+	Symbol* sym = np.find(buf);
+	if (!sym || sym->type != RANGEVAR || sym->subtype != NRNPOINTER) { return 0; }
+	return &m->prop_->dparam[np.prop_index(sym)].pval;
+}
+
 static PyObject* NPySecObj_call(NPySecObj* self, PyObject* args) {
 	double x = 0.5;
 	PyArg_ParseTuple(args, "|d", &x);
 	PyObject* segargs = Py_BuildValue("(O,d)", self, x);
 	PyObject* seg = NPySegObj_new(psegment_type, segargs, 0);
+	Py_DECREF(segargs);
 	return seg;
 }
 
@@ -783,6 +890,9 @@ static int rv_setitem(PyObject* self, Py_ssize_t ix, PyObject* value) {
 		PyErr_SetString(PyExc_ValueError, "bad value");
 		return -1;
 	}
+	if (r->sym_->u.rng.type == EXTRACELL && r->sym_->u.rng.index == 0) {
+		diam_changed = 1;
+	}
 	return 0;
 }
 
@@ -791,7 +901,7 @@ static PyMethodDef NPySecObj_methods[] = {
 	 "Section name (same as hoc secname())"
 	},
 	{"connect", (PyCFunction)NPySecObj_connect, METH_VARARGS,
-	 "childSection.connect(parentSection, [parentX], [childEnd])"
+	 "childSection.connect(parentSection, [parentX], [childEnd]) or\nchildSection.connect(parentSegment, [childEnd])"
 	},
 	{"insert", (PyCFunction)NPySecObj_insert, METH_VARARGS,
 	 "section.insert(densityMechanismType) e.g. soma.insert(hh)"
@@ -840,176 +950,9 @@ static PySequenceMethods rv_seqmeth = {
 	NULL, NULL
 };
 
-static PyTypeObject nrnpy_SectionType = {
-    PyObject_HEAD_INIT(NULL)
-    0,                         /*ob_size*/
-    "nrn.Section",         /*tp_name*/
-    sizeof(NPySecObj), /*tp_basicsize*/
-    0,                         /*tp_itemsize*/
-    (destructor)NPySecObj_dealloc,                        /*tp_dealloc*/
-    0,                         /*tp_print*/
-    0,                         /*tp_getattr*/
-    0,                         /*tp_setattr*/
-    0,                         /*tp_compare*/
-    0,                         /*tp_repr*/
-    0,                         /*tp_as_number*/
-    0,                         /*tp_as_sequence*/
-    0,                         /*tp_as_mapping*/
-    0,                         /*tp_hash */
-    (ternaryfunc)NPySecObj_call,                         /*tp_call*/
-    0,                         /*tp_str*/
-    (getattrofunc)section_getattro,                         /*tp_getattro*/
-    (setattrofunc)section_setattro,                         /*tp_setattro*/
-    0,                         /*tp_as_buffer*/
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,        /*tp_flags*/
-    "Section objects",         /* tp_doc */
-    0,		               /* tp_traverse */
-    0,		               /* tp_clear */
-    0,		               /* tp_richcompare */
-    0,		               /* tp_weaklistoffset */
-    (getiterfunc)section_iter,		               /* tp_iter */
-    0,		               /* tp_iternext */
-    NPySecObj_methods,             /* tp_methods */
-    0,             /* tp_members */
-    0,                         /* tp_getset */
-    0,                         /* tp_base */
-    0,                         /* tp_dict */
-    0,                         /* tp_descr_get */
-    0,                         /* tp_descr_set */
-    0,                         /* tp_dictoffset */
-    (initproc)NPySecObj_init,      /* tp_init */
-    0,                         /* tp_alloc */
-    NPySecObj_new,                 /* tp_new */
-};
-
-static PyTypeObject nrnpy_SegmentType = {
-    PyObject_HEAD_INIT(NULL)
-    0,                         /*ob_size*/
-    "nrn.Segment",         /*tp_name*/
-    sizeof(NPySegObj), /*tp_basicsize*/
-    0,                         /*tp_itemsize*/
-    (destructor)NPySegObj_dealloc,                        /*tp_dealloc*/
-    0,                         /*tp_print*/
-    0,                         /*tp_getattr*/
-    0,                         /*tp_setattr*/
-    0,                         /*tp_compare*/
-    0,                         /*tp_repr*/
-    0,                         /*tp_as_number*/
-    0,                         /*tp_as_sequence*/
-    0,                         /*tp_as_mapping*/
-    0,                         /*tp_hash */
-    0,                         /*tp_call*/
-    0,                         /*tp_str*/
-    (getattrofunc)segment_getattro,                         /*tp_getattro*/
-    (setattrofunc)segment_setattro,                         /*tp_setattro*/
-    0,                         /*tp_as_buffer*/
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,        /*tp_flags*/
-    "Segment objects",         /* tp_doc */
-    0,		               /* tp_traverse */
-    0,		               /* tp_clear */
-    0,		               /* tp_richcompare */
-    0,		               /* tp_weaklistoffset */
-    (getiterfunc)segment_iter,		               /* tp_iter */
-    (iternextfunc)segment_next,		               /* tp_iternext */
-    NPySegObj_methods,             /* tp_methods */
-    NPySegObj_members,             /* tp_members */
-    0,                         /* tp_getset */
-    0,                         /* tp_base */
-    0,                         /* tp_dict */
-    0,                         /* tp_descr_get */
-    0,                         /* tp_descr_set */
-    0,                         /* tp_dictoffset */
-    (initproc)NPySegObj_init,      /* tp_init */
-    0,                         /* tp_alloc */
-    NPySegObj_new,                 /* tp_new */
-};
-
-static PyTypeObject nrnpy_RangeType = {
-    PyObject_HEAD_INIT(NULL)
-    0,                         /*ob_size*/
-    "nrn.RangeVar",         /*tp_name*/
-    sizeof(NPyRangeVar), /*tp_basicsize*/
-    0,                         /*tp_itemsize*/
-    (destructor)NPyRangeVar_dealloc,                        /*tp_dealloc*/
-    0,                         /*tp_print*/
-    0,                         /*tp_getattr*/
-    0,                         /*tp_setattr*/
-    0,                         /*tp_compare*/
-    0,                         /*tp_repr*/
-    0,                         /*tp_as_number*/
-    &rv_seqmeth,                         /*tp_as_sequence*/
-    0,                         /*tp_as_mapping*/
-    0,                         /*tp_hash */
-    0,                         /*tp_call*/
-    0,                         /*tp_str*/
-    0,                         /*tp_getattro*/
-    0,                         /*tp_setattro*/
-    0,                         /*tp_as_buffer*/
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,        /*tp_flags*/
-    "Range Variable Array objects",         /* tp_doc */
-    0,		               /* tp_traverse */
-    0,		               /* tp_clear */
-    0,		               /* tp_richcompare */
-    0,		               /* tp_weaklistoffset */
-    0,		               /* tp_iter */
-    0,		               /* tp_iternext */
-    NPyRangeVar_methods,             /* tp_methods */
-    0,             /* tp_members */
-    0,                         /* tp_getset */
-    0,                         /* tp_base */
-    0,                         /* tp_dict */
-    0,                         /* tp_descr_get */
-    0,                         /* tp_descr_set */
-    0,                         /* tp_dictoffset */
-    (initproc)NPyRangeVar_init,      /* tp_init */
-    0,                         /* tp_alloc */
-    NPyRangeVar_new,                 /* tp_new */
-};
-
-static PyTypeObject nrnpy_MechanismType = {
-    PyObject_HEAD_INIT(NULL)
-    0,                         /*ob_size*/
-    "nrn.Mechanism",         /*tp_name*/
-    sizeof(NPyMechObj), /*tp_basicsize*/
-    0,                         /*tp_itemsize*/
-    (destructor)NPyMechObj_dealloc,                        /*tp_dealloc*/
-    0,                         /*tp_print*/
-    0,                         /*tp_getattr*/
-    0,                         /*tp_setattr*/
-    0,                         /*tp_compare*/
-    0,                         /*tp_repr*/
-    0,                         /*tp_as_number*/
-    0,                         /*tp_as_sequence*/
-    0,                         /*tp_as_mapping*/
-    0,                         /*tp_hash */
-    0,                         /*tp_call*/
-    0,                         /*tp_str*/
-    (getattrofunc)mech_getattro,                         /*tp_getattro*/
-    (setattrofunc)mech_setattro,                         /*tp_setattro*/
-    0,                         /*tp_as_buffer*/
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,        /*tp_flags*/
-    "Mechanism objects",         /* tp_doc */
-    0,		               /* tp_traverse */
-    0,		               /* tp_clear */
-    0,		               /* tp_richcompare */
-    0,		               /* tp_weaklistoffset */
-    0,		               /* tp_iter */
-    (iternextfunc)mech_next,		               /* tp_iternext */
-    NPyMechObj_methods,             /* tp_methods */
-    NPyMechObj_members,             /* tp_members */
-    0,                         /* tp_getset */
-    0,                         /* tp_base */
-    0,                         /* tp_dict */
-    0,                         /* tp_descr_get */
-    0,                         /* tp_descr_set */
-    0,                         /* tp_dictoffset */
-    (initproc)NPyMechObj_init,      /* tp_init */
-    0,                         /* tp_alloc */
-    NPyMechObj_new,                 /* tp_new */
-};
-
 PyObject* nrnpy_cas(PyObject* self, PyObject* args) {
 	Section* sec = chk_access();
+	//printf("nrnpy_cas %s\n", secname(sec));
 	section_ref(sec);
 	NPySecObj* pysec = NULL;
 	if (sec->prop->dparam[PROP_PY_INDEX]._pvoid) {
@@ -1019,7 +962,8 @@ PyObject* nrnpy_cas(PyObject* self, PyObject* args) {
 	}else{
 		pysec = (NPySecObj*)psection_type->tp_alloc(psection_type, 0);
 		pysec->sec_ = sec;
-		sec->prop->dparam[PROP_PY_INDEX]._pvoid;
+		pysec->name_ = 0;
+		pysec->cell_ = 0;
 	}
 	return (PyObject*)pysec;
 }
@@ -1030,6 +974,12 @@ static PyMethodDef nrnpy_methods[] = {
 	{NULL}
 };
 	
+#if PY_MAJOR_VERSION >= 3
+#include "nrnpy_nrn_3.h"
+#else
+#include "nrnpy_nrn_2.h"
+#endif
+
 static PyObject* nrnmodule_;
 
 static void rangevars_add(Symbol* sym) {
@@ -1037,6 +987,7 @@ static void rangevars_add(Symbol* sym) {
 	NPyRangeVar* r = PyObject_New(NPyRangeVar, range_type);
 	//printf("%s\n", sym->name);
 	r->sym_ = sym;
+	r->isptr_ = 0;
 	PyDict_SetItemString(rangevars_, sym->name, (PyObject*)r);
 }
 
@@ -1045,26 +996,37 @@ myPyMODINIT_FUNC nrnpy_nrn(void)
     int i;
     PyObject* m;
 
+#if PY_MAJOR_VERSION >= 3
+	PyObject* modules = PyImport_GetModuleDict();
+	if ((m = PyDict_GetItemString(modules, "nrn")) != NULL &&
+	    PyModule_Check(m)) {
+		return m;
+	}
+#endif
     psection_type = &nrnpy_SectionType;
     nrnpy_SectionType.tp_new = PyType_GenericNew;
     if (PyType_Ready(&nrnpy_SectionType) < 0)
-        return;
+        goto fail;
     Py_INCREF(&nrnpy_SectionType);
 
     psegment_type = &nrnpy_SegmentType;
     nrnpy_SegmentType.tp_new = PyType_GenericNew;
     if (PyType_Ready(&nrnpy_SegmentType) < 0)
-        return;
+        goto fail;
     Py_INCREF(&nrnpy_SegmentType);
 
     range_type = &nrnpy_RangeType;
     nrnpy_RangeType.tp_new = PyType_GenericNew;
     if (PyType_Ready(&nrnpy_RangeType) < 0)
-        return;
+        goto fail;
     Py_INCREF(&nrnpy_RangeType);
 
+#if PY_MAJOR_VERSION >= 3
+    m = PyModule_Create(&nrnmodule);
+#else
     m = Py_InitModule3("nrn", nrnpy_methods,
                        "NEURON interaction with Python");
+#endif
     nrnmodule_ = m;	
     PyModule_AddObject(m, "Section", (PyObject *)psection_type);
     PyModule_AddObject(m, "Segment", (PyObject *)psegment_type);
@@ -1073,9 +1035,32 @@ myPyMODINIT_FUNC nrnpy_nrn(void)
     pmech_generic_type = &nrnpy_MechanismType;
     nrnpy_MechanismType.tp_new = PyType_GenericNew;
     if (PyType_Ready(&nrnpy_MechanismType) < 0)
-        return;
+        goto fail;
     Py_INCREF(&nrnpy_MechanismType);
     PyModule_AddObject(m, "Mechanism", (PyObject *)pmech_generic_type);
+    remake_pmech_types();
+    nrnpy_reg_mech_p_ = nrnpy_reg_mech;
+    nrnpy_o2loc_p_ = o2loc;
+    nrnpy_pysec_name_p_ = pysec_name;
+    nrnpy_pysec_cell_p_ = pysec_cell;
+    nrnpy_pysec_cell_equals_p_ = pysec_cell_equals;
+#endif
+#if PY_MAJOR_VERSION >= 3
+	assert(PyDict_SetItemString(modules, "nrn", m) == 0);
+	Py_DECREF(m);
+    return m;
+    fail:
+        return NULL;
+#else
+    fail:
+	return;
+#endif
+}
+
+void remake_pmech_types() {
+    int i;
+    Py_XDECREF(pmech_types);
+    Py_XDECREF(rangevars_);
     pmech_types = PyDict_New();
     rangevars_ = PyDict_New();
     rangevars_add(hoc_table_lookup("diam", hoc_built_in_symlist));
@@ -1084,9 +1069,6 @@ myPyMODINIT_FUNC nrnpy_nrn(void)
     for (i=4; i < n_memb_func; ++i) { // start at pas
 	nrnpy_reg_mech(i);
     }
-    nrnpy_reg_mech_p_ = nrnpy_reg_mech;
-    nrnpy_o2loc_p_ = o2loc;
-#endif
 }
 
 void nrnpy_reg_mech(int type) {

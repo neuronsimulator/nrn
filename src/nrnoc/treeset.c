@@ -355,6 +355,7 @@ void nrn_rhs(NrnThread* _nt) {
 	
 	if (diam_changed) {
 		nrn_thread_error("need recalc_diam()");
+		recalc_diam();
 	}
 	if (use_sparse13) {
 		int i, neqn;

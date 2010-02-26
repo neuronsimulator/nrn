@@ -131,7 +131,7 @@ HocStr* hoc_tmpbuf;
 HocStr* hoc_cbufstr;
 char* hoc_promptstr;
 static CHAR	*cbuf;
-static CHAR	*ctp;
+CHAR	*ctp;
 int hoc_ictp;
 extern Symlist *symlist;	/* This list is permanent */
 extern Symlist *p_symlist; /* Constants, strings, auto variables */
@@ -956,6 +956,9 @@ printf("Discarding input til Dialog is closed.\n");
 
 hoc_final_exit() {
 	char buf[256];
+#if defined(USE_PYTHON)
+	if (p_nrnpython_start) { (*p_nrnpython_start)(0);}
+#endif
 	bbs_done();
 	hoc_audit_from_final_exit();
 	hoc_edit_quit();

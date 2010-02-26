@@ -97,6 +97,15 @@ char* BBSDirect::upkstr() {
 	return s;
 }
 
+char* BBSDirect::upkpickle(size_t* n) {
+	char* s;
+	s = nrnmpi_upkpickle(n, recvbuf_);
+#if debug
+	printf("upkpickle returning %d bytes\n", *n);
+#endif
+	return s;
+}
+
 void BBSDirect::pkbegin() {
 #if debug
 printf("%d BBSDirect::pkbegin\n", nrnmpi_myid);
@@ -133,6 +142,13 @@ void BBSDirect::pkstr(const char* s) {
 printf("%d BBSDirect::pkstr %s\n", nrnmpi_myid, s);
 #endif
 	nrnmpi_pkstr(s, sendbuf_);
+}
+
+void BBSDirect::pkpickle(const char* s, size_t n) {
+#if debug
+printf("%d BBSDirect::pkpickle %d bytes\n", nrnmpi_myid, n);
+#endif
+	nrnmpi_pkpickle(s, n, sendbuf_);
 }
 
 void BBSDirect::post(const char* key) {

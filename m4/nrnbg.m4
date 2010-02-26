@@ -76,12 +76,12 @@ AC_ARG_ENABLE([bluegeneP],
 				BG_INCLUDE="-I$BG_BASE/comm/include -I$BG_BASE/arch/include"
 			fi
 			if test "$PYINCDIR" = "" ; then
-				PYINCDIR="$BG_BASE/gnu-linux/include/python2.5"
+				PYINCDIR="$BG_BASE/gnu-linux/include/python2.6"
 			fi
 			if test "$PYLIB" = "" ; then
-				PYLIB="-L$BG_BASE/gnu-linux/lib -lpython2.5"
+				PYLIB="-L$BG_BASE/gnu-linux/lib -lpython2.6"
 				PYLIBDIR="$BG_BASE/gnu-linux/lib"
-				PYLIBLINK="-L$BG_BASE/gnu-linux/lib -lpython2.5"
+				PYLIBLINK="-L$BG_BASE/gnu-linux/lib -lpython2.6"
 			fi
 			if test "$LIBS" = "" ; then
 				LIBS='-lmass'

@@ -23,7 +23,8 @@ if UniversalMacBinary
 	$(CC) -arch i386 -o aouti386 -Dcpu="\"$(host_cpu)\"" -I. $(srcdir)/launch.c $(srcdir)/mac2uxarg.c -framework Carbon
 	lipo aouti386 aoutppc -create -output a.out
 else
-	$(CC) -Dcpu="\"$(host_cpu)\"" -I. $(srcdir)/launch.c $(srcdir)/mac2uxarg.c -framework Carbon
+	$(CC) $(CFLAGS) -Dcpu="\"$(host_cpu)\"" -I. $(srcdir)/launch.c $(srcdir)/mac2uxarg.c -framework Carbon
+
 endif
 	carbon=$(carbon) sh $(srcdir)/launch_inst.sh "$(host_cpu)" "$(prefix)" "$(srcdir)"
 	for i in $(S) ; do \
