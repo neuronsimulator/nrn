@@ -149,6 +149,7 @@ static DCMF_Multicast_t msend1[NSEND];
 static DCMF_Request_t sender1[NSEND] __attribute__((__aligned__(16)));
 static DCMF_Callback_t cb_done1[NSEND];
 static DCQuad msginfo1[NSEND];
+static boolean req_in_use[NSEND2];
 
 // maybe we will use this when a rank sends to itself.
 static void spk_ready (int gid, double spiketime) {
@@ -222,6 +223,12 @@ double nrn_bgp_receive_time(int type) { // and others
 	return rt;
 }
 
+// Multisend_multicast callback
+static void  multicast_done(void* arg, DCMF_Error_t*) {
+	boolean* a = (boolean*)arg;
+	*a = false;
+}
+
 #endif //BGPDMA == 2
 
 extern "C" {
@@ -243,13 +250,6 @@ public:
 };
 
 static int max_ntarget_host;
-static boolean req_in_use[NSEND2];
-
-// Multisend_multicast callback
-static void  multicast_done(void* arg, DCMF_Error_t*) {
-	boolean* a = (boolean*)arg;
-	*a = false;
-}
 
 static void bgp_dma_init() {
 	for (int i = 0; i < BGP_INTERVAL; ++i) {
@@ -257,11 +257,13 @@ static void bgp_dma_init() {
 	}
 	current_rbuf = 0;
 	next_rbuf = 1;
+#if BGPDMA == 2
 	for (int i=0; i < NSEND2; ++i) {
 		req_in_use[i] = false;
 	}
 	dmasend_time_ = 0;
 	n_xtra_cons_check_ = 0;
+#endif
 }
 
 static int bgp_advance() {
