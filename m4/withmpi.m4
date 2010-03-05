@@ -98,6 +98,8 @@ AC_HELP_STRING([--with-music=/prefix/of/music/installation],[Want to use the  MU
 	MUSIC_LIBDIR="$with_music/lib"
 ],[
 	use_music=no
+	MUSIC_INCDIR='.'
+	MUSIC_LIBDIR='.'
 ])
 AM_CONDITIONAL(BUILD_NEURONMUSIC, test x$use_music = xyes)
 AC_SUBST(MUSIC_LIBLA)

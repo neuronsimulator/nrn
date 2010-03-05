@@ -5,7 +5,9 @@
 #if HAVE_POSIX_MEMALIGN
 #define HAVE_MEMALIGN 1
 #endif
-
+#if defined(DARWIN)
+#undef HAVE_MEMALIGN
+#endif
 #if HAVE_MEMALIGN
 #define _XOPEN_SOURCE 600
 #endif
