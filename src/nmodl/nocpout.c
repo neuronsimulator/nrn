@@ -127,6 +127,7 @@ List *thread_mem_init_list;
 List* toplocal_;
 extern int protect_;
 extern int protect_include_;
+extern List *set_ion_variables(), *get_ion_variables();
 
 /* NEURON block information */
 List *currents;
@@ -1064,6 +1065,7 @@ located in a section and is not associated with an integrator\n"
 	}
 	q = ba_list_;
 	for (i = 1; i <= ba_index_; ++i) {
+		List* lst;
 		q = q->next;
                 if (electrode_current) {
 			insertstr(ITM(q), " \
@@ -1077,6 +1079,17 @@ if (_nd->_extnode) {\n\
 }\n");
 		}else{
 			insertstr(ITM(q), " v = NODEV(_nd);\n");
+		}
+		lst = get_ion_variables(0);
+		if (lst->next != lst->prev) {
+			move(lst->next, lst->prev, ITM(q));
+			freelist(lst);
+		}
+		q = q->next;
+		lst = set_ion_variables(0);
+		if (lst->next != lst->prev) {
+			move(lst->next, lst->prev, ITM(q));
+			freelist(lst);
 		}
 		q = q->next;
 		sprintf(buf, "\thoc_reg_ba(_mechtype, _ba%d, %s);\n", i, STR(q));
@@ -1518,6 +1531,7 @@ bablk(ba, type, q1, q2)
 	ba += (type == INITIAL1) ? 3 : 0;
 	ba += (type == STEP) ? 4 : 0;
 	lappenditem(ba_list_, qv->next);
+	lappenditem(ba_list_, q2);
 	sprintf(buf, "%d", ba);
 	lappendstr(ba_list_, buf);
 }
