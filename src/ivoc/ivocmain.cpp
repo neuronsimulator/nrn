@@ -611,7 +611,11 @@ ENDGUI
 	}else
 #endif
 	{
-		nrn_istty_ = nrn_optargint("-isatty", &our_argc, our_argv, 0);
+		nrn_istty_ = nrn_optarg_on("-isatty", &our_argc, our_argv);
+		if (nrn_istty_ == 0) {
+			nrn_istty_ = nrn_optarg_on("-notatty", &our_argc, our_argv);
+			if (nrn_istty_ == 1) { nrn_istty_ = -1; }
+		}
 	}
 
 #if HAVE_IV
