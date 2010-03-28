@@ -23,7 +23,9 @@ endif
 libnrnpython_la_SOURCES = nrnpython.cpp nrnpy_hoc.cpp nrnpy_nrn.cpp \
 	nrnpy_p2h.cpp $(EXTEND)
 
-noinst_HEADERS = nrnpython.h nrnpy_reg.h
+noinst_HEADERS = nrnpython.h nrnpy_reg.h \
+	nrnpy_hoc_2.h nrnpy_hoc_3.h \
+	nrnpy_nrn_2.h nrnpy_nrn_3.h
 
 if BUILD_NRNPYTHON
 BUILT_SOURCES = force setup.py
