@@ -788,6 +788,11 @@ static PyObject* mech_getattro(NPyMechObj* self, PyObject* name) {
 				result = Py_BuildValue("d", *px);
 			}
 		}
+	}else if (strcmp(n, "__dict__") == 0) {
+		result = PyDict_New();
+		for (Symbol* s = np.first_var(); np.more_var(); s = np.next_var()) {
+			assert(PyDict_SetItemString(result, s->name, Py_None) == 0);
+		}
 	}else{
 		result = PyObject_GenericGetAttr((PyObject*)self, name);
 	}
