@@ -1,21 +1,27 @@
 #setup.py
 from distutils.core import setup, Extension
+from distutils.sysconfig import get_python_version
 
 import sys
 
 # NRNPYTHON_DEFINES which were enabled at configure time
 extern_defines = "@NRNPYTHON_DEFINES@"
 nrnpython_exec = "@NRNPYTHON_EXEC@"
+nrnpython_pyver = "@NRNPYTHON_PYVER@"
 nrn_srcdir = "@NRN_SRCDIR@"
+ivlibdir = "@IV_LIBDIR@"
+if ivlibdir == "" :
+    ivlibdir = '.'
+
 instdir = "@prefix@"
 if nrn_srcdir[0] != '/' :
     nrn_srcdir = '../../' + nrn_srcdir
 
-if nrnpython_exec!=sys.executable:
+if nrnpython_pyver!=get_python_version():
     print "Error:"
-    print "NEURON configure time python: "+nrnpython_exec
-    print "Python presently executing setup.py: "+sys.executable
-    print "These do not match, and the should!"
+    print "NEURON configure time python: "+nrnpython_exec+"  "+ nrnpython_pyver
+    print "Python presently executing setup.py: "+sys.executable+"   "+ get_python_version()
+    print "These do not match, and they should!"
     sys.exit(1)
 
 
@@ -53,7 +59,7 @@ include_dirs = [nrn_srcdir+'/src/oc', '../oc']
 defines = []
 
 libdirs = ["@NRN_LIBDIR@",
-  "@IV_LIBDIR@"
+  ivlibdir
 ]
 epre='-Wl,-R'
 
@@ -68,7 +74,7 @@ hoc_module = Extension(
 	"nrnpython",
         "nrnoc", "oc", "nrniv", "ivoc",
         "memacs", "meschach", "neuron_gnu", "nrnmpi",
-        "scopmath", "sparse13", "sundials", "IVhines",
+        "scopmath", "sparse13", "sundials", "@IVHINES@",
 	"readline"
       ],
       include_dirs = include_dirs,

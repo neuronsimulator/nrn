@@ -74,7 +74,7 @@ AC_DEFUN([AC_NRN_PYTHON],[
 Probably need to set PYLIBDIR to find libpython...
 and PYINCDIR to find Python.h
 ]),
-		[ac_nrn_python=$withval], [ac_nrn_python=no]
+		[ac_nrn_python="$withval"], [ac_nrn_python=no]
 	)
 	nrn_temp_cflags="$CFLAGS"
 	AC_ARG_ENABLE([cygwin],
@@ -122,10 +122,11 @@ That is, build a version suitable mostly as a Python extension.])
 		NRN_DEFINE(USE_PYTHON,1,[define if Python available])
 		if test "$PYVER" = "" ; then
 			AC_NRN_PYCONF(xxx,get_python_version(),2.4,$ac_nrn_python)
-			PYVER=python${xxx}
+			PYVER=${xxx}
 			AC_NRN_PYCONF(xxx,sys.version_info.major,2,$ac_nrn_python)
 			NRNPYTHON_PYMAJOR=${xxx}
 		fi
+		NRNPYTHON_PYVER="$PYVER"
 		if test "$PYINCDIR" = "" ; then
 			AC_NRN_PYCONF(xxx,get_python_inc(1),"",$ac_nrn_python)
 			if test "$xxx" = "" ; then
@@ -180,7 +181,7 @@ and PYLIBLINK.])
 					fi
 				else
 PYLIBDIR="${xxx}"
-PYLIBLINK="-L${PYLIBDIR} -l${PYVER} ${EXTRAPYLIBS}"
+PYLIBLINK="-L${PYLIBDIR} -lpython${PYVER} ${EXTRAPYLIBS}"
 PYLIB="${PYLIBLINK} ${PYLINKFORSHARED} -R${PYLIBDIR}"
 				fi
 			;;
@@ -224,6 +225,7 @@ PYLIB="${PYLIBLINK} ${PYLINKFORSHARED} -R${PYLIBDIR}"
 	AC_SUBST(NRNPYTHON_PYLIBLINK)
 	AC_SUBST(setup_extra_link_args)
 	AC_SUBST(NRNPYTHON_PYMAJOR)
+	AC_SUBST(NRNPYTHON_PYVER)
 	AC_SUBST(PY2TO3)
 	AC_SUBST(PYTHON)
 ]) dnl end of AC_NRN_PYTHON
