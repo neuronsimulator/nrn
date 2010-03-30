@@ -154,31 +154,44 @@ static void NPyMechObj_dealloc(NPyMechObj* self) {
 // has no hoc Symbol but the Python Section pointer is filled in
 // and secname(sec) returns the Python Section object name from the hoc section.
 // If a Python Section object is created from an existing nrnoc section
-// (with a filled in Symbol) the nrnoc section will continue to exist untill
+// (with a filled in Symbol) the nrnoc section will continue to exist until
 // the hoc delete_section() is called on it.
 // 
-PyObject* NPySecObj_new(PyTypeObject* type, PyObject* args, PyObject* kwds) {
+static int NPySecObj_init(NPySecObj* self, PyObject* args, PyObject* kwds) {
+//printf("NPySecObj_init %lx %lx\n", (long)self, (long)self->sec_);
 	static char* kwlist[] = {"cell", "name", NULL};
-	NPySecObj* self;
-	self = (NPySecObj*)type->tp_alloc(type, 0);
-//printf("NPySecObj_new %lx\n", (long)self);
-	if (self != NULL) {
-		self->sec_ = nrnpy_newsection(self);
+	if (self != NULL && !self->sec_) {
 		self->allseg_iter_ = 0;
+		if (self->name_) { delete [] self->name_; }
 		self->name_ = 0;
 		self->cell_ = 0;
 		char* name = 0;
 		PyObject* cell = 0;
 		if (!PyArg_ParseTupleAndKeywords(args, kwds, "|Os", kwlist,
 		  &self->cell_, &name)) {
-			NPySecObj_dealloc(self);
-			return NULL;
+			return -1;
 		}
 		// note that we are NOT referencing the cell
 		if (name) {
 			self->name_ = new char[strlen(name) + 1];
 			strcpy(self->name_, name);
 		}
+		self->sec_ = nrnpy_newsection(self);
+	}
+	return 0;
+}
+
+PyObject* NPySecObj_new(PyTypeObject* type, PyObject* args, PyObject* kwds) {
+	static char* kwlist[] = {"cell", "name", NULL};
+	NPySecObj* self;
+	self = (NPySecObj*)type->tp_alloc(type, 0);
+//printf("NPySecObj_new %lx\n", (long)self);
+	if (self != NULL) {
+		if (NPySecObj_init(self, args, kwds) != 0) {
+			NPySecObj_dealloc(self);
+			return NULL;
+		}
+	
 	}
 	return (PyObject*)self;
 }
@@ -234,14 +247,6 @@ static PyObject* NPyRangeVar_new(PyTypeObject* type, PyObject* args, PyObject* k
 		self->isptr_ = 0;
 	}
 	return (PyObject*)self;
-}
-
-static int NPySecObj_init(NPySecObj* self, PyObject* args, PyObject* kwds) {
-//printf("NPySecObj_init %lx %lx\n", (long)self, (long)self->sec_);
-	if (self != NULL && !self->sec_) {
-		self->sec_ = nrnpy_newsection(self);
-	}
-	return 0;
 }
 
 static int NPySegObj_init(NPySegObj* self, PyObject* args, PyObject* kwds) {
