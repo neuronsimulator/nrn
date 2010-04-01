@@ -5,7 +5,7 @@
 #if HAVE_POSIX_MEMALIGN
 #define HAVE_MEMALIGN 1
 #endif
-#if defined(DARWIN)
+#if 0
 #undef HAVE_MEMALIGN
 #endif
 #if HAVE_MEMALIGN
@@ -238,10 +238,16 @@ hoc_Ecalloc(n, size)	/* check return from calloc */
 
 void* nrn_cacheline_alloc(void** memptr, size_t size) {
 #if HAVE_MEMALIGN
-	assert(posix_memalign(memptr, 64, size) == 0);
-#else
-	*memptr = hoc_Emalloc(size); hoc_malchk();
+	static int memalign_is_working = 1;
+	if (memalign_is_working) {
+		if (posix_memalign(memptr, 64, size) != 0) {
+fprintf(stderr, "posix_memalign not working, falling back to using malloc\n");
+			memalign_is_working = 0;
+			*memptr = hoc_Emalloc(size); hoc_malchk();
+		}
+	}else
 #endif
+	*memptr = hoc_Emalloc(size); hoc_malchk();
 	return *memptr;
 }
 
