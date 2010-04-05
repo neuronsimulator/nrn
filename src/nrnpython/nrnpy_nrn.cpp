@@ -68,6 +68,7 @@ extern Object* nrnpy_po2ho(PyObject*);
 extern Symbol* nrnpy_pyobj_sym_;
 extern int nrnpy_ho_eq_po(Object*, PyObject*);
 extern PyObject* nrnpy_hoc2pyobject(Object*);
+extern PyObject* nrnpy_ho2po(Object*);
 static void nrnpy_reg_mech(int);
 extern void (*nrnpy_reg_mech_p_)(int);
 static void o2loc(Object*, Section**, double*);
@@ -424,6 +425,20 @@ static PyObject* allseg(NPySecObj* self, PyObject* args) {
 	return (PyObject*)self;
 }
 
+static PyObject* seg_point_processes(NPySegObj* self) {
+	Node* nd = node_exact(self->pysec_->sec_, self->x_);
+	PyObject* result = PyList_New(0);
+	for (Prop* p = nd->prop; p; p = p->next) {
+		if (memb_func[p->type].is_point) {
+			Point_process* pp = (Point_process*)p->dparam[1]._pvoid;
+			PyObject* item = nrnpy_ho2po(pp->ob);
+			assert(PyList_Append(result, item)==0);
+			Py_XDECREF(item);
+		}
+	}
+	return result;
+}
+
 static PyObject* segment_iter(NPySegObj* self) {
 	NPyMechObj* m = NULL;
 	Node* nd = node_exact(self->pysec_->sec_, self->x_);
@@ -492,6 +507,14 @@ static PyObject* section_getattro(NPySecObj* self, PyObject* name) {
 				result = Py_BuildValue("d", *d);
 			}
 		}
+	}else if (strcmp(n, "rallbranch") == 0) {
+		result = Py_BuildValue("d", self->sec_->prop->dparam[4].val);
+	}else if (strcmp(n, "__dict__") == 0) {
+		result = PyDict_New();
+		assert(PyDict_SetItemString(result, "L", Py_None) == 0);
+		assert(PyDict_SetItemString(result, "Ra", Py_None) == 0);
+		assert(PyDict_SetItemString(result, "nseg", Py_None) == 0);
+		assert(PyDict_SetItemString(result, "rallbranch", Py_None) == 0);
 	}else{
 		result = PyObject_GenericGetAttr((PyObject*)self, name);
 	}
@@ -560,6 +583,17 @@ static int section_setattro(NPySecObj* self, PyObject* name, PyObject* value) {
 			}
 			//only need to do following if nseg > 1, VINDEX, or EXTRACELL
 			nrn_rangeconst(self->sec_, sym, d, 0);
+		}
+	}else if (strcmp(n, "rallbranch") == 0) {
+		double x;
+		if (PyArg_Parse(value, "d", &x) == 1 && x > 0.) {
+			self->sec_->prop->dparam[4].val = x;
+				diam_changed = 1;
+				self->sec_->recalc_area_ = 1;
+		}else{
+			PyErr_SetString(PyExc_ValueError,
+				"rallbranch must be > 0");
+			err = -1;
 		}
 	}else{
 		err = PyObject_GenericSetAttr((PyObject*)self, name, value);
@@ -698,6 +732,18 @@ static PyObject* segment_getattro(NPySegObj* self, PyObject* name) {
 		}else{
 			rv_noexist(self->pysec_->sec_, n, self->x_, 2);
 			result = NULL;
+		}
+	}else if (strcmp(n, "__dict__") == 0) {
+		Node* nd = node_exact(self->pysec_->sec_, self->x_);
+		result = PyDict_New();
+		assert(PyDict_SetItemString(result, "v", Py_None) == 0);
+		assert(PyDict_SetItemString(result, "diam", Py_None) == 0);
+		assert(PyDict_SetItemString(result, "cm", Py_None) == 0);
+		for (Prop* p = nd->prop; p ; p = p->next) {
+			if (p->type > CAP && !memb_func[p->type].is_point){
+				char* pn = memb_func[p->type].sym->name;
+				assert(PyDict_SetItemString(result, pn, Py_None) == 0);
+			}
 		}
 	}else{
 		result = PyObject_GenericGetAttr((PyObject*)self, name);
@@ -926,6 +972,8 @@ static PyMethodDef NPySecObj_methods[] = {
 };
 
 static PyMethodDef NPySegObj_methods[] = {
+	{"point_processes", (PyCFunction)seg_point_processes, METH_NOARGS,
+	  "seg.point_processes() returns list of POINT_PROCESS instances in the segment."},
 	{NULL}
 };
 
