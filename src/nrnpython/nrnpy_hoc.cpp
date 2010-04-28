@@ -355,9 +355,28 @@ static void component(PyHocObject* po) {
 }
 
 int nrnpy_numbercheck(PyObject* po) {
-	// PyNumber_Check can return 1 for things that are not numbers
-	return (PyInt_CheckExact(po) || PyFloat_CheckExact(po)
-		  || PyLong_CheckExact(po) || PyBool_Check(po));
+	// PyNumber_Check can return 1 for things that should not reasonably
+	// be cast to float but should stay as python objects.
+	// e.g. numpy.arange(1,5) and 5J
+	// The complexity here is partly due to SAGE having its own
+	// number system, e.g. type(1) is <type 'sage.rings.integer.Integer'>
+	int rval = PyNumber_Check(po);
+	// but do not allow sequences
+	if (rval == 1 && po->ob_type->tp_as_sequence) {
+		rval = 0;
+	}
+	// or things that fail when float(po) fails. ARGGH! This
+	// is a lot more expensive than I would like.
+	if (rval == 1) {
+		PyObject* tmp = PyNumber_Float(po);
+		if (tmp) {
+			Py_DECREF(tmp);
+		}else{
+			PyErr_Clear();
+			rval = 0;
+		}
+	}
+	return rval;
 }
 
 PyObject* nrnpy_ho2po(Object* o) {
