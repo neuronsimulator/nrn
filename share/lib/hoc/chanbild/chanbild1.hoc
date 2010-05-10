@@ -146,7 +146,7 @@ proc build() {
 	box.intercept(0)
 }
 
-proc kshoc() {local i, n
+proc kshoc() {local i, n, vmin, vmax
 	if (object_id(hf) == 0) {
 		sprint(tstr, "./%s.hoc", ks.name)
 		hf = new File()
