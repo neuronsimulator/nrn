@@ -110,6 +110,9 @@ class MyContentHandler(xml.sax.ContentHandler):
 
   def cell(self, attrs):
     self.biomechs_ = []
+    self.cellname = ""
+    if attrs.has_key('name'):
+        self.cellname = str(attrs['name'])
     if debug: 
         print "cell"
         self.prattrs(attrs)

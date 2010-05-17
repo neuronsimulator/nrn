@@ -324,6 +324,9 @@ proc parsed() {
 	bild.subsets.neuroml($o1)
 	bild.geom.neuroml($o1)
 	bild.memb.neuroml($o1)
+	if (strcmp($o1.cellname, "") != 0) {
+		classname = $o1.cellname
+	}
 }
 
 func warn3d() {

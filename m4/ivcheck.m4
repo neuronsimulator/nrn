@@ -69,9 +69,11 @@ AC_HELP_STRING([--without-iv],[Do not compile graphics into neuron.])
 ,[
 	dnl Interviews was specified:
 	HAVE_IV=1
+	IVHINES=IVhines
 	if test "$with_iv" = "no" ; then
 		dnl Interviews is not desired:
 		HAVE_IV=0
+		IVHINES=ivos
 		echo "Not compiling with interviews."
 	elif test "$with_iv" = "yes" ; then # look in default places
 		echo "Looking for InterViews in the usual places--"
@@ -201,6 +203,7 @@ AC_SUBST(IV_INCLUDE)
 AC_SUBST(IVOS_DIR)
 AC_SUBST(IVOS_LIB)
 AC_SUBST(IV_LIBDIR)
+AC_SUBST(IVHINES)
 
 AC_LANG_POP([])
 ])dnl end of AC_NRN_InterViews

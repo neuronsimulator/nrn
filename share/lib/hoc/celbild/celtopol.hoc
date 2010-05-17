@@ -1277,7 +1277,7 @@ proc neuroml() {local i, ip, nx, oldetop  localobj cab, cbs, s, pcbs, pt, pt2
 		nx = 0
 		sscanf(cab.name_, "%s[%d]", s.s, &nx)
 		//printf("i=%d id=%d %s[%d]\n", i, cab.id_, s.s, nx)
-		cbs = new CellBuildSection("d", i, 0, pcbs, cab.px_)
+		cbs = new CellBuildSection(s.s, i, 0, pcbs, cab.px_)
 		bild.all.add(cbs)
 		slist.append(cbs)
 		pt = $o1.points_[cab.first_]

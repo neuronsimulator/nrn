@@ -101,7 +101,7 @@ proc coef() {// kst, dir, type, resultstr
 	}
 }
 
-proc save_data() { local i, n, k
+proc save_data() { local i, n, k, vmin, vmax
 	sprint(tstr, "{%s.settype(%d, \"%s\")}", $s2, kst.type(), kst.ligand())
 	$o1.save(tstr)
 	if (kst.stoichiometry != 1) {
@@ -247,7 +247,7 @@ proc build_panel() {
 	doNotify()
 }
 
-proc pmenu() {
+proc pmenu() {local vmin, vmax
 	xlabel("")
 	ksth.coef(kst, $1, kst.type, tstr)
 	ksth.aform(kst, $1, tstr1)

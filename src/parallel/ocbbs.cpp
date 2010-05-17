@@ -173,6 +173,7 @@ static int submit_help(OcBBS* bbs) {
 			pname = (*nrnpy_po2pickle)(*hoc_objgetarg(i), &size);
 			bbs->pkint(3); // pyfun with no arg style
 			bbs->pkpickle(pname, size);
+			bbs->pkint(0); // argtypes
 			delete [] pname;
 		}
 	}

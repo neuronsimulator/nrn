@@ -45,7 +45,7 @@ proc init() {
 	cbf[1] = new ChannelBuildF($o3, 1)
 }
 
-proc kshoc() {local i, j  localobj tobj
+proc kshoc() {local i, j, vmin, vmax  localobj tobj
 	$o1.printf("{\n  tobj = kstransitions.object(%d)\n", $2)
 	if (kst.type >= 2) {
 		$o1.printf("  tobj.type(%d, \"%s\")\n", kst.type, kst.ligand)

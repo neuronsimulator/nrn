@@ -89,7 +89,7 @@ proc clone() {local i, j
 	objref tobj1
 }
 
-proc copygate() {local i, j, k
+proc copygate() {local i, j, k, vmin, vmax
 	// $o1 is the source KSChan, $o2 is the source KSGate
 	begin_restore($o2.power)
 	for i=0, $o2.nstate-1 {

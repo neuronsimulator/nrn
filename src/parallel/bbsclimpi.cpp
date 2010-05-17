@@ -17,7 +17,7 @@
 #define debug 0
 
 #if defined(USE_PYTHON)
-void (*p_nrnpython_start)(int);
+extern void (*p_nrnpython_start)(int);
 #endif
 
 #if defined(HAVE_STL)
