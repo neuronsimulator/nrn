@@ -4930,20 +4930,20 @@ void PreSyn::record(double tt) {
 }
 
 void PreSyn::disconnect(Observable* o) {
+//printf("PreSyn::disconnect %s\n", hoc_object_name(((ObjObservable*)o)->object()));
 	if (tvec_ && tvec_->obj_ == ((ObjObservable*)o)->object()) {
 		tvec_ = nil;
 	}
 	if (idvec_ && idvec_->obj_ == ((ObjObservable*)o)->object()) {
 		idvec_ = nil;
 	}
-	if (dil_.count() == 0) {
-		assert(tvec_ == nil && idvec_ == nil);
+	if (dil_.count() == 0 && tvec_ == nil && idvec_ == nil && output_index_ == -1) {
 		delete this;
 	}
 }
 
 void PreSyn::update(Observable* o) { // should be disconnect
-//printf("PreSyn::disconnect\n");
+//printf("PreSyn::update\n");
 	for (int i = 0; i < dil_.count(); ++i) {
 #if 0 // osrc_ below is invalid
 if (dil_.item(i)->obj_) {
