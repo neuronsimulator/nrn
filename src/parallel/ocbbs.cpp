@@ -710,7 +710,7 @@ static double broadcast(void*) {
 		char* s;
 		if (srcid == nrnmpi_myid) {
 			s = gargstr(1);
-			cnt = strlen(s);
+			cnt = strlen(s) + 1;
 		}
 		nrnmpi_int_broadcast(&cnt, 1, srcid);
 		if (srcid != nrnmpi_myid) {
