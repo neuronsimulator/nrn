@@ -68,6 +68,7 @@ extern NetCvode* net_cvode_instance;
 extern cTemplate** nrn_pnt_template_;
 extern double t, dt;
 extern void nrn_cvfun(double t, double* y, double* ydot);
+extern void nrn_cleanup_presyn(PreSyn*);
 #define nt_dt nrn_threads->_dt
 #define nt_t nrn_threads->_t
 extern void nrn_parent_info(Section*);
@@ -230,7 +231,6 @@ extern int nrnmpi_pgvts_least(double* tt, int* op, int* init);
 
 #if BGPDMA
 extern void bgp_dma_send(PreSyn*, double t);
-extern void bgpdma_cleanup_presyn(PreSyn*);
 extern int use_bgpdma_;
 #endif
 #if BGPDMA == 2
@@ -4769,9 +4769,7 @@ PreSyn::PreSyn(double* src, Object* osrc, Section* ssrc) {
 PreSyn::~PreSyn() {
 	PreSynSave::invalid();
 //	printf("~PreSyn %lx\n", (long)this);
-#if BGPDMA
-	bgpdma_cleanup_presyn(this);
-#endif
+	nrn_cleanup_presyn(this);
 	if (stmt_) {
 		delete stmt_;
 	}
@@ -4945,20 +4943,20 @@ void PreSyn::record(double tt) {
 }
 
 void PreSyn::disconnect(Observable* o) {
+//printf("PreSyn::disconnect %s\n", hoc_object_name(((ObjObservable*)o)->object()));
 	if (tvec_ && tvec_->obj_ == ((ObjObservable*)o)->object()) {
 		tvec_ = nil;
 	}
 	if (idvec_ && idvec_->obj_ == ((ObjObservable*)o)->object()) {
 		idvec_ = nil;
 	}
-	if (dil_.count() == 0) {
-		assert(tvec_ == nil && idvec_ == nil);
+	if (dil_.count() == 0 && tvec_ == nil && idvec_ == nil && output_index_ == -1) {
 		delete this;
 	}
 }
 
 void PreSyn::update(Observable* o) { // should be disconnect
-//printf("PreSyn::disconnect\n");
+//printf("PreSyn::update\n");
 	for (int i = 0; i < dil_.count(); ++i) {
 #if 0 // osrc_ below is invalid
 if (dil_.item(i)->obj_) {

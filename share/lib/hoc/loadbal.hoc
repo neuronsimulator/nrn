@@ -45,6 +45,7 @@ proc init() {local i, j  localobj ms
 			m_complex_[j].x[i] = 1 + ms.count
 //			printf("complexity %d for %s\n", m_complex_[j].x[i], mname)
 			if (j == 0 && hoc_sf_.substr(mname, "_ion") != -1) {
+				m_complex_[j].x[i] = 0
 				ion_complex_.x[i] = 1
 			}
 		}
@@ -438,11 +439,20 @@ proc ExperimentalMechComplex() {local i, j, k, b, ts, ns, baseindex, irun, par \
 		mt[j].selected(s.s)
 		names.o(kk).s = s.s
 		// parallelism added on top of working version
+		b = 1
+		if (kk%pc.nhost != pc.id) {
+			b = 0
+		}
 		// ions must be done on id 0 (because names for
 		// ionindices.x[k] needs to be assigned )
-		if (j == 0 && ionindices.x[k] > 0 && pc.id > 0) {
-			continue
-		}else if (kk%pc.nhost != pc.id) {
+		if (j == 0 && ionindices.x[k] > 0) {
+			if (pc.id == 0) {
+				b = 1
+			}else{
+				b = 0
+			}
+		}
+		if (b == 0) {
 			continue
 		}
 //printf("%d %s\n", pc.id, s.s)

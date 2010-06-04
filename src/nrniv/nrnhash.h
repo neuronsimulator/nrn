@@ -39,6 +39,7 @@ public: \
 	boolean find(Key, Value&)const; \
 	NrnHashEntry(Table)& at(unsigned long bucket){ return *(begin() + bucket); } \
 	Value& operator[](Key key) { return at(hash(key))[key]; } \
+	void remove(Key); \
 	unsigned long hash(Key key)const { return ((unsigned long)key)%size_; } \
 	long size_; \
 };
@@ -59,6 +60,11 @@ boolean Table::find(Key key, Value& ps)const { \
 	} \
 	ps = itr->second; \
 	return true; \
+}\
+\
+void Table::remove(Key key) { \
+	NrnHashEntry(Table)& gm = ((Table*)this)->at(hash(key)); \
+	gm.erase(key); \
 }
 
 // for iteration, if you have 

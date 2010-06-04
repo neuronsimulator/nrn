@@ -52,6 +52,7 @@ extern Object* nrn_sec2cell(Section*);
 extern void ncs2nrn_integrate(double tstop);
 extern void nrn_fake_fire(int gid, double firetime, int fake_out);
 int nrnmpi_spike_compress(int nspike, boolean gid_compress, int xchng_meth);
+void nrn_cleanup_presyn(PreSyn*);
 void nrnmpi_gid_clear(int);
 extern void nrn_partrans_clear();
 void nrn_spike_exchange_init();
@@ -197,7 +198,7 @@ static void bgp_dma_setup();
 static void bgp_dma_init();
 static void bgp_dma_receive();
 extern void bgp_dma_send(PreSyn*, double t);
-extern void bgpdma_cleanup_presyn(PreSyn*);
+static void bgpdma_cleanup_presyn(PreSyn*);
 #endif
 
 static int active_;
@@ -874,6 +875,16 @@ void BBS::set_gid2node(int gid, int nid) {
 		(*gid2out_)[gid] = nil;
 #endif
 //		gid2out_->insert(pair<const int, PreSyn*>(gid, nil));
+	}
+}
+
+void nrn_cleanup_presyn(PreSyn* ps) {
+#if BGPDMA
+	bgpdma_cleanup_presyn(ps);
+#endif
+	PreSyn* pss;
+	if (ps->gid_ >= 0 && gid2in_) {
+		gid2in_->remove(ps->gid_);
 	}
 }
 
