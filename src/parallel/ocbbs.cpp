@@ -49,6 +49,7 @@ extern "C" {
 	void nrnmpi_int_broadcast(int*, int, int);
 	void nrnmpi_char_broadcast(char*, int, int);
 	void nrnmpi_dbl_broadcast(double*, int, int);
+	extern void nrnmpi_subworlds(int n);
 #endif
 
 	extern double* nrn_mech_wtime_;
@@ -82,15 +83,6 @@ static void pack_help(int, OcBBS*);
 static void unpack_help(int, OcBBS*);
 static int submit_help(OcBBS*);
 static char* key_help();
-
-static double ihost(void* v) {
-#if USEBBS
-	OcBBS* bbs = (OcBBS*)v;
-	return double(bbs->myid());
-#else
-	return nrnmpi_myid;
-#endif
-}
 
 void bbs_done() {
 #if USEBBS
@@ -219,12 +211,38 @@ static double userid(void* v) {
 }
 
 static double nhost(void* v) {
-#if defined(HAVE_STL)
-	OcBBS* bbs = (OcBBS*)v;
-	return double(bbs->nhost());
-#else
 	return nrnmpi_numprocs;
+}
+
+static double rank(void* v) {
+	return nrnmpi_myid;
+}
+
+static double nhost_world(void* v) {
+	return nrnmpi_numprocs_world;
+}
+
+static double rank_world(void* v) {
+	return nrnmpi_myid_world;
+}
+
+static double nhost_bbs(void* v) {
+	return nrnmpi_numprocs_bbs;
+}
+
+static double rank_bbs(void* v) {
+	return nrnmpi_myid_bbs;
+}
+
+static double subworlds(void* v) {
+	int n = int(chkarg(1, 1, nrnmpi_numprocs_world));
+	if (nrnmpi_numprocs_world%n) {
+		hoc_execerror("nhost_world must be an integer multiple of subworld size", 0);
+	}
+#if NRNMPI
+	nrnmpi_subworlds(n);
 #endif
+	return 0.;
 }
 
 static double worker(void* v) {
@@ -847,8 +865,13 @@ static Member_func members[] = {
 	"look_take", look_take,
 	"runworker", worker,
 	"done", done,
-	"id", ihost,
+	"id", rank,
 	"nhost", nhost,
+	"id_world", rank_world,
+	"nhost_world", nhost_world,
+	"id_bbs", rank_bbs,
+	"nhost_bbs", nhost_bbs,
+	"subworlds", subworlds,
 	"context", context,
 
 	"time", pctime,

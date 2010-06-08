@@ -53,8 +53,8 @@ void BBS::init(int n) {
 //printf("BBS::init\n");
 //fflush(stdout);
 	if (!BBSImpl::started_) {
-		if (nrnmpi_numprocs < 2) { // master first time call
-			nrnmpi_numprocs = 1; // the minimum
+		if (nrnmpi_numprocs_bbs < 2) { // master first time call
+			nrnmpi_numprocs_bbs = 1; // the minimum
 			if (n == 0) { // demand local
 				BBSImpl::use_pvm_ = false;
 			}else{
@@ -92,8 +92,8 @@ void BBS::init(int) {
 	}
 	if (!BBSImpl::started_) {
 		BBSImpl::use_pvm_ = false;
-		BBSImpl::is_master_ = (nrnmpi_myid == 0) ? true : false;
-//printf("%d BBS::init is_master=%d\n", nrnmpi_myid, BBSImpl::is_master_);
+		BBSImpl::is_master_ = (nrnmpi_myid_bbs == 0) ? true : false;
+//printf("%d BBS::init is_master=%d\n", nrnmpi_myid_bbs, BBSImpl::is_master_);
 	}
 	// Just as with PVM which stored buffers on the bulletin board
 	// so we have the following files to store MPI_PACKED buffers

@@ -126,7 +126,7 @@ void BBSClient::pkpickle(const char* s, size_t n) {
 
 void BBSClient::post(const char* key) {
 #if debug
-printf("%d BBSClient::post |%s|\n", nrnmpi_myid, key);
+printf("%d BBSClient::post |%s|\n", nrnmpi_myid_bbs, key);
 fflush(stdout);
 #endif
 	nrnmpi_enddata(sendbuf_);
@@ -138,7 +138,7 @@ fflush(stdout);
 
 void BBSClient::post_todo(int parentid) {
 #if debug
-printf("%d BBSClient::post_todo for %d\n", nrnmpi_myid, parentid);
+printf("%d BBSClient::post_todo for %d\n", nrnmpi_myid_bbs, parentid);
 fflush(stdout);
 #endif
 	nrnmpi_enddata(sendbuf_);
@@ -150,7 +150,7 @@ fflush(stdout);
 
 void BBSClient::post_result(int id) {
 #if debug
-printf("%d BBSClient::post_result %d\n", nrnmpi_myid, id);
+printf("%d BBSClient::post_result %d\n", nrnmpi_myid_bbs, id);
 fflush(stdout);
 #endif
 	nrnmpi_enddata(sendbuf_);
@@ -162,7 +162,7 @@ fflush(stdout);
 
 int BBSClient::get(const char* key, int type) {
 #if debug
-printf("%d BBSClient::get |%s| type=%d\n", nrnmpi_myid, key, type);
+printf("%d BBSClient::get |%s| type=%d\n", nrnmpi_myid_bbs, key, type);
 fflush(stdout);
 #endif
 	nrnmpi_pkbegin(request_);
@@ -173,7 +173,7 @@ fflush(stdout);
 
 int BBSClient::get(int key, int type) {
 #if debug
-printf("%d BBSClient::get %d type=%d\n", nrnmpi_myid, key, type);
+printf("%d BBSClient::get %d type=%d\n", nrnmpi_myid_bbs, key, type);
 fflush(stdout);
 #endif
 	nrnmpi_pkbegin(request_);
@@ -193,7 +193,7 @@ fflush(stderr);
 	errno = 0;
 	wait_time_ += time() - ts;
 #if debug
-printf("%d BBSClient::get return msgtag=%d\n", nrnmpi_myid, msgtag);
+printf("%d BBSClient::get return msgtag=%d\n", nrnmpi_myid_bbs, msgtag);
 fflush(stdout);
 #endif
 	if (msgtag == QUIT) {
@@ -204,7 +204,7 @@ fflush(stdout);
 	
 boolean BBSClient::look_take(const char* key) {
 #if debug
-printf("%d BBSClient::look_take %s\n", nrnmpi_myid, key);
+printf("%d BBSClient::look_take %s\n", nrnmpi_myid_bbs, key);
 #endif
 	int type = get(key, LOOK_TAKE);
 	boolean b = (type == LOOK_TAKE_YES);
@@ -216,7 +216,7 @@ printf("%d BBSClient::look_take %s\n", nrnmpi_myid, key);
 
 boolean BBSClient::look(const char* key) {
 #if debug
-printf("%d BBSClient::look %s\n", nrnmpi_myid, key);
+printf("%d BBSClient::look %s\n", nrnmpi_myid_bbs, key);
 #endif
 	int type = get(key, LOOK);
 	boolean b = (type == LOOK_YES);
@@ -248,7 +248,7 @@ int BBSClient::take_todo() {
 		upkbegin();
 		upkint(); // throw away userid
 #if debug
-printf("%d execute context\n", nrnmpi_myid);
+printf("%d execute context\n", nrnmpi_myid_bbs);
 fflush(stdout);
 #endif
 		rs = execute_helper(&n);
@@ -294,7 +294,7 @@ void BBSClient::return_args(int userid) {
 
 void BBSClient::done() {
 #if debug
-printf("%d BBSClient::done\n", nrnmpi_myid);
+printf("%d BBSClient::done\n", nrnmpi_myid_bbs);
 fflush(stdout);
 #endif
 #if defined(USE_PYTHON)
@@ -311,7 +311,7 @@ void BBSClient::start() {
 	int n;
 	if (started_) { return; }
 #if debug
-printf("%d BBSClient start\n", nrnmpi_myid);
+printf("%d BBSClient start\n", nrnmpi_myid_bbs);
 fflush(stdout);
 #endif
 	BBSImpl::start();
