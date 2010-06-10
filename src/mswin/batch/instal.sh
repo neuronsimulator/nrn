@@ -70,7 +70,7 @@ for i in \
  cpp.exe cygpath.exe dirname.exe echo.exe find.exe $LTCC.exe \
  grep.exe ld.exe ls.exe make.exe mkdir.exe \
  nm.exe rm.exe mv.exe sed.exe bash.exe unzip.exe \
- rxvt.exe rebase.exe \
+ rxvt.exe rebase.exe sort.exe cygcheck.exe \
  ; do
  cp /usr/bin/$i $D/bin/$i
 done
@@ -87,7 +87,7 @@ if grep '^mpicc=mpicc' $B/src/mswin/nrncygso.sh ; then
 	echo "mpichbin=$mpichbin"
 	cp /bin/python2.5 $D/bin
 	for i in mpdboot mpdtrace mpdexit mpdallexit mpdcleanup mpd \
-	  mpiexec mpdman.py mpdlib.py ; do
+	  mpiexec mpdman.py mpdlib.py mpdroot.exe ; do
 		sed '1s/\/usr\/bin\/env //' $mpichbin/$i > $D/bin/$i
 		chmod 755 $D/bin/$i
 	done
@@ -156,7 +156,7 @@ cp float.h stdarg.h stddef.h varargs.h $D/mingw
 fi
 
 gclib=`$CC -print-libgcc-file-name`
-gclib=`echo $gclib|sed 's,/usr/lib/\(.*\)/[^/].*,\1,'`
+gclib=`echo $gclib|sed 's,.*/lib/\(.*\)/[^/].*,\1,'`
 echo $gclib
 (cd /usr/lib ; zip -r $D/lib/temp.tmp $gclib -x \*ada\* \*c++\* \*fortran\* \*libobj\* \*libgcj\* \*install-tools\* \*libff\* \*libgomp\* \*libgij\* \*finclude\*)
 (cd $D/lib ; unzip temp.tmp ; rm temp.tmp ; cd $gclib ; rm -f cc1.exe *obj* *plus* e* j* f* gnat* *ssp* )
