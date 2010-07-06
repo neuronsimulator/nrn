@@ -49,7 +49,7 @@ extern "C" {
 	void nrnmpi_int_broadcast(int*, int, int);
 	void nrnmpi_char_broadcast(char*, int, int);
 	void nrnmpi_dbl_broadcast(double*, int, int);
-	extern void nrnmpi_subworlds(int n);
+	extern void nrnmpi_subworld_size(int n);
 #endif
 
 	extern double* nrn_mech_wtime_;
@@ -240,7 +240,7 @@ static double subworlds(void* v) {
 		hoc_execerror("nhost_world must be an integer multiple of subworld size", 0);
 	}
 #if NRNMPI
-	nrnmpi_subworlds(n);
+	nrnmpi_subworld_size(n);
 #endif
 	return 0.;
 }

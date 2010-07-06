@@ -1,6 +1,7 @@
 #include <../../nrnconf.h>
 #include <nrnmpi.h>
 #include <stdio.h>
+#include <stdlib.h>
 #if NRNMPI
 #if HAVE_STRING_H
 #include <string.h>
