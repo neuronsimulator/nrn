@@ -49,6 +49,7 @@ extern void vector_resize(void*, int);
 extern double* vector_vec(void*);
 extern void* vector_arg(int);
 extern int vector_capacity(void*);
+extern int nrn_praxis_ran_index;
 
 static double efun();
 static Symbol* hoc_efun_sym;
@@ -139,10 +140,18 @@ void hoc_after_prax_quad(s) char* s; {
 }
 
 int attr_praxis() {
+    if (ifarg(2)) {
 	tolerance = *getarg(1);
 	maxstepsize = *getarg(2);
 	printmode = (int)chkarg(3, 0., 3.);
 	ret(0.);
+    }else{
+	int old = nrn_praxis_ran_index;
+	if (ifarg(1)) {
+	    	nrn_praxis_ran_index = (int)chkarg(1, 0., 1e9);
+	}
+	ret((double)old);
+    }
 }
 
 int pval_praxis() {

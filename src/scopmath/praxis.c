@@ -1699,9 +1699,15 @@ L3:
     goto L3;
 } /* maprnt_ */
 
+int nrn_praxis_ran_index;
+extern double mcell_ran4(unsigned int* idum, double* x, int n, double range);
+
 static doublereal random_(naught)
 integer *naught;
 {
+	double x;
+	return mcell_ran4(&nrn_praxis_ran_index, &x, 1, 1.);
+#if 0
     /* Initialized data */
 
     static logical init = FALSE_;
@@ -1748,5 +1754,6 @@ L3:
     ran3[ran2 - 1] = ran1;
     ret_val = ran1 + .5;
     return ret_val;
+#endif
 } /* random_ */
 
