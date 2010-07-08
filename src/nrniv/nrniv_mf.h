@@ -34,6 +34,7 @@ extern double get_loc_point_process(void*);
 extern double loc_point_process(int, void*);
 extern Prop* nrn_point_prop_;
 extern Point_process* ob2pntproc(Object*);
+extern Point_process* ob2pntproc_0(Object*);
 #if defined(__cplusplus)
 }
 #endif
