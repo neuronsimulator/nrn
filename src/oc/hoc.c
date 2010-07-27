@@ -20,6 +20,7 @@
 int use_python_interpreter = 0;
 void (*p_nrnpython_start)();
 #endif
+int (*p_nrnpy_pyrun)(char* fname);
 
 #if carbon
 #include <pthread.h>
@@ -1130,6 +1131,12 @@ with the hoc interpreter.
 		if (err) {
 			hoc_execerror("arg not valid statement:", infile);
 		}
+		return moreinput();
+	} else if (strlen(infile) > 3 && strcmp(infile+strlen(infile) -3, ".py") == 0) {
+		if (!p_nrnpy_pyrun) {
+			hoc_execerror("Python not available to interpret",infile);
+		}
+		(*p_nrnpy_pyrun)(infile);
 		return moreinput();
 	} else if ((fin=fopen(infile, "r")) == NULL) {
 #if OCSMALL
