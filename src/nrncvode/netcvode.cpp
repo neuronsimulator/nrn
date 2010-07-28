@@ -4042,6 +4042,11 @@ void nrn_cvfun(double t, double* y, double* ydot) {
 	d->gcv_->fun_thread(t, y, ydot, nrn_threads);
 }
 
+double nrn_hoc2fixed_step(void*) {
+	nrn_fixed_step();
+	return 0.;
+}
+
 double nrn_hoc2fun(void* v) {
 	NetCvode* d = (NetCvode*)v;
 	double tt = *getarg(1);
@@ -4063,6 +4068,16 @@ double nrn_hoc2scatter_y(void* v) {
 	if (nrn_nthread > 1) {hoc_execerror("only one thread allowed", 0);}
 	d->gcv_->scatter_y(vector_vec(s), 0);
 	return 0.;
+}
+
+double nrn_hoc2gather_y(void* v) {
+	NetCvode* d = (NetCvode*)v;
+	Vect* s = vector_arg(1);
+	if (!d->gcv_){hoc_execerror("not global variable time step", 0);}
+	if (nrn_nthread > 1) {hoc_execerror("only one thread allowed", 0);}
+	s->resize(d->gcv_->neq_);
+	d->gcv_->gather_y(vector_vec(s), 0);
+	return s->capacity();
 }
 
 void NetCvode::error_weights() {
