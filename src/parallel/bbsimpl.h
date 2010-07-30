@@ -60,7 +60,13 @@ public:
 	static int mytid_;
 	static int debug_;
 protected:
-	char* execute_helper(size_t*); // involves hoc specific details in ocbbs.c
+	char* execute_helper(size_t*, int id); // involves hoc specific details in ocbbs.c
+	void subworld_worker_execute(); //shadows execute_helper. ie. each of
+		// the nrnmpi_myid_bbs workers (and master) need to execute
+		// the same thing on each of the subworld processes
+		// associated with nrnmpi_myid==0. A subworld does not
+		// intracommunicate via the bulletin board but only via
+		// mpi on the subworld communicator.
 };
 
 #endif

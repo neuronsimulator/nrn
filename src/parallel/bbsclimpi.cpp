@@ -14,6 +14,10 @@
 #include "bbsrcli.h"
 #include "bbssrv.h"
 
+extern "C" {
+extern void nrnmpi_int_broadcast(int*, int, int);
+}
+
 #define debug 0
 
 #if defined(USE_PYTHON)
@@ -251,7 +255,7 @@ int BBSClient::take_todo() {
 printf("%d execute context\n", nrnmpi_myid_bbs);
 fflush(stdout);
 #endif
-		rs = execute_helper(&n);
+		rs = execute_helper(&n, -1);
 		if (rs) { delete [] rs; }
 	}
 	upkbegin();
@@ -297,6 +301,13 @@ void BBSClient::done() {
 printf("%d BBSClient::done\n", nrnmpi_myid_bbs);
 fflush(stdout);
 #endif
+	if (nrnmpi_numprocs > 1 && nrnmpi_numprocs_bbs < nrnmpi_numprocs_world) {
+	    if (nrnmpi_myid == 0) {
+		int info[2]; info[0] = -2; info[1] = -1;
+//printf("%d broadcast %d %d\n", nrnmpi_myid_world, info[0], info[1]);
+		nrnmpi_int_broadcast(info, 2, 0);
+	    }
+	}
 #if defined(USE_PYTHON)
 	if (p_nrnpython_start) { (*p_nrnpython_start)(0);}
 #endif

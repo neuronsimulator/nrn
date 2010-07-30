@@ -13,6 +13,10 @@
 #include "bbssrv2mpi.h"
 #include "bbssrv.h"
 
+extern "C" {
+extern void nrnmpi_int_broadcast(int*, int, int);
+}
+
 #if defined(HAVE_STL)
 #if defined(HAVE_SSTREAM) // the standard ...
 #include <map>
@@ -302,9 +306,15 @@ void BBSDirect::take(const char* key) { // blocking
 }
 	
 void BBSDirect::done() {
+//printf("%d bbsdirect::done\n", nrnmpi_myid_world);
 	int i;
 	if (done_) {
 		return;
+	}
+	if (nrnmpi_numprocs > 1 && nrnmpi_numprocs_bbs < nrnmpi_numprocs_world) {
+		int info[2]; info[0] = -2; info[1] = -1;
+//printf("%d broadcast %d %d\n", nrnmpi_myid_world, info[0], info[1]);
+		nrnmpi_int_broadcast(info, 2, 0);
 	}
 	BBSImpl::done();
 	done_ = true;

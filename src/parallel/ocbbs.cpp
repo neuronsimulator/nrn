@@ -956,14 +956,27 @@ void ParallelContext_reg() {
 		retobj_members, retstr_members);
 }
 
-char* BBSImpl::execute_helper(size_t* size) {
+char* BBSImpl::execute_helper(size_t* size, int id) {
 	char* s;
+	int subworld = (nrnmpi_numprocs > 1 && nrnmpi_numprocs_bbs < nrnmpi_numprocs_world);
 	int style = upkint();
+	if (subworld) {
+		assert(nrnmpi_myid == 0);
+		int info[2];
+		info[0] = id;
+		info[1] = style;
+		nrnmpi_int_broadcast(info, 2, 0);
+	}
 	char* rs = 0;
 	*size = 0;
 	switch (style) {
 	case 0:
 		s = upkstr();
+		if (subworld) {
+			int size = strlen(s) + 1;
+			nrnmpi_int_broadcast(&size, 1, 0);
+			nrnmpi_char_broadcast(s, size, 0);
+		}
 		hoc_obj_run(s, nil);
 		delete [] s;
 		break;
@@ -1064,6 +1077,8 @@ hoc_execerror("ParallelContext execution error", 0);
 	}
 	return rs;
 }
+
+#include "subworld.cpp"
 
 void BBSImpl::return_args(int id) {
 	// the message has been set up by the subclass
