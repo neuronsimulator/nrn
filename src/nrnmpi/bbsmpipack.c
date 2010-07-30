@@ -63,6 +63,9 @@ void nrnmpi_upkbegin(bbsmpibuf* r) {
 printf("%d nrnmpi_upkbegin %lx (preunpack upkpos=%d keypos=%d)\n", nrnmpi_myid_bbs, (long)r, r->upkpos, r->keypos);
 #endif
 assert(r && r->buf && r->size > 0);
+	if (nrnmpi_myid_bbs == -1) {
+		hoc_execerror("subworld process with nhost > 0 cannot use", "the bulletin board");
+	}
 	r->upkpos = 0;
 	MPI_Unpack(r->buf, r->size, &r->upkpos,
 		&p, 1, MPI_INT, nrn_bbs_comm);
@@ -158,6 +161,9 @@ static void resize(bbsmpibuf* r, int size) {
 
 void nrnmpi_pkbegin(bbsmpibuf* r) {
 	int type;
+	if (nrnmpi_myid_bbs == -1) {
+		hoc_execerror("subworld process with nhost > 0 cannot use", "the bulletin board");
+	}
 	r->pkposition = 0;
 	type = 0;
 #if debug
