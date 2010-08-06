@@ -50,8 +50,11 @@ extern "C" {
 	void nrnmpi_char_broadcast(char*, int, int);
 	void nrnmpi_dbl_broadcast(double*, int, int);
 	extern void nrnmpi_subworld_size(int n);
+#else
+	static void nrnmpi_int_broadcast(int*, int, int){}
+	static void nrnmpi_char_broadcast(char*, int, int){}
+	static void nrnmpi_dbl_broadcast(double*, int, int){}
 #endif
-
 	extern double* nrn_mech_wtime_;
 	extern int nrn_nthread;
 	extern void nrn_threads_create(int, int);
