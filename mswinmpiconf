@@ -26,19 +26,31 @@ if false
 #notes about building with mpich2 under cygwin.
 #I have used it with multicore desktops.
 #In my $HOME
-curl -O http://www.mcs.anl.gov/research/projects/mpich2/downloads/tarballs/1.0.7/mpich2-1.0.7.tar.gz
+curl -O http://www.mcs.anl.gov/research/projects/mpich2/downloads/tarballs/1.2.1p1/mpich2-1.2.1p1.tar.gz
 tar xzf mpich*gz
-cd mpich*7
-./configure --prefix=$HOME/mpich2 --with-device=ch3:nemesis \
-  'pac_cv_f77_sizeof_integer=4' 'pac_cv_f77_sizeof_double_precision=8' \
+cd mpich2*p1
+#For mpich2-1.2.1p1 I configured with:
+./configure --prefix=$HOME/mpich2  --with-pm=gforker:mpd \
   'CFLAGS=-DDLL_EXPORT -DPIC' 'CXXFLAGS=-DDLL_EXPORT -DPIC' \
-  LDFLAGS='-Wl,--enable-auto-import'
+  'LDFLAGS=-Wl,--enable-auto-import'
 make >& build.stdout
-#did not do a "make install"
 # note that the build.stdout is needed by src/mswin/nrncygso.sh
-#For mpich2-1.1.1p1 I configured with:
-./configure --prefix=$HOME/mpich2 --with-device=ch3:nemesis \
-  'CFLAGS=-DDLL_EXPORT -DPIC' 'CXXFLAGS=-DDLL_EXPORT -DPIC' \
-  'LDFLAGS=-Wl,--enable-auto-import' --enable-timer-type=gettimeofday
-
+make install
+# note that the install step is needed to find the mpd and related executables
+# in the mpich2/bin folder,
+# since only the gforker version of mpiexec.exe appears in mpich2-1.2.1p1/bin
+# folder after a make.
+# The reason for making gforker the default is that mpd sometimes fails to
+# operate correctly on user machines. gforker is limited to
+# launching on a single node(multcore) but that is the most typical situation
+# and makes it possible to use the bulletin board system on mulitcore desktops.
+# If the parallel machine is a cluster environment then it will be
+# necessary to use the mpd style for launching. i.e mpdboot on the master
+# or mpd& on every node and then launch with mpiexe.mpd
+# A test on a single node useing gforker is
+# mpiexec -n 2 echo 'hello'
+# A test on a single node useing mpd is
+# mpd&
+# mpiexec.mpd -n 2 echo 'hello'
+# mpdallexit
 fi

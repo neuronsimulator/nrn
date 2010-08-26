@@ -85,14 +85,27 @@ cp $cc1 $D/bin
 if grep '^mpicc=mpicc' $B/src/mswin/nrncygso.sh ; then
 	mpichbin=`which mpicc | sed 's,\(/bin\)/.*,\1,'`
 	echo "mpichbin=$mpichbin"
+	mpiinstalled=$HOME/mpich2/bin
+  if test -d $mpiinstalled ; then # want mpd
 	cp /bin/python2.5 $D/bin
 	for i in mpdboot mpdtrace mpdexit mpdallexit mpdcleanup mpd \
-	  mpiexec mpdman.py mpdlib.py mpdroot.exe ; do
-		sed '1s/\/usr\/bin\/env //' $mpichbin/$i > $D/bin/$i
+	  mpiexec.mpd mpdman.py mpdlib.py ; do
+		sed '1s/\/usr\/bin\/env //' $mpiinstalled/$i > $D/bin/$i
 		chmod 755 $D/bin/$i
 	done
+	# problem here. mpdroot.exe not installed and is in
+	# mpich2-1.2.1p1/src/pm/mpd/mpdroot.exe
+	cp $HOME/mpich2-1.2.1p1/src/pm/mpd/mpdroot.exe $D/bin
 	echo 'MPD_SECRETWORD=neuron' > $D/mpd.conf
 	chmod 600 $D/mpd.conf
+  fi
+	# gforker
+	cp $mpichbin/mpiexec.exe $D/bin
+	# and make the basic tests available
+	for i in test0.hoc test0.py ; do
+		cp $S/src/parallel/$i $D
+		unix2dos $D/$i
+	done
 fi
 
 # figure out which dll's need to be distributed
