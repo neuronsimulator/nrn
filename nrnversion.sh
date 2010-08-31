@@ -3,23 +3,24 @@
 if test "$NSRC" = "" ; then
 	NSRC=$HOME/neuron/nrn
 fi
-if test ! -f $NSRC/src/nrnoc/nrnversion.c ; then
-	echo "$0: Can not find $NSRC/src/nrnoc/nrnversion.c"
-	exit 1
+
+if test -f $NSRC/src/nrnoc/nrnversion.h ; then
+	VERHFILE=`cat $NSRC/src/nrnoc/nrnversion.h`
+else
+	VERHFILE=`sh $NSRC/hg2nrnversion_h.sh`
 fi
-VERFILE=$NSRC/src/nrnoc/nrnversion.c
-VERHFILE=$NSRC/src/nrnoc/nrnversion.h
-major=`sed -n '/NRN_MAJOR_VERSION/s/.*"\([0-9]*\)".*/\1/p' $VERHFILE`
-minor=`sed -n '/NRN_MINOR_VERSION/s/.*"\([0-9]*\)".*/\1/p' $VERHFILE`
-type=`sed -n '/HG_BRANCH/s/.*\(".*"\).*/\1/p' $VERHFILE | sed '
+
+major=`echo "$VERHFILE" | sed -n '/NRN_MAJOR_VERSION/s/.*"\([0-9]*\)".*/\1/p'`
+minor=`echo "$VERHFILE" | sed -n '/NRN_MINOR_VERSION/s/.*"\([0-9]*\)".*/\1/p'`
+type=`echo "$VERHFILE" | sed -n '/HG_BRANCH/s/.*\(".*"\).*/\1/p' | sed '
 s/"trunk"/alpha/
 s/"Release.*"/rel/
 s/"\(.*\)"/\1/
 '`
-local=`sed -n '/HG_LOCAL/s/.*"\(.*\)".*/\1/p' $VERHFILE`
-global=`sed -n '/HG_CHANGESET/s/.*"\(.*\)".*/\1/p' $VERHFILE`
+local=`echo "$VERHFILE" | sed -n '/HG_LOCAL/s/.*"\(.*\)".*/\1/p'`
+global=`echo "$VERHFILE" | sed -n '/HG_CHANGESET/s/.*"\(.*\)".*/\1/p'`
 base=`echo $global | sed 's/\+//'`
-commit=`sed -n '/HG_LOCAL/s/.*"\(.*\)".*/\1/p' $VERHFILE`
+commit=`echo "$VERHFILE" | sed -n '/HG_LOCAL/s/.*"\(.*\)".*/\1/p'`
 
 case $1 in
 	2) echo $major.$minor.$type-$commit ;;
