@@ -300,9 +300,19 @@ static void hpoasgn(Object* o, int type) {
 //printf("hpoasgn %s %s %d\n", hoc_object_name(o), sym->name, nindex);
 	if (nindex == 0) {
 		PyObject_SetAttrString(poleft, sym->name, poright);
+	}else if (nindex == 1) {
+		PyObject* key = PyLong_FromDouble(hoc_xpop());
+		PyObject* a = PyObject_GetAttrString(poleft, sym->name);
+		PyObject_SetItem(a, key, poright);
+		Py_DECREF(a);
+		Py_DECREF(key);
+	}else{
+		char buf[512];
+		sprintf(buf, "%s.%s[][]...=...:", hoc_object_name(o), sym->name);
+hoc_execerror(buf, "HOC cannot handle PythonObject assignment with more than one index.");
 	}
 	Py_DECREF(poright);
-	hoc_push_object(o);
+//	hoc_push_object(o);
 	hoc_stkobj_unref(o);
 }
 
