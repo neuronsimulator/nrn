@@ -254,7 +254,9 @@ Object* nrn_sec2cell(Section* sec) {
 			return sec->prop->dparam[6].obj;
 		}else if (nrnpy_pysec_cell_p_) {
 			Object* o = (*nrnpy_pysec_cell_p_)(sec);
-			--o->refcount;
+			if (o) {
+				--o->refcount;
+			}
 			return o;
 		}
 	}
