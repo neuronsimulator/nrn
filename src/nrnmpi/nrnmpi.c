@@ -253,4 +253,10 @@ void nrnmpi_subworld_size(int n) {
 	}
 	asrt(MPI_Group_free(&wg));
 }
+
+/* so src/nrnpython/inithoc.cpp does not have to include a c++ mpi.h */
+int nrn_wrap_mpi_init(int* flag) {
+	return MPI_Initialized(flag);
+}
+	
 #endif
