@@ -80,67 +80,108 @@ proc update() {local i
 		ps3()
 	}
 	if (proximal_style_ == 1) {
-		map.sub(map.min)
+		map.sub(p0)
+		p1 -= p0
+		p0 = 0
 	}
 	if (distal_style_ == 1) {
-		map.div(map.max)
+		map.div(p1)
+		p0 /= p1
+		p1 = 1
 	}
-	p0 = map.min
-	p1 = map.max
 }
 
 // path distance from root
 // assume sectionlist is a subset of a single cell
-proc ps0() {local i
+proc ps0() {local i, x, d
 	i = 0
-	forsec sl for (x, 0) {
+	p0 = 1e9
+	p1 = 1
+	forsec sl for (x, 1) {
 		if (i == 0) {
 			tobj = new SectionRef()
 			tobj.root { distance() }
 			objref tobj
 		}
-		map.x[i] = distance(x)
-		i += 1
+		d = distance(x)
+		if (x > 0 && x < 1) {
+			map.x[i] = d
+			i += 1
+		}
+		if (d < p0) { p0 = d }
+		if (d > p1) { p1 = d }
 	}
 }
 
 // radial distance from origin
-proc ps2() {local i, a, x, y, z
+proc ps2() {local i, a, x, y, z, d
 	i = 0
+	p0 = 1e9
+	p1 = 1
 	forsec sl {
 		i3 = 1
-		for (a, 0) {
+		for (a, 1) {
 			seg_from_3d(a)
-			map.x[i] = sqrt((x3 - xo_)^2 + (y3 - yo_)^2 + (z3 - zo_)^2)
-			i += 1
+			d = sqrt((x3 - xo_)^2 + (y3 - yo_)^2 + (z3 - zo_)^2)
+			if (a > 0 && a < 1) {
+				map.x[i] = d
+				i += 1
+			}
+			if (d < p0) { p0 = d }
+			if (d > p1) { p1 = d }
 		}
 	}
 }
 
 // projection onto line at angle theta with 0 defined at origin
-proc ps3() {local i, a, c, s
+proc ps3() {local i, a, c, s, d
 	c = cos(theta_/DEG)  s = sin(theta_/DEG)
 	i = 0
+	p0 = 1e9
+	p1 = 1
 	forsec sl {
 		i3 = 1
-		for (a, 0) {
+		for (a, 1) {
 			seg_from_3d(a)
-			map.x[i] = x3*c + y3*s
-			i += 1
+			d = x3*c + y3*s
+			if (a > 0 && a < 1) {
+				map.x[i] = d
+				i += 1
+			}
+			if (d < p0) { p0 = d }
+			if (d > p1) { p1 = d }
 		}
 	}
 	map.sub(origin_)
+	p0 -= origin_
+	p1 -= origin_
 }
 
 proc seg_from_3d() {local th, a, i
+    if ($1 == 0) {
+	i = 0
+	a = arc3d(i)
+	x3 = x3d(i)
+	y3 = y3d(i)
+	z3 = z3d(i)
+    }else if ($1 == 1) {
+	i = n3d()-1
+	a = arc3d(i)
+	x3 = x3d(i)
+	y3 = y3d(i)
+	z3 = z3d(i)
+    }else{
 	$1 *= L
-	while($1 > arc3d(i3)) {	i3 += 1	}
+	while($1 > arc3d(i3)) {
+		i3 += 1
+	}
 	i = i3 - 1
 	a = arc3d(i)
 	th = ($1 - a)/(arc3d(i3) - a)
 	x3 = (1 - th)*x3d(i) + th*x3d(i3)
 	y3 = (1 - th)*y3d(i) + th*y3d(i3)
 	z3 = (1 - th)*z3d(i) + th*z3d(i3)
+    }
 }
 endtemplate SubsetDomainIterator
 
