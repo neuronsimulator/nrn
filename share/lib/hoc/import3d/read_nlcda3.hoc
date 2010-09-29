@@ -311,11 +311,24 @@ proc somastack_process() {local i, n, n1 localobj pts, m, center, pv
 	printf("Principle axes\n") m.printf()
 }
 
+proc stk_bbox() {local i, j  localobj bbs, bbc
+	bbs = bounding_box($o1)
+	for i=0, $o1.contour_list.count-1 {
+		bbc = bounding_box($o1.contour_list.o(i))
+		for j=0, 2 {
+			if (bbs.x[j] > bbc.x[j]) bbs.x[j] = bbc.x[j]
+			if (bbs.x[j+3] < bbc.x[j+3]) bbs.x[j+3] = bbc.x[j+3]
+		}
+	}
+	$&2 = bbs.x[0]  $&3 = bbs.x[3]  $&4 = bbs.x[2]  $&5 = bbs.x[4]
+}
+
 proc connect2soma_2() {local i, xmin, xmax, ymin, ymax localobj sec, xc, yc, zc, center
 	// find centroid of soma if outline and connect all dangling
 	// dendrites to that if inside the contour
 	if (object_id($o1.contour_list)) {
 		center = $o1.stk_center()
+		stk_bbox($o1, &xmin, &xmax, &ymin, &ymax)
 	}else{
 		xc = $o1.raw.getrow(0)
 		yc = $o1.raw.getrow(1)
