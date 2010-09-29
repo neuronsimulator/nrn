@@ -107,6 +107,7 @@ static HocParmUnits _hoc_parm_units[] = {
 	"celsius", "degC",
 	"dt", "ms",
 	"t", "ms",
+	"v", "mV",
 	0, 0
 };
 

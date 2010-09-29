@@ -5,6 +5,7 @@
 #include "hocstr.h"
 #include	"parse.h"
 #include	<stdio.h>
+#include <stdlib.h>
 #include	<errno.h>
 
 int units_on_flag_;
@@ -13,6 +14,9 @@ extern FILE *fin;
 extern char **gargv;
 extern int gargc;
 extern double chkarg();
+extern Symlist* hoc_built_in_symlist;
+extern Symlist* hoc_top_level_symlist;
+extern Symbol *hoc_table_lookup();
 
 extern char **hoc_pgargstr();
 
@@ -81,6 +85,7 @@ double check_domain_limits(limits, val)
 
 
 char* hoc_symbol_units(sym, units) Symbol* sym; char* units; {
+	if (!sym) { return (char*)0; }
 	if (units) {
 		if (sym->extra && sym->extra->units) {
 			free(sym->extra->units);
@@ -97,33 +102,70 @@ char* hoc_symbol_units(sym, units) Symbol* sym; char* units; {
 	}
 }
 
+Symbol* hoc_name2sym(char* name) {
+	char* buf, *cp;
+	Symbol* sym;
+	buf = emalloc(strlen(name)+1);
+	strcpy(buf, name);
+	for (cp = buf; *cp; ++cp) {
+		if (*cp == '.') {
+			*cp = '\0';
+			++cp;
+			break;
+		}
+	}
+	sym = hoc_table_lookup(buf, hoc_built_in_symlist);
+	if (!sym) {
+		sym = hoc_table_lookup(buf, hoc_top_level_symlist);
+	}
+	if (sym && *cp == '\0') {
+		free(buf);
+		return sym;
+	}else if (sym && sym->type == TEMPLATE && *cp != '\0') {
+		sym = hoc_table_lookup(cp, sym->u.template->symtable);
+		if (sym) {
+			free(buf);
+			return sym;
+		}
+	}
+	free(buf);
+	return (Symbol*)0;
+}
+
 hoc_Symbol_units() {
 	Symbol* sym, *hoc_get_last_pointer_symbol();
 	double* hoc_pgetarg();
-	static char* units;
+	int hoc_is_str_arg();
+	char** hoc_temp_charptr();
+	char** units = hoc_temp_charptr();
 
 	if (hoc_is_double_arg(1)) {
 		units_on_flag_ = (int)chkarg(1, 0., 1.);
 		if (units_on_flag_) {
-			units = "on";
+			*units = "on";
 		}else{
-			units = "off";
+			*units = "off";
 		}
 	}else{			
-		hoc_pgetarg(1);
-		sym = hoc_get_last_pointer_symbol();
-		assert(sym);
-		units = (char*)0;
-		if (ifarg(2)) {
-			units = gargstr(2);
+		if (hoc_is_str_arg(1)) {
+			char* name = gargstr(1);
+			sym = hoc_name2sym(name);
+		}else{
+			hoc_pgetarg(1);
+			sym = hoc_get_last_pointer_symbol();
+			assert(sym);
 		}
-		units = hoc_symbol_units(sym, units);
-		if (units == (char*)0) {
-			units = "";
+		*units = (char*)0;
+		if (ifarg(2)) {
+			*units = gargstr(2);
+		}
+		*units = hoc_symbol_units(sym, *units);
+		if (*units == (char*)0) {
+			*units = "";
 		}
 	}
 	hoc_ret();
-	hoc_pushstr(&units);
+	hoc_pushstr(units);
 }
 
 char* neuronhome_forward() {
