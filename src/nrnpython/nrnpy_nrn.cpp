@@ -58,6 +58,8 @@ extern void nrn_change_nseg(Section*, int);
 extern double section_length(Section*);
 extern double nrn_ra(Section*);
 extern int can_change_morph(Section*);
+extern short *nrn_is_artificial_;
+extern cTemplate** nrn_pnt_template_;
 extern void nrn_diam_change(Section*);
 extern void nrn_length_change(Section*, double);
 extern int diam_changed;
@@ -65,6 +67,7 @@ extern void mech_insert1(Section*, int);
 extern PyObject* nrn_hocobj_ptr(double*);
 extern PyObject* nrnpy_forall(PyObject* self, PyObject* args);
 extern Object* nrnpy_po2ho(PyObject*);
+extern Object* nrnpy_pyobject_in_obj(PyObject*);
 extern Symbol* nrnpy_pyobj_sym_;
 extern int nrnpy_ho_eq_po(Object*, PyObject*);
 extern PyObject* nrnpy_hoc2pyobject(Object*);
@@ -460,6 +463,33 @@ static PyObject* segment_iter(NPySegObj* self) {
 	m->prop_ = p;
 	m->first_iter_ = 1;
 	return (PyObject*)m;
+}
+
+static Object** pp_get_segment(void* vptr) {
+	Point_process* pnt = (Point_process*)vptr;
+	//printf("pp_get_segment %s\n", hoc_object_name(pnt->ob));
+	PyObject* pyseg = Py_None;
+	if (pnt->prop) {
+		Section* sec = pnt->sec;
+		double x = nrn_arc_position(sec, pnt->node);
+		pyseg = (PyObject*)PyObject_New(NPySegObj, psegment_type);
+		NPySegObj* pseg = (NPySegObj*)pyseg;
+		NPySecObj* pysec = (NPySecObj*)sec->prop->dparam[PROP_PY_INDEX]._pvoid;
+		if (pysec) {
+			pseg->pysec_ = pysec;
+			Py_INCREF(pysec);
+		}else{
+			pysec = (NPySecObj*)psection_type->tp_alloc(psection_type, 0);
+			pysec->sec_ = sec;
+			pysec->name_ = 0;
+			pysec->cell_ = 0;
+			Py_INCREF(pysec);
+			pseg->pysec_ = pysec;
+		}
+		pseg->x_ = nrn_arc_position(sec, pnt->node);
+	}
+	Py_INCREF(pyseg);
+	return hoc_temp_objptr(nrnpy_pyobject_in_obj(pyseg));
 }
 
 static void rv_noexist(Section* sec, const char* n, double x, int err) {
@@ -1133,8 +1163,18 @@ void nrnpy_reg_mech(int type) {
 	int i;
 	char* s;
 	Memb_func* mf = memb_func + type;
-	if (mf->is_point) { return; }
 	if (!nrnmodule_) { return; }
+	if (mf->is_point) {
+		if (nrn_is_artificial_[type] == 0) {
+			Symlist* sl = nrn_pnt_template_[type]->symtable;
+			Symbol* s = hoc_table_lookup("get_segment", sl);
+			if (!s) {
+				s = hoc_install("get_segment", OBFUNCTION, 0, &sl);
+				s->u.u_proc->defn.pfo = (Object**(*)())pp_get_segment;
+			}
+		}
+		return;
+	}
 	s = mf->sym->name;
 //printf("nrnpy_reg_mech %s %d\n", s, type); 
 	if (PyDict_GetItemString(pmech_types, s)) {

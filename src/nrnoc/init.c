@@ -598,6 +598,9 @@ int point_reg_helper(s2) Symbol* s2; {
 	s2->public = 0;
 	pnt_map[n_memb_func-1] = pointtype;
 	memb_func[n_memb_func-1].is_point = 1;
+	if (nrnpy_reg_mech_p_) {
+		(*nrnpy_reg_mech_p_)(n_memb_func-1);
+	}
 	return pointtype++;
 }
 
