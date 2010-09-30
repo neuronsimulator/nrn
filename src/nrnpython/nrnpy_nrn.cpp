@@ -81,6 +81,7 @@ extern char* (*nrnpy_pysec_name_p_)(Section*);
 static char* pysec_name(Section*);
 extern Object* (*nrnpy_pysec_cell_p_)(Section*);
 static Object* pysec_cell(Section*);
+static PyObject* pysec2cell(NPySecObj*);
 extern int (*nrnpy_pysec_cell_equals_p_)(Section*, Object*);
 static int pysec_cell_equals(Section*, Object*);
 static void remake_pmech_types();
@@ -307,6 +308,20 @@ static int NPyRangeVar_init(NPyRangeVar* self, PyObject* args, PyObject* kwds) {
 static PyObject* NPySecObj_name(NPySecObj* self) {
 	PyObject* result;
 	result = PyString_FromString(secname(self->sec_));
+	return result;
+}
+
+static PyObject* pysec2cell(NPySecObj* self) {
+	PyObject* result;
+	if (self->cell_) {
+		result = self->cell_;
+		Py_INCREF(result);		
+	}else if (self->sec_->prop && self->sec_->prop->dparam[6].obj) {
+		result = nrnpy_ho2po(self->sec_->prop->dparam[6].obj);
+	}else{
+		result = Py_None;
+		Py_INCREF(result);
+	}
 	return result;
 }
 
@@ -997,6 +1012,9 @@ static PyMethodDef NPySecObj_methods[] = {
 	},
 	{"allseg", (PyCFunction)allseg, METH_VARARGS,
 	 "iterate over segments. Includes x=0 and x=1 zero-area nodes in the iteration."
+	},
+	{"cell", (PyCFunction)pysec2cell, METH_NOARGS,
+	 "Return the object that owns the Section. Possibly None."
 	},
 	{NULL}
 };
