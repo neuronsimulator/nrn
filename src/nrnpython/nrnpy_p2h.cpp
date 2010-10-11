@@ -24,6 +24,7 @@ int nrnpy_ho_eq_po(Object*, PyObject*);
 extern Symbol* nrnpy_pyobj_sym_;
 extern void (*nrnpy_py2n_component)(Object*, Symbol*, int, int);
 extern void (*nrnpy_hpoasgn)(Object*, int);
+extern double (*nrnpy_praxis_efun)(Object*, Object*);
 extern int (*nrnpy_hoccommand_exec)(Object*);
 extern int (*nrnpy_hoccommand_exec_strret)(Object*, char*, int);
 extern void (*nrnpy_cmdtool)(Object*, int, double, double, int);
@@ -49,6 +50,7 @@ PyObject* nrnpy_pyCallObject(PyObject*, PyObject*);
 Object* nrnpy_po2ho(PyObject*);
 static void py2n_component(Object*, Symbol*, int, int);
 static void hpoasgn(Object*, int);
+static double praxis_efun(Object*, Object*);
 static int hoccommand_exec(Object*);
 static int hoccommand_exec_strret(Object*, char*, int);
 static void grphcmdtool(Object*, int, double, double, int);
@@ -89,6 +91,7 @@ void nrnpython_reg_real() {
 	nrnpy_pyobj_sym_ = s;
 	nrnpy_py2n_component = py2n_component;
 	nrnpy_hpoasgn = hpoasgn;
+	nrnpy_praxis_efun = praxis_efun;
 	nrnpy_hoccommand_exec = hoccommand_exec;
 	nrnpy_hoccommand_exec_strret = hoccommand_exec_strret;
 	nrnpy_cmdtool = grphcmdtool;
@@ -363,9 +366,7 @@ static PyObject* PyTuple_Pack(int n, ...) {
 }
 #endif
 
-static PyObject* hoccommand_exec_help(Object* ho) {
-	PyObject* po = ((Py2Nrn*)ho->u.this_pointer)->po_;
-//printf("%s\n", hoc_object_name(ho));
+static PyObject* hoccommand_exec_help1(PyObject* po) {
 	PyObject* r;
 	nrnpython_ensure_threadstate();
 	// should we use this instead?
@@ -392,6 +393,27 @@ static PyObject* hoccommand_exec_help(Object* ho) {
 		hoc_execerror("Python Callback failed", 0);
 	}
 	return r;
+}
+
+static PyObject* hoccommand_exec_help(Object* ho) {
+	PyObject* po = ((Py2Nrn*)ho->u.this_pointer)->po_;
+//printf("%s\n", hoc_object_name(ho));
+	return hoccommand_exec_help1(po);
+}
+
+static double praxis_efun(Object* ho, Object* v) {
+	PyObject* pc = nrnpy_ho2po(ho);
+	PyObject* pv = nrnpy_ho2po(v);
+	PyObject* po = Py_BuildValue("(OO)", pc, pv);
+	Py_XDECREF(pc);
+	Py_XDECREF(pv);
+	PyObject* r = hoccommand_exec_help1(po);
+	PyObject* pn = PyNumber_Float(r);
+	double x = PyFloat_AsDouble(pn);
+	Py_XDECREF(pn);
+	Py_XDECREF(r);
+	Py_XDECREF(po);
+	return x;
 }
 
 static int hoccommand_exec(Object* ho) {

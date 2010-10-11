@@ -97,7 +97,11 @@ int vector_instance_px(){return 0;}
 void vector_resize(v, n) void* v; int n; {
 	hoc_execerror("implemented in ivoc library", "vector_resize");
 }
+void vector_delete(v) void* v; {}
+
 void* vector_arg(i) int i; { return (void*)0;}
+void* vector_new2(v) void* v; { return (void*)0;}
+Object** vector_pobj(v) void* v; { return (Object**)0;}
 double* vector_vec(v) void* v; {
 	hoc_execerror("implemented in ivoc library", "vector_vec");
 }

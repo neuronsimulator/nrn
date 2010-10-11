@@ -727,7 +727,15 @@ L270:
 	maprnt_(&c__2, q_1.v, &idim, n);
     }
     if (after_quad) {
+	struct QStruct* qsav;
+	double* dsav;
+	qsav = q_hoc;
+	q_hoc = q_;
+	dsav = d_hoc;
+	d_hoc = d_;
     	hoc_after_prax_quad(after_quad);
+	q_hoc = qsav;
+	d_hoc = dsav;
     }
     if (--praxstep == 0) {	/* allows analysis of approach to fit by */
 	praxstep = 0;
