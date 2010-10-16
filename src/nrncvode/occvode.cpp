@@ -651,6 +651,7 @@ void Cvode::fun_thread_transfer_part1(double tt, double* y, NrnThread* nt){
 
 void Cvode::fun_thread_transfer_part2(double* ydot, NrnThread* nt){
 	CvodeThreadData& z = CTD(nt->id);
+	if (z.nvsize_ == 0) { return; }
 #if 1 || PARANEURON
 	if (nrnmpi_v_transfer_) {
 		assert(nrn_nthread == 1);
