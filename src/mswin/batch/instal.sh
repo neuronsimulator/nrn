@@ -87,7 +87,7 @@ if grep '^mpicc=mpicc' $B/src/mswin/nrncygso.sh ; then
 	echo "mpichbin=$mpichbin"
 	mpiinstalled=$HOME/mpich2/bin
   if test -d $mpiinstalled ; then # want mpd
-	cp /bin/python2.5 $D/bin
+	cp /bin/python2.6 $D/bin
 	for i in mpdboot mpdtrace mpdexit mpdallexit mpdcleanup mpd \
 	  mpiexec.mpd mpdman.py mpdlib.py ; do
 		sed '1s/\/usr\/bin\/env //' $mpiinstalled/$i > $D/bin/$i
@@ -118,7 +118,7 @@ done
 # do not forget the ones used by the python dlls
 if false ; then
 # too many, putting duplicates in bin, setup is 13.69MB, only cygcrypto below
-for i in /lib/python2.5/lib-dynload/*.dll ; do
+for i in /lib/python2.6/lib-dynload/*.dll ; do
 	cygcheck $i | sed 's/^ *//' >> $D/bin/temp.tmp
 done
 fi
@@ -247,8 +247,8 @@ fi
 
 if true ; then
 cd /usr/lib
-pz=python25.zip
-pd=python2.5
+pz=python26.zip
+pd=python2.6
 if test ! -f $pz ; then
 	zip -r $pz $pd
 	zip -d $pz \*/\*.pyo
