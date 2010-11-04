@@ -320,7 +320,7 @@ proc stk_bbox() {local i, j  localobj bbs, bbc
 			if (bbs.x[j+3] < bbc.x[j+3]) bbs.x[j+3] = bbc.x[j+3]
 		}
 	}
-	$&2 = bbs.x[0]  $&3 = bbs.x[3]  $&4 = bbs.x[2]  $&5 = bbs.x[4]
+	$&2 = bbs.x[0]  $&3 = bbs.x[3]  $&4 = bbs.x[1]  $&5 = bbs.x[4]
 }
 
 proc connect2soma_2() {local i, xmin, xmax, ymin, ymax localobj sec, xc, yc, zc, center
