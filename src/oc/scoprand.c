@@ -1,4 +1,5 @@
 #include <../../nrnconf.h>
+#include <stdlib.h>
 
 /* this was removed from the scopmath library since there could be
 multiple copies of the static value below. One in neuron.exe and the
@@ -20,7 +21,7 @@ static char RCSid[] =
 #endif
 
 #include <math.h>
-static unsigned long value = 1;
+static u_int32_t value = 1;
 
 /*-----------------------------------------------------------------------------
  *
@@ -61,7 +62,7 @@ scop_random()
 	double x, mcell_ran4();
 	return mcell_ran4(&value, &x, 1, 1.);
   }else{
-    unsigned long a = 2147437301, c = 453816981,
+    u_int32_t a = 2147437301, c = 453816981,
     /* m = 2^32 - 1, the largest long int value that can be represented */
     /*m = 0xFFFFFFFF;*/ /* limited to 32 bit integers*/
     m = ~0;
@@ -96,6 +97,6 @@ scop_random()
 set_seed(seed)
 double seed;
 {
-    value = (unsigned int)seed;
+    value = (u_int32_t)seed;
 }
 
