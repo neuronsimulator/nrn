@@ -153,18 +153,6 @@ int fit_praxis() {
 	err = praxis(&tolerance, &machep, &maxstepsize,	nvar, &printmode,
 		px, efun, &fmin, after_quad);
 	err = minerr;
-	if (minargsav) {
-		free(minarg);
-		minarg = minargsav;
-		minerr = minerrsav;
-		hoc_efun_sym = funsav;
-		tolerance = tolerancesav;
-		maxstepsize = maxstepsizesav;
-		printmode = printmodesav;
-		efun_py = efun_py_save;
-		efun_py_arg = efun_py_arg_save;
-		vec_py_save = vec_py_save_save;
-	}
 	if (minerr < 1e9) {
 		for (i=0; i<nvar; ++i) { px[i] = minarg[i]; }
 	}
@@ -179,6 +167,18 @@ int fit_praxis() {
 		efun_py_arg = (Object*)0;
 		vector_delete(vec_py_save);
 		vec_py_save = (void*)0;
+	}
+	if (minargsav) {
+		free(minarg);
+		minarg = minargsav;
+		minerr = minerrsav;
+		hoc_efun_sym = funsav;
+		tolerance = tolerancesav;
+		maxstepsize = maxstepsizesav;
+		printmode = printmodesav;
+		efun_py = efun_py_save;
+		efun_py_arg = efun_py_arg_save;
+		vec_py_save = vec_py_save_save;
 	}
 	ret(err);
 }
