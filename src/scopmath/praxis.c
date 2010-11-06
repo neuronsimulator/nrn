@@ -727,7 +727,15 @@ L270:
 	maprnt_(&c__2, q_1.v, &idim, n);
     }
     if (after_quad) {
+	struct QStruct* qsav;
+	double* dsav;
+	qsav = q_hoc;
+	q_hoc = q_;
+	dsav = d_hoc;
+	d_hoc = d_;
     	hoc_after_prax_quad(after_quad);
+	q_hoc = qsav;
+	d_hoc = dsav;
     }
     if (--praxstep == 0) {	/* allows analysis of approach to fit by */
 	praxstep = 0;
@@ -1699,9 +1707,15 @@ L3:
     goto L3;
 } /* maprnt_ */
 
+int nrn_praxis_ran_index;
+extern double mcell_ran4(unsigned int* idum, double* x, int n, double range);
+
 static doublereal random_(naught)
 integer *naught;
 {
+	double x;
+	return mcell_ran4(&nrn_praxis_ran_index, &x, 1, 1.);
+#if 0
     /* Initialized data */
 
     static logical init = FALSE_;
@@ -1748,5 +1762,6 @@ L3:
     ran3[ran2 - 1] = ran1;
     ret_val = ran1 + .5;
     return ret_val;
+#endif
 } /* random_ */
 

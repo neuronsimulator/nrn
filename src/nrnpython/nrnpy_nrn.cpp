@@ -58,6 +58,8 @@ extern void nrn_change_nseg(Section*, int);
 extern double section_length(Section*);
 extern double nrn_ra(Section*);
 extern int can_change_morph(Section*);
+extern short *nrn_is_artificial_;
+extern cTemplate** nrn_pnt_template_;
 extern void nrn_diam_change(Section*);
 extern void nrn_length_change(Section*, double);
 extern int diam_changed;
@@ -65,6 +67,7 @@ extern void mech_insert1(Section*, int);
 extern PyObject* nrn_hocobj_ptr(double*);
 extern PyObject* nrnpy_forall(PyObject* self, PyObject* args);
 extern Object* nrnpy_po2ho(PyObject*);
+extern Object* nrnpy_pyobject_in_obj(PyObject*);
 extern Symbol* nrnpy_pyobj_sym_;
 extern int nrnpy_ho_eq_po(Object*, PyObject*);
 extern PyObject* nrnpy_hoc2pyobject(Object*);
@@ -78,6 +81,7 @@ extern char* (*nrnpy_pysec_name_p_)(Section*);
 static char* pysec_name(Section*);
 extern Object* (*nrnpy_pysec_cell_p_)(Section*);
 static Object* pysec_cell(Section*);
+static PyObject* pysec2cell(NPySecObj*);
 extern int (*nrnpy_pysec_cell_equals_p_)(Section*, Object*);
 static int pysec_cell_equals(Section*, Object*);
 static void remake_pmech_types();
@@ -307,6 +311,20 @@ static PyObject* NPySecObj_name(NPySecObj* self) {
 	return result;
 }
 
+static PyObject* pysec2cell(NPySecObj* self) {
+	PyObject* result;
+	if (self->cell_) {
+		result = self->cell_;
+		Py_INCREF(result);		
+	}else if (self->sec_->prop && self->sec_->prop->dparam[6].obj) {
+		result = nrnpy_ho2po(self->sec_->prop->dparam[6].obj);
+	}else{
+		result = Py_None;
+		Py_INCREF(result);
+	}
+	return result;
+}
+
 static PyObject* NPyMechObj_name(NPyMechObj* self) {
 	PyObject* result = NULL;
 	if (self->prop_) {
@@ -460,6 +478,33 @@ static PyObject* segment_iter(NPySegObj* self) {
 	m->prop_ = p;
 	m->first_iter_ = 1;
 	return (PyObject*)m;
+}
+
+static Object** pp_get_segment(void* vptr) {
+	Point_process* pnt = (Point_process*)vptr;
+	//printf("pp_get_segment %s\n", hoc_object_name(pnt->ob));
+	PyObject* pyseg = Py_None;
+	if (pnt->prop) {
+		Section* sec = pnt->sec;
+		double x = nrn_arc_position(sec, pnt->node);
+		pyseg = (PyObject*)PyObject_New(NPySegObj, psegment_type);
+		NPySegObj* pseg = (NPySegObj*)pyseg;
+		NPySecObj* pysec = (NPySecObj*)sec->prop->dparam[PROP_PY_INDEX]._pvoid;
+		if (pysec) {
+			pseg->pysec_ = pysec;
+			Py_INCREF(pysec);
+		}else{
+			pysec = (NPySecObj*)psection_type->tp_alloc(psection_type, 0);
+			pysec->sec_ = sec;
+			pysec->name_ = 0;
+			pysec->cell_ = 0;
+			Py_INCREF(pysec);
+			pseg->pysec_ = pysec;
+		}
+		pseg->x_ = nrn_arc_position(sec, pnt->node);
+	}
+	Py_INCREF(pyseg);
+	return hoc_temp_objptr(nrnpy_pyobject_in_obj(pyseg));
 }
 
 static void rv_noexist(Section* sec, const char* n, double x, int err) {
@@ -968,6 +1013,9 @@ static PyMethodDef NPySecObj_methods[] = {
 	{"allseg", (PyCFunction)allseg, METH_VARARGS,
 	 "iterate over segments. Includes x=0 and x=1 zero-area nodes in the iteration."
 	},
+	{"cell", (PyCFunction)pysec2cell, METH_NOARGS,
+	 "Return the object that owns the Section. Possibly None."
+	},
 	{NULL}
 };
 
@@ -1133,8 +1181,18 @@ void nrnpy_reg_mech(int type) {
 	int i;
 	char* s;
 	Memb_func* mf = memb_func + type;
-	if (mf->is_point) { return; }
 	if (!nrnmodule_) { return; }
+	if (mf->is_point) {
+		if (nrn_is_artificial_[type] == 0) {
+			Symlist* sl = nrn_pnt_template_[type]->symtable;
+			Symbol* s = hoc_table_lookup("get_segment", sl);
+			if (!s) {
+				s = hoc_install("get_segment", OBFUNCTION, 0, &sl);
+				s->u.u_proc->defn.pfo = (Object**(*)())pp_get_segment;
+			}
+		}
+		return;
+	}
 	s = mf->sym->name;
 //printf("nrnpy_reg_mech %s %d\n", s, type); 
 	if (PyDict_GetItemString(pmech_types, s)) {

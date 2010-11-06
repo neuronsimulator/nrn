@@ -49,8 +49,12 @@ extern "C" {
 	void nrnmpi_int_broadcast(int*, int, int);
 	void nrnmpi_char_broadcast(char*, int, int);
 	void nrnmpi_dbl_broadcast(double*, int, int);
+	extern void nrnmpi_subworld_size(int n);
+#else
+	static void nrnmpi_int_broadcast(int*, int, int){}
+	static void nrnmpi_char_broadcast(char*, int, int){}
+	static void nrnmpi_dbl_broadcast(double*, int, int){}
 #endif
-
 	extern double* nrn_mech_wtime_;
 	extern int nrn_nthread;
 	extern void nrn_threads_create(int, int);
@@ -82,15 +86,6 @@ static void pack_help(int, OcBBS*);
 static void unpack_help(int, OcBBS*);
 static int submit_help(OcBBS*);
 static char* key_help();
-
-static double ihost(void* v) {
-#if USEBBS
-	OcBBS* bbs = (OcBBS*)v;
-	return double(bbs->myid());
-#else
-	return nrnmpi_myid;
-#endif
-}
 
 void bbs_done() {
 #if USEBBS
@@ -219,12 +214,38 @@ static double userid(void* v) {
 }
 
 static double nhost(void* v) {
-#if defined(HAVE_STL)
-	OcBBS* bbs = (OcBBS*)v;
-	return double(bbs->nhost());
-#else
 	return nrnmpi_numprocs;
+}
+
+static double rank(void* v) {
+	return nrnmpi_myid;
+}
+
+static double nhost_world(void* v) {
+	return nrnmpi_numprocs_world;
+}
+
+static double rank_world(void* v) {
+	return nrnmpi_myid_world;
+}
+
+static double nhost_bbs(void* v) {
+	return nrnmpi_numprocs_bbs;
+}
+
+static double rank_bbs(void* v) {
+	return nrnmpi_myid_bbs;
+}
+
+static double subworlds(void* v) {
+	int n = int(chkarg(1, 1, nrnmpi_numprocs_world));
+	if (nrnmpi_numprocs_world%n) {
+		hoc_execerror("nhost_world must be an integer multiple of subworld size", 0);
+	}
+#if NRNMPI
+	nrnmpi_subworld_size(n);
 #endif
+	return 0.;
 }
 
 static double worker(void* v) {
@@ -847,8 +868,13 @@ static Member_func members[] = {
 	"look_take", look_take,
 	"runworker", worker,
 	"done", done,
-	"id", ihost,
+	"id", rank,
 	"nhost", nhost,
+	"id_world", rank_world,
+	"nhost_world", nhost_world,
+	"id_bbs", rank_bbs,
+	"nhost_bbs", nhost_bbs,
+	"subworlds", subworlds,
 	"context", context,
 
 	"time", pctime,
@@ -933,14 +959,27 @@ void ParallelContext_reg() {
 		retobj_members, retstr_members);
 }
 
-char* BBSImpl::execute_helper(size_t* size) {
+char* BBSImpl::execute_helper(size_t* size, int id) {
 	char* s;
+	int subworld = (nrnmpi_numprocs > 1 && nrnmpi_numprocs_bbs < nrnmpi_numprocs_world);
 	int style = upkint();
+	if (subworld) {
+		assert(nrnmpi_myid == 0);
+		int info[2];
+		info[0] = id;
+		info[1] = style;
+		nrnmpi_int_broadcast(info, 2, 0);
+	}
 	char* rs = 0;
 	*size = 0;
 	switch (style) {
 	case 0:
 		s = upkstr();
+		if (subworld) {
+			int size = strlen(s) + 1;
+			nrnmpi_int_broadcast(&size, 1, 0);
+			nrnmpi_char_broadcast(s, size, 0);
+		}
 		hoc_obj_run(s, nil);
 		delete [] s;
 		break;
@@ -980,10 +1019,24 @@ hoc_execerror("ParallelContext execution error", 0);
 			delete [] s;
 			s = upkstr();
 			fname = hoc_table_lookup(s, sym->u.ctemplate->symtable);
+			if (subworld) {
+hoc_execerror("with subworlds, this submit style not implemented", 0);
+			}
 		}else if (style == 3) { // Python callable
 			s = upkpickle(&npickle);
+			if (subworld) {
+				int size = npickle;
+				nrnmpi_int_broadcast(&size, 1, 0);
+				nrnmpi_char_broadcast(s, size, 0);
+			}
 		}else{
 			s = upkstr();
+			if (subworld) {
+				int size = strlen(s) + 1;
+//printf("%d exec hoc fun size = %d\n", nrnmpi_myid_world, size);
+				nrnmpi_int_broadcast(&size, 1, 0);
+				nrnmpi_char_broadcast(s, size, 0);
+			}
 			fname = hoc_lookup(s);
 		}
 //printf("execute helper style %d fname=%s obj=%s\n", style, fname->name, hoc_object_name(ob));
@@ -992,27 +1045,48 @@ fprintf(stderr, "%s not a function in %s\n", s, hoc_object_name(ob));
 hoc_execerror("ParallelContext execution error", 0);
 		}
 		int argtypes = upkint(); // first is least signif
+		if (subworld) {
+//printf("%d exec argtypes = %d\n", nrnmpi_myid_world, argtypes);
+			nrnmpi_int_broadcast(&argtypes, 1, 0);
+		}
 		for (j = argtypes; (i = j%5) != 0; j /= 5) {
 			++narg;
 			if (i == 1) {
 				double x = upkdouble();
-//printf("arg %d scalar %g\n", narg, x);
+//printf("%d arg %d scalar %g\n", nrnmpi_myid_world, narg, x);
+				if (subworld) {
+					nrnmpi_dbl_broadcast(&x, 1, 0);
+				}
 				hoc_pushx(x);
 			}else if (i == 2) {
 				sarg[ns] = upkstr();
 //printf("arg %d string |%s|\n", narg, sarg[ns]);
+				if (subworld) {
+					int size = strlen(sarg[ns]) + 1;
+					nrnmpi_int_broadcast(&size, 1, 0);
+					nrnmpi_char_broadcast(sarg[ns], size, 0);
+				}
 				hoc_pushstr(sarg+ns);
 				ns++;
 			}else if (i == 3) {
 				int n;
 				n = upkint();
+				if (subworld) {
+					nrnmpi_int_broadcast(&n, 1, 0);
+				}
 				Vect* vec = new Vect(n);
 //printf("arg %d vector size=%d\n", narg, n);
 				upkvec(n, vec->vec());
+				if (subworld) {
+					nrnmpi_dbl_broadcast(vec->vec(), n, 0);
+				}
 				hoc_pushobj(vec->temp_objvar());
 			}else{ //PythonObject
 				size_t n;
 				char* s = upkpickle(&n);
+				int size = n;
+				nrnmpi_int_broadcast(&size, 1, 0);
+				nrnmpi_char_broadcast(s, size, 0);
 				assert(nrnpy_pickle2po);
 				Object* po = nrnpy_pickle2po(s, n);
 				delete [] s;
@@ -1029,7 +1103,9 @@ hoc_execerror("ParallelContext execution error", 0);
 			rs = (*nrnpy_callpicklef)(s, npickle, narg, size);
 			hoc_ac_ = 0.;
 		}else{
+//printf("%d exec hoc call %s narg=%d\n", nrnmpi_myid_world, fname->name, narg);
 			hoc_ac_ = hoc_call_objfunc(fname, narg, ob);
+//printf("%d exec return from hoc call %s narg=%d\n", nrnmpi_myid_world, fname->name, narg);
 		}
 		delete [] s;
 		for (i=0; i < ns; ++i) {
@@ -1041,6 +1117,8 @@ hoc_execerror("ParallelContext execution error", 0);
 	}
 	return rs;
 }
+
+#include "subworld.cpp"
 
 void BBSImpl::return_args(int id) {
 	// the message has been set up by the subclass

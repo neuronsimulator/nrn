@@ -48,14 +48,24 @@ extern int hoc_is_pdouble_arg(int);
 extern void vector_resize(void*, int);
 extern double* vector_vec(void*);
 extern void* vector_arg(int);
+extern void* vector_new2(void* vec);
+extern void vector_delete(void* vec);
 extern int vector_capacity(void*);
+extern Object** vector_pobj(void* v);
+extern int nrn_praxis_ran_index;
+extern Object** hoc_objgetarg(int);
 
-static double efun();
+static double efun(double*, int);
 static Symbol* hoc_efun_sym;
 
 static double tolerance, machep, maxstepsize;
 static long int printmode;
 static long int nvar;
+
+double (*nrnpy_praxis_efun)(Object* pycallable, Object* hvec);
+static Object* efun_py;
+static Object* efun_py_arg;
+static void* vec_py_save;
 
 int stop_praxis() {
 	int i = 1;
@@ -79,7 +89,27 @@ int fit_praxis() {
 	double minerrsav, *minargsav, maxstepsizesav, tolerancesav;
 	long int printmodesav;
 	Symbol* funsav;
+	Object* efun_py_save, *efun_py_arg_save;
+	void* vec_py_save_save;
+	
 	fmin = 0.;
+	if (efun_py) {
+		hoc_obj_unref(efun_py);
+		efun_py = (Object*)0;
+		hoc_obj_unref(efun_py_arg);
+		efun_py_arg = (Object*)0;
+		vector_delete(vec_py_save);
+	}
+    if (hoc_is_object_arg(1)) {
+	assert(nrnpy_praxis_efun);
+	efun_py = *hoc_objgetarg(1);
+	hoc_obj_ref(efun_py);
+	efun_py_arg = *vector_pobj(vector_arg(2));
+	hoc_obj_ref(efun_py_arg);
+	vec_py_save = vector_new2(efun_py_arg->u.this_pointer);
+	nvar = vector_capacity(vec_py_save);
+	px = vector_vec(vec_py_save);
+    }else{
 	nvar = (int)chkarg(1, 0., 1e6);
 	funsav = hoc_efun_sym;
 	hoc_efun_sym = hoc_lookup(gargstr(2));
@@ -89,11 +119,6 @@ int fit_praxis() {
 		hoc_execerror(gargstr(2), "not a function name");
 	}
 	
-	if (maxstepsize == 0.) {
-		hoc_execerror("call attr_praxis first to set attributes", 0);
-	}
-	machep = 1e-15;
-		
 	if (!hoc_is_pdouble_arg(3)) {
 		void* vec = vector_arg(3);
 		if (vector_capacity(vec) != nvar) {
@@ -103,6 +128,12 @@ int fit_praxis() {
 	}else{
 		px = hoc_pgetarg(3);
 	}
+    }
+	if (maxstepsize == 0.) {
+		hoc_execerror("call attr_praxis first to set attributes", 0);
+	}
+	machep = 1e-15;
+		
 	if (ifarg(4)) {
 		after_quad = gargstr(4);
 	}else{
@@ -114,14 +145,29 @@ int fit_praxis() {
 	tolerancesav = tolerance;
 	maxstepsizesav = maxstepsize;
 	printmodesav = printmode;
+	efun_py_save = efun_py;
+	efun_py_arg_save = efun_py_arg;
+	vec_py_save_save = vec_py_save;
 
 	minerr=1e9;
 	err = praxis(&tolerance, &machep, &maxstepsize,	nvar, &printmode,
 		px, efun, &fmin, after_quad);
+	err = minerr;
 	if (minerr < 1e9) {
 		for (i=0; i<nvar; ++i) { px[i] = minarg[i]; }
 	}
-	err = minerr;
+	if (efun_py) {
+		double* px = vector_vec(efun_py_arg->u.this_pointer);
+		for (i=0; i < nvar; ++i) {
+			px[i] = minarg[i];
+		}
+		hoc_obj_unref(efun_py);
+		efun_py = (Object*)0;
+		hoc_obj_unref(efun_py_arg);
+		efun_py_arg = (Object*)0;
+		vector_delete(vec_py_save);
+		vec_py_save = (void*)0;
+	}
 	if (minargsav) {
 		free(minarg);
 		minarg = minargsav;
@@ -130,6 +176,9 @@ int fit_praxis() {
 		tolerance = tolerancesav;
 		maxstepsize = maxstepsizesav;
 		printmode = printmodesav;
+		efun_py = efun_py_save;
+		efun_py_arg = efun_py_arg_save;
+		vec_py_save = vec_py_save_save;
 	}
 	ret(err);
 }
@@ -139,10 +188,18 @@ void hoc_after_prax_quad(s) char* s; {
 }
 
 int attr_praxis() {
+    if (ifarg(2)) {
 	tolerance = *getarg(1);
 	maxstepsize = *getarg(2);
 	printmode = (int)chkarg(3, 0., 3.);
 	ret(0.);
+    }else{
+	int old = nrn_praxis_ran_index;
+	if (ifarg(1)) {
+	    	nrn_praxis_ran_index = (int)chkarg(1, 0., 1e9);
+	}
+	ret((double)old);
+    }
 }
 
 int pval_praxis() {
@@ -170,12 +227,24 @@ static double efun(v, n)
 	int n;
 	double* v;
 {
+	int i;
 	double err;
+    if (efun_py) {
+	double* px = vector_vec(efun_py_arg->u.this_pointer);
+	for (i=0; i < n; ++i) {
+		px[i] = v[i];
+	}
+    	err = nrnpy_praxis_efun(efun_py, efun_py_arg);
+	for (i=0; i < n; ++i) {
+		v[i] = px[i];
+	}
+    }else{
 	extern double hoc_call_func();
 	int i;
 	hoc_pushx((double)n);
 	hoc_pushpx(v);
 	err =  hoc_call_func(hoc_efun_sym, 2);
+    }
 	if (!stoprun && err < minerr) {
 		minerr = err;
 		for (i=0; i < n; ++i) {

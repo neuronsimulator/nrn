@@ -1020,8 +1020,11 @@ Object** BBS::gid2cell(int gid) {
 		// but if it is a POINT_PROCESS in a section
 		// that is inside an object ... (probably has a WATCH statement)
 		Section* sec = ob2pntproc(cell)->sec;
-		if (sec && nrn_sec2cell(sec)) {
-			cell = nrn_sec2cell(sec);
+		Object* c2;
+		if (sec && (c2 = nrn_sec2cell(sec))) {
+			if (c2) {
+				cell = c2;
+			}
 		}			
 	}
 //printf(" return %s\n", hoc_object_name(cell));

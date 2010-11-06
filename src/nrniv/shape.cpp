@@ -48,6 +48,7 @@ extern int structure_change_cnt;
 extern int section_count;
 extern Section** secorder;
 extern Point_process* ob2pntproc(Object*);
+extern Point_process* ob2pntproc_0(Object*);
 extern double* nrn_recalc_ptr(double*);
 }
 
@@ -1959,9 +1960,10 @@ void PointMark::set_loc(Section* sec, float x) {
 }
 
 boolean PointMark::everything_ok() {
+	sec_ = nil;
 	if (ob_) {
-		Point_process* pnt = ob2pntproc(ob_);
-		if (pnt->sec) {
+		Point_process* pnt = ob2pntproc_0(ob_);
+		if (pnt && pnt->sec) {
 			sec_ = pnt->sec;
 			xloc_ = nrn_arc_position(pnt->sec, pnt->node);
 		}

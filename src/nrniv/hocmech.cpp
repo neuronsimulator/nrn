@@ -78,13 +78,18 @@ void hoc_construct_point(Object* ob, int narg) {
 	}
 }
 
-Point_process* ob2pntproc(Object* ob) {
+Point_process* ob2pntproc_0(Object* ob) {
 	Point_process* pp;
 	if (ob->ctemplate->steer) {
 		pp = (Point_process*)ob->u.this_pointer;
 	}else{
 		pp = (Point_process*)ob->u.dataspace[ob->ctemplate->dataspace_size - 1]._pvoid;
 	}
+	return pp;
+}
+
+Point_process* ob2pntproc(Object* ob) {
+	Point_process* pp = ob2pntproc_0(ob);
 	if (!pp || !pp->prop) {
 		 hoc_execerror(hoc_object_name(ob),"point process not located in a section");
 	}

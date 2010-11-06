@@ -123,7 +123,10 @@ That is, build a version suitable mostly as a Python extension.])
 		if test "$PYVER" = "" ; then
 			AC_NRN_PYCONF(xxx,get_python_version(),2.4,$ac_nrn_python)
 			PYVER=${xxx}
-			AC_NRN_PYCONF(xxx,sys.version_info.major,2,$ac_nrn_python)
+			#Notice how brackets are escaped
+			AC_NRN_PYCONF(xxx,sys.version_info@<:@0@:>@,2,$ac_nrn_python)
+			#following only for 2.7 and 3.x
+			#AC_NRN_PYCONF(xxx,sys.version_info.major,2,$ac_nrn_python)
 			NRNPYTHON_PYMAJOR=${xxx}
 		fi
 		NRNPYTHON_PYVER="$PYVER"

@@ -264,7 +264,11 @@ void nrn_fixed_step() {
 #if ELIMINATE_T_ROUNDOFF
 	nrn_chk_ndt();
 #endif
-	dt2thread(dt);
+	if (t != nrn_threads->_t) {
+		dt2thread(-1.);
+	}else{
+		dt2thread(dt);
+	}
 	nrn_thread_table_check();
 	if (nrn_multisplit_setup_) {
 		nrn_multithread_job(nrn_ms_treeset_through_triang);

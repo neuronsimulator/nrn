@@ -172,7 +172,7 @@ hoc_obvar_declare(sym, type, pmes)
 	}
 assert(sym->public != 2);
 	if (pmes && hoc_symlist == hoc_top_level_symlist) {
-	    if (nrnmpi_myid == 0 &&(hoc_print_first_instance || (hoc_fin == stdin))) {
+	    if (nrnmpi_myid_world == 0 &&(hoc_print_first_instance || (hoc_fin == stdin))) {
 	        NOT_PARALLEL_SUB(printf("first instance of %s\n", sym->name);)
 	    }
 		sym->defined_on_the_fly = 1;
@@ -624,6 +624,7 @@ hoc_newobj() { /* template at pc+1 */
 		ob = hoc_newobj1(sym, narg);
 		hoc_push_object(ob);
 		(*nrnpy_hpoasgn)(o, OBJECTTMP);
+		hoc_obj_unref(ob);
 	}
 #endif
 }
@@ -1030,6 +1031,8 @@ hoc_execerror("Cannot assign to a PythonObject function call:", sym0->name);
 				pushi(nindex);
 				pushs(sym0);
 				hoc_push_object(obp);
+				/* note obp is now on stack twice */
+				/* hpoasgn will pop both */
 			}else{
 				(*nrnpy_py2n_component)(obp, sym0, nindex, isfunc);
 			}

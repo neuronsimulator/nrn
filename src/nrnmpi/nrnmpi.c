@@ -1,8 +1,13 @@
 #include <../../nrnconf.h>
+#include <assert.h>
 #include <nrnmpi.h>
 
 int nrnmpi_numprocs = 1; /* size */
 int nrnmpi_myid = 0; /* rank */
+int nrnmpi_numprocs_world = 1;
+int nrnmpi_myid_world = 0;
+int nrnmpi_numprocs_bbs = 1;
+int nrnmpi_myid_bbs = 0;
 
 #include <stdio.h>
 #include <string.h>
@@ -11,6 +16,7 @@ extern double nrn_timeus();
 
 #if NRNMPI
 #include <mpi.h>
+#define asrt(arg) assert(arg == MPI_SUCCESS)
 #define USE_HPM 0
 #if USE_HPM
 #include <libhpm.h>
@@ -24,8 +30,11 @@ extern void nrnmusic_terminate();
 #endif
 
 int nrnmpi_use; /* NEURON does MPI init and terminate?*/
+MPI_Comm nrnmpi_world_comm;
 MPI_Comm nrnmpi_comm;
 MPI_Comm nrn_bbs_comm;
+static MPI_Group grp_bbs;
+static MPI_Group grp_net;
 
 extern void nrnmpi_spike_initialize();
 
@@ -93,25 +102,26 @@ for (i=0; i < *pargc; ++i) {
 
 #if NRN_MUSIC
 		if (nrnmusic) {
-			MPI_Comm_dup(nrnmusic_comm, &nrnmpi_comm);
+			asrt(MPI_Comm_dup(nrnmusic_comm, &nrnmpi_world_comm));
 		}else{
 #else
 		{
 #endif
-			MPI_Comm_dup(MPI_COMM_WORLD, &nrnmpi_comm);
+			asrt(MPI_Comm_dup(MPI_COMM_WORLD, &nrnmpi_world_comm));
 		}
 	}
-	MPI_Comm_dup(nrnmpi_comm, &nrn_bbs_comm);
-	if (MPI_Comm_rank(nrnmpi_comm, &nrnmpi_myid) != MPI_SUCCESS) {
-		printf("MPI_Comm_rank failed\n");
-	}
-	if (MPI_Comm_size(nrnmpi_comm, &nrnmpi_numprocs) != MPI_SUCCESS) {
-		printf("MPI_Comm_size failed\n");
-	}
+	grp_bbs = MPI_GROUP_NULL;
+	grp_net = MPI_GROUP_NULL;
+	asrt(MPI_Comm_dup(nrnmpi_world_comm, &nrnmpi_comm));
+	asrt(MPI_Comm_dup(nrnmpi_world_comm, &nrn_bbs_comm));
+	asrt(MPI_Comm_rank(nrnmpi_world_comm, &nrnmpi_myid_world));
+	asrt(MPI_Comm_size(nrnmpi_world_comm, &nrnmpi_numprocs_world));
+	nrnmpi_numprocs = nrnmpi_numprocs_bbs = nrnmpi_numprocs_world;
+	nrnmpi_myid = nrnmpi_myid_bbs = nrnmpi_myid_world;
 	nrnmpi_spike_initialize();
 	/*begin instrumentation*/
 #if USE_HPM
-	hpmInit( nrnmpi_myid, "mpineuron" );
+	hpmInit( nrnmpi_myid_world, "mpineuron" );
 #endif
 #if 0
 {int i;
@@ -123,7 +133,7 @@ for (i=0; i < *pargc; ++i) {
 #endif
 #if 1
 	if (nrnmpi_myid == 0) {
-		printf("numprocs=%d\n", nrnmpi_numprocs);
+		printf("numprocs=%d\n", nrnmpi_numprocs_world);
 	}
 #endif
 
@@ -146,10 +156,10 @@ void nrnmpi_terminate() {
 #if NRNMPI
 	if (nrnmpi_use) {
 #if 0
-		printf("%d nrnmpi_terminate\n", nrnmpi_myid);
+		printf("%d nrnmpi_terminate\n", nrnmpi_myid_world);
 #endif
 #if USE_HPM
-		hpmTerminate( nrnmpi_myid );
+		hpmTerminate( nrnmpi_myid_world );
 #endif
 		if( nrnmpi_under_nrncontrol_ ) {
 #if NRN_MUSIC
@@ -180,3 +190,73 @@ void nrnmpi_abort(int errcode) {
 	abort();
 #endif
 }
+
+#if NRNMPI
+void nrnmpi_subworld_size(int n) {
+	// n is the size of a subworld, nrnmpi_numprocs (pc.nhost)
+	if (nrnmpi_use != 1) { return; }
+	if (nrnmpi_comm != MPI_COMM_NULL) {asrt(MPI_Comm_free(&nrnmpi_comm)); }
+	if (nrn_bbs_comm != MPI_COMM_NULL) {asrt(MPI_Comm_free(&nrn_bbs_comm)); }
+	if (grp_bbs != MPI_GROUP_NULL) { asrt(MPI_Group_free(&grp_bbs)); }
+	if (grp_net != MPI_GROUP_NULL) { asrt(MPI_Group_free(&grp_net)); }
+	MPI_Group wg;
+	asrt(MPI_Comm_group(nrnmpi_world_comm, &wg));
+	int r = nrnmpi_myid_world;
+	// special cases
+	if (n == 1) {
+		asrt(MPI_Group_incl(wg, 1, &r, &grp_net));
+		asrt(MPI_Comm_dup(nrnmpi_world_comm, &nrn_bbs_comm));
+		asrt(MPI_Comm_create(nrnmpi_world_comm, grp_net, &nrnmpi_comm));
+		asrt(MPI_Comm_rank(nrnmpi_comm, &nrnmpi_myid));
+		asrt(MPI_Comm_size(nrnmpi_comm, &nrnmpi_numprocs));
+		asrt(MPI_Comm_rank(nrn_bbs_comm, &nrnmpi_myid_bbs));
+		asrt(MPI_Comm_size(nrn_bbs_comm, &nrnmpi_numprocs_bbs));
+	}else if (n == nrnmpi_numprocs_world) {
+		asrt(MPI_Group_incl(wg, 1, &r, &grp_bbs));
+		asrt(MPI_Comm_dup(nrnmpi_world_comm, &nrnmpi_comm));
+		asrt(MPI_Comm_create(nrnmpi_world_comm, grp_bbs, &nrn_bbs_comm));
+		asrt(MPI_Comm_rank(nrnmpi_comm, &nrnmpi_myid));
+		asrt(MPI_Comm_size(nrnmpi_comm, &nrnmpi_numprocs));
+		if (r == 0) {
+			asrt(MPI_Comm_rank(nrn_bbs_comm, &nrnmpi_myid_bbs));
+			asrt(MPI_Comm_size(nrn_bbs_comm, &nrnmpi_numprocs_bbs));
+		}else{
+			nrnmpi_myid_bbs = -1;
+			nrnmpi_numprocs_bbs = -1;
+		}
+	}else{
+		int nw = nrnmpi_numprocs_world;
+		int nb = nw/n; // nrnmpi_numprocs_bbs
+		int range[3];
+		// net is contiguous
+		range[0] = r/n;
+		range[0] *= n; // first
+		range[1] = range[0] + n - 1; // last
+		range[2] = 1; // stride
+		asrt(MPI_Group_range_incl(wg, 1, &range, &grp_net));
+		asrt(MPI_Comm_create(nrnmpi_world_comm, grp_net, &nrnmpi_comm));
+		asrt(MPI_Comm_rank(nrnmpi_comm, &nrnmpi_myid));
+		asrt(MPI_Comm_size(nrnmpi_comm, &nrnmpi_numprocs));
+
+		range[0] = 0; // first
+		range[1] = nw - n; // last
+		range[2] = n; // stride
+		asrt(MPI_Group_range_incl(wg, 1, &range, &grp_bbs));
+		asrt(MPI_Comm_create(nrnmpi_world_comm, grp_bbs, &nrn_bbs_comm));
+		if (r%n == 0) { // only rank 0 of the subworlds
+			asrt(MPI_Comm_rank(nrn_bbs_comm, &nrnmpi_myid_bbs));
+			asrt(MPI_Comm_size(nrn_bbs_comm, &nrnmpi_numprocs_bbs));
+		}else{
+			nrnmpi_myid_bbs = -1;
+			nrnmpi_numprocs_bbs = -1;
+		}
+	}
+	asrt(MPI_Group_free(&wg));
+}
+
+/* so src/nrnpython/inithoc.cpp does not have to include a c++ mpi.h */
+int nrn_wrap_mpi_init(int* flag) {
+	return MPI_Initialized(flag);
+}
+	
+#endif

@@ -47,6 +47,7 @@ static void pyobject_in_objptr(Object**, PyObject*);
 extern IvocVect* (*nrnpy_vec_from_python_p_)(void*);
 extern Object** (*nrnpy_vec_to_python_p_)(void*);
 extern double** nrnpy_setpointer_helper(PyObject*, PyObject*);
+extern Symbol* ivoc_alias_lookup(const char* name, Object* ob);
 
 static cTemplate* hoc_vec_template_;
 static cTemplate* hoc_list_template_;
@@ -316,6 +317,8 @@ static Symbol* getsym(char* name, Object* ho, int fail) {
 		sym = hoc_table_lookup(name, ho->ctemplate->symtable);
 		if (!sym && strcmp(name, "delay") == 0) {
 			sym = hoc_table_lookup("del", ho->ctemplate->symtable);
+		}else if (!sym && ho->aliases) {
+			sym = ivoc_alias_lookup(name, ho);
 		}
 	}else{
 		sym = hoc_table_lookup(name, hoc_top_level_symlist);
@@ -812,7 +815,7 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* name) {
 		// evaluation deferred unless VAR,STRING,OBJECTVAR and not
 		// an array
 		int t = sym->type;
-		if (t == VAR || t == STRING || t == OBJECTVAR || t == RANGEVAR || t == SECTION || t == SECTIONREF) {
+		if (t == VAR || t == STRING || t == OBJECTVAR || t == RANGEVAR || t == SECTION || t == SECTIONREF || t == VARALIAS || t == OBJECTALIAS) {
 			if (sym != nrn_child_sym && !ISARRAY(sym)) {
 				hoc_push_object(po->ho_);
 				component(po);
@@ -994,7 +997,7 @@ static int hocobj_setattro(PyObject* subself, PyObject* name, PyObject* value) {
 		// evaluation deferred unless VAR,STRING,OBJECTVAR and not
 		// an array
 		int t = sym->type;
-		if (t == VAR || t == STRING || t == OBJECTVAR || t == RANGEVAR) {
+		if (t == VAR || t == STRING || t == OBJECTVAR || t == RANGEVAR || t == VARALIAS || t == OBJECTALIAS) {
 			if (!ISARRAY(sym)) {
 				hoc_push_object(po->ho_);
 				component(po);

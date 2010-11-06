@@ -1252,8 +1252,8 @@ frame_debug()	/* print the call sequence on an execerror */
 	int i, j;
 	char id[10];
 
-	if (nrnmpi_numprocs > 1) {
-		sprintf(id, "%d ", nrnmpi_myid);
+	if (nrnmpi_numprocs_world > 1) {
+		sprintf(id, "%d ", nrnmpi_myid_world);
 	}else{
 		id[0]='\0';
 	}

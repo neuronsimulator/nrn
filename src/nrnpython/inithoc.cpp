@@ -1,7 +1,4 @@
 #include "nrnmpiuse.h"
-#ifdef NRNMPI
-#include <mpi.h>
-#endif
 #include <stdio.h>
 #include "nrnmpi.h"
 #include "nrnpython_config.h"
@@ -29,6 +26,7 @@ extern int ivocmain(int, char**, char**);
 
 static char* argv_mpi[] = {"NEURON", "-mpi","-dll", 0};
 static int argc_mpi = 2;
+extern int nrn_wrap_mpi_init(int*);
 
 #endif
 
@@ -58,10 +56,12 @@ void inithoc() {
 
 	int flag;
 
-	MPI_Initialized(&flag);
+	// avoid having to include the c++ version of mpi.h
+	nrn_wrap_mpi_init(&flag);
+	//MPI_Initialized(&flag);
 
 	if (flag) {
-	  printf("MPI_Initialized==true, enabling MPI funtionality.\n");
+	  printf("MPI_Initialized==true, enabling MPI functionality.\n");
 
 	  argc = argc_mpi;
 	  argv = argv_mpi;

@@ -1,0 +1,26 @@
+// subworld test using the hoc statement form
+objref pc
+pc = new ParallelContext()
+if (!name_declared("swsize")) { execute("swsize = 1") }
+if (swsize > 0) {
+	pc.subworlds(swsize)
+}
+proc p() {
+    printf(" hoc_ac_=%d world %d of %d  bbs %d of %d  mpi %d of %d\n", \
+     hoc_ac_, pc.id_world, pc.nhost_world, pc.id_bbs, pc.nhost_bbs, pc.id, pc.nhost)
+    system("sleep 1")
+}
+hoc_ac_ = -1
+p()
+{pc.runworker()}
+{printf("after runworker\n")}
+hoc_ac_ = -1
+p()
+
+
+for i = 1, 5 { pc.submit("p()\n") }
+while (pc.working()) {}
+
+{pc.done()}
+printf("after done\n")
+quit()

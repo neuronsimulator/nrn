@@ -70,7 +70,7 @@ for i in \
  cpp.exe cygpath.exe dirname.exe echo.exe find.exe $LTCC.exe \
  grep.exe ld.exe ls.exe make.exe mkdir.exe \
  nm.exe rm.exe mv.exe sed.exe bash.exe unzip.exe \
- rxvt.exe rebase.exe \
+ rxvt.exe rebase.exe sort.exe cygcheck.exe \
  ; do
  cp /usr/bin/$i $D/bin/$i
 done
@@ -85,14 +85,27 @@ cp $cc1 $D/bin
 if grep '^mpicc=mpicc' $B/src/mswin/nrncygso.sh ; then
 	mpichbin=`which mpicc | sed 's,\(/bin\)/.*,\1,'`
 	echo "mpichbin=$mpichbin"
-	cp /bin/python2.5 $D/bin
+	mpiinstalled=$HOME/mpich2/bin
+  if test -d $mpiinstalled ; then # want mpd
+	cp /bin/python2.6 $D/bin
 	for i in mpdboot mpdtrace mpdexit mpdallexit mpdcleanup mpd \
-	  mpiexec mpdman.py mpdlib.py ; do
-		sed '1s/\/usr\/bin\/env //' $mpichbin/$i > $D/bin/$i
+	  mpiexec.mpd mpdman.py mpdlib.py ; do
+		sed '1s/\/usr\/bin\/env //' $mpiinstalled/$i > $D/bin/$i
 		chmod 755 $D/bin/$i
 	done
+	# problem here. mpdroot.exe not installed and is in
+	# mpich2-1.2.1p1/src/pm/mpd/mpdroot.exe
+	cp $HOME/mpich2-1.2.1p1/src/pm/mpd/mpdroot.exe $D/bin
 	echo 'MPD_SECRETWORD=neuron' > $D/mpd.conf
 	chmod 600 $D/mpd.conf
+  fi
+	# gforker
+	cp $mpichbin/mpiexec.exe $D/bin
+	# and make the basic tests available
+	for i in test0.hoc test0.py ; do
+		cp $S/src/parallel/$i $D
+		unix2dos $D/$i
+	done
 fi
 
 # figure out which dll's need to be distributed
@@ -105,7 +118,7 @@ done
 # do not forget the ones used by the python dlls
 if false ; then
 # too many, putting duplicates in bin, setup is 13.69MB, only cygcrypto below
-for i in /lib/python2.5/lib-dynload/*.dll ; do
+for i in /lib/python2.6/lib-dynload/*.dll ; do
 	cygcheck $i | sed 's/^ *//' >> $D/bin/temp.tmp
 done
 fi
@@ -156,7 +169,7 @@ cp float.h stdarg.h stddef.h varargs.h $D/mingw
 fi
 
 gclib=`$CC -print-libgcc-file-name`
-gclib=`echo $gclib|sed 's,/usr/lib/\(.*\)/[^/].*,\1,'`
+gclib=`echo $gclib|sed 's,.*/lib/\(.*\)/[^/].*,\1,'`
 echo $gclib
 (cd /usr/lib ; zip -r $D/lib/temp.tmp $gclib -x \*ada\* \*c++\* \*fortran\* \*libobj\* \*libgcj\* \*install-tools\* \*libff\* \*libgomp\* \*libgij\* \*finclude\*)
 (cd $D/lib ; unzip temp.tmp ; rm temp.tmp ; cd $gclib ; rm -f cc1.exe *obj* *plus* e* j* f* gnat* *ssp* )
@@ -234,8 +247,8 @@ fi
 
 if true ; then
 cd /usr/lib
-pz=python25.zip
-pd=python2.5
+pz=python26.zip
+pd=python2.6
 if test ! -f $pz ; then
 	zip -r $pz $pd
 	zip -d $pz \*/\*.pyo

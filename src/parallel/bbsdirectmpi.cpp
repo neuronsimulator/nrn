@@ -13,6 +13,10 @@
 #include "bbssrv2mpi.h"
 #include "bbssrv.h"
 
+extern "C" {
+extern void nrnmpi_int_broadcast(int*, int, int);
+}
+
 #if defined(HAVE_STL)
 #if defined(HAVE_SSTREAM) // the standard ...
 #include <map>
@@ -108,7 +112,7 @@ char* BBSDirect::upkpickle(size_t* n) {
 
 void BBSDirect::pkbegin() {
 #if debug
-printf("%d BBSDirect::pkbegin\n", nrnmpi_myid);
+printf("%d BBSDirect::pkbegin\n", nrnmpi_myid_bbs);
 #endif
 	nrnmpi_unref(sendbuf_);
 	sendbuf_ = nrnmpi_newbuf(100);
@@ -118,42 +122,42 @@ printf("%d BBSDirect::pkbegin\n", nrnmpi_myid);
 
 void BBSDirect::pkint(int i) {
 #if debug
-printf("%d BBSDirect::pkint %d\n", nrnmpi_myid, i);
+printf("%d BBSDirect::pkint %d\n", nrnmpi_myid_bbs, i);
 #endif
 	nrnmpi_pkint(i, sendbuf_);
 }
 
 void BBSDirect::pkdouble(double x) {
 #if debug
-printf("%d BBSDirect::pkdouble\n", nrnmpi_myid, x);
+printf("%d BBSDirect::pkdouble\n", nrnmpi_myid_bbs, x);
 #endif
 	nrnmpi_pkdouble(x, sendbuf_);
 }
 
 void BBSDirect::pkvec(int n, double* x) {
 #if debug
-printf("%d BBSDirect::pkvec n=%d\n", nrnmpi_myid, n);
+printf("%d BBSDirect::pkvec n=%d\n", nrnmpi_myid_bbs, n);
 #endif
 	nrnmpi_pkvec(n, x, sendbuf_);
 }
 
 void BBSDirect::pkstr(const char* s) {
 #if debug
-printf("%d BBSDirect::pkstr %s\n", nrnmpi_myid, s);
+printf("%d BBSDirect::pkstr %s\n", nrnmpi_myid_bbs, s);
 #endif
 	nrnmpi_pkstr(s, sendbuf_);
 }
 
 void BBSDirect::pkpickle(const char* s, size_t n) {
 #if debug
-printf("%d BBSDirect::pkpickle %d bytes\n", nrnmpi_myid, n);
+printf("%d BBSDirect::pkpickle %d bytes\n", nrnmpi_myid_bbs, n);
 #endif
 	nrnmpi_pkpickle(s, n, sendbuf_);
 }
 
 void BBSDirect::post(const char* key) {
 #if debug
-	printf("%d BBSDirect::post |%s|\n", nrnmpi_myid, key);
+	printf("%d BBSDirect::post |%s|\n", nrnmpi_myid_bbs, key);
 #endif
 	nrnmpi_enddata(sendbuf_);
 	nrnmpi_pkstr(key, sendbuf_);
@@ -165,11 +169,11 @@ void BBSDirect::post(const char* key) {
 
 void BBSDirect::post_todo(int parentid) {
 #if debug
-	printf("%d BBSDirect::post_todo for %d\n", nrnmpi_myid, parentid);
+	printf("%d BBSDirect::post_todo for %d\n", nrnmpi_myid_bbs, parentid);
 #endif
 	nrnmpi_enddata(sendbuf_);
 	nrnmpi_pkint(parentid, sendbuf_);
-	BBSDirectServer::server_->post_todo(parentid, nrnmpi_myid, sendbuf_);
+	BBSDirectServer::server_->post_todo(parentid, nrnmpi_myid_bbs, sendbuf_);
 	nrnmpi_unref(sendbuf_);
 	sendbuf_ = nil;
 	BBSDirectServer::handle();
@@ -177,7 +181,7 @@ void BBSDirect::post_todo(int parentid) {
 
 void BBSDirect::post_result(int id) {
 #if debug
-	printf("%d BBSDirect::post_result %d\n", nrnmpi_myid, id);
+	printf("%d BBSDirect::post_result %d\n", nrnmpi_myid_bbs, id);
 #endif
 	nrnmpi_enddata(sendbuf_);
 	nrnmpi_pkint(id, sendbuf_);
@@ -198,7 +202,7 @@ printf("%d look_take_todo getid=%d\n", nrnmpi_getid(recvbuf_));
 #endif
 	}
 #if debug
-printf("%d BBSDirect::look_take_todo id=%d\n", nrnmpi_myid, id);
+printf("%d BBSDirect::look_take_todo id=%d\n", nrnmpi_myid_bbs, id);
 #endif
 	return id;
 }
@@ -210,7 +214,7 @@ int BBSDirect::take_todo() {
 		assert(0);
 	}
 #if debug
-	printf("%d BBSDirect::take_todo id=%d\n", nrnmpi_myid, id);
+	printf("%d BBSDirect::take_todo id=%d\n", nrnmpi_myid_bbs, id);
 #endif
 	return id;
 }
@@ -219,13 +223,13 @@ int BBSDirect::look_take_result(int pid) {
 	BBSDirectServer::handle();
 	int id = BBSDirectServer::server_->look_take_result(pid, &recvbuf_);
 #if debug
-	printf("%d BBSDirect::look_take_result id=%d pid=%d\n", nrnmpi_myid, id, pid);
+	printf("%d BBSDirect::look_take_result id=%d pid=%d\n", nrnmpi_myid_bbs, id, pid);
 #endif
 	if (id) {
 		nrnmpi_upkbegin(recvbuf_);
 	}
 #if debug
-printf("%d look_take_result return id=%d\n", nrnmpi_myid, id);
+printf("%d look_take_result return id=%d\n", nrnmpi_myid_bbs, id);
 #endif
 	return id;
 }
@@ -302,18 +306,24 @@ void BBSDirect::take(const char* key) { // blocking
 }
 	
 void BBSDirect::done() {
+//printf("%d bbsdirect::done\n", nrnmpi_myid_world);
 	int i;
 	if (done_) {
 		return;
+	}
+	if (nrnmpi_numprocs > 1 && nrnmpi_numprocs_bbs < nrnmpi_numprocs_world) {
+		int info[2]; info[0] = -2; info[1] = -1;
+//printf("%d broadcast %d %d\n", nrnmpi_myid_world, info[0], info[1]);
+		nrnmpi_int_broadcast(info, 2, 0);
 	}
 	BBSImpl::done();
 	done_ = true;
 	nrnmpi_unref(sendbuf_);
 	sendbuf_ = nrnmpi_newbuf(20);
 #if debug
-printf("done: numprocs=%d\n", nrnmpi_numprocs);
+printf("done: numprocs_bbs=%d\n", nrnmpi_numprocs_bbs);
 #endif
-	for (i=1; i < nrnmpi_numprocs; ++i) {
+	for (i=1; i < nrnmpi_numprocs_bbs; ++i) {
 		nrnmpi_bbssend(i, QUIT, sendbuf_);
 //printf("kill %d\n", i);
 	}

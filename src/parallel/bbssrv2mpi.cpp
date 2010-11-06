@@ -281,7 +281,7 @@ void  BBSDirectServer::context(bbsmpibuf* send) {
 #if defined(HAVE_STL)
 	int cid, j;
 #if debug
-printf("numprocs=%d\n", nrnmpi_numprocs);
+printf("numprocs_bbs=%d\n", nrnmpi_numprocs_bbs);
 #endif
 	if (remaining_context_cnt_ > 0) {
 		printf("some workers did not receive previous context\n");
@@ -289,8 +289,8 @@ printf("numprocs=%d\n", nrnmpi_numprocs);
 		nrnmpi_unref(context_buf_);
 		context_buf_ = nil;
 	}
-	remaining_context_cnt_ = nrnmpi_numprocs - 1;
-	for (j = 1; j < nrnmpi_numprocs; ++j) {
+	remaining_context_cnt_ = nrnmpi_numprocs_bbs - 1;
+	for (j = 1; j < nrnmpi_numprocs_bbs; ++j) {
 		send_context_->insert(j);
 	}
 	LookingToDoList::iterator i = looking_todo_->begin();

@@ -28,6 +28,8 @@ extern int nrn_global_argc;
 extern char** nrn_global_argv;
 void nrnpy_augment_path();
 void nrnpython_ensure_threadstate();
+int nrnpy_pyrun(char*);
+extern int (*p_nrnpy_pyrun)(char*);
 }
 
 static PyThreadState* main_threadstate_;
@@ -46,11 +48,24 @@ void nrnpy_augment_path() {
 	}
 }
 
+int nrnpy_pyrun(char* fname) {
+	FILE* fp = fopen(fname, "r");
+	if (fp) {
+		PyRun_AnyFile(fp, fname);
+		fclose(fp);
+		return 1;
+	}else{
+		fprintf(stderr, "Could not open %s\n", fname);
+		return 0;
+	}
+}
+
 void nrnpython_start(int b) {
 #if USE_PYTHON
 	static int started = 0;
 //	printf("nrnpython_start %d started=%d\n", b, started);
 	if (b == 1 && !started) {
+		p_nrnpy_pyrun = nrnpy_pyrun;
 		Py_Initialize();
 		started = 1;
 		int i;
@@ -110,12 +125,7 @@ void nrnpython_start(int b) {
 				PyRun_SimpleString(nrn_global_argv[i+1]);
 				break;
 			}else if (strlen(arg) > 3 && strcmp(arg+strlen(arg)-3, ".py") == 0) {
-				FILE* fp = fopen(arg, "r");
-				if (fp) {
-					PyRun_AnyFile(fp, arg);
-				}else{
-					fprintf(stderr, "Could not open %s\n", arg);
-				}
+				nrnpy_pyrun(arg);
 				break;
 			}
 		}

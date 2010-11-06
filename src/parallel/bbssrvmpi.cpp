@@ -32,7 +32,7 @@ void bbs_handle() {
 }
 
 void BBSDirectServer::start() {
-	if (nrnmpi_numprocs > 1) {
+	if (nrnmpi_numprocs_bbs > 1) {
 		bbs_poll_ = POLLCNT;
 	}
 }

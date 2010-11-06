@@ -189,6 +189,7 @@ sprint(tstr, "%s %s = %g }", tstr2, tstr, tobj1.value)
 		}
 	    }
 	}
+	inhomo_export()
     }
 }
 proc inhomo_export() {

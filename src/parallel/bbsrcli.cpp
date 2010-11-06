@@ -252,7 +252,7 @@ int BBSClient::take_todo() {
 printf("execute context\n");
 fflush(stdout);
 #endif
-		rs = execute_helper(&n);
+		rs = execute_helper(&n, -1);
 		if (rs) { delete [] rs; }
 	}
 	return type;

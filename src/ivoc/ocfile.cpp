@@ -348,9 +348,9 @@ boolean OcFile::open(const char* name, const char* type) {
 	}
 	if (i > 0) {
 		if (file_) {
-printf("%d opened %s after %d retries\n", nrnmpi_myid, name, i);
+printf("%d opened %s after %d retries\n", nrnmpi_myid_world, name, i);
 		}else{
-printf("%d open %s failed after %d retries\n", nrnmpi_myid, name, i);
+printf("%d open %s failed after %d retries\n", nrnmpi_myid_world, name, i);
 		}
 	}
 #endif

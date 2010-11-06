@@ -264,7 +264,8 @@ void nrnmpi_setup_transfer() {
 	srccnt_[nrnmpi_myid] = sources_->count();
 #if PARANEURON
 	if (nrnmpi_numprocs > 1) {
-		nrnmpi_int_allgather(srccnt_ + nrnmpi_myid, srccnt_, 1);
+		int cnt = srccnt_[nrnmpi_myid];
+		nrnmpi_int_allgather(&cnt, srccnt_, 1);
 		errno = 0;
 	}
 #else

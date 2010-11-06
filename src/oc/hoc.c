@@ -20,6 +20,7 @@
 int use_python_interpreter = 0;
 void (*p_nrnpython_start)();
 #endif
+int (*p_nrnpy_pyrun)(char* fname);
 
 #if carbon
 #include <pthread.h>
@@ -613,7 +614,7 @@ execerror(s, t)	/* recover from run-time error */
 	if (oc_jump_target_) {
 		(*oc_jump_target_)();
 	}
-	if (nrnmpi_numprocs > 1) {
+	if (nrnmpi_numprocs_world > 1) {
 		nrnmpi_abort(-1);
 	}
 	hoc_execerror_messages = 1;
@@ -1131,6 +1132,12 @@ with the hoc interpreter.
 			hoc_execerror("arg not valid statement:", infile);
 		}
 		return moreinput();
+	} else if (strlen(infile) > 3 && strcmp(infile+strlen(infile) -3, ".py") == 0) {
+		if (!p_nrnpy_pyrun) {
+			hoc_execerror("Python not available to interpret",infile);
+		}
+		(*p_nrnpy_pyrun)(infile);
+		return moreinput();
 	} else if ((fin=fopen(infile, "r")) == NULL) {
 #if OCSMALL
 hoc_menu_cleanup();
@@ -1319,8 +1326,8 @@ warning(s, t)	/* print warning message */
 	CHAR *cp;
 	char id[10];
 	int n;
-	if (nrnmpi_numprocs > 1) {
-		sprintf(id, "%d ", nrnmpi_myid);
+	if (nrnmpi_numprocs_world > 1) {
+		sprintf(id, "%d ", nrnmpi_myid_world);
 	}else{
 		id[0]='\0';
 	}
@@ -1342,7 +1349,7 @@ warning(s, t)	/* print warning message */
 		}
 	}
 	Fprintf(stderr, "%s %s",id, cbuf);
-    if (nrnmpi_numprocs > 0) {
+    if (nrnmpi_numprocs_world > 0) {
 	for (cp = cbuf; cp != ctp; cp++) {
 #if defined(WIN32) && !defined(CYGWIN)
 		fputchar(' ');

@@ -35,6 +35,9 @@
 #include "ivoc.h"
 #endif
 
+#undef dmaxuint
+#define dmaxuint 4294967295.
+
 extern "C" {void nrn_random_play(); }
 class RandomPlay : public Observer, public Resource {
 public:
@@ -266,11 +269,11 @@ static double r_MLCG(void* r)
 static double r_MCellRan4(void* r) {
   Rand* x = (Rand*)r;
 
-  unsigned long seed1 = 0;
-  unsigned long ilow = 0;
+  u_int32_t seed1 = 0;
+  u_int32_t  ilow = 0;
 
-  if (ifarg(1)) seed1 = long(*getarg(1));
-  if (ifarg(2)) ilow = long(*getarg(2));
+  if (ifarg(1)) seed1 = (u_int32_t)(chkarg(1, 0., dmaxuint));
+  if (ifarg(2)) ilow = (u_int32_t)(chkarg(2, 0., dmaxuint));
   MCellRan4* mcr = new MCellRan4(seed1, ilow);
   x->rand->generator(mcr);
   delete x->gen;

@@ -1,6 +1,7 @@
 #include <../../nrnconf.h>
 #include <nrnmpi.h>
 #include <stdio.h>
+#include <stdlib.h>
 #if NRNMPI
 #if HAVE_STRING_H
 #include <string.h>
@@ -40,15 +41,15 @@ static void unpack(void* buf, int count, int my_datatype, bbsmpibuf* r, const ch
 	assert(r && r->buf);
 #if debug
 printf("%d unpack upkpos=%d pkposition=%d keypos=%d size=%d\n",
-  nrnmpi_myid, r->upkpos, r->pkposition, r->keypos, r->size);
+  nrnmpi_myid_bbs, r->upkpos, r->pkposition, r->keypos, r->size);
 #endif
 assert(r->upkpos >= 0 && r->size >= r->upkpos);
 	MPI_Unpack(r->buf, r->size, &r->upkpos, type, 2, MPI_INT, nrn_bbs_comm); 
 #if debug
-printf("%d unpack r=%lx size=%d upkpos=%d type[0]=%d datatype=%d  type[1]=%d  count=%d\n", nrnmpi_myid, (long)r, r->size, r->upkpos, type[0], my_datatype, type[1], count);
+printf("%d unpack r=%lx size=%d upkpos=%d type[0]=%d datatype=%d  type[1]=%d  count=%d\n", nrnmpi_myid_bbs, (long)r, r->size, r->upkpos, type[0], my_datatype, type[1], count);
 #endif
 if (type[0] != my_datatype || type[1] != count) {
-printf("%d unpack size=%d upkpos=%d type[0]=%d   datatype=%d  type[1]=%d  count=%d\n", nrnmpi_myid, r->size, r->upkpos, type[0], my_datatype, type[1], count);
+printf("%d unpack size=%d upkpos=%d type[0]=%d   datatype=%d  type[1]=%d  count=%d\n", nrnmpi_myid_bbs, r->size, r->upkpos, type[0], my_datatype, type[1], count);
 }
 	assert(type[0] == my_datatype);
 	assert(type[1] == count);
@@ -59,19 +60,22 @@ void nrnmpi_upkbegin(bbsmpibuf* r) {
 	int type;
 	int p;
 #if debug
-printf("%d nrnmpi_upkbegin %lx (preunpack upkpos=%d keypos=%d)\n", nrnmpi_myid, (long)r, r->upkpos, r->keypos);
+printf("%d nrnmpi_upkbegin %lx (preunpack upkpos=%d keypos=%d)\n", nrnmpi_myid_bbs, (long)r, r->upkpos, r->keypos);
 #endif
 assert(r && r->buf && r->size > 0);
+	if (nrnmpi_myid_bbs == -1) {
+		hoc_execerror("subworld process with nhost > 0 cannot use", "the bulletin board");
+	}
 	r->upkpos = 0;
 	MPI_Unpack(r->buf, r->size, &r->upkpos,
 		&p, 1, MPI_INT, nrn_bbs_comm);
 if (p > r->size) {
-printf("\n %d nrnmpi_upkbegin keypos=%d size=%d\n", nrnmpi_myid, p, r->size);
+printf("\n %d nrnmpi_upkbegin keypos=%d size=%d\n", nrnmpi_myid_bbs, p, r->size);
 }
 assert(p <= r->size);
 	MPI_Unpack(r->buf, r->size, &p, &type, 1, MPI_INT, nrn_bbs_comm);
 #if debug
-printf("%d nrnmpi_upkbegin type=%d keypos=%d\n", nrnmpi_myid, type, p);
+printf("%d nrnmpi_upkbegin type=%d keypos=%d\n", nrnmpi_myid_bbs, type, p);
 #endif
 	assert(type == 0);
 	r->keypos = p;
@@ -83,7 +87,7 @@ char* nrnmpi_getkey(bbsmpibuf* r) {
 	type = r->upkpos;
 	r->upkpos = r->keypos;
 #if debug
-printf("%d nrnmpi_getkey %lx keypos=%d\n", nrnmpi_myid, (long)r, r->keypos);
+printf("%d nrnmpi_getkey %lx keypos=%d\n", nrnmpi_myid_bbs, (long)r, r->keypos);
 #endif
 	s = nrnmpi_upkstr(r);
 	assert(r->pkposition == 0 || r->pkposition == r->upkpos);
@@ -100,7 +104,7 @@ int nrnmpi_getid(bbsmpibuf* r) {
 	type = r->upkpos;
 	r->upkpos = r->keypos;
 #if debug
-printf("%d nrnmpi_getid %lx keypos=%d\n", nrnmpi_myid, (long)r, r->keypos);
+printf("%d nrnmpi_getid %lx keypos=%d\n", nrnmpi_myid_bbs, (long)r, r->keypos);
 #endif
 	i = nrnmpi_upkint(r);
 	r->upkpos = type;
@@ -157,10 +161,13 @@ static void resize(bbsmpibuf* r, int size) {
 
 void nrnmpi_pkbegin(bbsmpibuf* r) {
 	int type;
+	if (nrnmpi_myid_bbs == -1) {
+		hoc_execerror("subworld process with nhost > 0 cannot use", "the bulletin board");
+	}
 	r->pkposition = 0;
 	type = 0;
 #if debug
-printf("%d nrnmpi_pkbegin %lx size=%d pkposition=%d\n", nrnmpi_myid, (long)r, r->size, r->pkposition);
+printf("%d nrnmpi_pkbegin %lx size=%d pkposition=%d\n", nrnmpi_myid_bbs, (long)r, r->size, r->pkposition);
 #endif
 	MPI_Pack(&type, 1, MPI_INT, r->buf, r->size, &r->pkposition, nrn_bbs_comm);
 }
@@ -170,23 +177,23 @@ void nrnmpi_enddata(bbsmpibuf* r) {
 	p = r->pkposition;
 	type = 0;
 #if debug
-printf("%d nrnmpi_enddata %lx size=%d pkposition=%d\n", nrnmpi_myid, (long)r, r->size, p);
+printf("%d nrnmpi_enddata %lx size=%d pkposition=%d\n", nrnmpi_myid_bbs, (long)r, r->size, p);
 #endif
 	MPI_Pack_size(1, MPI_INT, nrn_bbs_comm, &isize);
 oldsize = r->size;
 	resize(r, r->pkposition + isize);
 #if debug
 if (oldsize < r->pkposition + isize) {
-	printf("%d %lx need %d more. end up with total of %d\n", nrnmpi_myid, (long)r, isize, r->size);
+	printf("%d %lx need %d more. end up with total of %d\n", nrnmpi_myid_bbs, (long)r, isize, r->size);
 }
 #endif
 	MPI_Pack(&type, 1, MPI_INT, r->buf, r->size, &r->pkposition, nrn_bbs_comm);
 #if debug
-printf("%d nrnmpi_enddata buf=%lx size=%d pkposition=%d\n", nrnmpi_myid, r->buf, r->size, r->pkposition);
+printf("%d nrnmpi_enddata buf=%lx size=%d pkposition=%d\n", nrnmpi_myid_bbs, r->buf, r->size, r->pkposition);
 #endif
 	MPI_Pack(&p, 1, MPI_INT, r->buf, r->size, &type, nrn_bbs_comm);
 #if debug
-printf("%d after nrnmpi_enddata, %d was packed at beginning and 0 was packed before %d\n", nrnmpi_myid, p, r->pkposition);
+printf("%d after nrnmpi_enddata, %d was packed at beginning and 0 was packed before %d\n", nrnmpi_myid_bbs, p, r->pkposition);
 #endif
 }
 
@@ -194,7 +201,7 @@ static void pack(void* inbuf, int incount, int my_datatype, bbsmpibuf* r, const 
 	int type[2];
 	int dsize, isize, oldsize;
 #if debug
-printf("%d pack %lx count=%d type=%d outbuf-%lx pkposition=%d %s\n", nrnmpi_myid, (long)r, incount, my_datatype, r->buf, r->pkposition, e);
+printf("%d pack %lx count=%d type=%d outbuf-%lx pkposition=%d %s\n", nrnmpi_myid_bbs, (long)r, incount, my_datatype, r->buf, r->pkposition, e);
 #endif
 	MPI_Pack_size(incount, mytypes[my_datatype], nrn_bbs_comm, &dsize);
 	MPI_Pack_size(2, MPI_INT, nrn_bbs_comm, &isize);
@@ -202,14 +209,14 @@ oldsize = r->size;
 	resize(r, r->pkposition + dsize + isize);
 #if debug
 if (oldsize < r->pkposition + dsize + isize) {
-	printf("%d %lx need %d more. end up with total of %d\n", nrnmpi_myid, (long)r, dsize+isize, r->size);
+	printf("%d %lx need %d more. end up with total of %d\n", nrnmpi_myid_bbs, (long)r, dsize+isize, r->size);
 }
 #endif
 	type[0] = my_datatype;  type[1] = incount;
 	MPI_Pack(type, 2, MPI_INT, r->buf, r->size, &r->pkposition, nrn_bbs_comm);
 	MPI_Pack(inbuf, incount, mytypes[my_datatype], r->buf, r->size, &r->pkposition, nrn_bbs_comm);
 #if debug
-printf("%d pack done pkposition=%d\n", nrnmpi_myid, r->pkposition);
+printf("%d pack done pkposition=%d\n", nrnmpi_myid_bbs, r->pkposition);
 #endif
 }
 
@@ -244,7 +251,7 @@ void nrnmpi_pkpickle(const char* s, size_t size, bbsmpibuf* r) {
 
 void nrnmpi_bbssend(int dest, int tag, bbsmpibuf* r) {
 #if debug
-printf("%d nrnmpi_bbssend %lx dest=%d tag=%d size=%d\n", nrnmpi_myid, (long)r, dest, tag, (r)?r->upkpos:0);
+printf("%d nrnmpi_bbssend %lx dest=%d tag=%d size=%d\n", nrnmpi_myid_bbs, (long)r, dest, tag, (r)?r->upkpos:0);
 #endif
 	if (r) {
 		assert( r->buf && r->keypos <= r->size);
@@ -254,7 +261,7 @@ printf("%d nrnmpi_bbssend %lx dest=%d tag=%d size=%d\n", nrnmpi_myid, (long)r, d
 	}
 	errno = 0;
 #if debug
-printf("%d return from send\n", nrnmpi_myid);
+printf("%d return from send\n", nrnmpi_myid_bbs);
 #endif
 }
 
@@ -265,12 +272,12 @@ int nrnmpi_bbsrecv(int source, bbsmpibuf* r) {
 		source = MPI_ANY_SOURCE;
 	}
 #if debug
-printf("%d nrnmpi_bbsrecv %lx\n", nrnmpi_myid, (long)r);
+printf("%d nrnmpi_bbsrecv %lx\n", nrnmpi_myid_bbs, (long)r);
 #endif
 	MPI_Probe(source, MPI_ANY_TAG, nrn_bbs_comm, &status);
 	MPI_Get_count(&status, MPI_PACKED, &size);
 #if debug
-printf("%d nrnmpi_bbsrecv probe size=%d source=%d tag=%d\n", nrnmpi_myid, size, status.MPI_SOURCE, status.MPI_TAG);
+printf("%d nrnmpi_bbsrecv probe size=%d source=%d tag=%d\n", nrnmpi_myid_bbs, size, status.MPI_SOURCE, status.MPI_TAG);
 #endif
 	resize(r, size);
 	MPI_Recv(r->buf, r->size, MPI_PACKED, source, MPI_ANY_TAG, nrn_bbs_comm, &status);
@@ -283,11 +290,11 @@ int nrnmpi_bbssendrecv(int dest, int tag, bbsmpibuf* s, bbsmpibuf* r) {
 	int msgtag;
 	MPI_Status status;
 #if debug
-printf("%d nrnmpi_bbssendrecv dest=%d tag=%d\n", nrnmpi_myid, dest, tag);
+printf("%d nrnmpi_bbssendrecv dest=%d tag=%d\n", nrnmpi_myid_bbs, dest, tag);
 #endif
 	if (!nrnmpi_iprobe(&size, &itag, &source) || source != dest) {
 #if debug
-printf("%d nrnmpi_bbssendrecv nothing available so send\n", nrnmpi_myid);
+printf("%d nrnmpi_bbssendrecv nothing available so send\n", nrnmpi_myid_bbs);
 #endif
 		nrnmpi_bbssend(dest, tag, s);
 	}
@@ -310,7 +317,7 @@ bbsmpibuf* nrnmpi_newbuf(int size) {
 	bbsmpibuf* buf;
 	buf = (bbsmpibuf*)hoc_Emalloc(sizeof(bbsmpibuf)); hoc_malchk();
 #if debug
-printf("%d nrnmpi_newbuf %lx\n", nrnmpi_myid, (long)buf);
+printf("%d nrnmpi_newbuf %lx\n", nrnmpi_myid_bbs, (long)buf);
 #endif
 	buf->buf = (char*)0;
 	if (size > 0) {
@@ -340,7 +347,7 @@ void nrnmpi_copy(bbsmpibuf* dest, bbsmpibuf* src){
 
 static void nrnmpi_free(bbsmpibuf* buf){
 #if debug
-printf("%d nrnmpi_free %lx\n", nrnmpi_myid, (long)buf);
+printf("%d nrnmpi_free %lx\n", nrnmpi_myid_bbs, (long)buf);
 #endif
 	if (buf->buf) {
 		free(buf->buf);
@@ -368,7 +375,7 @@ void nrnmpi_unref(bbsmpibuf* buf) {
 #if nrnmpidebugleak
 void nrnmpi_checkbufleak() {
 	if (nrnmpi_bufcnt_ > 0) {
-		printf("%d nrnmpi_bufcnt=%d\n", nrnmpi_myid, nrnmpi_bufcnt_);
+		printf("%d nrnmpi_bufcnt=%d\n", nrnmpi_myid_bbs, nrnmpi_bufcnt_);
 	}
 }
 #endif
