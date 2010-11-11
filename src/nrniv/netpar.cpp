@@ -1213,6 +1213,47 @@ IvocVect* BBS::netpar_max_histogram(IvocVect* mh) {
 #endif
 }
 
+/*  08-Nov-2010
+The workhorse for spike exchange on up to 10K machines is MPI_Allgather
+but as the number of machines becomes far greater than the fanout per
+cell we have been exploring a class of exchange methods called multisend
+where the spikes only go to those machines that need them and there is
+overlap between communication and computation.  The numer of variants of
+multisend has grown so that some method selection function is needed
+that makes sense. 
+
+The situation that needs to be captured by xchng_meth is
+
+Allgather
+multisend implemented as MPI_ISend
+multisend DCMF (only for Blue Gene/P)
+multisend record_replay (only for Blue Gene/P with recordreplay_v1r4m2.patch)
+
+n_bgp_interval 1 or 2 per minimum interprocessor NetCon delay
+ that concept valid for all methods
+
+Note that Allgather allows spike compression and an allgather spike buffer
+ with size chosen at setup time.  All methods allow bin queueing.
+
+All the multisend methods should allow two phase multisend.
+
+Note that, in principle, MPI_ISend allows the source to send the index   
+ of the target PreSyn to avoid a hash table lookup (even with a two phase
+ variant)
+
+Not all variation are useful. e.g. it is pointless to combine Allgather and
+n_bgp_interval=2. And two phase has yet to be implemented and is a longshot.
+RecordReplay should be best on the BG/P. The whole point is to make the
+spike transfer initiation as lowcost as possible since that is what causes
+most load imbalance. I.e. since 10K more spikes arrive than are sent, spikes
+received per processor per interval are much more statistically
+balanced than spikes sent per processor per interval. And presently
+DCMF multisend injects 10000 messages per spike into the network which
+is quite expensive. record replay avoids this overhead and the idea of
+two phase multisend distributes the injection
+
+*/
+
 int nrnmpi_spike_compress(int nspike, boolean gid_compress, int xchng_meth) {
 #if NRNMPI
 	if (nrnmpi_numprocs < 2) { return 0; }

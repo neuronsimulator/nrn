@@ -334,6 +334,23 @@ double nrn_bgp_receive_time(int type) { // and others
 		rt = double(gid2in_->nfind());
 		break;
 #endif
+	case 8: // exchange method properties
+		// bit 0-1: 0 allgather, 1 multisend as MPI_ISend,
+		// 2 multisend DCMF, 3 multisend DCMF with record replay
+		// bit 2: n_bgp_interval, 0 means one interval, 1 means 2
+		// bit 3: number of phases, 0 means 1 phase, 1 means 2
+		// bit 4: 1 means althash used
+		// bit 5: 1 means enqueue separated into two parts for timeing
+	    {
+		int meth = use_bgpdma_ ? ( BGPDMA == 2 ? 2 : 1) : 0;
+		meth = use_dcmf_record_replay ? 3 : meth;
+		int p = meth + 4*(n_bgp_interval == 2 ? 1 : 0)
+			+ 8*0 // use phases
+			+ 16*(ALTHASH == 1 ? 1 : 0)
+			+ 32*(ENQUEUE == 1 ? 0 : 1)
+		rt = double(p);
+	    }
+		break;
 	}
 	return rt;
 }
@@ -379,6 +396,9 @@ static void bgp_dma_init() {
 	}
 	current_rbuf = 0;
 	next_rbuf = n_bgp_interval - 1;
+#if TBUFSIZE
+	itbuf_ = 0;
+#endif
 #if BGPDMA == 2
 	for (int i=0; i < n_mymulticast_; ++i) {
 		mci_[i].req_in_use = false;
