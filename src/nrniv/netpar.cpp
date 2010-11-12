@@ -692,7 +692,7 @@ static void mk_localgid_rep() {
 
 	// allocate Allgather receive buffer (send is the nrnmpi_myid one)
 	int* rbuf = new int[nrnmpi_numprocs*(ngidmax + 1)];
-	int* sbuf = rbuf + nrnmpi_myid*(ngidmax + 1);
+	int* sbuf = new int[ngidmax + 1];
 
 	sbuf[0] = ngid;
 	++sbuf;
@@ -709,6 +709,7 @@ static void mk_localgid_rep() {
 
 	// exchange everything
 	nrnmpi_int_allgather(sbuf, rbuf, ngidmax+1);
+	delete [] sbuf;
 	errno = 0;
 
 	// create the maps
