@@ -11,48 +11,51 @@ $(EXTRA_FLAGS)
 
 # to handle variations of filename extensions
 .SUFFIXES: .o .mod .moD .mOd .mOD .Mod .MoD .MOd .MOD
+.PRECIOUS: %.c
 
-.mod.o:
+%.o : %.mod
+
+%.c : %.mod
 	nocmodl $*
+
+%.o : %.c
 	gcc $(CFLAGS) -c $*.c
-	rm $*.c
 
 # additional rules to handle variations of filename extensions
-.moD.o:
-	nocmodl $*
+%.c : %.moD
 	gcc $(CFLAGS) -c $*.c
-	rm $*.c
 
-.mOd.o:
-	nocmodl $*
+%.c : %.mOd
 	gcc $(CFLAGS) -c $*.c
-	rm $*.c
 
-.mOD.o:
-	nocmodl $*
+%.c : %.mOD
 	gcc $(CFLAGS) -c $*.c
-	rm $*.c
 
-.Mod.o:
-	nocmodl $*
+%.c : %.Mod
 	gcc $(CFLAGS) -c $*.c
-	rm $*.c
 
-.MoD.o:
-	nocmodl $*
+%.c : %.MoD
 	gcc $(CFLAGS) -c $*.c
-	rm $*.c
 
-.MOd.o:
-	nocmodl $*
+%.c : %.MOd
 	gcc $(CFLAGS) -c $*.c
-	rm $*.c
 
-.MOD.o:
-	nocmodl $*
+%.c : %.MOD
 	gcc $(CFLAGS) -c $*.c
-	rm $*.c
 
+%.o : %.moD
+
+%.o : %.mOd
+
+%.o : %.mOD
+
+%.o : %.Mod
+
+%.o : %.MoD
+
+%.o : %.MOd
+
+%.o : %.MOD
 
 mod_func.o: mod_func.c
 	gcc $(CFLAGS) -c $*.c

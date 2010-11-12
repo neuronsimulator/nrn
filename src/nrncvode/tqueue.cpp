@@ -167,6 +167,7 @@ void SelfQueue::remove_all() {
 	for (TQItem* q = first(); q; q = next(q)) {
 		tpool_->hpfree(q);
 	}
+	head_ = nil;
 	MUTUNLOCK
 }
 

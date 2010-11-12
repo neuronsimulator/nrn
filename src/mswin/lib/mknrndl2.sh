@@ -41,12 +41,6 @@ done
 echo 'fprintf(stderr, "'$newline'");
     }' >>mod_func.c
 
-
-for i in $prefixes
-do
-	rm -f $i.c
-done
-
 echo -n 'MODOBJFILES=' >$$.tmp
 for i in $prefixes
 do
