@@ -60,17 +60,29 @@ AC_HELP_STRING([--without-paranrn],[default. No parallel integration])
 AC_ARG_WITH(multisend,
 AC_HELP_STRING([--with-multisend],[Allow optional MPI_ISend/Recv for spike transfer])
 AC_HELP_STRING([--with-multisend=bgp],[Use BlueGene/P style dma spike transfer])
+AC_HELP_STRING([--with-multisend=all],[Allow ISend or BGP style dma])
+AC_HELP_STRING([--with-multisend=allreplay],[Allow ISend or BGP style dma, and with possiblity of Record/Replay])
 ,[
 	if test "$with_multisend" = "yes" ; then
 		with_mpi=yes
 		use_bgpdma=yes
-		NRN_DEFINE(BGPDMA,1,[Define if you want the framework supporting BlueGene/P style direct dma spike transfer])
+		NRN_DEFINE(BGPDMA,1,
+[Define bits for BGPDMA & 1 (ISend) & 2 (DMA spike transfer) & 4 (DMA Record Replay)])
 	elif test "$with_multisend" = "bgp" ; then
 		with_mpi=yes
 		use_bgpdma=yes
-		NRN_DEFINE(BGPDMA,2,[Define if you want the framework supporting BlueGene/P style direct dma spike transfer])
+		NRN_DEFINE(BGPDMA,2,[Define bits for BGPDMA & 1 (ISend) & 2 (DMA spike transfer) & 4 (DMA Record Replay)])
+	elif test "$with_multisend" = "all" ; then
+		with_mpi=yes
+		use_bgpdma=yes
+		NRN_DEFINE(BGPDMA,3,[Define bits for BGPDMA & 1 (ISend) & 2 (DMA spike transfer) & 4 (DMA Record Replay)])
+	elif test "$with_multisend" = "allreplay" ; then
+		with_mpi=yes
+		use_bgpdma=yes
+		NRN_DEFINE(BGPDMA,7,[Define bits for BGPDMA & 1 (ISend) & 2 (DMA spike transfer) & 4 (DMA Record Replay)])
 	else
 		use_bgpdma=no
+		NRN_DEFINE(BGPDMA,0,[Define bits for BGPDMA & 1 (ISend) & 2 (DMA spike transfer) & 4 (DMA Record Replay)])
 	fi
 ],[
 	use_bgpdma=no

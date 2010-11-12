@@ -45,8 +45,7 @@ static int n_xtra_cons_check_;
 static int xtra_cons_hist_[MAXNCONS+1];
 #endif
 
-#if BGPDMA == 2
-
+#if BGPDMA > 1
 #define TBUFSIZE (1<<15)
 #else
 #define TBUFSIZE 0
@@ -205,7 +204,7 @@ void BGP_ReceiveBuffer::enqueue2() {
 // number of DCMF_Multicast_t to cycle through when not using recordreplay
 #define NSEND 10
 
-#if BGPDMA == 2
+#if BGPDMA & 2
 
 #include <dcmf_multisend.h>
 #include <dcmf.h>
@@ -287,18 +286,33 @@ static DCMF_Request_t * msend_recv(const DCQuad  * msginfo,
   return NULL;
 }
 
+// Multisend_multicast callback
+#if DCMF_VERSION_MAJOR >= 2
+static void  multicast_done(void* arg, DCMF_Error_t *) {
+#else
+static void  multicast_done(void* arg) {
+#endif
+	boolean* a = (boolean*)arg;
+	*a = false;
+}
+#define DCMFTICK DCMF_Tick();
+#endif //BGPDMA & 2
+#if !defined(DCMFTICK)
+#define DCMFTICK 0
+#endif
+
 double nrn_bgp_receive_time(int type) { // and others
 	double rt = 0.;
 	switch(type) {
 	case 2: //in msend_recv
 		if (!use_bgpdma_) { return rt; }
 		for (int i = 0; i < n_bgp_interval; ++i) {
-			rt += bgp_receive_buffer[i]->timebase_ * DCMF_Tick();
+			rt += bgp_receive_buffer[i]->timebase_ * DCMFTICK;
 		}
 		break;
 	case 3: // in BGP_DMAsend::send
 		if (!use_bgpdma_) { return rt; }
-		rt = dmasend_time_ * DCMF_Tick();
+		rt = dmasend_time_ * DCMFTICK;
 		break;
 	case 4: // number of extra conservation checks
 		rt = double(n_xtra_cons_check_);
@@ -319,7 +333,7 @@ double nrn_bgp_receive_time(int type) { // and others
 			for (int i=0; i <= itbuf_; ++i) {
 				vector_vec(vec)[i] = double(tbuf_[i]);
 			}
-			vector_vec(vec)[itbuf_] = DCMF_Tick();
+			vector_vec(vec)[itbuf_] = DCMFTICK;
 		}
 #endif
 		break;
@@ -342,30 +356,17 @@ double nrn_bgp_receive_time(int type) { // and others
 		// bit 4: 1 means althash used
 		// bit 5: 1 means enqueue separated into two parts for timeing
 	    {
-		int meth = use_bgpdma_ ? ( BGPDMA == 2 ? 2 : 1) : 0;
-		meth = use_dcmf_record_replay ? 3 : meth;
+		int meth = use_dcmf_record_replay ? 3 : use_bgpdma_;
 		int p = meth + 4*(n_bgp_interval == 2 ? 1 : 0)
 			+ 8*0 // use phases
 			+ 16*(ALTHASH == 1 ? 1 : 0)
-			+ 32*(ENQUEUE == 1 ? 0 : 1)
+			+ 32*(ENQUEUE == 1 ? 0 : 1);
 		rt = double(p);
 	    }
 		break;
 	}
 	return rt;
 }
-
-// Multisend_multicast callback
-#if DCMF_VERSION_MAJOR >= 2
-static void  multicast_done(void* arg, DCMF_Error_t *) {
-#else
-static void  multicast_done(void* arg) {
-#endif
-	boolean* a = (boolean*)arg;
-	*a = false;
-}
-
-#endif //BGPDMA == 2
 
 extern "C" {
 extern void nrnmpi_bgp_comm();
@@ -399,8 +400,8 @@ static void bgp_dma_init() {
 #if TBUFSIZE
 	itbuf_ = 0;
 #endif
-#if BGPDMA == 2
-	for (int i=0; i < n_mymulticast_; ++i) {
+#if BGPDMA & 2
+	if (use_bgpdma_ == 2) for (int i=0; i < n_mymulticast_; ++i) {
 		mci_[i].req_in_use = false;
 	}
 #endif
@@ -459,7 +460,8 @@ void BGP_DMASend::send(int gid, double t) {
 	bgp_receive_buffer[0]->nsend_ += ntarget_hosts_;
 #endif
 	nsend_ += 1;
-#if BGPDMA == 2
+#if BGPDMA & 2
+    if (use_bgpdma_ == 2) {
 	unsigned long long tb = DCMF_Timebase();
 
 	MyMulticastInfo* mci;
@@ -502,8 +504,12 @@ void BGP_DMASend::send(int gid, double t) {
 		DCMF_Multicast(&mci->msend);
 	}
 	dmasend_time_ += DCMF_Timebase() - tb;
-#else
+    }
+#endif // BGPDMA & 2
+#if BGPDMA & 1
+    if (use_bgpdma_ == 1) {
 	nrnmpi_bgp_multisend(&spk_, ntarget_hosts_, target_hosts_);
+    }
 #endif
     }
 	// I am given to understand that multisend cannot send to itself
@@ -534,7 +540,8 @@ void bgp_dma_receive() {
 	int& s = bgp_receive_buffer[current_rbuf]->nsend_;
 	int& r = bgp_receive_buffer[current_rbuf]->nrecv_;
 	w1 = nrnmpi_wtime();
-#if BGPDMA == 2
+#if BGPDMA & 2
+    if (use_bgpdma_ == 2) {
 	DCMF_Messager_advance();
 	TBUF
 	// demonstrates that most of the time here is due to load imbalance
@@ -548,11 +555,15 @@ void bgp_dma_receive() {
 	}
 	TBUF
 	n_xtra_cons_check_ += ncons;
-#else
+    }
+#endif
+#if BGPDMA & 1
+    if (use_bgpdma_ == 1) {
 	bgp_advance();
 	while (nrnmpi_bgp_conserve(s, r) != 0) {
 		bgp_advance();
 	}
+    }
 #endif
 	w1 = nrnmpi_wtime() - w1;
 	w2 = nrnmpi_wtime();
@@ -561,7 +572,7 @@ void bgp_dma_receive() {
 	tbuf_[itbuf_++] = (unsigned long)s;
 	tbuf_[itbuf_++] = (unsigned long)r;
 #endif
-#if BGPMDA == 2 && MAXNCONS
+#if (BGPMDA & 2) && MAXNCONS
 	if (ncons > MAXNCONS) { ncons = MAXNCONS; }
 	++xtra_cons_hist_[ncons];
 #endif // MAXNCONS
@@ -634,7 +645,8 @@ void bgp_dma_setup() {
 		bgp_receive_buffer[1] = new BGP_ReceiveBuffer();
 	}
 #endif
-#if BGPDMA == 2
+#if BGPDMA & 2
+  if (use_bgpdma_ == 2) {
     if (0 || !once) { once = 1;
 	//if (max_ntarget_host = 0) { max_ntarget_host = 1; }
 	max_ntarget_host = nrnmpi_numprocs;
@@ -705,6 +717,7 @@ void bgp_dma_setup() {
 #endif
 	}
     }
+  }
 #endif
 }
 

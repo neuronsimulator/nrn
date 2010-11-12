@@ -58,7 +58,15 @@ extern void nrn_partrans_clear();
 void nrn_spike_exchange_init();
 extern double nrn_bgp_receive_time(int);
 
-#if !defined(BGPDMA) || BGPDMA != 2
+// BGPDMA can be 0,1,2,3,6,7
+// (BGPDMA & 1) > 0 means multisend ISend allowed
+// (BGPDMA & 2) > 0 means multisend Blue Gene/P DMA allowed
+// (BGPDMA & 4) > 0 means multisend Blue Gene/P DMA Record Replay allowed
+#if !defined(BGPDMA)
+#define BGPDMA 0
+#endif
+
+#if BGPDMA == 0
 double nrn_bgp_receive_time(int) { return 0.; }
 #endif
 
@@ -185,15 +193,15 @@ static int idxout_;
 static void nrn_spike_exchange_compressed();
 #endif // NRNMPI
 
-#if BGPDMA == 2
-#define HAVE_DCMF_RECORD_REPLAY 0
+#if BGPDMA & 4
+#define HAVE_DCMF_RECORD_REPLAY 1
 #else
 #define HAVE_DCMF_RECORD_REPLAY 0
 #endif
 
 #if BGPDMA
 int use_dcmf_record_replay;
-int use_bgpdma_;
+int use_bgpdma_; // can be 0, 1, or 2 : allgather, multisend (ISend, bgpdma)
 static void bgp_dma_setup();
 static void bgp_dma_init();
 static void bgp_dma_receive();
@@ -398,7 +406,7 @@ static int nrn_need_npe() {
 
 static void calc_actual_mindelay() {
 	//reasons why mindelay_ can be smaller than min_interprocessor_delay
-	// are use_bgpdma when BGP_INTERVAL == 2
+	// are use_bgpdma_ when BGP_INTERVAL == 2
 #if BGPDMA && (BGP_INTERVAL == 2)
 	if (use_bgpdma_ && n_bgp_interval == 2) {
 		mindelay_ = min_interprocessor_delay_ / 2.;
@@ -1252,21 +1260,28 @@ DCMF multisend injects 10000 messages per spike into the network which
 is quite expensive. record replay avoids this overhead and the idea of
 two phase multisend distributes the injection
 
+See case 8 of nrn_bgp_receive_time for the xchng_meth properties
 */
 
 int nrnmpi_spike_compress(int nspike, boolean gid_compress, int xchng_meth) {
 #if NRNMPI
 	if (nrnmpi_numprocs < 2) { return 0; }
 #if BGP_INTERVAL == 2
-	n_bgp_interval = (xchng_meth & 2) ? 2 : 1;
+	n_bgp_interval = (xchng_meth & 4) ? 2 : 1;
 #endif
 #if BGPDMA
-	use_bgpdma_ = (xchng_meth > 0) ? 1 : 0;
-	if (nrnmpi_myid == 0) {printf("use_bgpdma_ = %d\n", use_bgpdma_);}
+	use_bgpdma_ = (xchng_meth & 3);
+	if (use_bgpdma_ == 3) {	assert(HAVE_DCMF_RECORD_REPLAY); }
 #if HAVE_DCMF_RECORD_REPLAY
-	use_dcmf_record_replay = (xchng_meth & 4) ? 1 : 0;
+	use_dcmf_record_replay = (use_bgpdma_ == 3 ? 1 : 0;
 	if (nrnmpi_myid == 0) {printf("use_dcmf_record_replay = %d\n", use_dcmf_record_replay);}
 #endif
+	if (use_bgpdma_ == 3) { use_bgpdma_ = 2; }
+	if (use_bgpdma_ == 2) { assert(BGPDMA & 2); }
+	if (use_bgpdma_ == 1) { assert(BGPDMA & 1); }
+	if (nrnmpi_myid == 0) {printf("use_bgpdma_ = %d\n", use_bgpdma_);}
+#else // BGPDMA == 0
+	assert(xchnge_meth == 0);
 #endif
 	if (nspike >= 0) {
 		ag_send_nspike_ = 0;
