@@ -447,6 +447,7 @@ void nrn_spike_exchange_init() {
 
 #if BGPDMA
 	if (use_bgpdma_) {
+		bgp_dma_setup();
 		bgp_dma_init();
 	}
 #endif
@@ -1113,7 +1114,13 @@ void BBS::netpar_solve(double tstop) {
 	impl_->integ_time_ -= (npe_ ? (npe_[0].wx_ + npe_[0].ws_) : 0.);
 #if BGPDMA
 	if (use_bgpdma_) {
+#if BGP_INTERVAL == 2
+		for (int i=0; i < n_bgp_interval; ++i) {
+			bgp_dma_receive();
+		}
+#else
 		bgp_dma_receive();
+#endif
 	}else{
 		nrn_spike_exchange();
 	}
@@ -1179,11 +1186,6 @@ printf("Notice: The global minimum NetCon delay is %g, so turned off the cvode.q
 printf("   use_self_queue option. The interprocessor minimum NetCon delay is %g\n", mindelay);
 		}
 	}
-#if BGPDMA
-	if (use_bgpdma_) {
-		bgp_dma_setup();
-	}
-#endif
 	errno = 0;
 	return mindelay;
 #else

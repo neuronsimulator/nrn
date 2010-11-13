@@ -620,7 +620,7 @@ void bgp_dma_setup() {
 	static int once = 0;
 	double wt = nrnmpi_wtime();
 	nrnmpi_bgp_comm();
-if (nrnmpi_myid == 0) printf("bgp_dma_setup()\n");
+	//if (nrnmpi_myid == 0) printf("bgp_dma_setup()\n");
 	// although we only care about the set of hosts that gid2out_
 	// sends spikes to (source centric). We do not want to send
 	// the entire list of gid2in (which may be 10000 times larger
