@@ -85,7 +85,7 @@ public:
 	void enqueue2();
 	PreSyn** psbuf_;
 };
-#define ENQUEUE 1 // 0 use psbuf_
+#define ENQUEUE 1 // use psbuf_
 static BGP_ReceiveBuffer* bgp_receive_buffer[BGP_INTERVAL];
 static int current_rbuf, next_rbuf;
 #if BGP_INTERVAL == 2
@@ -360,7 +360,7 @@ double nrn_bgp_receive_time(int type) { // and others
 		int p = meth + 4*(n_bgp_interval == 2 ? 1 : 0)
 			+ 8*0 // use phases
 			+ 16*(ALTHASH == 1 ? 1 : 0)
-			+ 32*(ENQUEUE == 1 ? 0 : 1);
+			+ 32*(ENQUEUE == 1 ? 1 : 0);
 		rt = double(p);
 	    }
 		break;
@@ -576,7 +576,7 @@ void bgp_dma_receive() {
 	if (ncons > MAXNCONS) { ncons = MAXNCONS; }
 	++xtra_cons_hist_[ncons];
 #endif // MAXNCONS
-#if ENQUEUE
+#if ENQUEUE == 0
 	bgp_receive_buffer[current_rbuf]->enqueue();
 #else
 	bgp_receive_buffer[current_rbuf]->enqueue1();
@@ -620,7 +620,7 @@ void bgp_dma_setup() {
 	static int once = 0;
 	double wt = nrnmpi_wtime();
 	nrnmpi_bgp_comm();
-
+if (nrnmpi_myid == 0) printf("bgp_dma_setup()\n");
 	// although we only care about the set of hosts that gid2out_
 	// sends spikes to (source centric). We do not want to send
 	// the entire list of gid2in (which may be 10000 times larger
