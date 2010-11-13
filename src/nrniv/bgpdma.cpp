@@ -560,9 +560,15 @@ void bgp_dma_receive() {
 #if BGPDMA & 1
     if (use_bgpdma_ == 1) {
 	bgp_advance();
+	TBUF
+#if TBUFSIZE
+	nrnmpi_barrier();
+#endif
+	TBUF
 	while (nrnmpi_bgp_conserve(s, r) != 0) {
 		bgp_advance();
 	}
+	TBUF
     }
 #endif
 	w1 = nrnmpi_wtime() - w1;

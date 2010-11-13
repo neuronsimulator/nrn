@@ -244,15 +244,7 @@ void NetParEvent::deliver(double tt, NetCvode* nc, NrnThread* nt){
 	nt->_t = tt;
 #if NRNMPI
     if (nrnmpi_numprocs > 0 && nt->id == 0) {
-#if BGPDMA
-	if (use_bgpdma_) {
-		bgp_dma_receive();
-	}else{
-		nrn_spike_exchange();
-	}
-#else    
 	nrn_spike_exchange();
-#endif
 	wx_ += wt_;
 	ws_ += wt1_;
    }
@@ -494,7 +486,12 @@ void nrn_spike_exchange_init() {
 #if NRNMPI
 void nrn_spike_exchange() {
 	if (!active_) { return; }
-
+#if BGPDMA
+	if (use_bgpdma_) {
+		bgp_dma_receive();
+		return;
+	}
+#endif
 	if (use_compress_) { nrn_spike_exchange_compressed(); return; }
 	TBUF
 	TBUF
@@ -1276,7 +1273,7 @@ int nrnmpi_spike_compress(int nspike, boolean gid_compress, int xchng_meth) {
 	use_bgpdma_ = (xchng_meth & 3);
 	if (use_bgpdma_ == 3) {	assert(HAVE_DCMF_RECORD_REPLAY); }
 #if HAVE_DCMF_RECORD_REPLAY
-	use_dcmf_record_replay = (use_bgpdma_ == 3 ? 1 : 0;
+	use_dcmf_record_replay = (use_bgpdma_ == 3 ? 1 : 0);
 	if (nrnmpi_myid == 0) {printf("use_dcmf_record_replay = %d\n", use_dcmf_record_replay);}
 #endif
 	if (use_bgpdma_ == 3) { use_bgpdma_ = 2; }
