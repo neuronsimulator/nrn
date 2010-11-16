@@ -653,7 +653,7 @@ void bgp_dma_setup() {
 #endif
 #if BGPDMA & 2
   if (use_bgpdma_ == 2) {
-    if (0 || !once) { once = 1;
+    if (1 || !once) { once = 1;
 	//if (max_ntarget_host = 0) { max_ntarget_host = 1; }
 	max_ntarget_host = nrnmpi_numprocs;
 	// I'm guessing everyone can use the same hints and so they

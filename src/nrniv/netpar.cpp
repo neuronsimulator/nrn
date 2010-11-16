@@ -408,6 +408,13 @@ static void calc_actual_mindelay() {
 #endif
 }
 
+#if BGPDMA
+#include "bgpdma.cpp"
+#else
+#define TBUFSIZE 0
+#define TBUF /**/
+#endif
+
 void nrn_spike_exchange_init() {
 #ifdef USENCS
     bgp_dma_setup();
@@ -435,6 +442,10 @@ void nrn_spike_exchange_init() {
 	if (nrnmusic) {
 		nrnmusic_runtime_phase();
 	}
+#endif
+
+#if TBUFSIZE
+		itbuf_ = 0;
 #endif
 
 #if BGPDMA
@@ -474,14 +485,6 @@ void nrn_spike_exchange_init() {
 #endif // NRNMPI
 	//if (nrnmpi_myid == 0){printf("usable_mindelay_ = %g\n", usable_mindelay_);}
 }
-
-
-#if BGPDMA
-#include "bgpdma.cpp"
-#else
-#define TBUFSIZE 0
-#define TBUF /**/
-#endif
 
 #if NRNMPI
 void nrn_spike_exchange() {
