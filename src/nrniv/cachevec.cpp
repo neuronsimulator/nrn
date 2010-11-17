@@ -79,6 +79,7 @@ void nrniv_recalc_ptrs() {
 				Oc oc;
 				oc.notify_pointer_disconnect(op);
 				op->p_ = pd;
+				op->valid_ = true;
 				oc.notify_when_freed(op->p_, op);
 #else
 				op->p_ = pd;
