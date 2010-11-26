@@ -85,7 +85,13 @@ public:
 	void enqueue2();
 	PreSyn** psbuf_;
 };
-#define ENQUEUE 1 // use psbuf_
+// ENQUEUE 0 means to  BGP_ReceiveBuffer buffer -> PreSyn.send
+// ENQUEUE 1 means to BGP_ReceiveBuffer buffer -> psbuf -> PreSyn.send
+// ENQUEUE 2 means to BGP_ReceiveBuffer.incoming -> PrySyn.send
+// Note that ENQUEUE 2 give more overlap between computation and exchange
+// since the enqueuing takes place during computation except for those
+// remaining during conservation.
+#define ENQUEUE 2 // use psbuf_
 static BGP_ReceiveBuffer* bgp_receive_buffer[BGP_INTERVAL];
 static int current_rbuf, next_rbuf;
 #if BGP_INTERVAL == 2
@@ -126,7 +132,11 @@ void BGP_ReceiveBuffer::incoming(int gid, double spiketime) {
 //printf("%d %lx.incoming %g %g %d\n", nrnmpi_myid, (long)this, t, spk->spiketime, spk->gid);
 	assert(busy_ == 0);
 	busy_ = 1;
-#if 1
+#if ENQUEUE == 2
+	PreSyn* ps;
+	assert(gid2in_->find(gid, ps));
+	ps->send(spiketime, net_cvode_instance, nrn_threads);
+#else
 	if (count_ >= size_) {
 		size_ *= 2;
 		NRNMPI_Spike** newbuf = new NRNMPI_Spike*[size_];
@@ -366,7 +376,7 @@ double nrn_bgp_receive_time(int type) { // and others
 		int p = meth + 4*(n_bgp_interval == 2 ? 1 : 0)
 			+ 8*0 // use phases
 			+ 16*(ALTHASH == 1 ? 1 : 0)
-			+ 32*(ENQUEUE == 1 ? 1 : 0);
+			+ 32*ENQUEUE;
 		rt = double(p);
 	    }
 		break;
@@ -607,7 +617,8 @@ void bgp_dma_receive() {
 #endif // MAXNCONS
 #if ENQUEUE == 0
 	bgp_receive_buffer[current_rbuf]->enqueue();
-#else
+#endif
+#if ENQUEUE == 1
 	bgp_receive_buffer[current_rbuf]->enqueue1();
 	TBUF
 	bgp_receive_buffer[current_rbuf]->enqueue2();
