@@ -67,6 +67,15 @@ static PyObject* pfunc_get_docstring = NULL;
   static char* hocobj_docstring = "class neuron.hoc.HocObject - Hoc Object wrapper";
 
 
+#if 0
+#include <hoccontext.h>
+}
+#else
+extern Object* hoc_thisobject;
+#define HocTopContextSet assert(hoc_thisobject == 0);
+#define HocContextRestore /**/
+#endif
+
 /*
 Because python types have so many methods, attempt to do all set and get
 using a PyHocObject which has different amounts filled in as the information
@@ -526,6 +535,7 @@ static void* fcall(void* vself, void* vargs) {
 		((PyHocObject*)result)->type_ = 1;
 		return result;
 	}else{
+		HocTopContextSet
 		Inst fc[3];
 		fc[0].sym = self->sym_;
 		fc[1].i = narg;
@@ -533,6 +543,7 @@ static void* fcall(void* vself, void* vargs) {
 		Inst* pcsav = save_pc(fc);
 		hoc_call();
 		hoc_pc = pcsav;
+		HocContextRestore
 	}
 	return (void*)nrnpy_hoc_pop();
 }
@@ -846,6 +857,7 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* name) {
 		}
 	}
 	// top level interpreter fork
+	HocTopContextSet
 	switch (sym->type) {
 	case VAR: // double*
 		if (!ISARRAY(sym)) {
@@ -911,7 +923,8 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* name) {
 		break;
 	    }
 	case SETPOINTERKEYWORD:
-		return PyObject_GenericGetAttr((PyObject*)subself, name);
+		result = PyObject_GenericGetAttr((PyObject*)subself, name);
+		break;
 	default: // otherwise
 	    {
 		char e[200];
@@ -920,6 +933,7 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* name) {
 		break;
 	    }
 	}
+	HocContextRestore
 	return result;
 }
 
@@ -1014,15 +1028,17 @@ static int hocobj_setattro(PyObject* subself, PyObject* name, PyObject* value) {
 			return -1;
 		}
 	}
+	HocTopContextSet
 	switch (sym->type) {
 	case VAR: // double*
 		if (ISARRAY(sym)) {
 			PyErr_SetString(PyExc_TypeError, "wrong number of subscripts");
-			return -1;
+			err = -1;
+		}else{
+			hoc_pushs(sym);
+			hoc_evalpointer();
+			err = PyArg_Parse(value, "d", hoc_pxpop()) != 1;
 		}
-		hoc_pushs(sym);
-		hoc_evalpointer();
-		err = PyArg_Parse(value, "d", hoc_pxpop()) != 1;
 		break;
 	case STRING: // char*
 		fc.sym = sym;
@@ -1051,11 +1067,12 @@ static int hocobj_setattro(PyObject* subself, PyObject* name, PyObject* value) {
 				pho = (PyHocObject*)po;
 				if (pho->sym_) {
  PyErr_SetString(PyExc_TypeError, "argument cannot be a hoc object intermediate");
-					return -1;
+					err = -1;
+				}else{
+					hoc_obj_ref(pho->ho_);
+					hoc_obj_unref(*op);
+					*op = pho->ho_;
 				}
-				hoc_obj_ref(pho->ho_);
-				hoc_obj_unref(*op);
-				*op = pho->ho_;
 			}else{ // it is a PythonObject in hoc
 				pyobject_in_objptr(op, po);
 			}
@@ -1069,7 +1086,7 @@ static int hocobj_setattro(PyObject* subself, PyObject* name, PyObject* value) {
 		err = -1;
 		break;
 	}
-
+	HocContextRestore
 	return err;
 }
 
@@ -1315,6 +1332,7 @@ static PyObject* hocobj_getitem(PyObject* self, Py_ssize_t ix) {
 				}
 			}
 		}else{ // must be a top level intermediate
+			HocTopContextSet
 			switch (po->sym_->type) {
 			case VAR:
 				hocobj_pushtop(po, po->sym_, ix);
@@ -1339,6 +1357,7 @@ static PyObject* hocobj_getitem(PyObject* self, Py_ssize_t ix) {
 				--po->nindex_;
 				break;
 			}
+			HocContextRestore
 		}
 	}
 	return result;
@@ -1393,6 +1412,7 @@ static int hocobj_setitem(PyObject* self, Py_ssize_t i, PyObject* arg) {
 			err = set_final_from_stk(arg);
 		}
 	}else{ // must be a top level intermediate
+		HocTopContextSet
 		switch (po->sym_->type) {
 		case VAR:
 			hocobj_pushtop(po, po->sym_, i);
@@ -1422,6 +1442,7 @@ static int hocobj_setitem(PyObject* self, Py_ssize_t i, PyObject* arg) {
 			PyErr_SetString(PyExc_TypeError, "not assignable");
 			break;
 		}
+		HocContextRestore
 	}
 	return err;
 }
