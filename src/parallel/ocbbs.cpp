@@ -469,7 +469,7 @@ static double step_time(void* v) {
 }
 
 static double send_time(void* v) {
-	int arg = ifarg(1) ? int(chkarg(1, 0, 10)) : 0;
+	int arg = ifarg(1) ? int(chkarg(1, 0, 20)) : 0;
 	if (arg) {
 		return nrn_bgp_receive_time(arg);
 	}

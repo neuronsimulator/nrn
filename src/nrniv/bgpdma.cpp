@@ -204,8 +204,14 @@ void BGP_ReceiveBuffer::enqueue2() {
 // number of DCMF_Multicast_t to cycle through when not using recordreplay
 #define NSEND 10
 
-#if BGPDMA & 2
+#if BGPDMA > 1
+extern "C" {
+#undef STR
+#include <bgpmeminfo.c>
+}
+#endif
 
+#if BGPDMA & 2
 #include <dcmf_multisend.h>
 #include <dcmf.h>
 
@@ -364,6 +370,23 @@ double nrn_bgp_receive_time(int type) { // and others
 		rt = double(p);
 	    }
 		break;
+#if BGPDMA > 1
+	case 9: // getMemSize
+	  { long long mem; getMemSize(&mem);
+		rt = double(mem);
+		break;
+	  }
+	case 10: // getUsedMem
+	  { long long mem; getUsedMem(&mem);
+		rt = double(mem);
+		break;
+	  }
+	case 11: // getFreeMem
+	  { long long mem; getFreeMem(&mem);
+		rt = double(mem);
+		break;
+	  }
+#endif
 	}
 	return rt;
 }
