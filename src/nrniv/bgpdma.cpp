@@ -332,6 +332,8 @@ static void  multicast_done(void* arg) {
 #define DCMFTICK 0
 #endif
 
+static int max_ntarget_host;
+
 double nrn_bgp_receive_time(int type) { // and others
 	double rt = 0.;
 	switch(type) {
@@ -412,6 +414,12 @@ double nrn_bgp_receive_time(int type) { // and others
 		break;
 	  }
 #endif
+
+	case 12: // greatest length multisend
+	  {
+		rt = double(max_ntarget_host);
+		break;
+	  }
 	}
 	return rt;
 }
@@ -436,8 +444,6 @@ public:
 	unsigned persist_id_;
 #endif
 };
-
-static int max_ntarget_host;
 
 static void bgp_dma_init() {
 	for (int i = 0; i < n_bgp_interval; ++i) {
@@ -692,6 +698,7 @@ void bgp_dma_setup() {
 	// of cells (even that is too large and we will split it up
 	// into chunks). And the second, an
 	// allreduce with receive buffer size of number of hosts.
+	max_ntarget_host = 0;
 
 	// gid2in_ gets spikes from which hosts.
 	determine_source_hosts();
@@ -710,17 +717,15 @@ void bgp_dma_setup() {
 #if BGPDMA & 2
   if (use_bgpdma_ == 2) {
     if (1 || !once) { once = 1;
-	//if (max_ntarget_host = 0) { max_ntarget_host = 1; }
-	max_ntarget_host = nrnmpi_numprocs;
-	// I'm guessing everyone can use the same hints and so they
+	// one would think that everyone can use the same hints and so they
 	// can be allocated according to the maximum ntarget_hosts_.
 	if (hints_) {
 		delete [] hints_;
 		hints_ = 0;
 		delete [] mconfig.connectionlist;
 	}
-	hints_ = new DCMF_Opcode_t[max_ntarget_host];
-	for (int i = 0; i < max_ntarget_host; ++i) {
+	hints_ = new DCMF_Opcode_t[nrnmpi_numprocs];
+	for (int i = 0; i < nrnmpi_numprocs; ++i) {
 		hints_[i] = DCMF_PT_TO_PT_SEND;
 	}
 	// I am also guessing everyone can use the same mconfig.
