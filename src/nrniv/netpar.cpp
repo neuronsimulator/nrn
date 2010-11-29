@@ -518,6 +518,7 @@ void nrn_spike_exchange() {
 	TBUF
 #if TBUFSIZE
 	tbuf_[itbuf_++] = (unsigned long)0;
+	tbuf_[itbuf_++] = (unsigned long)0;
 	tbuf_[itbuf_++] = (unsigned long)nout_;
 	tbuf_[itbuf_++] = (unsigned long)n;
 #endif

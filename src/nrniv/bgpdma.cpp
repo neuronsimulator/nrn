@@ -45,7 +45,11 @@ static int n_xtra_cons_check_;
 static int xtra_cons_hist_[MAXNCONS+1];
 #endif
 
-#if BGPDMA > 1
+// asm/msr.h no longer compiles on my machine.
+// only for basic testing of logic when not on blue gene/p
+#define USE_RDTSCL 0
+
+#if BGPDMA > 1 || USE_RDTSCL
 #define TBUFSIZE (1<<15)
 #else
 #define TBUFSIZE 0
@@ -54,7 +58,15 @@ static int xtra_cons_hist_[MAXNCONS+1];
 #if TBUFSIZE
 static unsigned long tbuf_[TBUFSIZE];
 static int itbuf_;
+#if USE_RDTSCL // but can have many accuracy problems on recent cpus.
+/* for rdtscl() */
+//#include <asm/msr.h>
+#define rdtscl(a) a++
+static unsigned long t__;
+#define TBUF {rdtscl(t__); tbuf_[itbuf_++] = t__;}
+#else
 #define TBUF tbuf_[itbuf_++] = (unsigned long)DCMF_Timebase();
+#endif // not USE_RDTSCLL
 #else
 #define TBUF /**/
 #endif
@@ -77,6 +89,7 @@ public:
 	int maxcount_;
 	int busy_;
 	int nsend_, nrecv_; // for checking conservation
+	int nsend_cell_; // cells that spiked this interval.
 	unsigned long long timebase_;
 	NRNMPI_Spike** buffer_;
 	SpkPool* pool_;
@@ -122,7 +135,7 @@ BGP_ReceiveBuffer::~BGP_ReceiveBuffer() {
 }
 void BGP_ReceiveBuffer::init() {
 	timebase_ = 0;
-	nsend_ = nrecv_ = busy_ = 0;
+	nsend_cell_ = nsend_ = nrecv_ = busy_ = 0;
 	for (int i = 0; i < count_; ++i) {
 		pool_->hpfree(buffer_[i]);
 	}
@@ -175,6 +188,7 @@ void BGP_ReceiveBuffer::enqueue() {
 	count_ = 0;
 	nrecv_ = 0;
 	nsend_ = 0;
+	nsend_cell_ = 0;
 	busy_ = 0;
 }
 
@@ -208,6 +222,7 @@ void BGP_ReceiveBuffer::enqueue2() {
 	count_ = 0;
 	nrecv_ = 0;
 	nsend_ = 0;
+	nsend_cell_ = 0;
 	busy_ = 0;
 }
 
@@ -486,11 +501,13 @@ void BGP_DMASend::send(int gid, double t) {
 	spk_.spiketime = t;
 #if BGP_INTERVAL == 2
 	bgp_receive_buffer[next_rbuf]->nsend_ += ntarget_hosts_;
+	bgp_receive_buffer[next_rbuf]->nsend_cell_ += 1;
 	if (next_rbuf == 1) {
 		spk_.gid = ~spk_.gid;
 	}
 #else
 	bgp_receive_buffer[0]->nsend_ += ntarget_hosts_;
+	bgp_receive_buffer[0]->nsend_cell_ += 1;
 #endif
 	nsend_ += 1;
 #if BGPDMA & 2
@@ -600,6 +617,7 @@ void bgp_dma_receive() {
 	TBUF
 	while (nrnmpi_bgp_conserve(s, r) != 0) {
 		bgp_advance();
+		++ncons;
 	}
 	TBUF
     }
@@ -608,6 +626,7 @@ void bgp_dma_receive() {
 	w2 = nrnmpi_wtime();
 #if TBUFSIZE
 	tbuf_[itbuf_++] = (unsigned long)ncons;
+	tbuf_[itbuf_++] = (unsigned long)bgp_receive_buffer[current_rbuf]->nsend_cell_;
 	tbuf_[itbuf_++] = (unsigned long)s;
 	tbuf_[itbuf_++] = (unsigned long)r;
 #endif
@@ -622,6 +641,9 @@ void bgp_dma_receive() {
 	bgp_receive_buffer[current_rbuf]->enqueue1();
 	TBUF
 	bgp_receive_buffer[current_rbuf]->enqueue2();
+#endif
+#if ENQUEUE == 2
+	s = r =  bgp_receive_buffer[current_rbuf]->nsend_cell_ = 0;
 #endif
 	wt1_ = nrnmpi_wtime() - w2;
 	wt_ = w1;
