@@ -497,7 +497,6 @@ void nrn_spike_exchange() {
 #endif
 	if (use_compress_) { nrn_spike_exchange_compressed(); return; }
 	TBUF
-	TBUF
 #if TBUFSIZE
 	nrnmpi_barrier();
 #endif
@@ -517,8 +516,6 @@ void nrn_spike_exchange() {
 	wt = nrnmpi_wtime();
 	TBUF
 #if TBUFSIZE
-	tbuf_[itbuf_++] = (unsigned long)0;
-	tbuf_[itbuf_++] = (unsigned long)0;
 	tbuf_[itbuf_++] = (unsigned long)nout_;
 	tbuf_[itbuf_++] = (unsigned long)n;
 #endif
@@ -590,7 +587,6 @@ void nrn_spike_exchange() {
 void nrn_spike_exchange_compressed() {
 	if (!active_) { return; }
 	TBUF
-	TBUF
 #if TBUFSIZE
 	nrnmpi_barrier();
 #endif
@@ -612,7 +608,6 @@ void nrn_spike_exchange_compressed() {
 	wt = nrnmpi_wtime();
 	TBUF
 #if TBUFSIZE             
-        tbuf_[itbuf_++] = (unsigned long)0;
         tbuf_[itbuf_++] = (unsigned long)nout_;
         tbuf_[itbuf_++] = (unsigned long)n;
 #endif

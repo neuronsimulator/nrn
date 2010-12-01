@@ -38,6 +38,18 @@ extern IvocVect* vector_arg(int);
 extern void vector_resize(IvocVect*, int);
 }
 
+#if BGPDMA & 2
+#include <dcmf_multisend.h>
+#include <dcmf.h>
+#define DCMFTICK DCMF_Tick();
+#define DCMFTIMEBASE DCMF_Timebase()
+#endif
+
+#if !defined(DCMFTICK)
+#define DCMFTICK 0
+#define DCMFTIMEBASE 0
+#endif
+
 static unsigned long long dmasend_time_;
 static int n_xtra_cons_check_;
 #define MAXNCONS 10
@@ -71,6 +83,19 @@ static unsigned long t__;
 #define TBUF /**/
 #endif
 
+// ENQUEUE 0 means to  BGP_ReceiveBuffer buffer -> PreSyn.send
+// ENQUEUE 1 means to BGP_ReceiveBuffer buffer -> psbuf -> PreSyn.send
+// ENQUEUE 2 means to BGP_ReceiveBuffer.incoming -> PrySyn.send
+// Note that ENQUEUE 2 give more overlap between computation and exchange
+// since the enqueuing takes place during computation except for those
+// remaining during conservation.
+#define ENQUEUE 2
+
+#if ENQUEUE == 2
+static unsigned long enq2_find_time_;
+static unsigned long enq2_enqueue_time_; // includes enq_find_time_
+#endif
+
 #include <structpool.h>
 
 declareStructPool(SpkPool, NRNMPI_Spike)
@@ -96,15 +121,11 @@ public:
 
 	void enqueue1();
 	void enqueue2();
+#if ENQUEUE == 1
 	PreSyn** psbuf_;
+#endif
 };
-// ENQUEUE 0 means to  BGP_ReceiveBuffer buffer -> PreSyn.send
-// ENQUEUE 1 means to BGP_ReceiveBuffer buffer -> psbuf -> PreSyn.send
-// ENQUEUE 2 means to BGP_ReceiveBuffer.incoming -> PrySyn.send
-// Note that ENQUEUE 2 give more overlap between computation and exchange
-// since the enqueuing takes place during computation except for those
-// remaining during conservation.
-#define ENQUEUE 2 // use psbuf_
+
 static BGP_ReceiveBuffer* bgp_receive_buffer[BGP_INTERVAL];
 static int current_rbuf, next_rbuf;
 #if BGP_INTERVAL == 2
@@ -118,10 +139,8 @@ BGP_ReceiveBuffer::BGP_ReceiveBuffer() {
 	size_ = BGP_RECEIVEBUFFER_SIZE;
 	buffer_ = new NRNMPI_Spike*[size_];
 	pool_ = new SpkPool(BGP_RECEIVEBUFFER_SIZE);
-#if ENQUEUE
+#if ENQUEUE == 1
 	psbuf_ = new PreSyn*[size_];
-#else
-	psbuf_ = 0;
 #endif
 }
 BGP_ReceiveBuffer::~BGP_ReceiveBuffer() {
@@ -131,7 +150,9 @@ BGP_ReceiveBuffer::~BGP_ReceiveBuffer() {
 	}
 	delete [] buffer_;
 	delete pool_;
+#if ENQUEUE == 1
 	if (psbuf_) delete [] psbuf_;
+#endif
 }
 void BGP_ReceiveBuffer::init() {
 	timebase_ = 0;
@@ -146,9 +167,14 @@ void BGP_ReceiveBuffer::incoming(int gid, double spiketime) {
 	assert(busy_ == 0);
 	busy_ = 1;
 #if ENQUEUE == 2
+	// this section is potential race if both ReceiveBuffer called at
+	// once, but in fact this is only called from within messager advance.
+	unsigned long long tb = DCMFTIMEBASE;
 	PreSyn* ps;
 	assert(gid2in_->find(gid, ps));
+	enq2_find_time_ += (unsigned long)(DCMFTIMEBASE - tb);
 	ps->send(spiketime, net_cvode_instance, nrn_threads);
+	enq2_enqueue_time_ += (unsigned long)(DCMFTIMEBASE - tb);
 #else
 	if (count_ >= size_) {
 		size_ *= 2;
@@ -196,7 +222,7 @@ void BGP_ReceiveBuffer::enqueue1() {
 //printf("%d %lx.enqueue count=%d t=%g nrecv=%d nsend=%d\n", nrnmpi_myid, (long)this, t, count_, nrecv_, nsend_);
 	assert(busy_ == 0);
 	busy_ = 1;
-#if 1
+#if ENQUEUE == 1
 	for (int i=0; i < count_; ++i) {
 		NRNMPI_Spike* spk = buffer_[i];
 		PreSyn* ps;
@@ -211,7 +237,7 @@ void BGP_ReceiveBuffer::enqueue2() {
 //printf("%d %lx.enqueue count=%d t=%g nrecv=%d nsend=%d\n", nrnmpi_myid, (long)this, t, count_, nrecv_, nsend_);
 	assert(busy_ == 0);
 	busy_ = 1;
-#if 1
+#if ENQUEUE == 1
 	for (int i=0; i < count_; ++i) {
 		NRNMPI_Spike* spk = buffer_[i];
 		PreSyn* ps = psbuf_[i];
@@ -237,8 +263,6 @@ extern "C" {
 #endif
 
 #if BGPDMA & 2
-#include <dcmf_multisend.h>
-#include <dcmf.h>
 
 void nrnbgp_messager_advance() {
 #if HAVE_DCMF_RECORD_REPLAY
@@ -326,11 +350,8 @@ static void  multicast_done(void* arg) {
 	boolean* a = (boolean*)arg;
 	*a = false;
 }
-#define DCMFTICK DCMF_Tick();
+
 #endif //BGPDMA & 2
-#if !defined(DCMFTICK)
-#define DCMFTICK 0
-#endif
 
 static int max_ntarget_host;
 
@@ -460,6 +481,9 @@ static void bgp_dma_init() {
 	}
 #endif
 	dmasend_time_ = 0;
+#if ENQUEUE == 2
+	enq2_find_time_ = enq2_enqueue_time_ = 0;
+#endif
 	n_xtra_cons_check_ = 0;
 #if MAXNCONS
 	for (int i=0; i <= MAXNCONS; ++i) {
@@ -502,6 +526,7 @@ BGP_DMASend::~BGP_DMASend() {
 static	int isend;
 
 void BGP_DMASend::send(int gid, double t) {
+	unsigned long long tb = DCMFTIMEBASE;
   if (ntarget_hosts_) {
 	spk_.gid = gid;
 	spk_.spiketime = t;
@@ -518,7 +543,6 @@ void BGP_DMASend::send(int gid, double t) {
 	nsend_ += 1;
 #if BGPDMA & 2
     if (use_bgpdma_ == 2) {
-	unsigned long long tb = DCMF_Timebase();
 
 	MyMulticastInfo* mci;
 #if HAVE_DCMF_RECORD_REPLAY
@@ -559,7 +583,6 @@ void BGP_DMASend::send(int gid, double t) {
 #endif
 		DCMF_Multicast(&mci->msend);
 	}
-	dmasend_time_ += DCMF_Timebase() - tb;
     }
 #endif // BGPDMA & 2
 #if BGPDMA & 1
@@ -567,7 +590,7 @@ void BGP_DMASend::send(int gid, double t) {
 	nrnmpi_bgp_multisend(&spk_, ntarget_hosts_, target_hosts_);
     }
 #endif
-    }
+  }
 	// I am given to understand that multisend cannot send to itself
 	if (send2self_) {
 		PreSyn* ps;
@@ -575,6 +598,7 @@ void BGP_DMASend::send(int gid, double t) {
 		ps->send(t, net_cvode_instance, nrn_threads);
 	}
 	isend = (++isend)%NSEND;
+	dmasend_time_ += DCMFTIMEBASE - tb;
 }
 
 
@@ -600,6 +624,11 @@ void bgp_dma_receive() {
     if (use_bgpdma_ == 2) {
 	DCMF_Messager_advance();
 	TBUF
+#if ENQUEUE == 2
+	// want the overlap with computation, not conserve
+	unsigned long tfind = enq2_find_time_;
+	unsigned long tsend = enq2_enqueue_time_ - enq2_find_time;
+#endif
 	// demonstrates that most of the time here is due to load imbalance
 #if TBUFSIZE
 	nrnmpi_barrier();
@@ -635,6 +664,7 @@ void bgp_dma_receive() {
 	tbuf_[itbuf_++] = (unsigned long)bgp_receive_buffer[current_rbuf]->nsend_cell_;
 	tbuf_[itbuf_++] = (unsigned long)s;
 	tbuf_[itbuf_++] = (unsigned long)r;
+	tbuf_[itbuf_++] = (unsigned long)dmasend_time_;
 #endif
 #if (BGPMDA & 2) && MAXNCONS
 	if (ncons > MAXNCONS) { ncons = MAXNCONS; }
@@ -650,7 +680,13 @@ void bgp_dma_receive() {
 #endif
 #if ENQUEUE == 2
 	s = r =  bgp_receive_buffer[current_rbuf]->nsend_cell_ = 0;
+	enq2_find_time_ = 0;
+	enq2_enqueue_time_ = 0;
+#if TBUFSIZE
+	tbuf_[itbuf_++] = tfind;
+	tbuf_[itbuf_++] = tsend;
 #endif
+#endif // ENQUEUE == 2
 	wt1_ = nrnmpi_wtime() - w2;
 	wt_ = w1;
 #if BGP_INTERVAL == 2
