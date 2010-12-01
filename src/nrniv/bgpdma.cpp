@@ -619,6 +619,9 @@ void bgp_dma_receive() {
 	int ncons = 0;
 	int& s = bgp_receive_buffer[current_rbuf]->nsend_;
 	int& r = bgp_receive_buffer[current_rbuf]->nrecv_;
+#if ENQUEUE == 2
+	unsigned long tfind, tsend;
+#endif
 	w1 = nrnmpi_wtime();
 #if BGPDMA & 2
     if (use_bgpdma_ == 2) {
@@ -626,8 +629,8 @@ void bgp_dma_receive() {
 	TBUF
 #if ENQUEUE == 2
 	// want the overlap with computation, not conserve
-	unsigned long tfind = enq2_find_time_;
-	unsigned long tsend = enq2_enqueue_time_ - enq2_find_time;
+	tfind = enq2_find_time_;
+	tsend = enq2_enqueue_time_ - enq2_find_time_;
 #endif
 	// demonstrates that most of the time here is due to load imbalance
 #if TBUFSIZE
@@ -646,6 +649,11 @@ void bgp_dma_receive() {
     if (use_bgpdma_ == 1) {
 	bgp_advance();
 	TBUF
+#if ENQUEUE == 2
+	// want the overlap with computation, not conserve
+	tfind = enq2_find_time_;
+	tsend = enq2_enqueue_time_ - enq2_find_time_;
+#endif
 #if TBUFSIZE
 	nrnmpi_barrier();
 #endif
