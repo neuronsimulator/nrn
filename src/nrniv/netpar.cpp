@@ -53,6 +53,7 @@ extern void ncs2nrn_integrate(double tstop);
 extern void nrn_fake_fire(int gid, double firetime, int fake_out);
 int nrnmpi_spike_compress(int nspike, boolean gid_compress, int xchng_meth);
 void nrn_cleanup_presyn(PreSyn*);
+int nrn_set_timeout(int);
 void nrnmpi_gid_clear(int);
 extern void nrn_partrans_clear();
 void nrn_spike_exchange_init();
@@ -1080,6 +1081,14 @@ Object** BBS::gid_connect(int gid) {
 	return po;
 }
 
+static int timeout_ = 20;
+int nrn_set_timeout(int timeout) {
+	int tt;
+	tt = timeout_;
+	timeout_ = timeout;
+	return tt;
+}
+
 void BBS::netpar_solve(double tstop) {
 #if NRNMPI
 	double mt, md;
@@ -1098,7 +1107,7 @@ void BBS::netpar_solve(double tstop) {
 	}
 	double wt;
 
-	nrn_timeout(20);
+	nrn_timeout(timeout_);
 	wt = nrnmpi_wtime();
 	if (cvode_active_) {
 		ncs2nrn_integrate(tstop);

@@ -36,6 +36,9 @@ extern void nrnmpi_barrier();
 
 extern IvocVect* vector_arg(int);
 extern void vector_resize(IvocVect*, int);
+
+extern void (*nrntimeout_call)();
+
 }
 
 #if BGPDMA & 2
@@ -729,6 +732,7 @@ void bgpdma_cleanup_presyn(PreSyn* ps) {
 }
 
 static void bgpdma_cleanup() {
+	nrntimeout_call = 0;
 #if BGPDMA & 2
 	if (hints_) {
 		delete [] hints_;
@@ -742,9 +746,18 @@ static void bgpdma_cleanup() {
 	}}}
 }
 
+static void bgptimeout() {
+	printf("%d timeout %d %d %d\n", nrnmpi_myid, current_rbuf,
+		bgp_receive_buffer[current_rbuf]->nsend_,
+		bgp_receive_buffer[current_rbuf]->nrecv_
+	);
+}
+
 void bgp_dma_setup() {
 	bgpdma_cleanup();
 	if (use_bgpdma_ == 0) { return; }
+	//not sure this is useful for debugging when stuck in a collective.
+	//nrntimeout_call = bgptimeout;
 	double wt = nrnmpi_wtime();
 	nrnmpi_bgp_comm();
 	//if (nrnmpi_myid == 0) printf("bgp_dma_setup()\n");
