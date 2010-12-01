@@ -720,8 +720,23 @@ void bgpdma_cleanup_presyn(PreSyn* ps) {
 	}
 }
 
+static void bgpdma_cleanup() {
+#if BGPDMA & 2
+	if (hints_) {
+		delete [] hints_;
+		hints_ = 0;
+		delete [] mconfig.connectionlist;
+		delete [] mci_;
+	}
+#endif
+	NrnHashIterate(Gid2PreSyn, gid2out_, PreSyn*, ps) {
+		bgpdma_cleanup_presyn(ps);
+	}}}
+}
+
 void bgp_dma_setup() {
-	static int once = 0;
+	bgpdma_cleanup();
+	if (use_bgpdma_ == 0) { return; }
 	double wt = nrnmpi_wtime();
 	nrnmpi_bgp_comm();
 	//if (nrnmpi_myid == 0) printf("bgp_dma_setup()\n");
@@ -752,14 +767,8 @@ void bgp_dma_setup() {
 #endif
 #if BGPDMA & 2
   if (use_bgpdma_ == 2) {
-    if (1 || !once) { once = 1;
 	// one would think that everyone can use the same hints and so they
 	// can be allocated according to the maximum ntarget_hosts_.
-	if (hints_) {
-		delete [] hints_;
-		hints_ = 0;
-		delete [] mconfig.connectionlist;
-	}
 	hints_ = new DCMF_Opcode_t[nrnmpi_numprocs];
 	for (int i = 0; i < nrnmpi_numprocs; ++i) {
 		hints_[i] = DCMF_PT_TO_PT_SEND;
@@ -819,7 +828,6 @@ void bgp_dma_setup() {
 		mci->msend.persist_id = i;
 #endif
 	}
-    }
   }
 #endif
 }

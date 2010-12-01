@@ -450,7 +450,6 @@ void nrn_spike_exchange_init() {
 
 #if BGPDMA
 	if (use_bgpdma_) {
-		bgp_dma_setup();
 		bgp_dma_init();
 	}
 #endif
@@ -1192,7 +1191,11 @@ printf("   use_self_queue option. The interprocessor minimum NetCon delay is %g\
 }
 
 double BBS::netpar_mindelay(double maxdelay) {
-	return set_mindelay(maxdelay);
+#if BGPDMA
+	bgp_dma_setup();
+#endif
+	double tt = set_mindelay(maxdelay);
+	return tt;
 }
 
 void BBS::netpar_spanning_statistics(int* nsend, int* nsendmax, int* nrecv, int* nrecv_useful) {
