@@ -124,9 +124,7 @@ public:
 
 	void enqueue1();
 	void enqueue2();
-#if ENQUEUE == 1
 	PreSyn** psbuf_;
-#endif
 };
 
 static BGP_ReceiveBuffer* bgp_receive_buffer[BGP_INTERVAL];
@@ -142,6 +140,7 @@ BGP_ReceiveBuffer::BGP_ReceiveBuffer() {
 	size_ = BGP_RECEIVEBUFFER_SIZE;
 	buffer_ = new NRNMPI_Spike*[size_];
 	pool_ = new SpkPool(BGP_RECEIVEBUFFER_SIZE);
+	psbuf_ = 0;
 #if ENQUEUE == 1
 	psbuf_ = new PreSyn*[size_];
 #endif
@@ -153,9 +152,7 @@ BGP_ReceiveBuffer::~BGP_ReceiveBuffer() {
 	}
 	delete [] buffer_;
 	delete pool_;
-#if ENQUEUE == 1
 	if (psbuf_) delete [] psbuf_;
-#endif
 }
 void BGP_ReceiveBuffer::init() {
 	timebase_ = 0;
@@ -169,9 +166,13 @@ void BGP_ReceiveBuffer::incoming(int gid, double spiketime) {
 //printf("%d %lx.incoming %g %g %d\n", nrnmpi_myid, (long)this, t, spk->spiketime, spk->gid);
 	assert(busy_ == 0);
 	busy_ = 1;
-#if ENQUEUE == 2
+#if 0 && ENQUEUE == 2
 	// this section is potential race if both ReceiveBuffer called at
 	// once, but in fact this is only called from within messager advance.
+	// Note that this does not work as we occasionally get a timeout        
+	// during conservation checking. For this reason we return to buffer    
+	// usage but overlap through a call to enqueue on both ReceiveBuffer    
+	// on each messager advance
 	unsigned long long tb = DCMFTIMEBASE;
 	PreSyn* ps;
 	assert(gid2in_->find(gid, ps));
@@ -209,15 +210,26 @@ void BGP_ReceiveBuffer::enqueue() {
 	for (int i=0; i < count_; ++i) {
 		NRNMPI_Spike* spk = buffer_[i];
 		PreSyn* ps;
+#if ENQUEUE == 2
+		unsigned long long tb = DCMFTIMEBASE;
+#endif
 		assert(gid2in_->find(spk->gid, ps));
+#if ENQUEUE == 2
+		enq2_find_time_ += (unsigned long)(DCMFTIMEBASE - tb);
+#endif
 		ps->send(spk->spiketime, net_cvode_instance, nrn_threads);
 		pool_->hpfree(spk);
+#if ENQUEUE == 2
+		enq2_enqueue_time_ += (unsigned long)(DCMFTIMEBASE - tb);
+#endif
 	}
 #endif
 	count_ = 0;
+#if ENQUEUE != 2
 	nrecv_ = 0;
 	nsend_ = 0;
 	nsend_cell_ = 0;
+#endif
 	busy_ = 0;
 }
 
@@ -225,14 +237,12 @@ void BGP_ReceiveBuffer::enqueue1() {
 //printf("%d %lx.enqueue count=%d t=%g nrecv=%d nsend=%d\n", nrnmpi_myid, (long)this, t, count_, nrecv_, nsend_);
 	assert(busy_ == 0);
 	busy_ = 1;
-#if ENQUEUE == 1
 	for (int i=0; i < count_; ++i) {
 		NRNMPI_Spike* spk = buffer_[i];
 		PreSyn* ps;
 		assert(gid2in_->find(spk->gid, ps));
 		psbuf_[i] = ps;
 	}
-#endif
 	busy_ = 0;
 }
 
@@ -240,14 +250,12 @@ void BGP_ReceiveBuffer::enqueue2() {
 //printf("%d %lx.enqueue count=%d t=%g nrecv=%d nsend=%d\n", nrnmpi_myid, (long)this, t, count_, nrecv_, nsend_);
 	assert(busy_ == 0);
 	busy_ = 1;
-#if ENQUEUE == 1
 	for (int i=0; i < count_; ++i) {
 		NRNMPI_Spike* spk = buffer_[i];
 		PreSyn* ps = psbuf_[i];
 		ps->send(spk->spiketime, net_cvode_instance, nrn_threads);
 		pool_->hpfree(spk);
 	}
-#endif
 	count_ = 0;
 	nrecv_ = 0;
 	nsend_ = 0;
@@ -268,8 +276,9 @@ extern "C" {
 #if BGPDMA & 2
 
 void nrnbgp_messager_advance() {
-#if HAVE_DCMF_RECORD_REPLAY
 	DCMF_Messager_advance();
+#if ENQUEUE == 2
+	bgp_receive_buffer[current_rbuf]->enqueue();
 #endif
 }
 
@@ -510,6 +519,9 @@ static int bgp_advance() {
 #endif
 		bgp_receive_buffer[j]->incoming(spk.gid, spk.spiketime);
 	}
+#if ENQUEUE == 2
+	bgp_receive_buffer[current_rbuf]->enqueue();
+#endif
 	nrecv_ += i;
 	return i;
 }
@@ -561,7 +573,7 @@ void BGP_DMASend::send(int gid, double t) {
 	int acnt = 0;
 	while (mci->req_in_use) {
 		++acnt;
-		DCMF_Messager_advance();
+		nrnbgp_messager_advance();
 	}
 //	if (acnt > 10) { printf("%d multicast %d not done\n", nrnmpi_myid, msend.connection_id);}
 	mci->req_in_use = true;
@@ -628,7 +640,7 @@ void bgp_dma_receive() {
 	w1 = nrnmpi_wtime();
 #if BGPDMA & 2
     if (use_bgpdma_ == 2) {
-	DCMF_Messager_advance();
+	nrnbgp_messager_advance();
 	TBUF
 #if ENQUEUE == 2
 	// want the overlap with computation, not conserve
@@ -690,6 +702,7 @@ void bgp_dma_receive() {
 	bgp_receive_buffer[current_rbuf]->enqueue2();
 #endif
 #if ENQUEUE == 2
+	bgp_receive_buffer[current_rbuf]->enqueue();
 	s = r =  bgp_receive_buffer[current_rbuf]->nsend_cell_ = 0;
 	enq2_find_time_ = 0;
 	enq2_enqueue_time_ = 0;
