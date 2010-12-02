@@ -597,6 +597,7 @@ void BGP_DMASend::send(int gid, double t) {
 	{
 #endif
 		DCMF_Multicast(&mci->msend);
+		isend = (++isend)%NSEND;
 	}
     }
 #endif // BGPDMA & 2
@@ -612,7 +613,6 @@ void BGP_DMASend::send(int gid, double t) {
 		assert(gid2in_->find(gid, ps));
 		ps->send(t, net_cvode_instance, nrn_threads);
 	}
-	isend = (++isend)%NSEND;
 	dmasend_time_ += DCMFTIMEBASE - tb;
 }
 
