@@ -152,6 +152,7 @@ public:
 
 #if TWOPHASE
 static int use_phase2_;
+static void setup_phase2();
 #define NTARGET_HOSTS_PHASE1 ntarget_hosts_phase1_
 #else
 #define NTARGET_HOSTS_PHASE1 ntarget_hosts_
@@ -954,7 +955,7 @@ void bgp_dma_setup() {
 		ps->bgp.srchost_ = 0;
 	}}}
 	if (use_phase2_) {
-		assert(0);
+		setup_phase2();
 	}else{
 		NrnHashIterate(Gid2PreSyn, gid2out_, PreSyn*, ps) {
 ps->bgp.dma_send_->ntarget_hosts_phase1_ = ps->bgp.dma_send_->ntarget_hosts_;
@@ -1399,6 +1400,170 @@ int ncs_bgp_mindelays( int **srchost, double **delays )
 	}}}
     
     return nsrcgid;
+}
+
+#endif //USENCS
+
+#if TWOPHASE
+static int specify_phase2_distribution(BGP_DMASend*, int*& indices);
+static void phase2_transfer(int*, PreSyn*);
+static int* determine_phase2_rbuf(int* scnt);
+
+void setup_phase2() {
+	// normal multisend has been setup and now make the target list
+	// much shorter (sqrt) and have each of the remaining
+	// targets send (phase2) to a subset of the original target list.
+	// We start with a very naive (certainly inefficient with
+	// regard to the torus) distribution (sqrt size subsets of the
+	// original targets) but the distribution specification
+	// should be changeable without affecting its use to modify
+	// the BGP_DMASend objects and creation of the
+	// proper BGP_DMASend_Phase2 on the phase1 targets.
+
+	// how many source cells are there on this machine
+	int ncell = 0;
+	NrnHashIterate(Gid2PreSyn, gid2out_, PreSyn*, ps) {
+		++ncell;
+	}}}
+
+	// what is the maximum source cell number on any one host
+	// every processor must communicate til the last cell is handled.
+	int ncell_max = nrnmpi_int_allmax(ncell);
+
+	// probably would be better to do the phase2 transfer in groups
+	// of cells
+	int icell = 0;
+	NrnHashIterate(Gid2PreSyn, gid2out_, PreSyn*, ps) {
+		BGP_DMASend* bs = ps->bgp.dma_send_;
+		// the specification reorders the target_host list
+		// and returns the indices of the hosts that get a phase 1
+		// send as well as the size for the new target list, the
+		// hosts from indices[i]+1 to indices[i+1]-1 on host
+		// indices[i] get a phase 2 send. indices is nil if
+		// do not have a phase 2 send for this cell.
+		// phase 1 targets in the target_hosts lis must be in rank
+		// order.
+		int* indices;
+		int n = specify_phase2_distribution(bs, indices);
+		bs->ntarget_hosts_phase1_ = n;
+		phase2_transfer(indices, ps);
+		if (indices) {
+			int* old = bs->target_hosts_;
+			bs->target_hosts_ = new int[n];
+			for (int i=0; i < n; ++i) {
+				bs->target_hosts_[i] = old[indices[i]];
+			}
+			delete [] old;
+			delete [] indices;
+		}
+		++icell;
+	}}}
+	// since ncell < ncell_max, some still need to be transferred
+	for (; icell < ncell_max; ++icell) {
+		phase2_transfer(0, 0);
+	}
+}
+
+void phase2_transfer(int* indices, PreSyn* ps) {
+	int srcgid = -1;
+	int* s, *scnt, *sdispl;
+	int* r, *rcnt, *rdispl;
+	int n = 0;
+	scnt = new int[nrnmpi_numprocs];
+	s = 0;
+	for (int i = 0; i < nrnmpi_numprocs; ++i) {
+		scnt[i] = 0;
+	}
+	if (indices) {
+		BGP_DMASend* bs = ps->bgp.dma_send_;
+		srcgid = ps->output_index_;
+		s = new int[bs->ntarget_hosts_];
+		n = bs->ntarget_hosts_phase1_;
+		int* ranks = bs->target_hosts_;
+		int j = 0;
+		for (int i=0; i < n; ++i) {
+			int i1 = indices[i];
+			int i2 = indices[i+1];
+			int rank = ranks[i1];
+			scnt[rank] = i2 - i1;
+			s[j++] = srcgid;
+			for (int k=i1+1; k < i2; ++k) {
+				s[j++] = ranks[k];
+			}
+		}
+	}
+	rcnt = determine_phase2_rbuf(scnt);
+	sdispl = new int[nrnmpi_numprocs+1];
+	rdispl = new int[nrnmpi_numprocs+1];
+	sdispl[0] = 0;
+	rdispl[0] = 0;
+	for (int i=0; i < nrnmpi_numprocs; ++i) {
+		sdispl[i+1] = sdispl[i] + scnt[i];
+		rdispl[i+1] = rdispl[i] + rcnt[i];
+	}
+	r = new int[rdispl[nrnmpi_numprocs]];
+	
+	nrnmpi_int_alltoallv(s, scnt, sdispl, r, rcnt, rdispl);
+	delete [] sdispl;
+	if (s) { delete [] s; }
+	delete [] scnt;
+
+	for (int i=0; i < nrnmpi_numprocs; ++i) {
+		if (rcnt[i]) {
+			int n = rcnt[i]-1;
+			srcgid = r[rdispl[i]];
+			PreSyn* ps;
+			assert(gid2in_->find(srcgid, ps));
+			assert(ps->bgp.srchost_ == 0);
+			BGP_DMASend_Phase2* bsp = new BGP_DMASend_Phase2();
+			ps->bgp.dma_send_phase2_ = bsp;
+			bsp->ntarget_hosts_phase2_ = n;
+			int* pr = r + rdispl[i] + 1;
+			int* pt = new int[n];
+			bsp->target_hosts_phase2_ = pt;
+			for (int j=0; j < n; ++j) {
+				pt[j] = pr[j];
+			}
+		}
+	}
+	if (r) delete [] r;
+	if (rcnt) {
+		delete [] rcnt;
+		delete [] rdispl;
+	}
+}
+
+int* determine_phase2_rbuf(int* scnt){
+	int* c = new int[nrnmpi_numprocs];
+	int* d = new int[nrnmpi_numprocs+1];
+	int* r = new int[nrnmpi_numprocs];
+	d[0] = 0;
+	for (int i=0; i < nrnmpi_numprocs; ++i) {
+		c[i] = 1;
+		d[i+1] = d[i] + c[i];
+	}
+	nrnmpi_int_alltoallv(scnt, c, d, r, c, d);
+	delete [] d;
+	delete [] c;
+	return r;
+}
+
+int specify_phase2_distribution(BGP_DMASend* bs, int*& indices) {
+	int n, nt;
+	nt = bs->ntarget_hosts_;
+	n = int(sqrt(double(nt)));
+	// change to about 20
+	if (n > 1) { // do not bother if not many connections
+		indices = new int[n+1];
+		indices[n] = bs->ntarget_hosts_;
+		for (int i=0; i < n; ++i) {
+			indices[i] = (i * nt)/n;
+		}
+	}else{
+		n = bs->ntarget_hosts_;
+		indices = 0;
+	}
+	return n;
 }
 
 #endif
