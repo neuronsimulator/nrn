@@ -740,7 +740,7 @@ static void mk_localgid_rep() {
 		}
 	}}}
 	int ngidmax = nrnmpi_int_allmax(ngid);
-	if (ngidmax >= 256) {
+	if (ngidmax > 256) {
 		//do not compress
 		return;
 	}
@@ -1261,7 +1261,7 @@ Note that, in principle, MPI_ISend allows the source to send the index
  variant)
 
 Not all variation are useful. e.g. it is pointless to combine Allgather and
-n_bgp_interval=2. And two phase has yet to be implemented and is a longshot.
+n_bgp_interval=2.
 RecordReplay should be best on the BG/P. The whole point is to make the
 spike transfer initiation as lowcost as possible since that is what causes
 most load imbalance. I.e. since 10K more spikes arrive than are sent, spikes
@@ -1283,6 +1283,10 @@ int nrnmpi_spike_compress(int nspike, boolean gid_compress, int xchng_meth) {
 #if BGPDMA
 	use_bgpdma_ = (xchng_meth & 3);
 	if (use_bgpdma_ == 3) {	assert(HAVE_DCMF_RECORD_REPLAY); }
+#if TWOPHASE
+	use_phase2_ = (xchng_meth & 8) ? 1 : 0;
+	if (nrnmpi_myid == 0) {printf("use_phase2_ = %d\n", use_phase2_);}
+#endif
 #if HAVE_DCMF_RECORD_REPLAY
 	use_dcmf_record_replay = (use_bgpdma_ == 3 ? 1 : 0);
 	if (nrnmpi_myid == 0) {printf("use_dcmf_record_replay = %d\n", use_dcmf_record_replay);}

@@ -33,6 +33,7 @@ class NetConSaveIndexTable;
 class PreSynSaveIndexTable;
 class IvocVect;
 class BGP_DMASend;
+class BGP_DMASend_Phase2;
 
 #define DiscreteEventType 0
 #define TstopEventType 1
@@ -260,6 +261,7 @@ public:
 	union { // A PreSyn cannot be both a source spike generator
 		// and a receiver of off-host spikes.
 		BGP_DMASend* dma_send_;
+		BGP_DMASend_Phase2* dma_send_phase2_;
 		int srchost_;
 	} bgp;
 #endif
