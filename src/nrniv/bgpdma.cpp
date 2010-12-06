@@ -122,7 +122,8 @@ static unsigned long enq2_enqueue_time_; // includes enq_find_time_
 #endif
 
 #if TWOPHASE
-#define PHASE2BUFFER_SIZE 01777 // one less than power of 2 (1023)
+#define PHASE2BUFFER_SIZE 2048 // power of 2
+#define PHASE2BUFFER_MASK (PHASE2BUFFER_SIZE - 1)
 struct Phase2Buffer {
 	PreSyn* ps;
 	double spiketime;
@@ -308,8 +309,9 @@ void BGP_ReceiveBuffer::enqueue() {
 		if (use_phase2_ && ps->bgp.dma_send_phase2_) {
 			// cannot do directly because busy_;
 			//ps->bgp.dma_send_phase2_->send_phase2(spk->gid, spk->spiketime, this);
-			Phase2Buffer& pb = phase2_buffer_[phase2_tail_++];
-			assert(phase2_tail_ != phase2_head_);
+			Phase2Buffer& pb = phase2_buffer_[phase2_head_++];
+			phase2_head_ &= PHASE2BUFFER_MASK;
+			assert(phase2_head_ != phase2_tail_);
 			pb.ps = ps;
 			pb.spiketime = spk->spiketime;
 			
@@ -332,6 +334,9 @@ void BGP_ReceiveBuffer::enqueue() {
 	nsend_cell_ = 0;
 #endif
 	busy_ = 0;
+#if TWOPHASE
+	phase2send();
+#endif
 }
 
 void BGP_ReceiveBuffer::enqueue1() {
@@ -347,8 +352,9 @@ void BGP_ReceiveBuffer::enqueue1() {
 		if (use_phase2_ && ps->bgp.dma_send_phase2_) {
 			// cannot do directly because busy_;
 			//ps->bgp.dma_send_phase2_->send_phase2(spk->gid, spk->spiketime, this);
-			Phase2Buffer& pb = phase2_buffer_[phase2_tail_++];
-			assert(phase2_tail_ != phase2_head_);
+			Phase2Buffer& pb = phase2_buffer_[phase2_head_++];
+			phase2_head_ &= PHASE2BUFFER_MASK;
+			assert(phase2_head_ != phase2_tail_);
 			pb.ps = ps;
 			pb.spiketime = spk->spiketime;
 			
@@ -381,7 +387,8 @@ void BGP_ReceiveBuffer::enqueue2() {
 #if TWOPHASE
 void BGP_ReceiveBuffer::phase2send() {
 	while (phase2_head_ != phase2_tail_) {
-		Phase2Buffer& pb = phase2_buffer_[phase2_head_++];
+		Phase2Buffer& pb = phase2_buffer_[phase2_tail_++];
+		phase2_tail_ &= PHASE2BUFFER_MASK;
 		pb.ps->bgp.dma_send_phase2_->send_phase2(pb.ps->gid_, pb.spiketime, this);
 	}
 }
