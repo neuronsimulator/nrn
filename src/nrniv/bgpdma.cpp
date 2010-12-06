@@ -121,6 +121,14 @@ static unsigned long enq2_find_time_;
 static unsigned long enq2_enqueue_time_; // includes enq_find_time_
 #endif
 
+#if TWOPHASE
+#define PHASE2BUFFER_SIZE 01777 // one less than power of 2 (1023)
+struct Phase2Buffer {
+	PreSyn* ps;
+	double spiketime;
+};
+#endif
+
 #include <structpool.h>
 
 declareStructPool(SpkPool, NRNMPI_Spike)
@@ -148,6 +156,12 @@ public:
 	void enqueue1();
 	void enqueue2();
 	PreSyn** psbuf_;
+#if TWOPHASE
+	void phase2send();
+	int phase2_head_;
+	int phase2_tail_;
+	Phase2Buffer* phase2_buffer_;
+#endif
 };
 
 #if TWOPHASE
@@ -209,6 +223,10 @@ BGP_ReceiveBuffer::BGP_ReceiveBuffer() {
 #if ENQUEUE == 1
 	psbuf_ = new PreSyn*[size_];
 #endif
+#if TWOPHASE
+	phase2_buffer_ = new Phase2Buffer[PHASE2BUFFER_SIZE];
+	phase2_head_ = phase2_tail_ = 0;
+#endif
 }
 BGP_ReceiveBuffer::~BGP_ReceiveBuffer() {
 	assert(busy_ == 0);
@@ -218,6 +236,9 @@ BGP_ReceiveBuffer::~BGP_ReceiveBuffer() {
 	delete [] buffer_;
 	delete pool_;
 	if (psbuf_) delete [] psbuf_;
+#if TWOPHASE
+	delete [] phase2_buffer_;
+#endif
 }
 void BGP_ReceiveBuffer::init(int index) {
 	index_ = index;
@@ -227,6 +248,9 @@ void BGP_ReceiveBuffer::init(int index) {
 		pool_->hpfree(buffer_[i]);
 	}
 	count_ = 0;
+#if TWOPHASE
+	phase2_head_ = phase2_tail_ = 0;
+#endif	
 }
 void BGP_ReceiveBuffer::incoming(int gid, double spiketime) {
 //printf("%d %lx.incoming %g %g %d\n", nrnmpi_myid, (long)this, t, spk->spiketime, spk->gid);
@@ -282,7 +306,13 @@ void BGP_ReceiveBuffer::enqueue() {
 		assert(gid2in_->find(spk->gid, ps));
 #if TWOPHASE
 		if (use_phase2_ && ps->bgp.dma_send_phase2_) {
-			ps->bgp.dma_send_phase2_->send_phase2(spk->gid, spk->spiketime, this);
+			// cannot do directly because busy_;
+			//ps->bgp.dma_send_phase2_->send_phase2(spk->gid, spk->spiketime, this);
+			Phase2Buffer& pb = phase2_buffer_[phase2_tail_++];
+			assert(phase2_tail_ != phase2_head_);
+			pb.ps = ps;
+			pb.spiketime = spk->spiketime;
+			
 		}
 #endif
 #if ENQUEUE == 2
@@ -315,11 +345,20 @@ void BGP_ReceiveBuffer::enqueue1() {
 		psbuf_[i] = ps;
 #if TWOPHASE
 		if (use_phase2_ && ps->bgp.dma_send_phase2_) {
-			ps->bgp.dma_send_phase2_->send_phase2(spk->gid, spk->spiketime, this);
+			// cannot do directly because busy_;
+			//ps->bgp.dma_send_phase2_->send_phase2(spk->gid, spk->spiketime, this);
+			Phase2Buffer& pb = phase2_buffer_[phase2_tail_++];
+			assert(phase2_tail_ != phase2_head_);
+			pb.ps = ps;
+			pb.spiketime = spk->spiketime;
+			
 		}
 #endif
 	}
 	busy_ = 0;
+#if TWOPHASE
+	phase2send();
+#endif
 }
 
 void BGP_ReceiveBuffer::enqueue2() {
@@ -339,6 +378,15 @@ void BGP_ReceiveBuffer::enqueue2() {
 	busy_ = 0;
 }
 
+#if TWOPHASE
+void BGP_ReceiveBuffer::phase2send() {
+	while (phase2_head_ != phase2_tail_) {
+		Phase2Buffer& pb = phase2_buffer_[phase2_head_++];
+		pb.ps->bgp.dma_send_phase2_->send_phase2(pb.ps->gid_, pb.spiketime, this);
+	}
+}
+#endif
+
 // number of DCMF_Multicast_t to cycle through when not using recordreplay
 #define NSEND 10
 
@@ -355,6 +403,11 @@ void nrnbgp_messager_advance() {
 	DCMF_Messager_advance();
 #if ENQUEUE == 2
 	bgp_receive_buffer[current_rbuf]->enqueue();
+#if TWOPHASE && BGP_INTERVAL > 1
+	if (use_phase2_ && n_bgp_interval == 2) {
+		bgp_receive_buffer[next_rbuf]->enqueue();
+	}
+#endif
 #endif
 }
 
@@ -585,6 +638,11 @@ static int bgp_advance() {
 	}
 #if ENQUEUE == 2
 	bgp_receive_buffer[current_rbuf]->enqueue();
+#if TWOPHASE && BGP_INTERVAL > 1
+	if (use_phase2_ && n_bgp_interval == 2) {
+		bgp_receive_buffer[next_rbuf]->enqueue();
+	}
+#endif
 #endif
 	nrecv_ += i;
 	return i;
@@ -798,7 +856,7 @@ void bgp_dma_receive() {
 #endif
 	TBUF
 	while (nrnmpi_bgp_conserve(s, r) != 0) {
-		DCMF_Messager_advance();
+		nrnbgp_messager_advance();
 		++ncons;
 	}
 	TBUF
