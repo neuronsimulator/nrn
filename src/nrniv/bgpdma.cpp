@@ -1506,7 +1506,7 @@ void setup_phase2() {
 		// hosts from indices[i]+1 to indices[i+1]-1 on host
 		// indices[i] get a phase 2 send. indices is nil if
 		// do not have a phase 2 send for this cell.
-		// phase 1 targets in the target_hosts lis must be in rank
+		// phase 1 targets in the target_hosts list must be in rank
 		// order.
 		int* indices;
 		int n = specify_phase2_distribution(bs, indices);
@@ -1527,6 +1527,26 @@ void setup_phase2() {
 	for (; icell < ncell_max; ++icell) {
 		phase2_transfer(0, 0);
 	}
+#if 1
+	int i1 = 0;
+	int i2 = 0;
+	NrnHashIterate(Gid2PreSyn, gid2in_, PreSyn*, ps) {
+		if (ps->bgp.dma_send_ == 0) {
+			++i1;
+		}else{
+			++i2;
+		}
+	}}}
+	int i1min, i1max, i2min, i2max;
+	i1max = nrnmpi_int_allmax(i1);
+	i2max = nrnmpi_int_allmax(i2);
+	i1min = int(nrnmpi_mindelay(double(i1)));
+	i2min = int(nrnmpi_mindelay(double(i2)));
+	if (nrnmpi_myid == 0) {
+		printf("phase2 senders = (%d, %d) leaves = (%d, %d)\n",
+		i2min, i2max, i1min, i1max);
+	}
+#endif
 }
 
 void phase2_transfer(int* indices, PreSyn* ps) {
@@ -1613,6 +1633,16 @@ int* determine_phase2_rbuf(int* scnt){
 	return r;
 }
 
+static int iran_;
+static int iran(int i1, int i2) {
+	// discrete uniform random integer from i2 to i2 inclusive. Must
+	// work if i1 == i2
+	if (i1 == i2) { return i1; }
+	int i3 = i1 + iran_%(i2 - i1 + 1);
+	iran_++;
+	return i3;
+}
+
 int specify_phase2_distribution(BGP_DMASend* bs, int*& indices) {
 	int n, nt;
 	nt = bs->ntarget_hosts_;
@@ -1623,6 +1653,19 @@ int specify_phase2_distribution(BGP_DMASend* bs, int*& indices) {
 		indices[n] = bs->ntarget_hosts_;
 		for (int i=0; i < n; ++i) {
 			indices[i] = (i * nt)/n;
+		}
+		// this distribution is very biased (if 0 is a phase1 target
+		// it is always a phase2 sender. So now choose a random
+		// target in the subset and make that the phase2 sender
+		// (need to switch the indices[i] target and the one chosen)
+		for (int i=0; i < n; ++i) {
+			int i1 = indices[i];
+			int i2 = indices[i+1]-1;
+			// need discrete uniform random integer from i1 to i2
+			int i3 = iran(i1, i2);
+			int itar = bs->target_hosts_[i1];
+			bs->target_hosts_[i1] = bs->target_hosts_[i3];
+			bs->target_hosts_[i3] = itar;
 		}
 	}else{
 		n = bs->ntarget_hosts_;
