@@ -6,7 +6,7 @@ public wfile, rfile, efun, build, title, chtitle
 public optsave, optrestore
 external object_index
 strdef tstr, title, basename_
-objref p, vbox, this, fspec, fdat, opt, optbox, nil, tobj, sf
+objref p, vbox, this, fspec, fdat, opt, optbox, nil, tobj, sf, optimizer
 
 proc init() {
 	running = 0
@@ -15,10 +15,11 @@ proc init() {
 	id = object_index(this) + 1
 	fspec = new File("temp.ft1")
 	fdat = new File("temp.fd1")
-	version_ = 5
+	version_ = 6
 	title = "Unnamed multiple run protocol"
 	p = new ParmFitnessGui(new ParmFitness(title),this)
-	opt = new MulfitPraxWrap(p.pf)
+	opt = new OptimizerWrap(p.pf)
+	opt.set_optimizer(new MulfitPraxWrap(p.pf))
 	if (numarg() == 0) {
 		build()
 		map()
@@ -34,8 +35,8 @@ proc chtitle() {
 
 func version() {
 	if ($1 > version_) {
-printf("MulrunFitter data format version %d is incompatible with this version %d tool\n",\
- $1, version_)
+		printf("MulrunFitter data format version %d is incompatible with this version %d tool\n",\
+ 			$1, version_)
 		stop
 		return 0
 	}
@@ -99,10 +100,8 @@ proc showopt() {
 	}
 	xpanel()
 	xpanel("")
-	sprint(tstr, "%s specific items", opt)
-	xlabel(tstr)
-	xpanel()
 	opt.showopt()
+	xpanel()
 	optbox.intercept(0)
 	sprint(tstr, "%s Optimize", this)
 	if (numarg() > 3) {
@@ -198,6 +197,7 @@ proc save() {
 	vbox.save("build()")
 	vbox.save("}")
 	tobj = new Vector(4)
+	opt.save_optimizer(vbox)
 	p.mapsave(vbox, tobj)
 	optsave(vbox, tobj)
 
@@ -208,7 +208,7 @@ proc optsave() {
 	if (object_id(optbox)) if (optbox.ismapped) {
 		$o2.resize(4)
 		optbox.size(&$o2.x[0])
-sprint(tstr, "{optrestore(%g, %g, %g, %g)}", $o2.x[0], $o2.x[1], $o2.x[2], $o2.x[3])
+		sprint(tstr, "{optrestore(%g, %g, %g, %g)}", $o2.x[0], $o2.x[1], $o2.x[2], $o2.x[3])
 		$o1.save(tstr)
 	}
 }

@@ -120,11 +120,11 @@ func efun() {local e, i
 		tobj = parmlist_use.object(i)
 		tobj.setln($&2[i])
 		if (tobj.invalid) {
-printf("invalid %s low=%g val=%g high=%g\n", tobj.name, tobj.low, tobj.val,tobj.high)
 			return 1e9
 		}
 		tobj.play_one()
 	}
+	doNotify()
 	e = 0
 	for i=0, generatorlist.count-1 {
 		if (generatorlist.object(i).use) {
@@ -141,7 +141,6 @@ func parm() {local i
 		tobj = parmlist_use.object(i)
 		tobj.setln($o1.x[i])
 		if (tobj.invalid) {
-printf("invalid %s low=%g val=%g high=%g\n", tobj.name, tobj.low, tobj.val,tobj.high)
 			return 0
 		}
 		tobj.play_one()
@@ -286,7 +285,6 @@ proc def_parmlist_use() {local i
 	for i=0, parmlist.count-1 {
 		if (parmlist.object(i).doarg) {
 			parmlist_use.append(parmlist.object(i))
-//printf("def_parmlist_use %d %s\n", i, parmlist.object(i).name)
 		}
 	}
 }
@@ -344,7 +342,6 @@ proc rfile() {local use
 		sprint(tstr1, "tobj = new %s(0)", tstr1)
 		execute(tstr1, this)
 		tobj.rfile($o1, $o2, tstr)
-//		printf("%s %s\n", tobj, tobj.title)
 		generatorlist.append(new GenInfo(tobj, $o2))
 	}
 	while (1) {
@@ -527,8 +524,7 @@ proc partest_efun() {
 	
 
 proc showopt() {
-	sprint(tstr, "mulfit.opt = new %s(pf)", mulfit_optimizers_.object($1).s)
-	execute(tstr, this)
+	mulfit.opt.set_opt($1)
 	mulfit.showopt()
 }
 

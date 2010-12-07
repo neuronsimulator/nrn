@@ -29,6 +29,7 @@ xopen("mulfit/eonefunc.hoc")
 xopen("mulfit/eoneprim.hoc")
 xopen("mulfit/eparmlst.hoc")
 xopen("mulfit/fitparm.hoc")
+xopen("mulfit/optwrap.hoc")
 xopen("mulfit/mulfit1.hoc")
 }
 
