@@ -1470,6 +1470,18 @@ int ncs_bgp_mindelays( int **srchost, double **delays )
 #endif //USENCS
 
 #if TWOPHASE
+
+//from http://en.wikipedia.org/wiki/Random_number_generation
+static unsigned int m_w;    /* must not be zero */
+static unsigned int m_z;    /* must not be zero */
+ 
+static unsigned int get_random()
+{
+	m_z = 36969 * (m_z & 65535) + (m_z >> 16);
+	m_w = 18000 * (m_w & 65535) + (m_w >> 16);
+	return ((m_z << 16) + m_w)&0xffffff;  /* 32-bit result */
+}
+
 static int specify_phase2_distribution(BGP_DMASend*, int*& indices);
 static void phase2_transfer(int*, PreSyn*);
 static int* determine_phase2_rbuf(int* scnt);
@@ -1484,6 +1496,10 @@ void setup_phase2() {
 	// should be changeable without affecting its use to modify
 	// the BGP_DMASend objects and creation of the
 	// proper BGP_DMASend_Phase2 on the phase1 targets.
+
+	// initialize random
+	m_w = nrnmpi_myid + 1;
+	m_z = nrnmpi_myid + 1;
 
 	// how many source cells are there on this machine
 	int ncell = 0;
@@ -1633,13 +1649,11 @@ int* determine_phase2_rbuf(int* scnt){
 	return r;
 }
 
-static int iran_;
 static int iran(int i1, int i2) {
 	// discrete uniform random integer from i2 to i2 inclusive. Must
 	// work if i1 == i2
 	if (i1 == i2) { return i1; }
-	int i3 = i1 + iran_%(i2 - i1 + 1);
-	iran_++;
+	int i3 = i1 + get_random()%(i2 - i1 + 1);
 	return i3;
 }
 
