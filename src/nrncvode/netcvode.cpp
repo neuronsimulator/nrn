@@ -232,10 +232,10 @@ extern int nrnmpi_pgvts_least(double* tt, int* op, int* init);
 #if BGPDMA
 extern void bgp_dma_send(PreSyn*, double t);
 extern int use_bgpdma_;
+extern void nrnbgp_messager_advance();
 #endif
 #if BGPDMA == 2
 extern int use_dcmf_record_replay;
-extern void nrnbgp_messager_advance();
 #endif
 
 boolean nrn_use_fifo_queue_;
@@ -5382,6 +5382,9 @@ void NetCvode::check_thresh(NrnThread* nt) { // for default method
 void NetCvode::deliver_net_events(NrnThread* nt) { // for default method
 	TQItem* q;
 	double tm, tt, tsav;
+#if BGPDMA
+	if (use_bgpdma_) { nrnbgp_messager_advance(); }
+#endif
 	int tid = nt->id;
 	tsav = nt->_t;
 	tm = nt->_t + 0.5*nt->_dt;

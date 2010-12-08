@@ -404,19 +404,8 @@ extern "C" {
 }
 #endif
 
-#if BGPDMA & 2
 
-void nrnbgp_messager_advance() {
-	DCMF_Messager_advance();
-#if ENQUEUE == 2
-	bgp_receive_buffer[current_rbuf]->enqueue();
-#if TWOPHASE && BGP_INTERVAL > 1
-	if (use_phase2_ && n_bgp_interval == 2) {
-		bgp_receive_buffer[next_rbuf]->enqueue();
-	}
-#endif
-#endif
-}
+#if BGPDMA & 2
 
 #define PIPEWIDTH 16
 
@@ -643,6 +632,18 @@ static int bgp_advance() {
 #endif
 		bgp_receive_buffer[j]->incoming(spk.gid, spk.spiketime);
 	}
+	nrecv_ += i;
+	return i;
+}
+
+#if BGPDMA
+void nrnbgp_messager_advance() {
+#if BGPDMA & 2
+	if (use_bgpdma_ > 1) { DCMF_Messager_advance(); }
+#endif
+#if BGPDMA & 1
+	if (use_bgpdma_ == 1) { bgp_advance(); }
+#endif
 #if ENQUEUE == 2
 	bgp_receive_buffer[current_rbuf]->enqueue();
 #if TWOPHASE && BGP_INTERVAL > 1
@@ -651,9 +652,8 @@ static int bgp_advance() {
 	}
 #endif
 #endif
-	nrecv_ += i;
-	return i;
 }
+#endif
 
 BGP_DMASend::BGP_DMASend() {
 	ntarget_hosts_ = 0;
@@ -872,7 +872,7 @@ void bgp_dma_receive() {
 #endif
 #if BGPDMA & 1
     if (use_bgpdma_ == 1) {
-	bgp_advance();
+	nrnbgp_messager_advance();
 	TBUF
 #if ENQUEUE == 2
 	// want the overlap with computation, not conserve
@@ -884,7 +884,7 @@ void bgp_dma_receive() {
 #endif
 	TBUF
 	while (nrnmpi_bgp_conserve(s, r) != 0) {
-		bgp_advance();
+		nrnbgp_messager_advance();
 		++ncons;
 	}
 	TBUF
