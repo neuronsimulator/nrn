@@ -4,7 +4,7 @@ begintemplate MulfitPraxWrap
 // public functions
 public prun, praxis_efun, after_quad, nquad, showopt, save_optimizer
 // public variables
-public saveflag, start, minerr, nstep
+public saveflag, minerr, nstep
 
 objref savepath, tl, pf, tobj, opt
 objref start
@@ -53,11 +53,10 @@ func prun() {
 		savepath.wopen("savepath.tmp") // need to put in rank later
 		lines = 0
 	}
-	pf.doarg_get(start)
 	nquad = 0
 	stop_praxis(nstep)
 	after_quad()
-	minerr = fit_praxis(start.size, "call_opt_efun", &start.x[0],"after_quad()\n")
+	minerr = fit_praxis(opt.start.size, "call_opt_efun", &opt.start.x[0],"after_quad()\n")
 	if (savepath.isopen) {
 		savepath.close
 		savepath.aopen("savepath.fit")

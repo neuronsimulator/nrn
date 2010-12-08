@@ -12,11 +12,10 @@ strdef tstr
 
 proc init() {
 	pf = $o1
-	printf("optwrap init\n")
 	start = new Vector()
 	savepath = new File()
 	nefun = 0
-	st = 0
+	st = startsw()
 	time = 0
 	currenterr = 1e9
 	saveflag = 0
@@ -37,9 +36,7 @@ proc set_optimizer() {
 proc set_opt() {
 	opt_index = $1
 	sprint(tstr, "optimizer = new %s(pf)", mulfit_optimizers_.object(opt_index).s)
-	printf("optimizer = new %s(pf)\n", mulfit_optimizers_.object(opt_index).s)
 	execute(tstr, this)
-	printf("set opt %s %s\n", optimizer, tstr)
 }
 
 func optwrap_efun() {local i
@@ -74,7 +71,7 @@ func prun() {
 		minerr = optwrap_efun(start.size, &start.x[0])
 		if (stoprun) {return minerr}
 		st = startsw()
-		time = st
+		time = startsw() - st
 		minerr = optimizer.prun(this)
 		time = startsw() - st
 		minerr = optwrap_efun(start.size, &start.x[0])
@@ -83,7 +80,6 @@ func prun() {
 }
 
 proc showopt() {
-	printf("Printing name %s\n",mulfit_optimizer_names_.object(opt_index).s)
 	sprint(tstr, "%s specific items", mulfit_optimizer_names_.object(opt_index).s)
 	xlabel(tstr)
 	optimizer.showopt()
