@@ -445,16 +445,22 @@ sprint(ppbuf, argn)	/* convert args to right type for conversion */
 		 {
 
 		case 'l':
-			lflag = 1;
+			lflag += 1;
 			break;
 
 		case 'd':
 		case 'o':
 		case 'x':
-			if (lflag)
-				Sprintf(pbuf, frag, (long)*getarg(argn));
-			else
+			if (lflag) {
+				if (lflag == 1) {
+					pfrag[1] = pfrag[0];
+					pfrag[0] = pfrag[-1];
+					pfrag[-1] = 'l';
+				}
+				Sprintf(pbuf, frag, (long long)*getarg(argn));
+			}else{
 				Sprintf(pbuf, frag, (int)*getarg(argn));
+			}
 			didit = 1;
 			break;
 
