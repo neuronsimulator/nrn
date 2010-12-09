@@ -233,8 +233,8 @@ void mac_open_app(){
 extern "C" {
 	int ivocmain(int, char**, char**);
 	int (*p_neosim_main)(int, char**, char**);
-	int nrn_global_argc;
-	char** nrn_global_argv;
+	extern int nrn_global_argc;
+	extern char** nrn_global_argv;
 	int always_false;
 	int nrn_is_python_extension;
 }
