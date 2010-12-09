@@ -13,6 +13,7 @@
 #include "ocobserv.h"
 #if HAVE_IV
 #include <InterViews/adjust.h>
+#include <InterViews/hit.h>
 #include "ocglyph.h"
 #if !MAC
 #include "checkpnt.h"
@@ -38,7 +39,9 @@ public:
 	OcListBrowser(OcList*, const char* = nil, Object* pystract=nil);
 	OcListBrowser(OcList*, char**, const char*);
 	virtual ~OcListBrowser();
+	virtual void drag(const Event& e);
 	virtual void select(GlyphIndex);
+	virtual void dragselect(GlyphIndex);
 	virtual void reload();
 	virtual void reload(GlyphIndex);
 	virtual void set_select_action(const char*, boolean on_rel = false, Object* pyact=nil);
@@ -632,16 +635,37 @@ InputHandler* OcListBrowser::focus_in() {
 }
 
 void OcListBrowser::select(GlyphIndex i) {
-	GlyphIndex old = selected();
 	OcBrowser::select(i);
-//printf("select %d old=%d ignore=%d\n", i, old, ignore_);
-//	if (old != i && select_action_ && !on_release_ && !ignore_) {
+//printf("select %d ignore=%d\n", i, ignore_);
 	if (select_action_ && !on_release_ && !ignore_) {
 		handle_old_focus();
 		hoc_ac_ = (double)i;
 		select_action_->execute();
 	}
 }
+void OcListBrowser::dragselect(GlyphIndex i) {
+	GlyphIndex old = selected();
+	OcBrowser::select(i);
+//printf("select %d old=%d ignore=%d\n", i, old, ignore_);
+	if (old != i && select_action_ && !on_release_ && !ignore_) {
+		handle_old_focus();
+		hoc_ac_ = (double)i;
+		select_action_->execute();
+	}
+}
+// mostly copied from src/InterViews/browser.cpp
+void OcListBrowser::drag(const Event& e) {
+    if (inside(e)) {
+        Hit h(&e);
+        repick(0, h);
+        if (h.any()) {
+            dragselect(h.index(0));
+            return;
+        }
+    }
+    dragselect(-1);
+}
+
 void OcListBrowser::reload() {
 	GlyphIndex i, cnt;
 	cnt = count();

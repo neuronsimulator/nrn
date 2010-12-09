@@ -608,7 +608,12 @@ Node* nrn_node_construct1() {
 void nrn_node_destruct1(nd) Node* nd; {
 	if (!nd) { return; }
 	prop_free(&(nd->prop));
+#if CACHEVEC
+	notify_freed_val_array(&NODEV(nd), 1);
+	notify_freed_val_array(&NODEAREA(nd), 2);
+#else
 	notify_freed_val_array(&NODEV(nd), 2);
+#endif
 #if EXTRACELLULAR
 	if (nd->extnode) {
 		notify_freed_val_array(nd->extnode->v, nlayer);

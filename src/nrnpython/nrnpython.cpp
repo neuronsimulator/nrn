@@ -6,6 +6,7 @@
 #endif
 #include <nrnoc2iv.h>
 #include <nrnpy_reg.h>
+#include <hoccontext.h>
 
 extern "C" {
 #include <hocstr.h>
@@ -155,7 +156,9 @@ void nrnpython_real() {
 	int retval = 0;
 #if USE_PYTHON
 	nrnpython_ensure_threadstate();
+	HocTopContextSet
 	retval = PyRun_SimpleString(gargstr(1)) == 0;
+	HocContextRestore
 #endif
 	ret(double(retval));
 }

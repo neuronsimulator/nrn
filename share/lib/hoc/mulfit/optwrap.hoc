@@ -1,0 +1,102 @@
+begintemplate OptimizerWrap
+
+external classname, mulfit_optimizers_, mulfit_optimizer_names_
+
+// public functions
+public prun, set_optimizer, save_optimizer, set_opt, optwrap_efun, showopt
+// public variables
+public saveflag, start, nquad, wfile, optimizer, opt_index, minerr, nefun, time
+
+objref savepath, tl, pf, tobj, opt, this, start, optimizer
+strdef tstr
+
+proc init() {
+	pf = $o1
+	start = new Vector()
+	savepath = new File()
+	nefun = 0
+	st = startsw()
+	time = 0
+	currenterr = 1e9
+	saveflag = 0
+	e = 0
+}
+
+// just for use when restoring from save
+proc set_optimizer() {
+	optimizer = $o1
+	classname($o1, tstr)
+	for i=0, mulfit_optimizers_.count-1 {
+		if (!strcmp(mulfit_optimizers_.object(i).s, tstr)) {
+			set_opt(i)
+		}
+	}
+}
+
+proc set_opt() {
+	opt_index = $1
+	sprint(tstr, "optimizer = new %s(pf)", mulfit_optimizers_.object(opt_index).s)
+	execute(tstr, this)
+}
+
+func optwrap_efun() {local i
+	nefun += 1
+	e =  pf.efun($1, &$&2)
+	if (!stoprun) {
+		if (minerr == -1 || e < minerr) {
+			minerr = e
+		}
+	}
+	doNotify()
+	time = startsw() - st
+	return e
+}
+
+proc saveval() {
+	if (numarg() == 1) savepath.printf("%s", $s1)
+	tl = pf.parmlist
+	for i=0, tl.count-1 {
+		savepath.printf("%-12.8g ", tl.object(i).val)
+	}
+	savepath.printf("\n")
+}
+
+func prun() {
+	minerr = -1
+	pf.doarg_get(start)
+	nquad = 0
+	if (start.size == 0) {
+		minerr = pf.efun(0, &time) // time is dummy here
+	}else{
+		minerr = optwrap_efun(start.size, &start.x[0])
+		if (stoprun) {return minerr}
+		st = startsw()
+		time = startsw() - st
+		minerr = optimizer.prun(this)
+		time = startsw() - st
+		minerr = optwrap_efun(start.size, &start.x[0])
+	}
+	return minerr
+}
+
+proc showopt() {
+	sprint(tstr, "%s specific items", mulfit_optimizer_names_.object(opt_index).s)
+	xlabel(tstr)
+	optimizer.showopt()
+}
+
+strdef opt_class
+proc save_optimizer() { localobj vbox
+	vbox = $o1
+	classname(optimizer, opt_class)
+	// set the optimizer than let it save itself
+	sprint(tstr, "opt.set_optimizer(new %s(p.pf))", mulfit_optimizers_.object(opt_index).s)
+	vbox.save(tstr)
+	vbox.save("{object_push(opt.optimizer)}")	
+	vbox.save("{")	
+	optimizer.save_optimizer(vbox) 
+	vbox.save("}")	
+	vbox.save("{object_pop()}")	
+}
+
+endtemplate OptimizerWrap
