@@ -27,10 +27,10 @@ proc init() {
 proc after_quad() {
 	if (savepath.isopen) {
 		lines += 1
-		savepath.printf("%d %d %d %-12.8g ", nquad, opt.nefun, opt.time, e)
+		savepath.printf("%d %d %d %-12.8g ", nquad, opt.nefun, opt.time, opt.minerr)
 		saveval()
 	}
-	printf("nquad=%d nefun=%d time=%d e=%-12.8g\n", nquad, opt.nefun, opt.time, e)
+	printf("nquad=%d nefun=%d time=%d e=%-12.8g\n", nquad, opt.nefun, opt.time, opt.minerr)
 	nquad += 1
 }
 

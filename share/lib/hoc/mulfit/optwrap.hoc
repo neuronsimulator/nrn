@@ -62,6 +62,7 @@ proc saveval() {
 }
 
 func prun() {
+	nefun = 0
 	minerr = -1
 	pf.doarg_get(start)
 	nquad = 0
