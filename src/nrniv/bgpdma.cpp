@@ -161,6 +161,7 @@ public:
 	void phase2send();
 	int phase2_head_;
 	int phase2_tail_;
+	int phase2_nsend_cell_, phase2_nsend_;
 	Phase2Buffer* phase2_buffer_;
 #endif
 };
@@ -251,6 +252,7 @@ void BGP_ReceiveBuffer::init(int index) {
 	count_ = 0;
 #if TWOPHASE
 	phase2_head_ = phase2_tail_ = 0;
+	phase2_nsend_cell_ = phase2_nsend_ = 0;
 #endif	
 }
 void BGP_ReceiveBuffer::incoming(int gid, double spiketime) {
@@ -742,7 +744,7 @@ void BGP_DMASend::send(int gid, double t) {
 	{
 #endif
 		DCMF_Multicast(&mci->msend);
-		isend = (++isend)%NSEND;
+		isend = (++isend)%n_mymulticast_;
 	}
     }
 #endif // BGPDMA & 2
@@ -773,6 +775,8 @@ void BGP_DMASend_Phase2::send_phase2(int gid, double t, BGP_ReceiveBuffer* rb) {
 		spk_.gid = ~spk_.gid;
 	}
 #endif
+	rb->phase2_nsend_cell_ += 1;
+	rb->phase2_nsend_ += ntarget_hosts_phase2_;
 #if BGPDMA & 2
     if (use_bgpdma_ == 2) {
 
@@ -814,7 +818,7 @@ void BGP_DMASend_Phase2::send_phase2(int gid, double t, BGP_ReceiveBuffer* rb) {
 	{
 #endif
 		DCMF_Multicast(&mci->msend);
-		isend = (++isend)%NSEND;
+		isend = (++isend)%n_mymulticast_;
 	}
     }
 #endif // BGPDMA & 2
@@ -898,6 +902,10 @@ void bgp_dma_receive() {
 	tbuf_[itbuf_++] = (unsigned long)s;
 	tbuf_[itbuf_++] = (unsigned long)r;
 	tbuf_[itbuf_++] = (unsigned long)dmasend_time_;
+#if TWOPHASE
+	tbuf_[itbuf_++] = (unsigned long)bgp_receive_buffer[current_rbuf]->phase2_nsend_cell_;
+	tbuf_[itbuf_++] = (unsigned long)bgp_receive_buffer[current_rbuf]->phase2_nsend_;
+#endif
 #endif
 #if (BGPMDA & 2) && MAXNCONS
 	if (ncons > MAXNCONS) { ncons = MAXNCONS; }
@@ -914,6 +922,10 @@ void bgp_dma_receive() {
 #if ENQUEUE == 2
 	bgp_receive_buffer[current_rbuf]->enqueue();
 	s = r =  bgp_receive_buffer[current_rbuf]->nsend_cell_ = 0;
+#if TWOPHASE
+	bgp_receive_buffer[current_rbuf]->phase2_nsend_cell_ = 0;
+	bgp_receive_buffer[current_rbuf]->phase2_nsend_ = 0;
+#endif
 	enq2_find_time_ = 0;
 	enq2_enqueue_time_ = 0;
 #if TBUFSIZE
@@ -1063,13 +1075,26 @@ ps->bgp.dma_send_->ntarget_hosts_phase1_ = ps->bgp.dma_send_->ntarget_hosts_;
 	}else{
 		mconfig.protocol = DCMF_MEMFIFO_DMA_MSEND_PROTOCOL;
 		mconfig.max_persist_ids = 0;
-		mconfig.max_msgs = 0;		
+		mconfig.max_msgs = 0;
 		n_mymulticast_ = NSEND;
+#if TWOPHASE
+		if (use_phase2_) {
+			n_mymulticast_ *= 100;
+		}
+#endif
 	}
 #else
 	mconfig.protocol = DCMF_MEMFIFO_DMA_MSEND_PROTOCOL;
 	n_mymulticast_ = NSEND;
+#if TWOPHASE
+		if (use_phase2_) {
+			n_mymulticast_ *= 100;
+		}
 #endif
+#endif
+	if (nrnmpi_myid == 0) {
+		printf("n_mymulticast_ = %d\n", n_mymulticast_);
+	}	
 	mci_ = new MyMulticastInfo[n_mymulticast_];
 	mconfig.cb_recv = msend_recv;
 	mconfig.nconnections = n_mymulticast_; //max_ntarget_host;
