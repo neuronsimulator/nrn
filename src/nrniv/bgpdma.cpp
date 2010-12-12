@@ -648,11 +648,6 @@ void nrnbgp_messager_advance() {
 #endif
 #if ENQUEUE == 2
 	bgp_receive_buffer[current_rbuf]->enqueue();
-#if TWOPHASE && BGP_INTERVAL > 1
-	if (use_phase2_ && n_bgp_interval == 2) {
-		bgp_receive_buffer[next_rbuf]->enqueue();
-	}
-#endif
 #endif
 }
 #endif
