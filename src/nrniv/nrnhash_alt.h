@@ -56,6 +56,7 @@ public: \
     boolean find(Key, Value&); \
     boolean find_and_remove(Value&, Key); \
     void remove(Key); \
+    void remove_all(); \
     int max_chain_length(); \
     int nclash() {return nclash_;} \
     int nfind() { return nfind_;} \
@@ -137,14 +138,19 @@ NrnHash::NrnHash(int n) { \
 } \
 \
 NrnHash::~NrnHash() { \
+    remove_all(); \
+    delete [] first_; \
+} \
+\
+void NrnHash::remove_all() { \
     for (register NrnHashEntry(NrnHash)** e = first_; e <= last_; e++) { \
 	NrnHashEntry(NrnHash)* t = *e; \
         for (register NrnHashEntry(NrnHash)* i = t; i; i = t) { \
 	    t = i->chain_; \
 	    delete i; \
 	} \
+	*e = nil; \
     } \
-    delete [] first_; \
 } \
 \
 inline NrnHashEntry(NrnHash)*& NrnHash::probe(Key i) { \

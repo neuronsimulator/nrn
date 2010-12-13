@@ -911,9 +911,6 @@ void nrnmpi_gid_clear(int arg) {
 				delete ps;
 			}
 		}
-#if ALTHASH
-                gid2out_->remove(i__.cur_key());
-#endif
 	}}}
 	NrnHashIterate(Gid2PreSyn, gid2in_, PreSyn*, ps) {
 		ps->gid_ = -1;
@@ -921,11 +918,11 @@ void nrnmpi_gid_clear(int arg) {
 		if (ps->dil_.count() == 0) {
 			delete ps;
 		}
-#if ALTHASH
-                gid2in_->remove(i__.cur_key());
-#endif
 	}}}
-#if !ALTHASH
+#if ALTHASH
+	gid2in_->remove_all();
+	gid2out_->remove_all();
+#else
 	int i;
 	for (i = gid2out_->size_ - 1; i >= 0; --i) {
 		gid2out_->at(i).clear();
