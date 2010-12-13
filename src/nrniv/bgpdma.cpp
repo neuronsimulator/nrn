@@ -898,8 +898,10 @@ void bgp_dma_receive() {
 	tbuf_[itbuf_++] = (unsigned long)r;
 	tbuf_[itbuf_++] = (unsigned long)dmasend_time_;
 #if TWOPHASE
-	tbuf_[itbuf_++] = (unsigned long)bgp_receive_buffer[current_rbuf]->phase2_nsend_cell_;
-	tbuf_[itbuf_++] = (unsigned long)bgp_receive_buffer[current_rbuf]->phase2_nsend_;
+	if (use_phase2_) {
+		tbuf_[itbuf_++] = (unsigned long)bgp_receive_buffer[current_rbuf]->phase2_nsend_cell_;
+		tbuf_[itbuf_++] = (unsigned long)bgp_receive_buffer[current_rbuf]->phase2_nsend_;
+	}
 #endif
 #endif
 #if (BGPMDA & 2) && MAXNCONS
