@@ -245,7 +245,7 @@ BGP_ReceiveBuffer::~BGP_ReceiveBuffer() {
 void BGP_ReceiveBuffer::init(int index) {
 	index_ = index;
 	timebase_ = 0;
-	nsend_cell_ = nsend_ = nrecv_ = busy_ = 0;
+	nsend_cell_ = nsend_ = nrecv_ = busy_ = maxcount_ = 0;
 	for (int i = 0; i < count_; ++i) {
 		pool_->hpfree(buffer_[i]);
 	}

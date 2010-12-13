@@ -133,7 +133,7 @@ NrnHash::NrnHash(int n) { \
     for (register NrnHashEntry(NrnHash)** e = first_; e <= last_; e++) { \
 	*e = nil; \
     } \
-    nclash_ = 0; \
+    nclash_ = nfind_ = 0; \
 } \
 \
 NrnHash::~NrnHash() { \
