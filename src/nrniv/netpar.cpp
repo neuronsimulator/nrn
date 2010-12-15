@@ -895,16 +895,21 @@ void nrn_cleanup_presyn(PreSyn* ps) {
 }
 
 void nrnmpi_gid_clear(int arg) {
-	if (arg == 0 || arg == 3) nrn_partrans_clear();
+	if (arg == 0 || arg == 3 || arg == 4) {
+		nrn_partrans_clear();
 #if PARANEURON
-	if (arg == 0 || arg == 3) nrnmpi_split_clear();
+		nrnmpi_split_clear();
 #endif
-	if (arg == 0 || arg == 2) nrnmpi_multisplit_clear();
-	if (arg != 0 && arg != 1) { return; }
+	}
+	if (arg == 0 || arg == 2 || arg == 4) { nrnmpi_multisplit_clear(); }
+	if (arg == 2 || arg == 3) { return; }
 	if (!gid2out_) { return; }
 	PreSyn* ps, *psi;
 	NrnHashIterate(Gid2PreSyn, gid2out_, PreSyn*, ps) {
 		if (ps && !gid2in_->find(ps->gid_, psi)) {
+		    if (arg == 4) {
+			delete ps;
+		    }else{
 #if BGPDMA
 			bgpdma_cleanup_presyn(ps);
 #endif
@@ -913,9 +918,13 @@ void nrnmpi_gid_clear(int arg) {
 			if (ps->dil_.count() == 0) {
 				delete ps;
 			}
+		    }
 		}
 	}}}
 	NrnHashIterate(Gid2PreSyn, gid2in_, PreSyn*, ps) {
+	    if (arg == 4) {
+		delete ps;
+	    }else{
 #if BGPDMA
 		bgpdma_cleanup_presyn(ps);
 #endif
@@ -924,6 +933,7 @@ void nrnmpi_gid_clear(int arg) {
 		if (ps->dil_.count() == 0) {
 			delete ps;
 		}
+	    }
 	}}}
 #if ALTHASH
 	gid2in_->remove_all();

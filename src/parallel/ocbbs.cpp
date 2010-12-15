@@ -559,7 +559,7 @@ static double set_timeout(void* v) {
 static double gid_clear(void* v) {
 	int arg = 0;
 	if (ifarg(1)){
-		arg = int(chkarg(1, 0, 3));
+		arg = int(chkarg(1, 0, 4));
 	}
 	nrnmpi_gid_clear(arg);
 	return 0.;
