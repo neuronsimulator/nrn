@@ -905,6 +905,9 @@ void nrnmpi_gid_clear(int arg) {
 	PreSyn* ps, *psi;
 	NrnHashIterate(Gid2PreSyn, gid2out_, PreSyn*, ps) {
 		if (ps && !gid2in_->find(ps->gid_, psi)) {
+#if BGPDMA
+			bgpdma_cleanup_presyn(ps);
+#endif
 			ps->gid_ = -1;
 			ps->output_index_ = -1;
 			if (ps->dil_.count() == 0) {
@@ -913,6 +916,9 @@ void nrnmpi_gid_clear(int arg) {
 		}
 	}}}
 	NrnHashIterate(Gid2PreSyn, gid2in_, PreSyn*, ps) {
+#if BGPDMA
+		bgpdma_cleanup_presyn(ps);
+#endif
 		ps->gid_ = -1;
 		ps->output_index_ = -1;
 		if (ps->dil_.count() == 0) {
