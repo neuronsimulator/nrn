@@ -536,11 +536,13 @@ static void* fcall(void* vself, void* vargs) {
 		return result;
 	}else{
 		HocTopContextSet
-		Inst fc[3];
-		fc[0].sym = self->sym_;
-		fc[1].i = narg;
-		fc[2].in = STOP;
-		Inst* pcsav = save_pc(fc);
+		Inst fc[4];
+// ugh. so a potential call of hoc_get_last_pointer_symbol will return nil.
+		fc[0].in = STOP;
+		fc[1].sym = self->sym_;
+		fc[2].i = narg;
+		fc[3].in = STOP;
+		Inst* pcsav = save_pc(fc+1);
 		hoc_call();
 		hoc_pc = pcsav;
 		HocContextRestore
