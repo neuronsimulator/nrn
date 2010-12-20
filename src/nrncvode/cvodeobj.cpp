@@ -173,6 +173,9 @@ static double abstol(void* v) {
 	}else{
 		hoc_pgetarg(1);
 		sym = hoc_get_last_pointer_symbol();
+		if (!sym) {
+hoc_execerror("Cannot find the symbol associated with the pointer when called from Python", "Use a string instead of pointer argument");
+		}
 		if (nrn_vartype(sym) != STATE && sym->u.rng.type != VINDEX) {
 			hoc_execerror(sym->name, "is not a STATE");
 		}
