@@ -412,8 +412,13 @@ extern "C" {
 #define PIPEWIDTH 16
 
 static DCMF_Opcode_t* hints_;
-static DCMF_Protocol_t protocol __attribute__((__aligned__(16)));
-static DCMF_Multicast_Configuration_t mconfig;
+//static DCMF_Protocol_t protocol __attribute__((__aligned__(16)));
+//static DCMF_Multicast_Configuration_t mconfig;
+struct MyProtocolWrapper {
+	DCMF_Protocol_t protocol __attribute__((__aligned__(16)));
+} __attribute__((__aligned__(16)));
+static MyProtocolWrapper* mpw;
+static DCMF_Multicast_Configuration_t* mconfig;
 
 struct MyMulticastInfo {
 	DCMF_Request_t request __attribute__((__aligned__(16)));
@@ -977,7 +982,7 @@ static void bgpdma_cleanup() {
 	if (hints_) {
 		delete [] hints_;
 		hints_ = 0;
-		delete [] mconfig.connectionlist;
+		delete [] mconfig->connectionlist;
 		delete [] mci_;
 	}
 #endif
@@ -1047,6 +1052,9 @@ ps->bgp.dma_send_->ntarget_hosts_phase1_ = ps->bgp.dma_send_->ntarget_hosts_;
 #endif
 #if BGPDMA & 2
   if (use_bgpdma_ == 2) {
+	// going to leak these since no way to unregister
+	mpw = new MyProtocolWrapper;
+	mconfig = new DCMF_Multicast_Configuration_t;
 	// one would think that everyone can use the same hints and so they
 	// can be allocated according to the maximum ntarget_hosts_.
 	hints_ = new DCMF_Opcode_t[nrnmpi_numprocs];
@@ -1065,14 +1073,14 @@ ps->bgp.dma_send_->ntarget_hosts_phase1_ = ps->bgp.dma_send_->ntarget_hosts_;
 		}}}
 	}
 	if (max_persist_ids > 0) { // may want to check for too many as well
-		mconfig.protocol = DCMF_MEMFIFO_MCAST_RECORD_REPLAY_PROTOCOL;
-		mconfig.max_persist_ids = max_persist_ids;
-		mconfig.max_msgs = 10000; //NSEND;
+		mconfig->protocol = DCMF_MEMFIFO_MCAST_RECORD_REPLAY_PROTOCOL;
+		mconfig->max_persist_ids = max_persist_ids;
+		mconfig->max_msgs = 10000; //NSEND;
 		n_mymulticast_ = max_persist_ids;
 	}else{
-		mconfig.protocol = DCMF_MEMFIFO_DMA_MSEND_PROTOCOL;
-		mconfig.max_persist_ids = 0;
-		mconfig.max_msgs = 0;
+		mconfig->protocol = DCMF_MEMFIFO_DMA_MSEND_PROTOCOL;
+		mconfig->max_persist_ids = 0;
+		mconfig->max_msgs = 0;
 		n_mymulticast_ = NSEND;
 #if TWOPHASE
 		if (use_phase2_) {
@@ -1081,7 +1089,7 @@ ps->bgp.dma_send_->ntarget_hosts_phase1_ = ps->bgp.dma_send_->ntarget_hosts_;
 #endif
 	}
 #else
-	mconfig.protocol = DCMF_MEMFIFO_DMA_MSEND_PROTOCOL;
+	mconfig->protocol = DCMF_MEMFIFO_DMA_MSEND_PROTOCOL;
 	n_mymulticast_ = NSEND;
 #if TWOPHASE
 		if (use_phase2_) {
@@ -1093,11 +1101,11 @@ ps->bgp.dma_send_->ntarget_hosts_phase1_ = ps->bgp.dma_send_->ntarget_hosts_;
 		printf("n_mymulticast_ = %d\n", n_mymulticast_);
 	}	
 	mci_ = new MyMulticastInfo[n_mymulticast_];
-	mconfig.cb_recv = msend_recv;
-	mconfig.nconnections = n_mymulticast_; //max_ntarget_host;
-	mconfig.connectionlist = new void*[n_mymulticast_];
-	mconfig.clientdata = NULL;
-	assert(DCMF_Multicast_register (&protocol, &mconfig) == DCMF_SUCCESS);
+	mconfig->cb_recv = msend_recv;
+	mconfig->nconnections = n_mymulticast_; //max_ntarget_host;
+	mconfig->connectionlist = new void*[n_mymulticast_];
+	mconfig->clientdata = NULL;
+	assert(DCMF_Multicast_register (&mpw->protocol, mconfig) == DCMF_SUCCESS);
 
 	for (int i = 0; i < n_mymulticast_; ++i) {
 		MyMulticastInfo* mci = mci_+ i;
@@ -1105,7 +1113,7 @@ ps->bgp.dma_send_->ntarget_hosts_phase1_ = ps->bgp.dma_send_->ntarget_hosts_;
 		mci->req_in_use = false;
 		mci->cb_done.clientdata = (void*)&mci->req_in_use;
 		mci->cb_done.function = multicast_done;
-		mci->msend.registration = &protocol;
+		mci->msend.registration = &mpw->protocol;
 		mci->msend.request = &mci->request;
 		mci->msend.cb_done = mci->cb_done;
 		mci->msend.consistency = DCMF_MATCH_CONSISTENCY; //DCMF_RELAXED_CONSISTENCY; 
