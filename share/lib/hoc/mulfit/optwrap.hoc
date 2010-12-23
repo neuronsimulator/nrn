@@ -3,7 +3,7 @@ begintemplate OptimizerWrap
 external classname, mulfit_optimizers_, mulfit_optimizer_names_
 
 // public functions
-public prun, set_optimizer, save_optimizer, set_opt, optwrap_efun, showopt
+public prun, set_optimizer, save_optimizer, optwrap_efun, showopt
 // public variables
 public saveflag, start, nquad, wfile, optimizer, opt_index, minerr, nefun, time
 
@@ -22,20 +22,13 @@ proc init() {
 	e = 0
 }
 
-// just for use when restoring from save
 proc set_optimizer() {
-	optimizer = $o1
-	classname($o1, tstr)
-	for i=0, mulfit_optimizers_.count-1 {
-		if (!strcmp(mulfit_optimizers_.object(i).s, tstr)) {
-			set_opt(i)
-		}
-	}
-}
-
-proc set_opt() {
-	opt_index = $1
-	sprint(tstr, "optimizer = new %s(pf)", mulfit_optimizers_.object(opt_index).s)
+    for i=0, mulfit_optimizers_.count-1 { // need to know index too
+		if (!strcmp(mulfit_optimizers_.object(i).s, $s1)) {
+			opt_index = i
+	    }
+    }
+	sprint(tstr, "optimizer = new %s(pf)", $s1)
 	execute(tstr, this)
 }
 
@@ -91,7 +84,7 @@ proc save_optimizer() { localobj vbox
 	vbox = $o1
 	classname(optimizer, opt_class)
 	// set the optimizer than let it save itself
-	sprint(tstr, "opt.set_optimizer(new %s(p.pf))", mulfit_optimizers_.object(opt_index).s)
+	sprint(tstr, "opt.set_optimizer(\"%s\")", mulfit_optimizers_.object(opt_index).s)
 	vbox.save(tstr)
 	vbox.save("{object_push(opt.optimizer)}")	
 	vbox.save("{")	

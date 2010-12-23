@@ -19,7 +19,7 @@ proc init() {
 	title = "Unnamed multiple run protocol"
 	p = new ParmFitnessGui(new ParmFitness(title),this)
 	opt = new OptimizerWrap(p.pf)
-	opt.set_optimizer(new MulfitPraxWrap(p.pf))
+	opt.set_optimizer("MulfitPraxWrap")
 	if (numarg() == 0) {
 		build()
 		map()

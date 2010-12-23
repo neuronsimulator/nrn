@@ -524,7 +524,7 @@ proc partest_efun() {
 	
 
 proc showopt() {
-	mulfit.opt.set_opt($1)
+	mulfit.opt.set_optimizer(mulfit_optimizers_.object($1).s)
 	mulfit.showopt()
 }
 
