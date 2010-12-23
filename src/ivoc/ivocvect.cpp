@@ -1929,18 +1929,20 @@ static Object** v_indgen(void* v)
     if (ifarg(3)) {
       start = *getarg(1);
       end = *getarg(2);
-      step = chkarg(3,EPSILON,end-start);
+      step = chkarg(3,Math::min(start-end,end-start),Math::max(start-end,end-start));
       double xn = floor((end-start)/step + EPSILON)+1.;
       if (xn > dmaxint_) {
 	hoc_execerror("size too large", 0);
+      } else if (xn < 0) {
+	hoc_execerror("empty set", 0);
       }
       n = int(xn);
       if (n != x->capacity()) x->resize(n);
     } else if (ifarg(2)) {
     	start = *getarg(1);
-    	step = chkarg(2,EPSILON,dmaxint_);
+    	step = chkarg(2,-dmaxint_,dmaxint_);
     } else {
-      step = chkarg(1,EPSILON,dmaxint_);
+      step = chkarg(1,-dmaxint_,dmaxint_);
     }
   }
   for (int i=0;i<n;i++) {
