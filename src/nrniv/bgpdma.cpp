@@ -1501,15 +1501,21 @@ int ncs_bgp_mindelays( int **srchost, double **delays )
 
 #if TWOPHASE
 
+// try isaac64 as the following for 64K cores shows more work on host 0
+// relative to average
 //from http://en.wikipedia.org/wiki/Random_number_generation
-static unsigned int m_w;    /* must not be zero */
-static unsigned int m_z;    /* must not be zero */
- 
+//static unsigned int m_w;    /* must not be zero */
+//static unsigned int m_z;    /* must not be zero */
+#include <nrnisaac.h>
+static void* ranstate;
+
+
 static unsigned int get_random()
 {
-	m_z = 36969 * (m_z & 65535) + (m_z >> 16);
-	m_w = 18000 * (m_w & 65535) + (m_w >> 16);
-	return ((m_z << 16) + m_w)&0xffffff;  /* 32-bit result */
+//	m_z = 36969 * (m_z & 65535) + (m_z >> 16);
+//	m_w = 18000 * (m_w & 65535) + (m_w >> 16);
+//	return ((m_z << 16) + m_w)&0xffffff;  /* 32-bit result */
+	return nrnisaac_uint32_pick(ranstate);
 }
 
 static int specify_phase2_distribution(BGP_DMASend*, int*& indices);
@@ -1528,9 +1534,12 @@ void setup_phase2() {
 	// proper BGP_DMASend_Phase2 on the phase1 targets.
 
 	// initialize random
-	m_w = nrnmpi_myid + 1;
-	m_z = nrnmpi_myid + 1;
-
+//	m_w = nrnmpi_myid + 1;
+//	m_z = nrnmpi_myid + 1;
+	if (!ranstate) {
+		ranstate = nrnisaac_new();
+	}
+	nrnisaac_init(ranstate, nrnmpi_myid + 1);
 	// how many source cells are there on this machine
 	int ncell = 0;
 	NrnHashIterate(Gid2PreSyn, gid2out_, PreSyn*, ps) {
