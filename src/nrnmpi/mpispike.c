@@ -390,6 +390,27 @@ double nrnmpi_dbl_allreduce(double x, int type) {
 	return result;
 }
 
+void nrnmpi_dbl_allreduce_vec(double* src, double* dest, int cnt, int type) {
+	int i;
+	MPI_Op t;
+	assert(src != dest);
+	if (nrnmpi_numprocs < 2) {
+		for (i = 0; i < cnt; ++i) {
+			dest[i] = src[i];
+		}
+		return;
+	}
+	if (type == 1) {
+		t = MPI_SUM;
+	}else if (type == 2) {
+		t = MPI_MAX;
+	}else{
+		t = MPI_MIN;
+	}
+	MPI_Allreduce(src, dest, cnt, MPI_DOUBLE, t, nrnmpi_comm);
+	return;
+}
+
 void nrnmpi_dbl_allgather(double* s, double* r, int n) {
 	MPI_Allgather(s, n,  MPI_DOUBLE, r, n, MPI_DOUBLE, nrnmpi_comm);
 }
