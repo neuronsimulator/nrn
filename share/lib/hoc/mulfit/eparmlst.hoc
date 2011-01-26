@@ -601,15 +601,15 @@ proc use_action() {local i
 	pf.generatorlist.select(i)
 }
 
-proc reorder() { local i //selected upward -1, downward 1
+proc reorder() { local i  localobj tobj //selected upward -1, downward 1
 	i = pf.generatorlist.selected
 	if (i != -1 && i + $1 > -1 && i + $1 < pf.generatorlist.count) {
-		dgen()
 		tobj = pf.generatorlist.object(i)
 		pf.generatorlist.select(-1)
 		pf.generatorlist.remove(i)
 		pf.generatorlist.insrt(i+$1, tobj)
 		pf.generatorlist.select(i+$1)
+		dgen()
 	}
 }
 
