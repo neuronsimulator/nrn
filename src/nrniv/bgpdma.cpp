@@ -61,6 +61,10 @@ extern void (*nrntimeout_call)();
 // setup time with a bgp.dma_send_ so as to pass on the spike to the
 // phase2 list of target hosts.
 
+// set to 1 if you have problems with Record_Replay when some cells send
+// spikes to fewer than 4 hosts.
+#define WORK_AROUND_RECORD_BUG 0
+
 #define TWOPHASE 1
 
 #if BGPDMA & 2
@@ -306,7 +310,19 @@ void BGP_ReceiveBuffer::enqueue() {
 #if ENQUEUE == 2
 		unsigned long long tb = DCMFTIMEBASE;
 #endif
+
+#if WORK_AROUND_RECORD_BUG
+		if (!gid2in_->find(spk->gid, ps)) {
+#if ENQUEUE == 2
+			enq2_find_time_ += (unsigned long)(DCMFTIMEBASE - tb);
+#endif
+			pool_->hpfree(spk);
+			continue;
+		}
+#else
 		assert(gid2in_->find(spk->gid, ps));
+#endif
+
 #if TWOPHASE
 		if (use_phase2_ && ps->bgp.dma_send_phase2_) {
 			// cannot do directly because busy_;
@@ -687,9 +703,20 @@ BGP_DMASend_Phase2::~BGP_DMASend_Phase2() {
 
 static	int isend;
 
+// helps debugging when core dump since otherwise cannot tell where
+// BGP_DMASend::send fails
+#if 0
+static void mymulticast(DCMF_Multicast_t* arg) {
+	DCMF_Multicast(arg);
+}
+static void myrestart(DCMF_Request_t* arg) {
+	DCMF_Restart(arg);
+}
+#endif
+
 void BGP_DMASend::send(int gid, double t) {
 	unsigned long long tb = DCMFTIMEBASE;
-  if (ntarget_hosts_) {
+  if (NTARGET_HOSTS_PHASE1) {
 	spk_.gid = gid;
 	spk_.spiketime = t;
 #if BGP_INTERVAL == 2
@@ -734,10 +761,18 @@ void BGP_DMASend::send(int gid, double t) {
 #if HAVE_DCMF_RECORD_REPLAY
 	if (use_dcmf_record_replay) {
 		if (mci->record) {
+#if 0
+			mymulticast(&mci->msend);
+#else
 			DCMF_Multicast(&mci->msend);
+#endif
 			mci->record = false;
 		}else{
+#if 0
+			myrestart(&mci->request);
+#else
 			DCMF_Restart(&mci->request);
+#endif
 		}
 	}else{
 #else
@@ -1003,6 +1038,36 @@ static void bgptimeout() {
 	);
 }
 
+#if WORK_AROUND_RECORD_BUG
+static void ensure_ntarget_gt_3(BGP_DMASend* bs) {
+	// work around for bug in RecordReplay
+	if (bs->ntarget_hosts_ > 3) { return; }
+	int nold = bs->ntarget_hosts_;
+	int* old = bs->target_hosts_;
+	bs->target_hosts_ = new int[4];
+	for (int i=0; i < nold; ++i) {
+		bs->target_hosts_[i] = old[i];
+	}
+	delete [] old;
+	int h = (nrnmpi_myid + 4)%nrnmpi_numprocs;
+	while (bs->ntarget_hosts_ < 4) {
+		int b = 0;
+		for (int i=0; i < bs->ntarget_hosts_; ++i) {
+			if (h == bs->target_hosts_[i]) {
+				h = (h + 4)%nrnmpi_numprocs;
+				b = 1;
+				break;
+			}
+		}
+		if (b == 0) {
+			bs->target_hosts_[bs->ntarget_hosts_++] = h;
+			h = (h + 1)%nrnmpi_numprocs;
+		}
+	}
+	bs->ntarget_hosts_phase1_ = bs->ntarget_hosts_;
+}
+#endif
+
 void bgp_dma_setup() {
 	bgpdma_cleanup();
 	if (use_bgpdma_ == 0) { return; }
@@ -1069,6 +1134,9 @@ ps->bgp.dma_send_->ntarget_hosts_phase1_ = ps->bgp.dma_send_->ntarget_hosts_;
 		NrnHashIterate(Gid2PreSyn, gid2out_, PreSyn*, ps) {
 			if (ps->output_index_ >= 0 && ps->bgp.dma_send_->ntarget_hosts_ > 0) {
 				ps->bgp.dma_send_->persist_id_ = max_persist_ids++;
+#if WORK_AROUND_RECORD_BUG
+				ensure_ntarget_gt_3(ps->bgp.dma_send_);
+#endif
 			}
 		}}}
 	}
