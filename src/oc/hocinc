@@ -1,25 +1,29 @@
-: To echo, replace - with + on command line and insert ec1
-: /local/src/master/nrn/src/oc/hocinc,v 1.1.1.1 1994/10/12 17:22:17 hines Exp
+H
+# To echo, replace - with + on command line and insert ec1
+# /local/src/master/nrn/src/oc/hocinc,v 1.1.1.1 1994/10/12 17:22:17 hines Exp
 w
-:
-: 1 extern statement/line and save - not used now
+#
+# 1 extern statement/line and save - not used now
 1i
 
-extern int tempppp, tempppp; extern double tempppp;
+extern int tempppp, tempppp; extern double tempppp; extern float tempppp;
 .
-gs/;/;\n/g
-gs/^[ 	]*extern//
-gs/^[ 	]*double/extern double/
-gs/^[ 	]*int/extern int/
-gs/^[ 	]*float/extern float/
+1,$s/;/;\
+/g
+1,$s/^[ 	]*extern//
+1,$s/^[ 	]*double/extern double/
+1,$s/^[ 	]*int/extern int/
+1,$s/^[ 	]*float/extern float/
 g/^[ 	]*$/d
 g/tempppp/d
 g/^$/d
 w temp1hoc
-:
-: eliminate extraneous statements, words, and make one variable/line
-: assume the .h file has been run through the C preprocessor
-1i.# define
+#
+# eliminate extraneous statements, words, and make one variable/line
+# assume the .h file has been run through the C preprocessor
+1i
+#define
+.
 g/#/d
 1i
 extern int tempppp, tempppp[1],tempppp[1]  	, 	 	tempppp();
@@ -28,15 +32,18 @@ extern double tempppp,tempppp[1],tempppp[1];
 extern double tempppp,tempppp[1][1],tempppp[1][1];
 extern double tempppp[1][1][1], tempppp[1][1][1];
 .
-gs/;//
-gs/extern //g
-g/^int/s/,/\nint /g
-g/^float/s/,/\nfloat /g
-g/^double/s/,/\ndouble /g
-gs/ //g
-gs/	//g
-:
-: collect types together (functions, i, i[], f, f[], d, d[], d[][], d[][][])
+1,$s/;//
+1,$s/extern //g
+g/^int/s/,/\
+int /g
+g/^float/s/,/\
+float /g
+g/^double/s/,/\
+double /g
+1,$s/ //g
+1,$s/	//g
+#
+# collect types together (functions, i, i[], f, f[], d, d[], d[][], d[][][])
 g/()/m$
 g/^int[^(]*$/m$
 g/^int.*\[/m$
@@ -46,39 +53,60 @@ g/^double[^(]*$/m$
 g/^double.*\[/m$
 g/^double.*\]\[/m$
 g/^double.*\]\[.*\[/m$
-:
-: headers for each type
-gs/^int/IN%T/
-gs/^float/FL%T/
-gs/^double/DB%L/
-gs/.*/"&", &,/
-1i.FUNCTION
-/IN%T[^(]*$/i.SCALARINT
-/\[/i.VECTORINT
-/FL%T[^(]*$/i.SCALARFLOAT
-/\[/i.VECTORFLOAT
-/DB%L/i.SCALARDOUBLE
-/\[/i.VECTORDOUBLE
-/\]\[/i.ARRAYDOUBLE
-/\]\[[^,]*\[/i.THREEDIM
-$a.END
-:
-: remove punctuation - repeat words for structure and keep array info
-gs/IN%T//g
-gs/FL%T//g
-gs/DB%L//g
-gs/()//g
+#
+# headers for each type
+1,$s/^int/IN%T/
+1,$s/^float/FL%T/
+1,$s/^double/DB%L/
+1,$s/.*/"&", &,/
+1i
+FUNCTION
+.
+w temp
+/IN%T[^(]*$/i
+SCALARINT
+.
+/\[/i
+VECTORINT
+.
+/FL%T[^(]*$/i
+SCALARFLOAT
+.
+/\[/i
+VECTORFLOAT
+.
+/DB%L/i
+SCALARDOUBLE
+.
+/\[/i
+VECTORDOUBLE
+.
+/\]\[/i
+ARRAYDOUBLE
+.
+/\]\[[^,]*\[/i
+THREEDIM
+.
+$a
+END
+.
+#
+# remove punctuation - repeat words for structure and keep array info
+1,$s/IN%T//g
+1,$s/FL%T//g
+1,$s/DB%L//g
+1,$s/()//g
 /SCALARINT/,/VECTORINT/s/, /, \&/
 /SCALARFLOAT/,/VECTORFLOAT/s/, /, \&/
 /SCALARDOUBLE/,/VECTORDOUBLE/s/, /, \&/
-gs/\[.*, /", /
-gs/\[/,  /g
-gs/\]//g
+1,$s/\[.*, /", /
+1,$s/\[/,  /g
+1,$s/\]//g
 /ARRAYDOUBLE/,/^END/s/, /, \&/
 /ARRAYDOUBLE/,/^THREEDIM/s/,  /[0][0],  /
 /^THREEDIM/,/^END/s/,  /[0][0][0],  /
-:
-: expand headers to structure definitions
+#
+# expand headers to structure definitions
 /SCALARINT/c
 0,0
 };
@@ -162,8 +190,8 @@ $a
 };
 .
 /^END/d
-:
-: cleanup
+#
+# cleanup
 g/tempppp/d
 w temp2hoc
 q

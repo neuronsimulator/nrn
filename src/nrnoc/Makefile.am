@@ -38,8 +38,8 @@ MODFILES = hh.mod feature.mod passive.mod stim.mod syn.mod \
 
 EXTRA_DIST = $(MODFILES)
 
-HOC_E = ../e_editor/hoc_e
-HOC_E_DEP = ../e_editor/hoc_e
+HOC_E = ../e_editor/hoc_ed
+HOC_E_DEP = ../e_editor/hoc_ed
 
 PTHREAD_CC=@PTHREAD_CC@
 PTHREAD_CFLAGS=@PTHREAD_CFLAGS@

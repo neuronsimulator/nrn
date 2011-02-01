@@ -509,7 +509,7 @@ AC_CONFIG_FILES([
 	src/mac/Makefile src/mswin/Makefile src/mswin/batch/Makefile
 	src/mswin/nrnsetup.nsi src/mswin/nrncygso.sh src/mswin/lib/mknrndll.mak
 	src/mswin/extra/Makefile src/mswin/rdln/Makefile
-	src/mswin/windll/Makefile src/mswin/winio/Makefile
+	src/mswin/windll/Makefile
 	src/mswin/wnrnbbs/Makefile src/mswin/lib/Makefile
 	src/mswin/bin/Makefile src/neuronmusic/Makefile src/neuronmusic/setup.py
 	share/Makefile bin/nrnoc_makefile bin/nrniv_makefile bin/nrnmech_makefile
