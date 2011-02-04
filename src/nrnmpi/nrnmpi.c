@@ -193,7 +193,7 @@ void nrnmpi_abort(int errcode) {
 
 #if NRNMPI
 void nrnmpi_subworld_size(int n) {
-	// n is the size of a subworld, nrnmpi_numprocs (pc.nhost)
+	/* n is the size of a subworld, nrnmpi_numprocs (pc.nhost) */
 	if (nrnmpi_use != 1) { return; }
 	if (nrnmpi_comm != MPI_COMM_NULL) {asrt(MPI_Comm_free(&nrnmpi_comm)); }
 	if (nrn_bbs_comm != MPI_COMM_NULL) {asrt(MPI_Comm_free(&nrn_bbs_comm)); }
@@ -202,7 +202,7 @@ void nrnmpi_subworld_size(int n) {
 	MPI_Group wg;
 	asrt(MPI_Comm_group(nrnmpi_world_comm, &wg));
 	int r = nrnmpi_myid_world;
-	// special cases
+	/* special cases */
 	if (n == 1) {
 		asrt(MPI_Group_incl(wg, 1, &r, &grp_net));
 		asrt(MPI_Comm_dup(nrnmpi_world_comm, &nrn_bbs_comm));
@@ -226,24 +226,24 @@ void nrnmpi_subworld_size(int n) {
 		}
 	}else{
 		int nw = nrnmpi_numprocs_world;
-		int nb = nw/n; // nrnmpi_numprocs_bbs
+		int nb = nw/n; /* nrnmpi_numprocs_bbs */
 		int range[3];
-		// net is contiguous
+		/* net is contiguous */
 		range[0] = r/n;
-		range[0] *= n; // first
-		range[1] = range[0] + n - 1; // last
-		range[2] = 1; // stride
+		range[0] *= n; /* first */
+		range[1] = range[0] + n - 1; /* last */
+		range[2] = 1; /* stride */
 		asrt(MPI_Group_range_incl(wg, 1, &range, &grp_net));
 		asrt(MPI_Comm_create(nrnmpi_world_comm, grp_net, &nrnmpi_comm));
 		asrt(MPI_Comm_rank(nrnmpi_comm, &nrnmpi_myid));
 		asrt(MPI_Comm_size(nrnmpi_comm, &nrnmpi_numprocs));
 
-		range[0] = 0; // first
-		range[1] = nw - n; // last
-		range[2] = n; // stride
+		range[0] = 0; /* first */
+		range[1] = nw - n; /* last */
+		range[2] = n; /* stride */
 		asrt(MPI_Group_range_incl(wg, 1, &range, &grp_bbs));
 		asrt(MPI_Comm_create(nrnmpi_world_comm, grp_bbs, &nrn_bbs_comm));
-		if (r%n == 0) { // only rank 0 of the subworlds
+		if (r%n == 0) { /* only rank 0 of the subworlds */
 			asrt(MPI_Comm_rank(nrn_bbs_comm, &nrnmpi_myid_bbs));
 			asrt(MPI_Comm_size(nrn_bbs_comm, &nrnmpi_numprocs_bbs));
 		}else{
