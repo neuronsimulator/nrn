@@ -95,7 +95,7 @@ proc showopt() {
 	xcheckbox("Running", &running, "running = !running")
 	xbutton("Stop", "stoprun = 1")
 	xbutton("Optimize", "prun()")
-	if (p.pf.pc.nhost > -1) {
+	if (p.pf.pc.nhost > 1) {
 		xbutton("|| Optimize", "paropt()")
 	}
 	xpanel()
