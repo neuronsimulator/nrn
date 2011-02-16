@@ -1209,7 +1209,7 @@ static Object** v_smhist(void* v) {
 	double *ans = (double *)calloc(2*n,(unsigned)sizeof(double));
 
 	// convolve
-	convlv(&series[0]-1,n,&gauss[0]-1,g,1,&ans[0]-1);
+	nrn_convlv(series,n,gauss,g,1,ans);
 
 	// put the answer in the vector
 	if (v1->capacity() != size) v1->resize(size);
@@ -2776,9 +2776,9 @@ static Object** v_correl(void* v) {
   for (i=0;i<v1n;++i) d1[i] = v1->elem(i);
   double *d2 = (double *)calloc(n,(unsigned)sizeof(double));
   for (i=0;i<v2n;++i) d2[i] = v2->elem(i);
-  double *ans = (double *)calloc(2*n,(unsigned)sizeof(double));
+  double *ans = (double *)calloc(n,(unsigned)sizeof(double));
 
-  correl(&d1[0]-1,&d2[0]-1,n,&ans[0]-1);
+  nrn_correl(d1, d2, n, ans);
 
   if (v3->capacity() != n) v3->resize(n);
   for (i=0;i<n;++i) v3->elem(i)=ans[i];
@@ -2825,7 +2825,7 @@ static Object** v_convlv(void* v) {
   
   double *ans = (double *)calloc(2*n,(unsigned)sizeof(double));
  
-  convlv(&data[0]-1,n,&respns[0]-1,v2n,isign,&ans[0]-1);
+  nrn_convlv(data,n,respns,v2n,isign,ans);
 
   if (v3->capacity() != n) v3->resize(n);
   for (i=0;i<n;++i) v3->elem(i)=ans[i];
@@ -2863,7 +2863,7 @@ static Object** v_spctrm(void* v) {
   for (int i=0;i<dc;++i) data[i] = v1->elem(i);
 
   if (ans->capacity() < m) ans->resize(m);
-  spctrm(&data[0], &ans->elem(0)-1, m, k);
+  nrn_spctrm(data, &ans->elem(0), m, k);
 
   free((char *)data);
 
@@ -2902,9 +2902,9 @@ static Object** v_filter(void* v) {
   
   double *ans = (double *)calloc(2*n,(unsigned)sizeof(double));
  
-  realft(&filter[0]-1,n,1);
+  nrngsl_realft(filter,n,1);
   
-  convlv(&data[0]-1,n,&filter[0]-1,v2n,1,&ans[0]-1);
+  nrn_convlv(data,n,filter,v2n,1,ans);
 
   if (v3->capacity() != n) v3->resize(n);
   for (i=0;i<n;++i) v3->elem(i)=ans[i];
@@ -2943,7 +2943,8 @@ static Object** v_fft(void* v) {
   int i;
   for (i=0;i<v1n;++i) data[i] = v1->elem(i);
 
-  realft(&data[0]-1,n,inv);
+  //realft(&data[0]-1,n,inv);
+  nrngsl_realft(data,n,inv);
 
   if (v3->capacity() != n) v3->resize(n);
   for (i=0;i<n;++i) v3->elem(i)=data[i];
