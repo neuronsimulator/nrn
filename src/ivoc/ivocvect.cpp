@@ -2942,13 +2942,15 @@ static Object** v_fft(void* v) {
   double *data = (double *)calloc(n,(unsigned)sizeof(double));
   int i;
   for (i=0;i<v1n;++i) data[i] = v1->elem(i);
-
-  //realft(&data[0]-1,n,inv);
-  nrngsl_realft(data,n,inv);
-
   if (v3->capacity() != n) v3->resize(n);
-  for (i=0;i<n;++i) v3->elem(i)=data[i];
 
+  if (inv == -1) {
+    nrn_nrc2gsl(data, &v3->elem(0), n);
+    nrngsl_realft(&v3->elem(0), n, -1);
+  }else{
+    nrngsl_realft(data, n, 1);
+    nrn_gsl2nrc(data, &v3->elem(0), n);
+  }
   free((char *)data);
  
   return v3->temp_objvar();

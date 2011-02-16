@@ -19,8 +19,7 @@
 #define myfabs fabs
 #endif
 
-static double argarg;
-#define SQUARE(a) ((argarg=(a)) == 0.0 ? 0.0 : argarg*argarg)
+#define SQUARE(a) ((x_=(a)) == 0.0 ? 0.0 : x_*x_)
 
 extern "C" {
 void hoc_execerror(const char*, const char*);
@@ -43,12 +42,39 @@ void nrngsl_realft(double* data, unsigned long n, int direction) {
   the respns function must be stored in wrap-around order 
 */
 
+/* frequency domain format copy from gsl fft to NRC fft */
+void nrn_gsl2nrc(double* x, double* y, unsigned long n) {
+	unsigned long i, n2;
+	n2 = n/2;
+	y[0] = x[0];
+	if (n < 2) { return; }
+	y[1] = x[n2];
+	for (i=1; i < n2; ++i) {
+		y[2*i] = x[i];
+		y[2*i+1] = -x[n-i];
+	}
+}
+void nrn_nrc2gsl(double* x, double* y, unsigned long n) {
+	double xn, xn2;
+	unsigned long i, n2;
+	n2 = n/2;
+	xn = n;
+	xn2 = .5*xn;
+	y[0] = x[0]*xn2;
+	if (n < 2) { return; }
+	y[n2] = x[1]*xn2;
+	for (i=1; i < n2; ++i) {
+		y[i] = x[2*i]*xn2;
+		y[n-i] = -x[2*i+1]*xn2;
+	}
+}
+
 void nrn_convlv(double* data, unsigned long n, double* respns, unsigned long m,
 	int isign, double* ans)
 {
 	// data and respns are modified.
 	unsigned long i;
-	double scl;
+	double scl, x_;
 
 	int n2 = n/2;
 	for (i=1;i<=(m-1)/2;i++) {
