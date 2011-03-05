@@ -1115,11 +1115,11 @@ func cansplit() {local i, b, x  localobj sr
 	sr = $o1.o($o2.x[$3])
 //	sr.sec print "cansplit ", secname(), " ", $3
 	if (sr.nchild == 0) { return 0 }
-	b = 1
+	b = 0
 	for i=0, sr.nchild -1 sr.child[i] {
 		x = parent_connection()
-		if (x > 0 && x < 1) {
-			b = 0
+		if (x == 0 || x == 1) {
+			b = 1
 		}
 	}
 	return b
