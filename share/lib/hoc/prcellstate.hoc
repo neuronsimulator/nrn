@@ -1,0 +1,132 @@
+// for debugging parallel and multisplit cells.
+// prcellgid(gid) is very useful when a cell's spike time is
+//   different for different numbers of hosts
+// section prcelltree(0) is very useful for multisplit debugging, But
+//   easiest if multisplit piece is identical for two runs with different
+//   results.
+// prcellall(i) is useful when diffent multisplit is different on one machine
+// prcellobj(i, cell, 0) is useful when a cell differs
+// rdcellstate(file1, file2) is useful for comparing the output of
+//   two result sets.
+
+load_file("stdlib.hoc")
+strdef mtname_, msname_, varval_
+
+
+// file will be cs$1.id.nhost
+
+// all sections
+proc prcellall() {localobj pc, sl
+	sl = new SectionList()
+	forall sl.append()
+	prcellseclist($1, sl, 0)
+}
+
+// tree containing currently accessed section
+proc prcelltree(){ localobj sl
+	sl = new SectionList()
+	sl.wholetree()
+	prcellseclist($1, sl, 0)
+}
+
+// cell specified by $1 as gid (cell must have an 'all' sectionlist)
+proc prcellgid() {localobj sl, pc
+	pc = new ParallelContext()
+	if (pc.gid_exists($1)){
+		prcellobj($1, pc.gid2cell($1), $1)
+	}
+}
+
+// cell specified by $o2 cell object (cell must have an 'all' sectionlist
+proc prcellobj() {
+	prcellseclist($1, $o2.all, $3)
+}
+
+proc prcellseclist() {localobj pc, fname, csf
+	pc = new ParallelContext()
+	fname = new String()
+	sprint(fname.s, "cs%d.%d.%d", $1, pc.id, pc.nhost)
+	csf = new File()
+	csf.wopen(fname.s)
+	prcellseclist_($o2, csf, $3)
+	csf.close
+}
+
+proc prcellseclist_() {local i, j, k, x, size localobj mt, ms, pp
+	i = 0
+	mt = new MechanismType(0)
+	forsec $o1 {
+		for (x, 0) {
+			$o2.printf("%d %d %.9g %s.v(%g)\n", $3, i, v(x), secname(), x)
+			i += 1
+			$o2.printf("%d %d %.9g area(%g)\n", $3, i, area(x), x)
+			i += 1
+			$o2.printf("%d %d %.9g ri(%g)\n", $3, i, ri(x), x)
+			i += 1
+		}
+		for j=1, mt.count-1 {
+			mt.select(j)
+			mt.selected(mtname_)
+			if (ismembrane(mtname_)) {
+				ms = new MechanismStandard(mtname_,0)
+				for k=0, ms.count-1 {
+					size = ms.name(msname_, k)
+				for (x,0) {
+sprint(varval_, "hoc_ac_ = %s(%g)", msname_, x)
+					execute(varval_)
+$o2.printf("%d %d %.9g %s(%g)\n", $3, i, hoc_ac_, msname_, x)
+						i += 1
+					}
+				}
+			}
+		}
+	}
+	mt = new MechanismType(1)
+	for j=0, mt.count-1 {
+		mt.select(j)
+		mt.selected(mtname_)
+		i = 0
+		forsec $o1 {
+			for (pp = mt.pp_begin(); object_id(pp) != 0; pp = mt.pp_next()) {
+				x = pp.get_loc()
+				pop_section()
+				ms = new MechanismStandard(mtname_,0)
+				ms.in(pp)
+				for k=0, ms.count-1 {
+					ms.name(msname_, k)
+$o2.printf("%d %d %.9g %s.%s %s %g\n", $3, i, ms.get(msname_), pp, msname_, secname(), x)
+					i += 1
+				}
+			}
+		}
+	}
+}
+
+//e.g  nrniv prcellstate.hoc -c 'rdcellstate("cs0.0.1", "cs0.0.2")'
+proc rdcellstate() {local i, g, j, val1, val2, diff, most localobj f1, f2, l1, l2, lmost1, lmost2
+	most = 0
+	lmost1 = new String()
+	lmost2 = new String()
+	l1 = new String() l2 = new String()
+	f1 = new File() f1.ropen($s1)
+	f2 = new File() f2.ropen($s2)
+	for (i=0; !f1.eof; i += 1) {
+		f1.gets(l1.s)  f2.gets(l2.s)
+		sscanf(l1.s, "%d %d %lf", &g, &j, &val1)
+		sscanf(l2.s, "%d %d %lf", &g, &j, &val2)
+		if (val1 != val2) {
+			diff = abs(val1-val2)/(abs(val1) + abs(val2))
+			printf("%g\n%s%s\n", diff, l1.s, l2.s)
+			if (most < diff) {
+				most = diff
+				lmost1.s = l1.s	
+				lmost2.s = l2.s
+			}
+		}
+	}
+	if (most > 0) {
+		printf("most: %g\n%s%s\n", most, lmost1.s,lmost2.s)
+	}
+	f1.close
+	f2.close
+}

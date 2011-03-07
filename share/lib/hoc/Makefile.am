@@ -11,7 +11,7 @@ neuronhomehoc_DATA = attshape.hoc celbild.hoc electrod.hoc \
 	vplay.hoc wingroup.hoc mkcurve.hoc netbild.hoc lincir.hoc \
 	mknrndll.hoc modlunit.hoc varmeth1.hoc atoltool.hoc \
 	mview.hoc chanbild.hoc subiter.hoc movierun.hoc import3d.hoc \
-	netparmpi.hoc loadbal.hoc binfo.hoc parcom.hoc
+	netparmpi.hoc loadbal.hoc binfo.hoc parcom.hoc prcellstate.hoc
 
 EXTRA_DIST = $(neuronhomehoc_DATA)
 
