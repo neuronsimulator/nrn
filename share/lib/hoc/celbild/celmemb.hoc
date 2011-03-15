@@ -685,14 +685,17 @@ proc set_default() {
 	}
 }
 
-proc neuroml() {local i, j, g_index, isms  localobj bm, parm, ms
-	// NeuroML is in error with regard to having group a subitem of
-	// parm instead of biomech
-	for i = 0, $o1.biomechs_.__len__() - 1 {
-		bm = $o1.biomechs_[i]
+proc neuroml() {local i, j, g_index, isms  localobj bm, parm, ms, cg
+	// NeuroML files from ModelView
+	// have group a subitem of parm instead of biomech
+	// CellBuild requires all parms of a biomech to be set for
+	// each group the biomech is in.
+    for g_index = 0, $o1.cablegroups_.__len__() - 1 {
+	cg = $o1.cablegroups_[g_index]
+	for i = 0, cg.mechs_.__len__() - 1 {
+		bm = cg.mechs_[i]
 		//print bm.name_
 		if (bm.parms_.__len__() == 0) { continue }
-		g_index = bm.parms_[0].group_index_
 		isms = 0
 		if (strcmp("Ra", bm.name_) == 0) {
 			ms = new FakeMechStan(0)
@@ -713,6 +716,7 @@ proc neuroml() {local i, j, g_index, isms  localobj bm, parm, ms
 		ms = new MStanWrap(ms, isms)
 		bild.subsets.snlist.object(g_index).ml.append(ms)
 	}
+    }
 }
 
 proc save_data() { local i, j, l, k

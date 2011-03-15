@@ -497,11 +497,17 @@ proc xmlwrite() {local proximalid, pointcount, segmentcount, sectioncount, i, j,
                             strdef comment 
                             comment = ""
                             
+			    // strip suffix
                             if  (hoc_sf_.substr(paramNameToUse, "_")>=0) {
                                 hoc_sf_.left(paramNameToUse, hoc_sf_.substr(paramNameToUse, "_"))
                             }
 
-
+if(1){ // only change g_pas
+                            if (strcmp(dparm.name,"g_pas") == 0) {
+                                paramNameToUse = "gmax" 
+                                comment = "Assuming parameter g_pas refers to passive maximum cond density"
+			    }
+}else{
                             if (strcmp(paramNameToUse,"g") == 0) {
                                 paramNameToUse = "gmax" 
                                 comment = "Assuming parameter g refers to the maximum cond density"
@@ -512,6 +518,7 @@ proc xmlwrite() {local proximalid, pointcount, segmentcount, sectioncount, i, j,
                                 paramNameToUse = "gmax"
                                 comment = "Assuming parameter gl refers to the maximum cond density"
                             }
+}
 
 
                             factor = 1

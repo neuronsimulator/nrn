@@ -6,7 +6,7 @@ objref type, sections, this, p, nil
 objref cables, points, cableid2index
 strdef filetype, tstr
 proc init() {
-	nrnpython("import rdxml")
+	nrnpython("from neuron.neuroml.rdxml import rdxml")
 	//print "Import3d_MorphML"
 	filetype = "MorphML"
 	p = new PythonObject()
@@ -16,7 +16,7 @@ proc input() {
 	type = new Vector()
 	sections = new List(1000)
 	err = 0
-	p.rdxml.rdxml($s1, this)
+	p.rdxml($s1, this)
 }
 proc parsed() {local i, j, ip, jp  localobj cab, sec, pt
 	cables = $o1.cables_

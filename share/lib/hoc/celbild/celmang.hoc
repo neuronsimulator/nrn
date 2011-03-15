@@ -283,9 +283,9 @@ proc iport() {
 
 proc neuroml() {localobj s, p
 	s = new String()
-	nrnpython("import rdxml")
+	nrnpython("from neuron.neuroml.rdxml import rdxml")
 	p = new PythonObject()
-	p.rdxml.rdxml($s1, this)
+	p.rdxml($s1, this)
 	bild.consist()
 	bild.page(5)
 	deck.flip_to(2)
