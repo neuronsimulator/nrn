@@ -985,11 +985,9 @@ void SaveState::readnet(FILE* f) {
 			case PlayRecordEventType:
 				de = PlayRecordEvent::savestate_read(f);
 				break;
-#if NRNMPI
 			case NetParEventType:
 				de = NetParEvent::savestate_read(f);
 				break;
-#endif
 			default:
 				hoc_execerror("SaveState::readnet", "Unimplemented DiscreteEvent type");
 				break;

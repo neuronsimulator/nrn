@@ -273,13 +273,13 @@ void NetParEvent::savestate_restore(double tt, NetCvode* nc){
 	if (use_compress_) {
 		t_exchange_ = t;
 	}
+#endif
 	if (ithread_ == 0) {
 		//npe_->pr("savestate_restore", tt, nc);
 		for (int i=0; i < nrn_nthread; ++i) {
 			nc->event(tt, npe_+i, nrn_threads + i);
 		}
 	}
-#endif
 }
 
 #if NRNMPI
