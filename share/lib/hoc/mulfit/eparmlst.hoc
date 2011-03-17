@@ -106,7 +106,7 @@ endtemplate GenInfo
 begintemplate ParmFitness
 public parmlist, efun, doarg_get, generatorlist, title, errval, pc
 public rfile, wfile, usegen, parmlist_use, putall, argget, randomize
-public use_parallel, save_context, declare
+public use_parallel, save_context, declare, verbose, def_parmlist_use
 external classname
 objref parmlist, generatorlist, tobj, sf, this, usegen, parmlist_use
 objref ran, pc, parmvec
@@ -120,6 +120,7 @@ func efun() {local e, i
 		tobj = parmlist_use.object(i)
 		tobj.setln($&2[i])
 		if (tobj.invalid) {
+if (verbose) printf("invalid %s low=%g val=%g high=%g\n", tobj.name, tobj.low, tobj.val,tobj.high)
 			return 1e9
 		}
 		tobj.play_one()
@@ -141,6 +142,7 @@ func parm() {local i
 		tobj = parmlist_use.object(i)
 		tobj.setln($o1.x[i])
 		if (tobj.invalid) {
+if (verbose) printf("invalid %s low=%g val=%g high=%g\n", tobj.name, tobj.low, tobj.val,tobj.high)
 			return 0
 		}
 		tobj.play_one()
@@ -250,6 +252,7 @@ proc use_parallel() {
  }
 
 proc init() {
+	verbose = 0
 	context_ = 1
 	use_parallel_ = 0
 	if (numarg() > 0) {
@@ -285,6 +288,7 @@ proc def_parmlist_use() {local i
 	for i=0, parmlist.count-1 {
 		if (parmlist.object(i).doarg) {
 			parmlist_use.append(parmlist.object(i))
+//printf("def_parmlist_use %d %s\n", i, parmlist.object(i).name)
 		}
 	}
 }
@@ -342,6 +346,7 @@ proc rfile() {local use
 		sprint(tstr1, "tobj = new %s(0)", tstr1)
 		execute(tstr1, this)
 		tobj.rfile($o1, $o2, tstr)
+//		printf("%s %s\n", tobj, tobj.title)
 		generatorlist.append(new GenInfo(tobj, $o2))
 	}
 	while (1) {
@@ -396,14 +401,14 @@ proc init() {
 	sf = new StringFunctions()
 }
 
-proc run() {
+func run() {
 	pf.putall()
 	tobj = new Vector(50)
 	pf.doarg_get(tobj)
 	if (tobj.size) {
-		pf.efun(tobj.size, &tobj.x[0])
+		return pf.efun(tobj.size, &tobj.x[0])
 	}else{
-		pf.efun(0)
+		return pf.efun(0)
 	}
 }
 
@@ -524,7 +529,7 @@ proc partest_efun() {
 	
 
 proc showopt() {
-	mulfit.opt.set_opt($1)
+	mulfit.opt.set_optimizer(mulfit_optimizers_.object($1).s)
 	mulfit.showopt()
 }
 
@@ -596,15 +601,15 @@ proc use_action() {local i
 	pf.generatorlist.select(i)
 }
 
-proc reorder() { local i //selected upward -1, downward 1
+proc reorder() { local i  localobj tobj //selected upward -1, downward 1
 	i = pf.generatorlist.selected
 	if (i != -1 && i + $1 > -1 && i + $1 < pf.generatorlist.count) {
-		dgen()
 		tobj = pf.generatorlist.object(i)
 		pf.generatorlist.select(-1)
 		pf.generatorlist.remove(i)
 		pf.generatorlist.insrt(i+$1, tobj)
 		pf.generatorlist.select(i+$1)
+		dgen()
 	}
 }
 

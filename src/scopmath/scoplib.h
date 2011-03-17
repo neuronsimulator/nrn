@@ -125,10 +125,10 @@ perstep();			/* (t, lag, period, jump_height) */
 /* Probability functions */
 
 int 
-factorial(),			/* (n) */
 setseed(),			/* (seed) */
 poisrand();			/* (mean) */
 double 
+factorial(),			/* (n) */
 scop_random(), exprand(),
 normrand(),			/* (mean, std_dev) */
 poisson(),			/* (x, mean) */

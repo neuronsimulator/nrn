@@ -289,13 +289,13 @@ void NetParEvent::savestate_restore(double tt, NetCvode* nc){
 	if (use_compress_) {
 		t_exchange_ = t;
 	}
+#endif
 	if (ithread_ == 0) {
 		//npe_->pr("savestate_restore", tt, nc);
 		for (int i=0; i < nrn_nthread; ++i) {
 			nc->event(tt, npe_+i, nrn_threads + i);
 		}
 	}
-#endif
 }
 
 #if NRNMPI
@@ -977,7 +977,11 @@ double BBS::threshold() {
 void BBS::cell() {
 	int gid = int(chkarg(1, 0., MD));
 	PreSyn* ps;
-	assert(gid2out_->find(gid, ps));
+	if (gid2out_->find(gid, ps) == 0) {
+		char buf[100];
+		sprintf(buf, "gid=%d has not been set on rank %d", gid, nrnmpi_myid);
+		hoc_execerror(buf, 0);
+	}
 	Object* ob = *hoc_objgetarg(2);
 	if (!ob || ob->ctemplate != netcon_sym_->u.ctemplate) {
 		check_obj_type(ob, "NetCon");
@@ -1059,7 +1063,11 @@ Object** BBS::gid_connect(int gid) {
 	PreSyn* ps;
 	if (gid2out_->find(gid, ps)) {
 		// the gid is owned by this machine so connect directly
-		assert(ps);
+		if (!ps) {
+			char buf[100];
+			sprintf(buf, "gid %d owned by %d but no associated cell", gid, nrnmpi_myid);
+			hoc_execerror(buf, 0);
+		}
 	}else if (gid2in_->find(gid, ps)) {
 		// the gid stub already exists
 //printf("%d connect %s from already existing %d\n", nrnmpi_myid, hoc_object_name(target), gid);

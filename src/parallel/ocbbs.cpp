@@ -43,6 +43,7 @@ extern "C" {
 #if NRNMPI
 	void nrnmpi_barrier();
 	double nrnmpi_dbl_allreduce(double, int);
+	void nrnmpi_dbl_allreduce_vec(double* src, double* dest, int cnt, int type);
 	void nrnmpi_dbl_allgather(double*, double*, int);
 	void nrnmpi_int_alltoallv(int*, int*, int*, int*, int*, int*);
 	void nrnmpi_dbl_alltoallv(double*, int*, int*, double*, int*, int*);
@@ -650,6 +651,25 @@ static double barrier(void*) {
 
 static double allreduce(void*) {
 	// type 1,2,3 sum, max, min
+    if (hoc_is_object_arg(1)) {
+	Vect* vec = vector_arg(1);
+	int n = vec->capacity();
+	if (n == 0) { return 0.0; }
+#if NRNMPI
+	if (nrnmpi_numprocs > 1) {
+		int type = (int)chkarg(2, 1, 3);
+		double* px = vector_vec(vec);
+		double* dest = new double[n];
+		nrnmpi_dbl_allreduce_vec(px, dest, n, type);
+		for (int i = 0; i < n; ++i) {
+			px[i] = dest[i];
+		}
+		delete [] dest;
+	}
+	errno = 0;
+#endif
+	return 0.;
+    }else{
 	double val = *getarg(1);
 #if NRNMPI
 	if (nrnmpi_numprocs > 1) {
@@ -659,6 +679,7 @@ static double allreduce(void*) {
 	errno = 0;
 #endif
 	return val;
+    }
 }
 
 static double allgather(void*) {

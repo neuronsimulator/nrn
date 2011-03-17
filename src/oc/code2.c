@@ -37,12 +37,53 @@ HocSymExtension* hoc_var_extra(name) char* name; {
 	}
 }
 
+Symbol* hoc_name2sym(char* name) {
+	char* buf, *cp;
+	Symbol* sym;
+	buf = emalloc(strlen(name)+1);
+	strcpy(buf, name);
+	for (cp = buf; *cp; ++cp) {
+		if (*cp == '.') {
+			*cp = '\0';
+			++cp;
+			break;
+		}
+	}
+	sym = hoc_table_lookup(buf, hoc_built_in_symlist);
+	if (!sym) {
+		sym = hoc_table_lookup(buf, hoc_top_level_symlist);
+	}
+	if (sym && *cp == '\0') {
+		free(buf);
+		return sym;
+	}else if (sym && sym->type == TEMPLATE && *cp != '\0') {
+		sym = hoc_table_lookup(cp, sym->u.template->symtable);
+		if (sym) {
+			free(buf);
+			return sym;
+		}
+	}
+	free(buf);
+	return (Symbol*)0;
+}
+
 hoc_Symbol_limits() {
 	Symbol* sym, *hoc_get_last_pointer_symbol();
 	double* hoc_pgetarg();
 
-	hoc_pgetarg(1);
-	sym = hoc_get_last_pointer_symbol();
+	if (hoc_is_str_arg(1)) {
+		char* name = gargstr(1);
+		sym = hoc_name2sym(name);
+		if (!sym) {
+			hoc_execerror("Cannot find the symbol for ", name);
+		}
+	}else{
+		hoc_pgetarg(1);
+		sym = hoc_get_last_pointer_symbol();
+		if (!sym) {
+hoc_execerror("Cannot find the symbol associated with the pointer when called from Python", "Use a string instead of pointer argument");
+		}
+	}
 	assert(sym);
 	hoc_symbol_limits(sym, *getarg(2), *getarg(3));
 	ret();
@@ -102,36 +143,6 @@ char* hoc_symbol_units(sym, units) Symbol* sym; char* units; {
 	}
 }
 
-Symbol* hoc_name2sym(char* name) {
-	char* buf, *cp;
-	Symbol* sym;
-	buf = emalloc(strlen(name)+1);
-	strcpy(buf, name);
-	for (cp = buf; *cp; ++cp) {
-		if (*cp == '.') {
-			*cp = '\0';
-			++cp;
-			break;
-		}
-	}
-	sym = hoc_table_lookup(buf, hoc_built_in_symlist);
-	if (!sym) {
-		sym = hoc_table_lookup(buf, hoc_top_level_symlist);
-	}
-	if (sym && *cp == '\0') {
-		free(buf);
-		return sym;
-	}else if (sym && sym->type == TEMPLATE && *cp != '\0') {
-		sym = hoc_table_lookup(cp, sym->u.template->symtable);
-		if (sym) {
-			free(buf);
-			return sym;
-		}
-	}
-	free(buf);
-	return (Symbol*)0;
-}
-
 hoc_Symbol_units() {
 	Symbol* sym, *hoc_get_last_pointer_symbol();
 	double* hoc_pgetarg();
@@ -150,11 +161,17 @@ hoc_Symbol_units() {
 		if (hoc_is_str_arg(1)) {
 			char* name = gargstr(1);
 			sym = hoc_name2sym(name);
+			if (!sym) {
+hoc_execerror("Cannot find the symbol for ", name);
+			}
 		}else{
 			hoc_pgetarg(1);
 			sym = hoc_get_last_pointer_symbol();
-			assert(sym);
+			if (!sym) {
+hoc_execerror("Cannot find the symbol associated with the pointer when called from Python", "Use a string instead of pointer argument");
+			}
 		}
+		assert(sym);
 		*units = (char*)0;
 		if (ifarg(2)) {
 			*units = gargstr(2);

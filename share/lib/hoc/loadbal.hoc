@@ -606,7 +606,7 @@ proc read_mcomplex() {local i, j, k, c  localobj f, s, s2, pc
 	}
 	c = f.scanvar() f.scanstr(s2.s)
 	if (strcmp(s2.s, "overhead") != 0) { execerror(s2.s, "should be overhead")}
-	while (f.gets(s.s) != -1) {
+	while (f.gets(s.s) != -1) if (hoc_sf_.substr(s.s, "_ion") != -1) {
 		sscanf(s.s, "%lf %s", &c, s2.s)
 		mt[0].select(s2.s)
 		ion_complex_.x[mt[0].selected()] = c
@@ -1115,11 +1115,11 @@ func cansplit() {local i, b, x  localobj sr
 	sr = $o1.o($o2.x[$3])
 //	sr.sec print "cansplit ", secname(), " ", $3
 	if (sr.nchild == 0) { return 0 }
-	b = 1
+	b = 0
 	for i=0, sr.nchild -1 sr.child[i] {
 		x = parent_connection()
-		if (x > 0 && x < 1) {
-			b = 0
+		if (x == 0 || x == 1) {
+			b = 1
 		}
 	}
 	return b

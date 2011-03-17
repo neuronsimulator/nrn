@@ -589,7 +589,7 @@ hoc_newobj_arg() {
 	sym = (pc++)->sym;
 	narg = (pc++)->i;
 	ob = hoc_newobj1(sym, narg);
-	ob->refcount = 0;
+	--ob->refcount; /*not necessarily 0 since init may reference 'this' */
 	hoc_pushobj(hoc_temp_objptr(ob));
 }
 
