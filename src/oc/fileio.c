@@ -9,15 +9,16 @@
 #include	"parse.h"
 #include	<setjmp.h>
 #include	<errno.h>
+#include	"nrnfilewrap.h"
 
-extern FILE		*fin;
+extern NrnFILEWrap*	fin;
 extern int		pipeflag;
 extern jmp_buf		begin;
 extern double		hoc_ac_;
 extern char* neuron_home;
 extern double chkarg();
 
-FILE	*frin;
+NrnFILEWrap	*frin;
 FILE	*fout;
 
 extern char** hoc_pgargstr();
@@ -99,17 +100,17 @@ ropen()		/* open file for reading */
 	else
 		fname = "";
 	d = 1.;
-	if (frin != stdin)
-		IGNORE(fclose(frin));
-	frin = stdin;
+	if (!nrn_fw_eq(frin, stdin))
+		IGNORE(nrn_fw_fclose(frin));
+	frin = nrn_fw_set_stdin();
 	if (fname[0] != 0) {
-		if ((frin = fopen(fname, "r")) == (FILE *)0)
+		if ((frin = nrn_fw_fopen(fname, "r")) == (NrnFILEWrap *)0)
 		{
 			char* retry;
 			retry = expand_env_var(fname);
-			if ((frin = fopen(retry, "r")) == (FILE *)0) {
+			if ((frin = nrn_fw_fopen(retry, "r")) == (NrnFILEWrap *)0) {
 				d = 0.;
-				frin = stdin;
+				frin = nrn_fw_set_stdin();
 			}
 		}
 	}
@@ -228,7 +229,7 @@ int hoc_xopen1(fname, rcs)	/* read and execute a hoc program */
 	char* fname;
 	char* rcs;
 {
-	FILE *savfin;
+	NrnFILEWrap *savfin;
 	int savpipflag, save_lineno;
 	char st[200];
 	extern hoc_lineno;
@@ -260,16 +261,16 @@ int hoc_xopen1(fname, rcs)	/* read and execute a hoc program */
 #endif 
 	   errno = 0; 
 #if MAC
-	   if ((fin = fopen(fname, "rb")) == NULL) {
+	   if ((fin = nrn_fw_fopen(fname, "rb")) == NULL) {
 #else
-	   if ((fin = fopen(fname, "r")) == NULL) {
+	   if ((fin = nrn_fw_fopen(fname, "r")) == NULL) {
 #endif
 		char* retry;
 		fname = retry = expand_env_var(fname);
 #if MAC
-		if ((fin = fopen(retry, "rb")) == NULL) {
+		if ((fin = nrn_fw_fopen(retry, "rb")) == NULL) {
 #else
-		if ((fin = fopen(retry, "r")) == NULL) {
+		if ((fin = nrn_fw_fopen(retry, "r")) == NULL) {
 #endif
 			fin = savfin;
 			pipeflag = savpipflag;
@@ -288,9 +289,10 @@ int hoc_xopen1(fname, rcs)	/* read and execute a hoc program */
 		hoc_audit_from_xopen1(fname, rcs);
 		IGNORE(hoc_xopen_run((Symbol *)0, (char *)0));
 	}
-	if (fin && fin != stdin)
- 		ERRCHK(IGNORE(fclose(fin));)
-	fin = savfin;		
+	if (fin && !nrn_fw_eq(fin,stdin)) {
+ 		ERRCHK(IGNORE(nrn_fw_fclose(fin));)
+	}
+	fin = savfin;
 	pipeflag = savpipflag;
 	if (fname == st) {
 		unlink(st);
@@ -350,14 +352,12 @@ hoc_Sprint()    /* sprintf function */
 	pushx(1.);
 }
 
-double hoc_scan(fi)
-	FILE* fi;
-{
+double hoc_scan(NrnFILEWrap* fi) {
 	double d;
 	char fs[256];
 
 	for(;;) {
-		if (fscanf(fi, "%255s", fs) == EOF) {
+		if (nrn_fw_fscanf(fi, "%255s", fs) == EOF) {
 			execerror("EOF in fscan", (char *)0);
 		}
 		if (fs[0] == 'i' || fs[0] == 'n' || fs[0] == 'I' || fs[0] == 'N') {
@@ -365,7 +365,7 @@ double hoc_scan(fi)
 		}
 		if (sscanf(fs, "%lf", &d) == 1) {
 			/* but if at end of line, leave at beginning of next*/
-			fscanf(fi, "\n");
+			nrn_fw_fscanf(fi, "\n");
 			break;
 		}
 	}
@@ -376,9 +376,9 @@ int
 Fscan()		/* read a number from input file */
 {
 	double d;
-	FILE *fi;
+	NrnFILEWrap *fi;
 
-	if (frin == stdin) {
+	if (nrn_fw_eq(frin, stdin)) {
 		fi = fin;
 	}else{
 		fi = frin;
@@ -393,9 +393,9 @@ hoc_Getstr()	/* read a line (or word) from input file */
 {
 	char* buf;
 	char **cpp;
-	FILE* fi;	
+	NrnFILEWrap* fi;
 	int word = 0;
-	if (frin == stdin) {
+	if (nrn_fw_eq(frin, stdin)) {
 		fi = fin;
 	}else{
 		fi = frin;
@@ -406,7 +406,7 @@ hoc_Getstr()	/* read a line (or word) from input file */
 	}
 	if (word) {
 		buf = hoc_tmpbuf->buf;
-		if(fscanf(fi, "%s", buf) != 1) {
+		if(nrn_fw_fscanf(fi, "%s", buf) != 1) {
 			execerror("EOF in getstr", (char*)0);
 		}
 	}else{

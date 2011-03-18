@@ -7,10 +7,10 @@
 #include	<stdio.h>
 #include <stdlib.h>
 #include	<errno.h>
+#include "nrnfilewrap.h"
 
 int units_on_flag_;
 
-extern FILE *fin;
 extern char **gargv;
 extern int gargc;
 extern double chkarg();
@@ -469,6 +469,7 @@ hoc_execerror("Internal error in System(): can't open", stdoutfile);
 		hocstr_delete(st);
 		IGNORE(unlink(stdoutfile));
 	} else if (ifarg(2)) {
+		NrnFILEWrap* fpw;
 		extern HocStr* hoc_tmpbuf;
 		HocStr* line;
 		int i;
@@ -479,7 +480,8 @@ hoc_execerror("Internal error in System(): can't open", stdoutfile);
 		line = hocstr_create(1000);
 		i = 0;
 		hoc_tmpbuf->buf[0] = '\0';
-		while (fgets_unlimited(line, fp)) {
+		fpw = nrn_fw_wrap(fp);
+		while (fgets_unlimited(line, fpw)) {
 			i += strlen(line->buf);
 			if (hoc_tmpbuf->size <= i) {
 				hocstr_resize(hoc_tmpbuf, 2*hoc_tmpbuf->size);
@@ -488,6 +490,7 @@ hoc_execerror("Internal error in System(): can't open", stdoutfile);
 		}
 		hocstr_delete(line);
 		d = (double)pclose(fp);
+		nrn_fw_delete(fpw);
 		hoc_assign_str(hoc_pgargstr(2), hoc_tmpbuf->buf);
 	} else {
 		d = (double) system(gargstr(1));

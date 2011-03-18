@@ -11,6 +11,7 @@
 #include "parse.h"
 #include "nrnmpi.h"
 #include "nrnrt.h"
+#include "nrnfilewrap.h"
 #if defined(__GO32__)
 #include <dos.h>
 #include <go32.h>
@@ -148,7 +149,11 @@ extern int hoc_print_first_instance;
 #define EPS hoc_epsilon
 extern double EPS;
 extern arayinstal();
-FILE	*fin;				/* input file pointer */
+/*
+used to be a FILE* but had fopen problems when 128K cores on BG/P
+tried to fopen the same file for reading at once.
+*/
+NrnFILEWrap	*fin;				/* input file pointer */
 
 #include <ctype.h>
 char	*progname;	/* for error messages */
@@ -623,7 +628,7 @@ execerror(s, t)	/* recover from run-time error */
 	}
 	hoc_execerror_messages = 1;
 	if (pipeflag == 0)
-		IGNORE(fseek(fin, 0L, 2));	/* flush rest of file */
+		IGNORE(nrn_fw_fseek(fin, 0L, 2));	/* flush rest of file */
 	hoc_oop_initaftererror();
 #if defined(WIN32) && !defined(CYGWIN)
 		hoc_win_normal_cursor();
@@ -706,7 +711,7 @@ int nrn_istty_;
 hoc_main1_init(pname, envp)
 	char *pname, **envp;
 {
-	extern FILE	*frin;
+	extern NrnFILEWrap *frin;
 	extern FILE	*fout;
 	static int inited = 0;
 	
@@ -734,7 +739,7 @@ hoc_main1_init(pname, envp)
 	hoc_cbufstr = hocstr_create(CBUFSIZE);
 	cbuf = hoc_cbufstr->buf;
 	ctp = cbuf;
-	frin = stdin;
+	frin = nrn_fw_set_stdin();
 	fout = stdout;
 	if (!parallel_sub) {
 	    if (!nrn_is_cable()) {
@@ -769,44 +774,10 @@ HocStr* hocstr_create(size) int size; {
 	return hs;
 }
 
-static CHAR* fgets_unlimited_nltrans();
+static CHAR* fgets_unlimited_nltrans(HocStr* s, NrnFILEWrap* f, int nltrans);
 
-char* fgets_unlimited(HocStr* s, FILE* f) {
-#if 1
+char* fgets_unlimited(HocStr* s, NrnFILEWrap* f) {
 	return fgets_unlimited_nltrans(s, f, 0);
-#else
-	int c, i, n;
-	i = 0;
-	n = s->size - 1;
-	while ((c = getc(f)) != EOF) {
-#if MAC
-		if (c == '\r') {
-			c = getc(f);
-			if (c != '\n') {
-				ungetc(c, f);
-				c = '\n';
-			}
-		}
-#endif
-		s->buf[i++] = c;
-		if (i == n) {
-			n = (n+1)*2 - 1;
-/*printf("fgets_unlimited resize to %d\n", n+1);*/
-			hocstr_resize(s, n+1);
-		}
-		if (c == '\n') {
-			break;
-			s->buf[i] = '\0';
-			return s->buf;
-		}
-	}
-	if (i == 0) {
-		return (char*)0;
-	}
-	s->buf[i] = '\n';
-	s->buf[i++] = '\0';
-	return s->buf;
-#endif
 }
 
 void hocstr_delete(hs) HocStr* hs; {
@@ -1043,7 +1014,7 @@ moreinput()
 #else
 	if (gargc == 0) {
 #endif
-		fin = stdin;
+		fin = nrn_fw_set_stdin();
 		infile = 0;
 		hoc_xopen_file_[0] = 0;
 #if defined(USE_PYTHON)
@@ -1055,7 +1026,7 @@ moreinput()
 #endif
 #if MAC
 	if (gargc == 0) {
-		fin = stdin;
+		fin = nrn_fw_set_stdin();
 		infile = 0;
 		hoc_xopen_file_[0] = 0;
 #if defined(USE_PYTHON)
@@ -1065,10 +1036,10 @@ moreinput()
 #endif
 	}
 #endif
-	if (fin && fin != stdin) {
-		IGNORE(fclose(fin));
+	if (fin && !nrn_fw_eq(fin, stdin)) {
+		IGNORE(nrn_fw_fclose(fin));
 	}
-	fin = stdin;
+	fin = nrn_fw_set_stdin();
 	infile = 0;
 	hoc_xopen_file_[0] = 0;
 	if (gargc-- <= 0) {
@@ -1107,7 +1078,7 @@ with the hoc interpreter.
 	}
 #endif
 	if (strcmp(infile, "-") == 0) {
-		fin = stdin;
+		fin = nrn_fw_set_stdin();
 		infile = 0;
 		hoc_xopen_file_[0] = 0;
 	} else if (strcmp(infile, "-parallel") == 0) {
@@ -1127,7 +1098,7 @@ with the hoc interpreter.
 		sprintf(hs->buf, "%s\n", infile);
 		/* now infile is a hoc statement */
 		hpfi = hoc_print_first_instance;
-		fin = (FILE*)0;
+		fin = (NrnFILEWrap*)0;
 		hoc_print_first_instance = 0;
 		err = hoc_oc(hs->buf);
 		hoc_print_first_instance = hpfi;
@@ -1142,11 +1113,14 @@ with the hoc interpreter.
 		}
 		(*p_nrnpy_pyrun)(infile);
 		return moreinput();
-	} else if ((fin=fopen(infile, "r")) == NULL) {
+	} else if ((fin=nrn_fw_fopen(infile, "r")) == (NrnFILEWrap*)0) {
 #if OCSMALL
 hoc_menu_cleanup();
 #endif
-		Fprintf(stderr, "%s: can't open %s\n", progname, infile);
+		Fprintf(stderr, "%d %s: can't open %s\n", nrnmpi_myid_world, progname, infile);
+		if (nrnmpi_numprocs_world > 1) {
+			nrnmpi_abort(-1);
+		}
 		return moreinput();
 	}
 	if (infile) {
@@ -1210,7 +1184,7 @@ hoc_run1()	/* execute until EOF */
 		pipeflag=0;
 	}
 #if defined(WIN32) && !defined(CYGWIN)
-	if (fin != stdin) {
+	if (!nrn_fw_eq(fin, stdin)) {
 		hoc_win_wait_cursor();
 	}
 #endif
@@ -1370,7 +1344,7 @@ warning(s, t)	/* print warning message */
 
 int
 Getc(fp)
-	FILE *fp;
+	NrnFILEWrap *fp;
 {
 	/*ARGSUSED*/
 	if (*ctp) {
@@ -1381,7 +1355,7 @@ Getc(fp)
 #if 0
 /* don't allow parser to block. Actually partial statements were never
 allowed anyway */
-	if (!pipeflag && fp == stdin) {
+	if (!pipeflag && nrn_fw_eq(fp,stdin)) {
 		eos = 1;
 		return 0;
 	}
@@ -1395,7 +1369,7 @@ allowed anyway */
 
 unGetc(c, fp)
 	int c;
-	FILE *fp;
+	NrnFILEWrap *fp;
 {
 	/*ARGSUSED*/
 	if (c != EOF && c && ctp != cbuf) {
@@ -1515,32 +1489,29 @@ static int event_hook() {
    for unix and mac this allows files created on any machine to be
    read on any machine
 */
-CHAR* hoc_fgets_unlimited(bufstr, f) HocStr* bufstr; FILE* f; {
+CHAR* hoc_fgets_unlimited(HocStr* bufstr, NrnFILEWrap* f) {
 	return fgets_unlimited_nltrans(bufstr, f, 1);
 }
 
-static CHAR* fgets_unlimited_nltrans(bufstr, f, nltrans)
-    HocStr* bufstr; FILE* f;
-    int nltrans;
-{
+static CHAR* fgets_unlimited_nltrans(HocStr* bufstr, NrnFILEWrap* f, int nltrans) {
 	int c, i;
 	int nl1, nl2;
 	if (nltrans) { nl1 = 26; nl2 = 4;}else{nl1 = nl2 = EOF;}
 	for(i=0;; ++ i) {
-		c = getc(f);
+		c = nrn_fw_getc(f);
 		if (c == EOF || c == nl1 || c == nl2) { /* ^Z and ^D are end of file */
 			/* some editors don't put a newline at last line */
 			if ( i > 0) {
-				ungetc(c, f);
+				nrn_fw_ungetc(c, f);
 				c = '\n';
 			}else{
 				break;
 			}
 		}
 		if (c == '\r') {
-			int c2 = getc(f);
+			int c2 = nrn_fw_getc(f);
 			if (c2 != '\n') {
-				ungetc(c2, f);
+				nrn_fw_ungetc(c2, f);
 			}
 			c = '\n';
 		}
@@ -1574,7 +1545,7 @@ int hoc_get_line(){ /* supports re-entry. fill cbuf with next line */
 			return EOF;
 		}
 	}else{
-		if (fin == stdin && hoc_interviews && !hoc_in_yyparse) {
+		if (nrn_fw_wrap(fin, stdin) && hoc_interviews && !hoc_in_yyparse) {
 		#if MAC
 			for(;;){
 				extern CHAR* hoc_console_buffer;
@@ -1617,7 +1588,7 @@ int hoc_get_line(){ /* supports re-entry. fill cbuf with next line */
 		}
 	}else{
 #if READLINE
-		if (fin == stdin && nrn_istty_) { char *line, *readline(); int n;
+		if (nrn_fw_eq(fin, stdin) && nrn_istty_) { char *line, *readline(); int n;
 #if INTERVIEWS
 			if (hoc_interviews && !hoc_in_yyparse) {
 				rl_event_hook = event_hook;
@@ -1654,12 +1625,12 @@ int hoc_get_line(){ /* supports re-entry. fill cbuf with next line */
 		}
 #else
 #if INTERVIEWS
-		if (fin == stdin && hoc_interviews && !hoc_in_yyparse) {
+		if (nrn_fw_eq(fin, stdin) && hoc_interviews && !hoc_in_yyparse) {
 			run_til_stdin());
 		}
 #endif
 #if defined(WIN32)
-		if (fin == stdin) {
+		if (nrn_fw_eq(fin, stdin)) {
 			if (gets(cbuf) == (char*)0) {
 /*DebugMessage("gets returned NULL\n");*/
 				return EOF;

@@ -26,6 +26,7 @@
 #include "oc2iv.h"
 #include "classreg.h"
 #include "ocfile.h"
+#include "nrnfilewrap.h"
 
 extern char* ivoc_get_temp_file();
 static int ivoc_unlink(const char*);
@@ -123,7 +124,14 @@ static double f_gets(void* v) {
 	OcFile* f = (OcFile*)v;
 	char** pbuf = hoc_pgargstr(1);
 	char* buf;
-	if ((buf = fgets_unlimited(hoc_tmpbuf, f->file())) != 0) {
+#if USE_NRNFILEWRAP
+	NrnFILEWrap nfw, *fw;
+	nfw.f = f->file();
+	fw = &nfw;
+#else
+	FILE* fw = f->file();
+#endif
+	if ((buf = fgets_unlimited(hoc_tmpbuf, fw)) != 0) {
 		hoc_assign_str(pbuf, buf);
 		return double(strlen(buf));
 	}else{
