@@ -52,7 +52,7 @@ pkginclude_HEADERS = hoc.h hoclist.h hocdec.h hocassrt.h nrnisaac.h \
 ## to be installed:
 noinst_HEADERS = code.h equation.h hocmodl.h hocstr.h \
 	profile.h redef.h parse.h mcran4.h nrnmpi.h nrnrt.h isaac64.h \
-	nrnfilewrap.h
+	nrnfilewrap.h nrn_vsscanf.c
 
 ## files that depend on the existence of parse.h
 ## this allows parallel make -j to work at the beginning when parse.h

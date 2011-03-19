@@ -16,7 +16,8 @@ extern "C" {
 
 typedef struct NrnFILEWrap {
 	FILE* f;
-	void* mf;
+	unsigned char* buf;
+	size_t ip, cnt;
 } NrnFILEWrap;
 
 extern char* fgets_unlimited(HocStr* s, NrnFILEWrap* f);
