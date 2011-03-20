@@ -1,10 +1,14 @@
 #ifndef nrnfilewrap_h
 #define nrnfilewrap_h
 
-#define USE_NRNFILEWRAP 1
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <nrnmpiuse.h>
+
+#if !defined(USE_NRNFILEWRAP)
+#define USE_NRNFILEWRAP 0
+#endif
 
 #if defined(__cplusplus)
 extern "C" {

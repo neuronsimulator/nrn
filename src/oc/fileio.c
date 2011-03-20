@@ -352,7 +352,29 @@ hoc_Sprint()    /* sprintf function */
 	pushx(1.);
 }
 
-double hoc_scan(NrnFILEWrap* fi) {
+double hoc_scan(fi)
+	FILE* fi;
+{
+	double d;
+	char fs[256];
+
+	for(;;) {
+		if (fscanf(fi, "%255s", fs) == EOF) {
+			execerror("EOF in fscan", (char *)0);
+		}
+		if (fs[0] == 'i' || fs[0] == 'n' || fs[0] == 'I' || fs[0] == 'N') {
+			 continue;
+		}
+		if (sscanf(fs, "%lf", &d) == 1) {
+			/* but if at end of line, leave at beginning of next*/
+			fscanf(fi, "\n");
+			break;
+		}
+	}
+	return d;
+}
+
+double hoc_fw_scan(NrnFILEWrap* fi) {
 	double d;
 	char fs[256];
 
@@ -383,7 +405,7 @@ Fscan()		/* read a number from input file */
 	}else{
 		fi = frin;
 	}
-	d = hoc_scan(fi);
+	d = hoc_fw_scan(fi);
 	ret();
 	pushx(d);
 }

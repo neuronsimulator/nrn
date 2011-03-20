@@ -20,7 +20,7 @@ broadcast to all the other ranks.
 #include "nrnmpi.h"
 #include "nrnfilewrap.h"
 
-int nrn_fw_thresh_;
+extern int nrn_xopen_broadcast_;
 
 #if USE_NRNFILEWRAP /* to end of file */
 
@@ -65,7 +65,7 @@ NrnFILEWrap* nrn_fw_set_stdin(){
 NrnFILEWrap* nrn_fw_fopen(const char* path, const char* mode){
 	NrnFILEWrap* fw = (NrnFILEWrap*)0;
 	FILE* f;
-	if (nrn_fw_thresh_ >= nrnmpi_numprocs) {
+	if (nrn_xopen_broadcast_ == 0 || nrn_xopen_broadcast_ > nrnmpi_numprocs) {
 		f = fopen(path, mode);
 		if (f) {
 			fw = nrn_fw_wrap(f);

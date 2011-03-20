@@ -84,6 +84,9 @@ AC_HELP_STRING([--with-multisend=allreplay],[Allow ISend or BGP style dma, and w
 		use_bgpdma=no
 		NRN_DEFINE(BGPDMA,0,[Define bits for BGPDMA & 1 (ISend) & 2 (DMA spike transfer) & 4 (DMA Record Replay)])
 	fi
+	if test "$use_bgpdma" = "yes" ; then
+		NRN_DEFINE(USE_NRNFILEWRAP,1,[Define to allow possibility of rank 0 read file into buffer and broadcast to all ranks.])
+	fi
 ],[
 	use_bgpdma=no
 ])

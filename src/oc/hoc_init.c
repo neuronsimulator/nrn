@@ -282,6 +282,7 @@ double hoc_default_dll_loaded_;
 char* neuron_home;
 char* nrn_mech_dll; /* but actually only for NEURON mswin and linux */
 int use_mcell_ran4_;
+int nrn_xopen_broadcast_;
 
 init()	/* install constants and built-ins table */
 {
@@ -289,6 +290,7 @@ init()	/* install constants and built-ins table */
 	Symbol *s;
 
 	use_mcell_ran4_ = 0;
+	nrn_xopen_broadcast_ = (1<<30);
 	hoc_init_space();
 	for (i = 0; keywords[i].name; i++)
 		IGNORE(install(keywords[i].name, keywords[i].kval, 0.0, &symlist));
@@ -331,6 +333,11 @@ init()	/* install constants and built-ins table */
 	hoc_install_var("hoc_cross_x_", &hoc_cross_x_);
 	hoc_install_var("hoc_cross_y_", &hoc_cross_y_);
 	hoc_install_var("default_dll_loaded_", &hoc_default_dll_loaded_);
+
+	s = install("xopen_broadcast_", UNDEF, 0.0, &hoc_symlist);
+	s->type = VAR;
+	s->subtype = USERINT;
+	s->u.pvalint = &nrn_xopen_broadcast_;
 
 	/* initialize pointers ( why doesn't Vax do this?) */
 	hoc_access = (int *)0;
