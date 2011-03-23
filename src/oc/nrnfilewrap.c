@@ -76,6 +76,23 @@ NrnFILEWrap* nrn_fw_fopen(const char* path, const char* mode){
 	return fw;
 }
 
+int nrn_fw_readaccess(const char* path) {
+	int r;
+	if (nrn_xopen_broadcast_ == 0 || nrn_xopen_broadcast_ > nrnmpi_numprocs) {
+		r = access(path, R_OK);
+	} else {
+		if ( nrnmpi_myid == 0) {
+			r = access(path, R_OK);
+#if 0
+			printf("access %s %d\n", path, r);
+#endif
+		}
+		nrnmpi_int_broadcast(&r, 1, 0);
+	}
+	r = ((r == 0) ? 1 : 0);
+	return r;
+}
+
 int nrn_fw_fseek(NrnFILEWrap* fw, long offset, int whence){
 	int r = 0;
 	int e = 0;
@@ -163,6 +180,9 @@ NrnFILEWrap* nrn_fw_read(const char* path, const char* mode){
 				assert(fread(buf, 1, sz, f) == sz);
 			}
 			fclose(f);
+#if 1
+			printf("load %s %d\n", path, isz);
+#endif
 		}
 	}
 	if (nrnmpi_numprocs > 1) {

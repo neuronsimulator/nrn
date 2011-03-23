@@ -35,6 +35,7 @@ extern int nrn_fw_fseek(NrnFILEWrap* fw, long offset, int whence);
 extern int nrn_fw_getc(NrnFILEWrap* fw);
 extern int nrn_fw_ungetc(int c, NrnFILEWrap* fw);
 extern int nrn_fw_fscanf(NrnFILEWrap* fw, const char* format, ...);
+extern int nrn_fw_readaccess(const char* path);
 
 #else /* not USE_NRNFILEWRAP */
 

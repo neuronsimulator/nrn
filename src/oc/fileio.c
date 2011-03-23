@@ -669,7 +669,11 @@ hoc_Load_file(always, name) int always; char* name; {
 	char expname[512];
 	char *base;
 	char path[1000], old[1000], fname[1000], cmd[200];
+#if USE_NRNFILEWRAP
+	int f;	
+#else
 	FILE* f;
+#endif
 
 	old[0] = '\0';
 	goback = 0;
@@ -695,12 +699,20 @@ hoc_Load_file(always, name) int always; char* name; {
 		strncpy(path, name, base-name);
 		path[base-name] = '\0';
 		++base;
+#if USE_NRNFILEWRAP
+		f = nrn_fw_readaccess(name);
+#else
 		f = fopen(name, "r");
+#endif
 	}else{
 		base = name;
 		path[0] = '\0';
 		/* otherwise find the file in the default directories */
+#if USE_NRNFILEWRAP
+		f = nrn_fw_readaccess(base);
+#else
 		f = fopen(base, "r"); /* cwd */
+#endif
 #if !MAC
 		if (!f) { /* try HOC_LIBRARY_PATH */
 			int i;
@@ -723,7 +735,11 @@ hoc_Load_file(always, name) int always; char* name; {
 				}
 				if (path[0]) {
 					sprintf(fname, "%s/%s", path, base);
+#if USE_NRNFILEWRAP
+					f = nrn_fw_readaccess(expand_env_var(fname));
+#else
 					f = fopen(expand_env_var(fname), "r");
+#endif
 					if (f) {
 						break;
 					}
@@ -736,7 +752,11 @@ hoc_Load_file(always, name) int always; char* name; {
 		if (!f) { /* try NEURONHOME/lib/hoc */
 			sprintf(path, "$(NEURONHOME)/lib/hoc");
 			sprintf(fname, "%s/%s", path, base);
+#if USE_NRNFILEWRAP
+			f = nrn_fw_readaccess(expand_env_var(fname));
+#else
 			f = fopen(expand_env_var(fname), "r");
+#endif
 		}
 	}
 	/* add the name to the list of loaded packages */
@@ -744,7 +764,9 @@ hoc_Load_file(always, name) int always; char* name; {
 		if (!is_loaded) {
 			hoc_l_lappendstr(loaded, name);
 		}
+#if USE_NRNFILEWRAP == 0
 		fclose(f);
+#endif
 		b = 1;
 	}else{
 		b = 0;

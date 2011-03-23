@@ -290,7 +290,7 @@ init()	/* install constants and built-ins table */
 	Symbol *s;
 
 	use_mcell_ran4_ = 0;
-	nrn_xopen_broadcast_ = (1<<30);
+	nrn_xopen_broadcast_ = 255;
 	hoc_init_space();
 	for (i = 0; keywords[i].name; i++)
 		IGNORE(install(keywords[i].name, keywords[i].kval, 0.0, &symlist));
