@@ -169,7 +169,7 @@ static void call(Symbol* s, Node* nd, Prop* p) {
 	nrn_popsec();
 }
 
-static void initial(Memb_list* ml, int type) {
+static void initial(void* nt, Memb_list* ml, int type) {
 	HocMech* hm = (HocMech*)memb_func[type].hoc_mech;
 	int i, cnt = ml->nodecount;
 	for (i=0; i < cnt; ++i) {
@@ -177,7 +177,7 @@ static void initial(Memb_list* ml, int type) {
 	}
 }
 
-static void after_step(Memb_list* ml, int type) {
+static void after_step(void* nt, Memb_list* ml, int type) {
 	HocMech* hm = (HocMech*)memb_func[type].hoc_mech;
 	int i, cnt = ml->nodecount;
 	for (i=0; i < cnt; ++i) {
