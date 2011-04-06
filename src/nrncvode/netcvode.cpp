@@ -4429,7 +4429,7 @@ void NetCvode::presyn_disconnect(PreSyn* ps) {
 		ps->thvar_ = nil;
 	}
 	if (gcv_) {
-		for (int it = 0; it < nrn_nthread; ++it) {
+		for (int it = 0; it < gcv_->nctd_; ++it) {
 			PreSynList* psl = gcv_->ctd_[it].psl_th_;
 			if (psl) for (int j = 0; j < psl->count(); ++j) {
 				if (psl->item(j) == ps) {

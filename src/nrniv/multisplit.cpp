@@ -1242,6 +1242,7 @@ for (i=0; i < nt; ++i) {
 		delete [] od;
 		delete [] iod;
 		ix = m.nd_rt_index_ + m.nnode_rt_;
+		ixth = m.nd_rt_index_th_;
 		od = m.offdiag_ + m.nnode_rt_;
 		iod = m.ioffdiag_ + m.nnode_rt_;
 	}else{
