@@ -1143,7 +1143,7 @@ ps->bgp.dma_send_->ntarget_hosts_phase1_ = ps->bgp.dma_send_->ntarget_hosts_;
 	if (max_persist_ids > 0) { // may want to check for too many as well
 		mconfig->protocol = DCMF_MEMFIFO_MCAST_RECORD_REPLAY_PROTOCOL;
 		mconfig->max_persist_ids = max_persist_ids;
-		mconfig->max_msgs = 10000; //NSEND;
+		mconfig->max_msgs = max_ntarget_host;
 		n_mymulticast_ = max_persist_ids;
 	}else{
 		mconfig->protocol = DCMF_MEMFIFO_DMA_MSEND_PROTOCOL;
