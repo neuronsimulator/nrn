@@ -61,7 +61,8 @@ extern int nrn_use_selfqueue_;
 extern int use_cachevec;
 extern void nrn_cachevec(int);
 extern Point_process* ob2pntproc(Object*);
-extern void (*nrnmpi_v_transfer_)(NrnThread*);
+extern void (*nrnthread_v_transfer_)(NrnThread*);
+extern void (*nrnmpi_v_transfer_)();
 
 extern int cvode_active_;
 extern NetCvode* net_cvode_instance;
@@ -1399,14 +1400,20 @@ static void f_gvardt(realtype t, N_Vector y, N_Vector ydot, void *f_data) {
 		if (nrn_multisplit_setup_) {
 			nrn_multithread_job(f_thread_ms_part1);
 			nrn_multithread_job(f_thread_ms_part2);
-			if (nrnmpi_v_transfer_) {
+			if (nrnthread_v_transfer_) {
 				nrn_multithread_job(f_thread_ms_part3);
+				if (nrnmpi_v_transfer_) {
+					(*nrnmpi_v_transfer_)();
+				}
 				nrn_multithread_job(f_thread_ms_part4);
 			}else{
 				nrn_multithread_job(f_thread_ms_part34);
 			}
-		}else if (nrnmpi_v_transfer_) {
+		}else if (nrnthread_v_transfer_) {
 			nrn_multithread_job(f_thread_transfer_part1);
+			if (nrnmpi_v_transfer_) {
+				(*nrnmpi_v_transfer_)();
+			}
 			nrn_multithread_job(f_thread_transfer_part2);
 		}else{
 			nrn_multithread_job(f_thread);

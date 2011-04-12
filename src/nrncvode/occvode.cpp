@@ -31,7 +31,8 @@ extern void linmod_dkmap(double**, double**);
 extern double* sp13mat;
 
 #if 1 || PARANEURON
-extern void (*nrnmpi_v_transfer_)(NrnThread*);
+extern void (*nrnthread_v_transfer_)(NrnThread*);
+extern void (*nrnmpi_v_transfer_)();
 #endif
 
 extern void (*nrn_multisplit_setup_)();
@@ -653,9 +654,9 @@ void Cvode::fun_thread_transfer_part2(double* ydot, NrnThread* nt){
 	CvodeThreadData& z = CTD(nt->id);
 	if (z.nvsize_ == 0) { return; }
 #if 1 || PARANEURON
-	if (nrnmpi_v_transfer_) {
+	if (nrnthread_v_transfer_) {
 		assert(nrn_nthread == 1);
-		(*nrnmpi_v_transfer_)(nt);
+		(*nrnthread_v_transfer_)(nt);
 	}
 #endif
 	before_after(z.before_breakpoint_, nt);
@@ -704,8 +705,8 @@ void Cvode::fun_thread_ms_part3(NrnThread* nt){
 }
 void Cvode::fun_thread_ms_part4(double* ydot, NrnThread* nt) {
 #if 1 || PARANEURON
-	if (nrnmpi_v_transfer_) {
-		(*nrnmpi_v_transfer_)(nt);
+	if (nrnthread_v_transfer_) {
+		(*nrnthread_v_transfer_)(nt);
 	}
 #endif
 	CvodeThreadData& z = ctd_[nt->id];

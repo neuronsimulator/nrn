@@ -112,8 +112,35 @@ t, dt, nrn_tbase_, nrn_ndt_, nrn_dt_);
 }
 #endif /* ELIMINATE_T_ROUNDOFF */
 
+/*
+There are (too) many variants of nrn_fixed_step depending on
+nrnmpi_numprocs 1 or > 1, nrn_nthread 1 or > 1,
+nrnmpi_v_transfer nil or callable, nrn_multisplit_setup nil or callable,
+and whether one step with fadvance
+or possibly many with ParallelContext.psolve before synchronizing with
+NetParEvent. The combination of simultaneous nrnmpi_numprocs > 1 and
+nrn_nthread > 1 with parallel transfer
+requires some refactoring of the use of the old
+(*nrnmpi_v_transfer_)() from within nonvint(nt) which handled either mpi
+or threads but cannot handle both simultaneously. (Unless the first
+thread that arrives in nrnmpi_v_transfer is the one that accomplishes
+the mpi transfer). Instead, we replace with
+nrnthread_v_transfer(nt) to handle the per thread copying of source
+data into the target space owned by the thread. Between update (called by
+nrn_fixed_step_thread and nrn_ms_bksub), and nonvint (called by
+nrn_fixed_step_lastpart, we need to have thread 0 do the interprocessor
+transfer of source voltages to a either a staging area for later
+copying to the target by a thread (or directly to the target if only one
+thread). This will happen with (*nrnmpi_v_transfer_)(). (Look Ma, no threads).
+This deals properly with the necessary mpi synchronization. And leaves
+thread handling where it was before. Also, writing to the staging area
+is only done by thread 0. Fixed step and global variable step
+logic is limited to the case where an nrnmpi_v_transfer requires
+existence of nrnthread_v_transfer (even if one thread).
+*/
 #if 1 || PARANEURON
-void (*nrnmpi_v_transfer_)(NrnThread* nt);
+void (*nrnmpi_v_transfer_)(); /* called by thread 0 */
+void (*nrnthread_v_transfer_)(NrnThread* nt);
 #endif
 
 #if VECTORIZE
@@ -275,13 +302,24 @@ void nrn_fixed_step() {
 		if (!nrn_allthread_handle) {
 			nrn_multithread_job(nrn_ms_reduce_solve);
 			nrn_multithread_job(nrn_ms_bksub);
-			if (nrn_nthread > 1 && nrnmpi_v_transfer_) {
+			/* see comment below */
+			if (nrnthread_v_transfer_) {
+				if (nrnmpi_v_transfer_) {
+					(*nrnmpi_v_transfer_)();
+				}
 				nrn_multithread_job(nrn_fixed_step_lastpart);
 			}
 		}
 	}else{
 		nrn_multithread_job(nrn_fixed_step_thread);
-		if (nrn_nthread > 1 && nrnmpi_v_transfer_) {
+/* if there is no nrnthread_v_transfer then there cannot be
+   a nrnmpi_v_transfer and lastpart
+   will be done in above call.
+*/
+		if (nrnthread_v_transfer_) {
+			if (nrnmpi_v_transfer_) {
+				(*nrnmpi_v_transfer_)();
+			}
 			nrn_multithread_job(nrn_fixed_step_lastpart);
 		}
 	}
@@ -290,7 +328,7 @@ void nrn_fixed_step() {
 }
 
 /* better cache efficiency since a thread can do an entire minimum delay
-integation interval before joining
+integration interval before joining
 */
 static int step_group_n;
 static int step_group_begin;
@@ -377,7 +415,11 @@ void* nrn_fixed_step_thread(NrnThread* nth) {
 	second_order_cur(nth);
 	update(nth);
 	CTADD
-	if (nrn_nthread == 1 || !nrnmpi_v_transfer_) {
+/*
+  To simplify the logic,
+  if there is no nrnthread_v_transfer then there cannot be an nrnmpi_v_transfer.
+*/
+	if (!nrnthread_v_transfer_) {
 		nrn_fixed_step_lastpart(nth);
 	}
 	return (void*)0;
@@ -438,7 +480,8 @@ void* nrn_ms_bksub(NrnThread* nth) {
 	second_order_cur(nth);
 	update(nth);
 	CTADD
-	if (nrn_nthread == 1 || !nrnmpi_v_transfer_) {
+/* see above comment in nrn_fixed_step_thread */
+	if (!nrnthread_v_transfer_) {
 		nrn_fixed_step_lastpart(nth);
 	}
 	return (void*)0;
@@ -589,7 +632,8 @@ void nonvint(NrnThread* _nt)
 	int measure = 0;
 	NrnThreadMembList* tml;
 #if 1 || PARANEURON
-	if (nrnmpi_v_transfer_) {(*nrnmpi_v_transfer_)(_nt);}
+	/* nrnmpi_v_transfer if needed was done earlier */
+	if (nrnthread_v_transfer_) {(*nrnthread_v_transfer_)(_nt);}
 #endif
 	if (_nt->id == 0 && nrn_mech_wtime_) { measure = 1; }
 	errno = 0;
@@ -699,8 +743,11 @@ void nrn_finitialize(int setv, double v) {
 		}
 	}
 #if 1 || PARANEURON
-	if (nrnmpi_v_transfer_) FOR_THREADS(_nt){
-		(*nrnmpi_v_transfer_)(_nt);
+	if (nrnmpi_v_transfer_) {
+		(nrnmpi_v_transfer_)();
+	}
+	if (nrnthread_v_transfer_) FOR_THREADS(_nt){
+		(*nrnthread_v_transfer_)(_nt);
 	}
 #endif
 	nrn_fihexec(0); /* after v is set but before INITIAL blocks are called*/
