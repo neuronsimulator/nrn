@@ -1396,7 +1396,7 @@ static void f_gvardt(realtype t, N_Vector y, N_Vector ydot, void *f_data) {
 	f_t_ = t;
 	f_y_ = y;
 	f_ydot_ = ydot;
-	if (nrn_nthread > 1) {
+	if (nrn_nthread > 1 || nrnmpi_numprocs > 1) {
 		if (nrn_multisplit_setup_) {
 			nrn_multithread_job(f_thread_ms_part1);
 			nrn_multithread_job(f_thread_ms_part2);
