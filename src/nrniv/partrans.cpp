@@ -20,12 +20,6 @@ static void thread_transfer(NrnThread*);
 static void mk_ttd();
 extern double t;
 extern int v_structure_change;
-extern void nrnmpi_barrier();
-extern void nrnmpi_int_allgather(int*, int*, int);
-extern void nrnmpi_int_allgatherv(int*, int*, int*, int*);
-extern void nrnmpi_dbl_allgatherv(double*, double*, int*, int*);
-extern void nrnmpi_int_alltoallv(int*, int*, int*,  int*, int*, int*);
-extern void nrnmpi_dbl_alltoallv(double*, int*, int*,  double*, int*, int*);
 extern double* nrn_recalc_ptr(double*);
 // see lengthy comment in ../nrnoc/fadvance.c
 // nrnmpi_v_transfer requires existence of nrnthread_v_transfer even if there
@@ -46,6 +40,12 @@ extern void (*nrn_mk_transfer_thread_data_)();
 #endif
 #if PARANEURON
 extern double nrnmpi_transfer_wait_;
+extern void nrnmpi_barrier();
+extern void nrnmpi_int_allgather(int*, int*, int);
+extern void nrnmpi_int_allgatherv(int*, int*, int*, int*);
+extern void nrnmpi_dbl_allgatherv(double*, double*, int*, int*);
+extern void nrnmpi_int_alltoallv(int*, int*, int*,  int*, int*, int*);
+extern void nrnmpi_dbl_alltoallv(double*, int*, int*,  double*, int*, int*);
 #endif
 }
 
@@ -281,6 +281,7 @@ void nrnmpi_setup_transfer() {
 	if (insrc_buf_) { delete [] insrc_buf_; insrc_buf_ = 0; }
 	if (outsrc_buf_) { delete [] outsrc_buf_; outsrc_buf_ = 0; }
 	if (sid2insrc_) { delete sid2insrc_; sid2insrc_ = 0; }
+#if PARANEURON
     if (nrnmpi_numprocs > 1) {
 	if (!insrccnt_) {
 		insrccnt_ = new int[nrnmpi_numprocs];
@@ -429,6 +430,7 @@ printf("%d step 4  %d sids coming from rank %d\n", nrnmpi_myid, insrccnt_[i], i)
 	}
 	nrnmpi_v_transfer_ = mpi_transfer;
     }	
+#endif //PARANEURON
 	nrn_mk_transfer_thread_data_ = mk_ttd;
 	if (!v_structure_change) {
 		mk_ttd();
