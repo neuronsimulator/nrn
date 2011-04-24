@@ -1756,7 +1756,7 @@ Symbol* hoc_get_last_pointer_symbol() {/* hard to imagine a kludgier function*/
 			sym = pcv[1].sym;
 			break;
 		}else if (pcv->in == STOP) {
-// hopefully only got here from python.
+/* hopefully only got here from python. */
 			break;
 		}
 	}

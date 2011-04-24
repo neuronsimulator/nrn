@@ -5,7 +5,7 @@
 #if HAVE_POSIX_MEMALIGN
 #define HAVE_MEMALIGN 1
 #endif
-#if defined(DARWIN) // posix_memalign seems not to work on Darwin 10.6.2
+#if defined(DARWIN) /* posix_memalign seems not to work on Darwin 10.6.2 */
 #undef HAVE_MEMALIGN
 #endif
 #if HAVE_MEMALIGN
