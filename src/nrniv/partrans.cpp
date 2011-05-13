@@ -42,6 +42,7 @@ extern void (*nrn_mk_transfer_thread_data_)();
 extern double nrnmpi_transfer_wait_;
 extern void nrnmpi_barrier();
 extern void nrnmpi_int_allgather(int*, int*, int);
+extern int nrnmpi_int_allmax(int);
 extern void nrnmpi_int_allgatherv(int*, int*, int*, int*);
 extern void nrnmpi_dbl_allgatherv(double*, double*, int*, int*);
 extern void nrnmpi_int_alltoallv(int*, int*, int*,  int*, int*, int*);
@@ -157,6 +158,7 @@ static void rm_ttd() {
 	delete [] transfer_thread_data_;
 	transfer_thread_data_ = 0;
 	n_transfer_thread_data_ = 0;
+	nrnthread_v_transfer_ = 0;
 }
 
 static void mk_ttd() {
@@ -207,6 +209,7 @@ hoc_execerror("For multiple threads, the target pointer must reference a range v
 			assert(0);
 		}
 	}
+	nrnthread_v_transfer_ = thread_transfer;
 }
 
 void mpi_transfer() {
@@ -282,6 +285,10 @@ void nrnmpi_setup_transfer() {
 	if (outsrc_buf_) { delete [] outsrc_buf_; outsrc_buf_ = 0; }
 	if (sid2insrc_) { delete sid2insrc_; sid2insrc_ = 0; }
 #if PARANEURON
+	// if there are no targets anywhere, we do not need to do anything
+	if (nrnmpi_int_allmax(targets_->count()) == 0) {
+		return;
+	}
     if (nrnmpi_numprocs > 1) {
 	if (!insrccnt_) {
 		insrccnt_ = new int[nrnmpi_numprocs];
@@ -446,7 +453,6 @@ void alloclists() {
 		sgids_ = new IntList(100);
 		sgid2srcindex_ = new MapInt2Int(256);
 	}
-	nrnthread_v_transfer_ = thread_transfer;
 }
 
 void nrn_partrans_clear() {
