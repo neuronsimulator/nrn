@@ -7,6 +7,9 @@
 
 #if !OCSMALL
 #include <stdlib.h>
+#if HAVE_UNISTD_H
+#include <unistd.h>
+#endif
 #include "hoc.h"
 #include "parse.h" /* OBJECTVAR */
 
@@ -240,13 +243,12 @@ save_parallel_argv(argc, argv)
 #endif
 }
 
-save_parallel_envp(envp)
-    /* first arg is program, save 2 & 3 for -parallel flags */
-    char *envp[];
-{ 
-#if !defined(WIN32)
+save_parallel_envp() { 
+#if LINDA
+	extern char** environ;
 	 char *pnt;
     int j;
+	char** envp = environ;
 
     /* count how long the block of memory should be */
     for (j = 0; envp[j]; j++) {

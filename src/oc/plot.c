@@ -202,6 +202,12 @@ plot.c,v
 
 #include <stdio.h>
 #include <string.h>
+
+#if HAVE_UNISTD_H
+#include <unistd.h>
+extern char** environ;
+#endif
+
 #if DOS
 #include <graphics.h>
 #include <dos.h>
@@ -492,8 +498,7 @@ hoc_outtext(s) char* s; {
 }
 #endif
 
-initplot(environ)
-	char *environ[];
+initplot()
 {
 	int i;
 #if defined(__TURBOC__)

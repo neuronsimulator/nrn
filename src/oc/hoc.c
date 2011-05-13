@@ -745,10 +745,10 @@ hoc_main1_init(pname, envp)
 		nrn_exit(1);
 	}
 
-	save_parallel_envp(envp);
+	save_parallel_envp();
 
 	init();
-	initplot(envp);
+	initplot();
 #if defined(__GO32__)
 	setcbrk(0);
 #endif
