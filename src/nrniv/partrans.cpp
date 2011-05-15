@@ -166,7 +166,7 @@ static void mk_ttd() {
 	rm_ttd();
 	if (!targets_ || targets_->count() == 0) { return; }
 	n = targets_->count();
-    for (i=0; i < n; ++i) {
+    if (nrn_nthread > 1) for (i=0; i < n; ++i) {
 	Point_process* pp = target_pntlist_->item(i);
 	int sgid = sgid2targets_->item(i);
 	if (!pp) {
@@ -181,11 +181,15 @@ hoc_execerror("For multiple threads, the target pointer must reference a range v
 	}
 	n_transfer_thread_data_ = nrn_nthread;
 	// how many targets in each thread
+    if (nrn_nthread == 1) {
+	transfer_thread_data_[0].cnt = target_pntlist_->count();
+    }else{
 	for (i=0; i < n; ++i) {
 		assert(target_pntlist_->item(i));
 		tid = ((NrnThread*)target_pntlist_->item(i)->_vnt)->id;
 		++transfer_thread_data_[tid].cnt;
 	}
+    }
 	// allocate
 	for (tid = 0; tid < nrn_nthread; ++tid) {
 		TransferThreadData& ttd = transfer_thread_data_[tid];
@@ -195,7 +199,11 @@ hoc_execerror("For multiple threads, the target pointer must reference a range v
 	}
 	// count again and fill pointers
 	for (i=0; i < n; ++i) {
-		tid = ((NrnThread*)target_pntlist_->item(i)->_vnt)->id;
+		if (nrn_nthread == 1) {
+			tid = 0;
+		}else{
+			tid = ((NrnThread*)target_pntlist_->item(i)->_vnt)->id;
+		}
 		TransferThreadData& ttd = transfer_thread_data_[tid];
 		j = ttd.cnt++;
 		ttd.tv[j] = targets_->item(i);
