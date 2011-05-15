@@ -20,6 +20,9 @@ extern void nrn_mk_prop_pools(int);
 extern void nrn_cache_prop_realloc();
 extern int nrn_is_ion(int);
 void nrn_update_ion_pointer(Symbol* sion, Datum* dp, int id, int ip);
+#if EXTRACELLULAR
+void nrn_extcell_update_param();
+#endif
 extern void nrn_recalc_ptrs(double*(*)(double*));
 static double* recalc_ptr(double*);
 
@@ -515,6 +518,10 @@ static int in_place_data_realloc() {
 			}
 		}
 	}
+	// one more thing to do for extracellular
+#if EXTRACELLULAR
+	nrn_extcell_update_param();
+#endif
 	// finally get rid of the old ion pools
 	for (int i=0; i < n_memb_func; ++i) if (types[i] && oldpools_[i]) {
 		delete oldpools_[i];

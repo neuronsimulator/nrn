@@ -214,6 +214,23 @@ extcell_node_create(nd) Node* nd; {
 	}
 }
 
+void nrn_extcell_update_param() {
+	int i;
+	NrnThread* nt;
+	FOR_THREADS(nt) {
+		Memb_list* ml = nt->_ecell_memb_list;
+		if (ml) {
+			int cnt = ml->nodecount;
+			Node **ndlist = ml->nodelist;
+			for (i=0; i < cnt; ++i) {
+				Node* nd = ndlist[i];
+				assert(nd->extnode);
+				nd->extnode->param = ml->data[i];
+			}
+		}
+	}
+}
+
 extcell_2d_alloc(sec)
 	Section *sec;
 {
