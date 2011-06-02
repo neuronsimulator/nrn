@@ -98,6 +98,8 @@ static double solve(void* v) {
 	if (i != SUCCESS) {
 		hoc_execerror("variable step integrator error", 0);
 	}
+	t = nt_t;
+	dt = nt_dt;
 	return double(i);
 }
 static double statistics(void* v) {

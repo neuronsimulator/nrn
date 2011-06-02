@@ -2102,8 +2102,6 @@ ENDGUI
 	}else{
 		nt_t += 1e9;
 	}
-	t = nt_t;
-	dt = nt_dt;
 	return err;
 }
 
@@ -3595,6 +3593,8 @@ void ncs2nrn_integrate(double tstop) {
 #endif
 		{
 			net_cvode_instance->solve(tstop);
+			t = nt_t;
+			dt = nt_dt;
 		}
 	}else{
 #if 1

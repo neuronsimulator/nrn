@@ -18,7 +18,7 @@ void cvode_finitialize();
 void nrncvode_set_t(double);
 boolean at_time(NrnThread*, double);
 
-//extern double dt, t;
+extern double dt, t;
 #define nt_t nrn_threads->_t
 #define nt_dt nrn_threads->_dt
 extern void nrn_random_play();
@@ -108,6 +108,8 @@ void cvode_fadvance(double tstop) { // tstop = -1 means single step
 			printf("err=%d\n", err);
 			hoc_execerror("variable step integrator error", 0);
 		}
+		t = nt_t;
+		dt = nt_dt;
 	}
 #endif
 }
