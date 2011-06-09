@@ -736,7 +736,11 @@ double MechanismStandard::get(const char* name, int index){
 	if (!s) {
 		hoc_execerror(name, "not in this property");
 	}
-	return 	*np_->prop_pval(s, index);
+	double* pval = np_->prop_pval(s, index);
+	if (!pval) {
+		return -1e300;
+	}
+	return *pval;
 }
 
 void MechanismStandard::in(Section* sec, double x){
