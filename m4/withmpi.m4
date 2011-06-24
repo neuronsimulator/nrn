@@ -88,7 +88,6 @@ AC_HELP_STRING([--with-music=/prefix/of/music/installation],[Want to use the  MU
 	if test x$with_nrnpython = x$no ; then
 		AC_MSG_ERROR([--with-music can be used only if --with-nrnpython is also used.])
 	fi
-	AC_CHECK_PROG(CYTHON, cython, cython, echo)
 	with_mpi=yes
 	with_paranrn=yes
 	use_music=yes

@@ -200,6 +200,12 @@ dnl have to be done with a CFLAGS="-mno-cygwin"
 dnl What to do about Python
 AC_NRN_PYTHON
 
+dnl Only needed if making a distribution. In that case cython must work.
+dnl Otherwise, to make a distribution, need to modify
+dnl src/neuronmusic/Makefile.am and remove neuronmusic.cpp fromt the list
+dnl of extra dist files.
+AC_CHECK_PROG(CYTHON, cython, cython, echo)
+
 MINGW_CFLAG=""
 EXTRA_CYGWIN_FLAGS='$(EXTRA_CYGWIN)'
 if test "$CYGWIN" = "yes" ; then
