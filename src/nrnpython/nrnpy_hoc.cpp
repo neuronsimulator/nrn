@@ -11,6 +11,7 @@
 extern "C" {
 
 #include "parse.h"
+extern Section* nrn_noerr_access();
 extern void hoc_pushs(Symbol*);
 extern double* hoc_evalpointer();
 extern Symlist* hoc_top_level_symlist;
@@ -812,7 +813,6 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* name) {
 	      }else{
 		return NULL;
 	      }
-
 	    }else{
 		// ipython wants to know if there is a __getitem__
 		// even though it does not use it.
@@ -863,6 +863,16 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* name) {
 	switch (sym->type) {
 	case VAR: // double*
 		if (!ISARRAY(sym)) {
+			if (sym->subtype == USERINT) {
+				Py_BuildValue("i", *(sym->u.pvalint));
+				break;
+			}
+			if (sym->subtype == USERPROPERTY) {
+				if (!nrn_noerr_access()) {
+					PyErr_SetString(PyExc_TypeError, "Section access unspecified");
+					break;
+				}
+			}
 			hoc_pushs(sym);
 			hoc_evalpointer();
 			if (isptr) {
