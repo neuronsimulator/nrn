@@ -40,11 +40,12 @@ if test "$mpicc" = "mpicc" ; then
 mpich=`which $mpicc | sed "s,/bin/.*,,"`
 echo "mpich=$mpich"
 # mpich configured and made with
-#./configure '--prefix=/home/Hines/mpich2' '--with-device=ch3:nemesis' \
-#  'pac_cv_f77_sizeof_integer=4' 'pac_cv_f77_sizeof_double_precision=8' \
-#  'CFLAGS=-DDLL_EXPORT -DPIC' 'CXXFLAGS=-DDLL_EXPORT -DPIC'
+#./configure --prefix=/home/Hines/mpich2 --with-pm=gforker:mpd \
+#  'CFLAGS=-DDLL_EXPORT -DPIC' 'CXXFLAGS=-DDLL_EXPORT -DPIC' \
+#  'LDFLAGS=-Wl,--enable-auto-import'
 #make >& build.stdout
-# did not do a make install
+#make install
+# note that $mpich is the build directory that contains build.stdout
 
 awk '
 /Entering directory/ { d = $4 }

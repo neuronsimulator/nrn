@@ -94,8 +94,8 @@ if grep '^mpicc=mpicc' $B/src/mswin/nrncygso.sh ; then
 		chmod 755 $D/bin/$i
 	done
 	# problem here. mpdroot.exe not installed and is in
-	# mpich2-1.2.1p1/src/pm/mpd/mpdroot.exe
-	cp $HOME/mpich2-1.2.1p1/src/pm/mpd/mpdroot.exe $D/bin
+	# mpich2-1.4/src/pm/mpd/mpdroot.exe
+	cp $HOME/mpich2-1.4/src/pm/mpd/mpdroot.exe $D/bin
 	echo 'MPD_SECRETWORD=neuron' > $D/mpd.conf
 	chmod 600 $D/mpd.conf
   fi
@@ -176,7 +176,7 @@ echo $gclib
 
 mkdir $D/gccinc
 cp /usr/include/*.h $D/gccinc
-for i in sys machine cygwin ; do
+for i in sys machine cygwin bits ; do
   mkdir $D/gccinc/$i
   cp /usr/include/$i/*.h $D/gccinc/$i
 done
