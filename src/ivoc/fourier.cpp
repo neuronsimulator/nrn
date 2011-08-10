@@ -8,6 +8,11 @@
 #include <stddef.h>
 #include <stdlib.h>
 
+// to print diagnostic statements
+// #define DEBUG_SPCTRM
+// otherwise
+#undef DEBUG_SPCTRM
+
 #undef myfabs
 #if MAC
 #if __GNUC__ < 4
@@ -133,8 +138,82 @@ void nrn_correl(double* x, double* y, unsigned long n, double* z)
 
 #define WINDOW(j,a,b) (1.0-myfabs((((j)-1)-(a))*(b)))       /* Bartlett */
 
-void nrn_spctrm(double* data, double* p, int m, int k)
+// void nrn_spctrm(double* data, double* p, int m, int k)
+void nrn_spctrm(double* data, double* psd, int setsize, int numsegpairs)
 {
-  hoc_execerror("nrn_spctrm in ivoc/fourier.cpp not implemented", 0);
+  int j, k, cx, n;
+  double a, ainv, wfac, x_;
+  double *fftv;
+
+  // 0 is index of first meaningful element of power spectral density
+  for (j=0;j<=setsize-1;j++) psd[j]=0.0; // zero out any prior result
+
+  // calc factor used to correct for window's effect on psd
+  a = setsize;
+  ainv = 1.0/a;
+
+  n = 2*setsize;
+  wfac = 0.0;
+  for (j=1;j<=n;j++) wfac += SQUARE(WINDOW(j,a,1/a));
+
+#ifdef DEBUG_SPCTRM
+  printf("setsize %d, numsegpairs %d\n", setsize, numsegpairs);
+  printf("=============\n");
+  printf("window values\n");
+  for (j=1;j<=n;j++) printf("%d  %f\n", j, WINDOW(j,a,1/a));
+  printf("initial wfac %f\n", wfac);
+#endif
+
+  // storage for a data segment
+  fftv = (double *)malloc((size_t) (n*sizeof(double)));
+
+  cx = 0; // data index
+  for (k=1;k<=numsegpairs*2;k++) {
+
+#ifdef DEBUG_SPCTRM
+    printf("==============\n");
+    printf("segment %d\n", k);
+#endif
+
+    // fill fftv with a segment of data
+    for (j=0; j<n; j++) fftv[j] = data[cx++];
+#ifdef DEBUG_SPCTRM
+    for (j=0; j<n; j++) printf("datum %d  %f\n", j, fftv[j]);
+    printf("--------------\n");
+#endif
+
+    cx -= setsize; // next segment overlaps by this much
+
+    // apply window
+    for (j=1; j<=n;j++) fftv[j-1]*=WINDOW(j,a,1/a);
+
+    // apply fft
+    nrngsl_realft(fftv, n, 1);
+#ifdef DEBUG_SPCTRM
+    printf("\nfftv:\n");
+    for (j=0; j<n;j++) printf("%f  ",fftv[j]);
+    printf("\n");
+#endif
+
+    // add to psd
+    psd[0] += SQUARE(fftv[0]);
+    for (j=1; j<setsize; j++) {
+      psd[j] += (SQUARE(fftv[j]) + SQUARE(fftv[n - j]));
+    }
+  }
+
+  wfac = 1 / (wfac*n*numsegpairs);
+  for (j=0; j<setsize; j++) psd[j] *= wfac;
+  psd[0] *= 0.5;
+
+#ifdef DEBUG_SPCTRM
+  printf("1/wfac for all but DC = %f\n", 1./wfac);
+  printf("1/wfac for DC = %f\n", 2./wfac);
+  printf("final results--\n");
+  for (j=0; j<setsize;j++) printf("%d  %f\n",j, psd[j]);
+  printf("\ndone\n");
+#endif
+
+  free(fftv);
 }
 #undef WINDOW
