@@ -1,136 +1,86 @@
-/* ran4 cryptographic random number generator */
-/* (C) Copr. 1986-92 Numerical Recipes Software #.,. */
-/* Modified by Thomas M. Bartol, Ph.D. */
-/* hoc interface at end added by Michale Hines */
-
-#define NITER 2
-static unsigned int idums = 0;
-
-void mcell_ran4_init(idum)
-  unsigned int *idum;
-{
-	idums = *idum;
-	*idum=1;
-	return;
-}
-
-double mcell_ran4_64(idum, ilow, ran_vec,n,range)
-  unsigned int *idum,n;
-  unsigned int ilow;
-  double *ran_vec,range;
-{
-	unsigned int irword,lword;
-        unsigned int i,j;
-        unsigned int ia,ib,iswap,itmph=0,itmpl=0;
-        static unsigned int c1[4]={
-                0xbaa96887L, 0x1e17d32cL, 0x03bcdc3cL, 0x0f33d1b2L};
-        static unsigned int c2[4]={
-                0x4b0f3b58L, 0xe874f0c3L, 0x6955c5a6L, 0x55a7ca46L};
-
-        range=range*2.3283064365386963e-10;
-	lword=ilow;
-
-	for (i=0;i<n;i++) {
-	  irword=(*idum);
-
 /*
-          printf("before: %x %x\n",lword,irword);
+The copyrighted code from  Numerical Recipes Software has been removed
+and replaced by an independent implementation found in the random.c file
+in function Ranint4
+from http://www.inference.phy.cam.ac.uk/bayesys/BayesSys.tar.gz
+by John Skilling
+http://www.inference.phy.cam.ac.uk/bayesys/
+The code fragment was further modified by Michael Hines to change prototypes
+and produce output identical to the old version. This code is now
+placed under the General GNU Public License, version 2. The random.c file
+contained the header:
+//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// Filename:  random.c
+// 
+// Purpose:   Random utility procedures for BayeSys3.
+// 
+// History:   Random.c  17 Nov 1994 - 13 Sep 2003
+//
+// Acknowledgments:
+//   "Numerical Recipes", Press et al, for ideas
+//   "Handbook of Mathematical Functions", Abramowitz and Stegun, for formulas
+//    Peter J Acklam website, for inverse normal code
+//-----------------------------------------------------------------------------
+    Copyright (c) 1994-2003 Maximum Entropy Data Consultants Ltd,
+                            114c Milton Road, Cambridge CB4 1XE, England
+
+    This library is free software; you can redistribute it and/or
+    modify it under the terms of the GNU Lesser General Public
+    License as published by the Free Software Foundation; either
+    version 2.1 of the License, or (at your option) any later version.
+
+    This library is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+    Lesser General Public License for more details.
+
+    You should have received a copy of the GNU Lesser General Public
+    License along with this library; if not, write to the Free Software
+    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-          for (j=0;j<NITER;j++) {
-                ia=(iswap=(irword)) ^ c1[j];
-                itmpl = ia & 0xffff;
-                itmph = ia >> 16;
-                ib=itmpl*itmpl+ ~(itmph*itmph);
-                irword=(lword) ^ (((ia = (ib >> 16) |
-                        ((ib & 0xffff) << 16)) ^ c2[j])+itmpl*itmph);
-                lword=iswap;
-          }
+#include <../../nrnconf.h>
+#include <stdio.h>
+#include <stddef.h>
+#include <math.h>
+#include <float.h>
+#include <stdlib.h>
+#include <mcran4.h>
 
-/*
-          printf("after: %x %x\n",lword,irword);
-*/
-	  ran_vec[i]=range*irword;
+static u_int32_t lowindex = 0;
 
-	  ++(*idum);
-        }
-        return(ran_vec[0]);
+void mcell_ran4_init(u_int32_t low) {
+	lowindex = low;
 }
 
-double mcell_ran4(idum, ran_vec,n,range)
-  unsigned int *idum,n;
-  double *ran_vec,range;
-{
-	return mcell_ran4_64(idum, idums, ran_vec, n, range);
+double mcell_ran4(u_int32_t *high) {
+	return nrnRan4dbl(high, lowindex);
 }
 
-unsigned int mcell_iran4_64(idum, ilow, iran_vec,n)
-  unsigned int *idum, ilow, *iran_vec,n;
-{
-	unsigned int irword,lword;
-        unsigned int i,j,ia,ib,iswap,itmph=0,itmpl=0;
-        static unsigned int c1[4]={
-                0xbaa96887L, 0x1e17d32cL, 0x03bcdc3cL, 0x0f33d1b2L};
-        static unsigned int c2[4]={
-                0x4b0f3b58L, 0xe874f0c3L, 0x6955c5a6L, 0x55a7ca46L};
-
-	lword=ilow;
-
-	for (i=0;i<n;i++) {
-	  irword=(*idum);
-
-/*
-          printf("before: %x %x\n",lword,irword);
-*/
-
-          for (j=0;j<NITER;j++) {
-                ia=(iswap=(irword)) ^ c1[j];
-                itmpl = ia & 0xffff;
-                itmph = ia >> 16;
-                ib=itmpl*itmpl+ ~(itmph*itmph);
-                irword=(lword) ^ (((ia = (ib >> 16) |
-                        ((ib & 0xffff) << 16)) ^ c2[j])+itmpl*itmph);
-                lword=iswap;
-          }
-
-/*
-          printf("after: %x %x\n",lword,irword);
-*/
-	  iran_vec[i]=irword;
-
-	  ++(*idum);
-        }
-        return(iran_vec[0]);
+u_int32_t mcell_iran4(u_int32_t *high){
+	return nrnRan4int(high, lowindex);
 }
-
-unsigned int mcell_iran4(idum,iran_vec,n)
-  unsigned int *idum,*iran_vec,n;
-{
-	return mcell_iran4_64( idum, idums, iran_vec, n);
-}
-
-#undef NITER
 
 /* Hoc interface */
 extern double chkarg(), *hoc_pgetarg();
 extern int use_mcell_ran4_;
 
 void hoc_mcran4() {
-	unsigned int idum;
-	double* xdum;
+	u_int32_t idx;
+	double* xidx;
 	double x;
-	xdum = hoc_pgetarg(1);
-	idum = (unsigned int)(*xdum);
-	mcell_ran4(&idum, &x, 1, 1.);
-	*xdum = idum;
+	xidx = hoc_pgetarg(1);
+	idx = (u_int32_t)(*xidx);
+	x = mcell_ran4(&idx);
+	*xidx = idx;
 	hoc_ret();
 	hoc_pushx(x);
 }
 void hoc_mcran4init() {
-	double prev = (double)idums;
+	double prev = (double)lowindex;
 	if (ifarg(1)) {
-		unsigned int idum = (unsigned int) chkarg(1, 0., 4294967295.);
-		mcell_ran4_init(&idum);
+		u_int32_t idx = (u_int32_t) chkarg(1, 0., 4294967295.);
+		mcell_ran4_init(idx);
 	}
 	hoc_ret();
 	hoc_pushx(prev);
@@ -144,3 +94,73 @@ void hoc_usemcran4() {
 	hoc_ret();
 	hoc_pushx(prev);
 }
+
+u_int32_t nrnRan4int(u_int32_t* idx1, u_int32_t idx2)
+{
+    u_int32_t  u, v, w, m, n;
+    /* 64-bit hash */
+    n = (*idx1)++;
+    m = idx2;
+
+    w = n ^ 0xbaa96887;
+    v = w >> 16;
+    w &= 0xffff;
+    u = ~((v - w) * (v + w));
+    /*m ^= (((u >> 16) | (u << 16)) ^ 0xb4f0c4a7) + w * v;*/
+    m ^= (((u >> 16) | (u << 16)) ^ 0x4b0f3b58) + w * v;
+
+    w = m ^ 0x1e17d32c;
+    v = w >> 16;
+    w &= 0xffff;
+    u = ~((v - w) * (v + w));
+    /*n ^= (((u >> 16) | (u << 16)) ^ 0x178b0f3c) + w * v;*/
+    n ^= (((u >> 16) | (u << 16)) ^ 0xe874f0c3) + w * v;
+    return n;
+
+    w = n ^ 0x03bcdc3c;
+    v = w >> 16;
+    w &= 0xffff;
+    u = (v - w) * (v + w);
+    m ^= (((u >> 16) | (u << 16)) ^ 0x96aa3a59) + w * v;
+
+    w = m ^ 0x0f33d1b2;
+    v = w >> 16;
+    w &= 0xffff;
+    u = (v - w) * (v + w);
+    n ^= (((u >> 16) | (u << 16)) ^ 0xaa5835b9) + w * v;
+    return  n;
+}
+
+/*
+//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// Function:  Randouble (hines now nrnRan4dbl
+//
+// Purpose:   Random double-precision floating-point sample.
+//            The 2^52 allowed values are odd multiples of 2^-53,
+//            symmetrically placed in strict interior of (0,1).
+//
+// Notes: (1) Tuned to 52-bit mantissa in "double" format.
+//        (2) Uses one call to Ranint to get 64 random bits, with extra
+//            random integer available in Rand[3].
+//        (3) All floating-point random calls are directed through this code,
+//            except Rangauss which uses the extra random integer in Rand[3].
+//
+// History:   John Skilling   6 May 1995, 3 Dec 1995, 24 Aug 1996
+//                           20 Oct 2002, 17 Dec 2002
+//-----------------------------------------------------------------------------
+// 
+*/
+static const double SHIFT32   = 1.0 / 4294967296.0;          /* 2^-32 */
+double nrnRan4dbl(u_int32_t* idx1, u_int32_t idx2)
+{
+    u_int32_t  hi, lo, extra;
+    hi = (u_int32_t)nrnRan4int(idx1, idx2);                /*top 32 bits*/
+/*
+//    lo = (extra                               // low bits
+//                  & 0xfffff000) ^ 0x00000800;   // switch lowest (2^-53) bit ON
+//    return  ((double)hi + (double)lo * SHIFT32) * SHIFT32;
+*/
+    return  ((double)hi) * SHIFT32;
+}
+
+

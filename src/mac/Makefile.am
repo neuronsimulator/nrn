@@ -6,7 +6,7 @@ S =  modlunit.sh mknrndll.sh nrngui.sh neurondemo.sh idraw.sh mos2nrn.sh
 launch_scripts = macnrn.term $(S)
 
 EXTRA_DIST = maccmd.c njconf.h nrnneosm.h bbsconf.h macnrn.h nrnconf.h \
-	sioux.c njvmstub.c nrncarbon.h \
+	njvmstub.c nrncarbon.h \
 	$(launch_scripts) launch_inst.sh \
 	modlunit.info mknrndll.info nrngui.info neurondemo.info idraw.info mos2nrn.info \
 	modlunit.icns mknrndll.icns nrngui.icns neurondemo.icns idraw.icns mos2nrn.icns \

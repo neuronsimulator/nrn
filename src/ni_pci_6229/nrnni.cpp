@@ -58,7 +58,7 @@ void NrnDAQ::nrndaq_final() {
 	}
 }
 
-// copied from niddk/100a2/examples/main.cpp
+// based on from niddk/100a2/examples/main.cpp
 void NrnDAQ::initMite() {
 	tAddressSpace bar0;
 	u32 physicalBar1;

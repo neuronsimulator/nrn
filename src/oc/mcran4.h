@@ -1,8 +1,16 @@
-void mcell_ran4_init();
-double mcell_ran4();
-unsigned int mcell_iran4();
-double mcell_ran4_64();
-unsigned int mcell_iran4_64();
+void mcell_ran4_init(u_int32_t);
+double mcell_ran4(u_int32_t* idx1);
+u_int32_t mcell_iran4(u_int32_t* idx1);
+double nrnRan4dbl(u_int32_t* idx1, u_int32_t idx2);
+u_int32_t nrnRan4int(u_int32_t* idx1, u_int32_t idx2);
+
+
+/*
+ The original ran4 generator was copyrighted by "Numerical Recipes in C"
+ and therefore has been removed from the NEURON sources and replaced by code
+ fragments obtained from http://www.inference.phy.cam.ac.uk/bayesys/
+ by John Skilling
+*/
 
 /*
 Michael Hines added the prefix mcell to the global names.

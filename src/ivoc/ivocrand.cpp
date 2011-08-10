@@ -59,11 +59,8 @@ extern "C" {
 double nrn_random_pick(Rand* r);
 Rand* nrn_random_arg(int);
 
-void mcell_ran4_init(unsigned int* idum);
-double mcell_ran4(unsigned int* idum, double* ran_vec, int n, double range);
-double mcell_ran4_64(unsigned int* idum, unsigned int ilow, double* ran_vec, int n, double range);
-unsigned int mcell_iran4(unsigned int* idum, unsigned int* iran_vec, int n);
-unsigned int mcell_iran4_64(unsigned int* idum, unsigned int ilow, unsigned int* iran_vec, int n);
+#include <mcran4.h>
+
 }
 
 // The decision that has to be made is whether each generator instance
@@ -75,42 +72,40 @@ unsigned int mcell_iran4_64(unsigned int* idum, unsigned int ilow, unsigned int*
 
 class MCellRan4 : public RNG {
 public:
-	MCellRan4(unsigned int idum = 0, unsigned int ilow = 0);
+	MCellRan4(u_int32_t ihigh = 0, u_int32_t ilow = 0);
 	virtual ~MCellRan4();
 	virtual _G_uint32_t asLong() {
-		return (_G_uint32_t)(ilow_ == 0 ? mcell_iran4(&idum_, iran_vec, 1) :
-			mcell_iran4_64(&idum_, ilow_, iran_vec, 1));
+		return (_G_uint32_t)(ilow_ == 0 ? mcell_iran4(&ihigh_) :
+			nrnRan4int(&ihigh_, ilow_));
 	}
-	virtual void reset() { idum_ = orig_; }
+	virtual void reset() { ihigh_ = orig_; }
 	virtual double asDouble() {
-		return (ilow_ == 0 ? mcell_ran4(&idum_, ran_vec, 1, 1.) :
-			 mcell_ran4_64(&idum_, ilow_, ran_vec, 1, 1.)); }
-	unsigned int idum_;
-	unsigned int orig_;
-	unsigned int ilow_;
+		return (ilow_ == 0 ? mcell_ran4(&ihigh_) :
+			 nrnRan4dbl(&ihigh_, ilow_)); }
+	u_int32_t ihigh_;
+	u_int32_t orig_;
+	u_int32_t ilow_;
 private:
-	static unsigned int cnt_;
-	double ran_vec[1];
-	unsigned int iran_vec[1];
+	static u_int32_t cnt_;
 };
 
-MCellRan4::MCellRan4(unsigned int idum, unsigned int ilow) {
+MCellRan4::MCellRan4(u_int32_t ihigh, u_int32_t ilow) {
 	++cnt_;
 	ilow_ = ilow;
-	idum_ = idum;
-	if (idum_ == 0) {
-		idum_ = cnt_;
-		idum_ = (unsigned int)asLong();
+	ihigh_ = ihigh;
+	if (ihigh_ == 0) {
+		ihigh_ = cnt_;
+		ihigh_ = (u_int32_t)asLong();
 	}
-	orig_ = idum_;
+	orig_ = ihigh_;
 }
 MCellRan4::~MCellRan4() {}
 
-unsigned int MCellRan4::cnt_ = 0;
+u_int32_t MCellRan4::cnt_ = 0;
 
 class Isaac64 : public RNG {
 public:
-	Isaac64(unsigned int seed = 0);
+	Isaac64(u_int32_t seed = 0);
 	virtual ~Isaac64();
 	virtual _G_uint32_t asLong() {
 		return (_G_uint32_t)nrnisaac_uint32_pick(rng_);
@@ -289,9 +284,9 @@ hoc_execerror("Random.seq() can only be used if the random generator was MCellRa
 	}
 	MCellRan4* mcr = (MCellRan4*)x->gen;
 	if (ifarg(1)) {
-		mcr->idum_ = (long)(*getarg(1));
+		mcr->ihigh_ = (long)(*getarg(1));
 	}
-	return (double)mcr->idum_;
+	return (double)mcr->ihigh_;
 }
 
 static double r_Isaac64(void* r) {
