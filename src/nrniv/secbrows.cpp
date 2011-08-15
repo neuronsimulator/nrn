@@ -352,7 +352,7 @@ void SectionBrowser::accept() {
     if (sec->prop) {
 	nrn_pushsec(sec);
 	if (sbi_->mvt_->parameter_select()) {
-		section_menu(-1, CONST, sbi_->ms_);
+		section_menu(-1, nrnocCONST, sbi_->ms_);
 	}
 	if (sbi_->mvt_->state_select()) {
 		section_menu(.5, STATE, sbi_->ms_);

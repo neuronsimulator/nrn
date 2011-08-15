@@ -90,8 +90,8 @@ static Inst* argcode(), *argrefcode();
 }
 
 %token		EQNEQ
-%token	<sym>	NUMBER STRING PRINT DELETE VAR BLTIN UNDEF WHILE IF ELSE FOR
-%token	<sym>	FUNCTION PROCEDURE RETURN FUNC PROC HOCOBJFUNC READ DOUBLE
+%token	<sym>	NUMBER STRING PRINT parseDELETE VAR BLTIN UNDEF WHILE IF ELSE FOR
+%token	<sym>	FUNCTION PROCEDURE RETURN FUNC parsePROC HOCOBJFUNC READ parseDOUBLE
 %token	<sym>	DEBUG EDIT FUN_BLTIN DEPENDENT EQUATION LOCAL HOCOBJFUNCTION
 %token	<sym>	BREAK CONTINUE AUTO STRDEF STOPSTMT CSTRING PARALLEL HELP
 %token	<sym>	ITERATOR ITERKEYWORD ITERSTMT STRINGFUNC OBJECTFUNC
@@ -327,7 +327,7 @@ stmt:	expr
 	| strnasgn
 	| string1
 		{ code(nopop); }
-	| DELETE delsym
+	| parseDELETE delsym
 		{ $$ = $2;}
 	| RETURN begin
 		{ defnonly("return"); $$=$2; code(procret); }
@@ -691,7 +691,7 @@ function: FUNCTION
 	| OBFUNCTION
 	| STRFUNCTION
 	;
-doublelist: DOUBLE begin newarray
+doublelist: parseDOUBLE begin newarray
 		{Symbol *s; code(varpush); codesym(s=spop()); $$ = $2;
 		code(arayinstal); codei($3); hoc_obvar_declare(s, VAR, 0);}
 	| doublelist ',' newarray
@@ -793,7 +793,7 @@ defn:	FUNC procname
 		{ code(procret); hoc_define($2);
 		 $2->u.u_proc->nobjauto = $6 - localcnt;
 		 $2->u.u_proc->nauto=$6; indef=0; }
-	| PROC procname
+	| parsePROC procname
 		{ $2->type=PROCEDURE; indef=1; }
 	'(' ')' procstmt
 		{ code(procret); hoc_define($2);

@@ -35,7 +35,7 @@ void nrn_clear_mark();
 short nrn_increment_mark(Section*);
 short nrn_value_mark(Section*);
 boolean is_point_process(Object*);
-int nrn_vartype(Symbol*); // CONST, DEP, STATE
+int nrn_vartype(Symbol*); // nrnocCONST, DEP, STATE
 void recalc_diam();
 }
 

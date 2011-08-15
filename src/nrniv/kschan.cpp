@@ -1138,7 +1138,7 @@ void KSChan::update_prop() {
 				sym = installsym("Nsingle", RANGEVAR, searchsym);
 			}
 			ppsym[NSingleIndex] = sym;
-			sym->subtype = CONST; // PARAMETER
+			sym->subtype = nrnocCONST; // PARAMETER
 			sym->u.rng.type = rlsym_->subtype;
 			sym->u.rng.index = NSingleIndex;
 		}else if (sym) { // eliminate if Nsingle exists

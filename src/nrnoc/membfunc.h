@@ -49,9 +49,9 @@ typedef struct Memb_func {
 #define EXTRACELL	5
 #endif
 
-#define CONST 1
+#define nrnocCONST 1
 #define DEP 2
-#define STATE 3	/*See init.c and cabvars.h for order of CONST, DEP, and STATE */
+#define STATE 3	/*See init.c and cabvars.h for order of nrnocCONST, DEP, and STATE */
 
 #define BEFORE_INITIAL 0
 #define AFTER_INITIAL 1

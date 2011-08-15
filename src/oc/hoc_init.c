@@ -62,7 +62,7 @@ static struct { /* Keywords */
 	char	*name;
 	int	kval;
 } keywords[] = {
-	"proc",		PROC,
+	"proc",		parsePROC,
 	"func",		FUNC,
 	"obfunc",	HOCOBJFUNC,
 	"return",	RETURN,
@@ -74,10 +74,10 @@ static struct { /* Keywords */
 	"while",	WHILE,
 	"for",		FOR,
 	"print",	PRINT,
-	"delete",	DELETE,
+	"delete",	parseDELETE,
 	"read",		READ,
 	"debug",	DEBUG,
-	"double",	DOUBLE,
+	"double",	parseDOUBLE,
 	"em",		EDIT,
 	"depvar",	DEPENDENT,
 	"eqn",		EQUATION,

@@ -27,14 +27,14 @@ consistency()
 
 	/* the scop_indep can also be a automatic constant */
 	sindep = SYM(scop_indep[0]);
-	if (sindep != indepsym && sindep->subtype == CONST | INDEP) {
+	if (sindep != indepsym && sindep->subtype == modlunitCONST | INDEP) {
 		sindep->subtype = INDEP;
 	}
 	
 	SYMITERALL {
 		t = s->subtype;
 		con("KEYWORD", KEYWORD, 0);
-		con("CONSTANT", CONST, ARRAY);
+		con("CONSTANT", modlunitCONST, ARRAY);
 		con("INDEPENDENT", INDEP, 0);
 		con("DEPENDENT", DEP, ARRAY);
 		con("STATE", STAT, ARRAY);

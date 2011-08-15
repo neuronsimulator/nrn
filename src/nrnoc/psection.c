@@ -58,7 +58,7 @@ static pnode(p1)
 	if (sym->s_varn) {
 		for (j=0; j < sym->s_varn; j++ ) {
 			Symbol* s = sym->u.ppsym[j];
-			if (nrn_vartype(s) == CONST) {
+			if (nrn_vartype(s) == nrnocCONST) {
 				if (p1->ob) {
 printf(" %s=%g", s->name, p1->ob->u.dataspace[s->u.rng.index].pval[0]);
 				}else{

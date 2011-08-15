@@ -203,10 +203,14 @@ plot.c,v
 #include <stdio.h>
 #include <string.h>
 
+#if defined(__MINGW32__)
+extern char** _environ;
+#else //!defined(__MINGW32__)
 #if HAVE_UNISTD_H
 #include <unistd.h>
 extern char** environ;
 #endif
+#endif //defined(__MINGW32__)
 
 #if DOS
 #include <graphics.h>
@@ -501,6 +505,9 @@ hoc_outtext(s) char* s; {
 initplot()
 {
 	int i;
+#if defined(__MINGW32__)
+	char** environ=_environ;
+#endif
 #if defined(__TURBOC__)
 	graphdev = 0;
 #else

@@ -463,7 +463,7 @@ lag_stmt(q1, blocktype)	/* LAG name1 BY name2 */
 	if (!(name1->subtype & (DEP | STAT))) {
 		diag(name1->name, " not a STATE or DEPENDENT variable");
 	}
-	if (!(name2->subtype & (PARM | CONST))) {
+	if (!(name2->subtype & (PARM | nmodlCONST))) {
 		diag(name2->name, " not a CONSTANT or PARAMETER");
 	}
 	Sprintf(buf, "lag_%s_%s", name1->name, name2->name);

@@ -161,7 +161,7 @@ void section_menu(double x1, int type, MechSelector* ms)
 	CopyString sname;
 	
 	switch (type) {
-	case CONST:
+	case nrnocCONST:
 		btype = "(Parameters)";
 		break;
 	case STATE:
@@ -188,7 +188,7 @@ void section_menu(double x1, int type, MechSelector* ms)
 	}		
 	hoc_ivpanel(buf);
 	hoc_ivlabel(buf);
-	if (type == CONST) {
+	if (type == nrnocCONST) {
 		if (x1 < 0) {
 			sprintf(buf,"nseg = %d", sec->nnode-1); hoc_ivlabel(buf);
 			sprintf(buf, "%s.L", sname.string());
@@ -258,7 +258,7 @@ static void mech_menu(Prop* p1, double x, int type, const char* path, MechSelect
 	if (ms && !ms->is_selected(p1->type)) {
 		return;
 	}
-	if (type == CONST) {
+	if (type == nrnocCONST) {
 		deflt = true;
 	}else{
 		deflt = false;
@@ -435,7 +435,7 @@ static void point_menu(Object* ob, unsigned int make_label) {
 
 #if 0
         switch (type) {
-        case CONST:
+        case nrnocCONST:
                 sprintf(buf, "%s[%d] (Parameters)", psym->name, j);
                 break;
         case STATE:
@@ -450,7 +450,7 @@ static void point_menu(Object* ob, unsigned int make_label) {
 	if (psym->s_varn) {
 		for (k=0; k < psym->s_varn; k++ ) {
 			vsym = psym->u.ppsym[k];
-			if (nrn_vartype(vsym) == CONST) {
+			if (nrn_vartype(vsym) == nrnocCONST) {
 				deflt = true;
 
 #if defined(MikeNeubig)
@@ -591,7 +591,7 @@ static double ms_save(void* v) {
 }
 
 static void* ms_cons(Object*) {
-	int vartype = CONST;
+	int vartype = nrnocCONST;
 	if (ifarg(2)) {
 		// 0 means all
 		vartype = int(chkarg(2, -1, STATE));

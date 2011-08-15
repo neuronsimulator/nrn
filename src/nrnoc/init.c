@@ -467,7 +467,7 @@ It's version %s \"c\" code is incompatible with this neuron version.\n",
 	} else {
 		modltypemax = NRNPOINTER;
 	}
-	for (k=0, j=0, modltype=CONST; modltype<=modltypemax; modltype++, j++){
+	for (k=0, j=0, modltype=nrnocCONST; modltype<=modltypemax; modltype++, j++){
 		/*EMPTY*/
 		for (; m2[j]; j++, k++) {
 			;
@@ -481,12 +481,12 @@ If never overloaded then no reason for list of symbols for each mechanism.
 */
 /* the indexing is confusing because k refers to index in the range indx list
 and j refers to index in mechanism list which has 0 elements to separate
-CONST, DEPENDENT, and STATE */
+nrnocCONST, DEPENDENT, and STATE */
 /* variable pointers added on at end, if they exist */
 /* allowing range variable arrays. Must extract dimension info from name[%d]*/
 /* pindx refers to index into the p-array */
 	pindx = 0;
-	for (j=0, k=0, modltype=CONST; modltype <= modltypemax; modltype++, j++) {
+	for (j=0, k=0, modltype=nrnocCONST; modltype <= modltypemax; modltype++, j++) {
 		for (; m2[j]; j++, k++) {
 			Symbol *s2;
 			char buf[200], *cp; int indx; unsigned nsub=0;

@@ -167,7 +167,7 @@ reactname(q1, lastok, q2) /* NAME [] INTEGER   q2 may be null*/
 		s1->usage |= DEP;
 		s->used++;
 		rterm->isstate = 1;
-	} else if (!(s->subtype & (DEP | CONST | PARM | INDEP | STEP1 | STAT)) ) {
+	} else if (!(s->subtype & (DEP | nmodlCONST | PARM | INDEP | STEP1 | STAT)) ) {
 diag(s->name, " must be a STATE, CONSTANT, ASSIGNED, STEPPED, or INDEPENDENT");
 	}
 	if (q2) {

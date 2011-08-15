@@ -1095,7 +1095,7 @@ unitdef: unit '=' unit
 	| unit error {myerr("Unit definition syntax: (units) = (units)");}
 	;
 factordef: NAME '=' real unit
-		{ SYM($1)->subtype |= CONST;
+		{ SYM($1)->subtype |= nmodlCONST;
 		  Sprintf(buf, "static double %s = %s;\n", SYM($1)->name,
 			STR($3));
 		  Lappendstr(firstlist, buf);
@@ -1104,7 +1104,7 @@ factordef: NAME '=' real unit
 		{Item *q; double d, unit_mag();
 		    Unit_push($3);
 			Unit_push($4); unit_div();
-		    SYM($1)->subtype |= CONST;
+		    SYM($1)->subtype |= nmodlCONST;
 		    Sprintf(buf, "static double %s = %g;\n", SYM($1)->name,
 			unit_mag());
 		    Lappendstr(firstlist, buf);
@@ -1113,7 +1113,7 @@ factordef: NAME '=' real unit
 	| NAME '=' unit '-' GT unit 
 		{ double unit_mag();
 		    Unit_push($3); Unit_push($6); unit_div();
-		    SYM($1)->subtype |= CONST;
+		    SYM($1)->subtype |= nmodlCONST;
 		    Sprintf(buf, "static double %s = %g;\n", SYM($1)->name,
 			unit_mag());
 		    Lappendstr(firstlist, buf);
@@ -1129,7 +1129,7 @@ constblk: CONSTANT '{' conststmt '}'
 	;
 conststmt: /*nothing*/
 	| conststmt NAME '=' number units
-		{ SYM($2)->subtype |= CONST;
+		{ SYM($2)->subtype |= nmodlCONST;
 		  Sprintf(buf, "static double %s = %s;\n", SYM($2)->name,
 			STR($4));
 		  Lappendstr(firstlist, buf);
