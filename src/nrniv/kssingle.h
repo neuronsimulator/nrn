@@ -7,7 +7,7 @@
 #include <netcon.h>
 
 extern "C" {
-double mcell_ran4(unsigned int* idum, double* x, int n, double range);
+#include <mcran4.h>
 }
 
 class KSSingleTrans;
@@ -55,8 +55,8 @@ public:
 	void nextNtrans(KSSingleNodeData*);
 
 	boolean vsame(double x, double y) {return Math::equal(x, y, vres_);}
-	double exprand() { double x; return -log(mcell_ran4(&idum_, &x, 1, 1.)); }
-	double unifrand(double range) { double x; return mcell_ran4(&idum_, &x, 1, range); }
+	double exprand() { return -log(mcell_ran4(&idum_)); }
+	double unifrand(double range) { return mcell_ran4(&idum_)*range; }
 	int rvalrand(int);
 
 	int ntrans_, nstate_, sndindex_;
