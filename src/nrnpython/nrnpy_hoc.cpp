@@ -1215,8 +1215,24 @@ static PyObject* iternext_sl(PyHocObject* po, hoc_Item* ql) {
 		if (q->prev != ql) {
 			nrn_popsec();
 		}
-		nrn_pushsec(q->element.sec);
-		po->iteritem_ = q->next;
+		for (;;) { // have to watch out for deleted sections.
+			hoc_Item* q1 = q->next;
+			Section* sec = q->element.sec;
+			if (!sec->prop) { // delete from list and go on
+				// to the next. If no more return NULL
+				hoc_l_delete(q);
+				section_unref(sec);
+				q = q1;
+				if (q != ql) {
+					continue;
+				}else{
+					return NULL;
+				}
+			}
+			nrn_pushsec(sec);
+			po->iteritem_ = q1;
+			break;
+		}
 		return nrnpy_cas(NULL, NULL);
 	}else{
 		if (q->prev != ql) {
