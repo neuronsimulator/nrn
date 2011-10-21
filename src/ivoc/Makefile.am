@@ -62,7 +62,6 @@ noinst_HEADERS = apwindow.h axis.h bndedval.h cbwidget.h checkpnt.h \
 ivoc_SOURCES = nrnmain.cpp ivocmain.cpp $(nrniv_iv_sources)
 
 ivoc_LDADD = ../oc/nocable.o ../oc/modlreg.o \
-	../oc/ockludge.o \
 	../oc/libocxt.la ../oc/liboc.la \
 	libivoc.la ../nrnmpi/libnrnmpi.la \
 	@MEMACSLIBLA@ ../mesch/libmeschach.la \

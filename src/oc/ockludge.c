@@ -1,20 +1,12 @@
 #include <../../nrnconf.h>
 #include <nrnmpi.h>
 
-//#if NRNMPI && DARWIN
+#if NRNMPI && DARWIN
 // For DARWIN I do not really know the proper way to avoid
 // dyld: lazy symbol binding failed: Symbol not found: _MPI_Init
 // when the MPI functions are all used in the libnrnmpi.dylib
 // but the libmpi.a is statically linked. Therefore I am forcing
 // the linking here by listing all the MPI functions being used.
-
-// The same or similar problem seems to occur with gcc 4.6.1 with
-// the symptom in ivoc and nrniv of
-// ../nrnmpi/.libs/libnrnmpi.so: undefined reference to `MPI_Allgather'
-// The symbols seen with nm are designated W. So we have removed the
-// && DARWIN
-
-#if NRNMPI
 #include <mpi.h>
 void work_around() {
 	MPI_Comm c = MPI_COMM_WORLD;
