@@ -189,7 +189,6 @@ dnl Older versions of automake insist on having the AM_PROG_LIBTOOL,
 dnl although it is now obsolete.  We used to leave it in here, and then define
 dnl AM_PROG_LIBTOOL to call AC_PROG_LIBTOOL, which is the modern
 dnl way of doing it.
-AM_PROG_LIBTOOL
 
 dnl Checks for libraries
 AC_CHECK_LIBM
@@ -225,6 +224,8 @@ AC_NRN_MUSIC
 AC_NRN_PARANEURON
 AC_NRN_WITH_MPI
 AC_NRN_WITH_METIS
+
+AM_PROG_LIBTOOL
 
 dnl when purify is enabled then one can use
 dnl nrnivmodl -p
