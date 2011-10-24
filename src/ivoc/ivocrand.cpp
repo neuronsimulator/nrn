@@ -80,7 +80,7 @@ public:
 	}
 	virtual void reset() { ihigh_ = orig_; }
 	virtual double asDouble() {
-		return (ilow_ == 0 ? mcell_ran4(&ihigh_) :
+		return (ilow_ == 0 ? mcell_ran4a(&ihigh_) :
 			 nrnRan4dbl(&ihigh_, ilow_)); }
 	u_int32_t ihigh_;
 	u_int32_t orig_;

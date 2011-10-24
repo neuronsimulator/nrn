@@ -2,7 +2,8 @@
 #define mcran4_h
 
 extern void mcell_ran4_init(u_int32_t);
-extern double mcell_ran4(u_int32_t* idx1);
+extern double mcell_ran4(u_int32_t *idx1, double *x, unsigned int n, double range);
+extern double mcell_ran4a(u_int32_t* idx1);
 extern u_int32_t mcell_iran4(u_int32_t* idx1);
 extern double nrnRan4dbl(u_int32_t* idx1, u_int32_t idx2);
 extern u_int32_t nrnRan4int(u_int32_t* idx1, u_int32_t idx2);
@@ -14,8 +15,9 @@ extern u_int32_t nrnRan4int(u_int32_t* idx1, u_int32_t idx2);
  and therefore has been removed from the NEURON sources and replaced by code
  fragments obtained from http://www.inference.phy.cam.ac.uk/bayesys/
  by John Skilling
- The prototype for mcell_ran4 has been changed. It now only returns
- a single uniform random number in the distribution 0.0 to 1.0
+ The function mcell_ran4a only returns
+ a single uniform random number in the distribution 0.0 to 1.0 .
+ The prototype for mcell_ran4 is the original.
 */
 
 /*

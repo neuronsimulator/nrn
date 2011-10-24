@@ -55,8 +55,8 @@ public:
 	void nextNtrans(KSSingleNodeData*);
 
 	boolean vsame(double x, double y) {return Math::equal(x, y, vres_);}
-	double exprand() { return -log(mcell_ran4(&idum_)); }
-	double unifrand(double range) { return mcell_ran4(&idum_)*range; }
+	double exprand() { return -log(mcell_ran4a(&idum_)); }
+	double unifrand(double range) { return mcell_ran4a(&idum_)*range; }
 	int rvalrand(int);
 
 	int ntrans_, nstate_, sndindex_;

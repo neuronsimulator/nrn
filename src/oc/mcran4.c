@@ -53,7 +53,13 @@ void mcell_ran4_init(u_int32_t low) {
 	lowindex = low;
 }
 
-double mcell_ran4(u_int32_t *high) {
+double mcell_ran4(u_int32_t *high, double *x, unsigned int n, double range) {
+  int i;
+  for (i=0;i<n;i++) { x[i]=range*nrnRan4dbl(high, lowindex); }
+  return x[0];
+}
+
+double mcell_ran4a(u_int32_t *high) {
 	return nrnRan4dbl(high, lowindex);
 }
 
@@ -71,7 +77,7 @@ void hoc_mcran4() {
 	double x;
 	xidx = hoc_pgetarg(1);
 	idx = (u_int32_t)(*xidx);
-	x = mcell_ran4(&idx);
+	x = mcell_ran4a(&idx);
 	*xidx = idx;
 	hoc_ret();
 	hoc_pushx(x);

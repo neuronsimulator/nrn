@@ -1709,7 +1709,7 @@ L3:
 } /* maprnt_ */
 
 int nrn_praxis_ran_index;
-extern double mcell_ran4(unsigned int* idum, double* x, int n, double range);
+#include <../oc/mcran4.h>
 
 static doublereal random_(naught)
 integer *naught;
