@@ -187,7 +187,7 @@ private:
 extern "C" {
 extern double (*p_java2nrn_dmeth)(Object* ho, Symbol* method);
 extern char** (*p_java2nrn_smeth)(Object* ho, Symbol* method);
-char** (*p_java2nrn_classname)(Object* ho);
+const char* (*p_java2nrn_classname)(Object* ho);
 boolean (*p_java2nrn_identity)(Object* o1, Object* o2);
 }
 
@@ -525,7 +525,7 @@ ENDGUI
 #endif
 	return 0.;
 }
-static char** pwman_name(void* v) {
+static const char** pwman_name(void* v) {
 #if HAVE_IV
 IFGUI
 	PWMImpl* p = PrintableWindowManager::current()->pwmi_;
@@ -537,7 +537,7 @@ IFGUI
 	}else{
 		*ps = si->jwindow()->title;
 	}
-	return ps;
+	return (const char**) ps;
 ENDGUI
 #endif
 	return 0;
@@ -1882,7 +1882,7 @@ float yoff = pageheight*72/2/sfac - (e.top() + e.bottom() + 23.)/2.;
 #endif
 	}
 //printf("%s\n", buf);
-	system(buf);
+	system(buf) == 0; //avoid warning
 #ifdef WIN32
 	unlink(tmpfile);
 #endif
@@ -2111,7 +2111,7 @@ void PrintableWindowManager::psfilter(const char* filename) {
 			filename, tmpfile,
 			filt.string(), tmpfile, filename);
 #endif
-		system(buf);
+		system(buf) == 0; // avoid warning
 		unlink(tmpfile);
 	}
 }
@@ -2183,7 +2183,7 @@ ScreenItem::~ScreenItem(){
 
 void ScreenItem::relabel(GlyphIndex i) {
 	char buf[10];
-	sprintf(buf, "%d", i);
+	sprintf(buf, "%ld", i);
 	i_ = i;
 	Glyph* g = WidgetKit::instance()->label(buf);
 	Resource::ref(g);
@@ -3549,7 +3549,7 @@ void JavaWindow::save_session(const char* fname, ostream& o) {
 	char buf[256];
 	o << "/*Begin " << title << " */\n";
 	sprintf(buf, "{load_java(\"%s\", \"%s\")}\n",
-		p_java2nrn_classname(ho),
+		(*p_java2nrn_classname)(ho),
 		ho->ctemplate->sym->name);
 	o << buf;
 	sprintf(buf, "ocbox_ = new %s()\n", ho->ctemplate->sym->name);
@@ -3645,7 +3645,7 @@ char* ivoc_get_temp_file() {
     tmpfile = new char[512];
     __temp_file_name(tmpfile, &spec);
 #else
-	char* tdir = getenv("TEMP");
+	const char* tdir = getenv("TEMP");
 	if (!tdir) {
 		tdir = "/tmp";
 	}

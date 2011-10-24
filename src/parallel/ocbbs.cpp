@@ -337,13 +337,13 @@ static double upkscalar(void* v) {
 	return bbs->upkdouble();
 }
 
-static char** upkstr(void* v) {
+static const char** upkstr(void* v) {
 	OcBBS* bbs = (OcBBS*)v;
 	char* s = bbs->upkstr();
 	char** ps = hoc_pgargstr(1);
 	hoc_assign_str(ps, s);
 	delete [] s;
-	return ps;
+	return (const char**)ps;
 }
 
 static Object** upkvec(void* v) {

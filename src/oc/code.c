@@ -288,7 +288,7 @@ static Pfri initfcns[MAXINITFCNS];
 hoc_prstack() {
 	int i;
 	Datum* s;
-	printf("interpreter stack: %d \n", (stackp - stack)/2);
+	printf("interpreter stack: %ld \n", (stackp - stack)/2);
 	for (i=0, s = stackp - 1; s > stack; --s, ++i) {
 		if (i > 10) {
 			printf("...\n");

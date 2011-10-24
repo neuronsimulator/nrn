@@ -493,7 +493,7 @@ void OcList_reg() {
 
 extern "C" {
 extern boolean hoc_objectpath_impl(Object* ob, Object* oblook, char* path, int depth);
-extern void hoc_path_prepend(char*, char*, char*);
+extern void hoc_path_prepend(char*, const char*, const char*);
 boolean ivoc_list_look(Object* ob, Object* oblook, char* path, int) {
 	if (oblook->ctemplate->constructor == l_cons) {
 		OcList* o = (OcList*)oblook->u.this_pointer;
@@ -508,7 +508,7 @@ boolean ivoc_list_look(Object* ob, Object* oblook, char* path, int) {
 			if (obj == ob) {
 #endif
 				char buf[200];
-				sprintf(buf, "object(%d)", i);
+				sprintf(buf, "object(%ld)", i);
 				hoc_path_prepend(path, buf, "");
 				return 1;
 			}

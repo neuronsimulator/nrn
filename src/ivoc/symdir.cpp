@@ -27,6 +27,18 @@ extern int hoc_array_index(Symbol*, Objectdata*);
 #include "string.h"
 #include "symdir.h"
 
+const char* concat(const char* s1, const char* s2) {
+	static char* tmp = 0;
+	int l1 = strlen(s1);
+	int l2 = strlen(s2);
+	if (tmp) {
+		delete [] tmp;
+	}
+	tmp = new char[l1 + l2 + 1];
+	sprintf(tmp, "%s%s", s1, s2);
+	return (const char*)tmp;
+}
+
 class SymbolItem {
 public:
 	SymbolItem(const char*, int whole_array = 0);
@@ -38,7 +50,6 @@ public:
 	void no_object();
 	const String& name() const { return name_;}
 	boolean is_directory() const;
-	const char* concat(char*, char*);
 	int array_index() const { return index_;}
 	int whole_vector();
 private:
@@ -323,9 +334,10 @@ int SymDirectory::index(const String& name) const {
 void SymDirectory::whole_name(int index, CopyString& s) const {
 	const String& s1 = impl_->path_;
 	const String& s2 = name(index);
-	char* tmp = new char[s1.length() + s2.length() + 1];
-	sprintf(tmp, "%.*%s%.*%s", s1.length(), s1.string(), s2.length(), s2.string());
-	s = tmp;
+//	char* tmp = new char[s1.length() + s2.length() + 1];
+//	sprintf(tmp, "%.*%s%.*%s", s1.length(), s1.string(), s2.length(), s2.string());
+//	s = tmp;	
+	s = concat(s1.string(), s2.string());
 }
 boolean SymDirectory::is_directory(int index) const {
 	return impl_->symbol_list_.item(index)->is_directory();
@@ -391,18 +403,6 @@ SymbolItem::SymbolItem(Object* ob) {
 void SymbolItem::no_object() {
 	ob_ = nil;
 	name_ = "Deleted";
-}
-
-const char* SymbolItem::concat(char* s1, char* s2) {
-	static char* tmp = 0;
-	int l1 = strlen(s1);
-	int l2 = strlen(s2);
-	if (tmp) {
-		delete [] tmp;
-	}
-	tmp = new char[l1 + l2 + 1];
-	sprintf(tmp, "%s%s", s1, s2);
-	return tmp;
 }
 
 SymbolItem::~SymbolItem() {}

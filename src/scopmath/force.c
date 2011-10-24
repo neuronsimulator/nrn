@@ -20,6 +20,7 @@ static char RCSid[] =
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <assert.h>
 #include <string.h>
 #include "errcodes.h"
 
@@ -257,7 +258,7 @@ char *filename;
 	/* Skip first 6 lines of file */
 
 	for (i = 0; i < 6; ++i)
-	    fgets(tmpstr, 81, pfile);
+	    assert(fgets(tmpstr, 81, pfile));
 
 	/* Read coordinates of forcing function */
 

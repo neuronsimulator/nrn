@@ -723,9 +723,9 @@ void OcViewGlyph::save(ostream& o) {
 	long i = Scene::scene_list_index(s);
 	if (!s->mark()) {
 		s->save_phase1(o);
-		sprintf(buf, "scene_vector_[%d] = save_window_", i);
+		sprintf(buf, "scene_vector_[%ld] = save_window_", i);
 	}else{
-		sprintf(buf, "save_window_ = scene_vector_[%d]", i);
+		sprintf(buf, "save_window_ = scene_vector_[%ld]", i);
 	}
 	o << buf << endl;
 	v_->save(o);

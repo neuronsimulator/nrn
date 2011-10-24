@@ -136,7 +136,7 @@ debugzz(p)	/* running copy of calls to execute */
 		{
 			long offset = (long)p->in;
 			if (offset < 1000)
-				Printf("relative %ld\n", p->i);
+				Printf("relative %d\n", p->i);
 			else {
 			offset = (long)(p->in) - (long)p;
 			if (offset > (long)prog - (long)p

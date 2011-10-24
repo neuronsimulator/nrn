@@ -4,6 +4,7 @@
 /* modl description via modlreg calls point_register_mech() and
 saves the pointtype as later argument to create and loc */
 
+#include <stdlib.h>
 #include "section.h"
 #include "membfunc.h"
 #include "parse.h"

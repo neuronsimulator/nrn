@@ -139,7 +139,9 @@ N_Vector N_VNew_Serial(long int length)
 
     /* Allocate memory */
 #if HAVE_MEMALIGN
-    posix_memalign((void**)&data, 64, length*sizeof(realtype));
+    if (posix_memalign((void**)&data, 64, length*sizeof(realtype)) != 0) {
+	N_VDestroy_Serial(v);return(NULL);
+    }
 #else
     data = (realtype *) malloc(length * sizeof(realtype));
 #endif
@@ -343,7 +345,9 @@ N_Vector N_VClone_Serial(N_Vector w)
 
     /* Allocate memory */
 #if HAVE_MEMALIGN
-    posix_memalign((void**)&data, 64, length*sizeof(realtype));
+    if (posix_memalign((void**)&data, 64, length*sizeof(realtype)) != 0) {
+	N_VDestroy_Serial(v);return(NULL);
+    }
 #else
     data = (realtype *) malloc(length * sizeof(realtype));
 #endif

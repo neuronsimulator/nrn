@@ -71,6 +71,7 @@ nonlin.c,v
 */
 
 /*version 7.2.1 2-jan-89 */
+#include <stdlib.h>
 #include <math.h>
 # include	"hoc.h"
 # include	"parse.h"

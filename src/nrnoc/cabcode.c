@@ -3,6 +3,7 @@
 
 #define HOC_L_LIST 1
 #include <stdio.h>
+#include <stdlib.h>
 #include <math.h>
 #include <nrnpython_config.h>
 #include "section.h"
@@ -1528,7 +1529,7 @@ keep_nseg_parm() {
 void nrn_change_nseg(sec, n) Section* sec; int n; {
 	if (n > 32767.) {
 		n = 1;
-		fprintf(stderr, "requesting %s.nseg=%g but the maximum value is 32767.\n", secname(sec), n);
+		fprintf(stderr, "requesting %s.nseg=%d but the maximum value is 32767.\n", secname(sec), n);
 		hoc_warning("nseg too large, setting to 1.", (char*)0);
 	}
 	if (n < 1) {

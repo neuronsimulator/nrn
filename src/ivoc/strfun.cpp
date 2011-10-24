@@ -258,7 +258,7 @@ static int l_ref4(Symbol* s, Object* ob, int nr) {
 		OcList* list = (OcList*)(OBJ(q)->u.this_pointer);
 		if (list->refs_items()) for (i = 0; i < list->count(); ++i) {
 			if (list->object(i) == ob) {	
-printf("   %s.object(%d)\n", hoc_object_name(OBJ(q)), i);
+printf("   %s.object(%ld)\n", hoc_object_name(OBJ(q)), i);
 				++nr;
 			}
 		}

@@ -233,7 +233,7 @@ char* BBS::upkstr() {
 char* BBS::upkpickle(size_t* n) {
 	char* s = impl_->upkpickle(n);
 	if (debug) {
-		printf("upkpickle %d |%s|\n", *n, s);
+		printf("upkpickle %lu |%s|\n", *n, s);
 	}
 	return s;
 }
@@ -275,7 +275,7 @@ void BBS::pkstr(const char* s) {
 
 void BBS::pkpickle(const char* s, size_t n) {
 	if (debug) {
-		printf("pkpickle %d |%s|\n", n, s);
+		printf("pkpickle %lu |%s|\n", n, s);
 	}
 	impl_->pkpickle(s, n);
 }

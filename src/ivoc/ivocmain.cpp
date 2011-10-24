@@ -178,7 +178,7 @@ extern HWND hCurrWnd;
 
 extern "C" {
 	extern void setneuronhome(const char*);
-	extern char* neuron_home;
+	extern const char* neuron_home;
 	int hoc_xopen1(const char* filename, const char* rcs);
 	extern int units_on_flag_;
 	extern double hoc_default_dll_loaded_;

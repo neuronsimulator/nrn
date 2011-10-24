@@ -124,8 +124,8 @@ static int Suffix[4096];
 static int OutCode[4097];
 
 static int   gif89 = 0;
-static char *id87 = "GIF87a";
-static char *id89 = "GIF89a";
+static const char *id87 = "GIF87a";
+static const char *id89 = "GIF89a";
 
 static int EGApalette[16][3] = {
   {0,0,0},       {0,0,128},     {0,128,0},     {0,128,128}, 
@@ -137,8 +137,8 @@ static int EGApalette[16][3] = {
 static int   readImage(PICINFO*);
 static int   readCode();
 static void  doInterlace(int);
-static int   gifError(PICINFO*, char *);
-static void  gifWarning(char *);
+static int   gifError(PICINFO*, const char *);
+static void  gifWarning(const char *);
 
 static int   filesize;
 static const char *bname;
@@ -781,7 +781,7 @@ static void doInterlace(int Index)
 
       
 /*****************************/
-static int gifError(PICINFO* pinfo, char* st)
+static int gifError(PICINFO* pinfo, const char* st)
 {
   gifWarning(st);
 
@@ -800,7 +800,7 @@ static int gifError(PICINFO* pinfo, char* st)
 
 
 /*****************************/
-static void gifWarning(char* st)
+static void gifWarning(const char* st)
 {
 //  SetISTR(ISTR_WARNING,"%s:  %s\n", bname, st);
 	hoc_warning(bname, st);

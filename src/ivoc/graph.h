@@ -373,7 +373,7 @@ public:
 	ColorPalette();
 	virtual ~ColorPalette();
 	const Color* color(int)const;
-	const Color* color(int, char*);
+	const Color* color(int, const char*);
 	const Color* color(int, const Color*);
 	int color(const Color*)const;
 //	enum {COLOR_SIZE = 20};

@@ -165,7 +165,7 @@ void TQueue::statistics() {
 		ninsert, nmove, nrem, nleast);
 	printf("calls to find=%lu\n",
 		nfind);
-	printf("comparisons=%lu\n",
+	printf("comparisons=%d\n",
 		sptree_->enqcmps);
 #else
 	printf("Turn on COLLECT_TQueue_STATISTICS_ in tqueue.h\n");

@@ -1771,7 +1771,7 @@ void MultiSplitControl::prstruct() {
     nrnmpi_barrier();
     if (id == nrnmpi_myid) {
 	printf("myid=%d\n", id);	
-	printf(" MultiSplit %d\n", multisplit_list_->count());
+	printf(" MultiSplit %ld\n", multisplit_list_->count());
 	for (i=0; i < multisplit_list_->count(); ++i) {
 		MultiSplit* ms = multisplit_list_->item(i);
 		Node* nd = ms->nd[0];
@@ -2588,24 +2588,24 @@ void ReducedTree::pr_map(int tsize, double* trbuf) {
     MultiSplitThread& t = msc_->mth_[it];
     int nb = t.backbone_end - t.backbone_begin;
 		if (rmap[i] >= trbuf && rmap[i] < (trbuf + tsize)) {
-			printf(" %2d rhs[%2d] += tbuf[%d]\n", i, irmap[i], rmap[i]-trbuf);
+			printf(" %2d rhs[%2d] += tbuf[%ld]\n", i, irmap[i], rmap[i]-trbuf);
 		}
 		if (rmap[i] >= nt->_actual_rhs && rmap[i] < (nt->_actual_rhs + nt->end)) {
 			Node* nd = nt->_v_node[rmap[i] - nt->_actual_rhs];
-			printf(" %2d rhs[%2d] rhs[%d] += rhs[%d] \t%s{%d}\n", i, irmap[i], irmap[i], rmap[i] - nt->_actual_rhs, secname(nd->sec), nd->sec_node_index_);
+			printf(" %2d rhs[%2d] rhs[%d] += rhs[%ld] \t%s{%d}\n", i, irmap[i], irmap[i], rmap[i] - nt->_actual_rhs, secname(nd->sec), nd->sec_node_index_);
 		}
 		if (rmap[i] >= nt->_actual_d && rmap[i] < (nt->_actual_d + nt->end)) {
-			printf(" %2d rhs[%2d]   d[%d] += d[%d]\n", i, irmap[i], irmap[i] - n, rmap[i] - nt->_actual_d);
+			printf(" %2d rhs[%2d]   d[%d] += d[%ld]\n", i, irmap[i], irmap[i] - n, rmap[i] - nt->_actual_d);
 		}
 		if (rmap[i] >= t.sid1A && rmap[i] < (t.sid1A + nb)) {
-			printf(" %2d rhs[%2d]   a[%d] += sid1A[%d]", i, irmap[i], irmap[i] - 2*n, rmap[i]-t.sid1A);
+			printf(" %2d rhs[%2d]   a[%d] += sid1A[%ld]", i, irmap[i], irmap[i] - 2*n, rmap[i]-t.sid1A);
 			int j = (rmap[i] - t.sid1A) + t.backbone_begin;
 			Node* nd = nt->_v_node[j];
 printf(" \tA(%d) %s{%d}", j, secname(nd->sec), nd->sec_node_index_);
 			printf("\n");
 		}
 		if (rmap[i] >= t.sid1B && rmap[i] < (t.sid1B + nb)) {
-			printf(" %2d rhs[%2d]   b[%d] += sid1B[%d]", i, irmap[i], irmap[i] - 3*n, rmap[i]-t.sid1B);
+			printf(" %2d rhs[%2d]   b[%d] += sid1B[%ld]", i, irmap[i], irmap[i] - 3*n, rmap[i]-t.sid1B);
 			int j = (rmap[i] - t.sid1B) + t.backbone_begin;
 			Node* nd = nt->_v_node[j];
 printf("\tB(%d) %s{%d}", j, secname(nd->sec), nd->sec_node_index_);

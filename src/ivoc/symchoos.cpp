@@ -139,7 +139,7 @@ static void* scons(Object*) {
 #if HAVE_IV
 	SymChooser* sc = nil;
 IFGUI
-	char* caption = "Choose a Variable Name or";
+	const char* caption = "Choose a Variable Name or";
 	if (ifarg(1)) {
 		caption = gargstr(1);
 	}

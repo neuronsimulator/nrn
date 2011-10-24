@@ -39,6 +39,9 @@ spawn.c,v
 #include	"estruct.h"
 #include        "edef.h"
 
+#undef IGNORE
+#define IGNORE(arg) if (arg) {;}
+
 #if     AMIGA
 #define  NEW   1006
 #endif

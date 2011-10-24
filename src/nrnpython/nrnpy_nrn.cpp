@@ -162,9 +162,10 @@ static void NPyMechObj_dealloc(NPyMechObj* self) {
 // (with a filled in Symbol) the nrnoc section will continue to exist until
 // the hoc delete_section() is called on it.
 // 
+
 static int NPySecObj_init(NPySecObj* self, PyObject* args, PyObject* kwds) {
 //printf("NPySecObj_init %lx %lx\n", (long)self, (long)self->sec_);
-	static char* kwlist[] = {"cell", "name", NULL};
+	static const char* kwlist[] = {"cell", "name", NULL};
 	if (self != NULL && !self->sec_) {
 		self->allseg_iter_ = 0;
 		if (self->name_) { delete [] self->name_; }
@@ -172,7 +173,9 @@ static int NPySecObj_init(NPySecObj* self, PyObject* args, PyObject* kwds) {
 		self->cell_ = 0;
 		char* name = 0;
 		PyObject* cell = 0;
-		if (!PyArg_ParseTupleAndKeywords(args, kwds, "|Os", kwlist,
+		// avoid "warning: deprecated conversion from string constant to char*"
+		//someday eliminate the (char**) when python changes their prototype
+		if (!PyArg_ParseTupleAndKeywords(args, kwds, "|Os", (char**)kwlist,
 		  &self->cell_, &name)) {
 			return -1;
 		}
@@ -187,7 +190,6 @@ static int NPySecObj_init(NPySecObj* self, PyObject* args, PyObject* kwds) {
 }
 
 PyObject* NPySecObj_new(PyTypeObject* type, PyObject* args, PyObject* kwds) {
-	static char* kwlist[] = {"cell", "name", NULL};
 	NPySecObj* self;
 	self = (NPySecObj*)type->tp_alloc(type, 0);
 //printf("NPySecObj_new %lx\n", (long)self);
@@ -1025,10 +1027,20 @@ static PyMethodDef NPySegObj_methods[] = {
 	{NULL}
 };
 
+// I'm guessing Python should change their typedef to get rid of the
+// four "deprecated conversion from string constant to 'char*'" warnings.
+// Could avoid by casting each to (char*) but probably better to keep the
+// warnings. For now we get rid of the warnings by copying the string to
+// char array.
+static char* cpstr(const char* s) {
+	char* s2 = new char[strlen(s) + 1];
+	strcpy(s2, s);
+	return s2;
+}
 static PyMemberDef NPySegObj_members[] = {
-	{"x", T_DOUBLE, offsetof(NPySegObj, x_), 0, 
-	 "location in the section (segment containing x)"},
-	{"sec", T_OBJECT_EX, offsetof(NPySegObj, pysec_), 0, "Section"},
+	{cpstr("x"), T_DOUBLE, offsetof(NPySegObj, x_), 0, 
+	 cpstr("location in the section (segment containing x)")},
+	{cpstr("sec"), T_OBJECT_EX, offsetof(NPySegObj, pysec_), 0, cpstr("Section")},
 	{NULL}
 };
 

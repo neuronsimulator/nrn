@@ -29,6 +29,10 @@ extern short* nrn_is_artificial_;
 static void tqcallback(const TQItem* tq, int i);
 };
 
+#define ASSERTfgets(a,b,c) assert(fgets(a,b,c) == 0)
+#define ASSERTfread(a,b,c,d) assert(fread(a,b,c,d) == c)
+#define ASSERTfwrite(a,b,c,d) assert(fwrite(a,b,c,d) == c)
+
 class SaveState : public Resource {
 public:
 	SaveState();
@@ -181,23 +185,23 @@ SaveState::~SaveState() {
 
 void SaveState::fread_NodeState(NodeState* ns, int cnt, FILE* f) {
 	for (int i=0; i < cnt; ++i) {
-		fread(&ns[i].v, sizeof(double), 1, f);
-		fread(&ns[i].nmemb, sizeof(int), 1, f);
-		fread(&ns[i].nstate, sizeof(int), 1, f);
+		ASSERTfread(&ns[i].v, sizeof(double), 1, f);
+		ASSERTfread(&ns[i].nmemb, sizeof(int), 1, f);
+		ASSERTfread(&ns[i].nstate, sizeof(int), 1, f);
 	}
 }
 void SaveState::fwrite_NodeState(NodeState* ns, int cnt, FILE* f){
 	for (int i=0; i < cnt; ++i) {
-		fwrite(&ns[i].v, sizeof(double), 1, f);
-		fwrite(&ns[i].nmemb, sizeof(int), 1, f);
-		fwrite(&ns[i].nstate, sizeof(int), 1, f);
+		ASSERTfwrite(&ns[i].v, sizeof(double), 1, f);
+		ASSERTfwrite(&ns[i].nmemb, sizeof(int), 1, f);
+		ASSERTfwrite(&ns[i].nstate, sizeof(int), 1, f);
 	}
 }
 void SaveState::fread_SecState(SecState* ss, int cnt, FILE* f){
 	int b;
 	for (int i=0; i < cnt; ++i) {
-		fread(&ss[i].nnode, sizeof(int), 1, f);
-		fread(&b, sizeof(int), 1, f);
+		ASSERTfread(&ss[i].nnode, sizeof(int), 1, f);
+		ASSERTfread(&b, sizeof(int), 1, f);
 		if (b) {
 			ss[i].root = new NodeState;
 		}else{
@@ -208,9 +212,9 @@ void SaveState::fread_SecState(SecState* ss, int cnt, FILE* f){
 void SaveState::fwrite_SecState(SecState* ss, int cnt, FILE* f){
 	int b;
 	for (int i=0; i < cnt; ++i) {
-		fwrite(&ss[i].nnode, sizeof(int), 1, f);
+		ASSERTfwrite(&ss[i].nnode, sizeof(int), 1, f);
 		b = ss[i].root ? 1 : 0;
-		fwrite(&b, sizeof(int), 1, f);
+		ASSERTfwrite(&b, sizeof(int), 1, f);
 	}
 }
 
@@ -703,16 +707,16 @@ void SaveState::read(OcFile* ocf, boolean close) {
 	FILE* f = ocf->file();
 	ssfree();
 	char buf[200];
-	fgets(buf, 200, f);
+	ASSERTfgets(buf, 200, f);
 	if (strcmp(buf, "SaveState binary file version 6.0\n") != 0) {
 		ocf->close();
 		hoc_execerror("Bad SaveState binary file", " Not version 6.0");
 	}
-	fread((char*)&t_, sizeof(double), 1, f);
+	ASSERTfread((char*)&t_, sizeof(double), 1, f);
 //	fscanf(f, "%d %d\n", &nsec_, &nrootnode_);
 // on some os's fscanf leaves file pointer at wrong place for next fread
 //	can check it with ftell(f)
-	fgets(buf, 200, f);
+	ASSERTfgets(buf, 200, f);
 	sscanf(buf, "%d %d\n", &nsec_, &nroot_);
 	// to enable comparison of SaveState files, we avoid
 	// putting pointers in the files and instead explicitly read/write
@@ -728,11 +732,11 @@ void SaveState::read(OcFile* ocf, boolean close) {
 			NodeState& ns = ss.ns[inode];
 			if (ns.nmemb) {
 				ns.type = new int[ns.nmemb];
-				fread((char*)ns.type, sizeof(int), ns.nmemb, f);
+				ASSERTfread((char*)ns.type, sizeof(int), ns.nmemb, f);
 			}
 			if (ns.nstate) {
 				ns.state = new double[ns.nstate];
-				fread((char*)ns.state, sizeof(double), ns.nstate, f);
+				ASSERTfread((char*)ns.state, sizeof(double), ns.nstate, f);
 			}
 		}
 		if (ss.root) {
@@ -740,30 +744,30 @@ void SaveState::read(OcFile* ocf, boolean close) {
 			NodeState& ns = *ss.root;
 			if (ns.nmemb) {
 				ns.type = new int[ns.nmemb];
-				fread((char*)ns.type, sizeof(int), ns.nmemb, f);
+				ASSERTfread((char*)ns.type, sizeof(int), ns.nmemb, f);
 			}
 			if (ns.nstate) {
 				ns.state = new double[ns.nstate];
-				fread((char*)ns.state, sizeof(double), ns.nstate, f);
+				ASSERTfread((char*)ns.state, sizeof(double), ns.nstate, f);
 			}
 		}
 	}
 	int n = 0;
-	fgets(buf, 20, f);
+	ASSERTfgets(buf, 20, f);
 	sscanf(buf, "%d\n", &n);
 	assert(n == nacell_);
 	for (int i=0, j=0; i < n_memb_func; ++i) if (nrn_is_artificial_[i]) {
 		int nt = 0, nc = 0, ns = 0;
-		fgets(buf, 200, f);
+		ASSERTfgets(buf, 200, f);
 		assert(sscanf(buf, "%d %d %d\n", &nt, &nc, &ns) == 3);
 		assert(nt == i && nc == memb_list[i].nodecount);
 		assert(ns == nc * ssi[i].size);
 		acell_[j].ncell = nc;
 		acell_[j].state = new double[ns];
-		fread((char*)acell_[j].state, sizeof(double), ns, f);
+		ASSERTfread((char*)acell_[j].state, sizeof(double), ns, f);
 		++j;
 	}
-	fgets(buf, 20, f);
+	ASSERTfgets(buf, 20, f);
 	sscanf(buf, "%d\n", &nprs_);
 	if (nprs_) {
 		prs_ = new PlayRecordSave*[nprs_];
@@ -784,7 +788,7 @@ void SaveState::write(OcFile* ocf, boolean close) {
 	BinaryMode(ocf)
 	FILE* f = ocf->file();
 	fprintf(f, "SaveState binary file version 6.0\n");
-	fwrite((char*)&t_, sizeof(double), 1, f);
+	ASSERTfwrite((char*)&t_, sizeof(double), 1, f);
 	fprintf(f, "%d %d\n", nsec_, nroot_);
 	fwrite_SecState(ss_, nsec_, f);
 	for (int isec=0; isec < nsec_; ++isec) {
@@ -793,20 +797,20 @@ void SaveState::write(OcFile* ocf, boolean close) {
 		for (int inode = 0; inode < ss.nnode; ++inode) {
 			NodeState& ns = ss.ns[inode];
 			if (ns.nmemb){
-				fwrite((char*)ns.type, sizeof(int), ns.nmemb, f);
+				ASSERTfwrite((char*)ns.type, sizeof(int), ns.nmemb, f);
 			}
 			if (ns.nstate) {
-				fwrite((char*)ns.state, sizeof(double), ns.nstate, f);
+				ASSERTfwrite((char*)ns.state, sizeof(double), ns.nstate, f);
 			}
 		}
 		if (ss.root) {
 			fwrite_NodeState(ss.root, 1, f);
 			NodeState& ns = *ss.root;
 			if (ns.nmemb){
-				fwrite((char*)ns.type, sizeof(int), ns.nmemb, f);
+				ASSERTfwrite((char*)ns.type, sizeof(int), ns.nmemb, f);
 			}
 			if (ns.nstate) {
-				fwrite((char*)ns.state, sizeof(double), ns.nstate, f);
+				ASSERTfwrite((char*)ns.state, sizeof(double), ns.nstate, f);
 			}
 		}
 	}
@@ -814,7 +818,7 @@ void SaveState::write(OcFile* ocf, boolean close) {
 	for (int i=0, j=0; i < n_memb_func; ++i) if (nrn_is_artificial_[i]) {
 		int sz = acell_[j].ncell * ssi[i].size;
 		fprintf(f, "%d %d %d\n", acell_[j].type, acell_[j].ncell, sz);
-		fwrite((char*)acell_[j].state, sizeof(double), sz, f);
+		ASSERTfwrite((char*)acell_[j].state, sizeof(double), sz, f);
 		++j;
 	}
 	fprintf(f, "%d\n", nprs_);
@@ -921,26 +925,26 @@ void SaveState::restorenet() {
 void SaveState::readnet(FILE* f) {
 	free_tq();
 	char buf[200];
-	fgets(buf, 200, f);
+	ASSERTfgets(buf, 200, f);
 	sscanf(buf, "%d\n", &nncs_);
 	if (nncs_ != 0) {
 		ncs_ = new NetConState[nncs_];
 	}
 	int i, n, type;
 	for (i=0; i < nncs_; ++i) {
-		fgets(buf, 200, f);
+		ASSERTfgets(buf, 200, f);
 		sscanf(buf, "%d %d\n", &ncs_[i].object_index, &ncs_[i].nstate);
 		if (ncs_[i].nstate) {
 			ncs_[i].state = new double[ncs_[i].nstate];
-			fread((char*)ncs_[i].state, sizeof(double), ncs_[i].nstate, f);
+			ASSERTfread((char*)ncs_[i].state, sizeof(double), ncs_[i].nstate, f);
 		}
 	}
 	// PreSyn's
-	fgets(buf, 200, f);
+	ASSERTfgets(buf, 200, f);
 	sscanf(buf, "%d\n", &npss_);
 	if (npss_ != 0) {
 		pss_ = new PreSynState[npss_];
-		fread((char*)pss_, sizeof(PreSynState), npss_, f);
+		ASSERTfread((char*)pss_, sizeof(PreSynState), npss_, f);
 		PreSyn* ps;
 		i = 0;
 		hoc_Item* q;
@@ -952,16 +956,16 @@ void SaveState::readnet(FILE* f) {
 		assert(npss_ == i);
 	}
 
-	fgets(buf, 200, f);
+	ASSERTfgets(buf, 200, f);
 	sscanf(buf, "%d\n", &n);
 	tqs_->nstate = n;
 	if (n) {
 		tqs_->items = new DiscreteEvent*[n];
 		tqs_->tdeliver = new double[n];
-		fread((char*)tqs_->tdeliver, sizeof(double), n, f);
+		ASSERTfread((char*)tqs_->tdeliver, sizeof(double), n, f);
 		for (i=0; i < n; ++i) {
 			DiscreteEvent* de = nil;
-			fgets(buf, 200, f);
+			ASSERTfgets(buf, 200, f);
 			sscanf(buf, "%d\n", &type);
 			switch(type) {
 			case DiscreteEventType:
@@ -1003,17 +1007,17 @@ void SaveState::writenet(FILE* f) {
 	for (i=0; i < nncs_; ++i) {
 		fprintf(f, "%d %d\n", ncs_[i].object_index, ncs_[i].nstate);
 		if (ncs_[i].nstate) {
-			fwrite((char*)ncs_[i].state, sizeof(double), ncs_[i].nstate, f);
+			ASSERTfwrite((char*)ncs_[i].state, sizeof(double), ncs_[i].nstate, f);
 		}
 	}
 	fprintf(f, "%d\n", npss_);
 	if (npss_) {
-		fwrite((char*)pss_, sizeof(PreSynState), npss_, f);
+		ASSERTfwrite((char*)pss_, sizeof(PreSynState), npss_, f);
 	}
 	n = tqs_->nstate;
 	fprintf(f, "%d\n", n);
 	if (n) {
-		fwrite((char*)tqs_->tdeliver, sizeof(double), n, f);
+		ASSERTfwrite((char*)tqs_->tdeliver, sizeof(double), n, f);
 		for (i=0; i < n; ++i) {
 			tqs_->items[i]->savestate_write(f);
 		}

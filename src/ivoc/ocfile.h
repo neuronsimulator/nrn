@@ -21,9 +21,9 @@ public:
 	void flush() { if (file_) { fflush(file_); }}
 	boolean mktemp();
 	boolean unlink();
-	void file_chooser_style(char* type, char* path,
-		char* banner=nil, char* filter=nil,
-		char* accept=nil, char* cancel=nil);
+	void file_chooser_style(const char* type, const char* path,
+		const char* banner=nil, const char* filter=nil,
+		const char* accept=nil, const char* cancel=nil);
 	boolean file_chooser_popup();
 #ifdef WIN32
 	void binary_mode();// sets open file to binary mode once only

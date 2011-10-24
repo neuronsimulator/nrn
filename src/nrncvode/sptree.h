@@ -100,6 +100,6 @@ extern void sprscan(void(*)(const TQItem*, int), SPBLK*, SPTREE*);		/* reverse s
 extern SPBLK * spfhead(SPTREE*);	/* fast non-splaying head */
 extern SPBLK * spfnext(SPBLK*);	/* fast non-splaying next */
 extern SPBLK * spfprev(SPBLK*);	/* fast non-splaying prev */
-extern char* spstats(SPTREE*);
+extern const char* spstats(SPTREE*);
 
 # endif

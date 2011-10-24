@@ -132,6 +132,7 @@ axis.c,v
    */
    
 #include	<stdio.h>
+#include <stdlib.h>
 #include	<math.h>
 #include	"hoc.h"
 # define	CLIP	1e9

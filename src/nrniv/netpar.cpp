@@ -270,7 +270,7 @@ DiscreteEvent* NetParEvent::savestate_save(){
 DiscreteEvent* NetParEvent::savestate_read(FILE* f){
 	int i;
 	char buf[100];
-	fgets(buf, 100, f);
+	assert(fgets(buf, 100, f));
 	assert(sscanf(buf, "%d\n", &i) == 1);
 	//printf("NetParEvent::savestate_read %d\n", i);
 	NetParEvent* npe = new NetParEvent();

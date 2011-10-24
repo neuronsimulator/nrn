@@ -255,7 +255,7 @@ IFGUI
 			<< g->x1() << "," << g->x2() << ","
 			<< g->y1() << "," << g->y2() << ")\n";
 		long i = Scene::scene_list_index(g);
-		sprintf(buf, "scene_vector_[%d] = save_window_", i);
+		sprintf(buf, "scene_vector_[%ld] = save_window_", i);
 		*Oc::save_stream << buf << endl;
 		g->save_phase2(*Oc::save_stream);
 		g->Scene::mark(true);
@@ -1141,7 +1141,7 @@ ENDGUI
 #endif
 }
 #if HAVE_IV
-static char* colorname[] = { "white", "black", "red", "blue", "green",
+static const char* colorname[] = { "white", "black", "red", "blue", "green",
 "orange", "brown", "violet", "yellow", "gray",
 0};
 
@@ -1176,7 +1176,7 @@ IFGUI
 	return color_palette[i];	
 ENDGUI else return nil;
 }
-const Color* ColorPalette::color(int i, char* name) {
+const Color* ColorPalette::color(int i, const char* name) {
 const Color* c = Color::lookup(Session::instance()->default_display(), name);
 	if (c == nil) {
 			printf("couldn't lookup color \"%s\", you must be missing the\n\

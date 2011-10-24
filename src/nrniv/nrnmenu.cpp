@@ -364,7 +364,7 @@ IFGUI
 		Object* ob = OBJ(q);
 			Point_process* pp = ob2pntproc(ob);
 			if (pp->sec) {
-sprintf(buf, "nrnpointmenu(%lu)", (unsigned long*)ob);
+sprintf(buf, "nrnpointmenu(%p)", ob);
 hoc_ivbutton(sec_and_position(pp->sec,pp->node), buf);
 			}
 	}

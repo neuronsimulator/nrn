@@ -53,8 +53,8 @@ extern "C" {extern void exit(int status);};
 #endif
 #define PI M_PI
 #endif
-#define FWrite(arg1,arg2,arg3,arg4) fwrite((char*)(arg1),arg2,arg3,arg4)
-#define FRead(arg1,arg2,arg3,arg4) fread((char*)(arg1),arg2,arg3,arg4)
+#define FWrite(arg1,arg2,arg3,arg4) if (fwrite((char*)(arg1),arg2,arg3,arg4) != arg3) { hoc_execerror("fwrite error", 0); }
+#define FRead(arg1,arg2,arg3,arg4) if (fread((char*)(arg1),arg2,arg3,arg4) != arg3) { hoc_execerror("fread error", 0); }
 #else
 #define FWrite(arg1,arg2,arg3,arg4) fwrite(arg1,arg2,arg3,arg4)
 #define FRead(arg1,arg2,arg3,arg4) fread(arg1,arg2,arg3,arg4)
@@ -161,20 +161,20 @@ void IvocVect::label(const char* label) {
 	}
 }
 
-static char* nullstr = "";
+static const char* nullstr = "";
 
-static char** v_label(void* v) {
+static const char** v_label(void* v) {
 	Vect* x  = (Vect*)v;
 	if (ifarg(1)) {
 		x->label(gargstr(1));
 	}
 	if (x->label_) {
-		return &x->label_;
+		return (const char**)&x->label_;
 	}
 	return &nullstr;
 }
 
-static void same_err(char* s, Vect* x, Vect* y) {
+static void same_err(const char* s, Vect* x, Vect* y) {
 	if (x == y) {
 		hoc_execerror(s, " argument needs to be copied first");
 	}
@@ -404,7 +404,7 @@ static double v_fwrite(void* v) {
 	}
 	int n = end-start+1;
 	BinaryMode(f);
-	return (double)FWrite(x,sizeof(double),n,fp);
+	return (double)fwrite(x,sizeof(double),n,fp);
 }
 
 static double v_fread(void* v) {
@@ -720,7 +720,7 @@ static double v_printf(void *v) {
 	int start = 0;
 	int end = top;
 	int next_arg = 1;
-	char *format = "%g\t";
+	const char *format = "%g\t";
 	int print_file = 0;
 	int extra_newline = 1; // when no File
 	OcFile *f;

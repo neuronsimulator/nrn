@@ -40,7 +40,7 @@ static Symbol* kstrans_sym;
 static void check_objtype(Object* o, Symbol* s) {
 	if (o->ctemplate->sym != s) {
 		char buf[200];
-		sprintf("%s is not a %s", o->ctemplate->sym->name, s->name);
+		sprintf(buf, "%s is not a %s", o->ctemplate->sym->name, s->name);
 		hoc_execerror(buf,0);
 	}
 	if (!o->u.this_pointer) {
@@ -419,31 +419,31 @@ static Object** ks_gate(void* v) {
 	return temp_objvar("KSGate", ksg, &ksg->obj_);
 }
 
-static char** ks_name(void* v) {
+static const char** ks_name(void* v) {
 	KSChan* ks = (KSChan*)v;
 	if (ifarg(1)) {
 		ks->setname(gargstr(1));
 	}
 	char** ps = hoc_temp_charptr();
 	*ps = (char*)ks->name_.string();
-	return ps;
+	return (const char**)ps;
 }
 
-static char** ks_ion(void* v) {
+static const char** ks_ion(void* v) {
 	KSChan* ks = (KSChan*)v;
 	if (ifarg(1)) {
 		ks->setion(gargstr(1));
 	}
 	char** ps = hoc_temp_charptr();
 	*ps = (char*)ks->ion_.string();
-	return ps;
+	return (const char**)ps;
 }
 
-static char** ks_ligand(void* v) {
+static const char** ks_ligand(void* v) {
 	KSChan* ks = (KSChan*)v;
 	char** ps = hoc_temp_charptr();
 	*ps = (char*)ks->ligands_[(int)chkarg(1, 0, ks->nligand_ - 1)]->name;
-	return ps;
+	return (const char**)ps;
 }
 
 static double kss_frac(void* v) {
@@ -470,7 +470,7 @@ static Object** kss_gate(void* v) {
 	return temp_objvar("KSGate", ksg, &ksg->obj_);
 }
 
-static char** kss_name(void* v) {
+static const char** kss_name(void* v) {
 	chkobj(v);
 	KSState* kss = (KSState*)v;
 	if (ifarg(1)) {
@@ -478,7 +478,7 @@ static char** kss_name(void* v) {
 	}
 	char** ps = hoc_temp_charptr();
 	*ps = (char*)kss->string();
-	return ps;
+	return (const char**)ps;
 }
 
 static double ksg_nstate(void* v) {
@@ -633,7 +633,7 @@ static Object** kst_parm(void* v) {
 	return vector_temp_objvar(vec);
 };
 
-static char** kst_ligand(void* v) {
+static const char** kst_ligand(void* v) {
 	static char s[20];;
 	s[0] = '\0';
 	chkobj(v);
@@ -645,7 +645,7 @@ static char** kst_ligand(void* v) {
 	}	
 	char** ps = hoc_temp_charptr();
 	*ps = s;
-	return ps;
+	return (const char**)ps;
 }
 
 static double kst_stoichiometry(void* v) {
@@ -849,7 +849,8 @@ void KSChan_reg() {
 
 // param is gmax, g, i --- if change then change numbers below
 // state names are handled individually
-static char* m_kschan[] = { "0", "kschan", "gmax", 0, "g", "i", 0, 0, 0 };
+static const char* m_kschan_pat[] = { "0", "kschan", "gmax", 0, "g", "i", 0, 0, 0 };
+static char* m_kschan[9];
 // gmax=0 g=1 i=1 state names will be modltype 2, there are no pointer variables
 
 void KSChan::add_channel(char** m) {
@@ -936,21 +937,26 @@ void KSChan::build() {
 	if (looksym(suffix)) {
 		hoc_execerror(suffix, "already exists");
 	}
-	m_kschan[1] = (char*)suffix;
-	sprintf(buf, "gmax%s", unsuffix); m_kschan[2] = strdup(buf);
+	assert((m_kschan[0] = strdup(m_kschan_pat[0])) != 0);
+	assert((m_kschan[1] = strdup(suffix)) != 0);
+	sprintf(buf, "gmax%s", unsuffix);
+	assert((m_kschan[2] = strdup(buf)) != 0);
 	int aoff = 0;
 	if (!ion_sym_) {
-		sprintf(buf, "e%s", unsuffix); m_kschan[3] = strdup(buf);
+		sprintf(buf, "e%s", unsuffix);
+		assert((m_kschan[3] = strdup(buf)) != 0);
 		aoff = 1;
 	}
 	m_kschan[3+aoff] = 0;
-	sprintf(buf, "g%s", unsuffix); m_kschan[4+aoff] = strdup(buf);
-	sprintf(buf, "i%s", unsuffix); m_kschan[5+aoff] = strdup(buf);
+	sprintf(buf, "g%s", unsuffix);
+	assert((m_kschan[4+aoff] = strdup(buf)) != 0);
+	sprintf(buf, "i%s", unsuffix);
+	assert((m_kschan[5+aoff] = strdup(buf)) != 0);
 	m_kschan[6+aoff] = 0;
 	m_kschan[7+aoff] = 0;
 	soffset_ = 3+aoff; // first state points here in p array
 	add_channel(m_kschan);
-	for (i=2; i < 9; ++i) if (m_kschan[i]) { free(m_kschan[i]); }
+	for (i=0; i < 9; ++i) if (m_kschan[i]) { free(m_kschan[i]); }
 	mechsym_ = looksym(suffix);
 	if (is_point()) {
 		rlsym_ = looksym(suffix, mechsym_);

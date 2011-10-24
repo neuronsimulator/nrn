@@ -65,6 +65,7 @@ directly by hoc.
 
 #include "modl.h"
 #include "parse1.h"
+#include <stdlib.h>
 #include <unistd.h>
 #define GETWD(buf) getcwd(buf, 256)
 

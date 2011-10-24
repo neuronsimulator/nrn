@@ -365,7 +365,7 @@ double hoc_scan(fi)
 		}
 		if (sscanf(fs, "%lf", &d) == 1) {
 			/* but if at end of line, leave at beginning of next*/
-			fscanf(fi, "\n");
+			if(fscanf(fi, "\n")) {;} /* ignore return value */
 			break;
 		}
 	}
@@ -505,7 +505,7 @@ sprint(ppbuf, argn)	/* convert args to right type for conversion */
 			n = pbuf - hs->buf;
 			hocstr_resize(hs, n + strlen(frag) + 100);
 			pbuf = hs->buf + n;
-			Sprintf(pbuf, frag);
+			Sprintf(pbuf, "%s", frag);
 			pfrag = frag;
 			*pfrag = 0;
 			while (*pbuf) {	pbuf++; }
@@ -527,7 +527,7 @@ sprint(ppbuf, argn)	/* convert args to right type for conversion */
 		}
 	}
 	if (pfrag != frag)
-		Sprintf(pbuf, frag);
+		Sprintf(pbuf, "%s", frag);
 	*ppbuf = hs->buf;
 }
 

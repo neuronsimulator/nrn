@@ -206,8 +206,8 @@ static double dialog(void* v) {
 	boolean r = false;
 IFGUI
 	OcBox* b = (OcBox*)v;
-	char* a = "Accept";
-	char* c = "Cancel";
+	const char* a = "Accept";
+	const char* c = "Cancel";
 	if (ifarg(2)) {
 		a = gargstr(2);
 	}

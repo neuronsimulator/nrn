@@ -608,7 +608,7 @@ static int exec_command( const char ** const ibufpp, const int prev_status,
     case '!': if( unexpected_address( addr_cnt ) ) return ERR;
               fnp = get_shell_command( ibufpp );
               if( !fnp ) return ERR;
-              system( fnp + 1 );
+              if (system( fnp + 1 ) == -1) return ERR;
               if( !scripted() ) printf( "!\n" );
               break;
     case '\n': first_addr = 1;

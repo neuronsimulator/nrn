@@ -351,7 +351,7 @@ void nrn_check_conc_write(p_ok, pion, i) Prop* p_ok, *pion; int i; {
 			if (chk_conc_[2*p->type + i] & ion_bit_[pion->type]) {
 				char buf[300];
 sprintf(buf, "%.*s%c is being written at the same location by %s and %s",
-				    strlen(memb_func[pion->type].sym->name)-4,
+				    (int)strlen(memb_func[pion->type].sym->name)-4,
 					memb_func[pion->type].sym->name,
 					((i == 1)? 'i' : 'o'),
 					memb_func[p_ok->type].sym->name,

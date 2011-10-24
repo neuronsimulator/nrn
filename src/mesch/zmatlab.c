@@ -187,10 +187,10 @@ char    **name;
     for ( i = 0; i < A->m*A->n; i++ )
     {
 	if ( p_flag == DOUBLE_PREC )
-	    fread(&d_temp,sizeof(double),1,fp);
+	    if (fread(&d_temp,sizeof(double),1,fp) != 1) {error(E_INPUT, "zm_load");}
 	else
 	{
-	    fread(&f_temp,sizeof(float),1,fp);
+	    if (fread(&f_temp,sizeof(float),1,fp) != 1) {error(E_INPUT, "zm_load");}
 	    d_temp = f_temp;
 	}
 	if ( o_flag == ROW_ORDER )
@@ -205,10 +205,10 @@ char    **name;
 	for ( i = 0; i < A->m*A->n; i++ )
 	{
 	    if ( p_flag == DOUBLE_PREC )
-		fread(&d_temp,sizeof(double),1,fp);
+		if (fread(&d_temp,sizeof(double),1,fp) != 1) {error(E_INPUT, "zm_load");}
 	    else
 	    {
-		fread(&f_temp,sizeof(float),1,fp);
+		if (fread(&f_temp,sizeof(float),1,fp) != 1) {error(E_INPUT, "zm_load");}
 		d_temp = f_temp;
 	    }
 	    if ( o_flag == ROW_ORDER )

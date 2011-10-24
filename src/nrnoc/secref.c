@@ -15,9 +15,11 @@ s2.sec {psection()} // makes soma the currently accessed section for a statement
 access s1.sec	// soma becomes the default section
 */
 
+#include <stdlib.h>
 #include "section.h"
 #include "parse.h"
 extern char* secname();
+extern char* hoc_object_name();
 extern Section* nrn_trueparent();
 
 Symbol* nrn_sec_sym, *nrn_parent_sym, *nrn_root_sym, *nrn_child_sym;

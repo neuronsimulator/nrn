@@ -135,7 +135,7 @@ diag(s1, s2)
 			;
 		}
 		if (q2 == intoken) {
-			Fprintf(stderr, " at end of file in file %s\n", linenum, finname);
+			Fprintf(stderr, " at end of file in file %s\n", finname);
 		}else{
 			Fprintf(stderr, " at line %d in file %s\n", q2->itemsubtype, finname);
 		}

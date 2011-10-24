@@ -157,21 +157,21 @@ static double f_flush(void* v){
 	return 1;
 }
 
-static char** f_get_name(void* v){
+static const char** f_get_name(void* v){
 	OcFile* f = (OcFile*)v;
 	char** ps = hoc_temp_charptr();
 	*ps = (char*)f->get_name();
 	if (ifarg(1)) {
 		hoc_assign_str(hoc_pgargstr(1), *ps);
 	}
-	return ps;
+	return (const char**)ps;
 }
 
-static char** f_dir(void* v) {
+static const char** f_dir(void* v) {
 	char** ps = hoc_temp_charptr();
 	OcFile* f = (OcFile*)v;
 	*ps = (char*)f->dir();
-	return ps;
+	return (const char**)ps;
 }
 
 static double f_chooser(void* v){
@@ -186,7 +186,7 @@ IFGUI
 
 	char *type, *banner, *filter, *bopen, *cancel;
 	banner=filter=bopen=cancel=nil;
-	char *path=".";
+	const char *path=".";
 	type = gargstr(1);
 	if (ifarg(2)) {
 		banner = gargstr(2);
@@ -385,8 +385,8 @@ boolean OcFile::unlink() {
 	return i == 0;
 }
 
-void OcFile::file_chooser_style(char* type, char* path, char* banner,
-	char* filter, char* bopen, char* cancel)
+void OcFile::file_chooser_style(const char* type, const char* path, const char* banner,
+	const char* filter, const char* bopen, const char* cancel)
 {
 #if HAVE_IV
 	Resource::unref(fc_);

@@ -857,7 +857,7 @@ void Scene::save_all(ostream& o) {
 	}
 	long count = scene_list->count();
 	if (count) {
-		sprintf(buf, "objectvar scene_vector_[%d]", count);
+		sprintf(buf, "objectvar scene_vector_[%ld]", count);
 		o << buf << endl;
 	}
 	for (long i = 0; i < count; ++i) {

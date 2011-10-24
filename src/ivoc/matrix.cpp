@@ -112,8 +112,8 @@ static double m_spgetrowval(void* v) {
 static double m_printf(void* v) {
 	Matrix* m = (Matrix*)v;
 	int i, j, nrow = m->nrow(), ncol = m->ncol();
-	char* f1 = " %-8.3g";
-	char* f2 = "\n";
+	const char* f1 = " %-8.3g";
+	const char* f2 = "\n";
 	if (ifarg(1)) {
 		f1 = gargstr(1);
 	}
@@ -124,7 +124,7 @@ static double m_printf(void* v) {
 		for (j=0; j < ncol; ++j) {
 			printf(f1, m->getval(i, j));
 		}
-		printf(f2);
+		printf("%s", f2);
 	}
 	return 0.;	
 }
@@ -134,8 +134,8 @@ static double m_fprint(void* v) {
 	int i, j, nrow = m->nrow(), ncol = m->ncol();
 	int ia = 1;
 	boolean pr_size = true;
-	char* f1 = " %-8.3g";
-	char* f2 = "\n";
+	const char* f1 = " %-8.3g";
+	const char* f2 = "\n";
 	if (hoc_is_double_arg(ia)) {
 		pr_size = ((int)chkarg(ia, 0, 1) == 1) ? true : false;
 		++ia;
@@ -154,7 +154,7 @@ static double m_fprint(void* v) {
 		for (j=0; j < ncol; ++j) {
 			fprintf(f, f1, m->getval(i, j));
 		}
-		fprintf(f, f2);
+		fprintf(f, "%s", f2);
 	}
 	return 0.;	
 }

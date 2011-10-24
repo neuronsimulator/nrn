@@ -116,7 +116,7 @@ extern int hoc_arayinstal();
 
 static struct HocInst {
 	Pfri pi;
-	char* signature;
+	const char* signature;
 } hoc_inst_[] = {
 	0, 0,		//0
 	nopop, 0,
@@ -413,7 +413,10 @@ int hoc_readcheckpoint(char* fname) {
 		return 0;
 	}
 	char buf[256];
-	fgets(buf, 256, f_);
+	if (fgets(buf, 256, f_) == 0) {
+		printf("checkpoint read from file %s failed.\n", fname);
+		return 2;
+	}
 	if (strcmp(buf, "NEURON Checkpoint\n") != 0) {
 		fclose(f_);
 		return 0;
@@ -668,7 +671,7 @@ printf("couldn't find %s in table\n", s->name);
 		}
 		if (p->size) {
 			DEBUG(f_, "instructions for %d |%s|\n", val, s->name);
-			DEBUG(f_, "size %d\n", p->size);
+			DEBUG(f_, "size %lu\n", p->size);
 			boolean b = xdr(val)
 				&& xdr(p->size);
 			if (!b) {
@@ -703,7 +706,7 @@ printf("instlist failed 1\n");
 printf("instlist failed 2\n");
 				return false;
 			}
-			char* s = hoc_inst_[val].signature;
+			const char* s = hoc_inst_[val].signature;
 			for (int j=0; s && s[j]; ++j) {
 				++i;
 				switch (s[j]) {
@@ -738,7 +741,7 @@ printf("instlist failed 5\n");
 				}
 			}
 		}else{
-printf("OcCheckpoint::instlist failed at i = %d\n", i);
+printf("OcCheckpoint::instlist failed at i = %lu\n", i);
 			return false;
 		}
 	}
@@ -754,7 +757,7 @@ boolean OcCheckpoint::ctemplate(Symbol* s) {
 		int ti;
 		boolean b;
 		b = stable_->find(ti, s);
-		DEBUG(f_, "%d %d %s\n", ti, t->count);
+		DEBUG(f_, "%d %d %s\n", ti, t->count, s->name);
 		b = b && xdr(ti);
 //		b = b && xdr(t->count);
 		hoc_Item* q;
@@ -1149,7 +1152,7 @@ boolean OcReadChkPnt::symbol() {
 boolean OcReadChkPnt::instructions() {
 	int sid, size, i, iid;
 	Symbol* sym;
-	char* signature;
+	const char* signature;
 	for (;;) {
 		Get(sid);
 		if (sid == -1) {
@@ -1168,7 +1171,7 @@ boolean OcReadChkPnt::instructions() {
 			Get(iid);
 			lin[i++].pf = hoc_inst_[iid].pi;
 			signature = hoc_inst_[iid].signature;
-			if (signature) for(char* cp = signature; *cp; ++cp) {
+			if (signature) for(const char* cp = signature; *cp; ++cp) {
 				Get(iid);
 				switch (*cp) {
 				case 's':

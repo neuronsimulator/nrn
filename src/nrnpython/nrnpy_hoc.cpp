@@ -65,7 +65,7 @@ static char array_interface_typestr[5] = "|f8";
 static PyObject* pfunc_get_docstring = NULL;
 
 
-  static char* hocobj_docstring = "class neuron.hoc.HocObject - Hoc Object wrapper";
+static const char* hocobj_docstring = "class neuron.hoc.HocObject - Hoc Object wrapper";
 
 
 #if 0
@@ -1327,7 +1327,7 @@ static PyObject* hocobj_getitem(PyObject* self, Py_ssize_t ix) {
 			}
 		}
 		char e[200];
-		sprintf(e, "%s[%d] instance does not exist", po->sym_->name, ix);
+		sprintf(e, "%s[%ld] instance does not exist", po->sym_->name, ix);
 		PyErr_SetString(PyExc_IndexError, e);
 		return NULL;
 	}
@@ -1826,7 +1826,7 @@ myPyMODINIT_FUNC nrnpy_hoc() {
 		goto fail;
 	}
 	// Setup bytesize in typestr
-	snprintf(array_interface_typestr+2,3,"%d",sizeof(double));
+	snprintf(array_interface_typestr+2,3,"%ld",sizeof(double));
 #if PY_MAJOR_VERSION >= 3
 	assert(PyDict_SetItemString(modules, "hoc", m) == 0);
 	Py_DECREF(m);
