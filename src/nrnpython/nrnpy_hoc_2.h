@@ -45,10 +45,17 @@ static PyNumberMethods hocobj_as_number = {
 #endif
 };
 
+#undef ccast
+#if PYTHON_API_VERSION < 1013
+#define ccast (char*)
+#else
+#define ccast /**/
+#endif
+
 static PyTypeObject nrnpy_HocObjectType = {
     PyObject_HEAD_INIT(NULL)
     0,                         /*ob_size*/
-    "hoc.HocObject",         /*tp_name*/
+    ccast "hoc.HocObject",         /*tp_name*/
     sizeof(PyHocObject), /*tp_basicsize*/
     0,                         /*tp_itemsize*/
     (destructor)hocobj_dealloc,                        /*tp_dealloc*/
@@ -67,7 +74,7 @@ static PyTypeObject nrnpy_HocObjectType = {
     hocobj_setattro,                         /*tp_setattro*/
     0,                         /*tp_as_buffer*/
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,        /*tp_flags*/
-    hocobj_docstring,         /* tp_doc */
+    ccast hocobj_docstring,         /* tp_doc */
     0,		               /* tp_traverse */
     0,		               /* tp_clear */
     0,		               /* tp_richcompare */

@@ -1,7 +1,15 @@
+
+#undef ccast
+#if PYTHON_API_VERSION < 1013
+#define ccast (char*)
+#else
+#define ccast /**/
+#endif
+
 static PyTypeObject nrnpy_SectionType = {
     PyObject_HEAD_INIT(NULL)
     0,                         /*ob_size*/
-    "nrn.Section",         /*tp_name*/
+    ccast "nrn.Section",         /*tp_name*/
     sizeof(NPySecObj), /*tp_basicsize*/
     0,                         /*tp_itemsize*/
     (destructor)NPySecObj_dealloc,                        /*tp_dealloc*/
@@ -20,7 +28,7 @@ static PyTypeObject nrnpy_SectionType = {
     (setattrofunc)section_setattro,                         /*tp_setattro*/
     0,                         /*tp_as_buffer*/
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,        /*tp_flags*/
-    "Section objects",         /* tp_doc */
+    ccast "Section objects",         /* tp_doc */
     0,		               /* tp_traverse */
     0,		               /* tp_clear */
     0,		               /* tp_richcompare */
@@ -43,7 +51,7 @@ static PyTypeObject nrnpy_SectionType = {
 static PyTypeObject nrnpy_SegmentType = {
     PyObject_HEAD_INIT(NULL)
     0,                         /*ob_size*/
-    "nrn.Segment",         /*tp_name*/
+    ccast "nrn.Segment",         /*tp_name*/
     sizeof(NPySegObj), /*tp_basicsize*/
     0,                         /*tp_itemsize*/
     (destructor)NPySegObj_dealloc,                        /*tp_dealloc*/
@@ -85,7 +93,7 @@ static PyTypeObject nrnpy_SegmentType = {
 static PyTypeObject nrnpy_RangeType = {
     PyObject_HEAD_INIT(NULL)
     0,                         /*ob_size*/
-    "nrn.RangeVar",         /*tp_name*/
+    ccast "nrn.RangeVar",         /*tp_name*/
     sizeof(NPyRangeVar), /*tp_basicsize*/
     0,                         /*tp_itemsize*/
     (destructor)NPyRangeVar_dealloc,                        /*tp_dealloc*/
@@ -127,7 +135,7 @@ static PyTypeObject nrnpy_RangeType = {
 static PyTypeObject nrnpy_MechanismType = {
     PyObject_HEAD_INIT(NULL)
     0,                         /*ob_size*/
-    "nrn.Mechanism",         /*tp_name*/
+    ccast "nrn.Mechanism",         /*tp_name*/
     sizeof(NPyMechObj), /*tp_basicsize*/
     0,                         /*tp_itemsize*/
     (destructor)NPyMechObj_dealloc,                        /*tp_dealloc*/
