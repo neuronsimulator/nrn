@@ -1200,7 +1200,11 @@ void nrnpy_reg_mech(int type) {
 			Symbol* s = hoc_table_lookup("get_segment", sl);
 			if (!s) {
 				s = hoc_install("get_segment", OBFUNCTION, 0, &sl);
+#if MAC
+				s->u.u_proc->defn.pfo = (Object**(*)(...))pp_get_segment;
+#else
 				s->u.u_proc->defn.pfo = (Object**(*)())pp_get_segment;
+#endif
 			}
 		}
 		return;
