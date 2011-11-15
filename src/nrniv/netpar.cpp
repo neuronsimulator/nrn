@@ -196,7 +196,9 @@ static int n_npe_; // just to compare with nrn_nthread
 
 #if NRNMPI
 // for combination of threads and mpi.
+#if USE_PTHREAD
 static MUTDEC
+#endif
 static int seqcnt_;
 static NrnThread* last_nt_;
 #endif
@@ -476,9 +478,11 @@ void nrn_spike_exchange_init() {
 	nsend_ = nsendmax_ = nrecv_ = nrecv_useful_ = 0;
 	if (nrnmpi_numprocs > 0) {
 		if (nrn_nthread > 0) {
+#if USETHREAD
 			if (!mut_) {
 				MUTCONSTRUCT(1)
 			}
+#endif
 		}else{
 			MUTDESTRUCT
 		}

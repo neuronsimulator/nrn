@@ -122,7 +122,10 @@ void winio_key_press() {
 }
 
 #endif
+
+#if USE_PTHREAD
 static MUTDEC
+#endif
 
 Oc::Oc() {
 	MUTLOCK
