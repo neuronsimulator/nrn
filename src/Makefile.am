@@ -63,17 +63,17 @@ else
 neuronmusicbuild =
 endif
 
-npydir = npy23 npy24 npy25 npy26 npy30
+npydir = npy24 npy25 npy26 npy27
 
 if BUILD_NRNPYTHON_DYNAMIC
 #does not work with parallel make (-j)
 
 nrnpydynam = $(npydir)
 
-all-recursive: npy25/Makefile
+all-recursive: npy27/Makefile
 
-npy25/Makefile: nrnpython/Makefile
-	sh $(srcdir)/nrnpython/nrnpydynam.sh $(srcdir) $(DEPDIR) $(host)
+npy27/Makefile: nrnpython/Makefile
+	bash $(srcdir)/nrnpython/nrnpydynam.sh $(srcdir) $(DEPDIR) $(host)
 
 else
 nrnpydynam =

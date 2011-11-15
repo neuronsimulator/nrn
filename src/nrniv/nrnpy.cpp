@@ -6,6 +6,7 @@
 
 #include <../nrnpython/nrnpython_config.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <InterViews/resource.h>
 #include "nrnoc2iv.h"
 #include "classreg.h"
@@ -22,7 +23,7 @@ static void (*p_nrnpython_reg_real)();
 extern "C" {
 extern char* neuron_home;
 }
-static char* ver[] = {"3.0", "2.6", "2.5", "2.4", "2.3", 0};
+static char* ver[] = {"2.7", "2.6", "2.5", "2.4", 0};
 static int iver; // which python is loaded?
 static void* python_already_loaded();
 static void* load_python();
