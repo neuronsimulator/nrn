@@ -125,7 +125,7 @@ static void* load_sym(void* handle, char* name) {
 static void load_nrnpython() {
 	char name[100];
 #if DARWIN
-	sprintf(name, "%s/../../umac/lib/libnrnpython%c%c.dylib", neuron_home, ver[iver][0], ver[iver][2]);
+	sprintf(name, "%s/../../%s/lib/libnrnpython%c%c.dylib", neuron_home, NRNHOSTCPU, ver[iver][0], ver[iver][2]);
 #else
 	sprintf(name, "libnrnpython%c%c.so", ver[iver][0], ver[iver][2]);
 #endif

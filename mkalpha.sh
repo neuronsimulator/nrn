@@ -121,8 +121,8 @@ cd $NOBJ
 #	--with-iv=$IDIR/iv --enable-carbon --with-nrnpython \
 #	PYLIB=-lpython PYLIBLINK=-lpython --enable-UniversalMacBinary
 $NSRC/configure --prefix=$IDIR/nrn --srcdir=$NSRC \
-	--with-iv=$IDIR/iv --enable-carbon --with-nrnpython=dynamic \
-	--enable-UniversalMacBinary
+  --with-iv=$IDIR/iv --enable-carbon --with-nrnpython=dynamic \
+  'CFLAGS=-arch i386 -g -O2' 'CXXFLAGS=-arch i386 -g -O2'
 make clean
 make
 if test $? != 0 ; then

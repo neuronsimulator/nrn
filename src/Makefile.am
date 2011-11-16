@@ -72,7 +72,7 @@ nrnpydynam = $(npydir)
 
 all-recursive: npy27/Makefile
 
-npy27/Makefile: nrnpython/Makefile
+npy27/Makefile: nrnpython/Makefile $(srcdir)/nrnpython/nrnpydynam.sh
 	bash $(srcdir)/nrnpython/nrnpydynam.sh $(srcdir) $(DEPDIR) $(host)
 
 else
