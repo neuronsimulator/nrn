@@ -56,12 +56,15 @@ $(RPM_TARGET): $(DISTFILES)
 	-rm $(pkgdatadir)/demo/neuron
 	(cd $(pkgdatadir)/demo/release ; $(bindir)/nrnivmodl ; cd $(host_cpu) ; rm -f *.c *.o *.lo *.mod *.la ; cd ../.. ; ln -s release/$(host_cpu)/special neuron )
 	-mkdir -p `dirname $(RPM_TARGET)`
-#	$(RPM_PROG) $(RPM_ARGS) $(RPM_TARBALL)
-	$(RPM_PROG) -bb nrnrpm.spec
+	(cd `dirname $(RPM_TARGET)` && rm -f nrn*.deb nrn*.rpm)
+	ln -s / /tmp/nrnrpmbld
+	$(RPM_PROG) -bb --buildroot /tmp/nrnrpmbld nrnrpm.spec
 	@echo Congratulations, $(RPM_TARGET) "(and friends) should now exist."
+	(cd `dirname $(RPM_TARGET)` &&  alien --to-deb $(RPM_TARGET))
 
 rpmdist:
 	scp $(RPM_TARGET) $(ALPHADIR)/nrn-"`sh $(srcdir)/nrnversion.sh 2`".$(host_cpu).rpm
+	scp `dirname $(RPM_TARGET)`/nrn*.deb $(ALPHADIR)/nrn-"`sh $(srcdir)/nrnversion.sh 2`".$(host_cpu).deb
 
 else
 endif
