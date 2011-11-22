@@ -1741,6 +1741,7 @@ Symbol* hoc_get_last_pointer_symbol() {/* hard to imagine a kludgier function*/
 	Symbol* sym = (Symbol*)0;
 	int hoc_ob_pointer(), rangevarevalpointer(), hoc_evalpointer(); 
 	Inst* pcv;
+	int istop=0;
 	for (pcv = pc; pcv; --pcv) {
 		if (pcv->pf == hoc_ob_pointer) {
 			if (pcv[-2].sym) {
@@ -1756,8 +1757,10 @@ Symbol* hoc_get_last_pointer_symbol() {/* hard to imagine a kludgier function*/
 			sym = pcv[1].sym;
 			break;
 		}else if (pcv->in == STOP) {
-/* hopefully only got here from python. */
-			break;
+/* hopefully only got here from python. Give up on second STOP*/
+			if (istop++ == 1) {
+				break;
+			}
 		}
 	}
 	return sym;
