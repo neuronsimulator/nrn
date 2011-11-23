@@ -100,7 +100,7 @@ if grep '^mpicc=mpicc' $B/src/mswin/nrncygso.sh ; then
 	chmod 600 $D/mpd.conf
   fi
 	# gforker
-	cp $mpichbin/mpiexec.exe $D/bin
+	cp $mpiinstalled/mpiexec.exe $D/bin
 	# and make the basic tests available
 	for i in test0.hoc test0.py ; do
 		cp $S/src/parallel/$i $D
