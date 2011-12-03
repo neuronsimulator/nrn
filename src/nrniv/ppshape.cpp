@@ -1,18 +1,23 @@
 #include <../../nrnconf.h>
-#if HAVE_IV // to end of file
-
 #include <stdio.h>
-#include "ppshape.h"
+#include "oclist.h"
 #include "nrnoc2iv.h"
 #include "classreg.h"
-#include "oclist.h"
+
+#if HAVE_IV
+#include "ppshape.h"
+#endif //HAVE_IV
 
 // ppshape registration
 
 static double pp_append(void* v) {
+#if HAVE_IV
+IFGUI
 	Object* ob = *hoc_objgetarg(1);
 	((PPShape*)v)->pp_append(ob);
 	return 1.;
+ENDGUI
+#endif
 }
 
 static Member_func pp_members[] = {
@@ -22,6 +27,8 @@ static Member_func pp_members[] = {
 };
 
 static void* pp_cons(Object* ho) {
+#if HAVE_IV
+IFGUI
 	Object* ob = *hoc_objgetarg(1);
 	check_obj_type(ob, "List");
 	PPShape* p = new PPShape((OcList*)ob->u.this_pointer);
@@ -29,16 +36,25 @@ static void* pp_cons(Object* ho) {
 	p->view(200);
 	p->hoc_obj_ptr(ho);
 	return (void*)p;
+ENDGUI
+	return 0;
+#endif
 }
 
 static void pp_destruct(void* v) {
+#if HAVE_IV
+IFGUI
 	Resource::unref((PPShape*)v);
+ENDGUI
+#endif
 }
 
 void PPShape_reg() {
 //	printf("PPShape_reg\n");
 	class2oc("PPShape", pp_cons, pp_destruct, pp_members);
 }
+
+#if HAVE_IV // to end of file
 
 /* static */ class PPShapeImpl {
 public:

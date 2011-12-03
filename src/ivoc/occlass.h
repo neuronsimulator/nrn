@@ -6,8 +6,8 @@
 	GUIMath_reg(),
 	PWManager_reg(),
 	GrGlyph_reg(),
-#if HAVE_IV
 	ValueFieldEditor_reg(),
+#if HAVE_IV
 	TextEditor_reg(),
 #endif
 #if !defined(WIN32) || defined(CYGWIN)
@@ -31,8 +31,8 @@
 	GUIMath_reg,
 	PWManager_reg,
 	GrGlyph_reg,
-#if HAVE_IV
 	ValueFieldEditor_reg,
+#if HAVE_IV
 	TextEditor_reg,
 #endif
 #if !defined(WIN32) || defined(CYGWIN)

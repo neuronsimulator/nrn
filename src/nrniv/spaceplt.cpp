@@ -1,13 +1,14 @@
 #include <../../nrnconf.h>
-#if HAVE_IV // to end of file
+#include <stdio.h>
+#include "classreg.h"
+
+#if HAVE_IV // to end of file except hoc interface stubs exist.
 
 #include <OS/list.h>
 #include <OS/string.h>
 #include <OS/math.h>
 #include <string.h>
 #include <ivstream.h>
-#include <stdio.h>
-#include "classreg.h"
 #include "graph.h"
 #include "ivocvect.h"
 #include "scenepic.h"
@@ -77,49 +78,85 @@ private:
 	int struc_changed_;
 	double d2root_; // distance to root of closest point to root
 };
+#endif //HAVE_IV
 
 static double s_begin(void* v) {
+#if HAVE_IV
+IFGUI
 	((RangeVarPlot*)v)->x_begin(chkarg(1, 0., 1.));
 	return 1.;
+ENDGUI
+#endif
 }
 
 static double s_end(void* v) {
+#if HAVE_IV
+IFGUI
 	((RangeVarPlot*)v)->x_end(chkarg(1, 0., 1.));
+ENDGUI
+#endif
 	return 1.;
 }
 
 static double s_origin(void* v) {
+#if HAVE_IV
+IFGUI
 	((RangeVarPlot*)v)->origin(*getarg(1));
+ENDGUI
+#endif
 	return 1.;
 }
 
 static double s_d2root(void* v) {
+#if HAVE_IV
+IFGUI
 	return ((RangeVarPlot*)v)->d2root();
+ENDGUI
+#endif
+	return 0.0;
 }
 
 static double s_left(void* v) {
+#if HAVE_IV
+IFGUI
 	return ((RangeVarPlot*)v)->left();
+ENDGUI
+#endif
+	return 0.0;
 }
 
 static double s_right(void* v) {
+#if HAVE_IV
+IFGUI
 	return ((RangeVarPlot*)v)->right();
+ENDGUI
+#endif
+	return 0.0;
 }
 
 static double s_list(void* v) {
+#if HAVE_IV
+IFGUI
 	Object* ob = *hoc_objgetarg(1);
 	check_obj_type(ob, "SectionList");
 	((RangeVarPlot*)v)->list(ob);
+ENDGUI
+#endif
 	return 0.;
 }
 
 static double s_color(void* v) {
+#if HAVE_IV
 IFGUI
 	((RangeVarPlot*)v)->color(colors->color((int)chkarg(1,0,100)));
 ENDGUI
+#endif
 	return 0.;
 }
 
 static double to_vector(void* v) {
+#if HAVE_IV
+IFGUI
 	RangeVarPlot* rvp = (RangeVarPlot*)v;
 	Vect* y = vector_arg(1);
 	long i, cnt = rvp->py_data()->count();
@@ -135,9 +172,14 @@ static double to_vector(void* v) {
 		}
 	}
 	return double(cnt);
+ENDGUI
+#endif
+	return 0.0;
 }
 
 static double from_vector(void* v) {
+#if HAVE_IV
+IFGUI
 	RangeVarPlot* rvp = (RangeVarPlot*)v;
 	Vect* y = vector_arg(1);
 	long i, cnt = rvp->py_data()->count();
@@ -145,6 +187,9 @@ static double from_vector(void* v) {
 		*rvp->py_data()->p(i) = y->elem(i);
 	}
 	return double(cnt);
+ENDGUI
+#endif
+	return 0.0;
 }
 
 static Member_func s_members[] = {
@@ -162,13 +207,22 @@ static Member_func s_members[] = {
 };
 
 static void* s_cons(Object*) {
+#if HAVE_IV
+IFGUI
 	RangeVarPlot* s = new RangeVarPlot(gargstr(1));
 	s->ref();
 	return (void*)s;
+ENDGUI
+#endif
+	return 0;
 }
 
 static void s_destruct(void* v) {
+#if HAVE_IV
+IFGUI
 	Resource::unref((RangeVarPlot*)v);
+ENDGUI
+#endif
 }
 
 void RangeVarPlot_reg() {
@@ -176,6 +230,7 @@ void RangeVarPlot_reg() {
 	class2oc("RangeVarPlot", s_cons, s_destruct, s_members);
 }
 
+#if HAVE_IV // to end of file
 
 RangeVarPlot::RangeVarPlot(const char* var) : GraphVector(var) {
 	begin_section_ = 0;

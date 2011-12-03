@@ -3,12 +3,13 @@
 
 #include <InterViews/resource.h>
 #include "oc2iv.h"
+#include "classreg.h"
 extern "C" {
 double (*nrnpy_guigetval)(Object*);
 void (*nrnpy_guisetval)(Object*, double);
 int (*nrnpy_guigetstr)(Object*, char**);
 }
-#if HAVE_IV // to end of file
+#if HAVE_IV // to end of file except for a few small fragments.
 
 #include <stdio.h>
 #include <string.h>
@@ -43,7 +44,6 @@ int (*nrnpy_guigetstr)(Object*, char**);
 #include "parse.h"
 #include "utility.h"
 #include "scenepic.h"
-#include "classreg.h"
 
 // The problem this overcomes is that the pick of an input handler normally
 // succeeds for a keystroke only if the mouse is over one of the child
@@ -3019,7 +3019,10 @@ void HocStateMenuItem::write(ostream& o) {
  }
 
 
+#endif //HAVE_IV
 static void* vfe_cons(Object*) {
+#if HAVE_IV
+IFGUI
 	if (!ifarg(2) || hoc_is_str_arg(2)) {
 		hoc_xvalue_helper();
 	}else{
@@ -3028,17 +3031,28 @@ static void* vfe_cons(Object*) {
 	HocValEditor* fe = last_fe_constructed_;
 	Resource::ref(fe);
 	return (void*)fe;
+ENDGUI
+#endif
+	return 0;
 }
 static void vfe_destruct(void* v) {
+#if HAVE_IV
+IFGUI
 	HocValEditor* fe = (HocValEditor*)v;
 	Resource::unref(fe);
+ENDGUI
+#endif
 }
 static double vfe_default(void* v) {
 	double x = 0.;
+#if HAVE_IV
+IFGUI
 	if (((HocValEditor*)v)->hoc_default_val_editor()) {
 		HocDefaultValEditor* dfe = (HocDefaultValEditor*)v;
 		dfe->deflt(x = dfe->get_val());
 	}
+ENDGUI
+#endif
 	return x;
 }
 static Member_func vfe_members[] = {
@@ -3049,6 +3063,7 @@ void ValueFieldEditor_reg() {
 	class2oc("ValueFieldEditor", vfe_cons, vfe_destruct, vfe_members);
 }
 
+#if HAVE_IV
 void HocValEditor::update_ptrs() {
 	update_ptrs_helper(&pval_);
 }
