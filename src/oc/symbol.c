@@ -429,3 +429,36 @@ hoc_free_pstring(p) char** p;
 	}
 }
 
+int nrn_mallinfo(int item) {
+#if HAVE_MALLINFO
+	struct mallinfo m;
+	m = mallinfo();
+	if (item == 1) {
+		return m.uordblks;
+	}else if (item == 2) {
+		return m.hblkhd;
+	}else if (item == 3) {
+		return m.arena;
+	}else if (item == 4) {
+		return m.fordblks;
+	}else if (item == 5) {
+		return m.hblks;
+	}else if (item == 6) {
+		return m.hblkhd + m.arena;
+	}
+	return m.hblkhd + m.uordblks;
+#else
+	return -1;
+#endif
+}
+
+int hoc_mallinfo() {
+	int i, x;
+	extern double chkarg(int, double, double);
+	i = (int)chkarg(1, 0., 10.);
+	x = nrn_mallinfo(i);
+	hoc_ret();
+	pushx((double)x);
+	return 0;
+}
+	
