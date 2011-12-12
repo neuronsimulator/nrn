@@ -10,6 +10,9 @@
 #if HAVE_UNISTD_H
 #include <unistd.h>
 #endif
+#if defined(__APPLE__)
+#include <crt_externs.h>
+#endif
 #include "hoc.h"
 #include "parse.h" /* OBJECTVAR */
 
@@ -245,7 +248,13 @@ save_parallel_argv(argc, argv)
 
 save_parallel_envp() { 
 #if LINDA
+#if !defined(__APPLE__)
 	extern char** environ;
+	char** envp = environ;
+#endif
+#if defined(__APPLE__)
+	char** envp = (*_NSGetEnviron());
+#endif
 	 char *pnt;
     int j;
 	char** envp = environ;

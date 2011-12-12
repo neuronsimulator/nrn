@@ -17,7 +17,11 @@ extern "C" {
 #include <stdlib.h>
 #if HAVE_UNISTD_H
 #include <unistd.h>
+#if !defined (__APPLE__)
 extern char** environ;
+#else
+#include <crt_externs.h>
+#endif
 #endif
 
 #if HAVE_IV
@@ -471,8 +475,11 @@ int ivocmain (int argc, char** argv, char** env) {
 #endif
 		// putenv and setenv may invalidate env but we no longer
 		// use it so following should not be needed
-#if HAVE_UNISTD_H
-		env = environ;
+#if HAVE_UNISTD_H && !defined(__APPLE__)
+	env = environ;
+#endif
+#if defined (__APPLE__)
+	env = (*_NSGetEnviron());
 #endif
 	}
 
