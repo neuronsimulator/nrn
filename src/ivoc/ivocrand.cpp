@@ -13,6 +13,7 @@
 
 #include <OS/list.h>
 #include "ocobserv.h"
+#include <nrnran123.h>
 
 #include <RNG.h>
 #include <ACG.h>
@@ -62,6 +63,23 @@ Rand* nrn_random_arg(int);
 #include <mcran4.h>
 
 }
+
+class NrnRandom123 : public RNG {
+public:
+	NrnRandom123(uint32_t id1, uint32_t id2);
+	virtual ~NrnRandom123();
+	virtual _G_uint32_t asLong() { return nrnran123_ipick(s_); }
+	virtual double asDouble() { return nrnran123_dblpick(s_); }
+	virtual void reset() { nrnran123_setseq(s_, 0, 0); }
+	nrnran123_State* s_;
+};
+NrnRandom123::NrnRandom123(uint32_t id1, uint32_t id2) {
+	s_ = nrnran123_newstream(id1, id2);
+}
+NrnRandom123::~NrnRandom123() {
+	nrnran123_deletestream(s_);
+}
+
 
 // The decision that has to be made is whether each generator instance
 // should have its own seed or only one seed for all. We choose separate
@@ -277,11 +295,47 @@ static double r_MCellRan4(void* r) {
   return (double)mcr->orig_;
 }
 
+static double r_nrnran123(void* r) {
+	Rand* x = (Rand*)r;
+	uint32_t id1 = 0;
+	uint32_t id2 = 0;
+	if (ifarg(1)) id1 = (uint32_t)(chkarg(1, 0., dmaxuint));
+	if (ifarg(2)) id2 = (uint32_t)(chkarg(2, 0., dmaxuint));
+	NrnRandom123* r123 = new NrnRandom123(id1, id2);
+	x->rand->generator(r123);
+	delete x->gen;
+	x->gen = x->rand->generator();
+	x->type_ = 4;
+	return 0.;
+}
+
+static double r_ran123_globalindex(void* r) {
+	if (ifarg(1)) {
+		uint32_t gix = (uint32_t)chkarg(1, 0., 4294967295.); /* 2^32 - 1 */
+		nrnran123_set_globalindex(gix);
+	}
+	return (double)nrnran123_get_globalindex();
+}
+
 static double r_sequence(void* r) {
 	Rand* x = (Rand*)r;
-	if (x->type_ != 2) {
-hoc_execerror("Random.seq() can only be used if the random generator was MCellRan4", 0);
+	if (x->type_ != 2 && x->type_ != 4) {
+hoc_execerror("Random.seq() can only be used if the random generator was MCellRan4 or Random123", 0);
 	}
+
+	if (x->type_ == 4) {
+		uint32_t seq; char which;
+		if (ifarg(1)) {
+			double s = chkarg(1, 0., 17179869183.); /* 2^34 - 1 */
+			seq = (uint32_t)(s/4.);
+			which = char(s - seq*4.);
+			NrnRandom123* nr = (NrnRandom123*)x->gen;
+			nrnran123_setseq(nr->s_, seq, which);
+		}			
+		nrnran123_getseq(((NrnRandom123*)x->gen)->s_, &seq, &which);
+		return double(seq)*4. + double(which);
+	}
+
 	MCellRan4* mcr = (MCellRan4*)x->gen;
 	if (ifarg(1)) {
 		mcr->ihigh_ = (long)(*getarg(1));
@@ -512,6 +566,8 @@ static Member_func r_members[] = {
 	"MLCG",             r_MLCG,
 	"Isaac64",	    r_Isaac64,
 	"MCellRan4",	    r_MCellRan4,
+	"Random123",	    r_nrnran123,
+	"Random123_globalindex", r_ran123_globalindex,
 	"seq",		    r_sequence,
 	"repick",           r_repick,
 	"uniform",          r_uniform,

@@ -504,7 +504,7 @@ AC_CONFIG_FILES([
 	src/sundials/Makefile src/sundials/shared/Makefile
 	src/sundials/cvodes/Makefile src/sundials/ida/Makefile
 	src/sparse/Makefile src/memacs/Makefile
-	src/readline/Makefile src/sparse13/Makefile
+	src/readline/Makefile src/sparse13/Makefile src/Random123/Makefile
 	src/oc/Makefile	src/scopmath/Makefile src/nrnoc/Makefile
 	src/gnu/Makefile src/uxnrnbbs/Makefile src/mesch/Makefile
 	src/uxnrnbbs/mos2nrn.h src/nrnmpi/Makefile
