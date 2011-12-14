@@ -41,7 +41,7 @@ PTHREAD_CC=@PTHREAD_CC@
 PTHREAD_CFLAGS=@PTHREAD_CFLAGS@
 PTHREAD_LIBS=@PTHREAD_LIBS@
 
-INCLUDES = -I. -I.. -I$(pkgincludedir) -I$(libdir)
+INCLUDES = -I. -I.. -I$(pkgincludedir) -I$(libdir) $(UserINCFLAGS)
 
 LIBTOOL = $(pkgdatadir)/libtool @LIBTOOLTAG@
 CC = @CC@

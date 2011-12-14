@@ -27,7 +27,7 @@ NJ_LIBS = @NRNJAVA_LIBS@
 PY_LIBS =
 NRNNI_LIBS = @NRNNI_LIBS@
 
-INCLUDES = -I. -I.. -I"$(pkgincludedir)" -I"$(libdir)"
+INCLUDES = -I. -I.. -I"$(pkgincludedir)" -I"$(libdir)" $(UserINCFLAGS) 
 
 LIBTOOL = "$(pkgdatadir)/libtool" @LIBTOOLTAG@
 CC = @CC@
