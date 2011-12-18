@@ -163,4 +163,14 @@ double* ivoc_vector_ptr(Object*, int) {return 0;}
 int ivoc_vector_size(Object*) {return 0;}
 #endif
 
+#ifdef MINGW
+IOHandler::IOHandler(){}
+IOHandler::~IOHandler(){}
+int IOHandler::inputReady(int){return 0;}
+int IOHandler::outputReady(int){return 0;}
+int IOHandler::exceptionRaised(int){return 0;}
+void IOHandler::timerExpired(long, long){}
+void IOHandler::childStatus(pid_t, int){}
+#endif // MINGW
+
 #endif //HAVE_IV

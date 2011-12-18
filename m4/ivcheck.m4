@@ -137,8 +137,8 @@ AC_HELP_STRING([--without-iv],[Do not compile graphics into neuron.])
 	xCXXFLAGS=$CXXFLAGS
 	CXXFLAGS="$CXXFLAGS $IV_INCLUDE"
 	AC_TRY_LINK(
-	 [#include "Dispatch/dispatcher.h"], dnl Random include file.
-	 [Dispatcher xyz;], dnl Random function to make sure link works.
+	 [#include "OS/string.h"], dnl Random include file.
+	 [String xyz;], dnl Random function to make sure link works.
 	 [AC_MSG_RESULT(ok)],
 	 [cat << EOF
 failed

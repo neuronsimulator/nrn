@@ -82,7 +82,11 @@ endif
 if BUILD_CYGWIN
 mos2nrnbuild =
 else
+if BUILD_MINGW
+mos2nrnbuild =
+else
 mos2nrnbuild = uxnrnbbs
+endif
 endif
 
 if BUILD_6229

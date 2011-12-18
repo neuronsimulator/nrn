@@ -1,0 +1,35 @@
+need a terminal capability library for mingw. For example mingw32-termcap
+from opensuse.org.
+In termcap-1.3.1 do
+./configure
+make
+/usr/bin/i686-pc-mingw32-gcc.exe -shared \
+  -Wl,--out-implib,libtermcap.dll.a \
+   -o libtermcap.dll termcap.o tparam.o version.o
+cp libtermcap.dll libtermcap.dll.a /usr/i686-pc-mingw32/sys-root/mingw/lib
+cp termcap.h /usr/i686-pc-mingw32/sys-root/mingw/lib
+
+need a readline library for mingw. For example mingw32-readling
+form opensuse.org.
+In readline-6.2 do
+./configure  '--prefix=/home/hines/neuron/readline' '--host=i686-pc-mingw32' \
+ '--disable-static'
+make
+make install
+cp ../readline/bin/* /usr/i686-pc-mingw32/sys-root/mingw/lib
+cp ../readline/lib/* /usr/i686-pc-mingw32/sys-root/mingw/lib
+
+../nrnwin/configure --prefix=`pwd` --without-iv --with-nmodl-only
+make
+
+../nrnwin/configure --prefix=`pwd` --with-iv=$HOME/neuron/ivwin --without-nmodl\
+  --with-nrnpython \
+  CC=/usr/bin/i686-pc-mingw32-gcc.exe CXX=/usr/bin/i686-pc-mingw32-g++.exe \
+  PYINCDIR=/cygdrive/c/Python27/include \
+  PYLIBDIR=/cygdrive/c/Python27/libs \
+  PYLIB='-L/cygdrive/c/Python27/libs -lpython27' \
+  PYLIBLINK='-L/cygdrive/c/Python27/libs -lpython27' \
+  --host=i686-pc-mingw32
+
+make
+make mswin

@@ -1,6 +1,11 @@
 #ifndef CYGWIN
 #include <../../nrnconf.h>
 #endif
+
+#if defined(MINGW)
+#define CYGWIN
+#endif
+
 #include <windows.h>
 #include <stdio.h>
 #include <stdarg.h>
@@ -15,7 +20,7 @@ extern char* neuron_home_dos;
 extern char* expand_env_var();
 extern double chkarg();
 
-#ifndef CYGWIN
+#if !defined(CYGWIN)
 extern HWND hCurrWnd;
 #endif
 static HCURSOR wait_cursor;

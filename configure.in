@@ -23,8 +23,12 @@ AH_BOTTOM([
 #include <ivstream.h>
 #endif
 
-#if defined(CYGWIN)
+#if defined(CYGWIN) || defined(MINGW)
 #define WIN32 1
+#endif
+
+#if defined(MINGW)
+#define CYGWIN
 #endif
 
 #if defined(carbon) && defined(__cplusplus)
@@ -130,12 +134,18 @@ nrndef_mac="//"
 nrndef_mswin="//"
 
 case $host_os in
-  *cygwin* ) CYGWIN=yes;;
-	 * ) CYGWIN=no;;
+	cygwin* ) CYGWIN=yes
+		  MINGW=no;;
+	mingw* )  MINGW=yes
+		  CYGWIN=no;;
+	* )	  CYGWIN=no
+		  MINGW=no;;
 esac
 
-if test "$CYGWIN" = "yes" ; then
-	echo "CYGWIN=$CYGWIN"
+echo "CYGWIN=$CYGWIN"
+echo "MINGW=$CYGWIN"
+
+if test "$CYGWIN" = "yes" -o "$MINGW" = "yes" ; then
 	nrndef_mswin=""
 fi
 
@@ -167,6 +177,9 @@ dnl	AM_ENABLE_SHARED(no)
 elif test x$CYGWIN = xyes ; then
 	AM_ENABLE_SHARED(yes)
 	AM_ENABLE_STATIC(no)
+elif test x$MINGW = xyes ; then
+	AM_ENABLE_SHARED(yes)
+	AM_ENABLE_STATIC(no)
 else
 	AM_ENABLE_SHARED(yes)
 	AM_ENABLE_STATIC(no)
@@ -195,7 +208,7 @@ AC_CHECK_LIBM
 LIBS="$LIBS $LIBM"
 
 dnl Python for cygwin and mingw has to be done early because later tests may
-dnl have to be done with a CFLAGS="-mno-cygwin"
+dnl have to be done with a CFLAGS="-mno-cygwin" (obsolete after gcc2.3)
 dnl What to do about Python
 AC_NRN_PYTHON
 
@@ -311,6 +324,17 @@ if test "$CYGWIN" = "yes" ; then
 	fi
 	AC_MSG_NOTICE(['make mswin' will marshal for building the installer in the marshall_dir = $marshall_dir])
 	AC_SUBST(marshall_dir)
+elif test "$MINGW" = "yes" ; then
+	no_x=yes
+	echo " MINGW and no X11 so make MSWwin version"
+	build_mingw=yes
+	AC_DEFINE(MINGW,,[define if using mingw])
+	if test "$marshall_dir" = "" ; then
+		#do not change without changing instal.sh and nrnsetup.nsi
+		marshall_dir=/cygdrive/c/marshalnrn
+	fi
+	AC_MSG_NOTICE(['make mswin' will marshal for building the installer in the marshall_dir = $marshall_dir])
+	AC_SUBST(marshall_dir)
 elif test "$enable_carbon" = "yes" ; then
 	no_x=yes
 	echo "Make the carbon version on max os x"
@@ -375,9 +399,8 @@ dnl Checks for typedefs, structures, and compiler characteristics.
 AC_TYPE_OFF_T
 AC_TYPE_PID_T
 AC_TYPE_SIZE_T
-AC_CHECK_TYPE(int32_t, int)
-AC_CHECK_TYPE(u_int32_t, unsigned int)
-AC_CHECK_TYPE(u_int, unsigned int)
+AC_TYPE_INT32_T
+AC_TYPE_UINT32_T
 dnl This causes a warning message from automake and autoconf because, I
 dnl suppose, it hasn't been updated.  There's nothing that can be done about
 dnl this except to fix autoconf, since it comes from the autoconf distribution.
@@ -435,6 +458,7 @@ AM_CONDITIONAL(BUILD_NRNIV, test x$build_nrniv = xyes)
 AM_CONDITIONAL(BUILD_IVOS, test x$use_ivos = xyes)
 AM_CONDITIONAL(BUILD_PARANEURON, test x$use_paranrn = xyes)
 AM_CONDITIONAL(BUILD_CYGWIN, test x$build_cygwin = xyes)
+AM_CONDITIONAL(BUILD_MINGW, test x$build_mingw = xyes)
 AM_CONDITIONAL(BUILD_NRNPYTHON, test x$build_nrnpython = xyes)
 AM_CONDITIONAL(BUILD_NRNPYTHON_DYNAMIC, test x$build_nrnpython_dynamic = xyes)
 

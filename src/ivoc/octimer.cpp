@@ -116,10 +116,13 @@ void OcTimer::start() {
 	InstallEventLoopTimer(GetMainEventLoop(), seconds_, seconds_, timer_proc,
 		(void*)this, &timer_);
 #else
+#ifdef MINGW
+#else
 	long s = long(seconds_);
 	long us = long((seconds_ - double(s))*1000000.);
 	stopped_ = false;
 	Dispatcher::instance().startTimer(s, us, this);
+#endif
 #endif
 }
 void OcTimer::stop() {
@@ -129,16 +132,22 @@ void OcTimer::stop() {
 		timer_ = 0;
 	}
 #else
+#ifdef MINGW
+#else
 	stopped_ = true;
 	Dispatcher::instance().stopTimer(this);
+#endif
 #endif
 }
 void OcTimer::timerExpired(long, long) {
 #if carbon
 #else
+#ifdef MINGW
+#else
 	if (!stopped_) {
 		this->start();
 	}
+#endif
 #endif
 	// want it to be part of interval just like on mac
 	hc_->execute();

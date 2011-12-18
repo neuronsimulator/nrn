@@ -43,6 +43,18 @@ mswin:
 
 endif
 
+if BUILD_MINGW
+#install from the build directories to the mswin destination
+#uses the classical positions of files
+mswin:
+	top_srcdir=$(top_srcdir) marshall_dir=$(marshall_dir) \
+	top_builddir=$(top_builddir) \
+	ivbindir=$(IV_LIBDIR)/../bin \
+	CC=$(CC) \
+	$(top_srcdir)/src/mswin/batch/instal.sh
+
+endif
+
 ALPHADIR = hines@www.neuron.yale.edu:/home/htdocs/ftp/neuron/versions/alpha
 
 if MAKE_RPMS
@@ -89,8 +101,12 @@ if BUILD_CYGWIN
 alphadist:
 	scp src/mswin/nrn"`sh $(srcdir)/nrnversion.sh 3`"setup.exe $(ALPHADIR)/nrn-"`sh $(srcdir)/nrnversion.sh 2`"-setup.exe
 else
+if BUILD_MINGW
+alphadist:
+	scp src/mswin/nrn"`sh $(srcdir)/nrnversion.sh 3`"setup.exe $(ALPHADIR)/nrn-"`sh $(srcdir)/nrnversion.sh 2`"-setup.exe
+else
 alphadist:
 	scp nrn-"`sh $(srcdir)/nrnversion.sh`".tar.gz $(ALPHADIR)/nrn-"`sh $(srcdir)/nrnversion.sh 2`".tar.gz
 endif
 endif
-
+endif

@@ -1,6 +1,10 @@
 #include <../../nrnconf.h>
 #if HAVE_IV // to end of file
 
+#if defined(MINGW)
+#undef CYGWIN
+#endif
+
 #include <InterViews/event.h>
 #include <InterViews/reqerr.h>
 #include <InterViews/style.h>

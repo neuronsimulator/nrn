@@ -47,23 +47,23 @@ contained the header:
 #include <stdlib.h>
 #include <mcran4.h>
 
-static u_int32_t lowindex = 0;
+static uint32_t lowindex = 0;
 
-void mcell_ran4_init(u_int32_t low) {
+void mcell_ran4_init(uint32_t low) {
 	lowindex = low;
 }
 
-double mcell_ran4(u_int32_t *high, double *x, unsigned int n, double range) {
+double mcell_ran4(uint32_t *high, double *x, unsigned int n, double range) {
   int i;
   for (i=0;i<n;i++) { x[i]=range*nrnRan4dbl(high, lowindex); }
   return x[0];
 }
 
-double mcell_ran4a(u_int32_t *high) {
+double mcell_ran4a(uint32_t *high) {
 	return nrnRan4dbl(high, lowindex);
 }
 
-u_int32_t mcell_iran4(u_int32_t *high){
+uint32_t mcell_iran4(uint32_t *high){
 	return nrnRan4int(high, lowindex);
 }
 
@@ -72,11 +72,11 @@ extern double chkarg(), *hoc_pgetarg();
 extern int use_mcell_ran4_;
 
 void hoc_mcran4() {
-	u_int32_t idx;
+	uint32_t idx;
 	double* xidx;
 	double x;
 	xidx = hoc_pgetarg(1);
-	idx = (u_int32_t)(*xidx);
+	idx = (uint32_t)(*xidx);
 	x = mcell_ran4a(&idx);
 	*xidx = idx;
 	hoc_ret();
@@ -85,7 +85,7 @@ void hoc_mcran4() {
 void hoc_mcran4init() {
 	double prev = (double)lowindex;
 	if (ifarg(1)) {
-		u_int32_t idx = (u_int32_t) chkarg(1, 0., 4294967295.);
+		uint32_t idx = (uint32_t) chkarg(1, 0., 4294967295.);
 		mcell_ran4_init(idx);
 	}
 	hoc_ret();
@@ -101,9 +101,9 @@ void hoc_usemcran4() {
 	hoc_pushx(prev);
 }
 
-u_int32_t nrnRan4int(u_int32_t* idx1, u_int32_t idx2)
+uint32_t nrnRan4int(uint32_t* idx1, uint32_t idx2)
 {
-    u_int32_t  u, v, w, m, n;
+    uint32_t  u, v, w, m, n;
     /* 64-bit hash */
     n = (*idx1)++;
     m = idx2;
@@ -157,10 +157,10 @@ u_int32_t nrnRan4int(u_int32_t* idx1, u_int32_t idx2)
 // 
 */
 static const double SHIFT32   = 1.0 / 4294967296.0;          /* 2^-32 */
-double nrnRan4dbl(u_int32_t* idx1, u_int32_t idx2)
+double nrnRan4dbl(uint32_t* idx1, uint32_t idx2)
 {
-    u_int32_t  hi, lo, extra;
-    hi = (u_int32_t)nrnRan4int(idx1, idx2);                /*top 32 bits*/
+    uint32_t  hi, lo, extra;
+    hi = (uint32_t)nrnRan4int(idx1, idx2);                /*top 32 bits*/
 /*
 //    lo = (extra                               // low bits
 //                  & 0xfffff000) ^ 0x00000800;   // switch lowest (2^-53) bit ON

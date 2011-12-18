@@ -90,7 +90,7 @@ NrnRandom123::~NrnRandom123() {
 
 class MCellRan4 : public RNG {
 public:
-	MCellRan4(u_int32_t ihigh = 0, u_int32_t ilow = 0);
+	MCellRan4(uint32_t ihigh = 0, uint32_t ilow = 0);
 	virtual ~MCellRan4();
 	virtual _G_uint32_t asLong() {
 		return (_G_uint32_t)(ilow_ == 0 ? mcell_iran4(&ihigh_) :
@@ -100,30 +100,30 @@ public:
 	virtual double asDouble() {
 		return (ilow_ == 0 ? mcell_ran4a(&ihigh_) :
 			 nrnRan4dbl(&ihigh_, ilow_)); }
-	u_int32_t ihigh_;
-	u_int32_t orig_;
-	u_int32_t ilow_;
+	uint32_t ihigh_;
+	uint32_t orig_;
+	uint32_t ilow_;
 private:
-	static u_int32_t cnt_;
+	static uint32_t cnt_;
 };
 
-MCellRan4::MCellRan4(u_int32_t ihigh, u_int32_t ilow) {
+MCellRan4::MCellRan4(uint32_t ihigh, uint32_t ilow) {
 	++cnt_;
 	ilow_ = ilow;
 	ihigh_ = ihigh;
 	if (ihigh_ == 0) {
 		ihigh_ = cnt_;
-		ihigh_ = (u_int32_t)asLong();
+		ihigh_ = (uint32_t)asLong();
 	}
 	orig_ = ihigh_;
 }
 MCellRan4::~MCellRan4() {}
 
-u_int32_t MCellRan4::cnt_ = 0;
+uint32_t MCellRan4::cnt_ = 0;
 
 class Isaac64 : public RNG {
 public:
-	Isaac64(u_int32_t seed = 0);
+	Isaac64(uint32_t seed = 0);
 	virtual ~Isaac64();
 	virtual _G_uint32_t asLong() {
 		return (_G_uint32_t)nrnisaac_uint32_pick(rng_);
@@ -282,11 +282,11 @@ static double r_MLCG(void* r)
 static double r_MCellRan4(void* r) {
   Rand* x = (Rand*)r;
 
-  u_int32_t seed1 = 0;
-  u_int32_t  ilow = 0;
+  uint32_t seed1 = 0;
+  uint32_t  ilow = 0;
 
-  if (ifarg(1)) seed1 = (u_int32_t)(chkarg(1, 0., dmaxuint));
-  if (ifarg(2)) ilow = (u_int32_t)(chkarg(2, 0., dmaxuint));
+  if (ifarg(1)) seed1 = (uint32_t)(chkarg(1, 0., dmaxuint));
+  if (ifarg(2)) ilow = (uint32_t)(chkarg(2, 0., dmaxuint));
   MCellRan4* mcr = new MCellRan4(seed1, ilow);
   x->rand->generator(mcr);
   delete x->gen;

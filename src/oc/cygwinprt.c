@@ -1,7 +1,7 @@
 #include <../../nrnconf.h>
 #include <errno.h>
 #include <unistd.h>
-#if defined(CYGWIN)
+#if defined(CYGWIN) || defined(MINGW)
 
 #if !defined(__MINGW32__)
 #include "system.c"

@@ -27,13 +27,15 @@
 
 #include <../../nrnconf.h>
 
+#if defined(HAVE_STDINT_H)
+#include <stdint.h>
+#endif
+
 #if !defined(HUGE) && defined(HUGE_VAL)
 #define HUGE HUGE_VAL
 #endif
 
-#if defined(WIN32) && (WIN32 == 1) && !defined(CYGWIN)
-typedef unsigned int u_int;
-#endif
+typedef uint32_t u_int;
 
 /* #undef const */
 

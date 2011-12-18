@@ -17,9 +17,22 @@ neuron.exe: $(nsrc)/mswin/extra/neuron.cpp
 	g++-3 -g -O2 -DCYGWIN -o neuron.exe -mno-cygwin -e _mainCRTStartup $(nsrc)/mswin/extra/neuron.cpp
 
 else
+if BUILD_MINGW
+nrniv_LDFLAGS =
+windll = -I$(nsrc)/mswin/windll
+cygexe = mos2nrn.exe neuron.exe
+
+mos2nrn.exe: $(nsrc)/mswin/extra/mos2nrn.cpp
+	g++ -g -O2 -DMINGW -o mos2nrn.exe $(nsrc)/mswin/extra/mos2nrn.cpp
+
+neuron.exe: $(nsrc)/mswin/extra/neuron.cpp
+	g++-3 -g -O2 -DMINGW -o neuron.exe $(nsrc)/mswin/extra/neuron.cpp
+
+else
 nrniv_LDFLAGS =
 windll = 
 cygexe =
+endif
 endif
 
 ## These are all the .c files that need to be compiled to make libnrniv.la.
@@ -72,15 +85,16 @@ nrniv_SOURCES = nvkludge.cpp
 nrniv_LDADD = ../ivoc/nrnmain.o ../ivoc/ivocmain.o ../oc/modlreg.o \
 	../oc/ockludge.o \
 	../nrnoc/libnrnoc.la ../oc/liboc.la \
-	libnrniv.la ../ivoc/libivoc.la \
+	libnrniv.la ../ivoc/libivoc.la ../oc/liboc.la \
 	../nrnmpi/libnrnmpi.la \
 	../gnu/libneuron_gnu.la \
 	../scopmath/libscopmath.la \
 	../sparse13/libsparse13.la \
 	../sundials/libsundials.la \
 	@MEMACSLIBLA@ ../mesch/libmeschach.la $(IVOS_DIR) \
-	$(IV_LIBS) @NRN_READLINE_LIBS@ @NRNJAVA_LIBLA@ \
-	$(BBS_LIBS) @NRNPYTHON_LIBLA@ @MUSIC_LIBLA@ @NRNNI_LIBLA@ @PTHREAD_LIBS@
+	$(IV_LIBS) @NRNJAVA_LIBLA@ \
+	$(BBS_LIBS) @NRNPYTHON_LIBLA@ @MUSIC_LIBLA@ @NRNNI_LIBLA@ \
+	@NRN_READLINE_LIBS@ @PTHREAD_LIBS@
 
 nrniv_DEPENDENCIES = \
 	../ivoc/nrnmain.o ../ivoc/ivocmain.o ../oc/modlreg.o \

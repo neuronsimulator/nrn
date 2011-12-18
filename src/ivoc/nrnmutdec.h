@@ -3,7 +3,26 @@
 
 #include <nrnpthread.h>
 #if USE_PTHREAD
+#ifdef MINGW
+#ifdef boolean
+#define redefboolean
+#undef boolean
+#endif
+#define boolean _avoid_boolean
+#endif
+
 #include <pthread.h>
+
+#ifdef MINGW
+#undef boolean
+#undef DELETE
+#undef near
+#ifdef redefboolean
+#define boolean _lib_os(boolean)
+#undef redefboolean
+#endif
+#endif
+
 #define MUTDEC pthread_mutex_t* mut_;
 #define MUTCONSTRUCTED (mut_ != (pthread_mutex_t*)0)
 #if defined(__cplusplus)
