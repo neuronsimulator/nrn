@@ -29,7 +29,7 @@ extern short* nrn_is_artificial_;
 static void tqcallback(const TQItem* tq, int i);
 };
 
-#define ASSERTfgets(a,b,c) assert(fgets(a,b,c) == 0)
+#define ASSERTfgets(a,b,c) assert(fgets(a,b,c) != 0)
 #define ASSERTfread(a,b,c,d) assert(fread(a,b,c,d) == c)
 #define ASSERTfwrite(a,b,c,d) assert(fwrite(a,b,c,d) == c)
 
