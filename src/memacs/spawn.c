@@ -151,7 +151,9 @@ spawncli(f, n)
                 {IGNORE(system("exec /bin/sh"));}
 #endif
         sgarbf = TRUE;
+#if !defined(__MINGW32__)
         sleep(2);
+#endif
         ttopen();
         return(TRUE);
 #endif
@@ -238,7 +240,9 @@ spawn(f, n)
         (*term.t_flush)();
         ttclose();                              /* stty to old modes    */
         IGNORE(system(line));
+#if !defined(__MINGW32__)
         sleep(2);
+#endif
         ttopen();
         mlputs("[End]");                        /* Pause.               */
         (*term.t_flush)();

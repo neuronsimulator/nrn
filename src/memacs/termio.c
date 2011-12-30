@@ -95,7 +95,7 @@ int nxtchar = -1;	/* character held from type ahead    */
 #include "rainbow.h"
 #endif
 
-#if V7 && !HAVE_TERMIO_H /* (SYSV == 0) & (LINUX == 0)*/
+#if V7 && !defined(__MINGW32__) && !HAVE_TERMIO_H /* (SYSV == 0) & (LINUX == 0)*/
 #undef	CTRL
 #include        <sgtty.h>        /* for stty/gtty functions */
 #include	<signal.h>
@@ -192,7 +192,7 @@ ttopen()
 	intdos(&rg, &rg);	/* go for it! */
 #endif
 
-#if     V7 & !HAVE_TERMIO_H /* (SYSV == 0) & (LINUX == 0)*/
+#if     V7 & !defined(__MINGW32__) & !HAVE_TERMIO_H /* (SYSV == 0) & (LINUX == 0)*/
         IGNORE(gtty(0, &ostate));                       /* save old state */
         IGNORE(gtty(0, &nstate));                       /* get base of new state */
         nstate.sg_flags |= RAW;
@@ -255,7 +255,7 @@ ttclose()
 	intdos(&rg, &rg);	/* go for it! */
 #endif
 
-#if     V7 && !HAVE_TERMIO_H /* (SYSV == 0) & (LINUX == 0)*/
+#if     V7 && !defined(__MINGW32__) && !HAVE_TERMIO_H /* (SYSV == 0) & (LINUX == 0)*/
         IGNORE(stty(0, &ostate));
 	IGNORE(ioctl(0, TIOCSETC, &otchars));	/* Place old character into K */
 #endif
@@ -465,7 +465,11 @@ ttgetc()
 		}
 	}
 #endif /*INTERVIEWS*/
+#if 0 && defined(__MINGW32__)
+	return getch();
+#else
         return(127 & fgetc(stdin));
+#endif
 #endif
 }
 
