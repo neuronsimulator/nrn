@@ -173,4 +173,19 @@ void IOHandler::timerExpired(long, long){}
 void IOHandler::childStatus(pid_t, int){}
 #endif // MINGW
 
+#ifdef MINGW
+extern "C" {
+int stdin_event_ready();
+}
+int stdin_event_ready() {
+  static DWORD main_threadid = -1;
+  if (main_threadid == -1) {
+	main_threadid = GetCurrentThreadId();
+	return 1;
+  }
+  PostThreadMessage(main_threadid, WM_QUIT, 0, 0);
+  return 1;
+}
+#endif
+
 #endif //HAVE_IV

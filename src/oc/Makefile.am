@@ -29,7 +29,11 @@ AM_YFLAGS = -d
 
 EXTRA_DIST = hocinc hocusr.c hoc2dec.sh macprt.c mswinprt.c system.c
 
+if BUILD_MINGW
+liboc_la_LIBADD = -lpthread
+else
 liboc_la_LIBADD = $(X_LIBS)
+endif
 
 bin_PROGRAMS = oc
 

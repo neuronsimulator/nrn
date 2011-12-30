@@ -116,7 +116,7 @@ void bbs_done(){}
 Symbol* ivoc_alias_lookup(name, ob) char* name; Object* ob; {return (Symbol*)0;}
 void ivoc_free_alias(ob) Object* ob; {}
 
-#if carbon
+#if carbon || defined(MINGW)
 void stdin_event_ready() {}
 #endif
 
