@@ -167,7 +167,7 @@ boolean BBSDirectServer::look_take(const char* key, bbsmpibuf** recv) {
 		delete [] s;
 	}
 #if debug
-		printf("DirectServer::look_take |%s| recv=%lx return %d\n", key, (long)(*recv), b);
+		printf("DirectServer::look_take |%s| recv=%p return %d\n", key, (*recv), b);
 #endif
 #endif
 	return b;
@@ -190,7 +190,7 @@ boolean BBSDirectServer::look(const char* key, bbsmpibuf** recv) {
 		}
 	}
 #if debug
-	printf("DirectServer::look |%s| recv=%lx return %d\n", key, (long)(*recv), b);
+	printf("DirectServer::look |%s| recv=%p return %d\n", key, (*recv), b);
 #endif
 #endif
 	return b;
@@ -228,7 +228,7 @@ void BBSDirectServer::post(const char* key, bbsmpibuf* send) {
 #if defined(HAVE_STL)
 	int cid;
 #if debug
-	printf("DirectServer::post |%s| send=%lx\n", key, (long)send);
+	printf("DirectServer::post |%s| send=%p\n", key, send);
 #endif
 	if (take_pending(key, &cid)) {
 		nrnmpi_bbssend(cid, TAKE, send);
@@ -250,7 +250,7 @@ void BBSDirectServer::add_looking_todo(int cid) {
 void BBSDirectServer::post_todo(int pid, int cid, bbsmpibuf* send){
 #if defined(HAVE_STL)
 #if debug
-printf("BBSDirectServer::post_todo pid=%d cid=%d send=%lx\n", pid, cid, (long)send);
+printf("BBSDirectServer::post_todo pid=%d cid=%d send=%p\n", pid, cid, send);
 #endif
 	WorkItem* w = new WorkItem(next_id_++, send, cid);
 	nrnmpi_ref(send);
@@ -350,7 +350,7 @@ printf("sending context to %d\n", cid);
 void BBSDirectServer::post_result(int id, bbsmpibuf* send){
 #if defined(HAVE_STL)
 #if debug
-printf("DirectServer::post_result id=%d send=%lx\n", id, (long)send);
+printf("DirectServer::post_result id=%d send=%p\n", id, send);
 #endif
 	WorkList::iterator i = work_->find(id);
 	WorkItem* w = (WorkItem*)((*i).second);
@@ -374,7 +374,7 @@ printf("DirectServer::look_take_todo\n");
 		todo_->erase(i);
 		*recv = w->buf_;
 #if debug
-printf("DirectServer::look_take_todo recv %lx with keypos=%d return %d\n", (long*)(*recv), (*recv)->keypos, w->id_);
+printf("DirectServer::look_take_todo recv %p with keypos=%d return %d\n", *recv, (*recv)->keypos, w->id_);
 #endif
 		w->buf_ = 0;
 		return w->id_;
@@ -403,7 +403,7 @@ printf("DirectServer::look_take_result pid=%d\n", pid);
 		work_->erase(j);
 		delete w;
 #if debug
-printf("DirectServer::look_take_result recv=%lx return %d\n", (long)(*recv), id);
+printf("DirectServer::look_take_result recv=%p return %d\n", *recv, id);
 #endif
 		return id;
 	}else{

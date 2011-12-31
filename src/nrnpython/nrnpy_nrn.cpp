@@ -98,7 +98,7 @@ static char* pysec_name(Section* sec) {
 		if (ps->name_) {
 			sprintf(cp, "%s", ps->name_);
 		}else{
-			sprintf(cp, "PySec_%lx", (long)ps);
+			sprintf(cp, "PySec_%p", ps);
 		}
 		return buf;
 	}
@@ -121,7 +121,7 @@ static int pysec_cell_equals(Section* sec, Object* obj) {
 }
 
 static void NPySecObj_dealloc(NPySecObj* self) {
-//printf("NPySecObj_dealloc %lx %s\n", (long)self, secname(self->sec_));
+//printf("NPySecObj_dealloc %p %s\n", self, secname(self->sec_));
 	if (self->sec_) {
 		if (self->sec_->prop) {
 			self->sec_->prop->dparam[PROP_PY_INDEX]._pvoid = 0;
@@ -137,19 +137,19 @@ static void NPySecObj_dealloc(NPySecObj* self) {
 }
 
 static void NPySegObj_dealloc(NPySegObj* self) {
-//printf("NPySegObj_dealloc %lx\n", (long)self);
+//printf("NPySegObj_dealloc %p\n", self);
 	Py_XDECREF(self->pysec_);
 	((PyObject*)self)->ob_type->tp_free((PyObject*)self);
 }
 
 static void NPyRangeVar_dealloc(NPyRangeVar* self) {
-//printf("NPyRangeVar_dealloc %lx\n", (long)self);
+//printf("NPyRangeVar_dealloc %p\n", self);
 	Py_XDECREF(self->pyseg_);
 	((PyObject*)self)->ob_type->tp_free((PyObject*)self);
 }
 
 static void NPyMechObj_dealloc(NPyMechObj* self) {
-//printf("NPyMechObj_dealloc %lx %s\n", (long)self, self->ob_type->tp_name);
+//printf("NPyMechObj_dealloc %p %s\n", self, self->ob_type->tp_name);
 	Py_XDECREF(self->pyseg_);
 	((PyObject*)self)->ob_type->tp_free((PyObject*)self);
 }
@@ -164,7 +164,7 @@ static void NPyMechObj_dealloc(NPyMechObj* self) {
 // 
 
 static int NPySecObj_init(NPySecObj* self, PyObject* args, PyObject* kwds) {
-//printf("NPySecObj_init %lx %lx\n", (long)self, (long)self->sec_);
+//printf("NPySecObj_init %p %p\n", self, self->sec_);
 	static const char* kwlist[] = {"cell", "name", NULL};
 	if (self != NULL && !self->sec_) {
 		self->allseg_iter_ = 0;
@@ -192,7 +192,7 @@ static int NPySecObj_init(NPySecObj* self, PyObject* args, PyObject* kwds) {
 PyObject* NPySecObj_new(PyTypeObject* type, PyObject* args, PyObject* kwds) {
 	NPySecObj* self;
 	self = (NPySecObj*)type->tp_alloc(type, 0);
-//printf("NPySecObj_new %lx\n", (long)self);
+//printf("NPySecObj_new %p\n", self);
 	if (self != NULL) {
 		if (NPySecObj_init(self, args, kwds) != 0) {
 			NPySecObj_dealloc(self);
@@ -221,7 +221,7 @@ static PyObject* NPySegObj_new(PyTypeObject* type, PyObject* args, PyObject* kwd
 	}
 	NPySegObj* self;
 	self = (NPySegObj*)type->tp_alloc(type, 0);
-//printf("NPySegObj_new %lx\n", (long)self);
+//printf("NPySegObj_new %p\n", self);
 	if (self != NULL) {
 		self->pysec_ = pysec;
 		self->x_ = x;
@@ -237,7 +237,7 @@ static PyObject* NPyMechObj_new(PyTypeObject* type, PyObject* args, PyObject* kw
 	}
 	NPyMechObj* self;
 	self = (NPyMechObj*)type->tp_alloc(type, 0);
-//printf("NPyMechObj_new %lx %s\n", (long)self, ((PyObject*)self)->ob_type->tp_name);
+//printf("NPyMechObj_new %p %s\n", self, ((PyObject*)self)->ob_type->tp_name);
 	if (self != NULL) {
 		self->pyseg_ = pyseg;
 		Py_INCREF(self->pyseg_);
@@ -257,7 +257,7 @@ static PyObject* NPyRangeVar_new(PyTypeObject* type, PyObject* args, PyObject* k
 }
 
 static int NPySegObj_init(NPySegObj* self, PyObject* args, PyObject* kwds) {
-//printf("NPySegObj_init %lx %lx\n", (long)self, (long)self->pysec_);
+//printf("NPySegObj_init %p %p\n", self, self->pysec_);
 	NPySecObj* pysec;
 	double x;
 	if (!PyArg_ParseTuple(args, "O!d", psection_type, &pysec, &x)) {
@@ -292,7 +292,7 @@ static void o2loc(Object* o, Section** psec, double* px) {
 }
 
 static int NPyMechObj_init(NPyMechObj* self, PyObject* args, PyObject* kwds) {
-//printf("NPyMechObj_init %lx %lx %s\n", (long)self, (long)self->pyseg_, ((PyObject*)self)->ob_type->tp_name);
+//printf("NPyMechObj_init %p %p %s\n", self, self->pyseg_, ((PyObject*)self)->ob_type->tp_name);
 	NPySegObj* pyseg;
 	if (!PyArg_ParseTuple(args, "O!", psegment_type, &pyseg)) {
 		return -1;

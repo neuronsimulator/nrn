@@ -101,7 +101,7 @@ void HocCommand::audit() {
 	}
 	char buf[256];
 	if (obj_) {
-		sprintf(buf, "// execute(\"%s\", %lx)\n", name(), (long)obj_);
+		sprintf(buf, "// execute(\"%s\", %p)\n", name(), obj_);
 	}else{
 		sprintf(buf, "{%s}\n", name());
 	}

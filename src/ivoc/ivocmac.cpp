@@ -109,7 +109,7 @@ boolean mac_open_dll(const char* name, FSSpec* fs) {
 		return false;
 	}
 //	printf("successfully loaded %s\n", name);
-//	printf("mainaddr=%lx\n", (long)mainaddr);
+//	printf("mainaddr=%p\n", mainaddr);
 	mainaddr = nil;
 	long cnt;
 	myErr = CountSymbols(id, &cnt);
@@ -124,7 +124,7 @@ boolean mac_open_dll(const char* name, FSSpec* fs) {
 		}
 //		printf("symbol %d name %s\n", i, sname+1);
 	}
-//	printf("mainaddr=%lx\n", (long)mainaddr);
+//	printf("mainaddr=%p\n", mainaddr);
 #if 1
 	if (mainaddr) {
 		Symlist* sav = hoc_symlist;

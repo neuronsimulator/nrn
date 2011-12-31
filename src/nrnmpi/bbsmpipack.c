@@ -46,7 +46,7 @@ printf("%d unpack upkpos=%d pkposition=%d keypos=%d size=%d\n",
 assert(r->upkpos >= 0 && r->size >= r->upkpos);
 	MPI_Unpack(r->buf, r->size, &r->upkpos, type, 2, MPI_INT, nrn_bbs_comm); 
 #if debug
-printf("%d unpack r=%lx size=%d upkpos=%d type[0]=%d datatype=%d  type[1]=%d  count=%d\n", nrnmpi_myid_bbs, (long)r, r->size, r->upkpos, type[0], my_datatype, type[1], count);
+printf("%d unpack r=%p size=%d upkpos=%d type[0]=%d datatype=%d  type[1]=%d  count=%d\n", nrnmpi_myid_bbs, r, r->size, r->upkpos, type[0], my_datatype, type[1], count);
 #endif
 if (type[0] != my_datatype || type[1] != count) {
 printf("%d unpack size=%d upkpos=%d type[0]=%d   datatype=%d  type[1]=%d  count=%d\n", nrnmpi_myid_bbs, r->size, r->upkpos, type[0], my_datatype, type[1], count);
@@ -60,7 +60,7 @@ void nrnmpi_upkbegin(bbsmpibuf* r) {
 	int type;
 	int p;
 #if debug
-printf("%d nrnmpi_upkbegin %lx (preunpack upkpos=%d keypos=%d)\n", nrnmpi_myid_bbs, (long)r, r->upkpos, r->keypos);
+printf("%d nrnmpi_upkbegin %p (preunpack upkpos=%d keypos=%d)\n", nrnmpi_myid_bbs, r, r->upkpos, r->keypos);
 #endif
 assert(r && r->buf && r->size > 0);
 	if (nrnmpi_myid_bbs == -1) {
@@ -87,7 +87,7 @@ char* nrnmpi_getkey(bbsmpibuf* r) {
 	type = r->upkpos;
 	r->upkpos = r->keypos;
 #if debug
-printf("%d nrnmpi_getkey %lx keypos=%d\n", nrnmpi_myid_bbs, (long)r, r->keypos);
+printf("%d nrnmpi_getkey %p keypos=%d\n", nrnmpi_myid_bbs, r, r->keypos);
 #endif
 	s = nrnmpi_upkstr(r);
 	assert(r->pkposition == 0 || r->pkposition == r->upkpos);
@@ -104,7 +104,7 @@ int nrnmpi_getid(bbsmpibuf* r) {
 	type = r->upkpos;
 	r->upkpos = r->keypos;
 #if debug
-printf("%d nrnmpi_getid %lx keypos=%d\n", nrnmpi_myid_bbs, (long)r, r->keypos);
+printf("%d nrnmpi_getid %p keypos=%d\n", nrnmpi_myid_bbs, r, r->keypos);
 #endif
 	i = nrnmpi_upkint(r);
 	r->upkpos = type;
@@ -167,7 +167,7 @@ void nrnmpi_pkbegin(bbsmpibuf* r) {
 	r->pkposition = 0;
 	type = 0;
 #if debug
-printf("%d nrnmpi_pkbegin %lx size=%d pkposition=%d\n", nrnmpi_myid_bbs, (long)r, r->size, r->pkposition);
+printf("%d nrnmpi_pkbegin %p size=%d pkposition=%d\n", nrnmpi_myid_bbs, r, r->size, r->pkposition);
 #endif
 	MPI_Pack(&type, 1, MPI_INT, r->buf, r->size, &r->pkposition, nrn_bbs_comm);
 }
@@ -177,19 +177,19 @@ void nrnmpi_enddata(bbsmpibuf* r) {
 	p = r->pkposition;
 	type = 0;
 #if debug
-printf("%d nrnmpi_enddata %lx size=%d pkposition=%d\n", nrnmpi_myid_bbs, (long)r, r->size, p);
+printf("%d nrnmpi_enddata %p size=%d pkposition=%d\n", nrnmpi_myid_bbs, r, r->size, p);
 #endif
 	MPI_Pack_size(1, MPI_INT, nrn_bbs_comm, &isize);
 oldsize = r->size;
 	resize(r, r->pkposition + isize);
 #if debug
 if (oldsize < r->pkposition + isize) {
-	printf("%d %lx need %d more. end up with total of %d\n", nrnmpi_myid_bbs, (long)r, isize, r->size);
+	printf("%d %p need %d more. end up with total of %d\n", nrnmpi_myid_bbs, r, isize, r->size);
 }
 #endif
 	MPI_Pack(&type, 1, MPI_INT, r->buf, r->size, &r->pkposition, nrn_bbs_comm);
 #if debug
-printf("%d nrnmpi_enddata buf=%lx size=%d pkposition=%d\n", nrnmpi_myid_bbs, r->buf, r->size, r->pkposition);
+printf("%d nrnmpi_enddata buf=%p size=%d pkposition=%d\n", nrnmpi_myid_bbs, r->buf, r->size, r->pkposition);
 #endif
 	MPI_Pack(&p, 1, MPI_INT, r->buf, r->size, &type, nrn_bbs_comm);
 #if debug
@@ -201,7 +201,7 @@ static void pack(void* inbuf, int incount, int my_datatype, bbsmpibuf* r, const 
 	int type[2];
 	int dsize, isize, oldsize;
 #if debug
-printf("%d pack %lx count=%d type=%d outbuf-%lx pkposition=%d %s\n", nrnmpi_myid_bbs, (long)r, incount, my_datatype, r->buf, r->pkposition, e);
+printf("%d pack %p count=%d type=%d outbuf-%p pkposition=%d %s\n", nrnmpi_myid_bbs, r, incount, my_datatype, r->buf, r->pkposition, e);
 #endif
 	MPI_Pack_size(incount, mytypes[my_datatype], nrn_bbs_comm, &dsize);
 	MPI_Pack_size(2, MPI_INT, nrn_bbs_comm, &isize);
@@ -209,7 +209,7 @@ oldsize = r->size;
 	resize(r, r->pkposition + dsize + isize);
 #if debug
 if (oldsize < r->pkposition + dsize + isize) {
-	printf("%d %lx need %d more. end up with total of %d\n", nrnmpi_myid_bbs, (long)r, dsize+isize, r->size);
+	printf("%d %p need %d more. end up with total of %d\n", nrnmpi_myid_bbs, r, dsize+isize, r->size);
 }
 #endif
 	type[0] = my_datatype;  type[1] = incount;
@@ -251,7 +251,7 @@ void nrnmpi_pkpickle(const char* s, size_t size, bbsmpibuf* r) {
 
 void nrnmpi_bbssend(int dest, int tag, bbsmpibuf* r) {
 #if debug
-printf("%d nrnmpi_bbssend %lx dest=%d tag=%d size=%d\n", nrnmpi_myid_bbs, (long)r, dest, tag, (r)?r->upkpos:0);
+printf("%d nrnmpi_bbssend %p dest=%d tag=%d size=%d\n", nrnmpi_myid_bbs, r, dest, tag, (r)?r->upkpos:0);
 #endif
 	if (r) {
 		assert( r->buf && r->keypos <= r->size);
@@ -272,7 +272,7 @@ int nrnmpi_bbsrecv(int source, bbsmpibuf* r) {
 		source = MPI_ANY_SOURCE;
 	}
 #if debug
-printf("%d nrnmpi_bbsrecv %lx\n", nrnmpi_myid_bbs, (long)r);
+printf("%d nrnmpi_bbsrecv %p\n", nrnmpi_myid_bbs, r);
 #endif
 	MPI_Probe(source, MPI_ANY_TAG, nrn_bbs_comm, &status);
 	MPI_Get_count(&status, MPI_PACKED, &size);
@@ -317,7 +317,7 @@ bbsmpibuf* nrnmpi_newbuf(int size) {
 	bbsmpibuf* buf;
 	buf = (bbsmpibuf*)hoc_Emalloc(sizeof(bbsmpibuf)); hoc_malchk();
 #if debug
-printf("%d nrnmpi_newbuf %lx\n", nrnmpi_myid_bbs, (long)buf);
+printf("%d nrnmpi_newbuf %p\n", nrnmpi_myid_bbs, buf);
 #endif
 	buf->buf = (char*)0;
 	if (size > 0) {
@@ -347,7 +347,7 @@ void nrnmpi_copy(bbsmpibuf* dest, bbsmpibuf* src){
 
 static void nrnmpi_free(bbsmpibuf* buf){
 #if debug
-printf("%d nrnmpi_free %lx\n", nrnmpi_myid_bbs, (long)buf);
+printf("%d nrnmpi_free %p\n", nrnmpi_myid_bbs, buf);
 #endif
 	if (buf->buf) {
 		free(buf->buf);

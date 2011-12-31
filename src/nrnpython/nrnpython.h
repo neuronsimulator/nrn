@@ -1,6 +1,12 @@
 #ifndef nrnpython_h
 #define nrnpython_h
 
+#ifdef _WIN64
+#define MS_WIN64
+#define MS_WIN32
+#define MS_WINDOWS
+#endif
+
 #include <../../nrnconf.h>
 #include <nrnpython_config.h>
 #if defined(USE_PYTHON)

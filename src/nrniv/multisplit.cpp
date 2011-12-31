@@ -1028,7 +1028,7 @@ for (i = 0; i < narea2buf_; ++i) {
 #if 0
 if (nrnmpi_myid == 0) {
 for (i=0; i < n; ++i) {
-        printf("%d %d sid=%d bbrelation=%d rthost=%d rt=%lx\n", nrnmpi_myid, i, sid[i], bb_relation[i], rthost[i], (long)rt[i]);
+        printf("%d %d sid=%d bbrelation=%d rthost=%d rt=%p\n", nrnmpi_myid, i, sid[i], bb_relation[i], rthost[i], rt[i]);
 }
 for (i=0; i < nrnmpi_numprocs+1; ++i) {
 	printf("%d displ[%d]=%d\n", nrnmpi_myid, i, displ[i]);
@@ -1339,8 +1339,8 @@ nrnmpi_myid, nbackrt_, iii, i, j1, jj, sid[j1], ix[0], ix[1], t.backAindex_[i], 
 			if (j1 >= 0 && all_bb_relation[j] >= 2
 			    && rthost[j1] == nrnmpi_myid
 			    && rthost[j1] != i) {
-//printf("%d i=%d sid=%d bb_relation=%d send to rthost=%d rt=%lx\n", nrnmpi_myid, i,
-//allsid[j], all_bb_relation[j], rthost[j1], (long)rt[j1]);
+//printf("%d i=%d sid=%d bb_relation=%d send to rthost=%d rt=%p\n", nrnmpi_myid, i,
+//allsid[j], all_bb_relation[j], rthost[j1], rt[j1]);
 				// don't care about the nodeindex, only
 				// the ReducedTree.
 // fill in the ReducedTree map with RHS and D pointers to the sid[0] related receive buffer
@@ -1370,7 +1370,7 @@ rt[j1]->fillsmap(allsid[j], tsendbuf_ + ib+1, tsendbuf_ + ib);
 			    && rthost[j1] != i) {
 				if (all_bb_relation[j] > 2) { // two of these
 					int ib = mdisp + 2*b + br;
-//printf("%d offdiag fill buf %d j1=%d rt=%lx\n", nrnmpi_myid, ib, j1, (long)rt[j1]);
+//printf("%d offdiag fill buf %d j1=%d rt=%p\n", nrnmpi_myid, ib, j1, rt[j1]);
 rt[j1]->fillrmap(allsid[j+1], allsid[j], trecvbuf_ + ib);
 rt[j1]->fillrmap(allsid[j], allsid[j+1], trecvbuf_ + ib + 1);
 					br += 2;
@@ -1446,7 +1446,7 @@ secname(v_node[j]->sec), v_node[j]->sec_node_index_);
 			NrnThread* _nt = nrn_threads + ms->ithread;
 			MultiSplitThread& t = mth_[ms->ithread];
 			if (ms->rthost == nrnmpi_myid) {
-//printf("%d nrtree_=%d i=%d rt=%lx\n", nrnmpi_myid, nrtree_, i, (long)rt[i]);
+//printf("%d nrtree_=%d i=%d rt=%p\n", nrnmpi_myid, nrtree_, i, rt[i]);
 				int j = ms->nd[0]->v_node_index;
 //printf("%d call fillrmap sid %d,%d  %d node=%d\n", nrnmpi_myid, ms->sid[0], ms->sid[0], j);
 				ms->rt_ = rt[i];
@@ -1532,7 +1532,7 @@ secname(v_node[j]->sec), v_node[j]->sec_node_index_);
 		if (msti.tag_ == 3) { // reduced tree related
 			// but we only want to, not from, the reduced tree machine
 			// any nodes nonzero area?
-//printf("%d i=%d nnode=%d nodeindex=%lx host=%d rthost=%d\n", nrnmpi_myid, i, msti.nnode_, msti.nodeindex_, msti.host_, msti.rthost_);
+//printf("%d i=%d nnode=%d nodeindex=%p host=%d rthost=%d\n", nrnmpi_myid, i, msti.nnode_, msti.nodeindex_, msti.host_, msti.rthost_);
 			if (msti.rthost_ != nrnmpi_myid) for (j=0; j < msti.nnode_; ++j) {
 				NrnThread* _nt = nrn_threads + msti.nodeindex_th_[j];
 				int in = msti.nodeindex_[j];
@@ -1813,18 +1813,18 @@ void MultiSplitControl::prstruct() {
 printf("  %d host=%d rthost=%d nnode=%d nnode_rt=%d size=%d tag=%d\n",
 i, m.host_, m.rthost_, m.nnode_, m.nnode_rt_, m.size_, m.tag_);
 		if (m.nnode_) {
-printf("    nodeindex=%lx  nodeindex_buffer = %lx\n", (long)m.nodeindex_,(long)nodeindex_buffer_);
+printf("    nodeindex=%p  nodeindex_buffer = %p\n", m.nodeindex_,nodeindex_buffer_);
 		}
 	}
-	printf(" ndbsize=%d  i  nodeindex_buffer_=%lx  nodeindex_rthost_=%lx\n",
-		ndbsize, (long)nodeindex_buffer_, (long)nodeindex_rthost_);
+	printf(" ndbsize=%d  i  nodeindex_buffer_=%p  nodeindex_rthost_=%p\n",
+		ndbsize, nodeindex_buffer_, nodeindex_rthost_);
 	if (ndbsize) {
 		for (int i=0; i < ndbsize; ++i) {
 			printf("  %d %d %d\n", i, nodeindex_buffer_[i], nodeindex_rthost_[i]);
 		}
 	}
-	printf(" tbsize=%d trecvbuf_=%lx tsendbuf_=%lx\n", tbsize,
-		(long)trecvbuf_, (long)tsendbuf_);
+	printf(" tbsize=%d trecvbuf_=%p tsendbuf_=%p\n", tbsize,
+		trecvbuf_, tsendbuf_);
 	printf("\n");
     }
   }
@@ -2550,7 +2550,7 @@ void ReducedTree::gather() {
 	for (i=0; i < nmap; ++i) { rhs[irmap[i]] += *rmap[i]; }
 #if 0
 for (i=0; i < nmap; ++i){
-printf("%d %lx gather i=%d ie=%d %g\n", nrnmpi_myid, (long)this, i, irmap[i], *rmap[i]);
+printf("%d %p gather i=%d ie=%d %g\n", nrnmpi_myid, this, i, irmap[i], *rmap[i]);
 }
 #endif
 }
@@ -2561,8 +2561,8 @@ void ReducedTree::scatter() {
 	// fill the send buffer for other hosts
 #if 0
 for (i=0; i < nsmap; i += 2) {
-printf("%d enter scatter %d %lx %g %lx %g\n", nrnmpi_myid, i,
-(long)smap[i], *smap[i], (long)smap[i+1], *smap[i+1]);
+printf("%d enter scatter %d %p %g %p %g\n", nrnmpi_myid, i,
+smap[i], *smap[i], smap[i+1], *smap[i+1]);
 }
 #endif
 //printf("nsmap=%d\n", nsmap);
@@ -2573,8 +2573,8 @@ printf("%d enter scatter %d %lx %g %lx %g\n", nrnmpi_myid, i,
 	}
 #if 0
 for (i=0; i < nsmap; i += 2) if (i > 10){
-printf("%d leave scatter %d %lx %g %lx %g\n", nrnmpi_myid, i,
-(long)smap[i], *smap[i], (long)smap[i+1], *smap[i+1]);
+printf("%d leave scatter %d %p %g %p %g\n", nrnmpi_myid, i,
+smap[i], *smap[i], smap[i+1], *smap[i+1]);
 }
 #endif
 }
@@ -3237,7 +3237,7 @@ parent[i]?parent[i]->sec_node_index_:-1);
 		j += k0;
 		k0 = j - 1;
 		while(nt->_v_node[k1]->eqn_index_ < 0) {
-//printf("ordering i=%d k1=%d k0=%d parent=%lx\n", i, k1, k0, (long)nt->_v_parent[k1]);
+//printf("ordering i=%d k1=%d k0=%d parent=%p\n", i, k1, k0, nt->_v_parent[k1]);
 			node[k0-i1] = nt->_v_node[k1];
 			parent[k0-i1] = nt->_v_parent[k1];
 			node[k0-i1]->eqn_index_ = k0;

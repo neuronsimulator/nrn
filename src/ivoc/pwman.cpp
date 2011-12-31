@@ -1448,7 +1448,7 @@ void PrintableWindowManager::xplace(int left, int top, boolean m) {
 
 void PrintableWindowManager::update(Observable* o) {
 	PrintableWindow* w = (PrintableWindow*)o;
-//printf("PrintableWindowManager::update(%lx)\n", (long)w);
+//printf("PrintableWindowManager::update(%p)\n", w);
 	reconfigured(w);
 #if carbon
 	if (w->leader() == w) {
@@ -1458,11 +1458,11 @@ void PrintableWindowManager::update(Observable* o) {
 }
 
 void PrintableWindowManager::disconnect(Observable* o) {
-//	printf("disconnect %lx\n", (long)((PrintableWindow*)o));
+//	printf("disconnect %p\n", (PrintableWindow*)o);
 }
 
 void PrintableWindowManager::append(PrintableWindow* w) {
-//printf("PrintableWindowManager::append(%lx)\n", (long)w);
+//printf("PrintableWindowManager::append(%p)\n", w);
 	if (w == nil) {
 		return;
 	}
@@ -1473,16 +1473,16 @@ void PrintableWindowManager::append(PrintableWindow* w) {
 	if (pw && pw->is_mapped() && pw != w) {
 		if (w->is_transient()) {
 			w->transient_for(pw);
-//printf("transient for %lx\n", (long)pw);
+//printf("transient for %p\n", pw);
 		}else{
 			w->group_leader(pw);
-//printf("group leader is %lx\n", (long)pw);
+//printf("group leader is %p\n", pw);
 		}
 	}
 }
 
 void PrintableWindowManager::append(JavaWindow* w) {
-//printf("PrintableWindowManager::append(%lx)\n", (long)w);
+//printf("PrintableWindowManager::append(%p)\n", w);
 	if (w == nil) {
 		return;
 	}
@@ -1491,12 +1491,12 @@ void PrintableWindowManager::append(JavaWindow* w) {
 }
 
 void PrintableWindowManager::remove(PrintableWindow* w) {
-//printf("PrintableWindowManager::remove(%lx)\n", (long)w);
+//printf("PrintableWindowManager::remove(%p)\n", w);
 	PWMImpl* impl = pwmi_;
 	if (w == impl->window()) {
 		impl->w_ = nil;
 	}
-//	printf("remove %lx\n", (long)w);
+//	printf("remove %p\n", w);
 	w->detach(this);
 	Scene* s = impl->screen_;
 	if (s) {
@@ -1506,9 +1506,9 @@ void PrintableWindowManager::remove(PrintableWindow* w) {
 	impl->relabel();
 }
 void PrintableWindowManager::remove(JavaWindow* w) {
-//printf("PrintableWindowManager::remove(%lx)\n", (long)w);
+//printf("PrintableWindowManager::remove(%p)\n", w);
 	PWMImpl* impl = pwmi_;
-//	printf("remove %lx\n", (long)w);
+//	printf("remove %p\n", w);
 	Scene* s = impl->screen_;
 	if (s) {
 		GlyphIndex i = impl->index(w);
@@ -3470,7 +3470,7 @@ JavaWindow::~JavaWindow() {
 	unref();
 }
 
-void (*nrnjava_pwm_setwin)(long, int, int, int);
+void (*nrnjava_pwm_setwin)(void*, int, int, int);
 
 Coord JavaWindow::l() {
 	return  Session::instance()->default_display()->to_coord(pl);
@@ -3490,22 +3490,22 @@ Coord JavaWindow::h() {
 }
 
 void JavaWindow::map() {
-	(*nrnjava_pwm_setwin)((long)this, 1, 0, 0);
+	(*nrnjava_pwm_setwin)(this, 1, 0, 0);
 }
 void JavaWindow::hide() {
-	(*nrnjava_pwm_setwin)((long)this, 2, 0, 0);
+	(*nrnjava_pwm_setwin)(this, 2, 0, 0);
 }
 void JavaWindow::move(Coord x, Coord y) {
 	Display* d = Session::instance()->default_display();
 	int left = d->to_pixels(x);
 	int top = d->pheight() - d->to_pixels(y) - ph;
-	(*nrnjava_pwm_setwin)((long)this, 3, left, top);
+	(*nrnjava_pwm_setwin)(this, 3, left, top);
 }
 void JavaWindow::pmove(int l, int t) {
-	(*nrnjava_pwm_setwin)((long)this, 3, l, t);
+	(*nrnjava_pwm_setwin)(this, 3, l, t);
 }
 void JavaWindow::presize(int w, int h) {
-	(*nrnjava_pwm_setwin)((long)this, 4, w, h);
+	(*nrnjava_pwm_setwin)(this, 4, w, h);
 }
 
 void JavaWindow::ref() {
@@ -3575,10 +3575,10 @@ void JavaWindow::save_session(const char* fname, ostream& o) {
 	o << "/*End " << title << " */\n";
 }
 
-long nrnjava_pwm_listen(const char* s, Object* ho) {
+void* nrnjava_pwm_listen(const char* s, Object* ho) {
 	JavaWindow* jw = new JavaWindow(s, ho);
 	PrintableWindowManager::current()->append(jw);
-	return (long)jw;
+	return jw;
 }
 
 // see src/nrnjava/PWMListener.java for the types

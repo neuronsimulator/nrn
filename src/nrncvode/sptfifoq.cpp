@@ -46,7 +46,7 @@ static void prnt(const TQItem* b, int level) {
 	for (i=0; i < level; ++i) {
 		printf("    ");
 	}
-	printf("%g %c %d Q=%lx D=%lx\n", b->t_, b->data_?'x':'o', b->cnt_, (long)b, (long)b->data_);
+	printf("%g %c %d Q=%p D=%p\n", b->t_, b->data_?'x':'o', b->cnt_, b, b->data_);
 }
 
 static void chk(TQItem* b, int level) {
@@ -283,7 +283,7 @@ TQItem* FifoQ::dequeue() {
 	return q;
 }
 void FifoQ::remove(TQItem* q) {
-	printf("FifoQ remove %lx\n", (long)q);
+	printf("FifoQ remove %p\n", q);
 	if (head_ == q) { head_ = q->right_; }
 	if (tail_ == q) { tail_ = q->left_; }
 	if (q->left_) { q->left_->right_ = q->right_; }

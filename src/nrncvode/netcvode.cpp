@@ -2243,7 +2243,7 @@ void net_move(void** v, Point_process* pnt, double tt) {
 		hoc_execerror( "No event with flag=1 for net_move in ", hoc_object_name(pnt->ob));
 	}
 	TQItem* q = (TQItem*)(*v);
-//printf("net_move tt=%g %s *v=%lx\n", tt, hoc_object_name(pnt->ob), (long)(*v));
+//printf("net_move tt=%g %s *v=%p\n", tt, hoc_object_name(pnt->ob), *v);
 	if (tt < PP2t(pnt)) {
 		SelfEvent* se = (SelfEvent*)q->data_;
 		char buf[100];
@@ -2263,7 +2263,7 @@ void artcell_net_move(void** v, Point_process* pnt, double tt) {
 	NrnThread* nt = PP2NT(pnt);
 	NetCvodeThreadData& p = net_cvode_instance->p[nt->id];
 	TQItem* q = (TQItem*)(*v);
-//printf("artcell_net_move t=%g qt_=%g tt=%g %s *v=%lx\n", nt->_t, q->t_, tt, hoc_object_name(pnt->ob), (long)(*v));
+//printf("artcell_net_move t=%g qt_=%g tt=%g %s *v=%p\n", nt->_t, q->t_, tt, hoc_object_name(pnt->ob), *v);
 	if (tt < nt->_t) {
 		SelfEvent* se = (SelfEvent*)q->data_;
 		char buf[100];
@@ -2342,7 +2342,7 @@ void net_send(void** v, double* weight, Point_process* pnt, double td, double fl
 	if (flag == 1.0) {
 		*v = (void*)q;
 	}
-//printf("net_send %g %s %g %lx\n", td, hoc_object_name(pnt->ob), flag, (long)(*v));
+//printf("net_send %g %s %g %p\n", td, hoc_object_name(pnt->ob), flag, *v);
 }
 
 void artcell_net_send(void** v, double* weight, Point_process* pnt, double td, double flag) {
@@ -2367,7 +2367,7 @@ void artcell_net_send(void** v, double* weight, Point_process* pnt, double td, d
 	q = p.selfqueue_->insert(se);
 	q->t_ = td;
 	*v = (void*)q;
-//printf("artcell_net_send %g %s %g %lx\n", td, hoc_object_name(pnt->ob), flag, (long)(*v));
+//printf("artcell_net_send %g %s %g %p\n", td, hoc_object_name(pnt->ob), flag, v);
 	if (q->t_ < p.immediate_deliver_) {
 //printf("artcell_net_send_  %s immediate %g %g %g\n", hoc_object_name(pnt->ob), nt->_t, q->t_, p.immediate_deliver_);
 		SelfEvent* se = (SelfEvent*)q->data_;
@@ -3392,14 +3392,14 @@ void NetCvode::local_retreat(double t, Cvode* cv) {
 	if (tq) {
 #if PRINT_EVENT
 		if (print_event_) {
-printf("microstep local retreat from %g (cvode_%lx is at %g) for event onset=%g\n", cv->tqitem_->t_, (long)cv, cv->t_, t);
+printf("microstep local retreat from %g (cvode_%p is at %g) for event onset=%g\n", cv->tqitem_->t_, cv, cv->t_, t);
 		}
 #endif
 		cv->interpolate(t);
 		tq->move(cv->tqitem_, t);
 #if PRINT_EVENT
 		if (print_event_ > 1) {
-printf("after target solve time for %lx is %g , dt=%g\n", (long)cv, cv->time(), nt_dt);
+printf("after target solve time for %p is %g , dt=%g\n", cv, cv->time(), nt_dt);
 		}
 #endif
 	}else{
@@ -3412,8 +3412,8 @@ void NetCvode::retreat(double t, Cvode* cv) {
 	TQueue* tq = p[cv->nth_ ? cv->nth_->id : 0].tq_;
 #if PRINT_EVENT
 	if (print_event_) {
-printf("microstep retreat from %g (cvode_%lx is at %g) for event onset=%g\n",
- tq ? cv->tqitem_->t_ : cv->t_, (long)cv, cv->t_, t);
+printf("microstep retreat from %g (cvode_%p is at %g) for event onset=%g\n",
+ tq ? cv->tqitem_->t_ : cv->t_, cv, cv->t_, t);
 	}
 #endif
 	cv->interpolate(t);
@@ -3422,7 +3422,7 @@ printf("microstep retreat from %g (cvode_%lx is at %g) for event onset=%g\n",
 	}
 #if PRINT_EVENT
 	if (print_event_ > 1) {
-printf("after target solve time for %lx is %g , dt=%g\n", (long)cv, cv->time(), dt);
+printf("after target solve time for %p is %g , dt=%g\n", cv, cv->time(), dt);
 	}
 #endif
 }
@@ -4768,7 +4768,7 @@ PreSyn::PreSyn(double* src, Object* osrc, Section* ssrc) {
 
 PreSyn::~PreSyn() {
 	PreSynSave::invalid();
-//	printf("~PreSyn %lx\n", (long)this);
+//	printf("~PreSyn %p\n", this);
 	nrn_cleanup_presyn(this);
 	if (stmt_) {
 		delete stmt_;
@@ -5409,13 +5409,13 @@ if (print_event_) {db->pr("binq deliver", nt_t, this);}
 implementPtrList(PlayRecList,PlayRecord)
 
 void NetCvode::playrec_add(PlayRecord* pr) { // called by PlayRecord constructor
-//printf("NetCvode::playrec_add %lx\n", (long)pr);
+//printf("NetCvode::playrec_add %p\n", pr);
 	playrec_change_cnt_ = 0;
 	prl_->append(pr);
 }
 
 void NetCvode::playrec_remove(PlayRecord* pr) { // called by PlayRecord destructor
-//printf("NetCvode::playrec_remove %lx\n", (long)pr);
+//printf("NetCvode::playrec_remove %p\n", pr);
 	playrec_change_cnt_ = 0;
 	int i, cnt = prl_->count();
 	for (i=0; i < cnt; ++i) {
@@ -5466,7 +5466,7 @@ PlayRecord* NetCvode::playrec_uses(void* v) {
 }
 
 PlayRecord::PlayRecord(double* pd, Object* ppobj) {
-//printf("PlayRecord::PlayRecord %lx\n", (long)this);
+//printf("PlayRecord::PlayRecord %p\n", this);
 	pd_ = pd;
 	cvode_ = nil;
 	ith_ = 0;
@@ -5484,7 +5484,7 @@ PlayRecord::PlayRecord(double* pd, Object* ppobj) {
 }
 
 PlayRecord::~PlayRecord() {
-//printf("PlayRecord::~PlayRecord %lx\n", (long)this);
+//printf("PlayRecord::~PlayRecord %p\n", this);
 #if HAVE_IV
 	Oc oc;
 	oc.notify_pointer_disconnect(this);

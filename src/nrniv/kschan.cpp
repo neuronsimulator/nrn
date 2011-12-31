@@ -1877,7 +1877,7 @@ void KSChan::trans_remove(int i) {
 
 void KSChan::setstructure(Vect* vec) {
 	int i, j, ii, idx, ns;
-//printf("setstructure called for KSChan %lx %s\n", (long)this, name_.string());
+//printf("setstructure called for KSChan %p %s\n", this, name_.string());
 #if 0
 for (i=0; i < vec->capacity(); ++i) {
 	printf("%d %g\n", i, vec->elem(i));
@@ -2161,7 +2161,7 @@ void KSChan::mulmat(double* s, double* ds) {
 
 void KSChan::alloc(Prop* prop) {
 //printf("KSChan::alloc nstate_=%d nligand_=%d\n", nstate_, nligand_);
-//printf("KSChan::alloc %s param=%lx\n", name_.string(), (long)prop->param);
+//printf("KSChan::alloc %s param=%p\n", name_.string(), prop->param);
 	int j;
 	prop->param_size = soffset_ + 2*nstate_;
     if (is_point() && nrn_point_prop_) {

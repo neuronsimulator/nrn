@@ -93,7 +93,7 @@ void PanelInputHandler::focus(InputHandler* h){
 
 void PanelInputHandler::handle_old_focus() {
 	if (focus_) {
-//printf("handle_old_focus %lx\n", (long)focus_);
+//printf("handle_old_focus %p\n", focus_);
 		sema_ = true;
 		InputHandler* f = focus_;
 		focus_ = nil;
@@ -1951,8 +1951,8 @@ void HocValEditor::audit() {
 		sprintf(buf, "%s = %s\n",
 			variable_->string(), fe_->text()->string());
 	}else if (pval_){
-		sprintf(buf, "// %lx pointer set to %s\n",
-			(long)pval_, fe_->text()->string());
+		sprintf(buf, "// %p pointer set to %s\n",
+			pval_, fe_->text()->string());
 	}
 	hoc_audit_command(buf);
 }
@@ -2219,7 +2219,7 @@ void HocEditorForItem::focus_out() {
 	}
 	FieldSEditor::focus_out();
 	if (PanelInputHandler::has_old_focus()) {
-//printf("old focus out %lx\n", (InputHandler*)this);
+//printf("old focus out %p\n", (InputHandler*)this);
 		hve_->exec_action();
 	}
 }
@@ -2639,8 +2639,8 @@ void OcSlider::audit() {
 		sprintf(buf, "%s = %g\n",
 			variable_->string(), *pval_);
 	}else if (pval_){
-		sprintf(buf, "// %lx pointer set to %g\n",
-			(long)pval_, *pval_);
+		sprintf(buf, "// %p pointer set to %g\n",
+			pval_, *pval_);
 	}
 	hoc_audit_command(buf);
 	if (send_) {

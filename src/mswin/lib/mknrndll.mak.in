@@ -1,6 +1,7 @@
 
+CC = @CC@
 
-EXTRA_CYGWIN = -I$N/lib -I$N/gccinc -I$N/gcc3inc -L$N/gcclib
+EXTRA_CYGWIN = -I$N/lib -I$N/$(CC)inc -I$N/$(CC)3inc -L$N/$(CC)lib
 EXTRA_FLAGS = @MINGW_CFLAG@ @EXTRA_CYGWIN_FLAGS@
 
 CFLAGS = \
@@ -19,29 +20,29 @@ $(EXTRA_FLAGS)
 	nocmodl $*
 
 %.o : %.c
-	gcc $(CFLAGS) -c $*.c
+	$(CC) $(CFLAGS) -c $*.c
 
 # additional rules to handle variations of filename extensions
 %.c : %.moD
-	gcc $(CFLAGS) -c $*.c
+	$(CC) $(CFLAGS) -c $*.c
 
 %.c : %.mOd
-	gcc $(CFLAGS) -c $*.c
+	$(CC) $(CFLAGS) -c $*.c
 
 %.c : %.mOD
-	gcc $(CFLAGS) -c $*.c
+	$(CC) $(CFLAGS) -c $*.c
 
 %.c : %.Mod
-	gcc $(CFLAGS) -c $*.c
+	$(CC) $(CFLAGS) -c $*.c
 
 %.c : %.MoD
-	gcc $(CFLAGS) -c $*.c
+	$(CC) $(CFLAGS) -c $*.c
 
 %.c : %.MOd
-	gcc $(CFLAGS) -c $*.c
+	$(CC) $(CFLAGS) -c $*.c
 
 %.c : %.MOD
-	gcc $(CFLAGS) -c $*.c
+	$(CC) $(CFLAGS) -c $*.c
 
 %.o : %.moD
 
@@ -58,13 +59,13 @@ $(EXTRA_FLAGS)
 %.o : %.MOD
 
 mod_func.o: mod_func.c
-	gcc $(CFLAGS) -c $*.c
+	$(CC) $(CFLAGS) -c $*.c
 
 #nrnmech.dll: mod_func.o $(MODOBJFILES)
 #	ld -d -S -x -r -o nrnmech.dll mod_func.o $(MODOBJFILES) -L$N/lib -lscpmt
 
 nrnmech.dll: mod_func.o $(MODOBJFILES)
-	gcc $(EXTRA_FLAGS) -shared -o nrnmech.dll mod_func.o $(MODOBJFILES) \
+	$(CC) $(EXTRA_FLAGS) -shared -o nrnmech.dll mod_func.o $(MODOBJFILES) \
   -L$N/bin -lnrniv
 	rebase -b 0x64000000 -v nrnmech.dll
 

@@ -1,5 +1,6 @@
 #include <../../nrnconf.h>
 #include <errno.h>
+#ifndef MINGW
 #if DOS || defined(__GO32__) || defined(WIN32) /*|| defined(MAC)*/
 /******************************************************************************
  *
@@ -43,12 +44,12 @@ static char RCSid[] =
  *
  ***********************************************************/
 
+#include <math.h>
 #define a1  0.254829592
 #define a2 -0.284496736
 #define a3  1.421413741
 #define a4 -1.453152027
 #define a5  1.061405429
-#include <math.h>
 double 
 erf(z)
 double z;
@@ -70,4 +71,5 @@ erfc(z)
 {
 	return 1. - erf(z);
 }
+#endif
 #endif

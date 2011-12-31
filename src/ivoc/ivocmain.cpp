@@ -199,7 +199,7 @@ void setneuronhome(const char*) {
 void penv() {
 	int i;
 	for (i=0; environ[i]; ++i) {
-		printf("%lx %s\n", (long)environ[i], environ[i]);
+		printf("%p %s\n", environ[i], environ[i]);
 	}
 }
 #endif
@@ -685,7 +685,7 @@ ENDGUI
 
 	}
 #endif
-	//printf("p_nrnpython_start = %lx\n", p_nrnpython_start);
+	//printf("p_nrnpython_start = %p\n", p_nrnpython_start);
 	if (p_nrnpython_start) { (*p_nrnpython_start)(1); }
 	if (use_python_interpreter && !p_nrnpython_start) {
 		fprintf(stderr, "Python not available\n");

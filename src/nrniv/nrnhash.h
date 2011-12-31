@@ -2,6 +2,7 @@
 #define nrnhash_h
 // hash table where buckets are binary search maps and key is castable to unsigned long
 
+#include <OS/table.h>
 #include <ivstream.h>
 
 #if defined(HAVE_SSTREAM) // the standard...
@@ -26,7 +27,7 @@
 #define declareNrnHash(Table,Key,Value) \
 struct NrnHashLT(Table) { \
 	int operator() (Key i, Key j) const { \
-		return ((unsigned long)i) < ((unsigned long)j); \
+		return (key_to_hash(i) < key_to_hash(j)); \
 	} \
 }; \
 \
@@ -40,7 +41,7 @@ public: \
 	NrnHashEntry(Table)& at(unsigned long bucket){ return *(begin() + bucket); } \
 	Value& operator[](Key key) { return at(hash(key))[key]; } \
 	void remove(Key); \
-	unsigned long hash(Key key)const { return ((unsigned long)key)%size_; } \
+	unsigned long hash(Key key)const { return (key_to_hash(key))%size_; } \
 	long size_; \
 };
 

@@ -99,7 +99,11 @@ inline boolean TableIterator(Table)::more() { return entry_ <= last_; }
 
 #ifndef os_table2_h
 inline unsigned long key_to_hash(long k) { return (unsigned long)k; }
+#if defined(__SIZEOF_POINTER__) && __SIZEOF_POINTER__ > __SIZEOF_LONG__
+inline unsigned long key_to_hash(const void* k) { return (unsigned long)((unsigned long long)k); }
+#else
 inline unsigned long key_to_hash(const void* k) { return (unsigned long)k; }
+#endif
 #endif
 
 /*

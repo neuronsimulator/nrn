@@ -28,17 +28,17 @@
 LinearModelAddition::LinearModelAddition(Matrix* cmat, Matrix* gmat,
 	Vect* yvec, Vect* y0, Vect* bvec, int nnode, Node** nodes, Vect* elayer) 
 	: NrnDAE(cmat, yvec, y0, nnode, nodes, elayer), b_(*bvec) {
-//printf("LinearModelAddition %lx\n", (long)this);
+//printf("LinearModelAddition %p\n", this);
 	g_ = new MatrixMap(gmat);
 }
 
 LinearModelAddition::~LinearModelAddition() {
-//printf("~LinearModelAddition %lx\n", (long)this);
+//printf("~LinearModelAddition %p\n", this);
 	delete g_;
 }
 
 void LinearModelAddition::alloc_(int size, int start, int nnode, Node** nodes, int* elayer) {
-//printf("LinearModelAddition::alloc_ %lx\n", (long)this);
+//printf("LinearModelAddition::alloc_ %p\n", this);
 	assert(b_.capacity() == size);
 	assert(g_->nrow() == size && g_->ncol() == size);
 //printf("g_->alloc start=%d, nnode=%d\n", start_, nnode_);
@@ -46,7 +46,7 @@ void LinearModelAddition::alloc_(int size, int start, int nnode, Node** nodes, i
 }
 
 void LinearModelAddition::f_(Vect& y, Vect& yprime, int size) {
-//printf("LinearModelAddition::f_ %lx\n", (long)this);
+//printf("LinearModelAddition::f_ %p\n", this);
 	//right side portion of (c/dt +g)*[dy] =  -g*y + b
 	// given y, returns y'
 	// vm,vext may be reinitialized between fixed steps and certainly

@@ -39,7 +39,7 @@ extern const char* (*p_java2nrn_classname)(Object* ho);
 extern boolean (*p_java2nrn_identity)(Object* o1, Object* o2);
 }
 // and others
-extern void (*nrnjava_pwm_setwin)(long, int, int, int);
+extern void (*nrnjava_pwm_setwin)(void*, int, int, int);
 
 // actual functions in this file that fill in the above hooks
 static void* java2nrn_cons(Object* o);
@@ -49,7 +49,7 @@ static char** java2nrn_smeth(Object* ho, Symbol* method);
 static Object** java2nrn_ometh(Object* ho, Symbol* method);
 static const char* java2nrn_classname(Object* ho);
 static boolean java2nrn_identity(Object* o1, Object* o2);
-static void pwm_setwin(long, int, int, int);
+static void pwm_setwin(void*, int, int, int);
 static char** js2charpool(jstring js);
 
 // see nrnjni.cpp
@@ -495,8 +495,8 @@ jobject nj_encapsulate(Object* ho) {
 	return jo;
 }
 
-static void pwm_setwin(long wincast, int type, int left, int top) {
-//	printf("pwm_setwin %ld %ld %d %d %d\n", wincast, type, left, top);
+static void pwm_setwin(void* win, int type, int left, int top) {
+//	printf("pwm_setwin %p %ld %d %d %d\n", win, type, left, top);
 	if (nrnjava_root_env == nrnjava_env) {
 		nrnjava_env->CallStaticIntMethod(neuronCls,
 			setwinID, (jlong)wincast, type, left, top);

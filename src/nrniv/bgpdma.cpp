@@ -91,7 +91,7 @@ void BGP_ReceiveBuffer::init() {
 	count_ = 0;
 }
 void BGP_ReceiveBuffer::incoming(int gid, double spiketime) {
-//printf("%d %lx.incoming %g %g %d\n", nrnmpi_myid, (long)this, t, spk->spiketime, spk->gid);
+//printf("%d %p.incoming %g %g %d\n", nrnmpi_myid, this, t, spk->spiketime, spk->gid);
 	assert(busy_ == 0);
 	busy_ = 1;
 #if 1
@@ -114,7 +114,7 @@ void BGP_ReceiveBuffer::incoming(int gid, double spiketime) {
 	busy_ = 0;	
 }
 void BGP_ReceiveBuffer::enqueue() {
-//printf("%d %lx.enqueue count=%d t=%g nrecv=%d nsend=%d\n", nrnmpi_myid, (long)this, t, count_, nrecv_, nsend_);
+//printf("%d %p.enqueue count=%d t=%g nrecv=%d nsend=%d\n", nrnmpi_myid, this, t, count_, nrecv_, nsend_);
 	assert(busy_ == 0);
 	busy_ = 1;
 #if 1
@@ -594,7 +594,7 @@ int gathersrcgid(int hostbegin, int totalngid, int* ngid, int* thishostgid,
 #if 0
 printf("%d hostbegin=%d hostend=%d totalngid=%d bsize=%d\n",
 nrnmpi_myid, hostbegin, hostend, totalngid, bsize);
-printf("%d thishostgid=%lx me=%lx\n", nrnmpi_myid, thishostgid, me);
+printf("%d thishostgid=%p me=%p\n", nrnmpi_myid, thishostgid, me);
 for (i=0; i < nrnmpi_numprocs; ++i) {
 printf("%d i=%d n=%d displ=%d\n", nrnmpi_myid, i, n[i], displ[i]);
 }

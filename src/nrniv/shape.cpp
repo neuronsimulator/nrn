@@ -2008,13 +2008,13 @@ ShapeChangeObserver::~ShapeChangeObserver() {
 }
 void ShapeChangeObserver::update(Observable*) {
 	if (shape_changed_ != nrn_shape_changed_) {
-//printf("ShapeChangeObserver::update shape_changed%lx nrn_shape_changed=%d\n", (long)this, nrn_shape_changed_);
+//printf("ShapeChangeObserver::update shape_changed%p nrn_shape_changed=%d\n", this, nrn_shape_changed_);
 		shape_changed_ = nrn_shape_changed_;
 		nrn_define_shape();
 		volatile_ptr_ref = nil;
 		if (struc_changed_ != structure_change_cnt) {
 			struc_changed_ = structure_change_cnt;
-//printf("ShapeChangeObserver::update structure_changed%lx\n", (long)this);
+//printf("ShapeChangeObserver::update structure_changed%p\n", this);
 			if (s_->view_all()) {
 				s_->observe();
 			}

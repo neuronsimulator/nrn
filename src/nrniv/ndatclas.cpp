@@ -90,7 +90,7 @@ NrnProperty::NrnProperty(const char* name) {
 	}
 	if (sym) {
 		Prop* p, *p0 = 0, *p1;
-//printf("prop_alloc %s %lx type=%d\n", sym->name, (long)sym, sym->subtype);
+//printf("prop_alloc %s %p type=%d\n", sym->name, sym, sym->subtype);
 		// need to do this with no args
 		push_frame(sym, 0);
 		p = prop_alloc(&p0, sym->subtype, nil);

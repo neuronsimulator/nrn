@@ -114,7 +114,7 @@ but will be missing this sessions hoc help text\n");
 		if ((help_pipe = popen(buf, "w")) == (FILE*)0) {
 			printf("Could not start %s\n", buf);
 		}
-//printf("help_pipe = %lx\n", long(help_pipe));
+//printf("help_pipe = %p\n", help_pipe);
 		readmore();
 		if (filequeue) {
 			for (long i = 0; i < filequeue->count(); ++i) {

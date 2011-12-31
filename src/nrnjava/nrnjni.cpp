@@ -33,7 +33,7 @@ extern Symbol* nrn_jobj_sym;
 extern Symbol* nrn_vec_sym;
 
 //implemented in src/ivoc/pwman.cpp
-long nrnjava_pwm_listen(const char*, Object*);
+void* nrnjava_pwm_listen(const char*, Object*);
 void nrnjava_pwm_event(long, int, int, int, int, int);
 
 extern "C" {
@@ -434,7 +434,7 @@ JNIEXPORT void JNICALL Java_neuron_Neuron_pushArgS
 JNIEXPORT void JNICALL Java_neuron_Neuron_pushArgO
   (JNIEnv *env, jclass, jobject jo, jint type){
 	jnisave
-//printf("pushArgO jo=%lx type=%d\n", (long)jo, type);
+//printf("pushArgO jo=%p type=%d\n", jo, type);
 	Object** po = nj_j2hObject(jo, type);
 	if (!po) {
 		printf("Do not recognize the object argument type %d\n", type);
@@ -461,7 +461,7 @@ JNIEXPORT jlong JNICALL Java_neuron_Neuron_pwmListen
 	jnisave
 	const char* s = env->GetStringUTFChars(title, 0);
 //	printf("pwmListen env=%ld %s\n", (long)env, s);
-	jlong ic = nrnjava_pwm_listen(s, ho); // implementation in src/ivoc/pwman.cpp
+	jlong ic = (jlong)nrnjava_pwm_listen(s, ho); // implementation in src/ivoc/pwman.cpp
 	env->ReleaseStringUTFChars(title, s);
 	jnirestore
 	return ic;	

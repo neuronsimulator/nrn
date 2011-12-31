@@ -77,14 +77,14 @@ void Graph::simgraph() {
 
 GLineRecord::GLineRecord(GraphLine* gl) : PlayRecord(nil){
 	//shouldnt be necessary but just in case
-//	printf("GLineRecord %lx name=%s\n", (long)this, gl->name());
+//	printf("GLineRecord %p name=%s\n", this, gl->name());
 	gl_ = gl;
 	gl_->simgraph_activate(true);
 	pd_ = hoc_val_pointer(gl->name());
 }
 
 GLineRecord::~GLineRecord(){
-//	printf("~GLineRecord %lx\n", (long)this);
+//	printf("~GLineRecord %p\n", this);
 	int i;
 	for (i = grl->count()-1; i >= 0; --i) {
 		if (grl->item(i) == this) {

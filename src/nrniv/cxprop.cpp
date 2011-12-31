@@ -265,7 +265,7 @@ double* nrn_prop_data_alloc(int type, int count, Prop* p) {
 	assert(dblpools_[type]->d2() == count);
 	p->_alloc_seq = dblpools_[type]->ntget();
 	double* pd = dblpools_[type]->alloc();
-//if (type > 1) printf("nrn_prop_data_alloc %d %s %d %lx\n", type, memb_func[type].sym->name, count, (long)pd);
+//if (type > 1) printf("nrn_prop_data_alloc %d %s %d %p\n", type, memb_func[type].sym->name, count, pd);
 	return pd;
 }
 
@@ -278,20 +278,20 @@ Datum* nrn_prop_datum_alloc(int type, int count, Prop* p) {
 	assert(datumpools_[type]->d2() == count);
 	p->_alloc_seq = datumpools_[type]->ntget();
 	ppd = datumpools_[type]->alloc();
-//if (type > 1) printf("nrn_prop_datum_alloc %d %s %d %lx\n", type, memb_func[type].sym->name, count, (long)ppd);
+//if (type > 1) printf("nrn_prop_datum_alloc %d %s %d %p\n", type, memb_func[type].sym->name, count, ppd);
 	for (i=0; i < count; ++i) { ppd[i]._pvoid = 0; }
 	return ppd;
 }
 
 void nrn_prop_data_free(int type, double* pd) {
-//if (type > 1) printf("nrn_prop_data_free %d %s %lx\n", type, memb_func[type].sym->name, (long)pd);
+//if (type > 1) printf("nrn_prop_data_free %d %s %p\n", type, memb_func[type].sym->name, pd);
 	if (pd) {
 		dblpools_[type]->hpfree(pd);
 	}
 }
 
 void nrn_prop_datum_free(int type, Datum* ppd) {
-//if (type > 1) printf("nrn_prop_datum_free %d %s %lx\n", type, memb_func[type].sym->name, (long)ppd);
+//if (type > 1) printf("nrn_prop_datum_free %d %s %p\n", type, memb_func[type].sym->name, ppd);
 	if (ppd) {
 		datumpools_[type]->hpfree(ppd);
 	}
@@ -323,8 +323,8 @@ int nrn_prop_is_cache_efficient() {
 			}
 			for (int j = 0; j < ml->nodecount; ++j) {
 				if (p[i]->element(j) != ml->data[j]) {
-//printf("thread %d mechanism %s instance %d  element %lx data %lx\n",
-//it, memb_func[i].sym->name, j, (long)p[i]->element(j), (long)(ml->data + j));
+//printf("thread %d mechanism %s instance %d  element %p data %p\n",
+//it, memb_func[i].sym->name, j, p[i]->element(j), (ml->data + j));
 					r = 0;
 				}
 			}
@@ -366,7 +366,7 @@ static double* recalc_ptr(double* old) {
 //if (i < 0 || i >= np->size()) abort();
 			assert(i >= 0 && i < np->size());
 			double* n = np->items()[i] + offset;
-//printf("recalc_ptr old=%lx new=%lx value=%g\n", (long)old, (long)n, *n);
+//printf("recalc_ptr old=%p new=%p value=%g\n", old, n, *n);
 			return n;
 		}
 	}

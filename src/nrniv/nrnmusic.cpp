@@ -98,7 +98,7 @@ void nrnmusic_injectlist(void* vp, double tt) {
 }
 
 void nrnmusic_inject(void* vport, int gi, double tt) {
-	//printf("nrnmusic_inject %lx %d %g\n", (long)vport, gi, tt);
+	//printf("nrnmusic_inject %p %d %g\n", vport, gi, tt);
 	((MUSIC::EventOutputPort*)vport)->
 	  insertEvent(tt, (MUSIC::GlobalIndex)gi);
 }
@@ -116,7 +116,7 @@ void NrnMusicEventHandler::filltable(NRNMUSIC::EventInputPort* port, int cnt) {
 void NrnMusicEventHandler::operator () (double t, MUSIC::LocalIndex id) {
 	PreSyn* ps = table[id];
 	ps->send(t, net_cvode_instance, nrn_threads);
-//printf("event handler t=%g id=%d ps=%lx\n", t, int(id), (long)ps);
+//printf("event handler t=%g id=%d ps=%p\n", t, int(id), ps);
 }
 
 NRNMUSIC::EventOutputPort* NRNMUSIC::publishEventOutput (std::string id) {
@@ -143,7 +143,7 @@ void NRNMUSIC::EventOutputPort::gid2index(int gid, int gi) {
 	}
 	PreSyn* ps2;
 	assert(!gi_table->find(ps2, gi));
-//printf("gid2index insert %lx %d\n", (long)this, gi);
+//printf("gid2index insert %p %d\n", this, gi);
 	gi_table->insert(gi, ps);
 }
 
@@ -227,7 +227,7 @@ static void nrnmusic_runtime_phase() {
 		int cnt = 0;
 		for (TableIterator(Gi2PreSynTable) j(*pst); j.more(); j.next()) {
 			int gi = j.cur_key();
-//printf("input port eip=%lx gi=%d\n", (long)eip, gi);
+//printf("input port eip=%p gi=%d\n", eip, gi);
 			gindices.push_back (gi);
 			++cnt;
 		}
@@ -247,7 +247,7 @@ static void nrnmusic_runtime_phase() {
 		//iterate over pst and create indices
 		for (TableIterator(Gi2PreSynTable) j(*pst); j.more(); j.next()) {
 			int gi = j.cur_key();
-//printf("output port eop=%lx gi = %d\n", (long)eop, gi);
+//printf("output port eop=%p gi = %d\n", eop, gi);
 			gindices.push_back (gi);
 		}
 		MUSIC::PermutationIndex indices (&gindices.front (),

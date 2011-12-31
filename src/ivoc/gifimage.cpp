@@ -415,7 +415,7 @@ static int LoadGIF(const char* fname, PICINFO* pinfo)
 
     else if (block == IMAGESEP) {
       if (DEBUG) fprintf(stderr,"imagesep (got=%d)  ",gotimage);
-      if (DEBUG) fprintf(stderr,"  at start: offset=0x%lx\n",dataptr-RawGIF);
+      if (DEBUG) fprintf(stderr,"  at start: offset=%p\n",dataptr-RawGIF);
 
       if (gotimage) {   /* just skip over remaining images */
 	int i,misc,ch,ch1;
@@ -444,7 +444,7 @@ static int LoadGIF(const char* fname, PICINFO* pinfo)
       }
 
       else if (readImage(pinfo)) gotimage = 1;
-      if (DEBUG) fprintf(stderr,"  at end:   dataptr=0x%lx\n",dataptr-RawGIF);
+      if (DEBUG) fprintf(stderr,"  at end:   dataptr=%p\n",dataptr-RawGIF);
     }
 
 
@@ -460,7 +460,7 @@ static int LoadGIF(const char* fname, PICINFO* pinfo)
 
       /* don't mention bad block if file was trunc'd, as it's all bogus */
       if ((dataptr - origptr) < filesize) {
-	sprintf(str, "Unknown block type (0x%02x) at offset 0x%lx",
+	sprintf(str, "Unknown block type (0x%02x) at offset %p",
 		block, (dataptr - origptr) - 1);
 
 	if (!gotimage) return gifError(pinfo, str);

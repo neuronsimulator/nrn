@@ -48,7 +48,7 @@ static void prnt(const TQItem* b, int level) {
 	for (i=0; i < level; ++i) {
 		printf("    ");
 	}
-	printf("%g %c %d Q=%lx D=%lx\n", b->t_, b->data_?'x':'o', b->cnt_, (long)b, (long)b->data_);
+	printf("%g %c %d Q=%p D=%p\n", b->t_, b->data_?'x':'o', b->cnt_, b, b->data_);
 }
 
 static void chk(TQItem* b, int level) {

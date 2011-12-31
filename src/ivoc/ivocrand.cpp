@@ -177,7 +177,7 @@ void RandomPlay::list_remove() {
 	long i, cnt = random_play_list_->count();
 	for (i = 0; i < cnt; ++i) {
 		if (random_play_list_->item(i) == (RandomPlay*)this) {
-//printf("RandomPlay %lx removed from list cnt=%d i=%d %lx\n", (long)this, cnt, i);
+//printf("RandomPlay %p removed from list cnt=%d i=%d %p\n", this, cnt, i);
 			random_play_list_->remove(i);
 			unref_deferred();
 			break;

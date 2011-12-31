@@ -69,8 +69,8 @@ void hoc_construct_point(Object* ob, int narg) {
 //printf("x=%g\n", x);
 		Section* sec = chk_access();
 		Node* nd = node_exact(sec, x);
-//printf("ptype=%d pnt=%lx %s nd=%lx\n", ptype, (long)pnt, secname(sec), (long)nd);
-//printf("type=%d pointsym=%lx\n", type, pointsym[ptype]);
+//printf("ptype=%d pnt=%p %s nd=%p\n", ptype, pnt, secname(sec), nd);
+//printf("type=%d pointsym=%p\n", type, pointsym[ptype]);
 //printf("type=%d from pointsym %s = %d\n", type, pointsym[ptype]->name,
 //pointsym[ptype]->subtype);
 
@@ -294,7 +294,7 @@ hoc_execerror("Can't make a template into a PointProcess when instances already 
 	assert(s2->subtype == type);
 //	type = s2->subtype;
 	ptype = point_reg_helper(s2);
-//printf("type=%d pointtype=%d %s %lx\n", type, ptype, s2->name, (long)s2);
+//printf("type=%d pointtype=%d %s %p\n", type, ptype, s2->name, s2);
 	classsym->u.ctemplate->is_point_ = ptype;
 
 	// classsym->name is already in slist as an undef, Remove it and

@@ -640,7 +640,7 @@ void Cvode::fun_thread_transfer_part1(double tt, double* y, NrnThread* nt){
 	nt->_dt = h(); // really does not belong here but dt is needed for events
 	if (nt->_dt == 0.) { nt->_dt = 1e-8; }
 
-//printf("%lx fun %d %.15g %g\n", (long)this, neq_, _t, _dt);
+//printf("%p fun %d %.15g %g\n", this, neq_, _t, _dt);
 	play_continuous_thread(tt, nt);
 	if (z.nvsize_ == 0) { return; }
 	scatter_y(y, nt->id);
@@ -683,7 +683,7 @@ void Cvode::fun_thread_ms_part1(double tt, double* y, NrnThread* nt){
 	nt->_dt = h(); // really does not belong here but dt is needed for events
 	if (nt->_dt == 0.) { nt->_dt = 1e-8; }
 
-//printf("%lx fun %d %.15g %g\n", (long)this, neq_, _t, _dt);
+//printf("%p fun %d %.15g %g\n", this, neq_, _t, _dt);
 	play_continuous_thread(tt, nt);
 	scatter_y(y, nt->id);
 #if PARANEURON

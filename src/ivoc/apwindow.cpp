@@ -66,7 +66,7 @@ DBAction::DBAction(WinDismiss* wd){
 	Resource::ref(wd_);
 }
 DBAction::~DBAction(){
-//	printf("~DBAction wd_=%lx\n", (long)wd_);
+//	printf("~DBAction wd_=%p\n", wd_);
 	Resource::unref(wd_);
 }
 void DBAction::execute() {
@@ -86,7 +86,7 @@ void DBAction::diswin(WinDismiss* wd) {
 WinDismiss::WinDismiss(DismissableWindow* w) { win_ = w;}
 
 WinDismiss::~WinDismiss() {
-//	printf("~WinDismiss %lx win_=%lx\n", (long)this, win_);
+//	printf("~WinDismiss %p win_=%p\n", this, win_);
 }
 
 DismissableWindow* WinDismiss::win_defer_;
@@ -97,7 +97,7 @@ void WinDismiss::execute() {
                 Oc::help("Dismiss GUI");
                 return;
         }
-//printf("WinDismiss:: execute win_defer_=%lx win_=%lx\n", (long)win_defer_,(long)win_);
+//printf("WinDismiss:: execute win_defer_=%p win_=%p\n", win_defer_,win_);
 	if (win_) {win_->unmap();}
 #if MAC
 #else
@@ -137,7 +137,7 @@ void WinDismiss::dismiss_defer() {
 		event that occurred in the window. So we defer the deletion
 	*/
 	if (win_defer_ && win_defer_ != win_defer_longer_) {
-//printf("WinDismiss::dismiss_defer %lx %lx\n", (long)win_defer_, (long)win_defer_longer_);
+//printf("WinDismiss::dismiss_defer %p %p\n", win_defer_, win_defer_longer_);
 		DismissableWindow* w = win_defer_; //prevents BadDrawable X Errors
 		win_defer_ = nil;
 		delete w;
@@ -200,7 +200,7 @@ DismissableWindow::DismissableWindow(Glyph* g, boolean force_menubar)
 	pg->append(g);
 }
 DismissableWindow::~DismissableWindow(){
-//	printf("~DismissableWindow %lx\n", (long)this);
+//	printf("~DismissableWindow %p\n", this);
 	Resource::unref(glyph_);
 	Resource::unref(wd_);
 	Resource::unref(dbutton_);
@@ -289,7 +289,7 @@ void DismissableWindow::set_attributes() {
 
 //PrintableWindow
 PrintableWindow::PrintableWindow(OcGlyph* g) : DismissableWindow(g) {
-//printf("PrintableWindow %lx\n", (long)this);
+//printf("PrintableWindow %p\n", this);
 	xplace_ = false;
 	g->window(this);
 	if (intercept_) {
@@ -310,7 +310,7 @@ mi->action(new ActionCallback(PrintableWindow)(this,&PrintableWindow::hide));
 	type_ = "";
 };
 PrintableWindow::~PrintableWindow(){
-//printf("~PrintableWindow %lx\n", (long)this);
+//printf("~PrintableWindow %p\n", this);
 	((OcGlyph*)glyph())->window(nil);
 	if (leader_ == this) {
 		leader_ = nil; // mswin deletes everthing on quit
@@ -399,7 +399,7 @@ void PrintableWindow::map() {
 void PrintableWindow::unmap() {
 	handle_old_focus();
 	if (is_mapped()) {
-//printf("unmap %lx xleft=%d xtop=%d\n", (long)this, xleft(), xtop());
+//printf("unmap %p xleft=%d xtop=%d\n", this, xleft(), xtop());
 xplace_ = true;
 xleft_ = xleft();
 xtop_ = xtop();
@@ -453,7 +453,7 @@ boolean PrintableWindow::receive(const Event& e) {
 		case MapNotify:
 if (xplace_) {
 	if (xtop() != xtop_ || xleft() != xleft_) {
-//printf("MapNotify move %lx (%d, %d) to (%d, %d)\n", (long)this, xleft(), xtop(), xleft_, xtop_);
+//printf("MapNotify move %p (%d, %d) to (%d, %d)\n", this, xleft(), xtop(), xleft_, xtop_);
 		xmove(xleft_, xtop_);
 	}
 }
@@ -461,7 +461,7 @@ if (xplace_) {
 			notify();
 			break;
 		case UnmapNotify:
-//printf("UnMapNotify %lx xleft=%d xtop=%d\n", (long)this, xleft(), xtop());
+//printf("UnMapNotify %p xleft=%d xtop=%d\n", this, xleft(), xtop());
 //having trouble with remapping after a "hide" that the left and top are
 // set to incorrect values. i.e.the symptom is that xleft() and xtop() are
 // wrong by the time we get this event.

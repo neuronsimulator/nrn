@@ -11,6 +11,7 @@
 #undef error
 
 extern "C" {
+#undef OUT /* /usr/x86_64-w64-mingw32/sys-root/mingw/include/windef.h */
 #include "matrix.h"	//meschach
 #include "matrix2.h"
 #include "sparse.h"

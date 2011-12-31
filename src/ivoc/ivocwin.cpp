@@ -84,7 +84,7 @@ void Oc::cleanup() {
 void PrintableWindow::hide() {
 	if (is_mapped()) {
 		HWND hwnd = Window::rep()->msWindow();
-//printf("hide %lx\n", (long)this);
+//printf("hide %p\n", this);
       ShowWindow(hwnd, SW_HIDE);
 	}
 }

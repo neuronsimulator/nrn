@@ -203,7 +203,7 @@ XYView::~XYView() {
 
 // should only be accessed by a method that traces its call from the pick
 XYView* XYView::current_pick_view() {
-//	printf("current pick view %lx\n", (long)XYView_helper::current_pick_view_);
+//	printf("current pick view %p\n", XYView_helper::current_pick_view_);
 	return XYView_helper::current_pick_view_;
 }
 
@@ -212,7 +212,7 @@ XYView* XYView_helper::current_pick_view_;
 // should only be accessed by a method that traces its call from the draw
 // or print
 XYView* XYView::current_draw_view() {
-//	printf("current draw view %lx\n", (long)XYView_helper::current_draw_view_);
+//	printf("current draw view %p\n", XYView_helper::current_draw_view_);
 	return XYView_helper::current_draw_view_;
 }
 

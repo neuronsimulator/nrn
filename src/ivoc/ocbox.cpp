@@ -452,7 +452,7 @@ IFGUI
 		}else{
 			box = bi_->box_ = lk.vbox(3);
 //((Box*)box)->debug_ = new char[50];
-//sprintf(((Box*)box)->debug_, "box%lx:", (long)this);
+//sprintf(((Box*)box)->debug_, "box%p:", this);
 //printf("%s\n", ((Box*)box)->debug_);
 		}
 	}

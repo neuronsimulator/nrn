@@ -143,7 +143,7 @@ static PyMethodDef HocMethods[] = {
 };
 
 static void hocobj_dealloc(PyHocObject* self) {
-//printf("hocobj_dealloc %lx\n", (long)self);
+//printf("hocobj_dealloc %p\n", self);
 	if (self->ho_) {
 		hoc_obj_unref(self->ho_);
 	}
@@ -161,7 +161,7 @@ static void hocobj_dealloc(PyHocObject* self) {
 static PyObject* hocobj_new(PyTypeObject* subtype, PyObject* args, PyObject* kwds) {
 	PyObject* subself;
 	subself = subtype->tp_alloc(subtype, 0);
-//printf("hocobj_new %s %lx\n", subtype->tp_name, (long)subself);
+//printf("hocobj_new %s %p\n", subtype->tp_name, subself);
 	if (subself == NULL) { return NULL; }
 	PyHocObject* self = (PyHocObject*)subself;
 	self->ho_ = NULL;
@@ -203,7 +203,7 @@ static PyObject* hocobj_new(PyTypeObject* subtype, PyObject* args, PyObject* kwd
 }
 
 static int hocobj_init(PyObject* subself, PyObject* args, PyObject* kwds) {
-//printf("hocobj_init %s %lx\n", ((PyTypeObject*)PyObject_Type(subself))->tp_name, (long)subself);
+//printf("hocobj_init %s %p\n", ((PyTypeObject*)PyObject_Type(subself))->tp_name, subself);
 #if 0
 	if (subself != NULL) {
 		PyHocObject* self = (PyHocObject*)subself;
@@ -459,7 +459,7 @@ PyObject* nrnpy_hoc_pop() {
 	case OBJECTTMP:
 		d = hoc_objpop();
 		ho = *d;
-//printf("Py2Nrn %lx %lx\n", (long)ho->ctemplate->sym, (long)nrnpy_pyobj_sym_);
+//printf("Py2Nrn %p %p\n", ho->ctemplate->sym, nrnpy_pyobj_sym_);
 		result = nrnpy_ho2po(ho);
 		hoc_tobj_unref(d);
 		break;
@@ -1182,7 +1182,7 @@ PyObject* nrnpy_forall(PyObject* self, PyObject* args) {
 }
 
 static PyObject* hocobj_iter(PyObject* self) {
-//	printf("hocobj_iter %lx\n", (long)self);
+//	printf("hocobj_iter %p\n", self);
 	PyHocObject* po = (PyHocObject*)self;
 	if (po->type_ == 1) {
 		if (po->ho_->ctemplate == hoc_vec_template_) {
@@ -1243,7 +1243,7 @@ static PyObject* iternext_sl(PyHocObject* po, hoc_Item* ql) {
 }
 
 static PyObject* hocobj_iternext(PyObject* self) {
-	//printf("hocobj_iternext %lx\n", (long)self);
+	//printf("hocobj_iternext %p\n", self);
 	PyHocObject* po = (PyHocObject*)self;
 	if (po->type_ == 1) {
 		hoc_Item* ql = (hoc_Item*)po->ho_->u.this_pointer;
