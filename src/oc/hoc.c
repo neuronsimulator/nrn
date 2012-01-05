@@ -1685,12 +1685,14 @@ int hoc_get_line(){ /* supports re-entry. fill cbuf with next line */
 		if (fin == stdin && nrn_istty_) { char *line, *readline(); int n;
 #if INTERVIEWS
 #ifdef MINGW
+IFGUI
 			if (hoc_interviews && !hoc_in_yyparse) {
 				rl_getc_function = getc_hook;
 				hoc_notify_value();
 			}else{
 				rl_getc_function = (Pfri)0;
 			}
+ENDGUI
 #else /* not MINGW */
 			if (hoc_interviews && !hoc_in_yyparse) {
 				rl_event_hook = event_hook;
