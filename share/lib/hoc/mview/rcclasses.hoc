@@ -1,14 +1,21 @@
 begintemplate ModelViewRCClasses
-public list, tname, mkdisplay, rcell
+public list, tname, mkdisplay, rcell, mklist
 objref list, disp, rcell, dall, sall, pall, mview
 strdef tname, tstr
 
 proc init() {
 	mview = $o1
 	tname = $s2
-	list = new List(tname)
+//	list = new List(tname) // use mklist since possibility of PythonObject
+	list = new List()
 	rcell = new List()
 	rcell.append($o3)
+}
+
+proc mklist() {local i
+	for i=0, rcell.count-1 {
+		list.append(rcell.o(i).cellobj)
+	}	
 }
 
 proc mkdisplay() {local i

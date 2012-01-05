@@ -286,6 +286,9 @@ func count_rco() {local i, cnt, x
 			add_type(rc_classes, tobj)
 		}
 	}
+	for i=0, rc_classes.count-1 {
+		rc_classes.o(i).mklist()
+	}
 	if (cnt > 0) {
 		tobj1.sort
 		ndrco = 1
@@ -304,6 +307,9 @@ func count_rco() {local i, cnt, x
 
 proc add_type() {local i
 	classname($o2.cellobj, tstr)
+	if (strcmp(tstr, "PythonObject") == 0) {
+		hoc_sf_.head($o2.cellobj.__str__(), " object at", tstr)
+	}
 	for i=0, $o1.count-1 {
 		if (strcmp($o1.object(i).tname, tstr) == 0) {
 			$o1.object(i).rcell.append($o2)

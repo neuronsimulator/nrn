@@ -168,6 +168,7 @@ static char* nrnpython_getline(FILE*, FILE*, char* prompt) {
 #else
 static char* nrnpython_getline(char* prompt) {
 #endif
+	nrnpython_ensure_threadstate();
 	hoc_cbufstr->buf[0] = '\0';
 	hoc_promptstr = prompt;
 	int r = hoc_get_line();
