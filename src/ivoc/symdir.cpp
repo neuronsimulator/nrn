@@ -484,7 +484,7 @@ void SymDirectoryImpl::load_object() {
 	if (obj_->aliases) {
 		load_aliases();
 	}
-	for (Symbol* s = sl->first; s; s = s->next) {
+	if (sl) for (Symbol* s = sl->first; s; s = s->next) {
 		if (s->cpublic) {
 			append(s, od, obj_);
 		}
