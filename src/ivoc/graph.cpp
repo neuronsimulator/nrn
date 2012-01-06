@@ -467,11 +467,13 @@ IFGUI
 	// organize args for backward compatibility and the new
 	// addexpr("label, "expr", obj,.... style
 	if (ifarg(2)) {
-		if (var) {// if string then variable and 1 was label
+		if (var) {// if string or address then variable and 1 was label
 			expr = gargstr(1);
 			if (hoc_is_str_arg(2)) {
 				ioff += 1;
 				pd = hoc_val_pointer(gargstr(2));
+			}else if (hoc_is_pdouble_arg(2)) {
+				pd = hoc_pgetarg(2);
 			}
 		}else if (hoc_is_str_arg(2)) { // 1 label, 2 expression
 			lab = gargstr(1);
