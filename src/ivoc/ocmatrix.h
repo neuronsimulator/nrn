@@ -7,6 +7,9 @@
 #define PERM void
 #endif
 
+#include <vector>
+using std::vector;
+
 struct Object;
 class IvocVect;
 class OcFullMatrix;
@@ -20,13 +23,18 @@ public:
 	virtual ~OcMatrix();
 
 	virtual double* mep(int i, int j) {unimp(); return nil;} //matrix element pointer
+	inline double& operator() (int i, int j) {return *mep(i, j);};	
+	
 	virtual double getval(int i, int j) { unimp(); return 0.; }
 	virtual int nrow() {unimp(); return 0;}
 	virtual int ncol() {unimp(); return 0;}
 	virtual void resize(int, int) {unimp();}
+    
+    virtual void nonzeros(vector<int>& m, vector<int>& n);
 
 	OcFullMatrix* full();
 	
+	inline void mulv(Vect& in, Vect& out) {mulv(&in, &out);};
 	virtual void mulv(Vect* in, Vect* out){unimp();}
 	virtual void mulm(Matrix* in, Matrix* out){unimp();}
 	virtual void muls(double, Matrix* out){unimp();}
@@ -131,8 +139,13 @@ public:
 	virtual void setcol(int, double in);
 	virtual void setdiag(int, double in);
 
+    virtual void nonzeros(vector<int>& m, vector<int>& n);
+
 	virtual int sprowlen(int); // how many elements in row
 	virtual double spgetrowval(int i, int jindx, int* j); 
+    
+    virtual void zero();
+
 private:
 	SPMAT* m_;
 	SPMAT* lu_factor_;

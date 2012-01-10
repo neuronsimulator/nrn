@@ -548,7 +548,7 @@ static void update(NrnThread* _nt)
 			NODEV(_nt->_v_node[i]) += NODERHS(_nt->_v_node[i]);
 		}
 		if (use_sparse13) {
-			linmod_update();
+			nrndae_update();
 		}
 	}
     } /* end of non-vectorized update */
@@ -812,7 +812,7 @@ hoc_warning("errno set during call to INITIAL block", (char*)0);
 	}
 #endif
 	if (use_sparse13) {
-		linmod_init();
+		nrndae_init();
 	}
 
 	init_net_events();
@@ -850,6 +850,7 @@ hoc_warning("errno set during call to INITIAL block", (char*)0);
 	nrn_spike_exchange();
 #endif
 	if (nrn_allthread_handle) { (*nrn_allthread_handle)(); }
+	
 	nrn_fihexec(2); /* just before return */
 }
 	

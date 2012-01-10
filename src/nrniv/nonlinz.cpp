@@ -15,7 +15,7 @@ extern "C" {
 extern int structure_change_cnt;
 extern void v_setup_vectors();
 extern void nrn_rhs(NrnThread*);
-extern int linmod_extra_eqn_count();
+extern int nrndae_extra_eqn_count();
 extern Symlist *hoc_built_in_symlist;
 }
 
@@ -103,7 +103,7 @@ void NonLinImp::compute(double omega, double deltafac) {
 	if (!rep_) {
 		rep_ = new NonLinImpRep();
 	}
-	if (linmod_extra_eqn_count() > 0) {
+	if (nrndae_extra_eqn_count() > 0) {
 		hoc_execerror("Impedance calculation with LinearMechanism not implemented", 0);
 	}
 	if (nrn_threads->_ecell_memb_list) {
@@ -178,7 +178,7 @@ NonLinImpRep::NonLinImpRep() {
 	if (_nt->_ecell_memb_list) {
 		n_ext_ = _nt->_ecell_memb_list->nodecount*nlayer;
 	}
-	n_lin_ = linmod_extra_eqn_count();
+	n_lin_ = nrndae_extra_eqn_count();
 	n_ode_ = 0;
 	for (NrnThreadMembList* tml = _nt->tml; tml; tml = tml->next) {
 		Memb_list* ml = tml->ml;

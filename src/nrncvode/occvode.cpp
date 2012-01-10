@@ -27,7 +27,7 @@ extern void long_difus_solve(int, NrnThread*);
 extern Symlist *hoc_built_in_symlist;
 
 #include "spmatrix.h"
-extern void linmod_dkmap(double**, double**);
+extern void nrndae_dkmap(double**, double**);
 extern double* sp13mat;
 
 #if 1 || PARANEURON
@@ -397,7 +397,7 @@ void Cvode::daspk_init_eqn(){
 				}
 			}
 		}
-		linmod_dkmap(z.pv_, z.pvdot_);
+		nrndae_dkmap(z.pv_, z.pvdot_);
 		for (i=0; i < z.neq_v_; ++i) {
 			atv[i] *= vtol;
 		}

@@ -1,4 +1,5 @@
 #include <../../nrnconf.h>
+#include <vector>
 #include <InterViews/resource.h>
 
 #define v_elem(v,i) (*(vector_vec(v) + i))
@@ -17,6 +18,7 @@ extern "C" {
 }
 
 #include "ocmatrix.h"
+using std::vector;
 
 static void Vect2VEC(Vect* v1, VEC& v2) {
 #ifdef WIN32
@@ -46,6 +48,34 @@ OcMatrix* OcMatrix::instance(int nrow, int ncol, int type) {
 void OcMatrix::unimp() {
 	hoc_execerror("Matrix method not implemented for this type matrix", 0);
 }
+
+void OcMatrix::nonzeros(vector<int>& m, vector<int>& n) {
+    m.clear();
+    n.clear();
+    for (int i = 0; i < nrow(); i++) {
+        for (int j = 0; j < ncol(); j++) {
+            if (getval(i, j)) {
+                m.push_back(i);
+                n.push_back(j);
+            }
+        }
+    }
+}
+
+void OcSparseMatrix::nonzeros(vector<int>& m, vector<int>& n) {
+    m.clear();
+    n.clear();
+    for (int i = 0; i < m_->m; i++) {
+        SPROW* const r = m_->row + i;
+        row_elt* r_elt = r->elt;
+        for (int k = 0; k < r->len; k++) {
+            int j = r_elt[k].col;
+            m.push_back(i);
+            n.push_back(j);
+        }
+    }
+}
+
 
 OcFullMatrix* OcMatrix::full() {
 	if (type_ != MFULL) {// could clone one maybe
@@ -352,6 +382,10 @@ double* OcSparseMatrix::mep(int i, int j) {
 	// and try again
 	idx = sprow_idx(r, j);
 	return &r->elt[idx].val;
+}
+
+void OcSparseMatrix::zero() {
+	sp_zero(m_);
 }
 
 double OcSparseMatrix::getval(int i, int j) {

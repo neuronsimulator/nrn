@@ -31,8 +31,8 @@ double Daspk::dteps_;
 
 extern "C" {
 	
-extern void linmod_dkres(double*, double*, double*);
-extern void linmod_dkpsol(double);
+extern void nrndae_dkres(double*, double*, double*);
+extern void nrndae_dkpsol(double);
 extern void nrn_rhs(NrnThread*);
 extern void nrn_lhs(NrnThread*);
 extern void nrn_solve(NrnThread*);
@@ -329,7 +329,7 @@ return 0;
 }
 
 int Daspk::advance_tn(double tstop) {
-//printf("Daspk:solve %s tin=%g tstop=%g\n", (info_[0] == 0)?"initial":"continue", *pt_, rwork_[0]);
+	//printf("Daspk::advance_tn(%g)\n", tstop);
 	double tn = cv_->tn_;
 	IDASetStopTime(mem_, tstop);
 	int ier = IDASolve(mem_, tstop, &cv_->t_, cv_->y_, yp_, IDA_ONE_STEP_TSTOP);
@@ -350,7 +350,7 @@ int Daspk::advance_tn(double tstop) {
 #endif
 	cv_->t0_ = tn;
 	cv_->tn_ = cv_->t_;
-//printf("Daspk:solve %s tout=%g tstop-tout=%g idid=%d\n", (info_[0] == 0)?"initial":"continue", *pt_, rwork_[0] - *pt_, idid_);
+	//printf("Daspk::advance_tn complete.\n");
 	return ier;
 }
 
@@ -563,7 +563,7 @@ for (i=0; i < z.nvsize_; ++i) {
 		}
 	}
 
-	linmod_dkres(y, yprime, delta);
+	nrndae_dkres(y, yprime, delta);
 
 	// the ode's
 	for (i=z.neq_v_; i < z.nvsize_; ++i) {
