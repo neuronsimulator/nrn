@@ -143,7 +143,7 @@ case $host_os in
 esac
 
 echo "CYGWIN=$CYGWIN"
-echo "MINGW=$CYGWIN"
+echo "MINGW=$MINGW"
 
 if test "$CYGWIN" = "yes" -o "$MINGW" = "yes" ; then
 	nrndef_mswin=""

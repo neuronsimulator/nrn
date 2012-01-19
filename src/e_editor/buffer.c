@@ -398,7 +398,7 @@ int path_max( const char * filename )
   long result;
   if( !filename ) filename = "/";
   errno = 0;
-  result = pathconf( filename, _PC_PATH_MAX );
+  result = pathconf( filename, PATH_MAX );
   if( result < 0 ) { if( errno ) result = 256; else result = 1024; }
   else if( result < 256 ) result = 256;
   return result;

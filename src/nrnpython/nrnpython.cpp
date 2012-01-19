@@ -143,7 +143,10 @@ void nrnpython_start(int b) {
                 PySys_SetArgv(nrn_global_argc, nrn_global_argv);
 #endif
 		nrnpy_augment_path();
+#if !defined(MINGW)
+		// cannot get this to avoid crashing with MINGW
 		PyOS_ReadlineFunctionPointer = nrnpython_getline;
+#endif
 		// Is there a -c "command" or file.py arg.
 		for (i=1; i < nrn_global_argc; ++i) {
 			char* arg = nrn_global_argv[i];

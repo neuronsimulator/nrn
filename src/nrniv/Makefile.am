@@ -26,7 +26,7 @@ mos2nrn.exe: $(nsrc)/mswin/extra/mos2nrn.cpp
 	g++ -g -O2 -DMINGW -o mos2nrn.exe $(nsrc)/mswin/extra/mos2nrn.cpp
 
 neuron.exe: $(nsrc)/mswin/extra/neuron.cpp
-	g++-3 -g -O2 -DMINGW -o neuron.exe $(nsrc)/mswin/extra/neuron.cpp
+	g++ -g -O2 -DMINGW -o neuron.exe $(nsrc)/mswin/extra/neuron.cpp
 
 else
 nrniv_LDFLAGS =

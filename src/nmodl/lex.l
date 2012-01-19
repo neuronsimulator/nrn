@@ -34,7 +34,7 @@ E	[Ee][-+]?{D}+
 	Symbol *base;
 
 	/* count the primes  and create SCoP name*/
-#if __TURBOC__ || SYSV || VMS
+#if __TURBOC__ || SYSV || VMS || defined(MINGW)
 #define index strchr
 #endif
 	cp = index(yytext, '\'');

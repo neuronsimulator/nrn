@@ -31,6 +31,8 @@ void* dlopen(char *name, int mode) {
 	return ret;
 }
 
+void* dlopen_noerr(char *name, int mode) {return (void*)LoadLibrary(name);}
+
 void* dlsym(void *handle, char *name) {
 	void *ret = (void *) GetProcAddress ((HMODULE) handle, name);
 	if (!ret) {

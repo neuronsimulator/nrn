@@ -12,6 +12,9 @@ pyver='24 25 26 27'
 
 # Specific for Hines machines which build distributions
 case "$host" in
+  *mingw*)
+	inc27=-I/c/python27/include
+	;;
   i686*linux-gnu)
 	inc24=-I${HOME}/python/include/python2.4
 	inc25=-I${HOME}/python/include/python2.5

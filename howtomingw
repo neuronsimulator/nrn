@@ -1,5 +1,6 @@
 need a terminal capability library for mingw. For example mingw32-termcap
 from opensuse.org.
+mingw from cygwin
 In termcap-1.3.1 do
 ./configure
 make
@@ -9,8 +10,18 @@ make
 cp libtermcap.dll libtermcap.dll.a /usr/i686-pc-mingw32/sys-root/mingw/lib
 cp termcap.h /usr/i686-pc-mingw32/sys-root/mingw/lib
 
+mingw from msys
+./configure
+make
+gcc -shared -Wl,--out-implib,libtermcap.dll.a -o libtermcap.dll *.o
+cp libtermcap.dll.a /mingw/lib
+cp libtermcap.dll /mingw/bin
+cp termcap.h /mingw/include
+
+
 need a readline library for mingw. For example mingw32-readling
 form opensuse.org.
+mingw from cygwin
 In readline-6.2 do
 ./configure  '--prefix=/home/hines/neuron/readline' '--host=i686-pc-mingw32' \
  '--disable-static'
@@ -19,11 +30,30 @@ make install
 cp ../readline/bin/* /usr/i686-pc-mingw32/sys-root/mingw/lib
 cp ../readline/lib/* /usr/i686-pc-mingw32/sys-root/mingw/lib
 
+mingw from msys
+./configure --disable-static
+make
+cp shlib/libhistory6.dll /mingw/bin
+cp shlib/libhistory6.dll.a /mingw/lib
+cp shlib/libreadline6.dll /mingw/bin/libreadline.dll
+cp shlib/libreadline6.dll.a /mingw/lib/libreadline.dll.a
+
+
+mingw from msys also needs regex
+Obtain http://ftp.gnu.org/olg-gnu/regex/regex-0.12.tar.gz
+configure
+make
+gcc -shared -Wl,--out-implib,libregex.dll.a -o libregex.dll regex.o
+cp libregex.dll.a /mingw/lib
+cp libregex.dll /mingw/bin
+cp regex.h /mingw/include
+
+mingw from cygwin
 ../nrnwin/configure --prefix=`pwd` --without-iv --with-nmodl-only
 make
 
 ../nrnwin/configure --prefix=`pwd` --with-iv=$HOME/neuron/ivwin --without-nmodl\
-  --with-nrnpython \
+  --with-nrnpython=dynamic \
   CC=/usr/bin/i686-pc-mingw32-gcc.exe CXX=/usr/bin/i686-pc-mingw32-g++.exe \
   PYINCDIR=/cygdrive/c/Python27/include \
   PYLIBDIR=/cygdrive/c/Python27/libs \
@@ -34,6 +64,9 @@ make
 make
 make mswin
 
+mingw from msys
+../nrnwin/configure --prefix=`pwd` --with-iv=$HOME/neuron/ivwin \
+  --with-nrnpython=dynamic
 
 For win7-64
 
@@ -60,7 +93,7 @@ cp ../readline/lib/* /usr/x86_64-w64-mingw32/sys-root/mingw/lib
 make 
 
 ../nrnwin/configure --prefix=`pwd` --with-iv=$HOME/neuron/ivwin \
-  --without-nmodl --with-nrnpython \
+  --without-nmodl --with-nrnpython=dynamic \
   --host=x86_64-w64-mingw32 \
   PYINCDIR=/cygdrive/c/Python27/include \
   PYLIBDIR=/cygdrive/c/Python27/libs \
