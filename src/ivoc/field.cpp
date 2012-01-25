@@ -67,7 +67,7 @@ public:
     void press(const Event&);
     void drag(const Event&);
     void release(const Event&);
-    boolean keystroke(const Event&);
+    bool keystroke(const Event&);
     void cursor_on();
     void cursor_off();
     void focus_in();
@@ -261,7 +261,7 @@ void FieldStringSEditor::do_rate_scroll(Event& e) {
     w->cursor(c);
 }
 
-boolean FieldStringSEditor::keystroke(const Event& e) {
+bool FieldStringSEditor::keystroke(const Event& e) {
     char c;
     return e.mapkey(&c, 1) != 0 && HandleChar(c) && c == '\t';
 }
@@ -322,7 +322,7 @@ private:
     FieldStringSEditor* editor_;
     FieldSButton* bs_;
     String text_;
-    boolean cursor_is_on_;
+    bool cursor_is_on_;
     IOHandler* blink_handler_;
     long flash_rate_;
 

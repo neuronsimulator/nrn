@@ -30,7 +30,7 @@ void nrn_vecsim_remove(void* v) {
 	}
 }
 
-void nrn_vecsim_add(void* v, boolean record) {
+void nrn_vecsim_add(void* v, bool record) {
 	IvocVect* yvec, *tvec, *dvec;
 	extern short* nrn_is_artificial_;
 	double* pvar = nil;

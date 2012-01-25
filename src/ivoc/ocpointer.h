@@ -15,7 +15,7 @@ public:
 	double* p_;
 	char* s_;
 	StmtInfo* sti_;
-	boolean valid_;
+	bool valid_;
 };
 
 class StmtInfo {

@@ -139,7 +139,7 @@ Rotate3Band::~Rotate3Band(){
 
 Rotation3d* Rotate3Band::rotation() { return rot_; }
 
-boolean Rotate3Band::event(Event& e) {
+bool Rotate3Band::event(Event& e) {
 	const float deg = 3.14159265358979323846/18.;
 	if (e.type() == Event::key) {
 		undraw(x(), y());

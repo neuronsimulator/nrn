@@ -84,11 +84,11 @@ typedef long double realtype;
  *------------------------------------------------------------------
  * Constants : FALSE and TRUE
  *------------------------------------------------------------------
- * ANSI C does not have a built-in boolean data type. Below is the
+ * ANSI C does not have a built-in bool data type. Below is the
  * definition for a new type called booleantype. The advantage of
  * using the name booleantype (instead of int) is an increase in
  * code readability. It also allows the programmer to make a
- * distinction between int and boolean data. Variables of type
+ * distinction between int and bool data. Variables of type
  * booleantype are intended to have only the two values FALSE and
  * TRUE which are defined below to be equal to 0 and 1,
  * respectively.

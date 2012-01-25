@@ -33,23 +33,23 @@ public:
 	WorkItem* parent_;
 	int id_;
 	MessageValue* val_;
-	boolean todo_less_than(const WorkItem*)const;
+	bool todo_less_than(const WorkItem*)const;
 };
 
 struct ltstr {
-	boolean operator() (const char* s1, const char* s2) const {
+	bool operator() (const char* s1, const char* s2) const {
 		return strcmp(s1, s2) < 0;
 	}
 };
 
 struct ltint {
-	boolean operator() (int i, int j) const {
+	bool operator() (int i, int j) const {
 		return i < j;
 	}
 };
 
 struct ltWorkItem {
-	boolean operator() (const WorkItem* w1, const WorkItem* w2) const {
+	bool operator() (const WorkItem* w1, const WorkItem* w2) const {
 		return w1->todo_less_than(w2);
 	}
 };
@@ -78,7 +78,7 @@ printf("~WorkItem %d\n", id_);
 	val_->unref();
 }
 
-boolean WorkItem::todo_less_than(const WorkItem* w) const {
+bool WorkItem::todo_less_than(const WorkItem* w) const {
 	WorkItem* w1 = (WorkItem*)this;
 	WorkItem* w2 = (WorkItem*)w;
 	while (w1->parent_ != w2->parent_) {
@@ -271,7 +271,7 @@ printf("~BBSLocalServer not deleting everything\n");
 #endif
 }
 
-boolean BBSLocalServer::look_take(const char* key, MessageValue** val) {
+bool BBSLocalServer::look_take(const char* key, MessageValue** val) {
 #if defined(HAVE_STL)
 	MessageList::iterator m = messages_->find(key);
 	if (m != messages_->end()) {
@@ -293,7 +293,7 @@ nostl();
 	return false;
 }
 
-boolean BBSLocalServer::look(const char* key, MessageValue** val) {
+bool BBSLocalServer::look(const char* key, MessageValue** val) {
 #if defined(HAVE_STL)
 	MessageList::iterator m = messages_->find(key);
 	if (m != messages_->end()) {

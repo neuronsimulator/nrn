@@ -207,11 +207,11 @@ void penv() {
 #if MAC
 #include <string.h>
 #include <sioux.h>
-extern boolean mac_load_dll(const char*);
+extern bool mac_load_dll(const char*);
 extern "C" {
 void mac_open_doc(const char* s) {
 	// only chdir and load dll on the first opendoc
-	static boolean done = false;
+	static bool done = false;
 	char cs[256];
 	strncpy(cs, s, 256);
 	char* cp  = strrchr(cs, ':');
@@ -257,9 +257,9 @@ static void force_load() {
 #if defined(CYGWIN)
 // see iv/src/OS/directory.cpp
 #include <sys/stat.h>
-static boolean isdir(const char* p) {
+static bool isdir(const char* p) {
 	struct stat st;
-	boolean b =  stat((char*)p, &st) == 0 && S_ISDIR(st.st_mode);
+	bool b =  stat((char*)p, &st) == 0 && S_ISDIR(st.st_mode);
 	//printf("isdir %s returns %d\n", p, b);
 	return b;
 }
@@ -270,11 +270,11 @@ static boolean isdir(const char* p) {
 #endif
 
 // in case we are running without IV then get some important args this way
-static boolean nrn_optarg_on(const char* opt, int* argc, char** argv);
+static bool nrn_optarg_on(const char* opt, int* argc, char** argv);
 static char* nrn_optarg(const char* opt, int* argc, char** argv);
 static int nrn_optargint(const char* opt, int* argc, char** argv, int dflt);
 
-static boolean nrn_optarg_on(const char* opt, int* pargc, char** argv) {
+static bool nrn_optarg_on(const char* opt, int* pargc, char** argv) {
 	char* a;
 	int i;
 	for (i=0; i < *pargc; ++i) {

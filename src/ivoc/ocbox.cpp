@@ -38,7 +38,7 @@ public:
     );
     virtual void span(Coord);
     virtual Coord span() { return span_; }
-    virtual boolean vertical() { return dimension_ == Dimension_Y; }
+    virtual bool vertical() { return dimension_ == Dimension_Y; }
 private:
     DimensionName dimension_;
     Coord span_;
@@ -56,10 +56,10 @@ public:
 	Object* keep_ref_;
 	CopyString* dis_act_;
 	Object* dis_pyact_;
-	boolean dismissing_;
+	bool dismissing_;
 	Coord next_map_adjust_;
 	PolyGlyph* ba_list_;
-	boolean full_request_;
+	bool full_request_;
 };
 
 /*static*/ class BoxAdjust : public InputHandler {
@@ -112,7 +112,7 @@ static void* vcons(Object*) {
 #if HAVE_IV
 	OcBox* b = nil;
         int frame = OcBox::INSET;
-	boolean scroll = false;
+	bool scroll = false;
         if (ifarg(1)) frame = int(chkarg(1,0,3));
 	if (ifarg(2) && int(chkarg(2,0,1)) == 1) { scroll = true; }
 	b = new OcBox(OcBox::V,frame, scroll);
@@ -150,7 +150,7 @@ ENDGUI
 
 static double intercept(void* v) {
 #if HAVE_IV
-	boolean b = int(chkarg(1, 0., 1.));
+	bool b = int(chkarg(1, 0., 1.));
 IFGUI
 	((OcBox*)v)->intercept(b);
 ENDGUI
@@ -203,7 +203,7 @@ ENDGUI
 
 static double dialog(void* v) {
 #if HAVE_IV
-	boolean r = false;
+	bool r = false;
 IFGUI
 	OcBox* b = (OcBox*)v;
 	const char* a = "Accept";
@@ -227,9 +227,9 @@ static double unmap(void* v) {
 #if HAVE_IV
 IFGUI
 	OcBox* b = (OcBox*)v;
-	boolean accept = true;
+	bool accept = true;
 	if (ifarg(1)) {
-		accept = (boolean)chkarg(1, 0, 1);
+		accept = (bool)chkarg(1, 0, 1);
 	}
 	if (b->dialog_dismiss(accept)) {
 		return 0.;
@@ -251,7 +251,7 @@ ENDGUI
 
 static double ismapped(void* v) {
 #if HAVE_IV
-	boolean b = false;
+	bool b = false;
 IFGUI
 	b = ((OcBox*)v)->has_window();
 ENDGUI
@@ -288,7 +288,7 @@ static double full_request(void* v) {
 IFGUI
 	OcBox* b = (OcBox*)v;
 	if (ifarg(1)) {
-		boolean x = ((int)chkarg(1, 0, 1) != 0) ? true : false;
+		bool x = ((int)chkarg(1, 0, 1) != 0) ? true : false;
 		b->full_request(x);
 	}
 	return (b->full_request() ? 1. : 0.);
@@ -429,7 +429,7 @@ hoc_execerror("Box or Deck is recursive. The GUI may no longer work correctly.\n
 		"Exit program and eliminate the recursion");
 	}
 }
-OcBox::OcBox(int type, int frame, boolean scroll) : OcGlyphContainer() {
+OcBox::OcBox(int type, int frame, bool scroll) : OcGlyphContainer() {
 	ScrollBox* sb;
 	PolyGlyph* box;
 	bi_ = new OcBoxImpl;
@@ -530,12 +530,12 @@ OcBox::~OcBox() {
 	delete bi_;
 }
 
-boolean OcBox::full_request() { return bi_->full_request_; }
-void OcBox::full_request(boolean b) { bi_->full_request_ = b; }
-boolean OcBox::dismissing() { return bi_->dismissing_; }
-void OcBox::dismissing(boolean d) { bi_->dismissing_ = d; }
+bool OcBox::full_request() { return bi_->full_request_; }
+void OcBox::full_request(bool b) { bi_->full_request_ = b; }
+bool OcBox::dismissing() { return bi_->dismissing_; }
+void OcBox::dismissing(bool d) { bi_->dismissing_ = d; }
 
-void OcGlyphContainer::intercept(boolean b) {
+void OcGlyphContainer::intercept(bool b) {
 	if (b) {
 		parent_ = PrintableWindow::intercept(this);
 	}else{

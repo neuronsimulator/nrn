@@ -18,10 +18,10 @@ public:
 	BBSDirect();
 	virtual ~BBSDirect();
 
-	virtual boolean look(const char*);
+	virtual bool look(const char*);
 
 	virtual void take(const char*); /* blocks til something to take */
-	virtual boolean look_take(const char*); /* returns false if nothing to take */
+	virtual bool look_take(const char*); /* returns false if nothing to take */
 	// after taking use these
 	virtual int upkint();
 	virtual double upkdouble();

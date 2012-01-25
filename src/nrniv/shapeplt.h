@@ -41,7 +41,7 @@ public:
 	float low() { return low_;}
 	float high() { return high_;}
 	Glyph* make_glyph();
-	void colormap(int size, boolean global = false);
+	void colormap(int size, bool global = false);
 	void colormap(int index, int red, int green, int blue);
 private:
 	float low_, high_;
@@ -56,7 +56,7 @@ public:
 	virtual void request(Requisition&) const;
 	virtual void allocate(Canvas*, const Allocation&, Extension&);
 	virtual void draw(Canvas*, const Allocation&) const;
-	virtual void fast_draw(Canvas*, Coord x, Coord y, boolean) const;
+	virtual void fast_draw(Canvas*, Coord x, Coord y, bool) const;
 	virtual void update(Observable*);
 private:
 	double* pd_;

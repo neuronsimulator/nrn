@@ -170,9 +170,9 @@ IFGUI
 			int(chkarg(4, 0, 255))
 		);
 	}else{
-		boolean b = false;
+		bool b = false;
 		if (ifarg(2)) {
-			b = (boolean)chkarg(2, 0, 1);
+			b = (bool)chkarg(2, 0, 1);
 		}
 		s->color_value()->colormap(int(chkarg(1, 0, 1000)), b);
 	}
@@ -315,7 +315,7 @@ public:
 	virtual void time();
 	virtual void space();
 	virtual void shape();
-	virtual void show_shape_val(boolean);
+	virtual void show_shape_val(bool);
 	virtual void select_variable();
 	virtual void scale();
 	virtual void colorbar();
@@ -327,16 +327,16 @@ public:
 	double graphid_;
 	int colorid_;
 	SectionHandler* time_sh_;
-	boolean showing_;
+	bool showing_;
 	Glyph* colorbar_;
-	boolean fast_;
+	bool fast_;
 };
 
 /* static */ class MakeTimePlot : public SectionHandler {
 public:
 	MakeTimePlot(ShapePlotImpl*);
 	virtual ~MakeTimePlot();
-	virtual boolean event(Event&);
+	virtual bool event(Event&);
 private:
 	ShapePlotImpl* spi_;
 };
@@ -580,7 +580,7 @@ ShapePlotImpl::~ShapePlotImpl() {
 }
 
 void ShapePlotImpl::colorbar() {
-	boolean showing;
+	bool showing;
 	if (colorbar_) {
 		int i = sp_->glyph_index(colorbar_);
 		Resource::unref(colorbar_);
@@ -673,7 +673,7 @@ void ShapePlotImpl::shape() {
 	show_shape_val(true);
 }
 
-void ShapePlotImpl::show_shape_val(boolean show) {
+void ShapePlotImpl::show_shape_val(bool show) {
 	if (show != showing_) {
 		PolyGlyph* pg = sp_->shape_section_list();
 		GlyphIndex i, cnt = pg->count();
@@ -707,7 +707,7 @@ MakeTimePlot::MakeTimePlot(ShapePlotImpl* spi){
 MakeTimePlot::~MakeTimePlot(){
 }
 
-boolean MakeTimePlot::event(Event&) {
+bool MakeTimePlot::event(Event&) {
 		Oc oc;
 		ShapeSection* ss = shape_section();
 		Section* sec = ss->section();
@@ -960,7 +960,7 @@ Glyph* ColorValue::make_glyph() {
 	return box;
 }
 
-void ColorValue::colormap(int size, boolean global) {
+void ColorValue::colormap(int size, bool global) {
 	int i;
 	if (csize_) {
 		for (i=0; i < csize_; ++i) {
@@ -1016,7 +1016,7 @@ void ColorValue::colormap(int i, int r, int g, int b) {
     }
 }
 
-FastGraphItem::FastGraphItem(FastShape* g, boolean s, boolean p) : GraphItem(g, s, p) {}
+FastGraphItem::FastGraphItem(FastShape* g, bool s, bool p) : GraphItem(g, s, p) {}
 
 FastShape::FastShape() {
 }
@@ -1062,7 +1062,7 @@ void Hinton::draw(Canvas* c, const Allocation& a) const {
 		IfIdraw(rect(c, x - xsize_, y - ysize_, x + xsize_, y + ysize_, color, nil, true));
 	}
 }
-void Hinton::fast_draw(Canvas* c, Coord x, Coord y, boolean) const {
+void Hinton::fast_draw(Canvas* c, Coord x, Coord y, bool) const {
 	if (pd_) {
 		const Color* color = ss_->color_value()->get_color(*pd_);
 		if (color != old_) {

@@ -1,8 +1,3 @@
-#undef boolean
-#if defined(IVOS_DELARE_TRUE)
-#undef true
-#undef false
-#endif
 #undef u_char
 #undef CopyString
 #undef Directory

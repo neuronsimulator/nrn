@@ -115,8 +115,8 @@ static PixelCoord pixres = 0;
 // PGH end
 
 #if SNAPSHOT
-extern boolean (*ivoc_snapshot_)(const Event*);
-static boolean ivoc_snapshot(const Event*);
+extern bool (*ivoc_snapshot_)(const Event*);
+static bool ivoc_snapshot(const Event*);
 #endif
 
 #define PWM_help_			"help"
@@ -179,7 +179,7 @@ public:
 /* static */ class ScreenSceneHandler : public Handler {
 public:
 	ScreenSceneHandler(Coord, Coord);
-	virtual boolean event(Event&);
+	virtual bool event(Event&);
 private:
 	Coord x_, y_;
 };
@@ -188,7 +188,7 @@ extern "C" {
 extern double (*p_java2nrn_dmeth)(Object* ho, Symbol* method);
 extern char** (*p_java2nrn_smeth)(Object* ho, Symbol* method);
 const char* (*p_java2nrn_classname)(Object* ho);
-boolean (*p_java2nrn_identity)(Object* o1, Object* o2);
+bool (*p_java2nrn_identity)(Object* o1, Object* o2);
 }
 
 //just enough info to get a java window represented in the PWM.
@@ -209,7 +209,7 @@ public:
 	Coord l(); Coord b(); Coord w(); Coord h();
 	char* title;
 	int pl, pt, pw, ph; // pixel coords straight from java
-	boolean is_mapped, reffing_, closing_;
+	bool is_mapped, reffing_, closing_;
 	Object* ho;
 };
 
@@ -232,7 +232,7 @@ public:
 	PaperItem* paper_item() const {return pi_;}
 	GlyphIndex index() const { return i_;}
 	Object* group_obj_;
-	boolean iconify_via_hide_;
+	bool iconify_via_hide_;
 private:
 	Glyph* label_;
 	GlyphIndex i_;
@@ -283,11 +283,11 @@ public:
 	void snap_cursor(Printer*, const Event*);
 #endif
 	void do_print0();
-	void do_print(boolean printer, const char* name);
-	void do_print_session(boolean also_controller = true);
-	void do_print_session(boolean printer, const char* name);
-	void ps_file_print(boolean, const char*, boolean, boolean);
-	void common_print(Printer*, boolean, boolean);
+	void do_print(bool printer, const char* name);
+	void do_print_session(bool also_controller = true);
+	void do_print_session(bool printer, const char* name);
+	void ps_file_print(bool, const char*, bool, bool);
+	void common_print(Printer*, bool, bool);
 #if DECO
 	void print_deco(Printer*, Allocation& a, const char*);
 #endif
@@ -301,8 +301,8 @@ public:
 	void move_tool();
 	void resize_tool();
 	void landscape();
-	void landscape(boolean);
-	boolean is_landscape() { return landscape_; }
+	void landscape(bool);
+	bool is_landscape() { return landscape_; }
 	void deco(int);
 	void virt_screen();
 	void tray();
@@ -311,11 +311,11 @@ public:
 #if SNAPSHOT
 	void snapshot_control();
 #endif
-	boolean file_control1();
+	bool file_control1();
 	void idraw_control();
-	void idraw_write(const char* fname, boolean ses_style = false);
+	void idraw_write(const char* fname, bool ses_style = false);
 	void ascii_control();
-	void ascii_write(const char* fname, boolean ses_style = false);
+	void ascii_write(const char* fname, bool ses_style = false);
 	void quit_control();
 	void save_selected_control();
 	void save_all_control();
@@ -329,7 +329,7 @@ public:
 	void unmap_all();
 	StandardWindow* window();
 	void window(StandardWindow* w) { w_ = w; }
-	void all_window_bounding_box(Extension&, boolean with_screen = true, boolean also_controller = true);
+	void all_window_bounding_box(Extension&, bool with_screen = true, bool also_controller = true);
 	void view_screen(Coord, Coord);
 	FileChooser* fc_save_;
 	const Color* window_outline_;
@@ -345,7 +345,7 @@ private:
 	void relabel();
 	GlyphIndex upper_left();
 	void redraw(Window*);
-	boolean none_selected(const char*, const char*)const;
+	bool none_selected(const char*, const char*)const;
 	void ses_group(ScreenItem* si, ostream& o); int ses_group_first_;
 	void save_begin(ostream&);
 	void save_list(int, ScreenItem**, ostream&);
@@ -354,10 +354,10 @@ private:
 	ScreenScene* screen_;
 	PaperScene* paper_;
 	View* pview_;
-	boolean landscape_;
+	bool landscape_;
 	Rect* prect_;
-	boolean use_printer;
-	boolean printer_control_accept_;
+	bool use_printer;
+	bool printer_control_accept_;
 	String printer_;
 	FieldDialog* b_printer_;
 	FileChooser* fc_print_;
@@ -370,7 +370,7 @@ private:
 	Glyph* left_; //ugh
 	EventButton tool_;
 	const Event* snap_event_;
-	boolean print_leader_flag_;
+	bool print_leader_flag_;
 #if DECO
 	TelltaleState* p_deco_;
 #endif
@@ -410,7 +410,7 @@ public:
 	enum {resize, move};
 	PaperItem_handler(int type, Coord x, Coord y, PaperItem*, const Transformer&);
 	virtual ~PaperItem_handler();
-	virtual boolean event(Event&);
+	virtual bool event(Event&);
 private:
 	void resize_action(Coord, Coord);
 	void move_action(Coord, Coord);
@@ -426,9 +426,9 @@ private:
 public:
 	ScreenItemHandler(Coord x, Coord y, ScreenItem*, const Transformer&);
 	virtual ~ScreenItemHandler();
-	virtual boolean event(Event&);
+	virtual bool event(Event&);
 private:
-	void move_action(boolean, Coord, Coord);
+	void move_action(bool, Coord, Coord);
 private:
 	Transformer t_;
 	ScreenItem* si_;
@@ -750,7 +750,7 @@ IFGUI
 	// second arg is 0,1,2 refers to postscript, idraw, ascii mode
 	// third arg is 0,1 refers to selected, all
 	PWMImpl* p = PrintableWindowManager::current()->pwmi_;
-	boolean ses_style = false;
+	bool ses_style = false;
 	if (ifarg(3)) {
 		ses_style = int(chkarg(3, 0, 1))? true:false;
 	}
@@ -857,7 +857,7 @@ PaperItem_handler::~PaperItem_handler() {
 	Resource::unref(pi_);
 }
 
-boolean PaperItem_handler::event(Event& e) {
+bool PaperItem_handler::event(Event& e) {
 //printf("PaperItem_handler::event (%g, %g)\n", e.pointer_x(), e.pointer_y());
 	switch(e.type()) {
 	case Event::down:
@@ -1016,7 +1016,7 @@ ScreenItemHandler::~ScreenItemHandler() {
 	Resource::unref(si_);
 }
 
-boolean ScreenItemHandler::event(Event& e) {
+bool ScreenItemHandler::event(Event& e) {
 //printf("ScreenItemHandler::event (%g, %g)\n", e.pointer_x(), e.pointer_y());
 	switch(e.type()) {
 	case Event::down:
@@ -1040,7 +1040,7 @@ boolean ScreenItemHandler::event(Event& e) {
 	return true;
 }
 
-void ScreenItemHandler::move_action(boolean doit, Coord x, Coord y) {
+void ScreenItemHandler::move_action(bool doit, Coord x, Coord y) {
 //printf("move_action\n");
 	Coord xs, ys;
 	t_.transform(x, y, xs, ys);
@@ -1082,7 +1082,7 @@ ScreenSceneHandler::ScreenSceneHandler(Coord x, Coord y) : Handler() {
 	x_ = x;
 	y_ = y;
 }
-boolean ScreenSceneHandler::event(Event&) {
+bool ScreenSceneHandler::event(Event&) {
 	pwm_impl->view_screen(x_, y_);
 	return true;
 }
@@ -1375,7 +1375,7 @@ IFGUI
 	int x, y;
 	x = int(*getarg(1));
 	y = int(*getarg(2));
-	boolean m = (ifarg(3) && int(*getarg(3)) == 0) ? false : true;
+	bool m = (ifarg(3) && int(*getarg(3)) == 0) ? false : true;
 	PrintableWindowManager::current()->xplace(x, y, m);
 ENDGUI
 #endif
@@ -1410,7 +1410,7 @@ IFGUI
 		}else if (ifarg(2)) {
 			pwm_impl->do_print_session((int)chkarg(1,0,1), gargstr(2));
 		}else{
-			boolean b = ifarg(1) ? (chkarg(1, 0, 1) == 1.) : true;
+			bool b = ifarg(1) ? (chkarg(1, 0, 1) == 1.) : true;
 			pwm_impl->do_print_session(b);
 		}
 	}
@@ -1421,7 +1421,7 @@ ENDGUI
 }
 }
 
-void PrintableWindowManager::xplace(int left, int top, boolean m) {
+void PrintableWindowManager::xplace(int left, int top, bool m) {
 	PrintableWindow* w = pwm_impl->window();
 	if (!w->is_mapped()) {
 		PrintableWindow* pw = PrintableWindow::leader();
@@ -1631,7 +1631,7 @@ void PWMImpl::help() {
 	}
 }
 
-void PWMImpl::all_window_bounding_box(Extension& e, boolean with_screen, boolean also_leader) {
+void PWMImpl::all_window_bounding_box(Extension& e, bool with_screen, bool also_leader) {
 	GlyphIndex i;
 	PrintableWindow* w;
 	Display* d = Session::instance()->default_display();
@@ -1641,7 +1641,7 @@ void PWMImpl::all_window_bounding_box(Extension& e, boolean with_screen, boolean
 		e.clear();
 	}
 	PrintableWindow* wl = PrintableWindow::leader();
-	boolean empty = true;
+	bool empty = true;
 	for (i=0; i < screen_->count(); i++) {
 		w = ((ScreenItem*)(screen_->component(i)))->window();
 		if (w && w->is_mapped() && w != wl) {
@@ -1724,7 +1724,7 @@ void PWMImpl::do_print0() {
 	}
 }
 
-void PWMImpl::do_print(boolean use_printer, const char* name) {
+void PWMImpl::do_print(bool use_printer, const char* name) {
 #if MAC && !defined(carbon)
 	if (use_printer) {
 		mac_do_print();
@@ -1740,12 +1740,12 @@ void PWMImpl::do_print(boolean use_printer, const char* name) {
 	ps_file_print(use_printer, name, landscape_, false);
 }
 
-void PWMImpl::do_print_session(boolean also_leader) {
+void PWMImpl::do_print_session(bool also_leader) {
 	// must work for mac, mswin, unix. All windows on screen
 	//scale so on paper
-	boolean p = true;
+	bool p = true;
 #if DECO
-	boolean deco = p_deco_->test(TelltaleState::is_chosen);
+	bool deco = p_deco_->test(TelltaleState::is_chosen);
 	p_deco_->set(TelltaleState::is_chosen, true);
 #endif
 
@@ -1798,12 +1798,12 @@ void PWMImpl::do_print_session(boolean also_leader) {
 	print_leader_flag_ = true;
 }
 
-void PWMImpl::do_print_session(boolean use_printer, const char* name) {
+void PWMImpl::do_print_session(bool use_printer, const char* name) {
 	print_leader_flag_ = true;
 	ps_file_print(use_printer, name, true, true);
 }
 
-void PWMImpl::ps_file_print(boolean use_printer, const char* name, boolean land_style, boolean ses_style) {
+void PWMImpl::ps_file_print(bool use_printer, const char* name, bool land_style, bool ses_style) {
         Style* s = Session::instance()->style();
 	static char* tmpfile = (char*)0;
 	filebuf obuf;
@@ -1824,7 +1824,7 @@ void PWMImpl::ps_file_print(boolean use_printer, const char* name, boolean land_
 	
 	if (ses_style) {
 #if DECO
-		boolean deco = p_deco_->test(TelltaleState::is_chosen);
+		bool deco = p_deco_->test(TelltaleState::is_chosen);
 		p_deco_->set(TelltaleState::is_chosen, true);
 #endif
 	        Style* s = Session::instance()->style();
@@ -1891,7 +1891,7 @@ float yoff = pageheight*72/2/sfac - (e.top() + e.bottom() + 23.)/2.;
 }
 
 #ifdef WIN32
-extern "C" { extern boolean hoc_copyfile(const char*, const char*);}
+extern "C" { extern bool hoc_copyfile(const char*, const char*);}
 #endif
 
 #if MACPRINT
@@ -1905,7 +1905,7 @@ void PWMImpl::mac_do_print() {
 }
 #endif
 
-void PWMImpl::common_print(Printer* pr, boolean land_style, boolean ses_style) {
+void PWMImpl::common_print(Printer* pr, bool land_style, bool ses_style) {
 	Scene* p;
 	if (ses_style) {
 		p = screen();
@@ -2595,7 +2595,7 @@ void PWMImpl::landscape() {
 	landscape_ = !landscape_;
 }
 
-void PWMImpl::landscape(boolean b) {
+void PWMImpl::landscape(bool b) {
 	if (landscape_ != b) {
 		landscape();
 	}
@@ -2659,7 +2659,7 @@ void PWMImpl::printer_control() {
 		b_printer_->ref();
 	}
 	use_printer = true;
-	boolean b;
+	bool b;
 	if (w_ && w_->is_mapped()) {
 		b = b_printer_->post_for(w_);
 	}else{
@@ -2692,7 +2692,7 @@ void PWMImpl::snapshot_control() {
 }
 #endif
 
-boolean PWMImpl::file_control1() {
+bool PWMImpl::file_control1() {
 	if (Oc::helpmode()) {
 		Oc::help(PWM_file_control_);
 	}
@@ -2766,7 +2766,7 @@ void PWMImpl::snap(Printer* pr, Window* w) {
 	t.translate(a.left(), -a.bottom());
 	Style* s = w->style();
 	String str;
-	boolean pd = false;
+	bool pd = false;
 	if (s && s->find_attribute("name", str)) {
 		pd = true;
 		pr->comment(str.string());
@@ -2873,7 +2873,7 @@ void PWMImpl::idraw_control() {
 	}
 }
 
-void PWMImpl::idraw_write(const char* fname, boolean ses_style) {
+void PWMImpl::idraw_write(const char* fname, bool ses_style) {
 #ifdef WIN32
 	unlink(fname);
 #endif
@@ -2932,7 +2932,7 @@ void PWMImpl::ascii_control() {
 	}
 }
 
-void PWMImpl::ascii_write(const char* fname, boolean ses_style) {
+void PWMImpl::ascii_write(const char* fname, bool ses_style) {
 	filebuf obuf;
 #ifdef WIN32
 	unlink(fname);
@@ -2968,7 +2968,7 @@ void PWMImpl::save_selected_control() {
 void PWMImpl::save_all_control() {
 	save_control(2);
 }
-boolean PWMImpl::none_selected(const char* title, const char* accept)const{
+bool PWMImpl::none_selected(const char* title, const char* accept)const{
 	int i, n=0;
 	if (paper_) for (i=0; i < paper_->count(); ++i) {
 		if (paper_->showing(i)) {
@@ -3419,7 +3419,7 @@ void PWMImpl::dissolve() {
 #endif
 
 #if SNAPSHOT
-boolean ivoc_snapshot(const Event* e) {
+bool ivoc_snapshot(const Event* e) {
 	char buf[4];
 	e->mapkey(buf, 1);
 	if (buf[0] == 'p') {

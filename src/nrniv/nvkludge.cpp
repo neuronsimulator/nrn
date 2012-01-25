@@ -31,7 +31,7 @@ extern "C" {
 }
 #endif
 
-extern void nrn_vecsim_add(void*, boolean);
+extern void nrn_vecsim_add(void*, bool);
 extern void nrn_vecsim_remove(void*);
 
 void nrn_nvkludge_dummy() {

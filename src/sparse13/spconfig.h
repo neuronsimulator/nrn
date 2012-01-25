@@ -273,7 +273,7 @@
 
 /*
  *  The following options affect Sparse exports and so are exported as a
- *  side effect.  For this reason they use the `sp' prefix.  The boolean
+ *  side effect.  For this reason they use the `sp' prefix.  The bool
  *  constants YES an NO are not defined in spMatrix.h to avoid conflicts
  *  with user code, so use 0 for NO and 1 for YES.
  */

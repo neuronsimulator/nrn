@@ -92,7 +92,7 @@ implementPtrList(ButtonItemInfoList,ButtonItemInfo)
 public:
 	SceneMover();
 	virtual ~SceneMover();
-	virtual boolean event(Event&);
+	virtual bool event(Event&);
 	virtual void help();
 private:
 	Coord x_, y_;
@@ -103,7 +103,7 @@ private:
 public:
 	SceneZoom();
 	virtual ~SceneZoom();
-	virtual boolean event(Event&);
+	virtual bool event(Event&);
 	virtual void help();
 private:
 	Coord x_, y_, xorg_, yorg_;
@@ -197,7 +197,7 @@ ScenePicker* Scene::picker() {
 public:
 	ScenePickerImpl(Scene* );
 	virtual ~ScenePickerImpl();
-	virtual boolean event(Event&);
+	virtual bool event(Event&);
 	long info_index(const char*);
 public:
 	friend class ScenePicker;
@@ -341,8 +341,8 @@ void ScenePicker::exec_item(const char* name) {
 	if (i > -1) {
 		ButtonItemInfo* b = spi_->bil_->item(i);
 		TelltaleState* t = b->s_;
-		boolean chosen = t->test(TelltaleState::is_chosen);
-		boolean act = !chosen;
+		bool chosen = t->test(TelltaleState::is_chosen);
+		bool act = !chosen;
 		if (t->test(TelltaleState::is_toggle)) {
 			t->set(TelltaleState::is_chosen, act);
 			act = true;
@@ -421,7 +421,7 @@ ScenePickerImpl::~ScenePickerImpl() {
 	delete bil_;
 }
 
-boolean ScenePickerImpl::event(Event& e) {
+bool ScenePickerImpl::event(Event& e) {
 //printf("ScenePickerImpl::event\n");
 	window_ = (DismissableWindow*)e.window();
 	menu_->event(e);
@@ -506,7 +506,7 @@ void SceneMover::help() {
 	Oc::help(Scene_SceneMover_);
 }
 
-boolean SceneMover::event(Event& e) {
+bool SceneMover::event(Event& e) {
 	if (Oc::helpmode()) {
 		if (e.type() == Event::down) {
 			help();
@@ -551,7 +551,7 @@ void SceneZoom::help() {
 	Oc::help(Scene_SceneZoom_);
 }
 
-boolean SceneZoom::event(Event& e) {
+bool SceneZoom::event(Event& e) {
 	if (Oc::helpmode()) {
 		if (e.type() == Event::down) {
 			help();
@@ -688,8 +688,8 @@ void SpecView::execute() {
 	if(!v) return;
 	Coord x1, x2, y1, y2;
 	v->zin(x1, y1, x2, y2);
-	boolean bx = var_pair_chooser("X size", x1, x2, v->canvas()->window());
-	boolean by = var_pair_chooser("Y size", y1, y2, v->canvas()->window());
+	bool bx = var_pair_chooser("X size", x1, x2, v->canvas()->window());
+	bool by = var_pair_chooser("Y size", y1, y2, v->canvas()->window());
 	v->size(x1, y1, x2, y2);
 	v->zout(x1, y1, x2, y2);
 	v->size(x1, y1, x2, y2);
@@ -786,7 +786,7 @@ PopupMenu::~PopupMenu() {
 	}
 }
 
-boolean PopupMenu::event(Event& e) {
+bool PopupMenu::event(Event& e) {
 	if (!w_) {
 		w_ = new PopupWindow(menu_);
 #if MAC

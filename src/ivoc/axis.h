@@ -12,7 +12,7 @@ public:
 	Axis(Scene*, DimensionName, Coord x1, Coord x2);
 	Axis(Scene*, DimensionName, Coord x1, Coord x2, Coord pos,
 		int ntic = 1, int nminor = 0,
-		int invert=0, boolean number=true);
+		int invert=0, bool number=true);
 	virtual ~Axis();
 	virtual void save(ostream&);
 	virtual void update(Observable*);
@@ -20,8 +20,8 @@ public:
 private:
 	void init(Coord x1, Coord x2, Coord pos=0.,
 		int ntic = 1, int nminor = 0,
-		int invert=0, boolean number=true);
-	boolean set_range();
+		int invert=0, bool number=true);
+	bool set_range();
 	void install();
 	void location();
 private:
@@ -31,7 +31,7 @@ private:
 	double amin_, amax_;
 	int ntic_, nminor_;
 	int invert_;
-	boolean number_;
+	bool number_;
 	Coord pos_;
 };
 

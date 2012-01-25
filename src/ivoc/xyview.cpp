@@ -246,7 +246,7 @@ void XYView::undraw() {
 	TransformSetter::undraw();
 }
 
-void XYView::damage(Glyph* g, const Allocation& a, boolean fixed, boolean vf) {
+void XYView::damage(Glyph* g, const Allocation& a, bool fixed, bool vf) {
 	if (canvas_) {
 		Extension e;
 		canvas_->push_transform();

@@ -40,13 +40,13 @@ public:
 	virtual ~RangeExpr();
 	void fill();
 	void compute();
-	boolean exists(int);
+	bool exists(int);
 	double* pval(int);
 private:
 	long n_;
 	SecPosList* spl_;
 	double* val_;
-	boolean* exist_;
+	bool* exist_;
 	HocCommand* cmd_;
 };
 
@@ -56,7 +56,7 @@ public:
 	virtual ~RangeVarPlot();
 	virtual void save(ostream&);
 	virtual void request(Requisition& req) const;
-	virtual boolean choose_sym(Graph*);
+	virtual bool choose_sym(Graph*);
 	virtual void update(Observable*);
 	void x_begin(float);
 	void x_end(float);
@@ -350,7 +350,7 @@ void RangeVarPlot::save(ostream& o) {
 	o << buf << endl;
 }
 
-boolean RangeVarPlot::choose_sym(Graph* g) {
+bool RangeVarPlot::choose_sym(Graph* g) {
 //	printf("RangeVarPlot::choose_sym\n");
 	char s[256];	
 	s[0] = '\0';
@@ -410,7 +410,7 @@ void RangeVarPlot::fill_pointers() {
 			sprintf(buf, "%s(hoc_ac_)", expr_.string());
 		}
 		int noexist=0;// don't plot single points that don't exist
-		boolean does_exist;
+		bool does_exist;
 		double* pval = nil;
 		for (long i=0; i < xcnt; ++i) {
 			Section* sec = sec_list_->item(i).sec;
@@ -618,7 +618,7 @@ void RangeExpr::fill() {
 		n_ = spl_->count();
 		if (n_) {
 			val_ = new double[n_];
-			exist_ = new boolean[n_];
+			exist_ = new bool[n_];
 		}
 	}
 	int temp = hoc_execerror_messages;
@@ -626,7 +626,7 @@ void RangeExpr::fill() {
 		nrn_pushsec(spl_->item(i).sec);
 		hoc_ac_ = spl_->item(i).x;
 		hoc_execerror_messages = 0;
-		if (cmd_->execute(boolean(false)) == 0) {
+		if (cmd_->execute(bool(false)) == 0) {
 			exist_[i] = true;
 			val_[i] = 0.;
 		}else{
@@ -648,14 +648,14 @@ void RangeExpr::compute() {
 		if (exist_[i]) {
 			nrn_pushsec(spl_->item(i).sec);
 			hoc_ac_ = spl_->item(i).x;
-			cmd_->execute(boolean(false));
+			cmd_->execute(bool(false));
 			nrn_popsec();
 			val_[i] = hoc_ac_;
 		}
 	}
 }
 
-boolean RangeExpr::exists(int i) {
+bool RangeExpr::exists(int i) {
 	if (i < n_) {
 		return exist_[i];
 	}else{

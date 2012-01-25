@@ -76,9 +76,9 @@ extern N_Vector N_VNew_Parallel(int comm, long int local_length,
 #endif
 }
 
-extern boolean nrn_use_fifo_queue_;
+extern bool nrn_use_fifo_queue_;
 #if BBTQ == 5
-extern boolean nrn_use_bin_queue_;
+extern bool nrn_use_bin_queue_;
 #endif
 
 #undef SUCCESS
@@ -654,7 +654,7 @@ double Cvode::h() {
 	}	
 }
 
-boolean Cvode::at_time(double te, NrnThread* nt) {
+bool Cvode::at_time(double te, NrnThread* nt) {
 	if (initialize_) {
 //printf("%d at_time initialize te=%g te-t0_=%g next_at_time_=%g\n", nt->id, te, te-t0_, next_at_time_);
 		MUTLOCK
@@ -806,7 +806,7 @@ void Cvode::init_prepare() {
 	}
 }
 
-void Cvode::activate_maxstate(boolean on) {
+void Cvode::activate_maxstate(bool on) {
 	if (maxstate_) {
 		N_VDestroy(maxstate_);
 		N_VDestroy(maxacor_);
@@ -822,13 +822,13 @@ void Cvode::activate_maxstate(boolean on) {
 	}
 }
 
-static boolean maxstate_b;
+static bool maxstate_b;
 static Cvode* maxstate_cv;
 static void* maxstate_thread(NrnThread* nt) {
 	maxstate_cv->maxstate(maxstate_b, nt);
 	return 0;
 }
-void Cvode::maxstate(boolean b, NrnThread* nt) {
+void Cvode::maxstate(bool b, NrnThread* nt) {
 	if (!maxstate_) { return; }
 	if (!nt) {
 		if (nrn_nthread > 1) {

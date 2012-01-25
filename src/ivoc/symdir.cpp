@@ -49,7 +49,7 @@ public:
 	Object* object() const {return ob_;}
 	void no_object();
 	const String& name() const { return name_;}
-	boolean is_directory() const;
+	bool is_directory() const;
 	int array_index() const { return index_;}
 	int whole_vector();
 private:
@@ -339,10 +339,10 @@ void SymDirectory::whole_name(int index, CopyString& s) const {
 //	s = tmp;	
 	s = concat(s1.string(), s2.string());
 }
-boolean SymDirectory::is_directory(int index) const {
+bool SymDirectory::is_directory(int index) const {
 	return impl_->symbol_list_.item(index)->is_directory();
 }
-boolean SymDirectory::match(const String&, const String&) {
+bool SymDirectory::match(const String&, const String&) {
 	return true;
 }
 Symbol* SymDirectory::symbol(int index) const {
@@ -407,7 +407,7 @@ void SymbolItem::no_object() {
 
 SymbolItem::~SymbolItem() {}
 
-boolean SymbolItem::is_directory() const {
+bool SymbolItem::is_directory() const {
 	if (symbol_) switch (symbol_->type) {
 	case SECTION:
 	case OBJECTVAR:

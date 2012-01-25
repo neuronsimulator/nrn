@@ -110,7 +110,7 @@ static int BitOffset = 0,		/* Bit Offset of next code */
     Misc;                       /* miscellaneous bits (interlace, local cmap)*/
 
 
-static boolean Interlace, HasColormap;
+static bool Interlace, HasColormap;
 
 static byte *RawGIF;			/* The heap array to hold it, raw */
 static byte *GRaster;			/* The raster data stream, unblocked */

@@ -58,9 +58,9 @@ extern Image* gif_image(const char*);
 #define Graph_choose_family_label_	"FamilyLabel Graph"
 #define Graph_choose_rvp_		"PlotRange Graph"
 
-boolean GraphItem::is_polyline() { return false; }
-boolean GPolyLineItem::is_polyline() { return true; }
-boolean GraphItem::is_mark() { return false; }
+bool GraphItem::is_polyline() { return false; }
+bool GPolyLineItem::is_polyline() { return true; }
+bool GraphItem::is_mark() { return false; }
 
 /*static*/ class GraphLabelItem : public GraphItem {
 public:
@@ -97,7 +97,7 @@ public:
 			s->remove(i);
 		}
 	}
-	virtual boolean is_mark() { return true; }
+	virtual bool is_mark() { return true; }
 };
 
 /*static*/ class VectorLineItem : public GPolyLineItem {
@@ -105,7 +105,7 @@ public:
 	VectorLineItem(Glyph* g) : GPolyLineItem(g){}
 	virtual ~VectorLineItem(){};
 	virtual void erase(Scene* s, GlyphIndex i, int type){}
-	virtual boolean is_graphVector() { return true; }
+	virtual bool is_graphVector() { return true; }
 };
 
 /*static*/ class LineExtension : public Glyph {
@@ -133,7 +133,7 @@ private:
 public:
 	NewLabelHandler(Graph*, Coord, Coord);
 	~NewLabelHandler();
-	virtual boolean event(Event&);
+	virtual bool event(Event&);
 private:	
 	Graph* g_;
 	Coord x_, y_;
@@ -149,7 +149,7 @@ NewLabelHandler::NewLabelHandler(Graph* g, Coord x, Coord y) {
 NewLabelHandler::~NewLabelHandler(){
 //	printf("~NewLabelHandler\n");
 }
-boolean NewLabelHandler::event(Event& e) {
+bool NewLabelHandler::event(Event& e) {
 	char buf[200];
 	buf[0] = '\0';
 	GLabel* gl = g_->new_proto_label();
@@ -176,7 +176,7 @@ static void gr_axis(Graph* g, DimensionName d) { IFGUI
 	int ntic = -1;
 	int nminor = 0;
 	int invert = 0;
-	boolean number = true;
+	bool number = true;
 	float x1 = 0;
 	float x2 = -1;
 	float pos = 0.;	
@@ -454,7 +454,7 @@ ENDGUI
 }
 
 #if HAVE_IV
-static void gr_add(void* v, boolean var) {
+static void gr_add(void* v, bool var) {
 IFGUI
 	Graph* g = (Graph*)v;
 	GraphLine* gl;
@@ -1011,7 +1011,7 @@ static double gr_set_cross_action(void* v) {
 #if HAVE_IV
 IFGUI
 	Graph* g = (Graph*)v;
-	boolean vector_copy = false;
+	bool vector_copy = false;
 	if (ifarg(2)) {
 		vector_copy = int(chkarg(2, 0, 1));
 	}
@@ -1265,7 +1265,7 @@ int BrushPalette::brush(const Brush* b) const {
 ColorPalette* colors;
 BrushPalette* brushes;
 
-GraphItem::GraphItem(Glyph* g, boolean s, boolean p) : MonoGlyph(g){
+GraphItem::GraphItem(Glyph* g, bool s, bool p) : MonoGlyph(g){
 	save_ = s;
 	pick_ = p;
 }
@@ -1287,7 +1287,7 @@ implementActionCallback(Graph);
 
 #define XSCENE 300.
 #define YSCENE 200.
-Graph::Graph(boolean b) : Scene(0,0,XSCENE,YSCENE) {
+Graph::Graph(bool b) : Scene(0,0,XSCENE,YSCENE) {
 	loc_ = 0;
 	x_expr_ = nil;
 	x_pval_ = nil;
@@ -1463,7 +1463,7 @@ GLabel* Graph::new_proto_label() const {
 		label_x_align_, label_y_align_);
 }
 
-boolean Graph::change_label(GLabel* glab, const char* text, GLabel* gl) {
+bool Graph::change_label(GLabel* glab, const char* text, GLabel* gl) {
 	GlyphIndex i, cnt = line_list_.count();
 	if (strcmp(glab->text(), text)) {
 		for (i=0; i < cnt; ++i) {
@@ -1566,7 +1566,7 @@ void Graph::ascii_save(ostream& o) const {
 		// check to see if all y_data has same count and a label.
 		// If so print as matrix. (Assumption that all x_data same is 
 		// dangerous.)
-		boolean matrix_form = true;
+		bool matrix_form = true;
 		int col=0;
 		int xcnt = 0;
 		const DataVec* xvec = nil;
@@ -1797,7 +1797,7 @@ void Graph::wholeplot(Coord& l, Coord& b, Coord& r, Coord& t) const {
 }
 
 void Graph::axis(DimensionName d, float x1, float x2, float pos,
-  int ntic, int nminor, int invert, boolean number) {
+  int ntic, int nminor, int invert, bool number) {
 //printf("%d %g %g %g %d %d %d %d %g\n", d, x1, x2, pos, ntic, nminor, invert, number);
 	Axis* a;
 	if (x2 < x1) {
@@ -1822,7 +1822,7 @@ void Graph::brush(int i) {
 	brush_ = b;
 }
 GraphLine* Graph::add_var(const char* expr, const Color* color, const Brush* brush,
-  boolean usepointer, int fixtype, double* pd, const char* lab, Object* obj) {
+  bool usepointer, int fixtype, double* pd, const char* lab, Object* obj) {
 	GraphLine* gl = new GraphLine(expr, x_, &symlist_, color, brush, usepointer,
 		pd, obj);
 	GLabel* glab;
@@ -1849,7 +1849,7 @@ void Graph::add_graphVector(GraphVector* gv) {
 	Scene::append(new VectorLineItem(gv));
 }
 
-void Graph::x_expr(const char* expr, boolean usepointer) {
+void Graph::x_expr(const char* expr, bool usepointer) {
 	Oc oc;
 	x_expr_ = oc.parseExpr(expr, &symlist_);
 	if (!x_expr_) {
@@ -1981,7 +1981,7 @@ void Graph::mark(Coord x, Coord y, char style, float size,
 	move(Scene::count() - 1, x, y);
 }
 
-void Graph::set_cross_action(const char* cp, boolean vector_copy) {
+void Graph::set_cross_action(const char* cp, bool vector_copy) {
 	if (cross_action_) {
 		delete cross_action_;
 		cross_action_ = nil;
@@ -2113,7 +2113,7 @@ void Graph::keep_lines() {
 	flush();
 }
 
-void Graph::family(boolean i) {
+void Graph::family(bool i) {
 	if (i) {
 		erase_lines();
 		family_on_ = true;
@@ -2201,8 +2201,8 @@ void Graph::spec_axis() {
 	XYView* v = XYView::current_pick_view();
 	Coord x1, x2, y1, y2;
 	v->zin(x1, y1, x2, y2);
-	boolean bx = var_pair_chooser("X-Axis", x1, x2);
-	boolean by = var_pair_chooser("Y-Axis", y1, y2);
+	bool bx = var_pair_chooser("X-Axis", x1, x2);
+	bool by = var_pair_chooser("Y-Axis", y1, y2);
 	v->size(x1, y1, x2, y2);
 	erase_axis();
 	if (bx) {
@@ -2352,7 +2352,7 @@ void Graph::save_phase2(ostream& o) {
 }
 
 
-boolean GraphVector::choose_sym(Graph*) {
+bool GraphVector::choose_sym(Graph*) {
 	// it is a range variable plot where we get a different result
 	return false;
 }
@@ -2448,7 +2448,7 @@ void Graph::family_label_chooser() {
 
 //GraphLine and GPolyLine
 GraphLine::GraphLine(const char* expr, DataVec* x, Symlist** symlist, const Color* c, const Brush* b,
-	boolean usepointer, double* pd, Object* obj)
+	bool usepointer, double* pd, Object* obj)
 	: GPolyLine(x, c, b)
 {
 	Oc oc;
@@ -2545,7 +2545,7 @@ GraphLine::~GraphLine() {
 	}
 }
 
-void GraphLine::simgraph_activate(boolean act_) {
+void GraphLine::simgraph_activate(bool act_) {
 	if (act_) {
 		if (!simgraph_x_sav_) {
 			simgraph_x_sav_ = x_;
@@ -2582,7 +2582,7 @@ void GraphLine::update(Observable*) { // *pval_ has been freed
 	obj_ = nil;
 }
 
-boolean GraphLine::change_expr(const char* expr, Symlist** symlist) {
+bool GraphLine::change_expr(const char* expr, Symlist** symlist) {
 	Oc oc;
 	if (pval_ || obj_) {
 		printf("Can't change.\n");
@@ -2872,7 +2872,7 @@ void GraphLine::plot(){
 //printf("GPolyLine::plot(%d) value = %g\n", loc, y_->value(loc));
 }
 
-boolean GraphLine::valid(boolean check) {
+bool GraphLine::valid(bool check) {
 	if (check && ! pval_) {
 		Oc oc;
 		valid_ = oc.valid_expr(expr_);
@@ -3280,7 +3280,7 @@ void GraphVector::add(float x, double* py) {
 	y_->add(float(*p));
 }
 
-boolean GraphVector::trivial() const {
+bool GraphVector::trivial() const {
 	for (int i=0; i < dp_->count(); ++i) {
 		if (dp_->p(i) != &zero) {
 			return false;

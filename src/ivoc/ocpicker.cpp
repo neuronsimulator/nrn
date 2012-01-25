@@ -55,7 +55,7 @@ StandardPicker::~StandardPicker() {
 		delete handlers_[i];
 	}
 }
-boolean StandardPicker::pick(Canvas* c, Glyph* glyph, int depth, Hit& h) {
+bool StandardPicker::pick(Canvas* c, Glyph* glyph, int depth, Hit& h) {
 	if (!h.event()) {
 		return false;
 	}

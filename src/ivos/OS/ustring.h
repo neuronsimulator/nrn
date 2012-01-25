@@ -47,10 +47,10 @@ public:
     virtual ~UniqueString();
 
     virtual unsigned long hash() const;
-    virtual boolean operator ==(const String&) const;
-    virtual boolean operator ==(const char*) const;
+    virtual bool operator ==(const String&) const;
+    virtual bool operator ==(const char*) const;
 
-    virtual boolean null_terminated() const;
+    virtual bool null_terminated() const;
 private:
     static UniqueStringTable* table_;
     static UniqueStringPool* pool_;

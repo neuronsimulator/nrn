@@ -12,7 +12,7 @@ class OcBox : public OcGlyphContainer {
 public:
 	enum {H, V};
         enum {INSET, OUTSET, BRIGHT_INSET, FLAT};
-        OcBox(int type, int frame = INSET, boolean scroll = false);
+        OcBox(int type, int frame = INSET, bool scroll = false);
 	virtual ~OcBox();
 	
 	virtual void box_append(OcGlyph*);
@@ -21,8 +21,8 @@ public:
 	virtual void adjuster(Coord natural);
 	virtual void adjust(Coord natural, int);
 	virtual void adjust(Coord natural, BoxAdjust*);
-	boolean full_request();
-	void full_request(boolean);
+	bool full_request();
+	void full_request(bool);
 
 	virtual void premap();
 	virtual void dismiss_action(const char*, Object* pyact=nil);
@@ -30,8 +30,8 @@ public:
 	void keep_ref(Object*);
 	Object* keep_ref();
 
-	boolean dismissing();
-	void dismissing(boolean);
+	bool dismissing();
+	void dismissing(bool);
 private:
 	OcBoxImpl* bi_;
 };

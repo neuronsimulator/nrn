@@ -118,7 +118,7 @@ void WinDismiss::execute() {
 // known what problem that fixed so it is dangerous to remove it from there
 // For this reason we avoid deleting the window while inside WinDismiss::event
 
-boolean WinDismiss::event(Event&) {
+bool WinDismiss::event(Event&) {
 	win_defer_longer_ = win_;
 	execute();
 	// but maybe it is not supposed to be dismissed
@@ -146,19 +146,19 @@ void WinDismiss::dismiss_defer() {
 
 // DismissableWindow
 
-boolean DismissableWindow::is_transient_;
+bool DismissableWindow::is_transient_;
 PrintableWindow* PrintableWindow::leader_;
 
 
 #ifdef WIN32
-DismissableWindow::DismissableWindow(Glyph* g, boolean force_menubar) : TransientWindow(
+DismissableWindow::DismissableWindow(Glyph* g, bool force_menubar) : TransientWindow(
   new Background(
 	LayoutKit::instance()->vbox(2),
 	WidgetKit::instance()->background()
   )
 )
 #else
-DismissableWindow::DismissableWindow(Glyph* g, boolean force_menubar)
+DismissableWindow::DismissableWindow(Glyph* g, bool force_menubar)
  : TransientWindow( LayoutKit::instance()->vbox(2))
 #endif
 {
@@ -322,7 +322,7 @@ Coord PrintableWindow::bottom_pw() const { return Window::bottom();}
 Coord PrintableWindow::width_pw() const { return Window::width();}
 Coord PrintableWindow::height_pw() const { return Window::height();}
 
-void PrintableWindow::request_on_resize(boolean b) {
+void PrintableWindow::request_on_resize(bool b) {
 	((Window*)this)->rep()->request_on_resize_ = b;
 }
 
@@ -419,14 +419,14 @@ OcGlyphContainer* PrintableWindow::intercept(OcGlyphContainer* b) {
 }
 #ifdef WIN32
 void virtual_window_top();
-boolean iv_user_keydown(long w) {
+bool iv_user_keydown(long w) {
 	if (w == 0x70) { //F1
 		virtual_window_top();
 	}
    return false;
 }
 
-boolean PrintableWindow::receive(const Event& e) {
+bool PrintableWindow::receive(const Event& e) {
 	if (e.rep()->messageOf() == WM_WINDOWPOSCHANGED) {
 			reconfigured();
 			notify();
@@ -435,13 +435,13 @@ boolean PrintableWindow::receive(const Event& e) {
 }
 #else
 #if MAC
-boolean PrintableWindow::receive(const Event& e) {
+bool PrintableWindow::receive(const Event& e) {
 	reconfigured();
 	notify();
 	return(false);
 }
 #else
-boolean PrintableWindow::receive(const Event& e) {
+bool PrintableWindow::receive(const Event& e) {
 	DismissableWindow::receive(e);
 	if (e.type() == Event::other_event) {
 		XEvent& xe = e.rep()->xevent_;
@@ -564,7 +564,7 @@ void OcGlyph::save(ostream&) {
 	printf("OcGlyph::save (not implemented for relevant class)\n");
 }
 
-boolean OcGlyph::has_window() { return (w_ != nil); }
+bool OcGlyph::has_window() { return (w_ != nil); }
 
 PrintableWindow* OcGlyph::window() { return w_;}
 void OcGlyph::window(PrintableWindow* w) { w_ = w; parents(w_ != nil);}
@@ -586,7 +586,7 @@ printf("%s %g %g\n", window()->name(), window()->width(), window()->height());
 	return w_;
 }
 
-void OcGlyph::parents(boolean b) {
+void OcGlyph::parents(bool b) {
 	if (b) {
 		++parents_;
 	}else{

@@ -77,7 +77,7 @@ extern int nrn_sec2cell_equals(Section*, Object*);
 extern ReceiveFunc* pnt_receive;
 extern ReceiveFunc* pnt_receive_init;
 extern short* pnt_receive_size;
-extern short* nrn_is_artificial_; // should be boolean but not using that type in c
+extern short* nrn_is_artificial_; // should be bool but not using that type in c
 extern short* nrn_artcell_qindex_;
 void net_send(void**, double*, Point_process*, double, double);
 void net_move(void**, Point_process*, double);
@@ -234,15 +234,15 @@ extern void bgp_dma_send(PreSyn*, double t);
 extern int use_bgpdma_;
 #endif
 
-boolean nrn_use_fifo_queue_;
+bool nrn_use_fifo_queue_;
 
 #if BBTQ == 5
-boolean nrn_use_bin_queue_;
+bool nrn_use_bin_queue_;
 #endif
 
 #if NRNMPI
 // for compressed info during spike exchange
-extern boolean nrn_use_localgid_;
+extern bool nrn_use_localgid_;
 extern void nrn_outputevent(unsigned char, double);
 #endif
 
@@ -654,9 +654,9 @@ static double nc_valid(void* v) {
 
 static double nc_active(void* v) {
 	NetCon* d = (NetCon*)v;
-	boolean a = d->active_;
+	bool a = d->active_;
 	if (d->target_ && ifarg(1)) {
-		d->active_ = boolean(chkarg(1, 0, 1));
+		d->active_ = bool(chkarg(1, 0, 1));
 	}
 	return double(a);
 }
@@ -935,7 +935,7 @@ Object** NetCvode::netconlist() {
 		}
 	}
 	
-	boolean b;
+	bool b;
 	hoc_Item* q;
 	if (psl_) ITERATE(q, psl_) {
 		PreSyn* ps = (PreSyn*)VOIDITM(q);
@@ -1117,7 +1117,7 @@ ite.t_, ite.de_->type(), nt->id, (ite.de_->type() == 2) ? PP2NT(((NetCon*)(ite.d
 	MUTUNLOCK
 }
 
-NetCvode::NetCvode(boolean single) {
+NetCvode::NetCvode(bool single) {
 	use_long_double_ = 0;
 	empty_ = true; // no equations (only artificial cells).
 	maxorder_ = 5;
@@ -1207,13 +1207,13 @@ NetCvode::~NetCvode() {
 	delete allthread_hocevents_;
 }
 
-boolean NetCvode::localstep(){
+bool NetCvode::localstep(){
 	return !single_;
 }
 
-boolean NetCvode::is_local() { return (cvode_active_ && localstep()); }
+bool NetCvode::is_local() { return (cvode_active_ && localstep()); }
 
-void NetCvode::localstep(boolean b) {
+void NetCvode::localstep(bool b) {
 	// due to possibility of gap junctions and until the complete matrix
 	// is analysed for block structure localstep and daspk are incompatible
 	b = (nrn_modeltype() == 1 ? b : false); // localstep doesn't work yet with DAE's
@@ -1228,11 +1228,11 @@ void NetCvode::localstep(boolean b) {
 	}
 }
 
-boolean NetCvode::use_daspk(){
+bool NetCvode::use_daspk(){
 	return (gcv_ != 0) ? gcv_->use_daspk_ : false;
 }
 
-void NetCvode::use_daspk(boolean b) {
+void NetCvode::use_daspk(bool b) {
 	b = (nrn_modeltype() == 2 ? true : b); // not optional if algebraic
 	if (gcv_ && b != gcv_->use_daspk_) {
 		delete_list();
@@ -1518,7 +1518,7 @@ void NetCvode::alloc_list() {
 #endif
 }
 
-boolean NetCvode::init_global() {
+bool NetCvode::init_global() {
 	int i;
 	CvMembList* cml;
 	if (tree_changed) { setup_topology(); }
@@ -1615,7 +1615,7 @@ boolean NetCvode::init_global() {
 		}
 	    }
 	}else{ // lvardt
-		boolean b = false;
+		bool b = false;
 		if (gcv_) { b = true; }
 		if (!b) for (i=0; i < pcnt_; ++i) {
 			if (p[i].nlcv_ != nrn_threads[i].ncell) {
@@ -2136,7 +2136,7 @@ void NetCvode::deliver_least_event(NrnThread* nt) {
 	de->deliver(tt, this, nt);
 }
 
-boolean NetCvode::deliver_event(double til, NrnThread* nt) {
+bool NetCvode::deliver_event(double til, NrnThread* nt) {
 	TQItem* q;
 	if ((q = p[nt->id].tqe_->atomic_dq(til)) != 0) {
 		DiscreteEvent* de = (DiscreteEvent*)q->data_;
@@ -3429,9 +3429,9 @@ printf("after target solve time for %p is %g , dt=%g\n", cv, cv->time(), dt);
 
 #if USENEOSIM
 
-boolean neosim_deliver_self_events(TQueue* tqe, double til);
-boolean neosim_deliver_self_events(TQueue* tqe, double til) {
-	boolean b;
+bool neosim_deliver_self_events(TQueue* tqe, double til);
+bool neosim_deliver_self_events(TQueue* tqe, double til) {
+	bool b;
 	TQItem* q;
 	DiscreteEvent* d;
 	b = false;
@@ -3575,7 +3575,7 @@ int NetCvode::pgvts_cvode(double tt, int op) {
 	return err;
 }
 
-boolean NetCvode::use_partrans() {
+bool NetCvode::use_partrans() {
 #if PARANEURON
 	if ( gcv_) { return gcv_->use_partrans_; } else { return 0; }
 #endif
@@ -5186,7 +5186,7 @@ void Cvode::ste_check() {
 	int i;
 	STEList* stel = ctd_[0].ste_list_;
 	if (stel) {
-		boolean b = true;
+		bool b = true;
 		int cnt = stel->count();
 		double tstart = t_;
 		while (b) { // until no more ste transitions
@@ -5225,7 +5225,7 @@ void NetCvode::ste_check() { // for fixed step
 	int i;
 	STEList* stel = StateTransitionEvent::stelist_;
 	if (stel) {
-		boolean b = true;
+		bool b = true;
 		int cnt = stel->count();
 		double tstart = nt_t;
 		while (b) { // until no more ste transitions
@@ -5721,7 +5721,7 @@ void NetCvode::vecrecord_add() {
 	if (pr) {
 		delete pr;
 	}
-	boolean discrete = ( (ifarg(4) && (int)chkarg(4,0,1) == 1) ? true : false);
+	bool discrete = ( (ifarg(4) && (int)chkarg(4,0,1) == 1) ? true : false);
 	if (discrete) {
 		pr = new VecRecordDiscrete(pd, y, t);
 	}else{
@@ -5757,7 +5757,7 @@ void NetCvode::playrec_setup() {
 	}
 	for (iprl = 0; iprl < prlc; ++iprl) {
 		PlayRecord* pr = prl_->item(iprl);
-		boolean b = false;
+		bool b = false;
 		if (single_) {
 			pr->install(gcv_);
 			b = true;
@@ -5805,7 +5805,7 @@ void NetCvode::stelist_change() {
 	}
 }
 
-boolean Cvode::is_owner(double* pd) { // is a pointer to range variable in this cell
+bool Cvode::is_owner(double* pd) { // is a pointer to range variable in this cell
 	int in, it;
     for (it=0; it < nrn_nthread; ++it) {
 	CvodeThreadData& z = CTD(it);

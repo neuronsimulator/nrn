@@ -36,7 +36,7 @@ extern double (*p_java2nrn_dmeth)(Object* ho, Symbol* method);
 extern char** (*p_java2nrn_smeth)(Object* ho, Symbol* method);
 extern Object** (*p_java2nrn_ometh)(Object* ho, Symbol* method);
 extern const char* (*p_java2nrn_classname)(Object* ho);
-extern boolean (*p_java2nrn_identity)(Object* o1, Object* o2);
+extern bool (*p_java2nrn_identity)(Object* o1, Object* o2);
 }
 // and others
 extern void (*nrnjava_pwm_setwin)(void*, int, int, int);
@@ -48,7 +48,7 @@ static double java2nrn_dmeth(Object* ho, Symbol* method);
 static char** java2nrn_smeth(Object* ho, Symbol* method);
 static Object** java2nrn_ometh(Object* ho, Symbol* method);
 static const char* java2nrn_classname(Object* ho);
-static boolean java2nrn_identity(Object* o1, Object* o2);
+static bool java2nrn_identity(Object* o1, Object* o2);
 static void pwm_setwin(void*, int, int, int);
 static char** js2charpool(jstring js);
 
@@ -249,7 +249,7 @@ char* nrn_dot2underbar(const char* s) {
 
 /** equality in the sense of ==
 */
-static boolean java2nrn_identity(Object* o1, Object* o2) {
+static bool java2nrn_identity(Object* o1, Object* o2) {
 	if (o1 == o2) return true;
 	if (o1 == 0 || o2 == 0) return false;
 	return (nrnjava_env->CallStaticIntMethod(neuronCls, identityID,

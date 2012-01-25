@@ -22,8 +22,8 @@ extern "C" {
 extern const char* expand_env_var(const char*);
 }
 
-boolean OcIdraw::closed_ = false;
-boolean OcIdraw::curved_ = false;
+bool OcIdraw::closed_ = false;
+bool OcIdraw::curved_ = false;
 int OcIdraw::ipath_ = 0;
 int OcIdraw::capacity_ = 0;
 Coord* OcIdraw::xpath_ = 0;
@@ -279,7 +279,7 @@ none SetP %I p n\n\
 }
 
 void OcIdraw::rect(Canvas* c, Coord x1, Coord y1, Coord x2, Coord y2,
-   const Color* color, const Brush* b, boolean f)
+   const Color* color, const Brush* b, bool f)
 {
 	Coord x[4], y[4];
 	x[0] = x1; y[0] = y1;
@@ -290,7 +290,7 @@ void OcIdraw::rect(Canvas* c, Coord x1, Coord y1, Coord x2, Coord y2,
 }
 
 void OcIdraw::polygon(Canvas*, int count, const Coord* x, const Coord* y,
-   const Color* color, const Brush* b, boolean f) {
+   const Color* color, const Brush* b, bool f) {
 	char buf[100];
 	out << "\nBegin %I Poly\n";
 	poly(count, x, y, color, b, f);
@@ -308,7 +308,7 @@ void OcIdraw::bspl(Canvas*, int count, const Coord* x, const Coord* y,
 }
 
 void OcIdraw::cbspl(Canvas*, int count, const Coord* x, const Coord* y,
-   const Color* color, const Brush* b, boolean f) {
+   const Color* color, const Brush* b, bool f) {
 	char buf[100];
 	out << "\nBegin %I CBSpl\n";
 	poly(count, x, y, color, b, f);
@@ -317,7 +317,7 @@ void OcIdraw::cbspl(Canvas*, int count, const Coord* x, const Coord* y,
 }
 
 void OcIdraw::poly(int count, const Coord* x, const Coord* y,
-    const Color* color, const Brush* b, boolean f) {
+    const Color* color, const Brush* b, bool f) {
 	brush(b);
 	ifill(color, f);
 	out << "%I t" << endl;
@@ -400,7 +400,7 @@ none SetP %I p n\n\
 
 void OcIdraw::ellipse(Canvas*, Coord x1, Coord y1,
 		Coord width, Coord height,
-		const Color* color, const Brush* b, boolean f)
+		const Color* color, const Brush* b, bool f)
 {
 
 	out << "\nBegin %I Elli\n";
@@ -445,7 +445,7 @@ void OcIdraw::brush(const Brush* b) {
 	out << buf << endl;
 }
 
-void OcIdraw::ifill(const Color* color, boolean f) {
+void OcIdraw::ifill(const Color* color, bool f) {
 	char buf[100];
 	ColorIntensity r=0,g=0,b=0;
 	if (color) {

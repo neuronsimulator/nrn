@@ -297,35 +297,6 @@ if test "$ac_cv_cxx_have_sstream" = yes; then
 fi
 ])
 
-dnl it has always been confusing as to whether true and false should be defined
-AC_DEFUN([SHOULD_TRUE_BE_DECLARED],[
- AC_LANG_SAVE
- AC_LANG_CPLUSPLUS
- AC_TRY_COMPILE([
-#include <stdio.h>
-#include <stdlib.h>
-#if defined(true)
-xxxxxx
-#endif
-#define true ostrue
-#define false osfalse
-#define boolean osboolean
-typedef unsigned boolean;
-static const unsigned false = 0;
-static const unsigned true = 0;
- ],[
-	boolean b;
-	b = true;
-	return 0;
- ],
-	ivos_declare_true=yes , ivos_declare_true=no
- )
- AC_LANG_RESTORE
- if test "$ivos_declare_true" = "yes" -a "$enable_carbon" != "yes" ; then
-	AC_DEFINE(IVOS_DECLARE_TRUE,,[define if ostrue should be declared])
- fi
-])dnl
-
 dnl decide whether to use std::fabs or ::fabs or declare it explicitly
 AC_DEFUN([NRN_FABS],[
  AC_LANG_SAVE

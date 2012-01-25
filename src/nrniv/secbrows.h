@@ -19,11 +19,11 @@ class MechVarType : public MonoGlyph {
 public:
 	MechVarType();
 	virtual ~MechVarType();
-	boolean parameter_select();
-	boolean assigned_select();
-	boolean state_select();
+	bool parameter_select();
+	bool assigned_select();
+	bool state_select();
 private:
-	boolean select(int);
+	bool select(int);
 private:
 	TelltaleState* tts_[3];
 };
@@ -33,9 +33,9 @@ public:
 	MechSelector();
 	virtual ~MechSelector();
 
-	boolean is_selected(int type);
+	bool is_selected(int type);
 	int begin();
-	boolean done();
+	bool done();
 	int next();
 private:
 	TelltaleState** tts_;

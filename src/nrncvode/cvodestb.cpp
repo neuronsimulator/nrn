@@ -16,7 +16,7 @@ extern "C" {
 void cvode_fadvance(double);
 void cvode_finitialize();
 void nrncvode_set_t(double);
-boolean at_time(NrnThread*, double);
+bool at_time(NrnThread*, double);
 
 extern double dt, t;
 #define nt_t nrn_threads->_t
@@ -122,7 +122,7 @@ void cvode_finitialize(){
 #endif
 }
 
-boolean at_time(NrnThread* nt, double te) {
+bool at_time(NrnThread* nt, double te) {
 #if USECVODE
 	if (cvode_active_ && nt->_vcv) {
 		return ((Cvode*)nt->_vcv)->at_time(te, nt);

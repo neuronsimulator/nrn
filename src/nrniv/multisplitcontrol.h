@@ -51,8 +51,8 @@ public:
 	void exchange_setup();
 	void rt_map_update();
 	void del_msti();
-	void pmat(boolean full = false);
-	void pmatf(boolean full = false);
+	void pmat(bool full = false);
+	void pmatf(bool full = false);
 	void pmat1(const char*);
 	void pexch();
 

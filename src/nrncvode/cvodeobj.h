@@ -97,8 +97,8 @@ public:
 	void maxorder(int), minstep(double), maxstep(double);
 public:
 	double tn_, t0_, t_;
-	boolean initialize_;
-	boolean can_retreat_; // only true after an integration step
+	bool initialize_;
+	bool can_retreat_; // only true after an integration step
 	// statistics
 	void stat_init();
 	int advance_calls_, interpolate_calls_, init_calls_;
@@ -127,7 +127,7 @@ public:
 	void fun_thread_ms_part3(NrnThread* nt);
 	void fun_thread_ms_part4(double* ydot, NrnThread* nt);
 	void fun_thread_ms_part34(double* ydot, NrnThread* nt);
-	boolean at_time(double, NrnThread*);
+	bool at_time(double, NrnThread*);
 	void set_init_flag();
 	void check_deliver(NrnThread* nt = 0);
 	void evaluate_conditions(NrnThread* nt = 0);
@@ -150,7 +150,7 @@ public:
 	double* n_vector_data(N_Vector, int);
 private:
 	void cvode_constructor();
-	boolean init_global();
+	bool init_global();
 	void init_eqn();
 	void daspk_init_eqn();
 	void matmeth();
@@ -167,7 +167,7 @@ private:
 	void before_after(BAMechList*, NrnThread*);
 public:
 	// daspk
-	boolean use_daspk_;
+	bool use_daspk_;
 	Daspk* daspk_;
 	int res(double, double*, double*, double*, NrnThread*);
 	int psol(double, double*, double*, double, NrnThread*);
@@ -182,9 +182,9 @@ public:
 	void gather_ydot(N_Vector);
 	void gather_ydot(double*, int);
 public:
-	void activate_maxstate(boolean);
+	void activate_maxstate(bool);
 	void maxstate(double*);
-	void maxstate(boolean, NrnThread* nt = 0);
+	void maxstate(bool, NrnThread* nt = 0);
 	void maxacor(double*);
 public:
 	void* mem_;
@@ -193,7 +193,7 @@ public:
 	N_Vector maxstate_;
 	N_Vector maxacor_;
 public:
-	boolean structure_change_;
+	bool structure_change_;
 #if USENEOSIM
 	TQueue* neosim_self_events_;
 #endif
@@ -219,8 +219,8 @@ private:
 private:
 	// segregation of old vectorized information to per cell info
 	friend class NetCvode;
-	boolean is_owner(double*); // for play and record in local step context.
-	boolean local_;
+	bool is_owner(double*); // for play and record in local step context.
+	bool local_;
 	void daspk_setup1_tree_matrix(); //unused
 	void daspk_setup2_tree_matrix(); //unused
 	TQItem* tqitem_;
@@ -228,7 +228,7 @@ private:
 	int prior2init_;
 #if PARANEURON
 public:
-	boolean use_partrans_;
+	bool use_partrans_;
 	int global_neq_;
 	int mpicomm_;
 	int opmode_; // 1 advance, 2 interpolate, 3 init; for testing

@@ -143,7 +143,7 @@ fprintf(help_pipe, "%s\n", filequeue->item_ref(i).string());
 void Oc::help(const char* s) {
 #if 0
 #ifndef CYGWIN
-	static boolean ran_ochelp = false;
+	static bool ran_ochelp = false;
 	char buf[1024];
 	nrnbbs_connect(); // benign if already connected
 	if (!nrnbbs_connected()) {
@@ -181,7 +181,7 @@ sprintf(buf, "%s\n", filequeue->item_ref(i).string());
 }
 #endif
 
-void Oc::helpmode(boolean b) {
+void Oc::helpmode(bool b) {
 	helpmode_ = b;
 }
 

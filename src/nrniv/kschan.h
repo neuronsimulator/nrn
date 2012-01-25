@@ -139,7 +139,7 @@ public:
 	// easily out of date!!
 	// in anything about f0 or f1 changes then must call hh_table_make;
 	void hh_table_make(double dt, int size=200, double vmin=-100., double vmax=50.);
-	boolean usehhtable() { return (size1_ > 0); }
+	bool usehhtable() { return (size1_ > 0); }
 	void inftau_hh_table(int i, double& inf, double& tau) {
 		inf = inftab_[i];
 		tau = tautab_[i];
@@ -239,7 +239,7 @@ public:
 
 class KSChan {
 public:
-	KSChan(Object*, boolean is_point = false);
+	KSChan(Object*, bool is_point = false);
 	virtual ~KSChan();
 	virtual void alloc(Prop*);
 	virtual void init(int, Node**, double**, Datum**, NrnThread*);
@@ -266,9 +266,9 @@ public:
 	int trans_index(const char* src, const char* target); // index of the transition
 	int trans_index(int src, int target); // index of the transition
 	int gate_index(int state_index); // index of the gate
-	boolean is_point() { return is_point_; }
-	boolean is_single() { return is_single_; }
-	void set_single(boolean, boolean update = true);
+	bool is_point() { return is_point_; }
+	bool is_single() { return is_single_; }
+	void set_single(bool, bool update = true);
 	void destroy_pnt(Point_process*);
 	int nsingle(Point_process*);
 	void nsingle(Point_process*, int);
@@ -291,10 +291,10 @@ public:
 	void remove_transition(int);
 	void setcond();
 	void power(KSGateComplex*, int);
-	void usetable(boolean, int size, double vmin, double vmax);
-	void usetable(boolean);
+	void usetable(bool, int size, double vmin, double vmax);
+	void usetable(bool);
 	int usetable(double* vmin, double* vmax);// get info
-	boolean usetable() { return usetable_; }
+	bool usetable() { return usetable_; }
 	void check_table_thread(NrnThread*);
 private:
 	void free1();
@@ -327,8 +327,8 @@ private:
 	int state_size_;
 	int gate_size_;
 	int trans_size_;
-	boolean is_point_;
-	boolean is_single_;
+	bool is_point_;
+	bool is_single_;
 	// for point process
 	int pointtype_;
 	int mechtype_;
@@ -374,7 +374,7 @@ private:
 	// for hh rate tables
 	double vmin_, vmax_, dvinv_, dtsav_;
 	int hh_tab_size_;
-	boolean usetable_;
+	bool usetable_;
 };
 
 #endif

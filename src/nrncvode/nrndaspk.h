@@ -28,7 +28,7 @@ public:
 	N_Vector delta_; // use for calling res explicitly
 	N_Vector parasite_; // used when initialization cannot make f(y',y,t)<tol
 	double t_parasite_;
-	boolean use_parasite_;
+	bool use_parasite_;
 	char* spmat_;
 	static int init_failure_style_;
 	static double dteps_;

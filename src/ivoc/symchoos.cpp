@@ -104,13 +104,13 @@ private:
 	const char* caption_attribute, const char* default_caption,
 	Glyph*, FieldEditorAction*
     );
-    boolean filtered(const String&, FieldEditor*);
+    bool filtered(const String&, FieldEditor*);
     void accept_browser();
     void accept_browser_index(int);
     void cancel_browser();
     void editor_accept(FieldEditor*);
     void filter_accept(FieldEditor*);
-    boolean chdir(int, int);
+    bool chdir(int, int);
 };
 
 /*static*/ class SymBrowserAccept : public Action {
@@ -170,7 +170,7 @@ static void sdestruct(void* v) {
 }
 static double srun(void* v) {
 #if HAVE_IV
-	boolean b = false;
+	bool b = false;
 IFGUI
 	SymChooser* sc = (SymChooser*)v;
 	Display* d = Session::instance()->default_display();
@@ -257,7 +257,7 @@ void SymChooser::reread() {
 #endif
 }
 
-void SymChooser::dismiss(boolean accept) {
+void SymChooser::dismiss(bool accept) {
     Dialog::dismiss(accept);
     SymChooserImpl& fc = *impl_;
     if (fc.action_ != nil) {
@@ -528,7 +528,7 @@ void SymChooserImpl::load(int bindex) {
 //printf("loading %d\n", bindex);
     for (int i = 0; i < dircount; i++) {
 	const String& f = d.name(i);
-	boolean is_dir = d.is_directory(i);
+	bool is_dir = d.is_directory(i);
 	if ((is_dir && filtered(f, directory_filter_)) ||
 	    (!is_dir && filtered(f, filter_))
 	) {
@@ -583,7 +583,7 @@ FieldEditor* SymChooserImpl::add_filter(
     return e;
 }
 
-boolean SymChooserImpl::filtered(const String& name, FieldEditor* e) {
+bool SymChooserImpl::filtered(const String& name, FieldEditor* e) {
     if (e == nil) {
 	return true;
     }
@@ -704,7 +704,7 @@ void SymChooserImpl::filter_accept(FieldEditor*) {
 	load(0);
 }
 
-boolean SymChooserImpl::chdir(int bindex, int index) {
+bool SymChooserImpl::chdir(int bindex, int index) {
 	if (dir_[bindex]->is_directory(index)) {
 		int bi;
 		SymDirectory* d;
@@ -738,5 +738,5 @@ if (dir_[bindex]->obj(index)) {
 
 SymChooserAction::SymChooserAction() { }
 SymChooserAction::~SymChooserAction() { }
-void SymChooserAction::execute(SymChooser*, boolean) { }
+void SymChooserAction::execute(SymChooser*, bool) { }
 #endif /* HAVE_IV */

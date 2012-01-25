@@ -1,8 +1,3 @@
-#define boolean _lib_os(boolean)
-#if defined(IVOS_DECLARE_TRUE)
-#define true _lib_os(true)
-#define false _lib_os(false)
-#endif
 #define u_char _lib_os(u_char)
 #define CopyString _lib_os(CopyString)
 #define Directory _lib_os(Directory)

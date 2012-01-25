@@ -149,7 +149,12 @@ if test "$CYGWIN" = "yes" -o "$MINGW" = "yes" ; then
 	nrndef_mswin=""
 fi
 
-SHOULD_TRUE_BE_DECLARED
+dnl for some unknown reason this is needed to tickle the use of mpic++
+dnl if requested later.
+AC_LANG_SAVE
+AC_LANG_CPLUSPLUS
+AC_TRY_COMPILE([],[return 0;],,)
+AC_LANG_RESTORE
 
 AM_CONDITIONAL(BUILD_CARBON, test x$enable_carbon = xyes)
 

@@ -103,55 +103,55 @@ String& String::operator =(const char* s) {
     return *this;
 }
 
-boolean String::operator ==(const String& s) const {
+bool String::operator ==(const String& s) const {
     return (length_ == s.length_) && (strncmp(data_, s.data_, length_) == 0);
 }
 
-boolean String::operator ==(const char* s) const {
+bool String::operator ==(const char* s) const {
     return (strncmp(data_, s, length_) == 0) && (s[length_] == '\0');
 }
 
-boolean String::operator !=(const String& s) const {
+bool String::operator !=(const String& s) const {
     return (length_ != s.length_) || (strncmp(data_, s.data_, length_) != 0);
 }
 
-boolean String::operator !=(const char* s) const {
+bool String::operator !=(const char* s) const {
     return (strncmp(data_, s, length_) != 0) || (s[length_] != '\0');
 }
 
-boolean String::operator >(const String& s) const {
+bool String::operator >(const String& s) const {
     return strncmp(data_, s.data_, length_) > 0;
 }
 
-boolean String::operator >(const char* s) const {
+bool String::operator >(const char* s) const {
     return strncmp(data_, s, length_) > 0;
 }
 
-boolean String::operator >=(const String& s) const {
+bool String::operator >=(const String& s) const {
     return strncmp(data_, s.data_, length_) >= 0;
 }
 
-boolean String::operator >=(const char* s) const {
+bool String::operator >=(const char* s) const {
     return strncmp(data_, s, length_) >= 0;
 }
 
-boolean String::operator <(const String& s) const {
+bool String::operator <(const String& s) const {
     return strncmp(data_, s.data_, length_) < 0;
 }
 
-boolean String::operator <(const char* s) const {
+bool String::operator <(const char* s) const {
     return strncmp(data_, s, length_) < 0;
 }
 
-boolean String::operator <=(const String& s) const {
+bool String::operator <=(const String& s) const {
     return strncmp(data_, s.data_, length_) <= 0;
 }
 
-boolean String::operator <=(const char* s) const {
+bool String::operator <=(const char* s) const {
     return strncmp(data_, s, length_) <= 0;
 }
 
-boolean String::case_insensitive_equal(const String& s) const {
+bool String::case_insensitive_equal(const String& s) const {
     if (length() != s.length()) {
 	return false;
     }
@@ -168,7 +168,7 @@ boolean String::case_insensitive_equal(const String& s) const {
     return true;
 }
 
-boolean String::case_insensitive_equal(const char* s) const {
+bool String::case_insensitive_equal(const char* s) const {
     return case_insensitive_equal(String(s));
 }
 
@@ -207,7 +207,7 @@ void String::set_to_substr(int start, int length) {
     length_ = len;
 }
 
-boolean String::null_terminated() const { return false; }
+bool String::null_terminated() const { return false; }
 
 void String::set_value(const char* s) {
     data_ = s;
@@ -250,7 +250,7 @@ int String::search(int start, u_char c) const {
  * Convert a string to binary value.
  */
 
-boolean String::convert(int& value) const {
+bool String::convert(int& value) const {
     NullTerminatedString s(*this);
     const char* str = s.string();
     char* ptr;
@@ -258,7 +258,7 @@ boolean String::convert(int& value) const {
     return ptr != str;
 }
 
-boolean String::convert(long& value) const {
+bool String::convert(long& value) const {
     NullTerminatedString s(*this);
     const char* str = s.string();
     char* ptr;
@@ -266,7 +266,7 @@ boolean String::convert(long& value) const {
     return ptr != str;
 }
 
-boolean String::convert(float& value) const {
+bool String::convert(float& value) const {
     NullTerminatedString s(*this);
     const char* str = s.string();
     char* ptr;
@@ -274,7 +274,7 @@ boolean String::convert(float& value) const {
     return ptr != str;
 }
 
-boolean String::convert(double& value) const {
+bool String::convert(double& value) const {
     NullTerminatedString s(*this);
     const char* str = s.string();
     char* ptr;
@@ -324,7 +324,7 @@ String& CopyString::operator =(const char* s) {
     return *this;
 }
 
-boolean CopyString::null_terminated() const { return true; }
+bool CopyString::null_terminated() const { return true; }
 
 void CopyString::set_value(const char* s) {
     set_value(s, strlen(s));
@@ -381,7 +381,7 @@ String& NullTerminatedString::operator =(const char* s) {
     return *this;
 }
 
-boolean NullTerminatedString::null_terminated() const { return true; }
+bool NullTerminatedString::null_terminated() const { return true; }
 
 void NullTerminatedString::assign(const String& s) {
     if (s.null_terminated()) {

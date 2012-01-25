@@ -17,18 +17,18 @@ public:
 	virtual ~OcGlyph();
 
 	virtual void save(ostream&);
-	virtual boolean has_window();
+	virtual bool has_window();
 	virtual PrintableWindow* window();
 	virtual void window(PrintableWindow*);
 	virtual PrintableWindow*  make_window(Coord left = -1, Coord bottom = -1,
 		Coord width = -1, Coord height = -1);
 
 	virtual void no_parents();
-	void parents(boolean);
+	void parents(bool);
 
-	virtual boolean dialog(const char* label,
+	virtual bool dialog(const char* label,
 		const char* accept, const char* cancel);
-	boolean dialog_dismiss(boolean b);
+	bool dialog_dismiss(bool b);
 	virtual void def_size(Coord& w, Coord& h)const;
 	int session_priority() { return session_priority_; }
 	void session_priority(int i) { session_priority_ = i; }
@@ -43,12 +43,12 @@ private:
 class OcGlyphContainer : public OcGlyph {
 public:
 	OcGlyphContainer();
-	virtual void intercept(boolean);
+	virtual void intercept(bool);
 	virtual void box_append(OcGlyph*) = 0;
 	virtual void request(Requisition&) const;
 private:
 	OcGlyphContainer* parent_;
-	boolean recurse_;
+	bool recurse_;
 };
 
 #endif

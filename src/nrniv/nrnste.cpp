@@ -163,7 +163,7 @@ STETransition::~STETransition(){
 	}
 }
 
-boolean STETransition::condition(double& tr){
+bool STETransition::condition(double& tr){
 	if (*var1_ > *var2_) {
 		return true;
 	}

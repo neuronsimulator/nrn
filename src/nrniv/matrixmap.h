@@ -41,7 +41,7 @@ public:
 	inline void exp(Matrix* out){m_.exp(out);}
 	inline void pow(int p, Matrix* out){m_.pow(p, out);}
 	inline void inverse(Matrix* out){m_.inverse(out);}
-	inline void solv(Vect* vin, Vect* vout, boolean use_lu) {m_.solv(vin, vout, use_lu);}
+	inline void solv(Vect* vin, Vect* vout, bool use_lu) {m_.solv(vin, vout, use_lu);}
 	inline void copy(Matrix* out){m_.copy(out);}
 	inline void bcopy(Matrix* mout, int i0, int j0, int n0, int m0, int i1, int j1) {
 		m_.bcopy(mout, i0, j0, n0, m0, i1, j1);

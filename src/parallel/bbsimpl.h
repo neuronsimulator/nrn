@@ -6,10 +6,10 @@ public:
 	BBSImpl();
 	virtual ~BBSImpl();
 
-	virtual boolean look(const char*) = 0;
+	virtual bool look(const char*) = 0;
 
 	virtual void take(const char*) = 0; /* blocks til something to take */
-	virtual boolean look_take(const char*) = 0; /* returns false if nothing to take */
+	virtual bool look_take(const char*) = 0; /* returns false if nothing to take */
 	// after taking use these
 	virtual int upkint() = 0;
 	virtual double upkdouble() = 0;
@@ -36,14 +36,14 @@ public:
 
 	virtual void execute(int id); // assumes a "todo" message in receive buffer
 	virtual int submit(int userid);
-	virtual boolean working(int &id, double& x, int& userid);
+	virtual bool working(int &id, double& x, int& userid);
 	virtual void context();
 
 	virtual void start();
 	virtual void done();
 
 	virtual void worker(); // forever execute
-	virtual boolean is_master();
+	virtual bool is_master();
 	virtual double time();
 	
 	virtual void perror(const char*);
@@ -54,9 +54,9 @@ public:
 	double send_time_;
 	char* pickle_ret_;
 	size_t pickle_ret_size_;
-	static boolean is_master_;
-	static boolean started_, done_;
-	static boolean use_pvm_;
+	static bool is_master_;
+	static bool started_, done_;
+	static bool use_pvm_;
 	static int mytid_;
 	static int debug_;
 protected:

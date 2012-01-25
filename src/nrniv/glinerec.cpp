@@ -30,7 +30,7 @@ public:
 	virtual void install(Cvode* cv) { record_add(cv); }
 	virtual void record_init() {gl_->simgraph_init();}
 	virtual void continuous(double t) { gl_->simgraph_continuous(t);}
-	virtual boolean uses(void* v) { return (void*)gl_ == v; }
+	virtual bool uses(void* v) { return (void*)gl_ == v; }
 
 	GraphLine* gl_;
 };

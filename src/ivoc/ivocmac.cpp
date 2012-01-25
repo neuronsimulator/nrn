@@ -30,34 +30,34 @@ char * mktemp(char *){
 }
 #endif
 
-boolean nrnbbs_connect(){return false;}
+bool nrnbbs_connect(){return false;}
 void nrnbbs_disconnect(){}
-boolean nrnbbs_connected(){return false;}
+bool nrnbbs_connected(){return false;}
 
 void nrnbbs_post(const char*){}
 void nrnbbs_post_int(const char*, int){}
 void nrnbbs_post_string(const char*, const char*){}
 
-boolean nrnbbs_take(const char*){return false;}
-boolean nrnbbs_take_int(const char*, int*){return false;}
-boolean nrnbbs_take_string(const char*, char*){return false;}
+bool nrnbbs_take(const char*){return false;}
+bool nrnbbs_take_int(const char*, int*){return false;}
+bool nrnbbs_take_string(const char*, char*){return false;}
 
-boolean nrnbbs_look(const char*){return false;}
+bool nrnbbs_look(const char*){return false;}
 
 void nrnbbs_exec(const char*){}
 
 void nrnbbs_notify(const char*, NrnBBSCallback){}
 
-void nrnbbs_wait(boolean* pflag = (boolean*)0){}
+void nrnbbs_wait(bool* pflag = (bool*)0){}
 
 #if !carbon
-boolean is_mac_dll(FSSpec*);
-boolean mac_open_dll(const char*, FSSpec*);
+bool is_mac_dll(FSSpec*);
+bool mac_open_dll(const char*, FSSpec*);
 #endif
 }
 
 #if !carbon
-boolean is_mac_dll(FSSpec* fs) {
+bool is_mac_dll(FSSpec* fs) {
 	FInfo finfo;
 	FSpGetFInfo(fs, &finfo);
 	return finfo.fdType == 'shlb';
@@ -85,7 +85,7 @@ static long fsspec2id(FSSpec* fs) {
 static int ndll;
 static long dllid[10];
 
-boolean mac_open_dll(const char* name, FSSpec* fs) {
+bool mac_open_dll(const char* name, FSSpec* fs) {
 	CFragConnectionID id;
 	Ptr mainaddr;
 	Str255 sname;
@@ -140,7 +140,7 @@ boolean mac_open_dll(const char* name, FSSpec* fs) {
 	return false; 
 }
 
-boolean mac_load_dll(const char* name) {
+bool mac_load_dll(const char* name) {
 	FSSpec fss;
 	if ((__path2fss(name, &fss) != fnfErr) && is_mac_dll(&fss)) {
 		return mac_open_dll(name, &fss);

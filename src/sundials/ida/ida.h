@@ -381,7 +381,7 @@ int IDAReInit(void *ida_mem, IDAResFn res,
  *                        | the IC problem.                       
  *                        | [10]                                  
  *                        |                                        
- * IDASetLineSearchOffIC  | a boolean flag to turn off the        
+ * IDASetLineSearchOffIC  | a bool flag to turn off the        
  *                        | linesearch algorithm.                 
  *                        | [FALSE]                               
  *                        |                                        

@@ -43,7 +43,7 @@ extern double* vector_vec(IvocVect*);
 extern Object* nrn_sec2cell(Section*);
 extern void ncs2nrn_integrate(double tstop);
 extern void nrn_fake_fire(int gid, double firetime, int fake_out);
-int nrnmpi_spike_compress(int nspike, boolean gid_compress, int xchng_meth);
+int nrnmpi_spike_compress(int nspike, bool gid_compress, int xchng_meth);
 void nrn_cleanup_presyn(PreSyn*);
 void nrnmpi_gid_clear(int);
 extern void nrn_partrans_clear();
@@ -157,7 +157,7 @@ int ncs_target_hosts( int gid, int** targetnodes ) {
 #endif
 
 // for compressed gid info during spike exchange
-boolean nrn_use_localgid_;
+bool nrn_use_localgid_;
 void nrn_outputevent(unsigned char localgid, double firetime);
 static Gid2PreSyn** localmaps_;
 
@@ -171,7 +171,7 @@ static int ocapacity_; // for spikeout_
 // require it to be smaller than  min_interprocessor_delay.
 static double wt_; // wait time for nrnmpi_spike_exchange
 static double wt1_; // time to find the PreSyns and send the spikes.
-static boolean use_compress_;
+static bool use_compress_;
 static int spfixout_capacity_;
 static int idxout_;
 static void nrn_spike_exchange_compressed();
@@ -1173,7 +1173,7 @@ IvocVect* BBS::netpar_max_histogram(IvocVect* mh) {
 #endif
 }
 
-int nrnmpi_spike_compress(int nspike, boolean gid_compress, int xchng_meth) {
+int nrnmpi_spike_compress(int nspike, bool gid_compress, int xchng_meth) {
 #if NRNMPI
 	if (nrnmpi_numprocs < 2) { return 0; }
 #if BGPDMA

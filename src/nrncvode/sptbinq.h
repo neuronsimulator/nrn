@@ -21,7 +21,7 @@ class TQItem {
 public:
 	TQItem();
 	virtual ~TQItem();
-	boolean check();
+	bool check();
 	void clear(){};
 public:
 	void* data_;

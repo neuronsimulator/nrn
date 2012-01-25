@@ -55,8 +55,8 @@ public:
 	virtual ~BBSLocalServer();
 
 	void post(const char* key, MessageValue*);
-	boolean look(const char* key, MessageValue**);
-	boolean look_take(const char* key, MessageValue**);
+	bool look(const char* key, MessageValue**);
+	bool look_take(const char* key, MessageValue**);
 
 	void post_todo(int parentid, MessageValue*);
 	void post_result(int id, MessageValue*);

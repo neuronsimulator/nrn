@@ -53,7 +53,7 @@ public:
 	virtual void exp(Matrix* out){unimp();}
 	virtual void pow(int, Matrix* out){unimp();}
 	virtual void inverse(Matrix* out){unimp();}
-	virtual void solv(Vect* vin, Vect* vout, boolean use_lu) {unimp();}
+	virtual void solv(Vect* vin, Vect* vout, bool use_lu) {unimp();}
 	virtual void copy(Matrix* out){unimp();}
 	virtual void bcopy(Matrix* mout, int i0, int j0, int n0, int m0, int i1, int j1){unimp();}
 	virtual void transpose(Matrix* out){unimp();}
@@ -106,7 +106,7 @@ public:
 	virtual void exp(Matrix* out);
 	virtual void pow(int, Matrix* out);
 	virtual void inverse(Matrix* out);
-	virtual void solv(Vect* vin, Vect* vout, boolean use_lu);
+	virtual void solv(Vect* vin, Vect* vout, bool use_lu);
 	virtual void copy(Matrix* out);
 	virtual void bcopy(Matrix* mout, int i0, int j0, int n0, int m0, int i1, int j1);
 	virtual void transpose(Matrix* out);
@@ -130,7 +130,7 @@ public:
 	virtual int ncol();
 	virtual double getval(int, int);
 	virtual void mulv(Vect* in, Vect* out);
-	virtual void solv(Vect* vin, Vect* vout, boolean use_lu);
+	virtual void solv(Vect* vin, Vect* vout, bool use_lu);
 
 	virtual void setrow(int, Vect* in);
 	virtual void setcol(int, Vect* in);

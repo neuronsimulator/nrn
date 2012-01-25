@@ -33,7 +33,7 @@ for fast insertion, deletion, iteration
  */
 
 #include <stdio.h>
-#include <InterViews/boolean.h>
+#include <OS/enter-scope.h>
 #include <htlist.h>
 
 /*****************************************************************************/

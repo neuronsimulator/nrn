@@ -14,7 +14,7 @@
 #if !defined(CABLE)
 // really belongs in vector.c but this is convenient since it will be
 // present in ivoc but not in nrniv
-void nrn_vecsim_add(void*, boolean) {printf("nrn_vecsym_add implemented in nrniv\n");}
+void nrn_vecsim_add(void*, bool) {printf("nrn_vecsym_add implemented in nrniv\n");}
 void nrn_vecsim_remove(void*) {printf("nrn_vecsym_remove implemented in nrniv\n");}
 #if HAVE_IV
 void graphLineRecDeleted(GraphLine*){}

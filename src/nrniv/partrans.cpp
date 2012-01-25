@@ -86,7 +86,7 @@ static IntList* sgids_;
 static MapInt2Int* sgid2srcindex_;
 static int* s2t_index_;
 
-static boolean is_setup_;
+static bool is_setup_;
 static void alloclists();
 
 void nrnmpi_source_var() {

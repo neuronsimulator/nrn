@@ -31,7 +31,7 @@ extern Objectdata* hoc_top_level_data;
 extern void hoc_tobj_unref(Object**);
 extern void sec_access_push();
 extern PyObject* nrnpy_pushsec(PyObject*);
-extern boolean hoc_valid_stmt(const char*, Object*);
+extern bool hoc_valid_stmt(const char*, Object*);
 myPyMODINIT_FUNC nrnpy_nrn();
 extern PyObject* nrnpy_cas(PyObject*, PyObject*);
 extern PyObject* nrnpy_forall(PyObject*, PyObject*);
@@ -122,7 +122,7 @@ static PyObject* nrnexec(PyObject* self, PyObject* args) {
 	if (!PyArg_ParseTuple(args, "s", &cmd)) {
 		return NULL;
 	}
-	boolean b = hoc_valid_stmt(cmd, 0);
+	bool b = hoc_valid_stmt(cmd, 0);
 	return Py_BuildValue("i", b?1:0);
 }
 

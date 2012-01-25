@@ -85,7 +85,7 @@ The variable step method for these cases is handled by daspk.
 // determine neq_ and vector of pointers to scatter/gather y
 // as well as algebraic nodes (no_cap)
 
-boolean Cvode::init_global() {
+bool Cvode::init_global() {
 #if PARANEURON
 	if (!use_partrans_ && nrnmpi_numprocs > 1
 	    && (nrnmpi_v_transfer_ || nrn_multisplit_solve_)) {

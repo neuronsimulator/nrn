@@ -146,7 +146,7 @@ void StmtInfo::parse() {
 	const char* s;
 	symlist_ = nil;
 	ParseTopLevel ptl;
-	boolean see_arg = false;
+	bool see_arg = false;
 	for (s=stmt_->string(), d = buf; *s; ++s, ++d) {
 		if (*s == '$' && s[1] == '1') {
 			strcpy(d, "hoc_ac_");

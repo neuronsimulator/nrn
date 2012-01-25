@@ -340,7 +340,7 @@ Vect* vector_arg(int i) {
 	return (Vect*)(ob->u.this_pointer);
 }
 
-boolean is_vector_arg(int i) {
+bool is_vector_arg(int i) {
 	Object* ob = *hoc_objgetarg(i);
 	if (!ob || ob->ctemplate != svec_->u.ctemplate) {
 		return false;
@@ -354,7 +354,7 @@ int vector_arg_px(int i, double** px) {
 	return x->capacity();
 }
 
-extern void nrn_vecsim_add(void*, boolean);
+extern void nrn_vecsim_add(void*, bool);
 extern void nrn_vecsim_remove(void*);
 
 static int possible_destvec(int arg, Vect*& dest) {
@@ -1121,7 +1121,7 @@ static Object** v_sumgauss(void* v) {
 	double step = chkarg(3,1.e-99,1.e99);
 	double var = chkarg(4,0,1.e99);
         Vect* w;
-	boolean d = false;
+	bool d = false;
         if (ifarg(5)) {
 	   w = vector_arg(5);
         } else {
@@ -3524,7 +3524,7 @@ static Object** v_index(void* v)
   Vect* ans = (Vect*)v;
   ParentVect* data;
   Vect* index;
-  boolean del = false;
+  bool del = false;
 
   if (ifarg(2)) {
 	data = vector_arg(1);

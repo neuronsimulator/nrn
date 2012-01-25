@@ -39,8 +39,8 @@ public:
 	~SaveState();
 	virtual void save();
 	virtual void restore(int type);
-	virtual void read(OcFile*, boolean close);
-	virtual void write(OcFile*, boolean close);
+	virtual void read(OcFile*, bool close);
+	virtual void write(OcFile*, bool close);
 	struct NodeState {
 		double v;
 		int nmemb;
@@ -69,7 +69,7 @@ public:
 		double* state;
 	};
 	struct PreSynState {
-		boolean flag; // is it firing?
+		bool flag; // is it firing?
 		double valthresh, valold, told;
 		
 	};		
@@ -79,7 +79,7 @@ public:
 		DiscreteEvent** items;
 	};
 private:
-	boolean check(boolean warn);
+	bool check(bool warn);
 	void alloc();
 	void ssfree();
 	void ssi_def();
@@ -108,19 +108,19 @@ private:
 private:
 	void savenode(NodeState&, Node*);
 	void restorenode(NodeState&, Node*);
-	boolean checknode(NodeState&, Node*, boolean);
+	bool checknode(NodeState&, Node*, bool);
 	void allocnode(NodeState&, Node*);
 
 	void saveacell(ACellState&, int type);
 	void restoreacell(ACellState&, int type);
-	boolean checkacell(ACellState&, int type, boolean);
+	bool checkacell(ACellState&, int type, bool);
 	void allocacell(ACellState&, int type);
 
 	void savenet();
 	void restorenet();
 	void readnet(FILE*);
 	void writenet(FILE*);
-	boolean checknet(boolean);
+	bool checknet(bool);
 	void allocnet();
 	void free_tq();
 	void alloc_tq();
@@ -258,7 +258,7 @@ void SaveState::ssi_def() {
 	}
 }
 
-boolean SaveState::check(boolean warn) {
+bool SaveState::check(bool warn) {
 	hoc_Item* qsec;
 	int isec;
 	if (nsec_ != section_count) {
@@ -354,7 +354,7 @@ fprintf(stderr, "SaveState warning: Saved section and %s are not both root secti
 	return true;
 }
 
-boolean SaveState::checknode(NodeState& ns, Node* nd, boolean warn) {
+bool SaveState::checknode(NodeState& ns, Node* nd, bool warn) {
 	int i=0;
 	Prop* p;
 	for (p = nd->prop; p; p = p->next) {
@@ -387,7 +387,7 @@ fprintf(stderr, "SaveState warning: more mechanisms saved than exist at a rootno
 	return true;
 }
 
-boolean SaveState::checkacell(ACellState& ac, int type, boolean warn) {
+bool SaveState::checkacell(ACellState& ac, int type, bool warn) {
 	if (memb_list[type].nodecount != ac.ncell) {
 if (warn) {
 fprintf(stderr, "SaveState warning: different number of %s saved than exist.\n",
@@ -698,7 +698,7 @@ void SaveState::restoreacell(ACellState& ac, int type) {
 	}
 }
 
-void SaveState::read(OcFile* ocf, boolean close) {
+void SaveState::read(OcFile* ocf, bool close) {
 	if (!ocf->open(ocf->get_name(), "r")) {
 		hoc_execerror("Couldn't open file for reading:", ocf->get_name());
 	}
@@ -781,7 +781,7 @@ void SaveState::read(OcFile* ocf, boolean close) {
 	}
 }
 
-void SaveState::write(OcFile* ocf, boolean close) {
+void SaveState::write(OcFile* ocf, bool close) {
 	if (!ocf->open(ocf->get_name(), "w")) {
 		hoc_execerror("Couldn't open file for writing:", ocf->get_name());
 	}
@@ -1024,7 +1024,7 @@ void SaveState::writenet(FILE* f) {
 	}
 }
 
-boolean SaveState::checknet(boolean warn) {
+bool SaveState::checknet(bool warn) {
 	if (nncs_ != nct->count) {
 		if (warn) {
 fprintf(stderr, "SaveState warning: There are %d NetCon but %d saved\n",
@@ -1162,7 +1162,7 @@ static double restore(void* v) {
 }
 
 static double ssread(void* v) {
-	boolean close = true;
+	bool close = true;
 	SaveState* ss = (SaveState*)v;
 	Object* obj = *hoc_objgetarg(1);
 	check_obj_type(obj, "File");
@@ -1173,7 +1173,7 @@ static double ssread(void* v) {
 }
 
 static double sswrite(void* v) {
-	boolean close = true;
+	bool close = true;
 	SaveState* ss = (SaveState*)v;
 	Object* obj = *hoc_objgetarg(1);
 	check_obj_type(obj, "File");

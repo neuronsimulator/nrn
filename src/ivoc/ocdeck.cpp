@@ -93,7 +93,7 @@ ENDGUI
 
 static double intercept(void* v) {
 #if HAVE_IV
-	boolean b = int(chkarg(1, 0., 1.));
+	bool b = int(chkarg(1, 0., 1.));
 IFGUI
 	((OcDeck*)v)->intercept(b);
 ENDGUI

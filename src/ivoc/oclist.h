@@ -21,7 +21,7 @@ public:
 	long index(Object*);
 	Object* object(long);
 	void remove_all();
-	boolean refs_items() { return ct_ == nil; }
+	bool refs_items() { return ct_ == nil; }
 
 	void create_browser(const char* name, const char* items=nil, Object* pystract=nil);
 	void create_browser(const char* name, char** pstr, const char* action);

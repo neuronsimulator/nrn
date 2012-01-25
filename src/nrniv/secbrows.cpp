@@ -203,10 +203,10 @@ MechVarType::~MechVarType() {
 	}
 }
 
-boolean MechVarType::parameter_select() { return select(0);}
-boolean MechVarType::state_select() { return select(1);}
-boolean MechVarType::assigned_select() { return select(2);}
-boolean MechVarType::select(int i) {
+bool MechVarType::parameter_select() { return select(0);}
+bool MechVarType::state_select() { return select(1);}
+bool MechVarType::assigned_select() { return select(2);}
+bool MechVarType::select(int i) {
 	return tts_[i]->test(TelltaleState::is_chosen);
 }
 	
@@ -247,7 +247,7 @@ MechSelector::MechSelector() : MonoGlyph(nil){
 MechSelector::~MechSelector(){
 	delete [] tts_;
 }
-boolean MechSelector::is_selected(int type) {
+bool MechSelector::is_selected(int type) {
 	if (type >= MSBEGIN && type < n_memb_func &&
 	   tts_[type]->test(TelltaleState::is_chosen)) {
 		return true;
@@ -259,7 +259,7 @@ int MechSelector::begin(){
 	iterator_ = MSBEGIN-1;
 	return next();
 }
-boolean MechSelector::done(){
+bool MechSelector::done(){
 	if (iterator_ >= n_memb_func) {
 		return true;
 	}else{

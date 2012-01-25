@@ -62,7 +62,7 @@ public:
 	virtual void update_ptr(double*);
 	virtual void disconnect(Observable*);
 	virtual void update(Observable* o) {disconnect(o);}
-	virtual boolean uses(void*) { return false; }
+	virtual bool uses(void*) { return false; }
 	virtual void frecord_init(TQItem*) {}
 	// for example, subclasses use things that may not go out of existence but wish us
 	// to remove ourselves from the PlayRecord system. e.g Vector.play_remove().
@@ -100,7 +100,7 @@ public:
 	virtual void continuous(double t);
 
 	virtual void disconnect(Observable*);
-	virtual boolean uses(void* v) { return (void*)t_ == v; }
+	virtual bool uses(void* v) { return (void*)t_ == v; }
 
 	IvocVect* t_;
 	Section* sec_;
@@ -115,7 +115,7 @@ public:
 	virtual void continuous(double t);
 
 	virtual void disconnect(Observable*);
-	virtual boolean uses(void* v) { return (void*)y_== v ;}
+	virtual bool uses(void* v) { return (void*)y_== v ;}
 
 	IvocVect* y_;
 };
@@ -130,7 +130,7 @@ public:
 	virtual void deliver(double t, NetCvode*);
 
 	virtual void disconnect(Observable*);
-	virtual boolean uses(void* v) { return (void*)y_== v || (void*)t_ == v;}
+	virtual bool uses(void* v) { return (void*)y_== v || (void*)t_ == v;}
 
 	virtual void frecord_init(TQItem*);
 	
@@ -162,7 +162,7 @@ public:
 	virtual PlayRecordEvent* event() { return e_;}
 
 	virtual void disconnect(Observable*);
-	virtual boolean uses(void* v) { return (void*)y_== v;}
+	virtual bool uses(void* v) { return (void*)y_== v;}
 
 	virtual void frecord_init(TQItem*);
 	virtual int type() { return VecRecordDtType; }
@@ -193,7 +193,7 @@ public:
 	virtual void pr();
 
 	virtual void disconnect(Observable*);
-	virtual boolean uses(void* v) { return (void*)y_== v || (void*)t_ == v;}
+	virtual bool uses(void* v) { return (void*)y_== v || (void*)t_ == v;}
 	virtual int type() { return VecPlayStepType; }
 	virtual PlayRecordSave* savestate_save();
 
@@ -233,7 +233,7 @@ public:
 	void search(double tt);
 
 	virtual void disconnect(Observable*);
-	virtual boolean uses(void* v) { return (void*)y_== v || (void*)t_ == v || (void*)discon_indices_ == v;}
+	virtual bool uses(void* v) { return (void*)y_== v || (void*)t_ == v || (void*)discon_indices_ == v;}
 	virtual int type() { return VecPlayContinuousType; }
 	virtual PlayRecordSave* savestate_save();
 

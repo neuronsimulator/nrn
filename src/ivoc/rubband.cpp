@@ -68,7 +68,7 @@ const Color* Rubberband::color() { return xor_color_;}
 const Brush* Rubberband::brush_;
 const Brush* Rubberband::brush() { return brush_;}
 
-boolean Rubberband::event(Event& e) {
+bool Rubberband::event(Event& e) {
 	e_ = &e;
 	EventType type = e.type();
 	switch (type) {

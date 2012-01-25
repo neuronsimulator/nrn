@@ -37,7 +37,7 @@ class Table : public vector<NrnHashEntry(Table)> { \
 public: \
 	Table(long size); \
 	virtual ~Table(); \
-	boolean find(Key, Value&)const; \
+	bool find(Key, Value&)const; \
 	NrnHashEntry(Table)& at(unsigned long bucket){ return *(begin() + bucket); } \
 	Value& operator[](Key key) { return at(hash(key))[key]; } \
 	void remove(Key); \
@@ -53,7 +53,7 @@ Table::Table(long size) { \
 \
 Table::~Table() {} \
 \
-boolean Table::find(Key key, Value& ps)const { \
+bool Table::find(Key key, Value& ps)const { \
 	NrnHashEntry(Table)::const_iterator itr; \
 	const NrnHashEntry(Table)& gm = ((Table*)this)->at(hash(key)); \
 	if ((itr = gm.find(key)) == gm.end()) { \

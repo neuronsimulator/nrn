@@ -54,9 +54,9 @@ extern "C" {
 // because NEURON can no longer maintain its own copy of dialogs.cpp
 // we communicate with the InterViews version through a callback.
 extern "C" {
-extern boolean (*IVDialog_setAcceptInput)(boolean);
-boolean setAcceptInputCallback(boolean);
-boolean setAcceptInputCallback(boolean b) {
+extern bool (*IVDialog_setAcceptInput)(bool);
+bool setAcceptInputCallback(bool);
+bool setAcceptInputCallback(bool b) {
 	Oc oc;
 	return oc.setAcceptInput(b);
 }
@@ -137,7 +137,7 @@ Oc::Oc() {
 	MUTUNLOCK
 }
 
-boolean Oc::helpmode_;
+bool Oc::helpmode_;
 
 Oc::Oc(Session *s, char* pname, char** env) {
 	if (session_) return;
@@ -194,7 +194,7 @@ int Oc::run(int argc, char** argv) {
 	return hoc_main1(argc, argv, 0);
 }
 
-int Oc::run(const char* buf, boolean show_err_mes) {
+int Oc::run(const char* buf, bool show_err_mes) {
 	hoc_execerror_messages = show_err_mes;
 	return hoc_oc(buf);
 }
@@ -211,8 +211,8 @@ const char* Oc::name(Symbol* sym) {
 	return sym->name;
 }
 
-boolean Oc::setAcceptInput(boolean b) {
-	boolean old = handleStdin_->acceptInput_;
+bool Oc::setAcceptInput(bool b) {
+	bool old = handleStdin_->acceptInput_;
 	handleStdin_->acceptInput_ = b;
 	return old;
 }
@@ -287,7 +287,7 @@ void Oc::notify_pointer_disconnect(Observer* ob) {
 extern "C" {
 void notify_pointer_freed(void* pt) {
 	if (p_list) {
-		boolean removed = false;
+		bool removed = false;
 		MUTLOCK
 		long i, n = p_list->count();
 		for (i = 0; i < n ; ++i) {
@@ -322,7 +322,7 @@ void notify_freed_val_array(double* p, int size) {
 		}
 	}
 	if (pd_list) {
-	    boolean removed = true;
+	    bool removed = true;
 	    while (removed) {
 		removed = false;
 		long i, n = pd_list->count() - 1;
@@ -400,12 +400,12 @@ void single_event_run() {
 	// actually run till no more events
 	Oc::setAcceptInput(false);
 #if MAC
-	extern boolean read_if_pending(Event&);
+	extern bool read_if_pending(Event&);
 	while ( !session->done() && read_if_pending(e)) {
 		e.handle();
 	}
 #else
-	boolean dsav = session->done();
+	bool dsav = session->done();
 	session->unquit();
 	while (session->pending() && !session->done()) {
 		session->read(e);

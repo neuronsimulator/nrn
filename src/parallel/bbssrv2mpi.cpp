@@ -46,23 +46,23 @@ public:
 	int id_;
 	bbsmpibuf* buf_;
 	int cid_; // mpi host id
-	boolean todo_less_than(const WorkItem*)const;
+	bool todo_less_than(const WorkItem*)const;
 };
 
 struct ltstr {
-	boolean operator() (const char* s1, const char* s2) const {
+	bool operator() (const char* s1, const char* s2) const {
 		return strcmp(s1, s2) < 0;
 	}
 };
 
 struct ltint {
-	boolean operator() (int i, int j) const {
+	bool operator() (int i, int j) const {
 		return i < j;
 	}
 };
 
 struct ltWorkItem {
-	boolean operator() (const WorkItem* w1, const WorkItem* w2) const {
+	bool operator() (const WorkItem* w1, const WorkItem* w2) const {
 		return w1->todo_less_than(w2);
 	}
 };
@@ -89,7 +89,7 @@ printf("~WorkItem %d\n", id_);
 #endif
 }
 
-boolean WorkItem::todo_less_than(const WorkItem* w) const {
+bool WorkItem::todo_less_than(const WorkItem* w) const {
 	WorkItem* w1 = (WorkItem*)this;
 	WorkItem* w2 = (WorkItem*)w;
 	while (w1->parent_ != w2->parent_) {
@@ -149,11 +149,11 @@ printf("~BBSLocalServer not deleting everything\n");
 #endif
 }
 
-boolean BBSDirectServer::look_take(const char* key, bbsmpibuf** recv) {
+bool BBSDirectServer::look_take(const char* key, bbsmpibuf** recv) {
 #if debug
 	printf("DirectServer::look_take |%s|\n", key);
 #endif
-	boolean b = false;
+	bool b = false;
 #if defined(HAVE_STL)
 	nrnmpi_unref(*recv);
 	*recv = nil;
@@ -173,11 +173,11 @@ boolean BBSDirectServer::look_take(const char* key, bbsmpibuf** recv) {
 	return b;
 }
 
-boolean BBSDirectServer::look(const char* key, bbsmpibuf** recv) {
+bool BBSDirectServer::look(const char* key, bbsmpibuf** recv) {
 #if debug
 	printf("DirectServer::look |%s|\n", key);
 #endif
-	boolean b = false;
+	bool b = false;
 	nrnmpi_unref(*recv);
 	*recv = nil;
 #if defined(HAVE_STL)
@@ -206,8 +206,8 @@ printf("put_pending |%s| %d\n", key, cid);
 #endif
 }
 
-boolean BBSDirectServer::take_pending(const char* key, int* cid) {
-	boolean b = false;
+bool BBSDirectServer::take_pending(const char* key, int* cid) {
+	bool b = false;
 #if defined(HAVE_STL)
 	PendingList::iterator p = pending_->find(key);
 	if (p != pending_->end()) {
@@ -328,7 +328,7 @@ void BBSDirectServer::context_wait() {
 //printf("context_wait exit %d\n", remaining_context_cnt_);
 }
 
-boolean  BBSDirectServer::send_context(int cid) {
+bool  BBSDirectServer::send_context(int cid) {
 #if defined(HAVE_STL)
 	LookingToDoList::iterator i = send_context_->find(cid);
 	if (i != send_context_->end()) {

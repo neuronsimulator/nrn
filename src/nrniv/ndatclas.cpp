@@ -27,7 +27,7 @@ extern void pop_frame();
 	Prop* p_;
 	int iterator_;
 	Symbol* sym_;
-	boolean del_;
+	bool del_;
 };
 NrnPropertyImpl::NrnPropertyImpl(Prop* p) {
 	p_ = p;
@@ -111,7 +111,7 @@ NrnProperty::~NrnProperty(){
 	delete npi_;
 }
 
-boolean NrnProperty::deleteable() {
+bool NrnProperty::deleteable() {
 	return npi_->del_;
 }
 
@@ -119,7 +119,7 @@ const char* NrnProperty::name() const {
 	return npi_->sym_->name;
 }
 
-boolean NrnProperty::is_point() const {
+bool NrnProperty::is_point() const {
 	return memb_func[npi_->p_->type].is_point;
 }
 
@@ -136,7 +136,7 @@ Symbol*  NrnProperty::first_var() {
 	return next_var();	
 }
 
-boolean NrnProperty::more_var() {
+bool NrnProperty::more_var() {
 	if (npi_->iterator_ >= npi_->sym_->s_varn) {
 		return false;
 	}else{
@@ -161,7 +161,7 @@ int NrnProperty::var_type(Symbol* sym) const{
 	return nrn_vartype(sym);
 }
 
-boolean NrnProperty::assign(Prop* src, Prop* dest, int vartype) {
+bool NrnProperty::assign(Prop* src, Prop* dest, int vartype) {
 	int n;
 	assert(vartype != NRNPOINTER);
 	if (src && dest && src != dest && src->type == dest->type) {
@@ -286,7 +286,7 @@ Section* NrnSection::section() {
 
 Node* NrnSection::node(int inode) { return sec_->pnode[inode]; }
 
-boolean NrnSection::is_mechanism(type) {
+bool NrnSection::is_mechanism(type) {
 	return nrn_mechanism(type, node(0)) != (Prop*)0
 }
 

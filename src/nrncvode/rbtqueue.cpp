@@ -88,7 +88,7 @@ static void deleteitem(TQItem* i) {
 	tpool_->free(i);
 }
 
-boolean TQItem::check() {
+bool TQItem::check() {
 #if DOCHECK
 #endif
 	return true;

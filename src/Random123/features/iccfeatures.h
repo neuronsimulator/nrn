@@ -78,9 +78,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 // An alternative idiom is:
 // #ifndef R123_SOMETHING
-// #define R123_SOMETHING (some boolean expression)
+// #define R123_SOMETHING (some bool expression)
 // #endif
-// where the boolean expression might contain previously-defined R123_SOMETHING_ELSE
+// where the bool expression might contain previously-defined R123_SOMETHING_ELSE
 // pp-symbols.
 
 #ifndef R123_USE_CXX0X

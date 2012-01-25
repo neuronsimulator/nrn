@@ -30,7 +30,7 @@ private:
 #if carbon
 	EventLoopTimerRef timer_;
 #else
-	boolean stopped_;
+	bool stopped_;
 #endif
 };
 

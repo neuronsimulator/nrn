@@ -16,7 +16,7 @@
 
 void get_position(XDisplay* dpy, XWindow window, int* rx, int* ry);
 
-static boolean r_unbound;
+static bool r_unbound;
 void Rubberband::rubber_on(Canvas* c) {
         if (c->rep()->copybuffer_ == CanvasRep::unbound) {
                 r_unbound = true;

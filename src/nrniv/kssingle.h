@@ -54,7 +54,7 @@ public:
 	void doNtrans(KSSingleNodeData*);
 	void nextNtrans(KSSingleNodeData*);
 
-	boolean vsame(double x, double y) {return Math::equal(x, y, vres_);}
+	bool vsame(double x, double y) {return Math::equal(x, y, vres_);}
 	double exprand() { return -log(mcell_ran4a(&idum_)); }
 	double unifrand(double range) { return mcell_ran4a(&idum_)*range; }
 	int rvalrand(int);
@@ -63,7 +63,7 @@ public:
 	KSSingleTrans* transitions_;
 	KSSingleState* states_;
 	double* rval_;
-	boolean uses_ligands_;
+	bool uses_ligands_;
 	static double vres_;
 	static unsigned int idum_;
 
@@ -81,7 +81,7 @@ public:
 	int src_;
 	int target_;
 	KSTransition* kst_;
-	boolean f_;
+	bool f_;
 	double fac_;
 };
 

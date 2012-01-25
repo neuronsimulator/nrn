@@ -37,7 +37,7 @@ TQItem::TQItem() {
 TQItem::~TQItem() {
 }
 
-boolean TQItem::check() {
+bool TQItem::check() {
 #if DOCHECK
 #endif
 	return true;

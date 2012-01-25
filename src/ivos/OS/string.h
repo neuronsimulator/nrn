@@ -48,21 +48,21 @@ public:
     virtual unsigned long hash() const;
     virtual String& operator =(const String&);
     virtual String& operator =(const char*);
-    virtual boolean operator ==(const String&) const;
-    virtual boolean operator ==(const char*) const;
-    virtual boolean operator !=(const String&) const;
-    virtual boolean operator !=(const char*) const;
-    virtual boolean operator >(const String&) const;
-    virtual boolean operator >(const char*) const;
-    virtual boolean operator >=(const String&) const;
-    virtual boolean operator >=(const char*) const;
-    virtual boolean operator <(const String&) const;
-    virtual boolean operator <(const char*) const;
-    virtual boolean operator <=(const String&) const;
-    virtual boolean operator <=(const char*) const;
+    virtual bool operator ==(const String&) const;
+    virtual bool operator ==(const char*) const;
+    virtual bool operator !=(const String&) const;
+    virtual bool operator !=(const char*) const;
+    virtual bool operator >(const String&) const;
+    virtual bool operator >(const char*) const;
+    virtual bool operator >=(const String&) const;
+    virtual bool operator >=(const char*) const;
+    virtual bool operator <(const String&) const;
+    virtual bool operator <(const char*) const;
+    virtual bool operator <=(const String&) const;
+    virtual bool operator <=(const char*) const;
 
-    virtual boolean case_insensitive_equal(const String&) const;
-    virtual boolean case_insensitive_equal(const char*) const;
+    virtual bool case_insensitive_equal(const String&) const;
+    virtual bool case_insensitive_equal(const char*) const;
 
     u_char operator [](int index) const;
     virtual String substr(int start, int length) const;
@@ -77,12 +77,12 @@ public:
     int index(u_char) const;
     int rindex(u_char) const;
 
-    virtual boolean convert(int&) const;
-    virtual boolean convert(long&) const;
-    virtual boolean convert(float&) const;
-    virtual boolean convert(double&) const;
+    virtual bool convert(int&) const;
+    virtual bool convert(long&) const;
+    virtual bool convert(float&) const;
+    virtual bool convert(double&) const;
 
-    virtual boolean null_terminated() const;
+    virtual bool null_terminated() const;
 protected:
     virtual void set_value(const char*);
     virtual void set_value(const char*, int);
@@ -107,7 +107,7 @@ public:
     virtual String& operator =(const String&);
     virtual String& operator =(const char*);
 
-    virtual boolean null_terminated() const;
+    virtual bool null_terminated() const;
 protected:
     virtual void set_value(const char*);
     virtual void set_value(const char*, int);
@@ -128,9 +128,9 @@ public:
     virtual String& operator =(const String&);
     virtual String& operator =(const char*);
 
-    virtual boolean null_terminated() const;
+    virtual bool null_terminated() const;
 private:
-    boolean allocated_;
+    bool allocated_;
 
     void assign(const String&);
     void strfree();

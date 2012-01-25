@@ -6,8 +6,6 @@
 #include <InterViews/resource.h>
 #else
 #define nil 0
-#undef boolean
-typedef unsigned int boolean;
 #endif
 
 struct Object;
@@ -31,7 +29,7 @@ extern double  chkarg(int, double min, double max);
 extern int ifarg(int);
 extern void class2oc(const char*, void* (*cons)(Object*), void (*destruct)(void*),
 	Member_func*,
-	boolean (*checkpoint)(void**) = nil,
+	bool (*checkpoint)(void**) = nil,
 	Member_ret_obj_func* = nil,
 	Member_ret_str_func* = nil);
 }

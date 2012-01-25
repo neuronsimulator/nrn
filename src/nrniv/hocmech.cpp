@@ -24,13 +24,13 @@ extern void make_mechanism();
 extern void make_pointprocess();
 extern void hoc_construct_point(Object*, int);
 extern Object* hoc_new_opoint(int);
-extern boolean special_pnt_call(Object*, Symbol*, int);
+extern bool special_pnt_call(Object*, Symbol*, int);
 }
 
 static Object* last_created_pp_ob_;
-static boolean skip_;
+static bool skip_;
 
-static char** make_m(boolean, int&, Symlist*, char*, char*);
+static char** make_m(bool, int&, Symlist*, char*, char*);
 
 class HocMech {
 public:
@@ -96,7 +96,7 @@ Point_process* ob2pntproc(Object* ob) {
 	return pp;
 }
 
-boolean special_pnt_call(Object* ob, Symbol* sym, int narg) {
+bool special_pnt_call(Object* ob, Symbol* sym, int narg) {
 	char* name = sym->name;
 	if (strcmp(name, "loc") == 0) {
 		int type = ob->ctemplate->symtable->last->subtype;
@@ -326,7 +326,7 @@ hoc_execerror("Can't make a template into a PointProcess when instances already 
 	ret(1.);
 }
 
-static char** make_m(boolean suffix, int& cnt, Symlist* slist, char* mname, char* parnames) {
+static char** make_m(bool suffix, int& cnt, Symlist* slist, char* mname, char* parnames) {
 	char buf[256];
 	Symbol* sp;
 	int i, imax;
@@ -409,7 +409,7 @@ hoc_execerror("Must be a space separated list of names\n", gargstr(3));
 			}else{
 				sprintf(buf, "%s", sp->name);
 			}
-			boolean b = false;
+			bool b = false;
 			for (j=1; j < jmax; ++j) {
 				if (strstr(m[j], buf)) {
 					b = true; // already a PARAMETER

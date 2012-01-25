@@ -26,7 +26,7 @@
 #include "utility.h"
 #include "oc2iv.h"
 
-boolean oc_post_dialog(Dialog* d, Coord x, Coord y) {
+bool oc_post_dialog(Dialog* d, Coord x, Coord y) {
 	if (x != 400. || y != 400.) {
 		return d->post_at_aligned(x, y, .5,.5);
 	}else{
@@ -35,8 +35,8 @@ boolean oc_post_dialog(Dialog* d, Coord x, Coord y) {
 	}
 }
 
-boolean ok_to_write(const String& s, Window* w) { return ok_to_write(s.string(), w);}
-boolean ok_to_read(const String& s, Window* w) { return ok_to_read(s.string(), w);}
+bool ok_to_write(const String& s, Window* w) { return ok_to_write(s.string(), w);}
+bool ok_to_read(const String& s, Window* w) { return ok_to_read(s.string(), w);}
 
 class OcGlyphDialog : public Dialog {
 public:
@@ -47,14 +47,14 @@ public:
 
 /*static*/ class DialogAction : public Action {
 public:
-	DialogAction(Dialog*, boolean);
+	DialogAction(Dialog*, bool);
 	virtual ~DialogAction();
 	virtual void execute() { d_->dismiss(accept_); }
 private:
 	Dialog* d_;
-	boolean accept_;
+	bool accept_;
 };
-DialogAction::DialogAction(Dialog* d, boolean accept) {
+DialogAction::DialogAction(Dialog* d, bool accept) {
 	accept_ = accept;
 	d_ = d;
 }
@@ -62,12 +62,12 @@ DialogAction::~DialogAction(){
 	//printf("~DialogAction\n");
 }
 	
-boolean boolean_dialog(const char* label, const char* accept,
+bool boolean_dialog(const char* label, const char* accept,
   const char* cancel, Window* w, Coord x, Coord y) {
 	WidgetKit& k = *WidgetKit::instance();
 	LayoutKit& l = *LayoutKit::instance();
 	PolyGlyph* vbox = l.vbox();
-	boolean ok;
+	bool ok;
 	Dialog* d = new Dialog(
 		k.outset_frame(l.margin(vbox, 5)),
 		Session::instance()->style()
@@ -115,7 +115,7 @@ void continue_dialog(const char* label, Window* w, Coord x, Coord y) {
 	d->unref();
 }
 
-static boolean ok_if_already_exists(const char* s, Window* w) {
+static bool ok_if_already_exists(const char* s, Window* w) {
 	char buf[256];
 	sprintf(buf, "%s already exists: Write?", s);
 	return boolean_dialog(buf, "Go Ahead", "Don't", w);
@@ -127,7 +127,7 @@ static void open_fail(const char* s, Window* w, const char* io) {
 	continue_dialog(buf, w);
 }
 
-boolean ok_to_write(const char* s, Window* w) {
+bool ok_to_write(const char* s, Window* w) {
 	filebuf obuf;
 	if (obuf.open(s, Input)) {
 		obuf.close();
@@ -147,7 +147,7 @@ boolean ok_to_write(const char* s, Window* w) {
 	return true;
 }
 
-boolean ok_to_read(const char* s, Window* w) {
+bool ok_to_read(const char* s, Window* w) {
 	filebuf obuf;
 	if (obuf.open(s, Input)) {
 		obuf.close();
@@ -160,7 +160,7 @@ boolean ok_to_read(const char* s, Window* w) {
 	}
 }
 
-boolean var_pair_chooser(const char* caption, float& x, float& y, Window* w,
+bool var_pair_chooser(const char* caption, float& x, float& y, Window* w,
 Coord x2, Coord y2) {
 	char buf[200];
 	float x1=x, y1=y;
@@ -179,12 +179,12 @@ continue_dialog("Invalid entry: Enter pair of numbers separated by space.", w);
 	}
 }
 
-boolean str_chooser(const char* caption, char* buf, Window* w, Coord x, Coord y) {
+bool str_chooser(const char* caption, char* buf, Window* w, Coord x, Coord y) {
 	WidgetKit& k = *WidgetKit::instance();
 	LayoutKit& l = *LayoutKit::instance();
 	Style* style = new Style(k.style());
 	style->attribute("caption", caption);
-	boolean ok;
+	bool ok;
 	FieldDialog* d = FieldDialog::field_dialog_instance(buf, style);
 	d->ref();
 	if (w) {
@@ -209,11 +209,11 @@ FieldDialog::~FieldDialog() {
 	Resource::unref(fe_);
 }
 
-boolean FieldDialog::run() {
+bool FieldDialog::run() {
 	fe_->select(0, fe_->text()->length());
 	return Dialog::run();
 }
-void FieldDialog::dismiss(boolean accept) {
+void FieldDialog::dismiss(bool accept) {
 	if (accept) {
 		s_ = *fe_->text();
 	}else{
@@ -282,7 +282,7 @@ void FieldDialog::cancel(FieldEditor*) { dismiss(false); }
 extern "C" {
 
 void hoc_boolean_dialog() {
-	boolean b = false;
+	bool b = false;
 IFGUI
 	if (ifarg(3)) {
 		b = boolean_dialog(gargstr(1), gargstr(2), gargstr(3));
@@ -300,7 +300,7 @@ ENDGUI
 	hoc_pushx(1.);
 }
 void hoc_string_dialog() {
-	boolean b = false;
+	bool b = false;
 IFGUI
 	char buf[256];
 	sprintf(buf, "%s", gargstr(2));
@@ -327,12 +327,12 @@ private:
 	GLabel* gl_;
 };
 
-boolean Graph::label_chooser(const char* caption, char* buf, GLabel* gl, Coord x, Coord y) {
+bool Graph::label_chooser(const char* caption, char* buf, GLabel* gl, Coord x, Coord y) {
 	WidgetKit& k = *WidgetKit::instance();
 	LayoutKit& l = *LayoutKit::instance();
 	Style* style = new Style(k.style());
 	style->attribute("caption", caption);
-	boolean ok;
+	bool ok;
 	LabelChooserAction* lca = new LabelChooserAction(gl);
 	Button* b = k.check_box("vfixed", lca);
 	lca->state(b->state());
@@ -379,7 +379,7 @@ void LabelChooserAction::execute() {
 	}
 }
 
-boolean OcGlyph::dialog_dismiss(boolean accept) {
+bool OcGlyph::dialog_dismiss(bool accept) {
 	if (d_) {
 		d_->dismiss(accept);
 		return true;
@@ -387,12 +387,12 @@ boolean OcGlyph::dialog_dismiss(boolean accept) {
 	return false;
 }
 
-boolean OcGlyph::dialog(const char* label, const char* accept,
+bool OcGlyph::dialog(const char* label, const char* accept,
   const char* cancel) {
 	WidgetKit& k = *WidgetKit::instance();
 	LayoutKit& l = *LayoutKit::instance();
 	PolyGlyph* vbox = l.vbox();
-	boolean ok;
+	bool ok;
 	d_ = new OcGlyphDialog(
 		k.outset_frame(l.margin(vbox, 5)),
 		Session::instance()->style()

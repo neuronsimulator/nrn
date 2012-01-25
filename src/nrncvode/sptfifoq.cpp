@@ -35,7 +35,7 @@ static void deleteitem(TQItem* i) { // only one, semantics changed
 	tpool_->hpfree(i);
 }
 
-boolean TQItem::check() {
+bool TQItem::check() {
 #if DOCHECK
 #endif
 	return true;

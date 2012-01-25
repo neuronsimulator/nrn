@@ -276,8 +276,8 @@ void OcFullMatrix::inverse(Matrix* out) {
 	m_inverse(m_, out->full()->m_);
 }
 
-void OcFullMatrix::solv(Vect* in, Vect* out, boolean use_lu) {
-	boolean call_lufac = true;
+void OcFullMatrix::solv(Vect* in, Vect* out, bool use_lu) {
+	bool call_lufac = true;
 	if (!lu_factor_) {
 		lu_factor_ = m_get(nrow(), nrow());
 		lu_pivot_ = px_get(nrow());
@@ -405,8 +405,8 @@ void OcSparseMatrix::mulv(Vect* vin, Vect* vout) {
 	sp_mv_mlt(m_, &v1, &v2);
 }
 
-void OcSparseMatrix::solv(Vect* in, Vect* out, boolean use_lu) {
-	boolean call_lufac = true;
+void OcSparseMatrix::solv(Vect* in, Vect* out, bool use_lu) {
+	bool call_lufac = true;
 	if (!lu_factor_) {
 		lu_factor_ = sp_get(nrow(), nrow(), 4);
 		lu_pivot_ = px_get(nrow());

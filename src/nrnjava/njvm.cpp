@@ -398,10 +398,10 @@ jint nrn_CreateJavaVM(JavaVM **pvm, void **penv, void *args) {
 
 #ifdef _WIN32
 #if _MSC_VER
-#undef boolean
+#undef bool
 #endif
 #if defined(__MWERKS__) && __MWERKS__ >= 7
-#undef boolean
+#undef bool
 #endif
 #include <InterViews/session.h>
 #include <OS/string.h>
@@ -465,7 +465,7 @@ jint nrn_CreateJavaVM(JavaVM **pvm, void **penv, void *args) {
 
 #if MAC
 extern "C" {
-boolean is_mac_dll(FSSpec*);
+bool is_mac_dll(FSSpec*);
 extern OSErr __path2fss(const char* name, FSSpec*);
 }
 typedef jint(*PCJVM)(JavaVM**, JNIEnv**, void*);

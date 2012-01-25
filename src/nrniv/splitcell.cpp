@@ -53,7 +53,7 @@ static SplitCellList* splitcell_list_;
 
 #define ip 0
 #define im 2
-static boolean splitcell_connected_[2];
+static bool splitcell_connected_[2];
 static double* transfer_p_[4];
 
 #endif

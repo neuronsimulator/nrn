@@ -323,7 +323,7 @@ static double ks_usetable(void* v) {
 			n = ks->usetable(hoc_pgetarg(1), hoc_pgetarg(2));
 			return double(n);
 		}else{
-			boolean use = ((int)chkarg(1, 0, 1)) ? true : false;
+			bool use = ((int)chkarg(1, 0, 1)) ? true : false;
 			if (ifarg(2)) {
 				ks->usetable(use, (int)chkarg(2, 2, 10000),
 					*getarg(3), *getarg(4));
@@ -802,7 +802,7 @@ static void* ks_cons(Object* o) {
 	hoc_obj_ref(t1); // never destroyed
 	hoc_obj_ref(t2); // never destroyed
 */
-	boolean isp = false;
+	bool isp = false;
 	if (ifarg(1)) {
 		isp = ((int)chkarg(1, 0, 1)) != 0;
 	}
@@ -878,7 +878,7 @@ void KSChan::add_channel(char** m) {
 	channels->append(c);
 }
 
-KSChan::KSChan(Object* obj, boolean is_p) {
+KSChan::KSChan(Object* obj, bool is_p) {
 //printf("KSChan created\n");
 	int i;
 	nhhstate_ = 0;
@@ -1031,7 +1031,7 @@ void KSChan::power(KSGateComplex* gc, int p) {
 	gc->power_ = p;
 }
 
-void KSChan::set_single(boolean b, boolean update) {
+void KSChan::set_single(bool b, bool update) {
 	if (!is_point()) {
 		b = false;
 		return;
@@ -1375,7 +1375,7 @@ void KSChan::settype(KSTransition* t, int type, const char* lig) {
 		if (type < 2) { // from having to not having
 			// what is to be done with existing ligand
 			// is anybody else using it
-			boolean remove = true;
+			bool remove = true;
 			for (i = iligtrans_; i < ntrans_; ++i) {
 				if (trans_[i].ligand_index_ == iligold && iligold != i) {
 					remove = false; // old is still needed
@@ -1448,8 +1448,8 @@ memb_func[s->subtype].alloc != memb_func[looksym("na_ion")->subtype].alloc) {
 		}
 	}
 //printf("ilig=%d iligold=%d\n", ilig, iligold);
-	boolean add2list = true;
-	boolean move = true;
+	bool add2list = true;
+	bool move = true;
 	// if t already using a ligand, what is to be done with it
 	if (t->type_ >= 2) {
 		move = false; // do not need to reorder the transition
@@ -3020,7 +3020,7 @@ void KSTransition::hh_table_make(double dt, int size, double vmin, double vmax) 
 	}
 }
 
-void KSChan::usetable(boolean use, int size, double vmin, double vmax) {
+void KSChan::usetable(bool use, int size, double vmin, double vmax) {
 	if (vmin >= vmax) {
 		vmin_ = -100;
 		vmax_ = 50;
@@ -3048,7 +3048,7 @@ static int ksusing(int type) {
 	return 0;
 }
 
-void KSChan::usetable(boolean use) {
+void KSChan::usetable(bool use) {
 	int i;
 	if (nhhstate_ == 0) { use = false; }
 	usetable_ = use;

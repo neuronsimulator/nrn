@@ -28,7 +28,7 @@ extern void nrnmpi_int_broadcast(int*, int, int);
 #define debug 0
 
 struct ltint {
-	boolean operator() (int i, int j) const {
+	bool operator() (int i, int j) const {
 		return i < j;
 	}
 };
@@ -259,9 +259,9 @@ void BBSDirect::return_args(int userid) {
 #endif
 }
 
-boolean BBSDirect::look_take(const char* key) {
+bool BBSDirect::look_take(const char* key) {
 	BBSDirectServer::handle();
-	boolean b = BBSDirectServer::server_->look_take(key, &recvbuf_);
+	bool b = BBSDirectServer::server_->look_take(key, &recvbuf_);
 	if (b) {
 		nrnmpi_upkbegin(recvbuf_);
 	}
@@ -275,9 +275,9 @@ boolean BBSDirect::look_take(const char* key) {
 	return b;
 }
 
-boolean BBSDirect::look(const char* key) {
+bool BBSDirect::look(const char* key) {
 	BBSDirectServer::handle();
-	boolean b = BBSDirectServer::server_->look(key, &recvbuf_);
+	bool b = BBSDirectServer::server_->look(key, &recvbuf_);
 	if (b) {
 		nrnmpi_upkbegin(recvbuf_);
 	}

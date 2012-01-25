@@ -21,7 +21,7 @@ public:
 	virtual ~NrnMessage();
 	const String& message();
 	const char* name();
-	boolean equal(const char*);
+	bool equal(const char*);
 	const char* value();
 private:
 	CopyString s_;
@@ -42,7 +42,7 @@ public:
 
 static NrnBBSImpl* bi_;
 
-boolean nrnbbs_connect() {
+bool nrnbbs_connect() {
 	if (!bi_) {
 		bi_ = new NrnBBSImpl();
 	}
@@ -148,7 +148,7 @@ NrnMessage::NrnMessage(const char* name, const char* value){
 NrnMessage::~NrnMessage() {
 }
 
-boolean NrnMessage::equal(const char* name) {
+bool NrnMessage::equal(const char* name) {
 	if (strcmp(name, s_.string()) == 0){
 		return true;
 	}else{

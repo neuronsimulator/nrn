@@ -18,15 +18,15 @@ private:
 	int* a3;
 	int a4;
 	Symlist* a5;
-	boolean restored_;
+	bool restored_;
 };
 
 class OcJump {
 public:
 	OcJump();
 	virtual ~OcJump();
-	boolean execute(Inst* p);
-	boolean execute(const char*, Object* ob = nil);
+	bool execute(Inst* p);
+	bool execute(const char*, Object* ob = nil);
 	void* fpycall(void*(*)(void*, void*), void*, void*);
 	static void save_context(ObjectContext*);
 	static void restore_context(ObjectContext*);

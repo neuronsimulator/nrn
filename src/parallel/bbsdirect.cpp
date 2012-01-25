@@ -32,7 +32,7 @@ extern "C" {
 #endif
 
 struct ltint {
-	boolean operator() (int i, int j) const {
+	bool operator() (int i, int j) const {
 		return i < j;
 	}
 };
@@ -212,9 +212,9 @@ void BBSDirect::return_args(int userid) {
 #endif
 }
 
-boolean BBSDirect::look_take(const char* key) {
+bool BBSDirect::look_take(const char* key) {
 	BBSDirectServer::handle();
-	boolean b = BBSDirectServer::server_->look_take(key);
+	bool b = BBSDirectServer::server_->look_take(key);
 #if 0
 	if (b) {
 		printf("look_take |%s| true rbuf %d\n", key, pvm_getrbuf());
@@ -225,9 +225,9 @@ boolean BBSDirect::look_take(const char* key) {
 	return b;
 }
 
-boolean BBSDirect::look(const char* key) {
+bool BBSDirect::look(const char* key) {
 	BBSDirectServer::handle();
-	boolean b = BBSDirectServer::server_->look(key);
+	bool b = BBSDirectServer::server_->look(key);
 	printf("look |%s| %d rbug %d\n", key, b, pvm_getrbuf());
 	return b;
 }
@@ -329,7 +329,7 @@ if (nrn_global_argv[nrn_global_argc] != 0) {
 		//spawn according to number of cpu's (but master has one less)
 //printf("%d total number of cpus on %d machines\n", nncpu, n);
 		int icid = 0;
-		boolean first = true;
+		bool first = true;
 	    while (icid < nrnmpi_numprocs - 1) {
 		for (i=0; i < n; ++i) {
 			ncpu = hostp[i].hi_speed;

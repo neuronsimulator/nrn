@@ -36,7 +36,7 @@ class NrnBBSCallbackItem {
 public:
 	NrnBBSCallbackItem(const char*, NrnBBSCallback);
 	virtual ~NrnBBSCallbackItem();
-	boolean equal(const char*);
+	bool equal(const char*);
 	void execute();
 private:
 	CopyString s_;
@@ -114,9 +114,9 @@ static const char* fname(const char* name) {
 	return buf[i];
 }
 
-static boolean connected_;
+static bool connected_;
 
-boolean nrnbbs_connect() {
+bool nrnbbs_connect() {
 	if (!lockfile_) {
 		const char* lfile = fname(LOCKFILE);
 		lockfile_ = fopen(lfile, "w");
@@ -168,14 +168,14 @@ void nrnbbs_disconnect() {
 	}
 }
 
-boolean nrnbbs_connected() {
+bool nrnbbs_connected() {
 	return connected_;
 }
 
 
-void nrnbbs_wait(boolean* pflag) {
-	boolean f = false;
-	boolean *pf;	
+void nrnbbs_wait(bool* pflag) {
+	bool f = false;
+	bool *pf;	
 	pf = (pflag) ? pflag : &f;
 	while (!(*pf) && nrnbbs_connected()) {
 		f = true; // once only if no arg
@@ -222,24 +222,24 @@ void nrnbbs_post_string(const char* key, const char* sval) {
 }
 
 
-boolean nrnbbs_take(const char* key) {
+bool nrnbbs_take(const char* key) {
 	char buf[256];
 	return nrnbbs_take_string(key, buf);
 }
 
-boolean nrnbbs_take_int(const char* key, int* ipval) {
+bool nrnbbs_take_int(const char* key, int* ipval) {
 	char buf[256];
-	boolean b = nrnbbs_take_string(key, buf);
+	bool b = nrnbbs_take_string(key, buf);
 	if (b) {
 		b = (sscanf(buf, "%d\n", ipval) == 1) ? true : false;
 	}
 	return b;
 }
 
-boolean nrnbbs_take_string(const char* key, char* sval) {
+bool nrnbbs_take_string(const char* key, char* sval) {
 	history("take", key);
 	get_lock();
-	boolean b = false;
+	bool b = false;
 	FILE* f = fopen(fname(NRNBBS), "r");
 	if (f != (FILE*)0) {
 		char name[256], val[256];
@@ -272,10 +272,10 @@ boolean nrnbbs_take_string(const char* key, char* sval) {
 }
 
 
-boolean nrnbbs_look(const char* key) {
+bool nrnbbs_look(const char* key) {
 	history("look", key);
 	get_lock();
-	boolean b = false;
+	bool b = false;
 	FILE* f = fopen(fname(NRNBBS), "r");
 	if (f != (FILE*)0) {
 		char name[256], val[256];
@@ -348,7 +348,7 @@ NrnBBSCallbackItem::NrnBBSCallbackItem(const char* s, NrnBBSCallback cb) {
 
 NrnBBSCallbackItem::~NrnBBSCallbackItem() {}
 
-boolean NrnBBSCallbackItem::equal(const char* s) {
+bool NrnBBSCallbackItem::equal(const char* s) {
 	return (strcmp(s_.string(), s) == 0) ? true : false;
 }
 

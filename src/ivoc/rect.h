@@ -75,7 +75,7 @@ private:
 
 class Circle : public Appear {
 public:
-	Circle(float radius, boolean filled=false, const Color* color=nil, const Brush* brush=nil);
+	Circle(float radius, bool filled=false, const Color* color=nil, const Brush* brush=nil);
 	virtual ~Circle();
 	
 	virtual void request(Requisition&) const;
@@ -83,12 +83,12 @@ public:
 	virtual void draw(Canvas*, const Allocation&) const;
 private:
 	float radius_;
-	boolean filled_;
+	bool filled_;
 };
 
 class Triangle : public Appear {
 public:
-	Triangle(float side, boolean filled=false, const Color* color=nil, const Brush* brush=nil);
+	Triangle(float side, bool filled=false, const Color* color=nil, const Brush* brush=nil);
 	virtual ~Triangle();
 	
 	virtual void request(Requisition&) const;
@@ -96,7 +96,7 @@ public:
 	virtual void draw(Canvas*, const Allocation&) const;
 private:
 	float side_;
-	boolean filled_;
+	bool filled_;
 };
 
 #if defined(__MWERKS__)
@@ -106,7 +106,7 @@ private:
 
 class Rectangle : public Appear {
 public:
-	Rectangle(float height, float width, boolean filled=false, const Color* color=nil, const Brush* brush=nil);
+	Rectangle(float height, float width, bool filled=false, const Color* color=nil, const Brush* brush=nil);
 	virtual ~Rectangle();
 	
 	virtual void request(Requisition&) const;
@@ -115,7 +115,7 @@ public:
       private:
         float height_;
 	float width_;
-	boolean filled_;
+	bool filled_;
 };
 
 inline Coord Rect::left() const { return l_; }

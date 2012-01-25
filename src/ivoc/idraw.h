@@ -23,14 +23,14 @@ public:
 	static void mline(Canvas*, int count,  const Coord* x, const Coord* y,
 		const Color* c=nil, const Brush* b=nil);
 	static void polygon(Canvas*, int count,  const Coord* x, const Coord* y,
-		const Color* c=nil, const Brush* b=nil, boolean fill = false);
+		const Color* c=nil, const Brush* b=nil, bool fill = false);
 	static void rect(Canvas*, Coord x1, Coord y1, Coord x2, Coord y2,
-		const Color* c=nil, const Brush* b=nil, boolean fill = false);
+		const Color* c=nil, const Brush* b=nil, bool fill = false);
 	static void line(Canvas*, Coord x1, Coord y1, Coord x2, Coord y2,
 		const Color* c=nil, const Brush* b=nil);
 	static void ellipse(Canvas*, Coord x1, Coord y1,
 		Coord width, Coord height,
-		const Color* c=nil, const Brush* b= nil, boolean fill = false);
+		const Color* c=nil, const Brush* b= nil, bool fill = false);
 
 	static void new_path();
 	static void move_to(Coord x, Coord y);
@@ -42,18 +42,18 @@ public:
 	static void bspl(Canvas*, int count,  const Coord* x, const Coord* y,
 		const Color* c=nil, const Brush* b=nil);
 	static void cbspl(Canvas*, int count,  const Coord* x, const Coord* y,
-		const Color* c=nil, const Brush* b=nil, boolean fill = false);
+		const Color* c=nil, const Brush* b=nil, bool fill = false);
 public:
 	static ostream* idraw_stream;
 private:
 	static void rcurve(int level, Coord x, Coord y, Coord x1, Coord y1, Coord x2, Coord y2);
 	static void poly(int count,  const Coord* x, const Coord* y,
-		const Color* c=nil, const Brush* b=nil, boolean fill = false);
+		const Color* c=nil, const Brush* b=nil, bool fill = false);
 	static void add(Coord, Coord);
 	static void brush(const Brush*);
-	static void ifill(const Color*, boolean);
-	static boolean closed_;
-	static boolean curved_;
+	static void ifill(const Color*, bool);
+	static bool closed_;
+	static bool curved_;
 	static Coord *xpath_, *ypath_;
 	static int ipath_, capacity_;
 };

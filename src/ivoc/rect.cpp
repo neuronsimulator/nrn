@@ -173,7 +173,7 @@ void Line::pick(Canvas* c, const Allocation& a, int depth, Hit& h) {
 }
 
 //Circle
-Circle::Circle(float radius, boolean filled, const Color* c, const Brush* b)
+Circle::Circle(float radius, bool filled, const Color* c, const Brush* b)
 	:Appear(c, b)
 {
 	radius_ = radius;
@@ -224,7 +224,7 @@ void Circle::draw(Canvas* c, const Allocation& a) const {
 
 
 //Rectangle
-Rectangle::Rectangle(float height, float width, boolean filled, const Color* c, const Brush* b)
+Rectangle::Rectangle(float height, float width, bool filled, const Color* c, const Brush* b)
 	:Appear(c, b)
 {
 	height_ = height;
@@ -260,7 +260,7 @@ void Rectangle::draw(Canvas* c, const Allocation& a) const {
 
 
 //Triangle
-Triangle::Triangle(float side, boolean filled, const Color* c, const Brush* b)
+Triangle::Triangle(float side, bool filled, const Color* c, const Brush* b)
 	:Appear(c, b)
 {
 	side_ = side/2;

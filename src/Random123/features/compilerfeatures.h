@@ -48,7 +48,7 @@ be used by other header files and source files in the Random123
 library (and may be used by applications) to control what actually
 gets presented to the compiler.
 
-Most of the symbols are boolean valued.  In general, they will
+Most of the symbols are bool valued.  In general, they will
 \b always be defined with value either 1 or 0, so do
 \b NOT use \#ifdef.  Use \#if R123_USE_SOMETHING instead.
 
@@ -60,7 +60,7 @@ e.g.,
 will use a strictly c99 version of the full-width 64x64->128-bit multiplication
 function, even if it would be disabled by default.
 
-All boolean-valued pre-processor symbols in Random123/features/compilerfeatures.h start with the prefix R123_USE_
+All bool-valued pre-processor symbols in Random123/features/compilerfeatures.h start with the prefix R123_USE_
 @verbatim
          AES_NI
          AES_OPENSSL
@@ -122,7 +122,7 @@ choose to rely on these:
 <li>The "higher" SSE values imply the lower ones.
 </ul>
 
-There are also non-boolean valued symbols:
+There are also non-bool valued symbols:
 
 <ul>
 <li>R123_STATIC_INLINE -

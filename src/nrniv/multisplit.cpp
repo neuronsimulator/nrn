@@ -3291,7 +3291,7 @@ printf("i=%d parent=%d\n", i, nt->_v_parent[i]->v_node_index);
 	// rt_map_update along with d and rhs
 }
 
-void MultiSplitControl::pmat(boolean full) {
+void MultiSplitControl::pmat(bool full) {
 int it, i, ip, is;
 printf("\n");
   for (it=0; it < nrn_nthread; ++it) {
@@ -3321,7 +3321,7 @@ printf("\n");
   }
 }
 
-void MultiSplitControl::pmatf(boolean full) {
+void MultiSplitControl::pmatf(bool full) {
 int it, i, ip, is;
 FILE* f; char fname[100];
 
