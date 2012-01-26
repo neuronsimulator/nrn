@@ -192,6 +192,8 @@ added to each of the *features.h files, AND to examples/ut_features.cpp.
 #include "gccfeatures.h"
 #elif defined(_MSC_FULL_VER)
 #include "msvcfeatures.h"
+#elif defined(__xlC__)
+#include "xlcfeatures.h"
 #else
 #error "Can't identify compiler.  You'll need to add a new xxfeatures.hpp"
 { /* maybe an unbalanced brace will terminate the compilation */
