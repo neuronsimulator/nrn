@@ -4934,11 +4934,7 @@ void PreSyn::record(double tt) {
 	}
 	if (stmt_) {
 		nt_t = tt;
-#if carbon
-		stmt_->execute((unsigned int)0);
-#else
 		stmt_->execute(false);
-#endif
 	}
 }
 

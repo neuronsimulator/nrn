@@ -1090,11 +1090,7 @@ int Cvode::init(double tout) {
 //printf("Cvode::init next_at_time_=%g tstop_=%.15g\n", next_at_time_, tstop_);
 	initialize_ = false;
 	prior2init_ = 0;
-#if carbon
-	maxstate((unsigned int)0);
-#else
 	maxstate(false);
-#endif
 	return err;
 }
 
