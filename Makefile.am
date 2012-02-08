@@ -51,7 +51,8 @@ mswin:
 	top_builddir=$(top_builddir) \
 	ivbindir=$(IV_LIBDIR)/../bin \
 	CC=$(CC) \
-	$(top_srcdir)/src/mswin/batch/instal.sh
+	host_cpu=$(host_cpu) \
+	$(top_srcdir)/src/mswin/batch/instalmingw.sh
 
 endif
 

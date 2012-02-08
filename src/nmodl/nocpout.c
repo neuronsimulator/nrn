@@ -1105,6 +1105,13 @@ if (_nd->_extnode) {\n\
 	hoc_register_var(hoc_scdoub, hoc_vdoub, hoc_intfunc);\n");
 	if (GETWD(buf)) {
 		char buf1[256];
+#if defined(MINGW)
+{		char* cp;
+		for (cp = buf; *cp; ++cp) {
+			if (*cp == '\\') { *cp = '/'; }
+		}
+}
+#endif
 sprintf(buf1, "\tivoc_help(\"help ?1 %s %s/%s\\n\");\n", mechname, buf, finname);
 		Lappendstr(defs_list, buf1);
 	}

@@ -1546,8 +1546,8 @@ static int getc_hook() {
 		pthread_mutex_unlock(&inputMutex_);
 	}
 //	printf("run til stdin\n");
-	run_til_stdin();
 	while(!inputReadyFlag_) {
+		run_til_stdin();
 		usleep(10000);
 	}
 	inputReadyFlag_ = 0;

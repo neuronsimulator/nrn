@@ -1,6 +1,6 @@
-; nrnsetup.nsi
+; nrnsetupmingw.nsi
 ;
-; This script is based on example2.nsi
+; This script is based on nrnsetup.nsi
 ;
 ; It will install the contents of c:/nrn into a directory that the user selects,
 ;
@@ -9,31 +9,28 @@
 
 !define Version "@PACKAGE_VERSION@"
 !define VerNoDot "@PACKAGE_VERSION_MAJOR@@PACKAGE_VERSION_MINOR@"
+!define binsuffix "@binsuffix@"
+!define cpu "@host_cpu@"
 
 ; The name of the installer
-Name "NEURON ${Version}"
+Name "NEURON ${Version} ${cpu}"
 
 ; The file to write
-OutFile "nrn${VerNoDot}setup.exe"
+OutFile "nrn${VerNoDot}setup-${cpu}.exe"
 
 RequestExecutionLevel user
 
 SetCompressor bzip2
 
 ; Declaration of user variables
-var "myCygVer1"
-var "myCygVer2"
-var "myCygVer3"
-var "myCygVer"
-var "cpCygwin"
 var "uINSTDIR" ; posix version of $INSTDIR
 
 ; The basic program group name
-!define NEURON  "NEURON ${Version}"
+!define NEURON  "NEURON ${Version} ${cpu}"
 ; The default directory
-!define NRN "nrn${VerNoDot}"
+!define NRN "nrn${VerNoDot}w${binsuffix}"
 ; where to get the files
-!define MARSHALL "c:\marshalnrn"
+!define MARSHALL "c:\marshalnrn${binsuffix}"
 
 ; The default installation directory
 ;InstallDir $PROGRAMFILES\${NRN}
@@ -50,32 +47,6 @@ Function .onInit ; called when installer is nearly finished initializing.
     MessageBox MB_OKCANCEL "${NEURON} already installed at $R1. Press OK to install again." IDOK ok
     Abort
 ok:
-  GetDLLVersionLocal "c:\cygwin\bin\cygwin1.dll" $R0 $R1
-  IntOp $R2 $R0 / 0x00010000
-  IntOp $myCygVer1 $R2 / 1000
-  IntOp $myCygVer2 $R2 % 1000
-  IntOp $myCygVer3 $R0 & 0x000FFFF
-  StrCpy $myCygVer "$myCygVer1.$myCygVer2.$myCygVer3"
-  StrCpy $cpCygwin "no"
-  IfFileExists "c:\cygwin\bin\cygwin1.dll" +1 one
-	GetDllVersion "c:\cygwin\bin\cygwin1.dll" $R0 $R1
-	IntOp $R2 $R0 / 0x00010000
-	IntOp $R3 $R2 / 1000
-	IntOp $R4 $R2 % 1000
-	IntOp $R5 $R0 & 0x000FFFF
-	StrCpy $0 "$R3.$R4.$R5"
-	IntCmp $myCygVer1 $R3 +1 meold menew
-	IntCmp $myCygVer2 $R4 +1 meold menew
-	IntCmp $myCygVer3 $R5 one meold menew
-	Goto one
-meold:
-	StrCpy $cpCygwin "yes"
-	MessageBox MB_OKCANCEL "Already installed cygwin1.dll version $0 is NEWER and will be cused in place of this installer distributed version $myCygVer . If you have trouble running NEURON after installation you will need to upgrade to a more recent version of NEURON. Press OK to continue installing." IDOK one
-	Abort
-menew:
-	MessageBox MB_OKCANCEL|MB_DEFBUTTON2 "Already installed cygwin1.dll version $0 is OLDER and may be incompatible with this installer distributed version $myCygVer . It is recommended that you upgrade to the most recent version from http://www.cygwin.org. Press OK to continue installing." IDOK one
-	Abort
-one:
 FunctionEnd
 
 ; The text to prompt the user to enter a directory
@@ -111,8 +82,7 @@ Section "${NEURON} (required)"
   ; Set output path to the installation directory.
   SetOutPath $INSTDIR
   ; Put file there
-  File /r "${MARSHALL}\nrn\*.*"
-  Call cyginst
+  File /r "${MARSHALL}\nrn${binsuffix}\*.*"
   ; Write the installation path into the registry
   WriteRegStr HKLM "Software\NEURON\${NRN}" "Install_Dir" "$INSTDIR"
   ; Write the uninstall keys for Windows
@@ -121,13 +91,6 @@ Section "${NEURON} (required)"
   WriteUninstaller "uninstall.exe"
 SectionEnd
 
-Function cyginst
-  StrCmp $cpCygwin "no" one +1
-    Rename "$INSTDIR\bin\cygwin1.dll" "$INSTDIR\bin\cygwin1.dist"
-    CopyFiles /SILENT /FILESONLY "c:\cygwin\bin\cygwin1.dll" "$INSTDIR\bin\cygwin1.dll" 1000
-one:
-FunctionEnd
-
 ; optional section
 Section "Associate .hoc and .nrnzip"
   ; I am trying to follow the makensis.nsi
@@ -135,12 +98,12 @@ Section "Associate .hoc and .nrnzip"
   WriteRegStr HKCR ".hoc" "" "NEURONFile"
   WriteRegStr HKCR "NEURONFile" "" "NEURON model file"
   WriteRegStr HKCR "NEURONFile\shell" "" "open"
-  WriteRegStr HKCR "NEURONFile\DefaultIcon" "" "$INSTDIR\bin\nrniv10.ico"
-  WriteRegStr HKCR "NEURONFile\shell\open\command" "" '"$INSTDIR\bin\neuron.exe" "%1"'
+  WriteRegStr HKCR "NEURONFile\DefaultIcon" "" "$INSTDIR\bin${binsuffix}\nrniv10.ico"
+  WriteRegStr HKCR "NEURONFile\shell\open\command" "" '"$INSTDIR\bin${binsuffix}\nrniv.exe" "%1"'
   WriteRegStr HKCR ".nrnzip" "" "NEURONArchive"
   WriteRegStr HKCR "NEURONArchive" "" "NEURON model archive"
   WriteRegStr HKCR "NEURONArchive\shell" "" "open"
-  WriteRegStr HKCR "NEURONArchive\DefaultIcon" "" "$INSTDIR\bin\nrniv.ico"
+  WriteRegStr HKCR "NEURONArchive\DefaultIcon" "" "$INSTDIR\bin${binsuffix}\nrniv.ico"
   WriteRegStr HKCR "NEURONArchive\shell\open\command" "" '"$INSTDIR\bin\mos2nrn.exe" "%1"'
   FileOpen $r1 "$INSTDIR\lib\associate.dat" "w"
   FileWrite $r1 "If $INSTDIR\lib\associate.dat exists then, on uninstall, .hoc and .nrnzip associations will be removed."
@@ -153,16 +116,16 @@ Section "Start Menu Shortcuts"
   SetOutPath "C:\" ; does not work, ends up as C
   StrCpy $OUTDIR "C:\"
   CreateShortCut "$SMPROGRAMS\${NEURON}\Uninstall.lnk" "$INSTDIR\uninstall.exe" "" "$INSTDIR\uninstall.exe" 0
-  CreateShortCut "$SMPROGRAMS\${NEURON}\nrngui.lnk" "$INSTDIR\bin\neuron.exe" "$uINSTDIR/lib/hoc/nrngui.hoc" "$INSTDIR\bin\nrniv10.ico" 0
-  CreateShortCut "$SMPROGRAMS\${NEURON}\nrngui_python.lnk" "$INSTDIR\bin\neuron.exe" "-python $uINSTDIR/lib/hoc/nrngui.hoc" "$INSTDIR\bin\nrniv10.ico" 0
-  CreateShortCut "$SMPROGRAMS\${NEURON}\mknrndll.lnk" "$INSTDIR\bin\nrniv.exe" "$uINSTDIR/lib/hoc/mknrndll.hoc" "$INSTDIR\bin\nmodl2a.ico" 0
-  CreateShortCut "$SMPROGRAMS\${NEURON}\modlunit.lnk" "$INSTDIR\bin\nrniv.exe" "$uINSTDIR/lib/hoc/modlunit.hoc" "$INSTDIR\bin\nmodl2a.ico" 0
+  CreateShortCut "$SMPROGRAMS\${NEURON}\nrngui.lnk" "$INSTDIR\bin${binsuffix}\nrniv.exe" "$uINSTDIR/lib/hoc/nrngui.hoc" "$INSTDIR\bin${binsuffix}\nrniv10.ico" 0
+  CreateShortCut "$SMPROGRAMS\${NEURON}\nrngui_python.lnk" "$INSTDIR\bin${binsuffix}\nrniv.exe" "-python $uINSTDIR/lib/hoc/nrngui.hoc" "$INSTDIR\bin${binsuffix}\nrniv10.ico" 0
+  CreateShortCut "$SMPROGRAMS\${NEURON}\mknrndll.lnk" "$INSTDIR\bin${binsuffix}\nrniv.exe" "$uINSTDIR/lib/hoc/mknrndll.hoc" "$INSTDIR\bin${binsuffix}\nmodl2a.ico" 0
+  CreateShortCut "$SMPROGRAMS\${NEURON}\modlunit.lnk" "$INSTDIR\bin${binsuffix}\nrniv.exe" "$uINSTDIR/lib/hoc/modlunit.hoc" "$INSTDIR\bin${binsuffix}\nmodl2a.ico" 0
   CreateShortCut "$SMPROGRAMS\${NEURON}\Notes.lnk" "notepad.exe" "$INSTDIR\notes.txt"
   WriteINIStr "$SMPROGRAMS\${NEURON}\NEURON Home Page.url" "InternetShortcut" "URL" "http://www.neuron.yale.edu/"
   SetOutPath "$INSTDIR\demo"
-  CreateShortCut "$SMPROGRAMS\${NEURON}\NEURON Demo.lnk" "$INSTDIR\bin\neuron.exe" "-dll $uINSTDIR/demo/release/nrnmech.dll demo.hoc" "$INSTDIR\bin\nrniv10.ico" 0
+  CreateShortCut "$SMPROGRAMS\${NEURON}\NEURON Demo.lnk" "$INSTDIR\bin${binsuffix}\nrniv.exe" "-dll $uINSTDIR/demo/release/nrnmech.dll demo.hoc" "$INSTDIR\bin${binsuffix}\nrniv10.ico" 0
   SetOutPath "$INSTDIR"
-  CreateShortCut "$SMPROGRAMS\${NEURON}\rxvt sh.lnk" "$INSTDIR\bin\rxvt.exe" "-cd $uINSTDIR -fn 16 -fg black -bg white -sl 1000 -e $uINSTDIR/bin/bash --rcfile $uINSTDIR/lib/bshstart.sh -i" "$INSTDIR\bin\rxvt.exe" 0
+  CreateShortCut "$SMPROGRAMS\${NEURON}\bash.lnk" "$INSTDIR\mingw\bin\bash.exe" "--rcfile $uINSTDIR/lib/bshstart.sh -i" "$INSTDIR\mingw\bin\bash.exe" 0
   FileOpen $r1 "$INSTDIR\lib\smsinst.dat" "w"
   FileWrite $r1 "If $INSTDIR\lib\smsinst.dat exists then, on uninstall, the ${NEURON} Start Menu Shortcuts will be removed."
   FileClose $r1
@@ -173,16 +136,16 @@ Section "Desktop ${NEURON} folder with Shortcuts"
   CreateDirectory "$DESKTOP\${NEURON}"
   SetOutPath "C:\" ; does not work, ends up as C
   StrCpy $OUTDIR "C:\"
-  CreateShortCut "$DESKTOP\${NEURON}\nrngui.lnk" "$INSTDIR\bin\neuron.exe" "$uINSTDIR/lib/hoc/nrngui.hoc" "$INSTDIR\bin\nrniv10.ico" 0
-  CreateShortCut "$DESKTOP\${NEURON}\nrngui_python.lnk" "$INSTDIR\bin\neuron.exe" "-python $uINSTDIR/lib/hoc/nrngui.hoc" "$INSTDIR\bin\nrniv10.ico" 0
-  CreateShortCut "$DESKTOP\${NEURON}\mknrndll.lnk" "$INSTDIR\bin\nrniv.exe" "$uINSTDIR/lib/hoc/mknrndll.hoc" "$INSTDIR\bin\nmodl2a.ico" 0
-  CreateShortCut "$DESKTOP\${NEURON}\modlunit.lnk" "$INSTDIR\bin\nrniv.exe" "$uINSTDIR/lib/hoc/modlunit.hoc" "$INSTDIR\bin\nmodl2a.ico" 0
+  CreateShortCut "$DESKTOP\${NEURON}\nrngui.lnk" "$INSTDIR\bin${binsuffix}\nrniv.exe" "$uINSTDIR/lib/hoc/nrngui.hoc" "$INSTDIR\bin${binsuffix}\nrniv10.ico" 0
+  CreateShortCut "$DESKTOP\${NEURON}\nrngui_python.lnk" "$INSTDIR\bin${binsuffix}\nrniv.exe" "-python $uINSTDIR/lib/hoc/nrngui.hoc" "$INSTDIR\bin${binsuffix}\nrniv10.ico" 0
+  CreateShortCut "$DESKTOP\${NEURON}\mknrndll.lnk" "$INSTDIR\bin${binsuffix}\nrniv.exe" "$uINSTDIR/lib/hoc/mknrndll.hoc" "$INSTDIR\bin${binsuffix}\nmodl2a.ico" 0
+  CreateShortCut "$DESKTOP\${NEURON}\modlunit.lnk" "$INSTDIR\bin${binsuffix}\nrniv.exe" "$uINSTDIR/lib/hoc/modlunit.hoc" "$INSTDIR\bin${binsuffix}\nmodl2a.ico" 0
   CreateShortCut "$DESKTOP\${NEURON}\Notes.lnk" "notepad.exe" "$INSTDIR\notes.txt"
   WriteINIStr "$DESKTOP\${NEURON}\NEURON Home Page.url" "InternetShortcut" "URL" "http://www.neuron.yale.edu/"
   SetOutPath "$INSTDIR\demo"
-  CreateShortCut "$DESKTOP\${NEURON}\NEURON Demo.lnk" "$INSTDIR\bin\neuron.exe" "-dll $uINSTDIR/demo/release/nrnmech.dll demo.hoc" "$INSTDIR\bin\nrniv10.ico" 0
+  CreateShortCut "$DESKTOP\${NEURON}\NEURON Demo.lnk" "$INSTDIR\bin${binsuffix}\nrniv.exe" "-dll $uINSTDIR/demo/release/nrnmech.dll demo.hoc" "$INSTDIR\bin${binsuffix}\nrniv10.ico" 0
   SetOutPath "$INSTDIR"
-  CreateShortCut "$DESKTOP\${NEURON}\rxvt sh.lnk" "$INSTDIR\bin\rxvt.exe" "-cd $uINSTDIR -fn 16 -fg black -bg white -sl 1000 -e $uINSTDIR/bin/bash --rcfile $uINSTDIR/lib/bshstart.sh -i" "$INSTDIR\bin\rxvt.exe" 0
+  CreateShortCut "$DESKTOP\${NEURON}\bash.lnk" "$INSTDIR\mingw\bin\bash.exe" "--rcfile $uINSTDIR/lib/bshstart.sh -i" "$INSTDIR\mingw\bin\bash.exe" 0
   FileOpen $r1 "$INSTDIR\lib\deskinst.dat" "w"
   FileWrite $r1 "If $INSTDIR\lib\deskinst.dat exists then, on uninstall, the ${NEURON} Desktop folder will be removed."
   FileClose $r1
@@ -206,7 +169,7 @@ UninstallText "This will uninstall ${NEURON}. Hit next to continue."
 
 ; special uninstall section.
 Section "Uninstall"
-  IfFileExists $INSTDIR\bin\neuron.exe skip_confirmation
+  IfFileExists $INSTDIR\bin${binsuffix}\nrniv.exe skip_confirmation
     MessageBox MB_YESNO "It does not appear that ${NEURON} is installed in the directory '$INSTDIR'.$\r$\nContinue anyway (not recommended)" IDYES skip_confirmation
     Abort "Uninstall aborted by user"
   skip_confirmation:
@@ -283,7 +246,7 @@ SectionEnd
    Exch $R1
  FunctionEnd
 
-; cygwin 7 needs a posix version of InstallDir
+; nrniv args need forward slashes
 ; d2u
  ; input, top of stack = dos path
  ; output, top of stack = posix path
@@ -293,7 +256,7 @@ SectionEnd
  ;  Push "c:\foo\bar"
  ;  Call d2u
  ;  Pop $R0
- ;  ($R0 at this point is "/cygdrive/c/foo/bar")
+ ;  ($R0 at this point is "c:/foo/bar")
 
 Function d2u
   Exch $R1 ; st=old$R1, $R1 = dospath
@@ -301,12 +264,11 @@ Function d2u
   Push $R3
   Push $R4
   StrLen $R3 $R1
-  StrCpy $R4 "/cygdrive/"
+  StrCpy $R4 ""
   loop:
     StrCpy $R2 "$R1" 1 ; first char remaining in R1
     StrCmp $R2 "" done
     StrCpy $R1 "$R1" $R3 1 ; replace with everythin except first char
-    StrCmp $R2 ":" loop ; discard
     StrCmp $R2 "\" +1 +2 ; only reverse backslash, all others pass through
     StrCpy $R2 "/"
     StrCpy $R4 "$R4$R2" ; append char

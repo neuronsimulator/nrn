@@ -40,7 +40,7 @@ cp shlib/libreadline6.dll.a /mingw/lib/libreadline.dll.a
 
 
 mingw from msys also needs regex
-Obtain http://ftp.gnu.org/olg-gnu/regex/regex-0.12.tar.gz
+Obtain http://ftp.gnu.org/old-gnu/regex/regex-0.12.tar.gz
 configure
 make
 gcc -shared -Wl,--out-implib,libregex.dll.a -o libregex.dll regex.o
@@ -101,4 +101,51 @@ make
   PYLIBLINK='-L/cygdrive/c/Python27/libs -lpython27'
 
 make
+
+mingw64 from mingw
+
+termcap-1.3.1
+autoconf (can be cygwin)
+./configure --host=x86_64-w64-mingw32
+make
+gcc -shared -Wl,--out-implib,libtermcap.dll.a -o libtermcap.dll *.o
+cp libtermcap.dll.a /mingw/x86_64-w64-mingw32/lib
+cp libtermcap.dll /mingw/x86_64-w64-mingw32/lib
+cp termcap.h /mingw/x86_64-w64-mingw32/include
+
+readline-6.2
+./configure --host=x86_64-w64-mingw32 --disable-static
+make
+cp shlib/libhistory6.dll /mingw/x86_64-w64-mingw32/lib
+cp shlib/libhistory6.dll.a /mingw/x86_64-w64-mingw32/lib
+cp shlib/libreadline6.dll /mingw/x86_64-w64-mingw32/lib/libreadline.dll
+cp shlib/libreadline6.dll.a /mingw/x86_64-w64-mingw32/lib/libreadline.dll.a
+
+regex
+wget http://ftp.gnu.org/old-gnu/regex/regex-0.12.tar.gz
+./configure --host=x86_64-w64-mingw32
+make
+gcc -shared -Wl,--out-implib,libregex.dll.a -o libregex.dll regex.o
+cp libregex.dll.a /mingw/x86_64-w64-mingw32/lib
+cp libregex.dll /mingw/x86_64-w64-mingw32/lib
+cp regex.h /mingw/x86_64-w64-mingw32/include
+
+pthreads from
+cd hines/pthreads-20100604/mingw64/x86_64-w64-mingw32/lib
+cp libpthread.a /cygdrive/c/mingw64/x86_64-w64-mingw32/lib
+cd hines/pthreads-20100604/mingw64/x86_64-w64-mingw32/include
+cp *.h /cygdrive/c/mingw64/x86_64-w64-mingw32/include
+
+nrniv
+
+no hoc_ed so from some built version (eg cygwin)
+cp nrnobj/src/nrnoc/hocusr.h ...nrnwin/src/nrnoc
+
+../nrnwin/configure --prefix=`pwd` --without-iv --with-nmodl-only
+make 
+
+../nrnwin/configure --prefix=`pwd` --with-iv=$HOME/neuron/ivwin \
+  --without-nmodl --with-nrnpython=dynamic \
+  --host=x86_64-w64-mingw32 \
+  PYINCDIR=/c/Python27/include \
 

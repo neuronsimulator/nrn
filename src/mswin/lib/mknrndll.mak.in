@@ -9,6 +9,7 @@ CFLAGS = \
 -I$N/src/scopmath -I$N/src/nrnoc -I$N/src/oc \
 $(EXTRA_FLAGS)
 
+bin = bin@binsuffix@
 
 # to handle variations of filename extensions
 .SUFFIXES: .o .mod .moD .mOd .mOD .Mod .MoD .MOd .MOD
@@ -66,12 +67,12 @@ mod_func.o: mod_func.c
 
 nrnmech.dll: mod_func.o $(MODOBJFILES)
 	$(CC) $(EXTRA_FLAGS) -shared -o nrnmech.dll mod_func.o $(MODOBJFILES) \
-  -L$N/bin -lnrniv
+  -L$N/$(bin) -lnrniv -lpthread
 	rebase -b 0x64000000 -v nrnmech.dll
 
 #nm nrnmech.dll | mkdll -u > nrnmech.h #will give a list of neuron.exe names
 #required by nrnmech.dll
 
-mod_func.o $(MODOBJFILES): $(N)/bin/nrniv.exe
+mod_func.o $(MODOBJFILES): $(N)/$(bin)/nrniv.exe
 
 
