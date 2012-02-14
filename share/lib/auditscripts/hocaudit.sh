@@ -1,3 +1,5 @@
+#!/bin/sh
+
 auditprogpath=`dirname $0`
 pid=$1
 auditdir=$2

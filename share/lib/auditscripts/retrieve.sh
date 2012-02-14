@@ -1,3 +1,5 @@
+#!/bin/sh
+
 # to be executed by retrieve_audit
 auditprogpath=`dirname $0`
 pid=ret
