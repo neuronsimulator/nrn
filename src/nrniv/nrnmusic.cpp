@@ -168,10 +168,12 @@ PyObject* NRNMUSIC::EventInputPort::index2target(int gi, PyObject* ptarget) {
 	if (!music_input_ports->find(i, (void*)this)) {
 		music_input_ports->insert((void*)this, i);
 	}
-	assert (!gi_table->find(ps, gi));
-	ps = new PreSyn(nil, nil, nil);
-	net_cvode_instance->psl_append(ps);
-	gi_table->insert(gi, ps);
+	//assert (!gi_table->find(ps, gi));
+	if (!gi_table->find(ps, gi)) {
+	  ps = new PreSyn(nil, nil, nil);
+	  net_cvode_instance->psl_append(ps);
+	  gi_table->insert(gi, ps);
+	}
 	ps->gid_ = -2;
 	ps->output_index_ = -2;
 
@@ -196,6 +198,8 @@ void nrnmusic_init(int* pargc, char*** pargv) {
 			nrnmusic = 1;
 		}
 	}
+	if (getenv ("_MUSIC_CONFIG_"))
+	  nrnmusic = 1; // temporary kludge
 	if (nrnmusic) {
 		nrnmusic_setup = new MUSIC::Setup(argc, argv);
 		nrnmusic_comm = nrnmusic_setup->communicator();
