@@ -100,7 +100,8 @@ void nrnmusic_injectlist(void* vp, double tt) {
 void nrnmusic_inject(void* vport, int gi, double tt) {
 	//printf("nrnmusic_inject %p %d %g\n", vport, gi, tt);
 	((MUSIC::EventOutputPort*)vport)->
-	  insertEvent(tt, (MUSIC::GlobalIndex)gi);
+	  insertEvent(tt / 1000.0, // unit conversion ms -> s
+		      (MUSIC::GlobalIndex)gi);
 }
 
 void NrnMusicEventHandler::filltable(NRNMUSIC::EventInputPort* port, int cnt) {
@@ -115,8 +116,8 @@ void NrnMusicEventHandler::filltable(NRNMUSIC::EventInputPort* port, int cnt) {
 
 void NrnMusicEventHandler::operator () (double t, MUSIC::LocalIndex id) {
 	PreSyn* ps = table[id];
-	ps->send(t, net_cvode_instance, nrn_threads);
-//printf("event handler t=%g id=%d ps=%p\n", t, int(id), ps);
+	ps->send(1000.0 * t, net_cvode_instance, nrn_threads);
+	//printf("event handler t=%g id=%d ps=%p\n", t, int(id), ps);
 }
 
 NRNMUSIC::EventOutputPort* NRNMUSIC::publishEventOutput (std::string id) {
@@ -238,7 +239,7 @@ static void nrnmusic_runtime_phase() {
 		eh->filltable(eip, cnt);
 		MUSIC::PermutationIndex indices (&gindices.front (),
 						 gindices.size ());
-		eip->map(&indices, eh, usable_mindelay_);
+		eip->map(&indices, eh, usable_mindelay_ / 1000.0);
 		delete eip->gi_table;
 	}
 	delete music_input_ports;
@@ -262,8 +263,9 @@ static void nrnmusic_runtime_phase() {
 	delete music_output_ports;
 
 	//switch to the runtime phase
-//printf("usable_mindelay = %g\n", usable_mindelay_);
-	nrnmusic_runtime = new MUSIC::Runtime(nrnmusic_setup, usable_mindelay_);
+	//printf("usable_mindelay = %g\n", usable_mindelay_);
+	nrnmusic_runtime = new MUSIC::Runtime(nrnmusic_setup,
+					      usable_mindelay_ / 1000.0);
 	npme = new NetParMusicEvent();
 	npme->send(0, net_cvode_instance, nrn_threads);
 }
