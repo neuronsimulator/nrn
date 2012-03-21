@@ -52,6 +52,8 @@ libnrniv_la_SOURCES = nrnmenu.cpp shape.cpp classreg.cpp rotate3d.cpp \
 	netpar.cpp partrans.cpp splitcell.cpp multisplit.cpp \
 	nrndae.cpp matrixmap.cpp
 
+libnrniv_la_LIBADD = @MUSIC_LIBLA@
+
 # The interviews includes must be before the X includes so that if a
 # vanilla interviews is also installed, we don't use it.
 IV_INCLUDES = @IV_INCLUDE@ $(X_CFLAGS)
