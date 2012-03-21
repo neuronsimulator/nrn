@@ -20,6 +20,7 @@ neuronmusic_module = Extension(
     ['neuronmusic.cpp'],
     library_dirs = libdirs,
     libraries = ['music'],
+    extra_objects = ['@NRN_LIBDIR@/libnrniv.so.0'],
     include_dirs = include_dirs
 )
 
