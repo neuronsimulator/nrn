@@ -293,10 +293,15 @@ ENDGUI
 #endif /* HAVE_IV  */
 }
 
-static double gr_menu_action(void* v) {
+double ivoc_gr_menu_action(void* v) {
 #if HAVE_IV
 IFGUI
-	HocCommand* hc = new HocCommand(gargstr(2));
+	HocCommand* hc;
+	if (hoc_is_object_arg(2)) {
+		hc = new HocCommand(*hoc_objgetarg(2));
+	}else{
+		hc = new HocCommand(gargstr(2));
+	}
 	((Scene*)v)->picker()->add_menu(gargstr(1), new HocCommandAction(hc));
 ENDGUI
 	return 1.;
@@ -1092,7 +1097,7 @@ static Member_func gr_members[] = {
 	"crosshair_action", gr_set_cross_action,
 	"printfile", gr_printfile,
 	"family", gr_family,
-	"menu_action", gr_menu_action,
+	"menu_action", ivoc_gr_menu_action,
 	"menu_tool", ivoc_gr_menu_tool,
 	"view_info", ivoc_view_info,
 	"view_size", ivoc_view_size,

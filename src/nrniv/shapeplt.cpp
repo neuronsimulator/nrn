@@ -149,15 +149,7 @@ ENDGUI
 	return 1.;
 }
 
-static double s_menu_action(void* v) {
-#if HAVE_IV
-IFGUI
-	HocCommand* hc = new HocCommand(gargstr(2));
-	((Scene*)v)->picker()->add_menu(gargstr(1), new HocCommandAction(hc));
-ENDGUI
-#endif
-	return 1.;
-}
+extern double ivoc_gr_menu_action(void* v);
 
 static double s_colormap(void* v) {
 #if HAVE_IV
@@ -245,7 +237,7 @@ static Member_func sh_members[] = {
 	"color_list", nrniv_sh_color_list,
 	"printfile", sh_printfile,
 	"show", sh_show,
-	"menu_action", s_menu_action,
+	"menu_action", ivoc_gr_menu_action,
 	"menu_tool", ivoc_gr_menu_tool,
 	"colormap", s_colormap, 
 	"exec_menu", exec_menu,

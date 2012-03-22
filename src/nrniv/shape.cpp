@@ -133,6 +133,7 @@ public:
 		ShapeScene::selected(s, x, y); }
 	virtual ShapeSection* selected() { return ShapeScene::selected(); }
 	virtual void set_select_action(const char*);
+	virtual void set_select_action(Object*);
 	virtual void save_phase1(ostream&);
 	virtual PointMark* point_mark(Object*, const Color*, const char style = 'O',const float size = 8.);
 	virtual PointMark* point_mark(Section*, float x, const Color*);
@@ -215,7 +216,11 @@ ENDGUI
 static double sh_select_action(void* v) {
 #if HAVE_IV
 IFGUI
-	((OcShape*)v)->set_select_action(gargstr(1));
+	if (hoc_is_object_arg(1)) {
+		((OcShape*)v)->set_select_action(*hoc_objgetarg(1));
+	}else{
+		((OcShape*)v)->set_select_action(gargstr(1));
+	}
 ENDGUI
 #endif
 	return 1.;
@@ -403,15 +408,7 @@ ENDGUI
 }
 
 
-static double sh_menu_action(void* v) {
-#if HAVE_IV
-IFGUI
-	HocCommand* hc = new HocCommand(gargstr(2));
-	((Scene*)v)->picker()->add_menu(gargstr(1), new HocCommandAction(hc));
-ENDGUI
-#endif
-	return 1.;
-}
+extern double ivoc_gr_menu_action(void* v);
 
 static double exec_menu(void* v) {
 #if HAVE_IV
@@ -469,7 +466,7 @@ static Member_func sh_members[] = {
 	"point_mark_remove", sh_point_mark_remove,
 	"printfile", sh_printfile,
 	"show", sh_show,
-	"menu_action", sh_menu_action,
+	"menu_action", ivoc_gr_menu_action,
 	"menu_tool", ivoc_gr_menu_tool,
 	"exec_menu", exec_menu,
 	"observe", nrniv_sh_observe,
@@ -609,6 +606,14 @@ void OcShape::set_select_action(const char* s) {
 	}
 	select_ = new HocCommand(s);
 }
+
+void OcShape::set_select_action(Object* pobj) {
+	if (select_) {
+		delete select_;
+	}
+	select_ = new HocCommand(pobj);
+}
+
 void OcShape::sel_color(ShapeSection* sold, ShapeSection* snew) {
 	ShapeSection* ss;
 	Section* s;
