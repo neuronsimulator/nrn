@@ -255,8 +255,8 @@ void NetParEvent::deliver(double tt, NetCvode* nc, NrnThread* nt){
 	send(tt, nc, nt);
 }
 void NetParEvent::pgvts_deliver(double tt, NetCvode* nc){
-	assert(0);
-	deliver(tt, nc, 0);
+	assert(nrn_nthread == 1);
+	deliver(tt, nc, nrn_threads);
 }
 
 void NetParEvent::pr(const char* m, double tt, NetCvode* nc){
