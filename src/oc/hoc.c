@@ -1025,7 +1025,7 @@ hoc_final_exit() {
 #else
 	sprintf(buf, "%s/lib/cleanup %d", neuron_home, hoc_pid());
 #endif
-	if (system(buf)) {;} // ignore return value
+	if (system(buf)) {;} /* ignore return value */
 #endif
 }
 	
