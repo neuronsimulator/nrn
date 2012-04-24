@@ -107,12 +107,12 @@ void nrnpython_reg_real() {
 Py2Nrn::Py2Nrn() {
 	po_ = NULL;
 	type_ = 0;	
-//	printf("Py2Nrn() %lx\n", (long)this);
+//	printf("Py2Nrn() %p\n", this);
 }
 Py2Nrn::~Py2Nrn() {
 	nrnpython_ensure_threadstate();
 	Py_XDECREF(po_);
-//	printf("~Py2Nrn() %lx\n", (long)this);
+//	printf("~Py2Nrn() %p\n", this);
 }
 
 int nrnpy_ho_eq_po(Object* ho, PyObject* po) {
@@ -169,7 +169,7 @@ printf("PyObject_CallObject callable\n");
 PyObject_Print(callable, stdout, 0);
 printf("\nargs\n");
 PyObject_Print(args, stdout, 0);
-printf("\nreturn %lx\n", (long)p);
+printf("\nreturn %p\n", p);
 if (p) { PyObject_Print(p, stdout, 0); printf("\n");}
 #endif
 
@@ -227,7 +227,7 @@ void py2n_component(Object* ob, Symbol* sym, int nindex, int isfunc) {
 				assert(0);
 			}
 		}
-//printf("PyObject_CallObject %s %lx\n", sym->name, (long)tail);
+//printf("PyObject_CallObject %s %p\n", sym->name, tail);
 		result = nrnpy_pyCallObject(tail, args);
 		Py_DECREF(args);
 //PyObject_Print(result, stdout, 0);
@@ -382,7 +382,7 @@ static PyObject* hoccommand_exec_help1(PyObject* po) {
 //printf("\n");
 //PyObject_Print(args, stdout, 0);
 //printf("\n");
-//printf("threadstate %lx\n", PyThreadState_GET());
+//printf("threadstate %p\n", PyThreadState_GET());
 		r = nrnpy_pyCallObject(PyTuple_GetItem(po, 0), args);
 	}else{
 		r = nrnpy_pyCallObject(po, PyTuple_New(0));

@@ -7,7 +7,7 @@ class TQItem {
 public:
 	TQItem();
 	virtual ~TQItem();
-	boolean check();
+	bool check();
 	void t_iterate(void (*)(const TQItem*, int), int);
 	void clear(){}
 public:
@@ -16,7 +16,7 @@ public:
 	TQItem* left_;
 	TQItem* right_;
 	TQItem* parent_;
-	boolean red_;
+	bool red_;
 };
 
 class TQueue {

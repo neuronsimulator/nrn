@@ -88,15 +88,15 @@ void UniqueString::init(const String& s) {
 
 unsigned long UniqueString::hash() const { return key_to_hash(string()); }
 
-boolean UniqueString::operator ==(const String& s) const {
+bool UniqueString::operator ==(const String& s) const {
     return string() == s.string() && length() == s.length();
 }
 
-boolean UniqueString::operator ==(const char* s) const {
+bool UniqueString::operator ==(const char* s) const {
     return String::operator ==(s);
 }
 
-boolean UniqueString::null_terminated() const { return false; }
+bool UniqueString::null_terminated() const { return false; }
 
 /*
  * UniqueStringPool implementation.

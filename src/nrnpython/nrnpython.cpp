@@ -29,8 +29,8 @@ extern int nrn_global_argc;
 extern char** nrn_global_argv;
 void nrnpy_augment_path();
 void nrnpython_ensure_threadstate();
-int nrnpy_pyrun(char*);
-extern int (*p_nrnpy_pyrun)(char*);
+int nrnpy_pyrun(const char*);
+extern int (*p_nrnpy_pyrun)(const char*);
 }
 
 static PyThreadState* main_threadstate_;
@@ -49,7 +49,31 @@ void nrnpy_augment_path() {
 	}
 }
 
-int nrnpy_pyrun(char* fname) {
+int nrnpy_pyrun(const char* fname) {
+#ifdef MINGW
+/*
+http://www.megasolutions.net/python/How-to-receive-a-FILE--from-Python-under-MinGW_-38375.aspx
+Because microsoft C runtimes are not binary compatible, we can't just
+call fopen to get a FILE * and pass that FILE * to another application
+or library (Python25.dll in this case) that uses a different version of
+the C runtime that this DLL uses.  Using PyFile_AsFile is a
+work-around... 
+*/
+	PyObject* pfo = PyFile_FromString((char*)fname, (char*)"r");
+	if (pfo == NULL) {
+		PyErr_Print();
+		PyErr_Clear();
+		return 0;
+	}else{
+		if (PyRun_AnyFile(PyFile_AsFile(pfo), fname) == -1) {
+			PyErr_Print();
+			PyErr_Clear();
+			return 0;
+		}
+		Py_DECREF(pfo);
+		return 1;
+	}
+#else
 	FILE* fp = fopen(fname, "r");
 	if (fp) {
 		PyRun_AnyFile(fp, fname);
@@ -59,6 +83,7 @@ int nrnpy_pyrun(char* fname) {
 		fprintf(stderr, "Could not open %s\n", fname);
 		return 0;
 	}
+#endif
 }
 
 void nrnpython_start(int b) {
@@ -69,13 +94,13 @@ void nrnpython_start(int b) {
 		p_nrnpy_pyrun = nrnpy_pyrun;
 		Py_Initialize();
 		started = 1;
+		main_threadstate_ = PyThreadState_GET();
 		int i;
 		// see nrnpy_reg.h
 		for (i=0; nrnpy_reg_[i]; ++i) {
 			(*nrnpy_reg_[i])();
 		}
 		nrnpy_augment_path();
-		main_threadstate_ = PyThreadState_GET();
 	}
 	if (b == 0 && started) {
 		nrnpython_ensure_threadstate();
@@ -118,7 +143,10 @@ void nrnpython_start(int b) {
                 PySys_SetArgv(nrn_global_argc, nrn_global_argv);
 #endif
 		nrnpy_augment_path();
+#if !defined(MINGW)
+		// cannot get this to avoid crashing with MINGW
 		PyOS_ReadlineFunctionPointer = nrnpython_getline;
+#endif
 		// Is there a -c "command" or file.py arg.
 		for (i=1; i < nrn_global_argc; ++i) {
 			char* arg = nrn_global_argv[i];
@@ -168,6 +196,7 @@ static char* nrnpython_getline(FILE*, FILE*, char* prompt) {
 #else
 static char* nrnpython_getline(char* prompt) {
 #endif
+	nrnpython_ensure_threadstate();
 	hoc_cbufstr->buf[0] = '\0';
 	hoc_promptstr = prompt;
 	int r = hoc_get_line();

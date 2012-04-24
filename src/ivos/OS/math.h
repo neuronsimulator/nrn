@@ -87,8 +87,8 @@ public:
     static int round(float);
     static int round(double);
 
-    static boolean equal(float x, float y, float e);
-    static boolean equal(double x, double y, double e);
+    static bool equal(float x, float y, float e);
+    static bool equal(double x, double y, double e);
 };
 
 implement_binary_minmax(int)
@@ -105,11 +105,11 @@ implement_4_minmax(double)
 inline int Math::round(float x) { return x > 0 ? int(x+0.5) : -int(-x+0.5); }
 inline int Math::round(double x) { return x > 0 ? int(x+0.5) : -int(-x+0.5); }
 
-inline boolean Math::equal(float x, float y, float e) {
+inline bool Math::equal(float x, float y, float e) {
     return x - y < e && y - x < e;
 }
 
-inline boolean Math::equal(double x, double y, double e) {
+inline bool Math::equal(double x, double y, double e) {
     return x - y < e && y - x < e;
 }
 

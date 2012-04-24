@@ -182,7 +182,7 @@ typedef struct Symbol {
 #define LINF	0200000
 #define UNITDEF 0400000L
 #define EXTDEF2 01000000L	/* functions that can take array or function name arguments */
-#define CONST	02000000L	/* constants that do not appear in .var file */
+#define nmodlCONST 02000000L	/* constants that do not appear in .var file */
 #define EXTDEF3 04000000L	/* get two extra reset arguments at beginning */
 #define INTGER	010000000L	/* must be cast to double in expr */
 #define EXTDEF4 020000000L	/* get extra NrnThread* arg at beginning */

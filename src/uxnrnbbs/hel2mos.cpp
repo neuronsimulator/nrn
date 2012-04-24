@@ -21,7 +21,7 @@ void start();
 void stop();
 void send(const char* url);
 
-static boolean quit_;
+static bool quit_;
 
 static void quit(const char* msg) {
 //printf("hel2mos quit |%s|\n", msg);
@@ -79,7 +79,7 @@ int main(int argc, const char** argv){
 	return 0;
 }
 
-static boolean find(const char* key, char* val) {
+static bool find(const char* key, char* val) {
 	static char buf[256];
 	sprintf(buf, "^%s ", key);
 //printf("|%s|\n", buf);

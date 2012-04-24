@@ -37,7 +37,7 @@
 // things in libivoc that wouldn't normally be linked because nothing
 // refers to them while libivoc is linking. So force them to link here
 extern "C" {
-boolean ivoc_list_look(Object*, Object*, char*, int);
+bool ivoc_list_look(Object*, Object*, char*, int);
 void class_registration();
 }
 static void dummy() {
@@ -84,7 +84,7 @@ void Oc::cleanup() {
 void PrintableWindow::hide() {
 	if (is_mapped()) {
 		HWND hwnd = Window::rep()->msWindow();
-//printf("hide %lx\n", (long)this);
+//printf("hide %p\n", this);
       ShowWindow(hwnd, SW_HIDE);
 	}
 }
@@ -161,6 +161,31 @@ void Rubberband::rubber_off(Canvas* c) {
 #if 0
 double* ivoc_vector_ptr(Object*, int) {return 0;}
 int ivoc_vector_size(Object*) {return 0;}
+#endif
+
+#ifdef MINGW
+IOHandler::IOHandler(){}
+IOHandler::~IOHandler(){}
+int IOHandler::inputReady(int){return 0;}
+int IOHandler::outputReady(int){return 0;}
+int IOHandler::exceptionRaised(int){return 0;}
+void IOHandler::timerExpired(long, long){}
+void IOHandler::childStatus(pid_t, int){}
+#endif // MINGW
+
+#ifdef MINGW
+extern "C" {
+int stdin_event_ready();
+}
+int stdin_event_ready() {
+  static DWORD main_threadid = -1;
+  if (main_threadid == -1) {
+	main_threadid = GetCurrentThreadId();
+	return 1;
+  }
+  PostThreadMessage(main_threadid, WM_QUIT, 0, 0);
+  return 1;
+}
 #endif
 
 #endif //HAVE_IV

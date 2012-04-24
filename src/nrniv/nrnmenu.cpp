@@ -44,7 +44,7 @@ void nrnpointmenu();
 #if HAVE_IV
 static void pnodemenu(Prop* p1, double, int type, const char* path, MechSelector* = nil);
 static void mech_menu(Prop* p1, double, int type, const char* path, MechSelector* = nil);
-static void point_menu(Object*, boolean);
+static void point_menu(Object*, int);
 #endif
 
 void nrnallsectionmenu() {
@@ -70,7 +70,7 @@ ENDGUI
 extern "C" { char *strstr(const char *, const char *); }
 #endif
 
-static boolean has_globals(const char* name) {
+static bool has_globals(const char* name) {
 	Symbol* sp;
 	char suffix[100];
 	sprintf(suffix, "_%s", name);
@@ -161,7 +161,7 @@ void section_menu(double x1, int type, MechSelector* ms)
 	CopyString sname;
 	
 	switch (type) {
-	case CONST:
+	case nrnocCONST:
 		btype = "(Parameters)";
 		break;
 	case STATE:
@@ -188,7 +188,7 @@ void section_menu(double x1, int type, MechSelector* ms)
 	}		
 	hoc_ivpanel(buf);
 	hoc_ivlabel(buf);
-	if (type == CONST) {
+	if (type == nrnocCONST) {
 		if (x1 < 0) {
 			sprintf(buf,"nseg = %d", sec->nnode-1); hoc_ivlabel(buf);
 			sprintf(buf, "%s.L", sname.string());
@@ -237,7 +237,7 @@ static void pnodemenu(Prop* p1, double x, int type, const char* path, MechSelect
 #endif
 
 #if HAVE_IV
-static boolean is_const(const char* path, const char* name) {
+static bool is_const(const char* path, const char* name) {
 	char buf[256];
 	sprintf(buf,
 "%s for (hoc_ac_) if (hoc_ac_ > 0 && hoc_ac_ < 1) if (%s(hoc_ac_) != %s(.5)) {hoc_ac_ = 0  break}\n",
@@ -253,12 +253,12 @@ static void mech_menu(Prop* p1, double x, int type, const char* path, MechSelect
 	Symbol *sym, *vsym;
 	int i, j;
 	char buf[200];
-	boolean deflt;
+	bool deflt;
 
 	if (ms && !ms->is_selected(p1->type)) {
 		return;
 	}
-	if (type == CONST) {
+	if (type == nrnocCONST) {
 		deflt = true;
 	}else{
 		deflt = false;
@@ -342,14 +342,14 @@ IFGUI
 	sp = hoc_table_lookup(psym->name,hoc_built_in_symlist);
 	assert (sp && sp->type == TEMPLATE);
 	
-	boolean locmenu = false;
+	bool locmenu = false;
 	ITERATE(q, sp->u.ctemplate->olist) { // are there any
 		hoc_ivmenu("locations");
 		locmenu = true;
 		break;
 	}
 
-	boolean are_globals = false;
+	bool are_globals = false;
 	char suffix[100];
 	sprintf(suffix, "_%s", sp->name);
 	for (Symbol *stmp = hoc_built_in_symlist->first; stmp; stmp = stmp->next) {
@@ -364,7 +364,7 @@ IFGUI
 		Object* ob = OBJ(q);
 			Point_process* pp = ob2pntproc(ob);
 			if (pp->sec) {
-sprintf(buf, "nrnpointmenu(%lu)", (unsigned long*)ob);
+sprintf(buf, "nrnpointmenu(%p)", ob);
 hoc_ivbutton(sec_and_position(pp->sec,pp->node), buf);
 			}
 	}
@@ -408,12 +408,12 @@ ENDGUI
 }
 
 #if HAVE_IV
-static void point_menu(Object* ob, unsigned int make_label) {
+static void point_menu(Object* ob, int make_label) {
 	Point_process* pp = ob2pntproc(ob);
 	int  k, m;
 	Symbol *psym, *vsym;
 	char buf[200];
-	boolean deflt;
+	bool deflt;
 
 	if (pp->sec) {
 		sprintf(buf, "%s at ", hoc_object_name(ob));
@@ -435,7 +435,7 @@ static void point_menu(Object* ob, unsigned int make_label) {
 
 #if 0
         switch (type) {
-        case CONST:
+        case nrnocCONST:
                 sprintf(buf, "%s[%d] (Parameters)", psym->name, j);
                 break;
         case STATE:
@@ -450,7 +450,7 @@ static void point_menu(Object* ob, unsigned int make_label) {
 	if (psym->s_varn) {
 		for (k=0; k < psym->s_varn; k++ ) {
 			vsym = psym->u.ppsym[k];
-			if (nrn_vartype(vsym) == CONST) {
+			if (nrn_vartype(vsym) == nrnocCONST) {
 				deflt = true;
 
 #if defined(MikeNeubig)
@@ -591,7 +591,7 @@ static double ms_save(void* v) {
 }
 
 static void* ms_cons(Object*) {
-	int vartype = CONST;
+	int vartype = nrnocCONST;
 	if (ifarg(2)) {
 		// 0 means all
 		vartype = int(chkarg(2, -1, STATE));
@@ -736,7 +736,11 @@ double MechanismStandard::get(const char* name, int index){
 	if (!s) {
 		hoc_execerror(name, "not in this property");
 	}
-	return 	*np_->prop_pval(s, index);
+	double* pval = np_->prop_pval(s, index);
+	if (!pval) {
+		return -1e300;
+	}
+	return *pval;
 }
 
 void MechanismStandard::in(Section* sec, double x){
@@ -992,7 +996,7 @@ void MechanismType_reg() {
 /* static */ class MechTypeImpl {
 private:
 	friend class MechanismType;
-	boolean is_point_;
+	bool is_point_;
 	int* type_;
 	int count_;
 	int select_;
@@ -1004,7 +1008,7 @@ private:
 
 typedef Symbol* PSym;
 
-MechanismType::MechanismType(boolean point_process){
+MechanismType::MechanismType(bool point_process){
 	mti_ = new MechTypeImpl;
 	mti_->is_point_ = point_process;
 	mti_->count_ = 0;
@@ -1029,7 +1033,7 @@ MechanismType::~MechanismType(){
 	delete [] mti_->type_;
 	delete mti_;
 }
-boolean MechanismType::is_point() {
+bool MechanismType::is_point() {
 	return mti_->is_point_;
 }
 
@@ -1053,7 +1057,7 @@ Point_process* MechanismType::pp_begin() {
 
 Point_process* MechanismType::pp_next() {
 	Point_process* pp = nil;
-	boolean done = mti_->p_iter_ == 0;
+	bool done = mti_->p_iter_ == 0;
 	while (!done) {
 		if (mti_->p_iter_->type == mti_->type_[mti_->select_]) {
 			pp = (Point_process*)mti_->p_iter_->dparam[1]._pvoid;
@@ -1078,12 +1082,12 @@ Point_process* MechanismType::pp_next() {
 	return pp;
 }
 
-boolean MechanismType::is_netcon_target(int i) {
+bool MechanismType::is_netcon_target(int i) {
 	int j = mti_->type_[i];
 	return pnt_receive[j] ? true : false;
 }
 
-boolean MechanismType::has_net_event(int i) {
+bool MechanismType::has_net_event(int i) {
 	int j = mti_->type_[i];
 	int k;
 	for (k=0; k < nrn_has_net_event_cnt_; ++k) {
@@ -1094,7 +1098,7 @@ boolean MechanismType::has_net_event(int i) {
 	return false;
 }
 
-boolean MechanismType::is_artificial(int i) {
+bool MechanismType::is_artificial(int i) {
 	int j = mti_->type_[i];
 	return (nrn_is_artificial_[j] ? true:false);
 }

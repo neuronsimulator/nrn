@@ -27,7 +27,7 @@ public:
 	virtual void drag(Event&);
 	virtual void draw(Coord, Coord);
 
-	virtual boolean event(Event&); // looks for x, y, z press
+	virtual bool event(Event&); // looks for x, y, z press
 	Rotation3d* rotation();
 	virtual void help();
 private:

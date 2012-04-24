@@ -9,10 +9,10 @@ extern "C" {
 #include "hocdec.h"
 extern int hoc_obj_run(const char*, Object*);
 extern int hoc_argtype(int);
-extern boolean hoc_is_double_arg(int);
-extern boolean hoc_is_pdouble_arg(int);
-extern boolean hoc_is_str_arg(int);
-extern boolean hoc_is_object_arg(int);
+extern bool hoc_is_double_arg(int);
+extern bool hoc_is_pdouble_arg(int);
+extern bool hoc_is_str_arg(int);
+extern bool hoc_is_object_arg(int);
 extern char* gargstr(int);
 extern char** hoc_pgargstr(int);
 extern double* getarg(int);
@@ -49,7 +49,7 @@ extern char* hoc_object_name(Object*);
 extern char* hoc_object_pathname(Object*);
 extern const char* expand_env_var(const char*);
 extern void check_obj_type(Object*, const char*);
-extern boolean is_obj_type(Object*, const char*);
+extern bool is_obj_type(Object*, const char*);
 extern void hoc_obj_ref(Object*); // nil allowed
 extern void hoc_obj_unref(Object*); // nil allowed
 extern void hoc_dec_refcount(Object**);
@@ -67,28 +67,28 @@ extern void nrn_hoc_unlock();
 
 //xmenu
 #define CChar const char
-extern void hoc_ivpanel(CChar*, boolean h = false);
+extern void hoc_ivpanel(CChar*, bool h = false);
 extern void hoc_ivpanelmap(int scroll = -1);
 extern void hoc_ivbutton(CChar* name, CChar* action, Object* pyact = 0);
-extern void hoc_ivradiobutton(CChar* name, CChar* action, boolean activate = false, Object* pyact = 0);
-extern void hoc_ivmenu(CChar*, boolean add2menubar = false);
-extern void hoc_ivvarmenu(CChar*, CChar*, boolean add2menubar = false, Object* pyvar = nil);
-extern void hoc_ivvalue(CChar* name, CChar* variable, boolean deflt=false, Object* pyvar = 0);
+extern void hoc_ivradiobutton(CChar* name, CChar* action, bool activate = false, Object* pyact = 0);
+extern void hoc_ivmenu(CChar*, bool add2menubar = false);
+extern void hoc_ivvarmenu(CChar*, CChar*, bool add2menubar = false, Object* pyvar = nil);
+extern void hoc_ivvalue(CChar* name, CChar* variable, bool deflt=false, Object* pyvar = 0);
 extern void hoc_ivfixedvalue(CChar* name, CChar* variable,
-		boolean deflt=false, boolean usepointer=false);
+		bool deflt=false, bool usepointer=false);
 extern void hoc_ivvalue_keep_updated(CChar* name, CChar* variable, Object* pyvar = 0);
-extern void hoc_ivpvalue(CChar* name, double*, boolean deflt=false, HocSymExtension* extra=nil);
+extern void hoc_ivpvalue(CChar* name, double*, bool deflt=false, HocSymExtension* extra=nil);
 extern void hoc_ivvaluerun(CChar* name, CChar* variable, CChar* action,
-	boolean deflt=false, boolean canrun=false, boolean usepointer=false, Object* pyvar = 0, Object* pyact = 0);
+	bool deflt=false, bool canrun=false, bool usepointer=false, Object* pyvar = 0, Object* pyact = 0);
 extern void hoc_ivpvaluerun(CChar* name, double*, CChar* action,
-	boolean deflt=false, boolean canrun=false, HocSymExtension* extra=nil);
+	bool deflt=false, bool canrun=false, HocSymExtension* extra=nil);
 
 extern void hoc_ivlabel(CChar*);
 extern void hoc_ivvarlabel(char**, Object* pyvar = 0);
 extern void hoc_ivstatebutton(double*, CChar* name, CChar* action, int style, Object* pyvar = 0, Object* pyact = 0);
 extern void hoc_ivslider(double*, float low=0, float high=100,
 	float resolution=1, int steps=10,
-	const char* send_cmd=nil, boolean vert=false, boolean slow = false, Object* pyvar = 0, Object* pyact = 0);
+	const char* send_cmd=nil, bool vert=false, bool slow = false, Object* pyvar = 0, Object* pyact = 0);
 
 inline double* object_pval(Symbol* sym, Objectdata* od) {
 	return od[sym->u.oboff].pval;
@@ -126,7 +126,7 @@ private:
 	Objectdata* obdsav_;
 	Object* obsav_;
 	Symlist* symsav_;
-	boolean restored_;
+	bool restored_;
 };
 #endif
 

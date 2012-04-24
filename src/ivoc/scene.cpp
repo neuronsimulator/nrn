@@ -440,7 +440,7 @@ void Scene::damage(Coord x1, Coord y1, Coord x2, Coord y2) {
 	}
 }
 
-void Scene::show(GlyphIndex index, boolean showing) {
+void Scene::show(GlyphIndex index, bool showing) {
     SceneInfo& info = info_->item_ref(index);
     if (((info.status_ & SceneInfoShowing) == SceneInfoShowing) != showing) {
 //printf("show %d showing=%d want %d\n", index, (info.status_ & SceneInfoHidden) == 0, showing);
@@ -454,7 +454,7 @@ void Scene::show(GlyphIndex index, boolean showing) {
     }
 }
 
-boolean Scene::showing(GlyphIndex index) const {
+bool Scene::showing(GlyphIndex index) const {
     return (info_->item_ref(index).status_ & SceneInfoShowing) != 0;
 }
 
@@ -635,7 +635,7 @@ void Scene::draw(Canvas* canvas, const Allocation& a) const {
 		}
 	}
     GlyphIndex count = info_->count();
-    boolean are_fixed = false;
+    bool are_fixed = false;
     for (GlyphIndex index = 0; index < count; ++index) {
         SceneInfo& info = info_->item_ref(index);
 	if (info.status_ & SceneInfoFixed) {
@@ -693,7 +693,7 @@ void Scene::print(Printer* canvas, const Allocation& a) const {
     	background_->print(canvas, a);
     }
     GlyphIndex count = info_->count();
-    boolean are_fixed = false;
+    bool are_fixed = false;
     for (GlyphIndex index = 0; index < count; ++index) {
         SceneInfo& info = info_->item_ref(index);
 	if (info.status_ & SceneInfoFixed) {
@@ -780,7 +780,7 @@ void Scene::pick(Canvas* c, const Allocation& a, int depth, Hit& h) {
 	Coord epsx = XYView::current_pick_view()->x_pick_epsilon();
 	Coord epsy = XYView::current_pick_view()->y_pick_epsilon();
 	
-    boolean are_fixed = false;
+    bool are_fixed = false;
     for (GlyphIndex index = 0; index < count; ++index) {
         SceneInfo& info = info_->item_ref(index);
 	if (info.status_ & SceneInfoFixed) {
@@ -857,7 +857,7 @@ void Scene::save_all(ostream& o) {
 	}
 	long count = scene_list->count();
 	if (count) {
-		sprintf(buf, "objectvar scene_vector_[%d]", count);
+		sprintf(buf, "objectvar scene_vector_[%ld]", count);
 		o << buf << endl;
 	}
 	for (long i = 0; i < count; ++i) {

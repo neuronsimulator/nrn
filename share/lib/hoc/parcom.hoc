@@ -19,8 +19,9 @@ endtemplate ParallelComputeToolSplitInfo
 begintemplate ParallelComputeTool
 public nthread, pthread, cache, busywait, multisplit, pinfo
 public pct, box, map, np, save, nthread_, lb, printpart, move2part
+public showshape
 external cvode
-objref this, pct, box, pc, lb, splitinfo_
+objref this, pct, box, pc, lb, splitinfo_, shapeplot
 strdef tstr, nprocstr, cxtotalstr, ldbalstr, npiecestr
 proc init() {
 	pinfo = 0
@@ -301,6 +302,23 @@ proc unsplit() {local i, j  localobj si, sil
     }
 	cacheeffic_ = cvode.cache_efficient(0)
 	multisplit_ = 0
+}
+
+proc showshape() {local i  localobj ar, piece
+	shapeplot = new Shape()
+        ar = new SectionList()
+        ar.allroots()
+	i = 0
+        forsec ar {
+		if ($1 == 0) {
+	                i = pc.sec_in_thread + 1
+		}else{
+			i = (i%8) + 1
+		}
+                piece = new SectionList()
+                piece.wholetree
+                shapeplot.color_list(piece, i)
+        }
 }
 
 endtemplate ParallelComputeTool

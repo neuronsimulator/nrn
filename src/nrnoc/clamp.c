@@ -23,6 +23,7 @@ fclampi()
 
 */
 
+#include <stdlib.h>
 #include "neuron.h"
 #include "section.h"
 

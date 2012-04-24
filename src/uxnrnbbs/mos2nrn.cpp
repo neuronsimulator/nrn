@@ -23,17 +23,19 @@ int main(int argc, char** argv) {
 	if (!f) {
 		return 1;
 	}
-	fread(buf, 1, 5, f);
+	if (fread(buf, 1, 5, f) < 2) { return 1; }
 	fclose(f);
 	if (strncmp(buf, "PK", 2) == 0) { // its a nrnzip file
 		getdname(dname);
 sprintf(buf, "xterm -sb -e %s/mos2nrn2.sh %s %s %d", NEURON_BIN_DIR,
 			argv[1], dname, 0);
-		system(buf);
+		int i = system(buf);
+		if (i) { return i; }
 	}else{ // its a hoc file
 		sprintf(buf, "xterm -sb -e %s/nrniv %s -",
 			NEURON_BIN_DIR, argv[1]);
-		system(buf);
+		int i = system(buf);
+		if (i) { return i; }
 	}
 	return 0;
 }
@@ -62,7 +64,7 @@ const char* basefile(const char* path) {
 
 static void getdname(char* dname) {
 	int fd;
-	char* tdir;
+	const char* tdir;
 	if ((tdir = getenv("TEMP")) == NULL) {
 		tdir = "/tmp";
 	}

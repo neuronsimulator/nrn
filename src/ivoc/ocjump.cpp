@@ -18,21 +18,21 @@ extern Symlist* hoc_top_level_symlist;
 extern Symlist* hoc_symlist;
 extern Object* hoc_thisobject;
 extern void hoc_execute1();
-extern boolean hoc_valid_stmt(const char* stmt, Object* ob);
+extern bool hoc_valid_stmt(const char* stmt, Object* ob);
 extern int hoc_execerror_messages;
 }
 
-static boolean valid_stmt1(const char* stmt, Object* ob) {
+static bool valid_stmt1(const char* stmt, Object* ob) {
 	char* s = new char[strlen(stmt)+2];
 	strcpy(s, stmt);
 	strcat(s, "\n");	
 	OcJump oj;
-	boolean val= oj.execute(s, ob);
+	bool val= oj.execute(s, ob);
 	delete [] s;
 	return val;
 }
 
-boolean hoc_valid_stmt(const char* stmt, Object* ob) {
+bool hoc_valid_stmt(const char* stmt, Object* ob) {
 	return valid_stmt1(stmt, ob);
 }
 
@@ -52,7 +52,7 @@ void hoc_execute1() {
 	
 	hemold = hoc_execerror_messages;
 	hoc_execerror_messages = hem;
-	boolean b = valid_stmt1(gargstr(1), ob);
+	bool b = valid_stmt1(gargstr(1), ob);
 	hoc_execerror_messages = hemold;
 	hoc_ret();
 	hoc_pushx(double(b));
@@ -65,8 +65,8 @@ class OcJumpImpl {
 public:
 	OcJumpImpl();
 	virtual ~OcJumpImpl();
-	boolean execute(Inst* p);
-	boolean execute(const char*, Object* ob = nil);
+	bool execute(Inst* p);
+	bool execute(const char*, Object* ob = nil);
 	void* fpycall(void*(*f)(void*, void*), void* a, void* b);
 
 /* jmpbuf is not portable and I can't figure out how get a pointer to one.
@@ -115,12 +115,12 @@ private:
 //------------------------------------------------------------------
 
 #if HAVE_IV
-boolean Oc::valid_expr(Symbol* s) {
+bool Oc::valid_expr(Symbol* s) {
 	OcJump oj;
 	return oj.execute(s->u.u_proc->defn.in);
 }
 
-boolean Oc::valid_stmt(const char* stmt, Object* ob) {
+bool Oc::valid_stmt(const char* stmt, Object* ob) {
 	return valid_stmt1(stmt, ob);
 }
 #endif
@@ -132,11 +132,11 @@ OcJump::OcJump() {
 OcJump::~OcJump() {
 	delete impl_;
 }
-boolean OcJump::execute(Inst* p) {
+bool OcJump::execute(Inst* p) {
 	return impl_->execute(p);
 }
 
-boolean OcJump::execute(const char* stmt, Object* ob) {
+bool OcJump::execute(const char* stmt, Object* ob) {
 	return impl_->execute(stmt, ob);
 }
 
@@ -165,7 +165,7 @@ extern "C" {
 	void hoc_execute(Inst*);
 }
 
-boolean OcJumpImpl::execute(Inst* p) {
+bool OcJumpImpl::execute(Inst* p) {
 	begin();
 #if 1
 	if (setjmp(begin_)) {
@@ -181,7 +181,7 @@ boolean OcJumpImpl::execute(Inst* p) {
 	return true;
 }
 
-boolean OcJumpImpl::execute(const char* stmt, Object* ob) {
+bool OcJumpImpl::execute(const char* stmt, Object* ob) {
 	begin();
 #if 1
 	if (setjmp(begin_)) {

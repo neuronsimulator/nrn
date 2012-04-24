@@ -37,7 +37,7 @@ class Rubberband : public OcHandler {
 public:
 	Rubberband(RubberAction* = nil, Canvas* = nil);
 	virtual ~Rubberband();
-	virtual boolean event(Event&);
+	virtual bool event(Event&);
 	Coord x_begin()const, y_begin()const, x()const, y()const; //canvas coords
 	static const Color* color();
 	static const Brush* brush();

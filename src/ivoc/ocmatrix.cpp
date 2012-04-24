@@ -1,4 +1,5 @@
 #include <../../nrnconf.h>
+#include <vector>
 #include <InterViews/resource.h>
 
 #define v_elem(v,i) (*(vector_vec(v) + i))
@@ -10,6 +11,7 @@
 #undef error
 
 extern "C" {
+#undef OUT /* /usr/x86_64-w64-mingw32/sys-root/mingw/include/windef.h */
 #include "matrix.h"	//meschach
 #include "matrix2.h"
 #include "sparse.h"
@@ -17,6 +19,7 @@ extern "C" {
 }
 
 #include "ocmatrix.h"
+using std::vector;
 
 static void Vect2VEC(Vect* v1, VEC& v2) {
 #ifdef WIN32
@@ -46,6 +49,34 @@ OcMatrix* OcMatrix::instance(int nrow, int ncol, int type) {
 void OcMatrix::unimp() {
 	hoc_execerror("Matrix method not implemented for this type matrix", 0);
 }
+
+void OcMatrix::nonzeros(vector<int>& m, vector<int>& n) {
+    m.clear();
+    n.clear();
+    for (int i = 0; i < nrow(); i++) {
+        for (int j = 0; j < ncol(); j++) {
+            if (getval(i, j)) {
+                m.push_back(i);
+                n.push_back(j);
+            }
+        }
+    }
+}
+
+void OcSparseMatrix::nonzeros(vector<int>& m, vector<int>& n) {
+    m.clear();
+    n.clear();
+    for (int i = 0; i < m_->m; i++) {
+        SPROW* const r = m_->row + i;
+        row_elt* r_elt = r->elt;
+        for (int k = 0; k < r->len; k++) {
+            int j = r_elt[k].col;
+            m.push_back(i);
+            n.push_back(j);
+        }
+    }
+}
+
 
 OcFullMatrix* OcMatrix::full() {
 	if (type_ != MFULL) {// could clone one maybe
@@ -245,8 +276,8 @@ void OcFullMatrix::inverse(Matrix* out) {
 	m_inverse(m_, out->full()->m_);
 }
 
-void OcFullMatrix::solv(Vect* in, Vect* out, boolean use_lu) {
-	boolean call_lufac = true;
+void OcFullMatrix::solv(Vect* in, Vect* out, bool use_lu) {
+	bool call_lufac = true;
 	if (!lu_factor_) {
 		lu_factor_ = m_get(nrow(), nrow());
 		lu_pivot_ = px_get(nrow());
@@ -354,6 +385,10 @@ double* OcSparseMatrix::mep(int i, int j) {
 	return &r->elt[idx].val;
 }
 
+void OcSparseMatrix::zero() {
+	sp_zero(m_);
+}
+
 double OcSparseMatrix::getval(int i, int j) {
 	return sp_get_val(m_, i, j);
 }
@@ -370,8 +405,8 @@ void OcSparseMatrix::mulv(Vect* vin, Vect* vout) {
 	sp_mv_mlt(m_, &v1, &v2);
 }
 
-void OcSparseMatrix::solv(Vect* in, Vect* out, boolean use_lu) {
-	boolean call_lufac = true;
+void OcSparseMatrix::solv(Vect* in, Vect* out, bool use_lu) {
+	bool call_lufac = true;
 	if (!lu_factor_) {
 		lu_factor_ = sp_get(nrow(), nrow(), 4);
 		lu_pivot_ = px_get(nrow());

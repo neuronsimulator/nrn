@@ -152,7 +152,7 @@ static Object** l_alias_list(void*) {
 	Symbol* sl = hoc_lookup("List");
 	Symbol* st = hoc_table_lookup("String", hoc_top_level_symlist);
 	if (!st || st->type != TEMPLATE) {
-printf("st=%lx %s %d\n", (long)st, st?st->name:"nil", st?st->type:0);
+printf("st=%p %s %d\n", st, st?st->name:"nil", st?st->type:0);
 		hoc_execerror("String is not a template", 0);
 	}
 	Object** po = hoc_temp_objvar(sl, list);
@@ -258,7 +258,7 @@ static int l_ref4(Symbol* s, Object* ob, int nr) {
 		OcList* list = (OcList*)(OBJ(q)->u.this_pointer);
 		if (list->refs_items()) for (i = 0; i < list->count(); ++i) {
 			if (list->object(i) == ob) {	
-printf("   %s.object(%d)\n", hoc_object_name(OBJ(q)), i);
+printf("   %s.object(%ld)\n", hoc_object_name(OBJ(q)), i);
 				++nr;
 			}
 		}

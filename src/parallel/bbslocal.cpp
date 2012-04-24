@@ -17,7 +17,7 @@
 #endif
 
 struct ltint {
-	boolean operator() (int i, int j) const {
+	bool operator() (int i, int j) const {
 		return i < j;
 	}
 };
@@ -124,17 +124,17 @@ void BBSLocal::post(const char* key) {
 	posting_ = nil;
 }
 
-boolean BBSLocal::look_take(const char* key) {
+bool BBSLocal::look_take(const char* key) {
 	Resource::unref(taking_);
 	taking_ = nil;
-	boolean b = server_->look_take(key, &taking_);
+	bool b = server_->look_take(key, &taking_);
 	return b;
 }
 
-boolean BBSLocal::look(const char* key) {
+bool BBSLocal::look(const char* key) {
 	Resource::unref(taking_);
 	taking_ = nil;
-	boolean b = server_->look(key, &taking_);
+	bool b = server_->look(key, &taking_);
 	return b;
 }
 

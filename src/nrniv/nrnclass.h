@@ -2,10 +2,8 @@
 #if EXTERNS
 	,Shape_reg()
 	,PlotShape_reg()
-#if HAVE_IV
 	,PPShape_reg()
 	,RangeVarPlot_reg()
-#endif
 	,SectionBrowser_reg()
 	,MechanismStandard_reg()
 	,MechanismType_reg()
@@ -42,10 +40,8 @@
 
 	,Shape_reg
 	,PlotShape_reg
-#if HAVE_IV
 	,PPShape_reg
 	,RangeVarPlot_reg
-#endif
 	,SectionBrowser_reg
 	,MechanismStandard_reg
 	,MechanismType_reg

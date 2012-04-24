@@ -1,5 +1,6 @@
 #include <../../nrnconf.h>
 
+#include <stdlib.h>
 #include "lineq.h"
 	
 subrow(pivot, rowsub)

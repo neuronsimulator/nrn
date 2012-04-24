@@ -44,10 +44,10 @@ public:
     virtual int count() const;
     virtual const String* name(int index) const;
     virtual int index(const String&) const;
-    virtual boolean is_directory(int index) const;
+    virtual bool is_directory(int index) const;
 
     static String* canonical(const String&);
-    static boolean match(const String& name, const String& pattern);
+    static bool match(const String& name, const String& pattern);
 private:
     DirectoryImpl* impl_;
 private:

@@ -137,8 +137,8 @@ AC_HELP_STRING([--without-iv],[Do not compile graphics into neuron.])
 	xCXXFLAGS=$CXXFLAGS
 	CXXFLAGS="$CXXFLAGS $IV_INCLUDE"
 	AC_TRY_LINK(
-	 [#include "Dispatch/dispatcher.h"], dnl Random include file.
-	 [Dispatcher xyz;], dnl Random function to make sure link works.
+	 [#include "OS/string.h"], dnl Random include file.
+	 [String xyz;], dnl Random function to make sure link works.
 	 [AC_MSG_RESULT(ok)],
 	 [cat << EOF
 failed
@@ -159,19 +159,19 @@ c++ classes then specify configure --without-iv.
 EOF
 exit 1
 ])
-	dnl Make sure we are up to date for nrn5.6
-	AC_MSG_CHECKING([if InterViews is up to date with respect to nrn-5.6 and later])
+	dnl Make sure we are up to date for nrn7.3
+	AC_MSG_CHECKING([if InterViews is up to date with respect to nrn-7.3 and later])
 	AC_TRY_COMPILE(
 	 [#include <ivversion.h>],
 	 [
-#if (iv_hines_version < 17)
+#if (iv_hines_version < 18)
 #error InterViews version is iv_hines_version
 #endif
 	 ],
 	 [AC_MSG_RESULT(ok)],
 	 [cat << EOF
 failed
-The installed version of InterViews is out of date. Install iv-17.tar.gz
+The installed version of InterViews is out of date. Install iv-18.tar.gz
 EOF
 exit 1
 	 ])

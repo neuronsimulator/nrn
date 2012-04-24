@@ -25,7 +25,7 @@ Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 #include <_G_config.h>
 #else
 /*
- * int32_t and u_int32_t have been defined by the configure procedure.  Just
+ * int32_t and uint32_t have been defined by the configure procedure.  Just
  * use these in place of the ones that libg++ used to provide. 
  */
 #ifndef int32_t
@@ -37,7 +37,7 @@ Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 #endif
 #endif
 typedef int32_t _G_int32_t;
-typedef u_int32_t _G_uint32_t;
+typedef uint32_t _G_uint32_t;
 #endif
 
 #include <assert.h>

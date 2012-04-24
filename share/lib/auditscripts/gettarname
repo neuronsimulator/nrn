@@ -1,3 +1,5 @@
+#!/bin/sh
+
 # look in tardir and print the next available id number as a name
 tardir=$1
 if [ ! -d $tardir ] ; then

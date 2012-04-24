@@ -41,7 +41,7 @@ PTHREAD_CC=@PTHREAD_CC@
 PTHREAD_CFLAGS=@PTHREAD_CFLAGS@
 PTHREAD_LIBS=@PTHREAD_LIBS@
 
-INCLUDES = -I. -I.. -I$(pkgincludedir) -I$(libdir)
+INCLUDES = -I. -I.. -I$(pkgincludedir) -I$(libdir) $(UserINCFLAGS)
 
 LIBTOOL = $(pkgdatadir)/libtool @LIBTOOLTAG@
 CC = @CC@
@@ -58,7 +58,7 @@ CXXLINK = $(LIBTOOL) --mode=link $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(LDFLAGS)
 LINK = $(LIBTOOL) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(LDFLAGS)
 
 NRNLIBS = -L$(libdir) -lnrnoc -loc \
-	-lnrniv -livoc \
+	-lnrniv -livoc -loc \
 	-lneuron_gnu -lscopmath -lsparse13 -lsundials -lnrnmpi \
 	@MEMACSLIB@ -lmeschach \
 	$(IVOS_LIB) $(IV_LIBS) \

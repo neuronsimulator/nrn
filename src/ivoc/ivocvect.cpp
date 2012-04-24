@@ -53,8 +53,8 @@ extern "C" {extern void exit(int status);};
 #endif
 #define PI M_PI
 #endif
-#define FWrite(arg1,arg2,arg3,arg4) fwrite((char*)(arg1),arg2,arg3,arg4)
-#define FRead(arg1,arg2,arg3,arg4) fread((char*)(arg1),arg2,arg3,arg4)
+#define FWrite(arg1,arg2,arg3,arg4) if (fwrite((char*)(arg1),arg2,arg3,arg4) != arg3) { hoc_execerror("fwrite error", 0); }
+#define FRead(arg1,arg2,arg3,arg4) if (fread((char*)(arg1),arg2,arg3,arg4) != arg3) { hoc_execerror("fread error", 0); }
 #else
 #define FWrite(arg1,arg2,arg3,arg4) fwrite(arg1,arg2,arg3,arg4)
 #define FRead(arg1,arg2,arg3,arg4) fread(arg1,arg2,arg3,arg4)
@@ -161,20 +161,20 @@ void IvocVect::label(const char* label) {
 	}
 }
 
-static char* nullstr = "";
+static const char* nullstr = "";
 
-static char** v_label(void* v) {
+static const char** v_label(void* v) {
 	Vect* x  = (Vect*)v;
 	if (ifarg(1)) {
 		x->label(gargstr(1));
 	}
 	if (x->label_) {
-		return &x->label_;
+		return (const char**)&x->label_;
 	}
 	return &nullstr;
 }
 
-static void same_err(char* s, Vect* x, Vect* y) {
+static void same_err(const char* s, Vect* x, Vect* y) {
 	if (x == y) {
 		hoc_execerror(s, " argument needs to be copied first");
 	}
@@ -340,7 +340,7 @@ Vect* vector_arg(int i) {
 	return (Vect*)(ob->u.this_pointer);
 }
 
-boolean is_vector_arg(int i) {
+bool is_vector_arg(int i) {
 	Object* ob = *hoc_objgetarg(i);
 	if (!ob || ob->ctemplate != svec_->u.ctemplate) {
 		return false;
@@ -354,7 +354,7 @@ int vector_arg_px(int i, double** px) {
 	return x->capacity();
 }
 
-extern void nrn_vecsim_add(void*, boolean);
+extern void nrn_vecsim_add(void*, bool);
 extern void nrn_vecsim_remove(void*);
 
 static int possible_destvec(int arg, Vect*& dest) {
@@ -404,7 +404,7 @@ static double v_fwrite(void* v) {
 	}
 	int n = end-start+1;
 	BinaryMode(f);
-	return (double)FWrite(x,sizeof(double),n,fp);
+	return (double)fwrite(x,sizeof(double),n,fp);
 }
 
 static double v_fread(void* v) {
@@ -720,7 +720,7 @@ static double v_printf(void *v) {
 	int start = 0;
 	int end = top;
 	int next_arg = 1;
-	char *format = "%g\t";
+	const char *format = "%g\t";
 	int print_file = 0;
 	int extra_newline = 1; // when no File
 	OcFile *f;
@@ -1121,7 +1121,7 @@ static Object** v_sumgauss(void* v) {
 	double step = chkarg(3,1.e-99,1.e99);
 	double var = chkarg(4,0,1.e99);
         Vect* w;
-	boolean d = false;
+	bool d = false;
         if (ifarg(5)) {
 	   w = vector_arg(5);
         } else {
@@ -1209,7 +1209,7 @@ static Object** v_smhist(void* v) {
 	double *ans = (double *)calloc(2*n,(unsigned)sizeof(double));
 
 	// convolve
-	convlv(&series[0]-1,n,&gauss[0]-1,g,1,&ans[0]-1);
+	nrn_convlv(series,n,gauss,g,1,ans);
 
 	// put the answer in the vector
 	if (v1->capacity() != size) v1->resize(size);
@@ -2776,9 +2776,9 @@ static Object** v_correl(void* v) {
   for (i=0;i<v1n;++i) d1[i] = v1->elem(i);
   double *d2 = (double *)calloc(n,(unsigned)sizeof(double));
   for (i=0;i<v2n;++i) d2[i] = v2->elem(i);
-  double *ans = (double *)calloc(2*n,(unsigned)sizeof(double));
+  double *ans = (double *)calloc(n,(unsigned)sizeof(double));
 
-  correl(&d1[0]-1,&d2[0]-1,n,&ans[0]-1);
+  nrn_correl(d1, d2, n, ans);
 
   if (v3->capacity() != n) v3->resize(n);
   for (i=0;i<n;++i) v3->elem(i)=ans[i];
@@ -2825,7 +2825,7 @@ static Object** v_convlv(void* v) {
   
   double *ans = (double *)calloc(2*n,(unsigned)sizeof(double));
  
-  convlv(&data[0]-1,n,&respns[0]-1,v2n,isign,&ans[0]-1);
+  nrn_convlv(data,n,respns,v2n,isign,ans);
 
   if (v3->capacity() != n) v3->resize(n);
   for (i=0;i<n;++i) v3->elem(i)=ans[i];
@@ -2863,7 +2863,7 @@ static Object** v_spctrm(void* v) {
   for (int i=0;i<dc;++i) data[i] = v1->elem(i);
 
   if (ans->capacity() < m) ans->resize(m);
-  spctrm(&data[0], &ans->elem(0)-1, m, k);
+  nrn_spctrm(data, &ans->elem(0), m, k);
 
   free((char *)data);
 
@@ -2902,9 +2902,9 @@ static Object** v_filter(void* v) {
   
   double *ans = (double *)calloc(2*n,(unsigned)sizeof(double));
  
-  realft(&filter[0]-1,n,1);
+  nrngsl_realft(filter,n,1);
   
-  convlv(&data[0]-1,n,&filter[0]-1,v2n,1,&ans[0]-1);
+  nrn_convlv(data,n,filter,v2n,1,ans);
 
   if (v3->capacity() != n) v3->resize(n);
   for (i=0;i<n;++i) v3->elem(i)=ans[i];
@@ -2942,12 +2942,15 @@ static Object** v_fft(void* v) {
   double *data = (double *)calloc(n,(unsigned)sizeof(double));
   int i;
   for (i=0;i<v1n;++i) data[i] = v1->elem(i);
-
-  realft(&data[0]-1,n,inv);
-
   if (v3->capacity() != n) v3->resize(n);
-  for (i=0;i<n;++i) v3->elem(i)=data[i];
 
+  if (inv == -1) {
+    nrn_nrc2gsl(data, &v3->elem(0), n);
+    nrngsl_realft(&v3->elem(0), n, -1);
+  }else{
+    nrngsl_realft(data, n, 1);
+    nrn_gsl2nrc(data, &v3->elem(0), n);
+  }
   free((char *)data);
  
   return v3->temp_objvar();
@@ -3521,7 +3524,7 @@ static Object** v_index(void* v)
   Vect* ans = (Vect*)v;
   ParentVect* data;
   Vect* index;
-  boolean del = false;
+  bool del = false;
 
   if (ifarg(2)) {
 	data = vector_arg(1);

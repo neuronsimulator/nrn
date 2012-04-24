@@ -102,7 +102,7 @@ public:
 	double* weight_;
 	Object* obj_;
 	int cnt_;
-	boolean active_;
+	bool active_;
 
 	static unsigned long netcon_send_active_;
 	static unsigned long netcon_send_inactive_;
@@ -172,7 +172,7 @@ public:
 	double valold_, told_;
 	double valthresh_; // go below this to reset threshold detector.
 	TQItem* qthresh_;
-	boolean flag_; // true when below, false when above.
+	bool flag_; // true when below, false when above.
 
 	static unsigned long init_above_;
 	static unsigned long send_qthresh_;
@@ -279,7 +279,7 @@ public:
 	virtual void savestate_restore(double deliverytime, NetCvode*);
 	virtual void savestate_write(FILE*);
 	PreSyn* presyn_;	
-	boolean have_qthresh_;
+	bool have_qthresh_;
 
 	static void invalid();
 	static PreSyn* hindx2presyn(long);

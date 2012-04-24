@@ -32,7 +32,7 @@ public:
 	LineRubberMarker(GPolyLine*, RubberAction*, Canvas* c=nil);
 	LineRubberMarker(Coord, Coord, RubberAction*, Canvas* c=nil);
 	virtual ~LineRubberMarker();
-	virtual boolean event(Event&);
+	virtual bool event(Event&);
 	virtual void undraw(Coord, Coord);
 	virtual void draw(Coord, Coord);
 	int index() { return index_;}
@@ -66,7 +66,7 @@ private:
 public:
 	DeleteLabelHandler(GLabel*);
 	~DeleteLabelHandler();
-	virtual boolean event(Event&);
+	virtual bool event(Event&);
 private:	
 	GLabel* gl_;
 };
@@ -75,7 +75,7 @@ private:
 public:
 	ChangeLabelHandler(GLabel*);
 	~ChangeLabelHandler();
-	virtual boolean event(Event&);
+	virtual bool event(Event&);
 private:	
 	GLabel* gl_;
 };
@@ -84,7 +84,7 @@ private:
 public:
 	DeleteLineHandler(GPolyLine*);
 	~DeleteLineHandler();
-	virtual boolean event(Event&);
+	virtual bool event(Event&);
 private:	
 	GPolyLine* gpl_;
 };
@@ -155,7 +155,7 @@ void HocMark::pick(Canvas* c, const Allocation& a, int depth, Hit& h) {
 	}
 }
 
-boolean GPolyLine::near(Coord xcm, Coord ycm, float epsilon, const Transformer& t)const {
+bool GPolyLine::near(Coord xcm, Coord ycm, float epsilon, const Transformer& t)const {
 	if (x_->count() <= 0) {
 		return false;
 	}
@@ -259,7 +259,7 @@ LineRubberMarker::~LineRubberMarker(){
 	Resource::unref(gl_);
 	Resource::unref(label_);
 }
-boolean LineRubberMarker::event(Event& e) {
+bool LineRubberMarker::event(Event& e) {
 	if (Oc::helpmode()) {
 		if (e.type() == Event::down) {
 			Oc::help(LineRubberMarker_event_);
@@ -367,7 +367,7 @@ DeleteLabelHandler::DeleteLabelHandler(GLabel* gl) {
 DeleteLabelHandler::~DeleteLabelHandler(){
 //	printf("~DeleteLabelHandler\n");
 }
-boolean DeleteLabelHandler::event(Event& e) {
+bool DeleteLabelHandler::event(Event& e) {
 	if (Oc::helpmode()) {
 		if (e.type() == Event::down) {
 			Oc::help(DeleteLabelHandler_event_);
@@ -386,7 +386,7 @@ ChangeLabelHandler::ChangeLabelHandler(GLabel* gl) {
 ChangeLabelHandler::~ChangeLabelHandler(){
 //	printf("~ChangeLabelHandler\n");
 }
-boolean ChangeLabelHandler::event(Event& e) {
+bool ChangeLabelHandler::event(Event& e) {
 	if (Oc::helpmode()) {
 		if (e.type() == Event::down) {
 			Oc::help(ChangeLabelHandler_event_);
@@ -426,7 +426,7 @@ DeleteLineHandler::DeleteLineHandler(GPolyLine* gpl) {
 DeleteLineHandler::~DeleteLineHandler(){
 //	printf("~DeleteLineHandler\n");
 }
-boolean DeleteLineHandler::event(Event& e) {
+bool DeleteLineHandler::event(Event& e) {
 	if (Oc::helpmode()) {
 		if (e.type() == Event::down) {
 			Oc::help(DeleteLineHandler_event_);

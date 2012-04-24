@@ -60,6 +60,7 @@ following function calls.
 
 #define HOC_L_LIST 1
 
+#include <stdlib.h>
 #include	"hoclist.h"
 #include	"hocdec.h"
 #include	"parse.h"

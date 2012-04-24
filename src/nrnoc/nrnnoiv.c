@@ -2,6 +2,7 @@
 #include "nrnredef.h"
 #include "section.h"
 #include "nrnmpiuse.h"
+
 /* stubs for nrnoc. The actual functions are for interviews menus */
 nrnallsectionmenu(){ret(0);}
 nrnallpointmenu(){ret(0);}
@@ -20,12 +21,13 @@ double nrn_random_pick(r) void* r; { return 0.; }
 hoc_new_opoint(){}
 special_pnt_call(){}
 bbs_handle(){}
-linmod_alloc(){}
-int linmod_extra_eqn_count() { return 0; }
-linmod_rhs(){}
-linmod_lhs(){}
-linmod_update(){}
-linmod_init(){}
+nrndae_alloc(){}
+int nrndae_extra_eqn_count() { return 0; }
+int nrndae_list_is_empty() {return 0;}
+nrndae_rhs(){}
+nrndae_lhs(){}
+nrndae_update(){}
+nrndae_init(){}
 nrn_solver_prepare(){}
 nrn_fihexec(i) int i;{}
 nrn_deliver_events(tt) double tt;{}

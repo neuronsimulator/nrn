@@ -36,6 +36,7 @@ static char RCSid[] =
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <assert.h>
 #include "errcodes.h"
 
 typedef struct event
@@ -139,10 +140,10 @@ char *filename;
     /* Put data into event structure */
 
     for (i = 0; i < 6; i++)	/* Skip first 6 lines */
-	fgets(buff, 80, datafile);
+	assert(fgets(buff, 80, datafile));
     for (i = 0; i < nevent; i++)
     {
-	fgets(buff, 80, datafile);
+	assert(fgets(buff, 80, datafile));
 	sscanf(buff, "%lf %lf", &((*new_event)->sched_t[i]), &((*new_event)->ampl[i]));
     }
 

@@ -22,7 +22,8 @@ static char RCSid[] =
 #endif
 
 #include <math.h>
-static u_int32_t value = 1;
+#include <mcran4.h>
+static uint32_t value = 1;
 
 /*-----------------------------------------------------------------------------
  *
@@ -60,10 +61,9 @@ scop_random()
   extern int use_mcell_ran4_;
   if (use_mcell_ran4_) {
 	/*perhaps 4 times slower but much higher quality*/
-	double x, mcell_ran4();
-	return mcell_ran4(&value, &x, 1, 1.);
+	return mcell_ran4a(&value);
   }else{
-    u_int32_t a = 2147437301, c = 453816981,
+    uint32_t a = 2147437301, c = 453816981,
     /* m = 2^32 - 1, the largest long int value that can be represented */
     /*m = 0xFFFFFFFF;*/ /* limited to 32 bit integers*/
     m = ~0;
@@ -98,6 +98,6 @@ scop_random()
 set_seed(seed)
 double seed;
 {
-    value = (u_int32_t)seed;
+    value = (uint32_t)seed;
 }
 

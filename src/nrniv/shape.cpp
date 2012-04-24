@@ -64,7 +64,7 @@ public:
 	virtual ~ShapeChangeObserver();
 	virtual void update(Observable*);
 	void force();
-	boolean needs_update() { return (shape_changed_ != nrn_shape_changed_);}
+	bool needs_update() { return (shape_changed_ != nrn_shape_changed_);}
 private:
 	int shape_changed_;
 	int struc_changed_;
@@ -112,7 +112,7 @@ public:
 	virtual void draw(Canvas*, const Allocation&) const;
 	const Object* object() {return ob_;}
 	virtual void set_loc(Section*, float x);
-	boolean everything_ok();
+	bool everything_ok();
 private:
 	GlyphIndex i_;
 	Coord x_, y_;
@@ -133,6 +133,7 @@ public:
 		ShapeScene::selected(s, x, y); }
 	virtual ShapeSection* selected() { return ShapeScene::selected(); }
 	virtual void set_select_action(const char*);
+	virtual void set_select_action(Object*);
 	virtual void save_phase1(ostream&);
 	virtual PointMark* point_mark(Object*, const Color*, const char style = 'O',const float size = 8.);
 	virtual PointMark* point_mark(Section*, float x, const Color*);
@@ -145,20 +146,20 @@ private:
 	PolyGlyph* point_mark_list_;
 	OcShapeHandler* osh_;
    ShapeSection* sold_;
-	boolean show_adjacent_selection_;
+	bool show_adjacent_selection_;
 };
 
 /*static*/ class OcShapeHandler : public SectionHandler {
 public:
 	OcShapeHandler(OcShape*);
 	virtual ~OcShapeHandler();
-	virtual boolean event(Event&);
+	virtual bool event(Event&);
 private:
 	OcShape* s_;
 };
 OcShapeHandler::OcShapeHandler(OcShape* s) { s_ = s; }
 OcShapeHandler::~OcShapeHandler() {}
-boolean OcShapeHandler::event(Event&) {
+bool OcShapeHandler::event(Event&) {
 	s_->handle_picked();
 	return true;
 }
@@ -215,7 +216,11 @@ ENDGUI
 static double sh_select_action(void* v) {
 #if HAVE_IV
 IFGUI
-	((OcShape*)v)->set_select_action(gargstr(1));
+	if (hoc_is_object_arg(1)) {
+		((OcShape*)v)->set_select_action(*hoc_objgetarg(1));
+	}else{
+		((OcShape*)v)->set_select_action(gargstr(1));
+	}
 ENDGUI
 #endif
 	return 1.;
@@ -403,15 +408,7 @@ ENDGUI
 }
 
 
-static double sh_menu_action(void* v) {
-#if HAVE_IV
-IFGUI
-	HocCommand* hc = new HocCommand(gargstr(2));
-	((Scene*)v)->picker()->add_menu(gargstr(1), new HocCommandAction(hc));
-ENDGUI
-#endif
-	return 1.;
-}
+extern double ivoc_gr_menu_action(void* v);
 
 static double exec_menu(void* v) {
 #if HAVE_IV
@@ -469,7 +466,7 @@ static Member_func sh_members[] = {
 	"point_mark_remove", sh_point_mark_remove,
 	"printfile", sh_printfile,
 	"show", sh_show,
-	"menu_action", sh_menu_action,
+	"menu_action", ivoc_gr_menu_action,
 	"menu_tool", ivoc_gr_menu_tool,
 	"exec_menu", exec_menu,
 	"observe", nrniv_sh_observe,
@@ -609,6 +606,14 @@ void OcShape::set_select_action(const char* s) {
 	}
 	select_ = new HocCommand(s);
 }
+
+void OcShape::set_select_action(Object* pobj) {
+	if (select_) {
+		delete select_;
+	}
+	select_ = new HocCommand(pobj);
+}
+
 void OcShape::sel_color(ShapeSection* sold, ShapeSection* snew) {
 	ShapeSection* ss;
 	Section* s;
@@ -1060,7 +1065,7 @@ ShapeSection* ShapeScene::shape_section(Section* sec) {
 
 //color the shapesections
 
-static boolean par_helper(Section* sec) {
+static bool par_helper(Section* sec) {
 	/* decide whether a sec with 2 marks should be colored. yes if
 	there are not two single marked children connected at same location
 	or any double marked children */
@@ -1380,7 +1385,7 @@ Section* ShapeSection::section() const {
 	return sec_;
 }
 
-boolean ShapeSection::good() const {
+bool ShapeSection::good() const {
 	return sec_->prop != 0;
 }
 
@@ -1400,7 +1405,7 @@ void ShapeSection::set_range_variable(Symbol* sym) {
 	int i, n=section()->nnode-1;
 	pvar_ = new double*[n];
 	old_ = new const Color*[n];
-	boolean any = false;
+	bool any = false;
    if (nrn_exists(sym, section()->pnode[0])){
 	for (i=0; i < n; ++i) {
 		pvar_[i] = nrn_rangepointer(section(), sym,
@@ -1450,7 +1455,7 @@ xmin_, a.left(),ymin_,a.bottom(),xmax_,a.right());
 	fast_draw(c, x, y, true);
 }
 
-void ShapeSection::fast_draw(Canvas* c, Coord x, Coord y, boolean b) const {
+void ShapeSection::fast_draw(Canvas* c, Coord x, Coord y, bool b) const {
 	Section* sec = section();
 	IfIdraw(pict());
 	if (pvar_) {
@@ -1602,7 +1607,7 @@ void ShapeSection::bevel_join(Canvas* c, const Color* color, int i, float d) con
 	if (i == 0) { return; }
 	float perp1[2], perp2[2], x, y;
 	x = x_[i]; y = y_[i];
-	boolean b = true;
+	bool b = true;
 	b &= MyMath::unit_normal(x - x_[i-1], y - y_[i-1], perp1);
 	b &= MyMath::unit_normal(x_[i+1] - x, y_[i+1] - y, perp2);
 	if (b && (perp1[0] != perp2[0] || perp1[1] != perp2[1])) {
@@ -1792,7 +1797,7 @@ ShapeScene* ShapeScene::current_draw_scene() {
 	return (ShapeScene*)XYView::current_draw_view()->scene();
 }
 
-boolean ShapeSection::near_section(Coord x, Coord y, Coord mineps)const {
+bool ShapeSection::near_section(Coord x, Coord y, Coord mineps)const {
 		int n = sec_->npt3d;
 		for (int i=1; i < n; ++i) {
 			if (MyMath::near_line_segment(
@@ -1901,7 +1906,7 @@ SectionHandler::SectionHandler() {
 SectionHandler::~SectionHandler() {
 	shape_section(nil);
 }
-boolean SectionHandler::event(Event&) {
+bool SectionHandler::event(Event&) {
 	return true;
 }
 void SectionHandler::shape_section(ShapeSection* ss) {
@@ -1959,7 +1964,7 @@ void PointMark::set_loc(Section* sec, float x) {
 	xloc_ = x;
 }
 
-boolean PointMark::everything_ok() {
+bool PointMark::everything_ok() {
 	sec_ = nil;
 	if (ob_) {
 		Point_process* pnt = ob2pntproc_0(ob_);
@@ -2008,13 +2013,13 @@ ShapeChangeObserver::~ShapeChangeObserver() {
 }
 void ShapeChangeObserver::update(Observable*) {
 	if (shape_changed_ != nrn_shape_changed_) {
-//printf("ShapeChangeObserver::update shape_changed%lx nrn_shape_changed=%d\n", (long)this, nrn_shape_changed_);
+//printf("ShapeChangeObserver::update shape_changed%p nrn_shape_changed=%d\n", this, nrn_shape_changed_);
 		shape_changed_ = nrn_shape_changed_;
 		nrn_define_shape();
 		volatile_ptr_ref = nil;
 		if (struc_changed_ != structure_change_cnt) {
 			struc_changed_ = structure_change_cnt;
-//printf("ShapeChangeObserver::update structure_changed%lx\n", (long)this);
+//printf("ShapeChangeObserver::update structure_changed%p\n", this);
 			if (s_->view_all()) {
 				s_->observe();
 			}

@@ -47,7 +47,7 @@ public:
     static void unref_deferred(const Resource*);
 
     /* postpone unref deletes */
-    static boolean defer(boolean);
+    static bool defer(bool);
     static void flush();
 
     /* for backward compatibility */

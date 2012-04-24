@@ -19,7 +19,7 @@ void nrn_popsec();
 Section* chk_access();
 void nrn_rangeconst(Section*, Symbol*, double* value, int op = 0);
 Prop* nrn_mechanism(int type, Node*);
-boolean nrn_exists(Symbol*, Node*);
+bool nrn_exists(Symbol*, Node*);
 double* nrn_rangepointer(Section*, Symbol*, double x);
 double* cable_prop_eval_pointer(Symbol*); // section on stack will be popped
 char* hoc_section_pathname(Section*);
@@ -34,8 +34,8 @@ int arc0at0(Section*);
 void nrn_clear_mark();
 short nrn_increment_mark(Section*);
 short nrn_value_mark(Section*);
-boolean is_point_process(Object*);
-int nrn_vartype(Symbol*); // CONST, DEP, STATE
+bool is_point_process(Object*);
+int nrn_vartype(Symbol*); // nrnocCONST, DEP, STATE
 void recalc_diam();
 }
 

@@ -17,8 +17,8 @@ public:
 	HandleStdin();
         virtual int inputReady(int fd);
         virtual int  exceptionRaised(int fd);
-	boolean stdinSeen_;
-	boolean acceptInput_; 
+	bool stdinSeen_;
+	bool acceptInput_; 
 };
 
 struct Symbol;
@@ -31,12 +31,12 @@ public:
 	virtual ~Oc();
 
 	int run(int argc, char** argv);
-	int run(const char *, boolean show_err_mes = true);
+	int run(const char *, bool show_err_mes = true);
 
 	Symbol* parseExpr(const char *, Symlist** = nil);
 	double runExpr(Symbol*);
-	static boolean valid_expr(Symbol*);
-	static boolean valid_stmt(const char*, Object* ob = nil);
+	static bool valid_expr(Symbol*);
+	static bool valid_stmt(const char*, Object* ob = nil);
 	const char* name(Symbol*);
 	
 	void notifyHocValue(); // loops over HocValueBS buttonstates.
@@ -52,10 +52,10 @@ public:
 	
 	static Session* getSession();
 	static int getStdinSeen() {return handleStdin_->stdinSeen_;}
-	static void setStdinSeen(boolean i) {handleStdin_->stdinSeen_ = i;}
-	static boolean setAcceptInput(boolean);
-	static boolean helpmode() {return helpmode_;}
-	static void helpmode(boolean);
+	static void setStdinSeen(bool i) {handleStdin_->stdinSeen_ = i;}
+	static bool setAcceptInput(bool);
+	static bool helpmode() {return helpmode_;}
+	static void helpmode(bool);
 	static void helpmode(Window*);
 	static void help(const char*);
 
@@ -65,7 +65,7 @@ private:
 	static int refcnt_;
 	static Session* session_;
 	static HandleStdin* handleStdin_;
-	static boolean helpmode_;
+	static bool helpmode_;
 	static Cursor* help_cursor();
 	static Cursor* help_cursor_;
 	static Observable* notify_change_;

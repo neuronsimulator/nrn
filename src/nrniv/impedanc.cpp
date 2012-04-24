@@ -186,7 +186,7 @@ public:
 	Imp();
 	virtual ~Imp();
 	// v(x)/i(x) and  v(loc)/i(x) == v(x)/i(loc)
-	void compute(double freq, boolean nonlin = false);
+	void compute(double freq, bool nonlin = false);
 	void location(Section*, double);
 	double transfer_amp(Section*, double);
 	double input_amp(Section*, double);
@@ -229,7 +229,7 @@ static void destruct(void* v) {
 
 static double compute(void* v) {
 	Imp* imp = (Imp*)v;
-	boolean nonlin = false;
+	bool nonlin = false;
 	if (ifarg(2)) {
 		nonlin = *getarg(2) ? true : false;
 	}
@@ -396,7 +396,7 @@ void Imp::location(Section* sec, double x){
 	}
 }
 
-void Imp::compute(double freq, boolean nonlin){
+void Imp::compute(double freq, bool nonlin){
 	check();
 	if (sloc_) {
 		istim = loc(sloc_, xloc_);

@@ -7,6 +7,9 @@
 #define PERM void
 #endif
 
+#include <vector>
+using std::vector;
+
 struct Object;
 class IvocVect;
 class OcFullMatrix;
@@ -20,13 +23,18 @@ public:
 	virtual ~OcMatrix();
 
 	virtual double* mep(int i, int j) {unimp(); return nil;} //matrix element pointer
+	inline double& operator() (int i, int j) {return *mep(i, j);};	
+	
 	virtual double getval(int i, int j) { unimp(); return 0.; }
 	virtual int nrow() {unimp(); return 0;}
 	virtual int ncol() {unimp(); return 0;}
 	virtual void resize(int, int) {unimp();}
+    
+    virtual void nonzeros(vector<int>& m, vector<int>& n);
 
 	OcFullMatrix* full();
 	
+	inline void mulv(Vect& in, Vect& out) {mulv(&in, &out);};
 	virtual void mulv(Vect* in, Vect* out){unimp();}
 	virtual void mulm(Matrix* in, Matrix* out){unimp();}
 	virtual void muls(double, Matrix* out){unimp();}
@@ -45,7 +53,7 @@ public:
 	virtual void exp(Matrix* out){unimp();}
 	virtual void pow(int, Matrix* out){unimp();}
 	virtual void inverse(Matrix* out){unimp();}
-	virtual void solv(Vect* vin, Vect* vout, boolean use_lu) {unimp();}
+	virtual void solv(Vect* vin, Vect* vout, bool use_lu) {unimp();}
 	virtual void copy(Matrix* out){unimp();}
 	virtual void bcopy(Matrix* mout, int i0, int j0, int n0, int m0, int i1, int j1){unimp();}
 	virtual void transpose(Matrix* out){unimp();}
@@ -98,7 +106,7 @@ public:
 	virtual void exp(Matrix* out);
 	virtual void pow(int, Matrix* out);
 	virtual void inverse(Matrix* out);
-	virtual void solv(Vect* vin, Vect* vout, boolean use_lu);
+	virtual void solv(Vect* vin, Vect* vout, bool use_lu);
 	virtual void copy(Matrix* out);
 	virtual void bcopy(Matrix* mout, int i0, int j0, int n0, int m0, int i1, int j1);
 	virtual void transpose(Matrix* out);
@@ -122,7 +130,7 @@ public:
 	virtual int ncol();
 	virtual double getval(int, int);
 	virtual void mulv(Vect* in, Vect* out);
-	virtual void solv(Vect* vin, Vect* vout, boolean use_lu);
+	virtual void solv(Vect* vin, Vect* vout, bool use_lu);
 
 	virtual void setrow(int, Vect* in);
 	virtual void setcol(int, Vect* in);
@@ -131,8 +139,13 @@ public:
 	virtual void setcol(int, double in);
 	virtual void setdiag(int, double in);
 
+    virtual void nonzeros(vector<int>& m, vector<int>& n);
+
 	virtual int sprowlen(int); // how many elements in row
 	virtual double spgetrowval(int i, int jindx, int* j); 
+    
+    virtual void zero();
+
 private:
 	SPMAT* m_;
 	SPMAT* lu_factor_;

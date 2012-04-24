@@ -13,6 +13,7 @@
 
 #include <OS/list.h>
 #include "ocobserv.h"
+#include <nrnran123.h>
 
 #include <RNG.h>
 #include <ACG.h>
@@ -59,12 +60,26 @@ extern "C" {
 double nrn_random_pick(Rand* r);
 Rand* nrn_random_arg(int);
 
-void mcell_ran4_init(unsigned int* idum);
-double mcell_ran4(unsigned int* idum, double* ran_vec, int n, double range);
-double mcell_ran4_64(unsigned int* idum, unsigned int ilow, double* ran_vec, int n, double range);
-unsigned int mcell_iran4(unsigned int* idum, unsigned int* iran_vec, int n);
-unsigned int mcell_iran4_64(unsigned int* idum, unsigned int ilow, unsigned int* iran_vec, int n);
+#include <mcran4.h>
+
 }
+
+class NrnRandom123 : public RNG {
+public:
+	NrnRandom123(uint32_t id1, uint32_t id2);
+	virtual ~NrnRandom123();
+	virtual _G_uint32_t asLong() { return nrnran123_ipick(s_); }
+	virtual double asDouble() { return nrnran123_dblpick(s_); }
+	virtual void reset() { nrnran123_setseq(s_, 0, 0); }
+	nrnran123_State* s_;
+};
+NrnRandom123::NrnRandom123(uint32_t id1, uint32_t id2) {
+	s_ = nrnran123_newstream(id1, id2);
+}
+NrnRandom123::~NrnRandom123() {
+	nrnran123_deletestream(s_);
+}
+
 
 // The decision that has to be made is whether each generator instance
 // should have its own seed or only one seed for all. We choose separate
@@ -75,42 +90,40 @@ unsigned int mcell_iran4_64(unsigned int* idum, unsigned int ilow, unsigned int*
 
 class MCellRan4 : public RNG {
 public:
-	MCellRan4(unsigned int idum = 0, unsigned int ilow = 0);
+	MCellRan4(uint32_t ihigh = 0, uint32_t ilow = 0);
 	virtual ~MCellRan4();
 	virtual _G_uint32_t asLong() {
-		return (_G_uint32_t)(ilow_ == 0 ? mcell_iran4(&idum_, iran_vec, 1) :
-			mcell_iran4_64(&idum_, ilow_, iran_vec, 1));
+		return (_G_uint32_t)(ilow_ == 0 ? mcell_iran4(&ihigh_) :
+			nrnRan4int(&ihigh_, ilow_));
 	}
-	virtual void reset() { idum_ = orig_; }
+	virtual void reset() { ihigh_ = orig_; }
 	virtual double asDouble() {
-		return (ilow_ == 0 ? mcell_ran4(&idum_, ran_vec, 1, 1.) :
-			 mcell_ran4_64(&idum_, ilow_, ran_vec, 1, 1.)); }
-	unsigned int idum_;
-	unsigned int orig_;
-	unsigned int ilow_;
+		return (ilow_ == 0 ? mcell_ran4a(&ihigh_) :
+			 nrnRan4dbl(&ihigh_, ilow_)); }
+	uint32_t ihigh_;
+	uint32_t orig_;
+	uint32_t ilow_;
 private:
-	static unsigned int cnt_;
-	double ran_vec[1];
-	unsigned int iran_vec[1];
+	static uint32_t cnt_;
 };
 
-MCellRan4::MCellRan4(unsigned int idum, unsigned int ilow) {
+MCellRan4::MCellRan4(uint32_t ihigh, uint32_t ilow) {
 	++cnt_;
 	ilow_ = ilow;
-	idum_ = idum;
-	if (idum_ == 0) {
-		idum_ = cnt_;
-		idum_ = (unsigned int)asLong();
+	ihigh_ = ihigh;
+	if (ihigh_ == 0) {
+		ihigh_ = cnt_;
+		ihigh_ = (uint32_t)asLong();
 	}
-	orig_ = idum_;
+	orig_ = ihigh_;
 }
 MCellRan4::~MCellRan4() {}
 
-unsigned int MCellRan4::cnt_ = 0;
+uint32_t MCellRan4::cnt_ = 0;
 
 class Isaac64 : public RNG {
 public:
-	Isaac64(unsigned int seed = 0);
+	Isaac64(uint32_t seed = 0);
 	virtual ~Isaac64();
 	virtual _G_uint32_t asLong() {
 		return (_G_uint32_t)nrnisaac_uint32_pick(rng_);
@@ -164,7 +177,7 @@ void RandomPlay::list_remove() {
 	long i, cnt = random_play_list_->count();
 	for (i = 0; i < cnt; ++i) {
 		if (random_play_list_->item(i) == (RandomPlay*)this) {
-//printf("RandomPlay %lx removed from list cnt=%d i=%d %lx\n", (long)this, cnt, i);
+//printf("RandomPlay %p removed from list cnt=%d i=%d %p\n", this, cnt, i);
 			random_play_list_->remove(i);
 			unref_deferred();
 			break;
@@ -269,11 +282,11 @@ static double r_MLCG(void* r)
 static double r_MCellRan4(void* r) {
   Rand* x = (Rand*)r;
 
-  u_int32_t seed1 = 0;
-  u_int32_t  ilow = 0;
+  uint32_t seed1 = 0;
+  uint32_t  ilow = 0;
 
-  if (ifarg(1)) seed1 = (u_int32_t)(chkarg(1, 0., dmaxuint));
-  if (ifarg(2)) ilow = (u_int32_t)(chkarg(2, 0., dmaxuint));
+  if (ifarg(1)) seed1 = (uint32_t)(chkarg(1, 0., dmaxuint));
+  if (ifarg(2)) ilow = (uint32_t)(chkarg(2, 0., dmaxuint));
   MCellRan4* mcr = new MCellRan4(seed1, ilow);
   x->rand->generator(mcr);
   delete x->gen;
@@ -282,16 +295,52 @@ static double r_MCellRan4(void* r) {
   return (double)mcr->orig_;
 }
 
+static double r_nrnran123(void* r) {
+	Rand* x = (Rand*)r;
+	uint32_t id1 = 0;
+	uint32_t id2 = 0;
+	if (ifarg(1)) id1 = (uint32_t)(chkarg(1, 0., dmaxuint));
+	if (ifarg(2)) id2 = (uint32_t)(chkarg(2, 0., dmaxuint));
+	NrnRandom123* r123 = new NrnRandom123(id1, id2);
+	x->rand->generator(r123);
+	delete x->gen;
+	x->gen = x->rand->generator();
+	x->type_ = 4;
+	return 0.;
+}
+
+static double r_ran123_globalindex(void* r) {
+	if (ifarg(1)) {
+		uint32_t gix = (uint32_t)chkarg(1, 0., 4294967295.); /* 2^32 - 1 */
+		nrnran123_set_globalindex(gix);
+	}
+	return (double)nrnran123_get_globalindex();
+}
+
 static double r_sequence(void* r) {
 	Rand* x = (Rand*)r;
-	if (x->type_ != 2) {
-hoc_execerror("Random.seq() can only be used if the random generator was MCellRan4", 0);
+	if (x->type_ != 2 && x->type_ != 4) {
+hoc_execerror("Random.seq() can only be used if the random generator was MCellRan4 or Random123", 0);
 	}
+
+	if (x->type_ == 4) {
+		uint32_t seq; char which;
+		if (ifarg(1)) {
+			double s = chkarg(1, 0., 17179869183.); /* 2^34 - 1 */
+			seq = (uint32_t)(s/4.);
+			which = char(s - seq*4.);
+			NrnRandom123* nr = (NrnRandom123*)x->gen;
+			nrnran123_setseq(nr->s_, seq, which);
+		}			
+		nrnran123_getseq(((NrnRandom123*)x->gen)->s_, &seq, &which);
+		return double(seq)*4. + double(which);
+	}
+
 	MCellRan4* mcr = (MCellRan4*)x->gen;
 	if (ifarg(1)) {
-		mcr->idum_ = (long)(*getarg(1));
+		mcr->ihigh_ = (long)(*getarg(1));
 	}
-	return (double)mcr->idum_;
+	return (double)mcr->ihigh_;
 }
 
 static double r_Isaac64(void* r) {
@@ -517,6 +566,8 @@ static Member_func r_members[] = {
 	"MLCG",             r_MLCG,
 	"Isaac64",	    r_Isaac64,
 	"MCellRan4",	    r_MCellRan4,
+	"Random123",	    r_nrnran123,
+	"Random123_globalindex", r_ran123_globalindex,
 	"seq",		    r_sequence,
 	"repick",           r_repick,
 	"uniform",          r_uniform,

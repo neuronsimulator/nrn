@@ -25,15 +25,15 @@ extern "C" {
 	extern char** nrn_global_argv;
 };
 
-boolean BBSImpl::is_master_ = false;
-boolean BBSImpl::started_ = false;
-boolean BBSImpl::done_ = false;
+bool BBSImpl::is_master_ = false;
+bool BBSImpl::started_ = false;
+bool BBSImpl::done_ = false;
 
 #undef debug
 #define debug BBSImpl::debug_
 
 int BBSImpl::debug_ = 0;
-boolean BBSImpl::use_pvm_;
+bool BBSImpl::use_pvm_;
 int BBSImpl::mytid_;
 
 static int etaskcnt;
@@ -147,7 +147,7 @@ BBSImpl::~BBSImpl() {
 	}
 }
 
-boolean BBS::is_master() {
+bool BBS::is_master() {
 	return BBSImpl::is_master_;
 }
 
@@ -159,7 +159,7 @@ int BBS::myid() {
 	return nrnmpi_myid;
 }
 
-boolean BBSImpl::is_master() {
+bool BBSImpl::is_master() {
 	return is_master_;
 }
 
@@ -233,7 +233,7 @@ char* BBS::upkstr() {
 char* BBS::upkpickle(size_t* n) {
 	char* s = impl_->upkpickle(n);
 	if (debug) {
-		printf("upkpickle %d |%s|\n", *n, s);
+		printf("upkpickle %lu |%s|\n", *n, s);
 	}
 	return s;
 }
@@ -275,7 +275,7 @@ void BBS::pkstr(const char* s) {
 
 void BBS::pkpickle(const char* s, size_t n) {
 	if (debug) {
-		printf("pkpickle %d |%s|\n", n, s);
+		printf("pkpickle %lu |%s|\n", n, s);
 	}
 	impl_->pkpickle(s, n);
 }
@@ -380,11 +380,11 @@ void BBSImpl::context() {
 	exit(1);
 }
 
-boolean BBS::working(int& id, double& x, int& userid) {
+bool BBS::working(int& id, double& x, int& userid) {
 	return impl_->working(id, x, userid);
 }
 
-boolean BBSImpl::working(int& id, double& x, int& userid) {
+bool BBSImpl::working(int& id, double& x, int& userid) {
 	int cnt=0;
 	int rtype;
 	double t;
@@ -462,16 +462,16 @@ void BBS::post(const char* key) {
 	impl_->post(key);
 }
 
-boolean BBS::look_take(const char* key) {
-	boolean b = impl_->look_take(key);
+bool BBS::look_take(const char* key) {
+	bool b = impl_->look_take(key);
 	if (debug) {
 		printf("look_take |%s| return %d\n", key, b);
 	}
 	return b;
 }
 
-boolean BBS::look(const char* key) {
-	boolean b = impl_->look(key);
+bool BBS::look(const char* key) {
+	bool b = impl_->look(key);
 	if (debug) {
 		printf("look |%s| return %d\n", key, b);
 	}

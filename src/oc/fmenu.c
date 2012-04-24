@@ -102,6 +102,9 @@ fmenu.c,v
 *
 *			Version 1.0 written by M.V. Evans and M.L. Hines 4-12-89
 */
+
+#include <stdlib.h>
+
 #if defined(WITHOUT_MEMACS)
 #define OCSMALL 1
 #endif

@@ -27,7 +27,7 @@ void (*p_nrnpython_start)();
 #endif
 int (*p_nrnpy_pyrun)(char* fname);
 
-#if carbon
+#if carbon || defined(MINGW)
 #include <pthread.h>
 #endif
 
@@ -754,10 +754,10 @@ hoc_main1_init(pname, envp)
 		nrn_exit(1);
 	}
 
-	save_parallel_envp(envp);
+	save_parallel_envp();
 
 	init();
-	initplot(envp);
+	initplot();
 #if defined(__GO32__)
 	setcbrk(0);
 #endif
@@ -930,6 +930,44 @@ printf("Discarding input til Dialog is closed.\n");
 }
 #endif
 
+#if defined(MINGW)
+static pthread_t* inputReady_;
+static pthread_mutex_t inputMutex_;
+static pthread_cond_t inputCond_;
+static int inputReadyFlag_;
+static int inputReadyVal_;
+
+void* inputReadyThread(void*  input);
+void* inputReadyThread(void* input) {
+	int i, j;
+	extern int stdin_event_ready();
+	char c;
+//	pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, &j);
+	for (;;) {
+		pthread_testcancel();
+#if 0
+		//if (kbhit()) {
+			if (!stdin_event_ready()) {
+				// dialog is open. cannot accept input now.
+printf("Discarding input til Dialog is closed.\n");
+				read(fileno(stdin), &c, 1);
+				continue;
+			}
+		//}
+#endif
+i = getch();
+//printf("see %d %c\n", i, i);
+		pthread_mutex_lock(&inputMutex_);
+inputReadyFlag_ = 1;
+inputReadyVal_ = i;
+		stdin_event_ready();
+		pthread_cond_wait(&inputCond_, &inputMutex_);
+		pthread_mutex_unlock(&inputMutex_);
+	}
+	printf("inputReadyThread done\n");
+}
+#endif
+
 hoc_final_exit() {
 	char buf[256];
 #if defined(USE_PYTHON)
@@ -962,7 +1000,7 @@ hoc_final_exit() {
 #else
 	sprintf(buf, "%s/lib/cleanup %d", neuron_home, hoc_pid());
 #endif
-	system(buf);
+	if (system(buf)) {;} /* ignore return value */
 #endif
 }
 	
@@ -1322,7 +1360,7 @@ warning(s, t)	/* print warning message */
 	n = strlen(cbuf);
 	for (cp = cbuf; cp < (cbuf + n); ++cp) {
 		if (!isprint((int)(*cp)) && !isspace((int)(*cp))) {
-			Fprintf(stderr, "%scharacter \\%03o at position %d is not printable\n", id, ((int)(*cp) & 0xff), cp-cbuf);
+			Fprintf(stderr, "%scharacter \\%03o at position %ld is not printable\n", id, ((int)(*cp) & 0xff), cp-cbuf);
 			break;
 		}
 	}
@@ -1454,9 +1492,9 @@ extern int run_til_stdin(); /* runs the interviews event loop. Returns 1
 extern hoc_notify_value();
 
 #if READLINE
+#if carbon
 extern Pfri rl_event_hook;
 static int event_hook() {
-#if carbon
 	if (!inputReady_) {
 		inputReady_ = (pthread_t*)emalloc(sizeof(pthread_t));
 		pthread_mutex_init(&inputMutex_, 0);
@@ -1470,13 +1508,44 @@ static int event_hook() {
 	pthread_mutex_lock(&inputMutex_);
 	pthread_cond_signal(&inputCond_);
 	return 1;
-#endif
+}
+#else /* not carbon */
+#if defined(MINGW)
+extern Pfri rl_getc_function;
+static int getc_hook() {
+	int i;
+	if (!inputReady_) {
+		stdin_event_ready(); /* store main thread id */
+		inputReady_ = (pthread_t*)emalloc(sizeof(pthread_t));
+		pthread_mutex_init(&inputMutex_, 0);
+		pthread_cond_init(&inputCond_, 0);
+		pthread_create(inputReady_, 0, inputReadyThread, 0);
+	}else{
+		pthread_mutex_unlock(&inputMutex_);
+	}
+//	printf("run til stdin\n");
+	while(!inputReadyFlag_) {
+		run_til_stdin();
+		usleep(10000);
+	}
+	inputReadyFlag_ = 0;
+	i = inputReadyVal_;
+	pthread_mutex_lock(&inputMutex_);
+	pthread_cond_signal(&inputCond_);
+//printf("getc_hook returning %d\n", i);
+	return i;
+}
+#else /* not carbon and not MINGW */
+extern Pfri rl_event_hook;
+static int event_hook() {
 	int i;
 	i = run_til_stdin();
 	return i;
 }
-#endif
-#endif
+#endif /* not carbon and not MINGW */
+#endif /* not carbon */
+#endif /* READLINE */
+#endif /* INTERVIEWS */
 
 #if 1 || MAC
 /*
@@ -1590,13 +1659,24 @@ int hoc_get_line(){ /* supports re-entry. fill cbuf with next line */
 #if READLINE
 		if (nrn_fw_eq(fin, stdin) && nrn_istty_) { char *line, *readline(); int n;
 #if INTERVIEWS
+#ifdef MINGW
+IFGUI
+			if (hoc_interviews && !hoc_in_yyparse) {
+				rl_getc_function = getc_hook;
+				hoc_notify_value();
+			}else{
+				rl_getc_function = (Pfri)0;
+			}
+ENDGUI
+#else /* not MINGW */
 			if (hoc_interviews && !hoc_in_yyparse) {
 				rl_event_hook = event_hook;
 				hoc_notify_value();
 			}else{
 				rl_event_hook = (Pfri)0;
 			}
-#endif
+#endif /* not MINGW */
+#endif /* INTERVIEWS */
 			if ((line = readline(hoc_promptstr)) == (char *)0) {
 				extern int hoc_notify_stop;
 				return EOF;

@@ -27,7 +27,6 @@
 
 #include <OS/os.h>
 
-#undef boolean
 #undef String
 #undef u_char
 
@@ -35,18 +34,6 @@
 
 #ifndef nil
 #define nil 0
-#endif
-
-#ifndef iv_os_boolean
-#define iv_os_boolean
-
-typedef unsigned boolean;
-
-#if defined(IVOS_DECLARE_TRUE)
-static const unsigned false = 0;
-static const unsigned true = 1;
-#endif
-
 #endif
 
 #ifndef iv_os_u_char

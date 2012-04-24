@@ -11,6 +11,7 @@
 extern "C" {
 
 #include "parse.h"
+extern Section* nrn_noerr_access();
 extern void hoc_pushs(Symbol*);
 extern double* hoc_evalpointer();
 extern Symlist* hoc_top_level_symlist;
@@ -30,7 +31,7 @@ extern Objectdata* hoc_top_level_data;
 extern void hoc_tobj_unref(Object**);
 extern void sec_access_push();
 extern PyObject* nrnpy_pushsec(PyObject*);
-extern boolean hoc_valid_stmt(const char*, Object*);
+extern bool hoc_valid_stmt(const char*, Object*);
 myPyMODINIT_FUNC nrnpy_nrn();
 extern PyObject* nrnpy_cas(PyObject*, PyObject*);
 extern PyObject* nrnpy_forall(PyObject*, PyObject*);
@@ -64,7 +65,7 @@ static char array_interface_typestr[5] = "|f8";
 static PyObject* pfunc_get_docstring = NULL;
 
 
-  static char* hocobj_docstring = "class neuron.hoc.HocObject - Hoc Object wrapper";
+static const char* hocobj_docstring = "class neuron.hoc.HocObject - Hoc Object wrapper";
 
 
 #if 0
@@ -121,7 +122,7 @@ static PyObject* nrnexec(PyObject* self, PyObject* args) {
 	if (!PyArg_ParseTuple(args, "s", &cmd)) {
 		return NULL;
 	}
-	boolean b = hoc_valid_stmt(cmd, 0);
+	bool b = hoc_valid_stmt(cmd, 0);
 	return Py_BuildValue("i", b?1:0);
 }
 
@@ -142,7 +143,7 @@ static PyMethodDef HocMethods[] = {
 };
 
 static void hocobj_dealloc(PyHocObject* self) {
-//printf("hocobj_dealloc %lx\n", (long)self);
+//printf("hocobj_dealloc %p\n", self);
 	if (self->ho_) {
 		hoc_obj_unref(self->ho_);
 	}
@@ -160,7 +161,7 @@ static void hocobj_dealloc(PyHocObject* self) {
 static PyObject* hocobj_new(PyTypeObject* subtype, PyObject* args, PyObject* kwds) {
 	PyObject* subself;
 	subself = subtype->tp_alloc(subtype, 0);
-//printf("hocobj_new %s %lx\n", subtype->tp_name, (long)subself);
+//printf("hocobj_new %s %p\n", subtype->tp_name, subself);
 	if (subself == NULL) { return NULL; }
 	PyHocObject* self = (PyHocObject*)subself;
 	self->ho_ = NULL;
@@ -202,7 +203,7 @@ static PyObject* hocobj_new(PyTypeObject* subtype, PyObject* args, PyObject* kwd
 }
 
 static int hocobj_init(PyObject* subself, PyObject* args, PyObject* kwds) {
-//printf("hocobj_init %s %lx\n", ((PyTypeObject*)PyObject_Type(subself))->tp_name, (long)subself);
+//printf("hocobj_init %s %p\n", ((PyTypeObject*)PyObject_Type(subself))->tp_name, subself);
 #if 0
 	if (subself != NULL) {
 		PyHocObject* self = (PyHocObject*)subself;
@@ -458,7 +459,7 @@ PyObject* nrnpy_hoc_pop() {
 	case OBJECTTMP:
 		d = hoc_objpop();
 		ho = *d;
-//printf("Py2Nrn %lx %lx\n", (long)ho->ctemplate->sym, (long)nrnpy_pyobj_sym_);
+//printf("Py2Nrn %p %p\n", ho->ctemplate->sym, nrnpy_pyobj_sym_);
 		result = nrnpy_ho2po(ho);
 		hoc_tobj_unref(d);
 		break;
@@ -812,7 +813,6 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* name) {
 	      }else{
 		return NULL;
 	      }
-
 	    }else{
 		// ipython wants to know if there is a __getitem__
 		// even though it does not use it.
@@ -863,6 +863,16 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* name) {
 	switch (sym->type) {
 	case VAR: // double*
 		if (!ISARRAY(sym)) {
+			if (sym->subtype == USERINT) {
+				Py_BuildValue("i", *(sym->u.pvalint));
+				break;
+			}
+			if (sym->subtype == USERPROPERTY) {
+				if (!nrn_noerr_access()) {
+					PyErr_SetString(PyExc_TypeError, "Section access unspecified");
+					break;
+				}
+			}
 			hoc_pushs(sym);
 			hoc_evalpointer();
 			if (isptr) {
@@ -1172,7 +1182,7 @@ PyObject* nrnpy_forall(PyObject* self, PyObject* args) {
 }
 
 static PyObject* hocobj_iter(PyObject* self) {
-//	printf("hocobj_iter %lx\n", (long)self);
+//	printf("hocobj_iter %p\n", self);
 	PyHocObject* po = (PyHocObject*)self;
 	if (po->type_ == 1) {
 		if (po->ho_->ctemplate == hoc_vec_template_) {
@@ -1205,8 +1215,24 @@ static PyObject* iternext_sl(PyHocObject* po, hoc_Item* ql) {
 		if (q->prev != ql) {
 			nrn_popsec();
 		}
-		nrn_pushsec(q->element.sec);
-		po->iteritem_ = q->next;
+		for (;;) { // have to watch out for deleted sections.
+			hoc_Item* q1 = q->next;
+			Section* sec = q->element.sec;
+			if (!sec->prop) { // delete from list and go on
+				// to the next. If no more return NULL
+				hoc_l_delete(q);
+				section_unref(sec);
+				q = q1;
+				if (q != ql) {
+					continue;
+				}else{
+					return NULL;
+				}
+			}
+			nrn_pushsec(sec);
+			po->iteritem_ = q1;
+			break;
+		}
 		return nrnpy_cas(NULL, NULL);
 	}else{
 		if (q->prev != ql) {
@@ -1217,7 +1243,7 @@ static PyObject* iternext_sl(PyHocObject* po, hoc_Item* ql) {
 }
 
 static PyObject* hocobj_iternext(PyObject* self) {
-	//printf("hocobj_iternext %lx\n", (long)self);
+	//printf("hocobj_iternext %p\n", self);
 	PyHocObject* po = (PyHocObject*)self;
 	if (po->type_ == 1) {
 		hoc_Item* ql = (hoc_Item*)po->ho_->u.this_pointer;
@@ -1301,7 +1327,7 @@ static PyObject* hocobj_getitem(PyObject* self, Py_ssize_t ix) {
 			}
 		}
 		char e[200];
-		sprintf(e, "%s[%d] instance does not exist", po->sym_->name, ix);
+		sprintf(e, "%s[%ld] instance does not exist", po->sym_->name, ix);
 		PyErr_SetString(PyExc_IndexError, e);
 		return NULL;
 	}
@@ -1800,7 +1826,7 @@ myPyMODINIT_FUNC nrnpy_hoc() {
 		goto fail;
 	}
 	// Setup bytesize in typestr
-	snprintf(array_interface_typestr+2,3,"%d",sizeof(double));
+	snprintf(array_interface_typestr+2,3,"%ld",sizeof(double));
 #if PY_MAJOR_VERSION >= 3
 	assert(PyDict_SetItemString(modules, "hoc", m) == 0);
 	Py_DECREF(m);

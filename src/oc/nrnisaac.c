@@ -1,4 +1,5 @@
 #include <../../nrnconf.h>
+#include <stdlib.h>
 #if HAVE_SYS_TYPES_H
 #include <sys/types.h>
 #endif
@@ -29,7 +30,7 @@ double nrnisaac_dbl_pick(void* v) {
 	return x;
 }
 
-u_int32_t nrnisaac_uint32_pick(void* v) {
+uint32_t nrnisaac_uint32_pick(void* v) {
 	Rng* rng = (Rng*)v;
 	double x = isaac64_uint32(rng);
 /*printf("uint32 %g\n", x);*/

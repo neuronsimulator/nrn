@@ -203,7 +203,7 @@ XYView::~XYView() {
 
 // should only be accessed by a method that traces its call from the pick
 XYView* XYView::current_pick_view() {
-//	printf("current pick view %lx\n", (long)XYView_helper::current_pick_view_);
+//	printf("current pick view %p\n", XYView_helper::current_pick_view_);
 	return XYView_helper::current_pick_view_;
 }
 
@@ -212,7 +212,7 @@ XYView* XYView_helper::current_pick_view_;
 // should only be accessed by a method that traces its call from the draw
 // or print
 XYView* XYView::current_draw_view() {
-//	printf("current draw view %lx\n", (long)XYView_helper::current_draw_view_);
+//	printf("current draw view %p\n", XYView_helper::current_draw_view_);
 	return XYView_helper::current_draw_view_;
 }
 
@@ -246,7 +246,7 @@ void XYView::undraw() {
 	TransformSetter::undraw();
 }
 
-void XYView::damage(Glyph* g, const Allocation& a, boolean fixed, boolean vf) {
+void XYView::damage(Glyph* g, const Allocation& a, bool fixed, bool vf) {
 	if (canvas_) {
 		Extension e;
 		canvas_->push_transform();
@@ -723,9 +723,9 @@ void OcViewGlyph::save(ostream& o) {
 	long i = Scene::scene_list_index(s);
 	if (!s->mark()) {
 		s->save_phase1(o);
-		sprintf(buf, "scene_vector_[%d] = save_window_", i);
+		sprintf(buf, "scene_vector_[%ld] = save_window_", i);
 	}else{
-		sprintf(buf, "save_window_ = scene_vector_[%d]", i);
+		sprintf(buf, "save_window_ = scene_vector_[%ld]", i);
 	}
 	o << buf << endl;
 	v_->save(o);

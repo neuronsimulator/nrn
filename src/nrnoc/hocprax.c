@@ -36,6 +36,7 @@ also can use
 pval = pval_praxis(i, Vector)
 */
 
+#include <stdlib.h>
 #include "hocdec.h"
 #include "parse.h"
 

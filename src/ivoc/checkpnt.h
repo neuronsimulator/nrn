@@ -10,9 +10,9 @@ public:
 		
 	static Checkpoint* instance();
 	
-	boolean out(); // true means to file, false means from file
-	boolean xdr(long&);
-	boolean xdr(Object*&);
+	bool out(); // true means to file, false means from file
+	bool xdr(long&);
+	bool xdr(Object*&);
 };
 
 #endif

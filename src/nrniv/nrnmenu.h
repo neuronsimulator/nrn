@@ -44,12 +44,12 @@ private:
 
 class MechanismType : public Resource {
 public:
-	MechanismType(boolean point_process);
+	MechanismType(bool point_process);
 	virtual ~MechanismType();
-	boolean is_point();
-	boolean is_netcon_target(int);
-	boolean has_net_event(int);
-	boolean is_artificial(int);
+	bool is_point();
+	bool is_netcon_target(int);
+	bool has_net_event(int);
+	bool is_artificial(int);
 	void select(const char*);
 	const char* selected();
 	void insert(Section*);

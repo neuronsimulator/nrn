@@ -159,11 +159,11 @@ constasgn: NAME '=' number units limits
 		/* ugh. 7 slots because constant may appear in COMPARTMENT
 			and the 7th space will contain the compartment
 			size units */
-		{P1{$$ = itemarray(7, $1, $4, ITEM0, $3,ITEM0,ITEM0,ITEM0); declare(CONST, $1, $$);}}
+		{P1{$$ = itemarray(7, $1, $4, ITEM0, $3,ITEM0,ITEM0,ITEM0); declare(modlunitCONST, $1, $$);}}
 	| NAME units limits
-		{P1{$$ = itemarray(7, $1, $2, ITEM0,ITEM0,ITEM0,ITEM0,ITEM0); declare(CONST, $1, $$);}}
+		{P1{$$ = itemarray(7, $1, $2, ITEM0,ITEM0,ITEM0,ITEM0,ITEM0); declare(modlunitCONST, $1, $$);}}
 	| NAME '[' integer ']' units limits
-		{P1{$$ = itemarray(7, $1, $5, $3, ITEM0, ITEM0,ITEM0,ITEM0); declare(CONST, $1, $$);}}
+		{P1{$$ = itemarray(7, $1, $5, $3, ITEM0, ITEM0,ITEM0,ITEM0); declare(modlunitCONST, $1, $$);}}
 	| error {myerr("name = number");}
 	;
 units:	/*nothing*/

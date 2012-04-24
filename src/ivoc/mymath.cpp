@@ -108,7 +108,7 @@ float MyMath::max(int count, const float* x) {
 	
 // within epsilon distance from the infinite line
 
-boolean MyMath::near_line(Coord x, Coord y,
+bool MyMath::near_line(Coord x, Coord y,
    Coord x1, Coord y1, Coord x2, Coord y2,
    float epsilon)
 {
@@ -193,7 +193,7 @@ float MyMath::distance_to_line_segment(Coord x, Coord y,
 	}
 }
 
-boolean MyMath::near_line_segment(Coord x, Coord y,
+bool MyMath::near_line_segment(Coord x, Coord y,
    Coord x1, Coord y1, Coord x2, Coord y2,
    float epsilon)
 {
@@ -366,7 +366,7 @@ void MyMath::box(Requisition& req, Coord& x1, Coord& y1, Coord& x2, Coord& y2) {
 	y2 = y1 + ry.natural();
 }
 
-boolean MyMath::unit_normal(Coord x, Coord y, Coord* perp) {
+bool MyMath::unit_normal(Coord x, Coord y, Coord* perp) {
 	float d;
 	d = sqrt(x*x + y*y);
 	if (d < 1e-6) {

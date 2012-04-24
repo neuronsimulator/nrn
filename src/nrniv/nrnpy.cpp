@@ -6,6 +6,7 @@
 
 #include <../nrnpython/nrnpython_config.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <InterViews/resource.h>
 #include "nrnoc2iv.h"
 #include "classreg.h"
@@ -18,11 +19,30 @@ static void (*p_nrnpython_reg_real)();
 }
 
 #if NRNPYTHON_DYNAMICLOAD
+
+#ifdef MINGW
+#define RTLD_NOW 0
+#define RTLD_GLOBAL 0
+#define RTLD_NOLOAD 0
+extern "C" {
+extern void* dlopen_noerr(const char* name, int mode);
+#define dlopen dlopen_noerr
+extern void* dlsym(void* handle, const char* name);
+extern int dlclose(void* handle);
+extern char* dlerror();
+}
+#else
 #include <dlfcn.h>
+#endif
+
 extern "C" {
 extern char* neuron_home;
 }
-static char* ver[] = {"3.0", "2.6", "2.5", "2.4", "2.3", 0};
+#ifdef MINGW
+static const char* ver[] = {"2.7", 0};
+#else
+static const char* ver[] = {"2.7", "2.6", "2.5", "2.4", 0};
+#endif
 static int iver; // which python is loaded?
 static void* python_already_loaded();
 static void* load_python();
@@ -85,10 +105,14 @@ void nrnpython_reg() {
 static void* ver_dlo(int flag) {
 	for (int i = 0; ver[i]; ++i) {
 		char name[100];
+#ifdef MINGW
+		sprintf(name, "python%c%c.dll", ver[i][0], ver[i][2]);
+#else	
 #if DARWIN
 		sprintf(name, "libpython%s.dylib", ver[i]);
 #else
 		sprintf(name, "libpython%s.so", ver[i]);
+#endif
 #endif
 		void* handle = dlopen(name, flag);
 		iver = i;
@@ -112,7 +136,7 @@ static void* load_python() {
 	return handle;
 }
 
-static void* load_sym(void* handle, char* name) {
+static void* load_sym(void* handle, const char* name) {
 	void* p = dlsym(handle, name);
 	if (!p) {
 		printf("Could not load %s\n", name);
@@ -123,14 +147,19 @@ static void* load_sym(void* handle, char* name) {
 
 static void load_nrnpython() {
 	char name[100];
+#ifdef MINGW
+	sprintf(name, "nrnpython%c%c.dll", ver[iver][0], ver[iver][2]);
+#else
 #if DARWIN
-	sprintf(name, "%s/../../umac/lib/libnrnpython%c%c.dylib", neuron_home, ver[iver][0], ver[iver][2]);
+	sprintf(name, "%s/../../%s/lib/libnrnpython%c%c.dylib", neuron_home, NRNHOSTCPU, ver[iver][0], ver[iver][2]);
 #else
 	sprintf(name, "libnrnpython%c%c.so", ver[iver][0], ver[iver][2]);
+#endif
 #endif
 	void* handle = dlopen(name, RTLD_NOW);
 	if (!handle) {
 		printf("Could not load %s\n", name);
+		return;
 	}
 	p_nrnpython_start = (void(*)(int))load_sym(handle, "nrnpython_start");
 	p_nrnpython_real = (void(*)())load_sym(handle, "nrnpython_real");

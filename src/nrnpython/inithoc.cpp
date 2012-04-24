@@ -66,6 +66,13 @@ void inithoc() {
 	  argc = argc_mpi;
 	  argv = argv_mpi;
 	}
+	else if (getenv ("NEURON_INIT_MPI")) {
+	  // force NEURON to initialize MPI
+	  printf("Will enable MPI functionality.\n");
+
+	  argc = argc_mpi;
+	  argv = argv_mpi;
+	}
 	else {
 	  printf("MPI_Initialized==false, disabling MPI functionality.\n");
 	}

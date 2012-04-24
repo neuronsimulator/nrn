@@ -3,7 +3,14 @@
 
 #include <nrnpthread.h>
 #if USE_PTHREAD
+
 #include <pthread.h>
+
+#ifdef MINGW
+#undef DELETE
+#undef near
+#endif
+
 #define MUTDEC pthread_mutex_t* mut_;
 #define MUTCONSTRUCTED (mut_ != (pthread_mutex_t*)0)
 #if defined(__cplusplus)

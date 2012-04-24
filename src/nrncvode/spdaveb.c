@@ -287,7 +287,7 @@ spfprev( SPBLK* n )
 
 
 
-char *
+const char *
 spstats( SPTREE* q )
 {
     static char buf[ 128 ];
@@ -305,6 +305,6 @@ spstats( SPTREE* q )
     sprintf(buf, "f(%d %4.2f) i(%d %4.2f) s(%d %4.2f)",
 	q->lookups, llen, q->enqs, elen, q->splays, sloops );
 
-    return buf;
+    return (const char*)buf;
 }
 

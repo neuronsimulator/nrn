@@ -27,6 +27,11 @@ sysdep_sources = $(cygwin_sources)
 nonsysdep_sources = $(x_sources) $(carbon_sources)
 ivoc_LDFLAGS = -mwindows -e _mainCRTStartup
 else
+if BUILD_MINGW
+sysdep_sources = $(cygwin_sources)
+nonsysdep_sources = $(x_sources) $(carbon_sources)
+ivoc_LDFLAGS =
+else
 if BUILD_CARBON
 sysdep_sources = $(carbon_sources)
 nonsysdep_sources = $(x_sources) $(cygwin_sources)
@@ -34,6 +39,7 @@ else
 sysdep_sources = $(x_sources)
 nonsysdep_sources = $(cygwin_sources) $(carbon_sources)
 ivoc_LDFLAGS =
+endif
 endif
 endif
 
@@ -56,16 +62,17 @@ noinst_HEADERS = apwindow.h axis.h bndedval.h cbwidget.h checkpnt.h \
 	ocglyph.h ocinput.h ocjump.h oclist.h ocmatrix.h ocobserv.h \
 	ocpicker.h ocpointer.h random1.h rect.h rubband.h scenepic.h \
 	scenevie.h symchoos.h symdir.h utility.h ivocvect.h xmenu.h \
+	nrngsl.h nrngsl_hc_radix2.c nrngsl_real_radix2.c \
 	grglyph.h nrnmutdec.h
 
 ivoc_SOURCES = nrnmain.cpp ivocmain.cpp $(nrniv_iv_sources)
 
 ivoc_LDADD = ../oc/nocable.o ../oc/modlreg.o \
 	../oc/libocxt.la ../oc/liboc.la \
-	libivoc.la ../nrnmpi/libnrnmpi.la \
+	libivoc.la ../nrnmpi/libnrnmpi.la ../oc/liboc.la \
 	@MEMACSLIBLA@ ../mesch/libmeschach.la \
 	../gnu/libneuron_gnu.la $(IVOS_DIR) \
-	$(IV_LIBS) @NRN_READLINE_LIBS@ @NRNJAVA_LIBLA@
+	$(IV_LIBS) @NRN_READLINE_LIBS@ @NRNJAVA_LIBLA@ @PTHREAD_LIBS@
 
 ## We have to play a trick on automake to get it to install the .o files in
 ## an architecture-dependent subdirectory.  (Apparently automake's authors

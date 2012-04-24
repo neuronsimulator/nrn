@@ -83,9 +83,9 @@ hoc_audit_from_hoc_main1(argc, argv, envp)
 	}
 	/* since file open for entire session will have to make the name unique*/
 	sprintf(buf, "if [ ! -d %s ] ; then mkdir %s ; fi", AUDIT_DIR, AUDIT_DIR);
-	system(buf);
+	assert(system(buf) >= 0);
 	sprintf(buf, "mkdir %s/%d", AUDIT_DIR, hoc_pid());
-	system(buf);
+	assert(system(buf) >= 0);
 	sprintf(buf, "%s/hocaudit.sh %d %s", AUDIT_SCRIPT_DIR, hoc_pid(), AUDIT_DIR);
 	if ((audit_pipe = popen(buf, "w")) == (FILE*)0) {
 		hoc_warning("Could not connect to hocaudit.sh via pipe:", buf);
@@ -259,7 +259,7 @@ static xopen_audit() {
 	bp[strlen(bp) - 1] = '\0';
 	hoc_xopen1(bp, "");
 #if 1
-	system(buf);
+	assert(system(buf) >= 0);
 #endif
 #endif
 }

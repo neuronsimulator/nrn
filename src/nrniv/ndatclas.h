@@ -14,11 +14,11 @@ public:
 	virtual ~NrnProperty();
 	const char* name() const;
 	int type() const;
-	boolean is_point() const;
-	boolean deleteable();
+	bool is_point() const;
+	bool deleteable();
 
 	Symbol* first_var();
-	boolean more_var();
+	bool more_var();
 	Symbol* next_var();
 	Symbol* find(const char* rangevar);
 	Symbol* var(int);
@@ -28,7 +28,7 @@ public:
 	Prop* prop() const;
 	int var_type(Symbol*) const;
 	//vartype=0, 1, 2, 3 means all, PARAMETER, ASSIGNED, STATE
-	static boolean assign(Prop* src, Prop* dest, int vartype=0);
+	static bool assign(Prop* src, Prop* dest, int vartype=0);
 private:
 	NrnPropertyImpl* npi_;
 };
@@ -51,7 +51,7 @@ public:
 	void section(Section*);
 	Section* section();
 	Node* node(int index);
-	boolean is_mechanism(int type);
+	bool is_mechanism(int type);
 	double* var_pointer(Symbol*, int index=0, int inode=0);
 	double* var_pointer(const char*); // eg. ca_cadifus[2](.7)
 private:

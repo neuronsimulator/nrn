@@ -29,7 +29,7 @@ public:
 	virtual void update(Observable*);
 	void create();
 	void lmfree();
-	boolean valid() { return model_ != nil; }
+	bool valid() { return model_ != nil; }
 	void update_ptrs();
 
 	LinearModelAddition* model_;

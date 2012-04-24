@@ -27,7 +27,7 @@ static void deleteitem(TQItem* i) {
 	tpool_->free(i);
 }
 
-boolean TQItem::check() {
+bool TQItem::check() {
 #if DOCHECK
 	if (left_ && left_->t_ > t_) {
 		printf("left %g not <= %g\n", left_->t_, t_);
@@ -262,7 +262,7 @@ check("begin remove1");
 #endif
 	TQItem* p = i->parent_;
 	TQItem** child;
-	boolean doweight = true;
+	bool doweight = true;
 	if (p) {
 //printf("removing with a parent %g\n", i->t_);
 		if (p->left_ == i) {
@@ -452,7 +452,7 @@ check("begin insert1");
 check("end insert1");
 }
 
-boolean TQItem::unbalanced() {
+bool TQItem::unbalanced() {
 	int balance, dbalance;
 	if (parent_) {
 		balance = parent_->wright() - parent_->wleft();

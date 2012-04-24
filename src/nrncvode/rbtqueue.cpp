@@ -88,7 +88,7 @@ static void deleteitem(TQItem* i) {
 	tpool_->free(i);
 }
 
-boolean TQItem::check() {
+bool TQItem::check() {
 #if DOCHECK
 #endif
 	return true;
@@ -100,7 +100,7 @@ static void prnt(const TQItem* b, int level) {
 		printf("    ");
 	}
 //	printf("%g %c %d\n", b->t_, b->data_?'x':'o', b->red_);
-	printf("%g %c %d Q=%lx D=%lx\n", b->t_, b->data_?'x':'o', b->red_, (long)b, (long)b->data_);
+	printf("%g %c %d Q=%p D=%p\n", b->t_, b->data_?'x':'o', b->red_, b, b->data_);
 }
 
 static void chk(TQItem* b, int level) {
@@ -364,7 +364,7 @@ Node* RBTQueue::insert(double t, void* d) {
 }
 
 void RBTQueue::insertNode(T data, Node* x) {
-//printf("%lx::insertNode %g\n", (long)this, data);
+//printf("%p::insertNode %g\n", this, data);
     Node *current, *parent;
 
 #if FAST_LEAST
@@ -486,7 +486,7 @@ void RBTQueue::remove(Node* z) {
 }
 
 void RBTQueue::deleteNode(Node *z) {
-//printf("%lx::deleteNode %g\n", (long)this, z->t_);
+//printf("%p::deleteNode %g\n", this, z->t_);
     Node *x, *y;
 
 	STAT(nrem)

@@ -110,7 +110,7 @@ static int BitOffset = 0,		/* Bit Offset of next code */
     Misc;                       /* miscellaneous bits (interlace, local cmap)*/
 
 
-static boolean Interlace, HasColormap;
+static bool Interlace, HasColormap;
 
 static byte *RawGIF;			/* The heap array to hold it, raw */
 static byte *GRaster;			/* The raster data stream, unblocked */
@@ -124,8 +124,8 @@ static int Suffix[4096];
 static int OutCode[4097];
 
 static int   gif89 = 0;
-static char *id87 = "GIF87a";
-static char *id89 = "GIF89a";
+static const char *id87 = "GIF87a";
+static const char *id89 = "GIF89a";
 
 static int EGApalette[16][3] = {
   {0,0,0},       {0,0,128},     {0,128,0},     {0,128,128}, 
@@ -137,8 +137,8 @@ static int EGApalette[16][3] = {
 static int   readImage(PICINFO*);
 static int   readCode();
 static void  doInterlace(int);
-static int   gifError(PICINFO*, char *);
-static void  gifWarning(char *);
+static int   gifError(PICINFO*, const char *);
+static void  gifWarning(const char *);
 
 static int   filesize;
 static const char *bname;
@@ -415,7 +415,7 @@ static int LoadGIF(const char* fname, PICINFO* pinfo)
 
     else if (block == IMAGESEP) {
       if (DEBUG) fprintf(stderr,"imagesep (got=%d)  ",gotimage);
-      if (DEBUG) fprintf(stderr,"  at start: offset=0x%lx\n",dataptr-RawGIF);
+      if (DEBUG) fprintf(stderr,"  at start: offset=%ld\n",dataptr-RawGIF);
 
       if (gotimage) {   /* just skip over remaining images */
 	int i,misc,ch,ch1;
@@ -444,7 +444,7 @@ static int LoadGIF(const char* fname, PICINFO* pinfo)
       }
 
       else if (readImage(pinfo)) gotimage = 1;
-      if (DEBUG) fprintf(stderr,"  at end:   dataptr=0x%lx\n",dataptr-RawGIF);
+      if (DEBUG) fprintf(stderr,"  at end:   dataptr=%ld\n",dataptr-RawGIF);
     }
 
 
@@ -460,7 +460,7 @@ static int LoadGIF(const char* fname, PICINFO* pinfo)
 
       /* don't mention bad block if file was trunc'd, as it's all bogus */
       if ((dataptr - origptr) < filesize) {
-	sprintf(str, "Unknown block type (0x%02x) at offset 0x%lx",
+	sprintf(str, "Unknown block type (0x%02x) at offset %ld",
 		block, (dataptr - origptr) - 1);
 
 	if (!gotimage) return gifError(pinfo, str);
@@ -781,7 +781,7 @@ static void doInterlace(int Index)
 
       
 /*****************************/
-static int gifError(PICINFO* pinfo, char* st)
+static int gifError(PICINFO* pinfo, const char* st)
 {
   gifWarning(st);
 
@@ -800,7 +800,7 @@ static int gifError(PICINFO* pinfo, char* st)
 
 
 /*****************************/
-static void gifWarning(char* st)
+static void gifWarning(const char* st)
 {
 //  SetISTR(ISTR_WARNING,"%s:  %s\n", bname, st);
 	hoc_warning(bname, st);

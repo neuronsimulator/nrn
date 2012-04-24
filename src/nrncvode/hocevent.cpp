@@ -93,11 +93,7 @@ hoc_execerror("multiple threads and/or local variable time step method require a
 		}else{
 			t = nt_t = tt;
 		}
-#if carbon
-		stmt_->execute((unsigned int)0);
-#else
 		stmt_->execute(false);
-#endif
 		if (nrn_nthread > 1 || nc->is_local()) {
 			nrn_hoc_unlock();
 		}
@@ -107,11 +103,7 @@ hoc_execerror("multiple threads and/or local variable time step method require a
 
 void HocEvent::allthread_handle() {
 	if (stmt_) {
-#if carbon
-		stmt_->execute((unsigned int)0);
-#else
 		stmt_->execute(false);
-#endif
 	}else{
 		tstopset;
 	}
@@ -168,14 +160,14 @@ DiscreteEvent* HocEvent::savestate_read(FILE* f) {
 	char stmt[256], objname[100], buf[200];
 	Object* obj = nil;
 //	assert(fscanf(f, "%d %d\n", &have_stmt, &have_obj) == 2);
-	fgets(buf, 200, f);
+	assert(fgets(buf, 200, f));
 	assert(sscanf(buf, "%d %d\n", &have_stmt, &have_obj) == 2);	
 	if (have_stmt) {
-		fgets(stmt, 256, f);
+		assert(fgets(stmt, 256, f));
 		stmt[strlen(stmt)-1] = '\0';
 		if (have_obj) {
 //			assert(fscanf(f, "%s %d\n", objname, &index) == 1);
-			fgets(buf, 200, f);
+			assert(fgets(buf, 200, f));
 			assert(sscanf(buf, "%s %d\n", objname, &index) == 1);
 			obj = hoc_name2obj(objname, index);
 		}

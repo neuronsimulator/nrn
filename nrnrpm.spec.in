@@ -22,6 +22,7 @@ Summary: Neuron for empirically-based simulations of neurons and networks of neu
 
 # for redhat 8 this is a hack until buildroot is understood
 %define __check_files %{nil}
+BuildRoot: /tmp/foo
 
 %define rel @RPM_RELEASE@
 %define version @VERSION@
@@ -56,12 +57,13 @@ NEURON has benefited from judicious revision and selective enhancement, guided a
 # the below may be replaced by a percentsetup?
 # get rid of any possible remenant of previous attempts to build including symbolic
 # links in /usr/local/bin and /usr/local/nrn and /usr/local/iv directories
-pushd /usr/local/bin
+(
+cd /usr/local/bin
 rm -r -f memacs neurondemo nrnivmodl modlunit
 rm -r -f nrngui nrniv 
 rm -r -f iclass idraw idemo
 cd ..
-popd
+)
 
 # this is where system-wide applications are typically added
 # NRNDEST=/usr/local

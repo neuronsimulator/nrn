@@ -5,9 +5,9 @@ AM_CPPFLAGS = -DOOP=1 -DINTERVIEWS=1 -DHOC=1
 AM_CFLAGS = @MINGW_CFLAG@
 
 nsrc=$(top_srcdir)/src
-INCLUDES = -I$(nsrc)/memacs -I$(nsrc)/sparse $(X_CFLAGS)
+INCLUDES = -I$(nsrc) -I$(nsrc)/memacs -I$(nsrc)/sparse $(X_CFLAGS)
 
-RanFiles = isaac64.c mcran4.c nrnisaac.c
+RanFiles = isaac64.c mcran4.c nrnisaac.c nrnran123.c
 
 liboc_la_SOURCES = parse.y bksub.c getelm.c lineq.c subrows.c prmat.c \
 	code2.c debug.c ocerf.c fileio.c ftime.c \
@@ -29,7 +29,11 @@ AM_YFLAGS = -d
 
 EXTRA_DIST = hocinc hocusr.c hoc2dec.sh macprt.c mswinprt.c system.c
 
+if BUILD_MINGW
+liboc_la_LIBADD = -lpthread
+else
 liboc_la_LIBADD = $(X_LIBS)
+endif
 
 bin_PROGRAMS = oc
 
@@ -46,7 +50,7 @@ hocdec.h: hoc.h hoc2dec.sh
 	
 ## Header files that need to be installed:
 pkginclude_HEADERS = hoc.h hoclist.h hocdec.h hocassrt.h nrnisaac.h \
-	nrnpthread.h
+	nrnpthread.h nrnran123.h
 
 ## Header files that need to be copied into the distribution but do not need
 ## to be installed:

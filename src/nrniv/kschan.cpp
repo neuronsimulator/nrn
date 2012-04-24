@@ -40,7 +40,7 @@ static Symbol* kstrans_sym;
 static void check_objtype(Object* o, Symbol* s) {
 	if (o->ctemplate->sym != s) {
 		char buf[200];
-		sprintf("%s is not a %s", o->ctemplate->sym->name, s->name);
+		sprintf(buf, "%s is not a %s", o->ctemplate->sym->name, s->name);
 		hoc_execerror(buf,0);
 	}
 	if (!o->u.this_pointer) {
@@ -323,7 +323,7 @@ static double ks_usetable(void* v) {
 			n = ks->usetable(hoc_pgetarg(1), hoc_pgetarg(2));
 			return double(n);
 		}else{
-			boolean use = ((int)chkarg(1, 0, 1)) ? true : false;
+			bool use = ((int)chkarg(1, 0, 1)) ? true : false;
 			if (ifarg(2)) {
 				ks->usetable(use, (int)chkarg(2, 2, 10000),
 					*getarg(3), *getarg(4));
@@ -419,31 +419,31 @@ static Object** ks_gate(void* v) {
 	return temp_objvar("KSGate", ksg, &ksg->obj_);
 }
 
-static char** ks_name(void* v) {
+static const char** ks_name(void* v) {
 	KSChan* ks = (KSChan*)v;
 	if (ifarg(1)) {
 		ks->setname(gargstr(1));
 	}
 	char** ps = hoc_temp_charptr();
 	*ps = (char*)ks->name_.string();
-	return ps;
+	return (const char**)ps;
 }
 
-static char** ks_ion(void* v) {
+static const char** ks_ion(void* v) {
 	KSChan* ks = (KSChan*)v;
 	if (ifarg(1)) {
 		ks->setion(gargstr(1));
 	}
 	char** ps = hoc_temp_charptr();
 	*ps = (char*)ks->ion_.string();
-	return ps;
+	return (const char**)ps;
 }
 
-static char** ks_ligand(void* v) {
+static const char** ks_ligand(void* v) {
 	KSChan* ks = (KSChan*)v;
 	char** ps = hoc_temp_charptr();
 	*ps = (char*)ks->ligands_[(int)chkarg(1, 0, ks->nligand_ - 1)]->name;
-	return ps;
+	return (const char**)ps;
 }
 
 static double kss_frac(void* v) {
@@ -470,7 +470,7 @@ static Object** kss_gate(void* v) {
 	return temp_objvar("KSGate", ksg, &ksg->obj_);
 }
 
-static char** kss_name(void* v) {
+static const char** kss_name(void* v) {
 	chkobj(v);
 	KSState* kss = (KSState*)v;
 	if (ifarg(1)) {
@@ -478,7 +478,7 @@ static char** kss_name(void* v) {
 	}
 	char** ps = hoc_temp_charptr();
 	*ps = (char*)kss->string();
-	return ps;
+	return (const char**)ps;
 }
 
 static double ksg_nstate(void* v) {
@@ -633,7 +633,7 @@ static Object** kst_parm(void* v) {
 	return vector_temp_objvar(vec);
 };
 
-static char** kst_ligand(void* v) {
+static const char** kst_ligand(void* v) {
 	static char s[20];;
 	s[0] = '\0';
 	chkobj(v);
@@ -645,7 +645,7 @@ static char** kst_ligand(void* v) {
 	}	
 	char** ps = hoc_temp_charptr();
 	*ps = s;
-	return ps;
+	return (const char**)ps;
 }
 
 static double kst_stoichiometry(void* v) {
@@ -802,7 +802,7 @@ static void* ks_cons(Object* o) {
 	hoc_obj_ref(t1); // never destroyed
 	hoc_obj_ref(t2); // never destroyed
 */
-	boolean isp = false;
+	bool isp = false;
 	if (ifarg(1)) {
 		isp = ((int)chkarg(1, 0, 1)) != 0;
 	}
@@ -849,7 +849,8 @@ void KSChan_reg() {
 
 // param is gmax, g, i --- if change then change numbers below
 // state names are handled individually
-static char* m_kschan[] = { "0", "kschan", "gmax", 0, "g", "i", 0, 0, 0 };
+static const char* m_kschan_pat[] = { "0", "kschan", "gmax", 0, "g", "i", 0, 0, 0 };
+static char* m_kschan[9];
 // gmax=0 g=1 i=1 state names will be modltype 2, there are no pointer variables
 
 void KSChan::add_channel(char** m) {
@@ -877,7 +878,7 @@ void KSChan::add_channel(char** m) {
 	channels->append(c);
 }
 
-KSChan::KSChan(Object* obj, boolean is_p) {
+KSChan::KSChan(Object* obj, bool is_p) {
 //printf("KSChan created\n");
 	int i;
 	nhhstate_ = 0;
@@ -936,21 +937,26 @@ void KSChan::build() {
 	if (looksym(suffix)) {
 		hoc_execerror(suffix, "already exists");
 	}
-	m_kschan[1] = (char*)suffix;
-	sprintf(buf, "gmax%s", unsuffix); m_kschan[2] = strdup(buf);
+	assert((m_kschan[0] = strdup(m_kschan_pat[0])) != 0);
+	assert((m_kschan[1] = strdup(suffix)) != 0);
+	sprintf(buf, "gmax%s", unsuffix);
+	assert((m_kschan[2] = strdup(buf)) != 0);
 	int aoff = 0;
 	if (!ion_sym_) {
-		sprintf(buf, "e%s", unsuffix); m_kschan[3] = strdup(buf);
+		sprintf(buf, "e%s", unsuffix);
+		assert((m_kschan[3] = strdup(buf)) != 0);
 		aoff = 1;
 	}
 	m_kschan[3+aoff] = 0;
-	sprintf(buf, "g%s", unsuffix); m_kschan[4+aoff] = strdup(buf);
-	sprintf(buf, "i%s", unsuffix); m_kschan[5+aoff] = strdup(buf);
+	sprintf(buf, "g%s", unsuffix);
+	assert((m_kschan[4+aoff] = strdup(buf)) != 0);
+	sprintf(buf, "i%s", unsuffix);
+	assert((m_kschan[5+aoff] = strdup(buf)) != 0);
 	m_kschan[6+aoff] = 0;
 	m_kschan[7+aoff] = 0;
 	soffset_ = 3+aoff; // first state points here in p array
 	add_channel(m_kschan);
-	for (i=2; i < 9; ++i) if (m_kschan[i]) { free(m_kschan[i]); }
+	for (i=0; i < 9; ++i) if (m_kschan[i]) { free(m_kschan[i]); }
 	mechsym_ = looksym(suffix);
 	if (is_point()) {
 		rlsym_ = looksym(suffix, mechsym_);
@@ -1025,7 +1031,7 @@ void KSChan::power(KSGateComplex* gc, int p) {
 	gc->power_ = p;
 }
 
-void KSChan::set_single(boolean b, boolean update) {
+void KSChan::set_single(bool b, bool update) {
 	if (!is_point()) {
 		b = false;
 		return;
@@ -1138,7 +1144,7 @@ void KSChan::update_prop() {
 				sym = installsym("Nsingle", RANGEVAR, searchsym);
 			}
 			ppsym[NSingleIndex] = sym;
-			sym->subtype = CONST; // PARAMETER
+			sym->subtype = nrnocCONST; // PARAMETER
 			sym->u.rng.type = rlsym_->subtype;
 			sym->u.rng.index = NSingleIndex;
 		}else if (sym) { // eliminate if Nsingle exists
@@ -1369,7 +1375,7 @@ void KSChan::settype(KSTransition* t, int type, const char* lig) {
 		if (type < 2) { // from having to not having
 			// what is to be done with existing ligand
 			// is anybody else using it
-			boolean remove = true;
+			bool remove = true;
 			for (i = iligtrans_; i < ntrans_; ++i) {
 				if (trans_[i].ligand_index_ == iligold && iligold != i) {
 					remove = false; // old is still needed
@@ -1442,8 +1448,8 @@ memb_func[s->subtype].alloc != memb_func[looksym("na_ion")->subtype].alloc) {
 		}
 	}
 //printf("ilig=%d iligold=%d\n", ilig, iligold);
-	boolean add2list = true;
-	boolean move = true;
+	bool add2list = true;
+	bool move = true;
 	// if t already using a ligand, what is to be done with it
 	if (t->type_ >= 2) {
 		move = false; // do not need to reorder the transition
@@ -1871,7 +1877,7 @@ void KSChan::trans_remove(int i) {
 
 void KSChan::setstructure(Vect* vec) {
 	int i, j, ii, idx, ns;
-//printf("setstructure called for KSChan %lx %s\n", (long)this, name_.string());
+//printf("setstructure called for KSChan %p %s\n", this, name_.string());
 #if 0
 for (i=0; i < vec->capacity(); ++i) {
 	printf("%d %g\n", i, vec->elem(i));
@@ -2155,7 +2161,7 @@ void KSChan::mulmat(double* s, double* ds) {
 
 void KSChan::alloc(Prop* prop) {
 //printf("KSChan::alloc nstate_=%d nligand_=%d\n", nstate_, nligand_);
-//printf("KSChan::alloc %s param=%lx\n", name_.string(), (long)prop->param);
+//printf("KSChan::alloc %s param=%p\n", name_.string(), prop->param);
 	int j;
 	prop->param_size = soffset_ + 2*nstate_;
     if (is_point() && nrn_point_prop_) {
@@ -3014,7 +3020,7 @@ void KSTransition::hh_table_make(double dt, int size, double vmin, double vmax) 
 	}
 }
 
-void KSChan::usetable(boolean use, int size, double vmin, double vmax) {
+void KSChan::usetable(bool use, int size, double vmin, double vmax) {
 	if (vmin >= vmax) {
 		vmin_ = -100;
 		vmax_ = 50;
@@ -3042,7 +3048,7 @@ static int ksusing(int type) {
 	return 0;
 }
 
-void KSChan::usetable(boolean use) {
+void KSChan::usetable(bool use) {
 	int i;
 	if (nhhstate_ == 0) { use = false; }
 	usetable_ = use;

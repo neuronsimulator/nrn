@@ -60,6 +60,10 @@ Supporting OS subroutines required: <<_exit>>, <<_execve>>, <<_fork_r>>,
 #include <_syslist.h>
 #include <reent.h>
 
+#if defined (__APPLE__)
+#include <crt_externs.h>
+#endif
+
 #if defined (unix) || defined (__CYGWIN__)
 static int do_system ();
 #endif
@@ -108,14 +112,19 @@ system (s)
 }
 
 #endif
-
+
 #if defined (unix) && !defined (__CYGWIN__) && !defined(__rtems__)
+#if !defined(__APPLE__)
 extern char **environ;
 
 /* Only deal with a pointer to environ, to work around subtle bugs with shared
    libraries and/or small data systems where the user declares his own
    'environ'.  */
 static char ***p_environ = &environ;
+#endif
+#if defined(__APPLE__)
+static char ***p_environ = _NSGetEnviron();
+#endif
 
 static int
 do_system (ptr, s)

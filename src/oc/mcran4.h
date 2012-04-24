@@ -1,8 +1,29 @@
-void mcell_ran4_init();
-double mcell_ran4();
-unsigned int mcell_iran4();
-double mcell_ran4_64();
-unsigned int mcell_iran4_64();
+#ifndef mcran4_h
+#define mcran4_h
+
+#include <nrnconf.h>
+#if defined(HAVE_STDINT_H)
+#include <stdint.h>
+#endif
+
+extern void mcell_ran4_init(uint32_t);
+extern double mcell_ran4(uint32_t *idx1, double *x, unsigned int n, double range);
+extern double mcell_ran4a(uint32_t* idx1);
+extern uint32_t mcell_iran4(uint32_t* idx1);
+extern double nrnRan4dbl(uint32_t* idx1, uint32_t idx2);
+extern uint32_t nrnRan4int(uint32_t* idx1, uint32_t idx2);
+
+#endif
+
+/*
+ The original ran4 generator was copyrighted by "Numerical Recipes in C"
+ and therefore has been removed from the NEURON sources and replaced by code
+ fragments obtained from http://www.inference.phy.cam.ac.uk/bayesys/
+ by John Skilling
+ The function mcell_ran4a only returns
+ a single uniform random number in the distribution 0.0 to 1.0 .
+ The prototype for mcell_ran4 is the original.
+*/
 
 /*
 Michael Hines added the prefix mcell to the global names.

@@ -17,7 +17,7 @@ class STETransition {
 public:
 	STETransition();
 	virtual ~STETransition();
-	boolean condition(double& tr);
+	bool condition(double& tr);
 
 	int dest_;
 	double* var1_;

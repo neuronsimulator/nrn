@@ -16,7 +16,7 @@
 
 void get_position(XDisplay* dpy, XWindow window, int* rx, int* ry);
 
-static boolean r_unbound;
+static bool r_unbound;
 void Rubberband::rubber_on(Canvas* c) {
         if (c->rep()->copybuffer_ == CanvasRep::unbound) {
                 r_unbound = true;
@@ -47,7 +47,7 @@ void PrintableWindow::hide() {
 	if (bound()) {
 		if (is_mapped()) {
 			xplace(xleft(), xtop());
-//printf("hide %lx %d %d\n", (long)this, xleft_, xtop_);
+//printf("hide %p %d %d\n", this, xleft_, xtop_);
 			WindowRep& w = *((Window*)this)->rep();
 			XWithdrawWindow(display()->rep()->display_, w.xwindow_, display()->rep()->screen_);
 		}
@@ -106,7 +106,7 @@ void PrintableWindow::xmove(int left1, int top) {
 	    yoff = (int)WMOffsetY;
 	}
 xoff = yoff = 0;
-//printf("%lx xmove(%d,%d) XMoveWindow(%d,%d)\n", (long)this,left1, top, left1+xoff, top+yoff);
+//printf("%p xmove(%d,%d) XMoveWindow(%d,%d)\n", this,left1, top, left1+xoff, top+yoff);
 	XMoveWindow(d.rep()->display_, w.xwindow_, left1+xoff, top+yoff);
 }
 #else
@@ -200,7 +200,7 @@ void get_position(XDisplay* dpy, XWindow window, int* rx, int* ry)
 				-win_attributes.y,
 				rx, ry, &junkwin);
 
-//printf("get_position %lx %d %d\n", (long)window, *rx, *ry);
+//printf("get_position %p %d %d\n", window, *rx, *ry);
 //if (xoff != -999) {
 //  *rx -= xoff;
 //  *ry -= yoff;

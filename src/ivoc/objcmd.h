@@ -18,9 +18,9 @@ public:
 	HocCommand(const char*, Object*);
 	HocCommand(Object* paction); // Python method call or tuple with args
 	virtual ~HocCommand();
-	int execute(boolean notify = true);
-	int execute(const char*, boolean notify = true);
-	int exec_strret(char* buf, int size, boolean notify = true); // for python callback returning a string
+	int execute(bool notify = true);
+	int execute(const char*, bool notify = true);
+	int exec_strret(char* buf, int size, bool notify = true); // for python callback returning a string
 	const char* name();
 	virtual void update(Observable*);
 	virtual void audit();
@@ -50,7 +50,7 @@ class HocCommandTool : public Rubberband {
 public:
 	HocCommandTool(HocCommand*);
 	virtual ~HocCommandTool();
-	virtual boolean event(Event&);
+	virtual bool event(Event&);
 	HocCommand* hc_;
 };
 #endif

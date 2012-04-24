@@ -26,19 +26,20 @@ if false
 #notes about building with mpich2 under cygwin.
 #I have used it with multicore desktops.
 #In my $HOME
-curl -O http://www.mcs.anl.gov/research/projects/mpich2/downloads/tarballs/1.2.1p1/mpich2-1.2.1p1.tar.gz
+curl -O http://www.mcs.anl.gov/research/projects/mpich2/downloads/tarballs/1.4/mpich2-1.4.tar.gz
 tar xzf mpich*gz
-cd mpich2*p1
-#For mpich2-1.2.1p1 I configured with:
+cd mpich2-1.4
+#For mpich2-1.4 I configured with:
 ./configure --prefix=$HOME/mpich2  --with-pm=gforker:mpd \
   'CFLAGS=-DDLL_EXPORT -DPIC' 'CXXFLAGS=-DDLL_EXPORT -DPIC' \
   'LDFLAGS=-Wl,--enable-auto-import'
 make >& build.stdout
 # note that the build.stdout is needed by src/mswin/nrncygso.sh
 make install
+# mpichs2-1.4 was added to my PATH
 # note that the install step is needed to find the mpd and related executables
 # in the mpich2/bin folder,
-# since only the gforker version of mpiexec.exe appears in mpich2-1.2.1p1/bin
+# since only the gforker version of mpiexec.exe appears in mpich2-1.4/bin
 # folder after a make.
 # The reason for making gforker the default is that mpd sometimes fails to
 # operate correctly on user machines. gforker is limited to
@@ -49,7 +50,7 @@ make install
 # or mpd& on every node and then launch with mpiexe.mpd
 # A test on a single node useing gforker is
 # mpiexec -n 2 echo 'hello'
-# A test on a single node useing mpd is
+# A test on a single node using mpd is
 # mpd&
 # mpiexec.mpd -n 2 echo 'hello'
 # mpdallexit

@@ -165,21 +165,21 @@ static double f_flush(void* v){
 	return 1;
 }
 
-static char** f_get_name(void* v){
+static const char** f_get_name(void* v){
 	OcFile* f = (OcFile*)v;
 	char** ps = hoc_temp_charptr();
 	*ps = (char*)f->get_name();
 	if (ifarg(1)) {
 		hoc_assign_str(hoc_pgargstr(1), *ps);
 	}
-	return ps;
+	return (const char**)ps;
 }
 
-static char** f_dir(void* v) {
+static const char** f_dir(void* v) {
 	char** ps = hoc_temp_charptr();
 	OcFile* f = (OcFile*)v;
 	*ps = (char*)f->dir();
-	return ps;
+	return (const char**)ps;
 }
 
 static double f_chooser(void* v){
@@ -194,7 +194,7 @@ IFGUI
 
 	char *type, *banner, *filter, *bopen, *cancel;
 	banner=filter=bopen=cancel=nil;
-	char *path=".";
+	const char *path=".";
 	type = gargstr(1);
 	if (ifarg(2)) {
 		banner = gargstr(2);
@@ -341,7 +341,7 @@ void OcFile::binary_mode() {
 }
 #endif
 
-boolean OcFile::open(const char* name, const char* type) {
+bool OcFile::open(const char* name, const char* type) {
 	set_name(name);
 #ifdef WIN32
 	binary_ = false;
@@ -372,13 +372,13 @@ FILE* OcFile::file() {
 	return file_;
 }
 
-boolean OcFile::eof() {
+bool OcFile::eof() {
 	int c;
 	c = getc(file());
 	return ungetc(c, file()) == EOF;
 }
 
-boolean OcFile::mktemp() {
+bool OcFile::mktemp() {
 	char* s = ivoc_get_temp_file();
 	if (s) {
 		set_name(s);
@@ -388,20 +388,20 @@ boolean OcFile::mktemp() {
 	return false;
 }
 
-boolean OcFile::unlink() {
+bool OcFile::unlink() {
 	int i = ivoc_unlink(get_name());
 	return i == 0;
 }
 
-void OcFile::file_chooser_style(char* type, char* path, char* banner,
-	char* filter, char* bopen, char* cancel)
+void OcFile::file_chooser_style(const char* type, const char* path, const char* banner,
+	const char* filter, const char* bopen, const char* cancel)
 {
 #if HAVE_IV
 	Resource::unref(fc_);
 
 	Style* style = new Style(Session::instance()->style());
 	style->ref();
-	boolean nocap = true;
+	bool nocap = true;
 	if (banner) {
 		if (banner[0]) {
 			style->attribute("caption", banner);
@@ -479,9 +479,9 @@ const char* OcFile::dir() {
 	return dirname_.string();
 }
 
-boolean OcFile::file_chooser_popup() {
+bool OcFile::file_chooser_popup() {
 #if HAVE_IV
-	boolean accept = false;
+	bool accept = false;
 	if (!fc_) {
 		hoc_execerror("First call to file_chooser must at least specify r or w", 0);
 	}

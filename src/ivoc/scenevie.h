@@ -114,7 +114,7 @@ public:
 	virtual Coord width() const, height() const;
 	
 	virtual void damage(Glyph*, const Allocation&,
-		boolean fixed = false, boolean viewfixed = false);
+		bool fixed = false, bool viewfixed = false);
 	virtual void damage(Coord x1, Coord y1, Coord x2, Coord y2);
 	virtual void damage_all();
 
@@ -223,8 +223,8 @@ public:
 	virtual void modified(GlyphIndex);
 	void move(GlyphIndex, Coord x, Coord y);
 	void location(GlyphIndex, Coord& x, Coord& y)const;
-	void show(GlyphIndex, boolean);
-	boolean showing(GlyphIndex) const;
+	void show(GlyphIndex, bool);
+	bool showing(GlyphIndex) const;
 
 	virtual void damage(GlyphIndex);
 	virtual void damage(Coord x1, Coord y1, Coord x2, Coord y2);
@@ -258,12 +258,12 @@ public:
 	virtual Glyph* component(GlyphIndex) const;
 	virtual void allotment(GlyphIndex, DimensionName, Allotment&) const;
 	virtual GlyphIndex glyph_index(const Glyph*);
-	boolean drawing_fixed_item()const { return drawing_fixed_item_;}
+	bool drawing_fixed_item()const { return drawing_fixed_item_;}
 
 	static void save_all(ostream&);
 	static long scene_list_index(Scene*);
-	boolean mark() {return mark_;}
-	void mark(boolean m) {mark_ = m;}
+	bool mark() {return mark_;}
+	void mark(bool m) {mark_ = m;}
 	virtual void save_phase1(ostream&);
 	virtual void save_phase2(ostream&);
 	virtual Coord mbs() const;
@@ -274,7 +274,7 @@ public:
 	ScenePicker* picker();
 	Object* hoc_obj_ptr() { return hoc_obj_ptr_;}
 	void hoc_obj_ptr(Object* o) { hoc_obj_ptr_ = o;}
-	boolean menu_picked() { return menu_picked_;}
+	bool menu_picked() { return menu_picked_;}
 protected:
 	virtual void save_class(ostream&, const char*);
 private:
@@ -296,12 +296,12 @@ private:
 	Glyph* background_;
 	ScenePicker* picker_;
 	int tool_;
-	boolean mark_;
+	bool mark_;
 	static Scene* current_scene_;
 	static Coord mbs_;	// menu_box_size (pixels) in left top
-	boolean drawing_fixed_item_;
+	bool drawing_fixed_item_;
 	Object* hoc_obj_ptr_;
-	boolean menu_picked_;
+	bool menu_picked_;
 
 	Coord x1_orig_, x2_orig_, y1_orig_, y2_orig_;
 };

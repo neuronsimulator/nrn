@@ -24,13 +24,13 @@ extern void make_mechanism();
 extern void make_pointprocess();
 extern void hoc_construct_point(Object*, int);
 extern Object* hoc_new_opoint(int);
-extern boolean special_pnt_call(Object*, Symbol*, int);
+extern bool special_pnt_call(Object*, Symbol*, int);
 }
 
 static Object* last_created_pp_ob_;
-static boolean skip_;
+static bool skip_;
 
-static char** make_m(boolean, int&, Symlist*, char*, char*);
+static char** make_m(bool, int&, Symlist*, char*, char*);
 
 class HocMech {
 public:
@@ -69,8 +69,8 @@ void hoc_construct_point(Object* ob, int narg) {
 //printf("x=%g\n", x);
 		Section* sec = chk_access();
 		Node* nd = node_exact(sec, x);
-//printf("ptype=%d pnt=%lx %s nd=%lx\n", ptype, (long)pnt, secname(sec), (long)nd);
-//printf("type=%d pointsym=%lx\n", type, pointsym[ptype]);
+//printf("ptype=%d pnt=%p %s nd=%p\n", ptype, pnt, secname(sec), nd);
+//printf("type=%d pointsym=%p\n", type, pointsym[ptype]);
 //printf("type=%d from pointsym %s = %d\n", type, pointsym[ptype]->name,
 //pointsym[ptype]->subtype);
 
@@ -96,7 +96,7 @@ Point_process* ob2pntproc(Object* ob) {
 	return pp;
 }
 
-boolean special_pnt_call(Object* ob, Symbol* sym, int narg) {
+bool special_pnt_call(Object* ob, Symbol* sym, int narg) {
 	char* name = sym->name;
 	if (strcmp(name, "loc") == 0) {
 		int type = ob->ctemplate->symtable->last->subtype;
@@ -169,7 +169,7 @@ static void call(Symbol* s, Node* nd, Prop* p) {
 	nrn_popsec();
 }
 
-static void initial(Memb_list* ml, int type) {
+static void initial(void* nt, Memb_list* ml, int type) {
 	HocMech* hm = (HocMech*)memb_func[type].hoc_mech;
 	int i, cnt = ml->nodecount;
 	for (i=0; i < cnt; ++i) {
@@ -177,7 +177,7 @@ static void initial(Memb_list* ml, int type) {
 	}
 }
 
-static void after_step(Memb_list* ml, int type) {
+static void after_step(void* nt, Memb_list* ml, int type) {
 	HocMech* hm = (HocMech*)memb_func[type].hoc_mech;
 	int i, cnt = ml->nodecount;
 	for (i=0; i < cnt; ++i) {
@@ -294,7 +294,7 @@ hoc_execerror("Can't make a template into a PointProcess when instances already 
 	assert(s2->subtype == type);
 //	type = s2->subtype;
 	ptype = point_reg_helper(s2);
-//printf("type=%d pointtype=%d %s %lx\n", type, ptype, s2->name, (long)s2);
+//printf("type=%d pointtype=%d %s %p\n", type, ptype, s2->name, s2);
 	classsym->u.ctemplate->is_point_ = ptype;
 
 	// classsym->name is already in slist as an undef, Remove it and
@@ -326,7 +326,7 @@ hoc_execerror("Can't make a template into a PointProcess when instances already 
 	ret(1.);
 }
 
-static char** make_m(boolean suffix, int& cnt, Symlist* slist, char* mname, char* parnames) {
+static char** make_m(bool suffix, int& cnt, Symlist* slist, char* mname, char* parnames) {
 	char buf[256];
 	Symbol* sp;
 	int i, imax;
@@ -409,7 +409,7 @@ hoc_execerror("Must be a space separated list of names\n", gargstr(3));
 			}else{
 				sprintf(buf, "%s", sp->name);
 			}
-			boolean b = false;
+			bool b = false;
 			for (j=1; j < jmax; ++j) {
 				if (strstr(m[j], buf)) {
 					b = true; // already a PARAMETER

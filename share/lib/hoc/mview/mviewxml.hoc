@@ -343,6 +343,10 @@ proc xmlwrite() {local proximalid, pointcount, segmentcount, sectioncount, i, j,
             totalNumCables = totalNumCables + 1
 		}
 
+	if (object_id(cellref.secanal.parmsubsets) == 0) {
+		cellref.secanal.analyse()
+	}
+
         if (cellref.secanal.parmsubsets.subsets.count >= 1) {
 
             for i=0, cellref.secanal.parmsubsets.subsets.count-1 {

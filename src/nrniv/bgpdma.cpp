@@ -260,7 +260,7 @@ void BGP_ReceiveBuffer::init(int index) {
 #endif	
 }
 void BGP_ReceiveBuffer::incoming(int gid, double spiketime) {
-//printf("%d %lx.incoming %g %g %d\n", nrnmpi_myid, (long)this, t, spk->spiketime, spk->gid);
+//printf("%d %p.incoming %g %g %d\n", nrnmpi_myid, this, t, spk->spiketime, spk->gid);
 	assert(busy_ == 0);
 	busy_ = 1;
 #if 0 && ENQUEUE == 2
@@ -300,7 +300,7 @@ void BGP_ReceiveBuffer::incoming(int gid, double spiketime) {
 	busy_ = 0;	
 }
 void BGP_ReceiveBuffer::enqueue() {
-//printf("%d %lx.enqueue count=%d t=%g nrecv=%d nsend=%d\n", nrnmpi_myid, (long)this, t, count_, nrecv_, nsend_);
+//printf("%d %p.enqueue count=%d t=%g nrecv=%d nsend=%d\n", nrnmpi_myid, this, t, count_, nrecv_, nsend_);
 	assert(busy_ == 0);
 	busy_ = 1;
 #if 1
@@ -441,8 +441,8 @@ struct MyMulticastInfo {
         DCQuad msginfo __attribute__((__aligned__(16)));
 	DCMF_Multicast_t msend;
 	DCMF_Callback_t cb_done;
-	boolean req_in_use;
-	boolean record; // when recordreplay, first time Multicast, thereafter  Restart
+	bool req_in_use;
+	bool record; // when recordreplay, first time Multicast, thereafter  Restart
 }__attribute__((__aligned__(16)));
 // NSEND of them for cycling, or, if recordreplay, max_persist_ids of them
 static int n_mymulticast_; // NSEND or max_persist_ids
@@ -507,7 +507,7 @@ static void  multicast_done(void* arg, DCMF_Error_t *) {
 #else
 static void  multicast_done(void* arg) {
 #endif
-	boolean* a = (boolean*)arg;
+	bool* a = (bool*)arg;
 	*a = false;
 }
 
@@ -607,6 +607,17 @@ double nrn_bgp_receive_time(int type) { // and others
 	return rt;
 }
 
+<<<<<<< /home/hines/neuron/nrnbgp1/src/nrniv/bgpdma.cpp
+=======
+// Multisend_multicast callback
+static void  multicast_done(void* arg, DCMF_Error_t*) {
+	bool* a = (bool*)arg;
+	*a = false;
+}
+
+#endif //BGPDMA == 2
+
+>>>>>>> /tmp/bgpdma.cpp~other.p29W7s
 extern "C" {
 extern void nrnmpi_bgp_comm();
 extern void nrnmpi_bgp_multisend(NRNMPI_Spike*, int, int*);
@@ -733,6 +744,7 @@ void BGP_DMASend::send(int gid, double t) {
 #if BGPDMA & 2
     if (use_bgpdma_ == 2) {
 
+<<<<<<< /home/hines/neuron/nrnbgp1/src/nrniv/bgpdma.cpp
 	MyMulticastInfo* mci;
 #if HAVE_DCMF_RECORD_REPLAY
 	if (use_dcmf_record_replay) {
@@ -743,6 +755,13 @@ void BGP_DMASend::send(int gid, double t) {
 #endif
 		mci = mci_ + isend;
 	}
+=======
+	DCMF_Multicast_t& msend = msend1[isend];
+	DCMF_Request_t& sender = sender1[isend];
+	DCMF_Callback_t& cb_done = cb_done1[isend];
+	DCQuad& msginfo = msginfo1[isend];
+	bool& riu = req_in_use[isend%NSEND2];
+>>>>>>> /tmp/bgpdma.cpp~other.p29W7s
 
 	int acnt = 0;
 	while (mci->req_in_use) {
@@ -1316,7 +1335,7 @@ int gathersrcgid(int hostbegin, int totalngid, int* ngid, int* thishostgid,
 #if 0
 printf("%d hostbegin=%d hostend=%d totalngid=%d bsize=%d\n",
 nrnmpi_myid, hostbegin, hostend, totalngid, bsize);
-printf("%d thishostgid=%lx me=%lx\n", nrnmpi_myid, thishostgid, me);
+printf("%d thishostgid=%p me=%p\n", nrnmpi_myid, thishostgid, me);
 for (i=0; i < nrnmpi_numprocs; ++i) {
 printf("%d i=%d n=%d displ=%d\n", nrnmpi_myid, i, n[i], displ[i]);
 }

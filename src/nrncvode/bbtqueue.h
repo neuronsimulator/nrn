@@ -7,11 +7,11 @@ class TQItem {
 public:
 	TQItem();
 	virtual ~TQItem();
-	boolean check();
+	bool check();
 	int wleft() { return (left_?left_->w_:0); }
 	int wright() { return (right_?right_->w_:0); }
 	void t_iterate(void (*)(const TQItem*, int), int);
-	boolean unbalanced();
+	bool unbalanced();
 	void clear(){}
 public:
 	void* data_;

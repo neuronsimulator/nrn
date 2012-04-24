@@ -46,7 +46,7 @@ void (*nrn_mk_transfer_thread_data_)();
 
 static int busywait_;
 static int busywait_main_;
-extern void nrn_thread_error(char*);
+extern void nrn_thread_error(const char*);
 extern void nrn_threads_free();
 extern void nrn_old_thread_save();
 extern double nrn_time();
@@ -442,7 +442,7 @@ static void threads_free_pthread(){
 }
 #endif /* !USE_PTHREAD */
 
-void nrn_thread_error(char* s) {
+void nrn_thread_error(const char* s) {
 	if (nrn_nthread != 1) {
 		hoc_execerror(s, (char*)0);
 	}

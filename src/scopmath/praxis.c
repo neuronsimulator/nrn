@@ -1,6 +1,8 @@
 #include <../../nrnconf.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <math.h>
+#undef small
 
 extern int stoprun;
 
@@ -1621,9 +1623,9 @@ doublereal *fmin;
 
     /* Function Body */
 printf("After ");
-printf("%d",global_1.nl);
+printf("%ld",global_1.nl);
 printf(" linear searches, the function has been evaluated ");
-printf("%d times.\n",global_1.nf);
+printf("%ld times.\n",global_1.nf);
 printf("The smallest value found is f(x) = ");
 printf("%g\n",global_1.fx);
     if (global_1.fx <= *fmin) {
@@ -1692,7 +1694,7 @@ L3:
     i__1 = *n;
     for (i = 1; i <= i__1; ++i) {
 /* L4: */
-		printf("%3d", i);
+		printf("%3ld", i);
 	i__2 = upp;
 	for (j = low; j <= i__2; ++j) {
 		printf("  %12g", v[i*v_dim1 + j]);
@@ -1708,7 +1710,7 @@ L3:
 } /* maprnt_ */
 
 int nrn_praxis_ran_index;
-extern double mcell_ran4(unsigned int* idum, double* x, int n, double range);
+#include <../oc/mcran4.h>
 
 static doublereal random_(naught)
 integer *naught;

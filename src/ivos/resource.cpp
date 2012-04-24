@@ -34,11 +34,11 @@ implementPtrList(ResourceList,Resource)
 class ResourceImpl {
     friend class Resource;
 
-    static boolean deferred_;
+    static bool deferred_;
     static ResourceList* deletes_;
 };
 
-boolean ResourceImpl::deferred_ = false;
+bool ResourceImpl::deferred_ = false;
 ResourceList* ResourceImpl::deletes_;
 
 Resource::Resource() { refcount_ = 0; }
@@ -98,8 +98,8 @@ void Resource::unref_deferred(const Resource* r) {
     }
 }
 
-boolean Resource::defer(boolean b) {
-    boolean previous = ResourceImpl::deferred_;
+bool Resource::defer(bool b) {
+    bool previous = ResourceImpl::deferred_;
     if (b != previous) {
 	flush();
 	ResourceImpl::deferred_ = b;
@@ -110,7 +110,7 @@ boolean Resource::defer(boolean b) {
 void Resource::flush() {
     ResourceList* list = ResourceImpl::deletes_;
     if (list != nil) {
-	boolean previous = ResourceImpl::deferred_;
+	bool previous = ResourceImpl::deferred_;
 	ResourceImpl::deferred_ = false;
 	for (ListItr(ResourceList) i(*list); i.more(); i.next()) {
 	    Resource* r = i.cur();

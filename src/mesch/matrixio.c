@@ -131,7 +131,9 @@ MAT     *mat;
 	       } while ( *line=='\0' || sscanf(line,"%f",&mat->me[i][j])<1 );
 #endif
 	  fprintf(stderr,"Continue: ");
-	  fscanf(fp,"%c",&c);
+	  if(fscanf(fp,"%c",&c) != 1) {
+		error(E_INPUT, "im_finput");
+	  }
 	  if ( c == 'n' || c == 'N' )
 	  {    dynamic = FALSE;                 goto redo;      }
 	  if ( (c == 'b' || c == 'B') /* && i > 0 */ )

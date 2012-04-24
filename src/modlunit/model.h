@@ -109,7 +109,7 @@ extern List *_LST();
 
 /* subtypes */
 #define	KEYWORD 01L
-#define CONST	02L
+#define modlunitCONST	02L
 #define	INDEP	04L
 #define	DEP	010L		/* also in usage field */
 #define	STAT	020L

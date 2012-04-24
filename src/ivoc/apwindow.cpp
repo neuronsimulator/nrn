@@ -66,7 +66,7 @@ DBAction::DBAction(WinDismiss* wd){
 	Resource::ref(wd_);
 }
 DBAction::~DBAction(){
-//	printf("~DBAction wd_=%lx\n", (long)wd_);
+//	printf("~DBAction wd_=%p\n", wd_);
 	Resource::unref(wd_);
 }
 void DBAction::execute() {
@@ -86,7 +86,7 @@ void DBAction::diswin(WinDismiss* wd) {
 WinDismiss::WinDismiss(DismissableWindow* w) { win_ = w;}
 
 WinDismiss::~WinDismiss() {
-//	printf("~WinDismiss %lx win_=%lx\n", (long)this, win_);
+//	printf("~WinDismiss %p win_=%p\n", this, win_);
 }
 
 DismissableWindow* WinDismiss::win_defer_;
@@ -97,7 +97,7 @@ void WinDismiss::execute() {
                 Oc::help("Dismiss GUI");
                 return;
         }
-//printf("WinDismiss:: execute win_defer_=%lx win_=%lx\n", (long)win_defer_,(long)win_);
+//printf("WinDismiss:: execute win_defer_=%p win_=%p\n", win_defer_,win_);
 	if (win_) {win_->unmap();}
 #if MAC
 #else
@@ -118,7 +118,7 @@ void WinDismiss::execute() {
 // known what problem that fixed so it is dangerous to remove it from there
 // For this reason we avoid deleting the window while inside WinDismiss::event
 
-boolean WinDismiss::event(Event&) {
+bool WinDismiss::event(Event&) {
 	win_defer_longer_ = win_;
 	execute();
 	// but maybe it is not supposed to be dismissed
@@ -137,7 +137,7 @@ void WinDismiss::dismiss_defer() {
 		event that occurred in the window. So we defer the deletion
 	*/
 	if (win_defer_ && win_defer_ != win_defer_longer_) {
-//printf("WinDismiss::dismiss_defer %lx %lx\n", (long)win_defer_, (long)win_defer_longer_);
+//printf("WinDismiss::dismiss_defer %p %p\n", win_defer_, win_defer_longer_);
 		DismissableWindow* w = win_defer_; //prevents BadDrawable X Errors
 		win_defer_ = nil;
 		delete w;
@@ -146,19 +146,19 @@ void WinDismiss::dismiss_defer() {
 
 // DismissableWindow
 
-boolean DismissableWindow::is_transient_;
+bool DismissableWindow::is_transient_;
 PrintableWindow* PrintableWindow::leader_;
 
 
 #ifdef WIN32
-DismissableWindow::DismissableWindow(Glyph* g, boolean force_menubar) : TransientWindow(
+DismissableWindow::DismissableWindow(Glyph* g, bool force_menubar) : TransientWindow(
   new Background(
 	LayoutKit::instance()->vbox(2),
 	WidgetKit::instance()->background()
   )
 )
 #else
-DismissableWindow::DismissableWindow(Glyph* g, boolean force_menubar)
+DismissableWindow::DismissableWindow(Glyph* g, bool force_menubar)
  : TransientWindow( LayoutKit::instance()->vbox(2))
 #endif
 {
@@ -200,7 +200,7 @@ DismissableWindow::DismissableWindow(Glyph* g, boolean force_menubar)
 	pg->append(g);
 }
 DismissableWindow::~DismissableWindow(){
-//	printf("~DismissableWindow %lx\n", (long)this);
+//	printf("~DismissableWindow %p\n", this);
 	Resource::unref(glyph_);
 	Resource::unref(wd_);
 	Resource::unref(dbutton_);
@@ -289,7 +289,7 @@ void DismissableWindow::set_attributes() {
 
 //PrintableWindow
 PrintableWindow::PrintableWindow(OcGlyph* g) : DismissableWindow(g) {
-//printf("PrintableWindow %lx\n", (long)this);
+//printf("PrintableWindow %p\n", this);
 	xplace_ = false;
 	g->window(this);
 	if (intercept_) {
@@ -310,7 +310,7 @@ mi->action(new ActionCallback(PrintableWindow)(this,&PrintableWindow::hide));
 	type_ = "";
 };
 PrintableWindow::~PrintableWindow(){
-//printf("~PrintableWindow %lx\n", (long)this);
+//printf("~PrintableWindow %p\n", this);
 	((OcGlyph*)glyph())->window(nil);
 	if (leader_ == this) {
 		leader_ = nil; // mswin deletes everthing on quit
@@ -322,7 +322,7 @@ Coord PrintableWindow::bottom_pw() const { return Window::bottom();}
 Coord PrintableWindow::width_pw() const { return Window::width();}
 Coord PrintableWindow::height_pw() const { return Window::height();}
 
-void PrintableWindow::request_on_resize(boolean b) {
+void PrintableWindow::request_on_resize(bool b) {
 	((Window*)this)->rep()->request_on_resize_ = b;
 }
 
@@ -399,7 +399,7 @@ void PrintableWindow::map() {
 void PrintableWindow::unmap() {
 	handle_old_focus();
 	if (is_mapped()) {
-//printf("unmap %lx xleft=%d xtop=%d\n", (long)this, xleft(), xtop());
+//printf("unmap %p xleft=%d xtop=%d\n", this, xleft(), xtop());
 xplace_ = true;
 xleft_ = xleft();
 xtop_ = xtop();
@@ -419,14 +419,14 @@ OcGlyphContainer* PrintableWindow::intercept(OcGlyphContainer* b) {
 }
 #ifdef WIN32
 void virtual_window_top();
-boolean iv_user_keydown(long w) {
+bool iv_user_keydown(long w) {
 	if (w == 0x70) { //F1
 		virtual_window_top();
 	}
    return false;
 }
 
-boolean PrintableWindow::receive(const Event& e) {
+bool PrintableWindow::receive(const Event& e) {
 	if (e.rep()->messageOf() == WM_WINDOWPOSCHANGED) {
 			reconfigured();
 			notify();
@@ -435,13 +435,13 @@ boolean PrintableWindow::receive(const Event& e) {
 }
 #else
 #if MAC
-boolean PrintableWindow::receive(const Event& e) {
+bool PrintableWindow::receive(const Event& e) {
 	reconfigured();
 	notify();
 	return(false);
 }
 #else
-boolean PrintableWindow::receive(const Event& e) {
+bool PrintableWindow::receive(const Event& e) {
 	DismissableWindow::receive(e);
 	if (e.type() == Event::other_event) {
 		XEvent& xe = e.rep()->xevent_;
@@ -453,7 +453,7 @@ boolean PrintableWindow::receive(const Event& e) {
 		case MapNotify:
 if (xplace_) {
 	if (xtop() != xtop_ || xleft() != xleft_) {
-//printf("MapNotify move %lx (%d, %d) to (%d, %d)\n", (long)this, xleft(), xtop(), xleft_, xtop_);
+//printf("MapNotify move %p (%d, %d) to (%d, %d)\n", this, xleft(), xtop(), xleft_, xtop_);
 		xmove(xleft_, xtop_);
 	}
 }
@@ -461,7 +461,7 @@ if (xplace_) {
 			notify();
 			break;
 		case UnmapNotify:
-//printf("UnMapNotify %lx xleft=%d xtop=%d\n", (long)this, xleft(), xtop());
+//printf("UnMapNotify %p xleft=%d xtop=%d\n", this, xleft(), xtop());
 //having trouble with remapping after a "hide" that the left and top are
 // set to incorrect values. i.e.the symptom is that xleft() and xtop() are
 // wrong by the time we get this event.
@@ -564,7 +564,7 @@ void OcGlyph::save(ostream&) {
 	printf("OcGlyph::save (not implemented for relevant class)\n");
 }
 
-boolean OcGlyph::has_window() { return (w_ != nil); }
+bool OcGlyph::has_window() { return (w_ != nil); }
 
 PrintableWindow* OcGlyph::window() { return w_;}
 void OcGlyph::window(PrintableWindow* w) { w_ = w; parents(w_ != nil);}
@@ -586,7 +586,7 @@ printf("%s %g %g\n", window()->name(), window()->width(), window()->height());
 	return w_;
 }
 
-void OcGlyph::parents(boolean b) {
+void OcGlyph::parents(bool b) {
 	if (b) {
 		++parents_;
 	}else{

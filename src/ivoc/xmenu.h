@@ -48,28 +48,28 @@ declarePtrList(HocPanelList, HocPanel)
 
 class HocPanel : public OcGlyph {
 public:
-	HocPanel(const char* name, boolean horizontal=false);
+	HocPanel(const char* name, bool horizontal=false);
 	virtual ~HocPanel();
 	virtual void map_window(int scroll = -1); // -1 leave up to panel_scroll attribute
 
-	void pushButton(const char* name, const char* action, boolean activate = false, Object* pyact = 0);
+	void pushButton(const char* name, const char* action, bool activate = false, Object* pyact = 0);
 	void stateButton(double *pd, const char* name, const char* action, int style, Object* pyvar = nil, Object* pyact = nil);
-	HocMenu* menu(const char* name, boolean add2menubar = false);
-	MenuItem* menuItem(const char* name, const char* action, boolean activate = false, Object* pyact = 0);
+	HocMenu* menu(const char* name, bool add2menubar = false);
+	MenuItem* menuItem(const char* name, const char* action, bool activate = false, Object* pyact = 0);
 	MenuItem* menuStateItem(double *pd, const char* name, const char* action, Object* pyvar = nil, Object* pyact = nil);
 	void valueEd(const char* prompt, const char* variable, const char* action=0,
-		boolean canrun=false, double* pd=nil, boolean deflt=false,
-		boolean keep_updated=false, HocSymExtension* extra=nil,
+		bool canrun=false, double* pd=nil, bool deflt=false,
+		bool keep_updated=false, HocSymExtension* extra=nil,
 		Object* pyvar=nil, Object* pyact=nil);
 	void valueEd(const char* prompt, Object* pyvar, Object* pyact=0,
-		boolean canrun=false, boolean deflt=false,
-		boolean keep_updated=false);
+		bool canrun=false, bool deflt=false,
+		bool keep_updated=false);
 
 // ZFM added vert
 	void slider(double*, float low = 0, float high = 100,
 		float resolution = 1, int steps = 10,
-		const char* send_cmd = nil, boolean vert = false,
-		boolean slow = false, Object* pyvar=nil, Object* pysend=nil);
+		const char* send_cmd = nil, bool vert = false,
+		bool slow = false, Object* pyvar=nil, Object* pysend=nil);
 	virtual void write(ostream&);
 	virtual void save(ostream&);
 	virtual HocItem* hoc_item();
@@ -82,14 +82,14 @@ public:
 	void check_valid_pointers(void*, int);
 	Coord left_, bottom_; // write by makeTray read by dissolve
 	static void save_all(ostream&);
-	void data_path(HocDataPaths*, boolean);
+	void data_path(HocDataPaths*, bool);
 	void item_append(HocItem*);
 #if MAC
 	void mac_menubar();
 	void mac_menubar(int&, int&, int); // recurse per menu through list
 #endif
 	static void keep_updated();
-	static void keep_updated(HocUpdateItem*, boolean);
+	static void keep_updated(HocUpdateItem*, bool);
 	static void paneltool(const char* name, const char* procname, const char* action, ScenePicker*, Object* pycallback = nil, Object* pyselact = nil);
 	static void update_ptrs();
 private:
@@ -97,7 +97,7 @@ private:
 	HocUpdateItemList elist_;
 	HocItemList ilist_;
 	static HocUpdateItemList* update_list_;
-	boolean horizontal_;
+	bool horizontal_;
 	InputHandler* ih_;
 };
 
@@ -143,7 +143,7 @@ private:
 
 class HocMenu : public HocItem {
 public:
-	HocMenu(const char*, Menu*, MenuItem*, HocItem* parent = nil, boolean add2menubar = false);
+	HocMenu(const char*, Menu*, MenuItem*, HocItem* parent = nil, bool add2menubar = false);
 	virtual ~HocMenu();
 	virtual void write(ostream&);
 	virtual Menu* menu() { return menu_;}
@@ -154,7 +154,7 @@ public:
 private:
 	MenuItem* mi_;
 	Menu* menu_;
-	boolean add2menubar_;
+	bool add2menubar_;
 };
 
 class HocUpdateItem : public HocItem {
@@ -163,7 +163,7 @@ public:
 	virtual ~HocUpdateItem();
 	virtual void update_hoc_item();
 	virtual void check_pointer(void*, int vector_size);
-	virtual void data_path(HocDataPaths*, boolean);
+	virtual void data_path(HocDataPaths*, bool);
 	virtual void update_ptrs(){}
 	void update_ptrs_helper(double**);
 };
@@ -182,7 +182,7 @@ public:
 	virtual void write(ostream&);
 	virtual void update_hoc_item();
 	virtual void check_pointer(void*, int);
-	virtual void data_path(HocDataPaths*, boolean);
+	virtual void data_path(HocDataPaths*, bool);
 private:
 	Patch* p_;
 	char** cpp_;
@@ -243,7 +243,7 @@ public:
 	virtual void press(const Event&);
 	virtual void release(const Event&);
 	virtual void menu_up(Event&);
-	void default_inc(boolean, double);
+	void default_inc(bool, double);
 	double default_inc();
 	static StepperMenu* menu() { return menu_;}
 protected:
@@ -253,7 +253,7 @@ private:
 	void middle();
 	void right();
 private:
-	boolean geometric_;
+	bool geometric_;
 	int steps_;
 	float default_inc_;
 	float inc_;
@@ -264,7 +264,7 @@ private:
 class HocValEditor : public HocUpdateItem {
 public:
 	HocValEditor(const char* name, const char* variable, ValEdLabel*,
-		HocValAction*, double* pd=0, boolean canrun=false,
+		HocValAction*, double* pd=0, bool canrun=false,
 		HocItem* parent = nil, Object* pvar = nil);
 	virtual ~HocValEditor();
 	FieldSEditor* field_editor() { return fe_; }
@@ -274,7 +274,7 @@ public:
 	void audit();
 	virtual void updateField();
 	virtual void write(ostream&);
-	virtual void data_path(HocDataPaths*, boolean);
+	virtual void data_path(HocDataPaths*, bool);
 	virtual void check_pointer(void*, int);
 	virtual void print(Printer*, const Allocation&)const;
 	virtual int hoc_default_val_editor() {return 0;}
@@ -284,14 +284,14 @@ public:
 	const char* variable() const;
 	virtual void setlimits(float*);
 	virtual double domain_limits(double);
-	boolean active() { return active_;}
+	bool active() { return active_;}
 	virtual void update_ptrs();
 private:
 	friend class HocEditorForItem;
 	friend class HocValStepper;
 	HocEditorForItem* fe_;
-	boolean active_;
-	boolean canrun_;
+	bool active_;
+	bool canrun_;
 	HocAction* action_;
 	CopyString* variable_;
 	double* pval_;
@@ -303,7 +303,7 @@ private:
 class HocDefaultValEditor : public HocValEditor {
 public:
 	HocDefaultValEditor(const char* name, const char* variable, ValEdLabel*,
-		HocValAction*, double* pd=0, boolean canrun=false,
+		HocValAction*, double* pd=0, bool canrun=false,
 		HocItem* parent = nil, Object* pyvar=nil);
 	virtual ~HocDefaultValEditor();
 	virtual Stepper* stepper() { return vs_; }
@@ -356,8 +356,8 @@ class OcSlider : public HocUpdateItem, public Observer {
 public:
 	OcSlider(double*, float low, float high,
 		float resolution, int nsteps,
-		const char* send_cmd, boolean vert,
-		boolean slow = false, Object* pyvar=nil, Object* pysend=nil);
+		const char* send_cmd, bool vert,
+		bool slow = false, Object* pyvar=nil, Object* pysend=nil);
 	virtual ~OcSlider();
 	virtual void write(ostream&);
 
@@ -367,7 +367,7 @@ public:
 
 	virtual void update_hoc_item();
 	virtual void check_pointer(void*, int vector_size);
-	virtual void data_path(HocDataPaths*, boolean);
+	virtual void data_path(HocDataPaths*, bool);
 	virtual double slider_val();
 	virtual void update_ptrs();
 private:
@@ -379,9 +379,9 @@ private:
 	double *pval_;
 	Object* pyvar_;
 	CopyString* variable_;
-	boolean scrolling_;
-	boolean vert_;
-	boolean slow_;
+	bool scrolling_;
+	bool vert_;
+	bool slow_;
 };
 
 
@@ -392,12 +392,12 @@ class HocStateButton : public HocUpdateItem, public Observer {
   virtual ~HocStateButton();
   virtual void write(ostream&);
 
-  boolean chosen();
+  bool chosen();
   void button_action();
 
   virtual void update_hoc_item();
   virtual void check_pointer(void*, int);
-  virtual void data_path(HocDataPaths*, boolean);
+  virtual void data_path(HocDataPaths*, bool);
   virtual void print(Printer*, const Allocation&) const;
   virtual void update_ptrs();
   enum { CHECKBOX,PALETTE };
@@ -419,12 +419,12 @@ class HocStateMenuItem : public HocUpdateItem, public Observer {
   virtual ~HocStateMenuItem();
   virtual void write(ostream&);
 
-  boolean chosen();
+  bool chosen();
   void button_action();
 
   virtual void update_hoc_item();
   virtual void check_pointer(void*, int);
-  virtual void data_path(HocDataPaths*, boolean);
+  virtual void data_path(HocDataPaths*, bool);
   virtual void print(Printer*, const Allocation&) const;
   virtual void update_ptrs();
 

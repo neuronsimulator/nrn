@@ -44,7 +44,7 @@ public:
 	virtual void dragselect(GlyphIndex);
 	virtual void reload();
 	virtual void reload(GlyphIndex);
-	virtual void set_select_action(const char*, boolean on_rel = false, Object* pyact=nil);
+	virtual void set_select_action(const char*, bool on_rel = false, Object* pyact=nil);
 	virtual void set_accept_action(const char*, Object* pyact=nil);
 	virtual void accept();
 	virtual void release(const Event&);
@@ -60,11 +60,11 @@ private:
 	HocCommand* accept_action_;
 	HocCommand* label_action_;
 	HocCommand* label_pystract_;
-	boolean on_release_;
+	bool on_release_;
 	char** plabel_;
 	CopyString* items_;
 	OcGlyph* ocg_;
-	boolean ignore_;
+	bool ignore_;
 };
 #else
 class OcListBrowser {
@@ -291,9 +291,9 @@ static double l_select_action(void* v) {
 IFGUI
 	OcListBrowser* b = ((OcList*)v)->browser();
 	if (b) {
-		boolean on_rel = false;
+		bool on_rel = false;
 		if (ifarg(2)) {
-			on_rel = (boolean)chkarg(2, 0, 1);
+			on_rel = (bool)chkarg(2, 0, 1);
 		}
 		if (hoc_is_object_arg(1)) {
 			b->set_select_action(nil, on_rel, *hoc_objgetarg(1));
@@ -456,7 +456,7 @@ OcList::~OcList() {
 	delete oli_;
 }
 
-static boolean l_chkpt(void** vp) {
+static bool l_chkpt(void** vp) {
 #if HAVE_IV && !MAC
 	OcList* o;
 	Checkpoint& chk = *Checkpoint::instance();
@@ -492,9 +492,9 @@ void OcList_reg() {
 }
 
 extern "C" {
-extern boolean hoc_objectpath_impl(Object* ob, Object* oblook, char* path, int depth);
-extern void hoc_path_prepend(char*, char*, char*);
-boolean ivoc_list_look(Object* ob, Object* oblook, char* path, int) {
+extern bool hoc_objectpath_impl(Object* ob, Object* oblook, char* path, int depth);
+extern void hoc_path_prepend(char*, const char*, const char*);
+bool ivoc_list_look(Object* ob, Object* oblook, char* path, int) {
 	if (oblook->ctemplate->constructor == l_cons) {
 		OcList* o = (OcList*)oblook->u.this_pointer;
 		long i, cnt = o->count();
@@ -508,7 +508,7 @@ boolean ivoc_list_look(Object* ob, Object* oblook, char* path, int) {
 			if (obj == ob) {
 #endif
 				char buf[200];
-				sprintf(buf, "object(%d)", i);
+				sprintf(buf, "object(%ld)", i);
 				hoc_path_prepend(path, buf, "");
 				return 1;
 			}
@@ -692,14 +692,14 @@ void OcListBrowser::change_name(GlyphIndex i) {
 	if (label_pystract_) {
 		hoc_ac_ = i;
 		char buf[256];
-		if (label_pystract_->exec_strret(buf, 256, boolean(false))) {
+		if (label_pystract_->exec_strret(buf, 256, bool(false))) {
 			change_item(i, buf);
 		}else{
 			change_item(i, "label error");
 		}
 	}else if (plabel_) {
 		hoc_ac_ = i;
-		if (label_action_->execute(boolean(false)) == 0) {
+		if (label_action_->execute(bool(false)) == 0) {
 			change_item(i, *plabel_);
 		}else{
 			change_item(i, "label error");
@@ -716,7 +716,7 @@ void OcListBrowser::change_name(GlyphIndex i) {
 	}
 }
 
-void OcListBrowser::set_select_action(const char* s, boolean on_rel, Object* pyact) {
+void OcListBrowser::set_select_action(const char* s, bool on_rel, Object* pyact) {
 	if (select_action_) {
 		delete select_action_;
 	}

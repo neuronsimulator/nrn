@@ -52,8 +52,8 @@ public: \
     ~Table(); \
 \
     void insert(Key, Value); \
-    boolean find(Value&, Key); \
-    boolean find_and_remove(Value&, Key); \
+    bool find(Value&, Key); \
+    bool find_and_remove(Value&, Key); \
     void remove(Key); \
 private: \
     friend class TableIterator(Table); \
@@ -81,8 +81,8 @@ public: \
 \
     Key& cur_key(); \
     Value& cur_value(); \
-    boolean more(); \
-    boolean next(); \
+    bool more(); \
+    bool next(); \
 private: \
     TableEntry(Table)* cur_; \
     TableEntry(Table)** entry_; \
@@ -91,7 +91,7 @@ private: \
 \
 inline Key& TableIterator(Table)::cur_key() { return cur_->key_; } \
 inline Value& TableIterator(Table)::cur_value() { return cur_->value_; } \
-inline boolean TableIterator(Table)::more() { return entry_ <= last_; }
+inline bool TableIterator(Table)::more() { return entry_ <= last_; }
 
 /*
  * Predefined hash functions
@@ -99,7 +99,11 @@ inline boolean TableIterator(Table)::more() { return entry_ <= last_; }
 
 #ifndef os_table2_h
 inline unsigned long key_to_hash(long k) { return (unsigned long)k; }
+#if defined(__SIZEOF_POINTER__) && __SIZEOF_POINTER__ > __SIZEOF_LONG__
+inline unsigned long key_to_hash(const void* k) { return (unsigned long)((unsigned long long)k); }
+#else
 inline unsigned long key_to_hash(const void* k) { return (unsigned long)k; }
+#endif
 #endif
 
 /*
@@ -141,7 +145,7 @@ void Table::insert(Key k, Value v) { \
     *a = e; \
 } \
 \
-boolean Table::find(Value& v, Key k) { \
+bool Table::find(Value& v, Key k) { \
     for (register TableEntry(Table)* e = probe(k); e != nil; e = e->chain_) { \
 	if (e->key_ == k) { \
 	    v = e->value_; \
@@ -151,7 +155,7 @@ boolean Table::find(Value& v, Key k) { \
     return false; \
 } \
 \
-boolean Table::find_and_remove(Value& v, Key k) { \
+bool Table::find_and_remove(Value& v, Key k) { \
     TableEntry(Table)** a = &probe(k); \
     register TableEntry(Table)* e = *a; \
     if (e != nil) { \
@@ -208,7 +212,7 @@ TableIterator(Table)::TableIterator(Table)(Table& t) { \
     } \
 } \
 \
-boolean TableIterator(Table)::next() { \
+bool TableIterator(Table)::next() { \
     cur_ = cur_->chain_; \
     if (cur_ != nil) { \
 	return true; \

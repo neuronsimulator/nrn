@@ -11,17 +11,31 @@ strdef root, name, tstr
 proc init() {local i
 	mview = $o1
 	analysed = 0
-	sprint(root, "%s", secname())
-	if (hoc_sf_.head(root, "\\.", name) == -1) {
-			name = root
-	}else{
-		sprint(tstr, "%s.cellobj = %s", this, name)
-		execute(tstr)
-	}
+	getcell()
 	allseclist = new SectionList()
 	allseclist.wholetree
 	secanal = new ModelViewSeclistAnalysis(mview, allseclist)
 	ppanal = new ModelViewPPAnalysis(mview)
+}
+
+proc getcell() {localobj p
+	sprint(root, "%s", secname())
+	if (nrnpython("import neuron")) {
+		p = new PythonObject()
+		cellobj = p.neuron.h.cas().cell()
+		if (object_id(cellobj) == 0) {
+			name = root
+		}else{
+			name = cellobj.__str__()
+		}
+	}else{
+		if (hoc_sf_.head(root, "\\.", name) == -1) {
+				name = root
+		}else{
+			sprint(tstr, "%s.cellobj = %s", this, name)
+			execute(tstr)
+		}
+	}		
 }
 
 iterator sections() {

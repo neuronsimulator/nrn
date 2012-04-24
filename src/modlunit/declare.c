@@ -34,7 +34,7 @@ declare(subtype, q, qa)
 			sym->level = declare_level;
 		}/*else leave as is. First declaration gets precedence */
 	} else { /* A few cases can be promoted */
-		if (subtype&(CONST|DEP|STAT) && sym->subtype&(CONST|DEP|STAT)){
+		if (subtype&(modlunitCONST|DEP|STAT) && sym->subtype&(modlunitCONST|DEP|STAT)){
 			if (promote(sym, subtype)) {
 				sym->subtype = subtype;
 				sym->info = qa;
@@ -109,7 +109,7 @@ declare_array(s)
 {
 	Item *q;
 	
-	if (s->subtype & (CONST|DEP|STAT)) {
+	if (s->subtype & (modlunitCONST|DEP|STAT)) {
 		q = ITMA(s->info)[2];
 		if (q) {
 			decdim(s, q);
@@ -203,7 +203,7 @@ Sprintf(buf, "%s/%s%d", decode_units(sbase), indepunits, nprime(s->name));
 				s->u.str = stralloc(buf, (char *)0);
 			} else {
 				if (sbase) {
-					s->subtype = CONST;
+					s->subtype = modlunitCONST;
 					s->u.str = stralloc(decode_units(sbase), (char *)0);
 				}
 			}

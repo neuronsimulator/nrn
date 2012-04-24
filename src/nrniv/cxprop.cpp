@@ -20,6 +20,9 @@ extern void nrn_mk_prop_pools(int);
 extern void nrn_cache_prop_realloc();
 extern int nrn_is_ion(int);
 void nrn_update_ion_pointer(Symbol* sion, Datum* dp, int id, int ip);
+#if EXTRACELLULAR
+void nrn_extcell_update_param();
+#endif
 extern void nrn_recalc_ptrs(double*(*)(double*));
 static double* recalc_ptr(double*);
 
@@ -85,17 +88,17 @@ static void read_temp1() {
 	f = fopen(line, "r");
 	if (!f) { return; }
 	force = 1;
-	fgets(line, 200, f); assert(sscanf(line, "%d", &maxtype) == 1);
+	assert(fgets(line, 200, f)); assert(sscanf(line, "%d", &maxtype) == 1);
 	mk_prop_pools(maxtype);
 	long* ntget1 = new long[maxtype];
 	for (i=0; i < maxtype; ++i) { ntget1[i] = 0; }
 
 	// allocate the pool space
-	fgets(line, 200, f); assert(sscanf(line, "%d", &nth) == 1);
+	assert(fgets(line, 200, f)); assert(sscanf(line, "%d", &nth) == 1);
 	for (ith=0; ith < nth; ++ith) {
-		fgets(line, 200, f); assert(sscanf(line, "%d", &nmech) == 1);
+		assert(fgets(line, 200, f)); assert(sscanf(line, "%d", &nmech) == 1);
 		for (imech=0; imech < nmech; ++imech) {
-			fgets(line, 200, f);
+			assert(fgets(line, 200, f));
 assert(sscanf(line, "%d %d %d %d %d", &type, &sz1, &sz2, &ntget, &cnt) == 5);
 //		printf("(%d %d %d %d %d) %s", type, sz1, sz2, ntget, cnt, line);
 			ntget1[type] = ntget;
@@ -154,9 +157,9 @@ assert(sscanf(line, "%d %d %d %d %d", &type, &sz1, &sz2, &ntget, &cnt) == 5);
 		chain[i] = 0;
 	}
 	for (ith = 0; ith < nth; ++ith) {
-		fgets(line, 200, f); assert(sscanf(line, "%d", &cnt) == 1);
+		assert(fgets(line, 200, f)); assert(sscanf(line, "%d", &cnt) == 1);
 		for (i=0; i < cnt; ++i) {
-			fgets(line, 200, f);
+			assert(fgets(line, 200, f));
 			assert(sscanf(line, "%d %d %d", &type, &j, &seq));
 			if (dblpools_[type]) {
 				double** items = dblpools_[type]->items();
@@ -262,7 +265,7 @@ double* nrn_prop_data_alloc(int type, int count, Prop* p) {
 	assert(dblpools_[type]->d2() == count);
 	p->_alloc_seq = dblpools_[type]->ntget();
 	double* pd = dblpools_[type]->alloc();
-//if (type > 1) printf("nrn_prop_data_alloc %d %s %d %lx\n", type, memb_func[type].sym->name, count, (long)pd);
+//if (type > 1) printf("nrn_prop_data_alloc %d %s %d %p\n", type, memb_func[type].sym->name, count, pd);
 	return pd;
 }
 
@@ -275,20 +278,20 @@ Datum* nrn_prop_datum_alloc(int type, int count, Prop* p) {
 	assert(datumpools_[type]->d2() == count);
 	p->_alloc_seq = datumpools_[type]->ntget();
 	ppd = datumpools_[type]->alloc();
-//if (type > 1) printf("nrn_prop_datum_alloc %d %s %d %lx\n", type, memb_func[type].sym->name, count, (long)ppd);
+//if (type > 1) printf("nrn_prop_datum_alloc %d %s %d %p\n", type, memb_func[type].sym->name, count, ppd);
 	for (i=0; i < count; ++i) { ppd[i]._pvoid = 0; }
 	return ppd;
 }
 
 void nrn_prop_data_free(int type, double* pd) {
-//if (type > 1) printf("nrn_prop_data_free %d %s %lx\n", type, memb_func[type].sym->name, (long)pd);
+//if (type > 1) printf("nrn_prop_data_free %d %s %p\n", type, memb_func[type].sym->name, pd);
 	if (pd) {
 		dblpools_[type]->hpfree(pd);
 	}
 }
 
 void nrn_prop_datum_free(int type, Datum* ppd) {
-//if (type > 1) printf("nrn_prop_datum_free %d %s %lx\n", type, memb_func[type].sym->name, (long)ppd);
+//if (type > 1) printf("nrn_prop_datum_free %d %s %p\n", type, memb_func[type].sym->name, ppd);
 	if (ppd) {
 		datumpools_[type]->hpfree(ppd);
 	}
@@ -320,8 +323,8 @@ int nrn_prop_is_cache_efficient() {
 			}
 			for (int j = 0; j < ml->nodecount; ++j) {
 				if (p[i]->element(j) != ml->data[j]) {
-//printf("thread %d mechanism %s instance %d  element %lx data %lx\n",
-//it, memb_func[i].sym->name, j, (long)p[i]->element(j), (long)(ml->data + j));
+//printf("thread %d mechanism %s instance %d  element %p data %p\n",
+//it, memb_func[i].sym->name, j, p[i]->element(j), (ml->data + j));
 					r = 0;
 				}
 			}
@@ -363,7 +366,7 @@ static double* recalc_ptr(double* old) {
 //if (i < 0 || i >= np->size()) abort();
 			assert(i >= 0 && i < np->size());
 			double* n = np->items()[i] + offset;
-//printf("recalc_ptr old=%lx new=%lx value=%g\n", (long)old, (long)n, *n);
+//printf("recalc_ptr old=%p new=%p value=%g\n", old, n, *n);
 			return n;
 		}
 	}
@@ -515,6 +518,10 @@ static int in_place_data_realloc() {
 			}
 		}
 	}
+	// one more thing to do for extracellular
+#if EXTRACELLULAR
+	nrn_extcell_update_param();
+#endif
 	// finally get rid of the old ion pools
 	for (int i=0; i < n_memb_func; ++i) if (types[i] && oldpools_[i]) {
 		delete oldpools_[i];
@@ -609,7 +616,7 @@ fprintf(f, "%d %d %d %d %d %s\n", i, sz1, sz2, ntget, cnt, memb_func[i].sym->nam
 				Memb_list* ml = mlmap[p->type];
 if(!ml || nd != ml->nodelist[ml->nodecount]) { abort(); }
 				assert(ml && nd == ml->nodelist[ml->nodecount]);
-fprintf(f, "%d %d %d\n", p->type, ml->nodecount++, p->_alloc_seq);
+assert(fprintf(f, "%d %d %ld\n", p->type, ml->nodecount++, p->_alloc_seq) > 0);
 				++cnt2;
 			}
 		}

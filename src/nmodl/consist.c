@@ -35,7 +35,7 @@ consistency()
 		t = s->subtype;
 		con("KEYWORD", KEYWORD, 0);
 		con("RESERVED WORD", EXTDEF|EXTDEF2|EXTDEF3|EXTDEF4|EXTDEF5, 0);
-		con("CONSTANT", CONST, 0);
+		con("CONSTANT", nmodlCONST, 0);
 		con("PARAMETER", PARM, ARRAY);
 		con("ASSIGNED", DEP, ARRAY);
 		con("INDEPENDENT", INDEP, 0);

@@ -176,6 +176,7 @@ plot.c,v
 */
 
 /*LINTLIBRARY*/
+#undef IGNORE
 #if LINT
 #define IGNORE(arg)	{if(arg);}
 #else
@@ -202,6 +203,22 @@ plot.c,v
 
 #include <stdio.h>
 #include <string.h>
+
+#if defined(__MINGW32__)
+extern char** _environ;
+#else /*!__MINGW32__*/
+
+#if HAVE_UNISTD_H
+#include <unistd.h>
+#if !defined(__APPLE__)
+extern char** environ;
+#else /* __APPLE */
+#include <crt_externs.h>
+#endif /* __APPLE__ */
+#endif /* HAVE_UNISTD_H */
+
+#endif /*!__MINGW32__*/
+
 #if DOS
 #include <graphics.h>
 #include <dos.h>
@@ -492,10 +509,13 @@ hoc_outtext(s) char* s; {
 }
 #endif
 
-initplot(environ)
-	char *environ[];
+initplot()
 {
+#if !defined(__MINGW32__) /* to end of function */
 	int i;
+#if defined (__APPLE__)
+	char** environ=(*_NSGetEnviron());
+#endif
 #if defined(__TURBOC__)
 	graphdev = 0;
 #else
@@ -516,8 +536,8 @@ initplot(environ)
 		if (strcmp(environ[i], ncsa) == 0)
 			graphdev = TEK4014;
 	}
-#endif
-#endif
+#endif /*!NeXTstep*/
+#endif /*!__TURBOC__*/
 	hpdev = (FILE *)0;
 	cdev = gdev = stdout;
 #if SUNCORE
@@ -538,14 +558,15 @@ initplot(environ)
 		IGNORE(fprintf(stderr, "Can't open /dev/ttyp4 for TEK\n"));
 		cdev = stdout;
 */
-#endif
-#endif
-#endif
+#endif /*NRNOC_X11*/
+#endif /*NeXTstep*/
+#endif /*SUNCORE*/
 	} else {
 		if (graphdev == TEK4014) {
 			cdev = gdev = stdout;
 		}
 	}
+#endif /*!__MINGW32__*/
 }
 
 hoc_close_plot() {
@@ -807,6 +828,7 @@ Fig_plt(mode, x, y)
 #define SCXD(x) ((x*.8))
 #define SCYD(y) (7.5*80.-(y*.8))
 #endif
+#undef TEXT
 #define TEXT 1
 #define LINE1 2
 #define LINE2 3

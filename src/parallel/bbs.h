@@ -11,10 +11,10 @@ public:
 	BBS(int nhost);
 	virtual ~BBS();
 
-	boolean look(const char*);
+	bool look(const char*);
 
 	void take(const char*); /* blocks til something to take */
-	boolean look_take(const char*); /* returns false if nothing to take */
+	bool look_take(const char*); /* returns false if nothing to take */
 	// after taking use these
 	int upkint();
 	double upkdouble();
@@ -32,10 +32,10 @@ public:
 	void post(const char*);
 
 	int submit(int userid);
-	boolean working(int &id, double& x, int& userid);
+	bool working(int &id, double& x, int& userid);
 	void context();
 
-	boolean is_master();
+	bool is_master();
 	void worker(); // forever execute
 	void done(); // prints timing
 

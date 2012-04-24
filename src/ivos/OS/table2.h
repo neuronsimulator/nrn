@@ -52,7 +52,7 @@ public: \
     ~Table2(); \
 \
     void insert(Key1, Key2, Value); \
-    boolean find(Value&, Key1, Key2); \
+    bool find(Value&, Key1, Key2); \
     void remove(Key1, Key2); \
 private: \
     friend class Table2Iterator(Table2); \
@@ -82,8 +82,8 @@ public: \
     Key1& cur_key1(); \
     Key2& cur_key2(); \
     Value& cur_value(); \
-    boolean more(); \
-    boolean next(); \
+    bool more(); \
+    bool next(); \
 private: \
     Table2Entry(Table2)* cur_; \
     Table2Entry(Table2)** entry_; \
@@ -93,7 +93,7 @@ private: \
 inline Key1& Table2Iterator(Table2)::cur_key1() { return cur_->key1_; } \
 inline Key2& Table2Iterator(Table2)::cur_key2() { return cur_->key2_; } \
 inline Value& Table2Iterator(Table2)::cur_value() { return cur_->value_; } \
-inline boolean Table2Iterator(Table2)::more() { return entry_ <= last_; }
+inline bool Table2Iterator(Table2)::more() { return entry_ <= last_; }
 
 /*
  * Predefined hash functions
@@ -137,7 +137,7 @@ void Table2::insert(Key1 k1, Key2 k2, Value v) { \
     *a = e; \
 } \
 \
-boolean Table2::find(Value& v, Key1 k1, Key2 k2) { \
+bool Table2::find(Value& v, Key1 k1, Key2 k2) { \
     for ( \
 	register Table2Entry(Table2)* e = probe(k1, k2); \
 	e != nil; \
@@ -182,7 +182,7 @@ Table2Iterator(Table2)::Table2Iterator(Table2)(Table2& t) { \
     } \
 } \
 \
-boolean Table2Iterator(Table2)::next() { \
+bool Table2Iterator(Table2)::next() { \
     cur_ = cur_->chain_; \
     if (cur_ != nil) { \
 	return true; \

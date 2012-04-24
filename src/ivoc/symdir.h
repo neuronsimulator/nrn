@@ -40,11 +40,11 @@ public:
 	virtual const String& name(int index) const;
 	virtual int index(const String&) const;
 	virtual void whole_name(int index, CopyString&) const;
-	virtual boolean is_directory(int index) const;
+	virtual bool is_directory(int index) const;
 	virtual double* variable(int index);
 	virtual int whole_vector(int index);
 
-	static boolean match(const String& name, const String& pattern);
+	static bool match(const String& name, const String& pattern);
 	Symbol* symbol(int index) const;
 	int array_index(int index) const;
 	Object* object() const; // the parent_object

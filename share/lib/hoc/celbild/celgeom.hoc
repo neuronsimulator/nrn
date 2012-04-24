@@ -274,11 +274,11 @@ proc export_autonseg() {local i, j, type, b, k
 				}else if (k == dlambdatype) {
 					b=1
 					x = tobj.object(j).value
-sprint(tstr2, "%s nseg = int((L/(%g*lambda_f(100))+.9)/2)*2 + 1 ", tstr2, x)
+sprint(tstr2, "%s nseg = int((L/(%g*lambda_f(100))+.999)/2)*2 + 1 ", tstr2, x)
 				}else if (k == dxtype) {
 					b=1
 					x = tobj.object(j).value
-sprint(tstr2, "%s nseg = int((L/%g + .9)/2)*2 + 1 ", tstr2, x)
+sprint(tstr2, "%s nseg = int((L/%g + .999)/2)*2 + 1 ", tstr2, x)
 				}else if (k == nsegtype) {
 					b=1
 					x = tobj.object(j).value
@@ -867,11 +867,11 @@ proc pr_autonseg() {local i, j, type, x, k, nline, isa
 				}else if (k == dlambdatype) {
 					is_auto=1
 					x = tobj.object(j).value
-sprint(tstr2, "%s nseg = int((L/(%g*lambda_f(100))+.9)/2)*2 + 1 ", tstr2, x)
+sprint(tstr2, "%s nseg = int((L/(%g*lambda_f(100))+.999)/2)*2 + 1 ", tstr2, x)
 				}else if (k == dxtype) {
 					is_auto=1
 					x = tobj.object(j).value
-sprint(tstr2, " %s nseg = int((L/x + .9)/2)*2 + 1 ", tstr2, x)
+sprint(tstr2, " %s nseg = int((L/%g + .999)/2)*2 + 1 ", tstr2, x)
 				}else if (k == nsegtype) {
 					is_auto=1
 					x = tobj.object(j).value

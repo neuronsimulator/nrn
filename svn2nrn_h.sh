@@ -1,6 +1,6 @@
 #!/bin/sh
 major=7
-minor=2
+minor=3
 a=$1
 if test "$a" = "" ; then
 	a=.

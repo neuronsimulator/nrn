@@ -1,13 +1,14 @@
 #include <../../nrnconf.h>
-#if HAVE_IV // to end of file
+#include <stdio.h>
+#include "classreg.h"
+
+#if HAVE_IV // to end of file except hoc interface stubs exist.
 
 #include <OS/list.h>
 #include <OS/string.h>
 #include <OS/math.h>
 #include <string.h>
 #include <ivstream.h>
-#include <stdio.h>
-#include "classreg.h"
 #include "graph.h"
 #include "ivocvect.h"
 #include "scenepic.h"
@@ -39,13 +40,13 @@ public:
 	virtual ~RangeExpr();
 	void fill();
 	void compute();
-	boolean exists(int);
+	bool exists(int);
 	double* pval(int);
 private:
 	long n_;
 	SecPosList* spl_;
 	double* val_;
-	boolean* exist_;
+	bool* exist_;
 	HocCommand* cmd_;
 };
 
@@ -55,7 +56,7 @@ public:
 	virtual ~RangeVarPlot();
 	virtual void save(ostream&);
 	virtual void request(Requisition& req) const;
-	virtual boolean choose_sym(Graph*);
+	virtual bool choose_sym(Graph*);
 	virtual void update(Observable*);
 	void x_begin(float);
 	void x_end(float);
@@ -77,49 +78,85 @@ private:
 	int struc_changed_;
 	double d2root_; // distance to root of closest point to root
 };
+#endif //HAVE_IV
 
 static double s_begin(void* v) {
+#if HAVE_IV
+IFGUI
 	((RangeVarPlot*)v)->x_begin(chkarg(1, 0., 1.));
 	return 1.;
+ENDGUI
+#endif
 }
 
 static double s_end(void* v) {
+#if HAVE_IV
+IFGUI
 	((RangeVarPlot*)v)->x_end(chkarg(1, 0., 1.));
+ENDGUI
+#endif
 	return 1.;
 }
 
 static double s_origin(void* v) {
+#if HAVE_IV
+IFGUI
 	((RangeVarPlot*)v)->origin(*getarg(1));
+ENDGUI
+#endif
 	return 1.;
 }
 
 static double s_d2root(void* v) {
+#if HAVE_IV
+IFGUI
 	return ((RangeVarPlot*)v)->d2root();
+ENDGUI
+#endif
+	return 0.0;
 }
 
 static double s_left(void* v) {
+#if HAVE_IV
+IFGUI
 	return ((RangeVarPlot*)v)->left();
+ENDGUI
+#endif
+	return 0.0;
 }
 
 static double s_right(void* v) {
+#if HAVE_IV
+IFGUI
 	return ((RangeVarPlot*)v)->right();
+ENDGUI
+#endif
+	return 0.0;
 }
 
 static double s_list(void* v) {
+#if HAVE_IV
+IFGUI
 	Object* ob = *hoc_objgetarg(1);
 	check_obj_type(ob, "SectionList");
 	((RangeVarPlot*)v)->list(ob);
+ENDGUI
+#endif
 	return 0.;
 }
 
 static double s_color(void* v) {
+#if HAVE_IV
 IFGUI
 	((RangeVarPlot*)v)->color(colors->color((int)chkarg(1,0,100)));
 ENDGUI
+#endif
 	return 0.;
 }
 
 static double to_vector(void* v) {
+#if HAVE_IV
+IFGUI
 	RangeVarPlot* rvp = (RangeVarPlot*)v;
 	Vect* y = vector_arg(1);
 	long i, cnt = rvp->py_data()->count();
@@ -135,9 +172,14 @@ static double to_vector(void* v) {
 		}
 	}
 	return double(cnt);
+ENDGUI
+#endif
+	return 0.0;
 }
 
 static double from_vector(void* v) {
+#if HAVE_IV
+IFGUI
 	RangeVarPlot* rvp = (RangeVarPlot*)v;
 	Vect* y = vector_arg(1);
 	long i, cnt = rvp->py_data()->count();
@@ -145,6 +187,9 @@ static double from_vector(void* v) {
 		*rvp->py_data()->p(i) = y->elem(i);
 	}
 	return double(cnt);
+ENDGUI
+#endif
+	return 0.0;
 }
 
 static Member_func s_members[] = {
@@ -162,13 +207,22 @@ static Member_func s_members[] = {
 };
 
 static void* s_cons(Object*) {
+#if HAVE_IV
+IFGUI
 	RangeVarPlot* s = new RangeVarPlot(gargstr(1));
 	s->ref();
 	return (void*)s;
+ENDGUI
+#endif
+	return 0;
 }
 
 static void s_destruct(void* v) {
+#if HAVE_IV
+IFGUI
 	Resource::unref((RangeVarPlot*)v);
+ENDGUI
+#endif
 }
 
 void RangeVarPlot_reg() {
@@ -176,6 +230,7 @@ void RangeVarPlot_reg() {
 	class2oc("RangeVarPlot", s_cons, s_destruct, s_members);
 }
 
+#if HAVE_IV // to end of file
 
 RangeVarPlot::RangeVarPlot(const char* var) : GraphVector(var) {
 	begin_section_ = 0;
@@ -295,7 +350,7 @@ void RangeVarPlot::save(ostream& o) {
 	o << buf << endl;
 }
 
-boolean RangeVarPlot::choose_sym(Graph* g) {
+bool RangeVarPlot::choose_sym(Graph* g) {
 //	printf("RangeVarPlot::choose_sym\n");
 	char s[256];	
 	s[0] = '\0';
@@ -355,7 +410,7 @@ void RangeVarPlot::fill_pointers() {
 			sprintf(buf, "%s(hoc_ac_)", expr_.string());
 		}
 		int noexist=0;// don't plot single points that don't exist
-		boolean does_exist;
+		bool does_exist;
 		double* pval = nil;
 		for (long i=0; i < xcnt; ++i) {
 			Section* sec = sec_list_->item(i).sec;
@@ -563,7 +618,7 @@ void RangeExpr::fill() {
 		n_ = spl_->count();
 		if (n_) {
 			val_ = new double[n_];
-			exist_ = new boolean[n_];
+			exist_ = new bool[n_];
 		}
 	}
 	int temp = hoc_execerror_messages;
@@ -571,7 +626,7 @@ void RangeExpr::fill() {
 		nrn_pushsec(spl_->item(i).sec);
 		hoc_ac_ = spl_->item(i).x;
 		hoc_execerror_messages = 0;
-		if (cmd_->execute(boolean(false)) == 0) {
+		if (cmd_->execute(bool(false)) == 0) {
 			exist_[i] = true;
 			val_[i] = 0.;
 		}else{
@@ -593,14 +648,14 @@ void RangeExpr::compute() {
 		if (exist_[i]) {
 			nrn_pushsec(spl_->item(i).sec);
 			hoc_ac_ = spl_->item(i).x;
-			cmd_->execute(boolean(false));
+			cmd_->execute(bool(false));
 			nrn_popsec();
 			val_[i] = hoc_ac_;
 		}
 	}
 }
 
-boolean RangeExpr::exists(int i) {
+bool RangeExpr::exists(int i) {
 	if (i < n_) {
 		return exist_[i];
 	}else{

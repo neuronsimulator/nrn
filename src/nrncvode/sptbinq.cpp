@@ -37,7 +37,7 @@ TQItem::TQItem() {
 TQItem::~TQItem() {
 }
 
-boolean TQItem::check() {
+bool TQItem::check() {
 #if DOCHECK
 #endif
 	return true;
@@ -48,7 +48,7 @@ static void prnt(const TQItem* b, int level) {
 	for (i=0; i < level; ++i) {
 		printf("    ");
 	}
-	printf("%g %c %d Q=%lx D=%lx\n", b->t_, b->data_?'x':'o', b->cnt_, (long)b, (long)b->data_);
+	printf("%g %c %d Q=%p D=%p\n", b->t_, b->data_?'x':'o', b->cnt_, b, b->data_);
 }
 
 static void chk(TQItem* b, int level) {
@@ -165,7 +165,7 @@ void TQueue::statistics() {
 		ninsert, nmove, nrem, nleast);
 	printf("calls to find=%lu\n",
 		nfind);
-	printf("comparisons=%lu\n",
+	printf("comparisons=%d\n",
 		sptree_->enqcmps);
 #else
 	printf("Turn on COLLECT_TQueue_STATISTICS_ in tqueue.h\n");

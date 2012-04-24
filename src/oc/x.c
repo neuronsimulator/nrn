@@ -207,7 +207,7 @@ void x11_open_window()
 	}
 	if ((display = XOpenDisplay(display_name)) == NULL)
 	{
-		(void)fprintf(stderr, "%s: cannot connect to X server %s\n", 
+		(void)fprintf(stderr, "cannot connect to X server %s\n", 
 					XDisplayName(display_name));
 	}
 

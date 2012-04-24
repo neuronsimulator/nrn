@@ -116,7 +116,7 @@ extern int hoc_arayinstal();
 
 static struct HocInst {
 	Pfri pi;
-	char* signature;
+	const char* signature;
 } hoc_inst_[] = {
 	0, 0,		//0
 	nopop, 0,
@@ -261,47 +261,47 @@ public:
 	OcCheckpoint();
 	virtual ~OcCheckpoint();
 	
-	boolean write(const char*);
+	bool write(const char*);
 private:
 	friend class Checkpoint;
-	boolean pass1();
-	boolean pass2();
-	boolean make_sym_table();
-	boolean build_map();
+	bool pass1();
+	bool pass2();
+	bool make_sym_table();
+	bool build_map();
 	PortablePointer* find(void*);
 
-	boolean func(Symbol*);
+	bool func(Symbol*);
 	
-	boolean sym_count(Symbol*);
-	boolean sym_table_install(Symbol*);
-	boolean sym_out(Symbol*);
-	boolean sym_instructions(Symbol*);
-	boolean sym_values(Symbol*);
-	boolean objects(Symbol*);
+	bool sym_count(Symbol*);
+	bool sym_table_install(Symbol*);
+	bool sym_out(Symbol*);
+	bool sym_instructions(Symbol*);
+	bool sym_values(Symbol*);
+	bool objects(Symbol*);
 	
-	boolean symlist(Symlist*);
-	boolean symbol(Symbol*);
-	boolean proc(Proc*);
-	boolean instlist(unsigned long, Inst*);
-	boolean datum(Datum*);
-	boolean ctemplate(Symbol*);
-	boolean object();
-	boolean objectdata(Objectdata*);
+	bool symlist(Symlist*);
+	bool symbol(Symbol*);
+	bool proc(Proc*);
+	bool instlist(unsigned long, Inst*);
+	bool datum(Datum*);
+	bool ctemplate(Symbol*);
+	bool object();
+	bool objectdata(Objectdata*);
 	long arrayinfo(Symbol* s, Objectdata*);
-	boolean xdr(int&);
-	boolean xdr(long&);
-	boolean xdr(char*&, int);
-	boolean xdr(short&);
-	boolean xdr(unsigned int&);
-	boolean xdr(unsigned long&);
-	boolean xdr(double&);
-	boolean xdr(Object*&);
+	bool xdr(int&);
+	bool xdr(long&);
+	bool xdr(char*&, int);
+	bool xdr(short&);
+	bool xdr(unsigned int&);
+	bool xdr(unsigned long&);
+	bool xdr(double&);
+	bool xdr(Object*&);
 private:
 	int cnt_;
 	int nobj_;
 	Objects* otable_;
 	PPList* ppl_;
-	boolean (OcCheckpoint::* func_)(Symbol*);
+	bool (OcCheckpoint::* func_)(Symbol*);
 	Symbols* stable_;
 #if HAVE_XDR
 	XDR xdrs_;
@@ -314,25 +314,25 @@ public:
 	OcReadChkPnt();
 	virtual ~OcReadChkPnt();
 	
-	boolean read();
+	bool read();
 private:
 	friend class Checkpoint;
-	boolean symbols();
-	boolean symtable();
-	boolean symbol();
-	boolean instructions();
-	boolean objects();
-	boolean objectdata();
+	bool symbols();
+	bool symtable();
+	bool symbol();
+	bool instructions();
+	bool objects();
+	bool objectdata();
 
 	long arrayinfo(Symbol* s, Objectdata*);
 
-	boolean get(int&);
-	boolean get(long&);
-	boolean get(char*&);
-	boolean get(double&);
-	boolean get(Object*&);
+	bool get(int&);
+	bool get(long&);
+	bool get(char*&);
+	bool get(double&);
+	bool get(Object*&);
 private:
-	boolean lookup_;
+	bool lookup_;
 	int builtin_size_;
 	int lineno_;
 	int id_;
@@ -343,7 +343,7 @@ private:
 	Symlist* symtable_;
 };
 
-static boolean out_;
+static bool out_;
 static FILE* f_;
 static OcCheckpoint* cp_;
 static OcReadChkPnt* rdckpt_;
@@ -360,17 +360,17 @@ Checkpoint::Checkpoint() {
 }
 Checkpoint::~Checkpoint() {
 }
-boolean Checkpoint::out() {
+bool Checkpoint::out() {
 	return out_;
 }
-boolean Checkpoint::xdr(long& i) {
+bool Checkpoint::xdr(long& i) {
 	if (out()) {
 		return cp_->xdr(i);
 	}else{
 		return rdckpt_->get(i);
 	}
 }
-boolean Checkpoint::xdr(Object*& o) {
+bool Checkpoint::xdr(Object*& o) {
 	if (out()) {
 		return cp_->xdr(o);
 	}else{
@@ -396,7 +396,7 @@ void hoc_checkpoint() {
 	if (! cp_) {
 		cp_ = new OcCheckpoint();
 	}
-	boolean b;
+	bool b;
 	b = cp_->write(gargstr(1)); 
 	hoc_ret();
 	hoc_pushx(double(b));
@@ -413,13 +413,16 @@ int hoc_readcheckpoint(char* fname) {
 		return 0;
 	}
 	char buf[256];
-	fgets(buf, 256, f_);
+	if (fgets(buf, 256, f_) == 0) {
+		printf("checkpoint read from file %s failed.\n", fname);
+		return 2;
+	}
 	if (strcmp(buf, "NEURON Checkpoint\n") != 0) {
 		fclose(f_);
 		return 0;
 	}
 	rdckpt_ = new OcReadChkPnt();
-	boolean b;
+	bool b;
 	b = rdckpt_->read(); 
 	int rval = 1;
 	if (!b) {
@@ -478,8 +481,8 @@ OcCheckpoint::~OcCheckpoint() {
 #define DEBUG fprintf
 #endif
 
-boolean OcCheckpoint::write(const char* fname) {
-	boolean b;
+bool OcCheckpoint::write(const char* fname) {
+	bool b;
 	int i;
 	out_ = 1;
 	f_ = fopen(fname, "w");
@@ -514,8 +517,8 @@ boolean OcCheckpoint::write(const char* fname) {
 	return b;
 }
 
-boolean OcCheckpoint::make_sym_table() {
-	boolean b;
+bool OcCheckpoint::make_sym_table() {
+	bool b;
 	cnt_ = 1;
 	nobj_ = 0;
 	func_ = &OcCheckpoint::sym_count;
@@ -542,7 +545,7 @@ boolean OcCheckpoint::make_sym_table() {
 	return b;
 }
 
-boolean OcCheckpoint::sym_count(Symbol* s) {
+bool OcCheckpoint::sym_count(Symbol* s) {
 	++cnt_;
 	if (s->type == TEMPLATE) {
 		nobj_ += s->u.ctemplate->count;
@@ -550,17 +553,17 @@ boolean OcCheckpoint::sym_count(Symbol* s) {
 	return true;
 }
 
-boolean OcCheckpoint::sym_table_install(Symbol* s) {
+bool OcCheckpoint::sym_table_install(Symbol* s) {
 	stable_->insert(s, cnt_);
 	++cnt_;
 	return true;
 }
-boolean OcCheckpoint::sym_out(Symbol* s) {
+bool OcCheckpoint::sym_out(Symbol* s) {
 	int val;
 	stable_->find(val, s);
 	DEBUG(f_, "%d %s %d %d\n", val,  s->name, s->type, s->subtype);
 	int l1 = strlen(s->name);
-	boolean b = xdr(val)
+	bool b = xdr(val)
 		&& xdr(s->name, l1)
 		&& xdr(s->type)
 		&& xdr(s->subtype)
@@ -603,25 +606,25 @@ boolean OcCheckpoint::sym_out(Symbol* s) {
 	return b;
 }
 
-boolean OcCheckpoint::pass1() {
+bool OcCheckpoint::pass1() {
 	return symlist(hoc_built_in_symlist) && symlist(hoc_top_level_symlist);
 }
-boolean OcCheckpoint::pass2() {
+bool OcCheckpoint::pass2() {
 	return false;
 }
-boolean OcCheckpoint::build_map() {
+bool OcCheckpoint::build_map() {
 	return false;
 }
 PortablePointer* find(void*) {
 	return nil;
 }
-boolean OcCheckpoint::func(Symbol* s) {
+bool OcCheckpoint::func(Symbol* s) {
 	if (func_) {
 		return (this->*func_)(s);
 	}
 	return true;
 }
-boolean OcCheckpoint::symlist(Symlist* sl){
+bool OcCheckpoint::symlist(Symlist* sl){
 	if (func_ == &OcCheckpoint::sym_out) {
 		int i = 0;
 		if (sl) for (Symbol* s = sl->first; s; s = s->next) {
@@ -641,11 +644,11 @@ printf("symlist failed\n");
 	}
 	return true;
 }
-boolean OcCheckpoint::symbol(Symbol* s) {
+bool OcCheckpoint::symbol(Symbol* s) {
 	if (!func(s)) {
 		return false;
 	}
-	boolean b = true;
+	bool b = true;
 	switch (s->type) {
 	case TEMPLATE:
 		b = ctemplate(s);
@@ -658,7 +661,7 @@ boolean OcCheckpoint::symbol(Symbol* s) {
 if (!b) printf("symbol failed\n");
 	return b;
 }
-boolean OcCheckpoint::sym_instructions(Symbol* s) {
+bool OcCheckpoint::sym_instructions(Symbol* s) {
 	Proc* p = s->u.u_proc;
 	if (s->type == FUNCTION || s->type == PROCEDURE) {
 		int val;
@@ -668,8 +671,8 @@ printf("couldn't find %s in table\n", s->name);
 		}
 		if (p->size) {
 			DEBUG(f_, "instructions for %d |%s|\n", val, s->name);
-			DEBUG(f_, "size %d\n", p->size);
-			boolean b = xdr(val)
+			DEBUG(f_, "size %lu\n", p->size);
+			bool b = xdr(val)
 				&& xdr(p->size);
 			if (!b) {
 				printf("failed in sym_intructions\n");
@@ -684,7 +687,7 @@ printf("couldn't find %s in table\n", s->name);
 	}
 	return true;
 }
-boolean OcCheckpoint::instlist(unsigned long size, Inst* in) {
+bool OcCheckpoint::instlist(unsigned long size, Inst* in) {
 	for (unsigned long i = 0; i < size; ++i) {
 		short val;
 		int sval;
@@ -703,7 +706,7 @@ printf("instlist failed 1\n");
 printf("instlist failed 2\n");
 				return false;
 			}
-			char* s = hoc_inst_[val].signature;
+			const char* s = hoc_inst_[val].signature;
 			for (int j=0; s && s[j]; ++j) {
 				++i;
 				switch (s[j]) {
@@ -738,23 +741,23 @@ printf("instlist failed 5\n");
 				}
 			}
 		}else{
-printf("OcCheckpoint::instlist failed at i = %d\n", i);
+printf("OcCheckpoint::instlist failed at i = %lu\n", i);
 			return false;
 		}
 	}
 	return true;
 }
-boolean OcCheckpoint::datum(Datum*) {
+bool OcCheckpoint::datum(Datum*) {
 	return false;
 }
-boolean OcCheckpoint::ctemplate(Symbol* s) {
+bool OcCheckpoint::ctemplate(Symbol* s) {
 	cTemplate* t = s->u.ctemplate;
 	if (func_ == &OcCheckpoint::sym_values) {
 		Objectdata* saveod = objectdata_;
 		int ti;
-		boolean b;
+		bool b;
 		b = stable_->find(ti, s);
-		DEBUG(f_, "%d %d %s\n", ti, t->count);
+		DEBUG(f_, "%d %d %s\n", ti, t->count, s->name);
 		b = b && xdr(ti);
 //		b = b && xdr(t->count);
 		hoc_Item* q;
@@ -784,8 +787,8 @@ printf("No checkpoint available for %s\n", hoc_object_name(ob));
 		return symlist(t->symtable);
 	}
 }
-boolean OcCheckpoint::object() {
-	boolean b;
+bool OcCheckpoint::object() {
+	bool b;
 	int i;
 	if (otable_) {
 		delete otable_;
@@ -799,8 +802,8 @@ boolean OcCheckpoint::object() {
 	b = b && xdr(i);
 	return b;
 }
-boolean OcCheckpoint::objects(Symbol* s) {
-	boolean b = true;
+bool OcCheckpoint::objects(Symbol* s) {
+	bool b = true;
 	if (s->type == TEMPLATE) {
 		int sid;
 		b = b && stable_->find(sid, s);
@@ -829,7 +832,7 @@ boolean OcCheckpoint::objects(Symbol* s) {
 	return b;
 }
 
-boolean OcCheckpoint::objectdata(Objectdata*) {
+bool OcCheckpoint::objectdata(Objectdata*) {
 	return false;
 }
 #undef sub
@@ -872,13 +875,13 @@ printf("checkpoint of equation array vars not implemented: %s\n", s->name);
 	return n;
 }
 
-boolean OcCheckpoint::proc(Proc*) {
+bool OcCheckpoint::proc(Proc*) {
 	return false;
 }
 
-boolean OcCheckpoint::sym_values(Symbol* s) {
+bool OcCheckpoint::sym_values(Symbol* s) {
 	int sp;
-	boolean b;
+	bool b;
 	stable_->find(sp, s);
 	if ((s->type == VAR && s->subtype == NOTUSER)
 	    || s->type == OBJECTVAR || s->type == STRING || s->type == SECTION) {
@@ -928,57 +931,57 @@ boolean OcCheckpoint::sym_values(Symbol* s) {
 }
 
 #if USEXDR && 0
-boolean OcCheckpoint::xdr(int& i) {
+bool OcCheckpoint::xdr(int& i) {
 	return xdr_int(&xdrs_, &i);
 }
-boolean OcCheckpoint::xdr(char*& i, int size){
+bool OcCheckpoint::xdr(char*& i, int size){
 	return xdr_string(&xdrs_, &i, size);
 }
-boolean OcCheckpoint::xdr(short& i){
+bool OcCheckpoint::xdr(short& i){
 	return xdr_short(&xdrs_, &i);
 }
-boolean OcCheckpoint::xdr(unsigned int& i){
+bool OcCheckpoint::xdr(unsigned int& i){
 	return xdr_u_int(&xdrs_, &i);
 }
-boolean OcCheckpoint::xdr(unsigned long& i){
+bool OcCheckpoint::xdr(unsigned long& i){
 	return xdr_u_long(&xdrs_, &i);
 }
 #else
-boolean OcCheckpoint::xdr(int& i) {
+bool OcCheckpoint::xdr(int& i) {
 	fprintf(f_, "%d\n", i);
 	return true;
 }
-boolean OcCheckpoint::xdr(long& i) {
+bool OcCheckpoint::xdr(long& i) {
 	fprintf(f_, "%ld\n", i);
 	return true;
 }
-boolean OcCheckpoint::xdr(char*& s, int){
+bool OcCheckpoint::xdr(char*& s, int){
 	fprintf(f_, "%s\n", s);
 	return true;
 }
-boolean OcCheckpoint::xdr(short& i){
+bool OcCheckpoint::xdr(short& i){
 	int j = i;
 	fprintf(f_, "%d\n", j);
 	return true;
 }
-boolean OcCheckpoint::xdr(unsigned int& i){
+bool OcCheckpoint::xdr(unsigned int& i){
 	int j = i;
 	fprintf(f_, "%d\n", j);
 	return true;
 }
-boolean OcCheckpoint::xdr(unsigned long& i){
+bool OcCheckpoint::xdr(unsigned long& i){
 	long j = i;
 	fprintf(f_, "%ld\n", j);
 	return true;
 }
-boolean OcCheckpoint::xdr(double& i){
+bool OcCheckpoint::xdr(double& i){
 	fprintf(f_, "%g\n", i);
 	return true;
 }
 #endif
-boolean OcCheckpoint::xdr(Object*& o) {
+bool OcCheckpoint::xdr(Object*& o) {
 	int i;
-	boolean b;
+	bool b;
 	b = otable_->find(i, o);
 	b  = b && xdr(i);
 	return b;
@@ -998,7 +1001,7 @@ OcReadChkPnt::~OcReadChkPnt() {
 	delete [] pobj_;
 }
 	
-boolean OcReadChkPnt::read() {
+bool OcReadChkPnt::read() {
 	int size;
 	out_ = 0;
 	lineno_ = 1;
@@ -1019,7 +1022,7 @@ printf("finished with objectdata at lineno = %d\n", lineno_);
 	return true;
 }
 
-boolean OcReadChkPnt::symbols() {
+bool OcReadChkPnt::symbols() {
 	Get(nsym_);
 	psym_ = new Symbol*[nsym_];
 	for (int i=0; i < nsym_; ++i) {
@@ -1037,7 +1040,7 @@ boolean OcReadChkPnt::symbols() {
 	Chk(symtable(), "top_level_symlist failure");
 	return true;
 }
-boolean OcReadChkPnt::symtable() {
+bool OcReadChkPnt::symtable() {
 	int size;
 	Get(size);
 	for (int i = 0; i < size; ++i) {
@@ -1045,7 +1048,7 @@ boolean OcReadChkPnt::symtable() {
 	}
 	return true;
 }
-boolean OcReadChkPnt::symbol() {
+bool OcReadChkPnt::symbol() {
 	int id, type, subtype, i;
 	char buf[2048], *name = buf;
 	
@@ -1146,10 +1149,10 @@ boolean OcReadChkPnt::symbol() {
 	}
 	return true;
 }
-boolean OcReadChkPnt::instructions() {
+bool OcReadChkPnt::instructions() {
 	int sid, size, i, iid;
 	Symbol* sym;
-	char* signature;
+	const char* signature;
 	for (;;) {
 		Get(sid);
 		if (sid == -1) {
@@ -1168,7 +1171,7 @@ boolean OcReadChkPnt::instructions() {
 			Get(iid);
 			lin[i++].pf = hoc_inst_[iid].pi;
 			signature = hoc_inst_[iid].signature;
-			if (signature) for(char* cp = signature; *cp; ++cp) {
+			if (signature) for(const char* cp = signature; *cp; ++cp) {
 				Get(iid);
 				switch (*cp) {
 				case 's':
@@ -1184,7 +1187,7 @@ boolean OcReadChkPnt::instructions() {
 	
 	return true;
 }
-boolean OcReadChkPnt::objects() {
+bool OcReadChkPnt::objects() {
 	int sid;
 	long i, n, iob = 0;
 	Symbol* sym;
@@ -1240,7 +1243,7 @@ boolean OcReadChkPnt::objects() {
 	}
 	return true;
 }
-boolean OcReadChkPnt::objectdata() {
+bool OcReadChkPnt::objectdata() {
 	int sid;
 	long n, i;
 	Symbol* sym;
@@ -1369,7 +1372,7 @@ long OcReadChkPnt::arrayinfo(Symbol* s, Objectdata* od) {
 	}
 	return n;
 }
-boolean OcReadChkPnt::get(int& i) {
+bool OcReadChkPnt::get(int& i) {
 	++lineno_;	
 	char buf[200];
 	if (!fgets(buf, 200, f_)
@@ -1380,7 +1383,7 @@ boolean OcReadChkPnt::get(int& i) {
 
 	return true;
 }
-boolean OcReadChkPnt::get(double& i) {
+bool OcReadChkPnt::get(double& i) {
 	++lineno_;	
 	char buf[200];
 	if (!fgets(buf, 200, f_)
@@ -1391,14 +1394,14 @@ boolean OcReadChkPnt::get(double& i) {
 
 	return true;
 }
-boolean OcReadChkPnt::get(long& i) {
+bool OcReadChkPnt::get(long& i) {
 	int j;
 	Get(j);
 	i = j;
 	return true;
 }
 
-boolean OcReadChkPnt::get(char*& s) {
+bool OcReadChkPnt::get(char*& s) {
 	++lineno_;	
    if (s) {
 	if (!fgets(s, 2048, f_)) {
@@ -1420,7 +1423,7 @@ boolean OcReadChkPnt::get(char*& s) {
 }
 
 
-boolean OcReadChkPnt::get(Object*& o) {
+bool OcReadChkPnt::get(Object*& o) {
 	long i;
 	Get(i);
 	o = pobj_[i];

@@ -61,8 +61,8 @@ public:
         Coord natural_trail, Coord max_trail, Coord min_trail
     );
 
-    boolean equals(const Requirement&, float epsilon) const;
-    boolean defined() const;
+    bool equals(const Requirement&, float epsilon) const;
+    bool defined() const;
 
     void natural(Coord);
     Coord natural() const;
@@ -93,7 +93,7 @@ public:
     void penalty(int);
     int penalty() const;
 
-    boolean equals(const Requisition&, float epsilon) const;
+    bool equals(const Requisition&, float epsilon) const;
     void require(DimensionName, const Requirement&);
     void require_x(const Requirement&);
     void require_y(const Requirement&);
@@ -117,7 +117,7 @@ public:
     Allotment();
     Allotment(Coord origin, Coord span, float alignment);
 
-    boolean equals(const Allotment&, float epsilon) const;
+    bool equals(const Allotment&, float epsilon) const;
 
     void origin(Coord);
     void offset(Coord);
@@ -144,7 +144,7 @@ public:
     Allocation();
     Allocation(const Allocation&);
 
-    boolean equals(const Allocation&, float epsilon) const;
+    bool equals(const Allocation&, float epsilon) const;
 
     void allot(DimensionName, const Allotment&);
     void allot_x(const Allotment&);
@@ -228,7 +228,7 @@ inline Requirement::Requirement(
     alignment_ = alignment;
 }
 
-inline boolean Requirement::defined() const {
+inline bool Requirement::defined() const {
     return natural_ != -fil;
 }
 

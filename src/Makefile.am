@@ -8,8 +8,12 @@
 
 READLINE_SUBDIRS = readline
 MEMACS_SUBDIRS = memacs
+if BUILD_MINGW
+NMODL_SUBDIRS = modlunit nmodl
+else
 NMODL_SUBDIRS = e_editor modlunit nmodl
-NRNOC_SUBDIRS = sparse sparse13 scopmath nrnmpi oc nrnoc
+endif
+NRNOC_SUBDIRS = sparse sparse13 scopmath Random123 nrnmpi oc nrnoc
 NRNIV_SUBDIRS = sundials mesch gnu ivoc nrncvode parallel nrniv
 IVOS_SUBDIRS = ivos
 NRNJAVA_SUBDIRS = nrnjava
@@ -63,17 +67,21 @@ else
 neuronmusicbuild =
 endif
 
-npydir = npy23 npy24 npy25 npy26 npy30
+if BUILD_MINGW
+npydir = npy27
+else
+npydir = npy24 npy25 npy26 npy27
+endif
 
 if BUILD_NRNPYTHON_DYNAMIC
 #does not work with parallel make (-j)
 
 nrnpydynam = $(npydir)
 
-all-recursive: npy25/Makefile
+all-recursive: npy27/Makefile
 
-npy25/Makefile: nrnpython/Makefile
-	sh $(srcdir)/nrnpython/nrnpydynam.sh $(srcdir) $(DEPDIR) $(host)
+npy27/Makefile: nrnpython/Makefile $(srcdir)/nrnpython/nrnpydynam.sh
+	bash $(srcdir)/nrnpython/nrnpydynam.sh $(srcdir) $(DEPDIR) $(host)
 
 else
 nrnpydynam =
@@ -82,7 +90,11 @@ endif
 if BUILD_CYGWIN
 mos2nrnbuild =
 else
+if BUILD_MINGW
+mos2nrnbuild =
+else
 mos2nrnbuild = uxnrnbbs
+endif
 endif
 
 if BUILD_6229

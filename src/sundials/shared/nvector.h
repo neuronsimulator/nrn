@@ -219,7 +219,7 @@ struct _generic_N_Vector {
  *      If c[i] = 1.0,  then x[i] must be >= 0.0.
  *      If c[i] = -1.0, then x[i] must be <= 0.0.
  *      If c[i] = -2.0, then x[i] must be < 0.0.
- *   This routine returns a boolean FALSE if any element failed
+ *   This routine returns a bool FALSE if any element failed
  *   the constraint test, TRUE if all passed.  It also sets a
  *   mask vector m, with elements equal to 1.0 where the
  *   corresponding constraint test failed, and equal to 0.0

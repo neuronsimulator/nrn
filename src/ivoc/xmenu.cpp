@@ -3,12 +3,13 @@
 
 #include <InterViews/resource.h>
 #include "oc2iv.h"
+#include "classreg.h"
 extern "C" {
 double (*nrnpy_guigetval)(Object*);
 void (*nrnpy_guisetval)(Object*, double);
 int (*nrnpy_guigetstr)(Object*, char**);
 }
-#if HAVE_IV // to end of file
+#if HAVE_IV // to end of file except for a few small fragments.
 
 #include <stdio.h>
 #include <string.h>
@@ -43,7 +44,6 @@ int (*nrnpy_guigetstr)(Object*, char**);
 #include "parse.h"
 #include "utility.h"
 #include "scenepic.h"
-#include "classreg.h"
 
 // The problem this overcomes is that the pick of an input handler normally
 // succeeds for a keystroke only if the mouse is over one of the child
@@ -54,17 +54,17 @@ public:
 	virtual ~PanelInputHandler();
 	virtual void pick(Canvas*, const Allocation&, int depth, Hit&);
 	virtual void focus(InputHandler*);
-	static boolean has_old_focus() { boolean old = sema_; sema_ = false; return old; }
+	static bool has_old_focus() { bool old = sema_; sema_ = false; return old; }
 	static void handle_old_focus();
 private:
 	static InputHandler* focus_;
-	static boolean sema_;
+	static bool sema_;
 };
 
 void handle_old_focus() { PanelInputHandler::handle_old_focus(); }
 
 InputHandler* PanelInputHandler::focus_ = nil;
-boolean PanelInputHandler::sema_ = false;
+bool PanelInputHandler::sema_ = false;
 
 PanelInputHandler::PanelInputHandler(Glyph* g, Style* s) : InputHandler(g, s){
 }
@@ -93,7 +93,7 @@ void PanelInputHandler::focus(InputHandler* h){
 
 void PanelInputHandler::handle_old_focus() {
 	if (focus_) {
-//printf("handle_old_focus %lx\n", (long)focus_);
+//printf("handle_old_focus %p\n", focus_);
 		sema_ = true;
 		InputHandler* f = focus_;
 		focus_ = nil;
@@ -106,11 +106,11 @@ public:
 	ValEdLabel(Glyph*);
 	virtual ~ValEdLabel();
 	virtual void draw(Canvas*, const Allocation&)const;
-	void state(boolean);
+	void state(bool);
 	void tts(TelltaleState*);
 private:
 	static const Color* color_;
-	boolean state_;
+	bool state_;
 	TelltaleState* tts_;
 };
 
@@ -134,7 +134,7 @@ void ValEdLabel::draw(Canvas* c, const Allocation& a)const {
 	}
 	MonoGlyph::draw(c, a);
 }
-void ValEdLabel::state(boolean s) {
+void ValEdLabel::state(bool s) {
 	if (state_ != s) {
 		state_ = s;
 		tts_->notify();
@@ -165,7 +165,7 @@ void hoc_notify_value() {
 
 void hoc_xpanel() { IFGUI
 	if (ifarg(1) && hoc_is_str_arg(1)) { // begin spec
-		boolean h = false;
+		bool h = false;
 		if (ifarg(2)) {
 			h = (int)chkarg(2, 0, 1) ? true : false;
 		}
@@ -186,7 +186,7 @@ ENDGUI
 }
         
 void hoc_xmenu() { IFGUI
-	boolean add2menubar = false;
+	bool add2menubar = false;
 	char* mk = nil;
 	int i = 2;
 	if (ifarg(i)) {
@@ -285,7 +285,7 @@ ENDGUI
 void hoc_xradiobutton() { IFGUI
         char *s1, *s2 = (char *)0;
 	Object* po = nil;
-        boolean activate = false;
+        bool activate = false;
         s1 = gargstr(1);
         if (ifarg(2)) {
 	    if (hoc_is_object_arg(2)) {
@@ -323,7 +323,7 @@ static void hoc_xvalue_helper() { IFGUI //prompt, variable, deflt,action,canrun,
         }else{
                 s2 = s1;
         }
-	boolean deflt = false;
+	bool deflt = false;
         if (ifarg(3) && *getarg(3)) {
 		if (*getarg(3) == 2.) {
 			if (pyvar) {
@@ -342,7 +342,7 @@ static void hoc_xvalue_helper() { IFGUI //prompt, variable, deflt,action,canrun,
 		}else{
 	                s3 = gargstr(4);
 		}
-                boolean canRun=false, usepointer=false; 
+                bool canRun=false, usepointer=false; 
                 if (ifarg(5) && *getarg(5)) {
                         canRun=true;
                 }
@@ -365,11 +365,11 @@ void hoc_xfixedvalue() { IFGUI //prompt, variable, deflt,action,canrun,usepointe
         }else{
                 s2 = s1;
         }
-	boolean deflt = false;
+	bool deflt = false;
         if (ifarg(3) && *getarg(3)) {
 		deflt=true;
 	}
-	boolean usepointer = false;
+	bool usepointer = false;
         if (ifarg(4) && *getarg(4)) {
 		usepointer = true;
 	}
@@ -396,13 +396,13 @@ static void hoc_xpvalue_helper() { IFGUI //prompt,variable,deflt,action,canrun
 	if (sym) {
 		extra = sym->extra;
 	}
-	boolean deflt = false;
+	bool deflt = false;
         if (ifarg(3) && *getarg(3)) {
 		deflt=true;
 	}
         if (ifarg(4)) {
                 s3 = gargstr(4);
-                boolean canRun=false; 
+                bool canRun=false; 
                 if (ifarg(5) && *getarg(5)) {
                         canRun=true;
                 }
@@ -454,7 +454,7 @@ void hoc_xslider() { IFGUI
 	Object* pysend = nil;
 	double* pval = nil;
 	Object* pyvar = nil;
-	boolean vert = 0;
+	bool vert = 0;
 	if (ifarg(3)) {
 		low = *getarg(2);
 		high = *getarg(3);
@@ -473,7 +473,7 @@ void hoc_xslider() { IFGUI
 	if (ifarg(iarg)) {
 	        vert = int(chkarg(iarg,0,1));
         }
-	boolean slow = false;
+	bool slow = false;
 	if (ifarg(++iarg)) {
 		slow = int(chkarg(iarg, 0, 1));
 	}
@@ -536,7 +536,7 @@ declarePtrList(HocMenuList,HocMenu)
 implementPtrList(HocMenuList,HocMenu)
 /*static*/ class MenuStack {
 public:
-	boolean isEmpty() { return l_.count() == 0; }
+	bool isEmpty() { return l_.count() == 0; }
 	void push(HocMenu* m);
 	void pop() {if (l_.count()) {l_.item(0)->unref(); l_.remove(0); }}
 	Menu* top() {return (l_.count()) ? l_.item(0)->menu() : nil; }
@@ -653,7 +653,7 @@ void HocRadio::stop() {
 
 static HocRadio* hoc_radio;
 
-void hoc_ivpanel(const char* name, boolean h) {
+void hoc_ivpanel(const char* name, bool h) {
 	if (!hoc_radio) {
 		hoc_radio = new HocRadio();
 	}
@@ -712,7 +712,7 @@ void hoc_ivstatebutton(double* pd, const char* name, const char* action, int sty
 	}
 }
 
-void hoc_ivradiobutton(const char* name, const char* action, boolean activate, Object* pyact) {
+void hoc_ivradiobutton(const char* name, const char* action, bool activate, Object* pyact) {
 	checkOpenPanel();
 	if (!hoc_radio->group()) {
 		hoc_radio->start();
@@ -724,7 +724,7 @@ void hoc_ivradiobutton(const char* name, const char* action, boolean activate, O
 	}
 }
 
-void hoc_ivmenu(const char* name, boolean add2menubar) {
+void hoc_ivmenu(const char* name, bool add2menubar) {
 	if (!menuStack) {
 		menuStack = new MenuStack();
 	}
@@ -739,7 +739,7 @@ void hoc_ivmenu(const char* name, boolean add2menubar) {
 	}
 }
 
-void hoc_ivvarmenu(const char* name, const char* action, boolean add2menubar, Object* pyvar) {
+void hoc_ivvarmenu(const char* name, const char* action, bool add2menubar, Object* pyvar) {
 	if (!menuStack) {
 		menuStack = new MenuStack();
 	}
@@ -758,20 +758,20 @@ void hoc_ivvalue_keep_updated(const char* name, const char* variable, Object* py
 		 hoc_val_pointer(variable), false, true, (s?s->extra:nil), pyvar);
 }
 
-void hoc_ivvalue(const char* name, const char* variable, boolean deflt, Object* pyvar) {
+void hoc_ivvalue(const char* name, const char* variable, bool deflt, Object* pyvar) {
         hoc_ivvaluerun( name, variable, 0, deflt, false, false, pyvar);
 }
                 
-void hoc_ivfixedvalue(const char* name, const char* variable, boolean deflt, boolean usepointer) {
+void hoc_ivfixedvalue(const char* name, const char* variable, bool deflt, bool usepointer) {
 	hoc_ivvaluerun(name, variable, 0, deflt, false, usepointer);
 }
                 
-void hoc_ivpvalue(const char* name, double* pd, boolean deflt, HocSymExtension* extra) {
+void hoc_ivpvalue(const char* name, double* pd, bool deflt, HocSymExtension* extra) {
         hoc_ivpvaluerun( name, pd, 0, deflt, false, extra);
 }
                 
 void hoc_ivvaluerun(const char* name, const char* variable, const char* action,
-	boolean deflt, boolean canRun, boolean usepointer, Object* pyvar, Object* pyact){
+	bool deflt, bool canRun, bool usepointer, Object* pyvar, Object* pyact){
 	checkOpenPanel();
 	hoc_radio->stop();
 	Symbol* s = nil;
@@ -785,7 +785,7 @@ void hoc_ivvaluerun(const char* name, const char* variable, const char* action,
 }
 
 void hoc_ivpvaluerun(const char* name, double* pd, const char* action,
-	boolean deflt, boolean canRun, HocSymExtension* extra){
+	bool deflt, bool canRun, HocSymExtension* extra){
 	checkOpenPanel();
 	hoc_radio->stop();
 	curHocPanel->valueEd(name, 0, action, canRun, pd, deflt, false, extra);
@@ -805,8 +805,8 @@ void hoc_ivvarlabel(char** s, Object* pyvar) {
 
 // ZFM added vert
 void hoc_ivslider(double* pd, float low, float high,
-	float resolution, int nsteps, const char* s, boolean vert,
-	boolean slow, Object* pyvar, Object* pyact) {
+	float resolution, int nsteps, const char* s, bool vert,
+	bool slow, Object* pyvar, Object* pyact) {
 	checkOpenPanel();
 	curHocPanel->slider(pd, low, high, resolution, nsteps, s, vert, slow, pyvar, pyact);
 }
@@ -925,7 +925,7 @@ static void var_freed(void* pd, int size) {
 	}				
 }
 
-HocPanel::HocPanel(const char* name, boolean h) : OcGlyph(nil) {
+HocPanel::HocPanel(const char* name, bool h) : OcGlyph(nil) {
 	LayoutKit& lk = *LayoutKit::instance();
 	WidgetKit& wk = *WidgetKit::instance();
 	horizontal_ = h;
@@ -986,7 +986,7 @@ HocUpdateItem::~HocUpdateItem() {
 	HocPanel::keep_updated(this, false);
 }
 void HocUpdateItem::update_hoc_item() {}
-void HocUpdateItem::check_pointer(void*, int) {}void HocUpdateItem::data_path(HocDataPaths*, boolean) {}
+void HocUpdateItem::check_pointer(void*, int) {}void HocUpdateItem::data_path(HocDataPaths*, bool) {}
 
 // ones that get updated on every doEvents()
 HocUpdateItemList* HocPanel::update_list_;
@@ -1000,7 +1000,7 @@ void HocPanel::keep_updated() {
 		}
 	}
 }
-void HocPanel::keep_updated(HocUpdateItem* hui, boolean add) {
+void HocPanel::keep_updated(HocUpdateItem* hui, bool add) {
 	if (!update_list_) {
 		update_list_ = new HocUpdateItemList();
 	}
@@ -1048,7 +1048,7 @@ HocItem* HocPanel::hoc_item() {
 	return ilist_.item(0);
 }
 
-void HocPanel::pushButton(const char* name, const char* action, boolean activate, Object* pyact) {
+void HocPanel::pushButton(const char* name, const char* action, bool activate, Object* pyact) {
   if (hoc_radio->group()) {
 	HocRadioAction* a = new HocRadioAction(action, hoc_radio->group(), pyact);
 	Button* b = WidgetKit::instance()->radio_button(hoc_radio->group(),
@@ -1128,7 +1128,7 @@ void HocPanel::var_label(char** name, Object* pyvar) {
 // ZFM added vert
 void HocPanel::slider(double* pd, float low, float high,
   float resolution, int nsteps,
-  const char* send, boolean vert, boolean slow, Object* pyvar, Object* pysend) {
+  const char* send, bool vert, bool slow, Object* pyvar, Object* pysend) {
      OcSlider* s = new OcSlider(pd, low, high, resolution, nsteps, send, vert,
      	slow, pyvar, pysend);
 	LayoutKit* lk = LayoutKit::instance();
@@ -1157,7 +1157,7 @@ void HocPanel::slider(double* pd, float low, float high,
 	s->ref();
 }
 
-HocMenu* HocPanel::menu(const char* name, boolean add2menubar) {
+HocMenu* HocPanel::menu(const char* name, bool add2menubar) {
 	WidgetKit* wk = WidgetKit::instance();
 	Menu* m = wk->pulldown();
 	MenuItem* mi;
@@ -1188,7 +1188,7 @@ HocMenu* HocPanel::menu(const char* name, boolean add2menubar) {
 	return hm;
 }
 
-MenuItem* HocPanel::menuItem(const char* name, const char* act, boolean activate, Object* pyact) {
+MenuItem* HocPanel::menuItem(const char* name, const char* act, bool activate, Object* pyact) {
 	MenuItem* mi;
   if (hoc_radio->group()) {
 	HocRadioAction* a = new HocRadioAction(act, hoc_radio->group(), pyact);
@@ -1209,7 +1209,7 @@ MenuItem* HocPanel::menuItem(const char* name, const char* act, boolean activate
 	return mi;
 }
 
-HocMenu::HocMenu(const char* name, Menu* m, MenuItem* mi, HocItem* hi, boolean add2menubar) : HocItem(name, hi) {
+HocMenu::HocMenu(const char* name, Menu* m, MenuItem* mi, HocItem* hi, bool add2menubar) : HocItem(name, hi) {
 	menu_ = m;
 	mi_ = mi;
 	add2menubar_ = add2menubar;
@@ -1235,13 +1235,13 @@ int HocMenu::mac_menubar(int& mindex, int m, int mi) {
 static Coord xvalue_field_size;
 
 void HocPanel::valueEd(const char* prompt, Object* pyvar, Object* pyact,
-	boolean canrun, boolean deflt, boolean keep_updated)
+	bool canrun, bool deflt, bool keep_updated)
 {
 	valueEd(prompt, nil, nil, canrun, nil, deflt, keep_updated, nil, pyvar, pyact);
 }
 
-void HocPanel::valueEd(const char* name, const char* variable, const char* action, boolean canrun,
-	double* pd, boolean deflt, boolean keep_updated, HocSymExtension* extra,
+void HocPanel::valueEd(const char* name, const char* variable, const char* action, bool canrun,
+	double* pd, bool deflt, bool keep_updated, HocSymExtension* extra,
 	Object* pyvar, Object* pyact) {
 	HocValAction* act;
 	if (pyact || action) {
@@ -1666,7 +1666,7 @@ implementActionCallback(HocDefaultValEditor);
 
 //HocDefaultValEditor
 HocDefaultValEditor::HocDefaultValEditor(const char* name, const char* variable,
-  ValEdLabel* prompt, HocValAction* a, double* pd, boolean canrun,
+  ValEdLabel* prompt, HocValAction* a, double* pd, bool canrun,
   HocItem* hi, Object* pyvar)
     : HocValEditor(name, variable, prompt, a, pd, canrun, hi, pyvar)
 {
@@ -1704,8 +1704,8 @@ void HocDefaultValEditor::updateField() {
 	HocValEditor::updateField();
 	TelltaleState* t = checkbox_->state();
 //	printf("telltale flag %x\n", t->flags());
-	boolean same = (hoc_ac_ == deflt_);
-	boolean chosen = t->test(TelltaleState::is_chosen);
+	bool same = (hoc_ac_ == deflt_);
+	bool chosen = t->test(TelltaleState::is_chosen);
 	if (same && chosen) {
 		t->set(TelltaleState::is_chosen, false);
 	}else if (!same) {
@@ -1727,7 +1727,7 @@ void HocDefaultValEditor::def_action() {
 		Oc::help(Editor_Default);
 		return;
 	}
-	boolean chosen = checkbox_->state()->test(TelltaleState::is_chosen);
+	bool chosen = checkbox_->state()->test(TelltaleState::is_chosen);
 	if (chosen) {
 		if (most_recent_ != deflt_) {
 			set_val(most_recent_);
@@ -1829,7 +1829,7 @@ double MyMath::resolution(double x) {
 	
 //HocValEditor
 HocValEditor::HocValEditor(const char* name, const char* variable, ValEdLabel* prompt,
-  HocValAction* a, double* pd, boolean canrun, HocItem* hi, Object* pyvar)
+  HocValAction* a, double* pd, bool canrun, HocItem* hi, Object* pyvar)
    : HocUpdateItem(name, hi)
 {
 	if (!xvalue_format) {
@@ -1951,8 +1951,8 @@ void HocValEditor::audit() {
 		sprintf(buf, "%s = %s\n",
 			variable_->string(), fe_->text()->string());
 	}else if (pval_){
-		sprintf(buf, "// %lx pointer set to %s\n",
-			(long)pval_, fe_->text()->string());
+		sprintf(buf, "// %p pointer set to %s\n",
+			pval_, fe_->text()->string());
 	}
 	hoc_audit_command(buf);
 }
@@ -2031,7 +2031,7 @@ sprintf(buf, "xvalue(\"%s\",\"%s\", 2 )", getStr(),
 }
 
 void HocEditorForItem::keystroke(const Event& e) {
-	boolean unfocus = false;
+	bool unfocus = false;
 	if (!hve_->active_) {
 		return;
 	}
@@ -2219,7 +2219,7 @@ void HocEditorForItem::focus_out() {
 	}
 	FieldSEditor::focus_out();
 	if (PanelInputHandler::has_old_focus()) {
-//printf("old focus out %lx\n", (InputHandler*)this);
+//printf("old focus out %p\n", (InputHandler*)this);
 		hve_->exec_action();
 	}
 }
@@ -2265,13 +2265,13 @@ void HocVarLabel::check_pointer(void* v, int) {
 	}
 }
 
-void HocPanel::data_path(HocDataPaths* hdp, boolean append) {
+void HocPanel::data_path(HocDataPaths* hdp, bool append) {
 	for (long i = elist_.count() - 1; i >= 0; --i) {
 		elist_.item(i)->data_path(hdp, append);
 	}				
 }
 
-void HocValEditor::data_path(HocDataPaths* hdp, boolean append) {
+void HocValEditor::data_path(HocDataPaths* hdp, bool append) {
 	if (!variable_) {
 		if (append) {
 			hdp->append(pval_);
@@ -2284,7 +2284,7 @@ void HocValEditor::data_path(HocDataPaths* hdp, boolean append) {
 	}
 }
 
-void HocVarLabel::data_path(HocDataPaths* hdp, boolean append) {
+void HocVarLabel::data_path(HocDataPaths* hdp, bool append) {
 	if (cpp_ && !variable_) {
 		if (append) {
 			hdp->append(cpp_);
@@ -2299,12 +2299,12 @@ void HocVarLabel::data_path(HocDataPaths* hdp, boolean append) {
 
 class StepperMenuAction : public Action {
 public:
-	StepperMenuAction(boolean, double);
+	StepperMenuAction(bool, double);
 	virtual ~StepperMenuAction();
 	virtual void execute();
 private:
 	double x_;
-	boolean geometric_;
+	bool geometric_;
 };
 
 class StepperMenu : public PopupMenu {
@@ -2313,17 +2313,17 @@ public:
 	virtual ~StepperMenu();
 	void stepper(HocValStepper* vs) { vs_ = vs;}
 	HocValStepper* stepper() { return vs_; }
-	virtual boolean event(Event&);
-	void active(boolean b) { active_ = b;}
-	boolean active() { return active_;}
+	virtual bool event(Event&);
+	void active(bool b) { active_ = b;}
+	bool active() { return active_;}
 private:
-	boolean active_;
+	bool active_;
 	HocValStepper* vs_;
 };
 	
 StepperMenu* HocValStepper::menu_;
 
-StepperMenuAction::StepperMenuAction(boolean b, double x) {
+StepperMenuAction::StepperMenuAction(bool b, double x) {
 	x_ = x;
 	geometric_ = b;
 }
@@ -2368,7 +2368,7 @@ StepperMenu::StepperMenu() {
 }
 StepperMenu::~StepperMenu() {
 }
-boolean StepperMenu::event(Event& e) {
+bool StepperMenu::event(Event& e) {
 	PopupMenu::event(e);
 	if (e.type() == Event::up) {
 		vs_->menu_up(e);
@@ -2506,7 +2506,7 @@ void HocValStepper::press(const Event& e) {
 		break;
 	}
 }
-void HocValStepper::default_inc(boolean g, double x) {
+void HocValStepper::default_inc(bool g, double x) {
 	if (x == 0.) {
 		default_inc_ = MyMath::resolution(hve_->get_val());
 		geometric_ = false;
@@ -2573,7 +2573,7 @@ void HocValStepper::right() {
 // ZFM added vert_
 OcSlider::OcSlider(double* pd, float low, float high,
 	float resolution, int nsteps,
-	const char* send, boolean vert, boolean slow, Object* pyvar, Object* pysend)
+	const char* send, bool vert, bool slow, Object* pyvar, Object* pysend)
   : HocUpdateItem("")
 {
 	resolution_ = resolution;
@@ -2639,8 +2639,8 @@ void OcSlider::audit() {
 		sprintf(buf, "%s = %g\n",
 			variable_->string(), *pval_);
 	}else if (pval_){
-		sprintf(buf, "// %lx pointer set to %g\n",
-			(long)pval_, *pval_);
+		sprintf(buf, "// %p pointer set to %g\n",
+			pval_, *pval_);
 	}
 	hoc_audit_command(buf);
 	if (send_) {
@@ -2668,7 +2668,7 @@ void OcSlider::update_hoc_item() {
 		return;
 	}
 	if (x != bv_->cur_lower(Dimension_X)) {
-		boolean old = scrolling_;
+		bool old = scrolling_;
 		scrolling_ = true;
 		bv_->scroll_to(Dimension_X, x);
 		scrolling_ = old;
@@ -2685,7 +2685,7 @@ void OcSlider::check_pointer(void* v, int size) {
 		pval_ = 0;
 	}
 }
-void OcSlider::data_path(HocDataPaths* hdp, boolean append) {
+void OcSlider::data_path(HocDataPaths* hdp, bool append) {
 	if (!variable_ && pval_) {
 		if (append) {
 			hdp->append(pval_);
@@ -2783,7 +2783,7 @@ void HocStateButton::print(Printer* pr, const Allocation& a) const {
 	l->unref();
 }
 
-boolean HocStateButton::chosen() { 
+bool HocStateButton::chosen() { 
   return b_->state()->test(TelltaleState::is_chosen);
 }
 
@@ -2795,13 +2795,13 @@ void HocStateButton::button_action() {
 	}
 	if (pval_) {
 	  TelltaleState* t = b_->state();
-		if (chosen() != boolean(*pval_)) {
+		if (chosen() != bool(*pval_)) {
 			*pval_ = double(chosen());
 		}
 	}
 	if (pyvar_) {
 	  TelltaleState* t = b_->state();
-		if (chosen() != boolean((*nrnpy_guigetval)(pyvar_))) {
+		if (chosen() != bool((*nrnpy_guigetval)(pyvar_))) {
 			(*nrnpy_guisetval)(pyvar_, double(chosen()));
 		}
 	}
@@ -2841,7 +2841,7 @@ void HocStateButton::check_pointer(void* v, int size) {
 	}
 }
 
-void HocStateButton::data_path(HocDataPaths* hdp, boolean append) {
+void HocStateButton::data_path(HocDataPaths* hdp, bool append) {
 	if (!variable_ && pval_) {
 		if (append) {
 			hdp->append(pval_);
@@ -2933,7 +2933,7 @@ void HocStateMenuItem::print(Printer* pr, const Allocation& a) const {
 	l->unref();
 }
 
-boolean HocStateMenuItem::chosen() { 
+bool HocStateMenuItem::chosen() { 
   return b_->state()->test(TelltaleState::is_chosen);
 }
 
@@ -2946,13 +2946,13 @@ void HocStateMenuItem::button_action() {
 	}
 	if (pval_) {
 	  TelltaleState* t = b_->state();
-		if (chosen() != boolean(*pval_)) {
+		if (chosen() != bool(*pval_)) {
 			*pval_ = double(chosen());
 		}
 	}
 	if (pyvar_) {
 	  TelltaleState* t = b_->state();
-		if (chosen() != boolean((*nrnpy_guigetval)(pyvar_))) {
+		if (chosen() != bool((*nrnpy_guigetval)(pyvar_))) {
 			(*nrnpy_guisetval)(pyvar_, double(chosen()));
 		}
 	}
@@ -2992,7 +2992,7 @@ void HocStateMenuItem::check_pointer(void* v, int size) {
 	}
 }
 
-void HocStateMenuItem::data_path(HocDataPaths* hdp, boolean append) {
+void HocStateMenuItem::data_path(HocDataPaths* hdp, bool append) {
 	if (!variable_ && pval_) {
 		if (append) {
 			hdp->append(pval_);
@@ -3019,7 +3019,10 @@ void HocStateMenuItem::write(ostream& o) {
  }
 
 
+#endif //HAVE_IV
 static void* vfe_cons(Object*) {
+#if HAVE_IV
+IFGUI
 	if (!ifarg(2) || hoc_is_str_arg(2)) {
 		hoc_xvalue_helper();
 	}else{
@@ -3028,17 +3031,28 @@ static void* vfe_cons(Object*) {
 	HocValEditor* fe = last_fe_constructed_;
 	Resource::ref(fe);
 	return (void*)fe;
+ENDGUI
+#endif
+	return 0;
 }
 static void vfe_destruct(void* v) {
+#if HAVE_IV
+IFGUI
 	HocValEditor* fe = (HocValEditor*)v;
 	Resource::unref(fe);
+ENDGUI
+#endif
 }
 static double vfe_default(void* v) {
 	double x = 0.;
+#if HAVE_IV
+IFGUI
 	if (((HocValEditor*)v)->hoc_default_val_editor()) {
 		HocDefaultValEditor* dfe = (HocDefaultValEditor*)v;
 		dfe->deflt(x = dfe->get_val());
 	}
+ENDGUI
+#endif
 	return x;
 }
 static Member_func vfe_members[] = {
@@ -3049,6 +3063,7 @@ void ValueFieldEditor_reg() {
 	class2oc("ValueFieldEditor", vfe_cons, vfe_destruct, vfe_members);
 }
 
+#if HAVE_IV
 void HocValEditor::update_ptrs() {
 	update_ptrs_helper(&pval_);
 }

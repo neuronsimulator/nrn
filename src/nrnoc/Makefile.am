@@ -38,8 +38,8 @@ MODFILES = hh.mod feature.mod passive.mod stim.mod syn.mod \
 
 EXTRA_DIST = $(MODFILES)
 
-HOC_E = ../e_editor/hoc_e
-HOC_E_DEP = ../e_editor/hoc_e
+HOC_E = ../e_editor/hoc_ed
+HOC_E_DEP = ../e_editor/hoc_ed
 
 PTHREAD_CC=@PTHREAD_CC@
 PTHREAD_CFLAGS=@PTHREAD_CFLAGS@
@@ -172,16 +172,19 @@ pattern.c: pattern.mod $(NMODL)
 ## Force make to make hocusr.h even before it's done dependency scanning.
 hocusr.lo: hocusr.h
 
+
 ## This uses a truly antique unix tool to convert a .h file into
 ## the static data necessary for hoc to link to all its functions.
 ## This wouldn't be hard to replace with a perl script....
+if BUILD_MINGW
+else
 hocusr.h: $(nsrc)/nrnoc/neuron.h $(nsrc)/oc/hocinc $(HOC_E_DEP)
 	cat $(nsrc)/nrnoc/neuron.h > tmp.c
 	@CPP@ -I$(nsrc)/nrnoc -I$(nsrc)/oc tmp.c | sed '/^#/d' > neuron.tmp
 	$(HOC_E) - neuron.tmp < $(nsrc)/oc/hocinc
 	cat neuron.tmp temp2hoc > hocusr.h
 	rm -f temp1hoc temp2hoc neuron.tmp tmp.c
-
+endif
 ## Header files that need to be installed:
 pkginclude_HEADERS = neuron.h md1redef.h md2redef.h section.h nrnoc_ml.h \
 	cabvars.h membdef.h membfunc.h \

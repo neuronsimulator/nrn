@@ -71,9 +71,9 @@ static double assign(void* v) {
 	return *ocp->p_;
 }
 
-static char** pname(void* v) {
+static const char** pname(void* v) {
 	OcPointer* ocp = (OcPointer*)v;
-	return &ocp->s_;
+	return (const char**)&ocp->s_;
 }
 
 static Member_func members[] = {
@@ -90,7 +90,7 @@ static Member_ret_str_func s_memb[] = {
 
 static void* cons(Object*) {
 	double* p;
-	char* s;
+	const char* s;
 	if (hoc_is_pdouble_arg(1)) {
 		p = hoc_pgetarg(1);
 		s = "unknown";
@@ -146,7 +146,7 @@ void StmtInfo::parse() {
 	const char* s;
 	symlist_ = nil;
 	ParseTopLevel ptl;
-	boolean see_arg = false;
+	bool see_arg = false;
 	for (s=stmt_->string(), d = buf; *s; ++s, ++d) {
 		if (*s == '$' && s[1] == '1') {
 			strcpy(d, "hoc_ac_");

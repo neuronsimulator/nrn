@@ -121,11 +121,11 @@ c_out()
 	Fflush(fcout);
 	/* things which must go first and most declarations */
 #if SIMSYS
-	P("#include <stdio.h>\n#include <math.h>\n#include \"mathlib.h\"\n");
+	P("#include <stdio.h>\n#include <stdlib.h>\n#include <math.h>\n#include \"mathlib.h\"\n");
 	P("#include \"common.h\"\n#include \"softbus.h\"\n");
 	P("#include \"sbtypes.h\"\n#include \"Solver.h\"\n");
 #else
-	P("#include <stdio.h>\n#include <math.h>\n#include \"scoplib.h\"\n");
+	P("#include <stdio.h>\n#include <stdlib.h>\n#include <math.h>\n#include \"scoplib.h\"\n");
 	P("#undef PI\n");
 #endif
 	printlist(defs_list);
@@ -581,7 +581,7 @@ c_out_vectorize()
 	
 	/* things which must go first and most declarations */
 	P("/* VECTORIZED */\n");
-	P("#include <stdio.h>\n#include <math.h>\n#include \"scoplib.h\"\n");
+	P("#include <stdio.h>\n#include <stdlib.h>\n#include <math.h>\n#include \"scoplib.h\"\n");
 	P("#undef PI\n");
 	printlist(defs_list);
 	printlist(firstlist);

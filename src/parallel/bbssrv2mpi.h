@@ -22,9 +22,9 @@ public:
 	virtual ~BBSDirectServer();
 
 	void post(const char* key, bbsmpibuf*);
-	boolean look(const char* key, bbsmpibuf**);
-	boolean look_take(const char* key, bbsmpibuf**);
-	boolean take_pending(const char* key, int* cid);
+	bool look(const char* key, bbsmpibuf**);
+	bool look_take(const char* key, bbsmpibuf**);
+	bool take_pending(const char* key, int* cid);
 	void put_pending(const char* key, int cid);
 	static BBSDirectServer* server_;
 	static void handle(); // all remote requests
@@ -34,7 +34,7 @@ public:
 
 	void post_todo(int parentid, int cid, bbsmpibuf*);
 	void context(bbsmpibuf*);
-	boolean send_context(int cid); // sends if not sent already
+	bool send_context(int cid); // sends if not sent already
 	void post_result(int id, bbsmpibuf*);
 	int look_take_todo(bbsmpibuf**);
 	int look_take_result(int parentid, bbsmpibuf**);

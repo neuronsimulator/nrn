@@ -60,6 +60,7 @@ static char RCSid[] =
 
 #include <stdio.h>
 #include <math.h>
+#include <assert.h>
 #include "errcodes.h"
 
 expfit(terms, reffile, amplitude, lambda, error)
@@ -234,14 +235,14 @@ double *deltat, **data;
     rewind(refdata);
 
     for (i = 0; i < 7; i++)
-	fgets(tmpstr, 80, refdata);
+	assert(fgets(tmpstr, 80, refdata));
     sscanf(tmpstr, "%lf %lf", &temp, *data);
-    fgets(tmpstr, 80, refdata);
+    assert(fgets(tmpstr, 80, refdata));
     sscanf(tmpstr, "%lf %lf", deltat, *data + 1);
     *deltat -= temp;
     for (i = 2; i < npts; i++)
     {
-	fgets(tmpstr, 80, refdata);
+	assert(fgets(tmpstr, 80, refdata));
 	sscanf(tmpstr, "%lf %lf", &temp, *data + i);
     }
 

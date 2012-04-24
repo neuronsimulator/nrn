@@ -32,7 +32,7 @@ extern "C" {
 #endif
 
 struct ltint {
-	boolean operator() (int i, int j) const {
+	bool operator() (int i, int j) const {
 		return i < j;
 	}
 };
@@ -220,15 +220,15 @@ fflush(stdout);
 	return msgtag;
 }
 	
-boolean BBSClient::look_take(const char* key) {
+bool BBSClient::look_take(const char* key) {
 	int type = get(key, LOOK_TAKE);
-	boolean b = (type == LOOK_TAKE_YES);
+	bool b = (type == LOOK_TAKE_YES);
 	return b;
 }
 
-boolean BBSClient::look(const char* key) {
+bool BBSClient::look(const char* key) {
 	int type = get(key, LOOK);
-	boolean b = (type == LOOK_YES);
+	bool b = (type == LOOK_YES);
 	return b;
 }
 

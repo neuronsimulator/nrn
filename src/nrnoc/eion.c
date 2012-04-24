@@ -158,7 +158,7 @@ ion_reg(name, valence)
 			global_conco(s->subtype) = DEF_iono;
 			global_charge(s->subtype) = VAL_SENTINAL;
 		}			
-		for (i=0; i < 3; ++i) { /* used to be CONST */
+		for (i=0; i < 3; ++i) { /* used to be nrnocCONST */
 			s->u.ppsym[i]->subtype = _AMBIGUOUS;
 		}
 	}
@@ -274,7 +274,7 @@ ion_style("name_ion", [c_style, e_style, einit, eadvance, cinit])
 
  ica is assigned
  eca is parameter but if conc exists then eca is assigned
- if conc is CONST then eca calculated on finitialize
+ if conc is nrnocCONST then eca calculated on finitialize
  if conc is STATE then eca calculated on fadvance and conc finitialize
  	with global nai0, nao0
 
@@ -284,9 +284,9 @@ ion_style("name_ion", [c_style, e_style, einit, eadvance, cinit])
 
 #define iontype ppd[i][0].i	/* how _AMBIGUOUS is to be handled */
 /*the bitmap is
-03	concentration unused, CONST, DEP, STATE
+03	concentration unused, nrnocCONST, DEP, STATE
 04	initialize concentrations
-030	reversal potential unused, CONST, DEP, STATE
+030	reversal potential unused, nrnocCONST, DEP, STATE
 040	initialize reversal potential
 0100	calc reversal during fadvance
 0200	ci being written by a model
@@ -351,7 +351,7 @@ void nrn_check_conc_write(p_ok, pion, i) Prop* p_ok, *pion; int i; {
 			if (chk_conc_[2*p->type + i] & ion_bit_[pion->type]) {
 				char buf[300];
 sprintf(buf, "%.*s%c is being written at the same location by %s and %s",
-				    strlen(memb_func[pion->type].sym->name)-4,
+				    (int)strlen(memb_func[pion->type].sym->name)-4,
 					memb_func[pion->type].sym->name,
 					((i == 1)? 'i' : 'o'),
 					memb_func[p_ok->type].sym->name,
@@ -422,13 +422,13 @@ int nrn_vartype(sym) Symbol* sym; {
 		Prop* p, *nrn_mechanism();
 		sec = nrn_noerr_access();
 		if (!sec) {
-			return CONST;
+			return nrnocCONST;
 		}
 		p = nrn_mechanism(sym->u.rng.type, sec->pnode[0]);
 		if (p) {
 			int it = p->dparam[0].i;
 			if (sym->u.rng.index == 0) { /* erev */
-				i = (it & 030)>>3; /* unused, CONST, DEP, or STATE */
+				i = (it & 030)>>3; /* unused, nrnocCONST, DEP, or STATE */
 			}else{	/* concentration */
 				i = (it & 03);
 			}

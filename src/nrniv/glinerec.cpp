@@ -30,7 +30,7 @@ public:
 	virtual void install(Cvode* cv) { record_add(cv); }
 	virtual void record_init() {gl_->simgraph_init();}
 	virtual void continuous(double t) { gl_->simgraph_continuous(t);}
-	virtual boolean uses(void* v) { return (void*)gl_ == v; }
+	virtual bool uses(void* v) { return (void*)gl_ == v; }
 
 	GraphLine* gl_;
 };
@@ -77,14 +77,14 @@ void Graph::simgraph() {
 
 GLineRecord::GLineRecord(GraphLine* gl) : PlayRecord(nil){
 	//shouldnt be necessary but just in case
-//	printf("GLineRecord %lx name=%s\n", (long)this, gl->name());
+//	printf("GLineRecord %p name=%s\n", this, gl->name());
 	gl_ = gl;
 	gl_->simgraph_activate(true);
 	pd_ = hoc_val_pointer(gl->name());
 }
 
 GLineRecord::~GLineRecord(){
-//	printf("~GLineRecord %lx\n", (long)this);
+//	printf("~GLineRecord %p\n", this);
 	int i;
 	for (i = grl->count()-1; i >= 0; --i) {
 		if (grl->item(i) == this) {

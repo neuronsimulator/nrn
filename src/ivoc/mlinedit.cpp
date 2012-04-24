@@ -21,7 +21,7 @@ public:
 
 class OcMLineEditor : public OcGlyph {
 public:
-	OcMLineEditor(unsigned row, unsigned col, char* buf = nil);
+	OcMLineEditor(unsigned row, unsigned col, const char* buf = nil);
 	virtual ~OcMLineEditor();
 public:
 	OcText* txt_;
@@ -52,7 +52,7 @@ static double readonly(void* v) {
 	return double(e->txt_->readOnly());
 }
 
-static char** v_text(void* v) {
+static const char** v_text(void* v) {
 	OcMLineEditor* e = (OcMLineEditor*)v;
 	TextBuffer* tb = e->txt_->editBuffer();
 	if (ifarg(1)) {
@@ -62,7 +62,7 @@ static char** v_text(void* v) {
 	}
 	char** p = hoc_temp_charptr();
 	*p = (char*)tb->Text();
-	return p;
+	return (const char**)p;
 }
 
 
@@ -78,7 +78,7 @@ static Member_ret_str_func retstr_members[] = {
 };
 
 static void* cons(Object*) {
-	char* buf = "";
+	const char* buf = "";
 	unsigned row = 5;
 	unsigned col = 30;
 	if (ifarg(1)) {
@@ -105,7 +105,7 @@ void TextEditor_reg() {
 	class2oc("TextEditor", cons, destruct, members, nil, nil, retstr_members);
 }
 
-OcMLineEditor::OcMLineEditor(unsigned row, unsigned col, char* buf) {
+OcMLineEditor::OcMLineEditor(unsigned row, unsigned col, const char* buf) {
 	txt_ = new OcText(row, col, new TextBuffer(buf,strlen(buf),1000));
 	txt_->ref();
 	body(

@@ -1,7 +1,7 @@
 #include <../../nrnconf.h>
 #include <errno.h>
 #include <unistd.h>
-#if defined(CYGWIN)
+#if defined(CYGWIN) || defined(MINGW)
 
 #if !defined(__MINGW32__)
 #include "system.c"
@@ -30,6 +30,8 @@ void* dlopen(char *name, int mode) {
 	}
 	return ret;
 }
+
+void* dlopen_noerr(char *name, int mode) {return (void*)LoadLibrary(name);}
 
 void* dlsym(void *handle, char *name) {
 	void *ret = (void *) GetProcAddress ((HMODULE) handle, name);

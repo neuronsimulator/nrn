@@ -56,7 +56,7 @@ public:
 
 class NetCvode {
 public:
-	NetCvode(boolean single=true);
+	NetCvode(bool single=true);
 	virtual ~NetCvode();
 	int solve(double t);
 	void statistics(int);
@@ -69,9 +69,9 @@ public:
 	void error_weights();
 	void acor();
 	const char* statename(int, int style=1);
-	void localstep(boolean); boolean localstep();
-	boolean is_local();
-	void use_daspk(boolean); boolean use_daspk();
+	void localstep(bool); bool localstep();
+	bool is_local();
+	void use_daspk(bool); bool use_daspk();
 	void move_event(TQItem*, double, NrnThread*);
 	void remove_event(TQItem*, int threadid);
 	TQItem* event(double tdeliver, DiscreteEvent*, NrnThread*);
@@ -142,7 +142,7 @@ public:
 	int print_event_;
 //	int nlist() { return nlist_; }
 //	Cvode* list() { return list_; }
-	boolean initialized_; // for global step solve.
+	bool initialized_; // for global step solve.
 	void consist_sec_pd(const char*, Section*, double*);
 	double state_magnitudes();
 	Symbol* name2sym(const char*);
@@ -150,8 +150,8 @@ public:
 	int pgvts(double tstop);
 	void update_ps2nt();
 	void point_receive(int, Point_process*, double*, double);
-	boolean deliver_event(double til, NrnThread*); //uses TQueue atomically
-	boolean empty_;
+	bool deliver_event(double til, NrnThread*); //uses TQueue atomically
+	bool empty_;
 	void delete_list();
 	void delete_list(Cvode*);
 //private:
@@ -167,7 +167,7 @@ public:
 	DiscreteEvent* pgvts_least(double& tt, int& op, int& init);
 	int pgvts_cvode(double tt, int op);
 
-	boolean init_global();
+	bool init_global();
 	void alloc_list();
 	void del_cv_memb_list();
 	void del_cv_memb_list(Cvode*);
@@ -193,7 +193,7 @@ private:
 	
 	int structure_change_cnt_;
 	int matrix_change_cnt_;
-	boolean single_;
+	bool single_;
 	PreSynTable* pst_;
 	int pst_cnt_;
 	int playrec_change_cnt_;
@@ -203,7 +203,7 @@ private:
 public:
 	Cvode* gcv_;
 	void set_CVRhsFn();
-	boolean use_partrans();
+	bool use_partrans();
 	hoc_Item* psl_; //actually a hoc_List
 	HTListList* wl_list_; // for faster deliver_net_events when many cvode
 	int pcnt_;

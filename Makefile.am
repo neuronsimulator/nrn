@@ -43,6 +43,19 @@ mswin:
 
 endif
 
+if BUILD_MINGW
+#install from the build directories to the mswin destination
+#uses the classical positions of files
+mswin:
+	top_srcdir=$(top_srcdir) marshall_dir=$(marshall_dir) \
+	top_builddir=$(top_builddir) \
+	ivbindir=$(IV_LIBDIR)/../bin \
+	CC=$(CC) \
+	host_cpu=$(host_cpu) \
+	$(top_srcdir)/src/mswin/batch/instalmingw.sh
+
+endif
+
 ALPHADIR = hines@www.neuron.yale.edu:/home/htdocs/ftp/neuron/versions/alpha
 
 if MAKE_RPMS
@@ -56,12 +69,15 @@ $(RPM_TARGET): $(DISTFILES)
 	-rm $(pkgdatadir)/demo/neuron
 	(cd $(pkgdatadir)/demo/release ; $(bindir)/nrnivmodl ; cd $(host_cpu) ; rm -f *.c *.o *.lo *.mod *.la ; cd ../.. ; ln -s release/$(host_cpu)/special neuron )
 	-mkdir -p `dirname $(RPM_TARGET)`
-#	$(RPM_PROG) $(RPM_ARGS) $(RPM_TARBALL)
-	$(RPM_PROG) -bb nrnrpm.spec
+	(cd `dirname $(RPM_TARGET)` && rm -f nrn*.deb nrn*.rpm)
+	ln -s / /tmp/nrnrpmbld
+	$(RPM_PROG) -bb --buildroot /tmp/nrnrpmbld nrnrpm.spec
 	@echo Congratulations, $(RPM_TARGET) "(and friends) should now exist."
+	(cd `dirname $(RPM_TARGET)` &&  alien --to-deb $(RPM_TARGET))
 
 rpmdist:
 	scp $(RPM_TARGET) $(ALPHADIR)/nrn-"`sh $(srcdir)/nrnversion.sh 2`".$(host_cpu).rpm
+	scp `dirname $(RPM_TARGET)`/nrn*.deb $(ALPHADIR)/nrn-"`sh $(srcdir)/nrnversion.sh 2`".$(host_cpu).deb
 
 else
 endif
@@ -86,8 +102,12 @@ if BUILD_CYGWIN
 alphadist:
 	scp src/mswin/nrn"`sh $(srcdir)/nrnversion.sh 3`"setup.exe $(ALPHADIR)/nrn-"`sh $(srcdir)/nrnversion.sh 2`"-setup.exe
 else
+if BUILD_MINGW
+alphadist:
+	scp src/mswin/nrn"`sh $(srcdir)/nrnversion.sh 3`"setup.exe $(ALPHADIR)/nrn-"`sh $(srcdir)/nrnversion.sh 2`"-setup.exe
+else
 alphadist:
 	scp nrn-"`sh $(srcdir)/nrnversion.sh`".tar.gz $(ALPHADIR)/nrn-"`sh $(srcdir)/nrnversion.sh 2`".tar.gz
 endif
 endif
-
+endif

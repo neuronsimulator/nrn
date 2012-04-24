@@ -102,13 +102,23 @@ proc recent_working_dirs() {local i
 	}
 }
 
-proc exec() {
+proc exec() {localobj s1, s2
 	chdir(path)
+    if (sf_.substr(nrnversion(6), "host=x86_64-w64-mingw32") > 0) {
+	s1 = new String()
+	s2 = new String()
+	sscanf(neuronhome(), "%[^:]:%s", s1.s, s2.s)
+	sprint(s1.s, "/%s%s", s1.s, s2.s)
+	sprint(tstr, "%s/mingw/bin/sh %s/lib/mknrndll.sh %s", neuronhome(), neuronhome(), s1.s)
+	print tstr
+	system(tstr)
+	quit()
+    }else{
 	sprint(tstr, "%s\\bin\\rxvt -e %s/bin/sh %s/lib/mknrndll.sh %s", neuronhome(1), neuronhome(), neuronhome(), neuronhome())
 	print tstr
-
 	WinExec(tstr)
 	quit()
+    }
 }
 
 doit()

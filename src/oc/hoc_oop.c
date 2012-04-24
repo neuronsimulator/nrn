@@ -1,4 +1,5 @@
 #include <../../nrnconf.h>
+#include <stdlib.h>
 #include "hoc.h"
 #include "hocstr.h"
 #include "parse.h"
@@ -1691,7 +1692,7 @@ Symbol* java2nrn_class(name, id, meth)
 
 		s = hoc_lookup(mname);
 		if (s->s_varn > 0) {
-			sprintf(mname + strlen(mname), "%d%s",
+			sprintf(mname + strlen(mname), "%ld%s",
 				strlen(signature), signature);
 			if (hoc_lookup(mname)) {
 printf("%s derived from overloaded %s already exists\n", mname, s->name);

@@ -16,6 +16,8 @@ Name "NEURON ${Version}"
 ; The file to write
 OutFile "nrn${VerNoDot}setup.exe"
 
+RequestExecutionLevel user
+
 SetCompressor bzip2
 
 ; Declaration of user variables

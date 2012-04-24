@@ -1,10 +1,17 @@
 #ifndef nrnpython_h
 #define nrnpython_h
 
+#ifdef _WIN64
+#define MS_WIN64
+#define MS_WIN32
+#define MS_WINDOWS
+#endif
+
 #include <../../nrnconf.h>
 #include <nrnpython_config.h>
 #if defined(USE_PYTHON)
 #undef _POSIX_C_SOURCE
+#undef _XOPEN_SOURCE
 #include <Python.h>
 
 #if (PY_MAJOR_VERSION >= 3)

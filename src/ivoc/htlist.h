@@ -37,7 +37,7 @@ public:
     HTList(void* = nil);
     virtual ~HTList();
 
-    boolean IsEmpty();
+    bool IsEmpty();
     void Append(HTList*);
     void Prepend(HTList*);
     void Remove(HTList*);
@@ -60,7 +60,7 @@ protected:
     HTList* _prev;
 };
 
-inline boolean HTList::IsEmpty () { return _next == this; }
+inline bool HTList::IsEmpty () { return _next == this; }
 inline HTList* HTList::First () { return _next; }
 inline HTList* HTList::Last () { return _prev; }
 inline HTList* HTList::End () { return this; }

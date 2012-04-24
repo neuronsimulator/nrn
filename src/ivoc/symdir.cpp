@@ -27,6 +27,18 @@ extern int hoc_array_index(Symbol*, Objectdata*);
 #include "string.h"
 #include "symdir.h"
 
+const char* concat(const char* s1, const char* s2) {
+	static char* tmp = 0;
+	int l1 = strlen(s1);
+	int l2 = strlen(s2);
+	if (tmp) {
+		delete [] tmp;
+	}
+	tmp = new char[l1 + l2 + 1];
+	sprintf(tmp, "%s%s", s1, s2);
+	return (const char*)tmp;
+}
+
 class SymbolItem {
 public:
 	SymbolItem(const char*, int whole_array = 0);
@@ -37,8 +49,7 @@ public:
 	Object* object() const {return ob_;}
 	void no_object();
 	const String& name() const { return name_;}
-	boolean is_directory() const;
-	const char* concat(char*, char*);
+	bool is_directory() const;
 	int array_index() const { return index_;}
 	int whole_vector();
 private:
@@ -323,14 +334,15 @@ int SymDirectory::index(const String& name) const {
 void SymDirectory::whole_name(int index, CopyString& s) const {
 	const String& s1 = impl_->path_;
 	const String& s2 = name(index);
-	char* tmp = new char[s1.length() + s2.length() + 1];
-	sprintf(tmp, "%.*%s%.*%s", s1.length(), s1.string(), s2.length(), s2.string());
-	s = tmp;
+//	char* tmp = new char[s1.length() + s2.length() + 1];
+//	sprintf(tmp, "%.*%s%.*%s", s1.length(), s1.string(), s2.length(), s2.string());
+//	s = tmp;	
+	s = concat(s1.string(), s2.string());
 }
-boolean SymDirectory::is_directory(int index) const {
+bool SymDirectory::is_directory(int index) const {
 	return impl_->symbol_list_.item(index)->is_directory();
 }
-boolean SymDirectory::match(const String&, const String&) {
+bool SymDirectory::match(const String&, const String&) {
 	return true;
 }
 Symbol* SymDirectory::symbol(int index) const {
@@ -393,21 +405,9 @@ void SymbolItem::no_object() {
 	name_ = "Deleted";
 }
 
-const char* SymbolItem::concat(char* s1, char* s2) {
-	static char* tmp = 0;
-	int l1 = strlen(s1);
-	int l2 = strlen(s2);
-	if (tmp) {
-		delete [] tmp;
-	}
-	tmp = new char[l1 + l2 + 1];
-	sprintf(tmp, "%s%s", s1, s2);
-	return tmp;
-}
-
 SymbolItem::~SymbolItem() {}
 
-boolean SymbolItem::is_directory() const {
+bool SymbolItem::is_directory() const {
 	if (symbol_) switch (symbol_->type) {
 	case SECTION:
 	case OBJECTVAR:
@@ -484,7 +484,7 @@ void SymDirectoryImpl::load_object() {
 	if (obj_->aliases) {
 		load_aliases();
 	}
-	for (Symbol* s = sl->first; s; s = s->next) {
+	if (sl) for (Symbol* s = sl->first; s; s = s->next) {
 		if (s->cpublic) {
 			append(s, od, obj_);
 		}

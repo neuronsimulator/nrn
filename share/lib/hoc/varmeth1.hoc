@@ -89,7 +89,7 @@ proc buildsmall() {
 	b1.ref(this)
 	b1.intercept(1)
 	xpanel("")
-	xcheckbox("Use variable dt", &isvar_, "isvar()")
+	xcheckbox("Use variable dt", &isvar_, "varstep(isvar_)")
 	xpvalue("Absolute Tolerance", &atol_, 1, "CVode[0].atol(atol_)")
 	xpanel()
 	xpanel("",1)

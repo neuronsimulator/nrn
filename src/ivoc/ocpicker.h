@@ -18,7 +18,7 @@ public:
 	StandardPicker();
 	virtual ~StandardPicker();
 	
-	virtual boolean pick(Canvas*, Glyph*, int depth, Hit& h);
+	virtual bool pick(Canvas*, Glyph*, int depth, Hit& h);
 	
 	void bind_select(Rubberband* rb) {bind_press(Event::left, rb);}
 	void bind_adjust(Rubberband* rb) {bind_press(Event::middle, rb);}
@@ -65,13 +65,13 @@ private:
 #endif
 
 #define declareHandlerCallback(T) \
-typedef boolean (T::*HandlerMemberFunction(T))(Event&); \
+typedef bool (T::*HandlerMemberFunction(T))(Event&); \
 class HandlerCallback(T) : public Handler { \
 public: \
     HandlerCallback(T)(T*, HandlerMemberFunction(T)); \
     virtual ~HandlerCallback(T)(); \
 \
-    virtual boolean event(Event&); \
+    virtual bool event(Event&); \
 private: \
     T* obj_; \
     HandlerMemberFunction(T) func_; \
@@ -87,7 +87,7 @@ HandlerCallback(T)::HandlerCallback(T)( \
 \
 HandlerCallback(T)::~HandlerCallback(T)() { } \
 \
-boolean HandlerCallback(T)::event(Event& e) { \
+bool HandlerCallback(T)::event(Event& e) { \
     return (obj_->*func_)(e); \
 }
 

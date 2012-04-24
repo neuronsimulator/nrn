@@ -36,6 +36,7 @@ extern int	hoc_Chdir(), hoc_getcwd(), hoc_Symbol_units(), hoc_stdout();
 extern int	hoc_name_declared(), hoc_unix_mac_pc(), hoc_show_winio();
 extern int	hoc_usemcran4(), hoc_mcran4(), hoc_mcran4init();
 extern int	hoc_nrn_load_dll(), hoc_nrnversion(), hoc_object_pushed();
+extern int	hoc_mallinfo();
 
 #if PVM
 extern int      numprocs(), myproc(), psync();
@@ -62,7 +63,7 @@ static struct { /* Keywords */
 	char	*name;
 	int	kval;
 } keywords[] = {
-	"proc",		PROC,
+	"proc",		parsePROC,
 	"func",		FUNC,
 	"obfunc",	HOCOBJFUNC,
 	"return",	RETURN,
@@ -74,10 +75,10 @@ static struct { /* Keywords */
 	"while",	WHILE,
 	"for",		FOR,
 	"print",	PRINT,
-	"delete",	DELETE,
+	"delete",	parseDELETE,
 	"read",		READ,
 	"debug",	DEBUG,
-	"double",	DOUBLE,
+	"double",	parseDOUBLE,
 	"em",		EDIT,
 	"depvar",	DEPENDENT,
 	"eqn",		EQUATION,
@@ -209,6 +210,7 @@ static struct { /* Builtin functions with multiple or variable args */
 	"numarg",	hoc_Numarg,
 	"argtype",	hoc_Argtype,
 	"hoc_pointer_",	hoc_pointer,		/* for internal use */
+	"nrn_mallinfo", hoc_mallinfo,
 	"execute",	hoc_exec_cmd,
 	"execute1",	hoc_execute1,
 	"load_proc",	hoc_load_proc,

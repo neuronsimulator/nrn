@@ -26,7 +26,7 @@ extern "C" {
 	int BGLCheckpoint();
 #endif
 	extern void nrnmpi_source_var(), nrnmpi_target_var(), nrnmpi_setup_transfer();
-	extern int nrnmpi_spike_compress(int nspike, boolean gid_compress, int xchng_meth);
+	extern int nrnmpi_spike_compress(int nspike, bool gid_compress, int xchng_meth);
 	extern int nrnmpi_splitcell_connect(int that_host);
 	extern int nrnmpi_multisplit(double x, int sid, int backbonestyle);
 	extern int nrn_set_timeout(int timeout);
@@ -83,7 +83,7 @@ OcBBS::OcBBS(int n) : BBS(n) {
 OcBBS::~OcBBS() {
 }
 
-static boolean posting_ = false;
+static bool posting_ = false;
 static void pack_help(int, OcBBS*);
 static void unpack_help(int, OcBBS*);
 static int submit_help(OcBBS*);
@@ -197,7 +197,7 @@ static double context(void *v) {
 static double working(void* v) {
 	OcBBS* bbs = (OcBBS*)v;
 	int id;
-	boolean b = bbs->working(id, bbs->retval_, bbs->userid_);
+	bool b = bbs->working(id, bbs->retval_, bbs->userid_);
 	if (b) {
 		return double(id);
 	}else{
@@ -338,13 +338,13 @@ static double upkscalar(void* v) {
 	return bbs->upkdouble();
 }
 
-static char** upkstr(void* v) {
+static const char** upkstr(void* v) {
 	OcBBS* bbs = (OcBBS*)v;
 	char* s = bbs->upkstr();
 	char** ps = hoc_pgargstr(1);
 	hoc_assign_str(ps, s);
 	delete [] s;
-	return ps;
+	return (const char**)ps;
 }
 
 static Object** upkvec(void* v) {
@@ -510,7 +510,7 @@ static double threshold(void* v) {
 
 static double spcompress(void* v) {
 	int nspike = -1;
-	boolean gid_compress = true;
+	bool gid_compress = true;
 	int xchng_meth = 0;
 	if (ifarg(1)) {
 		nspike = (int)chkarg(1, -1, MD);

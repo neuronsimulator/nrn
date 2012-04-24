@@ -89,7 +89,7 @@ h  = hoc.HocObject()
 # define a dummy help function which imports doc,
 # calls the real help function, and reassigns neuron.help to doc.help
 # (thus replacing the dummy)
-def help(request):
+def help(request=None):
     global help
     print "Enabling NEURON+Python help system."
     from neuron import doc

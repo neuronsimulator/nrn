@@ -92,7 +92,7 @@ class ListItr(List) { \
 public: \
     ListItr(List)(const List&); \
 \
-    boolean more() const; \
+    bool more() const; \
     T cur() const; \
     T& cur_ref() const; \
     void next(); \
@@ -101,7 +101,7 @@ private: \
     long cur_; \
 }; \
 \
-inline boolean ListItr(List)::more() const { return cur_ < list_->count(); } \
+inline bool ListItr(List)::more() const { return cur_ < list_->count(); } \
 inline T ListItr(List)::cur() const { return list_->item(cur_); } \
 inline T& ListItr(List)::cur_ref() const { \
     return list_->item_ref(cur_); \
@@ -112,7 +112,7 @@ class ListUpdater(List) { \
 public: \
     ListUpdater(List)(List&); \
 \
-    boolean more() const; \
+    bool more() const; \
     T cur() const; \
     T& cur_ref() const; \
     void remove_cur(); \
@@ -122,7 +122,7 @@ private: \
     long cur_; \
 }; \
 \
-inline boolean ListUpdater(List)::more() const { \
+inline bool ListUpdater(List)::more() const { \
     return cur_ < list_->count(); \
 } \
 inline T ListUpdater(List)::cur() const { return list_->item(cur_); } \
@@ -173,7 +173,7 @@ class ListItr(PtrList) { \
 public: \
     ListItr(PtrList)(const PtrList&); \
 \
-    boolean more() const; \
+    bool more() const; \
     T* cur() const; \
     void next(); \
 private: \
@@ -181,7 +181,7 @@ private: \
     long cur_; \
 }; \
 \
-inline boolean ListItr(PtrList)::more() const { \
+inline bool ListItr(PtrList)::more() const { \
     return cur_ < list_->count(); \
 } \
 inline T* ListItr(PtrList)::cur() const { return list_->item(cur_); } \
@@ -191,7 +191,7 @@ class ListUpdater(PtrList) { \
 public: \
     ListUpdater(PtrList)(PtrList&); \
 \
-    boolean more() const; \
+    bool more() const; \
     T* cur() const; \
     void remove_cur(); \
     void next(); \
@@ -200,7 +200,7 @@ private: \
     long cur_; \
 }; \
 \
-inline boolean ListUpdater(PtrList)::more() const { \
+inline bool ListUpdater(PtrList)::more() const { \
     return cur_ < list_->count(); \
 } \
 inline T* ListUpdater(PtrList)::cur() const { return list_->item(cur_); } \

@@ -46,7 +46,7 @@ protected:
     SymChooserAction();
     virtual ~SymChooserAction();
 public:
-    virtual void execute(SymChooser*, boolean accept);
+    virtual void execute(SymChooser*, bool accept);
 };
 
 #if defined(__STDC__) || defined(__ANSI_CPP__)
@@ -58,13 +58,13 @@ public:
 #endif
 
 #define declareSymChooserCallback(T) \
-typedef void (T::*SymChooserMemberFunction(T))(SymChooser*, boolean); \
+typedef void (T::*SymChooserMemberFunction(T))(SymChooser*, bool); \
 class SymChooserCallback(T) : public SymChooserAction { \
 public: \
     SymChooserCallback(T)(T*, SymChooserMemberFunction(T)); \
     virtual ~SymChooserCallback(T)(); \
 \
-    virtual void execute(SymChooser*, boolean accept); \
+    virtual void execute(SymChooser*, bool accept); \
 private: \
     T* obj_; \
     SymChooserMemberFunction(T) func_; \
@@ -80,7 +80,7 @@ SymChooserCallback(T)::SymChooserCallback(T)( \
 \
 SymChooserCallback(T)::~SymChooserCallback(T)() { } \
 \
-void SymChooserCallback(T)::execute(SymChooser* f, boolean accept) { \
+void SymChooserCallback(T)::execute(SymChooser* f, bool accept) { \
     (obj_->*func_)(f, accept); \
 }
 
@@ -95,7 +95,7 @@ public:
     virtual double* selected_var();
     virtual int selected_vector_count();
     virtual void reread();
-    virtual void dismiss(boolean);
+    virtual void dismiss(bool);
 private:
     SymChooserImpl* impl_;
 };

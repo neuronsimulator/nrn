@@ -23,7 +23,7 @@ public:
 	WinDismiss(DismissableWindow*);
 	virtual ~WinDismiss();
 	virtual void execute();	//this can be replaced
-	virtual boolean event(Event&);
+	virtual bool event(Event&);
 	static void dismiss_defer();
 protected:
 	DismissableWindow* win_;
@@ -36,7 +36,7 @@ private:
 // The style determines dynamically if this is transient or toplevel
 class DismissableWindow : public TransientWindow {
 public:
-	DismissableWindow(Glyph*, boolean force_menubar = false);
+	DismissableWindow(Glyph*, bool force_menubar = false);
 	virtual ~DismissableWindow();
 	virtual void dismiss();
 	virtual const char* name() const;
@@ -47,12 +47,12 @@ public:
 	virtual void set_attributes();
 	MenuItem* append_menubar(const char*);	// return nil if no dismiss menubar
 	
-	static boolean is_transient() { return is_transient_; }
+	static bool is_transient() { return is_transient_; }
 private:
 	Glyph* glyph_;
 	WinDismiss* wd_;
 	Action* dbutton_;
-	static boolean is_transient_;
+	static bool is_transient_;
 	Menu* menubar_;
 };
 
@@ -65,7 +65,7 @@ public:
 	virtual void map();
 	virtual void unmap();
 	virtual void hide();
-	virtual boolean receive(const Event&);
+	virtual bool receive(const Event&);
 	virtual void reconfigured();
 	// The glyph the user actually wants printed
 	virtual Glyph* print_glyph();
@@ -85,7 +85,7 @@ public:
 	int xtop() const;
 	void xplace(int left, int top); // in x display pixel coords
 	void xmove(int left, int top);
-	void request_on_resize(boolean);
+	void request_on_resize(bool);
 	static PrintableWindow* leader() { return leader_; }
 	static void leader(PrintableWindow* w) { leader_ = w; }
 protected:
@@ -93,8 +93,8 @@ protected:
 private:
 	CopyString type_;
 	static OcGlyphContainer* intercept_;
-	boolean mappable_;
-	boolean xplace_;
+	bool mappable_;
+	bool xplace_;
 	int xleft_;
 	int xtop_;
 	static PrintableWindow* leader_;
@@ -127,7 +127,7 @@ public:
 	PrintableWindowManager();
 	virtual ~PrintableWindowManager();
 	void psfilter(const char* filename);
-	void xplace(int, int, boolean map = true);
+	void xplace(int, int, bool map = true);
 	static PrintableWindowManager* current();
 
 	void append(PrintableWindow*);

@@ -47,14 +47,14 @@ Axis::Axis(Scene* s, DimensionName d, Coord x1, Coord x2) {
 }
 
 Axis::Axis(Scene* s, DimensionName d, Coord x1, Coord x2, Coord pos,
-   int ntic, int nminor, int invert, boolean number) {
+   int ntic, int nminor, int invert, bool number) {
 	s_ = s;
 	d_ = d;
 	init(x1, x2, pos, ntic, nminor, invert, number);
 }
 
 void Axis::init(Coord x1, Coord x2, Coord pos,
-   int ntic, int nminor, int invert, boolean number) {
+   int ntic, int nminor, int invert, bool number) {
 	min_ = x1;
 	max_ = x2;
 	pos_ = pos;
@@ -94,7 +94,7 @@ void Axis::save(ostream& o) {
 void Axis::update(Observable*) {
 }
 
-boolean Axis::set_range() {
+bool Axis::set_range() {
 	Coord x1, x2;
 	if (d_ == Dimension_X) {
 		x1 = s_->x1();

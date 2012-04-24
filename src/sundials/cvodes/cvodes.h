@@ -1337,7 +1337,7 @@ void CVodeSensFree(void *cvode_mem);
  *
  * fpred - f(tn, ypred).
  *
- * jcurPtr - a pointer to a boolean to be filled in by cv_lsetup.
+ * jcurPtr - a pointer to a bool to be filled in by cv_lsetup.
  *           The function should set *jcurPtr=TRUE if its Jacobian
  *           data is current after the call and should set
  *           *jcurPtr=FALSE if its Jacobian data is not current.

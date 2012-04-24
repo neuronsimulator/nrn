@@ -109,9 +109,9 @@ Regexp::~Regexp () {
 const char* Regexp::pattern() const { return pattern_; }
 
 int Regexp::Search (const char* text, int length, int index, int range) {
-    boolean forwardSearch;
-    boolean frontAnchored;
-    boolean endAnchored;
+    bool forwardSearch;
+    bool frontAnchored;
+    bool endAnchored;
     char* searchStart;
     char* searchLimit;
     char* endOfLine = nil;

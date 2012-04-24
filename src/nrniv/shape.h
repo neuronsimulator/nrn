@@ -58,12 +58,12 @@ public:
 	virtual void save_phase2(ostream&);
 	virtual void help();
 	void force();
-	boolean view_all() { return view_all_;}
+	bool view_all() { return view_all_;}
 	void rotate(); // identity
 	void rotate(Coord xorg, Coord yorg, Coord zorg,
 		float xrad, float yrad, float zrad); //relative
 private:
-	boolean view_all_;
+	bool view_all_;
 	ShapeSection* selected_;
 	Coord x_sel_, y_sel_;
 	ColorValue* color_value_;
@@ -79,13 +79,13 @@ class FastShape : public Glyph {
 public:
 	FastShape();
 	virtual ~FastShape();
-	virtual void fast_draw(Canvas*, Coord x, Coord y, boolean)const = 0;
+	virtual void fast_draw(Canvas*, Coord x, Coord y, bool)const = 0;
 };
 
 class FastGraphItem : public GraphItem {
 public:
-	FastGraphItem(FastShape* g, boolean save = true, boolean pick = true);
-	virtual boolean is_fast() {return true;}
+	FastGraphItem(FastShape* g, bool save = true, bool pick = true);
+	virtual bool is_fast() {return true;}
 };
 
 class ShapeSection : public FastShape { //single section
@@ -95,19 +95,19 @@ public:
 	virtual void request(Requisition&) const;
 	virtual void allocate(Canvas*, const Allocation&, Extension&);
 	virtual void draw(Canvas*, const Allocation&) const;
-	virtual void fast_draw(Canvas*, Coord x, Coord y, boolean) const;
+	virtual void fast_draw(Canvas*, Coord x, Coord y, bool) const;
 	virtual void pick(Canvas*, const Allocation&, int depth, Hit&);
 	virtual void setColor(const Color*, ShapeScene*);
 	const Color* color(){return color_;}
 	virtual void set_range_variable(Symbol*);
 	virtual void clear_variable();
 	virtual void selectMenu();
-	virtual boolean near_section(Coord, Coord, Coord mineps) const;
+	virtual bool near_section(Coord, Coord, Coord mineps) const;
 	float how_near(Coord, Coord)const;
 	float arc_position(Coord, Coord)const;
 	int get_coord(double arc, Coord&, Coord&)const;
 	Section* section() const;
-	boolean good() const;
+	bool good() const;
 	virtual void damage(ShapeScene*);
 //	virtual void update(Observable*);
 	virtual void draw_seg(Canvas*, const Color*, int iseg) const;
@@ -151,7 +151,7 @@ class SectionHandler : public Handler {
 public:
 	SectionHandler();
 	virtual ~SectionHandler();
-	virtual boolean event(Event&);
+	virtual bool event(Event&);
 	void shape_section(ShapeSection*);
 	ShapeSection* shape_section();
 private:
