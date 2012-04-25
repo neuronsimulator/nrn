@@ -31,9 +31,11 @@ else
 	D=`(cd $marshall_dir ; readlink -f .)`
 	mkdir $D
 	if test $host_cpu = x86_64 ; then
+		BIT=64
 		D=$D/nrn64
 		DB=$D/bin64
 	else
+		BIT=32
 		D=$D/nrn
 		DB=$D/bin
 	fi
@@ -42,11 +44,10 @@ else
 fi
 
 H=$HOME
-if test $host_cpu=x86_64 ; then
+if test "$host_cpu" = x86_64 ; then
 	SYS=/mingw/x86_64-w64-mingw32
 else
-	echo "fix for i686"
-	exit 1
+	SYS=/mingw
 fi
 
 if test "$ivbindir" = "" ; then
@@ -91,13 +92,25 @@ strip $DB/libreadline6.dll
 cp $H/neuron/regex-0.12/libregex.dll $DB
 strip $DB/libregex.dll
 
+if test "$host_cpu" = x86_64 ; then
 cp $H/pthreads-20100604/mingw64/bin/pthreadGC2-w64.dll $DB
 strip $DB/pthreadGC2-w64.dll
+else
+cp $SYS/bin/pthreadGC2.dll $DB
+strip $DB/pthreadGC2.dll
+fi
 
+if test "$host_cpu" = x86_64 ; then
 cp $SYS/lib/libgcc_s_sjlj-1.dll $DB
 strip $DB/libgcc_s_sjlj-1.dll
 cp $SYS/lib/libstdc++-6.dll $DB
 strip $DB/libstdc++-6.dll
+else
+cp $SYS/bin/libgcc_s_dw2-1.dll $DB
+strip $DB/libgcc_s_dw2-1.dll
+cp $SYS/bin/libstdc++-6.dll $DB
+strip $DB/libstdc++-6.dll
+fi
 
 if test -f $B/src/nmodl/.libs/nocmodl.exe ; then
 	cp $B/src/nmodl/.libs/nocmodl.exe $DB
@@ -115,7 +128,7 @@ fi
 
 # extract enough mingw stuff so mknrndll will work.
 #This adds 13MB to the installer.
-unzip -d $D -o $S/../mingw_nrndist.zip
+unzip -d $D -o $S/../mingw${BIT}_nrndist.zip
 
 # in case this is an mpi version distribute the appropriate administrative tools.
 if grep '^mpicc=mpicc' $B/src/mswin/nrncygso.sh ; then
