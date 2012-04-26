@@ -13,8 +13,8 @@ find .. -name \*.o -print | sed '
 /\/ivoc\/ocjump\.o/d
 /\/ivoc\/symdir\.o/d
 /\/ivoc\/\.libs\/ivocman1\.o/d
-/\/nrnpython\/\.libs\/.*\.o/d
-/\/npy.*\/\.libs\/.*\.o/d
+@BUILD_MINGW_TRUE@/\/nrnpython\/\.libs\/.*\.o/d
+@BUILD_MINGW_TRUE@/\/npy.*\/\.libs\/.*\.o/d
 /\/nrnoc\/cprop\.o/d
 /\/oc\/\.libs\/code\.o/d
 /\/oc\/\.libs\/hoc_init\.o/d
