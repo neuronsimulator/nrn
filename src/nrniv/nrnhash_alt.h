@@ -53,8 +53,8 @@ public: \
     ~NrnHash(); \
 \
     void insert(Key, Value); \
-    boolean find(Key, Value&); \
-    boolean find_and_remove(Value&, Key); \
+    bool find(Key, Value&); \
+    bool find_and_remove(Value&, Key); \
     void remove(Key); \
     void remove_all(); \
     int max_chain_length(); \
@@ -88,8 +88,8 @@ public: \
 \
     Key& cur_key(); \
     Value& cur_value(); \
-    boolean more(); \
-    boolean next(); \
+    bool more(); \
+    bool next(); \
 private: \
     NrnHashEntry(NrnHash)* cur_; \
     NrnHashEntry(NrnHash)** entry_; \
@@ -98,7 +98,7 @@ private: \
 \
 inline Key& NrnHashIterator(NrnHash)::cur_key() { return cur_->key_; } \
 inline Value& NrnHashIterator(NrnHash)::cur_value() { return cur_->value_; } \
-inline boolean NrnHashIterator(NrnHash)::more() { return entry_ <= last_; }
+inline bool NrnHashIterator(NrnHash)::more() { return entry_ <= last_; }
 
 /*
  * Predefined hash functions
@@ -173,7 +173,7 @@ void NrnHash::insert(Key k, Value v) { \
     *a = e; \
 } \
 \
-boolean NrnHash::find(Key k, Value& v) { \
+bool NrnHash::find(Key k, Value& v) { \
     ++nfind_; \
     for (register NrnHashEntry(NrnHash)* e = probe(k); e != nil; e = e->chain_) { \
 	if (e->key_ == k) { \
@@ -185,7 +185,7 @@ boolean NrnHash::find(Key k, Value& v) { \
     return false; \
 } \
 \
-boolean NrnHash::find_and_remove(Value& v, Key k) { \
+bool NrnHash::find_and_remove(Value& v, Key k) { \
     NrnHashEntry(NrnHash)** a = &probe(k); \
     register NrnHashEntry(NrnHash)* e = *a; \
     if (e != nil) { \
@@ -254,7 +254,7 @@ NrnHashIterator(NrnHash)::NrnHashIterator(NrnHash)(NrnHash& t) { \
     } \
 } \
 \
-boolean NrnHashIterator(NrnHash)::next() { \
+bool NrnHashIterator(NrnHash)::next() { \
     cur_ = cur_->chain_; \
     if (cur_ != nil) { \
 	return true; \

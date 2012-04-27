@@ -268,6 +268,7 @@ void NetParEvent::deliver(double tt, NetCvode* nc, NrnThread* nt){
 	}
 #else    
 	nrn_spike_exchange();
+#endif
 	wx_ += wt_;
 	ws_ += wt1_;
 	seqcnt_ = 0;

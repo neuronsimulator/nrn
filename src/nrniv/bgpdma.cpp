@@ -607,17 +607,6 @@ double nrn_bgp_receive_time(int type) { // and others
 	return rt;
 }
 
-<<<<<<< /home/hines/neuron/nrnbgp1/src/nrniv/bgpdma.cpp
-=======
-// Multisend_multicast callback
-static void  multicast_done(void* arg, DCMF_Error_t*) {
-	bool* a = (bool*)arg;
-	*a = false;
-}
-
-#endif //BGPDMA == 2
-
->>>>>>> /tmp/bgpdma.cpp~other.p29W7s
 extern "C" {
 extern void nrnmpi_bgp_comm();
 extern void nrnmpi_bgp_multisend(NRNMPI_Spike*, int, int*);
@@ -744,7 +733,6 @@ void BGP_DMASend::send(int gid, double t) {
 #if BGPDMA & 2
     if (use_bgpdma_ == 2) {
 
-<<<<<<< /home/hines/neuron/nrnbgp1/src/nrniv/bgpdma.cpp
 	MyMulticastInfo* mci;
 #if HAVE_DCMF_RECORD_REPLAY
 	if (use_dcmf_record_replay) {
@@ -755,13 +743,6 @@ void BGP_DMASend::send(int gid, double t) {
 #endif
 		mci = mci_ + isend;
 	}
-=======
-	DCMF_Multicast_t& msend = msend1[isend];
-	DCMF_Request_t& sender = sender1[isend];
-	DCMF_Callback_t& cb_done = cb_done1[isend];
-	DCQuad& msginfo = msginfo1[isend];
-	bool& riu = req_in_use[isend%NSEND2];
->>>>>>> /tmp/bgpdma.cpp~other.p29W7s
 
 	int acnt = 0;
 	while (mci->req_in_use) {
