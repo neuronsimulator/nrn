@@ -81,4 +81,14 @@ void Table::remove(Key key) { \
 			++p__; \
 // need to close with two extra }}
 
+#define NrnHashIterateKeyValue(Table,table, Key,key, Value,value) \
+	if (table) for (long i__ = table->size_ - 1; i__ >= 0; --i__) { \
+		NrnHashEntry(Table)::const_iterator p__ = table->at(i__).begin(); \
+		NrnHashEntry(Table)::const_iterator pe__ = table->at(i__).end(); \
+		while(p__ != pe__) { \
+			Key key = (*p__).first; \
+			Value value = (*p__).second; \
+			++p__; \
+// need to close with two extra }}
+
 #endif // nrnhash_h

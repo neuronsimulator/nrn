@@ -1068,6 +1068,11 @@ static void ensure_ntarget_gt_3(BGP_DMASend* bs) {
 }
 #endif
 
+#define FASTSETUP 1
+#if FASTSETUP
+#include "bgpdmasetup.cpp"
+#endif
+
 void bgp_dma_setup() {
 	bgpdma_cleanup();
 	if (use_bgpdma_ == 0) { return; }
@@ -1087,11 +1092,15 @@ void bgp_dma_setup() {
 	// allreduce with receive buffer size of number of hosts.
 	max_ntarget_host = 0;
 
+#if FASTSETUP
+	target_list_sizes();
+#else
 	// gid2in_ gets spikes from which hosts.
 	determine_source_hosts();
 
 	// gid2out_ sends spikes to which hosts
 	determine_target_hosts();
+#endif
 
 #if TWOPHASE
 	// need to use the bgp union slot for dma_send_phase2_
