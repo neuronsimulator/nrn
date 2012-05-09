@@ -1017,6 +1017,11 @@ double BBS::threshold() {
 void BBS::cell() {
 	int gid = int(chkarg(1, 0., MD));
 	PreSyn* ps;
+	if (gid2in_->find(gid, ps)) {
+		char buf[100];
+		sprintf(buf, "gid=%d is in the input list. Must register prior to connecting", gid);
+		hoc_execerror(buf, 0);
+	}
 	if (gid2out_->find(gid, ps) == 0) {
 		char buf[100];
 		sprintf(buf, "gid=%d has not been set on rank %d", gid, nrnmpi_myid);

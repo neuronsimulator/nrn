@@ -186,7 +186,11 @@ public:
 	int ntarget_hosts_;
 	int* target_hosts_;
 	NRNMPI_Spike spk_;
+#if 0
+	// There is no possibility of send2self because an output PreSyn
+	// is never in the gid2in_ table.
 	int send2self_; // if 1 then send spikes to this host also
+#endif
 #if TWOPHASE
 	int ntarget_hosts_phase1_;
 #endif
@@ -676,7 +680,9 @@ void nrnbgp_messager_advance() {
 BGP_DMASend::BGP_DMASend() {
 	ntarget_hosts_ = 0;
 	target_hosts_ = nil;
+#if 0
 	send2self_ = 0;
+#endif
 #if TWOPHASE
 	ntarget_hosts_phase1_ = 0;
 #endif
@@ -789,12 +795,16 @@ void BGP_DMASend::send(int gid, double t) {
     }
 #endif
   }
+#if 0
 	// I am given to understand that multisend cannot send to itself
+	// one is never supposed to send to oneself since an output presyn
+	// can never be in the gid2in_ table (ie. the assert below would fail).
 	if (send2self_) {
 		PreSyn* ps;
 		assert(gid2in_->find(gid, ps));
 		ps->send(t, net_cvode_instance, nrn_threads);
 	}
+#endif
 	dmasend_time_ += DCMFTIMEBASE - tb;
 }
 
@@ -1413,10 +1423,13 @@ for (i=0; i < nrnmpi_numprocs; ++i) {
 			assert(gid2out_->find(targid_on_src[j], ps));
 			BGP_DMASend* s = ps->bgp.dma_send_;
 			s->target_hosts_[s->ntarget_hosts_++] = i;
+			assert(i != nrnmpi_myid);
+#if 0
 			if (i == nrnmpi_myid) {
 				--s->ntarget_hosts_;
 				s->send2self_ = 1;
 			}
+#endif
 		}
 	}
 
