@@ -924,12 +924,14 @@ void BBS::set_gid2node(int gid, int nid) {
 	}
 }
 
+static int gid2in_donot_remove = 0; // avoid  gid2in_ removal when iterating gid2in_
+
 void nrn_cleanup_presyn(PreSyn* ps) {
 #if BGPDMA
 	bgpdma_cleanup_presyn(ps);
 #endif
 	PreSyn* pss;
-	if (ps->gid_ >= 0 && gid2in_) {
+	if (ps->gid_ >= 0 && gid2in_ && gid2in_donot_remove == 0) {
 		gid2in_->remove(ps->gid_);
 	}
 }
@@ -961,6 +963,7 @@ void nrnmpi_gid_clear(int arg) {
 		    }
 		}
 	}}}
+	gid2in_donot_remove = 1;
 	NrnHashIterate(Gid2PreSyn, gid2in_, PreSyn*, ps) {
 	    if (arg == 4) {
 		delete ps;
@@ -975,6 +978,7 @@ void nrnmpi_gid_clear(int arg) {
 		}
 	    }
 	}}}
+	gid2in_donot_remove = 0;
 #if ALTHASH
 	gid2in_->remove_all();
 	gid2out_->remove_all();
