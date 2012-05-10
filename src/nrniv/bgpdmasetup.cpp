@@ -54,6 +54,46 @@ void celldebug(const char* p, Gid2PreSyn* map) {}
 void alltoalldebug(const char* p, int* s, int* scnt, int* sdispl, int* r, int* rcnt, int* rdispl){}
 #endif
 
+#if 0
+void phase1debug() {
+	FILE* f;
+	char fname[100];
+	sprintf(fname, "debug.%d", nrnmpi_myid);
+	f = fopen(fname, "a");
+	PreSyn* ps;
+	fprintf(f, "\nphase1debug %d", nrnmpi_myid);
+	NrnHashIterate(Gid2PreSyn, gid2out_, PreSyn*, ps) {
+		fprintf(f, "\n %2d:", ps->gid_);
+		BGP_DMASend* bs = ps->bgp.dma_send_;
+		for (int i=0; i < bs->ntarget_hosts_; ++i) {
+			fprintf(f, " %2d", bs->target_hosts_[i]);
+		}
+	}}}
+	fprintf(f, "\n");
+	fclose(f);
+}
+
+void phase2debug() {
+	FILE* f;
+	char fname[100];
+	sprintf(fname, "debug.%d", nrnmpi_myid);
+	f = fopen(fname, "a");
+	PreSyn* ps;
+	fprintf(f, "\nphase2debug %d", nrnmpi_myid);
+	NrnHashIterate(Gid2PreSyn, gid2in_, PreSyn*, ps) {
+		fprintf(f, "\n %2d:", ps->gid_);
+		BGP_DMASend_Phase2* bs = ps->bgp.dma_send_phase2_;
+	    if (bs) {
+		for (int i=0; i < bs->ntarget_hosts_phase2_; ++i) {
+			fprintf(f, " %2d", bs->target_hosts_phase2_[i]);
+		}
+	    }
+	}}}
+	fprintf(f, "\n");
+	fclose(f);
+}
+#endif
+
 static void del(int* a) {
 	if (a) {
 		delete [] a;
@@ -147,9 +187,37 @@ void TarList::alloc() {
 	}
 }
 
-
+static void random_init(int);
+static int iran(int, int);
 
 static void phase2organize(TarList* tl) {
+	// copied and modified from old specify_phase2_distribution of bgpdma.cpp
+	int n, nt;
+	nt = tl->size;
+	n = int(sqrt(double(nt)));
+	// change to about 20
+	if (n > 1) { // do not bother if not many connections
+		tl->indices = new int[n+1];
+		tl->indices[n] = tl->size;
+		tl->size = n;
+		for (int i=0; i < n; ++i) {
+			tl->indices[i] = (i * nt)/n;
+		}
+		// Note: not sure the following is true anymore but it could be.
+		// This distribution is very biased (if 0 is a phase1 target
+		// it is always a phase2 sender. So now choose a random
+		// target in the subset and make that the phase2 sender
+		// (need to switch the indices[i] target and the one chosen)
+		for (int i=0; i < n; ++i) {
+			int i1 = tl->indices[i];
+			int i2 = tl->indices[i+1]-1;
+			// need discrete uniform random integer from i1 to i2
+			int i3 = iran(i1, i2);
+			int itar = tl->list[i1];
+			tl->list[i1] = tl->list[i3];
+			tl->list[i3] = itar;
+		}
+	}
 }
 
 static void target_list_sizes() {
@@ -166,6 +234,13 @@ static void target_list_sizes() {
 			ps->bgp.dma_send_ = new BGP_DMASend();
 		}
 	}}}
+
+#if TWOPHASE
+	// need to use the bgp union slot for dma_send_phase2_
+	NrnHashIterate(Gid2PreSyn, gid2in_, PreSyn*, ps) {
+		ps->bgp.srchost_ = 0;
+	}}}
+#endif
 
 	// How many items will be sent from this host to the intermediate?
 	// gid%nhost rank.
@@ -282,14 +357,41 @@ static void target_list_sizes() {
 			}
 		}
 	}
-	del(s);
-	del(scnt);
-	del(sdispl);
-	del(r);
-	del(rcnt);
-	del(rdispl);
+	del(s); del(scnt); del(sdispl); del(r); del(rcnt); del(rdispl);
 
 	if (use_phase2_) {
+		// For conservation, the source BGP_DMASend.ntarget_host
+		// needs to be the total number of destinations for that
+		// gid and not just the number of phase 1 destinations
+		// which will go into BGP_DMASend.ntarget_hosts_phase1.
+		// Here, we send those ntarget_host values. Note that
+		// the counts and displacements we just deleted are exactly
+		// what is needed. However to avoid confusion, send the info
+		// using our standard style. The payload is (gid, targetsize)
+		// pairs.
+		scnt = newintval(0, nhost);
+		NrnHashIterate(Int2TarList, gid2tarlist, TarList*, tl) {
+			scnt[tl->rank] += 2;
+		}}}
+		sdispl = newoffset(scnt, nhost);
+		s = newintval(0, sdispl[nhost]);
+		NrnHashIterate(Int2TarList, gid2tarlist, TarList*, tl) {
+			s[sdispl[tl->rank]++] = tl->gid;
+			s[sdispl[tl->rank]++] = tl->size;
+		}}}
+		del(sdispl);
+		sdispl = newoffset(scnt, nhost);
+		all2allv_int(s, scnt, sdispl, r, rcnt, rdispl, "phase1 ntarget_hosts");
+		for (int i=0; i < rdispl[nhost]; i += 2) {
+			PreSyn* ps;
+			assert(gid2out_->find(r[i], ps));
+			ps->bgp.dma_send_->ntarget_hosts_ = r[i+1];
+		}
+		del(s); del(scnt); del(sdispl); del(r); del(rcnt); del(rdispl);
+	}
+
+	if (use_phase2_) {
+		random_init(nrnmpi_myid + 1);
 		NrnHashIterate(Int2TarList, gid2tarlist, TarList*, tl) {
 			phase2organize(tl);
 		}}}
@@ -316,8 +418,11 @@ static void target_list_sizes() {
 			// Also there is a phase 1 target list of size so there
 			// are altogether size+1 target lists.
 			// (one phase 1 list and size phase 2 lists)
-			// So  (indices[size] - size) + size + 2*(size + 1)
-			scnt[tl->rank] += tl->indices[tl->size] + 2*(tl->size + 1);
+			scnt[tl->rank] += tl->size + 2;
+			for (int i=0; i < tl->size; ++i) {
+				scnt[tl->list[tl->indices[i]]] +=
+					tl->indices[i+1] - tl->indices[i] + 1;
+			}
 		}else{
 			// gid, list size, list
 			scnt[tl->rank] += tl->size + 2;
@@ -331,7 +436,7 @@ static void target_list_sizes() {
 			s[sdispl[tl->rank]++] = tl->gid;
 			s[sdispl[tl->rank]++] = tl->size;
 			for (int i = 0; i < tl->size; ++i) {
-				s[sdispl[tl->indices[i]]++] = tl->list[tl->indices[i]];
+				s[sdispl[tl->rank]++] = tl->list[tl->indices[i]];
 			}
 			for (int i = 0; i < tl->size; ++i) {
 				int rank = tl->list[tl->indices[i]];
@@ -376,6 +481,7 @@ static void target_list_sizes() {
 			bsp->ntarget_hosts_phase2_ = size;
 			int* p = newintval(0, size);
 			bsp->target_hosts_phase2_ = p;
+//printf("%d %d phase2 size=%d\n", nrnmpi_myid, gid, bsp->ntarget_hosts_phase2_);
 			for (int j = 0; j < size; ++j) {
 				p[j] = r[i++];
 				assert(p[j] != nrnmpi_myid);
@@ -385,9 +491,14 @@ static void target_list_sizes() {
 		if (!ps) { // phase 1 target list (or whole list if use_phase2 is 0)
 			assert(gid2out_->find(gid, ps));
 			BGP_DMASend* bs =  ps->bgp.dma_send_;
-			bs->ntarget_hosts_ = size;
+			bs->ntarget_hosts_phase1_ = size;
+			if (use_phase2_ == 0) {
+				// otherwise filled in prior to phase2_organize.
+				bs->ntarget_hosts_ = size;
+			}
 			int* p = newintval(0, size);
 			bs->target_hosts_ = p;
+//printf("%d %d phase1 size=%d\n", nrnmpi_myid, gid, bs->ntarget_hosts_);
 			for (int j = 0; j < size; ++j) {
 				p[j] = r[i++];
 				// There never was a possibility of send2self
@@ -397,6 +508,8 @@ static void target_list_sizes() {
 		}
 	}
 	del(r);
+//	phase1debug();
+//	phase2debug();
 
 #else // NOT TWOPHASE --- obsolete
 	// r is the gids (whose target lists are desired)

@@ -1103,14 +1103,14 @@ void bgp_dma_setup() {
 	max_ntarget_host = 0;
 
 #if FASTSETUP
+	// completely new algorithm does one and two phase.
 	target_list_sizes();
-#else
+#else // obsolete
 	// gid2in_ gets spikes from which hosts.
 	determine_source_hosts();
 
 	// gid2out_ sends spikes to which hosts
 	determine_target_hosts();
-#endif
 
 #if TWOPHASE
 	// need to use the bgp union slot for dma_send_phase2_
@@ -1125,6 +1125,7 @@ ps->bgp.dma_send_->ntarget_hosts_phase1_ = ps->bgp.dma_send_->ntarget_hosts_;
 		}}}
 	}
 #endif
+#endif // obsolete (not FASTSETUP)
 
 	if (!bgp_receive_buffer[0]) {
 		bgp_receive_buffer[0] = new BGP_ReceiveBuffer();
@@ -1599,6 +1600,12 @@ int ncs_bgp_mindelays( int **srchost, double **delays )
 #include <nrnisaac.h>
 static void* ranstate;
 
+static void random_init(int i) {
+	if (!ranstate) {
+		ranstate = nrnisaac_new();
+	}
+	nrnisaac_init(ranstate, nrnmpi_myid + 1);
+}
 
 static unsigned int get_random()
 {
@@ -1626,10 +1633,7 @@ void setup_phase2() {
 	// initialize random
 //	m_w = nrnmpi_myid + 1;
 //	m_z = nrnmpi_myid + 1;
-	if (!ranstate) {
-		ranstate = nrnisaac_new();
-	}
-	nrnisaac_init(ranstate, nrnmpi_myid + 1);
+	random_init(nrnmpi_myid + 1);
 	// how many source cells are there on this machine
 	int ncell = 0;
 	NrnHashIterate(Gid2PreSyn, gid2out_, PreSyn*, ps) {
