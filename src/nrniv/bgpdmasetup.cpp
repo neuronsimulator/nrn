@@ -508,6 +508,14 @@ static void target_list_sizes() {
 		}
 	}
 	del(r);
+	// compute max_ntarget_host
+	max_ntarget_host = 0;
+	NrnHashIterate(Gid2PreSyn, gid2out_, PreSyn*, ps) {
+		BGP_DMASend* bs = ps->bgp.dma_send_;
+		if (max_ntarget_host < bs->ntarget_hosts_) {
+			max_ntarget_host = bs->ntarget_hosts_;
+		}
+	}}}
 //	phase1debug();
 //	phase2debug();
 
