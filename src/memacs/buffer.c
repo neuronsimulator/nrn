@@ -430,7 +430,8 @@ bufname_match(pattern, string)
 {
 	char *bufnum, *bufname, *cp, buf[NBUFN];
 
-	Strcpy(buf, string);
+	strncpy(buf, string, NBUFN);
+	buf[NBUFN-1] = '\0';
 	for (cp=buf; cp < &buf[NBUFN]; cp++){
 		if (*cp == ')') break;
 	}
