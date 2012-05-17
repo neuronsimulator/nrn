@@ -549,12 +549,22 @@ static void target_list_sizes() {
 		}
 	}
 	del(r);
-	// compute max_ntarget_host
+	// compute max_ntarget_host and max_multisend_targets
 	max_ntarget_host = 0;
+	max_multisend_targets = 0;
 	NrnHashIterate(Gid2PreSyn, gid2out_, PreSyn*, ps) {
 		BGP_DMASend* bs = ps->bgp.dma_send_;
 		if (max_ntarget_host < bs->ntarget_hosts_) {
 			max_ntarget_host = bs->ntarget_hosts_;
+		}
+		if (max_multisend_targets < bs->NTARGET_HOSTS_PHASE1) {
+			max_multisend_targets = bs->NTARGET_HOSTS_PHASE1;
+		}
+	}}}
+	if (use_phase2_) NrnHashIterate(Gid2PreSyn, gid2in_, PreSyn*, ps) {
+		BGP_DMASend_Phase2* bsp = new BGP_DMASend_Phase2();
+		if (bsp && max_multisend_targets < bsp->ntarget_hosts_phase2_) {
+			max_multisend_targets = bsp->ntarget_hosts_phase2_;
 		}
 	}}}
 //	phase1debug();

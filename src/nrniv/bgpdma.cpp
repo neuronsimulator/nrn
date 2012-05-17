@@ -518,6 +518,10 @@ static void  multicast_done(void* arg) {
 #endif //BGPDMA & 2
 
 static int max_ntarget_host;
+// For one phase sending, max_multisend_targets is max_ntarget_host.
+// For two phase sending, it is the maximum of all the
+// ntarget_hosts_phase1 and ntarget_hosts_phase2.
+static int max_multisend_targets;
 
 double nrn_bgp_receive_time(int type) { // and others
 	double rt = 0.;
@@ -604,7 +608,7 @@ double nrn_bgp_receive_time(int type) { // and others
 
 	case 12: // greatest length multisend
 	  {
-		rt = double(max_ntarget_host);
+		rt = double(max_multisend_targets);
 		break;
 	  }
 	}
@@ -1101,6 +1105,7 @@ void bgp_dma_setup() {
 	// into chunks). And the second, an
 	// allreduce with receive buffer size of number of hosts.
 	max_ntarget_host = 0;
+	max_multisend_targets = 0;
 
 #if FASTSETUP
 	// completely new algorithm does one and two phase.
@@ -1146,7 +1151,7 @@ void bgp_dma_setup() {
 	if (max_persist_ids > 0) { // may want to check for too many as well
 		mconfig->protocol = DCMF_MEMFIFO_MCAST_RECORD_REPLAY_PROTOCOL;
 		mconfig->max_persist_ids = max_persist_ids;
-		mconfig->max_msgs = max_ntarget_host;
+		mconfig->max_msgs = max_multisend_targets;
 		n_mymulticast_ = max_persist_ids;
 	}else{
 		mconfig->protocol = DCMF_MEMFIFO_DMA_MSEND_PROTOCOL;
@@ -1173,7 +1178,7 @@ void bgp_dma_setup() {
 	}	
 	mci_ = new MyMulticastInfo[n_mymulticast_];
 	mconfig->cb_recv = msend_recv;
-	mconfig->nconnections = n_mymulticast_; //max_ntarget_host;
+	mconfig->nconnections = n_mymulticast_; //max_multisend_targets;
 	mconfig->connectionlist = new void*[n_mymulticast_];
 	mconfig->clientdata = NULL;
 	assert(DCMF_Multicast_register (&mpw->protocol, mconfig) == DCMF_SUCCESS);
