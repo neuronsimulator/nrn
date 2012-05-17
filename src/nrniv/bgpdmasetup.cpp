@@ -3,7 +3,7 @@ For very large numbers of processors and cells and fanout, it is taking
 a long time to figure out each cells target list given the input gids
 (gid2in) on each host. e.g 240 seconds for 2^25 cells, 1k connections
 per cell, and 128K cores; and 340 seconds for two phase excchange.
-To reduce this setup time we experiment with very different algorithm in which
+To reduce this setup time we experiment with a very different algorithm in which
 we construct a gid target host list on host gid%nhost and copy that list to
 the source host owning the gid.
 */
@@ -151,11 +151,13 @@ public:
 	void alloc();
 	int size;
 	int* list;
+	// Could eliminate the redundant gid below if,
+	// when iterating over the table, we used NrnHashIterateKeyValue.
 	int gid;
 	int rank;
 #if TWOPHASE
 	int* indices; // indices of list for groups of phase2 targets.
-	// If indices is not null, then size is then size is one less than
+	// If indices is not null, then size is one less than
 	// the size of the indices list where indices[size] = the size of
 	// the list. Indices[0] is 0 and list[indices[i]] is the rank
 	// to send the ith group of phase2 targets.
@@ -187,8 +189,30 @@ void TarList::alloc() {
 	}
 }
 
-static void random_init(int);
-static int iran(int, int);
+#if TWOPHASE
+
+#include <nrnisaac.h>
+static void* ranstate;
+
+static void random_init(int i) {
+	if (!ranstate) {
+		ranstate = nrnisaac_new();
+	}
+	nrnisaac_init(ranstate, nrnmpi_myid + 1);
+}
+
+static unsigned int get_random()
+{
+	return nrnisaac_uint32_pick(ranstate);
+}
+
+static int iran(int i1, int i2) {
+	// discrete uniform random integer from i2 to i2 inclusive. Must
+	// work if i1 == i2
+	if (i1 == i2) { return i1; }
+	int i3 = i1 + get_random()%(i2 - i1 + 1);
+	return i3;
+}
 
 static void phase2organize(TarList* tl) {
 	// copied and modified from old specify_phase2_distribution of bgpdma.cpp
@@ -197,6 +221,7 @@ static void phase2organize(TarList* tl) {
 	n = int(sqrt(double(nt)));
 	// change to about 20
 	if (n > 1) { // do not bother if not many connections
+		// equal as possible group sizes
 		tl->indices = new int[n+1];
 		tl->indices[n] = tl->size;
 		tl->size = n;
@@ -219,6 +244,7 @@ static void phase2organize(TarList* tl) {
 		}
 	}
 }
+#endif //TWOPHASE
 
 static void target_list_sizes() {
 	int *s, *r, *scnt, *rcnt, *sdispl, *rdispl;
@@ -236,14 +262,18 @@ static void target_list_sizes() {
 	}}}
 
 #if TWOPHASE
-	// need to use the bgp union slot for dma_send_phase2_
+	// Need to use the bgp union slot for dma_send_phase2_.
+	// Only will be non-nil if the input is a phase 2 sender.
 	NrnHashIterate(Gid2PreSyn, gid2in_, PreSyn*, ps) {
 		ps->bgp.srchost_ = 0;
 	}}}
 #endif
 
-	// How many items will be sent from this host to the intermediate?
-	// gid%nhost rank.
+	// What are the target ranks for a given input gid. All the ranks
+	// with the same input gid send that gid to the intermediate
+	// gid%nhost rank. The intermediate rank can then construct the
+	// list of target ranks for the gids it gets.
+
 	// scnt is number of input gids from target
 	scnt = newintval(0, nhost);
 	NrnHashIterate(Gid2PreSyn, gid2in_, PreSyn*, ps) {
@@ -266,6 +296,7 @@ static void target_list_sizes() {
 	del(sdispl);
 	// r is the gids received by this intermediate rank from all other ranks.
 
+	// Construct hash table for finding the target rank list for a given gid.
 	gid2tarlist = new Int2TarList(1000);
 	// Now figure out the size of the target list for each distinct gid in r.
 	for (int i=0; i < rdispl[nhost]; ++i) {
@@ -277,8 +308,8 @@ static void target_list_sizes() {
 			tl = new TarList();
 			tl->size = 1;
 			gid2tarlist->insert(r[i], tl);
-			tl->gid = r[i];
-		}
+			tl->gid = r[i]; // Not needed if we iterate using
+		}			// NrnHashIterateKeyValue
 		assert(tl->gid == r[i]);
 #else
 		assert(0);
@@ -307,7 +338,7 @@ static void target_list_sizes() {
 	// fill the target lists
 	for (int rank=0; rank < nhost; ++rank) {
 		int b = rdispl[rank];
-		int e = b + rcnt[rank];
+		int e = rdispl[rank + 1];
 		for (int i=b; i < e; ++i) {
 			TarList* tl;
 			if (gid2tarlist->find(r[i], tl)) {
@@ -325,10 +356,12 @@ static void target_list_sizes() {
 	// the ps->gid_.
 	// We could potentially organize here for two-phase exchange as well.
 
-	// How many target lists are desired by the source rank?
+	// Which target lists are desired by the source rank?
+
 	// Ironically, for round robin distributions, the target lists are
 	// already on the proper source rank so the following code should
 	// be tested for random distributions of gids.
+	// How many on the source rank?
 	scnt = newintval(0, nhost);
 	NrnHashIterate(Gid2PreSyn, gid2out_, PreSyn*, ps) {
 		++scnt[ps->gid_%nhost];
@@ -369,6 +402,12 @@ static void target_list_sizes() {
 		// what is needed. However to avoid confusion, send the info
 		// using our standard style. The payload is (gid, targetsize)
 		// pairs.
+		// It might be better to get rid of this section and instead
+		// modify the target list send buffer so that instead of a
+		// (gid, size) head for each list, phase one target lists
+		// have a (gid, totalsize, size) header. Is is easy to
+		// distinguish phase 1 and 3 lists since the gid on a rank
+		// is exclusively either in the input or output tables.
 		scnt = newintval(0, nhost);
 		NrnHashIterate(Int2TarList, gid2tarlist, TarList*, tl) {
 			scnt[tl->rank] += 2;
@@ -398,8 +437,10 @@ static void target_list_sizes() {
 	}
 
 	// For clarity, use the all2allv_int style of information flow
-	// from source to destination as above (see obsolete section below
-	// which is difficult to understand) and also use a uniform code
+	// from source to destination as above (instead of the obsolete
+	// section which was difficult to understand (It was last present at
+	// 672:544c61a730ec))
+	// and also use a uniform code
 	// for copying one and two phase information from a TarList to
 	// develop the s, scnt, and sdispl buffers. That is, a buffer list
 	// section in s for either a one-phase list or the much shorter
@@ -520,126 +561,7 @@ static void target_list_sizes() {
 //	phase2debug();
 
 #else // NOT TWOPHASE --- obsolete
-	// r is the gids (whose target lists are desired)
-	// received by this intermediate rank from all other ranks.
-	// The rcnt, rdispl received by the intermediate from source gid rank
-	// is the scnt, sdispl order we send back from the intermediate
-	// to the source gid rank, just need to copy target list size
-	// into an array
-	// Give s and r reasonable names
-	int *gid_source = s;
-	int *gid_source_cnt = scnt;
-	int *gid_source_displ = sdispl;
-	int *gid_intermediate = r;
-	int *gid_intermediate_cnt = rcnt;
-	int *gid_intermediate_displ = rdispl;
-	alltoalldebug("gid source intermediate", gid_source, gid_source_cnt,
-gid_source_displ, gid_intermediate, gid_intermediate_cnt, gid_intermediate_displ);
-
-	int *tlsize_source, *tlsize_intermediate;
-	tlsize_source = newintval(0, gid_source_displ[nhost]);
-	tlsize_intermediate = newintval(0, gid_intermediate_displ[nhost]);
-	for (int rank=0; rank < nhost; ++rank) {
-		int b = gid_intermediate_displ[rank];
-		int e = gid_intermediate_displ[rank+1];
-		for (int i=b; i < e; ++i) {
-			TarList* tl;
-			if (gid2tarlist->find(gid_intermediate[i], tl)) {
-				tlsize_intermediate[i] = tl->size;
-				tl->rank = rank;
-			}
-		}
-	}
-#if 0 //debug
-	NrnHashIterate(Int2TarList, gid2tarlist, TarList*, tl) {
-printf("%d NrnHashIterate rank=%d gid=%d size=%d\n", nrnmpi_myid, tl->rank, tl->gid, tl->size);
-	}}}
-#endif
-
-	nrnmpi_int_alltoallv(tlsize_intermediate, gid_intermediate_cnt, gid_intermediate_displ,
-		tlsize_source, gid_source_cnt, gid_source_displ);
-	alltoalldebug("intermediate sizes", tlsize_intermediate, gid_intermediate_cnt, gid_intermediate_displ,
-		tlsize_source, gid_source_cnt, gid_source_displ);
-	del(tlsize_intermediate);
-
-	// Need buffers for the full target list.
-	// on the intermediate
-	scnt = newintval(0, nhost);
-	for (int rank=0; rank < nhost; ++rank) {
-		int b = gid_intermediate_displ[rank];
-		int e = gid_intermediate_displ[rank+1];
-		for (int i=b; i < e; ++i) {
-			TarList* tl;
-			if (gid2tarlist->find(gid_intermediate[i], tl)) {
-				scnt[rank] += tl->size;
-			}
-		}
-	}
-	sdispl = newoffset(scnt, nhost);
-	s = newintval(0, sdispl[nhost]);
-	int j=0;
-	for (int rank=0; rank < nhost; ++rank) {
-		int b = gid_intermediate_displ[rank];
-		int e = gid_intermediate_displ[rank+1];
-		for (int i=b; i < e; ++i) {
-			TarList* tl;
-			if (gid2tarlist->find(gid_intermediate[i], tl)) {
-				for (int k = 0; k < tl->size; ++k) {
-					s[j++] += tl->list[k];
-				}
-				delete tl;
-			}
-		}
-	}
-	del(gid_intermediate);
-	del(gid_intermediate_cnt);
-	del(gid_intermediate_displ);
-	delete gid2tarlist;
-			
-	// on the source gid rank
-	rcnt = newintval(0, nhost);
-	for (int rank=0; rank < nhost; ++rank) {
-		int b = gid_source_displ[rank];
-		int e = gid_source_displ[rank+1];
-		for (int i=b; i < e; ++i) {
-			rcnt[rank] += tlsize_source[i];
-		}
-	}
-	rdispl = newoffset(rcnt, nhost);
-	r = newintval(0, rdispl[nhost]);
-
-	nrnmpi_int_alltoallv(s, scnt, sdispl, r, rcnt, rdispl);
-	alltoalldebug("target lists", s, scnt, sdispl, r, rcnt, rdispl);
-	del(s);
-	del(scnt);
-	del(sdispl);
-	j=0;
-	max_ntarget_host = 0;
-	for (int rank=0; rank < nhost; ++rank) {
-		int b = gid_source_displ[rank];
-		int e = gid_source_displ[rank+1];
-		for (int i=b; i < e; ++i) {
-			PreSyn* ps;
-			assert(gid2out_->find(gid_source[i], ps));
-			BGP_DMASend* s =  ps->bgp.dma_send_;
-			s->ntarget_hosts_ = tlsize_source[i];
-			if (max_ntarget_host < s->ntarget_hosts_) {
-				max_ntarget_host = s->ntarget_hosts_;
-			}
-			s->target_hosts_ = newintval(0, s->ntarget_hosts_);;
-			for (int k = 0; k < tlsize_source[i]; ++k) {
-				s->target_hosts_[k] = r[j++];
-				PreSyn* ps1;
-				assert(gid2out_->find(s->target_hosts_[k], ps1) == 0);
-			}
-		}
-	}
-	del(r);
-	del(rcnt);
-	del(rdispl);
-	del(tlsize_source);
-	del(gid_source);
-	del(gid_source_cnt);
-	del(gid_source_displ);
+	// see 672:544c61a730ec
+#error "TWOPHASE required"
 #endif // obsolete
 }

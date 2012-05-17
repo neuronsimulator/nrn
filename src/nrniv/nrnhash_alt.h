@@ -278,4 +278,10 @@ bool NrnHashIterator(NrnHash)::next() { \
 		Value value = i__.cur_value(); \
 // need to close with two extra }}
 
+#define NrnHashIterateKeyValue(Table,table, Key,key, Value,value) \
+	if (table) for (NrnHashIterator(Table) i__(*table); i__.more(); i__.next()) {{ \
+		Key key = i__.cur_key(); \
+		Value value = i__.cur_value(); \
+// need to close with two extra }}
+
 #endif
