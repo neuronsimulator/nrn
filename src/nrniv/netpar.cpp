@@ -1366,7 +1366,7 @@ int nrnmpi_spike_compress(int nspike, bool gid_compress, int xchng_meth) {
 	if (use_bgpdma_ == 1) { assert(BGPDMA & 1); }
 	if (nrnmpi_myid == 0) {printf("use_bgpdma_ = %d\n", use_bgpdma_);}
 #else // BGPDMA == 0
-	assert(xchnge_meth == 0);
+	assert(xchng_meth == 0);
 #endif
 	if (nspike >= 0) {
 		ag_send_nspike_ = 0;
