@@ -10,6 +10,7 @@
 #include <xmenu.h>
 #endif
 
+#include <ocnotify.h>
 #include <mymath.h>
 #include <nrnoc2iv.h>
 #include <parse.h>
@@ -75,15 +76,10 @@ void nrniv_recalc_ptrs() {
 		if (op && op->p_) {
 			double* pd = nrn_recalc_ptr(op->p_);
 			if (op->p_ != pd ) {
-#if HAVE_IV
-				Oc oc;
-				oc.notify_pointer_disconnect(op);
+				nrn_notify_pointer_disconnect(op);
 				op->p_ = pd;
 				op->valid_ = true;
-				oc.notify_when_freed(op->p_, op);
-#else
-				op->p_ = pd;
-#endif
+				nrn_notify_when_double_freed(op->p_, op);
 			}
 		}
 	}

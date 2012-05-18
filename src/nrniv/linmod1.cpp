@@ -1,6 +1,7 @@
 #include <../../nrnconf.h>
 #include <stdio.h>
 #include <InterViews/observe.h>
+#include "ocnotify.h"
 #if HAVE_IV
 #include "ivoc.h"
 #endif
@@ -90,10 +91,7 @@ void LinearMechanism::lmfree() {
 		model_ = nil;
 	}
 	if (nodes_) {
-#if HAVE_IV
-		Oc oc;
-		oc.notify_pointer_disconnect(this);
-#endif
+		nrn_notify_pointer_disconnect(this);
 		nnode_ = 0;
 		delete [] nodes_;
 		nodes_ = nil;
@@ -103,16 +101,13 @@ void LinearMechanism::lmfree() {
 
 void LinearMechanism::update_ptrs() {
 	if (nodes_) {
-#if HAVE_IV
-		Oc oc;
-		oc.notify_pointer_disconnect(this);
+		nrn_notify_pointer_disconnect(this);
 		for (int i=0; i < nnode_; ++i) {
 			double* pd = nrn_recalc_ptr(&(NODEV(nodes_[i])));
 			if (pd != &(NODEV(nodes_[i]))) {
-				oc.notify_when_freed(pd, this);
+				nrn_notify_when_double_freed(pd, this);
 			}
 		}
-#endif
 	}
 }
 
@@ -143,9 +138,7 @@ void LinearMechanism::create()
 		double x = chkarg(i, 0., 1.);
 		Section* sec = chk_access();
 		nodes_[0] = node_exact(sec, x);
-#if HAVE_IV
-		oc.notify_when_freed(&NODEV(nodes_[0]), this);
-#endif
+		nrn_notify_when_double_freed(&NODEV(nodes_[0]), this);
 	}else{
 		Object* o = *hoc_objgetarg(i);
 		check_obj_type(o, "SectionList");
@@ -157,9 +150,7 @@ void LinearMechanism::create()
 		nodes_ = new Node*[x->capacity()];
 		for (sec = sl->begin(); sec; sec = sl->next()) {
 			nodes_[nnode_] = node_exact(sec, x->elem(nnode_));
-#if HAVE_IV
-			oc.notify_when_freed(&NODEV(nodes_[nnode_]), this);
-#endif
+			nrn_notify_when_double_freed(&NODEV(nodes_[nnode_]), this);
 			++nnode_;
 		}
 		if (ifarg(i+2)) {

@@ -10,9 +10,6 @@ extern "C" {
 extern void hoc_ret();
 extern void hoc_pushx(double);
 
-void notify_freed(void*){}
-void notify_freed_val_array(double*, int){}
-void notify_pointer_freed(void*){}
 void ivoc_help(char*){}
 void ivoc_cleanup() {}
 int hoc_readcheckpoint(char*){ return 0; }

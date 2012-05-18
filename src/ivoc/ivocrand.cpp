@@ -12,6 +12,7 @@
 #include "nrnisaac.h"
 
 #include <OS/list.h>
+#include <ocnotify.h>
 #include "ocobserv.h"
 #include <nrnran123.h>
 
@@ -160,11 +161,8 @@ RandomPlay::RandomPlay(Rand* r, double* px) {
 	px_ = px;
 	random_play_list_->append(this);
 	ref();
-#if HAVE_IV
-	Oc oc;
-	oc.notify_when_freed(px_, this);
-	oc.notify_when_freed((void*)r->obj_, this);
-#endif
+	nrn_notify_when_double_freed(px_, this);
+	nrn_notify_when_void_freed((void*)r->obj_, this);
 }
 RandomPlay::~RandomPlay() {
 //printf("~RandomPlay\n");
@@ -185,11 +183,8 @@ void RandomPlay::list_remove() {
 	}
 }
 void RandomPlay::update(Observable*) {
-#if HAVE_IV
 //printf("RandomPlay::update\n");
-	Oc oc;
-	oc.notify_pointer_disconnect(this);
-#endif
+	nrn_notify_pointer_disconnect(this);
 	list_remove();
 }
 
