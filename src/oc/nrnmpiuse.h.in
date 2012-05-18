@@ -28,7 +28,10 @@
 /* define BlueGene with checkpointing */
 #undef BLUEGENE_CHECKPOINT
 
-/* define to 1 if you want the framework supporting BlueGene/P style direct dma transfer of spikes */
+/* Define bits for BGPDMA & 1 (ISend) & 2 (DMA spike transfer) & 4 (DMA Record Replay */
 #undef BGPDMA
+
+/* Define to 1 for possibility of rank 0 xopen/ropen a file and broadcast everywhere */
+#undef USE_NRNFILEWRAP
 
 #endif

@@ -12,6 +12,7 @@
 #include "hoc.h"
 #include "code.h"
 #include "equation.h"
+#include "nrnfilewrap.h"
 
 #if LINT
 Inst *inlint;
@@ -77,7 +78,7 @@ extern arayinstal();
 extern int indef;
 static Inst *prog_error;			/* needed for stmtlist loc if error */
 static int ntab;			/* auto indentation */
-extern FILE	*fin;				/* input file pointer */
+extern NrnFILEWrap	*fin;		/* input file pointer */
 
 static Inst* argcode(), *argrefcode();
  
@@ -607,7 +608,7 @@ stmtlist: /* nothing */
 		{
 			prog_parse_recover = progp;
 			prog_error = $$;
-			if (fin == stdin && !pipeflag)
+			if (nrn_fw_eq(fin, stdin) && !pipeflag)
 			{	int i;
 				Printf(">");
 				for (i = 0; i < ntab; i++)

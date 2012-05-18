@@ -70,9 +70,11 @@ AC_ARG_ENABLE([bluegeneP],
 		if test x$with_nmodl_only != xyes ; then
 			nmodl_build="no"
 			if test "$BG_BASE" = "" ; then
-				BG_BASE="/bgsys/drivers/ppcfloor"
+				BG_BASE="/bgsys/drivers/ppcfloor/"
 			fi
-			BG_INCLUDE="-I$BG_BASE/comm/include -I$BG_BASE/arch/include"
+			if test "$BG_INCLUDE" = "" ; then
+				BG_INCLUDE="-I$BG_BASE/comm/include -I$BG_BASE/arch/include"
+			fi
 			if test "$PYINCDIR" = "" ; then
 				PYINCDIR="$BG_BASE/gnu-linux/include/python2.6"
 			fi
@@ -91,10 +93,10 @@ AC_ARG_ENABLE([bluegeneP],
 				with_multisend=bgp
 			fi
 			if test "$CC" = "" ; then
-				CC=mpixlc_r
+				CC=mpixlc
 			fi
 			if test "$CXX" = "" ; then
-				CXX=mpixlcxx_r
+				CXX=mpixlcxx
 			fi
 			if test "$MPICC" = "" ; then
 				MPICC=$CC

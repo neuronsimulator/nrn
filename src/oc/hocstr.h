@@ -10,7 +10,6 @@ typedef struct HocStr {
 
 extern HocStr* hoc_tmpbuf; /* highly volatile, copy immediately */
 extern HocStr* hocstr_create();
-extern char* fgets_unlimited(HocStr* s, FILE* f);
 
 #endif
 

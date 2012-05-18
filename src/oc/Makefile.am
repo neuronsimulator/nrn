@@ -15,7 +15,7 @@ liboc_la_SOURCES = parse.y bksub.c getelm.c lineq.c subrows.c prmat.c \
 	list.c regexp.c audit.c symbol.c \
 	version.c xred.c parallel.c functabl.c plot.c plt.c axis.c \
 	settext.c x.c fmenu.c termio.c isoc99.c \
-	scoprand.c $(RanFiles) cygwinprt.c
+	scoprand.c $(RanFiles) cygwinprt.c nrnfilewrap.c
 
 ## MAC OS X does not allow multiple definitions in separate dyld files
 ## therefore we create a separate library for the oc objects that
@@ -55,7 +55,8 @@ pkginclude_HEADERS = hoc.h hoclist.h hocdec.h hocassrt.h nrnisaac.h \
 ## Header files that need to be copied into the distribution but do not need
 ## to be installed:
 noinst_HEADERS = code.h equation.h hocmodl.h hocstr.h \
-	profile.h redef.h parse.h mcran4.h nrnmpi.h nrnrt.h isaac64.h
+	profile.h redef.h parse.h mcran4.h nrnmpi.h nrnrt.h isaac64.h \
+	nrnfilewrap.h nrn_vsscanf.c
 
 ## files that depend on the existence of parse.h
 ## this allows parallel make -j to work at the beginning when parse.h

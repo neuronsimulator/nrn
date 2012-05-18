@@ -14,6 +14,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <nrnmpi.h>
+#include "nrnfilewrap.h"
 #if CABLE
 #include "options.h"
 
@@ -2569,7 +2570,7 @@ hoc_newline()		/* print newline */
 varread()	/* read into variable */
 {
 	double d;
-	extern FILE *fin;
+	extern NrnFILEWrap *fin;
 	Symbol *var = (pc++)->sym;
 
 	assert(var->public != 2);
@@ -2580,7 +2581,7 @@ varread()	/* read into variable */
 		execerror(var->name, "is not a scalar variable");
 	}
   Again:
-	switch (fscanf(fin, "%lf", OPVAL(var)))
+	switch (nrn_fw_fscanf(fin, "%lf", OPVAL(var)))
 	{
 	case EOF:
 		if (moreinput())

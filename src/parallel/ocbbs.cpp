@@ -471,7 +471,7 @@ static double step_time(void* v) {
 }
 
 static double send_time(void* v) {
-	int arg = ifarg(1) ? int(chkarg(1, 0, 10)) : 0;
+	int arg = ifarg(1) ? int(chkarg(1, 0, 20)) : 0;
 	if (arg) {
 		return nrn_bgp_receive_time(arg);
 	}
@@ -519,7 +519,7 @@ static double spcompress(void* v) {
 		gid_compress = (chkarg(2, 0, 1) ? true : false);
 	}
 	if (ifarg(3)) {
-		xchng_meth = (int)chkarg(3, 0, 1);
+		xchng_meth = (int)chkarg(3, 0, 15);
 	}
 	return (double)nrnmpi_spike_compress(nspike, gid_compress, xchng_meth);
 }
@@ -560,7 +560,7 @@ static double set_timeout(void* v) {
 static double gid_clear(void* v) {
 	int arg = 0;
 	if (ifarg(1)){
-		arg = int(chkarg(1, 0, 3));
+		arg = int(chkarg(1, 0, 4));
 	}
 	nrnmpi_gid_clear(arg);
 	return 0.;

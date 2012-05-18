@@ -9,15 +9,16 @@
 #include	"parse.h"
 #include	<setjmp.h>
 #include	<errno.h>
+#include	"nrnfilewrap.h"
 
-extern FILE		*fin;
+extern NrnFILEWrap*	fin;
 extern int		pipeflag;
 extern jmp_buf		begin;
 extern double		hoc_ac_;
 extern char* neuron_home;
 extern double chkarg();
 
-FILE	*frin;
+NrnFILEWrap	*frin;
 FILE	*fout;
 
 extern char** hoc_pgargstr();
@@ -99,17 +100,17 @@ ropen()		/* open file for reading */
 	else
 		fname = "";
 	d = 1.;
-	if (frin != stdin)
-		IGNORE(fclose(frin));
-	frin = stdin;
+	if (!nrn_fw_eq(frin, stdin))
+		IGNORE(nrn_fw_fclose(frin));
+	frin = nrn_fw_set_stdin();
 	if (fname[0] != 0) {
-		if ((frin = fopen(fname, "r")) == (FILE *)0)
+		if ((frin = nrn_fw_fopen(fname, "r")) == (NrnFILEWrap *)0)
 		{
 			char* retry;
 			retry = expand_env_var(fname);
-			if ((frin = fopen(retry, "r")) == (FILE *)0) {
+			if ((frin = nrn_fw_fopen(retry, "r")) == (NrnFILEWrap *)0) {
 				d = 0.;
-				frin = stdin;
+				frin = nrn_fw_set_stdin();
 			}
 		}
 	}
@@ -228,7 +229,7 @@ int hoc_xopen1(fname, rcs)	/* read and execute a hoc program */
 	char* fname;
 	char* rcs;
 {
-	FILE *savfin;
+	NrnFILEWrap *savfin;
 	int savpipflag, save_lineno;
 	char st[200];
 	extern hoc_lineno;
@@ -260,16 +261,16 @@ int hoc_xopen1(fname, rcs)	/* read and execute a hoc program */
 #endif 
 	   errno = 0; 
 #if MAC
-	   if ((fin = fopen(fname, "rb")) == NULL) {
+	   if ((fin = nrn_fw_fopen(fname, "rb")) == NULL) {
 #else
-	   if ((fin = fopen(fname, "r")) == NULL) {
+	   if ((fin = nrn_fw_fopen(fname, "r")) == NULL) {
 #endif
 		char* retry;
 		fname = retry = expand_env_var(fname);
 #if MAC
-		if ((fin = fopen(retry, "rb")) == NULL) {
+		if ((fin = nrn_fw_fopen(retry, "rb")) == NULL) {
 #else
-		if ((fin = fopen(retry, "r")) == NULL) {
+		if ((fin = nrn_fw_fopen(retry, "r")) == NULL) {
 #endif
 			fin = savfin;
 			pipeflag = savpipflag;
@@ -288,9 +289,10 @@ int hoc_xopen1(fname, rcs)	/* read and execute a hoc program */
 		hoc_audit_from_xopen1(fname, rcs);
 		IGNORE(hoc_xopen_run((Symbol *)0, (char *)0));
 	}
-	if (fin && fin != stdin)
- 		ERRCHK(IGNORE(fclose(fin));)
-	fin = savfin;		
+	if (fin && !nrn_fw_eq(fin,stdin)) {
+ 		ERRCHK(IGNORE(nrn_fw_fclose(fin));)
+	}
+	fin = savfin;
 	pipeflag = savpipflag;
 	if (fname == st) {
 		unlink(st);
@@ -372,18 +374,38 @@ double hoc_scan(fi)
 	return d;
 }
 
+double hoc_fw_scan(NrnFILEWrap* fi) {
+	double d;
+	char fs[256];
+
+	for(;;) {
+		if (nrn_fw_fscanf(fi, "%255s", fs) == EOF) {
+			execerror("EOF in fscan", (char *)0);
+		}
+		if (fs[0] == 'i' || fs[0] == 'n' || fs[0] == 'I' || fs[0] == 'N') {
+			 continue;
+		}
+		if (sscanf(fs, "%lf", &d) == 1) {
+			/* but if at end of line, leave at beginning of next*/
+			nrn_fw_fscanf(fi, "\n");
+			break;
+		}
+	}
+	return d;
+}
+
 int
 Fscan()		/* read a number from input file */
 {
 	double d;
-	FILE *fi;
+	NrnFILEWrap *fi;
 
-	if (frin == stdin) {
+	if (nrn_fw_eq(frin, stdin)) {
 		fi = fin;
 	}else{
 		fi = frin;
 	}
-	d = hoc_scan(fi);
+	d = hoc_fw_scan(fi);
 	ret();
 	pushx(d);
 }
@@ -393,9 +415,9 @@ hoc_Getstr()	/* read a line (or word) from input file */
 {
 	char* buf;
 	char **cpp;
-	FILE* fi;	
+	NrnFILEWrap* fi;
 	int word = 0;
-	if (frin == stdin) {
+	if (nrn_fw_eq(frin, stdin)) {
 		fi = fin;
 	}else{
 		fi = frin;
@@ -406,7 +428,7 @@ hoc_Getstr()	/* read a line (or word) from input file */
 	}
 	if (word) {
 		buf = hoc_tmpbuf->buf;
-		if(fscanf(fi, "%s", buf) != 1) {
+		if(nrn_fw_fscanf(fi, "%s", buf) != 1) {
 			execerror("EOF in getstr", (char*)0);
 		}
 	}else{
@@ -647,7 +669,11 @@ hoc_Load_file(always, name) int always; char* name; {
 	char expname[512];
 	char *base;
 	char path[1000], old[1000], fname[1000], cmd[200];
+#if USE_NRNFILEWRAP
+	int f;	
+#else
 	FILE* f;
+#endif
 
 	old[0] = '\0';
 	goback = 0;
@@ -673,12 +699,20 @@ hoc_Load_file(always, name) int always; char* name; {
 		strncpy(path, name, base-name);
 		path[base-name] = '\0';
 		++base;
+#if USE_NRNFILEWRAP
+		f = nrn_fw_readaccess(name);
+#else
 		f = fopen(name, "r");
+#endif
 	}else{
 		base = name;
 		path[0] = '\0';
 		/* otherwise find the file in the default directories */
+#if USE_NRNFILEWRAP
+		f = nrn_fw_readaccess(base);
+#else
 		f = fopen(base, "r"); /* cwd */
+#endif
 #if !MAC
 		if (!f) { /* try HOC_LIBRARY_PATH */
 			int i;
@@ -701,7 +735,11 @@ hoc_Load_file(always, name) int always; char* name; {
 				}
 				if (path[0]) {
 					sprintf(fname, "%s/%s", path, base);
+#if USE_NRNFILEWRAP
+					f = nrn_fw_readaccess(expand_env_var(fname));
+#else
 					f = fopen(expand_env_var(fname), "r");
+#endif
 					if (f) {
 						break;
 					}
@@ -714,7 +752,11 @@ hoc_Load_file(always, name) int always; char* name; {
 		if (!f) { /* try NEURONHOME/lib/hoc */
 			sprintf(path, "$(NEURONHOME)/lib/hoc");
 			sprintf(fname, "%s/%s", path, base);
+#if USE_NRNFILEWRAP
+			f = nrn_fw_readaccess(expand_env_var(fname));
+#else
 			f = fopen(expand_env_var(fname), "r");
+#endif
 		}
 	}
 	/* add the name to the list of loaded packages */
@@ -722,7 +764,9 @@ hoc_Load_file(always, name) int always; char* name; {
 		if (!is_loaded) {
 			hoc_l_lappendstr(loaded, name);
 		}
+#if USE_NRNFILEWRAP == 0
 		fclose(f);
+#endif
 		b = 1;
 	}else{
 		b = 0;

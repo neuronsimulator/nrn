@@ -1,9 +1,14 @@
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 #include <nrnversion.h>
 #include <nrnconfigargs.h>
 
+extern int nrn_global_argc;
+extern char** nrn_global_argv;
+
 static char buf[256];
+static char* sarg = 0;
 static char configargs[] = NRN_CONFIG_ARGS;
 
 #if defined(HG_BRANCH)
@@ -35,6 +40,22 @@ char* nrn_version(int i) {
 		sprintf(buf, "%s", HG_LOCAL);
 	}else if (i == 6) {
 		return configargs;
+	}else if (i == 7) {
+		int j, size;
+		if (!sarg) {
+			char* c;
+			int size = 0;
+			for (j=0; j < nrn_global_argc; ++j) {
+				size += strlen(nrn_global_argv[j]) + 1;
+			}
+			sarg = (char*)calloc(size+1, sizeof(char));
+			c = sarg;
+			for (j=0; j < nrn_global_argc; ++j) {
+				sprintf(c, "%s%s", j?" ":"", nrn_global_argv[j]);
+				c = c + strlen(c);
+			}
+		}
+		return sarg;
 	}else{
 		sprintf(buf, "NEURON -- %s %s", head, HG_DATE); 
 	}
