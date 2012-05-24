@@ -199,4 +199,80 @@ AC_ARG_ENABLE([bgPlinux],
 	fi
 ])
 
+AC_ARG_ENABLE([bluegeneQ],
+        AC_HELP_STRING([--enable-bluegeneQ],[For BlueGene/Q, supplies many extra configuration options]),[
+        if test "$enable_bluegeneQ" = "yes" ; then
+                with_x="no"
+                with_memacs="no"
+                enable_shared="no"                
+                with_readline="no"
+                java_dlopen="no"
+                linux_nrnmech="no"
+                if test x$with_nmodl_only != xyes ; then
+                        nmodl_build="no"
+                        if test "$BG_BASE" = "" ; then
+                                BG_BASE="/bgsys/drivers/ppcfloor/"
+                        fi
+                        if test "$BG_INCLUDE" = "" ; then
+                                BG_INCLUDE="-I$BG_BASE/comm/include -I$BG_BASE/arch/include"
+                        fi
+			PYBASE=$BG_BASE/tools/python/bldsrc-2.6.7/Python-2.6.7
+                        if test "$PYINCDIR" = "" ; then
+                                PYINCDIR="$PYBASE/Include -I$PYBASE"
+                        fi
+                        if test "$PYLIB" = "" ; then
+				PYLIB="-L$PYBASE -lpython2.6"
+				PYLIBDIR="$PYBASE"
+				PYLIBLINK="$PYLIB"
+                        fi
+                        if test "$LIBS" = "" ; then
+                                LIBS='-lmass'
+                        fi
+                        if test "$LDFLAGS" = "" ; then
+                                LDFLAGS='-qsmp -qnostaticlink'
+                        fi
+                        if test "$with_multisend" = "" ; then
+                                with_multisend=yes
+                        fi
+                        if test "$CC" = "" ; then
+                                CC=mpixlc
+                        fi
+                        if test "$CXX" = "" ; then
+                                CXX=mpixlcxx
+                        fi
+                        if test "$MPICC" = "" ; then
+                                MPICC=$CC
+                        fi
+                        if test "$MPICXX" = "" ; then
+                                MPICXX=$CXX
+                        fi
+                        if test "$OPTFLAGS" = "" ; then
+                                OPTFLAGS="-O3 -qarch=qp -q64"
+                        fi
+                        if test "$CFLAGS" = "" ; then
+                                CFLAGS="$OPTFLAGS $BG_INCLUDE"
+                        fi
+                        if test "$CXXFLAGS" = "" ; then
+                                CXXFLAGS=$CFLAGS
+                        fi
+                        if test "$BG_CHECKPOINT" = "yes" ; then
+                                NRN_DEFINE(BLUEGENE_CHECKPOINT,1,[enable the checkpointing on BlueGene hardware])
+                                BGL_LIBS = "-lchkpt.rts $BGL_LIBS"
+                        fi
+                        if test "$deptype" = "" ; then
+                                am_cv_CC_dependencies_compiler_type=xlc
+                                am_cv_CXX_dependencies_compiler_type=xlc
+                        fi
+                else
+                        nmodl_build="yes"
+                fi
+                always_call_mpi_init=yes
+                if test "$file_open_retry" = "" ; then
+                        file_open_retry=1
+                fi
+                NRN_DEFINE(BLUEGENE,1,[define if cross compiling for IBM BlueGene L or P])
+                NRN_DEFINE(BLUEGENEQ,1,[define if cross compiling for IBM BlueGene/Q])
+        fi
+])
+
 ]) dnl end of AC_NRN_BLUEGENE
