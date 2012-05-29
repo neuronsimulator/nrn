@@ -513,7 +513,7 @@ void nrn_spike_exchange_init() {
 	nsend_ = nsendmax_ = nrecv_ = nrecv_useful_ = 0;
 	if (nrnmpi_numprocs > 0) {
 		if (nrn_nthread > 0) {
-#if USETHREAD
+#if USE_PTHREAD
 			if (!mut_) {
 				MUTCONSTRUCT(1)
 			}
