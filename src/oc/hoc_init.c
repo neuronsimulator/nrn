@@ -400,10 +400,15 @@ hoc_nrnversion() {
 }
 
 hoc_Execerror() {
+	extern hoc_execerror_mes(char*, char*, int);
 	char* c2 = (char*)0;
 	if (ifarg(2)) {
 		c2 = gargstr(2);
 	}
-	hoc_execerror(gargstr(1), c2);
+	if (ifarg(1)) {
+		hoc_execerror(gargstr(1), c2);
+	}else{
+		hoc_execerror_mes(c2, c2, 0);
+	}
 	/* never get here */
 }

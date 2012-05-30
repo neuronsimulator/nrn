@@ -593,8 +593,9 @@ void (*oc_jump_target_)();	/* see ivoc/SRC/ocjump.c */
 
 int yystart;
 
-execerror(s, t)	/* recover from run-time error */
+hoc_execerror_mes(s, t, prnt)	/* recover from run-time error */
 	char *s, *t;
+	int prnt;
 {
 	extern int hoc_in_yyparse;
 	hoc_in_yyparse = 0;
@@ -604,7 +605,7 @@ execerror(s, t)	/* recover from run-time error */
 #if 0
 	hoc_xmenu_cleanup();
 #endif
-	if (debug_message_ || hoc_execerror_messages) {
+	if (debug_message_ || prnt) {
 		warning(s, t);
 		frame_debug();
 #if defined(__GO32__)
@@ -637,6 +638,12 @@ execerror(s, t)	/* recover from run-time error */
 		longjmp(hoc_oc_begin, 1);
 	}
 	longjmp(begin, 1);
+}
+
+hoc_execerror(s, t)	/* recover from run-time error */
+	char *s, *t;
+{
+	hoc_execerror_mes(s, t, hoc_execerror_messages);
 }
 
 RETSIGTYPE
