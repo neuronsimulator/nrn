@@ -110,8 +110,8 @@ void HocEvent::allthread_handle() {
 	hefree();
 }
 
-void HocEvent::pgvts_deliver(double tt, NetCvode*) {
-	deliver(tt, nil, nil);
+void HocEvent::pgvts_deliver(double tt, NetCvode* nc) {
+	deliver(tt, nc, nrn_threads);
 }
 
 void HocEvent::reclaim() {

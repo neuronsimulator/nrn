@@ -3526,6 +3526,7 @@ int NetCvode::pgvts_event(double& tt) {
 	if (de) { // handle the event
 		de->pgvts_deliver(tt, this);
 	}
+	if (nrn_allthread_handle) { (*nrn_allthread_handle)(); }
 	return err;
 }
 
