@@ -674,9 +674,16 @@ static PyObject* segment_next(NPySegObj* self) {
 			return NULL;
 		}
 	}
+	NPySegObj* seg = PyObject_New(NPySegObj, psegment_type);
+	assert(seg);
+	if (seg == NULL) {
+	}
 	self->x_ = x;
-	Py_INCREF(self);
-	return (PyObject*)self;
+	seg->x_ = x;
+	seg->alliter_ = self->alliter_;
+	seg->pysec_ = self->pysec_;
+	Py_INCREF(seg->pysec_);
+	return (PyObject*)seg;
 }
 
 static PyObject* mech_next(NPyMechObj* self) {
