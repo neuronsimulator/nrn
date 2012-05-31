@@ -18,7 +18,7 @@ proc init() {local i
 	ppanal = new ModelViewPPAnalysis(mview)
 }
 
-proc getcell() {localobj p
+proc getcell() {localobj p, s
 	sprint(root, "%s", secname())
 	if (nrnpython("import neuron")) {
 		p = new PythonObject()
@@ -26,7 +26,11 @@ proc getcell() {localobj p
 		if (object_id(cellobj) == 0) {
 			name = root
 		}else{
-			name = cellobj.__str__()
+			sprint(name, "%s", cellobj)
+			s = new String()
+			if (hoc_sf_.head(name, "PythonObject", s.s)==12) {
+				name = cellobj.__str__()
+			}
 		}
 	}else{
 		if (hoc_sf_.head(root, "\\.", name) == -1) {
