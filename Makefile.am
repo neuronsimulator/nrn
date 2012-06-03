@@ -100,11 +100,11 @@ endif
 else
 if BUILD_CYGWIN
 alphadist:
-	scp src/mswin/nrn"`sh $(srcdir)/nrnversion.sh 3`"setup.exe $(ALPHADIR)/nrn-"`sh $(srcdir)/nrnversion.sh 2`"-setup.exe
+	scp src/mswin/nrn"`sh $(srcdir)/nrnversion.sh 3`"setup.exe $(ALPHADIR)/nrn-"`sh $(srcdir)/nrnversion.sh 2`".cygwin-setup.exe
 else
 if BUILD_MINGW
 alphadist:
-	scp src/mswin/nrn"`sh $(srcdir)/nrnversion.sh 3`"setup.exe $(ALPHADIR)/nrn-"`sh $(srcdir)/nrnversion.sh 2`"-setup.exe
+	scp src/mswin/nrn"`sh $(srcdir)/nrnversion.sh 3`"setup.exe $(ALPHADIR)/nrn-"`sh $(srcdir)/nrnversion.sh 2`".$(host_cpu)-setup.exe
 else
 alphadist:
 	scp nrn-"`sh $(srcdir)/nrnversion.sh`".tar.gz $(ALPHADIR)/nrn-"`sh $(srcdir)/nrnversion.sh 2`".tar.gz

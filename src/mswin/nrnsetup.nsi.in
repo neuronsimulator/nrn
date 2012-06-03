@@ -153,14 +153,14 @@ Section "Start Menu Shortcuts"
   SetOutPath "C:\" ; does not work, ends up as C
   StrCpy $OUTDIR "C:\"
   CreateShortCut "$SMPROGRAMS\${NEURON}\Uninstall.lnk" "$INSTDIR\uninstall.exe" "" "$INSTDIR\uninstall.exe" 0
-  CreateShortCut "$SMPROGRAMS\${NEURON}\nrngui.lnk" "$INSTDIR\bin\neuron.exe" "$uINSTDIR/lib/hoc/nrngui.hoc" "$INSTDIR\bin\nrniv10.ico" 0
-  CreateShortCut "$SMPROGRAMS\${NEURON}\nrngui_python.lnk" "$INSTDIR\bin\neuron.exe" "-python $uINSTDIR/lib/hoc/nrngui.hoc" "$INSTDIR\bin\nrniv10.ico" 0
+  CreateShortCut "$SMPROGRAMS\${NEURON}\nrngui.lnk" "$INSTDIR\bin\rxvt.exe" "-cd $uINSTDIR -fn 16 -fg black -bg white -sl 1000 -e $uINSTDIR/bin/bash --rcfile $uINSTDIR/lib/bshstart.sh -i -c 'nrniv $uINSTDIR/lib/hoc/nrngui.hoc'" "$INSTDIR\bin\nrniv10.ico" 0
+  CreateShortCut "$SMPROGRAMS\${NEURON}\nrngui_python.lnk" "$INSTDIR\bin\rxvt.exe" "-cd $uINSTDIR -fn 16 -fg black -bg white -sl 1000 -e $uINSTDIR/bin/bash --rcfile $uINSTDIR/lib/bshstart.sh -i -c 'nrniv -python $uINSTDIR/lib/hoc/nrngui.hoc'" "$INSTDIR\bin\nrniv10.ico" 0
   CreateShortCut "$SMPROGRAMS\${NEURON}\mknrndll.lnk" "$INSTDIR\bin\nrniv.exe" "$uINSTDIR/lib/hoc/mknrndll.hoc" "$INSTDIR\bin\nmodl2a.ico" 0
   CreateShortCut "$SMPROGRAMS\${NEURON}\modlunit.lnk" "$INSTDIR\bin\nrniv.exe" "$uINSTDIR/lib/hoc/modlunit.hoc" "$INSTDIR\bin\nmodl2a.ico" 0
   CreateShortCut "$SMPROGRAMS\${NEURON}\Notes.lnk" "notepad.exe" "$INSTDIR\notes.txt"
   WriteINIStr "$SMPROGRAMS\${NEURON}\NEURON Home Page.url" "InternetShortcut" "URL" "http://www.neuron.yale.edu/"
   SetOutPath "$INSTDIR\demo"
-  CreateShortCut "$SMPROGRAMS\${NEURON}\NEURON Demo.lnk" "$INSTDIR\bin\neuron.exe" "-dll $uINSTDIR/demo/release/nrnmech.dll demo.hoc" "$INSTDIR\bin\nrniv10.ico" 0
+  CreateShortCut "$SMPROGRAMS\${NEURON}\NEURON Demo.lnk" "$INSTDIR\bin\rxvt.exe" "-cd $uINSTDIR -fn 16 -fg black -bg white -sl 1000 -e $uINSTDIR/bin/bash --rcfile $uINSTDIR/lib/bshstart.sh -i -c 'cd $uINSTDIR/demo ; nrniv -dll $uINSTDIR/demo/release/nrnmech.dll demo.hoc'" "$INSTDIR\bin\nrniv10.ico" 0
   SetOutPath "$INSTDIR"
   CreateShortCut "$SMPROGRAMS\${NEURON}\rxvt sh.lnk" "$INSTDIR\bin\rxvt.exe" "-cd $uINSTDIR -fn 16 -fg black -bg white -sl 1000 -e $uINSTDIR/bin/bash --rcfile $uINSTDIR/lib/bshstart.sh -i" "$INSTDIR\bin\rxvt.exe" 0
   FileOpen $r1 "$INSTDIR\lib\smsinst.dat" "w"
@@ -173,14 +173,14 @@ Section "Desktop ${NEURON} folder with Shortcuts"
   CreateDirectory "$DESKTOP\${NEURON}"
   SetOutPath "C:\" ; does not work, ends up as C
   StrCpy $OUTDIR "C:\"
-  CreateShortCut "$DESKTOP\${NEURON}\nrngui.lnk" "$INSTDIR\bin\neuron.exe" "$uINSTDIR/lib/hoc/nrngui.hoc" "$INSTDIR\bin\nrniv10.ico" 0
-  CreateShortCut "$DESKTOP\${NEURON}\nrngui_python.lnk" "$INSTDIR\bin\neuron.exe" "-python $uINSTDIR/lib/hoc/nrngui.hoc" "$INSTDIR\bin\nrniv10.ico" 0
+  CreateShortCut "$DESKTOP\${NEURON}\nrngui.lnk" "$INSTDIR\bin\rxvt.exe" "-cd $uINSTDIR -fn 16 -fg black -bg white -sl 1000 -e $uINSTDIR/bin/bash --rcfile $uINSTDIR/lib/bshstart.sh -i -c 'nrniv $uINSTDIR/lib/hoc/nrngui.hoc'" "$INSTDIR\bin\nrniv10.ico" 0
+  CreateShortCut "$DESKTOP\${NEURON}\nrngui_python.lnk" "$INSTDIR\bin\rxvt.exe" "-cd $uINSTDIR -fn 16 -fg black -bg white -sl 1000 -e $uINSTDIR/bin/bash --rcfile $uINSTDIR/lib/bshstart.sh -i -c 'nrniv -python $uINSTDIR/lib/hoc/nrngui.hoc'" "$INSTDIR\bin\nrniv10.ico" 0
   CreateShortCut "$DESKTOP\${NEURON}\mknrndll.lnk" "$INSTDIR\bin\nrniv.exe" "$uINSTDIR/lib/hoc/mknrndll.hoc" "$INSTDIR\bin\nmodl2a.ico" 0
   CreateShortCut "$DESKTOP\${NEURON}\modlunit.lnk" "$INSTDIR\bin\nrniv.exe" "$uINSTDIR/lib/hoc/modlunit.hoc" "$INSTDIR\bin\nmodl2a.ico" 0
   CreateShortCut "$DESKTOP\${NEURON}\Notes.lnk" "notepad.exe" "$INSTDIR\notes.txt"
   WriteINIStr "$DESKTOP\${NEURON}\NEURON Home Page.url" "InternetShortcut" "URL" "http://www.neuron.yale.edu/"
   SetOutPath "$INSTDIR\demo"
-  CreateShortCut "$DESKTOP\${NEURON}\NEURON Demo.lnk" "$INSTDIR\bin\neuron.exe" "-dll $uINSTDIR/demo/release/nrnmech.dll demo.hoc" "$INSTDIR\bin\nrniv10.ico" 0
+  CreateShortCut "$DESKTOP\${NEURON}\NEURON Demo.lnk" "$INSTDIR\bin\rxvt.exe" "-cd $uINSTDIR -fn 16 -fg black -bg white -sl 1000 -e $uINSTDIR/bin/bash --rcfile $uINSTDIR/lib/bshstart.sh -i -c 'cd $uINSTDIR/demo ; nrniv -dll $uINSTDIR/demo/release/nrnmech.dll demo.hoc'" "$INSTDIR\bin\nrniv10.ico" 0
   SetOutPath "$INSTDIR"
   CreateShortCut "$DESKTOP\${NEURON}\rxvt sh.lnk" "$INSTDIR\bin\rxvt.exe" "-cd $uINSTDIR -fn 16 -fg black -bg white -sl 1000 -e $uINSTDIR/bin/bash --rcfile $uINSTDIR/lib/bshstart.sh -i" "$INSTDIR\bin\rxvt.exe" 0
   FileOpen $r1 "$INSTDIR\lib\deskinst.dat" "w"

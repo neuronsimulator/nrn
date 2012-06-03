@@ -183,6 +183,7 @@ done
 
 mkdir $D/gcclib
 cp /usr/lib/libcygwin.a $D/gcclib
+cp /usr/lib/libpthread.a $D/gcclib
 for i in libuser32.a libkernel32.a libadvapi32.a libshell32.a ; do
   cp /usr/lib/w32api/$i $D/gcclib
 done

@@ -1,5 +1,7 @@
 
-CC = @CC@
+#CC = @CC@
+#until we can avoid mpicc
+CC = gcc
 
 EXTRA_CYGWIN = -I$N/lib -I$N/$(CC)inc -I$N/$(CC)3inc -L$N/$(CC)lib
 EXTRA_FLAGS = @MINGW_CFLAG@ @EXTRA_CYGWIN_FLAGS@
