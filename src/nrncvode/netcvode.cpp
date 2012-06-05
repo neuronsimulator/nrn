@@ -2636,6 +2636,10 @@ void NetCvode::allthread_handle(double tt, HocEvent* he, NrnThread* nt) {
 		allthread_hocevents_->append(he);
 		nt->_t = tt;
 	}
+	if (cvode_active_ && gcv_ && nrnmpi_numprocs > 0) {
+		assert(nrn_nthread == 1);
+		return;
+	}
 	// deliver any other events at this time (in particular, a possible NetParEvent)
 	// to guarantee consistency of the NetParEvent for all threads
 	// Otherwise, if some threads do a NetParEvent and others not, then
