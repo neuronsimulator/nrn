@@ -746,6 +746,10 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* name) {
 	Symbol* sym = getsym(n, self->ho_, 0);
 	Py_DECREF(name);
 	if (!sym) {
+		if (self->type_ == 1 && self->ho_->ctemplate->sym == nrnpy_pyobj_sym_) {
+			PyObject* p = nrnpy_hoc2pyobject(self->ho_);
+			return PyObject_GenericGetAttr(p, name);
+		}
 	    if (strcmp(n, "__dict__") == 0) {
 		// all the public names
 		Symlist* sl = 0;
@@ -1006,6 +1010,9 @@ static int hocobj_setattro(PyObject* subself, PyObject* name, PyObject* value) {
 	if (!sym) {
 		if (issub) {
 			return PyObject_GenericSetAttr(subself, name, value);
+		} else if (!sym && self->type_ == 1 && self->ho_->ctemplate->sym == nrnpy_pyobj_sym_) {
+			PyObject* p = nrnpy_hoc2pyobject(self->ho_);
+			return PyObject_GenericSetAttr(p, name, value);
 		}else{
 			sym = getsym(n, self->ho_, 1);
 		}
