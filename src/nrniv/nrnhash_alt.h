@@ -30,6 +30,10 @@
 #ifndef nrnhash_alt_h
 #define nrnhash_alt_h
 
+#if defined(HAVE_STDINT_H)
+#include <stdint.h>
+#endif
+
 #include <OS/enter-scope.h>
 
 #if 1 || defined(__STDC__) || defined(__ANSI_CPP__)
@@ -106,7 +110,7 @@ inline bool NrnHashIterator(NrnHash)::more() { return entry_ <= last_; }
 
 // google integer hash function
 // http://www.concentric.net/~Ttwang/tech/inthash.htm
-static u_int32_t nrn_uint32hash( u_int32_t a) {
+static uint32_t nrn_uint32hash( uint32_t a) {
     return a;
     a = (a ^ 61) ^ (a >> 16);
     a = a + (a << 3);  
@@ -118,8 +122,12 @@ static u_int32_t nrn_uint32hash( u_int32_t a) {
 
 //inline unsigned long key_to_hash(long k) { return (unsigned long)k; }
 //inline unsigned long key_to_hash(const void* k) { return (unsigned long)k; }
-inline u_int32_t nrn_key_to_hash(long k) { return nrn_uint32hash((u_int32_t)k); }
-inline u_int32_t nrn_key_to_hash(const void* k) { return nrn_uint32hash((u_int32_t)((long)k)); }
+inline uint32_t nrn_key_to_hash(long k) { return nrn_uint32hash((uint32_t)k); }
+#if defined(__SIZEOF_POINTER__) && __SIZEOF_POINTER__ > __SIZEOF_LONG__
+inline uint32_t nrn_key_to_hash(const void* k) { return nrn_uint32hash((uint32_t)((unsigned long long)k)); }
+#else
+inline uint32_t nrn_key_to_hash(const void* k) { return nrn_uint32hash((uint32_t)((unsigned long)k)); }
+#endif
 
 /*
  * NrnHash implementation
