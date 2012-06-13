@@ -180,10 +180,28 @@ LHOCMODULE=''
 fi
 
 echo 'make nrniv.exe'
+
 $CXX -g -O2 -o nrniv.exe \
   ../ivoc/nrnmain.o \
   -L. -lnrniv \
   ${LDFLAGS}
+
+#without msvcr90.dll and a manifest, cannot 'import numpy' from enthought.
+#To allow this,  create an alternative executable.
+manifest=Microsoft.VC90.CRT.manifest
+if test -f /c/Python27/$manifest ; then
+cp /c/Python27/$manifest .
+echo '#include "winuser.h"
+1 RT_MANIFEST '$manifest'
+' > msvcr.rc
+windres --input msvcr.rc --output msvcr.o
+
+$CXX -g -O2 -o nrniv_enthought.exe \
+  ../ivoc/nrnmain.o msvcr.o\
+  -L. -lnrniv \
+  ${LDFLAGS}
+
+fi # enthought manifest
 
 fi # mingw = yes
 

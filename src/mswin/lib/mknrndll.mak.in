@@ -1,7 +1,7 @@
-
-#CC = @CC@
-#until we can avoid mpicc
-CC = gcc
+#for cygwin need to avoid mpicc, and for x86_64-w64-mingw64 need the full
+#name of the compiler.
+@BUILD_MINGW_TRUE@CC = @CC@
+@BUILD_MINGW_FALSE@CC = gcc
 
 EXTRA_CYGWIN = -I$N/lib -I$N/$(CC)inc -I$N/$(CC)3inc -L$N/$(CC)lib
 EXTRA_FLAGS = @MINGW_CFLAG@ @EXTRA_CYGWIN_FLAGS@

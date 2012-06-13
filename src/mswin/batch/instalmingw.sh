@@ -74,6 +74,12 @@ cp $B/src/nrniv/neuron.exe $DB/neuron.exe
 strip $DB/neuron.exe
 cp $B/src/mswin/nrniv.exe $DB/nrniv.exe
 strip $DB/nrniv.exe
+if test -f $B/src/mswin/nrniv_enthought.exe ; then
+  cp $B/src/mswin/nrniv_enthought.exe $DB/nrniv_enthought.exe
+  strip $DB/nrniv_enthought.exe
+  cp /c/Python27/Microsoft.VC90.CRT.manifest $DB
+  cp /c/Python27/msvcr90.dll $DB
+fi
 cp $B/src/mswin/nrniv.dll $DB/nrniv.dll
 strip $DB/nrniv.dll
 cp $B/src/mswin/hocmodule.dll $DB/hocmodule.dll
@@ -95,6 +101,9 @@ strip $DB/libregex.dll
 if test "$host_cpu" = x86_64 ; then
 cp $H/pthreads-20100604/mingw64/bin/pthreadGC2-w64.dll $DB
 strip $DB/pthreadGC2-w64.dll
+mkdir $D/gccinc
+cp $H/pthreads-20100604/mingw64/x86_64-w64-mingw32/lib/*.a $DB
+cp $H/pthreads-20100604/mingw64/x86_64-w64-mingw32/include/*.h $D/gccinc
 else
 cp $SYS/bin/pthreadGC2.dll $DB
 strip $DB/pthreadGC2.dll
@@ -131,25 +140,12 @@ fi
 unzip -d $D -o $S/../mingw${BIT}_nrndist.zip
 
 # in case this is an mpi version distribute the appropriate administrative tools.
-if grep '^mpicc=mpicc' $B/src/mswin/nrncygso.sh ; then
-	mpichbin=`which mpicc | sed 's,\(/bin\)/.*,\1,'`
-	echo "mpichbin=$mpichbin"
-	mpiinstalled=$HOME/mpich2/bin
-  if test -d $mpiinstalled ; then # want mpd
-	cp /bin/python2.6 $DB
-	for i in mpdboot mpdtrace mpdexit mpdallexit mpdcleanup mpd \
-	  mpiexec.mpd mpdman.py mpdlib.py ; do
-		sed '1s/\/usr\/bin\/env //' $mpiinstalled/$i > $DB/$i
-		chmod 755 $DB/$i
-	done
-	# problem here. mpdroot.exe not installed and is in
-	# mpich2-1.4/src/pm/mpd/mpdroot.exe
-	cp $HOME/mpich2-1.4/src/pm/mpd/mpdroot.exe $DB
-	echo 'MPD_SECRETWORD=neuron' > $D/mpd.conf
-	chmod 600 $D/mpd.conf
-  fi
+if test "$PARANEURON"="yes" ; then
+	mpiinstalled=/c/mpich2/bin
 	# gforker
 	cp $mpiinstalled/mpiexec.exe $DB
+	#cp /c/Windows/System32/mpich2mpi.dll $DB
+	cp $S/../mpich2mpi.dll $DB
 	# and make the basic tests available
 	for i in test0.hoc test0.py ; do
 		cp $S/src/parallel/$i $D

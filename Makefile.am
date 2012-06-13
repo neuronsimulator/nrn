@@ -31,6 +31,12 @@ CONFIGURE_DEPENDENCIES = m4/acx_mpi.m4 m4/ivcheck.m4 m4/java_support.m4 \
 EXTRA_DIST = $(CONFIGURE_DEPENDENCIES) installunix.html build.sh \
 	nrnversion.sh hg2nrnversion_h.sh extend_depcomp.sh
 
+if BUILD_PARANEURON
+	PARANEURON='yes'
+else
+	PARANEURON='no'
+endif
+
 if BUILD_CYGWIN
 #install from the build directories to the mswin destination
 #uses the classical positions of files
@@ -51,6 +57,7 @@ mswin:
 	top_builddir=$(top_builddir) \
 	ivbindir=$(IV_LIBDIR)/../bin \
 	CC=$(CC) \
+	PARANEURON=$(PARANEURON) \
 	host_cpu=$(host_cpu) \
 	$(top_srcdir)/src/mswin/batch/instalmingw.sh
 

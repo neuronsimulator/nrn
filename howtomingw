@@ -149,3 +149,41 @@ make
   --host=x86_64-w64-mingw32 \
   PYINCDIR=/c/Python27/include \
 
+---------------------------
+
+# when c:/mpich2 is installed from mpich2-1.4.1p1-win-x86_64.msi
+# then use the following configure. Note that the user will also have to
+# install mpich2 to use it but to launch nrniv we need to distribute
+# mpich2mpi.dll which the mpich2 installer puts in /c/Windows/System32
+
+# for mswin 32 bit
+../nrn/configure --prefix=`pwd` --with-nrnpython=dynamic --with-paranrn \
+  CFLAGS=-I/c/mpich2/include LIBS='-L/c/mpich2/lib -mpi'
+
+# for mswin 64 bit
+../nrn/configure --prefix=`pwd` -with-nrnpython=dynamic \
+ --host=x86_64-w64-mingw32 PYINCDIR=/c/Python27/include \
+ --with-paranrn MPICC=x86_64-w64-mingw32-gcc \
+ MPICXX=x86_64-w64-mingw32-g++ \
+ CFLAGS=-I/c/mpich2/include LIBS='-L/c/mpich2/lib -lmpi'
+
+#easiest way for the user to use:
+=============
+mpich2 must be installed as administrator. Or
+http://hydrology.usu.edu/taudem/taudem5.0/troubleshooting.html
+    You receive an error "Error while connecting to host. No connection
+could be made because the target machine actively refused it.
+
+        This occurs if the smpd utility used by MPICH2 has not been
+installed properly, usually because MPICH2 was not installed when logged
+in as Administrator (different from user with Administrator privileges).
+Open an administrator command prompt from
+Start->All Programs->Accessories-Command Prompt->Right click
+run as administrator.  Click YES to the user account control about
+modifying the computer and make sure that the command window that opens
+says Administrator at the top.  Verify that c: program files/mpich2/bin
+is on your path (see installation instructions) In this prompt type smpd
+-install.  You should receive confirmation that MPICH2 Process Manager,
+Argonne National Lab installed.  Alternatively uninstall and reinstall
+MPICH2 when logged is as Administrator or see #1 above.
+
