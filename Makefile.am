@@ -101,7 +101,7 @@ alphadist:
 if UniversalMacBinary
 	scp $(HOME)/NEURON-"`sh $(srcdir)/nrnversion.sh`".dmg $(ALPHADIR)/nrn-"`sh $(srcdir)/nrnversion.sh 2`"-MacOSX"`sw_vers -productVersion`".dmg
 else
-	scp $(HOME)/NEURON-"`sh $(srcdir)/nrnversion.sh`".dmg $(ALPHADIR)/nrn-"`sh $(srcdir)/nrnversion.sh 2`"-$(host_triplet).dmg
+	scp $(HOME)/NEURON-"`sh $(srcdir)/nrnversion.sh`".dmg $(ALPHADIR)/nrn-"`sh $(srcdir)/nrnversion.sh 2`"."$(host_cpu)"-apple-osx"`sw_vers -productVersion`".dmg
 endif
 
 else
@@ -111,7 +111,7 @@ alphadist:
 else
 if BUILD_MINGW
 alphadist:
-	scp src/mswin/nrn"`sh $(srcdir)/nrnversion.sh 3`"setup.exe $(ALPHADIR)/nrn-"`sh $(srcdir)/nrnversion.sh 2`".$(host_cpu)-setup.exe
+	scp src/mswin/nrn"`sh $(srcdir)/nrnversion.sh 3`"setup-$(host_cpu).exe $(ALPHADIR)/nrn-"`sh $(srcdir)/nrnversion.sh 2`".$(host_cpu)-setup.exe
 else
 alphadist:
 	scp nrn-"`sh $(srcdir)/nrnversion.sh`".tar.gz $(ALPHADIR)/nrn-"`sh $(srcdir)/nrnversion.sh 2`".tar.gz
