@@ -486,6 +486,7 @@ AC_NRN_ParallelContext
 dnl This, in conjunction with a line in acconfig.h, causes the preprocessor
 dnl symbol NEURON_DATA_DIR to point to the neuron data directory.
 AC_DEFINE_UNQUOTED(NEURON_DATA_DIR, "$prefix/share/$PACKAGE", where the lib hoc is)
+AC_DEFINE_UNQUOTED(NRNHOST, "$host", host triplet)
 
 NRN_DEFINE_UNQUOTED(NRN_CONFIG_ARGS, "${ac_configure_args}", args given to configure)
 

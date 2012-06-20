@@ -1,3 +1,4 @@
+#include <../../nrnconf.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -56,6 +57,8 @@ char* nrn_version(int i) {
 			}
 		}
 		return sarg;
+	}else if (i == 8) {
+		sprintf(buf, "%s", NRNHOST);	
 	}else{
 		sprintf(buf, "NEURON -- %s %s", head, HG_DATE); 
 	}

@@ -115,7 +115,7 @@ proc recent_working_dirs() {local i
 }
 
 proc exec() {localobj s1, s2
-    if (sf_.substr(nrnversion(6), "host=x86_64-w64-mingw32") > 0) {
+    if (sf_.substr(nrnversion(8), "mingw") > 0) {
 	s1 = new String()
 	s2 = new String()
 	sscanf(neuronhome(), "%[^:]:%s", s1.s, s2.s)
