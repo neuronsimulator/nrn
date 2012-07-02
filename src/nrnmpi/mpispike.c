@@ -327,10 +327,15 @@ static void pgvts_op(double* in, double* inout, int* len, MPI_Datatype* dptr){
 	assert(*dptr == MPI_DOUBLE);
 	assert(*len == 4);
 	if (in[0] <= inout[0]) {
-		if (in[0] < inout[0]) {
+		if (in[0] < inout[0]) { /* least time done first */
 			for (i=0; i < 4; ++i) { inout[i] = in[i]; }	
-		}else if (in[3] < inout[3]) {
-			/* NetParEvent done last, init next to last.*/
+		}else if (in[1] < inout[1]) {
+			/* NetParEvent done last */
+			for (i=0; i < 4; ++i) { inout[i] = in[i]; }	
+		}else if (in[2] < inout[2]) {
+			/* init done next to last.*/
+			for (i=0; i < 4; ++i) { inout[i] = in[i]; }	
+		}else if (in[3] < inout[3]) { /* use the smallest rank */
 			for (i=0; i < 4; ++i) { inout[i] = in[i]; }	
 		}
 	}
