@@ -18,7 +18,9 @@ static void (*p_nrnpython_real)();
 static void (*p_nrnpython_reg_real)();
 }
 
-#if NRNPYTHON_DYNAMICLOAD
+// following is undefined or else has the value of sys.api_version
+// at time of configure (using the python first in the PATH).
+#if defined(NRNPYTHON_DYNAMICLOAD)
 
 #ifdef MINGW
 #define RTLD_NOW 0
@@ -38,11 +40,19 @@ extern char* dlerror();
 extern "C" {
 extern char* neuron_home;
 }
+#if NRNPYTHON_DYNAMICLOAD == 1013
 #ifdef MINGW
 static const char* ver[] = {"2.7", 0};
 #else
-static const char* ver[] = {"2.7", "2.6", "2.5", "2.4", 0};
+static const char* ver[] = {"2.7", "2.6", "2.5", 0};
 #endif
+#define npylib "libnrnpython1013"
+#endif
+#if NRNPYTHON_DYNAMICLOAD == 1012
+static const char* ver[] = {"2.4", "2.3", 0};
+#define npylib "libnrnpython1012"
+#endif
+
 static int iver; // which python is loaded?
 static void* python_already_loaded();
 static void* load_python();
@@ -148,12 +158,12 @@ static void* load_sym(void* handle, const char* name) {
 static void load_nrnpython() {
 	char name[100];
 #ifdef MINGW
-	sprintf(name, "nrnpython%c%c.dll", ver[iver][0], ver[iver][2]);
+	sprintf(name, "%s.dll", npylib);
 #else
 #if DARWIN
-	sprintf(name, "%s/../../%s/lib/libnrnpython%c%c.dylib", neuron_home, NRNHOSTCPU, ver[iver][0], ver[iver][2]);
+	sprintf(name, "%s/../../%s/lib/%s.dylib", neuron_home, NRNHOSTCPU, npylib);
 #else
-	sprintf(name, "libnrnpython%c%c.so", ver[iver][0], ver[iver][2]);
+	sprintf(name, "%s.so", npylib);
 #endif
 #endif
 	void* handle = dlopen(name, RTLD_NOW);

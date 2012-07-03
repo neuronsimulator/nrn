@@ -57,34 +57,13 @@ endif
 
 if BUILD_NRNPYTHON
 nrnpythonbuild = $(NRNPYTHON_SUBDIRS)
-else
-nrnpythonbuild =
 endif
+
 
 if BUILD_NEURONMUSIC
 neuronmusicbuild = neuronmusic
 else
 neuronmusicbuild =
-endif
-
-if BUILD_MINGW
-npydir = npy27
-else
-npydir = npy24 npy25 npy26 npy27
-endif
-
-if BUILD_NRNPYTHON_DYNAMIC
-#does not work with parallel make (-j)
-
-nrnpydynam = $(npydir)
-
-all-recursive: npy27/Makefile
-
-npy27/Makefile: nrnpython/Makefile $(srcdir)/nrnpython/nrnpydynam.sh
-	bash $(srcdir)/nrnpython/nrnpydynam.sh $(srcdir) $(DEPDIR) $(host)
-
-else
-nrnpydynam =
 endif
 
 if BUILD_CYGWIN
@@ -107,7 +86,7 @@ if NMODL_ONLY
 SUBDIRS = $(nmodlbuild)
 else
 SUBDIRS = $(readlinebuild) $(memacsbuild) $(nmodlbuild) $(NRNOC_SUBDIRS) \
-	$(nrnjavabuild) $(ivosbuild) $(nrnpythonbuild) $(nrnpydynam) \
+	$(nrnjavabuild) $(ivosbuild) $(nrnpythonbuild) \
 	$(build_6229) $(nrnivbuild) $(mos2nrnbuild) $(neuronmusicbuild) \
 	mac mswin
 endif

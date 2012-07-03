@@ -62,11 +62,13 @@ AC_DEFUN([AC_NRN_PYTHON],[
 	NRNPYTHON_LIBS=""
 	NRNPYTHON_DEP=""
 	NRNPYTHON_INCLUDES=""
+	npy_NRNPYTHON_INCLUDES=""
 	NRNPYTHON_PYLIBLINK=""
 	NRNPYTHON_PYMAJOR=2
 	PY2TO3="2to3"
 	build_nrnpython=no
 	build_nrnpython_dynamic=no
+	npy_apiver=""
 
 	AC_ARG_WITH([nrnpython],
 		AC_HELP_STRING([--with-nrnpython=[desired python binary or 'dynamic']],
@@ -88,10 +90,15 @@ and PYINCDIR to find Python.h
 	fi
 
 	if test "$ac_nrn_python" = "dynamic" ; then
-		NRN_DEFINE(USE_PYTHON,1,[Define if Python available])
-		NRN_DEFINE(NRNPYTHON_DYNAMICLOAD,1,[Define if dynamic loading desired])
+		ac_nrn_python="python"
 		build_nrnpython_dynamic="yes"
-	elif test "$ac_nrn_python" != "no" ; then
+		NRN_DEFINE(USE_PYTHON,1,[Define if Python available])
+		dnl 1013 good for 2.5-2.7, 1012 good for 2.3-2.4
+		npy_apiver=`$ac_nrn_python -c "import sys;print sys.api_version,"`
+		echo "dynamic npy_apiver=$npy_apiver"
+		NRN_DEFINE_UNQUOTED(NRNPYTHON_DYNAMICLOAD,$npy_apiver,[Define to value of sys.api_version if dynamic loading desired])
+	fi
+	if test "$ac_nrn_python" != "no" ; then
 		ac_nrn_python=`which ${ac_nrn_python}`
 
 		if test "$ac_nrn_python" = "" ; then
@@ -190,6 +197,7 @@ PYLIB="${PYLIBLINK} ${PYLINKFORSHARED} -R${PYLIBDIR}"
 			;;
 			esac
 		fi
+	  if test "$build_nrnpython_dynamic" = "no" ; then
 		NRNPYTHON_LIBS="-lnrnpython $PYLIB"
 		NRNPYTHON_LIBLA="../nrnpython/libnrnpython.la $PYLIB"
 		NRNPYTHON_DEP="../nrnpython/libnrnpython.la"
@@ -205,6 +213,10 @@ PYLIB="${PYLIBLINK} ${PYLINKFORSHARED} -R${PYLIBDIR}"
 		if test "$enable_bluegene" != yes ; then
 			AC_NRN_RUNPYTHON
 		fi
+	  fi
+		npy_NRNPYTHON_INCLUDES="-I${PYINCDIR}"
+		build_nrnpython=yes
+
 	fi
 	if test "$CYGWIN" = "yes" ; then
 		if test "$ac_nrn_cygwin" = "no" ; then
@@ -231,4 +243,6 @@ PYLIB="${PYLIBLINK} ${PYLINKFORSHARED} -R${PYLIBDIR}"
 	AC_SUBST(NRNPYTHON_PYVER)
 	AC_SUBST(PY2TO3)
 	AC_SUBST(PYTHON)
+	AC_SUBST(npy_NRNPYTHON_INCLUDES)
+	AC_SUBST(npy_apiver)
 ]) dnl end of AC_NRN_PYTHON
