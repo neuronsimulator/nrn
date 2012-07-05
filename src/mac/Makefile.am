@@ -14,7 +14,7 @@ EXTRA_DIST = maccmd.c njconf.h nrnneosm.h bbsconf.h macnrn.h nrnconf.h \
 
 host_cpu = @host_cpu@
 
-if BUILD_CARBON
+if MAC_DARWIN
 carbon = @enable_carbon@
 bin_SCRIPTS = $(launch_scripts)
 install: install-am
@@ -23,7 +23,7 @@ if UniversalMacBinary
 	$(CC) -arch i386 -o aouti386 -Dcpu="\"$(host_cpu)\"" -I. $(srcdir)/launch.c $(srcdir)/mac2uxarg.c -framework Carbon
 	lipo aouti386 aoutppc -create -output a.out
 else
-	$(CC) $(CFLAGS) -Dcpu="\"$(host_cpu)\"" -I. $(srcdir)/launch.c $(srcdir)/mac2uxarg.c -framework Carbon
+	gcc -g -arch i386 -Dncpu="\"$(host_cpu)\"" -I. $(srcdir)/launch.c $(srcdir)/mac2uxarg.c -framework Carbon
 
 endif
 	carbon=$(carbon) sh $(srcdir)/launch_inst.sh "$(host_cpu)" "$(prefix)" "$(srcdir)"
@@ -32,5 +32,4 @@ endif
 		mv temp $(bindir)/$$i; \
 		chmod 755 $(bindir)/$$i; \
 	done
-
 endif

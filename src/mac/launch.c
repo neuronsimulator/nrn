@@ -46,7 +46,7 @@ int main(int argc, char** argv) {
 	mkfile(farg);
 
 	termcmd = (char*)malloc(strlen(instdir) + 100);
-	sprintf(termcmd, "/usr/bin/open \"%s/nrn/%s/bin/macnrn.term\"", instdir, cpu);
+	sprintf(termcmd, "/usr/bin/open \"%s/nrn/%s/bin/macnrn.term\"", instdir, ncpu);
 	system(termcmd);
 
 	return 0;
@@ -58,17 +58,19 @@ void mkfile(char* farg) {
 	fprintf(f, "#!/bin/sh\n");
 	fprintf(f, "NRNHOME=\"%s/nrn\"\n", instdir);
 	fprintf(f, "NEURONHOME=\"${NRNHOME}/share/nrn\"\n");
-	fprintf(f, "NRNBIN=\"${NRNHOME}/%s/bin/\"\n", cpu);
-	fprintf(f, "PATH=\"${NRNHOME}/%s/bin:${PATH}\"\n", cpu);
+	fprintf(f, "CPU=%s\n", ncpu);
+	fprintf(f, "NRNBIN=\"${NRNHOME}/%s/bin/\"\n", ncpu);
+	fprintf(f, "PATH=\"${NRNHOME}/%s/bin:${PATH}\"\n", ncpu);
 	fprintf(f, "export NRNHOME\n");
 	fprintf(f, "export NEURONHOME\n");
 	fprintf(f, "export NRNBIN\n");
 	fprintf(f, "export PATH\n");
+	fprintf(f, "export CPU\n");
 #if carbon
 	fprintf(f, "nrncarbon=yes\n");
 	fprintf(f, "export nrncarbon\n");
 #endif
-	fprintf(f, "cd \"${NRNHOME}/%s/bin\"\n", cpu);
+	fprintf(f, "cd \"${NRNHOME}/%s/bin\"\n", ncpu);
 	fprintf(f, "./%s.sh%s\n", myname, farg);
 	fclose(f);
 }
