@@ -5,7 +5,7 @@ objref this, tobj, tobj1, mt, dparm, allsec, modelview
 objref mlist, pvec, ms, inhomo, distinctvalues
 strdef tstr, mname, pname
 
-in=0
+in_=0
 x=0
 is_ion = 0
 
@@ -83,9 +83,9 @@ proc mkdparm() {local i, j, k
 				for k=0, size-1 {
 					pvec.resize(0)			
 					if (size > 1) {
-						sprint(tstr, "for in=0, tobj.count-1 {pvec.append(tobj.object(in).%s[%d])}", pname, k)
+						sprint(tstr, "for in_=0, tobj.count-1 {pvec.append(tobj.object(in_).%s[%d])}", pname, k)
 					}else{
-						sprint(tstr, "for in=0, tobj.count-1 {pvec.append(tobj.object(in).%s)}", pname)
+						sprint(tstr, "for in_=0, tobj.count-1 {pvec.append(tobj.object(in_).%s)}", pname)
 					}
 					execute(tstr, this)	
 					distinct(mname)
@@ -98,7 +98,7 @@ proc mkdparm() {local i, j, k
 	tobj = new List(mname) if (tobj.count > 1) {
 		for modelview.strings(pname, "weight", "delay", "threshold") {
 			pvec.resize(0)
-			sprint(tstr, "for in=0, tobj.count-1 {pvec.append(tobj.object(in).%s)}", pname)
+			sprint(tstr, "for in_=0, tobj.count-1 {pvec.append(tobj.object(in_).%s)}", pname)
 			execute(tstr, this)	
 			distinct(mname)
 		}

@@ -11,7 +11,7 @@ objref topcelldis, distinctvalues, tvi, tvi2, kst, ksth, xml
 objref seclists
 strdef tstr, tstr1, cond, name
 
-in=0
+in_=0
 x=0
 is_ion = 0
 
