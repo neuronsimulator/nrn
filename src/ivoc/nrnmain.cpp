@@ -7,6 +7,7 @@
 extern "C" {
 	int nrn_isdouble(double*, double, double);
 	int ivocmain(int, char**, char**);
+	extern int nrn_main_launch;
 #if BLUEGENE_CHECKPOINT
 	void BGLCheckpointInit(char* chkptDirPath);
 	// note: get the path from the environment variable BGL_CHKPT_DIR_PATH
@@ -16,6 +17,7 @@ extern "C" {
 
 int main(int argc, char** argv, char** env) {
 	nrn_isdouble(0,0,0);
+	nrn_main_launch = 1;
 #if 0
 printf("argc=%d\n", argc);
 for (int i=0; i < argc; ++i) {

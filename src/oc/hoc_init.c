@@ -386,13 +386,15 @@ hoc_show_winio() {
     hoc_pushx(0.);
 }
 
+int nrn_main_launch;
+
 hoc_nrnversion() {
 	extern char* nrn_version();
 	static char* p;
 	int i;
 	i = 1;
 	if (ifarg(1)) {
-		i = (int)chkarg(1, 0., 10.);
+		i = (int)chkarg(1, 0., 20.);
 	}
 	hoc_ret();
 	p = nrn_version(i);

@@ -21,7 +21,7 @@ typedef struct HocContext {
 	Symlist* sl;
 } HocContext;
 
-HocContext* hc_save_and_set_to_top_(HocContext* hc) {
+static HocContext* hc_save_and_set_to_top_(HocContext* hc) {
 	hc->obj = hoc_thisobject;
 	hc->obd = hoc_objectdata;
 	hc->sl = hoc_symlist;
@@ -30,7 +30,7 @@ HocContext* hc_save_and_set_to_top_(HocContext* hc) {
 	hoc_symlist = hoc_top_level_symlist;
 	return hc;
 }
-void hc_restore_(HocContext* hc) {
+static void hc_restore_(HocContext* hc) {
 	hoc_thisobject = hc->obj;
 	hoc_objectdata = hc->obd;
 	hoc_symlist = hc->sl;

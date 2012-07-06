@@ -69,11 +69,12 @@ static const char* hocobj_docstring = "class neuron.hoc.HocObject - Hoc Object w
 
 
 #if 0
-#include <hoccontext.h>
 }
+#include <hoccontext.h>
+extern "C" {
 #else
 extern Object* hoc_thisobject;
-#define HocTopContextSet assert(hoc_thisobject == 0);
+#define HocTopContextSet if (hoc_thisobject){abort();} assert(hoc_thisobject == 0);
 #define HocContextRestore /**/
 #endif
 

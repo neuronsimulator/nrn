@@ -36,5 +36,6 @@ class LoopTimer(threading.Thread) :
       self.fun()
       time.sleep(self.interval)
 
-timer = LoopTimer(.2, process_events)
-timer.start()
+if (h.nrnversion(9) == '2'):
+  timer = LoopTimer(.2, process_events)
+  timer.start()

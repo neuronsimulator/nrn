@@ -21,6 +21,7 @@ extern void nrnpy_hoc();
 
 extern int nrn_is_python_extension;
 extern int ivocmain(int, char**, char**);
+extern int nrn_main_launch;
 
 #ifdef NRNMPI
 
@@ -95,6 +96,7 @@ void inithoc() {
 #if NRNMPI
 	nrnmpi_init(1, &argc, &argv); // may change argc and argv
 #endif		
+	nrn_main_launch = 2;
 	ivocmain(argc, argv, env);
 	nrnpy_augment_path();
 #if PY_MAJOR_VERSION >= 3
