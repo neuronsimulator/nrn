@@ -75,6 +75,18 @@ static double m_ncol(void* v) {
 	return (double)m->ncol();
 }
 
+static double m_setval(void* v) {
+	Matrix* m = (Matrix*)v;
+	int i, j;
+	double val, *pval;
+	i = (int)chkarg(1, 0, m->nrow()-1);
+	j = (int)chkarg(2, 0, m->ncol()-1);
+	val = *getarg(3);
+	pval =m->mep(i, j);
+	*pval = val;
+	return val;
+}
+
 static double m_getval(void* v) {
 	Matrix* m = (Matrix*)v;
 	int i, j;
@@ -653,6 +665,7 @@ static Member_func m_members[] = {
 	"nrow", m_nrow,
 	"ncol", m_ncol,
 	"getval", m_getval,
+	"setval", m_setval,
 	"sprowlen", m_sprowlen,
 	"spgetrowval", m_spgetrowval,
 	"det", m_det,
