@@ -14,7 +14,6 @@ find .. -name \*.o -print | sed '
 /\/ivoc\/symdir\.o/d
 /\/ivoc\/\.libs\/ivocman1\.o/d
 @BUILD_MINGW_TRUE@/\/nrnpython\/\.libs\/.*\.o/d
-@BUILD_MINGW_TRUE@/\/npy.*\/\.libs\/.*\.o/d
 /\/nrnoc\/cprop\.o/d
 /\/oc\/\.libs\/code\.o/d
 /\/oc\/\.libs\/hoc_init\.o/d
@@ -104,7 +103,7 @@ $CXX -shared $obj \
 if test $nrnpy = 'yes' ; then
   
 echo 'make nrnpython27.dll'
-$CXX -shared ../npy27/.libs/*.o -L. -lnrniv -o nrnpython27.dll \
+$CXX -shared ../nrnpython/.libs/*.o -L. -lnrniv -o nrnpython27.dll \
    -L/c/Python27/libs -lpython27 \
    -L${IVLIBDIR} -lIVhines \
    -lreadline \
@@ -157,7 +156,7 @@ $CXX -shared $obj \
 if test $nrnpy = 'yes' ; then
 
 echo 'make nrnpython27.dll'
-$CXX -shared ../npy27/.libs/*.o -L. -lnrniv -o nrnpython27.dll \
+$CXX -shared ../nrnpython/.libs/*.o -L. -lnrniv -o nrnpython27.dll \
    -L/c/Python27/libs -lpython27 \
    -L${IVLIBDIR} -lIVhines \
    -lreadline \
@@ -167,7 +166,7 @@ $CXX -shared ../npy27/.libs/*.o -L. -lnrniv -o nrnpython27.dll \
 
 echo 'make hocmodule.dll'
 $CXX -shared \
-  ../npy27/.libs/inithoc.o \
+  ../nrnpython/.libs/inithoc.o \
   -L. -lnrniv -lnrnpython27\
   -o hocmodule.dll \
   -Wl,--enable-auto-image-base \

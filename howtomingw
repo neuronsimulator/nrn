@@ -66,7 +66,10 @@ make mswin
 
 mingw from msys
 ../nrnwin/configure --prefix=`pwd` --with-iv=$HOME/neuron/ivwin \
-  --with-nrnpython=dynamic
+  --with-nrnpython=dynamic \
+  PYLIBDIR=/c/Python27/libs \
+  PYLIB='-L/c/Python27/libs -lpython27' \
+  PYLIBLINK='-L/c/Python27/libs -lpython27'
 
 For win7-64
 
@@ -148,6 +151,9 @@ make
   --without-nmodl --with-nrnpython=dynamic \
   --host=x86_64-w64-mingw32 \
   PYINCDIR=/c/Python27/include \
+  PYLIBDIR=/c/Python27/libs \
+  PYLIB='-L/c/Python27/libs -lpython27' \
+  PYLIBLINK='-L/c/Python27/libs -lpython27'
 
 ---------------------------
 
@@ -165,7 +171,10 @@ make
  --host=x86_64-w64-mingw32 PYINCDIR=/c/Python27/include \
  --with-paranrn MPICC=x86_64-w64-mingw32-gcc \
  MPICXX=x86_64-w64-mingw32-g++ \
- CFLAGS=-I/c/mpich2/include LIBS='-L/c/mpich2/lib -lmpi'
+ CFLAGS=-I/c/mpich2/include LIBS='-L/c/mpich2/lib -lmpi' \
+  PYLIBDIR=/c/Python27/libs \
+  PYLIB='-L/c/Python27/libs -lpython27' \
+  PYLIBLINK='-L/c/Python27/libs -lpython27'
 
 #easiest way for the user to use:
 =============
