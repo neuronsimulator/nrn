@@ -155,19 +155,19 @@ $CXX -shared $obj \
 
 if test $nrnpy = 'yes' ; then
 
-echo 'make nrnpython27.dll'
-$CXX -shared ../nrnpython/.libs/*.o -L. -lnrniv -o nrnpython27.dll \
+echo 'make libnrnpython@npy_apiver@.dll'
+$CXX -shared ../nrnpython/.libs/*.o -L. -lnrniv -o libnrnpython@npy_apiver@.dll \
    -L/c/Python27/libs -lpython27 \
    -L${IVLIBDIR} -lIVhines \
    -lreadline \
    -Wl,--enable-auto-image-base \
    ${LDFLAGS} \
-   -Xlinker --out-implib -Xlinker libnrnpython27.dll.a
+   -Xlinker --out-implib -Xlinker libnrnpython@npy_apiver@.dll.a
 
 echo 'make hocmodule.dll'
 $CXX -shared \
   ../nrnpython/.libs/inithoc.o \
-  -L. -lnrniv -lnrnpython27\
+  -L. -lnrniv -lnrnpython@npy_apiver@\
   -o hocmodule.dll \
   -Wl,--enable-auto-image-base \
   ${LDFLAGS} \

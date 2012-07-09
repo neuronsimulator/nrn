@@ -84,8 +84,8 @@ cp $B/src/mswin/nrniv.dll $DB/nrniv.dll
 strip $DB/nrniv.dll
 cp $B/src/mswin/hocmodule.dll $DB/hocmodule.dll
 strip $DB/hocmodule.dll
-cp $B/src/mswin/nrnpython27.dll $DB
-strip $DB/nrnpython27.dll
+cp $B/src/mswin/libnrnpython1013.dll $DB
+strip $DB/libnrnpython1013.dll
 cp $ivbindir/libIVhines-3.dll $DB/libIVhines-3.dll
 strip $DB/libIVhines-3.dll
 
