@@ -229,6 +229,7 @@ public:
 	void disconnect(Observable*);
 	void update_ptr(double*);
 	void record_stmt(const char*);
+	void record_stmt(Object*);
 	void record(IvocVect*, IvocVect* idvec = nil, int rec_id = 0);
 	void record(double t);
 	void init();

@@ -705,8 +705,10 @@ static double nc_record(void* v) {
 			d->src_->record(vector_arg(1), vector_arg(2), recid);
 		}else if (hoc_is_str_arg(1)) {
 			d->src_->record_stmt(gargstr(1));
-		}else{
+		}else if (is_vector_arg(1)){
 			d->src_->record(vector_arg(1));
+		}else{
+			d->src_->record_stmt(*hoc_objgetarg(1));
 		}
 	}else{
 		d->src_->record((IvocVect*)nil);
@@ -4904,6 +4906,16 @@ void PreSyn::record_stmt(const char* stmt) {
 	}
 	if (strlen(stmt) > 0) {
 		stmt_ = new HocCommand(stmt);
+	}
+}
+
+void PreSyn::record_stmt(Object* pyact) {
+	if (stmt_) {
+		delete stmt_;
+		stmt_ = nil;
+	}
+	if (pyact) {
+		stmt_ = new HocCommand(pyact);
 	}
 }
 
