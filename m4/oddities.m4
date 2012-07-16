@@ -76,4 +76,11 @@ echo "Neither RETSIGTYPE (*)(int) or RETSIGTYPE (*)(...) are correct prototypes.
 ])
 AC_LANG_POP([])
 
+dnl see src/mac/after_install . Allow safe changing of install_name
+case "$host_os" in
+  darwin*)
+	LDFLAGS="$LDFLAGS -headerpad_max_install_names"
+	;;
+esac
+
 ])dnl end of AC_NRN_ODDITIES

@@ -22,6 +22,7 @@ NVER="`sh $srcdir/nrnversion.sh`"
 NDIR="NEURON-$NVER"
 export NDIR
 N="$prefix"
+IV=`echo "$prefix"|sed 's/nrn$/iv/'`
 
 # activate macnrn.term and the app bundles
 osascript -e 'tell application "Finder"'\
@@ -91,3 +92,37 @@ if test -d "$ivlibdir" ; then
 		strip -x idraw
 	fi
 fi
+
+# change nrniv install_name for dylibs so nrniv,etc works at any location
+ff="$N/$CPU/bin/nrniv"
+f=`otool -L "$N/$CPU/bin/nrniv" | sed -n "s,.*$N/$CPU/lib/\(.*dylib\).*,\
+-change $N/$CPU/lib/\1 @executable_path/../lib/\1,p"`
+install_name_tool $f "$ff"
+
+f=`otool -L $N/$CPU/bin/nrniv | sed -n "s,.*$IV/$CPU/lib/\(.*dylib\).*,\
+-change $IV/$CPU/lib/\1 @executable_path/../../../iv/$CPU/lib/\1,p"`
+install_name_tool $f "$ff"
+
+#idraw
+if test -d "$ivlibdir" ; then
+ff="$IV/$CPU/bin/idraw"
+f=`otool -L $IV/$CPU/bin/idraw | sed -n "s,.*$IV/$CPU/lib/\(.*dylib\).*,\
+-change $IV/$CPU/lib/\1 @executable_path/../lib/\1,p"`
+install_name_tool $f "$ff"
+fi
+
+#this one needs to be done from nrnivmodl, same as all the libnrnmech.so
+if false ; then
+ff="$N/share/nrn/demo/release/x86_64/.libs/libnrnmech.so"
+f=`otool -L $ff | sed -n "s,.*$N/$CPU/lib/\(.*dylib\).*,\
+-change $N/$CPU/lib/\1 @executable_path/../lib/\1,p"`
+install_name_tool $f $ff
+fi
+
+# neurondemo for libnrnmech.so needs to follow the install location.
+f=/tmp/neuron$$
+sed '
+ s,..NRNHOME./share/nrn/demo,@executable_path/../../share/nrn/demo,
+' $N/share/nrn/demo/neuron > $f
+chmod 755 $f
+mv $f $N/share/nrn/demo/neuron
