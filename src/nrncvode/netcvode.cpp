@@ -2635,7 +2635,7 @@ void NetCvode::allthread_handle(double tt, HocEvent* he, NrnThread* nt) {
 		allthread_hocevents_->append(he);
 		nt->_t = tt;
 	}
-	if (cvode_active_ && gcv_ && nrnmpi_numprocs > 0) {
+	if (cvode_active_ && gcv_ && nrnmpi_numprocs > 1) {
 		assert(nrn_nthread == 1);
 		return;
 	}
