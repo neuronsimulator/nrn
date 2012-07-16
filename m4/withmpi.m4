@@ -22,11 +22,13 @@ dnl so we commnt out the next two lines. However we still need it
 dnl for nrnivmodl.
 dnl LIBTOOL='$(SHELL) $(top_builddir)/libtool $(LIBTOOLTAG)'
 dnl AC_SUBST(LIBTOOL)
+		    if test "$nrnmpi_dynamic" = "no" ; then
 			CC=$MPICC
 			CXX=$MPICXX
+		    fi
 			LIBTOOLTAG='--tag=CC'
-			AC_SUBST(CC)
-			AC_SUBST(CXX)
+			dnl AC_SUBST(CC)
+			dnl AC_SUBST(CXX)
 			AC_SUBST(LIBTOOLTAG)
 		],[
 			AC_MSG_ERROR([Cannot compile MPI program])
@@ -44,8 +46,15 @@ AC_DEFUN([AC_NRN_PARANEURON],[
 
 AC_ARG_WITH(paranrn,
 AC_HELP_STRING([--with-paranrn],[parallel variable step integration for individual cells])
+AC_HELP_STRING([--with-paranrn=dynamic],[as above, but with dynamic loading of mpi shared libaries])
 AC_HELP_STRING([--without-paranrn],[default. No parallel integration])
 ,[
+	nrnmpi_dynamic="no"
+	if test "$with_paranrn" = "dynamic" ; then
+		with_paranrn=yes
+		nrnmpi_dynamic="yes"
+		NRN_DEFINE(NRNMPI_DYNAMICLOAD,1,[define to 1 if you want mpi dynamically loaded instead of linked normally])
+	fi
 	if test "$with_paranrn" = "yes" ; then
 		with_mpi=yes
 		use_paranrn=yes

@@ -3,9 +3,15 @@ bin_PROGRAMS = nrnoc
 
 nrnoc_SOURCES = ocmain.c nrnnoiv.c ocnoiv.c cprop.c
 
+if BUILD_NRNMPI_DYNAMIC
+nrnmpila =
+else
+nrnmpila = ../nrnmpi/libnrnmpi.la
+endif
+
 nrnoc_LDADD = ../oc/modlreg.o libnrnoc.la ../oc/liboc.la @MEMACSLIBLA@ \
 	../scopmath/libscopmath.la ../sparse13/libsparse13.la \
-	../nrnmpi/libnrnmpi.la \
+	$(nrnmpila) \
 	@NRN_READLINE_LIBS@ @PTHREAD_LIBS@
 
 ## The shared library that we make from this directory.
@@ -47,7 +53,7 @@ PTHREAD_LIBS=@PTHREAD_LIBS@
 AM_CFLAGS = @MINGW_CFLAG@ $(PTHREAD_CFLAGS)
 AM_CPPFLAGS = -DCABLE=1 -DOOP=1
 nsrc=$(top_srcdir)/src
-INCLUDES = -I$(top_builddir)/src/oc -I$(nsrc)/oc -I$(nsrc)/scopmath -I$(nsrc)/sparse13
+INCLUDES = -I$(top_builddir)/src/oc -I$(nsrc)/oc -I$(nsrc)/scopmath -I$(nsrc)/sparse13 -I$(nsrc)/nrnmpi
 NMODL = ../nmodl/nocmodl
 
 FORCE:

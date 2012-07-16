@@ -1,5 +1,6 @@
 #include <../../nrnconf.h>
 #include <stdio.h>
+#include <string.h>
 #include "../nrncvode/nrnneosm.h"
 #include <nrnmpi.h>
 #include <errno.h>
@@ -8,6 +9,10 @@ extern "C" {
 	int nrn_isdouble(double*, double, double);
 	int ivocmain(int, char**, char**);
 	extern int nrn_main_launch;
+#if NRNMPI_DYNAMICLOAD
+	extern void nrnmpi_stubs();
+	extern void nrnmpi_load();
+#endif
 #if BLUEGENE_CHECKPOINT
 	void BGLCheckpointInit(char* chkptDirPath);
 	// note: get the path from the environment variable BGL_CHKPT_DIR_PATH
@@ -25,8 +30,17 @@ printf("argv[%d]=|%s|\n", i, argv[i]);
 }
 #endif
 #if NRNMPI
+#if NRNMPI_DYNAMICLOAD
+	nrnmpi_stubs();
+	for (int i=0; i < argc; ++i) {
+		if (strcmp("-mpi", argv[i]) == 0) {
+			nrnmpi_load();
+			break;
+		}
+	}
+#endif
 	nrnmpi_init(1, &argc, &argv); // may change argc and argv
-#endif		
+#endif	
 #if BLUEGENE_CHECKPOINT
 	BGLCheckpointInit((char*)0);
 #endif

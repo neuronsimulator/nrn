@@ -1,7 +1,8 @@
 #include <../../nrnconf.h>
+#include <stdlib.h>
 #include <nrnmpi.h>
 
-#if NRNMPI && DARWIN
+#if NRNMPI && DARWIN && !defined(NRNMPI_DYNAMICLOAD)
 // For DARWIN I do not really know the proper way to avoid
 // dyld: lazy symbol binding failed: Symbol not found: _MPI_Init
 // when the MPI functions are all used in the libnrnmpi.dylib

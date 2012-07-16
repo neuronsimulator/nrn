@@ -9,7 +9,6 @@
 #include <section.h>
 
 void (*nrntimeout_call)();
-extern void nrnmpi_abort(int errcode);
 static double told;
 static struct itimerval value;
 #if !defined(BLUEGENE)

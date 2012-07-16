@@ -5,6 +5,12 @@ lib_LTLIBRARIES = libnrniv.la
 bin_PROGRAMS = nrniv
 nsrc=$(top_srcdir)/src
 
+if BUILD_NRNMPI_DYNAMIC
+nrnmpila =
+else
+nrnmpila = ../nrnmpi/libnrnmpi.la    
+endif
+
 if BUILD_CYGWIN
 nrniv_LDFLAGS = -mwindows -e _mainCRTStartup
 windll = -I$(nsrc)/mswin/windll
@@ -70,7 +76,7 @@ PTHREAD_CC=@PTHREAD_CC@
 PTHREAD_CFLAGS=@PTHREAD_CFLAGS@
 PTHREAD_LIBS=@PTHREAD_LIBS@
 
-INCLUDES = $(windll) -I$(nsrc)/sundials -I$(nsrc)/sundials/shared -I$(nsrc)/nrncvode -I$(nsrc)/sparse13 -I$(nsrc)/gnu -I. -I$(nsrc)/ivoc -I$(nsrc)/nrnoc -I$(top_builddir)/src/oc -I$(nsrc)/oc  $(IV_INCLUDES) $(BBS_INCLUDES)
+INCLUDES = $(windll) -I$(nsrc)/sundials -I$(nsrc)/sundials/shared -I$(nsrc)/nrncvode -I$(nsrc)/sparse13 -I$(nsrc)/gnu -I. -I$(nsrc)/ivoc -I$(nsrc)/nrnoc -I$(top_builddir)/src/oc -I$(nsrc)/oc $(IV_INCLUDES) $(BBS_INCLUDES)
 AM_CPPFLAGS = -DOOP=1 -DCABLE=1 -DUSECVODE=1 -DUSEMATRIX=1 -DUSEBBS=1
 AM_CFLAGS = @MINGW_CFLAG@ $(PTHREAD_CFLAGS)
 AM_CXXFLAGS = @MINGW_CFLAG@ $(PTHREAD_CFLAGS)
@@ -89,7 +95,7 @@ nrniv_LDADD = ../ivoc/nrnmain.o ../ivoc/ivocmain.o ../oc/modlreg.o \
 	../oc/ockludge.o \
 	../nrnoc/libnrnoc.la ../oc/liboc.la \
 	libnrniv.la ../ivoc/libivoc.la ../oc/liboc.la \
-	../nrnmpi/libnrnmpi.la \
+	$(nrnmpila) \
 	../gnu/libneuron_gnu.la \
 	../scopmath/libscopmath.la \
 	../sparse13/libsparse13.la \
@@ -104,7 +110,7 @@ nrniv_DEPENDENCIES = \
 	../oc/ockludge.o \
 	../nrnoc/libnrnoc.la ../oc/liboc.la \
 	libnrniv.la ../ivoc/libivoc.la \
-	../nrnmpi/libnrnmpi.la \
+	$(nrnmpila) \
 	../gnu/libneuron_gnu.la \
 	../scopmath/libscopmath.la \
 	../sparse13/libsparse13.la \

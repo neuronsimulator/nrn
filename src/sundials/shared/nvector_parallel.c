@@ -19,6 +19,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+/* for NRNMPI_DYNAMICLOAD */
+#include <nrnmpiuse.h>
+#if NRNMPI_DYNAMICLOAD
+extern void (*p_nrnmpi_dbl_allreduce_vec)(double* src, double* dest, int cnt, int type);
+extern void (*p_nrnmpi_long_allreduce_vec)(long* src, long* dest, int cnt, int type);
+extern int nrnmpi_numprocs;
+#endif
+
 #include "nvector_parallel.h"
 #include "sundialsmath.h"
 #include "sundialstypes.h"
@@ -80,7 +88,11 @@ N_Vector N_VNewEmpty_Parallel(MPI_Comm comm,
 
   /* Compute global length as sum of local lengths */
   n = local_length;
+#if NRNMPI_DYNAMICLOAD
+  (*p_nrnmpi_long_allreduce_vec)(&n, &Nsum, 1, 1);
+#else
   MPI_Allreduce(&n, &Nsum, 1, PVEC_INTEGER_MPI_TYPE, MPI_SUM, comm);
+#endif
   if (Nsum != global_length) {
     printf(BAD_N);
     return(NULL);
@@ -394,7 +406,11 @@ void N_VSpace_Parallel(N_Vector v, long int *lrw, long int *liw)
   int npes;
 
   comm = NV_COMM_P(v);
+#if NRNMPI_DYNAMICLOAD
+  npes = nrnmpi_numprocs;
+#else
   MPI_Comm_size(comm, &npes);
+#endif
   
   *lrw = NV_GLOBLENGTH_P(v);
   *liw = 2 * npes;
@@ -863,6 +879,9 @@ static realtype VAllReduce_Parallel(realtype d, int op, MPI_Comm comm)
 
   realtype out;
 
+#if NRNMPI_DYNAMICLOAD
+  (*p_nrnmpi_dbl_allreduce_vec)(&d, &out, 1, op);
+#else
   switch (op) {
    case 1: MPI_Allreduce(&d, &out, 1, PVEC_REAL_MPI_TYPE, MPI_SUM, comm);
            break;
@@ -875,6 +894,7 @@ static realtype VAllReduce_Parallel(realtype d, int op, MPI_Comm comm)
 
    default: break;
   }
+#endif
 
   return(out);
 }

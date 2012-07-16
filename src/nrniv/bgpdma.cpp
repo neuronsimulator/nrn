@@ -28,11 +28,6 @@ of spikes sent is equal to the number of spikes sent.
 */
 
 extern "C" {
-extern void nrnmpi_int_allgatherv(int*, int*, int*, int*);
-extern void nrnmpi_int_alltoallv(int*, int*, int*, int*, int*, int*);
-extern void nrnmpi_int_gather(int*, int*, int, int);
-extern void nrnmpi_int_gatherv(int*, int, int*, int*, int*, int);
-extern void nrnmpi_barrier();
 
 extern IvocVect* vector_arg(int);
 extern void vector_resize(IvocVect*, int);

@@ -13,6 +13,10 @@ PARINC1 =
 EXTRA_DIST = $(PARSRC) $(PARINC)
 endif
 
+if BUILD_NRNMPI_DYNAMIC
+INCLUDES = -I$(top_srcdir)/src/nrnmpi
+endif
+
 AM_CFLAGS = @MINGW_CFLAG@
 
 libshared_la_SOURCES = band.c dense.c iterative.c \

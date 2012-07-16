@@ -9,7 +9,7 @@ DEFS = -Dmotif_kit -Dsgi_motif_kit -Dopenlook_kit -Dbw_kit \
 # vanilla interviews is also installed, we don't use it.
 IV_INCLUDES = @IV_INCLUDE@ $(X_CFLAGS)
 nsrc=$(top_srcdir)/src
-INCLUDES = -I$(nsrc)/gnu -I$(nsrc)/mesch -I$(top_builddir)/src/oc -I$(nsrc)/oc $(IV_INCLUDES)
+INCLUDES = -I$(nsrc)/gnu -I$(nsrc)/mesch -I$(top_builddir)/src/oc -I$(nsrc)/oc -I$(nsrc)/nrnmpi $(IV_INCLUDES)
 
 IV_LIBS = @IV_LIBS_LIBTOOL@
 IVOS_DIR = @IVOS_DIR@
@@ -21,6 +21,12 @@ nrniv_iv_sources = classreg.cpp datapath.cpp ocjump.cpp symdir.cpp
 cygwin_sources = ivocwin.cpp
 x_sources = xdep.cpp field.cpp
 carbon_sources = ivocmac.cpp
+
+if BUILD_NRNMPI_DYNAMIC
+nrnmpila =
+else
+nrnmpila = ../nrnmpi/libnrnmpi.la
+endif
 
 if BUILD_CYGWIN
 sysdep_sources = $(cygwin_sources)
@@ -69,7 +75,7 @@ ivoc_SOURCES = nrnmain.cpp ivocmain.cpp $(nrniv_iv_sources)
 
 ivoc_LDADD = ../oc/nocable.o ../oc/modlreg.o \
 	../oc/libocxt.la ../oc/liboc.la \
-	libivoc.la ../nrnmpi/libnrnmpi.la ../oc/liboc.la \
+	libivoc.la $(nrnmpila) ../oc/liboc.la \
 	@MEMACSLIBLA@ ../mesch/libmeschach.la \
 	../gnu/libneuron_gnu.la $(IVOS_DIR) \
 	$(IV_LIBS) @NRN_READLINE_LIBS@ @NRNJAVA_LIBLA@ @PTHREAD_LIBS@

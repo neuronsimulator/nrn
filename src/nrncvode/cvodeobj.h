@@ -230,7 +230,6 @@ private:
 public:
 	bool use_partrans_;
 	int global_neq_;
-	int mpicomm_;
 	int opmode_; // 1 advance, 2 interpolate, 3 init; for testing
 #endif // PARANEURON
 };

@@ -57,9 +57,12 @@ CXXLINK = $(LIBTOOL) --mode=link $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(LDFLAGS)
 @NRNPURIFY_TRUE@CXXPURELINK = $(LIBTOOL) --tag=purify --mode=link purify $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(LDFLAGS)
 LINK = $(LIBTOOL) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(LDFLAGS)
 
+BUILD_NRNMPI_DYNAMIC_TRUElnrnmpi =
+BUILD_NRNMPI_DYNAMIC_FALSElnrnmpi = -lnrnmpi
+
 NRNLIBS = -L$(libdir) -lnrnoc -loc \
 	-lnrniv -livoc -loc \
-	-lneuron_gnu -lscopmath -lsparse13 -lsundials -lnrnmpi \
+	-lneuron_gnu -lscopmath -lsparse13 -lsundials $(lnrnmpi) \
 	@MEMACSLIB@ -lmeschach \
 	$(IVOS_LIB) $(IV_LIBS) \
 	@READLINE_LIBS@ \

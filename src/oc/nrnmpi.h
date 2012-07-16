@@ -21,14 +21,12 @@ extern "C" {
 #endif
 
 extern int nrnmpi_use; /* NEURON does MPI init and terminate?*/
-extern void nrnmpi_init(int under_NEURON_control, int* pargc, char*** pargv);
-extern void nrnmpi_terminate();
-extern void nrnmpi_abort(int errcode);
-extern double nrnmpi_wtime();
 
 #if defined(__cplusplus)
 }
 #endif /*c++*/
+
+#include "nrnmpidec.h"
 
 #endif /*NRNMPI*/
 #endif /*nrnmpi_h*/

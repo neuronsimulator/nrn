@@ -8,10 +8,6 @@ extern "C" {
 void cvode_fadvance();
 void cvode_finitialize();
 extern void (*nrn_multisplit_setup_)();
-#if PARANEURON
-extern double nrnmpi_dbl_allmin(double, int);
-extern int nrnmpi_comm;
-#endif
 }
 
 #include <math.h>
@@ -483,7 +479,6 @@ static double use_parallel(void* v) {
 	assert(d->gcv_);
 	d->gcv_->use_partrans_ = true;
 	d->structure_change();
-	d->gcv_->mpicomm_ = nrnmpi_comm;
 	return 1.0;
 #else
 	return 0.0;
@@ -633,7 +628,6 @@ void Cvode::cvode_constructor() {
 #if PARANEURON
 	use_partrans_ = false;
 	global_neq_ = 0;
-	mpicomm_ = 0;
 	opmode_ = 0;
 #endif
 }
@@ -698,7 +692,8 @@ void Cvode::set_init_flag() {
 N_Vector Cvode::nvnew(long int n) {
 #if PARANEURON
 	if (use_partrans_) {
-		return N_VNew_Parallel(mpicomm_, n, global_neq_);
+		assert(0); // fixme
+		return N_VNew_Parallel(0, n, global_neq_);
 	}
 #endif
 	if (nctd_ > 1) {
@@ -1084,7 +1079,7 @@ int Cvode::init(double tout) {
 	tstop_ = next_at_time_ - NetCvode::eps(next_at_time_);
 #if PARANEURON
 	if (use_partrans_) {
-		tstop_ =  nrnmpi_dbl_allmin(tstop_, mpicomm_);
+		tstop_ =  nrnmpi_dbl_allmin(tstop_);
 	}
 #endif
 //printf("Cvode::init next_at_time_=%g tstop_=%.15g\n", next_at_time_, tstop_);

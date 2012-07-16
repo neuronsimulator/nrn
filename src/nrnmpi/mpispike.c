@@ -2,34 +2,20 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
+
+/* do not want the redef in the dynamic load case */
+#include <nrnmpiuse.h>   
+#undef NRNMPI_DYNAMICLOAD   
+#define NRNMPI_DYNAMICLOAD 0
 #include <nrnmpi.h>
 
 #if NRNMPI
+#include "nrnmpidec.h"
 #include "nrnmpi_impl.h"
 #include "mpispike.h"
 #include <mpi.h>
 
 extern void nrnbbs_context_wait();
-
-int nout_;
-int* nin_;
-int icapacity_;
-NRNMPI_Spike* spikeout_;
-NRNMPI_Spike* spikein_;
-
-int localgid_size_;
-int ag_send_size_;
-int ag_send_nspike_;
-int ovfl_capacity_;
-int ovfl_;
-unsigned char* spfixout_;
-unsigned char* spfixin_;
-unsigned char* spfixin_ovfl_;
-
-#if nrn_spikebuf_size > 0
-NRNMPI_Spikebuf* spbufout_;
-NRNMPI_Spikebuf* spbufin_;
-#endif
 
 static int np;
 static int* displs;
@@ -295,13 +281,13 @@ void nrnmpi_char_broadcast(char* buf, int cnt, int root) {
 	MPI_Bcast(buf, cnt,  MPI_CHAR, root, nrnmpi_comm);
 }
 
-int nrnmpi_int_sum_reduce(int in, int comm) {
+int nrnmpi_int_sum_reduce(int in) {
 	int result;
 	MPI_Allreduce(&in, &result, 1, MPI_INT, MPI_SUM, nrnmpi_comm);
 	return result;
 }
 
-void nrnmpi_assert_opstep(int opstep, double t, int comm) {
+void nrnmpi_assert_opstep(int opstep, double t) {
 	/* all machines in comm should have same opstep and same t. */
 	double buf[2];
 	if (nrnmpi_numprocs < 2) { return; }
@@ -315,7 +301,7 @@ void nrnmpi_assert_opstep(int opstep, double t, int comm) {
 	}
 }
 
-double nrnmpi_dbl_allmin(double x, int comm) {
+double nrnmpi_dbl_allmin(double x) {
 	double result;
 	if (nrnmpi_numprocs < 2) { return x; }
 	MPI_Allreduce(&x, &result, 1, MPI_DOUBLE, MPI_MIN, nrnmpi_comm);
@@ -413,6 +399,27 @@ void nrnmpi_dbl_allreduce_vec(double* src, double* dest, int cnt, int type) {
 		t = MPI_MIN;
 	}
 	MPI_Allreduce(src, dest, cnt, MPI_DOUBLE, t, nrnmpi_comm);
+	return;
+}
+
+void nrnmpi_long_allreduce_vec(long* src, long* dest, int cnt, int type) {
+	int i;
+	MPI_Op t;
+	assert(src != dest);
+	if (nrnmpi_numprocs < 2) {
+		for (i = 0; i < cnt; ++i) {
+			dest[i] = src[i];
+		}
+		return;
+	}
+	if (type == 1) {
+		t = MPI_SUM;
+	}else if (type == 2) {
+		t = MPI_MAX;
+	}else{
+		t = MPI_MIN;
+	}
+	MPI_Allreduce(src, dest, cnt, MPI_LONG, t, nrnmpi_comm);
 	return;
 }
 

@@ -42,12 +42,6 @@ static double nrnmpi_splitcell_wait_;
 #endif
 
 #if NRNMPI
-	extern void nrnmpi_int_allgather(int*, int*, int);
-	extern void nrnmpi_int_allgatherv(int*, int*, int*, int*);
-	extern void nrnmpi_postrecv_doubles(double*, int, int, int, void**);
-	extern void nrnmpi_send_doubles(double*, int, int, int);
-	extern void nrnmpi_wait(void**);
-	extern void nrnmpi_barrier();
 #else
 static int nrnmpi_use;
 static void nrnmpi_int_allgather(int*, int*, int){}

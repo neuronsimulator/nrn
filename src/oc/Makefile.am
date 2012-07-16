@@ -5,16 +5,24 @@ AM_CPPFLAGS = -DOOP=1 -DINTERVIEWS=1 -DHOC=1
 AM_CFLAGS = @MINGW_CFLAG@
 
 nsrc=$(top_srcdir)/src
-INCLUDES = -I$(nsrc) -I$(nsrc)/memacs -I$(nsrc)/sparse $(X_CFLAGS)
+INCLUDES = -I$(nsrc) -I$(nsrc)/memacs -I$(nsrc)/sparse -I$(nsrc)/nrnmpi $(X_CFLAGS)
 
 RanFiles = isaac64.c mcran4.c nrnisaac.c nrnran123.c
+
+if BUILD_NRNMPI_DYNAMIC
+nrnmpila =
+nrnmpidynam = nrnmpi_dynam.c nrnmpi_dynam_stubs.c
+else
+nrnmpila = ../nrnmpi/libnrnmpi.la
+nrnmpidynam =
+endif
 
 liboc_la_SOURCES = parse.y bksub.c getelm.c lineq.c subrows.c prmat.c \
 	code2.c debug.c ocerf.c fileio.c ftime.c \
 	getsym.c hoc.c hocedit.c math.c nonlin.c \
 	list.c regexp.c audit.c symbol.c \
 	version.c xred.c parallel.c functabl.c plot.c plt.c axis.c \
-	settext.c x.c fmenu.c termio.c isoc99.c \
+	settext.c x.c fmenu.c termio.c isoc99.c $(nrnmpidynam)\
 	scoprand.c $(RanFiles) cygwinprt.c nrnfilewrap.c
 
 ## MAC OS X does not allow multiple definitions in separate dyld files
@@ -27,7 +35,8 @@ libocxt_la_SOURCES = code.c hoc_init.c hoc_oop.c \
 
 AM_YFLAGS = -d
 
-EXTRA_DIST = hocinc hocusr.c hoc2dec.sh macprt.c mswinprt.c system.c
+EXTRA_DIST = hocinc hocusr.c hoc2dec.sh macprt.c mswinprt.c system.c \
+	$(nrnmpidynam)
 
 if BUILD_MINGW
 liboc_la_LIBADD = -lpthread
@@ -42,7 +51,7 @@ bin_PROGRAMS = oc
 oc_SOURCES = ocmain.c ocnoiv.c nocable.c modlreg.c ockludge.c
 
 oc_LDADD = libocxt.la liboc.la \
-	../nrnmpi/libnrnmpi.la \
+	$(nrnmpila) \
 	@MEMACSLIBLA@ @NRN_READLINE_LIBS@
 
 hocdec.h: hoc.h hoc2dec.sh

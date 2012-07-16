@@ -15,7 +15,6 @@ extern "C" {
 extern void setup_topology(), v_setup_vectors();
 extern void nrn_mul_capacity(NrnThread*, Memb_list*);
 extern void nrn_div_capacity(NrnThread*, Memb_list*);
-extern int nrnmpi_comm;
 extern int diam_changed;
 extern void recalc_diam();
 extern int nrn_errno_check(int);
@@ -46,8 +45,6 @@ extern void nrn_multisplit_nocap_v_part3(NrnThread*);
 extern void nrn_multisplit_adjust_rhs(NrnThread*);
 #if PARANEURON
 extern void (*nrn_multisplit_solve_)();
-extern int nrnmpi_int_sum_reduce(int in, int comm);
-extern void nrnmpi_assert_opstep(int, double, int comm);
 #endif
 };
 
@@ -93,7 +90,6 @@ bool Cvode::init_global() {
 		// threads and mpi together
 		// could be a lot better.
 		use_partrans_ = true;
-		mpicomm_ = nrnmpi_comm;
 	}else
 #endif
 	if (!structure_change_) {
@@ -172,7 +168,7 @@ void Cvode::init_eqn(){
     }
 #if PARANEURON
 	if (use_partrans_) {
-		global_neq_ = nrnmpi_int_sum_reduce(neq_, mpicomm_);
+		global_neq_ = nrnmpi_int_sum_reduce(neq_);
 //printf("%d global_neq_=%d neq=%d\n", nrnmpi_myid, global_neq_, neq_);
 	}
 #endif
@@ -646,7 +642,7 @@ void Cvode::fun_thread_transfer_part1(double tt, double* y, NrnThread* nt){
 	scatter_y(y, nt->id);
 #if PARANEURON
 	if (use_partrans_) {
-		nrnmpi_assert_opstep(opmode_, nt->_t, mpicomm_);
+		nrnmpi_assert_opstep(opmode_, nt->_t);
 	}
 #endif
 	nocap_v(nt);  // vm at nocap nodes consistent with adjacent vm
@@ -688,7 +684,7 @@ void Cvode::fun_thread_ms_part1(double tt, double* y, NrnThread* nt){
 	scatter_y(y, nt->id);
 #if PARANEURON
 	if (use_partrans_) {
-		nrnmpi_assert_opstep(opmode_, nt->_t, mpicomm_);
+		nrnmpi_assert_opstep(opmode_, nt->_t);
 	}
 #endif
 	nocap_v_part1(nt);  // vm at nocap nodes consistent with adjacent vm

@@ -2,7 +2,6 @@
 #include "bbsconf.h"
 #include <nrnmpi.h>
 #if NRNMPI 	// to end of file
-#include "../nrnmpi/bbsmpipack.h"
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>

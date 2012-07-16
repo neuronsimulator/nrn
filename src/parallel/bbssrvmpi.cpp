@@ -6,7 +6,6 @@
 #include <unistd.h>
 #include "bbssrv2mpi.h"
 #include "bbssrv.h"
-#include "../nrnmpi/bbsmpipack.h"
 
 #define debug 0
 

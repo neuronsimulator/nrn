@@ -1,17 +1,25 @@
 #include <../../nrnconf.h>
 #include <assert.h>
-#include <nrnmpi.h>
-
-int nrnmpi_numprocs = 1; /* size */
-int nrnmpi_myid = 0; /* rank */
-int nrnmpi_numprocs_world = 1;
-int nrnmpi_myid_world = 0;
-int nrnmpi_numprocs_bbs = 1;
-int nrnmpi_myid_bbs = 0;
-
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+
+/* do not want the redef in the dynamic load case */
+#include <nrnmpiuse.h>
+#if defined(NRNMPI_DYNAMICLOAD) && NRNMPI_DYNAMICLOAD==1
+#define NRNMPI_DYNAMICLOAD_use 1
+#undef NRNMPI_DYNAMICLOAD
+#define NRNMPI_DYNAMICLOAD 0
+#endif
+#include <nrnmpi.h>
+#include <mpispike.h>
+
+
+#if NRNMPI_DYNAMICLOAD_use
+#else
+#include "nrnmpi_def_cinc"
+#endif
+
 extern double nrn_timeus();
 
 #if NRNMPI
@@ -29,7 +37,6 @@ extern void nrnmusic_init(int* parg, char*** pargv);
 extern void nrnmusic_terminate();
 #endif
 
-int nrnmpi_use; /* NEURON does MPI init and terminate?*/
 MPI_Comm nrnmpi_world_comm;
 MPI_Comm nrnmpi_comm;
 MPI_Comm nrn_bbs_comm;

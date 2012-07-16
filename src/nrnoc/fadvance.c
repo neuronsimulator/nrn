@@ -36,7 +36,6 @@
  is present, v for all segments are set to that value.
  */
  
-extern double nrnmpi_wtime();
 extern double* nrn_mech_wtime_;
 extern double t, dt;
 extern double chkarg();

@@ -1,7 +1,13 @@
 #include <../../nrnconf.h>
-#include <nrnmpi.h>
 #include <stdio.h>
 #include <stdlib.h>
+
+/* do not want the redef in the dynamic load case */
+#include <nrnmpiuse.h>   
+#undef NRNMPI_DYNAMICLOAD   
+#define NRNMPI_DYNAMICLOAD 0
+#include <nrnmpi.h>
+
 #if NRNMPI
 #if HAVE_STRING_H
 #include <string.h>
@@ -9,7 +15,7 @@
 #include <assert.h>
 #include <errno.h>
 #include <mpi.h>
-#include <bbsmpipack.h>
+#include <nrnmpidec.h>
 #include <nrnmpi_impl.h>
 
 #define nrnmpidebugleak 0

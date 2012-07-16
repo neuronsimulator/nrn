@@ -225,9 +225,6 @@ void nrn2ncs_netcons();
 #if NRNMPI
 extern void nrn2ncs_outputevent(int netcon_output_index, double firetime);
 #endif
-#if PARANEURON
-extern int nrnmpi_pgvts_least(double* tt, int* op, int* init);
-#endif
 }; //extern "C"
 
 #if BGPDMA

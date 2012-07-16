@@ -11,7 +11,7 @@
 #include	"membfunc.h"
 #include	"neuron.h"
 #include	"parse.h"
-#include	"nrnmpiuse.h"
+#include	"nrnmpi.h"
 #include	"multisplit.h"
 #include "spmatrix.h"
 
@@ -26,7 +26,6 @@ extern int	diam_changed;
 extern int	tree_changed;
 extern double	chkarg();
 extern double	nrn_ra();
-extern double   nrnmpi_wtime();
 extern char* secname();
 extern double nrn_arc_position();
 extern Symlist* hoc_built_in_symlist;
