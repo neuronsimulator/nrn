@@ -111,7 +111,8 @@ fi
 
 #mac os x
 if test "$ostype" = "darwin" ; then
-NOBJ=$HOME/neuron/nrn${type}carbon
+#NOBJ=$HOME/neuron/nrn${type}carbon
+NOBJ=$HOME/neuron/nrn${type}x11
 IDIR=/Applications/NEURON-$NVER
 if test ! -d $NOBJ ; then
 	mkdir $NOBJ
@@ -120,9 +121,12 @@ cd $NOBJ
 #$NSRC/configure --prefix=$IDIR/nrn --srcdir=$NSRC \
 #	--with-iv=$IDIR/iv --enable-carbon --with-nrnpython \
 #	PYLIB=-lpython PYLIBLINK=-lpython --enable-UniversalMacBinary
-$NSRC/configure --prefix=$IDIR/nrn --srcdir=$NSRC \
-  --with-iv=$IDIR/iv --enable-carbon --with-nrnpython=dynamic \
-  'CFLAGS=-arch i386 -g -O2' 'CXXFLAGS=-arch i386 -g -O2'
+#$NSRC/configure --prefix=$IDIR/nrn --srcdir=$NSRC \
+#  --with-iv=$IDIR/iv --enable-carbon --with-nrnpython=dynamic \
+#  'CFLAGS=-arch i386 -g -O2' 'CXXFLAGS=-arch i386 -g -O2'
+$NSRC/configure --prefix=$IDIR/nrn  \
+  --with-iv=$IDIR/iv --with-paranrn=dynamic --with-nrnpython=dynamic
+
 make clean
 make
 if test $? != 0 ; then
