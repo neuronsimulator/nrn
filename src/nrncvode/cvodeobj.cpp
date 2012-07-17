@@ -692,7 +692,6 @@ void Cvode::set_init_flag() {
 N_Vector Cvode::nvnew(long int n) {
 #if PARANEURON
 	if (use_partrans_) {
-		assert(0); // fixme
 		return N_VNew_Parallel(0, n, global_neq_);
 	}
 #endif

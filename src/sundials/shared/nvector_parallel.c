@@ -28,6 +28,10 @@ extern int nrnmpi_numprocs;
 #endif
 
 #include "nvector_parallel.h"
+#if NRNMPI_DYNAMICLOAD
+#else
+extern MPI_Comm nrnmpi_comm;
+#endif
 #include "sundialsmath.h"
 #include "sundialstypes.h"
 
@@ -91,6 +95,7 @@ N_Vector N_VNewEmpty_Parallel(MPI_Comm comm,
 #if NRNMPI_DYNAMICLOAD
   (*p_nrnmpi_long_allreduce_vec)(&n, &Nsum, 1, 1);
 #else
+  comm = nrnmpi_comm;
   MPI_Allreduce(&n, &Nsum, 1, PVEC_INTEGER_MPI_TYPE, MPI_SUM, comm);
 #endif
   if (Nsum != global_length) {
