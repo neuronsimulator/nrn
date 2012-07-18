@@ -214,6 +214,7 @@ hoc_execerror("For multiple threads, the target pointer must reference a range v
 		}else if (sid2insrc_ && sid2insrc_->find(sid, k)) {
 			ttd.sv[j] = insrc_buf_ + k;
 		}else{
+fprintf(stderr, "No source_var for target_var sid = %d\n", sid);
 			assert(0);
 		}
 	}
@@ -329,12 +330,16 @@ void nrnmpi_setup_transfer() {
 		int sid = sgid2targets_->item(i);
 		// only need it if not a source on this machine
 		int srcindex;
-		if (!sgid2srcindex_->find(sid, srcindex)) {
+// Note that although it is mentioned several times that we do not transfer
+// intraprocessor sids, it is actually a good idea to do so in order to
+// produce a reasonable error message about using the same sid for multiple
+// source variables. Hence the follogwing statement is commented out.
+//		if (!sgid2srcindex_->find(sid, srcindex)) {
 			if (!seen->find(sid, srcindex)) {
 				(*seen)[sid] = srcindex;
 				needsrc[needsrc_cnt++] = sid;
 			}
-		}
+//		}
 	}
 	delete seen;
 #if 0
@@ -440,7 +445,11 @@ printf("%d step 4  %d sids coming from rank %d\n", nrnmpi_myid, insrccnt_[i], i)
 	for (int i=0; i < insrc_buf_size_; ++i) {
 		int sid = int(insrc_buf_[i]);
 		int whocares;
-		assert(!sid2insrc_->find(sid, whocares));
+		if (sid2insrc_->find(sid, whocares)) {
+			char buf[200];
+sprintf(buf, "multiple source variables for sid = %d\n", sid);
+			hoc_execerror(buf, 0);
+		}
 		(*sid2insrc_)[sid] = i;
 	}
 	nrnmpi_v_transfer_ = mpi_transfer;
