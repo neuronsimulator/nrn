@@ -3526,8 +3526,19 @@ int NetCvode::pgvts_event(double& tt) {
 	de = pgvts_least(tt, op, init);
 	err = pgvts_cvode(tt, op);
 	if (init) { gcv_->set_init_flag(); }
-	if (de) { // handle the event
+	if (de) { // handle the event and others just like it
 		de->pgvts_deliver(tt, this);
+		while (p[0].tqe_->least_t() == tt) {
+			TQItem* q = p[0].tqe_->least();
+			de = (DiscreteEvent*)q->data_;
+			int i1;
+			if (de->pgvts_op(i1) == op && i1 == init) {
+				p[0].tqe_->remove(q);
+				de->pgvts_deliver(tt, this);
+			}else{
+				break;
+			}
+		}
 	}
 	if (nrn_allthread_handle) { (*nrn_allthread_handle)(); }
 	return err;
@@ -3557,12 +3568,15 @@ DiscreteEvent* NetCvode::pgvts_least(double& tt, int& op, int& init) {
 			init = 0;
 		}
 	}
+	double ts = tt; int ops = op;
 	if (nrnmpi_pgvts_least(&tt, &op, &init)) {
 		if (q) {
 			p[0].tqe_->remove(q);
 		}
 	}else if (op == 4) {//NetParEvent need to be done all together
 		p[0].tqe_->remove(q); 
+	}else if (ts == tt && q && ops == op) { // safe to do this event as well
+		p[0].tqe_->remove(q);
 	}else{
 		de = nil;
 	}
