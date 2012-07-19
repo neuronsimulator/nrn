@@ -55,6 +55,7 @@ libnrniv_la_SOURCES = nrnmenu.cpp shape.cpp classreg.cpp rotate3d.cpp \
 	kschan.cpp kssingle.cpp nonlinz.cpp finithnd.cpp nrnste.cpp \
 	nrnrtime.cpp nvector_nrnthread.c nrnpy.cpp \
 	nvector_nrnthread_ld.c nvector_nrnserial_ld.c \
+	nvector_nrnparallel_ld.c \
 	netpar.cpp partrans.cpp splitcell.cpp multisplit.cpp \
 	nrndae.cpp matrixmap.cpp
 
@@ -126,6 +127,7 @@ noinst_HEADERS = ndatclas.h nrnclass.h nrnmenu.h nrnoc2iv.h ppshape.h \
 	linmod.h nrniv_mf.h nrnste.h arraypool.h structpool.h \
 	kschan.h kssingle.h nonlinz.h nrnhash.h \
 	nvector_nrnthread_ld.h nvector_nrnserial_ld.h \
+	nvector_nrnparallel_ld.h
 	bgpdma.cpp bgpdmasetup.cpp bgpmeminfo.c \
 	multisplitcontrol.h nvector_nrnthread.h \
 	nrnmusic.cpp nrndae.h matrixmap.h \
