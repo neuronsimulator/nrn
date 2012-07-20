@@ -8,7 +8,7 @@
 
 static const double SHIFT32   = 1.0 / 4294967297.0;    /* 1/(2^32 + 1) */
 
-static philox4x32_key_t k={{}};
+static philox4x32_key_t k={{0}};
 
 struct nrnran123_State {
 	philox4x32_ctr_t c;
