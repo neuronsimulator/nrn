@@ -4,5 +4,5 @@ EXTRA_DIST = aes.h array.h ars.h philox.h threefry.h \
 	features/iccfeatures.h features/llvmfeatures.h features/msvcfeatures.h \
 	features/nvccfeatures.h features/open64features.h \
 	features/openclfeatures.h features/sse.h features/sunprofeatures.h \
-	features/xlcfeatures.h
+	features/xlcfeatures.h features/pgcfeatures.h
 
