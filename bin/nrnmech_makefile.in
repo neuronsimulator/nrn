@@ -41,8 +41,8 @@ CCLD = $(CC)
 LINK = $(LIBTOOL) --mode=link $(CCLD) -module $(AM_CFLAGS) $(CFLAGS) \
         $(AM_LDFLAGS) $(LDFLAGS) -o $@
 
-BUILD_NRNMPI_DYNAMIC_TRUElnrnmpi =
-BUILD_NRNMPI_DYNAMIC_FALSElnrnmpi = -lnrnmpi
+@BUILD_NRNMPI_DYNAMIC_TRUE@lnrnmpi =
+@BUILD_NRNMPI_DYNAMIC_FALSE@lnrnmpi = -lnrnmpi
 
 NRNOCLIBS = -L"$(libdir)" -lnrnoc -loc @MEMACSLIB@ \
 	$(lnrnmpi) -lscopmath -lsparse13 @READLINE_LIBS@
