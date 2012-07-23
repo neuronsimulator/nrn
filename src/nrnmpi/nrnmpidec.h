@@ -11,6 +11,13 @@ extern "C" {
 #include "nrnmpi_dynam.h"
 #endif
 
+/* from mpispike.h */
+typedef struct {
+	int gid;
+	double spiketime;
+} NRNMPI_Spike;
+	        
+
 /* from bbsmpipack.c */
 typedef struct bbsmpibuf {
 	char* buf;

@@ -5,11 +5,6 @@
 #define nrn_spikebuf_size 0
 #endif
 
-typedef struct {
-	int gid;
-	double spiketime;
-} NRNMPI_Spike;
-	        
 #if nrn_spikebuf_size > 0
 typedef struct {
 	int nspike;
