@@ -1,5 +1,5 @@
-#ifndef bbsmpipack_h
-#define bbsmpipack_h
+#ifndef nrnmpidec_h
+#define nrnmpidec_h
 #include <nrnmpiuse.h>
 #if NRNMPI
 #include <stdlib.h>
@@ -10,13 +10,6 @@ extern "C" {
 #if NRNMPI_DYNAMICLOAD
 #include "nrnmpi_dynam.h"
 #endif
-
-/* from mpispike.h */
-typedef struct {
-	int gid;
-	double spiketime;
-} NRNMPI_Spike;
-	        
 
 /* from bbsmpipack.c */
 typedef struct bbsmpibuf {

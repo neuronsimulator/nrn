@@ -91,7 +91,7 @@ if test "$a" = 0 ; then
 fi
 $NSRC/configure --prefix=/usr/local/nrn --with-iv=/usr/local/iv \
 	--srcdir=$NSRC --enable-rpm-rules --disable-static \
-	--with-readline=yes --with-nrnpython=dynamic $jarg
+	--with-readline=yes --with-nrnpython=dynamic --with-paranrn=dynamic $jarg
 make
 if test $? != 0 ; then
 	echo "make failed"

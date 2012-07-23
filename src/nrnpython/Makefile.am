@@ -5,7 +5,7 @@ nsrc=$(top_srcdir)/src
 DEFS = @DEFS@ @NRNPYTHON_DEFINES@
 NRNPYTHON_INCLUDES = @npy_NRNPYTHON_INCLUDES@
 IV_INCLUDES = @IV_INCLUDE@ $(X_CFLAGS)
-INCLUDES =  -I. -I$(nsrc)/nrniv -I$(nsrc)/ivoc -I$(nsrc)/nrnoc -I$(nsrc)/oc -I$(nsrc)/gnu $(NRNPYTHON_INCLUDES) $(IV_INCLUDES)
+INCLUDES =  -I. -I$(nsrc)/nrniv -I$(nsrc)/ivoc -I$(nsrc)/nrnoc -I$(nsrc)/oc -I$(nsrc)/nrnmpi -I$(nsrc)/gnu $(NRNPYTHON_INCLUDES) $(IV_INCLUDES)
 AM_CPPFLAGS = -DOOP=1 -DCABLE=1 -DUSECVODE=1 -DUSEMATRIX=1 -DUSEBBS=1
 AM_CXXFLAGS = @MINGW_CFLAG@
 

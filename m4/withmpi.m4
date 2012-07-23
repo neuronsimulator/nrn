@@ -1,5 +1,7 @@
 AC_DEFUN([AC_NRN_WITH_MPI],[
 
+MPICCnrnmpi=$CC
+
 AC_ARG_WITH(mpi,
 AC_HELP_STRING([--with-mpi],[Also compile the parallel code in src/sundials/shared])
 AC_HELP_STRING([--without-mpi],[This is the default. Do not compile the parallel sundials code])
@@ -26,6 +28,7 @@ dnl AC_SUBST(LIBTOOL)
 			CC=$MPICC
 			CXX=$MPICXX
 		    fi
+			MPICCnrnmpi=$MPICC
 			LIBTOOLTAG='--tag=CC'
 			dnl AC_SUBST(CC)
 			dnl AC_SUBST(CXX)
@@ -181,6 +184,7 @@ AC_SUBST(METISINCLUDE)
 AC_SUBST(METISOBJADD)
 AC_SUBST(METISLIBADD)
 AC_SUBST(METISLIB)
+AC_SUBST(MPICCnrnmpi)
 
 ])dnl end of AC_NRN_WITH_METIS
 

@@ -5,6 +5,18 @@ lib_LTLIBRARIES = libnrniv.la
 bin_PROGRAMS = nrniv
 nsrc=$(top_srcdir)/src
 
+PARSRC = nvector_nrnparallel_ld.c
+PARINC = nvector_nrnparallel_ld.h
+
+if BUILD_PARANEURON
+PARSRC1 = $(PARSRC)
+PARINC1 = $(PARINC)
+else
+PARSRC1 =
+PARINC1 =
+EXTRA_DIST = $(PARSRC) $(PARINC)
+endif
+
 if BUILD_NRNMPI_DYNAMIC
 nrnmpila =
 else
@@ -55,7 +67,7 @@ libnrniv_la_SOURCES = nrnmenu.cpp shape.cpp classreg.cpp rotate3d.cpp \
 	kschan.cpp kssingle.cpp nonlinz.cpp finithnd.cpp nrnste.cpp \
 	nrnrtime.cpp nvector_nrnthread.c nrnpy.cpp \
 	nvector_nrnthread_ld.c nvector_nrnserial_ld.c \
-	nvector_nrnparallel_ld.c \
+	$(PARSRC1) \
 	netpar.cpp partrans.cpp splitcell.cpp multisplit.cpp \
 	nrndae.cpp matrixmap.cpp
 
@@ -127,7 +139,7 @@ noinst_HEADERS = ndatclas.h nrnclass.h nrnmenu.h nrnoc2iv.h ppshape.h \
 	linmod.h nrniv_mf.h nrnste.h arraypool.h structpool.h \
 	kschan.h kssingle.h nonlinz.h nrnhash.h \
 	nvector_nrnthread_ld.h nvector_nrnserial_ld.h \
-	nvector_nrnparallel_ld.h
+	$(PARINC1) \
 	bgpdma.cpp bgpdmasetup.cpp bgpmeminfo.c \
 	multisplitcontrol.h nvector_nrnthread.h \
 	nrnmusic.cpp nrndae.h matrixmap.h \
@@ -143,3 +155,4 @@ libobjdir = $(libdir)
 
 ## The following object files need to be installed:
 libobj_DATA = nvkludge.o
+

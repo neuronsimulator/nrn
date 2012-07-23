@@ -6,8 +6,7 @@ AM_CFLAGS = @MINGW_CFLAG@
 
 libnrnmpi_la_SOURCES = nrnmpi.c bbsmpipack.c mpispike.c nrnrt.c
 
-CC = @MPICC@
-CXX = @MPICXX@
+CC = @MPICCnrnmpi@
 
 if BUILD_NRNMPI_DYNAMIC
 nrnmpi_dynam.h nrnmpi_dynam_cinc: mkdynam.sh nrnmpidec.h
