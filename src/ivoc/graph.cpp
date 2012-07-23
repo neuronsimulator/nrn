@@ -476,10 +476,11 @@ IFGUI
 			expr = gargstr(1);
 			if (hoc_is_str_arg(2)) {
 				pd = hoc_val_pointer(gargstr(2));
+				ioff += 1;
 			}else if (hoc_is_pdouble_arg(2)) {
 				pd = hoc_pgetarg(2);
+				ioff += 1;
 			}
-			ioff += 1;
 		}else if (hoc_is_str_arg(2)) { // 1 label, 2 expression
 			lab = gargstr(1);
 			expr = gargstr(2);
