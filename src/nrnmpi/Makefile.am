@@ -17,4 +17,4 @@ endif
 
 libnrnmpi_la_LIBADD = @MUSIC_LIBLA@
 EXTRA_DIST = nrnmpidec.h nrnmpi_impl.h mpispike.h notes_nrnrt \
-	mkdynam.sh nrnmpi_dynam.c nrnmpi_dynam_stubs.c
+	mkdynam.sh nrnmpi_dynam.c nrnmpi_dynam_stubs.c nrnmpi_def_cinc
