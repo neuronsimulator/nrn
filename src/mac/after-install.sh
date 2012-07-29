@@ -104,8 +104,8 @@ f=`otool -L $N/$CPU/bin/nrniv | sed -n "s,.*$IV/$CPU/lib/\(.*dylib\).*,\
 install_name_tool $f "$ff"
 
 #idraw
-if test -d "$ivlibdir" ; then
 ff="$IV/$CPU/bin/idraw"
+if test -f "$ff" ; then
 f=`otool -L $IV/$CPU/bin/idraw | sed -n "s,.*$IV/$CPU/lib/\(.*dylib\).*,\
 -change $IV/$CPU/lib/\1 @executable_path/../lib/\1,p"`
 install_name_tool $f "$ff"
@@ -120,9 +120,12 @@ install_name_tool $f $ff
 fi
 
 # neurondemo for libnrnmech.so needs to follow the install location.
+vv=`sw_vers -productVersion|sed 's/.*\.\(.*\)\..*/\1/'`
+if test $vv -gt 5 ; then
 f=/tmp/neuron$$
 sed '
  s,..NRNHOME./share/nrn/demo,@executable_path/../../share/nrn/demo,
 ' $N/share/nrn/demo/neuron > $f
 chmod 755 $f
 mv $f $N/share/nrn/demo/neuron
+fi
