@@ -55,7 +55,7 @@ os.environ["CXX"]=mpicxx_bin
 #distutils.unixccompiler.UnixCCompiler = MPI_UnixCCompiler
 #################################
 
-include_dirs = [nrn_srcdir+'/src/oc', '../oc']
+include_dirs = [nrn_srcdir+'/src/oc', '../oc', nrn_srcdir+'/src/nrnmpi']
 defines = []
 
 libdirs = ["@NRN_LIBDIR@",
@@ -71,7 +71,7 @@ hoc_module = Extension(
       @setup_extra_link_args@ = [ epre+libdirs[0],epre+libdirs[1] ],
       #extra_objects = [],
       libraries = [
-	"nrnpython",
+	"nrnpython@npy_apiver@",
         "nrnoc", "oc", "nrniv", "ivoc",
         "memacs", "meschach", "neuron_gnu", "nrnmpi",
         "scopmath", "sparse13", "sundials", "@IVHINES@",
