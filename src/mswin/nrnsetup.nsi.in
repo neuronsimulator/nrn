@@ -16,6 +16,8 @@ Name "NEURON ${Version}"
 ; The file to write
 OutFile "nrn${VerNoDot}setup.exe"
 
+; as user cannot get .hoc icon or association with neuron.exe
+; even though one can manually associate.
 RequestExecutionLevel user
 
 SetCompressor bzip2
@@ -42,10 +44,10 @@ InstallDir c:\${NRN}
 
 ; Registry key to check for directory (so if you install again, it will 
 ; overwrite the old one automatically)
-InstallDirRegKey HKLM "Software\NEURON\${NRN}" "Install_Dir"
+InstallDirRegKey HKCU "Software\NEURON\${NRN}" "Install_Dir"
 
 Function .onInit ; called when installer is nearly finished initializing.
-  ReadRegStr $R1 HKLM "Software\NEURON\${NRN}" "Install_Dir"
+  ReadRegStr $R1 HKCU "Software\NEURON\${NRN}" "Install_Dir"
   StrCmp "$R1" "" ok +1
     MessageBox MB_OKCANCEL "${NEURON} already installed at $R1. Press OK to install again." IDOK ok
     Abort
@@ -114,10 +116,10 @@ Section "${NEURON} (required)"
   File /r "${MARSHALL}\nrn\*.*"
   Call cyginst
   ; Write the installation path into the registry
-  WriteRegStr HKLM "Software\NEURON\${NRN}" "Install_Dir" "$INSTDIR"
+  WriteRegStr HKCU "Software\NEURON\${NRN}" "Install_Dir" "$INSTDIR"
   ; Write the uninstall keys for Windows
-  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${NEURON}" "DisplayName" "${NEURON} (remove only)"
-  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${NEURON}" "UninstallString" '"$INSTDIR\uninstall.exe"'
+  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${NEURON}" "DisplayName" "${NEURON} (remove only)"
+  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${NEURON}" "UninstallString" '"$INSTDIR\uninstall.exe"'
   WriteUninstaller "uninstall.exe"
 SectionEnd
 
@@ -132,16 +134,16 @@ FunctionEnd
 Section "Associate .hoc and .nrnzip"
   ; I am trying to follow the makensis.nsi
   ; I do not know why we should back up old values
-  WriteRegStr HKCR ".hoc" "" "NEURONFile"
-  WriteRegStr HKCR "NEURONFile" "" "NEURON model file"
-  WriteRegStr HKCR "NEURONFile\shell" "" "open"
-  WriteRegStr HKCR "NEURONFile\DefaultIcon" "" "$INSTDIR\bin\nrniv10.ico"
-  WriteRegStr HKCR "NEURONFile\shell\open\command" "" '"$INSTDIR\bin\neuron.exe" "%1"'
-  WriteRegStr HKCR ".nrnzip" "" "NEURONArchive"
-  WriteRegStr HKCR "NEURONArchive" "" "NEURON model archive"
-  WriteRegStr HKCR "NEURONArchive\shell" "" "open"
-  WriteRegStr HKCR "NEURONArchive\DefaultIcon" "" "$INSTDIR\bin\nrniv.ico"
-  WriteRegStr HKCR "NEURONArchive\shell\open\command" "" '"$INSTDIR\bin\mos2nrn.exe" "%1"'
+  WriteRegStr HKCU "Software\Classes\.hoc" "" "NEURONFile"
+  WriteRegStr HKCU "Software\Classes\NEURONFile" "" "NEURON model file"
+  WriteRegStr HKCU "Software\Classes\NEURONFile\shell" "" "open"
+  WriteRegStr HKCU "Software\Classes\NEURONFile\DefaultIcon" "" "$INSTDIR\bin\nrniv10.ico"
+  WriteRegStr HKCU "Software\Classes\NEURONFile\shell\open\command" "" '"$INSTDIR\bin\neuron.exe" "%1"'
+  WriteRegStr HKCU "Software\Classes\.nrnzip" "" "NEURONArchive"
+  WriteRegStr HKCU "Software\Classes\NEURONArchive" "" "NEURON model archive"
+  WriteRegStr HKCU "Software\Classes\NEURONArchive\shell" "" "open"
+  WriteRegStr HKCU "Software\Classes\NEURONArchive\DefaultIcon" "" "$INSTDIR\bin\nrniv.ico"
+  WriteRegStr HKCU "Software\Classes\NEURONArchive\shell\open\command" "" '"$INSTDIR\bin\mos2nrn.exe" "%1"'
   FileOpen $r1 "$INSTDIR\lib\associate.dat" "w"
   FileWrite $r1 "If $INSTDIR\lib\associate.dat exists then, on uninstall, .hoc and .nrnzip associations will be removed."
   FileClose $r1
@@ -211,12 +213,12 @@ Section "Uninstall"
     Abort "Uninstall aborted by user"
   skip_confirmation:
 
-  DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${NEURON}"
-  DeleteRegKey HKLM "Software\NEURON\${NRN}"
+  DeleteRegKey HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${NEURON}"
+  DeleteRegKey HKCU "Software\NEURON\${NRN}"
   ; remove registry keys if we own them
   IfFileExists "$INSTDIR\lib\associate.dat" +1 asoc
-    DeleteRegKey HKCR "NEURONFile"
-    DeleteRegKey HKCR "NEURONArchive"
+    DeleteRegKey HKCU "Software\Classes\NEURONFile"
+    DeleteRegKey HKCU "Software\Classes\NEURONArchive"
 asoc:
   ; remove directories used.
   IfFileExists "$INSTDIR\lib\smsinst.dat" +1 one

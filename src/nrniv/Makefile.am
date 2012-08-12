@@ -32,7 +32,9 @@ mos2nrn.exe: $(nsrc)/mswin/extra/mos2nrn.cpp
 	g++-3 -g -O2 -DCYGWIN -o mos2nrn.exe -mwindows -e _mainCRTStartup $(nsrc)/mswin/extra/mos2nrn.cpp
 
 neuron.exe: $(nsrc)/mswin/extra/neuron.cpp
-	g++-3 -g -O2 -DCYGWIN -o neuron.exe -mno-cygwin -e _mainCRTStartup $(nsrc)/mswin/extra/neuron.cpp
+	echo "id ICON \"$(nsrc)/mswin/nrniv10.ico\"" > nrnicon.rc
+	windres nrnicon.rc -O coff -o nrnicon.res
+	g++-3 -g -O2 -DCYGWIN -o neuron.exe -mno-cygwin -e _mainCRTStartup $(nsrc)/mswin/extra/neuron.cpp nrnicon.res
 
 else
 if BUILD_MINGW

@@ -43,7 +43,7 @@ static char* argstr(int argc, char** argv) {
 		// the latter will be converted back to space in src/oc/hoc.c
 		// cygwin 7 need to convert x: and x:/ and x:\ to
 		// /cygdrive/x/
-		u = hoc_dos2unixpath(argv[i]);
+		u = hoc_dos2cygdrivepath(argv[i], 1);
 		for (a = u; *a; ++a) {
 			if (*a == ' ') {
 				s[j++] = '@';
@@ -68,10 +68,11 @@ int main(int argc, char** argv) {
 	char* msg;
 
 	setneuronhome();
-	nh = hoc_dos2unixpath(nrnhome);
+	nh = hoc_dos2cygdrivepath(nrnhome, 1);
 	args = argstr(argc, argv);
 	buf = new char[strlen(args) + 3*strlen(nh) + 200];
-	sprintf(buf, "%s\\bin\\sh %s/lib/neuron.sh %s %s", nrnhome, nh, nh, args);
+//	sprintf(buf, "%s\\bin\\sh %s/lib/neuron.sh %s %s", nrnhome, nh, nh, args);
+	sprintf(buf, "%s\\bin\\rxvt -fn 16 -fg black -bg white -sl 1000 -e %s/lib/neuron.sh %s %s", nrnhome, nh, nh, args);
 	msg = new char[strlen(buf) + 100];
 	err = WinExec(buf, SW_SHOW);
 	if (err < 32) {
