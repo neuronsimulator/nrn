@@ -121,6 +121,19 @@ void TQueue::forall_callback(void(*f)(const TQItem*, int)) {
 void TQueue::check(const char* mes) {
 }
 
+#if FAST_LEAST
+// for Parallel Global Variable Timestep method.
+// Assume not using bin queue.
+TQItem* TQueue::second_least(double t) {
+	assert(least_);
+	TQItem* b = sphead(sptree_);
+	if (b && b->t_ == t) {
+		return b;
+	}
+	return 0;
+}
+#endif
+
 void TQueue::move_least(double tnew) {
 	MUTLOCK
 	move_least_nolock(tnew);

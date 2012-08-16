@@ -3557,11 +3557,26 @@ DiscreteEvent* NetCvode::pgvts_least(double& tt, int& op, int& init) {
 		op = 1;
 		init = 0;
 	}else{
+		// If there are several events at the same time we need the
+		// highest priority (in particular, NetParEvent last).
+		// This is due to the fact that NetParEvent.deliver
+		// handles all the events at that time so there better not
+		// be any after it on the queue.
 		q = p[0].tqe_->least();
 		if (q) {
 			de = (DiscreteEvent*)q->data_;
 			tt = q->t_;
 			op = de->pgvts_op(init);
+			if (op == 4) { // is there another event at the same time?
+				TQItem* q2 = p[0].tqe_->second_least(tt);
+				if (q2) {
+					q = q2;
+					de = (DiscreteEvent*)q2->data_;
+					op = de->pgvts_op(init);
+					assert(op != 4);
+//printf("%d Type %d event after NetParEvent with deliver %g and t=%g\n", nrnmpi_myid, de->type(), tt, gcv_->t_);
+				}
+			}
 		}else{
 			tt = 1e20;
 			op = 1;

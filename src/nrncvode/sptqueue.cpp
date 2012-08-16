@@ -112,6 +112,17 @@ TQItem* TQueue::least() {
 }
 #endif
 
+#if FAST_LEAST
+TQItem* TQueue::second_least(double t) {
+	assert(least_);
+	TQItem* b = sphead(sptree_);
+	if (b && b->t_ == t) {
+		return b;
+	}
+	return 0;
+}
+#endif
+
 void TQueue::move_least(double tnew) {
 	TQItem* b = least();
 	if (b) {

@@ -27,6 +27,7 @@ public:
 #if FAST_LEAST
 	TQItem* least() {return least_;}
 	double least_t(){if (least_) { return least_->t_;}else{return 1e15;}}
+	TQItem* second_least(double t);
 #else
 	TQItem* least(); // does not remove from TQueue
 	double least_t();
