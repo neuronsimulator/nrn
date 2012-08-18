@@ -66,6 +66,7 @@ AC_HELP_STRING([--without-paranrn],[default. No parallel integration])
 		use_paranrn=no
 	fi
 ],[
+	nrnmpi_dynamic="no"
 	use_paranrn=no
 ])
 

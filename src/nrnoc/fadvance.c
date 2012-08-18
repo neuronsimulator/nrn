@@ -36,6 +36,9 @@
  is present, v for all segments are set to that value.
  */
  
+#if !defined(NRNMPI) || NRNMPI == 0
+extern double nrnmpi_wtime();
+#endif
 extern double* nrn_mech_wtime_;
 extern double t, dt;
 extern double chkarg();

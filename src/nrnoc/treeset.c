@@ -26,6 +26,9 @@ extern int	diam_changed;
 extern int	tree_changed;
 extern double	chkarg();
 extern double	nrn_ra();
+#if !defined(NRNMPI) || NRNMPI == 0
+extern double nrnmpi_wtime();
+#endif
 extern char* secname();
 extern double nrn_arc_position();
 extern Symlist* hoc_built_in_symlist;
