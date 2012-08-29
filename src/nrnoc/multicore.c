@@ -49,7 +49,7 @@ static int busywait_main_;
 extern void nrn_thread_error(const char*);
 extern void nrn_threads_free();
 extern void nrn_old_thread_save();
-extern double nrn_time();
+extern double nrn_timeus();
 
 static int nrn_thread_parallel_;
 void nrn_mk_table_check();
@@ -1152,14 +1152,14 @@ static double trial(int ip) {
 	double t;
 	pthread_t* th;
 	th = (pthread_t*)ecalloc(ip, sizeof(pthread_t));
-	t = nrn_time();
+	t = nrn_timeus();
 	for (i=0; i < ip; ++i) {
 		pthread_create(th + i, (void*)0, waste, (void*)100000000);
 	}
 	for (i=0; i < ip; ++i) {
 		pthread_join(th[i], (void*)0);
 	}
-	t = nrn_time() - t;
+	t = nrn_timeus() - t;
 	free((char*)th);
 	return t;	
 }
