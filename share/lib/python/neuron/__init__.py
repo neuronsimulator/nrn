@@ -74,6 +74,31 @@ $Id: __init__.py,v 1.1 2008/05/26 11:39:44 hines Exp hines $
 
 """
 
+## With Python launched under Linux, shared libraries are apparently imported
+## using RTLD_LOCAL. For --with-paranrn=dynamic, this caused a failure when
+## libnrnmpi.so is dynamically loaded because nrnmpi_myid (and other global
+## variables in src/nrnmpi/nrnmpi_def_cinc) were not resolved --- even though
+## all those variables are defined in src/oc/nrnmpi_dynam.c and that
+## does a dlopen("libnrnmpi.so", RTLD_NOW | RTLD_GLOBAL) .
+## In this case setting the dlopenflags below fixes the problem. But it
+## seems that DLFCN is often not available.
+## This situation is conceptually puzzling because there
+## never seems to be a problem dynamically loading libnrnmech.so, though it
+## obviously makes use of many names in the rest of NEURON. Anyway,
+## we make the following available in case it is ever needed at least to
+## verify that some import problem is traceable to this issue.
+## The problem can be resolved in two ways. 1) see src/nrnmpi/nrnmpi_dynam.c
+## which promotes liboc.so and libnrniv.so to RTLD_GLOBAL  (commented out).
+## 2) The better way of specifying those libraries to libnrnmpi_la_LIBADD
+## in src/nrnmpi/Makefile.am . This latter also explains why libnrnmech.so
+## does not have this problem.
+#try:
+#  import sys
+#  import DLFCN
+#  sys.setdlopenflags(DLFCN.RTLD_NOW | DLFCN.RTLD_GLOBAL)
+#except:
+#  pass
+
 try:
   import hoc
 except:

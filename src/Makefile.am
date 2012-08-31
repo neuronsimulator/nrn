@@ -101,3 +101,12 @@ dist-hook: $(npydir)
 		|| $(mkdir_p) "$(distdir)/$$subdir" \
 		|| exit 1; \
 	done
+
+if BUILD_NRNMPI_DYNAMIC
+install-exec-hook:
+	cd nrnmpi ; \
+	NEED_RTLD_GLOBAL='-L$(libdir) -loc -lnrniv' ; \
+	export NEED_RTLD_GLOBAL ; \
+	$(RM) *.la ; \
+	$(MAKE) -e install
+endif

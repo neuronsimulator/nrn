@@ -50,6 +50,7 @@ extern int nrnmpi_bbssendrecv(int dest, int tag, bbsmpibuf* s, bbsmpibuf* r);
 
 /* from nrnmpi.c */
 extern void nrnmpi_init(int nrnmpi_under_nrncontrol, int* pargc, char*** pargv);
+extern int nrnmpi_wrap_mpi_init(int* flag);
 extern double nrnmpi_wtime();
 extern void nrnmpi_terminate();
 extern void nrnmpi_abort(int errcode);

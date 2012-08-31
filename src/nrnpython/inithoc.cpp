@@ -19,6 +19,11 @@ extern PyObject* nrnpy_hoc();
 extern void nrnpy_hoc();
 #endif
 
+#if NRNMPI_DYNAMICLOAD
+	extern void nrnmpi_stubs();
+	extern void nrnmpi_load();
+#endif
+
 extern int nrn_is_python_extension;
 extern int ivocmain(int, char**, char**);
 extern int nrn_main_launch;
@@ -27,7 +32,6 @@ extern int nrn_main_launch;
 
 static char* argv_mpi[] = {"NEURON", "-mpi","-dll", 0};
 static int argc_mpi = 2;
-extern int nrn_wrap_mpi_init(int*);
 
 #endif
 
@@ -56,26 +60,29 @@ void inithoc() {
 #ifdef NRNMPI
 
 	int flag;
+	int mpi_mes = 0; // for printing an mpi message only once.
+
+#if NRNMPI_DYNAMICLOAD
+	nrnmpi_stubs();
+	nrnmpi_load();
+#endif
 
 	// avoid having to include the c++ version of mpi.h
-	nrn_wrap_mpi_init(&flag);
+	nrnmpi_wrap_mpi_init(&flag);
 	//MPI_Initialized(&flag);
 
 	if (flag) {
-	  printf("MPI_Initialized==true, enabling MPI functionality.\n");
+	  mpi_mes = 1;
 
 	  argc = argc_mpi;
 	  argv = argv_mpi;
-	}
-	else if (getenv ("NEURON_INIT_MPI")) {
+	} else if (getenv ("NEURON_INIT_MPI")) {
 	  // force NEURON to initialize MPI
-	  printf("Will enable MPI functionality.\n");
-
+	  mpi_mes = 2;
 	  argc = argc_mpi;
 	  argv = argv_mpi;
-	}
-	else {
-	  printf("MPI_Initialized==false, disabling MPI functionality.\n");
+	} else {
+	  mpi_mes = 3;
 	}
 
 #endif
@@ -95,6 +102,21 @@ void inithoc() {
 	nrn_is_python_extension = 1;
 #if NRNMPI
 	nrnmpi_init(1, &argc, &argv); // may change argc and argv
+	if (nrnmpi_myid == 0) {
+		switch(mpi_mes) {
+			case 0:
+				break;
+			case 1:
+  printf("MPI_Initialized==true, enabling MPI functionality.\n");
+				break;
+			case 2:
+  printf("MPI functionality enabled by NEURON.\n");
+				break;
+			case 3:
+  printf("MPI_Initialized==false, disabling MPI functionality.\n");
+				break;
+		}
+	}
 #endif		
 	nrn_main_launch = 2;
 	ivocmain(argc, argv, env);

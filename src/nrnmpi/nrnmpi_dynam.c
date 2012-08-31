@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <dlfcn.h>
+#include <assert.h>
 
 #if NRNMPI_DYNAMICLOAD /* to end of file */
 
@@ -61,6 +62,19 @@ printf("Is openmpi installed? If not in default location, need a LD_LIBRARY_PATH
 	}else{
 		handle = load_mpi("libmpl.so");
 		handle = load_mpi("libmpich.so");
+#if 0
+/* Not needed because the issue of Python launch on LINUX not resolving
+   variables from already loaded shared libraries (due to loading them with
+   RTLD_LOCAL) was solved at the src/nrnmpi/Makefile.am level via a change
+   to libnrnmpi_la_LIBADD
+*/
+if (!dlopen("liboc.so", RTLD_NOW | RTLD_NOLOAD | RTLD_GLOBAL)) {
+	fprintf(stderr, "Did not promote liboc.so to RTLD_GLOBAL: %s\n", dlerror());
+}
+if (!dlopen("libnrniv.so", RTLD_NOW | RTLD_NOLOAD | RTLD_GLOBAL)) {
+	fprintf(stderr, "Did not promote libnrniv.so to RTLD_GLOBAL: %s\n", dlerror());
+}
+#endif
 		load_nrnmpi("libnrnmpi.so");
 	}
 #endif
@@ -70,3 +84,4 @@ printf("Is openmpi installed? If not in default location, need a LD_LIBRARY_PATH
 	}	
 }
 #endif
+
