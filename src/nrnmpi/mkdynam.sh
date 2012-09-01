@@ -1,6 +1,10 @@
 #!/bin/sh
 
-names=`sed -n '/extern /s/extern [a-z*]* \(nrnmpi_[a-zA-Z0-9_]*\)(.*/\1/p' nrnmpidec.h`
+names=`sed -n '
+/extern /s/extern [a-z*]* \(nrnmpi_[a-zA-Z0-9_]*\)(.*/\1/p
+/BGPDMA/s/.*/BGPDMA/p
+$s/.*/ENDIF/p
+' nrnmpidec.h`
 
 #generate nrnmpi_dynam.h
 (
@@ -15,7 +19,13 @@ extern "C" {
 #if NRNMPI_DYNAMICLOAD
 '
 for i in $names ; do
-	echo "#define $i (*p_$i)"
+	if test "$i" = "BGPDMA" ; then
+		echo "#if BGPDMA"
+	elif test "$i" = "ENDIF" ; then
+		echo "#endif"
+	else
+		echo "#define $i (*p_$i)"
+	fi
 done
 
 echo '
@@ -35,7 +45,13 @@ typedef void(*PFRV)();
 PFRV
 '
 for i in $names ; do
-	echo "	p_$i,"
+	if test "$i" = "BGPDMA" ; then
+		echo "#if BGPDMA"
+	elif test "$i" = "ENDIF" ; then
+		echo "#endif"
+	else
+		echo "	p_$i,"
+	fi
 done
 echo '	p_not_used;'
 echo '
@@ -44,7 +60,13 @@ static struct {
 	PFRV* ppf;
 }ftable[] = {'
 for i in $names ; do
-	echo "	\"$i\", &p_$i,"
+	if test "$i" = "BGPDMA" ; then
+		echo "#if BGPDMA"
+	elif test "$i" = "ENDIF" ; then
+		echo "#endif"
+	else
+		echo "	\"$i\", &p_$i,"
+	fi
 done
 echo '	0,0
 };

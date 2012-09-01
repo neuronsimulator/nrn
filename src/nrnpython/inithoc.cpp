@@ -21,7 +21,7 @@ extern void nrnpy_hoc();
 
 #if NRNMPI_DYNAMICLOAD
 	extern void nrnmpi_stubs();
-	extern void nrnmpi_load();
+	extern char* nrnmpi_load(int is_python);
 #endif
 
 extern int nrn_is_python_extension;
@@ -59,16 +59,18 @@ void inithoc() {
 	}
 #ifdef NRNMPI
 
-	int flag;
+	int flag = 0;
 	int mpi_mes = 0; // for printing an mpi message only once.
+	char* pmes = 0;
 
 #if NRNMPI_DYNAMICLOAD
 	nrnmpi_stubs();
-	nrnmpi_load();
+	// if nrnmpi_load succeeds (MPI available), pmes is nil.
+	pmes = nrnmpi_load(1);
 #endif
 
 	// avoid having to include the c++ version of mpi.h
-	nrnmpi_wrap_mpi_init(&flag);
+	if (!pmes) {nrnmpi_wrap_mpi_init(&flag);}
 	//MPI_Initialized(&flag);
 
 	if (flag) {
@@ -79,8 +81,13 @@ void inithoc() {
 	} else if (getenv ("NEURON_INIT_MPI")) {
 	  // force NEURON to initialize MPI
 	  mpi_mes = 2;
+	 if (pmes) {
+printf("NEURON_INIT_MPI exists in env but NEURON cannot initialize MPI because:\n%s\n", pmes);
+		exit(1);
+	 }else{
 	  argc = argc_mpi;
 	  argv = argv_mpi;
+	 }
 	} else {
 	  mpi_mes = 3;
 	}
@@ -102,21 +109,24 @@ void inithoc() {
 	nrn_is_python_extension = 1;
 #if NRNMPI
 	nrnmpi_init(1, &argc, &argv); // may change argc and argv
+#if 0 && !defined(NRNMPI_DYNAMICLOAD)
 	if (nrnmpi_myid == 0) {
 		switch(mpi_mes) {
 			case 0:
 				break;
 			case 1:
-  printf("MPI_Initialized==true, enabling MPI functionality.\n");
+  printf("MPI_Initialized==true, MPI functionality enabled by Python.\n");
 				break;
 			case 2:
   printf("MPI functionality enabled by NEURON.\n");
 				break;
 			case 3:
-  printf("MPI_Initialized==false, disabling MPI functionality.\n");
+  printf("MPI_Initialized==false, MPI functionality not enabled.\n");
 				break;
 		}
 	}
+#endif
+	if (pmes) { free(pmes); }
 #endif		
 	nrn_main_launch = 2;
 	ivocmain(argc, argv, env);

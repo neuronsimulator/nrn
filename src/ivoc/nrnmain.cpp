@@ -11,7 +11,7 @@ extern "C" {
 	extern int nrn_main_launch;
 #if NRNMPI_DYNAMICLOAD
 	extern void nrnmpi_stubs();
-	extern void nrnmpi_load();
+	extern char* nrnmpi_load(int is_python);
 #endif
 #if BLUEGENE_CHECKPOINT
 	void BGLCheckpointInit(char* chkptDirPath);
@@ -34,7 +34,12 @@ printf("argv[%d]=|%s|\n", i, argv[i]);
 	nrnmpi_stubs();
 	for (int i=0; i < argc; ++i) {
 		if (strcmp("-mpi", argv[i]) == 0) {
-			nrnmpi_load();
+			char* pmes;
+			pmes = nrnmpi_load(0);
+			if (pmes) {
+				printf("%s\n", pmes);
+				exit(1);
+			}
 			break;
 		}
 	}
