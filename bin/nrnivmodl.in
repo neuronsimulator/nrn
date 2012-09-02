@@ -170,7 +170,7 @@ fi
 @NRNMECH_DLL_STYLE_TRUE@  chmod 755 special &&
 @NRNMECH_DLL_STYLE_TRUE@  echo "Successfully created $ARCH/special"
 
-@NRNMECH_DLL_STYLE_TRUE@@MAC_DARWIN_TRUE@if true ; then
+@NRNMECH_DLL_STYLE_TRUE@@MAC_DARWIN_TRUE@if false ; then
 @NRNMECH_DLL_STYLE_TRUE@@MAC_DARWIN_FALSE@if false ; then
 @NRNMECH_DLL_STYLE_FALSE@if false ; then
 vv=`sw_vers -productVersion|sed 's/.*\.\(.*\)\..*/\1/'`
