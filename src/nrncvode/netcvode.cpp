@@ -3900,6 +3900,17 @@ void NetCvode::fornetcon_prepare() {
 		int index = nrn_fornetcon_index_[i];
 		int type = nrn_fornetcon_type_[i];
 		t2i[type] = index;
+	  if (nrn_is_artificial_[type]) {
+		Memb_list* m = memb_list + type;
+		for (j = 0; j < m->nodecount; ++j) {
+			void** v = &(m->pdata[j][index]._pvoid);
+			_nrn_free_fornetcon(v);
+			ForNetConsInfo* fnc = new ForNetConsInfo;
+			*v = fnc;
+			fnc->argslist = 0;
+			fnc->size = 0;
+		}
+	  }else{
 	    FOR_THREADS(nt) for(tml = nt->tml; tml; tml = tml->next) if (tml->index == type) {
 		Memb_list* m = tml->ml;
 		for (j = 0; j < m->nodecount; ++j) {
@@ -3911,6 +3922,7 @@ void NetCvode::fornetcon_prepare() {
 			fnc->size = 0;
 		}
 	    }
+	  }
 	}
 	// two loops over all netcons. one to count, one to fill in argslist
 	// count
@@ -3932,6 +3944,17 @@ ForNetConsInfo* fnc = (ForNetConsInfo*)pnt->prop->dparam[t2i[pnt->prop->type]]._
 	// allocate argslist space and initialize for another count
 	for (i = 0; i < nrn_fornetcon_cnt_; ++i) {
 		int index = nrn_fornetcon_index_[i];
+		int type = nrn_fornetcon_type_[i];
+	  if (nrn_is_artificial_[type]) {
+		Memb_list* m = memb_list + type;
+		for (j = 0; j < m->nodecount; ++j) {
+			ForNetConsInfo* fnc = (ForNetConsInfo*)m->pdata[j][index]._pvoid;
+			if (fnc->size > 0) {
+				fnc->argslist = new double*[fnc->size];
+				fnc->size = 0;
+			}
+		}
+	  }else{
 	    FOR_THREADS(nt) for(tml = nt->tml; tml; tml = tml->next) if (tml->index == nrn_fornetcon_type_[i]) {
 		Memb_list* m = tml->ml;
 		for (j = 0; j < m->nodecount; ++j) {
@@ -3942,6 +3965,7 @@ ForNetConsInfo* fnc = (ForNetConsInfo*)pnt->prop->dparam[t2i[pnt->prop->type]]._
 			}
 		}
 	    }
+	  }
 	}
 	// fill in argslist and count again
 	if (psl_) ITERATE(q, psl_) {
