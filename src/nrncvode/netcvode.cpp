@@ -232,7 +232,7 @@ extern void bgp_dma_send(PreSyn*, double t);
 extern int use_bgpdma_;
 extern void nrnbgp_messager_advance();
 #endif
-#if BGPDMA == 2
+#if BGPDMA > 1
 extern int use_dcmf_record_replay;
 #endif
 
@@ -2140,7 +2140,7 @@ void NetCvode::deliver_least_event(NrnThread* nt) {
 	de->deliver(tt, this, nt);
 }
 
-#if BGPDMA == 2
+#if BGPDMA > 1
 #define RP_COUNT 50
 static int rp_count;
 #endif
@@ -2156,7 +2156,7 @@ bool NetCvode::deliver_event(double til, NrnThread* nt) {
 #endif
 		STATISTICS(deliver_cnt_);
 		de->deliver(tt, this, nt);
-#if BGPDMA == 2
+#if BGPDMA > 1
 		if (use_dcmf_record_replay) if (--rp_count < 0) {
 			nrnbgp_messager_advance();
 			rp_count = RP_COUNT;

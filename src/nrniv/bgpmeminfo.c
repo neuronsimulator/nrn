@@ -1,3 +1,9 @@
+#include <nrnmpiuse.h>
+#if defined(BGPDMA) && BGPDMA > 1
+/* now compiled directly instead of included in bgpdma.cpp because it
+   for an unknown reason now causes a bug in the functionality of pc.cell .
+*/
+
 /* from curl -k -O https://wiki.alcf.anl.gov/images/8/8d/Meminfo.c */
 /* compile with -I/bgsys/drivers/ppcfloor/arch/include */
 
@@ -51,3 +57,5 @@ getFreeMem(long long *mem)
 
   *mem = total - alloc;
 }
+
+#endif /* BGPDMA > 1 */

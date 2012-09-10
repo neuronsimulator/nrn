@@ -416,8 +416,9 @@ void BGP_ReceiveBuffer::phase2send() {
 
 #if BGPDMA > 1
 extern "C" {
-#undef STR
-#include <bgpmeminfo.c>
+extern void getMemSize(long long *mem);
+extern void getUsedMem(long long *mem);
+extern void getFreeMem(long long *mem);
 }
 #endif
 

@@ -69,7 +69,7 @@ libnrniv_la_SOURCES = nrnmenu.cpp shape.cpp classreg.cpp rotate3d.cpp \
 	kschan.cpp kssingle.cpp nonlinz.cpp finithnd.cpp nrnste.cpp \
 	nrnrtime.cpp nvector_nrnthread.c nrnpy.cpp \
 	nvector_nrnthread_ld.c nvector_nrnserial_ld.c \
-	$(PARSRC1) \
+	$(PARSRC1) bgpmeminfo.c \
 	netpar.cpp partrans.cpp splitcell.cpp multisplit.cpp \
 	nrndae.cpp matrixmap.cpp
 
