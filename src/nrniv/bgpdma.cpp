@@ -1105,7 +1105,7 @@ void bgp_dma_setup() {
 
 #if FASTSETUP
 	// completely new algorithm does one and two phase.
-	target_list_sizes();
+	setup_presyn_dma_lists();
 #else // obsolete
 	// see 672:544c61a730ec
 #error "FASTSETUP required"
