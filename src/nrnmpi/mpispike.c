@@ -309,31 +309,57 @@ double nrnmpi_dbl_allmin(double x) {
 }
 
 static void pgvts_op(double* in, double* inout, int* len, MPI_Datatype* dptr){
-	int i;
+	int i, r=0;
 	assert(*dptr == MPI_DOUBLE);
 	assert(*len == 4);
-	if (in[0] <= inout[0]) {
-		if (in[0] < inout[0]) { /* least time done first */
-			for (i=0; i < 4; ++i) { inout[i] = in[i]; }	
-		}else if (in[1] < inout[1]) {
+	if (in[0] < inout[0]) {
+ 		/* least time has highest priority */
+ 		r = 1;
+	}else if (in[0] == inout[0]) {
+		/* when times are equal then */
+		if (in[1] < inout[1]) {
 			/* NetParEvent done last */
-			for (i=0; i < 4; ++i) { inout[i] = in[i]; }	
-		}else if (in[2] < inout[2]) {
-			/* init done next to last.*/
-			for (i=0; i < 4; ++i) { inout[i] = in[i]; }	
-		}else if (in[3] < inout[3]) { /* use the smallest rank */
-			for (i=0; i < 4; ++i) { inout[i] = in[i]; }	
+			r = 1;
+		}else if (in[1] == inout[1]) {
+			/* when times and ops are equal then */
+			if (in[2] < inout[2]) {
+				/* init done next to last.*/
+				r = 1;
+			}else if (in[2] == inout[2]) {
+				/* when times, ops, and inits are equal then */
+				if (in[3] < inout[3]) {
+					/* choose lowest rank */
+					r = 1;
+				}
+			}
 		}
+	}
+	if (r) {
+		for (i=0; i < 4; ++i) { inout[i] = in[i]; }	
 	}
 }
 
 int nrnmpi_pgvts_least(double* t, int* op, int* init) {
+	int i;
 	double ibuf[4], obuf[4];
 	ibuf[0] = *t;
 	ibuf[1] = (double)(*op);
 	ibuf[2] = (double)(*init);
 	ibuf[3] = (double)nrnmpi_myid;
+	for (i=0; i < 4; ++i) {
+		obuf[i] = ibuf[i];
+	}
 	MPI_Allreduce(ibuf, obuf, 4, MPI_DOUBLE, mpi_pgvts_op, nrnmpi_comm);
+	assert(obuf[0] <= *t);
+	if (obuf[0] == *t) {
+	  assert((int)obuf[1] <= *op);
+	  if ((int)obuf[1] == *op) {
+	    assert((int)obuf[2] <= *init);
+	    if ((int)obuf[2] == *init) {
+	      assert((int)obuf[3] <= nrnmpi_myid);
+	    }
+	  }
+	}
 	*t = obuf[0];
 	*op = (int)obuf[1];
 	*init = (int)obuf[2];
