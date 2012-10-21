@@ -3638,6 +3638,8 @@ void ncs2nrn_integrate(double tstop) {
 #if PARANEURON
 		if (net_cvode_instance->use_partrans()) {
 			net_cvode_instance->pgvts(tstop);
+			t = nt_t;
+			dt = nt_dt;
 		}else
 #endif
 		{
