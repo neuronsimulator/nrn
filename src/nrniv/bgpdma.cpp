@@ -85,7 +85,8 @@ static int xtra_cons_hist_[MAXNCONS+1];
 // only for basic testing of logic when not on blue gene/p
 #define USE_RDTSCL 0
 
-#if BGPDMA > 1 || USE_RDTSCL
+// only use if careful not to overrun the buffer during a simulation
+#if 0 && (BGPDMA > 1 || USE_RDTSCL)
 #define TBUFSIZE (1<<15)
 #else
 #define TBUFSIZE 0
