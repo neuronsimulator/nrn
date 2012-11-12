@@ -516,6 +516,10 @@ void OcSparseMatrix::setcol(int k, double in) {
 	}
 }
 
+void OcSparseMatrix::ident(void) {
+    setdiag(0, 1);
+}
+
 void OcSparseMatrix::setdiag(int k, double in) {
 	int i, j, row, col;
 	row = nrow();

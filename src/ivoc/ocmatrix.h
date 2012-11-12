@@ -129,6 +129,7 @@ public:
 	virtual int nrow();
 	virtual int ncol();
 	virtual double getval(int, int);
+	virtual void ident(void);
 	virtual void mulv(Vect* in, Vect* out);
 	virtual void solv(Vect* vin, Vect* vout, bool use_lu);
 
