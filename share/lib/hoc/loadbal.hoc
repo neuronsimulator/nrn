@@ -445,7 +445,7 @@ proc ExperimentalMechComplex() {local i, j, k, b, ts, ns, baseindex, irun, par \
 		}
 		// ions must be done on id 0 (because names for
 		// ionindices.x[k] needs to be assigned )
-		if (j == 0 && ionindices.x[k] > 0) {
+		if (j == 0) if (ionindices.x[k] > 0) {
 			if (pc.id == 0) {
 				b = 1
 			}else{
