@@ -622,6 +622,20 @@ printf("%d %d %g %g %g %g\n", isec, inode, ClassicalNODEB(nd), ClassicalNODEA(nd
 }
 
 fmatrix() {
+	if (ifarg(1)) {
+		extern Node* node_exact(Section*, double);
+		double x = chkarg(1, 0., 1.);
+		int id = (int)chkarg(2, 1., 4.);
+		Node* nd = node_exact(chk_access(), x);
+		NrnThread* _nt = nd->_nt;
+		switch (id) {
+		case 1: ret(NODEA(nd)); break;
+		case 2: ret(NODED(nd)); break;
+		case 3: ret(NODEB(nd)); break;
+		case 4: ret(NODERHS(nd)); break;
+		}
+		return;
+	}
 	nrn_print_matrix(nrn_threads);
 	ret(1.);
 }
