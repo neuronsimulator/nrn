@@ -1182,7 +1182,7 @@ void BBS::netpar_solve(double tstop) {
 	if (cvode_active_) {
 		ncs2nrn_integrate(tstop);
 	}else{
-		ncs2nrn_integrate(tstop+1e-11);
+		ncs2nrn_integrate(tstop*(1.+1e-11));
 	}
 	impl_->integ_time_ += nrnmpi_wtime() - wt;
 	impl_->integ_time_ -= (npe_ ? (npe_[0].wx_ + npe_[0].ws_) : 0.);
