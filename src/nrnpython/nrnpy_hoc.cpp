@@ -825,6 +825,12 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* name) {
 	    }
 	}
 	if (self->ho_) { // use the component fork.
+		// but no hoc component for a hoc function
+		// ie the sym is a component for the object
+		if (self->type_ == 2) {
+			PyErr_SetString(PyExc_TypeError, "No hoc method for a callable. Missing parentheses before the '.'?");
+			return NULL;
+		}
 		result = hocobj_new(hocobject_type, 0, 0);
 		PyHocObject* po = (PyHocObject*)result;
 		po->ho_ = self->ho_;
