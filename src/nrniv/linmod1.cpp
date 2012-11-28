@@ -40,6 +40,7 @@ public:
 	Vect* y0_;
 	Vect* b_;
 	int nnode_;
+	Object* f_callable_;
 	Node** nodes_;
 	Vect* elayer_;
 };
@@ -77,7 +78,7 @@ void LinearMechanism_reg() {
 LinearMechanism::LinearMechanism() {
 	model_ = nil;
 	c_ = nil; g_ = nil; y_ = nil; b_ = nil; nnode_ = 0; nodes_ = nil;
-	y0_ = nil; elayer_ = nil;
+	y0_ = nil; elayer_ = nil; f_callable_ = nil;
 }
 
 LinearMechanism::~LinearMechanism() {
@@ -86,6 +87,10 @@ LinearMechanism::~LinearMechanism() {
 }
 
 void LinearMechanism::lmfree() {
+    if (f_callable_) {
+        hoc_obj_unref(f_callable_);
+        f_callable_ = nil;
+    }
 	if (model_) {
 		delete model_;
 		model_ = nil;
@@ -120,11 +125,21 @@ void LinearMechanism::create()
 {
 	int i;
 	lmfree();
-	c_ = matrix_arg(1);
-	g_ = matrix_arg(2);
-	y_ = vector_arg(3);
-	i = 3;
-	if (ifarg(5) && hoc_is_object_arg(5) && is_vector_arg(5)) {
+	i = 0;
+	Object* o = *hoc_objgetarg(++i);
+	
+	if (strcmp(o->ctemplate->sym->name, "PythonObject") == 0) {
+	    f_callable_ = o;
+    	hoc_obj_ref(o);
+	    c_ = matrix_arg(++i);
+    } else {
+        f_callable_ = NULL;
+        c_ = matrix_arg(1);
+    }
+	g_ = matrix_arg(++i);
+	y_ = vector_arg(++i);
+
+	if (ifarg(i + 2) && hoc_is_object_arg(i + 2) && is_vector_arg(i + 2)) {
 		y0_ = vector_arg(++i);
 	}
 	b_ = vector_arg(++i);
@@ -132,6 +147,7 @@ void LinearMechanism::create()
 #if HAVE_IV
 	Oc oc;
 #endif
+
 	if (hoc_is_double_arg(i)) {
 		nnode_ = 1;
 		nodes_ = new Node*[1];
@@ -159,6 +175,6 @@ void LinearMechanism::create()
 		sl->unref();
 	}
     }
-	model_ = new LinearModelAddition(c_, g_, y_, y0_, b_,
-		nnode_, nodes_, elayer_);
+ 	model_ = new LinearModelAddition(c_, g_, y_, y0_, b_,
+		nnode_, nodes_, elayer_, f_callable_);
 }

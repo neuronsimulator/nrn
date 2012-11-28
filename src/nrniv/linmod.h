@@ -12,7 +12,7 @@
 class LinearModelAddition : public NrnDAE {
 public:
 	LinearModelAddition(Matrix* c, Matrix* g, Vect* y, Vect* y0, Vect* b,
-		int nnode = 0, Node** nodes = NULL, Vect* elayer = NULL);
+		int nnode = 0, Node** nodes = NULL, Vect* elayer = NULL, Object* f_callable = NULL);
 	virtual ~LinearModelAddition();
 
 private:
@@ -23,6 +23,7 @@ private:
 	
 	MatrixMap* g_;
 	Vect& b_;
+	Object* f_callable_;
 };
 
 #endif

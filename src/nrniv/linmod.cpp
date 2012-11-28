@@ -25,9 +25,14 @@
 #include <cstdio>
 #include "linmod.h"
 
+extern "C" {
+    int (*nrnpy_hoccommand_exec)(Object*);
+}
+
+
 LinearModelAddition::LinearModelAddition(Matrix* cmat, Matrix* gmat,
-	Vect* yvec, Vect* y0, Vect* bvec, int nnode, Node** nodes, Vect* elayer) 
-	: NrnDAE(cmat, yvec, y0, nnode, nodes, elayer), b_(*bvec) {
+	Vect* yvec, Vect* y0, Vect* bvec, int nnode, Node** nodes, Vect* elayer, Object* f_callable) 
+	: NrnDAE(cmat, yvec, y0, nnode, nodes, elayer), b_(*bvec), f_callable_(f_callable) {
 //printf("LinearModelAddition %p\n", this);
 	g_ = new MatrixMap(gmat);
 }
@@ -52,6 +57,11 @@ void LinearModelAddition::f_(Vect& y, Vect& yprime, int size) {
 	// vm,vext may be reinitialized between fixed steps and certainly
 	// has been adjusted by daspk
 	// size is the number of equations
+	if (f_callable_) {
+		if (!(*nrnpy_hoccommand_exec)(f_callable_)) {
+			hoc_execerror("LinearModelAddition runtime error",0);
+		}
+	}
 	g_->mulv(y, yprime);
 	for (int i = 0; i < size; ++i) {
 		yprime[i] = b_[i] - yprime[i];
