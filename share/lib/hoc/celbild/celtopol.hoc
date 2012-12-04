@@ -1128,7 +1128,8 @@ $o1.printf("\tpt3dstyle(1, %g, %g, %g)\n", tobj.logpt.x[0], tobj.logpt.x[1], tob
 			tobj.p3d.sesstr1(j, tstr1)
 			$o1.printf("	%s\n", tstr1)
 			nline += 1
-			if (nline%200 == 0) {
+			if (nline > 200) {
+				nline = 0
 				is3d += 1
 $o1.printf("  }\n}\nproc shape3d_%d() {\n  %s {", is3d, tstr)
 			}
