@@ -922,6 +922,7 @@ proc contour() {local begin, end, keep, il
 	keep = 0
 	demand(string)
 	if (strcmp(current.s, "CellBody") == 0) { keep = 1 }
+	if (strcmp(current.s, "Cell Body") == 0) { keep = 1 }
 	il = current.iline
 	read_next_token()
 	contourinfo()
