@@ -63,6 +63,8 @@ extern void (*nrnmpi_v_transfer_)();
 extern int cvode_active_;
 extern NetCvode* net_cvode_instance;
 extern short* nrn_is_artificial_;
+extern int structure_change_cnt;
+extern int diam_change_cnt;
 #if USENCS
 extern void nrn2ncs_netcons();
 #endif //USENCS
@@ -487,6 +489,14 @@ static double use_parallel(void* v) {
 #endif
 }
 
+static double nrn_structure_change_count(void* v) {
+	return double(structure_change_cnt);
+}
+
+static double nrn_diam_change_count(void* v) {
+	return double(diam_change_cnt);
+}
+
 static Member_func members[] = {
 	"solve", solve,
 	"atol", nrn_atol,
@@ -531,6 +541,8 @@ static Member_func members[] = {
 	"yscatter", nrn_hoc2scatter_y,
 	"ygather", nrn_hoc2gather_y,
 	"fixed_step", nrn_hoc2fixed_step,
+	"structure_change_count", nrn_structure_change_count,
+	"diam_change_count", nrn_diam_change_count,
 	0,0
 };
 
