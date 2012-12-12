@@ -16,7 +16,7 @@ static char *mechanism[] = { /*just a template*/
 	"0",
 	"na_ion",
 	"ena", "nao", "nai", 0,
-	"ina", 0,
+	"ina", "dina_dv_", 0,
 	0
 };
 static DoubScal scdoub[] = { /* just a template*/
@@ -71,6 +71,7 @@ ion_register() {
 	sprintf(buf, "%si", name); if (hoc_lookup(buf))  { fail = 1; }
 	sprintf(buf, "%so", name); if (hoc_lookup(buf))  { fail = 1; }
 	sprintf(buf, "i%s", name); if (hoc_lookup(buf))  { fail = 1; }
+	sprintf(buf, "di%s_dv_", name); if (hoc_lookup(buf))  { fail = 1; }
 	if (fail) {
 		hoc_symlist = sav;
 		ret(-1.); return;
@@ -98,7 +99,7 @@ ion_reg(name, valence)
 {
 	int i;
 	Symbol *s;
-	char buf[6][50];
+	char buf[7][50];
 	double val;
 #define VAL_SENTINAL -10000.
 
@@ -107,10 +108,11 @@ ion_reg(name, valence)
 	Sprintf(buf[2], "%si", name);
 	Sprintf(buf[3], "%so", name);
 	Sprintf(buf[5], "i%s", name);
-	for (i=0; i<6; i++) {
+	Sprintf(buf[6], "di%s_dv_", name);
+	for (i=0; i<7; i++) {
 		mechanism[i+1] = buf[i];
 	}
-	mechanism[5] = (char *)0;
+	mechanism[5] = (char *)0; /* buf[4] not used above */
 	s = hoc_lookup(buf[0]);
 	if (!s || s->type != MECHANISM
 	  || memb_func[s->subtype].alloc != ion_alloc) {
@@ -121,6 +123,7 @@ ion_reg(name, valence)
 		hoc_symbol_units(hoc_lookup(buf[2]), "mM");
 		hoc_symbol_units(hoc_lookup(buf[3]), "mM");
 		hoc_symbol_units(hoc_lookup(buf[5]), "mA/cm2");
+		hoc_symbol_units(hoc_lookup(buf[6]), "S/cm2");
 		s = hoc_lookup(buf[0]);
 		nrn_writes_conc(nrn_get_mechtype(mechanism[1]), 1);
 		if (ion_global_map_size <= s->subtype) {
