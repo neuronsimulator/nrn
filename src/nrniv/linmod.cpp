@@ -26,7 +26,7 @@
 #include "linmod.h"
 
 extern "C" {
-    int (*nrnpy_hoccommand_exec)(Object*);
+    extern int (*nrnpy_hoccommand_exec)(Object*);
 }
 
 

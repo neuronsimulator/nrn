@@ -22,6 +22,7 @@ extern void (*nrn_multisplit_setup_)();
 #include "tqueue.h"
 #include "mymath.h"
 #include "htlist.h"
+#include <OS/list.h>
 #include <nrnmutdec.h>
 
 #if USE_PTHREAD
@@ -141,10 +142,14 @@ static double queue_mode(void* v) {
 #endif
 	return 0.;
 }
+
+extern void nrn_extra_scatter_gather(int direction, int tid);
 static double re_init(void* v) {
 	if (cvode_active_) {
 		NetCvode* d = (NetCvode*)v;
 		d->re_init(t);
+	}else{
+		nrn_extra_scatter_gather(1, 0);
 	}
 	return 0.;
 }
@@ -497,6 +502,58 @@ static double nrn_diam_change_count(void* v) {
 	return double(diam_change_cnt);
 }
 
+extern "C" {
+int (*nrnpy_pysame)(Object*, Object*);
+extern int (*nrnpy_hoccommand_exec)(Object*);
+}
+
+declarePtrList(ExtraScatterList, Object)
+implementPtrList(ExtraScatterList, Object)
+static ExtraScatterList* extra_scatterlist[2]; // 0 scatter, 1 gather
+
+void nrn_extra_scatter_gather(int direction, int tid) {
+	ExtraScatterList* esl = extra_scatterlist[direction];
+	if (esl) {
+	    nrn_thread_error("extra_scatter_gather not allowed with multiple threads");
+	    for (int i=0; i < esl->count(); ++i) {
+		Object* callable = esl->item(i);
+		if (!(*nrnpy_hoccommand_exec)(callable)) {
+			hoc_execerror("extra_scatter_gather runtime error", 0);
+		}
+	    }
+	}
+}
+
+static double extra_scatter_gather(void* v) {
+	int direction = int(chkarg(1, 0, 1));
+	Object* o = *hoc_objgetarg(2);
+	check_obj_type(o, "PythonObject");
+	ExtraScatterList* esl = extra_scatterlist[direction];
+	if (!esl) {
+		esl = new ExtraScatterList(2);
+		extra_scatterlist[direction] = esl;
+	}
+	esl->append(o);
+	hoc_obj_ref(o);
+	return 0.;
+}
+
+static double extra_scatter_gather_remove(void* v) {
+	Object* o = *hoc_objgetarg(1);
+	for (int direction=0; direction < 2; ++direction) {
+		ExtraScatterList* esl = extra_scatterlist[direction];
+		if (esl) for (int i = esl->count()-1; i >= 0; --i) {
+			Object* o1 = esl->item(i);
+			// if esl exists then python exists
+			if ((*nrnpy_pysame)(o, o1)) {
+				esl->remove(i);
+				hoc_obj_unref(o1);
+			}
+		}
+	}
+	return 0.;
+}
+
 static Member_func members[] = {
 	"solve", solve,
 	"atol", nrn_atol,
@@ -543,6 +600,8 @@ static Member_func members[] = {
 	"fixed_step", nrn_hoc2fixed_step,
 	"structure_change_count", nrn_structure_change_count,
 	"diam_change_count", nrn_diam_change_count,
+	"extra_scatter_gather", extra_scatter_gather,
+	"extra_scatter_gather_remove", extra_scatter_gather_remove,
 	0,0
 };
 

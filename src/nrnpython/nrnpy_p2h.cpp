@@ -34,6 +34,7 @@ extern int (*nrnpy_guigetstr)(Object*, char**);
 extern char* (*nrnpy_po2pickle)(Object*, size_t* size);
 extern Object* (*nrnpy_pickle2po)(char*, size_t size);
 extern char* (*nrnpy_callpicklef)(char*, size_t size, int narg, size_t* retsize);
+extern int (*nrnpy_pysame)(Object*, Object*); // contain same Python object
 extern void nrnpython_ensure_threadstate();
 
 extern Object* hoc_thisobject;
@@ -60,6 +61,7 @@ static int guigetstr(Object*, char**);
 static char* po2pickle(Object*, size_t* size);
 static Object* pickle2po(char*, size_t size);
 static char* call_picklef(char*, size_t size, int narg, size_t* retsize);
+static int pysame(Object*, Object*);
 static PyObject* main_module;
 static PyObject* main_namespace;
 static hoc_List* dlist;
@@ -101,6 +103,7 @@ void nrnpython_reg_real() {
 	nrnpy_po2pickle = po2pickle;
 	nrnpy_pickle2po = pickle2po;
 	nrnpy_callpicklef = call_picklef;
+	nrnpy_pysame = pysame;
 	dlist = hoc_l_newlist();
 }
 
@@ -118,6 +121,13 @@ Py2Nrn::~Py2Nrn() {
 int nrnpy_ho_eq_po(Object* ho, PyObject* po) {
 	if (ho->ctemplate->sym == nrnpy_pyobj_sym_) {
 		return ((Py2Nrn*)ho->u.this_pointer)->po_ == po;
+	}
+	return 0;
+}
+
+int pysame(Object* o1, Object* o2) {
+	if (o2->ctemplate->sym == nrnpy_pyobj_sym_) {
+		return nrnpy_ho_eq_po(o1, ((Py2Nrn*)o2->u.this_pointer)->po_);
 	}
 	return 0;
 }

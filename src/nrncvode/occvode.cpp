@@ -433,6 +433,8 @@ double* Cvode::n_vector_data(N_Vector v, int tid) {
 	return N_VGetArrayPointer(v);
 }
 
+extern void nrn_extra_scatter_gather(int, int);
+
 void Cvode::scatter_y(double* y, int tid){
 	int i;
 	CvodeThreadData& z = CTD(tid);
@@ -449,6 +451,7 @@ void Cvode::scatter_y(double* y, int tid){
 			(*s)(ml->nodecount, ml->data, ml->pdata);
 		}
 	}
+	nrn_extra_scatter_gather(0, tid);
 }
 
 static Cvode* gather_cv;
@@ -470,6 +473,7 @@ void Cvode::gather_y(N_Vector y) {
 void Cvode::gather_y(double* y, int tid) {
 	int i;
 	CvodeThreadData& z = CTD(tid);
+	nrn_extra_scatter_gather(1, tid);
 	for (i = 0; i < z.nvsize_; ++i) {
 		y[i] = *(z.pv_[i]);
 //printf("gather_y %d %d %g\n", tid, i,  y[i]);
