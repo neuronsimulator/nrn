@@ -117,6 +117,7 @@ static PropertyData properties[] = {
 {"*units_on_flag", "on"},
 {"*NFRAME", "0"}, // see src/oc/code.c for the default value
 {"*NSTACK", "0"}, // see src/oc/code.c for the default value
+{"*Py_NoSiteFlag", "0"}, 
 {"*python", "off"},
 {"*banner", "on"},
 	 { nil }
@@ -136,6 +137,7 @@ static OptionDesc options[] = {
 {"-NFRAME", "*NFRAME", OptionValueNext},
 {"--version", "*print_nrn_version", OptionValueImplicit, "on"},
 {"-python", "*python", OptionValueImplicit, "on"},
+{"-Py_NoSiteFlag", "*Py_NoSiteFlag", OptionValueImplicit, "1"},
 {"-nobanner", "*banner", OptionValueImplicit, "off"},
 #if defined(WIN32)
 {"-mswin_scale", "*mswin_scale", OptionValueNext},
@@ -187,6 +189,7 @@ extern "C" {
 	extern int units_on_flag_;
 	extern double hoc_default_dll_loaded_;
 	extern int hoc_print_first_instance;
+	int nrnpy_nositeflag;
 }
 
 #if !defined(WIN32) && !MAC && !defined(CYGWIN)
@@ -365,6 +368,7 @@ int ivocmain (int argc, char** argv, char** env) {
     -nogui           do not send any gui info to screen\n\
     -notatty         buffered stdout and no prompt\n\
     -python          Python is the interpreter\n\
+    -Py_NoSiteFlag   Set Py_NoSiteFlag=1 before initializeing Python\n\
     -realtime        For hard real-time simulation for dynamic clamp\n\
     --version        print version info\n\
     and all InterViews and X11 options\n\
@@ -381,6 +385,9 @@ int ivocmain (int argc, char** argv, char** env) {
 	}
 	if (nrn_optarg_on("-nobanner", &argc, argv)) {
 		nrn_nobanner_ = 1;
+	}
+	if (nrn_optarg_on("-Py_NoSiteFlag", &argc, argv)) {
+		nrnpy_nositeflag = 1;
 	}
 
 	nrnmpi_numprocs = nrn_optargint("-bbs_nhost", &argc, argv, nrnmpi_numprocs);

@@ -14,6 +14,7 @@ void nrnpython_real();
 void nrnpython_start(int);
 extern int hoc_get_line();
 extern HocStr* hoc_cbufstr;
+extern int nrnpy_nositeflag;
 extern char* hoc_ctp;
 extern FILE* hoc_fin;
 extern char* hoc_promptstr;
@@ -92,6 +93,10 @@ void nrnpython_start(int b) {
 //	printf("nrnpython_start %d started=%d\n", b, started);
 	if (b == 1 && !started) {
 		p_nrnpy_pyrun = nrnpy_pyrun;
+		if (nrnpy_nositeflag) {
+			Py_NoSiteFlag = 1;
+		}
+		//printf("Py_NoSiteFlag = %d\n", Py_NoSiteFlag);
 		Py_Initialize();
 		started = 1;
 		main_threadstate_ = PyThreadState_GET();
