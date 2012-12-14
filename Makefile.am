@@ -63,6 +63,14 @@ mswin:
 
 endif
 
+install-exec-hook:
+	echo "enter install-exec-hook in nrn/Makefile.am"
+if BUILD_NRNPYTHON_DYNAMIC
+	cd src/nrnpython ; \
+	$(PYTHON) setup.py install --home=$(prefix)
+endif
+	echo "leave install-exec-hook in nrn/Makefile.am"
+
 ALPHADIR = hines@www.neuron.yale.edu:/home/htdocs/ftp/neuron/versions/alpha
 
 if MAKE_RPMS

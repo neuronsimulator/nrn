@@ -103,7 +103,7 @@ dist-hook: $(npydir)
 	done
 
 install-exec-hook:
-	echo "enter install-exec-hook"
+	echo "enter install-exec-hook in nrn/src/Makefile.am"
 if BUILD_NRNMPI_DYNAMIC
 	cd nrnmpi ; \
 	NEED_RTLD_GLOBAL='-L$(libdir) -loc -lnrniv' ; \
@@ -111,8 +111,5 @@ if BUILD_NRNMPI_DYNAMIC
 	$(RM) *.la ; \
 	$(MAKE) -e install
 endif
-if BUILD_NRNPYTHON_DYNAMIC
-	cd nrnpython ; \
-	$(PYTHON) setup.py install --home=$(prefix)
-endif
-	echo "leave install-exec-hook"
+	echo "leave install-exec-hook in nrn/src/Makefile.am"
+
