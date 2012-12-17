@@ -143,7 +143,10 @@ static double queue_mode(void* v) {
 	return 0.;
 }
 
-extern void nrn_extra_scatter_gather(int direction, int tid);
+extern "C" {
+void nrn_extra_scatter_gather(int direction, int tid);
+}
+
 static double re_init(void* v) {
 	if (cvode_active_) {
 		NetCvode* d = (NetCvode*)v;
