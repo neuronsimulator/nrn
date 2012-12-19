@@ -36,6 +36,7 @@ nrn_play_init(){}
 fixed_record_continuous(){}
 fixed_play_continuous(){}
 nrniv_recalc_ptrs(){}
+void nrn_extra_scatter_gather(int direction, int tid) {}
 void nrn_update_ion_pointer(int type, Datum* d, int i, int j) {}
 nrn_update_ps2nt(){}
 

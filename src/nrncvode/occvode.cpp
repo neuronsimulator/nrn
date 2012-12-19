@@ -433,7 +433,9 @@ double* Cvode::n_vector_data(N_Vector v, int tid) {
 	return N_VGetArrayPointer(v);
 }
 
+extern "C" {
 extern void nrn_extra_scatter_gather(int, int);
+}
 
 void Cvode::scatter_y(double* y, int tid){
 	int i;

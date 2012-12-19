@@ -427,6 +427,8 @@ void* nrn_fixed_step_thread(NrnThread* nth) {
 	return (void*)0;
 }
 
+extern void nrn_extra_scatter_gather(int direction, int tid);
+
 void* nrn_fixed_step_lastpart(NrnThread* nth) {
 	CTBEGIN
 #if NRN_DAQ
@@ -442,6 +444,7 @@ void* nrn_fixed_step_lastpart(NrnThread* nth) {
 #if NRN_DAQ
 	nrn_daq_scanstart();
 #endif
+	nrn_extra_scatter_gather(0, nth->id);
 	nonvint(nth);
 	nrn_ba(nth, AFTER_SOLVE);
 #if NRN_DAQ
