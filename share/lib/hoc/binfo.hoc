@@ -325,11 +325,15 @@ proc init() {
 	if (numarg() == 1) {
 		read_all()
 	}else if (numarg() == 3) {
-		read_host($2, $3)
+		read_host($2, $3, 1)
+	}else if (numarg() == 4) {
+		// balance file must have nhost*nthread rank lines
+		// read nthread contiguous lines starting at rank*nthread
+		read_host($2, $3, $4) //rank, nhost, nthread
 	}
 }
 
-proc read_all() {local i1, i2, n1, n2 localobj f, s
+proc read_all() {local i1, i2, n1, n2  localobj f, s
 	f = new File()
 	s = new String()
 	sprint(s.s, "%s.dat", basename)
@@ -344,26 +348,33 @@ proc read_all() {local i1, i2, n1, n2 localobj f, s
 	f.close()
 }
 
-proc read_host() {local i, n, k, i1, i2, n1, n2 localobj f, s, cb
+proc read_host() {local i, j, n, k, i1, i2, n1, n2, rank, np, nthread \
+  localobj f, s, cb
+	rank = $1
+	np = $2
+	nthread = $3
 	items = new Vector()
 	gids = new Vector()
 	sindices = new Vector()
 
 	f = new File()
 	s = new String()
-	sprint(s.s, "%s.%d.dat", basename, $2)
+	sprint(s.s, "%s.%d.dat", basename, np*nthread)
 	f.ropen(s.s)
 	msgid = f.scanvar
 	nhost = f.scanvar
-	ihost = $1
-	for i=0, $1-1 {f.gets(s.s)}
-	if (f.scanvar != $1) { execerror("read_host() format error", "") }
+	if (nhost != np*nthread) { execerror("read_host() wrong number of lines", "") }
+	ihost = rank
+	for i=0, rank*nthread-1 {f.gets(s.s)}
+    for j=0, nthread-1 {
+	if (f.scanvar != (rank*nthread + j)) { execerror("read_host() format error", "") }
 	n = f.scanvar // number of triples
 	for i=0, n-1 {
 		items.append(f.scanvar)
 		gids.append(f.scanvar)
 		sindices.append(f.scanvar)
 	}
+    }
 	cbindex = new Vector(n)
 	f.close
 if (0) {
