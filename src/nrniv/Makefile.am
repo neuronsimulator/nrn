@@ -71,7 +71,7 @@ libnrniv_la_SOURCES = nrnmenu.cpp shape.cpp classreg.cpp rotate3d.cpp \
 	nvector_nrnthread_ld.c nvector_nrnserial_ld.c \
 	$(PARSRC1) bgpmeminfo.c \
 	netpar.cpp partrans.cpp splitcell.cpp multisplit.cpp \
-	nrndae.cpp matrixmap.cpp
+	nrndae.cpp matrixmap.cpp geometry3d.cpp
 
 libnrniv_la_LIBADD = @MUSIC_LIBLA@
 
