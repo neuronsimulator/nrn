@@ -44,14 +44,6 @@ find_triangles.argtypes = [ctypes.c_double, ctypes.c_double, ctypes.c_double, ct
 #                          numpy.ctypeslib.ndpointer(dtype=numpy.float64, ndim=1, flags='C_CONTIGUOUS'),
 #                          ctypes.c_int]
 
-# int geometry3d_contains_surface(int i, int j, int k, double (*objdist)(double, double, double), double* xs, double* ys, double* zs, double dx, double r_inner, double r_outer);
-contains_surface = nrn_dll.geometry3d_contains_surface
-dist_func_type = ctypes.CFUNCTYPE(ctypes.c_double, ctypes.c_double, ctypes.c_double, ctypes.c_double)
-contains_surface.argtypes = [ctypes.c_int, ctypes.c_int, ctypes.c_int, dist_func_type,
-                             numpy.ctypeslib.ndpointer(dtype=numpy.float64, ndim=1, flags='C_CONTIGUOUS'),
-                             numpy.ctypeslib.ndpointer(dtype=numpy.float64, ndim=1, flags='C_CONTIGUOUS'),
-                             numpy.ctypeslib.ndpointer(dtype=numpy.float64, ndim=1, flags='C_CONTIGUOUS'),
-                             ctypes.c_double, ctypes.c_double, ctypes.c_double]
 
 
 # for performance measures only
@@ -64,7 +56,6 @@ max_chunks = 10000000
 total_surface_tests = 0
 corner_tests = 0
 
-# comment this function out to fall back to slower (?!) C++ version
 def contains_surface(i, j, k, objdist, xs, ys, zs, dx, r_inner, r_outer):
     has_neg = False
     has_pos = False
@@ -164,7 +155,7 @@ def triangulate_surface(objects, xs, ys, zs, internal_membranes):
     triangles = numpy.zeros(1000)
     triangles_i = 0
     for count, obj in enumerate(objects):
-        objdist = dist_func_type(obj.distance)
+        objdist = obj.distance
         cell_list = []
         cur_processed = {}
         for i, j, k in obj.starting_points(xs, ys, zs):
@@ -226,6 +217,9 @@ def triangulate_surface(objects, xs, ys, zs, internal_membranes):
     dx = xs[1] - xs[0]
     # this is bigger than sqrt(3) * dx / 2 \approx 0.866, the distance from center of cube to corner
     max_d = dx * .87 * chunk_size
+    
+    # safety factor
+    max_d *= 2
 
     chunk_objs = [[[[] for k in xrange(nz)] for j in xrange(ny)] for i in xrange(nx)]
     chunk_pts = [[[[] for k in xrange(nz)] for j in xrange(ny)] for i in xrange(nx)]
