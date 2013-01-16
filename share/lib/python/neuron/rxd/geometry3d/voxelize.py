@@ -64,7 +64,7 @@ def voxelize(source, dx=0.25, xlo=None, xhi=None, ylo=None, yhi=None, zlo=None, 
      
         from neuron import h
         from matplotlib import pyplot
-        import geometry3d
+        from neuron.rxd import geometry3d
 
         s1, s2, s3 = [h.Section() for i in xrange(3)]
         for sec in [s2, s3]: ignore_return = sec.connect(s1)

@@ -339,4 +339,30 @@ def run(tstop):
     h('while (t < tstop) { fadvance() }')
     # what about pc.psolve(tstop)?
 
+def nrn_dll():
+    """Return a ctypes object corresponding to the NEURON library.
+    
+    .. warning::
+    
+        This provides access to the C-language internals of NEURON and should
+        be used with care.
+    """
+    import ctypes
+    import os
+    import platform
+    
+    neuron_home = os.path.split(os.path.split(h.neuronhome())[0])[0]
+
+    success = False
+    base_path = os.path.join(neuron_home, platform.machine(), 'lib', 'libnrniv')
+    for extension in ['', '.dll', '.so', '.dylib']:
+        try:
+            the_dll = ctypes.cdll[base_path + extension]
+            success = True
+        except:
+            pass
+        if success: break
+    else:
+        raise Exception('unable to connect to the NEURON library')
+    return the_dll
 

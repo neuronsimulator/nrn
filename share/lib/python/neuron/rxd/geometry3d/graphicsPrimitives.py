@@ -6,24 +6,13 @@
 
 import bisect
 from numpy import sqrt, fabs
-import ctypes
 import neuron
-import os
+import ctypes
 
 #
 # connect to dll via ctypes
 #
-
-for extension in ['', '.dll', '.so', '.dylib']:
-    success = False
-    try:
-        nrn_dll = ctypes.cdll[os.path.join(neuron.__path__[0], 'hoc' + extension)]
-        success = True
-    except:
-        pass
-    if success: break
-else:
-    raise Exception('unable to connect to the NEURON library')
+nrn_dll = neuron.nrn_dll()
 
 
 #
