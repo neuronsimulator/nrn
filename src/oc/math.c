@@ -29,8 +29,8 @@ int	errno;
 double	errcheck();
 
 int hoc_atan2() {
-	double d, *getarg();
-	d = atan2(*getarg(1), *getarg(2));
+	double d, *hoc_getarg();
+	d = atan2(*hoc_getarg(1), *hoc_getarg(2));
 	hoc_ret();
 	pushx(d);
 	return 0;

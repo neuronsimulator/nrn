@@ -7,6 +7,9 @@
 #include	"hocassrt.h"
 #include	<string.h>
 
+#define gargstr hoc_gargstr
+#define getarg hoc_getarg
+
 /* the dec alpha cxx doesn't understand struct foo* inside a struct */
 
 #if defined(__cplusplus)
