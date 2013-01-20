@@ -1,0 +1,433 @@
+.. _panel:
+
+         
+button-menu-panel
+-----------------
+
+        The following are implemented as hoc functions. They are used to create 
+        panels of buttons, menus, and field editors. 
+         
+
+----
+
+
+
+.. function:: xpanel
+
+
+    Syntax:
+        :code:`xpanel("name")`
+
+        :code:`xpanel("name", [0-1])`
+
+        :code:`xpanel()`
+
+        :code:`xpanel(x, y)`
+
+        :code:`xpanel(scroll)`
+
+        :code:`xpanel(scroll, x, y)`
+
+
+    Description:
+         
+
+
+        \ :code:`xpanel("name")` 
+
+        \ :code:`xpanel("name", [0-1])` 
+            Title of a new panel. Every 
+            button, menu, and value between this and a closing \ :code:`xpanel()` command 
+            with no arguments (or placement args) belongs to this panel. 
+            If the form is used with a second argument equal to 1, then 
+            the panel is laid out horizontally. Otherwise the default is vertically. 
+
+        \ :code:`xpanel()` 
+
+        \ :code:`xpanel(x, y)` 
+            done constructing the panel. so map it to the screen with position 
+            optionally specified. 
+
+        \ :code:`xpanel(slider)` 
+
+        \ :code:`xpanel(slider, x, y)` 
+            as above but if the first arg is a number, then the value determines 
+            whether the panel will be inside a scrollbox. Scroll = 0 means a scrollbox 
+            will NOT be used. Scroll = 1 means the panel will be inside a scrollbox. 
+            Scroll = -1 is the default value and whether or not a scrollbox is used 
+            is determined by the number of panel items in comparison with the 
+            value of the panel_scroll property in the nrn.defaults file. 
+
+
+         
+         
+
+----
+
+
+
+.. function:: xbutton
+
+
+    Syntax:
+        :code:`xbutton("command")`
+
+        :code:`xbutton("prompt", "command")`
+
+
+    Description:
+
+
+        \ :code:`xbutton("command")` 
+            new button with command to execute when pressed. The label 
+            on the button is "*command*". 
+
+        \ :code:`xbutton("prompt", "command")` 
+            the label ont the button is "*prompt*", the action 
+            to execute is "*command*". 
+
+
+         
+
+----
+
+
+
+.. function:: xstatebutton
+
+
+    Syntax:
+        :code:`xstatebutton("prompt",&var [,"action"])`
+
+
+    Description:
+        like xbutton, but when pressed var is set to 0 or 1 so that it matches the 
+        telltale state of the button. If the var is set by another way the 
+        telltale state is updated to reflect the correct value. 
+
+         
+
+----
+
+
+
+.. function:: xcheckbox
+
+
+    Syntax:
+        :code:`xcheckbox("prompt",&var [,"action"])`
+
+
+    Description:
+        like xstatebutton, but checkbox appearance. 
+
+         
+
+----
+
+
+
+.. function:: xradiobutton
+
+
+    Syntax:
+        :code:`xradiobutton("name", "action")`
+
+        :code:`xradiobutton("name", "action", 0or1)`
+
+
+    Description:
+        Like an \ :code:`xbutton` but highlights the most recently selected 
+        button of a contiguous group (like a car radio, mutually exclusive 
+        selection). 
+        If the third argument is 1, then the button will be selected when the 
+        panel is mapped onto the screen. However, in 
+        this case the action should also be explicitly executed by the programmer. 
+        That is not done automatically since it is often the case that the action 
+        is invalid when the radio button is created. 
+
+    Example:
+
+        .. code-block::
+            none
+
+            proc a() { 
+                print $1 
+            } 
+             
+            strdef label, cmd 
+             
+            xpanel("panel") 
+                xmenu("menu") 
+                for i =1, 10 { 
+                    sprint(label, "item %d", i) 
+                    sprint(cmd, "a(%d)", i) 
+                    xradiobutton(label, cmd) 
+                } 
+                xmenu() 
+            xpanel() 
+
+         
+
+         
+
+----
+
+
+
+.. function:: xmenu
+
+
+    Syntax:
+        :code:`xmenu("title")`
+
+        :code:`xmenu()`
+
+        :code:`xmenu("title", 1)`
+
+        :code:`xmenu("title", "stmt")`
+
+        :code:`xmenu("title", "stmt", 1)`
+
+
+    Description:
+
+
+        \ :code:`xmenu("title")` 
+            create a button in the panel with label "title" which, when 
+            pressed, pops up a menu containing buttons and other menus. Every 
+            \ :code:`xbutton` and \ :code:`xmenu` command between this and the closing \ :code:`xmenu()` 
+            command with no arguments becomes the menu. 
+            Don't put values into menus. 
+
+        \ :code:`xmenu()` 
+            done defining the menu. Menus can be nested as in 
+
+            .. code-block::
+                none
+
+                	xmenu("one") 
+                	  xmenu("two") 
+                	  xmenu() 
+                	xmenu() 
+
+
+        \ :code:`xmenu("title", 1)` 
+            adds the menu to the menubar. Note that a top level menu with no 
+            second argument starts a new menubar. Normally these menubars have only 
+            one top level item. 
+
+            .. code-block::
+                none
+
+                xpanel("menubar") 
+                	xmenu("first") 
+                		xbutton("one","print 1") 
+                		xbutton("two","print 2") 
+                	xmenu() 
+                	xmenu("second", 1) 
+                		xbutton("three","print 3") 
+                		xbutton("four","print 4") 
+                		xmenu("submenu") 
+                			xbutton("PI", "print PI") 
+                		xmenu() 
+                	xmenu() 
+                	xmenu("third", 1) 
+                		xbutton("five","print 5") 
+                		xbutton("six","print 6") 
+                	xmenu() 
+                	xmenu("nextline") 
+                		xbutton("seven","print 7") 
+                		xbutton("eight","print 8") 
+                	xmenu() 
+                xpanel() 
+
+
+        \ :code:`xmenu("title", "stmt")` and \ :code:`xmenu("title", "stmt", 1)` 
+            Dynamic menu added as item in panel or menu or (when third argument 
+            is 1) to a menubar. An example of the first type is the 
+            NEURONMainMenu/File/RecentDir and an example of the last type is the 
+            NEURONMainMenu/Window 
+             
+            When the menu title button is selected, the stmt is executed in a context 
+            like: 
+
+            .. code-block::
+                none
+
+                	xmenu("title") 
+                	stmt 
+                	xmenu() 
+
+            which should normally build a menu list and then this list is mapped to 
+            the screen as a normal walking menu. 
+             
+
+            .. code-block::
+                none
+
+                load_file("nrngui.hoc") 
+                xpanel("test") 
+                xmenu("dynamic", "make()") 
+                xpanel() 
+                 
+                strdef s1, s2 
+                n = 0 
+                 
+                proc make() {local i 
+                   n += 1 
+                   for i=1, n { 
+                      sprint(s1, "label %d", i) 
+                      sprint(s2, "print %d", i) 
+                      xbutton(s1, s2) 
+                   } 
+                } 
+                 
+
+
+
+         
+
+----
+
+
+
+.. function:: xlabel
+
+
+    Syntax:
+        :code:`xlabel("string")`
+
+
+    Description:
+        Show the string as a fixed label. 
+
+         
+
+----
+
+
+
+.. function:: xvarlabel
+
+
+    Syntax:
+        :code:`xvarlabel(strdef)`
+
+
+    Description:
+        Show the string as its current value. 
+
+         
+
+----
+
+
+
+.. function:: xvalue
+
+
+    Syntax:
+        :code:`xvalue("variable")`
+
+        :code:`xvalue("prompt", "variable" [, boolean_deflt, "action" [, boolean_canrun, boolean_usepointer]])`
+
+        :code:`xvalue("prompt", "variable", 2)`
+
+
+    Description:
+
+
+        \ :code:`xvalue("variable")` 
+            create field editor for variable 
+
+        \ :code:`xvalue("prompt", "variable" [, boolean_deflt, "action" [, boolean_canrun, boolean_usepointer]])` 
+            create field editor for variable with the button labeled with "*prompt*". 
+            If *boolean_deflt* == 1 then add a checkbox which is checked when the 
+            value of the field editor is different that when the editor was 
+            created. Execute "action" when user enters a new value. If 
+            *boolean_canrun* == 1 then use a default_button widget kit appearance 
+            instead	of a push_button widget kit appearance. 
+            If *boolean_usepointer* is true then (for efficiency sake) try to 
+            use the address of variable instead of interpreting it all the time. 
+            At this time you must use the address form if the button is created 
+            within an object, otherwise when the button is pressed, the symbol 
+            name won't be parsed within the context of the object but at the 
+            top-level context. 
+
+        \ :code:`xvalue("prompt", "variable", 2)` 
+            a field editor that keeps getting updated every 10th \ :code:`doNotify()`. 
+
+        The domain of values that can be entered by the user into a field editor 
+        may be limited to the domain specified by the 
+        :func:`variable_domain` function , the domain specified for the variable in 
+        a model description file, or a default domain that exists 
+        for some special NEURON variables such as diam, Ra, L, etc. 
+        For a field editor to check the domain, domain limits must be in effect 
+        prior to creation of the field editor. 
+
+         
+
+----
+
+
+
+.. function:: xpvalue
+
+
+    Syntax:
+        :code:`xpvalue("variable")`
+
+        :code:`xpvalue("prompt", &variable, ...)`
+
+
+    Description:
+        like :func:`xvalue` but definitely uses address of the variable. 
+
+         
+
+----
+
+
+
+.. function:: xfixedvalue
+
+
+    Syntax:
+        :code:`xfixedvalue("variable")`
+
+        :code:`xfixedvalue("prompt", "variable", boolean_deflt, boolean_usepointer)`
+
+
+    Description:
+        like xvalue but cannot be changed by the user except under 
+        program control and there can be no action associated with it. 
+        Note: this is not implemented. For now, try to do the same thing 
+        with \ :code:`xvarlabel()`. 
+
+         
+
+----
+
+
+
+.. function:: xslider
+
+
+    Syntax:
+        :code:`xslider(&var, [low, high], ["send_cmd"], [vert], [slow])`
+
+
+    Description:
+        Slider which is attached to the variable var. Whenever the slider 
+        is moved, the optional *send_cmd* is executed. The default range is 
+        0 to 100. Steppers increase or decrease the value by 1/10 of the range. 
+        Resolution is .01 of the range. vert=1 makes a vertical slider and 
+        if there is no *send_cmd* may be the 4th arg. slow=1 removes the "repeat 
+        key" functionality from the slider(and arrow steppers) and also 
+        prevents recursive calls to the *send_cmd*. This is necessary if 
+        a slider action is longer than the timeout delay. Otherwise the 
+        slider can get in a state that appears to be an infinite loop. 
+        The downside of slow=1 is that the var may not get the last value 
+        of the slider if one releases the button during an action. 
+

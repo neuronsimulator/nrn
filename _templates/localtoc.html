@@ -1,0 +1,19 @@
+{#
+    basic/localtoc.html
+    ~~~~~~~~~~~~~~~~~~~
+
+    Sphinx sidebar template: local table of contents.
+
+    :copyright: Copyright 2007-2011 by the Sphinx team, see AUTHORS.
+    :license: BSD, see LICENSE for details.
+#}
+  <h3><a href="{{ pathto(master_doc) }}">{{ _('Table Of Contents') }}</a></h3>
+{%- if display_toc %}
+
+  {{ toc }}
+{%- endif %}
+<div class="custom-index container">
+<script type="text/javascript" src={{ pathto(master_doc)[:-10] + '_static/pymunk.js' }}></script>
+
+</div>
+
