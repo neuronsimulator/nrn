@@ -1,6 +1,7 @@
-.. _ocsyntax:
 
 .. index::  syntax
+
+.. _ocsyntax:
 
 Syntax
 ------
