@@ -15,11 +15,12 @@ StandardRunTools
     which avoids inefficiencies of the :func:`load_proc` command on 
     mswindows machines. 
      
-    Implementations of the standard tools are in $NEURONHOME/lib/hoc/*.hoc 
+    Implementations of the standard tools are in :file:`$NEURONHOME/lib/hoc/*.hoc` 
      
+.. _NEURONMainMenu:
 
-NEURONMainMenu
-~~~~~~~~~~~~~~
+NEURON Main Menu
+~~~~~~~~~~~~~~~~
 
      
     Main menu for standard control, graphing, menu generation. 
@@ -537,9 +538,10 @@ Shape
     Pops up an :func:`ImpShape` template tool for displaying the morphoelectronic transform 
     of neuron shape in which distance is represented as the negative log of attenuation. 
      
+.. _ArchiveAndHardcopy:
 
-ArchiveAndHardcopy
-~~~~~~~~~~~~~~~~~~
+Archive And Hardcopy
+~~~~~~~~~~~~~~~~~~~~
 
     Checkin this simulation to RCS and print all windows on the printer. 
      

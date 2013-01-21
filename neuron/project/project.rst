@@ -4,52 +4,52 @@
 ProjectManagement
 -----------------
 
-    RCS control of simulation projects in a single directory. The idea is to 
-    be able to reproduce a simulation given its version number. 
-    The version number was printed along with all the neuron windows on the screen 
-    when the simulation was archived. 
-     
-    See :func:`ArchiveAndHardcopy` 
-     
-    Effective use of this management system requires that the user conform to 
-    a policy in which no simulation variables are changed except by changing them 
-    in managed files (listed in the nrnversion file). ie. during a session 
-    only change variables by editing a hoc file and saving it, or only change 
-    variables in field editors that actually appear on the screen when a simulation 
-    is archived. Variable values will be lost if you change them 
-    by direct command to the interpreter (the command does not appear in any file) 
-    or if you dismiss a panel after changing one of its field editors (when 
-    the simulation is archived, only values of field editors actually displayed 
-    on the screen are saved). User judgment is required to determine if these 
-    missing variable values will later prevent reproduction of the simulation. 
-    If this is the case, then when the hardcopy is printed, the user should 
-    manually enter this information when the log message is requested or 
-    else make hand written notes on the hardcopy itself. 
-     
-    A policy that seems to work pretty well is to always start a simulation via 
+RCS control of simulation projects in a single directory. The idea is to 
+be able to reproduce a simulation given its version number. 
+The version number was printed along with all the neuron windows on the screen 
+when the simulation was archived. 
+ 
+See :ref:`ArchiveAndHardcopy` 
+ 
+Effective use of this management system requires that the user conform to 
+a policy in which no simulation variables are changed except by changing them 
+in managed files (listed in the nrnversion file). ie. during a session 
+only change variables by editing a hoc file and saving it, or only change 
+variables in field editors that actually appear on the screen when a simulation 
+is archived. Variable values will be lost if you change them 
+by direct command to the interpreter (the command does not appear in any file) 
+or if you dismiss a panel after changing one of its field editors (when 
+the simulation is archived, only values of field editors actually displayed 
+on the screen are saved). User judgment is required to determine if these 
+missing variable values will later prevent reproduction of the simulation. 
+If this is the case, then when the hardcopy is printed, the user should 
+manually enter this information when the log message is requested or 
+else make hand written notes on the hardcopy itself. 
+ 
+A policy that seems to work pretty well is to always start a simulation via 
 
-    .. code-block::
-        none
+.. code-block::
+    none
 
-        	special init.hoc -	# if the simulation uses mod file 
+    	special init.hoc -	# if the simulation uses mod file 
 
-    where init.hoc xopens all necessary files to initialize the simulation. 
+where init.hoc xopens all necessary files to initialize the simulation. 
 
-    .. code-block::
-        none
+.. code-block::
+    none
 
-        init.hoc 
-        //------- 
-        xopen("$(NEURONHOME)/lib/hoc/noload.hoc")	// standard run tools 
-        xopen("morph.hoc")	// topology, geometry, compartmentalization 
-        xopen("memb.hoc")	// membrane properties 
-        xopen("param.hoc")	// parameters that are occasionally changed 
-        xopen("start.ses")	// will automatically change for every new version 
-        //------- 
+    init.hoc 
+    //------- 
+    xopen("$(NEURONHOME)/lib/hoc/noload.hoc")	// standard run tools 
+    xopen("morph.hoc")	// topology, geometry, compartmentalization 
+    xopen("memb.hoc")	// membrane properties 
+    xopen("param.hoc")	// parameters that are occasionally changed 
+    xopen("start.ses")	// will automatically change for every new version 
+    //------- 
 
-    With this style, whenever an old version is checked out and run, the appearance 
-    of the screen should match the hardcopy and it should be possible to 
-    reproduce the archived simulation. 
+With this style, whenever an old version is checked out and run, the appearance 
+of the screen should match the hardcopy and it should be possible to 
+reproduce the archived simulation. 
      
 
 .. warning::
@@ -67,99 +67,102 @@ ProjectManagement
     snapshots, although not failsafe, hopefully will realistically help to 
     solve the very real problems of simulation management. 
 
-Example:
-    The following example illustrates the initialization of an essentially 
-    empty project. 
+Examples
+~~~~~~~~
+
+The following example illustrates the initialization of an essentially 
+empty project. 
+ 
+Here are the files. After initializing the project with these, they 
+can be modified to handle arbitrary complexity. These files should be 
+in an otherwise empty subdirectory. 
+ 
+init.hoc 
+
+.. code-block::
+    none
+
+    xopen("$(NEURONHOME)/lib/hoc/noload.hoc") 
+    xopen("morph.hoc") 
+    xopen("memb.hoc") 
+    xopen("param.hoc") 
+    xopen("start.ses") 
+
+morph.hoc 
+
+.. code-block::
+    none
+
+    create soma 
+    access soma 
+    L=5 
+    diam=100/(PI*L) 
+
+memb.hoc 
+
+.. code-block::
+    none
+
+    insert hh 
+
+param.hoc 
+
+.. code-block::
+    none
+
+    gnabar_hh = .120 
+
+start.ses 
+
+.. code-block::
+    none
+
+    nrnmainmenu() 
+
+ 
+The project is initialized with :ref:`prjnrninit` . 
+This will create an RCS directory and checkout 
+a nrnversion file with the contents: 
+
+.. code-block::
+    none
+
+    $Revision: 1.3 $ 
+    1.1 init.hoc 
+    1.1 memb.hoc 
+    1.1 morph.hoc 
+    1.1 param.hoc 
+    1.1 start.ses 
+
+Note that nrnversion is essentially just a manifest of the files in 
+the project. To add a new file to the project one can explicitly check 
+the file into RCS with the ci command and insert the appropriate line 
+in the nrnversion file. 
+ 
+At this point one can run 
+
+.. code-block::
+    none
+
+    nrniv init.hoc - 
+
+and see a neuron main menu. Use the menu to generate a graph 
+of an action potential. Since there was an RCS directory with a 
+nrnversion,v archive when nrnmainmenu() was executed, 
+the Miscellaneous menu has an ArchiveAndHardcopy item. 
+Pressing this button will archive the current version with the session 
+(it is saved in start.ses), request a description of this version and 
+print the version number, description, and session windows on the 
+printer specified by the :code:`$PRINT_CMD` environment variable. 
+ 
+It is recommended that you play with this simple project for a while 
+to familiarize yourself with the style before employing it in a serious 
+project. Make several different hardcopies. Use :ref:`prjnrnco` to check out 
+earlier versions and run them, modify parameters, and make several more 
+hardcopies. Note the way branch version numbers are generated and incremented. 
      
-    Here are the files. After initializing the project with these, they 
-    can be modified to handle arbitrary complexity. These files should be 
-    in an otherwise empty subdirectory. 
-     
-    init.hoc 
 
-    .. code-block::
-        none
-
-        xopen("$(NEURONHOME)/lib/hoc/noload.hoc") 
-        xopen("morph.hoc") 
-        xopen("memb.hoc") 
-        xopen("param.hoc") 
-        xopen("start.ses") 
-
-    morph.hoc 
-
-    .. code-block::
-        none
-
-        create soma 
-        access soma 
-        L=5 
-        diam=100/(PI*L) 
-
-    memb.hoc 
-
-    .. code-block::
-        none
-
-        insert hh 
-
-    param.hoc 
-
-    .. code-block::
-        none
-
-        gnabar_hh = .120 
-
-    start.ses 
-
-    .. code-block::
-        none
-
-        nrnmainmenu() 
-
-     
-    The project is initialized with :func:`prjnrninit` . 
-    This will create an RCS directory and checkout 
-    a nrnversion file with the contents: 
-
-    .. code-block::
-        none
-
-        $Revision: 1.3 $ 
-        1.1 init.hoc 
-        1.1 memb.hoc 
-        1.1 morph.hoc 
-        1.1 param.hoc 
-        1.1 start.ses 
-
-    Note that nrnversion is essentially just a manifest of the files in 
-    the project. To add a new file to the project one can explicitly check 
-    the file into RCS with the ci command and insert the appropriate line 
-    in the nrnversion file. 
-     
-    At this point one can run 
-
-    .. code-block::
-        none
-
-        nrniv init.hoc - 
-
-    and see a neuron main menu. Use the menu to generate a graph 
-    of an action potential. Since there was an RCS directory with a 
-    nrnversion,v archive when nrnmainmenu() was executed, 
-    the Miscellaneous menu has an ArchiveAndHardcopy item. 
-    Pressing this button will archive the current version with the session 
-    (it is saved in start.ses), request a description of this version and 
-    print the version number, description, and session windows on the 
-    printer specified by the \ :code:` $PRINT_CMD ` environment variable. 
-     
-    It is recommended that you play with this simple project for a while 
-    to familiarize yourself with the style before employing it in a serious 
-    project. Make several different hardcopies. Use :func:`prjnrnco` to check out 
-    earlier versions and run them, modify parameters, and make several more 
-    hardcopies. Note the way branch version numbers are generated and incremented. 
-     
-
+.. _prjnrninit:
 
 prjnrninit
 ~~~~~~~~~~
@@ -191,6 +194,8 @@ Description:
     exit status 0. Otherwise return with exit status 1 and print the 
     names of the differing files on the standard output. 
 
+
+.. _prjnrnco:
 
 prjnrnco
 ~~~~~~~~
@@ -242,7 +247,7 @@ Syntax:
 Description:
     Checks in the working files and 
     sends the postscript file to the command specified in the 
-    \$PRINT_CMD (e.g. lp ) environment variable. 
+    :code:`$PRINT_CMD` (e.g. :command:`lp`) environment variable. 
      
     If the working files are not different from their archived versions 
     the user is asked whether to continue or verify that the simulation 
@@ -252,7 +257,7 @@ Description:
     will be asked whether or not to continue to checkin. If you can't reproduce 
     the simulation or had to change working files to reproduce it, choose "Abort" 
      
-    If the working files did differ then :func:`prjnrnci` is run in an xterm. 
+    If the working files did differ then :func:`prjnrnci` is run in an :program:`xterm`. 
      
     The last question for the user to answer is whether to leave the working 
     files at the new or old version. The answer depends on whether you envision 
@@ -260,10 +265,10 @@ Description:
     additive. 
      
     The log message entered during checkin is added to the postcript stream 
-    and sent to $PRINT_CMD 
+    and sent to :code:`$PRINT_CMD`.
      
-    This command is called by the :func:`ArchiveAndHardcopy` menu item in the 
-    :func:`NEURONMainMenu` which first saves the session in start.hoc and 
+    This command is called by the :ref:`ArchiveAndHardcopy` menu item in the 
+    :ref:`NEURONMainMenu` which first saves the session in :file:`start.hoc` and 
     sends the entire session as standard input to this command. 
 
 
