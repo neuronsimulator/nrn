@@ -18,15 +18,15 @@ ParallelContext
 
     Description:
         "Embarrassingly" parallel computations using a Bulletin board style 
-        analogous to LINDA. (But see the :meth:`ParallelContext.ParallelNetwork` , 
-        :func:`ParallelNetManager` and :func:`ParallelTransfer` discussions. 
-        Also see :meth:`ParallelContext.SubWorld` for a way to simultaneously use 
+        analogous to LINDA. (But see the :ref:`ParallelNetwork`, 
+        :class:`ParallelNetManager` and :ref:`ParallelTransfer` discussions. 
+        Also see :ref:`SubWorld` for a way to simultaneously use 
         the bulletin board and network simulations involving global identifiers.) 
         Useful when doing weeks or months worth of 
         simulation runs each taking more than a second and where not much 
         communication is required.  Eg.  parameter sensitivity, and some forms 
         of optimization.  The underlying strategy is to keep all machines in a 
-        PVM or :meth:`ParallelContext.MPI` 
+        PVM or :ref:`ParallelContext_MPI` 
         virtual machine (eg.  workstation cluster) as busy as possible by 
         distinguishing between hosts (cpu's) and tasks.  A task started by a 
         host stays on that host til it finishes.  The code that a host is 
@@ -41,8 +41,8 @@ ParallelContext
         Communication overhead is not bad if each task takes a second or more. 
          
         When using the Bulletin board with Python, the methods 
-        :func:`submit` , :func:`context` , :func:`pack` , and :func:`post` 
-        have been augmented and :func:`pyret` and :func:`upkpyobj` have been introduced 
+        :meth:`submit`, :meth:`context`, :meth:`pack`, and :meth:`post` 
+        have been augmented and :meth:`pyret` and :meth:`upkpyobj` have been introduced 
         to allow a more Pythonic style. I.e. The executable 
         string for submit and context may be replaced by a Python callable that 
         returns a Python Object (retrieved with pyret), the args to submit, context, pack, and post 
@@ -227,8 +227,8 @@ ParallelContext
          
         The PVM (parallel virtual machine) 
         should be setup so that it allows 
-        execution on all hosts of the csh script $NEURONHOME/bin/bbsworker.sh . 
-        (Simulations may also be run under :meth:`ParallelContext.MPI` but the launch 
+        execution on all hosts of the csh script :file:`$NEURONHOME/bin/bbsworker.sh`. 
+        (Simulations may also be run under :ref:`ParallelContext_MPI` but the launch 
         mechanisms are quite different) 
         The simulation hoc files should be available on each machine with 
         the same relative path with respect to the user's $HOME directory. 
@@ -347,7 +347,7 @@ ParallelContext
     Description:
         Submits statement for execution by any host. Submit returns the userid not the 
         system generated global id of the task. 
-        However when the task is executed, the hoc_ac_ variable 
+        However when the task is executed, the :data:`hoc_ac_` variable 
         is set to this unique id (positive integer) of the task. 
         This unique id is returned by :meth:`ParallelContext.working` . 
          
@@ -417,11 +417,11 @@ ParallelContext
         as numbers, strings, or hoc Vectors. The return is a Python object 
         and can only be retrieved with :func:`pyret` . The Python objects must be 
         pickleable (hoc objects are not presently pickleable). Python object arguments 
-        may be retrieved with :func:`upkpyobj` . 
+        may be retrieved with :func:`upkpyobj`. 
 
     .. seealso::
-        :meth:`ParallelContext.working`
-        :meth:`ParallelContext.retval`, :meth:`ParallelContext.userid`
+        :meth:`ParallelContext.working`,
+        :meth:`ParallelContext.retval`, :meth:`ParallelContext.userid`,
         :meth:`ParallelContext.pyret`
 
     .. warning::
@@ -535,8 +535,8 @@ ParallelContext
 
 
     .. seealso::
-        :meth:`ParallelContext.submit`
-        :meth:`ParallelContext.retval`, :meth:`ParallelContext.userid`
+        :meth:`ParallelContext.submit`,
+        :meth:`ParallelContext.retval`, :meth:`ParallelContext.userid`,
         :meth:`ParallelContext.pyret`
 
     .. warning::
@@ -565,7 +565,7 @@ ParallelContext
         The return value of the function executed by the task gathered by the 
         last :meth:`ParallelContext.working` call. 
         If the statement form of the submit is used then the return value 
-        is the value of hoc_ac_ when the statement completes on the executing host. 
+        is the value of :data:`hoc_ac_` when the statement completes on the executing host. 
 
          
 
@@ -810,7 +810,7 @@ ParallelContext
         To unpack Python objects, :func:`upkpyobj` must be used. 
 
     .. seealso::
-        :meth:`ParallelContext.upkstr`, :meth:`ParallelContext.upkscalar`
+        :meth:`ParallelContext.upkstr`, :meth:`ParallelContext.upkscalar`,
         :meth:`ParallelContext.upkvec`, :meth:`ParallelContext.upkpyobj`
 
          
@@ -1143,7 +1143,7 @@ ParallelContext
         splitcell_exchange_time includes the reducedtree_computation_time. 
          
         reducedtree_computation_time refers to the extra time used by the 
-        :meth:`ParallelTransfer.multisplit` backbone_style 1 and 2 methods between 
+        :meth:`ParallelContext.multisplit` backbone_style 1 and 2 methods between 
         send and receive of matrix information. This amount is also included 
         in the splitcell_exchange_time. 
 
@@ -1177,73 +1177,73 @@ ParallelContext
 ----
 
 
+Implementation Notes
+~~~~~~~~~~~~~~~~~~~~
 
-.. method:: ParallelContext.ImplementationNotes
 
-
-    Description:
-        Some of these notes are PVM specific. 
-         
-        With the following information you may be encouraged to provide 
-        a more efficient implementation. You may also see enough information 
-        here to decide that this implementation is about as good as can be 
-        expected in the context of your problem. 
-         
-        The master NEURON process contains the server for the bulletin board system. 
-        Communication between normal hoc code executing on the master NEURON 
-        process and the 
-        server is direct with no overhead except packing and unpacking 
-        messages and manipulating the send and receive buffers with pvm commands. 
-        The reason I put the server into the master process is twofold. 
-        1) While the master is number crunching, client messages are still 
-        promptly dealt with. I noticed that when neuron was cpu bound, a separate 
-        server process did not respond to requests for about a tenth of a second. 
-        2) No context switching between master process and server. 
-        If pvm is not running, a local implementation of the server is used 
-        which has even less overhead than pvm packing and unpacking. 
-         
-        Clients (worker processes) communicate with the bulletin board server 
-        (in the master machine) with pvm commands pvm_send and pvm_recv. 
-        The master process is notified of asynchronous events via the SIGPOLL 
-        signal. Unfortunately this is often early since a pvm message often 
-        consists of several of these asynchronous events and my experience 
-        so far is that (pvm_probe(-1,-1) > 0) is not always true even after 
-        the last of this burst of signals. Also SIGPOLL is not available 
-        except under UNIX. However SIGPOLL is only useful on the master 
-        process and should not affect performance with regard to whether a 
-        client is working under Win95, NT, or Linux. So even with SIGPOLL 
-        there must be software polling on the server and this takes place 
-        on the next execute() call in the interpreter. (an execute call 
-        takes place when the body of every for loop, if statement, or 
-        function/procedure call is executed.) In the absence of a SIGPOLL 
-        signal this software polling takes place every POLLDELAY=20 
-        executions. Of course this is too seldom in the case of 
-        fadvance calls with a very large model, and too often in the case 
-        of for i=1,100000 x+=i. Things are generally ok if the 
-        message at the end of a run says that the amount of time spent 
-        waiting for something to do is small compared to the amount of time 
-        spent doing things. Perhaps a timer would help. 
-         
-        The bulletin board server consists of several lists implemented with 
-        the STL (Standard Template Library) which makes for reasonably fast 
-        lookup of keys. ie searching is not proportional to the size of the 
-        list but proportional to the log of the list size. 
-         
-        Posts go into the message list ordered by key (string order). 
-        They stay there until taken with look_take or take. 
-        Submissions go into a work list ordered by id and a todo list of id's 
-        by priority. When a host requests something to do, the highest priority 
-        (first in the list) id is taken off the todo list. When done, the id goes 
-        onto a results list ordered by parent id. When working is called 
-        and a results list has an id with the right parent id, the 
-        id is removed from the results list and the (id, message) pair 
-        is removed from the work list. 
-         
-        If args are saved (no explicit userid in the submit call), they are 
-        stored locally and become the active buffer on the corresponding 
-        working return. The saving is in an STL map associated with userid. 
-        The data itself is not copied but neither is it released until 
-        the next usage of the receive buffer after the working call returns. 
+Description:
+    Some of these notes are PVM specific. 
+     
+    With the following information you may be encouraged to provide 
+    a more efficient implementation. You may also see enough information 
+    here to decide that this implementation is about as good as can be 
+    expected in the context of your problem. 
+     
+    The master NEURON process contains the server for the bulletin board system. 
+    Communication between normal hoc code executing on the master NEURON 
+    process and the 
+    server is direct with no overhead except packing and unpacking 
+    messages and manipulating the send and receive buffers with pvm commands. 
+    The reason I put the server into the master process is twofold. 
+    1) While the master is number crunching, client messages are still 
+    promptly dealt with. I noticed that when neuron was cpu bound, a separate 
+    server process did not respond to requests for about a tenth of a second. 
+    2) No context switching between master process and server. 
+    If pvm is not running, a local implementation of the server is used 
+    which has even less overhead than pvm packing and unpacking. 
+     
+    Clients (worker processes) communicate with the bulletin board server 
+    (in the master machine) with pvm commands pvm_send and pvm_recv. 
+    The master process is notified of asynchronous events via the SIGPOLL 
+    signal. Unfortunately this is often early since a pvm message often 
+    consists of several of these asynchronous events and my experience 
+    so far is that (pvm_probe(-1,-1) > 0) is not always true even after 
+    the last of this burst of signals. Also SIGPOLL is not available 
+    except under UNIX. However SIGPOLL is only useful on the master 
+    process and should not affect performance with regard to whether a 
+    client is working under Win95, NT, or Linux. So even with SIGPOLL 
+    there must be software polling on the server and this takes place 
+    on the next execute() call in the interpreter. (an execute call 
+    takes place when the body of every for loop, if statement, or 
+    function/procedure call is executed.) In the absence of a SIGPOLL 
+    signal this software polling takes place every POLLDELAY=20 
+    executions. Of course this is too seldom in the case of 
+    fadvance calls with a very large model, and too often in the case 
+    of for i=1,100000 x+=i. Things are generally ok if the 
+    message at the end of a run says that the amount of time spent 
+    waiting for something to do is small compared to the amount of time 
+    spent doing things. Perhaps a timer would help. 
+     
+    The bulletin board server consists of several lists implemented with 
+    the STL (Standard Template Library) which makes for reasonably fast 
+    lookup of keys. ie searching is not proportional to the size of the 
+    list but proportional to the log of the list size. 
+     
+    Posts go into the message list ordered by key (string order). 
+    They stay there until taken with look_take or take. 
+    Submissions go into a work list ordered by id and a todo list of id's 
+    by priority. When a host requests something to do, the highest priority 
+    (first in the list) id is taken off the todo list. When done, the id goes 
+    onto a results list ordered by parent id. When working is called 
+    and a results list has an id with the right parent id, the 
+    id is removed from the results list and the (id, message) pair 
+    is removed from the work list. 
+     
+    If args are saved (no explicit userid in the submit call), they are 
+    stored locally and become the active buffer on the corresponding 
+    working return. The saving is in an STL map associated with userid. 
+    The data itself is not copied but neither is it released until 
+    the next usage of the receive buffer after the working call returns. 
 
          
 
@@ -1251,175 +1251,177 @@ ParallelContext
 
 
 
-.. method:: ParallelContext.MPI
+.. _ParallelContext_MPI:
+
+MPI
+~~~
+
+Description:
+    If MPI is already installed, lucky you. You should ask the installer 
+    for help. 
+     
+    Here is how I got it going on a 24 cpu beowulf cluster and 
+    a dual processor Mac OSX G5. The cluster consisted of 12 dual processor 
+    nodes named node0 to node11 and a master. From the outside world you 
+    could only login to the master using ssh and from there to any of the nodes 
+    you also had to use ssh. For a second opinion see 
+    :doc:`Bill Lytton's notes on installing MPI <lyttonmpi>`.
+     
+    1) Figure out how to login to a worker without typing a password. 
+     
+    ie. do not go on unless you can 
+    \ :code:`ssh node1` or \ :code:`rsh node1`. If the former works then you must 
+    \ :code:`export RSHCOMMAND=ssh` before building the MPICH version of MPI since 
+    that information is compiled into one of the files. It's too late to set 
+    it after MPICH has been built. 
+     
+    On the Beowulf cluster master I did: 
+    \ :code:`ssh-keygen -t rsa` 
+    and just hit return three times (once to use the default file location 
+    and twice to specify and confirm an empty password). 
+    Then I did a 
+    \ :code:`cd $HOME/.ssh` and copied the id_rsa.pub file to authorized_keys. 
+    Now I could login to any node without using a password. 
+     
+    On the OSX machine I did the same thing but had to also check the 
+    SystemPreferences/Internet&Network Sharing/Services/RemoteLogin box. 
+     
+    2) install MPI 
+     
+    I use http://www-unix.mcs.anl.gov/mpi/mpich/downloads/mpich.tar.gz 
+    which on extraction ended up in $HOME/mpich-1.2.7. I built on 
+    osx with 
+
+    .. code-block::
+        none
+
+        export RSHCOMMAND=ssh 
+        ./configure --prefix=`pwd`/powerpc --with-device=ch_p4 
+        make 
+        make install 
+
+    and the same way on the beowulf cluster but with i686 instead of powerpc. 
+    I then added $HOME/mpich-1.2.7/powerpc/bin to my PATH because the 
+    NEURON configuration process will need to find mpicc and mpicxx 
+    and we will eventually be using mpirun. 
+     
+    Note: some systems may have a 
+    different implementation of MPI already installed and in that 
+    implementation the c++ compiler 
+    may be called mpic++. If that is in your path, then you will need to 
+    go to $HOME/mpich-1.2.7/powerpc/bin and 
+    \ :code:`ln -s mpicxx mpic++`. This will prevent NEURON's configure from becoming 
+    confused and deciding to use mpicc from one MPI version and mpic++ from another! 
+    ie. configure looks first for mpic++ and only if it does not find it does 
+    it try mpicxx. 
+     
+    You can gain some confidence if you go to mpich-1.2.7/examples/basic and 
+    test with 
+
+    .. code-block::
+        none
+
+        make hello++ 
+        mpirun -np 2 hello++ 
+
+    If this fails on the mac, you may need a machine file with the proper 
+    name that is indicated at the end of the $HOME/.ssh/authorized_keys file. 
+    In my case, since ssh-keygen called my machine Michael-Hines-Computer-2.local 
+    I have to use 
+
+    .. code-block::
+        none
+
+        {mpirun -machinefile $HOME/mpifile -np 2 hello++ 
+
+    where $HOME/mpifile has the single line 
+
+    .. code-block::
+        none
+
+        Michael-Hines-Computer-2.local 
+
+     
+    3) build NEURON using the --with-paranrn argument. 
+     
+    On the beowulf my neuron 
+    sources were in $HOME/neuron/nrn and interviews was installed in 
+    $HOME/neuron/iv and I decided to build in a separate object directory called 
+    $HOME/neuron/mpi-gcc2.96 so I created the latter directory, cd'd to it 
+    and used 
+
+    .. code-block::
+        none
+
+        ../nrn/configure --prefix=`pwd` --srcdir=../nrn --with-paranrn 
+
+    On the mac, I created a $HOME/neuron/withmpi directory and configured with 
+
+    .. code-block::
+        none
+
+        ../nrn/configure --prefix=`pwd` --srcdir=../nrn --with-paranrn \ 
+        --enable-carbon --with-iv=/Applications/NEURON-5.8/iv 
 
 
-    Description:
-        If MPI is already installed, lucky you. You should ask the installer 
-        for help. 
+     
+    4) test by going to $HOME/neuron/nrn/src/parallel and trying 
+
+    .. code-block::
+        none
+
+        mpirun -np 2  ~/neuron/withmpi/i686/bin/nrniv -mpi test0.hoc 
+
+    You should get an output similar to 
+
+    .. code-block::
+        none
+
+        nrnmpi_init(): numprocs=2 myid=0 
+        NEURON -- Version 5.8 2005-8-22 19:58:19 Main (52) 
+        by John W. Moore, Michael Hines, and Ted Carnevale 
+        Duke and Yale University -- Copyright 1984-2005 
          
-        Here is how I got it going on a 24 cpu beowulf cluster and 
-        a dual processor Mac OSX G5. The cluster consisted of 12 dual processor 
-        nodes named node0 to node11 and a master. From the outside world you 
-        could only login to the master using ssh and from there to any of the nodes 
-        you also had to use ssh. For a second opinion see 
-        <a href="lyttonmpi.txt">Bill Lytton's notes on installing MPI</a>. 
+        loading membrane mechanisms from i686/.libs/libnrnmech.so 
+        Additional mechanisms from files 
          
-        1) Figure out how to login to a worker without typing a password. 
+        hello from id 0 on NeuronDev 
          
-        ie. do not go on unless you can 
-        \ :code:`ssh node1` or \ :code:`rsh node1`. If the former works then you must 
-        \ :code:`export RSHCOMMAND=ssh` before building the MPICH version of MPI since 
-        that information is compiled into one of the files. It's too late to set 
-        it after MPICH has been built. 
+                0 
+        bbs_msg_cnt_=0 bbs_poll_cnt_=6667 bbs_poll_=93 
+                0 
+        hello from id 1 on NeuronDev 
          
-        On the Beowulf cluster master I did: 
-        \ :code:`ssh-keygen -t rsa` 
-        and just hit return three times (once to use the default file location 
-        and twice to specify and confirm an empty password). 
-        Then I did a 
-        \ :code:`cd $HOME/.ssh` and copied the id_rsa.pub file to authorized_keys. 
-        Now I could login to any node without using a password. 
+        [hines@NeuronDev parallel]$ 
          
-        On the OSX machine I did the same thing but had to also check the 
-        SystemPreferences/Internet&Network Sharing/Services/RemoteLogin box. 
-         
-        2) install MPI 
-         
-        I use http://www-unix.mcs.anl.gov/mpi/mpich/downloads/mpich.tar.gz 
-        which on extraction ended up in $HOME/mpich-1.2.7. I built on 
-        osx with 
 
-        .. code-block::
-            none
+     
+    5) If your machine is a cluster, list the machine names in a file 
+    (on the beowulf cluster $HOME/mpi32 has the contents 
 
-            export RSHCOMMAND=ssh 
-            ./configure --prefix=`pwd`/powerpc --with-device=ch_p4 
-            make 
-            make install 
+    .. code-block::
+        none
 
-        and the same way on the beowulf cluster but with i686 instead of powerpc. 
-        I then added $HOME/mpich-1.2.7/powerpc/bin to my PATH because the 
-        NEURON configuration process will need to find mpicc and mpicxx 
-        and we will eventually be using mpirun. 
-         
-        Note: some systems may have a 
-        different implementation of MPI already installed and in that 
-        implementation the c++ compiler 
-        may be called mpic++. If that is in your path, then you will need to 
-        go to $HOME/mpich-1.2.7/powerpc/bin and 
-        \ :code:`ln -s mpicxx mpic++`. This will prevent NEURON's configure from becoming 
-        confused and deciding to use mpicc from one MPI version and mpic++ from another! 
-        ie. configure looks first for mpic++ and only if it does not find it does 
-        it try mpicxx. 
-         
-        You can gain some confidence if you go to mpich-1.2.7/examples/basic and 
-        test with 
+        node0 
+        ... 
+        node11 
 
-        .. code-block::
-            none
+    ) 
+    and I use the mpirun command 
 
-            make hello++ 
-            mpirun -np 2 hello++ 
+    .. code-block::
+        none
 
-        If this fails on the mac, you may need a machine file with the proper 
-        name that is indicated at the end of the $HOME/.ssh/authorized_keys file. 
-        In my case, since ssh-keygen called my machine Michael-Hines-Computer-2.local 
-        I have to use 
+        mpirun -machinefile $HOME/mpi32 -np 24 \ 
+            /home/hines/neuron/mpi*6/i686/bin/nrniv -mpi test0.hoc 
 
-        .. code-block::
-            none
+    On my mac, for some bizarre reason known only to the tiger creators, 
+    the mpirun requires a machinefile with the line 
 
-            {mpirun -machinefile $HOME/mpifile -np 2 hello++ 
+    .. code-block::
+        none
 
-        where $HOME/mpifile has the single line 
-
-        .. code-block::
-            none
-
-            Michael-Hines-Computer-2.local 
-
-         
-        3) build NEURON using the --with-paranrn argument. 
-         
-        On the beowulf my neuron 
-        sources were in $HOME/neuron/nrn and interviews was installed in 
-        $HOME/neuron/iv and I decided to build in a separate object directory called 
-        $HOME/neuron/mpi-gcc2.96 so I created the latter directory, cd'd to it 
-        and used 
-
-        .. code-block::
-            none
-
-            ../nrn/configure --prefix=`pwd` --srcdir=../nrn --with-paranrn 
-
-        On the mac, I created a $HOME/neuron/withmpi directory and configured with 
-
-        .. code-block::
-            none
-
-            ../nrn/configure --prefix=`pwd` --srcdir=../nrn --with-paranrn \ 
-            --enable-carbon --with-iv=/Applications/NEURON-5.8/iv 
-
-
-         
-        4) test by going to $HOME/neuron/nrn/src/parallel and trying 
-
-        .. code-block::
-            none
-
-            mpirun -np 2  ~/neuron/withmpi/i686/bin/nrniv -mpi test0.hoc 
-
-        You should get an output similar to 
-
-        .. code-block::
-            none
-
-            nrnmpi_init(): numprocs=2 myid=0 
-            NEURON -- Version 5.8 2005-8-22 19:58:19 Main (52) 
-            by John W. Moore, Michael Hines, and Ted Carnevale 
-            Duke and Yale University -- Copyright 1984-2005 
-             
-            loading membrane mechanisms from i686/.libs/libnrnmech.so 
-            Additional mechanisms from files 
-             
-            hello from id 0 on NeuronDev 
-             
-                    0 
-            bbs_msg_cnt_=0 bbs_poll_cnt_=6667 bbs_poll_=93 
-                    0 
-            hello from id 1 on NeuronDev 
-             
-            [hines@NeuronDev parallel]$ 
-             
-
-         
-        5) If your machine is a cluster, list the machine names in a file 
-        (on the beowulf cluster $HOME/mpi32 has the contents 
-
-        .. code-block::
-            none
-
-            node0 
-            ... 
-            node11 
-
-        ) 
-        and I use the mpirun command 
-
-        .. code-block::
-            none
-
-            mpirun -machinefile $HOME/mpi32 -np 24 \ 
-                /home/hines/neuron/mpi*6/i686/bin/nrniv -mpi test0.hoc 
-
-        On my mac, for some bizarre reason known only to the tiger creators, 
-        the mpirun requires a machinefile with the line 
-
-        .. code-block::
-            none
-
-            Michael-Hines-Computer-2.local 
+        Michael-Hines-Computer-2.local 
 
 
          
@@ -1559,67 +1561,67 @@ ParallelContext
 ----
 
 
+.. _subworld:
 
-.. method:: ParallelContext.SubWorld
-
-
-    Description:
-        Without the methods discussed in this section, 
-        the bulletin board and parallel network styles cannot be used together. 
-        The parallel network style relies heavily on synchronization through 
-        the use of blocking collective communication 
-        methods and load balance is the primary consideration. The bulletin board 
-        style is assynchronous and a process works on a submitted task generally 
-        without communicating with other tasks except possibly and indirectly through 
-        posting and taking messages on the bulletin board. 
-        Without the subworld method, at most the network style can be used and then 
-        switched to bulletin board style. The only way to simulate a parallel 
-        network after executing :meth:`ParallelContext.runworker` would be to utilize 
-        the :meth:`ParallelContext.context` method. In particular, without subworlds, 
-        it is impossible to correctly submit bulletin board tasks, each of which 
-        simulates a network specfied with the :meth:`ParallelContext.ParallelNetwork` 
-        methods --- even if the network is complete on a single process. 
-         
-        The :func:`subworlds` method divides the world of processors into subworlds, 
-        each of which can execute a task that independently and assynchronously 
-        creates and simulates (and destroys if the task networks are different) 
-        a separate 
-        network described using the :meth:`ParallelContext.ParallelNetwork` and 
-        :meth:`ParallelContext.ParallelTransfer` methods. The task, executing 
-        in the subworld can also make use of the :meth:`ParallelContext.MPI` collectives. 
-        Different subworlds can use the same global identifiers without 
-        interference and the spike communication, transfers, and MPI collectives 
-        are localized to within a subworld. I.e. in MPI terms, 
-        each subworld utilizes a distinct MPI communicator. In a subworld, the 
-        :meth:`ParallelContext.id` and :meth:`ParallelContext.nhost` refer to the rank and 
-        number of processors in the subworld. (Note that every subworld has 
-        a :meth:`ParallelContext.id` == 0 rank processor.) 
-         
-        Only the rank :meth:`ParallelContext.id` == 0 subworld processors communicate 
-        with the bulletin board. Of these processors, one ( :func:`id_world` == 0) is 
-        the master processor and the others are the workers. The master 
-        submits tasks to the bulletin board (and executes a task if no results 
-        are available) and the workers execute tasks and post the results 
-        to the bulletin board. Remember, all the workers also have :meth:`ParallelContext.id` 
-        == 0 but different :func:`id_world` and :func:`id_bbs` ranks. The subworld 
-        :meth:`ParallelContext.id` ranks greater than 0 are not called workers --- their 
-        global rank is :func:`id_world` but their bulletin board rank, :func:`id_bbs` is -1. 
-        When a worker (or the master) receives a task to execute, the exact same 
-        function with arguments that define the task will be executed on all the 
-        processes of the subworld. A subworld is exactly analogous to the old 
-        world of a network simulation in which processes distinguish themselves 
-        by means of :meth:`ParallelContext.id` which is unique among 
-        the :meth:`ParallelContext.nhost` processes in the subworld. 
-         
-        A runtime error will result if an :func:`id_bbs` == -1 rank processor tries 
-        to communicate with the bulletin board, thus the general idiom for 
-        a task posting or taking information from the bulletin board should be either 
-        \ :code:` if (pc.id == 0) { ... } ` or \ :code:` if (pc.id_bbs != -1) { ... } `. 
-        The latter is more general since the former would not be correct if 
-        :func:`subworlds` has NOT been called since in that case 
-        \ :code:` pc.id == pc.id_world == pc.id_bbs ` and 
-        \ :code:` pc.nhost == pc.nhost_world == pc.nhost_bbs ` 
-         
+SubWorld
+~~~~~~~~
+Description:
+    Without the methods discussed in this section, 
+    the bulletin board and parallel network styles cannot be used together. 
+    The parallel network style relies heavily on synchronization through 
+    the use of blocking collective communication 
+    methods and load balance is the primary consideration. The bulletin board 
+    style is assynchronous and a process works on a submitted task generally 
+    without communicating with other tasks except possibly and indirectly through 
+    posting and taking messages on the bulletin board. 
+    Without the subworld method, at most the network style can be used and then 
+    switched to bulletin board style. The only way to simulate a parallel 
+    network after executing :meth:`ParallelContext.runworker` would be to utilize 
+    the :meth:`ParallelContext.context` method. In particular, without subworlds, 
+    it is impossible to correctly submit bulletin board tasks, each of which 
+    simulates a network specfied with the :ref:`ParallelNetwork` 
+    methods --- even if the network is complete on a single process. 
+     
+    The :meth:`ParallelContext.subworlds` method divides the world of processors into subworlds, 
+    each of which can execute a task that independently and assynchronously 
+    creates and simulates (and destroys if the task networks are different) 
+    a separate 
+    network described using the :ref:`ParallelNetwork` and 
+    :ref:`ParallelTransfer` methods. The task, executing 
+    in the subworld can also make use of the :ref:`ParallelContext_MPI` collectives. 
+    Different subworlds can use the same global identifiers without 
+    interference and the spike communication, transfers, and MPI collectives 
+    are localized to within a subworld. I.e. in MPI terms, 
+    each subworld utilizes a distinct MPI communicator. In a subworld, the 
+    :meth:`ParallelContext.id` and :meth:`ParallelContext.nhost` refer to the rank and 
+    number of processors in the subworld. (Note that every subworld has 
+    a :meth:`ParallelContext.id` == 0 rank processor.) 
+     
+    Only the rank :meth:`ParallelContext.id` == 0 subworld processors communicate 
+    with the bulletin board. Of these processors, one (:meth:`~ParallelContext.id_world` == 0) is 
+    the master processor and the others are the workers. The master 
+    submits tasks to the bulletin board (and executes a task if no results 
+    are available) and the workers execute tasks and post the results 
+    to the bulletin board. Remember, all the workers also have :meth:`ParallelContext.id` 
+    == 0 but different :meth:`~ParallelContext.id_world` and :meth:`~ParallelContext.id_bbs` ranks. The subworld 
+    :meth:`ParallelContext.id` ranks greater than 0 are not called workers --- their 
+    global rank is :meth:`~ParallelContext.id_world` but their bulletin board rank, :meth:`~ParallelContext.id_bbs` is -1. 
+    When a worker (or the master) receives a task to execute, the exact same 
+    function with arguments that define the task will be executed on all the 
+    processes of the subworld. A subworld is exactly analogous to the old 
+    world of a network simulation in which processes distinguish themselves 
+    by means of :meth:`ParallelContext.id` which is unique among 
+    the :meth:`ParallelContext.nhost` processes in the subworld. 
+     
+    A runtime error will result if an :meth:`~ParallelContext.id_bbs` == -1 rank processor tries 
+    to communicate with the bulletin board, thus the general idiom for 
+    a task posting or taking information from the bulletin board should be either 
+    :code:`if (pc.id == 0) { ... }` or :code:`if (pc.id_bbs != -1) { ... }`. 
+    The latter is more general since the former would not be correct if 
+    :meth:`~ParallelContext.subworlds` has NOT been called since in that case 
+    :code:`pc.id == pc.id_world == pc.id_bbs` and 
+    :code:`pc.nhost == pc.nhost_world == pc.nhost_bbs` 
+     
 
          
 
@@ -1646,26 +1648,26 @@ ParallelContext
         to the subworld of which it is a part. 
          
         Each subworld has its own 
-        unique MPI communicator for the :func:`MPI` functions such 
-        as :meth:`MPI.barrier` and so those collectives do not affect other subworlds. 
-        All the :func:`ParallelNetwork` notions are local to a subworld. I.e. independent 
+        unique MPI communicator for the :ref:`ParallelContext_MPI` functions such 
+        as :meth:`ParallelContext.barrier` and so those collectives do not affect other subworlds. 
+        All the :ref:`ParallelNetwork` notions are local to a subworld. I.e. independent 
         networks using the same gids can be simulated simultaneously in 
         different subworlds. Only rank 0 of a subworld ( :meth:`ParallelContext.id` 
-        == 0) can use the bulletin board and has a non-negative :func:`nhost_bbs` 
-        and :func:`id_bbs` . 
+        == 0) can use the bulletin board and has a non-negative :meth:`nhost_bbs` 
+        and :meth:`id_bbs` . 
          
         Thus the bulletin board interacts with :func:`nhost_bbs` processes 
         each with :meth:`ParallelContext.id` == 0. And each of those rank 0 processes 
         interacts with :meth:`ParallelContext.nhost` processes using MPI commands 
         isolated within each subworld. 
          
-        Probably the most useful values of subworld_size are 1 and :func:`nhost_world` . 
+        Probably the most useful values of subworld_size are 1 and :func:`nhost_world`. 
         The former uses the bulletin board to communicate between all processes 
         but allows the use of gid specified networks within each process. ie. 
         one master and nhost_world - 1 workers. 
         The latter uses all processes to simulate a parallel network and there 
         is only one process, the master, 
-        ( :func:`id_world` == 0 ) interacting with the bulletin board. 
+        (:meth:`id_world` == 0) interacting with the bulletin board. 
          
 
     Example:
@@ -1717,7 +1719,7 @@ ParallelContext
             quit() 
 
          
-        If the above code is saved in temp.hoc and executed with 6 processes using 
+        If the above code is saved in :file:`temp.hoc` and executed with 6 processes using 
         \ :code:`mpiexec -n 6 nrniv -mpi temp.hoc` then the output will look like 
         (some lines may be out of order) 
 
@@ -1854,71 +1856,72 @@ ParallelContext
 ----
 
 
+.. _parallelnetwork:
 
-.. method:: ParallelContext.ParallelNetwork
+Parallel Network
+~~~~~~~~~~~~~~~~
 
+Description:
+    Extra methods for the ParallelContext that pertain to parallel network 
+    simulations where cell communication involves discrete logical spike events. 
+     
+    The methods described in this section work for intra-machine connections 
+    regardless of how NEURON is configured (Thus all parallel network models can 
+    be executed on any serial machine). However machine spanning 
+    connections can only be made if NEURON has been configured with 
+    the --with-mpi option (or other options that automatically set it such as 
+    --with-paranrn). (See :ref:`ParallelContext_MPI` for installation hints). 
+     
+    The fundamental requirement is that each 
+    cell be associated with a unique integer global id (gid). The 
+    :func:`ParallelNetManager` in nrn/share/lib/hoc/netparmpi.hoc is a sample 
+    implementation that makes use of these facilities. That implementation 
+    assumes that all conductance based cells contain a public 
+    \ :code:`connect2target(targetsynapse, netcon)` which connects the target synapse 
+    object to a specific range variable (e.g. soma.v(.5)) and returns the 
+    new NetCon in the second object argument. Artificial cells may either be 
+    bare or wrapped in class and made public as a Point Process object field. That is, 
+    cells built as NetworkReadyCells are compatible with the 
+    ParallelNetManager and that manager follows as closely as possible 
+    the style of network construction used by the NetGUI builder. 
+     
+    Notes: 
+     
+    Gid, sid, and pieces. 
+     
+    The typical network simulation sets up 
+    a one to one correspondence between gid and cell. 
+    This most common usage is suggested by 
+    the method name, :meth:`ParallelContext.cell`, that makes the correspondence 
+    as well as the accessor method, :meth:`ParallelContext.gid2cell`. 
+    That's because, 
+    almost always, a cell has one spike detection site and the entire cell is 
+    on a single cpu. But either or both of those assertions can break down 
+    and then one must be aware that, rigorously, 
+    a gid is associated with a spike detection site (defined by 
+    a NetCon source). For example, 
+    many spike detection sites per cell are useful for reciprocal synapses. 
+    Each side of each reciprocal synapse will require its own distinct gid. 
+    When load balance is a problem, or when you have more cpus than cells, 
+    it is useful to split cells into pieces and put the pieces on different 
+    cpus (:meth:`ParallelContext.splitcell` and :meth:`ParallelContext.multisplit`). 
+    But now, some pieces will not have a spike detection site and therefore 
+    don't have to have a gid. In either case, it can be administratively 
+    useful to invent an administrative policy for gid values that encodes 
+    whole cell identification. For a cell piece that has no spike output, 
+    one can still give it a gid associated with an arbitrary spike detection 
+    site that is effectively turned off because it is not the source for 
+    any existing NetCon and it was never specified as an 
+    :meth:`ParallelContext.outputcell`. In the same way, it is also 
+    useful to encode a :meth:`ParallelContext.multisplit` 
+    sid (split id) with whole cell identification. 
+     
 
-    Description:
-        Extra methods for the ParallelContext that pertain to parallel network 
-        simulations where cell communication involves discrete logical spike events. 
-         
-        The methods described in this section work for intra-machine connections 
-        regardless of how NEURON is configured (Thus all parallel network models can 
-        be executed on any serial machine). However machine spanning 
-        connections can only be made if NEURON has been configured with 
-        the --with-mpi option (or other options that automatically set it such as 
-        --with-paranrn). (See :meth:`ParallelContext.MPI` for installation hints). 
-         
-        The fundamental requirement is that each 
-        cell be associated with a unique integer global id (gid). The 
-        :func:`ParallelNetManager` in nrn/share/lib/hoc/netparmpi.hoc is a sample 
-        implementation that makes use of these facilities. That implementation 
-        assumes that all conductance based cells contain a public 
-        \ :code:`connect2target(targetsynapse, netcon)` which connects the target synapse 
-        object to a specific range variable (e.g. soma.v(.5)) and returns the 
-        new NetCon in the second object argument. Artificial cells may either be 
-        bare or wrapped in class and made public as a Point Process object field. That is, 
-        cells built as NetworkReadyCells are compatible with the 
-        ParallelNetManager and that manager follows as closely as possible 
-        the style of network construction used by the NetGUI builder. 
-         
-        Notes: 
-         
-        Gid, sid, and pieces. 
-         
-        The typical network simulation sets up 
-        a one to one correspondence between gid and cell. 
-        This most common usage is suggested by 
-        the method name, :meth:`ParallelNetwork.cell` , that makes the correspondence 
-        as well as the accessor method, :meth:`ParallelNetwork.gid2cell` . 
-        That's because, 
-        almost always, a cell has one spike detection site and the entire cell is 
-        on a single cpu. But either or both of those assertions can break down 
-        and then one must be aware that, rigorously, 
-        a gid is associated with a spike detection site (defined by 
-        a NetCon source). For example, 
-        many spike detection sites per cell are useful for reciprocal synapses. 
-        Each side of each reciprocal synapse will require its own distinct gid. 
-        When load balance is a problem, or when you have more cpus than cells, 
-        it is useful to split cells into pieces and put the pieces on different 
-        cpus ( :meth:`ParallelTransfer.splitcell` and :meth:`ParallelTransfer.multisplit` ). 
-        But now, some pieces will not have a spike detection site and therefore 
-        don't have to have a gid. In either case, it can be administratively 
-        useful to invent an administrative policy for gid values that encodes 
-        whole cell identification. For a cell piece that has no spike output, 
-        one can still give it a gid associated with an arbitrary spike detection 
-        site that is effectively turned off because it is not the source for 
-        any existing NetCon and it was never specified as an 
-        :meth:`ParallelNetwork.outputcell` . In the same way, it is also 
-        useful to encode a :meth:`ParallelTransfer.multisplit` 
-        sid (split id) with whole cell identification. 
-         
-
-    .. warning::
-        If mpi is 
-        not available but NEURON has been built with PVM installed, an alternative 
-        ParallelNetManager implementation with the identical interface is 
-        available that makes use only of standard ParallelContext methods. 
+.. warning::
+    If mpi is 
+    not available but NEURON has been built with PVM installed, an alternative 
+    ParallelNetManager implementation with the identical interface is 
+    available that makes use only of standard ParallelContext methods. 
 
          
 
@@ -2018,7 +2021,7 @@ ParallelContext
         The cell which is the source of the :func:`NetCon` is associated with the global 
         id. By default,(no third arg or third arg = 1) 
         the spikes generated by that cell will be sent to every other machine 
-        (see :meth:`ParallelContext.outputcell` ). A cell commonly has only one spike 
+        (see :meth:`ParallelContext.outputcell`). A cell commonly has only one spike 
         generation location, but, for example in the case of reciprocal 
         dendro-dendritic synapses, there is no reason why it cannot have several. 
         The NetCon source defines the spike generation location. 
@@ -2100,7 +2103,7 @@ ParallelContext
         A virtual connection is made between the source cell global id (which 
         may or may not 
         be owned by this machine) and the target (a synapse or artificial cell object) 
-        which EXISTS on this machine. A :func:`NetCon` object is returned and the 
+        which EXISTS on this machine. A :class:`NetCon` object is returned and the 
         full delay for the connection should be given to it (as well as the weight). 
          
         Note that if the srcgid is owned by this machine then :func:`cell` must be called 
@@ -2150,7 +2153,7 @@ ParallelContext
 
 
     Description:
-        During execution of :meth:`ParallelContext.psolve`:func:`` , 
+        During execution of :meth:`ParallelContext.psolve` , 
         sets the timeout for when to abort when seconds pass and t does not 
         increase.  Returns the old timeout.  The standard timeout is 20 seconds. 
         If the arg is 0, then there is no timeout. 
@@ -2201,8 +2204,8 @@ ParallelContext
 
 .. method:: ParallelContext.spike_compress
 
-        @hsym 
-        nspike = pc.spike_compress(nspike, gid_compress) 
+    Syntax:
+        :samp:`nspike = pc.spike_compress({nspike}, {gid_compress})`
 
     Description:
         If nspike > 0, selects an alternative implementation of spike exchange 
@@ -2371,11 +2374,14 @@ ParallelContext
 
 
 
-.. method:: ParallelContext.ParallelTransfer
+.. _paralleltransfer:
+
+Parallel Transfer
+~~~~~~~~~~~~~~~~~
 
 
     Description:
-        Extends the :func:`MPI` :func:`ParallelNetwork` methods to allow parallel simulation 
+        Extends the :ref:`ParallelContext_MPI` :ref:`ParallelNetwork` methods to allow parallel simulation 
         of models involving gap junctions and/or 
         synapses where the postsynaptic conductance continuously 
         depends on presynaptic voltage. 
@@ -2388,9 +2394,9 @@ ParallelContext
         the modified euler method is acceptable for accuracy and stability. 
         For purposes of load balance, and regardless of coupling strength, 
         a cell may be split into two subtrees 
-        with each on a different processor. See :meth:`ParallelTransfer.splitcell` . 
+        with each on a different processor. See :meth:`ParallelContext.splitcell`. 
         Splitting a cell into more than two pieces can be done with 
-        :meth:`ParallelTransfer.multisplit` . 
+        :meth:`ParallelContext.multisplit` . 
          
         Except for "splitcell" and "multisplit, the methods described in this section work for intra-machine connections 
         regardless of how NEURON is configured. However 
@@ -2421,7 +2427,7 @@ ParallelContext
     Description:
         Associates the source variable with an integer. This integer has nothing 
         to do with and does not conflict with the discrete event gid used by the 
-        :func:`ParallelNetwork` methods. 
+        :ref:`ParallelNetwork` methods. 
         Must and can only be executed on the machine where the source_variable 
         exists. 
 
@@ -2507,7 +2513,7 @@ ParallelContext
         :meth:`ParallelNetManager.splitcell` which provides a simple interface to 
         support load balanced network simulations. 
          
-        See :meth:`ParallelTransfer.multisplit` for less restrictive 
+        See :meth:`ParallelContext.multisplit` for less restrictive 
         parallel simulation of individual cells. 
 
     .. warning::
@@ -2534,7 +2540,7 @@ ParallelContext
 
     Description:
         For parallel simulation of single cells. Generalizes 
-        :meth:`ParallelTransfer.splitcell` in a number of ways. 
+        :meth:`ParallelContext.splitcell` in a number of ways. 
         section(x) identifies a split node and can be any node, including 
         soma(0.5). The number of split nodes allowed on a (sub)tree is two or 
         fewer. Nodes with the same sid are connected by wires (0 resistance). 
@@ -2569,7 +2575,7 @@ ParallelContext
         the standard :func:`connect` statement. 
          
         If all the trees connected into a single cell have only one 
-        sid, the simulation is numerically identical to :meth:`ParallelTransfer.splitcell` 
+        sid, the simulation is numerically identical to :meth:`ParallelContext.splitcell` 
         which is numerically identical to all the trees 
         connected together on a single cpu to form one cell. 
         If one or more of the trees has two sids, then numerical accuracy, 
@@ -2601,7 +2607,7 @@ ParallelContext
         or not; it is solved exactly in any case. 
          
         Note: using multisplit automatically sets 
-        :meth:`CVode.CVode` . :func:`cache_efficient` (1) 
+        :code:`CVode.cache_efficient(1)`
 
     .. warning::
         Implemented only for fixed step methods. Cannot presently 
@@ -2630,10 +2636,10 @@ ParallelContext
         to start over with new :func:`set_gid2node` calls. Note that NetCon and cell 
         objects would have to be dereferenced separately under user control. 
          
-        With type = 2 clears any information setup by :meth:`ParallelTransfer.splitcell` or 
-        :meth:`ParallelTransfer.multisplit`. 
+        With type = 2 clears any information setup by :meth:`ParallelContext.splitcell` or 
+        :meth:`ParallelContext.multisplit`. 
          
-        With type = 3 clears any information setup by :meth:`ParallelContex.setup_transfer` . 
+        With type = 3 clears any information setup by :meth:`ParallelContext.setup_transfer`. 
          
         With a type arg of 0 or no arg, clears all the above information. 
 
@@ -2651,7 +2657,7 @@ ParallelContext
         threads. 
         The methods in this section are only available in the multicore version of NEURON. 
          
-        Multiple threads cannot be used with :func:`extracellular` , :func:`LinearMechanism` , 
+        Multiple threads cannot be used with :func:`extracellular`, :func:`LinearMechanism`, 
         and only with the fixed step and global variable time step integration 
         methods. 
          
@@ -2713,7 +2719,7 @@ ParallelContext
 
     Description:
         The seclist is a :func:`SectionList` which contains the root sections of cells 
-        (or cell pieces, see :func:`multisplit` ) which should be simulated by the thread 
+        (or cell pieces, see :func:`multisplit`) which should be simulated by the thread 
         indicated by the first arg index. Either all or no thread can have 
         an associated seclist. The no arg form of pc.partition() unrefs the seclist 
         for all the threads. 

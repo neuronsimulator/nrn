@@ -67,23 +67,24 @@ LinearMechanism
         1 uF/cm2), g elements have dimensions of S/cm2, and b elements have 
         dimensions of outward current in milliamp/cm2. The current balance 
         equations for the zero area nodes at the beginning and end 
-        of a section ( x = 0 and x = 1 ) have terms with the dimensions of 
+        of a section (x = 0 and x = 1) have terms with the dimensions of 
         nanoamps. Thus c elements involving voltages in mV have dimensions 
         of nF and g elements have dimensions of uS. 
          
         The existence of one or more LinearMechanism switches the gaussian elimination 
         solver to the general sparse linear equation solver written by 
         Kenneth S. Kundert and available from 
-        <a href="//www.netlib.org/sparse/index.html">http://www.netlib.org/sparse/index.html</a> 
+        http://www.netlib.org/sparse/index.html
         Although, even with no added equations, the solving of m*x=b takes more 
         than twice as long as the original default solver, there is no restriction 
         to a tree topology. 
 
     Example:
-        load_file("nrngui.hoc") 
 
         .. code-block::
             none
+
+            load_file("nrngui.hoc") 
 
             create soma 
             soma { insert hh } 

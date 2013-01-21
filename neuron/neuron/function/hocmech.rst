@@ -53,19 +53,19 @@ hocmech
     Example:
         The following example creates and installs a mechanism that watches 
         the membrane potential and keeps track of its maximum value. 
-         
-        load_file("noload.hoc") 
-         
-        create soma 
-        access soma 
-        { L = diam = sqrt(100/PI) insert hh} 
-         
-        objref stim 
-        stim = new IClamp(.5) 
-        {stim.dur = .1  stim.amp = .3 } 
 
         .. code-block::
             none
+
+            load_file("noload.hoc") 
+             
+            create soma 
+            access soma 
+            { L = diam = sqrt(100/PI) insert hh} 
+             
+            objref stim 
+            stim = new IClamp(.5) 
+            {stim.dur = .1  stim.amp = .3 } 
 
             begintemplate Max 
             public V 

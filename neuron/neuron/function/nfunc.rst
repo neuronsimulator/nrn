@@ -1,7 +1,7 @@
 .. _nfunc:
 
-nfunc
------
+nrnglobalmechmenu
+-----------------
 
 
 
@@ -18,7 +18,7 @@ nfunc
         pops up panel containing all global variables defined by the 
         mechanism. 
          
-        nrnglobalmechmenu("mechname", 0) returns the number of global variables 
+        :samp:`nrnglobalmechmenu("{mechname}", 0)` returns the number of global variables 
         for this mechanism. Does not pop up a panel. 
          
 
@@ -29,7 +29,6 @@ nfunc
 
 .. function:: nrnmechmenu
 
-        nrnmechmenu() 
         vestigial. does nothing. taken over by :func:`nrnsecmenu` 
 
 ----
@@ -75,7 +74,7 @@ nfunc
          
         0 < x < 1 shows variables at segment containing x 
         changing these variables changes only the values in that segment 
-        eg. equivalent to section.v(.2) = -65 
+        eg. equivalent to :samp:`section.v(.2) = -65`
          
         x = -1 shows range variables which are constant (same in 
         each segment  of the section). 
