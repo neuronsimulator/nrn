@@ -3,13 +3,13 @@
 math
 ----
 
-        The above math functions return a double precision value and take a double 
-        precision argument. The exception is :func:`atan2` with two double precision arguments. 
+These math functions return a double precision value and take a double 
+precision argument. The exception is :func:`atan2` with two double precision arguments. 
 
-    Diagnostics:
-        Arguments which are out of range give an argument domain diagnostic. 
-         
-        These functions call the library routines supplied by the compiler. 
+Diagnostics:
+    Arguments which are out of range give an argument domain diagnostic. 
+     
+    These functions call the library routines supplied by the compiler. 
 
          
 
@@ -20,9 +20,9 @@ math
 .. function:: sin
 
          
-        trigonometric function of radian argument. 
-         
-        see :meth:`Vector.sin` for the :func:`Vector` class. 
+    trigonometric function of radian argument. 
+     
+    see :meth:`Vector.sin` for the :class:`Vector` class. 
 
 ----
 
@@ -30,9 +30,9 @@ math
 
 .. function:: cos
 
-        trigonometric function of radian argument. 
-         
-        see :meth:`Vector.sin` 
+    trigonometric function of radian argument. 
+     
+    see :meth:`Vector.sin` 
 
 ----
 
@@ -85,7 +85,7 @@ math
 .. function:: tanh
 
         hyperbolic tangent. 
-        see :meth:`Vector.tanh` for the :func:`Vector` class. 
+        see :meth:`Vector.tanh` for the :class:`Vector` class. 
          
 
 ----
@@ -95,7 +95,7 @@ math
 .. function:: log
 
         logarithm to the base e 
-        see :meth:`Vector.log` for the :func:`Vector` class. 
+        see :meth:`Vector.log` for the :class:`Vector` class. 
 
 ----
 
@@ -105,7 +105,7 @@ math
 
         logarithm to the base 10 
          
-        see :meth:`Vector.log10` for the :func:`Vector` class. 
+        see :meth:`Vector.log10` for the :class:`Vector` class. 
          
 
 ----
@@ -142,7 +142,7 @@ math
 
         square root 
          
-        see :meth:`Vector.sqrt` for the :func:`Vector` class. 
+        see :meth:`Vector.sqrt` for the :class:`Vector` class. 
 
 ----
 

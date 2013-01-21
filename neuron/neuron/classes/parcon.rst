@@ -3,6 +3,10 @@
 ParallelContext
 ---------------
 
+.. toctree::
+    :hidden:
+
+    lyttonmpi.rst
 
 
 .. class:: ParallelContext
@@ -1014,7 +1018,7 @@ ParallelContext
 
     .. warning::
         A wrapper for MPI_Wtime when MPI is used. When PVM is used, the return 
-        value is clock_t times(struct tms *buf)/100. 
+        value is :samp:`clock_t times(struct tms {*buf})/100`. 
 
          
 
