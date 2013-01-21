@@ -97,7 +97,7 @@ SectionRef
         trueparent of sref.sec becomes the currently accessed section. 
         This is normally identical to :meth:`SectionRef.parent` except when the 
         parent's :func:`parent_connection` is equal to the parent's 
-        :func:`section_orientation` . 
+        :func:`section_orientation`. 
         If there is a chance that a section does not have a trueparent then 
         :meth:`SectionRef.has_trueparent` should be called first to avoid an execution error. 
 

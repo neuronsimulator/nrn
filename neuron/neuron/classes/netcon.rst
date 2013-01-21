@@ -48,13 +48,13 @@ NetCon
         set to 0 unless the NET_RECEIVE block contains an INITIAL block. In the 
         latter case, that block is executed on a call to :func:`finitialize`  and 
         allows non-zero initialization of netcon "states" --- args not initialized 
-        in the INITIAL block would be analogous to a :func:`Parameter` except that it 
+        in the INITIAL block would be analogous to a :ref:`Parameter <nmodl_parameter>` except that it 
         can have a different value for different NetCon instances and can be set 
-        to a desired value with :meth:`NetCon.weight` . 
+        to a desired value with :meth:`NetCon.weight`. 
          
         The target is allowed to be nil (NULLObject) in which case the NetCon 
         is always inactive. However this can be useful for recording (see 
-        :meth:`NetCon.record` ) the spike train from an output cell. 
+        :meth:`NetCon.record`) the spike train from an output cell. 
          
         The source is normally a reference to a membrane potential which is 
         watched during simulation for passage past threshold. The 
@@ -586,83 +586,87 @@ NetCon
 
     Example:
         To stop the simulation when a particular compartment reaches a threshold. 
-        load_file("nrngui.hoc") 
-        objectvar save_window_, rvp_ 
-        objectvar scene_vector_[4] 
-        objectvar ocbox_, ocbox_list_, scene_, scene_list_ 
-        {ocbox_list_ = new List()  scene_list_ = new List()} 
-        {pwman_place(0,0,0)} 
-         
-        //Begin SingleCompartment 
-        { 
-        load_file("single.hoc") 
-        } 
-        ocbox_ = new SingleCompartment(0) 
-        ocbox_.inserter = new Inserter(0) 
-        {object_push(ocbox_.inserter)} 
-        { 
-        mt.select("hh") i = mt.selected() 
-        ms[i] = new MechanismStandard("hh") 
-        ms[i].set("gnabar_hh", 0.12, 0) 
-        ms[i].set("gkbar_hh", 0.036, 0) 
-        ms[i].set("gl_hh", 0.0003, 0) 
-        ms[i].set("el_hh", -54.3, 0) 
-        mstate[i]= 1 
-        maction(i) 
-        } 
-        {object_pop() doNotify()} 
-        {object_push(ocbox_)} 
-        {inserter.v1.map()} 
-        {endbox()} 
-        {object_pop() doNotify()} 
-        { 
-        ocbox_ = ocbox_.vbox 
-        ocbox_.map("SingleCompartment", 382, 22, 91.2, 96) 
-        } 
-        objref ocbox_ 
-        //End SingleCompartment 
-         
-         
-        //Begin PointProcessManager 
-        { 
-        load_file("pointman.hoc") 
-        } 
-        { 
-        soma ocbox_ = new PointProcessManager(0) 
-        } 
-        {object_push(ocbox_)} 
-        { 
-        mt.select("IClamp") i = mt.selected() 
-        ms[i] = new MechanismStandard("IClamp") 
-        ms[i].set("del", 0, 0) 
-        ms[i].set("dur", 0.1, 0) 
-        ms[i].set("amp", 0.3, 0) 
-        mt.select("IClamp") i = mt.selected() maction(i) 
-        hoc_ac_ = 0.5 
-        sec.sec move() d1.flip_to(0) 
-        } 
-        {object_pop() doNotify()} 
-        { 
-        ocbox_ = ocbox_.v1 
-        ocbox_.map("PointProcessManager", 152, 109, 208.32, 326.4) 
-        } 
-        objref ocbox_ 
-        //End PointProcessManager 
-         
-        { 
-        save_window_ = new Graph(0) 
-        save_window_.size(0,5,-80,40) 
-        scene_vector_[2] = save_window_ 
-        {save_window_.view(0, -80, 5, 120, 493, 23, 300.48, 200.32)} 
-        graphList[0].append(save_window_) 
-        save_window_.save_name("graphList[0].") 
-        save_window_.addexpr("v(.5)", 1, 1, 0.8, 0.9, 2) 
-        } 
-        objectvar scene_vector_[1] 
-        {doNotify()} 
-         
-
+        
         .. code-block::
+            none  
+        
+            load_file("nrngui.hoc") 
+            objectvar save_window_, rvp_ 
+            objectvar scene_vector_[4] 
+            objectvar ocbox_, ocbox_list_, scene_, scene_list_ 
+            {ocbox_list_ = new List()  scene_list_ = new List()} 
+            {pwman_place(0,0,0)} 
+             
+            //Begin SingleCompartment 
+            { 
+            load_file("single.hoc") 
+            } 
+            ocbox_ = new SingleCompartment(0) 
+            ocbox_.inserter = new Inserter(0) 
+            {object_push(ocbox_.inserter)} 
+            { 
+            mt.select("hh") i = mt.selected() 
+            ms[i] = new MechanismStandard("hh") 
+            ms[i].set("gnabar_hh", 0.12, 0) 
+            ms[i].set("gkbar_hh", 0.036, 0) 
+            ms[i].set("gl_hh", 0.0003, 0) 
+            ms[i].set("el_hh", -54.3, 0) 
+            mstate[i]= 1 
+            maction(i) 
+            } 
+            {object_pop() doNotify()} 
+            {object_push(ocbox_)} 
+            {inserter.v1.map()} 
+            {endbox()} 
+            {object_pop() doNotify()} 
+            { 
+            ocbox_ = ocbox_.vbox 
+            ocbox_.map("SingleCompartment", 382, 22, 91.2, 96) 
+            } 
+            objref ocbox_ 
+            //End SingleCompartment 
+             
+             
+            //Begin PointProcessManager 
+            { 
+            load_file("pointman.hoc") 
+            } 
+            { 
+            soma ocbox_ = new PointProcessManager(0) 
+            } 
+            {object_push(ocbox_)} 
+            { 
+            mt.select("IClamp") i = mt.selected() 
+            ms[i] = new MechanismStandard("IClamp") 
+            ms[i].set("del", 0, 0) 
+            ms[i].set("dur", 0.1, 0) 
+            ms[i].set("amp", 0.3, 0) 
+            mt.select("IClamp") i = mt.selected() maction(i) 
+            hoc_ac_ = 0.5 
+            sec.sec move() d1.flip_to(0) 
+            } 
+            {object_pop() doNotify()} 
+            { 
+            ocbox_ = ocbox_.v1 
+            ocbox_.map("PointProcessManager", 152, 109, 208.32, 326.4) 
+            } 
+            objref ocbox_ 
+            //End PointProcessManager 
+             
+            { 
+            save_window_ = new Graph(0) 
+            save_window_.size(0,5,-80,40) 
+            scene_vector_[2] = save_window_ 
+            {save_window_.view(0, -80, 5, 120, 493, 23, 300.48, 200.32)} 
+            graphList[0].append(save_window_) 
+            save_window_.save_name("graphList[0].") 
+            save_window_.addexpr("v(.5)", 1, 1, 0.8, 0.9, 2) 
+            } 
+            objectvar scene_vector_[1] 
+            {doNotify()} 
+             
+
+
             none
 
             // ... soma with hh, IClamp, and voltage plot ... 
@@ -726,11 +730,11 @@ NetCon
         send interprocessor events. If the gid >= 0 then the netcon must have been 
         created by a :meth:`ParallelContext.gid_connect` call with gid as the first 
         arg or else it is connected to spike detector that was associated with a 
-        gid via :meth:`ParallelContext.cell` . 
+        gid via :meth:`ParallelContext.cell`. 
          
         There is no way to determine the corresponding target cell gid (assuming there 
         is one and only one gid source integer for each cell. But see 
-        :meth:`NetCon.syn` and :meth:`NetCon.postcell` . 
+        :meth:`NetCon.syn` and :meth:`NetCon.postcell`. 
 
          
          

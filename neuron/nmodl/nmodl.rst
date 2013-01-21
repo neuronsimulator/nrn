@@ -219,6 +219,8 @@ Only a small part of the full model description language is relevant to
 neuron mechanisms.  The important concepts held in common are 
 the declaration of all variables as 
 
+.. _nmodl_parameter:
+
 Parameter
 """""""""
 
