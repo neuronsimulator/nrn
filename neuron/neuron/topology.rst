@@ -11,8 +11,11 @@ Topology
 
 
 
-.. function:: create
+.. index::  create (keyword)
 
+.. _keyword_create:
+
+**create**
 
     Syntax:
         :code:`create`
@@ -50,7 +53,7 @@ Topology
          
 
     .. seealso::
-        :func:`connect`, :func:`insert`, :func:`forall`
+        :ref:`connect <keyword_connect>`, :ref:`insert <keyword_insert>`, :ref:`forall <keyword_forall>`
         
 
          
@@ -59,8 +62,11 @@ Topology
 
 
 
-.. function:: connect
+.. index::  connect (keyword)
 
+.. _keyword_connect:
+
+**connect**
 
     Syntax:
         :code:`connect section(0or1), x`

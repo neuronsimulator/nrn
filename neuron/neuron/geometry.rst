@@ -821,7 +821,7 @@ Section
 
 
 
-.. function:: diam_changed
+.. data:: diam_changed
 
 
     Syntax:
@@ -844,7 +844,7 @@ Section
 
 
 
-.. function:: L
+.. data:: L
 
         Length of a section in microns. 
          
@@ -853,7 +853,7 @@ Section
 
 
 
-.. function:: diam
+.. data:: diam
 
         Diameter range variable of a section in microns. 
          
@@ -862,7 +862,7 @@ Section
 
 
 
-.. function:: Ra
+.. data:: Ra
 
 
     Syntax:
