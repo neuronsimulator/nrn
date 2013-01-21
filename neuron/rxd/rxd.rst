@@ -1,9 +1,11 @@
-neuron.rxd
-==========
+.. _neuron_rxd:
+
+Basic Reaction-Diffusion
+========================
 
 .. currentmodule:: neuron.rxd
 .. autoclass:: Region
-    :members: nrn_region, secs
+    :members: __init__, nrn_region, secs
 
 ----
 
@@ -20,10 +22,17 @@ neuron.rxd
 ----
 
 .. autoclass:: Rate
+    :members: __init__
 
 ----
 
 .. autoclass:: MultiCompartmentReaction
+
+----
+
+.. currentmodule:: neuron.rxd.node
+.. autoclass:: Node
+    :members: __init__, _ref_concentration, satisfies, volume, surface_area, x, diff, region, sec, species, concentration
 
 ----
 
@@ -42,4 +51,29 @@ neuron.rxd
 .. autoclass:: Section1D
     :members: __init__, indices, name, region, nseg, nrn_region, species, section_orientation, L
 
+----
 
+.. currentmodule:: neuron.rxd.nodelist
+.. autoclass:: NodeList
+    :members: __init__, __call__, concentration, diff, volume, surface_area, region, species, x
+    
+----
+
+.. currentmodule:: neuron.rxd.geometry
+.. autoclass:: FixedCrossSection
+    :members: __init__, volumes1d, surface_areas1d, neighbor_areas1d, is_volume, is_area, __call__
+    
+----
+    
+.. autoclass:: FractionalVolume
+    :members: __init__, volumes1d, surface_areas1d, neighbor_areas1d, is_volume, is_area, __call__
+
+----
+
+.. autoclass:: FixedPerimeter
+    :members: __init__, volumes1d, surface_areas1d, neighbor_areas1d, is_volume, is_area, __call__
+
+----
+
+.. autoclass:: Shell
+    :members: __init__, volumes1d, surface_areas1d, neighbor_areas1d, is_volume, is_area, __call__

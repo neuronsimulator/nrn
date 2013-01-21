@@ -24,6 +24,7 @@ Quick Links
     :ref:`nmodl2`, :ref:`nmodl`, :ref:`lw`, :ref:`mech`, :ref:`predec`, :ref:`0stdrun`,
     :ref:`ocsyntax`, :ref:`topology`
     
+    :ref:`neuron_rxd`,
     :func:`neuron.rxd.geometry3d.surface`, :func:`neuron.rxd.geometry3d.voxelize`
 
 Contents
