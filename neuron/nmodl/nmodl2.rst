@@ -1,30 +1,31 @@
 .. _nmodl2:
 
+.. _nmodltoneuron:
 
-NMODLtoNEURON
--------------
+NMODL to NEURON
+---------------
 
-    This section describes the special NEURON block that has been added to 
-    the standard model description language in order to allow translation of 
-    a model into a form suitable for linking with NEURON. 
-     
-    The keyword NEURON introduces a special block which contains statements 
-    that tell NMODL how to organize the variables for access at the NEURON 
-    user level. It declares: 
+This section describes the special NEURON block that has been added to 
+the standard model description language in order to allow translation of 
+a model into a form suitable for linking with NEURON. 
+ 
+The keyword NEURON introduces a special block which contains statements 
+that tell NMODL how to organize the variables for access at the NEURON 
+user level. It declares: 
 
-    -   Which names are to be treated as range variables. 
-    -   Which names are to be treated as global variables. 
-    -   The names of all the ions used in the model and how the corresponding 
-        concentrations, current, and reversal potential are to be treated. 
-    -   The suffix to be used for all variables in the model so that they 
-        do not conflict with variables in other models. 
-    -   Whether the model is for a point process such as a synapse or 
-        a distributed process with density along an entire section such as a channel 
-        density. 
-    -   Which names will be connected to external variables. (See "Importing 
-        variables from other mechanisms".) 
+-   Which names are to be treated as range variables. 
+-   Which names are to be treated as global variables. 
+-   The names of all the ions used in the model and how the corresponding 
+    concentrations, current, and reversal potential are to be treated. 
+-   The suffix to be used for all variables in the model so that they 
+    do not conflict with variables in other models. 
+-   Whether the model is for a point process such as a synapse or 
+    a distributed process with density along an entire section such as a channel 
+    density. 
+-   Which names will be connected to external variables. (See "Importing 
+    variables from other mechanisms".) 
 
-    The syntax is (each statement can occur none or more times) : 
+The syntax is (each statement can occur none or more times) : 
 
 Neuron
 ~~~~~~
@@ -53,22 +54,22 @@ Suffix
 
 
 Description:
-    The suffix, "\ :code:`_name`" is appended to all variables, functions, and 
-    procedures that are accessible from the user level of NEURON. If the SUFFIX 
+    The suffix, ":code:`_name`" is appended to all variables, functions, and 
+    procedures that are accessible from the user level of NEURON. If the :code:`SUFFIX`
     statement is absent, the file name is used as the suffix (with the addition 
-    of an underscore character).  If there is a \ :code:`POINT_PROCESS` statement, 
+    of an underscore character).  If there is a :ref:`POINT_PROCESS` statement, 
     that name 
     is used as the suffix.  Suffixes prevent overloading of names at the user 
     level of NEURON.  At some point in the future I may add something similar 
     to the access statement which will allow the omission of the suffix for a 
     specified mechanism. 
     Note that suffixes are not used within the model 
-    description file itself. If the SUFFIX *name* is the word, "\ :code:`nothing`", 
+    description file itself. If the SUFFIX *name* is the word, ":code:`nothing`", 
     then no suffix is used for 
-    variables, functions, and procedures explicitly declared in the .mod file. 
+    variables, functions, and procedures explicitly declared in the :file:`.mod` file. 
     However, the mechanism name will be the base file name. 
     This is useful if you know that no conflict of names 
-    will exist or if the .mod file is primarily used to create functions callable 
+    will exist or if the :file:`.mod` file is primarily used to create functions callable 
     from NEURON by the user and you want to specify those function names exactly. 
 
 
@@ -78,15 +79,16 @@ Range
 
 Description:
     These names will be become range variables. Do not add suffixes here. 
-    The names should also be declared in the normal PARAMETER or ASSIGNED 
+    The names should also be declared in the normal :code:`PARAMETER` or :code:`ASSIGNED` 
     statement outside 
-    of the NEURON block.  Parameters that do not appear in a NEURON RANGE 
+    of the :code:`NEURON` block.  Parameters that do not appear in a :code:`NEURON RANGE`
     statement will become global variables. 
-    Assigned variables that do not appear in this statement or in the NEURON 
-    GLOBAL statement will be hidden from the user. 
+    Assigned variables that do not appear in this statement or in the
+    :code:`NEURON GLOBAL` statement will be hidden from the user. 
     When a mechanism is inserted in 
     a section, the values of these range variables are set to the values 
-    specified in the normal PARAMETER statement outside the NEURON block. 
+    specified in the normal :code:`PARAMETER` statement outside the
+    :code:`NEURON` block. 
 
 
 Global
@@ -94,14 +96,16 @@ Global
 
 
 Description:
-    These names, which should be declared elsewhere as ASSIGNED or PARAMETER 
+    These names, which should be declared elsewhere as :code:`ASSIGNED` or :code:`PARAMETER`
     variables, 
     become global variables instead of range variables.  Notice here that 
-    the default for a PARAMETER variable is to become a global variable whereas 
-    the default for an ASSIGNED variable is to become hidden at the user level. 
+    the default for a :code:`PARAMETER` variable is to become a global variable whereas 
+    the default for an :code:`ASSIGNED` variable is to become hidden at the user level. 
 
 
-Nonspecific_Current
+.. nonspecific_current:
+
+Nonspecific Current
 ~~~~~~~~~~~~~~~~~~~
 
 
@@ -109,9 +113,9 @@ Description:
     This signifies that we are calculating local currents which get added 
     to the total membrane current but will not contribute to any particular 
     ionic concentration.  This current should be assigned a value 
-    after any SOLVE statement but before the end of the BREAKPOINT block. 
-    This name will be hidden at the user level unless it appears in a NEURON 
-    RANGE statement. 
+    after any :code:`SOLVE` statement but before the end of the :code:`BREAKPOINT` block. 
+    This name will be hidden at the user level unless it appears in a
+    :code:`NEURON RANGE` statement. 
 
 
 Useion
@@ -121,18 +125,18 @@ Useion
 Description:
     This statement declares that a  specific ionic species will be used within 
     this model. The built-in 
-    HH channel uses the ions \ :code:`na` and \ :code:`k`. Different models which deal with 
+    HH channel uses the ions :code:`na` and :code:`k`. Different models which deal with 
     the same ionic species should use the same names so that total concentrations 
-    and currents can be computed consistently. The ion, \ :code:`Na`, is different from 
-    \ :code:`na`.  The example models using calcium call it, \ :code:`ca`. If an ion is 
+    and currents can be computed consistently. The ion, :code:`Na`, is different from 
+    :code:`na`.  The example models using calcium call it, :code:`ca`. If an ion is 
     declared, suppose it is called, 
-    \ :code:`ion`, then a separate mechanism is internally created 
-    within NEURON, denoted by \ :code:`ion`, and automatically inserted whenever 
+    :code:`ion`, then a separate mechanism is internally created 
+    within NEURON, denoted by :code:`ion`, and automatically inserted whenever 
     the "using" mechanism is inserted.  The variables of the mechanism 
-    called \ :code:`ion` are 
-    outward total current carried by this ion, \ :code:`iion`; internal and 
-    external concentrations of this ion, \ :code:`ioni` and \ :code:`iono`; and 
-    reversal potential of this ion, \ :code:`eion`.  These ion range variables do 
+    called :code:`ion` are 
+    outward total current carried by this ion, :code:`iion`; internal and 
+    external concentrations of this ion, :code:`ioni` and :code:`iono`; and 
+    reversal potential of this ion, :code:`eion`.  These ion range variables do 
     NOT have suffixes. 
     Prior to 9/94 the reversal potential was not automatically calculated 
     from the Nernst equation but, if it was *used* it had to be set by 
@@ -152,7 +156,7 @@ Description:
     ion_style(). Three cases are noteworthy. 
 
 Read
-~~~~
+====
 
     Assume only one model is inserted in a section. 
 
@@ -176,7 +180,7 @@ Read
     from the Nernst equation when finitialize() is called. 
 
 Write
-~~~~~
+=====
 
     Lastly, insert a final model at the same location in addition to the 
     first two. 
@@ -209,17 +213,17 @@ Write
     
 
  
-    Only the ion names \ :code:`na`, \ :code:`k`, and \ :code:`ca` are initialized to a 
+    Only the ion names :code:`na`, :code:`k`, and :code:`ca` are initialized to a 
     physiologically meaningful value --- and those may not be right for 
     your purposes.  Concentrations and reversal potentials should be considered 
     parameters unless explicitly calculated by some mechanism. 
 
 Valence
-~~~~~~~
+=======
 
-    The \ :code:`READ` list of a \ :code:`USEION` specifies those ionic variables which 
+    The :code:`READ` list of a :code:`USEION` specifies those ionic variables which 
     will be used to calculate other values but is not calculated itself. 
-    The \ :code:`WRITE` list of a \ :code:`USEION` specifies those ionic variables which 
+    The :code:`WRITE` list of a :code:`USEION` specifies those ionic variables which 
     will be calculated within this mechanism. Normally, a channel will read 
     the concentration or reversal potential variables and write a current. 
     A mechanism that calculates concentrations will normally read a current 
@@ -230,10 +234,10 @@ Valence
     write the same ionic concentrations. 
     It is possible to READ and WRITE currents. 
     One can imagine,  a large calcium 
-    model which would \ :code:`WRITE` all the ion variables (including current) 
+    model which would :code:`WRITE` all the ion variables (including current) 
     and READ the ion current. 
     And one can imagine 
-    models which \ :code:`READ` some ion variables and do not \ :code:`WRITE` any. 
+    models which :code:`READ` some ion variables and do not :code:`WRITE` any. 
     It would be an error if more than one mechanism at the same location tried 
     to WRITE the same concentration. 
      
@@ -241,27 +245,29 @@ Valence
 
  
     A bit of implementation specific discussion may be in order here. 
-    All the statements after the SOLVE statement in the BREAKPOINT block are 
+    All the statements after the :code:`SOLVE` statement in the
+    :code:`BREAKPOINT` block are 
     collected to form a function which is called during the construction of 
     the charge conservation matrix equation.  This function is called 
     several times in order to compute the current and conductance  to be added 
     into the matrix equation.  This function is never called if you are not 
-    writing any current.  The SOLVE statement is executed after the new voltages 
-    have been computed in order to integrate the states over the time step, \ :code:`dt`. 
+    writing any current.  The :code:`SOLVE` statement is executed after the new voltages 
+    have been computed in order to integrate the states over the time step, :code:`dt`. 
     Local static variables get appropriate copies of the proper ion variables 
     for use in the mechanism. Ion variables get updated on exit from these 
     functions such that WRITE currents are added to ion currents. 
 
      
+.. point_process:
 
 Point_Process
 ~~~~~~~~~~~~~
 
 
 Description:
-    The \ :code:`READ` list of a \ :code:`USEION` specifies those ionic variables which 
+    The :code:`READ` list of a :code:`USEION` specifies those ionic variables which 
     will be used to calculate other values but is not calculated itself. 
-    The \ :code:`WRITE` list of a \ :code:`USEION` specifies those ionic variables which 
+    The :code:`WRITE` list of a :code:`USEION` specifies those ionic variables which 
     will be calculated within this mechanism. Normally, a channel will read 
     the concentration or reversal potential variables and write a current. 
     A mechanism that calculates concentrations will normally read a current 
@@ -272,10 +278,10 @@ Description:
     write the same ionic concentrations. 
     It is possible to READ and WRITE currents. 
     One can imagine,  a large calcium 
-    model which would \ :code:`WRITE` all the ion variables (including current) 
+    model which would :code:`WRITE` all the ion variables (including current) 
     and READ the ion current. 
     And one can imagine 
-    models which \ :code:`READ` some ion variables and do not \ :code:`WRITE` any. 
+    models which :code:`READ` some ion variables and do not :code:`WRITE` any. 
     It would be an error if more than one mechanism at the same location tried 
     to WRITE the same concentration. 
      
@@ -289,7 +295,7 @@ Description:
     several times in order to compute the current and conductance  to be added 
     into the matrix equation.  This function is never called if you are not 
     writing any current.  The SOLVE statement is executed after the new voltages 
-    have been computed in order to integrate the states over the time step, \ :code:`dt`. 
+    have been computed in order to integrate the states over the time step, :code:`dt`. 
     Local static variables get appropriate copies of the proper ion variables 
     for use in the mechanism. Ion variables get updated on exit from these 
     functions such that WRITE currents are added to ion currents. 
@@ -321,7 +327,8 @@ External
 
 
 Description:
-    These names, which should be declared elsewhere as ASSIGNED or PARAMETER 
+    These names, which should be declared elsewhere as :code:`ASSIGNED`
+    or :code:`PARAMETER`
     variables allow global variables in other models or NEURON c files to be 
     used in this model. That is, the definition of this variable must appear 
     in some other file. Note that if the definition appeared in another mod file 
@@ -334,11 +341,12 @@ Description:
 
         extern double fname_othermodelsuffix(); 
 
-    in a VERBATIM block and use them with the proper suffix. 
+    in a :code:`VERBATIM` block and use them with the proper suffix. 
 
+.. _connectingmechanismstogether:
 
-ConnectingMechanismsTogether
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Connecting Mechanisms Together
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     Occasionally mechanisms need information from other mechanisms which may 
     be located elsewhere in the neuron. Connecting pre and post synaptic 
@@ -348,7 +356,7 @@ ConnectingMechanismsTogether
     location. (Normally, mechanism functions callable from HOC should not 
     modify range variables since the function does not know where the mechanism 
     data for a segment is located. Normally, the pointers are set when NEURON 
-    calls the BREAKPOINT block and the associated SOLVE blocks.) 
+    calls the :code:`BREAKPOINT` block and the associated :code:`SOLVE` blocks.) 
      
     
 
@@ -363,7 +371,7 @@ ConnectingMechanismsTogether
      
 
 Pointer-Communication
-~~~~~~~~~~~~~~~~~~~~~
+=====================
 
 
 Description:
@@ -375,7 +383,7 @@ Description:
         section1.var1_mech1(x1) =  section2.var2_mech2(x2) 
 
     efficiently from within a mechanism without having to explicitly connect them 
-    through assignment at the HOC level everytime the var2 might change. 
+    through assignment at the HOC level everytime the :samp:`{var2}` might change. 
      
     First of all, the variables which point to the values in some other mechanism 
     are declared within the NEURON block via 
@@ -406,7 +414,7 @@ Description:
     determine their exact segment and mechanism location. For a continuous 
     mechanism, this means the section and location information. For a point 
     process it means the object. The variable may also be any hoc variable 
-    or voltage, v. 
+    or voltage, :samp:`{v}`. 
      
     For example, consider a synapse which requires a presynaptic potential 
     in order to calculate the amount of transmitter release. Assume the 
@@ -428,9 +436,9 @@ Description:
 
     will allow the syn object to know the voltage at the distal end of the axon 
     section. As a variation on that example, if one supposed that the synapse 
-    needed the presynaptic transmitter concentration (call it tpre) calculated 
+    needed the presynaptic transmitter concentration (call it :samp:`{tpre}`) calculated 
     from a point process model called "release" (with object reference 
-    rel, say) then the 
+    :samp:`{rel}`, say) then the 
     statement would be 
 
     .. code-block::

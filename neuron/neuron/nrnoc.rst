@@ -63,11 +63,11 @@ functions
     Description:
 
 
-        \ :code:`batch_save()` 
+        :code:`batch_save()` 
             starts a new list of variables to save in a :func:`batch_run` . 
 
-        \ :code:`batch_save(&var, &var, ...)` 
-            adds pointers to the list of variables to be saved in a \ :code:`batch_run`. 
+        :code:`batch_save(&var, &var, ...)` 
+            adds pointers to the list of variables to be saved in a :code:`batch_run`. 
             A pointer to a range variable, eg. "v", must have an explicit 
             arc length, eg. axon.v(.5). 
 
@@ -85,7 +85,7 @@ functions
             	batch_save(&dend[i].v(.3)) 
             } 
 
-        specifies five quantities to be saved from each \ :code:`batch_run`. 
+        specifies five quantities to be saved from each :code:`batch_run`. 
 
          
 
@@ -101,15 +101,15 @@ functions
 
 
     Description:
-        Initialize \ :code:`t, dt, clamp_resist`, and \ :code:`celsius` to the values 
+        Initialize :code:`t, dt, clamp_resist`, and :code:`celsius` to the values 
         they had when the program was first run. 
          
         Note that in this 
-        version \ :code:`Ra` is no longer a global variable but a section variable 
-        like *L* and *rallbranch*. Thus \ :code:`Ra` can be different for different 
-        sections.  In order to set \ :code:`Ra` to a constant value, use: 
+        version :code:`Ra` is no longer a global variable but a section variable 
+        like *L* and *rallbranch*. Thus :code:`Ra` can be different for different 
+        sections.  In order to set :code:`Ra` to a constant value, use: 
          
-        \ :code:`forall Ra=...` 
+        :code:`forall Ra=...` 
 
     .. warning::
         Not very useful. No way to completely restart neuron exect to :func:`quit` and 
@@ -128,8 +128,8 @@ functions
 
 
     Description:
-        Integrate all section equations over the interval :func:`dt` . 
-        The value of :func:`t` is incremented by dt. 
+        Integrate all section equations over the interval :data:`dt` . 
+        The value of :data:`t` is incremented by dt. 
         The default method is first order implicit but may be changed to 
         Crank-Nicholson by changing :func:`secondorder` = 2. 
          
@@ -165,7 +165,7 @@ functions
         inserted in the sections. 
         If the optional argument is present then all voltages of all sections 
         are initialized to *v*. 
-        \ :code:`t` is set to 0. 
+        :code:`t` is set to 0. 
          
         The order of principal actions during an finitialize call is; 
 
@@ -278,20 +278,20 @@ functions
          
 
 
-        \ :code:`1 <= n < 20` 
+        :code:`1 <= n < 20` 
             is the number of parameters to vary (number 
             of arguments to *funname*). 
 
         *funname* 
             the name of the function to minimize, eg. least square difference between model and data. 
-            The funname must take two arguments, the first arg, \ :code:`$1`, 
-            is the number of elements in second arg vector, \ :code:`$&2`. The ith index of the 
-            vector is given by \ :code:`$&2[i]`. 
+            The funname must take two arguments, the first arg, :code:`$1`, 
+            is the number of elements in second arg vector, :code:`$&2`. The ith index of the 
+            vector is given by :code:`$&2[i]`. 
 
         *x* 
             is a double vector of at least length *n*. Prior to the call set 
             it to a guess of the parameter values. On return it contains the 
-            values of the args that minimize \ :code:`funname()`. 
+            values of the args that minimize :code:`funname()`. 
 
          
         *funname* may be either 
@@ -355,7 +355,7 @@ functions
 
     .. warning::
         Up to version 4.0.1, the arguments to *funname* were an explicit 
-        list of *n* arguments. ie \ :code:`numarg()==n`. 
+        list of *n* arguments. ie :code:`numarg()==n`. 
 
     .. seealso::
         :func:`attr_praxis`, :func:`stop_praxis`, :func:`pval_praxis`
@@ -382,7 +382,7 @@ functions
 
         tolerance 
             praxis attempt to return f(x) such that if x0 is the true 
-            local minimum then \ :code:`norm(x-x0) < tolerance` 
+            local minimum then :code:`norm(x-x0) < tolerance` 
 
         maxstepsize 
             should be set to about the maximum distance from 
@@ -417,7 +417,7 @@ functions
 
 
     Description:
-        Return the ith principal value. If the second argument is present, \ :code:`pval_praxis` also fills 
+        Return the ith principal value. If the second argument is present, :code:`pval_praxis` also fills 
         the vector with the ith principal axis. 
 
          
@@ -439,7 +439,7 @@ functions
         Set a flag in the praxis function that will cause it to stop after 
         it finishes the current (or ith subsequent) 
         principal axis calculation. If this function 
-        is called before \ :code:`fit_praxis`, then praxis will do a single 
+        is called before :code:`fit_praxis`, then praxis will do a single 
         (or i) principal axis calculation and then exit. 
 
          
@@ -504,7 +504,7 @@ functions
 
 
     Description:
-        obsolete. Print the info about \ :code:`fstim`, \ :code:`fclamp`, and \ :code:`fsyn` 
+        obsolete. Print the info about :code:`fstim`, :code:`fclamp`, and :code:`fsyn` 
 
          
 
@@ -601,10 +601,10 @@ functions
         don't want to require a match at the beginning use the dot. 
          
         (Note, 
-        that \ :code:`.` matches any character and \ :code:`*` matches 0 or more occurrences 
+        that :code:`.` matches any character and :code:`*` matches 0 or more occurrences 
         of the previous character). The interpreter always closes each string with 
-        an implicit \ :code:`$` to require a match at the end of the string. If you 
-        don't require a match at the end use "\ :code:`.*`". 
+        an implicit :code:`$` to require a match at the end of the string. If you 
+        don't require a match at the end use ":code:`.*`". 
 
     Example:
 
@@ -616,7 +616,7 @@ functions
             	print secname() 
             } 
 
-        will print \ :code:`soma` 
+        will print :code:`soma` 
 
         .. code-block::
             none
@@ -625,7 +625,7 @@ functions
             	print secname() 
             } 
 
-        will print \ :code:`dendrite[2]` 
+        will print :code:`dendrite[2]` 
 
         .. code-block::
             none
@@ -756,7 +756,7 @@ functions
 
 
 
-.. function:: secondorder
+.. data:: secondorder
 
 
     Syntax:
@@ -770,19 +770,19 @@ functions
         =0 
             default fully implicit backward euler. Very numerically stable. 
             gives steady state in one step when *dt=1e10*. Numerical errors 
-            are proportional to *dt*. 
+            are proportional to :data:`dt`. 
 
         =1 
             crank-nicholson Can give large (but damped) numerical error 
-            oscillations. For small \ :code:`dt` the numerical errors are proportional 
-            to \ :code:`dt^2`. Cannot be used with voltage clamps. Ionic currents 
+            oscillations. For small :data:`dt` the numerical errors are proportional 
+            to :code:`dt^2`. Cannot be used with voltage clamps. Ionic currents 
             are first order correct. Channel conductances are second order 
-            correct when plotted at \ :code:`t+dt/2` 
+            correct when plotted at :code:`t+dt/2` 
 
         =2 
             crank-nicholson like 1 but in addition Ion currents (*ina*, *ik*, 
             etc) are fixed up so that they are second order correct when 
-            plotted at \ :code:`t-dt/2` 
+            plotted at :code:`t-dt/2` 
 
 
          
@@ -791,7 +791,7 @@ functions
 
 
 
-.. function:: t
+.. data:: t
 
 
     Syntax:
@@ -807,7 +807,7 @@ functions
 
 
 
-.. function:: dt
+.. data:: dt
 
 
     Syntax:
@@ -815,9 +815,9 @@ functions
 
 
     Description:
-        The integration interval for :func:`fadvance` (). 
+        The integration interval for :func:`fadvance`. 
          
-        When using the default implicit integration method ( :func:`secondorder` = 0) 
+        When using the default implicit integration method (:func:`secondorder` = 0) 
         there is no upper limit on dt for numerical stability and in fact for 
         passive models it is often convenient to use dt=1.9 to obtain the 
         steady state in a single time step. 
@@ -834,7 +834,7 @@ functions
 
 
 
-.. function:: clamp_resist
+.. data:: clamp_resist
 
 
     Syntax:
@@ -850,7 +850,7 @@ functions
 
 
 
-.. function:: celsius
+.. data:: celsius
 
 
     Syntax:
@@ -870,7 +870,7 @@ functions
 
 
 
-.. function:: stoprun
+.. data:: stoprun
 
 
     Syntax:
@@ -1036,8 +1036,8 @@ functions
 ----
 
 
-
-.. function:: CompileTimeOptions
+Compile Time Options
+====================
 
         The following definitions are found in nrnoc/SRC/options.h and add extra 
         functionality which not everyone may need. The extras come at the cost 
@@ -1097,10 +1097,8 @@ functions
 
 
 
-.. function:: ion
-
-
-----
+Ion
+===
 
 
 
@@ -1143,16 +1141,16 @@ functions
 
         einit: 0 or 1. 
             If 1 then reversal potential computed by Nernst equation 
-            on call to \ :code:`finitialize()` using values of concentrations. 
+            on call to :code:`finitialize()` using values of concentrations. 
 
         eadvance: 0 or 1. 
             If 1 then reversal potential computed every call to 
-            \ :code:`fadvance()` using the values of the concentrations. 
+            :code:`fadvance()` using the values of the concentrations. 
 
         cinit: 0 or 1. 
             If 1 then a call to finitialize() sets the concentrations 
-            to the values of the global initial concentrations. eg. \ :code:`nai` set to 
-            \ :code:`nai0_na_ion` and \ :code:`nao` set to \ :code:`nao0_na_ion`. 
+            to the values of the global initial concentrations. eg. :code:`nai` set to 
+            :code:`nai0_na_ion` and :code:`nao` set to :code:`nao0_na_ion`. 
 
          
         The automatic style is chosen based on how the set of mechanisms that 
@@ -1177,13 +1175,13 @@ functions
         For example suppose one has inserted a mechanism that READ's eca, 
         a mechanism that READ's cai, cao and a mechanism that WRITE's cai, cao 
         Then, since WRITE takes precedence over READ in the above table, 
-        \ :code:`cai/cao` would appear in the STATE variable panel (first arg is 3), 
-        \ :code:`eca` would appear in the ASSIGNED variable panel (second arg is 2), 
-        \ :code:`eca` would be calculated on a call to finitialize (third arg is 1), 
-        \ :code:`eca` would be calculated on every call to fadvance (fourth arg is 1), 
-        \ :code:`cai/cao` would be initialized (on finitialize) to the global variables 
-        \ :code:`cai0_ca_ion` and \ :code:`cao0_ca_ion` respectively. (note that this takes place just 
-        before the calculation of \ :code:`eca`). 
+        :code:`cai/cao` would appear in the STATE variable panel (first arg is 3), 
+        :code:`eca` would appear in the ASSIGNED variable panel (second arg is 2), 
+        :code:`eca` would be calculated on a call to finitialize (third arg is 1), 
+        :code:`eca` would be calculated on every call to fadvance (fourth arg is 1), 
+        :code:`cai/cao` would be initialized (on finitialize) to the global variables 
+        :code:`cai0_ca_ion` and :code:`cao0_ca_ion` respectively. (note that this takes place just 
+        before the calculation of :code:`eca`). 
 
          
 
@@ -1226,11 +1224,11 @@ functions
     Description:
 
 
-        \ :code:`nernst(ci, co, charge)` 
+        :code:`nernst(ci, co, charge)` 
             returns nernst potential. Utilizes the present value of celsius. 
 
-        \ :code:`nernst("ena" or "nai" or "nao", [x])` 
-            calculates \ :code:`nao/nai = exp(z*ena/RTF)` for the ionic variable 
+        :code:`nernst("ena" or "nai" or "nao", [x])` 
+            calculates :code:`nao/nai = exp(z*ena/RTF)` for the ionic variable 
             named in the string. 
 
         Celsius, valence, and the other two ionic variables are taken from their 
