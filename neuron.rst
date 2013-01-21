@@ -7,3 +7,4 @@ neuron
     neuron/neuron.rst
     neuron/general.rst
     neuron/stdrun.rst
+    neuron/rxd.rst

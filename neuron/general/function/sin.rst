@@ -160,7 +160,7 @@ math
 
         absolute value 
          
-        see :meth:`Vector.abs` for the :func:`Vector` class. 
+        see :meth:`Vector.abs` for the :class:`Vector` class. 
          
 
 ----
@@ -170,9 +170,10 @@ math
 .. function:: erf
 
         normalized error function 
-        @eqn 
-        \[{\rm erf}(z) = \frac{2}{\sqrt{\pi}} \int_{0}^{z} e^{-t^2} dt\] 
-        @endeqn 
+        
+        .. math::
+        
+            {\rm erf}(z) = \frac{2}{\sqrt{\pi}} \int_{0}^{z} e^{-t^2} dt
 
 ----
 

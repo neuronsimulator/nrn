@@ -4,7 +4,6 @@ classes
 .. toctree::
     :maxdepth: 2
 
-    classes/Vector.rst
     ../../neuron/general/classes/vector/vect.rst
     ../../neuron/general/classes/glyph.rst
     ../../neuron/general/classes/timer.rst

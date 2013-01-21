@@ -15,7 +15,7 @@ KSChan
 
     Description:
         Declare and manage a new density channel type which can 
-        be instantiated in sections with the :meth:`keywords.insert` 
+        be instantiated in sections with the :ref:`insert <keyword_insert>` 
         statement. After the type comes into existence it 
         is always a valid type and the conductance style, 
         ligands, name, gating functions, etc can be changed 
@@ -343,15 +343,15 @@ KSChan
 
 
 
-.. method:: KSChan.KSState
+.. class:: KSState
 
 
     Syntax:
-        :code:`cannot be created directly`
+        cannot be created directly
 
 
     Description:
-        A helper class for :func:`KSChan` . KSChan creates and destroys 
+        A helper class for :class:`KSChan`. KSChan creates and destroys 
         these objects internally. It cannot be created directly 
         with the "new" keyword. An error message will be printed 
         if a hoc reference is used after KSChan has destroyed 
@@ -366,7 +366,7 @@ KSChan
 
 
 
-.. method:: KSChan.frac
+.. method:: KSState.frac
 
 
     Syntax:
@@ -382,7 +382,7 @@ KSChan
 
 
 
-.. method:: KSChan.index
+.. method:: KSState.index
 
 
     Syntax:
@@ -397,7 +397,7 @@ KSChan
 
 
 
-.. method:: KSChan.gate
+.. method:: KSState.gate
 
 
     Syntax:
@@ -412,7 +412,7 @@ KSChan
 
 
 
-.. method:: KSChan.name
+.. method:: KSState.name
 
 
     Syntax:
@@ -429,15 +429,15 @@ KSChan
 
 
 
-.. method:: KSChan.KSGate
+.. class:: KSGate
 
 
     Syntax:
-        :code:`cannot be created directly`
+        cannot be created directly
 
 
     Description:
-        A helper class for :func:`KSChan` . KSChan creates and destroys 
+        A helper class for :class:`KSChan`. KSChan creates and destroys 
         these objects internally. It cannot be created directly 
         with the "new" keyword. An error message will be printed 
         if a hoc reference is used after KSChan has destroyed 
@@ -452,7 +452,7 @@ KSChan
 
 
 
-.. method:: KSChan.nstate
+.. method:: KSGate.nstate
 
 
     Syntax:
@@ -466,7 +466,7 @@ KSChan
 
 
 
-.. method:: KSChan.power
+.. method:: KSGate.power
 
 
     Syntax:
@@ -482,7 +482,7 @@ KSChan
 
 
 
-.. method:: KSChan.sindex
+.. method:: KSGate.sindex
 
 
     Syntax:
@@ -496,7 +496,7 @@ KSChan
 
 
 
-.. method:: KSChan.index
+.. method:: KSGate.index
 
 
     Syntax:
@@ -511,15 +511,15 @@ KSChan
 
 
 
-.. method:: KSChan.KSTrans
+.. class:: KSTrans
 
 
     Syntax:
-        :code:`cannot be created directly`
+        cannot be created directly
 
 
     Description:
-        A helper class for :func:`KSChan` . KSChan creates and destroys 
+        A helper class for :class:`KSChan`. KSChan creates and destroys 
         these objects internally. It cannot be created directly 
         with the "new" keyword. An error message will be printed 
         if a hoc reference is used after KSChan has destroyed 
@@ -534,7 +534,7 @@ KSChan
 
 
 
-.. method:: KSChan.set_f
+.. method:: KSTrans.set_f
 
 
     Syntax:
@@ -548,7 +548,7 @@ KSChan
 
 
 
-.. method:: KSChan.index
+.. method:: KSTrans.index
 
 
     Syntax:
@@ -562,7 +562,7 @@ KSChan
 
 
 
-.. method:: KSChan.type
+.. method:: KSTrans.type
 
 
     Syntax:
@@ -578,7 +578,7 @@ KSChan
 
 
 
-.. method:: KSChan.ftype
+.. method:: KSTrans.ftype
 
 
     Syntax:
@@ -592,7 +592,7 @@ KSChan
 
 
 
-.. method:: KSChan.ab
+.. method:: KSTrans.ab
 
 
     Syntax:
@@ -606,7 +606,7 @@ KSChan
 
 
 
-.. method:: KSChan.inftau
+.. method:: KSTrans.inftau
 
 
     Syntax:
@@ -620,7 +620,7 @@ KSChan
 
 
 
-.. method:: KSChan.f
+.. method:: KSTrans.f
 
 
     Syntax:
@@ -635,7 +635,7 @@ KSChan
 
 
 
-.. method:: KSChan.src
+.. method:: KSTrans.src
 
 
     Syntax:
@@ -649,7 +649,7 @@ KSChan
 
 
 
-.. method:: KSChan.target
+.. method:: KSTrans.target
 
 
     Syntax:
@@ -663,7 +663,7 @@ KSChan
 
 
 
-.. method:: KSChan.parm
+.. method:: KSTrans.parm
 
 
     Syntax:
@@ -678,7 +678,7 @@ KSChan
 
 
 
-.. method:: KSChan.ligand
+.. method:: KSTrans.ligand
 
 
     Syntax:

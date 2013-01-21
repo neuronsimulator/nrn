@@ -32,13 +32,13 @@ CVode
                   Steve Lee, Radu Serban, Dan Shumaker, Carol Woodward 
                       Center for Applied Scientific Computing, LLNL 
 
-        (see :meth:`CVode.use_local_dt` and :meth:`CVode.use_daspk` ) 
+        (see :meth:`CVode.use_local_dt` and :meth:`CVode.use_daspk`) 
          
         When this class is :meth:`CVode.active` the finitialize/fadvance calls use the CVode 
         integrator. 
         In the default variable step context, the integrator 
         chooses the time step and fadvance returns after one step. Local accuracy 
-        is determined by :meth:`CVode.atol` and :meth:`CVode.rtol` . 
+        is determined by :meth:`CVode.atol` and :meth:`CVode.rtol`. 
          
         The two major energy barriers to 
         using the method are the requirement that hh type models be 
