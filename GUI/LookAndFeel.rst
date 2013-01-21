@@ -1,5 +1,5 @@
-LookAndFeel
-===========
+Look And Feel
+=============
 
 .. toctree::
     :maxdepth: 2

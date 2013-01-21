@@ -1,5 +1,6 @@
 .. _0stdrun:
 
+.. _standardruntools:
 
 StandardRunTools
 ----------------
@@ -212,8 +213,10 @@ RunControl
 
     Pops up a :meth:`StandardRunTools.RunControl` panel for controlling simulation runs. 
 
-VariableStepControl
-~~~~~~~~~~~~~~~~~~~
+.. _variablestepcontrol:
+
+Variable Step Control
+~~~~~~~~~~~~~~~~~~~~~
 
     Pops up a VariableTimeStep panel for controlling the :class:`CVode` 
     variable time step, variable order method. 
@@ -381,42 +384,45 @@ Grapher
     response to a run. However it can be made to control a family 
     of runs. 
 
-SavetoFile
-~~~~~~~~~~
+.. _vector_savetofile:
+
+Save to File
+~~~~~~~~~~~~
 
     Menu for saving/retrieving the last Vector selection to a file. eg. 
-    from a :func:`PickVector` as well as other Vector tools. 
+    from a :ref:`gui_PickVector` as well as other Vector tools. 
      
-    The format of the file is: 
-    1) optional first line with the format 
+    The format of the file is:
+    
+    1)  optional first line with the format 
 
-    .. code-block::
-        none
+        .. code-block::
+            none
 
-        label:anystring 
+            label:anystring 
 
-    2) optional line with one number which is the count of points. 
-    3) a tab separated pair of x, y coordinates 
-    each line. If there is no "count" line, there must be 
-    no empty lines at the end of the file and the last character must 
-    be a newline. 
+    2)  optional line with one number which is the count of points. 
+    3)  a tab separated pair of x, y coordinates 
+        each line. If there is no "count" line, there must be 
+        no empty lines at the end of the file and the last character must 
+        be a newline. 
      
     When the file is saved with this menu item, 
     the label and count are always present in the file. 
     For long files retrieval is much more efficient if the count is present. 
      
     The implementation of these operations is in 
-    $NEURONHOME/lib/hoc/stdlib.hoc 
+    :file:`$NEURONHOME/lib/hoc/stdlib.hoc`
     vectors and performing simple manipulations on them. 
 
 .. seealso::
-    :func:`hoc_obj_`
+    :data:`hoc_obj_`
 
 
 RetrievefromFile
 ~~~~~~~~~~~~~~~~
 
-    See :meth:`Vector.SavetoFile`#NEURONMainMenu 
+    See :ref:`vector_savetofile`
      
 
 GatherValues

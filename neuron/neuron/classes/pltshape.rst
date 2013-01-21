@@ -379,7 +379,7 @@ PlotShape
     Description:
         A filled square or rectangle is drawn with center at (x, y) and edge length given by 
         size. The color depends on the :meth:`PlotShape.colormap` and :meth:`PlotShape.scale` 
-        and is redrawn on :meth:`PlotShape.flush` . 
+        and is redrawn on :meth:`PlotShape.flush`. 
          
         If there are many of these elements then :meth:`PlotShape.fastflush` can 
         speed plotting by up to a factor of 4 if not too many elements change 

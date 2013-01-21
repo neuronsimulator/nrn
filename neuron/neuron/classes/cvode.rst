@@ -47,18 +47,19 @@ CVode
         and that the solver be explicitly notified of 
         the exact time of any discontinuity 
         such as step changes, pulses, and synaptic conductance 
-        onset's. These issues are discussed in :meth:`ModelDescriptionIssues.Channels` 
-        and :meth:`ModelDescriptionIssues.Events` . 
+        onset's. These issues are discussed in :ref:`Channels <ModelDescriptionIssues_Channels>` 
+        and :ref:`Events <ModelDescriptionIssues_Events>`. 
          
         After your mod files are generalized it will probably be 
         convenient to compare the default method with CVode by 
-        toggling the Use variable dt checkbox in the :func:`VariableStepControl` 
-        panel (NEURON Main Menu / Tools / VariableStepControl). 
+        toggling the Use variable dt checkbox in the :ref:`VariableStepControl` 
+        panel
+        :menuselection:`NEURON Main Menu --> Tools --> VariableStepControl`.
          
          
 
     .. seealso::
-        :func:`fadvance`, :func:`finitialize`, :func:`secondorder`, :func:`dt`
+        :func:`fadvance`, :func:`finitialize`, :data:`secondorder`, :data:`dt`
 
     .. warning::
         The consequences of solving continuous equations can be sometimes 
@@ -70,14 +71,14 @@ CVode
         Only the SEClamp works with CVode. VClamp cannot be used with this method. 
          
         Also .mod authors must take measures to handle step changes in parameters 
-        ( :meth:`ModelDescriptionIssues.Events` ) 
+        (:ref:`Events <ModelDescriptionIssues_Events>`) 
          
 
     .. warning::
         Alternative variable step methods such as :meth:`CVode.use_local_dt` 
         and :meth:`CVode.use_daspk` have been folded into this class and it has become 
         a catchall class for invoking any of the numerical methods. For example, 
-        :meth:`Cvode.use_mxb` is used to switch between the tree structured matrix solver 
+        :meth:`CVode.use_mxb` is used to switch between the tree structured matrix solver 
         and the general sparse matrix solver. Not all components work together, see 
         :meth:`CVode.current_method` for acceptable mixing. 
 
@@ -351,7 +352,7 @@ CVode
 
     Description:
         Initializes the integrator. This is done by :func:`finitialize` when cvode 
-        is :meth:`CVode.active` . 
+        is :meth:`~CVode.active`. 
 
          
 
@@ -400,7 +401,7 @@ CVode
 
     Description:
         When CVode is active then :func:`finitialize` 
-        calls :meth:`CVode.re_init` and  :meth:`CVode.fadvance` calls :func:`solve` . 
+        calls :meth:`CVode.re_init` and  :func:`fadvance` calls :meth:`CVode.solve`. 
          
         This function allows one to toggle between the normal integration 
         method and the CVode method with no changes to existing interpreter 
@@ -473,7 +474,7 @@ CVode
 
 
     Description:
-        Fill the destination :func:`Vector` with the values of the states. 
+        Fill the destination :class:`Vector` with the values of the states. 
         On return dest_vector.size will be the number of states. 
 
          
@@ -490,7 +491,7 @@ CVode
 
 
     Description:
-        Fill the destination :func:`Vector` with the values of d(state)/dt. 
+        Fill the destination :class:`Vector` with the values of d(state)/dt. 
 
          
 
@@ -508,7 +509,7 @@ CVode
     Description:
         returns f(yvec, t) in ypvec. f is the existing model. 
         Size of yvec must be equal to the number of states ( ie vector size 
-        returned by :meth:`CVode.states` ). ypvec will be resized to the proper size. 
+        returned by :meth:`CVode.states`). ypvec will be resized to the proper size. 
         Note that the order of the states in the vector is indicated by the 
         names returned by :meth:`CVode.statename` 
 
@@ -532,7 +533,7 @@ CVode
     Description:
         Fills the state variables with the values specified in yvec. 
         Size of yvec must be equal to the number of states ( ie vector size 
-        returned by :meth:`CVode.states` ). Note that active CVode requires a subsequent 
+        returned by :meth:`CVode.states`). Note that active CVode requires a subsequent 
         :meth:`CVode.re_init` if one wishes to integrate from the yvec state point. 
 
     .. warning::
@@ -554,7 +555,7 @@ CVode
 
     Description:
         Fills yvec with the state variables (will be resized to the number of 
-        states). This is analogous to cvode.states after a cvode.re_init . 
+        states). This is analogous to :meth:`CVode.states` after a :meth:`CVode.re_init`. 
 
     .. warning::
         Works only for global variable time step method. 
@@ -574,16 +575,16 @@ CVode
 
 
     Description:
-        Uses the fixed step method to advance the simulation by :meth:`globals.dt` . 
+        Uses the fixed step method to advance the simulation by :data:`dt` . 
         The initial condition is whatever state values are present (eg subsequent 
         to a previous integration step or :meth:`CVode.yscatter` or :meth:`CVode.f` or explicitly 
-        user modified state values ). The model state values are those after the 
+        user modified state values). The model state values are those after the 
         fixed step integration (but are NOT the same as the current state defined 
         by CVode and returned by :meth:`CVode.states` (that would be the case only after 
-        a subsequent :meth:`CVode.re_init` .)) To get the new current states in CVode 
-        vector order, use :meth:`CVode.ygather` . 
+        a subsequent :meth:`CVode.re_init`)) To get the new current states in CVode 
+        vector order, use :meth:`CVode.ygather`. 
          
-        Valid under all circumstances. This is basically an fadvance() using 
+        Valid under all circumstances. This is basically an :func:`fadvance` using 
         the fixed step method and avoids the overhead of 
 
         .. code-block::
@@ -612,15 +613,11 @@ CVode
     Syntax:
         :code:`cvode.error_weights(dest_vector)`
 
-        :code:`Fill the destination :func:`Vector` with the values of the weights used`
-
-        :code:`to compute the norm of the local error in cvodes and ida.`
-
 
     Description:
 
-         
-
+        Fill the destination :class:`Vector` with the values of the weights used
+        to compute the norm of the local error in cvodes and ida.
 ----
 
 
@@ -631,13 +628,9 @@ CVode
     Syntax:
         :code:`cvode.acor(dest_vector)`
 
-        :code:`Fill the destination :func:`Vector` with the values of the local errors`
-
-        :code:`on the last step.`
-
-
     Description:
-
+        Fill the destination :class:`Vector` with the values of the local errors
+        on the last step.
          
 
 ----
@@ -650,7 +643,7 @@ CVode
     Syntax:
         :code:`cvode.statename(i, dest_string)`
 
-        :code:`cvode.statename(i, dest_string, style`
+        :code:`cvode.statename(i, dest_string, style)`
 
 
     Description:
@@ -741,7 +734,7 @@ CVode
 
 
     Description:
-        Similar to the Vector :meth:`Vector.record` function but also works correctly with 
+        Similar to the Vector :meth:`~Vector.record` function but also works correctly with 
         the local variable time step method. Limited to recording only range variables 
         of density mechanisms and point processes. 
          
@@ -774,7 +767,7 @@ CVode
 
     Description:
         Remove yvec (and the corresponding xvec) 
-        from the list of recorded vectors. See :func:`record` . 
+        from the list of recorded vectors. See :func:`record`. 
 
          
 
@@ -797,7 +790,7 @@ CVode
         With no argument, an event without a source or target 
         is inserted into the event queue 
         for "delivery" at time t. This has the side effect of causing a return 
-        from fadvance() (or :meth:`CVode.solve` or :meth:`ParallelContext.psolve` or :func:`batch_run` 
+        from :func:`fadvance` (or :meth:`CVode.solve` or :meth:`ParallelContext.psolve` or :func:`batch_run` 
         exactly at time t. This is used by the stdrun.hoc file 
         to make sure a simulation stops at tstop or after the appropriate 
         time on pressing "continuerun" or "continuefor". When :meth:`CVode.use_local_dt` 
@@ -808,7 +801,7 @@ CVode
         the event time arrives. 
         This statement is normally a call to a procedure 
         which may send another cvode.event. Note that since the event queue 
-        is cleared upon finitialize() the cvode.event must be sent after that. 
+        is cleared upon :func:`finitialize` the cvode.event must be sent after that. 
          
         Multiple threads and/or the local variable time step method, sometimes require 
         a bit of extra thought about the purpose of the statement. Should it be executed 
@@ -887,7 +880,7 @@ CVode
 
     Description:
         Gets (and sets) the local variable time step method flag. 
-        When CVODE is :meth:`CVode.active`, this implies a separate CVODE 
+        When CVODE is :meth:`~CVode.active`, this implies a separate CVODE 
         instance for every cell in the simulation. :meth:`CVode.record` is the only way 
         at present that variables can be properly obtained when this method is used. 
 
@@ -938,7 +931,7 @@ CVode
         When true, vector methods involving sums over the elements are accumulated 
         in a long double variable. This is useful in debugging when the 
         global variable time step method gives different results for different 
-        :meth:`ParallelContext.nthread` . It may be the case that the difference is 
+        :meth:`ParallelContext.nthread`. It may be the case that the difference is 
         due to differences in round-off error due to the non-associativity of 
         computer addition. I.e when threads are used each thread adds up its own 
         group of numbers and then the group results are added together. When 
@@ -984,7 +977,7 @@ CVode
 
     Description:
         Gets (sets for the arg form) the internal flag with regard to whether to 
-        use the IDA method when CVode is :meth:`CVode.active`. If CVode is active 
+        use the IDA method when CVode is :meth:`~CVode.active`. If CVode is active 
         and the simulation involves :func:`LinearMechanism` or :func:`extracellular` mechanisms 
         then the IDA method is automatic and required. 
          
@@ -1103,7 +1096,7 @@ CVode
     Description:
         Removes all items from the list of Graph lines recorded during 
         a local variable step simulation. Graph lines would have been added to this 
-        list with :meth:`simgraph.Graph` . 
+        list with :ref:`gui_graph`. 
 
          
 
@@ -1173,7 +1166,7 @@ CVode
         daspk and not allowed for cvode. The fixed step methods can use either. 
         The latter takes about twice as much time as the former. 
          
-        methodtype = :func:`secondorder` if CVode is not active. It equals 3 if CVODE is 
+        methodtype = :data:`secondorder` if CVode is not active. It equals 3 if CVODE is 
         being used and 4 is DASPK is used. 
          
         localtype = 1 if the local step method is used. This implies methodtype==3 
@@ -1249,10 +1242,10 @@ CVode
         that same time events can be received by the NET_RECEIVE block. 
          
         The optional "use_self_queue" (default 0) argument can only be used if the 
-        the simulation is run with :meth:`ParallelNetwork.psolve` method 
-        of the :func:`ParallelContext` and must be selected prior to a call of 
+        the simulation is run with :meth:`~ParallelContext.psolve` method 
+        of the :class:`ParallelContext` and must be selected prior to a call of 
         :meth:`ParallelContext.set_maxstep`  since this special technique requires a 
-        computation of the global minimum NetCon :meth:`NetCon.delay` (not just the 
+        computation of the global minimum :meth:`NetCon.delay` (not just the 
         minimum interprocessor NetCon delay) and that delay must be 
         greater than 0. The technique avoids the use of the  normal splay tree queue 
         for self events for ARTIFICIAL_CELLs (events initiated by the net_send call 
@@ -1265,7 +1258,7 @@ CVode
         has not receive much testing and the results should be compared with the 
         default queuing method. 
          
-        Returns 2*use_self_queue + use_fixed_step_bin_queue. 
+        Returns :code:`2*use_self_queue + use_fixed_step_bin_queue`. 
 
     .. seealso::
         :meth:`ParallelContext.spike_compress`
@@ -1296,7 +1289,7 @@ CVode
             <eichnerh@in.tum.de> 
 
          
-        :meth:`ParallelTransfer.multisplit` automatically sets cache_efficient(1) 
+        :meth:`ParallelContext.multisplit` automatically sets cache_efficient(1) 
 
          
 
@@ -1304,7 +1297,8 @@ CVode
 
 
 
-.. method:: CVode.ModelDescriptionIssues
+ModelDescriptionIssues
+======================
 
         The following aspects of model descriptions (.mod files) 
         are relevant to their use with CVode. 
@@ -1332,145 +1326,150 @@ CVode
         CVode.solve(). 
          
 
-----
 
+.. _ModelDescriptionIssues_Channels:
 
+Channels
+~~~~~~~~
 
-.. method:: CVode.Channels
+The SOLVE PROCEDURE form was often used to implement 
+the exponential integration method for HH like states and was 
+very efficient in the context of the Crank-Nicholson like 
+staggered time step approach historically used by NEURON. 
+Furthermore the exponential integration often used tables 
+of rates which were calculated under the assumption of 
+a fixed time step, dt. Although it can still be used under some 
+circumstances, the usage to integrate states 
+should be considered obsolete and converted to 
+a DERIVATIVE form. To do this, 
 
-        The SOLVE PROCEDURE form was often used to implement 
-        the exponential integration method for HH like states and was 
-        very efficient in the context of the Crank-Nicholson like 
-        staggered time step approach historically used by NEURON. 
-        Furthermore the exponential integration often used tables 
-        of rates which were calculated under the assumption of 
-        a fixed time step, dt. Although it can still be used under some 
-        circumstances, the usage to integrate states 
-        should be considered obsolete and converted to 
-        a DERIVATIVE form. To do this, 
-        1) replace the PROCEDURE block with a DERIVATIVE block, eg. 
+1)  replace the PROCEDURE block with a DERIVATIVE block, eg. 
+
+    .. code-block::
+        none
+        
         DERIVATIVE states { 
         m' = (minf - m)/mtau 
         ... 
         } 
-        2) replace the SOLVE statement in the BREAKPOINT block with 
-        SOLVE states METHOD cnexp 
-        3) if using tables, store mtau instead of (1 - exp(-dt/mtau)) 
-        The nmodl translator will emit c code for both the staggered 
-        time step and high order variable time step methods. The only 
-        downside is slightly less efficiency with the staggered time 
-        step method since the exp(-dt...) is calculated instead of 
-        looked up in tables. 
+2)  replace the SOLVE statement in the BREAKPOINT block with 
+    :code:`SOLVE states METHOD cnexp`
+3)  if using tables, store mtau instead of :math:`(1 -\exp(-dt/m_{tau}))`
+    The nmodl translator will emit c code for both the staggered 
+    time step and high order variable time step methods. The only 
+    downside is slightly less efficiency with the staggered time 
+    step method since the exp(-dt...) is calculated instead of 
+    looked up in tables. 
+ 
+In summary, no model should anymore depend on :data:`dt`. 
          
-        In summary, no model should anymore depend on dt. 
-         
-
-----
 
 
-
-.. method:: CVode.Concentrations
+Concentrations
+~~~~~~~~~~~~~~
 
          
 
-----
 
 
 
-.. method:: CVode.Events
+.. _ModelDescriptionIssues_Events:
 
-         
-        How does one handle events?  This is really the only serious 
-        difficulty in writing models that work properly in the 
-        context of a variable time step method. All models which involve 
-        discontinuous functions of time, eg steps, pulses, synaptic 
-        onset, require special provision to notify the integrator that 
-        an event has occurred within this time step, ie between t-dt and t. 
-        If this is not done, the time step may be so large that it 
-        completely misses a pulse or synaptic event. And if it does see 
-        the effect of the event, there is a huge inefficiency involved in the 
-        variable step method's search for the location of the event and the 
-        concomitant tremendous reduction in size of dt. 
-         
-        So, if you change any variable discontinuously in the model 
-        at some time tevent, call 
-        call 
+Events
+~~~~~~
 
-        .. code-block::
-            none
+ 
+How does one handle events?  This is really the only serious 
+difficulty in writing models that work properly in the 
+context of a variable time step method. All models which involve 
+discontinuous functions of time, eg steps, pulses, synaptic 
+onset, require special provision to notify the integrator that 
+an event has occurred within this time step, ie between t-dt and t. 
+If this is not done, the time step may be so large that it 
+completely misses a pulse or synaptic event. And if it does see 
+the effect of the event, there is a huge inefficiency involved in the 
+variable step method's search for the location of the event and the 
+concomitant tremendous reduction in size of dt. 
+ 
+So, if you change any variable discontinuously in the model 
+at some time tevent, call 
+call 
 
-                    at_time(tevent) 
+.. code-block::
+    none
 
-        The user may check the return value of this function to decide 
-        if something needs changing. Examples of the two styles of usage are: 
-         
-        1) Just notify and do the logic separately. 
+            at_time(tevent) 
 
-        .. code-block::
-            none
+The user may check the return value of this function to decide 
+if something needs changing. Examples of the two styles of usage are: 
+ 
+1) Just notify and do the logic separately. 
 
-            	at_time(del) 
-            	at_time(del + dur) 
-            	if (t >= del && t <= del + dur) { 
-            		istim = on_value 
-            	}else{ 
-            		istim = 0 
-            	} 
+    .. code-block::
+        none
 
-         
-        2) Use the at_time return value to do the logic. 
+        	at_time(del) 
+        	at_time(del + dur) 
+        	if (t >= del && t <= del + dur) { 
+        		istim = on_value 
+        	}else{ 
+        		istim = 0 
+        	} 
 
-        .. code-block::
-            none
+ 
+2) Use the at_time return value to do the logic. 
 
-            INITIAL { 
-            	istim = 0 
-            } 
-            ... 
-            	if (at_time(del)) { 
-            		istim = on_value 
-            	} 
-            	if (at_time(del + dur)) { 
-            		istim = 0 
-            	} 
+    .. code-block::
+        none
 
-        Notice the requirement of initialization or else if the previous 
-        run was stopped before del + dur the value of istim would be on_value 
-        at the beginning of the next run. 
-         
-        What happens internally when at_time(tevent) is called? 
-         
-        The interesting case (t-dt < tevent <= t) --- 
-        First, at_time returns 0. Then 
-        CVode changes its step size to (tevent - (t-dt) - epsilon) and redoes 
-        the step starting at t-dt. Note that this should be safely prior 
-        to the event (so at_time still returns 0), 
-        but if not then the above process will repeat 
-        until a step size is found for which there is no event. 
-        CVode then re-initializes it's internal state and 
-        restarts from a new initial condition at tevent+epsilon. 
-        Now when at_time is called, it returns 1. 
-        Note that in its single step mode, CVode.solve() will return 
-        at t = tevent-epsilon, the subsequent call will start the 
-        initial condition at t = tevent + epsilon and return after a normal 
-        step (usually quite small). 
-         
-        The case (tevent <= t - dt) --- at_time returns 0. 
-         
-        The case (tevent > t) --- at_time returns 0. 
-         
-        Note that 
-        an action potential model with 
-        axonal delay delivering a "message" to a synaptic model may or 
-        may not think it worthwhile to call at_time at the time of threshold 
-        (I would just do my own interpolation to set t_threshold) 
-        but will certainly call at_time(t_threshold + delay)  (and possibly not 
-        allow t_threshold to change again until it returns a 1); 
-         
-        I am sorry that the variable time step method requires that the 
-        model author take careful account of events but I see no way 
-        to have them automatically taken care of. 
-         
+        INITIAL { 
+        	istim = 0 
+        } 
+        ... 
+        	if (at_time(del)) { 
+        		istim = on_value 
+        	} 
+        	if (at_time(del + dur)) { 
+        		istim = 0 
+        	} 
 
-         
+Notice the requirement of initialization or else if the previous 
+run was stopped before del + dur the value of istim would be on_value 
+at the beginning of the next run. 
+ 
+What happens internally when at_time(tevent) is called? 
+ 
+The interesting case (t-dt < tevent <= t) --- 
+First, at_time returns 0. Then 
+CVode changes its step size to (tevent - (t-dt) - epsilon) and redoes 
+the step starting at t-dt. Note that this should be safely prior 
+to the event (so at_time still returns 0), 
+but if not then the above process will repeat 
+until a step size is found for which there is no event. 
+CVode then re-initializes it's internal state and 
+restarts from a new initial condition at tevent+epsilon. 
+Now when at_time is called, it returns 1. 
+Note that in its single step mode, CVode.solve() will return 
+at t = tevent-epsilon, the subsequent call will start the 
+initial condition at t = tevent + epsilon and return after a normal 
+step (usually quite small). 
+ 
+The case (tevent <= t - dt) --- at_time returns 0. 
+ 
+The case (tevent > t) --- at_time returns 0. 
+ 
+Note that 
+an action potential model with 
+axonal delay delivering a "message" to a synaptic model may or 
+may not think it worthwhile to call at_time at the time of threshold 
+(I would just do my own interpolation to set t_threshold) 
+but will certainly call at_time(t_threshold + delay)  (and possibly not 
+allow t_threshold to change again until it returns a 1); 
+ 
+I am sorry that the variable time step method requires that the 
+model author take careful account of events but I see no way 
+to have them automatically taken care of. 
+ 
+
+ 
 

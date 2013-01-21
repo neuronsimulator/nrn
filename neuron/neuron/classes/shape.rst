@@ -186,7 +186,7 @@ Shape
     Description:
         command is executed whenever the user clicks on a section. 
         The clicked section is pushed before execution and popped after. 
-        \ :code:`hoc_ac_ contains` the arc position 0 - 1 of the nearest node. 
+        \ :data:`hoc_ac_` contains the arc position 0 - 1 of the nearest node. 
 
          
 
@@ -203,7 +203,7 @@ Shape
 
     Description:
         colors the currently accessed section according to color index 
-        (index same as specified in Graph class). If there are several 
+        (index same as specified in :class:`Graph` class). If there are several 
         sections to color it is more efficient to make a SectionList and 
         use \ :code:`.color_list` 
 
@@ -264,8 +264,8 @@ Shape
         mark. (at least after a flush) 
          
         The optional arguments specify the style and size as in the 
-        :meth:`Graph.mark` method of :class:`Graph` . This extension was contributed 
-        by Yichun Wei \ :code:`yichunwe@usc.edu`. 
+        :meth:`Graph.mark` method of :class:`Graph`. This extension was contributed 
+        by Yichun Wei :code:`yichunwe@usc.edu`.
 
          
 
@@ -495,7 +495,7 @@ Shape
         The section becomes the selected section of the Shape. It is NOT 
         pushed onto the section stack and it is NOT colored. The nearest 
         arc position of the selected section as well 
-        as the section is available from :meth:`Shape.push_section` . 
+        as the section is available from :func:`push_section`. 
 
          
 
@@ -527,7 +527,7 @@ Shape
 
     .. warning::
         The arc position is relevant only if the section was selected using 
-        :meth:`Shape.nearest` . Note, e.g., that :meth:`Shape.select` does not 
+        :meth:`Shape.nearest`. Note, e.g., that :meth:`Shape.select` does not 
         set the arc position. 
 
          
