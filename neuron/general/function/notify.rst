@@ -1,14 +1,7 @@
 .. _notify:
 
-notify
-------
-
-
-
-.. function:: Notification
-
-
-----
+Notification
+------------
 
 
 

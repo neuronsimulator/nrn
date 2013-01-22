@@ -15,7 +15,7 @@
 
     Description:
         Gives the style attribute to name. Any property listed in the file 
-        $(NEURONHOME)/lib/nrn.defaults or $(NEURONHOME)/src/ivoc/ivocmain.c 
+        :file:`$(NEURONHOME)/lib/nrn.defaults` or :file:`$(NEURONHOME)/src/ivoc/ivocmain.c`
         can be changed although it may be that a few of them have already been 
         used by the time the interpreter is invoked. 
 

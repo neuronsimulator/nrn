@@ -26,7 +26,7 @@ mcran4
          
         See :meth:`Random.Random123` for an even more useful alternative. 
          
-        This generator was obtained from Tom Bartol <bartol@salk.edu> 
+        This generator was obtained from Tom Bartol :code:`<bartol@salk.edu>`
         who uses them in his mcell program. (hence the mcell prefix) 
         He comments: 
         For MCell, Ran4 has the distinct advantage of generating 
@@ -80,7 +80,7 @@ mcran4
 
 
     .. seealso::
-        :class:`Random`, :meth:`Random.MCellRan4`, :func:`use_mcell_ran4`, :func:`mcell_ran4_init`
+        :class:`Random`, :meth:`Random.MCellRan4`, :func:`use_mcell_ran4`, :func:`mcell_ran4_init`,
         :meth:`Random.Random123`
 
          

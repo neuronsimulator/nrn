@@ -24,8 +24,8 @@ ocfunc
         the postscript is saved in the file specified by "name". 
          
         If there is a third arg equal to 1 then the printed windows are those 
-        selected and arranged on the paper icon of the :func:`PWM` and calling this function 
-        is equivalent to pressing the :meth:`PWM.Print` button. Otherwise all 
+        selected and arranged on the paper icon of the :ref:`PWM` and calling this function 
+        is equivalent to pressing the :ref:`PWM_Print` button. Otherwise all 
         printable windows are printed in landscape mode with a size such that 
         the screen fits on the paper. 
          
@@ -48,8 +48,8 @@ ocfunc
 
     Description:
         Save all the (saveable) windows on the screen to filename. 
-        This is equivalent to pressing the :meth:`Session.SaveAll` button 
-        on the Print and File Window Manager ( :func:`PWM` ) 
+        This is equivalent to pressing the :ref:`Session_SaveAll` button 
+        on the :ref:`pwm`.
         If the header argument exists, it is copied to the beginning of 
         the file. 
 
@@ -239,7 +239,7 @@ ocfunc
         Number of arguments passed to a user written hoc function. 
 
     .. seealso::
-        :func:`arguments`, :func:`argtype`
+        :ref:`arguments`, :func:`argtype`
 
          
 
@@ -259,7 +259,7 @@ ocfunc
         2 for strdef, 3 for pointers to numbers, and -1 if the arg does not exist. 
 
     .. seealso::
-        :func:`arguments`, :func:`numarg`
+        :ref:`arguments`, :func:`numarg`
 
          
 
@@ -331,7 +331,7 @@ ocfunc
         statement. 
          
         Error messages can be turned on even inside the statement 
-        with :func:`show_errmess_always` . 
+        with :func:`show_errmess_always`. 
          
         Parse and execute the command in the context 
         of the object. If second arg not present then execute it at the 
@@ -378,7 +378,7 @@ ocfunc
         Loading only takes place if the name has not previously been defined. 
         The search path consists of the current working directory, followed by 
         the paths in the environment variable HOC_LIBRARY_PATH (space separated), 
-        followed by $NEURONHOME/lib/hoc. 
+        followed by :file:`$NEURONHOME/lib/hoc`. 
         Remember that only entire files are loaded-- not just the definition of 
         the name. And nothing is loaded if the name is already defined. 
         Inadvertent recursion will use up all the file descriptors. 
@@ -419,10 +419,10 @@ ocfunc
         The functionality is identical to :func:`xopen` except that the xopen takes 
         place only if 
         if a file of that name has not already been loaded with the load_file, 
-        :func:`load_proc` , :func:`load_template` , or :func:`load_func` functions. 
+        :func:`load_proc`, :func:`load_template`, or :func:`load_func` functions. 
         The file is searched for in the current working 
         directory, $HOC_LIBRARY_PATH (a colon or space separated list of directories), 
-        and $NEURONHOME/lib/hoc directories (in that order) for 
+        and :file:`$NEURONHOME/lib/hoc` directories (in that order) for 
         the file if there is no directory prefix. 
         Before doing the xopen on the file the current working directory is 
         temporarily changed to the directory containing the file so 
@@ -529,7 +529,7 @@ ocfunc
     Description:
         Enter the context of the object referenced by objref. In this context you 
         can directly access any variables or call any functions, even those not 
-        declared as :func:`public` . Do not attempt to create any new symbol names! 
+        declared as :ref:`public <keyword_public>`. Do not attempt to create any new symbol names! 
         This function is generally used by the object itself to save its state 
         in a session. 
 
@@ -599,7 +599,7 @@ ocfunc
         Note that names can be (re)declared only if they do not already 
         exist or are already of the same type. 
         This is too useful to require the user to waste an objref in creating a 
-        :meth:`StringFunctions.StringFunctions` class to use :func:`is_name`. 
+        :class:`StringFunctions` class to use :meth:`~StringFunctions.is_name`. 
 
         .. code-block::
             none

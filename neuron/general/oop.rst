@@ -24,7 +24,7 @@ oop
 
     Description:
         Declare a new class or data structure. Any HOC code may appear between the 
-        \ :code:`begintemplate` and \ :code:`endtemplate` declarations. Classes are instantiated with 
+        :code:`begintemplate` and :code:`endtemplate` declarations. Classes are instantiated with 
         the new statement. 
          
 
@@ -99,12 +99,12 @@ oop
 
     Description:
         A comma separated list declarations of object variables.  Object 
-        variables are labels (pointers, references) to the actual objects.  Thus \ :code:`o1 = o2` 
+        variables are labels (pointers, references) to the actual objects.  Thus :code:`o1 = o2` 
         merely states that o1 and o2 are labels for the same object.  Objects are 
-        created with the \ :code:`new` statement.  When there are no labels for an object 
-        the object is deleted. The keywords \ :code:`objectvar` and \ :code:`objref` are synonyms. 
+        created with the :code:`new` statement.  When there are no labels for an object 
+        the object is deleted. The keywords :code:`objectvar` and :code:`objref` are synonyms. 
          
-        An object has a unique name that can be determined with the \ :code:`print obj` statement 
+        An object has a unique name that can be determined with the :code:`print obj` statement 
         and consists of the template name followed by an index number in brackets. 
         This name can be used in place of an objref. 
          
@@ -129,10 +129,11 @@ oop
 
 ----
 
+.. index:: public (keyword)
 
+.. _keyword_public:
 
-.. function:: public
-
+**public**
 
     Syntax:
         :code:`public`
@@ -217,7 +218,7 @@ oop
             objref vec 
             vec = new Vector(30) 
 
-        creates a vector of size 30 with its pointer named \ :code:`vec`. 
+        creates a vector of size 30 with its pointer named :code:`vec`. 
          
 
          

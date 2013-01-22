@@ -642,12 +642,12 @@ HOC Keywords
          
         This is a reasonably complete editor with many commands.  These commands 
         are listed in 
-        <a href="../../../emacs.txt">emacs.txt</a>. 
+        `emacs <http://www.neuron.yale.edu/neuron/static/docs/help/emacs.txt>`_\ .
         A tutorial is also available at 
-        <a href="../../../emacstut.txt">emacstut.txt</a> 
+        `emacstut <http://www.neuron.yale.edu/neuron/static/docs/help/emacstut.txt>`_\ .
          
         When 
-        called from the interpreter, the command ^C immediately returns to the 
+        called from the interpreter, the command :kbd:`Control-C` immediately returns to the 
         interpreter and the current buffer is interpreted. 
         Other commands follow: 
 
@@ -901,7 +901,7 @@ HOC Keywords
 
     Description:
         Connects pointer variables in membrane mechanisms to the address of var. 
-        eg. If $NEURONHOME/examples/nmodl/synpre.mod in linked into NEURON, then: 
+        eg. If :file:`$NEURONHOME/examples/nmodl/synpre.mod` is linked into NEURON, then: 
 
         .. code-block::
             none
@@ -935,7 +935,7 @@ HOC Keywords
          
 
     .. seealso::
-        :func:`hh`, :func:`pas`, :func:`fastpas`, :func:`psection`, :func:`pointprocesses`
+        :ref:`hh <mech_hh>`, :ref:`pas <mech_pas>`, :ref:`fastpas <mech_fastpas>`, :func:`psection`, :ref:`mech`
         
 
          

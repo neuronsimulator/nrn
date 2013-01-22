@@ -302,6 +302,7 @@ Example:
 
 .. index::  arguments
 
+.. _arguments:
 
 Arguments
 ~~~~~~~~~

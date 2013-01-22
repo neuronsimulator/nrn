@@ -41,14 +41,14 @@ system
         Does not work on the mac os 9 version. 
          
         Following is obsolete: 
-        Under mswin, executes the string under the cygwin sh.exe in $NEURONHOME/bin 
-        via the wrapper, $NEURONHOME/lib/nrnsys.sh . Normally, stdout is directed to 
-        the file tmpdos2.tmp in the working directory and this is copied to the 
+        Under mswin, executes the string under the cygwin sh.exe in :file:`$NEURONHOME/bin`
+        via the wrapper, :file:`$NEURONHOME/lib/nrnsys.sh`. Normally, stdout is directed to 
+        the file :file:`tmpdos2.tmp` in the working directory and this is copied to the 
         terminal. The neuron.exe busy waits until the nrnsys.sh script creates 
         a tmpdos1.tmp file signaling that the system command has completed. 
         Redirection of stdout to a file can only be done with the idiom 
         "command > filename". No other redirection is possible except by modifying 
-        nrnsys.sh . 
+        :file:`nrnsys.sh`. 
 
          
          
