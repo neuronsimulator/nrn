@@ -1,13 +1,13 @@
-.. _plt:
+.. _plt_doc:
 
-plt
----
+Obsolete Plotting
+-----------------
 
 
 
 .. function:: setcolor
 
-        obsolete. See :func:`plt` . 
+        obsolete. See :func:`plt`.
 
 ----
 
@@ -15,10 +15,9 @@ plt
 
 .. function:: settext
 
-        obsolete. See :func:`plt` . 
+        obsolete. See :func:`plt`.
 
 ----
-
 
 
 .. function:: plt
@@ -104,16 +103,16 @@ plt
         .. code-block::
             none
 
-            0      black  (pen 1 on HP plotter)		black 
-            1      blue					white 
-            2      green					yellow 
-            3      cyan					red 
-            4      red					green 
-            5      magenta					blue 
-            6      brown					violet 
-            7      light gray  (pen 1 on HP plotter)	cyan 
+            0      black  (pen 1 on HP plotter)         black 
+            1      blue                                 white 
+            2      green                                yellow 
+            3      cyan                                 red 
+            4      red                                  green 
+            5      magenta                              blue 
+            6      brown                                violet 
+            7      light gray  (pen 1 on HP plotter)    cyan 
             ... 
-            15	white					green	 
+            15     white                                green	 
 
          
 

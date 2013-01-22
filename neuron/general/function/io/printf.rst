@@ -12,7 +12,7 @@ IO
 
 
     Syntax:
-        :code:`hoc_stdout("filename")`
+        :samp:`hoc_stdout("{filename}")`
 
         :code:`hoc_stdout()`
 
@@ -65,9 +65,9 @@ IO
 
 
     Description:
-        \ :code:`Printf` places output on the standard output.  \ :code:`Fprint` places output 
-        on the file opened with the \ :code:`wopen(filename)` command (standard 
-        output if no file is opened).  \ :code:`Sprint` places output in its *string* 
+        :code:`Printf` places output on the standard output.  :code:`fprint` places output 
+        on the file opened with the :code:`wopen(filename)` command (standard 
+        output if no file is opened).  :code:`Sprint` places output in its *string* 
         argument.  These functions are subsets of their counterparts in 
         the C standard library. 
          
@@ -79,7 +79,7 @@ IO
         each of which causes conversion and printing of the next 
         successive argument. 
          
-        Each conversion specification is introduced by the character `\ :code:`%`' 
+        Each conversion specification is introduced by the character '\ :code:`%`\ '
         and ends with a conversion type specifier.  The type specifiers 
         supported are: 
          
@@ -112,26 +112,26 @@ IO
             string is printed, arg must be a string. 
 
          
-        Between \ :code:`%` and the conversion type, optional flags, width, precision 
-        and size specifiers can be placed.  The most useful flag is `-' which 
+        Between :code:`%` and the conversion type, optional flags, width, precision 
+        and size specifiers can be placed.  The most useful flag is '-' which 
         left justifies the result, otherwise the number is right justified in its 
-        field. Width and precision specifiers are of the form \ :code:`width.precis`. 
+        field. Width and precision specifiers are of the form :code:`width.precis`. 
          
         Special characters of note are: 
          
 
 
-        \ :code:`\n` 
+        :code:`\n` 
             newline 
 
-        \ :code:`\t` 
+        :code:`\t` 
             tab 
 
-        \ :code:`\r` 
+        :code:`\r` 
             carriage return without the line feed 
 
          
-        \ :code:`Printf` and \ :code:`Fprint` return the number of characters printed. 
+        :code:`printf` and :code:`fprint` return the number of characters printed. 
          
 
     Example:
@@ -146,7 +146,7 @@ IO
          
 
     .. seealso::
-        :func:`ropen`
+        :meth:`File.ropen`
         
 
     .. warning::

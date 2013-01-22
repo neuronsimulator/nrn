@@ -1,11 +1,11 @@
-.. _lw:
+.. _lw_doc:
 
 obsolete
 --------
 
-        The above functions have been superseded by the graphical user interface 
-        but are available for use on unix machines and in the DOS version. 
-        See :class:`Graph` 
+The functions on the left have been superseded by the graphical user interface 
+but are available for use on unix machines and in the DOS version. 
+See :class:`Graph`.
 
 ----
 
@@ -16,7 +16,7 @@ obsolete
 
     Description:
         This is an old terminal based menu system that has been superseded by the 
-        :func:`GUI` . 
+        :ref:`GUI`. 
          
         Fmenu creates, displays, and allows user to move within a menu to 
         select and change 
@@ -28,12 +28,12 @@ obsolete
         variables and commands. Menus can execute commands which call other 
         menus and in this way a hierarchical menu system can be constructed. 
         Menus can be navigated by using arrow keys or by typing the first character 
-        of a menu item. To exit a menu, either press the Esc key, execute the 
+        of a menu item. To exit a menu, either press the :kbd:`Esc` key, execute the 
         "Exit" item, or execute a command which has a "stop" statement. 
         A command item is executed by pressing the Return key. A variable item 
         is changed by typing the new number followed by a Return. 
          
-        See the file $NEURONHOME/doc/man/oc/menu.tex for a complete description 
+        See the file :file:`$NEURONHOME/doc/man/oc/menu.tex` for a complete description 
         of this function. 
 
 
@@ -47,7 +47,7 @@ obsolete
          
 
     Name:
-        lw - laser writer graphical output ( or HP pen plotter) 
+        lw - laser writer graphical output (or HP pen plotter) 
          
          
 
@@ -62,7 +62,7 @@ obsolete
 
 
     Description:
-        \ :code:`Lw(file, device)` opens a file to keep a copy of subsequent 
+        :code:`Lw(file, device)` opens a file to keep a copy of subsequent 
         plots (*file* is a string variable or a name enclosed in double 
         quotes).  All graphs which are generated on the screen are saved in 
         this file in a format given by the integer value of the *device* argument. 
@@ -74,18 +74,18 @@ obsolete
 
         *device* =2 
             Fig style (Fig is a public domain graphics program available 
-            on the SUN computer).  The filter \ :code:`f2ps` translates fig to postscript. 
+            on the SUN computer).  The filter :code:`f2ps` translates fig to postscript. 
 
         *device* =3 
             Codraw style. Files in this style can be read into the 
-            PC program, \ :code:`CODRAW`.  The file should be opened with the extension, 
-            \ :code:`.DRA`. 
+            PC program, :code:`CODRAW`.  The file should be opened with the extension, 
+            :code:`.DRA`. 
 
          
         Lw keeps copying every plot to the screen until the file is closed with 
-        the command, \ :code:`lw()`. Note that erasing the screen with \ :code:`plt(-3)` or 
-        a (cntrl)E will throw away whatever is in the file and restart the file at the 
-        beginning.  Therefore, \ :code:`lw` keeps an accurate representation of the 
+        the command, :code:`lw()`. Note that erasing the screen with :code:`plt(-3)` or 
+        a :kbd:`Control-e` will throw away whatever is in the file and restart the file at the 
+        beginning.  Therefore, :code:`lw` keeps an accurate representation of the 
         current graphic status of the screen. 
          
         After setting the device once, it remains the same unless changed again 
@@ -94,7 +94,7 @@ obsolete
          
 
     Example:
-        Suppose an HP plotter is connected to serial port, \ :code:`COM1:`.  Then 
+        Suppose an HP plotter is connected to serial port, :code:`COM1:`.  Then 
         the following procedure will plot whatever graphics information 
         happens to be on the screen (not normal text). 
          
@@ -109,18 +109,18 @@ obsolete
 
          
         Notice that the above procedure closes a file, prints it, and then 
-        re-opens \ :code:`temp`.  The initial direct command makes sure the 
+        re-opens :file:`temp`.  The initial direct command makes sure the 
         file is open the first time hp is called. 
          
          
 
     .. warning::
-        It is often necessary to end all the plotting with a \ :code:`plt(-1)` 
+        It is often necessary to end all the plotting with a :code:`plt(-1)` 
         command before closing the file to ensure that the last line drawing 
         is properly terminated. 
          
         In our hands the the HP plotter works well at 9600 BAUD and 
-        with the line ``\verb+MODE COM1:9600,,,,P+'' in the autoexec.bat file. 
+        with the line :code:`\verb+MODE COM1:9600,,,,P+` in the autoexec.bat file. 
          
          
 

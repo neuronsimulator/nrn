@@ -16,12 +16,12 @@ Quick Links
     :class:`CVode`, :class:`FInitializeHandler`, :class:`Impedance`,
     :class:`KSChan`, :class:`LinearMechanism`, :class:`MechanismStandard`,
     :class:`MechanismType`, :class:`NetCon`, :class:`ParallelContext`,
-    :class:`ParallelNetManager`, :class:`PlotShape`, :class:`Python`,
+    :class:`ParallelNetManager`, :class:`PlotShape`, :ref:`Python`,
     :class:`RangeVarPlot`, :class:`SaveState`, :class:`SectionBrowser`,
     :class:`SectionList`, :class:`SectionRef`, :class:`Shape`
     
     :ref:`panel`, :ref:`funfit`, :ref:`geometry`, :ref:`printf`, :ref:`ockeywor`, :ref:`sin`,
-    :ref:`nmodl2`, :ref:`nmodl`, :ref:`lw`, :ref:`mech`, :ref:`predec`, :ref:`0stdrun`,
+    :ref:`nmodl2`, :ref:`nmodl`, :ref:`lw_doc`, :ref:`mech`, :ref:`predec`, :ref:`0stdrun`,
     :ref:`ocsyntax`, :ref:`topology`
     
     :ref:`neuron_rxd`,

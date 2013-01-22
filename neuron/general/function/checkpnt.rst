@@ -1,7 +1,7 @@
 .. _checkpnt:
 
-checkpnt
---------
+checkpoint
+----------
 
 
 
@@ -9,12 +9,12 @@ checkpnt
 
 
     Syntax:
-        :code:`checkpoint("filename")`
+        :samp:`checkpoint("{filename}")`
 
 
     Description:
         saves the current state of the system in a portable file to 
-        allow one to take up where you left off --- possibly on another 
+        allow one to take up where you left off -- possibly on another 
         machine. Returning to this state is accomplished by running the 
         program with the checkpoint file as the first argument. 
         If the checkpoint file is inconsistent with the executable the 
