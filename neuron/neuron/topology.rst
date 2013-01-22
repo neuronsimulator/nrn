@@ -82,7 +82,7 @@ Topology
         is connected twice a Notice is printed on the standard error device 
         saying that the section has been reconnected (the last connection takes 
         precedence).  To avoid the notice, disconnect the section first with the 
-        function "disconnect()".  If sections are inadvertently connected in a 
+        function :func:`disconnect`.  If sections are inadvertently connected in a 
         loop, an error will be generated when the internal data structures are 
         created and the user will be required to disconnect one of the sections 
         forming the loop. 
@@ -140,10 +140,10 @@ Topology
         will remove all sections. 
          
         Note: deleted sections still exist (even though 
-        :meth:`SectionRef.SectionRef` . :func:`exists` 
+        :meth:`SectionRef.exists`
         returns 0 and an error will result if one attempts to access 
         the section) so 
-        that other objects (such as section lists and Shapes) which 
+        that other objects (such as :class:`SectionList`\ s and :class:`Shape`\ s) which 
         hold pointers to these sections will still work. When the last 
         pointer to a section is destroyed, the section memory will be 
         freed. 
@@ -237,7 +237,7 @@ Topology
         and, if PARAMETER range variables are 
         constant, that all the new segments have the proper PARAMETER values. 
         (It generally doesn't matter that ASSIGNED and STATE values do not get 
-        interpolated since those values are computed with fadvance()). 
+        interpolated since those values are computed with :func:`fadvance`). 
         If range variables are not constant then the hoc expressions used to 
         set them should be re-executed. 
          

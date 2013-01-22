@@ -1,32 +1,26 @@
 .. _mech:
 
          
-pointprocesses
---------------
+Point Processes
+---------------
 
 
-    Description:
-        Built-in POINT_PROCESS models and ARTIFICIAL_CELL models are listed above. 
-        The user may add other classes of those types using mod files. Some properties 
-        and functions that are available for all POINT_PROCESS models are described 
-        under :meth:`pointprocesses.general` . 
+Description:
+    Built-in POINT_PROCESS models and ARTIFICIAL_CELL models are listed on the left. 
+    The user may add other classes of those types using mod files. Some properties 
+    and functions that are available for all POINT_PROCESS models are described 
+    under :ref:`pointprocesses_general`. 
 
-    .. seealso::
-        :func:`PointProcessManager`
-
-
-----
+.. seealso::
+    :ref:`pointprocessmanager`
 
 
+.. _pointprocesses_general:
 
-.. function:: general
+General
+~~~~~~~
 
-
-----
-
-
-
-.. function:: get_loc
+.. method:: pnt.get_loc
 
 
     Syntax:
@@ -43,8 +37,8 @@ pointprocesses
         user input. 
 
     .. seealso::
-        :meth:`CurrentlyAccessedSection.pop_section`
-        :func:`get_segment`
+        :func:`pop_section`,
+        :meth:`get_segment`
 
          
 
@@ -52,7 +46,7 @@ pointprocesses
 
 
 
-.. function:: get_segment
+.. method:: pnt.get_segment
 
 
     Syntax:
@@ -62,7 +56,7 @@ pointprocesses
     Description:
         A more pythonic version of :func:`get_loc` in that it returns a python segment object 
         without pushing the section stack. From a segment object one can get the 
-        section with \ :code:`pyseg.sec` and the position with \ :code:`pyseg.x`. If the 
+        section with :code:`pyseg.sec` and the position with :code:`pyseg.x`. If the 
         point process is not located anywhere, the return value is None. 
 
     .. warning::
@@ -75,7 +69,7 @@ pointprocesses
 
 
 
-.. function:: loc
+.. method:: pnt.loc
 
 
     Syntax:
@@ -92,7 +86,7 @@ pointprocesses
 
 
 
-.. function:: has_loc
+.. method:: pnt.has_loc
 
 
     Syntax:
@@ -109,7 +103,7 @@ pointprocesses
 
 
 
-.. function:: IClamp
+.. class:: IClamp
 
 
     Syntax:
@@ -131,14 +125,14 @@ pointprocesses
         so positive amp depolarizes the cell. i is set to amp when t is within 
         the closed interval del to del+dur. Time varying current stimuli can 
         be simulated by setting del=0, dur=1e9 and playing a vector into amp 
-        with the :func:`play` :func:`Vector` method. 
+        with the :meth:`~Vector.play` :class:`Vector` method. 
 
 
 ----
 
 
 
-.. function:: AlphaSynapse
+.. class:: AlphaSynapse
 
 
     Syntax:
@@ -148,15 +142,15 @@ pointprocesses
 
         :code:`syn.tau	 --- ms`
 
-        :code:`syn.gmax ---	umho`
+        :code:`syn.gmax --- umho`
 
-        :code:`syn.e	---	mV`
+        :code:`syn.e	--- mV`
 
-        :code:`syn.i	---	nA`
+        :code:`syn.i	--- nA`
 
 
     Description:
-        See $NEURONHOME/src/nrnoc/syn.mod. The comment in this file reads: 
+        See :file:`$NEURONHOME/src/nrnoc/syn.mod`. The comment in this file reads: 
 
         .. code-block::
             none
@@ -176,7 +170,7 @@ pointprocesses
 
 
 
-.. function:: VClamp
+.. class:: VClamp
 
 
     Syntax:
@@ -194,7 +188,7 @@ pointprocesses
     Description:
         Two electrode voltage clamp. 
          
-        See $NEURONHOME/src/nrnoc/vclmp.mod . The comment in this file reads: 
+        See :file:`$NEURONHOME/src/nrnoc/vclmp.mod`. The comment in this file reads: 
          
         Voltage clamp with three levels. Clamp is on at time 0, and off at time 
         dur[0]+dur[1]+dur[2]. When clamp is off the injected current is 0. 
@@ -229,14 +223,14 @@ pointprocesses
          
         This model is quite stiff.  For this reason the current is updated 
         within the solve block before updating the state of the clamp. This 
-        gives the correct value of the current on exit from fadvance(). If we 
+        gives the correct value of the current on exit from :func:`fadvance`. If we 
         didn't do this and 
         instead used the values computed in the breakpoint block, it 
         would look like the clamp current is much larger than it actually is 
         since it 
         doesn't take into account the change in voltage within the timestep, ie 
         equivalent to an almost infinite capacitance. 
-        Also, because of stiffness, do not use this model except with secondorder=0. 
+        Also, because of stiffness, do not use this model except with :data:`secondorder`\ =0. 
          
         This model makes use of implementation details of how models are interfaced 
         to neuron. At some point I will make the translation such that these kinds 
@@ -255,7 +249,7 @@ pointprocesses
 
 
 
-.. function:: SEClamp
+.. class:: SEClamp
 
 
     Syntax:
@@ -276,7 +270,7 @@ pointprocesses
     Description:
         Single electrode voltage clamp with three levels. 
          
-        See $NEURONHOME/src/nrnoc/svclmp.mod. The comment in this file reads: 
+        See :file:`$NEURONHOME/src/nrnoc/svclmp.mod`. The comment in this file reads: 
          
         Single electrode Voltage clamp with three levels. 
         Clamp is on at time 0, and off at time 
@@ -305,8 +299,8 @@ pointprocesses
          
         This model is careful to ensure the clamp current is properly computed 
         relative to the membrane voltage on exit from fadvance and can therefore 
-        be used with time varying control potentials. Like :meth:`pointprocesses.VClamp` it is suitable 
-        for :meth:`Vector.play` ing a Vector into the control potential. 
+        be used with time varying control potentials. Like :class:`VClamp` it is suitable 
+        for :meth:`~Vector.play`\ ing a Vector into the control potential. 
          
         The following example compares the current that results from 
         clamping an action potential originally elicited by a current pulse.
@@ -349,7 +343,7 @@ pointprocesses
 
 
 
-.. function:: APCount
+.. class:: APCount
 
 
     Syntax:
@@ -375,14 +369,14 @@ pointprocesses
         The apc is not notified if the vector is freed but this can be fixed if 
         it is convenient to add this feature. 
          
-        See $NEURONHOME/src/nrnoc/apcount.mod 
+        See :file:`$NEURONHOME/src/nrnoc/apcount.mod`
 
 
 ----
 
 
 
-.. function:: ExpSyn
+.. class:: ExpSyn
 
 
     Syntax:
@@ -407,18 +401,18 @@ pointprocesses
 
          
         The weight is specified 
-        by the :meth:`NetCon.weight` field of a :func:`NetCon` object. 
+        by the :meth:`~NetCon.weight` field of a :class:`NetCon` object. 
          
         This synapse summates. 
          
-        See $NEURONHOME/src/nrnoc/expsyn.mod 
+        See :file:`$NEURONHOME/src/nrnoc/expsyn.mod`
 
 
 ----
 
 
 
-.. function:: Exp2Syn
+.. class:: Exp2Syn
 
 
     Syntax:
@@ -458,7 +452,7 @@ pointprocesses
               G = weight * factor * (exp(-t/tau2) - exp(-t/tau1)) 
 
         The weight is specified 
-        by the :meth:`NetCon.weight` field of a :func:`NetCon` object. 
+        by the :meth:`~NetCon.weight` field of a :class:`NetCon` object. 
         The factor is defined so that the normalized peak is 1. 
         If tau2 is close to tau1 
         this has the property that the maximum value is weight and occurs at 
@@ -471,7 +465,7 @@ pointprocesses
          
         This synapse summates. 
          
-        See $NEURONHOME/src/nrnoc/exp2syn.mod 
+        See :file:`$NEURONHOME/src/nrnoc/exp2syn.mod`
          
 
 
@@ -479,7 +473,7 @@ pointprocesses
 
 
 
-.. function:: NetStim
+.. class:: NetStim
 
 
     Syntax:
@@ -523,9 +517,9 @@ pointprocesses
             nc = new NetStim(.5) 
             ns = new NetCon(nc, target...) 
 
-        That is, do not use \ :code:`&nc.y` as the source for the netcon. 
+        That is, do not use :code:`&nc.y` as the source for the netcon. 
          
-        See $NEURONHOME/src/nrnoc/netstim.mod 
+        See :file:`$NEURONHOME/src/nrnoc/netstim.mod`
 
     .. warning::
         Prior to version 5.2.1 an attempt was made to 
@@ -543,7 +537,7 @@ pointprocesses
 
 
 
-.. function:: IntFire1
+.. class:: IntFire1
 
 
     Syntax:
@@ -577,14 +571,14 @@ pointprocesses
         for the first .5 ms and -1 for the rest of the period. Otherwise it 
         returns exp((t-t0)/tau) 
          
-        See $NEURONHOME/src/nrnoc/intfire1.mod 
+        See :file:`$NEURONHOME/src/nrnoc/intfire1.mod`
 
 
 ----
 
 
 
-.. function:: IntFire2
+.. class:: IntFire2
 
 
     Syntax:
@@ -619,7 +613,7 @@ pointprocesses
         changes abruptly by 
         the amount w. 
          
-        See $NEURONHOME/src/nrnoc/intfire2.mod 
+        See :file:`$NEURONHOME/src/nrnoc/intfire2.mod`
 
          
 
@@ -627,7 +621,7 @@ pointprocesses
 
 
 
-.. function:: IntFire4
+.. class:: IntFire4
 
 
     Syntax:
@@ -681,27 +675,29 @@ pointprocesses
         an isolated inhibitory event of weight -1 will produce a minimum 
         membrane potential of -1. 
          
-        See $NEURONHOME/src/nrnoc/intfire4.mod 
+        See :file:`$NEURONHOME/src/nrnoc/intfire4.mod`
          
 
 ----
 
 
 
-.. function:: mechanisms
+Mechanisms
+----------
 
-
-    .. seealso::
-        :meth:`keywords.insert`, :func:`Inserter`
+.. seealso::
+    :meth:`keywords.insert`, :func:`Inserter`
 
          
 
 ----
 
 
+.. index::  setdata (mechanism)
 
-.. function:: setdata
+.. _mech_setdata:
 
+**setdata**
 
     Syntax:
         :code:`sec setdata_suffix(x)`
@@ -730,8 +726,11 @@ pointprocesses
 ----
 
 
+.. index::  capacitance (mechanism)
 
-.. function:: capacitance
+.. _mech_setdata:
+
+**capacitance**
 
 
     Syntax:
@@ -752,8 +751,11 @@ pointprocesses
 ----
 
 
+.. index::  hh (mechanism)
 
-.. function:: hh
+.. _mech_hh:
+
+**hh**
 
 
     Syntax:
@@ -788,9 +790,11 @@ pointprocesses
 ----
 
 
+.. index::  pas (mechanism)
 
-.. function:: pas
+.. _mech_pas:
 
+**pas**
 
     Syntax:
         :code:`insert pas`
@@ -803,7 +807,7 @@ pointprocesses
 
 
     Description:
-        See $NEURONHOME/src/nrnoc/passive.mod 
+        See :file:`$NEURONHOME/src/nrnoc/passive.mod`
          
         Passive membrane channel. 
 
@@ -812,11 +816,15 @@ pointprocesses
 
 
 
-.. function:: fastpas
+.. index::  fastpas (mechanism)
 
-        See $NEURONHOME/src/nrnoc/passive0.c 
+.. _mech_fastpas:
+
+**fastpas**
+
+        See :file:`$NEURONHOME/src/nrnoc/passive0.c`
          
-        Passive membrane channel. Same as the :func:`pas` mechanism but hand coded to 
+        Passive membrane channel. Same as the :ref:`pas <mech_pas>` mechanism but hand coded to 
         be a bit faster (avoids the wasteful numerical derivative computation of 
         the conductance and does not save the current). Generally not worth 
         using since passive channel computations are not usually the rate limiting 
@@ -827,8 +835,11 @@ pointprocesses
 
 
 
-.. function:: extracellular
+.. index::  extracellular (mechanism)
 
+.. _mech_extracellular:
+
+**extracellular**
 
     Syntax:
         :code:`insert extracellular`
@@ -859,8 +870,8 @@ pointprocesses
         potential boundary condition computed by some external program, leaky 
         patch clamps, incomplete seals in the myelin sheath along with current 
         flow in the space between the myelin and the axon. And is required 
-        when connecting :func:`LinearMechanism` (e.g. a circuit built with 
-        the NEURONMainMenu/Build/LinearCircuit) to extracellular nodes. 
+        when connecting :class:`LinearMechanism` (e.g. a circuit built with 
+        the :menuselection:`NEURON Main Menu --> Build --> Linear Circuit`) to extracellular nodes. 
          
         i_membrane correctly does not include contributions from ELECTRODE_CURRENT 
         point processes. 
@@ -868,16 +879,18 @@ pointprocesses
         The figure illustrates the form the electrical equivalent circuit 
         when this mechanism is present. Note that previous documentation 
         was incorrect in showing that e_extracellular was in series with 
-        the xg[nlayer-1],xc[nlayer-1] parallel combination. 
+        the :code:`xg[nlayer-1],xc[nlayer-1]` parallel combination. 
         In fact it has always been the case 
         that e_extracellular was in series with xg[nlayer-1] and xc[nlayer-1] 
         was in parallel 
         with that series combination. 
          
-        Note: The only reason the standard 
-        distribution is built with nlayer=2 is so that when only a single 
-        layer is needed (the usual case), then e_extracellular is consistent 
-        with the previous documentation with the old default nlayer=1. 
+        .. note::
+        
+            The only reason the standard 
+            distribution is built with nlayer=2 is so that when only a single 
+            layer is needed (the usual case), then e_extracellular is consistent 
+            with the previous documentation with the old default nlayer=1. 
          
         e_extracellular is connected in series with the conductance of 
         the last extracellular layer. 
@@ -897,7 +910,7 @@ pointprocesses
                  |          |          |          |      
                  |          |          |          |     i_membrane      
                  |  xraxial |          |          | 
-             /`--o--'\/\/`--o--'\/\/`--o--'\/\/`--o--'\ vext 
+             /`--o--'\/\/`--o--'\/\/`--o--'\/\/`--o--'vext 
                  |          |          |          |      
                 ---        ---        ---        ---     xc and xg 
                |   |      |   |      |   |      |   |    in  parallel 
@@ -905,7 +918,7 @@ pointprocesses
                  |          |          |          |      
                  |          |          |          |      
                  |xraxial[1]|          |          |      
-             /`--o--'\/\/`--o--'\/\/`--o--'\/\/`--o--'\ vext[1] 
+             /`--o--'\/\/`--o--'\/\/`--o--'\/\/`--o--'vext[1] 
                  |          |          |          |      
                 ---        ---        ---        ---     the series xg[1], e_extracellular 
                |   |      |   |      |   |      |   |    combination is in parallel with 
@@ -923,8 +936,8 @@ pointprocesses
         It is best to start out believing that there are bugs in the method 
         and attempt to prove their existence. 
          
-        See $NEURONHOME/src/nrnoc/extcell.c 
-        and $NEURONHOME/examples/nrnoc/extcab*.hoc. 
+        See :file:`$NEURONHOME/src/nrnoc/extcell.c`
+        and :file:`$NEURONHOME/examples/nrnoc/extcab*.hoc`.
          
         NEURON can be compiled with any number of extracellular layers. 
         See below. 
@@ -1023,8 +1036,8 @@ pointprocesses
 
     Description:
         If other than 2 extracellular layers is desired, you may recompile the 
-        program by changing the nrn/src/nrnoc/options.h line 
-        #define EXTRACELLULAR 2 
+        program by changing the :file:`nrn/src/nrnoc/options.h` line 
+        :code:`#define EXTRACELLULAR 2`
         to the number of layers desired. Be sure to recompile both nrnoc and nrniv 
         as well as any user defined .mod files that use the ELECTRODE_CURRENT statement. 
          

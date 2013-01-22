@@ -581,7 +581,7 @@ Description:
 
     Description:
         The Python Section object allows modification and evaluation of the 
-        information associated with a NEURON Section. The typical way to get 
+        information associated with a NEURON :ref:`geometry_section`. The typical way to get 
         a reference to a Section in Python is with :meth:`neuron.h.cas`  or 
         by using the hoc section name as in :code:`asec = h.dend[4]`. 
         The :code:`sec = Section()` will create an anonymous Section with a hoc name 

@@ -1,15 +1,12 @@
 .. _nrnoc:
 
          
-functions
+Functions
 ---------
 
-        These are Neuron-specific functions which you can call from 
-        the nrnoc interpreter. 
-         
-
-----
-
+These are Neuron-specific functions which you can call from 
+the nrnoc interpreter. 
+ 
 
 
 .. function:: batch_run
@@ -131,7 +128,7 @@ functions
         Integrate all section equations over the interval :data:`dt` . 
         The value of :data:`t` is incremented by dt. 
         The default method is first order implicit but may be changed to 
-        Crank-Nicholson by changing :func:`secondorder` = 2. 
+        Crank-Nicholson by changing :data:`secondorder` = 2. 
          
         fadvance integrates the equation over the dt step by 
         calling all the BREAKPOINT blocks of models at t+dt/2 twice with 
@@ -165,38 +162,35 @@ functions
         inserted in the sections. 
         If the optional argument is present then all voltages of all sections 
         are initialized to *v*. 
-        :code:`t` is set to 0. 
+        :data:`t` is set to 0. 
          
-        The order of principal actions during an finitialize call is; 
-
-        .. code-block::
-            none
-
-            t = 0 
-            Clear the event queue. 
-            Random.play values assigned to variables. 
-            Make sure internal structures needed by integration methods are consistent 
-              with the current biophysical spec. 
-            Vector.play at t=0 values assigned to variables. 
-            All v = arg if the arg is present. 
-            Type 0 FInitializeHandler statements executed. 
-            All mechanism BEFORE INITIAL blocks are called. 
-            All mechanism INITIAL blocks called. 
+        The order of principal actions during an finitialize call is:
+        
+        -   t = 0 
+        -   Clear the event queue. 
+        -   Random.play values assigned to variables. 
+        -   Make sure internal structures needed by integration methods are consistent 
+             with the current biophysical spec. 
+        -   Vector.play at t=0 values assigned to variables. 
+        -   All v = arg if the arg is present. 
+        -   Type 0 FInitializeHandler statements executed. 
+        -   All mechanism BEFORE INITIAL blocks are called. 
+        -   All mechanism INITIAL blocks called. 
                Mechanisms that WRITE concentrations are after ion mechanisms and 
                before mechanisms that READ concentrations. 
-            LinearMechanism states are initialized 
-            INITIAL blocks inside NETRECEIVE blocks are called. 
-            All mechanism AFTER INITIAL blocks are called. 
-            Type 1 FInitializeHandler statements executed. 
-            The INITIAL block net_send(0, flag) events are delivered. 
-            Effectively a call to CVode.re_init or fcurrent(), whichever appropriate. 
-            Various record functions at t=0. e.g. CVode.record, Vector.record  
-            Type 2 FInitializeHandler statements executed. 
+        -   LinearMechanism states are initialized 
+        -   INITIAL blocks inside NETRECEIVE blocks are called. 
+        -   All mechanism AFTER INITIAL blocks are called. 
+        -   Type 1 FInitializeHandler statements executed. 
+        -   The INITIAL block net_send(0, flag) events are delivered. 
+        -   Effectively a call to CVode.re_init or fcurrent(), whichever appropriate. 
+        -   Various record functions at t=0. e.g. CVode.record, Vector.record  
+        -   Type 2 FInitializeHandler statements executed. 
              
 
 
     .. seealso::
-        :meth:`RunControl.FInitializeHandler`, :func:`Init`, :meth:`CVode.re_init`, :func:`fcurrent`, :func:`frecord_init`
+        :class:`FInitializeHandler`, :ref:`runcontrol_Init`, :meth:`CVode.re_init`, :func:`fcurrent`, :func:`frecord_init`
 
          
 
@@ -218,7 +212,7 @@ functions
         if the user changes states or assigned variables that are being recorded.. 
 
     .. seealso::
-        :meth:`Vector.record`, :meth:`RunControl.Init`#StandardRunTools
+        :meth:`Vector.record`, :ref:`runcontrol_Init`
 
          
 
@@ -316,7 +310,7 @@ functions
         parameter starting values. On return the vector contains the values of 
         parameters which generated the least minimum found so far. 
          
-        Hoc example: minimize (x+y - 5)^2 + 5*((x-y) - 15)^2 
+        Hoc example: minimize :code:`(x+y - 5)^2 + 5*((x-y) - 15)^2`
 
         .. code-block::
             none
@@ -377,7 +371,7 @@ functions
 
     Description:
         Set the attributes of the praxis method. This must be called before 
-        the first call to :func:`fit_praxis` . 
+        the first call to :func:`fit_praxis`. 
 
 
         tolerance 
@@ -397,7 +391,7 @@ functions
         The single argument form causes praxis to pick its random numbers from 
         the the mcellran4 generator beginning at the specified index. This 
         allows reproducible fitting. The return value is the previously picked 
-        index. (see :func:`mcell_ran4` ) 
+        index. (see :func:`mcell_ran4`) 
 
          
 
@@ -439,7 +433,7 @@ functions
         Set a flag in the praxis function that will cause it to stop after 
         it finishes the current (or ith subsequent) 
         principal axis calculation. If this function 
-        is called before :code:`fit_praxis`, then praxis will do a single 
+        is called before :func:`fit_praxis`, then praxis will do a single 
         (or i) principal axis calculation and then exit. 
 
          
@@ -456,7 +450,7 @@ functions
 
 
     Description:
-        obsolete. Use the :func:`VClamp` or :func:`SEClamp` point process. 
+        obsolete. Use the :class:`VClamp` or :class:`SEClamp` point process. 
 
          
 
@@ -472,7 +466,7 @@ functions
 
 
     Description:
-        obsolete. Use the :func:`VClamp` or :func:`SEClamp` point process. 
+        obsolete. Use the :class:`VClamp` or :class:`SEClamp` point process. 
 
          
 
@@ -488,7 +482,7 @@ functions
 
 
     Description:
-        obsolete. Use the :func:`VClamp` or :func:`SEClamp` point process. 
+        obsolete. Use the :class:`VClamp` or :class:`SEClamp` point process. 
 
          
 
@@ -522,7 +516,7 @@ functions
     Description:
         Make all assigned variables (currents, conductances, etc) 
         consistent with the values of the states. Useful in combination 
-        with :func:`finitialize` . 
+        with :func:`finitialize`. 
 
     Example:
 
@@ -644,7 +638,7 @@ functions
 
 
     .. seealso::
-        :func:`ifsec`, :func:`forsec`
+        :ref:`ifsec <keyword_ifsec>`, :ref:`forsec <keyword_forsec>`
 
          
 
@@ -692,7 +686,7 @@ functions
     Description:
         The name of the currently accessed section is placed in *strvar*. 
          
-        This function is superseded by the easier to use, :meth:`functions.secname` . 
+        This function is superseded by the easier to use, :func:`secname`. 
 
          
 
@@ -817,7 +811,7 @@ functions
     Description:
         The integration interval for :func:`fadvance`. 
          
-        When using the default implicit integration method (:func:`secondorder` = 0) 
+        When using the default implicit integration method (:data:`secondorder` = 0) 
         there is no upper limit on dt for numerical stability and in fact for 
         passive models it is often convenient to use dt=1.9 to obtain the 
         steady state in a single time step. 
@@ -860,7 +854,7 @@ functions
     Description:
         Temperature in degrees centigrade. 
          
-        Generally, rate function tables ( eg. used by the hh mechanism) 
+        Generally, rate function tables (eg. used by the hh mechanism) 
         depend on temperature and will automatically be re-computed 
         whenever celsius changes. 
 
@@ -878,7 +872,7 @@ functions
 
 
     Description:
-        A flag which is watched by :func:`fit_praxis` , :func:`CVode` , and other procedures 
+        A flag which is watched by :func:`fit_praxis`, :class:`CVode`, and other procedures 
         during a run or family of runs. 
         When stoprun==1 they will immediately return without completing 
         normally. This allows safe stopping in the middle of a long run. Procedures 
@@ -903,9 +897,9 @@ functions
     Description:
         Return a pointer (coded as a double) to the section which contains location 0 of the 
         currently accessed section. This pointer can be used as the argument 
-        to :func:`push_section` . Functions that return pointers coded as doubles 
+        to :func:`push_section`. Functions that return pointers coded as doubles 
         are unsafe with 64 bit pointers. This function has been superseded by 
-        :meth:`SectionRef.SectionRef` . See :func:`sec` . 
+        :class:`SectionRef`. See :meth:`~SectionRef.sec`. 
 
          
 
@@ -962,7 +956,7 @@ functions
     Description:
         Return the pointer to the section parent of the segment containing *x*. 
         Because a 64 bit pointer cannot safely be represented as a 
-        double this function is deprecated in favor of :meth:`SectionRef.parent` . 
+        double this function is deprecated in favor of :meth:`SectionRef.parent`. 
 
          
 
@@ -1161,16 +1155,13 @@ Ion
         Each table entry identifies the equivalent parameters to the ion_style 
         function. 
 
-        .. code-block::
-            none
-
-            cai/cao	->	unused		read		write 
-             
-            eca unused	0,0,0,0,0	1,0,0,0,0	3,0,0,0,1 
-             
-            eca read	0,1,0,0,0	1,2,1,0,0	3,2,1,1,1 
-             
-            eca write	0,2,0,0,0	1,2,0,0,0	3,2,0,0,1 
+            ==========    =========   =========   =========
+            cai/cao ->    unused      read        write 
+            ==========    =========   =========   =========
+            eca unused    0,0,0,0,0   1,0,0,0,0   3,0,0,0,1 
+            eca read      0,1,0,0,0   1,2,1,0,0   3,2,1,1,1 
+            eca write     0,2,0,0,0   1,2,0,0,0   3,2,0,0,1 
+            ==========    =========   =========   =========
 
         For example suppose one has inserted a mechanism that READ's eca, 
         a mechanism that READ's cai, cao and a mechanism that WRITE's cai, cao 

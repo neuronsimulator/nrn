@@ -16,7 +16,7 @@ SectionList
         Class for creating and managing a list of sections 
 
     .. seealso::
-        :meth:`RangeVarPlot.SectionBrowser`, :func:`Shape`, :func:`forsec`, :func:`list`
+        :class:`SectionBrowser`, :class:`Shape`, :ref:`forsec <keyword_forsec>`, :meth:`RangeVarPlot.list`
 
          
 
@@ -161,6 +161,6 @@ SectionList
          
         The normal usage of a section list involves efficiently iterating 
         over all the sections in the list with 
-        forsec sectionlist {statement} 
+        :code:`forsec sectionlist {statement}`
 
 

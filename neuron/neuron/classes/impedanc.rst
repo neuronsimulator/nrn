@@ -117,9 +117,9 @@ Impedance
         is computed -- \ :code:`v(x)/i(x)` 
         Frequency specified in Hz. 
         All membrane conductances are computed and used in the 
-        calculation as if \ :code:`fcurrent()` was called. 
+        calculation as if \ :func:`fcurrent()` was called. 
         The compute call is expensive but as a rule of thumb is not 
-        as expensive as \ :code:`fadvance()`. 
+        as expensive as \ :func:`fadvance()`. 
          
         Since version 5.3, when the second argument is 1, an extended impedance 
         calculation is performed which takes into account the effect of 
@@ -260,8 +260,8 @@ Impedance
         of the way results of calculations are stored it is very efficient 
         to access amp and phase; reasonably efficient to change freq or loc, 
         and inefficient to vary neuron state, eg, diameters. The last case 
-        implies at least the overhead of a call like \ :code:`fcurrent()`.(actually 
-        the present implementation calls \ :code:`fcurrent()` on every \ :code:`compute()` call 
+        implies at least the overhead of a call like \ :func:`fcurrent()`.(actually 
+        the present implementation calls \ :func:`fcurrent()` on every \ :code:`compute()` call 
         but that could be fixed if increased performance was needed). 
 
          
@@ -282,11 +282,11 @@ Impedance
     Description:
         Gets or sets and gets the factor used in computing the numerical derivatives 
         during calculation of the extended full impedance. Jacobian elements are 
-        calculated via the formula f(s+delta) - f(s))/delta where 
+        calculated via the formula :code:`f(s+delta) - f(s))/delta` where 
         delta is defined by fac * the state tolerance scale factor for cvode. 
         Note that default state tolerance scale factors are 1.0 except when 
         specifically declared in mod files or changed by calling 
-        :meth:`CVode.atolscale` . The default delta factor is 0.001 which is consistent 
+        :meth:`CVode.atolscale`. The default delta factor is 0.001 which is consistent 
         with the factor used by the default impedance calculation. Note that the 
         factor for the default impedance calculation cannot be changed. 
 

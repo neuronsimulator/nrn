@@ -49,7 +49,7 @@ MechanismType
 
 
     .. seealso::
-        :func:`MechanismStandard`
+        :class:`MechanismStandard`
 
          
 
@@ -201,7 +201,7 @@ MechanismType
 
     Description:
         The i'th point process has a NET_RECEIVE block and can therefore be 
-        a target for a :func:`NetCon` object. 
+        a target for a :class:`NetCon` object. 
 
          
 
@@ -218,8 +218,8 @@ MechanismType
 
     Description:
         The i'th point process has a net_event call in its NET_RECEIVE block 
-        and can therefore be a source for a :func:`NetCon` object. 
-        This means it is :func:`NetCon` stimulator or that 
+        and can therefore be a source for a :class:`NetCon` object. 
+        This means it is :class:`NetCon` stimulator or that 
         the point process can be used as an artificial neural network cell. 
 
          
@@ -237,8 +237,8 @@ MechanismType
 
     Description:
         The i'th point process is an ARTIFICIAL_CELL 
-        and can therefore be a source for a :func:`NetCon` object. 
-        This means it is :func:`NetCon` stimulator or that 
+        and can therefore be a source for a :class:`NetCon` object. 
+        This means it is :class:`NetCon` stimulator or that 
         the point process can be used as an artificial neural network cell. 
          
         This seems to have, but does not, equivalent functionality to 
