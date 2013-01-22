@@ -7,8 +7,6 @@ Random
 
 .. class:: Random
 
-        Random 
-
     Syntax:
         :code:`Random()`
 
@@ -25,9 +23,9 @@ Random
          
         This class is an interface to the RNG class 
         from the gnu c++ class library. As of version 5.2, a cryptographic quality 
-        RNG class wrapper for :meth:`functions.mcell_ran4` was added and is available 
+        RNG class wrapper for :func:`mcell_ran4` was added and is available 
         with the :meth:`Random.MCellRan4` method. The current default random generator 
-        is :meth:`Random.ACG` . 
+        is :meth:`Random.ACG`. 
          
         As of version 7.3, a more versatile cryptographic quality generator, 
         Random123, is available with the :meth:`Random.Random123` method. This generator 
@@ -41,7 +39,7 @@ Random
         streams of random numbers only if their seeds are different. 
          
         One can switch distributions at any time but if the distribution is 
-        stationary then it is more efficient to use r.repick() to avoid 
+        stationary then it is more efficient to use :meth:`Random.repick` to avoid 
         constructor/destructor overhead. 
          
 
@@ -122,7 +120,7 @@ Random
 
 
     Description:
-        Use the MCell variant of the Ran4 generator. See :meth:`functions.mcell_ran4` . 
+        Use the MCell variant of the Ran4 generator. See :func:`mcell_ran4`. 
         In the no argument case or if the highindex is 0, then the system selects 
         an index which is the random 32 bit integer resulting from 
         an mcell_ran4 call with an index equal to the 
@@ -131,17 +129,17 @@ Random
         highindex values differ by more than the eventual length of the stream. 
         In any case, the 
         initial highindex is returned and can be used to restart an instance 
-        of the generator. Use :meth:`functions.mcell_ran4_init` to set the (global) 
+        of the generator. Use :func:`mcell_ran4_init` to set the (global) 
         low 32 bit index of the generator. The :meth:`Random.seq` method is useful 
         for getting the current sequence number and restarting at that sequence 
         number (highindex). 
         If the lowindex arg is present and nonzero, then that lowindex is used 
-        instead of the global one specified by :meth:`functions.mcell_ran4_init` . 
+        instead of the global one specified by :func:`mcell_ran4_init`. 
         This allows 2^32-1 independent streams that do not overlap. 
          
         Note that for reproducibility, 
         the distribution should be defined AFTER setting the seed since some 
-        distributions, such as :meth:`Random.normal` , hold state information from 
+        distributions, such as :meth:`Random.normal`, hold state information from 
         a previous pick from the uniform distribution. 
 
     .. seealso::
@@ -192,8 +190,8 @@ Random
     Description:
         Use the Random123 generator (currently philox4x32 is the crypotgraphic hash 
         used) with the stream identified by the identifiers 0 <= id1 and id1 < 2^32 
-        and the global index (see :meth:`Random.Random123_globalindex` ). The counter, 
-        which increments from 0 to 2^34-1, is initialized to 0 (see :meth:`Random.seq` ). 
+        and the global index (see :meth:`Random.Random123_globalindex`). The counter, 
+        which increments from 0 to 2^34-1, is initialized to 0 (see :meth:`Random.seq`). 
          
         The generators should be usable in the context of threads as long as 
         no instance is used in more than one thread. 
@@ -234,9 +232,9 @@ Random
         For MCellRan4, 
         Gets and sets the current highindex value when the :meth:`Random.MCellRan4` is 
         in use. This allows restarting the generator at any specified point. 
-        Note that the currenthighindex value is incremented every :meth:`Random.repick` . 
+        Note that the currenthighindex value is incremented every :meth:`Random.repick`. 
         Usually the increment is 1 but some distributions, e.g. :meth:`Random.poisson` 
-        can increment by more. Also, some distributions, e.g. :meth:`Random.normal` , 
+        can increment by more. Also, some distributions, e.g. :meth:`Random.normal`, 
         pick twice on the first repick but once thereafter. 
          
         For Random123, 
@@ -314,7 +312,7 @@ Random
 
             var = r.repick() 
 
-        (but with no interpreter overhead). This is similar in concept to :meth:`Vector.play` . 
+        (but with no interpreter overhead). This is similar in concept to :meth:`Vector.play`. 
         Play may be called several times for different variables and each variable 
         will get an independent random value but with the same distribution. 
         To disconnect the Random object from its list of variables, either the variables 
@@ -349,7 +347,7 @@ Random
 
 
     Description:
-        Create a uniform random variable over the open interval *low*...*high*]. 
+        Create a uniform random variable over the open interval (*low*...\ *high*). 
 
     Example:
 
@@ -549,7 +547,7 @@ Random
         *N* trials when the probability of a success after one trial is *p*. 
         (n>0, 0<=p<=1). 
          
-        P(n, N, p) = p * P(n-1, N-1, p) + (1 - p) * P(n, N-1, p) 
+        :code:`P(n, N, p) = p * P(n-1, N-1, p) + (1 - p) * P(n, N-1, p)`
 
     Example:
 
@@ -589,7 +587,7 @@ Random
         Create a discrete geometric distribution. 
         Given 0<=*mean*<=1, return the number of uniform random samples 
         that were drawn before the sample was larger than the *mean* (always 
-        greater than 0. 
+        greater than 0). 
 
     Example:
 
