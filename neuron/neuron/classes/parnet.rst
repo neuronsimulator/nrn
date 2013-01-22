@@ -18,9 +18,9 @@ ParallelNetManager
         A version for PVM is also available. This class, implemented 
         in nrn/share/lib/hoc/netparmpi.hoc, presents an interface 
         compatible with the NetGUI style of network specification, and is implemented 
-        using the :meth:`ParallelContext.ParallelNetwork` methods. Those methods are 
+        using the :ref:`ParallelNetwork` methods. Those methods are 
         available only if NEURON has been built with the configuration option, 
-        --with-mpi. The netparmpi.hoc file at last count was only 285 lines long 
+        --with-mpi. The :file:`netparmpi.hoc` file at last count was only 285 lines long 
         so if you have questions about how it works that are not answered here, 
         take a look. 
          
@@ -31,7 +31,7 @@ ParallelNetManager
         cpu. Basically, good performance will occur if there is a lot for each 
         machine to do and the amount of effort to simulate each machine's subnet 
         is about equal. If cell granularity causes load balance to be 
-        a signficant problem see :meth:`ParallelNetManager.splitcell` . 
+        a signficant problem see :meth:`ParallelNetManager.splitcell`. 
         The "lot for each machine to do" is relative to the 
         number of spikes that must be exchanged between machines and how often 
         these exchanges take place. The latter is determined by the minimum 
@@ -55,227 +55,227 @@ ParallelNetManager
         It is assumed that every machine 
         executes exactly the same code (though with different data). 
          
-        0) So that the concatenation of all the following fragments will 
-        end up being a valid network simulation for a ring of 128 artificial 
-        cells where cell i sends a spike to cell i+1, let's start out with 
+        0)  So that the concatenation of all the following fragments will 
+            end up being a valid network simulation for a ring of 128 artificial 
+            cells where cell i sends a spike to cell i+1, let's start out with 
 
-        .. code-block::
-            none
+            .. code-block::
+                none
 
-            load_file("nrngui.hoc") // not that I want a gui but I do want the stdrun system 
-            tstop = 1000 
+                load_file("nrngui.hoc") // not that I want a gui but I do want the stdrun system 
+                tstop = 1000 
 
-        Yes, I know that this example is foolish since there is no computation 
-        going on except when a cell receives a spike. I don't expect any benefit 
-        from parallelization but it is simple enough to allow me to focus on the process 
-        of setup and run instead of cluttering the example with a large cell class. 
+            Yes, I know that this example is foolish since there is no computation 
+            going on except when a cell receives a spike. I don't expect any benefit 
+            from parallelization but it is simple enough to allow me to focus on the process 
+            of setup and run instead of cluttering the example with a large cell class. 
          
-        1) load the netparmpi.hoc file and create a ParallelNetManager 
+        1)  load the :file:`netparmpi.hoc` file and create a ParallelNetManager 
 
-        .. code-block::
-            none
+            .. code-block::
+                none
 
-            load_file("netparmpi.hoc") 
-            objref pnm 
-            ncell = 128 
-            pnm = new ParallelNetManager(ncell) 
+                load_file("netparmpi.hoc") 
+                objref pnm 
+                ncell = 128 
+                pnm = new ParallelNetManager(ncell) 
 
-        If you know the global number of cells put it in. For the non-MPI 
-        implementation of ParallelNetManager, ncell is absolutely necessary 
-        since that implementation constructs many mapping vectors that allow 
-        it to figure out what cell is being talked about when the gid is 
-        known. The MPI implementation uses dynamically constructed maps and 
-        it is not necessary to know the global number of cells at this time. 
-        Note that ncell refers to the global number of cells and NOT the 
-        number of cells to be created on this machine. 
+            If you know the global number of cells put it in. For the non-MPI 
+            implementation of ParallelNetManager, ncell is absolutely necessary 
+            since that implementation constructs many mapping vectors that allow 
+            it to figure out what cell is being talked about when the gid is 
+            known. The MPI implementation uses dynamically constructed maps and 
+            it is not necessary to know the global number of cells at this time. 
+            Note that ncell refers to the global number of cells and NOT the 
+            number of cells to be created on this machine. 
          
-        2) Tell the system which gid's are on which machines. 
-        The simplest distribution mechanism is :func:`round_robin` 
+        2)  Tell the system which gid's are on which machines. 
+            The simplest distribution mechanism is :func:`round_robin` 
 
-        .. code-block::
-            none
+            .. code-block::
+                none
 
-            pnm.round_robin() 
+                pnm.round_robin() 
 
-        which will certainly give good load balance if the number of each 
-        cell type to be constructed is an integer multiple of the number 
-        of machines. Otherwise specify which gid's are on which machines through 
-        the use of :meth:`ParallelNetManager.set_gid2node` . Note that you only 
-        HAVE to call \ :code:`pnm.set_gid2node(gid, myid)` for the subset of gid's that 
-        are supposed to be associated with this machines 
-        particular \ :code:`myid = pnm.pc.id` but it is usually simpler just to call 
-        it for all gid's since the set_gid2node call is a no-op when the second 
-        argument does not match the pc.id. Also, the PVM version REQUIRES that 
-        you call the function for all the gid values. 
+            which will certainly give good load balance if the number of each 
+            cell type to be constructed is an integer multiple of the number 
+            of machines. Otherwise specify which gid's are on which machines through 
+            the use of :meth:`ParallelNetManager.set_gid2node` . Note that you only 
+            HAVE to call \ :code:`pnm.set_gid2node(gid, myid)` for the subset of gid's that 
+            are supposed to be associated with this machines 
+            particular \ :code:`myid = pnm.pc.id` but it is usually simpler just to call 
+            it for all gid's since the set_gid2node call is a no-op when the second 
+            argument does not match the pc.id. Also, the PVM version REQUIRES that 
+            you call the function for all the gid values. 
+             
+            There are three performance considerations with regard to sprinkling gid 
+            values on machines. 
          
-        There are three performance considerations with regard to sprinkling gid 
-        values on machines. 
+            A)  By far the most important is load balance. That is 
+                simple if all your cells take the same time to integrate over the same 
+                interval. If cells have very different sizes or cpu's end up with 
+                very different amounts of work to do so that load balance is a 
+                serious problem then :meth:`ParallelNetManager.splitcell` can be used to 
+                solve it. 
          
-        A) By far the most important is load balance. That is 
-        simple if all your cells take the same time to integrate over the same 
-        interval. If cells have very different sizes or cpu's end up with 
-        very different amounts of work to do so that load balance is a 
-        serious problem then :meth:`ParallelNetManager.splitcell` can be used to 
-        solve it. 
+            B)  Of lesser importance but still quite important is to maximize the 
+                delay of NetCon's that span machines. This isn't an issue if all your 
+                NetCon delays are the same.  The minimum delay across machines defines 
+                the maximum step size that each machine can integrate before having 
+                to share spikes. In principle, Metis can help with this and C) but don't 
+                waste your time unless you have established that communication overhead 
+                is your rate limiting step. See :meth:`ParallelNetManager.prstat` and 
+                :meth:`ParallelContext.wait_time` . 
+             
+            C)  I am only guessing that this is less important than B, it is certainly 
+                related, but obviously 
+                things will be better if you minimize the number of spanning NetCon's. 
+                For our ring example it obviously would be best to keep neighboring cells together 
+                but the improvement may be too small to measure. 
          
-        B) Of lesser importance but still quite important is to maximize the 
-        delay of NetCon's that span machines. This isn't an issue if all your 
-        NetCon delays are the same.  The minimum delay across machines defines 
-        the maximum step size that each machine can integrate before having 
-        to share spikes. In principle, Metis can help with this and C) but don't 
-        waste your time unless you have established that communication overhead 
-        is your rate limiting step. See :meth:`ParallelNetManager.prstat` and 
-        :meth:`ParallelContext.wait_time` . 
+        3)  Now create only the cells that are supposed to be on this machine 
+            using :meth:`ParallelNetManager.register_cell`. 
+
+            .. code-block::
+                none
+
+                for i=0, ncell-1 if (pnm.gid_exists(i)) { 
+                	pnm.register_cell(i, new IntFire1()) 
+                } 
+
+            Notice how we don't construct a cell if the gid does not exist. 
+            You only HAVE to call 
+            register_cell for those gid's which are actually owned by this machine and 
+            need to send spikes to other machines. 
+            If the gid does not exist, then register_cell will call gid_exists for you. 
+            Note that 2) and 3) can 
+            be combined but it is a serious bug if a gid exists on more than one machine. 
+            You can even start connecting 
+            as discussed in item 4) but of course a NetCon presupposes the existence 
+            of whatever cells it needs on this machine. 
+             
+            Of course this presupposes that you have 
+            already read the files that define your cell classes. 
+            We assume your 
+            cell classes for "real" cells follow the NetworkReadyCell policy required by 
+            the NetGUI tool. That is, each "real" cell type has a synapse list, eg. the 
+            first synapse is \ :code:`cell.synlist.object(0)` (the programmer will have to 
+            make use of those synapse indices when such cells are the target of a NetCon) 
+            and each "real" cell type has a connect2target method that constructs 
+            a netcon (returns it in the second argument) 
+            with that cell as the source and its first argument as the 
+            synapse or artificial cell object. 
+             
+            Artificial cells can either be unwrapped or follow the NetGUI tool policy 
+            where they are wrapped in a cell class in which the actual artificial cell 
+            is given by the \ :code:`cell.pp` field and the cell class also has a 
+            connect2target method. 
+             
+            If you don't know what I've been talking about in the last two paragraphs, 
+            use the NetGUI tool on a single machine to construct a toy network consisting 
+            of a few real and artificial cells and save it to a hoc file for examination. 
          
-        C) I am only guessing that this is less important than B, it is certainly 
-        related, but obviously 
-        things will be better if you minimize the number of spanning NetCon's. 
-        For our ring example it obviously would be best to keep neighboring cells together 
-        but the improvement may be too small to measure. 
+        4)  Connect the cells using :meth:`ParallelNetManager.nc_append` 
+
+            .. code-block::
+                none
+
+                for i=0, ncell-1 { 
+                	pnm.nc_append(i, (i+1)%ncell, -1, 1.1, 2) 
+                } 
+
+            Again, it only has to be called if i, or i+1, or both, are on this machine. 
+            It is a no-op if neither are on this machine and usually a no-op if only 
+            the source is on this machine since it will only mark the source cell 
+            as output cell, once. 
+             
+            The -1 just refers to the 
+            synapse index which should be -1 for artificial cells. 
+            The delay is 2 ms and the weight is 1.1 which guarantees 
+            that the IntFire1 cell will fire when it receives a spike. 
+             
+            Our example requires a stimulus and this is not an 
+            unreasonable time to stimulate the net. 
+            Let's get the ring going by forcing the gid==4 
+            cell to fire. 
+
+            .. code-block::
+                none
+
+                // stimulate 
+                objref stim, ncstim 
+                if (pnm.gid_exists(4)) { 
+                        stim = new NetStim(.5) 
+                        ncstim = new NetCon(stim, pnm.pc.gid2obj(4)) 
+                        ncstim.weight = 1.1 
+                        ncstim.delay = 0 
+                        stim.number=1 
+                        stim.start=1 
+                } 
+
+            Note the stimulator does not require a gid even though it is an artificial 
+            cell because its connections do not span machines. But it does have to be 
+            on the machine that has the cell it is connecting to. 
          
-        3) Now create only the cells that are supposed to be on this machine 
-        using :meth:`ParallelNetManager.register_cell`. 
+        5)  Have the system figure out the minimum spanning NetCon delay so it knows 
+            the maximum step size. 
 
-        .. code-block::
-            none
+            .. code-block::
+                none
 
-            for i=0, ncell-1 if (pnm.gid_exists(i)) { 
-            	pnm.register_cell(i, new IntFire1()) 
-            } 
-
-        Notice how we don't construct a cell if the gid does not exist. 
-        You only HAVE to call 
-        register_cell for those gid's which are actually owned by this machine and 
-        need to send spikes to other machines. 
-        If the gid does not exist, then register_cell will call gid_exists for you. 
-        Note that 2) and 3) can 
-        be combined but it is a serious bug if a gid exists on more than one machine. 
-        You can even start connecting 
-        as discussed in item 4) but of course a NetCon presupposes the existence 
-        of whatever cells it needs on this machine. 
-         
-        Of course this presupposes that you have 
-        already read the files that define your cell classes. 
-        We assume your 
-        cell classes for "real" cells follow the NetworkReadyCell policy required by 
-        the NetGUI tool. That is, each "real" cell type has a synapse list, eg. the 
-        first synapse is \ :code:`cell.synlist.object(0)` (the programmer will have to 
-        make use of those synapse indices when such cells are the target of a NetCon) 
-        and each "real" cell type has a connect2target method that constructs 
-        a netcon (returns it in the second argument) 
-        with that cell as the source and its first argument as the 
-        synapse or artificial cell object. 
-         
-        Artificial cells can either be unwrapped or follow the NetGUI tool policy 
-        where they are wrapped in a cell class in which the actual artificial cell 
-        is given by the \ :code:`cell.pp` field and the cell class also has a 
-        connect2target method. 
-         
-        If you don't know what I've been talking about in the last two paragraphs, 
-        use the NetGUI tool on a single machine to construct a toy network consisting 
-        of a few real and artificial cells and save it to a hoc file for examination. 
-         
-        4) Connect the cells using :meth:`ParallelNetManager.nc_append` 
-
-        .. code-block::
-            none
-
-            for i=0, ncell-1 { 
-            	pnm.nc_append(i, (i+1)%ncell, -1, 1.1, 2) 
-            } 
-
-        Again, it only has to be called if i, or i+1, or both, are on this machine. 
-        It is a no-op if neither are on this machine and usually a no-op if only 
-        the source is on this machine since it will only mark the source cell 
-        as output cell, once. 
-         
-        The -1 just refers to the 
-        synapse index which should be -1 for artificial cells. 
-        The delay is 2 ms and the weight is 1.1 which guarantees 
-        that the IntFire1 cell will fire when it receives a spike. 
-         
-        Our example requires a stimulus and this is not an 
-        unreasonable time to stimulate the net. 
-        Let's get the ring going by forcing the gid==4 
-        cell to fire. 
-
-        .. code-block::
-            none
-
-            // stimulate 
-            objref stim, ncstim 
-            if (pnm.gid_exists(4)) { 
-                    stim = new NetStim(.5) 
-                    ncstim = new NetCon(stim, pnm.pc.gid2obj(4)) 
-                    ncstim.weight = 1.1 
-                    ncstim.delay = 0 
-                    stim.number=1 
-                    stim.start=1 
-            } 
-
-        Note the stimulator does not require a gid even though it is an artificial 
-        cell because its connections do not span machines. But it does have to be 
-        on the machine that has the cell it is connecting to. 
-         
-        5) Have the system figure out the minimum spanning NetCon delay so it knows 
-        the maximum step size. 
-
-        .. code-block::
-            none
-
-            pnm.set_maxstep(100) // will end up being 2 
-
-         
-        6) Decide what output to collect 
-
-        .. code-block::
-            none
-
-            pnm.want_all_spikes() 
-
-        If you want to record spikes from only a few cells you can use 
-        :meth:`ParallelNetManager.spike_record` explicitly. If you want to 
-        record range variable trajectories, check that the cell exists with 
-        :meth:`ParallelNetManager.gid_exists` and then use :meth:`Vector.record`. 
-         
-        7)Initialize and run. 
-
-        .. code-block::
-            none
-
-            stdinit() 
-            runtime = startsw() 
-            pnm.psolve(tstop) 
-            runtime = startsw() - runtime 
+                pnm.set_maxstep(100) // will end up being 2 
 
          
-        8) Print the results. 
+        6)  Decide what output to collect 
 
-        .. code-block::
-            none
+            .. code-block::
+                none
 
-            for i=0, pnm.spikevec.size-1 { 
-            	print pnm.spikevec.x[i], pnm.idvec.x[i] 
-            } 
+                pnm.want_all_spikes() 
 
-        If you save the stdout to a file you can sort the results. A nice idiom 
-        is 
-        \ :code:`sort -k 1n,1n -k 2n,2n temp1 > temp` 
+            If you want to record spikes from only a few cells you can use 
+            :meth:`ParallelNetManager.spike_record` explicitly. If you want to 
+            record range variable trajectories, check that the cell exists with 
+            :meth:`ParallelNetManager.gid_exists` and then use :meth:`Vector.record`. 
+             
+        7)  Initialize and run. 
+
+            .. code-block::
+                none
+
+                stdinit() 
+                runtime = startsw() 
+                pnm.psolve(tstop) 
+                runtime = startsw() - runtime 
+
          
-        A perhaps more flexible alternative is to separate the master from all the 
-        workers somewhere after item 4) and before item 8) using :meth:`ParallelContext.runworker` 
-        and then making use of the :meth:`ParallelNetManager.prun` and 
-        :meth:`ParallelNetManager.gatherspikes` with the normal ParallelContext control 
-        in a master worker framework. 
-         
-        At any rate, before we quit we have to call it so that the master can 
-        tell all the workers to quit. 
+        8)  Print the results. 
 
-        .. code-block::
-            none
+            .. code-block::
+                none
 
-            pnm.pc.runworker 
-            pnm.pc.done 
+                for i=0, pnm.spikevec.size-1 { 
+                	print pnm.spikevec.x[i], pnm.idvec.x[i] 
+                } 
+
+            If you save the stdout to a file you can sort the results. A nice idiom 
+            is 
+            \ :code:`sort -k 1n,1n -k 2n,2n temp1 > temp` 
+             
+            A perhaps more flexible alternative is to separate the master from all the 
+            workers somewhere after item 4) and before item 8) using :meth:`ParallelContext.runworker` 
+            and then making use of the :meth:`ParallelNetManager.prun` and 
+            :meth:`ParallelNetManager.gatherspikes` with the normal ParallelContext control 
+            in a master worker framework. 
+             
+            At any rate, before we quit we have to call it so that the master can 
+            tell all the workers to quit. 
+
+            .. code-block::
+                none
+
+                pnm.pc.runworker 
+                pnm.pc.done 
 
 
          
@@ -312,7 +312,7 @@ ParallelNetManager
 
     Description:
         The gid ranging from 0 to ncell-1 
-        is assigned to machine (gid+1)%nhost. There is no good reason 
+        is assigned to machine :code:`(gid + 1) % nhost`. There is no good reason 
         anymore for the "+1". :meth:`ParallelContext.nhost` is the number of machines 
         available. 
 
@@ -351,7 +351,7 @@ ParallelNetManager
         This is deprecated. Use :meth:`ParallelNetManager.register_cell` . 
          
         If the gid exists on this machine the obexpr is executed in a statement 
-        equivalent to pnm.cells.append(obexpr). Obexpr should be something like 
+        equivalent to :code:`pnm.cells.append(obexpr)`. Obexpr should be something like 
         \ :code:`"new Pyramid()"` or any function that returns a cell object. Valid 
         "real" cell objects should have a connect2target method and a synlist 
         synapse list field just as the types used by the NetGUI builder. 
@@ -619,7 +619,7 @@ ParallelNetManager
         by hostcas and the parent subtree will be destroyed. The parent 
         subtree 
         will be preserved on the host specified by hostparent and the cas 
-        subtree destroyed. Hostparent must be either hostcas+1 or hostcas-1. 
+        subtree destroyed. Hostparent must be either :code:`hostcas+1` or :code:`hostcas-1`. 
          
         Splitcell works only if NEURON has been configured with the 
         --with-paranrn option. A split cell has exactly the same stability 
@@ -628,5 +628,5 @@ ParallelNetManager
         be split into only two pieces. 
          
         Splitcell is implemented using the :meth:`ParallelContext.splitcell` method 
-        of :func:`ParallelContext` . 
+        of :class:`ParallelContext`. 
 

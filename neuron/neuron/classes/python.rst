@@ -6,7 +6,96 @@ Python
 
 
 
-.. class:: Python
+Installation
+~~~~~~~~~~~~
+
+
+Syntax:
+    :code:`./configure --with-nrnpython ...`
+
+    :code:`make`
+
+    :code:`make install`
+
+
+Description:
+    Builds NEURON with Python embedded as an alternative interpreter to HOC. 
+    The python version used is that found from :code:`which python`. 
+     
+    NEURON can be used as an extension to Python if, after building as above, 
+    one goes to the src/nrnpython directory containing the Makefile and types 
+    something analogous to 
+
+    .. code-block::
+        none
+
+        python setup.py install --home=$HOME 
+
+    Which on my machine installs in :file:`/home/hines/lib64/python/neuron`
+    and can be imported into NEURON with 
+
+    .. code-block::
+        none
+
+        ipython 
+        import sys 
+        sys.path.append("/home/hines/lib64/python") 
+        import neuron 
+
+    It is probably better to avoid the incessant :code:`import sys`... and instead 
+    add to your shell environment something analogous to 
+
+    .. code-block::
+        none
+
+        export PYTHONPATH=$PYTHONPATH:/home/hines/lib64/python 
+
+    since when launching NEURON and embedding Python, the path is automatically 
+    defined so that :code:`import neuron` does not require any prerequisites. 
+    If there is a :code:`@<host-cpu@>/.libs/libnrnmech.so` file in your working 
+    directory, those nmodl mechanisms will be loaded as well. 
+    After this, you will probably want to: 
+
+    .. code-block::
+        none
+
+        h = neuron.h # neuron imports hoc and does a  h = hoc.HocObject() 
+
+    In the past we also recommended an "import nrn" but this is no longer 
+    necessary as everything in that module is also directly available from 
+    the "h" object. 
+    You can use the hoc function :func:`nrn_load_dll` to load mechanism files 
+    as well, e.g. if neurondemo was used earlier so the shared object exists, 
+
+    .. code-block::
+        none
+
+        h = hoc.HocObject() 
+        h('nrn_load_dll("$(NEURONHOME)/demo/release/x86_64/.libs/libnrnmech.so")') 
+
+
+.. _python_accessing_hoc:
+
+Python Accessing HOC
+~~~~~~~~~~~~~~~~~~~~
+
+
+
+Syntax:
+    :code:`nrniv -python [file.hoc file.py  -c "python_statement"]`
+
+    :code:`nrngui -python ...`
+
+    :code:`neurondemo -python ...`
+
+
+Description:
+    Launches NEURON with Python as the command line interpreter. 
+    File arguments with a .hoc suffix are interpreted using the 
+    Hoc interpreter. File arguments with the .py suffix are interpreted 
+    using the Python interpreter. The -c statement causes python to 
+    execute the statement. 
+    The import statements allow use of the following 
 
          
 
@@ -14,105 +103,7 @@ Python
 
 
 
-.. method:: Python.Installation
-
-
-    Syntax:
-        :code:`./configure --with-nrnpython ...`
-
-        :code:`make`
-
-        :code:`make install`
-
-
-    Description:
-        Builds NEURON with Python embedded as an alternative interpreter to HOC. 
-        The python version used is that found from \ :code:`which python`. 
-         
-        NEURON can be used as an extension to Python if, after building as above, 
-        one goes to the src/nrnpython directory containing the Makefile and types 
-        something analogous to 
-
-        .. code-block::
-            none
-
-            python setup.py install --home=$HOME 
-
-        Which on my machine installs in /home/hines/lib64/python/neuron 
-        and can be imported into NEURON with 
-
-        .. code-block::
-            none
-
-            ipython 
-            import sys 
-            sys.path.append("/home/hines/lib64/python") 
-            import neuron 
-
-        It is probably better to avoid the incessant \ :code:`import sys...` and instead 
-        add to your shell environment something analogous to 
-
-        .. code-block::
-            none
-
-            export PYTHONPATH=$PYTHONPATH:/home/hines/lib64/python 
-
-        since when launching NEURON and embedding Python, the path is automatically 
-        defined so that \ :code:`import neuron` does not require any prerequisites. 
-        If there is a \ :code:`@<host-cpu@>/.libs/libnrnmech.so` file in your working 
-        directory, those nmodl mechanisms will be loaded as well. 
-        After this, you will probably want to: 
-
-        .. code-block::
-            none
-
-            h = neuron.h # neuron imports hoc and does a  h = hoc.HocObject() 
-
-        In the past we also recommended an "import nrn" but this is no longer 
-        necessary as everything in that module is also directly available from 
-        the "h" object. 
-        You can use the hoc function :func:`nrn_load_dll` to load mechanism files 
-        as well, e.g. if neurondemo was used earlier so the shared object exists, 
-
-        .. code-block::
-            none
-
-            h = hoc.HocObject() 
-            h('nrn_load_dll("$(NEURONHOME)/demo/release/x86_64/.libs/libnrnmech.so")') 
-
-
-         
-
-----
-
-
-
-.. method:: Python.Python_accessing_Hoc
-
-
-    Syntax:
-        :code:`nrniv -python [file.hoc file.py  -c "python_statement"]`
-
-        :code:`nrngui -python ...`
-
-        :code:`neurondemo -python ...`
-
-
-    Description:
-        Launches NEURON with Python as the command line interpreter. 
-        File arguments with a .hoc suffix are interpreted using the 
-        Hoc interpreter. File arguments with the .py suffix are interpreted 
-        using the Python interpreter. The -c statement causes python to 
-        execute the statement. 
-        The import statements allow use of the following 
-
-         
-
-----
-
-
-
-.. method:: Python.execute
+.. method:: neuron.hoc.execute
 
 
     Syntax:
@@ -135,7 +126,7 @@ Python
 
 
     .. seealso::
-        :meth:`Hoc_accessing_Python.nrnpython`
+        :func:`nrnpython`
 
          
 
@@ -143,7 +134,7 @@ Python
 
 
 
-.. method:: Python.HocObject
+.. class:: neuron.hoc.HocObject
 
 
     Syntax:
@@ -154,9 +145,9 @@ Python
 
     Description:
         Allow access to anything in the Hoc interpreter. 
-        Note that \ :code:`h = neuron.h` is the typical statement used since the 
+        Note that :code:`h = neuron.h` is the typical statement used since the 
         neuron module creates an h field. 
-        When created via hoc.HocObject() its print string is "TopLevelHocInterpreter". 
+        When created via :code:`hoc.HocObject()` its print string is "TopLevelHocInterpreter". 
 
         .. code-block::
             none
@@ -257,7 +248,7 @@ Python
             h('create soma, axon') 
             ax = h.axon 
 
-        makes ax a Python :meth:`Python_accessing_Hoc.Section` which references the hoc 
+        makes ax a Python :class:`~neuron.h.Section` which references the hoc 
         axon section. Many hoc functions require a currently accessed section 
         and for these a typical idiom is 
 
@@ -342,7 +333,7 @@ Python
 
         and thus in not what is needed in the most common 
         case of a hoc function holding a pointer to a variable such as 
-        Vector.record or Vector.play. For this one needs the _ref_varname idiom 
+        :meth:`Vector.record` or :meth:`Vector.play`. For this one needs the :samp:`_ref_{varname}` idiom 
         which works for any hoc variable and acts exactly like a c pointer. eg: 
 
         .. code-block::
@@ -484,7 +475,7 @@ Python
             h.setpointer(_ref_hocvar, 'POINTER_name', point_proces_object) 
             h.setpointer(_ref_hocvar, 'POINTER_name', nrn.Mechanism_object) 
 
-        See nrn/share/examples/nrniv/nmodl/(tstpnt1.py and tstpnt2.py) for 
+        See :file:`nrn/share/examples/nrniv/nmodl/`\ (:file:`tstpnt1.py` and :file:`tstpnt2.py`) for 
         examples of usage. For a density mechanism, the 'POINTER_name' cannot 
         have the SUFFIX appended. For example if a mechanism with suffix foo has 
         a POINTER bar and you want it to point to t use 
@@ -505,7 +496,7 @@ Python
 
 
 
-.. method:: Python.hoc_ac
+.. method:: neuron.hoc.hoc_ac
 
 
     Syntax:
@@ -517,7 +508,7 @@ Python
 
 
     Description:
-        Get and set the hoc global scalar, :meth:`predeclared.hoc_ac_`-variables. 
+        Get and set the hoc global scalar, :data:`hoc_ac_`-variables. 
         This is obsolete since HocObject 
         is far more general. 
 
@@ -537,7 +528,7 @@ Python
 
 
 
-.. method:: Python.cas
+.. method:: neuron.h.cas
 
 
     Syntax:
@@ -551,8 +542,8 @@ Python
 
 
     Description:
-        Returns the :meth:`Section.CurrentlyAccessedSection` as a Python 
-        :meth:`Python_accessing_Hoc.Section` object. 
+        Returns the :ref:`CurrentlyAccessedSection` as a Python 
+        :class:`~neuron.h.Section` object. 
 
         .. code-block::
             none
@@ -573,7 +564,7 @@ Python
 
 
 
-.. method:: Python.Section
+.. class:: neuron.h.Section
 
 
     Syntax:
@@ -590,16 +581,16 @@ Python
 
     Description:
         The Python Section object allows modification and evaluation of the 
-        information associated with a NEURON :meth:`neuron.Section`. The typical way to get 
-        a reference to a Section in Python is with :meth:`Python_accessing_Hoc.cas`  or 
-        by using the hoc section name as in \ :code:`asec = h.dend[4]`. 
-        The \ :code:`sec = Section()` will create an anonymous Section with a hoc name 
+        information associated with a NEURON Section. The typical way to get 
+        a reference to a Section in Python is with :meth:`neuron.h.cas`  or 
+        by using the hoc section name as in :code:`asec = h.dend[4]`. 
+        The :code:`sec = Section()` will create an anonymous Section with a hoc name 
         constructed from "Section" and the Python reference address. 
         Access to Section variables is through standard dot notation. 
         The "anonymous" python section can be given a name with the named 
         parameter and/or associated with a cell object using the named cell parameter. 
         Note that a cell association is required if one anticipates using the 
-        :meth:`ParallelNetwork.gid2cell` method of :func:`ParallelContext` . 
+        :meth:`~ParallelContext.gid2cell` method of :class:`ParallelContext`. 
 
         .. code-block::
             none
@@ -646,7 +637,7 @@ Python
             h.psection(sec=sec) 
 
          
-        With a :func:`SectionRef` one can, for example, 
+        With a :class:`SectionRef` one can, for example, 
 
         .. code-block::
             none
@@ -655,8 +646,12 @@ Python
             sr.root.push() ; print h.secname() ; h.pop_section() 
 
         or, more compactly, 
-        sr = h.SectionRef(sec=h.dend[2]) 
-        print sr.root.name(), h.secname(sec=sr.root) 
+        
+        .. code-block::
+            none
+
+            sr = h.SectionRef(sec=h.dend[2]) 
+            print sr.root.name(), h.secname(sec=sr.root) 
 
          
         Iteration over sections is accomplished with 
@@ -698,8 +693,8 @@ Python
 
 
 
-.. method:: Python.Segment
-
+Segment
+=======
 
     Syntax:
         :code:`seg = section(x)`
@@ -717,7 +712,8 @@ Python
 
 
 
-.. method:: Python.Mechanism
+Mechanism
+=========
 
 
     Syntax:
@@ -733,9 +729,10 @@ Python
 
 ----
 
+.. _Hoc_accessing_Python:
 
-
-.. method:: Python.Hoc_accessing_Python
+HOC accessing Python
+~~~~~~~~~~~~~~~~~~~~
 
 
     Syntax:
@@ -744,7 +741,7 @@ Python
 
     Description:
         The absence of a -python argument causes NEURON to launch with Hoc 
-        as the command line interpreter. At present, no file.py arguments 
+        as the command line interpreter. At present, no :file:`file.py` arguments 
         are allowed as all named files are treated as hoc files. Nevertheless, 
         from the hoc world any python statement can be executed and anything 
         in the python world can be assigned or evaluated. 
@@ -754,7 +751,7 @@ Python
 
 
 
-.. method:: Python.nrnpython
+.. function:: nrnpython
 
 
     Syntax:
@@ -780,7 +777,7 @@ Python
 
 
 
-.. method:: Python.PythonObject
+.. class:: PythonObject
 
 
     Syntax:
@@ -788,7 +785,7 @@ Python
 
 
     Description:
-        Accesses any python object. Almost equivalent to :func:`HocObject` in the 
+        Accesses any python object. Almost equivalent to :class:`~neuron.hoc.HocObject` in the 
         python world but because of some hoc syntax limitations, ie. hoc does not 
         allow an object to be a callable function, and top level indices have 
         different semantics, we sometimes need to use a special idiom, ie. the '_' 

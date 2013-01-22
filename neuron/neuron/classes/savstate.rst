@@ -7,28 +7,28 @@ SaveState
 
 .. class:: SaveState
 
-        The state includes t, the voltage for all segments of all sections, 
-        and all the STATEs defined in all the membrane and point process 
-        mechanisms. With regard to model descriptions, it does not include 
-        PARAMETERs, ASSIGNED variables. 
-        It always includes 
-        values for the ambiguous variable of ions such as 
-        cai, ko, or ena. This can be an expensive object in terms of memory 
-        storage. 
-         
-        The state also includes all the outstanding events (external and self) 
-        and the weight vectors of all NetCon objects. For model descriptions 
-        containing a NET_RECEIVE block, all the ASSIGNED variables are also included 
-        in the state (this is because such models often use such variables to 
-        store logic state and other values, such as the last event time t0, 
-        needed to compute state variables at the next event.) 
-         
-        The outstanding event delivery times are absolute. 
-        When restored, all outstanding 
-        events will be cleared and the restored event times and NetCon info 
-        will take their place. Note that it is not in general possible to 
-        change the value of t in a network simulation since most NET_RECEIVE 
-        blocks keep t0 (the last event time) as part of their state. 
+    The state includes :data:`t`, the voltage for all segments of all sections, 
+    and all the STATEs defined in all the membrane and point process 
+    mechanisms. With regard to model descriptions, it does not include 
+    PARAMETERs, ASSIGNED variables. 
+    It always includes 
+    values for the ambiguous variable of ions such as 
+    cai, ko, or ena. This can be an expensive object in terms of memory 
+    storage. 
+     
+    The state also includes all the outstanding events (external and self) 
+    and the weight vectors of all NetCon objects. For model descriptions 
+    containing a NET_RECEIVE block, all the ASSIGNED variables are also included 
+    in the state (this is because such models often use such variables to 
+    store logic state and other values, such as the last event time t0, 
+    needed to compute state variables at the next event.) 
+     
+    The outstanding event delivery times are absolute. 
+    When restored, all outstanding 
+    events will be cleared and the restored event times and NetCon info 
+    will take their place. Note that it is not in general possible to 
+    change the value of t in a network simulation since most NET_RECEIVE 
+    blocks keep t0 (the last event time) as part of their state. 
 
     .. warning::
         The intention is that a save followed by 
@@ -148,7 +148,7 @@ SaveState
         binary state data to the beginning of the file. 
         On return the file is closed unless the second arg exists 
         and is 1. In that case, extra computer state information 
-        may be written to the file, e.g. :meth:`Random.Random` . :func:`seq` 
+        may be written to the file, e.g. :meth:`Random.seq`.
 
          
 

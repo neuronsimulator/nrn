@@ -39,7 +39,7 @@ RangeVarPlot
         currently accessed section.) 
 
     .. seealso::
-        :meth:`Geometry.distance`
+        :func:`distance`
 
     Example:
         An example is plotting the 
@@ -142,7 +142,7 @@ RangeVarPlot
 
     Description:
         returns the coordinate of the end of the path. The total length 
-        of the path is right() - left(). 
+        of the path is :code:`right() - left()`. 
 
          
 
@@ -158,7 +158,7 @@ RangeVarPlot
 
 
     Description:
-        append the path of sections to the :func:`SectionList` object argument. 
+        append the path of sections to the :class:`SectionList` object argument. 
          
 
 
@@ -175,7 +175,7 @@ RangeVarPlot
 
     Description:
         Change the color property. To see the change on an already plotted 
-        RangeVarPlot in a Graph, the Graph should be :meth:`Graph.flush` ed. 
+        RangeVarPlot in a Graph, the Graph should be :meth:`~Graph.flush`\ ed. 
 
          
 

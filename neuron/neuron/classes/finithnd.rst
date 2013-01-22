@@ -17,7 +17,7 @@ FInitializeHandler
 
     Description:
         Install an initialization handler statement to be called during a call to 
-        :func:`finitialize` . The default type is 1. The 
+        :func:`finitialize`. The default type is 1. The 
         statement will be executed at the top level of the interpreter 
         or else in the context of the optional obj arg. 
          
@@ -36,7 +36,7 @@ FInitializeHandler
         within that function. 
          
         This class helps alleviate the administrative problems of maintaining variations 
-        of the proc :meth:`RunControl.Init` . 
+        of the proc :ref:`RunControl_Init`. 
 
     Example:
 

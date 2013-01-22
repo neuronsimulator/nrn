@@ -4,88 +4,92 @@
 RunControl
 ----------
 
-    A minimal control system for managing a single "Oscilloscope sweep" level 
-    simulation run. 
+A minimal control system for managing a single "Oscilloscope sweep" level 
+simulation run. 
      
 
 t
 ~
 
-    Neuron time (ms). The field editor is updated regularly to display the 
-    value of the global variable t. 
+Neuron time (ms). The field editor is updated regularly to display the 
+value of the global variable :data:`t`. 
 
 dt
 ~~
 
-    Value of the fundamental integration time step, :meth:`globals.dt` , 
-    used by :func:`fadvance` (). 
+    Value of the fundamental integration time step, :data:`dt`, 
+    used by :func:`fadvance`. 
     When a value is entered into the field editor it is rounded down 
     so that an integral multiple of fadvance's make up a SingleStep 
+
+.. _runcontrol_initrun:
 
 InitRun
 ~~~~~~~
 
-    Initialize states, set t=0, and run the simulation until t == Tstop 
-    Plotting to graphs constructed from the :func:`NEURONMainMenu` occurs at 
-    a rate given by the variable set by the :func:`Plotsms` valueeditor. 
-    It is often convenient to substitute problem specific procedures 
-    for the default procedures init() and advance(). 
-    The run call chain is 
+Initialize states, set t=0, and run the simulation until t == Tstop 
+Plotting to graphs constructed from the :func:`NEURONMainMenu` occurs at 
+a rate given by the variable set by the :func:`Plotsms` valueeditor. 
+It is often convenient to substitute problem specific procedures 
+for the default procedures init() and advance(). 
+The run call chain is 
 
-    .. code-block::
-        none
+.. code-block::
+    none
 
-        		run continuerun step advance fadvance 
+    		run continuerun step advance fadvance 
 
-    The default advance is merely 
+The default advance is merely 
 
-    .. code-block::
-        none
+.. code-block::
+    none
 
-        		proc advance() { 
-        			fadvance() 
-        		} 
+    		proc advance() { 
+    			fadvance() 
+    		} 
 
-    and is a good candidate for substitution by a problem specific 
-    user routine. 
-    Warning: multiple presses of the this button without waiting 
-    for the previous simulation to finish (or pressing Stop) will 
-    execute the run() procedure recursively (probably not what is 
-    desired) Press the Stop button to unwrap these recursions. 
+and is a good candidate for substitution by a problem specific 
+user routine. 
+Warning: multiple presses of the this button without waiting 
+for the previous simulation to finish (or pressing Stop) will 
+execute the run() procedure recursively (probably not what is 
+desired) Press the Stop button to unwrap these recursions. 
+
+.. _runcontrol_init:
 
 Init
 ~~~~
 
-    The default initialize procedure initializes states using 
-    :func:`finitialize` (v_init) where v_init is displayed in the valueeditor. 
-    The init call chain is 
+The default initialize procedure initializes states using 
+:func:`finitialize` (v_init) where v_init is displayed in the valueeditor. 
+The init call chain is 
 
-    .. code-block::
-        none
+.. code-block::
+    none
 
-        		stdinit init (finitialize fcurrent) 
+    		stdinit init (finitialize fcurrent) 
 
-    When more complicated initialization is required, use 
-    :func:`FInitializeHandler` statements or  substitute a 
-    new procedure for the default init procedure: 
+When more complicated initialization is required, use 
+:func:`FInitializeHandler` statements or  substitute a 
+new procedure for the default init procedure: 
 
-    .. code-block::
-        none
+.. code-block::
+    none
 
-        	proc init() { 
-        		finitialize(v_init) 
-        		// insert new initialization code here to change states 
-        		// If states have been changed then complete 
-        		// initialization with 
-        	    /*	 
-        		if (cvode.active()) { 
-        			cvode.re_init() 
-        		}else{ 
-        			fcurrent() 
-        		} 
-        		frecord_init() 
-        	    */ 
-        	} 
+    	proc init() { 
+    		finitialize(v_init) 
+    		// insert new initialization code here to change states 
+    		// If states have been changed then complete 
+    		// initialization with 
+    	    /*	 
+    		if (cvode.active()) { 
+    			cvode.re_init() 
+    		}else{ 
+    			fcurrent() 
+    		} 
+    		frecord_init() 
+    	    */ 
+    	} 
 
 
 .. seealso::
@@ -96,47 +100,47 @@ Init
 Stop
 ~~~~
 
-    Stops the simulation at the end of a step. 
+Stops the simulation at the end of a step. 
 
 Continuetil
 ~~~~~~~~~~~
 
-    Continues integrating until t >= value displayed in valueeditor. 
-    Plots occur each step. 
+Continues integrating until t >= value displayed in valueeditor. 
+Plots occur each step. 
 
 Continuefor
 ~~~~~~~~~~~
 
-    Continues integrating for amount of time displayed in valueeditor. 
-    Plots occur each step. 
+Continues integrating for amount of time displayed in valueeditor. 
+Plots occur each step. 
 
 SingleStep
 ~~~~~~~~~~
 
-    Integrates one step and plots. 
-    A step is 1/(Plots/ms) milliseconds and consists of 1/dt/(Plots/ms) 
-    calls to fadvance() 
+Integrates one step and plots. 
+A step is 1/(Plots/ms) milliseconds and consists of 1/dt/(Plots/ms) 
+calls to fadvance() 
 
 Tstop
 ~~~~~
 
-    Stop time for InitRun 
+Stop time for InitRun 
 
 Plotsms
 ~~~~~~~
 
-    Number of integration steps per millisecond at which plots occur. 
-    Notice that reducing dt does not by itself increase the number 
-    of points plotted. If the the step is not an integral multiple of 
-    dt then dt is rounded down to the nearest integral multiple. 
+Number of integration steps per millisecond at which plots occur. 
+Notice that reducing dt does not by itself increase the number 
+of points plotted. If the the step is not an integral multiple of 
+dt then dt is rounded down to the nearest integral multiple. 
 
 Quiet
 ~~~~~
 
-    When checked, turns off movies and graph flushing during 
-    an :meth:`RunControl.InitRun`#StandardRunTools. Under some circumstances this can speed 
-    things up very considerably such as when using the :func:`RunFitter` 
-    in the presence of a Shape Movie plot under MSWINDOWS. 
+When checked, turns off movies and graph flushing during 
+an :ref:`runcontrol_initrun`. Under some circumstances this can speed 
+things up very considerably such as when using the :func:`RunFitter` 
+in the presence of a Shape Movie plot under MSWINDOWS. 
 
 RealTime
 ~~~~~~~~

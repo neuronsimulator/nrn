@@ -522,42 +522,44 @@ Frequency
 Path
 ~~~~
 
-    Pops up a :func:`Impx` template tool for plotting the 
-    log of voltage attenuation (and other functions of impedance) 
-    at a specific measurement/injection site 
-    as a function of a selected path along the neuron in which current is 
-    injected/measured. 
+Pops up a :func:`Impx` template tool for plotting the 
+log of voltage attenuation (and other functions of impedance) 
+at a specific measurement/injection site 
+as a function of a selected path along the neuron in which current is 
+injected/measured. 
      
 
 LogAvsX
 ~~~~~~~
 
-    Pops up a :meth:`ImpedanceTools.LogAvsX` 
-    template tool for plotting the log of voltage attenuation 
-    (and other functions of impedance) between a specific measurement/injection 
-    site as a function of distance to every point on the cell. 
+Pops up a :meth:`ImpedanceTools.LogAvsX` 
+template tool for plotting the log of voltage attenuation 
+(and other functions of impedance) between a specific measurement/injection 
+site as a function of distance to every point on the cell. 
      
+
+.. _stdrun_shape:
 
 Shape
 ~~~~~
 
-    Pops up an :func:`ImpShape` template tool for displaying the morphoelectronic transform 
-    of neuron shape in which distance is represented as the negative log of attenuation. 
+Pops up an :func:`ImpShape` template tool for displaying the morphoelectronic transform 
+of neuron shape in which distance is represented as the negative log of attenuation. 
      
 .. _ArchiveAndHardcopy:
 
 Archive And Hardcopy
 ~~~~~~~~~~~~~~~~~~~~
 
-    Checkin this simulation to RCS and print all windows on the printer. 
-     
-    See :func:`ProjectManagement` 
-     
-    Saves all (saveable) windows in this session to the file start.ses 
-    ( :func:`save_session` ). 
-    Prints the entire session to the filter :func:`prjnrnpr` ( :func:`print_session` ). 
-     
-    This menu item exists only when nrnmainmenu is executed after the file 
-    RCS/nrnversion exists. Ie when the files in the current working directory 
-    have been placed under NEURON :func:`ProjectManagement` control. 
+Checkin this simulation to RCS and print all windows on the printer. 
+ 
+See :func:`ProjectManagement` 
+ 
+Saves all (saveable) windows in this session to the file start.ses 
+( :func:`save_session` ). 
+Prints the entire session to the filter :func:`prjnrnpr` ( :func:`print_session` ). 
+ 
+This menu item exists only when nrnmainmenu is executed after the file 
+RCS/nrnversion exists. Ie when the files in the current working directory 
+have been placed under NEURON :func:`ProjectManagement` control. 
 

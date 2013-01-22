@@ -20,7 +20,7 @@ SectionBrowser
         section names are shown in the browser. 
 
     .. seealso::
-        :func:`SectionList`, :func:`Shape`
+        :class:`SectionList`, :ref:`stdrun_shape`
 
          
 
