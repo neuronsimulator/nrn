@@ -17,10 +17,10 @@ value of the global variable :data:`t`.
 dt
 ~~
 
-    Value of the fundamental integration time step, :data:`dt`, 
-    used by :func:`fadvance`. 
-    When a value is entered into the field editor it is rounded down 
-    so that an integral multiple of fadvance's make up a SingleStep 
+Value of the fundamental integration time step, :data:`dt`, 
+used by :func:`fadvance`. 
+When a value is entered into the field editor it is rounded down 
+so that an integral multiple of fadvance's make up a SingleStep 
 
 .. _runcontrol_initrun:
 
@@ -28,8 +28,8 @@ InitRun
 ~~~~~~~
 
 Initialize states, set t=0, and run the simulation until t == Tstop 
-Plotting to graphs constructed from the :func:`NEURONMainMenu` occurs at 
-a rate given by the variable set by the :func:`Plotsms` valueeditor. 
+Plotting to graphs constructed from the :ref:`NEURONMainMenu` occurs at 
+a rate given by the variable set by the :ref:`Plotsms` value editor. 
 It is often convenient to substitute problem specific procedures 
 for the default procedures init() and advance(). 
 The run call chain is 
@@ -49,11 +49,14 @@ The default advance is merely
     		} 
 
 and is a good candidate for substitution by a problem specific 
-user routine. 
-Warning: multiple presses of the this button without waiting 
-for the previous simulation to finish (or pressing Stop) will 
-execute the run() procedure recursively (probably not what is 
-desired) Press the Stop button to unwrap these recursions. 
+user routine.
+
+.. warning:: 
+
+    multiple presses of the this button without waiting 
+    for the previous simulation to finish (or pressing Stop) will 
+    execute the run() procedure recursively (probably not what is 
+    desired) Press the Stop button to unwrap these recursions. 
 
 .. _runcontrol_init:
 
@@ -61,7 +64,7 @@ Init
 ~~~~
 
 The default initialize procedure initializes states using 
-:func:`finitialize` (v_init) where v_init is displayed in the valueeditor. 
+:func:`finitialize` (v_init) where v_init is displayed in the value editor. 
 The init call chain is 
 
 .. code-block::
@@ -70,7 +73,7 @@ The init call chain is
     		stdinit init (finitialize fcurrent) 
 
 When more complicated initialization is required, use 
-:func:`FInitializeHandler` statements or  substitute a 
+:class:`FInitializeHandler` statements or  substitute a 
 new procedure for the default init procedure: 
 
 .. code-block::
@@ -93,7 +96,7 @@ new procedure for the default init procedure:
 
 
 .. seealso::
-    :meth:`CVode.finitialize`, :func:`re_init`, :func:`fcurrent`, :func:`frecord_init`, :func:`FInitializeHandler`
+    :func:`finitialize`, :meth:`CVode.re_init`, :func:`fcurrent`, :func:`frecord_init`, :class:`FInitializeHandler`
 
      
 
@@ -105,13 +108,13 @@ Stops the simulation at the end of a step.
 Continuetil
 ~~~~~~~~~~~
 
-Continues integrating until t >= value displayed in valueeditor. 
+Continues integrating until t >= value displayed in value editor. 
 Plots occur each step. 
 
 Continuefor
 ~~~~~~~~~~~
 
-Continues integrating for amount of time displayed in valueeditor. 
+Continues integrating for amount of time displayed in value editor. 
 Plots occur each step. 
 
 SingleStep
@@ -126,6 +129,8 @@ Tstop
 
 Stop time for InitRun 
 
+.. _plotsms:
+
 Plotsms
 ~~~~~~~
 
@@ -139,12 +144,12 @@ Quiet
 
 When checked, turns off movies and graph flushing during 
 an :ref:`runcontrol_initrun`. Under some circumstances this can speed 
-things up very considerably such as when using the :func:`RunFitter` 
+things up very considerably such as when using the :ref:`RunFitter` 
 in the presence of a Shape Movie plot under MSWINDOWS. 
 
 RealTime
 ~~~~~~~~
 
-    Running display of computation time. Resolution is 1 second. 
+Running display of computation time. Resolution is 1 second. 
      
 

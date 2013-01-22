@@ -24,9 +24,7 @@ Shape
 
 
     Syntax:
-        :code:`.view(mleft, mbottom, mwidth, mheight, sleft, stop,`
-
-        :code:`swidth, sheight)`
+        :code:`.view(mleft, mbottom, mwidth, mheight, sleft, stop, swidth, sheight)`
 
 
     Description:

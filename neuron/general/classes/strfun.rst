@@ -149,7 +149,7 @@ StringFunctions
     Description:
         Returns 1 if the *str* is the name of a symbol, 0 otherwise. 
         This is so useful that the same thing is available with the top level 
-        :meth:`functions.name_declared` function. 
+        :func:`name_declared` function. 
 
          
 
@@ -225,7 +225,7 @@ StringFunctions
     Description:
         Prints the number of references to the object and all objref names 
         that reference that object (including references via 
-        HBox, VBox, and List). It also prints the number of references found. 
+        :class:`HBox`, :class:`VBox`, and :class:`List`). It also prints the number of references found. 
 
          
 
@@ -243,7 +243,7 @@ StringFunctions
     Description:
         Returns 0 if the object is not a POINT_PROCESS. Otherwise 
         returns the point type (which is always 1 greater than the index into the 
-        :func:`MechanismType` (1) list). 
+        :func:`MechanismType(1) <MechanismType>` list). 
 
          
 
@@ -261,7 +261,7 @@ StringFunctions
     Description:
         Returns 0 if the object is not an ARTIFICIAL_CELL. Otherwise 
         returns the point type (which is always 1 greater than the index into the 
-        :func:`MechanismType` (1)list). 
+        :func:`MechanismType(1) <MechanismType>` list). 
 
          
 

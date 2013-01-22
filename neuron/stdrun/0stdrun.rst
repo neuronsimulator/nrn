@@ -489,6 +489,8 @@ ParameterizedFunction
     or principal axis methods. 
     The more powerful :func:`MultipleRunFitter` is now recommended. 
 
+.. _runfitter:
+
 RunFitter
 ~~~~~~~~~
 

@@ -59,7 +59,7 @@ File
         vector.  This issue does not arise with the unix version. 
 
     .. seealso::
-        :func:`IO`, :func:`ropen`, :func:`xopen`, :func:`wopen`
+        :ref:`printf_doc`, :func:`ropen`, :func:`xopen`, :func:`wopen`
 
 
 ----
@@ -381,9 +381,9 @@ File
         The "d" style is used for selecting a directory (in 
         contrast to a file). 
         With the "d" style, three buttons are placed beneath the 
-        browser area with "Open" centered beneath the "Show", "Cancel" button pair. 
-        The "Open" button must be pressed for the 
-        dialog to return the name of the directory. The "Show" button merely 
+        browser area with :guilabel:`Open` centered beneath the :guilabel:`Show`, :guilabel:`Cancel` button pair. 
+        The :guilabel:`Open` button must be pressed for the 
+        dialog to return the name of the directory. The :guilabel:`Show` button merely 
         selects the highlighted browser entry and shows the relevant directory 
         contents. A returned directory 
         string always has a final "/". 
@@ -399,7 +399,7 @@ File
             			xopen(*str*) 
             		} 
 
-        The following comes courtesy of Zach Mainen, zach@helmholtz.sdsc.edu. 
+        The following comes courtesy of Zach Mainen, :code:`zach@helmholtz.sdsc.edu`. 
 
          
 
@@ -421,7 +421,7 @@ File
         using \ :code:`fwrite()`. The form with two arguments specifies the 
         number of elements to write and the address from which to 
         begin writing.  With one argument, *n* is assumed to be 1. 
-        Must be careful that  *x*[] has at least *n* 
+        Must be careful that  *x*\ [] has at least *n* 
         elements after its passed address. 
 
          
@@ -471,7 +471,7 @@ File
         the beginning of file.  Offset is in characters and is measured 
         from the beginning of the file unless origin is 1 (measures from 
         the current position) or 2 (from the end of the file).  Returns 
-        0 if successful, non-zero on error.  Used with .tell(). 
+        0 if successful, non-zero on error.  Used with :meth:`tell`. 
 
          
 
@@ -487,5 +487,5 @@ File
 
 
     Description:
-        Return the current file position or -1 on error.  Used with \ :code:`.seek()`. 
+        Return the current file position or -1 on error.  Used with :meth:`seek`. 
 

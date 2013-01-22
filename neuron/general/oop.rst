@@ -1,20 +1,16 @@
 .. _oop:
 
-oop
----
+Object Oriented Programming
+---------------------------
+See `Object Oriented Programming <http://www.neuron.yale.edu/neuron/static/docs/refman/obj.html>`_ 
+in the reference manual.
 
+.. index:: begintemplate (keyword)
 
+.. _begintemplate:
 
-.. function:: ObjectOrientedProgramming
-
-        See <a href="../../../refman/obj.html">Object Oriented Programming</a> in the 
-        reference manual. 
-
-----
-
-
-
-.. function:: begintemplate
+begintemplate
+~~~~~~~~~~~~~
 
 
     Syntax:
@@ -49,13 +45,12 @@ oop
         will print "Hello" to the screen. 
 
          
+.. index:: endtemplate (keyword)
 
-----
+.. _endtemplate:
 
-
-
-.. function:: endtemplate
-
+endtemplate
+~~~~~~~~~~~
 
     Syntax:
         :code:`endtemplate`
@@ -65,32 +60,31 @@ oop
         Closes the class declaration 
 
     .. seealso::
-        :func:`begintemplate`
+        :ref:`begintemplate`
 
          
+.. index:: objectvar (keyword)
 
-----
+.. _objectvar:
 
-
-
-.. function:: objectvar
-
+objectvar
+~~~~~~~~~
 
     Syntax:
         :code:`objectvar`
 
 
     Description:
-        Synonym for :func:`objref` . 
-
-         
-
-----
+        Synonym for :ref:`objref`. 
 
 
 
-.. function:: objref
+.. index:: objref (keyword)
 
+.. _objref:
+
+objref
+~~~~~~
 
     Syntax:
         :code:`objref`
@@ -122,18 +116,15 @@ oop
          
 
     .. seealso::
-        :func:`new`, :func:`begintemplate`, :func:`List`, :func:`pointprocesses`, :func:`SectionList`
+        :ref:`new`, :ref:`begintemplate`, :class:`List`, :ref:`mech`, :class:`SectionList`
         
-
-         
-
-----
 
 .. index:: public (keyword)
 
 .. _keyword_public:
 
-**public**
+public
+~~~~~~
 
     Syntax:
         :code:`public`
@@ -146,17 +137,16 @@ oop
          
 
     .. seealso::
-        :func:`begintemplate`
+        :ref:`begintemplate`
 
          
 
-----
+.. index:: external (keyword)
 
+.. _external:
 
-
-.. function:: external
-
-
+external
+~~~~~~~~
     Syntax:
         :code:`external`
 
@@ -190,14 +180,12 @@ oop
         :func:`execute1` can be used to obtain external information as well. 
          
 
-         
+.. index:: new (keyword)
 
-----
+.. _new:
 
-
-
-.. function:: new
-
+new
+~~~
 
     Syntax:
         :code:`objectvariable = new Object(args)`
@@ -239,7 +227,7 @@ oop
         an instance of the template is created. 
 
     .. seealso::
-        :func:`new`
+        :ref:`new`
 
          
 
@@ -269,8 +257,12 @@ oop
 
 
 
-.. function:: NULLobject
+.. index:: NULLobject
 
+.. _nil:
+
+NULLobject
+~~~~~~~~~~
 
     Syntax:
         :code:`objref nil`
@@ -279,7 +271,7 @@ oop
     Description:
         When an object variable is first declared, it refers to NULLobject 
         until it has been associated with an instance of some object class 
-        by a :meth:`ObjectOrientedProgramming.new` statement. 
+        by a :ref:`new` statement. 
         A NULLobject object variable can 
         be useful as an argument to certain class methods. 
 
@@ -298,7 +290,7 @@ oop
 
 
 
-.. function:: this
+.. data:: this
 
 
     Syntax:
@@ -307,7 +299,7 @@ oop
 
     Description:
         Declared inside a template 
-        (see :meth:`ObjectOrientedProgramming.begintemplate` ). 
+        (see :ref:`begintemplate`). 
         Allows the object to call a procedure 
         with itself as one of the arguments. 
 
@@ -335,25 +327,4 @@ oop
             print "check existing" 
             for i=0,2 foo[i].printname() 
 
-
-         
-         
-         
-         
-         
-         
-         
-         
-         
-         
-         
-         
-         
-         
-         
-         
-         
-         
-         
-         
 

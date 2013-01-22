@@ -17,7 +17,7 @@ Matrix
 
     Description:
         A class for manipulation of two dimensional arrays of numbers. A companion 
-        to the :func:`Vector` class, Matrix contains routines for m*x=b, v1=m*v2, etc. 
+        to the :class:`Vector` class, Matrix contains routines for m*x=b, v1=m*v2, etc. 
          
         Individual element values are assigned and evaluated 
         using the syntax: 
@@ -29,7 +29,7 @@ Matrix
 
         which may appear anywhere in an expression or on the left hand side of 
         an assignment statement. irow can range from 0 to m.nrow-1 and icol 
-        ranges from 0 to m.ncol-1 . ( See :func:`x` ) 
+        ranges from 0 to m.ncol-1 . (See :data:`~Matrix.x`) 
          
         When possible, Matrix methods returning a Matrix use the form, 
         mobj = m.f(args, [mout]), where mobj is a newly constructed matrix (m 
@@ -55,20 +55,18 @@ Matrix
         to the meschach library at this time. If a method is called on a matrix type 
         whose method has not been implemented, an error message will be printed. 
         It is intended that implemented methods will be transparent to the user, eg 
-        m*x=b (\ :code:`x = m.solv(b)` ) will solve the linear system 
+        m*x=b (:code:`x = m.solv(b)` ) will solve the linear system 
         regardless of the type of m and 
-        v1 = m*v2 (\ :code:`v1 = m.mulv(v2)` ) will perform the vector multiplication. 
+        v1 = m*v2 (:code:`v1 = m.mulv(v2)` ) will perform the vector multiplication. 
          
         Matrix is implemented using the 
-        <a href="http://www.math.uiowa.edu/~dstewart/meschach/meschach.html"> 
-        meschach c library by David E. Stewart </a> 
-        (discovered at <a href="http://www.netlib.org/c/index.html"> 
-        http://www.netlib.org/c/index.html</a>) which contains a large collection 
+        `meschach c library by David E. Stewart <http://www.math.uiowa.edu/~dstewart/meschach/meschach.html>`_
+        (discovered at http://www.netlib.org/c/index.html\ ) which contains a large collection 
         of routines for sparse, banded, and full matrices. Many of the useful 
         routines  have not 
         been interfaced with the hoc interpreter but can be easily added on request 
         or you can add it yourself 
-        by analogy with the code in \ :code:`nrn/src/ivoc/(matrix.c ocmatrix.[ch])` 
+        by analogy with the code in :code:`nrn/src/ivoc/(matrix.c ocmatrix.[ch])` 
         At this time the MFULL matrix type is complete enough to do useful work 
         and MSPARSE can be used to multiply a matrix by a vector and solve 
         Mx=b. 
@@ -79,7 +77,7 @@ Matrix
 
 
 
-.. method:: Matrix.x
+.. data:: Matrix.x
 
 
     Syntax:
@@ -1307,7 +1305,9 @@ Matrix
             cf = m.c.cholesky_factor() 
             cf.mulm(cf.transpose()).printf 
 
-        @hsee cholesky_solve 
+    .. seealso::
+        
+        cholesky_solve 
 
          
 

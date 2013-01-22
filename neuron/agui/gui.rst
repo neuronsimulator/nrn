@@ -65,6 +65,7 @@ scenes have a common View menu as the first menu item
 with which one can create a new view, zoom in/out, round the view 
 or make the view correspond to the natural size of the scene. 
      
+.. _gui_view_equal_plot:
 
 View_equal_Plot
 ===============
@@ -435,6 +436,8 @@ in the page icon. Each graph is an idraw group. Idraw is an excellent
 program for polishing graphs to publication quality. 
 A .id suffix is recommended. 
 
+.. _printtofile_ascii:
+
 Ascii
 """""
 
@@ -606,6 +609,8 @@ for a line. Also the global variables :data:`hoc_cross_x_` and
 :data:`hoc_cross_y_` contain the last value of the crosshair coordinates. 
  
 
+.. _gui_plotwhat:
+
 PlotWhat
 ========
 
@@ -656,6 +661,8 @@ range variable to plot using the same path. Also one can enter
 an expression involving $1. The expression will be executed for 
 each section in the path for each arc position set to $1. 
  
+
+.. _gui_changecolor_brush:
 
 ChangeColor-Brush
 =================

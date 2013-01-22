@@ -9,7 +9,7 @@ HBox
 
 
     .. seealso::
-        :func:`VBox`
+        :class:`VBox`
 
 
 ----
@@ -300,7 +300,7 @@ VBox
     Description:
         Execute the action when the user dismisses the window. Not executed 
         if the box is not the owner of the window (ie is a part of another 
-        deck or box, :meth:`VBox.intercept` ). Not executed if 
+        deck or box, :meth:`VBox.intercept`). Not executed if 
         the window is dismissed with an :meth:`VBox.unmap` command. 
         For the window to actually close, the command should call unmap 
         on the box. 
@@ -322,7 +322,7 @@ VBox
 
     Description:
         Put the box in a dialog and grabs mouse input until the user 
-        clicks on "Accept" (return 1) or "Cancel" (return 0). 
+        clicks on :guilabel:`Accept` (return 1) or :guilabel:`Cancel` (return 0). 
          
         The box may be dismissed under program control by calling 
         b.unmap(boolean) where the argument to :meth:`VBox.unmap` 
@@ -342,12 +342,12 @@ VBox
 
 
     Description:
-        When the next item is mapped (see :meth:`VBox.intercept` ), its size is fixed at 
+        When the next item is mapped (see :meth:`VBox.intercept`), its size is fixed at 
         start_size in the sense that resizing the box will preserve the vertical 
         size of the item. Also an adjuster item in the form of a narrow 
         horizontal space is placed just below this item 
         and the "fixed" size can be changed by dragging this space. 
-        (also see :meth:`VBox.adjust` ).  When adjusters 
+        (also see :meth:`VBox.adjust`).  When adjusters 
         are used, then the :func:`full_request` method should be called on the top level 
         box which is actually mapped to the screen before that top level box is 
         mapped. If full_request is not called then the box will get confused about 

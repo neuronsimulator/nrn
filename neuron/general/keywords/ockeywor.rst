@@ -13,7 +13,7 @@ HOC Keywords
 **help**
 
          
-        help--invokes the help system 
+    invokes the help system 
          
 
     Syntax:
@@ -24,8 +24,8 @@ HOC Keywords
 
 
     Description:
-        \ :code:`Help word` sends a word to the help system. 
-        The word is looked up in the nrn/lib/helpdict file and if found 
+        :code:`Help word` sends a word to the help system. 
+        The word is looked up in the :file:`nrn/lib/helpdict` file and if found 
         Netscape is sent the appropriate URL to display 
         the help text. If the word is not found, the URL for the table 
         of contents is sent. Netscape must be running for the help system 
@@ -54,18 +54,18 @@ HOC Keywords
 
 
     Description:
-        The \ :code:`return` command will immediately exit from a procedure 
+        The :code:`return` command will immediately exit from a procedure 
         without returning a value. 
          
-        The \ :code:`return expr` command will immediately exit from a function 
+        The :code:`return expr` command will immediately exit from a function 
         which must return a value.  This command must also be the last executable 
         statement of a function.  It is possible for a function to contain more 
-        than one \ :code:`return` command, for instance in a series of \ :code:`if else` 
-        statements; however, not more than one of the \ :code:`return` commands may 
+        than one :code:`return` command, for instance in a series of :code:`if else` 
+        statements; however, not more than one of the :code:`return` commands may 
         return a value at any given time. 
          
-        The \ :code:`return objref` command must be used to return from an 
-        :func:`obfunc` . 
+        The :code:`return objref` command must be used to return from an 
+        :ref:`obfunc`. 
          
 
     Example:
@@ -81,8 +81,8 @@ HOC Keywords
             	} 
             } 
 
-        returns the maximum of two arguments which are read into the function.  Eg. \ :code:`max(3,6)`, where $1 is the 
-        first argument (3) and $2 is the second argument (6).  This use of \ :code:`max` would return the value 6. 
+        returns the maximum of two arguments which are read into the function.  Eg. :code:`max(3,6)`, where $1 is the 
+        first argument (3) and $2 is the second argument (6).  This use of :code:`max` would return the value 6. 
 
     .. warning::
         See restriction of the :ref:`break <keyword_break>` statement. 
@@ -252,7 +252,7 @@ HOC Keywords
 
     Description:
         Conditional statement.  When the *expr* evaluates to a nonzero number 
-        (true) stmt1 is executed.  With the \ :code:`else` form, if the expression 
+        (true) stmt1 is executed.  With the :code:`else` form, if the expression 
         evaluates to zero (false) stm2 is executed. 
          
 
@@ -279,7 +279,7 @@ HOC Keywords
          
 
     .. seealso::
-        :func:`float_epsilon`, :func:`ifsec`
+        :data:`float_epsilon`, :ref:`ifsec <keyword_ifsec>`
 
          
 
@@ -332,7 +332,7 @@ HOC Keywords
             	i += 1 
             } 
 
-        prints the cosines and the sines of the \ :code:`vec` elements up to \ :code:`numelements`, which in this case = 20. 
+        prints the cosines and the sines of the :code:`vec` elements up to :code:`numelements`, which in this case = 20. 
          
 
     .. seealso::
@@ -366,8 +366,8 @@ HOC Keywords
 
 
     Description:
-        Iteration statement.  The \ :code:`for` statement is similar to \ :code:`while` in that it iterates over 
-        a statement.  However, the \ :code:`for` statement is more compact and contains within its parentheses 
+        Iteration statement.  The :code:`for` statement is similar to :code:`while` in that it iterates over 
+        a statement.  However, the :code:`for` statement is more compact and contains within its parentheses 
         the command to advance to the next iteration.  Statements 1 and 3 may be 
         empty. 
          
@@ -386,24 +386,24 @@ HOC Keywords
             for(*var*=*expr1*; *var* <= *expr2*; *var*=*var*+1) stmt 
 
         However, *expr1* and *expr2* are evaluated only once at the 
-        beginning of the \ :code:`for`. 
+        beginning of the :code:`for`. 
          
-        \ :code:`for (var) stmt` 
+        :code:`for (var) stmt` 
          
         Loops over all segments of the currently accessed section.  *var* begins 
         at 0 and ends at 1.  In between *var* is set to the center position of 
         each segment.  Ie.  stmt is executed nseg+2 times. 
          
-        \ :code:`for (var, expr) stmt` 
+        :code:`for (var, expr) stmt` 
          
         If the expression evaluates to a non-zero value, it is exactly equivalent 
         to 
-        \ :code:`for (var) stmt` 
-        If it evaluates to 0 (within :func:`float_epsilon` ) then the iteration does 
-        not include the 0 or 1 points. Thus \ :code:`for(x, 0) { print x }` 
-        is exactly equivalent to \ :code:`for (x) if (x > 0 && x < 1) { print x }` 
+        :code:`for (var) stmt` 
+        If it evaluates to 0 (within :data:`float_epsilon` ) then the iteration does 
+        not include the 0 or 1 points. Thus :code:`for(x, 0) { print x }` 
+        is exactly equivalent to :code:`for (x) if (x > 0 && x < 1) { print x }` 
          
-        The :func:`iterator` form of the for loop executes the statement with a looping 
+        The :ref:`keyword_iterator` form of the for loop executes the statement with a looping 
         construct defined by the user. 
 
     Example:
@@ -436,8 +436,8 @@ HOC Keywords
 
 
     .. seealso::
-        :func:`iterator`
-        :ref:`break <keyword_break>`, :ref:`continue <keyword_continue>`, :ref:`while <keyword_while>`, :func:`forall`, :func:`forsec`
+        :ref:`keyword_iterator`,
+        :ref:`break <keyword_break>`, :ref:`continue <keyword_continue>`, :ref:`while <keyword_while>`, :ref:`forall <keyword_forall>`, :ref:`forsec <keyword_forsec>`
 
          
          
@@ -527,7 +527,7 @@ HOC Keywords
 
     Description:
         *var* is assigned the number input by the user, or the next number in the 
-        standard input, or the file opened with ropen.  \ :code:`read(var)` 
+        standard input, or the file opened with ropen.  :code:`read(var)` 
         returns 0 on 
         end of file and 1 otherwise. 
          
@@ -547,7 +547,7 @@ HOC Keywords
          
 
     .. seealso::
-        :func:`xred`, :func:`ropen`, :func:`fscan`, :func:`File`, :func:`getstr`
+        :func:`xred`, :meth:`File.ropen`, :func:`fscan`, :func:`File`, :func:`getstr`
         
 
          
@@ -596,7 +596,7 @@ HOC Keywords
         redeclared at any time, including within procedures.  Thus arrays may 
         have different lengths in different objects. 
          
-        The :func:`Vector` class for the ivoc interpreter provides convenient and powerful methods for 
+        The :class:`Vector` class for the ivoc interpreter provides convenient and powerful methods for 
         manipulating arrays. 
          
 
@@ -642,26 +642,26 @@ HOC Keywords
          
         This is a reasonably complete editor with many commands.  These commands 
         are listed in 
-        `emacs <http://www.neuron.yale.edu/neuron/static/docs/help/emacs.txt>`_\ .
+        `emacs <http://www.neuron.yale.edu/neuron/static/docs/help/emacs.txt>`_.
         A tutorial is also available at 
-        `emacstut <http://www.neuron.yale.edu/neuron/static/docs/help/emacstut.txt>`_\ .
+        `emacstut <http://www.neuron.yale.edu/neuron/static/docs/help/emacstut.txt>`_.
          
         When 
-        called from the interpreter, the command :kbd:`Control-C` immediately returns to the 
+        called from the interpreter, the command :kbd:`^C` immediately returns to the 
         interpreter and the current buffer is interpreted. 
         Other commands follow: 
 
 
-        ^X^F 
+        :kbd:`^X^F` 
             reads a file into a new buffer. 
 
-        ^X^B 
+        :kbd:`^X^B` 
             changes buffers. 
 
-        ^X^W *filename* 
+        :kbd:`^X^W` *filename* 
             saves (writes) a file under a specific name. 
 
-        ^X^S 
+        :kbd:`^X^S`
             saves a file under the last specified name. 
 
          
@@ -795,8 +795,8 @@ HOC Keywords
             	return x 
             } 
 
-        returns the number of elements which have the value of 7 in the first 40 elements of \ :code:`vec`. \ :code:`i` 
-        and \ :code:`x` are local variables, and their usage here will not affect variables of the same name in 
+        returns the number of elements which have the value of 7 in the first 40 elements of :code:`vec`. :code:`i` 
+        and :code:`x` are local variables, and their usage here will not affect variables of the same name in 
         other functions and procedures of the same program. 
          
 

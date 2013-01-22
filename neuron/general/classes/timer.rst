@@ -15,8 +15,8 @@ Timer
     Description:
         Execute "stmt" at the end of each interval specified by timer.seconds(interval). 
         The timer must be started and can be stopped. 
-        A Timer is used to implement the NEURONMainMenu/Tools/MovieRun in 
-        nrn/lib/hoc/movierun.hoc 
+        A Timer is used to implement the :menuselection:`NEURON Main Menu --> Tools --> MovieRun` in 
+        :file:`nrn/lib/hoc/movierun.hoc`
 
     Example:
 

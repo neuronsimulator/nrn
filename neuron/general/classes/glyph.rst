@@ -225,7 +225,7 @@ Glyph
 
 
     Description:
-        Reads the gif image in the file. All Graph glyph#Graph arguments still work 
+        Reads the gif image in the file. All :class:`Glyph` arguments still work 
         when the glyph contains a gif image. The gif image is drawn first so 
         other drawing specs will appear on top of it. 
 

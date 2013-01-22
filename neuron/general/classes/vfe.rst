@@ -15,7 +15,7 @@ ValueFieldEditor
     Description:
         Takes exactly the same args as :func:`xvalue` or :func:`xpvalue` but is an object 
         which can change some features (default) under program control. 
-        Note that when this object is created, there must be an open :func:`xpanel` . 
+        Note that when this object is created, there must be an open :func:`xpanel`. 
 
 
 ----

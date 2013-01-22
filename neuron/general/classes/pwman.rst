@@ -14,7 +14,7 @@ PWManager
 
 
     Description:
-        A variety of hooks into the Print&FileWindowManager to allow program control 
+        A variety of hooks into the :ref:`pwm` to allow program control 
         of that tool. The implementation of the 
         Window item of the NeuronMainMenu makes 
         heavy use of this class. Note that the first window created is called 
@@ -156,7 +156,7 @@ PWManager
 
 
     Description:
-        Window index of the Print&FileWindowManager window. 
+        Window index of the :ref:`PWM` window. 
 
 
 ----

@@ -49,11 +49,11 @@ Graph
             g.flush()	//Actually draws the plot on the graph in the window. 
 
          
-        The function \ :code:`.line()`, however, only allows the user to plot one function 
-        per \ :code:`for` loop, whereas the function \ :code:`.plot()` can produce several 
-        plots per \ :code:`for` loop and is therefore more effective in comparing plots. 
-        You must use \ :code:`.begin()` and \ :code:`.addvar()` or \ :code:`.addexpr()` in 
-        conjunction with the \ :code:`.plot` function. 
+        The function :code:`.line()`, however, only allows the user to plot one function 
+        per :code:`for` loop, whereas the function :code:`.plot()` can produce several 
+        plots per :code:`for` loop and is therefore more effective in comparing plots. 
+        You must use :code:`.begin()` and :code:`.addvar()` or :code:`.addexpr()` in 
+        conjunction with the :code:`.plot` function. 
          
 
         .. code-block::
@@ -159,71 +159,64 @@ Graph
 
         The *xpos* argument gives the location of the yaxis on the xaxis (default 0). 
 
-        Without the *ntic* argument (or *ntic*=-1), 
+        Without the *ntic* argument (or *ntic*\ =-1), 
             the number of tics will be chosen for you. 
 
         *nminor* is the number 
             of minor tic marks. 
 
-        *shownumbers*=0 will not draw the axis labels. 
+        *shownumbers*\ =0 will not draw the axis labels. 
 
-        *invert*=1 will invert the axes. 
+        *invert*\ =1 will invert the axes. 
 
          
         Note: 
          
         It is easiest to control the size of the axes and the scale of 
         the graph through the graphical user interface.  Normally, when a 
-        new graph is declared (eg. \ :code:`g = new Graph()`), the y axis 
+        new graph is declared (eg. :code:`g = new Graph()`), the y axis 
         ranges from 20-180 and the x axis ranges from 50-250. 
         With the mouse arrow on the graph window, click on the right button 
-        and set the arrow on "View" at the top of the button window 
+        and set the arrow on :guilabel:`View` at the top of the button window 
         column.  A second button 
         window will appear to the right of the first, and from this button window 
         you can select several options.  Two of the most common are: 
 
 
-        1)  view=plot 
-            Size the window to best-fit the plot which it contains. 
+        1)  view=plot
+                Size the window to best-fit the plot which it contains. 
 
         2)  Zoom in/out 
-            Allows you to click on the left mouse button and perform the following 
-            tasks: 
+                Allows you to click on the left mouse button and perform the following 
+                tasks: 
+                
+                move arrow to the right 
+                    scale down the x axis (eg. 50 - 250 becomes 100 - 110) 
 
+                "shift" + move arrow to the right 
+                    view parts of the axis which are to the left of the original window 
 
+                move arrow to the left 
+                    scale up the x axis (eg. 50 - 250 becomes -100 - 500) 
 
-        move arrow to the right 
-            scale down the x axis (eg. 50 - 250 becomes 100 - 110) 
+                "shift" + move arrow to the left 
+                    view parts of the axis which are to the right of the original window 
 
-        "shift" + move arrow to the right 
-            view parts of the axis which are to the left of the original window 
+                move arrow up 
+                    scale down the y axis (eg. 20 - 180 becomes 57.5 - 62) 
 
-        ----- 
+                "shift" + move arrow up 
+                    view parts of the axis which are below the original window 
 
-        move arrow to the left 
-            scale up the x axis (eg. 50 - 250 becomes -100 - 500) 
+                move arrow down 
+                    scale up the y axis (eg. 20 - 180 becomes -10,000 - 5,000) 
 
-        "shift" + move arrow to the left 
-            view parts of the axis which are to the right of the original window 
+                "shift" + move arrow down 
+                    view parts of the axis which are above the original window 
 
-        ----- 
-
-        move arrow up 
-            scale down the y axis (eg. 20 - 180 becomes 57.5 - 62) 
-
-        "shift" + move arrow up 
-            view parts of the axis which are below the original window 
-
-        ----- 
-
-        move arrow down 
-            scale up the y axis (eg. 20 - 180 becomes -10,000 - 5,000) 
-
-        "shift" + move arrow down 
-            view parts of the axis which are above the original window 
 
         You can also use the size command to determine the size of what you view in the 
-        graph window.  Eg. \ :code:`g.size(-1,1,-1,1)` makes both axes go from -1 to 1. 
+        graph window.  Eg. :code:`g.size(-1,1,-1,1)` makes both axes go from -1 to 1. 
 
          
 
@@ -247,7 +240,7 @@ Graph
 
 
     Description:
-        Add the variable to the list of items graphed when \ :code:`g.plot(x)` is called. 
+        Add the variable to the list of items graphed when :code:`g.plot(x)` is called. 
         The address of the variable is computed so this is fast. The current 
         color and brush is used if the optional arguments are not present. The name 
         of the variable is 
@@ -278,13 +271,13 @@ Graph
 
     Description:
         Add an expression (eg. sin(x), cos(x), exp(x)) to the list of items graphed when 
-        \ :code:`g.plot(x)` is called. 
+        :code:`g.plot(x)` is called. 
          
         The current 
         color and brush is used if the optional arguments are not present. A label 
         is also added to the graph that indicates the name of the variable. 
-        The expression is interpreted every time \ :code:`g.plot(x)` is 
-        called so it is more general than :func:`addvar` , but slower. 
+        The expression is interpreted every time :code:`g.plot(x)` is 
+        called so it is more general than :func:`addvar`, but slower. 
          
         If the optional label is present that string will appear as the label instead 
         of the expr string. If the optional object is present the expr will be 
@@ -332,7 +325,7 @@ Graph
 
 
     Description:
-        Adds the :func:`RangeVarPlot` to the list of items to be plotted on 
+        Adds the :class:`RangeVarPlot` to the list of items to be plotted on 
         :meth:`Graph.flush` 
 
          
@@ -349,7 +342,7 @@ Graph
 
 
     Description:
-        Initialize the list of graph variables so the next \ :code:`g.plot(x)` 
+        Initialize the list of graph variables so the next :code:`g.plot(x)` 
         is the first point of each graph line. 
 
     Example:
@@ -393,7 +386,7 @@ Graph
 
     Description:
         The abscissa value for each item in the list of graph lines. Usually 
-        used in a \ :code:`for` loop. 
+        used in a :code:`for` loop. 
 
     Example:
 
@@ -439,10 +432,10 @@ Graph
     Description:
         Use this expression for plotting two-dimensional functions such as (x(*t*), y(*t*)), 
         where the x and y coordinates are separately dependent on a single variable *t*. 
-        This expression calculates the x value each time \ :code:`.plot` is called, while functions 
-        declared by \ :code:`.addexpr` will calculate the y value when \ :code:`.plot` is called. 
+        This expression calculates the x value each time :code:`.plot` is called, while functions 
+        declared by :code:`.addexpr` will calculate the y value when :code:`.plot` is called. 
         This can be used for phase plane plots, etc. Note that the normal argument to 
-        \ :code:`.plot` is ignored when such an expression is invoked. When \ :code:`usepointer` 
+        :code:`.plot` is ignored when such an expression is invoked. When :code:`usepointer` 
         is 1 the expression must be a variable name and its address is used. 
 
     Example:
@@ -516,13 +509,13 @@ Graph
 
     Description:
         Flushes only the :func:`plot` (x) points since the last :func:`flush` 
-        (or \ :code:`fastflush`). 
+        (or :code:`fastflush`). 
         This is useful for seeing the progress of :func:`addvar` plots during long 
         computations in which the graphlines contain many thousands of points. 
-        Make sure you do a normal \ :code:`.flush` when the lines are complete since 
+        Make sure you do a normal :code:`.flush` when the lines are complete since 
         fastflush does not notify the system of the true size of the lines. 
         In such cases, zooming, translation, and crosshairs do not always 
-        work properly till after the \ :code:`flush()` command has been given. 
+        work properly till after the :code:`flush()` command has been given. 
         (Note, this is most useful for time plots). 
          
 
@@ -591,7 +584,7 @@ Graph
         the string is printed as a label and when keep lines 
         is selected each line is labeled with the value of the variable. 
          
-        When graphs are printed to a file in :meth:`PrintToFile.Ascii` mode, 
+        When graphs are printed to a file in :ref:`printtofile_ascii` mode, 
         the lines are labeled 
         with these labels. If every line has a label and each line has the same size, 
         then the file is printed in matrix form. 
@@ -614,24 +607,24 @@ Graph
     Description:
 
 
-        \ :code:`.vector(n, &x[0], &y[0])` 
+        :code:`.vector(n, &x[0], &y[0])` 
             Rudimentary graphing of a y-vector vs. a fixed x-vector. The y-vector 
-            is reread on each \ :code:`.flush()` (x-vector is not reread). Cannot save 
+            is reread on each :code:`.flush()` (x-vector is not reread). Cannot save 
             and cannot keep lines. 
              
             Notes: 
              
             These vectors are assumed to be doubles and not vectors from 
             the Vector class.  The Vector class has its own functions 
-            :meth:`Vector.plot` , :meth:`Vector.line` , :meth:`Vector.mark` 
+            :meth:`Vector.plot`, :meth:`Vector.line`, :meth:`Vector.mark` 
             for graphing vectors constructed in that class. 
              
             A segmentation violation will result if 
             n is greater than the vector size. 
              
 
-        \ :code:`.vector("namey")` 
-            equivalent to \ :code:`.vector(n, ..., &namey[0])` above with the advantage 
+        :code:`.vector("namey")` 
+            equivalent to :code:`.vector(n, ..., &namey[0])` above with the advantage 
             that it is saved in a session (because the symbol name is known). 
             It is simpler in that the size n is obtained from the symbol but 
             the plot is vs. the index of the vector. Not implemented. 
@@ -651,9 +644,9 @@ Graph
 
 
     Description:
-        Copy a graph line into the :func:`Vector` s xvec and yvec. Those vectors are 
+        Copy a graph line into the :class:`Vector`\ 's xvec and yvec. Those vectors are 
         resized to the number of points in the line. Also, if the line has a 
-        label, it is copied to the vector as well (see :meth:`Vector.label` ). 
+        label, it is copied to the vector as well (see :meth:`Vector.label`). 
         The index of the line is returned. To re-get the line at a later time 
         (assuming no line has been inserted into the graphlist earlier than 
         its index value --- new lines are generally appended to the list but 
@@ -766,7 +759,7 @@ Graph
             Returns the xmin, xmax, ymin, ymax values of all marks and lines of more than two 
             points in the graph in dbl[0],..., dbl[3] respectively. This allows 
             convenient computation of a view size which will display everything on the 
-            graph. See :func:`View_equal_Plot` . In the absence of any graphics, it gives 
+            graph. See :ref:`gui_view_equal_plot`. In the absence of any graphics, it gives 
             the size as in the .size(1-4) prototype. 
 
 
@@ -792,14 +785,14 @@ Graph
     Description:
 
 
-        \ :code:`.label(x, y, "label")` 
+        :code:`.label(x, y, "label")` 
             Draw a label at indicated position with current color. 
 
-        \ :code:`.label("label")` 
+        :code:`.label("label")` 
             Add a label one line below the previous label 
 
-        \ :code:`.label(x, y)` 
-            Next \ :code:`label("string")` will be printed at this location 
+        :code:`.label(x, y)` 
+            Next :code:`label("string")` will be printed at this location 
 
          
         The many arg form is used by sessions to completely specify an individual 
@@ -930,7 +923,7 @@ Graph
 
 
 
-        \ :code:`.color(index, "colorname")` 
+        :code:`.color(index, "colorname")` 
             Install a color in the Color Palette to be accessed with that index. 
             The possible indices are 0-100. 
 
@@ -955,19 +948,19 @@ Graph
     Description:
 
 
-        \ :code:`.brush(index)` 
+        :code:`.brush(index)` 
             Set the default brush. 0 is the thinnest line possible, 1-4 are 
             thickness in pixel. Higher indices cycle through these line 
             thicknesses with different brush patterns. 
 
-        \ :code:`.brush(index, pattern, width)` 
+        :code:`.brush(index, pattern, width)` 
             Install a brush in the Brush Palette to be accessed with the index. 
             The width is in pixel coords (< 1000). The pattern is a 31 bit pattern 
             of 1's and 0's which is used to make dash patterns. Fractional widths 
             work with postscript but not idraw. Axes are drawn with the 
-            nrn.defaults property \ :code:`*default_brush: 0.0` 
+            nrn.defaults property :code:`*default_brush: 0.0` 
 
-        The user may also use the :func:`ChangeColor`-Brush#Graph button in the graphical user interface, which 
+        The user may also use the :ref:`gui_changecolor_brush` button in the graphical user interface, which 
         is called by placing the mouse arrow in the graph window and pressing the right button. 
 
          
@@ -1040,16 +1033,16 @@ Graph
 
 
     Description:
-        State that the next \ :code:`g.line(x)` 
+        State that the next :code:`g.line(x)` 
         is the first point of the next line to be graphed. 
-        This is a less general command than \ :code:`.begin()` which prepares a graph for 
-        the \ :code:`.plot()` command. 
+        This is a less general command than :code:`.begin()` which prepares a graph for 
+        the :code:`.plot()` command. 
         The optional label argument labels the line. 
 
     Example:
-        Notice that the argument to \ :code:`g.line()` is the expression sin(x) 
-        itself, whereas if you were using the \ :code:`.plot()` command, the arguments 
-        would have to be specified before the \ :code:`for` loop using \ :code:`.addexpr()` 
+        Notice that the argument to :code:`g.line()` is the expression sin(x) 
+        itself, whereas if you were using the :code:`.plot()` command, the arguments 
+        would have to be specified before the :code:`for` loop using :code:`.addexpr()` 
         commands. The addexpr/begin/plot method of plotting is preferred since it 
         is capable of simultaneously plotting multiple lines. 
 
@@ -1089,13 +1082,13 @@ Graph
 
     Description:
         Draw a line from the previous point to this point. This command is normally 
-        used inside of a \ :code:`for` loop.  It is analogous to \ :code:`.plot()` and the commands which 
-        go along with it.  In the case of \ :code:`.line()` however, all arguments are given in 
+        used inside of a :code:`for` loop.  It is analogous to :code:`.plot()` and the commands which 
+        go along with it.  In the case of :code:`.line()` however, all arguments are given in 
         the line command itself.  Therefore, the line command only plots one line at a time, whereas 
-        the \ :code:`.plot*()` command can plot several lines using the same for loop on the same graph. 
+        the :code:`.plot*()` command can plot several lines using the same for loop on the same graph. 
          
         This command takes arguments for both x and y values, so it can serve the same purpose of 
-        the \ :code:`.plot` command in conjunction with an \ :code:`.addexpr()` command and an \ :code:`.xexpr()` 
+        the :code:`.plot` command in conjunction with an :code:`.addexpr()` command and an :code:`.xexpr()` 
         command. 
 
     Example:
@@ -1114,7 +1107,7 @@ Graph
             	 
 
          
-        graphs a circle of radius=1, just as would the following code using \ :code:`g.plot()`: 
+        graphs a circle of radius=1, just as would the following code using :code:`g.plot()`: 
          
 
         .. code-block::
@@ -1134,7 +1127,7 @@ Graph
              
 
          
-        Note that the arguments to \ :code:`g.line` are doubles, and not chars as they are in \ :code:`g.plot()`. 
+        Note that the arguments to :code:`g.line` are doubles, and not chars as they are in :code:`g.plot()`. 
          
          
 
@@ -1160,7 +1153,7 @@ Graph
     Description:
         Make a mark centered at the indicated position which does not 
         change size when window is zoomed or resized. The style is a single 
-        character \ :code:`+, o, s, t, O, S, T, |, - ` where \ :code:`o,t,s` stand for circle, triangle, 
+        character :code:`+, o, s, t, O, S, T, |, -` where :code:`o,t,s` stand for circle, triangle, 
         square and capitalized means filled. Default size is 12 points. 
         For the style, an integer index, 0-8, relative to the above list may 
         also be used. 
@@ -1186,30 +1179,30 @@ Graph
         While the crosshair is visible (left mouse button pressed) one 
         can type any key and the procedure will be executed with 
         three arguments added: 
-        \ :code:`procedure_name(x, y, c)` 
+        :code:`procedure_name(x, y, c)` 
         where x and y are the coordinates of the crosshair (in model 
         coordinates) and c is the ascii code for the key pressed. 
          
         The procedure will be executed in the context of the object 
-        where \ :code:`crosshair_action` was executed. 
+        where :code:`crosshair_action` was executed. 
         When the optional vectorflag argument is 1, then, just prior 
         to each call of the *procedure_name* due to a keypress, 
         two temporary *objectref*'s are created and assigned to a 
-        new \ :code:`Vector()` and the line coordinate data is copied to those Vectors. 
+        new :code:`Vector()` and the line coordinate data is copied to those Vectors. 
         With this form the call to the procedure has two args added: 
-        \ :code:`procedure_name(i, c, $o3, $o4)` 
-        where \ :code:`i` is the index of the crosshair into the Vector. 
+        :code:`procedure_name(i, c, $o3, $o4)` 
+        where :code:`i` is the index of the crosshair into the Vector. 
          
         If you wish the Vector data to persist then you can assign to 
-        another objectvar before returning from the \ :code:`procedure_name`. 
+        another objectvar before returning from the :code:`procedure_name`. 
         Note that one can copy any line to a Vector with this method whereas 
-        the interpreter controlled \ :code:`Graph.dump("expr", y_objectref)` is 
-        limited to the current graphline of an \ :code:`addvar` or \ :code:`addexpr`. 
+        the interpreter controlled :code:`Graph.dump("expr", y_objectref)` is 
+        limited to the current graphline of an :code:`addvar` or :code:`addexpr`. 
          
         With an empty string arg, the existing action is removed. 
 
     .. seealso::
-        :func:`PickVector`, :func:`menu_tool`
+        :ref:`gui_PickVector`, :func:`menu_tool`
 
          
 
@@ -1226,8 +1219,8 @@ Graph
 
     Description:
         Returns number of views into this scene. (stdrun.hoc removes 
-        scenes from the \ :code:`flush_list` and \ :code:`graphList[]` when this goes to 
-        0. If no other \ :code:`objectvar` points to the scene, it will be 
+        scenes from the :code:`flush_list` and :code:`graphList[]` when this goes to 
+        0. If no other :code:`objectvar` points to the scene, it will be 
         freed.) 
 
          
@@ -1245,7 +1238,7 @@ Graph
 
     Description:
         Dismiss all windows that are a direct view into this scene. 
-        (does not unmap boxes containing scenes.) \ :code:`.unmap` is called 
+        (does not unmap boxes containing scenes.) :code:`.unmap` is called 
         automatically when no hoc object variable references the Graph. 
 
          
@@ -1556,7 +1549,7 @@ Graph
 
 
     Description:
-        Adds all the :meth:`Graph.addvar` lines to a list managed by :func:`CVode` which 
+        Adds all the :meth:`Graph.addvar` lines to a list managed by :class:`CVode` which 
         allows the local variable time step method to properly graph the lines. 
         See the implementation in share/lib/hoc/stdrun.hoc for usage. 
 

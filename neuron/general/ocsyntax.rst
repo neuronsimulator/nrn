@@ -44,27 +44,26 @@ Options:
     left associative except for assignment operators which are right associative. 
 
 
-    \ :code:`(e)` 
+    :code:`(e)` 
         grouping 
 
-    \ :code:`e^e` 
+    :code:`e^e` 
         exponentiation 
 
-    \ :code:`-e` 
+    :code:`-e` 
         negation 
 
-    \ :code:`e*e  e/e  e%e` 
+    :code:`e*e  e/e  e%e` 
         multiplication, division, modulus 
 
-    \ :code:`e+e  e-e` 
+    :code:`e+e  e-e` 
         addition, subtraction 
 
-    \ :code:`e==e  e!=e  e<e  e<=e  e>e  e>=e` 
+    :code:`e==e  e!=e  e<e  e<=e  e>e  e>=e` 
         logical equal, unequal, less than, less than or equal, greater than, 
         greater than or equal. These expressions have the numerical 
         value 1 (true) or 0 (false). The expression is considered true if it is 
-        within \ :code:`float_epsilon` of being mathematically exact. See 
-        :func:`float_epsilon` . 
+        within :data:`float_epsilon` of being mathematically exact.
          
         Special logical expressions of the form objref1 == objref2 (and obj != obj) 
         are also allowed and return 1 (0) if the object references label the same 
@@ -76,23 +75,23 @@ Options:
          
          
 
-    \ :code:`e&&e` 
+    :code:`e&&e` 
         Logical and. Both expressions 
         are always evaluated. A subexpression is considered false if it is within 
-        \ :code:`float_epsilon` of 0 and true otherwise. If the entire expression is true 
+        :data:`float_epsilon` of 0 and true otherwise. If the entire expression is true 
         its value is 1. 
 
-    \ :code:`e||e` 
+    :code:`e||e` 
         Logical or. Both expressions are always evaluated. 
         A subexpression is considered false if it is within 
         :data:`float_epsilon` of 0 and true otherwise. If the entire expression is true 
         its value is 1. 
 
-    \ :code:`v=e  v+=e  v-=e  v*=e  v/=e` 
-        assignment. others are equivalent to \ :code:`v = (v + e)`, 
-        \ :code:`v = (v - e)`, 
-        \ :code:`v = (v * e)`, 
-        \ :code:`v = (v / e)`, respectively. 
+    :code:`v=e  v+=e  v-=e  v*=e  v/=e` 
+        assignment. others are equivalent to :code:`v = (v + e)`, 
+        :code:`v = (v - e)`, 
+        :code:`v = (v * e)`, 
+        :code:`v = (v / e)`, respectively. 
 
      
 
@@ -142,8 +141,8 @@ Example:
         	i = i+1				//simply go to the next element of vec 
         } 
 
-    Statements exist between the braces following the \ :code:`if` and \ :code:`else` commands. 
-    The parentheses after the \ :code:`if` command contain an expression. 
+    Statements exist between the braces following the :code:`if` and :code:`else` commands. 
+    The parentheses after the :code:`if` command contain an expression. 
      
 
          
@@ -155,7 +154,7 @@ Example:
 proc
 ~~~~
 Syntax:
-    :code:`proc name() stmt`
+    :samp:`proc {name}() stmt`
 
 
 
@@ -179,13 +178,15 @@ Example:
     prints the square of 5. 
      
     Procedures can also be called within other procedures. 
-    The code which produces the interactive examples for the :func:`Random` class contains procedures 
+    The code which produces the interactive examples for the :class:`Random` class contains procedures 
     for both creating the buttons which allow you to select parameters as well as for creating 
     the histograms which appear on the screen. 
          
 
          
 .. index::  func
+
+.. _func:
 
 func
 ~~~~
@@ -212,7 +213,7 @@ Example:
          } 
          tan(PI/8) 
 
-    creates a function \ :code:`tan()` which takes one argument (floating point 
+    creates a function :code:`tan()` which takes one argument (floating point 
     or whole number), and contains one 
     statement. 
      
@@ -220,6 +221,8 @@ Example:
          
 
 .. index::  obfunc
+
+.. _obfunc:
 
 obfunc
 ~~~~~~
@@ -248,7 +251,7 @@ Example:
 
 .. index::  iterator
 
-
+.. _keyword_iterator:
 
 iterator
 ~~~~~~~~
@@ -291,7 +294,7 @@ Example:
 
     will print the values 1, 2, 4, 7, -25 
      
-    The body of the \ :code:`for name(..) statement` is executed in the same 
+    The body of the :code:`for name(..) statement` is executed in the same 
     context as a normal for statement. The name is executed in the same 
     context as a normal procedure but should use only variables local to the 
     iterator. 
@@ -311,12 +314,12 @@ Arguments
 
 Description:
     Arguments to functions and procedures are retrieved positionally. 
-    \ :code:`$1, $2, $3` refer to the first, second, and third scalar arguments 
+    :code:`$1, $2, $3` refer to the first, second, and third scalar arguments 
     respectively. 
      
-    If "\ :code:`i`" is declared as a local variable, \ :code:`$i` refers 
-    to the scalar argument in the position given by the value of \ :code:`i`. 
-    The value of \ :code:`i` must be in the 
+    If ":code:`i`" is declared as a local variable, :code:`$i` refers 
+    to the scalar argument in the position given by the value of :code:`i`. 
+    The value of :code:`i` must be in the 
     range {1...numarg()}. 
      
     The normal idiom is 
@@ -327,16 +330,16 @@ Description:
     If the calling statement has a '&' 
     prepended to the variable then it is passed by reference and must 
     be retrieved with the 
-    syntax \ :code:`$&1, $&2, ..., $&i`. If the variable passed by reference 
-    is a one dimensional array then \ :code:`$&1` refers to the first (0th) element 
-    and index i is denoted \ :code:`$&1[i]`. Warning, NO array bounds checking is 
+    syntax :code:`$&1, $&2, ..., $&i`. If the variable passed by reference 
+    is a one dimensional array then :code:`$&1` refers to the first (0th) element 
+    and index i is denoted :code:`$&1[i]`. Warning, NO array bounds checking is 
     done and the array is treated as being one-dimensional. A scalar or 
     array reference may be passed to another procedure with 
-    \ :code:`&$&1`. To save a scalar reference use the :class:`Pointer` class. 
+    :code:`&$&1`. To save a scalar reference use the :class:`Pointer` class. 
      
-    Retrieval of strdef arguments uses the syntax: \ :code:`$s1, $s2, ..., $si`. 
-    Retrieval of objref arguments uses the syntax: \ :code:`$o1, $o2, ..., $oi`. 
-    Arguments of type :ref:`strdef <keyword_strdef>` and \ :code:`objref` use call by reference so the calling 
+    Retrieval of strdef arguments uses the syntax: :code:`$s1, $s2, ..., $si`. 
+    Retrieval of objref arguments uses the syntax: :code:`$o1, $o2, ..., $oi`. 
+    Arguments of type :ref:`strdef <keyword_strdef>` and :code:`objref` use call by reference so the calling 
     value may be changed. 
 
 Example:
@@ -349,7 +352,7 @@ Example:
         } 
 
     defines a function which multiplies two arguments. 
-    Therefore \ :code:`mult(4,5)` will return the value 20. 
+    Therefore :code:`mult(4,5)` will return the value 20. 
 
     .. code-block::
         none
@@ -365,8 +368,8 @@ Example:
     positions 1 and 2, and finally prints the pointer reference to an 
     object in position 4. 
      
-    For a string '\ :code:`s`' which is defined as \ :code:`s = "hello"`, and an 
-    objref '\ :code:`r`', \ :code:`pr(3,5,s,r)` will return 
+    For a string ':code:`s`' which is defined as :code:`s = "hello"`, and an 
+    objref ':code:`r`', :code:`pr(3,5,s,r)` will return 
 
     .. code-block::
         none
@@ -375,10 +378,10 @@ Example:
         15 
         Graph[0]   
 
-    assuming \ :code:`r` refers to the first graph. 
+    assuming :code:`r` refers to the first graph. 
 
 .. seealso::
-    :class:`func`, :ref:`proc`, :ref:`objref`, :ref:`strdef <keyword_strdef>`, :class:`Pointer`, :func:`numarg`, :func:`argtype`
+    :ref:`func`, :ref:`proc`, :ref:`objref`, :ref:`strdef <keyword_strdef>`, :class:`Pointer`, :func:`numarg`, :func:`argtype`
     
 
      

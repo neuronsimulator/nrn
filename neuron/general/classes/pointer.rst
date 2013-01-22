@@ -75,10 +75,10 @@ Pointer
         Sets the value of the pointer variable to val. If  prt was constructed 
         with a second arg then the execution depends on its form. If the 
         second arg string contains one or more $1 tokens, then the tokens 
-        are replaced by hoc_ac_, hoc_ac_ is set to the val and the resulting 
+        are replaced by :data:`hoc_ac_`, :data:`hoc_ac_` is set to the val and the resulting 
         statement is executed. Otherwise the second arg string is assumed to 
         be a variable name and a statement of the form 
-        variablename = hoc_ac_ is executed. 
+        variablename = :data:`hoc_ac_` is executed. 
         Note that the compiling of these statements takes place just once when 
         the Pointer is constructed. Thus ptr.assign(val) is marginally 
         faster than execute("stmt with val"). 
