@@ -14,6 +14,7 @@
 #include	"nrnmpi.h"
 #include	"multisplit.h"
 #include "spmatrix.h"
+#include "nonvintblock.h"
 
 #if CVODE
 extern int cvode_active_;
@@ -550,6 +551,7 @@ has taken effect
 void* setup_tree_matrix(NrnThread* _nt){
 	nrn_rhs(_nt);
 	nrn_lhs(_nt);
+	nrn_nonvint_block_fixed_step_vmatrix(_nt->_actual_d, _nt->_actual_rhs, _nt->id);
 	return (void*)0;
 }
 
@@ -1656,6 +1658,7 @@ hoc_execerror(memb_func[i].sym->name, "is not thread safe");
 	nrn_update_ps2nt();
 	++structure_change_cnt;
 	long_difus_solve(3, nrn_threads);
+	nrn_nonvint_block_setup();
 	diam_changed = 1;
 }
 

@@ -7,6 +7,8 @@
 #include "section.h"
 #include "membfunc.h"
 #include "multisplit.h"
+#define nrnoc_fadvance_c
+#include "nonvintblock.h"
 
 /*
  after an fadvance from t-dt to t, v is defined at t
@@ -668,6 +670,7 @@ hoc_warning("errno set during calculation of states", (char*)0);
 		}
 	}
 	long_difus_solve(0, _nt); /* if any longitudinal diffusion */
+	nrn_nonvint_block_fixed_step_solve(_nt->id);
 #endif
 }
 
@@ -784,6 +787,7 @@ void nrn_finitialize(int setv, double v) {
 #if MULTICORE
 	for (i=0; i < nrn_nthread; ++i) {
 		NrnThread* nt = nrn_threads + i;
+		nrn_nonvint_block_init(nt->id);
 		NrnThreadMembList* tml;
 		for (tml = nt->tml; tml; tml = tml->next) {
 			Pfri s = memb_func[tml->index].initialize;

@@ -67,9 +67,11 @@ public:
 	STEList* ste_list_;
 	double** pv_;
 	double** pvdot_;
-	int nvoffset_;
-	int nvsize_;
-	int neq_v_; //for daspk
+	int nvoffset_; // beginning of this threads states
+	int nvsize_; // total number of states for this thread
+	int neq_v_; //for daspk, number of voltage states for this thread
+	int nonvint_offset_; // synonym for neq_v_. Beginning of this threads nonvint variables.
+	int nonvint_extra_offset_; // extra states (probably Python). Not scattered or gathered.
 	PlayRecList* record_;
 	PlayRecList* play_;
 };
