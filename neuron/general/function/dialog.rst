@@ -1,18 +1,13 @@
-.. _dialog:
+.. _dialog_doc:
 
-dialog
-------
-
-
-
-.. function:: dialogs
-
+Dialog Windows
+--------------
          
-        The following dialogs pop up at the center of the screen and block everything 
-        until dealt with. 
+The following dialogs pop up at the center of the screen and block everything 
+until dealt with. 
 
-    .. seealso::
-        :meth:`VBox.SymChooser`, :func:`dialog`
+.. seealso::
+    :class:`SymChooser`, :meth:`VBox.dialog`
 
 
 ----

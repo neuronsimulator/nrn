@@ -1,7 +1,7 @@
-.. _sscanf:
+.. _sscanf_doc:
 
-sscanf
-------
+sscanf function
+---------------
 
 
 

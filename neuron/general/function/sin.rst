@@ -181,7 +181,7 @@ Diagnostics:
 
 .. function:: erfc
 
-        returns 1.0 - \ :code:`erf(z)` but on sun machines computed by other methods 
+        returns :code:`1.0 - erf(z)` but on sun machines computed by other methods 
         that avoid cancellation for large z. 
          
          

@@ -1,4 +1,4 @@
-.. _printf:
+.. _printf_doc:
 
 IO
 --

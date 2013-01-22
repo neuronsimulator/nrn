@@ -1,12 +1,12 @@
 .. _panel:
 
          
-button-menu-panel
+Button Menu Panel
 -----------------
 
-        The following are implemented as hoc functions. They are used to create 
-        panels of buttons, menus, and field editors. 
-         
+The following are implemented as hoc functions. They are used to create 
+panels of buttons, menus, and field editors. 
+ 
 
 ----
 
@@ -33,24 +33,24 @@ button-menu-panel
          
 
 
-        \ :code:`xpanel("name")` 
+        :code:`xpanel("name")` 
 
-        \ :code:`xpanel("name", [0-1])` 
+        :code:`xpanel("name", [0-1])` 
             Title of a new panel. Every 
-            button, menu, and value between this and a closing \ :code:`xpanel()` command 
+            button, menu, and value between this and a closing :code:`xpanel()` command 
             with no arguments (or placement args) belongs to this panel. 
             If the form is used with a second argument equal to 1, then 
             the panel is laid out horizontally. Otherwise the default is vertically. 
 
-        \ :code:`xpanel()` 
+        :code:`xpanel()` 
 
-        \ :code:`xpanel(x, y)` 
+        :code:`xpanel(x, y)` 
             done constructing the panel. so map it to the screen with position 
             optionally specified. 
 
-        \ :code:`xpanel(slider)` 
+        :code:`xpanel(slider)` 
 
-        \ :code:`xpanel(slider, x, y)` 
+        :code:`xpanel(slider, x, y)` 
             as above but if the first arg is a number, then the value determines 
             whether the panel will be inside a scrollbox. Scroll = 0 means a scrollbox 
             will NOT be used. Scroll = 1 means the panel will be inside a scrollbox. 
@@ -78,11 +78,11 @@ button-menu-panel
     Description:
 
 
-        \ :code:`xbutton("command")` 
+        :code:`xbutton("command")` 
             new button with command to execute when pressed. The label 
             on the button is "*command*". 
 
-        \ :code:`xbutton("prompt", "command")` 
+        :code:`xbutton("prompt", "command")` 
             the label ont the button is "*prompt*", the action 
             to execute is "*command*". 
 
@@ -101,7 +101,7 @@ button-menu-panel
 
 
     Description:
-        like xbutton, but when pressed var is set to 0 or 1 so that it matches the 
+        like :func:`xbutton`, but when pressed var is set to 0 or 1 so that it matches the 
         telltale state of the button. If the var is set by another way the 
         telltale state is updated to reflect the correct value. 
 
@@ -119,7 +119,7 @@ button-menu-panel
 
 
     Description:
-        like xstatebutton, but checkbox appearance. 
+        like :func:`xstatebutton`, but checkbox appearance. 
 
          
 
@@ -137,7 +137,7 @@ button-menu-panel
 
 
     Description:
-        Like an \ :code:`xbutton` but highlights the most recently selected 
+        Like an :code:`xbutton` but highlights the most recently selected 
         button of a contiguous group (like a car radio, mutually exclusive 
         selection). 
         If the third argument is 1, then the button will be selected when the 
@@ -193,14 +193,14 @@ button-menu-panel
     Description:
 
 
-        \ :code:`xmenu("title")` 
+        :code:`xmenu("title")` 
             create a button in the panel with label "title" which, when 
             pressed, pops up a menu containing buttons and other menus. Every 
-            \ :code:`xbutton` and \ :code:`xmenu` command between this and the closing \ :code:`xmenu()` 
+            :code:`xbutton` and :code:`xmenu` command between this and the closing :code:`xmenu()` 
             command with no arguments becomes the menu. 
             Don't put values into menus. 
 
-        \ :code:`xmenu()` 
+        :code:`xmenu()` 
             done defining the menu. Menus can be nested as in 
 
             .. code-block::
@@ -212,7 +212,7 @@ button-menu-panel
                 	xmenu() 
 
 
-        \ :code:`xmenu("title", 1)` 
+        :code:`xmenu("title", 1)` 
             adds the menu to the menubar. Note that a top level menu with no 
             second argument starts a new menubar. Normally these menubars have only 
             one top level item. 
@@ -243,7 +243,7 @@ button-menu-panel
                 xpanel() 
 
 
-        \ :code:`xmenu("title", "stmt")` and \ :code:`xmenu("title", "stmt", 1)` 
+        :code:`xmenu("title", "stmt")` and :code:`xmenu("title", "stmt", 1)` 
             Dynamic menu added as item in panel or menu or (when third argument 
             is 1) to a menubar. An example of the first type is the 
             NEURONMainMenu/File/RecentDir and an example of the last type is the 
@@ -338,10 +338,10 @@ button-menu-panel
     Description:
 
 
-        \ :code:`xvalue("variable")` 
+        :code:`xvalue("variable")` 
             create field editor for variable 
 
-        \ :code:`xvalue("prompt", "variable" [, boolean_deflt, "action" [, boolean_canrun, boolean_usepointer]])` 
+        :code:`xvalue("prompt", "variable" [, boolean_deflt, "action" [, boolean_canrun, boolean_usepointer]])` 
             create field editor for variable with the button labeled with "*prompt*". 
             If *boolean_deflt* == 1 then add a checkbox which is checked when the 
             value of the field editor is different that when the editor was 
@@ -355,8 +355,8 @@ button-menu-panel
             name won't be parsed within the context of the object but at the 
             top-level context. 
 
-        \ :code:`xvalue("prompt", "variable", 2)` 
-            a field editor that keeps getting updated every 10th \ :code:`doNotify()`. 
+        :code:`xvalue("prompt", "variable", 2)` 
+            a field editor that keeps getting updated every 10th :code:`doNotify()`. 
 
         The domain of values that can be entered by the user into a field editor 
         may be limited to the domain specified by the 
@@ -403,7 +403,7 @@ button-menu-panel
         like xvalue but cannot be changed by the user except under 
         program control and there can be no action associated with it. 
         Note: this is not implemented. For now, try to do the same thing 
-        with \ :code:`xvarlabel()`. 
+        with :code:`xvarlabel()`. 
 
          
 
