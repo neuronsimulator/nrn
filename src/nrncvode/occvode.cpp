@@ -570,7 +570,7 @@ int Cvode::solvex_thread(double* b, double* y, NrnThread* nt){
 	gather_ydot(b, nt->id);
 //printf("\texit b\n");
 //for (i=0; i < neq_; ++i) { printf("\t\t%d %g\n", i, b[i]);}
-	nrn_nonvint_block_ode_solve(b, y, nt->id);
+	nrn_nonvint_block_ode_solve(z.nvsize_, b, y, nt->id);
 	return 0;
 }
 	
@@ -644,9 +644,10 @@ hoc_warning("errno set during ode jacobian solve", (char*)0);
 }
 
 void Cvode::fun_thread(double tt, double* y, double* ydot, NrnThread* nt){
+	CvodeThreadData& z = CTD(nt->id);
 	fun_thread_transfer_part1(tt, y, nt);
 	fun_thread_transfer_part2(ydot, nt);
-	nrn_nonvint_block_ode_fun(y, ydot, nt->id);
+	nrn_nonvint_block_ode_fun(z.nvsize_, y, ydot, nt->id);
 }
 
 void Cvode::fun_thread_transfer_part1(double tt, double* y, NrnThread* nt){

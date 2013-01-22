@@ -28,39 +28,39 @@ The other uses can merely return 0.
 #define nonvintblock_extern extern
 #endif
 
-nonvintblock_extern int (*nrn_nonvint_block)(int method, double* pd1, double* pd2, int tid);
+nonvintblock_extern int (*nrn_nonvint_block)(int method, int length, double* pd1, double* pd2, int tid);
 
-#define nonvint_block(method, pd1, pd2, tid) \
-  nrn_nonvint_block ? (*nrn_nonvint_block)(method, pd1, pd2, tid) : 0
+#define nonvint_block(method, size, pd1, pd2, tid) \
+  nrn_nonvint_block ? (*nrn_nonvint_block)(method, size, pd1, pd2, tid) : 0
 
 /* called near end of nrnoc/treeset.c:v_setup_vectors after structure_change_cnt is incremented. */
-#define nrn_nonvint_block_setup() nonvint_block(0, 0, 0, 0)
+#define nrn_nonvint_block_setup() nonvint_block(0, 0, 0, 0, 0)
 
 /* called in nrnoc/fadvance.c:nrn_finitialize before mod file INITIAL blocks */
-#define nrn_nonvint_block_init(d, rhs, tid) nonvint_block(1, d, rhs, tid)
+#define nrn_nonvint_block_init(tid) nonvint_block(1, 0, 0, 0, tid)
 
 /* called at end of nrnoc/treeset.c:setup_tree_matrix */
-#define nrn_nonvint_block_fixed_step_vmatrix(tid) nonvint_block(2, 0, 0, tid)
+#define nrn_nonvint_block_fixed_step_vmatrix(size, d, rhs, tid) nonvint_block(2, size, d, rhs, tid)
   /*if any ionic membrane currents are generated, they increment the
     NrnThread._actual_rhs and di/dv increments _actual_d */
 
 /* called at end of nrnoc/fadvance.c:nonvint */
-#define nrn_nonvint_block_fixed_step_solve(tid) nonvint_block(3, 0, 0, tid)
+#define nrn_nonvint_block_fixed_step_solve(tid) nonvint_block(3, 0, 0, 0, tid)
 
 /* returns the number of extra equations solved by cvode or ida */
 /* in Python the Method will be converted to 4. Here we are encoding the offset  */
-#define nrn_nonvint_block_ode_count(offset, tid) nonvint_block(10+offset, 0, 0, tid)
+#define nrn_nonvint_block_ode_count(offset, tid) nonvint_block(10+offset, 0, 0, 0, tid)
 
 /* fill in the double* y with the initial values */
-#define nrn_nonvint_block_ode_reinit(y, tid) nonvint_block(5, y, 0, tid)
+#define nrn_nonvint_block_ode_reinit(size, y, tid) nonvint_block(5, size, y, 0, tid)
 
 /* using the values in double* y, fill in double* ydot so that ydot = f(y) */
-#define nrn_nonvint_block_ode_fun(y, ydot, tid) nonvint_block(6, y, ydot, tid)
+#define nrn_nonvint_block_ode_fun(size, y, ydot, tid) nonvint_block(6, size, y, ydot, tid)
 
 /* Solve (1 + dt*jacobian)*x = b replacing b values with the x values.
    Note that y (state values) are available for constructing the jacobian
    (if the problem is non-linear) */
-#define nrn_nonvint_block_ode_solve(b, y, tid) nonvint_block(7, b, y, tid)
+#define nrn_nonvint_block_ode_solve(size, b, y, tid) nonvint_block(7, size, b, y, tid)
 
 #if defined(__cplusplus)
 }

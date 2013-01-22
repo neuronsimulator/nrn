@@ -551,7 +551,7 @@ has taken effect
 void* setup_tree_matrix(NrnThread* _nt){
 	nrn_rhs(_nt);
 	nrn_lhs(_nt);
-	nrn_nonvint_block_fixed_step_vmatrix(_nt->_actual_d, _nt->_actual_rhs, _nt->id);
+	nrn_nonvint_block_fixed_step_vmatrix(_nt->end, _nt->_actual_d, _nt->_actual_rhs, _nt->id);
 	return (void*)0;
 }
 

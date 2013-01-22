@@ -12,7 +12,9 @@ import neuron
 nrn_dll = neuron.nrn_dll()
 
 # declare prototype
-nonvint_block_prototype = ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_int, numpy.ctypeslib.ndpointer(dtype=numpy.float64, ndim=1, flags='C_CONTIGUOUS'), numpy.ctypeslib.ndpointer(dtype=numpy.float64, ndim=1, flags='C_CONTIGUOUS'), ctypes.c_int)
+nonvint_block_prototype = ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.POINTER(ctypes.c_double), ctypes.POINTER(ctypes.c_double), ctypes.c_int)
+
+nrn_thread_0_end = nrn_dll.nrn_thread_0_end
 
 set_nonvint_block = nrn_dll.set_nonvint_block
 set_nonvint_block.argtypes = [nonvint_block_prototype]
@@ -69,16 +71,26 @@ def ode_count_all(offset):
 
 # see nrn/src/nrnoc/nonvintblock.h for the magic method numbers
 
-def nonvint_block(method, pd1, pd2, tid):
-    print 'nonvint_block called with method = %d' % method
+def nonvint_block(method, array_length, pd1, pd2, tid):
+    print 'nonvint_block called with method = %d l=%d' % (method,array_length)
     assert(tid == 0)
     if method >= 10: # nrn_nonvint_block_ode_count
         # method - 10 is the offset for elements in pd1,pd2 managed by us.	
         return ode_count_all(method - 10) # count of the extra states-equations managed by us
     else:
+        try:
+            pd1_array = numpy.frombuffer(numpy.core.multiarray.int_asbuffer(ctypes.addressof(pd1.contents), array_length*numpy.dtype(float).itemsize))
+        except:
+            pd1_array = None
+
+        try:    
+            pd2_array = numpy.frombuffer(numpy.core.multiarray.int_asbuffer(ctypes.addressof(pd2.contents), array_length*numpy.dtype(float).itemsize))
+        except:
+            pd2_array = None
+        
         for c in call:
-            if c[method]:
-                c[method](pd1, pd2)
+            if c[method] is not None:
+                c[method](pd1_array, pd2_array)
     return 0
 
 set_nonvint_block(nonvint_block_prototype(nonvint_block))

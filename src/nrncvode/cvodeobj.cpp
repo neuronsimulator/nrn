@@ -45,6 +45,7 @@ static MUTDEC
 #include "cvodes/cvdiag.h"
 #include "shared/dense.h"
 #include "ida/ida.h"
+#include "nonvintblock.h"
 
 extern "C" {
 extern double dt, t;
@@ -1026,6 +1027,8 @@ int Cvode::cvode_init(double) {
 	int err = SUCCESS;
 	// note, a change in stiff_ due to call of stiff() destroys mem_
 	gather_y(y_);
+	// TODO: this needs changed if want to support more than one thread or local variable timestep
+	nrn_nonvint_block_ode_reinit(neq_, N_VGetArrayPointer(y_), 0);
 	if (mem_) {
 		err = CVodeReInit(mem_, pf_, t0_, y_, CV_SV, &ncv_->rtol_, atolnvec_);
 		CVodeSetFdata(mem_, (void*)this);
