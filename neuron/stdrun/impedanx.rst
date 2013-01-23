@@ -1,6 +1,6 @@
 .. _impedanx:
 
-     
+.. _impedance_impx:   
 
 Impx
 ----
@@ -32,10 +32,12 @@ positive values are on the path end side.
  
 This tool uses the :class:`Impedance` class to calculate voltage 
 attenuations. 
-     
+
+
+.. _impedance_logavsx:
 
 LogAvsX
-~~~~~~~
+-------
 
      
 Tool for plotting voltage attenuation at a specific measurement/injection 

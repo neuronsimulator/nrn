@@ -26,6 +26,9 @@ Quick Links
     
     :ref:`neuron_rxd`,
     :func:`neuron.rxd.geometry3d.surface`, :func:`neuron.rxd.geometry3d.voxelize`
+- Old documentation: `Quick Index <http://www.neuron.yale.edu/neuron/static/docs/help/quick_reference.html>`_ (contributed by `Mike Neubig <neubig@salk.edu>`_\ ),
+  `Index <http://www.neuron.yale.edu/neuron/static/docs/help/index.html>`_\ ,
+  `Contents <http://www.neuron.yale.edu/neuron/static/docs/help/hier.html>`_
 
 Contents
 --------

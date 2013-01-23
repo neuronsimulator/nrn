@@ -24,7 +24,7 @@ dismissing of windows then you *MUST* invoke nrniv with the
 automatic dismiss button feature. The default widget style is 
 MOTIF but openlook style can be selected. The relevant options are 
  
-nrniv -dismissbutton -openlook ... 
+:code:`nrniv -dismissbutton -openlook ...`
      
 
 Scene
@@ -32,16 +32,16 @@ Scene
 
 Graphs and Shape windows are instances of views into a scene.
 
-objref g 
-g = new Graph() 
-g.label("here is some text") 
-g.beginline() 
-g.line(100, 50) 
-g.line(200, 100) 
-g.flush() 
-
 .. code-block::
     none
+    
+    objref g 
+    g = new Graph() 
+    g.label("here is some text") 
+    g.beginline() 
+    g.line(100, 50) 
+    g.line(200, 100) 
+    g.flush() 
 
     // pop up an example of a scene 
 
@@ -192,17 +192,17 @@ The left button highlights a selection. Double clicking generally executes
 the selection. Browsers are used to select files for printing, 
 variables for plotting, etc. Sometimes, a browser has a field editor in which 
 one can directly type an entry. Usually after an item has been selected you 
-have to press an Accept or Cancel button to actually execute the selection. 
-Browsers can be scrolled with d,u,j,k,n,p and others. 
+have to press an :guilabel:`Accept` or :guilabel:`Cancel` button to actually execute the selection. 
+Browsers can be scrolled with :kbd:`d`, :kbd:`u`, :kbd:`j`, :kbd:`k`, :kbd:`n`, :kbd:`p` and others. 
  
 
 FieldEditor
 ~~~~~~~~~~~
 
-See also :func:`ValueEditor` , a FieldEditor for floating point numbers. 
+See also :ref:`ValueEditor`, a FieldEditor for floating point numbers. 
 Field editors accept a string entered by the user.  The allowed strings 
 are determined by the context.  In not all cases does typing the return 
-key signal the execution of a selection (if not, press the accept 
+key signal the execution of a selection (if not, press the :guilabel:`accept`
 button).  Field editors have an emacs-like syntax and typing characters 
 inserts them at the cursor.  The left mouse button specifies the cursor 
 location and dragging selects a portion of the string.  After selecting 
@@ -233,8 +233,8 @@ Panels: windows containing buttons, menus, and value editors. All mouse buttons
 mean the same thing. 
  
 If the number of items in a vertically arranged single panel is greater 
-than the number in the "*panel_scroll:" resource in the 
-$(NEURONHOME)/lib/nrn.defaults file (default 12) then the panel items 
+than the number in the :code:`*panel_scroll:` resource in the 
+:file:`$(NEURONHOME)/lib/nrn.defaults` file (default 12) then the panel items 
 are shown in a scroll box so that they do not take up so much screen 
 space. 
  
@@ -289,6 +289,8 @@ Menus: Drag the mouse to the desired item. If the menu fails to go away you
 can press one item and then move the mouse away and release. This 
 should cause the menu to unmap without executing the item. 
 
+.. _valueeditor:
+
 ValueEditor
 ===========
 
@@ -335,8 +337,9 @@ Only on release of the mouse button will the action (if any)
 be executed and finally all value editors will be updated. 
 The default increment starts at the least significant digit in the 
 value field. Stepper delays use the resources: 
-*autorepeatStart: .05	//seconds 
-*autorepeatDelay: .02 
+
+*   autorepeatStart: .05    //seconds 
+*   autorepeatDelay: .02 
  
  
 .. _pwm:
@@ -349,7 +352,7 @@ The manager contains two scenes representing the screen and a piece of
 paper.  The location and relative size of each hoc window appears on the 
 screen scene. 
  
-See :meth:`functions.pwman_place` . 
+See :func:`pwman_place`. 
 
 ScreenItem
 ==========
@@ -366,18 +369,21 @@ Windows selected for printing may be manipulated in the page scene.
 Place the mouse cursor over the desired window rectangle in the page 
 scene and: 
  
-Right button --- remove the window from the page.  If one clicks again 
-on that window in the screen scene then the window will return to the 
-same location and relative size on the page as when it was removed. 
+Right button
+    remove the window from the page.  If one clicks again 
+    on that window in the screen scene then the window will return to the 
+    same location and relative size on the page as when it was removed. 
  
-Middle button --- resize the window.  This resizes not the window on the 
-screen but how large the window will appear on the page.  The window 
-always maintains the same aspect ratio as the window on the console 
-screen.  To resize, drag the mouse with the button down til the desired 
-size is reached. 
+Middle button
+    resize the window.  This resizes not the window on the 
+    screen but how large the window will appear on the page.  The window 
+    always maintains the same aspect ratio as the window on the console 
+    screen.  To resize, drag the mouse with the button down til the desired 
+    size is reached. 
  
-Left button --- move the window.  Drag the mouse to the desired position 
-and release the button. 
+Left button
+    move the window.  Drag the mouse to the desired position 
+    and release the button. 
  
 When the manager is iconified, all the windows disappear.  When the 
 manager is redisplayed all the windows come back where they left off. 
@@ -401,8 +407,8 @@ the normal interface with an arrow cursor.
  
 The help system requires a running Netscape process. If the system 
 is not working properly on your machine, the help 
-button can be removed by specifying "*pwm_help: off" in the 
-nrn/lib/nrn.defaults file. 
+button can be removed by specifying :code:`*pwm_help: off` in the 
+:file:`nrn/lib/nrn.defaults` file. 
 
 .. _pwm_print:
 
@@ -410,9 +416,9 @@ Print
 =====
 
 Print: Sends the postscript images of the windows to a printer 
-selected by the Other menu item, :func:`SelectPrinter` . 
+selected by the Other menu item, :ref:`SelectPrinter`. 
 If no printer has been selected a printer 
-dialog pops up. See :meth:`Other.WindowTitlesPrinted` . 
+dialog pops up. See :ref:`WindowTitlesPrinted` . 
  
 
 PrintToFile
@@ -420,13 +426,14 @@ PrintToFile
 
 Print to File: Menu for saving windows to a printable file in the formats 
  
-See :meth:`Other.print_session` :func:`WindowTitlesPrinted` 
+.. seealso::
+    :func:`print_session`, :ref:`WindowTitlesPrinted` 
 
 PostScript
 """"""""""
 
 PostScript: Pops up dialogue requesting Filename for saving the postscript 
-images of the windows appearing	in the page icon. A .ps suffix is recommended. 
+images of the windows appearing	in the page icon. A :file:`.ps` suffix is recommended. 
 
 Idraw
 """""
@@ -465,7 +472,7 @@ Unlabeled lines are printed at the end of the file with the format
 
 
  
-See :func:`FamilyLabel` 
+.. seealso:: :ref:`FamilyLabel` 
  
 
 Session
@@ -505,14 +512,15 @@ Other
 =====
 
 Other: Menu of other options 
- 
+
+.. _selectprinter:
 
 SelectPrinter
 """""""""""""
 
 SelectPrinter: Enter your normal system command for printing. The Print button will 
 send post script to this command. for example: 
-lpr -Plp 
+:code:`lpr -Plp`
  
 Unix and Mswindows versions construct a print line of the form 
 
@@ -530,6 +538,7 @@ be set in the nrn.def(aults) file. The default printer command is
 In the unix version the printer command is found from the 
 "PRINT_CMD" environment variable. 
  
+.. _windowtitlesprinted:
 
 WindowTitlesPrinted
 """""""""""""""""""
@@ -542,7 +551,7 @@ VirtualScreen
 """""""""""""
 
 VirtualScreen: Useful for mswindows version when using low-resolution monitor. 
-Also invoked under mswindows when the "F1" key is pressed when focus in 
+Also invoked under mswindows when the :kbd:`F1` key is pressed when focus in 
 any InterViews window. 
  
 Pops up a view of the print window manager's screen icon to allow moving 
@@ -599,7 +608,7 @@ at the nearest point on the line. On dragging it searches from the
 last point for the nearest point but will stop searching if any point 
 becomes farther away. This makes it possible to easily follow 
 phase plane plots. Crosshairs may call a hoc function on a keypress. 
-See :func:`crosshair_action`. 
+See :meth:`Graph.crosshair_action`.
  
 If no crosshair action has been installed, any keypress will print 
 the x,y coordinates of the crosshair in the terminal window. 
@@ -675,8 +684,8 @@ on another radiomenu item and then clicking on this one again.
 Note: Lines associated with labels always have the same color. 
 Kept lines are not associated with labels. 
 The number of selectable colors and brushes may be set by 
-changing the values in your ~/.nrn.defaults file (see CBWidget in 
-$NEURONHOME/lib/nrn.defaults) 
+changing the values in your :file:`~/.nrn.defaults` file (see CBWidget in 
+:file:`$NEURONHOME/lib/nrn.defaults`) 
  
 
 AxisType
@@ -708,31 +717,33 @@ Erases the old axis and draws an axis box as a background
 with clipping. The box is sized dynamically with respect to the 
 view coordinates. 
  
+.. _keeplines:
 
 KeepLines
 =========
 
 Keep Lines: While checked, lines are saved. When not checked 
 the previous line is discarded every time 
-Graph.begin() is executed in preparation for plotting new lines. 
+:meth:`Graph.begin` is executed in preparation for plotting new lines. 
 A useful idiom to save a reference line is to toggle the Keep Lines 
 item on and then off. 
 
 .. seealso::
-    :meth:`Graph.family`, :func:`FamilyLabel`
+    :meth:`Graph.family`, :ref:`FamilyLabel`
 
+.. _familylabel:
 
 FamilyLabel
 ===========
 
 Pops up a global (same for all Graph windows) symbol chooser 
-which is used to select a label for :meth:`Graph.KeepLines`. Function is 
-identical to :meth:`Graph.family` . Ie. the label is used as a variable name 
+which is used to select a label for :ref:`KeepLines`. Function is 
+identical to :meth:`Graph.family`. Ie. the label is used as a variable name 
 and the value of the variable is used to actually label the kept lines. 
 To get a compatible label (instead of an :meth:`Graph.addexpr` label) 
 for the last line, the KeepLines menu item should be toggled off. 
  
-If all lines are labeled and have the same size then :meth:`PrintToFile.Ascii` 
+If all lines are labeled and have the same size then :ref:`PrintToFile_Ascii` 
 has a matrix format. 
  
 

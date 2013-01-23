@@ -51,12 +51,14 @@ Cont:
     (If the previous action was stopped in the middle, 
     that action is not restarted where it left off.) 
      
+.. _execcommand:
 
 ExecCommand
 -----------
 
 Specify a command and execute it. 
      
+.. _gathervec:
 
 GatherVec
 ---------
@@ -68,6 +70,8 @@ candidate for the x variable. Then one does a run, selects a point with
 crosshairs, and presses the record button on the GatherValues tool) 
      
 
+.. _vectorplay:
+
 VectorPlay
 ----------
 
@@ -75,6 +79,7 @@ Copy a vector from the clipboard and play it into some
 chosen (from a Symchooser) variable name. There is button to connect 
 and disconnect (return the default value to the variable) the vector. 
  
+.. _vecwrap:
 
 VecWrap
 -------

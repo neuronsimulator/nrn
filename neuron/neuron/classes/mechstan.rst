@@ -10,9 +10,9 @@ MechanismStandard
 
 
     Syntax:
-        :code:`ms = new MechanismStandard("name")`
+        :samp:`ms = new MechanismStandard("{name}")`
 
-        :code:`ms = new MechanismStandard("name", vartype)`
+        :samp:`ms = new MechanismStandard("{name}", {vartype})`
 
 
     Description:
@@ -21,12 +21,12 @@ MechanismStandard
         This class is useful in maintaining a default set of parameters and can 
         be used to specify values for a set of sections. 
          
-        *name* is a density mechanism such as \ :code:`hh` or a point process 
-        such as \ :code:`VClamp`. A \ :code:`MechanismStandard` instance, when created, 
+        *name* is a density mechanism such as :code:`hh` or a point process 
+        such as :class:`VClamp`. A :code:`MechanismStandard` instance, when created, 
         contains default values for all parameters associated with the mechanism. 
          
         In combination with the 
-        :func:`MechanismType` class it is possible to create generic graphical interface 
+        :class:`MechanismType` class it is possible to create generic graphical interface 
         widgets that are independent of the particular mechanism and parameter names. 
          
         If vartype = 1, 2, or 3, the storage is for PARAMETER, ASSIGNED, or STATE 
@@ -89,7 +89,7 @@ MechanismStandard
 
 
     .. seealso::
-        :func:`MechanismType`
+        :class:`MechanismType`
 
          
 
@@ -131,7 +131,7 @@ MechanismStandard
 
     Description:
         action to be executed when any variable is changed in the panel. 
-        The hoc variable hoc_ac_ is set to the index of the variable (0 to count-1). 
+        The hoc variable :data:`hoc_ac_` is set to the index of the variable (0 to count-1). 
 
     Example:
         forall delete_section() 
@@ -171,30 +171,30 @@ MechanismStandard
     Syntax:
         :code:`ms.in()`
 
-        :code:`ms.in(x)`
+        :samp:`ms.in({x})`
 
-        :code:`ms.in(pointprocess)`
+        :samp:`ms.in({pointprocess})`
 
-        :code:`ms.in(mechanismstandard)`
+        :samp:`ms.in({mechanismstandard})`
 
 
     Description:
         copies parameter values into this mechanism standard from ... 
 
 
-        \ :code:`ms.in()` 
+        :code:`ms.in()` 
             the mechanism located in first segment of the currently accessed section. 
 
-        \ :code:`ms.in(x)` 
+        :samp:`ms.in({x})` 
             the mechanism located in the segment containing x of the currently accessed section. 
             (Note that x=0 and 1 are considered to lie in the 
             0+ and 1- segments respectively so a proper iteration uses for(x, 0). 
-            See :ref:`for <keyword_for>`#keywords . 
+            See :ref:`for <keyword_for>`.
 
-        \ :code:`ms.in(pointprocess)` 
+        :samp:`ms.in({pointprocess})` 
             the point process object 
 
-        \ :code:`ms.in(mechanismstandard)` 
+        :samp:`ms.in({mechanismstandard})` 
             another mechanism standard 
 
         If the source is not the same type as the standard then nothing happens. 
@@ -222,18 +222,18 @@ MechanismStandard
         copies parameter values from this mechanism standard to ... 
 
 
-        \ :code:`ms.out()` 
+        :code:`ms.out()` 
             the mechanism located in the currently accessed section (all segments). 
 
-        \ :code:`ms.out(x)` 
+        :code:`ms.out(x)` 
             the mechanism located in the currently accessed section in the segment 
             containing x.(Note that x=0 and 1 are considered to lie in the 
             0+ and 1- segments respectively) 
 
-        \ :code:`ms.out(pointprocess)` 
+        :code:`ms.out(pointprocess)` 
             the point process argument 
 
-        \ :code:`ms.out(mechanismstandard)` 
+        :code:`ms.out(mechanismstandard)` 
             another mechanism standard 
 
         If the target is not the same type as the standard then nothing happens. 
@@ -248,7 +248,7 @@ MechanismStandard
 
 
     Syntax:
-        :code:`ms.set("varname", val [, arrayindex])`
+        :samp:`ms.set("{varname}", {val} [, {arrayindex}])`
 
 
     Description:
@@ -269,7 +269,7 @@ MechanismStandard
 
 
     Description:
-        returns the value of the parameter. If the variable is acutually 
+        returns the value of the parameter. If the variable is actually 
         a POINTER and it is nil, then return -1e300. 
 
          

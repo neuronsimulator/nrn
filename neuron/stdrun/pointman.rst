@@ -8,7 +8,7 @@ Managers
 PointManager
 ~~~~~~~~~~~~
 
-Starts a general purpose :func:`PointProcessManager` for specifying a 
+Starts a general purpose :ref:`pointprocessmanager` for specifying a 
 location and defining what kind of point process should exist 
 there. Any number of these managers can exist simultaneously. 
 It is more general than the Electrode below in the sense that 
@@ -18,7 +18,7 @@ implementation.
 PointGroup
 ~~~~~~~~~~
 
-Starts a :func:`PointProcessGroupManager` for managing a collection of 
+Starts a :ref:`PointProcessGroupManager` for managing a collection of 
 related point processes. If all the members of the collection are 
 of the same type, then the values of their variables can be changed 
 "globally" and all the values of a single parameter can be displayed. 
@@ -26,16 +26,16 @@ of the same type, then the values of their variables can be changed
 Electrode
 ~~~~~~~~~
 
-Starts a general purpose :meth:`StandardRunTools.Electrode` 
+Starts a general purpose :class:`Electrode` 
 voltage/current clamp (with some 
 voltage clamp families) that can be moved to any position in any 
 section. Any number of these may be present simultaneously. When 
 one is dismissed from the screen, it is also removed from the neuron 
 and the point processes it manages are destroyed. This widget is 
-pretty much superseded by the :func:`PointProcessManager` . 
+pretty much superseded by the :ref:`pointprocessmanager`. 
 
 Viewers
-~~~~~~~
+-------
 
 
 PointProcesses
@@ -47,7 +47,7 @@ point process, and, if global parameters exist, a button for popping
 up a panel showing the global parameters for this type of point 
 process. Double clicking a location on the browser pops up a panel 
 showing the values for a particular point process instance. 
-See :meth:`neuron.pointprocesses` for details about built-in point 
+See :ref:`mech` for details about built-in point 
 processes. The corresponding .mod file must in general be 
 examined in order to understand the particulars about a given 
 point process type. 
@@ -55,14 +55,14 @@ point process type.
 .. _pointprocessmanager:
 
 PointProcessManager
-~~~~~~~~~~~~~~~~~~~
+-------------------
 
      
 Create a Point Process of a particular type at a particular location. 
 Each instance of a PointProcessManager manages a single point process. 
  
-The items in the "SelectPointProcess" menu are used to specify the 
-type of the point process. After the selection, the "Show" menu 
+The items in the :guilabel:`SelectPointProcess` menu are used to specify the 
+type of the point process. After the selection, the :guilabel:`Show` menu 
 is used to make the lower portion of the panel to display either the "Shape" 
 (to indicate the location with a blue dot) 
 or "Parameter" values of the point process. The type and location of 
@@ -72,23 +72,29 @@ scene (right mouse button) and then clicking on a location (left mouse
 button). 
  
 Note that when one point process is replaced by another 
-the parameters are saved in a :func:`MechanismStandard` . When 
+the parameters are saved in a :class:`MechanismStandard`. When 
 the point process is re-installed, those parameters are restored. 
  
 If the panel is saved in a session, the MechanismStandard's are 
 saved as well. 
  
-hoc usage: section p = new PointProcessManager([xplacement, yplacement]) 
+hoc usage:
+
+.. code-block::
+    none
+    
+    section p = new PointProcessManager([xplacement, yplacement]) 
+    
 p.pp is the point process currently installed in the cell. 
      
 
 .. seealso::
-    :meth:`neuron.pointprocesses`
+    :ref:`mech`
 
-     
+.. _pointprocessgroupmanager:
 
 PointProcessGroupManager
-~~~~~~~~~~~~~~~~~~~~~~~~
+------------------------
 
      
 Specify point process types, locations, and values for a set of 
@@ -113,33 +119,33 @@ name) to that location. The label in the control area shows the name
 and location of the selected point process. 
  
 The right subpanel shows parameters in one of three styles determined 
-by the "PanelStyle" menu. "ViewSelection" shows all the parameters for 
+by the :guilabel:`PanelStyle` menu. :guilabel:`ViewSelection` shows all the parameters for 
 the selected (red dot, highlighted name) point process. The name of 
 the selected point process is also shown at the top of this subpanel. 
  
 The remaining two "PanelStyle" items work only if all the point processes 
 in the list are of the same type. 
  
-"GlobalSpec" is similar to "ViewSelection" but any change to a parameter 
+:guilabel:`GlobalSpec` is similar to :guilabel:`ViewSelection` but any change to a parameter 
 (or clicking on a value button) causes that value to be assigned to 
 all the point process of the list. Note that NO assignments are made 
-when the "GlobalSpec" panel is constructed. The user must press 
+when the :guilabel:`GlobalSpec` panel is constructed. The user must press 
 a value button or enter a new value into the field editor. This helps 
 prevent accidental changing of values in the individual point processes. 
 The default values in the global spec panel are those values in the 
 currently selected name. In this mode, the top of the right subpanel 
 shows the label: "All PP's set to these values". 
  
-When the "ViewOneName" item of the "PanelStyle" menu is selected 
+When the :guilabel:`ViewOneName` item of the :guilabel:`PanelStyle` menu is selected 
 the right submenu shows a list of names of parameters. Selecting 
 one of these names shows this parameter for all the managed point 
 processes (each button label indicates which point process is 
 referenced). 
  
-In the control portion of PointProcessGroupManager, the "New" menu 
+In the control portion of PointProcessGroupManager, the :guilabel:`New` menu 
 is used to add a point process of the indicated type to the 
-list of managed point processes. The "Remove" button destroys the 
-selected point process. The "Copy" button clones the selected 
+list of managed point processes. The :guilabel:`Remove` button destroys the 
+selected point process. The :guilabel:`Copy` button clones the selected 
 point process 
  
 

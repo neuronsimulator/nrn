@@ -1164,7 +1164,7 @@ Graph
 
 
 
-.. method:: Graph.crosshair
+.. method:: Graph.crosshair_action
 
 
     Syntax:

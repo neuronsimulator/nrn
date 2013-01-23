@@ -1,7 +1,7 @@
 .. _nfunc:
 
-nrnglobalmechmenu
------------------
+Miscellaneous Menus
+-------------------
 
 
 

@@ -31,7 +31,7 @@ Initialize states, set t=0, and run the simulation until t == Tstop
 Plotting to graphs constructed from the :ref:`NEURONMainMenu` occurs at 
 a rate given by the variable set by the :ref:`Plotsms` value editor. 
 It is often convenient to substitute problem specific procedures 
-for the default procedures init() and advance(). 
+for the default procedures :func:`init` and :func:`advance`. 
 The run call chain is 
 
 .. code-block::
@@ -98,7 +98,7 @@ new procedure for the default init procedure:
 .. seealso::
     :func:`finitialize`, :meth:`CVode.re_init`, :func:`fcurrent`, :func:`frecord_init`, :class:`FInitializeHandler`
 
-     
+.. _runctrl_stop:
 
 Stop
 ~~~~
