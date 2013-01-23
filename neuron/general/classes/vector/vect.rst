@@ -229,11 +229,12 @@ Vector
 
             objref vec 
             vec = new Vector(20,5) 
-            vec.resize(30) 
-            @endcode appends 10 elements, each having a value of 0, to :code:`vec`. 
+            vec.resize(30)
+        
+        Appends 10 elements, each having a value of 0, to :code:`vec`. 
 
-            .. code-block::
-                none
+        .. code-block::
+            none
 
             :code:`vec.resize(10)` 
 
@@ -1186,7 +1187,7 @@ Vector
 
 
     Description:
-        Write the vector :code:`vec` to an open *fileobj* of type :func:`File` in 
+        Write the vector :code:`vec` to an open *fileobj* of type :class:`File` in 
         machine dependent binary format. 
         You must keep track of the vector's 
         size for later reading, so it is recommended that you store the size of the 
@@ -1391,7 +1392,7 @@ Vector
 
 
     Description:
-        Read ascii values from a :func:`File` instance (must already be opened for reading) 
+        Read ascii values from a :class:`File` instance (must already be opened for reading) 
         into vector.  If present, scanning takes place til *n* items are 
         read or until EOF. Otherwise, :code:`vec.scanf` reads until end of file. 
         If reading 
@@ -2031,7 +2032,7 @@ Vector
 
 
     Description:
-        Rounds toward negative infinity. Note that :func:`float_epsilon` is not 
+        Rounds toward negative infinity. Note that :data:`float_epsilon` is not 
         used in this calculation. 
 
          
