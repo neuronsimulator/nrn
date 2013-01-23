@@ -276,7 +276,7 @@ List
          
         If the second arg exists and is 1 then the action is only called on 
         the mouse button release. If nothing is selected at that time then 
-        then :data:`hoc_ac_` = -1 
+        :data:`hoc_ac_` = -1 
 
     Example:
         This example shows that the object context is saved when an action is 
