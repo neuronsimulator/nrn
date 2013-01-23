@@ -2,7 +2,7 @@ general
 =======
 
 .. toctree::
-    :maxdepth: 2
+    :maxdepth: 3
 
     general/functions.rst
     ../neuron/general/function/panel.rst

@@ -2,7 +2,7 @@ function
 ========
 
 .. toctree::
-    :maxdepth: 2
+    :maxdepth: 3
 
     ../../neuron/general/function/system.rst
     function/obsolete.rst

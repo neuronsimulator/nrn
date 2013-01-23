@@ -728,7 +728,7 @@ Mechanisms
 
 .. index::  capacitance (mechanism)
 
-.. _mech_setdata:
+.. _mech_capacitance:
 
 **capacitance**
 

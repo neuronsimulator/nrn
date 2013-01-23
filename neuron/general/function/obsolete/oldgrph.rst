@@ -100,7 +100,7 @@ Obsolete Plotting
             graph("sin(x)","axis(100,300,100,300) axis()") 
             graph("cos(x)","")  /* same axes as previous call to graph */ 
              
-            p()    /*plots the sin and cos along with the ramp*/ 
+            p()    /* plots the sin and cos along with the ramp */ 
 
          
 
@@ -111,7 +111,7 @@ Obsolete Plotting
         The best method for complicated plots is to make the setup string a 
         simple call to a user defined procedure.  This procedure can setup the 
         axes, write the labels, etc.  Newlines and strings within strings are 
-        possible by quoting with the `\verb+\+' character but generally are 
+        possible by quoting with the '\verb+\+' character but generally are 
         too confusing to be practical. 
          
         Local variables in graph strings make no sense. 

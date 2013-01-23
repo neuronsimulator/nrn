@@ -1,4 +1,4 @@
-.. _pltshape:
+.. _pltshape_doc:
 
 PlotShape
 ---------

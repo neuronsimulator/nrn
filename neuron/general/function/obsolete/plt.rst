@@ -85,7 +85,7 @@ Obsolete Plotting
             the point, (x, y). 
 
         \ :code:`plt(-5)` 
-             Fast mode. By default, the X11 server is flushed on every 
+            Fast mode. By default, the X11 server is flushed on every 
             plot command so one can see the plot as it develops. Fast mode caches plot 
             commands and only flushes on \ :code:`plt(-1)` and \ :code:`setcolor()`.  Fast mode is 
             three times faster than the default mode.  It is most useful when 

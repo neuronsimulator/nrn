@@ -2,7 +2,7 @@ StandardRunTools
 ================
 
 .. toctree::
-    :maxdepth: 2
+    :maxdepth: 3
 
     ../neuron/stdrun/celbild.rst
     StandardRunTools/ImpedanceTools.rst

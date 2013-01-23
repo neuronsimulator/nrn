@@ -618,6 +618,7 @@ CVode
 
         Fill the destination :class:`Vector` with the values of the weights used
         to compute the norm of the local error in cvodes and ida.
+
 ----
 
 

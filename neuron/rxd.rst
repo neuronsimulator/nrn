@@ -2,7 +2,7 @@ Reaction-Diffusion
 ==================
 
 .. toctree::
-    :maxdepth: 2
+    :maxdepth: 3
 
     rxd/geometry3d.rst
     rxd/rxd.rst

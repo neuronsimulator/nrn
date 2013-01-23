@@ -2661,7 +2661,7 @@ Vector
 
             3  7  11  15  19 
 
-        where each pair of :code:`vec ` elements is added together into one element. 
+        where each pair of :code:`vec` elements is added together into one element. 
          
         But, 
 

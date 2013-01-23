@@ -2,7 +2,7 @@ general
 =======
 
 .. toctree::
-    :maxdepth: 2
+    :maxdepth: 3
 
     general/function.rst
     general/classes.rst

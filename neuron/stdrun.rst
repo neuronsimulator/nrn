@@ -2,7 +2,7 @@ stdrun
 ======
 
 .. toctree::
-    :maxdepth: 2
+    :maxdepth: 3
 
     ../neuron/stdrun/electrod.rst
     ../neuron/stdrun/inserter.rst

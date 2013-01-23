@@ -2,7 +2,7 @@ NEURONMainMenu
 ==============
 
 .. toctree::
-    :maxdepth: 2
+    :maxdepth: 3
 
     ../neuron/stdrun/0stdrun.rst
     NEURONMainMenu/File.rst

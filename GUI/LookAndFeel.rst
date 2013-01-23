@@ -2,7 +2,7 @@ Look And Feel
 =============
 
 .. toctree::
-    :maxdepth: 2
+    :maxdepth: 3
 
     ../neuron/agui/gui.rst
     LookAndFeel/PWM.rst

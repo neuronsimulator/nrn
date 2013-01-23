@@ -373,7 +373,7 @@ ocfunc
         Load the file containing a definition. 
          
         For each name in the list 
-        all the *.oc and *.hoc files will be searched and the first file that 
+        all the :file:`*.oc` and :file:`*.hoc` files will be searched and the first file that 
         contains the appropriate proc, func, or begintemplate will be loaded. 
         Loading only takes place if the name has not previously been defined. 
         The search path consists of the current working directory, followed by 

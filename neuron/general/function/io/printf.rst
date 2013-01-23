@@ -3,11 +3,6 @@
 IO
 --
 
-
-----
-
-
-
 .. function:: hoc_stdio
 
 
@@ -92,7 +87,7 @@ IO
             signed value of the form -d.dddddde-nn 
 
         g 
-            signed value in either `e' or `f' form based on given value 
+            signed value in either 'e' or 'f' form based on given value 
             and precision.  Trailing zeros and the decimal point are printed 
             only if necessary. 
 
