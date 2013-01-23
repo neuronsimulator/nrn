@@ -14,8 +14,6 @@ nrn_dll = neuron.nrn_dll()
 # declare prototype
 nonvint_block_prototype = ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.POINTER(ctypes.c_double), ctypes.POINTER(ctypes.c_double), ctypes.c_int)
 
-nrn_thread_0_end = nrn_dll.nrn_thread_0_end
-
 set_nonvint_block = nrn_dll.set_nonvint_block
 set_nonvint_block.argtypes = [nonvint_block_prototype]
 
@@ -93,7 +91,8 @@ def nonvint_block(method, array_length, pd1, pd2, tid):
                 c[method](pd1_array, pd2_array)
     return 0
 
-set_nonvint_block(nonvint_block_prototype(nonvint_block))
+_callback = nonvint_block_prototype(nonvint_block)
+set_nonvint_block(_callback)
 
 if __name__ == '__main__':
   exec(test) # see above string
