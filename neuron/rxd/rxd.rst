@@ -1,12 +1,12 @@
-.. warning::
-
-    These functions are experimental.
-    Please contact the NEURON developers with issues and be sure to validate your results.
-
 .. _neuron_rxd:
 
 Basic Reaction-Diffusion
 ========================
+
+.. warning::
+
+    These functions are experimental.
+    Please contact the NEURON developers with issues and be sure to validate your results.
 
 .. currentmodule:: neuron.rxd
 .. autoclass:: Region

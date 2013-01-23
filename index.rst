@@ -30,13 +30,52 @@ Quick Links
   `Index <http://www.neuron.yale.edu/neuron/static/docs/help/index.html>`_\ ,
   `Contents <http://www.neuron.yale.edu/neuron/static/docs/help/hier.html>`_
 
-Contents
---------
+Tools
+-----
+
 .. toctree::
     :maxdepth: 2
 
-    tools.rst
-    NMODL.rst
-    neuron.exe.rst
-    neuron.rst
-    GUI.rst
+    neuron/project/project.rst
+
+NMODL
+-----
+
+.. toctree::
+    :maxdepth: 2
+
+    NMODL/ModelDescriptionLanguage.rst
+    neuron/nmodl/nmodl.rst
+    
+neuron.exe
+----------
+
+.. toctree::
+    :maxdepth: 2
+
+    neuron.exe/neuron.rst
+    neuron.exe/general.rst
+
+
+neuron
+------
+
+.. toctree::
+    :maxdepth: 2
+
+    neuron/neuron.rst
+    neuron/general.rst
+    neuron/stdrun.rst
+    neuron/rxd.rst
+    
+
+GUI
+---
+.. toctree::
+    :maxdepth: 2
+
+    GUI/StandardRunTools.rst
+    neuron/stdrun/0stdrun.rst
+    GUI/NEURONMainMenu.rst
+    neuron/agui/gui.rst
+    GUI/LookAndFeel.rst
