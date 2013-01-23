@@ -36,7 +36,7 @@ Predeclared Variables
 
     .. warning::
         I certainly haven't gotten every floating comparison in the program to use 
-        float_epsilon but I have most of them including all interpreter logical 
+        :code:`float_epsilon` but I have most of them including all interpreter logical 
         operations, int, array indices, and Vector logic methods. 
 
 ----
@@ -64,8 +64,8 @@ Predeclared Variables
 
 
     Description:
-        When a line on a :class:`Graph` is picked with the :func:`PickVector` tool 
-        two new :func:`Vector` 's are created containing the y and x coordinates of the 
+        When a line on a :class:`Graph` is picked with the :ref:`gui_pickvector` tool 
+        two new :class:`Vector`\ 's are created containing the y and x coordinates of the 
         line. The y vector is referenced by hoc_obj_[0] and the x vector is 
         referenced by hoc_obj_[1]. 
 
@@ -82,10 +82,10 @@ Predeclared Variables
 
 
     Description:
-        X coordinate value of the last :func:`Crosshair` manipulation. 
+        X coordinate value of the last :ref:`graph_crosshair` manipulation. 
 
     .. seealso::
-        :meth:`Graph.crosshair`
+        :ref:`graph_crosshair`
 
 
 ----
@@ -96,10 +96,10 @@ Predeclared Variables
 
 
     Description:
-        Y coordinate value of the last :func:`Crosshair` manipulation. 
+        Y coordinate value of the last :ref:`graph_crosshair` manipulation. 
 
     .. seealso::
-        :meth:`Graph.crosshair`
+        :ref:`graph_crosshair`
 
 
 ----
@@ -128,7 +128,7 @@ The following mathematical and physical constants are built-in:
     may be changed with assignment statements. 
      
     The FARADAY is a bit different than the faraday of the units database. 
-    The faraday in a .mod mechanism is 96520. 
+    The faraday in a :file:`.mod` mechanism is 96520. 
 
          
          

@@ -595,6 +595,7 @@ On exit will ask if you want to save open editor buffers.
 Graph
 ~~~~~
 
+.. _graph_crosshair:
 
 Crosshair
 =========
