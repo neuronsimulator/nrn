@@ -870,6 +870,18 @@ static double thread_ctime(void*) {
 	return 0.0;
 }
 
+static double thread_t(void*) {
+	int i;
+	i = int(chkarg(1, 0, nrn_nthread));
+	return nrn_threads[i]._t;
+}
+
+static double thread_dt(void*) {
+	int i;
+	i = int(chkarg(1, 0, nrn_nthread));
+	return nrn_threads[i]._dt;
+}
+
 static Object** gid2obj(void* v) {
 	OcBBS* bbs = (OcBBS*)v;
 	return bbs->gid2obj(int(chkarg(1, 0, MD)));
@@ -951,6 +963,8 @@ static Member_func members[] = {
 	"thread_how_many_proc", thread_how_many_proc,
 	"sec_in_thread", sec_in_thread,
 	"thread_ctime", thread_ctime,
+	"dt", thread_dt,
+	"t", thread_t,
 
 	0,0
 };

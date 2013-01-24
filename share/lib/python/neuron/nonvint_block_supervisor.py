@@ -25,23 +25,23 @@ call = []
 
 # e.g.
 test = '''
-def setup(unused1, unused2):
+def setup(unused1, unused2): #0
   print "setup"
-def initialize(unused1, unused2):
+def initialize(unused1, unused2): #1
   print "initialize"
-def current(rhs, unused2):
+def current(rhs, unused2): #2
   print "outward current to be subtracted from rhs"
-def conductance(d, unused2):
+def conductance(d, unused2): #3
   print "conductance to be added to d"
-def fixed_step_solve(unused1, unused2):
+def fixed_step_solve(unused1, unused2): #4
   print "fixed_step_solve"
-def ode_count(offset):
+def ode_count(offset): #5
   print "ode_count" ; return 0
-def ode_reinit(y, unused):
+def ode_reinit(t, y, unused): #6
   print "ode_reinit"
-def ode_fun(y, ydot): # from y determine ydot
+def ode_fun(t, y, ydot): #7 # from y determine ydot
   print "ode_fun"
-def ode_solve(b, y): #solve mx=b replace b with x (y available if m depends on it
+def ode_solve(dt, b, y): #8 #solve mx=b replace b with x (y available if m depends on it
   print "ode_solve"
 call.append([
     setup, initialize, # method 0, 1
@@ -72,6 +72,8 @@ def ode_count_all(offset):
   #print "ode_count_all %d, offset=%d\n"%(cnt, nonvint_block_offset)
   return cnt
 
+pc = h.ParallelContext()
+
 # see nrn/src/nrnoc/nonvintblock.h for the magic method numbers
 
 def nonvint_block(method, size, pd1, pd2, tid):
@@ -91,9 +93,19 @@ def nonvint_block(method, size, pd1, pd2, tid):
         else:
             pd2_array = None
         
+        if method in [0, 1, 4]:
+            args = ()
+        else if method in [2, 3]:
+            args = (pd1_array,)
+        else if method == 6:
+            args = (pc.t(tid), pd1_array)
+        else if method == 7:
+            args = (pc.t(tid), pd1_array, pd2_array)
+        else if method == 8:
+            args = (pd.dt(tid), pd1_array, pd2_array)
         for c in call:
             if c[method] is not None:
-                c[method](pd1_array, pd2_array)
+                c[method](*args)
     return 0
 
 _callback = nonvint_block_prototype(nonvint_block)
