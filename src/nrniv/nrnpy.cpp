@@ -23,10 +23,6 @@ int set_nonvint_block(int (*new_nrn_nonvint_block)(int method, int size, double*
 	return 0;
 }
 
-int nrn_thread_0_end(void) {
-    return nrn_threads[0].end;
-}
-
 }
 
 // following is undefined or else has the value of sys.api_version

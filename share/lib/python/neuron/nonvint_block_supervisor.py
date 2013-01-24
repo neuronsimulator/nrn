@@ -29,8 +29,10 @@ def setup(unused1, unused2):
   print "setup"
 def initialize(unused1, unused2):
   print "initialize"
-def fixed_step_setup(d, rhs):
-  print "fixed_step_setup"
+def current(rhs, unused2):
+  print "outward current to be subtracted from rhs"
+def conductance(d, unused2):
+  print "conductance to be added to d"
 def fixed_step_solve(unused1, unused2):
   print "fixed_step_solve"
 def ode_count(offset):
@@ -43,10 +45,14 @@ def ode_solve(b, y): #solve mx=b replace b with x (y available if m depends on i
   print "ode_solve"
 call.append([
     setup, initialize, # method 0, 1
-    fixed_step_setup, fixed_step_solve, # method 2, 3
-    ode_count, ode_reinit, ode_fun, ode_solve # method 4-7
+    current, conductance, fixed_step_solve, # method 2, 3, 4
+    ode_count, ode_reinit, ode_fun, ode_solve # method 5-8
   ])
 '''
+
+ode_count_method_index = 5
+arrays_not_used = [0, 1, 4, 5]
+arrays_both_used = [7, 8]
 
 def register(c):
   unregister(c)
@@ -59,7 +65,6 @@ def unregister(c):
 def ode_count_all(offset):
   global nonvint_block_offset
   nonvint_block_offset = offset
-  ode_count_method_index = 4
   cnt = 0
   for c in call:
     if c[ode_count_method_index]:
@@ -69,21 +74,21 @@ def ode_count_all(offset):
 
 # see nrn/src/nrnoc/nonvintblock.h for the magic method numbers
 
-def nonvint_block(method, array_length, pd1, pd2, tid):
-    print 'nonvint_block called with method = %d l=%d' % (method,array_length)
+def nonvint_block(method, size, pd1, pd2, tid):
+    #print 'nonvint_block called with method = %d l=%d' % (method,size)
     assert(tid == 0)
-    if method >= 10: # nrn_nonvint_block_ode_count
-        # method - 10 is the offset for elements in pd1,pd2 managed by us.	
-        return ode_count_all(method - 10) # count of the extra states-equations managed by us
+    if method == ode_count_method_index:
+        return ode_count_all(size) # count of the extra states-equations managed by us
     else:
-        try:
-            pd1_array = numpy.frombuffer(numpy.core.multiarray.int_asbuffer(ctypes.addressof(pd1.contents), array_length*numpy.dtype(float).itemsize))
-        except:
+        if method in arrays_not_used:
             pd1_array = None
+            pd2_array = None
+        else:
+            pd1_array = numpy.frombuffer(numpy.core.multiarray.int_asbuffer(ctypes.addressof(pd1.contents), size*numpy.dtype(float).itemsize))
 
-        try:    
-            pd2_array = numpy.frombuffer(numpy.core.multiarray.int_asbuffer(ctypes.addressof(pd2.contents), array_length*numpy.dtype(float).itemsize))
-        except:
+        if method in arrays_both_used:
+            pd2_array = numpy.frombuffer(numpy.core.multiarray.int_asbuffer(ctypes.addressof(pd2.contents), size*numpy.dtype(float).itemsize))
+        else:
             pd2_array = None
         
         for c in call:

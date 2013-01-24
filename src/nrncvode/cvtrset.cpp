@@ -5,7 +5,7 @@
 #include	<InterViews/resource.h>
 #include	"nrnoc2iv.h"
 #include	"cvodeobj.h"
-
+#include	"nonvintblock.h"
 
 typedef int (*Pfridot)(...);
 extern "C" {
@@ -35,6 +35,7 @@ void Cvode::rhs(NrnThread* _nt) {
 	}
 
 	rhs_memb(z.cv_memb_list_, _nt);
+	nrn_nonvint_block_current(_nt->end, _nt->_actual_rhs, _nt->id);
 	/* at this point d contains all the membrane conductances */
 	/* now the internal axial currents.
 		rhs += ai_j*(vi_j - vi)
@@ -79,6 +80,7 @@ void Cvode::lhs(NrnThread* _nt) {
 	}
 
 	lhs_memb(z.cv_memb_list_, _nt);
+	nrn_nonvint_block_conductance(_nt->end, _nt->_actual_rhs, _nt->id);
 	nrn_cap_jacob(_nt, z.cmlcap_->ml);
 
 	/* now add the axial currents */

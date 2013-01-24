@@ -647,7 +647,7 @@ void Cvode::fun_thread(double tt, double* y, double* ydot, NrnThread* nt){
 	CvodeThreadData& z = CTD(nt->id);
 	fun_thread_transfer_part1(tt, y, nt);
 	fun_thread_transfer_part2(ydot, nt);
-	nrn_nonvint_block_ode_fun(z.nvsize_, y, ydot, nt->id);
+	if (ydot) nrn_nonvint_block_ode_fun(z.nvsize_, y, ydot, nt->id);
 }
 
 void Cvode::fun_thread_transfer_part1(double tt, double* y, NrnThread* nt){
