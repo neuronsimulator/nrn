@@ -17,6 +17,9 @@ nonvint_block_prototype = ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_int, ctypes.c_
 set_nonvint_block = nrn_dll.set_nonvint_block
 set_nonvint_block.argtypes = [nonvint_block_prototype]
 
+# Some info not available from the HocObject
+v_structure_change = ctypes.c_int.in_dll(nrn_dll, "v_structure_change")
+
 # items in call are each a list of 8 callables
 #    [setup, initialize, # method 0, 1
 #    fixed_step_setup, fixed_step_solve, # method 2, 3
@@ -59,6 +62,7 @@ def register(c):
   call.append(c)
 
 def unregister(c):
+  v_structure_change.value = 1
   if c in call:
     call.remove(c)
 
