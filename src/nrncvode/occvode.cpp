@@ -646,8 +646,8 @@ hoc_warning("errno set during ode jacobian solve", (char*)0);
 void Cvode::fun_thread(double tt, double* y, double* ydot, NrnThread* nt){
 	CvodeThreadData& z = CTD(nt->id);
 	fun_thread_transfer_part1(tt, y, nt);
+	nrn_nonvint_block_ode_fun(z.nvsize_, y, ydot, nt->id);
 	fun_thread_transfer_part2(ydot, nt);
-	if (ydot) nrn_nonvint_block_ode_fun(z.nvsize_, y, ydot, nt->id);
 }
 
 void Cvode::fun_thread_transfer_part1(double tt, double* y, NrnThread* nt){

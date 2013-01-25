@@ -25,21 +25,21 @@ call = []
 
 # e.g.
 test = '''
-def setup(unused1, unused2): #0
+def setup(): #0
   print "setup"
-def initialize(unused1, unused2): #1
+def initialize(): #1
   print "initialize"
-def current(rhs, unused2): #2
+def current(rhs): #2
   print "outward current to be subtracted from rhs"
-def conductance(d, unused2): #3
+def conductance(d): #3
   print "conductance to be added to d"
-def fixed_step_solve(unused1, unused2): #4
+def fixed_step_solve(dt): #4
   print "fixed_step_solve"
 def ode_count(offset): #5
   print "ode_count" ; return 0
-def ode_reinit(t, y, unused): #6
+def ode_reinit(y): #6 # fill y with initial values of states
   print "ode_reinit"
-def ode_fun(t, y, ydot): #7 # from y determine ydot
+def ode_fun(t, y, ydot): #7 # from t, y, determine ydot
   print "ode_fun"
 def ode_solve(dt, b, y): #8 #solve mx=b replace b with x (y available if m depends on it
   print "ode_solve"
@@ -82,27 +82,25 @@ def nonvint_block(method, size, pd1, pd2, tid):
     if method == ode_count_method_index:
         return ode_count_all(size) # count of the extra states-equations managed by us
     else:
-        if method in arrays_not_used:
-            pd1_array = None
-            pd2_array = None
-        else:
+        if pd1:
             pd1_array = numpy.frombuffer(numpy.core.multiarray.int_asbuffer(ctypes.addressof(pd1.contents), size*numpy.dtype(float).itemsize))
-
-        if method in arrays_both_used:
+        else:
+            pd1_array = None
+        if pd2:
             pd2_array = numpy.frombuffer(numpy.core.multiarray.int_asbuffer(ctypes.addressof(pd2.contents), size*numpy.dtype(float).itemsize))
         else:
             pd2_array = None
         
-        if method in [0, 1, 4]:
+        if method in [0, 1]:
             args = ()
-        else if method in [2, 3]:
+        elif method in [2, 3, 6]:
             args = (pd1_array,)
-        else if method == 6:
-            args = (pc.t(tid), pd1_array)
-        else if method == 7:
+        elif method == 4:
+            args = (pc.dt(tid),)
+        elif method == 7:
             args = (pc.t(tid), pd1_array, pd2_array)
-        else if method == 8:
-            args = (pd.dt(tid), pd1_array, pd2_array)
+        elif method == 8:
+            args = (pc.dt(tid), pd1_array, pd2_array)
         for c in call:
             if c[method] is not None:
                 c[method](*args)
