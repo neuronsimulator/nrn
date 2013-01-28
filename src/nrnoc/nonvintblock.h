@@ -28,10 +28,12 @@ The other uses can merely return 0.
 #define nonvintblock_extern extern
 #endif
 
+extern int nrn_nonvint_block_helper(int method, int length, double* pd1, double* pd2, int tid);
+
 nonvintblock_extern int (*nrn_nonvint_block)(int method, int length, double* pd1, double* pd2, int tid);
 
 #define nonvint_block(method, size, pd1, pd2, tid) \
-  nrn_nonvint_block ? (*nrn_nonvint_block)(method, size, pd1, pd2, tid) : 0
+  nrn_nonvint_block ? nrn_nonvint_block_helper(method, size, pd1, pd2, tid) : 0
 
 /* called near end of nrnoc/treeset.c:v_setup_vectors after structure_change_cnt is incremented. */
 #define nrn_nonvint_block_setup() nonvint_block(0, 0, 0, 0, 0)

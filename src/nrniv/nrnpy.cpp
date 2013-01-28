@@ -17,12 +17,6 @@ extern void (*p_nrnpython_start)(int);
 void nrnpython();
 static void (*p_nrnpython_real)();
 static void (*p_nrnpython_reg_real)();
-
-int set_nonvint_block(int (*new_nrn_nonvint_block)(int method, int size, double* pd1, double* pd2, int tid)) {
-	nrn_nonvint_block = new_nrn_nonvint_block;
-	return 0;
-}
-
 }
 
 // following is undefined or else has the value of sys.api_version

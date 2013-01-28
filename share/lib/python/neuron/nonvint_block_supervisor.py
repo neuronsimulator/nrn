@@ -2,6 +2,7 @@ import os
 import ctypes
 import neuron
 import numpy
+import sys
 from neuron import h
 import neuron
 
@@ -81,10 +82,12 @@ pc = h.ParallelContext()
 # see nrn/src/nrnoc/nonvintblock.h for the magic method numbers
 
 def nonvint_block(method, size, pd1, pd2, tid):
-    #print 'nonvint_block called with method = %d l=%d' % (method,size)
-    assert(tid == 0)
+  #print 'nonvint_block called with method = %d l=%d' % (method,size)
+  assert(tid == 0)
+  rval = 0
+  try:
     if method == ode_count_method_index:
-        return ode_count_all(size) # count of the extra states-equations managed by us
+        rval = ode_count_all(size) # count of the extra states-equations managed by us
     else:
         if pd1:
             pd1_array = numpy.frombuffer(numpy.core.multiarray.int_asbuffer(ctypes.addressof(pd1.contents), size*numpy.dtype(float).itemsize))
@@ -108,7 +111,10 @@ def nonvint_block(method, size, pd1, pd2, tid):
         for c in call:
             if c[method] is not None:
                 c[method](*args)
-    return 0
+  except:
+    print sys.exc_info()[0], ': ', sys.exc_info()[1]
+    rval = -1
+  return rval
 
 _callback = nonvint_block_prototype(nonvint_block)
 set_nonvint_block(_callback)

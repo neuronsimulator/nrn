@@ -983,3 +983,16 @@ nrn_ba(NrnThread* nt, int bat){
 		}
 	}
 }
+
+int set_nonvint_block(int (*new_nrn_nonvint_block)(int method, int size, double* pd1, double* pd2, int tid)) {
+	nrn_nonvint_block = new_nrn_nonvint_block;
+	return 0;
+}
+
+int nrn_nonvint_block_helper(int method, int size, double* pd1, double* pd2, int tid) {
+	int rval = (*nrn_nonvint_block)(method, size, pd1, pd2, tid);
+	if (rval == -1) {
+		hoc_execerror("nrn_nonvint_block error", 0);
+	}
+	return rval;
+}
