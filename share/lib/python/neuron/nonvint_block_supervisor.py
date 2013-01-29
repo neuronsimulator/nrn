@@ -1,10 +1,8 @@
-import os
 import ctypes
 import neuron
 import numpy
-import sys
 from neuron import h
-import neuron
+import traceback
 
 #
 # connect to dll via ctypes
@@ -112,7 +110,7 @@ def nonvint_block(method, size, pd1, pd2, tid):
             if c[method] is not None:
                 c[method](*args)
   except:
-    print sys.exc_info()[0], ': ', sys.exc_info()[1]
+    traceback.print_exc()
     rval = -1
   return rval
 
