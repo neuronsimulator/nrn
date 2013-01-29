@@ -7,7 +7,7 @@ Quick Links
 - :ref:`genindex`
 - :ref:`search`
 - Commonly used:
-    :class:`Deck`, :class:`File`, :class:`Glyph`, :class:`GUIMath`,
+    :class:`Deck`, :class:`File`, :class:`Glyph`, :class:`Graph`, :class:`GUIMath`,
     :class:`List`, :class:`Matrix`, :class:`Pointer`, :class:`PWManager`,
     :class:`Random`, :class:`StringFunctions`, :class:`SymChooser`,
     :class:`TextEditor`, :class:`Timer`, :class:`ValueFieldEditor`,
