@@ -45,10 +45,14 @@ def ode_fun(t, y, ydot): #7 # from t, y, determine ydot
   print "ode_fun"
 def ode_solve(dt, b, y): #8 #solve mx=b replace b with x (y available if m depends on it
   print "ode_solve"
+def ode_abs_tolerance(y_abs_tolerance): #9 fill with cvode.atol()*scalefactor
+  print "ode_abs_tolerance" # on entry, y_abs_tolerance filled with cvode.atol()
+
 call.append([
     setup, initialize, # method 0, 1
     current, conductance, fixed_step_solve, # method 2, 3, 4
-    ode_count, ode_reinit, ode_fun, ode_solve # method 5-8
+    ode_count, ode_reinit, ode_fun, ode_solve, # method 5-8
+    ode_abs_tolerance
   ])
 '''
 
@@ -98,7 +102,7 @@ def nonvint_block(method, size, pd1, pd2, tid):
         
         if method in [0, 1]:
             args = ()
-        elif method in [2, 3, 6]:
+        elif method in [2, 3, 6, 9]:
             args = (pd1_array,)
         elif method == 4:
             args = (pc.dt(tid),)

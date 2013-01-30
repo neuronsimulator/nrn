@@ -67,6 +67,9 @@ nonvintblock_extern int (*nrn_nonvint_block)(int method, int length, double* pd1
    (if the problem is non-linear) */
 #define nrn_nonvint_block_ode_solve(size, b, y, tid) nonvint_block(8, size, b, y, tid)
 
+/* multiply the existing values in y (cvode.atol()) with appropriate scale factors */
+#define nrn_nonvint_block_ode_abstol(size, y, tid) nonvint_block(9, size, y, 0, tid)
+
 #if defined(__cplusplus)
 }
 #endif

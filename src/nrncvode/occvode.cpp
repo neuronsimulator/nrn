@@ -263,6 +263,8 @@ printf("%d Cvode::init_eqn id=%d neq_v_=%d #nonvint=%d #nonvint_extra=%d nvsize=
 			}
 		}
 	}
+	printf("atv = %p\n", atv);
+	nrn_nonvint_block_ode_abstol(z.nvsize_, atv, id);
     }
 	structure_change_ = false;
 }
