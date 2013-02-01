@@ -128,6 +128,9 @@ if test "$file_open_retry" != "" ; then
 	NRN_DEFINE_UNQUOTED(FILE_OPEN_RETRY,$file_open_retry,[Number of times to retry a failed open])
 fi
 
+dnl Use to be only when configured with mpi. Now always since it is so useful.
+NRN_DEFINE_UNQUOTED(DLL_DEFAULT_FNAME,"$host_cpu/.libs/libnrnmech.so",[Define if want a automatic dll load])
+
 dnl there are some os dependent properties in nrn.defaults.
 nrndef_unix="//"
 nrndef_mac="//"

@@ -10,7 +10,6 @@ AC_HELP_STRING([--without-mpi],[This is the default. Do not compile the parallel
 		ACX_MPI([
 			use_mpi=yes
 			NRN_DEFINE(NRNMPI,1,[Define if you want MPI specific features.])
-			NRN_DEFINE_UNQUOTED(DLL_DEFAULT_FNAME,"$host_cpu/.libs/libnrnmech.so",[Define if want a automatic dll load])
 			AC_LANG_PUSH([C++])
 			ACX_MPI([use_mpi=yes])
 			AC_LANG_POP()
