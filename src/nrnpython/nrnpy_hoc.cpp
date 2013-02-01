@@ -1553,6 +1553,19 @@ static PyObject* hocobj_vptr(PyObject* pself, PyObject* args) {
 }
 
 
+static PyObject* hocobj_same(PyHocObject* pself, PyObject* args) {
+	PyObject* po;
+	if (PyArg_ParseTuple(args, "O", &po)) {
+		if (PyObject_TypeCheck(po, hocobject_type)){
+			if (((PyHocObject*)po)->ho_ == pself->ho_) {
+				return Py_True;
+			}
+		}
+	}
+	return Py_False;
+}
+
+
 static PySequenceMethods hocobj_seqmeth = {
 	hocobj_len, NULL, NULL, hocobj_getitem,
 	NULL, hocobj_setitem, NULL, NULL,
@@ -1731,6 +1744,7 @@ static PyMethodDef hocobj_methods[] = {
 	{"Section", (PyCFunction)nrnpy_newsecobj, METH_VARARGS|METH_KEYWORDS, "Return a new Section" },
 	{"setpointer", setpointer, METH_VARARGS, "Assign hoc variable address to NMODL POINTER"},
 	{"hocobjptr", hocobj_vptr, METH_NOARGS, "Hoc Object pointer as a long int"},
+	{"same", (PyCFunction)hocobj_same, METH_VARARGS, "o1.same(o2) return True if o1 and o2 wrap the same internal HOC Object"},
 	{"hname", hocobj_name, METH_NOARGS, "More specific than __str__() or __attr__()."},
 	{NULL, NULL, 0, NULL}
 };

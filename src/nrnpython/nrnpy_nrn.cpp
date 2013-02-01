@@ -327,6 +327,18 @@ static PyObject* pysec2cell(NPySecObj* self) {
 	return result;
 }
 
+static PyObject* pysec_same(NPySecObj* self, PyObject* args) {
+	PyObject* pysec;
+	if (PyArg_ParseTuple(args, "O", &pysec)) {
+		if (PyObject_TypeCheck(pysec, psection_type)){
+			if (((NPySecObj*)pysec)->sec_ == self->sec_) {
+				return Py_True;
+			}
+		}
+	}
+	return Py_False;
+}
+
 static PyObject* NPyMechObj_name(NPyMechObj* self) {
 	PyObject* result = NULL;
 	if (self->prop_) {
@@ -1030,6 +1042,9 @@ static PyMethodDef NPySecObj_methods[] = {
 	},
 	{"cell", (PyCFunction)pysec2cell, METH_NOARGS,
 	 "Return the object that owns the Section. Possibly None."
+	},
+	{"same", (PyCFunction)pysec_same, METH_VARARGS,
+	 "sec1.same(sec2) returns True if sec1 and sec2 wrap the same NEURON Section"
 	},
 	{NULL}
 };
