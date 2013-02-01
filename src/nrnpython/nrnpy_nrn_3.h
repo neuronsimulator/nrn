@@ -25,7 +25,7 @@ static PyTypeObject nrnpy_SectionType = {
 	"Section objects",	/*tp_doc*/
 	0,			/*tp_traverse*/
 	0,			/*tp_clear*/
-	0,			/*tp_richcompare*/
+	(richcmpfunc) pysec_richcmp,	/*tp_richcompare*/
 	0,			/*tp_weaklistoffset*/
 	(getiterfunc)section_iter, /*tp_iter*/
 	0,			/*tp_iternext*/

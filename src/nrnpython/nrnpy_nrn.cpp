@@ -327,6 +327,40 @@ static PyObject* pysec2cell(NPySecObj* self) {
 	return result;
 }
 
+
+static PyObject* pysec_richcmp(NPySecObj* self, PyObject* other, int op) {
+	PyObject* pysec;
+	bool result = false;
+	if (PyObject_TypeCheck(other, psection_type)){
+	    Section* self_ptr = self->sec_;
+	    Section* other_ptr = ((NPySecObj*)other)->sec_;
+	    switch(op) {
+	    case Py_LT:
+	        result = self_ptr < other_ptr;
+	        break;
+	    case Py_LE:
+	        result = self_ptr <= other_ptr;
+	        break;
+	    case Py_EQ:
+	        result = self_ptr == other_ptr;
+	        break;
+	    case Py_NE:
+	        result = self_ptr != other_ptr;
+	        break;
+	    case Py_GT:
+	        result = self_ptr > other_ptr;
+	        break;
+	    case Py_GE:
+	        result = self_ptr >= other_ptr;
+	        break;
+	    }
+	    return result ? Py_True : Py_False;
+	}
+	return Py_False;
+}
+
+
+
 static PyObject* pysec_same(NPySecObj* self, PyObject* args) {
 	PyObject* pysec;
 	if (PyArg_ParseTuple(args, "O", &pysec)) {
