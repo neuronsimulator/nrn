@@ -339,7 +339,7 @@ def run(tstop):
     h('while (t < tstop) { fadvance() }')
     # what about pc.psolve(tstop)?
 
-def nrn_dll():
+def nrn_dll(printpath = False):
     """Return a ctypes object corresponding to the NEURON library.
     
     .. warning::
@@ -358,7 +358,7 @@ def nrn_dll():
     for extension in ['', '.dll', '.so', '.dylib']:
         try:
             the_dll = ctypes.cdll[base_path + extension]
-            print base_path + extension
+            if printpath : print base_path + extension
             success = True
         except:
             pass
@@ -367,3 +367,19 @@ def nrn_dll():
         raise Exception('unable to connect to the NEURON library')
     return the_dll
 
+try:
+  import ctypes
+  import numpy
+  import traceback
+  vec_to_numpy_prototype = ctypes.CFUNCTYPE(ctypes.py_object, ctypes.c_int, ctypes.POINTER(ctypes.c_double))
+  def vec2numpy(size, data):
+    try:
+      return numpy.frombuffer(numpy.core.multiarray.int_asbuffer(ctypes.addressof(data.contents), size*numpy.dtype(float).itemsize))
+    except:
+      traceback.print_exc()
+      return None
+  vec_to_numpy_callback = vec_to_numpy_prototype(vec2numpy)
+  set_vec_as_numpy = nrn_dll().nrnpy_set_vec_as_numpy
+  set_vec_as_numpy(vec_to_numpy_callback)
+except:
+  pass

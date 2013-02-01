@@ -103,6 +103,7 @@ extern Symlist* hoc_top_level_symlist;
 extern void nrn_exit(int);
 IvocVect* (*nrnpy_vec_from_python_p_)(void*);
 Object** (*nrnpy_vec_to_python_p_)(void*);
+Object** (*nrnpy_vec_as_numpy_helper_)(int, double*);
 };
 
 
@@ -3573,6 +3574,16 @@ Object** v_to_python(void* v) {
 	return (*nrnpy_vec_to_python_p_)(v);
 }
 
+Object** v_as_numpy(void* v) {
+	if (!nrnpy_vec_as_numpy_helper_) {
+		hoc_execerror("Python not available", 0);
+	}
+	Vect* vec = (Vect*)v;
+	// not a copy, shares the data! So do not change the size while
+	// the python numpy array is in use.
+	return (*nrnpy_vec_as_numpy_helper_)(vec->capacity(), vec->vec());
+}
+
 
 
 
@@ -3693,6 +3704,7 @@ static Member_ret_obj_func v_retobj_members[] = {
 
 	"from_python",	v_from_python,
 	"to_python",	v_to_python,
+	"as_numpy",	v_as_numpy,
 
 	0,0
 };

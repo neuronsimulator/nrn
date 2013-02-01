@@ -47,6 +47,8 @@ extern Object* nrnpy_pyobject_in_obj(PyObject*);
 static void pyobject_in_objptr(Object**, PyObject*);
 extern IvocVect* (*nrnpy_vec_from_python_p_)(void*);
 extern Object** (*nrnpy_vec_to_python_p_)(void*);
+extern Object** (*nrnpy_vec_as_numpy_helper_)(int, double*);
+int nrnpy_set_vec_as_numpy(PyObject* (*p)(int, double*)); // called by ctypes.
 extern double** nrnpy_setpointer_helper(PyObject*, PyObject*);
 extern Symbol* ivoc_alias_lookup(const char* name, Object* ob);
 
@@ -1669,6 +1671,24 @@ static IvocVect* nrnpy_vec_from_python(void* v) {
 	return hv;
 }
 
+static PyObject* (*vec_as_numpy)(int, double*);
+int nrnpy_set_vec_as_numpy(PyObject*(*p)(int, double*)) {
+	vec_as_numpy = p;
+}
+
+static Object** vec_as_numpy_helper(int size, double* data) {
+	if (vec_as_numpy) {
+		PyObject* po = (*vec_as_numpy)(size, data);
+		if (po != Py_None) {
+			Object* ho = nrnpy_po2ho(po);
+			Py_DECREF(po);
+			--ho->refcount;
+			return hoc_temp_objptr(ho);
+		}
+	}
+	hoc_execerror("Vector.as_numpy() error", 0);
+}
+
 static Object** nrnpy_vec_to_python(void* v) {
 	Vect* hv = (Vect*)v;
 	int size = hv->capacity();
@@ -1794,6 +1814,7 @@ myPyMODINIT_FUNC nrnpy_hoc() {
 	char *byteorder;
 	nrnpy_vec_from_python_p_ = nrnpy_vec_from_python;
 	nrnpy_vec_to_python_p_ = nrnpy_vec_to_python;
+	nrnpy_vec_as_numpy_helper_ = vec_as_numpy_helper;
 #if PY_MAJOR_VERSION >= 3
 	PyObject* modules = PyImport_GetModuleDict();
 	if ((m = PyDict_GetItemString(modules, "hoc")) != NULL &&
