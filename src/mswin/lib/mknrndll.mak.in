@@ -27,25 +27,25 @@ bin = bin@binsuffix@
 
 # additional rules to handle variations of filename extensions
 %.c : %.moD
-	$(CC) $(CFLAGS) -c $*.c
+	nocmodl $*
 
 %.c : %.mOd
-	$(CC) $(CFLAGS) -c $*.c
+	nocmodl $*
 
 %.c : %.mOD
-	$(CC) $(CFLAGS) -c $*.c
+	nocmodl $*
 
 %.c : %.Mod
-	$(CC) $(CFLAGS) -c $*.c
+	nocmodl $*
 
 %.c : %.MoD
-	$(CC) $(CFLAGS) -c $*.c
+	nocmodl $*
 
 %.c : %.MOd
-	$(CC) $(CFLAGS) -c $*.c
+	nocmodl $*
 
 %.c : %.MOD
-	$(CC) $(CFLAGS) -c $*.c
+	nocmodl $*
 
 %.o : %.moD
 
