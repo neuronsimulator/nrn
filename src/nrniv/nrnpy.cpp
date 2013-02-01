@@ -10,6 +10,7 @@
 #include <InterViews/resource.h>
 #include "nrnoc2iv.h"
 #include "classreg.h"
+#include "nonvintblock.h"
 
 extern "C" {
 extern void (*p_nrnpython_start)(int);

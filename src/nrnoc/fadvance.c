@@ -7,6 +7,8 @@
 #include "section.h"
 #include "membfunc.h"
 #include "multisplit.h"
+#define nrnoc_fadvance_c
+#include "nonvintblock.h"
 
 /*
  after an fadvance from t-dt to t, v is defined at t
@@ -668,6 +670,7 @@ hoc_warning("errno set during calculation of states", (char*)0);
 		}
 	}
 	long_difus_solve(0, _nt); /* if any longitudinal diffusion */
+	nrn_nonvint_block_fixed_step_solve(_nt->id);
 #endif
 }
 
@@ -784,6 +787,7 @@ void nrn_finitialize(int setv, double v) {
 #if MULTICORE
 	for (i=0; i < nrn_nthread; ++i) {
 		NrnThread* nt = nrn_threads + i;
+		nrn_nonvint_block_init(nt->id);
 		NrnThreadMembList* tml;
 		for (tml = nt->tml; tml; tml = tml->next) {
 			Pfri s = memb_func[tml->index].initialize;
@@ -978,4 +982,17 @@ nrn_ba(NrnThread* nt, int bat){
 			(*f)(ml->nodelist[i], ml->data[i], ml->pdata[i], ml->_thread, nt);
 		}
 	}
+}
+
+int set_nonvint_block(int (*new_nrn_nonvint_block)(int method, int size, double* pd1, double* pd2, int tid)) {
+	nrn_nonvint_block = new_nrn_nonvint_block;
+	return 0;
+}
+
+int nrn_nonvint_block_helper(int method, int size, double* pd1, double* pd2, int tid) {
+	int rval = (*nrn_nonvint_block)(method, size, pd1, pd2, tid);
+	if (rval == -1) {
+		hoc_execerror("nrn_nonvint_block error", 0);
+	}
+	return rval;
 }

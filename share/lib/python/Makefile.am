@@ -11,6 +11,8 @@ neuron/gui.py \
 neuron/__init__.py \
 neuron/sections.py \
 \
+neuron/nonvint_block_supervisor.py \
+\
 neuron/neuroml/__init__.py \
 neuron/neuroml/rdxml.py \
 neuron/neuroml/xml2nrn.py \

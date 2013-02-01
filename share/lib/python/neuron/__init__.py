@@ -354,10 +354,11 @@ def nrn_dll():
     neuron_home = os.path.split(os.path.split(h.neuronhome())[0])[0]
 
     success = False
-    base_path = os.path.join(neuron_home, platform.machine(), 'lib', 'libnrniv')
+    base_path = os.path.join(neuron_home, 'lib' , 'python', 'neuron', 'hoc')
     for extension in ['', '.dll', '.so', '.dylib']:
         try:
             the_dll = ctypes.cdll[base_path + extension]
+            print base_path + extension
             success = True
         except:
             pass

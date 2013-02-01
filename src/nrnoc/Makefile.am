@@ -198,7 +198,8 @@ pkginclude_HEADERS = neuron.h md1redef.h md2redef.h section.h nrnoc_ml.h \
 
 ## Header files that need to be included in the distribution but not installed:
 noinst_HEADERS = hocusr.h \
-	osxdlfcn.h osxdlfcn.c multicore.c
+	osxdlfcn.h osxdlfcn.c multicore.c \
+	nonvintblock.h
 
 ## We have to play a trick on automake to get it to install the .o files in
 ## an architecture-dependent subdirectory.  (Apparently automake's authors

@@ -1300,7 +1300,8 @@ CvodeThreadData::CvodeThreadData() {
 	pvdot_ = nil;
 	nvoffset_ = 0;
 	nvsize_ = 0;
-	neq_v_ = 0;
+	neq_v_ = nonvint_offset_ = 0;
+	nonvint_extra_offset_ = 0;
 	record_ = nil;
 	play_ = nil;
 }
