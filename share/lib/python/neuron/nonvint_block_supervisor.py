@@ -92,11 +92,17 @@ def nonvint_block(method, size, pd1, pd2, tid):
         rval = ode_count_all(size) # count of the extra states-equations managed by us
     else:
         if pd1:
-            pd1_array = numpy.frombuffer(numpy.core.multiarray.int_asbuffer(ctypes.addressof(pd1.contents), size*numpy.dtype(float).itemsize))
+            if size:
+                pd1_array = numpy.frombuffer(numpy.core.multiarray.int_asbuffer(ctypes.addressof(pd1.contents), size*numpy.dtype(float).itemsize))
+            else:
+                pd1_array = numpy.array([])
         else:
             pd1_array = None
         if pd2:
-            pd2_array = numpy.frombuffer(numpy.core.multiarray.int_asbuffer(ctypes.addressof(pd2.contents), size*numpy.dtype(float).itemsize))
+            if size:
+                pd2_array = numpy.frombuffer(numpy.core.multiarray.int_asbuffer(ctypes.addressof(pd2.contents), size*numpy.dtype(float).itemsize))
+            else:
+                pd2_array = numpy.array([])
         else:
             pd2_array = None
         
