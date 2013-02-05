@@ -327,6 +327,55 @@ static PyObject* pysec2cell(NPySecObj* self) {
 	return result;
 }
 
+static long pysec_hash(PyObject* self) {
+    return (long) ((NPySecObj*) self)->sec_;
+}
+
+static long pyseg_hash(PyObject* self) {
+    NPySegObj* seg = (NPySegObj*) self;
+    return (long) node_exact(seg->pysec_->sec_, seg->x_);
+}
+
+
+
+static PyObject* pyseg_richcmp(NPySegObj* self, PyObject* other, int op) {
+	PyObject* pysec;
+	bool result = false;
+	if (PyObject_TypeCheck(other, psegment_type)){
+        NPySegObj* seg = (NPySegObj*) self;
+	    Node* self_ptr = node_exact(seg->pysec_->sec_, seg->x_);
+	    seg = (NPySegObj*) other;
+	    Node* other_ptr = node_exact(seg->pysec_->sec_, seg->x_);
+	    switch(op) {
+	    case Py_LT:
+	        result = self_ptr < other_ptr;
+	        break;
+	    case Py_LE:
+	        result = self_ptr <= other_ptr;
+	        break;
+	    case Py_EQ:
+	        result = self_ptr == other_ptr;
+	        break;
+	    case Py_NE:
+	        result = self_ptr != other_ptr;
+	        break;
+	    case Py_GT:
+	        result = self_ptr > other_ptr;
+	        break;
+	    case Py_GE:
+	        result = self_ptr >= other_ptr;
+	        break;
+	    }
+	    return result ? Py_True : Py_False;
+	}
+	return Py_False;
+}
+
+
+
+
+
+
 
 static PyObject* pysec_richcmp(NPySecObj* self, PyObject* other, int op) {
 	PyObject* pysec;

@@ -21,7 +21,7 @@ static PyTypeObject nrnpy_SectionType = {
     0,                         /*tp_as_number*/
     0,                         /*tp_as_sequence*/
     0,                         /*tp_as_mapping*/
-    0,                         /*tp_hash */
+	(hashfunc) pysec_hash, /*tp_hash*/
     (ternaryfunc)NPySecObj_call,                         /*tp_call*/
     0,                         /*tp_str*/
     (getattrofunc)section_getattro,                         /*tp_getattro*/
@@ -63,7 +63,7 @@ static PyTypeObject nrnpy_SegmentType = {
     0,                         /*tp_as_number*/
     0,                         /*tp_as_sequence*/
     0,                         /*tp_as_mapping*/
-    0,                         /*tp_hash */
+	(hashfunc) pyseg_hash, /*tp_hash*/
     0,                         /*tp_call*/
     0,                         /*tp_str*/
     (getattrofunc)segment_getattro,                         /*tp_getattro*/
@@ -73,7 +73,7 @@ static PyTypeObject nrnpy_SegmentType = {
     "Segment objects",         /* tp_doc */
     0,		               /* tp_traverse */
     0,		               /* tp_clear */
-    0,		               /* tp_richcompare */
+    (richcmpfunc) pyseg_richcmp,   /* tp_richcompare */
     0,		               /* tp_weaklistoffset */
     (getiterfunc)segment_iter,		               /* tp_iter */
     (iternextfunc)segment_next,		               /* tp_iternext */
