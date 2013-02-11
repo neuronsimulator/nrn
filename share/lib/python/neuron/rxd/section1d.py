@@ -81,7 +81,7 @@ class Section1D(rxdsection.RxDSection):
                 sign = 1
             else:
                 raise Exception('bad nrn_region for setting up currents (should never get here)')
-            scales.extend(sign * rxd._conversion_factor * surface_area[self.indices] * 10000. / (self.species.charge * rxd.FARADAY * volumes[self.indices]))
+            scales.extend(sign * surface_area[self.indices] * 10000. / (self.species.charge * rxd.FARADAY * volumes[self.indices]))
             ptrs.extend([self._sec((i + 0.5) / self.nseg).__getattribute__(ion_curr) for i in xrange(self.nseg)])
 
     @property
