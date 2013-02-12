@@ -9,7 +9,7 @@ Shape and browser for creating a section panel
 .. index:: MenuExpore (HOC class)
 
 usage:
-    :code:`ob = MenuExplore()`
+    ``ob = MenuExplore()``
  
 Pressing the left mouse button on a section in the Shape scene (make 
 sure the :guilabel:`Section` popup menu item is selected) colors the section red and 

@@ -8,11 +8,11 @@ Random
 .. class:: Random
 
     Syntax:
-        :code:`Random()`
+        ``Random()``
 
-        :code:`Random(seed)`
+        ``Random(seed)``
 
-        :code:`Random(seed, size)`
+        ``Random(seed, size)``
 
 
     Description:
@@ -66,11 +66,11 @@ Random
 
 
     Syntax:
-        :code:`r.ACG()`
+        ``r.ACG()``
 
-        :code:`r.ACG(seed)`
+        ``r.ACG(seed)``
 
-        :code:`r.ACG(seed, size)`
+        ``r.ACG(seed, size)``
 
 
     Description:
@@ -91,11 +91,11 @@ Random
 
 
     Syntax:
-        :code:`r.MLCG()`
+        ``r.MLCG()``
 
-        :code:`r.MLCG(seed1)`
+        ``r.MLCG(seed1)``
 
-        :code:`r.MLCG(seed1, seed2)`
+        ``r.MLCG(seed1, seed2)``
 
 
     Description:
@@ -112,11 +112,11 @@ Random
 
 
     Syntax:
-        :code:`highindex = r.MCellRan4()`
+        ``highindex = r.MCellRan4()``
 
-        :code:`highindex = r.MCellRan4(highindex)`
+        ``highindex = r.MCellRan4(highindex)``
 
-        :code:`highindex = r.MCellRan4(highindex, lowindex)`
+        ``highindex = r.MCellRan4(highindex, lowindex)``
 
 
     Description:
@@ -284,7 +284,7 @@ Random
 
 
     Syntax:
-        :code:`r.repick()`
+        ``r.repick()``
 
 
     Description:
@@ -300,7 +300,7 @@ Random
 
 
     Syntax:
-        :code:`r.play(&var)`
+        ``r.play(&var)``
 
 
     Description:
@@ -343,7 +343,7 @@ Random
 
 
     Syntax:
-        :code:`r.uniform(low, high)`
+        ``r.uniform(low, high)``
 
 
     Description:
@@ -379,7 +379,7 @@ Random
 
 
     Syntax:
-        :code:`r.discunif(low, high)`
+        ``r.discunif(low, high)``
 
 
     Description:
@@ -396,7 +396,7 @@ Random
 
 
     Syntax:
-        :code:`r.normal(mean, variance)`
+        ``r.normal(mean, variance)``
 
 
     Description:
@@ -439,7 +439,7 @@ Random
 
 
     Syntax:
-        :code:`r.lognormal(mean, variance)`
+        ``r.lognormal(mean, variance)``
 
 
     Description:
@@ -488,7 +488,7 @@ Random
 
 
     Syntax:
-        :code:`r.poisson(mean)`
+        ``r.poisson(mean)``
 
 
     Description:
@@ -539,7 +539,7 @@ Random
 
 
     Syntax:
-        :code:`r.binomial(N,p)`
+        ``r.binomial(N,p)``
 
 
     Description:
@@ -547,7 +547,7 @@ Random
         *N* trials when the probability of a success after one trial is *p*. 
         (n>0, 0<=p<=1). 
          
-        :code:`P(n, N, p) = p * P(n-1, N-1, p) + (1 - p) * P(n, N-1, p)`
+        ``P(n, N, p) = p * P(n-1, N-1, p) + (1 - p) * P(n, N-1, p)``
 
     Example:
 
@@ -580,7 +580,7 @@ Random
 
 
     Syntax:
-        :code:`r.geometric(mean)`
+        ``r.geometric(mean)``
 
 
     Description:
@@ -622,7 +622,7 @@ Random
 
 
     Syntax:
-        :code:`r.hypergeo(mean,variance)`
+        ``r.hypergeo(mean,variance)``
 
 
     Description:
@@ -638,7 +638,7 @@ Random
 
 
     Syntax:
-        :code:`r.negexp(mean)`
+        ``r.negexp(mean)``
 
 
     Description:
@@ -678,7 +678,7 @@ Random
 
 
     Syntax:
-        :code:`r.erlang(mean,variance)`
+        ``r.erlang(mean,variance)``
 
 
     Description:
@@ -694,7 +694,7 @@ Random
 
 
     Syntax:
-        :code:`r.weibull(alpha,beta)`
+        ``r.weibull(alpha,beta)``
 
 
     Description:

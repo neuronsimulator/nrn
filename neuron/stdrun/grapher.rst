@@ -54,7 +54,7 @@ To use the grapher widget:
         are in fact just variables then you will need a generator 
         statement that tells how to compute the y variables given 
         a value of the independent variable. eg. Just for fun you can 
-        try entering the generator statement: :code:`print x, sin(x)`
+        try entering the generator statement: ``print x, sin(x)``
 
  
 

@@ -9,7 +9,7 @@ ValueFieldEditor
 
 
     Syntax:
-        :code:`vfe = new ValueFieldEditor(...)`
+        ``vfe = new ValueFieldEditor(...)``
 
 
     Description:
@@ -26,7 +26,7 @@ ValueFieldEditor
 
 
     Syntax:
-        :code:`vfe.default`
+        ``vfe.default``
 
 
     Description:

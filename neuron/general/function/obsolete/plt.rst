@@ -29,20 +29,20 @@ Obsolete Plotting
          
 
     Syntax:
-        :code:`plt(mode)`
+        ``plt(mode)``
 
-        :code:`plt(mode, x, y)`
+        ``plt(mode, x, y)``
 
-        :code:`setcolor(colorval)`
+        ``setcolor(colorval)``
 
 
 
     Description:
-        \ :code:`Plt()` plots points, lines, and text using 
+        \ ``Plt()`` plots points, lines, and text using 
         the Tektronix 4010 standard. Absolute 
         coordinates of the lower left corner and upper right corner of the plot 
         region are (0,0) and (1000, 780) respectively. 
-        \ :code:`Setcolor()` sets the color (or pen number for HP plotter) 
+        \ ``Setcolor()`` sets the color (or pen number for HP plotter) 
          
         TURBO-C graphics drivers for VGA, EGA, CGA, and Hercules are automatically 
         selected when the first plotting command is executed. An HP7475 compatible 
@@ -52,52 +52,52 @@ Obsolete Plotting
     Options:
 
 
-        \ :code:`plt(-1)` 
+        \ ``plt(-1)`` 
             Place cursor in home position. 
 
-        \ :code:`plt(-2)` 
+        \ ``plt(-2)`` 
             Subsequent text printed starting at current coordinate position. 
 
-        \ :code:`plt(-3)` 
+        \ ``plt(-3)`` 
             Erase screen, cursor in home position. 
 
-        \ :code:`plt(-5)` 
+        \ ``plt(-5)`` 
             Open HP plotter on PC. 
 
-        \ :code:`setcolor()` 
-            The plotter will stay open till another \ :code:`plt(-5)` is executed. 
+        \ ``setcolor()`` 
+            The plotter will stay open till another \ ``plt(-5)`` is executed. 
 
-        \ :code:`plt(0, x, y)` 
+        \ ``plt(0, x, y)`` 
             Plot point. 
 
-        \ :code:`plt(1, x, y)` 
+        \ ``plt(1, x, y)`` 
             Move to point without plotting. 
 
-        \ :code:`plt(2, x, y)` 
+        \ ``plt(2, x, y)`` 
             Draw vector from former position to new position given by (x,y). 
             (*mode* can be any number >= 2) 
 
         Several extra options are available for X11 graphics. 
 
 
-        \ :code:`plt(-4, x, y)` 
+        \ ``plt(-4, x, y)`` 
             Erases area defined by previous plot position and 
             the point, (x, y). 
 
-        \ :code:`plt(-5)` 
+        \ ``plt(-5)`` 
             Fast mode. By default, the X11 server is flushed on every 
             plot command so one can see the plot as it develops. Fast mode caches plot 
-            commands and only flushes on \ :code:`plt(-1)` and \ :code:`setcolor()`.  Fast mode is 
+            commands and only flushes on \ ``plt(-1)`` and \ ``setcolor()``.  Fast mode is 
             three times faster than the default mode.  It is most useful when 
             plotting is the rate limiting step of the simulation. 
 
-        \ :code:`plt(-6)` 
+        \ ``plt(-6)`` 
             X11 server flushed on every plot call. 
 
         When the graphic window is resized, hoc is notified after 
         the next erase command. 
          
-        Argument to \ :code:`setcolor()` produces the following screen 
+        Argument to \ ``setcolor()`` produces the following screen 
         colors with an EGA adapter, X11 graphics: 
 
         .. code-block::

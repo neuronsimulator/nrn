@@ -23,15 +23,15 @@ VBox
 
 
     Syntax:
-        :code:`HBox()`
+        ``HBox()``
 
-        :code:`HBox(frame)`
+        ``HBox(frame)``
 
-        :code:`VBox()`
+        ``VBox()``
 
-        :code:`VBox(frame)`
+        ``VBox(frame)``
 
-        :code:`VBox(frame, 0or1)`
+        ``VBox(frame, 0or1)``
 
 
     Description:
@@ -41,14 +41,14 @@ VBox
         in a box. 
          
         As with all classes, a box must have an object reference pointer, and 
-        can be manipulated through this pointer.  You must use the \ :code:`.map` 
+        can be manipulated through this pointer.  You must use the \ ``.map`` 
         command to make a box appear on the screen. 
          
         A VBox with a second arg of 1 makes a vertical scrollbox. 
          
-        \ :code:`HBox()` tiles windows horizontally. 
+        \ ``HBox()`` tiles windows horizontally. 
          
-        \ :code:`VBox()` tiles windows vertically. 
+        \ ``VBox()`` tiles windows vertically. 
          
         The default frame is an inset frame. The available frames are: 
 
@@ -87,9 +87,9 @@ VBox
 
 
     Syntax:
-        :code:`box.intercept(1)`
+        ``box.intercept(1)``
 
-        :code:`box.intercept(0)`
+        ``box.intercept(0)``
 
 
     Description:
@@ -124,9 +124,9 @@ VBox
 
 
     Syntax:
-        :code:`.map("label")`
+        ``.map("label")``
 
-        :code:`.map("label", left, top, width, height)`
+        ``.map("label", left, top, width, height)``
 
 
     Description:
@@ -157,9 +157,9 @@ VBox
 
 
     Syntax:
-        :code:`b.unmap()`
+        ``b.unmap()``
 
-        :code:`b.unmap(accept)`
+        ``b.unmap(accept)``
 
 
     Description:
@@ -181,7 +181,7 @@ VBox
 
 
     Syntax:
-        :code:`bool = box.ismapped()`
+        ``bool = box.ismapped()``
 
 
     Description:
@@ -197,7 +197,7 @@ VBox
 
 
     Syntax:
-        :code:`box.size(&x[0])`
+        ``box.size(&x[0])``
 
 
     Description:
@@ -232,13 +232,13 @@ VBox
 
 
     Syntax:
-        :code:`box.save("proc_name")`
+        ``box.save("proc_name")``
 
-        :code:`box.save("string")`
+        ``box.save("string")``
 
-        :code:`box.save(str, 1)`
+        ``box.save(str, 1)``
 
-        :code:`box.save(str, obj)`
+        ``box.save(str, obj)``
 
 
     Description:
@@ -265,7 +265,7 @@ VBox
 
 
     Syntax:
-        :code:`.ref(objectvar)`
+        ``.ref(objectvar)``
 
 
     Description:
@@ -273,8 +273,8 @@ VBox
         then the object is unreferenced by the box. 
         This provides a way for 
         objects that control a box to be automatically destroyed when 
-        the box is dismissed (assuming no other \ :code:`objectvar` references 
-        the object). When \ :code:`.ref` is used, the string in \ :code:`.save` is executed 
+        the box is dismissed (assuming no other \ ``objectvar`` references 
+        the object). When \ ``.ref`` is used, the string in \ ``.save`` is executed 
         in the context of the object. 
          
         Note: When objects are inaccessible to hoc from a normal objref 
@@ -294,7 +294,7 @@ VBox
 
 
     Syntax:
-        :code:`.dismiss_action("command")`
+        ``.dismiss_action("command")``
 
 
     Description:
@@ -315,9 +315,9 @@ VBox
 
 
     Syntax:
-        :code:`b =  box.dialog("label")`
+        ``b =  box.dialog("label")``
 
-        :code:`b =  box.dialog("label", "Accept label", "Cancel label")`
+        ``b =  box.dialog("label", "Accept label", "Cancel label")``
 
 
     Description:
@@ -338,7 +338,7 @@ VBox
 
 
     Syntax:
-        :code:`b.adjuster(start_size)`
+        ``b.adjuster(start_size)``
 
 
     Description:
@@ -363,9 +363,9 @@ VBox
 
 
     Syntax:
-        :code:`b.adjust(size)`
+        ``b.adjust(size)``
 
-        :code:`b.adjust(size, index)`
+        ``b.adjust(size, index)``
 
 
     Description:
@@ -383,7 +383,7 @@ VBox
 
 
     Syntax:
-        :code:`b.full_request(1)`
+        ``b.full_request(1)``
 
 
     Description:
@@ -404,7 +404,7 @@ VBox
 
 
     Syntax:
-        :code:`box.priority(integer)`
+        ``box.priority(integer)``
 
 
     Description:

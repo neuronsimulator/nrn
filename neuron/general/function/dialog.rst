@@ -18,7 +18,7 @@ until dealt with.
 
 
     Syntax:
-        :code:`boolean_dialog("label", ["accept", "cancel"])`
+        ``boolean_dialog("label", ["accept", "cancel"])``
 
 
     Description:
@@ -34,7 +34,7 @@ until dealt with.
 
 
     Syntax:
-        :code:`continue_dialog("label")`
+        ``continue_dialog("label")``
 
 
     Description:
@@ -50,7 +50,7 @@ until dealt with.
 
 
     Syntax:
-        :code:`string_dialog("label", strdef)`
+        ``string_dialog("label", strdef)``
 
 
     Description:

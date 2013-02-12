@@ -10,11 +10,11 @@ LinearMechanism
 
 
     Syntax:
-        :code:`lm = new LinearMechanism(c, g, y, [y0], b)`
+        ``lm = new LinearMechanism(c, g, y, [y0], b)``
 
-        :code:`section lm = new LinearMechanism(c, g, y, [y0], b, x)`
+        ``section lm = new LinearMechanism(c, g, y, [y0], b, x)``
 
-        :code:`lm = new LinearMechanism(c, g, y, [y0], b, sl, xvec, [layervec])`
+        ``lm = new LinearMechanism(c, g, y, [y0], b, sl, xvec, [layervec])``
 
 
 
@@ -51,7 +51,7 @@ LinearMechanism
         0, 1, or 2 (or up to however many layers are defined in src/nrnoc/options.h) 
         0 refers to the internal potential (equal to the membrane potential when 
         the extracellular mechanism is not inserted), and higher numbers refer 
-        to the \ :code:`vext[layer-1]` layer (or ground if the extracellular mechanism is 
+        to the \ ``vext[layer-1]`` layer (or ground if the extracellular mechanism is 
         not inserted). 
          
         If some y variables correspond to membrane potential, the corresponding 

@@ -21,8 +21,8 @@ MechanismStandard
         This class is useful in maintaining a default set of parameters and can 
         be used to specify values for a set of sections. 
          
-        *name* is a density mechanism such as :code:`hh` or a point process 
-        such as :class:`VClamp`. A :code:`MechanismStandard` instance, when created, 
+        *name* is a density mechanism such as ``hh`` or a point process 
+        such as :class:`VClamp`. A ``MechanismStandard`` instance, when created, 
         contains default values for all parameters associated with the mechanism. 
          
         In combination with the 
@@ -101,9 +101,9 @@ MechanismStandard
 
 
     Syntax:
-        :code:`ms.panel()`
+        ``ms.panel()``
 
-        :code:`ms.panel("string")`
+        ``ms.panel("string")``
 
 
     Description:
@@ -126,7 +126,7 @@ MechanismStandard
 
 
     Syntax:
-        :code:`ms.action("statement")`
+        ``ms.action("statement")``
 
 
     Description:
@@ -169,7 +169,7 @@ MechanismStandard
 
 
     Syntax:
-        :code:`ms.in()`
+        ``ms.in()``
 
         :samp:`ms.in({x})`
 
@@ -182,7 +182,7 @@ MechanismStandard
         copies parameter values into this mechanism standard from ... 
 
 
-        :code:`ms.in()` 
+        ``ms.in()`` 
             the mechanism located in first segment of the currently accessed section. 
 
         :samp:`ms.in({x})` 
@@ -209,31 +209,31 @@ MechanismStandard
 
 
     Syntax:
-        :code:`ms.out()`
+        ``ms.out()``
 
-        :code:`ms.out(x)`
+        ``ms.out(x)``
 
-        :code:`ms.out(pointprocess)`
+        ``ms.out(pointprocess)``
 
-        :code:`ms.out(mechanismstandard)`
+        ``ms.out(mechanismstandard)``
 
 
     Description:
         copies parameter values from this mechanism standard to ... 
 
 
-        :code:`ms.out()` 
+        ``ms.out()`` 
             the mechanism located in the currently accessed section (all segments). 
 
-        :code:`ms.out(x)` 
+        ``ms.out(x)`` 
             the mechanism located in the currently accessed section in the segment 
             containing x.(Note that x=0 and 1 are considered to lie in the 
             0+ and 1- segments respectively) 
 
-        :code:`ms.out(pointprocess)` 
+        ``ms.out(pointprocess)`` 
             the point process argument 
 
-        :code:`ms.out(mechanismstandard)` 
+        ``ms.out(mechanismstandard)`` 
             another mechanism standard 
 
         If the target is not the same type as the standard then nothing happens. 
@@ -265,7 +265,7 @@ MechanismStandard
 
 
     Syntax:
-        :code:`val = ms.get("varname" [, arrayindex])`
+        ``val = ms.get("varname" [, arrayindex])``
 
 
     Description:
@@ -282,7 +282,7 @@ MechanismStandard
 
 
     Syntax:
-        :code:`.save("name")`
+        ``.save("name")``
 
 
     Description:
@@ -301,7 +301,7 @@ MechanismStandard
 
 
     Syntax:
-        :code:`cnt = ms.count()`
+        ``cnt = ms.count()``
 
 
     Description:
@@ -318,9 +318,9 @@ MechanismStandard
 
 
     Syntax:
-        :code:`ms.name(strdef)`
+        ``ms.name(strdef)``
 
-        :code:`size = ms.name(strdef, i)`
+        ``size = ms.name(strdef, i)``
 
 
     Description:

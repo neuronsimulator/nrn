@@ -9,13 +9,13 @@ NetCon
 
 
     Syntax:
-        :code:`section netcon = new NetCon(&v(x), target)`
+        ``section netcon = new NetCon(&v(x), target)``
 
-        :code:`netcon = new NetCon(source, target)`
+        ``netcon = new NetCon(source, target)``
 
-        :code:`section netcon = new NetCon(&v(x), target, threshold, delay, weight)`
+        ``section netcon = new NetCon(&v(x), target, threshold, delay, weight)``
 
-        :code:`netcon = new NetCon(source, target, threshold, delay, weight)`
+        ``netcon = new NetCon(source, target, threshold, delay, weight)``
 
 
     Description:
@@ -67,11 +67,11 @@ NetCon
         proper currently accessed section for the source must be correct during 
         the creation of the NetCon so that the proper cell may be associated 
         with the source. i.e, 
-        \ :code:`netcon = new NetCon(&obj.sec.v(.5), ...)` 
+        \ ``netcon = new NetCon(&obj.sec.v(.5), ...)`` 
         will not work with the local step method because, although the pointer 
         is correct, the proper section was popped from the section stack prior 
         to the constructor call. Instead, the proper syntax is 
-        \ :code:`obj.sec netcon = new NetCon(&v(.5),...)` 
+        \ ``obj.sec netcon = new NetCon(&v(.5),...)`` 
          
         The source may also be a PointProcess with a NET_RECEIVE block which 
         contains a call to net_event. PointProcesses like this serve as entire 
@@ -116,7 +116,7 @@ NetCon
         NetCon can currently only be used if a CVode object exists. 
          
         The local variable step method does not work when the source is specified 
-        with the syntax \ :code:`netcon = new NetCon(&soma.v(.5),...)`. The 
+        with the syntax \ ``netcon = new NetCon(&soma.v(.5),...)``. The 
         currently accessed section must be correct during the construction of 
         the object and the above example is correct only during calculation of 
         the pointer argument. 
@@ -132,7 +132,7 @@ NetCon
 
 
     Syntax:
-        :code:`boolean = netcon.valid()`
+        ``boolean = netcon.valid()``
 
 
     Description:
@@ -150,9 +150,9 @@ NetCon
 
 
     Syntax:
-        :code:`boolean = netcon.active(boolean)`
+        ``boolean = netcon.active(boolean)``
 
-        :code:`boolean = netcon.active()`
+        ``boolean = netcon.active()``
 
 
     Description:
@@ -170,9 +170,9 @@ NetCon
 
 
     Syntax:
-        :code:`netcon.event(tdeliver)`
+        ``netcon.event(tdeliver)``
 
-        :code:`netcon.event(tdeliver, flag)`
+        ``netcon.event(tdeliver, flag)``
 
 
     Description:
@@ -193,7 +193,7 @@ NetCon
 
 
     Syntax:
-        :code:`target_object = netcon.syn()`
+        ``target_object = netcon.syn()``
 
 
     Description:
@@ -209,7 +209,7 @@ NetCon
 
 
     Syntax:
-        :code:`source_object = netcon.pre()`
+        ``source_object = netcon.pre()``
 
 
     Description:
@@ -226,7 +226,7 @@ NetCon
 
 
     Syntax:
-        :code:`{x = netcon.preloc() ... pop_section()}`
+        ``{x = netcon.preloc() ... pop_section()}``
 
 
     Description:
@@ -251,7 +251,7 @@ NetCon
 
 
     Syntax:
-        :code:`{x = netcon.postloc() ... pop_section()}`
+        ``{x = netcon.postloc() ... pop_section()}``
 
 
     Description:
@@ -270,7 +270,7 @@ NetCon
 
 
     Syntax:
-        :code:`cellobj = netcon.precell()`
+        ``cellobj = netcon.precell()``
 
 
     Description:
@@ -288,7 +288,7 @@ NetCon
 
 
     Syntax:
-        :code:`cellobj = netcon.postcell()`
+        ``cellobj = netcon.postcell()``
 
 
     Description:
@@ -306,7 +306,7 @@ NetCon
 
 
     Syntax:
-        :code:`netcon.setpost(newtarget)`
+        ``netcon.setpost(newtarget)``
 
 
     Description:
@@ -327,9 +327,9 @@ NetCon
 
 
     Syntax:
-        :code:`List = netcon.prelist()`
+        ``List = netcon.prelist()``
 
-        :code:`List = netcon.prelist(List)`
+        ``List = netcon.prelist(List)``
 
 
     Description:
@@ -347,9 +347,9 @@ NetCon
 
 
     Syntax:
-        :code:`List = netcon.synlist()`
+        ``List = netcon.synlist()``
 
-        :code:`List = netcon.synlist(List)`
+        ``List = netcon.synlist(List)``
 
 
     Description:
@@ -370,9 +370,9 @@ NetCon
 
 
     Syntax:
-        :code:`List = netcon.postcelllist()`
+        ``List = netcon.postcelllist()``
 
-        :code:`List = netcon.postcelllist(List)`
+        ``List = netcon.postcelllist(List)``
 
 
     Description:
@@ -393,9 +393,9 @@ NetCon
 
 
     Syntax:
-        :code:`List = netcon.precelllist()`
+        ``List = netcon.precelllist()``
 
-        :code:`List = netcon.precelllist(List)`
+        ``List = netcon.precelllist(List)``
 
 
     Description:
@@ -416,9 +416,9 @@ NetCon
 
 
     Syntax:
-        :code:`del = netcon.delay`
+        ``del = netcon.delay``
 
-        :code:`netcon.delay = del`
+        ``netcon.delay = del``
 
 
     Description:
@@ -436,7 +436,7 @@ NetCon
 
 
     Syntax:
-        :code:`n = netcon.wcnt()`
+        ``n = netcon.wcnt()``
 
 
     Description:
@@ -452,13 +452,13 @@ NetCon
 
 
     Syntax:
-        :code:`w = netcon.weight`
+        ``w = netcon.weight``
 
-        :code:`netcon.weight = w`
+        ``netcon.weight = w``
 
-        :code:`x = netcon.weight[i]`
+        ``x = netcon.weight[i]``
 
-        :code:`netcon.weight[i] = x`
+        ``netcon.weight[i] = x``
 
 
     Description:
@@ -481,9 +481,9 @@ NetCon
 
 
     Syntax:
-        :code:`th = netcon.threshold`
+        ``th = netcon.threshold``
 
-        :code:`netcon.threshold = th`
+        ``netcon.threshold = th``
 
 
     Description:
@@ -508,9 +508,9 @@ NetCon
 
 
     Syntax:
-        :code:`x = netcon.x`
+        ``x = netcon.x``
 
-        :code:`netcon.x = x`
+        ``netcon.x = x``
 
 
     Description:
@@ -529,15 +529,15 @@ NetCon
 
 
     Syntax:
-        :code:`netcon.record(Vector)`
+        ``netcon.record(Vector)``
 
-        :code:`netcon.record()`
+        ``netcon.record()``
 
-        :code:`netcon.record("stmt")`
+        ``netcon.record("stmt")``
 
-        :code:`netcon.record(tvec, idvec)`
+        ``netcon.record(tvec, idvec)``
 
-        :code:`netcon.record(tvec, idvec, id)`
+        ``netcon.record(tvec, idvec, id)``
 
 
     Description:
@@ -701,7 +701,7 @@ NetCon
 
 
     Syntax:
-        :code:`tvec = netcon.get_recordvec()`
+        ``tvec = netcon.get_recordvec()``
 
 
     Description:
@@ -721,7 +721,7 @@ NetCon
 
 
     Syntax:
-        :code:`gid = netcon.srcgid()`
+        ``gid = netcon.srcgid()``
 
 
     Description:

@@ -9,7 +9,7 @@ SectionRef
 
 
     Syntax:
-        :code:`section sref = new SectionRef()`
+        ``section sref = new SectionRef()``
 
 
     Description:
@@ -29,7 +29,7 @@ SectionRef
 
 
     Syntax:
-        :code:`sref.sec`
+        ``sref.sec``
 
 
     Description:
@@ -69,12 +69,12 @@ SectionRef
 
 
     Syntax:
-        :code:`sref.parent`
+        ``sref.parent``
 
 
     Description:
         parent of sref.sec becomes the currently accessed section. Generally it 
-        is used in a context like \ :code:`sref.parent { statement }` just like a 
+        is used in a context like \ ``sref.parent { statement }`` just like a 
         normal section name and does NOT need a section_pop 
         If there is a chance that a section does not have a parent then 
         :meth:`SectionRef.has_parent` should be called first to avoid an execution error. 
@@ -90,7 +90,7 @@ SectionRef
 
 
     Syntax:
-        :code:`sref.trueparent`
+        ``sref.trueparent``
 
 
     Description:
@@ -110,7 +110,7 @@ SectionRef
 
 
     Syntax:
-        :code:`sref.child[i]`
+        ``sref.child[i]``
 
 
     Description:
@@ -136,7 +136,7 @@ SectionRef
 
 
     Syntax:
-        :code:`sref.root`
+        ``sref.root``
 
 
     Description:
@@ -151,7 +151,7 @@ SectionRef
 
 
     Syntax:
-        :code:`boolean = sref.has_parent`
+        ``boolean = sref.has_parent``
 
 
     Description:
@@ -168,7 +168,7 @@ SectionRef
 
 
     Syntax:
-        :code:`boolean = sref.has_trueparent`
+        ``boolean = sref.has_trueparent``
 
 
     Description:
@@ -185,7 +185,7 @@ SectionRef
 
 
     Syntax:
-        :code:`integer = sref.nchild`
+        ``integer = sref.nchild``
 
 
     Description:
@@ -201,7 +201,7 @@ SectionRef
 
 
     Syntax:
-        :code:`boolean = sref.is_cas()`
+        ``boolean = sref.is_cas()``
 
 
     Description:
@@ -217,7 +217,7 @@ SectionRef
 
 
     Syntax:
-        :code:`boolean = sref.exists()`
+        ``boolean = sref.exists()``
 
 
     Description:

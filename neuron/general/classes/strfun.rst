@@ -9,11 +9,11 @@ StringFunctions
 
 
     Syntax:
-        :code:`obj = new StringFunctions()`
+        ``obj = new StringFunctions()``
 
 
     Description:
-        The StringFunctions class contains functions which you can apply to a \ :code:`strdef`.  This class 
+        The StringFunctions class contains functions which you can apply to a \ ``strdef``.  This class 
         exists purely for the utility of preventing pollution of name space with string operations. 
 
     Example:
@@ -35,7 +35,7 @@ StringFunctions
 
 
     Syntax:
-        :code:`length = strobj.len(str)`
+        ``length = strobj.len(str)``
 
 
     Description:
@@ -51,7 +51,7 @@ StringFunctions
 
 
     Syntax:
-        :code:`index = strobj.substr(s1, s2)`
+        ``index = strobj.substr(s1, s2)``
 
 
     Description:
@@ -68,7 +68,7 @@ StringFunctions
 
 
     Syntax:
-        :code:`strobj.head(str, "regexp", result)`
+        ``strobj.head(str, "regexp", result)``
 
 
     Description:
@@ -86,7 +86,7 @@ StringFunctions
 
 
     Syntax:
-        :code:`strobj.tail(str, "regexp", result)`
+        ``strobj.tail(str, "regexp", result)``
 
 
     Description:
@@ -95,7 +95,7 @@ StringFunctions
         return index of first char. 
          
         Other functions can be added as needed, 
-        eg., \ :code:`index(s1, c1)`, \ :code:`char(s1, i)`, etc. 
+        eg., \ ``index(s1, c1)``, \ ``char(s1, i)``, etc. 
         without polluting the global name space. In recent versions 
         functions can return strings. 
 
@@ -109,7 +109,7 @@ StringFunctions
 
 
     Syntax:
-        :code:`strobj.right(str, n)`
+        ``strobj.right(str, n)``
 
 
     Description:
@@ -126,7 +126,7 @@ StringFunctions
 
 
     Syntax:
-        :code:`.left(str, n)`
+        ``.left(str, n)``
 
 
     Description:
@@ -143,7 +143,7 @@ StringFunctions
 
 
     Syntax:
-        :code:`.is_name(str)`
+        ``.is_name(str)``
 
 
     Description:
@@ -161,13 +161,13 @@ StringFunctions
 
 
     Syntax:
-        :code:`.alias(obj, "name", &var2)`
+        ``.alias(obj, "name", &var2)``
 
-        :code:`.alias(obj, "name", obj2)`
+        ``.alias(obj, "name", obj2)``
 
-        :code:`.alias(obj, "name")`
+        ``.alias(obj, "name")``
 
-        :code:`.alias(obj)`
+        ``.alias(obj)``
 
 
     Description:
@@ -186,7 +186,7 @@ StringFunctions
 
 
     Syntax:
-        :code:`list = sf.alias_list(obj)`
+        ``list = sf.alias_list(obj)``
 
 
     Description:
@@ -219,7 +219,7 @@ StringFunctions
 
 
     Syntax:
-        :code:`sf.references(object)`
+        ``sf.references(object)``
 
 
     Description:
@@ -237,7 +237,7 @@ StringFunctions
 
 
     Syntax:
-        :code:`i = sf.is_point_process(object)`
+        ``i = sf.is_point_process(object)``
 
 
     Description:
@@ -255,7 +255,7 @@ StringFunctions
 
 
     Syntax:
-        :code:`i = sf.is_artificial(object)`
+        ``i = sf.is_artificial(object)``
 
 
     Description:

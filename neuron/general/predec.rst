@@ -10,7 +10,7 @@ Predeclared Variables
 
 
     Syntax:
-        :code:`float_epsilon = 1e-11`
+        ``float_epsilon = 1e-11``
 
 
     Description:
@@ -36,7 +36,7 @@ Predeclared Variables
 
     .. warning::
         I certainly haven't gotten every floating comparison in the program to use 
-        :code:`float_epsilon` but I have most of them including all interpreter logical 
+        ``float_epsilon`` but I have most of them including all interpreter logical 
         operations, int, array indices, and Vector logic methods. 
 
 ----
@@ -58,9 +58,9 @@ Predeclared Variables
 
 
     Syntax:
-        :code:`hoc_obj_[0]`
+        ``hoc_obj_[0]``
 
-        :code:`hoc_obj_[1]`
+        ``hoc_obj_[1]``
 
 
     Description:
@@ -78,7 +78,7 @@ Predeclared Variables
 
 
     Syntax:
-        :code:`hoc_cross_x_`
+        ``hoc_cross_x_``
 
 
     Description:

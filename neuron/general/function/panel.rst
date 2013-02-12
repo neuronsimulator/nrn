@@ -16,41 +16,41 @@ panels of buttons, menus, and field editors.
 
 
     Syntax:
-        :code:`xpanel("name")`
+        ``xpanel("name")``
 
-        :code:`xpanel("name", [0-1])`
+        ``xpanel("name", [0-1])``
 
-        :code:`xpanel()`
+        ``xpanel()``
 
-        :code:`xpanel(x, y)`
+        ``xpanel(x, y)``
 
-        :code:`xpanel(scroll)`
+        ``xpanel(scroll)``
 
-        :code:`xpanel(scroll, x, y)`
+        ``xpanel(scroll, x, y)``
 
 
     Description:
          
 
 
-        :code:`xpanel("name")` 
+        ``xpanel("name")`` 
 
-        :code:`xpanel("name", [0-1])` 
+        ``xpanel("name", [0-1])`` 
             Title of a new panel. Every 
-            button, menu, and value between this and a closing :code:`xpanel()` command 
+            button, menu, and value between this and a closing ``xpanel()`` command 
             with no arguments (or placement args) belongs to this panel. 
             If the form is used with a second argument equal to 1, then 
             the panel is laid out horizontally. Otherwise the default is vertically. 
 
-        :code:`xpanel()` 
+        ``xpanel()`` 
 
-        :code:`xpanel(x, y)` 
+        ``xpanel(x, y)`` 
             done constructing the panel. so map it to the screen with position 
             optionally specified. 
 
-        :code:`xpanel(slider)` 
+        ``xpanel(slider)`` 
 
-        :code:`xpanel(slider, x, y)` 
+        ``xpanel(slider, x, y)`` 
             as above but if the first arg is a number, then the value determines 
             whether the panel will be inside a scrollbox. Scroll = 0 means a scrollbox 
             will NOT be used. Scroll = 1 means the panel will be inside a scrollbox. 
@@ -70,19 +70,19 @@ panels of buttons, menus, and field editors.
 
 
     Syntax:
-        :code:`xbutton("command")`
+        ``xbutton("command")``
 
-        :code:`xbutton("prompt", "command")`
+        ``xbutton("prompt", "command")``
 
 
     Description:
 
 
-        :code:`xbutton("command")` 
+        ``xbutton("command")`` 
             new button with command to execute when pressed. The label 
             on the button is "*command*". 
 
-        :code:`xbutton("prompt", "command")` 
+        ``xbutton("prompt", "command")`` 
             the label ont the button is "*prompt*", the action 
             to execute is "*command*". 
 
@@ -97,7 +97,7 @@ panels of buttons, menus, and field editors.
 
 
     Syntax:
-        :code:`xstatebutton("prompt",&var [,"action"])`
+        ``xstatebutton("prompt",&var [,"action"])``
 
 
     Description:
@@ -115,7 +115,7 @@ panels of buttons, menus, and field editors.
 
 
     Syntax:
-        :code:`xcheckbox("prompt",&var [,"action"])`
+        ``xcheckbox("prompt",&var [,"action"])``
 
 
     Description:
@@ -131,13 +131,13 @@ panels of buttons, menus, and field editors.
 
 
     Syntax:
-        :code:`xradiobutton("name", "action")`
+        ``xradiobutton("name", "action")``
 
-        :code:`xradiobutton("name", "action", 0or1)`
+        ``xradiobutton("name", "action", 0or1)``
 
 
     Description:
-        Like an :code:`xbutton` but highlights the most recently selected 
+        Like an ``xbutton`` but highlights the most recently selected 
         button of a contiguous group (like a car radio, mutually exclusive 
         selection). 
         If the third argument is 1, then the button will be selected when the 
@@ -179,28 +179,28 @@ panels of buttons, menus, and field editors.
 
 
     Syntax:
-        :code:`xmenu("title")`
+        ``xmenu("title")``
 
-        :code:`xmenu()`
+        ``xmenu()``
 
-        :code:`xmenu("title", 1)`
+        ``xmenu("title", 1)``
 
-        :code:`xmenu("title", "stmt")`
+        ``xmenu("title", "stmt")``
 
-        :code:`xmenu("title", "stmt", 1)`
+        ``xmenu("title", "stmt", 1)``
 
 
     Description:
 
 
-        :code:`xmenu("title")` 
+        ``xmenu("title")`` 
             create a button in the panel with label "title" which, when 
             pressed, pops up a menu containing buttons and other menus. Every 
-            :code:`xbutton` and :code:`xmenu` command between this and the closing :code:`xmenu()` 
+            ``xbutton`` and ``xmenu`` command between this and the closing ``xmenu()`` 
             command with no arguments becomes the menu. 
             Don't put values into menus. 
 
-        :code:`xmenu()` 
+        ``xmenu()`` 
             done defining the menu. Menus can be nested as in 
 
             .. code-block::
@@ -212,7 +212,7 @@ panels of buttons, menus, and field editors.
                 	xmenu() 
 
 
-        :code:`xmenu("title", 1)` 
+        ``xmenu("title", 1)`` 
             adds the menu to the menubar. Note that a top level menu with no 
             second argument starts a new menubar. Normally these menubars have only 
             one top level item. 
@@ -243,7 +243,7 @@ panels of buttons, menus, and field editors.
                 xpanel() 
 
 
-        :code:`xmenu("title", "stmt")` and :code:`xmenu("title", "stmt", 1)` 
+        ``xmenu("title", "stmt")`` and ``xmenu("title", "stmt", 1)`` 
             Dynamic menu added as item in panel or menu or (when third argument 
             is 1) to a menubar. An example of the first type is the 
             NEURONMainMenu/File/RecentDir and an example of the last type is the 
@@ -296,7 +296,7 @@ panels of buttons, menus, and field editors.
 
 
     Syntax:
-        :code:`xlabel("string")`
+        ``xlabel("string")``
 
 
     Description:
@@ -312,7 +312,7 @@ panels of buttons, menus, and field editors.
 
 
     Syntax:
-        :code:`xvarlabel(strdef)`
+        ``xvarlabel(strdef)``
 
 
     Description:
@@ -328,20 +328,20 @@ panels of buttons, menus, and field editors.
 
 
     Syntax:
-        :code:`xvalue("variable")`
+        ``xvalue("variable")``
 
-        :code:`xvalue("prompt", "variable" [, boolean_deflt, "action" [, boolean_canrun, boolean_usepointer]])`
+        ``xvalue("prompt", "variable" [, boolean_deflt, "action" [, boolean_canrun, boolean_usepointer]])``
 
-        :code:`xvalue("prompt", "variable", 2)`
+        ``xvalue("prompt", "variable", 2)``
 
 
     Description:
 
 
-        :code:`xvalue("variable")` 
+        ``xvalue("variable")`` 
             create field editor for variable 
 
-        :code:`xvalue("prompt", "variable" [, boolean_deflt, "action" [, boolean_canrun, boolean_usepointer]])` 
+        ``xvalue("prompt", "variable" [, boolean_deflt, "action" [, boolean_canrun, boolean_usepointer]])`` 
             create field editor for variable with the button labeled with "*prompt*". 
             If *boolean_deflt* == 1 then add a checkbox which is checked when the 
             value of the field editor is different that when the editor was 
@@ -355,8 +355,8 @@ panels of buttons, menus, and field editors.
             name won't be parsed within the context of the object but at the 
             top-level context. 
 
-        :code:`xvalue("prompt", "variable", 2)` 
-            a field editor that keeps getting updated every 10th :code:`doNotify()`. 
+        ``xvalue("prompt", "variable", 2)`` 
+            a field editor that keeps getting updated every 10th ``doNotify()``. 
 
         The domain of values that can be entered by the user into a field editor 
         may be limited to the domain specified by the 
@@ -376,9 +376,9 @@ panels of buttons, menus, and field editors.
 
 
     Syntax:
-        :code:`xpvalue("variable")`
+        ``xpvalue("variable")``
 
-        :code:`xpvalue("prompt", &variable, ...)`
+        ``xpvalue("prompt", &variable, ...)``
 
 
     Description:
@@ -394,16 +394,16 @@ panels of buttons, menus, and field editors.
 
 
     Syntax:
-        :code:`xfixedvalue("variable")`
+        ``xfixedvalue("variable")``
 
-        :code:`xfixedvalue("prompt", "variable", boolean_deflt, boolean_usepointer)`
+        ``xfixedvalue("prompt", "variable", boolean_deflt, boolean_usepointer)``
 
 
     Description:
         like xvalue but cannot be changed by the user except under 
         program control and there can be no action associated with it. 
         Note: this is not implemented. For now, try to do the same thing 
-        with :code:`xvarlabel()`. 
+        with ``xvarlabel()``. 
 
          
 
@@ -415,7 +415,7 @@ panels of buttons, menus, and field editors.
 
 
     Syntax:
-        :code:`xslider(&var, [low, high], ["send_cmd"], [vert], [slow])`
+        ``xslider(&var, [low, high], ["send_cmd"], [vert], [slow])``
 
 
     Description:

@@ -13,11 +13,11 @@ ParallelContext
 
 
     Syntax:
-        :code:`objref pc`
+        ``objref pc``
 
-        :code:`pc = new ParallelContext()`
+        ``pc = new ParallelContext()``
 
-        :code:`pc = new ParallelContext(nhost)`
+        ``pc = new ParallelContext(nhost)``
 
 
     Description:
@@ -279,7 +279,7 @@ ParallelContext
 
 
     Syntax:
-        :code:`n = pc.nhost()`
+        ``n = pc.nhost()``
 
 
     Description:
@@ -315,7 +315,7 @@ ParallelContext
 
 
     Syntax:
-        :code:`myid = pc.id()`
+        ``myid = pc.id()``
 
 
     Description:
@@ -337,15 +337,15 @@ ParallelContext
 
 
     Syntax:
-        :code:`pc.submit("statement\n")`
+        ``pc.submit("statement\n")``
 
-        :code:`pc.submit("function_name", arg1, ...)`
+        ``pc.submit("function_name", arg1, ...)``
 
-        :code:`pc.submit(object, "function_name", arg1, ...)`
+        ``pc.submit(object, "function_name", arg1, ...)``
 
-        :code:`pc.submit(userid, ..as above..)`
+        ``pc.submit(userid, ..as above..)``
 
-        :code:`pc.submit(python_callable, arg1, ...)`
+        ``pc.submit(python_callable, arg1, ...)``
 
 
     Description:
@@ -467,7 +467,7 @@ ParallelContext
 
 
     Syntax:
-        :code:`id = pc.working()`
+        ``id = pc.working()``
 
 
     Description:
@@ -562,7 +562,7 @@ ParallelContext
 
 
     Syntax:
-        :code:`scalar = pc.retval()`
+        ``scalar = pc.retval()``
 
 
     Description:
@@ -581,7 +581,7 @@ ParallelContext
 
 
     Syntax:
-        :code:`python_object = pc.pyret()`
+        ``python_object = pc.pyret()``
 
 
     Description:
@@ -600,7 +600,7 @@ ParallelContext
 
 
     Syntax:
-        :code:`scalar = pc.userid()`
+        ``scalar = pc.userid()``
 
 
     Description:
@@ -627,7 +627,7 @@ ParallelContext
 
 
     Syntax:
-        :code:`pc.runworker()`
+        ``pc.runworker()``
 
 
     Description:
@@ -667,7 +667,7 @@ ParallelContext
 
 
     Syntax:
-        :code:`pc.done()`
+        ``pc.done()``
 
 
     Description:
@@ -685,15 +685,15 @@ ParallelContext
 
 
     Syntax:
-        :code:`pc.context("statement\n")`
+        ``pc.context("statement\n")``
 
-        :code:`pc.context("function_name", arg1, ...])`
+        ``pc.context("function_name", arg1, ...])``
 
-        :code:`pc.context(object, "function_name", arg1, ...)`
+        ``pc.context(object, "function_name", arg1, ...)``
 
-        :code:`pc.context(userid, ..as above..)`
+        ``pc.context(userid, ..as above..)``
 
-        :code:`pc.context(python_callable, arg1, ...)`
+        ``pc.context(python_callable, arg1, ...)``
 
 
     Description:
@@ -766,9 +766,9 @@ ParallelContext
 
 
     Syntax:
-        :code:`pc.post(key)`
+        ``pc.post(key)``
 
-        :code:`pc.post(key, ...)`
+        ``pc.post(key, ...)``
 
 
     Description:
@@ -793,9 +793,9 @@ ParallelContext
 
 
     Syntax:
-        :code:`pc.take(key)`
+        ``pc.take(key)``
 
-        :code:`pc.take(key, ...)`
+        ``pc.take(key, ...)``
 
 
     Description:
@@ -809,7 +809,7 @@ ParallelContext
         be retrieved without unpacking earlier items first. Optional arguments 
         get the first unpacked values. Scalar, Vectors, and strdef may be 
         unpacked. Scalar arguments must be pointers to 
-        a variable. eg \ :code:`&x`. Unpacked Vectors will be resized to the 
+        a variable. eg \ ``&x``. Unpacked Vectors will be resized to the 
         correct size of the vector item of the message. 
         To unpack Python objects, :func:`upkpyobj` must be used. 
 
@@ -827,9 +827,9 @@ ParallelContext
 
 
     Syntax:
-        :code:`boolean = pc.look(key)`
+        ``boolean = pc.look(key)``
 
-        :code:`boolean = pc.look(key, ...)`
+        ``boolean = pc.look(key, ...)``
 
 
     Description:
@@ -852,7 +852,7 @@ ParallelContext
 
 
     Syntax:
-        :code:`boolean = pc.look_take(key, ...)`
+        ``boolean = pc.look_take(key, ...)``
 
 
     Description:
@@ -880,7 +880,7 @@ ParallelContext
 
 
     Syntax:
-        :code:`pc.pack(...)`
+        ``pc.pack(...)``
 
 
     Description:
@@ -901,7 +901,7 @@ ParallelContext
 
 
     Syntax:
-        :code:`pc.unpack(...)`
+        ``pc.unpack(...)``
 
 
     Description:
@@ -910,7 +910,7 @@ ParallelContext
         agree with the order in which the message was constructed with post 
         and pack. 
         Note that scalar items must be retrieved with pointer syntax as in 
-        \ :code:`&soma.gnabar_hh(.3)` 
+        \ ``&soma.gnabar_hh(.3)`` 
         To unpack Python objects, :func:`upkpyobj` must be used. 
 
     .. seealso::
@@ -928,7 +928,7 @@ ParallelContext
 
 
     Syntax:
-        :code:`x = pc.upkscalar()`
+        ``x = pc.upkscalar()``
 
 
     Description:
@@ -945,7 +945,7 @@ ParallelContext
 
 
     Syntax:
-        :code:`str = pc.upkstr(str)`
+        ``str = pc.upkstr(str)``
 
 
     Description:
@@ -962,9 +962,9 @@ ParallelContext
 
 
     Syntax:
-        :code:`vec = pc.upkvec()`
+        ``vec = pc.upkvec()``
 
-        :code:`vec = pc.upkvec(vecsrc)`
+        ``vec = pc.upkvec(vecsrc)``
 
 
     Description:
@@ -982,7 +982,7 @@ ParallelContext
 
 
     Syntax:
-        :code:`python_object = pc.upkpyobj()`
+        ``python_object = pc.upkpyobj()``
 
 
     Description:
@@ -1000,7 +1000,7 @@ ParallelContext
 
 
     Syntax:
-        :code:`st = pc.time()`
+        ``st = pc.time()``
 
 
     Description:
@@ -1030,7 +1030,7 @@ ParallelContext
 
 
     Syntax:
-        :code:`total = pc.wait_time()`
+        ``total = pc.wait_time()``
 
 
     Description:
@@ -1059,7 +1059,7 @@ ParallelContext
 
 
     Syntax:
-        :code:`total = pc.step_time()`
+        ``total = pc.step_time()``
 
 
     Description:
@@ -1077,7 +1077,7 @@ ParallelContext
 
 
     Syntax:
-        :code:`total = pc.send_time()`
+        ``total = pc.send_time()``
 
 
     Description:
@@ -1095,7 +1095,7 @@ ParallelContext
 
 
     Syntax:
-        :code:`total = pc.event_time()`
+        ``total = pc.event_time()``
 
 
     Description:
@@ -1115,7 +1115,7 @@ ParallelContext
 
 
     Syntax:
-        :code:`total = pc.integ_time()`
+        ``total = pc.integ_time()``
 
 
     Description:
@@ -1132,11 +1132,11 @@ ParallelContext
 
 
     Syntax:
-        :code:`transfer_exchange_time = pc.vtransfer_time()`
+        ``transfer_exchange_time = pc.vtransfer_time()``
 
-        :code:`splitcell_exchange_time = pc.vtransfer_time(1)`
+        ``splitcell_exchange_time = pc.vtransfer_time(1)``
 
-        :code:`reducedtree_computation_time = pc.vtransfer_time(2)`
+        ``reducedtree_computation_time = pc.vtransfer_time(2)``
 
 
     Description:
@@ -1161,9 +1161,9 @@ ParallelContext
 
 
     Syntax:
-        :code:`pc.mech_time()`
+        ``pc.mech_time()``
 
-        :code:`mechanism_time = pc.mech_time(i)`
+        ``mechanism_time = pc.mech_time(i)``
 
 
     Description:
@@ -1274,17 +1274,17 @@ Description:
     1) Figure out how to login to a worker without typing a password. 
      
     ie. do not go on unless you can 
-    \ :code:`ssh node1` or \ :code:`rsh node1`. If the former works then you must 
-    \ :code:`export RSHCOMMAND=ssh` before building the MPICH version of MPI since 
+    \ ``ssh node1`` or \ ``rsh node1``. If the former works then you must 
+    \ ``export RSHCOMMAND=ssh`` before building the MPICH version of MPI since 
     that information is compiled into one of the files. It's too late to set 
     it after MPICH has been built. 
      
     On the Beowulf cluster master I did: 
-    \ :code:`ssh-keygen -t rsa` 
+    \ ``ssh-keygen -t rsa`` 
     and just hit return three times (once to use the default file location 
     and twice to specify and confirm an empty password). 
     Then I did a 
-    \ :code:`cd $HOME/.ssh` and copied the id_rsa.pub file to authorized_keys. 
+    \ ``cd $HOME/.ssh`` and copied the id_rsa.pub file to authorized_keys. 
     Now I could login to any node without using a password. 
      
     On the OSX machine I did the same thing but had to also check the 
@@ -1314,7 +1314,7 @@ Description:
     implementation the c++ compiler 
     may be called mpic++. If that is in your path, then you will need to 
     go to $HOME/mpich-1.2.7/powerpc/bin and 
-    \ :code:`ln -s mpicxx mpic++`. This will prevent NEURON's configure from becoming 
+    \ ``ln -s mpicxx mpic++``. This will prevent NEURON's configure from becoming 
     confused and deciding to use mpicc from one MPI version and mpic++ from another! 
     ie. configure looks first for mpic++ and only if it does not find it does 
     it try mpicxx. 
@@ -1438,7 +1438,7 @@ Description:
 
 
     Syntax:
-        :code:`waittime = pc.barrier()`
+        ``waittime = pc.barrier()``
 
 
     Description:
@@ -1455,9 +1455,9 @@ Description:
 
 
     Syntax:
-        :code:`result = pc.allreduce(value, type)`
+        ``result = pc.allreduce(value, type)``
 
-        :code:`pc.allreduce(src_dest_vector, type)`
+        ``pc.allreduce(src_dest_vector, type)``
 
 
     Description:
@@ -1479,7 +1479,7 @@ Description:
 
 
     Syntax:
-        :code:`pc.allgather(value, result_vector)`
+        ``pc.allgather(value, result_vector)``
 
 
     Description:
@@ -1497,7 +1497,7 @@ Description:
 
 
     Syntax:
-        :code:`pc.alltoall(vsrc, vcnts, vdest)`
+        ``pc.alltoall(vsrc, vcnts, vdest)``
 
 
     Description:
@@ -1510,7 +1510,7 @@ Description:
         The vdest is resized to the number of elements received. 
         Note that vcnts are generally different for different hosts. If you need 
         to know how many came from what host, use the idiom 
-        \ :code:`pc.alltoall(vcnts, one, vdest)` where one is a vector filled with 1. 
+        \ ``pc.alltoall(vcnts, one, vdest)`` where one is a vector filled with 1. 
 
         .. code-block::
             none
@@ -1548,9 +1548,9 @@ Description:
 
 
     Syntax:
-        :code:`pc.broadcast(strdef, root)`
+        ``pc.broadcast(strdef, root)``
 
-        :code:`pc.broadcast(vector, root)`
+        ``pc.broadcast(vector, root)``
 
 
     Description:
@@ -1620,11 +1620,11 @@ Description:
     A runtime error will result if an :meth:`~ParallelContext.id_bbs` == -1 rank processor tries 
     to communicate with the bulletin board, thus the general idiom for 
     a task posting or taking information from the bulletin board should be either 
-    :code:`if (pc.id == 0) { ... }` or :code:`if (pc.id_bbs != -1) { ... }`. 
+    ``if (pc.id == 0) { ... }`` or ``if (pc.id_bbs != -1) { ... }``. 
     The latter is more general since the former would not be correct if 
     :meth:`~ParallelContext.subworlds` has NOT been called since in that case 
-    :code:`pc.id == pc.id_world == pc.id_bbs` and 
-    :code:`pc.nhost == pc.nhost_world == pc.nhost_bbs` 
+    ``pc.id == pc.id_world == pc.id_bbs`` and 
+    ``pc.nhost == pc.nhost_world == pc.nhost_bbs`` 
      
 
          
@@ -1637,7 +1637,7 @@ Description:
 
 
     Syntax:
-        :code:`pc.subworlds(subworld_size)`
+        ``pc.subworlds(subworld_size)``
 
 
     Description:
@@ -1724,7 +1724,7 @@ Description:
 
          
         If the above code is saved in :file:`temp.hoc` and executed with 6 processes using 
-        \ :code:`mpiexec -n 6 nrniv -mpi temp.hoc` then the output will look like 
+        \ ``mpiexec -n 6 nrniv -mpi temp.hoc`` then the output will look like 
         (some lines may be out of order) 
 
         .. code-block::
@@ -1791,7 +1791,7 @@ Description:
 
 
     Syntax:
-        :code:`numprocs = pc.nhost_world()`
+        ``numprocs = pc.nhost_world()``
 
 
     Description:
@@ -1808,7 +1808,7 @@ Description:
 
 
     Syntax:
-        :code:`rank = pc.id_world()`
+        ``rank = pc.id_world()``
 
 
     Description:
@@ -1825,7 +1825,7 @@ Description:
 
 
     Syntax:
-        :code:`numprocs = pc.nhost_bbs()`
+        ``numprocs = pc.nhost_bbs()``
 
 
     Description:
@@ -1845,7 +1845,7 @@ Description:
 
 
     Syntax:
-        :code:`rank = pc.id_bbs()`
+        ``rank = pc.id_bbs()``
 
 
     Description:
@@ -1881,7 +1881,7 @@ Description:
     :func:`ParallelNetManager` in nrn/share/lib/hoc/netparmpi.hoc is a sample 
     implementation that makes use of these facilities. That implementation 
     assumes that all conductance based cells contain a public 
-    \ :code:`connect2target(targetsynapse, netcon)` which connects the target synapse 
+    \ ``connect2target(targetsynapse, netcon)`` which connects the target synapse 
     object to a specific range variable (e.g. soma.v(.5)) and returns the 
     new NetCon in the second object argument. Artificial cells may either be 
     bare or wrapped in class and made public as a Point Process object field. That is, 
@@ -1937,7 +1937,7 @@ Description:
 
 
     Syntax:
-        :code:`pc.set_gid2node(gid, id)`
+        ``pc.set_gid2node(gid, id)``
 
 
     Description:
@@ -1967,7 +1967,7 @@ Description:
 
 
     Syntax:
-        :code:`integer = pc.gid_exists(gid)`
+        ``integer = pc.gid_exists(gid)``
 
 
     Description:
@@ -1995,9 +1995,9 @@ Description:
 
 
     Syntax:
-        :code:`th = pc.threshold(gid)`
+        ``th = pc.threshold(gid)``
 
-        :code:`th = pc.threshold(gid, th)`
+        ``th = pc.threshold(gid, th)``
 
 
     Description:
@@ -2016,9 +2016,9 @@ Description:
 
 
     Syntax:
-        :code:`pc.cell(gid, netcon)`
+        ``pc.cell(gid, netcon)``
 
-        :code:`pc.cell(gid, netcon, 0)`
+        ``pc.cell(gid, netcon, 0)``
 
 
     Description:
@@ -2032,7 +2032,7 @@ Description:
         Note that it is an error if the gid does not exist on this machine. The 
         normal idiom is to use a NetCon returned by a call to the cell's 
         connect2target(nil, netcon) method or else, if the cell is an unwrapped 
-        artificial cell, use a \ :code:`netcon = new NetCon(cell, nil)` statement to 
+        artificial cell, use a \ ``netcon = new NetCon(cell, nil)`` statement to 
         get a temporary netcon which can be destroyed after its use in the 
         pc.cell call. The weight and delay of this temporary netcon are 
         not relevant; they come into the picture with 
@@ -2054,7 +2054,7 @@ Description:
 
 
     Syntax:
-        :code:`pc.outputcell(gid)`
+        ``pc.outputcell(gid)``
 
 
     Description:
@@ -2077,7 +2077,7 @@ Description:
 
 
     Syntax:
-        :code:`pc.spike_record(gid, spiketimevector, gidvector)`
+        ``pc.spike_record(gid, spiketimevector, gidvector)``
 
 
     Description:
@@ -2098,9 +2098,9 @@ Description:
 
 
     Syntax:
-        :code:`netcon = pc.gid_connect(srcgid, target)`
+        ``netcon = pc.gid_connect(srcgid, target)``
 
-        :code:`netcon = pc.gid_connect(srcgid, target, netcon)`
+        ``netcon = pc.gid_connect(srcgid, target, netcon)``
 
 
     Description:
@@ -2134,7 +2134,7 @@ Description:
 
 
     Syntax:
-        :code:`pc.psolve(tstop)`
+        ``pc.psolve(tstop)``
 
 
     Description:
@@ -2153,7 +2153,7 @@ Description:
 
 
     Syntax:
-        :code:`oldtimeout = pc.timeout(seconds)`
+        ``oldtimeout = pc.timeout(seconds)``
 
 
     Description:
@@ -2178,7 +2178,7 @@ Description:
 
 
     Syntax:
-        :code:`local_minimum_delay = pc.set_maxstep(default_max_step)`
+        ``local_minimum_delay = pc.set_maxstep(default_max_step)``
 
 
     Description:
@@ -2253,7 +2253,7 @@ Description:
 
 
     Syntax:
-        :code:`object = pc.gid2obj(gid)`
+        ``object = pc.gid2obj(gid)``
 
 
     Description:
@@ -2279,7 +2279,7 @@ Description:
 
 
     Syntax:
-        :code:`object = pc.gid2cell(gid)`
+        ``object = pc.gid2cell(gid)``
 
 
     Description:
@@ -2309,7 +2309,7 @@ Description:
 
 
     Syntax:
-        :code:`nsendmax = pc.spike_statistics(&nsend, &nrecv, &nrecv_useful)`
+        ``nsendmax = pc.spike_statistics(&nsend, &nrecv, &nrecv_useful)``
 
 
     Description:
@@ -2341,7 +2341,7 @@ Description:
 
 
     Syntax:
-        :code:`pc.max_histogram(vec)`
+        ``pc.max_histogram(vec)``
 
 
     Description:
@@ -2366,7 +2366,7 @@ Description:
 
 
     Syntax:
-        :code:`i = pc.checkpoint()`
+        ``i = pc.checkpoint()``
 
 
     Description:
@@ -2425,7 +2425,7 @@ Parallel Transfer
 
 
     Syntax:
-        :code:`pc.source_var(&source_variable, source_global_index)`
+        ``pc.source_var(&source_variable, source_global_index)``
 
 
     Description:
@@ -2445,9 +2445,9 @@ Parallel Transfer
 
 
     Syntax:
-        :code:`pc.target_var(&target_variable, source_global_index)`
+        ``pc.target_var(&target_variable, source_global_index)``
 
-        :code:`pc.target_var(targetPointProcess, &target_variable, source_global_index)`
+        ``pc.target_var(targetPointProcess, &target_variable, source_global_index)``
 
 
     Description:
@@ -2479,7 +2479,7 @@ Parallel Transfer
 
 
     Syntax:
-        :code:`pc.setup_transfer()`
+        ``pc.setup_transfer()``
 
 
     Description:
@@ -2498,7 +2498,7 @@ Parallel Transfer
 
 
     Syntax:
-        :code:`rootsection pc.splitcell_connect(host_with_other_subtree)`
+        ``rootsection pc.splitcell_connect(host_with_other_subtree)``
 
 
     Description:
@@ -2535,11 +2535,11 @@ Parallel Transfer
 
 
     Syntax:
-        :code:`section pc.multisplit(x, sid)`
+        ``section pc.multisplit(x, sid)``
 
-        :code:`section pc.multisplit(x, sid, backbone_style)`
+        ``section pc.multisplit(x, sid, backbone_style)``
 
-        :code:`pc.multisplit()`
+        ``pc.multisplit()``
 
 
     Description:
@@ -2611,7 +2611,7 @@ Parallel Transfer
         or not; it is solved exactly in any case. 
          
         Note: using multisplit automatically sets 
-        :code:`CVode.cache_efficient(1)`
+        ``CVode.cache_efficient(1)``
 
     .. warning::
         Implemented only for fixed step methods. Cannot presently 
@@ -2628,9 +2628,9 @@ Parallel Transfer
 
 
     Syntax:
-        :code:`pc.gid_clear()`
+        ``pc.gid_clear()``
 
-        :code:`pc.gid_clear(type)`
+        ``pc.gid_clear(type)``
 
 
     Description:
@@ -2692,11 +2692,11 @@ Parallel Transfer
 
 
     Syntax:
-        :code:`n = pc.nthread(n)`
+        ``n = pc.nthread(n)``
 
-        :code:`n = pc.nthread(n, 0)`
+        ``n = pc.nthread(n, 0)``
 
-        :code:`n = pc.nthread()`
+        ``n = pc.nthread()``
 
 
     Description:
@@ -2716,9 +2716,9 @@ Parallel Transfer
 
 
     Syntax:
-        :code:`pc.partition(i, seclist)`
+        ``pc.partition(i, seclist)``
 
-        :code:`pc.partition()`
+        ``pc.partition()``
 
 
     Description:
@@ -2737,7 +2737,7 @@ Parallel Transfer
 
 
     Syntax:
-        :code:`pc.thread_stat()`
+        ``pc.thread_stat()``
 
 
     Description:
@@ -2752,7 +2752,7 @@ Parallel Transfer
 
 
     Syntax:
-        :code:`previous = pc.thread_busywait(next)`
+        ``previous = pc.thread_busywait(next)``
 
 
     Description:
@@ -2770,7 +2770,7 @@ Parallel Transfer
 
 
     Syntax:
-        :code:`n = pc.thread_how_many_proc()`
+        ``n = pc.thread_how_many_proc()``
 
 
     Description:
@@ -2788,7 +2788,7 @@ Parallel Transfer
 
 
     Syntax:
-        :code:`sec  i = pc.sec_in_thread()`
+        ``sec  i = pc.sec_in_thread()``
 
 
     Description:
@@ -2804,9 +2804,9 @@ Parallel Transfer
 
 
     Syntax:
-        :code:`ct = pc.thread_ctime(i)`
+        ``ct = pc.thread_ctime(i)``
 
-        :code:`pc.thread_ctime()`
+        ``pc.thread_ctime()``
 
 
     Description:

@@ -20,11 +20,11 @@ PlotShape
 
 
     Syntax:
-        :code:`.scale(low, high)`
+        ``.scale(low, high)``
 
-        :code:`sets blue and red values for the color scale and default axes for`
+        ``sets blue and red values for the color scale and default axes for``
 
-        :code:`time and space plots`
+        ``time and space plots``
 
 
 ----
@@ -90,7 +90,7 @@ PlotShape
 
 
     Syntax:
-        :code:`shapeplot.fastflush()`
+        ``shapeplot.fastflush()``
 
 
     Description:
@@ -105,11 +105,11 @@ PlotShape
 
 
     Syntax:
-        :code:`.variable("rangevar")`
+        ``.variable("rangevar")``
 
-        :code:`Range variable (v, m_hh, etc.) to be used for time, space, and`
+        ``Range variable (v, m_hh, etc.) to be used for time, space, and``
 
-        :code:`shape plots.`
+        ``shape plots.``
 
 
 ----
@@ -288,14 +288,14 @@ PlotShape
 
 
     Syntax:
-        :code:`section  shape.color(i)`
+        ``section  shape.color(i)``
 
 
     Description:
         colors the currently accessed section according to color index 
         (index same as specified in Graph class). If there are several 
         sections to color it is more efficient to make a SectionList and 
-        use \ :code:`.color_list` 
+        use \ ``.color_list`` 
 
          
 
@@ -307,7 +307,7 @@ PlotShape
 
 
     Syntax:
-        :code:`.color_all(i)`
+        ``.color_all(i)``
 
 
     Description:
@@ -323,7 +323,7 @@ PlotShape
 
 
     Syntax:
-        :code:`.color_list(SectionList, i)`
+        ``.color_list(SectionList, i)``
 
 
     Description:
@@ -339,9 +339,9 @@ PlotShape
 
 
     Syntax:
-        :code:`s.colormap(size, [global = 0])`
+        ``s.colormap(size, [global = 0])``
 
-        :code:`s.colormap(index, red, green, blue)`
+        ``s.colormap(index, red, green, blue)``
 
 
     Description:
@@ -371,9 +371,9 @@ PlotShape
 
 
     Syntax:
-        :code:`s.hinton(&varname, x, y, size)`
+        ``s.hinton(&varname, x, y, size)``
 
-        :code:`s.hinton(&varname, x, y, xsize, ysize)`
+        ``s.hinton(&varname, x, y, xsize, ysize)``
 
 
     Description:
@@ -439,7 +439,7 @@ PlotShape
 
 
     Syntax:
-        :code:`section shape.len_scale(scl)`
+        ``section shape.len_scale(scl)``
 
 
     Description:
@@ -455,9 +455,9 @@ PlotShape
 
 
     Syntax:
-        :code:`shape.rotate()`
+        ``shape.rotate()``
 
-        :code:`shape.rotate(xorg, yorg, zorg, xrad, yrad, zrad)`
+        ``shape.rotate(xorg, yorg, zorg, xrad, yrad, zrad)``
 
 
     Description:

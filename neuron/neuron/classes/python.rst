@@ -11,16 +11,16 @@ Installation
 
 
 Syntax:
-    :code:`./configure --with-nrnpython ...`
+    ``./configure --with-nrnpython ...``
 
-    :code:`make`
+    ``make``
 
-    :code:`make install`
+    ``make install``
 
 
 Description:
     Builds NEURON with Python embedded as an alternative interpreter to HOC. 
-    The python version used is that found from :code:`which python`. 
+    The python version used is that found from ``which python``. 
      
     NEURON can be used as an extension to Python if, after building as above, 
     one goes to the src/nrnpython directory containing the Makefile and types 
@@ -42,7 +42,7 @@ Description:
         sys.path.append("/home/hines/lib64/python") 
         import neuron 
 
-    It is probably better to avoid the incessant :code:`import sys`... and instead 
+    It is probably better to avoid the incessant ``import sys``... and instead 
     add to your shell environment something analogous to 
 
     .. code-block::
@@ -51,8 +51,8 @@ Description:
         export PYTHONPATH=$PYTHONPATH:/home/hines/lib64/python 
 
     since when launching NEURON and embedding Python, the path is automatically 
-    defined so that :code:`import neuron` does not require any prerequisites. 
-    If there is a :code:`@<host-cpu@>/.libs/libnrnmech.so` file in your working 
+    defined so that ``import neuron`` does not require any prerequisites. 
+    If there is a ``@<host-cpu@>/.libs/libnrnmech.so`` file in your working 
     directory, those nmodl mechanisms will be loaded as well. 
     After this, you will probably want to: 
 
@@ -82,11 +82,11 @@ Python Accessing HOC
 
 
 Syntax:
-    :code:`nrniv -python [file.hoc file.py  -c "python_statement"]`
+    ``nrniv -python [file.hoc file.py  -c "python_statement"]``
 
-    :code:`nrngui -python ...`
+    ``nrngui -python ...``
 
-    :code:`neurondemo -python ...`
+    ``neurondemo -python ...``
 
 
 Description:
@@ -107,9 +107,9 @@ Description:
 
 
     Syntax:
-        :code:`import neuron`
+        ``import neuron``
 
-        :code:`neuron.hoc.execute('any hoc statement')`
+        ``neuron.hoc.execute('any hoc statement')``
 
 
     Description:
@@ -138,16 +138,16 @@ Description:
 
 
     Syntax:
-        :code:`import neuron`
+        ``import neuron``
 
-        :code:`h = neuron.hoc.HocObject()`
+        ``h = neuron.hoc.HocObject()``
 
 
     Description:
         Allow access to anything in the Hoc interpreter. 
-        Note that :code:`h = neuron.h` is the typical statement used since the 
+        Note that ``h = neuron.h`` is the typical statement used since the 
         neuron module creates an h field. 
-        When created via :code:`hoc.HocObject()` its print string is "TopLevelHocInterpreter". 
+        When created via ``hoc.HocObject()`` its print string is "TopLevelHocInterpreter". 
 
         .. code-block::
             none
@@ -500,11 +500,11 @@ Description:
 
 
     Syntax:
-        :code:`import hoc`
+        ``import hoc``
 
-        :code:`double_value = hoc.hoc_ac()`
+        ``double_value = hoc.hoc_ac()``
 
-        :code:`hoc.hoc_ac(double_value)`
+        ``hoc.hoc_ac(double_value)``
 
 
     Description:
@@ -532,13 +532,13 @@ Description:
 
 
     Syntax:
-        :code:`sec = h.cas()`
+        ``sec = h.cas()``
 
-        :code:`or`
+        ``or``
 
-        :code:`import nrn`
+        ``import nrn``
 
-        :code:`sec = nrn.cas()`
+        ``sec = nrn.cas()``
 
 
     Description:
@@ -568,23 +568,23 @@ Description:
 
 
     Syntax:
-        :code:`sec = h.Section()`
+        ``sec = h.Section()``
 
-        :code:`sec = h.Section([name='string', [cell=self])`
+        ``sec = h.Section([name='string', [cell=self])``
 
-        :code:`or`
+        ``or``
 
-        :code:`import nrn`
+        ``import nrn``
 
-        :code:`sec = nrn.Section()`
+        ``sec = nrn.Section()``
 
 
     Description:
         The Python Section object allows modification and evaluation of the 
         information associated with a NEURON :ref:`geometry_section`. The typical way to get 
         a reference to a Section in Python is with :meth:`neuron.h.cas`  or 
-        by using the hoc section name as in :code:`asec = h.dend[4]`. 
-        The :code:`sec = Section()` will create an anonymous Section with a hoc name 
+        by using the hoc section name as in ``asec = h.dend[4]``. 
+        The ``sec = Section()`` will create an anonymous Section with a hoc name 
         constructed from "Section" and the Python reference address. 
         Access to Section variables is through standard dot notation. 
         The "anonymous" python section can be given a name with the named 
@@ -697,7 +697,7 @@ Segment
 =======
 
     Syntax:
-        :code:`seg = section(x)`
+        ``seg = section(x)``
 
 
     Description:
@@ -717,7 +717,7 @@ Mechanism
 
 
     Syntax:
-        :code:`mech = segment.mechname`
+        ``mech = segment.mechname``
 
 
     Description:
@@ -736,7 +736,7 @@ HOC accessing Python
 
 
     Syntax:
-        :code:`nrniv [file.hoc...]`
+        ``nrniv [file.hoc...]``
 
 
     Description:
@@ -755,7 +755,7 @@ HOC accessing Python
 
 
     Syntax:
-        :code:`nrnpython("any python statement")`
+        ``nrnpython("any python statement")``
 
 
     Description:
@@ -781,7 +781,7 @@ HOC accessing Python
 
 
     Syntax:
-        :code:`p = new PythonObject()`
+        ``p = new PythonObject()``
 
 
     Description:

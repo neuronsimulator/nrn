@@ -9,9 +9,9 @@ File
 
 
     Syntax:
-        :code:`fobj = new File()`
+        ``fobj = new File()``
 
-        :code:`fobj = new File("filename")`
+        ``fobj = new File("filename")``
 
 
     Description:
@@ -70,9 +70,9 @@ File
 
 
     Syntax:
-        :code:`.ropen()`
+        ``.ropen()``
 
-        :code:`.ropen("name")`
+        ``.ropen("name")``
 
 
     Description:
@@ -89,9 +89,9 @@ File
 
 
     Syntax:
-        :code:`.wopen()`
+        ``.wopen()``
 
-        :code:`.wopen("name")`
+        ``.wopen("name")``
 
 
     Description:
@@ -108,9 +108,9 @@ File
 
 
     Syntax:
-        :code:`.aopen()`
+        ``.aopen()``
 
-        :code:`.aopen("name")`
+        ``.aopen("name")``
 
 
     Description:
@@ -127,9 +127,9 @@ File
 
 
     Syntax:
-        :code:`.xopen()`
+        ``.xopen()``
 
-        :code:`.xopen("name")`
+        ``.xopen("name")``
 
 
     Description:
@@ -148,7 +148,7 @@ File
 
 
     Syntax:
-        :code:`.close()`
+        ``.close()``
 
 
     Description:
@@ -165,7 +165,7 @@ File
 
 
     Syntax:
-        :code:`boolean = f.mktemp()`
+        ``boolean = f.mktemp()``
 
 
     Description:
@@ -182,7 +182,7 @@ File
 
 
     Syntax:
-        :code:`boolean = f.unlink()`
+        ``boolean = f.unlink()``
 
 
     Description:
@@ -200,11 +200,11 @@ File
 
 
     Syntax:
-        :code:`.printf("format", args, ...)`
+        ``.printf("format", args, ...)``
 
 
     Description:
-        As in standard C \ :code:`printf` and the normal 
+        As in standard C \ ``printf`` and the normal 
         hoc :func:`printf` . 
 
          
@@ -217,11 +217,11 @@ File
 
 
     Syntax:
-        :code:`.scanvar()`
+        ``.scanvar()``
 
 
     Description:
-        Reads the next number as in the hoc function \ :code:`fscan()` and 
+        Reads the next number as in the hoc function \ ``fscan()`` and 
         returns its value. 
          
         Note: in order that .eof will return 
@@ -239,13 +239,13 @@ File
 
 
     Syntax:
-        :code:`.scanstr(strdef)`
+        ``.scanstr(strdef)``
 
 
     Description:
         Read the next string (delimited by whitespace) into 
-        \ :code:`strdef`. Returns the length of a string (if failure then returns 
-        -1 and \ :code:`strdef` is unchanged). 
+        \ ``strdef``. Returns the length of a string (if failure then returns 
+        -1 and \ ``strdef`` is unchanged). 
 
          
 
@@ -257,7 +257,7 @@ File
 
 
     Syntax:
-        :code:`.gets(strdef)`
+        ``.gets(strdef)``
 
 
     Description:
@@ -274,9 +274,9 @@ File
 
 
     Syntax:
-        :code:`strdef = file.getname()`
+        ``strdef = file.getname()``
 
-        :code:`strdef = file.getname(strdef)`
+        ``strdef = file.getname(strdef)``
 
 
     Description:
@@ -293,7 +293,7 @@ File
 
 
     Syntax:
-        :code:`strdef = file.dir()`
+        ``strdef = file.dir()``
 
 
     Description:
@@ -310,7 +310,7 @@ File
 
 
     Syntax:
-        :code:`.eof()`
+        ``.eof()``
 
 
     Description:
@@ -326,7 +326,7 @@ File
 
 
     Syntax:
-        :code:`.flush()`
+        ``.flush()``
 
 
     Description:
@@ -342,7 +342,7 @@ File
 
 
     Syntax:
-        :code:`.isopen()`
+        ``.isopen()``
 
 
     Description:
@@ -358,18 +358,18 @@ File
 
 
     Syntax:
-        :code:`.chooser()`
+        ``.chooser()``
 
-        :code:`.chooser("w,r,a,x,d or nothing")`
+        ``.chooser("w,r,a,x,d or nothing")``
 
-        :code:`.chooser("w,r,a,x,d or nothing", "Banner", "filter", "accept", "cancel", "path")`
+        ``.chooser("w,r,a,x,d or nothing", "Banner", "filter", "accept", "cancel", "path")``
 
 
 
     Description:
         File chooser interface for writing , reading, appending, or 
         just specifying a directory or filename without opening. The banner is 
-        optional. The filter, eg. \ :code:`"*.dat"` specifies the files shown 
+        optional. The filter, eg. \ ``"*.dat"`` specifies the files shown 
         in the browser part of the chooser. 
         The "path" arg specifies the file or directory to use when the 
         browser first pops up. 
@@ -399,7 +399,7 @@ File
             			xopen(*str*) 
             		} 
 
-        The following comes courtesy of Zach Mainen, :code:`zach@helmholtz.sdsc.edu`. 
+        The following comes courtesy of Zach Mainen, ``zach@helmholtz.sdsc.edu``. 
 
          
 
@@ -411,14 +411,14 @@ File
 
 
     Syntax:
-        :code:`.vwrite(&x)`
+        ``.vwrite(&x)``
 
-        :code:`.vwrite(n, &x)`
+        ``.vwrite(n, &x)``
 
 
     Description:
         Write binary doubles to a file from an array or variable 
-        using \ :code:`fwrite()`. The form with two arguments specifies the 
+        using \ ``fwrite()``. The form with two arguments specifies the 
         number of elements to write and the address from which to 
         begin writing.  With one argument, *n* is assumed to be 1. 
         Must be careful that  *x*\ [] has at least *n* 
@@ -434,14 +434,14 @@ File
 
 
     Syntax:
-        :code:`.vread(&x)`
+        ``.vread(&x)``
 
-        :code:`.vread(n, &x)`
+        ``.vread(n, &x)``
 
 
     Description:
         Read binary doubles from a file into a pre-existing array 
-        or variable using \ :code:`fread()`. 
+        or variable using \ ``fread()``. 
 
     .. seealso::
         :func:`vwrite`
@@ -458,11 +458,11 @@ File
 
 
     Syntax:
-        :code:`.seek()`
+        ``.seek()``
 
-        :code:`.seek(offset)`
+        ``.seek(offset)``
 
-        :code:`.seek(offset,origin)`
+        ``.seek(offset,origin)``
 
 
     Description:
@@ -483,7 +483,7 @@ File
 
 
     Syntax:
-        :code:`.tell()`
+        ``.tell()``
 
 
     Description:

@@ -98,7 +98,7 @@ In the stylized specification, the shape model used for a section is
 a sequence of right circular cylinders of length, L/nseg, with diameter 
 given by the diam range variable at the center of each segment. 
 The area of a segment is PI*diam*L/nseg (micron2) and the half-segment axial 
-resistance is \ :code:`.01*Ra*(L/2/nseg)/(PI*(diam/2)^2)`. The .01 factor is necessary 
+resistance is \ ``.01*Ra*(L/2/nseg)/(PI*(diam/2)^2)``. The .01 factor is necessary 
 to convert ohm-cm micron/micron2 to MegOhms. Ends of cylinders are not 
 counted in the area and, in fact, the areas are very close to those of 
 truncated cones as long as the diameter does not change too much. 
@@ -120,7 +120,7 @@ Note that the area (and length) of the 0,1 terminal ends is equal to 0
 and the axial resistance 
 is the sum of the adjacent half-segment resistances between segment and 
 parent segment. Such, niceties allow the spatial discretization error to 
-be proportional to \ :code:`(1/nseg)^2`. However, for second order correctness, 
+be proportional to \ ``(1/nseg)^2``. However, for second order correctness, 
 all point processes must be located at the center of the segments or at the 
 ends and all branches should be connected at the ends or centers of segments. 
 Note that if one increases nseg by a factor of 3, old centers are preserved. 
@@ -269,7 +269,7 @@ is that of a sequence of truncated cones in which the pt3d points define
 the location and diameter of the ends. From this sequence of points, 
 the effective area, diameter, and resistance is computed for each segment 
 via a trapezoidal integration across the segment length. This takes 
-into account the extra area due to \ :code:`sqrt(dx^2 + dy^2)` for fast changing 
+into account the extra area due to \ ``sqrt(dx^2 + dy^2)`` for fast changing 
 diameters (even degenerate cones of 0 length can be specified, ie. two 
 points with same coordinates but different diameters) 
 but no attempt is made to deal with centroid curvature effects 
@@ -368,9 +368,9 @@ of a given section.
 
 
     Syntax:
-        :code:`buffersize =  pt3dclear()`
+        ``buffersize =  pt3dclear()``
 
-        :code:`buffersize =  pt3dclear(buffersize)`
+        ``buffersize =  pt3dclear(buffersize)``
 
 
     Description:
@@ -388,7 +388,7 @@ of a given section.
 
 
     Syntax:
-        :code:`pt3dadd(x,y,z,d)`
+        ``pt3dadd(x,y,z,d)``
 
 
     Description:
@@ -396,9 +396,9 @@ of a given section.
         Add the 3d location and diameter point at the end of the current pt3d 
         list. Assume that successive additions increase the arc length 
         monotonically. When pt3d points exist in a section they are used 
-        to compute *diam* and *L*. When *diam* or *L* are changed and \ :code:`pt3dconst()==0` 
+        to compute *diam* and *L*. When *diam* or *L* are changed and \ ``pt3dconst()==0`` 
         the 3-d info is changed to be consistent with the new values of 
-        *L* and *diam*. (Note: When *L* is changed, \ :code:`diam_shape()` should be executed 
+        *L* and *diam*. (Note: When *L* is changed, \ ``diam_shape()`` should be executed 
         to adjust the 3-d info so that branches appear connected.) 
         The existence of a spine at this point is signaled 
         by a negative value for *d*. 
@@ -413,23 +413,23 @@ of a given section.
 
 
     Syntax:
-        :code:`pt3dconst(0)`
+        ``pt3dconst(0)``
 
-        :code:`pt3dconst(1)`
+        ``pt3dconst(1)``
 
 
     Description:
-        If \ :code:`pt3dconst` is set at 0, newly assigned values for *d* and *L* will 
+        If \ ``pt3dconst`` is set at 0, newly assigned values for *d* and *L* will 
         automatically update pre-existing 3d information. 
-        \ :code:`pt3dconst` returns its previous state on each call. Its original value is 0. 
+        \ ``pt3dconst`` returns its previous state on each call. Its original value is 0. 
          
         Note that the *diam* information transferred to the 3d point information 
         comes from the current diameter of the segments and does not change 
         the number of 3d points.  Thus if there are a lot of 3d points the 
         shape will appear as a string of uniform diameter cylinders each of 
-        length L/nseg. ie. after transfer \ :code:`diam3d(i) == diam(arc3d(i))`. 
-        Then, after a call to an internal function such as \ :code:`area()` or 
-        \ :code:`finitialize()`, the 3d point info will be used to determine the values 
+        length L/nseg. ie. after transfer \ ``diam3d(i) == diam(arc3d(i))``. 
+        Then, after a call to an internal function such as \ ``area()`` or 
+        \ ``finitialize()``, the 3d point info will be used to determine the values 
         of the segment diameters. 
          
         Because of the three separate interpolations: 
@@ -439,13 +439,13 @@ of a given section.
          
         Because of the surprises noted above, when using 3d points 
         consider treating them as the authoritative diameter info and set 
-        \ :code:`pt3dconst(1)`. 
+        \ ``pt3dconst(1)``. 
          
         3d points are automatically generated when one uses 
         the nrniv Shape class. If you want the flexibility of being able 
         to specify 3d diameter using range variable notation 
-        (eg diam(0:1) = 10:20) you will need to experiment with \ :code:`nseg` and 
-        \ :code:`n3d()` in order to understand the exact consequences of interpolation. 
+        (eg diam(0:1) = 10:20) you will need to experiment with \ ``nseg`` and 
+        \ ``n3d()`` in order to understand the exact consequences of interpolation. 
 
     .. seealso::
         :func:`pt3dstyle`
@@ -460,13 +460,13 @@ of a given section.
 
 
     Syntax:
-        :code:`style = pt3dstyle()`
+        ``style = pt3dstyle()``
 
-        :code:`style = pt3dstyle(0)`
+        ``style = pt3dstyle(0)``
 
-        :code:`style = pt3dstyle(1, x, y, z)`
+        ``style = pt3dstyle(1, x, y, z)``
 
-        :code:`style = pt3dstyle(1, &x, &y, &z)`
+        ``style = pt3dstyle(1, &x, &y, &z)``
 
 
     Description:
@@ -509,7 +509,7 @@ of a given section.
 
 
     Syntax:
-        :code:`pt3dinsert(i, x, y, z, diam)`
+        ``pt3dinsert(i, x, y, z, diam)``
 
 
     Description:
@@ -526,7 +526,7 @@ of a given section.
 
 
     Syntax:
-        :code:`pt3dremove(i)`
+        ``pt3dremove(i)``
 
 
     Description:
@@ -542,9 +542,9 @@ of a given section.
 
 
     Syntax:
-        :code:`pt3dchange(i, x, y, z, diam)`
+        ``pt3dchange(i, x, y, z, diam)``
 
-        :code:`pt3dchange(i, diam)`
+        ``pt3dchange(i, diam)``
 
 
     Description:
@@ -568,7 +568,7 @@ of a given section.
 
 
     Syntax:
-        :code:`n3d()`
+        ``n3d()``
 
 
     Description:
@@ -584,7 +584,7 @@ of a given section.
 
 
     Syntax:
-        :code:`x3d(i)`
+        ``x3d(i)``
 
 
     Description:
@@ -603,7 +603,7 @@ of a given section.
 
 
     Syntax:
-        :code:`y3d(i)`
+        ``y3d(i)``
 
 
     .. seealso::
@@ -618,7 +618,7 @@ of a given section.
 
 
     Syntax:
-        :code:`z3d(i)`
+        ``z3d(i)``
 
 
     .. seealso::
@@ -634,13 +634,13 @@ of a given section.
 
 
     Syntax:
-        :code:`diam3d(i)`
+        ``diam3d(i)``
 
 
     Description:
         Returns the diameter of the ith 3d point of the currently accessed 
         section. 
-        \ :code:`diam3d(i)` will always be positive even 
+        \ ``diam3d(i)`` will always be positive even 
         if there is a spine at the ith point. 
 
     .. seealso::
@@ -655,12 +655,12 @@ of a given section.
 
 
     Syntax:
-        :code:`arc3d(i)`
+        ``arc3d(i)``
 
 
     Description:
         This is the arc length position of the ith point in the 3d list. 
-        \ :code:`arc3d(n3d()-1) == L` 
+        \ ``arc3d(n3d()-1) == L`` 
 
          
 
@@ -672,7 +672,7 @@ of a given section.
 
 
     Syntax:
-        :code:`spine3d(i)`
+        ``spine3d(i)``
 
 
     Description:
@@ -688,11 +688,11 @@ of a given section.
 
 
     Syntax:
-        :code:`setSpineArea(area)`
+        ``setSpineArea(area)``
 
 
     Description:
-        The area of an average spine in um2. \ :code:`setSpineArea` merely adds to 
+        The area of an average spine in um2. \ ``setSpineArea`` merely adds to 
         the total area of a segment. 
 
          
@@ -705,7 +705,7 @@ of a given section.
 
 
     Syntax:
-        :code:`getSpineArea()`
+        ``getSpineArea()``
 
 
     Description:
@@ -721,7 +721,7 @@ of a given section.
 
 
     Syntax:
-        :code:`define_shape()`
+        ``define_shape()``
 
 
     Description:
@@ -733,7 +733,7 @@ of a given section.
         visualization. 
          
         Note: This may not work right when a branch is connected to 
-        the interior of a parent section \ :code:`0 < x < 1`, 
+        the interior of a parent section \ ``0 < x < 1``, 
         rather only when it is connected to the parent at 0 or 1. 
 
          
@@ -746,13 +746,13 @@ of a given section.
 
 
     Syntax:
-        :code:`area(x)`
+        ``area(x)``
 
 
     Description:
         Return the area (in square microns) of the segment which contains *x*. 
          
-        \ :code:`area(0)` and \ :code:`area(1)` = 0 
+        \ ``area(0)`` and \ ``area(1)`` = 0 
 
          
 
@@ -764,7 +764,7 @@ of a given section.
 
 
     Syntax:
-        :code:`ri(x)`
+        ``ri(x)``
 
 
     Description:
@@ -795,9 +795,9 @@ of a given section.
 
 
     Syntax:
-        :code:`distance() or distance(0, x)`
+        ``distance() or distance(0, x)``
 
-        :code:`len = distance(x) or len = distance(1, x)`
+        ``len = distance(x) or len = distance(1, x)``
 
 
 
@@ -807,11 +807,11 @@ of a given section.
          
 
 
-        \ :code:`distance()` with no arguments 
+        \ ``distance()`` with no arguments 
             specifies the origin as location 0 
             of the currently accessed section. 
 
-        \ :code:`distance(x) (0<=x<=1)` 
+        \ ``distance(x) (0<=x<=1)`` 
             returns the distance (in microns) from the origin to 
             this point on the currently accessed section. 
 
@@ -839,14 +839,14 @@ of a given section.
 
 
     Syntax:
-        :code:`diam_changed`
+        ``diam_changed``
 
 
     Description:
         Signals the system that the coefficient matrix needs to be 
         recalculated. 
          
-        This is not needed since \ :code:`Ra` is now a section variable 
+        This is not needed since \ ``Ra`` is now a section variable 
         and automatically sets diam_changed whenever any sections Ra is 
         changed. 
         Changing diam or any pt3d value will cause it to be set automatically. 
@@ -880,7 +880,7 @@ of a given section.
 
 
     Syntax:
-        :code:`Ra`
+        ``Ra``
 
 
     Description:
@@ -888,7 +888,7 @@ of a given section.
         so that it was the same for all sections. Now, it is a section 
         variable and must be set individually for each section. A simple 
         way to set its value is 
-        \ :code:`forall Ra=35.4` 
+        \ ``forall Ra=35.4`` 
          
         Prior to 1/6/95 the default value for Ra was 34.5. Presently it is 
         35.4. 

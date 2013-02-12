@@ -9,7 +9,7 @@ Timer
 
 
     Syntax:
-        :code:`timer = new Timer("stmt")`
+        ``timer = new Timer("stmt")``
 
 
     Description:
@@ -66,9 +66,9 @@ Timer
 
 
     Syntax:
-        :code:`interval = timer.seconds()`
+        ``interval = timer.seconds()``
 
-        :code:`interval = timer.seconds(interval)`
+        ``interval = timer.seconds(interval)``
 
 
     Description:
@@ -86,7 +86,7 @@ Timer
 
 
     Syntax:
-        :code:`timer.start()`
+        ``timer.start()``
 
 
     Description:
@@ -103,7 +103,7 @@ Timer
 
 
     Syntax:
-        :code:`timer.end()`
+        ``timer.end()``
 
 
     Description:

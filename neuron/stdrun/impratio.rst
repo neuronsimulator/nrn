@@ -15,7 +15,7 @@ Measurement and injection sites are indicated by red and blue dots respectively.
 The :guilabel:`SwapMeasure/Inject` menu item swaps the measurement and injection sites. 
  
 The :guilabel:`Plot` menu specifies whether to plot log attenuation (default), 
-input impedance, transfer impedance, or :code:`V(measure)/V(inject)`. 
+input impedance, transfer impedance, or ``V(measure)/V(inject)``. 
 Input impedance is plotted with 
 respect to the measurement site and the injection site is unused. 
  

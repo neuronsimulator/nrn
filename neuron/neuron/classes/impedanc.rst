@@ -85,7 +85,7 @@ Impedance
 
 
     Syntax:
-        :code:`.loc(x)`
+        ``.loc(x)``
 
 
     Description:
@@ -93,7 +93,7 @@ Impedance
         at position 0<=x<=1 of the currently accessed section. 
         This is needed for the transfer impedance calculation. Note that 
         transfer impedances obey the relation 
-        \ :code:`v(x)/i(loc) == v(loc)/i(x)` where *loc* is the fixed location and 
+        \ ``v(x)/i(loc) == v(loc)/i(x)`` where *loc* is the fixed location and 
         x ranges over every position of every section. 
 
          
@@ -106,15 +106,15 @@ Impedance
 
 
     Syntax:
-        :code:`.compute(freq)`
+        ``.compute(freq)``
 
-        :code:`.compute(freq, 1)`
+        ``.compute(freq, 1)``
 
 
     Description:
         Transfer impedance between location specified above and any other 
         location is computed. Also the input impedance at all locations 
-        is computed -- \ :code:`v(x)/i(x)` 
+        is computed -- \ ``v(x)/i(x)`` 
         Frequency specified in Hz. 
         All membrane conductances are computed and used in the 
         calculation as if \ :func:`fcurrent()` was called. 
@@ -165,15 +165,15 @@ Impedance
 
 
     Syntax:
-        :code:`.transfer(x)`
+        ``.transfer(x)``
 
 
     Description:
         absolute amplitude of the transfer impedance between the position 
-        specified in the \ :code:`loc(x)` call above and 0<=x<=1 of 
+        specified in the \ ``loc(x)`` call above and 0<=x<=1 of 
         currently accessed section at the freq specified by a previous 
         compute(freq). The value returned can be thought of as either 
-        \ :code:`|v(loc)/i(x)| or |v(x)/i(loc)|` 
+        \ ``|v(loc)/i(x)| or |v(x)/i(loc)|`` 
         Probably the more useful way of thinking about it is to assume 
         a current stimulus of 1nA injected at x and the voltage in mV 
         recorded at loc. 
@@ -193,11 +193,11 @@ Impedance
 
 
     Syntax:
-        :code:`.input(x)`
+        ``.input(x)``
 
 
     Description:
-        absolute amplitude of \ :code:`v(x)/i(x)` of the currently accessed section 
+        absolute amplitude of \ ``v(x)/i(x)`` of the currently accessed section 
 
          
 
@@ -209,11 +209,11 @@ Impedance
 
 
     Syntax:
-        :code:`.ratio(x)`
+        ``.ratio(x)``
 
 
     Description:
-        \ :code:`|v(loc)/v(x)|` Think of it as voltage clamping to 1mV at x at some 
+        \ ``|v(loc)/v(x)|`` Think of it as voltage clamping to 1mV at x at some 
         frequency and recording the voltage at loc. 
 
          
@@ -226,7 +226,7 @@ Impedance
 
 
     Syntax:
-        :code:`.transfer_phase(x)`
+        ``.transfer_phase(x)``
 
 
     Description:
@@ -246,7 +246,7 @@ Impedance
 
 
     Syntax:
-        :code:`.input_phase(x)`
+        ``.input_phase(x)``
 
 
     Description:
@@ -261,7 +261,7 @@ Impedance
         to access amp and phase; reasonably efficient to change freq or loc, 
         and inefficient to vary neuron state, eg, diameters. The last case 
         implies at least the overhead of a call like \ :func:`fcurrent()`.(actually 
-        the present implementation calls \ :func:`fcurrent()` on every \ :code:`compute()` call 
+        the present implementation calls \ :func:`fcurrent()` on every \ ``compute()`` call 
         but that could be fixed if increased performance was needed). 
 
          
@@ -274,15 +274,15 @@ Impedance
 
 
     Syntax:
-        :code:`fac = imp.deltafac()`
+        ``fac = imp.deltafac()``
 
-        :code:`fac = imp.deltafac(fac)`
+        ``fac = imp.deltafac(fac)``
 
 
     Description:
         Gets or sets and gets the factor used in computing the numerical derivatives 
         during calculation of the extended full impedance. Jacobian elements are 
-        calculated via the formula :code:`f(s+delta) - f(s))/delta` where 
+        calculated via the formula ``f(s+delta) - f(s))/delta`` where 
         delta is defined by fac * the state tolerance scale factor for cvode. 
         Note that default state tolerance scale factors are 1.0 except when 
         specifically declared in mod files or changed by calling 

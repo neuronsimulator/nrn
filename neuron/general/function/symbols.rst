@@ -14,7 +14,7 @@ symbols
          
 
     Syntax:
-        :code:`symbols()`
+        ``symbols()``
 
 
 

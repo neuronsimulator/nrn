@@ -59,7 +59,7 @@ Avoid the error:
 
             soma L=10 diam=10 
 
-which sets :code:`soma.L`, then pops the section stack and sets :data:`diam` 
+which sets ``soma.L``, then pops the section stack and sets :data:`diam` 
 for whatever section is then on the stack. 
  
 It is important that control flow reach the end of *stmt* in order to 
@@ -100,7 +100,7 @@ the command line level.
 In general, this statement should only be used once to give default access 
 to a privileged section. It's bad programming practice to change the 
 default access within anything other than an initialization procedure. 
-The ":code:`sec { stmt }`" form is almost always the right way to 
+The "``sec { stmt }``" form is almost always the right way to 
 use the section stack. 
 
          
@@ -117,7 +117,7 @@ use the section stack.
 
 
     Syntax:
-        :code:`access section`
+        ``access section``
 
 
 
@@ -128,9 +128,9 @@ use the section stack.
         the section stack is empty or has only one section in it. 
         This is lesser 
         precedence than 
-        :code:`section stmt` 
+        ``section stmt`` 
         which is lesser precedence than 
-        :code:`section.var` 
+        ``section.var`` 
          
         Note: 
          
@@ -169,7 +169,7 @@ use the section stack.
 **forall**
 
     Syntax:
-        :code:`forall stmt`
+        ``forall stmt``
 
 
 
@@ -177,13 +177,13 @@ use the section stack.
         Loops over all sections, successively making each section the currently 
         accessed section. 
          
-        Within an object, :code:`forall` refers to all the sections 
+        Within an object, ``forall`` refers to all the sections 
         declared in the object. This is generally the right thing to do when a template 
         creates sections but is inconvenient when a template is constructed which 
         needs to compute using sections external to it. In this case, one can pass a collection 
         of sections into a template function as a :class:`SectionList` object argument. 
          
-        The :code:`forall` is relatively slow, 
+        The ``forall`` is relatively slow, 
         especially when used in conjunction with :func:`issection` 
         and :func:`ismembrane` selectors. If you are often iterating over the same 
         sets it is much faster to keep the sets in :class:`SectionList` objects and use 
@@ -230,9 +230,9 @@ use the section stack.
 **ifsec**
 
     Syntax:
-        :code:`ifsec string stmt`
+        ``ifsec string stmt``
 
-        :code:`ifsec sectionlist stmt`
+        ``ifsec sectionlist stmt``
 
 
     Description:
@@ -264,9 +264,9 @@ use the section stack.
 
 **forsec**
     Syntax:
-        :code:`forsec string stmt`
+        ``forsec string stmt``
 
-        :code:`forsec sectionlist stmt`
+        ``forsec sectionlist stmt``
 
 
 
@@ -274,12 +274,12 @@ use the section stack.
 
 
         forsec string stmt 
-            equivalent to :code:`forall ifsec string stmt` but faster. 
+            equivalent to ``forall ifsec string stmt`` but faster. 
             Note that forsec string is equivalent to 
             :samp:`forall if (issection({string})) stmt` 
 
         forsec sectionlist 
-            equivalent to :code:`forall ifsec sectionlist stmt` but very fast. 
+            equivalent to ``forall ifsec sectionlist stmt`` but very fast. 
 
         These provide a very efficient iteration over the list of sections. 
 
@@ -312,13 +312,13 @@ use the section stack.
 
 
     Syntax:
-        :code:`pop_section()`
+        ``pop_section()``
 
 
     Description:
         Take the currently accessed section off the section stack. This can only be used after 
         a function which pushes a section on the section stack such as 
-        :code:`point_process.getloc()`. 
+        ``point_process.getloc()``. 
 
     Example:
 
@@ -345,13 +345,13 @@ use the section stack.
 
 
     Syntax:
-        :code:`push_section(number)`
+        ``push_section(number)``
 
-        :code:`push_section(section_name)`
+        ``push_section(section_name)``
 
 
     Description:
-        This function, along with :code:`pop_section()` should only be used as a last resort. 
+        This function, along with ``pop_section()`` should only be used as a last resort. 
         It will place a specified section on the top of the section stack, 
         becoming the current section to which all operations apply. It is 
         probably always better to use :class:`SectionRef` 

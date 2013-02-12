@@ -24,7 +24,7 @@ General
 
 
     Syntax:
-        :code:`{ x = pnt.get_loc() stmt pop_section()}`
+        ``{ x = pnt.get_loc() stmt pop_section()}``
 
 
     Description:
@@ -50,13 +50,13 @@ General
 
 
     Syntax:
-        :code:`pyseg = pnt.get_segment()`
+        ``pyseg = pnt.get_segment()``
 
 
     Description:
         A more pythonic version of :func:`get_loc` in that it returns a python segment object 
         without pushing the section stack. From a segment object one can get the 
-        section with :code:`pyseg.sec` and the position with :code:`pyseg.x`. If the 
+        section with ``pyseg.sec`` and the position with ``pyseg.x``. If the 
         point process is not located anywhere, the return value is None. 
 
     .. warning::
@@ -73,7 +73,7 @@ General
 
 
     Syntax:
-        :code:`pnt.loc(x)`
+        ``pnt.loc(x)``
 
 
     Description:
@@ -90,7 +90,7 @@ General
 
 
     Syntax:
-        :code:`b = pnt.has_loc()`
+        ``b = pnt.has_loc()``
 
 
     Description:
@@ -107,15 +107,15 @@ General
 
 
     Syntax:
-        :code:`stimobj = new IClamp(x)`
+        ``stimobj = new IClamp(x)``
 
-        :code:`del -- ms`
+        ``del -- ms``
 
-        :code:`dur -- ms`
+        ``dur -- ms``
 
-        :code:`amp -- nA`
+        ``amp -- nA``
 
-        :code:`i -- nA`
+        ``i -- nA``
 
 
     Description:
@@ -136,17 +136,17 @@ General
 
 
     Syntax:
-        :code:`syn = new AlphaSynapse(x)`
+        ``syn = new AlphaSynapse(x)``
 
-        :code:`syn.onset --- ms`
+        ``syn.onset --- ms``
 
-        :code:`syn.tau	 --- ms`
+        ``syn.tau	 --- ms``
 
-        :code:`syn.gmax --- umho`
+        ``syn.gmax --- umho``
 
-        :code:`syn.e	--- mV`
+        ``syn.e	--- mV``
 
-        :code:`syn.i	--- nA`
+        ``syn.i	--- nA``
 
 
     Description:
@@ -174,15 +174,15 @@ General
 
 
     Syntax:
-        :code:`obj = new VClamp(x)`
+        ``obj = new VClamp(x)``
 
-        :code:`dur[3]`
+        ``dur[3]``
 
-        :code:`amp[3]`
+        ``amp[3]``
 
-        :code:`gain, rstim, tau1, tau2`
+        ``gain, rstim, tau1, tau2``
 
-        :code:`i`
+        ``i``
 
 
     Description:
@@ -253,18 +253,18 @@ General
 
 
     Syntax:
-        :code:`clampobj = new SEClamp(.5)`
+        ``clampobj = new SEClamp(.5)``
 
-        :code:`dur1 dur2 dur3 -- ms`
+        ``dur1 dur2 dur3 -- ms``
 
-        :code:`amp1 amp2 amp3 -- mV`
+        ``amp1 amp2 amp3 -- mV``
 
-        :code:`rs -- MOhm`
+        ``rs -- MOhm``
 
 
-        :code:`vc -- mV`
+        ``vc -- mV``
 
-        :code:`i -- nA`
+        ``i -- nA``
 
 
     Description:
@@ -347,15 +347,15 @@ General
 
 
     Syntax:
-        :code:`apc = new APCount(x)`
+        ``apc = new APCount(x)``
 
-        :code:`apc.thresh ---	mV`
+        ``apc.thresh ---	mV``
 
-        :code:`apc.n`
+        ``apc.n``
 
-        :code:`apc.time --- ms`
+        ``apc.time --- ms``
 
-        :code:`apc.record(vector)`
+        ``apc.record(vector)``
 
 
     Description:
@@ -380,13 +380,13 @@ General
 
 
     Syntax:
-        :code:`syn = new ExpSyn(x)`
+        ``syn = new ExpSyn(x)``
 
-        :code:`syn.tau --- ms decay time constant`
+        ``syn.tau --- ms decay time constant``
 
-        :code:`syn.e -- mV reversal potential`
+        ``syn.e -- mV reversal potential``
 
-        :code:`syn.i -- nA synaptic current`
+        ``syn.i -- nA synaptic current``
 
 
     Description:
@@ -416,15 +416,15 @@ General
 
 
     Syntax:
-        :code:`syn = new Exp2Syn(x)`
+        ``syn = new Exp2Syn(x)``
 
-        :code:`syn.tau1 --- ms rise time`
+        ``syn.tau1 --- ms rise time``
 
-        :code:`syn.tau2 --- ms decay time`
+        ``syn.tau2 --- ms decay time``
 
-        :code:`syn.e -- mV reversal potential`
+        ``syn.e -- mV reversal potential``
 
-        :code:`syn.i -- nA synaptic current`
+        ``syn.i -- nA synaptic current``
 
 
     Description:
@@ -477,17 +477,17 @@ General
 
 
     Syntax:
-        :code:`s = new NetStim(x)`
+        ``s = new NetStim(x)``
 
-        :code:`s.interval ms (mean) time between spikes`
+        ``s.interval ms (mean) time between spikes``
 
-        :code:`s.number (average) number of spikes`
+        ``s.number (average) number of spikes``
 
-        :code:`s.start ms (most likely) start time of first spike`
+        ``s.start ms (most likely) start time of first spike``
 
-        :code:`s.noise ---- range 0 to 1. Fractional randomness.`
+        ``s.noise ---- range 0 to 1. Fractional randomness.``
 
-        :code:`0 deterministic, 1 intervals have negexp distribution.`
+        ``0 deterministic, 1 intervals have negexp distribution.``
 
 
     Description:
@@ -517,7 +517,7 @@ General
             nc = new NetStim(.5) 
             ns = new NetCon(nc, target...) 
 
-        That is, do not use :code:`&nc.y` as the source for the netcon. 
+        That is, do not use ``&nc.y`` as the source for the netcon. 
          
         See :file:`$NEURONHOME/src/nrnoc/netstim.mod`
 
@@ -541,15 +541,15 @@ General
 
 
     Syntax:
-        :code:`c = new IntFire1(x)`
+        ``c = new IntFire1(x)``
 
-        :code:`c.tau --- ms time constant`
+        ``c.tau --- ms time constant``
 
-        :code:`c.refrac --- ms refractory period. Minimum time between events is refrac`
+        ``c.refrac --- ms refractory period. Minimum time between events is refrac``
 
-        :code:`c.m --- state variable`
+        ``c.m --- state variable``
 
-        :code:`c.M --- analytic value of state at current time, t`
+        ``c.M --- analytic value of state at current time, t``
 
 
     Description:
@@ -582,21 +582,21 @@ General
 
 
     Syntax:
-        :code:`c = new IntFire2(x)`
+        ``c = new IntFire2(x)``
 
-        :code:`c.taum --- ms membrane time constant`
+        ``c.taum --- ms membrane time constant``
 
-        :code:`c.taus -- ms synaptic current time constant`
+        ``c.taus -- ms synaptic current time constant``
 
-        :code:`c.ib -- constant current input`
+        ``c.ib -- constant current input``
 
-        :code:`c.m --- membrane state variable`
+        ``c.m --- membrane state variable``
 
-        :code:`c.M --- analytic value of state at current time, t`
+        ``c.M --- analytic value of state at current time, t``
 
-        :code:`c.i --- synaptic current state variable`
+        ``c.i --- synaptic current state variable``
 
-        :code:`c.I --- analytic value of synaptic current.`
+        ``c.I --- analytic value of synaptic current.``
 
 
     Description:
@@ -625,27 +625,27 @@ General
 
 
     Syntax:
-        :code:`c = new IntFire4(x)`
+        ``c = new IntFire4(x)``
 
-        :code:`c.taue --- ms excitatory input time constant`
+        ``c.taue --- ms excitatory input time constant``
 
-        :code:`c.taui1 --- ms inhibitory input rise time constant`
+        ``c.taui1 --- ms inhibitory input rise time constant``
 
-        :code:`c.taui2 --- ms inhibitory input fall time constant`
+        ``c.taui2 --- ms inhibitory input fall time constant``
 
-        :code:`c.taum --- membrane time constant`
+        ``c.taum --- membrane time constant``
 
-        :code:`c.m --- membrane state variable`
+        ``c.m --- membrane state variable``
 
-        :code:`c.M --- analytic value of membrane state at current time, t`
+        ``c.M --- analytic value of membrane state at current time, t``
 
-        :code:`c.e --- excitatory current state variable`
+        ``c.e --- excitatory current state variable``
 
-        :code:`c.E --- analytic value of excitation current`
+        ``c.E --- analytic value of excitation current``
 
-        :code:`c.i1 c.i2 -- inhibitory current state variables`
+        ``c.i1 c.i2 -- inhibitory current state variables``
 
-        :code:`c.I --- analytic value of inhibitory current.`
+        ``c.I --- analytic value of inhibitory current.``
 
 
 
@@ -700,7 +700,7 @@ Mechanisms
 **setdata**
 
     Syntax:
-        :code:`sec setdata_suffix(x)`
+        ``sec setdata_suffix(x)``
 
 
     Description:
@@ -734,9 +734,9 @@ Mechanisms
 
 
     Syntax:
-        :code:`cm (uF/cm2)`
+        ``cm (uF/cm2)``
 
-        :code:`i_cap (mA/cm2)`
+        ``i_cap (mA/cm2)``
 
 
     Description:
@@ -759,7 +759,7 @@ Mechanisms
 
 
     Syntax:
-        :code:`insert hh`
+        ``insert hh``
 
 
     Description:
@@ -797,13 +797,13 @@ Mechanisms
 **pas**
 
     Syntax:
-        :code:`insert pas`
+        ``insert pas``
 
-        :code:`g_pas -- mho/cm2	conductance`
+        ``g_pas -- mho/cm2	conductance``
 
-        :code:`e_pas -- mV		reversal potential`
+        ``e_pas -- mV		reversal potential``
 
-        :code:`i -- mA/cm2		non-specific current`
+        ``i -- mA/cm2		non-specific current``
 
 
     Description:
@@ -842,19 +842,19 @@ Mechanisms
 **extracellular**
 
     Syntax:
-        :code:`insert extracellular`
+        ``insert extracellular``
 
-        :code:`vext[2]	-- mV`
+        ``vext[2]	-- mV``
 
-        :code:`i_membrane -- mA/cm2`
+        ``i_membrane -- mA/cm2``
 
-        :code:`xraxial[2] -- MOhms/cm`
+        ``xraxial[2] -- MOhms/cm``
 
-        :code:`xg[2]	-- mho/cm2`
+        ``xg[2]	-- mho/cm2``
 
-        :code:`xc[2]	-- uF/cm2`
+        ``xc[2]	-- uF/cm2``
 
-        :code:`e_extracellular -- mV`
+        ``e_extracellular -- mV``
 
 
     Description:
@@ -879,7 +879,7 @@ Mechanisms
         The figure illustrates the form the electrical equivalent circuit 
         when this mechanism is present. Note that previous documentation 
         was incorrect in showing that e_extracellular was in series with 
-        the :code:`xg[nlayer-1],xc[nlayer-1]` parallel combination. 
+        the ``xg[nlayer-1],xc[nlayer-1]`` parallel combination. 
         In fact it has always been the case 
         that e_extracellular was in series with xg[nlayer-1] and xc[nlayer-1] 
         was in parallel 
@@ -1013,31 +1013,31 @@ Mechanisms
          
 
     Syntax:
-        :code:`nrn/src/nrnoc/options.h`
+        ``nrn/src/nrnoc/options.h``
 
-        :code:`#define EXTRACELLULAR   2       /* number of extracellular layers */`
+        ``#define EXTRACELLULAR   2       /* number of extracellular layers */``
 
 
-        :code:`insert extracellular`
+        ``insert extracellular``
 
-        :code:`vext[i]	-- mV`
+        ``vext[i]	-- mV``
 
-        :code:`i_membrane -- mA/cm2`
+        ``i_membrane -- mA/cm2``
 
-        :code:`xraxial[i] -- MOhms/cm`
+        ``xraxial[i] -- MOhms/cm``
 
-        :code:`xg[i]	-- mho/cm2`
+        ``xg[i]	-- mho/cm2``
 
-        :code:`xc[i]	-- uF/cm2`
+        ``xc[i]	-- uF/cm2``
 
-        :code:`e_extracellular -- mV`
+        ``e_extracellular -- mV``
 
 
 
     Description:
         If other than 2 extracellular layers is desired, you may recompile the 
         program by changing the :file:`nrn/src/nrnoc/options.h` line 
-        :code:`#define EXTRACELLULAR 2`
+        ``#define EXTRACELLULAR 2``
         to the number of layers desired. Be sure to recompile both nrnoc and nrniv 
         as well as any user defined .mod files that use the ELECTRODE_CURRENT statement. 
          

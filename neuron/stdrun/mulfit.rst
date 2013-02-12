@@ -38,10 +38,10 @@ parameter names or expressions. Parameter names can be any variable
 name or any statement involving $1. Statements involving $1 are 
 extremely useful in causing a single parameter to modify many 
 variables. e.g. 
-:code:`forall Ra = $1` or :code:`some_procedure($1)` 
+``forall Ra = $1`` or ``some_procedure($1)`` 
 Even if the parameter is a single variable name, it is most often 
 more useful to express it as a "normalized expression" so that all 
-"optimized" values are close to unity. e.g. :code:`cai0_ca_ion = 1e-4*$1` 
+"optimized" values are close to unity. e.g. ``cai0_ca_ion = 1e-4*$1`` 
 The Praxis fitter does not work efficiently (or at all) when parameters 
 have very different scales. (but see the log scale factor discussion 
 below) 
@@ -147,8 +147,8 @@ a :ref:`RunFitter`.
     over the generator list items, displays the current selection in 
     a separate generator panel. When all the generators are empty this 
     panel is very small. So first select a Fitness/VariableToFit 
-    to specify a dependent variable, e.g :code:`soma.v(.5)` or 
-    :code:`SEClamp[0].i` to fit to data. Then close the panel and reopen 
+    to specify a dependent variable, e.g ``soma.v(.5)`` or 
+    ``SEClamp[0].i`` to fit to data. Then close the panel and reopen 
     it (requires double clicking if the item is already selected in 
     the generator list) in order to see the Graph portion of the display. 
     The generator panel is a :class:`Deck` and the top card is the one 
@@ -161,8 +161,8 @@ Fitness menu of a Generator instance in the generator Panel
     pops up a symbol chooser for selecting a dependent 
     variable which you wish to fit to data for this protocol. 
     For example, possible dependent variable for which you might have 
-    data are  :code:`soma.v(.5)` or 
-    :code:`SEClamp[0].i`. Any number of dependent variables can be fit for 
+    data are  ``soma.v(.5)`` or 
+    ``SEClamp[0].i``. Any number of dependent variables can be fit for 
     one protocol (run with particular stimulus values set, see below). 
     For a voltage clamp family, there would only be one current (dependent 
     variable) per generator and different generators for each voltage level. 

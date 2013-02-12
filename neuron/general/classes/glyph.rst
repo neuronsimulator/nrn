@@ -10,7 +10,7 @@ Glyph
 
 
     Syntax:
-        :code:`g = new Glyph()`
+        ``g = new Glyph()``
 
 
     Description:
@@ -37,7 +37,7 @@ Glyph
 
 
     Syntax:
-        :code:`g = g.path()`
+        ``g = g.path()``
 
 
     Description:
@@ -53,7 +53,7 @@ Glyph
 
 
     Syntax:
-        :code:`g = g.m(x, y)`
+        ``g = g.m(x, y)``
 
 
     Description:
@@ -69,7 +69,7 @@ Glyph
 
 
     Syntax:
-        :code:`g = g.l(x, y)`
+        ``g = g.l(x, y)``
 
 
     Description:
@@ -85,11 +85,11 @@ Glyph
 
 
     Syntax:
-        :code:`g = g.s()`
+        ``g = g.s()``
 
-        :code:`g = g.s(colorindex)`
+        ``g = g.s(colorindex)``
 
-        :code:`g = g.s(colorindex, brushindex)`
+        ``g = g.s(colorindex, brushindex)``
 
 
     Description:
@@ -105,7 +105,7 @@ Glyph
 
 
     Syntax:
-        :code:`g = g.close()`
+        ``g = g.close()``
 
 
     Description:
@@ -121,9 +121,9 @@ Glyph
 
 
     Syntax:
-        :code:`g = g.fill()`
+        ``g = g.fill()``
 
-        :code:`g = g.fill(colorindex)`
+        ``g = g.fill(colorindex)``
 
 
     Description:
@@ -139,7 +139,7 @@ Glyph
 
 
     Syntax:
-        :code:`g = g.curve(x,y, x1,y1, x2,y2)`
+        ``g = g.curve(x,y, x1,y1, x2,y2)``
 
 
     Description:
@@ -155,7 +155,7 @@ Glyph
 
 
     Syntax:
-        :code:`g = g.cpt(x,y)`
+        ``g = g.cpt(x,y)``
 
 
     Description:
@@ -173,7 +173,7 @@ Glyph
 
 
     Syntax:
-        :code:`g = g.erase()`
+        ``g = g.erase()``
 
 
     Description:
@@ -189,7 +189,7 @@ Glyph
 
 
     Syntax:
-        :code:`g = g.label("string", x, y, fixtype, colorindex)`
+        ``g = g.label("string", x, y, fixtype, colorindex)``
 
 
     Description:
@@ -205,7 +205,7 @@ Glyph
 
 
     Syntax:
-        :code:`g = g.glyph(glyphobject, x, y, scale, angle)`
+        ``g = g.glyph(glyphobject, x, y, scale, angle)``
 
 
     Description:
@@ -221,7 +221,7 @@ Glyph
 
 
     Syntax:
-        :code:`g = g.gif("filename")`
+        ``g = g.gif("filename")``
 
 
     Description:

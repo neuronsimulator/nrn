@@ -9,13 +9,13 @@ Pointer
 
 
     Syntax:
-        :code:`Pointer(&x)`
+        ``Pointer(&x)``
 
-        :code:`Pointer("variable")`
+        ``Pointer("variable")``
 
-        :code:`Pointer(&x, "stmt that may contain $1")`
+        ``Pointer(&x, "stmt that may contain $1")``
 
-        :code:`Pointer("variable", "stmt that may contain $1 or variable name")`
+        ``Pointer("variable", "stmt that may contain $1 or variable name")``
 
 
     Description:
@@ -32,9 +32,9 @@ Pointer
 
 
     Syntax:
-        :code:`x = ptr.val`
+        ``x = ptr.val``
 
-        :code:`ptr.val = expr`
+        ``ptr.val = expr``
 
 
     Description:
@@ -51,7 +51,7 @@ Pointer
 
 
     Syntax:
-        :code:`str = ptr.s`
+        ``str = ptr.s``
 
 
     Description:
@@ -68,7 +68,7 @@ Pointer
 
 
     Syntax:
-        :code:`x = ptr.assign(val)`
+        ``x = ptr.assign(val)``
 
 
     Description:

@@ -10,9 +10,9 @@ pwmplace
 
 
     Syntax:
-        :code:`pwman_place(left, top)`
+        ``pwman_place(left, top)``
 
-        :code:`pwman_place(left, top, 0)`
+        ``pwman_place(left, top, 0)``
 
 
     Description:

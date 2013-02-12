@@ -10,7 +10,7 @@
 
 
     Syntax:
-        :code:`ivoc_style("name", "attribute")`
+        ``ivoc_style("name", "attribute")``
 
 
     Description:
@@ -42,9 +42,9 @@
 
 
     Syntax:
-        :code:`variable_domain(&variable, lower_limit, upper_limit)`
+        ``variable_domain(&variable, lower_limit, upper_limit)``
 
-        :code:`variable_domain("varname", lower_limit, upper_limit)`
+        ``variable_domain("varname", lower_limit, upper_limit)``
 
 
     Description:
@@ -72,7 +72,7 @@
 
 
     Syntax:
-        :code:`chdir("path")`
+        ``chdir("path")``
 
 
     Description:
@@ -89,7 +89,7 @@
 
 
     Syntax:
-        :code:`string = getcwd()`
+        ``string = getcwd()``
 
 
     Description:
@@ -108,13 +108,13 @@
 
 
     Syntax:
-        :code:`current_units = units(&variable)`
+        ``current_units = units(&variable)``
 
-        :code:`current_units = units(&variable, "units string")`
+        ``current_units = units(&variable, "units string")``
 
-        :code:`"on or off" = units(1 or 0)`
+        ``"on or off" = units(1 or 0)``
 
-        :code:`current_units = units("varname", ["units string"])`
+        ``current_units = units("varname", ["units string"])``
 
 
     Description:
@@ -126,13 +126,13 @@
         variables must be given units before retrieving a session that shows them 
         in a panel. 
          
-        The units display may be turned off with \ :code:`units(0)` or by setting the 
-        \ :code:`*units_on_flag: off` in the nrn/lib/nrn.defaults file. 
+        The units display may be turned off with \ ``units(0)`` or by setting the 
+        \ ``*units_on_flag: off`` in the nrn/lib/nrn.defaults file. 
          
-        \ :code:`units(&variable)` returns the units string for any 
+        \ ``units(&variable)`` returns the units string for any 
         variable for which an address can be taken. 
          
-        \ :code:`units(&variable, "units string")` sets the units for the indicated 
+        \ ``units(&variable, "units string")`` sets the units for the indicated 
         variable. 
          
         If the first arg is a string, it is treated as the name of the variable. 
@@ -180,7 +180,7 @@
 
 
     Syntax:
-        :code:`execerror("message1", "message2")`
+        ``execerror("message1", "message2")``
 
 
     Description:

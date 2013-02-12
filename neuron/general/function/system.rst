@@ -14,9 +14,9 @@ system
          
 
     Syntax:
-        :code:`exitcode = system(cmdstr)`
+        ``exitcode = system(cmdstr)``
 
-        :code:`exitcode = system(cmdstr, stdout_str)`
+        ``exitcode = system(cmdstr, stdout_str)``
 
 
     Description:
@@ -29,9 +29,9 @@ system
     Example:
 
 
-        \ :code:`system("ls")` 
+        \ ``system("ls")`` 
             Prints a directory listing in the console terminal window. 
-            will take up where it left off when the user types the \ :code:`exit` 
+            will take up where it left off when the user types the \ ``exit`` 
             command 
 
 
@@ -66,15 +66,15 @@ system
          
 
     Syntax:
-        :code:`startsw()`
+        ``startsw()``
 
-        :code:`stopsw()`
+        ``stopsw()``
 
 
 
     Description:
-        \ :code:`Startsw()` initializes the stopwatch. \ :code:`Stopsw()` returns the number of 
-        seconds since the previous \ :code:`startsw()`. 
+        \ ``Startsw()`` initializes the stopwatch. \ ``Stopsw()`` returns the number of 
+        seconds since the previous \ ``startsw()``. 
          
 
 ----
@@ -90,7 +90,7 @@ system
          
 
     Syntax:
-        :code:`string = neuronhome()`
+        ``string = neuronhome()``
 
 
 
@@ -120,7 +120,7 @@ system
 
 
     Syntax:
-        :code:`winio_show(0or1)`
+        ``winio_show(0or1)``
 
 
     Description:
@@ -136,7 +136,7 @@ system
 
 
     Syntax:
-        :code:`WinExec("mswin command")`
+        ``WinExec("mswin command")``
 
 
     Description:
@@ -152,7 +152,7 @@ system
 
 
     Syntax:
-        :code:`type = unix_mac_pc()`
+        ``type = unix_mac_pc()``
 
 
     Description:
@@ -171,7 +171,7 @@ system
 
 
     Syntax:
-        :code:`nrn_load_dll(dll_file_name)`
+        ``nrn_load_dll(dll_file_name)``
 
 
     Description:
@@ -188,9 +188,9 @@ system
 
 
     Syntax:
-        :code:`versionstring = nrnversion()`
+        ``versionstring = nrnversion()``
 
-        :code:`string = nrnversion(i)`
+        ``string = nrnversion(i)``
 
 
     Description:

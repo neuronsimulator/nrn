@@ -153,19 +153,19 @@ correctly write a new membrane mechanism.
  
 NEURON integrates its equations using the function :func:`fadvance`. 
 During a call to this function the value of the global time variable, :data:`t`, 
-is increased by the value of :data:`dt`  :code:`(t = t + dt)`, 
+is increased by the value of :data:`dt`  ``(t = t + dt)``, 
 and all the voltages, currents, 
 concentrations, etc. are changed to new values appropriate to the new 
 value of time.  The default numerical method used by NEURON produces 
 values which have an error proportional to :data:`dt`.  That is, it makes 
 no sense to ask at what time in the interval are the values most accurate. 
 However, by setting the global variable 
-:data:`secondorder` equal to 2, the values produced by :code:`fadvance` have 
-errors proportional to :code:`dt^2` and it is important to realize that 
+:data:`secondorder` equal to 2, the values produced by ``fadvance`` have 
+errors proportional to ``dt^2`` and it is important to realize that 
 
 -   membrane potential is second order correct at time, :data:`t`. 
--   currents are second order correct at time, :code:`t - dt/2`. 
--   channel states are second order correct at time, :code:`t + dt/2`;. 
+-   currents are second order correct at time, ``t - dt/2``. 
+-   channel states are second order correct at time, ``t + dt/2``;. 
 -   concentrations are second order correct at time, :data:`t`. 
 
  
@@ -199,7 +199,7 @@ membrane potential and ionic concentrations do not change on the
 same time scale as the membrane potential.  When these conditions 
 are not met, however, such as in a calcium pump mechanism in which 
 the current depends on the concentrations of calcium next to the 
-membrane, one must be careful to use a :code:`dt` small enough to 
+membrane, one must be careful to use a ``dt`` small enough to 
 prevent the occurrence of numerical instabilities. (Or else using a single 
 model to describe both the pump current and that current's effect on concentration 
 so that the concentrations and pump states may be computed simultaneously. 
@@ -264,7 +264,7 @@ Description:
     Ionic concentration is a state only if the concentration is being 
     calculated within that specific model (mechanism). ERRORS in the simulation 
     would occur if concentrations were computed in more than one mechanism inserted 
-    at the same location.  Membrane potential, :code:`v`, is *never* 
+    at the same location.  Membrane potential, ``v``, is *never* 
     a state since 
     only NEURON itself is allowed to calculate that value. 
 
@@ -388,7 +388,7 @@ The caveat is that tight coupling between states in different models
 may cause numerical instability. When this happens, 
 merging models into one larger 
 model may eliminate the instability, unless the model is so simple that time 
-does not appear, such as a passive channel. In that case, :code:`v` is normally 
+does not appear, such as a passive channel. In that case, ``v`` is normally 
 chosen as the independent variable. MODL required this statement but NMODL 
 will implicitly generate one for you.  
 When currents and ionic potentials are calculated in a particular model they 

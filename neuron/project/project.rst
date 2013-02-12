@@ -153,7 +153,7 @@ the Miscellaneous menu has an ArchiveAndHardcopy item.
 Pressing this button will archive the current version with the session 
 (it is saved in start.ses), request a description of this version and 
 print the version number, description, and session windows on the 
-printer specified by the :code:`$PRINT_CMD` environment variable. 
+printer specified by the ``$PRINT_CMD`` environment variable. 
  
 It is recommended that you play with this simple project for a while 
 to familiarize yourself with the style before employing it in a serious 
@@ -169,7 +169,7 @@ prjnrninit
 
 
 Syntax:
-    :code:`$NEURONHOME/bin/prjnrninit`
+    ``$NEURONHOME/bin/prjnrninit``
 
 
 Description:
@@ -186,7 +186,7 @@ prjnrncmp
 
 
 Syntax:
-    :code:`$NEURONHOME/bin/prjnrncmp`
+    ``$NEURONHOME/bin/prjnrncmp``
 
 
 Description:
@@ -202,7 +202,7 @@ prjnrnco
 
 
 Syntax:
-    :code:`$NEURONHOME/bin/prjnrnco version`
+    ``$NEURONHOME/bin/prjnrnco version``
 
 
 Description:
@@ -218,7 +218,7 @@ prjnrnci
 
 
 Syntax:
-    :code:`$NEURONHOME/bin/prjnrnci`
+    ``$NEURONHOME/bin/prjnrnci``
 
 
 Description:
@@ -242,13 +242,13 @@ prjnrnpr
 
 
 Syntax:
-    :code:`cat postscriptfile | $NEURONHOME/bin/prjnrnpr`
+    ``cat postscriptfile | $NEURONHOME/bin/prjnrnpr``
 
 
 Description:
     Checks in the working files and 
     sends the postscript file to the command specified in the 
-    :code:`$PRINT_CMD` (e.g. :command:`lp`) environment variable. 
+    ``$PRINT_CMD`` (e.g. :command:`lp`) environment variable. 
      
     If the working files are not different from their archived versions 
     the user is asked whether to continue or verify that the simulation 
@@ -266,7 +266,7 @@ Description:
     additive. 
      
     The log message entered during checkin is added to the postcript stream 
-    and sent to :code:`$PRINT_CMD`.
+    and sent to ``$PRINT_CMD``.
      
     This command is called by the :ref:`ArchiveAndHardcopy` menu item in the 
     :ref:`NEURONMainMenu` which first saves the session in :file:`start.hoc` and 
@@ -278,7 +278,7 @@ ivdialog
 
 
 Syntax:
-    :code:`$NEURONHOME/bin/prjnrnpr "banner" "accept" "cancel"`
+    ``$NEURONHOME/bin/prjnrnpr "banner" "accept" "cancel"``
 
 
 Description:

@@ -9,7 +9,7 @@ sscanf function
 
 
     Syntax:
-        :code:`num = sscanf("string", "format", args)`
+        ``num = sscanf("string", "format", args)``
 
 
     Description:

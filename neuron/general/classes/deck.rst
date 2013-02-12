@@ -9,7 +9,7 @@ Deck
 
 
     Syntax:
-        :code:`Deck()`
+        ``Deck()``
 
 
     Description:
@@ -77,7 +77,7 @@ Deck
 
 
     Syntax:
-        :code:`.intercept(1 or 0)`
+        ``.intercept(1 or 0)``
 
 
     Description:
@@ -125,9 +125,9 @@ Deck
 
 
     Syntax:
-        :code:`.map("label")`
+        ``.map("label")``
 
-        :code:`.map("label", left, top, width, height)`
+        ``.map("label", left, top, width, height)``
 
 
     Description:
@@ -160,7 +160,7 @@ Deck
 
 
     Syntax:
-        :code:`.unmap()`
+        ``.unmap()``
 
 
     Description:
@@ -179,7 +179,7 @@ Deck
 
 
     Syntax:
-        :code:`.save("procedure_name")`
+        ``.save("procedure_name")``
 
 
     Description:
@@ -199,7 +199,7 @@ Deck
 
 
     Syntax:
-        :code:`.flip_to(i)`
+        ``.flip_to(i)``
 
 
     Description:
@@ -215,7 +215,7 @@ Deck
 
 
     Syntax:
-        :code:`.remove_last()`
+        ``.remove_last()``
 
 
     Description:
@@ -231,7 +231,7 @@ Deck
 
 
     Syntax:
-        :code:`.move_last(i)`
+        ``.move_last(i)``
 
 
     Description:
@@ -248,7 +248,7 @@ Deck
 
 
     Syntax:
-        :code:`.remove(i)`
+        ``.remove(i)``
 
 
     Description:

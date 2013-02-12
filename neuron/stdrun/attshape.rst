@@ -23,8 +23,8 @@ the :menuselection:`Extras --> AutoScale` rescales
 the results panel after each calculation. 
  
 The :guilabel:`Plot` menu specifies whether to plot log attenuation (default), 
-input impedance, transfer impedance, or :code:`V(measure)/V(inject)`
-Note: log attenuation is defined as :code:`ln( V(inject)/V(measure) )`
+input impedance, transfer impedance, or ``V(measure)/V(inject)``
+Note: log attenuation is defined as ``ln( V(inject)/V(measure) )``
 Input impedance is plotted with 
 respect to the measurement site and the injection site is unused. 
      
@@ -45,7 +45,7 @@ site (default location is location 0 of the currently accessed section
 when the ImpShape object was created). The lower panel displays 
 a neuromorphic rendering along with a unit attenuation scale bar. 
 The upper control panel allows selection of the frequency at which to 
-calculate the impedance and the direction of current flow, :code:`Vin/Vout`, 
+calculate the impedance and the direction of current flow, ``Vin/Vout``, 
 with respect 
 to the measurement/injection site. 
  
@@ -56,7 +56,7 @@ the lower panel) is recorded. The shape of the neuron
 is then plotted so that the distance between the 
 voltage clamp site and the measurement site is the natural 
 log of the attenuation 
-factor, :code:`ln( V(inject)/V(measure) )`
+factor, ``ln( V(inject)/V(measure) )``
  
 When :guilabel:`Vout` is selected, one can imagine that the selected position 
 becomes voltage clamped to 1mV and the voltage at every other position 

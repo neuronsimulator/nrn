@@ -60,7 +60,7 @@ SaveState
 
 
     Syntax:
-        :code:`.save()`
+        ``.save()``
 
 
     Description:
@@ -76,9 +76,9 @@ SaveState
 
 
     Syntax:
-        :code:`.restore()`
+        ``.restore()``
 
-        :code:`.restore(1)`
+        ``.restore(1)``
 
 
     Description:
@@ -104,16 +104,16 @@ SaveState
 
 
     Syntax:
-        :code:`.fread(File)`
+        ``.fread(File)``
 
-        :code:`.fread(File, close)`
+        ``.fread(File, close)``
 
 
     Description:
         Reads binary state data from a File object into the 
         SaveState object. (See File in ivochelp). This does 
         not change the state of the sections. (That is done with 
-        \ :code:`.restore()`). This function opens the file defined 
+        \ ``.restore()``). This function opens the file defined 
         by the File object. On return the file is closed unless 
         the second arg exists and is 1. 
          
@@ -140,7 +140,7 @@ SaveState
 
 
     Syntax:
-        :code:`.fwrite(File)`
+        ``.fwrite(File)``
 
 
     Description:
@@ -160,11 +160,11 @@ SaveState
 
 
     Syntax:
-        :code:`.writehoc(File)`
+        ``.writehoc(File)``
 
 
     Description:
         Writes saved state data as sequence of hoc statements that 
-        can be read with \ :code:`xopen(...)`. Not implemented at this time. 
+        can be read with \ ``xopen(...)``. Not implemented at this time. 
 
 

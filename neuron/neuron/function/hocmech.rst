@@ -10,7 +10,7 @@ hocmech
 
 
     Syntax:
-        :code:`hocmech("suffix", "Template", "parm1 parm2 parm3 ...")`
+        ``hocmech("suffix", "Template", "parm1 parm2 parm3 ...")``
 
 
     Description:
@@ -20,9 +20,9 @@ hocmech
         treated as PARAMETERs. Public variables not in this list are treated as 
         ASSIGNED variables. The new mechanism is used in exactly the same 
         way as "hh" or mechanism defined by NMODL. Thus, instances are created 
-        in each segment with \ :code:`section insert suffix` and after insertion 
+        in each segment with \ ``section insert suffix`` and after insertion 
         the public names are accessible via the normal range variable notation 
-        as in: \ :code:`section.name_suffix(x)` 
+        as in: \ ``section.name_suffix(x)`` 
          
         At this time the functionality of such interpreter defined membrane 
         mechanisms is a small subset of the functionality of mechanisms described 
@@ -37,12 +37,12 @@ hocmech
         indicated block in the model description language. In each case 
         the currently accessed section is set to the location of this instance 
         of the Template and one argument is passed, x, which is the 
-        range variable arc position \ :code:`(0 < x < 1)`. 
+        range variable arc position \ ``(0 < x < 1)``. 
          
-        INITIAL: \ :code:`proc initial()` 
+        INITIAL: \ ``proc initial()`` 
         Called when :func:`finitialize` is executed. 
          
-        BREAKPOINT {SOLVE ... METHOD after_cvode}: \ :code:`proc after_step()` 
+        BREAKPOINT {SOLVE ... METHOD after_cvode}: \ ``proc after_step()`` 
         For the standard staggered time step and global variable time step 
         integration methods, called at every :func:`fadvance` when t = t+dt. 
         For the local variable step method, the instance is called when 

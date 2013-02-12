@@ -10,9 +10,9 @@ FInitializeHandler
 
 
     Syntax:
-        :code:`fih = new FInitializeHandler("stmt", [obj])`
+        ``fih = new FInitializeHandler("stmt", [obj])``
 
-        :code:`fih = new FInitializeHandler(type, "stmt", [obj])`
+        ``fih = new FInitializeHandler(type, "stmt", [obj])``
 
 
     Description:
@@ -104,7 +104,7 @@ FInitializeHandler
 
 
     Syntax:
-        :code:`fih.allprint()`
+        ``fih.allprint()``
 
 
     Description:

@@ -9,7 +9,7 @@ Notification
 
 
     Syntax:
-        :code:`doEvents()`
+        ``doEvents()``
 
 
     Description:
@@ -29,7 +29,7 @@ Notification
 
 
     Syntax:
-        :code:`doNotify()`
+        ``doNotify()``
 
 
     Description:

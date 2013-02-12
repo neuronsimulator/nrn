@@ -9,7 +9,7 @@ GUIMath
 
 
     Syntax:
-        :code:`obj = new GUIMath()`
+        ``obj = new GUIMath()``
 
 
     Description:
@@ -26,7 +26,7 @@ GUIMath
 
 
     Syntax:
-        :code:`d = math.d2line(xpoint, ypoint, xline0, yline0, xline1, yline1)`
+        ``d = math.d2line(xpoint, ypoint, xline0, yline0, xline1, yline1)``
 
 
     Description:
@@ -43,7 +43,7 @@ GUIMath
 
 
     Syntax:
-        :code:`d = math.d2line_seg(xpoint, ypoint, xline0, yline0, xline1, yline1)`
+        ``d = math.d2line_seg(xpoint, ypoint, xline0, yline0, xline1, yline1)``
 
 
     Description:
@@ -60,7 +60,7 @@ GUIMath
 
 
     Syntax:
-        :code:`boolean = math.inside(xpoint, ypoint, left, bottom, right, top)`
+        ``boolean = math.inside(xpoint, ypoint, left, bottom, right, top)``
 
 
     Description:
@@ -76,9 +76,9 @@ GUIMath
 
 
     Syntax:
-        :code:`mode = math.feround()`
+        ``mode = math.feround()``
 
-        :code:`lastmode = math.feround(mode)`
+        ``lastmode = math.feround(mode)``
 
 
     Description:

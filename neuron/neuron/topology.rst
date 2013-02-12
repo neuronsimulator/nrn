@@ -18,7 +18,7 @@ Topology
 **create**
 
     Syntax:
-        :code:`create`
+        ``create``
 
 
 
@@ -69,9 +69,9 @@ Topology
 **connect**
 
     Syntax:
-        :code:`connect section(0or1), x`
+        ``connect section(0or1), x``
 
-        :code:`connect section(0or1), parent(x)`
+        ``connect section(0or1), parent(x)``
 
 
 
@@ -113,7 +113,7 @@ Topology
 
 
     Syntax:
-        :code:`topology()`
+        ``topology()``
 
 
     Description:
@@ -130,13 +130,13 @@ Topology
 
 
     Syntax:
-        :code:`delete_section()`
+        ``delete_section()``
 
 
     Description:
         Delete the currently accessed section from the main section 
         list which is used in computation. 
-        \ :code:`forall delete_section` 
+        \ ``forall delete_section`` 
         will remove all sections. 
          
         Note: deleted sections still exist (even though 
@@ -158,7 +158,7 @@ Topology
 
 
     Syntax:
-        :code:`boolean = section_exists("name", [index], [object])`
+        ``boolean = section_exists("name", [index], [object])``
 
 
     Description:
@@ -180,7 +180,7 @@ Topology
 
 
     Syntax:
-        :code:`section_owner()`
+        ``section_owner()``
 
 
     Description:
@@ -201,7 +201,7 @@ Topology
 
 
     Syntax:
-        :code:`disconnect()`
+        ``disconnect()``
 
 
     Description:

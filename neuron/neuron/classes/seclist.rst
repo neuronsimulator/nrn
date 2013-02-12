@@ -9,7 +9,7 @@ SectionList
 
 
     Syntax:
-        :code:`sl = new SectionList()`
+        ``sl = new SectionList()``
 
 
     Description:
@@ -28,7 +28,7 @@ SectionList
 
 
     Syntax:
-        :code:`sl.append()`
+        ``sl.append()``
 
 
     Description:
@@ -44,9 +44,9 @@ SectionList
 
 
     Syntax:
-        :code:`n = sl.remove()`
+        ``n = sl.remove()``
 
-        :code:`n = sl.remove(sectionlist)`
+        ``n = sl.remove(sectionlist)``
 
 
     Description:
@@ -65,7 +65,7 @@ SectionList
 
 
     Syntax:
-        :code:`sl.children()`
+        ``sl.children()``
 
 
     Description:
@@ -83,7 +83,7 @@ SectionList
 
 
     Syntax:
-        :code:`sl.subtree()`
+        ``sl.subtree()``
 
 
     Description:
@@ -99,7 +99,7 @@ SectionList
 
 
     Syntax:
-        :code:`sl.wholetree()`
+        ``sl.wholetree()``
 
 
     Description:
@@ -117,7 +117,7 @@ SectionList
 
 
     Syntax:
-        :code:`sl.allroots()`
+        ``sl.allroots()``
 
 
     Description:
@@ -135,7 +135,7 @@ SectionList
 
 
     Syntax:
-        :code:`n = sl.unique()`
+        ``n = sl.unique()``
 
 
     Description:
@@ -153,7 +153,7 @@ SectionList
 
 
     Syntax:
-        :code:`.printnames()`
+        ``.printnames()``
 
 
     Description:
@@ -161,6 +161,6 @@ SectionList
          
         The normal usage of a section list involves efficiently iterating 
         over all the sections in the list with 
-        :code:`forsec sectionlist {statement}`
+        ``forsec sectionlist {statement}``
 
 

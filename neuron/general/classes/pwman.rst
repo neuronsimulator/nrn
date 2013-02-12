@@ -10,7 +10,7 @@ PWManager
 
 
     Syntax:
-        :code:`p = new PWManager()`
+        ``p = new PWManager()``
 
 
     Description:
@@ -30,7 +30,7 @@ PWManager
 
 
     Syntax:
-        :code:`cnt = p.count()`
+        ``cnt = p.count()``
 
 
     Description:
@@ -45,7 +45,7 @@ PWManager
 
 
     Syntax:
-        :code:`boolean = p.is_mapped(index)`
+        ``boolean = p.is_mapped(index)``
 
 
     Description:
@@ -60,7 +60,7 @@ PWManager
 
 
     Syntax:
-        :code:`p.map(index)`
+        ``p.map(index)``
 
 
     Description:
@@ -75,7 +75,7 @@ PWManager
 
 
     Syntax:
-        :code:`p.hide(index)`
+        ``p.hide(index)``
 
 
     Description:
@@ -90,7 +90,7 @@ PWManager
 
 
     Syntax:
-        :code:`p.close(index)`
+        ``p.close(index)``
 
 
     Description:
@@ -106,7 +106,7 @@ PWManager
 
 
     Syntax:
-        :code:`p.iconify()`
+        ``p.iconify()``
 
 
     Description:
@@ -121,7 +121,7 @@ PWManager
 
 
     Syntax:
-        :code:`p.deiconify()`
+        ``p.deiconify()``
 
 
     Description:
@@ -137,7 +137,7 @@ PWManager
 
 
     Syntax:
-        :code:`index = p.leader()`
+        ``index = p.leader()``
 
 
     Description:
@@ -152,7 +152,7 @@ PWManager
 
 
     Syntax:
-        :code:`index = p.manager()`
+        ``index = p.manager()``
 
 
     Description:
@@ -167,9 +167,9 @@ PWManager
 
 
     Syntax:
-        :code:`n = p.save("filename", group_object, ["header"])`
+        ``n = p.save("filename", group_object, ["header"])``
 
-        :code:`n = p.save("filename", selected, ["header"])`
+        ``n = p.save("filename", selected, ["header"])``
 
 
     Description:
@@ -194,9 +194,9 @@ PWManager
 
 
     Syntax:
-        :code:`group_obj = p.group(index, group_obj)`
+        ``group_obj = p.group(index, group_obj)``
 
-        :code:`group_obj = p.group(index)`
+        ``group_obj = p.group(index)``
 
 
     Description:
@@ -212,9 +212,9 @@ PWManager
 
 
     Syntax:
-        :code:`p.snap()`
+        ``p.snap()``
 
-        :code:`p.snap("filename")`
+        ``p.snap("filename")``
 
 
     Description:
@@ -234,7 +234,7 @@ PWManager
 
 
     Syntax:
-        :code:`index = p.jwindow(hoc_owner, mapORhide, x, y, w, h)`
+        ``index = p.jwindow(hoc_owner, mapORhide, x, y, w, h)``
 
 
     Description:
@@ -252,7 +252,7 @@ PWManager
 
 
     Syntax:
-        :code:`p.scale(x)`
+        ``p.scale(x)``
 
 
     Description:
@@ -271,7 +271,7 @@ PWManager
 
 
     Syntax:
-        :code:`strdef = p.name(index)`
+        ``strdef = p.name(index)``
 
 
     Description:
@@ -287,7 +287,7 @@ PWManager
 
 
     Syntax:
-        :code:`p.window_place(index, left, top)`
+        ``p.window_place(index, left, top)``
 
 
     Description:
@@ -304,9 +304,9 @@ PWManager
 
 
     Syntax:
-        :code:`p.paper_place(index, show)`
+        ``p.paper_place(index, show)``
 
-        :code:`p.paper_place(index, left, bottom, scale)`
+        ``p.paper_place(index, left, bottom, scale)``
 
 
     Description:
@@ -328,7 +328,7 @@ PWManager
 
 
     Syntax:
-        :code:`p.landscape(boolean)`
+        ``p.landscape(boolean)``
 
 
     Description:
@@ -345,7 +345,7 @@ PWManager
 
 
     Syntax:
-        :code:`p.deco(mode)`
+        ``p.deco(mode)``
 
 
     Description:
@@ -366,7 +366,7 @@ PWManager
 
 
     Syntax:
-        :code:`p.printfile("filename", mode, selected)`
+        ``p.printfile("filename", mode, selected)``
 
 
     Description:

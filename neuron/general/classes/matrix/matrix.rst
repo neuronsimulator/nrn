@@ -10,9 +10,9 @@ Matrix
 
 
     Syntax:
-        :code:`mobj = new Matrix(nrow, ncol)`
+        ``mobj = new Matrix(nrow, ncol)``
 
-        :code:`mobj = new Matrix(nrow, ncol, type)`
+        ``mobj = new Matrix(nrow, ncol, type)``
 
 
     Description:
@@ -55,9 +55,9 @@ Matrix
         to the meschach library at this time. If a method is called on a matrix type 
         whose method has not been implemented, an error message will be printed. 
         It is intended that implemented methods will be transparent to the user, eg 
-        m*x=b (:code:`x = m.solv(b)` ) will solve the linear system 
+        m*x=b (``x = m.solv(b)`` ) will solve the linear system 
         regardless of the type of m and 
-        v1 = m*v2 (:code:`v1 = m.mulv(v2)` ) will perform the vector multiplication. 
+        v1 = m*v2 (``v1 = m.mulv(v2)`` ) will perform the vector multiplication. 
          
         Matrix is implemented using the 
         `meschach c library by David E. Stewart <http://www.math.uiowa.edu/~dstewart/meschach/meschach.html>`_
@@ -66,7 +66,7 @@ Matrix
         routines  have not 
         been interfaced with the hoc interpreter but can be easily added on request 
         or you can add it yourself 
-        by analogy with the code in :code:`nrn/src/ivoc/(matrix.c ocmatrix.[ch])` 
+        by analogy with the code in ``nrn/src/ivoc/(matrix.c ocmatrix.[ch])`` 
         At this time the MFULL matrix type is complete enough to do useful work 
         and MSPARSE can be used to multiply a matrix by a vector and solve 
         Mx=b. 
@@ -81,13 +81,13 @@ Matrix
 
 
     Syntax:
-        :code:`val = m.x[irow][icol]`
+        ``val = m.x[irow][icol]``
 
-        :code:`m.x[irow][icol] = val`
+        ``m.x[irow][icol] = val``
 
-        :code:`expr(m.x[irow][icol])`
+        ``expr(m.x[irow][icol])``
 
-        :code:`&m.x[irow][icol]`
+        ``&m.x[irow][icol]``
 
 
     Description:
@@ -155,7 +155,7 @@ Matrix
 
 
     Syntax:
-        :code:`n = m.nrow`
+        ``n = m.nrow``
 
 
     Description:
@@ -184,7 +184,7 @@ Matrix
 
 
     Syntax:
-        :code:`mobj = msrcdest(nrow, ncol)`
+        ``mobj = msrcdest(nrow, ncol)``
 
 
     Description:
@@ -222,7 +222,7 @@ Matrix
 
 
     Syntax:
-        :code:`mdest = msrc.c()`
+        ``mdest = msrc.c()``
 
 
     Description:
@@ -241,9 +241,9 @@ Matrix
 
 
     Syntax:
-        :code:`mdest = msrc.bcopy(i0, j0, n, m [, mout])`
+        ``mdest = msrc.bcopy(i0, j0, n, m [, mout])``
 
-        :code:`mdest = msrc.bcopy(i0, j0, n, m, i1, j1 [, mout])`
+        ``mdest = msrc.bcopy(i0, j0, n, m, i1, j1 [, mout])``
 
 
     Description:
@@ -279,7 +279,7 @@ Matrix
 
 
     Syntax:
-        :code:`val = m.getval(irow, jcol)`
+        ``val = m.getval(irow, jcol)``
 
 
     Description:
@@ -296,7 +296,7 @@ Matrix
 
 
     Syntax:
-        :code:`val = m.setval(irow, jcol, val)`
+        ``val = m.setval(irow, jcol, val)``
 
 
     Description:
@@ -314,7 +314,7 @@ Matrix
 
 
     Syntax:
-        :code:`n = m.sprowlen(i)`
+        ``n = m.sprowlen(i)``
 
 
     Description:
@@ -334,7 +334,7 @@ Matrix
 
 
     Syntax:
-        :code:`x = m.spgetrowval(i, jx, &j)`
+        ``x = m.spgetrowval(i, jx, &j)``
 
 
     Description:
@@ -379,11 +379,11 @@ Matrix
 
 
     Syntax:
-        :code:`0 = m.printf`
+        ``0 = m.printf``
 
-        :code:`0 = m.printf("element_format")`
+        ``0 = m.printf("element_format")``
 
-        :code:`0 = m.printf("element_format", "row_format")`
+        ``0 = m.printf("element_format", "row_format")``
 
 
     Description:
@@ -403,13 +403,13 @@ Matrix
 
 
     Syntax:
-        :code:`0 = m.fprint(fileobj)`
+        ``0 = m.fprint(fileobj)``
 
-        :code:`0 = m.fprint(fileobj, "element_format")`
+        ``0 = m.fprint(fileobj, "element_format")``
 
-        :code:`0 = m.fprint(fileobj, "element_format", "row_format")`
+        ``0 = m.fprint(fileobj, "element_format", "row_format")``
 
-        :code:`0 = m.fprint(0, fileobj [,...])`
+        ``0 = m.fprint(0, fileobj [,...])``
 
 
     Description:
@@ -433,9 +433,9 @@ Matrix
 
 
     Syntax:
-        :code:`0 = m.scanf(File_object)`
+        ``0 = m.scanf(File_object)``
 
-        :code:`0 = m.scanf(File_object, nrow, ncol)`
+        ``0 = m.scanf(File_object, nrow, ncol)``
 
 
     Description:
@@ -476,9 +476,9 @@ Matrix
 
 
     Syntax:
-        :code:`vobj = msrc.mulv(vin)`
+        ``vobj = msrc.mulv(vin)``
 
-        :code:`vobj = msrc.mulv(vin, vout)`
+        ``vobj = msrc.mulv(vin, vout)``
 
 
     Description:
@@ -533,9 +533,9 @@ Matrix
 
 
     Syntax:
-        :code:`vobj = msrc.getrow(i)`
+        ``vobj = msrc.getrow(i)``
 
-        :code:`vobj = msrc.getrow(i, vout)`
+        ``vobj = msrc.getrow(i, vout)``
 
 
     Description:
@@ -554,9 +554,9 @@ Matrix
 
 
     Syntax:
-        :code:`vobj = msrc.getcol(i)`
+        ``vobj = msrc.getcol(i)``
 
-        :code:`vobj = msrc.getcol(i, vout)`
+        ``vobj = msrc.getcol(i, vout)``
 
 
     Description:
@@ -575,9 +575,9 @@ Matrix
 
 
     Syntax:
-        :code:`vobj = msrc.getdiag(i)`
+        ``vobj = msrc.getdiag(i)``
 
-        :code:`vobj = msrc.getdiag(i, vout)`
+        ``vobj = msrc.getdiag(i, vout)``
 
 
     Description:
@@ -617,9 +617,9 @@ Matrix
 
 
     Syntax:
-        :code:`vx = msrc.solv(vb)`
+        ``vx = msrc.solv(vb)``
 
-        :code:`vx = msrc.solv(vb, vout and/or 1 in either order)`
+        ``vx = msrc.solv(vb, vout and/or 1 in either order)``
 
 
     Description:
@@ -685,7 +685,7 @@ Matrix
 
 
     Syntax:
-        :code:`mantissa = m.det(&base10exponent)`
+        ``mantissa = m.det(&base10exponent)``
 
 
     Description:
@@ -716,9 +716,9 @@ Matrix
 
 
     Syntax:
-        :code:`mobj = msrc.mulm(m)`
+        ``mobj = msrc.mulm(m)``
 
-        :code:`mobj = msrc.mulm(m, mout)`
+        ``mobj = msrc.mulm(m, mout)``
 
 
     Description:
@@ -762,7 +762,7 @@ Matrix
 
 
     Syntax:
-        :code:`mobj = m1srcdest.add(m2src)`
+        ``mobj = m1srcdest.add(m2src)``
 
 
     Description:
@@ -783,7 +783,7 @@ Matrix
 
 
     Syntax:
-        :code:`mobj = msrcdest.muls(scalar)`
+        ``mobj = msrcdest.muls(scalar)``
 
 
     Description:
@@ -815,9 +815,9 @@ Matrix
 
 
     Syntax:
-        :code:`mobj = msrcdest.setrow(i, vin)`
+        ``mobj = msrcdest.setrow(i, vin)``
 
-        :code:`mobj = msrcdest.setrow(i, scalar)`
+        ``mobj = msrcdest.setrow(i, scalar)``
 
 
     Description:
@@ -838,9 +838,9 @@ Matrix
 
 
     Syntax:
-        :code:`mobj = msrcdest.setcol(i, vin)`
+        ``mobj = msrcdest.setcol(i, vin)``
 
-        :code:`mobj = msrcdest.setcol(i, scalar)`
+        ``mobj = msrcdest.setcol(i, scalar)``
 
 
     Description:
@@ -861,9 +861,9 @@ Matrix
 
 
     Syntax:
-        :code:`mobj = msrcdest.setdiag(i, vin)`
+        ``mobj = msrcdest.setdiag(i, vin)``
 
-        :code:`mobj = msrcdest.setdiag(i, scalar)`
+        ``mobj = msrcdest.setdiag(i, scalar)``
 
 
     Description:
@@ -907,7 +907,7 @@ Matrix
 
 
     Syntax:
-        :code:`mobj = msrcdest.zero()`
+        ``mobj = msrcdest.zero()``
 
 
     Description:
@@ -925,7 +925,7 @@ Matrix
 
 
     Syntax:
-        :code:`mobj = msrcdest.ident()`
+        ``mobj = msrcdest.ident()``
 
 
     Description:
@@ -954,9 +954,9 @@ Matrix
 
 
     Syntax:
-        :code:`mobj = msrc.exp()`
+        ``mobj = msrc.exp()``
 
-        :code:`mobj = msrc.exp(mout)`
+        ``mobj = msrc.exp(mout)``
 
 
     Description:
@@ -988,9 +988,9 @@ Matrix
 
 
     Syntax:
-        :code:`mobj = msrc.pow(i)`
+        ``mobj = msrc.pow(i)``
 
-        :code:`mobj = msrc.pow(i, mout)`
+        ``mobj = msrc.pow(i, mout)``
 
 
     Description:
@@ -1025,9 +1025,9 @@ Matrix
 
 
     Syntax:
-        :code:`mobj = msrc.inverse()`
+        ``mobj = msrc.inverse()``
 
-        :code:`mobj = msrc.inverse(mout)`
+        ``mobj = msrc.inverse(mout)``
 
 
     Description:
@@ -1062,9 +1062,9 @@ Matrix
 
 
     Syntax:
-        :code:`dvec = msrc.svd()`
+        ``dvec = msrc.svd()``
 
-        :code:`dvec = msrc.svd(umat, vmat)`
+        ``dvec = msrc.svd(umat, vmat)``
 
 
     Description:
@@ -1131,7 +1131,7 @@ Matrix
 
 
     Syntax:
-        :code:`mdest = msrc.transpose()`
+        ``mdest = msrc.transpose()``
 
 
     Description:
@@ -1164,7 +1164,7 @@ Matrix
 
 
     Syntax:
-        :code:`veigenvalues = msrc.symmeig(eigenvectors)`
+        ``veigenvalues = msrc.symmeig(eigenvectors)``
 
 
     Description:
@@ -1218,9 +1218,9 @@ Matrix
 
 
     Syntax:
-        :code:`vobj = msrc.to_vector()`
+        ``vobj = msrc.to_vector()``
 
-        :code:`vobj = msrc.to_vector(vout)`
+        ``vobj = msrc.to_vector(vout)``
 
 
     Description:
@@ -1254,7 +1254,7 @@ Matrix
 
 
     Syntax:
-        :code:`mobj = msrcdest.from_vector(vec)`
+        ``mobj = msrcdest.from_vector(vec)``
 
 
     Description:
@@ -1285,7 +1285,7 @@ Matrix
 
 
     Syntax:
-        :code:`mc = msrcdest.cholesky_factor()`
+        ``mc = msrcdest.cholesky_factor()``
 
 
     Description:

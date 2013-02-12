@@ -9,9 +9,9 @@ SectionBrowser
 
 
     Syntax:
-        :code:`sb = new SectionBrowser()`
+        ``sb = new SectionBrowser()``
 
-        :code:`sb = new SectionBrowser(SectionList)`
+        ``sb = new SectionBrowser(SectionList)``
 
 
     Description:
@@ -32,7 +32,7 @@ SectionBrowser
 
 
     Syntax:
-        :code:`.select()`
+        ``.select()``
 
 
     Description:
@@ -48,14 +48,14 @@ SectionBrowser
 
 
     Syntax:
-        :code:`sb.select_action("command")`
+        ``sb.select_action("command")``
 
 
     Description:
         Command is executed when an item is selected (single click or 
         dragging) by the mouse. Before execution, the selected section 
         is pushed. (and	popped after the command completes.) 
-        Command is executed in the object context in which \ :code:`select_action` 
+        Command is executed in the object context in which \ ``select_action`` 
         registered it. 
 
     Example:
@@ -88,14 +88,14 @@ SectionBrowser
 
 
     Syntax:
-        :code:`sb.accept_action("command")`
+        ``sb.accept_action("command")``
 
 
     Description:
         Command is executed when an item is accepted (double click) by 
         the mouse. Before execution, the selected section 
         is pushed. (and	popped after the command completes.) 
-        Command is executed in the objet context in which the  \ :code:`accept_action` 
+        Command is executed in the objet context in which the  \ ``accept_action`` 
         registered it. 
 
     Example:

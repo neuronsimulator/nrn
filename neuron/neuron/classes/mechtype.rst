@@ -9,9 +9,9 @@ MechanismType
 
 
     Syntax:
-        :code:`mt = new MechanismType(0)`
+        ``mt = new MechanismType(0)``
 
-        :code:`mt = new MechanismType(1)`
+        ``mt = new MechanismType(1)``
 
 
     Description:
@@ -27,8 +27,8 @@ MechanismType
         eg. IClamp, AlphaSynapse, VClamp. 
          
         Mechanism order is the same as the argument order that created the "special" 
-        during \ :code:`nrnivmodl` or \ :code:`mknrndll`. Therefore when a saved session depends 
-        on information in a \ :code:`MechanismType` it is dependent on a particular special 
+        during \ ``nrnivmodl`` or \ ``mknrndll``. Therefore when a saved session depends 
+        on information in a \ ``MechanismType`` it is dependent on a particular special 
         or dll. 
          
 
@@ -61,9 +61,9 @@ MechanismType
 
 
     Syntax:
-        :code:`mt.select("name")`
+        ``mt.select("name")``
 
-        :code:`mt.select(i)`
+        ``mt.select(i)``
 
 
     Description:
@@ -79,7 +79,7 @@ MechanismType
 
 
     Syntax:
-        :code:`i = mt.selected([strdef])`
+        ``i = mt.selected([strdef])``
 
 
     Description:
@@ -96,7 +96,7 @@ MechanismType
 
 
     Syntax:
-        :code:`mt.remove()`
+        ``mt.remove()``
 
 
     Description:
@@ -114,19 +114,19 @@ MechanismType
 
 
     Syntax:
-        :code:`mt.make()`
+        ``mt.make()``
 
-        :code:`mt.make(objectvar)`
+        ``mt.make(objectvar)``
 
 
     Description:
 
 
-        \ :code:`mt.make()` 
+        \ ``mt.make()`` 
             For distributed mechanisms. Inserts selected mechanism into currently 
             accessed section. 
 
-        \ :code:`mt.make(objectvar)` 
+        \ ``mt.make(objectvar)`` 
             For point processes.  The arg becomes a reference to a new point process 
             of type given by the selection. 
             Note that the newly created point process is not located in any section. 
@@ -144,7 +144,7 @@ MechanismType
 
 
     Syntax:
-        :code:`i = mt.count()`
+        ``i = mt.count()``
 
 
     Description:
@@ -160,11 +160,11 @@ MechanismType
 
 
     Syntax:
-        :code:`mt.menu()`
+        ``mt.menu()``
 
 
     Description:
-        Inserts a special menu into the currently open \ :code:`xpanel`. The menu 
+        Inserts a special menu into the currently open \ ``xpanel``. The menu 
         label always reflects the current selection. Submenu items are indexed 
         according to position with the first item being item 0.  When the mouse 
         button is released on a submenu item that item becomes the selection 
@@ -180,7 +180,7 @@ MechanismType
 
 
     Syntax:
-        :code:`mt.action("command")`
+        ``mt.action("command")``
 
 
     Description:
@@ -196,7 +196,7 @@ MechanismType
 
 
     Syntax:
-        :code:`boolean =  mt.is_netcon_target(i)`
+        ``boolean =  mt.is_netcon_target(i)``
 
 
     Description:
@@ -213,7 +213,7 @@ MechanismType
 
 
     Syntax:
-        :code:`boolean = mt.has_net_event(i)`
+        ``boolean = mt.has_net_event(i)``
 
 
     Description:
@@ -232,7 +232,7 @@ MechanismType
 
 
     Syntax:
-        :code:`boolean = mt.is_artificial(i)`
+        ``boolean = mt.is_artificial(i)``
 
 
     Description:
@@ -259,7 +259,7 @@ MechanismType
 
 
     Syntax:
-        :code:`obj = mt.pp_begin()`
+        ``obj = mt.pp_begin()``
 
 
     Description:
@@ -310,7 +310,7 @@ MechanismType
 
 
     Syntax:
-        :code:`obj = mt.pp_next()`
+        ``obj = mt.pp_next()``
 
 
     Description:
@@ -328,7 +328,7 @@ MechanismType
 
 
     Syntax:
-        :code:`internal_type = mt.internal_type()`
+        ``internal_type = mt.internal_type()``
 
 
     Description:

@@ -8,9 +8,9 @@ CVode
 
 
     Syntax:
-        :code:`objref cvode`
+        ``objref cvode``
 
-        :code:`cvode = new CVode()`
+        ``cvode = new CVode()``
 
 
     Description:
@@ -92,9 +92,9 @@ CVode
 
 
     Syntax:
-        :code:`cvode.solve()`
+        ``cvode.solve()``
 
-        :code:`cvode.solve(tout)`
+        ``cvode.solve(tout)``
 
 
     Description:
@@ -120,7 +120,7 @@ CVode
 
 
     Syntax:
-        :code:`cvode.statistics()`
+        ``cvode.statistics()``
 
 
     Description:
@@ -140,7 +140,7 @@ CVode
 
 
     Syntax:
-        :code:`cvode.spike_stat(vector)`
+        ``cvode.spike_stat(vector)``
 
 
     Description:
@@ -174,9 +174,9 @@ CVode
 
 
     Syntax:
-        :code:`cvode.print_event_queue()`
+        ``cvode.print_event_queue()``
 
-        :code:`cvode.print_event_queue(Vector)`
+        ``cvode.print_event_queue(Vector)``
 
 
     Description:
@@ -197,9 +197,9 @@ CVode
 
 
     Syntax:
-        :code:`cvode.event_queue_info(2, tvec, list)`
+        ``cvode.event_queue_info(2, tvec, list)``
 
-        :code:`cvode.event_queue_info(3, tvec, flagvec, list)`
+        ``cvode.event_queue_info(3, tvec, flagvec, list)``
 
 
     Description:
@@ -227,9 +227,9 @@ CVode
 
 
     Syntax:
-        :code:`x = cvode.rtol()`
+        ``x = cvode.rtol()``
 
-        :code:`x = cvode.rtol(relative)`
+        ``x = cvode.rtol(relative)``
 
 
     Description:
@@ -257,9 +257,9 @@ CVode
 
 
     Syntax:
-        :code:`x = cvode.atol()`
+        ``x = cvode.atol()``
 
-        :code:`x = cvode.atol(absolute)`
+        ``x = cvode.atol(absolute)``
 
 
     Description:
@@ -299,17 +299,17 @@ CVode
 
 
     Syntax:
-        :code:`tol = cvode.atolscale(&var, toleranceMultiplier)`
+        ``tol = cvode.atolscale(&var, toleranceMultiplier)``
 
-        :code:`tol = cvode.atolscale(&var)`
+        ``tol = cvode.atolscale(&var)``
 
-        :code:`tol = cvode.atolscale("basename" [, toleranceMultiplier])`
+        ``tol = cvode.atolscale("basename" [, toleranceMultiplier])``
 
 
     Description:
         Specifies the absolute tolerance scale multiplier (default is 1.0) 
         for all STATE's of which the address 
-        of var is an instance. Eg.  \ :code:`cvode.atolscale(&soma.v(.5), 1e-8)` sets 
+        of var is an instance. Eg.  \ ``cvode.atolscale(&soma.v(.5), 1e-8)`` sets 
         the absolute tolerance multiplier for all membrane potentials everywhere. 
         (The syntax for merely specifying a name is admittedly cumbersome but 
         the function is not often needed and it avoids the necessity of 
@@ -347,7 +347,7 @@ CVode
 
 
     Syntax:
-        :code:`cvode.re_init()`
+        ``cvode.re_init()``
 
 
     Description:
@@ -364,9 +364,9 @@ CVode
 
 
     Syntax:
-        :code:`x = cvode.stiff()`
+        ``x = cvode.stiff()``
 
-        :code:`x = cvode.stiff(0-2)`
+        ``x = cvode.stiff(0-2)``
 
 
     Description:
@@ -386,17 +386,17 @@ CVode
 
 
     Syntax:
-        :code:`x = cvode.active()`
+        ``x = cvode.active()``
 
-        :code:`x = cvode.active(0)`
+        ``x = cvode.active(0)``
 
-        :code:`x = cvode.active(1)`
+        ``x = cvode.active(1)``
 
-        :code:`following two not yet implemented`
+        ``following two not yet implemented``
 
-        :code:`x = cvode.active(1, dt)`
+        ``x = cvode.active(1, dt)``
 
-        :code:`x = cvode.active(tvec)`
+        ``x = cvode.active(tvec)``
 
 
     Description:
@@ -427,9 +427,9 @@ CVode
 
 
     Syntax:
-        :code:`x = cvode.maxorder()`
+        ``x = cvode.maxorder()``
 
-        :code:`x = cvode.maxorder(0 - 12)`
+        ``x = cvode.maxorder(0 - 12)``
 
 
     Description:
@@ -446,9 +446,9 @@ CVode
 
 
     Syntax:
-        :code:`x = cvode.jacobian()`
+        ``x = cvode.jacobian()``
 
-        :code:`x = cvode.jacobian(0 - 2)`
+        ``x = cvode.jacobian(0 - 2)``
 
 
     Description:
@@ -466,11 +466,11 @@ CVode
 
 
     Syntax:
-        :code:`objref dest_vector`
+        ``objref dest_vector``
 
-        :code:`dest_vector = new Vector()`
+        ``dest_vector = new Vector()``
 
-        :code:`cvode.states(dest_vector)`
+        ``cvode.states(dest_vector)``
 
 
     Description:
@@ -487,7 +487,7 @@ CVode
 
 
     Syntax:
-        :code:`cvode.dstates(dest_vector)`
+        ``cvode.dstates(dest_vector)``
 
 
     Description:
@@ -503,7 +503,7 @@ CVode
 
 
     Syntax:
-        :code:`cvode.f(t, yvec, ypvec)`
+        ``cvode.f(t, yvec, ypvec)``
 
 
     Description:
@@ -527,7 +527,7 @@ CVode
 
 
     Syntax:
-        :code:`cvode.yscatter(yvec)`
+        ``cvode.yscatter(yvec)``
 
 
     Description:
@@ -550,7 +550,7 @@ CVode
 
 
     Syntax:
-        :code:`cvode.ygather(yvec)`
+        ``cvode.ygather(yvec)``
 
 
     Description:
@@ -571,7 +571,7 @@ CVode
 
 
     Syntax:
-        :code:`cvode.fixed_step()`
+        ``cvode.fixed_step()``
 
 
     Description:
@@ -611,7 +611,7 @@ CVode
 
 
     Syntax:
-        :code:`cvode.error_weights(dest_vector)`
+        ``cvode.error_weights(dest_vector)``
 
 
     Description:
@@ -627,7 +627,7 @@ CVode
 
 
     Syntax:
-        :code:`cvode.acor(dest_vector)`
+        ``cvode.acor(dest_vector)``
 
     Description:
         Fill the destination :class:`Vector` with the values of the local errors
@@ -642,9 +642,9 @@ CVode
 
 
     Syntax:
-        :code:`cvode.statename(i, dest_string)`
+        ``cvode.statename(i, dest_string)``
 
-        :code:`cvode.statename(i, dest_string, style)`
+        ``cvode.statename(i, dest_string, style)``
 
 
     Description:
@@ -665,9 +665,9 @@ CVode
 
 
     Syntax:
-        :code:`List = cvode.netconlist(precell, postcell, target)`
+        ``List = cvode.netconlist(precell, postcell, target)``
 
-        :code:`List = cvode.netconlist(precell, postcell, target, list)`
+        ``List = cvode.netconlist(precell, postcell, target, list)``
 
 
     Description:
@@ -729,9 +729,9 @@ CVode
 
 
     Syntax:
-        :code:`cvode.record(&rangevar, yvec, tvec)`
+        ``cvode.record(&rangevar, yvec, tvec)``
 
-        :code:`cvode.record(&rangevar, yvec, tvec, 1)`
+        ``cvode.record(&rangevar, yvec, tvec, 1)``
 
 
     Description:
@@ -763,7 +763,7 @@ CVode
 
 
     Syntax:
-        :code:`cvode.record_remove(yvec)`
+        ``cvode.record_remove(yvec)``
 
 
     Description:
@@ -780,11 +780,11 @@ CVode
 
 
     Syntax:
-        :code:`cvode.event(t)`
+        ``cvode.event(t)``
 
-        :code:`cvode.event(t, "statement")`
+        ``cvode.event(t, "statement")``
 
-        :code:`cvode.event(t, "statement", pointprocess, re_init)`
+        ``cvode.event(t, "statement", pointprocess, re_init)``
 
 
     Description:
@@ -831,9 +831,9 @@ CVode
 
 
     Syntax:
-        :code:`hmin = cvode.minstep()`
+        ``hmin = cvode.minstep()``
 
-        :code:`hmin = cvode.minstep(hmin)`
+        ``hmin = cvode.minstep(hmin)``
 
 
     Description:
@@ -854,9 +854,9 @@ CVode
 
 
     Syntax:
-        :code:`hmax = cvode.maxstep()`
+        ``hmax = cvode.maxstep()``
 
-        :code:`hmax = cvode.maxstep(hmax)`
+        ``hmax = cvode.maxstep(hmax)``
 
 
     Description:
@@ -874,9 +874,9 @@ CVode
 
 
     Syntax:
-        :code:`boolean = cvode.use_local_dt()`
+        ``boolean = cvode.use_local_dt()``
 
-        :code:`boolean = cvode.use_local_dt(boolean)`
+        ``boolean = cvode.use_local_dt(boolean)``
 
 
     Description:
@@ -904,9 +904,9 @@ CVode
 
 
     Syntax:
-        :code:`cvode.debug_event(1)`
+        ``cvode.debug_event(1)``
 
-        :code:`cvode.debug_event(2)`
+        ``cvode.debug_event(2)``
 
 
     Description:
@@ -923,9 +923,9 @@ CVode
 
 
     Syntax:
-        :code:`boolean = cvode.use_long_double()`
+        ``boolean = cvode.use_long_double()``
 
-        :code:`booelan = cvode.use_long_double(boolean)`
+        ``booelan = cvode.use_long_double(boolean)``
 
 
     Description:
@@ -952,9 +952,9 @@ CVode
 
 
     Syntax:
-        :code:`order = cvode.order()`
+        ``order = cvode.order()``
 
-        :code:`order = cvode.order(i)`
+        ``order = cvode.order(i)``
 
 
     Description:
@@ -971,9 +971,9 @@ CVode
 
 
     Syntax:
-        :code:`boolean = cvode.use_daspk()`
+        ``boolean = cvode.use_daspk()``
 
-        :code:`boolean = cvode.use_daspk(boolean)`
+        ``boolean = cvode.use_daspk(boolean)``
 
 
     Description:
@@ -997,9 +997,9 @@ CVode
 
 
     Syntax:
-        :code:`order = cvode.condition_order()`
+        ``order = cvode.condition_order()``
 
-        :code:`order = cvode.condition_order(1or2)`
+        ``order = cvode.condition_order(1or2)``
 
 
     Description:
@@ -1023,11 +1023,11 @@ CVode
 
 
     Syntax:
-        :code:`eps = cvode.dae_init_dteps()`
+        ``eps = cvode.dae_init_dteps()``
 
-        :code:`eps = cvode.dae_init_dteps(eps)`
+        ``eps = cvode.dae_init_dteps(eps)``
 
-        :code:`eps = cvode.dae_init_dteps(eps, style)`
+        ``eps = cvode.dae_init_dteps(eps, style)``
 
 
     Description:
@@ -1091,7 +1091,7 @@ CVode
 
 
     Syntax:
-        :code:`cvode.simgraph_remove()`
+        ``cvode.simgraph_remove()``
 
 
     Description:
@@ -1109,11 +1109,11 @@ CVode
 
 
     Syntax:
-        :code:`cvode.state_magnitudes(integer)`
+        ``cvode.state_magnitudes(integer)``
 
-        :code:`cvode.state_magnitudes(Vector, integer)`
+        ``cvode.state_magnitudes(Vector, integer)``
 
-        :code:`maxstate = cvode.state_magnitudes("basename", &maxacor)`
+        ``maxstate = cvode.state_magnitudes("basename", &maxacor)``
 
 
     Description:
@@ -1147,7 +1147,7 @@ CVode
 
 
     Syntax:
-        :code:`method = cvode.current_method()`
+        ``method = cvode.current_method()``
 
 
     Description:
@@ -1182,9 +1182,9 @@ CVode
 
 
     Syntax:
-        :code:`boolean = cvode.use_mxb()`
+        ``boolean = cvode.use_mxb()``
 
-        :code:`boolean = cvode.use_mxb(boolean)`
+        ``boolean = cvode.use_mxb(boolean)``
 
 
     Description:
@@ -1203,7 +1203,7 @@ CVode
 
 
     Syntax:
-        :code:`cvode.store_events(vec)`
+        ``cvode.store_events(vec)``
 
 
     Description:
@@ -1226,7 +1226,7 @@ CVode
 
 
     Syntax:
-        :code:`mode = cvode.queue_mode(boolean use_fixed_step_bin_queue, boolean use_self_queue)`
+        ``mode = cvode.queue_mode(boolean use_fixed_step_bin_queue, boolean use_self_queue)``
 
 
     Description:
@@ -1259,7 +1259,7 @@ CVode
         has not receive much testing and the results should be compared with the 
         default queuing method. 
          
-        Returns :code:`2*use_self_queue + use_fixed_step_bin_queue`. 
+        Returns ``2*use_self_queue + use_fixed_step_bin_queue``. 
 
     .. seealso::
         :meth:`ParallelContext.spike_compress`
@@ -1274,7 +1274,7 @@ CVode
 
 
     Syntax:
-        :code:`mode = cache_efficient(0or1)`
+        ``mode = cache_efficient(0or1)``
 
 
     Description:
@@ -1354,7 +1354,7 @@ a DERIVATIVE form. To do this,
         ... 
         } 
 2)  replace the SOLVE statement in the BREAKPOINT block with 
-    :code:`SOLVE states METHOD cnexp`
+    ``SOLVE states METHOD cnexp``
 3)  if using tables, store mtau instead of :math:`(1 -\exp(-dt/m_{tau}))`
     The nmodl translator will emit c code for both the staggered 
     time step and high order variable time step methods. The only 

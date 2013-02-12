@@ -51,7 +51,7 @@ Diagnostics:
 
 
     Syntax:
-        :code:`radians = atan2(y, x)`
+        ``radians = atan2(y, x)``
 
 
     Description:
@@ -181,7 +181,7 @@ Diagnostics:
 
 .. function:: erfc
 
-        returns :code:`1.0 - erf(z)` but on sun machines computed by other methods 
+        returns ``1.0 - erf(z)`` but on sun machines computed by other methods 
         that avoid cancellation for large z. 
          
          

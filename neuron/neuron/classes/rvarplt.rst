@@ -10,16 +10,16 @@ RangeVarPlot
 
 
     Syntax:
-        :code:`RangeVarPlot("rangevar")`
+        ``RangeVarPlot("rangevar")``
 
-        :code:`RangeVarPlot("expression involving $1")`
+        ``RangeVarPlot("expression involving $1")``
 
 
     Description:
         Class for making a space plot. eg. voltage as function of path between 
         two points on a cell.  For plotting, an object of this type needs 
         to be inserted in a Graph with 
-        \ :code:`g.addobject(rvp)` 
+        \ ``g.addobject(rvp)`` 
         By default, the location of the path nearest the root is location 0 
         (the origin) of the space plot. 
          
@@ -33,7 +33,7 @@ RangeVarPlot
         The second form is much slower since the expression 
         must be executed by the interpreter for each point along the path 
         for each plot.  Execution of the expression is equivalent to 
-        \ :code:`forsec seclist` for (*x*) f(*x*) 
+        \ ``forsec seclist`` for (*x*) f(*x*) 
         where the expression is the body of f. (Hence the use of $1 to 
         denote the arc length position of the (temporary 
         currently accessed section.) 
@@ -67,7 +67,7 @@ RangeVarPlot
 
 
     Syntax:
-        :code:`.begin(x)`
+        ``.begin(x)``
 
 
     Description:
@@ -84,7 +84,7 @@ RangeVarPlot
 
 
     Syntax:
-        :code:`.end(x)`
+        ``.end(x)``
 
 
     Description:
@@ -101,7 +101,7 @@ RangeVarPlot
 
 
     Syntax:
-        :code:`.origin(x)`
+        ``.origin(x)``
 
 
     Description:
@@ -121,7 +121,7 @@ RangeVarPlot
 
 
     Syntax:
-        :code:`.left()`
+        ``.left()``
 
 
     Description:
@@ -137,12 +137,12 @@ RangeVarPlot
 
 
     Syntax:
-        :code:`.right()`
+        ``.right()``
 
 
     Description:
         returns the coordinate of the end of the path. The total length 
-        of the path is :code:`right() - left()`. 
+        of the path is ``right() - left()``. 
 
          
 
@@ -154,7 +154,7 @@ RangeVarPlot
 
 
     Syntax:
-        :code:`.list(sectionlist)`
+        ``.list(sectionlist)``
 
 
     Description:
@@ -170,7 +170,7 @@ RangeVarPlot
 
 
     Syntax:
-        :code:`.color(index)`
+        ``.color(index)``
 
 
     Description:
@@ -187,16 +187,16 @@ RangeVarPlot
 
 
     Syntax:
-        :code:`rvp.to_vector(yvec)`
+        ``rvp.to_vector(yvec)``
 
-        :code:`rvp.to_vector(yvec, xvec)`
+        ``rvp.to_vector(yvec, xvec)``
 
 
     Description:
         Copy the range variable values to the :func:`Vector` yvec. yvec is resized 
         to the number of range points. If the second arg is present then 
-        the locations are copied to xvec. A plot of \ :code:`yvec.line(g, xvec)` would 
-        be identical to a plot using \ :code:`g.addobject(rvp)`. 
+        the locations are copied to xvec. A plot of \ ``yvec.line(g, xvec)`` would 
+        be identical to a plot using \ ``g.addobject(rvp)``. 
 
     .. seealso::
         :meth:`Graph.addobject`
@@ -211,7 +211,7 @@ RangeVarPlot
 
 
     Syntax:
-        :code:`rvp.from_vector(yvec)`
+        ``rvp.from_vector(yvec)``
 
 
     Description:

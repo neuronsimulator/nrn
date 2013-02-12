@@ -10,7 +10,7 @@ Family
 For several values of a variable, execute an action. 
 Basically just a form for specifying a for loop. 
 
-usage: :code:`makeFamily()` constructs a Family and maps it to the screen. The Family 
+usage: ``makeFamily()`` constructs a Family and maps it to the screen. The Family 
 instance is destroyed when its window is dismissed. 
  
 The slider value ranges from start to end. Due to the length of time it 

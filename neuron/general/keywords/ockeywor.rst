@@ -17,14 +17,14 @@ HOC Keywords
          
 
     Syntax:
-        :code:`help`
+        ``help``
 
-        :code:`help word`
+        ``help word``
 
 
 
     Description:
-        :code:`Help word` sends a word to the help system. 
+        ``Help word`` sends a word to the help system. 
         The word is looked up in the :file:`nrn/lib/helpdict` file and if found 
         Netscape is sent the appropriate URL to display 
         the help text. If the word is not found, the URL for the table 
@@ -45,26 +45,26 @@ HOC Keywords
 
 
     Syntax:
-        :code:`return`
+        ``return``
 
-        :code:`return expr`
+        ``return expr``
 
-        :code:`return objref`
+        ``return objref``
 
 
 
     Description:
-        The :code:`return` command will immediately exit from a procedure 
+        The ``return`` command will immediately exit from a procedure 
         without returning a value. 
          
-        The :code:`return expr` command will immediately exit from a function 
+        The ``return expr`` command will immediately exit from a function 
         which must return a value.  This command must also be the last executable 
         statement of a function.  It is possible for a function to contain more 
-        than one :code:`return` command, for instance in a series of :code:`if else` 
-        statements; however, not more than one of the :code:`return` commands may 
+        than one ``return`` command, for instance in a series of ``if else`` 
+        statements; however, not more than one of the ``return`` commands may 
         return a value at any given time. 
          
-        The :code:`return objref` command must be used to return from an 
+        The ``return objref`` command must be used to return from an 
         :ref:`obfunc`. 
          
 
@@ -81,8 +81,8 @@ HOC Keywords
             	} 
             } 
 
-        returns the maximum of two arguments which are read into the function.  Eg. :code:`max(3,6)`, where $1 is the 
-        first argument (3) and $2 is the second argument (6).  This use of :code:`max` would return the value 6. 
+        returns the maximum of two arguments which are read into the function.  Eg. ``max(3,6)``, where $1 is the 
+        first argument (3) and $2 is the second argument (6).  This use of ``max`` would return the value 6. 
 
     .. warning::
         See restriction of the :ref:`break <keyword_break>` statement. 
@@ -101,7 +101,7 @@ HOC Keywords
 
 
     Syntax:
-        :code:`break`
+        ``break``
 
 
 
@@ -164,7 +164,7 @@ HOC Keywords
 
 
     Syntax:
-        :code:`continue`
+        ``continue``
 
 
 
@@ -218,7 +218,7 @@ HOC Keywords
 
 
     Syntax:
-        :code:`stop`
+        ``stop``
 
 
 
@@ -245,14 +245,14 @@ HOC Keywords
 
 
     Syntax:
-        :code:`if (expr) stmt1`
+        ``if (expr) stmt1``
 
-        :code:`if (expr) stmt1 else stmt2`
+        ``if (expr) stmt1 else stmt2``
 
 
     Description:
         Conditional statement.  When the *expr* evaluates to a nonzero number 
-        (true) stmt1 is executed.  With the :code:`else` form, if the expression 
+        (true) stmt1 is executed.  With the ``else`` form, if the expression 
         evaluates to zero (false) stm2 is executed. 
          
 
@@ -310,7 +310,7 @@ HOC Keywords
 
 
     Syntax:
-        :code:`while (expr) stmt`
+        ``while (expr) stmt``
 
 
 
@@ -332,7 +332,7 @@ HOC Keywords
             	i += 1 
             } 
 
-        prints the cosines and the sines of the :code:`vec` elements up to :code:`numelements`, which in this case = 20. 
+        prints the cosines and the sines of the ``vec`` elements up to ``numelements``, which in this case = 20. 
          
 
     .. seealso::
@@ -353,21 +353,21 @@ HOC Keywords
 
 
     Syntax:
-        :code:`for(stmt1; expr2; stmt3) stmt`
+        ``for(stmt1; expr2; stmt3) stmt``
 
-        :code:`for var=expr1, expr2  stmt`
+        ``for var=expr1, expr2  stmt``
 
-        :code:`for (var) stmt`
+        ``for (var) stmt``
 
-        :code:`for (var, expr) stmt`
+        ``for (var, expr) stmt``
 
-        :code:`for iterator (args) stmt`
+        ``for iterator (args) stmt``
 
 
 
     Description:
-        Iteration statement.  The :code:`for` statement is similar to :code:`while` in that it iterates over 
-        a statement.  However, the :code:`for` statement is more compact and contains within its parentheses 
+        Iteration statement.  The ``for`` statement is similar to ``while`` in that it iterates over 
+        a statement.  However, the ``for`` statement is more compact and contains within its parentheses 
         the command to advance to the next iteration.  Statements 1 and 3 may be 
         empty. 
          
@@ -386,22 +386,22 @@ HOC Keywords
             for(*var*=*expr1*; *var* <= *expr2*; *var*=*var*+1) stmt 
 
         However, *expr1* and *expr2* are evaluated only once at the 
-        beginning of the :code:`for`. 
+        beginning of the ``for``. 
          
-        :code:`for (var) stmt` 
+        ``for (var) stmt`` 
          
         Loops over all segments of the currently accessed section.  *var* begins 
         at 0 and ends at 1.  In between *var* is set to the center position of 
         each segment.  Ie.  stmt is executed nseg+2 times. 
          
-        :code:`for (var, expr) stmt` 
+        ``for (var, expr) stmt`` 
          
         If the expression evaluates to a non-zero value, it is exactly equivalent 
         to 
-        :code:`for (var) stmt` 
+        ``for (var) stmt`` 
         If it evaluates to 0 (within :data:`float_epsilon` ) then the iteration does 
-        not include the 0 or 1 points. Thus :code:`for(x, 0) { print x }` 
-        is exactly equivalent to :code:`for (x) if (x > 0 && x < 1) { print x }` 
+        not include the 0 or 1 points. Thus ``for(x, 0) { print x }`` 
+        is exactly equivalent to ``for (x) if (x > 0 && x < 1) { print x }`` 
          
         The :ref:`keyword_iterator` form of the for loop executes the statement with a looping 
         construct defined by the user. 
@@ -454,7 +454,7 @@ HOC Keywords
 
 
     Syntax:
-        :code:`print expr, string, ...`
+        ``print expr, string, ...``
 
 
 
@@ -496,7 +496,7 @@ HOC Keywords
 
 
     Syntax:
-        :code:`delete varname`
+        ``delete varname``
 
 
 
@@ -521,13 +521,13 @@ HOC Keywords
 
 
     Syntax:
-        :code:`read(var)`
+        ``read(var)``
 
 
 
     Description:
         *var* is assigned the number input by the user, or the next number in the 
-        standard input, or the file opened with ropen.  :code:`read(var)` 
+        standard input, or the file opened with ropen.  ``read(var)`` 
         returns 0 on 
         end of file and 1 otherwise. 
          
@@ -578,11 +578,11 @@ HOC Keywords
 
 
     Syntax:
-        :code:`double var1[expr]`
+        ``double var1[expr]``
 
-        :code:`double var2[expr1][expr2]`
+        ``double var2[expr1][expr2]``
 
-        :code:`double varn[expr1][expr2]...[exprn]`
+        ``double varn[expr1][expr2]...[exprn]``
 
 
 
@@ -633,7 +633,7 @@ HOC Keywords
 
 
     Syntax:
-        :code:`em`
+        ``em``
 
 
 
@@ -679,7 +679,7 @@ HOC Keywords
 
 
     Syntax:
-        :code:`depvar`
+        ``depvar``
 
 
 
@@ -724,11 +724,11 @@ HOC Keywords
 
 
     Syntax:
-        :code:`eqn var:: expr = expr`
+        ``eqn var:: expr = expr``
 
-        :code:`eqn var: expr =`
+        ``eqn var: expr =``
 
-        :code:`eqn var: = expr`
+        ``eqn var: = expr``
 
 
     Description:
@@ -771,7 +771,7 @@ HOC Keywords
 
 
     Syntax:
-        :code:`local var`
+        ``local var``
 
 
 
@@ -795,8 +795,8 @@ HOC Keywords
             	return x 
             } 
 
-        returns the number of elements which have the value of 7 in the first 40 elements of :code:`vec`. :code:`i` 
-        and :code:`x` are local variables, and their usage here will not affect variables of the same name in 
+        returns the number of elements which have the value of 7 in the first 40 elements of ``vec``. ``i`` 
+        and ``x`` are local variables, and their usage here will not affect variables of the same name in 
         other functions and procedures of the same program. 
          
 
@@ -812,7 +812,7 @@ HOC Keywords
 
 
     Syntax:
-        :code:`localobj var`
+        ``localobj var``
 
 
     Description:
@@ -848,7 +848,7 @@ HOC Keywords
 
 
     Syntax:
-        :code:`strdef stringname`
+        ``strdef stringname``
 
 
 
@@ -895,7 +895,7 @@ HOC Keywords
 
 
     Syntax:
-        :code:`setpointer pvar, var`
+        ``setpointer pvar, var``
 
 
 
@@ -925,7 +925,7 @@ HOC Keywords
 
 
     Syntax:
-        :code:`insert mechanism`
+        ``insert mechanism``
 
 
 
@@ -952,7 +952,7 @@ HOC Keywords
 
 
     Syntax:
-        :code:`uninsert mechanism`
+        ``uninsert mechanism``
 
 
 

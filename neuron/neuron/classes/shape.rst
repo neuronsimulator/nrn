@@ -24,7 +24,7 @@ Shape
 
 
     Syntax:
-        :code:`.view(mleft, mbottom, mwidth, mheight, sleft, stop, swidth, sheight)`
+        ``.view(mleft, mbottom, mwidth, mheight, sleft, stop, swidth, sheight)``
 
 
     Description:
@@ -42,9 +42,9 @@ Shape
 
 
     Syntax:
-        :code:`.size(mleft, mright, mbottom, mtop)`
+        ``.size(mleft, mright, mbottom, mtop)``
 
-        :code:`...`
+        ``...``
 
 
     Description:
@@ -67,7 +67,7 @@ Shape
 
 
     Syntax:
-        :code:`shape.show(mode)`
+        ``shape.show(mode)``
 
 
     Description:
@@ -93,7 +93,7 @@ Shape
 
 
     Syntax:
-        :code:`.flush()`
+        ``.flush()``
 
 
     Description:
@@ -109,9 +109,9 @@ Shape
 
 
     Syntax:
-        :code:`shape.observe()`
+        ``shape.observe()``
 
-        :code:`shape.observe(sectionlist)`
+        ``shape.observe(sectionlist)``
 
 
     Description:
@@ -143,13 +143,13 @@ Shape
 
 
     Syntax:
-        :code:`.view_count()`
+        ``.view_count()``
 
 
     Description:
         Returns number of views into this scene. (stdrun.hoc removes 
-        scenes from the \ :code:`flush_list` and \ :code:`graphList[]` when this goes to 
-        0. If no other \ :code:`objectvar` points to the scene, it will be 
+        scenes from the \ ``flush_list`` and \ ``graphList[]`` when this goes to 
+        0. If no other \ ``objectvar`` points to the scene, it will be 
         freed.) 
 
          
@@ -162,7 +162,7 @@ Shape
 
 
     Syntax:
-        :code:`.select()`
+        ``.select()``
 
 
     Description:
@@ -178,7 +178,7 @@ Shape
 
 
     Syntax:
-        :code:`.action("command")`
+        ``.action("command")``
 
 
     Description:
@@ -196,14 +196,14 @@ Shape
 
 
     Syntax:
-        :code:`section  shape.color(i)`
+        ``section  shape.color(i)``
 
 
     Description:
         colors the currently accessed section according to color index 
         (index same as specified in :class:`Graph` class). If there are several 
         sections to color it is more efficient to make a SectionList and 
-        use \ :code:`.color_list` 
+        use \ ``.color_list`` 
 
          
 
@@ -215,7 +215,7 @@ Shape
 
 
     Syntax:
-        :code:`.color_all(i)`
+        ``.color_all(i)``
 
 
     Description:
@@ -231,7 +231,7 @@ Shape
 
 
     Syntax:
-        :code:`.color_list(SectionList, i)`
+        ``.color_list(SectionList, i)``
 
 
     Description:
@@ -247,23 +247,23 @@ Shape
 
 
     Syntax:
-        :code:`.point_mark(objvar, colorindex)`
+        ``.point_mark(objvar, colorindex)``
 
-        :code:`.point_mark(objvar, colorindex, style)`
+        ``.point_mark(objvar, colorindex, style)``
 
-        :code:`.point_mark(objvar, colorindex, style, size)`
+        ``.point_mark(objvar, colorindex, style, size)``
 
 
 
     Description:
         draw a little filled circle with indicated color where the point process 
-        referenced by \ :code:`objvar` is located. Note, if you subsequently relocate 
+        referenced by \ ``objvar`` is located. Note, if you subsequently relocate 
         the point process or destroy it the proper thing will happen to the 
         mark. (at least after a flush) 
          
         The optional arguments specify the style and size as in the 
         :meth:`Graph.mark` method of :class:`Graph`. This extension was contributed 
-        by Yichun Wei :code:`yichunwe@usc.edu`.
+        by Yichun Wei ``yichunwe@usc.edu``.
 
          
 
@@ -275,7 +275,7 @@ Shape
 
 
     Syntax:
-        :code:`.point_mark_remove([objvar])`
+        ``.point_mark_remove([objvar])``
 
 
     Description:
@@ -291,11 +291,11 @@ Shape
 
 
     Syntax:
-        :code:`.save_name("name")`
+        ``.save_name("name")``
 
 
     Description:
-        The \ :code:`objectvar` used to save the scene when the print window 
+        The \ ``objectvar`` used to save the scene when the print window 
         manager is used to save a session. 
 
          
@@ -308,12 +308,12 @@ Shape
 
 
     Syntax:
-        :code:`.unmap()`
+        ``.unmap()``
 
 
     Description:
         dismisses all windows that are a direct view into this scene. 
-        (does not unmap boxes containing scenes.) \ :code:`unmap` is called 
+        (does not unmap boxes containing scenes.) \ ``unmap`` is called 
         automatically when no hoc object variable references the Shape. 
 
          
@@ -326,7 +326,7 @@ Shape
 
 
     Syntax:
-        :code:`.printfile("filename")`
+        ``.printfile("filename")``
 
 
     Description:
@@ -434,7 +434,7 @@ Shape
 
 
     Syntax:
-        :code:`s.menu_tool("label", "procname")`
+        ``s.menu_tool("label", "procname")``
 
 
     Description:
@@ -485,7 +485,7 @@ Shape
 
 
     Syntax:
-        :code:`d = shape.nearest(x, y)`
+        ``d = shape.nearest(x, y)``
 
 
     Description:
@@ -505,13 +505,13 @@ Shape
 
 
     Syntax:
-        :code:`arc = shape.push_selected()`
+        ``arc = shape.push_selected()``
 
-        :code:`if (arc >= 0) {`
+        ``if (arc >= 0) {``
 
-        :code:`pop_section()`
+        ``pop_section()``
 
-        :code:`}`
+        ``}``
 
 
     Description:
@@ -538,7 +538,7 @@ Shape
 
 
     Syntax:
-        :code:`section shape.len_scale(scl)`
+        ``section shape.len_scale(scl)``
 
 
     Description:
@@ -557,9 +557,9 @@ Shape
 
 
     Syntax:
-        :code:`shape.rotate()`
+        ``shape.rotate()``
 
-        :code:`shape.rotate(xorg, yorg, zorg, xrad, yrad, zrad)`
+        ``shape.rotate(xorg, yorg, zorg, xrad, yrad, zrad)``
 
 
     Description:

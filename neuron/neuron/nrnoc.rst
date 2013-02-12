@@ -13,9 +13,9 @@ the nrnoc interpreter.
 
 
     Syntax:
-        :code:`batch_run(tstop, tstep, "filename")`
+        ``batch_run(tstop, tstep, "filename")``
 
-        :code:`batch_run(tstop, tstep, "filename", "comment")`
+        ``batch_run(tstop, tstep, "filename", "comment")``
 
 
     Description:
@@ -52,19 +52,19 @@ the nrnoc interpreter.
 
 
     Syntax:
-        :code:`batch_save()`
+        ``batch_save()``
 
-        :code:`batch_save(&var, &var, ...)`
+        ``batch_save(&var, &var, ...)``
 
 
     Description:
 
 
-        :code:`batch_save()` 
+        ``batch_save()`` 
             starts a new list of variables to save in a :func:`batch_run` . 
 
-        :code:`batch_save(&var, &var, ...)` 
-            adds pointers to the list of variables to be saved in a :code:`batch_run`. 
+        ``batch_save(&var, &var, ...)`` 
+            adds pointers to the list of variables to be saved in a ``batch_run``. 
             A pointer to a range variable, eg. "v", must have an explicit 
             arc length, eg. axon.v(.5). 
 
@@ -82,7 +82,7 @@ the nrnoc interpreter.
             	batch_save(&dend[i].v(.3)) 
             } 
 
-        specifies five quantities to be saved from each :code:`batch_run`. 
+        specifies five quantities to be saved from each ``batch_run``. 
 
          
 
@@ -94,19 +94,19 @@ the nrnoc interpreter.
 
 
     Syntax:
-        :code:`initnrn()`
+        ``initnrn()``
 
 
     Description:
-        Initialize :code:`t, dt, clamp_resist`, and :code:`celsius` to the values 
+        Initialize ``t, dt, clamp_resist``, and ``celsius`` to the values 
         they had when the program was first run. 
          
         Note that in this 
-        version :code:`Ra` is no longer a global variable but a section variable 
-        like *L* and *rallbranch*. Thus :code:`Ra` can be different for different 
-        sections.  In order to set :code:`Ra` to a constant value, use: 
+        version ``Ra`` is no longer a global variable but a section variable 
+        like *L* and *rallbranch*. Thus ``Ra`` can be different for different 
+        sections.  In order to set ``Ra`` to a constant value, use: 
          
-        :code:`forall Ra=...` 
+        ``forall Ra=...`` 
 
     .. warning::
         Not very useful. No way to completely restart neuron exect to :func:`quit` and 
@@ -121,7 +121,7 @@ the nrnoc interpreter.
 
 
     Syntax:
-        :code:`fadvance()`
+        ``fadvance()``
 
 
     Description:
@@ -152,9 +152,9 @@ the nrnoc interpreter.
 
 
     Syntax:
-        :code:`finitialize()`
+        ``finitialize()``
 
-        :code:`finitialize(v)`
+        ``finitialize(v)``
 
 
     Description:
@@ -202,7 +202,7 @@ the nrnoc interpreter.
 
 
     Syntax:
-        :code:`frecord_init()`
+        ``frecord_init()``
 
 
     Description:
@@ -224,7 +224,7 @@ the nrnoc interpreter.
 
 
     Syntax:
-        :code:`fstim()`
+        ``fstim()``
 
 
     Description:
@@ -241,7 +241,7 @@ the nrnoc interpreter.
 
 
     Syntax:
-        :code:`fstimi()`
+        ``fstimi()``
 
 
     Description:
@@ -257,13 +257,13 @@ the nrnoc interpreter.
 
 
     Syntax:
-        :code:`min = fit_praxis(n, "funname", &x[0])`
+        ``min = fit_praxis(n, "funname", &x[0])``
 
-        :code:`min = fit_praxis(n, "funname", Vector)`
+        ``min = fit_praxis(n, "funname", Vector)``
 
-        :code:`min = fit_praxis(..., ..., ..., "after quad statement")`
+        ``min = fit_praxis(..., ..., ..., "after quad statement")``
 
-        :code:`min = fit_praxis(efun_as_python_callable, hoc_vector)`
+        ``min = fit_praxis(efun_as_python_callable, hoc_vector)``
 
 
     Description:
@@ -272,20 +272,20 @@ the nrnoc interpreter.
          
 
 
-        :code:`1 <= n < 20` 
+        ``1 <= n < 20`` 
             is the number of parameters to vary (number 
             of arguments to *funname*). 
 
         *funname* 
             the name of the function to minimize, eg. least square difference between model and data. 
-            The funname must take two arguments, the first arg, :code:`$1`, 
-            is the number of elements in second arg vector, :code:`$&2`. The ith index of the 
-            vector is given by :code:`$&2[i]`. 
+            The funname must take two arguments, the first arg, ``$1``, 
+            is the number of elements in second arg vector, ``$&2``. The ith index of the 
+            vector is given by ``$&2[i]``. 
 
         *x* 
             is a double vector of at least length *n*. Prior to the call set 
             it to a guess of the parameter values. On return it contains the 
-            values of the args that minimize :code:`funname()`. 
+            values of the args that minimize ``funname()``. 
 
          
         *funname* may be either 
@@ -310,7 +310,7 @@ the nrnoc interpreter.
         parameter starting values. On return the vector contains the values of 
         parameters which generated the least minimum found so far. 
          
-        Hoc example: minimize :code:`(x+y - 5)^2 + 5*((x-y) - 15)^2`
+        Hoc example: minimize ``(x+y - 5)^2 + 5*((x-y) - 15)^2``
 
         .. code-block::
             none
@@ -349,7 +349,7 @@ the nrnoc interpreter.
 
     .. warning::
         Up to version 4.0.1, the arguments to *funname* were an explicit 
-        list of *n* arguments. ie :code:`numarg()==n`. 
+        list of *n* arguments. ie ``numarg()==n``. 
 
     .. seealso::
         :func:`attr_praxis`, :func:`stop_praxis`, :func:`pval_praxis`
@@ -364,9 +364,9 @@ the nrnoc interpreter.
 
 
     Syntax:
-        :code:`attr_praxis(tolerance, maxstepsize, printmode)`
+        ``attr_praxis(tolerance, maxstepsize, printmode)``
 
-        :code:`previous_index = attr_praxis(mcell_ran4_index)`
+        ``previous_index = attr_praxis(mcell_ran4_index)``
 
 
     Description:
@@ -376,7 +376,7 @@ the nrnoc interpreter.
 
         tolerance 
             praxis attempt to return f(x) such that if x0 is the true 
-            local minimum then :code:`norm(x-x0) < tolerance` 
+            local minimum then ``norm(x-x0) < tolerance`` 
 
         maxstepsize 
             should be set to about the maximum distance from 
@@ -403,15 +403,15 @@ the nrnoc interpreter.
 
 
     Syntax:
-        :code:`pval = pval_praxis(i)`
+        ``pval = pval_praxis(i)``
 
-        :code:`pval = pval_praxis(i, &paxis[0])`
+        ``pval = pval_praxis(i, &paxis[0])``
 
-        :code:`pval = pval_praxis(i, Vector)`
+        ``pval = pval_praxis(i, Vector)``
 
 
     Description:
-        Return the ith principal value. If the second argument is present, :code:`pval_praxis` also fills 
+        Return the ith principal value. If the second argument is present, ``pval_praxis`` also fills 
         the vector with the ith principal axis. 
 
          
@@ -424,9 +424,9 @@ the nrnoc interpreter.
 
 
     Syntax:
-        :code:`stop_praxis()`
+        ``stop_praxis()``
 
-        :code:`stop_praxis(i)`
+        ``stop_praxis(i)``
 
 
     Description:
@@ -446,7 +446,7 @@ the nrnoc interpreter.
 
 
     Syntax:
-        :code:`fclamp()`
+        ``fclamp()``
 
 
     Description:
@@ -462,7 +462,7 @@ the nrnoc interpreter.
 
 
     Syntax:
-        :code:`fclampi()`
+        ``fclampi()``
 
 
     Description:
@@ -478,7 +478,7 @@ the nrnoc interpreter.
 
 
     Syntax:
-        :code:`fclampv()`
+        ``fclampv()``
 
 
     Description:
@@ -494,11 +494,11 @@ the nrnoc interpreter.
 
 
     Syntax:
-        :code:`prstim()`
+        ``prstim()``
 
 
     Description:
-        obsolete. Print the info about :code:`fstim`, :code:`fclamp`, and :code:`fsyn` 
+        obsolete. Print the info about ``fstim``, ``fclamp``, and ``fsyn`` 
 
          
 
@@ -510,7 +510,7 @@ the nrnoc interpreter.
 
 
     Syntax:
-        :code:`fcurrent()`
+        ``fcurrent()``
 
 
     Description:
@@ -549,9 +549,9 @@ the nrnoc interpreter.
 
 
     Syntax:
-        :code:`fmatrix()`
+        ``fmatrix()``
 
-        :code:`section {value = fmatrix(x, index)}`
+        ``section {value = fmatrix(x, index)}``
 
 
     Description:
@@ -581,7 +581,7 @@ the nrnoc interpreter.
 
 
     Syntax:
-        :code:`issection("regular expression")`
+        ``issection("regular expression")``
 
 
     Description:
@@ -595,10 +595,10 @@ the nrnoc interpreter.
         don't want to require a match at the beginning use the dot. 
          
         (Note, 
-        that :code:`.` matches any character and :code:`*` matches 0 or more occurrences 
+        that ``.`` matches any character and ``*`` matches 0 or more occurrences 
         of the previous character). The interpreter always closes each string with 
-        an implicit :code:`$` to require a match at the end of the string. If you 
-        don't require a match at the end use ":code:`.*`". 
+        an implicit ``$`` to require a match at the end of the string. If you 
+        don't require a match at the end use "``.*``". 
 
     Example:
 
@@ -610,7 +610,7 @@ the nrnoc interpreter.
             	print secname() 
             } 
 
-        will print :code:`soma` 
+        will print ``soma`` 
 
         .. code-block::
             none
@@ -619,7 +619,7 @@ the nrnoc interpreter.
             	print secname() 
             } 
 
-        will print :code:`dendrite[2]` 
+        will print ``dendrite[2]`` 
 
         .. code-block::
             none
@@ -650,7 +650,7 @@ the nrnoc interpreter.
 
 
     Syntax:
-        :code:`ismembrane("mechanism")`
+        ``ismembrane("mechanism")``
 
 
     Description:
@@ -680,7 +680,7 @@ the nrnoc interpreter.
 
 
     Syntax:
-        :code:`sectionname(strvar)`
+        ``sectionname(strvar)``
 
 
     Description:
@@ -698,7 +698,7 @@ the nrnoc interpreter.
 
 
     Syntax:
-        :code:`secname()`
+        ``secname()``
 
 
     Description:
@@ -735,7 +735,7 @@ the nrnoc interpreter.
 
 
     Syntax:
-        :code:`psection()`
+        ``psection()``
 
 
     Description:
@@ -754,7 +754,7 @@ the nrnoc interpreter.
 
 
     Syntax:
-        :code:`secondorder`
+        ``secondorder``
 
 
     Description:
@@ -769,14 +769,14 @@ the nrnoc interpreter.
         =1 
             crank-nicholson Can give large (but damped) numerical error 
             oscillations. For small :data:`dt` the numerical errors are proportional 
-            to :code:`dt^2`. Cannot be used with voltage clamps. Ionic currents 
+            to ``dt^2``. Cannot be used with voltage clamps. Ionic currents 
             are first order correct. Channel conductances are second order 
-            correct when plotted at :code:`t+dt/2` 
+            correct when plotted at ``t+dt/2`` 
 
         =2 
             crank-nicholson like 1 but in addition Ion currents (*ina*, *ik*, 
             etc) are fixed up so that they are second order correct when 
-            plotted at :code:`t-dt/2` 
+            plotted at ``t-dt/2`` 
 
 
          
@@ -789,7 +789,7 @@ the nrnoc interpreter.
 
 
     Syntax:
-        :code:`t`
+        ``t``
 
 
     Description:
@@ -805,7 +805,7 @@ the nrnoc interpreter.
 
 
     Syntax:
-        :code:`dt`
+        ``dt``
 
 
     Description:
@@ -832,7 +832,7 @@ the nrnoc interpreter.
 
 
     Syntax:
-        :code:`clamp_resist`
+        ``clamp_resist``
 
 
     Description:
@@ -848,7 +848,7 @@ the nrnoc interpreter.
 
 
     Syntax:
-        :code:`celsius = 6.3`
+        ``celsius = 6.3``
 
 
     Description:
@@ -868,7 +868,7 @@ the nrnoc interpreter.
 
 
     Syntax:
-        :code:`stoprun`
+        ``stoprun``
 
 
     Description:
@@ -891,7 +891,7 @@ the nrnoc interpreter.
 
 
     Syntax:
-        :code:`this_section(x)`
+        ``this_section(x)``
 
 
     Description:
@@ -911,7 +911,7 @@ the nrnoc interpreter.
 
 
     Syntax:
-        :code:`this_node(x)`
+        ``this_node(x)``
 
 
     Description:
@@ -950,7 +950,7 @@ the nrnoc interpreter.
 
 
     Syntax:
-        :code:`parent_section(x)`
+        ``parent_section(x)``
 
 
     Description:
@@ -968,7 +968,7 @@ the nrnoc interpreter.
 
 
     Syntax:
-        :code:`parent_node(x)`
+        ``parent_node(x)``
 
 
     Description:
@@ -987,7 +987,7 @@ the nrnoc interpreter.
 
 
     Syntax:
-        :code:`y = parent_connection()`
+        ``y = parent_connection()``
 
 
     Description:
@@ -1010,7 +1010,7 @@ the nrnoc interpreter.
 
 
     Syntax:
-        :code:`y = section_orientation()`
+        ``y = section_orientation()``
 
 
     Description:
@@ -1100,9 +1100,9 @@ Ion
 
 
     Syntax:
-        :code:`oldstyle = ion_style("name_ion", c_style, e_style, einit, eadvance, cinit)`
+        ``oldstyle = ion_style("name_ion", c_style, e_style, einit, eadvance, cinit)``
 
-        :code:`oldstyle = ion_style("name_ion")`
+        ``oldstyle = ion_style("name_ion")``
 
 
     Description:
@@ -1135,16 +1135,16 @@ Ion
 
         einit: 0 or 1. 
             If 1 then reversal potential computed by Nernst equation 
-            on call to :code:`finitialize()` using values of concentrations. 
+            on call to ``finitialize()`` using values of concentrations. 
 
         eadvance: 0 or 1. 
             If 1 then reversal potential computed every call to 
-            :code:`fadvance()` using the values of the concentrations. 
+            ``fadvance()`` using the values of the concentrations. 
 
         cinit: 0 or 1. 
             If 1 then a call to finitialize() sets the concentrations 
-            to the values of the global initial concentrations. eg. :code:`nai` set to 
-            :code:`nai0_na_ion` and :code:`nao` set to :code:`nao0_na_ion`. 
+            to the values of the global initial concentrations. eg. ``nai`` set to 
+            ``nai0_na_ion`` and ``nao`` set to ``nao0_na_ion``. 
 
          
         The automatic style is chosen based on how the set of mechanisms that 
@@ -1166,13 +1166,13 @@ Ion
         For example suppose one has inserted a mechanism that READ's eca, 
         a mechanism that READ's cai, cao and a mechanism that WRITE's cai, cao 
         Then, since WRITE takes precedence over READ in the above table, 
-        :code:`cai/cao` would appear in the STATE variable panel (first arg is 3), 
-        :code:`eca` would appear in the ASSIGNED variable panel (second arg is 2), 
-        :code:`eca` would be calculated on a call to finitialize (third arg is 1), 
-        :code:`eca` would be calculated on every call to fadvance (fourth arg is 1), 
-        :code:`cai/cao` would be initialized (on finitialize) to the global variables 
-        :code:`cai0_ca_ion` and :code:`cao0_ca_ion` respectively. (note that this takes place just 
-        before the calculation of :code:`eca`). 
+        ``cai/cao`` would appear in the STATE variable panel (first arg is 3), 
+        ``eca`` would appear in the ASSIGNED variable panel (second arg is 2), 
+        ``eca`` would be calculated on a call to finitialize (third arg is 1), 
+        ``eca`` would be calculated on every call to fadvance (fourth arg is 1), 
+        ``cai/cao`` would be initialized (on finitialize) to the global variables 
+        ``cai0_ca_ion`` and ``cao0_ca_ion`` respectively. (note that this takes place just 
+        before the calculation of ``eca``). 
 
          
 
@@ -1184,7 +1184,7 @@ Ion
 
 
     Syntax:
-        :code:`ghk(v, ci, co, charge)`
+        ``ghk(v, ci, co, charge)``
 
 
     Description:
@@ -1207,19 +1207,19 @@ Ion
 
 
     Syntax:
-        :code:`nernst(ci, co, charge)`
+        ``nernst(ci, co, charge)``
 
-        :code:`nernst("ena" or "nai" or "nao", [x])`
+        ``nernst("ena" or "nai" or "nao", [x])``
 
 
     Description:
 
 
-        :code:`nernst(ci, co, charge)` 
+        ``nernst(ci, co, charge)`` 
             returns nernst potential. Utilizes the present value of celsius. 
 
-        :code:`nernst("ena" or "nai" or "nao", [x])` 
-            calculates :code:`nao/nai = exp(z*ena/RTF)` for the ionic variable 
+        ``nernst("ena" or "nai" or "nao", [x])`` 
+            calculates ``nao/nai = exp(z*ena/RTF)`` for the ionic variable 
             named in the string. 
 
         Celsius, valence, and the other two ionic variables are taken from their 
@@ -1236,7 +1236,7 @@ Ion
 
 
     Syntax:
-        :code:`type = ion_register("name", charge)`
+        ``type = ion_register("name", charge)``
 
 
     Description:
@@ -1257,7 +1257,7 @@ Ion
 
 
     Syntax:
-        :code:`charge = ion_charge("name_ion")`
+        ``charge = ion_charge("name_ion")``
 
 
     Description:

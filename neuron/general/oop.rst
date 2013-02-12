@@ -14,13 +14,13 @@ begintemplate
 
 
     Syntax:
-        :code:`begintemplate`
+        ``begintemplate``
 
 
 
     Description:
         Declare a new class or data structure. Any HOC code may appear between the 
-        :code:`begintemplate` and :code:`endtemplate` declarations. Classes are instantiated with 
+        ``begintemplate`` and ``endtemplate`` declarations. Classes are instantiated with 
         the new statement. 
          
 
@@ -53,7 +53,7 @@ endtemplate
 ~~~~~~~~~~~
 
     Syntax:
-        :code:`endtemplate`
+        ``endtemplate``
 
 
     Description:
@@ -71,7 +71,7 @@ objectvar
 ~~~~~~~~~
 
     Syntax:
-        :code:`objectvar`
+        ``objectvar``
 
 
     Description:
@@ -87,18 +87,18 @@ objref
 ~~~~~~
 
     Syntax:
-        :code:`objref`
+        ``objref``
 
 
 
     Description:
         A comma separated list declarations of object variables.  Object 
-        variables are labels (pointers, references) to the actual objects.  Thus :code:`o1 = o2` 
+        variables are labels (pointers, references) to the actual objects.  Thus ``o1 = o2`` 
         merely states that o1 and o2 are labels for the same object.  Objects are 
-        created with the :code:`new` statement.  When there are no labels for an object 
-        the object is deleted. The keywords :code:`objectvar` and :code:`objref` are synonyms. 
+        created with the ``new`` statement.  When there are no labels for an object 
+        the object is deleted. The keywords ``objectvar`` and ``objref`` are synonyms. 
          
-        An object has a unique name that can be determined with the :code:`print obj` statement 
+        An object has a unique name that can be determined with the ``print obj`` statement 
         and consists of the template name followed by an index number in brackets. 
         This name can be used in place of an objref. 
          
@@ -127,7 +127,7 @@ public
 ~~~~~~
 
     Syntax:
-        :code:`public`
+        ``public``
 
 
 
@@ -148,7 +148,7 @@ public
 external
 ~~~~~~~~
     Syntax:
-        :code:`external`
+        ``external``
 
 
 
@@ -188,7 +188,7 @@ new
 ~~~
 
     Syntax:
-        :code:`objectvariable = new Object(args)`
+        ``objectvariable = new Object(args)``
 
 
 
@@ -206,7 +206,7 @@ new
             objref vec 
             vec = new Vector(30) 
 
-        creates a vector of size 30 with its pointer named :code:`vec`. 
+        creates a vector of size 30 with its pointer named ``vec``. 
          
 
          
@@ -219,7 +219,7 @@ new
 
 
     Syntax:
-        :code:`proc init() { ... }`
+        ``proc init() { ... }``
 
 
     Description:
@@ -239,7 +239,7 @@ new
 
 
     Syntax:
-        :code:`proc unref() { print this, " refcount=", $1 }`
+        ``proc unref() { print this, " refcount=", $1 }``
 
 
     Description:
@@ -265,7 +265,7 @@ NULLobject
 ~~~~~~~~~~
 
     Syntax:
-        :code:`objref nil`
+        ``objref nil``
 
 
     Description:
@@ -294,7 +294,7 @@ NULLobject
 
 
     Syntax:
-        :code:`objref this`
+        ``objref this``
 
 
     Description:

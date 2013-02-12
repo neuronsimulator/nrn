@@ -22,56 +22,56 @@ Obsolete Plotting
          
 
     Syntax:
-        :code:`graph()`
+        ``graph()``
 
-        :code:`graph(expression, setup)`
+        ``graph(expression, setup)``
 
-        :code:`graph(t)`
+        ``graph(t)``
 
-        :code:`graphmode(mode)`
+        ``graphmode(mode)``
 
 
 
     Description:
-        :code:`Graph()` solves the problem of obtaining multiple line plots during 
-        a single run. During calls to :code:`graph(t)`, specified variables are stored 
-        and plotted using scales determined by calls to :code:`axis()`. 
+        ``Graph()`` solves the problem of obtaining multiple line plots during 
+        a single run. During calls to ``graph(t)``, specified variables are stored 
+        and plotted using scales determined by calls to ``axis()``. 
          
 
     Options:
 
 
-        :code:`graph()`
+        ``graph()``
             erases the old list and starts a new (empty) 
             list of plot expressions and setup statements. 
 
-        :code:`graph(s1, s2)`
+        ``graph(s1, s2)``
             Adds a new plot specification 
             to the graph list. s1 must be 
             string which contains an expression, usually a variable. e.g "y". s2 is a 
             string which contains any number of statements used to initialize axes. etc. 
-            E.G ":code:`axis(0,5,1,-1,1,2) axis()`". 
+            E.G "``axis(0,5,1,-1,1,2) axis()``". 
 
-        :code:`graph(t)` 
+        ``graph(t)`` 
             The current value of each 
             expression in the graph list is saved along with the abscissa value, t. 
             The line plots are flushed every 50 points. 
 
-        :code:`graphmode(1)`
+        ``graphmode(1)``
             Executes the list of setup statements. 
             This is also done on the 
-            first call to :code:`graph(t)` after 
+            first call to ``graph(t)`` after 
             a new setup statement is added to the list. 
 
-        :code:`graphmode(-1)`
+        ``graphmode(-1)``
             Flushes the stored plots. Subsequent calls to 
-            :code:`graph(t)` will start new lines. 
-            Should be executed just before a :code:`plt(-1)` to ensure the entire lines 
+            ``graph(t)`` will start new lines. 
+            Should be executed just before a ``plt(-1)`` to ensure the entire lines 
             are plotted. 
 
-        :code:`graphmode(2)` 
+        ``graphmode(2)`` 
             Flushes the stored plots. Subsequent calls to 
-            :code:`graph(t)` will continue the lines. 
+            ``graph(t)`` will continue the lines. 
             Graphs are normally flushed every  50 points. 
 
          
@@ -105,8 +105,8 @@ Obsolete Plotting
          
 
     Diagnostics:
-        The strings are parsed when :code:`graph(s1, s2)` is executed.  The strings are 
-        executed on calls to :code:`graph(t)`. 
+        The strings are parsed when ``graph(s1, s2)`` is executed.  The strings are 
+        executed on calls to ``graph(t)``. 
          
         The best method for complicated plots is to make the setup string a 
         simple call to a user defined procedure.  This procedure can setup the 

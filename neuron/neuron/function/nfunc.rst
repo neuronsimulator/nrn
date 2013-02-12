@@ -9,9 +9,9 @@ Miscellaneous Menus
 
 
     Syntax:
-        :code:`nrnglobalmechmenu("mechname")`
+        ``nrnglobalmechmenu("mechname")``
 
-        :code:`n = nrnglobalmechmenu("mechname", 0)`
+        ``n = nrnglobalmechmenu("mechname", 0)``
 
 
     Description:
@@ -40,9 +40,9 @@ Miscellaneous Menus
          
 
     Syntax:
-        :code:`nrnpointmenu(PointProcessObject)`
+        ``nrnpointmenu(PointProcessObject)``
 
-        :code:`nrnpointmenu(PointProcessObject, labelstyle)`
+        ``nrnpointmenu(PointProcessObject, labelstyle)``
 
 
     Description:
@@ -66,7 +66,7 @@ Miscellaneous Menus
 
 
     Syntax:
-        :code:`nrnsecmenu(x, vartype)`
+        ``nrnsecmenu(x, vartype)``
 
 
     Description:

@@ -24,7 +24,7 @@ dismissing of windows then you *MUST* invoke nrniv with the
 automatic dismiss button feature. The default widget style is 
 MOTIF but openlook style can be selected. The relevant options are 
  
-:code:`nrniv -dismissbutton -openlook ...`
+``nrniv -dismissbutton -openlook ...``
      
 
 Scene
@@ -233,7 +233,7 @@ Panels: windows containing buttons, menus, and value editors. All mouse buttons
 mean the same thing. 
  
 If the number of items in a vertically arranged single panel is greater 
-than the number in the :code:`*panel_scroll:` resource in the 
+than the number in the ``*panel_scroll:`` resource in the 
 :file:`$(NEURONHOME)/lib/nrn.defaults` file (default 12) then the panel items 
 are shown in a scroll box so that they do not take up so much screen 
 space. 
@@ -407,7 +407,7 @@ the normal interface with an arrow cursor.
  
 The help system requires a running Netscape process. If the system 
 is not working properly on your machine, the help 
-button can be removed by specifying :code:`*pwm_help: off` in the 
+button can be removed by specifying ``*pwm_help: off`` in the 
 :file:`nrn/lib/nrn.defaults` file. 
 
 .. _pwm_print:
@@ -520,7 +520,7 @@ SelectPrinter
 
 SelectPrinter: Enter your normal system command for printing. The Print button will 
 send post script to this command. for example: 
-:code:`lpr -Plp`
+``lpr -Plp``
  
 Unix and Mswindows versions construct a print line of the form 
 

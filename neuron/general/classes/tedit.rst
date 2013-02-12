@@ -10,11 +10,11 @@ TextEditor
 
 
     Syntax:
-        :code:`e = new TextEditor()`
+        ``e = new TextEditor()``
 
-        :code:`e = new TextEditor(string)`
+        ``e = new TextEditor(string)``
 
-        :code:`e = new TextEditor(string, rows, columns)`
+        ``e = new TextEditor(string, rows, columns)``
 
 
     Description:
@@ -34,9 +34,9 @@ TextEditor
 
 
     Syntax:
-        :code:`string = e.text()`
+        ``string = e.text()``
 
-        :code:`string = e.text(string)`
+        ``string = e.text(string)``
 
 
     Description:
@@ -53,9 +53,9 @@ TextEditor
 
 
     Syntax:
-        :code:`boolean = e.readonly()`
+        ``boolean = e.readonly()``
 
-        :code:`boolean = e.readonly(boolean)`
+        ``boolean = e.readonly(boolean)``
 
 
     Description:
@@ -73,11 +73,11 @@ TextEditor
 
 
     Syntax:
-        :code:`e.map()`
+        ``e.map()``
 
-        :code:`e.map(title)`
+        ``e.map(title)``
 
-        :code:`e.map(title, left, bottom, width, height)`
+        ``e.map(title, left, bottom, width, height)``
 
 
     Description:

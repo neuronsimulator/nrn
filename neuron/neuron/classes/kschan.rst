@@ -10,7 +10,7 @@ KSChan
 
 
     Syntax:
-        :code:`kschan = new KSChan()`
+        ``kschan = new KSChan()``
 
 
     Description:
@@ -43,7 +43,7 @@ KSChan
 
 
     Syntax:
-        :code:`kschan.setstructure(vec)`
+        ``kschan.setstructure(vec)``
 
 
     Description:
@@ -58,9 +58,9 @@ KSChan
 
 
     Syntax:
-        :code:`kschan.remove_state(index)`
+        ``kschan.remove_state(index)``
 
-        :code:`kschan.remove_state(ksstate)`
+        ``kschan.remove_state(ksstate)``
 
 
     Description:
@@ -74,9 +74,9 @@ KSChan
 
 
     Syntax:
-        :code:`kschan.remove_transition(index)`
+        ``kschan.remove_transition(index)``
 
-        :code:`kschan.remove_transition(kstrans)`
+        ``kschan.remove_transition(kstrans)``
 
 
     Description:
@@ -91,7 +91,7 @@ KSChan
 
 
     Syntax:
-        :code:`n = kschan.ngate()`
+        ``n = kschan.ngate()``
 
 
     Description:
@@ -105,7 +105,7 @@ KSChan
 
 
     Syntax:
-        :code:`n = kschan.nstate()`
+        ``n = kschan.nstate()``
 
 
     Description:
@@ -119,7 +119,7 @@ KSChan
 
 
     Syntax:
-        :code:`n = kschan.ntrans()`
+        ``n = kschan.ntrans()``
 
 
     Description:
@@ -133,7 +133,7 @@ KSChan
 
 
     Syntax:
-        :code:`n = kschan.nligand()`
+        ``n = kschan.nligand()``
 
 
     Description:
@@ -147,7 +147,7 @@ KSChan
 
 
     Syntax:
-        :code:`kschan.pr()`
+        ``kschan.pr()``
 
 
     Description:
@@ -162,9 +162,9 @@ KSChan
 
 
     Syntax:
-        :code:`type = kschan.iv_type()`
+        ``type = kschan.iv_type()``
 
-        :code:`type = kschan.iv_type(type)`
+        ``type = kschan.iv_type(type)``
 
 
     Description:
@@ -178,9 +178,9 @@ KSChan
 
 
     Syntax:
-        :code:`val = kschan.gmax()`
+        ``val = kschan.gmax()``
 
-        :code:`val = kschan.gmax(val)`
+        ``val = kschan.gmax(val)``
 
 
     Description:
@@ -194,9 +194,9 @@ KSChan
 
 
     Syntax:
-        :code:`val = kschan.erev()`
+        ``val = kschan.erev()``
 
-        :code:`val = kschan.erev(val)`
+        ``val = kschan.erev(val)``
 
 
     Description:
@@ -211,7 +211,7 @@ KSChan
 
 
     Syntax:
-        :code:`ksstate = kschan.add_hhstate(name)`
+        ``ksstate = kschan.add_hhstate(name)``
 
 
     Description:
@@ -225,7 +225,7 @@ KSChan
 
 
     Syntax:
-        :code:`ksstate = kschan.add_ksstate(name)`
+        ``ksstate = kschan.add_ksstate(name)``
 
 
     Description:
@@ -239,9 +239,9 @@ KSChan
 
 
     Syntax:
-        :code:`kstrans = kschan.add_transition(src_index, target_index)`
+        ``kstrans = kschan.add_transition(src_index, target_index)``
 
-        :code:`kstrans = kschan.add_transition(src_ksstate, target_ksstate)`
+        ``kstrans = kschan.add_transition(src_ksstate, target_ksstate)``
 
 
     Description:
@@ -255,9 +255,9 @@ KSChan
 
 
     Syntax:
-        :code:`kstrans = kschan.trans(index)`
+        ``kstrans = kschan.trans(index)``
 
-        :code:`kstrans = kschan.trans(src_ksstate, target_ksstate)`
+        ``kstrans = kschan.trans(src_ksstate, target_ksstate)``
 
 
     Description:
@@ -271,7 +271,7 @@ KSChan
 
 
     Syntax:
-        :code:`ksstate = kschan.state(index)`
+        ``ksstate = kschan.state(index)``
 
 
     Description:
@@ -285,7 +285,7 @@ KSChan
 
 
     Syntax:
-        :code:`ksgate = kschan.gate(index)`
+        ``ksgate = kschan.gate(index)``
 
 
     Description:
@@ -300,9 +300,9 @@ KSChan
 
 
     Syntax:
-        :code:`string = kschan.name()`
+        ``string = kschan.name()``
 
-        :code:`string = kschan.name(string)`
+        ``string = kschan.name(string)``
 
 
     Description:
@@ -316,9 +316,9 @@ KSChan
 
 
     Syntax:
-        :code:`string = kschan.ion()`
+        ``string = kschan.ion()``
 
-        :code:`string = kschan.ion(string)`
+        ``string = kschan.ion(string)``
 
 
     Description:
@@ -332,7 +332,7 @@ KSChan
 
 
     Syntax:
-        :code:`string = kschan.ligand(index)`
+        ``string = kschan.ligand(index)``
 
 
     Description:
@@ -370,9 +370,9 @@ KSChan
 
 
     Syntax:
-        :code:`val = ksstate.frac()`
+        ``val = ksstate.frac()``
 
-        :code:`val = ksstate.frac(val)`
+        ``val = ksstate.frac(val)``
 
 
     Description:
@@ -386,7 +386,7 @@ KSChan
 
 
     Syntax:
-        :code:`index = ksstate.index()`
+        ``index = ksstate.index()``
 
 
     Description:
@@ -401,7 +401,7 @@ KSChan
 
 
     Syntax:
-        :code:`ksgate = ksstate.gate()`
+        ``ksgate = ksstate.gate()``
 
 
     Description:
@@ -416,9 +416,9 @@ KSChan
 
 
     Syntax:
-        :code:`string = ksstate.name()`
+        ``string = ksstate.name()``
 
-        :code:`string = ksstate.name(string)`
+        ``string = ksstate.name(string)``
 
 
     Description:
@@ -456,7 +456,7 @@ KSChan
 
 
     Syntax:
-        :code:`n = ksgate.nstate()`
+        ``n = ksgate.nstate()``
 
 
     Description:
@@ -470,9 +470,9 @@ KSChan
 
 
     Syntax:
-        :code:`i = ksgate.power()`
+        ``i = ksgate.power()``
 
-        :code:`i = ksgate.power(i)`
+        ``i = ksgate.power(i)``
 
 
     Description:
@@ -486,7 +486,7 @@ KSChan
 
 
     Syntax:
-        :code:`i = ksgate.sindex()`
+        ``i = ksgate.sindex()``
 
 
     Description:
@@ -500,7 +500,7 @@ KSChan
 
 
     Syntax:
-        :code:`i = ksgate.index()`
+        ``i = ksgate.index()``
 
 
     Description:
@@ -538,7 +538,7 @@ KSChan
 
 
     Syntax:
-        :code:`kstrans.set_f(direction, ftype, parmvec)`
+        ``kstrans.set_f(direction, ftype, parmvec)``
 
 
     Description:
@@ -552,7 +552,7 @@ KSChan
 
 
     Syntax:
-        :code:`i = kstrans.index()`
+        ``i = kstrans.index()``
 
 
     Description:
@@ -566,9 +566,9 @@ KSChan
 
 
     Syntax:
-        :code:`i = kstrans.type()`
+        ``i = kstrans.type()``
 
-        :code:`i = kstrans.type(i)`
+        ``i = kstrans.type(i)``
 
 
     Description:
@@ -582,7 +582,7 @@ KSChan
 
 
     Syntax:
-        :code:`i = kstrans.ftype(direction)`
+        ``i = kstrans.ftype(direction)``
 
 
     Description:
@@ -596,7 +596,7 @@ KSChan
 
 
     Syntax:
-        :code:`kstrans.ab(vvec, avec, bvec)`
+        ``kstrans.ab(vvec, avec, bvec)``
 
 
     Description:
@@ -610,7 +610,7 @@ KSChan
 
 
     Syntax:
-        :code:`kstrans.inftau(vvec, infvec, tauvec)`
+        ``kstrans.inftau(vvec, infvec, tauvec)``
 
 
     Description:
@@ -624,7 +624,7 @@ KSChan
 
 
     Syntax:
-        :code:`val = kstrans.f(direction, v)`
+        ``val = kstrans.f(direction, v)``
 
 
     Description:
@@ -639,7 +639,7 @@ KSChan
 
 
     Syntax:
-        :code:`ksstate = kstrans.src()`
+        ``ksstate = kstrans.src()``
 
 
     Description:
@@ -653,7 +653,7 @@ KSChan
 
 
     Syntax:
-        :code:`ksstate = kstrans.target()`
+        ``ksstate = kstrans.target()``
 
 
     Description:
@@ -667,7 +667,7 @@ KSChan
 
 
     Syntax:
-        :code:`parmvec = kstrans.parm(direction)`
+        ``parmvec = kstrans.parm(direction)``
 
 
     Description:
@@ -682,9 +682,9 @@ KSChan
 
 
     Syntax:
-        :code:`string = kstrans.ligand()`
+        ``string = kstrans.ligand()``
 
-        :code:`string = kstrans.ligand(string)`
+        ``string = kstrans.ligand(string)``
 
 
     Description:

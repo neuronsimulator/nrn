@@ -9,11 +9,11 @@ read
 
 
     Syntax:
-        :code:`var = xred(promptstring, default, min, max)`
+        ``var = xred(promptstring, default, min, max)``
 
 
     Description:
-        :code:`Xred()` reads a value from the standard input after printing *promptstring* 
+        ``Xred()`` reads a value from the standard input after printing *promptstring* 
         on the console.  The value read must be in the range *min* <= *val* <= *max* and 
         the user will be prompted to enter another number if the value is not in 
         that range.  If the user types the :kbd:`Return` key, the *default* value is used 
@@ -28,13 +28,13 @@ read
 
 
     Syntax:
-        :code:`getstr(strvar)`
+        ``getstr(strvar)``
 
-        :code:`getstr(strvar, 1)`
+        ``getstr(strvar, 1)``
 
 
     Description:
-        :code:`Getstr()` reads a string up to and including the next newline from the file 
+        ``Getstr()`` reads a string up to and including the next newline from the file 
         opened with the :meth:`~File.ropen` command (or the currently executing file or 
         the standard input) and places it 
         in its string variable argument. With a second arg equal to 1, getstr reads 
@@ -53,11 +53,11 @@ read
 
 
     Syntax:
-        :code:`index = sred(prompt, defaultchar, charlist)`
+        ``index = sred(prompt, defaultchar, charlist)``
 
 
     Description:
-        :code:`sred()` reads a character typed on the standard input after printing the 
+        ``sred()`` reads a character typed on the standard input after printing the 
         first argument followed by the default character. The user is required to 
         enter one of the characters in the character list (or return if the default 
         happens to be one of these characters). The function returns the index in 
@@ -83,11 +83,11 @@ read
 
 
     Syntax:
-        :code:`var = fscan()`
+        ``var = fscan()``
 
 
     Description:
-        :code:`fscan()` reads the next number from the file opened with the :meth:`~File.ropen` 
+        ``fscan()`` reads the next number from the file opened with the :meth:`~File.ropen` 
         command. If no file is opened the number is read from the currently 
         executing file. If no file is being executed the number is read from 
         the standard input. 
@@ -97,9 +97,9 @@ read
         into numbers are skipped. 
 
     Example:
-        Suppose in response to the HOC command: :code:`print fscan(), fscan()` 
-        the user types: :code:`this is a number 1.3e4 this is not45 this is 25` 
-        Then HOC will print: :code:`13000 25` 
+        Suppose in response to the HOC command: ``print fscan(), fscan()`` 
+        the user types: ``this is a number 1.3e4 this is not45 this is 25`` 
+        Then HOC will print: ``13000 25`` 
          
 
         .. code-block::
@@ -133,7 +133,7 @@ read
 
 
     Diagnostics:
-        :code:`Fscan()` and :code:`getstr()` returns to the HOC 
+        ``Fscan()`` and ``getstr()`` returns to the HOC 
         interpreter with a run-time error on EOF. 
          
 

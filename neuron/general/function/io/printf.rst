@@ -9,7 +9,7 @@ IO
     Syntax:
         :samp:`hoc_stdout("{filename}")`
 
-        :code:`hoc_stdout()`
+        ``hoc_stdout()``
 
 
     Description:
@@ -51,18 +51,18 @@ IO
          
 
     Syntax:
-        :code:`printf(format, ...)`
+        ``printf(format, ...)``
 
-        :code:`fprint(format, ...)`
+        ``fprint(format, ...)``
 
-        :code:`sprint(string, format, ...)`
+        ``sprint(string, format, ...)``
 
 
 
     Description:
-        :code:`Printf` places output on the standard output.  :code:`fprint` places output 
-        on the file opened with the :code:`wopen(filename)` command (standard 
-        output if no file is opened).  :code:`Sprint` places output in its *string* 
+        ``Printf`` places output on the standard output.  ``fprint`` places output 
+        on the file opened with the ``wopen(filename)`` command (standard 
+        output if no file is opened).  ``Sprint`` places output in its *string* 
         argument.  These functions are subsets of their counterparts in 
         the C standard library. 
          
@@ -74,7 +74,7 @@ IO
         each of which causes conversion and printing of the next 
         successive argument. 
          
-        Each conversion specification is introduced by the character '\ :code:`%`\ '
+        Each conversion specification is introduced by the character '\ ``%``\ '
         and ends with a conversion type specifier.  The type specifiers 
         supported are: 
          
@@ -107,26 +107,26 @@ IO
             string is printed, arg must be a string. 
 
          
-        Between :code:`%` and the conversion type, optional flags, width, precision 
+        Between ``%`` and the conversion type, optional flags, width, precision 
         and size specifiers can be placed.  The most useful flag is '-' which 
         left justifies the result, otherwise the number is right justified in its 
-        field. Width and precision specifiers are of the form :code:`width.precis`. 
+        field. Width and precision specifiers are of the form ``width.precis``. 
          
         Special characters of note are: 
          
 
 
-        :code:`\n` 
+        ``\n`` 
             newline 
 
-        :code:`\t` 
+        ``\t`` 
             tab 
 
-        :code:`\r` 
+        ``\r`` 
             carriage return without the line feed 
 
          
-        :code:`printf` and :code:`fprint` return the number of characters printed. 
+        ``printf`` and ``fprint`` return the number of characters printed. 
          
 
     Example:

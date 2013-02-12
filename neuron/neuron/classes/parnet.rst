@@ -9,7 +9,7 @@ ParallelNetManager
 
 
     Syntax:
-        :code:`pnm = new ParallelNetManager(ncell)`
+        ``pnm = new ParallelNetManager(ncell)``
 
 
     Description:
@@ -101,9 +101,9 @@ ParallelNetManager
             cell type to be constructed is an integer multiple of the number 
             of machines. Otherwise specify which gid's are on which machines through 
             the use of :meth:`ParallelNetManager.set_gid2node` . Note that you only 
-            HAVE to call \ :code:`pnm.set_gid2node(gid, myid)` for the subset of gid's that 
+            HAVE to call \ ``pnm.set_gid2node(gid, myid)`` for the subset of gid's that 
             are supposed to be associated with this machines 
-            particular \ :code:`myid = pnm.pc.id` but it is usually simpler just to call 
+            particular \ ``myid = pnm.pc.id`` but it is usually simpler just to call 
             it for all gid's since the set_gid2node call is a no-op when the second 
             argument does not match the pc.id. Also, the PVM version REQUIRES that 
             you call the function for all the gid values. 
@@ -159,7 +159,7 @@ ParallelNetManager
             We assume your 
             cell classes for "real" cells follow the NetworkReadyCell policy required by 
             the NetGUI tool. That is, each "real" cell type has a synapse list, eg. the 
-            first synapse is \ :code:`cell.synlist.object(0)` (the programmer will have to 
+            first synapse is \ ``cell.synlist.object(0)`` (the programmer will have to 
             make use of those synapse indices when such cells are the target of a NetCon) 
             and each "real" cell type has a connect2target method that constructs 
             a netcon (returns it in the second argument) 
@@ -168,7 +168,7 @@ ParallelNetManager
              
             Artificial cells can either be unwrapped or follow the NetGUI tool policy 
             where they are wrapped in a cell class in which the actual artificial cell 
-            is given by the \ :code:`cell.pp` field and the cell class also has a 
+            is given by the \ ``cell.pp`` field and the cell class also has a 
             connect2target method. 
              
             If you don't know what I've been talking about in the last two paragraphs, 
@@ -260,7 +260,7 @@ ParallelNetManager
 
             If you save the stdout to a file you can sort the results. A nice idiom 
             is 
-            \ :code:`sort -k 1n,1n -k 2n,2n temp1 > temp` 
+            \ ``sort -k 1n,1n -k 2n,2n temp1 > temp`` 
              
             A perhaps more flexible alternative is to separate the master from all the 
             workers somewhere after item 4) and before item 8) using :meth:`ParallelContext.runworker` 
@@ -288,7 +288,7 @@ ParallelNetManager
 
 
     Syntax:
-        :code:`pnm.set_gid2node(gid, machine_id)`
+        ``pnm.set_gid2node(gid, machine_id)``
 
 
     Description:
@@ -307,12 +307,12 @@ ParallelNetManager
 
 
     Syntax:
-        :code:`pnm.round_robin()`
+        ``pnm.round_robin()``
 
 
     Description:
         The gid ranging from 0 to ncell-1 
-        is assigned to machine :code:`(gid + 1) % nhost`. There is no good reason 
+        is assigned to machine ``(gid + 1) % nhost``. There is no good reason 
         anymore for the "+1". :meth:`ParallelContext.nhost` is the number of machines 
         available. 
 
@@ -326,7 +326,7 @@ ParallelNetManager
 
 
     Syntax:
-        :code:`result = pnm.gid_exists(gid)`
+        ``result = pnm.gid_exists(gid)``
 
 
     Description:
@@ -344,15 +344,15 @@ ParallelNetManager
 
 
     Syntax:
-        :code:`cellobject = pnm.create_cell(gid, "obexpr")`
+        ``cellobject = pnm.create_cell(gid, "obexpr")``
 
 
     Description:
         This is deprecated. Use :meth:`ParallelNetManager.register_cell` . 
          
         If the gid exists on this machine the obexpr is executed in a statement 
-        equivalent to :code:`pnm.cells.append(obexpr)`. Obexpr should be something like 
-        \ :code:`"new Pyramid()"` or any function that returns a cell object. Valid 
+        equivalent to ``pnm.cells.append(obexpr)``. Obexpr should be something like 
+        \ ``"new Pyramid()"`` or any function that returns a cell object. Valid 
         "real" cell objects should have a connect2target method and a synlist 
         synapse list field just as the types used by the NetGUI builder. 
         Artificial cell objects can be bare or enclosed in a wrapper class 
@@ -361,7 +361,7 @@ ParallelNetManager
         Note: the following has been changed so that the source is always 
         an outputcell. 
          
-        At the end of this call, \ :code:`pnm.gid_exists(gid)` will return either 
+        At the end of this call, \ ``pnm.gid_exists(gid)`` will return either 
         0 or 1 because the cell has not yet been declared to be an outputcell. 
         That will be done when the first connection is requested for which 
         this cell is a source but the target is on another machine. 
@@ -376,7 +376,7 @@ ParallelNetManager
 
 
     Syntax:
-        :code:`pnm.register_cell(gid, cellobject)`
+        ``pnm.register_cell(gid, cellobject)``
 
 
     Description:
@@ -399,7 +399,7 @@ ParallelNetManager
 
 
     Syntax:
-        :code:`netcon = pnm.nc_append(src_gid, target_gid, synapse_id, weight, delay)`
+        ``netcon = pnm.nc_append(src_gid, target_gid, synapse_id, weight, delay)``
 
 
     Description:
@@ -407,14 +407,14 @@ ParallelNetManager
         and added to the pnm.nclist. 
          
         If the target exists and is a real cell 
-        the synapse object is \ :code:`pnm.gid2obj(target_gid).synlist(synapse_id)`. 
+        the synapse object is \ ``pnm.gid2obj(target_gid).synlist(synapse_id)``. 
          
         If the target exists and is a wrapped artificial cell then the 
         synapse_id should be -1 and the target artificial cell is 
-        \ :code:`pnm.gid2obj(target_gid).pp`. 
+        \ ``pnm.gid2obj(target_gid).pp``. 
         If the target exists and is an ArtificialCell 
         the synapse_id should be -1 and the target artificial cell is 
-        \ :code:`pnm.gid2obj(target_gid)`. Note that 
+        \ ``pnm.gid2obj(target_gid)``. Note that 
         the target is an unwrapped artificial cell if 
         :meth:`StringFunctions.is_point_process` returns a non-zero value. 
          
@@ -428,7 +428,7 @@ ParallelNetManager
         :meth:`ParallelContext.outputcell` . 
          
         If the source exists and is a real cell or wrapped artificial 
-        cell \ :code:`pnm.gid2obj(src_id).connect2target(synapse_target_object, nc)` 
+        cell \ ``pnm.gid2obj(src_id).connect2target(synapse_target_object, nc)`` 
         is used to 
         create the NetCon. 
          
@@ -448,7 +448,7 @@ ParallelNetManager
 
 
     Syntax:
-        :code:`pnm.want_all_spikes()`
+        ``pnm.want_all_spikes()``
 
 
     Description:
@@ -466,7 +466,7 @@ ParallelNetManager
 
 
     Syntax:
-        :code:`pnm.spike_record(gid)`
+        ``pnm.spike_record(gid)``
 
 
     Description:
@@ -485,7 +485,7 @@ ParallelNetManager
 
 
     Syntax:
-        :code:`pnm.prun()`
+        ``pnm.prun()``
 
 
     Description:
@@ -502,7 +502,7 @@ ParallelNetManager
 
 
     Syntax:
-        :code:`pnm.psolve(tstop)`
+        ``pnm.psolve(tstop)``
 
 
     Description:
@@ -518,7 +518,7 @@ ParallelNetManager
 
 
     Syntax:
-        :code:`pnm.pinit()`
+        ``pnm.pinit()``
 
 
     Description:
@@ -538,7 +538,7 @@ ParallelNetManager
 
 
     Syntax:
-        :code:`pnm.pcontinue(tstop)`
+        ``pnm.pcontinue(tstop)``
 
 
     Description:
@@ -555,9 +555,9 @@ ParallelNetManager
 
 
     Syntax:
-        :code:`pnm.prstat(0)`
+        ``pnm.prstat(0)``
 
-        :code:`pnm.prstat(1)`
+        ``pnm.prstat(1)``
 
 
     Description:
@@ -589,7 +589,7 @@ ParallelNetManager
 
 
     Syntax:
-        :code:`pnm.gatherspikes`
+        ``pnm.gatherspikes``
 
 
     Description:
@@ -607,7 +607,7 @@ ParallelNetManager
 
 
     Syntax:
-        :code:`cas pnm.splitcell(hostcas, hostparent)`
+        ``cas pnm.splitcell(hostcas, hostparent)``
 
 
     Description:
@@ -619,7 +619,7 @@ ParallelNetManager
         by hostcas and the parent subtree will be destroyed. The parent 
         subtree 
         will be preserved on the host specified by hostparent and the cas 
-        subtree destroyed. Hostparent must be either :code:`hostcas+1` or :code:`hostcas-1`. 
+        subtree destroyed. Hostparent must be either ``hostcas+1`` or ``hostcas-1``. 
          
         Splitcell works only if NEURON has been configured with the 
         --with-paranrn option. A split cell has exactly the same stability 

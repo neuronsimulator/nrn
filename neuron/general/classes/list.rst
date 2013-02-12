@@ -10,9 +10,9 @@ List
     List of objects 
 
     Syntax:
-        :code:`List()`
+        ``List()``
 
-        :code:`List("templatename")`
+        ``List("templatename")``
 
 
     Description:
@@ -23,11 +23,11 @@ List
         another of post-synaptic connections, as well as a list of all the connecting cells. 
 
 
-        :code:`List()` 
+        ``List()`` 
             Create an empty list. Objects added to the list are referenced. 
             Objects removed from the list are unreferenced. 
 
-        :code:`List("templatename")` 
+        ``List("templatename")`` 
             Create a list of all the object instances of the template. 
             These object instances are NOT referenced and therefore the list 
             dynamically changes as objects of template instances are 
@@ -45,7 +45,7 @@ List
 
 
     Syntax:
-        :code:`.append(object)`
+        ``.append(object)``
 
 
     Description:
@@ -61,7 +61,7 @@ List
 
 
     Syntax:
-        :code:`.prepend(object)`
+        ``.prepend(object)``
 
 
     Description:
@@ -79,7 +79,7 @@ List
 
 
     Syntax:
-        :code:`.insrt(i, object)`
+        ``.insrt(i, object)``
 
 
     Description:
@@ -99,7 +99,7 @@ List
 
 
     Syntax:
-        :code:`.remove(i)`
+        ``.remove(i)``
 
 
     Description:
@@ -117,7 +117,7 @@ List
 
 
     Syntax:
-        :code:`.remove_all()`
+        ``.remove_all()``
 
 
     Description:
@@ -133,7 +133,7 @@ List
 
 
     Syntax:
-        :code:`.index(object)`
+        ``.index(object)``
 
 
     Description:
@@ -150,7 +150,7 @@ List
 
 
     Syntax:
-        :code:`.count()`
+        ``.count()``
 
 
     Description:
@@ -166,23 +166,23 @@ List
 
 
     Syntax:
-        :code:`.browser()`
+        ``.browser()``
 
-        :code:`.browser("title", "strname")`
+        ``.browser("title", "strname")``
 
-        :code:`.browser("title", strdef, "command")`
+        ``.browser("title", strdef, "command")``
 
 
     Description:
 
 
-        :code:`.browser(["title"], ["strname"])` 
+        ``.browser(["title"], ["strname"])`` 
             Make the list visible on the screen. 
             The items are normally the object names but if the second arg is 
             present and is the name of a string symbol that is defined 
             in the object's	template, then that string is displayed in the list. 
 
-        :code:`.browser("title", strdef, "command")` 
+        ``.browser("title", strdef, "command")`` 
             Browser labels are computed. For each item, command is executed 
             with :data:`hoc_ac_` set to the index of the item. On return, the 
             contents of *strdef* are used as the label. Some objects 
@@ -200,7 +200,7 @@ List
 
 
     Syntax:
-        :code:`.selected()`
+        ``.selected()``
 
 
     Description:
@@ -219,7 +219,7 @@ List
 
 
     Syntax:
-        :code:`.select(i)`
+        ``.select(i)``
 
 
     Description:
@@ -238,9 +238,9 @@ List
 
 
     Syntax:
-        :code:`index = list.scroll_pos()`
+        ``index = list.scroll_pos()``
 
-        :code:`list.scroll_pos(index)`
+        ``list.scroll_pos(index)``
 
 
     Description:
@@ -261,18 +261,18 @@ List
 
 
     Syntax:
-        :code:`list.select_action("command")`
+        ``list.select_action("command")``
 
-        :code:`list.select_action("command", 0or1)`
+        ``list.select_action("command", 0or1)``
 
 
     Description:
         Execute a command when an item in the 
         list :meth:`List.browser` is selected by single clicking the mouse. 
         :data:`hoc_ac_` contains the index when the command is executed. Thus 
-        :code:`l.select_action("action(hoc_ac_)")` is convenient usage. 
+        ``l.select_action("action(hoc_ac_)")`` is convenient usage. 
         action will be invoked within the object context that existed when 
-        :code:`select_action` was called. 
+        ``select_action`` was called. 
          
         If the second arg exists and is 1 then the action is only called on 
         the mouse button release. If nothing is selected at that time then 
@@ -316,14 +316,14 @@ List
 
 
     Syntax:
-        :code:`list.accept_action("command")`
+        ``list.accept_action("command")``
 
 
     Description:
         Execute a command when double clicking 
         on an item displayed in the list :meth:`List.browser` by the mouse. 
         :data:`hoc_ac_` contains the index when the command is executed. Command is 
-        executed within the object context that existed when :code:`accept_action` 
+        executed within the object context that existed when ``accept_action`` 
         was called. 
 
     Example:
@@ -356,9 +356,9 @@ List
 
 
     Syntax:
-        :code:`.object(i)`
+        ``.object(i)``
 
-        :code:`.o(i)`
+        ``.o(i)``
 
 
     Description:
@@ -374,9 +374,9 @@ List
 
 
     Syntax:
-        :code:`.object(i)`
+        ``.object(i)``
 
-        :code:`.o(i)`
+        ``.o(i)``
 
 
     Description:

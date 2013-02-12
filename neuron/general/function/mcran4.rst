@@ -10,7 +10,7 @@ mcran4
 
 
     Syntax:
-        :code:`x = mcell_ran4(&highindex)`
+        ``x = mcell_ran4(&highindex)``
 
 
     Description:
@@ -26,7 +26,7 @@ mcran4
          
         See :meth:`Random.Random123` for an even more useful alternative. 
          
-        This generator was obtained from Tom Bartol :code:`<bartol@salk.edu>`
+        This generator was obtained from Tom Bartol ``<bartol@salk.edu>``
         who uses them in his mcell program. (hence the mcell prefix) 
         He comments: 
         For MCell, Ran4 has the distinct advantage of generating 
@@ -93,9 +93,9 @@ mcran4
 
 
     Syntax:
-        :code:`previous = use_mcell_ran4(next) // next must be 0 or 1`
+        ``previous = use_mcell_ran4(next) // next must be 0 or 1``
 
-        :code:`boolean = use_mcell_ran4()`
+        ``boolean = use_mcell_ran4()``
 
 
     Description:
@@ -121,9 +121,9 @@ mcran4
 
 
     Syntax:
-        :code:`previous_lowindex = mcell_ran4_init(lowindex)`
+        ``previous_lowindex = mcell_ran4_init(lowindex)``
 
-        :code:`lowindex= mcell_ran4_init()`
+        ``lowindex= mcell_ran4_init()``
 
 
     Description:

@@ -9,11 +9,11 @@ ocfunc
 
 
     Syntax:
-        :code:`0 = print_session(useprinter, "name")`
+        ``0 = print_session(useprinter, "name")``
 
-        :code:`0 = print_session(useprinter, "name", useselected)`
+        ``0 = print_session(useprinter, "name", useselected)``
 
-        :code:`0 = print_session()`
+        ``0 = print_session()``
 
 
     Description:
@@ -41,9 +41,9 @@ ocfunc
 
 
     Syntax:
-        :code:`0 = save_session("filename")`
+        ``0 = save_session("filename")``
 
-        :code:`0 = save_session("filename", "header")`
+        ``0 = save_session("filename", "header")``
 
 
     Description:
@@ -93,7 +93,7 @@ ocfunc
 
 
     Syntax:
-        :code:`sprint(strdef, "format", args)`
+        ``sprint(strdef, "format", args)``
 
 
     Description:
@@ -108,7 +108,7 @@ ocfunc
 
 
     Syntax:
-        :code:`x = strcmp("string1", "string2")`
+        ``x = strcmp("string1", "string2")``
 
 
     Description:
@@ -163,9 +163,9 @@ ocfunc
 
 
     Syntax:
-        :code:`object_id(objref)`
+        ``object_id(objref)``
 
-        :code:`object_id(objref, 1)`
+        ``object_id(objref, 1)``
 
 
     Description:
@@ -184,7 +184,7 @@ ocfunc
 
 
     Syntax:
-        :code:`allobjectvars()`
+        ``allobjectvars()``
 
 
     Description:
@@ -205,11 +205,11 @@ ocfunc
 
 
     Syntax:
-        :code:`allobjects()`
+        ``allobjects()``
 
-        :code:`allobjects("templatename")`
+        ``allobjects("templatename")``
 
-        :code:`nref = allobjects(objectref)`
+        ``nref = allobjects(objectref)``
 
 
     Description:
@@ -232,7 +232,7 @@ ocfunc
 
 
     Syntax:
-        :code:`n = numarg()`
+        ``n = numarg()``
 
 
     Description:
@@ -251,7 +251,7 @@ ocfunc
 
 
     Syntax:
-        :code:`itype = argtype(iarg)`
+        ``itype = argtype(iarg)``
 
 
     Description:
@@ -271,7 +271,7 @@ ocfunc
 
 
     Syntax:
-        :code:`hoc_pointer_(&variable)`
+        ``hoc_pointer_(&variable)``
 
 
     Description:
@@ -287,9 +287,9 @@ ocfunc
 
 
     Syntax:
-        :code:`execute("statement")`
+        ``execute("statement")``
 
-        :code:`execute("statement", objref)`
+        ``execute("statement", objref)``
 
 
     Description:
@@ -312,13 +312,13 @@ ocfunc
 
 
     Syntax:
-        :code:`err = execute1("statement")`
+        ``err = execute1("statement")``
 
-        :code:`err = execute1("statement", objref)`
+        ``err = execute1("statement", objref)``
 
-        :code:`err = execute1("statement", show_err_mes)`
+        ``err = execute1("statement", show_err_mes)``
 
-        :code:`err = execute1("statement", objref, show_err_mes`
+        ``err = execute1("statement", objref, show_err_mes``
 
 
     Description:
@@ -362,11 +362,11 @@ ocfunc
 
 
     Syntax:
-        :code:`load_proc("name1", ...)`
+        ``load_proc("name1", ...)``
 
-        :code:`load_func("name1", ...)`
+        ``load_func("name1", ...)``
 
-        :code:`load_template("name1", ..._`
+        ``load_template("name1", ..._``
 
 
     Description:
@@ -405,11 +405,11 @@ ocfunc
 
 
     Syntax:
-        :code:`load_file("filename")`
+        ``load_file("filename")``
 
-        :code:`load_file("filename", "name")`
+        ``load_file("filename", "name")``
 
-        :code:`load_file(0or1, "filename")`
+        ``load_file(0or1, "filename")``
 
 
     Description:
@@ -463,9 +463,9 @@ ocfunc
 
 
     Syntax:
-        :code:`strdef name`
+        ``strdef name``
 
-        :code:`machine_name(name)`
+        ``machine_name(name)``
 
 
     Description:
@@ -497,7 +497,7 @@ ocfunc
 
 
     Syntax:
-        :code:`coredump_on_error(1 or 0)`
+        ``coredump_on_error(1 or 0)``
 
 
     Description:
@@ -523,7 +523,7 @@ ocfunc
 
 
     Syntax:
-        :code:`object_push(objref)`
+        ``object_push(objref)``
 
 
     Description:
@@ -542,7 +542,7 @@ ocfunc
 
 
     Syntax:
-        :code:`object_pop()`
+        ``object_pop()``
 
 
     Description:
@@ -557,7 +557,7 @@ ocfunc
 
 
     Syntax:
-        :code:`show_errmess_always(boolean)`
+        ``show_errmess_always(boolean)``
 
 
     Description:
@@ -574,9 +574,9 @@ ocfunc
 
 
     Syntax:
-        :code:`type = name_declared("name")`
+        ``type = name_declared("name")``
 
-        :code:`type = name_declared("name", 1)`
+        ``type = name_declared("name", 1)``
 
 
     Description:

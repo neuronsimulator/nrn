@@ -9,17 +9,17 @@ SymChooser
 
 
     Syntax:
-        :code:`SymChooser()`
+        ``SymChooser()``
 
-        :code:`SymChooser(caption)`
+        ``SymChooser(caption)``
 
-        :code:`SymChooser("caption", "varname")`
+        ``SymChooser("caption", "varname")``
 
 
     Description:
         This class allows you to display a list of all names and variables in the system.  From this 
         list, you can simply select the name which you want to implement. 
-        \ :code:`Symchooser()` becomes especially convenient when you must keep track of many variables, 
+        \ ``Symchooser()`` becomes especially convenient when you must keep track of many variables, 
         or when the names of 
         your variables become too long to type over and over again. 
          
@@ -58,7 +58,7 @@ SymChooser
 
 
     Syntax:
-        :code:`.run()`
+        ``.run()``
 
 
     Description:
@@ -75,7 +75,7 @@ SymChooser
 
 
     Syntax:
-        :code:`.text(strdef)`
+        ``.text(strdef)``
 
 
     Description:

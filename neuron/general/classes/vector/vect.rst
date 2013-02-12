@@ -27,17 +27,17 @@ Vector
          
 
     Syntax:
-        :code:`obj = new Vector()`
+        ``obj = new Vector()``
 
-        :code:`obj = new Vector(size)`
+        ``obj = new Vector(size)``
 
-        :code:`obj = new Vector(size, init)`
+        ``obj = new Vector(size, init)``
 
 
     Description:
         The vector class provides convenient functions for manipulating one-dimensional 
         arrays of numbers. An object created with this class can be thought of as 
-        containing a :code:`double x[]` variable. Individual elements of this array can 
+        containing a ``double x[]`` variable. Individual elements of this array can 
         be manipulated with the normal :samp:`{objref}.x[{index}]` notation. 
         Most of the Vector functions apply their operations to each element of the 
         x array thus avoiding the often tedious scaffolding required by an otherwise 
@@ -126,27 +126,27 @@ Vector
 
 
     Syntax:
-        :code:`vec.x[index]`
+        ``vec.x[index]``
 
 
     Description:
-        Elements of a vector can be accessed with :code:`vec.x[index]` notation. 
+        Elements of a vector can be accessed with ``vec.x[index]`` notation. 
         Vector indices range from 0 to Vector.size()-1. 
         This 
-        notation is superior to the older :code:`vec.get()` and :code:`vec.set()` notations for 
+        notation is superior to the older ``vec.get()`` and ``vec.set()`` notations for 
         three reasons: 
          
         1.  It performs the roles of both 
-            :code:`vec.get` and :code:`vec.set` with a syntax that is consistent with the normal 
-            syntax for a :code:`double` array inside of an object. 
+            ``vec.get`` and ``vec.set`` with a syntax that is consistent with the normal 
+            syntax for a ``double`` array inside of an object. 
         2.  It can be viewed by a field editor (since it can appear on the left hand 
             side of an assignment statement). 
         3.  You can take its  address for functions which require that kind of argument. 
 
     Example:
-        :code:`print vec.x[0]` prints the value of the 0th (first) element. 
+        ``print vec.x[0]`` prints the value of the 0th (first) element. 
          
-        :code:`vec.x[i] = 3` sets the i'th element to 3. 
+        ``vec.x[i] = 3`` sets the i'th element to 3. 
          
 
         .. code-block::
@@ -162,10 +162,10 @@ Vector
         this case, the field editor will display the string, "Free'd". 
 
     .. warning::
-        :code:`vec.x[-1]` returns the value of the first element of the vector, just as 
-        would :code:`vec.x[0]`. 
+        ``vec.x[-1]`` returns the value of the first element of the vector, just as 
+        would ``vec.x[0]``. 
          
-        :code:`vec.x(i)` returns the value of index *i* just as does :code:`vec.x[i]`. 
+        ``vec.x(i)`` returns the value of index *i* just as does ``vec.x[i]``. 
 
          
 
@@ -177,12 +177,12 @@ Vector
 
 
     Syntax:
-        :code:`size = vec.size()`
+        ``size = vec.size()``
 
 
     Description:
         Return the number of elements in the vector. The last element has the index: 
-        :code:`vec.size() - 1`. Most explicit for loops over a vector can take the form: 
+        ``vec.size() - 1``. Most explicit for loops over a vector can take the form: 
 
         .. code-block::
             none
@@ -206,7 +206,7 @@ Vector
 
 
     Syntax:
-        :code:`obj = vsrcdest.resize(new_size)`
+        ``obj = vsrcdest.resize(new_size)``
 
 
     Description:
@@ -231,14 +231,14 @@ Vector
             vec = new Vector(20,5) 
             vec.resize(30)
         
-        Appends 10 elements, each having a value of 0, to :code:`vec`. 
+        Appends 10 elements, each having a value of 0, to ``vec``. 
 
         .. code-block::
             none
 
-            :code:`vec.resize(10)` 
+            ``vec.resize(10)`` 
 
-        removes the last 20 elements from the  :code:`vec`.The values of the first 
+        removes the last 20 elements from the  ``vec``.The values of the first 
         10 elements are unchanged. 
 
     .. seealso::
@@ -254,9 +254,9 @@ Vector
 
 
     Syntax:
-        :code:`space = vsrc.buffer_size()`
+        ``space = vsrc.buffer_size()``
 
-        :code:`space = vsrc.buffer_size(request)`
+        ``space = vsrc.buffer_size(request)``
 
 
     Description:
@@ -299,12 +299,12 @@ Vector
 
 
     Syntax:
-        :code:`x = vec.get(index)`
+        ``x = vec.get(index)``
 
 
     Description:
         Return the value of a vector element index.  This function 
-        is superseded by the :code:`vec.x[]` notation but is retained for backward 
+        is superseded by the ``vec.x[]`` notation but is retained for backward 
         compatibility. 
 
          
@@ -317,12 +317,12 @@ Vector
 
 
     Syntax:
-        :code:`obj = vsrcdest.set(index,value)`
+        ``obj = vsrcdest.set(index,value)``
 
 
     Description:
         Set vector element index to value.  This function is superseded by 
-        the :code:`vec.x[i] = expr` notation but is retained for backward 
+        the ``vec.x[i] = expr`` notation but is retained for backward 
         compatibility. 
 
          
@@ -336,9 +336,9 @@ Vector
 
 
     Syntax:
-        :code:`obj = vsrcdest.fil(value)`
+        ``obj = vsrcdest.fil(value)``
 
-        :code:`obj = vsrcdest.fill(value, start, end)`
+        ``obj = vsrcdest.fill(value, start, end)``
 
 
     Description:
@@ -372,11 +372,11 @@ Vector
 
 
     Syntax:
-        :code:`strdef s`
+        ``strdef s``
 
-        :code:`s = vec.label()`
+        ``s = vec.label()``
 
-        :code:`s = vec.label(s)`
+        ``s = vec.label(s)``
 
 
     Description:
@@ -408,13 +408,13 @@ Vector
 
 
     Syntax:
-        :code:`vdest.record(&var)`
+        ``vdest.record(&var)``
 
-        :code:`vdest.record(&var, Dt)`
+        ``vdest.record(&var, Dt)``
 
-        :code:`vdest.record(&var, tvec)`
+        ``vdest.record(&var, tvec)``
 
-        :code:`vdest.record(point_process_object, &varvar, ...)`
+        ``vdest.record(point_process_object, &varvar, ...)``
 
 
     Description:
@@ -423,9 +423,9 @@ Vector
         are destroyed. 
          
         Details: 
-        Transfers take place on exit from :code:`finitialize()` and on exit from :code:`fadvance()`. 
-        At the end of :code:`finitialize()`, :code:`v.x[0] = var`. At the end of :code:`fadvance`, 
-        *var* will be saved if :code:`t` (after being incremented by :code:`fadvance`) 
+        Transfers take place on exit from ``finitialize()`` and on exit from ``fadvance()``. 
+        At the end of ``finitialize()``, ``v.x[0] = var``. At the end of ``fadvance``, 
+        *var* will be saved if ``t`` (after being incremented by ``fadvance``) 
         is equal or greater than the associated time of the 
         next index. The system maintains a set of record vectors and the vector will 
         be removed from the list if the vector or var is destroyed. 
@@ -437,14 +437,14 @@ Vector
          
         The record semantics can be thought of as:
  
-        :code:`var(t) -> v.x[index]` 
+        ``var(t) -> v.x[index]`` 
          
-        The default relationship between :code:`index` and 
-        :code:`t` is :code:`t = index*dt`. 
+        The default relationship between ``index`` and 
+        ``t`` is ``t = index*dt``. 
  
-        In the second form, :code:`t = index*Dt`. 
+        In the second form, ``t = index*Dt``. 
  
-        In the third form, :code:`t = tvec.x[index]`. 
+        In the third form, ``t = tvec.x[index]``. 
          
         For the local variable timestep method, :meth:`CVode.use_local_dt` and/or multiple 
         threads, :meth:`ParallelContext.nthread` , it is 
@@ -458,8 +458,8 @@ Vector
 
     .. warning::
         record/play behavior is reasonable but surprising if :data:`dt` is greater than 
-        :code:`Dt`. Things work best if :code:`Dt` happens to be a multiple of :data:`dt`. All combinations 
-        of record ; play ; :code:`Dt =>< dt` ; and tvec sequences 
+        ``Dt``. Things work best if ``Dt`` happens to be a multiple of :data:`dt`. All combinations 
+        of record ; play ; ``Dt =>< dt`` ; and tvec sequences 
         have not been tested. 
 
     Example:
@@ -483,7 +483,7 @@ Vector
         To remove 
         dv from the list of record vectors, the easiest method is to destroy the instance 
         with 
-        :code:`dv = new Vector()` 
+        ``dv = new Vector()`` 
 
     .. seealso::
         :func:`finitialize`, :func:`fadvance`, :func:`play`, :data:`t`, :func:`play_remove`
@@ -498,23 +498,23 @@ Vector
 
 
     Syntax:
-        :code:`vsrc.play(&var, Dt)`
+        ``vsrc.play(&var, Dt)``
 
-        :code:`vsrc.play(&var, tvec)`
+        ``vsrc.play(&var, tvec)``
 
-        :code:`vsrc.play("stmt involving $1", optional Dt or tvec arg)`
+        ``vsrc.play("stmt involving $1", optional Dt or tvec arg)``
 
-        :code:`vsrc.play(index)`
+        ``vsrc.play(index)``
 
-        :code:`vsrc.play(&var or stmt, Dt or Tvec, continuous)`
+        ``vsrc.play(&var or stmt, Dt or Tvec, continuous)``
 
-        :code:`vsrc.play(&var or stmt, tvec, indices_of_discontinuities_vector)`
+        ``vsrc.play(&var or stmt, tvec, indices_of_discontinuities_vector)``
 
-        :code:`vsrc.play(point_process_object, &var, ...)`
+        ``vsrc.play(point_process_object, &var, ...)``
 
 
     Description:
-        The :code:`vsrc` vector values are assigned to the "*var*" variable during 
+        The ``vsrc`` vector values are assigned to the "*var*" variable during 
         a simulation. 
          
         The same vector can be played into different variables. 
@@ -534,7 +534,7 @@ Vector
         value of vsrc.x[index] 
          
         The play semantics can be thought of as 
-        :code:`v.x[index] -> var(t)` where t(index) is Dt*index or tvec.x[index] 
+        ``v.x[index] -> var(t)`` where t(index) is Dt*index or tvec.x[index] 
         The discrete event delivery system is used to determine the precise 
         time at which values are copied from vsrc to var. Note that for variable 
         step methods, unless continuity is specifically requested, the function 
@@ -545,24 +545,24 @@ Vector
          
         For the fixed step method 
         transfers take place on entry to :func:`finitialize` and  on entry to :func:`fadvance`. 
-        At the beginning of :func:`finitialize`, :code:`var = v.x[0]`. On :func:`fadvance` a transfer will 
-        take place if t will be (after the :code:`fadvance` increment) equal 
+        At the beginning of :func:`finitialize`, ``var = v.x[0]``. On :func:`fadvance` a transfer will 
+        take place if t will be (after the ``fadvance`` increment) equal 
         or greater than the associated time of the next index. For the variable step 
         methods, transfers take place exactly at the times specified by the Dt 
         or tvec arguments. 
          
         The system maintains a set of play vectors and the vector will be removed 
         from the list if the vector or var is destroyed. 
-        If the end of the vector is reached, no further transfers are made (:code:`var` becomes 
+        If the end of the vector is reached, no further transfers are made (``var`` becomes 
         constant) 
          
         Note well: for the fixed step method, 
-        if :code:`fadvance` exits with time equal to :code:`t` (ie enters at time t-dt), 
-        then on entry to :code:`fadvance`, *var* is set equal to the value of 
+        if ``fadvance`` exits with time equal to ``t`` (ie enters at time t-dt), 
+        then on entry to ``fadvance``, *var* is set equal to the value of 
         the vector at the index 
         appropriate to time t. Execute tests/nrniv/vrecord.hoc to see what this implies 
-        during a simulation. ie the value of var from :code:`t-dt` to t played into by 
-        a vector is equal to the value of the vector at :code:`index(t)`. If the vector 
+        during a simulation. ie the value of var from ``t-dt`` to t played into by 
+        a vector is equal to the value of the vector at ``index(t)``. If the vector 
         was meant to serve as a continuous stimulus function, this results in 
         a first order correct simulation with respect to dt. If a second order correct 
         simulation is desired, it is necessary (though perhaps not sufficient since 
@@ -618,7 +618,7 @@ Vector
 
 
     Syntax:
-        :code:`v.play_remove()`
+        ``v.play_remove()``
 
 
     Description:
@@ -645,13 +645,13 @@ Vector
 
 
     Syntax:
-        :code:`obj = vsrcdest.indgen()`
+        ``obj = vsrcdest.indgen()``
 
-        :code:`obj = vsrcdest.indgen(stepsize)`
+        ``obj = vsrcdest.indgen(stepsize)``
 
-        :code:`obj = vsrcdest.indgen(start,stepsize)`
+        ``obj = vsrcdest.indgen(start,stepsize)``
 
-        :code:`obj = vsrcdest.indgen(start,stop,stepsize)`
+        ``obj = vsrcdest.indgen(start,stop,stepsize)``
 
 
     Description:
@@ -704,13 +704,13 @@ Vector
 
 
     Syntax:
-        :code:`obj = vsrcdest.append(vec1, vec2, ...)`
+        ``obj = vsrcdest.append(vec1, vec2, ...)``
 
 
     Description:
         Concatenate values onto the end of a vector. 
         The arguments may be either scalars or vectors. 
-        The values are appended to the end of the :code:`vsrcdest` vector. 
+        The values are appended to the end of the ``vsrcdest`` vector. 
 
     Example:
 
@@ -723,7 +723,7 @@ Vector
             vec2 = new Vector (10,6) 
             vec.append(vec1, vec2, 7, 8, 9) 
 
-        turns :code:`vec` into a 33 element vector, whose first ten elements = 4, whose 
+        turns ``vec`` into a 33 element vector, whose first ten elements = 4, whose 
         second ten elements = 5, whose third ten elements = 6, and whose 31st, 32nd, 
         and 33rd elements = 7, 8, and 9, respectively. 
         Remember, index 32 refers to the 33rd element. 
@@ -738,14 +738,14 @@ Vector
 
 
     Syntax:
-        :code:`obj = vsrcdest.insrt(index, vec1, vec2, ...)`
+        ``obj = vsrcdest.insrt(index, vec1, vec2, ...)``
 
 
     Description:
         Inserts values before the index element. 
         The arguments may be either scalars or vectors. 
          
-        :code:`obj.insrt(obj.size, ...)` is equivalent to :code:`obj.append(...)` 
+        ``obj.insrt(obj.size, ...)`` is equivalent to ``obj.append(...)`` 
 
          
 
@@ -757,9 +757,9 @@ Vector
 
 
     Syntax:
-        :code:`obj = vsrcdest.remove(index)`
+        ``obj = vsrcdest.remove(index)``
 
-        :code:`obj = vsrcdest.remove(start, end)`
+        ``obj = vsrcdest.remove(start, end)``
 
 
     Description:
@@ -776,7 +776,7 @@ Vector
 
 
     Syntax:
-        :code:`boolean = vsrc.contains(value)`
+        ``boolean = vsrc.contains(value)``
 
 
     Description:
@@ -812,26 +812,26 @@ Vector
 
 
     Syntax:
-        :code:`obj = vdest.copy(vsrc)`
+        ``obj = vdest.copy(vsrc)``
 
-        :code:`obj = vdest.copy(vsrc, dest_start)`
+        ``obj = vdest.copy(vsrc, dest_start)``
 
-        :code:`obj = vdest.copy(vsrc, src_start, src_end)`
+        ``obj = vdest.copy(vsrc, src_start, src_end)``
 
-        :code:`obj = vdest.copy(vsrc, dest_start, src_start, src_end)`
+        ``obj = vdest.copy(vsrc, dest_start, src_start, src_end)``
 
-        :code:`obj = vdest.copy(vsrc, dest_start, src_start, src_end, dest_inc, src_inc)`
+        ``obj = vdest.copy(vsrc, dest_start, src_start, src_end, dest_inc, src_inc)``
 
-        :code:`obj = vdest.copy(vsrc, vsrcdestindex)`
+        ``obj = vdest.copy(vsrc, vsrcdestindex)``
 
-        :code:`obj = vdest.copy(vsrc, vsrcindex, vdestindex)`
+        ``obj = vdest.copy(vsrc, vsrcindex, vdestindex)``
 
 
     Description:
         Copies some or all of *vsrc* into *vdest*. 
         If the dest_start argument is present (an integer index), 
-        source elements (beginning at *src*:code:`.x[0]`) 
-        are copied to  *vdest* beginning at *dest*:code:`.x[dest_start]`, 
+        source elements (beginning at *src*``.x[0]``) 
+        are copied to  *vdest* beginning at *dest*``.x[dest_start]``, 
         *Src_start* and *src_end* here refer to indices of *vsrcx*, 
         not *vdest*.  If *vdest* is too small for the size required by *vsrc* and the 
         arguments, then it is resized to hold the data. 
@@ -839,7 +839,7 @@ Vector
         argument the *dest* is NOT resized. 
         One may use -1 for the 
         src_end argument to specify the entire size (instead of the 
-        tedious :code:`src.size()-1`) 
+        tedious ``src.size()-1``) 
          
         If the second (and third) argument is a vector, 
         the elements of that vector are the 
@@ -900,7 +900,7 @@ Vector
             vec1.indgen(5,105,10) 
             vec.copy(vec1, 50, 3, 6) 
 
-        turns :code:`vec` from a 100 element into a 54 element vector. 
+        turns ``vec`` from a 100 element into a 54 element vector. 
         The first 50 elements will each have the value 10 and the last four will 
         have the values 35, 45, 55, and 65 respectively. 
 
@@ -928,11 +928,11 @@ Vector
 
 
     Syntax:
-        :code:`newvec = vsrc.c`
+        ``newvec = vsrc.c``
 
-        :code:`newvec = vsrc.c(srcstart)`
+        ``newvec = vsrc.c(srcstart)``
 
-        :code:`newvec = vsrc.c(srcstart, srcend)`
+        ``newvec = vsrc.c(srcstart, srcend)``
 
 
     Description:
@@ -954,11 +954,11 @@ Vector
 
 
     Syntax:
-        :code:`newvec = vsrc.cl`
+        ``newvec = vsrc.cl``
 
-        :code:`newvec = vsrc.cl(srcstart)`
+        ``newvec = vsrc.cl(srcstart)``
 
-        :code:`newvec = vsrc.cl(srcstart, srcend)`
+        ``newvec = vsrc.cl(srcstart, srcend)``
 
 
     Description:
@@ -978,11 +978,11 @@ Vector
 
 
     Syntax:
-        :code:`newvec = vsrc.at()`
+        ``newvec = vsrc.at()``
 
-        :code:`newvec = vsrc.at(start)`
+        ``newvec = vsrc.at(start)``
 
-        :code:`newvec = vsrc.at(start,end)`
+        ``newvec = vsrc.at(start,end)``
 
 
     Description:
@@ -991,7 +991,7 @@ Vector
         This function predates the introduction of the vsrc.c, "clone", function 
         which is synonymous but is retained for backward compatibility. 
          
-        It merely avoids the necessity of a :code:`vdest = new Vector()` command and 
+        It merely avoids the necessity of a ``vdest = new Vector()`` command and 
         is equivalent to 
 
         .. code-block::
@@ -1011,8 +1011,8 @@ Vector
             vec.indgen(10,50,2) 
             vec1 = vec.at(2, 10) 
 
-        creates :code:`vec1` with 9 elements which correspond to the values at indices 
-        2 - 10 in :code:`vec`.  The contents of :code:`vec1` would then be, in order: 14, 16, 18, 
+        creates ``vec1`` with 9 elements which correspond to the values at indices 
+        2 - 10 in ``vec``.  The contents of ``vec1`` would then be, in order: 14, 16, 18, 
         20, 22, 24, 26, 28, 30. 
 
          
@@ -1025,9 +1025,9 @@ Vector
 
 
     Syntax:
-        :code:`double px[n]`
+        ``double px[n]``
 
-        :code:`obj = vdest.from_double(n, &px)`
+        ``obj = vdest.from_double(n, &px)``
 
 
     Description:
@@ -1043,24 +1043,24 @@ Vector
 
 
     Syntax:
-        :code:`obj = vdest.where(vsource, opstring, value1)`
+        ``obj = vdest.where(vsource, opstring, value1)``
 
-        :code:`obj = vdest.where(vsource, op2string, value1, value2)`
+        ``obj = vdest.where(vsource, op2string, value1, value2)``
 
-        :code:`obj = vsrcdest.where(opstring, value1)`
+        ``obj = vsrcdest.where(opstring, value1)``
 
-        :code:`obj = vsrcdest.where(op2string, value1, value2)`
+        ``obj = vsrcdest.where(op2string, value1, value2)``
 
 
     Description:
-        :code:`vdest` is vector consisting of those elements of the given vector, :code:`vsource` 
+        ``vdest`` is vector consisting of those elements of the given vector, ``vsource`` 
         that match the condition opstring. 
          
         Opstring is a string matching one of these (all comparisons 
-        are with respect to :data:`float_epsilon` ): :code:`"=="`, :code:`"!="`, :code:`">"`, :code:`"<"`, :code:`">="`, :code:`"<="`
+        are with respect to :data:`float_epsilon` ): ``"=="``, ``"!="``, ``">"``, ``"<"``, ``">="``, ``"<="``
 
         Op2string requires two numbers defining open/closed ranges and matches one 
-        of these: :code:`"[]"`, :code:`"[)"`, :code:`"(]"`, :code:`"()"`
+        of these: ``"[]"``, ``"[)"``, ``"(]"``, ``"()"``
          
 
     Example:
@@ -1073,7 +1073,7 @@ Vector
             vec.indgen(10) 
             vec1.where(vec, ">=", 50) 
 
-        creates :code:`vec1` with 20 elements ranging in value from 50 to 240 in 
+        creates ``vec1`` with 20 elements ranging in value from 50 to 240 in 
         increments of 10. 
 
         .. code-block::
@@ -1087,9 +1087,9 @@ Vector
             vec.fill(r) 
             vec1.where(vec, ">", 15) 
 
-        creates :code:`vec1` with random elements gotten from :code:`vec` which have values 
+        creates ``vec1`` with random elements gotten from ``vec`` which have values 
         greater than 15.  The new elements in vec1 will be ordered 
-        according to the order of their appearance in :code:`vec`. 
+        according to the order of their appearance in ``vec``. 
 
     .. seealso::
         :meth:`Vector.indvwhere`, :meth:`Vector.indwhere`
@@ -1116,18 +1116,18 @@ Vector
 
 
     Syntax:
-        :code:`i = vsrc.indwhere(opstring, value)`
+        ``i = vsrc.indwhere(opstring, value)``
 
-        :code:`i = vsrc.indwhere(op2string, low, high)`
+        ``i = vsrc.indwhere(op2string, low, high)``
 
 
-        :code:`obj = vsrcdest.indvwhere(opstring,value)`
+        ``obj = vsrcdest.indvwhere(opstring,value)``
 
-        :code:`obj = vsrcdest.indvwhere(opstring,value)`
+        ``obj = vsrcdest.indvwhere(opstring,value)``
 
-        :code:`obj = vdest.indvwhere(vsource,op2string,low, high)`
+        ``obj = vdest.indvwhere(vsource,op2string,low, high)``
 
-        :code:`obj = vdest.indvwhere(vsource,op2string,low, high)`
+        ``obj = vdest.indvwhere(vsource,op2string,low, high)``
 
 
     Description:
@@ -1135,13 +1135,13 @@ Vector
         the criterion given by the opstring. If there is no match, the return value 
         is -1. 
          
-        :code:`vdest` is a vector consisting of the indices of those elements of 
+        ``vdest`` is a vector consisting of the indices of those elements of 
         the source vector that match the condition opstring. 
          
-        Opstring is a string matching one of these: :code:`"=="`, :code:`"!="`, :code:`">"`, :code:`"<"`, :code:`">="`, :code:`"<="`
+        Opstring is a string matching one of these: ``"=="``, ``"!="``, ``">"``, ``"<"``, ``">="``, ``"<="``
 
 
-        Op2string is a string matching one of these: :code:`"[]"`, :code:`"[)"`, :code:`"(]"`, :code:`"()"`
+        Op2string is a string matching one of these: ``"[]"``, ``"[)"``, ``"(]"``, ``"()"``
 
          
         Comparisons are relative to the :data:`float_epsilon` global variable. 
@@ -1181,13 +1181,13 @@ Vector
 
 
     Syntax:
-        :code:`n = vsrc.fwrite(fileobj)`
+        ``n = vsrc.fwrite(fileobj)``
 
-        :code:`n = vsrc.fwrite(fileobj, start, end)`
+        ``n = vsrc.fwrite(fileobj, start, end)``
 
 
     Description:
-        Write the vector :code:`vec` to an open *fileobj* of type :class:`File` in 
+        Write the vector ``vec`` to an open *fileobj* of type :class:`File` in 
         machine dependent binary format. 
         You must keep track of the vector's 
         size for later reading, so it is recommended that you store the size of the 
@@ -1199,7 +1199,7 @@ Vector
          
         Return value is the number of items. (0 if error) 
          
-        :func:`fread` is used to read a file containing numbers stored by :code:`fwrite` but 
+        :func:`fread` is used to read a file containing numbers stored by ``fwrite`` but 
         must have the same size. 
 
          
@@ -1212,20 +1212,20 @@ Vector
 
 
     Syntax:
-        :code:`n = vdest.fread(fileobj)`
+        ``n = vdest.fread(fileobj)``
 
-        :code:`n = vdest.fread(fileobj, n)`
+        ``n = vdest.fread(fileobj, n)``
 
-        :code:`n = vdest.fread(fileobj, n, precision)`
+        ``n = vdest.fread(fileobj, n, precision)``
 
 
     Description:
-        Read the elements of a vector from the file in binary as written by :code:`fwrite.` 
+        Read the elements of a vector from the file in binary as written by ``fwrite.`` 
         If *n* is present, the vector is resized before reading. Note that 
         files created with fwrite cannot be fread on a machine with different 
         byte ordering. E.g. spark and intel cpus have different byte ordering. 
          
-        It is almost always better to use :code:`vwrite` in combination with :code:`vread`. 
+        It is almost always better to use ``vwrite`` in combination with ``vread``. 
         See vwrite for the meaning of the *precision* argment. 
          
         Return value is 1 (no error checking). 
@@ -1240,16 +1240,16 @@ Vector
 
 
     Syntax:
-        :code:`n = vec.vwrite(fileobj)`
+        ``n = vec.vwrite(fileobj)``
 
-        :code:`n = vec.vwrite(fileobj, precision)`
+        ``n = vec.vwrite(fileobj, precision)``
 
 
     Description:
         Write the vector in binary format 
         to an already opened for writing * fileobj* of type 
         :class:`File`. 
-        :meth:`~Vector.vwrite` is easier to use than :code:`fwrite()` 
+        :meth:`~Vector.vwrite` is easier to use than ``fwrite()`` 
         since it stores the size of the vector and type information 
         for a more 
         automated read/write. The file data can also be vread on a machine with 
@@ -1292,13 +1292,13 @@ Vector
 
 
     Syntax:
-        :code:`n = vec.vread(fileobj)`
+        ``n = vec.vread(fileobj)``
 
 
     Description:
-        Read vector from binary format file written with :code:`vwrite()`. 
+        Read vector from binary format file written with ``vwrite()``. 
         Size and data type have 
-        been stored by :code:`vwrite()` to allow correct retrieval syntax, byte ordering, and 
+        been stored by ``vwrite()`` to allow correct retrieval syntax, byte ordering, and 
         decompression (where necessary).  The vector is automatically resized. 
          
         Return value is 1. (No error checking.) 
@@ -1332,25 +1332,25 @@ Vector
 
 
     Syntax:
-        :code:`n = vec.printf()`
+        ``n = vec.printf()``
 
-        :code:`n = vec.printf(format_string)`
+        ``n = vec.printf(format_string)``
 
-        :code:`n = vec.printf(format_string, start, end)`
+        ``n = vec.printf(format_string, start, end)``
 
-        :code:`n = vec.printf(fileobj)`
+        ``n = vec.printf(fileobj)``
 
-        :code:`n = vec.printf(fileobj, format_string)`
+        ``n = vec.printf(fileobj, format_string)``
 
-        :code:`n = vec.printf(fileobj, format_string, start, end)`
+        ``n = vec.printf(fileobj, format_string, start, end)``
 
 
     Description:
         Print the values of the vector in ascii either to the screen or a File instance 
-        (if :code:`fileobj` is present).  *Start* and *end* enable you to specify 
+        (if ``fileobj`` is present).  *Start* and *end* enable you to specify 
         which particular set of indexed values to print. 
-        Use :code:`format_string` for formatting the output of each element. 
-        This string must contain exactly one :code:`%f`, :code:`%g`, or :code:`%e`, 
+        Use ``format_string`` for formatting the output of each element. 
+        This string must contain exactly one ``%f``, ``%g``, or ``%e``, 
         but can also contain additional formatting instructions. 
          
         Return value is number of items printed. 
@@ -1382,19 +1382,19 @@ Vector
 
 
     Syntax:
-        :code:`n = vec.scanf(fileobj)`
+        ``n = vec.scanf(fileobj)``
 
-        :code:`n = vec.scanf(fileobj, n)`
+        ``n = vec.scanf(fileobj, n)``
 
-        :code:`n = vec.scanf(fileobj, c, nc)`
+        ``n = vec.scanf(fileobj, c, nc)``
 
-        :code:`n = vec.scanf(fileobj, n, c, nc)`
+        ``n = vec.scanf(fileobj, n, c, nc)``
 
 
     Description:
         Read ascii values from a :class:`File` instance (must already be opened for reading) 
         into vector.  If present, scanning takes place til *n* items are 
-        read or until EOF. Otherwise, :code:`vec.scanf` reads until end of file. 
+        read or until EOF. Otherwise, ``vec.scanf`` reads until end of file. 
         If reading 
         til eof, a number followed 
         by a newline must be the last string in the file. (no trailing spaces 
@@ -1429,9 +1429,9 @@ Vector
 
 
     Syntax:
-        :code:`n = vec.scantil(fileobj, sentinel)`
+        ``n = vec.scantil(fileobj, sentinel)``
 
-        :code:`n = vec.scantil(fileobj, sentinel, c, nc)`
+        ``n = vec.scantil(fileobj, sentinel, c, nc)``
 
 
     Description:
@@ -1461,17 +1461,17 @@ Vector
 
 
     Syntax:
-        :code:`obj = vec.plot(graphobj)`
+        ``obj = vec.plot(graphobj)``
 
-        :code:`obj = vec.plot(graphobj, color, brush)`
+        ``obj = vec.plot(graphobj, color, brush)``
 
-        :code:`obj = vec.plot(graphobj, x_vec)`
+        ``obj = vec.plot(graphobj, x_vec)``
 
-        :code:`obj = vec.plot(graphobj, x_vec, color, brush)`
+        ``obj = vec.plot(graphobj, x_vec, color, brush)``
 
-        :code:`obj = vec.plot(graphobj, x_increment)`
+        ``obj = vec.plot(graphobj, x_increment)``
 
-        :code:`obj = vec.plot(graphobj, x_increment, color, brush)`
+        ``obj = vec.plot(graphobj, x_increment, color, brush)``
 
 
     Description:
@@ -1484,13 +1484,13 @@ Vector
         which case x is incremented according to this number. 
          
         This function plots the 
-        :code:`vec` values that exist in the vector at the time of graph flushing or window 
-        resizing. The alternative is :code:`vec.line()` which plots the vector values 
-        that exist at the time of the call to :code:`plot`.  It is therefore possible with 
-        :code:`vec.line()` to produce multiple plots 
+        ``vec`` values that exist in the vector at the time of graph flushing or window 
+        resizing. The alternative is ``vec.line()`` which plots the vector values 
+        that exist at the time of the call to ``plot``.  It is therefore possible with 
+        ``vec.line()`` to produce multiple plots 
         on the same graph. 
          
-        Once a vector is plotted, it is only necessary to call :code:`graphobj.flush()` 
+        Once a vector is plotted, it is only necessary to call ``graphobj.flush()`` 
         in order to display further changes to the vector.  In this way it 
         is possible to produce rather rapid line animation. 
          
@@ -1534,21 +1534,21 @@ Vector
 
 
     Syntax:
-        :code:`obj = vec.line(graphobj)`
+        ``obj = vec.line(graphobj)``
 
-        :code:`obj = vec.line(graphobj, color, brush)`
+        ``obj = vec.line(graphobj, color, brush)``
 
-        :code:`obj = vec.line(graphobj, x_vec)`
+        ``obj = vec.line(graphobj, x_vec)``
 
-        :code:`obj = vec.line(graphobj, x_vec, color, brush)`
+        ``obj = vec.line(graphobj, x_vec, color, brush)``
 
-        :code:`obj = vec.line(graphobj, x_increment)`
+        ``obj = vec.line(graphobj, x_increment)``
 
-        :code:`obj = vec.line(graphobj, x_increment, color, brush)`
+        ``obj = vec.line(graphobj, x_increment, color, brush)``
 
 
     Description:
-        Plot vector on a :class:`Graph`.  Exactly like :code:`.plot()` except the vector 
+        Plot vector on a :class:`Graph`.  Exactly like ``.plot()`` except the vector 
         is *not* plotted by reference so that the values may be changed 
         subsequently w/o disturbing the plot.  It is therefore possible to produce 
         a number of plots of the same function on the same graph, 
@@ -1586,15 +1586,15 @@ Vector
 
 
     Syntax:
-        :code:`obj = vec.ploterr(graphobj, x_vec, err_vec)`
+        ``obj = vec.ploterr(graphobj, x_vec, err_vec)``
 
-        :code:`obj = vec.ploterr(graphobj, x_vec, err_vec, size)`
+        ``obj = vec.ploterr(graphobj, x_vec, err_vec, size)``
 
-        :code:`obj = vec.ploterr(graphobj, x_vec, err_vec, size, color, brush)`
+        ``obj = vec.ploterr(graphobj, x_vec, err_vec, size, color, brush)``
 
 
     Description:
-        Similar to :code:`vec.line()`, but plots error bars with size +/- the elements 
+        Similar to ``vec.line()``, but plots error bars with size +/- the elements 
         of vector *err_vec*. 
          
         *size* sets the width of the seraphs on the error bars to a number 
@@ -1641,24 +1641,24 @@ Vector
 
 
     Syntax:
-        :code:`obj = vec.mark(graphobj, x_vector)`
+        ``obj = vec.mark(graphobj, x_vector)``
 
-        :code:`obj = vec.mark(graphobj, x_vector, "style")`
+        ``obj = vec.mark(graphobj, x_vector, "style")``
 
-        :code:`obj = vec.mark(graphobj, x_vector, "style", size)`
+        ``obj = vec.mark(graphobj, x_vector, "style", size)``
 
-        :code:`obj = vec.mark(graphobj, x_vector, "style", size, color, brush)`
+        ``obj = vec.mark(graphobj, x_vector, "style", size, color, brush)``
 
-        :code:`obj = vec.mark(graphobj, x_increment)`
+        ``obj = vec.mark(graphobj, x_increment)``
 
-        :code:`obj = vec.mark(graphobj, x_increment, "style", size, color, brush)`
+        ``obj = vec.mark(graphobj, x_increment, "style", size, color, brush)``
 
 
     Description:
-        Similar to :code:`vec.line`, but instead of connecting by lines, it make marks, 
+        Similar to ``vec.line``, but instead of connecting by lines, it make marks, 
         centered at the indicated position, which do not change size when 
         window is zoomed or resized. The style is a single character 
-        :code:`|,-,+,o,O,t,T,s,S` where :code:`o,t,s` stand for circle, triangle, square 
+        ``|,-,+,o,O,t,T,s,S`` where ``o,t,s`` stand for circle, triangle, square 
         and capitalized means filled. Default size is 12 points. 
 
          
@@ -1671,28 +1671,28 @@ Vector
 
 
     Syntax:
-        :code:`newvect = vsrc.histogram(low, high, width)`
+        ``newvect = vsrc.histogram(low, high, width)``
 
 
     Description:
-        Create a histogram constructed by binning the values in :code:`vsrc`. 
+        Create a histogram constructed by binning the values in ``vsrc``. 
          
         Bins run from *low* to *high* in divisions of *width*.  Data outside 
         the range is not binned. 
          
         This function returns a vector that contains the counts in each bin, so while it is 
-        necessary to declare an object reference (:code:`objref newvect`), it is not necessary 
-        to execute :code:`newvect = new Vector()`. 
+        necessary to declare an object reference (``objref newvect``), it is not necessary 
+        to execute ``newvect = new Vector()``. 
          
-        The first element of :code:`newvect` is 0 (:code:`newvect.x[0] = 0`). 
-        For :code:`ii > 0`, :code:`newvect.x[ii]` equals the number of 
+        The first element of ``newvect`` is 0 (``newvect.x[0] = 0``). 
+        For ``ii > 0``, ``newvect.x[ii]`` equals the number of 
         items 
-        in :code:`vsrc` whose values lie in the half open interval 
-        :code:`[a,b)` 
-        where :code:`b = low + ii*width` and :code:`a = b - width`. 
-        In other words, :code:`newvect.x[ii]` is the number of items in 
-        :code:`vsrc` 
-        that fall in the bin just below the boundary :code:`b`. 
+        in ``vsrc`` whose values lie in the half open interval 
+        ``[a,b)`` 
+        where ``b = low + ii*width`` and ``a = b - width``. 
+        In other words, ``newvect.x[ii]`` is the number of items in 
+        ``vsrc`` 
+        that fall in the bin just below the boundary ``b``. 
          
          
 
@@ -1739,14 +1739,14 @@ Vector
 
 
     Syntax:
-        :code:`obj = vdest.hist(vsrc, low, size, width)`
+        ``obj = vdest.hist(vsrc, low, size, width)``
 
 
     Description:
         Similar to :func:`histogram` (but notice the different argument meanings. 
         Put a histogram in *vdest* by binning 
         the data in *vsrc*. 
-        Bins run from *low* to :code:`low + size * width` 
+        Bins run from *low* to ``low + size * width`` 
         in divisions of *width*. 
         Data outside 
         the range is not binned. 
@@ -1761,28 +1761,28 @@ Vector
 
 
     Syntax:
-        :code:`newvect = vsrc.sumgauss(low, high, width, var)`
+        ``newvect = vsrc.sumgauss(low, high, width, var)``
 
-        :code:`newvect = vsrc.sumgauss(low, high, width, var, weight_vec)`
+        ``newvect = vsrc.sumgauss(low, high, width, var, weight_vec)``
 
 
     Description:
         Create a vector which is a curve calculated by summing gaussians of 
         area 1 centered on all the points in the vector.  This has the 
-        advantage over :code:`histogram` of not imposing arbitrary bins. *low* 
+        advantage over ``histogram`` of not imposing arbitrary bins. *low* 
         and *high* set the range of the curve. 
         *width* determines the granularity of the 
         curve. *var* sets the variance of the gaussians. 
          
-        The optional argument :code:`weight_vec` is a vector which should be the same 
-        size as :code:`vec` and is used to scale or weight the gaussians (default is 
+        The optional argument ``weight_vec`` is a vector which should be the same 
+        size as ``vec`` and is used to scale or weight the gaussians (default is 
         for them all to have areas of 1 unit). 
          
         This function returns a vector, so while it is 
-        necessary to declare a vector object (:code:`objref vectobj`), it is not necessary 
-        to declare *vectobj* as a :code:`new Vector()`. 
+        necessary to declare a vector object (``objref vectobj``), it is not necessary 
+        to declare *vectobj* as a ``new Vector()``. 
          
-        To plot, use :code:`v.indgen(low,high,width)` for the x-vector argument. 
+        To plot, use ``v.indgen(low,high,width)`` for the x-vector argument. 
 
     Example:
 
@@ -1816,18 +1816,18 @@ Vector
 
 
     Syntax:
-        :code:`obj = vdest.smhist(vsrc, start, size, step, var)`
+        ``obj = vdest.smhist(vsrc, start, size, step, var)``
 
-        :code:`obj = vdest.smhist(vsrc, start, size, step, var, weight_vec)`
+        ``obj = vdest.smhist(vsrc, start, size, step, var, weight_vec)``
 
 
     Description:
         Very similar to :func:`sumgauss` . Calculate a smooth histogram by convolving 
         the raw data set with a gaussian kernel.  The histogram begins at 
-        :code:`varstart` and has :code:`varsize` values in increments of size :code:`varstep`. 
-        :code:`varvar` sets the variance of the gaussians. 
-        The optional argument :code:`weight_vec` 
-        is a vector which should be the same size as :code:`vsrc` and is used to scale or 
+        ``varstart`` and has ``varsize`` values in increments of size ``varstep``. 
+        ``varvar`` sets the variance of the gaussians. 
+        The optional argument ``weight_vec`` 
+        is a vector which should be the same size as ``vsrc`` and is used to scale or 
         weight the number of data points at a particular value. 
 
          
@@ -1840,12 +1840,12 @@ Vector
 
 
     Syntax:
-        :code:`newvect = vsrc.ind(vindex)`
+        ``newvect = vsrc.ind(vindex)``
 
 
     Description:
-        Return a new vector consisting of the elements of :code:`vsrc` whose indices are given 
-        by the elements of :code:`vindex`. 
+        Return a new vector consisting of the elements of ``vsrc`` whose indices are given 
+        by the elements of ``vindex``. 
          
 
     Example:
@@ -1860,7 +1860,7 @@ Vector
             vec2.indgen(49, 59, 1) 
             vec1 = vec.ind(vec2) 
 
-        creates :code:`vec1` to contain the fiftieth through the sixtieth elements of :code:`vec2` 
+        creates ``vec1`` to contain the fiftieth through the sixtieth elements of ``vec2`` 
         which would have the values 245 through 295 in increments of 5. 
          
 
@@ -1874,9 +1874,9 @@ Vector
 
 
     Syntax:
-        :code:`obj = vsrcdest.addrand(randobj)`
+        ``obj = vsrcdest.addrand(randobj)``
 
-        :code:`obj = vsrcdest.addrand(randobj, start, end)`
+        ``obj = vsrcdest.addrand(randobj, start, end)``
 
 
     Description:
@@ -1918,9 +1918,9 @@ Vector
 
 
     Syntax:
-        :code:`obj = vdest.setrand(randobj)`
+        ``obj = vdest.setrand(randobj)``
 
-        :code:`obj = vdest.setrand(randobj, start, end)`
+        ``obj = vdest.setrand(randobj, start, end)``
 
 
     Description:
@@ -1937,13 +1937,13 @@ Vector
 
 
     Syntax:
-        :code:`obj = vdest.sin(freq, phase)`
+        ``obj = vdest.sin(freq, phase)``
 
-        :code:`obj = vdest.sin(freq, phase, dt)`
+        ``obj = vdest.sin(freq, phase, dt)``
 
 
     Description:
-        Generate a sin function in vector :code:`vec` with frequency *freq* hz, phase 
+        Generate a sin function in vector ``vec`` with frequency *freq* hz, phase 
         *phase* in radians.  *dt* is assumed to be 1 msec unless specified. 
 
          
@@ -1956,9 +1956,9 @@ Vector
 
 
     Syntax:
-        :code:`obj = vsrcdest.apply("func")`
+        ``obj = vsrcdest.apply("func")``
 
-        :code:`obj = vsrcdest.apply("func", start, end)`
+        ``obj = vsrcdest.apply("func", start, end)``
 
 
     Description:
@@ -1975,7 +1975,7 @@ Vector
 
             vec.apply("sin", 0, 9) 
 
-        applies the sin function to the first ten elements of the vector :code:`vec`. 
+        applies the sin function to the first ten elements of the vector ``vec``. 
 
          
 
@@ -1987,11 +1987,11 @@ Vector
 
 
     Syntax:
-        :code:`x = vsrc.reduce("func")`
+        ``x = vsrc.reduce("func")``
 
-        :code:`x = vsrc.reduce("func", base)`
+        ``x = vsrc.reduce("func", base)``
 
-        :code:`x = vsrc.reduce("func", base, start, end)`
+        ``x = vsrc.reduce("func", base, start, end)``
 
 
     Description:
@@ -2028,7 +2028,7 @@ Vector
 
 
     Syntax:
-        :code:`vec.floor()`
+        ``vec.floor()``
 
 
     Description:
@@ -2046,11 +2046,11 @@ Vector
 
 
     Syntax:
-        :code:`pythonlist = vec.to_python()`
+        ``pythonlist = vec.to_python()``
 
-        :code:`pythonlist = vec.to_python(pythonlist)`
+        ``pythonlist = vec.to_python(pythonlist)``
 
-        :code:`numpyarray = vec.to_python(numpyarray)`
+        ``numpyarray = vec.to_python(numpyarray)``
 
 
     Description:
@@ -2068,9 +2068,9 @@ Vector
 
 
     Syntax:
-        :code:`vec = vec.from_python(pythonlist)`
+        ``vec = vec.from_python(pythonlist)``
 
-        :code:`vec = vec.from_python(numpyarray)`
+        ``vec = vec.from_python(numpyarray)``
 
 
     Description:
@@ -2087,14 +2087,14 @@ Vector
 
 
     Syntax:
-        :code:`error = data_vec.fit(fit_vec,"fcn",indep_vec,&p1,[&p2],...,[&pN])`
+        ``error = data_vec.fit(fit_vec,"fcn",indep_vec,&p1,[&p2],...,[&pN])``
 
 
     Description:
         Use a simplex algorithm to find parameters *p1* through *pN* such to 
         minimize the mean squared error between the "data" contained in 
-        :code:`data_vec` and the approximation generated by the user-supplied "*fcn*" 
-        applied to the elements of :code:`indep_vec`. 
+        ``data_vec`` and the approximation generated by the user-supplied "*fcn*" 
+        applied to the elements of ``indep_vec``. 
          
         *fcn* must take one argument which is the main independent variable 
         followed by one or more arguments which are tunable parameters which 
@@ -2108,10 +2108,10 @@ Vector
         The results of a call to .fit are three-fold.  First, the parameters 
         of best fit are returned by setting the values of the variables *p1* to 
         *pN* (possible because they are passed as pointers).  Second, the values 
-        of the vector fit_vec are set to the fitted function.  If :code:`fit_vec` is 
-        not passed with the same size as :code:`indep_vec` and :code:`data_vec`, it is resized 
+        of the vector fit_vec are set to the fitted function.  If ``fit_vec`` is 
+        not passed with the same size as ``indep_vec`` and ``data_vec``, it is resized 
         accordingly.  Third, the mean squared error between the fitted 
-        function and the data is returned by :code:`.fit`.  The :code:`.fit()` call may be 
+        function and the data is returned by ``.fit``.  The ``.fit()`` call may be 
         reiterated several times until the error has reached an acceptable 
         level. 
          
@@ -2124,7 +2124,7 @@ Vector
         rather slow.  Several commonly-used functions are provided directly 
         in c code and will work much faster.  In each case, if the name below 
         is used, the builtin function will be used and the user is expected to 
-        provide the correct number of arguments (here denoted :code:`a,b,c`...). 
+        provide the correct number of arguments (here denoted ``a,b,c``...). 
 
         .. code-block::
             none
@@ -2200,16 +2200,16 @@ Vector
 
 
     Syntax:
-        :code:`obj = ysrcdest.interpolate(xdest, xsrc)`
+        ``obj = ysrcdest.interpolate(xdest, xsrc)``
 
-        :code:`obj = ydest.interpolate(xdest, xsrc, ysrc)`
+        ``obj = ydest.interpolate(xdest, xsrc, ysrc)``
 
 
     Description:
         Linearly interpolate points from (xsrc,ysrc) to (xdest,ydest) 
         In the second form, xsrc and ysrc remain unchanged. 
         Destination points outside the domain of xsrc are set to 
-        :code:`ysrc[0]` or :code:`ysrc[ysrc.size-1]`
+        ``ysrc[0]`` or ``ysrc[ysrc.size-1]``
 
     Example:
 
@@ -2250,45 +2250,45 @@ Vector
 
 
     Syntax:
-        :code:`obj = vdest.deriv(vsrc)`
+        ``obj = vdest.deriv(vsrc)``
 
-        :code:`obj = vdest.deriv(vsrc, dx)`
+        ``obj = vdest.deriv(vsrc, dx)``
 
-        :code:`obj = vdest.deriv(vsrc, dx, method)`
+        ``obj = vdest.deriv(vsrc, dx, method)``
 
-        :code:`obj = vsrcdest.deriv()`
+        ``obj = vsrcdest.deriv()``
 
-        :code:`obj = vsrcdest.deriv(dx)`
+        ``obj = vsrcdest.deriv(dx)``
 
-        :code:`obj = vsrcdest.deriv(dx, method)`
+        ``obj = vsrcdest.deriv(dx, method)``
 
 
     Description:
-        The numerical Euler derivative or the central difference derivative of :code:`vec` 
-        is placed in :code:`vdest`. 
+        The numerical Euler derivative or the central difference derivative of ``vec`` 
+        is placed in ``vdest``. 
         The variable *dx* gives the increment of the independent variable 
-        between successive elements of :code:`vec`. 
+        between successive elements of ``vec``. 
 
 
         *method* = 1 = Euler derivative: 
-            :code:`vec1[i] = (vec[i+1] - vec[i])/dx` 
+            ``vec1[i] = (vec[i+1] - vec[i])/dx`` 
  
             Each time this method is used, 
             the first element 
-            of :code:`vec` is lost since *i* cannot equal -1.  Therefore, since the 
-            :code:`integral` function performs an Euler 
-            integration, the integral of :code:`vec1` will reproduce :code:`vec` minus the first 
+            of ``vec`` is lost since *i* cannot equal -1.  Therefore, since the 
+            ``integral`` function performs an Euler 
+            integration, the integral of ``vec1`` will reproduce ``vec`` minus the first 
             element. 
 
         *method* = 2 = Central difference derivative: 
-            :code:`vec1[i] = ((vec[i+1]-vec[i-1])/2)/dx` 
+            ``vec1[i] = ((vec[i+1]-vec[i-1])/2)/dx`` 
  
             This method produces an Euler derivative for the first and last 
-            elements of :code:`vec1`.  The central difference method maintains the 
-            same number of elements in :code:`vec1` 
-            as were in :code:`vec` and is a more accurate method than the Euler method. 
+            elements of ``vec1``.  The central difference method maintains the 
+            same number of elements in ``vec1`` 
+            as were in ``vec`` and is a more accurate method than the Euler method. 
             A vector differentiated by this method cannot, however, be integrated 
-            to reproduce the original :code:`vec`. 
+            to reproduce the original ``vec``. 
 
          
 
@@ -2307,7 +2307,7 @@ Vector
             vec.apply("sq") 
             vec1.deriv(vec, 0.1) 
 
-        creates :code:`vec1` with elements: 
+        creates ``vec1`` with elements: 
 
         .. code-block::
             none
@@ -2319,7 +2319,7 @@ Vector
         Since *dx*\ =0.1, and there are eleven elements including 0, 
         the entire function exists between the values of 0 and 1, and the derivative 
         values are large compared to the function values. With *dx*\ =1,the vector 
-        :code:`vec1` would consist of the following elements: 
+        ``vec1`` would consist of the following elements: 
 
         .. code-block::
             none
@@ -2331,7 +2331,7 @@ Vector
          
         The Euler method vs. the Central difference method:
  
-        Beginning with the vector :code:`vec`: 
+        Beginning with the vector ``vec``: 
 
         .. code-block::
             none
@@ -2340,8 +2340,8 @@ Vector
             4	9	 
             16	25 
 
-        :code:`vec1.deriv(vec, 1, 1)` (Euler) would go about 
-        producing :code:`vec1` by the following method: 
+        ``vec1.deriv(vec, 1, 1)`` (Euler) would go about 
+        producing ``vec1`` by the following method: 
 
         .. code-block::
             none
@@ -2350,8 +2350,8 @@ Vector
             9-4   = 5	16-9 = 7	 
             25-16 = 9 
 
-        whereas :code:`vec1.deriv(vec, 1, 2)` (Central difference) would go about 
-        producing :code:`vec1` as such: 
+        whereas ``vec1.deriv(vec, 1, 2)`` (Central difference) would go about 
+        producing ``vec1`` as such: 
 
         .. code-block::
             none
@@ -2371,21 +2371,21 @@ Vector
 
 
     Syntax:
-        :code:`obj = vdest.integral(vsrc)`
+        ``obj = vdest.integral(vsrc)``
 
-        :code:`obj = vdest.integral(vsrc, dx)`
+        ``obj = vdest.integral(vsrc, dx)``
 
-        :code:`obj = vsrcdest.integral()`
+        ``obj = vsrcdest.integral()``
 
-        :code:`obj = vsrcdest.integral(dx)`
+        ``obj = vsrcdest.integral(dx)``
 
 
     Description:
         Places a numerical Euler integral of the vsrc elements in vdest. 
         *dx* sets the size of the discretization. 
          
-        :code:`vdest[i+1] = vdest[i] + vsrc[i+1]` and the first element of :code:`vdest` is always 
-        equal to the first element of :code:`vsrc`. 
+        ``vdest[i+1] = vdest[i] + vsrc[i+1]`` and the first element of ``vdest`` is always 
+        equal to the first element of ``vsrc``. 
 
     Example:
 
@@ -2402,7 +2402,7 @@ Vector
             			//an x-squared function, dx = 0.1 
             vec1.printf() 
 
-        will print the following elements in :code:`vec1` to the screen: 
+        will print the following elements in ``vec1`` to the screen: 
 
         .. code-block::
             none
@@ -2426,8 +2426,8 @@ Vector
             for i=0,5{vec2.x[i] = vec1.x[i*10]}  //put the value of every 10th index in vec2 
             vec2.printf() 
 
-        will print the following elements in :code:`vec2` (which are the elements of 
-        :code:`vec1` corresponding to the integers 0-5) to the screen: 
+        will print the following elements in ``vec2`` (which are the elements of 
+        ``vec1`` corresponding to the integers 0-5) to the screen: 
 
         .. code-block::
             none
@@ -2458,11 +2458,11 @@ Vector
 
 
     Syntax:
-        :code:`median = vsrc.median()`
+        ``median = vsrc.median()``
 
 
     Description:
-        Find the median value of :code:`vec`. 
+        Find the median value of ``vec``. 
 
          
 
@@ -2474,13 +2474,13 @@ Vector
 
 
     Syntax:
-        :code:`obj = vdest.medfltr(vsrc)`
+        ``obj = vdest.medfltr(vsrc)``
 
-        :code:`obj = vdest.medfltr(vsrc, points)`
+        ``obj = vdest.medfltr(vsrc, points)``
 
-        :code:`obj = vsrcdest.medfltr()`
+        ``obj = vsrcdest.medfltr()``
 
-        :code:`obj = vsrcdest.medfltr( points)`
+        ``obj = vsrcdest.medfltr( points)``
 
 
     Description:
@@ -2499,11 +2499,11 @@ Vector
 
 
     Syntax:
-        :code:`obj = vsrcdest.sort()`
+        ``obj = vsrcdest.sort()``
 
 
     Description:
-        Sort the elements of :code:`vec1` in place, putting them in numerical order. 
+        Sort the elements of ``vec1`` in place, putting them in numerical order. 
 
          
 
@@ -2515,9 +2515,9 @@ Vector
 
 
     Syntax:
-        :code:`vdest = vsrc.sortindex()`
+        ``vdest = vsrc.sortindex()``
 
-        :code:`vdest = vsrc.sortindex(vdest)`
+        ``vdest = vsrc.sortindex(vdest)``
 
 
     Description:
@@ -2554,11 +2554,11 @@ Vector
 
 
     Syntax:
-        :code:`obj = vsrcdest.reverse()`
+        ``obj = vsrcdest.reverse()``
 
 
     Description:
-        Reverses the elements of :code:`vec` in place. 
+        Reverses the elements of ``vec`` in place. 
 
          
 
@@ -2570,9 +2570,9 @@ Vector
 
 
     Syntax:
-        :code:`obj = vsrcdest.rotate(value)`
+        ``obj = vsrcdest.rotate(value)``
 
-        :code:`obj = vsrcdest.rotate(value, 0)`
+        ``obj = vsrcdest.rotate(value, 0)``
 
 
     Description:
@@ -2590,7 +2590,7 @@ Vector
             vec.indgen(1, 10, 1) 
             vec.rotate(3) 
 
-        orders the elements of :code:`vec` as follows: 
+        orders the elements of ``vec`` as follows: 
 
         .. code-block::
             none
@@ -2605,7 +2605,7 @@ Vector
             vec.indgen(1, 10, 1) 
             vec.rotate(-3) 
 
-        orders the elements of :code:`vec` as follows: 
+        orders the elements of ``vec`` as follows: 
 
         .. code-block::
             none
@@ -2636,15 +2636,15 @@ Vector
 
 
     Syntax:
-        :code:`obj = vdest.rebin(vsrc,factor)`
+        ``obj = vdest.rebin(vsrc,factor)``
 
-        :code:`obj = vsrcdest.rebin(factor)`
+        ``obj = vsrcdest.rebin(factor)``
 
 
     Description:
-        Compresses length of vector :code:`vsrc` by an integer *factor*.  The sum of 
+        Compresses length of vector ``vsrc`` by an integer *factor*.  The sum of 
         elements is conserved, unless the *factor* produces a remainder, 
-        in which case the remainder values are truncated from :code:`vdest`. 
+        in which case the remainder values are truncated from ``vdest``. 
 
     Example:
 
@@ -2654,14 +2654,14 @@ Vector
             vec.indgen(1, 10, 1) 
             vec1.rebin(vec, 2) 
 
-        produces :code:`vec1`: 
+        produces ``vec1``: 
 
         .. code-block::
             none
 
             3  7  11  15  19 
 
-        where each pair of :code:`vec` elements is added together into one element. 
+        where each pair of ``vec`` elements is added together into one element. 
          
         But, 
 
@@ -2671,8 +2671,8 @@ Vector
             vec.indgen(1, 10, 1) 
             vec1.rebin(vec, 3) 
 
-        adds trios :code:`vec` elements and gets rid of the value 10, producing 
-        :code:`vec1`: 
+        adds trios ``vec`` elements and gets rid of the value 10, producing 
+        ``vec1``: 
 
         .. code-block::
             none
@@ -2690,9 +2690,9 @@ Vector
 
 
     Syntax:
-        :code:`obj = vdest.pow(vsrc, power)`
+        ``obj = vdest.pow(vsrc, power)``
 
-        :code:`obj = vsrcdest.pow(power)`
+        ``obj = vsrcdest.pow(power)``
 
 
     Description:
@@ -2709,9 +2709,9 @@ Vector
 
 
     Syntax:
-        :code:`obj = vdest.sqrt(vsrc)`
+        ``obj = vdest.sqrt(vsrc)``
 
-        :code:`obj = vsrcdest.sqrt()`
+        ``obj = vsrcdest.sqrt()``
 
 
     Description:
@@ -2727,9 +2727,9 @@ Vector
 
 
     Syntax:
-        :code:`obj = vdest.log(vsrc)`
+        ``obj = vdest.log(vsrc)``
 
-        :code:`obj = vsrcdest.log()`
+        ``obj = vsrcdest.log()``
 
 
     Description:
@@ -2745,9 +2745,9 @@ Vector
 
 
     Syntax:
-        :code:`obj = vdest.log10(vsrc)`
+        ``obj = vdest.log10(vsrc)``
 
-        :code:`obj = vsrcdest.log10()`
+        ``obj = vsrcdest.log10()``
 
 
     Description:
@@ -2763,9 +2763,9 @@ Vector
 
 
     Syntax:
-        :code:`obj = vdest.tanh(vsrc)`
+        ``obj = vdest.tanh(vsrc)``
 
-        :code:`obj = vsrcdest.tanh()`
+        ``obj = vsrcdest.tanh()``
 
 
     Description:
@@ -2781,9 +2781,9 @@ Vector
 
 
     Syntax:
-        :code:`obj = vdest.abs(vsrc)`
+        ``obj = vdest.abs(vsrc)``
 
-        :code:`obj = vsrcdest.abs()`
+        ``obj = vsrcdest.abs()``
 
 
     Description:
@@ -2814,12 +2814,12 @@ Vector
 
 
     Syntax:
-        :code:`obj = vdest.index(vsrc,  indices)`
+        ``obj = vdest.index(vsrc,  indices)``
 
 
     Description:
-        The values of the vector :code:`vsrc` indexed by the vector *indices* are collected 
-        into :code:`vdest`. 
+        The values of the vector ``vsrc`` indexed by the vector *indices* are collected 
+        into ``vdest``. 
          
 
     Example:
@@ -2838,8 +2838,8 @@ Vector
             vec2.indgen(0, 50,10) 
             vec3.index(vec1, vec2)  //put the value of every 10th index in vec2 
 
-        makes :code:`vec3` with six elements corresponding to the integrated integers from 
-        :code:`vec`. 
+        makes ``vec3`` with six elements corresponding to the integrated integers from 
+        ``vec``. 
 
          
 
@@ -2851,9 +2851,9 @@ Vector
 
 
     Syntax:
-        :code:`x = vec.min()`
+        ``x = vec.min()``
 
-        :code:`x = vec.min(start, end)`
+        ``x = vec.min(start, end)``
 
 
     Description:
@@ -2869,9 +2869,9 @@ Vector
 
 
     Syntax:
-        :code:`i = vec.min_ind()`
+        ``i = vec.min_ind()``
 
-        :code:`i = vec.min_ind(start, end)`
+        ``i = vec.min_ind(start, end)``
 
 
     Description:
@@ -2887,9 +2887,9 @@ Vector
 
 
     Syntax:
-        :code:`x = vec.max()`
+        ``x = vec.max()``
 
-        :code:`x = vec.max(start, end)`
+        ``x = vec.max(start, end)``
 
 
     Description:
@@ -2905,9 +2905,9 @@ Vector
 
 
     Syntax:
-        :code:`i = vec.max_ind()`
+        ``i = vec.max_ind()``
 
-        :code:`i = vec.max_ind(start, end)`
+        ``i = vec.max_ind(start, end)``
 
 
     Description:
@@ -2923,9 +2923,9 @@ Vector
 
 
     Syntax:
-        :code:`x = vec.sum()`
+        ``x = vec.sum()``
 
-        :code:`x = vec.sum(start, end)`
+        ``x = vec.sum(start, end)``
 
 
     Description:
@@ -2941,9 +2941,9 @@ Vector
 
 
     Syntax:
-        :code:`x = vec.sumsq()`
+        ``x = vec.sumsq()``
 
-        :code:`x = vec.sumsq(start, end)`
+        ``x = vec.sumsq(start, end)``
 
 
     Description:
@@ -2959,9 +2959,9 @@ Vector
 
 
     Syntax:
-        :code:`x =  vec.mean()`
+        ``x =  vec.mean()``
 
-        :code:`x =  vec.mean(start, end)`
+        ``x =  vec.mean(start, end)``
 
 
     Description:
@@ -2977,9 +2977,9 @@ Vector
 
 
     Syntax:
-        :code:`x = vec.var()`
+        ``x = vec.var()``
 
-        :code:`x = vec.var(start, end)`
+        ``x = vec.var(start, end)``
 
 
     Description:
@@ -2995,9 +2995,9 @@ Vector
 
 
     Syntax:
-        :code:`vec.stdev()`
+        ``vec.stdev()``
 
-        :code:`vec.stdev(start,end)`
+        ``vec.stdev(start,end)``
 
 
     Description:
@@ -3013,9 +3013,9 @@ Vector
 
 
     Syntax:
-        :code:`x = vec.stderr()`
+        ``x = vec.stderr()``
 
-        :code:`x = vec.stderr(start, end)`
+        ``x = vec.stderr(start, end)``
 
 
     Description:
@@ -3031,11 +3031,11 @@ Vector
 
 
     Syntax:
-        :code:`x = vec.dot(vec1)`
+        ``x = vec.dot(vec1)``
 
 
     Description:
-        Return the dot (inner) product of :code:`vec` and *vec1*. 
+        Return the dot (inner) product of ``vec`` and *vec1*. 
 
          
 
@@ -3047,7 +3047,7 @@ Vector
 
 
     Syntax:
-        :code:`x = vec.mag()`
+        ``x = vec.mag()``
 
 
     Description:
@@ -3063,15 +3063,15 @@ Vector
 
 
     Syntax:
-        :code:`obj = vsrcdest.add(scalar)`
+        ``obj = vsrcdest.add(scalar)``
 
-        :code:`obj = vsrcdest.add(vec1)`
+        ``obj = vsrcdest.add(vec1)``
 
 
     Description:
         Add either a scalar to each element of the vector or add the corresponding 
-        elements of *vec1* to the elements of :code:`vsrcdest`. 
-        :code:`vsrcdest` and *vec1* must have the same size. 
+        elements of *vec1* to the elements of ``vsrcdest``. 
+        ``vsrcdest`` and *vec1* must have the same size. 
 
          
 
@@ -3083,15 +3083,15 @@ Vector
 
 
     Syntax:
-        :code:`obj = vsrcdest.sub(scalar)`
+        ``obj = vsrcdest.sub(scalar)``
 
-        :code:`obj = vsrcdest.sub(vec1)`
+        ``obj = vsrcdest.sub(vec1)``
 
 
     Description:
         Subtract either a scalar from each element of the vector or subtract the 
-        corresponding elements of *vec1* from the elements of :code:`vsrcdest`. 
-        :code:`vsrcdest` and *vec1* must have the same size. 
+        corresponding elements of *vec1* from the elements of ``vsrcdest``. 
+        ``vsrcdest`` and *vec1* must have the same size. 
 
          
 
@@ -3103,14 +3103,14 @@ Vector
 
 
     Syntax:
-        :code:`obj = vsrcdest.mul(scalar)`
+        ``obj = vsrcdest.mul(scalar)``
 
-        :code:`obj = vsrcdest.mul(vec1)`
+        ``obj = vsrcdest.mul(vec1)``
 
 
     Description:
-        Multiply each element of :code:`vsrcdest` either by either a scalar or the 
-        corresponding elements of *vec1*.  :code:`vsrcdest` 
+        Multiply each element of ``vsrcdest`` either by either a scalar or the 
+        corresponding elements of *vec1*.  ``vsrcdest`` 
         and *vec1* must have the same size. 
 
          
@@ -3123,14 +3123,14 @@ Vector
 
 
     Syntax:
-        :code:`obj = vsrcdest.div(scalar)`
+        ``obj = vsrcdest.div(scalar)``
 
-        :code:`obj = vsrcdest.div(vec1)`
+        ``obj = vsrcdest.div(vec1)``
 
 
     Description:
-        Divide each element of :code:`vsrcdest` either by a scalar or by the 
-        corresponding elements of *vec1*.  :code:`vsrcdest` 
+        Divide each element of ``vsrcdest`` either by a scalar or by the 
+        corresponding elements of *vec1*.  ``vsrcdest`` 
         and *vec1* must have the same size. 
 
          
@@ -3143,7 +3143,7 @@ Vector
 
 
     Syntax:
-        :code:`scale = vsrcdest.scale(low, high)`
+        ``scale = vsrcdest.scale(low, high)``
 
 
     Description:
@@ -3160,7 +3160,7 @@ Vector
 
 
     Syntax:
-        :code:`boolean = vec.eq(vec1)`
+        ``boolean = vec.eq(vec1)``
 
 
     Description:
@@ -3178,18 +3178,18 @@ Vector
 
 
     Syntax:
-        :code:`x = vec.meansqerr(vec1)`
+        ``x = vec.meansqerr(vec1)``
 
-        :code:`x = vec.meansqerr(vec1, weight_vec)`
+        ``x = vec.meansqerr(vec1, weight_vec)``
 
 
     Description:
-        Return the mean squared error between values of the elements of :code:`vec` and 
-        the corresponding elements of *vec1*.  :code:`vec` and *vec1* must have the 
+        Return the mean squared error between values of the elements of ``vec`` and 
+        the corresponding elements of *vec1*.  ``vec`` and *vec1* must have the 
         same size. 
          
         If the second vector arg is present, it also must have the same size and the 
-        return value is sum of :code:`w[i]*(v1[i] - v2[i])^2 / size`
+        return value is sum of ``w[i]*(v1[i] - v2[i])^2 / size``
 
          
 
@@ -3209,9 +3209,9 @@ Refer to this source for further information.
 
 
     Syntax:
-        :code:`obj = vdest.correl(src)`
+        ``obj = vdest.correl(src)``
 
-        :code:`obj = vdest.correl(src, vec2)`
+        ``obj = vdest.correl(src, vec2)``
 
 
     Description:
@@ -3228,16 +3228,16 @@ Refer to this source for further information.
 
 
     Syntax:
-        :code:`obj = vdest.convlv(src,filter)`
+        ``obj = vdest.convlv(src,filter)``
 
-        :code:`obj = vdest.convlv(src,filter, sign)`
+        ``obj = vdest.convlv(src,filter, sign)``
 
 
     Description:
         Compute the convolution of *src* with *filter*.  If <sign>=-1 then 
         compute the deconvolution. 
         Assumes filter is given in "wrap-around" order, with countup 
-        :code:`t=0..t=n/2` followed by countdown :code:`t=n..t=n/2`.  The size of *filter* 
+        ``t=0..t=n/2`` followed by countdown ``t=n..t=n/2``.  The size of *filter* 
         should be an odd <= the size of *v1*>. 
 
     Example:
@@ -3267,7 +3267,7 @@ Refer to this source for further information.
 
 
     Syntax:
-        :code:`obj = vdest.spctrm(vsrc)`
+        ``obj = vdest.spctrm(vsrc)``
 
 
     Description:
@@ -3283,9 +3283,9 @@ Refer to this source for further information.
 
 
     Syntax:
-        :code:`obj = vdest.filter(src,filter)`
+        ``obj = vdest.filter(src,filter)``
 
-        :code:`obj = vsrcdest.filter(filter)`
+        ``obj = vsrcdest.filter(filter)``
 
 
     Description:
@@ -3304,9 +3304,9 @@ Refer to this source for further information.
 
 
     Syntax:
-        :code:`obj = vdest.fft(vsrc, sign)`
+        ``obj = vdest.fft(vsrc, sign)``
 
-        :code:`obj = vsrcdest.fft(sign)`
+        ``obj = vsrcdest.fft(sign)``
 
 
     Description:
@@ -3534,7 +3534,7 @@ Refer to this source for further information.
 
 
     Syntax:
-        :code:`v1.trigavg(data,trigger,pre,post)`
+        ``v1.trigavg(data,trigger,pre,post)``
 
 
     Description:
@@ -3553,7 +3553,7 @@ Refer to this source for further information.
 
 
     Syntax:
-        :code:`v.spikebin(data,thresh)`
+        ``v.spikebin(data,thresh)``
 
 
     Description:
@@ -3572,7 +3572,7 @@ Refer to this source for further information.
 
 
     Syntax:
-        :code:`vmeanfreq = vdest.psth(vsrchist,dt,trials,size)`
+        ``vmeanfreq = vdest.psth(vsrchist,dt,trials,size)``
 
 
     Description:
@@ -3586,7 +3586,7 @@ Refer to this source for further information.
         widening the window until the number of spikes under the 
         window equals size.  Then f_mean[i] is calculated as 
          
-        :code:`f_mean[i] = N[i] / (m dt trials)` 
+        ``f_mean[i] = N[i] / (m dt trials)`` 
          
         where 
 
@@ -3670,7 +3670,7 @@ Refer to this source for further information.
 
 
     Syntax:
-        :code:`v.inf(i,dt,gl,el,cm,th,res,[ref])`
+        ``v.inf(i,dt,gl,el,cm,th,res,[ref])``
 
 
     Description:
@@ -3694,7 +3694,7 @@ Refer to this source for further information.
 
 
     Syntax:
-        :code:`v1.resample(v2,rate)`
+        ``v1.resample(v2,rate)``
 
 
     Description:
