@@ -5,7 +5,9 @@ NEURON 7.3 documentation
 Quick Links
 -----------
 - :ref:`genindex`
-- :ref:`search`
+- Old documentation: `Quick Index <http://www.neuron.yale.edu/neuron/static/docs/help/quick_reference.html>`_ (contributed by `Mike Neubig <neubig@salk.edu>`_\ ),
+  `Index <http://www.neuron.yale.edu/neuron/static/docs/help/index.html>`_\ ,
+  `Contents <http://www.neuron.yale.edu/neuron/static/docs/help/hier.html>`_
 - Commonly used:
     :class:`Deck`, :class:`File`, :class:`Glyph`, :class:`Graph`, :class:`GUIMath`,
     :class:`List`, :class:`Matrix`, :class:`Pointer`, :class:`PWManager`,
@@ -26,17 +28,29 @@ Quick Links
     
     :ref:`neuron_rxd`,
     :func:`neuron.rxd.geometry3d.surface`, :func:`neuron.rxd.geometry3d.voxelize`
-- Old documentation: `Quick Index <http://www.neuron.yale.edu/neuron/static/docs/help/quick_reference.html>`_ (contributed by `Mike Neubig <neubig@salk.edu>`_\ ),
-  `Index <http://www.neuron.yale.edu/neuron/static/docs/help/index.html>`_\ ,
-  `Contents <http://www.neuron.yale.edu/neuron/static/docs/help/hier.html>`_
 
-Tools
------
+
+neuron.exe
+----------
 
 .. toctree::
     :maxdepth: 2
 
-    neuron/project/project.rst
+    neuron.exe/general.rst
+    neuron.exe/neuron.rst
+
+
+neuron
+------
+
+.. toctree::
+    :maxdepth: 2
+
+    neuron/general.rst
+    neuron/neuron.rst
+    neuron/stdrun.rst
+    neuron/rxd.rst
+
 
 NMODL
 -----
@@ -46,31 +60,11 @@ NMODL
 
     NMODL/ModelDescriptionLanguage.rst
     neuron/nmodl/nmodl.rst
-    
-neuron.exe
-----------
 
-.. toctree::
-    :maxdepth: 2
-
-    neuron.exe/neuron.rst
-    neuron.exe/general.rst
-
-
-neuron
-------
-
-.. toctree::
-    :maxdepth: 2
-
-    neuron/neuron.rst
-    neuron/general.rst
-    neuron/stdrun.rst
-    neuron/rxd.rst
-    
 
 GUI
 ---
+
 .. toctree::
     :maxdepth: 2
 
@@ -79,3 +73,13 @@ GUI
     GUI/NEURONMainMenu.rst
     neuron/agui/gui.rst
     GUI/LookAndFeel.rst
+
+
+Tools
+-----
+
+.. toctree::
+    :maxdepth: 2
+
+    neuron/project/project.rst
+

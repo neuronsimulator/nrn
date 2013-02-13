@@ -1,7 +1,7 @@
 .. _panel:
 
          
-Button Menu Panel
+button menu panel
 -----------------
 
 The following are implemented as hoc functions. They are used to create 

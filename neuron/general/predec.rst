@@ -2,7 +2,7 @@
 
 .. _predeclared-variables:
 
-Predeclared Variables
+predeclared variables
 ---------------------
 
 

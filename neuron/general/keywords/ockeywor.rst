@@ -1,9 +1,8 @@
 .. _ockeywor:
 
-HOC Keywords
+hoc keywords
 ------------
 
-         
 
 
 .. index::  help (keyword)

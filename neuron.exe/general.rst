@@ -4,10 +4,11 @@ general
 .. toctree::
     :maxdepth: 3
 
+    ../neuron/general/ocsyntax.rst
+    ../neuron/general/keywords/ockeywor.rst
+    ../neuron/general/predec.rst
     general/functions.rst
     ../neuron/general/function/panel.rst
-    general/classes.rst
-    general/keywords.rst
     ../neuron/general/oop.rst
-    ../neuron/general/predec.rst
-    ../neuron/general/ocsyntax.rst
+    general/classes.rst
+
