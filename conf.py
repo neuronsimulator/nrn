@@ -91,15 +91,40 @@ pygments_style = 'sphinx'
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-html_theme = 'default'
+# html_theme = 'default'
+html_theme = "notdefault" # left justified
+
+# html_theme = 'agogo' # messes up sidebar menu
+# html_theme_options = { # for agogo
+#  "textalign": "false"
+# }
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
-#html_theme_options = {}
+# html_theme_options = {}
+# html_theme_options = {
+#    "collapsiblesidebar": "true"
+# }
+html_theme_options = {
+    "bgcolor": "#ffffff",
+    "textcolor": "#000",
+    "linkcolor": "#4356b4",
+    "visitedlinkcolor": "#59a5f0",
+    "sidebarbgcolor": "#e8e8e8",
+    "sidebartextcolor": "#000",
+    "sidebarlinkcolor": "#4356b4",
+    "relbarbgcolor": "#4356b4",
+    "relbartextcolor": "#fff",
+    "relbarlinkcolor": "#fff",
+    "footerbgcolor": "#303d80",
+    "footertextcolor": "#fff",
+    "codebgcolor": "#eee",
+    "headbgcolor": "#cddaff"
+}
 
 # Add any paths that contain custom themes here, relative to this directory.
-#html_theme_path = []
+html_theme_path = ["./customthemes"]
 
 # The name for this set of Sphinx documents.  If None, it defaults to
 # "<project> v<release> documentation".
