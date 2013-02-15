@@ -1,5 +1,5 @@
-general
-=======
+neuron.exe/general
+==================
 
 .. toctree::
     :maxdepth: 3

@@ -3,14 +3,14 @@
 
 .. _ocsyntax:
 
-Syntax
+syntax
 ------
 
 
 
 .. index::  comments
 
-Comments
+comments
 ~~~~~~~~
 Syntax:
     ``/*...*/``
@@ -28,7 +28,7 @@ Description:
 
 .. index::  expression
 
-Expression
+expression
 ~~~~~~~~~~
 
 Description:
@@ -102,7 +102,7 @@ Options:
          
   .. index::  statement       
 
-Statement
+statement
 ~~~~~~~~~
 
 Syntax:
@@ -307,7 +307,7 @@ Example:
 
 .. _arguments:
 
-Arguments
+arguments
 ~~~~~~~~~
 
      
