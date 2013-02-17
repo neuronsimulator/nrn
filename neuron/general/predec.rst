@@ -106,7 +106,7 @@ predeclared variables
 
 
 
-Constants
+constants
 ~~~~~~~~~
 
 The following mathematical and physical constants are built-in: 
