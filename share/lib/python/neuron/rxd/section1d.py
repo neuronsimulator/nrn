@@ -137,15 +137,15 @@ class Section1D(rxdsection.RxDSection):
             # TODO: verify that these are correct
             if i == 0:
                 gil2 = g.getval(il, il)
-                g.setval(il, il, gil2 + rate_l)
+                g.setval(il, il, gil2 + rate_l * _volumes[io])
                 gilio = g.getval(il, io)
-                g.setval(il, io, gilio - rate_l)
+                g.setval(il, io, gilio - rate_l * _volumes[io])
             if i == self.nseg - 1:
                 ir = io + 1
                 gir2 = g.getval(ir, ir)
                 girio = g.getval(ir, io)
-                g.setval(ir, ir, gir2 + rate_r)
-                g.setval(ir, io, girio - rate_r)
+                g.setval(ir, ir, gir2 + rate_r * _volumes[io])
+                g.setval(ir, io, girio - rate_r * _volumes[io])
             
 
     def _import_concentration(self, init):

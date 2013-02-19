@@ -77,7 +77,7 @@ def _perimeter1d(sec):
              for i in xrange(int(h.n3d(sec=sec)))]
     diam3d = [h.diam3d(i, sec=sec)
               for i in xrange(int(h.n3d(sec=sec)))]
-    area_pos = numpy.linspace(0, 1, sec.nseg + 1)
+    area_pos = numpy.linspace(0, sec.L, sec.nseg + 1)
     diams = numpy.interp(area_pos, arc3d, diam3d)
     return numpy.pi * diams    
     
@@ -86,9 +86,9 @@ def _neighbor_areas1d(sec):
              for i in xrange(int(h.n3d(sec=sec._sec)))]
     diam3d = [h.diam3d(i, sec=sec._sec)
               for i in xrange(int(h.n3d(sec=sec._sec)))]
-    area_pos = numpy.linspace(0, 1, sec.nseg + 1)
-    diams = numpy.interp(area_pos, arc3d, diam3d)
-    return numpy.pi * .25 * diams ** 2
+    area_pos = numpy.linspace(0, sec.L, sec.nseg + 1)
+    areas = numpy.pi * 0.25 * numpy.array(diam3d) ** 2
+    return numpy.interp(area_pos, arc3d, areas)
 
 def constant_function_per_length(value):
     return lambda sec: [value * sec.L / sec.nseg for i in xrange(sec.nseg)]
@@ -219,7 +219,7 @@ class Shell(RxDGeometry):
                  for i in xrange(int(h.n3d(sec=sec._sec)))]
         diam3d = [h.diam3d(i, sec=sec._sec)
                   for i in xrange(int(h.n3d(sec=sec._sec)))]
-        area_pos = numpy.linspace(0, 1, sec.nseg + 1)
+        area_pos = numpy.linspace(0, sec.L, sec.nseg + 1)
         diams = numpy.interp(area_pos, arc3d, diam3d)
         if self._type == _lo_hi_shell:
             return numpy.pi * .25 * ((diams * self._hi) ** 2 - (diams * self._lo) ** 2)

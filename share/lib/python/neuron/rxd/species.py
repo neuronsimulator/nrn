@@ -7,6 +7,7 @@ from neuron import h, nrn
 import node
 import nodelist
 import rxdmath
+import numpy
 
 _defined_species = {}
 def _get_all_species():
@@ -93,6 +94,13 @@ class SpeciesOnRegion(_SpeciesMathable):
         if self._species() is None or self._region() is None:
             return []
         return self._species()._indices(self._region())
+    
+    
+    @property
+    def states(self):
+        """A vector of all the states corresponding to this species"""
+        all_states = node._get_states()
+        return [all_states[i] for i in numpy.sort(self.indices())]
     
     @property
     def nodes(self):
@@ -217,6 +225,18 @@ class Species(_SpeciesMathable):
         self._has_adjusted_offsets = False
         self._assign_parents()
         self._update_region_indices()
+
+    @property
+    def states(self):
+        """A vector of all the states corresponding to this species"""
+        all_states = node._get_states()
+        return [all_states[i] for i in numpy.sort(self.indices())]
+
+
+
+    def re_init(self):
+        """Reinitialize the rxd concentration of this species to match the NEURON grid"""
+        self._import_concentration(init=False)
 
     def __getitem__(self, r):
         """Return a reference to those members of this species lying on the specific region @varregion.

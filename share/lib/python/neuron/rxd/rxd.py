@@ -58,7 +58,11 @@ def _advance2():
     section1d._transfer_to_legacy()
     last_diam_change_cnt = _cvode_object.diam_change_count()
     
-
+def re_init():
+    """reinitializes all rxd concentrations to match HOC values"""
+    for sr in species._get_all_species().values():
+        s = sr()
+        if s is not None: s.re_init()
 
 def _invalidate_matrices():
     # TODO: make a separate variable for this?

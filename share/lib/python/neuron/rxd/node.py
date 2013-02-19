@@ -97,6 +97,10 @@ class Node(object):
         return _volumes[self._index]
     
     @property
+    def segment(self):
+        return self._sec._sec(self.x)
+    
+    @property
     def surface_area(self):
         """The surface area of the compartment in square microns.
         
