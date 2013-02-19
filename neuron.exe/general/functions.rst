@@ -307,7 +307,16 @@ math
 .. toctree::
     :maxdepth: 2
 
-    ../../neuron/general/function/sin.rst
+    ../../neuron/general/function/math.rst
+
+
+mcell_ran4
+----------
+
+.. toctree::
+    :maxdepth: 2
+
+    ../../neuron/general/function/mcran4.rst
 
 
 namespace-related

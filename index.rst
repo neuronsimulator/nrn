@@ -22,7 +22,7 @@ Quick Links
     :class:`RangeVarPlot`, :class:`SaveState`, :class:`SectionBrowser`,
     :class:`SectionList`, :class:`SectionRef`, :class:`Shape`
     
-    :ref:`panel`, :ref:`funfit`, :ref:`geometry`, :ref:`printf_doc`, :ref:`ockeywor`, :ref:`sin`,
+    :ref:`panel`, :ref:`funfit`, :ref:`geometry`, :ref:`printf_doc`, :ref:`ockeywor`, :ref:`math`,
     :ref:`nmodl2`, :ref:`nmodl`, :ref:`lw_doc`, :ref:`mech`, :ref:`predec`, :ref:`0stdrun`,
     :ref:`ocsyntax`, :ref:`topology`
     

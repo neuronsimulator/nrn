@@ -1,7 +1,7 @@
-.. _mcran4:
+.. _mcell_ran4:
 
-mcran4
-------
+mcell_ran4
+----------
 
          
 
