@@ -554,6 +554,7 @@ session-related
         all neuron state/parameters with mechanisms. 
         Many aspects of the GUI are not included. 
          
+    .. warning::
         There is not enough implementation at this time to make this 
         facility useful. Use the :class:`SaveState` class instead.
 
