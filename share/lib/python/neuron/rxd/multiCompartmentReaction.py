@@ -17,7 +17,6 @@ class MultiCompartmentReaction(GeneralizedReaction):
     def __init__(self, scheme, rate_f, rate_b=None, membrane=None, custom_dynamics=False, membrane_flux=False, scale_by_area=True):
         """if not custom_dynamics, then assumes mass action: multiplies rate by appropriate powers of species;
         otherwise, assumes full equations given"""
-        raise Exception('MultiCompartmentReaction does not work. Do not use.')
         # TODO: verify schemes use weakrefs
         self._scheme = scheme
         self._scale_by_area = scale_by_area
@@ -29,6 +28,8 @@ class MultiCompartmentReaction(GeneralizedReaction):
             raise Exception('membrane_flux must be either True or False')
         if membrane is None:
             raise Exception('MultiCompartmentReaction requires a membrane parameter')
+        if membrane_flux:
+            raise Exception('membrane_flux not supported (not tested... might work, might not, so blocked out for now...')
         self._membrane_flux = membrane_flux
         if not isinstance(scheme, rxdmath._Reaction):
             raise Exception('%r not a recognized reaction scheme' % self._scheme)
@@ -79,9 +80,10 @@ class MultiCompartmentReaction(GeneralizedReaction):
     
     
     def _do_memb_scales(self):                    
-        areas = numpy.array(sum([list(self._regions[0]._geometry.volumes1d(sec) for sec in self._regions[0].secs)], []))
         if not self._scale_by_area:
             areas = numpy.ones(len(areas))
+        else:
+            areas = numpy.array(sum([list(self._regions[0]._geometry.volumes1d(sec) for sec in self._regions[0].secs)], []))
         neuron_areas = []
         for sec in self._regions[0].secs:
             neuron_areas += [h.area((i + 0.5) / sec.nseg, sec=sec) for i in xrange(sec.nseg)]

@@ -93,7 +93,7 @@ class SpeciesOnRegion(_SpeciesMathable):
         # TODO: add a mechanism to catch if not right region (but beware of reactions crossing regions)
         if self._species() is None or self._region() is None:
             return []
-        return self._species()._indices(self._region())
+        return self._species().indices(self._region())
     
     
     @property

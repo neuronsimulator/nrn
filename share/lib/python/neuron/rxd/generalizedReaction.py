@@ -84,7 +84,7 @@ class GeneralizedReaction:
             areas = numpy.array(sum([list(self._regions[0]._geometry.volumes1d(sec) for sec in self._regions[0].secs)], []))
             if not self._scale_by_area:
                 areas = numpy.ones(len(areas))
-            self._mult = list(-areas / volumes[sources_indices] / molecules_per_mM_um3) + list(areas / volumes[dests_indices])
+            self._mult = list(-areas / volumes[sources_indices] / molecules_per_mM_um3) + list(areas / volumes[dests_indices] / molecules_per_mM_um3)
             self._areas = areas
         else:
             self._mult = list([-1.] * len(v) for v in sources_indices) + list([1.] * len(v) for v in dests_indices)

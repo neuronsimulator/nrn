@@ -81,7 +81,7 @@ class Node(object):
             return self.region == condition
         try:
             if 0 < condition <= 1:
-                dx = self._sec._dx / 2
+                dx = self._sec.L / self._sec.nseg / 2
                 return -dx < self._location - condition <= dx
             elif condition == 0:
                 return self._location < self._sec._dx
