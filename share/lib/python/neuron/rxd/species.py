@@ -172,7 +172,7 @@ class Species(_SpeciesMathable):
         if name is not None:
             if not isinstance(name, str):
                 raise Exception('Species name must be a string')
-            if name in _defined_species and _definded_species[name]() is not None:
+            if name in _defined_species and _defined_species[name]() is not None:
                 raise Exception('Species "%s" previously defined: %r' % (name, _defined_species[name]()))
         else:
             name = _species_count

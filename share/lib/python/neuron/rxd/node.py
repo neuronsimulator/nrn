@@ -149,6 +149,19 @@ class Node(object):
         return self._sec._species()
     
     @property
+    def value(self):
+        """Gets the value associated with this Node."""
+        # TODO: change is stochastic allows molecules
+        return self.concentration
+    
+    @value.setter
+    def value(self, v):
+        """Sets the value associated with this Node."""
+        # TODO: change if stochastic allows molecules
+        self.concentration = v
+    
+    
+    @property
     def concentration(self):
         """Gets the concentration at the Node."""
         if self._sec.nrn_region is not None and self._sec.species.name is not None:
