@@ -18,7 +18,7 @@ def ref_list_with_mult(obj):
     return result
 
 
-class GeneralizedReaction:
+class GeneralizedReaction(object):
     """an abstract class, parent of Rate, Reaction, MultiCompartmentReaction"""
 
     def __del__(self):
@@ -88,6 +88,7 @@ class GeneralizedReaction:
             self._areas = areas
         else:
             self._mult = list([-1.] * len(v) for v in sources_indices) + list([1.] * len(v) for v in dests_indices)
+        self._mult = numpy.array(self._mult)
 
 
     def _get_memb_flux(self, states):
