@@ -59,14 +59,8 @@ class Node(object):
     @property
     def _ref_concentration(self):
         """Returns a HOC reference to the Node's state"""
-        #void_p = ctypes.cast(_states.ctypes.data_as(ctypes.POINTER(ctypes.c_double)), ctypes.c_voidp).value + self._index * ctypes.sizeof(ctypes.c_double)
-        #return _nrndll.nrn_hocobj_ptr(ctypes.cast(void_p, ctypes.POINTER(ctypes.c_double)))
-        if self._sec.nrn_region is not None and self._sec.species.name is not None:
-            # return pointer to legacy node, if one exists
-            return self._sec._sec(self.x).__getattribute__('_ref_%s%s' % (self._sec.species.name, self._sec.nrn_region))
-        else:
-            # no legacy node analog, return pointer to rxd array
-            return _states._ref_x[self._index]
+        # this points to rxd array only, will not change legacy concentration
+        return _states._ref_x[self._index]
 
     def satisfies(self, condition):
         """Tests if a Node satisfies a given condition.
@@ -170,17 +164,10 @@ class Node(object):
     @property
     def concentration(self):
         """Gets the concentration at the Node."""
-        if self._sec.nrn_region is not None and self._sec.species.name is not None:
-            # legacy grid value exists, return that one
-            return self._sec._sec(self.x).__getattribute__('%s%s' % (self._sec.species.name, self._sec.nrn_region))
-        else:
-            return _states.x[self._index]
+        return _states.x[self._index]
         
     @concentration.setter
     def concentration(self, value):
-        """Sets the concentration at the Node."""
+        """Sets the concentration at the Node"""
         _states.x[self._index] = value
-        
-        if self._sec.nrn_region is not None and self._sec.species.name is not None:
-            # TODO: this needs modified for 3d to only change part of the legacy concentration
-            self._sec._sec(self.x).__setattr__(self._sec.species.name + self._sec.nrn_region, value)
+
