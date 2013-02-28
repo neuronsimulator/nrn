@@ -159,7 +159,13 @@ class Node(object):
         """Sets the value associated with this Node."""
         # TODO: change if stochastic allows molecules
         self.concentration = v
-    
+
+
+    @property
+    def _ref_value(self):
+        """Returns a HOC reference to the Node's value"""
+        # TODO: change this if value no longer need be concentration
+        return self._ref_concentration
     
     @property
     def concentration(self):
