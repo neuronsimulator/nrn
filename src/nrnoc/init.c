@@ -859,3 +859,18 @@ void _nrn_thread_reg(int i, int cons, void(*f)(Datum*)) {
 void _nrn_thread_table_reg(int i, void(*f)(double*, Datum*, Datum*, void*, int)) {
 	memb_func[i].thread_table_check_ = f;
 }
+
+void _nrn_setdata_reg(int i, void(*call)(Prop*)) {
+	memb_func[i].setdata_ = call;
+}
+/* there is some question about the _extcall_thread variables, if any. */
+double nrn_call_mech_func(Symbol* s, int narg, Prop* p, int type) {
+	double x;	
+	extern double hoc_call_func(Symbol*, int);
+	void (*call)(Prop*) = memb_func[type].setdata_;
+	if (call) {
+		(*call)(p);
+	}
+	x = hoc_call_func(s, narg);
+	return x;
+}

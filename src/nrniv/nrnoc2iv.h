@@ -37,6 +37,7 @@ short nrn_value_mark(Section*);
 bool is_point_process(Object*);
 int nrn_vartype(Symbol*); // nrnocCONST, DEP, STATE
 void recalc_diam();
+double nrn_call_mech_func(Symbol*, int narg, Prop*, int type);
 }
 
 #include "ndatclas.h"

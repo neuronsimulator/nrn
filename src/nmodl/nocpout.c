@@ -359,14 +359,8 @@ Sprintf(buf, "static int _hoc_%s();\n", s->name);
 		Lappendstr(defs_list, "double get_loc_point_process(); return (get_loc_point_process(_vptr));\n}\n");
 	}
 	/* function to set up _p and _ppvar */
-	if (point_process) {
-		Lappendstr(defs_list, "static _hoc_setdata(_vptr) void* _vptr; { Prop* _prop;\n");
-		Lappendstr(defs_list, "_prop = ((Point_process*)_vptr)->_prop;\n");
-	}else{
-		Lappendstr(defs_list, "static _hoc_setdata() {\n Prop *_prop, *hoc_getdata_range();\n");
-		Sprintf(buf, "_prop = hoc_getdata_range(_mechtype);\n");
-		Lappendstr(defs_list, buf);
-	}
+	Lappendstr(defs_list, "extern void _nrn_setdata_reg(int, void(*)(Prop*));\n");
+	Lappendstr(defs_list, "static void _setdata(Prop* _prop) {\n");
 #if VECTORIZE
     if (vectorize) {
 	Lappendstr(defs_list, "_extcall_prop = _prop;\n");
@@ -375,6 +369,17 @@ Sprintf(buf, "static int _hoc_%s();\n", s->name);
     {
 	Lappendstr(defs_list, "_p = _prop->param; _ppvar = _prop->dparam;\n");
     }
+	Lappendstr(defs_list, "}\n");
+	
+	if (point_process) {
+		Lappendstr(defs_list, "static _hoc_setdata(_vptr) void* _vptr; { Prop* _prop;\n");
+		Lappendstr(defs_list, "_prop = ((Point_process*)_vptr)->_prop;\n");
+	}else{
+		Lappendstr(defs_list, "static _hoc_setdata() {\n Prop *_prop, *hoc_getdata_range();\n");
+		Sprintf(buf, "_prop = hoc_getdata_range(_mechtype);\n");
+		Lappendstr(defs_list, buf);
+	}
+	Lappendstr(defs_list, "  _setdata(_prop);\n");
 	if (point_process) {
 		Lappendstr(defs_list, "}\n");
 	}else{
@@ -990,6 +995,7 @@ Sprintf(buf, "\"%s\", %g,\n", s->name, d1);
 	}
 #endif
 	Lappendstr(defs_list, "_mechtype = nrn_get_mechtype(_mechanism[1]);\n");
+	lappendstr(defs_list, "    _nrn_setdata_reg(_mechtype, _setdata);\n");
 	if (vectorize && thread_mem_init_list->next != thread_mem_init_list) {
 		lappendstr(defs_list, "    _nrn_thread_reg(_mechtype, 1, _thread_mem_init);\n");
 	}

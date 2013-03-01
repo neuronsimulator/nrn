@@ -35,6 +35,7 @@ typedef struct Memb_func {
 	void (*_update_ion_pointers)(Datum*);
 	int is_point;
 	void* hoc_mech;
+	void (*setdata_)(struct Prop*);
 } Memb_func;
 
 #if VECTORIZE
