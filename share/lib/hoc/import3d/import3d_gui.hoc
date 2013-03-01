@@ -403,8 +403,8 @@ func some_format() {local i, a,b,c,d,e,f,g, n
 		continue_dialog(tstr)
 		return 0
 	}
-	for i=1, 200 {
-		if (i > 100 || file.eof) {
+	while (1) {
+		if (file.eof) {
 			file.close
 			sprint(tstr, "Can't figure out file format for %s", file.getname)
 			continue_dialog(tstr)
