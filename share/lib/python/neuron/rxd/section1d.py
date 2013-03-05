@@ -121,12 +121,23 @@ class Section1D(rxdsection.RxDSection):
                 parent, parenti = self._parent
                 il = parent._offset + parenti
             gil = g.getval(io, il)
-            rate_l = _diffs[io] * self._neighbor_areas[i] / (_volumes[io] * dx)
+            # second order accuracy needs diffusion constants halfway
+            # between nodes, which we approx by averaging
+            # TODO: is this the best way to handle boundary nodes?
+            if i > 0:
+                d_l = (_diffs[io] + _diffs[io - 1]) / 2.
+            else:
+                d_l = _diffs[io]
+            if i < self.nseg - 1:
+                d_r = (_diffs[io] + _diffs[io + 1]) / 2.
+            else:
+                d_r = _diffs[io]
+            rate_l = d_l * self._neighbor_areas[i] / (_volumes[io] * dx)
             if i == 0:
                 # on left edge, only half distance
                 # TODO: verify this is the right thing to do
                 rate_l *= 2
-            rate_r = _diffs[io] * self._neighbor_areas[i + 1] / (_volumes[io] * dx)
+            rate_r = d_r * self._neighbor_areas[i + 1] / (_volumes[io] * dx)
             if i == self.nseg - 1:
                 # on right edge, only half distance
                 # TODO: verify this is the right thing to do
