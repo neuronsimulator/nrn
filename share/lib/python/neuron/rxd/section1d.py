@@ -111,6 +111,8 @@ class Section1D(rxdsection.RxDSection):
         _volumes, _surface_area, _diffs = node._get_data()
         offset = self._offset
         dx = self.L / self.nseg
+        #print 'volumes:', _volumes
+        #print 'areas:', self._neighbor_areas
         for i in xrange(self.nseg):
             io = i + offset
             gi0 = g.getval(io, io)

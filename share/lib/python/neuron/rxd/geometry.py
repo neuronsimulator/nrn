@@ -87,8 +87,8 @@ def _neighbor_areas1d(sec):
     diam3d = [h.diam3d(i, sec=sec._sec)
               for i in xrange(int(h.n3d(sec=sec._sec)))]
     area_pos = numpy.linspace(0, sec.L, sec.nseg + 1)
-    areas = numpy.pi * 0.25 * numpy.array(diam3d) ** 2
-    return numpy.interp(area_pos, arc3d, areas)
+    diams = numpy.interp(area_pos, arc3d, diam3d)
+    return numpy.pi * 0.25 * diams ** 2
 
 def constant_function_per_length(value):
     return lambda sec: [value * sec.L / sec.nseg for i in xrange(sec.nseg)]
