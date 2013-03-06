@@ -150,15 +150,21 @@ class Section1D(rxdsection.RxDSection):
             # TODO: verify that these are correct
             if i == 0:
                 gil2 = g.getval(il, il)
-                g.setval(il, il, gil2 + rate_l * _volumes[io])
+                # for 0 volume nodes, must conserve MASS not concentration
+                scale = _volumes[io] / _volumes[il] if _volumes[il] else _volumes[io]
+                g.setval(il, il, gil2 + rate_l * scale)               
                 gilio = g.getval(il, io)
-                g.setval(il, io, gilio - rate_l * _volumes[io])
+                g.setval(il, io, gilio - rate_l * scale)
             if i == self.nseg - 1:
                 ir = io + 1
                 gir2 = g.getval(ir, ir)
                 girio = g.getval(ir, io)
-                g.setval(ir, ir, gir2 + rate_r * _volumes[io])
-                g.setval(ir, io, girio - rate_r * _volumes[io])
+                # for 0 volume nodes, must conserve MASS not concentration
+                # I suspect ir always points to a 0 volume node, but
+                # good to be safe
+                scale = _volumes[io] / _volumes[ir] if _volumes[ir] else _volumes[io]
+                g.setval(ir, ir, gir2 + rate_r * scale)
+                g.setval(ir, io, girio - rate_r * scale)
             
 
     def _import_concentration(self, init):
