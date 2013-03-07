@@ -267,7 +267,7 @@ def _setup_matrices():
             _linmodadd_cur = h.LinearMechanism(_linmodadd_cur_c, _linmodadd_cur_g, _linmodadd_cur_y, _linmodadd_cur_b, _cur_sec_list, _cur_x_list)
         else:
             _linmodadd_cur = None
-    
+    _cvode_object.re_init()    
 
 def _init():
     # TODO: check about the 0<x<1 problem alluded to in the documentation

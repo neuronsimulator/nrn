@@ -118,14 +118,16 @@ class Node(object):
         return self._location
     
     @property
-    def diff(self):
+    def d(self):
         """Gets the diffusion rate within the compartment."""
         return _diffs[self._index]
-    @diff.setter
-    def diff(self, value):
+    @d.setter
+    def d(self, value):
         """Sets the diffusion rate within the compartment."""
-        rxd._invalidate_matrices()
+        # TODO: make invalidation work so don't need to redo the setup each time
+        #rxd._invalidate_matrices()
         _diffs[self._index] = value
+        rxd._setup_matrices()
     
     @property
     def region(self):

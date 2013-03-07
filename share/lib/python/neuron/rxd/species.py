@@ -8,6 +8,7 @@ import node
 import nodelist
 import rxdmath
 import numpy
+import rxd
 
 _defined_species = {}
 def _get_all_species():
@@ -67,6 +68,16 @@ class _SpeciesMathable(object):
     def _involved_species(self, the_dict):
         the_dict[self._semi_compile] = weakref.ref(self)
 
+    @property
+    def d(self):
+        """diffusion constant. write-only"""
+        raise Exception('diffusion constant is write-only')
+    
+    @d.setter
+    def d(self, value):
+        _volumes, _surface_area, _diffs = node._get_data()
+        _diffs[self.indices()] = value
+        rxd._setup_matrices()
 
 class SpeciesOnRegion(_SpeciesMathable):
     def __init__(self, species, region):
@@ -231,7 +242,6 @@ class Species(_SpeciesMathable):
         """A vector of all the states corresponding to this species"""
         all_states = node._get_states()
         return [all_states[i] for i in numpy.sort(self.indices())]
-
 
 
     def re_init(self):
