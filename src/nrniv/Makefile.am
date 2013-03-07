@@ -43,10 +43,10 @@ windll = -I$(nsrc)/mswin/windll
 cygexe = mos2nrn.exe neuron.exe
 
 mos2nrn.exe: $(nsrc)/mswin/extra/mos2nrn.cpp
-	g++ -g -O2 -DMINGW -o mos2nrn.exe $(nsrc)/mswin/extra/mos2nrn.cpp
+	$(CXX) -g -O2 -DMINGW -o mos2nrn.exe $(nsrc)/mswin/extra/mos2nrn.cpp
 
 neuron.exe: $(nsrc)/mswin/extra/neuron.cpp
-	g++ -g -O2 -DMINGW -o neuron.exe $(nsrc)/mswin/extra/neuron.cpp
+	$(CXX) -g -O2 -DMINGW -o neuron.exe $(nsrc)/mswin/extra/neuron.cpp
 
 else
 nrniv_LDFLAGS =
