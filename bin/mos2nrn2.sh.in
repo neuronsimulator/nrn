@@ -13,6 +13,11 @@ else
 	NRNBIN="${exec_prefix}/bin/"
 fi
 
+if test "${NRNHOME_EXEC}" != "" ; then
+	exec_prefix="${NRNHOME_EXEC}"
+	NRNBIN="${exec_prefix}/bin/"
+fi
+
 if  [ "$3" = "1" ] ; then
 	echo "Already running neuron controlled by mosaic.
 Must quit that instance before running another."
