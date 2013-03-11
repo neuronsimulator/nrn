@@ -463,8 +463,13 @@ if test "$CYGWIN" = "yes" ; then
 	fi
 fi
 
+case "$exec_prefix" in
+	NONE*)  exec_prefix="${prefix}/${host_cpu}"
+	;;
+esac
+
 AC_DEFINE_UNQUOTED(NRNHOSTCPU,"$host_cpu",[cpu type consistent with nrnivmodl])
-NRN_LIBDIR=$prefix/$host_cpu/lib
+NRN_LIBDIR=$exec_prefix/lib
 AC_SUBST(NRN_LIBDIR)
 
 AC_SUBST(nrndef_unix)
@@ -515,11 +520,6 @@ if test "$no_x" = "yes" ; then
 fi
 echo "NRNOC_X11 = $NRNOC_X11"
 AC_DEFINE_UNQUOTED(NRNOC_X11,$NRNOC_X11, if nrnoc can use X11)
-
-case "$exec_prefix" in
-	NONE*)  exec_prefix="${prefix}/${host_cpu}"
-	;;
-esac
 
 dnl This list specifies what files configure actually makes.
 AC_CONFIG_FILES([

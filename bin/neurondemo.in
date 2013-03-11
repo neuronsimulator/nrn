@@ -12,6 +12,12 @@ else
 	NRNBIN="${exec_prefix}/bin/"
 	NRNDEMO="${prefix}/share/@PACKAGE@/demo/"
 fi
+
+if test "${NRNHOME_EXEC}" != "" ; then
+	exec_prefix="${NRNHOME_EXEC}"
+	NRNBIN="${exec_prefix}/bin/"
+fi
+
 export NRNDEMO
 
 if [ ! -f "${NRNDEMO}neuron" ] ; then

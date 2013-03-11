@@ -13,6 +13,12 @@ else
 	libdir="${prefix}/${ARCH}/lib"
 fi
 
+if test "${NRNHOME_EXEC}" != "" ; then
+	exec_prefix="${NRNHOME_EXEC}"
+	bindir="${exec_prefix}/bin"
+	libdir="${exec_prefix}/lib"
+fi
+
 export prefix
 export exec_prefix
 export bindir
