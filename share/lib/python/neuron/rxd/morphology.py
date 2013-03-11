@@ -4,9 +4,20 @@ import itertools
 def parent(sec):
     """Return the parent of sec or None if sec is a root"""
     sref = h.SectionRef(sec=sec)
-    return sref.trueparent().sec if sref.has_trueparent() else None
+    if sref.has_trueparent():
+        return sref.trueparent().sec
+    elif sref.has_parent():
+        temp = sref.parent().sec
+        # check if temp owns the connection point
+        if h.SectionRef(sec=temp).has_parent() and h.parent_connection(sec=temp) == h.section_orientation(sec=temp):
+            # connection point belongs to temp's ancestor
+            return parent(temp)
+        return temp
+    else:
+        return None
+    
 
-def parent_loc(sec):
+def parent_loc(sec, trueparent):
     """Return the position on the (true) parent where sec is connected
     
     Note that h.section_orientation(sec=sec) is which end of the section is
@@ -14,47 +25,10 @@ def parent_loc(sec):
     """
     # TODO: would I ever have a parent but not a trueparent (or vice versa)
     sref = h.SectionRef(sec=sec)
-    if not sref.has_trueparent():
-        return None
-    trueparent = sref.trueparent().sec
     parent = sref.parent().sec
-    while parent.name() != trueparent.name():
+    while parent != trueparent:
         sec, parent = parent, h.SectionRef(sec=sec).parent().sec
     return h.parent_connection(sec=sec)
-
-
-class SectionDict(dict):
-    def __setitem__(self, key, value):
-        if not isinstance(key, str):
-            key = key.name()
-        dict.__setitem__(self, key, value)
-    def __getitem__(self, key):
-        if not isinstance(key, str):
-            key = key.name()
-        return dict.__getitem__(self, key)
-    def __contains__(self, item):
-        if not isinstance(item, str):
-            item = item.name()
-        return dict.__contains__(self, item)
-        
-class SectionPtDict(dict):
-    def __setitem__(self, key, value):
-        sec, pt = key
-        if not isinstance(sec, str):
-            sec = sec.name()
-        dict.__setitem__(self, (sec, pt), value)
-    def __getitem__(self, key):
-        sec, pt = key
-        if not isinstance(sec, str):
-            sec = sec.name()
-        return dict.__getitem__(self, (sec, pt))
-    def __contains__(self, item):
-        sec, pt = item
-        if not isinstance(sec, str):
-            sec = sec.name()
-        return dict.__contains__(self, (sec, pt))
-
-
 
 class MorphologyDB:
     """
@@ -64,17 +38,15 @@ class MorphologyDB:
     """
     def __init__(self):
         """Create a MorphologyDB with the current NEURON morphology"""
-        self._children = SectionDict()
-        self._parents = SectionDict()
-        self._connection_pts = SectionPtDict()
-        for sec in h.allsec():
-            self._children[sec] = []
+        self._children = {sec:[] for sec in h.allsec()}
+        self._parents = {}
+        self._connection_pts = {}
         for sec in h.allsec():
             parent_sec = parent(sec)
             if parent_sec is not None:
                 self._children[parent_sec].append(sec)
-                pt = (parent_sec.name(), parent_loc(sec))
-                local_pt = (sec.name(), h.section_orientation(sec=sec))
+                pt = (parent_sec, parent_loc(sec, parent))
+                local_pt = (sec, h.section_orientation(sec=sec))
                 if pt in self._connection_pts:
                     self._connection_pts[pt].append(local_pt)
                 else:
@@ -108,10 +80,9 @@ class MorphologyDB:
 
             
 def main():
-    # create 11 sections: s[0] -- s[10]
-    s = []
-    for i in xrange(11):
-        s.append(h.Section(name='s[%d]' % i))
+    # create 13 sections: s[0] -- s[12]
+    s = [h.Section(name='s[%d]' % i) for i in xrange(13)]
+
     """
         Create the tree
         
@@ -122,6 +93,12 @@ def main():
     """
     for p, c in [[0, 1], [0, 2], [0, 3], [1, 4], [4, 7], [3, 5], [3, 6], [5, 8], [5, 9], [6, 10]]:
         s[c].connect(s[p])
+    
+    """
+    and now s11 and s12, connected at the 0 ends
+    """
+    s[11].connect(s[12](0))
+    
     # have NEURON print the topology
     h.topology()
     # now try it our way
@@ -131,7 +108,7 @@ def main():
         print '  children:', ', '.join(child.name() for child in morph.children(sec))
         print '  parent:', morph.parent(sec).name() if morph.parent(sec) is not None else 'None'
     
-    conns = morph.connections([s[i] for i in [2, 3, 4, 5, 6, 7, 9, 10]])
+    conns = morph.connections([s[i] for i in [2, 3, 4, 5, 6, 7, 9, 10, 11, 12]])
     for p1, p2 in conns:
         print '%s(%g)    %s(%g)' % (p1[0].name(), p1[1], p2[0].name(), p2[1])
     return 0

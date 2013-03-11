@@ -1,7 +1,6 @@
 from rxdmath import _Arithmeticed
 import weakref
 import region
-import morphology
 from section1d import Section1D
 from neuron import h, nrn
 import node

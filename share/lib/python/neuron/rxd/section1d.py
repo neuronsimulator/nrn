@@ -5,6 +5,7 @@ import numpy
 import rxd
 import rxdsection
 import nodelist
+import morphology
 
 # all concentration ptrs and indices
 _all_cptrs = []
@@ -20,28 +21,6 @@ def _transfer_to_legacy():
     # TODO: this is ridiculous; move into C++?
     concentrations = numpy.array(node._get_states().to_python)[_all_cindices]
     for ptr, c in zip(_all_cptrs, concentrations): ptr[0] = c
-
-def _parent(sec):
-    """Return the parent of sec or None if sec is a root"""
-    sref = h.SectionRef(sec=sec)
-    return sref.trueparent().sec if sref.has_trueparent() else None
-
-def _parent_loc(sec):
-    """Return the position on the (true) parent where sec is connected
-    
-    Note that h.section_orientation(sec=sec) is which end of the section is
-    connected.
-    """
-    # TODO: would I ever have a parent but not a trueparent (or vice versa)
-    sref = h.SectionRef(sec=sec)
-    if not sref.has_trueparent():
-        return None
-    trueparent = sref.trueparent().sec
-    parent = sref.parent().sec
-    while parent.name() != trueparent.name():
-        sec, parent = parent, h.SectionRef(sec=sec).parent().sec
-    return h.parent_connection(sec=sec)
-
 
 class Section1D(rxdsection.RxDSection):
     def __init__(self, species, sec, diff, r):
@@ -181,7 +160,7 @@ class Section1D(rxdsection.RxDSection):
 
     def _assign_parents(self, root_id, missing, root_children):
         # assign parents and root nodes
-        parent_sec = _parent(self._sec)
+        parent_sec = morphology.parent(self._sec)
         if parent_sec is None or not self._species()._has_region_section(self._region, parent_sec):
             if parent_sec is None:
                 pt = (self._region, None)
@@ -199,7 +178,7 @@ class Section1D(rxdsection.RxDSection):
         else:
             # TODO: this is inefficient since checking the list twice for _region, parent_sec combo
             parent_section = self.species._region_section(self._region, parent_sec)
-            self._parent = (parent_section, int(parent_section.nseg * _parent_loc(self._sec)))
+            self._parent = (parent_section, int(parent_section.nseg * morphology.parent_loc(self._sec, parent_section)))
         #print 'parent:', self._parent
         return root_id
 
