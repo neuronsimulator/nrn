@@ -36,6 +36,7 @@ extern Object* (*nrnpy_pickle2po)(char*, size_t size);
 extern char* (*nrnpy_callpicklef)(char*, size_t size, int narg, size_t* retsize);
 extern int (*nrnpy_pysame)(Object*, Object*); // contain same Python object
 extern void nrnpython_ensure_threadstate();
+extern Object* (*nrnpympi_alltoall)(Object*, int);
 
 extern Object* hoc_thisobject;
 extern Symlist* hoc_symlist;
@@ -61,6 +62,7 @@ static int guigetstr(Object*, char**);
 static char* po2pickle(Object*, size_t* size);
 static Object* pickle2po(char*, size_t size);
 static char* call_picklef(char*, size_t size, int narg, size_t* retsize);
+static Object* py_alltoall(Object*, int);
 static int pysame(Object*, Object*);
 static PyObject* main_module;
 static PyObject* main_namespace;
@@ -103,6 +105,7 @@ void nrnpython_reg_real() {
 	nrnpy_po2pickle = po2pickle;
 	nrnpy_pickle2po = pickle2po;
 	nrnpy_callpicklef = call_picklef;
+	nrnpympi_alltoall = py_alltoall;
 	nrnpy_pysame = pysame;
 	dlist = hoc_l_newlist();
 }
@@ -550,8 +553,7 @@ static char* po2pickle(Object* ho, size_t* size) {
 	}
 }
 
-static Object* pickle2po(char* s, size_t size) {
-	setpickle();
+static PyObject* unpickle(char* s, size_t size) {
 #if PY_MAJOR_VERSION >= 3
 	PyObject* ps = PyBytes_FromStringAndSize(s, size);
 #else
@@ -562,6 +564,12 @@ static Object* pickle2po(char* s, size_t size) {
 	assert(po);
 	Py_XDECREF(arg);
 	Py_XDECREF(ps);
+	return po;
+}
+
+static Object* pickle2po(char* s, size_t size) {
+	setpickle();
+	PyObject* po = unpickle(s, size);
 	Object* ho = nrnpy_pyobject_in_obj(po);
 	Py_XDECREF(po);
 	return ho;
@@ -610,4 +618,117 @@ char* call_picklef(char *fname, size_t size, int narg, size_t* retsize) {
 	char* rs = pickle(result, retsize);
 	Py_XDECREF(result);
 	return rs;
+}
+
+#include "nrnmpi.h"
+
+int* mk_displ(int* cnts) {
+	int* displ = new int[nrnmpi_numprocs + 1];
+	displ[0] = 0;
+	for (int i=0; i < nrnmpi_numprocs; ++i) {
+		displ[i+1] = displ[i] + cnts[i];
+	}
+	return displ;
+}
+
+Object* py_alltoall(Object* o, int size) {
+	int np = nrnmpi_numprocs;
+	if (np == 1) {
+		return o;
+	}
+#if NRNMPI
+	setpickle();
+	int* scnt = new int[np];
+	for (int i=0; i < np; ++i) { scnt[i] = 0; }
+
+	PyObject* pdest;
+	PyObject* psrc = nrnpy_hoc2pyobject(o);
+	assert(PySequence_Size(psrc) == np);
+	PyObject* iterator = PyObject_GetIter(psrc);
+	PyObject* p;
+	
+	size_t bufsz = 100000; // 100k buffer to start with
+	if (size > 0) { // or else the positive number specified
+		bufsz = size;
+	}
+	char* s = 0;
+	if (size >= 0) { // otherwise count only
+		s = new char[bufsz];
+	}
+	int curpos = 0;
+	for (int i=0 ; (p = PyIter_Next(iterator)) != NULL; ++i) {
+		if (p == Py_None) {
+			scnt[i] = 0;
+			Py_DECREF(p);
+			continue;
+		}
+		size_t sz;
+		char* b = pickle(p, &sz);
+	    if (size >= 0) {
+		if (curpos + sz >= bufsz) {
+			bufsz = bufsz * 2 + sz;
+			char* s2 = new char[bufsz];
+			for (int i = 0; i < curpos; ++i) {
+				s2[i] = s[i];
+			}
+			delete [] s;
+			s = s2;
+		}
+		for (int j=0; j < sz; ++j) {
+			s[curpos+j] = b[j];
+		}
+	    }
+		curpos += sz;
+		scnt[i] = sz;
+		delete [] b;
+		Py_DECREF(p);
+	}
+	Py_DECREF(iterator);
+
+	// what are destination counts
+	int* ones = new int[np];
+	for (int i=0; i < np; ++i) { ones[i] = 1; }
+	int* sdispl = mk_displ(ones);
+	int* rcnt = new int[np];
+	nrnmpi_int_alltoallv(scnt, ones, sdispl, rcnt, ones, sdispl);
+	delete [] ones;
+	delete [] sdispl;
+
+	// exchange
+	sdispl = mk_displ(scnt);
+	int* rdispl = mk_displ(rcnt);
+	char* r = 0;
+    if (size < 0) {
+	pdest = PyTuple_New(2);
+	PyTuple_SetItem(pdest, 0, Py_BuildValue("l", (long)sdispl[np]));
+	PyTuple_SetItem(pdest, 1, Py_BuildValue("l", (long)rdispl[np]));
+	delete [] scnt;
+	delete [] sdispl;
+	delete [] rcnt;
+	delete [] rdispl;
+    } else {
+	r = new char[rdispl[np]];
+	nrnmpi_char_alltoallv(s, scnt, sdispl, r, rcnt, rdispl);
+	delete [] s;
+	delete [] scnt;
+	delete [] sdispl;
+
+	assert((pdest = PyList_New(np)) != NULL);
+	for (int i=0; i < np; ++i) {
+		if (rcnt[i] == 0) {
+			PyList_SetItem(pdest, i, Py_None);
+		}else{
+			PyObject* p = unpickle(r + rdispl[i], rcnt[i]);
+			PyList_SetItem(pdest, i, p);
+		}
+	}
+
+	delete [] r;
+	delete [] rcnt;
+	delete [] rdispl;
+    }
+	Object* ho = nrnpy_po2ho(pdest);
+	--ho->refcount;
+	return ho;
+#endif
 }

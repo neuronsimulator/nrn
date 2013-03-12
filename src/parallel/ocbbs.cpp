@@ -36,6 +36,7 @@ extern "C" {
 	char* (*nrnpy_po2pickle)(Object*, size_t*);
 	Object* (*nrnpy_pickle2po)(char*, size_t);
 	char* (*nrnpy_callpicklef)(char*, size_t, int, size_t*);
+	Object* (*nrnpympi_alltoall)(Object*, int);
 #if PARANEURON
 	double nrnmpi_transfer_wait_;
 	double nrnmpi_splitcell_wait_;
@@ -382,6 +383,16 @@ Object** BBS::pyret() {
 	delete [] impl_->pickle_ret_;
 	impl_->pickle_ret_ = 0;
 	impl_->pickle_ret_size_ = 0;
+	return hoc_temp_objptr(po);
+}
+
+static Object** py_alltoall(void*) {
+	assert(nrnpympi_alltoall);
+	int size = 0;
+	if (ifarg(2)) {
+		size = int(chkarg(2, -1, 2.14748e9));
+	}
+	Object* po = (*nrnpympi_alltoall)(*hoc_objgetarg(1), size);
 	return hoc_temp_objptr(po);
 }
 
@@ -981,6 +992,7 @@ static Member_ret_obj_func retobj_members[] = {
 	"gid_connect", gid_connect,
 	"upkpyobj", upkpyobj,
 	"pyret", pyret,
+	"py_alltoall", py_alltoall,
 	0,0
 };
 

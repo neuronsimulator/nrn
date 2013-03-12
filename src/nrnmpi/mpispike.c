@@ -253,6 +253,12 @@ extern void nrnmpi_dbl_alltoallv(double* s, int* scnt, int* sdispl,
 		r, rcnt, rdispl, MPI_DOUBLE, nrnmpi_comm);
 }
 
+extern void nrnmpi_char_alltoallv(char* s, int* scnt, int* sdispl,
+    char* r, int* rcnt, int* rdispl) {
+	MPI_Alltoallv(s, scnt, sdispl, MPI_CHAR,
+		r, rcnt, rdispl, MPI_CHAR, nrnmpi_comm);
+}
+
 /* following are for the partrans */
 
 void nrnmpi_int_allgather(int* s, int* r, int n) {
