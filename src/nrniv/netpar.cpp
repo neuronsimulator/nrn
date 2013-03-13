@@ -914,7 +914,15 @@ void BBS::set_gid2node(int gid, int nid) {
 #endif
 //printf("gid %d defined on %d\n", gid, nrnmpi_myid);
 		PreSyn* ps;
-		assert(!(gid2in_->find(gid, ps)));
+		char m[200];
+		if (gid2in_->find(gid, ps)) {
+			sprintf(m, "gid=%d already exists as an input port", gid);
+			hoc_execerror(m, "Setup all the output ports on this process before using them as input ports.");
+		}
+		if (gid2out_->find(gid, ps)) {
+			sprintf(m, "gid=%d already exists on this process as an output port");
+			hoc_execerror(m, 0);                            
+		}
 #if ALTHASH
 		gid2out_->insert(gid, nil);
 #else
