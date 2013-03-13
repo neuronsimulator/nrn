@@ -101,6 +101,9 @@ bool Cvode::init_global() {
 		if (use_daspk_) {
 			return true;
 		}
+		if (nrn_nonvint_block_ode_count(0,0)) {
+			return true;
+		}
 		return false;
 	}
 	return true;
@@ -546,7 +549,7 @@ int Cvode::solvex_thread(double* b, double* y, NrnThread* nt){
 	if (z.nvsize_ == 0) { return 0; }
 	lhs(nt); // special version for cvode.
 	scatter_ydot(b, nt->id);
-	nrn_mul_capacity(nt, z.cmlcap_->ml);
+	if (z.cmlcap_) nrn_mul_capacity(nt, z.cmlcap_->ml);
 	for (i=0; i < z.no_cap_count_; ++i) {
 		NODERHS(z.no_cap_node_[i]) = 0.;
 	}
@@ -587,7 +590,7 @@ int Cvode::solvex_thread_part1(double* b, NrnThread* nt){
 	if (z.nvsize_ == 0) { return 0; }
 	lhs(nt); // special version for cvode.
 	scatter_ydot(b, nt->id);
-	nrn_mul_capacity(nt, z.cmlcap_->ml);
+	if (z.cmlcap_) nrn_mul_capacity(nt, z.cmlcap_->ml);
 	for (i=0; i < z.no_cap_count_; ++i) {
 		NODERHS(z.no_cap_node_[i]) = 0.;
 	}
@@ -688,7 +691,7 @@ void Cvode::fun_thread_transfer_part2(double* ydot, NrnThread* nt){
 #endif
 	do_ode(nt);
 	// divide by cm and compute capacity current
-	nrn_div_capacity(nt, z.cmlcap_->ml);
+	if (z.cmlcap_) nrn_div_capacity(nt, z.cmlcap_->ml);
 	gather_ydot(ydot, nt->id);
 	before_after(z.after_solve_, nt);
 //for (int i=0; i < z.neq_; ++i) { printf("\t%d %g %g\n", i, y[i], ydot?ydot[i]:-1e99);}

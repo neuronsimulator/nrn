@@ -19,10 +19,10 @@ set_nonvint_block.argtypes = [nonvint_block_prototype]
 # Some info not available from the HocObject
 v_structure_change = ctypes.c_int.in_dll(nrn_dll, "v_structure_change")
 
-# items in call are each a list of 8 callables
+# items in call are each a list of 10 callables
 #    [setup, initialize, # method 0, 1
-#    fixed_step_setup, fixed_step_solve, # method 2, 3
-#    ode_count, ode_reinit, ode_fun, ode_solve ] # method 4-7
+#    current, conductance, fixed_step_solve, # method 2, 4
+#    ode_count, ode_reinit, ode_fun, ode_solve, ode_abs_tolerance ] # method 5-9
 call = []
 
 # e.g.

@@ -1831,6 +1831,7 @@ int nrn_modeltype() {
 	}
 	
 	type = 0;
+	if (nrn_nonvint_block_ode_count(0, 0)) { type = 1; }
 	if (nrn_global_ncell > 0) {
 		type = 1;
 		FOR_THREADS(nt) if (nt->_ecell_memb_list) {

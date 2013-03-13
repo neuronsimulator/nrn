@@ -30,6 +30,7 @@ void Cvode::rhs(NrnThread* _nt) {
 	if (diam_changed) {
 		recalc_diam();
 	}
+	if (z.v_node_count_ == 0) { return; }
 	for (i = 0; i < z.v_node_count_; ++i) {
 		NODERHS(z.v_node_[i]) = 0.;
 	}
@@ -75,6 +76,7 @@ void Cvode::lhs(NrnThread* _nt) {
 	int i;
 
 	CvodeThreadData& z = CTD(_nt->id);
+	if (z.v_node_count_ == 0) { return; }
 	for (i = 0; i < z.v_node_count_; ++i) {
 		NODED(z.v_node_[i]) = 0.;
 	}
