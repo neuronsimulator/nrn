@@ -43,7 +43,7 @@ def ode_reinit(y): #6 # fill y with initial values of states
   print "ode_reinit"
 def ode_fun(t, y, ydot): #7 # from t, y, determine ydot
   print "ode_fun"
-def ode_solve(dt, b, y): #8 #solve mx=b replace b with x (y available if m depends on it
+def ode_solve(dt, t, b, y): #8 #solve mx=b replace b with x (y available if m depends on it
   print "ode_solve"
 def ode_abs_tolerance(y_abs_tolerance): #9 fill with cvode.atol()*scalefactor
   print "ode_abs_tolerance" # on entry, y_abs_tolerance filled with cvode.atol()
@@ -115,7 +115,7 @@ def nonvint_block(method, size, pd1, pd2, tid):
         elif method == 7:
             args = (pc.t(tid), pd1_array, pd2_array)
         elif method == 8:
-            args = (pc.dt(tid), pd1_array, pd2_array)
+            args = (pc.dt(tid), pc.t(tid), pd1_array, pd2_array)
         for c in call:
             if c[method] is not None:
                 c[method](*args)
