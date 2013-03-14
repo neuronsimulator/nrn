@@ -49,7 +49,6 @@ neuron
     neuron/general.rst
     neuron/neuron.rst
     neuron/stdrun.rst
-    neuron/rxd.rst
 
 
 NMODL
@@ -82,4 +81,13 @@ Tools
     :maxdepth: 2
 
     neuron/project/project.rst
+
+Python
+------
+
+.. toctree::
+    :maxdepth: 2
+    
+    neuron/neuron/classes/python.rst
+    neuron/neuronpython.rst
 

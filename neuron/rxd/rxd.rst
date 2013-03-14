@@ -3,6 +3,12 @@
 Basic Reaction-Diffusion
 ========================
 
+.. toctree::
+    :maxdepth: 2
+    
+    geometry3d.rst
+
+
 .. warning::
 
     These functions are experimental.
