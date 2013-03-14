@@ -339,7 +339,35 @@ def run(tstop):
     h('while (t < tstop) { fadvance() }')
     # what about pc.psolve(tstop)?
 
-def nrn_dll(printpath = False):
+_nrn_dll = None
+def numpy_element_ref(numpy_array, index):
+    """Return a HOC reference into a numpy array.
+    
+    Parameters
+    ----------
+    numpy_array : :class:`numpy.ndarray`
+        the numpy array
+    index : int
+        the index into the numpy array
+    
+    .. warning::
+    
+        No bounds checking.
+    
+    .. warning::
+    
+        Assumes a contiguous array of doubles. In particular, be careful when
+        using slices. If the array is multi-dimensional,
+        the user must figure out the integer index to the desired element.
+    """
+    global _nrn_dll
+    if _nrn_dll is None: _nrn_dll = nrn_dll()
+    import ctypes
+    _nrn_dll.nrn_hocobj_ptr.restype = ctypes.py_object    
+    void_p = ctypes.cast(numpy_array.ctypes.data_as(ctypes.POINTER(ctypes.c_double)), ctypes.c_voidp).value + index * ctypes.sizeof(ctypes.c_double)
+    return _nrn_dll.nrn_hocobj_ptr(ctypes.cast(void_p, ctypes.POINTER(ctypes.c_double)))
+
+def nrn_dll(printpath=False):
     """Return a ctypes object corresponding to the NEURON library.
     
     .. warning::
