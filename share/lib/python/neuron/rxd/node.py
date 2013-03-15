@@ -74,11 +74,13 @@ class Node(object):
         elif isinstance(condition, region.Region):
             return self.region == condition
         try:
+            dx = 1. / self._sec.nseg / 2.
             if 0 < condition <= 1:
-                dx = self._sec.L / self._sec.nseg / 2
                 return -dx < self._location - condition <= dx
             elif condition == 0:
-                return self._location < self._sec._dx
+                # nodes at dx, 3dx, 5dx, 7dx, etc... so this allows for roundoff errors
+                return self._location < 2. * dx
+                
         except:
             raise Exception('unrecognized node condition: %r' % condition)
 
