@@ -1539,6 +1539,90 @@ Description:
 
 
          
+----
+
+
+
+.. method:: ParallelContext.py_alltoall
+
+
+    Syntax:
+        ``destlist = pc.py_alltoall(srclist)``
+
+
+    Description:
+        Analogous to MPI_Alltoallv(...).
+	The srclist must be a Python list of nhost pickleable Python objects.
+        (Items with value None are allowed).
+        The ith object is communicated to the ith host. the return value is
+        a Python list of nhost items where the ith item was communicated
+        by the ith host. This is a collective operation, so all hosts must
+        participate.
+
+        An optional second integer argument > 0 specifies the initial source
+        pickle buffer size in bytes. The default size is 100k bytes. The size
+        will grow by approximately doubling when needed.
+
+        If the optional second argument is -1, then no transfers will be made
+        and return value will be (src_buffer_size, dest_buffer_size) of the
+        pickle buffers which would be needed for sending and receiving.
+
+    Example:
+
+        .. code-block::
+          python
+
+          from neuron import h
+          pc = h.ParallelContext()
+          nhost = int(pc.nhost())
+          rank = int(pc.id())
+          
+          #Keep host output from being intermingled.
+          #Not always completely successful.
+          import sys
+          def serialize():
+            for r in range(nhost):
+              pc.barrier()
+              if r == rank:
+                yield r
+                sys.stdout.flush()
+            pc.barrier()
+          
+          data = [(rank, i) for i in range(nhost)]
+          
+          if rank == 0: print 'source data'
+          for r in serialize(): print rank, data
+          
+          data = pc.py_alltoall(data)
+          
+          if rank == 0: print 'destination data'
+          for r in serialize(): print rank, data
+          
+          pc.runworker()
+          pc.done()
+          h.quit()
+
+        .. code-block::
+          none
+
+          $ mpiexec -n 4 nrniv -mpi -python test.py
+          numprocs=4
+          NEURON -- VERSION 7.3 (806:ba5e547c21f6) 2013-03-13
+          Duke, Yale, and the BlueBrain Project -- Copyright 1984-2012
+          See http://www.neuron.yale.edu/credits.html
+          
+          source data
+          0 [(0, 0), (0, 1), (0, 2), (0, 3)]
+          1 [(1, 0), (1, 1), (1, 2), (1, 3)]
+          2 [(2, 0), (2, 1), (2, 2), (2, 3)]
+          3 [(3, 0), (3, 1), (3, 2), (3, 3)]
+          destination data
+          0 [(0, 0), (1, 0), (2, 0), (3, 0)]
+          1 [(0, 1), (1, 1), (2, 1), (3, 1)]
+          2 [(0, 2), (1, 2), (2, 2), (3, 2)]
+          3 [(0, 3), (1, 3), (2, 3), (3, 3)]
+
+
 
 ----
 
@@ -2816,4 +2900,24 @@ Parallel Transfer
         active. 
 
          
+----
 
+.. method:: ParallelContext.t
+
+    Syntax:
+        ``t = pc.t(tid)``
+
+    Description:
+        Return the current time of the tid'th thread
+
+----
+
+.. method:: ParallelContext.dt
+
+    Syntax:
+        ``dt = pc.dt(tid)``
+
+    Description:
+        Return the current timestep value for the tid'th thread
+
+-------

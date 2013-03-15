@@ -1241,13 +1241,12 @@ Ion
 
     Description:
         Create a new ion type with mechanism name, "name_ion", and associated 
-        variables: iname, nameo, namei, ename. 
+        variables: iname, nameo, namei, ename, diname_dv. 
         If any of these names already 
         exists and name_ion is not already an ion, the function returns -1, 
         otherwise it returns the mechanism type index. If name_ion is already 
         an ion the charge is ignored but the type index is returned. 
 
-         
 
 ----
 

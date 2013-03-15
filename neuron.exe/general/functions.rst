@@ -274,7 +274,8 @@ error-handling
         ``execerror("message1", "message2")``
 
     Description:
-        Raise an error and print the messages. 
+        Raise an error and print the messages along with an interpreter stack
+        trace. If there are no arguments, then nothing is printed.
 
 
 interpreter management
@@ -817,6 +818,32 @@ system
             NEURON -- VERSION 7.2 twophase_multisend (534:2160ccb31406) 2010-12-09 
             nrniv -nobanner -c nrnversion() -c nrnversion(7) 
             $  
+
+        An arg of 8 now returns the host-triplet. E.g.
+
+        .. code-block::
+          none
+
+          $ nrniv -nobanner -c 'nrnversion(8)'
+          x86_64-unknown-linux-gnu
+
+        An arg of 9 now returns "1" if the neuron main program was launched,
+        "2" if the library was loaded by Python, and "0" if the launch
+        progam is unknown
+
+        .. code-block::
+          none
+
+          $ nrniv -nobanner -c 'nrnversion(9)'
+          1
+
+        .. code-block::
+          none
+
+          $ python 2</dev/null
+          >>> from neuron import h
+          >>> h.nrnversion(9)
+          '2'
 
 
 user interface
