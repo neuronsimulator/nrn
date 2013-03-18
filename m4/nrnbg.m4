@@ -247,7 +247,7 @@ AC_ARG_ENABLE([bluegeneQ],
                                 MPICXX=$CXX
                         fi
                         if test "$OPTFLAGS" = "" ; then
-                                OPTFLAGS="-O3 -qarch=qp -q64"
+                                OPTFLAGS="-O3 -qarch=qp -q64 -qstrict -qnohot"
                         fi
                         if test "$CFLAGS" = "" ; then
                                 CFLAGS="$OPTFLAGS $BG_INCLUDE"
