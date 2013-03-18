@@ -586,7 +586,7 @@ static double outputcell(void* v) {
 
 static double spike_record(void* v) {
 	OcBBS* bbs = (OcBBS*)v;
-	int gid = int(chkarg(1, 0., MD));
+	int gid = int(chkarg(1, -1., MD));
 	IvocVect* spikevec = vector_arg(2);
 	IvocVect* gidvec = vector_arg(3);	
 	bbs->spike_record(gid, spikevec, gidvec);

@@ -920,7 +920,7 @@ void BBS::set_gid2node(int gid, int nid) {
 			hoc_execerror(m, "Setup all the output ports on this process before using them as input ports.");
 		}
 		if (gid2out_->find(gid, ps)) {
-			sprintf(m, "gid=%d already exists on this process as an output port");
+			sprintf(m, "gid=%d already exists on this process as an output port", gid);
 			hoc_execerror(m, 0);                            
 		}
 #if ALTHASH
@@ -1069,9 +1069,17 @@ void BBS::outputcell(int gid) {
 
 void BBS::spike_record(int gid, IvocVect* spikevec, IvocVect* gidvec) {
 	PreSyn* ps;
+    if (gid >= 0) {
 	assert(gid2out_->find(gid, ps));
 	assert(ps);
 	ps->record(spikevec, gidvec, gid);
+    }else{ // record all output spikes
+	NrnHashIterate(Gid2PreSyn, gid2out_, PreSyn*, ps) {
+		if (ps->output_index_ >= 0) {
+			ps->record(spikevec, gidvec, ps->output_index_);
+		}
+	}}}
+    }
 }
 
 Object** BBS::gid2obj(int gid) {
