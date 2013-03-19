@@ -65,6 +65,42 @@ void mac_difusfunc(f, m, diffunc, v, ai, sindex, dindex, nt)
 }
 #endif
 
+
+void nrn_tree_solve(double* a, double* d, double* b, double* rhs, int* pindex, int n) {
+    /*
+        treesolver
+        
+        a      - above the diagonal 
+        d      - diagonal
+        b      - below the diagonal
+        rhs    - right hand side, which is changed to the result
+        pindex - parent indices
+        n      - number of states
+    */
+
+    int i;
+
+	/* triang */
+	for (i = n - 1; i > 0; --i) {
+		int pin = pindex[i];
+		if (pin > -1) {
+			double p;
+			p = a[i] / d[i];
+			d[pin] -= p * b[i];
+			rhs[pin] -= p * rhs[i];
+		}
+	}
+	/* bksub */
+	for (i = 0; i < n; ++i) {
+		int pin = pindex[i];
+		if (pin > -1) {
+			rhs[i] -= b[i] * rhs[pin];
+		}
+		rhs[i] /= d[i];
+	}
+}
+
+
 void long_difus_solve(int method, NrnThread* nt) {
 	Pfrv f;
 	int i;
@@ -369,29 +405,18 @@ for (i=0; i < n; ++i) { double a,b;
 	 i, a, b, pld->d[i], pld->rhs[i], pld->state[i][ai]);
 }
 #endif
-	/* triang */
-	for (i = n - 1; i > 0; --i) {
-		int pin = pld->pindex[i];
-		if (pin > -1) {
-			double p;
-			p = pld->a[i] / pld->d[i];
-			pld->d[pin] -= p * pld->b[i];
-			pld->rhs[pin] -= p * pld->rhs[i];
-		}
-	}
-	/* bksub */
-	for (i=0; i < n; ++i) {
-		int pin = pld->pindex[i];
-		if (pin > -1) {
-			pld->rhs[i] -= pld->b[i] * pld->rhs[pin];
-		}
-		pld->rhs[i] /= pld->d[i];
-	}
+
+    /* we've set up the matrix; now solve it */
+    nrn_tree_solve(pld->a, pld->d, pld->b, pld->rhs, pld->pindex, n);
+    
 	/* update answer */
 	for (i=0; i < n; ++i) {
 		pld->state[i][ai] = pld->rhs[i];
 	}
 }
+
+
+
 
 static void ode(m, diffunc, v, ai, sindex, dindex, _nt)
 	int m;
