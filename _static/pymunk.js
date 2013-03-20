@@ -2,6 +2,7 @@
 // http://stackoverflow.com/questions/12150491/toc-list-with-all-classes-generated-by-automodule-in-sphinx-docs
 // added support for methods -- 2013-01-19
 // modified to just list method name not header -- 2013-01-19
+// modified to put methods etc in paragraph instead of a list -- 2013-03-20
 $(function (){
 var createList = function(selector){
 
