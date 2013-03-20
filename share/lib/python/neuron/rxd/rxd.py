@@ -140,12 +140,27 @@ def _ode_fun(t, y, ydot):
     states[_nonzero_volume_indices] = y[lo : hi]
 
     # need to fill in the zero volume states with the correct concentration
+    # this assumes that states at the zero volume indices is zero (although that
+    # assumption could be easily removed)
+    #matrix = scipy.sparse.dok_matrix((len(_zero_volume_indices), len(states)))
+    """
+    for i, row in enumerate(_zero_volume_indices):
+        d = _diffusion_matrix[row, row]
+        if d:
+            nzj = _diffusion_matrix[row].nonzero()[1]
+            print 'nzj:', nzj
+            for j in nzj:
+                matrix[i, j] = -_diffusion_matrix[row, j] / d
+    states[_zero_volume_indices] = matrix * states
+    """
+    states[_zero_volume_indices] = _mat_for_zero_volume_nodes * states
+    """
     for i in _zero_volume_indices:
         v = _diffusion_matrix[i] * states
         d = _diffusion_matrix[i, i]
         if d:
             states[i] = -v / d
-
+    """
     # TODO: refactor so this isn't in section1d
     section1d._transfer_to_legacy()        
     
@@ -405,10 +420,24 @@ def _setup_matrices():
 
         _linmodadd_c = _linmodadd_c.tocsr()
         _diffusion_matrix = _diffusion_matrix.tocsr()
+        
     global _zero_volume_indices, _nonzero_volume_indices
     volumes = node._get_data()[0]
     _zero_volume_indices = numpy.where(volumes == 0)[0]
     _nonzero_volume_indices = volumes.nonzero()[0]
+
+    if n:
+        matrix = _diffusion_matrix[_zero_volume_indices].todok()
+        for row, i in enumerate(_zero_volume_indices):
+            d = _diffusion_matrix[i, i]
+            if d:
+                matrix[row, :] /= -d
+                matrix[row, i] = 0
+            else:
+                matrix[row, :] = 0
+        global _mat_for_zero_volume_nodes
+        _mat_for_zero_volume_nodes = matrix.tocsr()
+
 
 def _init():
     # TODO: check about the 0<x<1 problem alluded to in the documentation
