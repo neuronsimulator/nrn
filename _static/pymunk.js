@@ -5,7 +5,7 @@
 $(function (){
 var createList = function(selector){
 
-    var ul = $('<ul>');
+    var ul = $('<p>');
     var selected = $(selector);
 
     if (selected.length === 0){
@@ -24,8 +24,8 @@ var createList = function(selector){
         //a.append(p).append(n);
         a.append(n);
 
-        var entry = $('<li>').append(a);
-        ul.append(entry);
+        ul.append(a);
+        ul.append(' &middot; ');
     });
     return ul;
 }
