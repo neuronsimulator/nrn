@@ -294,7 +294,7 @@ class Species(_SpeciesMathable):
         # TODO: this will need to be changed for three dimensions, or stochastic
         for s in self._secs:
             for i in xrange(s._offset, s._offset + s.nseg):
-                c.setval(i, i, 1)
+                c[i, i] = 1.
     
     def _setup_currents(self, indices, scales, ptrs):
         for s in self._secs:

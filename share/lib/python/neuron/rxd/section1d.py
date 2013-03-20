@@ -19,7 +19,7 @@ def _purge_cptrs():
 
 def _transfer_to_legacy():
     # TODO: this is ridiculous; move into C++?
-    concentrations = numpy.array(node._get_states().to_python)[_all_cindices]
+    concentrations = node._get_states()[_all_cindices]
     for ptr, c in zip(_all_cptrs, concentrations): ptr[0] = c
 
 class Section1D(rxdsection.RxDSection):
@@ -70,8 +70,9 @@ class Section1D(rxdsection.RxDSection):
             
     def _transfer_to_legacy(self):
         states = node._get_states()
-        for i, ptr in zip(xrange(self._offset, self._offset + self.nseg), self._concentration_ptrs):
-            ptr[0] = states.x[i]
+        if self._concentration_ptrs is not None:
+            for i, ptr in zip(xrange(self._offset, self._offset + self.nseg), self._concentration_ptrs):
+                ptr[0] = states[i]
         
     def _register_cptrs(self):
         global _all_cptrs, _all_cindices
@@ -94,14 +95,11 @@ class Section1D(rxdsection.RxDSection):
         #print 'areas:', self._neighbor_areas
         for i in xrange(self.nseg):
             io = i + offset
-            gi0 = g.getval(io, io)
-            gir = g.getval(io, io + 1)
             if i > 0:
                 il = io - 1
             else:
                 parent, parenti = self._parent
                 il = parent._offset + parenti
-            gil = g.getval(io, il)
             # second order accuracy needs diffusion constants halfway
             # between nodes, which we approx by averaging
             # TODO: is this the best way to handle boundary nodes?
@@ -123,27 +121,23 @@ class Section1D(rxdsection.RxDSection):
                 # on right edge, only half distance
                 # TODO: verify this is the right thing to do
                 rate_r *= 2
-            g.setval(io, io, gi0 + rate_r + rate_l)
-            g.setval(io, io + 1, gir - rate_r)
-            g.setval(io, il, gil - rate_l)
+            g[io, io] += rate_r + rate_l
+            g[io, io + 1] -= rate_r
+            g[io, il] -= rate_l
             # TODO: verify that these are correct
             if i == 0:
-                gil2 = g.getval(il, il)
                 # for 0 volume nodes, must conserve MASS not concentration
                 scale = _volumes[io] / _volumes[il] if _volumes[il] else _volumes[io]
-                g.setval(il, il, gil2 + rate_l * scale)               
-                gilio = g.getval(il, io)
-                g.setval(il, io, gilio - rate_l * scale)
+                g[il, il] += rate_l * scale
+                g[il, io] -= rate_l * scale
             if i == self.nseg - 1:
                 ir = io + 1
-                gir2 = g.getval(ir, ir)
-                girio = g.getval(ir, io)
                 # for 0 volume nodes, must conserve MASS not concentration
                 # I suspect ir always points to a 0 volume node, but
                 # good to be safe
                 scale = _volumes[io] / _volumes[ir] if _volumes[ir] else _volumes[io]
-                g.setval(ir, ir, gir2 + rate_r * scale)
-                g.setval(ir, io, girio - rate_r * scale)
+                g[ir, ir] += rate_r * scale
+                g[ir, io] -= rate_r * scale
             
 
     def _import_concentration(self, init):
@@ -151,12 +145,12 @@ class Section1D(rxdsection.RxDSection):
         states = node._get_states()
         if self.nrn_region is not None and self.species.name is not None:
             for i, ptr in zip(xrange(self._offset, self._offset + self.nseg), self._concentration_ptrs):
-                states.x[i] = ptr[0]
+                states[i] = ptr[0]
 
         elif init:
             # TODO: think about if this is the desired behavior
             for i in xrange(self.nseg):
-                states.x[i + self._offset] = 0
+                states[i + self._offset] = 0
 
     def _assign_parents(self, root_id, missing, root_children):
         # assign parents and root nodes

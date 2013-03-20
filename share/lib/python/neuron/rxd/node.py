@@ -10,7 +10,7 @@ import rxdsection
 _volumes = numpy.array([])
 _surface_area = numpy.array([])
 _diffs = numpy.array([])
-_states = h.Vector()
+_states = numpy.array([])
 
 def _get_data():
     return (_volumes, _surface_area, _diffs)
@@ -28,7 +28,7 @@ def _allocate(num):
     _volumes.resize(total, refcheck=False)
     _surface_area.resize(total, refcheck=False)
     _diffs.resize(total, refcheck=False)
-    _states.resize(total)
+    _states.resize(total, refcheck=False)
     return start_index
 
 class Node(object):
@@ -60,7 +60,7 @@ class Node(object):
     def _ref_concentration(self):
         """Returns a HOC reference to the Node's state"""
         # this points to rxd array only, will not change legacy concentration
-        return _states._ref_x[self._index]
+        return neuron.numpy_element_ref(_states, self._index)
 
     def satisfies(self, condition):
         """Tests if a Node satisfies a given condition.
@@ -76,6 +76,7 @@ class Node(object):
         try:
             dx = 1. / self._sec.nseg / 2.
             if 0 < condition <= 1:
+                print self._location, condition, dx
                 return -dx < self._location - condition <= dx
             elif condition == 0:
                 # nodes at dx, 3dx, 5dx, 7dx, etc... so this allows for roundoff errors
@@ -149,7 +150,7 @@ class Node(object):
     @property
     def value(self):
         """Gets the value associated with this Node."""
-        # TODO: change is stochastic allows molecules
+        # TODO: change if stochastic allows molecules
         return self.concentration
     
     @value.setter
@@ -168,10 +169,10 @@ class Node(object):
     @property
     def concentration(self):
         """Gets the concentration at the Node."""
-        return _states.x[self._index]
+        return _states[self._index]
         
     @concentration.setter
     def concentration(self, value):
         """Sets the concentration at the Node"""
-        _states.x[self._index] = value
+        _states[self._index] = value
 
