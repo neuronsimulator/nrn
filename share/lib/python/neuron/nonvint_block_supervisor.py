@@ -57,8 +57,6 @@ call.append([
 '''
 
 ode_count_method_index = 5
-arrays_not_used = [0, 1, 4, 5]
-arrays_both_used = [7, 8]
 
 def register(c):
   unregister(c)
@@ -83,6 +81,9 @@ pc = h.ParallelContext()
 
 # see nrn/src/nrnoc/nonvintblock.h for the magic method numbers
 
+_no_args = (0, 1)
+_pd1_arg = (2, 3, 6, 9)
+_float_size = numpy.dtype(float).itemsize
 def nonvint_block(method, size, pd1, pd2, tid):
   #print 'nonvint_block called with method = %d l=%d' % (method,size)
   assert(tid == 0)
@@ -93,22 +94,22 @@ def nonvint_block(method, size, pd1, pd2, tid):
     else:
         if pd1:
             if size:
-                pd1_array = numpy.frombuffer(numpy.core.multiarray.int_asbuffer(ctypes.addressof(pd1.contents), size*numpy.dtype(float).itemsize))
+                pd1_array = numpy.frombuffer(numpy.core.multiarray.int_asbuffer(ctypes.addressof(pd1.contents), size * _float_size))
             else:
                 pd1_array = numpy.array([])
         else:
             pd1_array = None
         if pd2:
             if size:
-                pd2_array = numpy.frombuffer(numpy.core.multiarray.int_asbuffer(ctypes.addressof(pd2.contents), size*numpy.dtype(float).itemsize))
+                pd2_array = numpy.frombuffer(numpy.core.multiarray.int_asbuffer(ctypes.addressof(pd2.contents), size * _float_size))
             else:
                 pd2_array = numpy.array([])
         else:
             pd2_array = None
         
-        if method in [0, 1]:
+        if method in _no_args:
             args = ()
-        elif method in [2, 3, 6, 9]:
+        elif method in _pd1_arg:
             args = (pd1_array,)
         elif method == 4:
             args = (pc.dt(tid),)
