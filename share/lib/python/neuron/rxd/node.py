@@ -76,7 +76,6 @@ class Node(object):
         try:
             dx = 1. / self._sec.nseg / 2.
             if 0 < condition <= 1:
-                print self._location, condition, dx
                 return -dx < self._location - condition <= dx
             elif condition == 0:
                 # nodes at dx, 3dx, 5dx, 7dx, etc... so this allows for roundoff errors
