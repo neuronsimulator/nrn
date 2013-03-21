@@ -10,17 +10,37 @@ import morphology
 # all concentration ptrs and indices
 _all_cptrs = []
 _all_cindices = []
+_c_ptr_vector = None
+_c_ptr_vector_storage_nrn = None
+_c_ptr_vector_storage = None
+_last_c_ptr_length = None
 
 def _purge_cptrs():
     """purges all cptr information"""
-    global _all_cptrs, _all_cindices
+    global _all_cptrs, _all_cindices, _c_ptr_vector, _last_c_ptr_length
+    global _c_ptr_vector_storage, _c_ptr_vector_storage_nrn
     _all_cptrs = []
     _all_cindices = []
+    _c_ptr_vector = None
+    _c_ptr_vector_storage_nrn = None
+    _c_ptr_vector_storage = None
+    _last_c_ptr_length = None
 
 def _transfer_to_legacy():
-    # TODO: this is ridiculous; move into C++?
-    concentrations = node._get_states()[_all_cindices]
-    for ptr, c in zip(_all_cptrs, concentrations): ptr[0] = c
+    global  _c_ptr_vector, _c_ptr_vector_storage, _c_ptr_vector_storage_nrn
+    global _last_c_ptr_length
+    
+    size = len(_all_cptrs)
+    if _last_c_ptr_length != size:
+        _c_ptr_vector = h.PtrVector(len(_all_cptrs))
+        for i, ptr in enumerate(_all_cptrs):
+            _c_ptr_vector.pset(i, ptr)
+        _c_ptr_vector_storage_nrn = h.Vector(len(_all_cptrs))
+        _c_ptr_vector_storage = _c_ptr_vector_storage_nrn.as_numpy()
+        _last_c_ptr_length = size
+    
+    _c_ptr_vector_storage[:] = node._get_states()[_all_cindices]
+    _c_ptr_vector.scatter(_c_ptr_vector_storage_nrn)
 
 class Section1D(rxdsection.RxDSection):
     def __init__(self, species, sec, diff, r):

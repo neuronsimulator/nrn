@@ -233,7 +233,12 @@ def _rxd_reaction(states):
     # membrane fluxes from classic NEURON
     #print 'indices:', _curr_indices
     #print 'ptrs:', _curr_ptrs
-    b[_curr_indices] = _curr_scales * [ptr[0] for ptr in _curr_ptrs]
+    
+    
+    _curr_ptr_vector.gather(_curr_ptr_storage_nrn)
+    b[_curr_indices] = _curr_scales * _curr_ptr_storage
+    
+    #b[_curr_indices] = _curr_scales * [ptr[0] for ptr in _curr_ptrs]
 
     for rptr in _all_reactions:
         r = rptr()
@@ -312,9 +317,13 @@ _callbacks = [_setup, _initialize, _fixed_step_currents, _conductance, _fixed_st
               _ode_count, _ode_reinit, _ode_fun, _ode_solve, None]
 nbs.register(_callbacks)
 
+_curr_ptr_vector = None
+_curr_ptr_storage = None
+_curr_ptr_storage_nrn = None
 
 def _update_node_data(force=False):
     global last_diam_change_cnt, last_structure_change_cnt, _curr_indices, _curr_scales, _curr_ptrs
+    global _curr_ptr_vector, _curr_ptr_storage, _curr_ptr_storage_nrn
     if last_diam_change_cnt != _cvode_object.diam_change_count() or _cvode_object.structure_change_count() != last_structure_change_cnt or force:
         last_diam_change_cnt = _cvode_object.diam_change_count()
         last_structure_change_cnt = _cvode_object.structure_change_count()
@@ -333,6 +342,14 @@ def _update_node_data(force=False):
         for sr in species._get_all_species().values():
             s = sr()
             if s is not None: s._setup_currents(_curr_indices, _curr_scales, _curr_ptrs)
+        
+        _curr_ptr_vector = h.PtrVector(len(_curr_ptrs))
+        for i, ptr in enumerate(_curr_ptrs):
+            _curr_ptr_vector.pset(i, ptr)
+        
+        _curr_ptr_storage_nrn = h.Vector(len(_curr_ptrs))
+        _curr_ptr_storage = _curr_ptr_storage_nrn.as_numpy()
+
         _curr_scales = numpy.array(_curr_scales)        
         
 
