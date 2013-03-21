@@ -18,6 +18,7 @@
 	StringFunctions_reg(),
 	OcList_reg(),
 	Vector_reg(),
+	OcPtrVector_reg(),
 	OcFile_reg(),
 	OcPointer_reg(),
 #ifdef USEMATRIX
@@ -43,6 +44,7 @@
 	StringFunctions_reg,
 	OcList_reg,
 	Vector_reg,
+	OcPtrVector_reg,
 	OcFile_reg,
 	OcPointer_reg,
 #ifdef USEMATRIX

@@ -59,7 +59,7 @@ libivoc_la_SOURCES = ivoc.cpp xmenu.cpp graph.cpp rubband.cpp grmanip.cpp \
 	graphvec.cpp strfun.cpp ocobserv.cpp fourier.cpp \
 	cbwidget.cpp matrix.cpp ocmatrix.cpp \
 	ocpointer.cpp gifimage.cpp ocnoiv1.cpp grglyph.cpp mlinedit.cpp \
-	$(sysdep_sources) ivocman1.cpp
+	$(sysdep_sources) ivocman1.cpp ocptrvector.cpp
 
 noinst_HEADERS = apwindow.h axis.h bndedval.h cbwidget.h checkpnt.h \
 	classreg.h datapath.h dbrowser.h epsprint.h field.h fourier.h \
@@ -69,7 +69,7 @@ noinst_HEADERS = apwindow.h axis.h bndedval.h cbwidget.h checkpnt.h \
 	ocpicker.h ocpointer.h random1.h rect.h rubband.h scenepic.h \
 	scenevie.h symchoos.h symdir.h utility.h ivocvect.h xmenu.h \
 	nrngsl.h nrngsl_hc_radix2.c nrngsl_real_radix2.c \
-	grglyph.h nrnmutdec.h ocnotify.h
+	grglyph.h nrnmutdec.h ocnotify.h ocptrvector.h
 
 ivoc_SOURCES = nrnmain.cpp ivocmain.cpp $(nrniv_iv_sources)
 
