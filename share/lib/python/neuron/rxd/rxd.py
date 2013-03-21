@@ -234,9 +234,9 @@ def _rxd_reaction(states):
     #print 'indices:', _curr_indices
     #print 'ptrs:', _curr_ptrs
     
-    
-    _curr_ptr_vector.gather(_curr_ptr_storage_nrn)
-    b[_curr_indices] = _curr_scales * _curr_ptr_storage
+    if _curr_ptr_vector is not None:
+        _curr_ptr_vector.gather(_curr_ptr_storage_nrn)
+        b[_curr_indices] = _curr_scales * _curr_ptr_storage
     
     #b[_curr_indices] = _curr_scales * [ptr[0] for ptr in _curr_ptrs]
 
@@ -265,6 +265,8 @@ _diffusion_a_ptr, _diffusion_b_ptr, _diffusion_p_ptr = None, None, None
 def _rxd_matrix_solve(dt, rhs):
     global _last_dt
     global _diffusion_a_ptr, _diffusion_d, _diffusion_b_ptr, _diffusion_p_ptr, _c_diagonal
+
+    if _diffusion_matrix is None: return
 
     n = len(rhs)
 
@@ -343,12 +345,16 @@ def _update_node_data(force=False):
             s = sr()
             if s is not None: s._setup_currents(_curr_indices, _curr_scales, _curr_ptrs)
         
-        _curr_ptr_vector = h.PtrVector(len(_curr_ptrs))
-        for i, ptr in enumerate(_curr_ptrs):
-            _curr_ptr_vector.pset(i, ptr)
-        
-        _curr_ptr_storage_nrn = h.Vector(len(_curr_ptrs))
-        _curr_ptr_storage = _curr_ptr_storage_nrn.as_numpy()
+        num = len(_curr_ptrs)
+        if num:
+            _curr_ptr_vector = h.PtrVector(num)
+            for i, ptr in enumerate(_curr_ptrs):
+                _curr_ptr_vector.pset(i, ptr)
+            
+            _curr_ptr_storage_nrn = h.Vector(num)
+            _curr_ptr_storage = _curr_ptr_storage_nrn.as_numpy()
+        else:
+            _curr_ptr_vector = None
 
         _curr_scales = numpy.array(_curr_scales)        
         

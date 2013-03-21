@@ -32,15 +32,18 @@ def _transfer_to_legacy():
     
     size = len(_all_cptrs)
     if _last_c_ptr_length != size:
-        _c_ptr_vector = h.PtrVector(len(_all_cptrs))
-        for i, ptr in enumerate(_all_cptrs):
-            _c_ptr_vector.pset(i, ptr)
-        _c_ptr_vector_storage_nrn = h.Vector(len(_all_cptrs))
-        _c_ptr_vector_storage = _c_ptr_vector_storage_nrn.as_numpy()
+        if size:
+            _c_ptr_vector = h.PtrVector(size)
+            for i, ptr in enumerate(_all_cptrs):
+                _c_ptr_vector.pset(i, ptr)
+            _c_ptr_vector_storage_nrn = h.Vector(size)
+            _c_ptr_vector_storage = _c_ptr_vector_storage_nrn.as_numpy()
+        else:
+            _c_ptr_vector = None
         _last_c_ptr_length = size
-    
-    _c_ptr_vector_storage[:] = node._get_states()[_all_cindices]
-    _c_ptr_vector.scatter(_c_ptr_vector_storage_nrn)
+    if size:
+        _c_ptr_vector_storage[:] = node._get_states()[_all_cindices]
+        _c_ptr_vector.scatter(_c_ptr_vector_storage_nrn)
 
 class Section1D(rxdsection.RxDSection):
     def __init__(self, species, sec, diff, r):
