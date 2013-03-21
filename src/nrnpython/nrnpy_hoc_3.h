@@ -55,7 +55,7 @@ static PyTypeObject nrnpy_HocObjectType = {
 	&hocobj_as_number,	/*tp_as_number*/
 	&hocobj_seqmeth,	/*tp_as_sequence*/
 	0,			/*tp_as_mapping*/
-	0,			/*tp_hash*/
+	(hashfunc) hocobj_hash,			/*tp_hash*/
         (ternaryfunc)hocobj_call, /*tp_call*/
         0,                      /*tp_str*/
         hocobj_getattro,	/*tp_getattro*/
@@ -65,7 +65,7 @@ static PyTypeObject nrnpy_HocObjectType = {
         hocobj_docstring,	/*tp_doc*/
         0,			/*tp_traverse*/
         0,			/*tp_clear*/
-        0,			/*tp_richcompare*/
+        (richcmpfunc) hocobj_richcmp,			/*tp_richcompare*/
         0,			/*tp_weaklistoffset*/
         &hocobj_iter,		/*tp_iter*/
         &hocobj_iternext,	/*tp_iternext*/

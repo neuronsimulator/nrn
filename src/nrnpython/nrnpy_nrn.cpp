@@ -9,6 +9,7 @@ extern "C" {
 extern void sec_free(hoc_Item*);
 extern Symlist* hoc_built_in_symlist;
 double* nrnpy_rangepointer(Section*, Symbol*, double, int*);
+extern PyObject* nrn_ptr_richcmp(void* self_ptr, void* other_ptr, int op);
 
 typedef struct {
 	PyObject_HEAD
@@ -337,73 +338,26 @@ static long pyseg_hash(PyObject* self) {
 }
 
 
-
 static PyObject* pyseg_richcmp(NPySegObj* self, PyObject* other, int op) {
 	PyObject* pysec;
 	bool result = false;
 	if (PyObject_TypeCheck(other, psegment_type)){
         NPySegObj* seg = (NPySegObj*) self;
-	    Node* self_ptr = node_exact(seg->pysec_->sec_, seg->x_);
+	    void* self_ptr = (void*) node_exact(seg->pysec_->sec_, seg->x_);
 	    seg = (NPySegObj*) other;
-	    Node* other_ptr = node_exact(seg->pysec_->sec_, seg->x_);
-	    switch(op) {
-	    case Py_LT:
-	        result = self_ptr < other_ptr;
-	        break;
-	    case Py_LE:
-	        result = self_ptr <= other_ptr;
-	        break;
-	    case Py_EQ:
-	        result = self_ptr == other_ptr;
-	        break;
-	    case Py_NE:
-	        result = self_ptr != other_ptr;
-	        break;
-	    case Py_GT:
-	        result = self_ptr > other_ptr;
-	        break;
-	    case Py_GE:
-	        result = self_ptr >= other_ptr;
-	        break;
-	    }
-	    return result ? Py_True : Py_False;
+	    void* other_ptr = (void*) node_exact(seg->pysec_->sec_, seg->x_);
+	    return nrn_ptr_richcmp(self_ptr, other_ptr, op);
 	}
 	return Py_False;
 }
-
-
-
-
-
-
 
 static PyObject* pysec_richcmp(NPySecObj* self, PyObject* other, int op) {
 	PyObject* pysec;
 	bool result = false;
 	if (PyObject_TypeCheck(other, psection_type)){
-	    Section* self_ptr = self->sec_;
-	    Section* other_ptr = ((NPySecObj*)other)->sec_;
-	    switch(op) {
-	    case Py_LT:
-	        result = self_ptr < other_ptr;
-	        break;
-	    case Py_LE:
-	        result = self_ptr <= other_ptr;
-	        break;
-	    case Py_EQ:
-	        result = self_ptr == other_ptr;
-	        break;
-	    case Py_NE:
-	        result = self_ptr != other_ptr;
-	        break;
-	    case Py_GT:
-	        result = self_ptr > other_ptr;
-	        break;
-	    case Py_GE:
-	        result = self_ptr >= other_ptr;
-	        break;
-	    }
-	    return result ? Py_True : Py_False;
+	    void* self_ptr = (void*) (self->sec_);
+	    void* other_ptr = (void*) (((NPySecObj*)other)->sec_);
+	    return nrn_ptr_richcmp(self_ptr, other_ptr, op);
 	}
 	return Py_False;
 }

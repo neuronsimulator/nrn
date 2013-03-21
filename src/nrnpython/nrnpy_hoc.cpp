@@ -728,6 +728,8 @@ static int setup_doc_system() {
 	return 1;
 }
 
+
+
 static PyObject* hocobj_getattr(PyObject* subself, PyObject* name) {
 	PyObject* result = 0;
 	PyObject* docobj = 0;
@@ -1554,6 +1556,45 @@ static PyObject* hocobj_vptr(PyObject* pself, PyObject* args) {
 	return po;
 }
 
+static long hocobj_hash(PyHocObject* self) {
+    return (long) self->ho_;
+}
+
+PyObject* nrn_ptr_richcmp(void* self_ptr, void* other_ptr, int op) {
+    bool result = false;
+    switch(op) {
+    case Py_LT:
+        result = self_ptr < other_ptr;
+        break;
+    case Py_LE:
+        result = self_ptr <= other_ptr;
+        break;
+    case Py_EQ:
+        result = self_ptr == other_ptr;
+        break;
+    case Py_NE:
+        result = self_ptr != other_ptr;
+        break;
+    case Py_GT:
+        result = self_ptr > other_ptr;
+        break;
+    case Py_GE:
+        result = self_ptr >= other_ptr;
+        break;
+    }
+    return result ? Py_True : Py_False;
+}
+
+
+// TODO: unfortunately, this duplicates code from hocobj_same; consolidate?
+static PyObject* hocobj_richcmp(PyHocObject* self, PyObject* other, int op) {
+	if (PyObject_TypeCheck(other, hocobject_type)){
+	    void* self_ptr = (void*)(self->ho_);
+	    void* other_ptr = (void*)(((PyHocObject*)other)->ho_);
+	    return nrn_ptr_richcmp(self_ptr, other_ptr, op);
+	}
+	return Py_False;
+}
 
 static PyObject* hocobj_same(PyHocObject* pself, PyObject* args) {
 	PyObject* po;
