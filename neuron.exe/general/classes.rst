@@ -5,6 +5,7 @@ classes
     :maxdepth: 2
 
     ../../neuron/general/classes/vector/vect.rst
+    ../../neuron/general/classes/ptrvector.rst
     ../../neuron/general/classes/glyph.rst
     ../../neuron/general/classes/timer.rst
     ../../neuron/general/classes/vbox.rst

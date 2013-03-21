@@ -2083,6 +2083,37 @@ Vector
 ----
 
 
+.. method:: Vector.as_numpy()
+
+
+    Syntax:
+        ``numpyarray = vec.as_numpy()``
+
+
+    Description:
+        The numpyarray points into the data of the Hoc Vector, i.e. does not
+	copy the data. Do not
+        use the numpyarray if the Vector is destroyed.
+
+
+    Example:
+
+        .. code-block::
+            python
+
+            from neuron import h
+            v = h.Vector(5).indgen()
+            n = v.as_numpy()
+            print n #[0.  1.  2.  3.  4.]
+            v.x[1] += 10
+            n[2] += 20
+            print n #[  0.  11.  22.   3.   4.]
+            v.printf() #0	11	22	3	4
+
+
+----
+
+
 .. method:: Vector.fit
 
 
