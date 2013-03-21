@@ -51,7 +51,7 @@ PtrVector
 .. method:: PtrVector.pset
 
   Syntax:
-     ``var_val = pv.pset(i, &var)
+     ``var_val = pv.pset(i, &var)``
      
     
   Description:
