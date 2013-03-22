@@ -1,0 +1,13 @@
+{#
+    basic/page.html
+    ~~~~~~~~~~~~~~~
+
+    Master template for simple pages.
+
+    :copyright: Copyright 2007-2011 by the Sphinx team, see AUTHORS.
+    :license: BSD, see LICENSE for details.
+#}
+{% extends "layout.html" %}
+{% block body %} 
+  {{ body | replace('permalinkidentifier!', '&para</a> <a class="headerlink" href="#" title="top of page">&uarr;') }}
+{% endblock %}

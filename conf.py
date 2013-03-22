@@ -33,6 +33,9 @@ templates_path = ['_templates']
 # The suffix of source filenames.
 source_suffix = '.rst'
 
+# unique identifier for permalinks
+html_add_permalinks = 'permalinkidentifier!'
+
 # The encoding of source files.
 #source_encoding = 'utf-8-sig'
 
