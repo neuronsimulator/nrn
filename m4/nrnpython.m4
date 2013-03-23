@@ -70,6 +70,20 @@ AC_DEFUN([AC_NRN_PYTHON],[
 	build_nrnpython_dynamic=no
 	npy_apiver=""
 
+	AC_ARG_ENABLE([pysetup],
+		AC_HELP_STRING([--enable-pysetup=[installoption]],
+ [Execute 'python setup.py install installoption' as the last
+installation step.
+--disable-pysetup or an installoption of 'no' means do NOT execute
+'python setup.py...'
+The default installoption is '--home=<prefix>']
+),
+		[ac_pysetup="$enableval"], [ac_pysetup='--home=$(prefix)']
+	)
+	if test "$ac_pysetup" = "yes" ; then
+		ac_pysetup='--home=$(prefix)'
+	fi
+
 	AC_ARG_WITH([nrnpython],
 		AC_HELP_STRING([--with-nrnpython=[desired python binary or 'dynamic']],
 			[Python interpreter can be used (default is NO)
@@ -231,6 +245,7 @@ PYLIB="${PYLIBLINK} ${PYLINKFORSHARED} -R${PYLIBDIR}"
 		fi
 	fi
 
+	AC_SUBST(ac_pysetup)
 	AC_SUBST(NRNPYTHON_LIBLA)
 	AC_SUBST(NRNPYTHON_LIBS)
 	AC_SUBST(NRNPYTHON_DEP)

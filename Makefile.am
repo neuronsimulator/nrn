@@ -66,8 +66,10 @@ endif
 if BUILD_NRNPYTHON
 install-exec-hook:
 	echo "enter install-exec-hook in nrn/Makefile.am"
-	cd src/nrnpython ; \
-	$(PYTHON) setup.py install --home=$(prefix)
+	if test "@ac_pysetup@" != "no" ; then \
+		cd src/nrnpython ; \
+		$(PYTHON) setup.py install @ac_pysetup@ ;\
+	fi
 	echo "leave install-exec-hook in nrn/Makefile.am"
 endif
 
