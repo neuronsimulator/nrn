@@ -32,7 +32,7 @@ expression
 ~~~~~~~~~~
 
 Description:
-    An expression has a double precision value.  It usually appears as the left 
+    An expression has a double precision value.  It usually appears as the right 
     hand side of an assignment statement.  An expression may be a number, 
     variable, function call, or combination of simpler expressions. 
      
