@@ -1557,7 +1557,7 @@ static PyObject* hocobj_vptr(PyObject* pself, PyObject* args) {
 }
 
 static long hocobj_hash(PyHocObject* self) {
-    return (long) self->ho_;
+    return castptr2long self->ho_;
 }
 
 PyObject* nrn_ptr_richcmp(void* self_ptr, void* other_ptr, int op) {

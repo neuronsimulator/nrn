@@ -50,6 +50,12 @@ char* nrnpy_PyString_AsString(PyObject*);
 extern PyObject* nrnpy_hoc_pop();
 extern int nrnpy_numbercheck(PyObject*);
 
+#if defined(__SIZEOF_POINTER__) && __SIZEOF_POINTER__ > __SIZEOF_LONG__
+#define castptr2long (long)(long long)
+#else
+#define castptr2long (long)
+#endif
+
 #if defined(__cplusplus)
 }
 #endif

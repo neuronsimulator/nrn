@@ -329,12 +329,12 @@ static PyObject* pysec2cell(NPySecObj* self) {
 }
 
 static long pysec_hash(PyObject* self) {
-    return (long) ((NPySecObj*) self)->sec_;
+    return castptr2long ((NPySecObj*) self)->sec_;
 }
 
 static long pyseg_hash(PyObject* self) {
     NPySegObj* seg = (NPySegObj*) self;
-    return (long) node_exact(seg->pysec_->sec_, seg->x_);
+    return castptr2long node_exact(seg->pysec_->sec_, seg->x_);
 }
 
 
