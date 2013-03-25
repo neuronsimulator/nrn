@@ -1,6 +1,11 @@
 #from neuron import h
 #h.load_file('stdrun.hoc')
 
+try:
+    import scipy
+except:
+    raise Exception('NEURON RxD module requires SciPy')
+
 import rxd
 from species import Species
 from region import Region
