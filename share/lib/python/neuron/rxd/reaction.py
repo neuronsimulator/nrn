@@ -112,11 +112,4 @@ class Reaction(GeneralizedReaction):
         # nothing to do since NEVER a membrane flux
         pass 
     
-    def _evaluate(self, states):
-        """returns: (list of lists (lol) of increase indices, lol of decr indices, list of changes)"""
-        args = self._get_args(states)
-        if args is None: return 
-        return (self._indices, self._mult, self._rate(*args))
-
-    
 

@@ -22,7 +22,7 @@ v_structure_change = ctypes.c_int.in_dll(nrn_dll, "v_structure_change")
 # items in call are each a list of 10 callables
 #    [setup, initialize, # method 0, 1
 #    current, conductance, fixed_step_solve, # method 2, 4
-#    ode_count, ode_reinit, ode_fun, ode_solve, ode_abs_tolerance ] # method 5-9
+#    ode_count, ode_reinit, ode_fun, ode_solve, ode_jacobian, ode_abs_tolerance ] # method 5-10
 call = []
 
 # e.g.
@@ -45,13 +45,15 @@ def ode_fun(t, y, ydot): #7 # from t, y, determine ydot
   print "ode_fun"
 def ode_solve(dt, t, b, y): #8 #solve mx=b replace b with x (y available if m depends on it
   print "ode_solve"
-def ode_abs_tolerance(y_abs_tolerance): #9 fill with cvode.atol()*scalefactor
+def ode_jacobian(dt, t, ypred, fpred): #9 optionally prepare jacobaian for fast ode_solve.
+  print "ode_jacobian ", t, dt
+def ode_abs_tolerance(y_abs_tolerance): #10 fill with cvode.atol()*scalefactor
   print "ode_abs_tolerance" # on entry, y_abs_tolerance filled with cvode.atol()
 
 call.append([
     setup, initialize, # method 0, 1
     current, conductance, fixed_step_solve, # method 2, 3, 4
-    ode_count, ode_reinit, ode_fun, ode_solve, # method 5-8
+    ode_count, ode_reinit, ode_fun, ode_solve, ode_jacobian, # method 5-9
     ode_abs_tolerance
   ])
 '''
@@ -82,7 +84,7 @@ pc = h.ParallelContext()
 # see nrn/src/nrnoc/nonvintblock.h for the magic method numbers
 
 _no_args = (0, 1)
-_pd1_arg = (2, 3, 6, 9)
+_pd1_arg = (2, 3, 6, 10)
 _float_size = numpy.dtype(float).itemsize
 def nonvint_block(method, size, pd1, pd2, tid):
   #print 'nonvint_block called with method = %d l=%d' % (method,size)
@@ -115,7 +117,7 @@ def nonvint_block(method, size, pd1, pd2, tid):
             args = (pc.dt(tid),)
         elif method == 7:
             args = (pc.t(tid), pd1_array, pd2_array)
-        elif method == 8:
+        elif method in (8,9):
             args = (pc.dt(tid), pc.t(tid), pd1_array, pd2_array)
         for c in call:
             if c[method] is not None:

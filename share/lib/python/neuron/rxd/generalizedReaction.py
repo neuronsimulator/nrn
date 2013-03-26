@@ -2,6 +2,8 @@ import rxd
 import node
 import numpy
 import weakref
+import itertools
+import scipy.sparse
 
 # converting from mM um^3 to molecules
 # = 6.02214129e23 * 1000. / 1.e18 / 1000
@@ -87,8 +89,20 @@ class GeneralizedReaction(object):
             self._mult = list(-areas / volumes[sources_indices] / molecules_per_mM_um3) + list(areas / volumes[dests_indices] / molecules_per_mM_um3)
             self._areas = areas
         else:
-            self._mult = list([-1.] * len(v) for v in sources_indices) + list([1.] * len(v) for v in dests_indices)
+            self._mult = list(-1 for v in sources_indices) + list(1 for v in dests_indices)
         self._mult = numpy.array(self._mult)
+        
+        self._update_jac_cache()
+
+
+    def _evaluate(self, states):
+        """returns: (list of lists (lol) of increase indices, lol of decr indices, list of changes)"""
+        args = self._get_args(states)
+        if args is None: return ([], [], [])
+        return self._evaluate_args(args)
+
+    def _evaluate_args(self, args):
+        return (self._indices, self._mult, self._rate(*args))
 
 
     def _get_memb_flux(self, states):
@@ -99,4 +113,34 @@ class GeneralizedReaction(object):
         else:
             return []
 
+
+    def _update_jac_cache(self):
+        num_involved = len(self._involved_species)
+        self._jac_rows = list(itertools.chain(*[ind * num_involved for ind in self._indices]))
+        num_ind = len(self._indices)
+        self._jac_cols = list(itertools.chain(*[self._indices_dict[s()] for s in self._involved_species])) * num_ind
+        if self._trans_membrane:
+            self._mult_extended = [list(i) * num_involved for i in self._mult]
+        else:
+            self._mult_extended = self._mult
+
+
+    def _jacobian_entries(self, states, multiply=1, dx=1.e-10):
+        args = self._get_args(states)
+        indices, mult, base_value = self._evaluate_args(args)
+        mult = self._mult_extended
+        derivs = []
+        for i, arg in enumerate(args):
+            args[i] = arg + dx
+            new_value = self._evaluate_args(args)[2]
+            args[i] = arg
+            derivs.append((new_value - base_value) / dx)
+        derivs = numpy.array(list(itertools.chain(*derivs)))
+        data = list(itertools.chain(*[derivs * mul * multiply for mul in mult]))
+        return self._jac_rows, self._jac_cols, data
     
+    def _jacobian(self, states, multiply=1, dx=1.e-10):
+        rows, cols, data = self._jacobian_entries(states, multiply=multiply, dx=dx)
+        n = len(states)
+        jac = scipy.sparse.coo_matrix((data, (rows, cols)), shape=(n, n))
+        return jac

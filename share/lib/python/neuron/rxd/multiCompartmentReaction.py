@@ -91,13 +91,5 @@ class MultiCompartmentReaction(GeneralizedReaction):
         area_ratios = areas / neuron_areas
         # still needs to be multiplied by the valence of each molecule
         self._memb_scales = -area_ratios / (100 * molecules_per_mM_um3)
-        
-    
-    def _evaluate(self, states):
-        """returns: (list of lists (lol) of increase indices, lol of decr indices, list of changes)"""
-        args = self._get_args(states)
-        if args is None: return 
-        return (self._indices, self._mult, self._rate(*args))
-
     
         

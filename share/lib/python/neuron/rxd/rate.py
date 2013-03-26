@@ -16,6 +16,7 @@ class Rate(GeneralizedReaction):
         if not hasattr(regions, '__len__'):
             regions = [regions]
         self._regions = regions
+        self._trans_membrane = False
         self._update_indices()
         self._membrane_flux = membrane_flux
         if membrane_flux not in (True, False):
@@ -52,17 +53,12 @@ class Rate(GeneralizedReaction):
             s = sptr()
             self._indices_dict[s] = sum([s.indices(r) for r in active_regions], [])
         
-        self._output_indices = sum([self._species().indices(r) for r in active_regions], [])
-        self._mult = numpy.array([1] * len(self._output_indices))
-    
-    def _evaluate(self, states):
-        """returns: (list of lists (lol) of increase indices, lol of decr indices, list of changes)"""
-        args = self._get_args(states)
-        if args is None: return ([], [], [])
-        return ([self._output_indices], [self._mult], self._rate(*args))
+        self._indices = [sum([self._species().indices(r) for r in active_regions], [])]
+        self._mult = [1]
+        self._update_jac_cache()
 
-
-    def _do_memb_scales(self):              
+    def _do_memb_scales(self):
+        # TODO: does anyone still call this?
         # TODO: update self._memb_scales (this is just a dummy value to make things run)
         self._memb_scales = 1
 
@@ -70,6 +66,7 @@ class Rate(GeneralizedReaction):
     
     def _get_memb_flux(self, states):
         if self._membrane_flux:
+            raise Exception('membrane flux due to rxd.Rate objects not yet supported')
             # TODO: refactor the inside of _evaluate so can construct args in a separate function and just get self._rate() result
             rates = self._evaluate(states)[2]
             return self._memb_scales * rates

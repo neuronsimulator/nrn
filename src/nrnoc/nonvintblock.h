@@ -67,8 +67,12 @@ nonvintblock_extern int (*nrn_nonvint_block)(int method, int length, double* pd1
    (if the problem is non-linear) */
 #define nrn_nonvint_block_ode_solve(size, b, y, tid) nonvint_block(8, size, b, y, tid)
 
+/* Do any desired preprocessing of Jacobian in preparation for ode_solve.
+   This will be called at least every time dt changes */
+#define nrn_nonvint_block_jacobian(size, ypred, ydot, tid) nonvint_block(9, size, ypred, ydot, tid)
+
 /* multiply the existing values in y (cvode.atol()) with appropriate scale factors */
-#define nrn_nonvint_block_ode_abstol(size, y, tid) nonvint_block(9, size, y, 0, tid)
+#define nrn_nonvint_block_ode_abstol(size, y, tid) nonvint_block(10, size, y, 0, tid)
 
 #if defined(__cplusplus)
 }

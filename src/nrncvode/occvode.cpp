@@ -534,6 +534,9 @@ void Cvode::gather_ydot(double* ydot, int tid){
 int Cvode::setup(N_Vector ypred, N_Vector fpred){
 //printf("Cvode::setup\n");
 	++jac_calls_;
+	CvodeThreadData& z = CTD(0);     
+	nrn_threads->_dt = gam();
+	nrn_nonvint_block_jacobian(z.nvsize_, n_vector_data(ypred,0), n_vector_data(fpred,0), 0);
 	return 0;
 }
 

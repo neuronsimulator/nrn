@@ -10,7 +10,13 @@ from neuron import nonvint_block_supervisor as nbs
 import scipy.sparse
 import scipy.sparse.linalg
 import ctypes
+import atexit
 
+def byeworld():
+    global _react_matrix_solver
+    del _react_matrix_solver
+    
+atexit.register(byeworld)
 
 # Faraday's constant (store to reduce number of lookups)
 FARADAY = h.FARADAY
@@ -177,9 +183,9 @@ def _ode_solve(dt, t, b, y):
     n = len(node._get_states())
     full_b = numpy.zeros(n)
     full_b[_nonzero_volume_indices] = b[lo : hi]
-    
-    b[lo : hi] = _rxd_matrix_solve(dt, full_b)[_nonzero_volume_indices]
-
+    b[lo : hi] = _react_matrix_solver(_diffusion_matrix_solve(dt, full_b))[_nonzero_volume_indices]
+    # this line doesn't include the reaction contributions to the Jacobian
+    #b[lo : hi] = _diffusion_matrix_solve(dt, full_b)[_nonzero_volume_indices]
 def _initialize():
     section1d._purge_cptrs()
         
@@ -215,7 +221,10 @@ def _fixed_step_solve(dt):
 
     b = _rxd_reaction(states)
     
-    states[:] = _rxd_matrix_solve(dt, states + dt * b)
+    # the solve is logically equivalent to the commented out line, but simpler
+    #states[:] += _diffusion_matrix_solve(dt, -dt * _diffusion_matrix * states)
+    states[:] = _diffusion_matrix_solve(dt, states)
+    states[:] += _reaction_matrix_solve(dt, dt * b)
 
     # clear the zero-volume "nodes"
     states[_zero_volume_indices] = 0
@@ -262,7 +271,7 @@ _c_diagonal = None
 
 _diffusion_a_ptr, _diffusion_b_ptr, _diffusion_p_ptr = None, None, None
 
-def _rxd_matrix_solve(dt, rhs):
+def _diffusion_matrix_solve(dt, rhs):
     global _last_dt
     global _diffusion_a_ptr, _diffusion_d, _diffusion_b_ptr, _diffusion_p_ptr, _c_diagonal
 
@@ -305,18 +314,76 @@ def _rxd_matrix_solve(dt, rhs):
     
     nrn_tree_solve(_diffusion_a_ptr, d_ptr, _diffusion_b_ptr, result_ptr,
                    _diffusion_p_ptr, ctypes.c_int(n))
+    return result
+
+def _reaction_matrix_solve(dt, rhs):
+    # now handle the reaction contribution to the Jacobian
+    # this works as long as (I - dt(Jdiff + Jreact)) \approx (I - dtJreact)(I - dtJdiff)
+    count = 0
+    n = len(rhs)
+    rows = range(n)
+    cols = range(n)
+    data = [1] * n
+    for rptr in _all_reactions:
+        r = rptr()
+        if r:
+            r_rows, r_cols, r_data = r._jacobian_entries(rhs, multiply=-dt)
+            rows += r_rows
+            cols += r_cols
+            data += r_data
+            count += 1
+            
+    if count > 0:
+        jac = scipy.sparse.coo_matrix((data, (rows, cols)), shape=(n, n)).tocsr()
+        #result, info = scipy.sparse.linalg.bicgstab(jac, rhs)
+        #assert(info == 0)
+        result = scipy.sparse.linalg.spsolve(jac, rhs)
+    else:
+        result = rhs
 
     return result
-    
+
+_react_matrix_solver = None    
+def _reaction_matrix_setup(dt, rhs):
+    global _react_matrix_solver
+    # now handle the reaction contribution to the Jacobian
+    # this works as long as (I - dt(Jdiff + Jreact)) \approx (I - dtJreact)(I - dtJdiff)
+    count = 0
+    n = len(rhs)
+    rows = range(n)
+    cols = range(n)
+    data = [1] * n
+    for rptr in _all_reactions:
+        r = rptr()
+        if r:
+            r_rows, r_cols, r_data = r._jacobian_entries(rhs, multiply=-dt)
+            rows += r_rows
+            cols += r_cols
+            data += r_data
+            count += 1
+            
+    if count > 0:
+        
+        jac = scipy.sparse.coo_matrix((data, (rows, cols)), shape=(n, n)).tocsc()
+        #result, info = scipy.sparse.linalg.bicgstab(jac, rhs)
+        #assert(info == 0)
+        _react_matrix_solver = scipy.sparse.linalg.factorized(jac)
+    else:
+        _react_matrix_solver = lambda x: x
 
 def _setup():
+    # TODO: this is when I should resetup matrices (structure changed event)
     pass
 
 def _conductance(d):
     pass
+    
+def _ode_jacobian(dt, t, ypred, fpred):
+    #print '_ode_jacobian: dt = %g, last_dt = %r' % (dt, _last_dt)
+    _reaction_matrix_setup(dt, fpred)
 
 _callbacks = [_setup, _initialize, _fixed_step_currents, _conductance, _fixed_step_solve,
-              _ode_count, _ode_reinit, _ode_fun, _ode_solve, None]
+              _ode_count, _ode_reinit, _ode_fun, _ode_solve, _ode_jacobian, None]
 nbs.register(_callbacks)
 
 _curr_ptr_vector = None
