@@ -1,11 +1,10 @@
+.. index::  syntax (HOC)
 
-.. index::  syntax
+HOC Syntax
+----------
 
-.. _ocsyntax:
-
-syntax
-------
-
+HOC was the original programming language supported by NEURON.
+NEURON may also be programmed in Python.
 
 
 .. index::  comments

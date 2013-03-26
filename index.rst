@@ -29,4 +29,24 @@ Quick Links
     :ref:`neuron_rxd`,
     :func:`neuron.rxd.geometry3d.surface`, :func:`neuron.rxd.geometry3d.voxelize`
 
+Basic Programming
+-----------------
+
+.. toctree::
+    :maxdepth: 2
+
+    programming/hocsyntax.rst
+    programming/mathematics.rst
+
+Model Specification
+-------------------
+
+Simulation Control
+------------------
+
+Visualization
+-------------
+
+Analysis
+--------
 
