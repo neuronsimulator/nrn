@@ -41,8 +41,19 @@ Basic Programming
 Model Specification
 -------------------
 
+.. toctree::
+    :maxdepth: 2
+    
+    modelspec/guitools.rst
+    modelspec/channels.rst
+
 Simulation Control
 ------------------
+
+.. toctree::
+    :maxdepth: 2
+    
+    simctrl/stdrun.rst
 
 Visualization
 -------------

@@ -5,6 +5,6 @@ Mathematics
     :maxdepth: 2
 
     math/functions.rst
-    math/vector.rst
     math/matrix.rst
+    math/vector.rst
 

@@ -1,5 +1,7 @@
 .. index::  syntax (HOC)
 
+.. _ocsyntax:
+
 HOC Syntax
 ----------
 
