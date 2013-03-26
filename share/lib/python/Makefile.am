@@ -46,7 +46,8 @@ neuron/rxd/__init__.py \
 neuron/rxd/multiCompartmentReaction.py \
 neuron/rxd/nodelist.py \
 neuron/rxd/generalizedReaction.py \
-neuron/rxd/morphology.py
+neuron/rxd/morphology.py \
+neuron/rxd/options.py
 
 
 
