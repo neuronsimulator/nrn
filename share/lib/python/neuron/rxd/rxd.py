@@ -11,6 +11,7 @@ import scipy.sparse
 import scipy.sparse.linalg
 import ctypes
 import atexit
+import options
 
 def byeworld():
     global _react_matrix_solver
@@ -317,6 +318,8 @@ def _diffusion_matrix_solve(dt, rhs):
     return result
 
 def _reaction_matrix_solve(dt, rhs):
+    if not options.use_reaction_contribution_to_jacobian:
+        return rhs
     # now handle the reaction contribution to the Jacobian
     # this works as long as (I - dt(Jdiff + Jreact)) \approx (I - dtJreact)(I - dtJdiff)
     count = 0
@@ -345,6 +348,10 @@ def _reaction_matrix_solve(dt, rhs):
 
 _react_matrix_solver = None    
 def _reaction_matrix_setup(dt, rhs):
+    if not options.use_reaction_contribution_to_jacobian:
+        _react_matrix_solver = lambda x: x
+        return
+
     global _react_matrix_solver
     # now handle the reaction contribution to the Jacobian
     # this works as long as (I - dt(Jdiff + Jreact)) \approx (I - dtJreact)(I - dtJdiff)
