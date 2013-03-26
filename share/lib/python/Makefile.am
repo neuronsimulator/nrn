@@ -47,7 +47,9 @@ neuron/rxd/multiCompartmentReaction.py \
 neuron/rxd/nodelist.py \
 neuron/rxd/generalizedReaction.py \
 neuron/rxd/morphology.py \
-neuron/rxd/options.py
+neuron/rxd/options.py \
+\
+neuron/help_data.dat
 
 
 

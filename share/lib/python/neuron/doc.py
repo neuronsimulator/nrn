@@ -167,7 +167,7 @@ This synapse summates.
 
 See:
 
-http://www.neuron.yale.edu/neuron/docs/help/neuron/neuron/mech.html#ExpSyn
+http://www.neuron.yale.edu/neuron/static/docs/help/neuron/neuron/mech.html#ExpSyn
 
 """,
     Exp2Syn = """
@@ -208,7 +208,7 @@ This synapse summates.
 
 See:
 
-http://www.neuron.yale.edu/neuron/docs/help/neuron/neuron/mech.html#Exp2Syn
+http://www.neuron.yale.edu/neuron/static/docs/help/neuron/neuron/mech.html#Exp2Syn
 
 
 """,
@@ -237,7 +237,7 @@ Example:
 
 See:
 
-http://www.neuron.yale.edu/neuron/docs/help/neuron/neuron/mech.html#SEClamp
+http://www.neuron.yale.edu/neuron/static/docs/help/neuron/neuron/mech.html#SEClamp
 
 """,
     VClamp = """
@@ -263,7 +263,7 @@ Example:
 
 See:
 
-http://www.neuron.yale.edu/neuron/docs/help/neuron/neuron/mech.html#VClamp
+http://www.neuron.yale.edu/neuron/static/docs/help/neuron/neuron/mech.html#VClamp
 
 """,
     APCount = """
@@ -298,7 +298,7 @@ Example:
 
 See:
 
-http://www.neuron.yale.edu/neuron/docs/help/neuron/neuron/mech.html#APcount
+http://www.neuron.yale.edu/neuron/static/docs/help/neuron/neuron/mech.html#APcount
 
 """,
     ParallelContext = """
@@ -309,7 +309,7 @@ class ParallelContext
 
 See:
 
-http://www.neuron.yale.edu/neuron/docs/help/neuron/neuron/classes/parcon.html
+http://www.neuron.yale.edu/neuron/static/docs/help/neuron/neuron/classes/parcon.html
 
 """,
     NetStim = """
@@ -324,7 +324,7 @@ serve as the target of a NetCon.
 
 See:
 
-http://www.neuron.yale.edu/neuron/docs/help/neuron/neuron/mech.html#NetStim
+http://www.neuron.yale.edu/neuron/static/docs/help/neuron/neuron/mech.html#NetStim
 
 """,
     Random = """
@@ -342,7 +342,7 @@ normal with mean = 0 and standard deviation = 1.
 
 See:
     
-http://www.neuron.yale.edu/neuron/docs/help/neuron/general/classes/random.html#Random
+http://www.neuron.yale.edu/neuron/static/docs/help/neuron/general/classes/random.html#Random
 
 Note:
 
@@ -358,7 +358,7 @@ used in place of the default staggered fixed time step method.
 
 See:
 
-http://www.neuron.yale.edu/neuron/docs/help/neuron/neuron/classes/cvode.html
+http://www.neuron.yale.edu/neuron/static/docs/help/neuron/neuron/classes/cvode.html
 
 """,
     List = """
@@ -396,7 +396,7 @@ List("templatename")
 
 See:
 
-http://www.neuron.yale.edu/neuron/docs/help/neuron/general/classes/list.html
+http://www.neuron.yale.edu/neuron/static/docs/help/neuron/general/classes/list.html
 
 
 """,
@@ -483,7 +483,7 @@ needed.
 
 See:
 
-    http://www.neuron.yale.edu/neuron/docs/help/neuron/general/classes/vector/vect.html#Vector
+    http://www.neuron.yale.edu/neuron/static/docs/help/neuron/general/classes/vector/vect.html#Vector
 
 """,
     IClamp = """
@@ -509,9 +509,9 @@ Example:
 
 See:
 
-    http://www.neuron.yale.edu/neuron/docs/help/neuron/neuron/mech.html#IClamp
+    http://www.neuron.yale.edu/neuron/static/docs/help/neuron/neuron/mech.html#IClamp
 
-    http://www.neuron.yale.edu/neuron/docs/help/neuron/neuron/mech.html#pointprocesses
+    http://www.neuron.yale.edu/neuron/static/docs/help/neuron/neuron/mech.html#pointprocesses
 
 Note:
 
@@ -587,7 +587,7 @@ practical one.
 
 See:
 
-http://www.neuron.yale.edu/neuron/docs/help/neuron/neuron/classes/netcon.html#NetCon
+http://www.neuron.yale.edu/neuron/static/docs/help/neuron/neuron/classes/netcon.html
 
 """,
     File = """
@@ -637,7 +637,7 @@ vector. This issue does not arise with the unix version.
 
 See:
 
-    http://www.neuron.yale.edu/neuron/docs/help/neuron/general/classes/file.html
+    http://www.neuron.yale.edu/neuron/static/docs/help/neuron/general/classes/file.html
 
 """)
     
@@ -648,7 +648,7 @@ default_class_doc_template = """
 No docstring available for class '%s'
 A more extensive help for Hoc is available here:
 
-http://www.neuron.yale.edu/neuron/docs/docs.html
+http://www.neuron.yale.edu/neuron/static/docs/help/contents.html
 
 most of which still applies for python.
 """
@@ -658,7 +658,7 @@ default_object_doc_template = """
 No docstring available for object type '%s'
 A more extensive help for Hoc is available here:
 
-http://www.neuron.yale.edu/neuron/docs/docs.html
+http://www.neuron.yale.edu/neuron/static/docs/help/contents.html
 
 most of which still applies for python.
 """
@@ -668,7 +668,7 @@ default_member_doc_template = """
 No docstring available for the class member '%s.%s'
 A more extensive help for Hoc is available here:
 
-http://www.neuron.yale.edu/neuron/docs/docs.html
+http://www.neuron.yale.edu/neuron/static/docs/help/contents.html
 
 most of which still applies for python.
 
@@ -679,34 +679,75 @@ most of which still applies for python.
 """
 
 
+def _get_from_help_dict(name):
+    if name not in _help_dict:
+        return ''
+    return ('HOC documentation follows; Python syntax is usually the same.\n\n' + _help_dict[name])
 
+
+def _get_class_from_help_dict(name):
+    result = _get_from_help_dict(name)
+    if not result:
+        return ''
+    methods = dir(h.__getattribute__(name))
+    for m in methods:
+        if name + '.' + m in _help_dict:
+            result += '\n\n\n%s.%s:\n\n%s' % (name, m, _help_dict[name + '.' + m])
+    return result 
+
+
+_help_dict = None
 
 def get_docstring(objtype, symbol):
     """ Get the docstring for object-type and symbol.
-
+ 
     Ex:
     get_docstring('Vector','sqrt')
 
     returns a string
 
     """
-
+    global _help_dict
+    if _help_dict is None:
+        import neuron
+        import os
+        import zlib
+        import cPickle
+        
+        f = open(os.path.join(os.path.split(neuron.__file__)[0], 'help_data.dat'), 'rb')
+        _help_dict = cPickle.loads(zlib.decompress(f.read()))
+        f.close() 
+        
     if (objtype,symbol)==('',''):
 
         return doc_h
 
     # are we asking for help on a class, e.g. h.Vector
     if objtype == '':
-        return class_docstrings.get(symbol,default_class_doc_template % (symbol,) )
+        if symbol in class_docstrings:
+            return class_docstrings[symbol] + '\n\n' +  _get_class_from_help_dict(symbol)
+        elif symbol in _help_dict:
+            return _get_class_from_help_dict(symbol)
+        else:
+            return default_class_doc_template % symbol
 
     # are we asking for help on a object, e.g. h.Vector()
     if symbol == '':
-        return class_docstrings.get(objtype,default_object_doc_template % (objtype,) )
+        if objtype in class_docstrings:
+            return class_docstrings[objtype] + '\n\n' +  _get_class_from_help_dict(objtype)
+        elif objtype in _help_dict:
+            return _get_class_from_help_dict(objtype)
+        else:
+            return default_object_doc_template % symbol
 
 
     # are we asking for help on a member of an object, e.g. h.Vector.size
+    full_name = '%s.%s' % (objtype, symbol)
+    if full_name in _help_dict:
+        return _get_from_help_dict(full_name)
+    else:
 
-    return default_member_doc_template % (objtype,symbol, get_docstring(objtype,"") )
+        return default_member_doc_template % (objtype,symbol, get_docstring(objtype,"") )
 
 
 
