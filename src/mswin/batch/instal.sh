@@ -260,6 +260,13 @@ if test ! -f $pz ; then
 	done
 fi
 unzip -d $D/lib -o $pz
+#to avoid site problem
+mkdir -p $D/usr/include/python2.7
+cp /usr/include/python2.7/pyconfig.h $D/usr/include/python2.7
+# crazy but need it here as well and do not really know why.
+mkdir -p $D/include/python2.7
+cp /usr/include/python2.7/pyconfig.h $D/include/python2.7
+#if continue to have problems with this then perhaps explicitly set Py_NoSiteFlag
 fi
 
 if true ; then
