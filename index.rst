@@ -51,6 +51,7 @@ Model Specification
     
     modelspec/guitools.rst
     modelspec/channels.rst
+    modelspec/programmatic.rst
 
 Simulation Control
 ------------------
@@ -58,6 +59,7 @@ Simulation Control
 .. toctree::
     :maxdepth: 2
     
+    simctrl/programmatic.rst
     simctrl/stdrun.rst
 
 Visualization
@@ -68,8 +70,10 @@ Visualization
     
     visualization/glyph.rst
     visualization/graph.rst
+    visualization/plotshapeclass.rst
     visualization/plotshape.rst
     visualization/rvarplt.rst
+    visualization/shape.rst
     
     
 

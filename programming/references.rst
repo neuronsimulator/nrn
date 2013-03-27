@@ -6,4 +6,4 @@ References
 
     pointers/pointer.rst
     pointers/ptrvector.rst
-
+    pointers/misc.rst

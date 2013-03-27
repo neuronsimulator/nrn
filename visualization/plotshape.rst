@@ -1,8 +1,8 @@
 .. _pltshape:
 
 
-PlotShape
----------
+PlotShape Window
+----------------
 
 A picture of all the sections in a scene. This is designed for use 
 with 3-d reconstructions in which the 3-d shape is not usually tampered with. 
