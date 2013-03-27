@@ -36,7 +36,12 @@ Basic Programming
     :maxdepth: 2
 
     programming/hocsyntax.rst
+    programming/ockeywor.rst
+    programming/oop.rst
     programming/mathematics.rst
+    programming/guidesign.rst
+    programming/references.rst
+    programming/predec.rst
 
 Model Specification
 -------------------
@@ -58,6 +63,20 @@ Simulation Control
 Visualization
 -------------
 
+.. toctree::
+    :maxdepth: 2
+    
+    visualization/glyph.rst
+    visualization/graph.rst
+    visualization/plotshape.rst
+    visualization/rvarplt.rst
+    
+    
+
 Analysis
 --------
 
+.. toctree::
+    :maxdepth: 2
+    
+    analysis/programmatic.rst
