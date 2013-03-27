@@ -36,6 +36,8 @@ var "uINSTDIR" ; posix version of $INSTDIR
 !define NRN "nrn${VerNoDot}"
 ; where to get the files
 !define MARSHALL "c:\marshalnrn"
+; where is cygwin
+!define CYGWIN "e:\cygwin"
 
 ; The default installation directory
 ;InstallDir $PROGRAMFILES\${NRN}
@@ -52,15 +54,15 @@ Function .onInit ; called when installer is nearly finished initializing.
     MessageBox MB_OKCANCEL "${NEURON} already installed at $R1. Press OK to install again." IDOK ok
     Abort
 ok:
-  GetDLLVersionLocal "c:\cygwin\bin\cygwin1.dll" $R0 $R1
+  GetDLLVersionLocal "${CYGWIN}\bin\cygwin1.dll" $R0 $R1
   IntOp $R2 $R0 / 0x00010000
   IntOp $myCygVer1 $R2 / 1000
   IntOp $myCygVer2 $R2 % 1000
   IntOp $myCygVer3 $R0 & 0x000FFFF
   StrCpy $myCygVer "$myCygVer1.$myCygVer2.$myCygVer3"
   StrCpy $cpCygwin "no"
-  IfFileExists "c:\cygwin\bin\cygwin1.dll" +1 one
-	GetDllVersion "c:\cygwin\bin\cygwin1.dll" $R0 $R1
+  IfFileExists "${CYGWIN}\bin\cygwin1.dll" +1 one
+	GetDllVersion "${CYGWIN}\bin\cygwin1.dll" $R0 $R1
 	IntOp $R2 $R0 / 0x00010000
 	IntOp $R3 $R2 / 1000
 	IntOp $R4 $R2 % 1000
@@ -126,7 +128,7 @@ SectionEnd
 Function cyginst
   StrCmp $cpCygwin "no" one +1
     Rename "$INSTDIR\bin\cygwin1.dll" "$INSTDIR\bin\cygwin1.dist"
-    CopyFiles /SILENT /FILESONLY "c:\cygwin\bin\cygwin1.dll" "$INSTDIR\bin\cygwin1.dll" 1000
+    CopyFiles /SILENT /FILESONLY "$CYGWIN\bin\cygwin1.dll" "$INSTDIR\bin\cygwin1.dll" 1000
 one:
 FunctionEnd
 

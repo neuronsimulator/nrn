@@ -40,31 +40,29 @@ mpicc=@MPICC@
 if test "$mpicc" = "mpicc" ; then
 mpich=`which $mpicc | sed "s,/bin/.*,,"`
 echo "mpich=$mpich"
-# mpich configured and made with
-#./configure --prefix=/home/Hines/mpich2 --with-pm=gforker:mpd \
-#  'CFLAGS=-DDLL_EXPORT -DPIC' 'CXXFLAGS=-DDLL_EXPORT -DPIC' \
-#  'LDFLAGS=-Wl,--enable-auto-import'
-#make >& build.stdout
-#make install
-# note that $mpich is the build directory that contains build.stdout
 
-awk '
-/Entering directory/ { d = $4 }
-/ar cr/ { for (i=4; i <= NF; ++i) {
-	printf("%s/%s\n", d, $i)
-}}
-' $mpich/build.stdout | sed "s/'//
-	s/\`//
-	/\.no$/d
-	/\.po$/d
-	/\/hydra\/d
-	/\/c++\//d
-	/\/mpe2\//d
-	/\/binding\/f77\//d
-	"'$a \
-'$mpich/src/binding/f77/setbot.o'
-' >> temp
+#mpich made from mpich-3.0.2 and dlls created by
+if false ; then
+./configure  --prefix=$HOME/mpich2 --with-pm=gforker:mpd \      
+  --disable-static --enable-shared --disable-f77 --disable-fc
 
+make
+make install 
+
+cd $HOME/mpich2/lib
+
+mkdir objs
+cd objs
+ar -x ../libpmpich.a
+ar -x ../libmpl.a  
+ar -x ../libmpich.a
+
+rm lib_libpmpich_la-comm_split_type.o
+
+cd ..
+gcc -shared -Wl,--out-implib,libmpich.dll.a -o libmpich.dll objs/*.o
+
+fi
 fi
 
 @BUILD_MINGW_TRUE@mingw='yes'
@@ -75,7 +73,6 @@ fi
 @BUILD_NRNJAVA_TRUE@nrnjvm='yes'
 @BUILD_NRNJAVA_FALSE@nrnjvm='no'
 
-#sed 's,^.*/,,' temp |sort|uniq -d
 obj=`cat temp`
 
 CXX=@CXX@
@@ -88,9 +85,10 @@ if test "$CFLAGS" != "-mno-cygwin" ; then
 
 if test "$mingw" = "no" ; then
 
-echo 'make nrniv.dll for mingw under cygwin'
+echo 'make nrniv.dll under cygwin'
 $CXX -shared $obj \
   -L${IVLIBDIR} -lIVhines \
+  $mpich/lib/libmpich.dll.a \
   -lcygwin -luser32 -lkernel32 -ladvapi32 -lshell32 \
   $LIBS \
   @NRNPYTHON_PYLIBLINK@ \
@@ -104,7 +102,7 @@ if test $nrnpy = 'yes' ; then
   
 echo 'make nrnpython27.dll'
 $CXX -shared ../nrnpython/.libs/*.o -L. -lnrniv -o nrnpython27.dll \
-   -L/c/Python27/libs -lpython27 \
+   @NRNPYTHON_PYLIBLINK@ \
    -L${IVLIBDIR} -lIVhines \
    -lreadline \
    -Wl,--enable-auto-image-base \

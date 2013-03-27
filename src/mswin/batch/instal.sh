@@ -82,25 +82,23 @@ cc1=`$CC -print-prog-name=cc1`
 cp $cc1 $D/bin
 
 # in case this is an mpi version distribute the appropriate administrative tools.
+#nowadays (mpich-3.0.2) mpiinstalled is same as mpichbin
 if grep '^mpicc=mpicc' $B/src/mswin/nrncygso.sh ; then
-	mpichbin=`which mpicc | sed 's,\(/bin\)/.*,\1,'`
-	echo "mpichbin=$mpichbin"
-	mpiinstalled=$HOME/mpich2/bin
+	mpiinstalled=$HOME/mpich2
   if test -d $mpiinstalled ; then # want mpd
-	cp /bin/python2.6 $D/bin
+	cp /bin/python2.7 $D/bin
 	for i in mpdboot mpdtrace mpdexit mpdallexit mpdcleanup mpd \
-	  mpiexec.mpd mpdman.py mpdlib.py ; do
-		sed '1s/\/usr\/bin\/env //' $mpiinstalled/$i > $D/bin/$i
+	  mpiexec.mpd mpdman.py mpdlib.py \
+	  mpdroot.exe; do
+		sed '1s/\/usr\/bin\/env //' $mpiinstalled/bin/$i > $D/bin/$i
 		chmod 755 $D/bin/$i
 	done
-	# problem here. mpdroot.exe not installed and is in
-	# mpich2-1.4/src/pm/mpd/mpdroot.exe
-	cp $HOME/mpich2-1.4/src/pm/mpd/mpdroot.exe $D/bin
 	echo 'MPD_SECRETWORD=neuron' > $D/mpd.conf
 	chmod 600 $D/mpd.conf
   fi
 	# gforker
-	cp $mpiinstalled/mpiexec.exe $D/bin
+	cp $mpiinstalled/bin/mpiexec.exe $D/bin
+	cp $mpiinstalled/lib/libmpich.dll $D/bin
 	# and make the basic tests available
 	for i in test0.hoc test0.py ; do
 		cp $S/src/parallel/$i $D
@@ -118,7 +116,7 @@ done
 # do not forget the ones used by the python dlls
 if false ; then
 # too many, putting duplicates in bin, setup is 13.69MB, only cygcrypto below
-for i in /lib/python2.6/lib-dynload/*.dll ; do
+for i in /lib/python2.7/lib-dynload/*.dll ; do
 	cygcheck $i | sed 's/^ *//' >> $D/bin/temp.tmp
 done
 fi
@@ -248,8 +246,8 @@ fi
 
 if true ; then
 cd /usr/lib
-pz=python26.zip
-pd=python2.6
+pz=python27.zip
+pd=python2.7
 if test ! -f $pz ; then
 	zip -r $pz $pd
 	zip -d $pz \*/\*.pyo
