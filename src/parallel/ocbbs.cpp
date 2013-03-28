@@ -881,7 +881,7 @@ static double thread_ctime(void*) {
 	return 0.0;
 }
 
-static double thread_t(void*) {
+static double nrn_thread_t(void*) {
 	int i;
 	i = int(chkarg(1, 0, nrn_nthread));
 	return nrn_threads[i]._t;
@@ -975,7 +975,7 @@ static Member_func members[] = {
 	"sec_in_thread", sec_in_thread,
 	"thread_ctime", thread_ctime,
 	"dt", thread_dt,
-	"t", thread_t,
+	"t", nrn_thread_t,
 
 	0,0
 };
