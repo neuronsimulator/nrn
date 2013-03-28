@@ -187,15 +187,7 @@ def _ode_solve(dt, t, b, y):
     b[lo : hi] = _react_matrix_solver(_diffusion_matrix_solve(dt, full_b))[_nonzero_volume_indices]
     # this line doesn't include the reaction contributions to the Jacobian
     #b[lo : hi] = _diffusion_matrix_solve(dt, full_b)[_nonzero_volume_indices]
-def _initialize():
-    section1d._purge_cptrs()
-        
-    for sr in species._get_all_species().values():
-        s = sr()
-        if s is not None:
-            s._register_cptrs()
-            s._finitialize()
-    _setup_matrices()
+
 
 def _fixed_step_currents(rhs):
     # setup membrane fluxes from our stuff
@@ -389,7 +381,7 @@ def _ode_jacobian(dt, t, ypred, fpred):
     #print '_ode_jacobian: dt = %g, last_dt = %r' % (dt, _last_dt)
     _reaction_matrix_setup(dt, fpred)
 
-_callbacks = [_setup, _initialize, _fixed_step_currents, _conductance, _fixed_step_solve,
+_callbacks = [_setup, None, _fixed_step_currents, _conductance, _fixed_step_solve,
               _ode_count, _ode_reinit, _ode_fun, _ode_solve, _ode_jacobian, None]
 nbs.register(_callbacks)
 
