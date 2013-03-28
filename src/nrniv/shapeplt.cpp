@@ -262,7 +262,7 @@ IFGUI
 	SectionList* sl = nil;
 	// first arg may be an object.
 	if (ifarg(iarg)) {
-		if (hoc_argtype(iarg) == OBJECTVAR) {
+		if (hoc_is_object_arg(iarg)) {
 			sl = new SectionList(*hoc_objgetarg(iarg));
 			sl->ref();
 			++iarg;
