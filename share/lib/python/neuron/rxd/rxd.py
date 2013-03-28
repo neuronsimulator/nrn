@@ -348,11 +348,11 @@ def _reaction_matrix_solve(dt, rhs):
 
 _react_matrix_solver = None    
 def _reaction_matrix_setup(dt, rhs):
+    global _react_matrix_solver
     if not options.use_reaction_contribution_to_jacobian:
         _react_matrix_solver = lambda x: x
         return
 
-    global _react_matrix_solver
     # now handle the reaction contribution to the Jacobian
     # this works as long as (I - dt(Jdiff + Jreact)) \approx (I - dtJreact)(I - dtJdiff)
     count = 0
