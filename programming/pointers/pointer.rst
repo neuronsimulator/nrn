@@ -1,7 +1,7 @@
 .. _pointer:
 
-Pointer
--------
+Pointer Class
+-------------
 
 
 

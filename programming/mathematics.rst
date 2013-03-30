@@ -9,5 +9,7 @@ Mathematics
     math/matrix.rst
     math/vector.rst
     math/random.rst
+    math/guimath.rst
+    math/eqnsolve.rst
     math/misc.rst
     

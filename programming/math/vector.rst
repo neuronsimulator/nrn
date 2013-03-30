@@ -3226,8 +3226,8 @@ Vector
 
 
 
-Fourier
-~~~~~~~
+Fourier Analysis
+~~~~~~~~~~~~~~~~
 
 The following routines are based on the fast fourier transform (FFT) 
 and are implemented using code from Numerical Recipes in C (2nd ed.) 

@@ -4,6 +4,16 @@
 NMODL
 -----
 
+This document describes how to use the NBSR model description language 
+to add membrane mechanisms to NEURON. 
+
+NEURON's extensions to the NBSR language are described in:
+
+.. toctree:: :maxdepth: 1
+
+    nmodl2.rst
+
+
 .. _modeldescriptionlanguage:
 
 Model Description Language
@@ -13,8 +23,7 @@ Model Description Language
 Introduction
 ~~~~~~~~~~~~
 
-This document describes how to use the NBSR model description language 
-to add membrane mechanisms to NEURON.  The kinds of mechanisms that can 
+The kinds of mechanisms that can 
 be added are: 
 
 -   Channels in which the model consists of current-voltage relationships. 

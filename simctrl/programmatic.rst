@@ -1,8 +1,17 @@
-Programmatic
-============
+Programmatic Simulation Control
+===============================
 
+See also:
 
+.. toctree:: :maxdepth: 1
 
+    cvode.rst
+    batch.rst
+    savstate.rst
+    sessionsave.rst
+
+Functions
+---------
 
 .. function:: initnrn
 
@@ -130,105 +139,7 @@ Programmatic
 
 ----
 
-----
 
-
-
-.. function:: fstim
-
-
-    Syntax:
-        ``fstim()``
-
-
-    Description:
-        Consider this obsolete.  Nevertheless, it does work. See the old NEURON reference 
-        manual. 
-
-         
-
-----
-
-
-
-.. function:: fstimi
-
-
-    Syntax:
-        ``fstimi()``
-
-
-    Description:
-        Obsolete 
-
-         
-
-
-----
-
-
-
-.. function:: fclamp
-
-
-    Syntax:
-        ``fclamp()``
-
-
-    Description:
-        obsolete. Use the :class:`VClamp` or :class:`SEClamp` point process. 
-
-         
-
-----
-
-
-
-.. function:: fclampi
-
-
-    Syntax:
-        ``fclampi()``
-
-
-    Description:
-        obsolete. Use the :class:`VClamp` or :class:`SEClamp` point process. 
-
-         
-
-----
-
-
-
-.. function:: fclampv
-
-
-    Syntax:
-        ``fclampv()``
-
-
-    Description:
-        obsolete. Use the :class:`VClamp` or :class:`SEClamp` point process. 
-
-         
-
-----
-
-
-
-.. function:: prstim
-
-
-    Syntax:
-        ``prstim()``
-
-
-    Description:
-        obsolete. Print the info about ``fstim``, ``fclamp``, and ``fsyn`` 
-
-         
-
-----
 
 
 
@@ -429,6 +340,36 @@ Programmatic
         that do multiple runs should check stoprun after each run and exit 
         gracefully. The :meth:`RunControl.Stop` of the RunControl GUI sets this variable. 
         It is cleared at the beginning of a run or when continuing a run. 
+
+
+----
+
+.. function:: checkpoint
+
+    Syntax:
+        :samp:`checkpoint("{filename}")`
+
+    Description:
+        saves the current state of the system in a portable file to 
+        allow one to take up where you left off -- possibly on another 
+        machine. Returning to this state is accomplished by running the 
+        program with the checkpoint file as the first argument. 
+        If the checkpoint file is inconsistent with the executable the 
+        program prints an error message and exits. 
+         
+        At this time many portions of the computer state are left out of the 
+        checkpoint file, i.e. it is not as complete as a core dump. 
+        Some things that ARE included are: 
+        all interpreter symbols with definitions and values, 
+        all hoc instructions, 
+        all neuron state/parameters with mechanisms. 
+        Many aspects of the GUI are not included. 
+         
+    .. warning::
+        There is not enough implementation at this time to make this 
+        facility useful. Use the :class:`SaveState` class instead.
+
+
 
          
 ----

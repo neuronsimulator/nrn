@@ -1,7 +1,5 @@
-
-
 PtrVector
-----
+---------
 
 .. class:: PtrVector
 

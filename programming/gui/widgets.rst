@@ -384,6 +384,9 @@ panels of buttons, menus, and field editors.
     Description:
         like :func:`xvalue` but definitely uses address of the variable. 
 
+    .. seealso::
+    
+        :func:`units`
          
 
 ----
@@ -430,4 +433,70 @@ panels of buttons, menus, and field editors.
         slider can get in a state that appears to be an infinite loop. 
         The downside of slow=1 is that the var may not get the last value 
         of the slider if one releases the button during an action. 
+
+----
+
+
+.. function:: units
+
+    Syntax:
+        ``current_units = units(&variable)``
+
+        ``current_units = units(&variable, "units string")``
+
+        ``"on or off" = units(1 or 0)``
+
+        ``current_units = units("varname", ["units string"])``
+
+    Description:
+        When units are on (default on) value editor buttons display the units 
+        string (if it exists) along with the normal prompt string. Units for 
+        L, diam, Ra, t, etc are built-in and units for membrane mechanism variables 
+        are declared in the model description file. See modlunit . 
+        Note that units are NOT saved in a session. Therefore, any user defined 
+        variables must be given units before retrieving a session that shows them 
+        in a panel. 
+         
+        The units display may be turned off with \ ``units(0)`` or by setting the 
+        \ ``*units_on_flag: off`` in the nrn/lib/nrn.defaults file. 
+         
+        \ ``units(&variable)`` returns the units string for any 
+        variable for which an address can be taken. 
+         
+        \ ``units(&variable, "units string")`` sets the units for the indicated 
+        variable. 
+         
+        If the first arg is a string, it is treated as the name of the variable. 
+        This is restricted to hoc variable names of the style, "name", or "classname.name". 
+        Apart from the circumstance that the string arg style must be used when 
+        executed from Python, a benefit is that it can be used when an instance 
+        does not exist (no pointer to a variable of that type). 
+        If there are no units specified for the variable name, or the variable 
+        name is not defined, the return value is the empty string. 
+
+    Example:
+
+        .. code-block::
+            none
+
+            units(&t) // built in as "ms" 
+            units("t") 
+            units("ExpSyn.g") // built in as "uS" 
+            x = 1 
+            {units(&x, "mA/cm2")}	// declare units for variable x 
+            units(&x)		// prints mA/cm2 
+            proc p () { 
+            	xpanel("Panel") 
+            	xvalue("t") 
+            	xvalue("prompt for x", "x", 1) 
+            	xpanel() 
+            } 
+            p()		//shows units in panel 
+            units(0) 	// turn off units 
+            p()		// does not show units in panel 
+
+    .. warning::
+        In the Python world, the first arg must be a string as the pointer style will 
+        raise an error. 
+
 

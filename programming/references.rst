@@ -1,5 +1,5 @@
-References
-----------
+Pointers
+--------
 
 .. toctree::
     :maxdepth: 2

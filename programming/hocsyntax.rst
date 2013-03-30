@@ -29,8 +29,8 @@ Description:
 
 .. index::  expression
 
-expression
-~~~~~~~~~~
+Expressions
+~~~~~~~~~~~
 
 Description:
     An expression has a double precision value.  It usually appears as the right 
@@ -103,8 +103,8 @@ Options:
          
   .. index::  statement       
 
-statement
-~~~~~~~~~
+Statements
+~~~~~~~~~~
 
 Syntax:
     ``stmt``
@@ -308,40 +308,39 @@ Example:
 
 .. _arguments:
 
-arguments
+Arguments
 ~~~~~~~~~
 
-     
+Arguments to functions and procedures are retrieved positionally. 
+``$1, $2, $3`` refer to the first, second, and third scalar arguments 
+respectively. 
+ 
+If "``i``" is declared as a local variable, ``$i`` refers 
+to the scalar argument in the position given by the value of ``i``. 
+The value of ``i`` must be in the 
+range {1...numarg()}. 
+ 
+The normal idiom is
 
-Description:
-    Arguments to functions and procedures are retrieved positionally. 
-    ``$1, $2, $3`` refer to the first, second, and third scalar arguments 
-    respectively. 
-     
-    If "``i``" is declared as a local variable, ``$i`` refers 
-    to the scalar argument in the position given by the value of ``i``. 
-    The value of ``i`` must be in the 
-    range {1...numarg()}. 
-     
-    The normal idiom is 
     ``for i=1, numarg()  {print $i}`` 
-    Scalar arguments use call by value so the variable in the calling 
-    statement cannot be changed. 
-     
-    If the calling statement has a '&' 
-    prepended to the variable then it is passed by reference and must 
-    be retrieved with the 
-    syntax ``$&1, $&2, ..., $&i``. If the variable passed by reference 
-    is a one dimensional array then ``$&1`` refers to the first (0th) element 
-    and index i is denoted ``$&1[i]``. Warning, NO array bounds checking is 
-    done and the array is treated as being one-dimensional. A scalar or 
-    array reference may be passed to another procedure with 
-    ``&$&1``. To save a scalar reference use the :class:`Pointer` class. 
-     
-    Retrieval of strdef arguments uses the syntax: ``$s1, $s2, ..., $si``. 
-    Retrieval of objref arguments uses the syntax: ``$o1, $o2, ..., $oi``. 
-    Arguments of type :ref:`strdef <keyword_strdef>` and ``objref`` use call by reference so the calling 
-    value may be changed. 
+
+Scalar arguments use call by value so the variable in the calling 
+statement cannot be changed. 
+ 
+If the calling statement has a '&' 
+prepended to the variable then it is passed by reference and must 
+be retrieved with the 
+syntax ``$&1, $&2, ..., $&i``. If the variable passed by reference 
+is a one dimensional array then ``$&1`` refers to the first (0th) element 
+and index i is denoted ``$&1[i]``. Warning, NO array bounds checking is 
+done and the array is treated as being one-dimensional. A scalar or 
+array reference may be passed to another procedure with 
+``&$&1``. To save a scalar reference use the :class:`Pointer` class. 
+ 
+Retrieval of strdef arguments uses the syntax: ``$s1, $s2, ..., $si``. 
+Retrieval of objref arguments uses the syntax: ``$o1, $o2, ..., $oi``. 
+Arguments of type :ref:`strdef <keyword_strdef>` and ``objref`` use call by reference so the calling 
+value may be changed. 
 
 Example:
 
@@ -383,7 +382,34 @@ Example:
 
 .. seealso::
     :ref:`func`, :ref:`proc`, :ref:`objref`, :ref:`strdef <keyword_strdef>`, :class:`Pointer`, :func:`numarg`, :func:`argtype`
-    
+
+----
+
+.. function:: numarg
+
+    Syntax:
+        ``n = numarg()``
+
+    Description:
+        Number of arguments passed to a user written hoc function. 
+
+    .. seealso::
+        :ref:`arguments`, :func:`argtype`
+         
+
+----
+
+.. function:: argtype
+
+    Syntax:
+        ``itype = argtype(iarg)``
+
+    Description:
+        The type of the ith arg. The return value is 0 for numbers, 1 for objref, 
+        2 for strdef, 3 for pointers to numbers, and -1 if the arg does not exist. 
+
+    .. seealso::
+        :ref:`arguments`, :func:`numarg`    
 
      
      

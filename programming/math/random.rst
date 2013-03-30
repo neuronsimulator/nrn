@@ -1,9 +1,17 @@
 .. _random:
 
-Random
-------
+Pseudo-Random Number Generation
+-------------------------------
+
+Pseudo-random numbers from a variety of distributions may be generated with the :class:`Random` class. Multiple random number generators are provided; low level access to the mcell_ran4 generator is described in:
+
+.. toctree:: :maxdepth: 1
+
+    mcran4.rst
 
 
+Random Class
+============
 
 .. class:: Random
 

@@ -6,4 +6,5 @@ Networks
 
     network/parcon.rst
     network/parnet.rst
+    network/netcon.rst
     

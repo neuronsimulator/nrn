@@ -23,50 +23,55 @@ Quick Links
     :class:`SectionList`, :class:`SectionRef`, :class:`Shape`
     
     :ref:`panel`, :ref:`funfit`, :ref:`geometry`, :ref:`printf_doc`, :ref:`ockeywor`, :ref:`math`,
-    :ref:`nmodl2`, :ref:`nmodl`, :ref:`lw_doc`, :ref:`mech`, :ref:`predec`, :ref:`standardruntools`,
+    :ref:`nmodl2`, :ref:`nmodl`, :ref:`mech`, :ref:`predec`, :ref:`standardruntools`,
     :ref:`ocsyntax`, :ref:`topology`
     
-    :ref:`neuron_rxd`,
-    :func:`neuron.rxd.geometry3d.surface`, :func:`neuron.rxd.geometry3d.voxelize`
+    :ref:`neuron_rxd`
 
 Basic Programming
 -----------------
 
 .. toctree::
-    :maxdepth: 2
-
-    programming/hocsyntax.rst
-    programming/ockeywor.rst
-    programming/oop.rst
+    :maxdepth: 1
+    
+    programming/python.rst
+    programming/hoc.rst
     programming/mathematics.rst
+    programming/strings.rst
     programming/guidesign.rst
     programming/references.rst
-    programming/predec.rst
+    programming/timer.rst
+    programming/system.rst
+    programming/errors.rst
+    programming/dynamiccode.rst
+    programming/projectmanagement.rst
+    programming/internals.rst
 
 Model Specification
 -------------------
 
 .. toctree::
-    :maxdepth: 2
+    :maxdepth: 1
     
     modelspec/guitools.rst
-    modelspec/channels.rst
     modelspec/programmatic.rst
 
 Simulation Control
 ------------------
 
 .. toctree::
-    :maxdepth: 2
+    :maxdepth: 1
     
     simctrl/programmatic.rst
     simctrl/stdrun.rst
+    compilationoptions.rst
+    simctrl/interpretermanagement.rst
 
 Visualization
 -------------
 
 .. toctree::
-    :maxdepth: 2
+    :maxdepth: 1
     
     visualization/glyph.rst
     visualization/graph.rst
@@ -75,6 +80,10 @@ Visualization
     visualization/plotshape.rst
     visualization/rvarplt.rst
     visualization/shape.rst
+    visualization/notify.rst
+    visualization/gui.rst
+    visualization/shapebox.rst
+    visualization/oldgrph.rst
     
     
 
@@ -82,7 +91,7 @@ Analysis
 --------
 
 .. toctree::
-    :maxdepth: 2
+    :maxdepth: 1
     
     analysis/programmatic.rst
     analysis/guitools.rst

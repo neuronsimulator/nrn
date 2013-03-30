@@ -686,7 +686,7 @@ Mechanisms
 ----------
 
 .. seealso::
-    :meth:`keywords.insert`, :ref:`Inserter`, :ref:`nmodl`
+    :ref:`insert <keyword_insert>`, :ref:`Inserter`, :ref:`nmodl`
 
          
 
