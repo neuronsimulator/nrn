@@ -1188,7 +1188,7 @@ static int hocobj_nonzero(PyObject* self) {
 	}else if (po->sym_ && po->sym_->type == TEMPLATE) {
 		b = po->sym_->u.ctemplate->count > 0;
 	}
-	return b;// ? Py_True : Py_False;
+	return b;
 }
 
 PyObject* nrnpy_forall(PyObject* self, PyObject* args) {
@@ -1582,7 +1582,10 @@ PyObject* nrn_ptr_richcmp(void* self_ptr, void* other_ptr, int op) {
         result = self_ptr >= other_ptr;
         break;
     }
-    return result ? Py_True : Py_False;
+    if (result) {
+        Py_RETURN_TRUE;
+    }
+    Py_RETURN_FALSE;  
 }
 
 
@@ -1593,7 +1596,7 @@ static PyObject* hocobj_richcmp(PyHocObject* self, PyObject* other, int op) {
 	    void* other_ptr = (void*)(((PyHocObject*)other)->ho_);
 	    return nrn_ptr_richcmp(self_ptr, other_ptr, op);
 	}
-	return Py_False;
+	Py_RETURN_FALSE;
 }
 
 static PyObject* hocobj_same(PyHocObject* pself, PyObject* args) {
@@ -1601,11 +1604,11 @@ static PyObject* hocobj_same(PyHocObject* pself, PyObject* args) {
 	if (PyArg_ParseTuple(args, "O", &po)) {
 		if (PyObject_TypeCheck(po, hocobject_type)){
 			if (((PyHocObject*)po)->ho_ == pself->ho_) {
-				return Py_True;
+				Py_RETURN_TRUE;
 			}
 		}
 	}
-	return Py_False;
+	Py_RETURN_FALSE;
 }
 
 
