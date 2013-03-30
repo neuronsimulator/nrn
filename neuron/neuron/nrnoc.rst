@@ -285,12 +285,6 @@ the nrnoc interpreter.
 ----
 
 
-         
-
-----
-
-
-
 .. function:: parent_section
 
 
@@ -518,11 +512,6 @@ Ion
         ``cai/cao`` would be initialized (on finitialize) to the global variables 
         ``cai0_ca_ion`` and ``cao0_ca_ion`` respectively. (note that this takes place just 
         before the calculation of ``eca``). 
-
-         
-
-----
-
 
 
 

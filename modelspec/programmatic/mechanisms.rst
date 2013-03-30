@@ -8,3 +8,4 @@ Dynamics (Channels, etc...)
     kschan.rst
     linmod.rst
     mechanisms/mech.rst
+    mechanisms/nmodl.rst

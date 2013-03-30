@@ -23,7 +23,7 @@ Quick Links
     :class:`SectionList`, :class:`SectionRef`, :class:`Shape`
     
     :ref:`panel`, :ref:`funfit`, :ref:`geometry`, :ref:`printf_doc`, :ref:`ockeywor`, :ref:`math`,
-    :ref:`nmodl2`, :ref:`nmodl`, :ref:`lw_doc`, :ref:`mech`, :ref:`predec`, :ref:`0stdrun`,
+    :ref:`nmodl2`, :ref:`nmodl`, :ref:`lw_doc`, :ref:`mech`, :ref:`predec`, :ref:`standardruntools`,
     :ref:`ocsyntax`, :ref:`topology`
     
     :ref:`neuron_rxd`,
@@ -70,6 +70,7 @@ Visualization
     
     visualization/glyph.rst
     visualization/graph.rst
+    visualization/grapher.rst
     visualization/plotshapeclass.rst
     visualization/plotshape.rst
     visualization/rvarplt.rst
@@ -84,3 +85,4 @@ Analysis
     :maxdepth: 2
     
     analysis/programmatic.rst
+    analysis/guitools.rst

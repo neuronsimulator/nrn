@@ -68,8 +68,5 @@ Predeclared Variables
         :ref:`graph_crosshair`
 
 
-----
-
-
 
 

@@ -1,8 +1,8 @@
-Programmatic
-------------
+Programmatic Analysis Tools
+---------------------------
 
 .. toctree::
-    :maxdepth: 2
+    :maxdepth: 3
 
     programmatic/impedance.rst
     programmatic/optimization.rst

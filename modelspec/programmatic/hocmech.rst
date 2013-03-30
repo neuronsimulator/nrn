@@ -1,7 +1,7 @@
 .. _hocmech:
 
-hocmech
--------
+HOC-based Mechanisms
+--------------------
 
          
 

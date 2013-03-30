@@ -3,11 +3,17 @@
 .. seealso: :ref:`impratio`, :ref:`impedance_impx`, :ref:`impedance_logavsx`, 
 
 
-ImpedanceTools
---------------
+Impedance Tools
+---------------
 
 These tools plot various functions of :class:`Impedance` vs 
-location and frequency. 
+location and frequency. :ref:`impshape` is described below, but see also:
+
+.. toctree:: :maxdepth: 1
+
+    impratio.rst
+    impedanx.rst
+
  
 Each tool has three panels: The top 
 panel contains button and menu controls specific to the tool. The 

@@ -5,6 +5,7 @@
 Standard Run Tools
 ------------------
 
+
 All standard tools are available from the NEURONMainMenu. The fastest 
 way to load these tools is to execute 
 
@@ -15,7 +16,15 @@ way to load these tools is to execute
 
 which avoids inefficiencies of the :func:`load_proc` command on 
 mswindows machines. 
- 
+
+Brief summaries of the menu options are provided below, for more information on select functions see also:
+
+.. toctree::
+    :maxdepth: 1
+    
+    runctrl.rst
+    family.rst
+
 Implementations of the standard tools are in :file:`$NEURONHOME/lib/hoc/*.hoc` 
      
 .. _NEURONMainMenu:

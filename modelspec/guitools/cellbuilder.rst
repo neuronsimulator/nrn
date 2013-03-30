@@ -12,7 +12,7 @@ subtools, the :guilabel:`Hints` button in each subtool.
 .. _kineticbuild:
 
 KineticBuild
-~~~~~~~~~~~~
+------------
 
 Describe and simulate as a single channel, a Markov kinetic scheme. 
 This tool is not yet well integrated with the rest of NEURON 
