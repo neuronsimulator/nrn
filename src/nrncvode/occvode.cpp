@@ -533,6 +533,7 @@ void Cvode::gather_ydot(double* ydot, int tid){
 
 int Cvode::setup(N_Vector ypred, N_Vector fpred){
 //printf("Cvode::setup\n");
+	if (nth_) { return 0; }
 	++jac_calls_;
 	CvodeThreadData& z = CTD(0);     
 	double gamsave = nrn_threads->_dt;
