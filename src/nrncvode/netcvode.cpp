@@ -4738,6 +4738,7 @@ void nrn_update_ps2nt() {
 }
 
 void NetCvode::ps_thread_link(PreSyn* ps) {
+	if (!ps) { return; }
 	ps->nt_ = nil;
     if (!v_structure_change) { // PP2NT etc are correct
 	if (ps->osrc_) {
