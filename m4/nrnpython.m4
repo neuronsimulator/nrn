@@ -170,6 +170,20 @@ explicitly specify PYINCDIR])
 				setup_extra_link_args='#extra_link_args'
 				;;
 		esac
+
+		dnl standard hopefully
+		if test "$PYLIB" = "" ; then
+			AC_NRN_PYCONF(gcfLIBRARY, get_config_var('LIBRARY'),"",$ac_nrn_python)
+			AC_NRN_PYCONF(gcfLIBDIR, get_config_var('LIBDIR'),"",$ac_nrn_python)
+			AC_NRN_PYCONF(gcfLIBS, get_config_var('LIBS'),"",$ac_nrn_python)
+			PYLIB=`echo $gcfLIBRARY|sed 's/lib\(.*\)\.a/\1/'`
+			if test "$PYLIB" != "" ; then
+				PYLIBDIR="$gcfLIBDIR"
+				PYLIBLINK="-L$PYLIBDIR -l$PYLIB $gcfLIBS"
+				PYLIB="$PYLIBLINK -R$PYLIBDIR"
+			fi
+		fi
+
 		if test "$PYLIB" = "" ; then
 			case "$host_os" in
 			darwin*)
