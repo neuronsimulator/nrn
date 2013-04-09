@@ -51,6 +51,7 @@ extern Object** (*nrnpy_vec_as_numpy_helper_)(int, double*);
 int nrnpy_set_vec_as_numpy(PyObject* (*p)(int, double*)); // called by ctypes.
 extern double** nrnpy_setpointer_helper(PyObject*, PyObject*);
 extern Symbol* ivoc_alias_lookup(const char* name, Object* ob);
+extern int nrn_netcon_weight(void*, double**);
 
 static cTemplate* hoc_vec_template_;
 static cTemplate* hoc_list_template_;
@@ -1122,6 +1123,7 @@ static int hocobj_setattro(PyObject* subself, PyObject* name, PyObject* value) {
 
 static Symbol* sym_vec_x;
 static Symbol* sym_mat_x;
+static Symbol* sym_netcon_weight;
 
 static int araylen(Arrayinfo* a, PyHocObject* po) {
 	assert(a->nsub > po->nindex_);
@@ -1131,6 +1133,9 @@ static int araylen(Arrayinfo* a, PyHocObject* po) {
 	// at least check the vector
 	if (po->sym_ == sym_vec_x) {
 		n = vector_capacity((IvocVect*)po->ho_->u.this_pointer);
+	}else if (po->sym_ == sym_netcon_weight) {
+		double* w;
+		n = nrn_netcon_weight(po->ho_->u.this_pointer, &w);
 	}else if (po->sym_ == nrn_child_sym) {
 		n = nrn_secref_nchild((Section*)po->ho_->u.this_pointer);
 	}else if (po->sym_ == sym_mat_x) {
@@ -1888,6 +1893,8 @@ myPyMODINIT_FUNC nrnpy_hoc() {
 	hoc_sectionlist_template_ = s->u.ctemplate;
 	s = hoc_lookup("Matrix"); assert(s);
 	sym_mat_x = hoc_table_lookup("x", s->u.ctemplate->symtable); assert(sym_mat_x);
+	s = hoc_lookup("NetCon"); assert(s);
+	sym_netcon_weight = hoc_table_lookup("weight", s->u.ctemplate->symtable); assert(sym_netcon_weight);
 
 	nrnpy_nrn();
 
