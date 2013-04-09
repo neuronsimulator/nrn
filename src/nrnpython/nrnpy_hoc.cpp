@@ -847,7 +847,7 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* name) {
 			if (sym != nrn_child_sym && !ISARRAY(sym)) {
 				hoc_push_object(po->ho_);
 				component(po);
-				hocobj_dealloc(po);
+				Py_DECREF(po);
 				if (t == SECTION || t == SECTIONREF) {
 					section_object_seen = 0;
 					result = nrnpy_cas(0,0);
@@ -1045,7 +1045,7 @@ static int hocobj_setattro(PyObject* subself, PyObject* name, PyObject* value) {
 			if (!ISARRAY(sym)) {
 				hoc_push_object(po->ho_);
 				component(po);
-				hocobj_dealloc(po);
+				Py_DECREF(po);
 				return set_final_from_stk(value);
 			}else{
 				char e[200];

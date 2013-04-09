@@ -196,7 +196,7 @@ PyObject* NPySecObj_new(PyTypeObject* type, PyObject* args, PyObject* kwds) {
 //printf("NPySecObj_new %p\n", self);
 	if (self != NULL) {
 		if (NPySecObj_init(self, args, kwds) != 0) {
-			NPySecObj_dealloc(self);
+			Py_DECREF(self);
 			return NULL;
 		}
 	
