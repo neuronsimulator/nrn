@@ -152,7 +152,7 @@ That is, build a version suitable mostly as a Python extension.])
 		fi
 		NRNPYTHON_PYVER="$PYVER"
 		if test "$PYINCDIR" = "" ; then
-			AC_NRN_PYCONF(xxx,get_python_inc(1),"",$ac_nrn_python)
+			AC_NRN_PYCONF(xxx,get_python_inc(0),"",$ac_nrn_python)
 			if test "$xxx" = "" ; then
 AC_MSG_ERROR([cannot determine python include directory. Need to
 explicitly specify PYINCDIR])
