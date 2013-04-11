@@ -152,7 +152,7 @@ That is, build a version suitable mostly as a Python extension.])
 		fi
 		NRNPYTHON_PYVER="$PYVER"
 		if test "$PYINCDIR" = "" ; then
-			AC_NRN_PYCONF(xxx,get_python_inc(1),"",$ac_nrn_python)
+			AC_NRN_PYCONF(xxx,get_python_inc(0),"",$ac_nrn_python)
 			if test "$xxx" = "" ; then
 AC_MSG_ERROR([cannot determine python include directory. Need to
 explicitly specify PYINCDIR])
@@ -170,6 +170,20 @@ explicitly specify PYINCDIR])
 				setup_extra_link_args='#extra_link_args'
 				;;
 		esac
+
+		dnl standard hopefully
+		if test "$PYLIB" = "" ; then
+			AC_NRN_PYCONF(gcfLIBRARY, get_config_var('LIBRARY'),"",$ac_nrn_python)
+			AC_NRN_PYCONF(gcfLIBDIR, get_config_var('LIBDIR'),"",$ac_nrn_python)
+			AC_NRN_PYCONF(gcfLIBS, get_config_var('LIBS'),"",$ac_nrn_python)
+			PYLIB=`echo $gcfLIBRARY|sed 's/lib\(.*\)\.a/\1/'`
+			if test "$PYLIB" != "" ; then
+				PYLIBDIR="$gcfLIBDIR"
+				PYLIBLINK="-L$PYLIBDIR -l$PYLIB $gcfLIBS"
+				PYLIB="$PYLIBLINK -R$PYLIBDIR"
+			fi
+		fi
+
 		if test "$PYLIB" = "" ; then
 			case "$host_os" in
 			darwin*)

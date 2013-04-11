@@ -69,7 +69,7 @@ class NrnRandom123 : public RNG {
 public:
 	NrnRandom123(uint32_t id1, uint32_t id2);
 	virtual ~NrnRandom123();
-	virtual _G_uint32_t asLong() { return nrnran123_ipick(s_); }
+	virtual uint32_t asLong() { return nrnran123_ipick(s_); }
 	virtual double asDouble() { return nrnran123_dblpick(s_); }
 	virtual void reset() { nrnran123_setseq(s_, 0, 0); }
 	nrnran123_State* s_;
@@ -93,8 +93,8 @@ class MCellRan4 : public RNG {
 public:
 	MCellRan4(uint32_t ihigh = 0, uint32_t ilow = 0);
 	virtual ~MCellRan4();
-	virtual _G_uint32_t asLong() {
-		return (_G_uint32_t)(ilow_ == 0 ? mcell_iran4(&ihigh_) :
+	virtual uint32_t asLong() {
+		return (uint32_t)(ilow_ == 0 ? mcell_iran4(&ihigh_) :
 			nrnRan4int(&ihigh_, ilow_));
 	}
 	virtual void reset() { ihigh_ = orig_; }
@@ -126,20 +126,20 @@ class Isaac64 : public RNG {
 public:
 	Isaac64(uint32_t seed = 0);
 	virtual ~Isaac64();
-	virtual _G_uint32_t asLong() {
-		return (_G_uint32_t)nrnisaac_uint32_pick(rng_);
+	virtual uint32_t asLong() {
+		return (uint32_t)nrnisaac_uint32_pick(rng_);
 	}
 	virtual void reset() { nrnisaac_init(rng_, seed_); }
 	virtual double asDouble() { return nrnisaac_dbl_pick(rng_); }
-	_G_uint32_t  seed() { return seed_; }
-	void seed(_G_uint32_t s) { seed_ = s; reset(); }
+	uint32_t  seed() { return seed_; }
+	void seed(uint32_t s) { seed_ = s; reset(); }
 private:
-	_G_uint32_t seed_;
+	uint32_t seed_;
 	void* rng_;
-	static _G_uint32_t cnt_;
+	static uint32_t cnt_;
 };
 
-Isaac64::Isaac64(_G_uint32_t seed) {
+Isaac64::Isaac64(uint32_t seed) {
 	if (cnt_ == 0) { cnt_ = 0xffffffff; }
 	--cnt_;
 	seed_ = seed;
@@ -153,7 +153,7 @@ Isaac64::~Isaac64() {
 	nrnisaac_delete(rng_);
 }
 
-_G_uint32_t Isaac64::cnt_ = 0;
+uint32_t Isaac64::cnt_ = 0;
 
 RandomPlay::RandomPlay(Rand* r, double* px) {
 //printf("RandomPlay\n");
@@ -341,9 +341,9 @@ hoc_execerror("Random.seq() can only be used if the random generator was MCellRa
 static double r_Isaac64(void* r) {
   Rand* x = (Rand*)r;
 
-  _G_uint32_t seed1 = 0;
+  uint32_t seed1 = 0;
 
-  if (ifarg(1)) seed1 = (_G_uint32_t)(*getarg(1));
+  if (ifarg(1)) seed1 = (uint32_t)(*getarg(1));
   Isaac64* mcr = new Isaac64(seed1);
   x->rand->generator(mcr);
   delete x->gen;

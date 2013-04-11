@@ -51,6 +51,7 @@ extern Object** (*nrnpy_vec_as_numpy_helper_)(int, double*);
 int nrnpy_set_vec_as_numpy(PyObject* (*p)(int, double*)); // called by ctypes.
 extern double** nrnpy_setpointer_helper(PyObject*, PyObject*);
 extern Symbol* ivoc_alias_lookup(const char* name, Object* ob);
+extern int nrn_netcon_weight(void*, double**);
 
 static cTemplate* hoc_vec_template_;
 static cTemplate* hoc_list_template_;
@@ -847,7 +848,7 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* name) {
 			if (sym != nrn_child_sym && !ISARRAY(sym)) {
 				hoc_push_object(po->ho_);
 				component(po);
-				hocobj_dealloc(po);
+				Py_DECREF(po);
 				if (t == SECTION || t == SECTIONREF) {
 					section_object_seen = 0;
 					result = nrnpy_cas(0,0);
@@ -1045,7 +1046,7 @@ static int hocobj_setattro(PyObject* subself, PyObject* name, PyObject* value) {
 			if (!ISARRAY(sym)) {
 				hoc_push_object(po->ho_);
 				component(po);
-				hocobj_dealloc(po);
+				Py_DECREF(po);
 				return set_final_from_stk(value);
 			}else{
 				char e[200];
@@ -1122,6 +1123,7 @@ static int hocobj_setattro(PyObject* subself, PyObject* name, PyObject* value) {
 
 static Symbol* sym_vec_x;
 static Symbol* sym_mat_x;
+static Symbol* sym_netcon_weight;
 
 static int araylen(Arrayinfo* a, PyHocObject* po) {
 	assert(a->nsub > po->nindex_);
@@ -1131,6 +1133,9 @@ static int araylen(Arrayinfo* a, PyHocObject* po) {
 	// at least check the vector
 	if (po->sym_ == sym_vec_x) {
 		n = vector_capacity((IvocVect*)po->ho_->u.this_pointer);
+	}else if (po->sym_ == sym_netcon_weight) {
+		double* w;
+		n = nrn_netcon_weight(po->ho_->u.this_pointer, &w);
 	}else if (po->sym_ == nrn_child_sym) {
 		n = nrn_secref_nchild((Section*)po->ho_->u.this_pointer);
 	}else if (po->sym_ == sym_mat_x) {
@@ -1188,7 +1193,7 @@ static int hocobj_nonzero(PyObject* self) {
 	}else if (po->sym_ && po->sym_->type == TEMPLATE) {
 		b = po->sym_->u.ctemplate->count > 0;
 	}
-	return b;// ? Py_True : Py_False;
+	return b;
 }
 
 PyObject* nrnpy_forall(PyObject* self, PyObject* args) {
@@ -1582,7 +1587,10 @@ PyObject* nrn_ptr_richcmp(void* self_ptr, void* other_ptr, int op) {
         result = self_ptr >= other_ptr;
         break;
     }
-    return result ? Py_True : Py_False;
+    if (result) {
+        Py_RETURN_TRUE;
+    }
+    Py_RETURN_FALSE;  
 }
 
 
@@ -1593,7 +1601,7 @@ static PyObject* hocobj_richcmp(PyHocObject* self, PyObject* other, int op) {
 	    void* other_ptr = (void*)(((PyHocObject*)other)->ho_);
 	    return nrn_ptr_richcmp(self_ptr, other_ptr, op);
 	}
-	return Py_False;
+	Py_RETURN_FALSE;
 }
 
 static PyObject* hocobj_same(PyHocObject* pself, PyObject* args) {
@@ -1601,11 +1609,11 @@ static PyObject* hocobj_same(PyHocObject* pself, PyObject* args) {
 	if (PyArg_ParseTuple(args, "O", &po)) {
 		if (PyObject_TypeCheck(po, hocobject_type)){
 			if (((PyHocObject*)po)->ho_ == pself->ho_) {
-				return Py_True;
+				Py_RETURN_TRUE;
 			}
 		}
 	}
-	return Py_False;
+	Py_RETURN_FALSE;
 }
 
 
@@ -1885,6 +1893,8 @@ myPyMODINIT_FUNC nrnpy_hoc() {
 	hoc_sectionlist_template_ = s->u.ctemplate;
 	s = hoc_lookup("Matrix"); assert(s);
 	sym_mat_x = hoc_table_lookup("x", s->u.ctemplate->symtable); assert(sym_mat_x);
+	s = hoc_lookup("NetCon"); assert(s);
+	sym_netcon_weight = hoc_table_lookup("weight", s->u.ctemplate->symtable); assert(sym_netcon_weight);
 
 	nrnpy_nrn();
 

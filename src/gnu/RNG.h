@@ -21,23 +21,19 @@ Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //#pragma interface
 #endif
 
-#if defined(HAVE__G_CONFIG_H)
-#include <_G_config.h>
-#else
+
 /*
  * int32_t and uint32_t have been defined by the configure procedure.  Just
  * use these in place of the ones that libg++ used to provide. 
  */
-#ifndef int32_t
-#if defined(HAVE_SYS_TYPES_H)
-#include <sys/types.h>
-#endif
 #if defined(HAVE_INTTYPES_H)
 #include <inttypes.h>
-#endif
-#endif
-typedef int32_t _G_int32_t;
-typedef uint32_t _G_uint32_t;
+#elif defined(HAVE_SYS_TYPES_H)
+#include <sys/types.h>
+#elif defined(HAVE__G_CONFIG_H)
+#include <_G_config.h>
+typedef _G_int32_t int32_t;
+typedef _G_uint32_t uint32_t;
 #endif
 
 #include <assert.h>
@@ -45,12 +41,12 @@ typedef uint32_t _G_uint32_t;
 
 union PrivateRNGSingleType {		   	// used to access floats as unsigneds
     float s;
-    _G_uint32_t u;
+    uint32_t u;
 };
 
 union PrivateRNGDoubleType {		   	// used to access doubles as unsigneds
     double d;
-    _G_uint32_t u[2];
+    uint32_t u[2];
 };
 
 //
@@ -65,7 +61,7 @@ public:
     //
     // Return a long-words word of random bits
     //
-    virtual _G_uint32_t asLong() = 0;
+    virtual uint32_t asLong() = 0;
     virtual void reset() = 0;
     //
     // Return random bits converted to either a float or a double

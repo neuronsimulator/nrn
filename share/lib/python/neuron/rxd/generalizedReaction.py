@@ -83,15 +83,14 @@ class GeneralizedReaction(object):
         if self._trans_membrane and active_regions:
             # note that this assumes (as is currently enforced) that if trans-membrane then only one region
             # TODO: verify the areas and volumes are in the same order!
-            areas = numpy.array(sum([list(self._regions[0]._geometry.volumes1d(sec) for sec in self._regions[0].secs)], []))
+            areas = numpy.array(sum([list(self._regions[0]._geometry.volumes1d(sec)) for sec in self._regions[0].secs], []))
             if not self._scale_by_area:
                 areas = numpy.ones(len(areas))
-            self._mult = list(-areas / volumes[sources_indices] / molecules_per_mM_um3) + list(areas / volumes[dests_indices] / molecules_per_mM_um3)
+            self._mult = [-areas / volumes[si] / molecules_per_mM_um3 for si in sources_indices] + [areas / volumes[di] / molecules_per_mM_um3 for di in dests_indices]
             self._areas = areas
         else:
             self._mult = list(-1 for v in sources_indices) + list(1 for v in dests_indices)
         self._mult = numpy.array(self._mult)
-        
         self._update_jac_cache()
 
 
@@ -120,9 +119,10 @@ class GeneralizedReaction(object):
         num_ind = len(self._indices)
         self._jac_cols = list(itertools.chain(*[self._indices_dict[s()] for s in self._involved_species])) * num_ind
         if self._trans_membrane:
-            self._mult_extended = [list(i) * num_involved for i in self._mult]
+            self._mult_extended = [sum([list(mul) * num_involved], []) for mul in self._mult]
         else:
             self._mult_extended = self._mult
+        
 
 
     def _jacobian_entries(self, states, multiply=1, dx=1.e-10):
@@ -136,7 +136,11 @@ class GeneralizedReaction(object):
             args[i] = arg
             derivs.append((new_value - base_value) / dx)
         derivs = numpy.array(list(itertools.chain(*derivs)))
-        data = list(itertools.chain(*[derivs * mul * multiply for mul in mult]))
+        if self._trans_membrane:
+            data = list(itertools.chain(*[derivs * mul * multiply for mul in mult]))
+            #data = derivs * mult * multiply
+        else:
+            data = list(itertools.chain(*[derivs * mul * multiply for mul in mult]))
         return self._jac_rows, self._jac_cols, data
     
     def _jacobian(self, states, multiply=1, dx=1.e-10):

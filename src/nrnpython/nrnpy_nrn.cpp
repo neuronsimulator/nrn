@@ -196,7 +196,7 @@ PyObject* NPySecObj_new(PyTypeObject* type, PyObject* args, PyObject* kwds) {
 //printf("NPySecObj_new %p\n", self);
 	if (self != NULL) {
 		if (NPySecObj_init(self, args, kwds) != 0) {
-			NPySecObj_dealloc(self);
+			Py_DECREF(self);
 			return NULL;
 		}
 	
@@ -348,7 +348,7 @@ static PyObject* pyseg_richcmp(NPySegObj* self, PyObject* other, int op) {
 	    void* other_ptr = (void*) node_exact(seg->pysec_->sec_, seg->x_);
 	    return nrn_ptr_richcmp(self_ptr, other_ptr, op);
 	}
-	return Py_False;
+	Py_RETURN_FALSE;
 }
 
 static PyObject* pysec_richcmp(NPySecObj* self, PyObject* other, int op) {
@@ -359,7 +359,7 @@ static PyObject* pysec_richcmp(NPySecObj* self, PyObject* other, int op) {
 	    void* other_ptr = (void*) (((NPySecObj*)other)->sec_);
 	    return nrn_ptr_richcmp(self_ptr, other_ptr, op);
 	}
-	return Py_False;
+	Py_RETURN_FALSE;
 }
 
 
@@ -369,11 +369,11 @@ static PyObject* pysec_same(NPySecObj* self, PyObject* args) {
 	if (PyArg_ParseTuple(args, "O", &pysec)) {
 		if (PyObject_TypeCheck(pysec, psection_type)){
 			if (((NPySecObj*)pysec)->sec_ == self->sec_) {
-				return Py_True;
+				Py_RETURN_TRUE;
 			}
 		}
 	}
-	return Py_False;
+	Py_RETURN_FALSE;
 }
 
 static PyObject* NPyMechObj_name(NPyMechObj* self) {

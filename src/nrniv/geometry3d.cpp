@@ -5,7 +5,7 @@
     accessed 31 July 2012
 */
 
-#include <cmath>
+#include <math.h>
 #include <cstdio>
 #include <cassert>
 //#include <nrnpython.h>
@@ -336,7 +336,7 @@ void geometry3d_vi(double* p1, double* p2, double v1, double v2, double* out) {
         return;
     }
     double mu = v1 / delta_v;
-    if (std::isnan(mu)) {
+    if (isnan(mu)) {
         printf("geometry3d_vi error. delta_v = %g, v1 = %g, v2 = %g\n", delta_v, v1, v2);
     }
     out[0] = p1[0] + mu * (p2[0] - p1[0]);

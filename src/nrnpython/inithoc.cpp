@@ -130,7 +130,7 @@ printf("NEURON_INIT_MPI exists in env but NEURON cannot initialize MPI because:\
 #endif		
 	nrn_main_launch = 2;
 	ivocmain(argc, argv, env);
-	nrnpy_augment_path();
+//	nrnpy_augment_path();
 #if PY_MAJOR_VERSION >= 3
 	return nrnpy_hoc();
 #else
