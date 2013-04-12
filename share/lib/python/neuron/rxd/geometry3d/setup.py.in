@@ -20,7 +20,7 @@ os.environ["CXX"]=mpicxx_bin
 
 include_dirs = [nrn_srcdir + '/share/lib/python/neuron/rxd/geometry3d', '.', numpy.get_include()]
 
-
+srcdir = nrn_srcdir + '/share/lib/python/neuron/rxd/geometry3d/'
 
 #    name='neuron/rxd/geometry3d',
 setup(cmd_class = {'build_ext': build_ext},
@@ -32,7 +32,7 @@ setup(cmd_class = {'build_ext': build_ext},
                              sources=["ctng.cpp"],
                              include_dirs=include_dirs),
                    Extension("surfaces",
-                             sources=["surfaces.cpp", "marching_cubes2.c", "llgramarea.c"],
+                             sources=["surfaces.cpp", srcdir + "marching_cubes2.c", srcdir + "llgramarea.c"],
                              include_dirs=include_dirs)],
 )
 #    package_dir = {'': instdir + '/share/lib/python/neuron/rxd/geometry3d'}
