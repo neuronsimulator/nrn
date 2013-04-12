@@ -55,7 +55,6 @@ def surface(source, dx=0.25, internal_membranes=False, n_soma_step=100):
         because the former preserves the soma outline information while
         the later does not. Up to one soma outline is currently supported.
     """
-    
     objects = ctng.constructive_neuronal_geometry(source, n_soma_step, dx)
     
     xlo = min(obj.xlo for obj in objects)
@@ -64,7 +63,7 @@ def surface(source, dx=0.25, internal_membranes=False, n_soma_step=100):
     xhi = max(obj.xhi for obj in objects)
     yhi = max(obj.yhi for obj in objects)
     zhi = max(obj.zhi for obj in objects)
-
+    
     # I'm implicitly taking dx = dy = dz here
     # NOTE: triangulate_surface requires consistent discretization
     xs = numpy.arange(xlo - 3 * dx, xhi + 3 * dx, dx)

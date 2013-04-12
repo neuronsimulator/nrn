@@ -1,6 +1,9 @@
 import ctng
 import scalarField
 import numpy
+from surfaces import chunkify
+
+_max_chunks = 10000000
 
 def voxelize(source, dx=0.25, xlo=None, xhi=None, ylo=None, yhi=None, zlo=None, zhi=None, n_soma_step=100):
     """
@@ -64,7 +67,7 @@ def voxelize(source, dx=0.25, xlo=None, xhi=None, ylo=None, yhi=None, zlo=None, 
      
         from neuron import h
         from matplotlib import pyplot
-        from neuron.rxd import geometry3d
+        import geometry3d
 
         s1, s2, s3 = [h.Section() for i in xrange(3)]
         for sec in [s2, s3]: ignore_return = sec.connect(s1)
@@ -101,18 +104,18 @@ def voxelize(source, dx=0.25, xlo=None, xhi=None, ylo=None, yhi=None, zlo=None, 
     
     mesh = scalarField.ScalarField(xlo, xhi, ylo, yhi, zlo, zhi, dx, dtype='B')
     grid = mesh.values
-       
-    # figure out which objects go with which x/y/z values
-    x_objs = {x: [obj for obj in objects if obj.xlo < x < obj.xhi] for x in mesh.xs}
-    y_objs = {y: [obj for obj in objects if obj.ylo < y < obj.yhi] for y in mesh.ys}
-    z_objs = {z: [obj for obj in objects if obj.zlo < z < obj.zhi] for z in mesh.zs}
+
+    # use chunks no smaller than 10 voxels across, but aim for max_chunks chunks
+    chunk_size = max(10, int((len(mesh.xs) * len(mesh.ys) * len(mesh.zs) / _max_chunks) ** (1 / 3.)))
+    
+    chunk_objs, nx, ny, nz = chunkify(objects, mesh.xs, mesh.ys, mesh.zs, chunk_size, dx)
 
     for i, x in enumerate(mesh.xs):
-        x_obj = set(x_objs[x])
+        chunk_objsa = chunk_objs[i // chunk_size]
         for j, y in enumerate(mesh.ys):
-            xy_obj = x_obj.intersection(y_objs[y])
+            chunk_objsb = chunk_objsa[j // chunk_size]
             for k, z in enumerate(mesh.zs):
-                grid[i, j, k] = is_inside(x, y, z, xy_obj.intersection(z_objs[z]))
+                grid[i, j, k] = is_inside(x, y, z, chunk_objsb[k // chunk_size])
     
     return mesh
 
@@ -120,5 +123,5 @@ def voxelize(source, dx=0.25, xlo=None, xhi=None, ylo=None, yhi=None, zlo=None, 
             
 # inside the neuron if inside of any of its parts
 def is_inside(x, y, z, active_objs):
-    return 1 if any(obj.distance(x, y, z) <= 0 for obj in active_objs) else 0
+    return 1 if any(obj(x, y, z) <= 0 for obj in active_objs) else 0
 

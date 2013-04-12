@@ -585,9 +585,12 @@ AC_CONFIG_FILES([
 	share/examples/nrniv/xmech/Makefile
 	share/demo/Makefile share/demo/release/Makefile share/demo/dend3/Makefile
 	share/demo/sync/Makefile
+	share/lib/python/neuron/rxd/geometry3d/Makefile
+	share/lib/python/neuron/Makefile
+	share/lib/python/neuron/rxd/Makefile
 	])
-AC_CONFIG_FILES([src/nrnpython/setup.py],
-  [if test $NRNPYTHON_PYMAJOR -gt 2 ; then $PY2TO3 -w src/nrnpython/setup.py ; fi],
+AC_CONFIG_FILES([src/nrnpython/setup.py share/lib/python/neuron/rxd/geometry3d/setup.py],
+  [if test $NRNPYTHON_PYMAJOR -gt 2 ; then $PY2TO3 -w src/nrnpython/setup.py ; $PY2TO3 share/lib/python/neuron/rxd/geometry3d/setup.py ; fi],
   [NRNPYTHON_PYMAJOR=$NRNPYTHON_PYMAJOR PY2TO3=$PY2TO3]
 )
 fi

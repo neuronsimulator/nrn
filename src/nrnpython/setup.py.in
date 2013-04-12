@@ -89,11 +89,31 @@ from distutils.command.install import INSTALL_SCHEMES
 for scheme in INSTALL_SCHEMES.values():
     scheme['data'] = scheme['purelib']
 
+ext_modules = [hoc_module]
+try:
+    import numpy
+    # TODO: do we need to use os.path.join?
+    src_path = nrn_srcdir + '/share/lib/python/neuron/rxd/geometry3d/'
+    build_path = '../../share/lib/python/neuron/rxd/geometry3d/'
+    include_dirs = [nrn_srcdir + '/share/lib/python/neuron/rxd/geometry3d', '.', numpy.get_include()]
+    ext_modules=[hoc_module,
+                   Extension("neuron.rxd.geometry3d.graphicsPrimitives",
+                             sources=[build_path + "graphicsPrimitives.cpp"],
+                             include_dirs=include_dirs),
+                   Extension("neuron.rxd.geometry3d.ctng",
+                             sources=[build_path + "ctng.cpp"],
+                             include_dirs=include_dirs),
+                   Extension("neuron.rxd.geometry3d.surfaces",
+                             sources=[build_path + "surfaces.cpp", src_path + "marching_cubes2.c", src_path + "llgramarea.c"],
+                             include_dirs=include_dirs)]    
+except:
+    pass
+
 setup(name="NEURON", version="@PACKAGE_VERSION@",
       description = "NEURON bindings for python",
       package_dir = {'':instdir+'/share/nrn/lib/python'},
       packages=['neuron','neuron.neuroml','neuron.tests', 'neuron.rxd', 'neuron.rxd.geometry3d'],
       data_files = [('neuron', [nrn_srcdir + '/share/lib/python/neuron/help_data.dat'])],
-      ext_modules=[hoc_module]
+      ext_modules=ext_modules
 )
 

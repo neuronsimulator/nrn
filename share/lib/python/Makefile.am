@@ -34,24 +34,17 @@ neuron/rxd/section1d.py \
 neuron/rxd/geometry.py \
 neuron/rxd/rate.py \
 neuron/rxd/node.py \
-neuron/rxd/geometry3d/graphicsPrimitives.py \
-neuron/rxd/geometry3d/surface.py \
-neuron/rxd/geometry3d/surfaces.py \
-neuron/rxd/geometry3d/voxelize.py \
-neuron/rxd/geometry3d/ctng.py \
-neuron/rxd/geometry3d/__init__.py \
-neuron/rxd/geometry3d/triangularMesh.py \
-neuron/rxd/geometry3d/scalarField.py \
 neuron/rxd/__init__.py \
 neuron/rxd/multiCompartmentReaction.py \
 neuron/rxd/nodelist.py \
 neuron/rxd/generalizedReaction.py \
 neuron/rxd/morphology.py \
 neuron/rxd/options.py \
+neuron/rxd/geometry3d/*.* \
 \
 neuron/help_data.dat
 
-
+SUBDIRS = neuron
 
 EXTRA_DIST = $(nobase_neuronhomepython_DATA)
 
