@@ -32,6 +32,8 @@ void nrnpy_augment_path();
 void nrnpython_ensure_threadstate();
 int nrnpy_pyrun(const char*);
 extern int (*p_nrnpy_pyrun)(const char*);
+extern int nrn_global_argc;
+extern char** nrn_global_argv;
 }
 
 static PyThreadState* main_threadstate_;
@@ -98,6 +100,7 @@ void nrnpython_start(int b) {
 		}
 		//printf("Py_NoSiteFlag = %d\n", Py_NoSiteFlag);
 		Py_Initialize();
+		PySys_SetArgv(nrn_global_argc, nrn_global_argv);
 		started = 1;
 		main_threadstate_ = PyThreadState_GET();
 		int i;
