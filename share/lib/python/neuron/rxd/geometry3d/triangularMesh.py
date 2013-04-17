@@ -2,7 +2,7 @@ import neuron
 import os
 import numpy
 import numpy.linalg
-from mayavi import mlab
+#from mayavi import mlab
 
 # TODO: remove circular dependency
 import surfaces
@@ -94,9 +94,10 @@ class TriangularMesh:
                     if pt < neighbor:
                         # only print one direction of it
                         edge_count += 1
-                        mlab.plot3d([pt[0], neighbor[0]], [pt[1], neighbor[1]], [pt[2], neighbor[2]], color=(0,0,1))
+                        #mlab.plot3d([pt[0], neighbor[0]], [pt[1], neighbor[1]], [pt[2], neighbor[2]], color=(0,0,1))
                         if pt not in bad_pts: bad_pts.append(pt)
                         if neighbor not in bad_pts: bad_pts.append(neighbor)
+                        # TODO: remove this; should never get here anyways
                         print 'exposed edge: (%g, %g, %g)' % pt, ' to (%g, %g, %g)'%  neighbor
 
         if edge_count: return True

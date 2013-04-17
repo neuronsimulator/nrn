@@ -14,6 +14,7 @@ from reaction import Reaction
 import geometry
 from multiCompartmentReaction import MultiCompartmentReaction
 from rxd import re_init
+import dimension3
 
 from geometry import membrane, inside, Shell, FractionalVolume, FixedCrossSection, FixedPerimeter
 # deprecated:

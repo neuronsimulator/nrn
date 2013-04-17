@@ -31,6 +31,7 @@ class Rate(GeneralizedReaction):
     
     def _update_indices(self):
         # this is called anytime the geometry changes as well as at init
+        # TODO: is the above statement true?
         
         self._indices_dict = {}
         

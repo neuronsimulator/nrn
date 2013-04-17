@@ -8,6 +8,7 @@ import nodelist
 import rxdmath
 import numpy
 import rxd
+import warnings
 
 _defined_species = {}
 def _get_all_species():
@@ -143,6 +144,35 @@ class SpeciesOnRegion(_SpeciesMathable):
         self.nodes.concentration = value
 
 
+# 3d stuff
+
+def _check_neighbors(pt1, pt2, indices):
+    pt1in = pt1 in indices
+    pt2in = pt2 in indices
+    if not pt1in and not pt2in:
+        return None
+    if pt1in and pt2in:
+        return (indices[pt1], indices[pt2])
+    # reflective boundary conditions: reuse the same node
+    if pt1in:
+        return (indices[pt1], indices[pt1])
+    if pt2in:
+        return (indices[pt2], indices[pt2])
+    raise Exception('should never get here')
+
+def _setup_matrices_process_neighbors(pt1, pt2, indices, euler_matrix, dx2, index, d):
+    changes = _check_neighbors(pt1, pt2, indices)
+    if changes:
+        euler_matrix[index, index] -= 2. * d / dx2
+        # using += because could be repeated if at boundary
+        euler_matrix[index, changes[0]] += d / dx2
+        euler_matrix[index, changes[1]] += d / dx2
+
+
+
+
+
+
 
 # TODO: make sure that we can make this work where things diffuse across the
 #       boundary between two regions... for the tree solver, this is complicated
@@ -223,24 +253,65 @@ class Species(_SpeciesMathable):
                         # the last 1 says to set based on global initial concentrations
                         # e.g. nai0_na_ion, etc...
                         h.ion_style(name + '_ion', 3, 2, 1, 1, 1, sec=s)
-        self._real_secs = region._sort_secs(sum([r.secs for r in regions], []))
-        # TODO: at this point the sections are sorted within each region, but for
-        #       tree solver (which not currently using) would need sorted across
-        #       all regions if diffusion between multiple regions
-        self._secs = [Section1D(self, sec, d, r) for r in regions for sec in r.secs]
-        if self._secs:
-            self._offset = self._secs[0]._offset
+                        
+                        
+        # TODO: remove the need for this
+        self._dimension = region._sim_dimension
+        
+        # TODO: remove this line when certain no longer need it (commented out 2013-04-17)
+        # self._real_secs = region._sort_secs(sum([r.secs for r in regions], []))
+        
+        if self._dimension == 1:
+            # TODO: at this point the sections are sorted within each region, but for
+            #       tree solver (which not currently using) would need sorted across
+            #       all regions if diffusion between multiple regions
+            self._secs = [Section1D(self, sec, d, r) for r in regions for sec in r.secs]
+            if self._secs:
+                self._offset = self._secs[0]._offset
+            else:
+                raise Exception('no sections specified')
+            self._has_adjusted_offsets = False
+            self._assign_parents()
+            self._update_region_indices()
+        elif self._dimension == 3:
+            if len(regions) != 1:
+                raise Exception('3d currently only supports 1 region per species')
+            r = self._regions[0]
+            self._nodes = []
+            xs, ys, zs, segs = r._xs, r._ys, r._zs, r._segs
+            self._offset = node._allocate(len(xs))
+            for i, x, y, z, seg in zip(xrange(len(xs)), xs, ys, zs, segs):
+                self._nodes.append(node.Node3D(i + self._offset, x, y, z, r, seg))
+            self._register_cptrs()
+
         else:
-            raise Exception('no sections specified')
-        self._has_adjusted_offsets = False
-        self._assign_parents()
-        self._update_region_indices()
+            raise Exception('unsupported dimension: %r' % self._dimension)
 
     @property
     def states(self):
         """A vector of all the states corresponding to this species"""
         all_states = node._get_states()
         return [all_states[i] for i in numpy.sort(self.indices())]
+
+
+    def _setup_matrices3d(self, euler_matrix):
+        assert(self._dimension == 3)
+        # TODO: don't do Euler!
+        # TODO: this doesn't handle multiple regions
+        region_mesh = self._regions[0]._mesh.values
+        dx2 = self._regions[0]._dx ** 2
+        indices = {}
+        xs, ys, zs = region_mesh.nonzero()
+        diff = self._d
+        for i in xrange(len(xs)):
+            indices[(xs[i], ys[i], zs[i])] = i
+        
+        for node in self.nodes:
+            i, j, k, index = node._i, node._j, node._k, node._index
+            _setup_matrices_process_neighbors((i, j, k - 1), (i, j, k + 1), indices, euler_matrix, dx2, index, diff)
+            _setup_matrices_process_neighbors((i, j - 1, k), (i, j + 1, k), indices, euler_matrix, dx2, index, diff)
+            _setup_matrices_process_neighbors((i - 1, j, k), (i + 1, j, k), indices, euler_matrix, dx2, index, diff)
+            
 
 
     def re_init(self):
@@ -256,10 +327,37 @@ class Species(_SpeciesMathable):
     def _update_node_data(self):
         for sec in self._secs:
             sec._update_node_data()
+            
+    def concentrations(self):
+        if self._dimension != 3:
+            raise Exception('concentrations only supports 3d and that is deprecated')
+        warnings.warn('concentrations is deprecated; do not use')
+        r = self._regions[0]
+        data = numpy.array(r._mesh.values, dtype=float)
+        # things outside of the volume will be NaN
+        data[:] = numpy.NAN
+        max_concentration = -1
+        for node in self.nodes:
+            data[node._i, node._j, node._k] = node.concentration
+        return data
+        
 
     def _register_cptrs(self):
-        for sec in self._secs:
-            sec._register_cptrs()
+        if self._dimension == 1:
+            for sec in self._secs:
+                sec._register_cptrs()
+        elif self._dimension == 3:
+            assert(len(self._regions) == 1)
+            r = self._regions[0]
+            nrn_region = r._nrn_region
+            self._concentration_ptrs = []
+            if nrn_region is not None and self.name is not None:
+                ion = '_ref_' + self.name + nrn_region
+                self._seg_order = r.nodes_by_seg.keys()
+                for seg in self._seg_order:
+                    self._concentration_ptrs.append(seg.__getattribute__(ion))
+        else:
+            raise Exception('species._register_cptrs does not currently support dimension = %r' % self._dimension)
     
 
     @property
@@ -280,10 +378,19 @@ class Species(_SpeciesMathable):
         """return the indices corresponding to this species in the given region
         
         if r is None, then returns all species indices"""
-        if r in self._region_indices:
-            return self._region_indices[r]
+        if self._dimension == 1:
+            if r in self._region_indices:
+                return self._region_indices[r]
+            else:
+                return []
+        elif self._dimension == 3:
+            # TODO: change this when supporting more than one region
+            if r is None or r == self._regions[0]:
+                return range(self._offset, self._offset + len(self.nodes))
+            else:
+                return []
         else:
-            return []
+            raise Exception('unsupported dimension')
         
     
     def _setup_diffusion_matrix(self, g):
@@ -346,12 +453,32 @@ class Species(_SpeciesMathable):
     def _transfer_to_legacy(self):
         """Transfer concentrations to the standard NEURON grid"""
         if self._name is None: return
-        for sec in self._secs: sec._transfer_to_legacy()
+        if self._dimension == 1:
+            for sec in self._secs: sec._transfer_to_legacy()
+        elif self._dimension == 3:
+            assert(len(regions) == 1)
+            r = self._regions[0]
+            if r._nrn_region is None: return
+            for seg, ptr in zip(self._seg_order, self._concentration_ptrs):
+                ptr[0] = numpy.average([node.concentration for node in r._nodes_by_seg[seg]])
+        else:
+            raise Exception('unrecognized dimension')
     
     def _import_concentration(self, init=True):
         """Read concentrations from the standard NEURON grid"""
         if self._name is None: return
-        for sec in self._secs: sec._import_concentration(init)
+        if self._dimension == 1:
+            for sec in self._secs: sec._import_concentration(init)
+        elif self._dimension == 3:
+            assert(len(regions) == 1)
+            r = self._regions[0]
+            if r._nrn_region is None: return
+            for seg, ptr in zip(self._seg_order, self._concentration_ptrs):
+                value = ptr[0]
+                for node in r._nodes_by_seg[seg]:
+                    node.concentration = value
+        else:
+            raise Exception('unrecognized dimension')
             
             
     
@@ -360,7 +487,12 @@ class Species(_SpeciesMathable):
         """A NodeList of all the nodes corresponding to the species.
         
         This can then be further restricted using the callable property of NodeList objects."""
-        return nodelist.NodeList(sum([s.nodes for s in self._secs], []))
+        if self._dimension == 1:
+            return nodelist.NodeList(sum([s.nodes for s in self._secs], []))
+        elif self._dimension == 3:
+            return self._nodes
+        else:
+            raise Exception('nodes does not currently support species with dimension = %r.' % self._dimension)
 
 
     @property

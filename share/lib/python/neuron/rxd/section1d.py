@@ -89,7 +89,7 @@ class Section1D(rxdsection.RxDSection):
     @property
     def nodes(self):
         dx = self.L / self.nseg
-        return nodelist.NodeList([node.Node(self, i, ((i + 0.5) * dx) / self.L) for i in xrange(self.nseg)])
+        return nodelist.NodeList([node.Node1D(self, i, ((i + 0.5) * dx) / self.L) for i in xrange(self.nseg)])
             
     def _transfer_to_legacy(self):
         states = node._get_states()
