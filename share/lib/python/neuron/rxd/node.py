@@ -40,7 +40,7 @@ class Node(object):
         If a number between 0 and 1 is provided, returns True if the normalized position lies within the Node; else False.
         """
         if isinstance(condition, nrn.Section) or isinstance(condition, rxdsection.RxDSection):
-            return self.sec == condition
+            return self._in_sec(condition)
         elif isinstance(condition, region.Region):
             return self.region == condition
         try:
@@ -143,6 +143,10 @@ class Node1D(Node):
     def sec(self):
         """The RxDSection containing the compartment."""
         return self._sec
+
+    def _in_sec(self, sec):
+        return sec == self.sec or sec == self.sec._sec
+
     
     @property
     def species(self):
@@ -234,6 +238,9 @@ class Node3D(Node):
     @property
     def seg(self):
         return self._seg
+    
+    def _in_sec(self, sec):
+        return sec == self.sec
     
     @property
     def sec(self):
