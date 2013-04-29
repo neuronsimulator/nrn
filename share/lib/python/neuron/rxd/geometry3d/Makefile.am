@@ -16,7 +16,9 @@ graphicsPrimitives.cpp: graphicsPrimitives.pyx
 	$(CYTHON) $(geosrc)/graphicsPrimitives.pyx -o graphicsPrimitives.cpp
 
 pkginclude_HEADERS = 
-EXTRA_DIST = ctng.cpp ctng.pyx surfaces.cpp surfaces.pyx graphicsPrimitives.cpp graphicsPrimitives.pyx
+EXTRA_DIST = ctng.cpp ctng.pyx surfaces.cpp surfaces.pyx \
+	graphicsPrimitives.cpp graphicsPrimitives.pyx \
+	marching_cubes2.c llgramarea.c
 
 install-exec-am: ctng.cpp surfaces.cpp graphicsPrimitives.cpp
 	if test ! -f graphicsPrimitives.cpp ; then \
