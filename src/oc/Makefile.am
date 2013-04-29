@@ -11,7 +11,7 @@ RanFiles = isaac64.c mcran4.c nrnisaac.c nrnran123.c
 
 if BUILD_NRNMPI_DYNAMIC
 nrnmpila =
-nrnmpidynam = nrnmpi_dynam.c nrnmpi_dynam_stubs.c
+nrnmpidynam = nrnmpi_dynam.c
 else
 nrnmpila = ../nrnmpi/libnrnmpi.la
 nrnmpidynam =

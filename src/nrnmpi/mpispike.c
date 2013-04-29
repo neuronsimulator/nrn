@@ -5,8 +5,11 @@
 
 /* do not want the redef in the dynamic load case */
 #include <nrnmpiuse.h>   
-#undef NRNMPI_DYNAMICLOAD   
-#define NRNMPI_DYNAMICLOAD 0
+
+#if NRNMPI_DYNAMICLOAD
+#include <nrnmpi_dynam.h>
+#endif
+
 #include <nrnmpi.h>
 
 #if NRNMPI
