@@ -98,17 +98,15 @@ def re_init():
         
         # update matrix equations
         _setup_matrices()
-            
-        for sr in species._get_all_species().values():
-            s = sr()
-            if s is not None: s.re_init()
-        
-        _cvode_object.re_init()
-    elif dim == 3:
-        for sr in species._get_all_species().values():
-            s = sr()
-            if s is not None: s.re_init()
-    
+
+    elif dim != 3:            
+        raise Exception('unknown dimension')
+    for sr in species._get_all_species().values():
+        s = sr()
+        if s is not None: s.re_init()
+    # TODO: is this safe?        
+    _cvode_object.re_init()
+
 
 def _invalidate_matrices():
     # TODO: make a separate variable for this?
@@ -150,6 +148,7 @@ def _ode_reinit(y):
     y[_rxd_offset : _rxd_offset + len(_nonzero_volume_indices)] = node._get_states()[_nonzero_volume_indices]
 
 def _ode_fun(t, y, ydot):
+    current_dimension = region._sim_dimension
     if region._sim_dimension == 3: raise Exception('cvode not supported yet for 3D')
     lo = _rxd_offset
     hi = lo + len(_nonzero_volume_indices)
@@ -179,8 +178,16 @@ def _ode_fun(t, y, ydot):
         if d:
             states[i] = -v / d
     """
-    # TODO: refactor so this isn't in section1d
-    section1d._transfer_to_legacy()        
+    if region._sim_dimension == 1:
+        # TODO: refactor so this isn't in section1d?
+        section1d._transfer_to_legacy()        
+    elif region._sim_dimension == 3:
+        for sr in species._get_all_species().values():
+            s = sr()
+            if s is not None: s._transfer_to_legacy()
+    else:
+        raise Exception('unknown dimension')
+
     
     if ydot is not None:
         # diffusion_matrix = - jacobian    
@@ -241,9 +248,6 @@ def _fixed_step_solve(dt):
         # TODO: refactor so this isn't in section1d... probably belongs in node
         section1d._transfer_to_legacy()
     elif dim == 3:
-        if _curr_ptr_vector is not None:
-            raise Exception('still need to handle non-None _curr_ptr_vector')
-        
         # the actual advance via implicit euler
         n = len(states)
         m = scipy.sparse.eye(n, n) - dt * _euler_matrix
@@ -253,15 +257,10 @@ def _fixed_step_solve(dt):
         result, info = scipy.sparse.linalg.bicgstab(m, states + dt * b, M=pinverse)
         assert(info == 0)
         states[:] = result
-        #states[:] = scipy.sparse.linalg.spsolve(scipy.sparse.eye(n, n) - dt * _euler_matrix, states + dt * b)
-        #states += dt * (_euler_matrix * states + b)   # this was Euler
 
-
-        # TODO: readd transfer to legacy
-        #for sr in species._get_all_species().values():
-        #    s = sr()
-        #    if s is not None: s._transfer_to_legacy()
-
+        for sr in species._get_all_species().values():
+            s = sr()
+            if s is not None: s._transfer_to_legacy()
         
 
 def _rxd_reaction(states):
@@ -270,10 +269,6 @@ def _rxd_reaction(states):
     if _diffusion_matrix is None and region._sim_dimension == 1: _setup_matrices()
 
     b = numpy.zeros(len(states))
-    # TODO: this isn't yet (2013-03-14) in 3D, but needs to be
-    # membrane fluxes from classic NEURON
-    #print 'indices:', _curr_indices
-    #print 'ptrs:', _curr_ptrs
     
     if _curr_ptr_vector is not None:
         _curr_ptr_vector.gather(_curr_ptr_storage_nrn)
@@ -435,12 +430,14 @@ def _update_node_data(force=False):
     if last_diam_change_cnt != _cvode_object.diam_change_count() or _cvode_object.structure_change_count() != last_structure_change_cnt or force:
         last_diam_change_cnt = _cvode_object.diam_change_count()
         last_structure_change_cnt = _cvode_object.structure_change_count()
-        for sr in species._get_all_species().values():
-            s = sr()
-            if s is not None: s._update_node_data()
-        for sr in species._get_all_species().values():
-            s = sr()
-            if s is not None: s._update_region_indices()
+        if region._sim_dimension == 1:
+            # TODO: merge this with the 3d case
+            for sr in species._get_all_species().values():
+                s = sr()
+                if s is not None: s._update_node_data()
+            for sr in species._get_all_species().values():
+                s = sr()
+                if s is not None: s._update_region_indices()
         for rptr in _all_reactions:
             r = rptr()
             if r is not None: r._update_indices()
@@ -483,6 +480,9 @@ def _setup_matrices():
             if s is not None: s._setup_matrices3d(_euler_matrix)
 
         _euler_matrix = _euler_matrix.tocsr()
+
+        _update_node_data(True)
+        
 
     else:
         # TODO: initialization is slow. track down why

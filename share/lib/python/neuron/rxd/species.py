@@ -282,6 +282,15 @@ class Species(_SpeciesMathable):
             self._offset = node._allocate(len(xs))
             for i, x, y, z, seg in zip(xrange(len(xs)), xs, ys, zs, segs):
                 self._nodes.append(node.Node3D(i + self._offset, x, y, z, r, seg))
+            # TODO: volumes will be wrong when allowing partial volumes
+            node._volumes[range(self._offset, self._offset + len(xs))] = r._dx ** 3
+            for i, v in enumerate(r._on_surface):
+                if v:
+                    # TODO: surface area is always wrong
+                    sa = r._dx ** 2
+                else:
+                    sa = 0
+                node._surface_area[self._offset + i] = sa
             self._register_cptrs()
 
         else:
@@ -353,7 +362,7 @@ class Species(_SpeciesMathable):
             self._concentration_ptrs = []
             if nrn_region is not None and self.name is not None:
                 ion = '_ref_' + self.name + nrn_region
-                self._seg_order = r.nodes_by_seg.keys()
+                self._seg_order = r._nodes_by_seg.keys()
                 for seg in self._seg_order:
                     self._concentration_ptrs.append(seg.__getattribute__(ion))
         else:
@@ -404,8 +413,32 @@ class Species(_SpeciesMathable):
                 c[i, i] = 1.
     
     def _setup_currents(self, indices, scales, ptrs):
-        for s in self._secs:
-            s._setup_currents(indices, scales, ptrs)
+        if self._dimension == 1:
+            for s in self._secs:
+                s._setup_currents(indices, scales, ptrs)
+        elif self._dimension == 3:
+            # TODO: this is very similar to the 1d code; merge
+            # TODO: this needs changed when supporting more than one region
+            nrn_region = self._regions[0].nrn_region
+            if nrn_region is not None and self.name is not None and self.charge != 0:
+                ion_curr = '_ref_i%s' % self.name
+                volumes, surface_area, diffs = node._get_data()
+                # TODO: this implicitly assumes that o and i border the membrane
+                # different signs depending on if an outward current decreases the region's concentration or increases it
+                if nrn_region == 'i':
+                    sign = -1
+                elif nrn_region == 'o':
+                    sign = 1
+                else:
+                    raise Exception('bad nrn_region for setting up currents (should never get here)')
+                local_indices = self.indices()
+                for i, nodeobj in enumerate(self.nodes):
+                    if surface_area[i]:
+                        indices.append(local_indices[i])
+                        scales.append(sign * surface_area[i + self._offset] * 10000. / (self.charge * rxd.FARADAY * volumes[i + self._offset]))
+                        ptrs.append(nodeobj.seg.__getattribute__(ion_curr))
+        else:
+            raise Exception('unknown dimension')
 
     
     def _has_region_section(self, region, sec):
@@ -456,11 +489,16 @@ class Species(_SpeciesMathable):
         if self._dimension == 1:
             for sec in self._secs: sec._transfer_to_legacy()
         elif self._dimension == 3:
-            assert(len(regions) == 1)
+            assert(len(self._regions) == 1)
             r = self._regions[0]
             if r._nrn_region is None: return
+            
+            # TODO: at the very least, switch to using ptrvectors (for speed)
+            # TODO: what if no surface nodes in that segment???
+            # TODO: concentration 
+            nodes = self._nodes
             for seg, ptr in zip(self._seg_order, self._concentration_ptrs):
-                ptr[0] = numpy.average([node.concentration for node in r._nodes_by_seg[seg]])
+                ptr[0] = numpy.average([nodes[node].concentration for node in r._surface_nodes_by_seg[seg]])
         else:
             raise Exception('unrecognized dimension')
     
@@ -470,13 +508,15 @@ class Species(_SpeciesMathable):
         if self._dimension == 1:
             for sec in self._secs: sec._import_concentration(init)
         elif self._dimension == 3:
-            assert(len(regions) == 1)
+            assert(len(self._regions) == 1)
             r = self._regions[0]
             if r._nrn_region is None: return
+            # TODO: replace this with a pointer vec for speed
+            nodes = self._nodes
             for seg, ptr in zip(self._seg_order, self._concentration_ptrs):
                 value = ptr[0]
                 for node in r._nodes_by_seg[seg]:
-                    node.concentration = value
+                    nodes[node].concentration = value
         else:
             raise Exception('unrecognized dimension')
             

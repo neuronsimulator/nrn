@@ -29,7 +29,12 @@ class Region:
         global _region_count, _sim_dimension
         # TODO: validate sections (should be list of nrn.Section)
         if dimension == 3:
-            self._secs = sections #copy.copy(sections)
+            if hasattr(sections, 'sections'):
+                # TODO: Import3D. Won't work with currents, but no problem since need to remove anyways
+                self._secs = sections #copy.copy(sections)
+            else:
+                self._secs = _sort_secs(sections)
+            
         else:
             self._secs = _sort_secs(sections)
         if nrn_region not in (None, 'i', 'o'):
