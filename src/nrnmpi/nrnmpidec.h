@@ -1,3 +1,8 @@
+/*
+This file is processed by mkdynam.sh and so it is important that
+the prototypes be of the form "type foo(type arg, ...)"
+*/
+
 #ifndef nrnmpidec_h
 #define nrnmpidec_h
 #include <nrnmpiuse.h>
@@ -5,10 +10,6 @@
 #include <stdlib.h>
 #if defined(__cplusplus)
 extern "C" {
-#endif
-
-#if NRNMPI_DYNAMICLOAD
-#include "nrnmpi_dynam.h"
 #endif
 
 /* from bbsmpipack.c */
@@ -61,8 +62,8 @@ extern int nrn_wrap_mpi_init(int* flag);
 extern void nrnmpi_spike_initialize();
 extern int nrnmpi_spike_exchange();
 extern int nrnmpi_spike_exchange_compressed();
-extern double nrnmpi_mindelay(double);
-extern int nrnmpi_int_allmax(int);
+extern double nrnmpi_mindelay(double maxdel);
+extern int nrnmpi_int_allmax(int i);
 extern void nrnmpi_int_gather(int* s, int* r, int cnt, int root);
 extern void nrnmpi_int_gatherv(int* s, int scnt, int* r, int* rcnt, int* rdispl, int root);
 extern void nrnmpi_int_allgather(int* s, int* r, int n);

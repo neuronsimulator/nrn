@@ -15,7 +15,7 @@ if BUILD_NRNMPI_DYNAMIC
 # need to rerun the make after that
 NEED_RTLD_GLOBAL=
 
-nrnmpi_dynam.h nrnmpi_dynam_cinc: mkdynam.sh nrnmpidec.h
+nrnmpi_dynam.h nrnmpi_dynam_cinc nrnmpi_dynam_wrappers.inc: mkdynam.sh nrnmpidec.h
 	(cd $(nsrc)/nrnmpi ; sh mkdynam.sh)
 
 all: nrnmpi_dynam.h

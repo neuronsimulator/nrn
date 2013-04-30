@@ -6,16 +6,15 @@
 
 /* do not want the redef in the dynamic load case */
 #include <nrnmpiuse.h>
-#if defined(NRNMPI_DYNAMICLOAD) && NRNMPI_DYNAMICLOAD==1
-#define NRNMPI_DYNAMICLOAD_use 1
-#undef NRNMPI_DYNAMICLOAD
-#define NRNMPI_DYNAMICLOAD 0
+#if NRNMPI_DYNAMICLOAD
+#include <nrnmpi_dynam.h> /* define all the nrnmpi functions name to f_name */
 #endif
+
 #include <nrnmpi.h>
 #include <mpispike.h>
 
 
-#if NRNMPI_DYNAMICLOAD_use
+#if NRNMPI_DYNAMICLOAD
 #else
 #include "nrnmpi_def_cinc"
 #endif
