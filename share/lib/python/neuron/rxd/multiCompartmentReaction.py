@@ -76,7 +76,7 @@ class MultiCompartmentReaction(GeneralizedReaction):
         rxd._register_reaction(self)
     
     def __repr__(self):
-        return 'MultiCompartmentReaction(%r, %r, rate_b=%r, membrane=%r, custom_dynamics=%r, membrane_flux=%r, scale_by_area=%r)' % (self._scheme, self._original_rate_f, self._original_rate_b, self._regions[0], self._custom_dyanmics, self._membrane_flux, self._scale_by_area)
+        return 'MultiCompartmentReaction(%r, %r, rate_b=%r, membrane=%r, custom_dynamics=%r, membrane_flux=%r, scale_by_area=%r)' % (self._scheme, self._original_rate_f, self._original_rate_b, self._regions[0], self._custom_dynamics, self._membrane_flux, self._scale_by_area)
     
     
     def _do_memb_scales(self):                    
