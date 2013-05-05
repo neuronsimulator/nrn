@@ -49,6 +49,7 @@ begintemplate ModelViewXML
 public selected
 public selsub, selsec, disp, xportLevel1, xportLevel2
 public subsets, prependname, mview, unlink
+public exportNeuroML
 external nil, hoc_sf_
 objref tobj, tobj1, mview, secref, cellref, fileref
 objref dmech, dparm, dpelm, dmlist
@@ -90,12 +91,12 @@ proc xportLevel1() {
         xport1(1)
         return
     }
-    if (object_id(fileref) == 0) {
-        fileref = new File()
-        fileref.chooser("w", "Save model in file", "*.xml")
-    }
+
+    fileref = new File()
+    fileref.chooser("w", "Save model in NeuroML v1.8.1 Level 1 file", "*.xml")
+
     if (fileref.chooser()) {
-    xport1(1)
+        xport1(1)
     }
 }
 
@@ -105,16 +106,25 @@ proc xportLevel2() {
         xport1(2)
         return
     }
-    if (object_id(fileref) == 0) {
-        fileref = new File()
-        fileref.chooser("w", "Save model in file", "*.xml")
-    }
+
+    fileref = new File()
+    fileref.chooser("w", "Save model in NeuroML v1.8.1 Level 2 file", "*.xml")
+
     if (fileref.chooser()) {
-    xport1(2)
+        xport1(2)
     }
 }
 
-proc xport1() {local ok
+proc xport1() {
+    exportNeuroML(fileref.getname, $1)
+}
+
+// Takes args: fileName, level
+proc exportNeuroML() {local ok
+    fileref = new File($s1)
+    level = $2
+    print "Exporting NeuroML Level ", level, "into: ",fileref.getname
+
 	ok = fileref.wopen()
 	if (!ok) {
 		printf("could not open %s\n", fileref.getname)
@@ -122,23 +132,24 @@ proc xport1() {local ok
 	}
 	fileref.printf("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
 
-	header(fileref, $1)
-	xmlwrite(fileref, $1)
+	header(fileref, level)
+	xmlwrite(fileref, level)
 	fileref.printf("</neuroml>\n")
 	fileref.close()
 }
 
 proc header() {
-$o1.printf("<neuroml xmlns=\"http://morphml.org/neuroml/schema\"\n")
-$o1.printf("    xmlns:mml=\"http://morphml.org/morphml/schema\"\n")
-$o1.printf("    xmlns:meta=\"http://morphml.org/metadata/schema\"\n")
-$o1.printf("    xmlns:bio=\"http://morphml.org/biophysics/schema\"\n")
-$o1.printf("    xmlns:cml=\"http://morphml.org/channelml/schema\"\n")
-$o1.printf("    xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n")
-$o1.printf("    xsi:schemaLocation=\"http://morphml.org/neuroml/schema http://www.neuroml.org/NeuroMLValidator/NeuroMLFiles/Schemata/v1.8.1/Level3/NeuroML_Level3_v1.8.1.xsd\"\n", $2)
-$o1.printf("    name = \"NeuroML Level %d file exported from NEURON\"\n", $2)
-$o1.printf("    lengthUnits=\"micron\">\n\n")
+    $o1.printf("<neuroml xmlns=\"http://morphml.org/neuroml/schema\"\n")
+    $o1.printf("    xmlns:mml=\"http://morphml.org/morphml/schema\"\n")
+    $o1.printf("    xmlns:meta=\"http://morphml.org/metadata/schema\"\n")
+    $o1.printf("    xmlns:bio=\"http://morphml.org/biophysics/schema\"\n")
+    $o1.printf("    xmlns:cml=\"http://morphml.org/channelml/schema\"\n")
+    $o1.printf("    xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n")
+    $o1.printf("    xsi:schemaLocation=\"http://morphml.org/neuroml/schema http://www.neuroml.org/NeuroMLValidator/NeuroMLFiles/Schemata/v1.8.1/Level3/NeuroML_Level3_v1.8.1.xsd\"\n", $2)
+    $o1.printf("    name = \"NeuroML Level %d file exported from NEURON\"\n", $2)
+    $o1.printf("    lengthUnits=\"micron\">\n\n")
 }
+
 
 // store cell number in cm of first seg of root of cell (and restore original cm
 proc assoc_cell_number() {local i, j, pointcount
@@ -212,7 +223,7 @@ proc xmlwrite() {local proximalid, pointcount, segmentcount, sectioncount, i, j,
 
         forsec cellref.secanal.allseclist {
             
-            $o1.printf("<!-- Section: %s -->\n", secname())
+            $o1.printf("<!-- Section: %s which has %d 3D points, so %d segment(s)-->\n", secname(), n3d(), (n3d() - 1))
 
             sectioncount = cm(.00001)
             tobj = new SectionRef()
@@ -506,23 +517,35 @@ proc xmlwrite() {local proximalid, pointcount, segmentcount, sectioncount, i, j,
                                 hoc_sf_.left(paramNameToUse, hoc_sf_.substr(paramNameToUse, "_"))
                             }
 
-if(1){ // only change g_pas
                             if (strcmp(dparm.name,"g_pas") == 0) {
-                                paramNameToUse = "gmax" 
-                                comment = "Assuming parameter g_pas refers to passive maximum cond density"
-			    }
-}else{
-                            if (strcmp(paramNameToUse,"g") == 0) {
-                                paramNameToUse = "gmax" 
-                                comment = "Assuming parameter g refers to the maximum cond density"
-                            } else if (hoc_sf_.substr(paramNameToUse, "g")==0 && hoc_sf_.substr(paramNameToUse, "bar")>=1) {
                                 paramNameToUse = "gmax"
-                                sprint(comment, "Assuming parameter %s refers to the maximum cond density", paramNameToUse)
+                                sprint(comment, "<!-- Assuming parameter g_pas refers to passive maximum cond density, so replacing it with gmax -->", paramNameToUse)
+                            }
+
+                            if (strcmp(paramNameToUse,"g") == 0) {
+                                paramNameToUse = "gmax"
+                                sprint(comment, "<!-- Assuming parameter g refers to passive maximum cond density, so replacing it with gmax -->", paramNameToUse)
+
+                            } else if (hoc_sf_.substr(paramNameToUse, "g")==0 && hoc_sf_.substr(paramNameToUse, "bar")>=1) {
+                                sprint(comment, "<!-- Assuming parameter %s refers to the maximum cond density, so replacing it with gmax -->", paramNameToUse)
+                                paramNameToUse = "gmax"
                             } else if (strcmp(paramNameToUse,"gl") == 0) {
                                 paramNameToUse = "gmax"
-                                comment = "Assuming parameter gl refers to the maximum cond density"
+                                sprint(comment, "<!-- Assuming parameter gl refers to the maximum cond density, so replacing it with gmax -->", paramNameToUse)
+                            } else if (hoc_sf_.substr(dmech.name, "_") >= 0) {
+
+                                strdef paramNameSuspect
+                                paramNameSuspect = dmech.name
+                                hoc_sf_.left(paramNameSuspect, hoc_sf_.substr(paramNameSuspect, "_"))
+                                sprint(paramNameSuspect, "g%s", paramNameSuspect)
+                                print "Suspecting: ",paramNameSuspect
+                                if (strcmp(paramNameToUse,paramNameSuspect) == 0) {
+                                    sprint(comment, "Assuming parameter %s refers to the maximum cond density, so replacing it with gmax", paramNameToUse)
+                                    paramNameToUse = "gmax"
+                                }
                             }
-}
+                            //print "Checking param: ",paramNameToUse, " in ", dmech.name
+                            //print comment
 
 
                             factor = 1
@@ -693,7 +716,7 @@ proc printparmval() {
             sprint(nameattr, " name=\"%s\"",  newParamName)  
         }
 
-	    $o1.printf("        <bio:parameter%s value=\"%g\">  %s\n",  nameattr, $o4.value * $5, $s6)
+	    $o1.printf("        <bio:parameter%s value=\"%g\">   %s\n",  nameattr, $o4.value * $5, $s6)
 
 	    // 8 is ModelViewParmSubset, 9 is ModelViewParmSec
 	    if ($o4.location.type() == 8) {
@@ -778,7 +801,7 @@ proc printparmval() {
 
 	    //printvecvals($o1, $o4)
 
-	    $o1.printf("        <bio:parameter name=\"%s\" value=\"%g\">\n",  $s3, avgVal * $5)
+	    $o1.printf("        <bio:parameter name=\"%s\" value=\"%g\"> \n",  $s3, avgVal * $5)
         $o1.printf("          <bio:group>%s</bio:group>\n", groupName)
 	    $o1.printf("        </bio:parameter>\n")
 	}
