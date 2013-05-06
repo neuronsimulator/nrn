@@ -93,6 +93,9 @@ if test -d "$ivlibdir" ; then
 	fi
 fi
 
+vv=`sw_vers -productVersion|sed 's/.*\.\(.*\)\..*/\1/'`
+if test $vv -gt 6 ; then
+
 # change nrniv install_name for dylibs so nrniv,etc works at any location
 ff="$N/$CPU/bin/nrniv"
 f=`otool -L "$N/$CPU/bin/nrniv" | sed -n "s,.*$N/$CPU/lib/\(.*dylib\).*,\
@@ -120,12 +123,11 @@ install_name_tool $f $ff
 fi
 
 # neurondemo for libnrnmech.so needs to follow the install location.
-vv=`sw_vers -productVersion|sed 's/.*\.\(.*\)\..*/\1/'`
-if test $vv -gt 5 ; then
 f=/tmp/neuron$$
 sed '
  s,..NRNHOME./share/nrn/demo,@executable_path/../../share/nrn/demo,
 ' $N/share/nrn/demo/neuron > $f
 chmod 755 $f
 mv $f $N/share/nrn/demo/neuron
+
 fi
