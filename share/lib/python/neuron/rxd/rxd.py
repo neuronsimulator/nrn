@@ -43,14 +43,6 @@ _curr_scales = None
 _curr_ptrs = None
 _curr_indices = None
 
-_linmodadd_cur = None
-_linmodadd_cur_c = None
-_linmodadd_cur_g = None
-_linmodadd_cur_b = None
-_linmodadd_cur_y = None
-_cur_sec_list = None
-_cur_x_list = None
-
 _all_reactions = []
 
 _zero_volume_indices = []
@@ -113,27 +105,6 @@ def _invalidate_matrices():
     global last_structure_change_cnt, _diffusion_matrix
     _diffusion_matrix = None
     last_structure_change_cnt = None
-
-def _setup_output_flux_ptrs():
-    global _output_curr_valences, _output_curr_ptrs
-    _output_curr_valences = []
-    _output_curr_ptrs = []
-    states = numpy.array(node._get_states())
-    for rptr in _all_reactions:
-        r = rptr()
-        if r:
-            memb_flux = r._get_memb_flux(states)
-            if memb_flux:
-                # TODO: check sign; might be reversed
-                for sign, sources in zip([1, -1], [r._sources, r._dests]):
-                    for source in sources:
-                        name = '_ref_i%s' % (source._species().name)
-                        charge = source._species().charge
-                        for sec in r._regions[0].secs:
-                            for i in xrange(sec.nseg):
-                                _output_curr_ptrs.append(sec._sec((i + 0.5) / sec.nseg).__getattribute__(name))
-                            _output_curr_valences += [charge * sign] * sec.nseg
-    _output_curr_valences = numpy.array(_output_curr_valences)
 
 _rxd_offset = None
 
@@ -207,28 +178,63 @@ def _ode_solve(dt, t, b, y):
     #b[lo : hi] = _diffusion_matrix_solve(dt, full_b)[_nonzero_volume_indices]
 
 
-def _fixed_step_currents(rhs):
-    if region._sim_dimension == 1:
-        # setup membrane fluxes from our stuff
-        rxd_memb_flux = []
-        for rptr in _all_reactions:
-            r = rptr()
-            if r and r._membrane_flux:
-                rxd_memb_flux += list(r._get_memb_flux(states)) * (len(r._sources) + len(r._dests))
-                raise Exception('rxd_memb_flux not yet supported')
+_rxd_induced_currents = None
 
-        if rxd_memb_flux:
-            _linmodadd_cur_b.from_python(rxd_memb_flux)
-            rxd_memb_flux = _output_curr_valences * rxd_memb_flux
-            for ptr, cur in zip(_output_curr_ptrs, rxd_memb_flux):
+def _currents(rhs):
+    # setup membrane fluxes from our stuff
+    # TODO: cache the memb_cur_ptrs, memb_cur_charges, memb_net_charges, memb_cur_mapped
+    #       because won't change very often
+    global _rxd_induced_currents
+
+    # need this; think it's because of initialization of mod files
+    if _curr_indices is None: return
+
+    # TODO: change so that this is only called when there are in fact currents
+    _rxd_induced_currents = numpy.zeros(len(_curr_indices))
+    rxd_memb_flux = []
+    memb_cur_ptrs = []
+    memb_cur_charges = []
+    memb_net_charges = []
+    memb_cur_mapped = []
+    for rptr in _all_reactions:
+        r = rptr()
+        if r and r._membrane_flux:
+            # NOTE: memb_flux contains any scaling we need
+            new_fluxes = r._get_memb_flux(node._get_states())
+            rxd_memb_flux += list(new_fluxes)
+            memb_cur_ptrs += r._cur_ptrs
+            memb_cur_mapped += r._cur_mapped
+            memb_cur_charges += [r._cur_charges] * len(new_fluxes)
+            memb_net_charges += [r._net_charges] * len(new_fluxes)
+
+    # TODO: is this in any way dimension dependent?
+
+    if rxd_memb_flux:
+        # TODO: remove the asserts when this is verified to work
+        assert(len(rxd_memb_flux) == len(_cur_node_indices))
+        assert(len(rxd_memb_flux) == len(memb_cur_ptrs))
+        assert(len(rxd_memb_flux) == len(memb_cur_charges))
+        assert(len(rxd_memb_flux) == len(memb_net_charges))
+        for flux, cur_ptrs, cur_charges, net_charge, i, cur_maps in zip(rxd_memb_flux, memb_cur_ptrs, memb_cur_charges, memb_net_charges, _cur_node_indices, memb_cur_mapped):
+            rhs[i] -= net_charge * flux
+            #print net_charge * flux
+            #import sys
+            #sys.exit()
+            # TODO: remove this assert when more thoroughly tested
+            assert(len(cur_ptrs) == len(cur_maps))
+            for ptr, charge, cur_map_i in zip(cur_ptrs, cur_charges, cur_maps):
+                # this has the opposite sign of the above because positive
+                # currents lower the membrane potential
+                cur = charge * flux
                 ptr[0] += cur
-
+                for sign, c in zip([-1, 1], cur_maps):
+                    if c is not None:
+                        _rxd_induced_currents[c] += sign * cur
 
 preconditioner = None
 def _fixed_step_solve(dt):
     global preconditioner, pinverse
 
-    # TODO: use linear approx not constant approx
     states = node._get_states()[:]
 
     b = _rxd_reaction(states)
@@ -272,7 +278,7 @@ def _rxd_reaction(states):
     
     if _curr_ptr_vector is not None:
         _curr_ptr_vector.gather(_curr_ptr_storage_nrn)
-        b[_curr_indices] = _curr_scales * _curr_ptr_storage
+        b[_curr_indices] = _curr_scales * (_curr_ptr_storage + _rxd_induced_currents)
     
     #b[_curr_indices] = _curr_scales * [ptr[0] for ptr in _curr_ptrs]
 
@@ -295,6 +301,7 @@ _diffusion_a = None
 _diffusion_b = None
 _diffusion_p = None
 _c_diagonal = None
+_cur_node_indices = None
 
 _diffusion_a_ptr, _diffusion_b_ptr, _diffusion_p_ptr = None, None, None
 
@@ -415,7 +422,7 @@ def _ode_jacobian(dt, t, ypred, fpred):
     #print '_ode_jacobian: dt = %g, last_dt = %r' % (dt, _last_dt)
     _reaction_matrix_setup(dt, fpred)
 
-_callbacks = [_setup, None, _fixed_step_currents, _conductance, _fixed_step_solve,
+_callbacks = [_setup, None, _currents, _conductance, _fixed_step_solve,
               _ode_count, _ode_reinit, _ode_fun, _ode_solve, _ode_jacobian, None]
 nbs.register(_callbacks)
 
@@ -423,11 +430,13 @@ _curr_ptr_vector = None
 _curr_ptr_storage = None
 _curr_ptr_storage_nrn = None
 pinverse = None
+_cur_map = None
 
 def _update_node_data(force=False):
-    global last_diam_change_cnt, last_structure_change_cnt, _curr_indices, _curr_scales, _curr_ptrs
+    global last_diam_change_cnt, last_structure_change_cnt, _curr_indices, _curr_scales, _curr_ptrs, _cur_map
     global _curr_ptr_vector, _curr_ptr_storage, _curr_ptr_storage_nrn
     if last_diam_change_cnt != _cvode_object.diam_change_count() or _cvode_object.structure_change_count() != last_structure_change_cnt or force:
+        _cur_map = {}
         last_diam_change_cnt = _cvode_object.diam_change_count()
         last_structure_change_cnt = _cvode_object.structure_change_count()
         if region._sim_dimension == 1:
@@ -446,7 +455,7 @@ def _update_node_data(force=False):
         _curr_ptrs = []
         for sr in species._get_all_species().values():
             s = sr()
-            if s is not None: s._setup_currents(_curr_indices, _curr_scales, _curr_ptrs)
+            if s is not None: s._setup_currents(_curr_indices, _curr_scales, _curr_ptrs, _cur_map)
         
         num = len(_curr_ptrs)
         if num:
@@ -467,7 +476,7 @@ _euler_matrix = None
 # TODO: make sure this does the right thing when the diffusion constant changes between two neighboring nodes
 def _setup_matrices():
     global _linmodadd, _linmodadd_c, _diffusion_matrix, _linmodadd_b, _last_dt, _c_diagonal, _euler_matrix
-    global _linmodadd_cur, _linmodadd_cur_c, _linmodadd_cur_g, _linmodadd_cur_b, _cur_sec_list, _cur_x_list, _linmodadd_cur_y
+    global _cur_node_indices
 
 
     n = len(node._get_states())
@@ -525,41 +534,15 @@ def _setup_matrices():
             # and the vector b
             _linmodadd_b = h.Vector(n)
 
-            #print 'c:'
-            #for i in xrange(n):
-            #    print ' '.join('%10g' % _linmodadd_c.getval(i, j) for j in xrange(n))
-
             
-            #print 'g:'
-            #for i in xrange(n):
-            #    print ' '.join('%10g' % _diffusion_matrix.getval(i, j) for j in xrange(n))
-                    
-            
-            # and finally register everything with NEURON
-            #_linmodadd = h.LinearMechanism(_linmodadd_c, _diffusion_matrix, node._get_states(), node._get_states(), _linmodadd_b)
-            
-            # add the LinearMechanism for the membrane fluxes (if any)
-            _cur_sec_list = h.SectionList()
-            _cur_x_list = h.Vector()
+            # setup for induced membrane currents
+            _cur_node_indices = []
 
             for rptr in _all_reactions:
                 r = rptr()
                 if r is not None:
-                    r._setup_membrane_fluxes(_cur_sec_list, _cur_x_list)
-            
-            cur_size = _cur_x_list.size()
-            if cur_size:
-                raise Exception('membrane fluxes not yet supported')
-                _linmodadd_cur_b = h.Vector(cur_size)
-                _linmodadd_cur_c = scipy.sparse.dok_matrix((cur_size, cur_size))
-                _linmodadd_cur_g = scipy.sparse.dok_matrix((cur_size, cur_size))
-                # this gets copies of membrane potentials; don't currently use them
-                # except in that LinearMechanism requires a place to store them
-                _linmodadd_cur_y = h.Vector(cur_size)
-                _linmodadd_cur = h.LinearMechanism(_linmodadd_cur_c, _linmodadd_cur_g, _linmodadd_cur_y, _linmodadd_cur_b, _cur_sec_list, _cur_x_list)
-            else:
-                _linmodadd_cur = None
-        
+                    r._setup_membrane_fluxes(_cur_node_indices, _cur_map)
+                    
             #_cvode_object.re_init()    
 
             _linmodadd_c = _linmodadd_c.tocsr()

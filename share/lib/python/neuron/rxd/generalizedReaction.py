@@ -26,22 +26,22 @@ class GeneralizedReaction(object):
     def __del__(self):
         rxd._unregister_reaction(self)
 
-    def _setup_membrane_fluxes(self, sec_list, x_list):
+    def _setup_membrane_fluxes(self, node_indices, cur_map):
+        # TODO: make sure this is redone whenever nseg changes
         if not self._membrane_flux: return
 
         # locate the regions containing all species (including the one that changes)
         if all(sptr() for sptr in self._sources) and all(dptr() for dptr in self._dests):
-            active_regions = [r for r in self._regions if all(sptr()._indices(r) for sptr in self._sources + self._dests)]
+            active_regions = [r for r in self._regions if all(sptr().indices(r) for sptr in self._sources + self._dests)]
         else:
             active_regions = []
             
         for r in active_regions:
             for sec in r._secs:
-                for i in xrange(sec.nseg):
-                    sec_list.append(sec=sec)
-                    x_list.append((i + 0.5) / sec.nseg)
+                for seg in sec:
+                    node_indices.append(seg.node_index())
 
-        self._do_memb_scales()
+        self._do_memb_scales(cur_map)
         
     def _get_args(self, states):
         args = []
@@ -87,7 +87,6 @@ class GeneralizedReaction(object):
             if not self._scale_by_area:
                 areas = numpy.ones(len(areas))
             self._mult = [-areas / volumes[si] / molecules_per_mM_um3 for si in sources_indices] + [areas / volumes[di] / molecules_per_mM_um3 for di in dests_indices]
-            self._areas = areas
         else:
             self._mult = list(-1 for v in sources_indices) + list(1 for v in dests_indices)
         self._mult = numpy.array(self._mult)

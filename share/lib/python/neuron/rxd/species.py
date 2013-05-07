@@ -232,6 +232,7 @@ class Species(_SpeciesMathable):
         self.initial = initial
         self._charge = charge
         self._d = d
+        self._species = weakref.ref(self)        
         # at this point self._name is None if unnamed or a string == name if
         # named
         if self._name is not None:
@@ -412,10 +413,13 @@ class Species(_SpeciesMathable):
             for i in xrange(s._offset, s._offset + s.nseg):
                 c[i, i] = 1.
     
-    def _setup_currents(self, indices, scales, ptrs):
+    def _setup_currents(self, indices, scales, ptrs, cur_map):
+        if self.name:
+            cur_map[self.name + 'i'] = {}
+            cur_map[self.name + 'o'] = {}
         if self._dimension == 1:
             for s in self._secs:
-                s._setup_currents(indices, scales, ptrs)
+                s._setup_currents(indices, scales, ptrs, cur_map)
         elif self._dimension == 3:
             # TODO: this is very similar to the 1d code; merge
             # TODO: this needs changed when supporting more than one region
@@ -434,6 +438,7 @@ class Species(_SpeciesMathable):
                 local_indices = self.indices()
                 for i, nodeobj in enumerate(self.nodes):
                     if surface_area[i]:
+                        cur_map[self.name][nodeobj.seg] = len(indices)
                         indices.append(local_indices[i])
                         scales.append(sign * surface_area[i + self._offset] * 10000. / (self.charge * rxd.FARADAY * volumes[i + self._offset]))
                         ptrs.append(nodeobj.seg.__getattribute__(ion_curr))
