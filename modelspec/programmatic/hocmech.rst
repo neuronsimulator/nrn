@@ -10,12 +10,12 @@ HOC-based Mechanisms
 
 
     Syntax:
-        ``hocmech("suffix", "Template", "parm1 parm2 parm3 ...")``
-
+        ``make_mechanism("suffix", "Template", "parm1 parm2 parm3 ...")``
+        ``make_pointprocess("Name", "Template", "parm1 parm2 parm3 ...")``
 
     Description:
         Installs the hoc class called "Template" as a density membrane mechanism 
-        called "suffix". If the third argument exists it must be a space 
+        called "suffix" or a POINT_PROCESS called Name. If the third argument exists it must be a space 
         separated list of public variables in the Template which are to be 
         treated as PARAMETERs. Public variables not in this list are treated as 
         ASSIGNED variables. The new mechanism is used in exactly the same 
@@ -82,11 +82,10 @@ HOC-based Mechanisms
             endtemplate Max 
              
              
-            makemech("max", "Max") 
+            make_mechanism("max", "Max") 
             insert max 
             run() 
             print "V_max=", soma.V_max(.5) 
-             
              
 
 
