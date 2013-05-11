@@ -87,6 +87,19 @@ work-around...
 #endif
 }
 
+#if PY_MAJOR_VERSION >= 3
+static wchar_t** copy_argv_wcargv(int argc, char** argv) {
+	// adapted from frozenmain.c, left out error checking
+	wchar_t **argv_copy = (wchar_t**)PyMem_Malloc(sizeof(wchar_t*)*argc);
+	for (int i=0; i < argc; ++i) {
+		size_t argsize = strlen(argv[i]);
+		argv_copy[i] = (wchar_t*)PyMem_Malloc((argsize+1)*sizeof(wchar_t));
+		int count = mbstowcs(argv_copy[i], argv[i], argsize+1);
+	}
+	return argv_copy;
+}
+#endif
+
 void nrnpython_start(int b) {
 #if USE_PYTHON
 	static int started = 0;
@@ -98,6 +111,12 @@ void nrnpython_start(int b) {
 		}
 		//printf("Py_NoSiteFlag = %d\n", Py_NoSiteFlag);
 		Py_Initialize();
+#if PY_MAJOR_VERSION >= 3
+		wchar_t **argv_copy = copy_argv_wcargv(nrn_global_argc, nrn_global_argv);
+		PySys_SetArgv(nrn_global_argc, argv_copy);
+#else
+		PySys_SetArgv(nrn_global_argc, nrn_global_argv);
+#endif
 		started = 1;
 		main_threadstate_ = PyThreadState_GET();
 		int i;

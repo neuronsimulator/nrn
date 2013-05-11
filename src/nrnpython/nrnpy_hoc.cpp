@@ -1832,15 +1832,23 @@ printf("\n");
 #endif
 	char* str = 0;
 	if (PyUnicode_Check(po)) {
-		PyUnicodeObject* p = (PyUnicodeObject*)po;
-		Py_UNICODE* pu = ((PyUnicodeObject*)po)->str;
-		str = (char*)PyMem_Malloc(p->length + 1);
-		for (int i=0; i < p->length; ++i) {
-			assert(pu[i] < 256);
-			str[i] = pu[i];
+		PyObject* p = po;
+		po = PyUnicode_AsASCIIString(p);
+		if (po == NULL){
+			printf("PyUnicode_AsASCIIString failed\n");
+			return NULL;
 		}
-		str[p->length] = '\0';
-	}else if (PyBytes_Check(po)) {
+		size_t n = PyBytes_Size(po);
+		char* s = PyBytes_AsString(po);		
+		str = (char*)PyMem_Malloc(n + 1);
+		for (int i = 0; i < n; ++i) {
+			str[i] = s[i];
+		}
+		str[n] = '\0';
+		Py_DECREF(po);
+		return str;
+	}
+	if (PyBytes_Check(po)) {
 		size_t n = PyBytes_Size(po);
 		char* s = PyBytes_AsString(po);		
 		str = (char*)PyMem_Malloc(n + 1);
