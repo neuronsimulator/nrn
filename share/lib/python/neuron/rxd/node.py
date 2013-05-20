@@ -108,7 +108,7 @@ class Node(object):
         """
         
         rxd._update_node_data()
-        return _volumes[self._index]
+        return _surface_area[self._index]
     
         
     @property
