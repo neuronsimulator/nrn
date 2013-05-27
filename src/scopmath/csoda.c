@@ -4842,11 +4842,12 @@ doublereal *v, *w;
  */
 } /* vmnorm_ */
 
-/* Subroutine */ int xerrwv_(msg, nmes, nerr, level, ni, i1, i2, nr, r1, r2)
+/* Subroutine */ int xerrwv_(msg, nmes, nerr, level, ni, i1, i2, nr, r1, r2, d)
 integer *msg, *nmes;
 integer *nerr;
 integer *level, *ni, *i1, *i2, *nr;
 doublereal *r1, *r2;
+integer d;
 {
     /* Initialized data */
 

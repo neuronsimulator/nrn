@@ -141,5 +141,5 @@ VEC	*x_re, *x_im;
 
     sv_mlt(-1.0,x_im,x_im);
     fft(x_re,x_im);
-    sv_mlt(-1.0/((double)(x_re->dim)),x_im,x_im);
+    sv_mlt( 1.0/((double)(x_re->dim)),x_re,x_re);
 }
