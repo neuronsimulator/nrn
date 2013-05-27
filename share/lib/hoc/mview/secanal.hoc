@@ -407,7 +407,18 @@ proc addparm2inhomo() {local i, isec
 	parminhomos.append(tobj)
 }
 
-proc mk_nseg() {local i, n_nseg, n_dx, dx, dlam
+func chk0diam() {local i
+	if (n3d() > 1) {
+		for i=0, n3d()-1 {
+			if (diam3d(i) == 0) {
+				return 0
+			}
+		}
+	}
+	return 1
+}
+
+proc mk_nseg() {local i, n_nseg, n_dx, dx, dlam, n0
 	nseg_strategy = 0
 	nsegvec = new Vector(all.count)
 	lvec = new Vector(all.count)
@@ -415,7 +426,6 @@ proc mk_nseg() {local i, n_nseg, n_dx, dx, dlam
 	for i=0, all.count-1 all.object(i).sec {
 		nsegvec.x[i] = nseg
 		lvec.x[i] = L
-		lamvec.x[i] = L/lambda_f(100)
 	}
 	sprint(tstr, "%d sections; %d segments", all.count, nsegvec.sum)
 	disp.append(tstr)
@@ -449,7 +459,24 @@ proc mk_nseg() {local i, n_nseg, n_dx, dx, dlam
 		}
 	}
 
-	
+	n0 = 0
+	for i=0, all.count-1 all.object(i).sec {
+		if (chk0diam()) {
+			lamvec.x[i] = L/lambda_f(100)
+		}else{
+			n0 += 1
+			lamvec.x[i] = 1e6
+			if (n0 == 1){
+				sprint(tstr, "%s has 1 or more 0 diameter 3-d points",secname())
+				msub.append(tstr)
+			}
+		}
+	}
+	if (n0 > 1) {
+		sprint(tstr, "...there exist %d sections with 0 diameter points", n0)
+		msub.append(tstr)
+	}
+
 	i = lamvec.c.div(nsegvec).max_ind
 	all.object(i).sec {
 		dlam = lamvec.x[i]/nseg

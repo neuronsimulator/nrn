@@ -643,7 +643,9 @@ Object* py_alltoall(Object* o, int size) {
 
 	PyObject* pdest;
 	PyObject* psrc = nrnpy_hoc2pyobject(o);
-	assert(PySequence_Size(psrc) == np);
+	if (PySequence_Size(psrc) != np) {
+		hoc_execerror("py_alltall sequence size must be nhost",0);
+	}
 	PyObject* iterator = PyObject_GetIter(psrc);
 	PyObject* p;
 	

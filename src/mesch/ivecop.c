@@ -394,8 +394,9 @@ PERM	*order;
 	 {
 	    while ( x_ive[++i] < v )
 	      ;
-	    while ( x_ive[--j] > v )
-	      ;
+	    --j;
+	    while ( x_ive[j] > v && j != 0 )
+	        --j;
 	    if ( i >= j )	break;
 	    
 	    tmp = x_ive[i];
