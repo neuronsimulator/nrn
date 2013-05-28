@@ -29,8 +29,10 @@ install-exec-am: ctng.cpp surfaces.cpp graphicsPrimitives.cpp
 	fi
 	if test ! -f surfaces.cpp ; then \
 		cp $(geosrc)/surfaces.cpp  . ; \
-	fi	
-	$(PYTHON) setup.py build_ext --inplace
+	fi
+	if test "$(PYTHON)" != "" ; then \
+		$(PYTHON) setup.py build_ext --inplace ; \
+	fi
 
 clean-generic:
 	rm -r -f build
