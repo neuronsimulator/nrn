@@ -395,6 +395,14 @@ def nrn_dll(printpath=False):
         raise Exception('unable to connect to the NEURON library')
     return the_dll
 
+# TODO: put this someplace else
+#       can't be in rxd because that would break things if no scipy
+_sec_db = {}
+def _declare_contour(secobj, secname):
+    j = secobj.first
+    # (is_stack, x, y, z)
+    _sec_db[secname] = (True if secobj.contour_list else False, secobj.raw.getrow(0).c(j), secobj.raw.getrow(1).c(j), secobj.raw.getrow(2).c(j))
+
 try:
   import ctypes
   import numpy

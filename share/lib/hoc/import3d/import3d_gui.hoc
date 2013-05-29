@@ -1,4 +1,5 @@
 {load_file("celbild.hoc")}
+{load_file("stdlib.hoc")}
 
 begintemplate Import3d_GUI
 public swc, diam_glyph, box, plrot, readfile, redraw, name
@@ -894,8 +895,12 @@ func set_nameindex() {local i, min  localobj sec
 	return min
 }
 
-proc instantiate() {local i, j, min  localobj sec, xx, yy, zz, dd
+proc instantiate() {local i, j, min, haspy  localobj sec, xx, yy, zz, dd, pyobj
 	chk_valid()
+	haspy = nrnpython("import neuron")
+	if (haspy) {
+        pyobj = new PythonObject()
+	}
 	min = set_nameindex(swc.sections)
 	// create
 	for i = 0, types.size-1 {
@@ -937,6 +942,9 @@ proc instantiate() {local i, j, min  localobj sec, xx, yy, zz, dd
 		zz = sec.raw.getrow(2).c(j)
 		dd = sec.d.c(j)
 		if (sec.iscontour_) {
+            if (haspy) {
+                pyobj.neuron._declare_contour(sec, tstr)
+            }
 			contour2centroid(xx, yy, zz, dd, sec)
 		}
 		for j = 0, dd.size-1 {
