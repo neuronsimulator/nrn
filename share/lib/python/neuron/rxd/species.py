@@ -530,7 +530,7 @@ class Species(_SpeciesMathable):
         if self._dimension == 1:
             return nodelist.NodeList(sum([s.nodes for s in self._secs], []))
         elif self._dimension == 3:
-            return self._nodes
+            return nodelist.NodeList(self._nodes)
         else:
             raise Exception('nodes does not currently support species with dimension = %r.' % self._dimension)
 
