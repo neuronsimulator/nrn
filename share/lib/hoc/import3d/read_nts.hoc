@@ -156,6 +156,7 @@ proc parse() {local a1 ,a2, a3, a4, a5, a6, a7
 		return
 	}
 	pointtype.append(last)
+	points.append(a1)
 	id.append(a1)
 	ptype.append(a2)
 	tag.append(a3)
