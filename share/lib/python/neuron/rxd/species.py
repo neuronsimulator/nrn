@@ -144,32 +144,21 @@ class SpeciesOnRegion(_SpeciesMathable):
         self.nodes.concentration = value
 
 
-# 3d stuff
-
-def _check_neighbors(pt1, pt2, indices):
-    pt1in = pt1 in indices
-    pt2in = pt2 in indices
-    if not pt1in and not pt2in:
-        return None
-    if pt1in and pt2in:
-        return (indices[pt1], indices[pt2])
-    # reflective boundary conditions: reuse the same node
-    if pt1in:
-        return (indices[pt1], indices[pt1])
-    if pt2in:
-        return (indices[pt2], indices[pt2])
-    raise Exception('should never get here')
-
-def _setup_matrices_process_neighbors(pt1, pt2, indices, euler_matrix, dx2, index, d):
-    changes = _check_neighbors(pt1, pt2, indices)
-    if changes:
-        euler_matrix[index, index] -= 2. * d / dx2
-        # using += because could be repeated if at boundary
-        euler_matrix[index, changes[0]] += d / dx2
-        euler_matrix[index, changes[1]] += d / dx2
-
-
-
+# 3d matrix stuff
+def _setup_matrices_process_neighbors(pt1, pt2, indices, euler_matrix, index, diffs, vol, areal, arear, dx):
+    d = diffs[index]
+    if pt1 in indices:
+        ileft = indices[pt1]
+        dleft = (d + diffs[ileft]) * 0.5
+        left = dleft * areal / (vol * dx)
+        euler_matrix[index, ileft] += left
+        euler_matrix[index, index] -= left
+    if pt2 in indices:
+        iright = indices[pt2]
+        dright = (d + diffs[iright]) * 0.5
+        right = dright * arear / (vol * dx)
+        euler_matrix[index, iright] += right
+        euler_matrix[index, index] -= right
 
 
 
@@ -278,20 +267,17 @@ class Species(_SpeciesMathable):
             if len(regions) != 1:
                 raise Exception('3d currently only supports 1 region per species')
             r = self._regions[0]
+            selfref = weakref.ref(self)
             self._nodes = []
             xs, ys, zs, segs = r._xs, r._ys, r._zs, r._segs
             self._offset = node._allocate(len(xs))
             for i, x, y, z, seg in zip(xrange(len(xs)), xs, ys, zs, segs):
-                self._nodes.append(node.Node3D(i + self._offset, x, y, z, r, seg))
-            # TODO: volumes will be wrong when allowing partial volumes
-            node._volumes[range(self._offset, self._offset + len(xs))] = r._dx ** 3
-            for i, v in enumerate(r._on_surface):
-                if v:
-                    # TODO: surface area is always wrong
-                    sa = r._dx ** 2
-                else:
-                    sa = 0
-                node._surface_area[self._offset + i] = sa
+                self._nodes.append(node.Node3D(i + self._offset, x, y, z, r, seg, selfref))
+            # the region is now responsible for computing the correct volumes and surface areas
+                # this is done so that multiple species can use the same region without recomputing it
+            node._volumes[range(self._offset, self._offset + len(xs))] = r._vol
+            node._surface_area[self._offset : self._offset + len(xs)] = r._sa
+            node._diffs[range(self._offset, self._offset + len(xs))] = d
             self._register_cptrs()
 
         else:
@@ -309,18 +295,20 @@ class Species(_SpeciesMathable):
         # TODO: don't do Euler!
         # TODO: this doesn't handle multiple regions
         region_mesh = self._regions[0]._mesh.values
-        dx2 = self._regions[0]._dx ** 2
         indices = {}
         xs, ys, zs = region_mesh.nonzero()
-        diff = self._d
+        # TODO: make sure diffusion constants are set per node for 3D nodes
+        diffs = node._diffs
         for i in xrange(len(xs)):
             indices[(xs[i], ys[i], zs[i])] = i
-        
-        for node in self.nodes:
-            i, j, k, index = node._i, node._j, node._k, node._index
-            _setup_matrices_process_neighbors((i, j, k - 1), (i, j, k + 1), indices, euler_matrix, dx2, index, diff)
-            _setup_matrices_process_neighbors((i, j - 1, k), (i, j + 1, k), indices, euler_matrix, dx2, index, diff)
-            _setup_matrices_process_neighbors((i - 1, j, k), (i + 1, j, k), indices, euler_matrix, dx2, index, diff)
+        dx = self._regions[0]._dx
+        areal = dx * dx
+        arear = dx * dx
+        for nodeobj in self.nodes:
+            i, j, k, index, vol = nodeobj._i, nodeobj._j, nodeobj._k, nodeobj._index, nodeobj.volume
+            _setup_matrices_process_neighbors((i, j, k - 1), (i, j, k + 1), indices, euler_matrix, index, diffs, vol, areal, arear, dx)
+            _setup_matrices_process_neighbors((i, j - 1, k), (i, j + 1, k), indices, euler_matrix, index, diffs, vol, areal, arear, dx)
+            _setup_matrices_process_neighbors((i - 1, j, k), (i + 1, j, k), indices, euler_matrix, index, diffs, vol, areal, arear, dx)
             
 
 
@@ -436,12 +424,19 @@ class Species(_SpeciesMathable):
                 else:
                     raise Exception('bad nrn_region for setting up currents (should never get here)')
                 local_indices = self.indices()
+                offset = self._offset
+                charge = self.charge
+                name = '%s%s' % (self.name, nrn_region)
+                sign_tenthousand_over_charge_faraday = sign * 10000. / (charge * rxd.FARADAY)
                 for i, nodeobj in enumerate(self.nodes):
                     if surface_area[i]:
-                        cur_map[self.name][nodeobj.seg] = len(indices)
+                        seg = nodeobj.segment
+                        cur_map[name][seg] = len(indices)
                         indices.append(local_indices[i])
-                        scales.append(sign * surface_area[i + self._offset] * 10000. / (self.charge * rxd.FARADAY * volumes[i + self._offset]))
-                        ptrs.append(nodeobj.seg.__getattribute__(ion_curr))
+                        if volumes[i + offset] == 0:
+                            print '0 volume at position %d; surface area there: %g' % (i + offset, surface_area[i + offset])
+                        scales.append(sign_tenthousand_over_charge_faraday * surface_area[i + offset] / volumes[i + offset])
+                        ptrs.append(seg.__getattribute__(ion_curr))
         else:
             raise Exception('unknown dimension')
 
@@ -498,12 +493,12 @@ class Species(_SpeciesMathable):
             r = self._regions[0]
             if r._nrn_region is None: return
             
-            # TODO: at the very least, switch to using ptrvectors (for speed)
-            # TODO: what if no surface nodes in that segment???
-            # TODO: concentration 
+            # TODO: set volume based on surface nodes or all nodes?
+            #       the problem with surface nodes is that surface to volume ratio of these varies greatly
             nodes = self._nodes
             for seg, ptr in zip(self._seg_order, self._concentration_ptrs):
-                ptr[0] = numpy.average([nodes[node].concentration for node in r._surface_nodes_by_seg[seg]])
+                # concentration = total mass / volume
+                ptr[0] = sum(nodes[node].concentration * nodes[node].volume for node in r._nodes_by_seg[seg]) / sum(nodes[node].volume for node in r._nodes_by_seg[seg])
         else:
             raise Exception('unrecognized dimension')
     

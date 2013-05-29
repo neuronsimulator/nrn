@@ -313,6 +313,12 @@ void vi(double* p1, double* p2, double v1, double v2, double* out) {
         out[0] = p1[0]; out[1] = p1[1]; out[2] = p1[2];
         return;
     }
+    if (isinf(v1)) {
+        printf("v1 is inf\n");
+    }
+    if (isinf(v2)) {
+        printf("v2 is inf\n");
+    }
     double delta_v = v1 - v2;
     if (fabs(delta_v) < 0.0000000001) {
         out[0] = p1[0]; out[1] = p1[1]; out[2] = p1[2];
@@ -350,6 +356,16 @@ int find_triangles(double value0, double value1, double value2, double value3, d
     if (value5 < 0) cubeIndex |= 32;
     if (value6 < 0) cubeIndex |= 64;
     if (value7 < 0) cubeIndex |= 128;
+    
+    
+    if isinf(value0) printf('value0 is inf\n');
+    if isinf(value1) printf('value1 is inf\n');
+    if isinf(value2) printf('value2 is inf\n');
+    if isinf(value3) printf('value3 is inf\n');
+    if isinf(value4) printf('value4 is inf\n');
+    if isinf(value5) printf('value5 is inf\n');
+    if isinf(value6) printf('value6 is inf\n');
+    if isinf(value7) printf('value7 is inf\n');
     
     int et = edgeTable[cubeIndex];
     

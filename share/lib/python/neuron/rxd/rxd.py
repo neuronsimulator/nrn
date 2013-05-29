@@ -15,6 +15,9 @@ import options
 import region
 
 def byeworld():
+    # needed to prevent a seg-fault error at shudown in at least some
+    # combinations of NEURON and Python, which I think is due to objects
+    # getting deleted out-of-order
     global _react_matrix_solver
     del _react_matrix_solver
     
@@ -243,6 +246,8 @@ def _fixed_step_solve(dt):
     if dim is None:
         return
     elif dim == 1:
+        # TODO (major): is this right? I think _ode_solve does it right and this is wrong
+        
         # the solve is logically equivalent to the commented out line, but simpler
         #states[:] += _diffusion_matrix_solve(dt, -dt * _diffusion_matrix * states)
         states[:] = _diffusion_matrix_solve(dt, states)
@@ -260,7 +265,9 @@ def _fixed_step_solve(dt):
         # TODO: pinverse should be updated whenever dt changes
         if pinverse is not None:
             pinverse = scipy.sparse.diags([[1. / m.diagonal()]], [0], shape=(n, n), format='csr', dtype='d')
-        result, info = scipy.sparse.linalg.bicgstab(m, states + dt * b, M=pinverse)
+        #result, info = scipy.sparse.linalg.bicgstab(m, states + dt * b, M=pinverse)
+        result, info = scipy.sparse.linalg.bicgstab(m, states, M=pinverse)
+        result += dt * b
         assert(info == 0)
         states[:] = result
 

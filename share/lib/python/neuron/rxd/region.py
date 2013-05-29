@@ -4,6 +4,7 @@ import copy
 import geometry3d
 import dimension3
 import itertools
+import numpy
 
 _region_count = 0
 
@@ -62,7 +63,9 @@ class Region:
             if nrn_region == 'o':
                 raise Exception('3d version does not support nrn_region="o" yet')
 
-            self._mesh = geometry3d.voxelize(self._secs, dx=dx)
+            self._mesh, sa, vol, self._tri = geometry3d.voxelize2(self._secs, dx=dx)
+            sa_values = sa.values
+            vol_values = vol.values
             self._objs = {}
             # TODO: remove this when can store soma outlines
             if not hasattr(sections, 'sections'):
@@ -75,22 +78,16 @@ class Region:
             on_surface = []
             nodes_by_seg = {}
             surface_nodes_by_seg = {}
-            for x, y, z in zip(xs, ys, zs):
-                # check to see if the node is a surface node
-                # (nodes are surface nodes if at least one of their neighbors is
-                # not in the geometry)
 
-                for a, b, c in itertools.product([x - 1, x, x + 1], [y - 1, y, y + 1], [z - 1, z, z + 1]):
-                    try:
-                        if not mesh_values[a, b, c]:
-                            on_surface.append(False)
-                            break
-                    except IndexError:
-                        pass
-                else:
-                    on_surface.append(True)
-
-
+            # process surface area info
+            self._sa = numpy.array([sa_values[x, y, z] for x, y, z in zip(xs, ys, zs)])
+            on_surface = self._sa != 0
+            
+            # volumes
+            self._vol = numpy.array([vol_values[x, y, z] for x, y, z in zip(xs, ys, zs)])
+            
+            # map each node to a segment
+            for x, y, z, is_surf in zip(xs, ys, zs, on_surface):
                 # compute distances to all objects to figure out which one
                 # is closest
                 # TODO: be smarter about this: use the chunkification code
@@ -113,8 +110,9 @@ class Region:
                     surface_nodes_by_seg[seg] = []
                 nodes_by_seg[seg].append(len(segs) - 1)
 
-                if on_surface[-1]:
+                if is_surf:
                     surface_nodes_by_seg[seg].append(len(segs) - 1)
+                    
             self._surface_nodes_by_seg = surface_nodes_by_seg
             self._nodes_by_seg = nodes_by_seg
             self._on_surface = on_surface

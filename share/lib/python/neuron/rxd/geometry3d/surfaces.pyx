@@ -15,6 +15,7 @@ cimport cython
 
 cdef extern int find_triangles(double value0, double value1, double value2, double value3, double value4, double value5, double value6, double value7, double x0, double x1, double y0, double y1, double z0, double z1, double* out)
 cdef extern double llgramarea(double* p0, double* p1, double* p2)
+cdef extern double llpipedfromoriginvolume(double* p0, double* p1, double* p2)
 
 cdef extern from "math.h":
     double sqrt(double)
@@ -79,13 +80,13 @@ def contains_surface(i, j, k, objdist, xs, ys, zs, dx, r_inner, r_outer, reject_
 
     return False
 
-
+                            
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
 #cdef int process_cell(int i, int j, int k, list objects, numpy.ndarray[numpy.float_t, ndim=1] xs, numpy.ndarray[numpy.float_t, ndim=1] ys, numpy.ndarray[numpy.float_t, ndim=1] zs, numpy.ndarray[numpy.float_t, ndim=1] tridata, int start, bint print_values=False):
-def process_cell(int i, int j, int k, list objects, numpy.ndarray[numpy.float_t, ndim=1] xs, numpy.ndarray[numpy.float_t, ndim=1] ys, numpy.ndarray[numpy.float_t, ndim=1] zs, numpy.ndarray[numpy.float_t, ndim=1] tridata, int start, bint print_values=False):
-
+def process_cell(int i, int j, int k, list objects, numpy.ndarray[numpy.float_t, ndim=1] xs, numpy.ndarray[numpy.float_t, ndim=1] ys, numpy.ndarray[numpy.float_t, ndim=1] zs, numpy.ndarray[numpy.float_t, ndim=1] tridata, int start, bint store_areas=False, numpy.ndarray[numpy.float_t, ndim=3] areas=None, bint print_values=False):
+    cdef int new_index
     cdef double x, y, z, x1, y1, z1
     cdef tuple position
     x, y, z = xs[i], ys[j], zs[k]
@@ -110,10 +111,65 @@ def process_cell(int i, int j, int k, list objects, numpy.ndarray[numpy.float_t,
         print 'last object:', objects[len(objects) - 1]
         print 'position[4]:', position[4]
 
-    return start + 9 * find_triangles(value0, value1, value2, value3, value4, value5, value6, value7, x, x1, y, y1, z, z1, &tridata[start])
+    new_index = start + 9 * find_triangles(value0, value1, value2, value3, value4, value5, value6, value7, x, x1, y, y1, z, z1, &tridata[start])
+    if store_areas:
+        areas[i, j, k] = _tri_area(tridata, start, new_index)
+    return new_index
+
+# a matrix whose values are unambiguously outside the object
+big_number_matrix = numpy.zeros([4, 4, 4])
+for i in range(4):
+    for j in range(4):
+        for k in range(4):
+            big_number_matrix[i, j, k] = 9999 + i * 16 + j * 4 + k
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+def volume_inside_cell(int i, int j, int k, list objects, numpy.ndarray[numpy.float_t, ndim=1] xs, numpy.ndarray[numpy.float_t, ndim=1] ys, numpy.ndarray[numpy.float_t, ndim=1] zs):
+    cdef double x0 = xs[i], y0 = ys[j], z0 = zs[k]
+    cdef double x1 = xs[i + 1], y1 = ys[j + 1], z1 = zs[k + 1]
+    cdef double dx = x1 - x0, dy = y1 - y0, dz = z1 - z0
+    cdef numpy.ndarray[numpy.float_t, ndim=1] local_xs = numpy.array([x0 - dx, x0, x1, x0 + 2 * dx])
+    cdef numpy.ndarray[numpy.float_t, ndim=1] local_ys = numpy.array([y0 - dy, y0, y1, y0 + 2 * dy])
+    cdef numpy.ndarray[numpy.float_t, ndim=1] local_zs = numpy.array([z0 - dz, z0, z1, z0 + 2 * dz])
+    # big numbers unambiguously outside, no two of which are the same so (probably) no risk of dividing by zero?
+    cdef numpy.ndarray[numpy.float_t, ndim=3] data = numpy.array(big_number_matrix)
+    cdef double x, y, z
+    cdef int i1, j1, k1
+    if not objects:
+        print 'grr... it thinks there is surface when no nearby objects.'
+    for i, x in zip([1, 2], [x0, x1]):
+        for j, y in zip([1, 2], [y0, y1]):
+            for k, z in zip([1, 2], [z0, z1]):
+                data[i, j, k] = min([objdist(x, y, z) for objdist in objects])
+
+    # TODO: I probably don't need the 8 corner voxels
+    # 9 doubles/tri * 5 tri/cell * 27 cells = 1215 doubles
+    cdef numpy.ndarray[numpy.float_t, ndim=1] tridata = numpy.zeros(1215) 
+    cdef int start = 0
+    for i in range(3):
+        i1 = i + 1
+        for j in range(3):
+            j1 = j + 1
+            for k in range(3):
+                k1 = k + 1
+                x, y, z = xs[i], ys[j], zs[k]
+                x1, y1, z1 = xs[i + 1], ys[j + 1], zs[k + 1]
+                value0, value1, value2, value3, value4, value5, value6, value7 = (data[i, j, k],
+                                                                                  data[i1, j, k],
+                                                                                  data[i1, j1, k],
+                                                                                  data[i, j1, k],
+                                                                                  data[i, j, k1],
+                                                                                  data[i1, j, k1],
+                                                                                  data[i1, j1, k1],
+                                                                                  data[i, j1, k1])
+                # TODO: if i = 0, j = k = 1, then this finds the triangles to the left (so can get area that way), etc...
+                start += 9 * find_triangles(value0, value1, value2, value3, value4, value5, value6, value7, x, x1, y, y1, z, z1, &tridata[start])
+    # at this point tridata contains a triangularization that encloses the entire cell's volume
+    tridata.resize(start, refcheck=False)
+    return tri_volume(tridata)
     
-
-
+    
 cdef append_with_deltas(list cell_list, int i, int j, int k):
     cdef int im1 = i - 1, jm1 = j - 1, km1 = k - 1, ip1 = i + 1, jp1 = j + 1, kp1 = k + 1
     cell_list += [(im1, jm1, km1), (im1, jm1, k), (im1, jm1, kp1), (im1, j, km1),
@@ -194,6 +250,17 @@ cpdef chunkify(objects, xs, ys, zs, int chunk_size, double dx):
 @cython.boundscheck(False)
 @cython.wraparound(False)
 cpdef triangulate_surface(list objects, xs, ys, zs, internal_membranes):
+    # use chunks no smaller than 10 voxels across, but aim for max_chunks chunks
+    cdef int chunk_size = max(10, int((len(xs) * len(ys) * len(zs) / max_chunks) ** (1 / 3.)))
+    cdef double grid_dx = xs[1] - xs[0], grid_dy = ys[1] - ys[0], grid_dz = zs[1] - zs[0]
+    cdef double dx = grid_dx
+    
+    cdef list chunk_objs
+    cdef int nx, ny, nz
+    chunk_objs, nx, ny, nz = chunkify(objects, xs, ys, zs, chunk_size, dx)
+    return _triangulate_surface_given_chunks(objects, xs, ys, zs, internal_membranes, chunk_size, chunk_objs, nx, ny, nz, False, None)
+  
+cpdef _triangulate_surface_given_chunks(list objects, xs, ys, zs, internal_membranes, int chunk_size, list chunk_objs, int nx, int ny, int nz, bint store_areas, areas):
     cdef int i, j, k, di, dj, dk
     cdef double area
     cdef double grid_dx = xs[1] - xs[0], grid_dy = ys[1] - ys[0], grid_dz = zs[1] - zs[0]
@@ -219,6 +286,7 @@ cpdef triangulate_surface(list objects, xs, ys, zs, internal_membranes):
     cdef int brute_force_count = 0
     cdef list clip_objs
     cdef tuple cell_id
+    cdef int new_index
 
     cdef int numcompartments
     # locate all the potential boundary locations
@@ -274,7 +342,7 @@ cpdef triangulate_surface(list objects, xs, ys, zs, internal_membranes):
                     if contains_surface(i, j, k, objdist, xs, ys, zs, grid_dx, r_inner, r_outer, reject_if_outside):
                         if triangles_i > triangles.size - 50:
                             triangles.resize(triangles.size * 2, refcheck=False)
-                        triangles_i = process_cell(i, j, k, [objdist], xs, ys, zs, triangles, triangles_i)
+                        triangles_i = process_cell(i, j, k, [objdist], xs, ys, zs, triangles, triangles_i, store_areas=store_areas, areas=areas)
                         append_with_deltas(cell_list, i, j, k)
     
     if internal_membranes:
@@ -282,12 +350,6 @@ cpdef triangulate_surface(list objects, xs, ys, zs, internal_membranes):
         return triangles
     
     cur_processed = None
-    # use chunks no smaller than 10 voxels across, but aim for max_chunks chunks
-    cdef int chunk_size = max(10, int((len(xs) * len(ys) * len(zs) / max_chunks) ** (1 / 3.)))
-    
-    cdef list chunk_objs
-    cdef int nx, ny, nz
-    chunk_objs, nx, ny, nz = chunkify(objects, xs, ys, zs, chunk_size, dx)
     cdef list chunk_pts = [[[[] for k in range(nz)] for j in range(ny)] for i in range(nx)]
 
 
@@ -321,7 +383,7 @@ cpdef triangulate_surface(list objects, xs, ys, zs, internal_membranes):
                     last_starti = starti
                     #starti = process_cell(i, j, k, objects_distances, xs, ys, zs, triangles, last_starti) #was objs
                     #tri_data = list(triangles[last_starti : starti])
-                    starti = process_cell(i, j, k, objs, xs, ys, zs, triangles, last_starti) #was objs
+                    start_i = process_cell(i, j, k, objs, xs, ys, zs, triangles, last_starti, store_areas=store_areas, areas=areas)
                     '''
                     # this an the two-above commented-out lines are for debugging to detect discrepancies between the
                     # chunked partitioning and using all the nodes
@@ -394,7 +456,7 @@ cpdef triangulate_surface(list objects, xs, ys, zs, internal_membranes):
                 break
     
     still_to_process = process2.keys()
-    print 'len(still_to_process) = %d' % len(still_to_process)
+    #print 'len(still_to_process) = %d' % len(still_to_process)
     # flood on those still_to_process
     while still_to_process:
         cell_id = still_to_process.pop()
@@ -411,7 +473,9 @@ cpdef triangulate_surface(list objects, xs, ys, zs, internal_membranes):
                             if obj.distance == objdist:
                                 print '    (i.e. global item %d: %r)' % (n, obj)
                                 break
-                starti = process_cell(i, j, k, local_objs, xs, ys, zs, triangles, starti) # was objects_distances
+                #starti = process_cell(i, j, k, local_objs, xs, ys, zs, triangles, starti) # was objects_distances
+                starti = process_cell(i, j, k, local_objs, xs, ys, zs, triangles, starti, store_areas=store_areas, areas=areas)
+                
             # mark it off so we know we don't visit that grid point again
             to_process[cell_id] = 0
             if old_start_i != starti:
@@ -422,19 +486,34 @@ cpdef triangulate_surface(list objects, xs, ys, zs, internal_membranes):
     return triangles
 
 
+cpdef double tri_area(numpy.ndarray[numpy.float_t, ndim=1] triangles):
+    return _tri_area(triangles, 0, len(triangles))
+
+
 # CTNG:surfacearea
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cpdef double tri_area(numpy.ndarray[numpy.float_t, ndim=1] triangles):
+cpdef double _tri_area(numpy.ndarray[numpy.float_t, ndim=1] triangles, int lo, int hi):
     cpdef double doublearea = 0., local_area
     cdef int i
-    for i in range(0, len(triangles), 9):
+    for i in range(lo, hi, 9):
         local_area = llgramarea(&triangles[i], &triangles[3 + i], &triangles[6 + i])
         doublearea += local_area
         if numpy.isnan(local_area):
-            print 'tri_area exception:',
-            for j in xrange(i, i + 9):
-                print triangles[j],
-            print
+            print 'tri_area exception: ', ', '.join([str(v) for v in triangles[i : i + 9]])
     return doublearea * 0.5
 
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cpdef double tri_volume(numpy.ndarray[numpy.float_t, ndim=1] triangles):
+    cpdef double sixtimesvolume = 0., local_vol
+    cdef int i
+    for i in range(0, len(triangles), 9):
+        local_vol = llpipedfromoriginvolume(&triangles[i], &triangles[3 + i], &triangles[6 + i])
+        sixtimesvolume += local_vol
+        if numpy.isnan(local_vol):
+            print 'tri_volume exception:',
+            for j in range(i, i + 9):
+                print triangles[j],
+                print
+    return abs(sixtimesvolume / 6.)

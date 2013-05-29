@@ -54,6 +54,53 @@ class Node(object):
         except:
             raise Exception('unrecognized node condition: %r' % condition)
 
+    @property
+    def _ref_concentration(self):
+        """Returns a HOC reference to the Node's state"""
+        # this points to rxd array only, will not change legacy concentration
+        return neuron.numpy_element_ref(_states, self._index)
+    
+    @property
+    def d(self):
+        """Gets the diffusion rate within the compartment."""
+        return _diffs[self._index]
+    @d.setter
+    def d(self, value):
+        """Sets the diffusion rate within the compartment."""
+        # TODO: make invalidation work so don't need to redo the setup each time
+        #rxd._invalidate_matrices()
+        _diffs[self._index] = value
+        rxd._setup_matrices()    
+
+    @property
+    def concentration(self):
+        """Gets the concentration at the Node."""
+        return _states[self._index]
+    
+    @concentration.setter
+    def concentration(self, value):
+        """Sets the concentration at the Node"""
+        _states[self._index] = value
+        
+    @property
+    def value(self):
+        """Gets the value associated with this Node."""
+        # TODO: change if stochastic allows molecules
+        return self.concentration
+    
+    @value.setter
+    def value(self, v):
+        """Sets the value associated with this Node."""
+        # TODO: change if stochastic allows molecules
+        self.concentration = v
+
+    @property
+    def _ref_value(self):
+        """Returns a HOC reference to the Node's value"""
+        # TODO: change this if value no longer need be concentration
+        return self._ref_concentration
+    
+        
 class Node1D(Node):
     def __init__(self, sec, i, location):
         """n = Node(sec, i, location)
@@ -78,14 +125,6 @@ class Node1D(Node):
         self._sec = sec
         self._location = location
         self._index = i + sec._offset
-    
-    @property
-    def _ref_concentration(self):
-        """Returns a HOC reference to the Node's state"""
-        # this points to rxd array only, will not change legacy concentration
-        return neuron.numpy_element_ref(_states, self._index)
-
-
 
     @property
     def volume(self):
@@ -123,18 +162,6 @@ class Node1D(Node):
         return self._location
     
     @property
-    def d(self):
-        """Gets the diffusion rate within the compartment."""
-        return _diffs[self._index]
-    @d.setter
-    def d(self, value):
-        """Sets the diffusion rate within the compartment."""
-        # TODO: make invalidation work so don't need to redo the setup each time
-        #rxd._invalidate_matrices()
-        _diffs[self._index] = value
-        rxd._setup_matrices()
-    
-    @property
     def region(self):
         """The region containing the compartment."""
         return self._sec.region()
@@ -151,41 +178,11 @@ class Node1D(Node):
     @property
     def species(self):
         """The Species whose concentration is recorded at this Node."""
-        return self._sec._species()
-    
-    @property
-    def value(self):
-        """Gets the value associated with this Node."""
-        # TODO: change if stochastic allows molecules
-        return self.concentration
-    
-    @value.setter
-    def value(self, v):
-        """Sets the value associated with this Node."""
-        # TODO: change if stochastic allows molecules
-        self.concentration = v
-
-
-    @property
-    def _ref_value(self):
-        """Returns a HOC reference to the Node's value"""
-        # TODO: change this if value no longer need be concentration
-        return self._ref_concentration
-    
-    @property
-    def concentration(self):
-        """Gets the concentration at the Node."""
-        return _states[self._index]
-        
-    @concentration.setter
-    def concentration(self, value):
-        """Sets the concentration at the Node"""
-        _states[self._index] = value
-
+        return self._sec._species()    
 
 
 class Node3D(Node):
-    def __init__(self, index, i, j, k, r, seg):
+    def __init__(self, index, i, j, k, r, seg, speciesref):
         """
             Parameters
             ----------
@@ -209,14 +206,21 @@ class Node3D(Node):
         self._k = k
         self._r = r
         self._seg = seg
+        self._speciesref = speciesref
     
     @property
-    def _ref_concentration(self):
-        raise Exception('need to reimplement _ref_concentration for 3D')
-    
-    @property
-    def concentration(self):
-        return _states[self._index]
+    def surface_area(self):
+        """The surface area of the compartment in square microns.
+        
+        This is the area (if any) of the compartment that lies on the plasma membrane
+        and therefore is the area used to determine the contribution of currents (e.g. ina) from
+        mod files or kschan to the compartment's concentration.
+        
+        Read only.
+        """
+        # TODO: should I have the commented out line?
+        #rxd._update_node_data()
+        return _surface_area[self._index]
     
     @property
     def x3d(self):
@@ -236,7 +240,7 @@ class Node3D(Node):
         raise Exception('need to reimplement x for 3d nodes')
     
     @property
-    def seg(self):
+    def segment(self):
         return self._seg
     
     def _in_sec(self, sec):
@@ -250,9 +254,14 @@ class Node3D(Node):
     
     @property
     def volume(self):
-        return r._dx ** 3
+        return _volumes[self._index]
 
-    @concentration.setter
-    def concentration(self, value):
-        _states[self._index] = value
-        # TODO: transfer this value to the corresponding NEURON nodes, if any
+    @property
+    def region(self):
+        """The region containing the compartment."""
+        return self._r
+
+    @property
+    def species(self):
+        """The Species whose concentration is recorded at this Node."""
+        return self._speciesref()

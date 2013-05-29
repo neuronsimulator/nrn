@@ -266,5 +266,6 @@ def triangulate_surface(objects, xs, ys, zs, internal_membranes):
 
 # CTNG:surfacearea
 def tri_area(triangles):
+    print 'oh no, using surfaces.py'
     return geometry3d_sum_area_of_triangles(triangles, len(triangles))
 
