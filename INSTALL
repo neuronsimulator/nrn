@@ -116,6 +116,9 @@ There are a couple of options to configure that you may need:
 			neuron sources themselves.  This builds static
 			libraries in addition to the shared libraries.
 
+	--with-nrnpython=/where/you/put/python
+                        Access the NEURON python API
+
 It's possible that you need to specify the location of your X11 files,
 if they aren't in some standard place like /usr/X11R6/lib or
 /usr/lib/X11; do "configure --help" and look at the --with-X options.
