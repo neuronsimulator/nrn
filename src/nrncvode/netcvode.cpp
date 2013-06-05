@@ -3521,9 +3521,6 @@ int NetCvode::pgvts_event(double& tt) {
 	int rank, op, err, init;
 	DiscreteEvent* de;
 	assert(gcv_);
-	if (condition_order() == 1) {
-		gcv_->check_deliver();
-	}
 	de = pgvts_least(tt, op, init);
 	err = pgvts_cvode(tt, op);
 	if (init) { gcv_->set_init_flag(); }
@@ -3605,6 +3602,9 @@ int NetCvode::pgvts_cvode(double tt, int op) {
 	// this is the only place where we can enter cvode
 	switch (op) {
 	case 1: // advance
+		if (condition_order() == 1) {
+			gcv_->check_deliver();
+		}
 		gcv_->record_continuous();
 		err = gcv_->advance_tn();
 		if (condition_order() == 2) {

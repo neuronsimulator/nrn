@@ -246,12 +246,7 @@ def _fixed_step_solve(dt):
     if dim is None:
         return
     elif dim == 1:
-        # TODO (major): is this right? I think _ode_solve does it right and this is wrong
-        
-        # the solve is logically equivalent to the commented out line, but simpler
-        #states[:] += _diffusion_matrix_solve(dt, -dt * _diffusion_matrix * states)
-        states[:] = _diffusion_matrix_solve(dt, states)
-        states[:] += _reaction_matrix_solve(dt, dt * b)
+        states[:] = _reaction_matrix_solve(dt, _diffusion_matrix_solve(dt, states + dt * b))
 
         # clear the zero-volume "nodes"
         states[_zero_volume_indices] = 0
@@ -387,7 +382,7 @@ def _reaction_matrix_solve(dt, rhs):
     return result
 
 _react_matrix_solver = None    
-def _reaction_matrix_setup(dt, rhs):
+def _reaction_matrix_setup(dt, unexpanded_rhs):
     global _react_matrix_solver
     if not options.use_reaction_contribution_to_jacobian:
         _react_matrix_solver = lambda x: x
@@ -396,6 +391,8 @@ def _reaction_matrix_setup(dt, rhs):
     # now handle the reaction contribution to the Jacobian
     # this works as long as (I - dt(Jdiff + Jreact)) \approx (I - dtJreact)(I - dtJdiff)
     count = 0
+    rhs = numpy.array(node._get_states())
+    rhs[_nonzero_volume_indices] = unexpanded_rhs    
     n = len(rhs)
     rows = range(n)
     cols = range(n)
