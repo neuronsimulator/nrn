@@ -5,6 +5,7 @@ import bisect
 cimport numpy
 from numpy import linalg
 cimport cython
+from neuron.rxd.rxdException import RxDException
 
 cdef extern from "math.h":
     double sqrt(double)
@@ -41,7 +42,7 @@ cdef double project(double fromx, double fromy, double fromz, double tox, double
     return (fromx * tox + fromy * toy + fromz * toz) / (tox ** 2 + toy ** 2 + toz ** 2) ** 0.5
     
 cdef tuple extreme_pts(list pts):
-    if len(pts) < 2: raise Exception('extreme points computation failed')
+    if len(pts) < 2: raise RxDException('extreme points computation failed')
     cdef double max_dist, d
     cdef tuple pt1, pt2, best_p1, best_p2
     max_dist = -1
@@ -96,7 +97,7 @@ cdef tangent_sphere(cone, int whichend):
         rnear, rfar = cone._r1, cone._r0
         shift_sign = -1
     else:
-        raise Exception('whichend for tangent_sphere must be 0 or 1')
+        raise RxDException('whichend for tangent_sphere must be 0 or 1')
     shift = (rnear * rfar - rnear ** 2) / cone.axislength
     axis = (pt1 - pt0) / cone.axislength
     result = Sphere(*(list(pt + shift_sign * shift * axis) + [numpy.sqrt(shift ** 2 + rnear ** 2)]))
@@ -160,7 +161,7 @@ cdef list join_outside(double x0, double y0, double z0, double r0, double x1, do
             Plane(x1, y1, z1, axis[0], axis[1], axis[2]),
             Plane(x1, y1, z1, -naxis[0], -naxis[1], -naxis[2])])])
     else:
-        raise Exception('unexpected corner_counts?')
+        raise RxDException('unexpected corner_counts?')
     
     return result
 
@@ -184,7 +185,7 @@ def constructive_neuronal_geometry(source, int n_soma_step, double dx):
         # probably an Import3D type
         num_contours = sum(sec.iscontour_ for sec in cell.sections)        
         if num_contours > 1:
-            raise Exception('more than one contour is not currently supported')
+            raise RxDException('more than one contour is not currently supported')
         if num_contours == 1:
             # CTNG:soma
             branches = []
@@ -249,7 +250,7 @@ def constructive_neuronal_geometry(source, int n_soma_step, double dx):
                     del pts_sources
                     
                     if len(extreme1) != 1 or len(extreme2) != 1:
-                        raise Exception('multiple most extreme points')
+                        raise RxDException('multiple most extreme points')
                     extreme1 = extreme1[0]
                     extreme2 = extreme2[0]
                     major_length = linalg.norm(major_p1 - major_p2)

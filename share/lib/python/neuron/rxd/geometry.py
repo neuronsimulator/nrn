@@ -1,18 +1,19 @@
 import warnings
 import numpy
 from neuron import h, nrn
+from rxdException import RxDException
 
 class RxDGeometry:
     def volumes1d(self, sec):
-        raise Exception('volume1d unimplemented')
+        raise RxDException('volume1d unimplemented')
     def surface_areas1d(self, sec):
-        raise Exception('surface_areas1d unimplemented')
+        raise RxDException('surface_areas1d unimplemented')
     def neighbor_areas1d(self, sec):
-        raise Exception('neighbor_areas1d unimplemented')
+        raise RxDException('neighbor_areas1d unimplemented')
     def is_volume(self):
-        raise Exception('is_volume unimplemented')
+        raise RxDException('is_volume unimplemented')
     def is_area(self):
-        raise Exception('is_area unimplemented')
+        raise RxDException('is_area unimplemented')
     def __call__(self):
         """calling returns self to allow for rxd.inside or rxd.inside()"""
         return self
@@ -197,11 +198,11 @@ class ConstantArea(RxDGeometry):
 class Shell(RxDGeometry):
     def __init__(self, lo=None, hi=None):
         if lo is None or hi is None:
-            raise Exception('only Shells with a lo and hi are supported for now')
+            raise RxDException('only Shells with a lo and hi are supported for now')
         
         if lo > hi: lo, hi = hi, lo
         if lo == hi:
-            raise Exception('Shell objects must have thickness')
+            raise RxDException('Shell objects must have thickness')
         self._type = _lo_hi_shell
         self._lo = lo
         self._hi = hi
@@ -209,7 +210,7 @@ class Shell(RxDGeometry):
         if lo == 1 or hi == 1:
             self.surface_areas1d = _surface_areas1d
         elif lo < 1 < hi:
-            raise Exception('shells may not cross the membrane; i.e. 1 cannot lie strictly between lo and hi')
+            raise RxDException('shells may not cross the membrane; i.e. 1 cannot lie strictly between lo and hi')
         else:
             # TODO: is this what we want; e.g. what if lo < 1 < hi?
             self.surface_areas1d = _always_0

@@ -13,6 +13,7 @@ import ctypes
 import atexit
 import options
 import region
+from rxdException import RxDException
 
 def byeworld():
     # needed to prevent a seg-fault error at shudown in at least some
@@ -95,7 +96,7 @@ def re_init():
         _setup_matrices()
 
     elif dim != 3:            
-        raise Exception('unknown dimension')
+        raise RxDException('unknown dimension')
     for sr in species._get_all_species().values():
         s = sr()
         if s is not None: s.re_init()
@@ -118,12 +119,12 @@ def _ode_count(offset):
     return len(_nonzero_volume_indices)
 
 def _ode_reinit(y):
-    if region._sim_dimension == 3: raise Exception('cvode not supported yet for 3D')
+    if region._sim_dimension == 3: raise RxDException('cvode not supported yet for 3D')
     y[_rxd_offset : _rxd_offset + len(_nonzero_volume_indices)] = node._get_states()[_nonzero_volume_indices]
 
 def _ode_fun(t, y, ydot):
     current_dimension = region._sim_dimension
-    if region._sim_dimension == 3: raise Exception('cvode not supported yet for 3D')
+    if region._sim_dimension == 3: raise RxDException('cvode not supported yet for 3D')
     lo = _rxd_offset
     hi = lo + len(_nonzero_volume_indices)
     if lo == hi: return
@@ -160,7 +161,7 @@ def _ode_fun(t, y, ydot):
             s = sr()
             if s is not None: s._transfer_to_legacy()
     else:
-        raise Exception('unknown dimension')
+        raise RxDException('unknown dimension')
 
     
     if ydot is not None:

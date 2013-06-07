@@ -1,3 +1,4 @@
+from rxdException import RxDException
 import weakref
 import species
 import rxdmath
@@ -20,10 +21,10 @@ class Rate(GeneralizedReaction):
         self._update_indices()
         self._membrane_flux = membrane_flux
         if membrane_flux not in (True, False):
-            raise Exception('membrane_flux must be either True or False')
+            raise RxDException('membrane_flux must be either True or False')
         if membrane_flux and regions is None:
             # TODO: rename regions to region?
-            raise Exception('if membrane_flux then must specify the (unique) membrane regions')
+            raise RxDException('if membrane_flux then must specify the (unique) membrane regions')
         rxd._register_reaction(self)
     
     def __repr__(self):
@@ -67,7 +68,7 @@ class Rate(GeneralizedReaction):
     
     def _get_memb_flux(self, states):
         if self._membrane_flux:
-            raise Exception('membrane flux due to rxd.Rate objects not yet supported')
+            raise RxDException('membrane flux due to rxd.Rate objects not yet supported')
             # TODO: refactor the inside of _evaluate so can construct args in a separate function and just get self._rate() result
             rates = self._evaluate(states)[2]
             return self._memb_scales * rates

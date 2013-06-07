@@ -34,6 +34,7 @@ neuron/rxd/section1d.py \
 neuron/rxd/geometry.py \
 neuron/rxd/rate.py \
 neuron/rxd/node.py \
+neuron/rxd/rxdException.py \
 neuron/rxd/__init__.py \
 neuron/rxd/multiCompartmentReaction.py \
 neuron/rxd/nodelist.py \

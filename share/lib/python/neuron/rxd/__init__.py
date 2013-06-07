@@ -1,10 +1,11 @@
 #from neuron import h
 #h.load_file('stdrun.hoc')
+from rxdException import RxDException
 
 try:
     import scipy
 except:
-    raise Exception('NEURON RxD module requires SciPy')
+    raise RxDException('NEURON RxD module requires SciPy')
 
 import rxd
 from species import Species

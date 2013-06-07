@@ -5,6 +5,7 @@ import numpy
 import weakref
 import region
 import rxdsection
+from rxdException import RxDException
 
 # data storage
 _volumes = numpy.array([])
@@ -52,7 +53,7 @@ class Node(object):
                 return self.x < 2. * dx
                 
         except:
-            raise Exception('unrecognized node condition: %r' % condition)
+            raise RxDException('unrecognized node condition: %r' % condition)
 
     @property
     def _ref_concentration(self):
@@ -237,7 +238,7 @@ class Node3D(Node):
     
     @property
     def x(self):
-        raise Exception('need to reimplement x for 3d nodes')
+        raise RxDException('need to reimplement x for 3d nodes')
     
     @property
     def segment(self):

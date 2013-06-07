@@ -1,3 +1,4 @@
+from rxdException import RxDException
 from neuron import h
 import geometry as geo
 import copy
@@ -18,7 +19,7 @@ def _sort_secs(secs):
     secs_names = {sec.name():sec for sec in secs}
     for sec in secs:
         if h.section_orientation(sec=sec):
-            raise Exception('still need to deal with backwards sections')
+            raise RxDException('still need to deal with backwards sections')
     return [secs_names[sec.name()] for sec in all_sorted if sec.name() in secs_names]
 
 
@@ -39,19 +40,19 @@ class Region:
         else:
             self._secs = _sort_secs(sections)
         if nrn_region not in (None, 'i', 'o'):
-            raise Exception('nrn_region must be one of: None, "i", "o"')
+            raise RxDException('nrn_region must be one of: None, "i", "o"')
         self._nrn_region = nrn_region
         if dimension == 3 and geometry is not None:        
-            raise Exception('custom geometries not yet supported in 3d mode')
+            raise RxDException('custom geometries not yet supported in 3d mode')
         if _sim_dimension is not None and dimension != _sim_dimension:
-            raise Exception('only one type of dimension per simulation supported for now (should change later)')
+            raise RxDException('only one type of dimension per simulation supported for now (should change later)')
         _sim_dimension = dimension
         if geometry is None:
             geometry = geo.inside
         if dimension not in (1, 3):
-            raise Exception('only 1 and 3 dimensional simulations currently supported')
+            raise RxDException('only 1 and 3 dimensional simulations currently supported')
         if dimension != 3 and dx is not None:
-            raise Exception('dx option only accepted if dimension = 3')
+            raise RxDException('dx option only accepted if dimension = 3')
         if dimension == 3 and dx is None:
             dx = 0.25
         self._geometry = geometry
@@ -61,7 +62,7 @@ class Region:
         self._dimension = dimension
         if dimension == 3:
             if nrn_region == 'o':
-                raise Exception('3d version does not support nrn_region="o" yet')
+                raise RxDException('3d version does not support nrn_region="o" yet')
 
             self._mesh, sa, vol, self._tri = geometry3d.voxelize2(self._secs, dx=dx)
             sa_values = sa.values

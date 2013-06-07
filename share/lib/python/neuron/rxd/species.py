@@ -9,6 +9,7 @@ import rxdmath
 import numpy
 import rxd
 import warnings
+from rxdException import RxDException
 
 _defined_species = {}
 def _get_all_species():
@@ -71,7 +72,7 @@ class _SpeciesMathable(object):
     @property
     def d(self):
         """diffusion constant. write-only"""
-        raise Exception('diffusion constant is write-only')
+        raise RxDException('diffusion constant is write-only')
     
     @d.setter
     def d(self, value):
@@ -100,7 +101,7 @@ class SpeciesOnRegion(_SpeciesMathable):
         If r is a different Region, then returns the empty list.
         """    
         #if r is not None and r != self._region():
-        #    raise Exception('attempt to access indices on the wrong region')
+        #    raise RxDException('attempt to access indices on the wrong region')
         # TODO: add a mechanism to catch if not right region (but beware of reactions crossing regions)
         if self._species() is None or self._region() is None:
             return []
@@ -200,22 +201,22 @@ class Species(_SpeciesMathable):
         self._name = name
         if name is not None:
             if not isinstance(name, str):
-                raise Exception('Species name must be a string')
+                raise RxDException('Species name must be a string')
             if name in _defined_species and _defined_species[name]() is not None:
-                raise Exception('Species "%s" previously defined: %r' % (name, _defined_species[name]()))
+                raise RxDException('Species "%s" previously defined: %r' % (name, _defined_species[name]()))
         else:
             name = _species_count
         self._id = _species_count
         _species_count += 1
         _defined_species[name] = weakref.ref(self)
         if regions is None:
-            raise Exception('Must specify region where species is present')
+            raise RxDException('Must specify region where species is present')
         if hasattr(regions, '__len__'):
             regions = list(regions)
         else:
             regions = list([regions])
         if not all(isinstance(r, region.Region) for r in regions):
-            raise Exception('regions list must consist of Region objects only')
+            raise RxDException('regions list must consist of Region objects only')
         self._regions = regions
         self._real_name = name
         self.initial = initial
@@ -227,7 +228,7 @@ class Species(_SpeciesMathable):
         if self._name is not None:
             ion_type = h.ion_register(name, charge)
             if ion_type == -1:
-                raise Exception('Unable to register species: %s' % species)
+                raise RxDException('Unable to register species: %s' % species)
             # insert the species if not already present
             for r in regions:
                 if r.nrn_region in ('i', 'o'):
@@ -259,13 +260,13 @@ class Species(_SpeciesMathable):
             if self._secs:
                 self._offset = self._secs[0]._offset
             else:
-                raise Exception('no sections specified')
+                raise RxDException('no sections specified')
             self._has_adjusted_offsets = False
             self._assign_parents()
             self._update_region_indices()
         elif self._dimension == 3:
             if len(regions) != 1:
-                raise Exception('3d currently only supports 1 region per species')
+                raise RxDException('3d currently only supports 1 region per species')
             r = self._regions[0]
             selfref = weakref.ref(self)
             self._nodes = []
@@ -281,7 +282,7 @@ class Species(_SpeciesMathable):
             self._register_cptrs()
 
         else:
-            raise Exception('unsupported dimension: %r' % self._dimension)
+            raise RxDException('unsupported dimension: %r' % self._dimension)
 
     @property
     def states(self):
@@ -328,7 +329,7 @@ class Species(_SpeciesMathable):
             
     def concentrations(self):
         if self._dimension != 3:
-            raise Exception('concentrations only supports 3d and that is deprecated')
+            raise RxDException('concentrations only supports 3d and that is deprecated')
         warnings.warn('concentrations is deprecated; do not use')
         r = self._regions[0]
         data = numpy.array(r._mesh.values, dtype=float)
@@ -355,7 +356,7 @@ class Species(_SpeciesMathable):
                 for seg in self._seg_order:
                     self._concentration_ptrs.append(seg.__getattribute__(ion))
         else:
-            raise Exception('species._register_cptrs does not currently support dimension = %r' % self._dimension)
+            raise RxDException('species._register_cptrs does not currently support dimension = %r' % self._dimension)
     
 
     @property
@@ -388,7 +389,7 @@ class Species(_SpeciesMathable):
             else:
                 return []
         else:
-            raise Exception('unsupported dimension')
+            raise RxDException('unsupported dimension')
         
     
     def _setup_diffusion_matrix(self, g):
@@ -422,7 +423,7 @@ class Species(_SpeciesMathable):
                 elif nrn_region == 'o':
                     sign = 1
                 else:
-                    raise Exception('bad nrn_region for setting up currents (should never get here)')
+                    raise RxDException('bad nrn_region for setting up currents (should never get here)')
                 local_indices = self.indices()
                 offset = self._offset
                 charge = self.charge
@@ -438,7 +439,7 @@ class Species(_SpeciesMathable):
                         scales.append(sign_tenthousand_over_charge_faraday * surface_area[i + offset] / volumes[i + offset])
                         ptrs.append(seg.__getattribute__(ion_curr))
         else:
-            raise Exception('unknown dimension')
+            raise RxDException('unknown dimension')
 
     
     def _has_region_section(self, region, sec):
@@ -452,7 +453,7 @@ class Species(_SpeciesMathable):
             if s._region == region and s._sec.name() == sec_name:
                 return s
         else:
-            raise Exception('requested section not in species')
+            raise RxDException('requested section not in species')
 
     def _assign_parents(self):
         root_id = 0
@@ -500,7 +501,7 @@ class Species(_SpeciesMathable):
                 # concentration = total mass / volume
                 ptr[0] = sum(nodes[node].concentration * nodes[node].volume for node in r._nodes_by_seg[seg]) / sum(nodes[node].volume for node in r._nodes_by_seg[seg])
         else:
-            raise Exception('unrecognized dimension')
+            raise RxDException('unrecognized dimension')
     
     def _import_concentration(self, init=True):
         """Read concentrations from the standard NEURON grid"""
@@ -518,7 +519,7 @@ class Species(_SpeciesMathable):
                 for node in r._nodes_by_seg[seg]:
                     nodes[node].concentration = value
         else:
-            raise Exception('unrecognized dimension')
+            raise RxDException('unrecognized dimension')
             
             
     
@@ -532,7 +533,7 @@ class Species(_SpeciesMathable):
         elif self._dimension == 3:
             return nodelist.NodeList(self._nodes)
         else:
-            raise Exception('nodes does not currently support species with dimension = %r.' % self._dimension)
+            raise RxDException('nodes does not currently support species with dimension = %r.' % self._dimension)
 
 
     @property

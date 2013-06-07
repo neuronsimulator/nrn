@@ -1,7 +1,9 @@
+from rxdException import RxDException
+
 try:
     import scipy
 except:
-    raise Exception("NEURON's rxd module requires scipy")
+    raise RxDException("NEURON's rxd module requires scipy")
 
 import warnings
 

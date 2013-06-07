@@ -9,6 +9,7 @@ from generalizedReaction import GeneralizedReaction, molecules_per_mM_um3
 from neuron import h
 import itertools
 import copy
+from rxdException import RxDException
 
 FARADAY = h.FARADAY
 
@@ -31,18 +32,18 @@ class MultiCompartmentReaction(GeneralizedReaction):
         self._custom_dynamics = custom_dynamics
         self._trans_membrane = True
         if membrane_flux not in (True, False):
-            raise Exception('membrane_flux must be either True or False')
+            raise RxDException('membrane_flux must be either True or False')
         if membrane is None:
-            raise Exception('MultiCompartmentReaction requires a membrane parameter')
+            raise RxDException('MultiCompartmentReaction requires a membrane parameter')
         if membrane_flux and region._sim_dimension != 1:
-            raise Exception('membrane_flux not supported except in 1D')
+            raise RxDException('membrane_flux not supported except in 1D')
         self._membrane_flux = membrane_flux
         if not isinstance(scheme, rxdmath._Reaction):
-            raise Exception('%r not a recognized reaction scheme' % self._scheme)
+            raise RxDException('%r not a recognized reaction scheme' % self._scheme)
         self._dir = scheme._dir
         self._update_rates()
         if not membrane._geometry.is_area():
-            raise Exception('must specify a membrane not a volume for the boundary')
+            raise RxDException('must specify a membrane not a volume for the boundary')
         self._regions = [membrane]
         #self._update_indices()
         rxd._register_reaction(self)
@@ -61,7 +62,7 @@ class MultiCompartmentReaction(GeneralizedReaction):
                     rate_f *= k ** v
         if rate_b is not None:
             if self._dir in ('<', '>'):
-                raise Exception('unidirectional Reaction can have only one rate constant')
+                raise RxDException('unidirectional Reaction can have only one rate constant')
             if not self._custom_dynamics:
                 for k, v in zip(rhs.keys(), rhs.values()):
                     if v == 1:
@@ -72,7 +73,7 @@ class MultiCompartmentReaction(GeneralizedReaction):
             self._sources = _ref_list_with_mult(lhs)
             self._dests = _ref_list_with_mult(rhs)
         elif self._dir == '<>':
-            raise Exception('bidirectional Reaction needs two rate constants')
+            raise RxDException('bidirectional Reaction needs two rate constants')
         elif self._dir == '>':
             rate = rate_f
             self._sources = _ref_list_with_mult(lhs)
@@ -82,11 +83,11 @@ class MultiCompartmentReaction(GeneralizedReaction):
             self._dests = _ref_list_with_mult(lhs)
             rate = rate_f
         else:
-            raise Exception('unrecognized direction; should never happen')
+            raise RxDException('unrecognized direction; should never happen')
         self._rate, self._involved_species = rxdmath._compile(rate)
         self._changing_species = list(set(self._sources + self._dests))
         if not all(isinstance(s(), species.SpeciesOnRegion) for s in self._involved_species):
-            raise Exception('must specify region for all involved species')
+            raise RxDException('must specify region for all involved species')
 
 
 
@@ -99,13 +100,13 @@ class MultiCompartmentReaction(GeneralizedReaction):
     @f_rate.setter
     def f_rate(self, value):
         if self._dir not in ('<>', '>'):
-            raise Exception('no forward reaction in reaction scheme')
+            raise RxDException('no forward reaction in reaction scheme')
         self._original_rate_f = value
         self._update_rates()
     @b_rate.setter
     def b_rate(self, value):
         if self._dir not in ('<>', '<'):
-            raise Exception('no backward reaction in reaction scheme')
+            raise RxDException('no backward reaction in reaction scheme')
         self._original_rate_b = value
         self._update_rates()
         
@@ -153,7 +154,7 @@ class MultiCompartmentReaction(GeneralizedReaction):
             elif 'o' in dest_regions and 'i' not in dest_regions and 'o' not in source_regions:
                 inside = -1 # 'source'
             else:
-                raise Exception('unable to identify which side of reaction is inside (hope to remove the need for this')
+                raise RxDException('unable to identify which side of reaction is inside (hope to remove the need for this')
         
         # dereference the species to get the true species if it's actually a SpeciesOnRegion
         sources = [s()._species() for s in self._sources]
@@ -161,7 +162,7 @@ class MultiCompartmentReaction(GeneralizedReaction):
         if self._membrane_flux:
             if any(s in dests for s in sources) or any(d in sources for d in dests):
                 # TODO: remove this limitation
-                raise Exception('current fluxes do not yet support same species on both sides of reaction')
+                raise RxDException('current fluxes do not yet support same species on both sides of reaction')
         
         # TODO: make so don't need multiplicity (just do in one pass)
         # TODO: this needs changed when I switch to allowing multiple sides on the left/right (e.g. simplified Na/K exchanger)

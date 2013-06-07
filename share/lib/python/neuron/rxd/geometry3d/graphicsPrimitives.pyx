@@ -6,6 +6,7 @@
 
 import bisect
 cimport cython
+from neuron.rxd.rxdException import RxDException
 
 cdef extern from "math.h":
     double sqrt(double)
@@ -478,7 +479,7 @@ cdef class Cone:
         self.x0, self.y0, self.z0, self.r0, self.x1, self.y1, self.z1, self.r1 = x0, y0, z0, r0, x1, y1, z1, r1
         
         if r0 < 0:
-            raise Exception('At least one Cone radius must be positive')
+            raise RxDException('At least one Cone radius must be positive')
         if r1 < 0:
             axisx, axisy, axisz = (x1 - x0, y1 - y0, z1 - z0)
             length = sqrt(axisx ** 2 + axisy ** 2 + axisz ** 2)
