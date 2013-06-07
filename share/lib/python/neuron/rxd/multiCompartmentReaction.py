@@ -8,6 +8,7 @@ import region
 from generalizedReaction import GeneralizedReaction, molecules_per_mM_um3
 from neuron import h
 import itertools
+import copy
 
 FARADAY = h.FARADAY
 
@@ -39,9 +40,20 @@ class MultiCompartmentReaction(GeneralizedReaction):
         if not isinstance(scheme, rxdmath._Reaction):
             raise Exception('%r not a recognized reaction scheme' % self._scheme)
         self._dir = scheme._dir
-        lhs = scheme._lhs._items
-        rhs = scheme._rhs._items
-        if not custom_dynamics:
+        self._update_rates()
+        if not membrane._geometry.is_area():
+            raise Exception('must specify a membrane not a volume for the boundary')
+        self._regions = [membrane]
+        #self._update_indices()
+        rxd._register_reaction(self)
+
+
+    def _update_rates(self):
+        lhs = self._scheme._lhs._items
+        rhs = self._scheme._rhs._items
+        rate_f = copy.copy(self._original_rate_f)
+        rate_b = copy.copy(self._original_rate_b)        
+        if not self._custom_dynamics:
             for k, v in zip(lhs.keys(), lhs.values()):
                 if v == 1:
                     rate_f *= k
@@ -50,7 +62,7 @@ class MultiCompartmentReaction(GeneralizedReaction):
         if rate_b is not None:
             if self._dir in ('<', '>'):
                 raise Exception('unidirectional Reaction can have only one rate constant')
-            if not custom_dynamics:
+            if not self._custom_dynamics:
                 for k, v in zip(rhs.keys(), rhs.values()):
                     if v == 1:
                         rate_b *= k
@@ -75,11 +87,28 @@ class MultiCompartmentReaction(GeneralizedReaction):
         self._changing_species = list(set(self._sources + self._dests))
         if not all(isinstance(s(), species.SpeciesOnRegion) for s in self._involved_species):
             raise Exception('must specify region for all involved species')
-        if not membrane._geometry.is_area():
-            raise Exception('must specify a membrane not a volume for the boundary')
-        self._regions = [membrane]
-        #self._update_indices()
-        rxd._register_reaction(self)
+
+
+
+    @property
+    def f_rate(self):
+        return self._original_rate_f
+    @property
+    def b_rate(self):
+        return self._original_rate_b
+    @f_rate.setter
+    def f_rate(self, value):
+        if self._dir not in ('<>', '>'):
+            raise Exception('no forward reaction in reaction scheme')
+        self._original_rate_f = value
+        self._update_rates()
+    @b_rate.setter
+    def b_rate(self, value):
+        if self._dir not in ('<>', '<'):
+            raise Exception('no backward reaction in reaction scheme')
+        self._original_rate_b = value
+        self._update_rates()
+        
     
     def __repr__(self):
         return 'MultiCompartmentReaction(%r, %r, rate_b=%r, membrane=%r, custom_dynamics=%r, membrane_flux=%r, scale_by_area=%r)' % (self._scheme, self._original_rate_f, self._original_rate_b, self._regions[0], self._custom_dynamics, self._membrane_flux, self._scale_by_area)
