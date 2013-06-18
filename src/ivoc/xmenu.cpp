@@ -292,9 +292,9 @@ void hoc_xradiobutton() { IFGUI
 		po = *hoc_objgetarg(2);
 	    }else{
                 s2 = gargstr(2);
+        }
 		if (ifarg(3)) {
 			activate = (chkarg(3, 0, 1) != 0.);
-		}
 	    }
         }else{
         	s2 = s1;

@@ -72,6 +72,7 @@ implementList(IntList, int)
 static double* insrc_buf_; // Receives the interprocessor data destined for other threads.
 static double* outsrc_buf_;
 static double** poutsrc_; // prior to mpi copy src value to proper place in outsrc_buf_
+static int* poutsrc_indices_; // for recalc pointers
 static int insrc_buf_size_, *insrccnt_, *insrcdspl_;
 static int outsrc_buf_size_, *outsrccnt_, *outsrcdspl_;
 static MapInt2Int* sid2insrc_; // received interprocessor sid data is
@@ -81,10 +82,13 @@ static MapInt2Int* sid2insrc_; // received interprocessor sid data is
 static DblPList* targets_;
 static IntList* sgid2targets_;
 static PPList* target_pntlist_;
+static IntList* target_parray_index_; // to recompute targets_ for cache_efficint
 static DblPList* sources_;
 static IntList* sgids_;
 static MapInt2Int* sgid2srcindex_;
-static int* s2t_index_;
+
+static int target_ptr_update_cnt_ = 0;
+static int target_ptr_need_update_cnt_ = 0;
 
 static bool is_setup_;
 static void alloclists();
@@ -106,6 +110,43 @@ void nrnmpi_source_var() {
 //	printf("nrnmpi_source_var source_val=%g sgid=%d\n", *psv, sgid);
 }
 
+static int compute_parray_index(Point_process* pp, double* ptv) {
+	if (!pp) {
+		return -1;
+	}
+	long i =  ptv - pp->prop->param;
+	if (i < 0 || i >= pp->prop->param_size) {
+		i = -1;
+	}
+	return int(i);
+}
+static double* tar_ptr(Point_process* pp, int index) {
+	return pp->prop->param + index;
+}
+
+static void check_pointers() {
+printf("check_pointers\n");
+	for (int i = 0; i < targets_->count(); ++i) {
+		double* pd = tar_ptr(target_pntlist_->item(i), target_parray_index_->item(i));
+		assert(targets_->item(i) == pd);
+	}
+}
+
+static void target_ptr_update() {
+	if (targets_) {
+		int n = targets_->count();
+		DblPList* newtar = new DblPList(n);
+		for (int i=0; i < n; ++i) {
+			double* pd = tar_ptr(target_pntlist_->item(i), target_parray_index_->item(i));
+			newtar->append(pd);
+		}
+		delete targets_;
+		targets_ = newtar;
+	}
+	mk_ttd();
+	target_ptr_update_cnt_ = target_ptr_need_update_cnt_;
+}
+
 void nrnmpi_target_var() {
 	Point_process* pp = 0;
 	alloclists();
@@ -118,11 +159,14 @@ void nrnmpi_target_var() {
 	int sgid = (int)(*getarg(iarg++));
 	targets_->append(ptv);
 	target_pntlist_->append(pp);
+	target_parray_index_->append(compute_parray_index(pp, ptv));
 	sgid2targets_->append(sgid);
 //	printf("nrnmpi_target_var target_val=%g sgid=%d\n", *ptv, sgid);
 }
 
 void nrn_partrans_update_ptrs() {
+	// These pointer changes require that the targets be range variables
+	// of a point process and the sources be voltage.
 	int i, n;
 	if (sources_) {
 		n = sources_->count();
@@ -133,17 +177,14 @@ void nrn_partrans_update_ptrs() {
 		}
 		delete sources_;
 		sources_ = newsrc;
-	}
-	if (targets_) {
-		n = targets_->count();
-		DblPList* newtar = new DblPList(n);
-		for (i=0; i < n; ++i) {
-			double* pd = nrn_recalc_ptr(targets_->item(i));
-			newtar->append(pd);
+		// also must update the poutsrc
+		for (i=0; i < outsrc_buf_size_; ++i) {
+			poutsrc_[i] = sources_->item(long(poutsrc_indices_[i]));
 		}
-		delete targets_;
-		targets_ = newtar;
 	}
+	// the target vgap pointers also need updating but they will not
+	// change til after this returns ... (verify this)
+	++target_ptr_need_update_cnt_;
 }
 
 //static FILE* xxxfile;
@@ -260,6 +301,9 @@ void thread_transfer(NrnThread* _nt) {
 		// For now we presume we have dealt with these matters and
 		// do the transfer.
 	assert(n_transfer_thread_data_ == nrn_nthread);
+	if (target_ptr_need_update_cnt_ > target_ptr_update_cnt_) {
+		target_ptr_update();
+	}
 	TransferThreadData& ttd = transfer_thread_data_[_nt->id];
 	for (int i = 0; i < ttd.cnt; ++i) {
 		*(ttd.tv[i]) = *(ttd.sv[i]);
@@ -293,6 +337,8 @@ void nrnmpi_setup_transfer() {
 	if (insrc_buf_) { delete [] insrc_buf_; insrc_buf_ = 0; }
 	if (outsrc_buf_) { delete [] outsrc_buf_; outsrc_buf_ = 0; }
 	if (sid2insrc_) { delete sid2insrc_; sid2insrc_ = 0; }
+	if (poutsrc_) { delete [] poutsrc_ ; poutsrc_ = 0; }
+	if (poutsrc_indices_) { delete [] poutsrc_indices_ ; poutsrc_indices_ = 0; }
 #if PARANEURON
 	// if there are no targets anywhere, we do not need to do anything
 	if (nrnmpi_int_allmax(targets_->count()) == 0) {
@@ -325,7 +371,9 @@ void nrnmpi_setup_transfer() {
 	// sids needed by this machine where the sources are on other machines.
 	int needsrc_cnt = 0;
 	MapInt2Int* seen = new MapInt2Int(targets_->count());//for single counting
-	int* needsrc = new int[targets_->count()]; // more than we need
+	int szalloc = targets_->count();
+	szalloc = szalloc ? szalloc : 1;
+	int* needsrc = new int[szalloc]; // more than we need
 	for (int i = 0; i < sgid2targets_->count(); ++i) {
 		int sid = sgid2targets_->item(i);
 		// only need it if not a source on this machine
@@ -358,8 +406,11 @@ void nrnmpi_setup_transfer() {
 	for (int i=0; i < nrnmpi_numprocs; ++i) {
 		insrcdspl_[i+1] = insrcdspl_[i] + insrccnt_[i];
 	}
-	int* need = new int[insrcdspl_[nrnmpi_numprocs]];
+	szalloc = insrcdspl_[nrnmpi_numprocs];
+	szalloc = szalloc ? szalloc : 1;
+	int* need = new int[szalloc];
 	nrnmpi_int_allgatherv(needsrc, need, insrccnt_, insrcdspl_);
+	delete [] needsrc;
 #if 0
 	nrnmpi_barrier();
 	if (nrnmpi_myid == 0) {
@@ -390,8 +441,10 @@ printf("%d    interested in %d\n", nrnmpi_myid, need[insrcdspl_[i]+j]);
 		outsrcdspl_[i+1] = outsrcdspl_[i] + outsrccnt_[i];
 	}
 	outsrc_buf_size_ = outsrcdspl_[nrnmpi_numprocs];
-	outsrc_buf_ = new double[outsrc_buf_size_];
-	poutsrc_ = new double*[outsrc_buf_size_];
+	szalloc = outsrc_buf_size_ ? outsrc_buf_size_ : 1;
+	outsrc_buf_ = new double[szalloc];
+	poutsrc_ = new double*[szalloc];
+	poutsrc_indices_ = new int[szalloc];
 	for (int i=0; i < nrnmpi_numprocs; ++i) {
 		int k = 0;
 		for (int j = 0; j < insrccnt_[i]; ++j) {
@@ -399,6 +452,7 @@ printf("%d    interested in %d\n", nrnmpi_myid, need[insrcdspl_[i]+j]);
 			int srcindex;
 			if (sgid2srcindex_->find(sid, srcindex)) {
 		    poutsrc_[outsrcdspl_[i] + k] = sources_->item(srcindex);
+		    poutsrc_indices_[outsrcdspl_[i] + k] = srcindex;
 		    outsrc_buf_[outsrcdspl_[i] + k] = double(sid); // see step 5
 		    ++k;
 #if 0
@@ -424,7 +478,8 @@ printf("%d step 3 send sid %d to rank %d\n", nrnmpi_myid, sid, i);
 		insrcdspl_[i+1] = insrcdspl_[i] + insrccnt_[i];
 	}
 	insrc_buf_size_ = insrcdspl_[nrnmpi_numprocs];
-	insrc_buf_ = new double[insrc_buf_size_];
+	szalloc = insrc_buf_size_ ? insrc_buf_size_ : 1;
+	insrc_buf_ = new double[szalloc];
 	delete [] ones;
 #if 0
 for (int i=0; i < nrnmpi_numprocs; ++i) {
@@ -465,6 +520,7 @@ void alloclists() {
 	if (!targets_) {
 		targets_ = new DblPList(100);
 		target_pntlist_ = new PPList(100);
+		target_parray_index_ = new IntList(100);
 		sgid2targets_ = new IntList(100);
 		sources_ = new DblPList(100);
 		sgids_ = new IntList(100);
@@ -482,10 +538,13 @@ void nrn_partrans_clear() {
 	delete sgid2targets_;
 	delete targets_;
 	delete target_pntlist_;
+	delete target_parray_index_;
 	targets_ = 0;
 	rm_ttd();
 	if (insrc_buf_) { delete [] insrc_buf_; insrc_buf_ = 0; }
 	if (outsrc_buf_) { delete [] outsrc_buf_; outsrc_buf_ = 0; }
 	if (sid2insrc_) { delete sid2insrc_; sid2insrc_ = 0; }
+	if (poutsrc_) { delete [] poutsrc_ ; poutsrc_ = 0; }
+	if (poutsrc_indices_) { delete [] poutsrc_indices_ ; poutsrc_indices_ = 0; }
 	nrn_mk_transfer_thread_data_ = 0;
 }
