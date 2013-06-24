@@ -39,4 +39,5 @@ clean-generic:
 	if test "$(CYTHON)" != "echo" ; then \
 		rm -f ctng.cpp graphicsPrimitives.cpp surfaces.cpp ; \
 		rm -fr build/ ; \
+		rm -fr *.so ; \
 	fi
