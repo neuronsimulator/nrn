@@ -17,6 +17,8 @@ rxd_builder_top = 100
 rxd_builder_height = 400
 
 
+h.load_file('stdlib.hoc')
+
 default_region = {'morphology': 'No Sections', 'geometry': 'Inside'}
 
 
