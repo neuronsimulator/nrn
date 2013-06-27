@@ -6,7 +6,6 @@ import node
 import numpy
 from generalizedReaction import GeneralizedReaction
 from neuron import h
-import copy
 
 FARADAY = h.FARADAY
 
@@ -49,23 +48,23 @@ class MultiCompartmentReaction(GeneralizedReaction):
     def _update_rates(self):
         lhs = self._scheme._lhs._items
         rhs = self._scheme._rhs._items
-        rate_f = copy.copy(self._original_rate_f)
-        rate_b = copy.copy(self._original_rate_b)        
+        rate_f = self._original_rate_f
+        rate_b = self._original_rate_b
         if not self._custom_dynamics:
             for k, v in zip(lhs.keys(), lhs.values()):
                 if v == 1:
-                    rate_f *= k
+                    rate_f = rate_f * k
                 else:
-                    rate_f *= k ** v
+                    rate_f = rate_f * k ** v
         if rate_b is not None:
             if self._dir in ('<', '>'):
                 raise Exception('unidirectional Reaction can have only one rate constant')
             if not self._custom_dynamics:
                 for k, v in zip(rhs.keys(), rhs.values()):
                     if v == 1:
-                        rate_b *= k
+                        rate_b = rate_b * k
                     else:
-                        rate_b *= k ** v
+                        rate_b = rate_b * k ** v
             rate = rate_f - rate_b
             self._sources = _ref_list_with_mult(lhs)
             self._dests = _ref_list_with_mult(rhs)
