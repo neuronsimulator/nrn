@@ -912,6 +912,7 @@ class SpeciesPanel:
 class _SpeciesEditor:
     def __init__(self):
         self.hbox = h.HBox(3)
+        self.hbox.save('')
         self.hbox.intercept(1)
         self.vbox = h.VBox(3)
         self.vbox.intercept(1)
@@ -1462,6 +1463,7 @@ def ReactionPane():
 class _ReactionEditor:
     def __init__(self):
         self.hbox = h.HBox(3)
+        self.hbox.save('')
         self.hbox.intercept(1)
         self.vbox = h.VBox(3)
         self.vbox.intercept(1)
