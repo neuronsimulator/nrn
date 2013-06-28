@@ -569,15 +569,28 @@ class _RxDBuilder:
     def is_mapped(self):
         return self.vbox.ismapped()
     
-    def map(self):
+    def map(self, name=None, left=None, top=None, width=None, height=None):
         if self.is_mapped: return
-        if rxd_builder_left is None:
-            self.vbox.map('RxD Builder')
+        if name is None:
+            if rxd_builder_left is None:
+                self.vbox.map('RxD Builder')
+            else:
+                self.vbox.map('RxD Builder', rxd_builder_left, rxd_builder_top, rxd_builder_width, rxd_builder_height)
         else:
-            self.vbox.map('RxD Builder', rxd_builder_left, rxd_builder_top, rxd_builder_width, rxd_builder_height)
+            self.vbox.map(name, left, top, width, height)
         
     def save(self):
-        print '_RxDBuilder.save'
+        self.vbox.save('nrnpython("import neuron.rxd.gui")')
+        self.vbox.save('nrnpython("neuron.rxd.gui.regions = %r")' % regions)
+        self.vbox.save('nrnpython("neuron.rxd.gui.species = %r")' % species)
+        self.vbox.save('nrnpython("neuron.rxd.gui.all_reactions = %r")' % all_reactions)
+        self.vbox.save('nrnpython("neuron.rxd.gui.rxd_builder_tab = %r")' % rxd_builder_tab)
+        self.vbox.save('nrnpython("neuron.rxd.gui.has_instantiated = %r")' % has_instantiated)
+        self.vbox.save('nrnpython("from neuron import h")')
+        self.vbox.save('nrnpython("h.ocbox_ = neuron.rxd.gui.RxDBuilder(visible=False)")')
+                       
+        if has_instantiated:
+            self.vbox.save('nrnpython("h.ocbox_.instantiate()")')
     
     def regions(self):
         global rxd_builder_tab
