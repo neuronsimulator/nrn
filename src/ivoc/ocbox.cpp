@@ -331,7 +331,9 @@ IFGUI
 			sprintf(buf, "execute(\"%s\", %s)", gargstr(1), gargstr(2));
 		}
 	}else {
-		sprintf(buf, "%s", gargstr(1));
+        //sprintf(buf, "%s", gargstr(1));
+        b->save_action(gargstr(1), 0);
+        return 1.0;
 	}
 	b->save_action(buf, 0);
 ENDGUI
