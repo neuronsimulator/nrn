@@ -16,6 +16,7 @@ LinearMechanism
 
         ``lm = new LinearMechanism(c, g, y, [y0], b, sl, xvec, [layervec])``
 
+        ``lm = new LinearMechanism(pycallable, c, g, y, ...)``
 
 
     Description:
@@ -109,9 +110,67 @@ LinearMechanism
 
 
     .. warning::
-        Does not work yet with cvode. 
+        Does not work with the CVODE integrator but does work with the
+          differential-algebraic solver IDA. Note that if the standard
+          run system is loaded, cvode_active(1) will automatically
+          choose the correct variable step integrator.
         Does not allow changes to coupling locations. 
         Is not notified when matrices, vectors, or segments it depends on 
         disappear. 
 
+    Description (continued):
+        If the pycallable argument (A Python Callable object) is present
+        it is called just before the b Vector is used during a simulation. The
+        callable can change the elements of b and g (but do not introduce new
+        elements into g) as a function of time and states. It may be useful for
+        stability and performance to place the linearized part of b into g.
+        Consider the following pendulum.py with equations 
 
+    Example:
+         dtheta/dt = omega
+         domega/dt = -g/L*sin(theta) with g/L=1 
+
+        .. code-block::
+            none
+
+            from neuron import h
+            from math import sin
+            
+            h.load_file('nrngui.hoc')
+            
+            cmat = h.Matrix(2,2,2).ident()
+            
+            gmat = h.Matrix(2,2,2)
+            gmat.setval(0,1, -1)
+            
+            y = h.Vector(2)
+            y0 = h.Vector(2)
+            b = h.Vector(2)
+            
+            def callback():
+              b.x[1] = -sin(y.x[0])
+            
+            nlm = h.LinearMechanism(callback, cmat, gmat, y, y0, b)
+            
+            
+            dummy = h.Section()
+            trajec = h.Vector()
+            tvec = h.Vector()
+            trajec.record(y._ref_x[0])
+            tvec.record(h._ref_t)
+            
+            graph = h.Graph()
+            h.tstop=50
+            
+            def prun(theta0, omega0):
+              graph.erase()
+              y0.x[0] = theta0
+              y0.x[1] = omega0
+              h.run()
+              trajec.line(graph, tvec)
+            
+            h.dt /= 10
+            h.cvode.atol(1e-5)
+            h.cvode_active(1)
+            prun(0, 1.9999) # 2.0001 will keep it rotating
+            graph.exec_menu("View = plot")
