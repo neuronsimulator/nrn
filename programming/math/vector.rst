@@ -506,7 +506,7 @@ Vector
 
         ``vsrc.play(index)``
 
-        ``vsrc.play(&var or stmt, Dt or Tvec, continuous)``
+        ``vsrc.play(&var or stmt, tvec, continuous)``
 
         ``vsrc.play(&var or stmt, tvec, indices_of_discontinuities_vector)``
 

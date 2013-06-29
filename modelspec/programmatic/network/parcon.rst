@@ -2172,6 +2172,8 @@ Description:
         to :meth:`ParallelContext.cell` . A call to :meth:`ParallelContext.outputcell` is NOT 
         a prerequisite. 
 
+        If the gid arg is -1, then spikes from ALL output gids on this
+        machine will be recorded.
          
 
 ----
