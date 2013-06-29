@@ -67,7 +67,7 @@ fi
 # copy the essential cygwin programs
 for i in \
  as.exe basename.exe cat.exe cp.exe \
- cpp.exe cygpath.exe dirname.exe echo.exe find.exe $LTCC.exe \
+ cpp.exe cygpath.exe diff.exe dirname.exe echo.exe find.exe $LTCC.exe \
  grep.exe ld.exe ls.exe make.exe mkdir.exe \
  nm.exe rm.exe mv.exe sed.exe bash.exe unzip.exe \
  rxvt.exe rebase.exe sort.exe cygcheck.exe \
@@ -233,7 +233,7 @@ zip -l $Z notes.txt
 zip $Z bin/mknrndll lib/*.sh lib/*.sed
 #do the specified unix bin shell scripts in unix format
 cd $S
-zip $Z bin/mkthreadsafe
+zip $Z bin/mkthreadsafe bin/sortspike
 unzip -d $D -o $Z
 rm $Z
 cd $B/src/mswin
