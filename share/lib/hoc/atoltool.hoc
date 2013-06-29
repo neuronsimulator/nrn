@@ -16,7 +16,7 @@ proc init() {
 proc rescale() {
 	if (scale == -1) { return }
 	if (numarg() == 0) {
-		if (max <= 0) { return }
+		if (max*1e20 <= 0) { return }
 		scale = log10(max)
 		if (scale < 0) { scale -= .99 }
 		scale = 10^(int(scale))	
