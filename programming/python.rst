@@ -40,7 +40,7 @@ Description:
     and can be imported into NEURON with 
 
     .. code-block::
-        none
+        python
 
         ipython 
         import sys 
@@ -62,7 +62,7 @@ Description:
     After this, you will probably want to: 
 
     .. code-block::
-        none
+        python
 
         h = neuron.h # neuron imports hoc and does a  h = hoc.HocObject() 
 
@@ -73,7 +73,7 @@ Description:
     as well, e.g. if neurondemo was used earlier so the shared object exists, 
 
     .. code-block::
-        none
+        python
 
         h = hoc.HocObject() 
         h('nrn_load_dll("$(NEURONHOME)/demo/release/x86_64/.libs/libnrnmech.so")') 
@@ -125,7 +125,7 @@ Description:
         A '\n' should be escaped as '\\n'. 
 
         .. code-block::
-            none
+            python
 
             hoc.execute('load_file("nrngui.hoc")') 
 
@@ -155,7 +155,7 @@ Description:
         When created via ``hoc.HocObject()`` its print string is "TopLevelHocInterpreter". 
 
         .. code-block::
-            none
+            python
 
             h("any hoc statement") 
 
@@ -165,7 +165,7 @@ Description:
         in the Python world: 
 
         .. code-block::
-            none
+            python
 
             h('strdef s') 
             h('{x = 3  s = "hello"}') 
@@ -177,7 +177,7 @@ Description:
         in Hoc.) 
 
         .. code-block::
-            none
+            python
 
             h.x = 25 
             h.s = 'goodbye' 
@@ -187,7 +187,7 @@ Description:
         Any hoc object can be handled in Python. 
 
         .. code-block::
-            none
+            python
 
             h('objref vec') 
             h('vec = new Vector(5)') 
@@ -200,7 +200,7 @@ Description:
         object is not the return value of the method but a method object. ie. 
 
         .. code-block::
-            none
+            python
 
             x = h.vec.size     # not 5 but a python callable object 
             print x            # prints: Vector[0].size() 
@@ -209,7 +209,7 @@ Description:
         This is also true for indices 
 
         .. code-block::
-            none
+            python
 
             h.vec.indgen().add(10) # fills elements with 10, 11, ..., 14 
             print h.vec.x[2]   # prints 12.0 
@@ -220,7 +220,7 @@ Description:
         The hoc object can be created directly in Python. E.g. 
 
         .. code-block::
-            none
+            python
 
             v = h.Vector(10).indgen.add(10) 
 
@@ -228,7 +228,7 @@ Description:
         Iteration over hoc Vector, List, and arrays is supported. e.g. 
 
         .. code-block::
-            none
+            python
 
             v = h.Vector(4).indgen().add(10) 
             for x in v : 
@@ -248,7 +248,7 @@ Description:
         Any hoc Section can be handled in Python. E.g. 
 
         .. code-block::
-            none
+            python
 
             h('create soma, axon') 
             ax = h.axon 
@@ -258,7 +258,7 @@ Description:
         and for these a typical idiom is 
 
         .. code-block::
-            none
+            python
 
             ax.push() ; print secname() ; h.pop_section() 
 
@@ -267,7 +267,7 @@ Description:
         the scope of the function call. e.g 
 
         .. code-block::
-            none
+            python
 
             print secname(sec=ax) 
 
@@ -275,7 +275,7 @@ Description:
         Point processes are handled by direct object creation as in 
 
         .. code-block::
-            none
+            python
 
             stim = IClamp(1.0, sec = ax) 
             // or 
@@ -291,7 +291,7 @@ Description:
         changes a string. 
 
         .. code-block::
-            none
+            python
 
             h('proc chgstr() { $s1 = "goodbye" }') 
             s = h.ref('hello') 
@@ -304,7 +304,7 @@ Description:
         and here is an example that changes a pointer to a double 
 
         .. code-block::
-            none
+            python
 
             h('proc chgval() { $&1 = $2 }') 
             x = h.ref(5) 
@@ -315,7 +315,7 @@ Description:
         Finally, here is an example that changes a objref arg. 
 
         .. code-block::
-            none
+            python
 
             h('proc chgobj() { $o1 = new List() }') 
             v = h.ref([1,2,3])  # references a Python object 
@@ -327,7 +327,7 @@ Description:
         a pointer to a variable. For example consider 
 
         .. code-block::
-            none
+            python
 
             h('x = 1') 
             y = h.ref(h.x) 
@@ -342,7 +342,7 @@ Description:
         which works for any hoc variable and acts exactly like a c pointer. eg: 
 
         .. code-block::
-            none
+            python
 
             h('x = 1') 
             y = h._ref_x 
@@ -360,7 +360,7 @@ Description:
         is done with regard to array bounds errors.  e.g 
 
         .. code-block::
-            none
+            python
 
             v = h.Vector(4).indgen().add(10) 
             y = v._ref_x[1]    # holds pointer to second element of v 
@@ -371,7 +371,7 @@ Description:
         The idiom is used to record from (or play into) voltage and mechanism variables. eg 
 
         .. code-block::
-            none
+            python
 
             v = h.Vector() 
             v.record(h.soma(.5)._ref_v, sec = h.soma) 
@@ -385,7 +385,7 @@ Description:
         in Python. 
 
         .. code-block::
-            none
+            python
 
             h('obfunc newvec() { return new Vector($1) }') 
             v = h.newvec(10).indgen().add(10) 
@@ -395,7 +395,7 @@ Description:
         directly as shown a few fragments back. Also consider the minimalist 
 
         .. code-block::
-            none
+            python
 
             vt = h.Vector 
             v = vt(4).indgen().add(10) 
@@ -407,7 +407,7 @@ Description:
         and forth as strdef and scalar doubles respectively. 
 
         .. code-block::
-            none
+            python
 
             h('obfunc newlist() { return new List() }') 
             list = h.newlist() 
@@ -425,7 +425,7 @@ Description:
         To see all the methods available for a hoc object, use, for example, 
 
         .. code-block::
-            none
+            python
 
             dir(h.Vector) 
 
@@ -433,7 +433,7 @@ Description:
         h.anyclass can be subclassed with 
 
         .. code-block::
-            none
+            python
 
             class MyVector(neuron.hclass(neuron.h.Vector)) : 
               pass 
@@ -444,7 +444,7 @@ Description:
         If you override a base method such as 'size' use 
 
         .. code-block::
-            none
+            python
 
             v.baseattr('size')() 
 
@@ -455,7 +455,7 @@ Description:
         initialize the Section part of the instance with 
 
         .. code-block::
-            none
+            python
 
             nrn.Section.__init__() 
 
@@ -464,7 +464,7 @@ Description:
         subclass it normally with 
 
         .. code-block::
-            none
+            python
 
             class MySection(neuron.nrn.Section): 
               pass 
@@ -475,7 +475,7 @@ Description:
         of 
 
         .. code-block::
-            none
+            python
 
             h.setpointer(_ref_hocvar, 'POINTER_name', point_proces_object) 
             h.setpointer(_ref_hocvar, 'POINTER_name', nrn.Mechanism_object) 
@@ -486,7 +486,7 @@ Description:
         a POINTER bar and you want it to point to t use 
 
         .. code-block::
-            none
+            python
 
             h.setpointer(_ref_t, 'bar', sec(x).foo) 
 
@@ -518,7 +518,7 @@ Description:
         is far more general. 
 
         .. code-block::
-            none
+            python
 
             import hoc 
             hoc.hoc_ac(25) 
@@ -551,7 +551,7 @@ Description:
         :class:`~neuron.h.Section` object. 
 
         .. code-block::
-            none
+            python
 
             import neuron 
             neuron.h(''' 
@@ -598,7 +598,7 @@ Description:
         :meth:`~ParallelContext.gid2cell` method of :class:`ParallelContext`. 
 
         .. code-block::
-            none
+            python
 
             import neuron 
             h = neuron.h 
@@ -618,7 +618,7 @@ Description:
         I.e, given the above fragment, 
 
         .. code-block::
-            none
+            python
 
             from neuron import h 
             h(''' 
@@ -637,7 +637,7 @@ Description:
         hoc function. ie 
 
         .. code-block::
-            none
+            python
 
             h.psection(sec=sec) 
 
@@ -645,7 +645,7 @@ Description:
         With a :class:`SectionRef` one can, for example, 
 
         .. code-block::
-            none
+            python
 
             h.dend[2].push() ; sr = h.SectionRef() ; h.pop_section() 
             sr.root.push() ; print h.secname() ; h.pop_section() 
@@ -653,7 +653,7 @@ Description:
         or, more compactly, 
         
         .. code-block::
-            none
+            python
 
             sr = h.SectionRef(sec=h.dend[2]) 
             print sr.root.name(), h.secname(sec=sr.root) 
@@ -662,7 +662,7 @@ Description:
         Iteration over sections is accomplished with 
 
         .. code-block::
-            none
+            python
 
             for s in h.allsec() : 
               print h.secname() 
@@ -677,7 +677,7 @@ Description:
         using either 
 
         .. code-block::
-            none
+            python
 
             childsec.connect(parentsec, parentx, childx) 
             childsec.connect(parentsegment, childx) 
@@ -767,7 +767,7 @@ HOC accessing Python
         Executes any python statement. 
 
         .. code-block::
-            none
+            python
 
             nrnpython("import sys") 
             nrnpython("print sys.path") 
@@ -800,7 +800,7 @@ HOC accessing Python
          
 
         .. code-block::
-            none
+            python
 
             objref p 
             p = new PythonObject() 
@@ -822,7 +822,7 @@ HOC accessing Python
         get at an element through the built-in python method name via 
 
         .. code-block::
-            none
+            python
 
             tup.__getitem__(0) 
 
@@ -834,7 +834,7 @@ HOC accessing Python
         the __getitem__ idiom. 
 
         .. code-block::
-            none
+            python
 
             objref p 
             p = new PythonObject() 
@@ -851,7 +851,7 @@ HOC accessing Python
         To assign a value to a python variable that exists in a module use 
 
         .. code-block::
-            none
+            python
 
             nrnpython("a = 10") 
             p = new PythonObject() 
