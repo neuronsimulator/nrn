@@ -27,7 +27,7 @@ LinearMechanism
         membrane potentials as dependent variables. 
          
         The equations added are of the differential-algebraic form 
-        c*dy/dt + g*y = b 
+        :math:`c \frac{dy}{dt} + g y = b` 
         with initial conditions specified by the optional y0 vector argument. 
         c and g must be square matrices of the same rank as the y and b vectors. 
         The implementation is more efficient if c is a sparse matrix since 
@@ -49,7 +49,7 @@ LinearMechanism
         corresponding current balance equations and the first xvec.size dependent 
         y variables are copies of the membrane potentials at this location. 
         If the optional layervec argument is present then the values must be 
-        0, 1, or 2 (or up to however many layers are defined in src/nrnoc/options.h) 
+        0, 1, or 2 (or up to however many layers are defined in :file:`src/nrnoc/options.h`) 
         0 refers to the internal potential (equal to the membrane potential when 
         the extracellular mechanism is not inserted), and higher numbers refer 
         to the \ ``vext[layer-1]`` layer (or ground if the extracellular mechanism is 
@@ -64,13 +64,13 @@ LinearMechanism
         Note that current balance equations of sections when 0 < x < 1 have dimensions 
         of milliamp/cm2 and positive terms are outward. Thus 
         c elements involving voltages in mV 
-        have dimensions of 1000uF/cm2 (so a value of .001 corresponds to 
-        1 uF/cm2), g elements have dimensions of S/cm2, and b elements have 
-        dimensions of outward current in milliamp/cm2. The current balance 
+        have dimensions of 1000 :math:`\mathrm{\mu{}F/cm^2}` (so a value of .001 corresponds to 
+        1  :math:`\mathrm{\mu{}F/cm^2}`), g elements have dimensions of :math:`\mathrm{S/cm^2}`, and b elements have 
+        dimensions of outward current in :math:`\mathrm{milliamp/cm^2}`. The current balance 
         equations for the zero area nodes at the beginning and end 
         of a section (x = 0 and x = 1) have terms with the dimensions of 
         nanoamps. Thus c elements involving voltages in mV have dimensions 
-        of nF and g elements have dimensions of uS. 
+        of nF and g elements have dimensions of :math:`\mathrm{\mu{}S}`. 
          
         The existence of one or more LinearMechanism switches the gaussian elimination 
         solver to the general sparse linear equation solver written by 
@@ -110,13 +110,14 @@ LinearMechanism
 
 
     .. warning::
-        Does not work with the CVODE integrator but does work with the
+    
+          Does not work with the CVODE integrator but does work with the
           differential-algebraic solver IDA. Note that if the standard
-          run system is loaded, cvode_active(1) will automatically
+          run system is loaded, ``cvode_active(1)`` will automatically
           choose the correct variable step integrator.
-        Does not allow changes to coupling locations. 
-        Is not notified when matrices, vectors, or segments it depends on 
-        disappear. 
+	  Does not allow changes to coupling locations. 
+          Is not notified when matrices, vectors, or segments it depends on 
+          disappear. 
 
     Description (continued):
         If the pycallable argument (A Python Callable object) is present
@@ -127,11 +128,17 @@ LinearMechanism
         Consider the following pendulum.py with equations 
 
     Example:
-         dtheta/dt = omega
-         domega/dt = -g/L*sin(theta) with g/L=1 
+
+        .. math::
+
+                \frac{d\theta}{dt} = \omega
+
+	.. math::
+
+		\frac{d\omega}{dt} = -\frac{g}{L} \sin(\theta) \text{ with } \frac{g}{L}=1 
 
         .. code-block::
-            none
+            python
 
             from neuron import h
             from math import sin
