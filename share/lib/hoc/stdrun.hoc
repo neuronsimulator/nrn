@@ -161,7 +161,7 @@ using_cvode_ = 0 // now controlled in NumericalMethodPanel
 {load_file("atoltool.hoc")}
 {load_file("varmeth1.hoc")}
 {load_file("movierun.hoc")}
-objref tobj, tobj1, nrnmainmenu_, numericalmethodpanel
+objref tobj, tobj1, nrnmainmenu_, numericalmethodpanel, pyobj
 stdrun_quiet = 0
 realtime=0
 {units(&realtime, "s")}
@@ -227,7 +227,12 @@ proc editmenu() {
 	xmenu("Edit", 1)
 	xmenu()
 }
-proc buildmenu() {
+proc buildmenu() {local has_rxd
+    has_rxd = 0
+    if (nrnpython("import neuron")) {
+        pyobj = new PythonObject()
+        has_rxd = pyobj.neuron._has_scipy()
+    }    
     xmenu("Build", 1)
     xbutton("single compartment", "load_file(\"single.hoc\") makesinglecompartment()")
     xbutton("Cell Builder", "load_file(\"celbild.hoc\") makecellbuilder()")
@@ -243,7 +248,7 @@ proc buildmenu() {
     xbutton("Point", "load_file(\"chanbild.hoc\", \"ChannelBuild\") chanbild(0)")
     xmenu("import KSChan", "cbimportmenu()")
     xmenu()
-    if (nrnpython("import scipy")) {
+    if (has_rxd) {
         xbutton("RxD Builder", "nrnpython(\"import neuron.rxd\") nrnpython(\"neuron.rxd.gui.RxDBuilder()\")")
     }
     xmenu()

@@ -419,3 +419,23 @@ try:
   set_vec_as_numpy(vec_to_numpy_callback)
 except:
   pass
+
+
+def _has_scipy():
+    """
+    to check for scipy:
+    
+    has_scipy = 0
+    objref p
+    if (nrnpython("import neuron")) {
+        p = new PythonObject()
+        has_scipy = p.neuron._has_scipy()
+    }
+    """
+    try:
+        import scipy
+    except:
+        return 0
+    return 1
+        
+        
