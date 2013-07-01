@@ -8,7 +8,7 @@ external nil, classname, hoc_sf_
 objref this, realcells_, tobj, tobj1, mt, rc_classes, dparm, allsec
 objref ms, display, storecm, cdis, adis, acview, ncv, appv, pdis, gui
 objref topcelldis, distinctvalues, tvi, tvi2, kst, ksth, xml
-objref seclists
+objref seclists, pyobj
 strdef tstr, tstr1, cond, name
 
 in_=0
@@ -39,7 +39,7 @@ proc destroy1() {local i
 	}
 }
 
-proc init() {local i, n, icdis, ntop
+proc init() {local i, n, icdis, ntop, has_rxd
 	distinctvalues = new ModelViewDistinctValues()
 	ndrco = 0 // n distinct real cell objects
 	realcells_ = new List()
@@ -123,6 +123,20 @@ proc init() {local i, n, icdis, ntop
 	dparm.mkdisplay(this)
 
 	display.top.append(pdis)
+	
+    has_rxd = 0
+    if (nrnpython("import neuron")) {
+        pyobj = new PythonObject()
+        has_rxd = pyobj.neuron._has_scipy()
+    }
+    if (has_rxd) {
+        nrnpython("import neuron.rxd")
+        pyobj.neuron.rxd._model_view(display.top)
+    }
+	
+	
+	
+	
 	appv = new ModelViewAllPP(this)
 	appv.mkdisplay(pdis)
 
