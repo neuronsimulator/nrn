@@ -107,6 +107,9 @@ void nrn_vecsim_add(void* v, bool record) {
 		}
 	}else{
 		if (con) {
+			if (!tvec) {
+hoc_execerror("Second argument of Vector.play in continuous mode must be a time vector", 0);
+			}
 			if (s) {
 				new VecPlayContinuous(s, yvec, tvec, dvec, ppobj);
 			}else{
