@@ -134,8 +134,9 @@ _lo_hi_shell = Enum()
 
 
 class FractionalVolume(RxDGeometry):
-    def __init__(self, volume_fraction=1, surface_fraction=0, neighbor_areas_fraction=1):
-
+    def __init__(self, volume_fraction=1, surface_fraction=0, neighbor_areas_fraction=None):
+        if neighbor_areas_fraction is None:
+            neighbor_areas_fraction = volume_fraction
         if surface_fraction == 0:
             self.surface_areas1d = _always_0
         elif surface_fraction == 1:
