@@ -18,7 +18,7 @@ from rxd import re_init
 import dimension3
 import gui
 
-from geometry import membrane, inside, Shell, FractionalVolume, FixedCrossSection, FixedPerimeter
+from geometry import membrane, inside, Shell, FractionalVolume, FixedCrossSection, FixedPerimeter, ScalableBorder
 # deprecated:
 # from geometry import ConstantArea, ConstantVolume
 Parameter = Species

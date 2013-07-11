@@ -44,43 +44,49 @@ def _volumes1d(sec):
 
     return vols
 
+def _make_surfacearea1d_function(scale):
+    def result(sec):
+        if not isinstance(sec, nrn.Section):
+            sec = sec._sec
+        arc3d = [h.arc3d(i, sec=sec)
+                for i in xrange(int(h.n3d(sec=sec)))]
+        diam3d = [h.diam3d(i, sec=sec)
+                for i in xrange(int(h.n3d(sec=sec)))]
+        sas = numpy.zeros(sec.nseg)
+        dx = sec.L / sec.nseg
+        for iseg in xrange(sec.nseg):
+            # get a list of all pts in the segment, including end points
+            lo = iseg * dx
+            hi = (iseg + 1) * dx
+            pts = [lo] + [x for x in arc3d if lo < x < hi] + [hi]
+            
+            diams = numpy.interp(pts, arc3d, diam3d)
+            
+            # sum the surface areas of the constituent frusta
+            sa = 0
+            for i in xrange(len(pts) - 1):
+                diam0, diam1 = diams[i : i + 2]
+                pt0, pt1 = pts[i : i + 2]
+                sa += scale * 0.5 * (diam0 + diam1) * numpy.sqrt(0.25 * (diam0 - diam1) ** 2 + (pt1 - pt0) ** 2)
+            sas[iseg] = sa
+        return sas
+    return result
 
-def _surface_areas1d(sec):
-    if not isinstance(sec, nrn.Section):
-        sec = sec._sec
-    arc3d = [h.arc3d(i, sec=sec)
-             for i in xrange(int(h.n3d(sec=sec)))]
-    diam3d = [h.diam3d(i, sec=sec)
-              for i in xrange(int(h.n3d(sec=sec)))]
-    sas = numpy.zeros(sec.nseg)
-    dx = sec.L / sec.nseg
-    for iseg in xrange(sec.nseg):
-        # get a list of all pts in the segment, including end points
-        lo = iseg * dx
-        hi = (iseg + 1) * dx
-        pts = [lo] + [x for x in arc3d if lo < x < hi] + [hi]
+def _make_perimeter_function(scale):
+    def result(sec):
+        if not isinstance(sec, nrn.Section):
+            sec = sec._sec
+            arc3d = [h.arc3d(i, sec=sec)
+                     for i in xrange(int(h.n3d(sec=sec)))]
+            diam3d = [h.diam3d(i, sec=sec)
+                      for i in xrange(int(h.n3d(sec=sec)))]
+            area_pos = numpy.linspace(0, sec.L, sec.nseg + 1)
+            diams = numpy.interp(area_pos, arc3d, diam3d)
+            return scale * diams  
+    return result
         
-        diams = numpy.interp(pts, arc3d, diam3d)
-        
-        # sum the surface areas of the constituent frusta
-        sa = 0
-        for i in xrange(len(pts) - 1):
-            diam0, diam1 = diams[i : i + 2]
-            pt0, pt1 = pts[i : i + 2]
-            sa += numpy.pi * 0.5 * (diam0 + diam1) * numpy.sqrt(0.25 * (diam0 - diam1) ** 2 + (pt1 - pt0) ** 2)
-        sas[iseg] = sa
-    return sas
-    
-def _perimeter1d(sec):
-    if not isinstance(sec, nrn.Section):
-        sec = sec._sec
-    arc3d = [h.arc3d(i, sec=sec)
-             for i in xrange(int(h.n3d(sec=sec)))]
-    diam3d = [h.diam3d(i, sec=sec)
-              for i in xrange(int(h.n3d(sec=sec)))]
-    area_pos = numpy.linspace(0, sec.L, sec.nseg + 1)
-    diams = numpy.interp(area_pos, arc3d, diam3d)
-    return numpy.pi * diams    
+_surface_areas1d = _make_surfacearea1d_function(numpy.pi)
+_perimeter1d = _make_perimeter_function(numpy.pi)
     
 def _neighbor_areas1d(sec):
     arc3d = [h.arc3d(i, sec=sec._sec)
@@ -180,6 +186,23 @@ class FixedPerimeter(RxDGeometry):
         self.is_area = _always_true
     def neighbor_areas1d(self, sec):
         return [self._perim] * (sec.nseg + 1)
+
+class ScalableBorder(RxDGeometry):
+    """a membrane that scales proportionally with the diameter
+    
+    Example uses:
+    
+    - the boundary between radial shells
+    - the boundary of between FractionalVolume geometries
+    """
+    def __init__(self, scale, on_cell_surface=False):
+        self.volumes1d = _make_surfacearea1d_function(scale)
+        self.surface_areas1d = _always_0 if not on_cell_surface else self.volumes1d
+        self._scale = scale
+        self.is_volume = _always_false
+        self.is_area = _always_true
+        self.neighbor_areas1d = _make_perimeter_function(scale)
+        
 
 # TODO: remove this, use FixedPerimeter instead?        
 class ConstantArea(RxDGeometry):
