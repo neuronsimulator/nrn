@@ -104,7 +104,7 @@ class Node(object):
         
 class Node1D(Node):
     def __init__(self, sec, i, location):
-        """n = Node(sec, i, location)
+        """n = Node1D(sec, i, location)
         Description:
         
         Constructs a Node object. These encapsulate multiple properties of a given
@@ -126,6 +126,42 @@ class Node1D(Node):
         self._sec = sec
         self._location = location
         self._index = i + sec._offset
+        self._loc3d = None
+
+
+    def _update_loc3d(self):
+        sec = self._sec
+        length = sec.L
+        normalized_arc3d = [h.arc3d(i, sec=sec._sec) / length for i in xrange(int(h.n3d(sec=sec._sec)))]
+        x3d = [h.x3d(i, sec=sec._sec) for i in xrange(int(h.n3d(sec=sec._sec)))]
+        y3d = [h.y3d(i, sec=sec._sec) for i in xrange(int(h.n3d(sec=sec._sec)))]
+        z3d = [h.z3d(i, sec=sec._sec) for i in xrange(int(h.n3d(sec=sec._sec)))]
+        loc1d = self._location
+        self._loc3d = (numpy.interp(loc1d, normalized_arc3d, x3d),
+                       numpy.interp(loc1d, normalized_arc3d, y3d),
+                       numpy.interp(loc1d, normalized_arc3d, z3d))
+        
+
+    @property
+    def x3d(self):
+        """x coordinate"""
+        if self._loc3d is None:
+            self._update_loc3d()
+        return self._loc3d[0]
+
+    @property
+    def y3d(self):
+        """y coordinate"""
+        if self._loc3d is None:
+            self._update_loc3d()
+        return self._loc3d[1]
+    
+    @property
+    def z3d(self):
+        """z coordinate"""
+        if self._loc3d is None:
+            self._update_loc3d()
+        return self._loc3d[2]
 
     @property
     def volume(self):
