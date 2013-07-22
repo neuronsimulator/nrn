@@ -559,16 +559,19 @@ def _setup_matrices():
         _nonzero_volume_indices = volumes.nonzero()[0]
 
         if n:
-            matrix = _diffusion_matrix[_zero_volume_indices].todok()
+            matrix = _diffusion_matrix[_zero_volume_indices].tocsr()
+            indptr = matrix.indptr
+            matrixdata = matrix.data
+            count = len(_zero_volume_indices)
             for row, i in enumerate(_zero_volume_indices):
                 d = _diffusion_matrix[i, i]
                 if d:
-                    matrix[row, :] /= -d
+                    matrixdata[indptr[row] : indptr[row + 1]] /= -d
                     matrix[row, i] = 0
                 else:
-                    matrix[row, :] = 0
+                    matrixdata[indptr[row] : indptr[row + 1]] = 0
             global _mat_for_zero_volume_nodes
-            _mat_for_zero_volume_nodes = matrix.tocsr()
+            _mat_for_zero_volume_nodes = matrix
 
 
 def _init():
