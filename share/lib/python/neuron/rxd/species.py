@@ -88,6 +88,20 @@ class SpeciesOnRegion(_SpeciesMathable):
         self._region = weakref.ref(region)
         self._id = _species_count
         _species_count += 1
+        
+    def __eq__(self, other):
+        """test for equality.
+        
+        Two SpeciesOnRegion objects are equal if they refer to the same species
+        on the same region and both the species and the region still exist.
+        """
+        return (self._species() == other._species()) and (self._region() == other._region()) and (self._species() is not None) and (self._region() is not None)
+    
+    def __hash__(self):
+        return 1000 * (hash(self._species()) % 1000) + (hash(self._region()) % 1000)
+    
+    def __ne__(self, other):
+        return not self.__eq__(other)
 
     
     def __repr__(self):
