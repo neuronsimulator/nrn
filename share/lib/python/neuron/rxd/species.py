@@ -100,9 +100,6 @@ class SpeciesOnRegion(_SpeciesMathable):
     def __hash__(self):
         return 1000 * (hash(self._species()) % 1000) + (hash(self._region()) % 1000)
     
-    def __ne__(self, other):
-        return not self.__eq__(other)
-
     
     def __repr__(self):
         return '%r[%r]' % (self._species(), self._region())
