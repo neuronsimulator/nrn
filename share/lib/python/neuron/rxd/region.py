@@ -27,6 +27,9 @@ def _sort_secs(secs):
 _sim_dimension = None
 
 class Region:
+    def __repr__(self):
+        return 'Region(..., nrn_region=%r, geometry=%r, dimension=%r, dx=%r)' % (self.nrn_region, self._geometry, _sim_dimension, self._dx)
+    
     def __init__(self, sections, nrn_region=None, geometry=None, dimension=1, dx=None):
         global _region_count, _sim_dimension
         # TODO: validate sections (should be list of nrn.Section)
@@ -121,7 +124,7 @@ class Region:
             self._ys = ys
             self._zs = zs
             self._segs = segs            
-            self._dx = dx
+        self._dx = dx
 
     @property
     def nrn_region(self):

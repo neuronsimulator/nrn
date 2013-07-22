@@ -123,6 +123,7 @@ inside.surface_areas1d = _surface_areas1d
 inside.neighbor_areas1d = _neighbor_areas1d
 inside.is_volume = _always_true
 inside.is_area = _always_false
+inside.__repr__ = constant_function('inside')
 
 # TODO: make a version that allows arbitrary shells?
 membrane = RxDGeometry()
@@ -131,6 +132,7 @@ membrane.surface_areas1d = _always_0
 membrane.neighbor_areas1d = _perimeter1d
 membrane.is_volume = _always_false
 membrane.is_area = _always_true
+membrane.__repr__ = constant_function('membrane')
 
 class Enum:
     """a silly way of creating unique identifiers without using/allowing/requiring magic constants"""
@@ -154,6 +156,12 @@ class FractionalVolume(RxDGeometry):
         self.volumes1d = scale_by_constant(volume_fraction, _volumes1d)
         self.is_volume = _always_true
         self.is_area = _always_false
+        self._volume_fraction = volume_fraction
+        self._surface_fraction = surface_fraction
+        self._neighbor_areas_fraction = neighbor_areas_fraction
+    
+    def __repr__(self):
+        return 'FractionalVolume(volume_fraction=%r, surface_fraction=%r, neighbor_areas_fraction=%r)' % (self._volume_fraction, self._surface_fraction, self._neighbor_areas_fraction)
 
 # TODO: eliminate this class and replace with FixedCrossSection?
 class ConstantVolume(RxDGeometry):
@@ -176,6 +184,11 @@ class FixedCrossSection(RxDGeometry):
         self.is_volume = _always_true
         self.is_area = _always_false
         self.neighbor_areas1d = constant_everywhere_plus_one_1d(cross_area)
+        self._cross_area = cross_area
+        self._surface_area = surface_area
+        
+    def __repr__(self):
+        return 'FixedCrossSection(%r, surface_area=%r)' % (self._cross_area, self._surface_area)
     
 class FixedPerimeter(RxDGeometry):
     def __init__(self, perimeter, on_cell_surface=False):
@@ -184,8 +197,12 @@ class FixedPerimeter(RxDGeometry):
         self._perim = perimeter
         self.is_volume = _always_false
         self.is_area = _always_true
+        self._on_surface = on_cell_surface
     def neighbor_areas1d(self, sec):
         return [self._perim] * (sec.nseg + 1)
+
+    def __repr__(self):
+        return 'FixedPerimeter(%r, on_cell_surface=%r)' % (self._perim, self._on_surface)
 
 class ScalableBorder(RxDGeometry):
     """a membrane that scales proportionally with the diameter
@@ -202,7 +219,9 @@ class ScalableBorder(RxDGeometry):
         self.is_volume = _always_false
         self.is_area = _always_true
         self.neighbor_areas1d = _make_perimeter_function(scale)
-        
+        self._on_surface = on_cell_surface
+    def __repr__(self):
+        return 'ScalableBorder(%r, on_cell_surface=%r)' % (self._scale, self._on_surface)
 
 # TODO: remove this, use FixedPerimeter instead?        
 class ConstantArea(RxDGeometry):
@@ -238,6 +257,9 @@ class Shell(RxDGeometry):
         else:
             # TODO: is this what we want; e.g. what if lo < 1 < hi?
             self.surface_areas1d = _always_0
+    
+    def __repr__(self):
+        return 'Shell(lo=%r, hi=%r)' % (self._lo, self._hi)
     
     def neighbor_areas1d(self, sec):
         arc3d = [h.arc3d(i, sec=sec._sec)
