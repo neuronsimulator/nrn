@@ -134,7 +134,7 @@ class Node(object):
     @property
     def region(self):
         """The region containing the compartment."""
-        return self._sec.region()
+        return self._sec._region
     
     @property
     def sec(self):
