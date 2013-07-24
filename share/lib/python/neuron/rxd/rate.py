@@ -35,7 +35,7 @@ class Rate(GeneralizedReaction):
         return 'Rate(%r, %r, regions=%r, membrane_flux=%r)' % (self._species, self._original_rate, self._regions, self._membrane_flux)
     
     def _rate_from_rangevar(self, *args):
-        return self._original_rate._rangevar_vec
+        return self._original_rate._rangevar_vec()
     
     def _update_indices(self):
         # this is called anytime the geometry changes as well as at init
@@ -67,9 +67,13 @@ class Rate(GeneralizedReaction):
                         nodes += s[r].nodes
             self._original_rate._init_ptr_vectors(nodes)
             self._mult = [1]
-            self._indices = self._original_rate._locs
+            self._mult_extended = self._mult
+            self._indices = [self._original_rate._locs]
             self._rate = self._rate_from_rangevar
             self._get_args = lambda ignore: []
+            # this indicates no contribution to the jacobian
+            self._jac_rows = []
+            self._jac_cols = []
         else:
             # this is called anytime the geometry changes as well as at init
             # TODO: is the above statement true?
