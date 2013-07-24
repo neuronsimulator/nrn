@@ -43,6 +43,9 @@ class _SpeciesMathable(object):
         return _Arithmeticed(other) - self
     def __abs__(self):
         return abs(_Arithmeticed(self))
+    
+    def _evaluate(self, location):
+        return _Arithmeticed(self)._evaluate(location)
 
     def __ne__(self, other):
         other = rxdmath._ensure_arithmeticed(other)

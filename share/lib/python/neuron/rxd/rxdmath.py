@@ -241,8 +241,21 @@ class _Arithmeticed:
         else:
             self._items = {item: 1}
         self._valid_reaction_term = valid_reaction_term
+        self._compiled_form = None
     
-    
+    def _evaluate(self, location):
+        if self._compiled_form is None:
+            self._compiled_form = _compile(self)
+        if len(location) != 3:
+            raise RxDException('_evaluate needs a (region, section, normalized position) triple')
+        region, sec, x = location
+        concentrations = [numpy.array(sp()[region].nodes(sec)(x).concentration) for sp in self._compiled_form[1]]
+        value = self._compiled_form[0](*concentrations)
+        if len(value) != 1:
+            # this could happen in 3D
+            raise RxDException('found %d values; expected 1.' % len(value))
+        return value[0]
+            
     def __repr__(self):
         items = []
         counts = []

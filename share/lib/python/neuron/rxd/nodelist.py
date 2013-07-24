@@ -9,6 +9,15 @@ class NodeList(list):
         return NodeList([i for i in self if i.satisfies(restriction)])
     
     @property
+    def value(self):
+        # TODO: change this when not everything is a concentration
+        return self.concentration
+    @value.setter
+    def value(self, v):
+        # TODO: change this when not everything is a concentration
+        self.concentration = v
+    
+    @property
     def concentration(self):
         """Returns the concentration of the Node objects in the NodeList as an iterable."""
         return [node.concentration for node in self]
