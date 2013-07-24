@@ -42,6 +42,7 @@ neuron/rxd/generalizedReaction.py \
 neuron/rxd/morphology.py \
 neuron/rxd/options.py \
 neuron/rxd/gui.py \
+neuron/rxd/rangevar.py \
 neuron/rxd/dimension3.py \
 neuron/rxd/geometry3d/*.* \
 \

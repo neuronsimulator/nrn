@@ -94,7 +94,7 @@ class GeneralizedReaction(object):
 
 
     def _evaluate(self, states):
-        """returns: (list of lists (lol) of increase indices, lol of decr indices, list of changes)"""
+        """returns: (list of lists (lol) of increase indices, lol (or list?) of mults, list of changes)"""
         args = self._get_args(states)
         if args is None: return ([], [], [])
         return self._evaluate_args(args)
