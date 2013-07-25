@@ -140,7 +140,7 @@ General
 
         ``syn.onset --- ms``
 
-        ``syn.tau	 --- ms``
+        ``syn.tau --- ms``
 
         ``syn.gmax --- umho``
 
@@ -253,7 +253,7 @@ General
 
 
     Syntax:
-        ``clampobj = new SEClamp(.5)``
+        ``clampobj = new SEClamp(0.5)``
 
         ``dur1 dur2 dur3 -- ms``
 
@@ -313,26 +313,26 @@ General
             create s1, s2, s3 // will be stimulated by IClamp, SEClamp, and VClamp 
             forall {insert hh diam=3 L=3 } 
             objref c1, c2, c3, ap, apc 
-            s1 c1 = new IClamp(.5) 
-            s2 c2 = new SEClamp(.5) 
-            s3 c3 = new VClamp(.5) 
-            {c1.dur=.1 c1.amp=.3} 
-            {c2.dur1 = 1 c2.rs=.01 } 
+            s1 c1 = new IClamp(0.5) 
+            s2 c2 = new SEClamp(0.5) 
+            s3 c3 = new VClamp(0.5) 
+            {c1.dur=.1 c1.amp=0.3} 
+            {c2.dur1 = 1 c2.rs=0.01 } 
             {c3.dur[0] = 1} 
              
             // record an action potential 
             ap = new Vector() 
-            ap.record(&s1.v(.5)) 
+            ap.record(&s1.v(0.5)) 
             finitialize(-65)    
             while(t<1) { fadvance() } 
              
             // do the three cases while playing the recorded ap 
             apc = ap.c	// unfortunately can't play into two variables so clone it. 
             ap.play_remove()   
-            ap.play(&c2.amp1) 
-            apc.play(&c3.amp[0]) 
+            ap.play(&c2.amp1, dt) 
+            apc.play(&c3.amp[0], dt) 
             finitialize(-65) 
-            while(t<.4) { 
+            while(t<0.4) { 
                     fadvance() 
                     print s1.v, s2.v, s3.v, c1.i, c2.i, c3.i 
             } 
@@ -514,7 +514,7 @@ General
             none
 
             objref ns, nc 
-            nc = new NetStim(.5) 
+            nc = new NetStim(0.5) 
             ns = new NetCon(nc, target...) 
 
         That is, do not use ``&nc.y`` as the source for the netcon. 
@@ -568,7 +568,7 @@ General
         During the refractory period,  m = 2. 
         At the end of the refractory period, m = 0. 
         During the refractory period, the function M() returns a value of 2 
-        for the first .5 ms and -1 for the rest of the period. Otherwise it 
+        for the first 0.5 ms and -1 for the rest of the period. Otherwise it 
         returns exp((t-t0)/tau) 
          
         See :file:`$NEURONHOME/src/nrnoc/intfire1.mod`
@@ -607,7 +607,7 @@ General
         { a net synaptic current }. 
         Net synaptic current decays toward 0 with time constant taus, where 
         taus > taum (synaptic 
-        current decays slowly compared to the rate at which "membrane potential 
+        current decays slowly compared to the rate at which "membrane potential" 
         m equilibrates). 
         When an input event with weight w arrives, the net synaptic current 
         changes abruptly by 
@@ -771,15 +771,15 @@ Mechanisms
         .. code-block::
             none
 
-            gnabar_hh	.120 mho/cm2	Maximum specific sodium channel conductance 
-            gkbar_hh	.036 mho/cm2	Maximum potassium channel conductance 
-            gl_hh		.0003 mho/cm2	Leakage conductance 
-            el_hh		-54.3 mV	Leakage reversal potential 
-            m_hh				sodium activation state variable 
-            h_hh				sodium inactivation state variable 
-            n_hh				potassium activation state variable 
-            ina_hh		mA/cm2		sodium current through the hh channels 
-            ik_hh		mA/cm2		potassium current through the hh channels 
+            gnabar_hh	0.120 mho/cm2	Maximum specific sodium channel conductance 
+            gkbar_hh	0.036 mho/cm2	Maximum potassium channel conductance 
+            gl_hh	0.0003 mho/cm2	Leakage conductance 
+            el_hh	-54.3 mV	Leakage reversal potential 
+            m_hh			sodium activation state variable 
+            h_hh			sodium inactivation state variable 
+            n_hh			potassium activation state variable 
+            ina_hh	mA/cm2		sodium current through the hh channels 
+            ik_hh	mA/cm2		potassium current through the hh channels 
              
             rates_hh(v) computes the global variables [mhn]inf_hh and [mhn]tau_hh 
             from the rate functions. usetable_hh defaults to 1. 
@@ -844,7 +844,7 @@ Mechanisms
     Syntax:
         ``insert extracellular``
 
-        ``vext[2]	-- mV``
+        ``vext[2] -- mV``
 
         ``i_membrane -- mA/cm2``
 
@@ -869,7 +869,7 @@ Mechanisms
         extracellular electrodes, response in the presence of an extracellular 
         potential boundary condition computed by some external program, leaky 
         patch clamps, incomplete seals in the myelin sheath along with current 
-        flow in the space between the myelin and the axon. And is required 
+        flow in the space between the myelin and the axon. It is required 
         when connecting :class:`LinearMechanism` (e.g. a circuit built with 
         the :menuselection:`NEURON Main Menu --> Build --> Linear Circuit`) to extracellular nodes. 
          
@@ -944,7 +944,7 @@ Mechanisms
 
     .. warning::
         xcaxial is also defined but is not implemented. If you need those 
-        then add them with the :func:`LinearMechanism` . 
+        then add them with the :class:`LinearMechanism` . 
          
         Prior versions of this document indicated that 
         e_extracellular is in series with the parallel (xc,xg) 
@@ -970,7 +970,7 @@ Mechanisms
                        it contains contributions from Non-ELECTRODE_CURRENT 
                        point processes. i_membrane(0) and i_membrane(1) will 
                        return the membrane current density at the points 
-                       .5/nseg and 1-.5/nseg respectively. This can cause 
+                       0.5/nseg and 1-0.5/nseg respectively. This can cause 
                        confusion if non-ELECTRODE_CURRENT point processes 
                        are located at these 0-area nodes since 1) not only 
                        is the true current density infinite, but 2) the  
@@ -1015,12 +1015,11 @@ Mechanisms
     Syntax:
         ``nrn/src/nrnoc/options.h``
 
-        ``#define EXTRACELLULAR   2       /* number of extracellular layers */``
-
+        ``#define EXTRACELLULAR 2 /* number of extracellular layers */``
 
         ``insert extracellular``
 
-        ``vext[i]	-- mV``
+        ``vext[i] -- mV``
 
         ``i_membrane -- mA/cm2``
 
@@ -1044,7 +1043,7 @@ Mechanisms
         Note that vext is a synonym in hoc for vext[0]. Since the default value for 
         xg[i] = 1e9 all layers start out tightly connected to ground so 
         previous single layer extracellular simulations should produce the same 
-        results if either xc or e_extracellular was 0 
+        results if either xc or e_extracellular was 0. 
          
         e_extracellular is connected in series with the conductance of 
         the last extracellular layer. 
