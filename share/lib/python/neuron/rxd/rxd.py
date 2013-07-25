@@ -214,7 +214,7 @@ def _fixed_step_solve(dt):
 
     b = _rxd_reaction(states)
     
-    states[:] = _reaction_matrix_solve(dt, _diffusion_matrix_solve(dt, states + dt * b))
+    states[:] += _reaction_matrix_solve(dt, _diffusion_matrix_solve(dt, dt * b))
 
     # clear the zero-volume "nodes"
     states[_zero_volume_indices] = 0
