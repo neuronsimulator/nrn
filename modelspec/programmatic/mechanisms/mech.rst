@@ -401,7 +401,7 @@ General
 
          
         The weight is specified 
-        by the :meth:`~NetCon.weight` field of a :class:`NetCon` object. 
+        by the :data:`~NetCon.weight` field of a :class:`NetCon` object. 
          
         This synapse summates. 
          
@@ -452,7 +452,7 @@ General
               G = weight * factor * (exp(-t/tau2) - exp(-t/tau1)) 
 
         The weight is specified 
-        by the :meth:`~NetCon.weight` field of a :class:`NetCon` object. 
+        by the :data:`~NetCon.weight` field of a :class:`NetCon` object. 
         The factor is defined so that the normalized peak is 1. 
         If tau2 is close to tau1 
         this has the property that the maximum value is weight and occurs at 

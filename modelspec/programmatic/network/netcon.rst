@@ -29,7 +29,7 @@ NetCon
         If the optional threshold, delay, and weight arguments are not 
         specified, their default values are 10, 1, and 0 respectively. In 
         any case, their values can be specified after the netcon has been 
-        constructed, see :meth:`NetCon.threshold`, :meth:`NetCon.weight`, and :meth:`NetCon.delay` . 
+        constructed, see :data:`NetCon.threshold`, :data:`NetCon.weight`, and :data:`NetCon.delay` . 
          
         Note that prior to 12-Jul-2006, when the first form of the constructor 
         was used, (i.e. a NetCon having a pointer to a source 
@@ -41,7 +41,7 @@ NetCon
          
         The target must be a POINT_PROCESS or ARTIFICIAL_CELL that defines a NET_RECEIVE procedure. 
         The number of NET_RECEIVE procedure arguments define a weight vector 
-        whose elements can be accessed with through the NetCon.weight ( :meth:`NetCon.weight` )variable 
+        whose elements can be accessed with through the NetCon.weight ( :data:`NetCon.weight` )variable 
         but the weight argument in the above constructors specify the value of 
         the first argument, with the normal interpretation of weight or maximum 
         conductance. On initialization, all weight elements with index > 0 are 
@@ -50,7 +50,7 @@ NetCon
         allows non-zero initialization of netcon "states" --- args not initialized 
         in the INITIAL block would be analogous to a :ref:`Parameter <nmodl_parameter>` except that it 
         can have a different value for different NetCon instances and can be set 
-        to a desired value with :meth:`NetCon.weight`. 
+        to a desired value with :data:`NetCon.weight`. 
          
         The target is allowed to be nil (NULLObject) in which case the NetCon 
         is always inactive. However this can be useful for recording (see 
@@ -412,7 +412,7 @@ NetCon
 
 
 
-.. method:: NetCon.delay
+.. data:: NetCon.delay
 
 
     Syntax:
@@ -448,7 +448,7 @@ NetCon
 
 
 
-.. method:: NetCon.weight
+.. data:: NetCon.weight
 
 
     Syntax:
@@ -477,7 +477,7 @@ NetCon
 
 
 
-.. method:: NetCon.threshold
+.. data:: NetCon.threshold
 
 
     Syntax:
@@ -504,7 +504,7 @@ NetCon
 
 
 
-.. method:: NetCon.x
+.. data:: NetCon.x
 
 
     Syntax:
