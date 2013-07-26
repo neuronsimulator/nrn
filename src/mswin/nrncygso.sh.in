@@ -89,10 +89,11 @@ echo 'make nrniv.dll under cygwin'
 $CXX -shared $obj \
   -L${IVLIBDIR} -lIVhines \
   $mpich/lib/libmpich.dll.a \
-  -lcygwin -luser32 -lkernel32 -ladvapi32 -lshell32 \
+  -lreadline \
   $LIBS \
   @NRNPYTHON_PYLIBLINK@ \
-  -lgdi32 -lcomdlg32 -lncurses -lm \
+  -lgdi32 -lcomdlg32 \
+  -lncurses -lm \
   -o nrniv.dll \
   -Wl,--enable-auto-image-base \
   ${LDFLAGS} \
@@ -125,7 +126,7 @@ LHOCMODULE=''
 fi
 
 echo 'make nrniv.exe'
-$CXX -g -O2 -mwindows -e _mainCRTStartup -o nrniv.exe \
+$CXX -g -O2 -mwindows -o nrniv.exe \
   ../ivoc/nrnmain.o ../oc/modlreg.o \
   -L. -lnrniv \
   $LHOCMODULE \

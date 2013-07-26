@@ -1,4 +1,3 @@
-
 if test -f $1/bin/cygpath ; then
   N="`$1/bin/cygpath -u $1`"
   PATH=$N/bin

@@ -124,7 +124,7 @@ proc exec() {localobj s1, s2
 //	print tstr
 	system(tstr)
     }else{
-	sprint(tstr, "%s\\bin\\rxvt -sl 1000 -e %s/bin/sh %s/lib/modlunit.sh %s %s", neuronhome(1), neuronhome(), neuronhome(), neuronhome(), $s1)
+	sprint(tstr, "%s\\bin\\mintty -c %s/lib/minttyrc %s/bin/bash --rcfile %s/lib/nrnstart.bsh %s/lib/modlunit.sh %s %s", neuronhome(1), neuronhome(), neuronhome(), neuronhome(), neuronhome(), neuronhome(), $s1)
 	print tstr
 
 	WinExec(tstr)

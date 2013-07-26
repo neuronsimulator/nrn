@@ -45,6 +45,7 @@ mswin:
 	top_builddir=$(top_builddir) \
 	ivbindir=$(IV_LIBDIR)/../bin \
 	CC=$(CC) \
+	host_cpu=$(host_cpu) \
 	$(top_srcdir)/src/mswin/batch/instal.sh
 
 endif

@@ -60,17 +60,28 @@ fi
 strip $D/bin/nocmodl.exe
 strip $D/bin/modlunit.exe
 
+#needed by neuron.exe
+if test "$host_cpu" = "x86_64" ; then
+  X=/usr/x86_64-w64-mingw32/sys-root/mingw/bin
+  for i in libstdc++-6.dll libgcc_s_seh-1.dll ; do
+    cp $X/$i $D/bin
+    strip $D/bin/$i
+  done
+else
+fi
+
 if test "$LTCC" = "" ; then
 	LTCC=gcc
 fi
 
 # copy the essential cygwin programs
 for i in \
- as.exe basename.exe cat.exe cp.exe \
+ as.exe basename.exe cat.exe cp.exe cmp.exe which.exe \
  cpp.exe cygpath.exe diff.exe dirname.exe echo.exe find.exe $LTCC.exe \
  grep.exe ld.exe ls.exe make.exe mkdir.exe \
  nm.exe rm.exe mv.exe sed.exe bash.exe unzip.exe \
- rxvt.exe rebase.exe sort.exe cygcheck.exe \
+ rxvt.exe mintty.exe cygwin-console-helper.exe \
+ rebase.exe sort.exe cygcheck.exe \
  ; do
  cp /usr/bin/$i $D/bin/$i
 done
@@ -230,7 +241,7 @@ cd $S/src/mswin
 rm -f $Z
 zip -l $Z notes.txt
 #do the lib shell scripts in unix format
-zip $Z bin/mknrndll lib/*.sh lib/*.sed
+zip $Z bin/mknrndll lib/*.sh lib/*.bsh lib/minttyrc lib/*.sed
 #do the specified unix bin shell scripts in unix format
 cd $S
 zip $Z bin/mkthreadsafe bin/sortspike
@@ -242,6 +253,11 @@ rm -f $Z
 zip $Z lib/*.mak
 unzip -d $D -o $Z
 rm $Z
+fi
+
+if true ; then
+#cp $D/bin/hocmodule.dll $D/lib/python/neuron/hoc.pyd
+cp $D/bin/mknrndll $D/bin/nrnivmodl
 fi
 
 if true ; then
@@ -317,4 +333,8 @@ echo " The installer will be located in $S/src/mswin/nrnxxsetup.exe"
 
 cd $B/src/mswin
 #c:/Program\ Files/NSIS/makensisw nrnsetup.nsi
-c:/Program\ Files/NSIS/makensis nrnsetup.nsi
+if test "$host_cpu" = "x86_64" ; then
+  c:/Program\ Files\ \(x86\)/NSIS/makensis nrnsetup.nsi
+else
+  c:/Program\ Files/NSIS/makensis nrnsetup.nsi
+fi

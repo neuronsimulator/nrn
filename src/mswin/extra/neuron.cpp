@@ -67,12 +67,12 @@ int main(int argc, char** argv) {
 	char* args;
 	char* msg;
 
+	ShowWindow(GetConsoleWindow(), SW_HIDE);
 	setneuronhome();
 	nh = hoc_dos2cygdrivepath(nrnhome, 1);
 	args = argstr(argc, argv);
-	buf = new char[strlen(args) + 3*strlen(nh) + 200];
-//	sprintf(buf, "%s\\bin\\sh %s/lib/neuron.sh %s %s", nrnhome, nh, nh, args);
-	sprintf(buf, "%s\\bin\\rxvt -fn 16 -fg black -bg white -sl 1000 -e %s/lib/neuron.sh %s %s", nrnhome, nh, nh, args);
+	buf = new char[strlen(args) + 6*strlen(nh) + 200];
+	sprintf(buf, "%s\\bin\\mintty -c %s/lib/minttyrc %s/bin/bash --rcfile %s/lib/nrnstart.bsh %s/lib/neuron.sh %s %s", nrnhome, nh, nh, nh, nh, nh, args);
 	msg = new char[strlen(buf) + 100];
 	err = WinExec(buf, SW_SHOW);
 	if (err < 32) {

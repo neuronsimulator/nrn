@@ -114,7 +114,7 @@ proc exec() {localobj s1, s2
 	system(tstr)
 	quit()
     }else{
-	sprint(tstr, "%s\\bin\\rxvt -e %s/bin/sh %s/lib/mknrndll.sh %s", neuronhome(1), neuronhome(), neuronhome(), neuronhome())
+	sprint(tstr, "%s\\bin\\mintty -c %s/lib/minttyrc %s/bin/bash --rcfile %s/lib/nrnstart.bsh %s/lib/mknrndll.sh %s", neuronhome(1), neuronhome(), neuronhome(), neuronhome(), neuronhome(), neuronhome())
 	print tstr
 	WinExec(tstr)
 	quit()
