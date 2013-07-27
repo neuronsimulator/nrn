@@ -116,6 +116,13 @@ Section "${NEURON} (required)"
   SetOutPath $INSTDIR
   ; Put file there
   File /r "${MARSHALL}\nrn\*.*"
+  ; otherwise cannot figure out how to put the installation folder in the file
+  FileOpen $r1 "$INSTDIR\lib\nrnstart.bsh" "w"
+  FileWrite $r1 "#!/bin/bash$\n"
+  FileWrite $r1 "export N=$uINSTDIR$\n"
+  FileWrite $r1 "export PATH=$$N/bin:$$PATH$\n"
+  FileWrite $r1 "export PYTHONHOME=$$N$\n"
+  FileClose $r1
   Call cyginst
   ; Write the installation path into the registry
   WriteRegStr HKCU "Software\NEURON\${NRN}" "Install_Dir" "$INSTDIR"
@@ -157,16 +164,16 @@ Section "Start Menu Shortcuts"
   SetOutPath "C:\" ; does not work, ends up as C
   StrCpy $OUTDIR "C:\"
   CreateShortCut "$SMPROGRAMS\${NEURON}\Uninstall.lnk" "$INSTDIR\uninstall.exe" "" "$INSTDIR\uninstall.exe" 0
-  CreateShortCut "$SMPROGRAMS\${NEURON}\nrngui.lnk" "$INSTDIR\bin\rxvt.exe" "-cd $uINSTDIR -fn 16 -fg black -bg white -sl 1000 -e $uINSTDIR/bin/bash --rcfile $uINSTDIR/lib/bshstart.sh -i -c 'nrniv $uINSTDIR/lib/hoc/nrngui.hoc'" "$INSTDIR\bin\nrniv10.ico" 0
-  CreateShortCut "$SMPROGRAMS\${NEURON}\nrngui_python.lnk" "$INSTDIR\bin\rxvt.exe" "-cd $uINSTDIR -fn 16 -fg black -bg white -sl 1000 -e $uINSTDIR/bin/bash --rcfile $uINSTDIR/lib/bshstart.sh -i -c 'nrniv -python $uINSTDIR/lib/hoc/nrngui.hoc'" "$INSTDIR\bin\nrniv10.ico" 0
+  CreateShortCut "$SMPROGRAMS\${NEURON}\nrngui.lnk" "$INSTDIR\bin\mintty.exe" "-c $uINSTDIR/lib/minttyrc $uINSTDIR/bin/bash --rcfile $uINSTDIR/lib/nrnstart.bsh -i -c 'nrniv $uINSTDIR/lib/hoc/nrngui.hoc'" "$INSTDIR\bin\nrniv10.ico" 0
+  CreateShortCut "$SMPROGRAMS\${NEURON}\nrngui_python.lnk" "$INSTDIR\bin\mintty.exe" "-c $uINSTDIR/lib/minttyrc $uINSTDIR/bin/bash --rcfile $uINSTDIR/lib/nrnstart.bsh -i -c 'nrniv -python $uINSTDIR/lib/hoc/nrngui.hoc'" "$INSTDIR\bin\nrniv10.ico" 0
   CreateShortCut "$SMPROGRAMS\${NEURON}\mknrndll.lnk" "$INSTDIR\bin\nrniv.exe" "$uINSTDIR/lib/hoc/mknrndll.hoc" "$INSTDIR\bin\nmodl2a.ico" 0
   CreateShortCut "$SMPROGRAMS\${NEURON}\modlunit.lnk" "$INSTDIR\bin\nrniv.exe" "$uINSTDIR/lib/hoc/modlunit.hoc" "$INSTDIR\bin\nmodl2a.ico" 0
   CreateShortCut "$SMPROGRAMS\${NEURON}\Notes.lnk" "notepad.exe" "$INSTDIR\notes.txt"
   WriteINIStr "$SMPROGRAMS\${NEURON}\NEURON Home Page.url" "InternetShortcut" "URL" "http://www.neuron.yale.edu/"
   SetOutPath "$INSTDIR\demo"
-  CreateShortCut "$SMPROGRAMS\${NEURON}\NEURON Demo.lnk" "$INSTDIR\bin\rxvt.exe" "-cd $uINSTDIR -fn 16 -fg black -bg white -sl 1000 -e $uINSTDIR/bin/bash --rcfile $uINSTDIR/lib/bshstart.sh -i -c 'cd $uINSTDIR/demo ; nrniv -dll $uINSTDIR/demo/release/nrnmech.dll demo.hoc'" "$INSTDIR\bin\nrniv10.ico" 0
-  SetOutPath "$INSTDIR"
-  CreateShortCut "$SMPROGRAMS\${NEURON}\rxvt sh.lnk" "$INSTDIR\bin\rxvt.exe" "-cd $uINSTDIR -fn 16 -fg black -bg white -sl 1000 -e $uINSTDIR/bin/bash --rcfile $uINSTDIR/lib/bshstart.sh -i" "$INSTDIR\bin\rxvt.exe" 0
+  CreateShortCut "$SMPROGRAMS\${NEURON}\NEURON Demo.lnk" "$INSTDIR\bin\mintty.exe" "-c $uINSTDIR/lib/minttyrc $uINSTDIR/bin/bash --rcfile $uINSTDIR/lib/nrnstart.bsh -i -c 'cd $uINSTDIR/demo ; nrniv -dll $uINSTDIR/demo/release/nrnmech.dll demo.hoc'" "$INSTDIR\bin\nrniv10.ico" 0
+  SetOutPath "C:\"
+  CreateShortCut "$SMPROGRAMS\${NEURON}\mintty bash.lnk" "$INSTDIR\bin\mintty.exe" "-c $uINSTDIR/lib/minttyrc $uINSTDIR/bin/bash --rcfile $uINSTDIR/lib/nrnstart.bsh -i" "$INSTDIR\bin\mintty.exe" 0
   FileOpen $r1 "$INSTDIR\lib\smsinst.dat" "w"
   FileWrite $r1 "If $INSTDIR\lib\smsinst.dat exists then, on uninstall, the ${NEURON} Start Menu Shortcuts will be removed."
   FileClose $r1
@@ -177,16 +184,16 @@ Section "Desktop ${NEURON} folder with Shortcuts"
   CreateDirectory "$DESKTOP\${NEURON}"
   SetOutPath "C:\" ; does not work, ends up as C
   StrCpy $OUTDIR "C:\"
-  CreateShortCut "$DESKTOP\${NEURON}\nrngui.lnk" "$INSTDIR\bin\rxvt.exe" "-cd $uINSTDIR -fn 16 -fg black -bg white -sl 1000 -e $uINSTDIR/bin/bash --rcfile $uINSTDIR/lib/bshstart.sh -i -c 'nrniv $uINSTDIR/lib/hoc/nrngui.hoc'" "$INSTDIR\bin\nrniv10.ico" 0
-  CreateShortCut "$DESKTOP\${NEURON}\nrngui_python.lnk" "$INSTDIR\bin\rxvt.exe" "-cd $uINSTDIR -fn 16 -fg black -bg white -sl 1000 -e $uINSTDIR/bin/bash --rcfile $uINSTDIR/lib/bshstart.sh -i -c 'nrniv -python $uINSTDIR/lib/hoc/nrngui.hoc'" "$INSTDIR\bin\nrniv10.ico" 0
+  CreateShortCut "$DESKTOP\${NEURON}\nrngui.lnk" "$INSTDIR\bin\mintty.exe" "-c $uINSTDIR/lib/minttyrc $uINSTDIR/bin/bash --rcfile $uINSTDIR/lib/nrnstart.bsh -i -c 'nrniv $uINSTDIR/lib/hoc/nrngui.hoc'" "$INSTDIR\bin\nrniv10.ico" 0
+  CreateShortCut "$DESKTOP\${NEURON}\nrngui_python.lnk" "$INSTDIR\bin\mintty.exe" "-c $uINSTDIR/lib/minttyrc $uINSTDIR/bin/bash --rcfile $uINSTDIR/lib/nrnstart.bsh -i -c 'nrniv -python $uINSTDIR/lib/hoc/nrngui.hoc'" "$INSTDIR\bin\nrniv10.ico" 0
   CreateShortCut "$DESKTOP\${NEURON}\mknrndll.lnk" "$INSTDIR\bin\nrniv.exe" "$uINSTDIR/lib/hoc/mknrndll.hoc" "$INSTDIR\bin\nmodl2a.ico" 0
   CreateShortCut "$DESKTOP\${NEURON}\modlunit.lnk" "$INSTDIR\bin\nrniv.exe" "$uINSTDIR/lib/hoc/modlunit.hoc" "$INSTDIR\bin\nmodl2a.ico" 0
   CreateShortCut "$DESKTOP\${NEURON}\Notes.lnk" "notepad.exe" "$INSTDIR\notes.txt"
   WriteINIStr "$DESKTOP\${NEURON}\NEURON Home Page.url" "InternetShortcut" "URL" "http://www.neuron.yale.edu/"
   SetOutPath "$INSTDIR\demo"
-  CreateShortCut "$DESKTOP\${NEURON}\NEURON Demo.lnk" "$INSTDIR\bin\rxvt.exe" "-cd $uINSTDIR -fn 16 -fg black -bg white -sl 1000 -e $uINSTDIR/bin/bash --rcfile $uINSTDIR/lib/bshstart.sh -i -c 'cd $uINSTDIR/demo ; nrniv -dll $uINSTDIR/demo/release/nrnmech.dll demo.hoc'" "$INSTDIR\bin\nrniv10.ico" 0
-  SetOutPath "$INSTDIR"
-  CreateShortCut "$DESKTOP\${NEURON}\rxvt sh.lnk" "$INSTDIR\bin\rxvt.exe" "-cd $uINSTDIR -fn 16 -fg black -bg white -sl 1000 -e $uINSTDIR/bin/bash --rcfile $uINSTDIR/lib/bshstart.sh -i" "$INSTDIR\bin\rxvt.exe" 0
+  CreateShortCut "$DESKTOP\${NEURON}\NEURON Demo.lnk" "$INSTDIR\bin\mintty.exe" "-c $uINSTDIR/lib/minttyrc $uINSTDIR/bin/bash --rcfile $uINSTDIR/lib/nrnstart.bsh -i -c 'cd $uINSTDIR/demo ; nrniv -dll $uINSTDIR/demo/release/nrnmech.dll demo.hoc'" "$INSTDIR\bin\nrniv10.ico" 0
+  SetOutPath "C:\"
+  CreateShortCut "$DESKTOP\${NEURON}\mintty bash.lnk" "$INSTDIR\bin\mintty.exe" "-c $uINSTDIR/lib/minttyrc $uINSTDIR/bin/bash --rcfile $uINSTDIR/lib/nrnstart.bsh -i" "$INSTDIR\bin\mintty.exe" 0
   FileOpen $r1 "$INSTDIR\lib\deskinst.dat" "w"
   FileWrite $r1 "If $INSTDIR\lib\deskinst.dat exists then, on uninstall, the ${NEURON} Desktop folder will be removed."
   FileClose $r1
@@ -195,7 +202,7 @@ SectionEnd
 ; optional section
 Section "Documentation"
   SetOutPath "$INSTDIR"
-  File /r "${MARSHALL}\html"
+  File /nonfatal /r "${MARSHALL}\html"
   IfFileExists "$INSTDIR\lib\smsinst.dat" +1 next
     CreateShortCut "$SMPROGRAMS\${NEURON}\Documentation.lnk" "$INSTDIR\html\helpfils.html"
 next:

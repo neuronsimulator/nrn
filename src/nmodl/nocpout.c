@@ -222,8 +222,9 @@ parout() {
 		brkpnt_str_ = "nrn_cur, nrn_jacob, nrn_state";
 	}else{
 		brkpnt_str_ = "0, 0, 0";
-#if defined(__MINGW32__)
+#if 1 || defined(__MINGW32__)
 		/* x86_64-w64-mingw32-gcc passed 0 without zeroing the high 32 bits */
+		/* also cygwin64 gcc 4.8.1, so cast to void* universally */
 		brkpnt_str_ = "(void*)0, (void*)0, (void*)0";
 #endif
 	}

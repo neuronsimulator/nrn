@@ -181,14 +181,14 @@ do_system (ptr, s)
       char *sh = getenv ("SH_PATH");
       if (sh == NULL)
 	sh = "/bin/sh";
-      _execve (sh, argv, environ);
+      execve (sh, argv, environ);
       exit (100);
     }
   else if (pid == -1)
     return -1;
   else
     {
-      int rc = _wait (&status);
+      int rc = wait (&status);
       if (rc == -1)
 	return -1;
       status = (status >> 8) & 0xff;
