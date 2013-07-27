@@ -68,6 +68,11 @@ if test "$host_cpu" = "x86_64" ; then
     strip $D/bin/$i
   done
 else
+  X=/usr/i686-pc-mingw32/sys-root/mingw/bin
+  for i in libstdc++-6.dll libgcc_s_dw2-1.dll ; do
+    cp $X/$i $D/bin
+    strip $D/bin/$i
+  done
 fi
 
 if test "$LTCC" = "" ; then

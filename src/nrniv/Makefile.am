@@ -27,15 +27,20 @@ if BUILD_CYGWIN
 nrniv_LDFLAGS = -mwindows -e _mainCRTStartup
 windll = -I$(nsrc)/mswin/windll
 cygexe = mos2nrn.exe neuron.exe
-CXXWIN = x86_64-w64-mingw32-g++
+CXX64WIN = x86_64-w64-mingw32-g++
+CXX32WIN = i686-pc-mingw32-g++
 
 mos2nrn.exe: $(nsrc)/mswin/extra/mos2nrn.cpp
-	$(CXXWIN) -g -O2 -DCYGWIN -o mos2nrn.exe $(nsrc)/mswin/extra/mos2nrn.cpp
+	if test "$(host_cpu)"="x86_64" ; then \
+	$(CXX64WIN) -g -O2 -DCYGWIN -o mos2nrn.exe $(nsrc)/mswin/extra/mos2nrn.cpp ;\
+	fi
 
 neuron.exe: $(nsrc)/mswin/extra/neuron.cpp
 	echo "id ICON \"$(nsrc)/mswin/nrniv10.ico\"" > nrnicon.rc
 	windres nrnicon.rc -O coff -o nrnicon.res
-	$(CXXWIN) -g -O2 -DCYGWIN -o neuron.exe $(nsrc)/mswin/extra/neuron.cpp nrnicon.res
+	if test "$(host_cpu)"="x86_64" ; then \
+	$(CXX32WIN) -g -O2 -DCYGWIN -o neuron.exe $(nsrc)/mswin/extra/neuron.cpp nrnicon.res ;\
+	fi
 
 else
 if BUILD_MINGW
