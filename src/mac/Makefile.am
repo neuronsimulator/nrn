@@ -26,10 +26,10 @@ else
 	gcc -g -arch i386 -Dncpu="\"$(host_cpu)\"" -I. $(srcdir)/launch.c $(srcdir)/mac2uxarg.c -framework Carbon
 
 endif
-	carbon=$(carbon) sh $(srcdir)/launch_inst.sh "$(host_cpu)" "$(prefix)" "$(srcdir)"
+	carbon=$(carbon) sh $(srcdir)/launch_inst.sh "$(host_cpu)" "$(DESTDIR)$(prefix)" "$(srcdir)"
 	for i in $(S) ; do \
-		sed "s/^CPU.*/CPU=\"$(host_cpu)\"/" < $(bindir)/$$i > temp; \
-		mv temp $(bindir)/$$i; \
-		chmod 755 $(bindir)/$$i; \
+		sed "s/^CPU.*/CPU=\"$(host_cpu)\"/" < $(DESTDIR)$(bindir)/$$i > temp; \
+		mv temp $(DESTDIR)$(bindir)/$$i; \
+		chmod 755 $(DESTDIR)$(bindir)/$$i; \
 	done
 endif
