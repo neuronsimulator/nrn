@@ -733,6 +733,7 @@ static double alltoall(void*) {
 		hoc_execerror("sum of source counts is not the size of the src vector", 0);
 	}
 	Vect* vdest = vector_arg(3);
+    if (nrnmpi_numprocs > 1) {
 #if NRNMPI
 	int* rcnt = new int[np];
 	int* rdispl = new int[np + 1];
@@ -752,13 +753,14 @@ static double alltoall(void*) {
 	nrnmpi_dbl_alltoallv(s, scnt, sdispl, r, rcnt, rdispl);
 	delete [] rcnt;
 	delete [] rdispl;
-#else
+#endif
+    }else{
 	vector_resize(vdest, ns);
 	double* r = vector_vec(vdest);
 	for (i=0; i < ns; ++i) {
 		r[i] = s[i];
 	}
-#endif
+    }
 	delete [] scnt;
 	delete [] sdispl;
 	return 0.;
