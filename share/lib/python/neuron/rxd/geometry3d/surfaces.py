@@ -9,7 +9,7 @@ import ctypes
 #
 # connect to dll via ctypes
 #
-nrn_dll = neuron.nrn_dll()
+nrn_dll_sym = neuron.nrn_dll_sym
     
 #
 # declare prototypes
@@ -17,7 +17,7 @@ nrn_dll = neuron.nrn_dll()
 
 
 # int find_triangles(double value0, double value1, double value2, double value3, double value4, double value5, double value6, double value7, double x0, double x1, double y0, double y1, double z0, double z1, double* out)
-find_triangles = nrn_dll.geometry3d_find_triangles
+find_triangles = nrn_dll_sym('geometry3d_find_triangles')
 find_triangles.argtypes = [ctypes.c_double, ctypes.c_double, ctypes.c_double, ctypes.c_double,
                            ctypes.c_double, ctypes.c_double, ctypes.c_double, ctypes.c_double,
                            ctypes.c_double, ctypes.c_double, ctypes.c_double, ctypes.c_double,
@@ -25,7 +25,7 @@ find_triangles.argtypes = [ctypes.c_double, ctypes.c_double, ctypes.c_double, ct
                            numpy.ctypeslib.ndpointer(dtype=numpy.float64, ndim=1, flags='C_CONTIGUOUS'), ctypes.c_int]
 
 # int geometry3d_process_cell(int i, int j, int k, PyObject* objects, double* xs, double* ys, double* zs, double* tridata, int start);
-# process_cell = nrn_dll.geometry3d_process_cell
+# process_cell = nrn_dll_sym('geometry3d_process_cell')
 # process_cell.argtypes = [ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.py_object,
 #                          numpy.ctypeslib.ndpointer(dtype=numpy.float64, ndim=1, flags='C_CONTIGUOUS'),
 #                          numpy.ctypeslib.ndpointer(dtype=numpy.float64, ndim=1, flags='C_CONTIGUOUS'),

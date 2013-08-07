@@ -340,6 +340,9 @@ def run(tstop):
     # what about pc.psolve(tstop)?
 
 _nrn_dll = None
+_nrn_hocobj_ptr = None
+_double_ptr = None
+_double_size = None
 def numpy_element_ref(numpy_array, index):
     """Return a HOC reference into a numpy array.
     
@@ -360,12 +363,34 @@ def numpy_element_ref(numpy_array, index):
         using slices. If the array is multi-dimensional,
         the user must figure out the integer index to the desired element.
     """
-    global _nrn_dll
-    if _nrn_dll is None: _nrn_dll = nrn_dll()
-    import ctypes
-    _nrn_dll.nrn_hocobj_ptr.restype = ctypes.py_object    
-    void_p = ctypes.cast(numpy_array.ctypes.data_as(ctypes.POINTER(ctypes.c_double)), ctypes.c_voidp).value + index * ctypes.sizeof(ctypes.c_double)
-    return _nrn_dll.nrn_hocobj_ptr(ctypes.cast(void_p, ctypes.POINTER(ctypes.c_double)))
+    global _nrn_dll, _double_ptr, _double_size
+    if _nrn_hocobj_ptr is None:
+        _nrn_hocobj_ptr = nrn_dll_sym('nrn_hocobj_ptr')
+        import ctypes
+        _nrn_hocobj_ptr.restype = ctypes.py_object    
+        _double_ptr = ctypes.POINTER(ctypes.c_double)
+        _double_size = ctypes.sizeof(ctypes.c_double)
+    void_p = ctypes.cast(numpy_array.ctypes.data_as(_double_ptr), ctypes.c_voidp).value + index * _double_size
+    return _nrn_hocobj_ptr(ctypes.cast(void_p, _double_ptr))
+
+def nrn_dll_sym(name, type=None):
+    """return the specified object from the NEURON dlls.
+    
+    Parameters
+    ----------
+    name : string
+        the name of the object (function, integer, etc...)
+    type : None or ctypes type (e.g. ctypes.c_int)
+        the type of the object (if None, assumes function pointer)
+    """
+    # TODO: this won't work under Windows; will need to search through until
+    #       can find the right dll (should we cache the results of the search?)
+    dll = nrn_dll()
+    if type is None:
+        return dll.__getattr__(name)
+    else:
+        return type.in_dll(dll, name)
+        
 
 def nrn_dll(printpath=False):
     """Return a ctypes object corresponding to the NEURON library.
@@ -407,7 +432,7 @@ try:
       traceback.print_exc()
       return None
   vec_to_numpy_callback = vec_to_numpy_prototype(vec2numpy)
-  set_vec_as_numpy = nrn_dll().nrnpy_set_vec_as_numpy
+  set_vec_as_numpy = nrn_dll_sym('nrnpy_set_vec_as_numpy')
   set_vec_as_numpy(vec_to_numpy_callback)
 except:
   pass

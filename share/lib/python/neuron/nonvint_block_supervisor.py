@@ -8,16 +8,16 @@ import traceback
 # connect to dll via ctypes
 #
 
-nrn_dll = neuron.nrn_dll()
+nrn_dll_sym = neuron.nrn_dll_sym
 
 # declare prototype
 nonvint_block_prototype = ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.POINTER(ctypes.c_double), ctypes.POINTER(ctypes.c_double), ctypes.c_int)
 
-set_nonvint_block = nrn_dll.set_nonvint_block
+set_nonvint_block = nrn_dll_sym('set_nonvint_block')
 set_nonvint_block.argtypes = [nonvint_block_prototype]
 
 # Some info not available from the HocObject
-v_structure_change = ctypes.c_int.in_dll(nrn_dll, "v_structure_change")
+v_structure_change = nrn_dll_sym('v_structure_change', ctypes.c_int)
 
 # items in call are each a list of 10 callables
 #    [setup, initialize, # method 0, 1

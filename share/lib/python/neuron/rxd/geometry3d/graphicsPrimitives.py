@@ -12,7 +12,7 @@ import ctypes
 #
 # connect to dll via ctypes
 #
-nrn_dll = neuron.nrn_dll()
+nrn_dll_sym = neuron.nrn_dll_sym
 
 
 #
@@ -20,58 +20,58 @@ nrn_dll = neuron.nrn_dll()
 #
 
 # void* geometry3d_new_Cylinder(double x0, double y0, double z0, double x1, double y1, double z1, double r);
-geometry3d_new_Cylinder = nrn_dll.geometry3d_new_Cylinder
+geometry3d_new_Cylinder = nrn_dll_sym('geometry3d_new_Cylinder')
 geometry3d_new_Cylinder.restype = ctypes.c_void_p
 geometry3d_new_Cylinder.argtypes = [ctypes.c_double, ctypes.c_double, ctypes.c_double, ctypes.c_double, ctypes.c_double, ctypes.c_double, ctypes.c_double]
 
 # void geometry3d_delete_Cylinder(void* ptr);
-geometry3d_delete_Cylinder = nrn_dll.geometry3d_delete_Cylinder
+geometry3d_delete_Cylinder = nrn_dll_sym('geometry3d_delete_Cylinder')
 geometry3d_delete_Cylinder.argtypes = [ctypes.c_void_p]
 
 # double geometry3d_Cylinder_signed_distance(void* ptr, double px, double py, double pz);
-geometry3d_Cylinder_signed_distance = nrn_dll.geometry3d_Cylinder_signed_distance
+geometry3d_Cylinder_signed_distance = nrn_dll_sym('geometry3d_Cylinder_signed_distance')
 geometry3d_Cylinder_signed_distance.restype = ctypes.c_double
 geometry3d_Cylinder_signed_distance.argtypes = [ctypes.c_void_p, ctypes.c_double, ctypes.c_double, ctypes.c_double]
 
 # void* geometry3d_new_Cone(double x0, double y0, double z0, double r0, double x1, double y1, double z1, double r1);
-geometry3d_new_Cone = nrn_dll.geometry3d_new_Cone
+geometry3d_new_Cone = nrn_dll_sym('geometry3d_new_Cone')
 geometry3d_new_Cone.restype = ctypes.c_void_p
 geometry3d_new_Cone.argtypes = [ctypes.c_double, ctypes.c_double, ctypes.c_double, ctypes.c_double, ctypes.c_double, ctypes.c_double, ctypes.c_double, ctypes.c_double]
 
 # void geometry3d_delete_Cone(void* ptr);
-geometry3d_delete_Cone = nrn_dll.geometry3d_delete_Cone
+geometry3d_delete_Cone = nrn_dll_sym('geometry3d_delete_Cone')
 geometry3d_delete_Cone.argtypes = [ctypes.c_void_p]
 
 # double geometry3d_Cone_signed_distance(void* ptr, double px, double py, double pz);
-geometry3d_Cone_signed_distance = nrn_dll.geometry3d_Cone_signed_distance
+geometry3d_Cone_signed_distance = nrn_dll_sym('geometry3d_Cone_signed_distance')
 geometry3d_Cone_signed_distance.restype = ctypes.c_double
 geometry3d_Cone_signed_distance.argtypes = [ctypes.c_void_p, ctypes.c_double, ctypes.c_double, ctypes.c_double]
 
 # void* geometry3d_new_Sphere(double x, double y, double z);
-geometry3d_new_Sphere = nrn_dll.geometry3d_new_Sphere
+geometry3d_new_Sphere = nrn_dll_sym('geometry3d_new_Sphere')
 geometry3d_new_Sphere.restype = ctypes.c_void_p
 geometry3d_new_Sphere.argtypes = [ctypes.c_double, ctypes.c_double, ctypes.c_double, ctypes.c_double]
 
 # void geometry3d_delete_Sphere(void* ptr);
-geometry3d_delete_Sphere = nrn_dll.geometry3d_delete_Sphere
+geometry3d_delete_Sphere = nrn_dll_sym('geometry3d_delete_Sphere')
 geometry3d_delete_Sphere.argtypes = [ctypes.c_void_p]
 
 # double geometry3d_Sphere_signed_distance(void* ptr, double px, double py, double pz);
-geometry3d_Sphere_signed_distance = nrn_dll.geometry3d_Sphere_signed_distance
+geometry3d_Sphere_signed_distance = nrn_dll_sym('geometry3d_Sphere_signed_distance')
 geometry3d_Sphere_signed_distance.restype = ctypes.c_double
 geometry3d_Sphere_signed_distance.argtypes = [ctypes.c_void_p, ctypes.c_double, ctypes.c_double, ctypes.c_double]
 
 # void* geometry3d_new_Plane(double x, double y, double z, double nx, double ny, double nz);
-geometry3d_new_Plane = nrn_dll.geometry3d_new_Plane
+geometry3d_new_Plane = nrn_dll_sym('geometry3d_new_Plane')
 geometry3d_new_Plane.restype = ctypes.c_void_p
 geometry3d_new_Plane.argtypes = [ctypes.c_double, ctypes.c_double, ctypes.c_double, ctypes.c_double, ctypes.c_double, ctypes.c_double]
 
 # void geometry3d_delete_Plane(void* ptr);
-geometry3d_delete_Plane = nrn_dll.geometry3d_delete_Plane
+geometry3d_delete_Plane = nrn_dll_sym('geometry3d_delete_Plane')
 geometry3d_delete_Plane.argtypes = [ctypes.c_void_p]
 
 # double geometry3d_Plane_signed_distance(void* ptr, double px, double py, double pz);
-geometry3d_Plane_signed_distance = nrn_dll.geometry3d_Plane_signed_distance
+geometry3d_Plane_signed_distance = nrn_dll_sym('geometry3d_Plane_signed_distance')
 geometry3d_Plane_signed_distance.restype = ctypes.c_double
 geometry3d_Plane_signed_distance.argtypes = [ctypes.c_void_p, ctypes.c_double, ctypes.c_double, ctypes.c_double]
 

@@ -5,14 +5,14 @@ import ctypes
 #
 # connect to dll via ctypes
 #
-nrn_dll = neuron.nrn_dll()
+nrn_dll_sym = neuron.nrn_dll_sym
     
 #
 # declare prototypes
 #
 
 # double geometry3d_llgramarea(double* x, double* y, double* z)
-geometry3d_sum_area_of_triangles = nrn_dll.geometry3d_sum_area_of_triangles
+geometry3d_sum_area_of_triangles = nrn_dll_sym('geometry3d_sum_area_of_triangles')
 geometry3d_sum_area_of_triangles.restype = ctypes.c_double
 geometry3d_sum_area_of_triangles.argtypes = [
     numpy.ctypeslib.ndpointer(dtype=numpy.float64, ndim=1, flags='C_CONTIGUOUS'),
