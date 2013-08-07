@@ -56,8 +56,7 @@ _double_ptr = ctypes.POINTER(ctypes.c_double)
 _int_ptr = ctypes.POINTER(ctypes.c_int)
 
 
-_nrn_dll = neuron.nrn_dll()
-nrn_tree_solve = _nrn_dll.nrn_tree_solve
+nrn_tree_solve = neuron.nrn_dll_sym('nrn_tree_solve')
 nrn_tree_solve.restype = None
 
 _dptr = _double_ptr

@@ -1,15 +1,18 @@
 #!/bin/sh
 N="`$1/bin/cygpath -u $1`"
 export N
+export PYTHONHOME=$N
 shift
 
 PATH=$N/bin:/usr/bin:$PATH
 export PATH
 SH_PATH=$N/bin/sh
 export SH_PATH
-
-#rxvt -fn 16 -fg black -bg white -sl 1000 -e nrniv $* &
-nrniv $*
+ARG="`cygpath -u $1`"
+DD=`dirname "$ARG"`
+FF=`basename "$ARG"`
+cd $DD
+nrniv $FF
 a=$?
 
 if test $a -ne 0 ; then

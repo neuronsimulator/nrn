@@ -3,6 +3,7 @@ from distutils.core import setup, Extension
 from distutils.sysconfig import get_python_version
 
 import sys
+import os
 
 # NRNPYTHON_DEFINES which were enabled at configure time
 extern_defines = "@NRNPYTHON_DEFINES@"
@@ -13,7 +14,11 @@ ivlibdir = "@IV_LIBDIR@"
 if ivlibdir == "" :
     ivlibdir = '.'
 
-instdir = "@prefix@"
+destdir = os.getenv("DESTDIR")
+if not destdir:
+  destdir = ""
+
+instdir = destdir + "@prefix@"
 if nrn_srcdir[0] != '/' :
     nrn_srcdir = '../../' + nrn_srcdir
 
@@ -58,7 +63,7 @@ os.environ["CXX"]=mpicxx_bin
 include_dirs = [nrn_srcdir+'/src/oc', '../oc', nrn_srcdir+'/src/nrnmpi']
 defines = []
 
-libdirs = ["@NRN_LIBDIR@",
+libdirs = [destdir + "@NRN_LIBDIR@",
   ivlibdir
 ]
 epre='-Wl,-R'
