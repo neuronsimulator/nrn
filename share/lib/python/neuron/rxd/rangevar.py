@@ -1,6 +1,10 @@
 import numpy
 from neuron import h
 
+_h_vector = h.Vector
+_numpy_zeros = numpy.zeros
+_h_ptrvector = h.PtrVector
+
 class RangeVar:
     def __init__(self, name):
         self._name = name
@@ -11,23 +15,26 @@ class RangeVar:
         #       or everytime the nodes change
         ptrs = []
         locs = []
+        ptrs_append = ptrs.append
+        locs_append = locs.append
         name = self._name
         for node in nodes:
             seg = node.segment
-            ptrs.append(seg.__getattribute__('_ref_%s' % name))
+            ptrs_append(seg.__getattribute__('_ref_%s' % name))
             # TODO: is this the right index? or do I need to change things to
             #       account for the zero-volume nodes?
-            locs.append(node._index)
+            locs_append(node._index)
         self._locs = numpy.array(locs)
-        pv = h.PtrVector(len(ptrs))
+        pv = _h_ptrvector(len(ptrs))
+        pv_pset = pv.pset
         for i, ptr in enumerate(ptrs):
-            pv.pset(i, ptr)
+            pv_pset(i, ptr)
         self._pv = pv
         
     def _rangevar_vec(self):
         pv = self._pv
-        result = numpy.zeros(pv.size())
-        vec = h.Vector(pv.size())
+        result = _numpy_zeros(pv.size())
+        vec = _h_vector(pv.size())
         pv.gather(vec)
         vec.to_python(result)
         return result

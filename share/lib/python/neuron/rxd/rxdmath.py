@@ -285,13 +285,15 @@ class _Arithmeticed:
     def _semi_compile(self):
         items = []
         counts = []
+        items_append = items.append
+        counts_append = counts.append
         for item, count in zip(self._items.keys(), self._items.values()):
             if count:
                 try:
-                    items.append(item._semi_compile)
+                    items_append(item._semi_compile)
                 except AttributeError:
-                    items.append('%s' % item)
-                counts.append(count)
+                    items_append('%s' % item)
+                counts_append(count)
         result = ''
         for i, c in zip(items, counts):
             if result and c > 0:

@@ -15,6 +15,22 @@ import options
 import region
 from rxdException import RxDException
 
+# aliases to avoid repeatedly doing multiple hash-table lookups
+_numpy_array = numpy.array
+_numpy_zeros = numpy.zeros
+_scipy_sparse_linalg_bicgstab = scipy.sparse.linalg.bicgstab
+_scipy_sparse_diags = scipy.sparse.diags
+_scipy_sparse_eye = scipy.sparse.eye
+_scipy_sparse_linalg_spsolve = scipy.sparse.linalg.spsolve
+_scipy_sparse_dok_matrix = scipy.sparse.dok_matrix
+_scipy_sparse_linalg_factorized = scipy.sparse.linalg.factorized
+_scipy_sparse_coo_matrix = scipy.sparse.coo_matrix
+_species_get_all_species = species._get_all_species
+_node_get_states = node._get_states
+_section1d_transfer_to_legacy = section1d._transfer_to_legacy
+_ctypes_c_int = ctypes.c_int
+_weakref_ref = weakref.ref
+
 def byeworld():
     # needed to prevent a seg-fault error at shudown in at least some
     # combinations of NEURON and Python, which I think is due to objects
@@ -53,7 +69,7 @@ _zero_volume_indices = []
 _nonzero_volume_indices = []
 
 _double_ptr = ctypes.POINTER(ctypes.c_double)
-_int_ptr = ctypes.POINTER(ctypes.c_int)
+_int_ptr = ctypes.POINTER(_ctypes_c_int)
 
 
 nrn_tree_solve = neuron.nrn_dll_sym('nrn_tree_solve')
@@ -71,11 +87,11 @@ def _unregister_reaction(r):
 def _register_reaction(r):
     # TODO: should we search to make sure that (a weakref to) r hasn't already been added?
     global _all_reactions
-    _all_reactions.append(weakref.ref(r))
+    _all_reactions.append(_weakref_ref(r))
 
 def _after_advance():
     global last_diam_change_cnt
-    last_diam_change_cnt = _cvode_object.diam_change_count()
+    last_diam_change_cnt = _diam_change_count.value
     
 def re_init():
     """reinitializes all rxd concentrations to match HOC values, updates matrices"""
@@ -86,7 +102,7 @@ def re_init():
     if dim == 1:
         # update current pointers
         section1d._purge_cptrs()
-        for sr in species._get_all_species().values():
+        for sr in _species_get_all_species().values():
             s = sr()
             if s is not None:
                 s._register_cptrs()
@@ -96,7 +112,7 @@ def re_init():
 
     elif dim != 3:            
         raise RxDException('unknown dimension')
-    for sr in species._get_all_species().values():
+    for sr in _species_get_all_species().values():
         s = sr()
         if s is not None: s.re_init()
     # TODO: is this safe?        
@@ -119,7 +135,7 @@ def _ode_count(offset):
 
 def _ode_reinit(y):
     if region._sim_dimension == 3: raise RxDException('cvode not supported yet for 3D')
-    y[_rxd_offset : _rxd_offset + len(_nonzero_volume_indices)] = node._get_states()[_nonzero_volume_indices]
+    y[_rxd_offset : _rxd_offset + len(_nonzero_volume_indices)] = _node_get_states()[_nonzero_volume_indices]
 
 def _ode_fun(t, y, ydot):
     current_dimension = region._sim_dimension
@@ -127,13 +143,13 @@ def _ode_fun(t, y, ydot):
     lo = _rxd_offset
     hi = lo + len(_nonzero_volume_indices)
     if lo == hi: return
-    states = node._get_states()
+    states = _node_get_states()
     states[_nonzero_volume_indices] = y[lo : hi]
 
     # need to fill in the zero volume states with the correct concentration
     # this assumes that states at the zero volume indices is zero (although that
     # assumption could be easily removed)
-    #matrix = scipy.sparse.dok_matrix((len(_zero_volume_indices), len(states)))
+    #matrix = _scipy_sparse_dok_matrix((len(_zero_volume_indices), len(states)))
     """
     for i, row in enumerate(_zero_volume_indices):
         d = _diffusion_matrix[row, row]
@@ -154,9 +170,9 @@ def _ode_fun(t, y, ydot):
     """
     if region._sim_dimension == 1:
         # TODO: refactor so this isn't in section1d?
-        section1d._transfer_to_legacy()        
+        _section1d_transfer_to_legacy()        
     elif region._sim_dimension == 3:
-        for sr in species._get_all_species().values():
+        for sr in _species_get_all_species().values():
             s = sr()
             if s is not None: s._transfer_to_legacy()
     else:
@@ -173,8 +189,8 @@ def _ode_solve(dt, t, b, y):
     if _diffusion_matrix is None: _setup_matrices()
     lo = _rxd_offset
     hi = lo + len(_nonzero_volume_indices)
-    n = len(node._get_states())
-    full_b = numpy.zeros(n)
+    n = len(_node_get_states())
+    full_b = _numpy_zeros(n)
     full_b[_nonzero_volume_indices] = b[lo : hi]
     b[lo : hi] = _react_matrix_solver(_diffusion_matrix_solve(dt, full_b))[_nonzero_volume_indices]
     # this line doesn't include the reaction contributions to the Jacobian
@@ -193,7 +209,7 @@ def _currents(rhs):
     if _curr_indices is None: return
 
     # TODO: change so that this is only called when there are in fact currents
-    _rxd_induced_currents = numpy.zeros(len(_curr_indices))
+    _rxd_induced_currents = _numpy_zeros(len(_curr_indices))
     rxd_memb_flux = []
     memb_cur_ptrs = []
     memb_cur_charges = []
@@ -203,7 +219,7 @@ def _currents(rhs):
         r = rptr()
         if r and r._membrane_flux:
             # NOTE: memb_flux contains any scaling we need
-            new_fluxes = r._get_memb_flux(node._get_states())
+            new_fluxes = r._get_memb_flux(_node_get_states())
             rxd_memb_flux += list(new_fluxes)
             memb_cur_ptrs += r._cur_ptrs
             memb_cur_mapped += r._cur_mapped
@@ -238,7 +254,7 @@ preconditioner = None
 def _fixed_step_solve(dt):
     global preconditioner, pinverse
 
-    states = node._get_states()[:]
+    states = _node_get_states()[:]
 
     b = _rxd_reaction(states)
     
@@ -252,21 +268,21 @@ def _fixed_step_solve(dt):
         states[_zero_volume_indices] = 0
 
         # TODO: refactor so this isn't in section1d... probably belongs in node
-        section1d._transfer_to_legacy()
+        _section1d_transfer_to_legacy()
     elif dim == 3:
         # the actual advance via implicit euler
         n = len(states)
-        m = scipy.sparse.eye(n, n) - dt * _euler_matrix
+        m = _scipy_sparse_eye(n, n) - dt * _euler_matrix
         # TODO: pinverse should be updated whenever dt changes
         if pinverse is not None:
-            pinverse = scipy.sparse.diags([[1. / m.diagonal()]], [0], shape=(n, n), format='csr', dtype='d')
-        #result, info = scipy.sparse.linalg.bicgstab(m, states + dt * b, M=pinverse)
-        result, info = scipy.sparse.linalg.bicgstab(m, states, M=pinverse)
+            pinverse = _scipy_sparse_diags([[1. / m.diagonal()]], [0], shape=(n, n), format='csr', dtype='d')
+        #result, info = _scipy_sparse_linalg_bicgstab(m, states + dt * b, M=pinverse)
+        result, info = _scipy_sparse_linalg_bicgstab(m, states, M=pinverse)
         result += dt * b
         assert(info == 0)
         states[:] = result
 
-        for sr in species._get_all_species().values():
+        for sr in _species_get_all_species().values():
             s = sr()
             if s is not None: s._transfer_to_legacy()
         
@@ -276,7 +292,7 @@ def _rxd_reaction(states):
     # TODO: this was included in the 3d, probably shouldn't be there either
     if _diffusion_matrix is None and region._sim_dimension == 1: _setup_matrices()
 
-    b = numpy.zeros(len(states))
+    b = _numpy_zeros(len(states))
     
     if _curr_ptr_vector is not None:
         _curr_ptr_vector.gather(_curr_ptr_storage_nrn)
@@ -284,6 +300,8 @@ def _rxd_reaction(states):
     
     #b[_curr_indices] = _curr_scales * [ptr[0] for ptr in _curr_ptrs]
 
+    # TODO: store weak references to the r._evaluate in addition to r so no
+    #       repeated lookups
     for rptr in _all_reactions:
         r = rptr()
         if r:
@@ -321,11 +339,11 @@ def _diffusion_matrix_solve(dt, rhs):
         _last_dt = dt
         # clear _c_diagonal and _last_dt to trigger a recalculation
         if _c_diagonal is None:
-            _diffusion_d_base = numpy.array(_diffusion_matrix.diagonal())
-            _diffusion_a_base = numpy.zeros(n)
-            _diffusion_b_base = numpy.zeros(n)
+            _diffusion_d_base = _numpy_array(_diffusion_matrix.diagonal())
+            _diffusion_a_base = _numpy_zeros(n)
+            _diffusion_b_base = _numpy_zeros(n)
             # TODO: the int32 bit may be machine specific
-            _diffusion_p = numpy.array([-1] * n, dtype=numpy.int32)
+            _diffusion_p = _numpy_array([-1] * n, dtype=numpy.int32)
             for j in xrange(n):
                 col = _diffusion_matrix[:, j]
                 col_nonzero = col.nonzero()
@@ -343,13 +361,13 @@ def _diffusion_matrix_solve(dt, rhs):
         _diffusion_b_ptr = _diffusion_b.ctypes.data_as(_double_ptr)
         _diffusion_p_ptr = _diffusion_p.ctypes.data_as(_int_ptr)
     
-    result = numpy.array(rhs)
-    d = numpy.array(_diffusion_d)
+    result = _numpy_array(rhs)
+    d = _numpy_array(_diffusion_d)
     d_ptr = d.ctypes.data_as(_double_ptr)
     result_ptr = result.ctypes.data_as(_double_ptr)
     
     nrn_tree_solve(_diffusion_a_ptr, d_ptr, _diffusion_b_ptr, result_ptr,
-                   _diffusion_p_ptr, ctypes.c_int(n))
+                   _diffusion_p_ptr, _ctypes_c_int(n))
     return result
 
 def _reaction_matrix_solve(dt, rhs):
@@ -365,17 +383,21 @@ def _reaction_matrix_solve(dt, rhs):
     for rptr in _all_reactions:
         r = rptr()
         if r:
+            # TODO: store weakrefs to r._jacobian_entries as well as r
+            #       this will reduce lookup time
             r_rows, r_cols, r_data = r._jacobian_entries(rhs, multiply=-dt)
+            # TODO: can we predict the length of rows etc in advance so we
+            #       don't need to grow them?
             rows += r_rows
             cols += r_cols
             data += r_data
             count += 1
             
     if count > 0:
-        jac = scipy.sparse.coo_matrix((data, (rows, cols)), shape=(n, n)).tocsr()
-        #result, info = scipy.sparse.linalg.bicgstab(jac, rhs)
+        jac = _scipy_sparse_coo_matrix((data, (rows, cols)), shape=(n, n)).tocsr()
+        #result, info = _scipy_sparse_linalg_bicgstab(jac, rhs)
         #assert(info == 0)
-        result = scipy.sparse.linalg.spsolve(jac, rhs)
+        result = _scipy_sparse_linalg_spsolve(jac, rhs)
     else:
         result = rhs
 
@@ -391,7 +413,7 @@ def _reaction_matrix_setup(dt, unexpanded_rhs):
     # now handle the reaction contribution to the Jacobian
     # this works as long as (I - dt(Jdiff + Jreact)) \approx (I - dtJreact)(I - dtJdiff)
     count = 0
-    rhs = numpy.array(node._get_states())
+    rhs = _numpy_array(_node_get_states())
     rhs[_nonzero_volume_indices] = unexpanded_rhs    
     n = len(rhs)
     rows = range(n)
@@ -408,10 +430,10 @@ def _reaction_matrix_setup(dt, unexpanded_rhs):
             
     if count > 0:
         
-        jac = scipy.sparse.coo_matrix((data, (rows, cols)), shape=(n, n)).tocsc()
-        #result, info = scipy.sparse.linalg.bicgstab(jac, rhs)
+        jac = _scipy_sparse_coo_matrix((data, (rows, cols)), shape=(n, n)).tocsc()
+        #result, info = _scipy_sparse_linalg_bicgstab(jac, rhs)
         #assert(info == 0)
-        _react_matrix_solver = scipy.sparse.linalg.factorized(jac)
+        _react_matrix_solver = _scipy_sparse_linalg_factorized(jac)
     else:
         _react_matrix_solver = lambda x: x
 
@@ -435,20 +457,25 @@ _curr_ptr_storage = None
 _curr_ptr_storage_nrn = None
 pinverse = None
 _cur_map = None
+_h_ptrvector = h.PtrVector
+_h_vector = h.Vector
+
+_structure_change_count = neuron.nrn_dll_sym('structure_change_cnt', _ctypes_c_int)
+_diam_change_count = neuron.nrn_dll_sym('diam_change_cnt', _ctypes_c_int)
 
 def _update_node_data(force=False):
     global last_diam_change_cnt, last_structure_change_cnt, _curr_indices, _curr_scales, _curr_ptrs, _cur_map
     global _curr_ptr_vector, _curr_ptr_storage, _curr_ptr_storage_nrn
-    if last_diam_change_cnt != _cvode_object.diam_change_count() or _cvode_object.structure_change_count() != last_structure_change_cnt or force:
+    if last_diam_change_cnt != _diam_change_count.value or _structure_change_count.value != last_structure_change_cnt or force:
         _cur_map = {}
-        last_diam_change_cnt = _cvode_object.diam_change_count()
-        last_structure_change_cnt = _cvode_object.structure_change_count()
+        last_diam_change_cnt = _diam_change_count.value
+        last_structure_change_cnt = _structure_change_count.value
         if region._sim_dimension == 1:
             # TODO: merge this with the 3d case
-            for sr in species._get_all_species().values():
+            for sr in _species_get_all_species().values():
                 s = sr()
                 if s is not None: s._update_node_data()
-            for sr in species._get_all_species().values():
+            for sr in _species_get_all_species().values():
                 s = sr()
                 if s is not None: s._update_region_indices()
         for rptr in _all_reactions:
@@ -457,22 +484,22 @@ def _update_node_data(force=False):
         _curr_indices = []
         _curr_scales = []
         _curr_ptrs = []
-        for sr in species._get_all_species().values():
+        for sr in _species_get_all_species().values():
             s = sr()
             if s is not None: s._setup_currents(_curr_indices, _curr_scales, _curr_ptrs, _cur_map)
         
         num = len(_curr_ptrs)
         if num:
-            _curr_ptr_vector = h.PtrVector(num)
+            _curr_ptr_vector = _h_ptrvector(num)
             for i, ptr in enumerate(_curr_ptrs):
                 _curr_ptr_vector.pset(i, ptr)
             
-            _curr_ptr_storage_nrn = h.Vector(num)
+            _curr_ptr_storage_nrn = _h_vector(num)
             _curr_ptr_storage = _curr_ptr_storage_nrn.as_numpy()
         else:
             _curr_ptr_vector = None
 
-        _curr_scales = numpy.array(_curr_scales)        
+        _curr_scales = _numpy_array(_curr_scales)        
         
 
 _euler_matrix = None
@@ -483,12 +510,12 @@ def _setup_matrices():
     global _cur_node_indices
 
 
-    n = len(node._get_states())
+    n = len(_node_get_states())
         
     if region._sim_dimension == 3:
-        _euler_matrix = scipy.sparse.dok_matrix((n, n), dtype=float)
+        _euler_matrix = _scipy_sparse_dok_matrix((n, n), dtype=float)
 
-        for sr in species._get_all_species().values():
+        for sr in _species_get_all_species().values():
             s = sr()
             if s is not None: s._setup_matrices3d(_euler_matrix)
 
@@ -503,7 +530,7 @@ def _setup_matrices():
         _last_dt = None
         _c_diagonal = None
         
-        for sr in species._get_all_species().values():
+        for sr in _species_get_all_species().values():
             s = sr()
             if s is not None:
                 s._assign_parents()
@@ -516,13 +543,13 @@ def _setup_matrices():
         
         if n:        
             # create sparse matrix for C in cy'+gy=b
-            _linmodadd_c = scipy.sparse.dok_matrix((n, n))
+            _linmodadd_c = _scipy_sparse_dok_matrix((n, n))
             # most entries are 1 except those corresponding to the 0 and 1 ends
             
             
             # create the matrix G
-            _diffusion_matrix = scipy.sparse.dok_matrix((n, n))
-            for sr in species._get_all_species().values():
+            _diffusion_matrix = _scipy_sparse_dok_matrix((n, n))
+            for sr in _species_get_all_species().values():
                 s = sr()
                 if s is not None:
                     s._setup_diffusion_matrix(_diffusion_matrix)
@@ -536,7 +563,7 @@ def _setup_matrices():
 
             
             # and the vector b
-            _linmodadd_b = h.Vector(n)
+            _linmodadd_b = _h_vector(n)
 
             
             # setup for induced membrane currents
@@ -580,7 +607,7 @@ def _init():
     
     dim = region._sim_dimension
     if dim == 3:
-        for sr in species._get_all_species().values():
+        for sr in _species_get_all_species().values():
             s = sr()
             if s is not None:
                 # s._register_cptrs()
@@ -589,7 +616,7 @@ def _init():
     elif dim == 1:
         section1d._purge_cptrs()
         
-        for sr in species._get_all_species().values():
+        for sr in _species_get_all_species().values():
             s = sr()
             if s is not None:
                 s._register_cptrs()

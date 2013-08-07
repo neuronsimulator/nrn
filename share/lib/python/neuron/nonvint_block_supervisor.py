@@ -4,6 +4,12 @@ import numpy
 from neuron import h
 import traceback
 
+# reducing the indirection improves performance
+_numpy_core_multiarray_int_asbuffer = numpy.core.multiarray.int_asbuffer
+_ctypes_addressof = ctypes.addressof
+_numpy_array = numpy.array
+_numpy_frombuffer = numpy.frombuffer
+
 #
 # connect to dll via ctypes
 #
@@ -80,8 +86,12 @@ def ode_count_all(offset):
   return cnt
 
 pc = h.ParallelContext()
+_pc_dt = pc.dt
+_pc_t = pc.t
 
 # see nrn/src/nrnoc/nonvintblock.h for the magic method numbers
+
+_empty_array = _numpy_array([])
 
 _no_args = (0, 1)
 _pd1_arg = (2, 3, 6, 10)
@@ -96,16 +106,16 @@ def nonvint_block(method, size, pd1, pd2, tid):
     else:
         if pd1:
             if size:
-                pd1_array = numpy.frombuffer(numpy.core.multiarray.int_asbuffer(ctypes.addressof(pd1.contents), size * _float_size))
+                pd1_array = _numpy_frombuffer(_numpy_core_multiarray_int_asbuffer(_ctypes_addressof(pd1.contents), size * _float_size))
             else:
-                pd1_array = numpy.array([])
+                pd1_array = _empty_array
         else:
             pd1_array = None
         if pd2:
             if size:
-                pd2_array = numpy.frombuffer(numpy.core.multiarray.int_asbuffer(ctypes.addressof(pd2.contents), size * _float_size))
+                pd2_array = _numpy_frombuffer(_numpy_core_multiarray_int_asbuffer(_ctypes_addressof(pd2.contents), size * _float_size))
             else:
-                pd2_array = numpy.array([])
+                pd2_array = _empty_array
         else:
             pd2_array = None
         
@@ -114,11 +124,11 @@ def nonvint_block(method, size, pd1, pd2, tid):
         elif method in _pd1_arg:
             args = (pd1_array,)
         elif method == 4:
-            args = (pc.dt(tid),)
+            args = (_pc_dt(tid),)
         elif method == 7:
-            args = (pc.t(tid), pd1_array, pd2_array)
-        elif method in (8,9):
-            args = (pc.dt(tid), pc.t(tid), pd1_array, pd2_array)
+            args = (_pc_t(tid), pd1_array, pd2_array)
+        elif method in (8, 9):
+            args = (_pc_dt(tid), _pc_t(tid), pd1_array, pd2_array)
         for c in call:
             if c[method] is not None:
                 c[method](*args)

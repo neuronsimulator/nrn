@@ -32,6 +32,8 @@ def _allocate(num):
     _states.resize(total, refcheck=False)
     return start_index
 
+_numpy_element_ref = neuron.numpy_element_ref
+
 class Node(object):
     def satisfies(self, condition):
         """Tests if a Node satisfies a given condition.
@@ -59,7 +61,7 @@ class Node(object):
     def _ref_concentration(self):
         """Returns a HOC reference to the Node's state"""
         # this points to rxd array only, will not change legacy concentration
-        return neuron.numpy_element_ref(_states, self._index)
+        return _numpy_element_ref(_states, self._index)
     
     @property
     def d(self):
@@ -101,7 +103,12 @@ class Node(object):
         # TODO: change this if value no longer need be concentration
         return self._ref_concentration
     
-        
+_h_n3d = h.n3d
+_h_x3d = h.x3d
+_h_y3d = h.y3d
+_h_z3d = h.z3d
+_h_arc3d = h.arc3d
+
 class Node1D(Node):
     def __init__(self, sec, i, location):
         """n = Node1D(sec, i, location)
@@ -132,10 +139,10 @@ class Node1D(Node):
     def _update_loc3d(self):
         sec = self._sec
         length = sec.L
-        normalized_arc3d = [h.arc3d(i, sec=sec._sec) / length for i in xrange(int(h.n3d(sec=sec._sec)))]
-        x3d = [h.x3d(i, sec=sec._sec) for i in xrange(int(h.n3d(sec=sec._sec)))]
-        y3d = [h.y3d(i, sec=sec._sec) for i in xrange(int(h.n3d(sec=sec._sec)))]
-        z3d = [h.z3d(i, sec=sec._sec) for i in xrange(int(h.n3d(sec=sec._sec)))]
+        normalized_arc3d = [_h_arc3d(i, sec=sec._sec) / length for i in xrange(int(_h_n3d(sec=sec._sec)))]
+        x3d = [_h_x3d(i, sec=sec._sec) for i in xrange(int(_h_n3d(sec=sec._sec)))]
+        y3d = [_h_y3d(i, sec=sec._sec) for i in xrange(int(_h_n3d(sec=sec._sec)))]
+        z3d = [_h_z3d(i, sec=sec._sec) for i in xrange(int(_h_n3d(sec=sec._sec)))]
         loc1d = self._location
         self._loc3d = (numpy.interp(loc1d, normalized_arc3d, x3d),
                        numpy.interp(loc1d, normalized_arc3d, y3d),
