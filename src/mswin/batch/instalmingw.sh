@@ -28,8 +28,10 @@ fi
 if test "$marshall_dir" = "" ; then
 	echo "instalmingw.sh should be executed at top level with make mswin"
 else
+	if test ! -d $marshall_dir ; then
+		mkdir $marshall_dir
+	fi
 	D=`(cd $marshall_dir ; readlink -f .)`
-	mkdir $D
 	if test $host_cpu = x86_64 ; then
 		BIT=64
 		D=$D/nrn64
@@ -82,6 +84,7 @@ if test -f $B/src/mswin/nrniv_enthought.exe ; then
 fi
 cp $B/src/mswin/nrniv.dll $DB/nrniv.dll
 strip $DB/nrniv.dll
+#will move hocmodule to lib/python/neuron/hoc.pyd after lib/python is created
 cp $B/src/mswin/hocmodule.dll $DB/hocmodule.dll
 strip $DB/hocmodule.dll
 cp $B/src/mswin/libnrnpython1013.dll $DB
@@ -179,6 +182,7 @@ rm -f $Z
 zip -l $Z lib/nrn.defaults
 unzip -d $D -o $Z 
 rm $Z
+mv $DB/hocmodule.dll $D/lib/python/neuron/hoc.pyd
 fi
 
 if true ; then
