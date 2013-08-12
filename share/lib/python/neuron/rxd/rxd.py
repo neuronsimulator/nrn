@@ -19,7 +19,12 @@ from rxdException import RxDException
 _numpy_array = numpy.array
 _numpy_zeros = numpy.zeros
 _scipy_sparse_linalg_bicgstab = scipy.sparse.linalg.bicgstab
-_scipy_sparse_diags = scipy.sparse.diags
+try:
+    _scipy_sparse_diags = scipy.sparse.diags
+except:
+    # we do this because it will still throw an error if scipy < 0.11, but
+    # only when 3D is used
+    _scipy_sparse_diags = None
 _scipy_sparse_eye = scipy.sparse.eye
 _scipy_sparse_linalg_spsolve = scipy.sparse.linalg.spsolve
 _scipy_sparse_dok_matrix = scipy.sparse.dok_matrix
