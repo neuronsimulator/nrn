@@ -385,12 +385,43 @@ def nrn_dll_sym(name, type=None):
     """
     # TODO: this won't work under Windows; will need to search through until
     #       can find the right dll (should we cache the results of the search?)
+    import os
+    if os.name == 'nt':
+      return nrn_dll_sym_nt(name, type)
     dll = nrn_dll()
     if type is None:
         return dll.__getattr__(name)
     else:
         return type.in_dll(dll, name)
-        
+
+nt_dlls = []
+def nrn_dll_sym_nt(name, type):
+    """return the specified object from the NEURON dlls.
+    helper for nrn_dll_sym(name, type). Try to find the name in either
+    nrniv.dll or libnrnpython1013.dll
+    """
+    global nt_dlls
+    import ctypes
+    import os
+    if len(nt_dlls) is 0:
+      b = 'bin64'
+      if h.nrnversion(8).find('i686') is 0:
+        b = 'bin'
+      path = os.path.join(h.neuronhome().replace('/','\\'), b)
+      for dllname in ['nrniv.dll', 'libnrnpython1013.dll']:
+        p = os.path.join(path, dllname)
+        nt_dlls.append(ctypes.cdll[p])
+    for dll in nt_dlls:
+      try:
+        a = dll.__getattr__(name)
+      except:
+        a = None
+      if a:
+        if type is None:
+          return a
+        else:
+          return type.in_dll(dll, name)
+    raise Exception('unable to connect to the NEURON library containing '+name)
 
 def nrn_dll(printpath=False):
     """Return a ctypes object corresponding to the NEURON library.
