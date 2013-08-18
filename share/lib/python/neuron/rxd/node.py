@@ -13,6 +13,10 @@ _surface_area = numpy.array([])
 _diffs = numpy.array([])
 _states = numpy.array([])
 
+# node data types
+_concentration_node = 0
+_molecule_node = 1
+
 def _get_data():
     return (_volumes, _surface_area, _diffs)
 
@@ -59,9 +63,29 @@ class Node(object):
 
     @property
     def _ref_concentration(self):
-        """Returns a HOC reference to the Node's state"""
+        """Returns a HOC reference to the Node's concentration
+        
+        (The node must store concentration data. Use _ref_molecules for nodes
+        storing molecule counts.)
+        """
         # this points to rxd array only, will not change legacy concentration
-        return _numpy_element_ref(_states, self._index)
+        if self._data_type == _concentration_node:        
+            return self._ref_value
+        else:
+            raise RxDException('_ref_concentration only available for concentration nodes')
+
+    @property
+    def _ref_molecules(self):
+        """Returns a HOC reference to the Node's concentration
+        
+        (The node must store concentration data. Use _ref_molecules for nodes
+        storing molecule counts.)
+        """
+        # this points to rxd array only, will not change legacy concentration
+        if self._data_type == _molecule_node:        
+            return self._ref_value
+        else:
+            raise RxDException('_ref_molecules only available for molecule count nodes')
     
     @property
     def d(self):
@@ -78,30 +102,67 @@ class Node(object):
     @property
     def concentration(self):
         """Gets the concentration at the Node."""
-        return _states[self._index]
+        # TODO: don't use an if statement here... put the if statement at node
+        #       construction and change the actual function that is pointed to
+        if self._data_type == _concentration_node:
+            return _states[self._index]
+        else:
+            # TODO: make this return a concentration instead of an error
+            raise RxDException('concentration property not yet supported for non-concentration nodes')
     
     @concentration.setter
     def concentration(self, value):
         """Sets the concentration at the Node"""
-        _states[self._index] = value
+        # TODO: don't use an if statement here... put the if statement at node
+        #       construction and change the actual function that is pointed to
+        if self._data_type == _concentration_node:
+            _states[self._index] = value
+        else:
+            # TODO: make this set a concentration instead of raise an error
+            raise RxDException('concentration property not yet supported for non-concentration nodes')
+
+    @property
+    def molecules(self):
+        """Gets the molecule count at the Node."""
+        # TODO: don't use an if statement here... put the if statement at node
+        #       construction and change the actual function that is pointed to
+        if self._data_type == _molecule_node:
+            return _states[self._index]
+        else:
+            # TODO: make this return a molecule count instead of an error
+            raise RxDException('molecules property not yet supported for non-concentration nodes')
+    
+    @molecules.setter
+    def molecules(self, value):
+        """Sets the molecule count at the Node"""
+        # TODO: don't use an if statement here... put the if statement at node
+        #       construction and change the actual function that is pointed to
+        if self._data_type == _molecule_node:
+            _states[self._index] = value
+        else:
+            # TODO: make this set a molecule count instead of raise an error
+            raise RxDException('molecules property not yet supported for non-concentration nodes')
+        
+
         
     @property
     def value(self):
         """Gets the value associated with this Node."""
-        # TODO: change if stochastic allows molecules
-        return self.concentration
+        return _states[self._index]
     
     @value.setter
     def value(self, v):
-        """Sets the value associated with this Node."""
-        # TODO: change if stochastic allows molecules
-        self.concentration = v
+        """Sets the value associated with this Node.
+        
+        For Species nodes belonging to a deterministic simulation, this is a concentration.
+        For Species nodes belonging to a stochastic simulation, this is the molecule count.
+        """
+        _states[self._index] = v
 
     @property
     def _ref_value(self):
         """Returns a HOC reference to the Node's value"""
-        # TODO: change this if value no longer need be concentration
-        return self._ref_concentration
+        return _numpy_element_ref(_states, self._index)
     
 _h_n3d = h.n3d
 _h_x3d = h.x3d
@@ -110,7 +171,7 @@ _h_z3d = h.z3d
 _h_arc3d = h.arc3d
 
 class Node1D(Node):
-    def __init__(self, sec, i, location):
+    def __init__(self, sec, i, location, data_type=_concentration_node):
         """n = Node1D(sec, i, location)
         Description:
         
@@ -134,6 +195,7 @@ class Node1D(Node):
         self._location = location
         self._index = i + sec._offset
         self._loc3d = None
+        self._data_type = data_type
 
 
     def _update_loc3d(self):
@@ -226,7 +288,7 @@ class Node1D(Node):
 
 
 class Node3D(Node):
-    def __init__(self, index, i, j, k, r, seg, speciesref):
+    def __init__(self, index, i, j, k, r, seg, speciesref, data_type=_concentration_node):
         """
             Parameters
             ----------
@@ -251,6 +313,7 @@ class Node3D(Node):
         self._r = r
         self._seg = seg
         self._speciesref = speciesref
+        self._data_type = data_type
     
     @property
     def surface_area(self):
