@@ -208,10 +208,13 @@ preconditioner = None
 def _fixed_step_solve(dt):
     global preconditioner
 
+    # TODO: this probably shouldn't be here
+    if _diffusion_matrix is None: _setup_matrices()
+
     # TODO: use linear approx not constant approx
     states = node._get_states()[:]
 
-    b = _rxd_reaction(states)
+    b = _rxd_reaction(states) - _diffusion_matrix * states
     
     states[:] += _reaction_matrix_solve(dt, _diffusion_matrix_solve(dt, dt * b))
 
