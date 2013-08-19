@@ -258,10 +258,12 @@ def _currents(rhs):
 preconditioner = None
 def _fixed_step_solve(dt):
     global preconditioner, pinverse
+    # TODO: this probably shouldn't be here
+    if _diffusion_matrix is None: _setup_matrices()
 
     states = _node_get_states()[:]
 
-    b = _rxd_reaction(states)
+    b = _rxd_reaction(states) - _diffusion_matrix * states
     
     dim = region._sim_dimension
     if dim is None:
