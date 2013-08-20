@@ -24,44 +24,44 @@ Layout
 
             objref deck, g 
             deck = new Deck() 
-            deck.intercept(1)	//all following windows will be placed in the deck 
-            strdef yexpr		//declare a variable to hold the string expressing a function 
-            ncard =10		//there will be 10 cards in the deck 
-            proc mkgraph(){		//this procedure makes a graph 
+            deck.intercept(1)       //all following windows will be placed in the deck 
+            strdef yexpr            //declare a variable to hold the string expressing a function 
+            ncard =10               //there will be 10 cards in the deck 
+            proc mkgraph(){         //this procedure makes a graph 
              
-            	g = new Graph()		//the new graph is declared 
-            	g.size(-4,4,-4,4)	//and given a size 
+            	g = new Graph()	    //the new graph is declared 
+            	g.size(-4,4,-4,4)   //and given a size 
             	t = 0 
             	sprint(yexpr, "3*sin(%d*t)", $1)	//takes the argument to mkgraph() and  
             						//uses it to change the sin function 
-            	g.addexpr(yexpr)	//declare the string represented by yexpr as the y function 
-            	g.xexpr("3*cos(t)")	//3*cos(t) is the x function 
+            	g.addexpr(yexpr)    //declare the string represented by yexpr as the y function 
+            	g.xexpr("3*cos(t)") //3*cos(t) is the x function 
             	g.begin() 
             	for(t=0; t<=2*PI+0.01; t=t+0.01){ 
-            		g.plot(t)	//plot the x,y expression for one cycle between 0 and 2PI 
+            		g.plot(t)	    //plot the x,y expression for one cycle between 0 and 2PI 
             	} 
-            	g.flush()		//draw the plot 
+            	g.flush()		    //draw the plot 
             } 
-            for i=1,1 mkgraph(i)	//make the first graph, so it will appear while the other 
-            deck.intercept(0)	//9 graphs are being made 
-            deck.map()		//put the deck on the screen 
-            deck.flip_to(0)		//show the first plot of the deck 
-            xpanel("flip to")	//create a panel titled "flip to" 
-            for i=1,ncard {		//create radio buttons which will bring each card to the front 
-            sprint(yexpr, "xradiobutton(\"card %d\", \"deck.flip_to(%d)\")", i,i-1) 
-            execute(yexpr) 
+            for i=1,1 mkgraph(i)    //make the first graph, so it will appear while the other 
+            deck.intercept(0)	    //9 graphs are being made 
+            deck.map()	    	    //put the deck on the screen 
+            deck.flip_to(0)         //show the first plot of the deck 
+            xpanel("flip to")       //create a panel titled "flip to" 
+            for i=1,ncard {         //create radio buttons which will bring each card to the front 
+                sprint(yexpr, "xradiobutton(\"card %d\", \"deck.flip_to(%d)\")", i,i-1) 
+                execute(yexpr) 
             } 
-            xpanel()		//close off the set of panel commands 
+            xpanel()                //close off the set of panel commands 
              
-            for i=2,ncard {		//now that the first card appears on the screen, take the time 
-            			//to make the rest of the cards 
-            	deck.intercept(1)	//reopen the deck 
-            	mkgraph(i)		//make a plot for each other card 
-            	deck.intercept(0)	//close the deck 
+            for i=2,ncard {         //now that the first card appears on the screen, take the time 
+                                    //to make the rest of the cards 
+            	deck.intercept(1)   //reopen the deck 
+            	mkgraph(i)          //make a plot for each other card 
+            	deck.intercept(0)   //close the deck 
             }	 
 
          
-        makes a deck of windows showing the plots {x=3cos(t), y=3sin(*i**t)}, where *i* = 1 through 10. 
+        makes a deck of windows showing the plots :math:`\{(3\cos(t), 3\sin(i\,t)): 0 \le t \le 2\pi \}`, where :math:`i=1 \ldots 10`.
         You can see in this example how the 
         panel of radio buttons enhances your ability 
         to access a particular plot. 
