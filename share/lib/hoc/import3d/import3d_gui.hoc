@@ -805,6 +805,17 @@ proc cbexport() {local i, j, k  localobj sec, cell
 	}
 }
 
+proc sphere_rep() { local i  localobj x, y, z, d
+	x = new Vector(3)  y = x.c  z = x.c  d = x.c
+	x.fill($o1.x[0])
+	y.fill($o2.x[0])
+	z.fill($o3.x[0])
+	d.fill($o4.x[0])
+	x.x[0] -= $o4.x[0]/2
+	x.x[2] += $o4.x[0]/2
+	$o1 = x  $o2 = y  $o3 = z  $o4 = d
+}
+
 proc cbexport1() {local i, j, k, min  localobj cb, sec, psec, cbsec, slist, m, subsetindex, xx, yy, zz, dd
 	for i=0, $o1.count-1 {
 		sec = $o1.object(i)
@@ -833,6 +844,11 @@ proc cbexport1() {local i, j, k, min  localobj cb, sec, psec, cbsec, slist, m, s
 		dd = sec.d.c(j)
 		if (sec.iscontour_) {
 			contour2centroid(xx, yy, zz, dd, sec)
+		}
+		if (sec.parentsec == nil && dd.size == 1) {
+			// represent spherical soma as 3 point cylinder
+			// with L=diam
+			sphere_rep(xx, yy, zz, dd)
 		}
 		k = dd.size-1
 		cbsec.position(xx.x[0], yy.x[0], xx.x[k], yy.x[k])
@@ -939,6 +955,7 @@ proc instantiate() {local i, j, min  localobj sec, xx, yy, zz, dd
 		if (sec.iscontour_) {
 			contour2centroid(xx, yy, zz, dd, sec)
 		}
+		if (dd.size == 1) { sphere_rep(xx, yy, zz, dd) }
 		for j = 0, dd.size-1 {
 			sprint(tstr1, "%s { pt3dadd(%g, %g, %g, %g) }",\
 			  tstr,xx.x[j], yy.x[j], zz.x[j], dd.x[j])
@@ -952,9 +969,10 @@ proc chk_valid() {local i, x, replot  localobj sec
 	// some validity checks added in response to experienced file errors
 	// sometimes we can work around them
 
-	// two point sections with 0 length, remove
+	// two point sections with 0 length, remove, unless root
 	for (i=swc.sections.count-1; i >= 0; i -= 1) {
 		sec = swc.sections.object(i)
+		if (sec.parentsec == nil) { continue }
 		if ((sec.raw.ncol - sec.first) <= 1) {
 			printf("One point section %s ending at line %d has been removed\n", sec, swc.iline.x[swc.id2line(sec.id)])
 			rm0len(i, sec)

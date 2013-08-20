@@ -32,6 +32,7 @@ public:
 	void control_point(Coord, Coord);
 	void curve_to(Coord, Coord, Coord, Coord, Coord, Coord);
 	void close_path();
+	void circle(Coord x, Coord y, Coord r);
 	void stroke(int color, int brush);
 	void fill(int color);
 	void erase();
