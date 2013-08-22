@@ -81,19 +81,15 @@ Glyph
 
 
 
-.. method:: Glyph.stroke
+.. method:: Glyph.curve_to
 
 
     Syntax:
-        ``g = g.s()``
-
-        ``g = g.s(colorindex)``
-
-        ``g = g.s(colorindex, brushindex)``
+        ``g = g.curve(x,y, x1,y1, x2,y2)``
 
 
     Description:
-        Render the current path as a line. 
+        Draw a curve from the current point to x,y 
 
          
 
@@ -117,6 +113,60 @@ Glyph
 
 
 
+.. method:: Glyph.circle
+
+
+    Syntax:
+        ``g = g.circle(x, y, r)``
+
+
+    Description:
+        A circle at location x, y and radius r. This is implemented using
+        the glyph methods new_path, move_to, curve_to, and close_path.
+        Can stroke and/or fill.
+
+    Example:
+        Rotated ellipse
+
+        .. code-block::
+            none
+            
+            objref gr, gl
+            gr = new Graph()
+            
+            gl = new Glyph()
+            gl.circle(0,0,1)
+            gl.fill(3)
+            gl.s(2, 3)
+            
+            gr.glyph(gl, 150, 100, 30, 60, PI/4*DEG)
+
+
+
+----
+
+
+
+.. method:: Glyph.stroke
+
+
+    Syntax:
+        ``g = g.s()``
+
+        ``g = g.s(colorindex)``
+
+        ``g = g.s(colorindex, brushindex)``
+
+
+    Description:
+        Render the current path as a line. 
+
+         
+
+----
+
+
+
 .. method:: Glyph.fill
 
 
@@ -128,22 +178,6 @@ Glyph
 
     Description:
         For a closed path, fill the interior with the indicated color. 
-
-         
-
-----
-
-
-
-.. method:: Glyph.curve_to
-
-
-    Syntax:
-        ``g = g.curve(x,y, x1,y1, x2,y2)``
-
-
-    Description:
-        Draw a curve from the current point to x,y 
 
          
 
