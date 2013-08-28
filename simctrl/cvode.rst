@@ -932,14 +932,14 @@ CVode
         When true, vector methods involving sums over the elements are accumulated 
         in a long double variable. This is useful in debugging when the 
         global variable time step method gives different results for different 
-        :meth:`ParallelContext.nthread`. It may be the case that the difference is 
+        :meth:`ParallelContext.nthread` or numbers of processes. It may be the case that the difference is 
         due to differences in round-off error due to the non-associativity of 
         computer addition. I.e when threads are used each thread adds up its own 
         group of numbers and then the group results are added together. When 
         a long double is used as the accumulator for addition, the round off error 
-        should be the same regardless of the order of addition. Note that 
-        this DOES NOT make the simulation more accurate --- just identical for 
-        different numbers of threads (if the difference without it was due to 
+        is much more likely to be the same regardless of the order of addition. Note that 
+        this DOES NOT make the simulation more accurate --- just more likely to be identical for 
+        different numbers of threads or processes (if the difference without it was due to 
         round off errors during summation). 
 
          
