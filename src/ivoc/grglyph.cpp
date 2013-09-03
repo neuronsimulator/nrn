@@ -146,6 +146,16 @@ ENDGUI
 	return g->temp_objvar();
 }
 
+static Object** g_circle(void* v) {
+	GrGlyph* g = (GrGlyph*)v;
+#if HAVE_IV
+IFGUI
+	g->circle(*getarg(1), *getarg(2), *getarg(3));
+ENDGUI
+#endif
+	return g->temp_objvar();
+}
+
 static Object** g_gif(void* v) {
 	GrGlyph* g = (GrGlyph*)v;
 #if HAVE_IV
@@ -173,6 +183,7 @@ Member_ret_obj_func objmembers[] = {
 	"cpt", g_control_point,
 	"erase", g_erase,
 	"gif", g_gif,
+	"circle", g_circle,
 	0, 0
 };
 
@@ -278,6 +289,25 @@ void GrGlyph::curve_to(Coord x, Coord y, Coord x1, Coord y1, Coord x2, Coord y2)
 void GrGlyph::close_path() {
 	type_->add(5);
 }
+void GrGlyph::circle(Coord x, Coord y, Coord r) {
+    const Coord p0 = 1.00000000 * r;
+    const Coord p1 = 0.89657547 * r;   // cos 30 * sqrt(1 + tan 15 * tan 15)
+    const Coord p2 = 0.70710678 * r;   // cos 45
+    const Coord p3 = 0.51763809 * r;   // cos 60 * sqrt(1 + tan 15 * tan 15)
+    const Coord p4 = 0.26794919 * r;   // tan 15
+    new_path();
+    move_to(x+p0, y);
+    curve_to(x+p2, y+p2, x+p0, y+p4, x+p1, y+p3);
+    curve_to(x, y+p0, x+p3, y+p1, x+p4, y+p0);
+    curve_to(x-p2, y+p2, x-p4, y+p0, x-p3, y+p1);
+    curve_to(x-p0, y, x-p1, y + p3, x-p0, y+p4);
+    curve_to(x-p2, y-p2, x-p0, y-p4, x-p1, y-p3);
+    curve_to(x, y-p0, x-p3, y-p1, x-p4, y-p0);
+    curve_to(x+p2, y-p2, x+p4, y-p0, x+p3, y-p1);
+    curve_to(x+p0, y, x+p1, y-p3, x+p0, y-p4);
+    close_path();
+}
+
 void GrGlyph::stroke(int ci, int bi) {
 	type_->add(6); type_->add(ci); type_->add(bi);
 }

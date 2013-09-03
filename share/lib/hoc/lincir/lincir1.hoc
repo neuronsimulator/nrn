@@ -2,18 +2,23 @@ begintemplate LinearCircuit
 public box, g, map, elements, sel, lincirnodes, model, change_val
 public pr_singular, prnodes, toggle_xtrn, setalias, version
 public con, plotwhat, dismiss_graph, varptrname, simulate_, ystate, yinit
+public gmat, cmat, bvec
+public gmatsym , cmatsym, bvecsym, mkclass, varnames, varname_indices
 external graph_menu_remove_most, LincirGraph, ElementBase, hoc_sf_
 external valid_name_syntax
 
 objref box, g, this, elements, nil, sel, tobj, parts, model, fih
 objref xends, yends, tobj1, groundnode, si, con, lincirnodes
 objref gmat, cmat, bvec, inmat, inb, umat, vmat, dvec, almat, alvec
-objref valbox, namebox, model, deck, b1, statebox, icbox, graphlist
+objref valbox, namebox, deck, b1, statebox, icbox, graphlist
 objref varnames, varname_indices, namelist, ystate, yinit, icptrs
 objref ic_name_indices_, csx, csy, csp
+objref gmatsym, cmatsym, bvecsym
+objref label_dialog_title
 strdef tstr, tstr1
 
 proc init() {local i
+	label_dialog_title = new String("Enter Name")
 	noconsist_ = 0
 	parasitic_ = 0
 	show_parts_ = 1
@@ -44,12 +49,14 @@ proc init() {local i
 	parts.append(new Current(1, con))
 	GND = parts.count
 	parts.append(new Ground(1, con))
+	OPAMP = parts.count
 	parts.append(new OpAmp(1, con))
 	// following must be last so that part>=CELL logic clause works
 	CELL = parts.count
 	parts.append(new InsideCell(1, con))
 	parts.append(new OutsideCell(1, con))
 	ncellnode = 0
+
 	build()
 	if (numarg() == 0) {
 		map()
@@ -95,6 +102,8 @@ xlabel(" While \"Move\" is selected, labels may be dragged to a new position")
 xlabel(" While \"Change\" is selected, selecting a label, center of a part,")
 xlabel("or an end connected to a part (GND and WIRE excluded) pops up")
 xlabel("a string chooser for entering a label for the part or end.")
+xlabel("Labels have priority so if they interfere with selecting the part or")
+xlabel("end, move them away temporarily")
 xlabel(" For, cell labels, a Shape Scene pops up for selecting the")
 xlabel("desired location of the circuit connection to the cell.")
 xlabel(" Since connection nodes involve multiple parts, they may have more")
@@ -119,6 +128,13 @@ xlabel("of inappropriate parameter values.")
 xlabel(" The circuit can be forced to have a solution. Selecting the")
 xlabel("\"Parasitics\" checkbox connects each node to ground with a 1e-9 nF")
 xlabel("capacitance and gives each battery a 1e-9 MOhm series resistance.")
+xlabel(" \"Create class\" button creates a foo.hoc file with template Foo.")
+xlabel("At least one port of each cell location must be labeled and the class")
+xlabel("will have \"label\"_loc() methods to identify the segments the circuit")
+xlabel("connects to. After identifying the locations, one calls the install()")
+xlabel("method to activate the LinearMechanism object wrapped by the instance.")
+xlabel("Must call refill() method if element parameters or segment area")
+xlabel("is changed after install() is called.")
 xpanel()
 }
 proc hints_simulate() {
@@ -305,6 +321,7 @@ proc build() {
 	xcheckbox("Turn off consistency checking", &noconsist_)
 	xcheckbox("Parasitic aF/battery mOhm", &parasitic_)
 	xbutton("Print Matrix Info", "pr_singular()")
+	xbutton("Create class", "mkclass()")
 	xbutton("Hints", "hints_parm()")
 	xpanel()
 	deck.intercept(0)
@@ -729,6 +746,11 @@ proc label() {local i
 	} // dialog on press gives exception on mswin
 	if ($1 == 3) {
 		if (sel != nil) {
+			if (selsub) {
+				label_dialog_title.s = "Enter Voltage node name"
+			}else{
+				label_dialog_title.s = "Enter device name"
+			}
 			if (sel.names[selsub] == nil) {
 				sel.names[selsub] = new String("")
 			}
@@ -742,7 +764,7 @@ proc label() {local i
 				tobj.select()
 				tobj.name(sel)
 			}else{
-				while (string_dialog("Enter Name", tstr)) {
+				while (string_dialog(label_dialog_title.s, tstr)) {
 					if (valid_name_syntax(tstr, 1)) {
 						sel.names[selsub].s = tstr
 						break
@@ -882,7 +904,7 @@ proc setval() {
 
 func simdef() {local b
 	b = 0
-	if (setup_matrix()) {
+	if (setup_matrix(1)) {
 		if (neq > 1) {
 			if (has_solution()) {
 				model = new Lincir2Linmech(ystate, yinit)
@@ -971,6 +993,283 @@ proc def_nodes() {
 	}
 }
 
+proc mkclass() {localobj f
+  setup_matrix(0)
+  fill_eqn_sym()
+  statemap()
+  //print "cmatsym" cmatsym.pr("c")
+  //print "gmatsym" gmatsym.pr("g")
+  //print "bvecsym" bvecsym.pr("b")
+  f = new File("LM.tmp")
+  if (numarg() > 0) {
+    f = new File($s1)
+  }else{
+    f.chooser("w", "Write multiply instantiable Linear Circuit class to file", "*.*", "Write", "Cancel")
+    if (!f.chooser()) {
+      return
+    }
+  }
+  f.wopen()
+  head_out(f)
+  f.printf("begintemplate LM\n")
+  decl_out(f)
+  init_out(f)
+  portfunc_out(f)
+  mat_out(f)
+  install_out(f)
+  f.printf("endtemplate LM\n")
+  f.close()
+}
+
+obfunc cellname() {local j, k  localobj o, lcn, name
+  // node name is bizarrely complex
+  o = $o1
+  for j=0, o.nnode-1 {
+    lcn = o.lincirnodes[j]
+    for k=0, lcn.elements.count-1 {
+      name = lcn.elements.o(k).names[lcn.ends.x[k]+1]
+      if (name != nil) { break }
+    }
+    if (name != nil) { break }
+  }
+  return name
+}
+
+proc head_out() {local i,j  localobj o, sname, scon, s
+  $o1.printf("// Created by %s of %s\n", this, nrnversion())
+  $o1.printf("// manages LinearMechanism of rank %d\n", gmat.nrow-1)
+  $o1.printf("// See first public declaration and proc init() for important\
+//  methods and variable names\n")
+  $o1.printf("// Change begintemplate and endtemplate statements if LM is not\
+//  an appropriate name for the class.\n")
+  $o1.printf("// Usage: (assume object reference is \"lm\")\n")
+  $o1.printf("//  1) Attach segments to all the lm.*_loc(x) methods.\n")
+  $o1.printf("//  2) lm.install() creates the LinearMechanism\n")
+  $o1.printf("//  3) If any parameters are changed after lm.install(), call lm.refill()\n")
+$o1.printf("//  Named voltage nodes and internal states can be plotted using their alias\
+//    names in proc init()\
+//  Stimuli can be changed dynamically during a run using Vector.play. See\
+//    their alias names in proc init()\
+//  Initial conditions for named voltage nodes can be changed prior to finitialize().\
+//    Initial conditions are 0 by default (not copied from the original\
+//    LinearCircuit builder that generated this file).\
+")
+  $o1.printf("\n// netlist: %d v nodes  %d elements\n", lincirnodes.count, elements.count)
+  $o1.printf("//  index type name (endname)...(endname) (v node indices)\n")
+  scon = new String()
+  s = new String()
+  for i=0, elements.count - 1 {
+    o = elements.o(i)
+    sname = new String()
+    if (o.names[0] != nil) {
+      sname.s = o.names[0].s
+    }
+    for j=1, o.nnode {
+      if (o.names[j] != nil) {
+        s.s = o.names[j].s
+      }else{
+        s.s = ""
+      }
+      sprint(sname.s, "%s (%s)", sname.s, s.s)
+    }
+    scon = new String(" ")
+    for j=0, o.nnode-1 {
+      sprint(scon.s, "%s %d ", scon.s, o.lincirnodes[j].index-1)
+    }
+    $o1.printf("//  %2d %s %s (%s)\n", i, o.pat, sname.s, scon.s)
+  }
+  $o1.printf("\n")
+}
+proc decl_out() {local i, j  localobj o, s, name
+  s = new String()
+  $o1.printf("public install, refill")
+  for i=0, elements.count-1 {
+    o = elements.o(i)
+    if (o.part >= CELL) {
+      name = cellname(o)
+      if (name == nil) {execerror("no label on cell port")}
+      $o1.printf(", %s_loc", name.s)
+    }
+  }
+  for i=0, elements.count-1 {
+    o = elements.o(i)
+    s.s = ""
+    for j=0, o.val.size-1 {
+      if (o.part == OPAMP) {
+        s.s = o.pat.xparm[j].s
+      }
+      $o1.printf(", %s%s", s.s, o.names[0].s)
+    }
+  }
+  $o1.printf("\n //also see the aliases in proc init() for more public names\n")
+  $o1.printf("public _lm, _c, _g, _b, _y, _y0, _sl, _xloc, _layer, _afac\n")
+  $o1.printf("objref this,_lm,  _c, _g, _b, _y, _y0, _srs[1], _sl, _xloc, _layer, _afac\n")
+}
+proc init_out() {local n, nc, i, j, k  localobj o, sel, s
+  s = new String()
+  n = bvec.size-1
+  $o1.printf("proc init() { localobj _sf\
+  _n = %d\
+  _c = new Matrix(_n,_n,2)\
+  _g = new Matrix(_n,_n,2)\
+  _b = new Vector(_n)\
+  _y = new Vector(_n)\
+  _y0 = new Vector(_n)\
+", n)
+  // count the cell ports
+  nc = 0
+  for i=0, elements.count-1 {
+    o = elements.o(i)
+    if (o.pat == parts.o(CELL)) { nc += 1 }
+    if (o.pat == parts.o(CELL+1)) { nc += 2 }
+  }
+  ncellport = nc // needed in mat_out
+  // space to describe cell ports
+  $o1.printf("\
+  _ncellport = %d\
+  objref _srs[_ncellport+1] // in case _ncellport=0\
+  _xloc = new Vector(_ncellport)\
+  _layer = new Vector(_ncellport)\
+  _afac = new Vector(_ncellport)\
+", nc)
+  $o1.printf("  _sf = new StringFunctions()\n")
+  // analogous to statemap code
+  $o1.printf("  // element parameters\n")
+  for i=0, elements.count-1 {
+    o = elements.o(i)
+    s.s = ""
+    for j=0, o.val.size-1 {
+      if (o.part == OPAMP) {
+        s.s = o.pat.xparm[j].s
+      }
+      $o1.printf("  %s%s = %g\n", s.s, o.names[0].s, o.val.x[j])
+    }
+  }
+  $o1.printf("  // named voltage nodes and initial conditions\n")
+  for i=1, lincirnodes.count - 1 { // skip ground node
+    o = lincirnodes.o(i)
+    k = -1
+    for j=0, o.elements.count-1 {
+      sel = o.elements.o(j)
+      k = o.ends.x(j) + 1
+      if (sel.names[k] == nil) {
+        k = -1
+      }else{
+        break
+      }
+    }
+    if (k != -1) {
+      $o1.printf("  _sf.alias(this, \"%s\", &_y.x[%d])\n", sel.names[k].s, o.index - 1)
+      if (i > ncellport) {
+        $o1.printf("  _sf.alias(this, \"%s_0\", &_y0.x[%d])\n", sel.names[k].s, o.index - 1)
+      }
+    }
+  }
+  $o1.printf("  // internal states\n")
+  for i=0, elements.count-1 {
+    o = elements.o(i)
+    for j=0, o.pat.extra_eqn-1 {
+      if (o.names[0] != nil) {
+        $o1.printf("  _sf.alias(this, \"i_%s\", &_y.x[%d])\n", o.names[0].s, o.indices.x[o.nnode+j]-1)
+      }
+    }
+  }
+  $o1.printf("  // stimuli\n")
+  for i=0, elements.count-1 {
+    o = elements.o(i)
+    if (o.part == BAT || o.part == CUR) {
+      if (o.part == BAT) { s.s = "E" } else {s.s = "I"}	
+      if (o.names[0] != nil) {
+        $o1.printf("  _sf.alias(this, \"%s_%s\", &_b.x[%d])\n", s.s, o.names[0].s, o.indices.x[2]-1)
+      }
+    }
+  }
+  $o1.printf("}\n")
+}
+proc portfunc_out() {local i,j,k, ix  localobj o, lcn, name
+  for i=0, elements.count-1 {
+    o = elements.o(i)
+    if (o.part >= CELL) { 
+      // node name is bizarrely complex
+      name = cellname(o)
+      if (name == nil) {execerror("no label on cell port")}
+      $o1.printf("proc %s_loc() {local ix\n", name.s)
+
+      for j=0, o.nnode-1 {
+        $o1.printf("  ix = %d\n", o.lincirnodes[j].index-1)
+        $o1.printf("  _srs[ix] = new SectionRef()\
+  _xloc.x[ix] = $1\
+  _layer.x[ix] = %d\n", j)
+      }
+      $o1.printf("}\n")
+    } 
+  }
+}
+proc mat_out() {
+  $o1.printf("proc refill() {local i,a\n")
+  $o1.printf("  for i=0, _ncellport-1 _srs[i].sec {\
+    a = area(_xloc.x[i])\
+    if (a == 0) { a = 100 }\
+    _afac.x[i] = -100./a\
+  }\n")
+  cmatsym.pr("  _c.x", $o1, ncellport)
+  gmatsym.pr("  _g.x", $o1, ncellport)
+  bvecsym.pr("  _b.x", $o1, ncellport)
+  $o1.printf("}\n")
+}
+proc install_out() {
+  $o1.printf("proc install() { local i\
+  _sl = new SectionList()\
+  for i=0, _ncellport-1 {\
+    _srs[i].sec { _sl.append() }\
+  }\
+  refill()\
+  _y.copy(_y0)\
+  _lm = new LinearMechanism(_c, _g, _y, _y0, _b, _sl, _xloc, _layer)\
+}\n")
+}
+
+
+proc fill_eqn_sym() { local i, j, a, inode
+	cmat.zero
+	gmat.zero
+	bvec.fill(0)
+	cmatsym = new LinCirMatSym(cmat.nrow, gmat.ncol)
+	gmatsym = new LinCirMatSym(cmat.nrow, gmat.ncol)
+	bvecsym = new LinCirMatSym(cmat.nrow, 1)
+	for i=0, elements.count - 1 {
+		elements.object(i).setup_mat(cmat, gmat, bvec)
+		elements.object(i).setup_mat_sym(cmatsym, gmatsym, bvecsym)
+	}
+	// the groundnode equation is just v[groundnode] = 0
+	i = groundnode.index
+	cmatsym.zerorow(i)
+	gmatsym.zerorow(i)
+	bvecsym.zerorow(i)
+	gmatsym.add(i,i,"1.0")
+	// multiply segment current balance equations by -100/area to satisfy our convention
+	// fac is 100 for since we must convert nanoamps/micron2 to millamp/cm2
+	// thus for our circuit, R is Megohm, v is mV, t is ms, C is nF
+	for i=0, elements.count-1 {
+		tobj = elements.object(i)
+		if (tobj.part >= CELL) {
+			if (tobj.extra_info.sec == nil) {
+				a = 0
+			}else{
+				tobj.extra_info.sec.sec { a = area(tobj.extra_info.x)}
+			}
+			if (a == 0) { a = 100 }
+			for j=0, tobj.nnode-1 {
+				inode = tobj.lincirnodes[j].index
+//print tobj.names[0].s, " inode=", inode, "a=", a
+				cmat.setrow(inode, cmat.getrow(inode).mul(-100/a))
+				gmat.setrow(inode, gmat.getrow(inode).mul(-100/a))
+				bvec.x[inode] *= -100/a
+			}
+		}
+	}
+}
+
 func setup_matrix() {local i, j, k
 	def_nodes()
 	// merge the ground nodes
@@ -1044,7 +1343,9 @@ if (0) {
 	gmat = new Matrix(neq, neq)
 	bvec = new Vector(neq)
 	yinit.resize(neq)
-	fill_eqn()
+	if ($1 == 1) {
+		fill_eqn()
+	}
 	return 1
 }
 
@@ -1061,11 +1362,12 @@ proc reorder() {local i, j, k
 			for k=0, tobj.elements.count-1 {
 				tobj1 = tobj.elements.object(k)
 				if (tobj1.part >= CELL) {
-					if (tobj1.extra_info.sec != nil) {
+					// reorder even if not located
+					//if (tobj1.extra_info.sec != nil) {
 						lincirnodes.remove(i)
 						lincirnodes.insrt(j, tobj)
 						j += 1
-					}
+					//}
 				}
 			}
 		}
@@ -1176,7 +1478,7 @@ sprint(tstr, "Circuit equations have %d inconsistencies", ns)
 }
 
 proc pr_singular() {local ns
-	setup_matrix()
+	setup_matrix(1)
 	ns = n_singular()
 	prnodes("Matrix equations")
 	print "cmat" inmat.muls(-1).add(gmat).muls(-1).printf

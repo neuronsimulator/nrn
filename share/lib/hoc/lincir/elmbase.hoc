@@ -27,6 +27,78 @@ proc re_index() {local i
 }
 endtemplate LinearCircuitNode
 
+begintemplate LinCirMatSym
+public add, sub, val, exists, zerorow, nrow, ncol, pr
+objref m[1][1]
+proc init() {
+	nrow = $1
+	ncol = $2
+	objref m[$1][$2]
+}
+obfunc val() { return m[$1][$2] }
+func exists() { if (object_id(m[$1][$2]) == 0) return 0 else return 1 }
+proc add() {
+	if (!exists($1,$2)) {
+		m[$1][$2] = new String($s3)
+	}else{
+		sprint(m[$1][$2].s, "%s + %s", m[$1][$2].s, $s3)
+	}
+}
+
+proc sub() {
+	if (!exists($1,$2)) {
+		m[$1][$2] = new String()
+		sprint(m[$1][$2].s, "-%s", $s3)
+	}else{
+		sprint(m[$1][$2].s, "%s - %s", m[$1][$2].s, $s3)
+	}
+}
+
+proc zerorow() {local j localobj nil
+	for j=0, ncol-1 {
+		m[$1][j] = nil
+	}
+}
+proc pr() { local i, j, nc
+  nc = 0
+  if (numarg() > 2) { nc = $3 }
+  //ground equation and ground voltage state removed if $s1
+  for i=0,nrow-1 {
+    for j=0, ncol-1 {
+      if (exists(i,j)) {
+         if (numarg() > 0) {
+           if (i == 0 || j == 0) { continue }
+           if (ncol == 1) {
+             if (numarg() > 1) {
+               if (i <= nc) {
+                 $o2.printf("%s[%d] = (%s)*_afac.x[%d]\n", $s1, i-1, m[i][0].s, i-1)
+               }else{
+                 $o2.printf("%s[%d] = %s\n", $s1, i-1, m[i][0].s)
+               }
+             }else{
+               printf("%s[%d] = %s\n", $s1, i-1, m[i][0].s)
+             }
+           }else{
+             if (numarg() > 1) {
+               if (i <= nc) {
+                 $o2.printf("%s[%d][%d] = (%s)*_afac.x[%d]\n", $s1, i-1, j-1, m[i][j].s, i-1)
+               }else{
+                 $o2.printf("%s[%d][%d] = %s\n", $s1, i-1, j-1, m[i][j].s)
+               }
+             }else{
+               printf("%s[%d][%d] = %s\n", $s1, i-1, j-1, m[i][j].s)
+             }
+           }
+         }else{
+           printf("m[%d][%d] = %s\n", i, j, m[i][j].s)
+         }
+      }
+    }
+  }
+}
+
+endtemplate LinCirMatSym
+
 // too bad there is no inheritance
 // patterns involve a set of nodes so that every node is at a grid point
 // as long as the location is at a grid point. This basically means that
@@ -37,7 +109,7 @@ endtemplate LinearCircuitNode
 
 begintemplate ElementBase
 
-public indices, extra_eqn, setup_mat, extra_info
+public indices, extra_eqn, setup_mat, setup_mat_sym, extra_info
 public pat, scale, angle, selected, x, y, location, move, ends, pl, plc, val
 public nodes, tr, nd, part, valedit, lincirnodes, nnode, setalias
 public move_label, names, names_x, names_y, valmap, ic
@@ -70,6 +142,12 @@ proc init() {
 //print names[0].s
 		names_x = new Vector(nnode+1, 15)
 		names_y = new Vector(nnode+1, 15)
+		// default cell label location should not interfere
+		// with selecting a node to specify a label
+		if (strcmp(pat.name, "S") == 0) {
+			names_x.x[0] = 0
+			names_y.x[0] = 0
+		}
 	}
 	indices = new Vector(pat.extra_eqn + nnode)
 }
@@ -122,6 +200,10 @@ func extra_eqn() {
 
 proc setup_mat() {
 	pat.setup_matrix($o1, $o2, $o3, val, indices)
+}
+
+proc setup_mat_sym() {
+	pat.setup_matrix_sym($o1, $o2, $o3, names[0], indices)
 }
 
 func res() {
@@ -252,6 +334,7 @@ endtemplate ElementBase
 
 begintemplate Resistor
 public nodes, g, len, val, default, extra_eqn, setup_matrix, name
+public setup_matrix_sym
 public setalias
 objref nodes, g
 strdef name
@@ -280,6 +363,17 @@ proc setup_matrix() {local g, i, j // cmat, rmat, bvec, val, indices
 	$o2.x[j][i] += g
 }
 
+proc setup_matrix_sym() {local i, j  localobj g // cmat, rmat, bvec, val, indices
+	g = new String()
+	sprint(g.s, "1.0/%s", $o4.s)
+	i = $o5.x[0]
+	j = $o5.x[1]
+	$o2.sub(i, i, g.s)
+	$o2.add(i, j, g.s)
+	$o2.sub(j, j, g.s)
+	$o2.add(j, i, g.s)
+}
+
 proc default() {
 	$o1.append(1) //Mohm
 }
@@ -294,6 +388,7 @@ endtemplate Resistor
 
 begintemplate Wire
 public nodes, g, len, val, default, extra_eqn, setup_matrix, name
+public setup_matrix_sym
 public setalias
 objref nodes, g
 strdef name
@@ -310,6 +405,7 @@ proc init() {
 }
 
 proc setup_matrix(){}
+proc setup_matrix_sym(){}
 
 proc default() {
 }
@@ -323,6 +419,7 @@ endtemplate Wire
 
 begintemplate Capacitor
 public nodes, g, len, val, default, extra_eqn, setup_matrix, name
+public setup_matrix_sym
 public setalias
 objref nodes, g
 strdef name
@@ -356,6 +453,16 @@ proc setup_matrix() {local c, i, j // cmat, rmat, bvec, val, indices
 	$o1.x[j][j] -= c
 	$o1.x[j][i] += c
 }
+proc setup_matrix_sym() {local i, j localobj c// cmat, rmat, bvec, val, indices
+	c = new String()
+	sprint(c.s, "%s", $o4.s)
+	i = $o5.x[0]
+	j = $o5.x[1]
+	$o1.sub(i,i,c.s)
+	$o1.add(i,j,c.s)
+	$o1.sub(j,j,c.s)
+	$o1.add(j,i,c.s)
+}
 proc default() {
 	$o1.append(1) // nanofarad
 }
@@ -370,6 +477,7 @@ endtemplate Capacitor
 
 begintemplate Inductor
 public nodes, g, len, val, default, extra_eqn, setup_matrix, name, ename
+public setup_matrix_sym
 public setalias
 objref nodes, g
 strdef name
@@ -411,6 +519,20 @@ proc setup_matrix() {local ell, i, j, k // cmat, rmat, bvec, val, indices
 	$o2.x[k][j] += 1
 	$o1.x[k][k] += 0.001*ell //kiloHenry
 }
+proc setup_matrix_sym() {local i, j, k localobj ell// cmat, rmat, bvec, val, indices
+	// since cy' + gy = b we want vj - vi = LI'
+	// equations are analogous to both a battery and a capacitor
+	ell = new String()
+	sprint(ell.s, "0.001*%s", $o4.s)
+	i = $o5.x[0]
+	j = $o5.x[1]
+	k = $o5.x[2]
+	$o2.sub(i,k,"1.0")
+	$o2.add(j,k,"1.0")
+	$o2.sub(k,i,"1.0")
+	$o2.add(k,i,"1.0")
+	$o2.add(k,k,ell.s)
+}
 proc default() {
 	$o1.append(1000) // 1 kiloHenry
 }
@@ -428,6 +550,7 @@ endtemplate Inductor
 
 begintemplate SourceInfo
 public dur, amp, tvec, changed_dur, play, box, save, restore
+public setup_matrix_sym
 public setalias, xtrn, set_xtrn
 objref dur, amp, tvec, box
 strdef tstr
@@ -487,6 +610,7 @@ endtemplate SourceInfo
 
 begintemplate Battery
 public nodes, g, len, val, default, extra_eqn, setup_matrix, name, ename
+public setup_matrix_sym
 public setalias
 objref nodes, g
 strdef  name
@@ -521,6 +645,21 @@ proc setup_matrix() {local e, i, j, k // cmat, rmat, bvec, val, indices
 	$o2.x[k][j] = 1
 }
 
+proc setup_matrix_sym() {local i, j, k localobj e // cmat, rmat, bvec, val, indices
+	// since cy' + gy = b, we want vj - vi = e
+	// for the k equation. current leaves node i and enters node j.
+	i = $o5.x[0]
+	j = $o5.x[1]
+	k = $o5.x[2]
+	e = new String()
+	sprint(e.s, "e_%s", $o4.s)
+	$o2.sub(i,k,"1.0")
+	$o2.add(j,k,"1.0")
+	$o3.add(k,0, e.s)
+	$o2.sub(k,i,"1.0")
+	$o2.add(k,j,"1.0")
+}
+
 proc default() {
 	$o2 = new SourceInfo()
 }
@@ -537,6 +676,7 @@ endtemplate Battery
 
 begintemplate Current
 public nodes, g, len, val, default, extra_eqn, setup_matrix, name, ename
+public setup_matrix_sym
 public setalias
 objref nodes, g
 strdef  name
@@ -570,6 +710,20 @@ proc setup_matrix() {local cur, i, j, k // cmat, rmat, bvec, val, indices
 	$o2.x[j][k] += 1
 }
 
+proc setup_matrix_sym() {local i, j, k  localobj cur// cmat, rmat, bvec, val, indices
+	// add and subtract current at the nodes
+	i = $o5.x[0]
+	j = $o5.x[1]
+	k = $o5.x[2]
+//print "Current ", cur, " to nodes ", i, j
+	cur = new String()
+	sprint(cur.s, "i_%s", $o4.s)
+	$o3.add(k,0, cur.s)
+	$o2.add(k,k, "1.0") // must turn out =
+	$o2.sub(i,k, "1.0")
+	$o2.add(k,i, "1.0")
+}
+
 proc default() {
 	$o2 = new SourceInfo()
 }
@@ -586,6 +740,7 @@ endtemplate Current
 
 begintemplate Ground
 public nodes, g, len, val, default, extra_eqn, setup_matrix, name
+public setup_matrix_sym
 public setalias
 objref nodes, g
 strdef name
@@ -610,6 +765,9 @@ proc setup_matrix(){local i, j // cmat, rmat, bvec, val, indices
 	$o2.x[j][i] = 1
 }
 
+proc setup_matrix_sym(){
+}
+
 proc default() {
 }
 
@@ -622,12 +780,15 @@ endtemplate Ground
 
 begintemplate OpAmp
 public nodes, g, len, val, default, extra_eqn, setup_matrix, name, ename
+public setup_matrix_sym, xparm
 public setalias
-objref nodes, g
+objref nodes, g, xparm[2]
 strdef name
 
 proc init() {
 	name = "A"
+	xparm[0] = new String("gain_")
+	xparm[1] = new String("tau_")
 	extra_eqn = 1
 	len = 40
 	nodes = new Matrix(3,2)
@@ -666,6 +827,27 @@ proc setup_matrix() {local gain, tau, i, j, k, o // cmat, rmat, bvec, val, indic
 	$o2.x[o][k] = 1
 }
 
+proc setup_matrix_sym() {local i, j, k, o  localobj gain, tau// cmat, rmat, bvec, val, indices
+	// o is the current output and the row is the equation that determines vk
+	gain = new String()
+	sprint(gain.s, "%s%s", xparm[0].s, $o4.s)
+	tau = new String()
+	sprint(tau.s, "%s%s", xparm[1].s, $o4.s)
+	i = $o5.x[0] // - node
+	j = $o5.x[1] // + node
+	k = $o5.x[2] // output node
+	o = $o5.x[3] // current output
+//printf("i=%d j=%d k=%d o=%d\n", i, j, k, o)
+	// nothing for the input nodes
+	// the output node adds the o current
+	$o2.add(k,o,"1.0")
+	// now the o equation tau*dvk/dt + gain*(vi - vj) + vk = 0
+	$o1.add(o,k,tau.s)
+	$o2.add(o,i,gain.s)
+	$o2.sub(o,j,gain.s)
+	$o2.add(o,k,"1.0")
+}
+
 proc default() {
 	$o1.append(1e6, 0) // gain, tau (ms)
 }
@@ -691,6 +873,7 @@ endtemplate OpAmp
 
 begintemplate InsideCell_Info
 public sec, x, select, set, name, has_loc
+public setup_matrix_sym
 public setalias
 objref sec, sh, this, pp
 strdef tstr
@@ -748,6 +931,7 @@ endtemplate InsideCell_Info
 
 begintemplate InsideCell
 public nodes, g, len, val, default, extra_eqn, setup_matrix, name
+public setup_matrix_sym
 public setalias
 objref nodes, g, sloc
 strdef name
@@ -773,6 +957,9 @@ proc setup_matrix(){local i, c, g // cmat, rmat, bvec, val, indices
 	//$o2.x[i][i] -= g
 }
 
+proc setup_matrix_sym(){local i, c, g // cmat, rmat, bvec, val, indices
+}
+
 proc default() {
 //	$o1.append(.001, 1) // S, uF
 	$o2 = new InsideCell_Info()
@@ -787,6 +974,7 @@ endtemplate InsideCell
 
 begintemplate OutsideCell // actually just InsideCell + 1 extracellular layer
 public nodes, g, len, val, default, extra_eqn, setup_matrix, name
+public setup_matrix_sym
 public setalias
 objref nodes, g, sloc
 strdef name
@@ -812,6 +1000,9 @@ proc setup_matrix(){local i, c, g // cmat, rmat, bvec, val, indices
 	//i = $o5.x[0]
 	//$o1.x[i][i] -= c
 	//$o2.x[i][i] -= g
+}
+
+proc setup_matrix_sym(){local i, c, g // cmat, rmat, bvec, val, indices
 }
 
 proc default() {

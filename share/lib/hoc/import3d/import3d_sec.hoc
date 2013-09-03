@@ -115,10 +115,16 @@ proc pl_point() {local i
 
 proc mkglyph() {local i, d1, d2   localobj x, y, norm, x1, y1, i1
 	g = new Glyph()
-	if (xyz.ncol - first < 2) { return }
+	if (xyz.ncol - first < 1) { return }
 	// normal
 	x1 = xyz.getrow(0)
 	y1 = xyz.getrow(1)
+	if (xyz.ncol - first == 1) {
+		// render as spherical
+		g.circle(x1.x[0], y1.x[0], d.x[0]/2)
+		g.fill(1)
+		return
+	}
 	// may or may not want to include parent point in glyph
 	x = x1.c(first).deriv(1,1)
 	y = y1.c(first).deriv(1,1)

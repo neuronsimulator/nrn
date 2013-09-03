@@ -149,11 +149,11 @@ proc sectionify() {local i, si  localobj tobj
 	mark_branch(tobj)
 
 	point2sec = new Vector(id.size)
-	// first two points are definitely in section 0
+	// first point in the root and if only one point it will be interpreted
+	// as spherical.
 	point2sec.x[0] = 0
-	point2sec.x[1] = 0
 	si = 0
-	for i=2, id.size-1 {
+	for i=1, id.size-1 {
 		if (tobj.x[pid.x[i]] > 1) {
 			si += 1
 		}
@@ -181,11 +181,11 @@ proc mark_branch() { local i, p
 	// point type changes with branch points.
 
 	// however warn if the first two points do not have the same type
+	// if single point soma set the spherical_soma flag
 	if ( type.x[0] != type.x[1]) {
 		err = 1
-printf("\nNotice: %s:\nThe first two points have different types (%d and %d) but\n    a single point root section is not allowed.\n    Changing point id %d so that it is type %d.\n    If this is an incorrect repair, then change the file.\n"\
-, file.getname, type.x[0], type.x[1], pt2id(1), type.x[0])
-		type.x[1] = type.x[0]
+printf("\nNotice: %s:\nThe first two points have different types (%d and %d) but\n    a single point NEURON section is not allowed.\n    Interpreting the point as the center of a sphere of\n    radius %g at location (%g, %g, %g)\n    Will represent as 3-point cylinder with L=diam and with all\n    children kept at their 1st point positions and connected\n    with wire to middle point.\n    If this is an incorrect guess, then change the file.\n"\
+, file.getname, type.x[0], type.x[1], d.x[0]/2, x.x[0], y.x[0], z.x[0])
 	}
 
 	$o1 = new Vector(id.size)
@@ -225,7 +225,14 @@ proc mksection() { local i, isec, first   localobj sec
 	if (isec > 0) {// branches have pid as first point
 		sec = new Import3d_Section(first, i-first+1)
 		pt2sec(pid.x[first], sec.parentsec)
-		if (pid.x[first] == 0) { sec.parentx = 0 }
+		// but if the parent is the root and the branch has more than
+		// one point, then connect to center of root with wire
+		if (point2sec.x[pid.x[first]] == 0 && i > 1) {
+			sec.parentx = 0.5
+			sec.first = 1
+		}else{
+			if (pid.x[first] == 0) { sec.parentx = 0 }
+		}
 		sec.append(0, pid.x[first], 1, x, y, z, d)
 		sec.append(1, first, i-first, x, y, z, d)
 	}else{// pid not first point in root section
