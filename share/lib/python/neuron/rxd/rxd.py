@@ -255,9 +255,18 @@ def _currents(rhs):
                     if c is not None:
                         _rxd_induced_currents[c] += sign * cur
 
+_fixed_step_count = 0
 preconditioner = None
-def _fixed_step_solve(dt):
-    global preconditioner, pinverse
+def _fixed_step_solve(raw_dt):
+    global preconditioner, pinverse, _fixed_step_count
+
+    # allow for skipping certain fixed steps
+    # warning: this risks numerical errors!
+    fixed_step_factor = options.fixed_step_factor
+    _fixed_step_count += 1
+    if _fixed_step_count % fixed_step_factor: return
+    dt = fixed_step_factor * raw_dt
+    
     # TODO: this probably shouldn't be here
     if _diffusion_matrix is None: _setup_matrices()
 
