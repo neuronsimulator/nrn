@@ -39,7 +39,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #if !defined(_M_IX86) && !defined(_M_X64)
 #  error "This code has only been tested on x86 platforms."
 { // maybe an unbalanced brace will terminate the compilation
-// You are invited to try Easy123 on other architectures, by changing
+// You are invited to try Random123 on other architectures, by changing
 // the conditions that reach this error, but you should consider it a
 // porting exercise and expect to encounter bugs and deficiencies.
 // Please let the authors know of any successes (or failures).
@@ -79,14 +79,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 // An alternative idiom is:
 // #ifndef R123_SOMETHING
-// #define R123_SOMETHING (some bool expression)
+// #define R123_SOMETHING (some boolean expression)
 // #endif
-// where the bool expression might contain previously-defined R123_SOMETHING_ELSE
+// where the boolean expression might contain previously-defined R123_SOMETHING_ELSE
 // pp-symbols.
-
-#ifndef R123_USE_CXX0X
-#define R123_USE_CXX0X 0
-#endif
 
 #ifndef R123_USE_AES_NI
 #if defined(_M_X64)
@@ -116,10 +112,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define R123_USE_SSE 1
 #endif
 
-#ifndef R123_USE_STD_RANDOM
-#define R123_USE_STD_RANDOM 1
-#endif
-
 #ifndef R123_USE_AES_OPENSSL
 #define R123_USE_AES_OPENSSL 0
 #endif
@@ -142,6 +134,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #ifndef R123_USE_IA32INTRIN_H
 #define R123_USE_IA32INTRIN_H 0
+#endif
+
+#ifndef R123_USE_XMMINTRIN_H
+#define R123_USE_XMMINTRIN_H 0
 #endif
 
 #ifndef R123_USE_EMMINTRIN_H

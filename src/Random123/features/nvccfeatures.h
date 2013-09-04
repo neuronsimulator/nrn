@@ -32,6 +32,24 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef __r123_nvcc_features_dot_h__
 #define __r123_nvcc_features_dot_h__
 
+#if !defined(CUDART_VERSION)
+#error "why are we in nvccfeatures.h if CUDART_VERSION is not defined"
+#endif
+
+#if CUDART_VERSION < 4010
+#error "CUDA versions earlier than 4.1 produce incorrect results for some templated functions in namespaces.  Random123 isunsupported.  See comments in nvccfeatures.h"
+// This test was added in Random123-1.08 (August, 2013) because we
+// discovered that Ftype(maxTvalue<T>()) with Ftype=double and
+// T=uint64_t in examples/uniform.hpp produces -1 for CUDA4.0 and
+// earlier.  We can't be sure this bug doesn't also affect invocations
+// of other templated functions, e.g., essentially all of Random123.
+// Thus, we no longer trust CUDA versions earlier than 4.1 even though
+// we had previously tested and timed Random123 with CUDA 3.x and 4.0.
+// If you feel lucky or desperate, you can change #error to #warning, but
+// please take extra care to be sure that you are getting correct
+// results.
+#endif
+
 // nvcc falls through to gcc or msvc.  So first define
 // a couple of things and then include either gccfeatures.h
 // or msvcfeatures.h
@@ -70,6 +88,12 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #ifndef R123_USE_GNU_UINT128
 #define R123_USE_GNU_UINT128 0
+#endif
+
+#ifndef R123_ULONG_LONG
+// uint64_t, which is what we'd get without this, is
+// not the same as unsigned long long
+#define R123_ULONG_LONG unsigned long long
 #endif
 
 #ifndef R123_THROW
