@@ -363,7 +363,7 @@ def numpy_element_ref(numpy_array, index):
         using slices. If the array is multi-dimensional,
         the user must figure out the integer index to the desired element.
     """
-    global _nrn_dll, _double_ptr, _double_size
+    global _nrn_dll, _double_ptr, _double_size, _nrn_hocobj_ptr
     if _nrn_hocobj_ptr is None:
         _nrn_hocobj_ptr = nrn_dll_sym('nrn_hocobj_ptr')
         import ctypes
