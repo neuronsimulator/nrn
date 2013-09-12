@@ -364,9 +364,9 @@ def numpy_element_ref(numpy_array, index):
         the user must figure out the integer index to the desired element.
     """
     global _nrn_dll, _double_ptr, _double_size, _nrn_hocobj_ptr
+    import ctypes
     if _nrn_hocobj_ptr is None:
         _nrn_hocobj_ptr = nrn_dll_sym('nrn_hocobj_ptr')
-        import ctypes
         _nrn_hocobj_ptr.restype = ctypes.py_object    
         _double_ptr = ctypes.POINTER(ctypes.c_double)
         _double_size = ctypes.sizeof(ctypes.c_double)
