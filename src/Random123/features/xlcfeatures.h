@@ -1,4 +1,3 @@
-/* modified from gccfeatures.h for use with bgxlc_r */
 /*
 Copyright 2010-2011, D. E. Shaw Research.
 All rights reserved.
@@ -29,24 +28,47 @@ DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
 THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+Copyright (c) 2013, Los Alamos National Security, LLC
+All rights reserved.
+
+Copyright 2013. Los Alamos National Security, LLC. This software was produced
+under U.S. Government contract DE-AC52-06NA25396 for Los Alamos National
+Laboratory (LANL), which is operated by Los Alamos National Security, LLC for
+the U.S. Department of Energy. The U.S. Government has rights to use,
+reproduce, and distribute this software.  NEITHER THE GOVERNMENT NOR LOS
+ALAMOS NATIONAL SECURITY, LLC MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR
+ASSUMES ANY LIABILITY FOR THE USE OF THIS SOFTWARE.  If software is modified
+to produce derivative works, such modified software should be clearly marked,
+so as not to confuse it with the version available from LANL.
 */
 #ifndef __xlcfeatures_dot_hpp
 #define __xlcfeatures_dot_hpp
 
-#if defined(__xlC__)
-#define XLC_VERSION __xlC
+#if !defined(__x86_64__) && !defined(__i386__) && !defined(__powerpc__)
+#  error "This code has only been tested on x86 and PowerPC platforms."
+#include <including_a_nonexistent_file_will_stop_some_compilers_from_continuing_with_a_hopeless_task>
+{ /* maybe an unbalanced brace will terminate the compilation */
+ /* Feel free to try the Random123 library on other architectures by changing
+ the conditions that reach this error, but you should consider it a
+ porting exercise and expect to encounter bugs and deficiencies.
+ Please let the authors know of any successes (or failures). */
+#endif
+
+#ifdef __cplusplus
+/* builtins are automatically available to xlc.  To use them with xlc++,
+   one must include builtins.h.   c.f
+   http://publib.boulder.ibm.com/infocenter/cellcomp/v101v121/index.jsp?topic=/com.ibm.xlcpp101.cell.doc/compiler_ref/compiler_builtins.html
+*/
+#include <builtins.h>
 #endif
 
 #ifndef R123_STATIC_INLINE
-#define R123_STATIC_INLINE static __inline__
+#define R123_STATIC_INLINE static inline
 #endif
 
 #ifndef R123_FORCE_INLINE
-#if 0
-#define R123_FORCE_INLINE(decl) decl __attribute__((always_inline))
-#else
-#define R123_FORCE_INLINE(decl) decl
-#endif
+#define R123_FORCE_INLINE(decl) decl __attribute__((__always_inline__))
 #endif
 
 #ifndef R123_CUDA_DEVICE
@@ -62,56 +84,20 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define R123_BUILTIN_EXPECT(expr,likely) __builtin_expect(expr,likely)
 #endif
 
-#ifndef R123_USE_CXX0X
-/* According to the C++0x standard, we should be able to test the numeric
-   value of __cplusplus == 199701L for C++98, __cplusplus == 201103L for C++0x
-   But gcc has had an open bug  http://gcc.gnu.org/bugzilla/show_bug.cgi?id=1773
-   since early 2001, which may finally be fixed in 4.7 (late 2011) */
-/* See the comments near r123m128i::r128m128i() = default in sse.h. for why
- we conditionalize CXX0X usage on GNU_VERSION */
-#if defined( __GXX_EXPERIMENTAL_CXX0X__ ) && GNU_VERSION >= 40600
-#define R123_USE_CXX0X 1
-#else
-#define R123_USE_CXX0X 0
-#endif
-#endif
-
 #ifndef R123_USE_AES_NI
-#ifdef __AES__
-#define R123_USE_AES_NI 1
-#else
 #define R123_USE_AES_NI 0
-#endif
 #endif
 
 #ifndef R123_USE_SSE4_2
-#ifdef __SSE4_2__
-#define R123_USE_SSE4_2 1
-#else
 #define R123_USE_SSE4_2 0
-#endif
 #endif
 
 #ifndef R123_USE_SSE4_1
-#ifdef __SSE4_1__
-#define R123_USE_SSE4_1 1
-#else
 #define R123_USE_SSE4_1 0
-#endif
 #endif
 
 #ifndef R123_USE_SSE
-/* There's no point in trying to compile SSE code in Random123
-   unless SSE2 is available. */
-#ifdef __SSE2__
-#define R123_USE_SSE 1
-#else
 #define R123_USE_SSE 0
-#endif
-#endif
-
-#ifndef R123_USE_STD_RANDOM
-#define R123_USE_STD_RANDOM (R123_USE_CXX0X && GNUC_VERSION>=40500)
 #endif
 
 #ifndef R123_USE_AES_OPENSSL
@@ -124,11 +110,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #endif
 
 #ifndef R123_USE_GNU_UINT128
-#ifdef __x86_64__
-#define R123_USE_GNU_UINT128 1
-#else
 #define R123_USE_GNU_UINT128 0
-#endif
 #endif
 
 #ifndef R123_USE_ASM_GNU
@@ -140,24 +122,23 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #endif
 
 #ifndef R123_USE_X86INTRIN_H
-#define R123_USE_X86INTRIN_H (GNUC_VERSION >= 40402)
+#define R123_USE_X86INTRIN_H 0
 #endif
 
 #ifndef R123_USE_IA32INTRIN_H
 #define R123_USE_IA32INTRIN_H 0
 #endif
 
+#ifndef R123_USE_XMMINTRIN_H
+#define R123_USE_XMMINTRIN_H 0
+#endif
+
 #ifndef R123_USE_EMMINTRIN_H
-/* gcc -m64 on Solaris 10 defines __SSE2__ but doesn't have 
-   emmintrin.h in the include search path.  This is
-   so broken that I refuse to try to work around it.  If this
-   affects you, figure out where your emmintrin.h lives and
-   add an appropriate -I to your CPPFLAGS.  Or add -DR123_USE_SSE=0. */
-#define R123_USE_EMMINTRIN_H (R123_USE_SSE && (GNUC_VERSION < 40402))
+#define R123_USE_EMMINTRIN_H 0
 #endif
 
 #ifndef R123_USE_SMMINTRIN_H
-#define R123_USE_SMMINTRIN_H ((R123_USE_SSE4_1 || R123_USE_SSE4_2) && (GNUC_VERSION < 40402))
+#define R123_USE_SMMINTRIN_H 0
 #endif
 
 #ifndef R123_USE_WMMINTRIN_H
@@ -165,15 +146,35 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #endif
 
 #ifndef R123_USE_INTRIN_H
+#ifdef __ABM__
+#define R123_USE_INTRIN_H 1
+#else
 #define R123_USE_INTRIN_H 0
+#endif
 #endif
 
 #ifndef R123_USE_MULHILO32_ASM
 #define R123_USE_MULHILO32_ASM 0
 #endif
 
+#ifndef R123_USE_MULHILO64_MULHI_INTRIN
+#define R123_USE_MULHILO64_MULHI_INTRIN (defined(__powerpc64__))
+#endif
+
+#ifndef R123_MULHILO64_MULHI_INTRIN
+#define R123_MULHILO64_MULHI_INTRIN __mulhdu
+#endif
+
+#ifndef R123_USE_MULHILO32_MULHI_INTRIN
+#define R123_USE_MULHILO32_MULHI_INTRIN 0
+#endif
+
+#ifndef R123_MULHILO32_MULHI_INTRIN
+#define R123_MULHILO32_MULHI_INTRIN __mulhwu
+#endif
+
 #ifndef R123_USE_MULHILO64_ASM
-#define R123_USE_MULHILO64_ASM 0
+#define R123_USE_MULHILO64_ASM (defined(__powerpc64__) && !(R123_USE_MULHILO64_MULHI_INTRIN))
 #endif
 
 #ifndef R123_USE_MULHILO64_MSVC_INTRIN

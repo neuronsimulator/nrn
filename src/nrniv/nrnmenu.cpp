@@ -31,6 +31,7 @@ extern int* nrn_has_net_event_;
 extern short* nrn_is_artificial_;
 extern int node_index(Section*, double);
 extern char* pnt_map;
+extern void nrn_parent_info(Section*);
 
 // to nrnoc
 void nrnallsectionmenu();
@@ -1042,6 +1043,7 @@ Point_process* MechanismType::pp_begin() {
 		hoc_execerror("Not a MechanismType(1)", 0);
 	}
 	mti_->sec_iter_ = chk_access();
+	nrn_parent_info(mti_->sec_iter_);
 	mti_->p_iter_ = 0;
 	if (mti_->sec_iter_->parentnode) {
 		mti_->inode_iter_ = -1;

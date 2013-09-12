@@ -66,14 +66,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 // An alternative idiom is:
 // #ifndef R123_SOMETHING
-// #define R123_SOMETHING (some bool expression)
+// #define R123_SOMETHING (some boolean expression)
 // #endif
-// where the bool expression might contain previously-defined R123_SOMETHING_ELSE
+// where the boolean expression might contain previously-defined R123_SOMETHING_ELSE
 // pp-symbols.
-
-#ifndef R123_USE_CXX0X
-#define R123_USE_CXX0X 0
-#endif
 
 #ifndef R123_USE_AES_NI
 #define R123_USE_AES_NI 0
@@ -89,10 +85,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #ifndef R123_USE_SSE
 #define R123_USE_SSE 0
-#endif
-
-#ifndef R123_USE_STD_RANDOM
-#define R123_USE_STD_RANDOM 0
 #endif
 
 #ifndef R123_USE_AES_OPENSSL
@@ -117,6 +109,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #ifndef R123_USE_IA32INTRIN_H
 #define R123_USE_IA32INTRIN_H 0
+#endif
+
+#ifndef R123_USE_XMMINTRIN_H
+#define R123_USE_XMMINTRIN_H 0
 #endif
 
 #ifndef R123_USE_EMMINTRIN_H

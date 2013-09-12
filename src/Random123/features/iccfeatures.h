@@ -33,7 +33,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define __icpcfeatures_dot_hpp
 
 // icc relies on gcc libraries and other toolchain components.
-#define GNUC_VERSION (__GNUC__*10000 + __GNUC_MINOR__*100 + __GNUC_PATCHLEVEL__)
+#define R123_GNUC_VERSION (__GNUC__*10000 + __GNUC_MINOR__*100 + __GNUC_PATCHLEVEL__)
 
 #if !defined(__x86_64__) && !defined(__i386__)
 #  error "This code has only been tested on x86 platforms."
@@ -78,14 +78,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 // An alternative idiom is:
 // #ifndef R123_SOMETHING
-// #define R123_SOMETHING (some bool expression)
+// #define R123_SOMETHING (some boolean expression)
 // #endif
-// where the bool expression might contain previously-defined R123_SOMETHING_ELSE
+// where the boolean expression might contain previously-defined R123_SOMETHING_ELSE
 // pp-symbols.
-
-#ifndef R123_USE_CXX0X
-#define R123_USE_CXX0X 0
-#endif
 
 #ifndef R123_USE_SSE4_2
 #ifdef __SSE4_2__
@@ -126,10 +122,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define R123_USE_AES_NI ((__ICC>=1101) && defined(__AES__))
 #endif
 
-#ifndef R123_USE_STD_RANDOM
-#define R123_USE_STD_RANDOM 0
-#endif
-
 #ifndef R123_USE_AES_OPENSSL
 /* There isn't really a good way to tell at compile time whether
    openssl is available.  Without a pre-compilation configure-like
@@ -157,6 +149,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #ifndef R123_USE_IA32INTRIN_H
 #define R123_USE_IA32INTRIN_H 1
+#endif
+
+#ifndef R123_USE_XMMINTRIN_H
+#define R123_USE_XMMINTRIN_H 0
 #endif
 
 #ifndef R123_USE_EMMINTRIN_H
