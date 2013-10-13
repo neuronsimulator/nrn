@@ -268,7 +268,7 @@ def _fixed_step_solve(raw_dt):
     dt = fixed_step_factor * raw_dt
     
     # TODO: this probably shouldn't be here
-    if _diffusion_matrix is None: _setup_matrices()
+    if _diffusion_matrix is None and _euler_matrix is None: _setup_matrices()
 
     states = _node_get_states()[:]
 
