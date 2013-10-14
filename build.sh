@@ -9,7 +9,7 @@
 aclocal -I m4
 
 ltarg="-i"
-if test -f /usr/bin/glibtoolize ; then
+if test -f "`which glibtoolize`" ; then
 	ltver=`glibtoolize --version | sed -n '1s/.* \([0-9]\).*/\1/p'`
 	if test "${ltver}" = 1 ; then ltarg="" ; fi
 	echo "glibtoolize -c -f $ltarg"

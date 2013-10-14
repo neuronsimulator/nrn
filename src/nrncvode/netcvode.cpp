@@ -4475,7 +4475,6 @@ NetCon* NetCvode::install_deliver(double* dsrc, Section* ssrc, Object* osrc,
 	NetCon* d = new NetCon(ps, target);
 	d->delay_ = delay;
 	d->weight_[0] = magnitude;
-	for (i=1;i<d->cnt_;i++) { d->weight_[i]=0.; }
 	structure_change_cnt_ = 0;
 	return d;
 }
@@ -4573,6 +4572,7 @@ NetCon::NetCon(PreSyn* src, Object* target) {
 		active_ = false;
 		cnt_ = 1;
 		weight_ = new double[cnt_];
+		weight_[0] = 0.0;
 		return;
 	}
 	target_ = ob2pntproc(target);
@@ -4587,6 +4587,9 @@ hoc_execerror("No NET_RECEIVE in target PointProcess:", hoc_object_name(target))
 	weight_ = nil;
 	if (cnt_) {
 		weight_ = new double[cnt_];
+		for (int i=0; i < cnt_; ++i) {
+			weight_[i] = 0.0;
+		}
 	}
 }
 
