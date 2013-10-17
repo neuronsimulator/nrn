@@ -231,7 +231,7 @@ class Species(_SpeciesMathable):
         if self._secs:
             self._offset = self._secs[0]._offset
         else:
-            raise Exception('no sections specified')
+            self._offset = 0
         self._has_adjusted_offsets = False
         self._assign_parents()
         self._update_region_indices()

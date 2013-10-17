@@ -267,7 +267,7 @@ def _diffusion_matrix_solve(dt, rhs):
     global _last_dt
     global _diffusion_a_ptr, _diffusion_d, _diffusion_b_ptr, _diffusion_p_ptr, _c_diagonal
 
-    if _diffusion_matrix is None: return
+    if _diffusion_matrix is None: return numpy.array([])
 
     n = len(rhs)
 
@@ -327,7 +327,7 @@ def _reaction_matrix_solve(dt, rhs):
             data += r_data
             count += 1
             
-    if count > 0:
+    if count > 0 and n > 0:
         jac = scipy.sparse.coo_matrix((data, (rows, cols)), shape=(n, n)).tocsr()
         #result, info = scipy.sparse.linalg.bicgstab(jac, rhs)
         #assert(info == 0)
