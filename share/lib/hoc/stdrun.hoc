@@ -249,7 +249,7 @@ proc buildmenu() {local has_rxd
     xmenu("import KSChan", "cbimportmenu()")
     xmenu()
     if (has_rxd) {
-        xbutton("RxD Builder", "nrnpython(\"import neuron.rxd\") nrnpython(\"neuron.rxd.gui.RxDBuilder()\")")
+        xbutton("RxD Builder", "nrnpython(\"import neuron.rxd.gui\") nrnpython(\"neuron.rxd.gui.RxDBuilder()\")")
     }
     xmenu()
 }

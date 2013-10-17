@@ -16,7 +16,6 @@ import geometry
 from multiCompartmentReaction import MultiCompartmentReaction
 from rxd import re_init
 import dimension3
-import gui
 from rangevar import RangeVar
 from geometry import membrane, inside, Shell, FractionalVolume, FixedCrossSection, FixedPerimeter, ScalableBorder
 # deprecated:
