@@ -258,7 +258,7 @@ def constructive_neuronal_geometry(source, int n_soma_step, double dx):
                     delta_x /= n_soma_step
                     delta_y /= n_soma_step
                     
-                    f_pts = [major_p1]
+                    f_pts = [extreme1]
                     f_diams = [0]
                     
                     # CTNG:slicesoma
@@ -276,7 +276,7 @@ def constructive_neuronal_geometry(source, int n_soma_step, double dx):
                         f_pts.append((cx, cy))
                         f_diams.append(linalg.norm(p1 - p2))
                     
-                    f_pts.append(major_p2)
+                    f_pts.append(extreme2)
                     f_diams.append(0)
                     
                     for i in xrange(len(f_pts) - 1):

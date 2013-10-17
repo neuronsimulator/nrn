@@ -144,7 +144,7 @@ def _ode_reinit(y):
 
 def _ode_fun(t, y, ydot):
     current_dimension = region._sim_dimension
-    if region._sim_dimension == 3: raise RxDException('cvode not supported yet for 3D')
+    if current_dimension == 3: raise RxDException('cvode not supported yet for 3D')
     lo = _rxd_offset
     hi = lo + len(_nonzero_volume_indices)
     if lo == hi: return
@@ -173,10 +173,10 @@ def _ode_fun(t, y, ydot):
         if d:
             states[i] = -v / d
     """
-    if region._sim_dimension == 1:
+    if current_dimension == 1:
         # TODO: refactor so this isn't in section1d?
         _section1d_transfer_to_legacy()        
-    elif region._sim_dimension == 3:
+    elif current_dimension == 3:
         for sr in _species_get_all_species().values():
             s = sr()
             if s is not None: s._transfer_to_legacy()
@@ -268,7 +268,7 @@ def _fixed_step_solve(raw_dt):
     dt = fixed_step_factor * raw_dt
     
     # TODO: this probably shouldn't be here
-    if _diffusion_matrix is None: _setup_matrices()
+    if _diffusion_matrix is None and _euler_matrix is None: _setup_matrices()
 
     states = _node_get_states()[:]
 
@@ -464,8 +464,20 @@ def _ode_jacobian(dt, t, ypred, fpred):
     #print '_ode_jacobian: dt = %g, last_dt = %r' % (dt, _last_dt)
     _reaction_matrix_setup(dt, fpred)
 
-_callbacks = [_setup, None, _currents, _conductance, _fixed_step_solve,
-              _ode_count, _ode_reinit, _ode_fun, _ode_solve, _ode_jacobian, None]
+
+# wrapper functions allow swapping in experimental alternatives
+def _w_ode_jacobian(dt, t, ypred, fpred): return _ode_jacobian(dt, t, ypred, fpred)
+def _w_conductance(d): return _conductance(d)
+def _w_setup(): return _setup()
+def _w_currents(rhs): return _currents(rhs)
+def _w_ode_count(offset): return _ode_count(offset)
+def _w_ode_reinit(y): return _ode_reinit(y)
+def _w_ode_fun(t, y, ydot): return _ode_fun(t, y, ydot)
+def _w_ode_solve(dt, t, b, y): return _ode_solve(dt, t, b, y)
+def _w_fixed_step_solve(raw_dt): return _fixed_step_solve(raw_dt)
+_callbacks = [_w_setup, None, _w_currents, _w_conductance, _w_fixed_step_solve,
+              _w_ode_count, _w_ode_reinit, _w_ode_fun, _w_ode_solve, _w_ode_jacobian, None]
+
 nbs.register(_callbacks)
 
 _curr_ptr_vector = None
