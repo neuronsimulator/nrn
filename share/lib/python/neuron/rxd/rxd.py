@@ -289,14 +289,10 @@ def _fixed_step_solve(raw_dt):
         # the actual advance via implicit euler
         n = len(states)
         m = _scipy_sparse_eye(n, n) - dt * _euler_matrix
-        # TODO: pinverse should be updated whenever dt changes
-        if pinverse is not None:
-            pinverse = _scipy_sparse_diags([[1. / m.diagonal()]], [0], shape=(n, n), format='csr', dtype='d')
-        #result, info = _scipy_sparse_linalg_bicgstab(m, states + dt * b, M=pinverse)
-        result, info = _scipy_sparse_linalg_bicgstab(m, states, M=pinverse)
-        result += dt * b
+        # removed diagonal preconditioner since tests showed no improvement in convergence
+        result, info = _scipy_sparse_linalg_bicgstab(m, dt * b)
         assert(info == 0)
-        states[:] = result
+        states[:] += result
 
         for sr in _species_get_all_species().values():
             s = sr()
@@ -548,7 +544,7 @@ def _setup_matrices():
             if s is not None: s._setup_matrices3d(_euler_matrix)
 
         _euler_matrix = _euler_matrix.tocsr()
-
+        _diffusion_matrix = -_euler_matrix
         _update_node_data(True)
         
 
