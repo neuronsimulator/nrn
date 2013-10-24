@@ -28,6 +28,7 @@ typedef char Symbol;
 #extern "C" {
 #endif
 
+extern double celsius;
 extern double t, dt;
 extern int secondorder;
 extern int stoprun;

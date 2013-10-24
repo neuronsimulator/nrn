@@ -52,7 +52,7 @@ void nrn_finitialize(int setv, double v) {
 		nrn_nonvint_block_init(nt->id);
 		NrnThreadMembList* tml;
 		for (tml = nt->tml; tml; tml = tml->next) {
-			Pfri s = memb_func[tml->index].initialize;
+			mod_f_t s = memb_func[tml->index].initialize;
 			if (s) {
 				(*s)(nt, tml->ml, tml->index);
 			}
@@ -63,7 +63,7 @@ void nrn_finitialize(int setv, double v) {
 	  i = memb_order_[iord];
 	  /* first clause due to MULTICORE */
 	  if (nrn_is_artificial_[i]) if (memb_func[i].initialize) {
-	    Pfri s = memb_func[i].initialize;
+	    mod_f_t s = memb_func[i].initialize;
 	    if (memb_list[i].nodecount){
 		(*s)(nrn_threads, memb_list + i, i);
 	    }

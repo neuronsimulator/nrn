@@ -1,11 +1,12 @@
 #ifndef multicore_h
 #define multicore_h
 
-#include <membfunc.h>
 
 #if defined(__cplusplus)
 extern "C" {
 #endif
+
+#include <membfunc.h>
 
 typedef struct NrnThreadMembList{ /* patterned after CvMembList in cvodeobj.h */
 	struct NrnThreadMembList* next;

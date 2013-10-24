@@ -1,6 +1,7 @@
 #include <nrnconf.h>
 
-#include	"membdef.h"
+#include <membdef.h>
+#include <math.h>
 #undef ret
 
 extern void hoc_register_prop_size(int, int, int);
@@ -16,7 +17,10 @@ static char *mechanism[] = { /*just a template*/
 static double ci0_na_ion;
 static double co0_na_ion;
 
-static ion_alloc(), ion_cur(), ion_init();
+static void ion_alloc(double*, Datum*, int);
+static void ion_cur(NrnThread*, Memb_list*, int);
+static void ion_init(NrnThread*, Memb_list*, int);
+
 double nrn_nernst(), nrn_ghk();
 static int na_ion, k_ion, ca_ion; /* will get type for these special ions */
 
@@ -69,13 +73,13 @@ ion_reg(name, valence)
 				sizeof(double*)*ion_global_map_size);
 		}
 		ion_global_map[mechtype] = (double*)emalloc(3*sizeof(double));
-		Sprintf(buf[0], "%si0_%s", name, s->name);
-		scdoub[0].name = buf[0];
-		scdoub[0].pdoub = ion_global_map[s->subtype];		
-		Sprintf(buf[1], "%so0_%s", name, s->name);
-		scdoub[1].name = buf[1];
-		scdoub[1].pdoub = ion_global_map[s->subtype] + 1;
-		hoc_register_var(scdoub, (DoubVec*)0, (IntFunc*)0);
+		//Sprintf(buf[0], "%si0_%s", name, buf[0]);
+		//scdoub[0].name = buf[0];
+		//scdoub[0].pdoub = ion_global_map[mechtype];		
+		Sprintf(buf[1], "%so0_%s", name, buf[0]);
+		//scdoub[1].name = buf[1];
+		//scdoub[1].pdoub = ion_global_map[mechtypepe] + 1;
+		//hoc_register_var(scdoub, (DoubVec*)0, (IntFunc*)0);
 		if (strcmp("na", name) == 0) {
 			na_ion = mechtype;
 			global_conci(mechtype) = DEF_nai;
@@ -96,19 +100,21 @@ ion_reg(name, valence)
 			global_conco(mechtype) = DEF_iono;
 			global_charge(mechtype) = VAL_SENTINAL;
 		}			
+#if 0 // only for hoc?
 		for (i=0; i < 3; ++i) { /* used to be nrnocCONST */
 			s->u.ppsym[i]->subtype = _AMBIGUOUS;
 		}
+#endif
 	}
 	val = global_charge(mechtype);
 	if (valence != VAL_SENTINAL && val != VAL_SENTINAL && valence != val) {
 		fprintf(stderr, "%s ion valence defined differently in\n\
 two USEION statements (%g and %g)\n",
-			s->name, valence, global_charge(mechtype));
+			buf[0], valence, global_charge(mechtype));
 		nrn_exit(1);
 	}else if (valence == VAL_SENTINAL && val == VAL_SENTINAL) {
 		fprintf(stderr, "%s ion valence must be defined in\n\
-the USEION statement of any model using this ion\n", s->name);
+the USEION statement of any model using this ion\n", buf[0]);
 		nrn_exit(1);
 	}else if (valence != VAL_SENTINAL) {
 		global_charge(mechtype) = valence;
@@ -131,52 +137,10 @@ double nrn_nernst(ci, co, z) double z, ci, co; {
 	}
 }
 
-nrn_wrote_conc(sym, pe, it) Symbol* sym; double* pe; int it; {
+void nrn_wrote_conc(int type, double* pe, int it) {
 	if (it & 04) {
-		pe[0] = nrn_nernst(pe[1], pe[2], nrn_ion_charge(sym));
+		pe[0] = nrn_nernst(pe[1], pe[2], nrn_ion_charge(type));
 	}
-}
-
-int nernst() {
-	double val;
-	
-	if (hoc_is_str_arg(1)) {
-		Symbol* s = hoc_lookup(gargstr(1));
-		if (s && ion_global_map[s->u.rng.type]) {
-			Section* sec = chk_access();
-			double* nrn_rangepointer();
-			Symbol* ion = memb_func[s->u.rng.type].sym;
-			double z = global_charge(s->u.rng.type);
-			double *ci, *co, *e, x;
-			if (ifarg(2)) {
-				x = chkarg(2, 0., 1.);
-			}else{
-				x = .5;
-			}
-			ci = nrn_rangepointer(sec, ion->u.ppsym[1] , x);
-			co = nrn_rangepointer(sec, ion->u.ppsym[2], x);
-			e = nrn_rangepointer(sec, ion->u.ppsym[0], x);
-			switch (s->u.rng.index) {
-			case 0:
-				val = nrn_nernst(*ci, *co, z);
-				ret(val);
-				return;
-			case 1:
-				val = *co*exp(-z/ktf* *e);
-				ret(val);
-				return;
-			case 2:
-				val = *ci*exp(z/ktf* *e);
-				ret(val);
-				return;
-			}
-		}
-		hoc_execerror(gargstr(1), " not a reversal potential or concentration");
-	}else{
-		val = nrn_nernst(*getarg(1), *getarg(2), *getarg(3));
-/*printf("nernst=%g\n", val);*/
-	}
-	ret(val);
 }
 
 static double efun(x) double x; {
@@ -217,7 +181,7 @@ ion_style("name_ion", [c_style, e_style, einit, eadvance, cinit])
  and models.
 */
 
-#define iontype ppd[i][0].i	/* how _AMBIGUOUS is to be handled */
+#define iontype ppd[i][0]	/* how _AMBIGUOUS is to be handled */
 /*the bitmap is
 03	concentration unused, nrnocCONST, DEP, STATE
 04	initialize concentrations
@@ -240,6 +204,7 @@ double nrn_nernst_coef(type) int type; {
 /*
 It is generally an error for two models to WRITE the same concentration
 */
+#if 0 /* likely determined from nrncore file format */
 void nrn_check_conc_write(p_ok, pion, i) Prop* p_ok, *pion; int i; {
 	static long *chk_conc_, *ion_bit_, size_;
 	Prop* p;
@@ -297,7 +262,9 @@ sprintf(buf, "%.*s%c is being written at the same location by %s and %s",
 	}
 	pion->dparam[0].i |= flag;
 }
+#endif
 
+#if 0 // hoc interface to specify the style.
 ion_style() {
 	Symbol* s;
 	int istyle, i, oldstyle;
@@ -348,7 +315,9 @@ ion_style() {
    }
 	ret((double)oldstyle);
 }
+#endif
 
+#if 0 // unlikely to be used by nrnbbcore
 int nrn_vartype(sym) Symbol* sym; {
 	int i;
 	i = sym->subtype;
@@ -371,14 +340,12 @@ int nrn_vartype(sym) Symbol* sym; {
 	}
 	return i;
 }
+#endif
 
 /* the ion mechanism it flag  defines how _AMBIGUOUS is to be interpreted */
-nrn_promote(p, conc, rev)
-	Prop* p;
-	int conc, rev;
-{
+void nrn_promote(Datum* dparam, int conc, int rev){
 	int oldconc, oldrev;
-	int* it = &p->dparam[0].i;
+	int* it = &dparam[0];
 	oldconc = (*it & 03);
 	oldrev = (*it & 030)>>3;
 	/* precedence */
@@ -406,9 +373,8 @@ nrn_promote(p, conc, rev)
 }
 
 /* Must be called prior to any channels which update the currents */
-static ion_cur(NrnThread* nt, Memb_list* ml, int type) {
+static void ion_cur(NrnThread* nt, Memb_list* ml, int type) {
 	int count = ml->nodecount;
-	Node** vnode = ml->nodelist;
 	double **pd = ml->data;
 	Datum **ppd = ml->pdata;
 	int i;
@@ -428,9 +394,8 @@ static ion_cur(NrnThread* nt, Memb_list* ml, int type) {
 /* Must be called prior to other models which possibly also initialize
 	concentrations based on their own states
 */
-static ion_init(NrnThread* nt, Memb_list* ml, int type) {
+static void ion_init(NrnThread* nt, Memb_list* ml, int type) {
 	int count = ml->nodecount;
-	Node** vnode = ml->nodelist;
 	double **pd = ml->data;
 	Datum **ppd = ml->pdata;
 	int i;
@@ -454,26 +419,22 @@ static ion_init(NrnThread* nt, Memb_list* ml, int type) {
 	}
 }
 
-static ion_alloc(p)
-	Prop *p;
-{
+static void ion_alloc(double* data, Datum* pdata, int type) {
 	double *pd[1];
 	int i=0;
-	
-	pd[0] = nrn_prop_data_alloc(p->type, nparm, p);
-	p->param_size = nparm;
+	pd[0] = data;	
 
 	cur = 0.;
 	dcurdv = 0.;
-	if (p->type == na_ion) {
+	if (type == na_ion) {
 		erev = DEF_ena;
 		conci = DEF_nai;
 		conco = DEF_nao;
-	}else if (p->type == k_ion) {
+	}else if (type == k_ion) {
 		erev = DEF_ek;
 		conci = DEF_ki;
 		conco = DEF_ko;
-	}else if (p->type == ca_ion) {
+	}else if (type == ca_ion) {
 		erev = DEF_eca;
 		conci = DEF_cai;
 		conco = DEF_cao;
@@ -482,13 +443,11 @@ static ion_alloc(p)
 		conci = DEF_ioni;
 		conco = DEF_iono;
 	}
-	p->param = pd[0];
 	
-	p->dparam = nrn_prop_datum_alloc(p->type, 1, p);
-	p->dparam->i = 0;
+	pdata[0] = 0;
 }
 
-second_order_cur(NrnThread* nt) {
+second_order_cur(NrnThread* _nt) {
 	extern int secondorder;
 	NrnThreadMembList* tml;
 	Memb_list* ml;
@@ -496,12 +455,12 @@ second_order_cur(NrnThread* nt) {
 #define c 3
 #define dc 4
   if (secondorder == 2) {
-	for (tml = nt->tml; tml; tml = tml->next) if (memb_func[tml->index].alloc == ion_alloc) {
+	for (tml = _nt->tml; tml; tml = tml->next) if (memb_func[tml->index].alloc == ion_alloc) {
 		ml = tml->ml;
 		i2 = ml->nodecount;
 		for (i = 0; i < i2; ++i) {
 			ml->data[i][c] += ml->data[i][dc]
-			   * ( NODERHS(ml->nodelist[i]) )
+			   * ( VEC_RHS(i) )
 			;
 		}
 	}

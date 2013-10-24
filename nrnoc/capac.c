@@ -3,7 +3,7 @@
 #include	"membdef.h"
 
 static char *mechanism[] = { "0", "capacitance", "cm",0, "i_cap", 0,0 };
-static void cap_alloc(double*, Datum*);
+static void cap_alloc(double*, Datum*, int type);
 static void cap_init(NrnThread*, Memb_list*, int);
 
 #define nparm 2
@@ -64,6 +64,6 @@ void nrn_capacity_current(NrnThread* _nt, Memb_list* ml) {
 
 /* the rest can be constructed automatically from the above info*/
 
-static void cap_alloc(double* data, Datum* pdata) {
+static void cap_alloc(double* data, Datum* pdata, int type) {
 	data[0] = DEF_cm;	/*default capacitance/cm^2*/
 }

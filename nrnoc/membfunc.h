@@ -1,22 +1,30 @@
 #ifndef nrn_memb_func_h
 #define nrn_memb_func_h
+
 #if defined(__cplusplus)
 extern "C" {
 #endif
 
+typedef struct NrnThread NrnThread;
+#include "nrnoc_ml.h"
+
 typedef Datum *(*Pfrpdat)();
 
-#define NULL_CUR (Pfri)0
-#define NULL_ALLOC (Pfri)0
-#define NULL_STATE (Pfri)0
-#define NULL_INITIALIZE (Pfri)0
+
+typedef void (*mod_alloc_t)(double*, Datum*, int);
+typedef void (*mod_f_t)(NrnThread*, Memb_list*, int);
+
+#define NULL_ALLOC (mod_alloc_t)0
+#define NULL_CUR (mod_f_t)0
+#define NULL_STATE (mod_f_t)0
+#define NULL_INITIALIZE (mod_f_t)0
 
 typedef struct Memb_func {
-	Pfri	alloc;
-	Pfri	current;
-	Pfri	jacob;
-	Pfri	state;
-	Pfri	initialize;
+	mod_alloc_t alloc;
+	mod_f_t	current;
+	mod_f_t	jacob;
+	mod_f_t	state;
+	mod_f_t	initialize;
 	Pfri	destructor;	/* only for point processes */
 	Symbol	*sym;
 	int vectorized;
@@ -29,9 +37,6 @@ typedef struct Memb_func {
 	int* dparam_semantics; // for nrncore writing.
 } Memb_func;
 
-#if VECTORIZE
-#include "nrnoc_ml.h"
-#endif
 
 #define VINDEX	-1
 #define CABLESECTION	1

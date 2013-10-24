@@ -124,7 +124,7 @@ static void nonvint(NrnThread* _nt)
 	NrnThreadMembList* tml;
 	errno = 0;
 	for (tml = _nt->tml; tml; tml = tml->next) if (memb_func[tml->index].state) {
-		Pfri s = memb_func[tml->index].state;
+		mod_f_t s = memb_func[tml->index].state;
 		(*s)(_nt, tml->ml, tml->index);
 		if (errno) {
 			if (nrn_errno_check(i)) {

@@ -22,7 +22,7 @@ static void nrn_rhs(NrnThread* _nt) {
 	nrn_ba(_nt, BEFORE_BREAKPOINT);
 	/* note that CAP has no current */
 	for (tml = _nt->tml; tml; tml = tml->next) if (memb_func[tml->index].current) {
-		Pfri s = memb_func[tml->index].current;
+		mod_f_t s = memb_func[tml->index].current;
 		(*s)(_nt, tml->ml, tml->index);
 		if (errno) {
 			if (nrn_errno_check(tml->index)) {
@@ -64,7 +64,7 @@ static void nrn_lhs(NrnThread* _nt) {
 
 	/* note that CAP has no jacob */
 	for (tml = _nt->tml; tml; tml = tml->next) if (memb_func[tml->index].jacob) {
-		Pfri s = memb_func[tml->index].jacob;
+		mod_f_t s = memb_func[tml->index].jacob;
 		(*s)(_nt, tml->ml, tml->index);
 		if (errno) {
 			if (nrn_errno_check(tml->index)) {
