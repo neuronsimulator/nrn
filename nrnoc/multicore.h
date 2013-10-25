@@ -8,15 +8,16 @@ extern "C" {
 
 #include <membfunc.h>
 
+
 typedef struct NrnThreadMembList{ /* patterned after CvMembList in cvodeobj.h */
 	struct NrnThreadMembList* next;
-	Memb_list* ml;
+	struct Memb_list* ml;
 	int index;
 } NrnThreadMembList;
 
 typedef struct NrnThreadBAList {
-	Memb_list* ml; /* an item in the NrnThreadMembList */
-	BAMech* bam;
+	struct Memb_list* ml; /* an item in the NrnThreadMembList */
+	struct BAMech* bam;
 	struct NrnThreadBAList* next;
 } NrnThreadBAList;
 
@@ -38,7 +39,7 @@ typedef struct NrnThread {
 	double* _actual_area;
 	int* _v_parent_index;
 	char* _sp13mat; /* handle to general sparse matrix */
-	Memb_list* _ecell_memb_list; /* normally nil */
+	struct Memb_list* _ecell_memb_list; /* normally nil */
 
 #if 1
 	double _ctime; /* computation time in seconds (using nrnmpi_wtime) */

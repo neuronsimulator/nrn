@@ -31,7 +31,7 @@ void nrn_cap_jacob(NrnThread* _nt, Memb_list* ml) {
 	double **vdata = ml->data;
 	int i;
 	double cfac = .001 * _nt->cj;
-	{ //if (use_cachevec) {
+	{ /*if (use_cachevec) {*/
 		int* ni = ml->nodeindices;
 		for (i=0; i < count; i++) {
 			VEC_D(ni[i]) += cfac*cm;

@@ -5,14 +5,14 @@
 extern "C" {
 #endif
 
-typedef struct NrnThread NrnThread;
 #include "nrnoc_ml.h"
 
 typedef Datum *(*Pfrpdat)();
 
+struct NrnThread;
 
 typedef void (*mod_alloc_t)(double*, Datum*, int);
-typedef void (*mod_f_t)(NrnThread*, Memb_list*, int);
+typedef void (*mod_f_t)(struct NrnThread*, Memb_list*, int);
 
 #define NULL_ALLOC (mod_alloc_t)0
 #define NULL_CUR (mod_f_t)0
@@ -34,7 +34,7 @@ typedef struct Memb_func {
 	void (*thread_table_check_)(double*, Datum*, Datum*, void*, int);
 	void (*_update_ion_pointers)(Datum*);
 	int is_point;
-	int* dparam_semantics; // for nrncore writing.
+	int* dparam_semantics; /* for nrncore writing. */
 } Memb_func;
 
 

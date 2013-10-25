@@ -73,13 +73,17 @@ ion_reg(name, valence)
 				sizeof(double*)*ion_global_map_size);
 		}
 		ion_global_map[mechtype] = (double*)emalloc(3*sizeof(double));
-		//Sprintf(buf[0], "%si0_%s", name, buf[0]);
-		//scdoub[0].name = buf[0];
-		//scdoub[0].pdoub = ion_global_map[mechtype];		
+		Sprintf(buf[0], "%si0_%s", name, buf[0]);
+#if 0
+		scdoub[0].name = buf[0];
+		scdoub[0].pdoub = ion_global_map[mechtype];		
+#endif
 		Sprintf(buf[1], "%so0_%s", name, buf[0]);
-		//scdoub[1].name = buf[1];
-		//scdoub[1].pdoub = ion_global_map[mechtypepe] + 1;
-		//hoc_register_var(scdoub, (DoubVec*)0, (IntFunc*)0);
+#if 0
+		scdoub[1].name = buf[1];
+		scdoub[1].pdoub = ion_global_map[mechtypepe] + 1;
+		hoc_register_var(scdoub, (DoubVec*)0, (IntFunc*)0);
+#endif
 		if (strcmp("na", name) == 0) {
 			na_ion = mechtype;
 			global_conci(mechtype) = DEF_nai;
@@ -100,7 +104,7 @@ ion_reg(name, valence)
 			global_conco(mechtype) = DEF_iono;
 			global_charge(mechtype) = VAL_SENTINAL;
 		}			
-#if 0 // only for hoc?
+#if 0 /* only for hoc? */
 		for (i=0; i < 3; ++i) { /* used to be nrnocCONST */
 			s->u.ppsym[i]->subtype = _AMBIGUOUS;
 		}
@@ -264,7 +268,7 @@ sprintf(buf, "%.*s%c is being written at the same location by %s and %s",
 }
 #endif
 
-#if 0 // hoc interface to specify the style.
+#if 0 /* hoc interface to specify the style. */
 ion_style() {
 	Symbol* s;
 	int istyle, i, oldstyle;
@@ -317,7 +321,7 @@ ion_style() {
 }
 #endif
 
-#if 0 // unlikely to be used by nrnbbcore
+#if 0 /* unlikely to be used by nrnbbcore */
 int nrn_vartype(sym) Symbol* sym; {
 	int i;
 	i = sym->subtype;
