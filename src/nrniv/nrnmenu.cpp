@@ -238,7 +238,7 @@ static void pnodemenu(Prop* p1, double x, int type, const char* path, MechSelect
 #endif
 
 #if HAVE_IV
-static bool is_const(const char* path, const char* name) {
+static bool nrn_is_const(const char* path, const char* name) {
 	char buf[256];
 	sprintf(buf,
 "%s for (hoc_ac_) if (hoc_ac_ > 0 && hoc_ac_ < 1) if (%s(hoc_ac_) != %s(.5)) {hoc_ac_ = 0  break}\n",
@@ -277,7 +277,7 @@ if (ISARRAY(vsym)) {
 		if (i > 5) break;
 		sprintf(n, "%s[%d]", vsym->name, i);
 		if (path) {
-			if (is_const(path, n)) {
+			if (nrn_is_const(path, n)) {
 				sprintf(buf, "%s.%s", path, n);
 				hoc_ivvalue(n, buf, deflt);
 			}else{
@@ -291,7 +291,7 @@ if (ISARRAY(vsym)) {
 	}
 }else{
 					if (path) {
-					 if (is_const(path, vsym->name)) {
+					 if (nrn_is_const(path, vsym->name)) {
 					   sprintf(buf, "%s.%s", path, vsym->name);
 					   hoc_ivvalue(vsym->name, buf, deflt);
 					 }else{

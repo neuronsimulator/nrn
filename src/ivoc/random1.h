@@ -8,7 +8,7 @@ struct Object;
 
 class Rand {
 public:
-  Rand(unsigned long seed, int size, Object*);
+  Rand(unsigned long seed = 0, int size = 55, Object* obj = NULL);
   ~Rand();
   RNG *gen;
   Random *rand;
