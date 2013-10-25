@@ -49,8 +49,8 @@ void nrn_finitialize(int setv, double v) {
 #if MULTICORE
 	for (i=0; i < nrn_nthread; ++i) {
 		NrnThread* nt = nrn_threads + i;
-		nrn_nonvint_block_init(nt->id);
 		NrnThreadMembList* tml;
+		nrn_nonvint_block_init(nt->id);
 		for (tml = nt->tml; tml; tml = tml->next) {
 			mod_f_t s = memb_func[tml->index].initialize;
 			if (s) {
