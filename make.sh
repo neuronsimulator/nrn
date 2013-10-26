@@ -1,8 +1,8 @@
 nrnmpiSRC='nrnmpi mpispike'
 
-nrnocSRC='capac eion finitialize fadvance_core solve_core treeset_core'
+nrnocSRC='capac eion finitialize fadvance_core solve_core treeset_core nrnoc_aux'
 
-nrnivSRC='netpar netcvode cxprop cvodestb tqueue'
+nrnivSRC='netpar netcvode cxprop cvodestb tqueue htlist ivlistimpl'
 
 rm -r -f *.o
 

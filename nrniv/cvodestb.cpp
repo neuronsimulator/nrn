@@ -9,7 +9,7 @@ bool at_time(NrnThread*, double);
 #define nt_dt nrn_threads->_dt
 extern void nrn_random_play();
 
-NetCvode* net_cvode_instance;
+extern NetCvode* net_cvode_instance;
 void deliver_net_events(NrnThread*);
 void nrn_deliver_events(NrnThread*);
 void clear_event_queue();
