@@ -1,16 +1,14 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 #include <nrnmpi.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include <InterViews/resource.h>
 #define ALTHASH 1
 #if ALTHASH
 #include <nrnhash_alt.h>
 #else
 #include <nrnhash.h>
 #endif
-#include <bbs.h>
 
 #undef MD
 #define MD 2147483648.
@@ -69,7 +67,7 @@ static double set_mindelay(double maxdelay);
 
 #if NRNMPI
 
-#include "../nrnmpi/mpispike.h"
+#include <mpispike.h>
 
 extern "C" {
 void nrn_timeout(int);
@@ -290,7 +288,7 @@ void nrn_outputevent(unsigned char localgid, double firetime) {
 	idxout_ += 2;
 	if (idxout_ >= spfixout_capacity_) {
 		spfixout_capacity_ *= 2;
-		spfixout_ = (unsigned char*)hoc_Erealloc(spfixout_, spfixout_capacity_*sizeof(unsigned char)); hoc_malchk();
+		spfixout_ = (unsigned char*)erealloc(spfixout_, spfixout_capacity_*sizeof(unsigned char));
 	}
 	spfixout_[i++] = (unsigned char)((firetime - t_exchange_)*dt1_ + .5);
 	spfixout_[i] = localgid;
@@ -308,7 +306,7 @@ void nrn2ncs_outputevent(int gid, double firetime) {
 	idxout_ += 1 + localgid_size_;
 	if (idxout_ >= spfixout_capacity_) {
 		spfixout_capacity_ *= 2;
-		spfixout_ = (unsigned char*)hoc_Erealloc(spfixout_, spfixout_capacity_*sizeof(unsigned char)); hoc_malchk();
+		spfixout_ = (unsigned char*)erealloc(spfixout_, spfixout_capacity_*sizeof(unsigned char));
 	}
 //printf("%d nrnncs_outputevent %d %.20g %.20g %d\n", nrnmpi_myid, gid, firetime, t_exchange_,
 //(int)((unsigned char)((firetime - t_exchange_)*dt1_ + .5)));
@@ -321,7 +319,7 @@ void nrn2ncs_outputevent(int gid, double firetime) {
 	int i = nout_++;
 	if (i >= ocapacity_) {
 		ocapacity_ *= 2;
-		spikeout_ = (NRNMPI_Spike*)hoc_Erealloc(spikeout_, ocapacity_*sizeof(NRNMPI_Spike)); hoc_malchk();
+		spikeout_ = (NRNMPI_Spike*)erealloc(spikeout_, ocapacity_*sizeof(NRNMPI_Spike));
 	}		
 //printf("%d cell %d in slot %d fired at %g\n", nrnmpi_myid, gid, i, firetime);
 	spikeout_[i].gid = gid;
@@ -400,10 +398,10 @@ void nrn_spike_exchange_init() {
 //printf("nrnmpi_use=%d active=%d\n", nrnmpi_use, active_);
 	calc_actual_mindelay();	
 	usable_mindelay_ = mindelay_;
-	if (cvode_active_ == 0 && nrn_nthread > 1) {
+	if (nrn_nthread > 1) {
 		usable_mindelay_ -= dt;
 	}
-	if ((usable_mindelay_ < 1e-9) || (cvode_active_ == 0 && usable_mindelay_ < dt)) {
+	if ((usable_mindelay_ < 1e-9) || (usable_mindelay_ < dt)) {
 		if (nrnmpi_myid == 0) {
 			hoc_execerror("usable mindelay is 0", "(or less than dt for fixed step method)");
 		}else{
@@ -568,7 +566,6 @@ void nrn_spike_exchange_compressed() {
 	nrnmpi_barrier();
 #endif
 	TBUF
-	assert(!cvode_active_);
 	double wt;
 	int i, n, idx;
 #if NRNSTAT
@@ -820,7 +817,6 @@ void nrn_fake_fire(int gid, double spiketime, int fake_out) {
 
 static void alloc_space() {
 	if (!gid2out_) {
-		netcon_sym_ = hoc_lookup("NetCon");
 #if ALTHASH
 		gid2out_ = new Gid2PreSyn(1000);
 		gid2in_ = new Gid2PreSyn(500000);
@@ -830,19 +826,19 @@ static void alloc_space() {
 #endif
 #if NRNMPI
 		ocapacity_  = 100;
-		spikeout_ = (NRNMPI_Spike*)hoc_Emalloc(ocapacity_*sizeof(NRNMPI_Spike)); hoc_malchk();
+		spikeout_ = (NRNMPI_Spike*)emalloc(ocapacity_*sizeof(NRNMPI_Spike));
 		icapacity_  = 100;
-		spikein_ = (NRNMPI_Spike*)hoc_Emalloc(icapacity_*sizeof(NRNMPI_Spike)); hoc_malchk();
-		nin_ = (int*)hoc_Emalloc(nrnmpi_numprocs*sizeof(int)); hoc_malchk();
+		spikein_ = (NRNMPI_Spike*)malloc(icapacity_*sizeof(NRNMPI_Spike));
+		nin_ = (int*)emalloc(nrnmpi_numprocs*sizeof(int));
 #if nrn_spikebuf_size > 0
-spbufout_ = (NRNMPI_Spikebuf*)hoc_Emalloc(sizeof(NRNMPI_Spikebuf)); hoc_malchk();
-spbufin_ = (NRNMPI_Spikebuf*)hoc_Emalloc(nrnmpi_numprocs*sizeof(NRNMPI_Spikebuf)); hoc_malchk();
+spbufout_ = (NRNMPI_Spikebuf*)emalloc(sizeof(NRNMPI_Spikebuf));
+spbufin_ = (NRNMPI_Spikebuf*)emalloc(nrnmpi_numprocs*sizeof(NRNMPI_Spikebuf));
 #endif
 #endif
 	}
 }
 
-void BBS::set_gid2node(int gid, int nid) {
+void BBS_set_gid2node(int gid, int nid) {
 	alloc_space();
 #if NRNMPI
 	if (nid == nrnmpi_myid) {
@@ -869,7 +865,7 @@ void BBS::set_gid2node(int gid, int nid) {
 	}
 }
 
-int BBS::gid_exists(int gid) {
+int BBS_gid_exists(int gid) {
 	PreSyn* ps;
 	alloc_space();
 	if (gid2out_->find(gid, ps)) {
@@ -883,9 +879,8 @@ int BBS::gid_exists(int gid) {
 	return 0;
 }
 
-void BBS::cell() {
-	int gid = int(chkarg(1, 0., MD));
-	PreSyn* ps;
+// not sure this will be used
+void BBS_cell(int gid, PreSyn* ps) {
 	if (gid2in_->find(gid, ps)) {
 		char buf[100];
 		sprintf(buf, "gid=%d is in the input list. Must register prior to connecting", gid);
@@ -896,12 +891,6 @@ void BBS::cell() {
 		sprintf(buf, "gid=%d has not been set on rank %d", gid, nrnmpi_myid);
 		hoc_execerror(buf, 0);
 	}
-	Object* ob = *hoc_objgetarg(2);
-	if (!ob || ob->ctemplate != netcon_sym_->u.ctemplate) {
-		check_obj_type(ob, "NetCon");
-	}
-	NetCon* nc = (NetCon*)ob->u.this_pointer;
-	ps = nc->src_;
 //printf("%d cell %d %s\n", nrnmpi_myid, gid, hoc_object_name(ps->ssrc_ ? nrn_sec2cell(ps->ssrc_) : ps->osrc_));
 #if ALTHASH
 	gid2out_->insert(gid, ps);
@@ -909,14 +898,10 @@ void BBS::cell() {
 	(*gid2out_)[gid] = ps;
 #endif
 	ps->gid_ = gid;
-	if (ifarg(3) && !chkarg(3, 0., 1.)) {
-		ps->output_index_ = -2; //prevents destruction of PreSyn
-	}else{
-		ps->output_index_ = gid;
-	}
+	ps->output_index_ = gid;
 }
 
-void BBS::outputcell(int gid) {
+void BBS_outputcell(int gid) {
 	PreSyn* ps;
 	assert(gid2out_->find(gid, ps));
 	assert(ps);
@@ -924,7 +909,7 @@ void BBS::outputcell(int gid) {
 	ps->gid_ = gid;
 }
 
-void BBS::spike_record(int gid, IvocVect* spikevec, IvocVect* gidvec) {
+void BBS_spike_record(int gid, IvocVect* spikevec, IvocVect* gidvec) {
 	PreSyn* ps;
     if (gid >= 0) {
 	assert(gid2out_->find(gid, ps));
@@ -939,11 +924,7 @@ void BBS::spike_record(int gid, IvocVect* spikevec, IvocVect* gidvec) {
     }
 }
 
-Object** BBS::gid_connect(int gid) {
-	Object* target = *hoc_objgetarg(2);
-	if (!is_point_process(target)) {
-		hoc_execerror("arg 2 must be a point process", 0);
-	}
+NetCon* BBS_gid_connect(int gid, Point_process* target) {
 	alloc_space();
 	PreSyn* ps;
 	if (gid2out_->find(gid, ps)) {
@@ -967,24 +948,8 @@ Object** BBS::gid_connect(int gid) {
 #endif
 		ps->gid_ = gid;
 	}
-	NetCon* nc;
-	Object** po;
-	if (ifarg(3)) {
-		po = hoc_objgetarg(3);
-		if (!*po || (*po)->ctemplate != netcon_sym_->u.ctemplate) {
-			check_obj_type(*po, "NetCon");
-		}
-		nc = (NetCon*)((*po)->u.this_pointer);
-		if (nc->target_ != ob2pntproc(target)) {
-			hoc_execerror("target is different from 3rd arg NetCon target", 0);
-		}
-		nc->replace_src(ps);
-	}else{
-		nc = new NetCon(ps, target);
-		po = hoc_temp_objvar(netcon_sym_, nc);
-		nc->obj_ = *po;
-	}
-	return po;
+	NetCon* nc = new NetCon(ps, target);
+	return nc;
 }
 
 static int timeout_ = 20;
@@ -995,15 +960,11 @@ int nrn_set_timeout(int timeout) {
 	return tt;
 }
 
-void BBS::netpar_solve(double tstop) {
+void BBS_netpar_solve(double tstop) {
 #if NRNMPI
 	double mt, md;
 	tstopunset;
-	if (cvode_active_) {
-		mt = 1e-9 ; md = mindelay_;
-	}else{
-		mt = dt ; md = mindelay_ - 1e-10;
-	}
+	mt = dt ; md = mindelay_ - 1e-10;
 	if (md < mt) {
 		if (nrnmpi_myid == 0) {
 			hoc_execerror("mindelay is 0", "(or less than dt for fixed step method)");
@@ -1015,13 +976,10 @@ void BBS::netpar_solve(double tstop) {
 
 	nrn_timeout(timeout_);
 	wt = nrnmpi_wtime();
-	if (cvode_active_) {
-		ncs2nrn_integrate(tstop);
-	}else{
-		ncs2nrn_integrate(tstop*(1.+1e-11));
-	}
-	impl_->integ_time_ += nrnmpi_wtime() - wt;
-	impl_->integ_time_ -= (npe_ ? (npe_[0].wx_ + npe_[0].ws_) : 0.);
+	ncs2nrn_integrate(tstop*(1.+1e-11));
+//figure out where to store these
+//	impl_->integ_time_ += nrnmpi_wtime() - wt;
+//	impl_->integ_time_ -= (npe_ ? (npe_[0].wx_ + npe_[0].ws_) : 0.);
 #if BGPDMA
 	if (use_bgpdma_) {
 #if BGP_INTERVAL == 2
@@ -1038,11 +996,11 @@ void BBS::netpar_solve(double tstop) {
 	nrn_spike_exchange();
 #endif
 	nrn_timeout(0);
-	impl_->wait_time_ += wt_;
-	impl_->send_time_ += wt1_;
+//	impl_->wait_time_ += wt_;
+//	impl_->send_time_ += wt1_;
 	if (npe_) {
-		impl_->wait_time_ += npe_[0].wx_;
-		impl_->send_time_ += npe_[0].ws_;
+//		impl_->wait_time_ += npe_[0].wx_;
+//		impl_->send_time_ += npe_[0].ws_;
 		npe_[0].wx_ = npe_[0].ws_ = 0.;
 	};
 //printf("%d netpar_solve exit t=%g tstop=%g mindelay_=%g\n",nrnmpi_myid, t, tstop, mindelay_);
@@ -1056,9 +1014,10 @@ static double set_mindelay(double maxdelay) {
 	double mindelay = maxdelay;
 	last_maxstep_arg_ = maxdelay;
     if (nrn_use_selfqueue_ || net_cvode_instance->localstep() || nrn_nthread > 1 ) {
-	hoc_Item* q;
-	if (net_cvode_instance->psl_) ITERATE(q, net_cvode_instance->psl_) {
-		PreSyn* ps = (PreSyn*)VOIDITM(q);
+	HTList* q;
+	HTList* psl = net_cvode_instance->psl_;
+	if (psl) for (q = psl->First(); q != psl->End(); q = q->Next()) {
+		PreSyn* ps = (PreSyn*)q->vptr();
 		double md = ps->mindelay();
 		if (mindelay > md) {
 			mindelay = md;
@@ -1105,7 +1064,7 @@ printf("   use_self_queue option. The interprocessor minimum NetCon delay is %g\
 #endif //NRNMPI
 }
 
-double BBS::netpar_mindelay(double maxdelay) {
+double BBS_netpar_mindelay(double maxdelay) {
 #if BGPDMA
 	bgp_dma_setup();
 #endif
@@ -1113,7 +1072,7 @@ double BBS::netpar_mindelay(double maxdelay) {
 	return tt;
 }
 
-void BBS::netpar_spanning_statistics(int* nsend, int* nsendmax, int* nrecv, int* nrecv_useful) {
+void BBS_netpar_spanning_statistics(int* nsend, int* nsendmax, int* nrecv, int* nrecv_useful) {
 #if NRNMPI
 	*nsend = nsend_;
 	*nsendmax = nsendmax_;
@@ -1205,12 +1164,6 @@ int nrnmpi_spike_compress(int nspike, bool gid_compress, int xchng_meth) {
 		use_compress_ = false;
 		nrn_use_localgid_ = false;
 	}else if (nspike > 0) { // turn on
-		if (cvode_active_) {
-if (nrnmpi_myid == 0) {hoc_warning("ParallelContext.spike_compress cannot be used with cvode active", 0);}
-			use_compress_ = false;
-			nrn_use_localgid_ = false;
-			return 0;
-		}
 		use_compress_ = true;
 		ag_send_nspike_ = nspike;
 		nrn_use_localgid_ = false;
@@ -1226,10 +1179,10 @@ printf("Notice: gid compression did not succeed. Probably more than 255 cells on
 		}
 		ag_send_size_ = 2 + ag_send_nspike_*(1 + localgid_size_);
 		spfixout_capacity_ = ag_send_size_ + 50*(1 + localgid_size_);
-		spfixout_ = (unsigned char*)hoc_Emalloc(spfixout_capacity_); hoc_malchk();
-		spfixin_ = (unsigned char*)hoc_Emalloc(nrnmpi_numprocs*ag_send_size_); hoc_malchk();
+		spfixout_ = (unsigned char*)emalloc(spfixout_capacity_);
+		spfixin_ = (unsigned char*)emalloc(nrnmpi_numprocs*ag_send_size_);
 		ovfl_capacity_ = 100;
-		spfixin_ovfl_ = (unsigned char*)hoc_Emalloc(ovfl_capacity_*(1 + localgid_size_)); hoc_malchk();
+		spfixin_ovfl_ = (unsigned char*)emalloc(ovfl_capacity_*(1 + localgid_size_));
 	}
 	return ag_send_nspike_;
 #else

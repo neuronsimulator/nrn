@@ -6,10 +6,8 @@
 #define NetCon nrniv_Dinfo
 #endif
 
-#include <InterViews/observe.h>
-#include <OS/list.h>
+#include <ivlist.h>
 #include "htlist.h"
-#include "nrnneosm.h"
 #include "nrnmpi.h"
 
 #if 0
@@ -23,6 +21,7 @@ class PlayRecord;
 class TQueue;
 class TQItem;
 struct NrnThread;
+struct Point_process;
 class NetCvode;
 class SelfEventPPTable;
 class IvocVect;
@@ -45,7 +44,6 @@ public:
 	virtual void send(double deliverytime, NetCvode*, NrnThread*);
 	virtual void deliver(double t, NetCvode*, NrnThread*);
 	virtual void pr(const char*, double t, NetCvode*);
-	virtual void disconnect(Observable*) {};
 	virtual NrnThread* thread();
 
 	virtual int type() { return DiscreteEventType; }
@@ -60,7 +58,7 @@ public:
 class NetCon : public DiscreteEvent {
 public:
 	NetCon();
-	NetCon(PreSyn* src, Object* target);
+	NetCon(PreSyn* src, Point_process* target);
 	virtual ~NetCon();
 	virtual void send(double sendtime, NetCvode*, NrnThread*);
 	virtual void deliver(double, NetCvode*, NrnThread*);
@@ -115,7 +113,6 @@ public:
 	virtual ~ConditionEvent();
 	virtual void check(NrnThread*, double sendtime, double teps = 0.0);
 	virtual double value() { return -1.; }
-	void condition(Cvode*);
 	virtual void asf_err() = 0;
 
 	double valold_, told_;
@@ -148,7 +145,7 @@ public:
 
 class PreSyn : public ConditionEvent {
 public:
-	PreSyn(double* src, Object* osrc, Section* ssrc = nil);
+	PreSyn(double* src, Point_process* osrc, double* var);
 	virtual ~PreSyn();
 	virtual void send(double sendtime, NetCvode*, NrnThread*);
 	virtual void deliver(double, NetCvode*, NrnThread*);
@@ -171,8 +168,8 @@ public:
 	IvocVect* tvec_;
 	IvocVect* idvec_;
 	NrnThread* nt_;
-	hoc_Item* hi_; // in the netcvode psl_
-	hoc_Item* hi_th_; // in the netcvode psl_th_
+	HTList* hi_; // in the netcvode psl_
+	HTList* hi_th_; // in the netcvode psl_th_
 	int use_min_delay_;
 	int rec_id_;
 	int output_index_;

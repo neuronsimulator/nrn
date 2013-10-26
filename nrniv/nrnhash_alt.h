@@ -34,8 +34,6 @@
 #include <stdint.h>
 #endif
 
-#include <OS/enter-scope.h>
-
 #if 1 || defined(__STDC__) || defined(__ANSI_CPP__)
 #define __NrnHashEntry(NrnHash) NrnHash##_Entry
 #define NrnHashEntry(NrnHash) __NrnHashEntry(NrnHash)

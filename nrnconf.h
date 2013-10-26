@@ -5,6 +5,9 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <errno.h>
+#include <stdint.h>
+
+#define nil NULL
 
 typedef int Datum;
 typedef int (*Pfri)();
@@ -33,7 +36,11 @@ extern double celsius;
 extern double t, dt;
 extern int secondorder;
 extern int stoprun;
+#define tstopbit (1 << 15)
+#define tstopset stoprun |= tstopbit
+#define tstopunset stoprun &= (~tstopbit)
 
+extern void* hoc_execerror(const char*, const char*); /* print and abort */
 extern void* nrn_cacheline_calloc(void** memptr, size_t nmemb, size_t size);
 
 extern void hoc_warning(const char*, const char*);
