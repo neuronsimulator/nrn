@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <assert.h>
 #include <errno.h>
 
 typedef int Datum;
@@ -32,6 +33,8 @@ extern double celsius;
 extern double t, dt;
 extern int secondorder;
 extern int stoprun;
+
+extern void* nrn_cacheline_calloc(void** memptr, size_t nmemb, size_t size);
 
 extern void hoc_warning(const char*, const char*);
 

@@ -250,28 +250,31 @@ void nrn_mk_prop_pools(int n) {
 	mk_prop_pools(n);
 }
 
-double* nrn_prop_data_alloc(int type, int count, Prop* p) {
+// Not sure these will be used. The original Prop* arg was only used
+// to record the Prop._alloc_seq for later cache efficiency. Now
+// it is merely returned.
+double* nrn_prop_data_alloc(int type, int count, int* pseq) {
 	if (!dblpools_[type]) {
 		dblpools_[type] = new DoubleArrayPool(APSIZE, count);
 	}
 	assert(dblpools_[type]->d2() == count);
-	p->_alloc_seq = dblpools_[type]->ntget();
+	*pseq = dblpools_[type]->ntget();
 	double* pd = dblpools_[type]->alloc();
 //if (type > 1) printf("nrn_prop_data_alloc %d %s %d %p\n", type, memb_func[type].sym->name, count, pd);
 	return pd;
 }
 
-Datum* nrn_prop_datum_alloc(int type, int count, Prop* p) {
+Datum* nrn_prop_datum_alloc(int type, int count, int* pseq) {
 	int i;
 	Datum* ppd;
 	if (!datumpools_[type]) {
 		datumpools_[type] = new DatumArrayPool(APSIZE, count);
 	}
 	assert(datumpools_[type]->d2() == count);
-	p->_alloc_seq = datumpools_[type]->ntget();
+	*pseq = datumpools_[type]->ntget();
 	ppd = datumpools_[type]->alloc();
-//if (type > 1) printf("nrn_prop_datum_alloc %d %s %d %p\n", type, memb_func[type].sym->name, count, ppd);
-	for (i=0; i < count; ++i) { ppd[i]._pvoid = 0; }
+//if (type > 1) printf("nrn_prop_datum_alloc %d %s %d %p\n", type, memb_func[type].sym, count, ppd);
+	for (i=0; i < count; ++i) { ppd[i] = 0; }
 	return ppd;
 }
 
