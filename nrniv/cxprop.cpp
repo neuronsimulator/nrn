@@ -1,4 +1,4 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 
 /*
 allocate and free property data and Datum arrays for nrniv
@@ -6,13 +6,8 @@ this allows for the possibility of
 greater cache efficiency
 */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <InterViews/resource.h>
 #include <nrnmpi.h>
-#include <nrnoc2iv.h>
 #include <membfunc.h>
-#include <nrnmenu.h>
 #include <arraypool.h>
 
 extern "C" {
