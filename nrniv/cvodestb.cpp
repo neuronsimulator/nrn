@@ -1,11 +1,10 @@
-#include <../../nrnconf.h>
+#include <nrnconf.h>
 // solver CVode stub to allow cvode as dll for mswindows version.
 
 #include "netcvode.h"
 
 extern "C" {
 bool at_time(NrnThread*, double);
-extern double dt, t;
 #define nt_t nrn_threads->_t
 #define nt_dt nrn_threads->_dt
 extern void nrn_random_play();
