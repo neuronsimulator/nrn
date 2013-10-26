@@ -13,7 +13,6 @@ of struct _spblk, we are really using TQItem
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
-#include <section.h>
 
 #define SPBLK TQItem
 #define leftlink left_
@@ -48,13 +47,7 @@ static void prnt(const TQItem* b, int level) {
 	for (i=0; i < level; ++i) {
 		printf("    ");
 	}
-	printf("%g %c %d Q=%p D=%p\n", b->t_, b->data_?'x':'o', b->cnt_, b, b->data_);
-}
-
-static void chk(TQItem* b, int level) {
-	if (!b->check()) {
-		hoc_execerror("chk failed", errmess_);
-	}
+	printf("%g %c %d Q=%p D=%p\n", b->t_, b->data_?'x':'o', b->cnt_, (void*)b, (void*)b->data_);
 }
 
 TQueue::TQueue(TQItemPool* tp, int mkmut) {
@@ -74,7 +67,7 @@ TQueue::TQueue(TQItemPool* tp, int mkmut) {
 
 TQueue::~TQueue() {
 	SPBLK* q, *q2;
-	while((q = spdeq(&sptree_->root)) != nil) {
+	while((q = spdeq(&sptree_->root)) != NULL) {
 		deleteitem(q);
 	}
 	delete sptree_;
@@ -97,7 +90,7 @@ void TQueue::print() {
 		prnt(least_, 0);
 	}
 #endif
-	spscan(prnt, nil, sptree_);
+	spscan(prnt, NULL, sptree_);
 	for (TQItem* q = binq_->first(); q; q = binq_->next(q)) {
 		prnt(q, 0);
 	}
@@ -111,7 +104,7 @@ void TQueue::forall_callback(void(*f)(const TQItem*, int)) {
 		f(least_, 0);
 	}
 #endif
-	spscan(f, nil, sptree_);
+	spscan(f, NULL, sptree_);
 	for (TQItem* q = binq_->first(); q; q = binq_->next(q)) {
 		f(q, 0);
 	}
@@ -237,7 +230,7 @@ void TQueue::remove(TQItem* q) {
 			if (sptree_->root) {
 				least_ = spdeq(&sptree_->root);
 			}else{
-				least_ = nil;
+				least_ = NULL;
 			}
 		}else if (q->cnt_ >= 0) {
 			binq_->remove(q);
@@ -258,7 +251,7 @@ TQItem* TQueue::atomic_dq(double tt) {
 		if (sptree_->root) {
 			least_ = spdeq(&sptree_->root);
 		}else{
-			least_ = nil;
+			least_ = NULL;
 		}
 	}
 	MUTUNLOCK

@@ -25,7 +25,7 @@ typedef char Symbol;
 #include <multicore.h>
 
 #if defined(__cplusplus)
-#extern "C" {
+extern "C" {
 #endif
 
 extern double celsius;
