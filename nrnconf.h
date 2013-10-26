@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 #include <assert.h>
 #include <errno.h>
 #include <stdint.h>
@@ -44,6 +45,19 @@ extern void* hoc_execerror(const char*, const char*); /* print and abort */
 extern void* nrn_cacheline_calloc(void** memptr, size_t nmemb, size_t size);
 
 extern void hoc_warning(const char*, const char*);
+
+/* will go away at some point */
+typedef struct Point_process {
+	int type;
+	double* data;
+	Datum* pdata;
+	void* presyn_; /* for artificial cell net_event */
+	void* _vnt; /* NrnThread* */
+} Point_process;
+
+extern char* pnt_name(Point_process* pnt) {
+	return memb_func[pnt->type].sym;
+}
 
 #if defined(__cplusplus)
 }

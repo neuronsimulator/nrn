@@ -66,6 +66,7 @@ public:
 	virtual NrnThread* thread();
 
 	virtual int type() { return NetConType; }
+	void rmsrc();
 
 	double delay_;
 	PreSyn* src_;
@@ -165,6 +166,7 @@ public:
 	double threshold_;
 	double delay_;
 	double* thvar_;
+	Point_process* pntsrc_;
 	IvocVect* tvec_;
 	IvocVect* idvec_;
 	NrnThread* nt_;
