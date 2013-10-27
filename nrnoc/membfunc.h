@@ -7,7 +7,7 @@ extern "C" {
 
 #include "nrnoc_ml.h"
 
-typedef Datum *(*Pfrpdat)();
+typedef Datum *(*Pfrpdat)(void);
 
 struct NrnThread;
 
@@ -34,6 +34,7 @@ typedef struct Memb_func {
 	void (*thread_table_check_)(double*, Datum*, Datum*, void*, int);
 	void (*_update_ion_pointers)(Datum*);
 	int is_point;
+	void (*setdata_)(double*, Datum*);
 	int* dparam_semantics; /* for nrncore writing. */
 } Memb_func;
 
@@ -42,9 +43,7 @@ typedef struct Memb_func {
 #define CABLESECTION	1
 #define MORPHOLOGY	2
 #define CAP	3
-#if EXTRACELLULAR
 #define EXTRACELL	5
-#endif
 
 #define nrnocCONST 1
 #define DEP 2
@@ -76,6 +75,14 @@ pointers which connect variables  from other mechanisms via the _ppval array.
 */
 
 #define _AMBIGUOUS 5
+
+extern int nrn_get_mechtype(const char*);
+extern int register_mech(char** m, mod_alloc_t alloc, mod_f_t cur, mod_f_t jacob,
+  mod_f_t stat, mod_f_t initialize, int nrnpointerindex, int vectorized
+  ); 
+extern void nrn_cap_jacob(struct NrnThread*, Memb_list*);
+extern void nrn_writes_conc(int, int);
+extern void hoc_register_prop_size(int, int, int);
 
 #if defined(__cplusplus)
 }

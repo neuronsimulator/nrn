@@ -7,18 +7,9 @@ extern "C" {
 bool at_time(NrnThread*, double);
 #define nt_t nrn_threads->_t
 #define nt_dt nrn_threads->_dt
-extern void nrn_random_play();
 
 extern NetCvode* net_cvode_instance;
-void deliver_net_events(NrnThread*);
-void nrn_deliver_events(NrnThread*);
-void clear_event_queue();
-void init_net_events();
-void nrn_record_init();
-void nrn_play_init();
-void fixed_record_continuous(NrnThread* nt);
-void fixed_play_continuous(NrnThread* nt);
-void nrn_solver_prepare();
+void nrn_solver_prepare(void);
 static void check_thresh(NrnThread*);
 }
 

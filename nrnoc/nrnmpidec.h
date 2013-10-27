@@ -52,16 +52,16 @@ extern int nrnmpi_bbssendrecv(int dest, int tag, bbsmpibuf* s, bbsmpibuf* r);
 /* from nrnmpi.c */
 extern void nrnmpi_init(int nrnmpi_under_nrncontrol, int* pargc, char*** pargv);
 extern int nrnmpi_wrap_mpi_init(int* flag);
-extern double nrnmpi_wtime();
+extern double nrnmpi_wtime(void);
 extern void nrnmpi_terminate();
 extern void nrnmpi_abort(int errcode);
 extern void nrnmpi_subworld_size(int n);
 extern int nrn_wrap_mpi_init(int* flag);
 
 /* from mpispike.c */
-extern void nrnmpi_spike_initialize();
-extern int nrnmpi_spike_exchange();
-extern int nrnmpi_spike_exchange_compressed();
+extern void nrnmpi_spike_initialize(void);
+extern int nrnmpi_spike_exchange(void);
+extern int nrnmpi_spike_exchange_compressed(void);
 extern double nrnmpi_mindelay(double maxdel);
 extern int nrnmpi_int_allmax(int i);
 extern void nrnmpi_int_gather(int* s, int* r, int cnt, int root);
@@ -83,13 +83,13 @@ extern void nrnmpi_send_doubles(double* pd, int cnt, int dest, int tag);
 extern void nrnmpi_recv_doubles(double* pd, int cnt, int src, int tag);
 extern void nrnmpi_postrecv_doubles(double* pd, int cnt, int src, int tag, void** request);
 extern void nrnmpi_wait(void** request);
-extern void nrnmpi_barrier();
+extern void nrnmpi_barrier(void);
 extern double nrnmpi_dbl_allreduce(double x, int type);
 extern void nrnmpi_dbl_allreduce_vec(double* src, double* dest, int cnt, int type);
 extern void nrnmpi_long_allreduce_vec(long* src, long* dest, int cnt, int type);
 extern void nrnmpi_dbl_allgather(double* s, double* r, int n);
 #if BGPDMA
-extern void nrnmpi_bgp_comm();
+extern void nrnmpi_bgp_comm(void);
 extern void nrnmpi_bgp_multisend(NRNMPI_Spike* spk, int n, int* hosts);
 extern int nrnmpi_bgp_single_advance(NRNMPI_Spike* spk);
 extern int nrnmpi_bgp_conserve(int nsend, int nrecv);

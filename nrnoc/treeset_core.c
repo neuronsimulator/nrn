@@ -25,9 +25,7 @@ static void nrn_rhs(NrnThread* _nt) {
 		mod_f_t s = memb_func[tml->index].current;
 		(*s)(_nt, tml->ml, tml->index);
 		if (errno) {
-			if (nrn_errno_check(tml->index)) {
 hoc_warning("errno set during calculation of currents", (char*)0);
-			}
 		}
 	}
 	/* now the internal axial currents.
@@ -67,9 +65,7 @@ static void nrn_lhs(NrnThread* _nt) {
 		mod_f_t s = memb_func[tml->index].jacob;
 		(*s)(_nt, tml->ml, tml->index);
 		if (errno) {
-			if (nrn_errno_check(tml->index)) {
 hoc_warning("errno set during calculation of jacobian", (char*)0);
-			}
 		}
 	}
 /* now the cap current can be computed because any change to cm by another model

@@ -26,6 +26,7 @@ typedef char Symbol;
 #define MULTICORE 1
 
 #include <multicore.h>
+#include <nrnoc_decl.h>
 
 #if defined(__cplusplus)
 extern "C" {

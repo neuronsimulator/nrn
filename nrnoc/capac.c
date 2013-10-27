@@ -8,10 +8,10 @@ static void cap_init(NrnThread*, Memb_list*, int);
 
 #define nparm 2
 
-capac_reg_() {
+void capac_reg_(void) {
 	int mechtype;
 	/* all methods deal with capacitance in special ways */
-	register_mech(mechanism, cap_alloc, (Pfri)0, (Pfri)0, (Pfri)0, cap_init, -1, 1);
+	register_mech(mechanism, cap_alloc, (mod_f_t)0, (mod_f_t)0, (mod_f_t)0, (mod_f_t)cap_init, -1, 1);
 	mechtype = nrn_get_mechtype(mechanism[1]);
 	hoc_register_prop_size(mechtype, nparm, 0);
 }

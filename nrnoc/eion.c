@@ -2,7 +2,7 @@
 
 #include <membdef.h>
 #include <math.h>
-#undef ret
+#include <string.h>
 
 extern void hoc_register_prop_size(int, int, int);
 
@@ -24,10 +24,7 @@ static void ion_init(NrnThread*, Memb_list*, int);
 double nrn_nernst(), nrn_ghk();
 static int na_ion, k_ion, ca_ion; /* will get type for these special ions */
 
-int
-nrn_is_ion(type)
-	int type;
-{
+int nrn_is_ion(int type) {
 	return (memb_func[type].alloc == ion_alloc);
 }
 
@@ -41,10 +38,7 @@ double nrn_ion_charge(int type) {
 	return global_charge(type);
 }
 
-ion_reg(name, valence)
-	char *name;
-	double valence;
-{
+void ion_reg(char* name, double valence) {
 	int i, mechtype;
 	Symbol *s;
 	char buf[7][50];
@@ -63,7 +57,7 @@ ion_reg(name, valence)
 	mechanism[5] = (char *)0; /* buf[4] not used above */
 	mechtype = nrn_get_mechtype(buf[0]);
 	if (mechtype == 0) {
-		register_mech(mechanism, ion_alloc, ion_cur, (Pfri)0, (Pfri)0, ion_init, -1, 1);
+		register_mech(mechanism, ion_alloc, ion_cur, (mod_f_t)0, (mod_f_t)0, (mod_f_t)ion_init, -1, 1);
 		mechtype = nrn_get_mechtype(mechanism[1]);
 		hoc_register_prop_size(mechtype, nparm, 1 );
 		nrn_writes_conc(mechtype, 1);
@@ -147,7 +141,7 @@ void nrn_wrote_conc(int type, double* pe, int it) {
 	}
 }
 
-static double efun(x) double x; {
+static double efun(double x) {
 	if (fabs(x) < 1e-4) {
 		return 1. - x/2.;
 	}else{
@@ -155,7 +149,7 @@ static double efun(x) double x; {
 	}
 }
 
-double nrn_ghk(v, ci, co, z) double v, ci, co, z; {
+double nrn_ghk(double v, double ci, double co, double z) {
 	double eco, eci, temp;
 	temp = z*v/ktf;
 	eco = co*efun(temp);
@@ -451,7 +445,7 @@ static void ion_alloc(double* data, Datum* pdata, int type) {
 	pdata[0] = 0;
 }
 
-second_order_cur(NrnThread* _nt) {
+void second_order_cur(NrnThread* _nt) {
 	extern int secondorder;
 	NrnThreadMembList* tml;
 	Memb_list* ml;

@@ -16,7 +16,9 @@ void nrn_finitialize(int setv, double v) {
 	nrn_thread_table_check();
 	clear_event_queue();
 	nrn_spike_exchange_init();
-	nrn_random_play();
+	for (i=0; i < nrn_nthread; ++i) {
+		nrn_random_play(nrn_threads + i);
+	}
 #if VECTORIZE
 	nrn_play_init(); /* Vector.play */
 	for (i=0; i < nrn_nthread; ++i) {
@@ -50,7 +52,6 @@ void nrn_finitialize(int setv, double v) {
 	for (i=0; i < nrn_nthread; ++i) {
 		NrnThread* nt = nrn_threads + i;
 		NrnThreadMembList* tml;
-		nrn_nonvint_block_init(nt->id);
 		for (tml = nt->tml; tml; tml = tml->next) {
 			mod_f_t s = memb_func[tml->index].initialize;
 			if (s) {
@@ -68,9 +69,7 @@ void nrn_finitialize(int setv, double v) {
 		(*s)(nrn_threads, memb_list + i, i);
 	    }
 		if (errno) {
-			if (nrn_errno_check(i)) {
 hoc_warning("errno set during call to INITIAL block", (char*)0);
-			}
 		}
 	  }
 	}

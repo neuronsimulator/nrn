@@ -13,7 +13,7 @@
 #if 0
 #define STATISTICS(arg) ++arg
 #else
-#define STATISTICS /**/
+#define STATISTICS(arg) /**/
 #endif
 
 class PreSyn;

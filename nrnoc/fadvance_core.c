@@ -1,11 +1,12 @@
 #include <nrnconf.h>
+#include <nrnmpi.h>
 
 static void* nrn_fixed_step_thread(NrnThread*);
 static void* nrn_fixed_step_group_thread(NrnThread*);
 static void update(NrnThread*);
 static void nonvint(NrnThread*);
 
-static void dt2thread(double adt) { /* copied from nrnoc/fadvance.c */
+void dt2thread(double adt) { /* copied from nrnoc/fadvance.c */
     if (adt != nrn_threads[0]._dt) {
 	int i;
 	for (i=0; i < nrn_nthread; ++i) {
@@ -72,28 +73,7 @@ static void* nrn_fixed_step_group_thread(NrnThread* nth) {
 	return (void*)0;
 }
 
-static void* nrn_fixed_step_thread(NrnThread* nth) {
-	double wt;
-	deliver_net_events(nth);
-	wt = nrnmpi_wtime();
-	nrn_random_play(nth);
-	nth->_t += .5 * nth->_dt;
-	fixed_play_continuous(nth);
-	setup_tree_matrix_minimal(nth);
-	nrn_solve_minimal(nth);
-	second_order_cur(nth);
-	update(nth);
-	nth->_t += .5 * nth->_dt;
-	fixed_play_continuous(nth);
-	nonvint(nth);
-	nrn_ba(nth, AFTER_SOLVE);
-	fixed_record_continuous(nth);
-	nrn_deliver_events(nth) ; /* up to but not past texit */
-	return (void*)0;
-}
-
-static void update(NrnThread* _nt)
-{
+static void update(NrnThread* _nt){
 	int i, i1, i2;
 	i1 = 0;
 	i2 = _nt->end;
@@ -116,8 +96,7 @@ static void update(NrnThread* _nt)
 
 }
 
-static void nonvint(NrnThread* _nt)
-{
+static void nonvint(NrnThread* _nt) {
 	int i;
 	double w;
 	int measure = 0;
@@ -127,9 +106,28 @@ static void nonvint(NrnThread* _nt)
 		mod_f_t s = memb_func[tml->index].state;
 		(*s)(_nt, tml->ml, tml->index);
 		if (errno) {
-			if (nrn_errno_check(i)) {
 hoc_warning("errno set during calculation of states", (char*)0);
-			}
 		}
 	}
 }
+
+static void* nrn_fixed_step_thread(NrnThread* nth) {
+	double wt;
+	deliver_net_events(nth);
+	wt = nrnmpi_wtime();
+	nrn_random_play(nth);
+	nth->_t += .5 * nth->_dt;
+	fixed_play_continuous(nth);
+	setup_tree_matrix_minimal(nth);
+	nrn_solve_minimal(nth);
+	second_order_cur(nth);
+	update(nth);
+	nth->_t += .5 * nth->_dt;
+	fixed_play_continuous(nth);
+	nonvint(nth);
+	nrn_ba(nth, AFTER_SOLVE);
+	fixed_record_continuous(nth);
+	nrn_deliver_events(nth) ; /* up to but not past texit */
+	return (void*)0;
+}
+

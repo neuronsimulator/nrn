@@ -1,14 +1,15 @@
 #include <nrnconf.h>
 
-double celsius;
-double t, dt;
-int secondorder;
 int stoprun;
 int nrn_nthread;
 NrnThread* nrn_threads;
 
 char* pnt_name(Point_process* pnt) {
   return memb_func[pnt->type].sym;
+}
+
+void nrn_exit(int err) {
+  exit(err);
 }
 
 void hoc_execerror(const char* s1, const char* s2) {
