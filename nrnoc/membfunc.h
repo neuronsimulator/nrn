@@ -29,8 +29,8 @@ typedef struct Memb_func {
 	Symbol	*sym;
 	int vectorized;
 	int thread_size_; /* how many Datum needed in Memb_list if vectorized */
-	void (*thread_mem_init_)(Datum*); /* after Memb_list._thread is allocated */
-	void (*thread_cleanup_)(Datum*); /* before Memb_list._thread is freed */
+	void (*thread_mem_init_)(ThreadDatum*); /* after Memb_list._thread is allocated */
+	void (*thread_cleanup_)(ThreadDatum*); /* before Memb_list._thread is freed */
 	void (*thread_table_check_)(double*, Datum*, Datum*, void*, int);
 	void (*_update_ion_pointers)(Datum*);
 	int is_point;
@@ -87,6 +87,9 @@ extern int point_register_mech(char**, mod_alloc_t alloc, mod_f_t cur,
 extern void nrn_cap_jacob(struct NrnThread*, Memb_list*);
 extern void nrn_writes_conc(int, int);
 extern void hoc_register_prop_size(int, int, int);
+extern void _nrn_thread_reg0(int i, void(*f)(ThreadDatum*));
+extern void _nrn_thread_reg1(int i, void(*f)(ThreadDatum*));
+extern void _nrn_thread_reg2(int i, void(*f)(Datum*));
 
 #if defined(__cplusplus)
 }

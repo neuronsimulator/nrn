@@ -21,6 +21,10 @@ void hoc_warning(const char* s1, const char* s2) {
   printf("warning: %s %s\n", s1, s2?s2:"");
 }
 
+double* makevector(size_t size) {
+	return (double*)ecalloc(size, sizeof(char));
+}
+
 void* emalloc(size_t size) {
   void* memptr;
   memptr = malloc(size);

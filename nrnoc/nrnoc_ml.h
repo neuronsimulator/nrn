@@ -1,6 +1,13 @@
 #ifndef nrnoc_ml_h
 #define nrnoc_ml_h
 
+typedef union ThreadDatum {
+	double val;
+	int i;
+	double* pval;
+	void* _pvoid;
+}ThreadDatum;
+
 typedef struct Memb_list {
 #if CACHEVEC != 0
 	/* nodeindices contains all nodes this extension is responsible for,
@@ -12,7 +19,7 @@ typedef struct Memb_list {
 #endif /* CACHEVEC */
 	double** data;
 	Datum** pdata;
-	Datum* _thread; /* thread specific data (when static is no good) */
+	ThreadDatum* _thread; /* thread specific data (when static is no good) */
 	int nodecount;
 } Memb_list;
 

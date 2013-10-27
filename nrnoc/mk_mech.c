@@ -193,7 +193,7 @@ int register_mech(char** m, mod_alloc_t alloc, mod_f_t cur, mod_f_t jacob,
 	memb_func[type].setdata_ = (void*)0;
 	memb_func[type].dparam_semantics = (int*)0;
 	memb_list[type].nodecount = 0;
-	memb_list[type]._thread = (Datum*)0;
+	memb_list[type]._thread = (ThreadDatum*)0;
 	memb_order_[type] = type;
 #endif
 	return type;
@@ -300,14 +300,16 @@ printf("before-after processing type %d for %s not implemented\n", type, memb_fu
 	bamech_[type] = bam;
 }
 
-void _nrn_thread_reg(int i, int cons, void(*f)(Datum*)) {
-	if (cons == 1) {
-		memb_func[i].thread_mem_init_ = f;
-	}else if (cons == 0) {
-		memb_func[i].thread_cleanup_ = f;
-	}else if (cons == 2) {
-		memb_func[i]._update_ion_pointers = f;
-	}
+void _nrn_thread_reg0(int i, void(*f)(ThreadDatum*)) {
+	memb_func[i].thread_cleanup_ = f;
+}
+
+void _nrn_thread_reg1(int i, void(*f)(ThreadDatum*)) {
+	memb_func[i].thread_mem_init_ = f;
+}
+
+void _nrn_thread_reg2(int i, void(*f)(Datum*)) {
+	memb_func[i]._update_ion_pointers = f;
 }
 
 void _nrn_thread_table_reg(int i, void(*f)(double*, Datum*, Datum*, void*, int)) {

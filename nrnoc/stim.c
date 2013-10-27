@@ -29,7 +29,7 @@
 #define _nd_area  _nt->_data[_ppvar[0]]
  
  static int hoc_nrnpointerindex =  -1;
- static Datum* _extcall_thread;
+ static ThreadDatum* _extcall_thread;
  /* external NEURON variables */
  /* declaration of user functions */
  static int _mechtype;
@@ -87,7 +87,7 @@ static int _ninits = 0;
 static int _match_recurse=1;
 static _modl_cleanup(){ _match_recurse=1;}
 
-static void initmodel(double* _p, Datum* _ppvar, Datum* _thread, _NrnThread* _nt) {
+static void initmodel(double* _p, Datum* _ppvar, ThreadDatum* _thread, _NrnThread* _nt) {
   int _i; double _save;{
  {
    i = 0.0 ;
@@ -97,7 +97,7 @@ static void initmodel(double* _p, Datum* _ppvar, Datum* _thread, _NrnThread* _nt
 }
 
 static void nrn_init(_NrnThread* _nt, _Memb_list* _ml, int _type){
-double* _p; Datum* _ppvar; Datum* _thread;
+double* _p; Datum* _ppvar; ThreadDatum* _thread;
 double _v; int* _ni; int _iml, _cntml;
 #if CACHEVEC
     _ni = _ml->_nodeindices;
@@ -121,7 +121,7 @@ for (_iml = 0; _iml < _cntml; ++_iml) {
  initmodel(_p, _ppvar, _thread, _nt);
 }}
 
-static double _nrn_current(double* _p, Datum* _ppvar, Datum* _thread, _NrnThread* _nt, double _v){double _current=0.;v=_v;{ {
+static double _nrn_current(double* _p, Datum* _ppvar, ThreadDatum* _thread, _NrnThread* _nt, double _v){double _current=0.;v=_v;{ {
    at_time ( _nt, del ) ;
    at_time ( _nt, del + dur ) ;
    if ( t < del + dur  && t >= del ) {
@@ -137,7 +137,7 @@ static double _nrn_current(double* _p, Datum* _ppvar, Datum* _thread, _NrnThread
 }
 
 static void nrn_cur(_NrnThread* _nt, _Memb_list* _ml, int _type) {
-double* _p; Datum* _ppvar; Datum* _thread;
+double* _p; Datum* _ppvar; ThreadDatum* _thread;
 int* _ni; double _rhs, _v; int _iml, _cntml;
 #if CACHEVEC
     _ni = _ml->_nodeindices;
@@ -175,7 +175,7 @@ for (_iml = 0; _iml < _cntml; ++_iml) {
 }}
 
 static void nrn_jacob(_NrnThread* _nt, _Memb_list* _ml, int _type) {
-double* _p; Datum* _ppvar; Datum* _thread;
+double* _p; Datum* _ppvar; ThreadDatum* _thread;
 int* _ni; int _iml, _cntml;
 #if CACHEVEC
     _ni = _ml->_nodeindices;

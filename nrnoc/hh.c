@@ -55,7 +55,7 @@ extern double hoc_Exp();
 #define _ion_dikdv	_nt->_data[_ppvar[5]]
  
  static int hoc_nrnpointerindex =  -1;
- static Datum* _extcall_thread;
+ static ThreadDatum* _extcall_thread;
  /* external NEURON variables */
  extern double celsius;
  /* declaration of user functions */
@@ -64,8 +64,8 @@ extern int nrn_get_mechtype();
 #define vtrap vtrap_hh
  extern double vtrap();
  
-static void _check_rates(double*, Datum*, Datum*, _NrnThread*); 
-static void _check_table_thread(double* _p, Datum* _ppvar, Datum* _thread, _NrnThread* _nt, int _type) {
+static void _check_rates(double*, Datum*, ThreadDatum*, _NrnThread*); 
+static void _check_table_thread(double* _p, Datum* _ppvar, ThreadDatum* _thread, _NrnThread* _nt, int _type) {
    _check_rates(_p, _ppvar, _thread, _nt);
  }
  /* declare global and static user variables */
@@ -127,20 +127,20 @@ static void nrn_alloc(double* _p, Datum* _ppvar, int _type) {
 	/* already done */
 }
  static _initlists();
- static void _thread_mem_init(Datum*);
- static void _thread_cleanup(Datum*);
+ static void _thread_mem_init(ThreadDatum*);
+ static void _thread_cleanup(ThreadDatum*);
  static void _update_ion_pointer(Datum*);
  _hh_reg_() {
 	int _vectorized = 1;
   _initlists();
  	register_mech(_mechanism, nrn_alloc,nrn_cur, nrn_jacob, nrn_state, nrn_init, hoc_nrnpointerindex, 2);
-  _extcall_thread = (Datum*)ecalloc(1, sizeof(Datum));
+  _extcall_thread = (ThreadDatum*)ecalloc(1, sizeof(ThreadDatum));
   _thread_mem_init(_extcall_thread);
   _thread1data_inuse = 0;
  _mechtype = nrn_get_mechtype(_mechanism[1]);
-     _nrn_thread_reg(_mechtype, 1, _thread_mem_init);
-     _nrn_thread_reg(_mechtype, 0, _thread_cleanup);
-     _nrn_thread_reg(_mechtype, 2, _update_ion_pointer);
+     _nrn_thread_reg1(_mechtype, _thread_mem_init);
+     _nrn_thread_reg0(_mechtype, _thread_cleanup);
+     _nrn_thread_reg2(_mechtype, _update_ion_pointer);
      _nrn_thread_table_reg(_mechtype, _check_table_thread);
   hoc_register_prop_size(_mechtype, 7, 19);
  }
@@ -164,7 +164,7 @@ static rates();
  static int _slist1[3], _dlist1[3];
  static int states();
  
- static int states (double* _p, Datum* _ppvar, Datum* _thread, _NrnThread* _nt) { {
+ static int states (double* _p, Datum* _ppvar, ThreadDatum* _thread, _NrnThread* _nt) { {
    rates ( _threadargscomma_ v ) ;
     m = m + (1. - exp(dt*(( ( ( - 1.0 ) ) ) / mtau)))*(- ( ( ( minf ) ) / mtau ) / ( ( ( ( - 1.0) ) ) / mtau ) - m) ;
     h = h + (1. - exp(dt*(( ( ( - 1.0 ) ) ) / htau)))*(- ( ( ( hinf ) ) / htau ) / ( ( ( ( - 1.0) ) ) / htau ) - h) ;
@@ -173,7 +173,7 @@ static rates();
   return 0;
 }
  static double _mfac_rates, _tmin_rates;
-  static void _check_rates(double* _p, Datum* _ppvar, Datum* _thread, _NrnThread* _nt) {
+  static void _check_rates(double* _p, Datum* _ppvar, ThreadDatum* _thread, _NrnThread* _nt) {
   static int _maktable=1; int _i, _j, _ix = 0;
   double _xi, _tmax;
   static double _sav_celsius;
@@ -196,7 +196,7 @@ static rates();
   }
  }
 
- static rates(double* _p, Datum* _ppvar, Datum* _thread, _NrnThread* _nt, double _lv) { 
+ static rates(double* _p, Datum* _ppvar, ThreadDatum* _thread, _NrnThread* _nt, double _lv) { 
 #if 0
 _check_rates(_p, _ppvar, _thread, _nt);
 #endif
@@ -204,7 +204,7 @@ _check_rates(_p, _ppvar, _thread, _nt);
  return;
  }
 
- static _n_rates(double* _p, Datum* _ppvar, Datum* _thread, _NrnThread* _nt, double _lv){ int _i, _j;
+ static _n_rates(double* _p, Datum* _ppvar, ThreadDatum* _thread, _NrnThread* _nt, double _lv){ int _i, _j;
  double _xi, _theta;
  if (!usetable) {
  _f_rates(_p, _ppvar, _thread, _nt, _lv); return; 
@@ -237,9 +237,7 @@ _check_rates(_p, _ppvar, _thread, _nt);
  }
 
  
-static int  _f_rates ( _p, _ppvar, _thread, _nt, _lv ) double* _p; Datum* _ppvar; Datum* _thread; _NrnThread* _nt; 
-	double _lv ;
- {
+static int  _f_rates ( double* _p, Datum* _ppvar, ThreadDatum* _thread, _NrnThread*_nt, double _lv ) {
    double _lalpha , _lbeta , _lsum , _lq10 ;
   _lq10 = pow( 3.0 , ( ( celsius - 6.3 ) / 10.0 ) ) ;
    _lalpha = .1 * vtrap ( _threadargscomma_ - ( _lv + 40.0 ) , 10.0 ) ;
@@ -259,9 +257,7 @@ static int  _f_rates ( _p, _ppvar, _thread, _nt, _lv ) double* _p; Datum* _ppvar
    ninf = _lalpha / _lsum ;
     return 0; }
  
-double vtrap ( _p, _ppvar, _thread, _nt, _lx , _ly ) double* _p; Datum* _ppvar; Datum* _thread; _NrnThread* _nt; 
-	double _lx , _ly ;
- {
+double vtrap ( double* _p, Datum* _ppvar, ThreadDatum* _thread, _NrnThread* _nt, double _lx , double _ly ) {
    double _lvtrap;
  if ( fabs ( _lx / _ly ) < 1e-6 ) {
      _lvtrap = _ly * ( 1.0 - _lx / _ly / 2.0 ) ;
@@ -273,14 +269,14 @@ double vtrap ( _p, _ppvar, _thread, _nt, _lx , _ly ) double* _p; Datum* _ppvar; 
 return _lvtrap;
  }
  
-static void _thread_mem_init(Datum* _thread) {
+static void _thread_mem_init(ThreadDatum* _thread) {
   if (_thread1data_inuse) {_thread[_gth]._pval = (double*)ecalloc(6, sizeof(double));
  }else{
  _thread[_gth]._pval = _thread1data; _thread1data_inuse = 1;
  }
  }
  
-static void _thread_cleanup(Datum* _thread) {
+static void _thread_cleanup(ThreadDatum* _thread) {
   if (_thread[_gth]._pval == _thread1data) {
    _thread1data_inuse = 0;
   }else{
@@ -298,7 +294,7 @@ static void _thread_cleanup(Datum* _thread) {
    nrn_update_ion_pointer(_k_sym, _ppvar, 5, 4);
  }
 
-static void initmodel(double* _p, Datum* _ppvar, Datum* _thread, _NrnThread* _nt) {
+static void initmodel(double* _p, Datum* _ppvar, ThreadDatum* _thread, _NrnThread* _nt) {
   int _i; double _save;{
   h = h0;
   m = m0;
@@ -314,7 +310,7 @@ static void initmodel(double* _p, Datum* _ppvar, Datum* _thread, _NrnThread* _nt
 }
 
 static void nrn_init(_NrnThread* _nt, _Memb_list* _ml, int _type){
-double* _p; Datum* _ppvar; Datum* _thread;
+double* _p; Datum* _ppvar; ThreadDatum* _thread;
 double _v; int* _ni; int _iml, _cntml;
 #if CACHEVEC
     _ni = _ml->_nodeindices;
@@ -336,7 +332,7 @@ for (_iml = 0; _iml < _cntml; ++_iml) {
  initmodel(_p, _ppvar, _thread, _nt);
   }}
 
-static double _nrn_current(double* _p, Datum* _ppvar, Datum* _thread, _NrnThread* _nt, double _v){double _current=0.;v=_v;{ {
+static double _nrn_current(double* _p, Datum* _ppvar, ThreadDatum* _thread, _NrnThread* _nt, double _v){double _current=0.;v=_v;{ {
    gna = gnabar * m * m * m * h ;
    ina = gna * ( v - ena ) ;
    gk = gkbar * n * n * n * n ;
@@ -351,7 +347,7 @@ static double _nrn_current(double* _p, Datum* _ppvar, Datum* _thread, _NrnThread
 }
 
 static void nrn_cur(_NrnThread* _nt, _Memb_list* _ml, int _type) {
-double* _p; Datum* _ppvar; Datum* _thread;
+double* _p; Datum* _ppvar; ThreadDatum* _thread;
 int* _ni; double _rhs, _v; int _iml, _cntml;
 #if CACHEVEC
     _ni = _ml->_nodeindices;
@@ -383,7 +379,7 @@ for (_iml = 0; _iml < _cntml; ++_iml) {
 }}
 
 static void nrn_jacob(_NrnThread* _nt, _Memb_list* _ml, int _type) {
-double* _p; Datum* _ppvar; Datum* _thread;
+double* _p; Datum* _ppvar; ThreadDatum* _thread;
 int* _ni; int _iml, _cntml;
 #if CACHEVEC
     _ni = _ml->_nodeindices;
@@ -399,7 +395,7 @@ for (_iml = 0; _iml < _cntml; ++_iml) {
 
 static void nrn_state(_NrnThread* _nt, _Memb_list* _ml, int _type) {
  double _break, _save;
-double* _p; Datum* _ppvar; Datum* _thread;
+double* _p; Datum* _ppvar; ThreadDatum* _thread;
 double _v; int* _ni; int _iml, _cntml;
 #if CACHEVEC
     _ni = _ml->_nodeindices;
@@ -408,7 +404,6 @@ _cntml = _ml->_nodecount;
 _thread = _ml->_thread;
 for (_iml = 0; _iml < _cntml; ++_iml) {
  _p = _ml->_data[_iml]; _ppvar = _ml->_pdata[_iml];
- _nd = _ml->_nodelist[_iml];
 #if CACHEVEC
     _v = VEC_V(_ni[_iml]);
 #endif
