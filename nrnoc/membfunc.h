@@ -56,7 +56,7 @@ typedef struct Memb_func {
 #define BEFORE_STEP 4
 #define BEFORE_AFTER_SIZE 5 /* 1 more than the previous */
 typedef struct BAMech {
-	Pfri f;
+	mod_f_t f;
 	int type;
 	struct BAMech* next;
 } BAMech;
@@ -80,6 +80,10 @@ extern int nrn_get_mechtype(const char*);
 extern int register_mech(char** m, mod_alloc_t alloc, mod_f_t cur, mod_f_t jacob,
   mod_f_t stat, mod_f_t initialize, int nrnpointerindex, int vectorized
   ); 
+extern int point_register_mech(char**, mod_alloc_t alloc, mod_f_t cur,
+  mod_f_t jacob, mod_f_t stat, mod_f_t initialize, int nrnpointerindex,
+  void*(*constructor)(), void(*destructor)(), int vectorized
+  );
 extern void nrn_cap_jacob(struct NrnThread*, Memb_list*);
 extern void nrn_writes_conc(int, int);
 extern void hoc_register_prop_size(int, int, int);

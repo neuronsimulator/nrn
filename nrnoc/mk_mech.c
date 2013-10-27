@@ -229,8 +229,6 @@ void register_destructor(Pfri d) {
 	memb_func[n_memb_func - 1].destructor = d;
 }
 
-struct Member_func { char* _name; double (*_member)();};
-
 int point_reg_helper(Symbol* s2) {
 	pointsym[pointtype] = s2;
 	pnt_map[n_memb_func-1] = pointtype;
@@ -241,7 +239,7 @@ int point_reg_helper(Symbol* s2) {
 int point_register_mech(char** m,
   mod_alloc_t alloc, mod_f_t cur, mod_f_t jacob,
   mod_f_t stat, mod_f_t initialize, int nrnpointerindex,
-  void*(*constructor)(), void(*destructor)(), struct Member_func* fmember,
+  void*(*constructor)(), void(*destructor)(),
   int vectorized
 ){
 	Symbol* s;
@@ -271,6 +269,10 @@ int nrn_pointing(pd) double *pd; {
 	return pd ? 1 : 0;
 }
 
+int nrn_get_mechtype(const char* name) {
+	assert(0); /* needs an implementation */
+}
+
 int state_discon_flag_ = 0;
 void state_discontinuity(int i, double* pd, double d) {
 	if (state_discon_allowed_ && state_discon_flag_ == 0) {
@@ -279,7 +281,7 @@ void state_discontinuity(int i, double* pd, double d) {
 	}
 }
 
-void hoc_reg_ba(int mt, Pfri f, int type) {
+void hoc_reg_ba(int mt, mod_f_t f, int type) {
 	BAMech* bam;
 	switch (type) { /* see bablk in src/nmodl/nocpout.c */
 	case 11: type = BEFORE_BREAKPOINT; break;

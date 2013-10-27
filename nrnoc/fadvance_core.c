@@ -111,6 +111,17 @@ hoc_warning("errno set during calculation of states", (char*)0);
 	}
 }
 
+void nrn_ba(NrnThread* nt, int bat){
+	NrnThreadBAList* tbl;
+	int i;
+	for (tbl = nt->tbl[bat]; tbl; tbl = tbl->next) {
+		mod_f_t f = tbl->bam->f;
+		int type = tbl->bam->type;
+		Memb_list* ml = tbl->ml;
+		(*f)(nt, ml, type);
+	}
+}
+
 static void* nrn_fixed_step_thread(NrnThread* nth) {
 	double wt;
 	deliver_net_events(nth);

@@ -1,7 +1,4 @@
 #include <nrnconf.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <assert.h>
 
 /* do not want the redef in the dynamic load case */
 #include <nrnmpiuse.h>   
@@ -13,8 +10,6 @@
 #include "nrnmpi_impl.h"
 #include "mpispike.h"
 #include <mpi.h>
-
-extern void nrnbbs_context_wait();
 
 static int np;
 static int* displs;
@@ -90,13 +85,12 @@ int nrnmpi_spike_exchange() {
 	int i, n, novfl, n1;
 	if (!displs) {
 		np = nrnmpi_numprocs;
-		displs = (int*)hoc_Emalloc(np*sizeof(int)); hoc_malchk();
+		displs = (int*)emalloc(np*sizeof(int));
 		displs[0] = 0;
 #if nrn_spikebuf_size > 0		
 		make_spikebuf_type();
 #endif
 	}
-	nrnbbs_context_wait();
 #if nrn_spikebuf_size == 0
 	MPI_Allgather(&nout_, 1, MPI_INT, nin_, 1, MPI_INT, nrnmpi_comm);
 	n = nin_[0];
@@ -108,7 +102,7 @@ int nrnmpi_spike_exchange() {
 		if (icapacity_ < n) {
 			icapacity_ = n + 10;
 			free(spikein_);
-			spikein_ = (NRNMPI_Spike*)hoc_Emalloc(icapacity_ * sizeof(NRNMPI_Spike)); hoc_malchk();
+			spikein_ = (NRNMPI_Spike*)emalloc(icapacity_ * sizeof(NRNMPI_Spike));
 		}
 		MPI_Allgatherv(spikeout_, nout_, spike_type, spikein_, nin_, displs, spike_type, nrnmpi_comm);
 	}
@@ -169,11 +163,10 @@ int nrnmpi_spike_exchange_compressed() {
 	int i, novfl, n, ntot, idx, bs, bstot; /* n is #spikes, bs is #byte overflow */
 	if (!displs) {
 		np = nrnmpi_numprocs;
-		displs = (int*)hoc_Emalloc(np*sizeof(int)); hoc_malchk();
+		displs = (int*)emalloc(np*sizeof(int));
 		displs[0] = 0;
-		byteovfl = (int*)hoc_Emalloc(np*sizeof(int)); hoc_malchk();
+		byteovfl = (int*)emalloc(np*sizeof(int));
 	}
-	nrnbbs_context_wait();
 
 	MPI_Allgather(spfixout_, ag_send_size_, MPI_BYTE, spfixin_, ag_send_size_, MPI_BYTE, nrnmpi_comm);
 	novfl = 0;
@@ -199,7 +192,7 @@ int nrnmpi_spike_exchange_compressed() {
 		if (ovfl_capacity_ < novfl) {
 			ovfl_capacity_ = novfl + 10;
 			free(spfixin_ovfl_);
-			spfixin_ovfl_ = (unsigned char*)hoc_Emalloc(ovfl_capacity_ * (1 + localgid_size_)*sizeof(unsigned char)); hoc_malchk();
+			spfixin_ovfl_ = (unsigned char*)emalloc(ovfl_capacity_ * (1 + localgid_size_)*sizeof(unsigned char));
 		}
 		bs = byteovfl[nrnmpi_myid];
 		/*
@@ -217,7 +210,6 @@ int nrnmpi_spike_exchange_compressed() {
 double nrnmpi_mindelay(double m) {
 	double result;
 	if (!nrnmpi_use) { return m; }
-	nrnbbs_context_wait();
 	MPI_Allreduce(&m, &result, 1, MPI_DOUBLE, MPI_MIN, nrnmpi_comm);
 	return result;
 }
@@ -225,7 +217,6 @@ double nrnmpi_mindelay(double m) {
 int nrnmpi_int_allmax(int x) {
 	int result;
 	if (nrnmpi_numprocs < 2) { return x; }
-	nrnbbs_context_wait();
 	MPI_Allreduce(&x, &result, 1, MPI_INT, MPI_MAX, nrnmpi_comm);
 	return result;
 }

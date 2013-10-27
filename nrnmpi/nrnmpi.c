@@ -6,8 +6,6 @@
 
 #include "nrnmpi_def_cinc"
 
-extern double nrn_timeus();
-
 #if NRNMPI
 #include <mpi.h>
 #define asrt(arg) assert(arg == MPI_SUCCESS)
@@ -127,7 +125,6 @@ double nrnmpi_wtime() {
 		return MPI_Wtime();
 	}
 #endif
-	return nrn_timeus();
 }
 
 void nrnmpi_terminate() {

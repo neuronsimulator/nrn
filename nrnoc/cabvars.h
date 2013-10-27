@@ -1,26 +1,19 @@
 
-extern  void capac_reg_(void), passive0_reg_(void), _passive_reg_(void),
+extern  void capac_reg_(void),
 #if EXTRACELLULAR
 	extracell_reg_(void),
 #endif
 	_stim_reg_(void),
-	_expsyn_reg_(void),
-	_netstim_reg_(void),
-	_pattern_reg_(void),
 	_hh_reg_(void);
 
 static void (*mechanism[])(void) = { /* type will start at 3 */
 	capac_reg_,
-	_passive_reg_,
 #if EXTRACELLULAR
 	/* extracellular requires special handling and must be type 5 */
 	extracell_reg_,
 #endif
-	passive0_reg_,	/* twice as fast as model description? */
 	_stim_reg_,
-	_expsyn_reg_,
 	_hh_reg_,
-	_netstim_reg_,
 	0
 };
 

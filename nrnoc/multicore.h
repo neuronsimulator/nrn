@@ -31,6 +31,11 @@ typedef struct NrnThread {
 	int id; /* this is nrn_threads[id] */
 	int _stop_stepping; /* delivered an all thread HocEvent */
 
+	size_t _ndata, _nidata, _nvdata; /* sizes */
+	double* _data; /* all the other double* and Datum to doubles point into here*/
+	int* _idata; /* all the Datum to ints index into here */
+	void* _vdata; /* all the Datum to pointers index into here */
+
 	double* _actual_rhs;
 	double* _actual_d;
 	double* _actual_a;
