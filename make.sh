@@ -1,7 +1,7 @@
 nrnmpiSRC='nrnmpi mpispike'
 
 nrnocSRC='capac eion finitialize fadvance_core solve_core treeset_core nrnoc_aux
-  mk_mech'
+  mk_mech multicore'
 
 nrnivSRC='netpar netcvode cxprop cvodestb tqueue htlist ivlistimpl ivvect'
 
@@ -21,4 +21,4 @@ done
 
 g++ -I. -Inrnoc -Inrniv -c main.cpp
 
-mpicxx *.o
+mpicxx *.o -lm -pthread

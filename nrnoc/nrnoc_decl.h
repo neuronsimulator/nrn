@@ -5,6 +5,10 @@
 extern "C" {
 #endif
 	
+extern int v_structure_change;
+extern int diam_changed;
+extern int structure_change_cnt;
+
 extern void nrn_exit(int);
 extern void deliver_net_events(NrnThread*);
 extern void nrn_deliver_events(NrnThread*);
@@ -25,6 +29,11 @@ extern void nrn_spike_exchange_init(void);
 extern void nrn_mk_prop_pools(int);
 extern void modl_reg(void);
 extern int nrn_is_ion(int);
+extern int nrn_modeltype(void);
+#define nrn_fixed_step_group nrn_fixed_step_group_minimal
+#define nrn_fixed_step nrn_fixed_step_minimal
+extern void nrn_fixed_step_group(int n);
+extern void nrn_fixed_step(void);
 
 #if defined(__cplusplus)
 }

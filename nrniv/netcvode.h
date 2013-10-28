@@ -16,8 +16,6 @@ class DiscreteEvent;
 class TQItemPool;
 class SelfEventPool;
 class SelfEvent;
-class PlayRecord;
-class PlayRecList;
 class IvocVect;
 class BAMechList;
 class MaxStateTable;
@@ -92,22 +90,7 @@ public:
 	void init_events();
 	void vec_event_store();
 	int owned_by_thread(double*);
-	PlayRecord* playrec_uses(void*);
-	void playrec_add(PlayRecord*);
-	void playrec_remove(PlayRecord*);
-	int playrec_item(PlayRecord*);
-	PlayRecord* playrec_item(int);
-	PlayRecList*  playrec_list() { return prl_;}
 	void simgraph_remove();
-	// fixed step continuous play and record
-	PlayRecList* fixed_play_;
-	PlayRecList* fixed_record_;
-	void vecrecord_add(); // hoc interface functions
-	void vec_remove();
-	void record_init();
-	void play_init();
-	void fixed_record_continuous(NrnThread*);
-	void fixed_play_continuous(NrnThread*);
 	void stelist_change();
 	void ste_check(); // for fixed step;
 	static double eps(double x) { return eps_*fabs(x); }
@@ -134,7 +117,6 @@ public:
 	bool init_global();
 	void alloc_list();
 	void distribute_dinfo(int*, int);
-	void playrec_setup();
 	void fill_global_ba(NrnThread*, int, BAMechList**);
 	void fornetcon_prepare();
 	int fornetcon_change_cnt_;
@@ -145,8 +127,6 @@ private:
 	int matrix_change_cnt_;
 	PreSynTable* pst_;
 	int pst_cnt_;
-	int playrec_change_cnt_;
-	PlayRecList* prl_;
 	IvocVect* vec_event_store_;
 public:
 	bool use_partrans();

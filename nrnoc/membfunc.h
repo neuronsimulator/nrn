@@ -31,7 +31,7 @@ typedef struct Memb_func {
 	int thread_size_; /* how many Datum needed in Memb_list if vectorized */
 	void (*thread_mem_init_)(ThreadDatum*); /* after Memb_list._thread is allocated */
 	void (*thread_cleanup_)(ThreadDatum*); /* before Memb_list._thread is freed */
-	void (*thread_table_check_)(double*, Datum*, Datum*, void*, int);
+	void (*thread_table_check_)(double*, Datum*, ThreadDatum*, void*, int);
 	void (*_update_ion_pointers)(Datum*);
 	int is_point;
 	void (*setdata_)(double*, Datum*);
@@ -90,6 +90,11 @@ extern void hoc_register_prop_size(int, int, int);
 extern void _nrn_thread_reg0(int i, void(*f)(ThreadDatum*));
 extern void _nrn_thread_reg1(int i, void(*f)(ThreadDatum*));
 extern void _nrn_thread_reg2(int i, void(*f)(Datum*));
+
+extern int nrn_fornetcon_cnt_;
+extern int* nrn_fornetcon_type_;
+extern int* nrn_fornetcon_index_;
+extern void add_nrn_fornetcons(int, int);
 
 #if defined(__cplusplus)
 }

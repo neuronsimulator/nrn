@@ -22,6 +22,7 @@ implementNrnHash(Gid2PreSyn, int, PreSyn*)
 #include <errno.h>
 #include <netcon.h>
 #include <netcvode.h>
+#include <nrniv_decl.h>
 
 #define BGP_INTERVAL 2
 #if BGP_INTERVAL == 2
@@ -41,10 +42,8 @@ extern int nrn_use_selfqueue_;
 extern void nrn_pending_selfqueue(double, NrnThread*);
 extern int vector_capacity(IvocVect*); //ivocvect.h conflicts with STL
 extern double* vector_vec(IvocVect*);
-extern void ncs2nrn_integrate(double tstop);
 extern void nrn_fake_fire(int gid, double firetime, int fake_out);
 int nrnmpi_spike_compress(int nspike, bool gid_compress, int xchng_meth);
-void nrn_cleanup_presyn(PreSyn*);
 int nrn_set_timeout(int);
 void nrn_spike_exchange_init();
 extern double nrn_bgp_receive_time(int);
@@ -877,6 +876,10 @@ int BBS_gid_exists(int gid) {
 		}
 	}
 	return 0;
+}
+
+void nrn_cleanup_presyn(PreSyn* ps) {
+	assert(0);
 }
 
 // not sure this will be used

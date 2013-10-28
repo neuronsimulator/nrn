@@ -3,6 +3,8 @@
 int stoprun;
 int nrn_nthread;
 NrnThread* nrn_threads;
+int v_structure_change;
+int diam_changed;
 
 char* pnt_name(Point_process* pnt) {
   return memb_func[pnt->type].sym;
@@ -72,3 +74,9 @@ void* nrn_cacheline_calloc(void** memptr, size_t nmemb, size_t size) {
   return *memptr;
 }
 
+/* 0 means no model, 1 means ODE, 2 means DAE */
+int nrn_modeltype() {
+	int type;
+	type = 1;
+	return type;
+}

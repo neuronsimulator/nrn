@@ -17,7 +17,6 @@
 #endif
 
 class PreSyn;
-class PlayRecord;
 class TQueue;
 class TQItem;
 struct NrnThread;
@@ -33,8 +32,6 @@ class BGP_DMASend_Phase2;
 #define NetConType 2
 #define SelfEventType 3
 #define PreSynType 4
-#define PlayRecordEventType 6
-// the above will in turn steer to proper PlayRecord type
 #define NetParEventType 7
 
 class DiscreteEvent {
