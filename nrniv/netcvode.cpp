@@ -38,6 +38,12 @@ int nrn_use_selfqueue_;
 bool nrn_use_bin_queue_;
 #endif
 
+void mk_netcvode() {
+	if (!net_cvode_instance) {
+		net_cvode_instance = new NetCvode();
+	}
+}
+
 static DiscreteEvent* null_event_;
 static DiscreteEvent* tstop_event_;
 

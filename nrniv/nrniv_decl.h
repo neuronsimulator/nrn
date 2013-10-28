@@ -7,10 +7,10 @@ class PreSyn;
 extern "C" {
 #endif
 
-extern void mk_mech();
-extern void mk_netcvode();
-extern void nrn_setup();
-extern void output_spikes();
+extern void mk_mech(void);
+extern void mk_netcvode(void);
+extern void nrn_setup(void);
+extern void output_spikes(void);
 extern void BBS_netpar_solve(double);
 extern void nrn_cleanup_presyn(PreSyn*);
 extern void nrn_outputevent(unsigned char, double);
