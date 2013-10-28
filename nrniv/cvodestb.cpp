@@ -44,27 +44,35 @@ void init_net_events() {
 }
 
 void nrn_record_init() {
+	return;
 	if (net_cvode_instance) {
-		net_cvode_instance->record_init();
+//		net_cvode_instance->record_init();
 	}
 }
 
 void nrn_play_init() {
+	return;
 	if (net_cvode_instance) {
-		net_cvode_instance->play_init();
+//		net_cvode_instance->play_init();
 	}
 }
 
 void fixed_play_continuous(NrnThread* nt) {
+	return;
 	if (net_cvode_instance) {
-		net_cvode_instance->fixed_play_continuous(nt);
+//		net_cvode_instance->fixed_play_continuous(nt);
 	}
 }
 
 void fixed_record_continuous(NrnThread* nt) {
+	return;
 	if (net_cvode_instance) {
-		net_cvode_instance->fixed_record_continuous(nt);
+//		net_cvode_instance->fixed_record_continuous(nt);
 	}
+}
+
+void nrn_random_play(NrnThread* nt) {
+	return;
 }
 
 void nrn_solver_prepare() {

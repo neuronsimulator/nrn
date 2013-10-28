@@ -1,7 +1,7 @@
 nrnmpiSRC='nrnmpi mpispike'
 
 nrnocSRC='capac eion finitialize fadvance_core solve_core treeset_core nrnoc_aux
-  mk_mech multicore'
+  mk_mech multicore nrntimeout stim hh'
 
 nrnivSRC='netpar netcvode cxprop cvodestb tqueue htlist ivlistimpl ivvect'
 

@@ -13,10 +13,6 @@
 extern int _method3;
 #endif
 
-#undef exp
-#define exp hoc_Exp
-extern double hoc_Exp();
- 
 #define _threadargscomma_ _p, _ppvar, _thread, _nt,
 #define _threadargs_ _p, _ppvar, _thread, _nt
  	/*SUPPRESS 761*/

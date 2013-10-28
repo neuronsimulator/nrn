@@ -28,6 +28,9 @@ implementPool(SelfEventPool, SelfEvent)
 declarePtrList(TQList, TQItem)
 implementPtrList(TQList, TQItem)
 
+implementPtrList(NetConPList, NetCon)
+static NetConPList* ncs2nrn_input_;
+
 double NetCvode::eps_;
 NetCvode* net_cvode_instance;
 int nrn_use_selfqueue_;
@@ -61,7 +64,6 @@ static int nrn_errno_check(int type) { assert(0); return 1;}
 
 }
 
-void nrn_pending_selfqueue(double tt, NrnThread*);
 static void all_pending_selfqueue(double tt);
 static void* pending_selfqueue(NrnThread*);
 
@@ -342,6 +344,14 @@ void NetCvode::p_construct(int n) {
 	for (i=0; i < n; ++i) {
 		p[i].unreffed_event_cnt_ = 0;
 	}
+}
+
+void NetCvode::psl_append(PreSyn* ps) {
+	if (!psl_) {
+		psl_ = new HTList(NULL);
+	}
+	ps->hi_ = new HTList(ps);
+	psl_->Append(ps->hi_);
 }
 
 void NetCvode::solver_prepare() {
@@ -656,6 +666,10 @@ double PreSyn::mindelay() {
 	return md;
 }
 
+void NetCvode::handle_tstop_event(double tt, NrnThread* nt) {
+	assert(0);
+}
+
 void NetCvode::deliver_least_event(NrnThread* nt) {
 	TQItem* q = p[nt->id].tqe_->least();
 	DiscreteEvent* de = (DiscreteEvent*)q->data_;
@@ -822,6 +836,35 @@ void NetCon::rmsrc() {
 		}
 	}
 	src_ = nil;
+}
+
+PreSyn::PreSyn(double* src, Point_process* psrc) {
+	hi_th_ = nil;
+	flag_ = false;
+	valthresh_ = 0;
+	thvar_ = src;
+	pntsrc_ = psrc;;
+	threshold_ = 10.;
+	use_min_delay_ = 0;
+	tvec_ = nil;
+	idvec_ = nil;
+	gid_ = -1;
+	nt_ = nil;
+	if (src) {
+		if (psrc) {
+			nt_ = PP2NT(psrc);
+		}else{
+			//nt_ = (NrnThread*)ssrc->prop->dparam[9]._pvoid;
+			assert(0);
+		}
+	}
+	if (psrc && !src) {
+		nt_ = PP2NT(psrc);
+	}
+	output_index_ = -1;
+#if BGPDMA
+	bgp.dma_send_ = 0;
+#endif
 }
 
 PreSyn::~PreSyn() {

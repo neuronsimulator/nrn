@@ -9,6 +9,7 @@ extern int v_structure_change;
 extern int diam_changed;
 extern int structure_change_cnt;
 
+extern const char* nrn_version(int);
 extern void nrn_exit(int);
 extern void deliver_net_events(NrnThread*);
 extern void nrn_deliver_events(NrnThread*);
@@ -17,8 +18,6 @@ extern void nrn_random_play(NrnThread*);
 extern void nrn_play_init(void);
 extern void nrn_record_init(void);
 extern void fixed_play_continuous(NrnThread*);
-extern void setup_tree_matrix(NrnThread*);
-extern void* setup_tree_matrix_minimal(NrnThread*);
 extern void nrn_solve_minimal(NrnThread*);
 extern void second_order_cur(NrnThread*);
 extern void nrn_ba(NrnThread*, int);
@@ -32,8 +31,10 @@ extern int nrn_is_ion(int);
 extern int nrn_modeltype(void);
 #define nrn_fixed_step_group nrn_fixed_step_group_minimal
 #define nrn_fixed_step nrn_fixed_step_minimal
+#define setup_tree_matrix setup_tree_matrix_minimal
 extern void nrn_fixed_step_group(int n);
 extern void nrn_fixed_step(void);
+extern void* setup_tree_matrix(NrnThread*);
 
 #if defined(__cplusplus)
 }

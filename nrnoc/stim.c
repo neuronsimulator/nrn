@@ -36,7 +36,7 @@
 extern int nrn_get_mechtype();
  static int _pointtype;
  static void* _hoc_create_pnt(){ void* create_point_process();
-  return create_point_process(_pointtype);
+  return NULL; /*create_point_process(_pointtype);*/
 }
  static void _hoc_destroy_pnt();
 
@@ -44,7 +44,7 @@ extern int nrn_get_mechtype();
  static void nrn_alloc(), nrn_init(), nrn_state();
  static void nrn_cur(), nrn_jacob();
  static void _hoc_destroy_pnt(_vptr) void* _vptr; {
-   destroy_point_process(_vptr);
+   /*destroy_point_process(_vptr);*/
 }
  /* connect range variables in _p that hoc is supposed to know about */
  static char *_mechanism[] = {

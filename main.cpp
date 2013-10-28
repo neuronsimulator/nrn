@@ -1,13 +1,6 @@
 #include <nrnconf.h>
 #include <nrnmpi.h>
-
-extern "C" {
-  extern void mk_mech();
-  extern void mk_netcvode();
-  extern void nrn_setup();
-  extern void BBS_netpar_solve(double);
-  extern void output_spikes();
-}
+#include <nrniv_decl.h>
 
 int main(int argc, char** argv, char** env) {
   nrnmpi_init(1, &argc, &argv);
@@ -17,4 +10,13 @@ int main(int argc, char** argv, char** env) {
   BBS_netpar_solve(100.);
   output_spikes();
   return 0;
+}
+
+void modl_reg() {
+	// not right place, but plays role of nrnivmodl constructed
+	// mod_func.c.
+}
+
+const char* nrn_version(int i) {
+	return "version id unimplemented";
 }

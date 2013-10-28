@@ -3,8 +3,6 @@
 #include <membdef.h>
 #include <cabvars.h>
 
-extern char* nrn_version();
-
 /* change this to correspond to the ../nmodl/nocpout nmodl_version_ string*/
 static char nmodl_version_[] =
 "6.2.0";
@@ -312,7 +310,7 @@ void _nrn_thread_reg2(int i, void(*f)(Datum*)) {
 	memb_func[i]._update_ion_pointers = f;
 }
 
-void _nrn_thread_table_reg(int i, void(*f)(double*, Datum*, Datum*, void*, int)) {
+void _nrn_thread_table_reg(int i, void(*f)(double*, Datum*, ThreadDatum*, void*, int)) {
 	memb_func[i].thread_table_check_ = f;
 }
 

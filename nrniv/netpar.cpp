@@ -39,7 +39,6 @@ extern "C" {
 extern NetCvode* net_cvode_instance;
 extern double t, dt;
 extern int nrn_use_selfqueue_;
-extern void nrn_pending_selfqueue(double, NrnThread*);
 extern int vector_capacity(IvocVect*); //ivocvect.h conflicts with STL
 extern double* vector_vec(IvocVect*);
 extern void nrn_fake_fire(int gid, double firetime, int fake_out);
@@ -942,7 +941,7 @@ NetCon* BBS_gid_connect(int gid, Point_process* target) {
 //printf("%d connect %s from already existing %d\n", nrnmpi_myid, hoc_object_name(target), gid);
 	}else{
 //printf("%d connect %s from new PreSyn for %d\n", nrnmpi_myid, hoc_object_name(target), gid);
-		ps = new PreSyn(nil, nil, nil);
+		ps = new PreSyn(nil, nil);
 		net_cvode_instance->psl_append(ps);
 #if ALTHASH
 		gid2in_->insert(gid, ps);
@@ -1016,7 +1015,7 @@ void BBS_netpar_solve(double tstop) {
 static double set_mindelay(double maxdelay) {
 	double mindelay = maxdelay;
 	last_maxstep_arg_ = maxdelay;
-    if (nrn_use_selfqueue_ || net_cvode_instance->localstep() || nrn_nthread > 1 ) {
+    if (nrn_use_selfqueue_ || nrn_nthread > 1 ) {
 	HTList* q;
 	HTList* psl = net_cvode_instance->psl_;
 	if (psl) for (q = psl->First(); q != psl->End(); q = q->Next()) {
