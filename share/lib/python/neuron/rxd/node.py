@@ -1,10 +1,8 @@
 import neuron
 from neuron import h, nrn
-import rxd
+from . import rxd, region, rxdsection
 import numpy
 import weakref
-import region
-import rxdsection
 
 # data storage
 _volumes = numpy.array([])

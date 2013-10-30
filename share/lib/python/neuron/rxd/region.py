@@ -1,5 +1,5 @@
 from neuron import h
-import geometry as geo
+from . import geometry as geo
 
 _region_count = 0
 

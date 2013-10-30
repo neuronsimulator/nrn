@@ -1,9 +1,7 @@
 import weakref
-import species
-import rxdmath
-import rxd
+from . import species, rxdmath, rxd
 import numpy
-from generalizedReaction import GeneralizedReaction
+from .generalizedReaction import GeneralizedReaction
 
 class Rate(GeneralizedReaction):
     def __init__(self, species, rate, regions=None, membrane_flux=False):

@@ -1,9 +1,7 @@
 import neuron
 from neuron import h
-import species
-from nodelist import NodeList
-import node
-import section1d
+from . import species, node, section1d
+from .nodelist import NodeList
 import weakref
 import numpy
 from neuron import nonvint_block_supervisor as nbs
