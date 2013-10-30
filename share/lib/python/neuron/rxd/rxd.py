@@ -1,9 +1,7 @@
 import neuron
 from neuron import h
-import species
-from nodelist import NodeList
-import node
-import section1d
+from . import species, node, section1d, region
+from .nodelist import NodeList
 import weakref
 import numpy
 from neuron import nonvint_block_supervisor as nbs
@@ -12,8 +10,7 @@ import scipy.sparse.linalg
 import ctypes
 import atexit
 import options
-import region
-from rxdException import RxDException
+from .rxdException import RxDException
 
 # aliases to avoid repeatedly doing multiple hash-table lookups
 _numpy_array = numpy.array

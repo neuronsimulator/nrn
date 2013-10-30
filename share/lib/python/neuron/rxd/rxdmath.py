@@ -1,10 +1,10 @@
 import math
 import numpy
-import rxdmath
 import species
+import rxdmath
 import weakref
 import functools
-from rxdException import RxDException
+from .rxdException import RxDException
 
 def _vectorized(f, objs):
     if hasattr(objs, '__len__'):

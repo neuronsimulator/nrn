@@ -1,6 +1,6 @@
 import bisect
 import numpy
-from geometry3d.graphicsPrimitives import Cylinder, Cone
+from .geometry3d.graphicsPrimitives import Cylinder, Cone
 from neuron import h
 
 # TODO: remove indirection (e.g. use _h_x3d instead of h.x3d)

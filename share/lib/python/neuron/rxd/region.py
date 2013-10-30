@@ -1,11 +1,10 @@
-from rxdException import RxDException
+from .rxdException import RxDException
 from neuron import h
-import geometry as geo
+from . import geometry3d, dimension3
 import copy
-import geometry3d
-import dimension3
 import itertools
 import numpy
+from . import geometry as geo
 
 _region_count = 0
 

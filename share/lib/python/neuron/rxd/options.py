@@ -1,4 +1,4 @@
-from rxdException import RxDException
+from .rxdException import RxDException
 
 try:
     import scipy

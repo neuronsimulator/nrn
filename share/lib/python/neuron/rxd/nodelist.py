@@ -1,4 +1,4 @@
-from rxdException import RxDException
+from .rxdException import RxDException
 
 class NodeList(list):
     def __init__(self, items):

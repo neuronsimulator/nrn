@@ -1,6 +1,4 @@
-#from neuron import h
-#h.load_file('stdrun.hoc')
-from rxdException import RxDException
+from .rxdException import RxDException
 
 try:
     import scipy

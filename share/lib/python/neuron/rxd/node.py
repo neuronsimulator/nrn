@@ -1,11 +1,11 @@
 import neuron
 from neuron import h, nrn
 import rxd
-import numpy
-import weakref
 import region
 import rxdsection
-from rxdException import RxDException
+import numpy
+import weakref
+from .rxdException import RxDException
 
 # data storage
 _volumes = numpy.array([])

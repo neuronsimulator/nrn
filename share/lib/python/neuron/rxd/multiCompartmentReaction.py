@@ -1,14 +1,10 @@
 import weakref
-import species
-import rxdmath
-import rxd
-import node
+from . import rxdmath, rxd, node, species, region
 import numpy
-import region
-from generalizedReaction import GeneralizedReaction, molecules_per_mM_um3
+from .generalizedReaction import GeneralizedReaction, molecules_per_mM_um3, get_scheme_rate1_rate2_regions_custom_dynamics_mass_action
 from neuron import h
 import itertools
-from rxdException import RxDException
+from .rxdException import RxDException
 
 FARADAY = h.FARADAY
 
@@ -20,9 +16,46 @@ def _ref_list_with_mult(obj):
     return result
 
 class MultiCompartmentReaction(GeneralizedReaction):
-    def __init__(self, scheme, rate_f, rate_b=None, membrane=None, custom_dynamics=None, mass_action=None, membrane_flux=False, scale_by_area=True):
-        """if not custom_dynamics, then assumes mass action: multiplies rate by appropriate powers of species;
-        otherwise, assumes full equations given"""
+    def __init__(self, *args, **kwargs):
+        """Specify a reaction spanning multiple regions to be added to the system.
+        
+        Use this for, for example, pumps and channels, or interactions between
+        species living in a volume (e.g. the cytosol) and species on a
+        membrane (e.g. the plasma membrane).
+        
+        For each species/state/parameter, you must specify what region you are
+        referring to, as it could be present in multiple regions. You must
+        also specify a `membrane` or a `border` (these are treated as synonyms)
+        that separates the regions involved in your reaction. This is necessary
+        because the default behavior is to scale the reaction rate by the
+        border area, as would be expected if one of the species involved is a
+        pump that is binding to a species in the volume. If this is not the
+        desired behavior, pass the keyword argument `scale_by_area=False`.
+        
+        Unlike Reaction objects, the base units for the rates are in terms of
+        molecules per square micron per ms.
+        
+        .. seealso::
+        
+            :class:`neuron.rxd.Reaction`
+        """
+        
+        # parse the arguments shared with rxd.Reaction
+        scheme, rate1, rate2, regions, custom_dynamics, mass_action = (
+            get_scheme_rate1_rate2_regions_custom_dynamics_mass_action(args, kwargs)
+        )
+        # additional keyword arguments
+        membrane_flux = kwargs.get('membrane_flux')
+        membrane = kwargs.get('membrane')
+        border = kwargs.get('border')
+        scale_by_area = kwargs.get('scale_by_area', True)
+
+        if border is not None and membrane is not None:
+            raise Exception('cannot specify both border and membrane; they are synoyms')
+        if border is not None:
+            membrane = border
+
+        
         # TODO: verify schemes use weakrefs
         self._scheme = scheme
         self._scale_by_area = scale_by_area

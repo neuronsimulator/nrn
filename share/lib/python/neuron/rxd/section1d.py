@@ -1,12 +1,9 @@
 import weakref
-import node
 from neuron import h
-import numpy
 import rxd
-import rxdsection
-import nodelist
-import morphology
-from rxdException import RxDException
+from . import node, rxdsection, nodelist, morphology
+import numpy
+from .rxdException import RxDException
 
 # all concentration ptrs and indices
 _all_cptrs = []

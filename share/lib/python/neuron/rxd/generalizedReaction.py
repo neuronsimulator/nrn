@@ -1,5 +1,4 @@
-import rxd
-import node
+from . import rxd, node, rxdmath
 import numpy
 import weakref
 import itertools
@@ -26,6 +25,55 @@ def ref_list_with_mult(obj):
         result += [w] * p
     return result
 
+
+def get_scheme_rate1_rate2_regions_custom_dynamics_mass_action(args, kwargs):
+    """Parse the arguments to a rxd.Reaction or rxd.MultiCompartmentReaction.
+    
+    There are four valid options, two for historical
+    compatibility, two for future support (these two are the ones
+    described in the help)
+    """
+    if len(args) == 4:
+        # bidirectional reaction
+        # writing != instead of <> because Python 3 does not support <>
+        scheme = (args[0] != args[1])
+        rate1 = args[2]
+        rate2 = args[3]
+    elif len(args) == 3:
+        # two possibilities which we can distinguish based on if the
+        # first argument is an rxdmath._Reaction:
+        # 1. with the new way, this would be reactants, products, and a
+        #    forward rate
+        # 2. with the old way, this is a bidirectional scheme
+        if isinstance(args[0], rxdmath._Reaction):
+            scheme = args[0]
+            rate1 = args[1]
+            rate2 = args[2]
+        else:
+            scheme = (args[0] > args[1])
+            rate1 = args[2]
+            rate2 = None
+    elif len(args) == 2:
+        # first argument must be a unidirectional rxdmath._Reaction
+        # this is the old way and not included in the help because it
+        # does not generalize to bidirectional reactions in Python 3
+        # because of the missing <>
+        scheme = args[0]
+        if not isinstance(scheme, rxdmath._Reaction):
+            raise RxDException('%r not a recognized reaction scheme' % self._scheme)
+        rate1 = args[1]
+        rate2 = None
+    else:
+        raise RxDException('Invalid number of arguments to rxd.Reaction')
+        
+    # keyword arguments
+    # custom_dynamics is discouraged in favor of its antonym mass_action
+    # (but internally we use custom_dynamics because of how originally
+    # designed)
+    regions = kwargs.get('regions')
+    custom_dynamics = kwargs.get('custom_dynamics')
+    mass_action = kwargs.get('mass_action')
+    return scheme, rate1, rate2, regions, custom_dynamics, mass_action
 
 class GeneralizedReaction(object):
     """an abstract class, parent of Rate, Reaction, MultiCompartmentReaction"""

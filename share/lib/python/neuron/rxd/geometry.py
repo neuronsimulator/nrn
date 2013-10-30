@@ -1,7 +1,7 @@
 import warnings
 import numpy
 from neuron import h, nrn
-from rxdException import RxDException
+from .rxdException import RxDException
 
 class RxDGeometry:
     def volumes1d(self, sec):

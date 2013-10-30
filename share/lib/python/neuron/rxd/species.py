@@ -1,15 +1,12 @@
-from rxdmath import _Arithmeticed
+from .rxdmath import _Arithmeticed
 import weakref
-import region
-from section1d import Section1D
+from .section1d import Section1D
 from neuron import h, nrn
-import node
-import nodelist
-import rxdmath
-import numpy
 import rxd
+from . import node, nodelist, rxdmath, region
+import numpy
 import warnings
-from rxdException import RxDException
+from .rxdException import RxDException
 
 _defined_species = {}
 def _get_all_species():
