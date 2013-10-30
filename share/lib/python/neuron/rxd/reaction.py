@@ -16,7 +16,7 @@ class Reaction(GeneralizedReaction):
         # TODO: verify schemes use weakrefs
         self._scheme = scheme
         if not isinstance(scheme, rxdmath._Reaction):
-            raise Exception('%r not a recognized reaction scheme' % self._scheme)
+            raise RxDException('%r not a recognized reaction scheme' % self._scheme)
         if custom_dynamics is not None and mass_action is not None:
             raise RxDException('Cannot specify both custom_dynamics and mass_action.')
         elif custom_dynamics is None and mass_action is None:
@@ -27,17 +27,17 @@ class Reaction(GeneralizedReaction):
         if scheme._dir == '<':
             rate_f, rate_b = 0, rate1
             if rate2 is not None:
-                raise Exception('unidirectional Reaction can have only one rate constant')
+                raise RxDException('unidirectional Reaction can have only one rate constant')
         elif scheme._dir == '<>':
             rate_f, rate_b = rate1, rate2
             if rate2 is None:
-                raise Exception('bidirectional Reaction needs two rate constants')
+                raise RxDException('bidirectional Reaction needs two rate constants')
         elif scheme._dir == '>':
             rate_f, rate_b = rate1, 0
             if rate2 is not None:
-                raise Exception('unidirectional Reaction can have only one rate constant')
+                raise RxDException('unidirectional Reaction can have only one rate constant')
         else:
-            raise Exception('unknown reaction scheme direction: %r' % scheme._dir)
+            raise RxDException('unknown reaction scheme direction: %r' % scheme._dir)
         
 
         self._original_rate_f = rate_f
@@ -60,7 +60,7 @@ class Reaction(GeneralizedReaction):
         rhs = self._scheme._rhs._items
         if self._dir == '<':
             # TODO: remove this limitation (probably means doing with rate_b what done with rate_f and making sure _sources and _dests are correct
-            raise Exception('pure reverse reaction currently not supported; reformulate as a forward reaction')
+            raise RxDException('pure reverse reaction currently not supported; reformulate as a forward reaction')
         
         rate_f = copy.copy(self._original_rate_f)
         rate_b = copy.copy(self._original_rate_b)
@@ -84,7 +84,7 @@ class Reaction(GeneralizedReaction):
         
         trans_membrane = any(isinstance(s(), species.SpeciesOnRegion) for s in self._involved_species)
         if trans_membrane:
-            raise Exception('Reaction does not support multi-compartment dynamics. Use MultiCompartmentReaction.')
+            raise RxDException('Reaction does not support multi-compartment dynamics. Use MultiCompartmentReaction.')
 
     
     @property
@@ -96,13 +96,13 @@ class Reaction(GeneralizedReaction):
     @f_rate.setter
     def f_rate(self, value):
         if self._dir not in ('<>', '>'):
-            raise Exception('no forward reaction in reaction scheme')
+            raise RxDException('no forward reaction in reaction scheme')
         self._original_rate_f = value
         self._update_rates()
     @b_rate.setter
     def b_rate(self, value):
         if self._dir not in ('<>', '<'):
-            raise Exception('no backward reaction in reaction scheme')
+            raise RxDException('no backward reaction in reaction scheme')
         self._original_rate_b = value
         self._update_rates()
         
