@@ -188,7 +188,7 @@ void RandomPlay::update(Observable*) {
 	list_remove();
 }
 
-Rand::Rand(unsigned long seed = 0, int size = 55, Object* obj = nil) {
+Rand::Rand(unsigned long seed, int size, Object* obj) {
 //printf("Rand\n");
    gen = new ACG(seed,size);
    rand = new Normal(0.,1.,gen); 

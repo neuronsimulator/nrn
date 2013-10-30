@@ -220,7 +220,7 @@ static double nhost(void* v) {
 	return nrnmpi_numprocs;
 }
 
-static double rank(void* v) {
+static double nrn_rank(void* v) {
 	return nrnmpi_myid;
 }
 
@@ -924,7 +924,7 @@ static Member_func members[] = {
 	"look_take", look_take,
 	"runworker", worker,
 	"done", done,
-	"id", rank,
+	"id", nrn_rank,
 	"nhost", nhost,
 	"id_world", rank_world,
 	"nhost_world", nhost_world,
