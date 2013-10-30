@@ -10,13 +10,19 @@ from generalizedReaction import GeneralizedReaction, ref_list_with_mult
 
 
 class Reaction(GeneralizedReaction):
-    def __init__(self, scheme, rate1, rate2=None, regions=None, custom_dynamics=False):
+    def __init__(self, scheme, rate1, rate2=None, regions=None, custom_dynamics=None, mass_action=None):
         """if not custom_dynamics, then assumes mass action: multiplies rate by appropriate powers of species;
         otherwise, assumes full equations given"""
         # TODO: verify schemes use weakrefs
         self._scheme = scheme
         if not isinstance(scheme, rxdmath._Reaction):
             raise Exception('%r not a recognized reaction scheme' % self._scheme)
+        if custom_dynamics is not None and mass_action is not None:
+            raise RxDException('Cannot specify both custom_dynamics and mass_action.')
+        elif custom_dynamics is None and mass_action is None:
+            custom_dynamics = False
+        elif custom_dynamics is None and mass_action is not None:
+            custom_dynamics = not mass_action
         self._custom_dynamics = custom_dynamics
         if scheme._dir == '<':
             rate_f, rate_b = 0, rate1
