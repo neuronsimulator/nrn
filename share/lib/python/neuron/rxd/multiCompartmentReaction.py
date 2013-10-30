@@ -32,6 +32,9 @@ class MultiCompartmentReaction(GeneralizedReaction):
         pump that is binding to a species in the volume. If this is not the
         desired behavior, pass the keyword argument `scale_by_area=False`.
         
+        Pass in `membrane_flux=True` if the reaction produces a current across
+        the plasma membrane that should affect the membrane potential.        
+        
         Unlike Reaction objects, the base units for the rates are in terms of
         molecules per square micron per ms.
         
@@ -41,11 +44,11 @@ class MultiCompartmentReaction(GeneralizedReaction):
         """
         
         # parse the arguments shared with rxd.Reaction
-        scheme, rate1, rate2, regions, custom_dynamics, mass_action = (
+        scheme, rate_f, rate_b, regions, custom_dynamics, mass_action = (
             get_scheme_rate1_rate2_regions_custom_dynamics_mass_action(args, kwargs)
         )
         # additional keyword arguments
-        membrane_flux = kwargs.get('membrane_flux')
+        membrane_flux = kwargs.get('membrane_flux', False)
         membrane = kwargs.get('membrane')
         border = kwargs.get('border')
         scale_by_area = kwargs.get('scale_by_area', True)
