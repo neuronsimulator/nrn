@@ -17,7 +17,7 @@ def _ref_list_with_mult(obj):
     return result
 
 class MultiCompartmentReaction(GeneralizedReaction):
-    def __init__(self, scheme, rate_f, rate_b=None, membrane=None, custom_dynamics=False, membrane_flux=False, scale_by_area=True):
+    def __init__(self, scheme, rate_f, rate_b=None, membrane=None, custom_dynamics=None, mass_action=None, membrane_flux=False, scale_by_area=True):
         """if not custom_dynamics, then assumes mass action: multiplies rate by appropriate powers of species;
         otherwise, assumes full equations given"""
         # TODO: verify schemes use weakrefs
@@ -25,6 +25,12 @@ class MultiCompartmentReaction(GeneralizedReaction):
         self._scale_by_area = scale_by_area
         self._original_rate_f = rate_f
         self._original_rate_b = rate_b
+        if custom_dynamics is not None and mass_action is not None:
+            raise Exception('Cannot specify both custom_dynamics and mass_action.')
+        elif custom_dynamics is None and mass_action is None:
+            custom_dynamics = False
+        elif custom_dynamics is None and mass_action is not None:
+            custom_dynamics = not mass_action        
         self._custom_dynamics = custom_dynamics
         self._trans_membrane = True
         if membrane_flux not in (True, False):
