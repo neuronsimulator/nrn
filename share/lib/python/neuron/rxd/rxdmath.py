@@ -372,5 +372,9 @@ class _Arithmeticed:
                 new_items[oitem] -= other._items[oitem]
         return _Arithmeticed(new_items, False)
     
-    
+
+    def __rsub__(self, other):
+        other = _ensure_arithmeticed(other)
+        return other.__sub__(self)
+        
 
