@@ -1,22 +1,43 @@
 import weakref
-import species
-import rxdmath
-import rxd
-import node
+from . import species, rxdmath, rxd, node
 import numpy
 import copy
-from generalizedReaction import GeneralizedReaction, ref_list_with_mult
+from .generalizedReaction import GeneralizedReaction, ref_list_with_mult
 
 
 
 class Reaction(GeneralizedReaction):
-    def __init__(self, scheme, rate1, rate2=None, regions=None, custom_dynamics=None, mass_action=None):
-        """if not custom_dynamics, then assumes mass action: multiplies rate by appropriate powers of species;
-        otherwise, assumes full equations given"""
+    def __init__(self, *args, **kwargs):
+        """Specify a reaction to be added to the system.
+        
+        Examples:
+            For 2 * H + O > H2O in a mass action reaction at rate k:
+                r = rxd.Reaction(2 * H + O, H2O, k)
+                
+            To constrain the reaction to a specified list of regions,
+            say to just the extracellular space (ext) and the cytosol (cyt),
+            use the regions keyword, e.g.
+                r = rxd.Reaction(2 * H + O, H2O, k, regions=[ext, cyt])
+            
+            For a bi-directional reaction, specify a backward reaction rate.
+            e.g. if kf is the forward rate and kb is the backward rate, then:
+                r = rxd.Reaction(2 * H + O, H2O, kf, kb)
+            
+            To use dynamics other than mass-action, add that mass_action=False
+            flag and put the full formula instead of a mass-action rate for
+            kf (and kb). E.g. Michaelis-Menten degradation
+                r = rxd.Reaction(
+                    dimer, decomposed, dimer / (k + diamer), mass_action=False
+                )
+        """
+        
+        # parse the arguments
+        scheme, rate1, rate2, regions, custom_dynamics, mass_action = (
+            get_scheme_rate1_rate2_regions_custom_dynamics_mass_action(args, kwargs)
+        )
+
         # TODO: verify schemes use weakrefs
         self._scheme = scheme
-        if not isinstance(scheme, rxdmath._Reaction):
-            raise Exception('%r not a recognized reaction scheme' % self._scheme)
         if custom_dynamics is not None and mass_action is not None:
             raise Exception('Cannot specify both custom_dynamics and mass_action.')
         elif custom_dynamics is None and mass_action is None:
