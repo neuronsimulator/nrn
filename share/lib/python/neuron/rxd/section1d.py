@@ -1,6 +1,9 @@
 import weakref
 from neuron import h
-from . import node, rxd, rxdsection, nodelist, morphology
+import rxd
+import node
+import rxdsection
+from . import nodelist, morphology
 import numpy
 
 # all concentration ptrs and indices

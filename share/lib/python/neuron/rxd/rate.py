@@ -1,5 +1,6 @@
 import weakref
-from . import species, rxdmath, rxd
+import rxd
+from . import species, rxdmath
 import numpy
 from .generalizedReaction import GeneralizedReaction
 

@@ -2,7 +2,8 @@ from .rxdmath import _Arithmeticed
 import weakref
 from .section1d import Section1D
 from neuron import h, nrn
-from . import node, nodelist, rxdmath, rxd, region
+import rxd
+from . import node, nodelist, rxdmath, region
 import numpy
 
 _defined_species = {}

@@ -1,6 +1,8 @@
 import neuron
 from neuron import h, nrn
-from . import rxd, region, rxdsection
+import rxd
+import region
+import rxdsection
 import numpy
 import weakref
 

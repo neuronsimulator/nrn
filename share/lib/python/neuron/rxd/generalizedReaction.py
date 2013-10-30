@@ -1,4 +1,5 @@
-from . import rxd, node, rxdmath
+from . import node, rxdmath
+import rxd
 import numpy
 import weakref
 import itertools

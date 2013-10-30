@@ -1,6 +1,7 @@
 import math
 import numpy
-from . import rxdmath, species
+import rxdmath
+import species
 import weakref
 import functools
 
