@@ -143,6 +143,7 @@ int register_mech(char** m, mod_alloc_t alloc, mod_f_t cur, mod_f_t jacob,
 
 	type = nrn_get_mechtype(m[1]);
 	assert(type);
+	printf("register_mech %s %d\n", m[1], type);
 	nrn_prop_param_size_[type] = 0; /* fill in later */
 	nrn_prop_dparam_size_[type] = 0; /* fill in later */
 	nrn_dparam_ptr_start_[type] = 0; /* fill in later */

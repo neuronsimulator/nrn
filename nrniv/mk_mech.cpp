@@ -31,17 +31,28 @@ void mk_mech(const char* fname) {
   alloc_mech(n);
   for (int i=2; i < n; ++i) {
     char mname[100];
-    int type, pnttype, dsize, pdsize;
-    assert(fscanf(f, "%s %d %d %d %d\n", mname, &type, &pnttype, &dsize, &pdsize) == 5);
+    int type, pnttype, is_ion, dsize, pdsize;
+    assert(fscanf(f, "%s %d %d %d %d %d\n", mname, &type, &pnttype, &is_ion, &dsize, &pdsize) == 6);
     assert(i == type);
-    //printf("%s %d %d %d %d\n", mname, type, pnttype, dsize, pdsize);
+    //printf("%s %d %d %d %d %d\n", mname, type, pnttype, is_ion, dsize, pdsize);
     set_mechtype(mname, type);
     pnt_map[type] = (char)pnttype;
     nrn_prop_param_size_[type] = dsize;
     nrn_prop_dparam_size_[type] = pdsize;
-    printf("%s %d %d\n", mname, nrn_get_mechtype(mname), type);
+    if (is_ion) {
+      double charge;
+      assert(fscanf(f, "%lf\n", &charge) == 1);
+      // strip the _ion
+      char iname[100];
+      strcpy(iname, mname);
+      iname[strlen(iname) - 4] = '\0';
+      //printf("%s %s\n", mname, iname);
+      ion_reg(iname, charge);
+    }
+    //printf("%s %d %d\n", mname, nrn_get_mechtype(mname), type);
   }
   fclose(f);
+  hoc_last_init();
   exit(0);
 }
 
@@ -56,6 +67,9 @@ static void set_mechtype(const char* name, int type) {
 int nrn_get_mechtype(const char* name) {
   int type;
   StringKey s(name);
-  assert(mech2type->find(type, s));
+  if (!mech2type->find(type, s)) {
+    printf("could not find %s\n", name);
+    abort();
+  }
   return type;
 }

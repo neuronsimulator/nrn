@@ -38,7 +38,7 @@ double nrn_ion_charge(int type) {
 	return global_charge(type);
 }
 
-void ion_reg(char* name, double valence) {
+void ion_reg(const char* name, double valence) {
 	int i, mechtype;
 	Symbol *s;
 	char buf[7][50];
@@ -56,7 +56,7 @@ void ion_reg(char* name, double valence) {
 	}
 	mechanism[5] = (char *)0; /* buf[4] not used above */
 	mechtype = nrn_get_mechtype(buf[0]);
-	if (mechtype == 0) {
+	if (memb_func[mechtype].alloc != ion_alloc) {
 		register_mech(mechanism, ion_alloc, ion_cur, (mod_f_t)0, (mod_f_t)0, (mod_f_t)ion_init, -1, 1);
 		mechtype = nrn_get_mechtype(mechanism[1]);
 		hoc_register_prop_size(mechtype, nparm, 1 );
