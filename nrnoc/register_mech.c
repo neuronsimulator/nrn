@@ -21,6 +21,9 @@ double t, dt, clamp_resist, celsius, htablemin, htablemax;
 int nrn_global_ncell = 0; /* used to be rootnodecount */
 
 static int memb_func_size_;
+static int pointtype = 1; /* starts at 1 since 0 means not point in pnt_map*/
+int n_memb_func;
+
 Memb_func* memb_func;
 Memb_list* memb_list;
 short* memb_order_;
@@ -73,19 +76,9 @@ int nrn_is_cable() {return 1;}
 
 extern void nrn_threads_create(int);
 
-void hoc_last_init() {
-	int i;
-	void (**m)();
-	Symbol *s;
-
-	nrn_threads_create(1);
-
- 	if (nrnmpi_myid < 1) if (nrn_nobanner_ == 0) { 
-	    fprintf(stderr, "%s\n", nrn_version(1));
-	    fprintf(stderr, "%s\n", banner);
-	    fflush(stderr);
- 	} 
-	memb_func_size_ = 30;
+void alloc_mech(int n) {
+	memb_func_size_ = n;
+	n_memb_func = n;
 	memb_func = (Memb_func*)ecalloc(memb_func_size_, sizeof(Memb_func));
 	memb_list = (Memb_list*)ecalloc(memb_func_size_, sizeof(Memb_list));
 	pointsym = (Symbol**)ecalloc(memb_func_size_, sizeof(Symbol*));
@@ -106,6 +99,20 @@ void hoc_last_init() {
 	memb_order_ = (short*)ecalloc(memb_func_size_, sizeof(short));
 	bamech_ = (BAMech**)ecalloc(BEFORE_AFTER_SIZE, sizeof(BAMech*));
 	nrn_mk_prop_pools(memb_func_size_);
+}
+
+void hoc_last_init() {
+	int i;
+	void (**m)();
+	Symbol *s;
+
+	nrn_threads_create(1);
+
+ 	if (nrnmpi_myid < 1) if (nrn_nobanner_ == 0) { 
+	    fprintf(stderr, "%s\n", nrn_version(1));
+	    fprintf(stderr, "%s\n", banner);
+	    fflush(stderr);
+ 	} 
 #if 0
 /* will have to put this back if any mod file refers to diam */
 	register_mech(morph_mech, morph_alloc, (Pfri)0, (Pfri)0, (Pfri)0, (Pfri)0, -1, 0);
@@ -125,9 +132,6 @@ void initnrn() {
 	celsius = DEF_celsius;	/* degrees celsius */
 }
 
-static int pointtype = 1; /* starts at 1 since 0 means not point in pnt_map*/
-int n_memb_func;
-
 /* if vectorized then thread_data_size added to it */
 int register_mech(char** m, mod_alloc_t alloc, mod_f_t cur, mod_f_t jacob,
   mod_f_t stat, mod_f_t initialize, int nrnpointerindex, int vectorized
@@ -139,37 +143,6 @@ int register_mech(char** m, mod_alloc_t alloc, mod_f_t cur, mod_f_t jacob,
 
 	type = nrn_get_mechtype(m[1]);
 	assert(type);
-	if (type >= memb_func_size_) {
-		memb_func_size_ += 20;
-		memb_func = (Memb_func*)erealloc(memb_func, memb_func_size_*sizeof(Memb_func));
-		memb_list = (Memb_list*)erealloc(memb_list, memb_func_size_*sizeof(Memb_list));
-		pointsym = (Symbol**)erealloc(pointsym, memb_func_size_*sizeof(Symbol*));
-		point_process = (Point_process**)erealloc(point_process, memb_func_size_*sizeof(Point_process*));
-		pnt_map = (char*)erealloc(pnt_map, memb_func_size_*sizeof(char));
-		pnt_receive = (Pfrv*)erealloc(pnt_receive, memb_func_size_*sizeof(Pfrv));
-		pnt_receive_init = (Pfrv*)erealloc(pnt_receive_init, memb_func_size_*sizeof(Pfrv));
-		pnt_receive_size = (short*)erealloc(pnt_receive_size, memb_func_size_*sizeof(short));
-		nrn_is_artificial_ = (short*)erealloc(nrn_is_artificial_, memb_func_size_*sizeof(short));
-		nrn_artcell_qindex_ = (short*)erealloc(nrn_artcell_qindex_, memb_func_size_*sizeof(short));
-		nrn_prop_param_size_ = (int*)erealloc(nrn_prop_param_size_, memb_func_size_*sizeof(int));
-		nrn_prop_dparam_size_ = (int*)erealloc(nrn_prop_dparam_size_, memb_func_size_*sizeof(int));
-		nrn_dparam_ptr_start_ = (int*)erealloc(nrn_dparam_ptr_start_, memb_func_size_*sizeof(int));
-		nrn_dparam_ptr_end_ = (int*)erealloc(nrn_dparam_ptr_end_, memb_func_size_*sizeof(int));
-		memb_order_ = (short*)erealloc(memb_order_, memb_func_size_*sizeof(short));
-		for (j=memb_func_size_ - 20; j < memb_func_size_; ++j) {
-			pnt_map[j] = 0;
-			point_process[j] = (Point_process*)0;
-			pointsym[j] = (Symbol*)0;
-			pnt_receive[j] = (Pfrv)0;
-			pnt_receive_init[j] = (Pfrv)0;
-			pnt_receive_size[j] = 0;
-			nrn_is_artificial_[j] = 0;
-			nrn_artcell_qindex_[j] = 0;
-			memb_order_[j] = 0;
-		}
-		nrn_mk_prop_pools(memb_func_size_);
-	}
-
 	nrn_prop_param_size_[type] = 0; /* fill in later */
 	nrn_prop_dparam_size_[type] = 0; /* fill in later */
 	nrn_dparam_ptr_start_[type] = 0; /* fill in later */
@@ -265,10 +238,6 @@ double _modl_get_dt_thread(NrnThread* nt) {
 
 int nrn_pointing(pd) double *pd; {
 	return pd ? 1 : 0;
-}
-
-int nrn_get_mechtype(const char* name) {
-	assert(0); /* needs an implementation */
 }
 
 int state_discon_flag_ = 0;

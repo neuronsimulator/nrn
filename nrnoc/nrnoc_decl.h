@@ -35,6 +35,7 @@ extern int nrn_modeltype(void);
 extern void nrn_fixed_step_group(int n);
 extern void nrn_fixed_step(void);
 extern void* setup_tree_matrix(NrnThread*);
+extern void alloc_mech(int);
 
 #if defined(__cplusplus)
 }

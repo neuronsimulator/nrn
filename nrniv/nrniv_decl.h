@@ -7,7 +7,7 @@ class PreSyn;
 extern "C" {
 #endif
 
-extern void mk_mech(void);
+extern void mk_mech(const char* fname);
 extern void mk_netcvode(void);
 extern void nrn_setup(void);
 extern void output_spikes(void);

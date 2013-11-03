@@ -1,9 +1,10 @@
 nrnmpiSRC='nrnmpi mpispike'
 
-nrnocSRC='capac eion finitialize fadvance_core solve_core treeset_core nrnoc_aux
-  mk_mech multicore nrntimeout stim hh'
+nrnocSRC='capac eion finitialize fadvance_core solve_core treeset_core
+  nrnoc_aux register_mech multicore nrntimeout stim hh'
 
-nrnivSRC='netpar netcvode cxprop cvodestb tqueue htlist ivlistimpl ivvect'
+nrnivSRC='netpar netcvode cxprop cvodestb tqueue htlist ivlistimpl ivvect
+  mk_mech nrn_setup output_spikes'
 
 rm -r -f *.o
 
