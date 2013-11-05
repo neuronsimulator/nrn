@@ -95,6 +95,15 @@ add_library(${LIBRARY} ${HEADERS} ${SOURCES})
 add_executable(special main.cpp)
 target_link_libraries (special cbluron)
 
+####### Including files for Packaging ##############
+set_target_properties(${LIBRARY} PROPERTIES VERSION ${VERSION} SOVERSION ${VERSION_ABI} PUBLIC_HEADER "${HEADERS}")
+install(TARGETS ${LIBRARY}
+  PUBLIC_HEADER DESTINATION include
+  ARCHIVE DESTINATION lib
+  RUNTIME DESTINATION bin
+  LIBRARY DESTINATION lib)
+install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/bin/special DESTINATION bin)
+
 ############ Packaging & Release ###################
 #set(CPACK_PACKAGING_INSTALL_PREFIX "/usr/bin" CACHE PATH "")
 
