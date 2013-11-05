@@ -4,7 +4,7 @@
 
 int main(int argc, char** argv, char** env) {
   nrnmpi_init(1, &argc, &argv);
-  mk_mech();
+  mk_mech("bbcore_mech.dat");
   mk_netcvode();
   nrn_setup();
   BBS_netpar_solve(100.);

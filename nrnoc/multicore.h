@@ -8,7 +8,6 @@ extern "C" {
 
 #include "membfunc.h"
 
-
 typedef struct NrnThreadMembList{ /* patterned after CvMembList in cvodeobj.h */
 	struct NrnThreadMembList* next;
 	struct Memb_list* ml;

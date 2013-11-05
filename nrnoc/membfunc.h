@@ -76,6 +76,10 @@ pointers which connect variables  from other mechanisms via the _ppval array.
 
 #define _AMBIGUOUS 5
 
+extern int* nrn_prop_param_size_;
+extern int* nrn_prop_dparam_size_;
+extern char* pnt_map;
+
 extern int nrn_get_mechtype(const char*);
 extern int register_mech(char** m, mod_alloc_t alloc, mod_f_t cur, mod_f_t jacob,
   mod_f_t stat, mod_f_t initialize, int nrnpointerindex, int vectorized

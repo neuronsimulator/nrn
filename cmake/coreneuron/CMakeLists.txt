@@ -70,7 +70,7 @@ nrnoc/fadvance_core.c
 nrnoc/solve_core.c
 nrnoc/treeset_core.c
 nrnoc/nrnoc_aux.c
-nrnoc/mk_mech.c
+nrnoc/register_mech.c
 nrnoc/multicore.c
 nrnoc/nrntimeout.c
 nrnoc/stim.c
@@ -83,6 +83,9 @@ nrniv/tqueue.cpp
 nrniv/htlist.cpp
 nrniv/ivlistimpl.cpp
 nrniv/ivvect.cpp
+nrniv/mk_mech.cpp
+nrniv/nrn_setup.cpp
+nrniv/output_spikes.cpp
 )
 
 set(LIBRARY cbluron)
