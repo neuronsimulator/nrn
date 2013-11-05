@@ -2,8 +2,21 @@
 
 include(System)
 list(APPEND FIND_PACKAGES_DEFINES ${SYSTEM})
+find_package(PkgConfig)
 
-find_package(MPI   REQUIRED)
+set(ENV{PKG_CONFIG_PATH} "${CMAKE_INSTALL_PREFIX}/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}")
+if(PKG_CONFIG_EXECUTABLE)
+  find_package(MPI )
+  if((NOT MPI_FOUND) AND (NOT MPI_FOUND))
+    pkg_check_modules(MPI MPI)
+  endif()
+  if((NOT MPI_FOUND) AND (NOT MPI_FOUND))
+    message(FATAL_ERROR "Could not find MPI")
+  endif()
+else()
+  find_package(MPI   REQUIRED)
+endif()
+
 
 if(EXISTS ${CMAKE_SOURCE_DIR}/CMake/FindPackagesPost.cmake)
   include(${CMAKE_SOURCE_DIR}/CMake/FindPackagesPost.cmake)
@@ -11,12 +24,13 @@ endif()
 
 if(MPI_FOUND)
   set(MPI_name MPI)
-endif()
-if(MPI_FOUND)
+  set(MPI_FOUND TRUE)
+elseif(MPI_FOUND)
   set(MPI_name MPI)
+  set(MPI_FOUND TRUE)
 endif()
 if(MPI_name)
-  list(APPEND FIND_PACKAGES_DEFINES BLURON_USE_MPI)
+  list(APPEND FIND_PACKAGES_DEFINES CBLURON_USE_MPI)
   set(FIND_PACKAGES_FOUND "${FIND_PACKAGES_FOUND} MPI")
   link_directories(${${MPI_name}_LIBRARY_DIRS})
   if(NOT "${${MPI_name}_INCLUDE_DIRS}" MATCHES "-NOTFOUND")
@@ -24,9 +38,9 @@ if(MPI_name)
   endif()
 endif()
 
-set(BLURON_BUILD_DEBS autoconf;automake;cmake;git;git-review;git-svn;ninja-build;pkg-config;subversion)
+set(CBLURON_BUILD_DEBS autoconf;automake;cmake;git;git-review;git-svn;ninja-build;pkg-config;subversion)
 
-set(BLURON_DEPENDS MPI)
+set(CBLURON_DEPENDS MPI)
 
 # Write defines.h and options.cmake
 if(NOT PROJECT_INCLUDE_NAME)
