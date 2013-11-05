@@ -3,7 +3,7 @@
 # Blue Brain Project
 # (c) 2006-2013. All rights reserved.
 #
-# Author: Fabien Delalondre
+# Author: Aleksandr Ovcharenko
 # Core Bluron
 
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
