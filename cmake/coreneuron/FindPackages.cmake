@@ -30,7 +30,7 @@ elseif(MPI_FOUND)
   set(MPI_FOUND TRUE)
 endif()
 if(MPI_name)
-  list(APPEND FIND_PACKAGES_DEFINES CBLURON_USE_MPI)
+  list(APPEND FIND_PACKAGES_DEFINES COREBLURON_USE_MPI)
   set(FIND_PACKAGES_FOUND "${FIND_PACKAGES_FOUND} MPI")
   link_directories(${${MPI_name}_LIBRARY_DIRS})
   if(NOT "${${MPI_name}_INCLUDE_DIRS}" MATCHES "-NOTFOUND")
@@ -38,9 +38,9 @@ if(MPI_name)
   endif()
 endif()
 
-set(CBLURON_BUILD_DEBS autoconf;automake;cmake;git;git-review;git-svn;ninja-build;pkg-config;subversion)
+set(COREBLURON_BUILD_DEBS autoconf;automake;cmake;git;git-review;git-svn;ninja-build;pkg-config;subversion)
 
-set(CBLURON_DEPENDS MPI)
+set(COREBLURON_DEPENDS MPI)
 
 # Write defines.h and options.cmake
 if(NOT PROJECT_INCLUDE_NAME)

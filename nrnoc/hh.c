@@ -125,7 +125,6 @@ static void nrn_alloc(double* _p, Datum* _ppvar, int _type) {
  static _initlists();
  static void _thread_mem_init(ThreadDatum*);
  static void _thread_cleanup(ThreadDatum*);
- static void _update_ion_pointer(Datum*);
  _hh_reg_() {
 	int _vectorized = 1;
   _initlists();
@@ -136,7 +135,6 @@ static void nrn_alloc(double* _p, Datum* _ppvar, int _type) {
  _mechtype = nrn_get_mechtype(_mechanism[1]);
      _nrn_thread_reg1(_mechtype, _thread_mem_init);
      _nrn_thread_reg0(_mechtype, _thread_cleanup);
-     _nrn_thread_reg2(_mechtype, _update_ion_pointer);
      _nrn_thread_table_reg(_mechtype, _check_table_thread);
   hoc_register_prop_size(_mechtype, 7, 19);
  }
@@ -278,16 +276,6 @@ static void _thread_cleanup(ThreadDatum* _thread) {
   }else{
    free((void*)_thread[_gth]._pval);
   }
- }
- extern void nrn_update_ion_pointer(Symbol*, Datum*, int, int);
- static void _update_ion_pointer(Datum* _ppvar) {
-   assert(0);
-   nrn_update_ion_pointer(_na_sym, _ppvar, 0, 0);
-   nrn_update_ion_pointer(_na_sym, _ppvar, 1, 3);
-   nrn_update_ion_pointer(_na_sym, _ppvar, 2, 4);
-   nrn_update_ion_pointer(_k_sym, _ppvar, 3, 0);
-   nrn_update_ion_pointer(_k_sym, _ppvar, 4, 3);
-   nrn_update_ion_pointer(_k_sym, _ppvar, 5, 4);
  }
 
 static void initmodel(double* _p, Datum* _ppvar, ThreadDatum* _thread, _NrnThread* _nt) {

@@ -160,7 +160,6 @@ int register_mech(char** m, mod_alloc_t alloc, mod_f_t cur, mod_f_t jacob,
 	memb_func[type].thread_mem_init_ = (void*)0;
 	memb_func[type].thread_cleanup_ = (void*)0;
 	memb_func[type].thread_table_check_ = (void*)0;
-	memb_func[type]._update_ion_pointers = (void*)0;
 	memb_func[type].is_point = 0;
 	memb_func[type].setdata_ = (void*)0;
 	memb_func[type].dparam_semantics = (int*)0;
@@ -274,10 +273,6 @@ void _nrn_thread_reg0(int i, void(*f)(ThreadDatum*)) {
 
 void _nrn_thread_reg1(int i, void(*f)(ThreadDatum*)) {
 	memb_func[i].thread_mem_init_ = f;
-}
-
-void _nrn_thread_reg2(int i, void(*f)(Datum*)) {
-	memb_func[i]._update_ion_pointers = f;
 }
 
 void _nrn_thread_table_reg(int i, void(*f)(double*, Datum*, ThreadDatum*, void*, int)) {

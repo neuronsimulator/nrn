@@ -1,4 +1,4 @@
-#include <nrnconf.h>
+#include "nrnconf.h"
 
 /*
 allocate and free property data and Datum arrays for nrniv
@@ -6,15 +6,14 @@ this allows for the possibility of
 greater cache efficiency
 */
 
-#include <nrnmpi.h>
-#include <membfunc.h>
-#include <arraypool.h>
+#include "nrnmpi.h"
+#include "membfunc.h"
+#include "arraypool.h"
 
 extern "C" {
 extern void nrn_mk_prop_pools(int);
 extern void nrn_cache_prop_realloc();
 extern int nrn_is_ion(int);
-void nrn_update_ion_pointer(Symbol* sion, Datum* dp, int id, int ip);
 
 void* nrn_pool_create(long count, int itemsize);
 void nrn_pool_delete(void* pool);
