@@ -2,6 +2,7 @@
 #include <nrnmpi.h>
 #include <membdef.h>
 #include <cabvars.h>
+#include <string.h>
 
 /* change this to correspond to the ../nmodl/nocpout nmodl_version_ string*/
 static char nmodl_version_[] =
@@ -74,7 +75,6 @@ void  add_nrn_artcell(int type, int qi){
 
 int nrn_is_cable() {return 1;}
 
-extern void nrn_threads_create(int);
 
 void alloc_mech(int n) {
 	memb_func_size_ = n;
@@ -106,8 +106,7 @@ void hoc_last_init() {
 	void (**m)();
 	Symbol *s;
 
-	nrn_threads_create(1);
-
+	initnrn();
  	if (nrnmpi_myid < 1) if (nrn_nobanner_ == 0) { 
 	    fprintf(stderr, "%s\n", nrn_version(1));
 	    fprintf(stderr, "%s\n", banner);
@@ -133,7 +132,7 @@ void initnrn() {
 }
 
 /* if vectorized then thread_data_size added to it */
-int register_mech(char** m, mod_alloc_t alloc, mod_f_t cur, mod_f_t jacob,
+int register_mech(const char** m, mod_alloc_t alloc, mod_f_t cur, mod_f_t jacob,
   mod_f_t stat, mod_f_t initialize, int nrnpointerindex, int vectorized
   ) {
 	int type;	/* 0 unused, 1 for cable section */
@@ -148,6 +147,8 @@ int register_mech(char** m, mod_alloc_t alloc, mod_f_t cur, mod_f_t jacob,
 	nrn_prop_dparam_size_[type] = 0; /* fill in later */
 	nrn_dparam_ptr_start_[type] = 0; /* fill in later */
 	nrn_dparam_ptr_end_[type] = 0; /* fill in later */
+	memb_func[type].sym = (char*)emalloc(strlen(m[1])+1);
+	strcpy(memb_func[type].sym, m[1]);
 	memb_func[type].current = cur;
 	memb_func[type].jacob = jacob;
 	memb_func[type].alloc = alloc;
@@ -207,7 +208,7 @@ int point_reg_helper(Symbol* s2) {
 	return pointtype++;
 }
 
-int point_register_mech(char** m,
+int point_register_mech(const char** m,
   mod_alloc_t alloc, mod_f_t cur, mod_f_t jacob,
   mod_f_t stat, mod_f_t initialize, int nrnpointerindex,
   void*(*constructor)(), void(*destructor)(),
@@ -215,7 +216,7 @@ int point_register_mech(char** m,
 ){
 	Symbol* s;
 	CHECK(m[1]);
-	s = m[1];
+	s = (char*)m[1];
 	register_mech(m, alloc, cur, jacob, stat, initialize, nrnpointerindex, vectorized);
 	return point_reg_helper(s);
 }

@@ -55,7 +55,7 @@ public:
 class NetCon : public DiscreteEvent {
 public:
 	NetCon();
-	NetCon(PreSyn* src, Point_process* target);
+	void init(PreSyn* src, Point_process* target);
 	virtual ~NetCon();
 	virtual void send(double sendtime, NetCvode*, NrnThread*);
 	virtual void deliver(double, NetCvode*, NrnThread*);
@@ -143,7 +143,7 @@ public:
 
 class PreSyn : public ConditionEvent {
 public:
-	PreSyn(double* src, Point_process* psrc);
+	PreSyn(double* src, Point_process* psrc, NrnThread*);
 	virtual ~PreSyn();
 	virtual void send(double sendtime, NetCvode*, NrnThread*);
 	virtual void deliver(double, NetCvode*, NrnThread*);

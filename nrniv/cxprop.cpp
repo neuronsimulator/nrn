@@ -303,6 +303,7 @@ int nrn_prop_is_cache_efficient() {
 		for (NrnThreadMembList* tml = nt->tml; tml; tml = tml->next) {
 			Memb_list* ml = tml->ml;
 			int i = tml->index;
+			int sz = nrn_prop_param_size_[i];
 		    if (ml->nodecount > 0) {
 			if (!p[i]) {
 //printf("thread %d mechanism %s pool chain does not exist\n", it, memb_func[i].sym->name);
@@ -316,9 +317,9 @@ int nrn_prop_is_cache_efficient() {
 				continue;
 			}
 			for (int j = 0; j < ml->nodecount; ++j) {
-				if (p[i]->element(j) != ml->data[j]) {
+				if (p[i]->element(j) != ml->data+j*sz) {
 //printf("thread %d mechanism %s instance %d  element %p data %p\n",
-//it, memb_func[i].sym->name, j, p[i]->element(j), (ml->data + j));
+//it, memb_func[i].sym->name, j, p[i]->element(j), (ml->data + j*sz));
 					r = 0;
 				}
 			}

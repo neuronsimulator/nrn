@@ -17,8 +17,8 @@ typedef struct Memb_list {
 	 * cache-efficient */
 	int *nodeindices;
 #endif /* CACHEVEC */
-	double** data;
-	Datum** pdata;
+	double* data;
+	Datum* pdata;
 	ThreadDatum* _thread; /* thread specific data (when static is no good) */
 	int nodecount;
 } Memb_list;

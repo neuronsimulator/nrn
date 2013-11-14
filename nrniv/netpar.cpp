@@ -883,12 +883,13 @@ void nrn_cleanup_presyn(PreSyn* ps) {
 
 // not sure this will be used
 void BBS_cell(int gid, PreSyn* ps) {
-	if (gid2in_->find(gid, ps)) {
+	PreSyn* ps1;
+	if (gid2in_->find(gid, ps1)) {
 		char buf[100];
 		sprintf(buf, "gid=%d is in the input list. Must register prior to connecting", gid);
 		hoc_execerror(buf, 0);
 	}
-	if (gid2out_->find(gid, ps) == 0) {
+	if (gid2out_->find(gid, ps1) == 0) {
 		char buf[100];
 		sprintf(buf, "gid=%d has not been set on rank %d", gid, nrnmpi_myid);
 		hoc_execerror(buf, 0);
@@ -926,7 +927,7 @@ void BBS_spike_record(int gid, IvocVect* spikevec, IvocVect* gidvec) {
     }
 }
 
-NetCon* BBS_gid_connect(int gid, Point_process* target) {
+NetCon* BBS_gid_connect(int gid, Point_process* target, NetCon& nc) {
 	alloc_space();
 	PreSyn* ps;
 	if (gid2out_->find(gid, ps)) {
@@ -941,7 +942,7 @@ NetCon* BBS_gid_connect(int gid, Point_process* target) {
 //printf("%d connect %s from already existing %d\n", nrnmpi_myid, hoc_object_name(target), gid);
 	}else{
 //printf("%d connect %s from new PreSyn for %d\n", nrnmpi_myid, hoc_object_name(target), gid);
-		ps = new PreSyn(nil, nil);
+		ps = new PreSyn(NULL, NULL, NULL);
 		net_cvode_instance->psl_append(ps);
 #if ALTHASH
 		gid2in_->insert(gid, ps);
@@ -950,8 +951,8 @@ NetCon* BBS_gid_connect(int gid, Point_process* target) {
 #endif
 		ps->gid_ = gid;
 	}
-	NetCon* nc = new NetCon(ps, target);
-	return nc;
+	nc.init(ps, target);
+	return &nc;
 }
 
 static int timeout_ = 20;

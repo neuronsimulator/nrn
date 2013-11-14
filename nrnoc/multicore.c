@@ -50,7 +50,6 @@ extern void nrn_old_thread_save();
 extern double nrn_timeus();
 
 static int nrn_thread_parallel_;
-void nrn_mk_table_check();
 static int table_check_cnt_;
 static ThreadDatum* table_check_;
 static int allow_busywait_;
@@ -626,7 +625,7 @@ void nrn_thread_table_check() {
 		NrnThreadMembList* tml = (NrnThreadMembList*)table_check_[i+1]._pvoid;
 		Memb_list* ml = tml->ml;
 		(*memb_func[tml->index].thread_table_check_)(
-			ml->data[0], ml->pdata[0], ml->_thread, nt, tml->index
+			ml->data, ml->pdata, ml->_thread, nt, tml->index
 		);
 	}
 }

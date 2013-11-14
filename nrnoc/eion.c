@@ -56,7 +56,7 @@ void ion_reg(const char* name, double valence) {
 	mechanism[5] = (char *)0; /* buf[4] not used above */
 	mechtype = nrn_get_mechtype(buf[0]);
 	if (memb_func[mechtype].alloc != ion_alloc) {
-		register_mech(mechanism, ion_alloc, ion_cur, (mod_f_t)0, (mod_f_t)0, (mod_f_t)ion_init, -1, 1);
+		register_mech((const char**)mechanism, ion_alloc, ion_cur, (mod_f_t)0, (mod_f_t)0, (mod_f_t)ion_init, -1, 1);
 		mechtype = nrn_get_mechtype(mechanism[1]);
 		hoc_register_prop_size(mechtype, nparm, 1 );
 		nrn_writes_conc(mechtype, 1);
@@ -157,11 +157,11 @@ double nrn_ghk(double v, double ci, double co, double z) {
 }
 
 #if VECTORIZE
-#define erev	pd[i][0]	/* From Eion */
-#define conci	pd[i][1]
-#define conco	pd[i][2]
-#define cur	pd[i][3]
-#define dcurdv	pd[i][4]
+#define erev	pd[0]	/* From Eion */
+#define conci	pd[1]
+#define conco	pd[2]
+#define cur	pd[3]
+#define dcurdv	pd[4]
 
 /*
  handle erev, conci, conc0 "in the right way" according to ion_style
@@ -178,7 +178,7 @@ ion_style("name_ion", [c_style, e_style, einit, eadvance, cinit])
  and models.
 */
 
-#define iontype ppd[i][0]	/* how _AMBIGUOUS is to be handled */
+#define iontype ppd[0]	/* how _AMBIGUOUS is to be handled */
 /*the bitmap is
 03	concentration unused, nrnocCONST, DEP, STATE
 04	initialize concentrations
@@ -372,14 +372,14 @@ void nrn_promote(Datum* dparam, int conc, int rev){
 /* Must be called prior to any channels which update the currents */
 static void ion_cur(NrnThread* nt, Memb_list* ml, int type) {
 	int count = ml->nodecount;
-	double **pd = ml->data;
-	Datum **ppd = ml->pdata;
 	int i;
 /*printf("ion_cur %s\n", memb_func[type].sym->name);*/
 #if _CRAY
 #pragma _CRI ivdep
 #endif
 	for (i=0; i < count; ++i) {
+		double *pd = ml->data + i*nparm;
+		Datum *ppd = ml->pdata + i*1;
 		dcurdv = 0.;
 		cur = 0.;
 		if (iontype & 0100) {
@@ -393,14 +393,14 @@ static void ion_cur(NrnThread* nt, Memb_list* ml, int type) {
 */
 static void ion_init(NrnThread* nt, Memb_list* ml, int type) {
 	int count = ml->nodecount;
-	double **pd = ml->data;
-	Datum **ppd = ml->pdata;
 	int i;
 /*printf("ion_init %s\n", memb_func[type].sym->name);*/
 #if _CRAY
 #pragma _CRI ivdep
 #endif
 	for (i=0; i < count; ++i) {
+		double *pd = ml->data + i*nparm;
+		Datum *ppd = ml->pdata + i*1;
 		if (iontype & 04) {
 			conci = conci0;
 			conco = conco0;
@@ -410,6 +410,8 @@ static void ion_init(NrnThread* nt, Memb_list* ml, int type) {
 #pragma _CRI ivdep
 #endif
 	for (i=0; i < count; ++i) {
+		double *pd = ml->data + i*nparm;
+		Datum *ppd = ml->pdata + i*1;
 		if (iontype & 040) {
 			erev = nrn_nernst(conci, conco, charge);
 		}
@@ -417,9 +419,9 @@ static void ion_init(NrnThread* nt, Memb_list* ml, int type) {
 }
 
 static void ion_alloc(double* data, Datum* pdata, int type) {
-	double *pd[1];
+	double *pd;
 	int i=0;
-	pd[0] = data;	
+	pd = data;	
 
 	cur = 0.;
 	dcurdv = 0.;
@@ -441,7 +443,7 @@ static void ion_alloc(double* data, Datum* pdata, int type) {
 		conco = DEF_iono;
 	}
 	
-	pdata[0] = 0;
+	pdata = 0;
 }
 
 void second_order_cur(NrnThread* _nt) {
@@ -456,7 +458,7 @@ void second_order_cur(NrnThread* _nt) {
 		ml = tml->ml;
 		i2 = ml->nodecount;
 		for (i = 0; i < i2; ++i) {
-			ml->data[i][c] += ml->data[i][dc]
+			ml->data[i*nparm + c] += ml->data[i*nparm + dc]
 			   * ( VEC_RHS(i) )
 			;
 		}

@@ -6,6 +6,7 @@
 #include <ivtable.h>
 #include <ivocvect.h>
 #include <nrniv_decl.h>
+#include <output_spikes.h>
 
 #define UNIT_ROUNDOFF DBL_EPSILON
 #define PP2NT(pp) ((NrnThread*)((pp)->_vnt))
@@ -791,7 +792,7 @@ NetCon::NetCon() {
 	cnt_ = 0; active_ = false; weight_ = nil;
 }
 
-NetCon::NetCon(PreSyn* src, Point_process* target) {
+void NetCon::init(PreSyn* src, Point_process* target) {
 	src_ = src;
 	delay_ = 1.0;
 	if (src_) {
@@ -844,7 +845,7 @@ void NetCon::rmsrc() {
 	src_ = nil;
 }
 
-PreSyn::PreSyn(double* src, Point_process* psrc) {
+PreSyn::PreSyn(double* src, Point_process* psrc, NrnThread* nt) {
 	hi_th_ = nil;
 	flag_ = false;
 	valthresh_ = 0;
@@ -860,8 +861,8 @@ PreSyn::PreSyn(double* src, Point_process* psrc) {
 		if (psrc) {
 			nt_ = PP2NT(psrc);
 		}else{
-			//nt_ = (NrnThread*)ssrc->prop->dparam[9]._pvoid;
-			assert(0);
+			assert(nt);
+			nt_ = nt;
 		}
 	}
 	if (psrc && !src) {
@@ -871,6 +872,13 @@ PreSyn::PreSyn(double* src, Point_process* psrc) {
 #if BGPDMA
 	bgp.dma_send_ = 0;
 #endif
+	if (nt_ && thvar_) {
+		NetCvodeThreadData& p = net_cvode_instance->p[nt_->id];
+		if (!p.psl_thr_) {
+			p.psl_thr_ = new HTList(NULL);
+		}
+		p.psl_thr_->Append(new HTList(this));
+	}
 }
 
 PreSyn::~PreSyn() {
@@ -908,6 +916,7 @@ void PreSyn::record(IvocVect* vec, IvocVect* idvec, int rec_id) {
 
 void PreSyn::record(double tt) {
 	int i;
+#if 0
 	if (tvec_) {
 		// need to lock the vector if shared by other PreSyn
 		// since we get here in the thread that manages the
@@ -923,6 +932,12 @@ void PreSyn::record(double tt) {
 			tvec_->unlock();
 		}
 	}
+#else
+	assert(spikevec_size < spikevec_buffer_size);
+	spikevec_gid[spikevec_size] = gid_;
+	spikevec_time[spikevec_size] = tt;
+	++spikevec_size;
+#endif
 }
 
 void ConditionEvent::check(NrnThread* nt, double tt, double teps) {

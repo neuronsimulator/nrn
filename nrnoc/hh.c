@@ -93,7 +93,7 @@ static double _thread1data[6];
  static void nrn_cur(), nrn_jacob();
  
  /* connect range variables in _p that hoc is supposed to know about */
- static char *_mechanism[] = {
+ static const char *_mechanism[] = {
  "6.2.0",
 "hh",
  "gnabar_hh",
@@ -136,7 +136,7 @@ static void nrn_alloc(double* _p, Datum* _ppvar, int _type) {
      _nrn_thread_reg1(_mechtype, _thread_mem_init);
      _nrn_thread_reg0(_mechtype, _thread_cleanup);
      _nrn_thread_table_reg(_mechtype, _check_table_thread);
-  hoc_register_prop_size(_mechtype, 7, 19);
+  hoc_register_prop_size(_mechtype, 19, 7);
  }
  static double *_t_minf;
  static double *_t_mtau;
@@ -302,7 +302,7 @@ double _v; int* _ni; int _iml, _cntml;
 _cntml = _ml->_nodecount;
 _thread = _ml->_thread;
 for (_iml = 0; _iml < _cntml; ++_iml) {
- _p = _ml->_data[_iml]; _ppvar = _ml->_pdata[_iml];
+ _p = _ml->_data + _iml*19; _ppvar = _ml->_pdata + _iml*7;
 
 #if 0
  _check_rates(_p, _ppvar, _thread, _nt);
@@ -339,7 +339,7 @@ int* _ni; double _rhs, _v; int _iml, _cntml;
 _cntml = _ml->_nodecount;
 _thread = _ml->_thread;
 for (_iml = 0; _iml < _cntml; ++_iml) {
- _p = _ml->_data[_iml]; _ppvar = _ml->_pdata[_iml];
+ _p = _ml->_data + _iml*19; _ppvar = _ml->_pdata + _iml*7;
 #if CACHEVEC
     _v = VEC_V(_ni[_iml]);
 #endif
@@ -371,7 +371,7 @@ int* _ni; int _iml, _cntml;
 _cntml = _ml->_nodecount;
 _thread = _ml->_thread;
 for (_iml = 0; _iml < _cntml; ++_iml) {
- _p = _ml->_data[_iml];
+ _p = _ml->_data + _iml*19;
 #if CACHEVEC
 	VEC_D(_ni[_iml]) += _g;
 #endif
@@ -387,7 +387,7 @@ double _v; int* _ni; int _iml, _cntml;
 _cntml = _ml->_nodecount;
 _thread = _ml->_thread;
 for (_iml = 0; _iml < _cntml; ++_iml) {
- _p = _ml->_data[_iml]; _ppvar = _ml->_pdata[_iml];
+ _p = _ml->_data + _iml*19; _ppvar = _ml->_pdata + _iml*7;
 #if CACHEVEC
     _v = VEC_V(_ni[_iml]);
 #endif

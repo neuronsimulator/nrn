@@ -32,12 +32,15 @@ extern int nrn_modeltype(void);
 #define nrn_fixed_step_group nrn_fixed_step_group_minimal
 #define nrn_fixed_step nrn_fixed_step_minimal
 #define setup_tree_matrix setup_tree_matrix_minimal
+extern void nrn_finitialize(int setv, double v);
 extern void nrn_fixed_step_group(int n);
 extern void nrn_fixed_step(void);
 extern void* setup_tree_matrix(NrnThread*);
 extern void alloc_mech(int);
 extern void hoc_last_init(void);
 extern void ion_reg(const char*, double);
+extern void nrn_mk_table_check(void);
+extern void initnrn(void);
 
 #if defined(__cplusplus)
 }

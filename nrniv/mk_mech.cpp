@@ -53,7 +53,6 @@ void mk_mech(const char* fname) {
   }
   fclose(f);
   hoc_last_init();
-  exit(0);
 }
 
 static void set_mechtype(const char* name, int type) {

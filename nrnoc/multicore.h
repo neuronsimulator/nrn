@@ -53,6 +53,7 @@ typedef struct NrnThread {
 
 } NrnThread;
 
+extern void nrn_threads_create(int n, int parallel);
 extern int nrn_nthread;
 extern NrnThread* nrn_threads;
 extern void nrn_thread_error(const char*);

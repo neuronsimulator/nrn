@@ -1,7 +1,7 @@
 #include "nrnconf.h"
 #include "membdef.h"
 
-static char *mechanism[] = { "0", "capacitance", "cm",0, "i_cap", 0,0 };
+static const char *mechanism[] = { "0", "capacitance", "cm",0, "i_cap", 0,0 };
 static void cap_alloc(double*, Datum*, int type);
 static void cap_init(NrnThread*, Memb_list*, int);
 
@@ -15,8 +15,8 @@ void capac_reg_(void) {
 	hoc_register_prop_size(mechtype, nparm, 0);
 }
 
-#define cm  vdata[i][0]
-#define i_cap  vdata[i][1]
+#define cm  vdata[i*nparm]
+#define i_cap  vdata[i*nparm+1]
 
 /*
 cj is analogous to 1/dt for cvode and daspk
@@ -27,8 +27,8 @@ It used to be static but is now a thread data variable
 
 void nrn_cap_jacob(NrnThread* _nt, Memb_list* ml) {
 	int count = ml->nodecount;
-	double **vdata = ml->data;
 	int i;
+	double *vdata = ml->data;
 	double cfac = .001 * _nt->cj;
 	{ /*if (use_cachevec) {*/
 		int* ni = ml->nodeindices;
@@ -40,7 +40,7 @@ void nrn_cap_jacob(NrnThread* _nt, Memb_list* ml) {
 
 static void cap_init(NrnThread* _nt, Memb_list* ml, int type ) {
 	int count = ml->nodecount;
-	double **vdata = ml->data;
+	double *vdata = ml->data;
 	int i;
 	for (i=0; i < count; ++i) {
 		i_cap = 0;
@@ -49,7 +49,7 @@ static void cap_init(NrnThread* _nt, Memb_list* ml, int type ) {
 
 void nrn_capacity_current(NrnThread* _nt, Memb_list* ml) {
 	int count = ml->nodecount;
-	double **vdata = ml->data;
+	double *vdata = ml->data;
 	int i;
 	double cfac = .001 * _nt->cj;
 	/* since rhs is dvm for a full or half implicit step */

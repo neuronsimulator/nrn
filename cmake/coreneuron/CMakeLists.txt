@@ -7,12 +7,12 @@
 # Core Bluron
 
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
-PROJECT(cbluron)
+PROJECT(CoreBluron)
 
 set(RELEASE_VERSION OFF)  # OFF or ABI version
-set(LAST_RELEASE 0.9.0)
-set (VERSION_MAJOR "1")
-set (VERSION_MINOR "0")
+set(LAST_RELEASE 0.0.0)
+set (VERSION_MAJOR "0")
+set (VERSION_MINOR "1")
 set (VERSION_PATCH "0")
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/CMake")
@@ -40,6 +40,7 @@ nrniv/nrniv_decl.h
 nrniv/nrniv_mf.h
 nrniv/nrnmutdec.h
 nrniv/pool.h
+nrniv/output_spikes.h
 nrniv/sptbinq.h
 nrniv/sptree.h
 nrniv/structpool.h
@@ -75,6 +76,8 @@ nrnoc/multicore.c
 nrnoc/nrntimeout.c
 nrnoc/stim.c
 nrnoc/hh.c
+nrnoc/expsyn.c
+nrnoc/passive.c
 nrniv/netpar.cpp
 nrniv/netcvode.cpp
 nrniv/cxprop.cpp
@@ -88,12 +91,12 @@ nrniv/nrn_setup.cpp
 nrniv/output_spikes.cpp
 )
 
-set(LIBRARY cbluron)
+set(LIBRARY corebluron)
 
 include_directories(${CMAKE_SOURCE_DIR}/nrnmpi ${CMAKE_SOURCE_DIR}/nrnoc ${CMAKE_SOURCE_DIR}/nrniv)
 add_library(${LIBRARY} ${HEADERS} ${SOURCES})
-add_executable(special main.cpp)
-target_link_libraries (special cbluron)
+add_executable(coreron main.cpp)
+target_link_libraries (coreron corebluron)
 
 ####### Including files for Packaging ##############
 set_target_properties(${LIBRARY} PROPERTIES VERSION ${VERSION} SOVERSION ${VERSION_ABI} PUBLIC_HEADER "${HEADERS}")
@@ -102,7 +105,7 @@ install(TARGETS ${LIBRARY}
   ARCHIVE DESTINATION lib
   RUNTIME DESTINATION bin
   LIBRARY DESTINATION lib)
-install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/bin/special DESTINATION bin)
+install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/bin/coreron DESTINATION bin)
 
 ############ Packaging & Release ###################
 #set(CPACK_PACKAGING_INSTALL_PREFIX "/usr/bin" CACHE PATH "")

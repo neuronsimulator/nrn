@@ -1,7 +1,7 @@
 #ifndef nrniv_dec_h
 #define nrniv_dec_h
 
-class PreSyn;
+#include <netcon.h>
 
 #if defined(__cplusplus)
 extern "C" {
@@ -9,9 +9,12 @@ extern "C" {
 
 extern void mk_mech(const char* fname);
 extern void mk_netcvode(void);
-extern void nrn_setup(void);
-extern void output_spikes(void);
+extern void nrn_setup(int nthread);
+extern double BBS_netpar_mindelay(double maxdelay);
 extern void BBS_netpar_solve(double);
+extern NetCon* BBS_gid_connect(int gid, Point_process* target, NetCon&);
+extern void BBS_cell(int gid, PreSyn* ps);
+extern void BBS_set_gid2node(int gid, int rank);
 extern void nrn_cleanup_presyn(PreSyn*);
 extern void nrn_outputevent(unsigned char, double);
 extern void ncs2nrn_integrate(double tstop);
