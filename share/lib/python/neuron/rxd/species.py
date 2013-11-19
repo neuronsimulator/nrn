@@ -118,6 +118,20 @@ class SpeciesOnRegion(_SpeciesMathable):
             return []
         return self._species().indices(self._region())
     
+
+    def __getitem__(self, r):
+        """Return a reference to those members of this species lying on the specific region @varregion.
+        The resulting object is a SpeciesOnRegion.
+        This is useful for defining reaction schemes for MultiCompartmentReaction.
+        
+        This is provided to allow use of SpeciesOnRegion where Species would normally go.
+        
+        If the regions match, self is returned; otherwise an empty SpeciesOnRegion.
+        """
+        if r == self._region():
+            return self
+        else:
+            return SpeciesOnRegion(self._species, None)
     
     @property
     def states(self):
