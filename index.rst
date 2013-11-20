@@ -9,18 +9,22 @@ Quick Links
   `Index <http://www.neuron.yale.edu/neuron/static/docs/help/index.html>`_\ ,
   `Contents <http://www.neuron.yale.edu/neuron/static/docs/help/hier.html>`_
 - Commonly used:
-    :class:`Deck`, :class:`File`, :class:`Glyph`, :class:`Graph`, :class:`GUIMath`,
-    :class:`List`, :class:`Matrix`, :class:`Pointer`, :class:`PWManager`,
-    :class:`Random`, :class:`StringFunctions`, :class:`SymChooser`,
-    :class:`TextEditor`, :class:`Timer`, :class:`ValueFieldEditor`,
-    :class:`VBox`, :class:`Vector`
+    :class:`Deck`, `File <programming/io/file.html>`_, `Glyph <visualization/glyph.html>`_,
+    `Graph <visualization/graph.html>`_, `GUIMath <programming/math/guimath.html>`_,
+    `List <programming/gui/list.html>`_, `Matrix <programming/math/matrix.html>`_,
+    `Pointer <programming/pointers/pointer.html>`_, `PWManager <programming/gui/pwman.html>`_,
+    `Random <programming/math/random.html>`_, `StringFunctions <programming/strfun.html>`_,
+    `SymChooser <programming/gui/symchooser.html>`_,
+    `TextEditor <programming/gui/texteditor.html>`_, `Timer <programming/timer.html>`_, `ValueFieldEditor <programming/gui/vfe.html>`_,
+    :class:`VBox`, `Vector <programming/math/vector.html>`_
     
-    :class:`CVode`, :class:`FInitializeHandler`, :class:`Impedance`,
-    :class:`KSChan`, :class:`LinearMechanism`, :class:`MechanismStandard`,
-    :class:`MechanismType`, :class:`NetCon`, :class:`ParallelContext`,
-    :class:`ParallelNetManager`, :class:`PlotShape`, :ref:`Python`,
-    :class:`RangeVarPlot`, :class:`SaveState`, :class:`SectionBrowser`,
-    :class:`SectionList`, :class:`SectionRef`, :class:`Shape`
+    `CVode <simctrl/cvode.html>`_, :class:`FInitializeHandler`, `Impedance <analysis/programmatic/impedance.html>`_,
+    `KSChan <modelspec/programmatic/kschan.html>`_, `LinearMechanism <modelspec/programmatic/linmod.html>`_,
+    `MechanismStandard <programming/mechstan.html>`_,
+    `MechanismType <modelspec/programmatic/mechtype.html>`_, `NetCon <modelspec/programmatic/network/netcon.html>`_, `ParallelContext <modelspec/programmatic/network/parcon.html>`_,
+    `ParallelNetManager <modelspec/programmatic/network/parnet.html>`_, `PlotShape <visualization/plotshapeclass.html>`_, :ref:`Python`,
+    `RangeVarPlot <visualization/rvarplt.html>`_, `SaveState <simctrl/savstate.html>`_, `SectionBrowser <programming/gui/secbrows.html>`_,
+    `SectionList <modelspec/programmatic/topology/seclist.html>`_, `SectionRef <modelspec/programmatic/topology/secref.html>`_, `Shape <visualization/shape.html>`_
     
     :ref:`panel`, :ref:`funfit`, :ref:`geometry`, :ref:`printf_doc`, :ref:`ockeywor`, :ref:`math`,
     :ref:`nmodl2`, :ref:`nmodl`, :ref:`mech`, :ref:`predec`, :ref:`standardruntools`,
