@@ -25,87 +25,65 @@ if(MPI_FOUND)
   set(CMAKE_CXX_COMPILER ${MPI_CXX_COMPILER})
 endif(MPI_FOUND)
 
-set(HEADERS
-nrnconf.h
-nrniv/arraypool.h
-nrniv/htlist.h
-nrniv/ivlist.h
-nrniv/ivocvect.h
-nrniv/ivtable.h
-nrniv/netcon.h
-nrniv/netcvode.h
-nrniv/nrnhash.h
-nrniv/nrnhash_alt.h
-nrniv/nrniv_decl.h
-nrniv/nrniv_mf.h
-nrniv/nrnmutdec.h
-nrniv/pool.h
-nrniv/output_spikes.h
-nrniv/sptbinq.h
-nrniv/sptree.h
-nrniv/structpool.h
-nrniv/tqueue.h
-nrnoc/cabvars.h
-nrnoc/md1redef.h
-nrnoc/md2redef.h
-nrnoc/membdef.h
-nrnoc/membfunc.h
-nrnoc/mpispike.h
-nrnoc/multicore.h
-nrnoc/nrnmpi.h
-nrnoc/nrnmpidec.h
-nrnoc/nrnmpiuse.h
-nrnoc/nrnoc_decl.h
-nrnoc/nrnoc_ml.h
-nrnoc/nrnpthread.h
-nrnmpi/nrnmpi_impl.h
-)
+option (COREBLURON_TESTS "Build the CORE BLURON regression tests" ON)
+option (COREBLURON_MAIN "Build the CORE BLURON main" ON)
 
-set(SOURCES
-nrnmpi/nrnmpi.c
-nrnmpi/mpispike.c
-nrnoc/capac.c
-nrnoc/eion.c
-nrnoc/finitialize.c
-nrnoc/fadvance_core.c
-nrnoc/solve_core.c
-nrnoc/treeset_core.c
-nrnoc/nrnoc_aux.c
-nrnoc/register_mech.c
-nrnoc/multicore.c
-nrnoc/nrntimeout.c
-nrnoc/stim.c
-nrnoc/hh.c
-nrnoc/expsyn.c
-nrnoc/passive.c
-nrniv/netpar.cpp
-nrniv/netcvode.cpp
-nrniv/cxprop.cpp
-nrniv/cvodestb.cpp
-nrniv/tqueue.cpp
-nrniv/htlist.cpp
-nrniv/ivlistimpl.cpp
-nrniv/ivvect.cpp
-nrniv/mk_mech.cpp
-nrniv/nrn_setup.cpp
-nrniv/output_spikes.cpp
-)
+########################################################################
+#
+# Core and mech libraries 
+#
+########################################################################
 
-set(LIBRARY corebluron)
+add_subdirectory (src/simcore)
+add_subdirectory (src/mech)
 
-include_directories(${CMAKE_SOURCE_DIR}/nrnmpi ${CMAKE_SOURCE_DIR}/nrnoc ${CMAKE_SOURCE_DIR}/nrniv)
-add_library(${LIBRARY} ${HEADERS} ${SOURCES})
-add_executable(coreron main.cpp)
-target_link_libraries (coreron corebluron)
+########################################################################
+#
+# Main
+#
+########################################################################
 
-####### Including files for Packaging ##############
-set_target_properties(${LIBRARY} PROPERTIES VERSION ${VERSION} SOVERSION ${VERSION_ABI} PUBLIC_HEADER "${HEADERS}")
-install(TARGETS ${LIBRARY}
-  PUBLIC_HEADER DESTINATION include
-  ARCHIVE DESTINATION lib
-  RUNTIME DESTINATION bin
-  LIBRARY DESTINATION lib)
-install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/bin/coreron DESTINATION bin)
+if(COREBLURON_MAIN)
+    add_subdirectory (src/main)
+endif(COREBLURON_MAIN)
+
+
+#this depends of the associated module
+#set(Boost_NO_SYSTEM_PATHS TRUE)
+set(BOOST_DIR $ENV{BOOST_DIR} CACHE PATH "Path to the Boost installation (or to the Boost source)")
+set(BOOST_ROOT ${BOOST_DIR})
+#set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
+find_package (Boost COMPONENTS unit_test_framework system)
+if(Boost_FOUND)
+    include_directories(${Boost_INCLUDE_DIRS})
+else()
+    message(FATAL_ERROR "Boost libraries not found. Please specify location using the BOOST_DIR variable")
+endif()
+
+########################################################################
+#
+# Tests
+#
+########################################################################
+
+if(COREBLURON_TESTS)
+    find_package(PythonInterp 2.6 REQUIRED )
+    include(CTest)
+    enable_testing()
+    set(BUILDNAME "${PROJECT_VERSION}" CACHE STRING "Name of build on the dashboard")
+      mark_as_advanced(BUILDNAME)
+    add_subdirectory (test/integration)
+endif(COREBLURON_TESTS)
+
+
+########################################################################
+#
+# Install
+#
+########################################################################
+install(DIRECTORY src DESTINATION include FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp" PATTERN ".git" EXCLUDE)
+install(FILES ${PROJECT_BINARY_DIR}/src/simcore/libcorebluron.a DESTINATION lib)
+install(FILES ${PROJECT_BINARY_DIR}/src/mech/libcoremech.a DESTINATION lib)
 
 ############ Packaging & Release ###################
 #set(CPACK_PACKAGING_INSTALL_PREFIX "/usr/bin" CACHE PATH "")
