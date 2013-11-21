@@ -6,8 +6,8 @@ extracellular 5 0 0 0 0
 fastpas 6 0 0 0 0
 IClamp 7 1 0 6 2
 AlphaSynapse 8 2 0 8 2
-ExpSyn 9 3 0 8 3
-Exp2Syn 10 4 0 13 3
+ExpSyn 9 3 0 8 2
+Exp2Syn 10 4 0 13 2
 SEClamp 11 5 0 14 2
 VClamp 12 6 0 24 2
 OClamp 13 7 0 9 2
@@ -16,7 +16,7 @@ na_ion 15 0 1 5 1
 1
 k_ion 16 0 1 5 1
 1
-hh 17 0 0 19 7
+hh 17 0 0 19 6
 NetStim 18 9 0 9 4
 IntFire1 19 10 0 7 3
 IntFire2 20 11 0 8 3

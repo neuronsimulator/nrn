@@ -3,12 +3,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include "scoplib.h"
+#undef PI
+ 
 #include "simcore/nrnoc/md1redef.h"
 #include "simcore/nrnconf.h"
 #include "simcore/nrnoc/multicore.h"
-#include "simcore/nrnoc/md2redef.h"
 
-#undef PI
+#include "simcore/nrnoc/md2redef.h"
+#if METHOD3
+extern int _method3;
+#endif
  
 #define _threadargscomma_ _p, _ppvar, _thread, _nt,
 #define _threadargs_ _p, _ppvar, _thread, _nt
@@ -29,24 +34,95 @@
 #define _g _p[5]
 #define _nd_area  _nt->_data[_ppvar[0]]
  
+#if MAC
+#if !defined(v)
+#define v _mlhv
+#endif
+#if !defined(h)
+#define h _mlhh
+#endif
+#endif
  static int hoc_nrnpointerindex =  -1;
  static ThreadDatum* _extcall_thread;
  /* external NEURON variables */
+ 
+#if 0 /*BBCORE*/
  /* declaration of user functions */
+ 
+#endif /*BBCORE*/
  static int _mechtype;
 extern int nrn_get_mechtype();
  static int _pointtype;
- static void* _hoc_create_pnt(){ void* create_point_process();
-  return NULL; /*create_point_process(_pointtype);*/
+ 
+#if 0 /*BBCORE*/
+ static void* _hoc_create_pnt(_ho) Object* _ho; { void* create_point_process();
+ return create_point_process(_pointtype, _ho);
 }
  static void _hoc_destroy_pnt();
-
+ static double _hoc_loc_pnt(_vptr) void* _vptr; {double loc_point_process();
+ return loc_point_process(_pointtype, _vptr);
+}
+ static double _hoc_has_loc(_vptr) void* _vptr; {double has_loc_point();
+ return has_loc_point(_vptr);
+}
+ static double _hoc_get_loc_pnt(_vptr)void* _vptr; {
+ double get_loc_point_process(); return (get_loc_point_process(_vptr));
+}
+ 
+#endif /*BBCORE*/
+ 
+#if 0 /*BBCORE*/
+ /* connect user functions to hoc names */
+ static IntFunc hoc_intfunc[] = {
+ 0,0
+};
+ static struct Member_func {
+	char* _name; double (*_member)();} _member_func[] = {
+ "loc", _hoc_loc_pnt,
+ "has_loc", _hoc_has_loc,
+ "get_loc", _hoc_get_loc_pnt,
+ 0, 0
+};
+ 
+#endif /*BBCORE*/
+ /* declare global and static user variables */
+ 
+#if 0 /*BBCORE*/
+ /* some parameters have upper and lower limits */
+ static HocParmLimits _hoc_parm_limits[] = {
+ "dur", 0, 1e+09,
+ 0,0,0
+};
+ static HocParmUnits _hoc_parm_units[] = {
+ "del", "ms",
+ "dur", "ms",
+ "amp", "nA",
+ "i", "nA",
+ 0,0
+};
+ 
+#endif /*BBCORE*/
+ 
+#if 0 /*BBCORE*/
+ /* connect global user variables to hoc */
+ static DoubScal hoc_scdoub[] = {
+ 0,0
+};
+ static DoubVec hoc_vdoub[] = {
+ 0,0,0
+};
+ 
+#endif /*BBCORE*/
  static double _sav_indep;
  static void nrn_alloc(), nrn_init(), nrn_state();
  static void nrn_cur(), nrn_jacob();
+ 
+#if 0 /*BBCORE*/
  static void _hoc_destroy_pnt(_vptr) void* _vptr; {
-   /*destroy_point_process(_vptr);*/
+   destroy_point_process(_vptr);
 }
+ 
+#endif /*BBCORE*/
  /* connect range variables in _p that hoc is supposed to know about */
  static const char *_mechanism[] = {
  "6.2.0",
@@ -65,20 +141,30 @@ static void nrn_alloc(double* _p, Datum* _ppvar, int _type) {
  	del = 0;
  	dur = 0;
  	amp = 0;
- 	/*connect ionic variables to this model*/
+ 
+#if 0 /*BBCORE*/
+ 
+#endif /* BBCORE */
  
 }
  static _initlists();
- _stim_reg_() {
+ 
+#define _psize 6
+#define _ppsize 2
+ _stim_reg() {
 	int _vectorized = 1;
   _initlists();
+ 
+#if 0 /*BBCORE*/
+ 
+#endif /*BBCORE*/
  	_pointtype = point_register_mech(_mechanism,
 	 nrn_alloc,nrn_cur, nrn_jacob, nrn_state, nrn_init,
 	 hoc_nrnpointerindex,
-	 _hoc_create_pnt, _hoc_destroy_pnt,
+	 NULL/*_hoc_create_pnt*/, NULL/*_hoc_destroy_pnt*/, /*_member_func,*/
 	 1);
  _mechtype = nrn_get_mechtype(_mechanism[1]);
-  hoc_register_prop_size(_mechtype, 6, 2);
+  hoc_register_prop_size(_mechtype, _psize, _ppsize);
  }
 static int _reset;
 static char *modelname = "";
@@ -106,7 +192,7 @@ double _v; int* _ni; int _iml, _cntml;
 _cntml = _ml->_nodecount;
 _thread = _ml->_thread;
 for (_iml = 0; _iml < _cntml; ++_iml) {
- _p = _ml->_data + _iml*6; _ppvar = _ml->_pdata + _iml*1;
+ _p = _ml->_data + _iml*_psize; _ppvar = _ml->_pdata + _iml*_ppsize;
 #if EXTRACELLULAR
  _nd = _ml->_nodelist[_iml];
  if (_nd->_extnode) {
@@ -114,9 +200,7 @@ for (_iml = 0; _iml < _cntml; ++_iml) {
  }else
 #endif
  {
-#if CACHEVEC
     _v = VEC_V(_ni[_iml]);
-#endif
  }
  v = _v;
  initmodel(_p, _ppvar, _thread, _nt);
@@ -146,7 +230,7 @@ int* _ni; double _rhs, _v; int _iml, _cntml;
 _cntml = _ml->_nodecount;
 _thread = _ml->_thread;
 for (_iml = 0; _iml < _cntml; ++_iml) {
- _p = _ml->_data + _iml*6; _ppvar = _ml->_pdata + _iml*1;
+ _p = _ml->_data + _iml*_psize; _ppvar = _ml->_pdata + _iml*_ppsize;
 #if EXTRACELLULAR
  _nd = _ml->_nodelist[_iml];
  if (_nd->_extnode) {
@@ -154,9 +238,7 @@ for (_iml = 0; _iml < _cntml; ++_iml) {
  }else
 #endif
  {
-#if CACHEVEC
     _v = VEC_V(_ni[_iml]);
-#endif
  }
  _g = _nrn_current(_p, _ppvar, _thread, _nt, _v + .001);
  	{ _rhs = _nrn_current(_p, _ppvar, _thread, _nt, _v);
@@ -164,9 +246,7 @@ for (_iml = 0; _iml < _cntml; ++_iml) {
  _g = (_g - _rhs)/.001;
  _g *=  1.e2/(_nd_area);
  _rhs *= 1.e2/(_nd_area);
-#if CACHEVEC
 	VEC_RHS(_ni[_iml]) += _rhs;
-#endif
 #if EXTRACELLULAR
  if (_nd->_extnode) {
    *_nd->_extnode->_rhs[0] += _rhs;
@@ -184,10 +264,8 @@ int* _ni; int _iml, _cntml;
 _cntml = _ml->_nodecount;
 _thread = _ml->_thread;
 for (_iml = 0; _iml < _cntml; ++_iml) {
- _p = _ml->_data + _iml*6;
-#if CACHEVEC
+ _p = _ml->_data + _iml*_psize;
 	VEC_D(_ni[_iml]) -= _g;
-#endif
 #if EXTRACELLULAR
  if (_nd->_extnode) {
    *_nd->_extnode->_d[0] += _g;

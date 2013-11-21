@@ -3,20 +3,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include "scoplib.h"
+#undef PI
+ 
 #include "simcore/nrnoc/md1redef.h"
 #include "simcore/nrnconf.h"
 #include "simcore/nrnoc/multicore.h"
-#include "simcore/nrnoc/md2redef.h"
 
-#undef PI
- 
+#include "simcore/nrnoc/md2redef.h"
 #if METHOD3
 extern int _method3;
 #endif
-
-#undef exp
-#define exp hoc_Exp
-extern double hoc_Exp();
  
 #define _threadargscomma_ _p, _ppvar, _thread, _nt,
 #define _threadargs_ _p, _ppvar, _thread, _nt
@@ -35,13 +32,60 @@ extern double hoc_Exp();
 #define v _p[3]
 #define _g _p[4]
  
+#if MAC
+#if !defined(v)
+#define v _mlhv
+#endif
+#if !defined(h)
+#define h _mlhh
+#endif
+#endif
  static int hoc_nrnpointerindex =  -1;
- static Datum* _extcall_thread;
+ static ThreadDatum* _extcall_thread;
  /* external NEURON variables */
+ 
+#if 0 /*BBCORE*/
  /* declaration of user functions */
+ 
+#endif /*BBCORE*/
  static int _mechtype;
 extern int nrn_get_mechtype();
-
+ 
+#if 0 /*BBCORE*/
+ /* connect user functions to hoc names */
+ static IntFunc hoc_intfunc[] = {
+ "setdata_pas", _hoc_setdata,
+ 0, 0
+};
+ 
+#endif /*BBCORE*/
+ /* declare global and static user variables */
+ 
+#if 0 /*BBCORE*/
+ /* some parameters have upper and lower limits */
+ static HocParmLimits _hoc_parm_limits[] = {
+ "g_pas", 0, 1e+09,
+ 0,0,0
+};
+ static HocParmUnits _hoc_parm_units[] = {
+ "g_pas", "S/cm2",
+ "e_pas", "mV",
+ "i_pas", "mA/cm2",
+ 0,0
+};
+ 
+#endif /*BBCORE*/
+ 
+#if 0 /*BBCORE*/
+ /* connect global user variables to hoc */
+ static DoubScal hoc_scdoub[] = {
+ 0,0
+};
+ static DoubVec hoc_vdoub[] = {
+ 0,0,0
+};
+ 
+#endif /*BBCORE*/
  static double _sav_indep;
  static void nrn_alloc(), nrn_init(), nrn_state();
  static void nrn_cur(), nrn_jacob();
@@ -61,14 +105,26 @@ static void nrn_alloc(double* _p, Datum* _ppvar, int _type) {
  	/*initialize range parameters*/
  	g = 0.001;
  	e = -70;
+ 
+#if 0 /*BBCORE*/
+ 
+#endif /* BBCORE */
+ 
 }
  static _initlists();
- _passive_reg_() {
+ 
+#define _psize 5
+#define _ppsize 0
+ _passive_reg() {
 	int _vectorized = 1;
   _initlists();
+ 
+#if 0 /*BBCORE*/
+ 
+#endif /*BBCORE*/
  	register_mech(_mechanism, nrn_alloc,nrn_cur, nrn_jacob, nrn_state, nrn_init, hoc_nrnpointerindex, 1);
  _mechtype = nrn_get_mechtype(_mechanism[1]);
-  hoc_register_prop_size(_mechtype, 5, 0);
+  hoc_register_prop_size(_mechtype, _psize, _ppsize);
  }
 static int _reset;
 static char *modelname = "passive membrane channel";
@@ -93,10 +149,8 @@ double _v; int* _ni; int _iml, _cntml;
 _cntml = _ml->_nodecount;
 _thread = _ml->_thread;
 for (_iml = 0; _iml < _cntml; ++_iml) {
- _p = _ml->_data + _iml*5; _ppvar = _ml->_pdata + _iml*0;
-#if CACHEVEC
+ _p = _ml->_data + _iml*_psize; _ppvar = _ml->_pdata + _iml*_ppsize;
     _v = VEC_V(_ni[_iml]);
-#endif
  v = _v;
  initmodel(_p, _ppvar, _thread, _nt);
 }}
@@ -118,17 +172,14 @@ int* _ni; double _rhs, _v; int _iml, _cntml;
 _cntml = _ml->_nodecount;
 _thread = _ml->_thread;
 for (_iml = 0; _iml < _cntml; ++_iml) {
- _p = _ml->_data + _iml*5; _ppvar = _ml->_pdata + _iml*0;
-#if CACHEVEC
+ _p = _ml->_data + _iml*_psize; _ppvar = _ml->_pdata + _iml*_ppsize;
     _v = VEC_V(_ni[_iml]);
-#endif
  _g = _nrn_current(_p, _ppvar, _thread, _nt, _v + .001);
  	{ _rhs = _nrn_current(_p, _ppvar, _thread, _nt, _v);
  	}
  _g = (_g - _rhs)/.001;
-#if CACHEVEC
 	VEC_RHS(_ni[_iml]) -= _rhs;
-#endif
+ 
 }}
 
 static void nrn_jacob(_NrnThread* _nt, _Memb_list* _ml, int _type) {
@@ -140,10 +191,9 @@ int* _ni; int _iml, _cntml;
 _cntml = _ml->_nodecount;
 _thread = _ml->_thread;
 for (_iml = 0; _iml < _cntml; ++_iml) {
- _p = _ml->_data + _iml*5;
-#if CACHEVEC
+ _p = _ml->_data + _iml*_psize;
 	VEC_D(_ni[_iml]) += _g;
-#endif
+ 
 }}
 
 static void nrn_state(_NrnThread* _nt, _Memb_list* _ml, int _type) {

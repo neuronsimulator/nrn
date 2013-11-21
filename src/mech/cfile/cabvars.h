@@ -1,21 +1,22 @@
-extern  void capac_reg_(void), _passive_reg_(void),
+
+extern  void capac_reg_(void), _passive_reg(void),
 #if EXTRACELLULAR
 	extracell_reg_(void),
 #endif
-	_stim_reg_(void),
-	_hh_reg_(void),
-	_expsyn_reg_(void);
+	_stim_reg(void),
+	_hh_reg(void),
+	_expsyn_reg(void);
 
 static void (*mechanism[])(void) = { /* type will start at 3 */
 	capac_reg_,
-	_passive_reg_,
+	_passive_reg,
 #if EXTRACELLULAR
 	/* extracellular requires special handling and must be type 5 */
 	extracell_reg_,
 #endif
-	_stim_reg_,
-	_hh_reg_,
-	_expsyn_reg_,
+	_stim_reg,
+	_hh_reg,
+	_expsyn_reg,
 	0
 };
 

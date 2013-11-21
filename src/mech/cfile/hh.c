@@ -3,17 +3,18 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include "scoplib.h"
+#undef PI
+ 
 #include "simcore/nrnoc/md1redef.h"
 #include "simcore/nrnconf.h"
 #include "simcore/nrnoc/multicore.h"
-#include "simcore/nrnoc/md2redef.h"
 
-#undef PI
- 
+#include "simcore/nrnoc/md2redef.h"
 #if METHOD3
 extern int _method3;
 #endif
-
+ 
 #define _threadargscomma_ _p, _ppvar, _thread, _nt,
 #define _threadargs_ _p, _ppvar, _thread, _nt
  	/*SUPPRESS 761*/
@@ -44,20 +45,45 @@ extern int _method3;
 #define ik _p[16]
 #define v _p[17]
 #define _g _p[18]
-#define _ion_ena	_nt->_data[_ppvar[0]]
+#define _ion_ena		_nt->_data[_ppvar[0]]
 #define _ion_ina	_nt->_data[_ppvar[1]]
 #define _ion_dinadv	_nt->_data[_ppvar[2]]
-#define _ion_ek	_nt->_data[_ppvar[3]]
+#define _ion_ek		_nt->_data[_ppvar[3]]
 #define _ion_ik	_nt->_data[_ppvar[4]]
 #define _ion_dikdv	_nt->_data[_ppvar[5]]
  
+#if MAC
+#if !defined(v)
+#define v _mlhv
+#endif
+#if !defined(h)
+#define h _mlhh
+#endif
+#endif
  static int hoc_nrnpointerindex =  -1;
  static ThreadDatum* _extcall_thread;
  /* external NEURON variables */
  extern double celsius;
+ 
+#if 0 /*BBCORE*/
  /* declaration of user functions */
+ static int _hoc_rates();
+ static int _hoc_vtrap();
+ 
+#endif /*BBCORE*/
  static int _mechtype;
 extern int nrn_get_mechtype();
+ 
+#if 0 /*BBCORE*/
+ /* connect user functions to hoc names */
+ static IntFunc hoc_intfunc[] = {
+ "setdata_hh", _hoc_setdata,
+ "rates_hh", _hoc_rates,
+ "vtrap_hh", _hoc_vtrap,
+ 0, 0
+};
+ 
+#endif /*BBCORE*/
 #define vtrap vtrap_hh
  extern double vtrap();
  
@@ -83,16 +109,56 @@ static double _thread1data[6];
 #define ninf _thread[_gth]._pval[5]
 #define usetable usetable_hh
  double usetable = 1;
-
+ 
+#if 0 /*BBCORE*/
+ /* some parameters have upper and lower limits */
+ static HocParmLimits _hoc_parm_limits[] = {
+ "gl_hh", 0, 1e+09,
+ "gkbar_hh", 0, 1e+09,
+ "gnabar_hh", 0, 1e+09,
+ "usetable_hh", 0, 1,
+ 0,0,0
+};
+ static HocParmUnits _hoc_parm_units[] = {
+ "mtau_hh", "ms",
+ "htau_hh", "ms",
+ "ntau_hh", "ms",
+ "gnabar_hh", "S/cm2",
+ "gkbar_hh", "S/cm2",
+ "gl_hh", "S/cm2",
+ "el_hh", "mV",
+ "gna_hh", "S/cm2",
+ "gk_hh", "S/cm2",
+ "il_hh", "mA/cm2",
+ 0,0
+};
+ 
+#endif /*BBCORE*/
  static double delta_t = 0.01;
  static double h0 = 0;
  static double m0 = 0;
  static double n0 = 0;
-
+ 
+#if 0 /*BBCORE*/
+ /* connect global user variables to hoc */
+ static DoubScal hoc_scdoub[] = {
+ "minf_hh", &minf_hh,
+ "hinf_hh", &hinf_hh,
+ "ninf_hh", &ninf_hh,
+ "mtau_hh", &mtau_hh,
+ "htau_hh", &htau_hh,
+ "ntau_hh", &ntau_hh,
+ "usetable_hh", &usetable_hh,
+ 0,0
+};
+ static DoubVec hoc_vdoub[] = {
+ 0,0,0
+};
+ 
+#endif /*BBCORE*/
  static double _sav_indep;
  static void nrn_alloc(), nrn_init(), nrn_state();
  static void nrn_cur(), nrn_jacob();
- 
  /* connect range variables in _p that hoc is supposed to know about */
  static const char *_mechanism[] = {
  "6.2.0",
@@ -120,15 +186,40 @@ static void nrn_alloc(double* _p, Datum* _ppvar, int _type) {
  	gkbar = 0.036;
  	gl = 0.0003;
  	el = -54.3;
- 	/*connect ionic variables to this model*/
-	/* already done */
+ 
+#if 0 /*BBCORE*/
+ prop_ion = need_memb(_na_sym);
+ nrn_promote(prop_ion, 0, 1);
+ 	_ppvar[0]._pval = &prop_ion->param[0]; /* ena */
+ 	_ppvar[1]._pval = &prop_ion->param[3]; /* ina */
+ 	_ppvar[2]._pval = &prop_ion->param[4]; /* _ion_dinadv */
+ prop_ion = need_memb(_k_sym);
+ nrn_promote(prop_ion, 0, 1);
+ 	_ppvar[3]._pval = &prop_ion->param[0]; /* ek */
+ 	_ppvar[4]._pval = &prop_ion->param[3]; /* ik */
+ 	_ppvar[5]._pval = &prop_ion->param[4]; /* _ion_dikdv */
+ 
+#endif /* BBCORE */
+ 
 }
  static _initlists();
  static void _thread_mem_init(ThreadDatum*);
  static void _thread_cleanup(ThreadDatum*);
- _hh_reg_() {
+ static void _update_ion_pointer(Datum*);
+ 
+#define _psize 19
+#define _ppsize 6
+ _hh_reg() {
 	int _vectorized = 1;
   _initlists();
+ 
+#if 0 /*BBCORE*/
+ 	ion_reg("na", -10000.);
+ 	ion_reg("k", -10000.);
+ 	_na_sym = hoc_lookup("na_ion");
+ 	_k_sym = hoc_lookup("k_ion");
+ 
+#endif /*BBCORE*/
  	register_mech(_mechanism, nrn_alloc,nrn_cur, nrn_jacob, nrn_state, nrn_init, hoc_nrnpointerindex, 2);
   _extcall_thread = (ThreadDatum*)ecalloc(1, sizeof(ThreadDatum));
   _thread_mem_init(_extcall_thread);
@@ -137,7 +228,7 @@ static void nrn_alloc(double* _p, Datum* _ppvar, int _type) {
      _nrn_thread_reg1(_mechtype, _thread_mem_init);
      _nrn_thread_reg0(_mechtype, _thread_cleanup);
      _nrn_thread_table_reg(_mechtype, _check_table_thread);
-  hoc_register_prop_size(_mechtype, 19, 7);
+  hoc_register_prop_size(_mechtype, _psize, _ppsize);
  }
  static double *_t_minf;
  static double *_t_mtau;
@@ -155,10 +246,27 @@ static _modl_cleanup(){ _match_recurse=1;}
 static _f_rates();
 static rates();
  
+static int _ode_spec1(), _ode_matsol1();
  static _n_rates();
  static int _slist1[3], _dlist1[3];
  static int states();
  
+/*CVODE*/
+ static int _ode_spec1 (double* _p, Datum* _ppvar, ThreadDatum* _thread, _NrnThread* _nt) {int _reset = 0; {
+   rates ( _threadargscomma_ v ) ;
+   Dm = ( minf - m ) / mtau ;
+   Dh = ( hinf - h ) / htau ;
+   Dn = ( ninf - n ) / ntau ;
+   }
+ return _reset;
+}
+ static int _ode_matsol1 (double* _p, Datum* _ppvar, ThreadDatum* _thread, _NrnThread* _nt) {
+ rates ( _threadargscomma_ v ) ;
+ Dm = Dm  / (1. - dt*( ( ( ( - 1.0 ) ) ) / mtau )) ;
+ Dh = Dh  / (1. - dt*( ( ( ( - 1.0 ) ) ) / htau )) ;
+ Dn = Dn  / (1. - dt*( ( ( ( - 1.0 ) ) ) / ntau )) ;
+}
+ /*END CVODE*/
  static int states (double* _p, Datum* _ppvar, ThreadDatum* _thread, _NrnThread* _nt) { {
    rates ( _threadargscomma_ v ) ;
     m = m + (1. - exp(dt*(( ( ( - 1.0 ) ) ) / mtau)))*(- ( ( ( minf ) ) / mtau ) / ( ( ( ( - 1.0) ) ) / mtau ) - m) ;
@@ -232,7 +340,9 @@ _check_rates(_p, _ppvar, _thread, _nt);
  }
 
  
-static int  _f_rates ( double* _p, Datum* _ppvar, ThreadDatum* _thread, _NrnThread*_nt, double _lv ) {
+static int  _f_rates ( _p, _ppvar, _thread, _nt, _lv ) double* _p; Datum* _ppvar; ThreadDatum* _thread; _NrnThread* _nt; 
+	double _lv ;
+ {
    double _lalpha , _lbeta , _lsum , _lq10 ;
   _lq10 = pow( 3.0 , ( ( celsius - 6.3 ) / 10.0 ) ) ;
    _lalpha = .1 * vtrap ( _threadargscomma_ - ( _lv + 40.0 ) , 10.0 ) ;
@@ -252,7 +362,28 @@ static int  _f_rates ( double* _p, Datum* _ppvar, ThreadDatum* _thread, _NrnThre
    ninf = _lalpha / _lsum ;
     return 0; }
  
-double vtrap ( double* _p, Datum* _ppvar, ThreadDatum* _thread, _NrnThread* _nt, double _lx , double _ly ) {
+#if 0 /*BBCORE*/
+ 
+static int _hoc_rates() {
+  double _r;
+   double* _p; Datum* _ppvar; ThreadDatum* _thread; _NrnThread* _nt;
+   if (_extcall_prop) {_p = _extcall_prop->param; _ppvar = _extcall_prop->dparam;}else{ _p = (double*)0; _ppvar = (Datum*)0; }
+  _thread = _extcall_thread;
+  _nt = nrn_threads;
+ 
+#if 1
+ _check_rates(_p, _ppvar, _thread, _nt);
+#endif
+ _r = 1.;
+ rates ( _p, _ppvar, _thread, _nt, *getarg(1) ) ;
+ ret(_r);
+}
+ 
+#endif /*BBCORE*/
+ 
+double vtrap ( _p, _ppvar, _thread, _nt, _lx , _ly ) double* _p; Datum* _ppvar; ThreadDatum* _thread; _NrnThread* _nt; 
+	double _lx , _ly ;
+ {
    double _lvtrap;
  if ( fabs ( _lx / _ly ) < 1e-6 ) {
      _lvtrap = _ly * ( 1.0 - _lx / _ly / 2.0 ) ;
@@ -263,6 +394,20 @@ double vtrap ( double* _p, Datum* _ppvar, ThreadDatum* _thread, _NrnThread* _nt,
    
 return _lvtrap;
  }
+ 
+#if 0 /*BBCORE*/
+ 
+static int _hoc_vtrap() {
+  double _r;
+   double* _p; Datum* _ppvar; ThreadDatum* _thread; _NrnThread* _nt;
+   if (_extcall_prop) {_p = _extcall_prop->param; _ppvar = _extcall_prop->dparam;}else{ _p = (double*)0; _ppvar = (Datum*)0; }
+  _thread = _extcall_thread;
+  _nt = nrn_threads;
+ _r =  vtrap ( _p, _ppvar, _thread, _nt, *getarg(1) , *getarg(2) ) ;
+ ret(_r);
+}
+ 
+#endif /*BBCORE*/
  
 static void _thread_mem_init(ThreadDatum* _thread) {
   if (_thread1data_inuse) {_thread[_gth]._pval = (double*)ecalloc(6, sizeof(double));
@@ -277,6 +422,8 @@ static void _thread_cleanup(ThreadDatum* _thread) {
   }else{
    free((void*)_thread[_gth]._pval);
   }
+ }
+ static void _update_ion_pointer(Datum* _ppvar) {
  }
 
 static void initmodel(double* _p, Datum* _ppvar, ThreadDatum* _thread, _NrnThread* _nt) {
@@ -303,14 +450,12 @@ double _v; int* _ni; int _iml, _cntml;
 _cntml = _ml->_nodecount;
 _thread = _ml->_thread;
 for (_iml = 0; _iml < _cntml; ++_iml) {
- _p = _ml->_data + _iml*19; _ppvar = _ml->_pdata + _iml*7;
+ _p = _ml->_data + _iml*_psize; _ppvar = _ml->_pdata + _iml*_ppsize;
 
 #if 0
  _check_rates(_p, _ppvar, _thread, _nt);
 #endif
-#if CACHEVEC
     _v = VEC_V(_ni[_iml]);
-#endif
  v = _v;
   ena = _ion_ena;
   ek = _ion_ek;
@@ -340,10 +485,8 @@ int* _ni; double _rhs, _v; int _iml, _cntml;
 _cntml = _ml->_nodecount;
 _thread = _ml->_thread;
 for (_iml = 0; _iml < _cntml; ++_iml) {
- _p = _ml->_data + _iml*19; _ppvar = _ml->_pdata + _iml*7;
-#if CACHEVEC
+ _p = _ml->_data + _iml*_psize; _ppvar = _ml->_pdata + _iml*_ppsize;
     _v = VEC_V(_ni[_iml]);
-#endif
   ena = _ion_ena;
   ek = _ion_ek;
  _g = _nrn_current(_p, _ppvar, _thread, _nt, _v + .001);
@@ -358,9 +501,8 @@ for (_iml = 0; _iml < _cntml; ++_iml) {
  _g = (_g - _rhs)/.001;
   _ion_ina += ina ;
   _ion_ik += ik ;
-#if CACHEVEC
 	VEC_RHS(_ni[_iml]) -= _rhs;
-#endif
+ 
 }}
 
 static void nrn_jacob(_NrnThread* _nt, _Memb_list* _ml, int _type) {
@@ -372,10 +514,9 @@ int* _ni; int _iml, _cntml;
 _cntml = _ml->_nodecount;
 _thread = _ml->_thread;
 for (_iml = 0; _iml < _cntml; ++_iml) {
- _p = _ml->_data + _iml*19;
-#if CACHEVEC
+ _p = _ml->_data + _iml*_psize;
 	VEC_D(_ni[_iml]) += _g;
-#endif
+ 
 }}
 
 static void nrn_state(_NrnThread* _nt, _Memb_list* _ml, int _type) {
@@ -388,10 +529,8 @@ double _v; int* _ni; int _iml, _cntml;
 _cntml = _ml->_nodecount;
 _thread = _ml->_thread;
 for (_iml = 0; _iml < _cntml; ++_iml) {
- _p = _ml->_data + _iml*19; _ppvar = _ml->_pdata + _iml*7;
-#if CACHEVEC
+ _p = _ml->_data + _iml*_psize; _ppvar = _ml->_pdata + _iml*_ppsize;
     _v = VEC_V(_ni[_iml]);
-#endif
  _break = t + .5*dt; _save = t;
  v=_v;
 {
