@@ -46,6 +46,7 @@ int* nrn_prop_param_size_;
 int* nrn_prop_dparam_size_;
 int* nrn_dparam_ptr_start_;
 int* nrn_dparam_ptr_end_;
+short* nrn_is_artificial_;
 
 void  add_nrn_has_net_event(type) int type; {
 	++nrn_has_net_event_cnt_;
@@ -99,6 +100,7 @@ void alloc_mech(int n) {
 	nrn_dparam_ptr_start_ = (int*)ecalloc(memb_func_size_, sizeof(int));
 	nrn_dparam_ptr_end_ = (int*)ecalloc(memb_func_size_, sizeof(int));
 	memb_order_ = (short*)ecalloc(memb_func_size_, sizeof(short));
+        nrn_is_artificial_ = (short*)ecalloc(memb_func_size_, sizeof(short));
 	bamech_ = (BAMech**)ecalloc(BEFORE_AFTER_SIZE, sizeof(BAMech*));
 	nrn_mk_prop_pools(memb_func_size_);
 }

@@ -5,7 +5,10 @@
 #include "simcore/nrnoc/membfunc.h"
 
 #if defined(__cplusplus)
+class NetCon;
 extern "C" {
+#else
+typedef void NetCon;
 #endif
 
 typedef struct NrnThreadMembList{ /* patterned after CvMembList in cvodeobj.h */
@@ -24,7 +27,15 @@ typedef struct NrnThread {
 	double _t;
 	double _dt;
 	double cj;
+
 	NrnThreadMembList* tml;
+        Point_process* synapses;
+        NetCon* netcons;
+
+	NrnThreadMembList* acell_tml;
+	Point_process* acells;
+	NetCon* acell_netcons;
+
         int ncell; /* analogous to old rootnodecount */
 	int end;    /* 1 + position of last in v_node array. Now v_node_count. */
 	int id; /* this is nrn_threads[id] */
@@ -33,7 +44,7 @@ typedef struct NrnThread {
 	size_t _ndata, _nidata, _nvdata; /* sizes */
 	double* _data; /* all the other double* and Datum to doubles point into here*/
 	int* _idata; /* all the Datum to ints index into here */
-	void* _vdata; /* all the Datum to pointers index into here */
+	void** _vdata; /* all the Datum to pointers index into here */
 
 	double* _actual_rhs;
 	double* _actual_d;

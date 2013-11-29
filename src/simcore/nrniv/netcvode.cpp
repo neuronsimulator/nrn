@@ -61,6 +61,7 @@ extern bool nrn_use_localgid_;
 extern void nrn_outputevent(unsigned char, double);
 extern void nrn2ncs_outputevent(int netcon_output_index, double firetime);
 void net_send(void**, double*, Point_process*, double, double);
+void net_event(Point_process* pnt, double time);
 void net_move(void**, Point_process*, double);
 void artcell_net_send(void**, double*, Point_process*, double, double);
 void artcell_net_move(void**, Point_process*, double);

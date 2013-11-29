@@ -5,6 +5,7 @@ extern  void capac_reg_(void), _passive_reg(void),
 #endif
 	_stim_reg(void),
 	_hh_reg(void),
+        _netstim_reg(void),
 	_expsyn_reg(void);
 
 static void (*mechanism[])(void) = { /* type will start at 3 */
@@ -17,6 +18,7 @@ static void (*mechanism[])(void) = { /* type will start at 3 */
 	_stim_reg,
 	_hh_reg,
 	_expsyn_reg,
+        _netstim_reg,
 	0
 };
 

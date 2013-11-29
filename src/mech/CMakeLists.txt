@@ -3,6 +3,7 @@ cfile/expsyn.c
 cfile/hh.c
 cfile/passive.c
 cfile/stim.c
+cfile/netstim.c
 )
 
 set(LIBRARY coremech)

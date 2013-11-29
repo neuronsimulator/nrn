@@ -1,3 +1,4 @@
+#include "simcore/nrnconf.h"
 #include "simcore/nrnoc/multicore.h"
 #include "simcore/nrniv/nrniv_decl.h"
 #include "simcore/nrnoc/nrnoc_decl.h"
@@ -16,7 +17,7 @@ void nrn_setup(int nthread, const char *path) {
   nrn_threads_create(nthread, 0); // serial threads
   for (int i = 0; i < nthread; ++i) {
 //    sprintf(fname, "bbcore_thread.%d.%d.dat", i, 0);
-      sprintf(fname, "%sbbcore_thread.%d.%d.dat", path, i, 0);
+    sprintf(fname, "%sbbcore_thread.%d.%d.dat", path, i, 0);
     read_nrnthread(fname, nrn_threads[i]);
     setup_ThreadData(nrn_threads[i]); // nrncore does this in multicore.c in thread_memblist_setup
     nrn_mk_table_check(); // was done in nrn_thread_memblist_setup in multicore.c
@@ -88,7 +89,13 @@ void read_nrnthread(const char* fname, NrnThread& nt) {
   nt.ncell = read_int();
   nt.end = read_int();
   int nmech = read_int();
+  int nart = read_int();
+  int nart_without_gid = read_int();
+  int nart_without_gid_netcons = read_int();
+  int nart_without_gid_netcons_wcnt = read_int();
   printf("ncell=%d end=%d nmech=%d\n", nt.ncell, nt.end, nmech);
+  printf("nart=%d nart_without_gid=%d nart_without_gid_netcons=%d\n", nart, nart_without_gid, nart_without_gid_netcons);
+  printf("nart_without_gid_netcons_wcnt = %d\n", nart_without_gid_netcons_wcnt);
   NrnThreadMembList* tml_last = NULL;
   for (int i=0; i < nmech; ++i) {
     tml = (NrnThreadMembList*)emalloc(sizeof(NrnThreadMembList));
@@ -112,7 +119,7 @@ void read_nrnthread(const char* fname, NrnThread& nt) {
 
   nt._data = (double*)ecalloc(nt._ndata, sizeof(double));
   if (nt._nidata) nt._idata = (int*)ecalloc(nt._nidata, sizeof(int));
-  if (nt._nvdata) nt._vdata = (void*)ecalloc(nt._nvdata, sizeof(void*));
+  if (nt._nvdata) nt._vdata = (void**)ecalloc(nt._nvdata, sizeof(void*));
   int n = nt.end;
   nt._actual_rhs = nt._data + 0*n;
   nt._actual_d = nt._data + 1*n;
@@ -121,12 +128,17 @@ void read_nrnthread(const char* fname, NrnThread& nt) {
   nt._actual_v = nt._data + 4*n;
   nt._actual_area = nt._data + 5*n;
   size_t offset = 6*n;
+  int nsyn = 0;
   for (tml = nt.tml; tml; tml = tml->next) {
     Memb_list* ml = tml->ml;
+    int type = tml->index;
     int n = ml->nodecount;
-    int sz = nrn_prop_param_size_[tml->index];
+    int sz = nrn_prop_param_size_[type];
     ml->data = nt._data + offset;
     offset += n*sz;
+    if (pnt_map[type] > 0 && nrn_is_artificial_[type] == 0) {
+      nsyn += n;
+    }
   }
   printf("offset=%ld ndata=%ld\n", offset, nt._ndata);
   assert(offset == nt._ndata);
@@ -151,18 +163,58 @@ void read_nrnthread(const char* fname, NrnThread& nt) {
   read_dbl_array(nt._actual_area, nt.end);
   read_dbl_array(nt._actual_v, nt.end);
   Memb_list** mlmap = new Memb_list*[n_memb_func];
+  int synoffset = 0;
+  int acelloffset = 0;
+  int* pnt_offset = new int[n_memb_func];
+  nt.synapses = new Point_process[nsyn];
+  nt.acells = new Point_process[nart];
   for (tml = nt.tml; tml; tml = tml->next) {
+    int type = tml->index;
     Memb_list* ml = tml->ml;
-    mlmap[tml->index] = ml;
+    mlmap[type] = ml;
+    int is_art = nrn_is_artificial_[type];
     int n = ml->nodecount;
-    int sz = nrn_prop_param_size_[tml->index];
-    ml->nodeindices = read_int_array(NULL, ml->nodecount);
-    read_dbl_array(ml->data, n*sz);
-    sz = nrn_prop_dparam_size_[tml->index];
-    if (sz) {
-      ml->pdata = read_int_array(NULL, n*sz);
+    int szp = nrn_prop_param_size_[type];
+    int szdp = nrn_prop_dparam_size_[type];
+    if (!is_art) {ml->nodeindices = read_int_array(NULL, ml->nodecount);}
+    read_dbl_array(ml->data, n*szp);
+    if (szdp) {
+      ml->pdata = read_int_array(NULL, n*szdp);
     }else{
       ml->pdata = NULL;
+    }
+    if (pnt_map[type] > 0) { // POINT_PROCESS mechanism
+      int cnt = ml->nodecount;
+      Point_process* pnt = NULL;
+      if (is_art) {
+        pnt = nt.acells + acelloffset;
+        pnt_offset[type] = acelloffset;
+        acelloffset += cnt;
+      }else{
+        pnt = nt.synapses + synoffset;
+        pnt_offset[type] = synoffset;
+        synoffset += cnt;
+      }
+      for (int i=0; i < cnt; ++i) {
+        Point_process* pp = pnt + i;
+        pp->type = type;
+        pp->data = ml->data + i*szp;
+        pp->pdata = ml->pdata + i*szdp;
+printf("type=%d i=%d pp->pdata[1]=%d\n", type, i, pp->pdata[1]);
+        nt._vdata[pp->pdata[1]] = pp;
+        pp->presyn_ = NULL;
+        pp->_vnt = &nt;
+      }
+    }
+  }
+
+  //put the artcells in a different tml list (all the artcells are last)
+  for (tml = nt.tml; tml; tml = tml->next) {
+    NrnThreadMembList* tmlnext = tml->next;
+    if (tmlnext && nrn_is_artificial_[tmlnext->index]) {
+      tml->next = NULL;
+      nt.acell_tml = tmlnext;
+      break;
     }
   }
 
@@ -171,19 +223,13 @@ printf("nnetcon=%d nweight=%d\n", nnetcon, nweight);
   int* pnttype = read_int_array(NULL, nnetcon);
   int* pntindex = read_int_array(NULL, nnetcon);
   // it is likely that Point_process structures will be made unnecessary
-  // by factoring into NetCon. For now we create and save both Point_process
-  // and NetCon.
-  point_processes = new Point_process[nnetcon];
-  netcons = new NetCon[nnetcon];
+  // by factoring into NetCon.
+  nt.netcons = new NetCon[nnetcon];
   for (int i=0; i < nnetcon; ++i) {
-    Point_process* pnt = point_processes + i;
-    pnt->type = pnttype[i];
-    Memb_list* ml = mlmap[pnt->type];
-    pnt->data = ml->data + pntindex[i]*nrn_prop_param_size_[pnt->type];
-    pnt->pdata = ml->pdata + pntindex[i]*nrn_prop_dparam_size_[pnt->type];
-    pnt->presyn_ = NULL;
-    pnt->_vnt = &nt;
-    BBS_gid_connect(srcgid[i], pnt, netcons[i]);
+    int type = pnttype[i];
+    int index = pnt_offset[type] + pntindex[i];
+    Point_process* pnt = nt.synapses + index;
+    BBS_gid_connect(srcgid[i], pnt, nt.netcons[i]);
   }
   delete [] mlmap;
   delete [] srcgid;
@@ -192,7 +238,7 @@ printf("nnetcon=%d nweight=%d\n", nnetcon, nweight);
   double* weights = read_dbl_array(NULL, nweight);
   int iw = 0;
   for (int i=0; i < nnetcon; ++i) {
-    NetCon& nc = netcons[i];
+    NetCon& nc = nt.netcons[i];
     for (int j=0; j < nc.cnt_; ++j) {
       nc.weight_[j] = weights[iw++];
     }
@@ -201,9 +247,43 @@ printf("nnetcon=%d nweight=%d\n", nnetcon, nweight);
   delete [] weights;
   double* delay = read_dbl_array(NULL, nnetcon);
   for (int i=0; i < nnetcon; ++i) {
-    NetCon& nc = netcons[i];
+    NetCon& nc = nt.netcons[i];
     nc.delay_ = delay[i];
   }
+  delete [] delay;
+
+  // now the artcells
+  int n_nc = nart_without_gid_netcons;
+  int n_wt = nart_without_gid_netcons_wcnt;
+  int* art_nc_cnts = read_int_array(NULL, nart);
+  int* target_type = read_int_array(NULL, n_nc);
+  int* target_index = read_int_array(NULL, n_nc);
+  weights = read_dbl_array(NULL, n_wt);
+  delay = read_dbl_array(NULL, n_nc);
+  int inc = 0;
+  int iwt = 0;
+  nt.acell_netcons = new NetCon[nart_without_gid_netcons];
+  for (int i = 0; i < nart; ++i) {
+    Point_process& acell = nt.acells[i];
+    PreSyn* ps = new PreSyn(NULL, NULL, NULL);
+    acell.presyn_ = ps;
+    for (int j=0; j < art_nc_cnts[i]; ++j) {
+      NetCon& nc = nt.acell_netcons[inc];
+      int offset = pnt_offset[target_type[inc]];
+      Point_process* target = nt.synapses + (offset + target_index[inc]);
+      nc.init(ps, target);
+      for (int k=0; k < nc.cnt_; ++k) {
+        nc.weight_[k] = weights[iwt++];
+      }
+      nc.delay_ = delay[inc];
+      ++inc;
+    }
+  }
+  delete [] pnt_offset;
+  delete [] art_nc_cnts;
+  delete [] target_type;
+  delete [] target_index;
+  delete [] weights;
   delete [] delay;
 
   fclose(f);

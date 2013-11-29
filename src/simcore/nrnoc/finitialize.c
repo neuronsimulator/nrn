@@ -60,21 +60,14 @@ void nrn_finitialize(int setv, double v) {
 				(*s)(nt, tml->ml, tml->index);
 			}
 		}
+		for (tml = nt->acell_tml; tml; tml = tml->next) {
+			mod_f_t s = memb_func[tml->index].initialize;
+			if (s) {
+				(*s)(nt, tml->ml, tml->index);
+			}
+		}
 	}
 #endif
-	for (iord=0; iord < n_memb_func; ++iord) {
-	  i = memb_order_[iord];
-	  /* first clause due to MULTICORE */
-	  if (nrn_is_artificial_[i]) if (memb_func[i].initialize) {
-	    mod_f_t s = memb_func[i].initialize;
-	    if (memb_list[i].nodecount){
-		(*s)(nrn_threads, memb_list + i, i);
-	    }
-		if (errno) {
-hoc_warning("errno set during call to INITIAL block", (char*)0);
-		}
-	  }
-	}
 #endif
 
 	init_net_events();
