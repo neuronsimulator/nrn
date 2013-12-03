@@ -231,7 +231,6 @@ printf("nnetcon=%d nweight=%d\n", nnetcon, nweight);
     Point_process* pnt = nt.synapses + index;
     BBS_gid_connect(srcgid[i], pnt, nt.netcons[i]);
   }
-  delete [] mlmap;
   delete [] srcgid;
   delete [] pnttype;
   delete [] pntindex;
@@ -285,6 +284,34 @@ printf("nnetcon=%d nweight=%d\n", nnetcon, nweight);
   delete [] target_index;
   delete [] weights;
   delete [] delay;
+
+  // BBCOREPOINTER information
+  int npnt = read_int();
+  for (int i=0; i < npnt; ++i) {
+    int type = read_int();
+    assert(nrn_bbcore_read_[type]);
+    int sz = read_int();
+    int cnt = read_int();
+    void* vp;
+    if (sz == sizeof(int)) {
+      vp = read_int_array(NULL, cnt);
+    }else if (sz == sizeof(double)) {
+      vp = read_dbl_array(NULL, cnt);
+    }else{
+      assert(0);
+    }
+    int k=0;
+    Memb_list* ml = mlmap[type];
+    int dsz = nrn_prop_param_size_[type];
+    int pdsz = nrn_prop_dparam_size_[type];
+    for (int j=0; j < ml->nodecount; ++j) {
+      double* d = ml->data + j*dsz;
+      Datum* pd = ml->pdata + j*pdsz;
+      k = (*nrn_bbcore_read_[type])(vp, k, d, pd, ml->_thread, &nt);
+    }
+    assert(k == cnt);
+  }
+  delete [] mlmap;
 
   fclose(f);
 }

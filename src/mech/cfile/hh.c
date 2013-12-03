@@ -17,6 +17,7 @@ extern int _method3;
  
 #define _threadargscomma_ _p, _ppvar, _thread, _nt,
 #define _threadargs_ _p, _ppvar, _thread, _nt
+#define _threadargsproto_ double* _p, Datum* _ppvar, ThreadDatum* _thread, _NrnThread* _nt
  	/*SUPPRESS 761*/
 	/*SUPPRESS 762*/
 	/*SUPPRESS 763*/

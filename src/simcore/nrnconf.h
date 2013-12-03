@@ -7,6 +7,8 @@
 #include <errno.h>
 #include <stdint.h>
 
+#define NRNBBCORE 1
+
 #define nil NULL
 #define Sprintf sprintf
 

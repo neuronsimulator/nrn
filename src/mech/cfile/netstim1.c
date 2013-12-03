@@ -17,6 +17,7 @@ extern int _method3;
  
 #define _threadargscomma_ _p, _ppvar, _thread, _nt,
 #define _threadargs_ _p, _ppvar, _thread, _nt
+#define _threadargsproto_ double* _p, Datum* _ppvar, ThreadDatum* _thread, _NrnThread* _nt
  	/*SUPPRESS 761*/
 	/*SUPPRESS 762*/
 	/*SUPPRESS 763*/
@@ -36,7 +37,7 @@ extern int _method3;
 #define v _p[7]
 #define _tsav _p[8]
 #define _nd_area  _nt->_data[_ppvar[0]]
-#define donotuse	*((double*)(_nt->_vdata[_ppvar[2]]))
+#define _tsav _p[8]
 #define _p_donotuse	_nt->_vdata[_ppvar[2]]
  
 #if MAC
@@ -57,8 +58,7 @@ extern int _method3;
  static double _hoc_init_sequence();
  static double _hoc_invl();
  static double _hoc_next_invl();
- static double _hoc_noiseFromRandom();
- static double _hoc_seed();
+ static double _hoc_noiseFromRandom123();
  
 #endif /*BBCORE*/
  static int _mechtype;
@@ -96,14 +96,13 @@ extern int nrn_get_mechtype();
  "init_sequence", _hoc_init_sequence,
  "invl", _hoc_invl,
  "next_invl", _hoc_next_invl,
- "noiseFromRandom", _hoc_noiseFromRandom,
- "seed", _hoc_seed,
+ "noiseFromRandom123", _hoc_noiseFromRandom123,
  0, 0
 };
  
 #endif /*BBCORE*/
-#define erand erand_NetStim
-#define invl invl_NetStim
+#define erand erand_NetStim1
+#define invl invl_NetStim1
  extern double erand();
  extern double invl();
  /* declare global and static user variables */
@@ -146,7 +145,7 @@ extern int nrn_get_mechtype();
  /* connect range variables in _p that hoc is supposed to know about */
  static const char *_mechanism[] = {
  "6.2.0",
-"NetStim",
+"NetStim1",
  "interval",
  "number",
  "start",
@@ -179,7 +178,9 @@ static void nrn_alloc(double* _p, Datum* _ppvar, int _type) {
  
 #define _psize 9
 #define _ppsize 4
- _netstim_reg() {
+ static int bbcore_read(void*, int, _threadargsproto_);
+ extern void hoc_reg_bbcore_read(int, int(*)(void*, int, _threadargsproto_));
+ _netstim1_reg() {
 	int _vectorized = 1;
   _initlists();
  
@@ -192,6 +193,7 @@ static void nrn_alloc(double* _p, Datum* _ppvar, int _type) {
 	 NULL/*_hoc_create_pnt*/, NULL/*_hoc_destroy_pnt*/, /*_member_func,*/
 	 1);
  _mechtype = nrn_get_mechtype(_mechanism[1]);
+   hoc_reg_bbcore_read(_mechtype, bbcore_read);
   hoc_register_prop_size(_mechtype, _psize, _ppsize);
  add_nrn_artcell(_mechtype, 3);
  add_nrn_has_net_event(_mechtype);
@@ -207,29 +209,7 @@ static int _match_recurse=1;
 static _modl_cleanup(){ _match_recurse=1;}
 static init_sequence();
 static next_invl();
-static noiseFromRandom();
-static seed();
- 
-static int  seed ( _p, _ppvar, _thread, _nt, _lx ) double* _p; Datum* _ppvar; ThreadDatum* _thread; _NrnThread* _nt; 
-	double _lx ;
- {
-    return 0; }
- 
-#if 0 /*BBCORE*/
- 
-static double _hoc_seed(_vptr) void* _vptr; {
- double _r;
-   double* _p; Datum* _ppvar; ThreadDatum* _thread; _NrnThread* _nt;
-   _p = ((Point_process*)_vptr)->_prop->param;
-  _ppvar = ((Point_process*)_vptr)->_prop->dparam;
-  _thread = _extcall_thread;
-  _nt = (_NrnThread*)((Point_process*)_vptr)->_vnt;
- _r = 1.;
- seed ( _p, _ppvar, _thread, _nt, *getarg(1) ) ;
- return(_r);
-}
- 
-#endif /*BBCORE*/
+static noiseFromRandom123();
  
 static int  init_sequence ( _p, _ppvar, _thread, _nt, _lt ) double* _p; Datum* _ppvar; ThreadDatum* _thread; _NrnThread* _nt; 
 	double _lt ;
@@ -290,10 +270,7 @@ static double _hoc_invl(_vptr) void* _vptr; {
 #endif /*BBCORE*/
  
 /*VERBATIM*/
-#if 0
-double nrn_random_pick(void* r);
-void* nrn_random_arg(int argpos);
-#endif
+#include "nrnran123.h"
  
 double erand ( _p, _ppvar, _thread, _nt ) double* _p; Datum* _ppvar; ThreadDatum* _thread; _NrnThread* _nt; {
    double _lerand;
@@ -305,15 +282,10 @@ double erand ( _p, _ppvar, _thread, _nt ) double* _p; Datum* _ppvar; ThreadDatum
 		: each instance. However, the corresponding hoc Random
 		: distribution MUST be set to Random.negexp(1)
 		*/
-		_lerand = 1.0; /*nrn_random_pick(_p_donotuse);*/
+		_lerand = nrnran123_negexp((nrnran123_State*)_p_donotuse);
+printf("erand %g\n", _lerand);
 	}else{
-		/* only can be used in main thread */
-		if (_nt != nrn_threads) {
-hoc_execerror("multithread random in NetStim"," only via hoc Random");
-		}
- _lerand = 1.0 ;
-   
-/*VERBATIM*/
+		assert(0);
 	}
  
 return _lerand;
@@ -334,24 +306,26 @@ static double _hoc_erand(_vptr) void* _vptr; {
  
 #endif /*BBCORE*/
  
-static int  noiseFromRandom ( _p, _ppvar, _thread, _nt ) double* _p; Datum* _ppvar; ThreadDatum* _thread; _NrnThread* _nt; {
+static int  noiseFromRandom123 ( _p, _ppvar, _thread, _nt ) double* _p; Datum* _ppvar; ThreadDatum* _thread; _NrnThread* _nt; {
    
 /*VERBATIM*/
+#if !NRNBBCORE
  {
-#if 0
-	void** pv = (void**)(&_p_donotuse);
-	if (ifarg(1)) {
-		*pv = nrn_random_arg(1);
-	}else{
-		*pv = (void*)0;
+	nrnran123_State** pv = (nrnran123_State**)(&_p_donotuse);
+	if (*pv) {
+		nrnran123_deletestream(*pv);
+		*pv = (nrnran123_State*)0;
 	}
-#endif
+	if (ifarg(2)) {
+		*pv = nrnran123_newstream((uint32_t)*getarg(1), (uint32_t)*getarg(2));
+	}
  }
+#endif
   return 0; }
  
 #if 0 /*BBCORE*/
  
-static double _hoc_noiseFromRandom(_vptr) void* _vptr; {
+static double _hoc_noiseFromRandom123(_vptr) void* _vptr; {
  double _r;
    double* _p; Datum* _ppvar; ThreadDatum* _thread; _NrnThread* _nt;
    _p = ((Point_process*)_vptr)->_prop->param;
@@ -359,11 +333,34 @@ static double _hoc_noiseFromRandom(_vptr) void* _vptr; {
   _thread = _extcall_thread;
   _nt = (_NrnThread*)((Point_process*)_vptr)->_vnt;
  _r = 1.;
- noiseFromRandom ( _p, _ppvar, _thread, _nt ) ;
+ noiseFromRandom123 ( _p, _ppvar, _thread, _nt ) ;
  return(_r);
 }
  
 #endif /*BBCORE*/
+ 
+/*VERBATIM*/
+static int bbcore_write(void* d, int offset, int* sz, _threadargsproto_) {
+	if (!noise) { return offset; }
+	if (d) {
+		uint32_t* di = ((uint32_t*)d) + offset;
+		nrnran123_State** pv = (nrnran123_State**)(&_p_donotuse);
+		nrnran123_getids(*pv, di, di+1);
+printf("Netstim bbcore_write %d %d\n", di[0], di[1]);
+	}
+	*sz = sizeof(uint32_t);
+	return offset + 2;
+}
+static int bbcore_read(void* d, int offset, _threadargsproto_) {
+	assert(!_p_donotuse);
+	if (noise) {
+		uint32_t* di = ((uint32_t*)d) + offset;
+		nrnran123_State** pv = (nrnran123_State**)(&_p_donotuse);
+		*pv = nrnran123_newstream(di[0], di[1]);
+printf("Netstim bbcore_read %d %d\n", di[0], di[1]);
+	}
+	return offset + 2;
+}
  
 static int  next_invl ( _p, _ppvar, _thread, _nt ) double* _p; Datum* _ppvar; ThreadDatum* _thread; _NrnThread* _nt; {
    if ( number > 0.0 ) {
