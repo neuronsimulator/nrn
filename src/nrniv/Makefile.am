@@ -39,7 +39,7 @@ neuron.exe: $(nsrc)/mswin/extra/neuron.cpp
 	echo "id ICON \"$(nsrc)/mswin/nrniv10.ico\"" > nrnicon.rc
 	windres nrnicon.rc -O coff -o nrnicon.res
 	if test "$(host_cpu)"="x86_64" ; then \
-	$(CXX32WIN) -g -O2 -DCYGWIN -o neuron.exe $(nsrc)/mswin/extra/neuron.cpp nrnicon.res ;\
+	$(CXX64WIN) -g -O2 -DCYGWIN -o neuron.exe $(nsrc)/mswin/extra/neuron.cpp nrnicon.res ;\
 	fi
 
 else

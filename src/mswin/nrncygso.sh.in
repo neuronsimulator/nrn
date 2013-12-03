@@ -85,10 +85,13 @@ if test "$CFLAGS" != "-mno-cygwin" ; then
 
 if test "$mingw" = "no" ; then
 
+mpilib=mpich/lib/libmpich.dll.a
+mpilib=""
+
 echo 'make nrniv.dll under cygwin'
 $CXX -shared $obj \
   -L${IVLIBDIR} -lIVhines \
-  $mpich/lib/libmpich.dll.a \
+  $mpilib \
   -lreadline \
   $LIBS \
   @NRNPYTHON_PYLIBLINK@ \
