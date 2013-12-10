@@ -11,6 +11,7 @@ nrnoc/nrnoc_aux.c
 nrnoc/register_mech.c
 nrnoc/multicore.c
 nrnoc/nrntimeout.c
+nrniv/main1.cpp
 nrniv/netpar.cpp
 nrniv/netcvode.cpp
 nrniv/cxprop.cpp

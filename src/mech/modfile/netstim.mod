@@ -9,7 +9,7 @@
 : will give the same random streams for simulation in either version.
 
 NEURON	{ 
-  ARTIFICIAL_CELL NetStim1
+  ARTIFICIAL_CELL NetStim
   RANGE interval, number, start
   RANGE noise
   THREADSAFE : only true if every instance has its own distinct Random

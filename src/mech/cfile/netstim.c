@@ -37,7 +37,6 @@ extern int _method3;
 #define v _p[7]
 #define _tsav _p[8]
 #define _nd_area  _nt->_data[_ppvar[0]]
-#define _tsav _p[8]
 #define _p_donotuse	_nt->_vdata[_ppvar[2]]
  
 #if MAC
@@ -101,8 +100,8 @@ extern int nrn_get_mechtype();
 };
  
 #endif /*BBCORE*/
-#define erand erand_NetStim1
-#define invl invl_NetStim1
+#define erand erand_NetStim
+#define invl invl_NetStim
  extern double erand();
  extern double invl();
  /* declare global and static user variables */
@@ -145,7 +144,7 @@ extern int nrn_get_mechtype();
  /* connect range variables in _p that hoc is supposed to know about */
  static const char *_mechanism[] = {
  "6.2.0",
-"NetStim1",
+"NetStim",
  "interval",
  "number",
  "start",
@@ -180,7 +179,7 @@ static void nrn_alloc(double* _p, Datum* _ppvar, int _type) {
 #define _ppsize 4
  static int bbcore_read(void*, int, _threadargsproto_);
  extern void hoc_reg_bbcore_read(int, int(*)(void*, int, _threadargsproto_));
- _netstim1_reg() {
+ _netstim_reg() {
 	int _vectorized = 1;
   _initlists();
  
