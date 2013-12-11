@@ -200,7 +200,6 @@ void read_nrnthread(const char* fname, NrnThread& nt) {
         pp->type = type;
         pp->data = ml->data + i*szp;
         pp->pdata = ml->pdata + i*szdp;
-printf("type=%d i=%d pp->pdata[1]=%d\n", type, i, pp->pdata[1]);
         nt._vdata[pp->pdata[1]] = pp;
         pp->presyn_ = NULL;
         pp->_vnt = &nt;

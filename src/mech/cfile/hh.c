@@ -178,8 +178,8 @@ static double _thread1data[6];
  "n_hh",
  0,
  0};
- static Symbol* _na_sym;
- static Symbol* _k_sym;
+ static int _na_type;
+ static int _k_type;
  
 static void nrn_alloc(double* _p, Datum* _ppvar, int _type) {
  	/*initialize range parameters*/
@@ -213,7 +213,7 @@ static void nrn_alloc(double* _p, Datum* _ppvar, int _type) {
  _hh_reg() {
 	int _vectorized = 1;
   _initlists();
- 
+ _na_type = nrn_get_mechtype("na_ion"); _k_type = nrn_get_mechtype("k_ion"); 
 #if 0 /*BBCORE*/
  	ion_reg("na", -10000.);
  	ion_reg("k", -10000.);
