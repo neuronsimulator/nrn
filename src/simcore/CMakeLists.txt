@@ -5,6 +5,7 @@ nrnoc/capac.c
 nrnoc/eion.c
 nrnoc/finitialize.c
 nrnoc/fadvance_core.c
+nrnoc/hocstub.c
 nrnoc/solve_core.c
 nrnoc/treeset_core.c
 nrnoc/nrnoc_aux.c

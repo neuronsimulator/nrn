@@ -35,6 +35,10 @@ void* emalloc(size_t size) {
   return memptr;
 }
 
+/* some user mod files may use this in VERBATIM */
+void* hoc_Emalloc(size_t size) { return emalloc(size);}
+void hoc_malchk(void) {}
+
 void* ecalloc(size_t n, size_t size) {
   void* p;
   if (n == 0) { return (void*)0; }
