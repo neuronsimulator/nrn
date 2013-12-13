@@ -17,6 +17,7 @@
 #endif
 
 class PreSyn;
+class InputPreSyn;
 class TQueue;
 class TQItem;
 struct NrnThread;
@@ -33,6 +34,7 @@ class BGP_DMASend_Phase2;
 #define SelfEventType 3
 #define PreSynType 4
 #define NetParEventType 7
+#define InputPreSynType 20
 
 class DiscreteEvent {
 public:
@@ -55,7 +57,7 @@ public:
 class NetCon : public DiscreteEvent {
 public:
 	NetCon();
-	void init(PreSyn* src, Point_process* target);
+	void init(DiscreteEvent* src, Point_process* target);
 	virtual ~NetCon();
 	virtual void send(double sendtime, NetCvode*, NrnThread*);
 	virtual void deliver(double, NetCvode*, NrnThread*);
@@ -66,7 +68,7 @@ public:
 	void rmsrc();
 
 	double delay_;
-	PreSyn* src_;
+	DiscreteEvent* src_; // either a PreSyn or an InputPreSyn or NULL
 	Point_process* target_;
 	double* weight_;
 	int cnt_;
@@ -190,6 +192,40 @@ public:
 	static unsigned long presyn_deliver_netcon_;
 	static unsigned long presyn_deliver_direct_;
 	static unsigned long presyn_deliver_ncsend_;
+};
+
+class InputPreSyn : public DiscreteEvent {
+public:
+	InputPreSyn();
+	virtual ~InputPreSyn();
+	virtual void send(double sendtime, NetCvode*, NrnThread*);
+	virtual void deliver(double, NetCvode*, NrnThread*);
+	virtual void pr(const char*, double t, NetCvode*);
+
+	virtual int type() { return InputPreSynType; }
+
+	double mindelay();
+
+	NetConPList dil_;
+	double delay_; // can be eliminated since only a few targets on a process
+	int use_min_delay_;
+	int gid_;
+#if BGPDMA
+	union { // A PreSyn cannot be both a source spike generator
+		// and a receiver of off-host spikes.
+		BGP_DMASend* dma_send_;
+		BGP_DMASend_Phase2* dma_send_phase2_;
+		int srchost_;
+	} bgp;
+#endif
+
+#if 0
+	static unsigned long presyn_send_mindelay_;
+	static unsigned long presyn_send_direct_;
+	static unsigned long presyn_deliver_netcon_;
+	static unsigned long presyn_deliver_direct_;
+	static unsigned long presyn_deliver_ncsend_;
+#endif
 };
 
 class TstopEvent : public DiscreteEvent {

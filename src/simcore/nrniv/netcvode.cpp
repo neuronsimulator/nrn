@@ -395,6 +395,8 @@ struct ForNetConsInfo {
 void NetCvode::fornetcon_prepare() {
 // need to figure out how to deal with
 // &(m->pdata[j][index]._pvoid);
+assert(0);
+// InputPresyn are not in the psl_ list so need to check gid2in_.
 #if 0
 	NrnThread* nt;
 	NrnThreadMembList* tml;
@@ -675,6 +677,18 @@ double PreSyn::mindelay() {
 	return md;
 }
 
+double InputPreSyn::mindelay() {
+	double md = 1e9;
+	int i;
+	for (i=dil_.count()-1; i >= 0; --i) {
+		NetCon* d = dil_.item(i);
+		if (md > d->delay_) {
+			md = d->delay_;
+		}
+	}
+	return md;
+}
+
 void NetCvode::handle_tstop_event(double tt, NrnThread* nt) {
 	assert(0);
 }
@@ -794,12 +808,20 @@ NetCon::NetCon() {
 	cnt_ = 0; active_ = false; weight_ = nil;
 }
 
-void NetCon::init(PreSyn* src, Point_process* target) {
+void NetCon::init(DiscreteEvent* src, Point_process* target) {
 	src_ = src;
 	delay_ = 1.0;
 	if (src_) {
-		src_->dil_.append((NetCon*)this);
-		src_->use_min_delay_ = 0;
+		if (src_->type() == PreSynType) {
+			PreSyn* ps = (PreSyn*)src;
+			ps->dil_.append((NetCon*)this);
+			ps->use_min_delay_ = 0;
+		}else{
+			assert(src_->type() == InputPreSynType);
+			InputPreSyn* ps = (InputPreSyn*)src;
+			ps->dil_.append((NetCon*)this);
+			ps->use_min_delay_ = 0;
+		}
 	}
 	if (target == nil) {
 		target_ = nil;
@@ -830,19 +852,34 @@ NetCon::~NetCon() {
 
 void NetCon::rmsrc() {
 	if (src_) {
-		for (int i=0; i < src_->dil_.count(); ++i) {
-			if (src_->dil_.item(i) == this) {
-				src_->dil_.remove(i);
-				if (src_->dil_.count() == 0 && src_->tvec_ == nil
-				    && src_->idvec_ == nil) {
+	    if (src_->type() == PreSynType) {
+		PreSyn* ps = (PreSyn*)src_;
+		for (int i=0; i < ps->dil_.count(); ++i) {
+			if (ps->dil_.item(i) == this) {
+				ps->dil_.remove(i);
+				if (ps->dil_.count() == 0 && ps->tvec_ == nil
+				    && ps->idvec_ == nil) {
 #if 1 || NRNMPI
-	if (src_->output_index_ == -1)
+	if (ps->output_index_ == -1)
 #endif
 					delete src_;
 				}
 				break;
 			}
 		}
+	    }else{
+		assert(src_->type() == InputPreSynType);
+		InputPreSyn* ps = (InputPreSyn*)src_;
+		for (int i=0; i < ps->dil_.count(); ++i) {
+			if (ps->dil_.item(i) == this) {
+				ps->dil_.remove(i);
+				if (ps->dil_.count() == 0) {
+					delete src_;
+				}
+				break;
+			}
+		}
+	    }
 	}
 	src_ = nil;
 }
@@ -883,6 +920,14 @@ PreSyn::PreSyn(double* src, Point_process* psrc, NrnThread* nt) {
 	}
 }
 
+InputPreSyn::InputPreSyn() {
+	use_min_delay_ = 0;
+	gid_ = -1;
+#if BGPDMA
+	bgp.dma_send_ = 0;
+#endif
+}
+
 PreSyn::~PreSyn() {
 //	printf("~PreSyn %p\n", this);
 	nrn_cleanup_presyn(this);
@@ -893,6 +938,14 @@ PreSyn::~PreSyn() {
 			}
 		}
 	}
+	for (int i=0; i < dil_.count(); ++i) {
+		dil_.item(i)->src_ = nil;
+	}
+}
+
+InputPreSyn::~InputPreSyn() {
+//	printf("~InputPreSyn %p\n", this);
+	nrn_cleanup_presyn(this);
 	for (int i=0; i < dil_.count(); ++i) {
 		dil_.item(i)->src_ = nil;
 	}
@@ -1161,6 +1214,43 @@ void PreSyn::send(double tt, NetCvode* ns, NrnThread* nt) {
 #endif //USENCS || NRNMPI
 }
 	
+void InputPreSyn::send(double tt, NetCvode* ns, NrnThread* nt) {
+	int i;
+#ifndef USENCS
+	if (use_min_delay_) {
+		//STATISTICS(presyn_send_mindelay_);
+#if BBTQ == 5
+		for (i=0; i < nrn_nthread; ++i) {
+			if (nt->id == i) {
+				ns->bin_event(tt+delay_, this, nt);
+			}else{
+				ns->p[i].interthread_send(tt+delay_, this, nrn_threads + i);
+			}
+		}
+#else
+		ns->event(tt+delay_, this);
+#endif
+	}else{
+		//STATISTICS(presyn_send_direct_);
+		for (int i = dil_.count()-1; i >= 0; --i) {
+			NetCon* d = dil_.item(i);
+			if (d->active_ && d->target_) {
+				NrnThread* n = PP2NT(d->target_);
+#if BBTQ == 5
+				if (nt == n) {
+					ns->bin_event(tt + d->delay_, d, n);
+				}else{
+					ns->p[n->id].interthread_send(tt + d->delay_, d, n);
+				}
+#else
+				ns->event(tt + d->delay_, d, PP2NT(d->target_));
+#endif
+			}
+		}
+	}
+#endif //ndef USENCS
+}
+	
 void PreSyn::deliver(double tt, NetCvode* ns, NrnThread* nt) {
 	// the thread is the one that owns the targets
 	int i, n = dil_.count();
@@ -1183,9 +1273,40 @@ hoc_execerror("internal error: Source delay is > NetCon delay", 0);
 	}
 }
 
+void InputPreSyn::deliver(double tt, NetCvode* ns, NrnThread* nt) {
+	// the thread is the one that owns the targets
+	int i, n = dil_.count();
+	//STATISTICS(presyn_deliver_netcon_);
+	for (i=0; i < n; ++i) {
+		NetCon* d = dil_.item(i);
+		if (d->active_ && d->target_ && PP2NT(d->target_) == nt) {
+			double dtt = d->delay_ - delay_;
+			if (dtt == 0.) {
+				//STATISTICS(presyn_deliver_direct_);
+				//STATISTICS(deliver_cnt_);
+				d->deliver(tt, ns, nt);
+			}else if (dtt < 0.) {
+hoc_execerror("internal error: Source delay is > NetCon delay", 0);
+			}else{
+				//STATISTICS(presyn_deliver_ncsend_);
+				ns->event(tt + dtt, d, nt);
+			}
+		}
+	}
+}
+
 NrnThread* PreSyn::thread() { return nt_; }
 
 void PreSyn::pr(const char* s, double tt, NetCvode* ns) {
+	assert(0);
+#if 0
+	printf("%s", s);
+	printf(" PreSyn src=%s",  osrc_ ? hoc_object_name(osrc_):secname(ssrc_));
+	printf(" %.15g\n", tt);
+#endif
+}
+
+void InputPreSyn::pr(const char* s, double tt, NetCvode* ns) {
 	assert(0);
 #if 0
 	printf("%s", s);

@@ -20,6 +20,8 @@ void nrn_setup(int nthread, const char *path) {
     sprintf(fname, "%sbbcore_thread.%d.%d.dat", path, i, 0);
     read_nrnthread(fname, nrn_threads[i]);
     setup_ThreadData(nrn_threads[i]); // nrncore does this in multicore.c in thread_memblist_setup
+    printf("sizeof(PreSyn)=%d sizeof(InputPreSyn)=%d sizeof(NetCon)=%d sizeof(Point_process)=%d\n",
+      sizeof(PreSyn), sizeof(InputPreSyn), sizeof(NetCon), sizeof(Point_process));
     nrn_mk_table_check(); // was done in nrn_thread_memblist_setup in multicore.c
   }
 }

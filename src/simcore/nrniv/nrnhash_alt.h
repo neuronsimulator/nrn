@@ -150,9 +150,9 @@ NrnHash::~NrnHash() { \
 \
 void NrnHash::remove_all() { \
     for (register NrnHashEntry(NrnHash)** e = first_; e <= last_; e++) { \
-	NrnHashEntry(NrnHash)* t = *e; \
-        for (register NrnHashEntry(NrnHash)* i = t; i; i = t) { \
-	    t = i->chain_; \
+	NrnHashEntry(NrnHash)* _t = *e; \
+        for (register NrnHashEntry(NrnHash)* i = _t; i; i = _t) { \
+	    _t = i->chain_; \
 	    delete i; \
 	} \
 	*e = nil; \
@@ -250,9 +250,9 @@ int NrnHash::max_chain_length() { \
     return m; \
 } \
 \
-NrnHashIterator(NrnHash)::NrnHashIterator(NrnHash)(NrnHash& t) { \
-    last_ = t.last_; \
-    for (entry_ = t.first_; entry_ <= last_; entry_++) { \
+NrnHashIterator(NrnHash)::NrnHashIterator(NrnHash)(NrnHash& _t) { \
+    last_ = _t.last_; \
+    for (entry_ = _t.first_; entry_ <= last_; entry_++) { \
 	cur_ = *entry_; \
 	if (cur_ != nil) { \
 	    break; \

@@ -10,10 +10,13 @@
 #define MD 2147483648.
 
 class PreSyn;
+class InputPreSyn;
 
 // hash table where buckets are binary search maps
 declareNrnHash(Gid2PreSyn, int, PreSyn*)
 implementNrnHash(Gid2PreSyn, int, PreSyn*)
+declareNrnHash(Gid2InputPreSyn, int, InputPreSyn*)
+implementNrnHash(Gid2InputPreSyn, int, InputPreSyn*)
 
 #include "simcore/nrniv/netcon.h"
 #include "simcore/nrniv/netcvode.h"
@@ -25,7 +28,7 @@ static int n_bgp_interval;
 #endif
 
 static Gid2PreSyn* gid2out_;
-static Gid2PreSyn* gid2in_;
+static Gid2InputPreSyn* gid2in_;
 static double t_exchange_;
 static double dt1_; // 1/dt
 static void alloc_space();
@@ -94,35 +97,43 @@ double ncs_netcon_localmindelay( int srcgid )
 //get the number of netcons for an object, if it sends here
 int ncs_netcon_count( int srcgid, bool localNetCons )
 {
-    PreSyn *ps;
+    PreSyn *ps = NULL;
+    InputPreSyn *psi = NULL;
     int flag = false;
-    if( localNetCons )
+    if( localNetCons ) {
         gid2out_->find( srcgid, ps );
-    else
-        gid2in_->find( srcgid, ps );
-    if( !ps ) {  //no cells on this cpu receive from the given gid
-        fprintf( stderr, "should never happen!\n" );
-        return 0;
+        if (ps) { return ps->dil_.count(); }
+    }else{
+        gid2in_->find( srcgid, psi );
+	if (psi) { return psi->dil_.count(); }
     }
-    
-    return ps->dil_.count();
+    fprintf( stderr, "should never happen!\n" );
+    return 0;
 }
 
 //inject a spike into the appropriate netcon
 void ncs_netcon_inject( int srcgid, int netconIndex, double spikeTime, bool localNetCons )
 {
-    PreSyn *ps;
+    PreSyn *ps = NULL;
+    InputPreSyn *psi = NULL;
     NetCvode* ns = net_cvode_instance;
-    if( localNetCons )
+    NetCon* d = NULL
+    if( localNetCons ) {
         gid2out_->find( srcgid, ps );
-    else
-        gid2in_->find( srcgid, ps );
-    if( !ps ) {  //no cells on this cpu receive from the given gid
+	if (ps) {
+	    d = ps->dil_.item(netconIndex);
+	}
+    }else{
+        gid2in_->find( srcgid, psi );
+	if (psi) {
+	    d = psi->dil_.item(netconIndex);
+	}
+    }
+    if( !d ) {  //no cells on this cpu receive from the given gid
         return;
     }
     
     //fprintf( stderr, "gid %d index %d!\n", srcgid, netconIndex );
-    NetCon* d = ps->dil_.item(netconIndex);
     NrnThread* nt = nrn_threads;
     if (d->active_ && d->target_) {
 #if BBTQ == 5
@@ -155,7 +166,7 @@ int ncs_target_hosts( int gid, int** targetnodes ) {
 // for compressed gid info during spike exchange
 bool nrn_use_localgid_;
 void nrn_outputevent(unsigned char localgid, double firetime);
-static Gid2PreSyn** localmaps_;
+static Gid2InputPreSyn** localmaps_;
 
 #define NRNSTAT 1
 static int nsend_, nsendmax_, nrecv_, nrecv_useful_;
@@ -528,7 +539,7 @@ void nrn_spike_exchange() {
 		int nn = spbufin_[i].nspike;
 		if (nn > nrn_spikebuf_size) { nn = nrn_spikebuf_size; }
 		for (j=0; j < nn; ++j) {
-			PreSyn* ps;
+			InputPreSyn* ps;
 			if (gid2in_->find(spbufin_[i].gid[j], ps)) {
 				ps->send(spbufin_[i].spiketime[j], net_cvode_instance, nrn_threads);
 #if NRNSTAT
@@ -540,7 +551,7 @@ void nrn_spike_exchange() {
 	n = ovfl_;
 #endif // nrn_spikebuf_size > 0
 	for (i = 0; i < n; ++i) {
-		PreSyn* ps;
+		InputPreSyn* ps;
 		if (gid2in_->find(spikein_[i].gid, ps)) {
 			ps->send(spikein_[i].spiketime, net_cvode_instance, nrn_threads);
 #if NRNSTAT
@@ -620,7 +631,7 @@ void nrn_spike_exchange_compressed() {
 			}
 			continue;
 		}
-		Gid2PreSyn* gps = localmaps_[i];
+		Gid2InputPreSyn* gps = localmaps_[i];
 		if (nn > ag_send_nspike_) {
 			nnn = ag_send_nspike_;
 		}else{
@@ -632,7 +643,7 @@ void nrn_spike_exchange_compressed() {
 			double firetime = spfixin_[idx++]*dt + t_exchange_;
 			int lgid = (int)spfixin_[idx];
 			idx += localgid_size_;
-			PreSyn* ps;
+			InputPreSyn* ps;
 			if (gps->find(lgid, ps)) {
 				ps->send(firetime + 1e-10, net_cvode_instance, nrn_threads);
 #if NRNSTAT
@@ -644,7 +655,7 @@ void nrn_spike_exchange_compressed() {
 			double firetime = spfixin_ovfl_[idxov++]*dt + t_exchange_;
 			int lgid = (int)spfixin_ovfl_[idxov];
 			idxov += localgid_size_;
-			PreSyn* ps;
+			InputPreSyn* ps;
 			if (gps->find(lgid, ps)) {
 				ps->send(firetime+1e-10, net_cvode_instance, nrn_threads);
 #if NRNSTAT
@@ -665,7 +676,7 @@ void nrn_spike_exchange_compressed() {
 			double firetime = spfixin_[idx++]*dt + t_exchange_;
 			int gid = spupk(spfixin_ + idx);
 			idx += localgid_size_;
-			PreSyn* ps;
+			InputPreSyn* ps;
 			if (gid2in_->find(gid, ps)) {
 				ps->send(firetime+1e-10, net_cvode_instance, nrn_threads);
 #if NRNSTAT
@@ -680,7 +691,7 @@ void nrn_spike_exchange_compressed() {
 		double firetime = spfixin_ovfl_[idx++]*dt + t_exchange_;
 		int gid = spupk(spfixin_ovfl_ + idx);
 		idx += localgid_size_;
-		PreSyn* ps;
+		InputPreSyn* ps;
 		if (gid2in_->find(gid, ps)) {
 			ps->send(firetime+1e-10, net_cvode_instance, nrn_threads);
 #if NRNSTAT
@@ -697,6 +708,7 @@ void nrn_spike_exchange_compressed() {
 static void mk_localgid_rep() {
 	int i, j, k;
 	PreSyn* ps;
+	InputPreSyn* psi;
 
 	// how many gids are there on this machine
 	// and can they be compressed into one byte
@@ -739,7 +751,7 @@ static void mk_localgid_rep() {
 	// create the maps
 	// there is a lot of potential for efficiency here. i.e. use of
 	// perfect hash functions, or even simple Vectors.
-	localmaps_ = new Gid2PreSyn*[nrnmpi_numprocs];
+	localmaps_ = new Gid2InputPreSyn*[nrnmpi_numprocs];
 	localmaps_[nrnmpi_myid] = 0;
 	for (i = 0; i < nrnmpi_numprocs; ++i) if (i != nrnmpi_myid) {
 		// how many do we need?
@@ -747,12 +759,12 @@ static void mk_localgid_rep() {
 		ngid = *(sbuf++); // at most
 		// of which we actually use...
 		for (k=0, j=0; k < ngid; ++k) {
-			if (gid2in_ && gid2in_->find(int(sbuf[k]), ps)) {
+			if (gid2in_ && gid2in_->find(int(sbuf[k]), psi)) {
 				++j;
 			}
 		}
 		// oh well. there is probably a rational way to choose but...
-		localmaps_[i] = new Gid2PreSyn((j > 19) ? 19 : j+1);
+		localmaps_[i] = new Gid2InputPreSyn((j > 19) ? 19 : j+1);
 	}
 
 	// fill in the maps
@@ -760,11 +772,11 @@ static void mk_localgid_rep() {
 		sbuf = rbuf + i*(ngidmax + 1);
 		ngid = *(sbuf++);
 		for (k=0; k < ngid; ++k) {
-			if (gid2in_ && gid2in_->find(int(sbuf[k]), ps)) {
+			if (gid2in_ && gid2in_->find(int(sbuf[k]), psi)) {
 #if ALTHASH
-				localmaps_[i]->insert(k, ps);
+				localmaps_[i]->insert(k, psi);
 #else
-				(*localmaps_[i])[k] = ps;
+				(*localmaps_[i])[k] = psi;
 #endif
 			}
 		}
@@ -790,10 +802,11 @@ static void mk_localgid_rep() {
 void nrn_fake_fire(int gid, double spiketime, int fake_out) {
 	assert(gid2in_);
 	PreSyn* ps;
-	if (gid2in_->find(gid, ps)) {
-		assert(ps);
+	InputPreSyn* psi;
+	if (gid2in_->find(gid, psi)) {
+		assert(psi);
 //printf("nrn_fake_fire %d %g\n", gid, spiketime);
-		ps->send(spiketime, net_cvode_instance, nrn_threads);
+		psi->send(spiketime, net_cvode_instance, nrn_threads);
 #if NRNSTAT
 		++nrecv_useful_;
 #endif
@@ -812,10 +825,10 @@ static void alloc_space() {
 	if (!gid2out_) {
 #if ALTHASH
 		gid2out_ = new Gid2PreSyn(1000);
-		gid2in_ = new Gid2PreSyn(500000);
+		gid2in_ = new Gid2InputPreSyn(500000);
 #else
 		gid2out_ = new Gid2PreSyn(211);
-		gid2in_ = new Gid2PreSyn(2311);
+		gid2in_ = new Gid2InputPreSyn(2311);
 #endif
 #if NRNMPI
 		ocapacity_  = 100;
@@ -840,8 +853,9 @@ void BBS_set_gid2node(int gid, int nid) {
 #endif
 //printf("gid %d defined on %d\n", gid, nrnmpi_myid);
 		PreSyn* ps;
+		InputPreSyn* psi;
 		char m[200];
-		if (gid2in_->find(gid, ps)) {
+		if (gid2in_->find(gid, psi)) {
 			sprintf(m, "gid=%d already exists as an input port", gid);
 			hoc_execerror(m, "Setup all the output ports on this process before using them as input ports.");
 		}
@@ -872,14 +886,15 @@ int BBS_gid_exists(int gid) {
 	return 0;
 }
 
-void nrn_cleanup_presyn(PreSyn* ps) {
+void nrn_cleanup_presyn(DiscreteEvent* ps) {
 	assert(0);
 }
 
 // not sure this will be used
 void BBS_cell(int gid, PreSyn* ps) {
 	PreSyn* ps1;
-	if (gid2in_->find(gid, ps1)) {
+	InputPreSyn* ps2;
+	if (gid2in_->find(gid, ps2)) {
 		char buf[100];
 		sprintf(buf, "gid=%d is in the input list. Must register prior to connecting", gid);
 		hoc_execerror(buf, 0);
@@ -925,6 +940,7 @@ void BBS_spike_record(int gid, IvocVect* spikevec, IvocVect* gidvec) {
 NetCon* BBS_gid_connect(int gid, Point_process* target, NetCon& nc) {
 	alloc_space();
 	PreSyn* ps;
+	InputPreSyn* psi;
 	if (gid2out_->find(gid, ps)) {
 		// the gid is owned by this machine so connect directly
 		if (!ps) {
@@ -932,21 +948,23 @@ NetCon* BBS_gid_connect(int gid, Point_process* target, NetCon& nc) {
 			sprintf(buf, "gid %d owned by %d but no associated cell", gid, nrnmpi_myid);
 			hoc_execerror(buf, 0);
 		}
-	}else if (gid2in_->find(gid, ps)) {
+		nc.init(ps, target);
+	}else if (gid2in_->find(gid, psi)) {
 		// the gid stub already exists
 //printf("%d connect %s from already existing %d\n", nrnmpi_myid, hoc_object_name(target), gid);
+		nc.init(psi, target);
 	}else{
 //printf("%d connect %s from new PreSyn for %d\n", nrnmpi_myid, hoc_object_name(target), gid);
-		ps = new PreSyn(NULL, NULL, NULL);
-		net_cvode_instance->psl_append(ps);
+		psi = new InputPreSyn();
+		//net_cvode_instance->psl_append(ps);
 #if ALTHASH
-		gid2in_->insert(gid, ps);
+		gid2in_->insert(gid, psi);
 #else
-		(*gid2in_)[gid] = ps;
+		(*gid2in_)[gid] = psi;
 #endif
-		ps->gid_ = gid;
+		psi->gid_ = gid;
+		nc.init(psi, target);
 	}
-	nc.init(ps, target);
 	return &nc;
 }
 
@@ -1021,10 +1039,17 @@ static double set_mindelay(double maxdelay) {
 			mindelay = md;
 		}
 	}
+	//and now need to also check the InputPreSyn
+	NrnHashIterate(Gid2InputPreSyn, gid2in_, InputPreSyn*, ps) {
+		double md = ps->mindelay();
+		if (mindelay > md) {
+			mindelay = md;
+		}
+	}}}
     }
 #if NRNMPI
     else{
-	NrnHashIterate(Gid2PreSyn, gid2in_, PreSyn*, ps) {
+	NrnHashIterate(Gid2InputPreSyn, gid2in_, InputPreSyn*, ps) {
 		double md = ps->mindelay();
 		if (mindelay > md) {
 			mindelay = md;

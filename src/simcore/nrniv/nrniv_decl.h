@@ -15,7 +15,7 @@ extern void BBS_netpar_solve(double);
 extern NetCon* BBS_gid_connect(int gid, Point_process* target, NetCon&);
 extern void BBS_cell(int gid, PreSyn* ps);
 extern void BBS_set_gid2node(int gid, int rank);
-extern void nrn_cleanup_presyn(PreSyn*);
+extern void nrn_cleanup_presyn(DiscreteEvent*);
 extern void nrn_outputevent(unsigned char, double);
 extern void ncs2nrn_integrate(double tstop);
 extern void nrn_pending_selfqueue(double, NrnThread*);
