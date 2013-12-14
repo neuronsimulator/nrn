@@ -19,6 +19,8 @@ extern void nrn_cleanup_presyn(DiscreteEvent*);
 extern void nrn_outputevent(unsigned char, double);
 extern void ncs2nrn_integrate(double tstop);
 extern void nrn_pending_selfqueue(double, NrnThread*);
+extern size_t output_presyn_size(int prnt);
+extern size_t input_presyn_size(int prnt);
 
 #if defined(__cplusplus)
 }

@@ -33,8 +33,9 @@ typedef struct NrnThread {
         NetCon* netcons;
 
 	NrnThreadMembList* acell_tml;
-	Point_process* acells;
-	NetCon* acell_netcons;
+	Point_process* acells; // no gid for these
+	NetCon* acell_netcons; // source is no-gid acell
+	int n_syn, n_netcon, n_acell, n_acellnetcon, n_weight; // only for model_size
 
         int ncell; /* analogous to old rootnodecount */
 	int end;    /* 1 + position of last in v_node array. Now v_node_count. */

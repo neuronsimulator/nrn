@@ -1213,3 +1213,29 @@ printf("Notice: gid compression did not succeed. Probably more than 255 cells on
 #endif
 }
 
+size_t output_presyn_size(int prnt) {
+  size_t sz = sizeof(PreSyn);
+  size_t cnt = 0;
+  NrnHashIterate(Gid2PreSyn, gid2out_, PreSyn*, ps) {
+    ++cnt;
+  }}}
+  size_t nbyte = cnt*sz;
+  if (prnt > 1) {
+    printf(" Output PreSyn sz=%ld cnt=%ld nbyte=%ld\n", sz, cnt, nbyte);
+  }
+  return nbyte;
+}
+
+size_t input_presyn_size(int prnt) {
+  size_t sz = sizeof(InputPreSyn);
+  size_t cnt = 0;
+  NrnHashIterate(Gid2InputPreSyn, gid2in_, InputPreSyn*, ps) {
+    ++cnt;
+  }}}
+  size_t nbyte = cnt*sz;
+  if (prnt > 1) {
+    printf(" InputPreSyn sz=%ld cnt=%ld nbyte=%ld\n", sz, cnt, nbyte);
+  }
+  return nbyte;
+}
+

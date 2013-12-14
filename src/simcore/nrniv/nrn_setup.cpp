@@ -7,6 +7,7 @@
 
 static void read_nrnthread(const char* fname, NrnThread& nt);
 static void setup_ThreadData(NrnThread& nt);
+static size_t model_size(int prnt);
 
 static Point_process* point_processes; // NetCon targets
 static NetCon* netcons;
@@ -20,10 +21,9 @@ void nrn_setup(int nthread, const char *path) {
     sprintf(fname, "%sbbcore_thread.%d.%d.dat", path, i, 0);
     read_nrnthread(fname, nrn_threads[i]);
     setup_ThreadData(nrn_threads[i]); // nrncore does this in multicore.c in thread_memblist_setup
-    printf("sizeof(PreSyn)=%d sizeof(InputPreSyn)=%d sizeof(NetCon)=%d sizeof(Point_process)=%d\n",
-      sizeof(PreSyn), sizeof(InputPreSyn), sizeof(NetCon), sizeof(Point_process));
     nrn_mk_table_check(); // was done in nrn_thread_memblist_setup in multicore.c
   }
+  model_size(2);
 }
 
 void setup_ThreadData(NrnThread& nt) {
@@ -95,9 +95,11 @@ void read_nrnthread(const char* fname, NrnThread& nt) {
   int nart_without_gid = read_int();
   int nart_without_gid_netcons = read_int();
   int nart_without_gid_netcons_wcnt = read_int();
-  printf("ncell=%d end=%d nmech=%d\n", nt.ncell, nt.end, nmech);
-  printf("nart=%d nart_without_gid=%d nart_without_gid_netcons=%d\n", nart, nart_without_gid, nart_without_gid_netcons);
-  printf("nart_without_gid_netcons_wcnt = %d\n", nart_without_gid_netcons_wcnt);
+  assert (nart == nart_without_gid);
+
+  //printf("ncell=%d end=%d nmech=%d\n", nt.ncell, nt.end, nmech);
+  //printf("nart=%d nart_without_gid=%d nart_without_gid_netcons=%d\n", nart, nart_without_gid, nart_without_gid_netcons);
+  //printf("nart_without_gid_netcons_wcnt = %d\n", nart_without_gid_netcons_wcnt);
   NrnThreadMembList* tml_last = NULL;
   for (int i=0; i < nmech; ++i) {
     tml = (NrnThreadMembList*)emalloc(sizeof(NrnThreadMembList));
@@ -105,7 +107,7 @@ void read_nrnthread(const char* fname, NrnThread& nt) {
     tml->next = NULL;
     tml->index = read_int();
     tml->ml->nodecount = read_int();;
-    printf("index=%d nodecount=%d membfunc=%s\n", tml->index, tml->ml->nodecount, memb_func[tml->index].sym?memb_func[tml->index].sym:"None");
+    //printf("index=%d nodecount=%d membfunc=%s\n", tml->index, tml->ml->nodecount, memb_func[tml->index].sym?memb_func[tml->index].sym:"None");
     if (nt.tml) {
       tml_last->next = tml;
     }else{
@@ -118,10 +120,12 @@ void read_nrnthread(const char* fname, NrnThread& nt) {
   nt._nvdata = read_int();
   int nnetcon = read_int();
   int nweight = read_int();
+  nt.n_weight = nweight + nart_without_gid_netcons_wcnt;
 
   nt._data = (double*)ecalloc(nt._ndata, sizeof(double));
   if (nt._nidata) nt._idata = (int*)ecalloc(nt._nidata, sizeof(int));
   if (nt._nvdata) nt._vdata = (void**)ecalloc(nt._nvdata, sizeof(void*));
+  //printf("_ndata=%d _nidata=%d _nvdata=%d\n", nt._ndata, nt._nidata, nt._nvdata);
   int n = nt.end;
   nt._actual_rhs = nt._data + 0*n;
   nt._actual_d = nt._data + 1*n;
@@ -142,7 +146,7 @@ void read_nrnthread(const char* fname, NrnThread& nt) {
       nsyn += n;
     }
   }
-  printf("offset=%ld ndata=%ld\n", offset, nt._ndata);
+  //printf("offset=%ld ndata=%ld\n", offset, nt._ndata);
   assert(offset == nt._ndata);
 
   int* output_gid = read_int_array(NULL, nt.ncell);
@@ -170,6 +174,9 @@ void read_nrnthread(const char* fname, NrnThread& nt) {
   int* pnt_offset = new int[n_memb_func];
   nt.synapses = new Point_process[nsyn];
   nt.acells = new Point_process[nart];
+  nt.n_syn = nsyn;
+  nt.n_acell = nart;
+  nt.n_acellnetcon = nart_without_gid_netcons;
   for (tml = nt.tml; tml; tml = tml->next) {
     int type = tml->index;
     Memb_list* ml = tml->ml;
@@ -219,13 +226,14 @@ void read_nrnthread(const char* fname, NrnThread& nt) {
     }
   }
 
-printf("nnetcon=%d nweight=%d\n", nnetcon, nweight);
+//printf("nnetcon=%d nweight=%d\n", nnetcon, nweight);
   int* srcgid = read_int_array(NULL, nnetcon);
   int* pnttype = read_int_array(NULL, nnetcon);
   int* pntindex = read_int_array(NULL, nnetcon);
   // it is likely that Point_process structures will be made unnecessary
   // by factoring into NetCon.
   nt.netcons = new NetCon[nnetcon];
+  nt.n_netcon = nnetcon;
   for (int i=0; i < nnetcon; ++i) {
     int type = pnttype[i];
     int index = pnt_offset[type] + pntindex[i];
@@ -236,6 +244,7 @@ printf("nnetcon=%d nweight=%d\n", nnetcon, nweight);
   delete [] pnttype;
   delete [] pntindex;
   double* weights = read_dbl_array(NULL, nweight);
+  nt.n_weight = nweight;
   int iw = 0;
   for (int i=0; i < nnetcon; ++i) {
     NetCon& nc = nt.netcons[i];
@@ -315,4 +324,70 @@ printf("nnetcon=%d nweight=%d\n", nnetcon, nweight);
   delete [] mlmap;
 
   fclose(f);
+}
+
+static size_t memb_list_size(NrnThreadMembList* tml, int prnt) {
+  size_t sz_ntml = sizeof(NrnThreadMembList);
+  size_t sz_ml = sizeof(Memb_list);
+  size_t szi = sizeof(int);
+  size_t nbyte = sz_ntml + sz_ml;
+  nbyte += tml->ml->nodecount*szi;
+  if (prnt > 1) {
+    int i = tml->index;
+    printf("%s %d psize=%d ppsize=%d cnt=%d nbyte=%ld\n", memb_func[i].sym, i,
+      nrn_prop_param_size_[i], nrn_prop_dparam_size_[i], tml->ml->nodecount, nbyte);
+  }
+  return nbyte;
+}
+
+size_t model_size(int prnt) {
+  size_t nbyte = 0;
+  size_t szd = sizeof(double);
+  size_t szi = sizeof(int);
+  size_t szv = sizeof(void*);
+  size_t sz_th = sizeof(NrnThread);
+  size_t sz_pp = sizeof(Point_process);
+  size_t sz_nc = sizeof(NetCon);
+  NrnThreadMembList* tml;
+
+  for (int i=0; i < nrn_nthread; ++i) {
+    NrnThread& nt = nrn_threads[i];
+    size_t nb_nt = 0; // per thread
+
+    // Memb_list size
+    int nmech = 0;
+    for (tml=nt.tml; tml; tml = tml->next) {
+      nb_nt += memb_list_size(tml, prnt);
+      ++nmech;
+    }
+    for (tml=nt.acell_tml; tml; tml = tml->next) {
+      nb_nt += memb_list_size(tml, prnt);
+      ++nmech;
+    }
+
+    // basic thread size includes mechanism data and G*V=I matrix
+    nb_nt + sz_th;
+    nb_nt += nt._ndata*szd + nt._nidata*szi + nt._nvdata*szv;
+    nb_nt += nt.end*szi; // _v_parent_index
+
+    if (prnt > 1) {
+      printf("ncell=%d end=%d n_acell=%d nmech=%d\n", nt.ncell, nt.end, nt.n_acell, nmech);
+      printf("ndata=%d nidata=%d nvdata=%d\n", nt._ndata, nt._nidata, nt._nvdata);
+      printf("nbyte so far %ld\n", nb_nt);
+      printf("n_syn=%d sz=%ld nbyte=%ld\n", nt.n_syn, sz_pp, nt.n_syn*sz_pp);
+      printf("n_netcon=%d sz=%ld nbyte=%ld\n", nt.n_netcon, sz_nc, nt.n_netcon*sz_nc);
+      printf("n_acellnetcon=%d\n", nt.n_acellnetcon);
+      printf("n_weight = %d\n", nt.n_weight);
+    }
+
+    // spike handling
+    nb_nt += output_presyn_size(prnt);
+    nb_nt += input_presyn_size(prnt);
+    nb_nt += nt.n_syn*sz_pp + nt.n_netcon*sz_nc
+             + nt.n_acell*sz_pp + nt.n_acellnetcon*sz_nc
+             + nt.n_weight*szd;
+    nbyte += nb_nt;
+    if (prnt) {printf("%d thread %d total bytes %ld\n", nrnmpi_myid, i, nb_nt);}
+  }
+  return nbyte;
 }

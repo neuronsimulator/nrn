@@ -505,6 +505,17 @@ void nrn_threads_create(int n, int parallel) {
 				nt->id = i;
 				nt->_stop_stepping = 0;
 				nt->tml = (NrnThreadMembList*)0;
+				nt->synapses = (Point_process*)0;
+				nt->netcons = (NetCon*)0;
+				nt->acell_tml = (NrnThreadMembList*)0;
+				nt->acells = (Point_process*)0;
+				nt->acell_netcons = (NetCon*)0;
+				nt->n_syn = nt->n_netcon = nt->n_acell = 0;
+				nt->n_acellnetcon = nt->n_weight = 0;
+				nt->_ndata = nt->_nidata = nt->_nvdata = 0;
+				nt->_data = (double*)0;
+				nt->_idata = (int*)0;
+				nt->_vdata = (void**)0;
 				nt->ncell = 0;
 				nt->end = 0;
 				for (j=0; j < BEFORE_AFTER_SIZE; ++j) {
