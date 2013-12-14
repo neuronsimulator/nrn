@@ -320,11 +320,12 @@ NetCvode::~NetCvode() {
 		HTList* q;
 		for (q = psl_->First(); q != psl_->End(); q = q->Next()) {
 			PreSyn* ps = (PreSyn*)q->vptr();
-			for (int i = ps->dil_.count() - 1; i >= 0; --i) {
-				NetCon* d = ps->dil_.item(i);
+			for (int i = ps->nc_cnt_ - 1; i >= 0; --i) {
+				NetCon* d = ps->ncl_[i];
 				d->src_ = nil;
 				delete d;
 			}
+			if (ps->ncl_) { delete [] ps->ncl_; }
 			delete ps;
 		}
 		delete psl_;
@@ -630,22 +631,22 @@ void NetCvode::init_events() {
 			PreSyn* ps = (PreSyn*)q->vptr();
 			ps->init();
 			ps->flag_ = false;
-			NetConPList& dil = ps->dil_;
+			NetCon** ncl = ps->ncl_;
 			ps->use_min_delay_ = 0;
 #if USE_MIN_DELAY
 			// also decide what to do about use_min_delay_
 			// the rule for now is to use it if all delays are
 			// the same and there are more than 2
 			{
-				if (dil.count() > 2) {
+				if (ps->nc_cnt_ > 2) {
 					ps->use_min_delay_ = 1;
-					ps->delay_ = dil.item(0)->delay_;
+					ps->delay_ = ncl[0]->delay_;
 				}
 			}
 #endif // USE_MIN_DELAY
 
-			for (i=dil.count()-1; i >= 0; --i) {
-				NetCon* d = dil.item(i);
+			for (i=ps->nc_cnt_-1; i >= 0; --i) {
+				NetCon* d = ncl[i];
 				if (d->target_) {
 					int type = d->target_->type;
 					if (pnt_receive_init[type]) {
@@ -668,8 +669,8 @@ void NetCvode::init_events() {
 double PreSyn::mindelay() {
 	double md = 1e9;
 	int i;
-	for (i=dil_.count()-1; i >= 0; --i) {
-		NetCon* d = dil_.item(i);
+	for (i=nc_cnt_-1; i >= 0; --i) {
+		NetCon* d = ncl_[i];
 		if (md > d->delay_) {
 			md = d->delay_;
 		}
@@ -680,8 +681,8 @@ double PreSyn::mindelay() {
 double InputPreSyn::mindelay() {
 	double md = 1e9;
 	int i;
-	for (i=dil_.count()-1; i >= 0; --i) {
-		NetCon* d = dil_.item(i);
+	for (i=nc_cnt_-1; i >= 0; --i) {
+		NetCon* d = ncl_[i];
 		if (md > d->delay_) {
 			md = d->delay_;
 		}
@@ -814,12 +815,14 @@ void NetCon::init(DiscreteEvent* src, Point_process* target) {
 	if (src_) {
 		if (src_->type() == PreSynType) {
 			PreSyn* ps = (PreSyn*)src;
-			ps->dil_.append((NetCon*)this);
+			//ps->dil_.append((NetCon*)this);
+			// ncl_ was preallocated in nrn_setup.cpp
+			ps->ncl_[ps->nc_cnt_++] = (NetCon*)this;
 			ps->use_min_delay_ = 0;
 		}else{
 			assert(src_->type() == InputPreSynType);
 			InputPreSyn* ps = (InputPreSyn*)src;
-			ps->dil_.append((NetCon*)this);
+			ps->ncl_[ps->nc_cnt_++] = (NetCon*)this;
 			ps->use_min_delay_ = 0;
 		}
 	}
@@ -851,6 +854,8 @@ NetCon::~NetCon() {
 }
 
 void NetCon::rmsrc() {
+assert(0);
+#if 0 //replace ps.dil if needed
 	if (src_) {
 	    if (src_->type() == PreSynType) {
 		PreSyn* ps = (PreSyn*)src_;
@@ -882,9 +887,12 @@ void NetCon::rmsrc() {
 	    }
 	}
 	src_ = nil;
+#endif
 }
 
 PreSyn::PreSyn(double* src, Point_process* psrc, NrnThread* nt) {
+	ncl_ = NULL;
+	nc_cnt_ = 0;
 	hi_th_ = nil;
 	flag_ = false;
 	valthresh_ = 0;
@@ -921,6 +929,8 @@ PreSyn::PreSyn(double* src, Point_process* psrc, NrnThread* nt) {
 }
 
 InputPreSyn::InputPreSyn() {
+	ncl_ = NULL;
+	nc_cnt_ = 0;
 	use_min_delay_ = 0;
 	gid_ = -1;
 #if BGPDMA
@@ -938,17 +948,19 @@ PreSyn::~PreSyn() {
 			}
 		}
 	}
-	for (int i=0; i < dil_.count(); ++i) {
-		dil_.item(i)->src_ = nil;
+	for (int i=0; i < nc_cnt_; ++i) {
+		ncl_[i]->src_ = nil;
 	}
+	if (ncl_) { delete [] ncl_; }
 }
 
 InputPreSyn::~InputPreSyn() {
 //	printf("~InputPreSyn %p\n", this);
 	nrn_cleanup_presyn(this);
-	for (int i=0; i < dil_.count(); ++i) {
-		dil_.item(i)->src_ = nil;
+	for (int i=0; i < nc_cnt_; ++i) {
+		ncl_[i]->src_ = nil;
 	}
+	if (ncl_) { delete [] ncl_; }
 }
 
 void PreSyn::init() {
@@ -1176,8 +1188,8 @@ void PreSyn::send(double tt, NetCvode* ns, NrnThread* nt) {
 #endif
 	}else{
 		STATISTICS(presyn_send_direct_);
-		for (int i = dil_.count()-1; i >= 0; --i) {
-			NetCon* d = dil_.item(i);
+		for (int i = nc_cnt_-1; i >= 0; --i) {
+			NetCon* d = ncl_[i];
 			if (d->active_ && d->target_) {
 				NrnThread* n = PP2NT(d->target_);
 #if BBTQ == 5
@@ -1232,8 +1244,8 @@ void InputPreSyn::send(double tt, NetCvode* ns, NrnThread* nt) {
 #endif
 	}else{
 		//STATISTICS(presyn_send_direct_);
-		for (int i = dil_.count()-1; i >= 0; --i) {
-			NetCon* d = dil_.item(i);
+		for (int i = nc_cnt_-1; i >= 0; --i) {
+			NetCon* d = ncl_[i];
 			if (d->active_ && d->target_) {
 				NrnThread* n = PP2NT(d->target_);
 #if BBTQ == 5
@@ -1253,10 +1265,10 @@ void InputPreSyn::send(double tt, NetCvode* ns, NrnThread* nt) {
 	
 void PreSyn::deliver(double tt, NetCvode* ns, NrnThread* nt) {
 	// the thread is the one that owns the targets
-	int i, n = dil_.count();
+	int i, n = nc_cnt_;
 	STATISTICS(presyn_deliver_netcon_);
 	for (i=0; i < n; ++i) {
-		NetCon* d = dil_.item(i);
+		NetCon* d = ncl_[i];
 		if (d->active_ && d->target_ && PP2NT(d->target_) == nt) {
 			double dtt = d->delay_ - delay_;
 			if (dtt == 0.) {
@@ -1275,10 +1287,10 @@ hoc_execerror("internal error: Source delay is > NetCon delay", 0);
 
 void InputPreSyn::deliver(double tt, NetCvode* ns, NrnThread* nt) {
 	// the thread is the one that owns the targets
-	int i, n = dil_.count();
+	int i, n = nc_cnt_;
 	//STATISTICS(presyn_deliver_netcon_);
 	for (i=0; i < n; ++i) {
-		NetCon* d = dil_.item(i);
+		NetCon* d = ncl_[i];
 		if (d->active_ && d->target_ && PP2NT(d->target_) == nt) {
 			double dtt = d->delay_ - delay_;
 			if (dtt == 0.) {

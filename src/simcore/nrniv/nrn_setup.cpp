@@ -234,6 +234,13 @@ void read_nrnthread(const char* fname, NrnThread& nt) {
   // by factoring into NetCon.
   nt.netcons = new NetCon[nnetcon];
   nt.n_netcon = nnetcon;
+  // instead of looping once using a dynamically expanding NetConPList
+  // used a fixed NetCon** allocation for each PreSyn. So count, allocate
+  // and fill
+  for (int i=0; i < nnetcon; ++i) {
+    gid_connect_count(srcgid[i]);
+  }
+  gid_connect_allocate(); // and sets all the nc_cnt_ back to 0
   for (int i=0; i < nnetcon; ++i) {
     int type = pnttype[i];
     int index = pnt_offset[type] + pntindex[i];

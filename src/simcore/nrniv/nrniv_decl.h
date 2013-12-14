@@ -12,6 +12,8 @@ extern void mk_netcvode(void);
 extern void nrn_setup(int nthread, const char *path);
 extern double BBS_netpar_mindelay(double maxdelay);
 extern void BBS_netpar_solve(double);
+extern void gid_connect_count(int gid);
+extern void gid_connect_allocate(void);
 extern NetCon* BBS_gid_connect(int gid, Point_process* target, NetCon&);
 extern void BBS_cell(int gid, PreSyn* ps);
 extern void BBS_set_gid2node(int gid, int rank);

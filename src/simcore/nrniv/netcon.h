@@ -161,7 +161,8 @@ public:
 	void init();
 	double mindelay();
 
-	NetConPList dil_;
+	//NetConPList dil_;
+	NetCon** ncl_; //replaces dil_
 	double threshold_;
 	double delay_;
 	double* thvar_;
@@ -171,6 +172,7 @@ public:
 	NrnThread* nt_;
 	HTList* hi_; // in the netcvode psl_
 	HTList* hi_th_; // in the netcvode psl_th_
+	int nc_cnt_; // size of ncl_
 	int use_min_delay_;
 	int rec_id_;
 	int output_index_;
@@ -206,10 +208,9 @@ public:
 
 	double mindelay();
 
-	NetConPList dil_;
+	//NetConPList dil_;
+	NetCon** ncl_; //replaces dil_
 	double delay_; // can be eliminated since only a few targets on a process
-	int use_min_delay_;
-	int gid_;
 #if BGPDMA
 	union { // A PreSyn cannot be both a source spike generator
 		// and a receiver of off-host spikes.
@@ -218,6 +219,9 @@ public:
 		int srchost_;
 	} bgp;
 #endif
+	int nc_cnt_; // size of ncl_
+	int use_min_delay_;
+	int gid_;
 
 #if 0
 	static unsigned long presyn_send_mindelay_;

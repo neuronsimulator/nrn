@@ -102,10 +102,10 @@ int ncs_netcon_count( int srcgid, bool localNetCons )
     int flag = false;
     if( localNetCons ) {
         gid2out_->find( srcgid, ps );
-        if (ps) { return ps->dil_.count(); }
+        if (ps) { return ps->nc_cnt_; }
     }else{
         gid2in_->find( srcgid, psi );
-	if (psi) { return psi->dil_.count(); }
+	if (psi) { return psi->nc_cnt_; }
     }
     fprintf( stderr, "should never happen!\n" );
     return 0;
@@ -121,12 +121,12 @@ void ncs_netcon_inject( int srcgid, int netconIndex, double spikeTime, bool loca
     if( localNetCons ) {
         gid2out_->find( srcgid, ps );
 	if (ps) {
-	    d = ps->dil_.item(netconIndex);
+	    d = ps->ncl_[netconIndex];
 	}
     }else{
         gid2in_->find( srcgid, psi );
 	if (psi) {
-	    d = psi->dil_.item(netconIndex);
+	    d = psi->ncl_[netconIndex];
 	}
     }
     if( !d ) {  //no cells on this cpu receive from the given gid
@@ -937,6 +937,44 @@ void BBS_spike_record(int gid, IvocVect* spikevec, IvocVect* gidvec) {
     }
 }
 
+void gid_connect_count(int gid) {
+	alloc_space();
+	PreSyn* ps;
+	InputPreSyn* psi;
+	if (gid2out_->find(gid, ps)) {
+		// the gid is owned by this machine so connect directly
+		++ps->nc_cnt_;
+	}else if (gid2in_->find(gid, psi)) {
+		// the gid stub already exists
+		++psi->nc_cnt_;
+	}else{
+		psi = new InputPreSyn();
+		//net_cvode_instance->psl_append(ps);
+#if ALTHASH
+		gid2in_->insert(gid, psi);
+#else
+		(*gid2in_)[gid] = psi;
+#endif
+		psi->gid_ = gid;
+		++psi->nc_cnt_;
+	}
+}
+
+void gid_connect_allocate() {
+	NrnHashIterate(Gid2PreSyn, gid2out_, PreSyn*, ps) {
+		if (ps->nc_cnt_ > 0) {
+			ps->ncl_ = new NetCon*[ps->nc_cnt_];
+		}
+		ps->nc_cnt_ = 0;
+	}}}
+	NrnHashIterate(Gid2InputPreSyn, gid2in_, InputPreSyn*, psi) {
+		if (psi->nc_cnt_ > 0) {
+			psi->ncl_ = new NetCon*[psi->nc_cnt_];
+		}
+		psi->nc_cnt_ = 0;
+	}}}
+}
+
 NetCon* BBS_gid_connect(int gid, Point_process* target, NetCon& nc) {
 	alloc_space();
 	PreSyn* ps;
@@ -954,6 +992,8 @@ NetCon* BBS_gid_connect(int gid, Point_process* target, NetCon& nc) {
 //printf("%d connect %s from already existing %d\n", nrnmpi_myid, hoc_object_name(target), gid);
 		nc.init(psi, target);
 	}else{
+		// they have all been made by gid_connect_count().
+		assert(0);
 //printf("%d connect %s from new PreSyn for %d\n", nrnmpi_myid, hoc_object_name(target), gid);
 		psi = new InputPreSyn();
 		//net_cvode_instance->psl_append(ps);
@@ -1216,12 +1256,14 @@ printf("Notice: gid compression did not succeed. Probably more than 255 cells on
 size_t output_presyn_size(int prnt) {
   size_t sz = sizeof(PreSyn);
   size_t cnt = 0;
+  size_t nnc = 0;
   NrnHashIterate(Gid2PreSyn, gid2out_, PreSyn*, ps) {
     ++cnt;
+    nnc += ps->nc_cnt_;
   }}}
-  size_t nbyte = cnt*sz;
+  size_t nbyte = cnt*sz + nnc*sizeof(NetCon*);
   if (prnt > 1) {
-    printf(" Output PreSyn sz=%ld cnt=%ld nbyte=%ld\n", sz, cnt, nbyte);
+    printf(" Output PreSyn sz=%ld cnt=%ld n_netcon=%ld nbyte=%ld\n", sz, cnt, nnc, nbyte);
   }
   return nbyte;
 }
@@ -1229,12 +1271,14 @@ size_t output_presyn_size(int prnt) {
 size_t input_presyn_size(int prnt) {
   size_t sz = sizeof(InputPreSyn);
   size_t cnt = 0;
+  size_t nnc = 0;
   NrnHashIterate(Gid2InputPreSyn, gid2in_, InputPreSyn*, ps) {
     ++cnt;
+    nnc += ps->nc_cnt_;
   }}}
-  size_t nbyte = cnt*sz;
+  size_t nbyte = cnt*sz + nnc*sizeof(NetCon*);
   if (prnt > 1) {
-    printf(" InputPreSyn sz=%ld cnt=%ld nbyte=%ld\n", sz, cnt, nbyte);
+    printf(" InputPreSyn sz=%ld cnt=%ld n_netcon=%ld nbyte=%ld\n", sz, cnt, nnc, nbyte);
   }
   return nbyte;
 }
