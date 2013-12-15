@@ -20,8 +20,11 @@ int nrn_mallinfo() { return 0; }
 int main1(int argc, char** argv, char** env) {
   printf("enter main1 mallinfo %d\n", nrn_mallinfo());
   nrnmpi_init(1, &argc, &argv);
+  printf("after nrnmpi_init mallinfo %d\n", nrn_mallinfo());
   mk_mech("bbcore_mech.dat");
+  printf("after mk_mech mallinfo %d\n", nrn_mallinfo());
   mk_netcvode();
+  printf("after mk_netcvode mallinfo %d\n", nrn_mallinfo());
   nrn_setup(1, "./");
   printf("after nrn_setup mallinfo %d\n", nrn_mallinfo());
   t = 0;

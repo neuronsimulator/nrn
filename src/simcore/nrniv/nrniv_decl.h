@@ -7,6 +7,7 @@
 extern "C" {
 #endif
 
+extern int nrn_mallinfo(void);
 extern void mk_mech(const char* fname);
 extern void mk_netcvode(void);
 extern void nrn_setup(int nthread, const char *path);

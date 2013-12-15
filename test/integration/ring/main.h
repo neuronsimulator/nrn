@@ -20,7 +20,3 @@ void modl_reg() {
 	// not right place, but plays role of nrnivmodl constructed
 	// mod_func.c.
 }
-
-const char* nrn_version(int i) {
-	return "version id unimplemented";
-}
