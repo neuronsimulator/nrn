@@ -8,11 +8,15 @@ static const double SHIFT32   = 1.0 / 4294967297.0;    /* 1/(2^32 + 1) */
 
 static philox4x32_key_t k={{0}};
 
+static size_t instance_count_ = 0;
+size_t nrnran123_instance_count() { return instance_count_; }
+
 struct nrnran123_State {
 	philox4x32_ctr_t c;
 	philox4x32_ctr_t r;
 	char which_;
 };
+size_t nrnran123_state_size() { return sizeof(nrnran123_State); }
 
 void nrnran123_set_globalindex(uint32_t gix) {
 	k.v[0] = gix;
@@ -28,10 +32,12 @@ nrnran123_State* nrnran123_newstream(uint32_t id1, uint32_t id2) {
 	s->c.v[2] = id1;
 	s->c.v[3] = id2;
 	nrnran123_setseq(s, 0, 0);
+	++instance_count_;
 	return s;
 }
 
 void nrnran123_deletestream(nrnran123_State* s) {
+	--instance_count_;
 	free(s);
 }
 

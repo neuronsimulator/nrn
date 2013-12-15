@@ -40,6 +40,9 @@ typedef struct nrnran123_array4x32 {
 extern void nrnran123_set_globalindex(uint32_t gix);
 extern uint32_t nrnran123_get_globalindex();
 
+extern size_t nrnran123_instance_count(void);
+extern size_t nrnran123_state_size(void);
+
 /* minimal data stream */
 extern nrnran123_State* nrnran123_newstream(uint32_t id1, uint32_t id2);
 extern void nrnran123_deletestream(nrnran123_State*);

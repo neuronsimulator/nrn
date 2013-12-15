@@ -2,6 +2,7 @@
 #include "simcore/nrnoc/multicore.h"
 #include "simcore/nrniv/nrniv_decl.h"
 #include "simcore/nrnoc/nrnoc_decl.h"
+#include "nrnran123.h"
 
 // file format defined in cooperation with nrncore/src/nrniv/nrnbbcore_write.cpp
 
@@ -400,5 +401,8 @@ size_t model_size(int prnt) {
     nbyte += nb_nt;
     if (prnt) {printf("%d thread %d total bytes %ld\n", nrnmpi_myid, i, nb_nt);}
   }
+  if (prnt) {printf("nrnran123 size=%ld cnt=%ld nbyte=%ld\n", nrnran123_state_size(), nrnran123_instance_count(), nrnran123_instance_count()*nrnran123_state_size());}
+  nbyte += nrnran123_instance_count() * nrnran123_state_size();
+  if (prnt) {printf("%d total bytes %ld\n", nrnmpi_myid, nbyte);}
   return nbyte;
 }
