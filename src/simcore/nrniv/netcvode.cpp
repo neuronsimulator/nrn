@@ -54,8 +54,6 @@ extern "C" {
 extern int nrn_modeltype();
 extern ReceiveFunc* pnt_receive;
 extern ReceiveFunc* pnt_receive_init;
-extern short* pnt_receive_size;
-extern short* nrn_is_artificial_; // should be bool but not using that type in c
 extern short* nrn_artcell_qindex_;
 extern bool nrn_use_localgid_;
 extern void nrn_outputevent(unsigned char, double);
@@ -653,7 +651,8 @@ void NetCvode::init_events() {
 (*pnt_receive_init[type])(d->target_, d->weight_, 0);
 					}else{
 						//not the first
-						for (j = d->cnt_-1; j > 0; --j) {
+						int cnt = pnt_receive_size[type];
+						for (j = cnt; j > 0; --j) {
 							d->weight_[j] = 0.;
 						}
 					}
@@ -806,7 +805,7 @@ DiscreteEvent::DiscreteEvent() {}
 DiscreteEvent::~DiscreteEvent() {}
 
 NetCon::NetCon() {
-	cnt_ = 0; active_ = false; weight_ = nil;
+	active_ = false; weight_ = nil;
 }
 
 void NetCon::init(DiscreteEvent* src, Point_process* target) {
@@ -829,8 +828,7 @@ void NetCon::init(DiscreteEvent* src, Point_process* target) {
 	if (target == nil) {
 		target_ = nil;
 		active_ = false;
-		cnt_ = 1;
-		weight_ = new double[cnt_];
+		weight_ = NULL;
 		return;
 	}
 	target_ = target;
@@ -838,19 +836,13 @@ void NetCon::init(DiscreteEvent* src, Point_process* target) {
 	if (!pnt_receive[target_->type]) {
 hoc_execerror("No NET_RECEIVE in target PointProcess:", pnt_name(target));
 	}
-	cnt_ = pnt_receive_size[target_->type];
-	weight_ = nil;
-	if (cnt_) {
-		weight_ = new double[cnt_];
-	}
+	// set by nrn_setup.cpp
+	weight_ = NULL;
 }
 
 NetCon::~NetCon() {
 //printf("~NetCon\n");
 	rmsrc();
-	if (cnt_) {
-		delete [] weight_;
-	}
 }
 
 void NetCon::rmsrc() {

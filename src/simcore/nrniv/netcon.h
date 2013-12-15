@@ -71,7 +71,6 @@ public:
 	DiscreteEvent* src_; // either a PreSyn or an InputPreSyn or NULL
 	Point_process* target_;
 	double* weight_;
-	int cnt_;
 	bool active_;
 
 	static unsigned long netcon_send_active_;

@@ -121,6 +121,7 @@ void read_nrnthread(const char* fname, NrnThread& nt) {
   int nnetcon = read_int();
   int nweight = read_int();
   nt.n_weight = nweight + nart_without_gid_netcons_wcnt;
+  nt._weight = (double*)ecalloc(nt.n_weight, sizeof(double));
 
   nt._data = (double*)ecalloc(nt._ndata, sizeof(double));
   if (nt._nidata) nt._idata = (int*)ecalloc(nt._nidata, sizeof(int));
@@ -248,19 +249,20 @@ void read_nrnthread(const char* fname, NrnThread& nt) {
     BBS_gid_connect(srcgid[i], pnt, nt.netcons[i]);
   }
   delete [] srcgid;
-  delete [] pnttype;
   delete [] pntindex;
   double* weights = read_dbl_array(NULL, nweight);
-  nt.n_weight = nweight;
+  for (int i=0; i < nweight; ++i) {
+    nt._weight[i] = weights[i];
+  }
+  delete [] weights;
   int iw = 0;
   for (int i=0; i < nnetcon; ++i) {
     NetCon& nc = nt.netcons[i];
-    for (int j=0; j < nc.cnt_; ++j) {
-      nc.weight_[j] = weights[iw++];
-    }
+    nc.weight_ = nt._weight + iw;
+    iw += pnt_receive_size[pnttype[i]];
   }
   assert(iw == nweight);
-  delete [] weights;
+  delete [] pnttype;
   double* delay = read_dbl_array(NULL, nnetcon);
   for (int i=0; i < nnetcon; ++i) {
     NetCon& nc = nt.netcons[i];
@@ -275,9 +277,11 @@ void read_nrnthread(const char* fname, NrnThread& nt) {
   int* target_type = read_int_array(NULL, n_nc);
   int* target_index = read_int_array(NULL, n_nc);
   weights = read_dbl_array(NULL, n_wt);
+  for (int i = 0; i < n_wt; ++i) {
+    nt._weight[i + iw] = weights[i];
+  }
   delay = read_dbl_array(NULL, n_nc);
   int inc = 0;
-  int iwt = 0;
   nt.acell_netcons = new NetCon[nart_without_gid_netcons];
   for (int i = 0; i < nart; ++i) {
     Point_process& acell = nt.acells[i];
@@ -288,13 +292,13 @@ void read_nrnthread(const char* fname, NrnThread& nt) {
       int offset = pnt_offset[target_type[inc]];
       Point_process* target = nt.synapses + (offset + target_index[inc]);
       nc.init(ps, target);
-      for (int k=0; k < nc.cnt_; ++k) {
-        nc.weight_[k] = weights[iwt++];
-      }
+      nc.weight_ = nt._weight + iw;
+      iw += pnt_receive_size[target_type[inc]];
       nc.delay_ = delay[inc];
       ++inc;
     }
   }
+  assert(iw == nt.n_weight);
   delete [] pnt_offset;
   delete [] art_nc_cnts;
   delete [] target_type;

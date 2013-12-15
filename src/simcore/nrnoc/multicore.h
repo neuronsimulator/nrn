@@ -37,6 +37,8 @@ typedef struct NrnThread {
 	NetCon* acell_netcons; // source is no-gid acell
 	int n_syn, n_netcon, n_acell, n_acellnetcon, n_weight; // only for model_size
 
+	double* _weight; // size n_weight. NetCon.weight_ points into this array.
+
         int ncell; /* analogous to old rootnodecount */
 	int end;    /* 1 + position of last in v_node array. Now v_node_count. */
 	int id; /* this is nrn_threads[id] */
