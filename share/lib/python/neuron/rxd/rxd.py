@@ -275,7 +275,7 @@ def _fixed_step_solve(raw_dt):
     if dim is None:
         return
     elif dim == 1:
-        states[:] += _reaction_matrix_solve(dt, _diffusion_matrix_solve(dt, dt * b))
+        states[:] += _reaction_matrix_solve(dt, states, _diffusion_matrix_solve(dt, dt * b))
 
         # clear the zero-volume "nodes"
         states[_zero_volume_indices] = 0
@@ -379,7 +379,7 @@ def _diffusion_matrix_solve(dt, rhs):
                    _diffusion_p_ptr, _ctypes_c_int(n))
     return result
 
-def _reaction_matrix_solve(dt, rhs):
+def _reaction_matrix_solve(dt, states, rhs):
     if not options.use_reaction_contribution_to_jacobian:
         return rhs
     # now handle the reaction contribution to the Jacobian
@@ -394,7 +394,7 @@ def _reaction_matrix_solve(dt, rhs):
         if r:
             # TODO: store weakrefs to r._jacobian_entries as well as r
             #       this will reduce lookup time
-            r_rows, r_cols, r_data = r._jacobian_entries(rhs, multiply=-dt)
+            r_rows, r_cols, r_data = r._jacobian_entries(states, multiply=-dt)
             # TODO: can we predict the length of rows etc in advance so we
             #       don't need to grow them?
             rows += r_rows
@@ -455,7 +455,7 @@ def _conductance(d):
     
 def _ode_jacobian(dt, t, ypred, fpred):
     #print '_ode_jacobian: dt = %g, last_dt = %r' % (dt, _last_dt)
-    _reaction_matrix_setup(dt, fpred)
+    _reaction_matrix_setup(dt, ypred)
 
 
 # wrapper functions allow swapping in experimental alternatives
