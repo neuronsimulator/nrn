@@ -136,12 +136,10 @@ def _ode_count(offset):
     return len(_nonzero_volume_indices)
 
 def _ode_reinit(y):
-    if region._sim_dimension == 3: raise RxDException('cvode not supported yet for 3D')
     y[_rxd_offset : _rxd_offset + len(_nonzero_volume_indices)] = _node_get_states()[_nonzero_volume_indices]
 
 def _ode_fun(t, y, ydot):
     current_dimension = region._sim_dimension
-    if current_dimension == 3: raise RxDException('cvode not supported yet for 3D')
     lo = _rxd_offset
     hi = lo + len(_nonzero_volume_indices)
     if lo == hi: return
@@ -162,7 +160,8 @@ def _ode_fun(t, y, ydot):
                 matrix[i, j] = -_diffusion_matrix[row, j] / d
     states[_zero_volume_indices] = matrix * states
     """
-    states[_zero_volume_indices] = _mat_for_zero_volume_nodes * states
+    if _zero_volume_indices:
+        states[_zero_volume_indices] = _mat_for_zero_volume_nodes * states
     """
     for i in _zero_volume_indices:
         v = _diffusion_matrix[i] * states
@@ -178,7 +177,7 @@ def _ode_fun(t, y, ydot):
             s = sr()
             if s is not None: s._transfer_to_legacy()
     else:
-        raise RxDException('unknown dimension')
+        raise RxDException('unknown dimension: %r' % current_dimension)
 
     
     if ydot is not None:
@@ -192,12 +191,21 @@ def _ode_solve(dt, t, b, y):
     lo = _rxd_offset
     hi = lo + len(_nonzero_volume_indices)
     n = len(_node_get_states())
-    full_b = _numpy_zeros(n)
-    full_b[_nonzero_volume_indices] = b[lo : hi]
-    b[lo : hi] = _react_matrix_solver(_diffusion_matrix_solve(dt, full_b))[_nonzero_volume_indices]
-    # this line doesn't include the reaction contributions to the Jacobian
-    #b[lo : hi] = _diffusion_matrix_solve(dt, full_b)[_nonzero_volume_indices]
-
+    # TODO: this will need changed when can have both 1D and 3D
+    if region._sim_dimension == 3:
+        m = _scipy_sparse_eye(n, n) - dt * _euler_matrix
+        # removed diagonal preconditioner since tests showed no improvement in convergence
+        result, info = _scipy_sparse_linalg_bicgstab(m, dt * b)
+        assert(info == 0)
+        b[lo : hi] = _react_matrix_solver(result)
+    elif region._sim_dimension == 1:
+        full_b = _numpy_zeros(n)
+        full_b[_nonzero_volume_indices] = b[lo : hi]
+        b[lo : hi] = _react_matrix_solver(_diffusion_matrix_solve(dt, full_b))[_nonzero_volume_indices]
+        # this line doesn't include the reaction contributions to the Jacobian
+        #b[lo : hi] = _diffusion_matrix_solve(dt, full_b)[_nonzero_volume_indices]
+    else:
+        raise RxDException('unknown simulation dimension: %r' % region._sim_dimension)
 
 _rxd_induced_currents = None
 
@@ -423,7 +431,8 @@ def _reaction_matrix_setup(dt, unexpanded_rhs):
     # this works as long as (I - dt(Jdiff + Jreact)) \approx (I - dtJreact)(I - dtJdiff)
     count = 0
     rhs = _numpy_array(_node_get_states())
-    rhs[_nonzero_volume_indices] = unexpanded_rhs    
+    if _nonzero_volume_indices:
+        rhs[_nonzero_volume_indices] = unexpanded_rhs    
     n = len(rhs)
     rows = range(n)
     cols = range(n)
@@ -529,7 +538,7 @@ _euler_matrix = None
 def _setup_matrices():
     global _linmodadd, _linmodadd_c, _diffusion_matrix, _linmodadd_b, _last_dt, _c_diagonal, _euler_matrix
     global _cur_node_indices
-
+    global _zero_volume_indices, _nonzero_volume_indices
 
     n = len(_node_get_states())
         
@@ -543,6 +552,10 @@ def _setup_matrices():
         _euler_matrix = _euler_matrix.tocsr()
         _diffusion_matrix = -_euler_matrix
         _update_node_data(True)
+
+        # TODO: this will need changed when can have both 1D and 3D simultaneously
+        _zero_volume_indices = []
+        _nonzero_volume_indices = range(len(_node_get_states()))
         
 
     else:
@@ -600,7 +613,6 @@ def _setup_matrices():
             _linmodadd_c = _linmodadd_c.tocsr()
             _diffusion_matrix = _diffusion_matrix.tocsr()
             
-        global _zero_volume_indices, _nonzero_volume_indices
         volumes = node._get_data()[0]
         _zero_volume_indices = numpy.where(volumes == 0)[0]
         _nonzero_volume_indices = volumes.nonzero()[0]
