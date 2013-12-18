@@ -214,7 +214,7 @@ def _fixed_step_solve(dt):
 
     b = _rxd_reaction(states) - _diffusion_matrix * states
     
-    states[:] += _reaction_matrix_solve(dt, _diffusion_matrix_solve(dt, dt * b))
+    states[:] += _reaction_matrix_solve(dt, states, _diffusion_matrix_solve(dt, dt * b))
 
     # clear the zero-volume "nodes"
     states[_zero_volume_indices] = 0
@@ -306,7 +306,7 @@ def _diffusion_matrix_solve(dt, rhs):
                    _diffusion_p_ptr, ctypes.c_int(n))
     return result
 
-def _reaction_matrix_solve(dt, rhs):
+def _reaction_matrix_solve(dt, states, rhs):
     if not options.use_reaction_contribution_to_jacobian:
         return rhs
     # now handle the reaction contribution to the Jacobian
@@ -319,7 +319,7 @@ def _reaction_matrix_solve(dt, rhs):
     for rptr in _all_reactions:
         r = rptr()
         if r:
-            r_rows, r_cols, r_data = r._jacobian_entries(rhs, multiply=-dt)
+            r_rows, r_cols, r_data = r._jacobian_entries(states, multiply=-dt)
             rows += r_rows
             cols += r_cols
             data += r_data
@@ -378,7 +378,7 @@ def _conductance(d):
     
 def _ode_jacobian(dt, t, ypred, fpred):
     #print '_ode_jacobian: dt = %g, last_dt = %r' % (dt, _last_dt)
-    _reaction_matrix_setup(dt, fpred)
+    _reaction_matrix_setup(dt, ypred)
 
 _callbacks = [_setup, None, _fixed_step_currents, _conductance, _fixed_step_solve,
               _ode_count, _ode_reinit, _ode_fun, _ode_solve, _ode_jacobian, None]
