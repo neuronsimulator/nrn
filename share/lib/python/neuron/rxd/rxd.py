@@ -464,7 +464,8 @@ def _conductance(d):
     
 def _ode_jacobian(dt, t, ypred, fpred):
     #print '_ode_jacobian: dt = %g, last_dt = %r' % (dt, _last_dt)
-    _reaction_matrix_setup(dt, ypred)
+    # TODO: should say dt, ypred but in our test problem that actually made things worse... need to fix cvode jac
+    _reaction_matrix_setup(dt, fpred)
 
 
 # wrapper functions allow swapping in experimental alternatives
