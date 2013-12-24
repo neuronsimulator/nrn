@@ -1296,18 +1296,20 @@ printf("Notice: gid compression did not succeed. Probably more than 255 cells on
 
 size_t output_presyn_size(int prnt) {
   if (!gid2out_) { return 0; }
-  size_t nbyte = 1000*sizeof(PreSyn*) + sizeof(Gid2PreSyn);
+  size_t nbyte = gid2out_->bytes();
   if (prnt > 1) {
-    printf(" gid2out_ table approximate bytes=%ld\n", nbyte);
+    printf(" gid2out_ table bytes=~%ld size=%d nentry=%d nchain=%d max_chain_length=%d\n",
+      nbyte, gid2out_->size(), gid2out_->nentry(), gid2out_->nchain(), gid2out_->max_chain_length());
   }
   return nbyte;
 }
 
 size_t input_presyn_size(int prnt) {
   if (!gid2in_) { return 0; }
-  size_t nbyte = 500000*sizeof(InputPreSyn*) + sizeof(Gid2InputPreSyn);
+  size_t nbyte = gid2in_->bytes();
   if (prnt > 1) {
-    printf(" gid2in_ table approximate bytes=%ld\n", nbyte);
+    printf(" gid2in_ table bytes=~%ld size=%d nentry=%d nchain=%d max_chain_length=%d\n",
+      nbyte, gid2in_->size(), gid2in_->nentry(), gid2in_->nchain(), gid2in_->max_chain_length());
   }
   return nbyte;
 }

@@ -60,6 +60,10 @@ public: \
     void remove(Key); \
     void remove_all(); \
     int max_chain_length(); \
+    int size() { return size_; } \
+    int nentry() { return nentry_; } \
+    int nchain() { return nchain_; } \
+    int bytes(); /* but not the malloc overhead per entry */ \
     int nclash() {return nclash_;} \
     int nfind() { return nfind_;} \
 private: \
@@ -72,6 +76,8 @@ private: \
     NrnHashEntry(NrnHash)*& probe(Key); \
     int nclash_; \
     int nfind_; \
+    int nentry_; \
+    int nchain_; \
 }; \
 \
 struct NrnHashEntry(NrnHash) { \
@@ -138,9 +144,9 @@ NrnHash::NrnHash(int n) { \
     --size_; \
     last_ = &first_[size_]; \
     for (register NrnHashEntry(NrnHash)** e = first_; e <= last_; e++) { \
-	*e = nil; \
+	*e = NULL; \
     } \
-    nclash_ = nfind_ = 0; \
+    nclash_ = nfind_ = nentry_ = nchain_ = 0; \
 } \
 \
 NrnHash::~NrnHash() { \
@@ -155,8 +161,9 @@ void NrnHash::remove_all() { \
 	    _t = i->chain_; \
 	    delete i; \
 	} \
-	*e = nil; \
+	*e = NULL; \
     } \
+    nentry_ = nchain_ = 0; \
 } \
 \
 inline NrnHashEntry(NrnHash)*& NrnHash::probe(Key i) { \
@@ -165,23 +172,25 @@ inline NrnHashEntry(NrnHash)*& NrnHash::probe(Key i) { \
 \
 void NrnHash::insert(Key k, Value v) { \
     register NrnHashEntry(NrnHash)* e; \
-    for (e = probe(k); e != nil; e = e->chain_) { \
+    for (e = probe(k); e != NULL; e = e->chain_) { \
 	if (e->key_ == k) { \
 	    e->value_ = v; \
 	    return; \
 	} \
     } \
     e = new NrnHashEntry(NrnHash); \
+    ++nentry_; \
     e->key_ = k; \
     e->value_ = v; \
     register NrnHashEntry(NrnHash)** a = &probe(k); \
+    if (*a) { ++nchain_; } \
     e->chain_ = *a; \
     *a = e; \
 } \
 \
 bool NrnHash::find(Key k, Value& v) { \
     ++nfind_; \
-    for (register NrnHashEntry(NrnHash)* e = probe(k); e != nil; e = e->chain_) { \
+    for (register NrnHashEntry(NrnHash)* e = probe(k); e != NULL; e = e->chain_) { \
 	if (e->key_ == k) { \
 	    v = e->value_; \
 	    return true; \
@@ -194,22 +203,25 @@ bool NrnHash::find(Key k, Value& v) { \
 bool NrnHash::find_and_remove(Value& v, Key k) { \
     NrnHashEntry(NrnHash)** a = &probe(k); \
     register NrnHashEntry(NrnHash)* e = *a; \
-    if (e != nil) { \
+    if (e != NULL) { \
 	if (e->key_ == k) { \
 	    v = e->value_; \
 	    *a = e->chain_; \
 	    delete e; \
+	    --nentry_; \
 	    return true; \
 	} else { \
 	    register NrnHashEntry(NrnHash)* prev; \
 	    do { \
 		prev = e; \
 		e = e->chain_; \
-	    } while (e != nil && e->key_ != k); \
-	    if (e != nil) { \
+	    } while (e != NULL && e->key_ != k); \
+	    if (e != NULL) { \
 		v = e->value_; \
 		prev->chain_ = e->chain_; \
 		delete e; \
+		--nentry_; \
+		--nchain_; \
 		return true; \
 	    } \
 	} \
@@ -220,19 +232,22 @@ bool NrnHash::find_and_remove(Value& v, Key k) { \
 void NrnHash::remove(Key k) { \
     NrnHashEntry(NrnHash)** a = &probe(k); \
     register NrnHashEntry(NrnHash)* e = *a; \
-    if (e != nil) { \
+    if (e != NULL) { \
 	if (e->key_ == k) { \
 	    *a = e->chain_; \
 	    delete e; \
+	    --nentry_; \
 	} else { \
 	    register NrnHashEntry(NrnHash)* prev; \
 	    do { \
 		prev = e; \
 		e = e->chain_; \
-	    } while (e != nil && e->key_ != k); \
-	    if (e != nil) { \
+	    } while (e != NULL && e->key_ != k); \
+	    if (e != NULL) { \
 		prev->chain_ = e->chain_; \
 		delete e; \
+		--nentry_; \
+		--nchain_; \
 	    } \
 	} \
     } \
@@ -250,11 +265,16 @@ int NrnHash::max_chain_length() { \
     return m; \
 } \
 \
+int NrnHash::bytes() { \
+    return (sizeof(NrnHash) + size()*sizeof(NrnHashEntry(NrnHash)*) \
+        + nentry_*(sizeof(NrnHashEntry(NrnHash)))); \
+} \
+\
 NrnHashIterator(NrnHash)::NrnHashIterator(NrnHash)(NrnHash& _t) { \
     last_ = _t.last_; \
     for (entry_ = _t.first_; entry_ <= last_; entry_++) { \
 	cur_ = *entry_; \
-	if (cur_ != nil) { \
+	if (cur_ != NULL) { \
 	    break; \
 	} \
     } \
@@ -262,12 +282,12 @@ NrnHashIterator(NrnHash)::NrnHashIterator(NrnHash)(NrnHash& _t) { \
 \
 bool NrnHashIterator(NrnHash)::next() { \
     cur_ = cur_->chain_; \
-    if (cur_ != nil) { \
+    if (cur_ != NULL) { \
 	return true; \
     } \
     for (++entry_; entry_ <= last_; entry_++) { \
 	cur_ = *entry_; \
-	if (cur_ != nil) { \
+	if (cur_ != NULL) { \
 	    return true; \
 	} \
     } \
