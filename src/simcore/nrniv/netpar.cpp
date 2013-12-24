@@ -890,7 +890,6 @@ void nrn_cleanup_presyn(DiscreteEvent* ps) {
 	assert(0);
 }
 
-// not sure this will be used
 void BBS_cell(int gid, PreSyn* ps) {
 	PreSyn* ps1;
 	InputPreSyn* ps2;
@@ -937,6 +936,7 @@ void BBS_spike_record(int gid, IvocVect* spikevec, IvocVect* gidvec) {
     }
 }
 
+#if 0
 void gid_connect_count(int gid) {
 	alloc_space();
 	PreSyn* ps;
@@ -973,6 +973,47 @@ void gid_connect_allocate() {
 		}
 		psi->nc_cnt_ = 0;
 	}}}
+}
+#endif
+
+int input_gid_register(int gid) {
+	alloc_space();
+	PreSyn* ps;
+	InputPreSyn* psi;
+	if (gid2out_->find(gid, ps)) {
+		return 0;
+	}else if (gid2in_->find(gid, psi)) {
+		return 0;
+	}
+#if ALTHASH
+	gid2in_->insert(gid, NULL);
+#else
+	(*gid2in_)[gid] = NULL;
+#endif
+	return 1;
+}
+
+int input_gid_associate(int gid, InputPreSyn* psi) {
+	InputPreSyn* ps;
+	if (gid2in_->find(gid, ps)) {
+		if (ps) {
+			return 0;
+		}
+		gid2in_->insert(gid, psi);
+		return 1;
+	}
+	return 0;
+}
+
+void BBS_gid2ps(int gid, PreSyn** ps, InputPreSyn** psi) {
+	if (gid2out_->find(gid, *ps)) {
+		*psi = NULL;
+	}else if (gid2in_->find(gid, *psi)) {
+		*ps = NULL;
+	}else {
+		*psi = NULL;
+		*ps = NULL;
+	}
 }
 
 NetCon* BBS_gid_connect(int gid, Point_process* target, NetCon& nc) {
@@ -1254,31 +1295,19 @@ printf("Notice: gid compression did not succeed. Probably more than 255 cells on
 }
 
 size_t output_presyn_size(int prnt) {
-  size_t sz = sizeof(PreSyn);
-  size_t cnt = 0;
-  size_t nnc = 0;
-  NrnHashIterate(Gid2PreSyn, gid2out_, PreSyn*, ps) {
-    ++cnt;
-    nnc += ps->nc_cnt_;
-  }}}
-  size_t nbyte = cnt*sz + nnc*sizeof(NetCon*);
+  if (!gid2out_) { return 0; }
+  size_t nbyte = 1000*sizeof(PreSyn*) + sizeof(Gid2PreSyn);
   if (prnt > 1) {
-    printf(" Output PreSyn sz=%ld cnt=%ld n_netcon=%ld nbyte=%ld\n", sz, cnt, nnc, nbyte);
+    printf(" gid2out_ table approximate bytes=%ld\n", nbyte);
   }
   return nbyte;
 }
 
 size_t input_presyn_size(int prnt) {
-  size_t sz = sizeof(InputPreSyn);
-  size_t cnt = 0;
-  size_t nnc = 0;
-  NrnHashIterate(Gid2InputPreSyn, gid2in_, InputPreSyn*, ps) {
-    ++cnt;
-    nnc += ps->nc_cnt_;
-  }}}
-  size_t nbyte = cnt*sz + nnc*sizeof(NetCon*);
+  if (!gid2in_) { return 0; }
+  size_t nbyte = 500000*sizeof(InputPreSyn*) + sizeof(Gid2InputPreSyn);
   if (prnt > 1) {
-    printf(" InputPreSyn sz=%ld cnt=%ld n_netcon=%ld nbyte=%ld\n", sz, cnt, nnc, nbyte);
+    printf(" gid2in_ table approximate bytes=%ld\n", nbyte);
   }
   return nbyte;
 }

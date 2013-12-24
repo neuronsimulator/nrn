@@ -6,9 +6,11 @@
 
 #if defined(__cplusplus)
 class NetCon;
+class PreSyn;
 extern "C" {
 #else
 typedef void NetCon;
+typedef void PreSyn;
 #endif
 
 typedef struct NrnThreadMembList{ /* patterned after CvMembList in cvodeobj.h */
@@ -29,15 +31,12 @@ typedef struct NrnThread {
 	double cj;
 
 	NrnThreadMembList* tml;
-        Point_process* synapses;
+        Point_process* pntprocs; // synapses and artificial cells with and without gid
+	PreSyn* presyns; // all the output PreSyn with and without gid
         NetCon* netcons;
+	double* weights; // size n_weight. NetCon.weight_ points into this array.
 
-	NrnThreadMembList* acell_tml;
-	Point_process* acells; // no gid for these
-	NetCon* acell_netcons; // source is no-gid acell
-	int n_syn, n_netcon, n_acell, n_acellnetcon, n_weight; // only for model_size
-
-	double* _weight; // size n_weight. NetCon.weight_ points into this array.
+	int n_pntproc, n_presyn, n_netcon, n_weight; // only for model_size
 
         int ncell; /* analogous to old rootnodecount */
 	int end;    /* 1 + position of last in v_node array. Now v_node_count. */

@@ -357,6 +357,8 @@ static int bbcore_read(void* d, int offset, _threadargsproto_) {
 		nrnran123_State** pv = (nrnran123_State**)(&_p_donotuse);
 		*pv = nrnran123_newstream(di[0], di[1]);
 printf("Netstim bbcore_read %d %d\n", di[0], di[1]);
+	}else{
+		return offset;
 	}
 	return offset + 2;
 }

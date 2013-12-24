@@ -60,12 +60,6 @@ void nrn_finitialize(int setv, double v) {
 				(*s)(nt, tml->ml, tml->index);
 			}
 		}
-		for (tml = nt->acell_tml; tml; tml = tml->next) {
-			mod_f_t s = memb_func[tml->index].initialize;
-			if (s) {
-				(*s)(nt, tml->ml, tml->index);
-			}
-		}
 	}
 #endif
 #endif

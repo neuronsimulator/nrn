@@ -70,7 +70,13 @@ public:
 	double delay_;
 	DiscreteEvent* src_; // either a PreSyn or an InputPreSyn or NULL
 	Point_process* target_;
-	double* weight_;
+	union {
+		double* weight_;
+		int srcgid_; // only to help InputPreSyn during setup
+		// before weights are read and stored. Saves on transient
+		// memory requirements by avoiding storage of all group file
+		// netcon_srcgid lists. ie. that info is copied into here.
+	} u;
 	bool active_;
 
 	static unsigned long netcon_send_active_;
@@ -144,6 +150,7 @@ public:
 
 class PreSyn : public ConditionEvent {
 public:
+	PreSyn();
 	PreSyn(double* src, Point_process* psrc, NrnThread*);
 	virtual ~PreSyn();
 	virtual void send(double sendtime, NetCvode*, NrnThread*);
@@ -157,11 +164,12 @@ public:
 
 	void record(IvocVect*, IvocVect* idvec = nil, int rec_id = 0);
 	void record(double t);
-	void init();
+	void construct_init();
+	void vecinit();
 	double mindelay();
 
 	//NetConPList dil_;
-	NetCon** ncl_; //replaces dil_
+	int nc_index_; //replaces dil_, index into global NetCon** netcon_in_presyn_order_
 	double threshold_;
 	double delay_;
 	double* thvar_;
@@ -171,7 +179,7 @@ public:
 	NrnThread* nt_;
 	HTList* hi_; // in the netcvode psl_
 	HTList* hi_th_; // in the netcvode psl_th_
-	int nc_cnt_; // size of ncl_
+	int nc_cnt_; // how many netcon starting at nc_index_
 	int use_min_delay_;
 	int rec_id_;
 	int output_index_;
@@ -208,7 +216,7 @@ public:
 	double mindelay();
 
 	//NetConPList dil_;
-	NetCon** ncl_; //replaces dil_
+	int nc_index_; //replaces dil_, index into global NetCon** netcon_in_presyn_order_
 	double delay_; // can be eliminated since only a few targets on a process
 #if BGPDMA
 	union { // A PreSyn cannot be both a source spike generator
@@ -218,7 +226,7 @@ public:
 		int srchost_;
 	} bgp;
 #endif
-	int nc_cnt_; // size of ncl_
+	int nc_cnt_; // how many netcon starting at nc_index_
 	int use_min_delay_;
 	int gid_;
 

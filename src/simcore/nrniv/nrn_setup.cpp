@@ -5,25 +5,96 @@
 #include "nrnran123.h"
 
 // file format defined in cooperation with nrncore/src/nrniv/nrnbbcore_write.cpp
+// single integers are ascii one per line. arrays are binary int or double
+// Note that regardless of the gid contents of a group, since all gids are
+// globally unique, a filename convention which involves the first gid
+// from the group is adequate. Also note that balance is carried out from a
+// per group perspective and launching a process consists of specifying
+// a list of group ids (first gid of the group) for each process.
+//
+// <firstgid>_1.dat
+// n_presyn, n_netcon
+// output_gids (npresyn) with -(type+1000*index) for those acell with no gid
+// netcon_srcgid (nnetcon) -(type+1000*index) refers to acell with no gid
+//                         -1 means the netcon has no source (not implemented)
+//
+// <firstgid>_2.dat
+// n_output n_real_output, nnode
+// nmech - includes artcell mechanisms
+// for the nmech tml mechanisms
+//   type, nodecount
+// ndata, nidata, nvdata, nweight
+// v_parent_index (nnode)
+// actual_a, b, area, v (nnode)
+// for the nmech tml mechanisms
+//   nodeindices (nodecount) but only if not an artificial cell
+//   data (nodecount*param_size)
+//   pdata (nodecount*dparam_size) but only if dparam_size > 0 on this side.
+// output_vindex (n_presyn) >= 0 associated with voltages -(type+1000*index) for acell
+// output_threshold (n_real_output)
+// netcon_pnttype (nnetcon) <=0 if a NetCon does not have a target.
+// netcon_pntindex (nnetcon)
+// weights (nweight)
+// delays (nnetcon)
+// for the nmech tml mechanisms that have a nrn_bbcore_write method
+//   type
+//   sz, cnt
+//   int or double array (number specified by the nodecount nrn_bbcore_write
+//     to be intepreted by this side's nrn_bbcore_read method)
+// 
+// The critical issue requiring careful attention is that a corebluron
+// process reads many bluron thread files with a result that, although
+// the conceptual
+// total n_pre is the sum of all the n_presyn from each thread as is the
+// total number of output_gid, the number of InputPreSyn instances must
+// be computed here from a knowledge of all thread's netcon_srcgid after
+// all thread's output_gids have been registered. We want to save the
+// "individual allocation of many small objects" memory overhead by
+// allocating a single InputPreSyn array for the entire process.
+// For this reason cellgroup data are divided into two separate
+// files with the first containing output_gids and netcon_srcgid which are
+// stored in the nt.presyns array and nt.netcons array respectively
 
-static void read_nrnthread(const char* fname, NrnThread& nt);
+static void read_phase1(const char* fname, NrnThread& nt);
+static void determine_inputpresyn(void);
+static void read_phase2(const char* fname, NrnThread& nt);
 static void setup_ThreadData(NrnThread& nt);
 static size_t model_size(int prnt);
 
-static Point_process* point_processes; // NetCon targets
-static NetCon* netcons;
+static int n_inputpresyn_;
+static InputPreSyn* inputpresyn_; // the global array of instances.
 
-void nrn_setup(int nthread, const char *path) {
+// InputPreSyn.nc_index_ to + InputPreSyn.nc_cnt_ give the NetCon*
+NetCon** netcon_in_presyn_order_;
+
+void nrn_setup(int ngroup, int* gidgroups, const char *path) {
   char fname[100];
-  assert(nthread > 0);
-  nrn_threads_create(nthread, 0); // serial threads
-  for (int i = 0; i < nthread; ++i) {
-//    sprintf(fname, "bbcore_thread.%d.%d.dat", i, 0);
-    sprintf(fname, "%sbbcore_thread.%d.%d.dat", path, i, 0);
-    read_nrnthread(fname, nrn_threads[i]);
+  assert(ngroup > 0);
+  nrn_threads_create(ngroup, 0); // serial threads
+
+  // A process's complete set of output gids and allocation of each thread's
+  // nt.presyns and nt.netcons arrays.
+  // Generates the gid2out hash table which is needed
+  // to later count the required number of InputPreSyn
+  for (int i = 0; i < ngroup; ++i) {
+    sprintf(fname, "%s/%d_1.dat", path, gidgroups[i]);
+    read_phase1(fname, nrn_threads[i]);
+  }
+
+  // from the netpar::gid2out_ hash table and the netcon_srcgid array,
+  // fill the netpar::gid2in_ hash table, and from the number of entries,
+  // allocate the process wide InputPreSyn array
+  determine_inputpresyn();
+
+  // read the rest of the gidgroup's data and complete the setup for each
+  // thread.
+  for (int i = 0; i < ngroup; ++i) {
+    sprintf(fname, "%s/%d_2.dat", path, gidgroups[i]);
+    read_phase2(fname, nrn_threads[i]);
     setup_ThreadData(nrn_threads[i]); // nrncore does this in multicore.c in thread_memblist_setup
     nrn_mk_table_check(); // was done in nrn_thread_memblist_setup in multicore.c
   }
+
   model_size(2);
 }
 
@@ -85,22 +156,152 @@ static int* read_int_array_(int* p, size_t n, FILE* f) {
 }
 #define read_int_array(p,n) read_int_array_(p, n, f)
 
-void read_nrnthread(const char* fname, NrnThread& nt) {
+void read_phase1(const char* fname, NrnThread& nt) {
+  FILE* f = fopen(fname, "r");
+  assert(f);
+  nt.n_presyn = read_int();
+  nt.n_netcon = read_int();
+  nt.presyns = new PreSyn[nt.n_presyn];
+  nt.netcons = new NetCon[nt.n_netcon];
+  int* output_gid = read_int_array(NULL, nt.n_presyn);
+  int* netcon_srcgid = read_int_array(NULL, nt.n_netcon);
+  fclose(f);
+  for (int i=0; i < nt.n_presyn; ++i) {
+    int gid = output_gid[i];
+    // for uniformity of processing, even put the negative (type, index)
+    // coded information in the netpar::gid2in_ hash table. This hash
+    // table can be deleted before the end of setup
+    BBS_set_gid2node(gid, nrnmpi_myid);
+    BBS_cell(gid, nt.presyns + i);
+    if (gid < 0) {
+      nt.presyns[i].output_index_ = -1;
+    }
+    nt.presyns[i].nt_ = &nt;
+  }
+  delete [] output_gid;
+  // encode netcon_srggid_ values in nt.netcons
+  // which allows immediate freeing of that array.
+  for (int i=0; i < nt.n_netcon; ++i) {
+    nt.netcons[i].u.srcgid_ = netcon_srcgid[i];
+  }
+  delete [] netcon_srcgid;
+}
+
+void determine_inputpresyn() {
+  // all the output_gid have been registered and associated with PreSyn.
+  // now count the needed InputPreSyn by filling the netpar::gid2in_ hash table
+  int n_psi = 0;
+  for (int ith = 0; ith < nrn_nthread; ++ith) {
+    NrnThread& nt = nrn_threads[ith];
+    for (int i = 0; i < nt.n_netcon; ++i) {
+      int gid = nt.netcons[i].u.srcgid_;
+      if (gid >= 0) {
+        n_psi += input_gid_register(gid);
+      }
+    }
+  }
+  n_inputpresyn_ = n_psi;
+  inputpresyn_ = new InputPreSyn[n_psi];
+
+  // associate gid with InputPreSyn
+  n_psi = 0;
+  for (int ith = 0; ith < nrn_nthread; ++ith) {
+    NrnThread& nt = nrn_threads[ith];
+    for (int i = 0; i < nt.n_netcon; ++i) {
+      int gid = nt.netcons[i].u.srcgid_;
+      if (gid >= 0) {
+        n_psi += input_gid_associate(gid, inputpresyn_ + n_psi);
+      }
+    }
+  }
+
+  // now, we can opportunistically create the NetCon* pointer array
+  // to save some memory overhead for
+  // "large number of small array allocation" by
+  // counting the number of NetCons each PreSyn and InputPreSyn point to,
+  // and instead of a NetCon** InputPreSyn.dil_, merely use a
+  // int InputPreSyn.nc_index_ into the pointer array.
+  // Conceivably the nt.netcons could become a process global array
+  // in which case the NetCon* pointer array could become an integer index
+  // array. More speculatively, the index array could be eliminated itself
+  // if the process global NetCon array were ordered properly but that
+  // would interleave NetCon from different threads. Not a problem for
+  // serial threads but the reordering would propagate to nt.pntprocs
+  // if the NetCon data pointers are also replaced by integer indices.
+
+  // First, allocate the pointer array.
+  int n_nc = 0;
+  for (int ith = 0; ith < nrn_nthread; ++ith) {
+    n_nc += nrn_threads[ith].n_netcon;
+  }
+  netcon_in_presyn_order_ = new NetCon*[n_nc];
+
+  // count the NetCon each PreSyn and InputPresyn points to.
+  for (int ith = 0; ith < nrn_nthread; ++ith) {
+    NrnThread& nt = nrn_threads[ith];
+    for (int i = 0; i < nt.n_netcon; ++i) {
+      int gid = nt.netcons[i].u.srcgid_;
+      PreSyn* ps; InputPreSyn* psi;
+      BBS_gid2ps(gid, &ps, &psi);
+      if (ps) {
+        ++ps->nc_cnt_;
+      }else if (psi) {
+        ++psi->nc_cnt_;
+      }
+    }
+  }
+  // fill the indices with the offset values and reset the nc_cnt_
+  int offset = 0;
+  for (int ith = 0; ith < nrn_nthread; ++ith) {
+    NrnThread& nt = nrn_threads[ith];
+    for (int i = 0; i < nt.n_presyn; ++i) {
+      PreSyn& ps = nt.presyns[i];
+      ps.nc_index_ = offset;
+      offset += ps.nc_cnt_;
+      ps.nc_cnt_ = 0;
+    }
+  }
+  for (int i=0; i < n_inputpresyn_; ++i) {
+    InputPreSyn& psi = inputpresyn_[i];
+    psi.nc_index_ = offset;
+    offset += psi.nc_cnt_;
+    psi.nc_cnt_ = 0;
+  }
+  // fill the netcon_in_presyn_order and recompute nc_cnt_
+  // note that not all netcon_in_presyn will be filled if there are netcon
+  // with no presyn (ie. nc->u.srcgid_ = -1) but that is ok since they are
+  // only used via ps.nc_index_ and ps.nc_cnt_;
+  for (int ith = 0; ith < nrn_nthread; ++ith) {
+    NrnThread& nt = nrn_threads[ith];
+    for (int i = 0; i < nt.n_netcon; ++i) {
+      NetCon* nc = nt.netcons + i;
+      int gid = nc->u.srcgid_;
+      PreSyn* ps; InputPreSyn* psi;
+      BBS_gid2ps(gid, &ps, &psi);
+      if (ps) {
+        netcon_in_presyn_order_[ps->nc_index_ + ps->nc_cnt_] = nc;
+        nc->src_ = ps; // maybe nc->src_ is not needed
+        ++ps->nc_cnt_;
+      }else if (psi) {
+        netcon_in_presyn_order_[psi->nc_index_ + psi->nc_cnt_] = nc;
+        nc->src_ = psi; // maybe nc->src_ is not needed
+        ++psi->nc_cnt_;
+      }
+    }
+  }
+}
+
+void read_phase2(const char* fname, NrnThread& nt) {
   FILE* f = fopen(fname, "r");
   NrnThreadMembList* tml;
   assert(f);
+  int n_outputgid = read_int();
   nt.ncell = read_int();
   nt.end = read_int();
   int nmech = read_int();
-  int nart = read_int();
-  int nart_without_gid = read_int();
-  int nart_without_gid_netcons = read_int();
-  int nart_without_gid_netcons_wcnt = read_int();
-  assert (nart == nart_without_gid);
 
   //printf("ncell=%d end=%d nmech=%d\n", nt.ncell, nt.end, nmech);
-  //printf("nart=%d nart_without_gid=%d nart_without_gid_netcons=%d\n", nart, nart_without_gid, nart_without_gid_netcons);
-  //printf("nart_without_gid_netcons_wcnt = %d\n", nart_without_gid_netcons_wcnt);
+  //printf("nart=%d\n", nart);
   NrnThreadMembList* tml_last = NULL;
   for (int i=0; i < nmech; ++i) {
     tml = (NrnThreadMembList*)emalloc(sizeof(NrnThreadMembList));
@@ -119,15 +320,14 @@ void read_nrnthread(const char* fname, NrnThread& nt) {
   nt._ndata = read_int();
   nt._nidata = read_int();
   nt._nvdata = read_int();
-  int nnetcon = read_int();
-  int nweight = read_int();
-  nt.n_weight = nweight + nart_without_gid_netcons_wcnt;
-  nt._weight = (double*)ecalloc(nt.n_weight, sizeof(double));
+  nt.n_weight = read_int();
 
   nt._data = (double*)ecalloc(nt._ndata, sizeof(double));
   if (nt._nidata) nt._idata = (int*)ecalloc(nt._nidata, sizeof(int));
   if (nt._nvdata) nt._vdata = (void**)ecalloc(nt._nvdata, sizeof(void*));
   //printf("_ndata=%d _nidata=%d _nvdata=%d\n", nt._ndata, nt._nidata, nt._nvdata);
+
+  // The data format defines the order of matrix data
   int n = nt.end;
   nt._actual_rhs = nt._data + 0*n;
   nt._actual_d = nt._data + 1*n;
@@ -136,7 +336,10 @@ void read_nrnthread(const char* fname, NrnThread& nt) {
   nt._actual_v = nt._data + 4*n;
   nt._actual_area = nt._data + 5*n;
   size_t offset = 6*n;
-  int nsyn = 0;
+
+  // Memb_list.data points into the nt.data array.
+  // Also count the number of Point_process
+  int npnt = 0;
   for (tml = nt.tml; tml; tml = tml->next) {
     Memb_list* ml = tml->ml;
     int type = tml->index;
@@ -144,41 +347,29 @@ void read_nrnthread(const char* fname, NrnThread& nt) {
     int sz = nrn_prop_param_size_[type];
     ml->data = nt._data + offset;
     offset += n*sz;
-    if (pnt_map[type] > 0 && nrn_is_artificial_[type] == 0) {
-      nsyn += n;
+    if (pnt_map[type] > 0) {
+      npnt += n;
     }
   }
+  nt.pntprocs = new Point_process[npnt]; // includes acell with and without gid
+  nt.n_pntproc = npnt;
   //printf("offset=%ld ndata=%ld\n", offset, nt._ndata);
   assert(offset == nt._ndata);
 
-  int* output_gid = read_int_array(NULL, nt.ncell);
-  int* output_vindex = read_int_array(NULL, nt.ncell);
-  double* output_threshold = read_dbl_array(NULL, nt.ncell);
-  for (int i=0; i < nt.ncell; ++i) {
-    BBS_set_gid2node(output_gid[i], nrnmpi_myid);
-    assert(output_vindex[i] < nt.end);
-    PreSyn* ps = new PreSyn(nt._actual_v + output_vindex[i], NULL, &nt);
-    BBS_cell(output_gid[i], ps);
-    ps->threshold_ = output_threshold[i];
-  }
-  delete [] output_gid;
-  delete [] output_vindex;
-  delete [] output_threshold;
-
+  // matrix info
   nt._v_parent_index = read_int_array(NULL, nt.end);
   read_dbl_array(nt._actual_a, nt.end);
   read_dbl_array(nt._actual_b, nt.end);
   read_dbl_array(nt._actual_area, nt.end);
   read_dbl_array(nt._actual_v, nt.end);
+
   Memb_list** mlmap = new Memb_list*[n_memb_func];
   int synoffset = 0;
-  int acelloffset = 0;
   int* pnt_offset = new int[n_memb_func];
-  nt.synapses = new Point_process[nsyn];
-  nt.acells = new Point_process[nart];
-  nt.n_syn = nsyn;
-  nt.n_acell = nart;
-  nt.n_acellnetcon = nart_without_gid_netcons;
+
+  // All the mechanism data and pdata. 
+  // Also fill in mlmap and pnt_offset
+  // Complete spec of Point_process except for the acell presyn_ field.
   for (tml = nt.tml; tml; tml = tml->next) {
     int type = tml->index;
     Memb_list* ml = tml->ml;
@@ -194,18 +385,12 @@ void read_nrnthread(const char* fname, NrnThread& nt) {
     }else{
       ml->pdata = NULL;
     }
-    if (pnt_map[type] > 0) { // POINT_PROCESS mechanism
+    if (pnt_map[type] > 0) { // POINT_PROCESS mechanism including acell
       int cnt = ml->nodecount;
       Point_process* pnt = NULL;
-      if (is_art) {
-        pnt = nt.acells + acelloffset;
-        pnt_offset[type] = acelloffset;
-        acelloffset += cnt;
-      }else{
-        pnt = nt.synapses + synoffset;
-        pnt_offset[type] = synoffset;
-        synoffset += cnt;
-      }
+      pnt = nt.pntprocs + synoffset;
+      pnt_offset[type] = synoffset;
+      synoffset += cnt;
       for (int i=0; i < cnt; ++i) {
         Point_process* pp = pnt + i;
         pp->type = type;
@@ -218,52 +403,71 @@ void read_nrnthread(const char* fname, NrnThread& nt) {
     }
   }
 
-  //put the artcells in a different tml list (all the artcells are last)
-  for (tml = nt.tml; tml; tml = tml->next) {
-    NrnThreadMembList* tmlnext = tml->next;
-    if (tmlnext && nrn_is_artificial_[tmlnext->index]) {
-      tml->next = NULL;
-      nt.acell_tml = tmlnext;
-      break;
+  // Real cells are at the beginning of the nt.presyns followed by
+  // acells (with and without gids mixed together)
+  // Here we associate the real cells with voltage pointers and
+  // acell PreSyn with the Point_process.
+  //nt.presyns order same as output_vindex order
+  int* output_vindex = read_int_array(NULL, nt.n_presyn);
+  double* output_threshold = read_dbl_array(NULL, nt.ncell);
+  for (int i=0; i < nt.n_presyn; ++i) { // real cells
+    PreSyn* ps = nt.presyns + i;
+    int ix = output_vindex[i];
+    if (ix < 0) {
+      ix = -ix;
+      int index = ix/1000;
+      int type = ix - index*1000;
+      Point_process* pnt = nt.pntprocs + (pnt_offset[type] + index);
+      ps->pntsrc_ = pnt;
+      pnt->presyn_ = ps;
+      if (ps->gid_ < 0) {
+        ps->gid_ = -1;
+      }
+    }else{
+      assert(ps->gid_ > -1);
+      ps->thvar_ = nt._actual_v + ix;
+      assert (ix < nt.end);
+      ps->threshold_ = output_threshold[i];
     }
   }
+  delete [] output_vindex;
+  delete [] output_threshold;
 
+  int nnetcon = nt.n_netcon;
+  int nweight = nt.n_weight;
 //printf("nnetcon=%d nweight=%d\n", nnetcon, nweight);
-  int* srcgid = read_int_array(NULL, nnetcon);
+  // it may happen that Point_process structures will be made unnecessary
+  // by factoring into NetCon.
+
+  // Make NetCon.target_ point to proper Point_process. Only the NetCon
+  // with pnttype[i] > 0 have a target.
   int* pnttype = read_int_array(NULL, nnetcon);
   int* pntindex = read_int_array(NULL, nnetcon);
-  // it is likely that Point_process structures will be made unnecessary
-  // by factoring into NetCon.
-  nt.netcons = new NetCon[nnetcon];
-  nt.n_netcon = nnetcon;
-  // instead of looping once using a dynamically expanding NetConPList
-  // used a fixed NetCon** allocation for each PreSyn. So count, allocate
-  // and fill
-  for (int i=0; i < nnetcon; ++i) {
-    gid_connect_count(srcgid[i]);
-  }
-  gid_connect_allocate(); // and sets all the nc_cnt_ back to 0
   for (int i=0; i < nnetcon; ++i) {
     int type = pnttype[i];
-    int index = pnt_offset[type] + pntindex[i];
-    Point_process* pnt = nt.synapses + index;
-    BBS_gid_connect(srcgid[i], pnt, nt.netcons[i]);
+    if (type > 0) {
+      int index = pnt_offset[type] + pntindex[i];
+      Point_process* pnt = nt.pntprocs + index;
+      NetCon& nc = nt.netcons[i];
+      nc.target_ = pnt;
+      nc.active_ = true;
+    }
   }
-  delete [] srcgid;
   delete [] pntindex;
-  double* weights = read_dbl_array(NULL, nweight);
-  for (int i=0; i < nweight; ++i) {
-    nt._weight[i] = weights[i];
-  }
-  delete [] weights;
+  delete [] pnt_offset;
+
+  // weights in netcons order in groups defined by Point_process target type.
+  nt.weights = read_dbl_array(NULL, nweight);
   int iw = 0;
   for (int i=0; i < nnetcon; ++i) {
     NetCon& nc = nt.netcons[i];
-    nc.weight_ = nt._weight + iw;
+    nc.u.weight_ = nt.weights + iw;
     iw += pnt_receive_size[pnttype[i]];
   }
   assert(iw == nweight);
   delete [] pnttype;
+
+  // delays in netcons order
   double* delay = read_dbl_array(NULL, nnetcon);
   for (int i=0; i < nnetcon; ++i) {
     NetCon& nc = nt.netcons[i];
@@ -271,44 +475,8 @@ void read_nrnthread(const char* fname, NrnThread& nt) {
   }
   delete [] delay;
 
-  // now the artcells
-  int n_nc = nart_without_gid_netcons;
-  int n_wt = nart_without_gid_netcons_wcnt;
-  int* art_nc_cnts = read_int_array(NULL, nart);
-  int* target_type = read_int_array(NULL, n_nc);
-  int* target_index = read_int_array(NULL, n_nc);
-  weights = read_dbl_array(NULL, n_wt);
-  for (int i = 0; i < n_wt; ++i) {
-    nt._weight[i + iw] = weights[i];
-  }
-  delay = read_dbl_array(NULL, n_nc);
-  int inc = 0;
-  nt.acell_netcons = new NetCon[nart_without_gid_netcons];
-  for (int i = 0; i < nart; ++i) {
-    Point_process& acell = nt.acells[i];
-    PreSyn* ps = new PreSyn(NULL, NULL, NULL);
-    acell.presyn_ = ps;
-    for (int j=0; j < art_nc_cnts[i]; ++j) {
-      NetCon& nc = nt.acell_netcons[inc];
-      int offset = pnt_offset[target_type[inc]];
-      Point_process* target = nt.synapses + (offset + target_index[inc]);
-      nc.init(ps, target);
-      nc.weight_ = nt._weight + iw;
-      iw += pnt_receive_size[target_type[inc]];
-      nc.delay_ = delay[inc];
-      ++inc;
-    }
-  }
-  assert(iw == nt.n_weight);
-  delete [] pnt_offset;
-  delete [] art_nc_cnts;
-  delete [] target_type;
-  delete [] target_index;
-  delete [] weights;
-  delete [] delay;
-
   // BBCOREPOINTER information
-  int npnt = read_int();
+  npnt = read_int();
   for (int i=0; i < npnt; ++i) {
     int type = read_int();
     assert(nrn_bbcore_read_[type]);
@@ -332,6 +500,7 @@ void read_nrnthread(const char* fname, NrnThread& nt) {
       k = (*nrn_bbcore_read_[type])(vp, k, d, pd, ml->_thread, &nt);
     }
     assert(k == cnt);
+    delete [] vp;
   }
   delete [] mlmap;
 
@@ -358,21 +527,21 @@ size_t model_size(int prnt) {
   size_t szi = sizeof(int);
   size_t szv = sizeof(void*);
   size_t sz_th = sizeof(NrnThread);
+  size_t sz_ps = sizeof(PreSyn);
   size_t sz_pp = sizeof(Point_process);
   size_t sz_nc = sizeof(NetCon);
+  size_t sz_psi = sizeof(InputPreSyn);
   NrnThreadMembList* tml;
+  size_t nccnt = 0;
 
   for (int i=0; i < nrn_nthread; ++i) {
     NrnThread& nt = nrn_threads[i];
     size_t nb_nt = 0; // per thread
+    nccnt += nt.n_netcon;
 
     // Memb_list size
     int nmech = 0;
     for (tml=nt.tml; tml; tml = tml->next) {
-      nb_nt += memb_list_size(tml, prnt);
-      ++nmech;
-    }
-    for (tml=nt.acell_tml; tml; tml = tml->next) {
       nb_nt += memb_list_size(tml, prnt);
       ++nmech;
     }
@@ -383,24 +552,30 @@ size_t model_size(int prnt) {
     nb_nt += nt.end*szi; // _v_parent_index
 
     if (prnt > 1) {
-      printf("ncell=%d end=%d n_acell=%d nmech=%d\n", nt.ncell, nt.end, nt.n_acell, nmech);
+      printf("ncell=%d end=%d nmech=%d\n", nt.ncell, nt.end, nmech);
       printf("ndata=%d nidata=%d nvdata=%d\n", nt._ndata, nt._nidata, nt._nvdata);
       printf("nbyte so far %ld\n", nb_nt);
-      printf("n_syn=%d sz=%ld nbyte=%ld\n", nt.n_syn, sz_pp, nt.n_syn*sz_pp);
+      printf("n_presyn = %d sz=%ld nbyte=%ld\n", nt.n_presyn, sz_ps, nt.n_presyn*sz_ps);
+      printf("n_pntproc=%d sz=%ld nbyte=%ld\n", nt.n_pntproc, sz_pp, nt.n_pntproc*sz_pp);
       printf("n_netcon=%d sz=%ld nbyte=%ld\n", nt.n_netcon, sz_nc, nt.n_netcon*sz_nc);
-      printf("n_acellnetcon=%d\n", nt.n_acellnetcon);
       printf("n_weight = %d\n", nt.n_weight);
     }
 
     // spike handling
-    nb_nt += output_presyn_size(prnt);
-    nb_nt += input_presyn_size(prnt);
-    nb_nt += nt.n_syn*sz_pp + nt.n_netcon*sz_nc
-             + nt.n_acell*sz_pp + nt.n_acellnetcon*sz_nc
+    nb_nt += nt.n_pntproc*sz_pp + nt.n_netcon*sz_nc
              + nt.n_weight*szd;
     nbyte += nb_nt;
     if (prnt) {printf("%d thread %d total bytes %ld\n", nrnmpi_myid, i, nb_nt);}
   }
+
+  if (prnt) {
+    printf("%d n_inputpresyn=%d sz=%ld nbyte=%ld\n", nrnmpi_myid, n_inputpresyn_, sz_psi, n_inputpresyn_*sz_psi);
+    printf("%d netcon pointers %d  nbyte=%ld\n", nrnmpi_myid, nccnt, nccnt*sizeof(NetCon*));
+  }
+  nbyte += n_inputpresyn_*sz_psi + nccnt*sizeof(NetCon*);
+  nbyte += output_presyn_size(prnt);
+  nbyte += input_presyn_size(prnt);
+
   if (prnt) {printf("nrnran123 size=%ld cnt=%ld nbyte=%ld\n", nrnran123_state_size(), nrnran123_instance_count(), nrnran123_instance_count()*nrnran123_state_size());}
   nbyte += nrnran123_instance_count() * nrnran123_state_size();
   if (prnt) {printf("%d total bytes %ld\n", nrnmpi_myid, nbyte);}
