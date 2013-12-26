@@ -93,7 +93,9 @@ static char* pysec_name(Section* sec) {
 		NPySecObj* ps = (NPySecObj*)sec->prop->dparam[PROP_PY_INDEX]._pvoid;
 		buf[0] = '\0';
 		if (ps->cell_) {
-			sprintf(buf, "%s.", PyString_AsString(PyObject_Str(ps->cell_)));
+			char* cp = PyString_AsString(PyObject_Str(ps->cell_));
+			sprintf(buf, "%s.", cp);
+			nrnpy_pystring_asstring_free(cp);
 		}
 		char* cp = buf + strlen(buf);
 		if (ps->name_) {
@@ -621,6 +623,7 @@ static PyObject* section_getattro(NPySecObj* self, PyObject* name) {
 		result = PyObject_GenericGetAttr((PyObject*)self, name);
 	}
 	Py_DECREF(name);
+	nrnpy_pystring_asstring_free(n);
 	return result;
 }
 
@@ -701,6 +704,7 @@ static int section_setattro(NPySecObj* self, PyObject* name, PyObject* value) {
 		err = PyObject_GenericSetAttr((PyObject*)self, name, value);
 	}
 	Py_DECREF(name);
+	nrnpy_pystring_asstring_free(n);
 	return err;
 }
 
@@ -786,11 +790,13 @@ static PyObject* segment_getattro(NPySegObj* self, PyObject* name) {
 		if (!p) {
 			rv_noexist(self->pysec_->sec_, n, self->x_, 1);
 			Py_DECREF(name);
+			nrnpy_pystring_asstring_free(n);
 			return NULL;
 		}	
 		NPyMechObj* m = PyObject_New(NPyMechObj, pmech_generic_type);
 		if (m == NULL) {
 			Py_DECREF(name);
+			nrnpy_pystring_asstring_free(n);
 			return NULL;
 		}
 		m->pyseg_ = self;
@@ -858,6 +864,7 @@ static PyObject* segment_getattro(NPySegObj* self, PyObject* name) {
 		result = PyObject_GenericGetAttr((PyObject*)self, name);
 	}
 	Py_DECREF(name);
+	nrnpy_pystring_asstring_free(n);
 	return result;
 }
 
@@ -897,11 +904,13 @@ static int segment_setattro(NPySegObj* self, PyObject* name, PyObject* value) {
 			if (!d) {
 				rv_noexist(self->pysec_->sec_, n, self->x_, errp);
 				Py_DECREF(name);
+				nrnpy_pystring_asstring_free(n);
 				return -1;
 			}
 			if (!PyArg_Parse(value, "d", d)) {
 				PyErr_SetString(PyExc_ValueError, "bad value");
 				Py_DECREF(name);
+				nrnpy_pystring_asstring_free(n);
 				return -1;
 			}else if (sym->u.rng.type == MORPHOLOGY) {
 				diam_changed = 1;
@@ -916,6 +925,7 @@ static int segment_setattro(NPySegObj* self, PyObject* name, PyObject* value) {
 		err = PyObject_GenericSetAttr((PyObject*)self, name, value);
 	}
 	Py_DECREF(name);
+	nrnpy_pystring_asstring_free(n);
 	return err;
 }
 
@@ -957,6 +967,7 @@ static PyObject* mech_getattro(NPyMechObj* self, PyObject* name) {
 		result = PyObject_GenericGetAttr((PyObject*)self, name);
 	}
 	Py_DECREF(name);
+	nrnpy_pystring_asstring_free(n);
 	return result;
 }
 
@@ -988,6 +999,7 @@ static int mech_setattro(NPyMechObj* self, PyObject* name, PyObject* value) {
 		err = PyObject_GenericSetAttr((PyObject*)self, name, value);
 	}
 	Py_DECREF(name);
+	nrnpy_pystring_asstring_free(n);
 	return err;
 }
 
@@ -996,7 +1008,9 @@ double** nrnpy_setpointer_helper(PyObject* name, PyObject* mech) {
 	NPyMechObj* m = (NPyMechObj*)mech;
 	NrnProperty np(m->prop_);
 	char buf[200];
-	sprintf(buf, "%s_%s", PyString_AsString(name), memb_func[m->prop_->type].sym->name);
+	char* cp = PyString_AsString(name);
+	sprintf(buf, "%s_%s", cp, memb_func[m->prop_->type].sym->name);
+	nrnpy_pystring_asstring_free(cp);
 	Symbol* sym = np.find(buf);
 	if (!sym || sym->type != RANGEVAR || sym->subtype != NRNPOINTER) { return 0; }
 	return &m->prop_->dparam[np.prop_index(sym)].pval;
