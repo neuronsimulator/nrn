@@ -126,7 +126,7 @@ estruct.h,v
 /*	internal constants	*/
 
 #define	NBINDS	200			/* max # of bound keys		*/
-#define NFILEN  80                      /* # of bytes, file name        */
+#define NFILEN  1024                      /* # of bytes, file name        */
 #define NBUFN   16                      /* # of bytes, buffer name      */
 #if 0
 #define NLINE   256                     /* # of bytes, line             */
