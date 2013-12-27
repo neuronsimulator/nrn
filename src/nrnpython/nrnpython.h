@@ -46,6 +46,9 @@ extern "C" {
 
 #if (PY_MAJOR_VERSION >= 3)
 char* nrnpy_PyString_AsString(PyObject*);
+void nrnpy_pystring_asstring_free(const char*);
+#else
+#define nrnpy_pystring_asstring_free(a) /**/
 #endif
 extern PyObject* nrnpy_hoc_pop();
 extern int nrnpy_numbercheck(PyObject*);

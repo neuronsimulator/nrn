@@ -15,9 +15,17 @@ static struct itimerval value;
 static struct sigaction act, oact;
 #endif
 
+#define NRNTIMEOUT_DEBUG 0
+#if NRNTIMEOUT_DEBUG
+extern double nrn_time();
+static old_nrn_time;
+#endif
+
 static void timed_out(int sig) {
-#if 0
-printf("timed_out told=%g t=%g\n", told, t);
+#if NRNTIMEOUT_DEBUG
+double z = nrn_time();
+printf("timed_out(%d) wall_elapse=%g told=%g t=%g\n", sig, z-old_nrn_time, told, nrn_threads->_t);
+old_nrn_time = z;
 #endif
 	if (nrn_threads->_t == told) { /* nothing has been accomplished since last signal*/
 		printf("nrn_timeout t=%g\n", nrn_threads->_t);
@@ -31,8 +39,9 @@ printf("timed_out told=%g t=%g\n", told, t);
 
 void nrn_timeout(int seconds) {
 	if (nrnmpi_myid != 0) { return; }
-#if 0
-printf("nrn_timeout %d\n", seconds);
+#if NRNTIMEOUT_DEBUG
+printf("nrn_timeout(%d) t=%g\n", seconds, nrn_threads->_t);
+old_nrn_time = nrn_time();
 #endif
 #if BLUEGENE
 	if (seconds) {

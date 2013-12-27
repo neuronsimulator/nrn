@@ -65,6 +65,7 @@ public:
 	float left();
 	float right();
 	void list(Object*);
+	void compute();
 private:
 	void set_x();
 	void fill_pointers();
@@ -160,6 +161,7 @@ IFGUI
 	RangeVarPlot* rvp = (RangeVarPlot*)v;
 	Vect* y = vector_arg(1);
 	long i, cnt = rvp->py_data()->count();
+	rvp->compute();
 	y->resize(cnt);
 	for (i=0; i < cnt; ++i) {
 		y->elem(i) = *rvp->py_data()->p(i);
@@ -322,6 +324,12 @@ float RangeVarPlot::right() {
 		return sec_list_->item(sec_list_->count() - 1).len + origin_;
 	}else{
 		return origin_;
+	}
+}
+
+void RangeVarPlot::compute() {
+	if (rexp_) {
+		rexp_->compute();
 	}
 }
 

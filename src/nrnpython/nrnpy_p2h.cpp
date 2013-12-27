@@ -441,6 +441,7 @@ static int hoccommand_exec_strret(Object* ho, char* buf, int size) {
 		PyObject* pn = PyObject_Str(r);
 		const char* cp = PyString_AsString(pn);
 		strncpy(buf, cp, size);
+		nrnpy_pystring_asstring_free(cp);
 		buf[size-1] = '\0';
 		Py_XDECREF(pn);
 		Py_XDECREF(r);
@@ -487,12 +488,14 @@ static int guigetstr(Object* ho, char** cpp){
 	const char* cp = PyString_AsString(pn);
 	if (*cpp && strcmp(*cpp, cp) == 0) {
 		Py_XDECREF(pn);
+		nrnpy_pystring_asstring_free(cp);
 		return 0;
 	}
 	if (*cpp) { delete [] *cpp; }
 	*cpp = new char[strlen(cp) + 1];
 	strcpy(*cpp, cp);
 	Py_XDECREF(pn);
+	nrnpy_pystring_asstring_free(cp);
 	return 1;
 }
 

@@ -751,6 +751,7 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* name) {
 	}
 	Symbol* sym = getsym(n, self->ho_, 0);
 	Py_DECREF(name);
+	nrnpy_pystring_asstring_free(n);
 	if (!sym) {
 		if (self->type_ == 1 && self->ho_->ctemplate->sym == nrnpy_pyobj_sym_) {
 			PyObject* p = nrnpy_hoc2pyobject(self->ho_);
@@ -1030,6 +1031,7 @@ static int hocobj_setattro(PyObject* subself, PyObject* name, PyObject* value) {
 		}
 	}
 	Py_DECREF(name);
+	nrnpy_pystring_asstring_free(n);
 	if (!sym) {
 		return -1;
 	}
@@ -1511,7 +1513,9 @@ static PyObject* mkref(PyObject* self, PyObject* args) {
 		}else if (PyString_Check(pa)) {
 			result->type_ = 5;
 			result->u.s_ = 0;
-			hoc_assign_str(&result->u.s_, PyString_AsString(pa));
+			char* cpa = PyString_AsString(pa);
+			hoc_assign_str(&result->u.s_, cpa);
+			nrnpy_pystring_asstring_free(cpa);
 		}else{
 			result->type_ = 6;
 			result->u.ho_ = nrnpy_po2ho(pa);
@@ -1531,7 +1535,9 @@ static PyObject* setpointer(PyObject* self, PyObject* args) {
 		if (PyObject_TypeCheck(pp, hocobject_type)) {
 			PyHocObject* hpp = (PyHocObject*)pp;
 			if (hpp->type_ != 1) { goto done; }
-			Symbol* sym = getsym(PyString_AsString(name), hpp->ho_, 0);
+			char* n = PyString_AsString(name);
+			Symbol* sym = getsym(n, hpp->ho_, 0);
+			nrnpy_pystring_asstring_free(n);
 			if (!sym || sym->type != RANGEVAR || sym->subtype != NRNPOINTER) { goto done; }
 			ppd = &ob2pntproc(hpp->ho_)->prop->dparam[sym->u.rng.index].pval;
 		}else{
@@ -1860,6 +1866,10 @@ printf("\n");
 	//printf("nrnpy_PyString_AsString %s\n", str);
 	return str;
 }
+void nrnpy_pystring_asstring_free(const char* n) {
+  PyMem_Free((void*)n);
+}
+
 #else
 #include "nrnpy_hoc_2.h"
 #endif
