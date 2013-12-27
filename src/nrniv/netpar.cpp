@@ -1193,7 +1193,9 @@ void BBS::netpar_solve(double tstop) {
 	}
 	double wt;
 
-	nrn_timeout(timeout_);
+	nrnmpi_barrier(); // make sure all integrations start about the same
+	nrn_timeout(timeout_); //time to avoid spurious timeouts while waiting
+				// at the next MPI_collective.
 	wt = nrnmpi_wtime();
 	if (cvode_active_) {
 		ncs2nrn_integrate(tstop);
