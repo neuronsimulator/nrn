@@ -264,7 +264,7 @@ void NetParEvent::deliver(double tt, NetCvode* nc, NrnThread* nt){
 	send(tt, nc, nt);
 }
 
-void NetParEvent::pr(const char* m, double tt, NetCvode* nc){
+void NetParEvent::pr(const char* m, double tt, NetCvode*){
 	printf("%s NetParEvent %d t=%.15g tt-t=%g\n", m, ithread_, tt, tt - nrn_threads[ithread_]._t);
 }
 
@@ -707,7 +707,6 @@ void nrn_spike_exchange_compressed() {
 
 static void mk_localgid_rep() {
 	int i, j, k;
-	PreSyn* ps;
 	InputPreSyn* psi;
 
 	// how many gids are there on this machine
@@ -886,7 +885,7 @@ int BBS_gid_exists(int gid) {
 	return 0;
 }
 
-void nrn_cleanup_presyn(DiscreteEvent* ps) {
+void nrn_cleanup_presyn(DiscreteEvent*) {
 	assert(0);
 }
 
@@ -928,9 +927,9 @@ void BBS_spike_record(int gid, IvocVect* spikevec, IvocVect* gidvec) {
 	assert(ps);
 	ps->record(spikevec, gidvec, gid);
     }else{ // record all output spikes
-	NrnHashIterate(Gid2PreSyn, gid2out_, PreSyn*, ps) {
-		if (ps->output_index_ >= 0) {
-			ps->record(spikevec, gidvec, ps->output_index_);
+	NrnHashIterate(Gid2PreSyn, gid2out_, PreSyn*, ps2) {
+		if (ps2->output_index_ >= 0) {
+			ps2->record(spikevec, gidvec, ps2->output_index_);
 		}
 	}}}
     }
@@ -1069,10 +1068,10 @@ void BBS_netpar_solve(double tstop) {
 			return;
 		}
 	}
-	double wt;
+//	double wt;
 
 	nrn_timeout(timeout_);
-	wt = nrnmpi_wtime();
+//	wt = nrnmpi_wtime();
 	ncs2nrn_integrate(tstop*(1.+1e-11));
 //figure out where to store these
 //	impl_->integ_time_ += nrnmpi_wtime() - wt;

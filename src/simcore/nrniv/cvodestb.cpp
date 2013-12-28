@@ -11,12 +11,10 @@ bool at_time(NrnThread*, double);
 
 extern NetCvode* net_cvode_instance;
 void nrn_solver_prepare(void);
-static void check_thresh(NrnThread*);
-
 
 // for fixed step thread
 void deliver_net_events(NrnThread* nt) {
-	int i;
+	(void)nt;
 	if (net_cvode_instance) {
 		net_cvode_instance->check_thresh(nt);
 		net_cvode_instance->deliver_net_events(nt);
@@ -59,20 +57,21 @@ void nrn_play_init() {
 }
 
 void fixed_play_continuous(NrnThread* nt) {
-	return;
+	(void)nt; return;
 	if (net_cvode_instance) {
 //		net_cvode_instance->fixed_play_continuous(nt);
 	}
 }
 
 void fixed_record_continuous(NrnThread* nt) {
-	return;
+	(void)nt; return;
 	if (net_cvode_instance) {
 //		net_cvode_instance->fixed_record_continuous(nt);
 	}
 }
 
 void nrn_random_play(NrnThread* nt) {
+	(void)nt;
 	return;
 }
 

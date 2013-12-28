@@ -82,6 +82,7 @@ static unsigned long t1_[BS][BSIZE], *t_[BS];
 #endif
 
 static void* nulljob(NrnThread* nt) {
+	(void)nt; /* unused */
 	return (void*)0;
 }
 
@@ -266,12 +267,14 @@ static void wait_for_workers() {
 	}
 }
 
+#if BENCHMARKING
 static void wait_for_workers_timeit() {
 	BENCHDECLARE
 	BENCHBEGIN(BS-2)
 	wait_for_workers();
 	BENCHADD(BS-1)
 }
+#endif
 
 static void send_job_to_slave(int i, void* (*job)(NrnThread*)) {
 #if PERMANENT
@@ -286,9 +289,10 @@ static void send_job_to_slave(int i, void* (*job)(NrnThread*)) {
 }
 
 void setaffinity(int i) {
-	int mask;
-return;
-#if 0
+#if 1
+	(void)i;
+	return;
+#else
 	cpu_set_t mask;
 	CPU_ZERO(&mask);
 	CPU_SET(i, &mask);

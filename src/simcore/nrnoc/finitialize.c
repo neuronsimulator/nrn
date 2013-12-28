@@ -3,10 +3,9 @@
 #include "simcore/nrnoc/nrnoc_decl.h"
 	
 void nrn_finitialize(int setv, double v) {
-	int iord, i;
+	int i;
 	NrnThread* _nt;
 	extern int _ninits;
-	extern short* nrn_is_artificial_;
 	++_ninits;
 
 #if ELIMINATE_T_ROUNDOFF

@@ -15,7 +15,6 @@ nrnoc/nrntimeout.c
 nrniv/main1.cpp
 nrniv/netpar.cpp
 nrniv/netcvode.cpp
-nrniv/cxprop.cpp
 nrniv/cvodestb.cpp
 nrniv/tqueue.cpp
 nrniv/htlist.cpp

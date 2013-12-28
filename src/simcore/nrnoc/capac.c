@@ -43,6 +43,7 @@ static void cap_init(NrnThread* _nt, Memb_list* ml, int type ) {
 	int count = ml->nodecount;
 	double *vdata = ml->data;
 	int i;
+	(void)_nt; (void)type; /* unused */
 	for (i=0; i < count; ++i) {
 		i_cap = 0;
 	}
@@ -65,5 +66,6 @@ void nrn_capacity_current(NrnThread* _nt, Memb_list* ml) {
 /* the rest can be constructed automatically from the above info*/
 
 static void cap_alloc(double* data, Datum* pdata, int type) {
+	(void)pdata; (void)type; /* unused */
 	data[0] = DEF_cm;	/*default capacitance/cm^2*/
 }

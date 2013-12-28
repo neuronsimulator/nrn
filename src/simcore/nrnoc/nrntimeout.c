@@ -16,6 +16,7 @@ static struct sigaction act, oact;
 #endif
 
 static void timed_out(int sig) {
+	(void)sig; /* unused */
 #if 0
 printf("timed_out told=%g t=%g\n", told, t);
 #endif

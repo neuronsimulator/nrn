@@ -122,9 +122,9 @@ Table::Table(int n) { \
 \
 Table::~Table() { \
     for (register TableEntry(Table)** e = first_; e <= last_; e++) { \
-	TableEntry(Table)* t = *e; \
-        for (register TableEntry(Table)* i = t; i; i = t) { \
-	    t = i->chain_; \
+	TableEntry(Table)* _t_ = *e; \
+        for (register TableEntry(Table)* i = _t_; i; i = _t_) { \
+	    _t_ = i->chain_; \
 	    delete i; \
 	} \
     } \
@@ -201,9 +201,9 @@ void Table::remove(Key k) { \
     } \
 } \
 \
-TableIterator(Table)::TableIterator(Table)(Table& t) { \
-    last_ = t.last_; \
-    for (entry_ = t.first_; entry_ <= last_; entry_++) { \
+TableIterator(Table)::TableIterator(Table)(Table& _t_) { \
+    last_ = _t_.last_; \
+    for (entry_ = _t_.first_; entry_ <= last_; entry_++) { \
 	cur_ = *entry_; \
 	if (cur_ != nil) { \
 	    break; \

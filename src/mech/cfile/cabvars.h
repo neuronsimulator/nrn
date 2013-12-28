@@ -22,11 +22,11 @@ static void (*mechanism[])(void) = { /* type will start at 3 */
 	0
 };
 
+#if 0
 static char *morph_mech[] = { /* this is type 2 */
 	"0", "morphology", "diam", 0,0,0,
 };
 
-#if 0
 extern void cab_alloc(void);
 extern void morph_alloc(void);
 #endif

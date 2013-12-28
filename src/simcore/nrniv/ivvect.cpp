@@ -11,8 +11,8 @@ void IvocVect::resize(int newl) { // all that for this
   double* p = news;
   int minl = (len < newl)? len : newl;
   double* top = &(s[minl]);
-  double* t = s;
-  while (t < top) *p++ = *t++;
+  double* tt = s;
+  while (tt < top) *p++ = *tt++;
   delete [] s;
   s = news;
   space = newl;
@@ -49,14 +49,14 @@ void IvocVect::buffer_size(int n) {
         s = y;
 }
 
-void IvocVect::label(const char* label) {
+void IvocVect::label(const char* lab) {
         if (label_) {
                 delete [] label_;
                 label_ = nil;
         }
-        if (label) {
-                label_ = new char[strlen(label) + 1];   
-                strcpy(label_, label);
+        if (lab) {
+                label_ = new char[strlen(lab) + 1];   
+                strcpy(label_, lab);
         }   
 }
 

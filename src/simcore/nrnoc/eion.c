@@ -3,6 +3,7 @@
 #include "simcore/nrnconf.h"
 #include "simcore/nrnoc/multicore.h"
 #include "simcore/nrnoc/membdef.h"
+#include "simcore/nrnoc/nrnoc_decl.h"
 
 extern void hoc_register_prop_size(int, int, int);
 
@@ -14,8 +15,6 @@ static char *mechanism[] = { /*just a template*/
 	"ina", "dina_dv_", 0,
 	0
 };
-static double ci0_na_ion;
-static double co0_na_ion;
 
 static void ion_alloc(double*, Datum*, int);
 static void ion_cur(NrnThread*, Memb_list*, int);
@@ -40,7 +39,6 @@ double nrn_ion_charge(int type) {
 
 void ion_reg(const char* name, double valence) {
 	int i, mechtype;
-	Symbol *s;
 	char buf[7][50];
 	double val;
 #define VAL_SENTINAL -10000.
@@ -378,6 +376,7 @@ static void ion_cur(NrnThread* nt, Memb_list* ml, int type) {
 #if _CRAY
 #pragma _CRI ivdep
 #endif
+	(void)nt; /* unused */
 	for (i=0; i < count; ++i) {
 		double *pd = ml->data + i*nparm;
 		Datum *ppd = ml->pdata + i*1;
@@ -399,6 +398,7 @@ static void ion_init(NrnThread* nt, Memb_list* ml, int type) {
 #if _CRAY
 #pragma _CRI ivdep
 #endif
+	(void)nt; /* unused */
 	for (i=0; i < count; ++i) {
 		double *pd = ml->data + i*nparm;
 		Datum *ppd = ml->pdata + i*1;
@@ -421,7 +421,7 @@ static void ion_init(NrnThread* nt, Memb_list* ml, int type) {
 
 static void ion_alloc(double* data, Datum* pdata, int type) {
 	double *pd;
-	int i=0;
+	(void)pdata; /* unused */
 	pd = data;	
 
 	cur = 0.;
@@ -451,7 +451,7 @@ void second_order_cur(NrnThread* _nt) {
 	extern int secondorder;
 	NrnThreadMembList* tml;
 	Memb_list* ml;
-	int j, i, i2;
+	int i, i2;
 #define c 3
 #define dc 4
   if (secondorder == 2) {

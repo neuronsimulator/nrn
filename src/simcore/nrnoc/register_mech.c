@@ -2,20 +2,25 @@
 #include "simcore/nrnconf.h"
 #include "simcore/nrnoc/multicore.h"
 #include "simcore/nrnoc/membdef.h"
+#include "simcore/nrnoc/nrnoc_decl.h"
 #include "simcore/nrnmpi/nrnmpi.h"
 #include "mech/cfile/cabvars.h"
 
 
+#if 0
 /* change this to correspond to the ../nmodl/nocpout nmodl_version_ string*/
 static char nmodl_version_[] =
 "6.2.0";
+#endif
 
 static char banner[] =
 "Duke, Yale, and the BlueBrain Project -- Copyright 1984-2013\n";
 
 # define	CHECK(name) /**/
 
+#if 0
 static char	CHKmes[] = "The user defined name, %s, already exists\n";
+#endif
 
 int secondorder=0;
 int state_discon_allowed_;
@@ -108,13 +113,10 @@ void alloc_mech(int n) {
 	nrn_bbcore_read_ = (bbcore_read_t*)ecalloc(memb_func_size_, sizeof(bbcore_read_t));
         nrn_is_artificial_ = (short*)ecalloc(memb_func_size_, sizeof(short));
 	bamech_ = (BAMech**)ecalloc(BEFORE_AFTER_SIZE, sizeof(BAMech*));
-	nrn_mk_prop_pools(memb_func_size_);
 }
 
 void hoc_last_init() {
-	int i;
 	void (**m)();
-	Symbol *s;
 
 	initnrn();
  	if (nrnmpi_myid < 1) if (nrn_nobanner_ == 0) { 
@@ -146,9 +148,7 @@ int register_mech(const char** m, mod_alloc_t alloc, mod_f_t cur, mod_f_t jacob,
   mod_f_t stat, mod_f_t initialize, int nrnpointerindex, int vectorized
   ) {
 	int type;	/* 0 unused, 1 for cable section */
-	int j, k, modltype, pindx, modltypemax;
-	Symbol *s;
-	char **m2;
+	(void)nrnpointerindex; /*unused*/
 
 	type = nrn_get_mechtype(m[1]);
 	assert(type);
@@ -184,6 +184,7 @@ int register_mech(const char** m, mod_alloc_t alloc, mod_f_t cur, mod_f_t jacob,
 void nrn_writes_conc(int type, int unused) {
 	static int lastion = EXTRACELL+1;
 	int i;
+	(void)unused; /* unused */
 	for (i=n_memb_func - 2; i >= lastion; --i) {
 		memb_order_[i+1] = memb_order_[i];
 	}
@@ -205,6 +206,7 @@ void hoc_register_prop_size(int type, int psize, int dpsize) {
 }
 void hoc_register_dparam_semantics(int type, int i, const char* name) {
   /* already set up */
+  (void)type; (void)i; (void)name; /* unused */
 }
 
 void register_destructor(Pfri d) {
@@ -225,6 +227,7 @@ int point_register_mech(const char** m,
   int vectorized
 ){
 	Symbol* s;
+	(void)constructor; (void)destructor; /* unused */
 	CHECK(m[1]);
 	s = (char*)m[1];
 	register_mech(m, alloc, cur, jacob, stat, initialize, nrnpointerindex, vectorized);
@@ -253,6 +256,7 @@ int nrn_pointing(pd) double *pd; {
 
 int state_discon_flag_ = 0;
 void state_discontinuity(int i, double* pd, double d) {
+	(void)i; /* unused */
 	if (state_discon_allowed_ && state_discon_flag_ == 0) {
 		*pd = d;
 /*printf("state_discontinuity t=%g pd=%lx d=%g\n", t, (long)pd, d);*/

@@ -113,6 +113,7 @@ void TQueue::forall_callback(void(*f)(const TQItem*, int)) {
 }
 
 void TQueue::check(const char* mes) {
+	(void)mes;
 }
 
 #if 0
@@ -189,12 +190,12 @@ void TQueue::spike_stat(double* d) {
 #endif
 }
 
-TQItem* TQueue::insert(double t, void* d) {
+TQItem* TQueue::insert(double tt, void* d) {
 	MUTLOCK
 	STAT(ninsert);
 	TQItem* i = tpool_->alloc();
 	i->data_ = d;
-	i->t_ = t;
+	i->t_ = tt;
 	i->cnt_ = -1;
 	if (t < least_t_nolock()) {
 		if (least()) {
@@ -260,15 +261,15 @@ TQItem* TQueue::atomic_dq(double tt) {
 	return q;
 }
 
-TQItem* TQueue::find(double t) {
+TQItem* TQueue::find(double tt) {
 	TQItem* q;
 	MUTLOCK
 	// search only in the  splay tree. if this is a bug then fix it.
 	STAT(nfind)
-	if (t == least_t_nolock()) {
+	if (tt == least_t_nolock()) {
 		q = least();
 	}else{
-		q = splookup(t, sptree_);
+		q = splookup(tt, sptree_);
 	}
 	MUTUNLOCK
 	return(q);

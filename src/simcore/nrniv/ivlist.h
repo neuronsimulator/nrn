@@ -83,8 +83,8 @@ inline T& List::item_ref(long index) const { \
     return items_[i]; \
 } \
 \
-inline void List::append(const T& item) { insert(count_, item); } \
-inline void List::prepend(const T& item) { insert(0, item); } \
+inline void List::append(const T& _item_) { insert(count_, _item_); } \
+inline void List::prepend(const T& _item_) { insert(0, _item_); } \
 \
 class ListItr(List) { \
 public: \
@@ -162,8 +162,8 @@ private: \
 inline PtrList::PtrList(long size) : impl_(size) { } \
 inline long PtrList::count() const { return impl_.count(); } \
 inline T* PtrList::item(long index) const { return (T*)impl_.item(index); } \
-inline void PtrList::append(T* item) { insert(impl_.count(), item); } \
-inline void PtrList::prepend(T* item) { insert(0, item); } \
+inline void PtrList::append(T* _item_) { insert(impl_.count(), _item_); } \
+inline void PtrList::prepend(T* _item_) { insert(0, _item_); } \
 inline void PtrList::remove(long index) { impl_.remove(index); } \
 inline void PtrList::remove_all() { impl_.remove_all(); } \
 \
@@ -226,7 +226,7 @@ List::~List() { \
     delete [] items_; \
 } \
 \
-void List::insert(long index, const T& item) { \
+void List::insert(long index, const T& _item_) { \
     if (count_ == size_) { \
         long size = ListImpl_best_new_count(size_ + 1, sizeof(T), 2); \
         T* items = new T[size]; \
@@ -256,7 +256,7 @@ void List::insert(long index, const T& item) { \
         } \
         free_ = index + 1; \
         count_ += 1; \
-        items_[index] = item; \
+        items_[index] = _item_; \
     } \
 } \
 \
@@ -293,8 +293,8 @@ ListUpdater(List)::ListUpdater(List)(List& list) { \
 }
 
 #define implementPtrList(PtrList,T) \
-void PtrList::insert(long index, T* item) { \
-    const __AnyPtr p = item; \
+void PtrList::insert(long index, T* _item_) { \
+    const __AnyPtr p = _item_; \
     impl_.insert(index, p); \
 } \
 ListItr(PtrList)::ListItr(PtrList)(const PtrList& list) { \

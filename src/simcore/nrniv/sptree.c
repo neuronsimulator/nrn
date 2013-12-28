@@ -101,7 +101,9 @@ spenq( SPBLK* n, SPTREE* q )
     register SPBLK * temp;
 
     double key;
+#if STRCMP_DEF
     register int Sct;		/* Strcmp value */
+#endif
 
     q->enqs++;
     n->uplink = NULL;
@@ -326,7 +328,9 @@ spenqprior( SPBLK* n, SPTREE* q )
     register SPBLK * right;	/* the leftmost node in the right tree */
     register SPBLK * next;	/* the root of unsplit part of tree */
     register SPBLK * temp;
+#if STRCMP_DEF
     register int Sct;		/* Strcmp value */
+#endif
     double key;
 
     n->uplink = NULL;

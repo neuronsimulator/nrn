@@ -79,7 +79,7 @@ public:
 	TQItem* insert(double t, void* data);
 	TQItem* enqueue_bin(double t, void* data);
 	TQItem* dequeue_bin() { return binq_->dequeue(); }
-	void shift_bin(double t) { ++nshift_; binq_->shift(t); }
+	void shift_bin(double _t_) { ++nshift_; binq_->shift(_t_); }
 	double tbin() { return binq_->tbin(); }
 	TQItem* top() { return binq_->top(); }
 	void release(TQItem*);

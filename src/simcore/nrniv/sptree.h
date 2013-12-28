@@ -16,7 +16,8 @@
 # define NULL	0
 # endif
 
-#if 0
+#define STRCMP_DEF 0
+#if STRCMP_DEF
 # define STRCMP( a, b ) ( (Sct = *(a) - *(b)) ? Sct : strcmp( (a), (b) ) )
 #else
 #define STRCMP(a, b) (a - b)

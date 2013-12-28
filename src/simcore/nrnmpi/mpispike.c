@@ -80,7 +80,10 @@ static void make_spikebuf_type() {
 #endif
 
 int nrnmpi_spike_exchange() {
-	int i, n, novfl, n1;
+	int i, n;
+#if nrn_spikebuf_size > 0
+	int n1, novfl;
+#endif
 	if (!displs) {
 		np = nrnmpi_numprocs;
 		displs = (int*)emalloc(np*sizeof(int));

@@ -1,3 +1,4 @@
+#include <stdlib.h>
 #include "simcore/nrnconf.h"
 #include "simcore/nrnoc/multicore.h"
 
@@ -69,7 +70,6 @@ void* nrn_cacheline_alloc(void** memptr, size_t size) {
 }
 
 void* nrn_cacheline_calloc(void** memptr, size_t nmemb, size_t size) {
-  int i, n;
 #if HAVE_MEMALIGN
   nrn_cacheline_alloc(memptr, nmemb*size);
   memset(*memptr, 0, nmemb*size);

@@ -296,6 +296,7 @@ void read_phase2(const char* fname, NrnThread& nt) {
   NrnThreadMembList* tml;
   assert(f);
   int n_outputgid = read_int();
+  assert(n_outputgid > 0); // avoid n_outputgid unused warning
   nt.ncell = read_int();
   nt.end = read_int();
   int nmech = read_int();
@@ -328,14 +329,14 @@ void read_phase2(const char* fname, NrnThread& nt) {
   //printf("_ndata=%d _nidata=%d _nvdata=%d\n", nt._ndata, nt._nidata, nt._nvdata);
 
   // The data format defines the order of matrix data
-  int n = nt.end;
-  nt._actual_rhs = nt._data + 0*n;
-  nt._actual_d = nt._data + 1*n;
-  nt._actual_a = nt._data + 2*n;
-  nt._actual_b = nt._data + 3*n;
-  nt._actual_v = nt._data + 4*n;
-  nt._actual_area = nt._data + 5*n;
-  size_t offset = 6*n;
+  int ne = nt.end;
+  nt._actual_rhs = nt._data + 0*ne;
+  nt._actual_d = nt._data + 1*ne;
+  nt._actual_a = nt._data + 2*ne;
+  nt._actual_b = nt._data + 3*ne;
+  nt._actual_v = nt._data + 4*ne;
+  nt._actual_area = nt._data + 5*ne;
+  size_t offset = 6*ne;
 
   // Memb_list.data points into the nt.data array.
   // Also count the number of Point_process
@@ -500,7 +501,11 @@ void read_phase2(const char* fname, NrnThread& nt) {
       k = (*nrn_bbcore_read_[type])(vp, k, d, pd, ml->_thread, &nt);
     }
     assert(k == cnt);
-    delete [] vp;
+    if (sz == sizeof(int)) {
+      delete [] (int*)vp;
+    }else{
+      delete [] (double*)vp;
+    }
   }
   delete [] mlmap;
 
@@ -547,13 +552,13 @@ size_t model_size(int prnt) {
     }
 
     // basic thread size includes mechanism data and G*V=I matrix
-    nb_nt + sz_th;
+    nb_nt = sz_th;
     nb_nt += nt._ndata*szd + nt._nidata*szi + nt._nvdata*szv;
     nb_nt += nt.end*szi; // _v_parent_index
 
     if (prnt > 1) {
       printf("ncell=%d end=%d nmech=%d\n", nt.ncell, nt.end, nmech);
-      printf("ndata=%d nidata=%d nvdata=%d\n", nt._ndata, nt._nidata, nt._nvdata);
+      printf("ndata=%ld nidata=%ld nvdata=%ld\n", nt._ndata, nt._nidata, nt._nvdata);
       printf("nbyte so far %ld\n", nb_nt);
       printf("n_presyn = %d sz=%ld nbyte=%ld\n", nt.n_presyn, sz_ps, nt.n_presyn*sz_ps);
       printf("n_pntproc=%d sz=%ld nbyte=%ld\n", nt.n_pntproc, sz_pp, nt.n_pntproc*sz_pp);
@@ -570,7 +575,7 @@ size_t model_size(int prnt) {
 
   if (prnt) {
     printf("%d n_inputpresyn=%d sz=%ld nbyte=%ld\n", nrnmpi_myid, n_inputpresyn_, sz_psi, n_inputpresyn_*sz_psi);
-    printf("%d netcon pointers %d  nbyte=%ld\n", nrnmpi_myid, nccnt, nccnt*sizeof(NetCon*));
+    printf("%d netcon pointers %ld  nbyte=%ld\n", nrnmpi_myid, nccnt, nccnt*sizeof(NetCon*));
   }
   nbyte += n_inputpresyn_*sz_psi + nccnt*sizeof(NetCon*);
   nbyte += output_presyn_size(prnt);

@@ -123,6 +123,7 @@ double nrnmpi_wtime() {
 		return MPI_Wtime();
 	}
 #endif
+	return 0.0;
 }
 
 void nrnmpi_terminate() {

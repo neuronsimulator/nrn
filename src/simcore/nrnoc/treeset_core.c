@@ -1,5 +1,6 @@
 #include "simcore/nrnconf.h"
 #include "simcore/nrnoc/multicore.h"
+#include "simcore/nrnoc/nrnoc_decl.h"
 
 /*
 Fixed step method with threads and cache efficiency. No extracellular,
@@ -8,8 +9,6 @@ sparse matrix, multisplit, or legacy features.
 
 static void nrn_rhs(NrnThread* _nt) {
 	int i, i1, i2, i3;
-	double w;
-	int measure = 0;
 	NrnThreadMembList* tml;
 	
 	i1 = 0;

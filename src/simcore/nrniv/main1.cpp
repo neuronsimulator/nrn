@@ -18,6 +18,7 @@ int nrn_mallinfo() { return 0; }
 #endif
 
 int main1(int argc, char** argv, char** env) {
+  (void)env; /* unused */
   printf("enter main1 mallinfo %d\n", nrn_mallinfo());
   nrnmpi_init(1, &argc, &argv);
   printf("after nrnmpi_init mallinfo %d\n", nrn_mallinfo());
@@ -54,6 +55,6 @@ int main1(int argc, char** argv, char** env) {
   return 0;
 }
 
-const char* nrn_version(int i) {
-	return "version id unimplemented";
+const char* nrn_version(int) {
+  return "version id unimplemented";
 }

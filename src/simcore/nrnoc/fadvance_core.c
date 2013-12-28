@@ -1,6 +1,7 @@
 #include "simcore/nrnconf.h"
 #include "simcore/nrnoc/multicore.h"
 #include "simcore/nrnmpi/nrnmpi.h"
+#include "simcore/nrnoc/nrnoc_decl.h"
 
 static void* nrn_fixed_step_thread(NrnThread*);
 static void* nrn_fixed_step_group_thread(NrnThread*);
@@ -24,7 +25,6 @@ void dt2thread(double adt) { /* copied from nrnoc/fadvance.c */
 }
 
 void nrn_fixed_step_minimal() {
-	int i;
 	if (t != nrn_threads->_t) {
 		dt2thread(-1.);
 	}else{
@@ -44,7 +44,6 @@ static int step_group_begin;
 static int step_group_end;
 
 void nrn_fixed_step_group_minimal(int n) {
-	int i;
 	dt2thread(dt);
 	nrn_thread_table_check();
 	step_group_n = n;
@@ -98,9 +97,6 @@ static void update(NrnThread* _nt){
 }
 
 static void nonvint(NrnThread* _nt) {
-	int i;
-	double w;
-	int measure = 0;
 	NrnThreadMembList* tml;
 	errno = 0;
 	for (tml = _nt->tml; tml; tml = tml->next) if (memb_func[tml->index].state) {
@@ -114,7 +110,6 @@ hoc_warning("errno set during calculation of states", (char*)0);
 
 void nrn_ba(NrnThread* nt, int bat){
 	NrnThreadBAList* tbl;
-	int i;
 	for (tbl = nt->tbl[bat]; tbl; tbl = tbl->next) {
 		mod_f_t f = tbl->bam->f;
 		int type = tbl->bam->type;
@@ -124,9 +119,7 @@ void nrn_ba(NrnThread* nt, int bat){
 }
 
 static void* nrn_fixed_step_thread(NrnThread* nth) {
-	double wt;
 	deliver_net_events(nth);
-	wt = nrnmpi_wtime();
 	nrn_random_play(nth);
 	nth->_t += .5 * nth->_dt;
 	fixed_play_continuous(nth);
