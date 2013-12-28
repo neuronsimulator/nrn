@@ -156,6 +156,13 @@ static int* read_int_array_(int* p, size_t n, FILE* f) {
 }
 #define read_int_array(p,n) read_int_array_(p, n, f)
 
+void nrnthreads_free_helper(NrnThread* nt) {
+	if (nt->pntprocs) delete[] nt->pntprocs;
+	if (nt->presyns) delete [] nt->presyns;
+	if (nt->netcons) delete [] nt->netcons;
+	if (nt->weights) delete [] nt->weights;
+}
+
 void read_phase1(const char* fname, NrnThread& nt) {
   FILE* f = fopen(fname, "r");
   assert(f);
@@ -543,6 +550,7 @@ static size_t memb_list_size(NrnThreadMembList* tml, int prnt) {
   size_t szi = sizeof(int);
   size_t nbyte = sz_ntml + sz_ml;
   nbyte += tml->ml->nodecount*szi;
+  nbyte += nrn_prop_dparam_size_[tml->index]*tml->ml->nodecount*sizeof(Datum);
   if (prnt > 1) {
     int i = tml->index;
     printf("%s %d psize=%d ppsize=%d cnt=%d nbyte=%ld\n", memb_func[i].sym, i,
@@ -577,7 +585,7 @@ size_t model_size(int prnt) {
     }
 
     // basic thread size includes mechanism data and G*V=I matrix
-    nb_nt = sz_th;
+    nb_nt += sz_th;
     nb_nt += nt._ndata*szd + nt._nidata*szi + nt._nvdata*szv;
     nb_nt += nt.end*szi; // _v_parent_index
 
@@ -592,7 +600,7 @@ size_t model_size(int prnt) {
     }
 
     // spike handling
-    nb_nt += nt.n_pntproc*sz_pp + nt.n_netcon*sz_nc
+    nb_nt += nt.n_pntproc*sz_pp + nt.n_netcon*sz_nc + nt.n_presyn*sz_ps
              + nt.n_weight*szd;
     nbyte += nb_nt;
     if (prnt) {printf("%d thread %d total bytes %ld\n", nrnmpi_myid, i, nb_nt);}

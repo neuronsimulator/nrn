@@ -25,7 +25,6 @@ int main1(int argc, char** argv, char** env) {
   mk_mech("bbcore_mech.dat");
   printf("after mk_mech mallinfo %d\n", nrn_mallinfo());
   mk_netcvode();
-  printf("after mk_netcvode mallinfo %d\n", nrn_mallinfo());
 
   // args are one gid in each group for the <gid>_[12].dat files.
   int ngrp = argc-1;
@@ -41,8 +40,10 @@ int main1(int argc, char** argv, char** env) {
     grp[0] = 0;
   }
 
+  printf("before nrn_setup mallinfo %d\n", nrn_mallinfo());
   nrn_setup(ngrp, grp, ".");
   printf("after nrn_setup mallinfo %d\n", nrn_mallinfo());
+
   t = 0;
   dt = 0.025;
   double mindelay = BBS_netpar_mindelay(10.0);

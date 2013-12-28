@@ -592,6 +592,7 @@ void nrn_threads_free() {
 		nt->_actual_area = 0;
 		nt->end = 0;
 		nt->ncell = 0;
+		nrnthreads_free_helper(nt);
 	}
 }
 

@@ -74,6 +74,7 @@ extern void nrn_multithread_job(void*(*)(NrnThread*));
 extern void nrn_onethread_job(int, void*(*)(NrnThread*));
 extern void nrn_wait_for_threads(void);
 extern void nrn_thread_table_check(void);
+extern void nrnthreads_free_helper(NrnThread*);
 
 #define FOR_THREADS(nt) for (nt = nrn_threads; nt < nrn_threads + nrn_nthread; ++nt)
 
