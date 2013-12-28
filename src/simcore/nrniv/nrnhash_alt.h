@@ -46,12 +46,18 @@
 #define NrnHashIterator(NrnHash) __NrnHashIterator(NrnHash)
 #endif
 
+/* a pool was added to reduce space used by individually allocated NrnHashEntry
+   The assumption is that if the pool_size_ > 0 then table use is mostly find,
+   filled by insertion with no removal,
+   and it is known a-priori how many elements are in the table.
+*/
+
 #define declareNrnHash(NrnHash,Key,Value) \
 struct NrnHashEntry(NrnHash); \
 \
 class NrnHash { \
 public: \
-    NrnHash(int); \
+    NrnHash(int, int); \
     ~NrnHash(); \
 \
     void insert(Key, Value); \
@@ -61,7 +67,8 @@ public: \
     void remove_all(); \
     int max_chain_length(); \
     int size() { return size_; } \
-    int nentry() { return nentry_; } \
+    int nentry_single() { return nentry_; } \
+    int nentry_pool() { return npool_; } \
     int nchain() { return nchain_; } \
     int bytes(); /* but not the malloc overhead per entry */ \
     int nclash() {return nclash_;} \
@@ -78,6 +85,9 @@ private: \
     int nfind_; \
     int nentry_; \
     int nchain_; \
+    NrnHashEntry(NrnHash)* pool_; \
+    int npool_; \
+    int pool_size_; \
 }; \
 \
 struct NrnHashEntry(NrnHash) { \
@@ -138,7 +148,7 @@ inline uint32_t nrn_key_to_hash(const void* k) { return nrn_uint32hash((uint32_t
  */
 
 #define implementNrnHash(NrnHash,Key,Value) \
-NrnHash::NrnHash(int n) { \
+NrnHash::NrnHash(int n, int pool_size) { \
     for (size_ = 32; size_ < n; size_ <<= 1); \
     first_ = new NrnHashEntry(NrnHash)*[size_]; \
     --size_; \
@@ -146,12 +156,20 @@ NrnHash::NrnHash(int n) { \
     for (register NrnHashEntry(NrnHash)** e = first_; e <= last_; e++) { \
 	*e = NULL; \
     } \
+    pool_size_ = pool_size; \
+    if (pool_size_) { \
+        pool_ = new NrnHashEntry(NrnHash)[pool_size_]; \
+    }else{ \
+        pool_ = NULL; \
+    } \
+    npool_ = 0; \
     nclash_ = nfind_ = nentry_ = nchain_ = 0; \
 } \
 \
 NrnHash::~NrnHash() { \
     remove_all(); \
     delete [] first_; \
+    if (pool_) { delete [] pool_; } \
 } \
 \
 void NrnHash::remove_all() { \
@@ -159,7 +177,11 @@ void NrnHash::remove_all() { \
 	NrnHashEntry(NrnHash)* _t = *e; \
         for (register NrnHashEntry(NrnHash)* i = _t; i; i = _t) { \
 	    _t = i->chain_; \
-	    delete i; \
+            if (pool_ && i >= pool_ && i < (pool_ + pool_size_)) { \
+                ; \
+            }else{ \
+                delete i; \
+            } \
 	} \
 	*e = NULL; \
     } \
@@ -178,8 +200,13 @@ void NrnHash::insert(Key k, Value v) { \
 	    return; \
 	} \
     } \
-    e = new NrnHashEntry(NrnHash); \
-    ++nentry_; \
+    if (pool_ && npool_ < pool_size_) { \
+        e = pool_ + npool_; \
+        ++npool_; \
+    }else{ \
+        e = new NrnHashEntry(NrnHash); \
+        ++nentry_; \
+    } \
     e->key_ = k; \
     e->value_ = v; \
     register NrnHashEntry(NrnHash)** a = &probe(k); \
@@ -207,8 +234,12 @@ bool NrnHash::find_and_remove(Value& v, Key k) { \
 	if (e->key_ == k) { \
 	    v = e->value_; \
 	    *a = e->chain_; \
-	    delete e; \
-	    --nentry_; \
+            if (pool_ && e >= pool_ && e < (pool_ + pool_size_)) { \
+                ; \
+            }else{ \
+                delete e; \
+                --nentry_; \
+            } \
 	    return true; \
 	} else { \
 	    register NrnHashEntry(NrnHash)* prev; \
@@ -219,8 +250,12 @@ bool NrnHash::find_and_remove(Value& v, Key k) { \
 	    if (e != NULL) { \
 		v = e->value_; \
 		prev->chain_ = e->chain_; \
-		delete e; \
-		--nentry_; \
+                if (pool_ && e >= pool_ && e < (pool_ + pool_size_)) { \
+                    ; \
+                }else{ \
+                    delete e; \
+                    --nentry_; \
+                } \
 		--nchain_; \
 		return true; \
 	    } \
@@ -235,8 +270,12 @@ void NrnHash::remove(Key k) { \
     if (e != NULL) { \
 	if (e->key_ == k) { \
 	    *a = e->chain_; \
-	    delete e; \
-	    --nentry_; \
+            if (pool_ && e >= pool_ && e < (pool_ + pool_size_)) { \
+                ; \
+            }else{ \
+                delete e; \
+                --nentry_; \
+            } \
 	} else { \
 	    register NrnHashEntry(NrnHash)* prev; \
 	    do { \
@@ -245,8 +284,12 @@ void NrnHash::remove(Key k) { \
 	    } while (e != NULL && e->key_ != k); \
 	    if (e != NULL) { \
 		prev->chain_ = e->chain_; \
-		delete e; \
-		--nentry_; \
+                if (pool_ && e >= pool_ && e < (pool_ + pool_size_)) { \
+                    ; \
+                }else{ \
+                    delete e; \
+                    --nentry_; \
+                } \
 		--nchain_; \
 	    } \
 	} \
@@ -267,6 +310,7 @@ int NrnHash::max_chain_length() { \
 \
 int NrnHash::bytes() { \
     return (sizeof(NrnHash) + size()*sizeof(NrnHashEntry(NrnHash)*) \
+        + pool_size_*(sizeof(NrnHashEntry(NrnHash))) \
         + nentry_*(sizeof(NrnHashEntry(NrnHash)))); \
 } \
 \

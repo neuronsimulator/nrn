@@ -163,6 +163,7 @@ void read_phase1(const char* fname, NrnThread& nt) {
   nt.n_netcon = read_int();
   nt.presyns = new PreSyn[nt.n_presyn];
   nt.netcons = new NetCon[nt.n_netcon];
+  nrn_alloc_gid2out(2*nt.n_presyn, nt.n_presyn);
   int* output_gid = read_int_array(NULL, nt.n_presyn);
   int* netcon_srcgid = read_int_array(NULL, nt.n_netcon);
   fclose(f);
@@ -190,7 +191,16 @@ void read_phase1(const char* fname, NrnThread& nt) {
 void determine_inputpresyn() {
   // all the output_gid have been registered and associated with PreSyn.
   // now count the needed InputPreSyn by filling the netpar::gid2in_ hash table
+  // unfortunately, need space for a hash table in order to count
+  // use total number of netcon for a temporary table
   int n_psi = 0;
+  for (int ith = 0; ith < nrn_nthread; ++ith) {
+    n_psi += nrn_threads[ith].n_netcon;
+  }
+  nrn_alloc_gid2in(n_psi, n_psi);
+
+  // now do the actual count
+  n_psi = 0;
   for (int ith = 0; ith < nrn_nthread; ++ith) {
     NrnThread& nt = nrn_threads[ith];
     for (int i = 0; i < nt.n_netcon; ++i) {
@@ -200,6 +210,21 @@ void determine_inputpresyn() {
       }
     }
   }
+
+  // free and alloc a more appropriate space
+  nrn_alloc_gid2in(3*n_psi, n_psi);
+  // now have to fill the new table
+  n_psi = 0;
+  for (int ith = 0; ith < nrn_nthread; ++ith) {
+    NrnThread& nt = nrn_threads[ith];
+    for (int i = 0; i < nt.n_netcon; ++i) {
+      int gid = nt.netcons[i].u.srcgid_;
+      if (gid >= 0) {
+        n_psi += input_gid_register(gid);
+      }
+    }
+  }
+
   n_inputpresyn_ = n_psi;
   inputpresyn_ = new InputPreSyn[n_psi];
 

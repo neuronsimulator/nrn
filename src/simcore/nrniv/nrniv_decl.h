@@ -14,6 +14,8 @@ extern void nrn_setup(int ngroup, int* gidgroups, const char *path);
 extern double BBS_netpar_mindelay(double maxdelay);
 extern void BBS_netpar_solve(double);
 
+extern void nrn_alloc_gid2out(int size, int poolsize);
+extern void nrn_alloc_gid2in(int size, int poolsize);
 extern int input_gid_register(int gid);
 extern int input_gid_associate(int gid, InputPreSyn* psi);
 extern void BBS_gid2ps(int gid, PreSyn** ps, InputPreSyn** psi);

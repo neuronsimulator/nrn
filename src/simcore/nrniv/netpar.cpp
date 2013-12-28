@@ -763,7 +763,7 @@ static void mk_localgid_rep() {
 			}
 		}
 		// oh well. there is probably a rational way to choose but...
-		localmaps_[i] = new Gid2InputPreSyn((j > 19) ? 19 : j+1);
+		localmaps_[i] = new Gid2InputPreSyn(((j > 19) ? 19 : j+1),0);
 	}
 
 	// fill in the maps
@@ -820,16 +820,29 @@ void nrn_fake_fire(int gid, double spiketime, int fake_out) {
 
 }
 
-static void alloc_space() {
-	if (!gid2out_) {
+void nrn_alloc_gid2out(int size, int poolsize) {
 #if ALTHASH
-		gid2out_ = new Gid2PreSyn(1000);
-		gid2in_ = new Gid2InputPreSyn(500000);
+	if (gid2out_) { delete gid2out_; }
+	gid2out_ = new Gid2PreSyn(size, poolsize);
 #else
-		gid2out_ = new Gid2PreSyn(211);
-		gid2in_ = new Gid2InputPreSyn(2311);
+	assert(0);
+	gid2out_ = new Gid2PreSyn(211);
 #endif
+}
+
+void nrn_alloc_gid2in(int size, int poolsize) {
+#if ALTHASH
+	if (gid2in_) { delete gid2in_; }
+	gid2in_ = new Gid2InputPreSyn(size, poolsize);
+#else
+	assert(0);
+	gid2in_ = new Gid2InputPreSyn(2311);
+#endif
+}
+
+static void alloc_space() {
 #if NRNMPI
+	if (!spikeout_) {
 		ocapacity_  = 100;
 		spikeout_ = (NRNMPI_Spike*)emalloc(ocapacity_*sizeof(NRNMPI_Spike));
 		icapacity_  = 100;
@@ -854,7 +867,7 @@ void BBS_set_gid2node(int gid, int nid) {
 		PreSyn* ps;
 		InputPreSyn* psi;
 		char m[200];
-		if (gid2in_->find(gid, psi)) {
+		if (gid2in_ && gid2in_->find(gid, psi)) {
 			sprintf(m, "gid=%d already exists as an input port", gid);
 			hoc_execerror(m, "Setup all the output ports on this process before using them as input ports.");
 		}
@@ -892,7 +905,7 @@ void nrn_cleanup_presyn(DiscreteEvent*) {
 void BBS_cell(int gid, PreSyn* ps) {
 	PreSyn* ps1;
 	InputPreSyn* ps2;
-	if (gid2in_->find(gid, ps2)) {
+	if (gid2in_ && gid2in_->find(gid, ps2)) {
 		char buf[100];
 		sprintf(buf, "gid=%d is in the input list. Must register prior to connecting", gid);
 		hoc_execerror(buf, 0);
@@ -1297,8 +1310,8 @@ size_t output_presyn_size(int prnt) {
   if (!gid2out_) { return 0; }
   size_t nbyte = gid2out_->bytes();
   if (prnt > 1) {
-    printf(" gid2out_ table bytes=~%ld size=%d nentry=%d nchain=%d max_chain_length=%d\n",
-      nbyte, gid2out_->size(), gid2out_->nentry(), gid2out_->nchain(), gid2out_->max_chain_length());
+    printf(" gid2out_ table bytes=~%ld size=%d nentry_pool=%d nentry_single=%d nchain=%d max_chain_length=%d\n",
+      nbyte, gid2out_->size(), gid2out_->nentry_pool(), gid2out_->nentry_single(), gid2out_->nchain(), gid2out_->max_chain_length());
   }
   return nbyte;
 }
@@ -1307,8 +1320,8 @@ size_t input_presyn_size(int prnt) {
   if (!gid2in_) { return 0; }
   size_t nbyte = gid2in_->bytes();
   if (prnt > 1) {
-    printf(" gid2in_ table bytes=~%ld size=%d nentry=%d nchain=%d max_chain_length=%d\n",
-      nbyte, gid2in_->size(), gid2in_->nentry(), gid2in_->nchain(), gid2in_->max_chain_length());
+    printf(" gid2in_ table bytes=~%ld size=%d nentry_pool=%d nentry_single=%d nchain=%d max_chain_length=%d\n",
+      nbyte, gid2in_->size(), gid2in_->nentry_pool(), gid2in_->nentry_single(), gid2in_->nchain(), gid2in_->max_chain_length());
   }
   return nbyte;
 }
