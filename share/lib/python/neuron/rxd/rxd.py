@@ -160,7 +160,7 @@ def _ode_fun(t, y, ydot):
                 matrix[i, j] = -_diffusion_matrix[row, j] / d
     states[_zero_volume_indices] = matrix * states
     """
-    if _zero_volume_indices:
+    if len(_zero_volume_indices):
         states[_zero_volume_indices] = _mat_for_zero_volume_nodes * states
     """
     for i in _zero_volume_indices:
@@ -199,9 +199,13 @@ def _ode_solve(dt, t, b, y):
         assert(info == 0)
         b[lo : hi] = _react_matrix_solver(result)
     elif region._sim_dimension == 1:
-        full_b = _numpy_zeros(n)
+        full_b = numpy.zeros(n)
         full_b[_nonzero_volume_indices] = b[lo : hi]
         b[lo : hi] = _react_matrix_solver(_diffusion_matrix_solve(dt, full_b))[_nonzero_volume_indices]
+        # the following version computes the reaction matrix each time
+        #full_y = numpy.zeros(n)
+        #full_y[_nonzero_volume_indices] = y[lo : hi]
+        #b[lo : hi] = _reaction_matrix_solve(dt, full_y, _diffusion_matrix_solve(dt, full_b))[_nonzero_volume_indices]
         # this line doesn't include the reaction contributions to the Jacobian
         #b[lo : hi] = _diffusion_matrix_solve(dt, full_b)[_nonzero_volume_indices]
     else:
@@ -387,13 +391,11 @@ def _diffusion_matrix_solve(dt, rhs):
                    _diffusion_p_ptr, _ctypes_c_int(n))
     return result
 
-def _reaction_matrix_solve(dt, states, rhs):
-    if not options.use_reaction_contribution_to_jacobian:
-        return rhs
+def _get_jac(dt, states):
     # now handle the reaction contribution to the Jacobian
     # this works as long as (I - dt(Jdiff + Jreact)) \approx (I - dtJreact)(I - dtJdiff)
     count = 0
-    n = len(rhs)
+    n = len(states)
     rows = range(n)
     cols = range(n)
     data = [1] * n
@@ -411,8 +413,25 @@ def _reaction_matrix_solve(dt, states, rhs):
             count += 1
             
     if count > 0 and n > 0:
-        jac = _scipy_sparse_coo_matrix((data, (rows, cols)), shape=(n, n)).tocsr()
-        #result, info = _scipy_sparse_linalg_bicgstab(jac, rhs)
+        return scipy.sparse.coo_matrix((data, (rows, cols)), shape=(n, n))
+    return None
+
+def _reaction_matrix_solve(dt, states, rhs):
+    if not options.use_reaction_contribution_to_jacobian:
+        return rhs
+    jac = _get_jac(dt, states)
+    if jac is not None:
+        jac = jac.tocsr()
+        """
+        print 'states:', list(states)
+        print 'jacobian (_solve):'
+        m = jac.todense()
+        for i in xrange(m.shape[0]):
+            for j in xrange(m.shape[1]):
+                print ('%15g' % m[i, j]),
+            print    
+        """
+        #result, info = scipy.sparse.linalg.bicgstab(jac, rhs)
         #assert(info == 0)
         result = _scipy_sparse_linalg_spsolve(jac, rhs)
     else:
@@ -421,35 +440,26 @@ def _reaction_matrix_solve(dt, states, rhs):
     return result
 
 _react_matrix_solver = None    
-def _reaction_matrix_setup(dt, unexpanded_rhs):
+def _reaction_matrix_setup(dt, unexpanded_states):
     global _react_matrix_solver
     if not options.use_reaction_contribution_to_jacobian:
         _react_matrix_solver = lambda x: x
         return
 
-    # now handle the reaction contribution to the Jacobian
-    # this works as long as (I - dt(Jdiff + Jreact)) \approx (I - dtJreact)(I - dtJdiff)
-    count = 0
-    rhs = _numpy_array(_node_get_states())
-    if _nonzero_volume_indices:
-        rhs[_nonzero_volume_indices] = unexpanded_rhs    
-    n = len(rhs)
-    rows = range(n)
-    cols = range(n)
-    data = [1] * n
-    for rptr in _all_reactions:
-        r = rptr()
-        if r:
-            r_rows, r_cols, r_data = r._jacobian_entries(rhs, multiply=-dt)
-            rows += r_rows
-            cols += r_cols
-            data += r_data
-            count += 1
-            
-    if count > 0:
-        
-        jac = _scipy_sparse_coo_matrix((data, (rows, cols)), shape=(n, n)).tocsc()
-        #result, info = _scipy_sparse_linalg_bicgstab(jac, rhs)
+    states = numpy.zeros(len(node._get_states()))
+    states[_nonzero_volume_indices] = unexpanded_states    
+    jac = _get_jac(dt, states)
+    if jac is not None:
+        jac = jac.tocsc()
+        """
+        print 'jacobian (_reaction_matrix_setup):'
+        m = jac.todense()
+        for i in xrange(m.shape[0]):
+            for j in xrange(m.shape[1]):
+                print ('%15g' % m[i, j]),
+            print
+        """
+        #result, info = scipy.sparse.linalg.bicgstab(jac, rhs)
         #assert(info == 0)
         _react_matrix_solver = _scipy_sparse_linalg_factorized(jac)
     else:
@@ -464,8 +474,10 @@ def _conductance(d):
     
 def _ode_jacobian(dt, t, ypred, fpred):
     #print '_ode_jacobian: dt = %g, last_dt = %r' % (dt, _last_dt)
-    # TODO: should say dt, ypred but in our test problem that actually made things worse... need to fix cvode jac
-    _reaction_matrix_setup(dt, fpred)
+    lo = _rxd_offset
+    hi = lo + len(_nonzero_volume_indices)    
+    _reaction_matrix_setup(dt, ypred[lo : hi])
+
 
 
 # wrapper functions allow swapping in experimental alternatives
