@@ -263,8 +263,7 @@ hoc_execerror("Distance origin not valid.","Need to initialize origin with dista
 	ret(d);
 }
 	
-int
-topology() /* print the topology of the branched cable */
+void nrnhoc_topology() /* print the topology of the branched cable */
 {
 	hoc_Item* q;
 

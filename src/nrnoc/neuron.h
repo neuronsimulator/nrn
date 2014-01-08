@@ -14,7 +14,7 @@ extern int pt3dinsert(), pt3dremove(), pt3dchange();
 extern int define_shape(), pt3dconst(), pt3dstyle();
 extern int spine3d(), setSpineArea(), getSpineArea();
 extern int area(), ri();
-extern int initnrn(), topology(), fadvance(), distance(), finitialize();
+extern int initnrn(), nrnhoc_topology(), fadvance(), distance(), finitialize();
 extern int fstim(), fstimi();
 extern int ion_style(), ion_register(), ion_charge(), nernst(), ghk();
 extern int section_owner(); /* returns object that created section */
