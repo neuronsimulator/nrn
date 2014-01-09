@@ -2,20 +2,21 @@
 #include <stdio.h>
 #include "classreg.h"
 
-#if HAVE_IV // to end of file except hoc interface stubs exist.
 
 #include <OS/list.h>
 #include <OS/string.h>
 #include <OS/math.h>
 #include <string.h>
 #include <ivstream.h>
+#if HAVE_IV
 #include "graph.h"
-#include "ivocvect.h"
 #include "scenepic.h"
-#include "nrnoc2iv.h"
-#include "objcmd.h"
 #include "utility.h"
 #include "ivoc.h"
+#endif
+#include "ivocvect.h"
+#include "nrnoc2iv.h"
+#include "objcmd.h"
 
 extern "C" {
 extern int nrn_multisplit_active_;
@@ -50,14 +51,74 @@ private:
 	HocCommand* cmd_;
 };
 
+#if !HAVE_IV
+class NoIVGraphVector {
+public:
+  NoIVGraphVector(const char*);
+  virtual ~NoIVGraphVector();
+  void begin();
+  void add(float, double*);
+  int count();
+  CopyString name_;
+  int count_, size_;
+  double** py_;
+  float* x_;
+};
+NoIVGraphVector::NoIVGraphVector(const char* name) {
+  name_ = name;
+  size_ = 0;
+  count_ = 0;
+  py_ = NULL;
+  x_ = NULL;
+}
+NoIVGraphVector::~NoIVGraphVector() {
+  if (py_) {
+    delete [] py_;
+    delete [] x_;
+  }
+}
+int NoIVGraphVector::count() {return count_;}
+void NoIVGraphVector::begin() {
+  count_ = 0;
+  if (!size_) {
+    size_ = 20;
+    py_ = new double*[size_];
+    x_ = new float[size_];
+  }
+}
+void NoIVGraphVector::add(float x, double* y) {
+        if ( count_ == size_) {
+                size_ *= 2;   
+                double** py = new double*[size_];
+		float* px = new float[size_];
+                for (int i=0; i<count_; i++) {
+                        py[i] = py_[i];
+			px[i] = x_[i];
+                }
+                delete [] py_;
+                delete [] x_;
+                py_ = py;
+                x_ = px;
+        }
+        py_[count_] = y;
+        x_[count_++] = x;
+}
+#endif
+
+#if HAVE_IV
 class RangeVarPlot : public GraphVector {
+#else
+class RangeVarPlot : public NoIVGraphVector {
+#endif
 public:
 	RangeVarPlot(const char*);
 	virtual ~RangeVarPlot();
+#if HAVE_IV
 	virtual void save(ostream&);
 	virtual void request(Requisition& req) const;
 	virtual bool choose_sym(Graph*);
 	virtual void update(Observable*);
+#endif
 	void x_begin(float);
 	void x_end(float);
 	void origin(float);
@@ -79,70 +140,41 @@ private:
 	int struc_changed_;
 	double d2root_; // distance to root of closest point to root
 };
-#endif //HAVE_IV
 
 static double s_begin(void* v) {
-#if HAVE_IV
-IFGUI
 	((RangeVarPlot*)v)->x_begin(chkarg(1, 0., 1.));
 	return 1.;
-ENDGUI
-#endif
 }
 
 static double s_end(void* v) {
-#if HAVE_IV
-IFGUI
 	((RangeVarPlot*)v)->x_end(chkarg(1, 0., 1.));
-ENDGUI
-#endif
 	return 1.;
 }
 
 static double s_origin(void* v) {
-#if HAVE_IV
-IFGUI
 	((RangeVarPlot*)v)->origin(*getarg(1));
-ENDGUI
-#endif
 	return 1.;
 }
 
 static double s_d2root(void* v) {
-#if HAVE_IV
-IFGUI
 	return ((RangeVarPlot*)v)->d2root();
-ENDGUI
-#endif
 	return 0.0;
 }
 
 static double s_left(void* v) {
-#if HAVE_IV
-IFGUI
 	return ((RangeVarPlot*)v)->left();
-ENDGUI
-#endif
 	return 0.0;
 }
 
 static double s_right(void* v) {
-#if HAVE_IV
-IFGUI
 	return ((RangeVarPlot*)v)->right();
-ENDGUI
-#endif
 	return 0.0;
 }
 
 static double s_list(void* v) {
-#if HAVE_IV
-IFGUI
 	Object* ob = *hoc_objgetarg(1);
 	check_obj_type(ob, "SectionList");
 	((RangeVarPlot*)v)->list(ob);
-ENDGUI
-#endif
 	return 0.;
 }
 
@@ -156,42 +188,57 @@ ENDGUI
 }
 
 static double to_vector(void* v) {
-#if HAVE_IV
-IFGUI
 	RangeVarPlot* rvp = (RangeVarPlot*)v;
 	Vect* y = vector_arg(1);
+#if HAVE_IV
 	long i, cnt = rvp->py_data()->count();
+#else
+	long i, cnt = rvp->count();
+#endif
 	rvp->compute();
 	y->resize(cnt);
 	for (i=0; i < cnt; ++i) {
+#if HAVE_IV
 		y->elem(i) = *rvp->py_data()->p(i);
+#else
+	    if (rvp->py_[i]) {
+		y->elem(i) = *rvp->py_[i];
+	    }else{
+		y->elem(i) = 0.0;
+	    }
+#endif
 	}
 	if (ifarg(2)) {
 		Vect* x = vector_arg(2);
 		x->resize(cnt);
 		for (i=0; i < cnt; ++i) {
+#if HAVE_IV
 			x->elem(i) = rvp->x_data()->get_val(i);
+#else
+			x->elem(i) = rvp->x_[i];
+#endif
 		}
 	}
 	return double(cnt);
-ENDGUI
-#endif
-	return 0.0;
 }
 
 static double from_vector(void* v) {
-#if HAVE_IV
-IFGUI
 	RangeVarPlot* rvp = (RangeVarPlot*)v;
 	Vect* y = vector_arg(1);
+#if HAVE_IV
 	long i, cnt = rvp->py_data()->count();
 	for (i=0; i < cnt; ++i) {
 		*rvp->py_data()->p(i) = y->elem(i);
 	}
-	return double(cnt);
-ENDGUI
+#else
+	long i, cnt = rvp->count();
+	for (i=0; i < cnt; ++i) {
+		if (rvp->py_[i]) {
+			*rvp->py_[i] = y->elem(i);
+		}
+	}
 #endif
-	return 0.0;
+	return double(cnt);
 }
 
 static Member_func s_members[] = {
@@ -209,21 +256,16 @@ static Member_func s_members[] = {
 };
 
 static void* s_cons(Object*) {
-#if HAVE_IV
-IFGUI
 	RangeVarPlot* s = new RangeVarPlot(gargstr(1));
+#if HAVE_IV
 	s->ref();
-	return (void*)s;
-ENDGUI
 #endif
-	return 0;
+	return (void*)s;
 }
 
 static void s_destruct(void* v) {
 #if HAVE_IV
-IFGUI
 	Resource::unref((RangeVarPlot*)v);
-ENDGUI
 #endif
 }
 
@@ -232,16 +274,20 @@ void RangeVarPlot_reg() {
 	class2oc("RangeVarPlot", s_cons, s_destruct, s_members);
 }
 
-#if HAVE_IV // to end of file
-
+#if HAVE_IV
 RangeVarPlot::RangeVarPlot(const char* var) : GraphVector(var) {
+#else
+RangeVarPlot::RangeVarPlot(const char* var) : NoIVGraphVector(var) {
+#endif
 	begin_section_ = 0;
 	end_section_ = 0;
 	sec_list_ = new SecPosList(50);
 	struc_changed_ = structure_change_cnt;
 	shape_changed_ = nrn_shape_changed_;
+#if HAVE_IV
 	Oc oc;
 	oc.notify_attach(this);
+#endif
 	if (strstr(var, "$1")) {
 		rexp_ = new RangeExpr(var, sec_list_);
 	}else{
@@ -265,10 +311,13 @@ RangeVarPlot::~RangeVarPlot() {
 	if (rexp_) {
 		delete rexp_;
 	}
+#if HAVE_IV
 	Oc oc;
 	oc.notify_detach(this);
+#endif
 }
 
+#if HAVE_IV
 void RangeVarPlot::update(Observable* o) {
 	if (o) { // must be Oc::notify_change_ because free is nil
 		// but do not update if multisplit active
@@ -283,6 +332,7 @@ void RangeVarPlot::update(Observable* o) {
 		GraphVector::update(o);
 	}
 }
+#endif
 
 void RangeVarPlot::origin(float x) {
 	origin_ = x;
@@ -333,13 +383,16 @@ void RangeVarPlot::compute() {
 	}
 }
 
+#if HAVE_IV
 void RangeVarPlot::request(Requisition& req) const {
 	if (rexp_) {
 		rexp_->compute();
 	}
 	GraphVector::request(req);
 }
+#endif
 
+#if HAVE_IV
 void RangeVarPlot::save(ostream& o) {
 	char buf[256];
 	o << "objectvar rvp_" << endl;
@@ -357,7 +410,9 @@ void RangeVarPlot::save(ostream& o) {
 		colors->color(color()), brushes->brush(brush()), x, y);
 	o << buf << endl;
 }
+#endif
 
+#if HAVE_IV
 bool RangeVarPlot::choose_sym(Graph* g) {
 //	printf("RangeVarPlot::choose_sym\n");
 	char s[256];	
@@ -389,6 +444,7 @@ printf(" to %s(%g)\n", secname(end_section_), x_end_);
 	
 	return true;
 }
+#endif
 
 #if 0
 void SpacePlot::expr(const char* expr) {
@@ -678,4 +734,3 @@ double* RangeExpr::pval(int i) {
 		return 0;
 	}
 }
-#endif
