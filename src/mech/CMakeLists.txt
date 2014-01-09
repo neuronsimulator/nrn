@@ -1,10 +1,10 @@
 set(SOURCES
-cfile/nrnran123.c
 cfile/expsyn.c
 cfile/hh.c
 cfile/passive.c
 cfile/stim.c
 cfile/netstim.c
+cfile/nrnran123.c
 )
 
 set(LIBRARY coremech)

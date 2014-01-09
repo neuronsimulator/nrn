@@ -1,8 +1,8 @@
-#include "simcore/nrnconf.h"
-#include "nrnran123.h"
 #include <stdlib.h>
 #include <math.h>
-#include "Random123/philox.h"
+#include "simcore/nrnconf.h"
+#include "mech/cfile/nrnran123.h"
+#include "utils/randoms/Random123/philox.h"
 
 static const double SHIFT32   = 1.0 / 4294967297.0;    /* 1/(2^32 + 1) */
 

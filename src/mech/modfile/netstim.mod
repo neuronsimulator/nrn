@@ -71,7 +71,7 @@ FUNCTION invl(mean (ms)) (ms) {
 	}
 }
 VERBATIM
-#include "nrnran123.h"
+#include "mech/cfile/nrnran123.h"
 ENDVERBATIM
 
 FUNCTION erand() {
