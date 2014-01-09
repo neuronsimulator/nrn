@@ -1079,6 +1079,9 @@ static PyMethodDef NPySecObj_methods[] = {
 	{"name", (PyCFunction)NPySecObj_name, METH_NOARGS,
 	 "Section name (same as hoc secname())"
 	},
+	{"hname", (PyCFunction)NPySecObj_name, METH_NOARGS,
+	 "Section name (same as hoc secname())"
+	},
 	{"connect", (PyCFunction)NPySecObj_connect, METH_VARARGS,
 	 "childSection.connect(parentSection, [parentX], [childEnd]) or\nchildSection.connect(parentSegment, [childEnd])"
 	},
