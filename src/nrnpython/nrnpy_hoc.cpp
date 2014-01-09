@@ -751,10 +751,10 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* name) {
 	}
 	Symbol* sym = getsym(n, self->ho_, 0);
 	Py_DECREF(name);
-	nrnpy_pystring_asstring_free(n);
 	if (!sym) {
 		if (self->type_ == 1 && self->ho_->ctemplate->sym == nrnpy_pyobj_sym_) {
 			PyObject* p = nrnpy_hoc2pyobject(self->ho_);
+			nrnpy_pystring_asstring_free(n);
 			return PyObject_GenericGetAttr(p, name);
 		}
 	    if (strcmp(n, "__dict__") == 0) {
@@ -778,20 +778,24 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* name) {
 		if (is_obj_type(self->ho_, "Vector")) {
 			PyDict_SetItemString(dict,"__array_interface__",Py_None);
 		}
+		nrnpy_pystring_asstring_free(n);
 		return dict;
 	    }else if (strncmp(n, "_ref_", 5) == 0) {
 		if (self->type_ > 1) {
 			PyErr_SetString(PyExc_TypeError, "not a HocTopLevelInterpreter or HocObject");
+			nrnpy_pystring_asstring_free(n);
 			return NULL;
 		}
 		sym = getsym(n+5, self->ho_, 0);
 		if (!sym) {
+			nrnpy_pystring_asstring_free(n);
 			return PyObject_GenericGetAttr((PyObject*)subself, name);
 		}
 		if (sym->type != VAR && sym->type != RANGEVAR) {
 			char buf[200];
 			sprintf(buf, "Hoc pointer error, %s is not a hoc variable or range variable", sym->name);
 			PyErr_SetString(PyExc_TypeError, buf);
+			nrnpy_pystring_asstring_free(n);
 			return NULL;
 		}
 		isptr = 1;
@@ -802,6 +806,7 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* name) {
 		int size = v->capacity();
 		double* x = vector_vec(v);
 
+		nrnpy_pystring_asstring_free(n);
 	     	return Py_BuildValue("{s:(i),s:s,s:i,s:(N,O)}","shape",size,"typestr",array_interface_typestr,"version",3,"data",PyLong_FromVoidPtr(x),Py_True);
 
 	    }else if (strcmp(n, "__doc__") == 0) {
@@ -820,16 +825,20 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* name) {
 
 		result = PyObject_CallObject(pfunc_get_docstring,docobj);
 		Py_DECREF(docobj);
+		nrnpy_pystring_asstring_free(n);
 		return result;
 	      }else{
+		nrnpy_pystring_asstring_free(n);
 		return NULL;
 	      }
 	    }else{
 		// ipython wants to know if there is a __getitem__
 		// even though it does not use it.
+		nrnpy_pystring_asstring_free(n);
 		return PyObject_GenericGetAttr((PyObject*)subself, name);
 	    }
 	}
+	nrnpy_pystring_asstring_free(n);
 	if (self->ho_) { // use the component fork.
 		// but no hoc component for a hoc function
 		// ie the sym is a component for the object
