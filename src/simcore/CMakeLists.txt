@@ -12,10 +12,11 @@ nrnoc/nrnoc_aux.c
 nrnoc/register_mech.c
 nrnoc/multicore.c
 nrnoc/nrntimeout.c
+nrniv/corebluron_main.cpp
+nrniv/cvodestb.cpp
 nrniv/main1.cpp
 nrniv/netpar.cpp
 nrniv/netcvode.cpp
-nrniv/cvodestb.cpp
 nrniv/tqueue.cpp
 nrniv/htlist.cpp
 nrniv/ivlistimpl.cpp
