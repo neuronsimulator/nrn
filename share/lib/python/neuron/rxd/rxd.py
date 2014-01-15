@@ -208,7 +208,7 @@ def _ode_solve(dt, t, b, y):
         #b[lo : hi] = _reaction_matrix_solve(dt, full_y, _diffusion_matrix_solve(dt, full_b))[_nonzero_volume_indices]
         # this line doesn't include the reaction contributions to the Jacobian
         #b[lo : hi] = _diffusion_matrix_solve(dt, full_b)[_nonzero_volume_indices]
-    else:
+    elif region._sim_dimension is not None:
         raise RxDException('unknown simulation dimension: %r' % region._sim_dimension)
 
 _rxd_induced_currents = None
