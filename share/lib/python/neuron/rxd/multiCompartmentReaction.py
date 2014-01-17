@@ -160,7 +160,8 @@ class MultiCompartmentReaction(GeneralizedReaction):
         if not self._scale_by_area:
             areas = numpy.ones(len(areas))
         else:
-            areas = numpy.array(sum([list(self._regions[0]._geometry.volumes1d(sec) for sec in self._regions[0].secs)], []))
+            # TODO: simplify this expression
+            areas = numpy.array(itertools.chain.from_iterable([list(self._regions[0]._geometry.volumes1d(sec) for sec in self._regions[0].secs)]))
         neuron_areas = []
         for sec in self._regions[0].secs:
             neuron_areas += [h.area((i + 0.5) / sec.nseg, sec=sec) for i in xrange(sec.nseg)]

@@ -3,6 +3,7 @@ import weakref
 from . import species, rxdmath, rxd
 import numpy
 from .rangevar import RangeVar
+import itertools
 from .generalizedReaction import GeneralizedReaction
 
 class Rate(GeneralizedReaction):
@@ -95,9 +96,9 @@ class Rate(GeneralizedReaction):
             # store the indices
             for sptr in self._involved_species:
                 s = sptr()
-                self._indices_dict[s] = sum([s.indices(r) for r in active_regions], [])
+                self._indices_dict[s] = list(itertools.chain.from_iterable([s.indices(r) for r in active_regions]))
             
-            self._indices = [sum([self._species().indices(r) for r in active_regions], [])]
+            self._indices = [list(itertools.chain.from_iterable([self._species().indices(r) for r in active_regions]))]
             self._mult = [1]
             self._update_jac_cache()
 

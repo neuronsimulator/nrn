@@ -6,6 +6,7 @@ import rxd
 from . import node, nodelist, rxdmath, region
 import numpy
 import warnings
+import itertools
 from .rxdException import RxDException
 
 _defined_species = {}
@@ -155,7 +156,7 @@ class SpeciesOnRegion(_SpeciesMathable):
         constructs all Node objects belonging to the Species ca and then culls the list to only include those also
         belonging to the Region cyt.
         """
-        return nodelist.NodeList(sum([s.nodes for s in self._species()._secs if s._region == self._region()], []))
+        return nodelist.NodeList(itertools.chain.fromiterable([s.nodes for s in self._species()._secs if s._region == self._region()]))
     
     @property
     def concentration(self):
@@ -396,7 +397,7 @@ class Species(_SpeciesMathable):
                 self._region_indices[s._region] = []
             self._region_indices[s._region] += s.indices
         # a list of all indices
-        self._region_indices[None] = sum(self._region_indices.values(), [])
+        self._region_indices[None] = list(itertools.chain.from_iterable(self._region_indices.values()))
     
     def indices(self, r=None):
         """return the indices corresponding to this species in the given region
@@ -554,7 +555,7 @@ class Species(_SpeciesMathable):
         
         This can then be further restricted using the callable property of NodeList objects."""
         if self._dimension == 1:
-            return nodelist.NodeList(sum([s.nodes for s in self._secs], []))
+            return nodelist.NodeList(itertools.chain.from_iterable([s.nodes for s in self._secs]))
         elif self._dimension == 3:
             return nodelist.NodeList(self._nodes)
         else:
