@@ -39,7 +39,8 @@ def _power(objs1, objs2):
     # TODO? assumes numpy arrays; won't work for lists
     return objs1 ** objs2
 
-
+def _neg(objs):
+    return -objs
 
 def analyze_reaction(r):
     if not isinstance(r, _Reaction):
@@ -334,8 +335,11 @@ class _Arithmeticed:
         return self._do_mul(other)
     
     def __abs__(self):
-        return _Arithmeticed(_Function(self, numpy.abs, 'abs'), valid_reaction_term=False)
+        return _Arithmeticed(_Function(self, 'numpy.abs', 'abs'), valid_reaction_term=False)
 
+
+    def __neg__(self):
+        return _Arithmeticed(_Function(self, 'rxdmath._neg', '-'), valid_reaction_term=False)    
 
     def __div__(self, other):
         other = _ensure_arithmeticed(other)

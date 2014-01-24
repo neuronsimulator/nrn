@@ -398,6 +398,7 @@ void nrnmpi_wait(void** request) {
 }
 
 void nrnmpi_barrier() {
+	if (nrnmpi_numprocs < 2) { return; }
 	MPI_Barrier(nrnmpi_comm);
 }
 

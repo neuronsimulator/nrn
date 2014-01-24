@@ -188,7 +188,7 @@ hocusr.h: $(nsrc)/nrnoc/neuron.h $(nsrc)/oc/hocinc $(HOC_E_DEP)
 	cat $(nsrc)/nrnoc/neuron.h > tmp.c
 	@CPP@ -I$(nsrc)/nrnoc -I$(nsrc)/oc tmp.c | sed '/^#/d' > neuron.tmp
 	$(HOC_E) - neuron.tmp < $(nsrc)/oc/hocinc
-	cat neuron.tmp temp2hoc > hocusr.h
+	cat neuron.tmp temp2hoc |sed 's/"nrnhoc_topology"/"topology"/' > hocusr.h
 	rm -f temp1hoc temp2hoc neuron.tmp tmp.c
 endif
 ## Header files that need to be installed:
