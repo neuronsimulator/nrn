@@ -106,6 +106,7 @@ except:
   import neuron.hoc
 
 import nrn
+import _neuron_section
 h  = hoc.HocObject()
 
 

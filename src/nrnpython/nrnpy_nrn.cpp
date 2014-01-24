@@ -1226,6 +1226,10 @@ myPyMODINIT_FUNC nrnpy_nrn(void)
 #if PY_MAJOR_VERSION >= 3
     m = PyModule_Create(&nrnmodule);
 #else
+    m = Py_InitModule3("_neuron_section", nrnpy_methods,
+                       "NEURON interaction with Python");
+    PyModule_AddObject(m, "Section", (PyObject *)psection_type);
+    PyModule_AddObject(m, "Segment", (PyObject *)psegment_type);
     m = Py_InitModule3("nrn", nrnpy_methods,
                        "NEURON interaction with Python");
 #endif

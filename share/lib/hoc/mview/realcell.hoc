@@ -22,7 +22,7 @@ proc getcell() {localobj p, s
 	sprint(root, "%s", secname())
 	if (nrnpython("import neuron")) {
 		p = new PythonObject()
-		cellobj = p.neuron.h.cas().cell()
+		cellobj = p.neuron._neuron_section.cas().cell()
 		if (object_id(cellobj) == 0) {
 			name = root
 		}else{
