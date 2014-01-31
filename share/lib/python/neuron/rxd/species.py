@@ -156,7 +156,7 @@ class SpeciesOnRegion(_SpeciesMathable):
         constructs all Node objects belonging to the Species ca and then culls the list to only include those also
         belonging to the Region cyt.
         """
-        return nodelist.NodeList(itertools.chain.fromiterable([s.nodes for s in self._species()._secs if s._region == self._region()]))
+        return nodelist.NodeList(itertools.chain.from_iterable([s.nodes for s in self._species()._secs if s._region == self._region()]))
     
     @property
     def concentration(self):
