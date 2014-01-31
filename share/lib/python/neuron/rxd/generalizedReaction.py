@@ -141,7 +141,7 @@ class GeneralizedReaction(object):
         if self._trans_membrane and active_regions:
             # note that this assumes (as is currently enforced) that if trans-membrane then only one region
             # TODO: verify the areas and volumes are in the same order!
-            areas = _numpy_array(_itertools_chain.from_iterable([list(self._regions[0]._geometry.volumes1d(sec)) for sec in self._regions[0].secs]))
+            areas = _numpy_array(list(_itertools_chain.from_iterable([list(self._regions[0]._geometry.volumes1d(sec)) for sec in self._regions[0].secs])))
             if not self._scale_by_area:
                 areas = numpy.ones(len(areas))
             self._mult = [-areas / volumes[si] / molecules_per_mM_um3 for si in sources_indices] + [areas / volumes[di] / molecules_per_mM_um3 for di in dests_indices]
