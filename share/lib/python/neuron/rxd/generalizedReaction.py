@@ -176,7 +176,8 @@ class GeneralizedReaction(object):
         num_ind = len(self._indices)
         self._jac_cols = list(_itertools_chain(*[self._indices_dict[s()] for s in self._involved_species])) * num_ind
         if self._trans_membrane:
-            self._mult_extended = [list(_itertools_chain.from_iterable(list(mul) * num_involved)) for mul in self._mult]
+            self._mult_extended = [sum([list(mul) * num_involved], []) for mul in self._mult]
+            #self._mult_extended = [list(_itertools_chain.from_iterable(list(mul) * num_involved)) for mul in self._mult]
         else:
             self._mult_extended = self._mult
         
