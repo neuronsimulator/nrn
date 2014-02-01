@@ -101,7 +101,7 @@ static Datum	*stack;	/* the stack */
 static Datum	*stackp;	/* next free spot on stack */
 static Datum	*stacklast; /* last stack element */
 
-#define	NPROG	5000
+#define	NPROG	50000
 Inst	*prog;	/* the machine */
 Inst	*progp;		/* next free spot for code generation */
 Inst	*pc;		/* program counter during execution */
