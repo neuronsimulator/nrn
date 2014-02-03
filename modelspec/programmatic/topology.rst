@@ -286,9 +286,11 @@ This document describes the construction and manipulation of a stylized topology
         Return 1 if the currently accessed section matches the regular expression. 
         Return 0 if otherwise. 
          
-        Regular expressions are like those of grep except {} are used 
-        in place of [] to avoid conflict with indexed sections. Thus 
-        a[{8-15}] matches sections a[8] through a[15]. 
+        Regular expressions are like those of grep except {n1-n2} denotes
+	an integer range and [] is literal instead of denoting a character
+	range. For character ranges use <>. For example <a-z> or <abz45> denotes
+	any character from a to z or to any of the characters abz45.
+        Thus a[{8-15}] matches sections a[8] through a[15]. 
         A match always begins from the beginning of a section name. If you 
         don't want to require a match at the beginning use the dot. 
          
