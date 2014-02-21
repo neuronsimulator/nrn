@@ -1,6 +1,6 @@
 begintemplate ModelViewGUI
 public b, sh, selsub, selsec, selpp, selected, grph, pgrph
-external nil
+external nil, hoc_sf_
 
 objref modelview, this, b, sh, bsh, g, bg
 objref all, svec, xvec, psh, yvec, tobj, xpvec
@@ -224,6 +224,11 @@ proc pgrph() {
 	xpvec.resize(tobj.count)
 	yvec.resize(tobj.count)	
 	for j=0, tobj.count-1 {
+		if (hoc_sf_.is_point_process(tobj.o(j))) {
+			if (tobj.o(j).has_loc() == 0) {
+				continue
+			}
+		}
 		sprint(tstr, "yvec.x[j] = %s.%s", tobj.object(j), $o1.name)
 		execute(tstr, this)
 		xpvec.x[j] = object_id(tobj.object(j), 1)

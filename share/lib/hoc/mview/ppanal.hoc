@@ -34,6 +34,11 @@ proc prependname() {
 }
 
 proc ppsappend() {local i
+	if (hoc_sf_.is_point_process($o1)) {
+		if ($o1.has_loc() == 0) {
+			return
+		}
+	}
 	i = pps.count-1
 	if (i < 0) {
 		pps.append(new ModelViewPMech($2, this))
