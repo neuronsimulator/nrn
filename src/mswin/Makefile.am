@@ -12,7 +12,7 @@ all-am: nrniv.exe
 FORCE:
 
 nrniv.exe: FORCE
-	IVLIBDIR="$(IV_LIBDIR)" CFLAGS="$(AM_CFLAGS)" LDFLAGS="$(LDFLAGS)" sh nrncygso.sh
+	IVLIBDIR="$(IV_LIBDIR)" CFLAGS="$(AM_CFLAGS)" LDFLAGS="$(LDFLAGS)" sh -e nrncygso.sh
 endif
 
 if BUILD_MINGW
@@ -22,6 +22,6 @@ FORCE:
 
 nrniv.exe: FORCE
 	IVLIBDIR="$(IV_LIBDIR)" CFLAGS="$(AM_CFLAGS)" LDFLAGS="$(LDFLAGS)" \
-	  LIBS="$(LIBS)" sh nrncygso.sh
+	  LIBS="$(LIBS)" sh -e nrncygso.sh
 endif
 
