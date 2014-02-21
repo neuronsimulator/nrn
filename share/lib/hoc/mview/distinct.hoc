@@ -12,6 +12,7 @@ proc init() {
 // for comparison (in case values are very close to 0)
 // sortx is the sortindex
 func ndistinct() {local fe, i, j, val, distinct
+	if ($o1.size == 0) { return 0 }
 	distinct = 1
 	// do not allow the sentinals to affect the scale
 	if ($o1.indwhere("==", -1e50) == -1) {

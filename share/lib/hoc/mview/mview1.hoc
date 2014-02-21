@@ -265,6 +265,7 @@ proc assoc_cell_number() {local i, j
 
 proc rcell_pps() {local i, j
 	for i=0, $o1.count-1 {
+		if (!$o1.object(i).has_loc()) { continue }
 		$o1.object(i).get_loc()
 		tobj1 = new SectionRef()
 		pop_section()

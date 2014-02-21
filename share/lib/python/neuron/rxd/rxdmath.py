@@ -337,6 +337,8 @@ class _Arithmeticed:
     def __abs__(self):
         return _Arithmeticed(_Function(self, 'numpy.abs', 'abs'), valid_reaction_term=False)
 
+    def __pos__(self):
+        return self
 
     def __neg__(self):
         return _Arithmeticed(_Function(self, 'rxdmath._neg', '-'), valid_reaction_term=False)    

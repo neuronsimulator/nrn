@@ -21,6 +21,8 @@ class _SpeciesMathable(object):
     # support arithmeticing
     def __neg__(self):
         return -1 * _Arithmeticed(self)
+    def __Pos__(self):
+        return _Arithmeticed(self)
     def __pow__(self, other):
         return _Arithmeticed(self) ** other
     def __add__(self, other):
