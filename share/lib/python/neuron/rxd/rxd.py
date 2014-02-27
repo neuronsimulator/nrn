@@ -306,7 +306,6 @@ def _fixed_step_solve(raw_dt):
         for sr in _species_get_all_species().values():
             s = sr()
             if s is not None: s._transfer_to_legacy()
-        
 
 def _rxd_reaction(states):
     # TODO: this probably shouldn't be here
