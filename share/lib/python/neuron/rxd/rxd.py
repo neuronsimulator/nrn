@@ -331,7 +331,7 @@ def _rxd_reaction(states):
             for i, m in zip(indices, mult):
                 b[i] += m * rate
 
-
+    node._apply_node_fluxes(b)
     return b
     
 _last_preconditioner_dt = 0
