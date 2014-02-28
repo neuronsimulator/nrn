@@ -244,7 +244,7 @@ class Node(object):
             flux_type = 1
             try:
                 # just a test access
-                ptr[0]
+                source[0]
             except:
                 raise RxDException('HocObject must be a pointer')
         elif len(args) == 1 and callable(args[0]):
@@ -253,7 +253,7 @@ class Node(object):
         elif len(args) == 2:
             flux_type = 1
             try:
-                source = args[0].__getattr__('_ref_' + args[1])
+                source = args[0].__getattribute__('_ref_' + args[1])
             except:
                 raise RxDException('Invalid two parameter form')
             
