@@ -257,9 +257,10 @@ class Node(object):
             except:
                 raise RxDException('Invalid two parameter form')
             
-            source_units = h.units(source)
-            if source_units and source_units != units:
-                warnings.warn('Possible units conflict. NEURON says %r, but specified as %r.' % (source_units, units))
+            # TODO: figure out a units checking solution that works
+            # source_units = h.units(source)
+            # if source_units and source_units != units:
+            #    warnings.warn('Possible units conflict. NEURON says %r, but specified as %r.' % (source_units, units))
         else:
             success = False
             if len(args) == 1:
