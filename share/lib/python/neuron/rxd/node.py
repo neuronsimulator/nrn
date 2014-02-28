@@ -23,12 +23,14 @@ _molecule_node = 1
 def _apply_node_fluxes(dy):
     # TODO: what if the nodes go away because a section is destroyed?
     if _has_node_fluxes:
-        # TODO: be smarter. Use PtrVector when possible.
+        # TODO: be smarter. Use PtrVector when possible. Handle constants efficiently.
         for index, t, source, scale in zip(_node_fluxes['indices'], _node_fluxes['type'], _node_fluxes['source'], _node_fluxes['scale']):
             if t == 1:
                 delta = source[0]
             elif t == 2:
                 delta = source()
+            elif t == 3:
+                delta = source
             else:
                 raise RxDException('Unknown flux source type. Users should never see this.')
             # TODO: check this... make sure scale shouldn't be divided by volume
@@ -185,15 +187,28 @@ class Node(object):
         """Include a flux contribution to a specific node.
         
         The flux can be described as a HOC reference, a point process and a
-        property, or a Python function.
+        property, a Python function, or something that evaluates to a constant
+        Python float.
         
-        Examples:
+        Supported units:
+            molecule/ms
+            mol/ms
+            mmol/ms == millimol/ms == mol/s
         
-        node.include_flux(mglur, 'ip3flux')           # default units: molecule/ms
-        node.include_flux(mglur, 'ip3flux', units='mol/ms') # units: moles/ms
-        node.include_flux(mglur._ref_ip3flux, units='molecule/ms')
-        node.include_flux(lambda: mglur.ip3flux)
-        node.include_flux(lambda: math.sin(h.t))
+        Examples:        
+            node.include_flux(mglur, 'ip3flux')           # default units: molecule/ms
+            node.include_flux(mglur, 'ip3flux', units='mol/ms') # units: moles/ms
+            node.include_flux(mglur._ref_ip3flux, units='molecule/ms')
+            node.include_flux(lambda: mglur.ip3flux)
+            node.include_flux(lambda: math.sin(h.t))
+            node.include_flux(47)
+        
+        Warning:
+            Flux denotes a change in *mass* not a change in concentration.
+            For example, a metabotropic synapse produces a certain amount of
+            substance when activated. The corresponding effect on the node's
+            concentration depends on the volume of the node. (This scaling is
+            handled automatically by NEURON's rxd module.)
         """
         global _has_node_fluxes
         if len(args) not in (1, 2):
@@ -210,14 +225,17 @@ class Node(object):
         if units == 'molecule/ms':
             scale = 602214.129
         elif units == 'mol/ms':
-            # TODO: verify!!!!
             # You have: mol
-            # You want: (mol/L) * um^3
-            #	* 1e+15
-            #	/ 1e-15
-            # that is, I divide mol by 1e-15 to get M * um^3            
-            # dividing M by 0.001 gives mM
+            # You want: (millimol/L) * um^3
+            #    * 1e+18
+            #    / 1e-18
             scale = 1e-18
+        elif units in ('mmol/ms', 'millimol/ms', 'mol/s'):
+            # You have: millimol
+            # You want: (millimol/L)*um^3
+            #    * 1e+15
+            #    / 1e-15
+            scale = 1e-15
         else:
             raise RxDException('unknown unit: %r' % units)
         
@@ -242,9 +260,18 @@ class Node(object):
             source_units = h.units(source)
             if source_units and source_units != units:
                 warnings.warn('Possible units conflict. NEURON says %r, but specified as %r.' % (source_units, units))
-        # TODO: support constants?
         else:
-            raise RxDException('unsupported flux form')
+            success = False
+            if len(args) == 1:
+                try:
+                    f = float(args[0])
+                    source = f
+                    flux_type = 3
+                    success = True
+                except:
+                    pass
+            if not success:
+                raise RxDException('unsupported flux form')
         
         _node_fluxes['indices'].append(self._index)
         _node_fluxes['type'].append(flux_type)
