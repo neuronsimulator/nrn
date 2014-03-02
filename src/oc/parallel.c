@@ -35,7 +35,7 @@ int parallel_val; /* for use with parallel neuron (see hoc.c) */
   and should contain these on exit in order to execute the following shortfor
 */
 
-hoc_parallel_begin() {
+void hoc_parallel_begin() {
 #if !OCSMALL
 		  Symbol *sym;
         double first, last;

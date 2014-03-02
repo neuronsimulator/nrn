@@ -33,7 +33,7 @@ static type_change();
 static long previous_subtype;	/* subtype at the sym->level */
 static char *previous_str;	/* u.str on last install */
 
-explicit_decl(level, q)
+void explicit_decl(level, q)
 	int level;
 	Item *q;
 {
@@ -396,7 +396,7 @@ static int func_arg_examine(Item* qpar, Item* qend) {
 	return b;
 }
 
-vectorize_scan_for_func(Item* q1, Item* q2) {
+void vectorize_scan_for_func(Item* q1, Item* q2) {
 	Item* q, *qq;
 	int b;
 	return;
@@ -417,26 +417,24 @@ vectorize_scan_for_func(Item* q1, Item* q2) {
 	}
 }
 
-defarg(q1, q2)			/* copy arg list and define as doubles */
+void defarg(q1, q2)			/* copy arg list and define as doubles */
 	Item           *q1, *q2;
 {
 	Item           *q3, *q;
 
 	if (q1->next == q2) {
 #if VECTORIZE
-		vectorize_substitute(insertstr(q2, ""), "_p, _ppvar, _thread, _nt");
-		vectorize_substitute(insertstr(q2->next, ""), "double* _p; Datum* _ppvar; Datum* _thread; _NrnThread* _nt;");
+		vectorize_substitute(insertstr(q2, ""), "_threadargsproto_");
 #endif
 		return;
 	}
-	for (q3 = q2->next, q = q1; q != q2; q = q->next, q3 = q3->next) {
-		q3 = insertsym(q3, SYM(q));
-	}
-	replacstr(q2->next, "\n\tdouble");
-	Insertstr(q3, ";\n");
+	for (q = q1->next; q != q2; q = q->next) {
+		if (strcmp(SYM(q)->name, ",") != 0) {
+			insertstr(q, "double");
+		}
+	}		
 #if VECTORIZE
-		vectorize_substitute(insertstr(q1->next, ""), "_p, _ppvar, _thread, _nt,");
-		vectorize_substitute(insertstr(q2->next, ""), "double* _p; Datum* _ppvar; Datum* _thread; _NrnThread* _nt;");
+		vectorize_substitute(insertstr(q1->next, ""), "_threadargsprotocomma_");
 #endif
 }
 
@@ -600,7 +598,7 @@ int check_tables_threads(List* p) {
 	return 0;
 }
 
-table_massage(tablist, qtype, qname, arglist)
+void table_massage(tablist, qtype, qname, arglist)
 	List *tablist, *arglist;
 	Item *qtype, *qname;
 {
@@ -658,14 +656,23 @@ diag("FUNCTION or PROCEDURE containing a TABLE stmt\n",
 	Sprintf(buf, "_f_%s", fname);
 	SYM(qname) = install(buf, fsym->type);
 	SYM(qname)->subtype = fsym->subtype;
+	SYM(qname)->varnum = fsym->varnum;
 	if (type == FUNCTION1) {
 		fsym->subtype |= FUNCT;
-		Sprintf(buf, "static double _n_%s();\n", fname);
-		Linsertstr(procfunc, buf);
+		Sprintf(buf, "static double _n_%s(double);\n", fname);
+		q = linsertstr(procfunc, buf);
+#if VECTORIZE
+		Sprintf(buf, "static double _n_%s(_threadargsprotocomma_ double _lv);\n", fname);
+		vectorize_substitute(q, buf);
+#endif
 	}else{
 		fsym->subtype |= PROCED;
-		Sprintf(buf, "static _n_%s();\n", fname);
-		Linsertstr(procfunc, buf);
+		Sprintf(buf, "static void _n_%s(double);\n", fname);
+		q = linsertstr(procfunc, buf);
+#if VECTORIZE
+		Sprintf(buf, "static void _n_%s(_threadargsprotocomma_ double _lv);\n", fname);
+		vectorize_substitute(q, buf);
+#endif
 	}
 	fsym->usage |= FUNCT;
 		
@@ -680,10 +687,10 @@ diag("FUNCTION or PROCEDURE containing a TABLE stmt\n",
 	}
 	sprintf(buf, "_check_%s", fname);
 	lappendstr(check_table_thread_list, buf);
-	Sprintf(buf, "static _check_%s();\n", fname);
+	Sprintf(buf, "static void _check_%s();\n", fname);
 	q = insertstr(procfunc, buf);
 	vectorize_substitute(q, "");
-	Sprintf(buf, "static _check_%s() {\n", fname);
+	Sprintf(buf, "static void _check_%s() {\n", fname);
 	q = lappendstr(procfunc, buf);
 	Sprintf(buf, "static void _check_%s(double* _p, Datum* _ppvar, Datum* _thread, _NrnThread* _nt) {\n", fname);
 	vectorize_substitute(q, buf);
@@ -771,11 +778,11 @@ Sprintf(buf, "   _t_%s[_i] = %s;\n", s->name, s->name);
 	if (type == FUNCTION1) {
 #define GLOBFUNC 1
 #if !GLOBFUNC
-		Lappendstr(procfunc, "static");
+		Lappendstr(procfunc, "static int");
 #endif
 		Lappendstr(procfunc, "double");
 	}else{
-		Lappendstr(procfunc, "static");
+		Lappendstr(procfunc, "static int");
 	}
 	Sprintf(buf, "%s(double %s){",
 			fname, arg->name);
@@ -802,7 +809,7 @@ Sprintf(buf, "   _t_%s[_i] = %s;\n", s->name, s->name);
 	vectorize_substitute(procfunc->prev, buf);
 #endif
 	if (type != FUNCTION1) {
-		Lappendstr(procfunc, "return;\n");
+		Lappendstr(procfunc, "return 0;\n");
 	}
 	Lappendstr(procfunc, "}\n\n"); /* end of new function */		
 
@@ -810,7 +817,7 @@ Sprintf(buf, "   _t_%s[_i] = %s;\n", s->name, s->name);
 	if (type == FUNCTION1) {
 		Lappendstr(procfunc, "static double");
 	}else{
-		Lappendstr(procfunc, "static");
+		Lappendstr(procfunc, "static void");
 	}
 	Sprintf(buf, "_n_%s(double %s){",
 			fname, arg->name);
@@ -937,7 +944,7 @@ void hocfunchack(Symbol* n, Item* qpar1, Item* qpar2, int hack)
 #endif
 	
    if (point_process) {
-	Sprintf(buf, "\nstatic double _hoc_%s(_vptr) void* _vptr; {\n double _r;\n", n->name);
+	Sprintf(buf, "\nstatic double _hoc_%s(void* _vptr) {\n double _r;\n", n->name);
    }else{
 	Sprintf(buf, "\nstatic int _hoc_%s() {\n  double _r;\n", n->name);
    }
@@ -972,26 +979,23 @@ void hocfunchack(Symbol* n, Item* qpar1, Item* qpar2, int hack)
 		Lappendstr(procfunc, "_r = 1.;\n");
 	}
 	Lappendsym(procfunc, n);
-	for (i=0, q=qpar1; q->prev != qpar2; q = q->next) {
+	lappendstr(procfunc, "(");
 #if VECTORIZE
-		if (i == 0 && q->itemtype == STRING) {
-			qp = lappendstr(procfunc, "");
-			continue;
-		}
+	qp = lappendstr(procfunc, "");
 #endif
-		if (SYM(q)->type == NAME) {
-			Sprintf(buf, "*getarg(%d)", ++i);
-			Lappendstr(procfunc, buf);
-		}else{
-			Lappendsym(procfunc, SYM(q));
+	for (i=0; i < n->varnum; ++i) {
+		Sprintf(buf, "*getarg(%d)", i+1);
+		Lappendstr(procfunc, buf);
+		if (i+1 < n->varnum) {
+			Lappendstr(procfunc, ",");
 		}
 	}
 #if NOCMODL
    if (point_process) {
-	Lappendstr(procfunc, ";\n return(_r);\n}\n");
+	Lappendstr(procfunc, ");\n return(_r);\n}\n");
    }else
 #endif
-	Lappendstr(procfunc, ";\n ret(_r);\n}\n");
+	Lappendstr(procfunc, ");\n ret(_r);\n}\n");
 #if VECTORIZE
 	if (i) {
 		vectorize_substitute(qp, "_p, _ppvar, _thread, _nt,");
@@ -1012,7 +1016,7 @@ hocfunc(n, qpar1, qpar2) /*interface between modl and hoc for proc and func */
 
 #if VECTORIZE
 /* ARGSUSED */
-vectorize_use_func(qname, qpar1, qexpr, qpar2, blocktype)
+void vectorize_use_func(qname, qpar1, qexpr, qpar2, blocktype)
 	Item* qname, *qpar1, *qexpr, *qpar2;
 	int blocktype;
 {
@@ -1122,6 +1126,7 @@ function_table(s, qpar1, qpar2, qb1, qb2) /* s ( ... ) { ... } */
 	t = install(buf, NAME);
 	t->subtype |= FUNCT;
 	t->usage |= FUNCT;
+	t->no_threadargs = 1;
 
 	sprintf(buf,"double %s", t->name);
 	lappendstr(procfunc, buf);

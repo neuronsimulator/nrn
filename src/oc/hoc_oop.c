@@ -1,5 +1,6 @@
 #include <../../nrnconf.h>
 #include <stdlib.h>
+#include <hoc_membf.h>
 #include "hoc.h"
 #include "hocstr.h"
 #include "parse.h"
@@ -23,6 +24,8 @@ extern Object** hoc_temp_objptr();
 extern Object*	hoc_pop_object();
 extern Datum* hoc_look_inside_stack();
 extern Object* hoc_obj_look_inside_stack();
+extern void hoc_obj_unref();
+extern void hoc_dec_refcount();
 
 #define JAVA2NRN 1
 
@@ -163,7 +166,7 @@ Objectdata* hoc_objectdata_restore(obdsav) Objectdata* obdsav; {
 	}
 }
 
-hoc_obvar_declare(sym, type, pmes)
+void hoc_obvar_declare(sym, type, pmes)
 	Symbol *sym;
 	int type, pmes;
 {
@@ -870,7 +873,7 @@ hoc_objectarg() { /* object arg index at pc+1. */
 	hoc_pushobj(obp);
 }
 
-hoc_constobject() { /* template at pc, index at pc+1, objpointer left on stack*/
+void hoc_constobject() { /* template at pc, index at pc+1, objpointer left on stack*/
 	char buf[200];
 	Object *obj;
 	Item* q;
@@ -969,7 +972,7 @@ connect_obsec_syntax() {
 
 #endif
 
-hoc_object_component() { /* number of indices at pc+2, number of args at pc+3,
+void hoc_object_component() { /* number of indices at pc+2, number of args at pc+3,
 				 symbol at pc+1 */
 			/* object pointer on stack after indices */
 	/* if component turns out to be an object then make sure pointer
@@ -1017,7 +1020,7 @@ hoc_execerror("[...](...) syntax only allowed for array range variables:", sym0-
 	if (obp) {
 #if USE_PYTHON
 		if (obp->template->sym == nrnpy_pyobj_sym_) {
-			extern int hoc_object_asgn();
+			extern void hoc_object_asgn();
 			if (isfunc & 2) {
 				/* this is the final left hand side of an
 				assignment to the method of a PythonObject
@@ -1326,7 +1329,7 @@ hoc_asgn_obj_to_str() { /* string on stack */
 	hoc_assign_str(pstr, d);
 }
 
-hoc_object_asgn() {
+void hoc_object_asgn() {
 	int type1, type2, op;
 	op = (pc++)->i;
 	type1 = hoc_stacktype();
@@ -1513,21 +1516,6 @@ hoc_execerror("'unref' can only be used as the callback procedure when the refer
 	}
 }
 
-typedef struct Member_func {
-	char* name;
-	double (*member)();
-}Member_func;
-
-typedef struct Member_ret_obj_func {
-	char* name;
-	Object** (*omember)();
-}Member_ret_obj_func;
-
-typedef struct Member_ret_str_func {
-	char* name;
-	char** (*smember)();
-}Member_ret_str_func;
-
 void class2oc(name, cons, destruct, m, checkpoint,  mobjret, strret)
 	char* name;
 	void* (*cons)();
@@ -1559,12 +1547,12 @@ void class2oc(name, cons, destruct, m, checkpoint,  mobjret, strret)
 	}
 	if (mobjret) for (i=0; mobjret[i].name; ++i) {
 		s = hoc_install(mobjret[i].name, OBFUNCTION, 0.0, &hoc_symlist);
-		s->u.u_proc->defn.pfo = mobjret[i].omember;
+		s->u.u_proc->defn.pfo = mobjret[i].member;
 		hoc_add_publiclist(s);
 	}
 	if (strret) for (i=0; strret[i].name; ++i) {
 		s = hoc_install(strret[i].name, STRFUNCTION, 0.0, &hoc_symlist);
-		s->u.u_proc->defn.pfs = strret[i].smember;
+		s->u.u_proc->defn.pfs = strret[i].member;
 		hoc_add_publiclist(s);
 	}
 	hoc_endtemplate(tsym);
@@ -1940,7 +1928,7 @@ hoc_obj_ref(obj)
 	}
 }
 
-hoc_dec_refcount(pobj)
+void hoc_dec_refcount(pobj)
 	Object **pobj;
 {
 	Object* obj;
@@ -1954,7 +1942,7 @@ hoc_dec_refcount(pobj)
 	hoc_obj_unref(obj);	
 }
 
-hoc_obj_unref(obj)
+void hoc_obj_unref(obj)
 	Object* obj;
 {
 	Object *obsav;

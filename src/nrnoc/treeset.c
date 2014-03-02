@@ -37,6 +37,9 @@ extern Symbol* hoc_table_lookup();
 extern int* nrn_prop_dparam_size_;
 extern int* nrn_dparam_ptr_start_;
 extern int* nrn_dparam_ptr_end_;
+extern void nrn_define_shape();
+extern void v_setup_vectors();
+extern void single_prop_free();
 
 
 
@@ -657,7 +660,7 @@ prop_free(pp)	/* free an entire property list */
 	}
 }
 
-single_prop_free(p)
+void single_prop_free(p)
 	Prop* p;
 {
 	extern char* pnt_map;
@@ -856,6 +859,8 @@ void nrn_shape_update() {
 	updating = 0;
     }
 }
+
+static void nrn_matrix_node_alloc();
 
 int recalc_diam() {
 	v_setup_vectors();
@@ -1264,7 +1269,7 @@ define_shape() {
 	ret(1.);
 }
 
-static nrn_translate_shape(sec, x, y, z)
+static void nrn_translate_shape(sec, x, y, z)
 	Section* sec;
 	float x, y, z;
 {
@@ -1294,7 +1299,7 @@ static nrn_translate_shape(sec, x, y, z)
 	}
 }
 
-nrn_define_shape() {
+void nrn_define_shape() {
 	static changed_;
 	int i, j;
 	Section* sec, *psec, *ch, *nrn_trueparent();
@@ -1509,7 +1514,7 @@ static double diam_from_list(sec, inode, p, rparent)
 #include "multicore.c"
 
 #if VECTORIZE
-v_setup_vectors() {
+void v_setup_vectors() {
 	int inode, i;
 	int isec;
 	Section* sec;
@@ -1765,7 +1770,7 @@ node_data() {
 
 #endif
 
-nrn_complain(pp) double* pp; {
+void nrn_complain(pp) double* pp; {
 	/* print location for this param on the standard error */
 	Node* nd;
 	hoc_Item* qsec;
@@ -1885,7 +1890,7 @@ Also the actual_rhs_ uses this style, 1-neqn, when sparse13 is activated
 and therefore is passed to spSolve as actual_rhs intead of actual_rhs-1.
 */
 
-nrn_matrix_node_alloc() {
+static void nrn_matrix_node_alloc() {
 	int i, b;
 	Node* nd;
 	NrnThread* nt;

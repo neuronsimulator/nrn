@@ -39,9 +39,11 @@ static double clampval();
 extern double *getarg(), chkarg();
 extern char *secname();
 
+extern void clamp_prepare();
+
 #define nt_t nrn_threads->_t
 
-print_clamp() {
+void print_clamp() {
 	int i;
 	
 	if (maxlevel == 0) return;
@@ -77,7 +79,7 @@ fclampi() {
 	}
 }
 	
-fclamp() {
+int fclamp() {
 	int i;
 
 	if (nrn_nthread > 1) {
@@ -100,7 +102,7 @@ fclamp() {
 		}
 		oldsw = 0;
 		ret(tswitch[maxlevel-1]);
-		return;
+		return 0;
 	} else {
 		free_clamp();
 		maxlevel = i;
@@ -121,6 +123,7 @@ fclamp() {
 		}
 	}
 	ret(0.);
+	return 0;
 }
 
 free_clamp() {
@@ -134,7 +137,7 @@ free_clamp() {
 	}
 }
 	
-clamp_prepare()	/*fill in the section info*/
+void clamp_prepare()	/*fill in the section info*/
 {
 	Node *node_ptr();
 	double area;
@@ -153,7 +156,7 @@ clamp_prepare()	/*fill in the section info*/
 	}
 }
 
-activclamp_rhs() {
+void activclamp_rhs() {
 	double v;
 	if (!maxlevel) {
 		return;
@@ -171,7 +174,7 @@ activclamp_rhs() {
 #endif
 }
 
-activclamp_lhs() {
+void activclamp_lhs() {
 	double v;
 	if (!maxlevel) {
 		return;

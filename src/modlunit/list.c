@@ -58,7 +58,7 @@ newlist()
 	return (List *)i;
 }
 
-freelist(plist)	/*free the list but not the elements*/
+void freelist(plist)	/*free the list but not the elements*/
 	List **plist;
 {
 	Item *i1, *i2;

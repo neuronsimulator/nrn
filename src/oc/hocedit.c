@@ -107,7 +107,7 @@ static char *argv[] = { "embedded", (char *)0};
 
 #endif /* !OCSMALL */
 
-hoc_edit()
+void hoc_edit()
 {
 #if !OCSMALL
 #if	DOS || defined(__GO32__) /*must erase screen if in graphics mode*/

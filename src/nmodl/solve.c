@@ -25,7 +25,7 @@ Symbol* cvode_nrn_cur_solve_;
 Symbol* cvode_nrn_current_solve_;
 #endif
 
-static whileloop();
+static void whileloop();
 static check_ss_consist();
 
 /* Need list of solve statements. We impress the
@@ -365,8 +365,7 @@ save_dt(q)	/* save and restore the value of indepvar */
 
 char *saveindep = "";
 
-static
-whileloop(qsol, type, ss)
+static void whileloop(qsol, type, ss)
 	Item *qsol;
 	long type;
 	int ss;

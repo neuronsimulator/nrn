@@ -78,17 +78,18 @@ Getc()
 	return c;
 }
 
-unGetc(c)
+int unGetc(c)
 	int             c;
 {
 	if (c == EOF)
-		return;
+		return c;
 	if (ctp > inlinebuf) {
 		ctp--;
 		*ctp = c;
 	} else {
 		diag("internal error in unGetc", "");
 	}
+	return c;
 }
 
 char           *

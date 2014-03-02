@@ -193,7 +193,7 @@ hocusr.h: $(nsrc)/nrnoc/neuron.h $(nsrc)/oc/hocinc $(HOC_E_DEP)
 endif
 ## Header files that need to be installed:
 pkginclude_HEADERS = neuron.h md1redef.h md2redef.h section.h nrnoc_ml.h \
-	cabvars.h membdef.h membfunc.h \
+	cabvars.h membdef.h membfunc.h nrniv_mf.h \
 	options.h nrnredef.h multisplit.h multicore.h nmodlmutex.h
 
 ## Header files that need to be included in the distribution but not installed:

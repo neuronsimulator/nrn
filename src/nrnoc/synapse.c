@@ -59,7 +59,7 @@ static Stimulus *pstim;		/* pointer to stimulus array */
 extern double *getarg(), chkarg();
 extern char *secname();
 
-print_syn() {
+void print_syn() {
 	int i;
 	
 	if (maxstim == 0) return;

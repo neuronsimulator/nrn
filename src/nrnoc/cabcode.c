@@ -34,6 +34,10 @@ extern Prop	*nrn_mechanism(); /*returns prop given mech type, node */
 extern Prop	*nrn_mechanism_check(); /*returns prop given mech type, section, and inode */
 					/* error if mech not at this position */
 
+extern void nrn_popsec();
+extern void nrn_disconnect();
+extern void mech_uninsert1();
+
 int	tree_changed = 1;	/* installing section, changeing nseg
 				and connecting sections set this flag.
 				The flag is set to 0 when the topology
@@ -78,7 +82,8 @@ static int range_vec_indx();
 nrn_isecstack() {
 	return isecstack;
 }
-nrn_secstack(i) int i; {
+
+void nrn_secstack(i) int i; {
 	if (skip_secstack_check) { return; }
 #if 1
 	if (isecstack > i) {
@@ -146,7 +151,7 @@ nrn_pushsec(sec)
 	}
 }
 
-nrn_popsec() {
+void nrn_popsec() {
 	if (isecstack > 0) {
 		Section* sec = secstack[isecstack--];
 		if (!sec) {
@@ -516,7 +521,7 @@ nrn_noerr_access() /* return 0 if no accessed section */
 /*sibling and child pointers do not ref sections to avoid mutual references */
 /* the sibling list is ordered according to increasing distance from parent */
 
-nrn_remove_sibling_list(sec)
+void nrn_remove_sibling_list(sec)
 	Section* sec;
 {
 	Section* s;
@@ -544,7 +549,7 @@ static double ncp_abs(sec) Section* sec; {
 	return x;
 }
 
-nrn_add_sibling_list(sec)
+void nrn_add_sibling_list(sec)
 	Section* sec;
 {
 	Section* s;
@@ -610,7 +615,7 @@ static reverse_nodes(sec)
 	}
 }
 
-nrn_disconnect(sec)
+void nrn_disconnect(sec)
 	Section* sec;
 {
 	Section* ch;
@@ -886,7 +891,7 @@ mech_uninsert() {
 	mech_uninsert1(sec, s);
 }
 
-mech_uninsert1(sec, s)
+void mech_uninsert1(sec, s)
 	Section* sec;
 	Symbol* s;
 {
@@ -931,7 +936,7 @@ mech_uninsert1(sec, s)
 	}
 }
 
-nrn_rangeconst(sec, s, pd, op)
+void nrn_rangeconst(sec, s, pd, op)
 	Section* sec;
 	Symbol* s;
 	double *pd;
@@ -1141,7 +1146,7 @@ connectpointer() { /* pointer symbol at pc, target variable on stack, maybe
 	dat->pval = pd;
 }
 
-range_interpolate_single() /*symbol at pc, 2 values on stack*/
+void range_interpolate_single() /*symbol at pc, 2 values on stack*/
 {
 	double x, y;
 	Symbol* s;
@@ -1183,7 +1188,7 @@ range_interpolate_single() /*symbol at pc, 2 values on stack*/
 #endif
 }
 
-range_interpolate() /*symbol at pc, 4 values on stack*/
+void range_interpolate() /*symbol at pc, 4 values on stack*/
 {
 	short i, i1, i2, di;
 	Section* sec;
@@ -1378,7 +1383,7 @@ double* nrnpy_rangepointer(sec, s, d, err)
 	return nrnpy_dprop(s, 0, sec, i, err);
 }
 
-rangevarevalpointer() /* symbol at pc, location on stack, return pointer on stack */
+void rangevarevalpointer() /* symbol at pc, location on stack, return pointer on stack */
 {
 	short i;
 	Section* sec;
@@ -2233,7 +2238,7 @@ issection() { /* returns true if string is the access section */
 	}
 }
 
-ismembrane() { /* return true if string is an inserted membrane in the
+void ismembrane() { /* return true if string is an inserted membrane in the
 		access section */
 	char *str;
 	Prop *p;

@@ -247,7 +247,7 @@ hoc_stkobj_unref(o) Object* o; {
 
 /* check the args of the frame and unref any of type OBJECTTMP */
 
-static frameobj_clean(f) Frame* f; {
+static void frameobj_clean(f) Frame* f; {
 	Datum* s;
 	int i, narg;
 	if (f->nargs == 0) {
@@ -578,7 +578,7 @@ pushx(d)		/* push double onto stack */
 	(stackp++)->i = NUMBER;
 }
 
-hoc_pushobj(d)		/* push pointer to object pointer onto stack */
+void hoc_pushobj(d)		/* push pointer to object pointer onto stack */
 	Object **d;
 {
 	STACKCHK
@@ -608,7 +608,7 @@ hoc_pushstr(d)		/* push pointer to string pointer onto stack */
 	(stackp++)->i = STRING;
 }
 
-hoc_push_string() {	/* code for pushing a symbols string */
+void hoc_push_string() {	/* code for pushing a symbols string */
 	Objectdata* odsav;
 	Object* obsav = 0;
 	Symlist* slsav;

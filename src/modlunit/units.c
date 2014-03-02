@@ -46,12 +46,14 @@ static void fperr();
 static int	lookup();
 static struct	table	*hash();
 
-static chkfperror();
+static void chkfperror();
 static units();
 static pu();
 static convr();
-static init();
+static void init();
 static get();
+
+extern void Unit_push(char*);
 
 static struct table
 {
@@ -139,13 +141,13 @@ static char* neuronhome() {
 #endif
 }
 
-unit_pop() {
+void unit_pop() {
 	IFUNITS
 	assert(usp >= unit_stack);
 	--usp;
 }
 
-unit_swap() { /*exchange top two elements of stack*/
+void unit_swap() { /*exchange top two elements of stack*/
 	struct unit *up;
 	int i, j;
 	double d;
@@ -176,14 +178,14 @@ unit_mag_mul(d)
 	usp->factor *= d;
 }
 
-punit() {
+void punit() {
 	struct unit *	i;
 	for (i=usp; i!=unit_stack-1; --i) {
 		printf("%s\n", Unit_str(i));
 	}
 }
 
-ucopypop(up)
+void ucopypop(up)
 	struct unit *up;
 {
 	int i;
@@ -195,7 +197,7 @@ ucopypop(up)
 	unit_pop();
 }
 
-ucopypush(up)
+void ucopypush(up)
 	struct unit *up;
 {
 	int i;
@@ -207,7 +209,7 @@ ucopypush(up)
 	usp->isnum = up->isnum;
 }
 
-Unit_push(string)
+void Unit_push(string)
 	char *string;
 {
 	IFUNITS
@@ -224,14 +226,14 @@ Unit_push(string)
 /*printf("unit_push %s\n", string); units(usp);*/
 }
 
-unit_push_num(d)
+void unit_push_num(d)
 	double d;
 {
 	Unit_push("");
 	usp->factor = d;
 }
 
-unitcheck(s)
+void unitcheck(s)
 	char *s;
 {
 	Unit_push(s);
@@ -245,7 +247,7 @@ unit_str() {
 	return Unit_str(usp);
 }
 
-install_units(s1, s2) /* define s1 as s2 */
+void install_units(s1, s2) /* define s1 as s2 */
 	char *s1, *s2;
 {
 	struct table *tp;
@@ -269,7 +271,7 @@ install_units(s1, s2) /* define s1 as s2 */
 	unit_pop();
 }
 
-check_num()
+void check_num()
 {
 	struct unit * up = usp -1;
 	/*EMPTY*/
@@ -280,7 +282,7 @@ check_num()
 	}
 }
 		
-unit_mul() {
+void unit_mul() {
 	/* multiply next element by top of stack and leave on stack */
 	struct unit *up;
 	int i;
@@ -296,7 +298,7 @@ unit_mul() {
 	unit_pop();
 }
 
-unit_div() {
+void unit_div() {
 	/* divide next element by top of stack and leave on stack */
 	struct unit *up;
 	int i;
@@ -312,7 +314,7 @@ unit_div() {
 	unit_pop();
 }
 
-Unit_exponent(val)
+void Unit_exponent(val)
 	int val;
 {
 	/* multiply top of stack by val and leave on stack */
@@ -358,7 +360,7 @@ unit_cmp_exact() { /* returns 1 if top two units on stack are same */
 /* ARGSUSED */
 static print_unit_expr(i) int i; {}
 
-Unit_cmp() {
+void Unit_cmp() {
 	/*compares top two units on stack. If not conformable then
 	gives error. If not same factor then gives error.
 	*/
@@ -443,14 +445,14 @@ unit_diff() {
 	return 0;
 }
 
-static chkfperror()
+static void chkfperror()
 {
 	if (fperrc) {
 		diag("underflow or overflow in units calculation", (char *)0);
 	}
 }
 
-dimensionless() {
+void dimensionless() {
 	/* ensures top element is dimensionless */
 	int i;
 	
@@ -465,7 +467,7 @@ diag("The previous expression is not dimensionless", (char *)0);
 	}
 }
 
-unit_less() {
+void unit_less() {
 	/* ensures top element is dimensionless  with factor 1*/
 	IFUNITS
 	if (unitonflag) {
@@ -479,13 +481,15 @@ fprintf(stderr, "The previous expression needs the conversion factor (%g)\n",
 	unit_pop();
 }
 
-unit_stk_clean() {
+void unit_stk_clean() {
 	IFUNITS
 	usp = unit_stack - 1;
 }
 	
 #if MODL||NMODL||HMODL||SIMSYS
-modl_units() {
+extern void unit_init();
+
+void modl_units() {
 	static int first=1;
 	unitonflag = 1;
 	if (first) {
@@ -496,7 +500,7 @@ modl_units() {
 
 #endif
 
-unit_init() {
+void unit_init() {
 	char* s;
 	char buf[256];
 	inpfile = (FILE*)0;
@@ -762,7 +766,7 @@ char *s1, *s2;
 	return(0);
 }
 
-static init()
+static void init()
 {
 	register char *cp;
 	register struct table *tp, *lp;

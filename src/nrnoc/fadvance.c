@@ -162,7 +162,7 @@ int stoprun;
 #define PROFILE 0
 #include "profile.h"
 
-fadvance()
+int fadvance()
 {
 	tstopunset;
 #if CVODE
@@ -170,7 +170,7 @@ fadvance()
 		cvode_fadvance(-1.);
 		tstopunset;
 		ret(1.);
-		return;
+		return 0;
 	}
 #endif
 	if (tree_changed) {
@@ -185,6 +185,7 @@ fadvance()
 	nrn_fixed_step();
 	tstopunset;
 	ret(1.);
+	return 0;
 }
 
 /*
@@ -195,7 +196,7 @@ fadvance()
   batch_run(tstop, tstep, "file") saves variables in file every tstep
 */
 
-static batch_out(), batch_open(), batch_close();
+static void batch_out(), batch_open(), batch_close();
 batch_run() /* avoid interpreter overhead */
 {
 	double tstop, tstep, tnext;
@@ -626,7 +627,7 @@ printf("%d %d %g %g %g %g\n", isec, inode, ClassicalNODEB(nd), ClassicalNODEA(nd
     }
 }
 
-fmatrix() {
+int fmatrix() {
 	if (ifarg(1)) {
 		extern Node* node_exact(Section*, double);
 		double x = chkarg(1, 0., 1.);
@@ -639,10 +640,11 @@ fmatrix() {
 		case 3: ret(NODEB(nd)); break;
 		case 4: ret(NODERHS(nd)); break;
 		}
-		return;
+		return 0;
 	}
 	nrn_print_matrix(nrn_threads);
 	ret(1.);
+	return 0;
 }
 
 void nonvint(NrnThread* _nt)
@@ -896,7 +898,7 @@ static int batch_size;
 static int batch_n;
 static double** batch_var;
 
-static batch_open(name, tstop, tstep, comment)
+static void  batch_open(name, tstop, tstep, comment)
 	char* name, *comment;
 	double tstop, tstep;
 {
@@ -936,14 +938,14 @@ static batch_open(name, tstop, tstep, comment)
 #endif
 }
 
-static batch_close() {
+static void batch_close() {
 	if (batch_file) {
 		fclose(batch_file);
 		batch_file = 0;
 	}
 }
 
-static batch_out() {
+static void batch_out() {
 	if (batch_file) {
 		int i;
 		for (i =0; i < batch_n; ++i) {

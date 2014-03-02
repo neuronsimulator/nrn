@@ -7,7 +7,7 @@
 
 extern char *secname();
 extern double nrn_ra();
-static pnode();
+static void pnode();
 
 psection()
 {
@@ -43,7 +43,7 @@ psection()
 	ret(1.);
 }
 
-static pnode(p1)
+static void pnode(p1)
 	Prop *p1;
 {
 	Symbol *sym;

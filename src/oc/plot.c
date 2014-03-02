@@ -201,6 +201,25 @@ plot.c,v
 /* but not VT125 */
 #define CODRAW 1
 
+#if CODRAW
+static void Codraw_plt();
+static void Codraw_preamble();
+#endif
+
+#if HP
+static void hplot();
+#endif
+
+#if FIG
+static void Fig_preamble();
+static void Fig_plt();
+void Fig_file();
+#endif
+
+#if TEK
+static void tplot();
+#endif
+
 #include <stdio.h>
 #include <string.h>
 
@@ -274,9 +293,6 @@ extern void NeXT_clear(), NeXT_cleararea(), NeXT_open_window(), NeXT_fast();
 #endif
 
 static hard_text_preamble();
-#if FIG
-static Fig_preamble();
-#endif
 
 #if defined(__TURBOC__)
 int egagrph = 0;	/* global because need to erase on quit if in graphics
@@ -668,7 +684,7 @@ plt(mode, x, y)
 #define XHOME 0
 #define YHOME 770
 
-tplot(mode, x, y)
+static void tplot(mode, x, y)
    int mode; double x, y;
 {
 	unsigned ix, iy;
@@ -779,7 +795,7 @@ IGNORE(fprintf(stderr, "Can't open %s for hardplot output\n", s));
 	}
 }
 
-Fig_file(s, dev)
+void Fig_file(s, dev)
 	char *s;
 	int dev;
 {
@@ -809,8 +825,7 @@ static hard_text_preamble() {
 }
 
 #if FIG
-static
-Fig_preamble() {
+static void Fig_preamble() {
 	static char fig_preamble[] = "#FIG 1.4\n80 2\n";
 	
 	if (!hpdev) return;
@@ -818,7 +833,7 @@ Fig_preamble() {
 }
 
 #define HIRES 1
-Fig_plt(mode, x, y)
+void Fig_plt(mode, x, y)
 	int mode;
 	double x, y;
 {
@@ -914,7 +929,7 @@ Fig_plt(mode, x, y)
 #endif /*FIG*/
 
 #if HP
-hplot(mode, x, y)
+void hplot(mode, x, y)
 	int mode;
 	double x, y;
 {
@@ -973,7 +988,7 @@ IGNORE(fprintf(hpdev, "%c.Y%c.I81;;17:%c.N;19:SC 0,1023,0,780;SP 1;",
 
 /* not modified for new method */
 #if VT125
-vtplot(mode, x, y)
+void vtplot(mode, x, y)
 	int mode;
 	double x, y;
 {
@@ -1159,9 +1174,9 @@ cursor(int r, int c) {
 #define CODRAW_MAXPOINT 200
 static int codraw_npoint = 0;
 static float *codraw_pointx, *codraw_pointy;
-static codraw_line();
+static void codraw_line();
 
-Codraw_preamble() {
+void Codraw_preamble() {
 #if LINT
 	double *hoc_Emalloc();
 #else
@@ -1182,7 +1197,7 @@ TL(1);TV(4);TA(0);TH(0.2);\n";
 	}
 }
 
-Codraw_plt(mode, x, y)
+void Codraw_plt(mode, x, y)
 	int mode;
 	double x, y;
 {
@@ -1254,8 +1269,7 @@ Codraw_plt(mode, x, y)
 	}
 }
 
-static
-codraw_line() {
+static void codraw_line() {
 	int i;
 	
 	if (codraw_npoint < 2) {

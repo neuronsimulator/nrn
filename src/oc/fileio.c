@@ -248,7 +248,7 @@ int hoc_xopen1(fname, rcs)	/* read and execute a hoc program */
 	   }
 	}else if (hoc_retrieving_audit()) {
 		hoc_xopen_from_audit(fname);
-		return;
+		return 0;
 	}
 #endif
 	savpipflag = pipeflag;
@@ -300,6 +300,7 @@ int hoc_xopen1(fname, rcs)	/* read and execute a hoc program */
 	hoc_xopen_file_[0] = '\0';
 	hoc_lineno = save_lineno;
 	strcpy(hoc_xopen_file_, st);
+	return 0;
 }
 
 xopen()		/* read and execute a hoc program */

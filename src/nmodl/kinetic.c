@@ -98,7 +98,9 @@ extern int sens_parm;
 
 static int genconservterms();
 static int number_states();
-static kinlist();
+static void kinlist();
+static void genderivterms();
+static void genmatterms();
 
 #define MAXKINBLK 20
 static int nstate_[MAXKINBLK];
@@ -546,7 +548,7 @@ Insertstr(rlst->endbrace, buf);
 	kinlist(fun, rlst);
 }
 
-genderivterms(r, type, n)
+void genderivterms(r, type, n)
 	Reaction *r;
 	int type;	/* 0 derivative, 1 implicit */
 	int n;		/* function number, needed only for implicit */
@@ -932,7 +934,7 @@ Insertstr(rlst->position, "}");
     } /* end of NOT_CVODE_FLAG */
 }
 
-genmatterms(r, fn)
+void genmatterms(r, fn)
 	Reaction *r;
 	int fn; /*function number, numlist*/
 {
@@ -1152,8 +1154,7 @@ number_states(fun, prlst, pclst)
 	return istate;
 }
 
-static
-kinlist(fun, rlst)
+static void kinlist(fun, rlst)
 	Symbol *fun;
 	Rlist *rlst;
 {
@@ -1368,7 +1369,7 @@ kin_vect1(q1, q2, q4)
 	Lappenditem(kvect, q4); /* } */
 }
 
-kin_vect2() {
+void kin_vect2() {
 	Item *q, *q1, *q2, *q4;
 	return;
 	if (kvect) {
@@ -1583,7 +1584,7 @@ cvode_kinetic(qsol, fun, numeqn, listnum)
 #endif
 }
 
-single_channel(qsol, fun, numeqn, listnum)
+void single_channel(qsol, fun, numeqn, listnum)
 	Item* qsol;
 	Symbol* fun;
 	int numeqn, listnum;

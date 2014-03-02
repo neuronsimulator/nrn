@@ -866,7 +866,7 @@ ElementPtr  pCreatedElement, spcGetElement(), spcGetFillin();
  *      Column currently being operated upon.
  */
 
-spcLinkRows( Matrix )
+void spcLinkRows( Matrix )
 
 MatrixPtr Matrix;
 {

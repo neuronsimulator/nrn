@@ -243,7 +243,7 @@ static check(ob) Object* ob; {
 	}
 }
 
-forall_sectionlist() {
+void forall_sectionlist() {
 	Inst* savepc = pc;
 	Item* q, *q1;
 	Section* sec;
@@ -289,7 +289,7 @@ forall_sectionlist() {
 	}
 }
 
-hoc_ifseclist() {
+void hoc_ifseclist() {
 	Inst *savepc = pc;
 	Item* q;
 	Section* sec = chk_access();

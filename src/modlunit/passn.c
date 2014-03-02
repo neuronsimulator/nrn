@@ -17,7 +17,7 @@ Item *lex_tok;
 int parse_pass=0;
 int restart_pass=0;
 
-parsepass(n)
+void parsepass(n)
 	int n;
 {
 	unitonflag = 1;
@@ -27,7 +27,7 @@ parsepass(n)
 	}
 }
 
-parse_restart(q, i)
+void parse_restart(q, i)
 	Item *q;
 	int i;
 {
