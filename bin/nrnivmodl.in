@@ -180,7 +180,8 @@ fi
 @NRNMECH_DLL_STYLE_TRUE@@MAC_DARWIN_FALSE@if false ; then
 @NRNMECH_DLL_STYLE_FALSE@if false ; then
 vv=`sw_vers -productVersion|sed 's/.*\.\(.*\)\..*/\1/'`
-if test $vv -gt 6 ; then
+#if test $vv -gt 6 ; then
+if false ; then
 echo "use @executable_path prefix for install_name for dylib absolute paths"
 ff="${mdir}/.libs/libnrnmech.so"
 f=`otool -L "$ff" | sed -n "s,.*$libdir/\(.*dylib\).*,\
