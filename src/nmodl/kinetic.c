@@ -763,7 +763,7 @@ kinetic_implicit(fun, dt, mname)
     }
 	Sprintf(buf, "{int _i; double _dt1 = 1.0/%s;\n\
 for(_i=%d;_i<%d;_i++){\n",
-		dt, ncons, nstate, fun->u.i, fun->u.i);
+		dt, ncons, nstate);
 	Insertstr(rlst->position, buf);
 
 	qv = insertstr(rlst->position, "");

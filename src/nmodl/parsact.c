@@ -1153,8 +1153,7 @@ watchstmt(par1, dir, par2, flag, blocktype )Item *par1, *dir, *par2, *flag;
 		watch_seen_);
 	lappendstr(procfunc, buf);
 	vectorize_substitute(lappendstr(procfunc, ""),"\tdouble* _p; Datum* _ppvar; Datum* _thread; _NrnThread* _nt;\n\t_thread= (Datum*)0; _nt = (_NrnThread*)_pnt->_vnt;\n");
-	sprintf(buf, "\t_p = _pnt->_prop->param; _ppvar = _pnt->_prop->dparam;\n\tv = NODEV(_pnt->node);\n	return ",
-		watch_seen_);
+	sprintf(buf, "\t_p = _pnt->_prop->param; _ppvar = _pnt->_prop->dparam;\n\tv = NODEV(_pnt->node);\n	return ");
 	lappendstr(procfunc, buf);
 	movelist(par1, par2, procfunc);
 	movelist(dir->next, par2, procfunc);

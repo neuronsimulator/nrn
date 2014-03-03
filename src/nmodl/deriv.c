@@ -826,7 +826,7 @@ static double _match_time[%d], _match_value[%d], _found_init[%d];\n",
 		nunknown, nunknown, nunknown, nunknown, nunknown);
 	Linsertstr(procfunc, buf);
 	Sprintf(buf, "static double *_pmatch_time[%d], *_pmatch_value[%d];\n",
- 		nunknown, nunknown, nunknown);
+ 		nunknown, nunknown);
 	Linsertstr(procfunc, buf);
 	
 	/* create the _state_match stuff */

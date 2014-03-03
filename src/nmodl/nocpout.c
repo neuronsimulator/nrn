@@ -1842,7 +1842,7 @@ Sprintf(buf, " _ion_%s += %s", SYM(q1)->name, SYM(q1)->name);
 						Sprintf(buf, ";\n");
 					}
 				}else{
-					Sprintf(buf, "");
+					buf[0] = '\0';
 				}
 			}else{
 				if (iontype(SYM(q1)->name, in) != IONEREV) {
@@ -2364,10 +2364,10 @@ static _ode_synonym(_cnt, _pp, _ppd) int _cnt; double** _pp; Datum** _ppd; {");
 		if (cvode_fun_->subtype == KINF) {
 			int i = cvode_num_;
 sprintf(buf, "_cvode_sparse(&_cvsparseobj%d, %d, _dlist%d, _p, _ode_matsol%d, &_coef%d);\n",
-				i, cvode_neq_, i, i, i, i);
+				i, cvode_neq_, i, i, i);
 			Lappendstr(procfunc, buf);
 sprintf(buf, "_cvode_sparse_thread(&_thread[_cvspth%d]._pvoid, %d, _dlist%d, _p, _ode_matsol%d, _ppvar, _thread, _nt);\n",
-				i, cvode_neq_, i, i, i, i);
+				i, cvode_neq_, i, i);
 			vectorize_substitute(procfunc->prev, buf);
 			
 		}else{

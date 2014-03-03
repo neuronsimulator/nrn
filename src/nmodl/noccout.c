@@ -597,7 +597,7 @@ if (vectorize) {
 			}
 }
 			/*loop over argcount and add ,double */
-			if (narg == 1) { Fprintf(fcout, "double"); }
+			if (narg > 0) { Fprintf(fcout, "double"); }
 			for (j=1; j < narg; ++j) {
 				Fprintf(fcout, ", double");
 			}
