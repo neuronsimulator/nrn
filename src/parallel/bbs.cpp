@@ -128,6 +128,7 @@ void BBS::init(int) {
 #endif // !HAVE_PVM3_H
 
 BBSImpl::BBSImpl() {
+	runworker_called_ = 0;
 	wait_time_ = 0.;
 	send_time_ = 0.;
 	integ_time_ = 0.;
@@ -432,6 +433,7 @@ printf("working: no result for %d but did get _todo id=%d\n", working_id_, id);
 };
 
 void BBS::worker() {
+	impl_->runworker_called_ = 1;
 	impl_->worker();
 }
 
@@ -491,7 +493,9 @@ void BBS::take(const char* key) { // blocking
 }
 
 void BBS::done() {
-	impl_->done();
+	if (impl_->runworker_called_) {
+		impl_->done();
+	}
 }
 
 void BBSImpl::done() {
