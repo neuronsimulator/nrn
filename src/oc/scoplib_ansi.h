@@ -121,7 +121,7 @@ double scop_random();
 double exprand(double);
 double normrand(double, double);/* (mean, std_dev) */
 double poisson(double, double);	/* (x, mean) */
-double gauss(double, double);	/* (x, mean, std_dev) */
+double gauss(double, double, double);	/* (x, mean, std_dev) */
 double scop_erf(double);	/* (x) */
 
 #if defined(__cplusplus)
