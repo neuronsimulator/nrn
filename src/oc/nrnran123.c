@@ -26,7 +26,11 @@ uint32_t nrnran123_get_globalindex() {
 }
 
 nrnran123_State* nrnran123_newstream(uint32_t id1, uint32_t id2) {
+	return nrnran123_newstream3(id1, id2, 0);
+}
+nrnran123_State* nrnran123_newstream3(uint32_t id1, uint32_t id2, uint32_t id3) {
 	nrnran123_State* s = (nrnran123_State*)ecalloc(sizeof(nrnran123_State), 1);
+	s->c.v[1] = id3;
 	s->c.v[2] = id1;
 	s->c.v[3] = id2;
 	nrnran123_setseq(s, 0, 0);
@@ -53,6 +57,12 @@ void nrnran123_setseq(nrnran123_State* s, uint32_t seq, char which) {
 }
 
 void nrnran123_getids(nrnran123_State* s, uint32_t* id1, uint32_t* id2) {
+	*id1 = s->c.v[2];
+	*id2 = s->c.v[3];
+}
+
+void nrnran123_getids3(nrnran123_State* s, uint32_t* id1, uint32_t* id2, uint32_t* id3) {
+	*id3 = s->c.v[1];
 	*id1 = s->c.v[2];
 	*id2 = s->c.v[3];
 }
@@ -93,22 +103,23 @@ double nrnran123_normal(nrnran123_State* s) {
 	return x;
 }
 
-#if 0
 nrnran123_array4x32 nrnran123_iran(uint32_t seq, uint32_t id1, uint32_t id2) {
+	return nrnran123_iran3(seq, id1, id2, 0);
+}
+nrnran123_array4x32 nrnran123_iran3(uint32_t seq, uint32_t id1, uint32_t id2, uint32_t id3) {
 	nrnran123_array4x32 a;
-	philox4x32 c;
+	philox4x32_ctr_t c;
 	c.v[0] = seq;
-	c.v[1] = 0;
+	c.v[1] = id3;
 	c.v[2] = id1;
 	c.v[3] = id2;
-	philox4x32 r = philox4x32(c, k);
+	philox4x32_ctr_t r = philox4x32(c, k);
 	a.v[0] = r.v[0];
 	a.v[1] = r.v[1];
 	a.v[2] = r.v[2];
 	a.v[3] = r.v[3];
 	return a;
 }
-#endif
 
 double nrnran123_uint2dbl(uint32_t u) {
 	/* 0 to 2^32-1 transforms to double value in open (0,1) interval */
