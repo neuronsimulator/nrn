@@ -1,6 +1,6 @@
-#include "simcore/nrnconf.h"
-#include "simcore/nrnoc/multicore.h"
-#include "simcore/nrnoc/nrnoc_decl.h"
+#include "src/simcore/nrnconf.h"
+#include "src/simcore/nrnoc/multicore.h"
+#include "src/simcore/nrnoc/nrnoc_decl.h"
 	
 void nrn_finitialize(int setv, double v) {
 	int i;

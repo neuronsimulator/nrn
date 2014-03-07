@@ -1,4 +1,46 @@
-set(SOURCES
+set(COREBLURON_PUBLIC_HEADERS
+${COMMON_INCLUDES}
+nrnconf.h
+)
+
+set(COREBLURON_HEADERS
+nrnconf.h
+nrnmpi/mpispike.h
+nrnmpi/nrnmpidec.h
+nrnmpi/nrnmpi_def_cinc.h
+nrnmpi/nrnmpi.h
+nrnmpi/nrnmpi_impl.h
+nrnmpi/nrnmpiuse.h
+nrnoc/md1redef.h
+nrnoc/md2redef.h
+nrnoc/membdef.h
+nrnoc/membfunc.h
+nrnoc/multicore.h
+nrnoc/nrnoc_decl.h
+nrnoc/nrnoc_ml.h
+nrnoc/nrnpthread.h
+nrniv/arraypool.h
+nrniv/htlist.h
+nrniv/ivlist.h
+nrniv/ivocvect.h
+nrniv/ivtable.h
+nrniv/netcon.h
+nrniv/netcvode.h
+nrniv/nrnhash_alt.h
+nrniv/nrnhash.h
+nrniv/nrniv_decl.h
+nrniv/nrniv_mf.h
+nrniv/nrnmutdec.h
+nrniv/output_spikes.h
+nrniv/pool.h
+nrniv/sptbinq.h
+nrniv/sptree.h
+nrniv/structpool.h
+nrniv/tqueue.h
+)
+
+set(COREBLURON_SOURCES
+${COMMON_SOURCES}
 nrnmpi/nrnmpi.c
 nrnmpi/mpispike.c
 nrnoc/capac.c
@@ -26,7 +68,4 @@ nrniv/nrn_setup.cpp
 nrniv/output_spikes.cpp
 )
 
-set(LIBRARY corebluron)
-
-include_directories(${CMAKE_SOURCE_DIR}/src)
-add_library(${LIBRARY} ${SOURCES})
+common_library(corebluron)

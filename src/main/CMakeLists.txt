@@ -1,7 +1,5 @@
-include_directories(${CMAKE_SOURCE_DIR}/src)
-link_directories (${CMAKE_BINARY_DIR}/src/simcore ${CMAKE_BINARY_DIR}/src/mech)
+set(CORERON_HEADERS)
+set(CORERON_SOURCES main.cpp)
+set(CORERON_LINK_LIBRARIES corebluron coremech)
 
-set(LIBRARY corebluron coremech)
-
-add_executable(coreron main.cpp)
-target_link_libraries (coreron ${LIBRARY})
+common_application(coreron)

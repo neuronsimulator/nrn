@@ -21,7 +21,7 @@ of struct _spblk, we are really using TQItem
 #define cnt cnt_
 #define key t_
 
-#include "simcore/nrniv/sptree.h"
+#include "src/simcore/nrniv/sptree.h"
 
 extern "C" {
 //extern double dt;
@@ -374,7 +374,7 @@ void BinQ::remove(TQItem* q) {
 	}
 }
 
-#include "simcore/nrniv/spaux.c"
-#include "simcore/nrniv/sptree.c"
-#include "simcore/nrniv/spdaveb.c"
+#include "src/simcore/nrniv/spaux.c"
+#include "src/simcore/nrniv/sptree.c"
+#include "src/simcore/nrniv/spdaveb.c"
 

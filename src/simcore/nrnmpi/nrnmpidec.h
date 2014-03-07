@@ -6,7 +6,7 @@ the prototypes be of the form "type foo(type arg, ...)"
 #ifndef nrnmpidec_h
 #define nrnmpidec_h
 
-#include "simcore/nrnmpi/nrnmpiuse.h"
+#include "src/simcore/nrnmpi/nrnmpiuse.h"
 
 #if NRNMPI
 #include <stdlib.h>

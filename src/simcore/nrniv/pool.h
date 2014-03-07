@@ -11,7 +11,7 @@
 // the pool doubles in size every time a chain Pool is added.
 // maxget() tells the most number of pool items used at once.
 
-#include "simcore/nrniv/nrnmutdec.h"
+#include "src/simcore/nrniv/nrnmutdec.h"
 
 #define declarePool(Pool,T) \
 class Pool { \

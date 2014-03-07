@@ -1,6 +1,6 @@
 #ifndef nrnmpi_h
 #define nrnmpi_h
-#include "simcore/nrnmpi/nrnmpiuse.h"
+#include "src/simcore/nrnmpi/nrnmpiuse.h"
 
 /* by default nrnmpi_numprocs_world = nrnmpi_numprocs = nrnmpi_numsubworlds and
    nrnmpi_myid_world = nrnmpi_myid and the bulletin board and network communication do
@@ -31,7 +31,7 @@ extern int nrnmpi_use; /* NEURON does MPI init and terminate?*/
 }
 #endif /*c++*/
 
-#include "simcore/nrnmpi/nrnmpidec.h"
+#include "src/simcore/nrnmpi/nrnmpidec.h"
 
 #endif /*NRNMPI*/
 #endif /*nrnmpi_h*/

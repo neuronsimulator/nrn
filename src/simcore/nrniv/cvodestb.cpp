@@ -1,8 +1,8 @@
-#include "simcore/nrnconf.h"
-#include "simcore/nrnoc/multicore.h"
+#include "src/simcore/nrnconf.h"
+#include "src/simcore/nrnoc/multicore.h"
 // solver CVode stub to allow cvode as dll for mswindows version.
 
-#include "simcore/nrniv/netcvode.h"
+#include "src/simcore/nrniv/netcvode.h"
 
 extern "C" {
 bool at_time(NrnThread*, double);

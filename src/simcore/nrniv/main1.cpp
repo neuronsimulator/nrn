@@ -1,9 +1,9 @@
-#include "simcore/nrnconf.h"
-#include "simcore/nrnoc/multicore.h"
-#include "simcore/nrnoc/nrnoc_decl.h"
-#include "simcore/nrnmpi/nrnmpi.h"
-#include "simcore/nrniv/nrniv_decl.h"
-#include "simcore/nrniv/output_spikes.h"
+#include "src/simcore/nrnconf.h"
+#include "src/simcore/nrnoc/multicore.h"
+#include "src/simcore/nrnoc/nrnoc_decl.h"
+#include "src/simcore/nrnmpi/nrnmpi.h"
+#include "src/simcore/nrniv/nrniv_decl.h"
+#include "src/simcore/nrniv/output_spikes.h"
 
 #define HAVE_MALLINFO 1
 #if HAVE_MALLINFO

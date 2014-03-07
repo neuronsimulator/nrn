@@ -1,8 +1,8 @@
 #include <stdlib.h>
 #include <math.h>
-#include "simcore/nrnconf.h"
-#include "mech/cfile/nrnran123.h"
-#include "utils/randoms/Random123/philox.h"
+#include "src/simcore/nrnconf.h"
+#include "src/mech/cfile/nrnran123.h"
+#include "src/utils/randoms/Random123/philox.h"
 
 static const double SHIFT32   = 1.0 / 4294967297.0;    /* 1/(2^32 + 1) */
 
@@ -63,7 +63,7 @@ void nrnran123_getids(nrnran123_State* s, uint32_t* id1, uint32_t* id2) {
 
 uint32_t nrnran123_ipick(nrnran123_State* s) {
 	uint32_t rval;
-	char which = s->which_;
+	unsigned char which = s->which_;
 	assert (which < 4);
 	rval = s->r.v[which++];
 	if (which > 3) {

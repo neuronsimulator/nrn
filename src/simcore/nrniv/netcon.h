@@ -1,9 +1,9 @@
 #ifndef netcon_h
 #define netcon_h
 
-#include "simcore/nrniv/ivlist.h"
-#include "simcore/nrniv/htlist.h"
-#include "simcore/nrnmpi/nrnmpi.h"
+#include "src/simcore/nrniv/ivlist.h"
+#include "src/simcore/nrniv/htlist.h"
+#include "src/simcore/nrnmpi/nrnmpi.h"
 
 #undef check
 #if MAC

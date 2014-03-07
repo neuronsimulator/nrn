@@ -1,7 +1,7 @@
 #include <string.h>
-#include "simcore/nrnconf.h"
-#include "simcore/nrniv/ivocvect.h"
-#include "simcore/nrniv/ivlist.h"
+#include "src/simcore/nrnconf.h"
+#include "src/simcore/nrniv/ivocvect.h"
+#include "src/simcore/nrniv/ivlist.h"
 
 void IvocVect::resize(int newl) { // all that for this
         long oldcap = capacity();

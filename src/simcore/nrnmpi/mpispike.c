@@ -1,10 +1,10 @@
-#include "simcore/nrnconf.h"
+#include "src/simcore/nrnconf.h"
 /* do not want the redef in the dynamic load case */
-#include "simcore/nrnmpi/nrnmpiuse.h"
-#include "simcore/nrnmpi/nrnmpi.h"
-#include "simcore/nrnmpi/nrnmpidec.h"
-#include "simcore/nrnmpi/nrnmpi_impl.h"
-#include "simcore/nrnmpi/mpispike.h"
+#include "src/simcore/nrnmpi/nrnmpiuse.h"
+#include "src/simcore/nrnmpi/nrnmpi.h"
+#include "src/simcore/nrnmpi/nrnmpidec.h"
+#include "src/simcore/nrnmpi/nrnmpi_impl.h"
+#include "src/simcore/nrnmpi/mpispike.h"
 
 #if NRNMPI
 #include <mpi.h>
@@ -284,16 +284,16 @@ int nrnmpi_int_sum_reduce(int in) {
 	return result;
 }
 
-void nrnmpi_assert_opstep(int opstep, double t) {
-	/* all machines in comm should have same opstep and same t. */
+void nrnmpi_assert_opstep(int opstep, double tt) {
+	/* all machines in comm should have same opstep and same tt. */
 	double buf[2];
 	if (nrnmpi_numprocs < 2) { return; }
 	buf[0] = (double)opstep;
-	buf[1] = t;
+	buf[1] = tt;
 	MPI_Bcast(buf, 2, MPI_DOUBLE, 0, nrnmpi_comm);
-	if (opstep != (int)buf[0]  || t != buf[1]) {
+	if (opstep != (int)buf[0]  || tt != buf[1]) {
 		printf("%d opstep=%d %d  t=%g t-troot=%g\n", nrnmpi_myid, opstep,
-			(int)buf[0], t, t-buf[1]);
+			(int)buf[0], tt, tt-buf[1]);
 		hoc_execerror("nrnmpi_assert_opstep failed", (char*)0);		
 	}
 }
@@ -336,10 +336,10 @@ static void pgvts_op(double* in, double* inout, int* len, MPI_Datatype* dptr){
 	}
 }
 
-int nrnmpi_pgvts_least(double* t, int* op, int* init) {
+int nrnmpi_pgvts_least(double* tt, int* op, int* init) {
 	int i;
 	double ibuf[4], obuf[4];
-	ibuf[0] = *t;
+	ibuf[0] = *tt;
 	ibuf[1] = (double)(*op);
 	ibuf[2] = (double)(*init);
 	ibuf[3] = (double)nrnmpi_myid;
@@ -347,8 +347,8 @@ int nrnmpi_pgvts_least(double* t, int* op, int* init) {
 		obuf[i] = ibuf[i];
 	}
 	MPI_Allreduce(ibuf, obuf, 4, MPI_DOUBLE, mpi_pgvts_op, nrnmpi_comm);
-	assert(obuf[0] <= *t);
-	if (obuf[0] == *t) {
+	assert(obuf[0] <= *tt);
+	if (obuf[0] == *tt) {
 	  assert((int)obuf[1] <= *op);
 	  if ((int)obuf[1] == *op) {
 	    assert((int)obuf[2] <= *init);
@@ -357,7 +357,7 @@ int nrnmpi_pgvts_least(double* t, int* op, int* init) {
 	    }
 	  }
 	}
-	*t = obuf[0];
+	*tt = obuf[0];
 	*op = (int)obuf[1];
 	*init = (int)obuf[2];
 	if (nrnmpi_myid == (int)obuf[3]) {
@@ -391,22 +391,22 @@ void nrnmpi_barrier() {
 
 double nrnmpi_dbl_allreduce(double x, int type) {
 	double result;
-	MPI_Op t;
+	MPI_Op tt;
 	if (nrnmpi_numprocs < 2) { return x; }
 	if (type == 1) {
-		t = MPI_SUM;
+		tt = MPI_SUM;
 	}else if (type == 2) {
-		t = MPI_MAX;
+		tt = MPI_MAX;
 	}else{
-		t = MPI_MIN;
+		tt = MPI_MIN;
 	}
-	MPI_Allreduce(&x, &result, 1, MPI_DOUBLE, t, nrnmpi_comm);
+	MPI_Allreduce(&x, &result, 1, MPI_DOUBLE, tt, nrnmpi_comm);
 	return result;
 }
 
 void nrnmpi_dbl_allreduce_vec(double* src, double* dest, int cnt, int type) {
 	int i;
-	MPI_Op t;
+	MPI_Op tt;
 	assert(src != dest);
 	if (nrnmpi_numprocs < 2) {
 		for (i = 0; i < cnt; ++i) {
@@ -415,19 +415,19 @@ void nrnmpi_dbl_allreduce_vec(double* src, double* dest, int cnt, int type) {
 		return;
 	}
 	if (type == 1) {
-		t = MPI_SUM;
+		tt = MPI_SUM;
 	}else if (type == 2) {
-		t = MPI_MAX;
+		tt = MPI_MAX;
 	}else{
-		t = MPI_MIN;
+		tt = MPI_MIN;
 	}
-	MPI_Allreduce(src, dest, cnt, MPI_DOUBLE, t, nrnmpi_comm);
+	MPI_Allreduce(src, dest, cnt, MPI_DOUBLE, tt, nrnmpi_comm);
 	return;
 }
 
 void nrnmpi_long_allreduce_vec(long* src, long* dest, int cnt, int type) {
 	int i;
-	MPI_Op t;
+	MPI_Op tt;
 	assert(src != dest);
 	if (nrnmpi_numprocs < 2) {
 		for (i = 0; i < cnt; ++i) {
@@ -436,13 +436,13 @@ void nrnmpi_long_allreduce_vec(long* src, long* dest, int cnt, int type) {
 		return;
 	}
 	if (type == 1) {
-		t = MPI_SUM;
+		tt = MPI_SUM;
 	}else if (type == 2) {
-		t = MPI_MAX;
+		tt = MPI_MAX;
 	}else{
-		t = MPI_MIN;
+		tt = MPI_MIN;
 	}
-	MPI_Allreduce(src, dest, cnt, MPI_LONG, t, nrnmpi_comm);
+	MPI_Allreduce(src, dest, cnt, MPI_LONG, tt, nrnmpi_comm);
 	return;
 }
 

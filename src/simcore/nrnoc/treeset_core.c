@@ -1,6 +1,6 @@
-#include "simcore/nrnconf.h"
-#include "simcore/nrnoc/multicore.h"
-#include "simcore/nrnoc/nrnoc_decl.h"
+#include "src/simcore/nrnconf.h"
+#include "src/simcore/nrnoc/multicore.h"
+#include "src/simcore/nrnoc/nrnoc_decl.h"
 
 /*
 Fixed step method with threads and cache efficiency. No extracellular,

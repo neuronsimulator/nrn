@@ -1,6 +1,6 @@
-#include "simcore/nrnconf.h"
-#include "simcore/nrnoc/multicore.h"
-#include "simcore/nrnmpi/nrnmpi.h"
+#include "src/simcore/nrnconf.h"
+#include "src/simcore/nrnoc/multicore.h"
+#include "src/simcore/nrnmpi/nrnmpi.h"
 
 #if NRNMPI
 #if 1 || (defined(HAVE_SETITIMER) && defined(HAVE_SIGACTION))

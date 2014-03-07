@@ -7,7 +7,7 @@ using namespace corebluron::test;
 
 BOOST_AUTO_TEST_CASE(ring_validation)
 {
-    std::string path("../../../../test/integration/ring/");
+    std::string path("../../../test/integration/ring/");
     reference ref(path);
     std::vector<std::pair<double, int> > res;
     char* env[256];

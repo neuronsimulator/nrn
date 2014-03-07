@@ -29,8 +29,8 @@ for fast insertion, deletion, iteration
  * HTList implementation.
  */
 
-#include "simcore/nrnconf.h"
-#include "simcore/nrniv/htlist.h"
+#include "src/simcore/nrnconf.h"
+#include "src/simcore/nrniv/htlist.h"
 
 /*****************************************************************************/
 

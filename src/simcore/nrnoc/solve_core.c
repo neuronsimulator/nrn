@@ -1,5 +1,5 @@
-#include "simcore/nrnconf.h"
-#include "simcore/nrnoc/multicore.h"
+#include "src/simcore/nrnconf.h"
+#include "src/simcore/nrnoc/multicore.h"
 
 static void triang(NrnThread*), bksub(NrnThread*);
 

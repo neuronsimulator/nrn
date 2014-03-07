@@ -1,9 +1,9 @@
 #ifndef tqueue_h
 #define tqueue_h
 
-#include "simcore/nrniv/nrnmutdec.h"
-#include "simcore/nrniv/pool.h"
-#include "simcore/nrniv/sptbinq.h"
+#include "src/simcore/nrniv/nrnmutdec.h"
+#include "src/simcore/nrniv/pool.h"
+#include "src/simcore/nrniv/sptbinq.h"
 
 #undef check
 

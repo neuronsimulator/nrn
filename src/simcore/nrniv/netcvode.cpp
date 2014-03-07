@@ -1,14 +1,14 @@
 #include <float.h>
-#include "simcore/nrnconf.h"
-#include "simcore/nrnoc/multicore.h"
-#include "simcore/nrnoc/nrnoc_decl.h"
-#include "simcore/nrniv/netcon.h"
-#include "simcore/nrniv/netcvode.h"
-#include "simcore/nrniv/ivlist.h"
-#include "simcore/nrniv/ivtable.h"
-#include "simcore/nrniv/ivocvect.h"
-#include "simcore/nrniv/nrniv_decl.h"
-#include "simcore/nrniv/output_spikes.h"
+#include "src/simcore/nrnconf.h"
+#include "src/simcore/nrnoc/multicore.h"
+#include "src/simcore/nrnoc/nrnoc_decl.h"
+#include "src/simcore/nrniv/netcon.h"
+#include "src/simcore/nrniv/netcvode.h"
+#include "src/simcore/nrniv/ivlist.h"
+#include "src/simcore/nrniv/ivtable.h"
+#include "src/simcore/nrniv/ivocvect.h"
+#include "src/simcore/nrniv/nrniv_decl.h"
+#include "src/simcore/nrniv/output_spikes.h"
 
 #define UNIT_ROUNDOFF DBL_EPSILON
 #define PP2NT(pp) ((NrnThread*)((pp)->_vnt))

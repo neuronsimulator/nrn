@@ -1,8 +1,8 @@
-#include "simcore/nrnconf.h"
-#include "simcore/nrnoc/multicore.h"
-#include "simcore/nrniv/nrniv_decl.h"
-#include "simcore/nrnoc/nrnoc_decl.h"
-#include "mech/cfile/nrnran123.h"
+#include "src/simcore/nrnconf.h"
+#include "src/simcore/nrnoc/multicore.h"
+#include "src/simcore/nrniv/nrniv_decl.h"
+#include "src/simcore/nrnoc/nrnoc_decl.h"
+#include "src/mech/cfile/nrnran123.h"
 
 // file format defined in cooperation with nrncore/src/nrniv/nrnbbcore_write.cpp
 // single integers are ascii one per line. arrays are binary int or double

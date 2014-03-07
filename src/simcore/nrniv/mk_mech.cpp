@@ -1,9 +1,9 @@
 #include <string.h>
-#include "simcore/nrnconf.h"
-#include "simcore/nrnoc/multicore.h"
-#include "simcore/nrnoc/nrnoc_decl.h"
-#include "simcore/nrniv/nrniv_decl.h"
-#include "simcore/nrniv/ivtable.h"
+#include "src/simcore/nrnconf.h"
+#include "src/simcore/nrnoc/multicore.h"
+#include "src/simcore/nrnoc/nrnoc_decl.h"
+#include "src/simcore/nrniv/nrniv_decl.h"
+#include "src/simcore/nrniv/ivtable.h"
 
 
 class StringKey {

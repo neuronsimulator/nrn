@@ -1,7 +1,7 @@
 #ifndef nrnoc_ml_h
 #define nrnoc_ml_h
 
-#include "simcore/nrnconf.h"
+#include "src/simcore/nrnconf.h"
 
 typedef union ThreadDatum {
 	double val;

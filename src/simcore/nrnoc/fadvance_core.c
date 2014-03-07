@@ -1,7 +1,7 @@
-#include "simcore/nrnconf.h"
-#include "simcore/nrnoc/multicore.h"
-#include "simcore/nrnmpi/nrnmpi.h"
-#include "simcore/nrnoc/nrnoc_decl.h"
+#include "src/simcore/nrnconf.h"
+#include "src/simcore/nrnoc/multicore.h"
+#include "src/simcore/nrnmpi/nrnmpi.h"
+#include "src/simcore/nrnoc/nrnoc_decl.h"
 
 static void* nrn_fixed_step_thread(NrnThread*);
 static void* nrn_fixed_step_group_thread(NrnThread*);

@@ -1,8 +1,8 @@
 #include <string.h>
-#include "simcore/nrnconf.h"
-#include "simcore/nrnmpi/nrnmpi.h"
-#include "simcore/nrnmpi/mpispike.h"
-#include "simcore/nrnmpi/nrnmpi_def_cinc.h"
+#include "src/simcore/nrnconf.h"
+#include "src/simcore/nrnmpi/nrnmpi.h"
+#include "src/simcore/nrnmpi/mpispike.h"
+#include "src/simcore/nrnmpi/nrnmpi_def_cinc.h"
 
 #if NRNMPI
 #include <mpi.h>

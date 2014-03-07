@@ -1,7 +1,7 @@
-#include "simcore/nrnconf.h"
-#include "simcore/nrnoc/nrnpthread.h"
-#include "simcore/nrnoc/multicore.h"
-#include "simcore/nrnmpi/nrnmpi.h"
+#include "src/simcore/nrnconf.h"
+#include "src/simcore/nrnoc/nrnpthread.h"
+#include "src/simcore/nrnoc/multicore.h"
+#include "src/simcore/nrnmpi/nrnmpi.h"
 
 /*
 Now that threads have taken over the actual_v, v_node, etc, it might

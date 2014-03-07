@@ -1,7 +1,7 @@
 #ifndef nrniv_dec_h
 #define nrniv_dec_h
 
-#include "simcore/nrniv/netcon.h"
+#include "src/simcore/nrniv/netcon.h"
 
 #if defined(__cplusplus)
 extern "C" {

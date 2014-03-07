@@ -2,8 +2,8 @@
 #define netcvode_h
 
 //#include "mymath.h"
-#include "simcore/nrniv/tqueue.h"
-#include "simcore/nrniv/htlist.h"
+#include "src/simcore/nrniv/tqueue.h"
+#include "src/simcore/nrniv/htlist.h"
 
 #define PRINT_EVENT 1
 

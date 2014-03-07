@@ -19,7 +19,7 @@
  */
 
 
-# include "simcore/nrniv/sptree.h"
+# include "src/simcore/nrniv/sptree.h"
 
 /* USER SUPPLIED! */
 

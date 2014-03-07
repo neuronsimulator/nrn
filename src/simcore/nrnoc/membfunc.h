@@ -5,7 +5,7 @@
 extern "C" {
 #endif
 
-#include "simcore/nrnoc/nrnoc_ml.h"
+#include "src/simcore/nrnoc/nrnoc_ml.h"
 
 typedef Datum *(*Pfrpdat)(void);
 

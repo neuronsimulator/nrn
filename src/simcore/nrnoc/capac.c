@@ -1,6 +1,6 @@
-#include "simcore/nrnconf.h"
-#include "simcore/nrnoc/multicore.h"
-#include "simcore/nrnoc/membdef.h"
+#include "src/simcore/nrnconf.h"
+#include "src/simcore/nrnoc/multicore.h"
+#include "src/simcore/nrnoc/membdef.h"
 
 static const char *mechanism[] = { "0", "capacitance", "cm",0, "i_cap", 0,0 };
 static void cap_alloc(double*, Datum*, int type);

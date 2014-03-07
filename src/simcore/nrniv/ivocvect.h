@@ -1,7 +1,7 @@
 #ifndef ivoc_vector_h
 #define ivoc_vector_h
 
-#include "simcore/nrniv/nrnmutdec.h"
+#include "src/simcore/nrniv/nrnmutdec.h"
 
 class IvocVect {
 public:

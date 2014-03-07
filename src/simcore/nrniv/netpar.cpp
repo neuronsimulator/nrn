@@ -1,9 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "simcore/nrnconf.h"
-#include "simcore/nrnoc/multicore.h"
-#include "simcore/nrnmpi/nrnmpi.h"
-#include "simcore/nrniv/nrnhash_alt.h"
+#include "src/simcore/nrnconf.h"
+#include "src/simcore/nrnoc/multicore.h"
+#include "src/simcore/nrnmpi/nrnmpi.h"
+#include "src/simcore/nrniv/nrnhash_alt.h"
 
 #define ALTHASH 1
 #undef MD
@@ -18,9 +18,9 @@ implementNrnHash(Gid2PreSyn, int, PreSyn*)
 declareNrnHash(Gid2InputPreSyn, int, InputPreSyn*)
 implementNrnHash(Gid2InputPreSyn, int, InputPreSyn*)
 
-#include "simcore/nrniv/netcon.h"
-#include "simcore/nrniv/netcvode.h"
-#include "simcore/nrniv/nrniv_decl.h"
+#include "src/simcore/nrniv/netcon.h"
+#include "src/simcore/nrniv/netcvode.h"
+#include "src/simcore/nrniv/nrniv_decl.h"
 
 #define BGP_INTERVAL 2
 #if BGP_INTERVAL == 2
@@ -63,7 +63,7 @@ static double set_mindelay(double maxdelay);
 
 #if NRNMPI
 
-#include "simcore/nrnmpi/mpispike.h"
+#include "src/simcore/nrnmpi/mpispike.h"
 
 extern "C" {
 void nrn_timeout(int);

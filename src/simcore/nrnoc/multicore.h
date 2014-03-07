@@ -1,8 +1,8 @@
 #ifndef multicore_h
 #define multicore_h
 
-#include "simcore/nrnconf.h"
-#include "simcore/nrnoc/membfunc.h"
+#include "src/simcore/nrnconf.h"
+#include "src/simcore/nrnoc/membfunc.h"
 
 #if defined(__cplusplus)
 class NetCon;

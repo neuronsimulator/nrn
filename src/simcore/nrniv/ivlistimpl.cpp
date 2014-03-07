@@ -28,7 +28,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "simcore/nrniv/ivlist.h"
+#include "src/simcore/nrniv/ivlist.h"
 
 implementList(__AnyPtrList,__AnyPtr)
 

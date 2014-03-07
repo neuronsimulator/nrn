@@ -10,13 +10,16 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 PROJECT(CoreBluron)
 
 set(RELEASE_VERSION OFF)  # OFF or ABI version
-set(LAST_RELEASE 0.0.0)
+set(LAST_RELEASE 0.1.0)
 set (VERSION_MAJOR "0")
-set (VERSION_MINOR "1")
+set (VERSION_MINOR "2")
 set (VERSION_PATCH "0")
 
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/CMake")
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/CMake ${CMAKE_SOURCE_DIR}/CMake/common)
+include(GitExternal)
 
+set(COREBLURON_DESCRIPTION "BBP core simulator")
+set(COMMON_PROJECT_DOMAIN ch.epfl.bluebrain)
 include(Common)
 include(FindPackages)
 
@@ -81,14 +84,12 @@ endif(COREBLURON_TESTS)
 # Install
 #
 ########################################################################
-install(DIRECTORY src DESTINATION include FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp" PATTERN ".git" EXCLUDE)
-install(FILES ${PROJECT_BINARY_DIR}/src/simcore/libcorebluron.a DESTINATION lib)
-install(FILES ${PROJECT_BINARY_DIR}/src/mech/libcoremech.a DESTINATION lib)
+#install(DIRECTORY src DESTINATION include FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp" PATTERN ".git" EXCLUDE)
+#install(FILES ${PROJECT_BINARY_DIR}/src/simcore/libcorebluron.a DESTINATION lib)
+#install(FILES ${PROJECT_BINARY_DIR}/src/mech/libcoremech.a DESTINATION lib)
 
 ############ Packaging & Release ###################
 #set(CPACK_PACKAGING_INSTALL_PREFIX "/usr/bin" CACHE PATH "")
 
 include(CPackConfig)
 include(DoxygenRule)
-include(PackageConfig)
-include(BBPRelease)

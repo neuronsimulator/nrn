@@ -1,6 +1,6 @@
-#include "simcore/nrnoc/multicore.h"
-#include "simcore/nrniv/tqueue.h"
-#include "simcore/nrniv/pool.h"
+#include "src/simcore/nrnoc/multicore.h"
+#include "src/simcore/nrniv/tqueue.h"
+#include "src/simcore/nrniv/pool.h"
 
 #if COLLECT_TQueue_STATISTICS
 #define STAT(arg) ++arg;
@@ -12,7 +12,7 @@
 
 implementPool(TQItemPool, TQItem)
 
-#include "simcore/nrniv/sptbinq.cpp"
+#include "src/simcore/nrniv/sptbinq.cpp"
 
 SelfQueue::SelfQueue(TQItemPool* tp, int mkmut) {
 	MUTCONSTRUCT(mkmut)

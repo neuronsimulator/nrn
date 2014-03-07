@@ -1,9 +1,9 @@
 #include <math.h>
 #include <string.h>
-#include "simcore/nrnconf.h"
-#include "simcore/nrnoc/multicore.h"
-#include "simcore/nrnoc/membdef.h"
-#include "simcore/nrnoc/nrnoc_decl.h"
+#include "src/simcore/nrnconf.h"
+#include "src/simcore/nrnoc/multicore.h"
+#include "src/simcore/nrnoc/membdef.h"
+#include "src/simcore/nrnoc/nrnoc_decl.h"
 
 extern void hoc_register_prop_size(int, int, int);
 

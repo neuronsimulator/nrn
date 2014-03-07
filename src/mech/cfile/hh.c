@@ -6,11 +6,11 @@
 #include "scoplib.h"
 #undef PI
  
-#include "simcore/nrnoc/md1redef.h"
-#include "simcore/nrnconf.h"
-#include "simcore/nrnoc/multicore.h"
+#include "src/simcore/nrnoc/md1redef.h"
+#include "src/simcore/nrnconf.h"
+#include "src/simcore/nrnoc/multicore.h"
 
-#include "simcore/nrnoc/md2redef.h"
+#include "src/simcore/nrnoc/md2redef.h"
 #if METHOD3
 extern int _method3;
 #endif

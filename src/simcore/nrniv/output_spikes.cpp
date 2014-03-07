@@ -1,7 +1,7 @@
-#include "simcore/nrnconf.h"
-#include "simcore/nrniv/nrniv_decl.h"
-#include "simcore/nrniv/output_spikes.h"
-#include "simcore/nrnmpi/nrnmpi.h"
+#include "src/simcore/nrnconf.h"
+#include "src/simcore/nrniv/nrniv_decl.h"
+#include "src/simcore/nrniv/output_spikes.h"
+#include "src/simcore/nrnmpi/nrnmpi.h"
 
 int spikevec_buffer_size;
 int spikevec_size;
