@@ -139,6 +139,7 @@ fi
 
 for i in ` sort $D/bin/temp.tmp | uniq | sed '
 	/WINDOWS/d
+	/Windows/d
 	/\.exe/d
 	/cygIVhines/d
 	/nrniv/d
