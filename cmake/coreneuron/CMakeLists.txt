@@ -33,12 +33,11 @@ option (COREBLURON_MAIN "Build the CORE BLURON main" ON)
 
 ########################################################################
 #
-# Core and mech libraries 
+# Core library
 #
 ########################################################################
 
-add_subdirectory (src/simcore)
-add_subdirectory (src/mech)
+add_subdirectory(corebluron)
 
 ########################################################################
 #
@@ -47,21 +46,9 @@ add_subdirectory (src/mech)
 ########################################################################
 
 if(COREBLURON_MAIN)
-    add_subdirectory (src/main)
+    add_subdirectory(apps)
 endif(COREBLURON_MAIN)
 
-
-#this depends of the associated module
-#set(Boost_NO_SYSTEM_PATHS TRUE)
-set(BOOST_DIR $ENV{BOOST_DIR} CACHE PATH "Path to the Boost installation (or to the Boost source)")
-set(BOOST_ROOT ${BOOST_DIR})
-#set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
-find_package (Boost COMPONENTS unit_test_framework system)
-if(Boost_FOUND)
-    include_directories(${Boost_INCLUDE_DIRS})
-else()
-    message(FATAL_ERROR "Boost libraries not found. Please specify location using the BOOST_DIR variable")
-endif()
 
 ########################################################################
 #
@@ -70,26 +57,17 @@ endif()
 ########################################################################
 
 if(COREBLURON_TESTS)
-    find_package(PythonInterp 2.6 REQUIRED )
-    include(CTest)
-    enable_testing()
-    set(BUILDNAME "${PROJECT_VERSION}" CACHE STRING "Name of build on the dashboard")
-      mark_as_advanced(BUILDNAME)
-    add_subdirectory (test/integration)
+  #this depends of the associated module
+  set(BOOST_DIR $ENV{BOOST_DIR} CACHE PATH "Path to the Boost installation (or to the Boost source)")
+  set(BOOST_ROOT ${BOOST_DIR})
+  find_package (Boost COMPONENTS unit_test_framework system)
+  if(Boost_FOUND)
+    include_directories(${Boost_INCLUDE_DIRS})
+  else()
+    message(FATAL_ERROR "Boost libraries not found. Please specify location using the BOOST_DIR variable")
+  endif()
+  add_subdirectory(tests)
 endif(COREBLURON_TESTS)
-
-
-########################################################################
-#
-# Install
-#
-########################################################################
-#install(DIRECTORY src DESTINATION include FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp" PATTERN ".git" EXCLUDE)
-#install(FILES ${PROJECT_BINARY_DIR}/src/simcore/libcorebluron.a DESTINATION lib)
-#install(FILES ${PROJECT_BINARY_DIR}/src/mech/libcoremech.a DESTINATION lib)
-
-############ Packaging & Release ###################
-#set(CPACK_PACKAGING_INSTALL_PREFIX "/usr/bin" CACHE PATH "")
 
 include(CPackConfig)
 include(DoxygenRule)
