@@ -27,12 +27,12 @@ extern List* thread_cleanup_list;
 #if CVODE
 extern char* cvode_deriv(), *cvode_eqnrhs();
 extern Item* cvode_cnexp_solve;
-static cvode_diffeq();
+static void cvode_diffeq();
 static List* cvode_diffeq_list, *cvode_eqn;
 static int cvode_cnexp_possible;
 #endif
 
-solv_diffeq(qsol, fun, method, numeqn, listnum, steadystate, btype)
+void solv_diffeq(qsol, fun, method, numeqn, listnum, steadystate, btype)
 	Item *qsol;
 	Symbol *fun, *method;
 	int numeqn, listnum;
@@ -416,7 +416,7 @@ deriv_used(s, q1, q2)	/* q1, q2 are begin and end tokens for expression */
    
 static int matchused = 0;	/* set when MATCH seen */
 /* args are --- derivblk: DERIVATIVE NAME stmtlist '}' */
-massagederiv(q1, q2, q3, q4, sensused)
+void massagederiv(q1, q2, q3, q4, sensused)
 	Item *q1, *q2, *q3, *q4;
 {
 	int count = 0, deriv_implicit, solve_seen;
@@ -429,7 +429,7 @@ massagederiv(q1, q2, q3, q4, sensused)
 	Lappendsym(massage_list_, SYM(q2));
 	
 	/* all this junk is still in the intoken list */
-	Sprintf(buf, "static int %s();\n", SYM(q2)->name);
+	Sprintf(buf, "static int %s(_threadargsproto_);\n", SYM(q2)->name);
 	Linsertstr(procfunc, buf);
 	replacstr(q1, "\nstatic int"); q = insertstr(q3, "() {_reset=0;\n");
 	derfun = SYM(q2);
@@ -633,7 +633,7 @@ List		*match_bound;	/* list of triples or quadruples.
 in match_bound must be equal to the number of differential equations */
 /* we limit ourselves to one matched boundary problem per model */
 
-matchinitial(q1)	/* name */
+void matchinitial(q1)	/* name */
 	Item *q1;
 {
 	/* must be of form state0. Later we can check if state' is in fact
@@ -826,7 +826,7 @@ static double _match_time[%d], _match_value[%d], _found_init[%d];\n",
 		nunknown, nunknown, nunknown, nunknown, nunknown);
 	Linsertstr(procfunc, buf);
 	Sprintf(buf, "static double *_pmatch_time[%d], *_pmatch_value[%d];\n",
- 		nunknown, nunknown, nunknown);
+ 		nunknown, nunknown);
 	Linsertstr(procfunc, buf);
 	
 	/* create the _state_match stuff */
@@ -963,7 +963,7 @@ Symbol*ds, *s; Item* qbegin, *qend; {
 }
 
 /* DState symbol, begin, and end of expression */
-static cvode_diffeq(ds, qbegin, qend) Symbol* ds; Item* qbegin, *qend; {
+static void cvode_diffeq(ds, qbegin, qend) Symbol* ds; Item* qbegin, *qend; {
 	/* try first the assumption of linear. If not, then use numerical diff*/
 	Symbol* s;
 	Item* q;

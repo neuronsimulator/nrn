@@ -148,7 +148,7 @@ nrniv_DEPENDENCIES = \
 ## Header files that must be included in the distribution:
 noinst_HEADERS = ndatclas.h nrnclass.h nrnmenu.h nrnoc2iv.h ppshape.h \
 	rot3band.h rotate3d.h secbrows.h shape.h shapeplt.h singlech.h \
-	linmod.h nrniv_mf.h nrnste.h arraypool.h structpool.h \
+	linmod.h nrnste.h arraypool.h structpool.h \
 	kschan.h kssingle.h nonlinz.h nrnhash.h \
 	nvector_nrnthread_ld.h nvector_nrnserial_ld.h \
 	$(PARINC1) \

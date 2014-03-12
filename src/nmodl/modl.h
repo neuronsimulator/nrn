@@ -120,6 +120,7 @@ typedef struct Symbol {
 #if NMODL
 	short		nrntype;
 	short		assigned_to_;
+	int		no_threadargs; /* introduced for FUNCTION_TABLE table_name */
 #if CVODE
 	int*		slist_info_; /* blunt instrument for retrieving ion concentration slist value */
 #endif
@@ -251,6 +252,8 @@ extern Symbol
 		*semi,		/* ';'. When seen on output, causes newline */
 		*beginblk,	/* '{'. Used for rudimentary indentation */
 		*endblk;	/* on output. */
+
+extern void printlist(List*);
 
 /* the following is to get lint to shut up */
 #if LINT

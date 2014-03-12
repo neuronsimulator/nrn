@@ -32,7 +32,7 @@ solv_lineq(qsol, fun, method, numeqn, listnum)
 	sens_nonlin_out(qsol->next, fun);
 }
 
-eqnqueue(q1)
+void eqnqueue(q1)
 	Item *q1;
 {
 	Item *lq;

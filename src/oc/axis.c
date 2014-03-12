@@ -222,7 +222,7 @@ static save_regraph_item(narg, mode, x)
 	}
 }
 
-Plot() {
+void Plot() {
 	double ok;
 	int narg, mode;
 

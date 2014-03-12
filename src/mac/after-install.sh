@@ -94,7 +94,8 @@ if test -d "$ivlibdir" ; then
 fi
 
 vv=`sw_vers -productVersion|sed 's/.*\.\(.*\)\..*/\1/'`
-if test $vv -gt 6 ; then
+#if test $vv -gt 6 ; then
+if false ; then
 
 # change nrniv install_name for dylibs so nrniv,etc works at any location
 ff="$N/$CPU/bin/nrniv"

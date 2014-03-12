@@ -241,7 +241,7 @@ menu_manager(nmenu) int nmenu; {
 	current_menu = previous;
 }
 
-hoc_fmenu(){
+void hoc_fmenu(){
 	int imenu, flag, i, narg;
 #ifdef WIN32
 	hoc_execerror("fmenu not available under mswindows.", "Use xpanel series");
@@ -314,7 +314,6 @@ menuscurrent = (Menuitem **)emalloc((unsigned)(imenu*sizeof(Menuitem *)));
 			break;
 	}
 	Ret (0.);
-	return 0;
 }
 
 static xcursor(r, c) int r, c;{

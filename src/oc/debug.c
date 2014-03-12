@@ -18,7 +18,6 @@ debug()		/* print the machine */
 		zzdebug = 1;
 	else
 		zzdebug = 0;
-	return;
 }
 
 debugzz(p)	/* running copy of calls to execute */

@@ -44,7 +44,7 @@ extern char *secname();
 
 #define nt_t nrn_threads->_t
 
-print_stim() {
+void print_stim() {
 	int i;
 	
 	if (maxstim == 0) return;

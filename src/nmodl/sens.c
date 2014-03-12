@@ -338,7 +338,7 @@ fn, j + nstate*i, sname, fn, j + nstate*i, dname);
 	sens_parm = 0;
 }
 
-sens_nonlin_out(q, fun)
+void sens_nonlin_out(q, fun)
 	Item *q;
 	Symbol *fun;
 {

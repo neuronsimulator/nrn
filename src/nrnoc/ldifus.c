@@ -151,7 +151,7 @@ printf("free longdifus structure_change=%d %d\n", pld->schange, structure_change
 	*ppld = (LongDifus*)0;
 }
 
-static longdifus_diamchange(pld, m, sindex, ml, _nt)
+static void longdifus_diamchange(pld, m, sindex, ml, _nt)
  LongDifus* pld; int m, sindex; Memb_list* ml; NrnThread* _nt;
 {
 	int i, n, mi, mpi, j, index, pindex, vnodecount;

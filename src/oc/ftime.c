@@ -54,7 +54,7 @@ int hoc_stopsw()
 		Ret((double)(stop_time - start_time));
 	}
 #endif
-	return;
+	return 0;
 }
 
 double nrn_timeus()

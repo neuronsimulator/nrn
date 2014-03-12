@@ -25,5 +25,5 @@ int hoc_settext()
 	if (text_orient > 1 || text_orient < 0) text_orient = 0;
 	newstyle = 1;
 	Ret(1.);
-	return;
+	return 0;
 }

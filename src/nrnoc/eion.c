@@ -47,7 +47,7 @@ double nrn_ion_charge(Symbol* sym) {
 	return global_charge(sym->subtype);
 }
 
-ion_register() {
+int ion_register() {
 	/* hoc level registration of ion name. Return -1 if name already
 	in use and not an ion;	and the mechanism subtype otherwise.
 	*/
@@ -64,7 +64,7 @@ ion_register() {
 	s = hoc_lookup(buf);
 	if (s && s->type == MECHANISM && memb_func[s->subtype].alloc == ion_alloc) {
 		hoc_symlist = sav;
-		ret((double)s->subtype); return;
+		ret((double)s->subtype); return 0;
 	}
 	if (s) { fail = 1; }
 	sprintf(buf, "e%s", name); if (hoc_lookup(buf))  { fail = 1; }
@@ -74,7 +74,7 @@ ion_register() {
 	sprintf(buf, "di%s_dv_", name); if (hoc_lookup(buf))  { fail = 1; }
 	if (fail) {
 		hoc_symlist = sav;
-		ret(-1.); return;
+		ret(-1.); return 0;
 	}
 	hoc_symlist = hoc_built_in_symlist;
 	ion_reg(name, *getarg(2));
@@ -82,6 +82,7 @@ ion_register() {
 	sprintf(buf, "%s_ion", name);
 	s = hoc_lookup(buf);
 	ret((double)s->subtype);
+	return 0;
 }
 
 ion_charge() {
@@ -225,15 +226,15 @@ int nernst() {
 			case 0:
 				val = nrn_nernst(*ci, *co, z);
 				ret(val);
-				return;
+				return 0;
 			case 1:
 				val = *co*exp(-z/ktf* *e);
 				ret(val);
-				return;
+				return 0;
 			case 2:
 				val = *ci*exp(z/ktf* *e);
 				ret(val);
-				return;
+				return 0;
 			}
 		}
 		hoc_execerror(gargstr(1), " not a reversal potential or concentration");
@@ -242,6 +243,7 @@ int nernst() {
 /*printf("nernst=%g\n", val);*/
 	}
 	ret(val);
+	return 0;
 }
 
 static double efun(x) double x; {

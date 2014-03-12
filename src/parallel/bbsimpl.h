@@ -48,6 +48,7 @@ public:
 	
 	virtual void perror(const char*);
 public:
+	int runworker_called_;
 	int working_id_, n_;
 	double wait_time_;
 	double integ_time_;

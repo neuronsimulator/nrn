@@ -110,22 +110,32 @@ dmg:
 
 alphadist:
 if UniversalMacBinary
-	scp $(HOME)/NEURON-"`sh $(srcdir)/nrnversion.sh`".dmg $(ALPHADIR)/nrn-"`sh $(srcdir)/nrnversion.sh 2`"-MacOSX"`sw_vers -productVersion`".dmg
+	a=$(ALPHADIR)/nrn-"`sh $(srcdir)/nrnversion.sh 2`"-MacOSX"`sw_vers -productVersion`".dmg && \
+	echo $$a && \
+	scp $(HOME)/NEURON-"`sh $(srcdir)/nrnversion.sh`".dmg "$$a"
 else
-	scp $(HOME)/NEURON-"`sh $(srcdir)/nrnversion.sh`".dmg $(ALPHADIR)/nrn-"`sh $(srcdir)/nrnversion.sh 2`"."$(host_cpu)"-apple-osx"`sw_vers -productVersion`".dmg
+	a=$(ALPHADIR)/nrn-"`sh $(srcdir)/nrnversion.sh 2`"."$(host_cpu)"-apple-osx"`sw_vers -productVersion`".dmg && \
+	echo $$a && \
+	scp $(HOME)/NEURON-"`sh $(srcdir)/nrnversion.sh`".dmg $$a
 endif
 
 else
 if BUILD_CYGWIN
 alphadist:
-	scp src/mswin/nrn"`sh $(srcdir)/nrnversion.sh 3`"setup.exe $(ALPHADIR)/nrn-"`sh $(srcdir)/nrnversion.sh 2`".$(host)-setup.exe
+	a=$(ALPHADIR)/nrn-"`sh $(srcdir)/nrnversion.sh 2`".$(host)-setup.exe &&\
+	echo $$a && \
+	scp src/mswin/nrn"`sh $(srcdir)/nrnversion.sh 3`"setup.exe $$a
 else
 if BUILD_MINGW
 alphadist:
-	scp src/mswin/nrn"`sh $(srcdir)/nrnversion.sh 3`"setup-$(host_cpu).exe $(ALPHADIR)/nrn-"`sh $(srcdir)/nrnversion.sh 2`".$(host)-setup.exe
+	a=$(ALPHADIR)/nrn-"`sh $(srcdir)/nrnversion.sh 2`".$(host)-setup.exe && \
+	echo $$a && \
+	scp src/mswin/nrn"`sh $(srcdir)/nrnversion.sh 3`"setup-$(host_cpu).exe $$a
 else
 alphadist:
-	scp nrn-"`sh $(srcdir)/nrnversion.sh`".tar.gz $(ALPHADIR)/nrn-"`sh $(srcdir)/nrnversion.sh 2`".tar.gz
+	a=$(ALPHADIR)/nrn-"`sh $(srcdir)/nrnversion.sh 2`".tar.gz && \
+	echo $$a && \
+	scp nrn-"`sh $(srcdir)/nrnversion.sh`".tar.gz $$a
 endif
 endif
 endif

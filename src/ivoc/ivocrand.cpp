@@ -67,15 +67,15 @@ Rand* nrn_random_arg(int);
 
 class NrnRandom123 : public RNG {
 public:
-	NrnRandom123(uint32_t id1, uint32_t id2);
+	NrnRandom123(uint32_t id1, uint32_t id2, uint32_t id3 = 0);
 	virtual ~NrnRandom123();
 	virtual uint32_t asLong() { return nrnran123_ipick(s_); }
 	virtual double asDouble() { return nrnran123_dblpick(s_); }
 	virtual void reset() { nrnran123_setseq(s_, 0, 0); }
 	nrnran123_State* s_;
 };
-NrnRandom123::NrnRandom123(uint32_t id1, uint32_t id2) {
-	s_ = nrnran123_newstream(id1, id2);
+NrnRandom123::NrnRandom123(uint32_t id1, uint32_t id2, uint32_t id3) {
+	s_ = nrnran123_newstream3(id1, id2, id3);
 }
 NrnRandom123::~NrnRandom123() {
 	nrnran123_deletestream(s_);
@@ -294,9 +294,11 @@ static double r_nrnran123(void* r) {
 	Rand* x = (Rand*)r;
 	uint32_t id1 = 0;
 	uint32_t id2 = 0;
+	uint32_t id3 = 0;
 	if (ifarg(1)) id1 = (uint32_t)(chkarg(1, 0., dmaxuint));
 	if (ifarg(2)) id2 = (uint32_t)(chkarg(2, 0., dmaxuint));
-	NrnRandom123* r123 = new NrnRandom123(id1, id2);
+	if (ifarg(3)) id3 = (uint32_t)(chkarg(3, 0., dmaxuint));
+	NrnRandom123* r123 = new NrnRandom123(id1, id2, id3);
 	x->rand->generator(r123);
 	delete x->gen;
 	x->gen = x->rand->generator();

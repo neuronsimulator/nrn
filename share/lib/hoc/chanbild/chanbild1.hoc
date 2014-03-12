@@ -53,7 +53,7 @@ proc init() {local den, imp, sin
 	build()
 	i = 0
 	if ( imp && sin) {
-		genprop.set_single(sin)
+		genprop.single_ = sin
 	}
 }
 
@@ -88,7 +88,10 @@ proc import() {local i, j, k, srcindex, tarindex, ut
 		}
 		tobj.end_restore()
 	}
-	end_restore()
+	// end_restore() // need to avoid cb2ks() so explicitly do following
+	changegate()
+	set_alias()
+
 	usetable(ut)
 	objref gate, kst, tobj,tobj1
 }

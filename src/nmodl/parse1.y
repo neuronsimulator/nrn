@@ -801,6 +801,7 @@ firstlast: FIRST | LAST
 functableblk: FUNCTION_TABLE NAME '(' arglist ')' units
 		{Item *b1, *b2;
 		Symbol* s = SYM($2);
+		s->varnum = argcnt_;
 		b1 = insertstr($5->next, "{\n");
 		b2 = insertstr(b1->next, "}\n");
 
@@ -830,6 +831,7 @@ funcblk: FUNCTION1 NAME '(' arglist ')' units
 		/* boilerplate added to form double function(){...}
 		   Note all arguments have prefix _l */
 		{ Symbol *s = SYM($2);
+		s->varnum = argcnt_;
 		table_massage(table_list, $1, $2, $4); freelist(&table_list);
 #if GLOBFUNCT && NMODL
 		replacstr($1, "\ndouble");
@@ -867,6 +869,7 @@ arglist1: name units
 procedblk: PROCEDURE NAME '(' arglist ')' units stmtlist '}'
 		{Symbol *s = SYM($2);
 		s->u.i = 0; 	/* avoid objectcenter warning if solved */
+		s->varnum = argcnt_; /* allow proper number of "double" in prototype */
 		table_massage(table_list, $1, $2, $4); freelist(&table_list);
 		replacstr($1, "\nstatic int "); defarg($3, $5);
 		Insertstr($8, " return 0;");
@@ -892,7 +895,7 @@ diag("NET_RECEIVE block"," must have at least one argument");
 		}
 	     stmtlist '}'
 		{
-		replacstr($1, "\nstatic _net_receive");
+		replacstr($1, "\nstatic void _net_receive");
 		movelist($1, $7, procfunc);
 #if NMODL
 		net_receive($3, $2, $4, $6, $7);

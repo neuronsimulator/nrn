@@ -92,7 +92,7 @@ static int	int_range_stop[NBRA];
 
 static int advance();
 
-hoc_regexp_compile(cp)
+void hoc_regexp_compile(cp)
 	char *cp;
 {
 	register c;

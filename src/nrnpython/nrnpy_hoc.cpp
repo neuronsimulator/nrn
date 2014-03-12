@@ -890,7 +890,7 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* name) {
 	case VAR: // double*
 		if (!ISARRAY(sym)) {
 			if (sym->subtype == USERINT) {
-				Py_BuildValue("i", *(sym->u.pvalint));
+				result = Py_BuildValue("i", *(sym->u.pvalint));
 				break;
 			}
 			if (sym->subtype == USERPROPERTY) {
@@ -1078,8 +1078,12 @@ static int hocobj_setattro(PyObject* subself, PyObject* name, PyObject* value) {
 			err = -1;
 		}else{
 			hoc_pushs(sym);
-			hoc_evalpointer();
-			err = PyArg_Parse(value, "d", hoc_pxpop()) != 1;
+			if (sym->subtype == USERINT) {
+				err = PyArg_Parse(value, "i", sym->u.pvalint) != 1;
+			}else{
+				hoc_evalpointer();
+				err = PyArg_Parse(value, "d", hoc_pxpop()) != 1;
+			}
 		}
 		break;
 	case STRING: // char*

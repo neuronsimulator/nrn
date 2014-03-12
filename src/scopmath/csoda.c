@@ -4842,12 +4842,11 @@ doublereal *v, *w;
  */
 } /* vmnorm_ */
 
-/* Subroutine */ int xerrwv_(msg, nmes, nerr, level, ni, i1, i2, nr, r1, r2, d)
+/* Subroutine */ int xerrwv_(msg, nmes, nerr, level, ni, i1, i2, nr, r1, r2)
 integer *msg, *nmes;
 integer *nerr;
 integer *level, *ni, *i1, *i2, *nr;
 doublereal *r1, *r2;
-integer d;
 {
     /* Initialized data */
 
@@ -5527,15 +5526,15 @@ L55:
 
 L80:
     xerrwv_("intdy--  k (=i1) illegal      ", &c__30, &c__51, &c__0, &c__1, k,
-	     &c__0, &c__0, &c_b136, &c_b136, 30L);
+	     &c__0, &c__0, &c_b136, &c_b136);
     *iflag = -1;
     return 0;
 L90:
     xerrwv_("intdy--  t (=r1) illegal      ", &c__30, &c__52, &c__0, &c__0, &
-	    c__0, &c__0, &c__1, t, &c_b136, 30L);
+	    c__0, &c__0, &c__1, t, &c_b136);
     xerrwv_("      t not in interval tcur - hu (= r1) to tcur (=r2)      ", &
 	    c__60, &c__52, &c__0, &c__0, &c__0, &c__0, &c__2, &tp, &
-	    ls0001_2.tn, 60L);
+	    ls0001_2.tn);
     *iflag = -2;
     return 0;
 /* ----------------------- end of subroutine intdy -----------------------

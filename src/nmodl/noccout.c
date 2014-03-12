@@ -53,7 +53,7 @@ extern int electrode_current; /* 1 means we should watch out for extracellular
 static initstates();
 static funcdec();
 
-static ext_vdef() {
+static void ext_vdef() {
 	if (artificial_cell) { return; }
 		if (electrode_current) {
 			P("#if EXTRACELLULAR\n");
@@ -97,7 +97,7 @@ static ext_vdef() {
 }
 
 /* when vectorize = 0 */
-c_out()
+void c_out()
 {
 #if NMODL
 	Item *q;
@@ -125,8 +125,9 @@ c_out()
 	P("#include \"common.h\"\n#include \"softbus.h\"\n");
 	P("#include \"sbtypes.h\"\n#include \"Solver.h\"\n");
 #else
-	P("#include <stdio.h>\n#include <stdlib.h>\n#include <math.h>\n#include \"scoplib.h\"\n");
+	P("#include <stdio.h>\n#include <stdlib.h>\n#include <math.h>\n#include \"scoplib_ansi.h\"\n");
 	P("#undef PI\n");
+	P("#define nil 0\n");
 #endif
 	printlist(defs_list);
 	printlist(firstlist);
@@ -148,7 +149,7 @@ c_out()
 	P("int _ninits = 0;\n");
 	P("static int _match_recurse=1;\n");
 #if NMODL
-	P("static ");
+	P("static void ");
 #endif	
 	P("_modl_cleanup(){ _match_recurse=1;}\n");
 	/*
@@ -423,7 +424,7 @@ c_out()
 #endif
 
 #if NMODL
-	P("\nstatic terminal(){}\n");
+	P("\nstatic void terminal(){}\n");
 #else
 	/* Terminal function must always be present */
 #if SIMSYS || HMODL
@@ -440,7 +441,7 @@ c_out()
 
 	/* initlists() is called once to setup slist and dlist pointers */
 #if NMODL || SIMSYS || HMODL
-	P("\nstatic _initlists() {\n");
+	P("\nstatic void _initlists() {\n");
 #else
 	P("\n_initlists() {\n");
 #endif
@@ -525,7 +526,20 @@ printitem(q) Item* q; {
 		}
 }
 
-printlist(s)
+debugprintitem(q) Item* q; {
+		if (q->itemtype == SYMBOL) {
+			printf("SYM %s\n", SYM(q)->name);
+		} else if (q->itemtype == VERBATIM) {
+			printf("VERB %s\n",STR(q));
+		} else if (q->itemtype == ITEM) {
+			printf("ITM ");
+			debugprintitem(ITM(q));
+		}else {
+			printf("STR %s\n", STR(q));
+		}
+}
+
+void printlist(s)
 	List           *s;
 {
 	Item           *q;
@@ -556,18 +570,38 @@ funcdec()
 	int             i;
 	Symbol         *s;
 	List           *qs;
+	int j, narg, more;
 
 	SYMITER(NAME) {
+		more = 0;
 		/*EMPTY*/	/*maybe*/
 		if (s->subtype & FUNCT) {
 #define GLOBFUNCT 1
 #if GLOBFUNCT && NMODL
 #else
-			Fprintf(fcout, "static double %s();\n", s->name);
+			Fprintf(fcout, "static double %s(", s->name);
+			more = 1;
 #endif
 		}
 		if (s->subtype & PROCED) {
-			Fprintf(fcout, "static %s();\n", s->name);
+			Fprintf(fcout, "static int %s(", s->name);
+			more = 1;
+		}
+		if (more) {
+			narg = s->varnum;
+if (vectorize) {
+			if (narg) {
+				Fprintf(fcout, "_threadargsprotocomma_ ");
+			}else{
+				Fprintf(fcout, "_threadargsproto_");
+			}
+}
+			/*loop over argcount and add ,double */
+			if (narg > 0) { Fprintf(fcout, "double"); }
+			for (j=1; j < narg; ++j) {
+				Fprintf(fcout, ", double");
+			}
+			Fprintf(fcout,");\n");
 		}
 	}
 }
@@ -581,8 +615,9 @@ c_out_vectorize()
 	
 	/* things which must go first and most declarations */
 	P("/* VECTORIZED */\n");
-	P("#include <stdio.h>\n#include <stdlib.h>\n#include <math.h>\n#include \"scoplib.h\"\n");
+	P("#include <stdio.h>\n#include <stdlib.h>\n#include <math.h>\n#include \"scoplib_ansi.h\"\n");
 	P("#undef PI\n");
+	P("#define nil 0\n");
 	printlist(defs_list);
 	printlist(firstlist);
 	P("static int _reset;\n");
@@ -596,7 +631,7 @@ c_out_vectorize()
 	P("static int error;\n");
 	P("static int _ninits = 0;\n");
 	P("static int _match_recurse=1;\n");
-	P("static _modl_cleanup(){ _match_recurse=1;}\n");
+	P("static void _modl_cleanup(){ _match_recurse=1;}\n");
 
 	funcdec();
 	Fflush(fcout);
@@ -815,7 +850,7 @@ c_out_vectorize()
 	}
 	P("\n}\n");
 
-	P("\nstatic terminal(){}\n");
+	P("\nstatic void terminal(){}\n");
 
 	/* vectorized: data must have own copies of slist and dlist
 	   for now we don't vectorize if slist or dlist exists. Eventually
@@ -823,12 +858,13 @@ c_out_vectorize()
 	   things.
 	*/
 	/* initlists() is called once to setup slist and dlist pointers */
-	P("\nstatic _initlists(){\n");
+	P("\nstatic void _initlists(){\n");
 	P(" double _x; double* _p = &_x;\n");
 	P(" int _i; static int _first = 1;\n");
 	P("  if (!_first) return;\n");
 	printlist(initlist);
 	P("_first = 0;\n}\n");
+	P("\n#if defined(__cplusplus)\n} /* extern \"C\" */\n#endif\n");
 }
 
 vectorize_substitute(q, str)

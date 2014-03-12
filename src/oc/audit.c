@@ -22,7 +22,7 @@ typedef struct RetrieveAudit {
 
 static RetrieveAudit retrieve_audit;
 
-static pipesend();
+static void pipesend();
 
 /*
 Notes:
@@ -56,7 +56,7 @@ static hoc_audit_init() {
 #endif
 }
 
-hoc_audit_from_hoc_main1(argc, argv, envp)
+void hoc_audit_from_hoc_main1(argc, argv, envp)
 	int argc;
 	char** argv;
 	char** envp;
@@ -112,7 +112,7 @@ hoc_audit_from_hoc_main1(argc, argv, envp)
 }
 
 #if !OCSMALL
-static pipesend(type, s)
+static void pipesend(type, s)
 	int type;
 	char* s;
 {
@@ -164,7 +164,7 @@ hoc_audit_from_final_exit() {
 #endif
 }
 
-hoc_audit_from_emacs(bufname, filname)
+void hoc_audit_from_emacs(bufname, filname)
 	char* bufname;
 	char* filname;
 {
@@ -173,7 +173,7 @@ hoc_audit_from_emacs(bufname, filname)
 	char s[256];
 	FILE* f;
 	extern char* hoc_pipegets();
-	static n=0;
+	static int n=0;
 
 	if (!doaudit) {
 		return;

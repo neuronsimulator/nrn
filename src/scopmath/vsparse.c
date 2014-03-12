@@ -210,8 +210,8 @@ static bksub();
 static int free_elm();
 static create_coef_list();
 static init_coef_list();
-static increase_order();
-static reduce_order();
+static void increase_order();
+static void reduce_order();
 static spar_minorder();
 static get_next_pivot();
 static freelist();
@@ -554,7 +554,7 @@ static prmat()
 	IGNORE(fflush(stdin));
 }
 
-static initeqn(_ix1, _ix2, count, maxeqn) /* reallocate space for matrix */
+static void initeqn(_ix1, _ix2, count, maxeqn) /* reallocate space for matrix */
      int _ix1, _ix2, count ;
      unsigned maxeqn;
 {
@@ -778,7 +778,7 @@ static init_minorder() {
 	}
 }
 
-static increase_order(row) unsigned row; {
+static void increase_order(row) unsigned row; {
 	/* order of row increases by 1. Maintain the orderlist. */
 	Item *order;
 
@@ -789,7 +789,7 @@ static increase_order(row) unsigned row; {
 	insert(order);
 }
 
-static reduce_order(row) unsigned row; {
+static void reduce_order(row) unsigned row; {
 	/* order of row decreases by 1. Maintain the orderlist. */
 	Item *order;
 

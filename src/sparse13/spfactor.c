@@ -2096,6 +2096,9 @@ RealNumber  Largest, Magnitude;
  *      of the reduced submatrix.
  */
 
+extern void spcRowExchange();
+extern void spcColExchange();
+
 static
 void ExchangeRowsAndCols( Matrix, pPivot, Step )
 
@@ -2226,7 +2229,7 @@ ElementPtr spcFindElementInCol();
  *      Pointer to the element in Row2 to be exchanged.
  */
 
-spcRowExchange( Matrix, Row1, Row2 )
+void spcRowExchange( Matrix, Row1, Row2 )
 
 MatrixPtr Matrix;
 int  Row1, Row2;
@@ -2327,7 +2330,7 @@ ElementPtr  Element1, Element2;
  *      Pointer to the element in Col2 to be exchanged.
  */
 
-spcColExchange( Matrix, Col1, Col2 )
+void spcColExchange( Matrix, Col1, Col2 )
 
 MatrixPtr Matrix;
 int  Col1, Col2;

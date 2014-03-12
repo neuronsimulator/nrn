@@ -9,7 +9,7 @@ static List *reactnames;
 static set_flux_units();
 static react_unit_err();
 
-kinunits(type, pass)
+void kinunits(type, pass)
 	Item *type;
 	int pass;
 {

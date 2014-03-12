@@ -259,18 +259,23 @@ fprintf(stderr, "Notice: ARTIFICIAL_CELL models that would require thread specif
 	Lappendstr(defs_list, "\
 \n#include \"md1redef.h\"\
 \n#include \"section.h\"\
+\n#include \"nrniv_mf.h\"\
 \n#include \"md2redef.h\"\n\
 \n#if METHOD3\nextern int _method3;\n#endif\n\
+\n#if !NRNGPU\
 \n#undef exp\
-\n#define exp hoc_Exp\nextern double hoc_Exp();\n\
+\n#define exp hoc_Exp\nextern double hoc_Exp(double);\
+\n#endif\n\
 ");
 	if (protect_include_) {
 		Lappendstr(defs_list, "\n#include \"nmodlmutex.h\"");
 	}
 	if (vectorize) {
 		Lappendstr(defs_list, "\n#define _threadargscomma_ _p, _ppvar, _thread, _nt,\n#define _threadargs_ _p, _ppvar, _thread, _nt\n");
+		Lappendstr(defs_list, "\n#define _threadargsprotocomma_ double* _p, Datum* _ppvar, Datum* _thread, _NrnThread* _nt,\n#define _threadargsproto_ double* _p, Datum* _ppvar, Datum* _thread, _NrnThread* _nt\n");
 	}else{
 		Lappendstr(defs_list, "\n#define _threadargscomma_ /**/\n#define _threadargs_ /**/\n");
+		Lappendstr(defs_list, "\n#define _threadargsprotocomma_ /**/\n#define _threadargsproto_ /**/\n");
 	}
 	Lappendstr(defs_list, "\
 	/*SUPPRESS 761*/\n\
@@ -294,6 +299,7 @@ fprintf(stderr, "Notice: ARTIFICIAL_CELL models that would require thread specif
 	declare_p();
 	ioncount = iondef(&pointercount); /* first is _nd_area if point process */
 	Lappendstr(defs_list, "\n#if MAC\n#if !defined(v)\n#define v _mlhv\n#endif\n#if !defined(h)\n#define h _mlhh\n#endif\n#endif\n");
+	Lappendstr(defs_list, "\n#if defined(__cplusplus)\nextern \"C\" {\n#endif\n");
 	Lappendstr(defs_list, "static int hoc_nrnpointerindex = ");
 	if (pointercount) {
 		q = nrnpointers->next;
@@ -344,7 +350,18 @@ Sprintf(buf, "static int _hoc_%s();\n", s->name);
 		}
 	}
 
-	Lappendstr(defs_list, "static int _mechtype;\nextern int nrn_get_mechtype();\n");
+	Lappendstr(defs_list, "extern int ret(double);\n");
+	Lappendstr(defs_list, "static int _mechtype;\n\
+extern void _nrn_cacheloop_reg(int, int);\n\
+extern void hoc_register_prop_size(int, int, int);\n\
+extern void hoc_register_var(DoubScal*, DoubVec*, IntFunc*);\n\
+extern void ivoc_help(char*);\n\
+extern void hoc_register_limits(int, HocParmLimits*);\n\
+extern void hoc_register_units(int, HocParmUnits*);\n\
+extern void nrn_promote(Prop*, int, int);\n\
+extern Memb_func* memb_func;\n\
+"	);
+
 	/**** create special point process functions */
 	if (point_process) {
 		Lappendstr(defs_list, "extern Prop* nrn_point_prop_;\n");
@@ -373,18 +390,18 @@ Sprintf(buf, "static int _hoc_%s();\n", s->name);
 	Lappendstr(defs_list, "}\n");
 	
 	if (point_process) {
-		Lappendstr(defs_list, "static _hoc_setdata(_vptr) void* _vptr; { Prop* _prop;\n");
+		Lappendstr(defs_list, "static int _hoc_setdata(void* _vptr) { Prop* _prop;\n");
 		Lappendstr(defs_list, "_prop = ((Point_process*)_vptr)->_prop;\n");
 	}else{
-		Lappendstr(defs_list, "static _hoc_setdata() {\n Prop *_prop, *hoc_getdata_range();\n");
+		Lappendstr(defs_list, "static int _hoc_setdata() {\n Prop *_prop, *hoc_getdata_range(int);\n");
 		Sprintf(buf, "_prop = hoc_getdata_range(_mechtype);\n");
 		Lappendstr(defs_list, buf);
 	}
 	Lappendstr(defs_list, "  _setdata(_prop);\n");
 	if (point_process) {
-		Lappendstr(defs_list, "}\n");
+		Lappendstr(defs_list, "return 0;\n}\n");
 	}else{
-		Lappendstr(defs_list, "ret(1.);\n}\n");
+		Lappendstr(defs_list, "ret(1.);\n return 0;\n}\n");
 	}
 	
 	/* functions */
@@ -392,8 +409,7 @@ Sprintf(buf, "static int _hoc_%s();\n", s->name);
 	Lappendstr(defs_list,"static IntFunc hoc_intfunc[] = {\n");
    if (point_process) {
 	Lappendstr(defs_list,"0,0\n};\n");
-	Lappendstr(defs_list, "static struct Member_func {\n\
-	char* _name; double (*_member)();} _member_func[] = {\n");
+	Lappendstr(defs_list, "static Member_func _member_func[] = {\n");
 	Sprintf(buf, "\"loc\", _hoc_loc_pnt,\n");
 	Lappendstr(defs_list, buf);
 	Sprintf(buf, "\"has_loc\", _hoc_has_loc,\n");
@@ -427,10 +443,25 @@ Sprintf(buf, "\"%s%s\", _hoc_%s,\n", s->name, rsuffix, s->name);
 		}
 	}
 	SYMLISTITER {
+		int j;
 		s = SYM(q);
 		if ((s->subtype & FUNCT)) {
-			Sprintf(buf, "extern double %s();\n", s->name);
+			Sprintf(buf, "extern double %s(", s->name);
 			Lappendstr(defs_list, buf);
+			if (vectorize && !s->no_threadargs) {
+				if (s->varnum) {
+					Lappendstr(defs_list, "_threadargsprotocomma_");
+				}else{
+					Lappendstr(defs_list, "_threadargsproto_");
+				}
+			}
+			for (j=0; j < s->varnum; ++j) {
+				Lappendstr(defs_list, "double");
+				if (j+1 < s->varnum) {
+					Lappendstr(defs_list, ",");
+				}
+			}
+			Lappendstr(defs_list, ");\n");
 		}
 	}
 #endif
@@ -610,10 +641,10 @@ diag("No statics allowed for thread safe models:", s->name);
 	/******** what normally goes into cabvars.h structures */
 	
 	/*declaration of the range variables names to HOC */
-	Lappendstr(defs_list, "static void nrn_alloc(), nrn_init(), nrn_state();\n\
+	Lappendstr(defs_list, "static void nrn_alloc(Prop*);\nstatic void  nrn_init(_NrnThread*, _Memb_list*, int);\nstatic void nrn_state(_NrnThread*, _Memb_list*, int);\n\
 ");
 	if (brkpnt_exists) {
-		Lappendstr(defs_list, "static void nrn_cur(), nrn_jacob();\n");
+		Lappendstr(defs_list, "static void nrn_cur(_NrnThread*, _Memb_list*, int);\nstatic void  nrn_jacob(_NrnThread*, _Memb_list*, int);\n");
 	}
 	/* count the number of pointers needed */
 	ppvar_cnt = ioncount + diamdec + pointercount + areadec;
@@ -737,10 +768,9 @@ static char *_mechanism[] = {\n\
 	}
 	
 	Lappendstr(defs_list, "\n\
-static void nrn_alloc(_prop)\n\
-	Prop *_prop;\n\
-{\n\
-	Prop *prop_ion, *need_memb();\n\
+extern Prop* need_memb(Symbol*);\n\n\
+static void nrn_alloc(Prop* _prop) {\n\
+	Prop *prop_ion;\n\
 	double *_p; Datum *_ppvar;\n\
 ");
 	if (point_process) {
@@ -883,7 +913,8 @@ static _constructor(_prop)\n\
 	Lappendstr(defs_list, "\n}\n");
 
 	/**** create function that registers the above info to NEURON and HOC*/
-	Lappendstr(defs_list, "static _initlists();\n");
+	Lappendstr(defs_list, "extern void register_mech(char**, void(*)(Prop*), Pvmi, Pvmi, Pvmi, Pvmi, int, int);\n");
+	Lappendstr(defs_list, "static void _initlists();\n");
 #if CVODE
 	if (cvode_emit) {
 		Lappendstr(defs_list, " /* some states have an absolute tolerance */\n");
@@ -921,16 +952,12 @@ Sprintf(buf, "\"%s\", %g,\n", s->name, d1);
 		}
 	}
 	if (net_receive_) {
-		Lappendstr(defs_list, "static _net_receive();\n");
+		Lappendstr(defs_list, "static void _net_receive(Point_process*, double*, double);\n");
 		if (for_netcons_) {
-			Lappendstr(defs_list, "extern int nrn_netcon_argslist();\n");
+			Lappendstr(defs_list, "extern int _nrn_netcon_args(void*, double***);\n");
 		}
-		Lappendstr(defs_list, "typedef (*_Pfrv)();\n");
-		Lappendstr(defs_list, "extern _Pfrv* pnt_receive;\n");
-		Lappendstr(defs_list, "extern short* pnt_receive_size;\n");
 		if (net_init_q1_) {
-			Lappendstr(defs_list, "static _net_init();\n");
-			Lappendstr(defs_list, "extern _Pfrv* pnt_receive_init;\n");
+			Lappendstr(defs_list, "static void _net_init(Point_process*, double*, double);\n");
 		}
 	}
 	if (vectorize && thread_mem_init_list->next != thread_mem_init_list) {
@@ -942,13 +969,20 @@ Sprintf(buf, "\"%s\", %g,\n", s->name, d1);
 	if (uip) {
 		lappendstr(defs_list, "static void _update_ion_pointer(Datum*);\n");
 	}
-	Sprintf(buf, "_%s_reg() {\n\
+	Lappendstr(defs_list, "\
+extern Symbol* hoc_lookup(const char*);\n\
+extern void _nrn_thread_reg(int, int, void(*f)(Datum*));\n\
+extern void _nrn_thread_table_reg(int, void(*)(double*, Datum*, Datum*, _NrnThread*, int));\n\
+extern void hoc_register_tolerance(int, HocStateTolerance*, Symbol***);\n\
+extern void _cvode_abstol( Symbol**, double*, int);\n\n\
+");        
+	Sprintf(buf, "void _%s_reg() {\n\
 	int _vectorized = %d;\n", modbase, vectorize);
 	Lappendstr(defs_list, buf);
 	q = lappendstr(defs_list, "");
 	Lappendstr(defs_list, "_initlists();\n");
 #else
-	Sprintf(buf, "_%s_reg() {\n	_initlists();\n", modbase);
+	Sprintf(buf, "void _%s_reg() {\n	_initlists();\n", modbase);
 	Lappendstr(defs_list, buf);
 #endif
 
@@ -1808,7 +1842,7 @@ Sprintf(buf, " _ion_%s += %s", SYM(q1)->name, SYM(q1)->name);
 						Sprintf(buf, ";\n");
 					}
 				}else{
-					Sprintf(buf, "");
+					buf[0] = '\0';
 				}
 			}else{
 				if (iontype(SYM(q1)->name, in) != IONEREV) {
@@ -2259,17 +2293,21 @@ cvode_emit_interface() {
 	Item* q, *q1;
 	if (cvode_not_allowed) {
 		Lappendstr(defs_list, "\n\
-static int _ode_count();\n");
+static int _ode_count(int);\n");
 		sprintf(buf, "\n\
-static int _ode_count(_type)int _type; { hoc_execerror(\"%s\", \"cannot be used with CVODE\");}\n",
+static int _ode_count(int _type){ hoc_execerror(\"%s\", \"cannot be used with CVODE\");}\n",
 			mechname);
 		Lappendstr(procfunc, buf);
 	}else if (cvode_emit) {
 
 		Lappendstr(defs_list, "\n\
-static int _ode_count(), _ode_map(), _ode_spec(), _ode_matsol();\n");
+static int _ode_count(int);\n\
+static int _ode_map(int, double**, double**, double*, Datum*, double*, int);\n\
+static int _ode_spec(_NrnThread*, _Memb_list*, int);\n\
+static int _ode_matsol(_NrnThread*, _Memb_list*, int);\n\
+");
 		sprintf(buf, "\n\
-static int _ode_count(_type) int _type;{ return %d;}\n",
+static int _ode_count(int _type){ return %d;}\n",
 			cvode_neq_);
 		Lappendstr(procfunc, buf);
 		sprintf(buf, "\n#define _cvode_ieq _ppvar[%d]._i\n",cvode_ieq_index);
@@ -2290,7 +2328,7 @@ static int _ode_count(_type) int _type;{ return %d;}\n",
 		Lappendstr(procfunc, "}}\n");
 
 		Lappendstr(procfunc, "\n\
-static int _ode_map(_ieq, _pv, _pvdot, _pp, _ppd, _atol, _type) int _ieq, _type; double** _pv, **_pvdot, *_pp, *_atol; Datum* _ppd; {");
+static int _ode_map(int _ieq, double** _pv, double** _pvdot, double* _pp, Datum* _ppd, double* _atol, int _type) {");
 		vectorize_substitute(lappendstr(procfunc, "\n"), "\n\
 	double* _p; Datum* _ppvar;\n");
 		sprintf(buf, "\
@@ -2326,10 +2364,10 @@ static _ode_synonym(_cnt, _pp, _ppd) int _cnt; double** _pp; Datum** _ppd; {");
 		if (cvode_fun_->subtype == KINF) {
 			int i = cvode_num_;
 sprintf(buf, "_cvode_sparse(&_cvsparseobj%d, %d, _dlist%d, _p, _ode_matsol%d, &_coef%d);\n",
-				i, cvode_neq_, i, i, i, i);
+				i, cvode_neq_, i, i, i);
 			Lappendstr(procfunc, buf);
 sprintf(buf, "_cvode_sparse_thread(&_thread[_cvspth%d]._pvoid, %d, _dlist%d, _p, _ode_matsol%d, _ppvar, _thread, _nt);\n",
-				i, cvode_neq_, i, i, i, i);
+				i, cvode_neq_, i, i);
 			vectorize_substitute(procfunc->prev, buf);
 			
 		}else{
@@ -2356,21 +2394,21 @@ sprintf(buf, "_cvode_sparse_thread(&_thread[_cvspth%d]._pvoid, %d, _dlist%d, _p,
 
 cvode_proced_emit() {
 		sprintf(buf, "\n\
-static int _ode_spec(_nd, _pp, _ppd) Node* _nd; double* _pp; Datum* _ppd; {\n\
+static int _ode_spec(Node* _nd, double* _pp, Datum* _ppd) {\n\
 	_p = _pp; _ppvar = _ppd; v = NODEV(_nd);\n\
-	%s();\n}\n",
+	%s();\n\treturn 0;\n}\n",
 			cvode_fun_->name);
 
 		Lappendstr(procfunc, buf);
 		sprintf(buf, "\n\
-static int _ode_map(_ieq, _pv, _pvdot, _pp) int _ieq; double** _pv, **_pvdot, *_pp; {}\n");
+static int _ode_map(int _ieq, double** _pv, doubl** _pvdot, double* _pp){return 0;}\n");
 		Lappendstr(procfunc, buf);
 
 		Lappendstr(procfunc, "\n\
-static int _ode_matsol(_nd, _pp, _ppd) Node* _nd; double* _pp; Datum* _ppd; {}\n");
+static int _ode_matsol(Node* _nd, double* _pp, Datum* _ppd){return 0;}\n");
 }
 
-cvode_interface(fun, num, neq) Symbol* fun; int num, neq; {
+void cvode_interface(fun, num, neq) Symbol* fun; int num, neq; {
 	/* if only one then allowed and emit */
 	cvode_valid_ = 1;
 	cvode_not_allowed = (using_cvode++) ? 1 : 0;
@@ -2382,7 +2420,10 @@ cvode_interface(fun, num, neq) Symbol* fun; int num, neq; {
 		cvode_emit = 0;
 		return;
 	}
-	Sprintf(buf, "\nstatic int _ode_spec%d(), _ode_matsol%d();\n", num, num);
+	Sprintf(buf, "\n\
+static int _ode_spec%d(_threadargsproto_);\n\
+/*static int _ode_matsol%d(_threadargsproto_);*/\n\
+", num, num);
 	Linsertstr(procfunc, buf);
 }
 
@@ -2395,7 +2436,7 @@ cvode_valid() {
 	cvode_valid_ = 0;
 }
 
-cvode_rw_cur(b) char* b; {
+void cvode_rw_cur(b) char* b; {
 	/* if a current is READ and WRITE then call the correct _ode_spec
 	   since it may compute some aspect of the current */
 	Item* q, *q1;
@@ -2533,7 +2574,7 @@ net_init(qinit, qp2)
 	Item* qinit, *qp2;
 {
 	/* qinit=INITIAL { stmtlist qp2=} */
-	replacstr(qinit, "\nstatic _net_init(_pnt, _args, _lflag) Point_process* _pnt; double* _args; double _lflag;");
+	replacstr(qinit, "\nstatic void _net_init(Point_process* _pnt, double* _args, double _lflag)");
 	vectorize_substitute(insertstr(qinit->next->next, ""), "\
     double* _p = _pnt->_prop->param;\n\
     Datum* _ppvar = _pnt->_prop->dparam;\n\

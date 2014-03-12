@@ -715,7 +715,7 @@ int hoc_pid() { return (int)getpid();} /* useful for making unique temporary fil
 int nrn_istty_;
 
 /* has got to be called first. oc can only be event driven after this returns */
-hoc_main1_init(pname, envp)
+void hoc_main1_init(pname, envp)
 	char *pname, **envp;
 {
 	extern NrnFILEWrap *frin;

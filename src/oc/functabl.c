@@ -149,7 +149,7 @@ printf("calculating y2: fx=%g fy=%g j1=%d y2=%g tabj1=%g\n", ft->targs[0].frac, 
 #endif
 }
 
-hoc_spec_table(ppt, n)
+void hoc_spec_table(ppt, n)
 	FuncTable** ppt;
 	int n;
 {

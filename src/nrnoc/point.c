@@ -19,7 +19,7 @@ extern Prop* prop_alloc();
 
 static int cppp_semaphore = 0;	/* connect point process pointer semaphore */
 static double** cppp_pointer;
-static free_one_point();
+static void free_one_point();
 static void create_artcell_prop(Point_process* pnt, short type);
 
 Prop* nrn_point_prop_;
@@ -315,7 +315,7 @@ connect_point_process_pointer() {
 	hoc_nopop();
 }
 
-static free_one_point(pnt) /* must unlink from node property list also */
+static void free_one_point(pnt) /* must unlink from node property list also */
 	Point_process *pnt;
 {
 	Prop *p, *p1;
