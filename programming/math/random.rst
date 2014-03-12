@@ -37,7 +37,7 @@ Random Class
          
         As of version 7.3, a more versatile cryptographic quality generator, 
         Random123, is available with the :meth:`Random.Random123` method. This generator 
-        uses a 34bit counter, 2 32 bit identifiers, and a 32 bit global index and 
+        uses a 34bit counter, up to 3 32 bit identifiers, and a 32 bit global index and 
         is most suitable for managing separate independent, reproducible, restartable 
         streams that are unique to individual cell and synapses in large parallel 
         network models. 
@@ -193,19 +193,21 @@ Random Class
 
 .. method:: Random.Random123
 
-        0 = r.Random123(id1, id2) 
+    Syntax:
+        ``0 = r.Random123(id1, id2, id3)``
 
     Description:
         Use the Random123 generator (currently philox4x32 is the crypotgraphic hash 
-        used) with the stream identified by the identifiers 0 <= id1 and id1 < 2^32 
+        used) with the stream identified by the identifiers 0 <= id1,2,3 < 2^32 
         and the global index (see :meth:`Random.Random123_globalindex`). The counter, 
         which increments from 0 to 2^34-1, is initialized to 0 (see :meth:`Random.seq`). 
+        If any of the up to 3 arguments are missing, it is assumed 0.
          
         The generators should be usable in the context of threads as long as 
         no instance is used in more than one thread. 
          
         This generator 
-        uses a 34bit counter, 2 32 bit identifiers, and a 32 bit global index and 
+        uses a 34bit counter, 3 32 bit identifiers, and a 32 bit global index and 
         is most suitable for managing separate independent, reproducible, restartable 
         streams that are unique to individual cell and synapses in large parallel 
         network models. 
@@ -219,7 +221,8 @@ Random Class
 
 .. method:: Random.Random123_globalindex
 
-        uint32 = r.Random123_globalindex([uint32]) 
+    Syntax:
+        ``uint32 = r.Random123_globalindex([uint32])``
 
     Description:
         Gets and sets the global index used by all instances of the Random123 
@@ -233,8 +236,9 @@ Random Class
 
 .. method:: Random.seq
 
-        currenthighindex = r.seq() 
-        r.seq(sethighindex) 
+    Syntax:
+        ``currenthighindex = r.seq()``
+        ``r.seq(sethighindex)``
 
     Description:
         For MCellRan4, 

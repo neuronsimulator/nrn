@@ -16,10 +16,18 @@ Namespace Related
 
         ``type = name_declared("name", 1)``
 
+        ``type = name_declared("name", 2)``
+
     Description:
         Return 0 if the name is not in the symbol table. The first form looks 
         for names in the top level symbol table. The second form looks in the 
-        current object context. 
+        current object context. The last form also looks in the top level
+        symbol table but is useful in Python to distinguish subtypes of
+        variables which appear as doubles in HOC but internally are really
+        not doubles and so cannot be pointed to by double*, eg. h.secondorder
+        which is <type 'int'> or h.nseg which returns either
+        ``TypeError: Section access unspecified`` or
+        ``nseg  not a USERPROPERTY that can be pointed to``
          
         If the name exists return 
          
@@ -29,10 +37,20 @@ Namespace Related
          
         4 if a :ref:`strdef <keyword_strdef>` 
          
-        5 if a scalar or :ref:`double <keyword_double>` variable. 
-         
+        5 if a scalar or :ref:`double <keyword_double>` variable. (if second arg is not 2)
+
+          if second arg is 2
+
+          5 if a scalar double
+
+          6 if a double array
+
+          7 if an integer
+
+          8 if a section property
+         	         
         1 otherwise 
-         
+
         Note that names can be (re)declared only if they do not already 
         exist or are already of the same type. 
         This is too useful to require the user to waste an objref in creating a 
