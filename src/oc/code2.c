@@ -747,8 +747,9 @@ hoc_name_declared() {
 	extern Symlist* hoc_top_level_symlist;
 	Symlist* slsav;
 	int x;
-
-	if (ifarg(2) && *getarg(2) == 1.) {
+	int arg2 = 0;
+	if (ifarg(2)) { arg2 = chkarg(2, 0., 2.); }
+	if (arg2 == 1.) {
 		s = hoc_lookup(gargstr(1));
 	}else{
 		slsav = hoc_symlist;
@@ -762,6 +763,11 @@ hoc_name_declared() {
 		x = (s->type == SECTION) ? 3 : x;
 		x = (s->type == STRING) ? 4 : x;
 		x = (s->type == VAR) ? 5 : x;
+		if (x == 5 && arg2 == 2) {
+		  x = (s->arayinfo) ? 6 : x;
+		  x = (s->subtype == USERINT) ? 7 : x;
+		  x = (s->subtype == USERPROPERTY) ? 8 : x;
+		}
 	}
 	ret();
 	pushx((double)x);
