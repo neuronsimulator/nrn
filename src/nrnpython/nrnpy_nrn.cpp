@@ -518,6 +518,35 @@ static PyObject* node_index(NPySegObj* self) {
 	return result;
 }
 
+static PyObject* seg_area(NPySegObj* self) {
+	Section* sec = self->pysec_->sec_;
+	if (sec->recalc_area_) {
+		nrn_area_ri(sec);
+	}
+	double x = self->x_;
+	double a = 0.0;
+	if (x > 0. && x < 1.) {
+		Node* nd = node_exact(sec, x);
+		a = NODEAREA(nd);
+	}
+	PyObject* result = Py_BuildValue("d", a);
+	return result;
+}
+
+static PyObject* seg_ri(NPySegObj* self) {
+	Section* sec = self->pysec_->sec_;
+	if (sec->recalc_area_) {
+		nrn_area_ri(sec);
+	}
+	double ri = 1e30;
+	Node* nd = node_exact(sec, self->x_);
+	if (NODERINV(nd)) {
+		ri = 1./NODERINV(nd);
+	}
+	PyObject* result = Py_BuildValue("d", ri);
+	return result;
+}
+
 static PyObject* segment_iter(NPySegObj* self) {
 	NPyMechObj* m = NULL;
 	Node* nd = node_exact(self->pysec_->sec_, self->x_);
@@ -1114,6 +1143,12 @@ static PyMethodDef NPySegObj_methods[] = {
 	  "seg.point_processes() returns list of POINT_PROCESS instances in the segment."},
 	{"node_index", (PyCFunction)node_index, METH_NOARGS,
 	  "seg.node_index() returns index of v, rhs, etc. in the _actual arrays of the appropriate NrnThread."},
+	{"area", (PyCFunction)seg_area, METH_NOARGS,
+	 "Segment area (um2) (same as h.area(sec(x), sec=sec))"
+	},
+	{"ri", (PyCFunction)seg_ri, METH_NOARGS,
+	 "Segment resistance to parent segment (Megohms) (same as h.ri(sec(x), sec=sec))"
+	},
 	{NULL}
 };
 
