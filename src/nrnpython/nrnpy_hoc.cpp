@@ -1615,12 +1615,12 @@ PyObject* nrn_ptr_richcmp(void* self_ptr, void* other_ptr, int op) {
 
 // TODO: unfortunately, this duplicates code from hocobj_same; consolidate?
 static PyObject* hocobj_richcmp(PyHocObject* self, PyObject* other, int op) {
+	void* self_ptr = (void*)(self->ho_);
+	void* other_ptr = (void*)other;
 	if (PyObject_TypeCheck(other, hocobject_type)){
-	    void* self_ptr = (void*)(self->ho_);
-	    void* other_ptr = (void*)(((PyHocObject*)other)->ho_);
-	    return nrn_ptr_richcmp(self_ptr, other_ptr, op);
+	    other_ptr = (void*)(((PyHocObject*)other)->ho_);
 	}
-	Py_RETURN_FALSE;
+	return nrn_ptr_richcmp(self_ptr, other_ptr, op);
 }
 
 static PyObject* hocobj_same(PyHocObject* pself, PyObject* args) {
