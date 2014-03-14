@@ -343,25 +343,26 @@ static long pyseg_hash(PyObject* self) {
 static PyObject* pyseg_richcmp(NPySegObj* self, PyObject* other, int op) {
 	PyObject* pysec;
 	bool result = false;
-	if (PyObject_TypeCheck(other, psegment_type)){
         NPySegObj* seg = (NPySegObj*) self;
-	    void* self_ptr = (void*) node_exact(seg->pysec_->sec_, seg->x_);
+	void* self_ptr = (void*) node_exact(seg->pysec_->sec_, seg->x_);
+	void* other_ptr = (void*) other;
+	if (PyObject_TypeCheck(other, psegment_type)){
 	    seg = (NPySegObj*) other;
-	    void* other_ptr = (void*) node_exact(seg->pysec_->sec_, seg->x_);
-	    return nrn_ptr_richcmp(self_ptr, other_ptr, op);
+	    other_ptr = (void*) node_exact(seg->pysec_->sec_, seg->x_);
 	}
-	Py_RETURN_FALSE;
+	return nrn_ptr_richcmp(self_ptr, other_ptr, op);
 }
 
 static PyObject* pysec_richcmp(NPySecObj* self, PyObject* other, int op) {
 	PyObject* pysec;
 	bool result = false;
+	void* self_ptr = (void*) (self->sec_);
+	void* other_ptr = (void*) other;
 	if (PyObject_TypeCheck(other, psection_type)){
 	    void* self_ptr = (void*) (self->sec_);
-	    void* other_ptr = (void*) (((NPySecObj*)other)->sec_);
-	    return nrn_ptr_richcmp(self_ptr, other_ptr, op);
+	    other_ptr = (void*) (((NPySecObj*)other)->sec_);
 	}
-	Py_RETURN_FALSE;
+	return nrn_ptr_richcmp(self_ptr, other_ptr, op);
 }
 
 
