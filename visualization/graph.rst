@@ -251,6 +251,12 @@ Graph
          
         The second arg may be an explicit pointer arg which allows g.addvar to be 
         used in Python using section(x)._ref_rangevar . 
+    
+    .. note::
+    
+        To automatically plot a variable added to a graph ``g`` with addvar against
+        ``t`` during a ``run()``, ``stdrun.hoc`` must be loaded and the graph must be
+        added to a graphList, such as by executing ``graphList[0].append(g)``.
 
          
 
