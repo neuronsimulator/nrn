@@ -151,18 +151,20 @@ hoc_push_current_object() {
 }
 
 Objectdata* hoc_objectdata_save() {
+	/* hoc_top_level_data changes when new vars are introduced */
 	if (hoc_objectdata == hoc_top_level_data) {
-		return 0;
+		/* a template starts out its Objectdata as 0. */
+		return (Objectdata*)1;
 	}else{
 		return hoc_objectdata;
 	}
 }
 
 Objectdata* hoc_objectdata_restore(obdsav) Objectdata* obdsav; {
-	if (obdsav) {
-		return obdsav;
+	if (obdsav == (Objectdata*)1) {
+		return hoc_top_level_data;;
 	}else{
-		return hoc_top_level_data;
+		return obdsav;
 	}
 }
 
@@ -449,7 +451,12 @@ oc_save_hoc_oop(a1, a2, a3, a4, a5)
 	Symlist*	*a5;
 {
 	*a1 = hoc_thisobject;
+    /* same style as hoc_objectdata_sav */
+    if (hoc_objectdata == hoc_top_level_data) {
+	*a2 = (Objectdata*)1;
+    }else{
 	*a2 = hoc_objectdata;
+    }
 	*a4 = obj_stack_loc;
 	*a5 = hoc_symlist;
 }
@@ -461,7 +468,11 @@ oc_restore_hoc_oop(a1, a2, a3, a4, a5)
 	Symlist*	*a5;
 {
 	hoc_thisobject = *a1;
+    if (*a2 == (Objectdata*)1) {
+	hoc_objectdata = hoc_top_level_data;
+    }else{
 	hoc_objectdata = *a2;
+    }
 	obj_stack_loc = *a4;
 	hoc_symlist = *a5;
 }
