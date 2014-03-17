@@ -690,11 +690,11 @@ sprintf(buf, "  if (_prop) { _nrn_free_fornetcon(&(_prop->dparam[_fnc_index]._pv
 		if (! point_process) {
 			diag("DESTRUCTOR only permitted for POINT_PROCESS", (char*)0);
 		}
-		Lappendstr(defs_list, "static _destructor();\n");
+		Lappendstr(defs_list, "static void _destructor(Prop*);\n");
 	}
 	
 	if (constructorfunc->next != constructorfunc) {
-		Lappendstr(defs_list, "static _constructor();\n");
+		Lappendstr(defs_list, "static void _constructor(Prop*);\n");
 	}
 	
 	Lappendstr(defs_list,
@@ -900,9 +900,7 @@ static _constructor(_prop)\n\
 ");
 		    }else{
 			Lappendstr(procfunc, "\n\
-static _constructor(_prop)\n\
-	Prop *_prop;\n\
-{\n\
+static void _constructor(Prop* _prop) {\n\
 	_p = _prop->param; _ppvar = _prop->dparam;\n\
 {\n\
 ");
@@ -1190,9 +1188,7 @@ static _destructor(_prop)\n\
 ");
 	    }else{
 		Lappendstr(procfunc, "\n\
-static _destructor(_prop)\n\
-	Prop *_prop;\n\
-{\n\
+static void _destructor(Prop* _prop) {\n\
 	_p = _prop->param; _ppvar = _prop->dparam;\n\
 {\n\
 ");

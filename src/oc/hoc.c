@@ -813,7 +813,7 @@ hocstr_copy(hs, buf) HocStr* hs; char* buf; {
 static int cygonce; /* does not need the '-' after a list of hoc files */
 #endif
 
-static hoc_run1();
+static void hoc_run1();
 
 hoc_main1(argc, argv, envp)	/* hoc6 */
 	char *argv[], *envp[];
@@ -1216,8 +1216,7 @@ restore_signals() {
 #endif
 }
 	
-static
-hoc_run1()	/* execute until EOF */
+static void hoc_run1()	/* execute until EOF */
 {
 	int controlled = control_jmpbuf;
 	NrnFILEWrap* sav_fin = fin;

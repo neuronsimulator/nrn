@@ -30,12 +30,12 @@ extern int nrn_main_launch;
 
 #ifdef NRNMPI
 
-static char* argv_mpi[] = {"NEURON", "-mpi","-dll", 0};
+static const char* argv_mpi[] = {"NEURON", "-mpi","-dll", 0};
 static int argc_mpi = 2;
 
 #endif
 
-static char* argv_nompi[] = {"NEURON", "-dll", 0};
+static const char* argv_nompi[] = {"NEURON", "-dll", 0};
 static int argc_nompi = 1;
 
 static char* env[] = {0};
@@ -47,7 +47,7 @@ void inithoc() {
 	char buf[200];
 	
 	int argc = argc_nompi;
-	char** argv = argv_nompi;
+	char** argv = (char**)argv_nompi;
 
 	if (nrn_global_argv) { //ivocmain was already called so already loaded
 #if PY_MAJOR_VERSION >= 3
@@ -77,7 +77,7 @@ void inithoc() {
 	  mpi_mes = 1;
 
 	  argc = argc_mpi;
-	  argv = argv_mpi;
+	  argv = (char**)argv_mpi;
 	} else if (getenv ("NEURON_INIT_MPI")) {
 	  // force NEURON to initialize MPI
 	  mpi_mes = 2;
@@ -86,7 +86,7 @@ printf("NEURON_INIT_MPI exists in env but NEURON cannot initialize MPI because:\
 		exit(1);
 	 }else{
 	  argc = argc_mpi;
-	  argv = argv_mpi;
+	  argv = (char**)argv_mpi;
 	 }
 	} else {
 	  mpi_mes = 3;

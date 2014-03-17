@@ -1563,7 +1563,7 @@ void class2oc(name, cons, destruct, m, checkpoint,  mobjret, strret)
 	}
 	if (strret) for (i=0; strret[i].name; ++i) {
 		s = hoc_install(strret[i].name, STRFUNCTION, 0.0, &hoc_symlist);
-		s->u.u_proc->defn.pfs = strret[i].member;
+		s->u.u_proc->defn.pfs = (Pfrs)strret[i].member;
 		hoc_add_publiclist(s);
 	}
 	hoc_endtemplate(tsym);
