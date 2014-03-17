@@ -1277,7 +1277,14 @@ frame_debug()	/* print the call sequence on an execerror */
 			Fprintf(stderr, "%g", f->argn[(j - f->nargs)*2].val);
 			break;
 		   case STRING:
-		   	Fprintf(stderr, "\"%s\"", *f->argn[(j - f->nargs)*2].pstr);
+			{
+			char* s = *f->argn[(j - f->nargs)*2].pstr;
+			if(strlen(s) > 15) {
+			   	Fprintf(stderr, "\"%.10s...\"", s);
+			}else{
+			   	Fprintf(stderr, "\"%s\"", s);
+			}
+			}
 			break;
 		   case OBJECTVAR:
 Fprintf(stderr, "%s", hoc_object_name(*f->argn[(j - f->nargs)*2].pobj));

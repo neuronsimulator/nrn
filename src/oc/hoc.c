@@ -621,6 +621,10 @@ hoc_execerror_mes(s, t, prnt)	/* recover from run-time error */
 		}}
 #endif
 	}
+	/* in case warning not called */
+	ctp = cbuf;
+	*ctp = '\0';
+
 	if (oc_jump_target_) {
 		(*oc_jump_target_)();
 	}
@@ -628,7 +632,7 @@ hoc_execerror_mes(s, t, prnt)	/* recover from run-time error */
 		nrnmpi_abort(-1);
 	}
 	hoc_execerror_messages = 1;
-	if (pipeflag == 0)
+	if (pipeflag == 0 && (!nrn_fw_eq(fin, stdin) || !nrn_istty_))
 		IGNORE(nrn_fw_fseek(fin, 0L, 2));	/* flush rest of file */
 	hoc_oop_initaftererror();
 #if defined(WIN32) && !defined(CYGWIN)
@@ -1216,10 +1220,16 @@ static
 hoc_run1()	/* execute until EOF */
 {
 	int controlled = control_jmpbuf;
+	NrnFILEWrap* sav_fin = fin;
 	if (!controlled) {
 		set_signals();
 		control_jmpbuf = 1;
-		IGNORE(setjmp(begin));
+		if (setjmp(begin)) {
+			fin = sav_fin;
+			if (!nrn_fw_eq(fin, stdin)) {
+				return;
+			}
+		}
 		intset = 0;
 	}
 	hoc_execerror_messages = 1;
@@ -1274,6 +1284,39 @@ hoc_run1()	/* execute until EOF */
    when there is no other controlling routine.
 */
 
+/* allow hoc_oc(buf) to handle any number of multiline statements */
+static char* nrn_inputbufptr;
+static void nrn_inputbuf_getline() {
+  CHAR* cp;
+  cp = ctp = cbuf = hoc_cbufstr->buf;
+  while (*nrn_inputbufptr) {
+    *cp++ = *nrn_inputbufptr++;
+    if (cp[-1] == '\n') {
+      break;
+    }
+  }
+  if (cp != ctp) {
+    if (cp[-1] != '\n') {
+      *cp++ = '\n';
+    }
+  }
+  *cp = '\0';
+}
+
+// used by ocjump.cpp
+void oc_save_input_info(char** i1, int* i2, int* i3, NrnFILEWrap** i4) {
+  *i1 = nrn_inputbufptr;
+  *i2 = pipeflag;
+  *i3 = lineno;
+  *i4 = fin;
+}
+void oc_restore_input_info(char* i1, int i2, int i3, NrnFILEWrap* i4) {
+  nrn_inputbufptr = i1;
+  pipeflag = i2;
+  lineno = i3;
+  fin = i4;
+}
+
 int
 hoc_oc(buf) char *buf; {
 	char *cp;
@@ -1282,6 +1325,12 @@ hoc_oc(buf) char *buf; {
 	int yret;
 #endif
 	
+	int sav_pipeflag = pipeflag;
+	int sav_lineno = lineno;
+	char* sav_inputbufptr = nrn_inputbufptr;
+	nrn_inputbufptr = buf;
+	pipeflag = 3;
+	lineno = 1;
 	controlled = hoc_oc_jmpbuf || oc_jump_target_;
 	if (!controlled) {
 		hoc_oc_jmpbuf = 1;
@@ -1290,46 +1339,20 @@ hoc_oc(buf) char *buf; {
 			restore_signals();
 			initcode();
 			intset = 0;
+			pipeflag = sav_pipeflag;
+			nrn_inputbufptr = sav_inputbufptr;
+			lineno = sav_lineno;
 			return 1;
 		}
 		set_signals();
 	}
 	intset = 0;
 
-	cp = buf;
-	while (*cp) {
-		hocstr_resize(hoc_cbufstr, strlen(cp)+10);
-		cbuf = hoc_cbufstr->buf;
-		for (ctp = cbuf; *cp;) {
-			*ctp++ = *cp++;
-			if (ctp[-1] == '\n') {
-				break;
-			}
-		}
-		*ctp = '\0';
-		ctp = cbuf;	
-
-#if 1
+	hocstr_resize(hoc_cbufstr, strlen(buf) + 10);
+	nrn_inputbuf_getline();
+	while (*ctp || *nrn_inputbufptr) {
 		hoc_ParseExec(yystart);
-#else
-		if (yystart) {
-			initcode();
-		}
-		yret = yyparse();
-		switch (yret) {
-		case 1:
-			execute(progbase);
-			initcode();
-			break;
-		case 'e':
-			hoc_edit();
-			for (initcode(); hoc_yyparse(); initcode())
-				execute(progbase);
-			break;
-		default:
-			break;
-		}
-#endif
+
 		if (intset) {
 			execerror("interrupted", (char *)0);
 		}
@@ -1339,6 +1362,9 @@ hoc_oc(buf) char *buf; {
 		hoc_oc_jmpbuf = 0;
 		restore_signals();
 	}
+	lineno = sav_lineno;
+	pipeflag = sav_pipeflag;
+	nrn_inputbufptr = sav_inputbufptr;
 	hoc_execerror_messages = 1;
 	return 0;
 }
@@ -1613,7 +1639,12 @@ int hoc_get_line(){ /* supports re-entry. fill cbuf with next line */
 	}
 	ctp = cbuf;
 	*ctp = '\0';
-	if (pipeflag) {
+	if (pipeflag == 3) {
+		nrn_inputbuf_getline();
+		if (*ctp == '\0') {
+			return EOF;
+		}
+	}else if (pipeflag) {
 		if (hoc_pipegets_need() > hoc_cbufstr->size) {
 			hocstr_resize(hoc_cbufstr, hoc_pipegets_need());
 		}
@@ -1655,7 +1686,12 @@ int hoc_get_line(){ /* supports re-entry. fill cbuf with next line */
 	}
 	ctp = cbuf = hoc_cbufstr->buf;
 	*ctp = '\0';
-	if (pipeflag) {
+	if (pipeflag == 3) {
+		nrn_inputbuf_getline();
+		if (*ctp == '\0') {
+			return EOF;
+		}
+	}else if (pipeflag) {
 		if (hoc_pipegets_need() > hoc_cbufstr->size) {
 			hocstr_resize(hoc_cbufstr, hoc_pipegets_need() + 100);
 		}

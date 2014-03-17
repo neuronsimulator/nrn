@@ -8,6 +8,7 @@
 #include "oc2iv.h"
 #endif
 #include "ocjump.h"
+#include "nrnfilewrap.h"
 #if HAVE_IV
 #include "ivoc.h"
 #endif
@@ -104,6 +105,12 @@ private:
 	Symlist* c10;
 	Inst* c11;
 	int c12;
+
+	// input_info
+	char* i1;
+	int i2;
+	int i3;
+	NrnFILEWrap* i4;
 
 #if CABLE
 	// cabcode
@@ -227,6 +234,9 @@ extern "C" {
 	void oc_restore_code(Inst**, Inst**, Datum**, OcFrame**, int*, int*,
 		Inst**, OcFrame**, Datum**, Symlist**, Inst**, int*);
 
+	void oc_save_input_info(char**, int*, int*, NrnFILEWrap**);
+	void oc_restore_input_info(char*, int, int, NrnFILEWrap*);
+
 #if CABLE
 	void oc_save_cabcode(int*, int*);
 	void oc_restore_cabcode(int*, int*);
@@ -237,6 +247,7 @@ void OcJumpImpl::begin(){
 // not complete but it is good for expressions and it can be improved
 	oc_save_hoc_oop(&o1, &o2, &o3, &o4, &o5);
 	oc_save_code(&c1, &c2, &c3, &c4, &c5, &c6, &c7, &c8, &c9, &c10, &c11, &c12);
+	oc_save_input_info(&i1, &i2, &i3, &i4);
 #if CABLE
 	oc_save_cabcode(&cc1, &cc2);
 #endif
@@ -249,6 +260,7 @@ void OcJumpImpl::begin(){
 void OcJumpImpl::restore(){
 	oc_restore_hoc_oop(&o1, &o2, &o3, &o4, &o5);
 	oc_restore_code(&c1, &c2, &c3, &c4, &c5, &c6, &c7, &c8, &c9, &c10, &c11, &c12);
+	oc_restore_input_info(i1, i2, i3, i4);
 #if CABLE
 	oc_restore_cabcode(&cc1, &cc2);
 #endif

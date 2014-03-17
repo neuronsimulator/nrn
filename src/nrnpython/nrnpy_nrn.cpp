@@ -6,6 +6,7 @@
 extern "C" {
 #include <membfunc.h>
 #include <parse.h>
+extern void nrn_area_ri(Section* sec);
 extern void sec_free(hoc_Item*);
 extern Symlist* hoc_built_in_symlist;
 double* nrnpy_rangepointer(Section*, Symbol*, double, int*);
@@ -343,25 +344,26 @@ static long pyseg_hash(PyObject* self) {
 static PyObject* pyseg_richcmp(NPySegObj* self, PyObject* other, int op) {
 	PyObject* pysec;
 	bool result = false;
-	if (PyObject_TypeCheck(other, psegment_type)){
         NPySegObj* seg = (NPySegObj*) self;
-	    void* self_ptr = (void*) node_exact(seg->pysec_->sec_, seg->x_);
+	void* self_ptr = (void*) node_exact(seg->pysec_->sec_, seg->x_);
+	void* other_ptr = (void*) other;
+	if (PyObject_TypeCheck(other, psegment_type)){
 	    seg = (NPySegObj*) other;
-	    void* other_ptr = (void*) node_exact(seg->pysec_->sec_, seg->x_);
-	    return nrn_ptr_richcmp(self_ptr, other_ptr, op);
+	    other_ptr = (void*) node_exact(seg->pysec_->sec_, seg->x_);
 	}
-	Py_RETURN_FALSE;
+	return nrn_ptr_richcmp(self_ptr, other_ptr, op);
 }
 
 static PyObject* pysec_richcmp(NPySecObj* self, PyObject* other, int op) {
 	PyObject* pysec;
 	bool result = false;
+	void* self_ptr = (void*) (self->sec_);
+	void* other_ptr = (void*) other;
 	if (PyObject_TypeCheck(other, psection_type)){
 	    void* self_ptr = (void*) (self->sec_);
-	    void* other_ptr = (void*) (((NPySecObj*)other)->sec_);
-	    return nrn_ptr_richcmp(self_ptr, other_ptr, op);
+	    other_ptr = (void*) (((NPySecObj*)other)->sec_);
 	}
-	Py_RETURN_FALSE;
+	return nrn_ptr_richcmp(self_ptr, other_ptr, op);
 }
 
 
@@ -516,6 +518,35 @@ static PyObject* node_index(NPySegObj* self) {
 	return result;
 }
 
+static PyObject* seg_area(NPySegObj* self) {
+	Section* sec = self->pysec_->sec_;
+	if (sec->recalc_area_) {
+		nrn_area_ri(sec);
+	}
+	double x = self->x_;
+	double a = 0.0;
+	if (x > 0. && x < 1.) {
+		Node* nd = node_exact(sec, x);
+		a = NODEAREA(nd);
+	}
+	PyObject* result = Py_BuildValue("d", a);
+	return result;
+}
+
+static PyObject* seg_ri(NPySegObj* self) {
+	Section* sec = self->pysec_->sec_;
+	if (sec->recalc_area_) {
+		nrn_area_ri(sec);
+	}
+	double ri = 1e30;
+	Node* nd = node_exact(sec, self->x_);
+	if (NODERINV(nd)) {
+		ri = 1./NODERINV(nd);
+	}
+	PyObject* result = Py_BuildValue("d", ri);
+	return result;
+}
+
 static PyObject* segment_iter(NPySegObj* self) {
 	NPyMechObj* m = NULL;
 	Node* nd = node_exact(self->pysec_->sec_, self->x_);
@@ -608,6 +639,9 @@ static PyObject* section_getattro(NPySecObj* self, PyObject* name) {
 				rv_noexist(self->sec_, n, 0.5, err);
 				result = NULL;
 			}else{
+				if (self->sec_->recalc_area_ && sym->u.rng.type == MORPHOLOGY) {
+					nrn_area_ri(self->sec_);
+				}
 				result = Py_BuildValue("d", *d);
 			}
 		}
@@ -779,16 +813,17 @@ static PyObject* segment_getattro(NPySegObj* self, PyObject* name) {
 	PyObject* result = 0;
 	PyObject* otype;
 	PyObject* rv;
+	Section* sec = self->pysec_->sec_;
 	if (strcmp(n, "v") == 0) {
-		Node* nd = node_exact(self->pysec_->sec_, self->x_);
+		Node* nd = node_exact(sec, self->x_);
 		result = Py_BuildValue("d", NODEV(nd));
 	}else if ((otype = PyDict_GetItemString(pmech_types, n)) != NULL) {
 		int type = PyInt_AsLong(otype);
 //printf("segment_getattr type=%d\n", type);
-		Node* nd = node_exact(self->pysec_->sec_, self->x_);
+		Node* nd = node_exact(sec, self->x_);
 		Prop* p = nrn_mechanism(type, nd);
 		if (!p) {
-			rv_noexist(self->pysec_->sec_, n, self->x_, 1);
+			rv_noexist(sec, n, self->x_, 1);
 			Py_DECREF(name);
 			nrnpy_pystring_asstring_free(n);
 			return NULL;
@@ -814,17 +849,20 @@ static PyObject* segment_getattro(NPySegObj* self, PyObject* name) {
 			result = (PyObject*)r;
 		}else{
 			int err;
-			double* d = nrnpy_rangepointer(self->pysec_->sec_, sym, self->x_, &err);
+			double* d = nrnpy_rangepointer(sec, sym, self->x_, &err);
 			if (!d) {
-				rv_noexist(self->pysec_->sec_, n, self->x_, err);
+				rv_noexist(sec, n, self->x_, err);
 				result = NULL;
 			}else{
+				if (sec->recalc_area_ && sym->u.rng.type == MORPHOLOGY) {
+					nrn_area_ri(sec);
+				}
 				result = Py_BuildValue("d", *d);
 			}
 		}
 	}else if (strncmp(n, "_ref_", 5) == 0) {
 		if (strcmp(n+5, "v") == 0) {
-			Node* nd = node_exact(self->pysec_->sec_, self->x_);
+			Node* nd = node_exact(sec, self->x_);
 			result = nrn_hocobj_ptr(&(NODEV(nd)));
 		}else if ((sym = hoc_table_lookup(n+5, hoc_built_in_symlist)) != 0 && sym->type == RANGEVAR) {
 			if (ISARRAY(sym)) {
@@ -836,20 +874,20 @@ static PyObject* segment_getattro(NPySegObj* self, PyObject* name) {
 				result = (PyObject*)r;
 			}else{
 				int err;
-				double* d = nrnpy_rangepointer(self->pysec_->sec_, sym, self->x_, &err);
+				double* d = nrnpy_rangepointer(sec, sym, self->x_, &err);
 				if (!d) {
-					rv_noexist(self->pysec_->sec_, n+5, self->x_, err);
+					rv_noexist(sec, n+5, self->x_, err);
 					result = NULL;
 				}else{
 					result = nrn_hocobj_ptr(d);
 				}
 			}
 		}else{
-			rv_noexist(self->pysec_->sec_, n, self->x_, 2);
+			rv_noexist(sec, n, self->x_, 2);
 			result = NULL;
 		}
 	}else if (strcmp(n, "__dict__") == 0) {
-		Node* nd = node_exact(self->pysec_->sec_, self->x_);
+		Node* nd = node_exact(sec, self->x_);
 		result = PyDict_New();
 		assert(PyDict_SetItemString(result, "v", Py_None) == 0);
 		assert(PyDict_SetItemString(result, "diam", Py_None) == 0);
@@ -1108,6 +1146,12 @@ static PyMethodDef NPySegObj_methods[] = {
 	  "seg.point_processes() returns list of POINT_PROCESS instances in the segment."},
 	{"node_index", (PyCFunction)node_index, METH_NOARGS,
 	  "seg.node_index() returns index of v, rhs, etc. in the _actual arrays of the appropriate NrnThread."},
+	{"area", (PyCFunction)seg_area, METH_NOARGS,
+	 "Segment area (um2) (same as h.area(sec(x), sec=sec))"
+	},
+	{"ri", (PyCFunction)seg_ri, METH_NOARGS,
+	 "Segment resistance to parent segment (Megohms) (same as h.ri(sec(x), sec=sec))"
+	},
 	{NULL}
 };
 
