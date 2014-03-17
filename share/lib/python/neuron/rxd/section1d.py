@@ -193,9 +193,7 @@ class Section1D(rxdsection.RxDSection):
             self._parent = (self.species, local_root)
             root_children[local_root].append(self)
         else:
-            # TODO: this is inefficient since checking the list twice for _region, parent_sec combo
-            parent_section = self.species._region_section(self._region, parent_sec)
-            self._parent = (parent_section, int(parent_section.nseg * morphology.parent_loc(self._sec, parent_section)))
+            self._parent = (parent_sec, int(parent_sec.nseg * morphology.parent_loc(self._sec, parent_sec)))
         #print 'parent:', self._parent
         return root_id
 
