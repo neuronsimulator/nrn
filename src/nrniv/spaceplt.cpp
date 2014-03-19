@@ -85,9 +85,9 @@ static double s_begin(void* v) {
 #if HAVE_IV
 IFGUI
 	((RangeVarPlot*)v)->x_begin(chkarg(1, 0., 1.));
-	return 1.;
 ENDGUI
 #endif
+	return 1.;
 }
 
 static double s_end(void* v) {
