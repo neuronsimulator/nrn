@@ -285,7 +285,7 @@ static Member_func members[] = {
 };
 
 void Impedance_reg() {
-	class2oc("Impedance", cons, destruct, members, 0);
+	class2oc("Impedance", cons, destruct, members, NULL, NULL, NULL);
 }
 
 Imp::Imp(){

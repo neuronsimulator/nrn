@@ -12,7 +12,7 @@ int zzdebug;
 #define prcod(c1,c2)	else if (p->pf == c1) Printf("%lx %lx %s", (long)p, (long)p->pf, c2);
 #endif
 
-debug()		/* print the machine */
+void debug(void)		/* print the machine */
 {
 	if (zzdebug == 0)
 		zzdebug = 1;
@@ -20,18 +20,15 @@ debug()		/* print the machine */
 		zzdebug = 0;
 }
 
-debugzz(p)	/* running copy of calls to execute */
-	Inst *p;
+void debugzz(Inst* p)	/* running copy of calls to execute */
 {
 #if !OCSMALL
-	int pushx();
 	{
 		if(p->in == STOP) Printf("STOP\n");
-		prcod(pushx, "PUSH\n")
 		prcod(nopop, "POP\n")
 		prcod(eval, "EVAL\n")
 		prcod(add, "ADD\n")
-		prcod(sub, "SUB\n")
+		prcod(hoc_sub, "SUB\n")
 		prcod(mul, "MUL\n")
 		prcod(hoc_div, "DIV\n")
 		prcod(negate, "NEGATE\n")

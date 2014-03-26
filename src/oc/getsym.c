@@ -62,23 +62,12 @@ getsym.c,v
 #if OCSMALL
 #else
 
-#include "hoc.h"
+#include "hocgetsym.h"
 #include  "parse.h"
+#include "hocparse.h"
+#include "code.h"
 
-typedef struct Psym {
-	Symbol *sym;
-	Arrayinfo* arayinfo;
-	int nsub;
-	int sub[1];
-} Psym;
-
-extern eval();
-Psym *hoc_getsym();
-double hoc_getsymval();
-
-Psym *hoc_getsym(cp)
-	char *cp;
-{
+Psym *hoc_getsym(const char* cp) {
 	Symbol *sp, *sym;
 	Symlist *symlist = (Symlist *)0;
 	Inst *last, *pcsav;
@@ -137,10 +126,7 @@ Psym *hoc_getsym(cp)
 	return p;	
 }
 
-static
-arayonstack(p)
-	Psym *p;
-{
+static void arayonstack(Psym* p) {
 	int i;
 	double d;
 	
@@ -155,21 +141,14 @@ arayonstack(p)
 	}
 }
 
-double
-hoc_getsymval(p)
-	Psym *p;
-{
-	
+double hoc_getsymval(Psym* p) {
 	arayonstack(p);
 	hoc_pushs(p->sym);
 	hoc_eval();
 	return hoc_xpop();
 }
 
-hoc_assignsym(p, val)
-	Psym *p;
-	double val;
-{
+void hoc_assignsym(Psym* p, double val){
 	arayonstack(p);
 	hoc_pushx(val);
 	hoc_pushs(p->sym);
@@ -177,9 +156,7 @@ hoc_assignsym(p, val)
 	hoc_nopop();
 }
 
-hoc_execstr(cp)
-	char *cp;
-{
+void hoc_execstr(const char* cp) {
 	Symbol *sp;
 	Symlist *symlist = (Symlist *)0;
 	Inst *pcsav;

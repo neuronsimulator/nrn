@@ -6,9 +6,12 @@
 #include "equation.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <math.h>
 #include <errno.h>
 #include "parse.h"
+#include "hocparse.h"
+#include "ocmisc.h"
 #include "nrnmpi.h"
 #include "nrnrt.h"
 #include "nrnfilewrap.h"
@@ -25,7 +28,7 @@ char** nrn_global_argv;
 int use_python_interpreter = 0;
 void (*p_nrnpython_start)();
 #endif
-int (*p_nrnpy_pyrun)(char* fname);
+int (*p_nrnpy_pyrun)(const char* fname);
 
 #if carbon || defined(MINGW)
 #include <pthread.h>
@@ -51,7 +54,7 @@ int matherr(exc) struct exception *exc; {
 nrn_fpsetmask() {
 	feenableexcept(FEEXCEPT);
 }
-int matherr1() {
+int matherr1(void) {
 	/* above gives the signal but for some reason fegetexcept returns 0 */
 	switch(fegetexcept()) {
 	case FE_DIVBYZERO:
@@ -84,7 +87,7 @@ void add_profile(int i) {
 		usec[i] += tp.tv_usec - oldusec[i];
 	}
 }
-void pr_profile() {
+void pr_profile(void) {
 	int i;
 	for (i=0; i < 30; ++i) {
 		if (usec[i]) {
@@ -95,7 +98,7 @@ void pr_profile() {
 #else
 void start_profile(i) int i; {}
 void add_profile(i) int i; {}
-void pr_profile() {}
+void pr_profile(void) {}
 #endif
 
 #ifdef MAC
@@ -113,6 +116,11 @@ void pr_profile() {}
 
 #ifndef READLINE
 #define READLINE 1
+#endif
+
+#if READLINE
+extern void rl_deprep_terminal(void);
+extern void add_history(const char*);
 #endif
 
 int nrn_nobanner_;
@@ -139,16 +147,13 @@ char* hoc_promptstr;
 static CHAR	*cbuf;
 CHAR	*ctp;
 int hoc_ictp;
-extern Symlist *symlist;	/* This list is permanent */
-extern Symlist *p_symlist; /* Constants, strings, auto variables */
+
 extern char *RCS_hoc_version;
 extern char *RCS_hoc_date;
 extern char* neuron_home;
 extern int hoc_print_first_instance;
 
 #define EPS hoc_epsilon
-extern double EPS;
-extern arayinstal();
 /*
 used to be a FILE* but had fopen problems when 128K cores on BG/P
 tried to fopen the same file for reading at once.
@@ -156,7 +161,7 @@ tried to fopen the same file for reading at once.
 NrnFILEWrap	*fin;				/* input file pointer */
 
 #include <ctype.h>
-char	*progname;	/* for error messages */
+const char	*progname;	/* for error messages */
 int	lineno;
 
 #include <signal.h>
@@ -167,10 +172,9 @@ static int hoc_oc_jmpbuf;
 static jmp_buf hoc_oc_begin;
 int	intset;		/* safer interrupt handling */
 int	indef;
-char	*infile;	/* input file name */
+const char	*infile;	/* input file name */
 extern char hoc_xopen_file_[];
-extern stoprun;
-char	**gargv;	/* global argument list */
+const char	**gargv;	/* global argument list */
 int	gargc;
 static int c = '\n';	/* global for use by warning() */
 
@@ -179,6 +183,11 @@ set_intset() {
 	intset++;
 }
 #endif
+
+static int follow(int expect, int ifyes, int ifno);/* look ahead for >=, etc. */
+static int Getc(NrnFILEWrap* fp);
+static void unGetc(int c, NrnFILEWrap* fp);
+static int backslash(int c);
 
 void nrn_exit(i) int i; {
 #if defined(WIN32)
@@ -193,9 +202,7 @@ void nrn_exit(i) int i; {
 int hoc_retreat_flag;
 #define RETREAT_SIGNAL SIGHUP
 
-static
-RETSIGTYPE
-retreat_handler(sig) int sig;	/* catch interrupt */
+static RETSIGTYPE retreat_handler(int sig) /* catch interrupt */
 {
 	/*ARGSUSED*/
 	if (hoc_retreat_flag++) {
@@ -211,7 +218,7 @@ retreat_handler(sig) int sig;	/* catch interrupt */
 	IGNORE(signal(RETREAT_SIGNAL, retreat_handler));
 }
 
-hoc_retreat() {
+void hoc_retreat(void) {
 	hoc_obj_run("linda_retreat()\n", (Object*)0);
 	exit(0);
 }
@@ -225,16 +232,13 @@ hoc_retreat() {
 #endif
 #if HAS_SIGPIPE
 /*ARGSUSED*/
-static
-RETSIGTYPE
-sigpipe_handler(sig) int sig; {
+static RETSIGTYPE sigpipe_handler(int sig) {
 	fprintf(stderr, "writing to a broken pipe\n");
 	signal(SIGPIPE, sigpipe_handler);
 }
 #endif
 
-int
-getnb()	/* get next non-white character */
+int getnb(void)	/* get next non-white character */
 {
 	int c;
 
@@ -260,7 +264,7 @@ static int lexstate = 0;
    at eos to see if true.*/
 static int eos;
 
-yylex()			/* hoc6 */
+int yylex(void)			/* hoc6 */
 {
    restart:	/* when no token in between comments */
 	eos = 0;
@@ -438,9 +442,7 @@ yylex()			/* hoc6 */
 	}
 }
 
-backslash(c)	/* get next char with \'s interpreted */
-	int c;
-{
+static int backslash(int c) {	/* get next char with \'s interpreted */
 	static char transtab[] = "b\bf\fn\nr\rt\t";
 	if (c != '\\')
 		return c;
@@ -450,7 +452,7 @@ backslash(c)	/* get next char with \'s interpreted */
 	return c;
 }
 
-follow(expect, ifyes, ifno)	/* look ahead for >=, etc. */
+static int follow(int expect, int ifyes, int ifno)	/* look ahead for >=, etc. */
 {
 	int c = Getc(fin);
 
@@ -460,7 +462,7 @@ follow(expect, ifyes, ifno)	/* look ahead for >=, etc. */
 	return ifno;
 }
 
-arayinstal()	/* allocate storage for arrays */
+void arayinstal(void)	/* allocate storage for arrays */
 {
 	int i, nsub;
 	Symbol * sp;
@@ -490,10 +492,7 @@ arayinstal()	/* allocate storage for arrays */
 #endif
 }
 
-int
-hoc_arayinfo_install(sp, nsub)
-	Symbol *sp; int nsub;
-{
+int hoc_arayinfo_install(Symbol* sp, int nsub) {
 	double total, subscpt;
 	int i;
 	free_arrayinfo(sp->arayinfo);
@@ -534,9 +533,7 @@ but no UMR if in present location just above return.
 	return i;
 }
 
-hoc_freearay(sp)
-	Symbol *sp;
-{
+void hoc_freearay(Symbol* sp) {
 	Arrayinfo** pa = &(OPARINFO(sp));
 	if (sp->type == VAR)
 	{
@@ -549,9 +546,7 @@ hoc_freearay(sp)
 	*pa = (Arrayinfo *)0;
 }
 
-free_arrayinfo(a)
-	Arrayinfo* a;
-{
+void free_arrayinfo(Arrayinfo* a) {
 	if (a != (Arrayinfo *) 0)
 	{
 	    if ((--a->refcount) <= 0) {
@@ -563,9 +558,7 @@ free_arrayinfo(a)
 	}
 }
 
-defnonly(s)	/* warn if illegal definition */
-	char *s;
-{
+void defnonly(const char* s) {	/* warn if illegal definition */
 	if (!indef)
 		acterror(s, "used outside definition");
 }
@@ -574,7 +567,7 @@ defnonly(s)	/* warn if illegal definition */
 value of oc_run()
 */
 static int debug_message_;
-hoc_show_errmess_always() {
+void hoc_show_errmess_always(void) {
 	double x, chkarg();
 	x = chkarg(1, 0., 1.);
 	debug_message_ = (int)x;
@@ -593,11 +586,7 @@ void (*oc_jump_target_)();	/* see ivoc/SRC/ocjump.c */
 
 int yystart;
 
-hoc_execerror_mes(s, t, prnt)	/* recover from run-time error */
-	char *s, *t;
-	int prnt;
-{
-	extern int hoc_in_yyparse;
+void hoc_execerror_mes(const char* s, const char* t, int prnt){	/* recover from run-time error */
 	hoc_in_yyparse = 0;
 	yystart = 1;
 	hoc_menu_cleanup();
@@ -628,9 +617,11 @@ hoc_execerror_mes(s, t, prnt)	/* recover from run-time error */
 	if (oc_jump_target_) {
 		(*oc_jump_target_)();
 	}
+#if NRNMPI
 	if (nrnmpi_numprocs_world > 1) {
 		nrnmpi_abort(-1);
 	}
+#endif
 	hoc_execerror_messages = 1;
 	if (pipeflag == 0 && (!nrn_fw_eq(fin, stdin) || !nrn_istty_))
 		IGNORE(nrn_fw_fseek(fin, 0L, 2));	/* flush rest of file */
@@ -644,14 +635,12 @@ hoc_execerror_mes(s, t, prnt)	/* recover from run-time error */
 	longjmp(begin, 1);
 }
 
-hoc_execerror(s, t)	/* recover from run-time error */
-	char *s, *t;
+void hoc_execerror(const char* s, const char* t)/* recover from run-time error */
 {
 	hoc_execerror_mes(s, t, hoc_execerror_messages);
 }
 
-RETSIGTYPE
-onintr(sig) int sig;	/* catch interrupt */
+RETSIGTYPE onintr(int sig) /* catch interrupt */
 {
 	/*ARGSUSED*/
 	stoprun = 1;
@@ -666,14 +655,13 @@ onintr(sig) int sig;	/* catch interrupt */
 
 static int coredump;
 
-hoc_coredump_on_error() {
+void hoc_coredump_on_error(void) {
 	coredump = 1;
 	ret();
 	pushx(1.);
 }
 
-RETSIGTYPE
-fpecatch(sig) int sig;	/* catch floating point exceptions */
+RETSIGTYPE fpecatch(int sig)	/* catch floating point exceptions */
 {
 	/*ARGSUSED*/
 #if DOS
@@ -690,8 +678,7 @@ _fpreset();
 }
 
 #if HAVE_SIGSEGV
-RETSIGTYPE
-sigsegvcatch(sig) int sig;	/* segmentation violation probably due to arg type error */
+RETSIGTYPE sigsegvcatch(int sig) /* segmentation violation probably due to arg type error */
 {
 	/*ARGSUSED*/
 	if (coredump) {
@@ -702,8 +689,7 @@ sigsegvcatch(sig) int sig;	/* segmentation violation probably due to arg type er
 #endif
 
 #if HAVE_SIGBUS
-RETSIGTYPE
-sigbuscatch(sig) int sig;
+RETSIGTYPE sigbuscatch(int sig)
 {
 	/*ARGSUSED*/
 	if (coredump) {
@@ -713,14 +699,13 @@ sigbuscatch(sig) int sig;
 }
 #endif
 
-int hoc_pid() { return (int)getpid();} /* useful for making unique temporary file names */
+int hoc_pid(void) { return (int)getpid();} /* useful for making unique temporary file names */
 
 /* readline should be avoided if stdin is not a terminal */
 int nrn_istty_;
 
 /* has got to be called first. oc can only be event driven after this returns */
-void hoc_main1_init(pname, envp)
-	char *pname, **envp;
+void hoc_main1_init(const char* pname, const char** envp)
 {
 	extern NrnFILEWrap *frin;
 	extern FILE	*fout;
@@ -767,7 +752,7 @@ void hoc_main1_init(pname, envp)
 
 	save_parallel_envp();
 
-	init();
+	hoc_init();
 	initplot();
 #if defined(__GO32__)
 	setcbrk(0);
@@ -777,7 +762,7 @@ nrn_fpsetmask();
 #endif
 }
 
-HocStr* hocstr_create(size) int size; {
+HocStr* hocstr_create(size_t size) {
 	HocStr* hs;
 	hs = (HocStr*)emalloc(sizeof(HocStr));
 	hs->size = size;
@@ -791,12 +776,12 @@ char* fgets_unlimited(HocStr* s, NrnFILEWrap* f) {
 	return fgets_unlimited_nltrans(s, f, 0);
 }
 
-void hocstr_delete(hs) HocStr* hs; {
+void hocstr_delete(HocStr* hs) {
 	free(hs->buf);
 	free(hs);
 }
 
-hocstr_resize(hs, n) HocStr* hs; int n; {
+void hocstr_resize(HocStr* hs, size_t n) {
 	if (hs->size < n) {
 /*printf("hocstr_resize to %d\n", n);*/
 		hs->buf = erealloc(hs->buf, n+1);
@@ -804,7 +789,7 @@ hocstr_resize(hs, n) HocStr* hs; int n; {
 	}
 }
 	
-hocstr_copy(hs, buf) HocStr* hs; char* buf; {
+void hocstr_copy(HocStr* hs, const char* buf) {
 	hocstr_resize(hs, strlen(buf)+1);
 	strcpy(hs->buf, buf);
 }
@@ -813,10 +798,9 @@ hocstr_copy(hs, buf) HocStr* hs; char* buf; {
 static int cygonce; /* does not need the '-' after a list of hoc files */
 #endif
 
-static void hoc_run1();
+static void hoc_run1(void);
 
-hoc_main1(argc, argv, envp)	/* hoc6 */
-	char *argv[], *envp[];
+int hoc_main1(int argc, const char** argv, const char** envp)	/* hoc6 */
 {
 #ifdef WIN32
 	hoc_set_unhandled_exception_filter();
@@ -876,10 +860,10 @@ hoc_main1(argc, argv, envp)	/* hoc6 */
 
 	if (gargc == 1)	/* fake an argument list */
 	{
-#if 0
+#if 1
 		/* who knows why this ancient code no longer works under cygwin
 		when the @@ to ' ' was introduced in moreinput*/
-		static char *stdinonly[] = { "-" };
+		static const char *stdinonly[] = { "-" };
 #else
 		static char *stdinonly[1];
 		stdinonly[0] = (char*)emalloc(2*sizeof(char));
@@ -979,7 +963,7 @@ inputReadyVal_ = i;
 }
 #endif
 
-hoc_final_exit() {
+void hoc_final_exit(void) {
 	char buf[256];
 #if defined(USE_PYTHON)
 	if (p_nrnpython_start) { (*p_nrnpython_start)(0);}
@@ -1015,7 +999,7 @@ hoc_final_exit() {
 #endif
 }
 	
-hoc_quit() {
+void hoc_quit(void) {
 #if carbon
 	if (0 && inputReady_) {
 		pthread_cancel(*inputReady_);
@@ -1029,9 +1013,21 @@ hoc_quit() {
 }
 
 #if defined(CYGWIN)
-static double_at2space(char* infile) {
+static const char* double_at2space(const char* infile) {
+	char* buf;
 	char *cp1, *cp2;
-	for (cp1=infile, cp2=infile; *cp1; ++cp1, ++cp2) {
+	int replace = 0;
+	for (cp1 = infile; *cp1; ++cp1) {
+		if (*cp1 == '@' && cp1[1] == '@') {
+			replace = 1;
+			break;
+		}
+	}
+	if (replace) {
+		return infile;
+	}
+	buf = (char*)emalloc(strlen(infile) + 1);
+	for (cp1=infile, cp2=buf; *cp1; ++cp1, ++cp2) {
 		if (*cp1 == '@' && cp1[1] == '@') {
 			*cp2 = ' ';
 			++cp1;
@@ -1040,10 +1036,11 @@ static double_at2space(char* infile) {
 		}
 	}
 	*cp2 = '\0';
+	return buf;
 }
 #endif /*CYGWIN*/
 
-moreinput()
+int moreinput(void)
 {
 	if (pipeflag)
 	{
@@ -1112,7 +1109,7 @@ moreinput()
 	through the neuron.sh shell script to nrniv.exe. Therefore
 	neuron.exe converts the ' ' to "@@" and here we need to convert
 	it back */
-	double_at2space(infile);
+	infile = double_at2space(infile);
 #endif
 	lineno = 0;
 #if defined(USE_PYTHON)
@@ -1141,7 +1138,7 @@ with the hoc interpreter.
 		infile = *gargv++;
 		gargc--;
 #if defined (CYGWIN)
-		double_at2space(infile);
+		infile = double_at2space(infile);
 #endif
 		hs = hocstr_create(strlen(infile) + 2);
 		sprintf(hs->buf, "%s\n", infile);
@@ -1167,9 +1164,11 @@ with the hoc interpreter.
 hoc_menu_cleanup();
 #endif
 		Fprintf(stderr, "%d %s: can't open %s\n", nrnmpi_myid_world, progname, infile);
+#if NRNMPI
 		if (nrnmpi_numprocs_world > 1) {
 			nrnmpi_abort(-1);
 		}
+#endif
 		return moreinput();
 	}
 	if (infile) {
@@ -1179,7 +1178,7 @@ hoc_menu_cleanup();
 }
 
 #if 1
-hoc_run() {
+void hoc_run(void) {
 	hoc_run1();
 	while (pipeflag == 1) {
 		pipeflag = 0;
@@ -1192,8 +1191,7 @@ typedef RETSIGTYPE (*SignalType)();
 
 static SignalType signals[4];
 
-static
-set_signals() {
+static void set_signals(void) {
 	signals[0] = signal(SIGINT, onintr);
 	signals[1] = signal(SIGFPE, fpecatch);
 #if HAVE_SIGSEGV
@@ -1204,8 +1202,7 @@ set_signals() {
 #endif
 }
 
-static
-restore_signals() {
+static void restore_signals(void) {
 	signals[0] = signal(SIGINT, signals[0]);
 	signals[1] = signal(SIGFPE, signals[1]);
 #if HAVE_SIGSEGV
@@ -1216,7 +1213,7 @@ restore_signals() {
 #endif
 }
 	
-static void hoc_run1()	/* execute until EOF */
+static void hoc_run1(void)	/* execute until EOF */
 {
 	int controlled = control_jmpbuf;
 	NrnFILEWrap* sav_fin = fin;
@@ -1284,8 +1281,8 @@ static void hoc_run1()	/* execute until EOF */
 */
 
 /* allow hoc_oc(buf) to handle any number of multiline statements */
-static char* nrn_inputbufptr;
-static void nrn_inputbuf_getline() {
+static const char* nrn_inputbufptr;
+static void nrn_inputbuf_getline(void) {
   CHAR* cp;
   cp = ctp = cbuf = hoc_cbufstr->buf;
   while (*nrn_inputbufptr) {
@@ -1303,21 +1300,20 @@ static void nrn_inputbuf_getline() {
 }
 
 // used by ocjump.cpp
-void oc_save_input_info(char** i1, int* i2, int* i3, NrnFILEWrap** i4) {
+void oc_save_input_info(const char** i1, int* i2, int* i3, NrnFILEWrap** i4) {
   *i1 = nrn_inputbufptr;
   *i2 = pipeflag;
   *i3 = lineno;
   *i4 = fin;
 }
-void oc_restore_input_info(char* i1, int i2, int i3, NrnFILEWrap* i4) {
+void oc_restore_input_info(const char* i1, int i2, int i3, NrnFILEWrap* i4) {
   nrn_inputbufptr = i1;
   pipeflag = i2;
   lineno = i3;
   fin = i4;
 }
 
-int
-hoc_oc(buf) char *buf; {
+int hoc_oc(const char* buf) {
 	char *cp;
 	int controlled;
 #if 0
@@ -1326,7 +1322,7 @@ hoc_oc(buf) char *buf; {
 	
 	int sav_pipeflag = pipeflag;
 	int sav_lineno = lineno;
-	char* sav_inputbufptr = nrn_inputbufptr;
+	const char* sav_inputbufptr = nrn_inputbufptr;
 	nrn_inputbufptr = buf;
 	pipeflag = 3;
 	lineno = 1;
@@ -1368,8 +1364,7 @@ hoc_oc(buf) char *buf; {
 	return 0;
 }
 
-warning(s, t)	/* print warning message */
-	char *s, *t;
+void warning(const char* s, const char* t)	/* print warning message */
 {
 	CHAR *cp;
 	char id[10];
@@ -1412,10 +1407,7 @@ warning(s, t)	/* print warning message */
 }
 
 
-int
-Getc(fp)
-	NrnFILEWrap *fp;
-{
+static int Getc(NrnFILEWrap* fp) {
 	/*ARGSUSED*/
 	if (*ctp) {
 		++hoc_ictp;
@@ -1437,10 +1429,7 @@ allowed anyway */
 	return *ctp++;
 }
 
-unGetc(c, fp)
-	int c;
-	NrnFILEWrap *fp;
-{
+static void unGetc(int c, NrnFILEWrap* fp) {
 	/*ARGSUSED*/
 	if (c != EOF && c && ctp != cbuf) {
 		*(--ctp) = c;
@@ -1449,7 +1438,7 @@ unGetc(c, fp)
 
 int hoc_in_yyparse=0;
 
-int hoc_yyparse() {
+int hoc_yyparse(void) {
 	/* read line before calling yyparse() and set flag that we
 	are inside yyparse() since re-entry is not allowed.
 	This allows xview menus to work since most of the time
@@ -1521,12 +1510,12 @@ extern int run_til_stdin(); /* runs the interviews event loop. Returns 1
 				if somebody said quit but there is no input
 				*/
 
-extern hoc_notify_value();
+extern void hoc_notify_value(void);
 
 #if READLINE
 #if carbon
-extern Pfri rl_event_hook;
-static int event_hook() {
+extern int (*rl_event_hook)(void);
+static int event_hook(void) {
 	if (!inputReady_) {
 		inputReady_ = (pthread_t*)emalloc(sizeof(pthread_t));
 		pthread_mutex_init(&inputMutex_, 0);
@@ -1543,8 +1532,8 @@ static int event_hook() {
 }
 #else /* not carbon */
 #if defined(MINGW)
-extern Pfri rl_getc_function;
-static int getc_hook() {
+extern int (*rl_getc_function)(void);
+static int getc_hook(void) {
 	int i;
 	if (!inputReady_) {
 		stdin_event_ready(); /* store main thread id */
@@ -1568,8 +1557,8 @@ static int getc_hook() {
 	return i;
 }
 #else /* not carbon and not MINGW */
-extern Pfri rl_event_hook;
-static int event_hook() {
+extern int (*rl_event_hook)(void);
+static int event_hook(void) {
 	int i;
 	i = run_til_stdin();
 	return i;
@@ -1630,7 +1619,7 @@ static CHAR* fgets_unlimited_nltrans(HocStr* bufstr, NrnFILEWrap* f, int nltrans
 #endif
 
 #if MAC
-int hoc_get_line(){ /* supports re-entry. fill cbuf with next line */
+int hoc_get_line(void){ /* supports re-entry. fill cbuf with next line */
 	int hoc_pipegets_need();
 	char *hoc_pipegets();
 	if (*ctp) {
@@ -1678,7 +1667,7 @@ int hoc_get_line(){ /* supports re-entry. fill cbuf with next line */
 }
 
 #else
-int hoc_get_line(){ /* supports re-entry. fill cbuf with next line */
+int hoc_get_line(void){ /* supports re-entry. fill cbuf with next line */
 	char *hoc_pipegets();
 	if (*ctp) {
 		hoc_execerror("Internal error:", "Not finished with previous input line");
@@ -1707,7 +1696,7 @@ IFGUI
 				rl_getc_function = getc_hook;
 				hoc_notify_value();
 			}else{
-				rl_getc_function = (Pfri)0;
+				rl_getc_function = NULL;
 			}
 ENDGUI
 #else /* not MINGW */
@@ -1715,7 +1704,7 @@ ENDGUI
 				rl_event_hook = event_hook;
 				hoc_notify_value();
 			}else{
-				rl_event_hook = (Pfri)0;
+				rl_event_hook = NULL;
 			}
 #endif /* not MINGW */
 #endif /* INTERVIEWS */
@@ -1775,7 +1764,7 @@ ENDGUI
 }
 #endif
 
-hoc_help() {
+void hoc_help(void) {
 #if INTERVIEWS
 	if (hoc_interviews) {
 		ivoc_help(cbuf);
@@ -1790,7 +1779,7 @@ ctp = cbuf + strlen(cbuf) - 1;
 }
 
 #if defined(__GO32__)
-hoc_check_intupt(intupt) int intupt; {
+void hoc_check_intupt(int intupt) {
 	if (_go32_was_ctrl_break_hit()) {
 		if (intupt) {
 			execerror("interrupted", (char*)0);

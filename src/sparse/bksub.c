@@ -2,7 +2,7 @@
 
 #include "lineq.h"
 
-bksub()
+void bksub(void)
 {
 	int i;
 	struct elm *el, *pivot;

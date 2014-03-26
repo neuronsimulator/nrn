@@ -1140,7 +1140,7 @@ ENDGUI
 }
 void Graph_reg() {
 //printf("Graph_reg\n");
-	class2oc("Graph", gr_cons, gr_destruct, gr_members);
+	class2oc("Graph", gr_cons, gr_destruct, gr_members, NULL, NULL, NULL);
 #if HAVE_IV
 IFGUI
 	colors = new ColorPalette();

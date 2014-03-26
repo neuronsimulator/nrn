@@ -5,7 +5,7 @@
 #include <errno.h>
 #include "neuron.h"
 #include "section.h"
-#include "membfunc.h"
+#include "nrniv_mf.h"
 #include "multisplit.h"
 #define nrnoc_fadvance_c
 #include "nonvintblock.h"
@@ -162,15 +162,15 @@ int stoprun;
 #define PROFILE 0
 #include "profile.h"
 
-int fadvance()
+void fadvance(void)
 {
 	tstopunset;
 #if CVODE
 	if (cvode_active_) {
 		cvode_fadvance(-1.);
 		tstopunset;
-		ret(1.);
-		return 0;
+		hoc_retpushx(1.);
+		return;
 	}
 #endif
 	if (tree_changed) {
@@ -184,8 +184,7 @@ int fadvance()
 	}
 	nrn_fixed_step();
 	tstopunset;
-	ret(1.);
-	return 0;
+	hoc_retpushx(1.);
 }
 
 /*
@@ -197,7 +196,7 @@ int fadvance()
 */
 
 static void batch_out(), batch_open(), batch_close();
-batch_run() /* avoid interpreter overhead */
+void batch_run(void) /* avoid interpreter overhead */
 {
 	double tstop, tstep, tnext;
 	char* filename;
@@ -246,7 +245,7 @@ batch_run() /* avoid interpreter overhead */
 		}
 	}
 	batch_close();
-	ret(1.);
+	hoc_retpushx(1.);
 }
 
 static void dt2thread(double adt) {
@@ -431,6 +430,7 @@ void* nrn_fixed_step_thread(NrnThread* nth) {
 }
 
 extern void nrn_extra_scatter_gather(int direction, int tid);
+extern void nrn_ba(NrnThread*, int);
 
 void* nrn_fixed_step_lastpart(NrnThread* nth) {
 	CTBEGIN
@@ -574,7 +574,7 @@ static void update(NrnThread* _nt)
 
 }
 
-fcurrent()
+void fcurrent(void)
 {
 	int i;
 	if (tree_changed) {
@@ -592,7 +592,7 @@ fcurrent()
 	state_discon_allowed_ = 0;
 	nrn_multithread_job(setup_tree_matrix);
 	state_discon_allowed_ = 1;
-	ret(1.);
+	hoc_retpushx(1.);
 }
 
 void nrn_print_matrix(NrnThread* _nt) {
@@ -627,7 +627,7 @@ printf("%d %d %g %g %g %g\n", isec, inode, ClassicalNODEB(nd), ClassicalNODEA(nd
     }
 }
 
-int fmatrix() {
+void fmatrix(void) {
 	if (ifarg(1)) {
 		extern Node* node_exact(Section*, double);
 		double x = chkarg(1, 0., 1.);
@@ -635,16 +635,16 @@ int fmatrix() {
 		Node* nd = node_exact(chk_access(), x);
 		NrnThread* _nt = nd->_nt;
 		switch (id) {
-		case 1: ret(NODEA(nd)); break;
-		case 2: ret(NODED(nd)); break;
-		case 3: ret(NODEB(nd)); break;
-		case 4: ret(NODERHS(nd)); break;
+		case 1: hoc_retpushx(NODEA(nd)); break;
+		case 2: hoc_retpushx(NODED(nd)); break;
+		case 3: hoc_retpushx(NODEB(nd)); break;
+		case 4: hoc_retpushx(NODERHS(nd)); break;
 		}
-		return 0;
+		return;
 	}
 	nrn_print_matrix(nrn_threads);
-	ret(1.);
-	return 0;
+	hoc_retpushx(1.);
+	return;
 }
 
 void nonvint(NrnThread* _nt)
@@ -661,7 +661,7 @@ void nonvint(NrnThread* _nt)
 	if (_nt->id == 0 && nrn_mech_wtime_) { measure = 1; }
 	errno = 0;
 	for (tml = _nt->tml; tml; tml = tml->next) if (memb_func[tml->index].state) {
-		Pfri s = memb_func[tml->index].state;
+		Pvmi s = memb_func[tml->index].state;
 		if (measure) { w = nrnmpi_wtime(); }
 		(*s)(_nt, tml->ml, tml->index);
 		if (measure) { nrn_mech_wtime_[tml->index] += nrnmpi_wtime() - w; }
@@ -706,7 +706,7 @@ nrnmpi_myid, t, memb_func[p->type].sym->name, inode, secname(sec));
 }
 #endif
 
-frecord_init() { /* useful when changing states after an finitialize() */
+void frecord_init(void) { /* useful when changing states after an finitialize() */
 	int i;
 	dt2thread(-1);
 	nrn_record_init();
@@ -715,10 +715,10 @@ frecord_init() { /* useful when changing states after an finitialize() */
 			fixed_record_continuous(nrn_threads + i);
 		}
 	}
-	ret(1.);
+	hoc_retpushx(1.);
 }
 
-verify_structure() {
+void verify_structure(void) {
 	if (tree_changed) {
 		setup_topology();
 	}
@@ -792,7 +792,7 @@ void nrn_finitialize(int setv, double v) {
 		nrn_nonvint_block_init(nt->id);
 		NrnThreadMembList* tml;
 		for (tml = nt->tml; tml; tml = tml->next) {
-			Pfri s = memb_func[tml->index].initialize;
+			Pvmi s = memb_func[tml->index].initialize;
 			if (s) {
 				(*s)(nt, tml->ml, tml->index);
 			}
@@ -803,7 +803,7 @@ void nrn_finitialize(int setv, double v) {
 	  i = memb_order_[iord];
 	  /* first clause due to MULTICORE */
 	  if (nrn_is_artificial_[i]) if (memb_func[i].initialize) {
-	    Pfri s = memb_func[i].initialize;
+	    Pvmi s = memb_func[i].initialize;
 #if 0
 	    if (nrn_is_artificial_[i]) {
 		/*
@@ -879,7 +879,7 @@ hoc_warning("errno set during call to INITIAL block", (char*)0);
 	nrn_fihexec(2); /* just before return */
 }
 	
-finitialize() {
+void finitialize(void) {
 	int setv;
 	double v = 0.0;
 	setv = 0;
@@ -890,7 +890,7 @@ finitialize() {
 	tstopunset;
 	nrn_finitialize(setv, v);
 	tstopunset;
-	ret(1.);
+	hoc_retpushx(1.);
 }
 
 static FILE* batch_file;
@@ -955,7 +955,7 @@ static void batch_out() {
 	}
 }
 
-batch_save() {
+void batch_save(void) {
 	double* hoc_pgetarg();
 	int i;
 	if (!ifarg(1)) {
@@ -970,14 +970,14 @@ batch_save() {
 			++batch_n;
 		}
 	}
-	ret(1.);
+	hoc_retpushx(1.);
 }
 
-nrn_ba(NrnThread* nt, int bat){
+void nrn_ba(NrnThread* nt, int bat){
 	NrnThreadBAList* tbl;
 	int i;
 	for (tbl = nt->tbl[bat]; tbl; tbl = tbl->next) {
-		Pfri f = tbl->bam->f;
+		nrn_bamech_t f = tbl->bam->f;
 		int type = tbl->bam->type;
 		Memb_list* ml = tbl->ml;
 		for (i=0; i < ml->nodecount; ++i) {

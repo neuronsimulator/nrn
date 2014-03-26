@@ -407,5 +407,5 @@ static void destruct(void* v) {
 }
 
 void SingleChan_reg() {
-	class2oc("SingleChan", cons, destruct, members);
+	class2oc("SingleChan", cons, destruct, members, NULL, NULL, NULL);
 }

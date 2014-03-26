@@ -27,10 +27,10 @@ struct Symlist;
 class Oc {
 public:
 	Oc();
-	Oc(Session*, char* pname = nil, char** env = nil);
+	Oc(Session*, const char* pname = nil, const char** env = nil);
 	virtual ~Oc();
 
-	int run(int argc, char** argv);
+	int run(int argc, const char** argv);
 	int run(const char *, bool show_err_mes = true);
 
 	Symbol* parseExpr(const char *, Symlist** = nil);

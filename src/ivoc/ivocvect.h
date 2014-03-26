@@ -12,10 +12,10 @@ struct Object;
 
 class IvocVect : public ParentVect {
 public:
-	IvocVect(Object* obj = nil);
-	IvocVect(int, Object* obj = nil);
-	IvocVect(int, double, Object* obj = nil);
-	IvocVect(IvocVect&, Object* obj = nil);
+	IvocVect(Object* obj = NULL);
+	IvocVect(int, Object* obj = NULL);
+	IvocVect(int, double, Object* obj = NULL);
+	IvocVect(IvocVect&, Object* obj = NULL);
 	~IvocVect();
 
 	void resize(int);

@@ -67,12 +67,12 @@ static Pfri mechanism[] = { /* type will start at 3 */
 	0
 };
 
-static char *morph_mech[] = { /* this is type 2 */
+static const char *morph_mech[] = { /* this is type 2 */
 	"0", "morphology", "diam", 0,0,0,
 };
 
-extern cab_alloc();
-extern morph_alloc();
+extern void cab_alloc(Prop*);
+extern void morph_alloc(Prop*);
 
 extern Memb_func* memb_func;
 #if 0

@@ -16,7 +16,7 @@ static time_t stop_time=1;
 
 # define	Ret(a)	hoc_ret(); hoc_pushx(a);
 
-double nrn_time()
+double nrn_time(void)
 {
 #if defined(HAVE_GETTIMEOFDAY)
 	int ms10;
@@ -29,12 +29,12 @@ double nrn_time()
 	return ((double)time(&start_time));
 #endif
 }
-int hoc_startsw()
+void hoc_startsw(void)
 {
 	Ret(nrn_time());
 }
 
-int hoc_stopsw()
+void hoc_stopsw(void)
 {
 #if defined(HAVE_GETTIMEOFDAY)
 	double y;
@@ -54,10 +54,9 @@ int hoc_stopsw()
 		Ret((double)(stop_time - start_time));
 	}
 #endif
-	return 0;
 }
 
-double nrn_timeus()
+double nrn_timeus(void)
 {
 #if defined(HAVE_GETTIMEOFDAY)
 	struct timeval x;

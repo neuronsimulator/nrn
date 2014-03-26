@@ -20,7 +20,7 @@ extern Section** secorder;
 
 nemo2neuron()
 {
-	ret(1.);
+	hoc_retpushx(1.);
 }
 
 neuron2nemo()
@@ -73,7 +73,7 @@ neuron2nemo()
 	fclose(fin);
 	fclose(fmark);
 #endif
-	ret(1.);
+	hoc_retpushx(1.);
 }
 
 #if !OBSOLETE

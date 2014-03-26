@@ -35,7 +35,7 @@ int parallel_val; /* for use with parallel neuron (see hoc.c) */
   and should contain these on exit in order to execute the following shortfor
 */
 
-void hoc_parallel_begin() {
+void hoc_parallel_begin(void) {
 #if !OCSMALL
 		  Symbol *sym;
         double first, last;
@@ -137,7 +137,7 @@ void hoc_parallel_begin() {
 #endif
 }
 
-hoc_parallel_end() {
+void hoc_parallel_end(void) {
 #if !OCSMALL
 	/* need to exit after for-loop for all sub-processes */
 	if (parallel_sub) {
@@ -155,15 +155,15 @@ hoc_parallel_end() {
 #endif
 }
 
-int
-parallel_hoc_main(i)
-        int i;
-{
+int parallel_hoc_main(int i) {
 #if !OCSMALL
 	/*ARGSUSED*/
-        char *_largv[NUM_ARGS], *_lenvp[NUM_ARGS];
-	char *targv, *tenvp, *pnt;
+        const char **_largv, **_lenvp;
+	const char* pnt;
+	char *targv, *tenvp;
 	int j, _largc;
+	_largv = emalloc(NUM_ARGS*sizeof(char*));
+	_lenvp = emalloc(NUM_ARGS*sizeof(char*));
 #if LINDA
 	char name[20];
 
@@ -200,12 +200,10 @@ parallel_hoc_main(i)
 	return 0;
 }
 
-save_parallel_argv(argc, argv)
+void save_parallel_argv(int argc, const char** argv) {
     /* first arg is program, save 2 & 3 for -parallel flags */
-    char *argv[];
-{ 
 #if !defined(WIN32)
-	 char *pnt;
+	const char *pnt;
     int j;
 
     /* count how long the block of memory should be */
@@ -246,7 +244,7 @@ save_parallel_argv(argc, argv)
 #endif
 }
 
-save_parallel_envp() { 
+void save_parallel_envp(void) { 
 #if LINDA
 #if !defined(__APPLE__)
 	extern char** environ;

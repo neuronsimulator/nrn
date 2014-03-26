@@ -38,11 +38,11 @@
 // refers to them while libivoc is linking. So force them to link here
 extern "C" {
 bool ivoc_list_look(Object*, Object*, char*, int);
-void class_registration();
+void hoc_class_registration();
 }
 static void dummy() {
 	ivoc_list_look(nil, nil, nil, 0);
-	class_registration();
+	hoc_class_registration();
 }
 #endif
 

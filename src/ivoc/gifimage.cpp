@@ -71,6 +71,7 @@ extern "C" {
 
 
 #define NEXTBYTE (*dataptr++)
+#define NEXTBYTEa (dataptr++) /* avoid 'expression result unused' warnings */
 #define EXTENSION     0x21
 #define IMAGESEP      0x2c
 #define TRAILER       0x3b
@@ -274,11 +275,11 @@ static int LoadGIF(const char* fname, PICINFO* pinfo)
 			     aspnum, aspden,normaspect);
 	}
 	else {
-	  for (i=0; i<blocksize; i++) NEXTBYTE;
+	  for (i=0; i<blocksize; i++) NEXTBYTEa;
 	}
 
 	while ((sbsize=NEXTBYTE)>0) {  /* eat any following data subblocks */
-	  for (i=0; i<sbsize; i++) NEXTBYTE;
+	  for (i=0; i<sbsize; i++) NEXTBYTEa;
 	}
       }
 
@@ -347,7 +348,7 @@ static int LoadGIF(const char* fname, PICINFO* pinfo)
 	fg       = NEXTBYTE;
 	bg       = NEXTBYTE;
 	i=12;
-	for ( ; i<sbsize; i++) NEXTBYTE;   /* read rest of first subblock */
+	for ( ; i<sbsize; i++) NEXTBYTEa;   /* read rest of first subblock */
       
 	if (DEBUG) fprintf(stderr,
 	   "PlainText: tgrid=%d,%d %dx%d  cell=%dx%d  col=%d,%d\n",
@@ -377,7 +378,7 @@ static int LoadGIF(const char* fname, PICINFO* pinfo)
 	/* read (and ignore) data sub-blocks */
 	do {
 	  j = 0; sbsize = NEXTBYTE;
-	  while (j<sbsize) { NEXTBYTE;  j++; }
+	  while (j<sbsize) { NEXTBYTEa;  j++; }
 	} while (sbsize);
       }
       
@@ -390,7 +391,7 @@ static int LoadGIF(const char* fname, PICINFO* pinfo)
 	/* read (and ignore) data sub-blocks */
 	do {
 	  j = 0; sbsize = NEXTBYTE;
-	  while (j<sbsize) { NEXTBYTE;  j++; }
+	  while (j<sbsize) { NEXTBYTEa;  j++; }
 	} while (sbsize);
       }
       
@@ -407,7 +408,7 @@ static int LoadGIF(const char* fname, PICINFO* pinfo)
 	/* read (and ignore) data sub-blocks */
 	do {
 	  j = 0; sbsize = NEXTBYTE;
-	  while (j<sbsize) { NEXTBYTE;  j++; }
+	  while (j<sbsize) { NEXTBYTEa;  j++; }
 	} while (sbsize);
       }
     }
@@ -421,24 +422,24 @@ static int LoadGIF(const char* fname, PICINFO* pinfo)
 	int i,misc,ch,ch1;
 
 	/* skip image header */
-	NEXTBYTE;  NEXTBYTE;  /* left position */
-	NEXTBYTE;  NEXTBYTE;  /* top position */
-	NEXTBYTE;  NEXTBYTE;  /* width */
-	NEXTBYTE;  NEXTBYTE;  /* height */
+	NEXTBYTEa;  NEXTBYTEa;  /* left position */
+	NEXTBYTEa;  NEXTBYTEa;  /* top position */
+	NEXTBYTEa;  NEXTBYTEa;  /* width */
+	NEXTBYTEa;  NEXTBYTEa;  /* height */
 	misc = NEXTBYTE;      /* misc. bits */
 
 	if (misc & 0x80) {    /* image has local colormap.  skip it */
 	  for (i=0; i< 1 << ((misc&7)+1);  i++) {
-	    NEXTBYTE;  NEXTBYTE;  NEXTBYTE;
+	    NEXTBYTEa;  NEXTBYTEa;  NEXTBYTEa;
 	  }
 	}
 
-	NEXTBYTE;       /* minimum code size */
+	NEXTBYTEa;       /* minimum code size */
 
 	/* skip image data sub-blocks */
 	do {
 	  ch = ch1 = NEXTBYTE;
-	  while (ch--) NEXTBYTE;
+	  while (ch--) NEXTBYTEa;
 	  if ((dataptr - RawGIF) > filesize) break;      /* EOF */
 	} while(ch1);
       }

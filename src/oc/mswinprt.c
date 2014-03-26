@@ -341,7 +341,7 @@ void hoc_winio_show(int b) {
 }
 
 #if 0
-plprint(char* s) {
+void plprint(const char* s) {
 	printf("%s", s);
 }
 #endif

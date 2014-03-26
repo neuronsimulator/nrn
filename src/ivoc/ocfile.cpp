@@ -36,8 +36,6 @@ int ivoc_unlink(const char* s) {
 
 extern "C" {
 #include "hocstr.h"
-	extern int hoc_sprint1(char** buf, int arg1);
-	extern double hoc_scan(FILE*);
 	FILE* hoc_obj_file_arg(int i);
 }
 

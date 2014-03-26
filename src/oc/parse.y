@@ -10,6 +10,8 @@
 #endif
 
 #include "hoc.h"
+#include "ocmisc.h"
+#include "hocparse.h"
 #include "code.h"
 #include "equation.h"
 #include "nrnfilewrap.h"
@@ -20,7 +22,6 @@ Inst *inlint;
 #else
 #define code	Code
 #endif
-extern Inst* codei(int i);
 
 #define paction(arg) fprintf(stderr, "%s\n", arg)
 
@@ -30,7 +31,7 @@ static int** hoc_err;
 static int hoc_errp;
 static int localcnt;
 
-static clean_err() {
+static void clean_err(void) {
 	int i;
 	for (i=0; i < hoc_errp; ++i) {
 		*hoc_err[i] = 0;
@@ -38,7 +39,7 @@ static clean_err() {
 	hoc_errp = 0;
 }
 
-static pusherr(ip) int* ip; {
+static void pusherr(int* ip) {
 	if (!hoc_err) {
 		hoc_err = (int**)ecalloc(HOCERRSIZE, sizeof(int*));
 		hoc_errp = 0;
@@ -49,6 +50,8 @@ static pusherr(ip) int* ip; {
 	}
 	hoc_err[hoc_errp++] = ip;
 }
+
+static void yyerror(const char* s);
 
 #if YYBISON
 #define myerr(arg) static int ierr=0;\
@@ -67,20 +70,12 @@ if (!(ierr++)){pusherr(&ierr);yyerror(arg);} YYERROR
 #define TPD hoc_ob_check(NUMBER);
 #define TPDYNAM hoc_ob_check(0);
 
-extern int pipeflag;
-extern Symlist *symlist;	/* This list is permanent */
-extern Symlist *p_symlist; /* Constants, strings, auto variables */
-extern Symbol* hoc_decl();
-extern Symbol* hoc_which_template();
-extern Symbol* hoc_table_lookup();
-
-extern arayinstal();
-extern int indef;
 static Inst *prog_error;			/* needed for stmtlist loc if error */
 static int ntab;			/* auto indentation */
-extern NrnFILEWrap	*fin;		/* input file pointer */
 
-static Inst* argcode(), *argrefcode();
+static Inst* argrefcode(Pfrv pfrv, int i, int j);
+static Inst* argcode(Pfrv pfrv, int i);
+static void hoc_opasgn_invalid(int op);
  
 %}
 
@@ -152,13 +147,15 @@ list:	/* nothing */
 	| list EDIT '\n'
 		{ return 'e';}
 	| list string1 '\n'
-		{code3(prstr, hoc_newline, STOP); return 1; }
+		{code(prstr); code2(hoc_newline, STOP); return 1; }
 
 /* OOP */
 	| list template '\n' { return '\n';}
 /* END OOP */
+/* no longer useful
 	| list '' '\n'
 		{ plt(-3,0.,0.); return '\n';}
+*/
 	| list HELP {hoc_help();} '\n' { return '\n'; }
 	| list error
 		{clean_err(); hoc_execerror("parse error", (char*)0);
@@ -583,9 +580,9 @@ for_cond: expr
 		{ TPD; $$ = $1; codein(STOP);}
 	;
 for_inc:  ';' stmt ')'
-		{ $$ = $2; code(STOP);}
+		{ $$ = $2; codein(STOP);}
 	| ';' ')'
-		{ $$ = progp; code(STOP);}
+		{ $$ = progp; codein(STOP);}
 	;
 cond:	'(' expr ')'
 		{ TPD; codein(STOP); $$ = $2;}
@@ -657,7 +654,7 @@ expr:	NUMBER
 	| expr '+' expr
 		{ TPD; TPD; code(add); PN; }
 	| expr '-' expr
-		{ TPD; TPD;code(sub); PN;}
+		{ TPD; TPD;code(hoc_sub); PN;}
 	| expr '*' expr
 		{ TPD; TPD; code(mul); PN;}
 	| expr '/' expr
@@ -941,29 +938,24 @@ anyname: STRING|VAR|UNDEF|FUNCTION|PROCEDURE|FUN_BLTIN|SECTION|RANGEVAR
 %%
 	/* end of grammar */
 
-yyerror(s)	/* called for yacc syntax error */
-	char *s;
+static void yyerror(const char* s)	/* called for yacc syntax error */
 {
 	execerror(s, (char *)0);
 }
 
-acterror(s, t)	/* recover from action error while parsing */
-	char *s, *t;
+void acterror(const char* s, const char*t)	/* recover from action error while parsing */
 {
 	execerror(s,t);
 }
 
-static Inst* argrefcode(pfri, i, j) Pfri pfri; int i, j; {
+static Inst* argrefcode(Pfrv pfrv, int i, int j){
 	Inst* in;
-	in = argcode(pfri, i);
+	in = argcode(pfrv, i);
 	codei(j);
 	return in;
 }
 
-static Inst* argcode(pfri, i)
-	Pfri pfri;
-	int i;
-{
+static Inst* argcode(Pfrv pfrv, int i) {
 	Inst* in;
 	if (i == 0) {
 		Symbol* si = hoc_lookup("i");
@@ -971,16 +963,16 @@ static Inst* argcode(pfri, i)
 			acterror("arg index used and i is not a LOCAL variable", 0);
 		}
 		in = code3(varpush, si, eval);		
-		Code(pfri);
+		Code(pfrv);
 		codei(0);
 	}else{
-		in = Code(pfri);
+		in = Code(pfrv);
 		codei(i);
 	}
 	return in;
 }
 
-hoc_opasgn_invalid(op) int op; {
+static void hoc_opasgn_invalid(int op) {
         if (op) {
                 acterror("Invalid assignment operator.", "Only '=' allowed. ");
         }

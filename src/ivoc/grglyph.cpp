@@ -199,7 +199,7 @@ static void destruct(void* v) {
 }
 
 void GrGlyph_reg() {
-	class2oc("Glyph", cons, destruct, members, nil, objmembers);
+	class2oc("Glyph", cons, destruct, members, NULL, objmembers, NULL);
 	sggl_ = hoc_lookup("Glyph");
 }
 
@@ -213,7 +213,7 @@ IFGUI
 	type_->ref();
 	x_->ref();
 	y_->ref();
-	gif_ = nil;
+	gif_ = NULL;
 ENDGUI
 #endif
 }
@@ -323,7 +323,7 @@ void GrGlyph::erase() {
 	y_->erase();
 	if (gif_) {
 		gif_->unref();
-		gif_ = nil;
+		gif_ = NULL;
 	}
 }
 

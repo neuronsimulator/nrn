@@ -15,7 +15,7 @@ See http://www.neuron.yale.edu/neuron/credits\n";
 #include <stdlib.h>
 #include "section.h"
 #include "parse.h"
-#include "membfunc.h"
+#include "nrniv_mf.h"
 #include "cabvars.h"
 #include "neuron.h"
 #include "membdef.h"
@@ -118,13 +118,14 @@ short* memb_order_;
 Symbol** pointsym;
 Point_process** point_process;
 char* pnt_map;		/* so prop_free can know its a point mech*/
-typedef void (*Pfrv)();
 BAMech** bamech_;
 
 Template** nrn_pnt_template_; /* for finding artificial cells */
-Pfrv* pnt_receive;	/* for synaptic events. */
-Pfrv* pnt_receive_init;
+/* for synaptic events. */
+pnt_receive_t* pnt_receive;
+pnt_receive_init_t* pnt_receive_init;
 short* pnt_receive_size;
+
  /* values are type numbers of mechanisms which do net_send call */
 int nrn_has_net_event_cnt_;
 int* nrn_has_net_event_;
@@ -213,8 +214,7 @@ hoc_nrn_load_dll() {
 	Symlist* sav;
 	int i;
 	FILE* f;
-	char* fn;
-	extern char* expand_env_var();
+	const char* fn;
 	fn = expand_env_var(gargstr(1));
 	f = fopen(fn, "rb");
 	if (f) {
@@ -225,13 +225,13 @@ hoc_nrn_load_dll() {
 		i = mswin_load_dll(fn);
 		hoc_built_in_symlist = hoc_symlist;
 		hoc_symlist = sav;
-		ret((double)i);
+		hoc_retpushx((double)i);
 	}else{
-		ret(0.);
+		hoc_retpushx(0.);
 	}	
 #else
 	hoc_warning("nrn_load_dll not available on this machine", (char*)0);
-	ret(0.);
+	hoc_retpushx(0.);
 #endif
 }
 #endif
@@ -250,7 +250,7 @@ hoc_last_init()
 	Pfri *m;
 	Symbol *s;
 
-	hoc_register_var(scdoub, (DoubVec*)0, (IntFunc*)0);
+	hoc_register_var(scdoub, (DoubVec*)0, (VoidFunc*)0);
 	nrn_threads_create(1);
 
  	if (nrnmpi_myid < 1) if (nrn_nobanner_ == 0) { 
@@ -266,8 +266,8 @@ hoc_last_init()
 	pnt_map = (char*)ecalloc(memb_func_size_, sizeof(char));
 	memb_func[1].alloc = cab_alloc;
 	nrn_pnt_template_ = (Template**)ecalloc(memb_func_size_, sizeof(Template*));
-	pnt_receive = (Pfrv*)ecalloc(memb_func_size_, sizeof(Pfrv));
-	pnt_receive_init = (Pfrv*)ecalloc(memb_func_size_, sizeof(Pfrv));
+	pnt_receive = (pnt_receive_t*)ecalloc(memb_func_size_, sizeof(pnt_receive_t));
+	pnt_receive_init = (pnt_receive_init_t*)ecalloc(memb_func_size_, sizeof(pnt_receive_init_t));
 	pnt_receive_size = (short*)ecalloc(memb_func_size_, sizeof(short));
 	nrn_is_artificial_ = (short*)ecalloc(memb_func_size_, sizeof(short));
 	nrn_artcell_qindex_ = (short*)ecalloc(memb_func_size_, sizeof(short));
@@ -308,7 +308,7 @@ hoc_last_init()
 	}
 	SectionList_reg();
 	SectionRef_reg();
-	register_mech(morph_mech, morph_alloc, (Pfri)0, (Pfri)0, (Pfri)0, (Pfri)0, -1, 0);
+	register_mech(morph_mech, morph_alloc, (Pvmi)0, (Pvmi)0, (Pvmi)0, (Pvmi)0, -1, 0);
 	for (m = mechanism; *m; m++) {
 		(*m)();
 	}
@@ -344,36 +344,34 @@ hoc_last_init()
 	s->type = OBJECTFUNC;
 }
 
-initnrn() {
+void initnrn(void) {
 	secondorder = DEF_secondorder;	/* >0 means crank-nicolson. 2 means currents
 				   adjusted to t+dt/2 */
 	t = 0;		/* msec */
 	dt = DEF_dt;	/* msec */
 	clamp_resist = DEF_clamp_resist;	/*megohm*/
 	celsius = DEF_celsius;	/* degrees celsius */
-	ret(1.);
+	hoc_retpushx(1.);
 }
 
 static int pointtype = 1; /* starts at 1 since 0 means not point in pnt_map*/
 int n_memb_func;
 
 /* if vectorized then thread_data_size added to it */
-register_mech(m, alloc, cur, jacob, stat, initialize, nrnpointerindex, vectorized)
-	char **m;
-	Pfri alloc;
-	Pfri cur;
-	Pfri jacob;
-	Pfri stat;
-	Pfri initialize;
-	int nrnpointerindex; /* if -1 then there are none */
-#if VECTORIZE
-	int vectorized;
-#endif
-{
+void register_mech(
+	const char **m,
+	Pvmp alloc,
+	Pvmi cur,
+	Pvmi jacob,
+	Pvmi stat,
+	Pvmi initialize,
+	int nrnpointerindex, /* if -1 then there are none */
+	int vectorized
+){
 	static int type = 2;	/* 0 unused, 1 for cable section */
 	int j, k, modltype, pindx, modltypemax;
 	Symbol *s;
-	char **m2;
+	const char **m2;
 
 	if (type >= memb_func_size_) {
 		memb_func_size_ += 20;
@@ -383,8 +381,8 @@ register_mech(m, alloc, cur, jacob, stat, initialize, nrnpointerindex, vectorize
 		point_process = (Point_process**)erealloc(point_process, memb_func_size_*sizeof(Point_process*));
 		pnt_map = (char*)erealloc(pnt_map, memb_func_size_*sizeof(char));
 		nrn_pnt_template_ = (Template**)erealloc(nrn_pnt_template_, memb_func_size_*sizeof(Template*));
-		pnt_receive = (Pfrv*)erealloc(pnt_receive, memb_func_size_*sizeof(Pfrv));
-		pnt_receive_init = (Pfrv*)erealloc(pnt_receive_init, memb_func_size_*sizeof(Pfrv));
+		pnt_receive = (pnt_receive_t*)erealloc(pnt_receive, memb_func_size_*sizeof(pnt_receive_t));
+		pnt_receive_init = (pnt_receive_init_t*)erealloc(pnt_receive_init, memb_func_size_*sizeof(pnt_receive_init_t));
 		pnt_receive_size = (short*)erealloc(pnt_receive_size, memb_func_size_*sizeof(short));
 		nrn_is_artificial_ = (short*)erealloc(nrn_is_artificial_, memb_func_size_*sizeof(short));
 		nrn_artcell_qindex_ = (short*)erealloc(nrn_artcell_qindex_, memb_func_size_*sizeof(short));
@@ -397,8 +395,8 @@ register_mech(m, alloc, cur, jacob, stat, initialize, nrnpointerindex, vectorize
 			point_process[j] = (Point_process*)0;
 			pointsym[j] = (Symbol*)0;
 			nrn_pnt_template_[j] = (Template*)0;
-			pnt_receive[j] = (Pfrv)0;
-			pnt_receive_init[j] = (Pfrv)0;
+			pnt_receive[j] = (pnt_receive_t)0;
+			pnt_receive_init[j] = (pnt_receive_init_t)0;
 			pnt_receive_size[j] = 0;
 			nrn_is_artificial_[j] = 0;
 			nrn_artcell_qindex_[j] = 0;
@@ -415,7 +413,7 @@ register_mech(m, alloc, cur, jacob, stat, initialize, nrnpointerindex, vectorize
 	memb_func[type].alloc = alloc;
 	memb_func[type].state = stat;
 	memb_func[type].initialize = initialize;
-	memb_func[type].destructor = (Pfri)0;
+	memb_func[type].destructor = (void*)0;
 #if VECTORIZE
 	memb_func[type].vectorized = vectorized ? 1:0;
 	memb_func[type].thread_size_ = vectorized ? (vectorized - 1) : 0;
@@ -430,12 +428,12 @@ register_mech(m, alloc, cur, jacob, stat, initialize, nrnpointerindex, vectorize
 	memb_order_[type] = type;
 #endif
 #if CVODE
-	memb_func[type].ode_count = (Pfri)0;
-	memb_func[type].ode_map = (Pfri)0;
-	memb_func[type].ode_spec = (Pfri)0;
-	memb_func[type].ode_matsol = (Pfri)0;
-	memb_func[type].ode_synonym = (Pfri)0;
-	memb_func[type].singchan_ = (Pfri)0;
+	memb_func[type].ode_count = (void*)0;
+	memb_func[type].ode_map = (void*)0;
+	memb_func[type].ode_spec = (void*)0;
+	memb_func[type].ode_matsol = (void*)0;
+	memb_func[type].ode_synonym = (void*)0;
+	memb_func[type].singchan_ = (void*)0;
 #endif
 	/* as of 5.2 nmodl translates so that the version string
 	   is the first string in m. This allows the neuron application
@@ -553,7 +551,7 @@ IGNORE(fprintf(stderr, CHKmes, buf));
 	n_memb_func = type;
 }
 
-nrn_writes_conc(type, unused) int type, unused; {
+void nrn_writes_conc(type, unused) int type, unused; {
 	static int lastion = EXTRACELL+1;
 	int i;
 	for (i=n_memb_func - 2; i >= lastion; --i) {
@@ -573,26 +571,26 @@ void hoc_register_dparam_size(int type, int size) {
 }
 
 #if CVODE
-hoc_register_cvode(i, cnt, map, spec, matsol)
-	int i; Pfri cnt,map,spec,matsol;
-{
+void hoc_register_cvode(
+	int i,
+	nrn_ode_count_t cnt,
+	nrn_ode_map_t map,
+	Pvmi spec,
+	Pvmi matsol
+){
 	memb_func[i].ode_count = cnt;
 	memb_func[i].ode_map = map;
 	memb_func[i].ode_spec = spec;
 	memb_func[i].ode_matsol = matsol;
 }
-hoc_register_synonym(i, syn)
-	int i; Pfri syn;
-{
+void hoc_register_synonym(int i, void (*syn)(int, double**, Datum**)){
 	memb_func[i].ode_synonym = syn;
 }
 #endif
 
-register_destructor(d) Pfri d; {
+void register_destructor(Pvmp d) {
 	memb_func[n_memb_func - 1].destructor = d;
 }
-
-struct Member_func { char* _name; double (*_member)();};
 
 int point_reg_helper(s2) Symbol* s2; {
 	pointsym[pointtype] = s2;
@@ -605,25 +603,20 @@ int point_reg_helper(s2) Symbol* s2; {
 	return pointtype++;
 }
 
-int
-#if VECTORIZE
-point_register_mech(m, alloc, cur, jacob, stat, initialize, nrnpointerindex,
-	constructor, destructor, fmember,
-	vectorized
-)
-	char **m;
-	Pfri alloc;
-	Pfri cur;
-	Pfri jacob;
-	Pfri stat;
-	Pfri initialize;
-	int nrnpointerindex;
-	int vectorized;
+int point_register_mech(
+	const char **m,
+	Pvmp alloc,
+	Pvmi cur,
+	Pvmi jacob,
+	Pvmi stat,
+	Pvmi initialize,
+	int nrnpointerindex,
+	int vectorized,
 
-	void* (*constructor)();
-	void (*destructor)();
-	struct Member_func* fmember;
-{
+	void* (*constructor)(Object*),
+	void (*destructor)(void*),
+	Member_func* fmember
+){
 	extern void steer_point_process();
 	Symlist* sl;
 	Symbol* s, *s2;
@@ -641,13 +634,11 @@ point_register_mech(m, alloc, cur, jacob, stat, initialize, nrnpointerindex,
 	hoc_symlist = sl;
 	return point_reg_helper(s2);
 }
-#endif
 
 /* some stuff from scopmath needed for built-in models */
  
 #if 0
-double*
-makevector(nrows)
+double* makevector(nrows)
         int nrows;
 {
         double* v;
@@ -730,9 +721,7 @@ hoc_register_units(type, units)
 	}
 }
 
-hoc_reg_ba(mt, f, type)
-	int mt, type;
-	Pfri f;
+void hoc_reg_ba(int mt, nrn_bamech_t f, int type)
 {
 	BAMech* bam;
 	switch (type) { /* see bablk in src/nmodl/nocpout.c */
@@ -796,18 +785,17 @@ hoc_register_tolerance(type, tol, stol)
 		double **pv;
 		Node** pnode;
 		Prop* p;
-		extern Prop* prop_alloc();
 		extern Node** node_construct();
 		int i, j, k, n, na, index;
 		
-		n = (*memb_func[type].ode_count)();
+		n = (*memb_func[type].ode_count)(type);
 		if (n > 0) {
 			psym = (Symbol**)ecalloc(n, sizeof(Symbol*));
 			pv = (double**)ecalloc(2*n, sizeof(double*));
 			pnode = node_construct(1);
 prop_alloc(&(pnode[0]->prop), MORPHOLOGY, pnode[0]); /* in case we need diam */
 p = prop_alloc(&(pnode[0]->prop), type, pnode[0]); /* this and any ions */
-(*memb_func[type].ode_map)(0, pv, pv+n, p->param, p->dparam, (double*)0);
+(*memb_func[type].ode_map)(0, pv, pv+n, p->param, p->dparam, (double*)0, type);
 			for (i=0; i < n; ++i) {
 				for (p = pnode[0]->prop; p; p = p->next) {
 					if (pv[i] >= p->param && pv[i] < (p->param + p->param_size)) {

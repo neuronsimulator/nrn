@@ -198,7 +198,7 @@ static Member_func members[] = {
 	0, 0
 };
 void SymChooser_reg() {
-	class2oc("SymChooser", scons, sdestruct, members);
+	class2oc("SymChooser", scons, sdestruct, members, NULL, NULL, NULL);
 }
 #if HAVE_IV
 

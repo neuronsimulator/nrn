@@ -25,7 +25,7 @@ static void (*register_classes[])() = {
 };
 	
 extern "C" {
-void class_registration() {
+void hoc_class_registration(void) {
 	for (int i=0; register_classes[i]; i++) {
 		(*register_classes[i])();
 	}

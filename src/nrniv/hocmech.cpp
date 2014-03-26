@@ -30,7 +30,7 @@ extern bool special_pnt_call(Object*, Symbol*, int);
 static Object* last_created_pp_ob_;
 static bool skip_;
 
-static char** make_m(bool, int&, Symlist*, char*, char*);
+static const char** make_m(bool, int&, Symlist*, char*, char*);
 
 class HocMech {
 public:
@@ -187,7 +187,7 @@ static void after_step(void* nt, Memb_list* ml, int type) {
 
 // note that an sgi CC complained about the alloc token not being interpretable
 //as std::alloc so we changed to hm_alloc
-static HocMech* common_register(char** m, Symbol* classsym, Symlist* slist,  void (hm_alloc)(Prop*), int& type){
+static HocMech* common_register(const char** m, Symbol* classsym, Symlist* slist,  void (hm_alloc)(Prop*), int& type){
 	Pvmi cur, jacob, stat, initialize;	
 	cur = nil;
 	jacob = nil;
@@ -228,7 +228,7 @@ void make_mechanism() {
 	}
 	cTemplate* tp = classsym->u.ctemplate;
 	Symlist* slist = tp->symtable;
-	char** m = make_m(true, cnt, slist, mname, parnames);
+	const char** m = make_m(true, cnt, slist, mname, parnames);
 
 	common_register(m, classsym, slist, alloc_mech, i);
 		
@@ -246,7 +246,7 @@ void make_mechanism() {
 	}
 	delete [] m;
 	delete [] parnames;
-	ret(1.);
+	hoc_retpushx(1.);
 }
 
 void make_pointprocess() {
@@ -275,7 +275,7 @@ fprintf(stderr, "%d object(s) of type %s already exist.\n", tp->count, classsym-
 hoc_execerror("Can't make a template into a PointProcess when instances already exist", 0);
 	}
 	++tp->dataspace_size;
-	char** m = make_m(false, cnt, slist, classsym->name, parnames);
+	const char** m = make_m(false, cnt, slist, classsym->name, parnames);
 	
 	check_list("loc", slist);
 	check_list("get_loc", slist);
@@ -323,11 +323,12 @@ hoc_execerror("Can't make a template into a PointProcess when instances already 
 	if (parnames) {
 		delete [] parnames;
 	}
-	ret(1.);
+	hoc_retpushx(1.);
 }
 
-static char** make_m(bool suffix, int& cnt, Symlist* slist, char* mname, char* parnames) {
+static const char** make_m(bool suffix, int& cnt, Symlist* slist, char* mname, char* parnames) {
 	char buf[256];
+	char* cc;
 	Symbol* sp;
 	int i, imax;
 	cnt = 0;
@@ -339,17 +340,17 @@ static char** make_m(bool suffix, int& cnt, Symlist* slist, char* mname, char* p
 	}
 	cnt += 6;
 //printf("cnt=%d\n", cnt);
-	char** m = new char*[cnt];
+	const char** m = new const char*[cnt];
 	for (i=0; i<cnt; ++i) { // not all space is used since some variables
 		m[i] = 0;	// are not public
 	}
 	i = 0;
-	m[i] = new char[2];
-	strcpy(m[i], "0");
+	cc = new char[2];
+	strcpy(cc, "0"); m[i] = cc;
 //printf("m[%d]=%s\n", i, m[i]);
 	++i;
-	m[i] = new char[strlen(mname)+1];
-	strcpy(m[i], mname);
+	cc = new char[strlen(mname)+1];
+	strcpy(cc, mname); m[i] = cc;
 //printf("m[%d]=%s\n", i, m[i]);
 	++i;
 	
@@ -387,14 +388,15 @@ hoc_execerror("Must be a space separated list of names\n", gargstr(3));
 		  || !sp->cpublic || !(sp->type == VAR)) {
 			hoc_execerror(cp, "is not a public variable");
 		}
-		m[i] = new char[strlen(cp) + strlen(m[1]) + 20];
+		cc = new char[strlen(cp) + strlen(m[1]) + 20];
 		//above 20 give enough room for _ and possible array size
 		imax = hoc_total_array_data(sp, 0);
 		if (imax > 1) {
-			sprintf(m[i], "%s[%d]", buf, imax);
+			sprintf(cc, "%s[%d]", buf, imax);
 		}else{
-			sprintf(m[i], "%s", buf);
+			sprintf(cc, "%s", buf);
 		}
+		m[i] = cc;
 //printf("m[%d]=%s\n", i, m[i]);
 		++i;
 	}
@@ -419,14 +421,15 @@ hoc_execerror("Must be a space separated list of names\n", gargstr(3));
 			if (b) {
 				continue;
 			}
-			m[i] = new char[strlen(buf) + 20];
+			cc = new char[strlen(buf) + 20];
 			//above 20 give enough room for possible array size
 			imax = hoc_total_array_data(sp, 0);
 			if (imax > 1) {
-				sprintf(m[i], "%s[%d]", buf, imax);
+				sprintf(cc, "%s[%d]", buf, imax);
 			}else{
-				sprintf(m[i], "%s", buf);
+				sprintf(cc, "%s", buf);
 			}
+			m[i] = cc;
 //printf("m[%d]=%s\n", i, m[i]);
 			++i;
 		}

@@ -1,8 +1,5 @@
 #include <../../nrnconf.h>
 #include "hoc.h"
-extern int hoc_is_double_arg();
-extern double* getarg();
-extern double* hoc_pgetarg();
 
 #define INTERPOLATE 1
 
@@ -22,9 +19,7 @@ typedef struct FuncTable {
 	double value; /* if constant this is it */
 } FuncTable;
 
-static int arg_index(ta, x)
-	TableArg* ta;
-	double x;
+static int arg_index(TableArg* ta, double x)
 {
 	int j;
 		
@@ -80,10 +75,7 @@ printf("x[%d]=%g  frac=%g  x=%g\n", j, ta->argvec[j], ta->frac, x);
 	return j;
 }
 
-static double inter(frac, tab, j)
-	double frac;
-	double* tab;
-	int j;
+static double inter(double frac, double* tab, int j)
 {
 	if (frac > 0.) {
 		return (1. - frac)*tab[j] + frac*tab[j+1];
@@ -92,8 +84,7 @@ static double inter(frac, tab, j)
 	}
 }
 
-static double interp(frac, x1, x2)
-	double frac, x1, x2;
+static double interp(double frac, double x1, double x2)
 {
 	if (frac > 0.) {
 		return (1. - frac)*x1 + frac*x2;
@@ -102,10 +93,7 @@ static double interp(frac, x1, x2)
 	}
 }
 
-double hoc_func_table(ft, n, args)
-	FuncTable* ft;
-	int n;
-	double* args;
+double hoc_func_table(FuncTable* ft, int n, double* args)
 {
 	int i, j;
 	double* tab;
@@ -149,9 +137,7 @@ printf("calculating y2: fx=%g fy=%g j1=%d y2=%g tabj1=%g\n", ft->targs[0].frac, 
 #endif
 }
 
-void hoc_spec_table(ppt, n)
-	FuncTable** ppt;
-	int n;
+void hoc_spec_table(FuncTable** ppt, int n)
 {
 	int i, argcnt;
 	FuncTable* ft;

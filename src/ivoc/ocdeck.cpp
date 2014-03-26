@@ -227,7 +227,7 @@ static Member_func members[] = {
 };
 
 void OcDeck_reg() {
-	class2oc("Deck", cons, destruct, members);
+	class2oc("Deck", cons, destruct, members, NULL, NULL, NULL);
 }
 #if HAVE_IV
 OcDeck::OcDeck() : OcGlyphContainer() {

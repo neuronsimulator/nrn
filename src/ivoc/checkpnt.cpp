@@ -93,6 +93,7 @@ data depending on type. eg for VAR && NOTUSER it is
 #include <OS/list.h>
 #include <OS/table.h>
 #include "oc2iv.h"
+#include "ocfunc.h"
 #if HAVE_XDR
 #include <rpc/xdr.h>
 #endif
@@ -103,26 +104,20 @@ extern "C" {
 #include "hoclist.h"
 #include "parse.h"
 #include "code.h"
-extern int hoc_arayinstal();
 #include "equation.h"
-	extern Symlist* hoc_built_in_symlist;
-	extern Symlist* hoc_top_level_symlist;
-	void hoc_checkpoint();
 	int hoc_readcheckpoint(char*);
-	extern Objectdata* hoc_top_level_data;
-	extern int hoc_total_array_data(Symbol*, Objectdata*);
 	extern int hoc_resize_toplevel(int);
 }
 
 static struct HocInst {
-	Pfri pi;
+	Pfrv pi;
 	const char* signature;
 } hoc_inst_[] = {
 	0, 0,		//0
 	nopop, 0,
 	eval, 0,
 	add, 0,
-	sub, 0,
+	hoc_sub, 0,
 	mul, 0,
 	hoc_div, 0,
 	negate, 0,

@@ -399,11 +399,11 @@ static Member_func members[] = {
 };
 
 void HBox_reg() {
-	class2oc("HBox", hcons, destruct, members);
+	class2oc("HBox", hcons, destruct, members, NULL, NULL, NULL);
 }
 
 void VBox_reg() {
-	class2oc("VBox", vcons, destruct, members);
+	class2oc("VBox", vcons, destruct, members, NULL, NULL, NULL);
 }
 #if HAVE_IV
 OcGlyphContainer::OcGlyphContainer() :OcGlyph(nil) {

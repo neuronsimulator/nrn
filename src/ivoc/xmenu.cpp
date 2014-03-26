@@ -3060,7 +3060,7 @@ static Member_func vfe_members[] = {
 	0, 0
 };
 void ValueFieldEditor_reg() {
-	class2oc("ValueFieldEditor", vfe_cons, vfe_destruct, vfe_members);
+	class2oc("ValueFieldEditor", vfe_cons, vfe_destruct, vfe_members, NULL, NULL, NULL);
 }
 
 #if HAVE_IV

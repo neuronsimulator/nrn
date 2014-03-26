@@ -369,7 +369,7 @@ delete_section() {
 	}
 	sec_free(*pitm);
 	*pitm = 0;
-	ret(0.);
+	hoc_retpushx(0.);
 }
 
 /*
@@ -597,7 +597,7 @@ reverse_sibling_list(sec)
 
 disconnect() {
 	nrn_disconnect(chk_access());
-	ret(0.);
+	hoc_retpushx(0.);
 }
 
 static reverse_nodes(sec)
@@ -1527,7 +1527,7 @@ int keep_nseg_parm_;
 keep_nseg_parm() {
 	int i = keep_nseg_parm_;
 	keep_nseg_parm_ = (int)chkarg(1, 0., 1.);
-	ret((double)i);
+	hoc_retpushx((double)i);
 }
 #endif
 
@@ -2232,9 +2232,9 @@ hoc_ifsec() {
 issection() { /* returns true if string is the access section */
 	hoc_regexp_compile(gargstr(1));
 	if (hoc_regexp_search(secname(chk_access()))) {
-		ret(1.);
+		hoc_retpushx(1.);
 	}else{
-		ret(0.);
+		hoc_retpushx(0.);
 	}
 }
 
@@ -2246,11 +2246,11 @@ void ismembrane() { /* return true if string is an inserted membrane in the
 	str = gargstr(1);
 	for (p = chk_access()->pnode[0]->prop; p; p = p->next) {
 		if (strcmp(memb_func[p->type].sym->name, str) == 0) {
-			ret(1.);
+			hoc_retpushx(1.);
 			return;
 		}
 	}
-	ret(0.);
+	hoc_retpushx(0.);
 }
 
 
@@ -2264,7 +2264,7 @@ sectionname() {
 	buf = secname(chk_access());
 	cpp = hoc_pgargstr(1);
 	hoc_assign_str(cpp, buf);
-	ret(1.);
+	hoc_retpushx(1.);
 }
 
 hoc_secname() {
@@ -2280,7 +2280,7 @@ this_section() {
 	
 	Section* sec;
 	sec = chk_access();
-	ret((double)(unsigned long)(sec));
+	hoc_retpushx((double)(unsigned long)(sec));
 }
 this_node() {
 	/* return node number of currently accessed section at
@@ -2290,7 +2290,7 @@ this_node() {
 	Node* nd;
 	sec = chk_access();
 	nd = node_exact(sec, *getarg(1));
-	ret((double)(unsigned long)nd);
+	hoc_retpushx((double)(unsigned long)nd);
 }
 parent_section() {
 	/* return section number of currently accessed section at
@@ -2298,32 +2298,32 @@ parent_section() {
 	
 	Section* sec;
 	sec = chk_access();
-	ret((double)(unsigned long)(sec->parentsec));
+	hoc_retpushx((double)(unsigned long)(sec->parentsec));
 }
 parent_connection() {
 	Section* sec;
 	sec = chk_access();
-	ret(nrn_connection_position(sec));
+	hoc_retpushx(nrn_connection_position(sec));
 }
 
 section_orientation() {
 	Section* sec;
 	sec = chk_access();
-	ret(nrn_section_orientation(sec));
+	hoc_retpushx(nrn_section_orientation(sec));
 }
 
 parent_node() {
 	Section* sec;
 	hoc_execerror("parent_node() needs to be re-implemented", 0);
 	sec = chk_access();
-	ret((double)(unsigned long)(sec->parentnode));
+	hoc_retpushx((double)(unsigned long)(sec->parentnode));
 }
 
 pop_section() {
 	--skip_secstack_check;
 	if (skip_secstack_check < 0) { skip_secstack_check = 0; }
 	nrn_popsec();
-	ret(1.);
+	hoc_retpushx(1.);
 }
 
 /* turn off section stack fixing (in case of return,continue,break in a section
@@ -2358,7 +2358,7 @@ push_section() {
 		hoc_execerror("Not a Section pointer", (char*)0);
 	}
 	hoc_level_pushsec(sec);
-	ret(1.0);
+	hoc_retpushx(1.0);
 }
 
 
@@ -2438,5 +2438,5 @@ section_exists() {
 			}
 		}
 	}
-	ret((double)(sec && sec->prop));
+	hoc_retpushx((double)(sec && sec->prop));
 }

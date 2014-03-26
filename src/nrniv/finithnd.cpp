@@ -104,7 +104,7 @@ static void finithnd_destruct(void* v) {
 
 void FInitializeHandler_reg() {
 	class2oc("FInitializeHandler", finithnd_cons, finithnd_destruct,
-		members, nil, nil);
+		members, NULL, NULL, NULL);
 }
 
 FIHList* FInitialHandler::fihlist_[4];

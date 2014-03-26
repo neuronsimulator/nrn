@@ -946,7 +946,7 @@ void hocfunchack(Symbol* n, Item* qpar1, Item* qpar2, int hack)
    if (point_process) {
 	Sprintf(buf, "\nstatic double _hoc_%s(void* _vptr) {\n double _r;\n", n->name);
    }else{
-	Sprintf(buf, "\nstatic int _hoc_%s() {\n  double _r;\n", n->name);
+	Sprintf(buf, "\nstatic void _hoc_%s(void) {\n  double _r;\n", n->name);
    }
 	Lappendstr(procfunc, buf);
 	vectorize_substitute(lappendstr(procfunc, ""), "\
@@ -995,7 +995,7 @@ void hocfunchack(Symbol* n, Item* qpar1, Item* qpar2, int hack)
 	Lappendstr(procfunc, ");\n return(_r);\n}\n");
    }else
 #endif
-	Lappendstr(procfunc, ");\n ret(_r);\n}\n");
+	Lappendstr(procfunc, ");\n hoc_retpushx(_r);\n}\n");
 #if VECTORIZE
 	if (i) {
 		vectorize_substitute(qp, "_p, _ppvar, _thread, _nt,");

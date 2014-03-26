@@ -109,7 +109,7 @@ void notify_freed(void* p) {
 	}
 	notify_pointer_freed(p);	
 }
-void notify_freed_val_array(double* p, int size) {
+void notify_freed_val_array(double* p, size_t size) {
 	if (f_list) {
 		long i, n=f_list->count();
 		for (i=0; i < n; ++i) {
@@ -162,8 +162,7 @@ void notify_freed_val_array(double* p, int size) {
  */
 
 extern "C" {
-	extern int hoc_main1(int argc, char** argv, char** env);
-	extern void hoc_main1_init(char* pname, char** env);
+	extern void hoc_main1_init(const char* pname, const char** env);
 	extern int hoc_oc(const char*);
 	extern int hoc_interviews;
 	extern Symbol* hoc_parse_expr(const char*, Symlist**);
@@ -269,7 +268,7 @@ Oc::Oc() {
 
 bool Oc::helpmode_;
 
-Oc::Oc(Session *s, char* pname, char** env) {
+Oc::Oc(Session *s, const char* pname, const char** env) {
 	if (session_) return;
 	refcnt_++;
 	session_ = s;
@@ -320,7 +319,7 @@ Oc::~Oc() {
 
 Session* Oc::getSession() { return session_;}
 
-int Oc::run(int argc, char** argv) {
+int Oc::run(int argc, const char** argv) {
 	return hoc_main1(argc, argv, 0);
 }
 
@@ -369,8 +368,8 @@ HandleStdin::HandleStdin() {
 }
 
 int HandleStdin::inputReady(int fd) {
-	if(fd);
         stdinSeen_ = 1;
+	if(fd){;}
 	if (acceptInput_) {
 	        Oc::getSession()->quit();
 	}
@@ -379,7 +378,7 @@ int HandleStdin::inputReady(int fd) {
 
 int HandleStdin::exceptionRaised(int fd) {
 	hoc_interviews = 0;
-	if(fd);
+	if(fd){;}
 	stdinSeen_ = 1;
         Oc::getSession()->quit();
         return 0;

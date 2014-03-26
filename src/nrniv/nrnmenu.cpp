@@ -55,7 +55,7 @@ IFGUI
 ENDGUI
 #endif
 
-	ret(1.);
+	hoc_retpushx(1.);
 }
 
 void nrnsecmenu() {
@@ -64,7 +64,7 @@ IFGUI
 	section_menu(chkarg(1,-1.,1.), (int)chkarg(2,1.,3.));
 ENDGUI
 #endif
-	ret(1.);
+	hoc_retpushx(1.);
 }
 
 #ifdef ultrix
@@ -101,7 +101,7 @@ IFGUI
 		}
 	}
 	hoc_ivmenu(0);
-	ret(1.);
+	hoc_retpushx(1.);
 	return;
    }
 	char* name = gargstr(1);
@@ -115,7 +115,7 @@ IFGUI
 		    		++cnt;
 			}
 		}
-		ret(double(cnt));
+		hoc_retpushx(double(cnt));
 		return;
 	}
 	sprintf(buf, "%s (Globals)", name);
@@ -142,11 +142,11 @@ IFGUI
 	hoc_ivpanelmap();
 ENDGUI
 #endif
-	ret(1.);
+	hoc_retpushx(1.);
 }
 
 void nrnmechmenu() {
-	ret(1.);
+	hoc_retpushx(1.);
 }
 
 #if HAVE_IV
@@ -333,7 +333,7 @@ IFGUI
 		hoc_ivbutton(sp->name, buf);
 	}
 	hoc_ivmenu(0);
-	ret(1.);
+	hoc_retpushx(1.);
 	return;
    }
 
@@ -380,7 +380,7 @@ hoc_ivbutton(sec_and_position(pp->sec,pp->node), buf);
    }
 ENDGUI
 #endif
-	ret(1.);
+	hoc_retpushx(1.);
 }
 
 void nrnpointmenu()
@@ -405,7 +405,7 @@ IFGUI
 	point_menu(ob, make_label);
 ENDGUI
 #endif
-	ret(1.);
+	hoc_retpushx(1.);
 }
 
 #if HAVE_IV
@@ -620,7 +620,7 @@ static Member_func ms_members[] = {
 };
 
 void MechanismStandard_reg() {
-	class2oc("MechanismStandard", ms_cons, ms_destruct, ms_members);
+	class2oc("MechanismStandard", ms_cons, ms_destruct, ms_members, NULL, NULL, NULL);
 }
 
 MechanismStandard::MechanismStandard(const char* name, int vartype) {
@@ -991,7 +991,7 @@ static Member_ret_obj_func mt_retobj_members[] = {
 };
 void MechanismType_reg() {
 	class2oc("MechanismType", mt_cons, mt_destruct, mt_members,
-		nil, mt_retobj_members);
+		NULL, mt_retobj_members, NULL);
 }
 
 /* static */ class MechTypeImpl {

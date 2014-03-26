@@ -260,7 +260,7 @@ hoc_execerror("Distance origin not valid.","Need to initialize origin with dista
 		d = topol_distance(origin_sec, origin_node, sec, node,
 			&sec, &node );
 	}
-	ret(d);
+	hoc_retpushx(d);
 }
 	
 void nrnhoc_topology() /* print the topology of the branched cable */
@@ -277,7 +277,7 @@ void nrnhoc_topology() /* print the topology of the branched cable */
 		}
 	}
 	Printf("\n");
-	ret(1.);
+	hoc_retpushx(1.);
 }
 
 dashes(sec, offset,first)

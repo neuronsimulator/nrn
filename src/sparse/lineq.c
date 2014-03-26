@@ -12,8 +12,7 @@ double *rhs;			/* initially- right hand side
 					finally - answer */
 #define SMALL 0.
 
-int
-matsol()
+int matsol(void)
 {
 	register struct elm *pivot;
 	register struct elm *el;

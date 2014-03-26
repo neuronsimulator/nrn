@@ -332,6 +332,8 @@ extern int stoprun;
 }
 #endif
 
+#include "nrn_ansi.h"
+
 #endif
 
 

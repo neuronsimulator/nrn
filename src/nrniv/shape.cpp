@@ -521,7 +521,7 @@ ENDGUI
 }
 void Shape_reg() {
 //	printf("Shape_reg\n");
-	class2oc("Shape", sh_cons, sh_destruct, sh_members);
+	class2oc("Shape", sh_cons, sh_destruct, sh_members, NULL, NULL, NULL);
 }
 
 #if HAVE_IV

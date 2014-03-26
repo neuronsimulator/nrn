@@ -1,42 +1,27 @@
 #include <../../nrnconf.h>
 #include <stdlib.h>
-#include <hoc_membf.h>
-#include "hoc.h"
+#include <classreg.h>
 #include "hocstr.h"
 #include "parse.h"
+#include "hocparse.h"
+#include "code.h"
 #include "hocassrt.h"
 #include "hoclist.h"
 #include "nrnmpi.h"
+#include "nrnfilewrap.h"
 #include <nrnpython_config.h>
 
 #define PDEBUG 0
-extern Symlist  *hoc_symlist;
-extern Symlist* hoc_built_in_symlist;
-extern Object	**hoc_objpop();
-extern double	*hoc_pxpop();
-extern double	hoc_opasgn();
-extern double chkarg();
-extern char	**hoc_strpop();
-extern Symbol	*hoc_table_lookup();
-extern Symbol	*hoc_install();
-extern Object** hoc_objgetarg();
-extern Object** hoc_temp_objptr();
-extern Object*	hoc_pop_object();
-extern Datum* hoc_look_inside_stack();
-extern Object* hoc_obj_look_inside_stack();
-extern void hoc_obj_unref();
-extern void hoc_dec_refcount();
 
 #define JAVA2NRN 1
 
 #if JAVA2NRN
-/* #include "java2nrn.h" */
-extern Symbol* java2nrn_class();
-void* (*p_java2nrn_cons)(); /* returns pointer to java object */
-void  (*p_java2nrn_destruct)();
-Pfrd p_java2nrn_dmeth;
-Pfrs p_java2nrn_smeth;
-Pfro p_java2nrn_ometh;
+#include "nrnjava.h"
+void* (*p_java2nrn_cons)(Object*);
+void  (*p_java2nrn_destruct)(void* opaque_java_object);
+double (*p_java2nrn_dmeth)(Object* ho, Symbol* method);
+char** (*p_java2nrn_smeth)(Object* ho, Symbol* method);
+Object** (*p_java2nrn_ometh)(Object* ho, Symbol* method);
 #endif
 
 #if USE_PYTHON
@@ -55,21 +40,19 @@ static int connect_obsec_;
 
 #define PUBLIC_TYPE 1
 #define EXTERNAL_TYPE 2
-static call_constructor();
-static free_objectdata();
-extern Symbol* hoc_decl();
+static void call_constructor(Object*, Symbol*, int);
+static void free_objectdata(Objectdata*, Template*);
 
 int hoc_print_first_instance = 1;
-extern FILE* hoc_fin;
 
 static Symbol* hoc_obj_;
 
-hoc_install_hoc_obj() {
+void hoc_install_hoc_obj(void) {
 	hoc_oc("objref hoc_obj_[2]\n");
 	hoc_obj_ = hoc_lookup("hoc_obj_");
 }
 
-Object* hoc_obj_get(i) int i; {
+Object* hoc_obj_get(int i) {
 	Object** p = hoc_objectdata[hoc_obj_->u.oboff].pobj;
 	if (p) {
 		return p[i];
@@ -78,16 +61,14 @@ Object* hoc_obj_get(i) int i; {
 	}
 }
 
-void hoc_obj_set(i, obj) int i; Object* obj; {
+void hoc_obj_set(int i, Object* obj) {
 	Object** p = hoc_objectdata[hoc_obj_->u.oboff].pobj;
 	hoc_obj_ref(obj);
 	hoc_dec_refcount(p + i);
 	p[i] = obj;
 }
 
-char* hoc_object_name(ob)
-	Object* ob;
-{
+char* hoc_object_name(Object* ob) {
 	static char s[100];
 	if (ob) {
 		Sprintf(s, "%s[%d]", ob->template->sym->name, ob->index);
@@ -97,8 +78,7 @@ char* hoc_object_name(ob)
 	return s;
 }
 	
-int hoc_total_array(s) /* total number of elements in array pointer */
-	Symbol *s;
+size_t hoc_total_array(Symbol* s) /* total number of elements in array pointer */
 {
 	int total = 1, i;
 	Arrayinfo* a = OPARINFO(s);
@@ -110,9 +90,7 @@ int hoc_total_array(s) /* total number of elements in array pointer */
 	return total;
 }
 	
-int hoc_total_array_data(s, obd) /* total number of elements in array pointer */
-	Symbol *s;
-	Objectdata* obd;
+size_t hoc_total_array_data(Symbol* s, Objectdata* obd) /* total number of elements in array pointer */
 {
 	Arrayinfo* a;
 	int total = 1, i;
@@ -141,16 +119,15 @@ static int icntobjectdata=0;
 Object* hoc_thisobject;
 Objectdata *hoc_objectdata = (Objectdata *)0;
 Objectdata *hoc_top_level_data;
-extern Symlist *hoc_top_level_symlist;
 static int icnttoplevel;
 int hoc_in_template=0;
 
 
-hoc_push_current_object() {
+void hoc_push_current_object(void) {
 	hoc_push_object(hoc_thisobject);
 }
 
-Objectdata* hoc_objectdata_save() {
+Objectdata* hoc_objectdata_save(void) {
 	/* hoc_top_level_data changes when new vars are introduced */
 	if (hoc_objectdata == hoc_top_level_data) {
 		/* a template starts out its Objectdata as 0. */
@@ -160,7 +137,7 @@ Objectdata* hoc_objectdata_save() {
 	}
 }
 
-Objectdata* hoc_objectdata_restore(obdsav) Objectdata* obdsav; {
+Objectdata* hoc_objectdata_restore(Objectdata* obdsav) {
 	if (obdsav == (Objectdata*)1) {
 		return hoc_top_level_data;;
 	}else{
@@ -168,10 +145,7 @@ Objectdata* hoc_objectdata_restore(obdsav) Objectdata* obdsav; {
 	}
 }
 
-void hoc_obvar_declare(sym, type, pmes)
-	Symbol *sym;
-	int type, pmes;
-{
+void hoc_obvar_declare(Symbol* sym, int type, int pmes) {
 	
 	if (sym->type != UNDEF) {
 		return;
@@ -220,7 +194,7 @@ typedef union {
 static Templatedatum templatestack[NTEMPLATESTACK];
 static Templatedatum *templatestackp = templatestack;
 
-static Templatedatum *poptemplate() {
+static Templatedatum *poptemplate(void) {
 	if (templatestackp == templatestack) {
 		hoc_execerror("templatestack underflow", (char *)0);
 	}
@@ -233,7 +207,7 @@ static Templatedatum *poptemplate() {
 #define pushtemplateodata(arg) chktemplate(); (templatestackp++)->odata = arg
 #define pushtemplateo(arg) chktemplate(); (templatestackp++)->o = arg
 
-static chktemplate(){
+static void chktemplate(void){
 	if (templatestackp == templatestack+NTEMPLATESTACK) {
 		templatestackp = templatestack;
 		hoc_execerror("templatestack overflow", (char *)0);
@@ -245,9 +219,9 @@ static chktemplate(){
 
 #define OBJ_STACK_SIZE 10
 static Object* obj_stack_[OBJ_STACK_SIZE+1]; /* +1 so we can see the most recent pushed */
-static obj_stack_loc;
+static int obj_stack_loc;
 
-hoc_object_push() {
+void hoc_object_push(void) {
 	Object* ob = *hoc_objgetarg(1);
 	if (ob->template->constructor) {
 		hoc_execerror("Can't do object_push for built-in class", 0);
@@ -269,7 +243,7 @@ hoc_object_push() {
 	pushx(0.);
 }
 	
-hoc_object_pushed() {
+void hoc_object_pushed(void) {
 	Object* ob;
 	int i = chkarg(1, 0., (double)obj_stack_loc);
 	ob = obj_stack_[obj_stack_loc - i];
@@ -277,7 +251,7 @@ hoc_object_pushed() {
 	hoc_push_object(ob);
 }
 
-hoc_object_pop() {
+void hoc_object_pop(void) {
 	Object* ob;
 	if (obj_stack_loc < 1) {
 		hoc_execerror("object context stack underflow", 0);
@@ -296,7 +270,7 @@ hoc_object_pop() {
 	pushx(0.);
 }
 /*-----------------------------------------------*/
-int hoc_resize_toplevel(more) int more; {
+int hoc_resize_toplevel(int more) {
 	if (more > 0) {
 		icnttoplevel += more;
 hoc_top_level_data = (Objectdata *)erealloc((char *)hoc_top_level_data,
@@ -308,9 +282,7 @@ hoc_top_level_data = (Objectdata *)erealloc((char *)hoc_top_level_data,
 	return icnttoplevel;
 }
 
-hoc_install_object_data_index(sp)
-	Symbol *sp;
-{
+void hoc_install_object_data_index(Symbol* sp) {
 	
 	if (!hoc_objectdata) {
 		icntobjectdata = 0;
@@ -329,10 +301,7 @@ hoc_install_object_data_index(sp)
 	}
 }
 
-int hoc_obj_run(cmd, ob)
-	char* cmd;
-	Object* ob;
-{
+int hoc_obj_run(const char* cmd, Object* ob) {
 	int err;
 	Object* objsave;
 	Objectdata* obdsave;
@@ -366,7 +335,7 @@ hoc_execerror("Can't execute in a built-in class context", 0);
 	return err;
 }
 
-hoc_exec_cmd() { /* execute string from top level or within an object context */
+void hoc_exec_cmd(void) { /* execute string from top level or within an object context */
 	int err;
 	char* cmd;
 	char buf[256];
@@ -399,11 +368,7 @@ hoc_exec_cmd() { /* execute string from top level or within an object context */
 }
 
 /* call a function within the context of an object. Args must be on stack */
-double hoc_call_objfunc(s, narg, ob)
-	Symbol* s;
-	int narg;
-	Object* ob;
-{
+double hoc_call_objfunc(Symbol* s, int narg, Object* ob) {
 	double d, hoc_call_func();
 	Object* objsave;
 	Objectdata* obdsave;
@@ -431,7 +396,7 @@ double hoc_call_objfunc(s, narg, ob)
 	return d;
 }
 	
-hoc_oop_initaftererror() {
+void hoc_oop_initaftererror(void) {
 	hoc_symlist = hoc_top_level_symlist;
 	templatestackp = templatestack;
 	icntobjectdata = icnttoplevel;
@@ -444,12 +409,12 @@ hoc_oop_initaftererror() {
 #endif
 }
 
-oc_save_hoc_oop(a1, a2, a3, a4, a5)
-	Object*		*a1;
-	Objectdata*	*a2;
-	int		*a4;
-	Symlist*	*a5;
-{
+void oc_save_hoc_oop(
+	Object*		*a1,
+	Objectdata*	*a2,
+	int		*a4,
+	Symlist*	*a5
+){
 	*a1 = hoc_thisobject;
     /* same style as hoc_objectdata_sav */
     if (hoc_objectdata == hoc_top_level_data) {
@@ -461,12 +426,12 @@ oc_save_hoc_oop(a1, a2, a3, a4, a5)
 	*a5 = hoc_symlist;
 }
 
-oc_restore_hoc_oop(a1, a2, a3, a4, a5)
-	Object*		*a1;
-	Objectdata*	*a2;
-	int		*a4;
-	Symlist*	*a5;
-{
+void oc_restore_hoc_oop(
+	Object*		*a1,
+	Objectdata*	*a2,
+	int		*a4,
+	Symlist*	*a5
+){
 	hoc_thisobject = *a1;
     if (*a2 == (Objectdata*)1) {
 	hoc_objectdata = hoc_top_level_data;
@@ -477,10 +442,7 @@ oc_restore_hoc_oop(a1, a2, a3, a4, a5)
 	hoc_symlist = *a5;
 }
 
-Object* hoc_new_object(symtemp, v)
-	Symbol* symtemp;
-	void* v;
-{
+Object* hoc_new_object(Symbol* symtemp, void* v) {
 	Object* ob;
 #if PDEBUG
 	printf("new object from template %s created.\n", symtemp->name);
@@ -508,24 +470,21 @@ Object* hoc_new_object(symtemp, v)
 	return ob;
 }
 
-hoc_new_object_asgn(obp, st, v)
-	Object** obp;
-	Symbol* st;
-	void* v;
-{
+void hoc_new_object_asgn(
+	Object** obp,
+	Symbol* st,
+	void* v
+){
 	hoc_dec_refcount(obp);
 	*obp = hoc_new_object(st, v);
 	hoc_obj_ref(*obp);
 }
 
-Object** hoc_temp_objvar(symtemp, v)
-	Symbol* symtemp;
-	void* v;
-{
+Object** hoc_temp_objvar(Symbol* symtemp, void* v){
 	return hoc_temp_objptr(hoc_new_object(symtemp, v));
 }
 
-Object* hoc_newobj1(sym, narg) Symbol* sym; int narg; {
+Object* hoc_newobj1(Symbol* sym, int narg) {
 	Object *ob;
 	Objectdata *obd;
 	Symbol *s;
@@ -597,7 +556,7 @@ Object* hoc_newobj1(sym, narg) Symbol* sym; int narg; {
 	return ob;	
 }
 
-hoc_newobj_arg() {
+void hoc_newobj_arg(void) {
 	Object* ob;
 	Symbol* sym;
 	int narg;
@@ -608,11 +567,11 @@ hoc_newobj_arg() {
 	hoc_pushobj(hoc_temp_objptr(ob));
 }
 
-hoc_newobj_ret() {
+void hoc_newobj_ret(void) {
 	hoc_newobj_arg();
 }
 
-hoc_newobj() { /* template at pc+1 */
+void hoc_newobj(void) { /* template at pc+1 */
 	Object *ob, **obp;
 	Objectdata *obd;
 	Symbol *sym, *s;
@@ -644,11 +603,11 @@ hoc_newobj() { /* template at pc+1 */
 #endif
 }
 
-static call_constructor(ob, sym, narg)
-	Object *ob;
-	Symbol *sym;
-	int narg;
-{
+static void call_constructor(
+	Object *ob,
+	Symbol *sym,
+	int narg
+){
 	Inst *pcsav;
 	Symlist *slsav;
 	Objectdata *obdsav;
@@ -669,16 +628,11 @@ static call_constructor(ob, sym, narg)
 	hoc_thisobject = obsav;
 }
 
-call_ob_proc(ob, sym, narg)
-	Object *ob;
-	Symbol *sym;
-	int narg;
-{
+void call_ob_proc(Object *ob, Symbol *sym, int narg){
 	Inst *pcsav, callcode[4];
 	Symlist *slsav;
 	Objectdata *obdsav;
 	Object* obsav;
-	extern int call(); 
 
 	slsav = hoc_symlist;
 	obdsav = hoc_objectdata_save();
@@ -691,19 +645,19 @@ call_ob_proc(ob, sym, narg)
 	hoc_thisobject = obsav;
 	if (sym->type == OBFUNCTION) {
 		Object** o;
-		o = (*(sym->u.u_proc->defn.pfo))(ob->u.this_pointer);
+		o = (*(sym->u.u_proc->defn.pfo_vp))(ob->u.this_pointer);
 		if (*o) {++(*o)->refcount;} /* in case unreffed below */
 		pop_frame(); 
 		if (*o) {--(*o)->refcount;}
 		hoc_pushobj(o);
 	}else if (sym->type == STRFUNCTION) {
 		char** s;
-		s = (*(sym->u.u_proc->defn.pfs))(ob->u.this_pointer);
+		s = (char**)(*(sym->u.u_proc->defn.pfs_vp))(ob->u.this_pointer);
 		pop_frame();
 		hoc_pushstr(s);
 	}else{
 		double x;
-		x = (*(sym->u.u_proc->defn.pfd))(ob->u.this_pointer);
+		x = (*(sym->u.u_proc->defn.pfd_vp))(ob->u.this_pointer);
 		pop_frame();
 		hoc_pushx(x);
 	}
@@ -760,11 +714,7 @@ call_ob_proc(ob, sym, narg)
 	hoc_thisobject = obsav;
 }
 
-static call_ob_iter(ob, sym, narg)
-	Object *ob;
-	Symbol *sym;
-	int narg;
-{
+static void call_ob_iter(Object *ob, Symbol *sym, int narg){
 	Symlist *slsav;
 	Objectdata *obdsav;
 	Object* obsav;
@@ -794,7 +744,7 @@ static call_ob_iter(ob, sym, narg)
 	hoc_thisobject = obsav;
 }
 
-hoc_objvardecl() {/* symbol at pc+1, number of indices at pc+2 */
+void hoc_objvardecl(void) {/* symbol at pc+1, number of indices at pc+2 */
 	Symbol *sym;
 	int nsub, size, i;
 	Object **pobj;
@@ -826,17 +776,17 @@ hoc_objectdata[sym->u.oboff].pobj = pobj = (Object **)emalloc(size*sizeof(Object
 	}
 }
 
-hoc_cmp_otype() {/* NUMBER, OBJECTVAR, or STRING must be the type */
+void hoc_cmp_otype(void) {/* NUMBER, OBJECTVAR, or STRING must be the type */
 	int type;
 	type = (pc++)->i;
 }
 
-hoc_known_type() {
+void hoc_known_type(void) {
 	int type;
 	type = ((pc++)->i);
 }
 
-hoc_objectvar() { /* object variable symbol at pc+1. */
+void hoc_objectvar(void) { /* object variable symbol at pc+1. */
 		  /* pointer to correct object left on stack */
 	Objectdata* odsav;
 	Object* obsav = 0;
@@ -869,7 +819,7 @@ hoc_objectvar() { /* object variable symbol at pc+1. */
     }
 }
 
-hoc_objectarg() { /* object arg index at pc+1. */
+void hoc_objectarg(void) { /* object arg index at pc+1. */
 		  /* pointer to correct object left on stack */
 	int i;
 	Object **obp, **hoc_objgetarg();
@@ -884,7 +834,7 @@ hoc_objectarg() { /* object arg index at pc+1. */
 	hoc_pushobj(obp);
 }
 
-void hoc_constobject() { /* template at pc, index at pc+1, objpointer left on stack*/
+void hoc_constobject(void) { /* template at pc, index at pc+1, objpointer left on stack*/
 	char buf[200];
 	Object *obj;
 	Item* q;
@@ -903,7 +853,7 @@ void hoc_constobject() { /* template at pc, index at pc+1, objpointer left on st
 	hoc_execerror("Object ID doesn't exist:", buf);
 }
 
-Object* hoc_name2obj(char* name, int index) {
+Object* hoc_name2obj(const char* name, int index) {
 	char buf[200];
 	Object *obj;
 	Item* q;
@@ -928,7 +878,7 @@ Object* hoc_name2obj(char* name, int index) {
 	return (Object*)0;
 }
 
-hoc_object_id() {
+void hoc_object_id(void) {
 	Object *ob, **hoc_objgetarg();
 
 	ob = *(hoc_objgetarg(1));
@@ -946,10 +896,7 @@ hoc_object_id() {
 }
 
 #if CABLE
-static range_suffix(sym, nindex, narg)
-	Symbol* sym;
-	int nindex, narg;
-{
+static void range_suffix(Symbol* sym, int nindex, int narg) {
 	int bdim = 0;
 	if (ISARRAY(sym)) {
 		if (nindex != sym->arayinfo->nsub) {
@@ -977,21 +924,19 @@ static range_suffix(sym, nindex, narg)
 	}	
 }
 
-connect_obsec_syntax() {
+void connect_obsec_syntax(void) {
 	connect_obsec_ = 1;
 }
 
 #endif
 
-void hoc_object_component() { /* number of indices at pc+2, number of args at pc+3,
+void hoc_object_component(void) { /* number of indices at pc+2, number of args at pc+3,
 				 symbol at pc+1 */
 			/* object pointer on stack after indices */
 	/* if component turns out to be an object then make sure pointer
 	to correct object, symbol, etc is left on stack for evaluation,
 	assignment, etc. */
-	extern Symbol* ivoc_alias_lookup();
 	Symbol *sym0, *sym;
-	extern int hoc_returning;
 	int nindex, narg, cplus, isfunc;
 	Object *obp, *obsav;
 	Objectdata *psav;
@@ -1031,7 +976,6 @@ hoc_execerror("[...](...) syntax only allowed for array range variables:", sym0-
 	if (obp) {
 #if USE_PYTHON
 		if (obp->template->sym == nrnpy_pyobj_sym_) {
-			extern void hoc_object_asgn();
 			if (isfunc & 2) {
 				/* this is the final left hand side of an
 				assignment to the method of a PythonObject
@@ -1264,7 +1208,7 @@ hoc_execerror(sym->name, ":ITERATOR can only be used in a for statement");
 	hoc_thisobject = obsav;
 }
 
-hoc_object_eval() {
+void hoc_object_eval(void) {
 	int type;
 #if PDEBUG
 	printf("code for hoc_object_eval\n");
@@ -1295,7 +1239,7 @@ hoc_object_eval() {
 	}
 }
 
-hoc_ob_pointer() {
+void hoc_ob_pointer(void) {
 	int type;
 	Symbol* sym;
 #if PDEBUG
@@ -1333,14 +1277,14 @@ hoc_ob_pointer() {
 	}
 }
 
-hoc_asgn_obj_to_str() { /* string on stack */
+void hoc_asgn_obj_to_str(void) { /* string on stack */
 	char *d, **pstr;
 	d = *(hoc_strpop());
 	pstr = hoc_strpop();
 	hoc_assign_str(pstr, d);
 }
 
-void hoc_object_asgn() {
+void hoc_object_asgn(void) {
 	int type1, type2, op;
 	op = (pc++)->i;
 	type1 = hoc_stacktype();
@@ -1438,7 +1382,7 @@ void hoc_object_asgn() {
 /* if the name isn't a template then look in the top level symbol table.
 This allows objects to create objects of any class defined at the top level
 */
-Symbol* hoc_which_template(s) Symbol* s; {
+Symbol* hoc_which_template(Symbol* s) {
 	if (s->type != TEMPLATE) {
 		Symbol* s1;
 		s1 = hoc_table_lookup(s->name, hoc_top_level_symlist);
@@ -1456,7 +1400,7 @@ is used for all non-builtin names until an endtemplate is reached
 */
 static int template_id;
 
-hoc_begintemplate(t1) Symbol *t1; {
+void hoc_begintemplate(Symbol* t1) {
 	Symbol* t;
 	int type;
 	t = hoc_decl(t1);
@@ -1494,7 +1438,7 @@ hoc_begintemplate(t1) Symbol *t1; {
 	hoc_symlist = t->u.template->symtable;
 }
 
-hoc_endtemplate(t) Symbol *t; {
+void hoc_endtemplate(Symbol* t) {
 	Symbol *ts, *s;
 #if PDEBUG
 	printf("end template %s\n", t->name);
@@ -1527,15 +1471,15 @@ hoc_execerror("'unref' can only be used as the callback procedure when the refer
 	}
 }
 
-void class2oc(name, cons, destruct, m, checkpoint,  mobjret, strret)
-	char* name;
-	void* (*cons)();
-	void (*destruct)();
-	Member_func* m;
-	int (*checkpoint)();
-	Member_ret_obj_func* mobjret;
-	Member_ret_str_func* strret;
-{
+void class2oc(
+	const char* name,
+	void* (*cons)(Object*),
+	void (*destruct)(void*),
+	Member_func* m,
+	int (*checkpoint)(void**),
+	Member_ret_obj_func* mobjret,
+	Member_ret_str_func* strret
+){
 	Symbol* tsym, *s;
 	Template* t;
 	int i;
@@ -1553,32 +1497,33 @@ void class2oc(name, cons, destruct, m, checkpoint,  mobjret, strret)
 	t->checkpoint = checkpoint;
 	if (m) for (i=0; m[i].name; ++i) {
 		s = hoc_install(m[i].name, FUNCTION, 0.0, &hoc_symlist);
-		s->u.u_proc->defn.pfd = m[i].member;
+		s->u.u_proc->defn.pfd_vp = m[i].member;
 		hoc_add_publiclist(s);
 	}
 	if (mobjret) for (i=0; mobjret[i].name; ++i) {
 		s = hoc_install(mobjret[i].name, OBFUNCTION, 0.0, &hoc_symlist);
-		s->u.u_proc->defn.pfo = mobjret[i].member;
+		s->u.u_proc->defn.pfo_vp = mobjret[i].member;
 		hoc_add_publiclist(s);
 	}
 	if (strret) for (i=0; strret[i].name; ++i) {
 		s = hoc_install(strret[i].name, STRFUNCTION, 0.0, &hoc_symlist);
-		s->u.u_proc->defn.pfs = (Pfrs)strret[i].member;
+		s->u.u_proc->defn.pfs_vp = strret[i].member;
 		hoc_add_publiclist(s);
 	}
 	hoc_endtemplate(tsym);
 }
 
 #if JAVA2NRN
-Symbol* java2nrn_class(name, id, meth)
-	char* name;
-	int id;
-	char* meth;
-{
+Symbol* java2nrn_class(
+	const char* name,
+	int id,
+	const char* meth
+){
 	Symbol* tsym, *s;
 	Template* t;
 	int i, mid;
-	char mname[256], signature[256], *cp, *cn, *buf;
+	const char* cp;
+	char mname[256], signature[256], *cn, *buf;
 	
 	if (hoc_lookup(name)) {
 		hoc_execerror(name, "already being used as a name");
@@ -1728,8 +1673,7 @@ printf("%s derived from overloaded %s already exists\n", mname, s->name);
 }
 #endif /* JAVA2NRN */
 
-Symbol*
-hoc_decl(s) Symbol* s; {
+Symbol* hoc_decl(Symbol* s) {
 	Symbol* ss;	
 	if (templatestackp == templatestack) {
 		if (s == hoc_table_lookup(s->name, hoc_built_in_symlist)) {
@@ -1744,7 +1688,7 @@ hoc_decl(s) Symbol* s; {
 	return ss;
 }
 
-hoc_add_publiclist(s) Symbol *s; {
+void hoc_add_publiclist(Symbol* s) {
 	Symbol* ss;
 #if PDEBUG
 	printf("public name %s with type %d\n", s->name, s->type);
@@ -1756,7 +1700,7 @@ hoc_add_publiclist(s) Symbol *s; {
 	ss->public = PUBLIC_TYPE;
 }
 
-hoc_external_var(s) Symbol *s; {
+void hoc_external_var(Symbol* s) {
 	Symbol* s0;
 	if (templatestackp == templatestack) {
 		hoc_execerror("Not in a template\n", 0);
@@ -1794,7 +1738,7 @@ hoc_external_var(s) Symbol *s; {
 	}
 }
 
-hoc_ob_check(type) int type; {
+void hoc_ob_check(int type) {
 	int t;
 	t = ipop();
 	if (type == -1) {
@@ -1817,9 +1761,7 @@ hoc_ob_check(type) int type; {
 	}
 }
 
-hoc_free_allobjects(template, sl, data)
-Template *template; Symlist *sl; Objectdata *data;
-{
+void hoc_free_allobjects(Template *template, Symlist *sl, Objectdata *data) {
 	/* look in all object variables that point to
 		objects with this template and null them */
 	Symbol *s;
@@ -1857,9 +1799,7 @@ hoc_free_allobjects(template, (*obp)->template->symtable, (*obp)->u.dataspace);
 #define objectpath hoc_objectpath_impl
 #define pathprepend hoc_path_prepend
 
-pathprepend(path, name, indx)
-	char* path, *name, *indx;
-{
+void pathprepend(char* path, const char* name, const char* indx) {
 	char buf[200];
 	if (path[0]) {
 		strcpy(buf, path);
@@ -1869,18 +1809,13 @@ pathprepend(path, name, indx)
 	}
 }
 
-int objectpath(ob, oblook, path, depth)
-	Object* ob;
-	Object* oblook;
-	char* path;
-{
+int objectpath(Object* ob, Object* oblook, char* path, int depth) {
 	/* recursively build the pathname to the object */
 	Symbol *s;
 	Symlist* sl;
 	int total, i;
 	Objectdata* od;
 	Object **obp;
-	extern char* hoc_araystr();
 
 	if (ob == oblook) {
 		return 1;
@@ -1915,7 +1850,7 @@ int objectpath(ob, oblook, path, depth)
 	return 0;
 }
 
-char* hoc_object_pathname(ob) Object* ob; {
+char* hoc_object_pathname(Object* ob) {
 	static char path[200];
 	path[0] = '\0';
 	if (objectpath(ob, (Object*)0, path, 0)) {
@@ -1931,17 +1866,13 @@ char* hoc_object_pathname(ob) Object* ob; {
 	}
 }
 
-hoc_obj_ref(obj)
-	Object* obj;
-{
+void hoc_obj_ref(Object* obj){
 	if (obj) {
 		++obj->refcount;
 	}
 }
 
-void hoc_dec_refcount(pobj)
-	Object **pobj;
-{
+void hoc_dec_refcount(Object** pobj) {
 	Object* obj;
 
 	obj = *pobj;
@@ -1953,9 +1884,7 @@ void hoc_dec_refcount(pobj)
 	hoc_obj_unref(obj);	
 }
 
-void hoc_obj_unref(obj)
-	Object* obj;
-{
+void hoc_obj_unref(Object* obj){
 	Object *obsav;
 
 	if (!obj) {
@@ -2004,10 +1933,7 @@ printf("unreffing %s with refcount %d\n", hoc_object_name(obj), obj->refcount);
 	}
 }
 		
-static free_objectdata(od, template)
-	Objectdata *od;
-	Template *template;
-{
+static void free_objectdata(Objectdata *od, Template *template){
 	Symbol *s;
 	int i, total;
 	Objectdata *psav;
@@ -2068,7 +1994,10 @@ static free_objectdata(od, template)
 }
 
 
-hoc_allobjects() {
+static void hoc_allobjects1(Symlist* sl, int nspace);
+static void hoc_allobjects2(Symbol* s, int nspace);
+
+void hoc_allobjects(void) {
 	int n = 0;
 	if (ifarg(1)) {
 		if (hoc_is_str_arg(1)) {
@@ -2087,10 +2016,7 @@ hoc_allobjects() {
 	pushx((double)n);
 }
 
-hoc_allobjects1(sl, nspace)
-	Symlist* sl;
-	int nspace;
-{
+void hoc_allobjects1(Symlist* sl, int nspace) {
 	Symbol* s;
 	Template* t;
 	Object* o;
@@ -2111,10 +2037,7 @@ printf("%s with %d refs\n", hoc_object_name(o), o->refcount);
 	}
 }
 
-hoc_allobjects2(s, nspace)
-	Symbol* s;
-	int nspace;
-{
+void hoc_allobjects2(Symbol* s, int nspace) {
 	Template* t;
 	Object* o;
 	Item* q;
@@ -2131,15 +2054,15 @@ printf("%s with %d refs\n", hoc_object_name(o), o->refcount);
 	}
 }
 
-hoc_allobjectvars() {
+static void hoc_list_allobjref(Symlist*, Objectdata*, int);
+
+void hoc_allobjectvars(void) {
 	hoc_list_allobjref(hoc_top_level_symlist, hoc_top_level_data, 0);
 	hoc_ret();
 	pushx(0.);
 }
 
-hoc_list_allobjref(sl, data, depth)
-	Symlist *sl; Objectdata *data; int depth;
-{
+static void hoc_list_allobjref(Symlist *sl, Objectdata *data, int depth) {
 	/* look in all object variables that point to
 		objects and print them */
 	Symbol *s;
@@ -2174,10 +2097,7 @@ hoc_list_allobjref((*obp)->template->symtable, (*obp)->u.dataspace, depth+1);
 	}
 }
 
-check_obj_type(obj, typename)
-	Object* obj;
-	char* typename;
-{
+void check_obj_type(Object* obj, const char* typename) {
 	char buf[100];
 	if (!obj || strcmp(obj->template->sym->name, typename) != 0) {
 		if (obj) {
@@ -2190,10 +2110,7 @@ check_obj_type(obj, typename)
 	}
 }
 
-int is_obj_type(obj, typename)
-	Object* obj;
-	char* typename;
-{
+int is_obj_type(Object* obj, const char* typename) {
 	if (obj && strcmp(obj->template->sym->name, typename) == 0) {
 		return 1;
 	}else{

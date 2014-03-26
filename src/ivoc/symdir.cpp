@@ -540,8 +540,6 @@ void SymDirectoryImpl::load_sectionlist() {
 }
 
 extern "C" {
-extern int hoc_total_array_data(Symbol*, Objectdata*);
-extern char* hoc_araystr(Symbol*, int, Objectdata*);
 #if CABLE
 extern char* secname(Section*);
 #endif

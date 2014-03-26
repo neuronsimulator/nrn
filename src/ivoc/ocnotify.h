@@ -13,7 +13,7 @@ void nrn_notify_when_double_freed(double* p, Observer* ob);
 void nrn_notify_pointer_disconnect(Observer* ob);
 void notify_pointer_freed(void* pt);
 void notify_freed(void* p);
-void notify_freed_val_array(double* p, int size);
+void notify_freed_val_array(double* p, size_t);
 
 #if defined(__cplusplus)
 }

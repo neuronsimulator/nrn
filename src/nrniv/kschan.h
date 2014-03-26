@@ -251,7 +251,7 @@ public:
 	virtual void jacob(int, int *, double**, Datum**, NrnThread*);
 	virtual void state(int, int *, Node**, double**, Datum**, NrnThread*);
 #endif /* CACHEVEC */
-	void add_channel(char**);
+	void add_channel(const char**);
 	//for cvode
 	virtual int count();
 	virtual void map(int, double**, double**, double*, Datum*, double*);

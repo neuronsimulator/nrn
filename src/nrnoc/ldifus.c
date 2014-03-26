@@ -11,7 +11,7 @@
 #define nt_t nrn_threads->_t
 #define nt_dt nrn_threads->_dt
 
-extern char* secname(), *hoc_Erealloc(); 
+extern char* secname();
 extern int diam_change_cnt;
 extern int structure_change_cnt;
 
@@ -37,14 +37,13 @@ typedef struct LongDifusThreadData {
 	Memb_list** ml;
 }LongDifusThreadData;
 
-typedef void (*Pfrv)();
-
 static int ldifusfunccnt;
-static Pfrv* ldifusfunc;
+typedef void (*ldifusfunc_t)(Pfrv, NrnThread*);
+static ldifusfunc_t* ldifusfunc;
 static void stagger(), ode(), matsol(), overall_setup();
 
-hoc_register_ldifus1( f ) Pfrv f; {
-	ldifusfunc = (Pfrv*)erealloc(ldifusfunc, (ldifusfunccnt + 1)*sizeof(Pfrv) );
+void hoc_register_ldifus1(ldifusfunc_t f) {
+	ldifusfunc = (ldifusfunc_t*)erealloc(ldifusfunc, (ldifusfunccnt + 1)*sizeof(ldifusfunc_t) );
 	ldifusfunc[ldifusfunccnt] = f;	
 	++ldifusfunccnt;
 }

@@ -53,7 +53,7 @@ static void ste_destruct(void* v) {
 
 void StateTransitionEvent_reg() {
 	class2oc("StateTransitionEvent", ste_cons, ste_destruct,
-		members, nil, nil);
+		members, NULL, NULL, NULL);
 }
 
 implementPtrList(STEList, StateTransitionEvent)

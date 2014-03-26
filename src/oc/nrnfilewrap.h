@@ -54,6 +54,8 @@ extern char* fgets_unlimited(HocStr* s, NrnFILEWrap* f);
 
 #endif
 
+extern NrnFILEWrap* hoc_fin;
+
 #if defined(__cplusplus)
 }
 #endif

@@ -1882,7 +1882,7 @@ float yoff = pageheight*72/2/sfac - (e.top() + e.bottom() + 23.)/2.;
 #endif
 	}
 //printf("%s\n", buf);
-	system(buf) == 0; //avoid warning
+	system(buf);
 #ifdef WIN32
 	unlink(tmpfile);
 #endif
@@ -2111,7 +2111,7 @@ void PrintableWindowManager::psfilter(const char* filename) {
 			filename, tmpfile,
 			filt.string(), tmpfile, filename);
 #endif
-		system(buf) == 0; // avoid warning
+		system(buf);
 		unlink(tmpfile);
 	}
 }

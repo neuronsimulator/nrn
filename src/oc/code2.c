@@ -4,8 +4,11 @@
 #include	"hoc.h"
 #include "hocstr.h"
 #include	"parse.h"
+#include	"hocparse.h"
 #include	<stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
+#include <ctype.h>
 #include	<errno.h>
 #include "nrnfilewrap.h"
 
@@ -20,14 +23,14 @@ extern Symbol *hoc_table_lookup();
 
 extern char **hoc_pgargstr();
 
-float* hoc_sym_domain(sym) Symbol* sym; {
+float* hoc_sym_domain(Symbol* sym) {
 	if (sym && sym->extra) {
 		return sym->extra->parmlimits;
 	}
 	return (float*)0;
 }
 
-HocSymExtension* hoc_var_extra(name) char* name; {
+HocSymExtension* hoc_var_extra(const char* name) {
 	Symbol* sym;
 	sym = hoc_lookup(name);
 	if (sym) {
@@ -37,7 +40,7 @@ HocSymExtension* hoc_var_extra(name) char* name; {
 	}
 }
 
-Symbol* hoc_name2sym(char* name) {
+Symbol* hoc_name2sym(const char* name) {
 	char* buf, *cp;
 	Symbol* sym;
 	buf = emalloc(strlen(name)+1);
@@ -67,7 +70,7 @@ Symbol* hoc_name2sym(char* name) {
 	return (Symbol*)0;
 }
 
-hoc_Symbol_limits() {
+void hoc_Symbol_limits(void) {
 	Symbol* sym, *hoc_get_last_pointer_symbol();
 	double* hoc_pgetarg();
 
@@ -90,9 +93,7 @@ hoc_execerror("Cannot find the symbol associated with the pointer when called fr
 	pushx(1.);
 }
 
-hoc_symbol_limits(sym, low, high)
-	Symbol* sym;
-	float low, high;
+void hoc_symbol_limits(Symbol* sym, float low, float high)
 {
 	sym_extra_alloc(sym);
 	if (!sym->extra->parmlimits) {
@@ -102,17 +103,13 @@ hoc_symbol_limits(sym, low, high)
 	sym->extra->parmlimits[1] = high;
 }
 
-hoc_symbol_tolerance(sym, tol)
-	Symbol* sym;
-	double tol;
+void hoc_symbol_tolerance(Symbol* sym, double tol)
 {
 	sym_extra_alloc(sym);
 	sym->extra->tolerance = tol;
 }
 
-double check_domain_limits(limits, val)
-	float* limits;
-	double val;
+double check_domain_limits(float* limits, double val)
 {
 	if (limits) {
 		if (val < limits[0]) {
@@ -125,7 +122,7 @@ double check_domain_limits(limits, val)
 }
 
 
-char* hoc_symbol_units(sym, units) Symbol* sym; char* units; {
+char* hoc_symbol_units(Symbol* sym, const char* units) {
 	if (!sym) { return (char*)0; }
 	if (units) {
 		if (sym->extra && sym->extra->units) {
@@ -143,7 +140,7 @@ char* hoc_symbol_units(sym, units) Symbol* sym; char* units; {
 	}
 }
 
-hoc_Symbol_units() {
+void hoc_Symbol_units(void) {
 	Symbol* sym, *hoc_get_last_pointer_symbol();
 	double* hoc_pgetarg();
 	int hoc_is_str_arg();
@@ -185,7 +182,7 @@ hoc_execerror("Cannot find the symbol associated with the pointer when called fr
 	hoc_pushstr(units);
 }
 
-char* neuronhome_forward() {
+char* neuronhome_forward(void) {
 	extern char* neuron_home;
 #if defined(WIN32)
 	static char* buf;
@@ -203,7 +200,7 @@ char* neuronhome_forward() {
 }
 
 char *neuron_home_dos;
-hoc_neuronhome() {
+void hoc_neuronhome(void) {
 	extern char* neuron_home;
 #if defined(WIN32)||defined(CYGWIN)
 	if (ifarg(1) && (int)chkarg(1, 0., 1.) == 1) {
@@ -223,15 +220,12 @@ hoc_neuronhome() {
 #endif
 }
 
-char *
-gargstr(narg)	/* Return pointer to string which is the narg argument */
-	int narg;
+char* gargstr(int narg)	/* Return pointer to string which is the narg argument */
 {
 	return *hoc_pgargstr(narg);
 }
 
-hoc_Strcmp()
-{
+void hoc_Strcmp(void) {
 	char *s1, *s2;
 	s1=gargstr(1);
 	s2=gargstr(2);
@@ -239,14 +233,16 @@ hoc_Strcmp()
 	pushx((double)strcmp(s1 ,s2));
 }
 
-int hoc_sscanf() {
+static int hoc_vsscanf(const char* buf);
+
+void hoc_sscanf(void) {
 	int n;
 	n = hoc_vsscanf(gargstr(1));
 	ret();
 	pushx((double)n);
 }
 
-int hoc_vsscanf(buf) char* buf;{
+static int hoc_vsscanf(const char* buf) {
 	/* assumes arg2 format string from hoc as well as remaining args */
 	char *pf, *format, errbuf[100], **hoc_pgargstr();
 	void* arglist[20];
@@ -443,7 +439,7 @@ normal:
 	return n;
 }
 
-System()
+void System(void)
 {
 	extern int hoc_plttext;
 #if defined(WIN32) && !defined(CYGWIN)
@@ -504,8 +500,7 @@ hoc_execerror("Internal error in System(): can't open", stdoutfile);
 	pushx(d);
 }
 
-int
-Xred()	/* read with prompt string and default and limits */
+void Xred(void)	/* read with prompt string and default and limits */
 {
 	double d;
 	double xred();
@@ -528,14 +523,7 @@ static struct { /* symbol types */
 	0,		0
 };
 
-extern Symlist *symlist;
-extern Symlist	*p_symlist;
-extern int	zzdebug;
-
-static int
-symdebug(s, list)	/* for debugging display the symbol lists */
-	char *s;
-	Symlist *list;
+static void symdebug(const char* s, Symlist* list) /* for debugging display the symbol lists */
 {
 	Symbol *sp;
 
@@ -579,7 +567,7 @@ if(!ISARRAY(sp)) {
 	}
 }
 
-symbols()	/* display the types above */
+void symbols(void)	/* display the types above */
 {
 	int i, j;
 	Symbol *sp;
@@ -617,10 +605,7 @@ if(ISARRAY(sp)){
 	pushx(0.);
 }
 
-double
-chkarg(arg, low, high) /* argument checking for user functions */
-	int arg;
-	double low, high;
+double chkarg(int arg, double low, double high) /* argument checking for user functions */
 {
 	double *getarg(), val;
 
@@ -633,15 +618,7 @@ chkarg(arg, low, high) /* argument checking for user functions */
 
 
 
-extern Inst *hoc_pc;
-extern int hoc_nopop(), hoc_print();
-extern int hoc_xopen_run();
-extern double hoc_xpop();
-
-extern double hoc_ac_;
-
-double hoc_run_expr(sym) /* value of expression in sym made by hoc_parse_expr*/
-	Symbol* sym;
+double hoc_run_expr(Symbol* sym) /* value of expression in sym made by hoc_parse_expr*/
 {
 	Inst *pcsav = hoc_pc;	
 	hoc_execute(sym->u.u_proc->defn.in);
@@ -649,9 +626,7 @@ double hoc_run_expr(sym) /* value of expression in sym made by hoc_parse_expr*/
 	return hoc_ac_;
 }
 
-Symbol* hoc_parse_expr(str, psymlist)
-	char* str;
-	Symlist** psymlist;
+Symbol* hoc_parse_expr(const char* str, Symlist** psymlist)
 {
 	Symbol* sp;
 	char s[BUFSIZ];
@@ -678,18 +653,13 @@ Symbol* hoc_parse_expr(str, psymlist)
 	return sp;
 }
 
-hoc_run_stmt(sym)
-	Symbol* sym;
-{
+void hoc_run_stmt(Symbol* sym) {
 	Inst *pcsav = hoc_pc;	
 	hoc_execute(sym->u.u_proc->defn.in);
 	hoc_pc = pcsav;
 }
 
-Symbol* hoc_parse_stmt(str, psymlist)
-	char* str;
-	Symlist** psymlist;
-{
+Symbol* hoc_parse_stmt(const char* str, Symlist** psymlist) {
 	Symbol* sp;
 	char s[BUFSIZ];
 	extern Symlist* hoc_top_level_symlist;
@@ -718,15 +688,14 @@ Symbol* hoc_parse_stmt(str, psymlist)
 
 extern double* hoc_varpointer;
 
-hoc_pointer() {
+void hoc_pointer(void) {
 	double* hoc_pgetarg();
 	hoc_varpointer = hoc_pgetarg(1);
 	ret();
 	pushx(1.);
 }
 
-double* hoc_val_pointer(s) char* s;
-{
+double* hoc_val_pointer(const char* s) {
 	char buf[BUFSIZ];
 	hoc_varpointer = 0;
 	if (strlen(s) > BUFSIZ - 20) {
@@ -742,7 +711,7 @@ double* hoc_val_pointer(s) char* s;
 	return hoc_varpointer;
 }
 
-hoc_name_declared() {
+void hoc_name_declared(void) {
 	Symbol* s;
 	extern Symlist* hoc_top_level_symlist;
 	Symlist* slsav;

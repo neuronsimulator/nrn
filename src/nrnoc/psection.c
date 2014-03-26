@@ -40,7 +40,7 @@ psection()
 		pnode(p1);
 	}
 	Printf("}\n");
-	ret(1.);
+	hoc_retpushx(1.);
 }
 
 static void pnode(p1)
@@ -75,6 +75,6 @@ prstim()
 	print_stim();
 	print_clamp();
 	print_syn();
-	ret(1.);
+	hoc_retpushx(1.);
 }
 

@@ -229,7 +229,7 @@ ENDGUI
 
 void RangeVarPlot_reg() {
 //printf("RangeVarPlot_reg\n");
-	class2oc("RangeVarPlot", s_cons, s_destruct, s_members);
+	class2oc("RangeVarPlot", s_cons, s_destruct, s_members, NULL, NULL, NULL);
 }
 
 #if HAVE_IV // to end of file

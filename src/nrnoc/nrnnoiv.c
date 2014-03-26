@@ -2,43 +2,44 @@
 #include "nrnredef.h"
 #include "section.h"
 #include "nrnmpiuse.h"
+#define hoc_retpushx hoc_retpushx
 
 /* stubs for nrnoc. The actual functions are for interviews menus */
-nrnallsectionmenu(){ret(0);}
-nrnallpointmenu(){ret(0);}
-nrnsecmenu(){ret(0);}
-nrnglobalmechmenu(){ret(0);}
-nrnmechmenu(){ret(0);}
-nrnpointmenu(){ret(0);}
-make_mechanism(){ret(0);}
-make_pointprocess(){ret(0);}
-nrnpython() {ret(0);}
+void nrnallsectionmenu(){hoc_retpushx(0);}
+void nrnallpointmenu(){hoc_retpushx(0);}
+void nrnsecmenu(){hoc_retpushx(0);}
+void nrnglobalmechmenu(){hoc_retpushx(0);}
+void nrnmechmenu(){hoc_retpushx(0);}
+void nrnpointmenu(){hoc_retpushx(0);}
+void make_mechanism(){hoc_retpushx(0);}
+void make_pointprocess(){hoc_retpushx(0);}
+void nrnpython() {hoc_retpushx(0);}
 /*ARGSUSED*/
-void hoc_construct_point(ob) void* ob; {}
-nrn_random_play(){}
+void hoc_construct_point(Object* ob, int i){}
+void nrn_random_play(){}
 void* nrn_random_arg(i) int i; { return (void*)0; }
 double nrn_random_pick(r) void* r; { return 0.; }
-hoc_new_opoint(){}
-special_pnt_call(){}
-bbs_handle(){}
-nrndae_alloc(){}
+void hoc_new_opoint(){}
+void special_pnt_call(){}
+void bbs_handle(){}
+void nrndae_alloc(){}
 int nrndae_extra_eqn_count() { return 0; }
 int nrndae_list_is_empty() {return 0;}
-nrndae_rhs(){}
-nrndae_lhs(){}
-nrndae_update(){}
-nrndae_init(){}
-nrn_solver_prepare(){}
-nrn_fihexec(i) int i;{}
-nrn_deliver_events(tt) double tt;{}
-nrn_record_init(){}
-nrn_play_init(){}
-fixed_record_continuous(){}
-fixed_play_continuous(){}
-nrniv_recalc_ptrs(){}
+void nrndae_rhs(){}
+void nrndae_lhs(){}
+void nrndae_update(){}
+void nrndae_init(){}
+void nrn_solver_prepare(){}
+void nrn_fihexec(i) int i;{}
+void nrn_deliver_events(tt) double tt;{}
+void nrn_record_init(){}
+void nrn_play_init(){}
+void fixed_record_continuous(){}
+void fixed_play_continuous(){}
+void nrniv_recalc_ptrs(){}
 void nrn_extra_scatter_gather(int direction, int tid) {}
 void nrn_update_ion_pointer(int type, Datum* d, int i, int j) {}
-nrn_update_ps2nt(){}
+void nrn_update_ps2nt(){}
 
 int at_time(NrnThread* nt, double te) {
 	double x = te - 1e-11;
@@ -49,24 +50,24 @@ int at_time(NrnThread* nt, double te) {
 	}
 }
 
-net_event(){hoc_execerror("net_event only available in nrniv", (char*)0);}
-net_send(){hoc_execerror("net_send only available in nrniv", (char*)0);}
-artcell_net_send(){hoc_execerror("net_send only available in nrniv", (char*)0);}
-net_move(){hoc_execerror("net_move only available in nrniv", (char*)0);}
-artcell_net_move(){hoc_execerror("net_move only available in nrniv", (char*)0);}
-nrn_use_daspk(i) int i; { }
+void net_event(){hoc_execerror("net_event only available in nrniv", (char*)0);}
+void net_send(){hoc_execerror("net_send only available in nrniv", (char*)0);}
+void artcell_net_send(){hoc_execerror("net_send only available in nrniv", (char*)0);}
+void net_move(){hoc_execerror("net_move only available in nrniv", (char*)0);}
+void artcell_net_move(){hoc_execerror("net_move only available in nrniv", (char*)0);}
+void nrn_use_daspk(i) int i; { }
 
 #if CVODE
-cvode_fadvance(t)double t;{}
-cvode_finitialize(){}
+void cvode_fadvance(t)double t;{}
+void cvode_finitialize(){}
 void nrncvode_set_t(double tt) {}
-cvode_event(x) double x;{}
-clear_event_queue(){}
-init_net_events(){}
-deliver_net_events(){}
-hoc_reg_singlechan(){}
-_singlechan_declare(){}
-_nrn_single_react(){}
+void cvode_event(x) double x;{}
+void clear_event_queue(){}
+void init_net_events(){}
+void deliver_net_events(){}
+void hoc_reg_singlechan(){}
+void _singlechan_declare(){}
+void _nrn_single_react(){}
 #endif
 
 #if defined(CYGWIN)

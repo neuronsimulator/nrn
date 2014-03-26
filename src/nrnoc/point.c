@@ -64,9 +64,9 @@ nrn_new_pointprocess(sym)
 	if (memb_func[sym->subtype].hoc_mech) {
 		ob = hoc_new_opoint(sym->subtype);
 	}else{
-		push_frame(sym, 0);
+		hoc_push_frame(sym, 0);
 		v = create_point_process(pointtype, (Object*)0);
-		pop_frame();
+		hoc_pop_frame();
 		sym = hoc_table_lookup(sym->name, hoc_built_in_symlist);
 		ob =  hoc_new_object(sym, v);
 		((Point_process*)v)->ob = ob;
@@ -308,7 +308,7 @@ connect_point_process_pointer() {
 	double* hoc_pxpop();
 	if (cppp_semaphore != 2) {
 		cppp_semaphore = 0;
-		hoc_execerror("not a point process pointer");
+		hoc_execerror("not a point process pointer", (char*)0);
 	}
 	cppp_semaphore = 0;
 	*cppp_pointer = hoc_pxpop();

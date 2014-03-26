@@ -55,11 +55,12 @@ typedef struct Stimulus {
 
 static maxstim = 0;		/* size of stimulus array */
 static Stimulus *pstim;		/* pointer to stimulus array */
+static void free_syn(void);
+static stim_record(int);
 
-extern double *getarg(), chkarg();
 extern char *secname();
 
-void print_syn() {
+void print_syn(void) {
 	int i;
 	
 	if (maxstim == 0) return;
@@ -75,7 +76,7 @@ void print_syn() {
 
 static double stimulus();
 
-fsyni() {
+void fsyni(void) {
 	int i;
 	double cur, g;
 	
@@ -83,10 +84,10 @@ fsyni() {
 	if ((cur = stimulus(i, &g)) != 0.) {
 		cur *= pstim[i].mag / pstim[i].mag_seg;
 	}
-	ret(cur);
+	hoc_retpushx(cur);
 }
 
-fsyng() {
+void fsyng(void) {
 	int i;
 	double g;
 	
@@ -95,12 +96,10 @@ fsyng() {
 	if (g != 0.) {
 		g *= pstim[i].mag / pstim[i].mag_seg;
 	}
-	ret(g);
+	hoc_retpushx(g);
 }
 
-static stim_record();
-
-fsyn() {
+void fsyn(void) {
 	int i;
 
 	if (nrn_nthread > 1) {
@@ -135,10 +134,10 @@ fsyn() {
 			stim_record(i);
 		}
 	}
-	ret(0.);
+	hoc_retpushx(0.);
 }
 
-free_syn() {
+static void free_syn(void) {
 	int i;
 	if (maxstim) {
 		for (i=0; i < maxstim; ++i) {
@@ -151,9 +150,7 @@ free_syn() {
 	}
 }
 
-static
-stim_record(i)	/*fill in the section info*/
-	int i;
+static stim_record(int i)	/*fill in the section info*/
 {
 	Node *node_ptr();
 	double area;

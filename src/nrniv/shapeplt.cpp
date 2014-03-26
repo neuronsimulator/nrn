@@ -295,7 +295,7 @@ ENDGUI
 }
 void PlotShape_reg() {
 //	printf("PlotShape_reg\n");
-	class2oc("PlotShape", sh_cons, sh_destruct, sh_members);
+	class2oc("PlotShape", sh_cons, sh_destruct, sh_members, NULL, NULL, NULL);
 }
 
 #if HAVE_IV

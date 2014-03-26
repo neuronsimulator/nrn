@@ -74,7 +74,7 @@ int stop_praxis() {
 		i = (int)chkarg(1, 0., 1e5);
 	}
 	i = praxis_stop(i);
-	ret((double)i);
+	hoc_retpushx((double)i);
 }
 
 /* want to get best result if user does a stoprun */
@@ -181,7 +181,7 @@ int fit_praxis() {
 		efun_py_arg = efun_py_arg_save;
 		vec_py_save = vec_py_save_save;
 	}
-	ret(err);
+	hoc_retpushx(err);
 }
 
 void hoc_after_prax_quad(s) char* s; {
@@ -193,13 +193,13 @@ int attr_praxis() {
 	tolerance = *getarg(1);
 	maxstepsize = *getarg(2);
 	printmode = (int)chkarg(3, 0., 3.);
-	ret(0.);
+	hoc_retpushx(0.);
     }else{
 	int old = nrn_praxis_ran_index;
 	if (ifarg(1)) {
 	    	nrn_praxis_ran_index = (int)chkarg(1, 0., 1e9);
 	}
-	ret((double)old);
+	hoc_retpushx((double)old);
     }
 }
 
@@ -221,7 +221,7 @@ int pval_praxis() {
 			p2[j] = p1[j];
 		}
 	}
-	ret(praxis_pval(i));
+	hoc_retpushx(praxis_pval(i));
 }
 
 static double efun(v, n)

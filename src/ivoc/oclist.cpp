@@ -456,7 +456,7 @@ OcList::~OcList() {
 	delete oli_;
 }
 
-static bool l_chkpt(void** vp) {
+static int l_chkpt(void** vp) {
 #if HAVE_IV && !MAC
 	OcList* o;
 	Checkpoint& chk = *Checkpoint::instance();
@@ -482,19 +482,19 @@ static bool l_chkpt(void** vp) {
 		*vp = (void*)o;
 	}
 #endif
-	return true;
+	return 1;
 }
 
 void OcList_reg() {
 //printf("Oclist_reg\n");
-	class2oc("List", l_cons, l_destruct, l_members, l_chkpt, l_retobj_members);
+	class2oc("List", l_cons, l_destruct, l_members, l_chkpt, l_retobj_members, NULL);
 	list_class_sym_ = hoc_lookup("List");
 }
 
 extern "C" {
 extern bool hoc_objectpath_impl(Object* ob, Object* oblook, char* path, int depth);
 extern void hoc_path_prepend(char*, const char*, const char*);
-bool ivoc_list_look(Object* ob, Object* oblook, char* path, int) {
+int ivoc_list_look(Object* ob, Object* oblook, char* path, int) {
 	if (oblook->ctemplate->constructor == l_cons) {
 		OcList* o = (OcList*)oblook->u.this_pointer;
 		long i, cnt = o->count();

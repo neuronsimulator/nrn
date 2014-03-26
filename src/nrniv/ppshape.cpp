@@ -51,7 +51,7 @@ ENDGUI
 
 void PPShape_reg() {
 //	printf("PPShape_reg\n");
-	class2oc("PPShape", pp_cons, pp_destruct, pp_members);
+	class2oc("PPShape", pp_cons, pp_destruct, pp_members, NULL, NULL, NULL);
 }
 
 #if HAVE_IV // to end of file

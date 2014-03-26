@@ -1,3 +1,3 @@
 #include <../../nrnconf.h>
-hoc_last_init() {} /* called at end of hoc_spinit in hocusr.c */
+void hoc_last_init(void) {} /* called at end of hoc_spinit in hocusr.c */
 

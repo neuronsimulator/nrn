@@ -69,7 +69,7 @@ static void steer_val(void* v) {
 }
 
 void NrnRealTime_reg() {
-	class2oc("RealTime", cons, destruct, members);
+	class2oc("RealTime", cons, destruct, members, NULL, NULL, NULL);
 	Symbol* sv = hoc_lookup("RealTime");
 	Symbol* sx = hoc_table_lookup("steptime", sv->u.ctemplate->symtable);
 	sx->type = VAR;

@@ -1,8 +1,12 @@
 
-#ifndef hoc_h
-#define hoc_h
+#ifndef hocdec_h
+#define hocdec_h
 #define	INCLUDEHOCH	1
 #define OOP 1
+
+#if defined(__cplusplus)
+extern "C" {
+#endif
 
 #include	"hocassrt.h"
 #include	<string.h>
@@ -32,22 +36,27 @@ struct hoc_Item;
 #define HocTypedef typedef
 #endif
 
-#if MAC && defined(__cplusplus)
-typedef int	(*Pfri)(...);
-typedef double	(*Pfrd)(...);
-typedef struct Object** (*Pfro)(...);
-typedef char** (*Pfrs)(...);
-#else
-typedef int	(*Pfri)();
-typedef double	(*Pfrd)();
-typedef struct Object** (*Pfro)();
-typedef char** (*Pfrs)();
-#endif
+typedef int	(*Pfri)(void);
+typedef void	(*Pfrv)(void);
+typedef double	(*Pfrd)(void);
+typedef struct Object** (*Pfro)(void);
+typedef const char** (*Pfrs)(void);
+
+typedef int	(*Pfri_vp)(void*);
+typedef void	(*Pfrv_vp)(void*);
+typedef double	(*Pfrd_vp)(void*);
+typedef struct Object** (*Pfro_vp)(void*);
+typedef const char** (*Pfrs_vp)(void*);
+
 typedef union Inst { /* machine instruction list type */
-	Pfri	pf;
+	Pfrv	pf;
 	Pfrd	pfd;
 	Pfro	pfo;
 	Pfrs	pfs;
+	Pfrv_vp	pfv_vp;
+	Pfrd_vp	pfd_vp;
+	Pfro_vp	pfo_vp;
+	Pfrs_vp	pfs_vp;
 	HocUnion Inst	*in;
 	HocStruct Symbol	*sym;
 	int	i;
@@ -144,9 +153,6 @@ typedef struct Symbol {	/* symbol table entry */
 					with old nmodl dll's */
 	HocStruct Symbol	*next;	/* to link to another */
 } Symbol;
-#if !defined(__cplusplus)
-extern Symbol	*hoc_install(), *hoc_lookup();
-#endif
 #define	ISARRAY(arg)	(arg->arayinfo != (Arrayinfo *)0)
 
 
@@ -190,17 +196,13 @@ typedef struct Template {
 	hoc_List* olist;	/* list of all instances */
 	int id;
 	void* observers;	/* hook to c++ ClassObservable */
-#if defined(__cplusplus)
-	void* (*constructor)(Object*);
+	void* (*constructor)(struct Object*);
 	void (*destructor)(void*);
 	void (*steer)(void*);	/* normally nil */
 	int (*checkpoint)(void**);
+#if defined(__cplusplus)
 } cTemplate;
 #else
-	void* (*constructor)();
-	void (*destructor)();
-	void (*steer)();	/* point processes have member variables */
-	int (*checkpoint)();
 } Template;
 #endif
 
@@ -236,76 +238,53 @@ typedef struct Object {
 #endif
 
 typedef struct {		/* User Functions */
-	char 	*name;
-	int	(*func)();
-} IntFunc;
+	const char 	*name;
+	void	(*func)(void);
+} VoidFunc;
 
 typedef struct {		/* User Double Scalars */
-	char 	*name;
+	const char 	*name;
 	double	*pdoub;
 } DoubScal;
 
 typedef struct {		/* User Vectors */
-	char 	*name;
+	const char 	*name;
 	double	*pdoub;
 	int	index1;
 } DoubVec;
 
 typedef struct {		/* recommended limits for symbol values */
-	char	*name;
+	const char	*name;
 	float	bnd[2];
 } HocParmLimits;
 
 typedef struct {		/* recommended tolerance for CVODE */
-	char	*name;
+	const char	*name;
 	float tolerance;
 } HocStateTolerance;
 
 typedef struct {		/* units for symbol values */
-	char	*name;
+	const char	*name;
 	char	*units;
 } HocParmUnits;
 
-extern double hoc_xpop();
-extern Symbol *hoc_spop();
-
-#if defined(__cplusplus)
-extern	double *getarg(int);
-extern	char	*gargstr(int);
-#else
-extern	double *getarg();
-extern	char	*gargstr();
-#endif
-
-extern void* nrn_cacheline_alloc(void** memptr, size_t size);
-extern void* nrn_cacheline_calloc(void** memptr, size_t nmemb, size_t size);
+#include "oc_ansi.h"
 
 #define emalloc(arg)	hoc_Emalloc(arg), hoc_malchk()
 #define ecalloc(arg1,arg2)	hoc_Ecalloc(arg1,arg2), hoc_malchk()
 #define erealloc(arg1,arg2)	hoc_Erealloc(arg1,arg2), hoc_malchk()
 
-#if defined(__cplusplus)
-extern void* hoc_Emalloc(unsigned long);
-extern void* hoc_Ecalloc(unsigned long, unsigned long);
-extern void* hoc_Erealloc(void*, unsigned long);
-extern void hoc_malchk();
-#else
-#if LINT
-extern	double	*hoc_Emalloc(), *hoc_Ecalloc(), *hoc_Erealloc();
-#else
-extern	char	*hoc_Emalloc(), *hoc_Ecalloc(), *hoc_Erealloc();
-#endif
-#endif
-
+extern	Inst *hoc_progp, *hoc_progbase, *hoc_prog, *hoc_prog_parse_recover;
 extern Inst *hoc_pc;
 
 extern Objectdata *hoc_objectdata;
-extern Objectdata *hoc_objectdata_save();
-#if defined(__cplusplus)
+extern Objectdata *hoc_top_level_data;
+extern Object* hoc_thisobject;
+extern Symlist* hoc_symlist;
+extern Symlist* hoc_top_level_symlist;
+extern Symlist* hoc_built_in_symlist;
+extern Objectdata *hoc_objectdata_save(void);
 extern Objectdata* hoc_objectdata_restore(Objectdata*);
-#else
-extern Objectdata* hoc_objectdata_restore();
-#endif
 #define OPVAL(sym) hoc_objectdata[sym->u.oboff].pval
 #define OPSTR(sym) hoc_objectdata[sym->u.oboff].ppstr
 #define OPOBJ(sym) hoc_objectdata[sym->u.oboff].pobj
@@ -346,8 +325,6 @@ int	ilint;
 #define Fprintf		fprintf
 #endif
 
-#endif
-
 /* EINTR handling for LINDA */
 #if LINDA
 #include <errno.h>
@@ -375,3 +352,8 @@ int node_num;
 int mytid;
 #endif
 
+#if defined(__cplusplus)
+}
+#endif
+
+#endif

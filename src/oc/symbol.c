@@ -42,7 +42,7 @@ Symlist	*p_symlist = (Symlist *)0; /* current proc, func, or temp table */
 			/* variables. Discarding these lists at */
 			/* appropriate times prevents storage leakage. */
 
-void print_symlist(s, tab) char* s; Symlist *tab; {
+void print_symlist(const char* s, Symlist* tab) {
 	Symbol *sp;
 	printf("%s\n", s);
 	if (tab) for (sp=tab->first ; sp != (Symbol *) 0; sp = sp->next) {
@@ -50,9 +50,7 @@ void print_symlist(s, tab) char* s; Symlist *tab; {
 	}
 }
 
-Symbol *hoc_table_lookup(s, tab) /* find s in specific table */
-	char *s;
-	Symlist *tab;
+Symbol *hoc_table_lookup(const char* s, Symlist* tab) /* find s in specific table */
 {
 	Symbol *sp;
 	if (tab) for (sp=tab->first ; sp != (Symbol *) 0; sp = sp->next) {
@@ -63,9 +61,8 @@ Symbol *hoc_table_lookup(s, tab) /* find s in specific table */
 	return (Symbol *)0;
 }
 
-Symbol *
-lookup(s)	/* find s in symbol table */
-	char *s; /* look in p_symlist then built_in_symlist then symlist */
+Symbol* lookup(const char* s)	/* find s in symbol table */
+	/* look in p_symlist then built_in_symlist then symlist */
 {
 	Symbol *sp;
 
@@ -84,13 +81,12 @@ lookup(s)	/* find s in symbol table */
 	return 0;	/* 0 ==> not found */
 }
 
-Symbol *
-install(s, t, d, list)	/* install s in the list symbol table */
-	char *s;
-	int t;
-	double d;
-	Symlist **list;
-{
+Symbol* install(	/* install s in the list symbol table */
+	const char *s,
+	int t,
+	double d,
+	Symlist **list
+){
 	Symbol *sp;
 
 	sp = (Symbol *) emalloc(sizeof(Symbol));
@@ -134,7 +130,7 @@ install(s, t, d, list)	/* install s in the list symbol table */
 	return sp;
 }
 
-Symbol* hoc_install_var(name, pval) char* name; double* pval; {
+Symbol* hoc_install_var(const char* name, double* pval){
 	Symbol* s;
 	s = hoc_install(name, UNDEF, 0.0, &symlist);
 	s->type = VAR;
@@ -143,9 +139,7 @@ Symbol* hoc_install_var(name, pval) char* name; double* pval; {
 	return s;
 }
 
-hoc_unlink_symbol(s, list)
-	Symbol* s;
-	Symlist* list;
+void hoc_unlink_symbol(Symbol* s, Symlist* list)
 {
 	Symbol *sp;
 	assert(list);
@@ -170,10 +164,7 @@ hoc_unlink_symbol(s, list)
 	s->next = (Symbol*)0;
 }
 
-hoc_link_symbol(sp, list)
-	Symbol* sp;
-	Symlist* list;
-{
+void hoc_link_symbol(Symbol* sp, Symlist* list) {
 	/* put at end of list */
 	if (list->last) {
 		list->last->next = sp;
@@ -186,54 +177,32 @@ hoc_link_symbol(sp, list)
 
 static int emalloc_error=0;
 
-hoc_malchk() {
+void hoc_malchk(void) {
 	if (emalloc_error) {
 		emalloc_error = 0;
 		execerror("out of memory", (char *) 0);
 	}
 }
 	
-#if LINT
-double *
-#else
-char *
-#endif
-hoc_Emalloc(n)	/* check return from malloc */
-	unsigned n;
-{
-	char *p;
+void* hoc_Emalloc(size_t n) {	/* check return from malloc */
+	void *p;
 
-	p = (char *)malloc(n);
+	p = malloc(n);
 	if (p == 0)
 		emalloc_error = 1;
-#if LINT
-	{static double *p; return p;}
-#else
 	return p;
-#endif
 }
 
-#if LINT
-double *
-#else
-char *
-#endif
-hoc_Ecalloc(n, size)	/* check return from calloc */
-	unsigned n, size;
-{
-	char *p;
+void* hoc_Ecalloc(size_t n, size_t size) {	/* check return from calloc */
+	void *p;
 
 	if (n == 0) {
-		return (char*)0;
+		return (void*)0;
 	}
-	p = (char *)calloc(n, size);
+	p = calloc(n, size);
 	if (p == 0)
 		emalloc_error = 1;
-#if LINT
-	{static double *p; return p;}
-#else
 	return p;
-#endif
 }
 
 void* nrn_cacheline_alloc(void** memptr, size_t size) {
@@ -261,35 +230,22 @@ void* nrn_cacheline_calloc(void** memptr, size_t nmemb, size_t size) {
 #endif
 	return *memptr;
 }
-#if LINT
-double *
-#else
-char *
-#endif
-hoc_Erealloc(ptr, size)	/* check return from realloc */
-	char *ptr;
-	unsigned size;
-{
-	char *p;
+
+void* hoc_Erealloc(void* ptr, size_t size) {/* check return from realloc */
+	void* p;
 
 	if (!ptr) {
 		return hoc_Emalloc(size);
 	}
-	p = (char *)realloc(ptr, size);
+	p = realloc(ptr, size);
 	if (p == 0) {
 		free(ptr);
 		emalloc_error = 1;
 	}
-#if LINT
-	{static double *p; return p;}
-#else
 	return p;
-#endif
 }
 
-hoc_free_symspace(s1)	/* frees symbol space. Marks it UNDEF */
-	Symbol *s1;
-{
+void hoc_free_symspace(Symbol* s1) {	/* frees symbol space. Marks it UNDEF */
 	if (s1 && s1->public != 2) {
 		switch (s1->type)
 		{
@@ -370,15 +326,13 @@ Fprintf(stderr, "In free_symspace may not free all of %s of type=%d\n", s1->name
 	s1->type = UNDEF;
 }
 
-sym_extra_alloc(sym) Symbol* sym; {
+void sym_extra_alloc(Symbol* sym) {
 	if (!sym->extra) {
 		sym->extra = (HocSymExtension*)ecalloc(1, sizeof(HocSymExtension));
 	}
 }
 
-free_list(list)	/* free the space in a symbol table */
-	Symlist **list;
-{
+void free_list(Symlist** list) {	/* free the space in a symbol table */
 	Symbol *s1, *s2;
 
 	if (*list) {
@@ -395,33 +349,28 @@ free_list(list)	/* free the space in a symbol table */
 	*list = (Symlist *)0;
 }
 
-hoc_free_val(p) double* p;
-{
-	notify_freed((void*)p);
-	free((char*)p);
-}
-
-hoc_free_val_array(p, size) double* p; int size;
-{
-	notify_freed_val_array(p, size);
-	free((char*)p);
-}
-
-hoc_free_object(p) Object* p;
-{
-	if (p) {
-		notify_pointer_freed((void*)p);
-		free((char*)p);
-	}
-}
-
-hoc_free_string(p) char* p;
-{
+void hoc_free_val(double* p) {
+	notify_freed(p);
 	free(p);
 }
 
-hoc_free_pstring(p) char** p;
-{
+void hoc_free_val_array(double* p, size_t size) {
+	notify_freed_val_array(p, size);
+	free(p);
+}
+
+void hoc_free_object(Object* p){
+	if (p) {
+		notify_pointer_freed(p);
+		free(p);
+	}
+}
+
+void hoc_free_string(char* p) {
+	free(p);
+}
+
+void hoc_free_pstring(char** p) {
 	notify_freed((void*)p);
 	if (*p) {
 		free(*p);
@@ -452,7 +401,7 @@ int nrn_mallinfo(int item) {
 #endif
 }
 
-int hoc_mallinfo() {
+int hoc_mallinfo(void) {
 	int i, x;
 	extern double chkarg(int, double, double);
 	i = (int)chkarg(1, 0., 10.);

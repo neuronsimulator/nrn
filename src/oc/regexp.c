@@ -50,6 +50,7 @@ regexp.c,v
 */
 
 #include <stdio.h>
+#include "hocdec.h"
 #define CABLESECTION	1
 /* Always match from beginning of string (implicit ^),
    Always match end of string (implicit $),
@@ -90,12 +91,13 @@ static int	int_range_start[NBRA];
 static int	int_range_stop[NBRA];
 #endif
 
-static int advance();
+static int advance(char* lp, char* ep);
+static int hoc_cclass(char* set, char c, int af);
 
 void hoc_regexp_compile(cp)
 	char *cp;
 {
-	register c;
+	register int c;
 	register char *ep;
 	char *lastep;
 #if (!CABLESECTION)
@@ -352,9 +354,7 @@ hoc_regexp_search(target) /*return true if target matches pattern*/
 	return(0);
 }
 
-static int
-advance(lp, ep)
-register char *lp, *ep;
+static int advance(char* lp, char* ep)
 {
 	register char *curlp;
 
@@ -457,10 +457,9 @@ register char *lp, *ep;
 	}
 }
 
-hoc_cclass(set, c, af)
-register char *set, c;
+static int hoc_cclass(char* set, char c, int af)
 {
-	register n;
+	register int n;
 
 	if (c == 0)
 		return(0);

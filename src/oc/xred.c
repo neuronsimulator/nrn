@@ -51,11 +51,8 @@ xred.c,v
 #include "hoc.h"
 
 /* input a n integer in range > min and < max */
-int ired(prompt, defalt, min, max)
-   char prompt[];
-   int defalt, min, max;
+int ired(const char* prompt, int defalt, int min, int max)
 {
-		double xred();
 	return( (int) xred(prompt, (double) defalt,
 		 (double) min, (double) max));
 }
@@ -66,8 +63,7 @@ int ired(prompt, defalt, min, max)
 	input is freeform as scanf can make it.
 */
 #include <stdio.h>
-double xred(prompt, defalt, min, max)
-   char prompt[]; double defalt, min, max; {
+double xred(const char* prompt, double defalt, double min, double max) {
 #if !OCSMALL
 	char istr[80], c[2] ; double input;
 	for (;;) {
@@ -106,14 +102,13 @@ return 0.;
       This is the hoc interface for the sred() function, which follows.
 */
 
-int hoc_Sred() {
+void hoc_Sred(void) {
 #if !OCSMALL
-	char *gargstr();
-   char **hoc_pgargstr(), defalt[80], **pdefalt;
-   double x, hoc_sred();
+   char defalt[80], **pdefalt;
+   double x;
    strcpy(defalt,gargstr(2));
    pdefalt = hoc_pgargstr(2);
-   x = hoc_sred(gargstr(1), defalt, gargstr(3));
+   x = (double) hoc_sred(gargstr(1), defalt, gargstr(3));
    hoc_assign_str(pdefalt, defalt);
 #else
 	double x = 0.;
@@ -136,8 +131,7 @@ int hoc_Sred() {
            *** NOTE: default is replaced by entered string ***
 */
 
-double hoc_sred(prompt, defalt, charlist)
-char prompt[], defalt[], charlist[]; {
+int hoc_sred(const char* prompt, char* defalt, char* charlist) {
 	char istr[80], c[2], instring[40], *result;
 #if !defined(HAVE_STRSTR)
    extern char *strstr();
@@ -174,6 +168,7 @@ char prompt[], defalt[], charlist[]; {
       }
       IGNORE(fprintf(stderr,"input error\n"));     /* recycle */
    }
+   return 0;
 }
 
 #if !defined(HAVE_STRSTR)

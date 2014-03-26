@@ -14,8 +14,6 @@ extern Prop* prop_alloc(Prop**, int, Node*);
 extern void single_prop_free(Prop*);
 extern Symlist* hoc_built_in_symlist;
 extern Symlist* hoc_top_level_symlist;
-extern void push_frame(Symbol*, int);
-extern void pop_frame();
 }
 
 //----------------------------------------------------
@@ -92,9 +90,9 @@ NrnProperty::NrnProperty(const char* name) {
 		Prop* p, *p0 = 0, *p1;
 //printf("prop_alloc %s %p type=%d\n", sym->name, sym, sym->subtype);
 		// need to do this with no args
-		push_frame(sym, 0);
+		hoc_push_frame(sym, 0);
 		p = prop_alloc(&p0, sym->subtype, nil);
-		pop_frame();
+		hoc_pop_frame();
 		for (; p0 != p; p0 = p1) {
 			p1 = p0->next;
 			single_prop_free(p0);

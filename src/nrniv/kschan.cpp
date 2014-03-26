@@ -23,11 +23,6 @@ static KSChanList* channels;
 
 extern "C" {
 extern char* hoc_symbol_units(Symbol*, const char*);
-extern void hoc_unlink_symbol(Symbol*, Symlist*);
-extern Symlist* hoc_symlist;
-extern Symlist* hoc_built_in_symlist;
-extern Symlist* hoc_top_level_symlist;
-extern void notify_freed_val_array(double*, int);
 extern void nrn_mk_table_check();
 }
 
@@ -122,30 +117,26 @@ static int ode_count(int type){
 	KSChan* c = channels->item(type);
 	return c->count();
 }
-static int ode_map(int ieq, double** pv, double** pvdot,
+static void ode_map(int ieq, double** pv, double** pvdot,
     double* p, Datum* pd, double* atol, int type){
 //printf("ode_map\n");
 	KSChan* c = channels->item(type);
 	c->map(ieq, pv, pvdot, p, pd, atol);
-	return 0;
 }
-static int ode_spec(NrnThread*, Memb_list* ml, int type){
+static void ode_spec(NrnThread*, Memb_list* ml, int type){
 //printf("ode_spec\n");
 	KSChan* c = channels->item(type);
 	c->spec(ml->nodecount, ml->nodelist, ml->data, ml->pdata);
-	return 0;
 }
-static int ode_matsol(NrnThread* nt, Memb_list* ml, int type){
+static void ode_matsol(NrnThread* nt, Memb_list* ml, int type){
 //printf("ode_matsol\n");
 	KSChan* c = channels->item(type);
 	c->matsol(ml->nodecount, ml->nodelist, ml->data, ml->pdata, nt);
-	return 0;
 }
-static int singchan(NrnThread* nt, Memb_list* ml, int type){
+static void singchan(NrnThread* nt, Memb_list* ml, int type){
 //printf("singchan_\n");
 	KSChan* c = channels->item(type);
 	c->cv_sc_update(ml->nodecount, ml->nodelist, ml->data, ml->pdata, nt);
-	return 0;
 }
 static void* hoc_create_pnt(Object* ho) {
 	return create_point_process(ho->ctemplate->is_point_, ho);
@@ -850,17 +841,17 @@ void KSChan_reg() {
 // param is gmax, g, i --- if change then change numbers below
 // state names are handled individually
 static const char* m_kschan_pat[] = { "0", "kschan", "gmax", 0, "g", "i", 0, 0, 0 };
-static char* m_kschan[9];
+static const char* m_kschan[9];
 // gmax=0 g=1 i=1 state names will be modltype 2, there are no pointer variables
 
-void KSChan::add_channel(char** m) {
+void KSChan::add_channel(const char** m) {
 	KSChan* c = (KSChan*)this;
 	Symlist* sav = hoc_symlist;
 	hoc_symlist = hoc_built_in_symlist;
 	hoc_built_in_symlist = 0;
 	if (is_point()) {
-		pointtype_ = point_register_mech(m, nrn_alloc, nrn_cur, nrn_jacob, nrn_state, nrn_init, -1,
-			hoc_create_pnt, hoc_destroy_pnt, member_func, 1);
+		pointtype_ = point_register_mech(m, nrn_alloc, nrn_cur, nrn_jacob, nrn_state, nrn_init, -1, 1,
+			hoc_create_pnt, hoc_destroy_pnt, member_func);
 	}else{
 		register_mech(m, nrn_alloc, nrn_cur, nrn_jacob, nrn_state, nrn_init, -1, 1);
 	}
@@ -956,7 +947,7 @@ void KSChan::build() {
 	m_kschan[7+aoff] = 0;
 	soffset_ = 3+aoff; // first state points here in p array
 	add_channel(m_kschan);
-	for (i=0; i < 9; ++i) if (m_kschan[i]) { free(m_kschan[i]); }
+	for (i=0; i < 9; ++i) if (m_kschan[i]) { free((void*)m_kschan[i]); }
 	mechsym_ = looksym(suffix);
 	if (is_point()) {
 		rlsym_ = looksym(suffix, mechsym_);
@@ -1052,7 +1043,7 @@ hoc_warning("KSChan single channel mode implemented only for single ks gating co
 	}
 	if (b) {
 		single_ = new KSSingle(this);
-		memb_func[mechtype_].singchan_ = (Pfri)singchan;
+		memb_func[mechtype_].singchan_ = singchan;
 		alloc_schan_node_data();
 	}
 }
