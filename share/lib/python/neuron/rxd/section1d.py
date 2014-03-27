@@ -53,14 +53,13 @@ class Section1D(rxdsection.RxDSection):
         self._offset = node._allocate(sec.nseg + 1)
         self._nseg = sec.nseg
         self._region = r
+        node._diffs[self._offset : self._offset + self.nseg] = self._diff
     
     def _update_node_data(self):
         volumes, surface_area, diffs = node._get_data()
         geo = self._region._geometry
         volumes[self._offset : self._offset + self.nseg] = geo.volumes1d(self)
         surface_area[self._offset : self._offset + self.nseg] = geo.surface_areas1d(self)
-        # TODO: if diffs changed locally, this will overwrite them; fix
-        diffs[self._offset : self._offset + self.nseg] = self._diff
         self._neighbor_areas = geo.neighbor_areas1d(self)
         
 
