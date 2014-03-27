@@ -1742,6 +1742,7 @@ static IvocVect* nrnpy_vec_from_python(void* v) {
 static PyObject* (*vec_as_numpy)(int, double*);
 int nrnpy_set_vec_as_numpy(PyObject*(*p)(int, double*)) {
 	vec_as_numpy = p;
+	return 0;
 }
 
 static Object** vec_as_numpy_helper(int size, double* data) {
@@ -1895,6 +1896,7 @@ myPyMODINIT_FUNC nrnpy_hoc() {
 	nrnpy_vec_from_python_p_ = nrnpy_vec_from_python;
 	nrnpy_vec_to_python_p_ = nrnpy_vec_to_python;
 	nrnpy_vec_as_numpy_helper_ = vec_as_numpy_helper;
+	PyGILState_STATE pgs = PyGILState_Ensure();
 #if PY_MAJOR_VERSION >= 3
 	PyObject* modules = PyImport_GetModuleDict();
 	if ((m = PyDict_GetItemString(modules, "hoc")) != NULL &&
@@ -1961,11 +1963,14 @@ myPyMODINIT_FUNC nrnpy_hoc() {
 #if PY_MAJOR_VERSION >= 3
 	assert(PyDict_SetItemString(modules, "hoc", m) == 0);
 	Py_DECREF(m);
+	PyGILState_Release(pgs);
 	return m;
     fail:
+	PyGILState_Release(pgs);
 	return NULL;
 #else
     fail:
+	PyGILState_Release(pgs);
 	return;
 #endif
 }

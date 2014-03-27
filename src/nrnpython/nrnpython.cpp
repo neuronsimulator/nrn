@@ -29,14 +29,11 @@ extern void rl_stuff_char(int);
 extern int nrn_global_argc;
 extern char** nrn_global_argv;
 void nrnpy_augment_path();
-void nrnpython_ensure_threadstate();
 int nrnpy_pyrun(const char*);
 extern int (*p_nrnpy_pyrun)(const char*);
 extern int nrn_global_argc;
 extern char** nrn_global_argv;
 }
-
-static PyThreadState* main_threadstate_;
 
 void nrnpy_augment_path() {
 	static int augmented = 0;
@@ -120,7 +117,6 @@ void nrnpython_start(int b) {
 		PySys_SetArgv(nrn_global_argc, nrn_global_argv);
 #endif
 		started = 1;
-		main_threadstate_ = PyThreadState_GET();
 		int i;
 		// see nrnpy_reg.h
 		for (i=0; nrnpy_reg_[i]; ++i) {
@@ -129,8 +125,9 @@ void nrnpython_start(int b) {
 		nrnpy_augment_path();
 	}
 	if (b == 0 && started) {
-		nrnpython_ensure_threadstate();
+		PyGILState_STATE gilsav = PyGILState_Ensure();
 		Py_Finalize();
+		// because of finalize, no PyGILState_Release(gilsav);
 		started = 0;
 	}
 	if (b == 2 && started) {
@@ -199,19 +196,13 @@ void nrnpython_start(int b) {
 #endif
 }
 
-void nrnpython_ensure_threadstate() {
-	if (!PyThreadState_GET()) {
-		//printf("no threadstate\n");
-		PyThreadState_Swap(main_threadstate_);
-	}
-}
-
 void nrnpython_real() {
 	int retval = 0;
 #if USE_PYTHON
-	nrnpython_ensure_threadstate();
 	HocTopContextSet
+	PyGILState_STATE gilsav = PyGILState_Ensure();
 	retval = PyRun_SimpleString(gargstr(1)) == 0;
+	PyGILState_Release(gilsav);
 	HocContextRestore
 #endif
 	ret(double(retval));
@@ -222,7 +213,6 @@ static char* nrnpython_getline(FILE*, FILE*, char* prompt) {
 #else
 static char* nrnpython_getline(char* prompt) {
 #endif
-	nrnpython_ensure_threadstate();
 	hoc_cbufstr->buf[0] = '\0';
 	hoc_promptstr = prompt;
 	int r = hoc_get_line();
