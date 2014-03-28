@@ -539,12 +539,6 @@ void SymDirectoryImpl::load_sectionlist() {
 #endif
 }
 
-extern "C" {
-#if CABLE
-extern char* secname(Section*);
-#endif
-}
-
 #if CABLE
 void SymDirectoryImpl::load_mechanism(Prop* p, int type, const char* xarg) {
 	NrnProperty np(p);

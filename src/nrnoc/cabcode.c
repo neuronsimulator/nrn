@@ -7,36 +7,14 @@
 #include <math.h>
 #include <nrnpython_config.h>
 #include "section.h"
+#include "nrniv_mf.h"
 #include "membfunc.h"
 #include "parse.h"
+#include "hocparse.h"
 #include "membdef.h"
 
-extern Object* hoc_thisobject;
-extern Object** hoc_objgetarg();
-extern Objectdata* hoc_top_level_data;
-extern Symlist* hoc_top_level_symlist;
-extern Symbol* hoc_table_lookup();
 extern int hoc_execerror_messages;
 #define symlist	hoc_symlist
-extern void sec_free(), section_order();
-extern Prop *prop_alloc();
-extern char *secname();
-extern Symlist *symlist;
-extern Section* nrn_sec_pop();
-extern Node	*node_ptr();
-extern double	*nrn_vext_pd();
-extern double	*dprop();
-extern double	*nrnpy_dprop();
-extern double	chkarg();
-extern double	nrn_section_orientation(); /* x=0,1 end connected to parent */
-extern double	nrn_connection_position(); /* x of parent for this section */
-extern Prop	*nrn_mechanism(); /*returns prop given mech type, node */
-extern Prop	*nrn_mechanism_check(); /*returns prop given mech type, section, and inode */
-					/* error if mech not at this position */
-
-extern void nrn_popsec();
-extern void nrn_disconnect();
-extern void mech_uninsert1();
 
 int	tree_changed = 1;	/* installing section, changeing nseg
 				and connecting sections set this flag.
@@ -51,8 +29,6 @@ extern int v_structure_change;
 char* (*nrnpy_pysec_name_p_)(Section*);
 Object* (*nrnpy_pysec_cell_p_)(Section*);
 int (*nrnpy_pysec_cell_equals_p_)(Section*, Object*);
-extern Object* nrn_sec2cell(Section*);
-extern int nrn_sec2cell_equals(Section*, Object*);
 
 /* switching from Ra being a global variable to it being a section variable
 opens up the possibility of a great deal of confusion and inadvertant wrong
@@ -73,13 +49,9 @@ static int isecstack = 0; /* stack index */
 */
 static int skip_secstack_check = 0;
 
-extern char* hoc_object_name();
-extern double hoc_opasgn();
-extern int state_discon_allowed_;
-extern section_object_seen;
 static int range_vec_indx();
 
-nrn_isecstack() {
+int nrn_isecstack(void) {
 	return isecstack;
 }
 
@@ -97,7 +69,7 @@ and the currently accessed section would have been ", secname(secstack[isecstack
 	}
 }
 
-nrn_initcode() {
+void nrn_initcode(void) {
 	while(isecstack > 0) {
 		nrn_popsec();
 	}
@@ -107,17 +79,13 @@ nrn_initcode() {
 	skip_secstack_check = 0;
 }
 
-oc_save_cabcode(a1, a2)
-	int	*a1;
-	int	*a2;
+void oc_save_cabcode(int* a1, int* a2)
 {
 	*a1 = isecstack;
 	*a2 = section_object_seen;
 }
 
-oc_restore_cabcode(a1, a2)
-	int	*a1;
-	int	*a2;
+void oc_restore_cabcode(int* a1, int* a2)
 {
 	while(isecstack > *a1) {
 		nrn_popsec();
@@ -126,8 +94,7 @@ oc_restore_cabcode(a1, a2)
 	section_object_seen = *a2;
 }
 
-nrn_pushsec(sec)
-	Section *sec;
+void nrn_pushsec(Section* sec)
 {
 	isecstack++;
 	if (isecstack >= NSECSTACK) {
@@ -151,7 +118,7 @@ nrn_pushsec(sec)
 	}
 }
 
-void nrn_popsec() {
+void nrn_popsec(void) {
 	if (isecstack > 0) {
 		Section* sec = secstack[isecstack--];
 		if (!sec) {
@@ -173,13 +140,12 @@ void nrn_popsec() {
 	}
 }
 
-sec_access_pop() {
+void sec_access_pop(void) {
 	nrn_popsec();
 }
 
 #if 0
-static
-free_point_process() {
+static void free_point_process(void) {
 	free_all_point();
 	free_clamp();
 	free_stim();
@@ -188,7 +154,7 @@ free_point_process() {
 #endif
 
 #if 0
-clear_sectionlist()	/* merely change all SECTION to UNDEF */
+void clear_sectionlist(void)	/* merely change all SECTION to UNDEF */
 {
 printf("clear_sectionlist not fixed yet, doing nothing\n");
 return;
@@ -215,7 +181,7 @@ no longer done this way see OPARINFO
 }
 #endif
 
-add_section() /* symbol at pc+1, number of indices at pc+2 */
+void add_section(void) /* symbol at pc+1, number of indices at pc+2 */
 {
 	Symbol *sym;
 	int nsub, size;
@@ -280,11 +246,7 @@ int nrn_sec2cell_equals(Section* sec, Object* obj) {
 	return 0;
 }
 
-static Section* new_section(ob, sym, i)
-	Object* ob;
-	Symbol* sym;
-	int i;
-{
+static Section* new_section(Object* ob,	Symbol* sym, int i){
 	Section* sec;
 	Prop* prop;
 	static Symbol* nseg;
@@ -314,12 +276,7 @@ static Section* new_section(ob, sym, i)
 	return sec;
 }
 	
-new_sections(ob, sym, pitm, size)
-	Object* ob;
-	Symbol* sym;
-	Item** pitm;
-	int size;
-{
+void new_sections(Object* ob, Symbol* sym, Item** pitm, int size){
 	int i;
 	for (i=0; i < size; ++i) {
 		Section* sec = new_section(ob, sym, i);
@@ -349,7 +306,7 @@ Section* nrnpy_newsection(void* v) {
 }
 #endif
 
-delete_section() {
+void delete_section(void) {
 	Section* sec;
 	Object* ob;
 	Item** pitm;
@@ -392,9 +349,7 @@ If an array section the index can be computed with
 i - (section[i].sym)->u.u_auto
 */
 
-double section_length(sec)
-	Section* sec;
-{
+double section_length(Section* sec) {
 	double x;
 	if (sec->recalc_area_ && sec->npt3d) {
 		sec->prop->dparam[2].val = sec->pt3d[sec->npt3d - 1].arc;
@@ -406,21 +361,17 @@ double section_length(sec)
 	return x;
 }
 
-int arc0at0(sec)
-	Section* sec;
+int arc0at0(Section* sec)
 {
 	return ((sec->prop->dparam[3].val) ? 0 : 1);
 }
 
-double nrn_ra(sec)
-	Section* sec;
+double nrn_ra(Section* sec)
 {
 	return sec->prop->dparam[7].val;
 }
 
-cab_alloc(p)
-	Prop *p;
-{
+void cab_alloc(Prop* p) {
 	Datum *pd;
 #if USE_PYTHON
 #define CAB_SIZE 11
@@ -436,8 +387,7 @@ cab_alloc(p)
 	p->param_size = CAB_SIZE; /* this one is special since it refers to dparam */
 }
 
-morph_alloc(p)
-	Prop *p;
+void morph_alloc(Prop* p)
 {
 	
 	double *pd;
@@ -448,24 +398,21 @@ morph_alloc(p)
 	p->param_size = 1;
 }
 	
-double nrn_diameter(nd)
-	Node* nd;
+double nrn_diameter(Node* nd)
 {
 	Prop* p;
 	p = nrn_mechanism(MORPHOLOGY, nd);
 	return p->param[0];
 }	
 
-nrn_chk_section(s)
-	Symbol *s;
+void nrn_chk_section(Symbol* s)
 {
 	if (s->type != SECTION) {
 		execerror("Not a SECTION name:", s->name);
 	}
 }
 
-Section*
-chk_access()
+Section* chk_access(void)
 {
 	Section* sec = secstack[isecstack];
 	if (!sec || !sec->prop) {
@@ -489,10 +436,10 @@ chk_access()
 	}else{
 		execerror("Accessing a deleted section", (char*)0);
 	}
+	return NULL; /* never reached */
 }
 
-Section*
-nrn_noerr_access() /* return 0 if no accessed section */
+Section* nrn_noerr_access(void) /* return 0 if no accessed section */
 {
 	Section* sec = secstack[isecstack];
 	if (!sec || !sec->prop) {
@@ -521,8 +468,7 @@ nrn_noerr_access() /* return 0 if no accessed section */
 /*sibling and child pointers do not ref sections to avoid mutual references */
 /* the sibling list is ordered according to increasing distance from parent */
 
-void nrn_remove_sibling_list(sec)
-	Section* sec;
+void nrn_remove_sibling_list(Section* sec)
 {
 	Section* s;
 	if (sec->parentsec) {
@@ -539,7 +485,7 @@ void nrn_remove_sibling_list(sec)
 	}
 }
 
-static double ncp_abs(sec) Section* sec; {
+static double ncp_abs(Section* sec) {
 	double x = nrn_connection_position(sec);
 	if (sec->parentsec) {
 		if (!arc0at0(sec->parentsec)) {
@@ -549,8 +495,7 @@ static double ncp_abs(sec) Section* sec; {
 	return x;
 }
 
-void nrn_add_sibling_list(sec)
-	Section* sec;
+void nrn_add_sibling_list(Section* sec)
 {
 	Section* s;
 	double x;
@@ -574,9 +519,7 @@ void nrn_add_sibling_list(sec)
 	}
 }
 
-static
-reverse_sibling_list(sec)
-	Section* sec;
+static void reverse_sibling_list(Section* sec)
 {
 	int scnt;
 	Section* ch;
@@ -595,13 +538,12 @@ reverse_sibling_list(sec)
 	*pch = 0;
 }
 
-disconnect() {
+void disconnect(void) {
 	nrn_disconnect(chk_access());
 	hoc_retpushx(0.);
 }
 
-static reverse_nodes(sec)
-	Section* sec;
+static void reverse_nodes(Section* sec)
 {
 	int i, j;
 	Node* nd;
@@ -615,8 +557,7 @@ static reverse_nodes(sec)
 	}
 }
 
-void nrn_disconnect(sec)
-	Section* sec;
+void nrn_disconnect(Section* sec)
 {
 	Section* ch;
 	Section* oldpsec = sec->parentsec;
@@ -637,7 +578,7 @@ void nrn_disconnect(sec)
 	tree_changed = 1;
 }
 
-static connectsec_impl(parent, sec) Section* parent, *sec;
+static void connectsec_impl(Section* parent, Section* sec)
 {
 	Section* ch;
 	Section* oldpsec = sec->parentsec;
@@ -687,7 +628,7 @@ static connectsec_impl(parent, sec) Section* parent, *sec;
 	diam_changed = 1;
 }
 
-simpleconnectsection() /* 2 expr on stack and two sections on section stack */
+void simpleconnectsection(void) /* 2 expr on stack and two sections on section stack */
 	/* for a prettier syntax: connect sec1(x), sec2(x) */
 {
 	Section* parent, *child;
@@ -696,7 +637,7 @@ simpleconnectsection() /* 2 expr on stack and two sections on section stack */
 	connectsec_impl(parent, child);	
 }
 
-connectsection() /* 2 expr on stack and section symbol on section stack */
+void connectsection(void) /* 2 expr on stack and section symbol on section stack */
 {
 	Section* parent, *child;
 	child = nrn_sec_pop();
@@ -704,8 +645,7 @@ connectsection() /* 2 expr on stack and section symbol on section stack */
 	connectsec_impl(parent, child);
 }
 
-static Section *
-Sec_access()	/* section symbol at pc */
+static Section* Sec_access(void)	/* section symbol at pc */
 {
 	Objectdata* odsav;
 	Object* obsav = 0;
@@ -741,7 +681,7 @@ printf("accessing %s with index %d\n", s->name, access_index);
 #endif
 }
 
-sec_access() { /* access section */
+void sec_access(void) { /* access section */
 	Section** psec;
 	Section* sec = chk_access();
 	++sec->refcount;
@@ -753,7 +693,7 @@ sec_access() { /* access section */
 	*psec = sec;
 }
 
-sec_access_object() { /* access section */
+void sec_access_object(void) { /* access section */
 	Section** psec;
 	Section* sec;
 	if (! section_object_seen) {
@@ -770,13 +710,12 @@ sec_access_object() { /* access section */
 	section_object_seen = 0;
 }
 
-sec_access_push()
+void sec_access_push(void)
 {
 	nrn_pushsec(Sec_access());
 }
 
-Section*
-nrn_sec_pop()
+Section* nrn_sec_pop(void)
 {
 	Section* sec = chk_access();
 	nrn_popsec();
@@ -794,8 +733,7 @@ below to keep the stack ok when it is popped at the end of the next
 statement.
 */
 
-ob_sec_access_push(qsec)
-	Item* qsec;
+void ob_sec_access_push(Item* qsec)
 {
 	if (!qsec) {
 		hoc_execerror("section in the object was deleted", (char*)0);
@@ -803,7 +741,7 @@ ob_sec_access_push(qsec)
 	nrn_pushsec(qsec->element.sec);
 }
 
-ob_sec_access() {
+void ob_sec_access(void) {
 	if (!section_object_seen) {
 		hoc_nopop();
 		nrn_pushsec(secstack[isecstack]);
@@ -815,15 +753,13 @@ ob_sec_access() {
 node has no properties. This fact is spread everywhere in which
 nnode is dealt with */
 
-mech_access() {	/* section symbol at pc */
+void mech_access(void) {	/* section symbol at pc */
 	Section* sec = chk_access();
 	Symbol* s = (pc++)->sym;
 	mech_insert1(sec, s->subtype);
 }
 
-mech_insert1(sec, type)
-	Section* sec;
-	int type;
+void mech_insert1(Section* sec, int type)
 {
 	int n, i;
 	Node *nd, **pnd;
@@ -885,15 +821,13 @@ mech_insert1(sec, type)
 	}
 }
 
-mech_uninsert() {
+void mech_uninsert(void) {
 	Section* sec = chk_access();
 	Symbol* s = (pc++)->sym;	
 	mech_uninsert1(sec, s);
 }
 
-void mech_uninsert1(sec, s)
-	Section* sec;
-	Symbol* s;
+void mech_uninsert1(Section* sec, Symbol* s)
 {
 	/* remove the mechanism from the currently accessed section */
 	int n, i;
@@ -936,11 +870,7 @@ void mech_uninsert1(sec, s)
 	}
 }
 
-void nrn_rangeconst(sec, s, pd, op)
-	Section* sec;
-	Symbol* s;
-	double *pd;
-	int op;
+void nrn_rangeconst(Section* sec, Symbol* s, double* pd, int op)
 {
 	short n, i;
 	Node *nd;
@@ -1033,7 +963,7 @@ void nrn_rangeconst(sec, s, pd, op)
 	}
 }
 
-range_const()	/* rangevariable symbol at pc, value on stack */
+void range_const(void)	/* rangevariable symbol at pc, value on stack */
 {
 	Section* sec;
 	double d;
@@ -1048,9 +978,7 @@ range_const()	/* rangevariable symbol at pc, value on stack */
 	hoc_pushx(d);
 }
 
-static int
-range_vec_indx(s)
-	Symbol *s;
+static int range_vec_indx(Symbol* s)
 {
 	int indx;
 	
@@ -1062,10 +990,7 @@ range_vec_indx(s)
 	return indx;
 }
 
-Prop *
-nrn_mechanism(type, nd) /* returns property for mechanism at the node */
-	int type;
-	Node* nd;
+Prop* nrn_mechanism(int type, Node* nd) /* returns property for mechanism at the node */
 {
 	Prop *m;
 	for (m = nd->prop; m; m = m->next) {
@@ -1075,10 +1000,10 @@ nrn_mechanism(type, nd) /* returns property for mechanism at the node */
 	}
 	return m;
 }
-Prop *
-nrn_mechanism_check(type, sec, inode)
-	int type, inode;
-	Section* sec;
+
+/*returns prop given mech type, section, and inode */
+/* error if mech not at this position */
+Prop* nrn_mechanism_check(int type, Section* sec, int inode)
 {
 	Prop *m;
 	m = nrn_mechanism(type, sec->pnode[inode]);
@@ -1092,9 +1017,7 @@ nrn_mechanism_check(type, sec, inode)
 	return m;
 }
 	
-Prop *
-hoc_getdata_range(type)
-	int type;
+Prop* hoc_getdata_range(int type)
 {
 	int inode;
 	Section *sec;
@@ -1104,21 +1027,15 @@ hoc_getdata_range(type)
 	return nrn_mechanism_check(type, sec, inode);
 }
 
-static Datum *
-pdprop(s, indx, sec, inode) /* basically copied from dprop for use
-				to connect a nmodl POINTER */
-	Symbol *s;
-	Section* sec;
-	short inode;
-	int indx;
-{
+static Datum* pdprop(Symbol* s, int indx, Section* sec, short inode) {
+/* basically copied from dprop for use to connect a nmodl POINTER */
 	Prop *m;
 	
 	m = nrn_mechanism_check(s->u.rng.type, sec, inode);
 	return 	m->dparam + s->u.rng.index + indx;
 }
 
-connectpointer() { /* pointer symbol at pc, target variable on stack, maybe
+void connectpointer(void) { /* pointer symbol at pc, target variable on stack, maybe
 	range variable location on stack */
 	Datum *dat;
 	double *pd, *hoc_pxpop();
@@ -1146,7 +1063,7 @@ connectpointer() { /* pointer symbol at pc, target variable on stack, maybe
 	dat->pval = pd;
 }
 
-void range_interpolate_single() /*symbol at pc, 2 values on stack*/
+void range_interpolate_single(void) /*symbol at pc, 2 values on stack*/
 {
 	double x, y;
 	Symbol* s;
@@ -1188,7 +1105,7 @@ void range_interpolate_single() /*symbol at pc, 2 values on stack*/
 #endif
 }
 
-void range_interpolate() /*symbol at pc, 4 values on stack*/
+void range_interpolate(void) /*symbol at pc, 4 values on stack*/
 {
 	short i, i1, i2, di;
 	Section* sec;
@@ -1307,9 +1224,7 @@ void range_interpolate() /*symbol at pc, 4 values on stack*/
 #endif
 }
 
-int nrn_exists(s, node) 
-	Symbol* s;
-	Node* node;
+int nrn_exists(Symbol* s, Node* node) 
 {
 	if (s->u.rng.type == VINDEX) {
 		return 1;
@@ -1324,10 +1239,7 @@ int nrn_exists(s, node)
 	}
 }
 
-double* nrn_rangepointer(sec, s, d)
-	Section* sec;
-	Symbol* s;
-	double d;
+double* nrn_rangepointer(Section* sec, Symbol* s, double d)
 {
 	/* if you change this change nrnpy_rangepointer as well */
 	short i;
@@ -1355,11 +1267,7 @@ double* nrn_rangepointer(sec, s, d)
 /* return nil if failure instead of hoc_execerror
    and return pointer to the 0 element if an array
 */
-double* nrnpy_rangepointer(sec, s, d, err)
-	Section* sec;
-	Symbol* s;
-	double d;
-	int* err;
+double* nrnpy_rangepointer(Section* sec, Symbol* s, double d, int* err)
 {
 	/* if you change this change nrnpy_rangepointer as well */
 	short i;
@@ -1383,7 +1291,7 @@ double* nrnpy_rangepointer(sec, s, d, err)
 	return nrnpy_dprop(s, 0, sec, i, err);
 }
 
-void rangevarevalpointer() /* symbol at pc, location on stack, return pointer on stack */
+void rangevarevalpointer(void) /* symbol at pc, location on stack, return pointer on stack */
 {
 	short i;
 	Section* sec;
@@ -1415,7 +1323,7 @@ void rangevarevalpointer() /* symbol at pc, location on stack, return pointer on
 	hoc_pushpx(dprop(s, indx, sec, i));
 }
 
-rangevareval() /* symbol at pc, location on stack, return value on stack */
+void rangevareval(void) /* symbol at pc, location on stack, return value on stack */
 {
 	double *pd, *hoc_pxpop();
 
@@ -1424,16 +1332,13 @@ rangevareval() /* symbol at pc, location on stack, return value on stack */
 	hoc_pushx(*pd);
 }
 
-rangepoint() /* symbol at pc, return value on stack */
+void rangepoint(void) /* symbol at pc, return value on stack */
 {
 	hoc_pushx(.5);
 	rangevareval();
 }
 
-int
-node_index(sec, x) /* returns nearest index to x */
-	Section *sec;
-	double x;
+int node_index(Section* sec, double x) /* returns nearest index to x */
 {
 	int i;
 	double n;
@@ -1459,10 +1364,7 @@ node_index(sec, x) /* returns nearest index to x */
 }
 
 /* return -1 if x at connection end, nnode-1 if at other end */
-int
-node_index_exact(sec, x)
-	Section* sec;
-	double x;
+int node_index_exact(Section* sec, double x)
 {
 	if (x == 0.) {
 		if (arc0at0(sec)) {
@@ -1484,9 +1386,7 @@ node_index_exact(sec, x)
 with section property
 may have special actions (eg. nseg)*/
 
-double
-cable_prop_eval(sym)
-	Symbol *sym;
+double cable_prop_eval(Symbol* sym)
 {
 	Section* sec;
 	sec = nrn_sec_pop();
@@ -1506,9 +1406,7 @@ cable_prop_eval(sym)
 	}
 	return 0.;
 }
-double*
-cable_prop_eval_pointer(sym)
-	Symbol *sym;
+double* cable_prop_eval_pointer(Symbol* sym)
 {
 	Section* sec;
 	sec = nrn_sec_pop();
@@ -1524,14 +1422,14 @@ cable_prop_eval_pointer(sym)
 
 #if KEEP_NSEG_PARM
 int keep_nseg_parm_;
-keep_nseg_parm() {
+void keep_nseg_parm(void) {
 	int i = keep_nseg_parm_;
 	keep_nseg_parm_ = (int)chkarg(1, 0., 1.);
 	hoc_retpushx((double)i);
 }
 #endif
 
-void nrn_change_nseg(sec, n) Section* sec; int n; {
+void nrn_change_nseg(Section* sec, int n) {
 	if (n > 32767.) {
 		n = 1;
 		fprintf(stderr, "requesting %s.nseg=%d but the maximum value is 32767.\n", secname(sec), n);
@@ -1572,10 +1470,7 @@ void nrn_change_nseg(sec, n) Section* sec; int n; {
 		}
 	}
 }
-cable_prop_assign(sym, pd, op)
-	Symbol *sym;
-	double* pd;
-	int op;
+void cable_prop_assign(Symbol* sym, double* pd, int op)
 {
 	Section* sec;
 	sec = nrn_sec_pop();
@@ -1617,30 +1512,25 @@ cable_prop_assign(sym, pd, op)
 	}
 }
 
-
-double
-nrn_connection_position(sec)
-	Section* sec;
+/* x of parent for this section */
+double nrn_connection_position(Section* sec)
 {
 	return sec->prop->dparam[1].val;
 }
 
-double
-nrn_section_orientation(sec)
-	Section* sec;
+/* x=0,1 end connected to parent */
+double nrn_section_orientation(Section* sec)
 {
 	return sec->prop->dparam[3].val;
 }
 
-int nrn_at_beginning(sec)
-	Section * sec;
+int nrn_at_beginning(Section* sec)
 {
 	assert(sec->parentsec);
 	return nrn_connection_position(sec) == nrn_section_orientation(sec->parentsec);
 }
 
-static nrn_rootnode_alloc(sec)
-	Section* sec;
+static void nrn_rootnode_alloc(Section* sec)
 {
 	Extnode* nde;
 	Node* nrn_node_construct1();
@@ -1654,9 +1544,7 @@ static nrn_rootnode_alloc(sec)
 #endif
 }
 
-Section*
-nrn_trueparent(sec)
-	Section* sec;
+Section* nrn_trueparent(Section* sec)
 {
 	Section* psec;
 	for (psec = sec->parentsec; psec; psec = psec->parentsec) {
@@ -1669,8 +1557,7 @@ nrn_trueparent(sec)
 	return psec;
 }
 
-nrn_parent_info(s)
-	Section* s;
+void nrn_parent_info(Section* s)
 {
 	/* determine the parentnode using only the authoritative
 	info of parentsec
@@ -1717,7 +1604,7 @@ nrn_parent_info(s)
 	s->parentnode = pnode;
 }
 
-setup_topology()
+void setup_topology(void)
 {
 	Item* qsec;
 			
@@ -1768,9 +1655,7 @@ setup_topology()
 	++nrn_shape_changed_;
 }
 
-char *
-secname(sec) /* name of section (for use in error messages) */
-	Section *sec;
+const char* secname(Section* sec) /* name of section (for use in error messages) */
 {
 	extern char* hoc_araystr();
 	static char name[512];
@@ -1805,7 +1690,7 @@ secname(sec) /* name of section (for use in error messages) */
 	return name;
 }
 
-int section_owner() {
+void section_owner(void) {
 	Section* sec;
 	Object* ob;
 	sec = chk_access();
@@ -1814,10 +1699,8 @@ int section_owner() {
 	hoc_push_object(ob);	
 }
 
-char* hoc_section_pathname(sec)
-	Section* sec;
+char* hoc_section_pathname(Section* sec)
 {
-	extern char* hoc_araystr(), *hoc_object_pathname();
 	Symbol* s;
 	int indx;
 	static char name[200];
@@ -1834,7 +1717,8 @@ char* hoc_section_pathname(sec)
 				s->name, hoc_araystr(s, indx, ob->u.dataspace));
 			}else{
 				hoc_warning("Can't find a pathname for", secname(sec));
-				return secname(sec);
+				strcpy(name, secname(sec));
+				return name;
 			}
 		}else{
 			Sprintf(name, "%s%s", s->name, hoc_araystr(s, indx, hoc_objectdata));
@@ -1845,10 +1729,7 @@ char* hoc_section_pathname(sec)
 	return name;
 }
 
-double
-nrn_arc_position(sec, node)
-	Section *sec;
-	Node* node;
+double nrn_arc_position(Section* sec, Node* node)
 {
 	int inode;
 	double x;
@@ -1868,9 +1749,7 @@ nrn_arc_position(sec, node)
 }
 
 #if 0
-double nrn_arc_position(sec, i)
-	Section* sec;
-	int i;
+double nrn_arc_position(Section* sec, int i)
 {
 	double x;
 	int n;
@@ -1892,11 +1771,9 @@ double nrn_arc_position(sec, i)
 }
 #endif
 
-char * sec_and_position(sec, nd)
-	Section* sec;
-	Node* nd;
+const char* sec_and_position(Section* sec, Node* nd)
 {
-	char* buf;
+	const char* buf;
 	static char buf1[200];
 	double x;
 	assert(sec);
@@ -1906,9 +1783,7 @@ char * sec_and_position(sec, nd)
 	return buf1;
 }
 
-int
-segment_limits(pdx)
-	double *pdx;
+int segment_limits(double* pdx)
 {
 	int n;
 	Section* sec;
@@ -1930,10 +1805,7 @@ segment_limits(pdx)
 #undef PI
 #define PI	3.14159265358979323846
 
-Node*
-node_exact(sec, x)
-	Section *sec;
-	double x;
+Node* node_exact(Section* sec, double x)
 {
 	/* like node_index but give proper node when
 		x is 0 or 1 as well as in between
@@ -1980,11 +1852,8 @@ node_exact(sec, x)
 	return node;
 }
 
-Node *
-node_ptr(sec, x, parea) /* returns pointer to proper node */
-	Section *sec;	/* and the area of the node */
-	double x, *parea;
-{
+Node* node_ptr(Section* sec, double x, double* parea) {
+ /* returns pointer to proper node and the area of the node */
 	Node *nd;
 
 	nd = node_exact(sec, x);
@@ -1997,7 +1866,7 @@ node_ptr(sec, x, parea) /* returns pointer to proper node */
 	return nd;
 }
 
-int nrn_get_mechtype(mechname) char* mechname; {
+int nrn_get_mechtype(const char* mechname) {
 	Symbol* s;
 	s = hoc_lookup(mechname);
 	assert(s);
@@ -2009,7 +1878,7 @@ int nrn_get_mechtype(mechname) char* mechname; {
 }
 
 #if VECTORIZE
-int nrn_instance_count(mechtype) int mechtype; {
+int nrn_instance_count(int mechtype) {
 	if (v_structure_change) {
 		v_setup_vectors();
 	}
@@ -2024,10 +1893,7 @@ otherwise return correct pointer to vext if it exists
 return pointer to zero if a child node has extnode
 return 0 if symbol is not vext.
 */
-double* nrn_vext_pd(s, indx, nd)
-	Symbol* s;
-	int indx;
-	Node* nd;
+double* nrn_vext_pd(Symbol* s, int indx, Node* nd)
 {
 	static double zero;
 	if (s->u.rng.type != EXTRACELL) {return (double*)0;}
@@ -2055,11 +1921,8 @@ double* nrn_vext_pd(s, indx, nd)
 #endif
 
 /* if you change this then change nrnpy_dprop as well */
-double* dprop(s, indx, sec, inode) /* returns location of property symbol */
-	Symbol *s;
-	Section* sec;
-	short inode;
-	int indx;
+/* returns location of property symbol */
+double* dprop(Symbol* s, int indx, Section* sec, short inode)
 {
 	Prop *m;
 	
@@ -2090,12 +1953,8 @@ double **p = &((m->dparam)[s->u.rng.index + indx].pval);
 }
 
 /* return nil instead of hoc_execerror. */
-double* nrnpy_dprop(s, indx, sec, inode, err) /* returns location of property symbol */
-	Symbol *s;
-	Section* sec;
-	short inode;
-	int indx;
-	int* err;
+/* returns location of property symbol */
+double* nrnpy_dprop(Symbol* s, int indx, Section* sec, short inode, int* err)
 {
 	Prop *m;
 	
@@ -2129,7 +1988,7 @@ double **p = &((m->dparam)[s->u.rng.index + indx].pval);
 	}
 }
 
-static char* objectname() {
+static char* objectname(void) {
 	static char buf[100];
 	if (hoc_thisobject) {
 		Sprintf(buf, "%s", hoc_object_name(hoc_thisobject));
@@ -2141,7 +2000,7 @@ static char* objectname() {
 
 #define relative(pc)	(pc + (pc)->i)
 
-forall_section() {
+void forall_section(void) {
 	/*statement pointed to by pc
 	continuation pointed to by pc+1. template used is shortfor in code.c
 	of hoc system.
@@ -2212,7 +2071,7 @@ forall_section() {
 		pc =relative(savepc+1);
 }
 
-hoc_ifsec() {
+void hoc_ifsec(void) {
 	Inst *savepc = pc;
 	char buf[200];
 	char** s;
@@ -2229,7 +2088,7 @@ hoc_ifsec() {
 		pc = relative(savepc+1);
 }
 
-issection() { /* returns true if string is the access section */
+void issection(void) { /* returns true if string is the access section */
 	hoc_regexp_compile(gargstr(1));
 	if (hoc_regexp_search(secname(chk_access()))) {
 		hoc_retpushx(1.);
@@ -2238,7 +2097,7 @@ issection() { /* returns true if string is the access section */
 	}
 }
 
-void ismembrane() { /* return true if string is an inserted membrane in the
+void ismembrane(void) { /* return true if string is an inserted membrane in the
 		access section */
 	char *str;
 	Prop *p;
@@ -2254,12 +2113,13 @@ void ismembrane() { /* return true if string is an inserted membrane in the
 }
 
 
-char* secaccessname() {
+const char* secaccessname(void) {
 	return secname(chk_access());
 }
 
-sectionname() {
-	char *buf, **cpp, **hoc_pgargstr();
+void sectionname(void) {
+	const char *buf;
+	char **cpp;
 	
 	buf = secname(chk_access());
 	cpp = hoc_pgargstr(1);
@@ -2267,14 +2127,15 @@ sectionname() {
 	hoc_retpushx(1.);
 }
 
-hoc_secname() {
-	static char *buf;
-	buf = secname(chk_access());
+void hoc_secname(void) {
+	static char* buf = (char*)0;
+	if (!buf) { buf = (char*)emalloc(256*sizeof(char)); }
+	strcpy(buf,secname(chk_access()));
 	hoc_ret();
 	hoc_pushstr(&buf);
 }
 
-this_section() {
+void this_section(void) {
 	/* return section number of currently accessed section at
 		arc length postition x */
 	
@@ -2282,7 +2143,7 @@ this_section() {
 	sec = chk_access();
 	hoc_retpushx((double)(unsigned long)(sec));
 }
-this_node() {
+void this_node(void) {
 	/* return node number of currently accessed section at
 		arc length postition x */
 	
@@ -2292,7 +2153,7 @@ this_node() {
 	nd = node_exact(sec, *getarg(1));
 	hoc_retpushx((double)(unsigned long)nd);
 }
-parent_section() {
+void parent_section(void) {
 	/* return section number of currently accessed section at
 		arc length postition x */
 	
@@ -2300,26 +2161,26 @@ parent_section() {
 	sec = chk_access();
 	hoc_retpushx((double)(unsigned long)(sec->parentsec));
 }
-parent_connection() {
+void parent_connection(void) {
 	Section* sec;
 	sec = chk_access();
 	hoc_retpushx(nrn_connection_position(sec));
 }
 
-section_orientation() {
+void section_orientation(void) {
 	Section* sec;
 	sec = chk_access();
 	hoc_retpushx(nrn_section_orientation(sec));
 }
 
-parent_node() {
+void parent_node(void) {
 	Section* sec;
 	hoc_execerror("parent_node() needs to be re-implemented", 0);
 	sec = chk_access();
 	hoc_retpushx((double)(unsigned long)(sec->parentnode));
 }
 
-pop_section() {
+void pop_section(void) {
 	--skip_secstack_check;
 	if (skip_secstack_check < 0) { skip_secstack_check = 0; }
 	nrn_popsec();
@@ -2330,12 +2191,12 @@ pop_section() {
 statement) between exlicit user level push_section,etc and pop_section
 */
 
-hoc_level_pushsec(sec) Section* sec; {
+void hoc_level_pushsec(Section* sec) {
 	++skip_secstack_check;
 	nrn_pushsec(sec);
 }
 	
-push_section() {
+void push_section(void) {
 	Section* sec;
 	if (hoc_is_str_arg(1)) {
 		Item* qsec;
@@ -2363,13 +2224,11 @@ push_section() {
 
 
 #if FISHER
-assign_hoc_str(str, val, global) 
+void assign_hoc_str(char* str, char* val, int global) 
 
     /* Assign hoc string in global dataspace if global == 1,
        else use current dataspace. */
 
-    char *str, *val;
-    int global;
 {
     Symbol *sym;
     char** pstr;
@@ -2390,7 +2249,7 @@ assign_hoc_str(str, val, global)
 }
 #endif
 
-section_exists() {
+void section_exists(void) {
 	int iarg, indx;
 	Symbol* sym;
 	Section* sec;

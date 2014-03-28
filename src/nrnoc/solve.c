@@ -60,11 +60,7 @@ node.v + extnode.v[0]
 #include	"membfunc.h"
 #include 	"spmatrix.h"
 
-extern char	*secname();
-extern void	prop_free();
-extern void	nrn_node_destruct1(Node*);
 extern int	tree_changed;
-extern double nrn_connection_position();
 static void node_free();
 static void triang(NrnThread*), bksub(NrnThread*);
 
@@ -94,8 +90,7 @@ Section** secorder;
 */
 
 #if DEBUGSOLVE
-double
-debugsolve()	/* returns solution error */
+double debugsolve(void)	/* returns solution error */
 {
 	short inode;
 	int i;
@@ -151,10 +146,7 @@ assert(0)
 #endif /*DEBUGSOLVE*/
 
 
-double
-node_dist(sec, node)
-	Section *sec;
-	Node* node;
+double node_dist(Section* sec, Node* node)
 {
 	int inode;
 	double ratio;
@@ -169,10 +161,8 @@ node_dist(sec, node)
 	return  section_length(sec)*ratio;
 }
 
-double
-topol_distance(sec1, node1, sec2, node2, prootsec, prootnode)
-	Section *sec1, *sec2, **prootsec;
-	Node* node1, *node2, **prootnode;
+double topol_distance(Section* sec1, Node* node1, Section* sec2, Node* node2,
+  Section** prootsec, Node** prootnode)
 {	/* returns the distance between the two nodes
 		Ie the sum of the appropriate length portions
 		of those sections connecting these two
@@ -227,7 +217,7 @@ topol_distance(sec1, node1, sec2, node2, prootsec, prootnode)
 
 static Section *origin_sec;
 
-int distance() {
+void distance(void) {
 	double d, chkarg();
 	int mode;
 	Node* node, *node_exact();
@@ -263,7 +253,9 @@ hoc_execerror("Distance origin not valid.","Need to initialize origin with dista
 	hoc_retpushx(d);
 }
 	
-void nrnhoc_topology() /* print the topology of the branched cable */
+static void dashes(Section* sec, int offset, int first);
+
+void nrnhoc_topology(void) /* print the topology of the branched cable */
 {
 	hoc_Item* q;
 
@@ -280,9 +272,7 @@ void nrnhoc_topology() /* print the topology of the branched cable */
 	hoc_retpushx(1.);
 }
 
-dashes(sec, offset,first)
-	Section *sec;
-	int offset, first;
+static void dashes(Section* sec, int offset, int first)
 {
 	int i, scnt;
 	Section* ch;
@@ -316,8 +306,7 @@ dashes(sec, offset,first)
 }
 
 /* solve the matrix equation */
-void
-nrn_solve(NrnThread* _nt) {
+void nrn_solve(NrnThread* _nt) {
 #if 0
 	printf("\nnrn_solve enter %lx\n", (long)_nt);
 	nrn_print_matrix(_nt);
@@ -380,8 +369,7 @@ extern int v_node_depth; /* so depth may be more than twice what you'd expect */
 #endif
 
 /* triangularization of the matrix equations */
-void
-triang(NrnThread* _nt)
+void triang(NrnThread* _nt)
 {
 	register Node *nd, *pnd;
 	double p;
@@ -409,8 +397,7 @@ triang(NrnThread* _nt)
 }
 
 /* back substitution to finish solving the matrix equations */
-void
-bksub(NrnThread* _nt)
+void bksub(NrnThread* _nt)
 {
 	register Node *nd, *cnd;
 	int i, i1, i2, i3;
@@ -441,7 +428,7 @@ bksub(NrnThread* _nt)
     }
 }
 
-nrn_clear_mark() {
+void nrn_clear_mark(void) {
 	hoc_Item* qsec;
 	ForAllSections(sec)
 		sec->volatile_mark = 0;
@@ -451,8 +438,8 @@ short nrn_increment_mark(sec) Section* sec; { return sec->volatile_mark++;}
 short nrn_value_mark(sec) Section* sec; { return sec->volatile_mark;}
 
 /* allocate space for sections (but no nodes) */
-Section *		/* returns pointer to Section */
-sec_alloc()
+/* returns pointer to Section */
+Section* sec_alloc(void)
 {
 	Section  *sec;
 
@@ -474,10 +461,9 @@ sec_alloc()
 	return sec;
 }
 
+static void section_unlink(Section* sec);
 /* free everything about sections */
-void
-sec_free(secitem)
-	hoc_Item* secitem;
+void sec_free(hoc_Item* secitem)
 {
 	Section *sec;
 	
@@ -521,8 +507,7 @@ sec_free(secitem)
 
 
 /* can't actually release the space till the refcount goes to 0 */
-section_unref(sec)
-	Section* sec;
+void section_unref(Section* sec)
 {
 /*printf("section_unref %lx %d\n", (long)sec, sec->refcount-1);*/
 	if (--sec->refcount <= 0) {
@@ -533,16 +518,13 @@ printf("section_unref: freed\n");
 		free((char*)sec);
 	}
 }
-section_ref(sec)
-	Section* sec;
+void section_ref(Section* sec)
 {
 /*printf("section_ref %lx %d\n", (long)sec,sec->refcount+1);*/
 	++sec->refcount;
 }
 
-nrn_sec_ref(psec, sec)
-	Section** psec;
-	Section* sec;
+void nrn_sec_ref(Section** psec, Section* sec)
 {
 	Section* s = *psec;
 	if (sec) {
@@ -554,8 +536,7 @@ nrn_sec_ref(psec, sec)
 	}
 }
 
-section_unlink(sec) /* other sections no longer reference this one */
-	Section* sec;
+static void section_unlink(Section* sec) /* other sections no longer reference this one */
 {
 	/* only sections that are explicitly connected to this are disconnected */
 	Section* child;
@@ -567,9 +548,7 @@ section_unlink(sec) /* other sections no longer reference this one */
 	nrn_disconnect(sec);
 }
 
-Node**
-node_construct(n)
-int n;
+Node** node_construct(int n)
 {
 	Node* nd, **pnode;
 	int i;
@@ -596,7 +575,7 @@ int n;
 	return pnode;
 }
 
-Node* nrn_node_construct1() {
+Node* nrn_node_construct1(void) {
 	Node* nd;
 	Node** ndp;
 	ndp = node_construct(1);
@@ -605,7 +584,7 @@ Node* nrn_node_construct1() {
 	return nd;
 }
 
-void nrn_node_destruct1(nd) Node* nd; {
+void nrn_node_destruct1(Node* nd) {
 	if (!nd) { return; }
 	prop_free(&(nd->prop));
 #if CACHEVEC
@@ -636,9 +615,7 @@ void nrn_node_destruct1(nd) Node* nd; {
 	free((char*)nd);
 }
 
-node_destruct(pnode, n)
-	Node** pnode;
-	int n;
+void node_destruct(Node** pnode, int n)
 {
 	int i;
 	Node* nd;
@@ -655,7 +632,7 @@ node_destruct(pnode, n)
 
 extern int keep_nseg_parm_;
 
-static Node* node_clone(nd1) Node* nd1; {
+static Node* node_clone(Node* nd1) {
 	Node* nd2;
 	Prop* p1, *p2, *prop_alloc();
 	int i, imax;
@@ -703,9 +680,7 @@ static Node* node_clone(nd1) Node* nd1; {
 	return nd2;
 }
 
-static Node* node_interp(nd1, nd2, frac)
-	Node* nd1, *nd2;
-	double frac;
+static Node* node_interp(Node* nd1, Node* nd2, double frac)
 {
 	Node* nd;
 	if (frac > .5) {
@@ -716,9 +691,7 @@ static Node* node_interp(nd1, nd2, frac)
 	return nd;
 }
 
-static node_realloc(sec, nseg)
-	Section* sec;
-	short nseg;
+static void node_realloc(Section* sec, short nseg)
 {
 	Node** pn1, **pn2;
 	int n1, n2, i1, i2, i;
@@ -803,10 +776,7 @@ printf("i.e. x1=%g in the range %g to %g\n", x1, x2-1./n2, x2);
 #endif
 
 /* allocate node vectors for a section list */
-void
-node_alloc(sec, nseg)
-	Section *sec;
-	short nseg;
+void node_alloc(Section* sec, short nseg)
 {
 	int i;
 #if KEEP_NSEG_PARM
@@ -828,9 +798,7 @@ node_alloc(sec, nseg)
 }
 
 /* free a node vector for one section */
-static void
-node_free(sec)
-	Section *sec;
+static void node_free(Section* sec)
 {
 	Node **pnd;
 
@@ -846,8 +814,7 @@ node_free(sec)
 	sec->nnode = 0;
 }
 
-void
-section_order() /* create a section order consistent */
+void section_order(void) /* create a section order consistent */
 		/* with connection info */
 {
 	int order, isec;

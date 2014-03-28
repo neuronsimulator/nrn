@@ -9,6 +9,8 @@
 #include "multisplit.h"
 #define nrnoc_fadvance_c
 #include "nonvintblock.h"
+#include "nrncvode.h"
+#include "spmatrix.h"
 
 /*
  after an fadvance from t-dt to t, v is defined at t
@@ -153,8 +155,6 @@ extern int v_structure_change;
 
 #if CVODE
 int cvode_active_;
-extern cvode_fadvance();
-extern cvode_finitialize();
 #endif
 
 int stoprun;
@@ -271,9 +271,10 @@ static void* daspk_init_step_thread(NrnThread* nt) {
 	if (_upd) {
 		update(nt);
 	}
+	return (void*)0;
 }
 
-nrn_daspk_init_step(double tt, double dteps, int upd){
+void nrn_daspk_init_step(double tt, double dteps, int upd){
 	int i;
 	double dtsav = nrn_threads->_dt;
 	int so = secondorder;
@@ -677,8 +678,7 @@ hoc_warning("errno set during calculation of states", (char*)0);
 }
 
 #if VECTORIZE
-nrn_errno_check(i)
-	int i;
+int nrn_errno_check(int i)
 {
 	int ierr;
 	ierr = hoc_errno_check();
@@ -689,10 +689,7 @@ nrn_errno_check(i)
 	return ierr;
 }
 #else
-nrn_errno_check(p, inode, sec)
-	Prop* p;
-	int inode;
-	Section* sec;
+int nrn_errno_check(Prop* p, int inode, Section* sec)
 {
 	int ierr;
 	char* secname();
@@ -752,7 +749,7 @@ void nrn_finitialize(int setv, double v) {
 	nrn_thread_table_check();
 	clear_event_queue();
 	nrn_spike_exchange_init();
-	nrn_random_play();
+	nrn_random_play(_nt);
 #if VECTORIZE
 	nrn_play_init(); /* Vector.play */
 	for (i=0; i < nrn_nthread; ++i) {

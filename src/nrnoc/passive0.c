@@ -3,13 +3,17 @@
 
 #include	"section.h"
 #include	"membdef.h"
-#include	"nrnoc_ml.h"
-static char *mechanism[] = {
+#include	"nrniv_mf.h"
+
+static const char *mechanism[] = {
 	"0", "fastpas", "g_fastpas", "e_fastpas", 0,0,0
 };
-static void pas_alloc(), pas_cur(), pas_jacob();
-passive0_reg_() {
-	register_mech(mechanism, pas_alloc, pas_cur, pas_jacob, (Pfri)0, (Pfri)0, -1, 1);
+static void pas_alloc(Prop* p);
+static void pas_cur(NrnThread* nt, Memb_list* ml, int type);
+static void pas_jacob(NrnThread* nt, Memb_list* ml, int type);
+
+void passive0_reg_(void) {
+	register_mech(mechanism, pas_alloc, pas_cur, pas_jacob, (Pvmi)0, (Pvmi)0, -1, 1);
 }
 
 #define g vdata[i][0]
@@ -46,8 +50,7 @@ static void pas_jacob(NrnThread* nt, Memb_list* ml, int type) {
 
 /* the rest can be constructed automatically from the above info*/
 
-static void pas_alloc(p)
-	Prop *p;
+static void pas_alloc(Prop* p)
 {
 	double *pd;
 #define	nparm 2

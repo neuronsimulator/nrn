@@ -64,7 +64,8 @@ void nrndae_alloc() {
 
 
 void nrndae_init() {
-	if ((!nrndae_list.empty()) && (secondorder > 0 || (cvode_active_ > 0) && (nrn_use_daspk_ == 0))) {
+	if ((!nrndae_list.empty()) &&
+(secondorder > 0 || ((cvode_active_ > 0) && (nrn_use_daspk_ == 0)))) {
 hoc_execerror("NrnDAEs only work with secondorder==0 or daspk",0);
 	}
 	for (NrnDAEPtrListIterator m = nrndae_list.begin(); m != nrndae_list.end(); m++) {

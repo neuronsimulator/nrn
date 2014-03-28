@@ -21,8 +21,10 @@
 #include "nrnfilewrap.h"
 #if CABLE
 #include "options.h"
+#include "section.h"
 
 int bbs_poll_;
+extern void bbs_handle(void);
 #define BBSPOLL if (--bbs_poll_ == 0) { bbs_handle(); }
 
 int nrn_isecstack();

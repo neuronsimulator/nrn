@@ -26,18 +26,16 @@ fclampi()
 #include <stdlib.h>
 #include "neuron.h"
 #include "section.h"
+#include "nrniv_mf.h"
 
 static double loc;
 static Node *pnd;
 static Section* sec;
 static double gtemp;
-static maxlevel = 0;		/* size of clamp array */
+static int maxlevel = 0;		/* size of clamp array */
 static double *duration, *vc, *tswitch; /* maxlevel of them */
 static int oldsw = 0;
 static double clampval();
-
-extern double *getarg(), chkarg();
-extern char *secname();
 
 extern void clamp_prepare();
 

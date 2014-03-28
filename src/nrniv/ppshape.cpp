@@ -15,9 +15,9 @@ static double pp_append(void* v) {
 IFGUI
 	Object* ob = *hoc_objgetarg(1);
 	((PPShape*)v)->pp_append(ob);
-	return 1.;
 ENDGUI
 #endif
+	return 1.;
 }
 
 static Member_func pp_members[] = {

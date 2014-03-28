@@ -558,7 +558,7 @@ static void ion_alloc(p)
 	p->dparam->i = 0;
 }
 
-second_order_cur(NrnThread* nt) {
+void second_order_cur(NrnThread* nt) {
 	extern int secondorder;
 	NrnThreadMembList* tml;
 	Memb_list* ml;

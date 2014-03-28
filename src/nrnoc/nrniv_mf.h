@@ -7,19 +7,15 @@
 struct NrnThread;
 	
 
-typedef void(*Pvmi)(NrnThread*, Memb_list*, int);
-
 #if defined(__cplusplus)
 extern "C" {
 #endif
 
+typedef double (*ldifusfunc3_t)(int, double*, Datum*, double*, double*, Datum*, NrnThread*);
+typedef void ldifusfunc2_t(int, ldifusfunc3_t, void**, int, int, int, NrnThread*);
+typedef void (*ldifusfunc_t)(ldifusfunc2_t, NrnThread*);
 typedef void (*pnt_receive_t)(Point_process*, double*, double);
 typedef void (*pnt_receive_init_t)(Point_process*, double*, double);
-
-typedef void (*register_mech_t)(const char**, Pvmp, Pvmi, Pvmi, Pvmi, Pvmi, int, int);
-typedef int (*point_register_mech_t)(const char**, Pvmp, Pvmi, Pvmi, Pvmi, Pvmi, int, int,
-	void*(*)(Object*), void(*)(void*), Member_func*);
-typedef void (*hoc_register_cvode_t)(int, nrn_ode_count_t, nrn_ode_map_t, Pvmi, Pvmi);
 
 extern void register_mech(const char**, Pvmp, Pvmi, Pvmi, Pvmi, Pvmi, int, int);
 extern int point_register_mech(const char**, Pvmp, Pvmi, Pvmi, Pvmi, Pvmi, int, int,

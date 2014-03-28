@@ -1,8 +1,10 @@
 #include <../../nrnconf.h>
+
+#include "section.h"
+
 #define OBSOLETE 1
 
 #if !OBSOLETE
-#include "section.h"
 #include "membfunc.h"
 #include "hocassrt.h"
 
@@ -18,12 +20,12 @@ extern int section_count;
 extern Section** secorder;
 #endif
 
-nemo2neuron()
+void nemo2neuron(void)
 {
-	hoc_retpushx(1.);
+	hoc_retpushx(1.0);
 }
 
-neuron2nemo()
+void neuron2nemo(void)
 {
 #if OBSOLETE
 	hoc_execerror("neuron2nemo:", "implementation is obsolete");
@@ -73,15 +75,11 @@ neuron2nemo()
 	fclose(fin);
 	fclose(fmark);
 #endif
-	hoc_retpushx(1.);
+	hoc_retpushx(1.0);
 }
 
 #if !OBSOLETE
-static
-dashes(sec, x, y, theta, leftend)
-	Section *sec;
-	double x, y, theta;
-	int leftend;
+static dashes(Section* sec, double x, double y, double theta, int leftend)
 {
 	Section* ch;
 	int i, nrall, irall;
@@ -119,9 +117,7 @@ dashes(sec, x, y, theta, leftend)
    }
 }
 
-static double
-diamval(nd)
-	Node *nd;
+static double diamval(Node* nd)
 {
 	Prop *p;
 
@@ -134,11 +130,7 @@ diamval(nd)
 	return p->param[0];
 }
 
-static
-printline(sec, i, x, y)
-	Section *sec;
-	int i;
-	double x, y;
+static void printline(Section* sec, int i, double x, double y)
 {
 	char type;
 	int nb;
@@ -184,9 +176,7 @@ printline(sec, i, x, y)
 }
 
 /* modified from nemo.c */
-static
-file_func(sec)
-	Section *sec;
+static void file_func(Section* sec)
 {
 	int active;
 	Node *nd;
@@ -220,8 +210,7 @@ file_func(sec)
 	fprintf(fdat,"^twidth %g\n",0.);
 }
 
-static
-dat_head()
+static void dat_head(void)
 {
 	double Ra = 35.4;
 	

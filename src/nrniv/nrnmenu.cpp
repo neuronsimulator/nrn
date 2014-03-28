@@ -20,7 +20,6 @@ extern "C" {
 // from nrnoc
 #include "membfunc.h"
 #include "parse.h"
-extern char* sec_and_position(Section* sec, Node* nd);
 extern Symlist *hoc_built_in_symlist;
 extern Symbol **pointsym;
 extern double* point_process_pointer(Point_process*, Symbol*, int);
@@ -153,7 +152,7 @@ void nrnmechmenu() {
 void section_menu(double x1, int type, MechSelector* ms)
 {
 	char buf[200];
-	char* name;
+	const char* name;
 	Section *sec;
 	Prop *p;
 	Node* node;

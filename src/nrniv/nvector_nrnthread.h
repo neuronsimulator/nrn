@@ -62,6 +62,7 @@ extern "C" {
 
 #include "nvector.h"
 #include "sundialstypes.h"
+extern void N_VOneMask_Serial(N_Vector x);
 
 /*
  * -----------------------------------------------------------------

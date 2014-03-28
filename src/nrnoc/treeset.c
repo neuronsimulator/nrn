@@ -15,6 +15,7 @@
 #include	"multisplit.h"
 #include "spmatrix.h"
 #include "nonvintblock.h"
+#include "nrndae_c.h"
 
 #if CVODE
 extern int cvode_active_;
@@ -30,18 +31,11 @@ extern double	nrn_ra();
 #if !defined(NRNMPI) || NRNMPI == 0
 extern double nrnmpi_wtime();
 #endif
-extern char* secname();
-extern double nrn_arc_position();
 extern Symlist* hoc_built_in_symlist;
-extern Symbol* hoc_table_lookup();
 extern int* nrn_prop_dparam_size_;
 extern int* nrn_dparam_ptr_start_;
 extern int* nrn_dparam_ptr_end_;
 extern void nrn_define_shape();
-extern void v_setup_vectors();
-extern void single_prop_free();
-
-
 
 #if 1 || PARANEURON
 void (*nrn_multisplit_setup_)();
@@ -57,7 +51,6 @@ static void nrn_recalc_node_ptrs();
 #define UPDATE_VEC_AREA(nd) if (nd->_nt && nd->_nt->_actual_area) { nd->_nt->_actual_area[(nd)->v_node_index] = NODEAREA(nd);}
 #endif /* CACHEVEC */
 int use_cachevec;
-extern void nrn_cachevec();
 
 /*
 Do not use unless necessary (loops in tree structure) since overhead
@@ -67,9 +60,6 @@ about a factor of 3 in space and 2 in time even for a tree.
 int nrn_matrix_cnt_ = 0;
 int use_sparse13 = 0;
 int nrn_use_daspk_ = 0;
-extern int nrndae_extra_eqn_count();
-extern int nrndae_list_is_empty();
-extern void nrndae_alloc(), nrndae_rhs(), nrndae_lhs();
 
 #if VECTORIZE
 /*
@@ -569,9 +559,7 @@ static Prop **current_prop_list; /* the one prop_alloc is working on
 static int disallow_needmemb = 0; /* point processes cannot use need_memb
 	when inserted at locations 0 or 1 */
 
-Prop *
-need_memb(sym)
-	Symbol* sym;
+Prop* need_memb(Symbol* sym)
 {
 	int type;
 	Prop *mprev, *m, *prop_alloc();
@@ -604,12 +592,11 @@ need_memb(sym)
 	
 Node* nrn_alloc_node_; /* needed by models that use area */
 
-Prop *
-prop_alloc(pp, type, nd)	/* link in new property at head of list */
-	Prop **pp;	/* returning *Prop because allocation may */
-	int type;	/* cause other properties to be linked ahead */
-	Node* nd;	/* some models need the node (to find area) */
-{
+Prop* prop_alloc(Prop** pp, int type, Node* nd) {
+/* link in new property at head of list */
+/* returning *Prop because allocation may */
+/* cause other properties to be linked ahead */
+/* some models need the node (to find area) */
 	Prop *p;
 
 	if (nd) {
@@ -633,11 +620,7 @@ prop_alloc(pp, type, nd)	/* link in new property at head of list */
 	return p;
 }
 
-Prop*
-prop_alloc_disallow(pp, type, nd)
-	Prop** pp;
-	short type;
-	Node* nd;
+Prop* prop_alloc_disallow(Prop** pp, short type, Node* nd)
 {
 	Prop *p;
 	disallow_needmemb = 1;
@@ -646,9 +629,7 @@ prop_alloc_disallow(pp, type, nd)
 	return p;
 }
 
-void
-prop_free(pp)	/* free an entire property list */
-	Prop **pp;
+void prop_free(Prop** pp)	/* free an entire property list */
 {
 	Prop *p, *pn;
 	p = *pp;
@@ -660,8 +641,7 @@ prop_free(pp)	/* free an entire property list */
 	}
 }
 
-void single_prop_free(p)
-	Prop* p;
+void single_prop_free(Prop* p)
 {
 	extern char* pnt_map;
 #if VECTORIZE
@@ -695,7 +675,7 @@ sections */
 #undef PI
 #define PI	3.14159265358979323846
 
-static double diam_from_list();
+static double diam_from_list(Section* sec, int inode, Prop* p, double rparent);
 
 int recalc_diam_count_, nrn_area_ri_nocount_, nrn_area_ri_count_;
 void nrn_area_ri(Section* sec) {
@@ -759,7 +739,7 @@ Node* nrn_parent_node(Node* nd) {
 	return nd->_classical_parent;
 }
 
-void connection_coef()	/* setup a and b */
+void connection_coef(void)	/* setup a and b */
 {
 	int j;
 	double dx, diam, area, ra;
@@ -840,7 +820,7 @@ void connection_coef()	/* setup a and b */
 #endif
 }
 
-void nrn_shape_update() {
+void nrn_shape_update(void) {
 	static int updating;
 	if (section_list->next == section_list) {
 		return;
@@ -860,7 +840,7 @@ void nrn_shape_update() {
     }
 }
 
-static void nrn_matrix_node_alloc();
+static void nrn_matrix_node_alloc(void);
 
 void recalc_diam(void) {
 	v_setup_vectors();
@@ -877,7 +857,7 @@ void recalc_diam(void) {
 }
 
 
-void area() { /* returns area (um^2) of segment containing x */
+void area(void) { /* returns area (um^2) of segment containing x */
 	double x;
 	Section *sec;
 	Node *node_ptr();
@@ -894,7 +874,7 @@ void area() { /* returns area (um^2) of segment containing x */
 }
 
 
-void ri() { /* returns resistance (Mohm) between center of segment containing x
+void ri(void) { /* returns resistance (Mohm) between center of segment containing x
 		and the center of the parent segment */
 	double area;
 	Node *np, *node_ptr();
@@ -911,7 +891,7 @@ void ri() { /* returns resistance (Mohm) between center of segment containing x
 
 static int pt3dconst_;
 
-void pt3dconst() {
+void pt3dconst(void) {
 	int i = pt3dconst_;
 	if (ifarg(1)) {
 		pt3dconst_ = (int)chkarg(1, 0., 1.);	
@@ -919,7 +899,7 @@ void pt3dconst() {
 	hoc_retpushx((double)i);
 }
 
-void pt3dstyle() {
+void pt3dstyle(void) {
 	Section* sec = chk_access();
 	if (ifarg(1)) {
 		/* Classical, Logical connection */
@@ -967,13 +947,13 @@ void pt3dstyle() {
 	hoc_retpushx((double)(sec->logical_connection ? 1 : 0));
 }
 
-void pt3dclear() { /*destroys space in current section for 3d points.*/
+void pt3dclear(void) { /*destroys space in current section for 3d points.*/
 	Section* sec = chk_access();
 	nrn_pt3dclear(sec);
 	hoc_retpushx((double)sec->pt3d_bsize);
 }
 
-static void nrn_pt3dbufchk(sec, n) Section* sec; int n; {
+static void nrn_pt3dbufchk(Section* sec, int n) {
 	if (n > sec->pt3d_bsize) {
 		sec->pt3d_bsize = n;
 		if ((sec->pt3d =
@@ -986,7 +966,7 @@ static void nrn_pt3dbufchk(sec, n) Section* sec; int n; {
 	}
 }
 
-static void nrn_pt3dmodified(sec, i0) Section* sec; int i0; {
+static void nrn_pt3dmodified(Section* sec, int i0) {
 	int n, i;
 	
 	++nrn_shape_changed_;
@@ -1014,8 +994,7 @@ static void nrn_pt3dmodified(sec, i0) Section* sec; int i0; {
 	sec->prop->dparam[2].val = sec->pt3d[n-1].arc;
 }
 
-void nrn_pt3dclear(sec)
-	Section* sec;
+void nrn_pt3dclear(Section* sec)
 {
 	int req;
 	if (ifarg(1)) {
@@ -1039,7 +1018,7 @@ void nrn_pt3dclear(sec)
 }
 
 
-void pt3dinsert() {
+void pt3dinsert(void) {
 	Section* sec;
 	int i, n, i0;
 	sec = chk_access();
@@ -1061,7 +1040,7 @@ void pt3dinsert() {
 	nrn_pt3dmodified(sec,i0);
 	hoc_retpushx(0.);
 }
-void pt3dchange() {
+void pt3dchange(void) {
 	int i, n;
 	Section* sec = chk_access();
 	n = sec->npt3d;
@@ -1080,7 +1059,7 @@ void pt3dchange() {
 	}
 	hoc_retpushx(0.);
 }
-void pt3dremove() {
+void pt3dremove(void) {
 	int i, i0, n;
 	Section* sec = chk_access();
 	n = sec->npt3d;
@@ -1097,8 +1076,7 @@ void pt3dremove() {
 	hoc_retpushx(0.);
 }
 
-void nrn_diam_change(sec)
-	Section* sec;
+void nrn_diam_change(Section* sec)
 {
 	if (!pt3dconst_ && sec->npt3d) { /* fill 3dpoints as though constant diam segments */
 		int i;
@@ -1142,13 +1120,12 @@ void nrn_length_change(Section* sec, double d)
 }
 
 /*ARGSUSED*/
-int can_change_morph(sec)
-	Section* sec;
+int can_change_morph(Section* sec)
 {
 	return pt3dconst_ == 0;
 }
 	
-void pt3dadd() {
+void pt3dadd(void) {
 	/*pt3add(x,y,z, d) stores 3d point at end of current pt3d list.
 	  first point assumed to be at arc length position 0. Last point
 	  at 1. arc length increases monotonically.
@@ -1159,13 +1136,13 @@ void pt3dadd() {
 }
 
 
-void n3d() { /* returns number of 3d points in section */
+void n3d(void) { /* returns number of 3d points in section */
 	Section* sec;
 	sec = chk_access();
 	hoc_retpushx ((double)sec->npt3d);
 }
 
-void x3d() { /* returns x value at index of 3d list  */
+void x3d(void) { /* returns x value at index of 3d list  */
 	Section* sec;
 	int n, i;
 	sec = chk_access();
@@ -1174,7 +1151,7 @@ void x3d() { /* returns x value at index of 3d list  */
 	hoc_retpushx((double)sec->pt3d[i].x);
 }
 
-void y3d() { /* returns x value at index of 3d list  */
+void y3d(void) { /* returns x value at index of 3d list  */
 	Section* sec;
 	int n, i;
 	sec = chk_access();
@@ -1183,7 +1160,7 @@ void y3d() { /* returns x value at index of 3d list  */
 	hoc_retpushx((double)sec->pt3d[i].y);
 }
 
-void z3d() { /* returns x value at index of 3d list  */
+void z3d(void) { /* returns x value at index of 3d list  */
 	Section* sec;
 	int n, i;
 	sec = chk_access();
@@ -1192,7 +1169,7 @@ void z3d() { /* returns x value at index of 3d list  */
 	hoc_retpushx((double)sec->pt3d[i].z);
 }
 
-void arc3d() { /* returns x value at index of 3d list  */
+void arc3d(void) { /* returns x value at index of 3d list  */
 	Section* sec;
 	int n, i;
 	sec = chk_access();
@@ -1201,7 +1178,7 @@ void arc3d() { /* returns x value at index of 3d list  */
 	hoc_retpushx((double)sec->pt3d[i].arc);
 }
 
-void diam3d() { /* returns x value at index of 3d list  */
+void diam3d(void) { /* returns x value at index of 3d list  */
 	Section* sec;
 	double d;
 	int n, i;
@@ -1212,7 +1189,7 @@ void diam3d() { /* returns x value at index of 3d list  */
 	hoc_retpushx(fabs(d));
 }
 
-void spine3d() { /* returns x value at index of 3d list  */
+void spine3d(void) { /* returns x value at index of 3d list  */
 	Section* sec;
 	int n, i;
 	double d;
@@ -1243,24 +1220,22 @@ void stor_pt3d(Section* sec, double x, double y, double z, double d)
 
 static double spinearea=0.;
 
-void setSpineArea() {
+void setSpineArea(void) {
 	spinearea = *getarg(1);
 	diam_changed = 1;
 	hoc_retpushx(spinearea);
 }
 
-void getSpineArea() {
+void getSpineArea(void) {
 	hoc_retpushx(spinearea);
 }
 
-void define_shape() {
+void define_shape(void) {
 	nrn_define_shape();
 	hoc_retpushx(1.);
 }
 
-static void nrn_translate_shape(sec, x, y, z)
-	Section* sec;
-	float x, y, z;
+static void nrn_translate_shape(Section* sec, float x, float y, float z)
 {
 	int i;
 	float dx, dy, dz;
@@ -1288,8 +1263,8 @@ static void nrn_translate_shape(sec, x, y, z)
 	}
 }
 
-void nrn_define_shape() {
-	static changed_;
+void nrn_define_shape(void) {
+	static int changed_;
 	int i, j;
 	Section* sec, *psec, *ch, *nrn_trueparent();
 	float x, y, z, dz, x1, y1;
@@ -1374,11 +1349,9 @@ printf("nrn_define_shape: %s first and last 3-d point at same (x,y)\n", secname(
 	changed_ = nrn_shape_changed_;
 }
 
-static double diam_from_list(sec, inode, p, rparent)
-	Section *sec;
-	int inode;
-	Prop *p;  /* p->param[0] is diam of inode in sec.*/
-	double rparent;  /* right half resistance of the parent segment*/
+static double diam_from_list(Section* sec, int inode, Prop* p, double rparent)
+	/* p->param[0] is diam of inode in sec.*/
+	/* rparent right half resistance of the parent segment*/
 {
 	/* Basic algorithm assumes a set of monotonic points on which a
 	   function is defined. The extension is the piecewise continuous
@@ -1503,7 +1476,7 @@ static double diam_from_list(sec, inode, p, rparent)
 #include "multicore.c"
 
 #if VECTORIZE
-void v_setup_vectors() {
+void v_setup_vectors(void) {
 	int inode, i;
 	int isec;
 	Section* sec;
@@ -1673,7 +1646,7 @@ static FILE* fnd;
 #define Pd(arg) P "%d\n", arg)
 #define Pg(arg) P "%g\n", arg)
 
-node_data_scaffolding() {
+void node_data_scaffolding(void) {
 	int i;
 	Pd(n_memb_func);
 /*	P "Mechanism names (first two are nil) beginning with memb_func[2]\n");*/
@@ -1682,7 +1655,7 @@ node_data_scaffolding() {
 	}
 }
 
-node_data_structure() {
+void node_data_structure(void) {
 	int i, j;
 	nrn_thread_error("node_data_structure");
 	Pd(v_node_count);
@@ -1702,7 +1675,7 @@ node_data_structure() {
 	}
 }
 
-node_data_values() {
+void node_data_values(void) {
 	int i, j, k;
 /*	P "data for nodes then for all mechanisms in order of the above structure\n");	*/
 	for (i=0; i < v_node_count; ++ i) {
@@ -1730,7 +1703,7 @@ node_data_values() {
 	}
 }
 
-node_data() {
+void node_data(void) {
 	fnd = fopen(gargstr(1), "w");
 	if (!fnd) {
 		hoc_execerror("node_data: can't open", gargstr(1));
@@ -1759,7 +1732,7 @@ void node_data(void) {
 
 #endif
 
-void nrn_complain(pp) double* pp; {
+void nrn_complain(double* pp) {
 	/* print location for this param on the standard error */
 	Node* nd;
 	hoc_Item* qsec;
@@ -1781,7 +1754,7 @@ fprintf(stderr, "Error at section location %s(%g)\n", secname(sec),
 	fprintf(stderr, "Don't know the location of params at %lx\n", (long)pp);
 }
 
-nrn_matrix_node_free() {
+void nrn_matrix_node_free(void) {
 	NrnThread* nt;
     FOR_THREADS(nt) {
 	if (nt->_actual_rhs) {
@@ -1814,7 +1787,7 @@ nrn_matrix_node_free() {
 }
 
 /* 0 means no model, 1 means ODE, 2 means DAE */
-int nrn_modeltype() {
+int nrn_modeltype(void) {
 	NrnThread* nt;
 	static Template* lm = (Template*)0;
 	int type;
@@ -1844,7 +1817,7 @@ If daspk then must be sparse13
 If cvode then must be classic tree method
 */
 
-int nrn_method_consistent() {
+int nrn_method_consistent(void) {
 	int consist;
 	int type;
 	consist = 0;
@@ -1879,7 +1852,7 @@ Also the actual_rhs_ uses this style, 1-neqn, when sparse13 is activated
 and therefore is passed to spSolve as actual_rhs intead of actual_rhs-1.
 */
 
-static void nrn_matrix_node_alloc() {
+static void nrn_matrix_node_alloc(void) {
 	int i, b;
 	Node* nd;
 	NrnThread* nt;
@@ -1988,7 +1961,7 @@ printf("nrn_matrix_node_alloc use_sparse13=%d cvode_active_=%d nrn_use_daspk_=%d
 	}
 }
 
-void nrn_cachevec(b) int b; {
+void nrn_cachevec(int b) {
 	if (use_sparse13) {
 		use_cachevec = 0;
 	}else{
@@ -2009,7 +1982,6 @@ All Vector record and play pointers that deal with v.
 All PreSyn threshold detectors that watch v.
 */
 
-extern void nrniv_recalc_ptrs();
 static int n_recalc_ptr_callback;
 static void (*recalc_ptr_callback[20])();
 static int recalc_cnt_;
@@ -2021,7 +1993,7 @@ static double** old_actual_area_;
 
 /* defer freeing a few things which may have pointers to them
 until ready to update those pointers */
-void nrn_old_thread_save() {
+void nrn_old_thread_save(void) {
 	int i;
 	int n = nrn_nthread;
 	if (old_actual_v_){return;} /* one is already outstanding */
@@ -2051,7 +2023,7 @@ double* nrn_recalc_ptr(double* old) {
 	return old;
 }
 
-void nrn_register_recalc_ptr_callback(void (*f)()) {
+void nrn_register_recalc_ptr_callback(Pfrv f) {
 	if (n_recalc_ptr_callback >= 20) {
 		printf("More than 20 recalc_ptr_callback functions\n");
 		exit(1);
@@ -2074,7 +2046,7 @@ void nrn_recalc_ptrs(double*(*r)(double*)) {
 	recalc_ptr_ = (void*)0;
 }
 
-void nrn_recalc_node_ptrs() {
+void nrn_recalc_node_ptrs(void) {
 	int i, ii, j, k;
 	NrnThread* nt;
 	if (use_cachevec == 0) { return; }

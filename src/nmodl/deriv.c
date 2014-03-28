@@ -544,7 +544,7 @@ Sprintf(buf, "static int _slist%d[%d], _dlist%d[%d];\n",
 		cvode_diffeq(s, q1, q2);
 		qextra = q2->next;
 	}
-	Lappendstr(procfunc, ";\n}\n");
+	Lappendstr(procfunc, ";\n return 0;\n}\n");
 	vectorize_scan_for_func(qq, procfunc);
   }
 

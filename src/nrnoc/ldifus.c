@@ -6,12 +6,12 @@
 #include        "section.h"
 #include        "membfunc.h"
 #include        "neuron.h"
+#include	"nrniv_mf.h"
 #include        "parse.h"
 
 #define nt_t nrn_threads->_t
 #define nt_dt nrn_threads->_dt
 
-extern char* secname();
 extern int diam_change_cnt;
 extern int structure_change_cnt;
 
@@ -38,9 +38,9 @@ typedef struct LongDifusThreadData {
 }LongDifusThreadData;
 
 static int ldifusfunccnt;
-typedef void (*ldifusfunc_t)(Pfrv, NrnThread*);
 static ldifusfunc_t* ldifusfunc;
-static void stagger(), ode(), matsol(), overall_setup();
+
+static ldifusfunc2_t stagger, ode, matsol, overall_setup;
 
 void hoc_register_ldifus1(ldifusfunc_t f) {
 	ldifusfunc = (ldifusfunc_t*)erealloc(ldifusfunc, (ldifusfunccnt + 1)*sizeof(ldifusfunc_t) );
@@ -52,13 +52,7 @@ void hoc_register_ldifus1(ldifusfunc_t f) {
 /* this avoids a missing _ptrgl12 in the mac library that was called by
 the MrC compiled object
 */
-void mac_difusfunc(f, m, diffunc, v, ai, sindex, dindex, nt)
-	Pfrv f;
-	int m;
-	double (*diffunc)();
-	void** v;
-	int ai, sindex, dindex;
-	NrnThread* _nt;
+void mac_difusfunc(ldifusfunc2_t* f, int m, ldifusfunc3_t diffunc, void** v, int ai, int sindex, int dindex, NrnThread* nt)
 {
 	(*f)(m, diffunc, v, ai, sindex, dindex, nt);
 }
@@ -101,7 +95,7 @@ void nrn_tree_solve(double* a, double* d, double* b, double* rhs, int* pindex, i
 
 
 void long_difus_solve(int method, NrnThread* nt) {
-	Pfrv f;
+	ldifusfunc2_t* f;
 	int i;
 	if (ldifusfunc) {
 		switch (method) {
@@ -126,11 +120,9 @@ void long_difus_solve(int method, NrnThread* nt) {
 	}
 }	
 
-static longdifusfree(ppld) LongDifus** ppld; {
-	LongDifus* pld;
-	
+static void longdifusfree(LongDifus** ppld) {
 	if (*ppld) {
-		pld = *ppld;
+		LongDifus* pld = *ppld;
 #if 0
 printf("free longdifus structure_change=%d %d\n", pld->schange, structure_change_cnt);
 #endif
@@ -150,8 +142,7 @@ printf("free longdifus structure_change=%d %d\n", pld->schange, structure_change
 	*ppld = (LongDifus*)0;
 }
 
-static void longdifus_diamchange(pld, m, sindex, ml, _nt)
- LongDifus* pld; int m, sindex; Memb_list* ml; NrnThread* _nt;
+static void longdifus_diamchange(LongDifus* pld, int m, int sindex, Memb_list* ml, NrnThread* _nt)
 {
 	int i, n, mi, mpi, j, index, pindex, vnodecount;
 	Node* nd, *pnd;
@@ -192,8 +183,7 @@ static void longdifus_diamchange(pld, m, sindex, ml, _nt)
 	pld->dchange = diam_change_cnt;
 }
 
-static longdifusalloc(ppld, m, sindex, ml, _nt)
- LongDifus** ppld; int m, sindex; Memb_list* ml; NrnThread* _nt;
+static void longdifusalloc(LongDifus** ppld, int m, int sindex, Memb_list* ml, NrnThread* _nt)
 {
 	LongDifus* pld;
 	int i, n, mi, mpi, j, index, pindex, vnodecount;
@@ -287,12 +277,7 @@ printf("i=%d pin=%d mi=%d :%s node %d state[(%i)]=%g\n", i, pld->pindex[i],
 /* only v makes sense and the purpose is to free the old, allocate space */
 /* for the new, and setup the tml field */
 /* the args used are m and v */
-static void overall_setup(m, diffunc, v, ai, sindex, dindex, _nt)
-	int m;
-	double (*diffunc)();
-	void** v;
-	int ai, sindex, dindex;
-	NrnThread* _nt;
+static void overall_setup(int m, ldifusfunc3_t diffunc, void** v, int ai, int sindex, int dindex, NrnThread* _nt)
 {
 	int i;
 	LongDifusThreadData** ppldtd = (LongDifusThreadData**)v;
@@ -327,22 +312,17 @@ static void overall_setup(m, diffunc, v, ai, sindex, dindex, _nt)
 	}
 }
 
-static LongDifus* v2ld(v, tid) void** v; int tid; {
+static LongDifus* v2ld(void** v, int tid) {
 	LongDifusThreadData** ppldtd = (LongDifusThreadData**)v;
 	return (*ppldtd)->ldifus[tid];
 }
 
-static Memb_list* v2ml(v, tid) void** v; int tid; {
+static Memb_list* v2ml(void** v, int tid) {
 	LongDifusThreadData** ppldtd = (LongDifusThreadData**)v;
 	return (*ppldtd)->ml[tid];
 }
 
-static void stagger(m, diffunc, v, ai, sindex, dindex, _nt)
-	int m;
-	double (*diffunc)();
-	void** v;
-	int ai, sindex, dindex;
-	NrnThread* _nt;
+static void stagger(int m, ldifusfunc3_t diffunc, void** v, int ai, int sindex, int dindex, NrnThread* _nt)
 {
 	LongDifus* pld;
 	int i, n, di;
@@ -417,12 +397,7 @@ for (i=0; i < n; ++i) { double a,b;
 
 
 
-static void ode(m, diffunc, v, ai, sindex, dindex, _nt)
-	int m;
-	double (*diffunc)();
-	void** v;
-	int ai, sindex, dindex;
-	NrnThread* _nt;
+static void ode(int m, ldifusfunc3_t diffunc, void** v, int ai, int sindex, int dindex, NrnThread* _nt)
 {
 	LongDifus* pld;
 	int i, n, di;
@@ -480,12 +455,7 @@ static void ode(m, diffunc, v, ai, sindex, dindex, _nt)
 }
 
 
-static void matsol(m, diffunc, v, ai, sindex, dindex, _nt)
-	int m;
-	double (*diffunc)();
-	void** v;
-	int ai, sindex, dindex;
-	NrnThread* _nt;
+static void matsol(int m, ldifusfunc3_t diffunc, void** v, int ai, int sindex, int dindex, NrnThread* _nt)
 {
 	LongDifus* pld;
 	int i, n, di;

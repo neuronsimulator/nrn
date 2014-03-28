@@ -15,12 +15,6 @@ extern "C" {
 
 extern int	diam_changed;
 extern int	tree_changed;
-extern char* secname(Section*);
-extern void recalc_diam();
-extern int nrn_errno_check(int);
-extern void activstim_rhs(), activclamp_rhs(), activsynapse_rhs();
-extern void activclamp_lhs(), activsynapse_lhs();
-extern void nrn_cap_jacob(NrnThread*, Memb_list*);
 }
 
 void Cvode::rhs(NrnThread* _nt) {

@@ -32,6 +32,7 @@ void (*nrnpy_hpoasgn)(Object* o, int type);
 
 #if CABLE
 #include "section.h"
+#include "nrniv_mf.h"
 int section_object_seen;
 struct Section* nrn_sec_pop();
 double* nrn_rangepointer();

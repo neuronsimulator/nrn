@@ -57,7 +57,7 @@ extern Object** vector_temp_objvar(Vect*);
 extern double* vector_vec(Vect*);
 extern Object** vector_pobj(Vect*);
 extern Vect* vector_arg(int);
-extern bool is_vector_arg(int);
+extern int is_vector_arg(int);
 extern char* vector_get_label(Vect*);
 extern void vector_set_label(Vect*, char*);
 }

@@ -34,7 +34,6 @@ extern void hoc_name_declared(void), hoc_unix_mac_pc(void), hoc_show_winio(void)
 extern void hoc_usemcran4(void), hoc_mcran4(void), hoc_mcran4init(void);
 extern void hoc_nrn_load_dll(void), hoc_nrnversion(void), hoc_object_pushed(void);
 extern void hoc_mallinfo(void), hoc_load_java(void);
-extern void hoc_regexp_compile(void), hoc_regexp_search(void);
 extern void hoc_Setcolor(void);
 extern void hoc_init_space(void);
 extern void hoc_install_hoc_obj(void);

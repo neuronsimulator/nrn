@@ -5,11 +5,9 @@
 #include "parse.h"
 #include "membfunc.h"
 
-extern char *secname();
-extern double nrn_ra();
-static void pnode();
+static void pnode(Prop*);
 
-psection()
+void psection(void)
 {
 	Section *sec;
 	Prop *p, *p1;
@@ -43,8 +41,7 @@ psection()
 	hoc_retpushx(1.);
 }
 
-static void pnode(p1)
-	Prop *p1;
+static void pnode(Prop* p1)
 {
 	Symbol *sym;
 	int j;
@@ -70,7 +67,11 @@ Printf(" %s=%g", s->name, p1->param[s->u.rng.index]);
 	Printf("}\n");
 }
 
-prstim()
+extern void print_stim(void);
+extern void print_clamp(void);
+extern void print_syn(void);
+
+void prstim(void)
 {
 	print_stim();
 	print_clamp();

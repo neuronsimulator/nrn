@@ -2,6 +2,7 @@
 #include "nrnredef.h"
 #include "section.h"
 #include "nrnmpiuse.h"
+#include "nrndae_c.h"
 #define hoc_retpushx hoc_retpushx
 
 /* stubs for nrnoc. The actual functions are for interviews menus */
@@ -20,15 +21,21 @@ void nrn_random_play(){}
 void* nrn_random_arg(i) int i; { return (void*)0; }
 double nrn_random_pick(r) void* r; { return 0.; }
 void hoc_new_opoint(){}
-void special_pnt_call(){}
+int special_pnt_call(Object* ob, Symbol* sym, int narg){return 0;}
 void bbs_handle(){}
-void nrndae_alloc(){}
-int nrndae_extra_eqn_count() { return 0; }
-int nrndae_list_is_empty() {return 0;}
-void nrndae_rhs(){}
-void nrndae_lhs(){}
-void nrndae_update(){}
-void nrndae_init(){}
+
+void nrndae_alloc(void){}
+int nrndae_extra_eqn_count(void){return 0;}
+void nrndae_init(void){}
+void nrndae_rhs(void){}
+void nrndae_lhs(void){}
+void nrndae_dkmap(double** pv, double** pvdot){}
+void nrndae_dkres(double* y, double* yprime, double* delta){}
+void nrndae_dkpsol(double unused){}
+void nrndae_update(void){}
+void nrn_matrix_node_free(void){}
+int nrndae_list_is_empty(void){return 0;}
+
 void nrn_solver_prepare(){}
 void nrn_fihexec(i) int i;{}
 void nrn_deliver_events(tt) double tt;{}
@@ -90,10 +97,10 @@ void nrn_multisplit_triang(){assert(0);}
 double* nrn_classicalNodeA(Node* n) {return (double*)0;}
 double* nrn_classicalNodeB(Node* n) {return (double*)0;}
 #endif
-void* nrn_pool_create(long count, int itemsize){assert(0);}
+void* nrn_pool_create(long count, int itemsize){assert(0); return (void*)0;}
 void nrn_pool_delete(void* pool){assert(0);}
 void nrn_pool_freeall(void* pool){assert(0);}
-void* nrn_pool_alloc(void* pool){assert(0);}
+void* nrn_pool_alloc(void* pool){assert(0); return (void*)0;}
 
 #if NRN_MUSIC
 void nrnmusic_init(int* parg, char*** pargv){}      

@@ -37,6 +37,7 @@ fsyng(i)
 #include <stdlib.h>
 #include "neuron.h"
 #include "section.h"
+#include "nrniv_mf.h"
 
 #define nt_t nrn_threads->_t
 
@@ -53,12 +54,10 @@ typedef struct Stimulus {
 	Section* sec;
 } Stimulus;
 
-static maxstim = 0;		/* size of stimulus array */
+static int maxstim = 0;		/* size of stimulus array */
 static Stimulus *pstim;		/* pointer to stimulus array */
 static void free_syn(void);
-static stim_record(int);
-
-extern char *secname();
+static void stim_record(int);
 
 void print_syn(void) {
 	int i;
@@ -150,7 +149,7 @@ static void free_syn(void) {
 	}
 }
 
-static stim_record(int i)	/*fill in the section info*/
+static void stim_record(int i)	/*fill in the section info*/
 {
 	Node *node_ptr();
 	double area;
@@ -168,7 +167,7 @@ static stim_record(int i)	/*fill in the section info*/
 	}
 }
 
-synapse_prepare() {
+void synapse_prepare(void) {
 	int i;
 	
 	for (i=0; i<maxstim; i++) {
@@ -178,9 +177,7 @@ synapse_prepare() {
 
 static double alpha();
 
-static double
-stimulus(i)
-	int i;
+static double stimulus(int i)
 {
 	double x, g;
 	
@@ -196,9 +193,7 @@ stimulus(i)
 	return pstim[i].g * (NODEV(pstim[i].pnd) - pstim[i].erev);
 }
 
-static double
-alpha(x)
-	double x;
+static double alpha(double x)
 {
 	double exp();
 	
@@ -208,7 +203,7 @@ alpha(x)
 	return 0.0;
 }
 
-activsynapse_rhs() {
+void activsynapse_rhs(void) {
 	
 	int i;
 	for (i=0; i<maxstim; i++) {
@@ -218,7 +213,7 @@ activsynapse_rhs() {
 	}
 }
 
-activsynapse_lhs() {
+void activsynapse_lhs() {
 	
 	int i;
 

@@ -25,9 +25,7 @@ static void create_artcell_prop(Point_process* pnt, short type);
 Prop* nrn_point_prop_;
 void (*nrnpy_o2loc_p_)(Object*, Section**, double*);
 
-void* create_point_process(pointtype, ho)
-	int pointtype;
-	Object* ho;
+void* create_point_process(int pointtype, Object* ho)
 {
 	Point_process* pp;
 	pp = (Point_process*)emalloc(sizeof(Point_process));
@@ -49,9 +47,7 @@ void* create_point_process(pointtype, ho)
 	return (void*)pp;
 }
 
-Object*
-nrn_new_pointprocess(sym)
-	Symbol* sym;
+Object* nrn_new_pointprocess(Symbol* sym)
 {
 	void* v;
 	Object* hoc_new_object(), *hoc_new_opoint();
@@ -74,19 +70,14 @@ nrn_new_pointprocess(sym)
 	return ob;
 }
 
-destroy_point_process(v)
-	void* v;
+void destroy_point_process(void* v)
 {
 	Point_process* pp = (Point_process*)v;
 	free_one_point(pp);
 	free((char*)pp);
 }
 
-nrn_loc_point_process(pointtype, pnt, sec, node)
-	int pointtype;
-	Point_process* pnt;
-	Section* sec;
-	Node* node;
+void nrn_loc_point_process(int pointtype, Point_process* pnt, Section* sec, Node* node)
 {
 	extern Prop *prop_alloc_disallow(), *prop_alloc();
 	Prop* p;
@@ -156,9 +147,7 @@ static void create_artcell_prop(Point_process* pnt, short type) {
 	}
 }
 
-nrn_relocate_old_points(oldsec, oldnode, sec, node)
-	Section* oldsec, *sec;
-	Node* oldnode, *node;
+void nrn_relocate_old_points(Section* oldsec, Node* oldnode, Section* sec, Node* node)
 {
 	Point_process* pnt;
 	Prop* p, *pn;
@@ -187,9 +176,7 @@ secname(sec), nrn_arc_position(sec, node)
 	}
 }
 
-double loc_point_process(pointtype, v)
-	int pointtype;
-	void* v;
+double loc_point_process(int pointtype, void* v)
 {
 	extern int hoc_is_double_arg();
 	extern double chkarg();
@@ -220,9 +207,7 @@ double loc_point_process(pointtype, v)
 	return x;
 }
 
-double
-get_loc_point_process(v)
-	void* v;
+double get_loc_point_process(void* v)
 {
 #if METHOD3
 	extern int _method3;
@@ -243,18 +228,13 @@ get_loc_point_process(v)
 	return x;
 }
 
-double
-has_loc_point(v)
-	void* v;
+double has_loc_point(void* v)
 {
 	Point_process *pnt = (Point_process*)v;
 	return (pnt->sec != 0);
 }
 
-double* point_process_pointer(pnt, sym, index)
-	Point_process* pnt;
-	Symbol* sym;
-	int index;
+double* point_process_pointer(Point_process* pnt, Symbol* sym, int index)
 {
 	static double dummy;
 	double* pd;
@@ -285,8 +265,7 @@ double* point_process_pointer(pnt, sym, index)
 	return pd;
 }
 
-void steer_point_process(v) /* put the right double pointer on the stack */
-	void* v;
+void steer_point_process(void* v) /* put the right double pointer on the stack */
 {
 	Symbol* sym, *hoc_spop();
 	int index;
@@ -300,11 +279,11 @@ void steer_point_process(v) /* put the right double pointer on the stack */
 	hoc_pushpx(point_process_pointer(pnt, sym, index));
 }
 
-nrn_cppp() {
+void nrn_cppp(void) {
 	cppp_semaphore = 1;
 }
 
-connect_point_process_pointer() {
+void connect_point_process_pointer(void) {
 	double* hoc_pxpop();
 	if (cppp_semaphore != 2) {
 		cppp_semaphore = 0;
@@ -315,8 +294,7 @@ connect_point_process_pointer() {
 	hoc_nopop();
 }
 
-static void free_one_point(pnt) /* must unlink from node property list also */
-	Point_process *pnt;
+static void free_one_point(Point_process* pnt) /* must unlink from node property list also */
 {
 	Prop *p, *p1;
 
@@ -357,8 +335,7 @@ static void free_one_point(pnt) /* must unlink from node property list also */
 	pnt->sec = (Section *)0;
 }
 
-clear_point_process_struct(p) /* called from prop_free */
-	Prop *p;
+void clear_point_process_struct(Prop* p) /* called from prop_free */
 {
 	Point_process* pnt;
 	pnt = (Point_process*)p->dparam[1]._pvoid;
@@ -387,8 +364,7 @@ clear_point_process_struct(p) /* called from prop_free */
 	}
 }
 
-int is_point_process(ob)
-	Object* ob;
+int is_point_process(Object* ob)
 {
 	if (ob) {
 		return ob->template->is_point_ != 0;

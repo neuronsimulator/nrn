@@ -25,6 +25,7 @@ fstimi(i)
 #include <stdlib.h>
 #include "neuron.h"
 #include "section.h"
+#include "nrniv_mf.h"
 
 typedef struct Stimulus {
 	double loc;	/* parameter location (0--1) */
@@ -36,13 +37,10 @@ typedef struct Stimulus {
 	Section* sec;
 } Stimulus;
 
-static maxstim = 0;		/* size of stimulus array */
+static int maxstim = 0;		/* size of stimulus array */
 static Stimulus *pstim;		/* pointer to stimulus array */
 static void free_stim(void);
 static void stim_record(int);
-
-extern double *getarg(), chkarg();
-extern char *secname();
 
 #define nt_t nrn_threads->_t
 

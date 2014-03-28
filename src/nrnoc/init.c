@@ -65,8 +65,6 @@ extern char* nrn_mech_dll; /* declared in hoc_init.c so ivocmain.cpp can see it 
 
 static char	CHKmes[] = "The user defined name, %s, already exists\n";
 
-extern Symlist	*hoc_symlist, *hoc_built_in_symlist;
-extern Symbol	*hoc_table_lookup();
 void (*nrnpy_reg_mech_p_)(int);
 
 int secondorder=0;
@@ -156,19 +154,19 @@ void add_nrn_fornetcons(int type, int indx) {
 short* nrn_is_artificial_;
 short* nrn_artcell_qindex_;
 
-void  add_nrn_artcell(type, qi) int type, qi; {
+void  add_nrn_artcell(int type, int qi) {
 	nrn_is_artificial_[type] = 1;
 	nrn_artcell_qindex_[type] = qi;
 }
 
-int nrn_is_artificial(pnttype) int pnttype; {
+int nrn_is_artificial(int pnttype) {
 	return (int)nrn_is_artificial_[pointsym[pnttype]->subtype];
 }
 
-int nrn_is_cable() {return 1;}
+int nrn_is_cable(void) {return 1;}
 
 #if 0 && defined(WIN32)
-int mswin_load_dll(cp1) char* cp1; {
+int mswin_load_dll(char* cp1) {
 	if (nrnmpi_myid < 1) if (!nrn_nobanner_ && nrn_istty_) {
 		printf("loading membrane mechanisms from %s\n", cp1);
 	}
@@ -185,14 +183,14 @@ int mswin_load_dll(cp1) char* cp1; {
 #endif
 
 #if defined(WIN32) || defined(NRNMECH_DLL_STYLE)
-int mswin_load_dll(cp1) char* cp1; { /* actually linux dlopen */
+int mswin_load_dll(const char* cp1) { /* actually linux dlopen */
 	void* handle;
 	if (nrnmpi_myid < 1) if (!nrn_nobanner_ && nrn_istty_) {
 		printf("loading membrane mechanisms from %s\n", cp1);
 	}
 	handle = dlopen(cp1, RTLD_NOW);
 	if (handle) {
-		Pfri mreg = (Pfri)dlsym(handle, "modl_reg");
+		Pfrv mreg = (Pfrv)dlsym(handle, "modl_reg");
 		if (mreg) {
 			(*mreg)();
 		}else{
@@ -209,7 +207,7 @@ int mswin_load_dll(cp1) char* cp1; { /* actually linux dlopen */
 #endif
 
 #if !MAC
-hoc_nrn_load_dll() {
+void hoc_nrn_load_dll(void) {
 #if defined(WIN32) || defined(NRNMECH_DLL_STYLE)
 	Symlist* sav;
 	int i;
@@ -244,10 +242,10 @@ static DoubScal scdoub[] = {
 	0,0
 };
 
-hoc_last_init()
+void hoc_last_init(void)
 {
 	int i;
-	Pfri *m;
+	Pfrv *m;
 	Symbol *s;
 
 	hoc_register_var(scdoub, (DoubVec*)0, (VoidFunc*)0);
@@ -551,7 +549,7 @@ IGNORE(fprintf(stderr, CHKmes, buf));
 	n_memb_func = type;
 }
 
-void nrn_writes_conc(type, unused) int type, unused; {
+void nrn_writes_conc(int type, int unused) {
 	static int lastion = EXTRACELL+1;
 	int i;
 	for (i=n_memb_func - 2; i >= lastion; --i) {
@@ -592,7 +590,7 @@ void register_destructor(Pvmp d) {
 	memb_func[n_memb_func - 1].destructor = d;
 }
 
-int point_reg_helper(s2) Symbol* s2; {
+int point_reg_helper(Symbol* s2) {
 	pointsym[pointtype] = s2;
 	s2->public = 0;
 	pnt_map[n_memb_func-1] = pointtype;
@@ -638,8 +636,7 @@ int point_register_mech(
 /* some stuff from scopmath needed for built-in models */
  
 #if 0
-double* makevector(nrows)
-        int nrows;
+double* makevector(int nrows)
 {
         double* v;
         v = (double*)emalloc((unsigned)(nrows*sizeof(double)));
@@ -648,14 +645,14 @@ double* makevector(nrows)
 #endif
   
 int _ninits;
-_modl_cleanup(){}
+void _modl_cleanup(void){}
 
 #if 1
-_modl_set_dt(newdt) double newdt; {
+void _modl_set_dt(double newdt) {
 	dt = newdt;
 	nrn_threads->_dt = newdt;
 }
-_modl_set_dt_thread(double newdt, NrnThread* nt) {
+void _modl_set_dt_thread(double newdt, NrnThread* nt) {
 	nt->_dt = newdt;
 }
 double _modl_get_dt_thread(NrnThread* nt) {
@@ -663,21 +660,19 @@ double _modl_get_dt_thread(NrnThread* nt) {
 }
 #endif	
 
-int nrn_pointing(pd) double *pd; {
+int nrn_pointing(double* pd) {
 	return pd ? 1 : 0;
 }
 
 int state_discon_flag_ = 0;
-state_discontinuity(i, pd, d) int i; double* pd; double d; {
+void state_discontinuity(int i, double* pd, double d) {
 	if (state_discon_allowed_ && state_discon_flag_ == 0) {
 		*pd = d;
 /*printf("state_discontinuity t=%g pd=%lx d=%g\n", t, (long)pd, d);*/
 	}
 }
 
-hoc_register_limits(type, limits)
-	int type;
-	HocParmLimits* limits;
+void hoc_register_limits(int type, HocParmLimits* limits)
 {
 	int i;
 	Symbol* sym;
@@ -698,9 +693,7 @@ hoc_register_limits(type, limits)
 	}
 }
 
-hoc_register_units(type, units)
-	int type;
-	HocParmUnits* units;
+void hoc_register_units(int type, HocParmUnits* units)
 {
 	int i;
 	Symbol* sym;
@@ -741,10 +734,7 @@ printf("before-after processing type %d for %s not implemented\n", type, memb_fu
 	bamech_[type] = bam;
 }
 
-_cvode_abstol(s, tol, i)
-	Symbol** s;
-	double* tol;
-	int i;
+void _cvode_abstol(Symbol** s, double* tol, int i)
 {
 #if CVODE
 	if (s && s[i]->extra) {
@@ -757,10 +747,7 @@ _cvode_abstol(s, tol, i)
 #endif
 }
 
-hoc_register_tolerance(type, tol, stol)
-	int type;
-	HocStateTolerance* tol;
-	Symbol*** stol;
+void hoc_register_tolerance(int type, HocStateTolerance* tol, Symbol*** stol)
 {
 #if CVODE
 	int i;

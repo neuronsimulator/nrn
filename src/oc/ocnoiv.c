@@ -59,7 +59,7 @@ int ivoc_list_look(Object* ob, Object* oblook, char* path, int depth)
 void hoc_obj_disconnect(Object* ob) {}
 
 /*ARGSUSED*/
-void hoc_obj_notify(Object* ob, int create) {}
+void hoc_obj_notify(Object* ob) {}
 
 /*ARGSUSED*/
 void hoc_template_notify(Object* ob, int create) {}

@@ -4,7 +4,7 @@
 #include	<stdio.h>
 #include	<math.h>
 #include	"section.h"
-#include	"membfunc.h"
+#include	"nrniv_mf.h"
 #include	"hocassrt.h"
 
 extern int cvode_active_;
@@ -13,7 +13,7 @@ extern int nrn_use_daspk_;
 #if EXTRACELLULAR
 
 /* the N index is a keyword in the following. See init.c for implementation.*/
-static char *mechanism[] = {
+static const char *mechanism[] = {
 	"0",
 	"extracellular",
 	"xraxial[N]", "xg[N]", "xc[N]", "e_extracellular", 0,
@@ -38,13 +38,13 @@ static HocParmUnits units[] = {
 	0,0
 };
 
-static void extcell_alloc();
-static extcell_init();
+static void extcell_alloc(Prop*);
+static void extcell_init(NrnThread* nt, Memb_list* ml, int type);
 #if 0
-static printnode();
+static void printnode(const char* s);
 #endif
 
-static int _ode_count(type) int type; {
+static int _ode_count(int type) {
 /*	hoc_execerror("extracellular", "cannot be used with CVODE");*/
 	/* but can be used with daspk. However everything is handled
 	in analogy with intracellular nodes instead of in analogy with a
@@ -54,9 +54,9 @@ static int _ode_count(type) int type; {
 	return 0;
 }
 
-extracell_reg_() {
+void extracell_reg_(void) {
 	int i;
-	register_mech(mechanism, extcell_alloc, (Pfri)0, (Pfri)0, (Pfri)0,
+	register_mech(mechanism, extcell_alloc, (Pvmi)0, (Pvmi)0, (Pvmi)0,
 		extcell_init, -1, 1);
 	i = nrn_get_mechtype(mechanism[1]);
 	hoc_register_cvode(i, _ode_count, 0,0,0);
@@ -143,8 +143,7 @@ i_membrane = sav_g * (NODERHS(nd)) + sav_rhs;
 #endif
 }
 
-static void extcell_alloc(p)
-	Prop *p;
+static void extcell_alloc(Prop* p)
 {
 	double *pd;
 	int i;
@@ -172,7 +171,7 @@ static void extcell_alloc(p)
 }
 
 /*ARGSUSED*/
-static extcell_init(NrnThread* nt, Memb_list* ml, int type) {
+static void extcell_init(NrnThread* nt, Memb_list* ml, int type) {
 	int ndcount = ml->nodecount;
 	Node** ndlist = ml->nodelist;
 	double** data = ml->data;
@@ -192,7 +191,7 @@ hoc_execerror("Extracellular mechanism only works with fixed step methods and da
 	}
 }
 
-extcell_node_create(nd) Node* nd; {
+void extcell_node_create(Node* nd) {
 	int i, j;
 	Extnode *nde;
 	Prop* p;
@@ -214,7 +213,7 @@ extcell_node_create(nd) Node* nd; {
 	}
 }
 
-void nrn_extcell_update_param() {
+void nrn_extcell_update_param(void) {
 	int i;
 	NrnThread* nt;
 	FOR_THREADS(nt) {
@@ -231,8 +230,7 @@ void nrn_extcell_update_param() {
 	}
 }
 
-extcell_2d_alloc(sec)
-	Section *sec;
+void extcell_2d_alloc(Section* sec)
 {
 	int i, j;
 	Node *nd;
@@ -247,8 +245,6 @@ extcell_2d_alloc(sec)
 		extcell_node_create(sec->parentnode);
 	}
 }
-
-static set_extnode_lhs();
 
 /* from treesetup.c */
 void nrn_rhs_ext(NrnThread* _nt)
@@ -379,7 +375,7 @@ void nrn_setup_ext(NrnThread* _nt)
 }
 
 /* based on treeset.c */
-void ext_con_coef()	/* setup a and b */
+void ext_con_coef(void)	/* setup a and b */
 {
 	int j,k;
 	double dx, area;
@@ -486,7 +482,7 @@ void ext_con_coef()	/* setup a and b */
 #if 0
 /* needs to be fixed to deal with rootnodes having this property */
 
-static printnode(s) char* s; {
+static void printnode(const char* s) {
 	int in, i, j, k;
 	hoc_Item* qsec;
 	Section* sec;
@@ -512,7 +508,7 @@ printf("xraxial=%g xg=%g xc=%g e=%g\n", xraxial[k], xg[k], xc[k], e_extracellula
 static int cntndsave;
 static Extnode* ndesave;
 
-save2mat() {
+void save2mat(void) {
 	int i, j, k, im, ipm;
 	register Node *nd, *pnd;
 	register Extnode *nde, *pnde;
@@ -558,7 +554,7 @@ save2mat() {
 DBG() {}
 #endif
 
-check2mat() {
+void check2mat(void) {
 	int i, j, k, im, ip;
 	Node* nd;
 	Extnode* nde;

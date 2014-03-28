@@ -1363,7 +1363,7 @@ void ShapeSection::allocate(Canvas* c, const Allocation& a, Extension& ext) {
 }
 
 void ShapeSection::selectMenu() {//popup menu item selected
-	char* name = secname(sec_);
+	const char* name = secname(sec_);
 	printf("%s\n", name);
 	Color* blue = (Color*) Color::lookup(Session::instance()->default_display(), "blue");
 	ShapeScene* s = ShapeScene::current_pick_scene();

@@ -24,7 +24,6 @@ extern void make_mechanism();
 extern void make_pointprocess();
 extern void hoc_construct_point(Object*, int);
 extern Object* hoc_new_opoint(int);
-extern bool special_pnt_call(Object*, Symbol*, int);
 }
 
 static Object* last_created_pp_ob_;
@@ -96,7 +95,7 @@ Point_process* ob2pntproc(Object* ob) {
 	return pp;
 }
 
-bool special_pnt_call(Object* ob, Symbol* sym, int narg) {
+int special_pnt_call(Object* ob, Symbol* sym, int narg) {
 	char* name = sym->name;
 	if (strcmp(name, "loc") == 0) {
 		int type = ob->ctemplate->symtable->last->subtype;
@@ -109,16 +108,16 @@ bool special_pnt_call(Object* ob, Symbol* sym, int narg) {
 		Node* node = node_exact(sec, x);	
 		nrn_loc_point_process(ptype, ob2pntproc(ob), sec, node);
 		hoc_pushx(x);
-		return true;
+		return 1;
 	}else if (strcmp(name, "has_loc") == 0) {
 		Point_process* p = ob2pntproc(ob);
 		hoc_pushx(double(p != nil && p->sec != nil));
-		return true;
+		return 1;
 	}else if (strcmp(name, "get_loc") == 0) {
 		hoc_pushx(get_loc_point_process(ob2pntproc(ob)));
-		return true;
+		return 1;
 	}else{
-		return false;
+		return 0;
 	}
 }	
 

@@ -1144,6 +1144,7 @@ static void* waste(void* v) {
 	}
 	/* hoping it is  not optimized away */
 	waste_ = j;
+	return (void*)0;
 }
 
 #define _nt_ 32

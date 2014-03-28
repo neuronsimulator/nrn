@@ -94,9 +94,8 @@ static int	int_range_stop[NBRA];
 static int advance(char* lp, char* ep);
 static int hoc_cclass(char* set, char c, int af);
 
-void hoc_regexp_compile(cp)
-	char *cp;
-{
+void hoc_regexp_compile(const char* pat) {
+	char *cp = (char*)pat;
 	register int c;
 	register char *ep;
 	char *lastep;
@@ -300,9 +299,8 @@ void hoc_regexp_compile(cp)
 }
 
 int
-hoc_regexp_search(target) /*return true if target matches pattern*/
-	char *target;
-{
+hoc_regexp_search(const char* tar) { /*return true if target matches pattern*/
+	char *target = (char*)tar;
 	register char *p1, *p2, c;
 
 #if 1

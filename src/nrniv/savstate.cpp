@@ -904,7 +904,7 @@ void SaveState::restorenet() {
 	i = 0;
 	if (net_cvode_instance_psl()) ITERATE(q, net_cvode_instance_psl()) {
 		ps = (PreSyn*)VOIDITM(q);
-		ps->hi_index_ == i;
+		ps->hi_index_ = i;
 		ps->flag_ = pss_[i].flag;
 		ps->valthresh_ = pss_[i].valthresh;
 		ps->valold_ = pss_[i].valold;

@@ -97,14 +97,42 @@ extern int hoc_xopen_run(Symbol*, const char*);
 extern void hoc_symbol_limits(Symbol*, float, float);
 extern void sym_extra_alloc(Symbol*);
 extern int hoc_chdir(const char* path);
-extern int vector_arg_px(int, double**);
 extern void hoc_register_var(DoubScal*, DoubVec*, VoidFunc*);
 extern int nrn_isdouble(void*, double, double);
 extern int hoc_main1(int, const char**, const char**);
 extern void hoc_final_exit();
 extern void hoc_sprint1(char**, int);
 extern double hoc_scan(FILE*);
+extern char* hoc_symbol_units(Symbol* sym, const char* units);
+extern void hoc_fake_call(Symbol*);
+extern void hoc_last_init(void);
+extern void hoc_obj_notify(Object*);
+extern int ivoc_list_count(Object*);
 
+#if defined(__cplusplus)
+class IvocVect;
+#else
+#define IvocVect void
+#endif
+extern int vector_arg_px(int, double**);
+extern IvocVect* vector_new(int, Object*); /*use this if possible*/
+extern IvocVect* vector_new0();
+extern IvocVect* vector_new1(int);
+extern IvocVect* vector_new2(IvocVect*);
+extern void vector_delete(IvocVect*);
+extern int vector_buffer_size(IvocVect*);
+extern int vector_capacity(IvocVect*);
+extern void vector_resize(IvocVect*, int);
+extern Object** vector_temp_objvar(IvocVect*);
+extern double* vector_vec(IvocVect*);
+extern Object** vector_pobj(IvocVect*);
+extern IvocVect* vector_arg(int);
+extern int is_vector_arg(int);
+extern char* vector_get_label(IvocVect*);
+extern void vector_set_label(IvocVect*, char*);
+
+extern void hoc_regexp_compile(const char*);
+extern int hoc_regexp_search(const char*);
 extern Symbol* hoc_install_var(const char*, double*);
 extern void hoc_class_registration(void);
 extern void hoc_spinit(void);

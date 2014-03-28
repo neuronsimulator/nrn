@@ -193,13 +193,13 @@ hocusr.h: $(nsrc)/nrnoc/neuron.h $(nsrc)/oc/hocinc $(HOC_E_DEP)
 endif
 ## Header files that need to be installed:
 pkginclude_HEADERS = neuron.h md1redef.h md2redef.h section.h nrnoc_ml.h \
-	cabvars.h membdef.h membfunc.h nrniv_mf.h nrn_ansi.h \
+	cabvars.h membdef.h membfunc.h nrniv_mf.h nrn_ansi.h nrncvode.h \
 	options.h nrnredef.h multisplit.h multicore.h nmodlmutex.h
 
 ## Header files that need to be included in the distribution but not installed:
 noinst_HEADERS = hocusr.h \
 	osxdlfcn.h osxdlfcn.c multicore.c \
-	nonvintblock.h
+	nonvintblock.h nrndae_c.h
 
 ## We have to play a trick on automake to get it to install the .o files in
 ## an architecture-dependent subdirectory.  (Apparently automake's authors

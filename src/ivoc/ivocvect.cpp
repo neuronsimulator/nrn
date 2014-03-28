@@ -341,12 +341,12 @@ Vect* vector_arg(int i) {
 	return (Vect*)(ob->u.this_pointer);
 }
 
-bool is_vector_arg(int i) {
+int is_vector_arg(int i) {
 	Object* ob = *hoc_objgetarg(i);
 	if (!ob || ob->ctemplate != svec_->u.ctemplate) {
-		return false;
+		return 0;
 	}
-	return true;
+	return 1;
 }
 
 int vector_arg_px(int i, double** px) {

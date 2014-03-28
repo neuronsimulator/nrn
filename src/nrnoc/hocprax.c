@@ -42,10 +42,8 @@ pval = pval_praxis(i, Vector)
 
 extern int stoprun;
 extern double praxis(), praxis_pval(), *praxis_paxis(), chkarg();
-extern double *hoc_pgetarg();
-extern Object* hoc_thisobject;
+extern int praxis_stop(int);
 
-extern int hoc_is_pdouble_arg(int);
 extern void vector_resize(void*, int);
 extern double* vector_vec(void*);
 extern void* vector_arg(int);
@@ -68,7 +66,7 @@ static Object* efun_py;
 static Object* efun_py_arg;
 static void* vec_py_save;
 
-int stop_praxis() {
+void stop_praxis(void) {
 	int i = 1;
 	if (ifarg(1)) {
 		i = (int)chkarg(1, 0., 1e5);
@@ -80,7 +78,7 @@ int stop_praxis() {
 /* want to get best result if user does a stoprun */
 static double minerr, *minarg; /* too bad this is not recursive */
 
-int fit_praxis() {
+void fit_praxis(void) {
 	extern Symbol* hoc_lookup();
 	extern char* gargstr();
 	char* after_quad;	
@@ -188,7 +186,7 @@ void hoc_after_prax_quad(s) char* s; {
 	hoc_obj_run(s, hoc_thisobject);
 }
 
-int attr_praxis() {
+void attr_praxis(void) {
     if (ifarg(2)) {
 	tolerance = *getarg(1);
 	maxstepsize = *getarg(2);
@@ -203,7 +201,7 @@ int attr_praxis() {
     }
 }
 
-int pval_praxis() {
+void pval_praxis(void) {
 	int i;
 	i = (int)chkarg(1, 0., (double)(nvar-1));
 	if (ifarg(2)) {
@@ -224,9 +222,7 @@ int pval_praxis() {
 	hoc_retpushx(praxis_pval(i));
 }
 
-static double efun(v, n)
-	int n;
-	double* v;
+static double efun(double* v, int n)
 {
 	int i;
 	double err;
