@@ -46,7 +46,7 @@ static char RCSid[] =
 /*								*/
 /****************************************************************/
 
-derivs(nbase, x, y, h, der)
+int derivs(nbase, x, y, h, der)
 int nbase;
 double x[], y[], h[], der[];
 {

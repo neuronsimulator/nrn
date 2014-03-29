@@ -4843,7 +4843,8 @@ doublereal *v, *w;
 } /* vmnorm_ */
 
 /* Subroutine */ int xerrwv_(msg, nmes, nerr, level, ni, i1, i2, nr, r1, r2)
-integer *msg, *nmes;
+const char *msg;
+integer *nmes;
 integer *nerr;
 integer *level, *ni, *i1, *i2, *nr;
 doublereal *r1, *r2;
@@ -5032,6 +5033,7 @@ L100:
 	return 0;
     }
     s_stop("", 0L);
+    return 0;
 /* ----------------------- end of subroutine xerrwv ----------------------
  */
 } /* xerrwv_ */

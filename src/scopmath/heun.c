@@ -60,7 +60,7 @@ static char RCSid[] =
 
 #include "errcodes.h"
 
-heun(_ninits, neqn, var, der, p, t, dt, func, work)
+int heun(_ninits, neqn, var, der, p, t, dt, func, work)
 int _ninits;
 double p[], *t, dt, **work; int var[]; int der[];
 #define der_(arg)  p[der[arg]]

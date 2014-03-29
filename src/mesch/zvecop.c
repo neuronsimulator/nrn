@@ -244,7 +244,7 @@ ZVEC	*zv_linlist(ZVEC *out,ZVEC *v1,complex a1,...)
    va_start(ap, a1);
    out = zv_mlt(a1,v1,out);
    
-   while (par = va_arg(ap,ZVEC *)) {   /* NULL ends the list*/
+   while ((par = va_arg(ap,ZVEC *))) {   /* NULL ends the list*/
       a_par = va_arg(ap,complex);
       if (a_par.re == 0.0 && a_par.im == 0.0) continue;
       if ( out == par )		
@@ -289,7 +289,7 @@ ZVEC  *zv_linlist(va_alist) va_dcl
    a_par = va_arg(ap,complex);
    out = zv_mlt(a_par,par,out);
    
-   while (par = va_arg(ap,ZVEC *)) {   /* NULL ends the list*/
+   while ((par = va_arg(ap,ZVEC *))) {   /* NULL ends the list*/
       a_par = va_arg(ap,complex);
       if (a_par.re == 0.0 && a_par.im == 0.0) continue;
       if ( out == par )		

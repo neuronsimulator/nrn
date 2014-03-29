@@ -865,7 +865,7 @@ int sp_get_vars(int m,int n,int deg,...)
    SPMAT **par;
    
    va_start(ap, deg);
-   while (par = va_arg(ap,SPMAT **)) {   /* NULL ends the list*/
+   while ((par = va_arg(ap,SPMAT **))) {   /* NULL ends the list*/
       *par = sp_get(m,n,deg);
       i++;
    } 
@@ -895,7 +895,7 @@ int sp_resize_vars(int m,int n,...)
    SPMAT **par;
    
    va_start(ap, n);
-   while (par = va_arg(ap,SPMAT **)) {   /* NULL ends the list*/
+   while ((par = va_arg(ap,SPMAT **))) {   /* NULL ends the list*/
       *par = sp_resize(*par,m,n);
       i++;
    } 
@@ -924,7 +924,7 @@ int sp_free_vars(SPMAT **va,...)
    sp_free(*va);
    *va = (SPMAT *) NULL;
    va_start(ap, va);
-   while (par = va_arg(ap,SPMAT **)) {   /* NULL ends the list*/
+   while ((par = va_arg(ap,SPMAT **))) {   /* NULL ends the list*/
       sp_free(*par); 
       *par = (SPMAT *)NULL;
       i++;
@@ -958,7 +958,7 @@ int sp_get_vars(va_alist) va_dcl
    m = va_arg(ap,int);
    n = va_arg(ap,int);
    deg = va_arg(ap,int);
-   while (par = va_arg(ap,SPMAT **)) {   /* NULL ends the list*/
+   while ((par = va_arg(ap,SPMAT **))) {   /* NULL ends the list*/
       *par = sp_get(m,n,deg);
       i++;
    } 
@@ -990,7 +990,7 @@ int sp_resize_vars(va_alist) va_dcl
    va_start(ap);
    m = va_arg(ap,int);
    n = va_arg(ap,int);
-   while (par = va_arg(ap,SPMAT **)) {   /* NULL ends the list*/
+   while ((par = va_arg(ap,SPMAT **))) {   /* NULL ends the list*/
       *par = sp_resize(*par,m,n);
       i++;
    } 
@@ -1019,7 +1019,7 @@ int sp_free_vars(va_alist) va_dcl
    SPMAT **par;
    
    va_start(ap);
-   while (par = va_arg(ap,SPMAT **)) {   /* NULL ends the list*/
+   while ((par = va_arg(ap,SPMAT **))) {   /* NULL ends the list*/
       sp_free(*par); 
       *par = (SPMAT *)NULL;
       i++;

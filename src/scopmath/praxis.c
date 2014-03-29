@@ -5,6 +5,8 @@
 #undef small
 
 extern int stoprun;
+extern void hoc_execerror(const char*, const char*);
+extern void hoc_after_prax_quad(char*);
 
 static int minfit_(), min_(), sort_(), quad_();
 static int vcprnt_(), print_(), maprnt_();
@@ -1709,8 +1711,8 @@ L3:
     goto L3;
 } /* maprnt_ */
 
-int nrn_praxis_ran_index;
 #include <../oc/mcran4.h>
+uint32_t nrn_praxis_ran_index;
 
 static doublereal random_(naught)
 integer *naught;

@@ -55,7 +55,7 @@ static char RCSid[] =
  *
  *--------------------------------------------------------------------------*/
 
-deflate(degree, pcoeff, root)
+int deflate(degree, pcoeff, root)
 double degree, pcoeff[], root[];
 {
     int n, ndeg, iter, i, status = CONTINUE;

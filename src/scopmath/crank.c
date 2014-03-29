@@ -61,8 +61,9 @@ static char RCSid[] =
 /*  Functions called: bounds(), tridiag(), makevector(),	*/
 /*								*/
 /*--------------------------------------------------------------*/
+#include "scoplib.h"
 
-crank(n, y, fval, gval, dt, dx, t, bound, pwork)
+int crank(n, y, fval, gval, dt, dx, t, bound, pwork)
 int n;
 double y[], fval[], gval[], dt, dx, t, *bound[], **pwork;
 {
@@ -141,7 +142,7 @@ double y[], fval[], gval[], dt, dx, t, *bound[], **pwork;
  *  Files accessed:
  *---------------------------------------------------------------------------*/
 
-bounds(n, a, b, c, d, y, fval, dt, dx, bound)
+int bounds(n, a, b, c, d, y, fval, dt, dx, bound)
 int n;
 double a[], b[], c[], d[], y[], fval[], dt, dx;
 double *bound[];
@@ -186,4 +187,5 @@ double *bound[];
 		break;
 	}
     }
+    return 0;
 }

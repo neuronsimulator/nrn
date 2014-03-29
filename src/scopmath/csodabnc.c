@@ -15,6 +15,7 @@ static char RCSid[] =
 
 #include <stdio.h>
 #include <stdlib.h>
+#include "scoplib.h"
 
 typedef long int integer;
 typedef double doublereal;
@@ -28,10 +29,10 @@ static double *g_t;
 static int (*modl_fun)();
 
 static int funct();
-static to_gear();
-static from_gear();
-static to_modl();
-static from_modl();
+static void to_gear();
+static void from_gear();
+static void to_modl();
+static void from_modl();
 
 int
 clsoda(_ninits, n, slist, dlist, p, pt, dt, fun, ptemp, maxerr) /* Changed from gear() MDF */
@@ -122,10 +123,11 @@ funct(neq, t, y, ydot)
 	to_modl(t, y);
 	modl_fun();
 	from_modl(ydot);
+	return 0;
 }
 
 static
-to_gear(y)
+void to_gear(y)
 	double *y;
 {
 	int i;
@@ -136,7 +138,7 @@ to_gear(y)
 }
 
 static
-from_gear(y)
+void from_gear(y)
 	double *y;
 {
 	int i;
@@ -147,7 +149,7 @@ from_gear(y)
 }
 
 static
-to_modl(t, y)
+void to_modl(t, y)
 	double *t, *y;
 {
 	int i;
@@ -159,7 +161,7 @@ to_modl(t, y)
 }
 
 static
-from_modl(ydot)
+void from_modl(ydot)
 	double *ydot;
 {
 	int i;
@@ -169,19 +171,23 @@ from_modl(ydot)
 	}
 }
 
-s_wsfe() {
+int s_wsfe() {
 	printf("called s_wsfe\n");
 	abort_run(1);
+	return 0;
 }
-s_stop() {
+int s_stop() {
 	printf("called s_stop\n");
 	abort_run(1);
+	return 0;
 }
-do_fio() {
+int do_fio() {
 	printf("called do_fio\n");
 	abort_run(1);
+	return 0;
 }
-e_wsfe() {
+int e_wsfe() {
 	printf("called e_wsfe\n");
 	abort_run(1);
+	return 0;
 }

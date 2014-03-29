@@ -86,7 +86,7 @@ int nrn_newton_thread(NewtonSpace* ns, int n, int* index, double* x,
 		value[i] = - value[i];	/* Required correction to
 				 		 * function values */
 
-	    if (error = nrn_crout_thread(ns, n, jacobian, perm))
+	    if ((error = nrn_crout_thread(ns, n, jacobian, perm)) != SUCCESS)
 		break;
 	}
 	nrn_scopmath_solve_thread(n, jacobian, value, perm, delta_x, (int *)0);

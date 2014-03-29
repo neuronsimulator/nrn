@@ -68,6 +68,8 @@ extern int DEFLT;
  *
  **************************************************************************/
 
+static int init_force();
+
 double 
 force(t, filename)
 double t;
@@ -206,6 +208,7 @@ int *reset_integ;
     else
 	/* Above upper limit; Print message and return to main menu */
 	    abort_run(RANGE);
+    return 0;
 }
 
 /*---------------------------------------------------------------------------
@@ -225,7 +228,7 @@ int *reset_integ;
  * Files accessed: filename (input)
  *-------------------------------------------------------------------------*/
 
-init_force(filename)
+static int init_force(filename)
 char *filename;
 {
     FILE *fopen(), *pfile;
@@ -299,14 +302,15 @@ char *filename;
 	/* Calculate spacings of base points and second derivatives */
 
 	    fclose(pfile);
-	if (error = derivs(lastspline->npts, lastspline->x, lastspline->y,
-			   lastspline->width, lastspline->der))
+	if ((error = derivs(lastspline->npts, lastspline->x, lastspline->y,
+			   lastspline->width, lastspline->der)) != SUCCESS)
 	{
 	    abort_run(error);
 	}
     }
     else	/* Forcing function file not found */
 	abort_run(NOFORCE);
+    return 0;
 }
 
 /*---------------------------------------------------------------------------

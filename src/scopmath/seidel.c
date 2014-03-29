@@ -62,7 +62,7 @@ static char RCSid[] =
 #include "errcodes.h"
 #define w 1.5
 
-seidel(n, coef, soln, index)
+int seidel(n, coef, soln, index)
 int n,*index;
 double *coef[], soln[];
 {
