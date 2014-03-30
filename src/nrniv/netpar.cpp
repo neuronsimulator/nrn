@@ -419,7 +419,7 @@ static int nrn_need_npe() {
 	}else{
 		if (npe_) {
 			delete [] npe_;
-			npe_ = nil;
+			npe_ = NULL;
 			n_npe_ = 0;
 		}
 	}
@@ -924,11 +924,11 @@ void BBS::set_gid2node(int gid, int nid) {
 			hoc_execerror(m, 0);                            
 		}
 #if ALTHASH
-		gid2out_->insert(gid, nil);
+		gid2out_->insert(gid, NULL);
 #else
-		(*gid2out_)[gid] = nil;
+		(*gid2out_)[gid] = NULL;
 #endif
-//		gid2out_->insert(pair<const int, PreSyn*>(gid, nil));
+//		gid2out_->insert(pair<const int, PreSyn*>(gid, NULL));
 	}
 }
 
@@ -1138,7 +1138,7 @@ Object** BBS::gid_connect(int gid) {
 //printf("%d connect %s from already existing %d\n", nrnmpi_myid, hoc_object_name(target), gid);
 	}else{
 //printf("%d connect %s from new PreSyn for %d\n", nrnmpi_myid, hoc_object_name(target), gid);
-		ps = new PreSyn(nil, nil, nil);
+		ps = new PreSyn(NULL, NULL, NULL);
 		net_cvode_instance->psl_append(ps);
 #if ALTHASH
 		gid2in_->insert(gid, ps);
@@ -1309,14 +1309,14 @@ IvocVect* BBS::netpar_max_histogram(IvocVect* mh) {
 #if NRNMPI && NRNSTAT
 	IvocVect* h = max_histogram_;
 	if (max_histogram_) {
-		max_histogram_ = nil;
+		max_histogram_ = NULL;
 	}
 	if (mh) {
 		max_histogram_ = mh;
 	}
 	return h;
 #else
-	return nil;
+	return NULL;
 #endif
 }
 

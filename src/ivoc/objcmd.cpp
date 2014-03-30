@@ -35,21 +35,21 @@ HocCommand::HocCommand(Object* pobj) {
 	}
 	po_ = pobj;
 	hoc_obj_ref(po_);
-	s_ = nil;
-	obj_ = nil;
+	s_ = NULL;
+	obj_ = NULL;
 }
 
 void HocCommand::init(const char* cmd, Object* obj) {
 	s_ = new CopyString(cmd);
 	obj_ = obj;
-	po_ = nil;
+	po_ = NULL;
 	if (obj_) {
 		nrn_notify_when_void_freed((void*)obj_, this);
 	}
 }
 
 void HocCommand::update(Observable*) { // obj_ has been freed
-	obj_ = nil;
+	obj_ = NULL;
 	delete s_;
 	s_ = new CopyString("");
 }
@@ -83,7 +83,7 @@ void HocCommand::help() {
 
 const char* ccc = "PythonObject";
 const char* HocCommand::name() {
-	if (po_ == nil) {
+	if (po_ == NULL) {
 		return s_->string();
 	}else{
 		return ccc;
@@ -136,7 +136,7 @@ int HocCommand::exec_strret(char* buf, int size, bool notify) {
 	return err;
 }
 int HocCommand::execute(const char* s, bool notify) {
-	assert(po_ == nil);
+	assert(po_ == NULL);
 	char buf[256];
 	sprintf(buf, "{%s}\n", s);
 	int err = hoc_obj_run(buf, obj_);
@@ -150,8 +150,8 @@ int HocCommand::execute(const char* s, bool notify) {
 }
 
 double HocCommand::func_call(int narg) {
-	assert(po_ == nil);
-	Symbol* s = nil;
+	assert(po_ == NULL);
+	Symbol* s = NULL;
 	if (obj_ && obj_->ctemplate) {
 		s = hoc_table_lookup(name(), obj_->ctemplate->symtable);
 	}

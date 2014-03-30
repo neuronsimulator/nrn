@@ -155,7 +155,7 @@ void KSChan::destroy_pnt(Point_process* pp) {
 //printf("deleteing KSSingleNodeData\n");
 		KSSingleNodeData* snd = (KSSingleNodeData*) pp->prop->dparam[2]._pvoid;
 		delete snd;
-		pp->prop->dparam[2]._pvoid = nil;
+		pp->prop->dparam[2]._pvoid = NULL;
 	}
 	destroy_point_process(pp);
 }
@@ -360,7 +360,7 @@ static Object** ks_add_ksstate(void* v) {
 
 static Object** ks_add_transition(void* v) {
 	KSChan* ks = (KSChan*)v;
-	const char* lig = nil;
+	const char* lig = NULL;
 	if (ifarg(3)) {
 		lig = gargstr(3);
 	}
@@ -529,7 +529,7 @@ static double kst_type(void* v) {
 	KSTransition* kst = (KSTransition*)v;
 	if (ifarg(1)) {
 		int type = (int)chkarg(1, 0, 3);
-		char* s = nil;
+		char* s = NULL;
 		if (type >= 2) {
 			s = gargstr(2);
 		}
@@ -608,7 +608,7 @@ static Object** kst_parm(void* v) {
 	}else{
 		f = kst->f1;
 	}
-	Vect* vec = nil;
+	Vect* vec = NULL;
 	if (f) {
 		vec = f->gp_;
 		if (f->type() == 7) {
@@ -809,28 +809,28 @@ static void ks_destruct(void*) {
 // computationally efficient lists
 static void* kss_cons(Object* o) {
 	hoc_execerror("Cannot create a KSState except through KSChan", 0);
-	return nil;
+	return NULL;
 }
 static void kss_destruct(void*) {
 }
 static void* ksg_cons(Object* o) {
 	hoc_execerror("Cannot create a KSGate except through KSChan", 0);
-	return nil;
+	return NULL;
 }
 static void ksg_destruct(void*) {
 }
 static void* kst_cons(Object* o) {
 	hoc_execerror("Cannot create a KSTransition except through KSChan", 0);
-	return nil;
+	return NULL;
 }
 static void kst_destruct(void*) {
 }
 
 void KSChan_reg() {
-	class2oc("KSChan", ks_cons, ks_destruct, ks_dmem, nil, ks_omem, ks_smem);
-	class2oc("KSGate", ksg_cons, ksg_destruct, ksg_dmem, nil, ksg_omem, ksg_smem);
-	class2oc("KSState", kss_cons, kss_destruct, kss_dmem, nil, kss_omem, kss_smem);
-	class2oc("KSTrans", kst_cons, kst_destruct, kst_dmem, nil, kst_omem, kst_smem);
+	class2oc("KSChan", ks_cons, ks_destruct, ks_dmem, NULL, ks_omem, ks_smem);
+	class2oc("KSGate", ksg_cons, ksg_destruct, ksg_dmem, NULL, ksg_omem, ksg_smem);
+	class2oc("KSState", kss_cons, kss_destruct, kss_dmem, NULL, kss_omem, kss_smem);
+	class2oc("KSTrans", kst_cons, kst_destruct, kst_dmem, NULL, kst_omem, kst_smem);
 	ksstate_sym = hoc_lookup("KSState");
 	ksgate_sym = hoc_lookup("KSGate");
 	kstrans_sym = hoc_lookup("KSTrans");
@@ -864,7 +864,7 @@ void KSChan::add_channel(const char** m) {
 		channels = new KSChanList(50);
 	}
 	while(channels->count() < mechtype_) {
-		channels->append(nil);
+		channels->append(NULL);
 	}
 	channels->append(c);
 }
@@ -877,27 +877,27 @@ KSChan::KSChan(Object* obj, bool is_p) {
 	usetable(false, 0, 1., 0.);;
 	is_point_ = is_p;
 	is_single_ = false;
-	single_ = nil;
+	single_ = NULL;
 	ppoff_ = (is_point() ? (is_single() ? 3 : 2) : 0) ; // area, pnt, single
 	gmaxoffset_ = (is_single() ? 1 : 0); // and Nsingle is the first
 	obj_ = obj;
 	hoc_obj_ref(obj_);
-	gc_ = nil; state_ = nil; trans_ = nil; iv_relation_ = nil;
+	gc_ = NULL; state_ = NULL; trans_ = NULL; iv_relation_ = NULL;
 	state_size_ = gate_size_ = trans_size_ = 0;
 	ngate_ = nligand_ = nstate_ = nksstate_ = 0;
 	ntrans_ = iligtrans_ = ivkstrans_ = 0;
 	cond_model_ = 0;
-	ion_sym_ = nil;
-	ligands_ = nil;
-	mechsym_ = nil;
-	rlsym_ = nil;
+	ion_sym_ = NULL;
+	ligands_ = NULL;
+	mechsym_ = NULL;
+	rlsym_ = NULL;
 	char buf[50];
 	sprintf(buf, "Chan%d", obj_->index);
 	name_ = buf;
 	ion_ = "NonSpecific";
-	mat_ = nil;
-	elms_ = nil;	
-	diag_ = nil;
+	mat_ = NULL;
+	elms_ = NULL;	
+	diag_ = NULL;
 	gmax_deflt_ = 0.;
 	erev_deflt_ = 0.;
 	soffset_ = 4; // gmax, e, g, i before the first state in p array
@@ -1032,10 +1032,10 @@ void KSChan::set_single(bool b, bool update) {
 hoc_warning("KSChan single channel mode implemented only for single ks gating complex to first power", 0);
 	}
 	if (is_single()) {
-		memb_func[mechtype_].singchan_ = nil;
+		memb_func[mechtype_].singchan_ = NULL;
 		delete_schan_node_data();
 		delete single_;
-		single_ = nil;
+		single_ = NULL;
 	}
 	is_single_ = b;
 	if (update) {
@@ -1088,13 +1088,13 @@ void KSChan::update_prop() {
 	// prop.dparam for density is [4ion], [4ligands]
 	// prop.dparam for point is area, pnt, [singledata], [4ion], [4ligands]
 	int i;
-	Symbol* searchsym = (is_point() ? mechsym_ : nil);
+	Symbol* searchsym = (is_point() ? mechsym_ : NULL);
 	
 	// some old sym pointers
 	Symbol* gmaxsym = rlsym_->u.ppsym[gmaxoffset_];
 	Symbol* gsym = rlsym_->u.ppsym[soffset_ - 2];
 	Symbol* isym = rlsym_->u.ppsym[soffset_ - 1];
-	Symbol* esym = ion_sym_ ? nil : rlsym_->u.ppsym[gmaxoffset_ + 1];
+	Symbol* esym = ion_sym_ ? NULL : rlsym_->u.ppsym[gmaxoffset_ + 1];
 	int old_gmaxoffset = gmaxoffset_;
 	int old_soffset = soffset_;
 	int old_svarn = rlsym_->s_varn;
@@ -1116,7 +1116,7 @@ void KSChan::update_prop() {
 		dsize_ += 2; // area, Point_process* exists
 		ppoff_ += 2;
 	}
-	if (ion_sym_ == nil ) {
+	if (ion_sym_ == NULL ) {
 		psize_ += 1; // e exists
 		soffset_ += 1;
 	}else{
@@ -1168,7 +1168,7 @@ void KSChan::setion(const char* s) {
 //printf("KSChan::setion\n");
 	int i;
 	if (strcmp(ion_.string(), s) == 0) { return; }
-	Symbol* searchsym = (is_point() ? mechsym_ : nil);
+	Symbol* searchsym = (is_point() ? mechsym_ : NULL);
 	if (strlen(s) == 0) {
 		ion_ = "NonSpecific";
 	}else{
@@ -1185,7 +1185,7 @@ printf("switch from useion to non-specific\n");
 			for (i=0; i <= io; ++i) {
 				ppsym[i] = rlsym_->u.ppsym[i];
 			}
-			ion_sym_ = nil;
+			ion_sym_ = NULL;
 			if (is_point()) {
 				sprintf(buf, "e");
 			}else{
@@ -1229,7 +1229,7 @@ memb_func[sym->subtype].alloc != memb_func[looksym("na_ion")->subtype].alloc) {
 			}
 			// if same do nothing
 		}else{ // switch from non-specific to useion
-			Symbol* searchsym = (is_point() ? mechsym_ : nil);
+			Symbol* searchsym = (is_point() ? mechsym_ : NULL);
 			ion_sym_ = sym;
 			rlsym_->s_varn -= 1;
 			Symbol** ppsym = newppsym(rlsym_->s_varn);
@@ -1264,16 +1264,16 @@ void KSChan::free1() {
 	for (i=0; i < nstate_; ++i) { unref(state_[i].obj_); }
 	for (i=0; i < ngate_; ++i) { unref(gc_[i].obj_); }
 	for (i=0; i < ntrans_; ++i) { unref(trans_[i].obj_); }
-	if (gc_) {delete [] gc_; gc_ = nil;}
-	if (state_) { delete [] state_; state_ = nil;}
-	if (trans_) { delete [] trans_; trans_ = nil;}
-	if (iv_relation_) { delete iv_relation_; iv_relation_ = nil; }
-	if (ligands_) { delete [] ligands_; ligands_ = nil; }
+	if (gc_) {delete [] gc_; gc_ = NULL;}
+	if (state_) { delete [] state_; state_ = NULL;}
+	if (trans_) { delete [] trans_; trans_ = NULL;}
+	if (iv_relation_) { delete iv_relation_; iv_relation_ = NULL; }
+	if (ligands_) { delete [] ligands_; ligands_ = NULL; }
 	if (mat_) {
 		spDestroy(mat_);
 		delete [] elms_;
 		delete [] diag_;
-		mat_ = nil;
+		mat_ = NULL;
 	}
 	ngate_ = 0;
 	nstate_ = 0;
@@ -1373,7 +1373,7 @@ void KSChan::settype(KSTransition* t, int type, const char* lig) {
 				}
 			}
 			if (remove) { // unneeded
-				Symbol** ligands = nil;
+				Symbol** ligands = NULL;
 				--nligand_;
 				if (nligand_ > 0) {
 					ligands = new Symbol*[nligand_];
@@ -1394,7 +1394,7 @@ void KSChan::settype(KSTransition* t, int type, const char* lig) {
 			// the transition may have to be moved forward
 			assert(t->index_ >= iligtrans_);
 			KSTransition tt = *t;
-			t->obj_ = nil;
+			t->obj_ = NULL;
 			trans_remove(t->index_);
 			trans_insert(iligtrans_, tt.src_, tt.target_);
 			t = trans_ + iligtrans_ - 1;
@@ -1404,8 +1404,8 @@ void KSChan::settype(KSTransition* t, int type, const char* lig) {
 			if (t->obj_) { t->obj_->u.this_pointer = t; }
 			t->f0 = tt.f0;
 			t->f1 = tt.f1;
-			tt.f0 = nil;
-			tt.f1 = nil;
+			tt.f0 = NULL;
+			tt.f1 = NULL;
 			check_struct();
 			state_consist();
 			ion_consist();
@@ -1486,9 +1486,9 @@ state_[trans_[i].src_].string(), state_[trans_[i].target_].string());
 #endif
 		assert(t->index_ < iligtrans_);
 		KSTransition tt = *t;
-		t->obj_ = nil;
-		t->f0 = nil;
-		t->f1 = nil;
+		t->obj_ = NULL;
+		t->f0 = NULL;
+		t->f1 = NULL;
 		trans_remove(t->index_);
 		trans_insert(ntrans_, tt.src_, tt.target_);
 		t = trans_ + ntrans_ - 1;
@@ -1497,8 +1497,8 @@ state_[trans_[i].src_].string(), state_[trans_[i].target_].string());
 		t->type_ = tt.type_;
 		t->f0 = tt.f0;
 		t->f1 = tt.f1;
-		tt.f0 = nil;
-		tt.f1 = nil;
+		tt.f0 = NULL;
+		tt.f1 = NULL;
 		if (t->obj_) { t->obj_->u.this_pointer = t; }
 		if (iligtrans_ == ntrans_) {
 			--iligtrans_;
@@ -1639,7 +1639,7 @@ void KSChan::remove_state(int is) {
 
 KSTransition* KSChan::add_transition(int src, int target, const char* ligand) {
 	usetable(false);
-	assert(ligand == nil);
+	assert(ligand == NULL);
 	int it = (ligand ? ntrans_ : iligtrans_);
 	trans_insert(it, src, target);
 	trans_[it].ligand_index_ = -1;
@@ -1758,7 +1758,7 @@ void KSChan::state_remove(int i) {
 		--nksstate_;
 	}
 	--nstate_;
-	state_[nstate_].obj_ = nil;
+	state_[nstate_].obj_ = NULL;
 	for (j = 0; j < nstate_; ++j) {
 		state_[j].index_ = j;
 		if (state_[j].obj_) { state_[j].obj_->u.this_pointer = state_ + j; }
@@ -1803,7 +1803,7 @@ void KSChan::gate_remove(int i) {
 		if (gc_[j-1].obj_) { gc_[j-1].obj_->u.this_pointer = gc_ + j - 1; }
 	}
 	--ngate_;
-	gc_[ngate_].obj_ = nil;
+	gc_[ngate_].obj_ = NULL;
 	for (j = 0; j < ngate_; ++j) {
 		gc_[j].index_ = j;
 		if (gc_[j].obj_) { gc_[j].obj_->u.this_pointer = gc_ + j; }
@@ -1818,8 +1818,8 @@ KSTransition* KSChan::trans_insert(int i, int src, int target) {
 		KSTransition* trans = new KSTransition[trans_size_];
 		for (j = 0; j < ntrans_; ++j) {
 			trans[j] = trans_[j];
-			trans_[j].f0 = nil;
-			trans_[j].f1 = nil;
+			trans_[j].f0 = NULL;
+			trans_[j].f1 = NULL;
 		}
 		delete [] trans_;
 		trans_ = trans;			
@@ -1829,8 +1829,8 @@ KSTransition* KSChan::trans_insert(int i, int src, int target) {
 	}
 	trans_[i].src_ = src;
 	trans_[i].target_ = target;
-	trans_[i].f0 = nil;
-	trans_[i].f1 = nil;
+	trans_[i].f0 = NULL;
+	trans_[i].f1 = NULL;
 	ivkstrans_ = nhhstate_;
 	if (i <= iligtrans_) {
 		++iligtrans_;
@@ -1863,7 +1863,7 @@ void KSChan::trans_remove(int i) {
 		trans_[j].index_ = j;
 		if (trans_[j].obj_) { trans_[j].obj_->u.this_pointer = trans_ + j; }
 	}
-	trans_[ntrans_].obj_ = nil;
+	trans_[ntrans_].obj_ = NULL;
 }
 
 void KSChan::setstructure(Vect* vec) {
@@ -1945,7 +1945,7 @@ for (i=0; i < vec->capacity(); ++i) {
 	}
 	if (nligand_) {
 		ligands_ = new Symbol*[nligand_];
-		for (i=0; i < nligand_; ++i) { ligands_[i] = nil; }
+		for (i=0; i < nligand_; ++i) { ligands_[i] = NULL; }
 	}
 	check_struct();
 	if (mechsym_) {
@@ -1957,7 +1957,7 @@ for (i=0; i < vec->capacity(); ++i) {
 }
 
 void KSChan::sname_install() {
-	Symbol* searchsym = is_point() ? mechsym_ : nil;
+	Symbol* searchsym = is_point() ? mechsym_ : NULL;
 	char unsuffix[100];
 	if (is_point()) {
 		unsuffix[0] = '\0';
@@ -2013,7 +2013,7 @@ void KSChan::sname_install() {
 	}
 }
 
-// check at the top and built-in level, or, if top!= nil check the template
+// check at the top and built-in level, or, if top!= NULL check the template
 Symbol* KSChan::looksym(const char* name, Symbol* top) {
 	if (top) {
 if (top->type != TEMPLATE) { printf("%s type=%d\n", top->name, top->type); abort();}
@@ -2069,7 +2069,7 @@ void KSChan::setupmat() {
 		spDestroy(mat_);
 		delete [] elms_;
 		delete [] diag_;
-		mat_ = nil;
+		mat_ = NULL;
 	}
 	if (!nksstate_) { return; }
 	mat_ = spCreate(nksstate_, 0, &err);
@@ -2179,7 +2179,7 @@ void KSChan::alloc(Prop* prop) {
 	if (ppsize > 0) {
 		prop->dparam = nrn_prop_datum_alloc(prop->type, ppsize, prop);
 		if (is_point()) {
-			prop->dparam[2]._pvoid = nil;
+			prop->dparam[2]._pvoid = NULL;
 		}
 	}else{
 		prop->dparam = 0;
@@ -2209,7 +2209,7 @@ void KSChan::alloc(Prop* prop) {
 		pp[poff+2*j].pval = pion->param + 2; // nao
 		pp[poff+2*j+1].pval = pion->param + 1; // nai
 	}
-	if (single_ && prop->dparam[2]._pvoid == nil) {
+	if (single_ && prop->dparam[2]._pvoid == NULL) {
 		single_->alloc(prop, soffset_);
 	}
 }
@@ -2351,7 +2351,7 @@ void KSChan::delete_schan_node_data() {
 		if (pnt && pnt->prop && pnt->prop->dparam[2]._pvoid) {
 			KSSingleNodeData* snd = (KSSingleNodeData*)pnt->prop->dparam[2]._pvoid;
 			delete snd;
-			pnt->prop->dparam[2]._pvoid = nil;
+			pnt->prop->dparam[2]._pvoid = NULL;
 		}
 	}
 }
@@ -2671,12 +2671,12 @@ double KSChan::conductance(double gmax, double* s) {
 }
 
 KSTransition::KSTransition(){
-	obj_ = nil;
-	f0 = nil;
-	f1 = nil;
+	obj_ = NULL;
+	f0 = NULL;
+	f1 = NULL;
 	size1_ = 0;
-	inftab_ = nil;
-	tautab_ = nil;
+	inftab_ = NULL;
+	tautab_ = NULL;
 	stoichiom_ = 1;
 //	f0 = new KSChanFunction();
 //	f1 = new KSChanFunction();
@@ -2807,7 +2807,7 @@ double KSTransition::beta() {
 
 KSGateComplex::KSGateComplex() {
 	power_ = 0;
-	obj_ = nil;
+	obj_ = NULL;
 }
 
 KSGateComplex::~KSGateComplex() {}
@@ -2832,7 +2832,7 @@ double KSGateComplex::conductance(double* s, KSState* st) {
 }
 
 KSState::KSState() {
-	obj_ = nil;
+	obj_ = NULL;
 	f_ = 0.;
 }
 
@@ -2919,7 +2919,7 @@ void KSChan::cv_sc_update(int n, Node** nd, double** pp, Datum** ppd, NrnThread*
 }
 
 KSChanFunction::KSChanFunction() {
-	gp_ = nil;
+	gp_ = NULL;
 }
 
 KSChanFunction::~KSChanFunction() {
@@ -2992,14 +2992,14 @@ void KSTransition::hh_table_make(double dt, int size, double vmin, double vmax) 
 			delete [] inftab_;
 			delete [] tautab_;
 			size1_ = 0;
-			inftab_ = nil;
-			tautab_ = nil;
+			inftab_ = NULL;
+			tautab_ = NULL;
 		}
 		if (size < 1) {
 			return;
 		}
 	}
-	if (inftab_ == nil) {
+	if (inftab_ == NULL) {
 		inftab_ = new double[size];
 		tautab_ = new double[size];
 	}

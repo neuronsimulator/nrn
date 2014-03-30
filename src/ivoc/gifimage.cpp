@@ -163,8 +163,8 @@ static int LoadGIF(const char* fname, PICINFO* pinfo)
   RawGIF = GRaster = pic8 = 0;
   gif89 = 0;
 
-  pinfo->raster     = nil;
-  pinfo->comment = nil;
+  pinfo->raster     = NULL;
+  pinfo->comment = NULL;
 
   bname = fname;
   fp = fopen(fname,"rb");

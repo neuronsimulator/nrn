@@ -203,7 +203,7 @@ void nrnpython_real() {
 	PyGILState_Release(gilsav);
 	HocContextRestore
 #endif
-	ret(double(retval));
+	hoc_retpushx(double(retval));
 }
 
 #if ((PY_MAJOR_VERSION >= 3) || (PY_MAJOR_VERSION == 2 && PY_MINOR_VERSION > 2))

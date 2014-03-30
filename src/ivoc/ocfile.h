@@ -22,8 +22,8 @@ public:
 	bool mktemp();
 	bool unlink();
 	void file_chooser_style(const char* type, const char* path,
-		const char* banner=nil, const char* filter=nil,
-		const char* accept=nil, const char* cancel=nil);
+		const char* banner=NULL, const char* filter=NULL,
+		const char* accept=NULL, const char* cancel=NULL);
 	bool file_chooser_popup();
 #ifdef WIN32
 	void binary_mode();// sets open file to binary mode once only

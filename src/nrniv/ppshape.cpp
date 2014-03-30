@@ -37,8 +37,8 @@ IFGUI
 	p->hoc_obj_ptr(ho);
 	return (void*)p;
 ENDGUI
-	return 0;
 #endif
+	return 0;
 }
 
 static void pp_destruct(void* v) {
@@ -62,7 +62,7 @@ public:
 };
 
 
-PPShape::PPShape(OcList* ocl) : ShapeScene(nil) {
+PPShape::PPShape(OcList* ocl) : ShapeScene(NULL) {
 	si_ = new PPShapeImpl;
 	si_->ocl_ = ocl;
 	Resource::ref(si_->ocl_);

@@ -72,12 +72,12 @@ private:
 };
 
 static const Color* sec_sel_color() {
-	static const Color* lt = nil;
+	static const Color* lt = NULL;
 	if (!lt) {
 		String c;
 		Display* dis = Session::instance()->default_display();
 		if (!dis->style()->find_attribute("section_select_color", c)
-		   || ( lt = Color::lookup(dis, c)) == nil) {
+		   || ( lt = Color::lookup(dis, c)) == NULL) {
 	       		lt = Color::lookup(dis, "#ff0000");
 		}
 		lt->ref();
@@ -86,12 +86,12 @@ static const Color* sec_sel_color() {
 }
 
 static const Color* sec_adjacent_color() {
-	static const Color* lt = nil;
+	static const Color* lt = NULL;
 	if (!lt) {
 		String c;
 		Display* dis = Session::instance()->default_display();
 		if (!dis->style()->find_attribute("section_adjacent_color", c)
-		   || ( lt = Color::lookup(dis, c)) == nil) {
+		   || ( lt = Color::lookup(dis, c)) == NULL) {
 	       		lt = Color::lookup(dis, "#00ff00");
 		}
 		lt->ref();
@@ -125,7 +125,7 @@ private:
 class OcShapeHandler;
 /* static */ class OcShape : public ShapeScene {
 public:
-	OcShape(SectionList* = nil);
+	OcShape(SectionList* = NULL);
 	virtual ~OcShape();
 	virtual void select_section(Section*);
 	virtual void handle_picked();
@@ -137,8 +137,8 @@ public:
 	virtual void save_phase1(ostream&);
 	virtual PointMark* point_mark(Object*, const Color*, const char style = 'O',const float size = 8.);
 	virtual PointMark* point_mark(Section*, float x, const Color*);
-	virtual void point_mark_remove(Object* pp = nil);
-	virtual void transform3d(Rubberband* rb = nil);
+	virtual void point_mark_remove(Object* pp = NULL);
+	virtual void transform3d(Rubberband* rb = NULL);
 	virtual void erase_all();
 	virtual void sel_color(ShapeSection* sold, ShapeSection* snew);
 private:
@@ -265,7 +265,7 @@ double nrniv_sh_observe(void* v) {
 #if HAVE_IV
 IFGUI
 	ShapeScene* s = (ShapeScene*)v;
-	SectionList* sl = nil;
+	SectionList* sl = NULL;
 	if (ifarg(1)) {
 		Object* o = *hoc_objgetarg(1);
 		check_obj_type(o, "SectionList");
@@ -274,7 +274,7 @@ IFGUI
 		s->observe(sl);
 		sl->unref();
 	}else{
-		s->observe(nil);
+		s->observe(NULL);
 	}
 ENDGUI
 #endif
@@ -314,7 +314,7 @@ double nrniv_sh_color(void*v) {
 #if HAVE_IV
 IFGUI
 	ShapeScene* s = (ShapeScene*)v;
-	const Color* c = nil;
+	const Color* c = NULL;
 	c = colors->color(int(*getarg(1)));
 	s->color(chk_access(), c);
 ENDGUI
@@ -326,7 +326,7 @@ double nrniv_sh_color_all(void*v) {
 #if HAVE_IV
 IFGUI
 	ShapeScene* s = (ShapeScene*)v;
-	const Color* c = nil;
+	const Color* c = NULL;
 	c = colors->color(int(*getarg(1)));
 	s->color(c);
 ENDGUI
@@ -338,7 +338,7 @@ double nrniv_sh_color_list(void*v) {
 #if HAVE_IV
 IFGUI
 	ShapeScene* s = (ShapeScene*)v;
-	const Color* c = nil;
+	const Color* c = NULL;
 	c = colors->color(int(*getarg(2)));
 	s->color(new SectionList(*hoc_objgetarg(1)), c);
 ENDGUI
@@ -376,7 +376,7 @@ ENDGUI
 static double sh_point_mark_remove(void* v) {
 #if HAVE_IV
 IFGUI
-	Object* o = nil;
+	Object* o = NULL;
 	OcShape* s = (OcShape*)v;
 	if (ifarg(1)) {
 		o = *hoc_objgetarg(1);
@@ -483,11 +483,11 @@ static Member_func sh_members[] = {
 };
 static void* sh_cons(Object* ho) {
 #if HAVE_IV
-	OcShape* sh = nil;
+	OcShape* sh = NULL;
 IFGUI
 	int i=1;
 	int iarg=1;
-	SectionList* sl = nil;
+	SectionList* sl = NULL;
 	// first arg may be an object.
 	if (ifarg(iarg)) {
 		if (hoc_argtype(iarg) == OBJECTVAR) {
@@ -527,12 +527,12 @@ void Shape_reg() {
 #if HAVE_IV
 
 OcShape::OcShape(SectionList* sl):ShapeScene(sl){
-	select_ = nil;
-	point_mark_list_ = nil;
+	select_ = NULL;
+	point_mark_list_ = NULL;
 	osh_ = new OcShapeHandler(this);
 	osh_->ref();
 	section_handler(osh_);
-	sold_ = nil;
+	sold_ = NULL;
 	Display* dis = Session::instance()->default_display();
 	show_adjacent_selection_ = dis->style()->value_is_on("show_adjacent_selection");
 }
@@ -545,7 +545,7 @@ OcShape::~OcShape(){
 
 void OcShape::erase_all() {
 	Resource::unref(point_mark_list_);
-	point_mark_list_ = nil;
+	point_mark_list_ = NULL;
 	ShapeScene::erase_all();
 }
 
@@ -559,7 +559,7 @@ PointMark* OcShape::point_mark(Object* ob, const Color* c, const char style, con
 	if (!g->everything_ok()) {
 		point_mark_list_->remove(point_mark_list_->count()-1);
 		remove(glyph_index(g));
-		return nil;
+		return NULL;
 	}
 	return g;
 }
@@ -568,14 +568,14 @@ PointMark* OcShape::point_mark(Section* sec, float x, const Color* c) {
 	if (!point_mark_list_) {
 		point_mark_list_ = new PolyGlyph();
 	}
-	PointMark* g = new PointMark(this, nil, c);
+	PointMark* g = new PointMark(this, NULL, c);
 	g->set_loc(sec, x);
 	point_mark_list_->append(g);
 	append_fixed(new GraphItem(g, 0));
 	if (!g->everything_ok()) {
 		point_mark_list_->remove(point_mark_list_->count()-1);
 		remove(glyph_index(g));
-		return nil;
+		return NULL;
 	}
 	return g;
 }
@@ -772,8 +772,8 @@ void ShapeScene::observe(SectionList* sl) {
 		}
 	}
 	recalc_diam();
-	selected_ = nil;
-	volatile_ptr_ref = nil;
+	selected_ = NULL;
+	volatile_ptr_ref = NULL;
 	transform3d();
 	if (shape_changed_) {
 		force();
@@ -793,21 +793,21 @@ ShapeScene::ShapeScene(SectionList* sl) : Graph(0)
 	WidgetKit& wk = *WidgetKit::instance();
 	sg_ = new PolyGlyph();
 	sg_->ref();
-	shape_changed_ = nil; //observe not ready for it yet
-	r3b_ =  new Rotate3Band(nil,new RubberCallback(ShapeScene)(
+	shape_changed_ = NULL; //observe not ready for it yet
+	r3b_ =  new Rotate3Band(NULL,new RubberCallback(ShapeScene)(
 			this, &ShapeScene::transform3d));
 	r3b_->ref();
 	observe(sl);
-	var_name_ = nil;
+	var_name_ = NULL;
 	wk.style()->find_attribute("shape_beveljoin", beveljoin_);
 
 	MenuItem* mi;
 	Menu* m;
 
 	shape_type_ = ShapeScene::show_centroid;
-	section_handler_ = nil;
+	section_handler_ = NULL;
 	
-	selected_ = nil;
+	selected_ = NULL;
 	picker();
 	picker()->remove_item("Crosshair");
 	picker()->remove_item("Plot what?");
@@ -818,8 +818,8 @@ ShapeScene::ShapeScene(SectionList* sl) : Graph(0)
 	picker()->remove_item("Erase");
 	picker()->remove_item("Remove");
 
-	picker()->bind_select((OcHandler*)nil);
-	MenuItem* m2 = picker()->add_radio_menu("Section",(OcHandler*)nil, SECTION); 
+	picker()->bind_select((OcHandler*)NULL);
+	MenuItem* m2 = picker()->add_radio_menu("Section",(OcHandler*)NULL, SECTION); 
 	m2->state()->set(TelltaleState::is_chosen, true);
 	picker()->add_radio_menu("3D Rotate", r3b_, 0, ROTATE);	
 	picker()->add_menu("Redraw Shape",
@@ -876,7 +876,7 @@ StandardPicker* ShapeScene::picker() { return picker_;}
 #endif
 
 ShapeScene::~ShapeScene(){
-	volatile_ptr_ref = nil;
+	volatile_ptr_ref = NULL;
 	Resource::unref(section_handler_);
 	Resource::unref(color_value_);
 	Resource::unref(sg_);
@@ -891,7 +891,7 @@ void ShapeScene::erase_all() {
 	Resource::unref(sg_);
 	sg_ = new PolyGlyph();
 	sg_->ref();
-	volatile_ptr_ref = nil;
+	volatile_ptr_ref = NULL;
 	Graph::erase_all();
 }
 
@@ -932,7 +932,7 @@ void ShapeScene::transform3d(Rubberband*) {
 
 void ShapeScene::flush() {
 	if (shape_changed_->needs_update()) {
-		shape_changed_->update(nil);
+		shape_changed_->update(NULL);
 	}else{
 		damage_all();
 	}
@@ -1051,7 +1051,7 @@ ShapeSection* ShapeScene::shape_section(Section* sec) {
 	if (this != volatile_ptr_ref) {
 		volatile_ptr_ref = this;
 		for (i=0; i < section_count; ++i) {
-			secorder[i]->volatile_ptr = nil;
+			secorder[i]->volatile_ptr = NULL;
 		}
 		for (i=0; i < cnt; ++i) {
 			ShapeSection* ss = (ShapeSection*)sg_->component(i);
@@ -1060,7 +1060,7 @@ ShapeSection* ShapeScene::shape_section(Section* sec) {
 			}
 		}
 	}
-	return sec ? (ShapeSection*)sec->volatile_ptr : nil;
+	return sec ? (ShapeSection*)sec->volatile_ptr : NULL;
 }
 
 //color the shapesections
@@ -1182,8 +1182,8 @@ ShapeSection::ShapeSection(Section* sec) {
 	section_ref(sec_);
 	color_ = Scene::default_foreground();
 	color_->ref();
-	old_ = nil;
-	pvar_ = nil;
+	old_ = NULL;
+	pvar_ = NULL;
 	scale(1.);
 
 	if (sec_->npt3d == 0) {
@@ -1331,7 +1331,7 @@ void ShapeSection::update(Observable* o) {
 //printf("setting to dark\n");
 			setColor(Scene::default_foreground());
 		}
-		ShapeScene::current_pick_scene()->selected(nil);
+		ShapeScene::current_pick_scene()->selected(NULL);
 	}
 }
 #endif
@@ -1411,7 +1411,7 @@ void ShapeSection::set_range_variable(Symbol* sym) {
 		pvar_[i] = nrn_rangepointer(section(), sym,
 			nrn_arc_position(section(), section()->pnode[i])
 		);
-		old_[i] = nil;
+		old_[i] = NULL;
 		if (pvar_[i]) {
 			any = true;
 		}
@@ -1419,18 +1419,18 @@ void ShapeSection::set_range_variable(Symbol* sym) {
    }else{
    	for (i=0; i < n; ++i) {
    		pvar_[i] = 0;
-		old_[i] = nil;
+		old_[i] = NULL;
    	}
    }
 }
 void ShapeSection::clear_variable() {
 	if (pvar_) {
 		delete [] pvar_;
-		pvar_ = nil;
+		pvar_ = NULL;
 	}
 	if (old_) {
 		delete [] old_;
-		old_ = nil;
+		old_ = NULL;
 	}
 }
 void ShapeSection::draw(Canvas* c, const Allocation& a) const {
@@ -1508,7 +1508,7 @@ void ShapeSection::fast_draw(Canvas* c, Coord x, Coord y, bool b) const {
 		if (color != old_[iseg] || b) {
 			((ShapeSection*)this)->old_[iseg] = color;
 		}else{
-			color = nil;
+			color = NULL;
 		}
 		xend = double(iseg+1)*dseg;
 		for ( ; i3d < sec->npt3d; ++i3d) {
@@ -1901,10 +1901,10 @@ void ShapeSection::damage(ShapeScene* s) {
 }	
 
 SectionHandler::SectionHandler() {
-	ss_ = nil;
+	ss_ = NULL;
 }
 SectionHandler::~SectionHandler() {
-	shape_section(nil);
+	shape_section(NULL);
 }
 bool SectionHandler::event(Event&) {
 	return true;
@@ -1916,22 +1916,22 @@ void SectionHandler::shape_section(ShapeSection* ss) {
 }
 ShapeSection* SectionHandler::shape_section() { return ss_;}
 
-PointMark::PointMark(OcShape* sh, Object* ob, const Color* c, const char style, const float size) : MonoGlyph(nil) {
+PointMark::PointMark(OcShape* sh, Object* ob, const Color* c, const char style, const float size) : MonoGlyph(NULL) {
 	sh_ = sh;	// don't ref
 	ob_ = ob;
 	if (ob_) {
 		ObjObservable::Attach(ob, this);
 	}
-	body(HocMark::instance(style, size, c, nil));
+	body(HocMark::instance(style, size, c, NULL));
 	i_ = 0;
-	sec_ = nil;
+	sec_ = NULL;
 	xloc_ = 0.;
 }
 PointMark::~PointMark() {
 //printf("~PointMark\n");
 	if(ob_) {
 		Object* ob = ob_;
-		ob_ = nil;
+		ob_ = NULL;
 //printf("Detach\n");
 		ObjObservable::Detach(ob, this);
 	}
@@ -1940,7 +1940,7 @@ void PointMark::disconnect(Observable*) {
 //printf("PointMark::disconnect\n");
 	if (ob_) {
 		Object* ob = ob_;
-		ob_ = nil;
+		ob_ = NULL;
 //printf("point_mark_remove\n");
 		sh_->point_mark_remove(ob);
 	}
@@ -1965,7 +1965,7 @@ void PointMark::set_loc(Section* sec, float x) {
 }
 
 bool PointMark::everything_ok() {
-	sec_ = nil;
+	sec_ = NULL;
 	if (ob_) {
 		Point_process* pnt = ob2pntproc_0(ob_);
 		if (pnt && pnt->sec) {
@@ -1995,7 +1995,7 @@ void OcShape::transform3d(Rubberband* rot) {
 	if (point_mark_list_) {
 		GlyphIndex i, cnt = point_mark_list_->count();
 		for (i=0; i < cnt; ++i) {
-			((PointMark*)point_mark_list_->component(i))->update(nil);
+			((PointMark*)point_mark_list_->component(i))->update(NULL);
 		}
 	}
 }
@@ -2016,7 +2016,7 @@ void ShapeChangeObserver::update(Observable*) {
 //printf("ShapeChangeObserver::update shape_changed%p nrn_shape_changed=%d\n", this, nrn_shape_changed_);
 		shape_changed_ = nrn_shape_changed_;
 		nrn_define_shape();
-		volatile_ptr_ref = nil;
+		volatile_ptr_ref = NULL;
 		if (struc_changed_ != structure_change_cnt) {
 			struc_changed_ = structure_change_cnt;
 //printf("ShapeChangeObserver::update structure_changed%p\n", this);

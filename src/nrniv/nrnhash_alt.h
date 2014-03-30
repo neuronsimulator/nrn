@@ -140,7 +140,7 @@ NrnHash::NrnHash(int n) { \
     --size_; \
     last_ = &first_[size_]; \
     for (register NrnHashEntry(NrnHash)** e = first_; e <= last_; e++) { \
-	*e = nil; \
+	*e = NULL; \
     } \
     nclash_ = nfind_ = 0; \
 } \
@@ -157,7 +157,7 @@ void NrnHash::remove_all() { \
 	    t = i->chain_; \
 	    delete i; \
 	} \
-	*e = nil; \
+	*e = NULL; \
     } \
 } \
 \
@@ -167,7 +167,7 @@ inline NrnHashEntry(NrnHash)*& NrnHash::probe(Key i) { \
 \
 void NrnHash::insert(Key k, Value v) { \
     register NrnHashEntry(NrnHash)* e; \
-    for (e = probe(k); e != nil; e = e->chain_) { \
+    for (e = probe(k); e != NULL; e = e->chain_) { \
 	if (e->key_ == k) { \
 	    e->value_ = v; \
 	    return; \
@@ -183,7 +183,7 @@ void NrnHash::insert(Key k, Value v) { \
 \
 bool NrnHash::find(Key k, Value& v) { \
     ++nfind_; \
-    for (register NrnHashEntry(NrnHash)* e = probe(k); e != nil; e = e->chain_) { \
+    for (register NrnHashEntry(NrnHash)* e = probe(k); e != NULL; e = e->chain_) { \
 	if (e->key_ == k) { \
 	    v = e->value_; \
 	    return true; \
@@ -196,7 +196,7 @@ bool NrnHash::find(Key k, Value& v) { \
 bool NrnHash::find_and_remove(Value& v, Key k) { \
     NrnHashEntry(NrnHash)** a = &probe(k); \
     register NrnHashEntry(NrnHash)* e = *a; \
-    if (e != nil) { \
+    if (e != NULL) { \
 	if (e->key_ == k) { \
 	    v = e->value_; \
 	    *a = e->chain_; \
@@ -207,8 +207,8 @@ bool NrnHash::find_and_remove(Value& v, Key k) { \
 	    do { \
 		prev = e; \
 		e = e->chain_; \
-	    } while (e != nil && e->key_ != k); \
-	    if (e != nil) { \
+	    } while (e != NULL && e->key_ != k); \
+	    if (e != NULL) { \
 		v = e->value_; \
 		prev->chain_ = e->chain_; \
 		delete e; \
@@ -222,7 +222,7 @@ bool NrnHash::find_and_remove(Value& v, Key k) { \
 void NrnHash::remove(Key k) { \
     NrnHashEntry(NrnHash)** a = &probe(k); \
     register NrnHashEntry(NrnHash)* e = *a; \
-    if (e != nil) { \
+    if (e != NULL) { \
 	if (e->key_ == k) { \
 	    *a = e->chain_; \
 	    delete e; \
@@ -231,8 +231,8 @@ void NrnHash::remove(Key k) { \
 	    do { \
 		prev = e; \
 		e = e->chain_; \
-	    } while (e != nil && e->key_ != k); \
-	    if (e != nil) { \
+	    } while (e != NULL && e->key_ != k); \
+	    if (e != NULL) { \
 		prev->chain_ = e->chain_; \
 		delete e; \
 	    } \
@@ -256,7 +256,7 @@ NrnHashIterator(NrnHash)::NrnHashIterator(NrnHash)(NrnHash& t) { \
     last_ = t.last_; \
     for (entry_ = t.first_; entry_ <= last_; entry_++) { \
 	cur_ = *entry_; \
-	if (cur_ != nil) { \
+	if (cur_ != NULL) { \
 	    break; \
 	} \
     } \
@@ -264,12 +264,12 @@ NrnHashIterator(NrnHash)::NrnHashIterator(NrnHash)(NrnHash& t) { \
 \
 bool NrnHashIterator(NrnHash)::next() { \
     cur_ = cur_->chain_; \
-    if (cur_ != nil) { \
+    if (cur_ != NULL) { \
 	return true; \
     } \
     for (++entry_; entry_ <= last_; entry_++) { \
 	cur_ = *entry_; \
-	if (cur_ != nil) { \
+	if (cur_ != NULL) { \
 	    return true; \
 	} \
     } \

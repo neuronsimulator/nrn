@@ -103,7 +103,7 @@ FieldStringSEditor::FieldStringSEditor(
     style_ = style;
     Resource::ref(style);
     delete input;
-    input = nil;
+    input = NULL;
     start_ = index_ = -1;
 }
 
@@ -143,7 +143,7 @@ void FieldStringSEditor::pick(
     Canvas*, const Allocation& a, int depth, Hit& h
 ) {
     const Event* ep = h.event();
-    if (ep != nil && h.left() < a.right() && h.right() >= a.left() &&
+    if (ep != NULL && h.left() < a.right() && h.right() >= a.left() &&
 	h.bottom() < a.top() && h.top() >= a.bottom()
     ) {
 	h.target(depth, this, 0);
@@ -267,13 +267,13 @@ bool FieldStringSEditor::keystroke(const Event& e) {
 }
 
 void FieldStringSEditor::cursor_on() {
-    if (canvas != nil) {
+    if (canvas != NULL) {
 	display->CaretStyle(BarCaret);
     }
 }
 
 void FieldStringSEditor::cursor_off() {
-    if (canvas != nil) {
+    if (canvas != NULL) {
 	display->CaretStyle(NoCaret);
     }
 }
@@ -336,7 +336,7 @@ implementIOCallback(FieldSEditorImpl)
 
 FieldSEditor::FieldSEditor(
     const String& sample, WidgetKit* kit, Style* s, FieldSEditorAction* action
-) : InputHandler(nil, s) {
+) : InputHandler(NULL, s) {
     impl_ = new FieldSEditorImpl;
     impl_->kit_ = kit;
     NullTerminatedString ns(sample);
@@ -502,7 +502,7 @@ void FieldSButton::Notify() {
     int v;
     GetValue(v);
     value = 0;
-    if (action_ != nil) {
+    if (action_ != NULL) {
 	switch (v) {
 	case '\r':
 	    action_->accept(editor_);

@@ -13,7 +13,7 @@ class Dialog;
 
 class OcGlyph : public MonoGlyph {
 public:
-	OcGlyph(Glyph* body=nil);
+	OcGlyph(Glyph* body=NULL);
 	virtual ~OcGlyph();
 
 	virtual void save(ostream&);

@@ -69,7 +69,7 @@ static Member_func members[] = {
 };
 
 static void* cons(Object*) {
-	return nil;
+	return NULL;
 }
 
 static void destruct(void*) {

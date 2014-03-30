@@ -13,7 +13,7 @@ class PPBImpl;
 class HocCommand;
 struct Section;
 
-extern void section_menu(double, int, MechSelector* = nil);
+extern void section_menu(double, int, MechSelector* = NULL);
 
 class MechVarType : public MonoGlyph {
 public:

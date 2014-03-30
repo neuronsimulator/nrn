@@ -1756,6 +1756,7 @@ static Object** vec_as_numpy_helper(int size, double* data) {
 		}
 	}
 	hoc_execerror("Vector.as_numpy() error", 0);
+	return NULL;
 }
 
 static Object** nrnpy_vec_to_python(void* v) {

@@ -152,16 +152,16 @@ SaveState::SaveState() {
 	int i, j;
 	ssi_def();
 	nroot_ = 0;
-	ss_ = nil;
+	ss_ = NULL;
 	nsec_ = 0;
 	nncs_ = 0;
-	ncs_ = nil;
+	ncs_ = NULL;
 	npss_ = 0;
-	pss_ = nil;
+	pss_ = NULL;
 	tqs_ = new TQState();
 	tqs_->nstate = 0;
 	nprs_ = 0;
-	prs_ = nil;
+	prs_ = NULL;
 	nacell_ = 0;
 	for (i=0; i < n_memb_func; ++i) if (nrn_is_artificial_[i]) {
 		++nacell_;
@@ -275,7 +275,7 @@ fprintf(stderr, "SaveState warning: %d cells exist but saved %d\n",
 		}
 		return false;
 	}
-	if (nsec_ && ss_[0].sec == nil) { // got the data from a read
+	if (nsec_ && ss_[0].sec == NULL) { // got the data from a read
 		isec = 0; ForAllSections(sec)
 			ss_[isec].sec = sec;
 			section_ref(ss_[isec].sec);
@@ -443,8 +443,8 @@ void SaveState::alloc() {
 
 void SaveState::allocnode(NodeState& ns, Node* nd) {
 	ns.nmemb = 0;
-	ns.type = nil;
-	ns.state = nil;
+	ns.type = NULL;
+	ns.state = NULL;
 	ns.nstate = 0;
 	Prop* p;
 	for (p = nd->prop; p; p = p->next) {
@@ -511,7 +511,7 @@ void SaveState::ssfree() {
 		delete [] ss_;
 	}	
 	nsec_ = 0;
-	ss_ = nil;
+	ss_ = NULL;
 	for (i=0; i < nacell_; ++i) {
 		if (acell_[i].ncell) {
 			delete [] acell_[i].state;
@@ -528,12 +528,12 @@ void SaveState::ssfree() {
 		delete [] ncs_;
 	}
 	nncs_ = 0;
-	ncs_ = nil;
+	ncs_ = NULL;
 	if (npss_) {
 		delete [] pss_;
 	}
 	npss_ = 0;
-	pss_ = nil;
+	pss_ = NULL;
 	free_tq();
 	if (nprs_) {
 		for (i=0; i < nprs_; ++i) {
@@ -725,7 +725,7 @@ void SaveState::read(OcFile* ocf, bool close) {
 	fread_SecState(ss_, nsec_, f);
 	for (int isec=0; isec < nsec_; ++isec) {
 		SecState& ss = ss_[isec];
-		ss.sec = nil;
+		ss.sec = NULL;
 		ss.ns = new NodeState[ss.nnode];
 		fread_NodeState(ss.ns, ss.nnode, f);
 		for (int inode = 0; inode < ss.nnode; ++inode) {
@@ -964,7 +964,7 @@ void SaveState::readnet(FILE* f) {
 		tqs_->tdeliver = new double[n];
 		ASSERTfread((char*)tqs_->tdeliver, sizeof(double), n, f);
 		for (i=0; i < n; ++i) {
-			DiscreteEvent* de = nil;
+			DiscreteEvent* de = NULL;
 			ASSERTfgets(buf, 200, f);
 			sscanf(buf, "%d\n", &type);
 			switch(type) {

@@ -42,8 +42,8 @@ void nrnpointmenu();
 }
 
 #if HAVE_IV
-static void pnodemenu(Prop* p1, double, int type, const char* path, MechSelector* = nil);
-static void mech_menu(Prop* p1, double, int type, const char* path, MechSelector* = nil);
+static void pnodemenu(Prop* p1, double, int type, const char* path, MechSelector* = NULL);
+static void mech_menu(Prop* p1, double, int type, const char* path, MechSelector* = NULL);
 static void point_menu(Object*, int);
 #endif
 
@@ -209,7 +209,7 @@ void section_menu(double x1, int type, MechSelector* ms)
 			sprintf(buf,"%s.%s", sname.string(), "v");
 			hoc_ivvalue("v",buf);
 		}else{
-sprintf(buf,"v(%g)", x); hoc_ivpvalue("v",hoc_val_pointer(buf), nil, hoc_lookup("v")->extra);
+sprintf(buf,"v(%g)", x); hoc_ivpvalue("v",hoc_val_pointer(buf), NULL, hoc_lookup("v")->extra);
 		}
 	}
 	
@@ -485,7 +485,7 @@ static void point_menu(Object* ob, int make_label) {
 static double ms_panel(void* v) {
 #if HAVE_IV
 IFGUI
-	char* label = nil;
+	char* label = NULL;
 	if (ifarg(1)) {
 		label = gargstr(1);
 	}
@@ -623,7 +623,7 @@ void MechanismStandard_reg() {
 }
 
 MechanismStandard::MechanismStandard(const char* name, int vartype) {
-	glosym_ = nil;
+	glosym_ = NULL;
 	np_ = new NrnProperty(name);
 	name_cnt_ = 0;
 	vartype_ = vartype; // vartype=0 means all but not globals, -1 means globals
@@ -943,7 +943,7 @@ static double mt_is_artificial(void* v) {
 static Object** mt_pp_begin(void* v) {
 	MechanismType* mt = (MechanismType*)v;
 	Point_process* pp = mt->pp_begin();
-	Object* obj = nil;
+	Object* obj = NULL;
 	if (pp) {
 		obj = pp->ob;
 	}
@@ -953,7 +953,7 @@ static Object** mt_pp_begin(void* v) {
 static Object** mt_pp_next(void* v) {
 	MechanismType* mt = (MechanismType*)v;
 	Point_process* pp = mt->pp_next();
-	Object* obj = nil;
+	Object* obj = NULL;
 	if (pp) {
 		obj = pp->ob;
 	}
@@ -1057,7 +1057,7 @@ Point_process* MechanismType::pp_begin() {
 }
 
 Point_process* MechanismType::pp_next() {
-	Point_process* pp = nil;
+	Point_process* pp = NULL;
 	bool done = mti_->p_iter_ == 0;
 	while (!done) {
 		if (mti_->p_iter_->type == mti_->type_[mti_->select_]) {
@@ -1065,7 +1065,7 @@ Point_process* MechanismType::pp_next() {
 			done = true;
 			// but if it does not belong to this section
 			if (pp->sec != mti_->sec_iter_) {
-				pp = nil;
+				pp = NULL;
 				done = false;
 			}
 		}

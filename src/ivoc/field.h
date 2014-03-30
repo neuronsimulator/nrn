@@ -95,7 +95,7 @@ void FieldSEditorCallback(T)::cancel(FieldSEditor* f) { (obj_->*cancel_)(f); }
 class FieldSEditor : public InputHandler {
 public:
     FieldSEditor(
-	const String& sample, WidgetKit*, Style*, FieldSEditorAction* = nil
+	const String& sample, WidgetKit*, Style*, FieldSEditorAction* = NULL
     );
     virtual ~FieldSEditor();
 

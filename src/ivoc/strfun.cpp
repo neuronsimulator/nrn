@@ -152,7 +152,7 @@ static Object** l_alias_list(void*) {
 	Symbol* sl = hoc_lookup("List");
 	Symbol* st = hoc_table_lookup("String", hoc_top_level_symlist);
 	if (!st || st->type != TEMPLATE) {
-printf("st=%p %s %d\n", st, st?st->name:"nil", st?st->type:0);
+printf("st=%p %s %d\n", st, st?st->name:"NULL", st?st->type:0);
 		hoc_execerror("String is not a template", 0);
 	}
 	Object** po = hoc_temp_objvar(sl, list);

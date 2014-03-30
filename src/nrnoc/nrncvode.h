@@ -24,6 +24,7 @@ extern void nrndae_update(void);
 extern void nrn_update_2d(NrnThread*);
 extern void nrn_capacity_current(NrnThread* _nt, Memb_list* ml);
 extern void nrn_spike_exchange_init(void);
+extern void nrn_spike_exchange(void);
 
 #if defined(__cplusplus)
 }

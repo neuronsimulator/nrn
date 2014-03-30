@@ -11,6 +11,7 @@
 #endif
 
 #include <nrnmpi.h>
+#include <hocdec.h>
 
 #if NRNMPI
 #include "nrnmpidec.h"

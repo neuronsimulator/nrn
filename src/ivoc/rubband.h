@@ -35,7 +35,7 @@ public:
 
 class Rubberband : public OcHandler {
 public:
-	Rubberband(RubberAction* = nil, Canvas* = nil);
+	Rubberband(RubberAction* = NULL, Canvas* = NULL);
 	virtual ~Rubberband();
 	virtual bool event(Event&);
 	Coord x_begin()const, y_begin()const, x()const, y()const; //canvas coords
@@ -72,7 +72,7 @@ private:
 
 class RubberRect : public Rubberband {
 public:
-	RubberRect(RubberAction* = nil, Canvas* = nil);
+	RubberRect(RubberAction* = NULL, Canvas* = NULL);
 	virtual ~RubberRect();
 	
 	virtual void draw(Coord, Coord);
@@ -84,7 +84,7 @@ public:
 
 class RubberLine : public Rubberband {
 public:
-	RubberLine(RubberAction* = nil, Canvas* = nil);
+	RubberLine(RubberAction* = NULL, Canvas* = NULL);
 	virtual ~RubberLine();
 	
 	virtual void draw(Coord, Coord);

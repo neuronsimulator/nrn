@@ -89,7 +89,7 @@ void notify_pointer_freed(void* pt) {
 			if (p_list->item(i).p == pt) {
 				Observer* obs = p_list->item(i).observer;
 				p_list->remove(i);
-				obs->update(nil);	// might change list
+				obs->update(NULL);	// might change list
 				removed = true;
 				break;		
 			}
@@ -127,7 +127,7 @@ void notify_freed_val_array(double* p, size_t size) {
 			if (j >= 0 && j < size) {
 				Observer* obs = pd_list->item(i).observer;
 				pd_list->remove(i);
-				obs->update(nil);
+				obs->update(NULL);
 				removed = true;
 				break;
 			}

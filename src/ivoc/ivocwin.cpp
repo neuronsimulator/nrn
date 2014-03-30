@@ -41,7 +41,7 @@ bool ivoc_list_look(Object*, Object*, char*, int);
 void hoc_class_registration();
 }
 static void dummy() {
-	ivoc_list_look(nil, nil, nil, 0);
+	ivoc_list_look(NULL, NULL, NULL, 0);
 	hoc_class_registration();
 }
 #endif

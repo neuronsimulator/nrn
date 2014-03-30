@@ -53,7 +53,7 @@ MenuItem* K::radio_menu_item(TelltaleGroup* tg, const char* name) {
 
 /*static*/ class ButtonItemInfo {
 public:
-	ButtonItemInfo(const char* name, Action*, TelltaleState*, MenuItem* mi = nil, Menu* m = nil);
+	ButtonItemInfo(const char* name, Action*, TelltaleState*, MenuItem* mi = NULL, Menu* m = NULL);
 	virtual ~ButtonItemInfo();
 	GlyphIndex menu_index();
 	TelltaleState* s_;
@@ -334,8 +334,8 @@ void ScenePicker::exec_item(const char* name) {
 			ScenePickerImpl::window_ = (DismissableWindow*)v->canvas()->window();
 		}
 	}else{
-		XYView::current_pick_view(nil);
-		ScenePickerImpl::window_ = nil;
+		XYView::current_pick_view(NULL);
+		ScenePickerImpl::window_ = NULL;
 	}		
 	i = spi_->info_index(name);
 	if (i > -1) {
@@ -350,7 +350,7 @@ void ScenePicker::exec_item(const char* name) {
 			t->set(TelltaleState::is_chosen, true);
 		}
 		t->notify();
-		if (act && b->a_ != nil) {
+		if (act && b->a_ != NULL) {
 			b->a_->execute();
 		}
 	}
@@ -768,14 +768,14 @@ void OcViewGlyph::viewmenu(Glyph* m) {
 		printf("delete menu\n");
 		body(g_);
 		Resource::unref(g_);
-		g_ = nil;
+		g_ = NULL;
 	}
 }
 
 PopupMenu::PopupMenu() {
 	menu_ = WidgetKit::instance()->pulldown();
 	menu_->ref();
-	w_ = nil;
+	w_ = NULL;
 	grabbed_ = false;
 }
 

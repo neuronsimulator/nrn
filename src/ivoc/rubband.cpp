@@ -97,7 +97,7 @@ bool Rubberband::event(Event& e) {
 		break;
 	case Event::up:
 //printf("Rubberband::event up\n");
-		current_ = nil;
+		current_ = NULL;
 		e.ungrab(this);
 #ifdef WIN32
 		e.window()->ungrab_pointer();

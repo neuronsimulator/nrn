@@ -8,8 +8,8 @@ long hoc_nframe, hoc_nstack;
 #if !HAVE_IV
 #define Session void
 extern "C" {
-	int hoc_main1(int, char**, char**);
-	void hoc_main1_init(char*, char**);
+	int hoc_main1(int, const char**, const char**);
+	void hoc_main1_init(const char*, const char**);
 }
 #endif
 
@@ -120,7 +120,7 @@ static PropertyData properties[] = {
 {"*Py_NoSiteFlag", "0"}, 
 {"*python", "off"},
 {"*banner", "on"},
-	 { nil }
+	 { NULL }
 };
 
 static OptionDesc options[] = {
@@ -142,7 +142,7 @@ static OptionDesc options[] = {
 #if defined(WIN32)
 {"-mswin_scale", "*mswin_scale", OptionValueNext},
 #endif
-	 { nil }
+	 { NULL }
 };
 #endif // HAVE_IV
 
@@ -455,7 +455,7 @@ int ivocmain (int argc, const char** argv, const char** env) {
 	int our_argc = argc;
 	const char** our_argv = argv;
 	int exit_status = 0;
-	Session* session = nil;
+	Session* session = NULL;
 #if !defined(WIN32)&&!defined(MAC) && !defined(CYGWIN)
 // Gary Holt's first pass at this was:
 //

@@ -7,6 +7,8 @@
 extern "C" {
 #endif
 
+extern int nrnignore;
+
 extern int hoc_obj_run(const char*, Object*);
 extern int hoc_argtype(int);
 extern int hoc_is_double_arg(int);

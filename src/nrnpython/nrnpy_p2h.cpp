@@ -89,7 +89,7 @@ Member_func p_members[] = {0,0};
 
 void nrnpython_reg_real() {
 	//printf("nrnpython_reg_real()\n");
-	class2oc("PythonObject", p_cons, p_destruct, p_members);
+	class2oc("PythonObject", p_cons, p_destruct, p_members, NULL, NULL, NULL);
 	Symbol* s = hoc_lookup("PythonObject");
 	nrnpy_pyobj_sym_ = s;
 	nrnpy_py2n_component = py2n_component;

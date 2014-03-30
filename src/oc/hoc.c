@@ -20,6 +20,9 @@
 #include <go32.h>
 #endif
 
+/* for eliminating "ignoreing return value" warnings. */
+int nrnignore;
+
 /* only set  in ivoc */
 int nrn_global_argc;
 char** nrn_global_argv;

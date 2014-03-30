@@ -126,7 +126,7 @@ HocMark* HocMark::search(char style, float size,
 {
 	HocMark* m;
 	if (!most_recent_) {
-		return nil;
+		return NULL;
 	}
 	m = check(style, size, c, b);
 	if (m) {
@@ -139,7 +139,7 @@ HocMark* HocMark::search(char style, float size,
 			return m;
 		}
 	}
-	return nil;
+	return NULL;
 }
 
 HocMark* HocMark::check(char style, float size,
@@ -153,7 +153,7 @@ HocMark* HocMark::check(char style, float size,
 	) {
 		return most_recent_;
 	}
-	return nil;
+	return NULL;
 }
 
 HocMark* HocMark::most_recent_;

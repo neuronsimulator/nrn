@@ -378,7 +378,7 @@ double hoc_fw_scan(NrnFILEWrap* fi) {
 		}
 		if (sscanf(fs, "%lf", &d) == 1) {
 			/* but if at end of line, leave at beginning of next*/
-			nrn_fw_fscanf(fi, "\n");
+			nrnignore = nrn_fw_fscanf(fi, "\n");
 			break;
 		}
 	}
