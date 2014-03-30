@@ -33,7 +33,6 @@ void nrndae_dkmap(double** pv, double** pvdot){}
 void nrndae_dkres(double* y, double* yprime, double* delta){}
 void nrndae_dkpsol(double unused){}
 void nrndae_update(void){}
-void nrn_matrix_node_free(void){}
 int nrndae_list_is_empty(void){return 0;}
 
 void nrn_solver_prepare(){}
