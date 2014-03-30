@@ -132,7 +132,7 @@ static int narg() {
 
 extern "C" {
 	extern void notify_freed_val_array(double*, size_t);
-	extern void install_vector_method(const char* name, double (*)(...));
+	extern void install_vector_method(const char* name, Pfrd_vp);
 	extern int vector_instance_px(void*, double**);
 	extern int vector_arg_px(int, double**);
         extern int nrn_mlh_gsort (double* vec, int *base_ptr, int total_elems, doubleComparator cmp);
@@ -315,7 +315,7 @@ Object** IvocVect::temp_objvar() {
 }
 
 extern "C" { // bug in cray compiler requires this
-void install_vector_method(const char* name, double (*f)(...)) {
+void install_vector_method(const char* name, double (*f)(void*)) {
 	Symbol* s_meth;
 	if (hoc_table_lookup(name, svec_->u.ctemplate->symtable)) {
 		hoc_execerror(name, " already a method in the Vector class");

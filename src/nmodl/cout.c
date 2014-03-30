@@ -249,7 +249,7 @@ extern char* cray_pragma();
 static initstates();
 static funcdec();
 
-c_out()
+void c_out()
 {
 #if NMODL
 	Item *q;
@@ -487,8 +487,7 @@ c_out()
  * value of state0.  This generated code goes before any explicit initialize
  * code written by the user. 
  */
-static
-initstates()
+static void initstates()
 {
 	int             i;
 	Item           *qs;
@@ -519,7 +518,7 @@ initstates()
  * type of a list element 
  */
 
-printlist(s)
+void printlist(s)
 	List           *s;
 {
 	Item           *q;
@@ -566,8 +565,7 @@ printlist(s)
 	}
 }
 
-static
-funcdec()
+static void funcdec()
 {
 	int             i;
 	Symbol         *s;
@@ -589,7 +587,7 @@ funcdec()
 }
 
 #if VECTORIZE
-c_out_vectorize()
+void c_out_vectorize()
 {
 	Item *q;
 	extern int point_process;
@@ -789,7 +787,7 @@ c_out_vectorize()
 	P("_first = 0;\n}\n");
 }
 
-vectorize_substitute(q, str)
+void vectorize_substitute(q, str)
 	Item* q;
 	char* str;
 {
@@ -800,7 +798,7 @@ vectorize_substitute(q, str)
 	lappendstr(vectorize_replacements, str);
 }
 
-vectorize_do_substitute() {
+void vectorize_do_substitute() {
 	Item *q, *q1;
 	if (vectorize_replacements) {
 		ITERATE(q, vectorize_replacements) {

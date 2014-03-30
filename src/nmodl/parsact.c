@@ -5,6 +5,7 @@
  * also be used, e.g. in sens to automattically construct variables 
  */
 
+#include <stdlib.h>
 #include "modl.h"
 #include "parse1.h"
 
@@ -28,7 +29,7 @@ extern int artificial_cell;
 extern int vectorize;
 extern int assert_threadsafe;
 
-static type_change();
+static int type_change();
 
 static long previous_subtype;	/* subtype at the sym->level */
 static char *previous_str;	/* u.str on last install */
@@ -107,8 +108,7 @@ void explicit_decl(level, q)
 one producing a message. Notice that multiple declarations at level 0 are
 caught as errors in the function above. */
 
-static int
-type_change(sym, level) /*return 1 if type change, 0 otherwise*/
+static int type_change(sym, level) /*return 1 if type change, 0 otherwise*/
 	Symbol *sym;
 {
 	long s, d, c;
@@ -144,7 +144,7 @@ Fprintf(stderr, "Notice: %s is promoted from a PARAMETER to an ASSIGNED\n", sym-
 	return 1;
 }
 	
-parm_array_install(n, num, units, limits, index)
+void parm_array_install(n, num, units, limits, index)
 	Symbol         *n;
 	char           *num, *units, *limits;
 {
@@ -161,7 +161,7 @@ parm_array_install(n, num, units, limits, index)
 	n->u.str = stralloc(buf, (char *) 0);
 }
 
-parminstall(n, num, units, limits)
+void parminstall(n, num, units, limits)
 	Symbol         *n;
 	char           *num, *units, *limits;
 {
@@ -179,8 +179,7 @@ parminstall(n, num, units, limits)
 /* often we want to install a parameter by default but only
 if the user hasn't declared it herself.
 */
-Symbol *
-ifnew_parminstall(name, num, units, limits)
+Symbol *ifnew_parminstall(name, num, units, limits)
 	char *name, *num, *units, *limits;
 {
 	Symbol *s;
@@ -202,7 +201,7 @@ ifnew_parminstall(name, num, units, limits)
 	return s;
 }
 
-steppedinstall(n, q1, q2, units)
+void steppedinstall(n, q1, q2, units)
 	Symbol         *n;
 	Item           *q1, *q2;
 	char           *units;
@@ -245,7 +244,7 @@ static char    *indepunits = "";
 int using_default_indep;
 #endif
 
-indepinstall(n, from, to, with, qstart, units, scop)
+void indepinstall(n, from, to, with, qstart, units, scop)
 	Symbol         *n;
 	char           *from, *to, *with, *units;
 	Item		*qstart;	/* ITEM0 if not present */
@@ -308,7 +307,7 @@ diag("Only one independent variable can be defined", (char *) 0);
  * However Dname will not appear in the .var file unless it is used -- see
  * parout.c. 
  */
-depinstall(type, n, index, from, to, units, qs, makeconst, abstol)
+void depinstall(type, n, index, from, to, units, qs, makeconst, abstol)
 	int             type, index, makeconst;
 	Symbol         *n;
 	char           *from, *to, *units, *abstol;
@@ -347,7 +346,7 @@ depinstall(type, n, index, from, to, units, qs, makeconst, abstol)
 	previous_str = pstr;
 }
 
-statdefault(n, index, units, qs, makeconst)
+void statdefault(n, index, units, qs, makeconst)
 	Symbol         *n;
 	int             index, makeconst;
 	char           *units;
@@ -438,7 +437,7 @@ void defarg(q1, q2)			/* copy arg list and define as doubles */
 #endif
 }
 
-lag_stmt(q1, blocktype)	/* LAG name1 BY name2 */
+void lag_stmt(q1, blocktype)	/* LAG name1 BY name2 */
 	Item *q1;
 	int blocktype;
 {
@@ -490,7 +489,7 @@ lag_stmt(q1, blocktype)	/* LAG name1 BY name2 */
 	replacstr(q1, buf);
 }
 
-queue_stmt(q1, q2)
+void queue_stmt(q1, q2)
 	Item *q1, *q2;
 {
 	Symbol *s;
@@ -519,7 +518,7 @@ queue_stmt(q1, q2)
 	replacstr(q2, buf);
 }
 
-add_reset_args(q)
+void add_reset_args(q)
 	Item *q;
 {
 	static int reset_fun_cnt=0;
@@ -531,7 +530,7 @@ add_reset_args(q)
 	Lappendstr(firstlist, buf);
 }
 
-add_nrnthread_arg(q)
+void add_nrnthread_arg(q)
 	Item *q;
 {
 	vectorize_substitute(insertstr(q->next, "nrn_threads,"), "_nt,");
@@ -563,7 +562,7 @@ add_nrnthread_arg(q)
 static List* check_table_statements;
 static Symbol* last_func_using_table;
 
-check_tables() {
+void check_tables() {
 	/* for threads do this differently */
 	if (check_table_statements) {
 		fprintf(fcout, "\n#if %d\n", 0);
@@ -1005,7 +1004,7 @@ void hocfunchack(Symbol* n, Item* qpar1, Item* qpar2, int hack)
 #endif
 }
 
-hocfunc(n, qpar1, qpar2) /*interface between modl and hoc for proc and func */
+void hocfunc(n, qpar1, qpar2) /*interface between modl and hoc for proc and func */
 	Item *qpar1, *qpar2;
 	Symbol *n;
 {
@@ -1089,7 +1088,7 @@ diag("net_move", " only allowed in NET_RECEIVE block");
 
 #endif
 		
-function_table(s, qpar1, qpar2, qb1, qb2) /* s ( ... ) { ... } */
+void function_table(s, qpar1, qpar2, qb1, qb2) /* s ( ... ) { ... } */
 	Symbol* s;
 	Item *qpar1, *qpar2, *qb1, *qb2;
 {
@@ -1140,7 +1139,7 @@ function_table(s, qpar1, qpar2, qb1, qb2) /* s ( ... ) { ... } */
 	hocfunchack(t, q1, q2, 1);
 }
 
-watchstmt(par1, dir, par2, flag, blocktype )Item *par1, *dir, *par2, *flag;
+void watchstmt(par1, dir, par2, flag, blocktype )Item *par1, *dir, *par2, *flag;
 	int blocktype;
 {
 	if (!watch_seen_) {

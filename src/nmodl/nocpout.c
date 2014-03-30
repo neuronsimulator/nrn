@@ -130,6 +130,9 @@ extern int protect_;
 extern int protect_include_;
 extern List *set_ion_variables(), *get_ion_variables();
 
+static int decode_limits();
+static int decode_tolerance();
+
 /* NEURON block information */
 List *currents;
 List *useion;
@@ -146,14 +149,14 @@ int artificial_cell; /* 1 if also explicitly declared an ARTIFICIAL_CELL */
 static int diamdec = 0;	/*1 if diam is declared*/
 static int areadec = 0;
 
-static defs_h();
+static void defs_h();
 static int iontype();
-static nrndeclare();
-static del_range();
-static declare_p();
+static void nrndeclare();
+static void del_range();
+static void declare_p();
 static int iondef();
-static ion_promote();
-static ppvar_cnt;
+static void ion_promote();
+static int ppvar_cnt;
 static int for_netcons_; /* number of FOR_NETCONS statements */
 static Item* net_init_q1_;
 static Item* net_init_q2_;
@@ -191,9 +194,9 @@ static Item* net_send_delivered_; /* location for if flag is 1 then clear the
    parraycount holds the index into the p array and is saved in s->varnum
    pvarcount indexes pointers to variables such as ena
 */
-static varcount, parraycount;
+static int varcount, parraycount;
 
-nrninit() {
+void nrninit() {
 	extern int using_default_indep;
 	currents = newlist();
 	rangeparm = newlist();
@@ -209,7 +212,7 @@ nrninit() {
 	thread_mem_init_list = newlist();
 }
 
-parout() {
+void parout() {
 	int i, j, ioncount, pointercount, gind, emit_check_table_thread;
 	Item *q, *q1;
 	Symbol *s, *sion;
@@ -1202,7 +1205,7 @@ static void _destructor(Prop* _prop) {\n\
 	}
 }
 
-warn_ignore(s) Symbol* s; {
+void warn_ignore(s) Symbol* s; {
 	int b;
 	double d1, d2;
 	b = 0;
@@ -1216,7 +1219,7 @@ warn_ignore(s) Symbol* s; {
 	}
 }
 
-ldifusreg() {
+void ldifusreg() {
 	Item* q, *qdexp, *qb1, *qvexp, *qb2, *q1;
 	char* cfindex, *dfdcur;
 	Symbol* s, *d;
@@ -1300,7 +1303,7 @@ sprintf(buf, " _f(_mechtype, _difcoef%d, &_difspace%d, 0, ", n, n);
 	lappendstr(procfunc, "}\n");
 }
 
-int decode_limits(sym, pg1, pg2)
+static int decode_limits(sym, pg1, pg2)
 	Symbol *sym;
 	double *pg1, *pg2;
 {
@@ -1327,7 +1330,7 @@ int decode_limits(sym, pg1, pg2)
 	return 0;
 }
 
-int decode_tolerance(sym, pg1)
+static int decode_tolerance(sym, pg1)
 	Symbol *sym;
 	double *pg1;
 {
@@ -1353,7 +1356,7 @@ int decode_tolerance(sym, pg1)
 	return 0;
 }
 
-decode_ustr(sym, pg1, pg2, s)	/* decode sym->u.str */
+void decode_ustr(sym, pg1, pg2, s)	/* decode sym->u.str */
 	Symbol *sym;
 	char *s;
 	double *pg1, *pg2;
@@ -1403,7 +1406,7 @@ decode_ustr(sym, pg1, pg2, s)	/* decode sym->u.str */
 	if (s[0] == '0') {s[0] = '\0';}
 }
 
-units_reg() {
+void units_reg() {
 	Symbol* s;
 	Item* q;
 	double d1, d2;
@@ -1455,8 +1458,7 @@ units_reg() {
 	Lappendstr(defs_list, "0,0\n};\n");
 }
 
-static
-var_count(s)
+static void var_count(s)
 	Symbol *s;
 {
 	defs_h(s);
@@ -1469,8 +1471,7 @@ var_count(s)
 		}
 }
 
-static
-defs_h(s)
+static void defs_h(s)
 	Symbol *s;
 {
 	Item *q;
@@ -1486,7 +1487,7 @@ defs_h(s)
 }
 
 
-nrn_list(q1, q2)
+void nrn_list(q1, q2)
 	Item *q1, *q2;
 {
 	List **plist;
@@ -1552,7 +1553,7 @@ threadsafe("Use of POINTER is not thread safe.");
 	}
 }
 
-bablk(ba, type, q1, q2)
+void bablk(ba, type, q1, q2)
 	int ba, type;
 	Item *q1, *q2;
 {
@@ -1580,7 +1581,7 @@ bablk(ba, type, q1, q2)
 	lappendstr(ba_list_, buf);
 }
 
-nrn_use(q1, q2, q3, q4)
+void nrn_use(q1, q2, q3, q4)
 	Item *q1, *q2, *q3, *q4;
 {
 	int used, i;
@@ -1649,8 +1650,7 @@ nrn_use(q1, q2, q3, q4)
 	}
 }
 
-static
-int iontype(s1, s2)	/* returns index of variable in ion mechanism */
+static int iontype(s1, s2)	/* returns index of variable in ion mechanism */
 	char *s1, *s2;
 {
 	Sprintf(buf, "i%s", s2);
@@ -1674,8 +1674,7 @@ int iontype(s1, s2)	/* returns index of variable in ion mechanism */
 	return -1;
 }
 
-static Symbol *
-ifnew_install(name)
+static Symbol *ifnew_install(name)
 	char *name;
 {
 	Symbol *s;
@@ -1687,7 +1686,7 @@ ifnew_install(name)
 	return s;
 }
 
-static nrndeclare() {
+static void nrndeclare() {
 	Symbol *s;
 	Item *q;
 	
@@ -1754,7 +1753,7 @@ diag(s->name, " cannot be a RANGE or GLOBAL variable for this mechanism");
 	del_range(rangedep);
 }
 
-static del_range(range)
+static void del_range(range)
 	List *range;
 {
 	Item *q, *q1;
@@ -1770,7 +1769,7 @@ static del_range(range)
 }
 	
 
-static declare_p() {
+static void declare_p() {
 	Item *q;
 	Symbol* s;
 	
@@ -1807,8 +1806,7 @@ static declare_p() {
 	}
 }
 
-List *
-set_ion_variables(block)
+List *set_ion_variables(block)
 	int block;	/* 0 means equation block , 2 means initial block */
 {
 	/*ARGSUSED*/
@@ -1874,8 +1872,7 @@ Sprintf(buf, " _ion_%s = %s;\n", SYM(q1)->name, SYM(q1)->name);
 	return l;
 }
 
-List *
-get_ion_variables(block)
+List *get_ion_variables(block)
 	int block;	/* 0 means equation block */
 			/* 2 means ode_spec and ode_matsol blocks */
 {
@@ -1916,8 +1913,7 @@ Fprintf(stderr, "WARNING: WRITE %s with it a STATE may not be translated correct
 	return l;
 }
 
-static int
-iondef(p_pointercount) int *p_pointercount; {
+static int iondef(p_pointercount) int *p_pointercount; {
 	int ioncount, it, need_style;
 	Item *q, *q1, *q2;
 	Symbol *sion;
@@ -2028,8 +2024,7 @@ Sprintf(buf, "#define _ion_di%sdv\t*_ppvar[%d]._pval\n", sion->name, ioncount);
 	return ioncount;
 }
 
-List *
-begin_dion_stmt()
+List *begin_dion_stmt()
 {
 	Item *q, *q1, *qbrak;
 	static List *l;
@@ -2055,8 +2050,7 @@ begin_dion_stmt()
 	return l;
 }
 
-List *
-end_dion_stmt(strdel)
+List *end_dion_stmt(strdel)
 	char *strdel;
 {
 	Item *q, *q1;
@@ -2086,7 +2080,7 @@ Sprintf(buf, " _ion_di%sdv += (_di%s - %s)/%s",
 	return l;
 }
 
-static ion_promote(qion)
+static void ion_promote(qion)
 	Item* qion;
 {
 	Item* q;
@@ -2127,7 +2121,7 @@ static ion_promote(qion)
 
 #define NRNFIX(arg) if (strcmp(n, arg) == 0) e=1;
 
-nrn_var_assigned(s) Symbol* s; {
+void nrn_var_assigned(s) Symbol* s; {
 	int e;
 	char* n;
 	if (s->assigned_to_ == 0) {
@@ -2155,7 +2149,7 @@ static int cvode_valid_, using_cvode;
 static int cvode_num_, cvode_neq_;
 static Symbol* cvode_fun_;
 
-slist_data(s, indx, findx) Symbol* s; int indx, findx; {
+void slist_data(s, indx, findx) Symbol* s; int indx, findx; {
 	/* format: number of pairs, followed by findx, indx pairs */
 	int* pi;
 	int i, n;
@@ -2196,7 +2190,7 @@ if (pi == (int*)0) {
 	return 0;
 }
 
-static cvode_conc_map() {
+static void cvode_conc_map() {
 	/* pv index is slist index, ppd index is to the concentration
 	pointer to the ion concentration is eg. &(ion_cai). Unfortunately
 	the slist index has nothing to do with the _p array index.
@@ -2279,7 +2273,7 @@ void out_nt_ml_frag(List* p) {
 ");
 }
 
-cvode_emit_interface() {
+void cvode_emit_interface() {
 	List* lst;
 	Item* q, *q1;
 	if (cvode_not_allowed) {
@@ -2383,7 +2377,7 @@ sprintf(buf, "_cvode_sparse_thread(&_thread[_cvspth%d]._pvoid, %d, _dlist%d, _p,
    }
 }
 
-cvode_proced_emit() {
+void cvode_proced_emit() {
 		sprintf(buf, "\n\
 static void _ode_spec(Node* _nd, double* _pp, Datum* _ppd) {\n\
 	_p = _pp; _ppvar = _ppd; v = NODEV(_nd);\n\
@@ -2418,7 +2412,7 @@ static int _ode_spec%d(_threadargsproto_);\n\
 	Linsertstr(procfunc, buf);
 }
 
-cvode_valid() {
+void cvode_valid() {
 	static int once;
 	if (!cvode_valid_ && !once++) {
 		Fprintf(stderr, "Notice: This mechanism cannot be used with CVODE\n");
@@ -2439,7 +2433,7 @@ void cvode_rw_cur(b) char* b; {
 		q = q->next;
 		ITERATE (q1, LST(q)) {
 			type = SYM(q1)->nrntype;
-			if ((type & NRNCURIN) && (type && NRNCUROUT)) {
+			if ((type & NRNCURIN) && (type & NRNCUROUT)) {
 				if (!cvode_not_allowed && cvode_emit) {
 					if (vectorize) {
 sprintf(b, "if (_nt->_vcv) { _ode_spec%d(_p, _ppvar, _thread, _nt); }\n", cvode_num_);
@@ -2456,7 +2450,7 @@ sprintf(b, "if (_nt->_vcv) { _ode_spec%d(); }\n", cvode_num_);
 }
 #endif
 
-net_receive(qarg, qp1, qp2, qstmt, qend)
+void net_receive(qarg, qp1, qp2, qstmt, qend)
 	Item* qarg, *qp1, *qp2, *qstmt, *qend;
 {
 	Item* q, *q1;
@@ -2561,7 +2555,7 @@ diag("too many ions mentioned in NET_RECEIVE block (limit 10", (char*)0);
 	}
 }
 
-net_init(qinit, qp2)
+void net_init(qinit, qp2)
 	Item* qinit, *qp2;
 {
 	/* qinit=INITIAL { stmtlist qp2=} */
@@ -2579,7 +2573,7 @@ net_init(qinit, qp2)
 	net_init_q2_ = qp2;
 }
 
-fornetcon(keyword, par1, args, par2, stmt, qend)
+void fornetcon(keyword, par1, args, par2, stmt, qend)
 	Item* keyword, *par1, *args, *par2, *stmt, *qend;
 {
 	Item* q, *q1;

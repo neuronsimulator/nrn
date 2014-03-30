@@ -74,8 +74,8 @@ int vector_arg_px(int i, double** p) {
 	return 0;
 }
 int vector_capacity(void* v) {return 0;}
-void install_vector_method(void) {}
-int vector_instance_px(void){return 0;}
+void install_vector_method(const char* name, Pfrd_vp f) {}
+int vector_instance_px(void* vv, double** px){return 0;}
 void vector_resize(v, n) void* v; int n; {
 	hoc_execerror("implemented in ivoc library", "vector_resize");
 }

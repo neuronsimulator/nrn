@@ -13,7 +13,8 @@
 
 /* every yy gets changed to diffeq_yy before compiling */
 
-static int yylex(), yyparse(), yyerror();
+static int yylex(), yyparse();
+static void yyerror();
 static int d_invalid, eq_invalid;
 static char lbuf[4][1000];
 static Item* qexpr; /* yylex finds tokens here;*/
@@ -25,7 +26,7 @@ static List* result;
 #define b3 sprintf(lbuf[2],
 #define b4 sprintf(lbuf[3],
 
-static replace(), initbuf(), free4();
+static void replace(), initbuf(), free4();
 static int zero();
 static char *expr(), *de(), *a(), *b();
 static List* list4();
@@ -174,7 +175,7 @@ static char* b(lst) List* lst; {
 	return STR(q);
 }
 
-static replace(lst) List* lst; {
+static void replace(lst) List* lst; {
 	int i;
 	Item* q = lst->next;
 	for (i=0; i < 4; ++i) {
@@ -189,7 +190,7 @@ lbuf[0], lbuf[1], lbuf[2], lbuf[3]);
 #endif
 }
 
-static initbuf() {
+static void initbuf() {
 	int i;
 	for (i=0; i < 4; ++i) {
 		strcpy(lbuf[i], "0.0");
@@ -205,7 +206,7 @@ static List* list4(s1, s2, s3, s4) char *s1, *s2, *s3, *s4; {
 	return lst;
 }
 
-static free4(lst) List* lst; {
+static void free4(lst) List* lst; {
 	Item* q;
 	List* ls = lst;
 	ITERATE(q, lst) {
@@ -214,9 +215,9 @@ static free4(lst) List* lst; {
 	freelist(&ls);
 }
 
-static yyerror() { assert(0); }
+static void yyerror() { assert(0); }
 
-static fullname(buf) char* buf; {
+static void fullname(buf) char* buf; {
 	/* handle case of name [...] with qexpr pointing to final item */
 	Item* q = qexpr;
 	strcpy(buf, SYM(q)->name);
@@ -298,7 +299,7 @@ fprintf(stderr, "|%s|\n", SYM(qexpr)->name);
 }
 
 /*----------- interface to outside world -------------*/
-cvode_parse(s, e) Symbol* s; List* e; {
+void cvode_parse(s, e) Symbol* s; List* e; {
 	state = s;
 	qexpr = e->next;
 	yyparse();

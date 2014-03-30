@@ -11,3 +11,5 @@ struct unit
 };
 
 extern char *Unit_str();
+extern int unit_diff();
+extern int unit_cmp_exact();

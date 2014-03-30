@@ -13,7 +13,7 @@ static char Derivimplicit[] = "derivimplicit";
 extern Symbol *indepsym;
 extern List *indeplist;
 extern int sens_parm, numlist;
-static copylist();
+static void copylist();
 List* massage_list_;
 
 #if VECTORIZE
@@ -227,8 +227,7 @@ static Symbol	*forderiv;	/* base state */
 static char	base_units[50];	/*base state units */
 static int	indx, maxindx;	/* current indx, and indx of dstate */
 
-static Symbol *
-init_forderiv(prime)
+static Symbol * init_forderiv(prime)
 	Symbol *prime;
 {
 	char name[100];
@@ -258,8 +257,7 @@ init_forderiv(prime)
 	return forderiv;
 }
 
-static char *
-name_forderiv(i)
+static char *name_forderiv(i)
 	int i;
 {
 	static char name[100];
@@ -276,8 +274,7 @@ name_forderiv(i)
 /* Scop can handle 's so we put the prime style names into the .var file.
 We make use of the tools here to reconstruct the original prime name.
 */
-char *
-reprime(sym)
+char *reprime(sym)
 	Symbol *sym;
 {
 	static char name[100];
@@ -300,8 +297,7 @@ reprime(sym)
 	return name;
 }
 
-static Symbol *
-next_forderiv()
+static Symbol *next_forderiv()
 {
 	char *name;
 	Symbol *s;
@@ -383,7 +379,7 @@ Sprintf(units, "%s/%s^%d", base_units, STR(indeplist->prev), indx);
    message.
 */
 
-add_deriv_imp_list(name)
+void add_deriv_imp_list(name)
 	char *name;
 {
 	if (!deriv_imp_list) {
@@ -395,7 +391,7 @@ add_deriv_imp_list(name)
 static List *deriv_used_list; /* left hand side derivatives of diffeqs */
 static List *deriv_state_list;	/* states of the derivative equations */
 
-deriv_used(s, q1, q2)	/* q1, q2 are begin and end tokens for expression */
+void deriv_used(s, q1, q2)	/* q1, q2 are begin and end tokens for expression */
 	Symbol *s;
 	Item* q1, *q2;
 {
@@ -647,7 +643,7 @@ void matchinitial(q1)	/* name */
 			Strcpy(buf, s->name);
 			buf[strlen(buf) - 1] = '\0';
 			state = lookup(buf);
-			if(state && (state->subtype & STAT)
+			if((state && (state->subtype & STAT))
 			   || (state->type == PRIME)) {
 				Lappendsym(match_init, state);
 				return;
@@ -658,7 +654,7 @@ void matchinitial(q1)	/* name */
 	return;
 }	
 			
-matchbound(q1, q2, q3, q4, q5, sindex) /* q1name q2'(' q3')' '=' q4exprq5 */
+void matchbound(q1, q2, q3, q4, q5, sindex) /* q1name q2'(' q3')' '=' q4exprq5 */
 	Item *q1, *q2, *q3, *q4, *q5;
 	Symbol *sindex;
 {
@@ -695,7 +691,7 @@ matchbound(q1, q2, q3, q4, q5, sindex) /* q1name q2'(' q3')' '=' q4exprq5 */
 	}
 }
 
-checkmatch(blocktype) int blocktype; {
+void checkmatch(blocktype) int blocktype; {
 	if (blocktype != DERIVATIVE) {
 		diag("MATCH block can only be in DERIVATIVE block", (char *)0);
 	}
@@ -711,7 +707,7 @@ checkmatch(blocktype) int blocktype; {
 	match_init = newlist();
 }
 
-matchmassage(nderiv)
+void matchmassage(nderiv)
 	int nderiv;
 {
 	int count, nunknown, j;
@@ -882,7 +878,7 @@ Sprintf(buf, ";\n _match_value[%d] = ", j);
 }
 	
 	
-static copylist(l, i)	/* copy list l before item i */
+static void copylist(l, i)	/* copy list l before item i */
 	List *l;
 	Item *i;
 {
@@ -904,7 +900,7 @@ static copylist(l, i)	/* copy list l before item i */
 	}
 }
 
-copyitems(q1, q2, qdest) /* copy items before item */
+void copyitems(q1, q2, qdest) /* copy items before item */
 	Item* q1, *q2, *qdest;
 {
 	Item* q;

@@ -18,7 +18,7 @@ extern Item  **scop_indep;
 			err=1;\
 		}
 
-consistency()
+void consistency()
 {
 	int             tu, err = 0;
 	long            t;
@@ -27,7 +27,7 @@ consistency()
 
 	/* the scop_indep can also be a automatic constant */
 	sindep = SYM(scop_indep[0]);
-	if (sindep != indepsym && sindep->subtype == modlunitCONST | INDEP) {
+	if (sindep != indepsym && sindep->subtype == (modlunitCONST | INDEP)) {
 		sindep->subtype = INDEP;
 	}
 	

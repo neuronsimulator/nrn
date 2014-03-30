@@ -89,14 +89,12 @@ following function calls.
 #include	"modl.h"
 #include	"parse1.h"
 
-static Item *
-newitem()
+static Item *newitem()
 {
 	return (Item *)emalloc(sizeof(Item));
 }
 
-List *
-newlist()
+List *newlist()
 {
 	Item *i;
 	i = newitem();
@@ -122,8 +120,7 @@ void freelist(plist)	/*free the list but not the elements*/
 	*plist = (List *)0;
 }
 
-static Item *
-linkitem(item)
+static Item *linkitem(item)
 	Item *item;
 {
 	Item *i;
@@ -152,8 +149,7 @@ Item *prev(item)
 }
 #endif
 
-Item *
-insertstr(item, str) /* insert a copy of the string before item */
+Item *insertstr(item, str) /* insert a copy of the string before item */
 /* a copy is made because strings are often assembled into a reusable buffer*/
 	Item *item;
 	char *str;
@@ -166,8 +162,7 @@ insertstr(item, str) /* insert a copy of the string before item */
 	return i;
 }
 
-Item *
-insertitem(item, itm) /* insert a item pointer before item */
+Item *insertitem(item, itm) /* insert a item pointer before item */
 	Item *item, *itm;
 {
 	Item *i;
@@ -178,8 +173,7 @@ insertitem(item, itm) /* insert a item pointer before item */
 	return i;
 }
 
-Item *
-insertlist(item, lst) /* insert a item pointer before item */
+Item *insertlist(item, lst) /* insert a item pointer before item */
 	Item *item;
 	List *lst;
 {
@@ -191,8 +185,7 @@ insertlist(item, lst) /* insert a item pointer before item */
 	return i;
 }
 	
-Item *
-insertsym(item, sym) /* insert a symbol before item */
+Item *insertsym(item, sym) /* insert a symbol before item */
 /* a copy is not made because we need the same symbol in different lists */
 	Item *item;
 	Symbol *sym;
@@ -205,54 +198,48 @@ insertsym(item, sym) /* insert a symbol before item */
 	return i;
 }
 	
-Item *
-linsertstr(list, str)
+Item *linsertstr(list, str)
 	List *list;
 	char *str;
 {
 	return insertstr(list->next, str);
 }
 
-Item *
-lappendstr(list, str)
+Item *lappendstr(list, str)
 	List *list;
 	char *str;
 {
 	return insertstr(list, str);
 }
 
-Item *
-linsertsym(list, sym)
+Item *linsertsym(list, sym)
 	List *list;
 	Symbol *sym;
 {
 	return insertsym(list->next, sym);
 }
 
-Item *
-lappendsym(list, sym)
+Item *lappendsym(list, sym)
 	List *list;
 	Symbol *sym;
 {
 	return insertsym(list, sym);
 }
 
-Item *
-lappenditem(list, item)
+Item *lappenditem(list, item)
 	List *list;
 	Item *item;
 {
 	return insertitem(list, item);
 }
 
-Item *
-lappendlst(list, lst)
+Item *lappendlst(list, lst)
 	List *list, *lst;
 {
 	return insertlist(list, lst);
 }
 
-delete(item)
+void delete(item)
 	Item *item;
 {
 	assert(item->itemtype); /* can't delete list */
@@ -286,7 +273,7 @@ char *stralloc(buf, rel) char *buf,*rel; {
 	return s;
 }
 
-deltokens(q1, q2) /* delete tokens from q1 to q2 */
+void deltokens(q1, q2) /* delete tokens from q1 to q2 */
 	Item *q1, *q2;
 {
 	/* It is a serious error if q2 precedes q1 */
@@ -299,7 +286,7 @@ deltokens(q1, q2) /* delete tokens from q1 to q2 */
 		
 }
 
-move(q1, q2, q3)	/* move q1 to q2 and insert before q3*/
+void move(q1, q2, q3)	/* move q1 to q2 and insert before q3*/
 	Item *q1, *q2, *q3;
 {
 	/* it is a serious error if q2 precedes q1 */
@@ -314,14 +301,14 @@ move(q1, q2, q3)	/* move q1 to q2 and insert before q3*/
 	q2->next = q3;
 }
 
-movelist(q1, q2, s)	/* move q1 to q2 from old list to end of list s*/
+void movelist(q1, q2, s)	/* move q1 to q2 from old list to end of list s*/
 	Item *q1, *q2;
 	List *s;
 {
 	move(q1, q2, s);
 }
 
-replacstr(q, s)
+void replacstr(q, s)
 	Item *q;
 	char *s;
 {
@@ -330,8 +317,7 @@ replacstr(q, s)
 
 }
 
-Item *
-putintoken(s, type)
+Item *putintoken(s, type)
 	char *s;
 	short type;
 {	/* make sure a symbol exists for s and

@@ -8,14 +8,15 @@
 
 #define DEBUG 0
 #if DEBUG
-static debugtoken=1;
+static int debugtoken=1;
 #else
-static debugtoken=0;
+static int debugtoken=0;
 #endif
 
 Item *lex_tok;
 int parse_pass=0;
 int restart_pass=0;
+extern int yylex();
 
 void parsepass(n)
 	int n;
@@ -42,8 +43,7 @@ void parse_restart(q, i)
 	}
 }
 
-int
-next_intoken(pitem)
+int next_intoken(pitem)
 	Item **pitem;
 {
 	if (parse_pass == 1) {

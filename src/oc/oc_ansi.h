@@ -115,6 +115,8 @@ class IvocVect;
 #define IvocVect void
 #endif
 extern int vector_arg_px(int, double**);
+extern int vector_instance_px(void*, double**);
+extern void install_vector_method(const char*, double(*)(void*));
 extern IvocVect* vector_new(int, Object*); /*use this if possible*/
 extern IvocVect* vector_new0();
 extern IvocVect* vector_new1(int);

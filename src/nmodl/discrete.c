@@ -54,11 +54,12 @@ discrete.c,v
  * 
 */
 
+#include <stdlib.h>
 #include "modl.h"
 #include "parse1.h"
 #include "symbol.h"
 
-disc_var_seen(q1, q2, q3, array)	/*NAME '@' NUMBER --- array flag*/
+void disc_var_seen(q1, q2, q3, array)	/*NAME '@' NUMBER --- array flag*/
 	Item *q1, *q2, *q3;
 	int array;
 {
@@ -90,7 +91,7 @@ disc_var_seen(q1, q2, q3, array)	/*NAME '@' NUMBER --- array flag*/
 	replacstr(q3, buf);
 }
 
-massagediscblk(q1, q2, q3, q4) /*DISCRETE NAME stmtlist '}'*/
+void massagediscblk(q1, q2, q3, q4) /*DISCRETE NAME stmtlist '}'*/
 	Item *q1, *q2, *q3, *q4;
 {
 	int i;
@@ -121,7 +122,7 @@ Sprintf(buf, "{int _i; for (_i=%d; _i>0; _i--) __%s[_i] = __%s[_i-1];\n\
 	movelist(q1, q4, procfunc);
 }
 
-init_disc_vars()
+void init_disc_vars()
 {
 	int i;
 	Item *qs;

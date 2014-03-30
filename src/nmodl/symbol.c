@@ -9,7 +9,7 @@ List	*symlist[128];	/* symbol table: linked list
 
 List *symlistlist;	 /* for a stack of local symbol lists */
 
-symbol_init() {
+void symbol_init() {
 	int i;
 	symlistlist = newlist();
 	for (i=0; i<128; i++) {	/* more than we need */
@@ -17,8 +17,7 @@ symbol_init() {
 	}
 }
 
-Symbol *
-lookup(s)	/* find s in symbol table */
+Symbol *lookup(s)	/* find s in symbol table */
 	char *s;
 {
 	Item *sp;
@@ -31,8 +30,7 @@ lookup(s)	/* find s in symbol table */
 	return SYM0;	/* 0 ==> not found */
 }
 
-Symbol *
-checklocal(sym)
+Symbol *checklocal(sym)
 	Symbol *sym;
 {
 	Item *sp;
@@ -50,8 +48,7 @@ checklocal(sym)
 	return sym;
 }
 	
-Symbol *
-install(s, t)	/* install s in the list symbol table with type t*/
+Symbol *install(s, t)	/* install s in the list symbol table with type t*/
 	char *s;
 	int t;
 {
@@ -89,14 +86,14 @@ install(s, t)	/* install s in the list symbol table with type t*/
 	return sp;
 }
 
-pushlocal()
+void pushlocal()
 {
 	Item * q;
 	q = linsertsym(symlistlist, SYM0); /*the type is irrelevant*/
 	LST(q) = newlist();
 }
 
-poplocal() /* a lot of storage leakage here for symbols we are guaranteed
+void poplocal() /* a lot of storage leakage here for symbols we are guaranteed
 	not to need */
 {
 	List *sl;
@@ -111,8 +108,7 @@ poplocal() /* a lot of storage leakage here for symbols we are guaranteed
 	delete(symlistlist->next);
 }
 
-Symbol *
-copylocal(s)
+Symbol *copylocal(s)
 	Symbol *s;
 {
 	if (s->name[0] == '_') {
