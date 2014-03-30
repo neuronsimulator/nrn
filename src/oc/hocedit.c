@@ -80,9 +80,9 @@ hocedit.c,v
 TERM emacs_term;
 BUFFER *emacs_curbp;
 WINDOW *emacs_curwp;
-extern void emacs_main(int n, char** cpp);
-extern void emacs_refresh(int i, int j);
-extern void emacs_vtinit(void);
+extern int emacs_main(int n, char** cpp);
+extern int emacs_refresh(int i, int j);
+extern int emacs_vtinit(void);
 #define IGNORE(arg)	arg
 #define Fprintf		fprintf
 
@@ -143,7 +143,7 @@ void hoc_edit_quit(void)
 #endif
 }
 
-void emacs_exit(int status) {
+int emacs_exit(int status) {
 #if !OCSMALL
 	if (status) {
 		Fprintf(stderr, "emacs--status = %d\n", status);
@@ -163,6 +163,7 @@ void emacs_exit(int status) {
 	}
 	longjmp(emacs_begin, 1);
 #endif
+	return 0;
 }
 
 #if !OCSMALL

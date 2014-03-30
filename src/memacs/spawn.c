@@ -36,6 +36,7 @@ spawn.c,v
  */
 
 #include        <stdio.h>
+#include	<unistd.h>
 #include	"estruct.h"
 #include        "edef.h"
 
@@ -84,7 +85,7 @@ extern int vttidy();
  * repaint. Bound to "^X C". The message at the start in VMS puts out a newline.
  * Under some (unknown) condition, you don't get one free when DCL starts up.
  */
-spawncli(f, n)
+int spawncli(f, n)
 {
 #if     AMIGA
         long newcli;
@@ -161,20 +162,22 @@ spawncli(f, n)
 
 #if	V7 & BSD
 
-bktoshell()		/* suspend MicroEMACS and wait to wake up */
+int bktoshell()		/* suspend MicroEMACS and wait to wake up */
 {
 	int pid;
 
 	vttidy();
 	pid = getpid();
 	IGNORE(kill(pid,SIGTSTP));
+	return 0;
 }
 
-rtfrmshell()
+int rtfrmshell()
 {
 	ttopen();
 	curwp->w_flag = WFHARD;
 	IGNORE(refresh(TRUE, 0));
+	return 0;
 }
 #endif
 
@@ -183,7 +186,7 @@ rtfrmshell()
  * character to be typed, then mark the screen as garbage so a full repaint is
  * done. Bound to "C-X !".
  */
-spawn(f, n)
+int spawn(f, n)
 {
         register int    s;
         char            line[NLINE];
@@ -261,7 +264,7 @@ spawn(f, n)
  * LIB$SPAWN works. You have to do wierd stuff with the terminal on the way in
  * and the way out, because DCL does not want the channel to be in raw mode.
  */
-sys(cmd)
+int sys(cmd)
 register char   *cmd;
 {
         struct  dsc$descriptor  cdsc;
@@ -305,7 +308,7 @@ register char   *cmd;
  * off "command.com". We really do not understand what it does, but if you don't
  * do it exactly "malloc" starts doing very very strange things.
  */
-sys(cmd, tail)
+int sys(cmd, tail)
 char    *cmd;
 char    *tail;
 {

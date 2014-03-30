@@ -105,7 +105,7 @@ static int load_memacs() {
 	}
 }
 
-emacs_main(argc, argv) int argc; char** argv; {
+int emacs_main(argc, argv) int argc; char** argv; {
 	static int first = 1;
 	if (first) {
 		first = 0;
@@ -115,36 +115,42 @@ emacs_main(argc, argv) int argc; char** argv; {
 	if (main_) {
 		(*main_)(argc, argv);
 	}
+	return 0;
 }
 
-emacs_vtinit() {
+int emacs_vtinit() {
 	if (vtinit_) {
 		(*vtinit_)();
 	}
+	return 0;
 }
 
-emacs_refresh(f, n) int f, n; {
+int emacs_refresh(f, n) int f, n; {
 	if (refresh_) {
 		(*refresh_)(f, n);
 	}
+	return 0;
 }
 
-emacs_ttputc(c) int c; {
+int emacs_ttputc(c) int c; {
 	if (ttputc_) {
 		(*ttputc_)(c);
 	}
+	return 0;
 }
 
-emacs_ttflush() {
+int emacs_ttflush() {
 	if (ttflush_) {
 		(*ttflush_)();
 	}
+	return 0;
 }
 
-emacs_quit(f, n) int f, n; {
+int emacs_quit(f, n) int f, n; {
 	if (quit_) {
 		(*quit_)();
 	}
+	return 0;
 }
 
 #endif
@@ -175,7 +181,7 @@ TERM	term	= {
 };
 
 
-static ibmmove(row, col)
+static int ibmmove(row, col)
 {
 #ifndef _Windows
 	union REGS regs;
@@ -187,6 +193,7 @@ static ibmmove(row, col)
 #else
 	em_goto(hwnd, row, col);
 #endif
+	return 0;
 }
 
 static ibmeeol()
@@ -209,10 +216,10 @@ static ibmeeol()
 #endif
 }
 #ifdef _Windows
-clreol() {printf("clreol\n");}
+int clreol() {printf("clreol\n"); return 0;}
 #endif
 
-static ibmeeop()
+static int ibmeeop()
 {
 #ifdef _Windows
 	em_clear(hwnd);
@@ -228,9 +235,10 @@ static ibmeeop()
 	int86(0x10, &regs, &regs);
 	ibmmove(0, 0);
 #endif
+	return 0;
 }
 
-static ibmgetc()
+static int ibmgetc()
 {
 #ifdef _Windows
 	return getch();
@@ -242,11 +250,11 @@ static ibmgetc()
 #endif
 }
 #ifdef _Windows
-int getch() { return fgetchar();}
+int getch() { return fgetchar(); return 0;}
 #endif
 
 
-static ibmputc(c)
+static int ibmputc(c)
 {
 #if 1
 #ifdef _Windows
@@ -261,23 +269,26 @@ static ibmputc(c)
 	regs.h.al = c;
 	int86(0x10, &regs, &regs);
 #endif
+	return 0;
 }
 
 static ibmflush()
 {
 }
 
-static ttputc(int a) {
+static int ttputc(int a) {
 	ibmputc(a);
+	return 0;
 }
 
-static ibmbeep()
+static int ibmbeep()
 {
 	ttputc(BEL);
 	ibmflush();
+	return 0;
 }
 
-static ibmparm(n)
+static int ibmparm(n)
 register int	n;
 {
 
@@ -287,11 +298,12 @@ register int	n;
 	if (q != 0)
 		ibmparm(q);
 	ttputc((n%10) + '0');
+	return 0;
 }
 
 #endif
 
-ibmopen()
+int ibmopen()
 {
 #ifndef _Windows
 	textmode(3);
@@ -299,6 +311,7 @@ ibmopen()
 #endif
 
 	ttopen();
+	return 0;
 }
 #ifdef _Windows
 void destroy_func(HWND hwnd) {
@@ -307,7 +320,7 @@ void destroy_func(HWND hwnd) {
 	winio_onclose(hwnd, destroy_func);
 }
 
-ttopen() {
+int ttopen() {
 	int row, col;
 	hwnd = winio_current();
 	winio_setecho(hwnd, FALSE);
@@ -316,13 +329,15 @@ ttopen() {
 	term.t_nrow = row;
 	term.t_ncol = col;
 	term.t_nrow;
+	return 0;
 }
-ibmclose() {
+int ibmclose() {
 	em_close(hwnd, destroy_func);
+	return 0;
 }
 #endif
 
-static ibmrev(state)		/* change reverse video state */
+static int ibmrev(state)		/* change reverse video state */
 
 int state;	/* TRUE = reverse, FALSE = normal */
 
@@ -332,6 +347,7 @@ int state;	/* TRUE = reverse, FALSE = normal */
 	ttputc(state ? '7': '0');
 	ttputc('m');
 */
+	return 0;
 }
 
 

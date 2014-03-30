@@ -136,7 +136,7 @@ struct termio nstate;		/* new tty state */
  * On VMS, it translates TT until it finds the terminal, then assigns
  * a channel to it and sets it raw. On CPM it is a no-op.
  */
-void ttopen(void)
+int ttopen()
 {
 #if     AMIGA
         terminal = Open("RAW:1/1/639/199/MicroEMACS 3.6/Amiga", NEW);
@@ -218,7 +218,7 @@ void ttopen(void)
 	nstate.c_cc[5]=1;
 	IGNORE(ioctl(0, TCSETA, &nstate));
 #endif
-
+	return 0;
 }
 
 /*
@@ -226,7 +226,7 @@ void ttopen(void)
  * interpreter. On VMS it puts the terminal back in a reasonable state.
  * Another no-operation on CPM.
  */
-void ttclose(void)
+int ttclose(void)
 {
 #if     AMIGA
         amg_flush();
@@ -263,6 +263,7 @@ void ttclose(void)
 #if HAVE_TERMIO_H /* SYSV | LINUX */
 	IGNORE(ioctl(0, TCSETA, &ostate));
 #endif
+	return 0;
 }
 
 /*
@@ -271,7 +272,7 @@ void ttclose(void)
  * On CPM terminal I/O unbuffered, so we just write the byte out. Ditto on
  * MS-DOS (use the very very raw console output routine).
  */
-void ttputc(char c)
+int  ttputc(char c)
 {
 #if     AMIGA
         scrn_tmp[scrn_tmp_p++] = c;
@@ -307,14 +308,16 @@ void ttputc(char c)
 #if     V7
         IGNORE(fputc(c, stdout));
 #endif
+	return 0;
 }
 
 #if	AMIGA
-void amg_flush(void)
+int amg_flush(void)
 {
         if(scrn_tmp_p)
                 Write(terminal,scrn_tmp,scrn_tmp_p);
         scrn_tmp_p = 0;
+	return 0;
 }
 #endif
 
@@ -322,7 +325,7 @@ void amg_flush(void)
  * Flush terminal buffer. Does real work where the terminal output is buffered
  * up. A no-operation on systems where byte at a time terminal I/O is done.
  */
-void ttflush(void)
+int  ttflush(void)
 {
 #if     AMIGA
         amg_flush();
@@ -348,6 +351,7 @@ void ttflush(void)
 #if     V7
         IGNORE(fflush(stdout));
 #endif
+	return 0;
 }
 
 /*

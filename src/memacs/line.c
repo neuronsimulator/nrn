@@ -49,8 +49,7 @@ unsigned ksize   = 0;                   /* # of bytes allocated in KB   */
  * a pointer to the new block, or NULL if there isn't any memory left. Print a
  * message in the message line if no space.
  */
-LINE    *
-lalloc(used)
+LINE    *lalloc(used)
 register int    used;
 {
         register LINE   *lp;
@@ -74,7 +73,7 @@ register int    used;
  * might be in. Release the memory. The buffers are updated too; the magic
  * conditions described in the above comments don't hold here.
  */
-lfree(lp)
+int lfree(lp)
 register LINE   *lp;
 {
         register BUFFER *bp;
@@ -111,6 +110,7 @@ register LINE   *lp;
         lp->l_bp->l_fp = lp->l_fp;
         lp->l_fp->l_bp = lp->l_bp;
         free((char *) lp);
+	return TRUE;
 }
 
 /*
@@ -120,7 +120,7 @@ register LINE   *lp;
  * displayed in more than 1 window we change EDIT t HARD. Set MODE if the
  * mode line needs to be updated (the "*" has to be set).
  */
-lchange(flag)
+int lchange(flag)
 register int    flag;
 {
         register WINDOW *wp;
@@ -137,15 +137,17 @@ register int    flag;
                         wp->w_flag |= flag;
                 wp = wp->w_wndp;
         }
+	return TRUE;
 }
 
-insspace(f, n)	/* insert spaces forward into text */
+int insspace(f, n)	/* insert spaces forward into text */
 
 int f, n;	/* default flag and numeric argument */
 
 {
 	IGNORE(linsert(n, ' '));
 	IGNORE(backchar(f, n));
+	return TRUE;
 }
 
 /*
@@ -157,7 +159,7 @@ int f, n;	/* default flag and numeric argument */
  * greater than the place where you did the insert. Return TRUE if all is
  * well, and FALSE on errors.
  */
-linsert(n, c)
+int linsert(n, c)
 {
         register char   *cp1;
         register char   *cp2;
@@ -243,7 +245,7 @@ linsert(n, c)
  * update of dot and mark is a bit easier then in the above case, because the
  * split forces more updating.
  */
-lnewline()
+int lnewline()
 {
         register char   *cp1;
         register char   *cp2;
@@ -298,7 +300,7 @@ lnewline()
  * deleted, and FALSE if they were not (because dot ran into the end of the
  * buffer. The "kflag" is TRUE if the text should be put in the kill buffer.
  */
-ldelete(n, kflag)
+int ldelete(n, kflag)
 {
         register char   *cp1;
         register char   *cp2;
@@ -367,7 +369,7 @@ ldelete(n, kflag)
  * about in memory. Return FALSE on error and TRUE if all looks ok. Called by
  * "ldelete" only.
  */
-ldelnewline()
+int ldelnewline()
 {
         register char   *cp1;
         register char   *cp2;
@@ -451,7 +453,7 @@ ldelnewline()
  * new kill context is being created. The kill buffer array is released, just
  * in case the buffer has grown to immense size. No errors.
  */
-kdelete()
+int kdelete()
 {
         if (kbufp != NULL) {
                 free((char *) kbufp);
@@ -459,6 +461,7 @@ kdelete()
                 kused = 0;
                 ksize = 0;
         }
+	return TRUE;
 }
 
 /*
@@ -468,7 +471,7 @@ kdelete()
  * later. Return TRUE if all is well, and FALSE on errors.
  */
 
-kinsert(c)
+int kinsert(c)
 {
         register char   *nbufp;
 
@@ -491,7 +494,7 @@ kinsert(c)
  * "n" is off the end, it returns "-1". This lets the caller just scan along
  * until it gets a "-1" back.
  */
-kremove(n)
+int kremove(n)
 {
         if (n >= kused)
                 return (-1);

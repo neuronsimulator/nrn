@@ -33,6 +33,13 @@ tcap.c,v
 #define BEL     0x07
 #define ESC     0x1B
 
+extern int tgetnum();
+extern int tgetent();
+extern int tputs();
+
+static int putpad();
+static int putnpad();
+
 extern int      ttopen();
 extern int      ttgetc();
 extern int      ttputc();
@@ -70,7 +77,7 @@ TERM term = {
         tcaprev
 };
 
-tcapopen()
+int tcapopen()
 
 {
         char *getenv();
@@ -125,25 +132,29 @@ tcapopen()
                 exit(1);
         }
         ttopen();
+	return 0;
 }
 
-tcapmove(row, col)
+int tcapmove(row, col)
 register int row, col;
 {
         putpad(tgoto(CM, col, row));
+	return 0;
 }
 
-tcapeeol()
+int tcapeeol()
 {
         putpad(CE);
+	return 0;
 }
 
-tcapeeop()
+int tcapeeop()
 {
         putpad(CL);
+	return 0;
 }
 
-tcaprev(state)		/* change reverse video status */
+int tcaprev(state)		/* change reverse video status */
 
 int state;	/* FALSE = normal video, TRUE = reverse video */
 
@@ -155,29 +166,34 @@ int state;	/* FALSE = normal video, TRUE = reverse video */
 		if (SE != NULL)
 			putpad(SE);
 	}
+	return 0;
 }
 
-tcapbeep()
+int tcapbeep()
 {
         ttputc(BEL);
+	return 0;
 }
 
-putpad(str)
+static int putpad(str)
 char    *str;
 {
         tputs(str, 1, ttputc);
+	return 0;
 }
 
-putnpad(str, n)
+static int putnpad(str, n)
 char    *str;
 {
         tputs(str, n, ttputc);
+	return 0;
 }
 
 #else
 
-hello()
+int hello()
 {
+	return 0;
 }
 
 #endif /*TERMCAP*/

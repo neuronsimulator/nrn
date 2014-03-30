@@ -35,7 +35,7 @@ int numlocks;		/* # of current locks active */
 
 /* lockchk:	check a file for locking and add it to the list */
 
-lockchk(fname)
+int lockchk(fname)
 
 char *fname;	/* file to check for a lock */
 
@@ -79,7 +79,7 @@ char *fname;	/* file to check for a lock */
 
 /*	lockrel:	release all the file locks so others may edit */
 
-lockrel()
+int lockrel()
 
 {
 	register int i;		/* loop index */
@@ -103,7 +103,7 @@ lockrel()
 			ABORT = file was locked, abort command
 */
 
-lock(fname)
+int lock(fname)
 
 char *fname;	/* file name to lock */
 
@@ -139,7 +139,7 @@ char *fname;	/* file name to lock */
 		this only warns the user if it fails
 							*/
 
-unlock(fname)
+int unlock(fname)
 
 char *fname;	/* file to unlock */
 
@@ -157,7 +157,7 @@ char *fname;	/* file to unlock */
 	return(FALSE);
 }
 
-lckerror(errstr)	/* report a lock error */
+int lckerror(errstr)	/* report a lock error */
 
 char *errstr;		/* lock error string to print out */
 
@@ -174,7 +174,8 @@ char *errstr;		/* lock error string to print out */
 }
 #endif
 #else
-lckhello()	/* dummy function */
+int lckhello()	/* dummy function */
 {
+  return TRUE;
 }
 #endif

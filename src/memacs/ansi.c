@@ -72,7 +72,7 @@ TERM    term    = {
 	ansirev
 };
 
-ansimove(row, col)
+int ansimove(row, col)
 {
         ttputc(ESC);
         ttputc('[');
@@ -80,23 +80,26 @@ ansimove(row, col)
         ttputc(';');
         ansiparm(col+1);
         ttputc('H');
+	return 0;
 }
 
-ansieeol()
+int ansieeol()
 {
         ttputc(ESC);
         ttputc('[');
         ttputc('K');
+	return 0;
 }
 
-ansieeop()
+int ansieeop()
 {
         ttputc(ESC);
         ttputc('[');
         ttputc('J');
+	return 0;
 }
 
-ansirev(state)		/* change reverse video state */
+int ansirev(state)		/* change reverse video state */
 
 int state;	/* TRUE = reverse, FALSE = normal */
 
@@ -105,15 +108,17 @@ int state;	/* TRUE = reverse, FALSE = normal */
 	ttputc('[');
 	ttputc(state ? '7': '0');
 	ttputc('m');
+	return 0;
 }
 
-ansibeep()
+int ansibeep()
 {
         ttputc(BEL);
         ttflush();
+	return 0;
 }
 
-ansiparm(n)
+int ansiparm(n)
 register int    n;
 {
         register int    q;
@@ -122,11 +127,10 @@ register int    n;
         if (q != 0)
                 ansiparm(q);
         ttputc((n%10) + '0');
+	return 0;
 }
 
-#endif
-
-ansiopen()
+int ansiopen()
 {
 #if     V7
         register char *cp;
@@ -143,4 +147,7 @@ ansiopen()
 #endif
 	revexist = TRUE;
         ttopen();
+	return 0;
 }
+
+#endif

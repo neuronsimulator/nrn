@@ -39,7 +39,7 @@ buffer.c,v
  * if the use count is 0. Otherwise, they come
  * from some other window.
  */
-usebuffer(f, n)
+int usebuffer(f, n)
 {
         register BUFFER *bp;
         register int    s;
@@ -53,7 +53,7 @@ usebuffer(f, n)
 	return(swbuffer(bp));
 }
 
-nextbuffer(f, n)	/* switch to the next buffer in the buffer list */
+int nextbuffer(f, n)	/* switch to the next buffer in the buffer list */
 
 {
         register BUFFER *bp;
@@ -70,7 +70,7 @@ nextbuffer(f, n)	/* switch to the next buffer in the buffer list */
 	return(swbuffer(bp));
 }
 
-swbuffer(bp)	/* make buffer BP current */
+int swbuffer(bp)	/* make buffer BP current */
 
 BUFFER *bp;
 
@@ -123,7 +123,7 @@ BUFFER *bp;
  * if the buffer has been changed). Then free the header
  * line and the buffer header. Bound to "C-X K".
  */
-killbuffer(f, n)
+int killbuffer(f, n)
 
 {
 	register BUFFER *bp;
@@ -138,7 +138,7 @@ killbuffer(f, n)
 	return(zotbuf(bp));
 }
 
-zotbuf(bp)	/* kill the buffer pointed to by bp */
+int zotbuf(bp)	/* kill the buffer pointed to by bp */
 
 register BUFFER *bp;
 
@@ -169,7 +169,7 @@ register BUFFER *bp;
         return (TRUE);
 }
 
-namebuffer(f,n)		/*	Rename the current buffer	*/
+int namebuffer(f,n)		/*	Rename the current buffer	*/
 
 int f, n;		/* default Flag & Numeric arg */
 
@@ -209,7 +209,7 @@ ask:	if (mlreply("Change buffer name to: ", bufn, NBUFN) != TRUE)
  * the windows that are displaying the
  * list. Bound to "C-X C-B".
  */
-listbuffers(f, n)
+int listbuffers(f, n)
 {
         register WINDOW *wp;
         register BUFFER *bp;
@@ -254,7 +254,7 @@ listbuffers(f, n)
  * if everything works. Return FALSE if there
  * is an error (if there is no memory).
  */
-makelist()
+int makelist()
 {
         register char   *cp1;
         register char   *cp2;
@@ -352,7 +352,7 @@ makelist()
         return (TRUE);                          /* All done             */
 }
 
-emacs_itoa(buf, width, num)
+int emacs_itoa(buf, width, num)
 register char   buf[];
 register int    width;
 register int    num;
@@ -365,6 +365,7 @@ register int    num;
         buf[--width] = num + '0';               /* Always 1 digit.      */
         while (width != 0)                      /* Pad with blanks.     */
                 buf[--width] = ' ';
+	return TRUE;
 }
 
 /*
@@ -374,7 +375,7 @@ register int    num;
  * on the end. Return TRUE if it worked and
  * FALSE if you ran out of room.
  */
-addline(text)
+int addline(text)
 char    *text;
 {
         register LINE   *lp;
@@ -405,7 +406,7 @@ char    *text;
  * Return FALSE if no buffers
  * have been changed.
  */
-anycb()
+int anycb()
 {
         register BUFFER *bp;
 
@@ -424,8 +425,7 @@ anycb()
  */
 static int nextnum;
 
-static int
-bufname_match(pattern, string)
+static int bufname_match(pattern, string)
 	char *pattern, *string;
 {
 	char *bufnum, *bufname, *cp, buf[NBUFN];
@@ -455,8 +455,7 @@ bufname_match(pattern, string)
  * and the "cflag" is TRUE, create it. The "bflag" is
  * the settings for the flags in in buffer.
  */
-BUFFER  *
-bfind(bname, cflag, bflag)
+BUFFER  *bfind(bname, cflag, bflag)
 register char   *bname;
 {
         register BUFFER *bp;
@@ -539,7 +538,7 @@ register char   *bname;
  * that are required. Return TRUE if everything
  * looks good.
  */
-bclear(bp)
+int bclear(bp)
 register BUFFER *bp;
 {
         register LINE   *lp;
