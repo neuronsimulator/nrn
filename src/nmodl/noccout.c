@@ -128,6 +128,11 @@ void c_out()
 	P("#include <stdio.h>\n#include <stdlib.h>\n#include <math.h>\n#include \"scoplib_ansi.h\"\n");
 	P("#undef PI\n");
 	P("#define nil 0\n");
+P("#include \"md1redef.h\"\n");
+P("#include \"section.h\"\n");
+P("#include \"nrniv_mf.h\"\n");
+P("#include \"md2redef.h\"\n");
+
 #endif
 	printlist(defs_list);
 	printlist(firstlist);
@@ -616,6 +621,10 @@ void c_out_vectorize()
 	P("#include <stdio.h>\n#include <stdlib.h>\n#include <math.h>\n#include \"scoplib_ansi.h\"\n");
 	P("#undef PI\n");
 	P("#define nil 0\n");
+P("#include \"md1redef.h\"\n");
+P("#include \"section.h\"\n");
+P("#include \"nrniv_mf.h\"\n");
+P("#include \"md2redef.h\"\n");
 	printlist(defs_list);
 	printlist(firstlist);
 	P("static int _reset;\n");

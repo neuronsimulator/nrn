@@ -86,7 +86,7 @@ if (deriv_imp_list) {	/* make sure deriv block translation matches method */
  precede the DERIVATIVE block\n",
 " and all SOLVEs using that block must use the derivimplicit method\n");
 	}
-	Sprintf(deriv1_advance, "0; _deriv%d_advance = 1;\n", listnum);
+	Sprintf(deriv1_advance, "_deriv%d_advance = 1;\n", listnum);
 	Sprintf(deriv2_advance, "_deriv%d_advance = 0;\n", listnum);
 	Sprintf(buf, "static int _deriv%d_advance = 0;\n", listnum);
 	q = linsertstr(procfunc, buf);

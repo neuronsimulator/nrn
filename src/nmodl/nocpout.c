@@ -260,10 +260,6 @@ fprintf(stderr, "Notice: ARTIFICIAL_CELL models that would require thread specif
 	}
 
 	Lappendstr(defs_list, "\
-\n#include \"md1redef.h\"\
-\n#include \"section.h\"\
-\n#include \"nrniv_mf.h\"\
-\n#include \"md2redef.h\"\n\
 \n#if METHOD3\nextern int _method3;\n#endif\n\
 \n#if !NRNGPU\
 \n#undef exp\
@@ -1139,7 +1135,7 @@ if (_nd->_extnode) {\n\
 	}
 	if (ldifuslist) {
 		Lappendstr(defs_list, "\thoc_register_ldifus1(_difusfunc);\n");
-		Linsertstr(defs_list, "static void _difusfunc();\n");
+		Linsertstr(defs_list, "static void _difusfunc(ldifusfunc2_t, _NrnThread*);\n");
 	}
     } /* end of not "nothing" */
 	Lappendstr(defs_list, "\
@@ -1257,11 +1253,7 @@ static double _difcoef%d(int _i, double* _p, Datum* _ppvar, double* _pdvol, doub
 		}
 		lappendstr(procfunc, ";\n}\n");
 	}
-#if MAC
-	lappendstr(procfunc, "static void _difusfunc(_f, _nt) void *_f; _NrnThread* _nt; {int _i;\n");
-#else
-	lappendstr(procfunc, "static void _difusfunc(_f, _nt) void(*_f)(); _NrnThread* _nt; {int _i;\n");
-#endif
+	lappendstr(procfunc, "static void _difusfunc(ldifusfunc2_t _f, _NrnThread* _nt) {int _i;\n");
 	n = 0;
 	ITERATE(q, ldifuslist) {
 		s = SYM(q); q = q->next;
@@ -1277,13 +1269,13 @@ static double _difcoef%d(int _i, double* _p, Datum* _ppvar, double* _pdvol, doub
 #if MAC
 sprintf(buf, " for (_i=0; _i < %d; ++_i) mac_difusfunc(_f, _mechtype, _difcoef%d, &_difspace%d, _i, ", s->araydim, n, n);
 #else
-sprintf(buf, " for (_i=0; _i < %d; ++_i) _f(_mechtype, _difcoef%d, &_difspace%d, _i, ", s->araydim, n, n);
+sprintf(buf, " for (_i=0; _i < %d; ++_i) (*_f)(_mechtype, _difcoef%d, &_difspace%d, _i, ", s->araydim, n, n);
 #endif
 		}else{
 #if MAC
 sprintf(buf, " mac_difusfunc(_f,_mechtype, _difcoef%d, &_difspace%d, 0, ", n, n);
 #else
-sprintf(buf, " _f(_mechtype, _difcoef%d, &_difspace%d, 0, ", n, n);
+sprintf(buf, " (*_f)(_mechtype, _difcoef%d, &_difspace%d, 0, ", n, n);
 #endif
 		}
 		lappendstr(procfunc, buf);
@@ -2280,7 +2272,7 @@ void cvode_emit_interface() {
 		Lappendstr(defs_list, "\n\
 static int _ode_count(int);\n");
 		sprintf(buf, "\n\
-static int _ode_count(int _type){ hoc_execerror(\"%s\", \"cannot be used with CVODE\");}\n",
+static int _ode_count(int _type){ hoc_execerror(\"%s\", \"cannot be used with CVODE\"); return 0;}\n",
 			mechname);
 		Lappendstr(procfunc, buf);
 	}else if (cvode_emit) {
@@ -2330,9 +2322,9 @@ the _pp pointer with a pointer to the actual ion model's concentration */
 		cvode_conc_map();
 		Lappendstr(procfunc, "}\n"); 
 		if (ion_synonym) {
-			Lappendstr(defs_list, "static _ode_synonym();\n");
+			Lappendstr(defs_list, "static void _ode_synonym(int, double**, Datum**);\n");
 			Lappendstr(procfunc, "\
-static _ode_synonym(_cnt, _pp, _ppd) int _cnt; double** _pp; Datum** _ppd; {");
+static void _ode_synonym(int _cnt, double** _pp, Datum** _ppd) {");
 		vectorize_substitute(lappendstr(procfunc, "\n"), "\n\
 	double* _p; Datum* _ppvar;\n");
 			Lappendstr(procfunc, "\

@@ -21,6 +21,7 @@ extern void register_mech(const char**, Pvmp, Pvmi, Pvmi, Pvmi, Pvmi, int, int);
 extern int point_register_mech(const char**, Pvmp, Pvmi, Pvmi, Pvmi, Pvmi, int, int,
 	void*(*)(Object*), void(*)(void*), Member_func*);
 extern void hoc_register_cvode(int, nrn_ode_count_t, nrn_ode_map_t, Pvmi, Pvmi);
+extern void hoc_register_ldifus1(ldifusfunc_t);
 extern int nrn_get_mechtype(const char*);
 extern int v_structure_change;
 extern void ion_reg(const char*, double);

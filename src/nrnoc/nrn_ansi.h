@@ -76,6 +76,12 @@ extern void nrn_multisplit_ptr_update(void);
 extern void nrn_cache_prop_realloc();
 extern void nrn_use_daspk(int);
 extern void nrn_update_ps2nt(void);
+extern void _nrn_free_fornetcon(void**);
+extern void add_nrn_fornetcons(int, int);
+extern void _nrn_free_watch(Datum*, int, int);
+extern void _nrn_watch_activate(Datum*, double(*)(Point_process*), int, Point_process*, int, double);
+extern void hoc_reg_ba(int, nrn_bamech_t, int);
+extern int nrn_pointing(double*);
 
 extern void activstim_rhs(void);
 extern void activclamp_rhs(void);
