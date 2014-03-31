@@ -1,5 +1,5 @@
 #ifndef singlech_h
-#define singelch_h
+#define singlech_h
 
 class SingleChanInfo;
 class SingleChanState;

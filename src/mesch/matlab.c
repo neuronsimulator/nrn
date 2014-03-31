@@ -174,36 +174,37 @@ char    **name;
 	A = m_get((unsigned)(mat.m),(unsigned)(mat.n));
 	for ( i = 0; i < A->m*A->n; i++ )
 	{
-		if ( p_flag == DOUBLE_PREC )
+		if ( p_flag == DOUBLE_PREC ) {
 		    if (fread(&d_temp,sizeof(double),1,fp) != 1) {
 			error(E_INPUT, "m_load");
 		    }
-		else
-		{
+		} else {
 		    if (fread(&f_temp,sizeof(float),1,fp) != 1) {
 			error(E_INPUT, "m_load");
 		    }
 		    d_temp = f_temp;
 		}
-		if ( o_flag == ROW_ORDER )
+		if ( o_flag == ROW_ORDER ) {
 		    A->me[i / A->n][i % A->n] = d_temp;
-		else if ( o_flag == COL_ORDER )
+		} else if ( o_flag == COL_ORDER ) {
 		    A->me[i % A->m][i / A->m] = d_temp;
-		else
+		} else {
 		    error(E_FORMAT,"m_load");
+		}
 	}
 
 	if ( mat.imag )         /* skip imaginary part */
 	for ( i = 0; i < A->m*A->n; i++ )
 	{
-		if ( p_flag == DOUBLE_PREC )
+		if ( p_flag == DOUBLE_PREC ) {
 		    if (fread(&d_temp,sizeof(double),1,fp) != 1) {
 			error(E_INPUT, "m_load");
 		    }
-		else
+		} else {
 		    if (fread(&f_temp,sizeof(float),1,fp) != 1) {
 			error(E_INPUT, "m_load");
 		    }
+		}
 	}
 
 	return A;

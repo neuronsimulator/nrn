@@ -28,6 +28,7 @@
 #include <nrnmpiuse.h>
 #if NRNMPI_DYNAMICLOAD
 extern void nrnmpi_dbl_allreduce_vec(double* src, double* dest, int cnt, int type);
+extern void nrnmpi_longdbl_allreduce_vec(long double* src, long double* dest, int cnt, int type);
 extern void nrnmpi_long_allreduce_vec(long* src, long* dest, int cnt, int type);
 extern int nrnmpi_numprocs;
 #endif

@@ -209,7 +209,7 @@ void section_menu(double x1, int type, MechSelector* ms)
 			sprintf(buf,"%s.%s", sname.string(), "v");
 			hoc_ivvalue("v",buf);
 		}else{
-sprintf(buf,"v(%g)", x); hoc_ivpvalue("v",hoc_val_pointer(buf), NULL, hoc_lookup("v")->extra);
+sprintf(buf,"v(%g)", x); hoc_ivpvalue("v",hoc_val_pointer(buf), false, hoc_lookup("v")->extra);
 		}
 	}
 	

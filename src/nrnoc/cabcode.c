@@ -101,7 +101,8 @@ void nrn_pushsec(Section* sec)
 		int i = NSECSTACK;
 		hoc_warning("section stack overflow", (char *)0);
 		while (--i >= 0) {
-			fprintf(stderr, "%*s%s\n", i--, "",  secname(secstack[i]));
+	fprintf(stderr, "%*s%s\n", i, "",  secname(secstack[i]));
+			--i;
 		}
 		hoc_execerror("section stack overflow", (char *)0);
 	}

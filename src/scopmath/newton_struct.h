@@ -1,5 +1,5 @@
 #ifndef newton_struct_h
-#define newton_sruct_h
+#define newton_struct_h
 /* avoid incessant alloc/free memory */
 typedef struct NewtonSpace {
 	int n;
