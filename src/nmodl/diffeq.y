@@ -215,7 +215,7 @@ static void free4(lst) List* lst; {
 	freelist(&ls);
 }
 
-static void yyerror() { assert(0); }
+static void yyerror(s) char* s; { assert(0); }
 
 static void fullname(buf) char* buf; {
 	/* handle case of name [...] with qexpr pointing to final item */

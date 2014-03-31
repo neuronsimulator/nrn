@@ -77,10 +77,10 @@ static double stimulus();
 
 void fsyni(void) {
 	int i;
-	double cur, g;
+	double cur;
 	
 	i = chkarg(1, 0., (double)(maxstim-1));
-	if ((cur = stimulus(i, &g)) != 0.) {
+	if ((cur = stimulus(i)) != 0.) {
 		cur *= pstim[i].mag / pstim[i].mag_seg;
 	}
 	hoc_retpushx(cur);
@@ -91,7 +91,8 @@ void fsyng(void) {
 	double g;
 	
 	i = chkarg(1, 0., (double)(maxstim-1));
-	IGNORE(stimulus(i, &g));
+	IGNORE(stimulus(i));
+	g = pstim[i].g;
 	if (g != 0.) {
 		g *= pstim[i].mag / pstim[i].mag_seg;
 	}

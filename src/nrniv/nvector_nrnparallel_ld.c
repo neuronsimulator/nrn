@@ -941,7 +941,7 @@ static ldrealtype VAllReduce_long_NrnParallelLD(ldrealtype d, int op, MPI_Comm c
 
   assert(op == 1);
 #if NRNMPI_DYNAMICLOAD
-  nrnmpi_dbl_allreduce_vec(&d, &out, 1, op);
+  nrnmpi_longdbl_allreduce_vec(&d, &out, 1, op);
 #else
   MPI_Allreduce(&d, &out, 1, MPI_LONG_DOUBLE, MPI_SUM, comm);
 #endif

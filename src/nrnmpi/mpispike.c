@@ -439,6 +439,27 @@ void nrnmpi_dbl_allreduce_vec(double* src, double* dest, int cnt, int type) {
 	return;
 }
 
+void nrnmpi_longdbl_allreduce_vec(longdbl* src, longdbl* dest, int cnt, int type) {
+	int i;
+	MPI_Op t;
+	assert(src != dest);
+	if (nrnmpi_numprocs < 2) {
+		for (i = 0; i < cnt; ++i) {
+			dest[i] = src[i];
+		}
+		return;
+	}
+	if (type == 1) {
+		t = MPI_SUM;
+	}else if (type == 2) {
+		t = MPI_MAX;
+	}else{
+		t = MPI_MIN;
+	}
+	MPI_Allreduce(src, dest, cnt, MPI_LONG_DOUBLE, t, nrnmpi_comm);
+	return;
+}
+
 void nrnmpi_long_allreduce_vec(long* src, long* dest, int cnt, int type) {
 	int i;
 	MPI_Op t;
