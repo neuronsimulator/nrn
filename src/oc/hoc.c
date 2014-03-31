@@ -1018,7 +1018,8 @@ void hoc_quit(void) {
 #if defined(CYGWIN)
 static const char* double_at2space(const char* infile) {
 	char* buf;
-	char *cp1, *cp2;
+	const char *cp1;
+	char *cp2;
 	int replace = 0;
 	for (cp1 = infile; *cp1; ++cp1) {
 		if (*cp1 == '@' && cp1[1] == '@') {
@@ -1026,7 +1027,7 @@ static const char* double_at2space(const char* infile) {
 			break;
 		}
 	}
-	if (replace) {
+	if (!replace) {
 		return infile;
 	}
 	buf = (char*)emalloc(strlen(infile) + 1);
@@ -1097,14 +1098,14 @@ int moreinput(void)
 	infile = *gargv++;
 #if defined(WIN32)
 	if (infile[0] == '"') {
-		char* cp = infile;
-		++infile;
+		char* cp = strdup(infile + 1);
 		for (++cp; *cp; ++cp) {
 			if (*cp == '"') {
 				*cp = '\0';
 				break;
 			}
 		}
+		infile = cp;
 	}
 #endif
 #if defined(CYGWIN)

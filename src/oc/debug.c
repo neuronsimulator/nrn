@@ -9,7 +9,7 @@ int zzdebug;
 #if	DOS
 #define prcod(c1,c2)	else if (p->pf == c1) Printf("%p %p %s", p, p->pf, c2);
 #else
-#define prcod(c1,c2)	else if (p->pf == c1) Printf("%lx %lx %s", (long)p, (long)p->pf, c2);
+#define prcod(c1,c2)	else if (p->pf == c1) Printf("%p %p %s", p, p->pf, c2);
 #endif
 
 void debug(void)		/* print the machine */
@@ -130,13 +130,13 @@ void debugzz(Inst* p)	/* running copy of calls to execute */
 #endif
 		else
 		{
-			long offset = (long)p->in;
+			size_t offset = (size_t)p->in;
 			if (offset < 1000)
 				Printf("relative %d\n", p->i);
 			else {
-			offset = (long)(p->in) - (long)p;
-			if (offset > (long)prog - (long)p
-			&& offset < (long)(&prog[2000]) - (long)p )
+			offset = (size_t)(p->in) - (size_t)p;
+			if (offset > (size_t)prog - (size_t)p
+			&& offset < (size_t)(&prog[2000]) - (size_t)p )
 				Printf("relative %ld\n", p->in - p);
 			else if (p->sym->name != (char *) 0)
 				{

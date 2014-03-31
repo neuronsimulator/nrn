@@ -46,7 +46,7 @@ void print_symlist(const char* s, Symlist* tab) {
 	Symbol *sp;
 	printf("%s\n", s);
 	if (tab) for (sp=tab->first ; sp != (Symbol *) 0; sp = sp->next) {
-		printf("%s %lx\n", sp->name, (long)sp);
+		printf("%s %p\n", sp->name, sp);
 	}
 }
 

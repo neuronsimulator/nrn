@@ -1751,7 +1751,7 @@ fprintf(stderr, "Error at section location %s(%g)\n", secname(sec),
 			}
 		}
 	}
-	fprintf(stderr, "Don't know the location of params at %lx\n", (long)pp);
+	fprintf(stderr, "Don't know the location of params at %p\n", pp);
 }
 
 void nrn_matrix_node_free(void) {

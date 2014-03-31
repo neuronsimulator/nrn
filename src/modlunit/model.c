@@ -229,7 +229,7 @@ static void debug_item(q, indent, file)
 	}else
 	switch (q->itemtype) {
 		case SYMBOL:
-		Fprintf(file, "SYMBOL |%s| %lx\n", SYM(q)->name, (long)SYM(q));
+		Fprintf(file, "SYMBOL |%s| %p\n", SYM(q)->name, SYM(q));
 		break;
 	case STRING:
 		Fprintf(file, "STRING |%s|\n", STR(q));
@@ -254,7 +254,7 @@ static void debug_item(q, indent, file)
 		break;
 	case ITEMARRAY: {Item **qa; int i; long n;
 		qa = ITMA(q);
-		n = (long)qa[-1];
+		n = (size_t)qa[-1];
 		Fprintf(file, "ITEMARRAY %ld\n", n);
 		for (i=0; i<n; i++) {
 			debug_item(qa[i], indent+2, file);

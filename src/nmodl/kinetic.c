@@ -1484,16 +1484,16 @@ void prn(q1,q2) Item *q1, *q2; {
 		}
 switch(q->itemtype) {
 case STRING:
-fprintf(stderr, "%lx STRING |%s|\n", (long)q, STR(q));
+fprintf(stderr, "%p STRING |%s|\n", q, STR(q));
 break;
 case SYMBOL:
-fprintf(stderr, "%lx SYMBOL |%s|\n", (long)q, SYM(q)->name);
+fprintf(stderr, "%p SYMBOL |%s|\n", q, SYM(q)->name);
 break;
 case ITEM:
-fprintf(stderr, "%lx ITEM\n", (long)q);
+fprintf(stderr, "%p ITEM\n", q);
 break;
 default:
-fprintf(stderr, "%lx type %d\n", (long)q, q->itemtype);
+fprintf(stderr, "%p type %d\n", q, q->itemtype);
 break;
 }
 	}

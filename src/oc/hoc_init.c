@@ -16,7 +16,7 @@ extern int	hoc_co();
 #endif
 #if	DOS || defined(WIN32) /*|| defined(MAC)*/
 extern int	hoc_settext();
-extern hoc_win_exec();
+extern void hoc_win_exec(void);
 extern double	erf(), erfc();	/* supplied by unix */
 #endif
 

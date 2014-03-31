@@ -26,7 +26,7 @@ See http://www.neuron.yale.edu/neuron/credits\n";
 #include <dlfcn.h>
 #else
 #define RTLD_NOW 0
-extern void* dlopen(char* name, int mode);
+extern void* dlopen(const char* name, int mode);
 extern void* dlsym(void* handle, char* name);
 extern int dlclose(void* handle);
 extern char* dlerror();
@@ -38,6 +38,7 @@ extern char* dlerror();
 extern char* nrn_mech_dll; /* declared in hoc_init.c so ivocmain.cpp can see it */
 #endif
 #if defined(WIN32)
+#undef DLL_DEFAULT_FNAME
 #define DLL_DEFAULT_FNAME "nrnmech.dll"
 #endif
 #if defined(NRNMECH_DLL_STYLE)

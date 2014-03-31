@@ -2142,7 +2142,7 @@ void this_section(void) {
 	
 	Section* sec;
 	sec = chk_access();
-	hoc_retpushx((double)(unsigned long)(sec));
+	hoc_retpushx((double)(size_t)(sec));
 }
 void this_node(void) {
 	/* return node number of currently accessed section at
@@ -2152,7 +2152,7 @@ void this_node(void) {
 	Node* nd;
 	sec = chk_access();
 	nd = node_exact(sec, *getarg(1));
-	hoc_retpushx((double)(unsigned long)nd);
+	hoc_retpushx((double)(size_t)nd);
 }
 void parent_section(void) {
 	/* return section number of currently accessed section at
@@ -2160,7 +2160,7 @@ void parent_section(void) {
 	
 	Section* sec;
 	sec = chk_access();
-	hoc_retpushx((double)(unsigned long)(sec->parentsec));
+	hoc_retpushx((double)(size_t)(sec->parentsec));
 }
 void parent_connection(void) {
 	Section* sec;
@@ -2178,7 +2178,7 @@ void parent_node(void) {
 	Section* sec;
 	hoc_execerror("parent_node() needs to be re-implemented", 0);
 	sec = chk_access();
-	hoc_retpushx((double)(unsigned long)(sec->parentnode));
+	hoc_retpushx((double)(size_t)(sec->parentnode));
 }
 
 void pop_section(void) {
@@ -2214,7 +2214,7 @@ void push_section(void) {
 			hoc_execerror("push_section: arg not a sectionname:", s);
 		}
 	}else{
-		sec = (Section*)(long)(*getarg(1));
+		sec = (Section*)(size_t)(*getarg(1));
 	}
 	if (!sec || !sec->prop || !sec->prop->dparam[0].sym || sec->prop->dparam[0].sym->type != SECTION) {
 		hoc_execerror("Not a Section pointer", (char*)0);

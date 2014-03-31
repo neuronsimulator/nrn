@@ -425,6 +425,6 @@ itemarray(va_alist)
 		qa[i] = q;
 	}
 	va_end (ap);
-	ITMA(ql)[-1] = (Item *)((long)narg);
+	ITMA(ql)[-1] = (Item *)((size_t)narg);
 	return ql;
 }

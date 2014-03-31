@@ -17,8 +17,6 @@
 
 extern char* neuron_home;
 extern char* neuron_home_dos;
-extern char* expand_env_var();
-extern double chkarg();
 
 #if !defined(CYGWIN)
 extern HWND hCurrWnd;
@@ -134,7 +132,7 @@ static FILE* dll_stdio_[] = {(FILE*)0x0, (FILE*)0x20, (FILE*)0x40};
 
 void nrn_mswindll_stdio(i,o,e) FILE* i, *o, *e; {
 	if (o != dll_stdio_[1]) {
-		printf("nrn_mswindll_stdio stdio in dll = %lx but expected %lx\n", (long)o, (long)dll_stdio_[1]);
+		printf("nrn_mswindll_stdio stdio in dll = %p but expected %p\n", o, dll_stdio_[1]);
 	}
 	dll_stdio_[0] = i;
 	dll_stdio_[1] = o;
@@ -214,7 +212,7 @@ void hoc_win32_cleanup() {
 	}
 }
 
-int hoc_win_exec() {
+void hoc_win_exec(void) {
 	int i;
 	i = SW_SHOW;
 	if (ifarg(2)) {

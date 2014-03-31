@@ -892,7 +892,7 @@ void hoc_object_id(void) {
 		}
 	}else{
 		hoc_ret();
-		pushx((double)((long)ob));
+		pushx((double)((size_t)ob));
 	}
 }
 
