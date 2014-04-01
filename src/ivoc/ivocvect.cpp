@@ -131,17 +131,17 @@ static int narg() {
 #define EPSILON 1e-9
 
 extern "C" {
-	extern void notify_freed_val_array(double*, int);
-	extern void install_vector_method(const char* name, double (*)(...));
+	extern void notify_freed_val_array(double*, size_t);
+	extern void install_vector_method(const char* name, Pfrd_vp);
 	extern int vector_instance_px(void*, double**);
 	extern int vector_arg_px(int, double**);
         extern int nrn_mlh_gsort (double* vec, int *base_ptr, int total_elems, doubleComparator cmp);
 };
 
-IvocVect::IvocVect(Object* o) : ParentVect(){obj_ = o; label_ = nil; MUTCONSTRUCT(0)}
-IvocVect::IvocVect(int l, Object* o) : ParentVect(l){obj_ = o; label_ = nil; MUTCONSTRUCT(0)}
-IvocVect::IvocVect(int l, double fill_value, Object* o) : ParentVect(l, fill_value){obj_ = o; label_ = nil; MUTCONSTRUCT(0)}
-IvocVect::IvocVect(IvocVect& v, Object* o) : ParentVect(v) {obj_ = o; label_ = nil; MUTCONSTRUCT(0)}
+IvocVect::IvocVect(Object* o) : ParentVect(){obj_ = o; label_ = NULL; MUTCONSTRUCT(0)}
+IvocVect::IvocVect(int l, Object* o) : ParentVect(l){obj_ = o; label_ = NULL; MUTCONSTRUCT(0)}
+IvocVect::IvocVect(int l, double fill_value, Object* o) : ParentVect(l, fill_value){obj_ = o; label_ = NULL; MUTCONSTRUCT(0)}
+IvocVect::IvocVect(IvocVect& v, Object* o) : ParentVect(v) {obj_ = o; label_ = NULL; MUTCONSTRUCT(0)}
 
 IvocVect::~IvocVect(){
 	MUTDESTRUCT
@@ -154,7 +154,7 @@ IvocVect::~IvocVect(){
 void IvocVect::label(const char* label) {
 	if (label_) {
 		delete [] label_;
-		label_ = nil;
+		label_ = NULL;
 	}
 	if (label) {
 		label_ = new char[strlen(label) + 1];
@@ -286,7 +286,7 @@ void vector_set_label(Vect* v, char* s) { v->label(s); }
 extern "C" {extern char* neuron_home;}
 
 void load_ocmatrix() {
-	struct DLL* dll = nil;
+	struct DLL* dll = NULL;
 	char buf[256];
 	sprintf(buf, "%s\\lib\\ocmatrix.dll", neuron_home);
 	dll = dll_load(buf);
@@ -315,7 +315,7 @@ Object** IvocVect::temp_objvar() {
 }
 
 extern "C" { // bug in cray compiler requires this
-void install_vector_method(const char* name, double (*f)(...)) {
+void install_vector_method(const char* name, double (*f)(void*)) {
 	Symbol* s_meth;
 	if (hoc_table_lookup(name, svec_->u.ctemplate->symtable)) {
 		hoc_execerror(name, " already a method in the Vector class");
@@ -341,12 +341,12 @@ Vect* vector_arg(int i) {
 	return (Vect*)(ob->u.this_pointer);
 }
 
-bool is_vector_arg(int i) {
+int is_vector_arg(int i) {
 	Object* ob = *hoc_objgetarg(i);
 	if (!ob || ob->ctemplate != svec_->u.ctemplate) {
-		return false;
+		return 0;
 	}
-	return true;
+	return 1;
 }
 
 int vector_arg_px(int i, double** px) {
@@ -2005,7 +2005,7 @@ static Object** v_apply(void* v)
   Symbol* s = hoc_lookup(func);
   ob = hoc_thisobject;
   if (!s) {
-	ob = nil;
+	ob = NULL;
 	s = hoc_table_lookup(func, hoc_top_level_symlist);
 	if (!s) {
 	  	hoc_execerror(func, " is undefined");
@@ -2202,7 +2202,7 @@ static double v_meansqerr(void* v1)
   Vect* x = (Vect*)v1;
 
     Vect* y = vector_arg(1);
-    Vect* w = nil;
+    Vect* w = NULL;
 
 	if (ifarg(2)) {
 		w = vector_arg(2);
@@ -3753,7 +3753,7 @@ void Vector_reg() {
 		}
 	}		
 	//printf("dmaxint=%30.20g   %d\n", dmaxint_, (long)dmaxint_);
-        class2oc("Vector", v_cons, v_destruct, v_members, nil, v_retobj_members,
+        class2oc("Vector", v_cons, v_destruct, v_members, NULL, v_retobj_members,
         	v_retstr_members);
 	svec_ = hoc_lookup("Vector");
 	// now make the x variable an actual double
@@ -3762,7 +3762,7 @@ void Vector_reg() {
 	sx->type = VAR;
 	sx->arayinfo = new Arrayinfo;
 	sx->arayinfo->refcount = 1;
-	sx->arayinfo->a_varn = nil;
+	sx->arayinfo->a_varn = NULL;
 	sx->arayinfo->nsub = 1;
 	sx->arayinfo->sub[0] = 1;
 	sv->u.ctemplate->steer = steer_x;

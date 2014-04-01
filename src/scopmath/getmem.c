@@ -36,13 +36,15 @@ int nrows;
 	abort_run(LOWMEM);
     else
 	return (vector);
+    return (double*)0;
 }
 
-freevector(vector)
+int freevector(vector)
 double *vector;
 {
     if (vector != NULL)
 	free((char *) vector);
+    return 0;
 }
 
 double **
@@ -65,7 +67,7 @@ int nrows, ncols;
     return (matrix);
 }
 
-freematrix(matrix)
+int freematrix(matrix)
 double **matrix;
 {
     if (matrix != NULL)
@@ -73,6 +75,7 @@ double **matrix;
 	free((char *) *matrix);
 	free((char *) matrix);
     }
+    return 0;
 }
 
 /**********************************************************
@@ -81,7 +84,7 @@ double **matrix;
  *
  *********************************************************/
 
-zero_matrix(matrix, rows, cols)
+int zero_matrix(matrix, rows, cols)
 double *matrix[];
 int rows, cols;
 {
@@ -90,9 +93,10 @@ int rows, cols;
     for (i = 0; i < rows; i++)
 	for (j = 0; j < cols; j++)
 	    matrix[i][j] = 0.0;
+    return 0;
 }
 
-zero_vector(vector, n)
+int zero_vector(vector, n)
 double vector[];
 int n;
 {
@@ -100,9 +104,10 @@ int n;
 
     for (i = 0; i < n; i++)
 	vector[i] = 0.0;
+    return 0;
 }
 
-zero_ptrvector(ptrvector, n)
+int zero_ptrvector(ptrvector, n)
 double *ptrvector[];
 int n;
 {
@@ -110,4 +115,5 @@ int n;
 
     for (i = 0; i < n; i++)
 	*ptrvector[i] = 0.0;
+    return 0;
 }

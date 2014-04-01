@@ -22,6 +22,9 @@
 #include "parse1.h"
 
 int lexcontext = 0;
+extern int Getc();
+extern int unGetc();
+extern int unput();
 
 #define debug(arg1,arg2) /*printf("lex:arg1|%s|\n", arg2);*/
 %}
@@ -173,7 +176,7 @@ int input()
 
 
 int unput(c) int c; {
-	unGetc(c);
+	return unGetc(c);
 }
 
 
@@ -182,14 +185,14 @@ int output(c) int c; {
 	IGNORE(c);
 #endif
 	diag("internal error: ", "called output");
+	return 0;
 }
 
 int yywrap() {
 	return 1;
 }
 
-char           *
-inputtopar()
+char * inputtopar()
 {				/* returns string up to and not including
 				 * next closing parenthesis */
 	/* main usage is to read the units string */

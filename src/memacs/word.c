@@ -33,7 +33,7 @@ word.c,v
  * back to the end of the word.
  * Returns TRUE on success, FALSE on errors.
  */
-wrapword(n)
+int wrapword(n)
 int n;
 {
         register int cnt;	/* size of word wrapped to next line */
@@ -73,7 +73,7 @@ int n;
  * performed by the "backchar" and "forwchar" routines. Error if you try to
  * move beyond the buffers.
  */
-backword(f, n)
+int backword(f, n)
 {
         if (n < 0)
                 return (forwword(f, -n));
@@ -96,7 +96,7 @@ backword(f, n)
  * Move the cursor forward by the specified number of words. All of the motion
  * is done by "forwchar". Error if you try and move beyond the buffer's end.
  */
-forwword(f, n)
+int forwword(f, n)
 {
         if (n < 0)
                 return (backword(f, -n));
@@ -126,7 +126,7 @@ forwword(f, n)
  * convert any characters to upper case. Error if you try and move beyond the
  * end of the buffer. Bound to "M-U".
  */
-upperword(f, n)
+int upperword(f, n)
 {
         register int    c;
 
@@ -159,7 +159,7 @@ upperword(f, n)
  * convert characters to lower case. Error if you try and move over the end of
  * the buffer. Bound to "M-L".
  */
-lowerword(f, n)
+int lowerword(f, n)
 {
         register int    c;
 
@@ -193,7 +193,7 @@ lowerword(f, n)
  * characters to lower case. Error if you try and move past the end of the
  * buffer. Bound to "M-C".
  */
-capword(f, n)
+int capword(f, n)
 {
         register int    c;
 
@@ -236,7 +236,7 @@ capword(f, n)
  * the right number of words. Put dot back where it was and issue the kill
  * command for the right number of characters. Bound to "M-D".
  */
-delfword(f, n)
+int delfword(f, n)
 {
         register int    size;
         register LINE   *dotp;
@@ -281,7 +281,7 @@ delfword(f, n)
  * counting the characters. When dot is finally moved to its resting place,
  * fire off the kill command. Bound to "M-Rubout" and to "M-Backspace".
  */
-delbword(f, n)
+int delbword(f, n)
 {
         register int    size;
 
@@ -314,7 +314,7 @@ delbword(f, n)
  * Return TRUE if the character at dot is a character that is considered to be
  * part of a word. The word character list is hard coded. Should be setable.
  */
-inword()
+int inword()
 {
         register int    c;
 
@@ -332,7 +332,7 @@ inword()
         return (FALSE);
 }
 
-fillpara(f, n)	/* Fill the current paragraph according to the current
+int fillpara(f, n)	/* Fill the current paragraph according to the current
 		   fill column						*/
 
 int f, n;	/* deFault flag and Numeric argument */
@@ -429,7 +429,7 @@ int f, n;	/* deFault flag and Numeric argument */
 	return TRUE;
 }
 
-killpara(f, n)	/* delete n paragraphs starting with the current one */
+int killpara(f, n)	/* delete n paragraphs starting with the current one */
 
 int f;	/* default flag */
 int n;	/* # of paras to delete */

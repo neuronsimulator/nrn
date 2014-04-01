@@ -73,7 +73,7 @@ void nrnpython() {
 		return;
 	}
 #endif	
-	ret(0.);
+	hoc_retpushx(0.);
 }
 
 // Stub class for when Python does not exist
@@ -105,7 +105,7 @@ void nrnpython_reg() {
 		return;
 	}
 #endif
-	class2oc("PythonObject", p_cons, p_destruct, p_members);
+	class2oc("PythonObject", p_cons, p_destruct, p_members, NULL, NULL, NULL);
 }
 
 #if NRNPYTHON_DYNAMICLOAD // to end of file

@@ -78,7 +78,7 @@ public:
 
 /*static*/ class BoxDismiss : public WinDismiss {
 public:
-	BoxDismiss(DismissableWindow*, String*, OcBox*, Object* pyact=nil);
+	BoxDismiss(DismissableWindow*, String*, OcBox*, Object* pyact=NULL);
 	virtual ~BoxDismiss();
 	virtual void execute();
 private:
@@ -110,7 +110,7 @@ void BoxDismiss::execute() {
 #endif /* HAVE_IV */ 
 static void* vcons(Object*) {
 #if HAVE_IV
-	OcBox* b = nil;
+	OcBox* b = NULL;
         int frame = OcBox::INSET;
 	bool scroll = false;
         if (ifarg(1)) frame = int(chkarg(1,0,3));
@@ -125,7 +125,7 @@ static void* vcons(Object*) {
 	
 static void* hcons(Object*) {
 #if HAVE_IV
-	OcBox* b = nil;
+	OcBox* b = NULL;
         int frame = OcBox::INSET;
         if (ifarg(1)) frame = int(chkarg(1,0,3));
 	b = new OcBox(OcBox::H,frame);
@@ -193,7 +193,7 @@ IFGUI
 	if (b->full_request() && b->has_window()) {
 		b->window()->request_on_resize(true);
 	}
-	b->dismiss_action(nil);
+	b->dismiss_action(NULL);
 ENDGUI
 	return 1.;
 #else 
@@ -238,7 +238,7 @@ IFGUI
 		b->ref();
 		b->dismissing(true);
 		b->window()->dismiss();
-		b->window(nil); // so we don't come back here again before
+		b->window(NULL); // so we don't come back here again before
 				// printable window destructor called
 		b->unref();
 	}
@@ -401,15 +401,15 @@ static Member_func members[] = {
 };
 
 void HBox_reg() {
-	class2oc("HBox", hcons, destruct, members);
+	class2oc("HBox", hcons, destruct, members, NULL, NULL, NULL);
 }
 
 void VBox_reg() {
-	class2oc("VBox", vcons, destruct, members);
+	class2oc("VBox", vcons, destruct, members, NULL, NULL, NULL);
 }
 #if HAVE_IV
-OcGlyphContainer::OcGlyphContainer() :OcGlyph(nil) {
-	parent_ = nil;
+OcGlyphContainer::OcGlyphContainer() :OcGlyph(NULL) {
+	parent_ = NULL;
 	recurse_ = false;
 }
 
@@ -439,9 +439,9 @@ OcBox::OcBox(int type, int frame, bool scroll) : OcGlyphContainer() {
 	bi_->dismissing_ = false;
 	bi_->next_map_adjust_ = -1.;
 	bi_->ocglyph_list_ = new PolyGlyph();
-	bi_->ba_list_ = nil;
+	bi_->ba_list_ = NULL;
 	Resource::ref(bi_->ocglyph_list_);
-	bi_->box_ = nil;
+	bi_->box_ = NULL;
 IFGUI
 	WidgetKit& wk = *WidgetKit::instance();
 	LayoutKit& lk = *LayoutKit::instance();
@@ -497,13 +497,13 @@ IFGUI
 	}
 ENDGUI
 	bi_->type_ = type;
-	bi_->oc_ref_ = nil;
-	bi_->save_action_ = nil;
-	bi_->save_pyact_ = nil;
-	bi_->o_ = nil;
-	bi_->keep_ref_ = nil;
-	bi_->dis_act_ = nil;
-	bi_->dis_pyact_ = nil;
+	bi_->oc_ref_ = NULL;
+	bi_->save_action_ = NULL;
+	bi_->save_pyact_ = NULL;
+	bi_->o_ = NULL;
+	bi_->keep_ref_ = NULL;
+	bi_->dis_act_ = NULL;
+	bi_->dis_pyact_ = NULL;
 }
 
 OcBox::~OcBox() {
@@ -542,7 +542,7 @@ void OcGlyphContainer::intercept(bool b) {
 		parent_ = PrintableWindow::intercept(this);
 	}else{
 		PrintableWindow::intercept(parent_);
-		parent_ = nil;
+		parent_ = NULL;
 	}
 }
 
@@ -622,7 +622,7 @@ void NrnFixedLayout::span(Coord s) {
 	span_ = s;
 }
 
-BoxAdjust::BoxAdjust(OcBox* b, OcBoxImpl* bi, Glyph* g, Coord natural) : InputHandler(nil, WidgetKit::instance()->style()) {
+BoxAdjust::BoxAdjust(OcBox* b, OcBoxImpl* bi, Glyph* g, Coord natural) : InputHandler(NULL, WidgetKit::instance()->style()) {
 	b_ = b;
 	bi_ = bi;
 	LayoutKit& lk = *LayoutKit::instance();
@@ -691,12 +691,12 @@ void OcBox::dismiss_action(const char* act, Object* pyact) {
 		bi_->dis_pyact_ = pyact;
 		if (bi_->dis_act_) {
 			delete bi_->dis_act_;
-			bi_->dis_act_ = nil;
+			bi_->dis_act_ = NULL;
 		}
 	}else if (act) {
 		if (bi_->dis_pyact_) {
 			hoc_obj_unref(bi_->dis_pyact_);
-			bi_->dis_pyact_ = nil;
+			bi_->dis_pyact_ = NULL;
 		}
 		if (bi_->dis_act_) {
 			*bi_->dis_act_ = act;
@@ -729,7 +729,7 @@ void OcBox::save(ostream& o){
 		HocCommand hc(bi_->save_action_->string(), bi_->keep_ref_);
 		hc.execute();
 	    }
-		bi_->o_ = nil;
+		bi_->o_ = NULL;
 	}else{
 		if (bi_->type_ == H) {
 			o << "{\nocbox_ = new HBox()" << endl;
@@ -787,7 +787,7 @@ void OcBox::no_parents() {
 	if (bi_->keep_ref_) {
 //printf("OcBox::no_parents unreffing %s\n", hoc_object_name(bi_->keep_ref_));
 		hoc_obj_unref(bi_->keep_ref_);
-		bi_->keep_ref_ = nil;
+		bi_->keep_ref_ = NULL;
 	}
 }
 

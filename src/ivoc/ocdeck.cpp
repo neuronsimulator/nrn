@@ -68,7 +68,7 @@ public:
 
 static void* cons(Object*) {
 #if HAVE_IV
-	OcDeck* b = nil;
+	OcDeck* b = NULL;
 IFGUI
 	b = new OcDeck();
 	b->ref();
@@ -151,7 +151,7 @@ IFGUI
 		if (ifarg(i+1)) {
 			o[i] = *hoc_objgetarg(i+1);
 		}else{
-			o[i] = nil;
+			o[i] = NULL;
 		}
 	}
 	b->save_action(gargstr(1), o[0]);		
@@ -227,7 +227,7 @@ static Member_func members[] = {
 };
 
 void OcDeck_reg() {
-	class2oc("Deck", cons, destruct, members);
+	class2oc("Deck", cons, destruct, members, NULL, NULL, NULL);
 }
 #if HAVE_IV
 OcDeck::OcDeck() : OcGlyphContainer() {
@@ -250,8 +250,8 @@ OcDeck::OcDeck() : OcGlyphContainer() {
 		)
 	    )
 	);
-	bi_->oc_ref_ = nil;
-	bi_->save_action_ = nil;
+	bi_->oc_ref_ = NULL;
+	bi_->save_action_ = NULL;
 }
 
 OcDeck::~OcDeck() {

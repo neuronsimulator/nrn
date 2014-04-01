@@ -16,6 +16,7 @@ static char RCSid[] =
 #include <stdlib.h>
 #include <math.h>
 #include "errcodes.h"
+#include "scoplib.h"
 static int oldsimeq();
 /*-----------------------------------------------------------------------------
  *

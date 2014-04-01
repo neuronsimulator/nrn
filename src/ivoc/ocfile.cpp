@@ -36,8 +36,6 @@ int ivoc_unlink(const char* s) {
 
 extern "C" {
 #include "hocstr.h"
-	extern int hoc_sprint1(char** buf, int arg1);
-	extern double hoc_scan(FILE*);
 	FILE* hoc_obj_file_arg(int i);
 }
 
@@ -52,8 +50,8 @@ FILE* hoc_obj_file_arg(int i) {
 }
 
 OcFile::OcFile() :filename_(""){
-	file_ = nil;
-	fc_ = nil;
+	file_ = NULL;
+	fc_ = NULL;
 #ifdef WIN32
 	binary_ = false;
 #endif
@@ -193,7 +191,7 @@ IFGUI
 	}
 
 	char *type, *banner, *filter, *bopen, *cancel;
-	banner=filter=bopen=cancel=nil;
+	banner=filter=bopen=cancel=NULL;
 	const char *path=".";
 	type = gargstr(1);
 	if (ifarg(2)) {
@@ -304,14 +302,14 @@ static Member_ret_str_func f_retstr_members[] = {
 };
 
 void OcFile_reg() {
-	class2oc("File", f_cons, f_destruct, f_members, nil, nil, f_retstr_members);
+	class2oc("File", f_cons, f_destruct, f_members, NULL, NULL, f_retstr_members);
 }
 
 void OcFile::close() {
 	if (file_) {
 		fclose(file_);
 	}
-	file_ = nil;
+	file_ = NULL;
 }
 void OcFile::set_name(const char* s) {
 	close();
@@ -490,20 +488,20 @@ bool OcFile::file_chooser_popup() {
 	while (fc_->post_at(d->width()/2, d->height()/2)) {
 		switch( chooser_type_ ) {
 		case W:
-			if (ok_to_write(*fc_->selected(), nil)) {
+			if (ok_to_write(*fc_->selected(), NULL)) {
 				open(fc_->selected()->string(), "w");
 				accept = true;
 			}
 			break;
 		case A:
-			if (ok_to_write(*fc_->selected(), nil)) {
+			if (ok_to_write(*fc_->selected(), NULL)) {
 				open(fc_->selected()->string(), "a");
 				accept = true;
 			}
 			break;
 		case R:
 #if 1
-			if (ok_to_read(*fc_->selected(), nil)) {
+			if (ok_to_read(*fc_->selected(), NULL)) {
 				open(fc_->selected()->string(), "r");
 				accept = true;
 			}

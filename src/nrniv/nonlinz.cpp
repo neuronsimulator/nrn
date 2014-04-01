@@ -50,7 +50,7 @@ public:
 };
 
 NonLinImp::NonLinImp() {
-	rep_ = nil;
+	rep_ = NULL;
 }
 NonLinImp::~NonLinImp() {
 	if (rep_) {
@@ -98,7 +98,7 @@ void NonLinImp::compute(double omega, double deltafac) {
 	nrn_rhs(nrn_threads);
 	if (rep_ && rep_->scnt_ != structure_change_cnt) {
 		delete rep_;
-		rep_ = nil;
+		rep_ = NULL;
 	}
 	if (!rep_) {
 		rep_ = new NonLinImpRep();
@@ -162,7 +162,7 @@ NonLinImpRep::NonLinImpRep() {
 	int i, j, ieq, cnt;
 	NrnThread* _nt = nrn_threads;
 
-	vsymtol_ = nil;
+	vsymtol_ = NULL;
 	Symbol* vsym = hoc_table_lookup("v", hoc_built_in_symlist);
 	if (vsym->extra) {
 		vsymtol_ = &vsym->extra->tolerance;

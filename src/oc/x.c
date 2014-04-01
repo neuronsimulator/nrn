@@ -60,22 +60,21 @@ static double xscale, yscale;
 #define TEKX 1000.
 #define TEKY 780.
 
-static set_colors();
+static void set_colors(void);
 
-void x11_fast(mode)
-	int mode;
+void x11_fast(int mode)
 {
 	fast = mode;
 }
 
-void x11flush() {
+void x11flush(void) {
 	if (fast && nlinept) {
 		x11_draw_vec();
 	}
 	XFlush(display);
 }
 
-static void getscale() {
+static void getscale(void) {
 	int x,y;
 	unsigned int width, height, border_width, depth;
 	Window root;
@@ -85,21 +84,19 @@ static void getscale() {
 	yscale = ((double)height)/TEKY;
 }
 
-void x11_coord(x, y)
-	double x, y;
-{
+void x11_coord(double x, double y) {
 	xnew = (int)(xscale*x);
 	ynew = (int)(yscale*(TEKY - y));
 }
 
-void x11_draw_vec() {
+void x11_draw_vec(void) {
 	if (nlinept > 1) {
 		XDrawLines(display, win, gc, polyline, nlinept, CoordModeOrigin);
 	}
 	nlinept = 0;
 }
 
-void x11_vector()
+void x11_vector(void)
 {
 	if (fast) {
 		if (nlinept == 0) {
@@ -120,7 +117,7 @@ void x11_vector()
 	LAST;
 }
 
-void x11_point()
+void x11_point(void)
 {
 	Plot(xnew, ynew);
 	LAST;
@@ -128,7 +125,7 @@ void x11_point()
 		XFlush(display);
 	}
 }
-void x11_move()
+void x11_move(void)
 {
 	if (fast) {
 		if (nlinept && (xnew != xold || ynew != yold)) {
@@ -137,13 +134,13 @@ void x11_move()
 	}
 	LAST;
 }
-void x11_clear(){
+void x11_clear(void){
 	XClearWindow(display, win);
 	XFlush(display);
 	getscale();
 }
 
-void x11_cleararea(){
+void x11_cleararea(void){
 	int w, h, x, y;
 	w = xnew-xold;
 	h = ynew-yold;
@@ -165,8 +162,7 @@ void x11_cleararea(){
 	}
 }
 
-void x11_put_text(s)
-	char *s;
+void x11_put_text(const char* s)
 {
 	if(fast && nlinept) {
 		x11_draw_vec();
@@ -176,8 +172,7 @@ void x11_put_text(s)
 		XFlush(display);
 	}
 }
-void x11_setcolor(c)
-	int c;
+void x11_setcolor(int c)
 {
 	if (!x11_init_done) {
 		x11_open_window();
@@ -195,7 +190,7 @@ void x11_setcolor(c)
 	}
 }
 
-void x11_open_window()
+void x11_open_window(void)
 {
 	char *window_name = "Xhocplot";
 	char *display_name = NULL;
@@ -246,7 +241,7 @@ void x11_open_window()
 	x11_init_done = 1;
 }
 
-void x11_close_window()
+void x11_close_window(void)
 {
 	if (x11_init_done) {
 		XFreeGC(display, gc);
@@ -260,7 +255,7 @@ void x11_close_window()
 char *color_names[Ncolors] = { "black", "white", "yellow", 
    "red",  "green", "blue",  "magenta", "cyan", "sienna", "orange", "coral" };
 
-static set_colors() {
+static void set_colors(void) {
    int n;
    XColor used, exact;
 

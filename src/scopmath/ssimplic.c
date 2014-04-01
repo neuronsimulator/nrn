@@ -2,6 +2,11 @@
 #include "errcodes.h"
 #define s_(arg)	p[s[arg]]
 
+extern void _modl_set_dt(double);
+extern int _advance();
+extern int sparse();
+extern int derivimplicit();
+
 static int check_state();
 
 int

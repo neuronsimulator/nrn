@@ -110,7 +110,7 @@ fmenu.c,v
 #endif
 
 #if OCSMALL
-hoc_fmenu() {
+void hoc_fmenu(void) {
 	hoc_ret(); hoc_pushx(0.);
 }
 hoc_menu_cleanup() {
@@ -148,15 +148,7 @@ extern TERM emacs_term;
 #define BEEP	(*emacs_term.t_beep)()
 #endif
 /* structure and functions from getsym.c */
-typedef struct Psym {
-	Symbol *sym;
-	Arrayinfo* arayinfo;
-	int nsub;
-	int sub[1];
-} Psym;
-
-Psym *hoc_getsym();
-double hoc_getsymval();
+#include "hocgetsym.h"
 
 /* Structure for single menu list */
 typedef struct Menuitem{
@@ -185,16 +177,16 @@ in a structure list. Successive items are appended at the end of the list. This 
 */
 
 
-static int cexecute();
-static char *navigate();
+static int cexecute(const char*);
+static char *navigate(int);
 static Menuitem *append();	/*common code for appendsym,appendaction*/
-static appendvar();
-static appendaction();
-static destroy();
-static double enter();
-static prval();
-static prs();
-static undisplay();
+static void appendvar(int, const char*, const char*);
+static void appendaction(int, const char*, const char*);
+static void destroy(int);
+static double enter(int, int, double, int, Menuitem*);
+static void prval(int, int, int, double);
+static void prs(int, int, int, const char*);
+static void undisplay(int);
 
 /* Structure pointer summary:
 	*pprev - pointer to previous item structure
@@ -210,9 +202,9 @@ static Menuitem **menuslast; /* pointers to last menuitem in list*/
 static Menuitem **menuscurrent; /* pointers to where navigate starts*/
 static int first = 1;		/* emacs_term has not been opened */
 
+#define diag(s) hoc_execerror(s, (char*)0);
 #define chk(i)	{if (i < 0 || i >= maxmenus) diag("menu number out of range");}
-static
-menu_manager(nmenu) int nmenu; {
+static void menu_manager(int nmenu) {
 	int previous;
 	char *command;
 	previous = current_menu;
@@ -241,7 +233,7 @@ menu_manager(nmenu) int nmenu; {
 	current_menu = previous;
 }
 
-void hoc_fmenu(){
+void hoc_fmenu(void){
 	int imenu, flag, i, narg;
 #ifdef WIN32
 	hoc_execerror("fmenu not available under mswindows.", "Use xpanel series");
@@ -316,7 +308,7 @@ menuscurrent = (Menuitem **)emalloc((unsigned)(imenu*sizeof(Menuitem *)));
 	Ret (0.);
 }
 
-static xcursor(r, c) int r, c;{
+static void xcursor(int r, int c){
 #if DOS
 	_BH = 0;
 	_DH = r;
@@ -341,7 +333,7 @@ static xcursor(r, c) int r, c;{
 #endif
 }
 
-static ibmgetc(){       /* Copied from ibm.c file in memacs */
+static int ibmgetc(void){       /* Copied from ibm.c file in memacs */
 #if DOS
 	regs.h.ah = 7;
 	intdos(&regs,&regs);
@@ -358,7 +350,7 @@ static ibmgetc(){       /* Copied from ibm.c file in memacs */
 #endif
 }
 
-static Menuitem *append(imenu)int imenu;{
+static Menuitem *append(int imenu){
 	Menuitem *last, *pnow;
 
 	if (imenu < 0 || imenu >= maxmenus) {
@@ -395,8 +387,7 @@ static Menuitem *append(imenu)int imenu;{
 	return (pnow);
 }
 
-static appendvar(imenu, variable, command)
-	int imenu; char *variable, *command;
+static void appendvar(int imenu, const char* variable, const char* command)
 {
 	Menuitem *item;
 	int i, len;
@@ -422,8 +413,7 @@ static appendvar(imenu, variable, command)
 	Strcpy(item->prompt, buf);
 }
 
-static appendaction(imenu, prompt, command)
-	int imenu; char *prompt, *command;
+static void appendaction(int imenu, const char* prompt, const char* command)
 {
 	Menuitem *item;
 	item = append(imenu);
@@ -434,7 +424,7 @@ static appendaction(imenu, prompt, command)
 	Strcpy(item->command, command);
 }
 
-static void display(imenu) int imenu; {
+static void display(int imenu) {
 
 	Menuitem *menu, *pnow;
 	int row, col;
@@ -455,7 +445,7 @@ static void display(imenu) int imenu; {
 }
 
 
-static destroy(imenu) int imenu; {
+static void destroy(int imenu) {
 	Menuitem *menu;
 	Menuitem *pnow, *nextitem;
 
@@ -479,7 +469,7 @@ static destroy(imenu) int imenu; {
 	}
 }
 
-static char *navigate(imenu) int imenu; {
+static char *navigate(int imenu) {
 	Menuitem *menu;
 	Menuitem *pcur, *pnow;
 	int row, col, key, current_col;
@@ -616,9 +606,7 @@ label:	xcursor(menuslast[imenu]->row+2, 0);
 	return (char *)0;
 }
 
-static double enter(row,col,defalt,frstch, pnow)
-	double defalt; int row, col, frstch; Menuitem *pnow;
-
+static double enter(int row, int col, double defalt, int frstch, Menuitem* pnow)
 {
         char istr[80],*istrptr; int key;
 	double input;
@@ -680,16 +668,14 @@ prs(0, pnow->row, pnow->col, pnow->prompt);
 	}
 }/* end of function enter */
 
-static prval(oldnew, row, col, val)
-int oldnew, row, col; double val;
+static void prval(int oldnew, int row, int col, double val)
 {
         char string[100];
 	Sprintf(string,"%g",val);
 	prs(oldnew, row, col, string);
 }
 
-static prs(oldnew, row, col, string)
-int oldnew, row, col; char *string;
+static void prs(int oldnew, int row, int col, const char* string)
 {
 	char buf[100];
 	xcursor(row, col);
@@ -705,10 +691,7 @@ int oldnew, row, col; char *string;
 	}
 }
 
-extern int hoc_returning; /* if 4 then stop was executed */
-
-static
-int cexecute(command) char *command; {
+static int cexecute(const char* command) {
 	int i;
 	hoc_returning = 0;
 	hoc_execstr(command);
@@ -719,13 +702,13 @@ int cexecute(command) char *command; {
 
 #if DOS || G32
 #else
-static clrscr(){
+static void clrscr(void){
 	(*emacs_term.t_move)(0, 0);
 	(*emacs_term.t_eeop)();
 }
 #endif
 
-static undisplay(imenu) int imenu; {
+static void undisplay(int imenu) {
 	int i;
 	if(egagrph !=0){
 #if GRX
@@ -741,7 +724,7 @@ static undisplay(imenu) int imenu; {
 	}
 }
 
-hoc_menu_cleanup() {
+void hoc_menu_cleanup(void) {
 	current_menu = -1;
 #if DOS || G32
 #else

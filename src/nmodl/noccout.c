@@ -50,8 +50,8 @@ extern int electrode_current; /* 1 means we should watch out for extracellular
 #define index strchr
 #endif
 
-static initstates();
-static funcdec();
+static void initstates();
+static void funcdec();
 
 static void ext_vdef() {
 	if (artificial_cell) { return; }
@@ -128,6 +128,11 @@ void c_out()
 	P("#include <stdio.h>\n#include <stdlib.h>\n#include <math.h>\n#include \"scoplib_ansi.h\"\n");
 	P("#undef PI\n");
 	P("#define nil 0\n");
+P("#include \"md1redef.h\"\n");
+P("#include \"section.h\"\n");
+P("#include \"nrniv_mf.h\"\n");
+P("#include \"md2redef.h\"\n");
+
 #endif
 	printlist(defs_list);
 	printlist(firstlist);
@@ -456,8 +461,7 @@ void c_out()
  * value of state0.  This generated code goes before any explicit initialize
  * code written by the user. 
  */
-static
-initstates()
+static void initstates()
 {
 	int             i;
 	Item           *qs;
@@ -498,7 +502,7 @@ initstates()
 
 static int newline, indent;
 
-printitem(q) Item* q; {
+void printitem(q) Item* q; {
 		if (q->itemtype == SYMBOL) {
 			if (SYM(q)->type == SPECIAL) {
 				switch (SYM(q)->subtype) {
@@ -526,7 +530,7 @@ printitem(q) Item* q; {
 		}
 }
 
-debugprintitem(q) Item* q; {
+void debugprintitem(q) Item* q; {
 		if (q->itemtype == SYMBOL) {
 			printf("SYM %s\n", SYM(q)->name);
 		} else if (q->itemtype == VERBATIM) {
@@ -564,8 +568,7 @@ void printlist(s)
 	}
 }
 
-static
-funcdec()
+static void funcdec()
 {
 	int             i;
 	Symbol         *s;
@@ -608,7 +611,7 @@ if (vectorize) {
 
 #if VECTORIZE
 /* when vectorize = 1 */
-c_out_vectorize()
+void c_out_vectorize()
 {
 	Item *q;
 	extern int point_process;
@@ -618,6 +621,10 @@ c_out_vectorize()
 	P("#include <stdio.h>\n#include <stdlib.h>\n#include <math.h>\n#include \"scoplib_ansi.h\"\n");
 	P("#undef PI\n");
 	P("#define nil 0\n");
+P("#include \"md1redef.h\"\n");
+P("#include \"section.h\"\n");
+P("#include \"nrniv_mf.h\"\n");
+P("#include \"md2redef.h\"\n");
 	printlist(defs_list);
 	printlist(firstlist);
 	P("static int _reset;\n");
@@ -867,7 +874,7 @@ c_out_vectorize()
 	P("\n#if defined(__cplusplus)\n} /* extern \"C\" */\n#endif\n");
 }
 
-vectorize_substitute(q, str)
+void vectorize_substitute(q, str)
 	Item* q;
 	char* str;
 {
@@ -890,7 +897,7 @@ Item* vectorize_replacement_item(Item* q) {
 	return (Item*)0;
 }
 
-vectorize_do_substitute() {
+void vectorize_do_substitute() {
 	Item *q, *q1;
 	if (vectorize_replacements) {
 		ITERATE(q, vectorize_replacements) {

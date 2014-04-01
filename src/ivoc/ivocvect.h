@@ -12,10 +12,10 @@ struct Object;
 
 class IvocVect : public ParentVect {
 public:
-	IvocVect(Object* obj = nil);
-	IvocVect(int, Object* obj = nil);
-	IvocVect(int, double, Object* obj = nil);
-	IvocVect(IvocVect&, Object* obj = nil);
+	IvocVect(Object* obj = NULL);
+	IvocVect(int, Object* obj = NULL);
+	IvocVect(int, double, Object* obj = NULL);
+	IvocVect(IvocVect&, Object* obj = NULL);
 	~IvocVect();
 
 	void resize(int);
@@ -57,7 +57,7 @@ extern Object** vector_temp_objvar(Vect*);
 extern double* vector_vec(Vect*);
 extern Object** vector_pobj(Vect*);
 extern Vect* vector_arg(int);
-extern bool is_vector_arg(int);
+extern int is_vector_arg(int);
 extern char* vector_get_label(Vect*);
 extern void vector_set_label(Vect*, char*);
 }

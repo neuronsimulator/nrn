@@ -10,7 +10,7 @@ extern "C" {
 extern void hoc_ret();
 extern void hoc_pushx(double);
 
-void ivoc_help(char*){}
+void ivoc_help(const char*){}
 void ivoc_cleanup() {}
 int hoc_readcheckpoint(char*){ return 0; }
 

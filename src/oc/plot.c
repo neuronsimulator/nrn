@@ -1,179 +1,5 @@
 #include <../../nrnconf.h>
-/* /local/src/master/nrn/src/oc/plot.c,v 1.7 1999/06/22 12:51:55 hines Exp */
-/*
-plot.c,v
- * Revision 1.7  1999/06/22  12:51:55  hines
- * a work around for LINUX installation problem with old style x graph
- * using plot (just not compile it)
- *
- * Revision 1.6  1999/05/11  13:56:03  hines
- * redhat linux 6.0 does not allow a definition involving stdin or stdout
- * so move the initialization to hoc_main1_init
- *
- * Revision 1.5  1994/11/23  19:53:03  hines
- * all nrnoc works in dos with go32
- *
- * Revision 1.4  1994/11/08  19:37:14  hines
- * command line editing works while in graphics mode with GRX and GO32
- *
- * Revision 1.3  1994/11/02  18:55:33  hines
- * can find hoc object name from a scene. constructor of built in classes
- * now gets the Object* argument of the hoc object. Also some porting mods
- * for GO32
- *
- * Revision 1.2  1994/10/28  12:11:15  hines
- * port to __GO32__
- *
- * Revision 1.1.1.1  1994/10/12  17:22:13  hines
- * NEURON 3.0 distribution
- *
- * Revision 2.69  1994/02/10  19:41:06  hines
- * set term=vt125 replaces vt100 in plot.c since that is a common term
- * even in a window system
- *
- * Revision 2.65  1993/11/09  14:30:04  hines
- * partial port to djg dos extender go32
- *
- * Revision 2.27  1993/02/22  13:12:29  hines
- * works with turboc on DOS (but no readline)
- *
- * Revision 2.25  93/02/20  08:55:43  hines
- * AIX
- * 
- * Revision 2.21  93/02/11  17:04:17  hines
- * some fixes for NeXT
- * 
- * Revision 2.20  93/02/03  11:27:53  hines
- * a bit more generic for portability. will possibly work on NeXT
- * 
- * Revision 2.19  93/02/02  10:34:35  hines
- * static functions declared before used
- * 
- * Revision 1.6  92/10/24  12:12:46  hines
- * botched last checkin. now its right.
- * 
- * Revision 1.4  92/08/12  10:45:38  hines
- * Changes of sejnowski lab. also gets sred from hoc. Major addition is
- * a new x.c which is modified for screen updating following an expose
- * event. This is in x_sejnowski.c and will compile to x.o when
- * Sejnowski is defined as 1 in Imakefile (don't forget imknrn -a when
- * changed and delete old x.o)
- * Does not contain get_default on this checkin
- * 
- * Revision 1.3  92/05/13  13:38:45  hines
- * plot(-3) merely seeked to beginning of file without erasing it.
- * now plt(-3) closes and reopens a 0 length file.
- * only for fig plots not done for codraw at this time.
- * 
- * Revision 1.2  91/11/05  11:24:16  hines
- * all neuron/examples produce same results with nrnoc as with neuron.
- * Found quite a few bugs this way.
- * 
- * Revision 4.45  91/10/28  08:46:10  hines
- * Wathey's improvements. Works on MIPS machine. places  binaries in
- * standard bin directory.
- * 
- * Revision 4.16  91/03/14  13:12:19  hines
- * x11 graphics has fast mode (plt(-5)) which is more than 5 times
- * faster than default mode in which server is flushed on every plot
- * call. in fast mode plt(-1) will flush server.
- * 
- * Revision 4.14  91/02/20  08:44:28  hines
- * fixed error on reopening same file with lw() in hardplot()
- * 
- * Revision 4.9  91/01/04  09:51:15  hines
- * turboc++ sometimes fails with __TURBOC__ but succeeds with
- * #if defined(__TURBOC__)
- * 
- * Revision 3.107  90/10/24  09:07:28  hines
- * hoc_close_plot() responsible for device dependent cleanup
- * 
- * Revision 3.104  90/10/15  09:00:23  hines
- * somehow some changes got lost on previous checkin. Saber may mess up links.
- * 
- * Revision 3.103  90/10/15  08:37:59  hines
- * x11 graphics reasonably good. doesn't fork
- * uses only standard libX11
- * 
- * Revision 3.98  90/09/17  15:29:54  hines
- * xhoc calls hoc
- * 
- * Revision 3.96  90/09/04  08:31:28  hines
- * try to get dos and unix together again in one RCS directory
- * 
- * Revision 3.95  90/08/29  08:57:12  hines
- * now can load using saber-c. SUNCORE define for plot and sunplot
- * 
- * Revision 3.92  90/08/08  16:15:24  hines
- * cursor no longer dissappears in sunplot window
- * setenv SUNPLOT large
- * will cause a large plot window
- * 
- * Revision 3.83  90/07/25  10:40:31  hines
- * almost lint free on sparc 1+ under sunos 4.1
- * 
- * Revision 3.81  90/07/25  07:20:37  hines
- * system() now can print to the plotter.
- * 
- * Revision 3.78  90/07/24  12:27:18  hines
- * allow newline at end of string in call to plprint
- * If text then newline will set plot coordinated to
- * next line
- * 
- * Revision 3.61  90/05/19  12:58:33  mlh
- * switch from TEK to gfxtool using suncore.
- * setcolor(0) draws invisible line setcolor(1) draws visible line
- * for graphing at this time you must run hoc in a gfxtool window.
- * 
- * Revision 3.57  90/05/16  09:10:47  jamie
- * Fixed up tek4014 mode to work with ncsa tek emulator
- * 
- * Revision 3.52  90/03/22  14:51:22  jamie
- * Jamie's Additions  stopwatch and settext
- * 
- * Revision 3.50  90/02/17  10:12:32  mlh
- * lint free on sparc and makfile good for sparc
- * 
- * Revision 3.46  90/01/24  06:38:10  mlh
- * emalloc() and ecalloc() are macros which return null if out of space
- * and then call execerror.  This ensures that pointers are set to null.
- * If more cleanup necessary then use hoc_Emalloc() followed by hoc_malchk()
- * 
- * Revision 3.45  90/01/12  08:07:58  mlh
- * Lint free again, fflush return ignored, #if VT changed to #if VT125
- * so VT125 stuff not compiled
- * 
- * Revision 3.43  89/12/20  11:16:07  mlh
- * Need to fflush on every plot call
- * 
- * Revision 3.42  89/12/11  14:04:58  mlh
- * turbo_c gave problem of NAN for x and y when mode < 0
- * 
- * Revision 3.39  89/11/08  15:30:28  mlh
- * fixed text mode in turboc
- * 
- * Revision 3.37  89/11/08  12:20:36  mlh
- * codraw seems to work
- * 
- * Revision 3.35  89/11/08  10:10:20  mlh
- * merge turboc and unix versions. Lw can take second argument
- * to switch between hp and fig
- * 
- * Revision 3.34  89/10/31  14:00:40  mlh
- * plt(-3) now works on sun
- * 
- * Revision 3.33  89/10/21  10:50:53  mlh
- * turn off console plot for cray
- * 
- * Revision 3.31  89/10/20  11:17:16  mlh
- * proper scale for landfig and landf2ps
- * scale is from (0,0) to (1000, 750) fitting exactly on landfig canvas
- * 100 tek points is exactly 1 inch
- * 
- * Revision 1.1  89/10/19  13:05:01  mlh
- * Initial revision
- * 
-*/
+#include "hoc.h"
 
 /*LINTLIBRARY*/
 #undef IGNORE
@@ -202,22 +28,22 @@ plot.c,v
 #define CODRAW 1
 
 #if CODRAW
-static void Codraw_plt();
-static void Codraw_preamble();
+static void Codraw_plt(int, double, double);
+static void Codraw_preamble(void);
 #endif
 
 #if HP
-static void hplot();
+static void hplot(int, double, double);
 #endif
 
 #if FIG
-static void Fig_preamble();
-static void Fig_plt();
-void Fig_file();
+static void Fig_preamble(void);
+static void Fig_plt(int, double, double);
+void Fig_file(const char*, int);
 #endif
 
 #if TEK
-static void tplot();
+static void tplot(int, double, double);
 #endif
 
 #include <stdio.h>
@@ -280,10 +106,10 @@ int hoc_color = 15;
 static double xlast, ylast;
 
 #if NRNOC_X11
-extern void x11_put_text(), x11_close_window(), x11_setcolor();
+extern void x11_put_text(const char*), x11_close_window(void), x11_setcolor(int);
 extern void x11_coord(), x11_vector(), x11_point(), x11_move(), x11flush();
 extern void x11_clear(), x11_cleararea(), x11_open_window(), x11_fast();
-static hoc_x11plot();
+static void hoc_x11plot(int, double, double);
 #endif
 
 #if NeXTstep
@@ -292,7 +118,7 @@ extern void NeXT_coord(), NeXT_vector(), NeXT_point(), NeXT_move(), NeXTflush();
 extern void NeXT_clear(), NeXT_cleararea(), NeXT_open_window(), NeXT_fast();
 #endif
 
-static hard_text_preamble();
+static void hard_text_preamble();
 
 #if defined(__TURBOC__)
 int egagrph = 0;	/* global because need to erase on quit if in graphics
@@ -302,12 +128,12 @@ static double xres=640., yres=350.;
 static tplt();
 
 void *_graphgetmem(unsigned size) {
-char *hoc_Emalloc(), *p;
-p= hoc_Emalloc(size), hoc_malchk() ;
-return p;
+	char *p;
+	p= hoc_Emalloc(size), hoc_malchk() ;
+	return p;
 }
 
-static Initplot() {
+static void Initplot(void) {
 #if !defined(__GO32__)
 	registerfarbgidriver(EGAVGA_driver_far);
 	registerfarbgidriver(CGA_driver_far);
@@ -338,8 +164,7 @@ hoc_execerror("Error in initializing graphics adaptor\n", (char *)0);
 }
 #endif
 
-plprint(s)
-	char *s;
+void plprint(const char* s)
 {
 #if DOS
 	extern int newstyle;
@@ -350,7 +175,7 @@ plprint(s)
 	if (text && s[strlen(s) - 1] == '\n') {
 		IGNORE(strcpy(buf, s));
 		s = buf;
-		s[strlen(s)-1] = '\0';
+		buf[strlen(s)-1] = '\0';
 	}
 
 	if (console && text) {
@@ -409,22 +234,22 @@ static int trcur;
 static GrTextRegion* gtr;
 #define GRXCOL 80
 #define GRXROW 5
-grx_move(r, c) int r, c;{
+void grx_move(int r, int c){
 	r = r%GRXROW;
 	c = c%GRXCOL;
 	trcur = c + r*GRXCOL;
 }
-grx_rel_move(new) int new;{
+void grx_rel_move(int new){
 	trcur = ((int)(trcur/GRXCOL))*GRXCOL + new;
 }
-grx_output_some_chars(string, count) char* string; int count; {
+void grx_output_some_chars(const char* string, int count) {
 	if (string[count] == '\0') {
 		hoc_outtext(string);
 	}else{
 		hoc_outtext("non-terminated string\n");
 	}
 }
-grx_delete_chars(count) int count; {
+void grx_delete_chars(int count) {
 	int i;
 	int j = trcur;
 	for (i=0; i < count; ++i) {
@@ -525,7 +350,7 @@ hoc_outtext(s) char* s; {
 }
 #endif
 
-initplot()
+void initplot(void)
 {
 #if !defined(__MINGW32__) /* to end of function */
 	int i;
@@ -585,7 +410,7 @@ initplot()
 #endif /*!__MINGW32__*/
 }
 
-hoc_close_plot() {
+void hoc_close_plot(void) {
 #if	DOS
 	if (egagrph) plt(-3,0.,0.);
 #else
@@ -603,9 +428,7 @@ hoc_close_plot() {
 #endif
 }
 	
-plt(mode, x, y)
-	int mode;
-	double x, y;
+void plt(int mode, double x, double y)
 {
 	if (x < 0.) x = 0.;
 	if (x > 1000.) x = 1000.;
@@ -684,8 +507,7 @@ plt(mode, x, y)
 #define XHOME 0
 #define YHOME 770
 
-static void tplot(mode, x, y)
-   int mode; double x, y;
+static void tplot(int mode, double x, double y)
 {
 	unsigned ix, iy;
 	int hx,hy,ly,lx;
@@ -771,8 +593,7 @@ static void tplot(mode, x, y)
 #if FIG || HP || CODRAW
 
 static char hardplot_filename[100];
-hardplot_file(s)
-	char *s;
+void hardplot_file(const char* s)
 {
 	if (hpdev) {
 		IGNORE(fclose(hpdev));
@@ -795,9 +616,7 @@ IGNORE(fprintf(stderr, "Can't open %s for hardplot output\n", s));
 	}
 }
 
-void Fig_file(s, dev)
-	char *s;
-	int dev;
+void Fig_file(const char* s, int dev)
 {
 	plt(-1, 0., 0.);
 	hardplot_file(s);
@@ -817,7 +636,7 @@ void Fig_file(s, dev)
 #endif
 
 static char fig_text_preamble[100];
-static hard_text_preamble() {
+static void hard_text_preamble(void) {
 	if (hardplot == 2) {
 		IGNORE(fprintf(hpdev, "%s", fig_text_preamble));
 		fig_text_preamble[0] = '\0';
@@ -825,7 +644,7 @@ static hard_text_preamble() {
 }
 
 #if FIG
-static void Fig_preamble() {
+static void Fig_preamble(void) {
 	static char fig_preamble[] = "#FIG 1.4\n80 2\n";
 	
 	if (!hpdev) return;
@@ -833,9 +652,7 @@ static void Fig_preamble() {
 }
 
 #define HIRES 1
-void Fig_plt(mode, x, y)
-	int mode;
-	double x, y;
+void Fig_plt(int mode, double x, double y)
 {
 #define SCX(x) ((int)(x*.8))
 #define SCY(y) (600-(int)(y*.8))
@@ -929,9 +746,7 @@ void Fig_plt(mode, x, y)
 #endif /*FIG*/
 
 #if HP
-void hplot(mode, x, y)
-	int mode;
-	double x, y;
+void hplot(int mode, double x, double y)
 {
 	static short hpflag=0;
 	static short txt = 0;
@@ -988,9 +803,7 @@ IGNORE(fprintf(hpdev, "%c.Y%c.I81;;17:%c.N;19:SC 0,1023,0,780;SP 1;",
 
 /* not modified for new method */
 #if VT125
-void vtplot(mode, x, y)
-	int mode;
-	double x, y;
+void vtplot(int mode, double x, double y)
 {
 	static short vtgrph = 0;
 	int vtx, vty;
@@ -1052,9 +865,7 @@ void vtplot(mode, x, y)
 }
 #endif /*VT*/
 
-int
-set_color(c)
-	int c;
+int set_color(int c)
 {
 	if (c >= 0 || c < 128) {
 		hoc_color = c;
@@ -1083,10 +894,7 @@ set_color(c)
 #if defined(__TURBOC__)
 #define UN		unsigned int
 
-static
-tplt(mode, x, y)
-	int mode;
-	double x, y;
+static void tplt(int mode, double x, double y)
 {
 #if DOS
 	extern int newstyle;
@@ -1156,7 +964,7 @@ tplt(mode, x, y)
 	return;
 }
 
-cursor(int r, int c) {
+void cursor(int r, int c) {
 #if !defined(__GO32__)
 	int ax, dx;
 	ax = 2*256;
@@ -1177,11 +985,6 @@ static float *codraw_pointx, *codraw_pointy;
 static void codraw_line();
 
 void Codraw_preamble() {
-#if LINT
-	double *hoc_Emalloc();
-#else
-	char *hoc_Emalloc();
-#endif
 	static char codraw_preamble[] = "SW(1,0,8,0,8);\nST(1);\nSG(0.1);\n\
 SF(1,'HELVET-L');\nSF(2,'HELVET');\nSF(3,'CENTURY');\nSF(4,'SCRIPT');\n\
 SF(5,'GREEK');\nSP(1);\nLT(1);LW(1);LC(15);LD(50);\nTF(1);TW(1);TS(0);TC(15);\
@@ -1297,10 +1100,7 @@ static void codraw_line() {
 
 #if NRNOC_X11
 extern char *getenv();
-static
-hoc_x11plot(mode, x, y)
-	int mode;
-	double x, y;
+static void hoc_x11plot(int mode, double x, double y)
 {
 	extern int x11_init_done;
 

@@ -7,21 +7,21 @@
 struct NrnThread;
 	
 
-typedef void(*Pvmi)(NrnThread*, Memb_list*, int);
-
 #if defined(__cplusplus)
 extern "C" {
 #endif
 
-extern void register_mech(char**, void(*)(Prop*), Pvmi, Pvmi, Pvmi, Pvmi, int, int);
-extern int point_register_mech(char**, void(*)(Prop*), Pvmi, Pvmi, Pvmi, Pvmi, int,
-	void*(*)(Object*), void(*)(void*), Member_func*, int);
-extern void hoc_register_cvode(int, int(*)(int),
-	int(*)(int, double**, double**, double*, Datum*, double*, int),
-	int(*)(NrnThread*, Memb_list*, int),
-	int(*)(NrnThread*, Memb_list*, int)
-);
+typedef double (*ldifusfunc3_t)(int, double*, Datum*, double*, double*, Datum*, NrnThread*);
+typedef void ldifusfunc2_t(int, ldifusfunc3_t, void**, int, int, int, NrnThread*);
+typedef void (*ldifusfunc_t)(ldifusfunc2_t, NrnThread*);
+typedef void (*pnt_receive_t)(Point_process*, double*, double);
+typedef void (*pnt_receive_init_t)(Point_process*, double*, double);
 
+extern void register_mech(const char**, Pvmp, Pvmi, Pvmi, Pvmi, Pvmi, int, int);
+extern int point_register_mech(const char**, Pvmp, Pvmi, Pvmi, Pvmi, Pvmi, int, int,
+	void*(*)(Object*), void(*)(void*), Member_func*);
+extern void hoc_register_cvode(int, nrn_ode_count_t, nrn_ode_map_t, Pvmi, Pvmi);
+extern void hoc_register_ldifus1(ldifusfunc_t);
 extern int nrn_get_mechtype(const char*);
 extern int v_structure_change;
 extern void ion_reg(const char*, double);
@@ -45,8 +45,8 @@ extern Point_process* ob2pntproc_0(Object*);
 extern int at_time(NrnThread*, double);
 extern void nrn_complain(double*);
 extern int ifarg(int);
-extern void (**pnt_receive)(Point_process*, double*, double);
-extern void (**pnt_receive_init)(Point_process*, double*, double);
+extern pnt_receive_t* pnt_receive;
+extern pnt_receive_init_t* pnt_receive_init;
 extern short* pnt_receive_size;
 extern void add_nrn_artcell(int, int);
 extern void add_nrn_has_net_event(int);
@@ -56,7 +56,7 @@ extern void nrn_net_move(void**, Point_process*, double);
 extern void nrn_net_event(Point_process*, double);
 extern void artcell_net_send(void**, double*, Point_process*, double, double);
 extern void artcell_net_move(void**, Point_process*, double);
-extern void register_destructor(void(*)(Prop*));
+extern void register_destructor(Pvmp);
 extern void hoc_register_synonym(int, void(*)(int, double**, Datum**));
 extern double* _getelm(int, int);
 extern double* _nrn_thread_getelm(void*, int, int);

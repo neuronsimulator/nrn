@@ -24,6 +24,9 @@
 
 #define ldebug(arg1, arg2) qdebug(arg1, arg2->next)
 
+extern int yylex(), yyparse();
+static void yyerror();
+
 #if YYBISON
 #define myerr(arg) static int ierr=0;\
 if (!(ierr++))yyerror(arg); --yyssp; --yyvsp; YYERROR
@@ -1224,7 +1227,7 @@ valence: /*nothing*/
 		}
 	;
 %%
-yyerror(s)	/* called for yacc syntax error */
+void yyerror(s)	/* called for yacc syntax error */
 	char *s;
 {
 	Fprintf(stderr, "%s:\n ", s);
@@ -1232,12 +1235,12 @@ yyerror(s)	/* called for yacc syntax error */
 
 
 #if !NMODL
-nrn_list(q1, q2)
+void nrn_list(q1, q2)
 	Item *q1, *q2;
 {
 	/*ARGSUSED*/
 }
-nrn_use(q1, q2, q3, q4)
+void nrn_use(q1, q2, q3, q4)
 	Item *q1, *q2, *q3, *q4;
 {
 	/*ARGSUSED*/

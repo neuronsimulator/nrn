@@ -26,7 +26,7 @@ public:
 	OcJump();
 	virtual ~OcJump();
 	bool execute(Inst* p);
-	bool execute(const char*, Object* ob = nil);
+	bool execute(const char*, Object* ob = NULL);
 	void* fpycall(void*(*)(void*, void*), void*, void*);
 	static void save_context(ObjectContext*);
 	static void restore_context(ObjectContext*);

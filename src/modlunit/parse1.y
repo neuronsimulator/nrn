@@ -2,6 +2,7 @@
 /* /local/src/master/nrn/src/modlunit/parse1.y,v 1.11 1999/02/27 21:13:50 hines Exp */
 
 #include <../../nmodlconf.h>
+#include <stdlib.h>
 #include "model.h"
 
 /* Constructs a parse tree. No translation is done, ie. on exit printing
@@ -16,6 +17,7 @@ their usage for later error checking.
 */
 
 extern Symbol *checklocal();
+extern int next_intoken();
 extern Item *title;
 extern int declare_level;
 extern int parse_pass, restart_pass;
@@ -30,6 +32,7 @@ extern List *solvelist;
 #define R1	IFR(1)
 
 static int yylex();
+static void yyerror();
 
 #if YYBISON 
 #define myerr(arg) static int ierr=0;\
@@ -871,7 +874,7 @@ valence: /*nothing*/
 %%
 	/* end of grammar */
 
-yyerror(s)	/* called for yacc syntax error */
+static void yyerror(s)	/* called for yacc syntax error */
 	char *s;
 {
 	Fprintf(stderr, "%s:\n ", s);
@@ -880,12 +883,12 @@ yyerror(s)	/* called for yacc syntax error */
 static int yylex() {return next_intoken(&(yylval.qp));}
 
 #if !NRNUNIT
-nrn_list(q1, q2)
+void nrn_list(q1, q2)
 	Item *q1, *q2;
 {
 	/*ARGSUSED*/
 }
-nrn_use(q1, q2, q3)
+void nrn_use(q1, q2, q3)
 	Item *q1, *q2, *q3;
 {
 	/*ARGSUSED*/

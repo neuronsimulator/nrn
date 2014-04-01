@@ -146,13 +146,13 @@ void Axis::install() {
   
 	int i,j;
 	GlyphIndex gi;
-	Line* tic = nil;
+	Line* tic = NULL;
 	Coord x, y;
 	char str[20];
 	float tic_space;
 	
 	float y_align, x_align;
-	Line* minor_tic = nil;
+	Line* minor_tic = NULL;
 
 	Coord l_minor = 5.;
 	Coord length = 10.;
@@ -281,7 +281,7 @@ void Axis::install() {
 	int i;
 	GlyphIndex gi;
 	Coord length = 10;
-	Line* tic = nil;
+	Line* tic = NULL;
 	Coord x, y;
 	char str[20];
 	if (d_ == Dimension_X) {
@@ -332,7 +332,7 @@ void Axis::install() {
 }
 #endif
 
-BoxBackground::BoxBackground() : Background(nil, Scene::default_background())
+BoxBackground::BoxBackground() : Background(NULL, Scene::default_background())
 {
 }
 
@@ -422,11 +422,11 @@ void BoxBackground::tic_label( Coord x1, Coord y1, Coord val,
 	if (OcIdraw::idraw_stream) {
 		Transformer t;
 		t.translate(a.x(), a.y());
-		OcIdraw::text(c, buf, t, nil, Appear::default_color());
+		OcIdraw::text(c, buf, t, NULL, Appear::default_color());
 	}
 }
 
-AxisBackground::AxisBackground() : Background(nil, Scene::default_background())
+AxisBackground::AxisBackground() : Background(NULL, Scene::default_background())
 {
 }
 
@@ -517,7 +517,7 @@ void AxisBackground::tic_label( Coord x1, Coord y1, Coord val,
 	if (OcIdraw::idraw_stream) {
 		Transformer t;
 		t.translate(a.x(), a.y());
-		OcIdraw::text(c, buf, t, nil, Appear::default_color());
+		OcIdraw::text(c, buf, t, NULL, Appear::default_color());
 	}
 }
 

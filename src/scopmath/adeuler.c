@@ -59,7 +59,7 @@ static char RCSid[] =
 #include <math.h>
 #include "errcodes.h"
 
-adeuler(_ninits, neqn, var, der, p, t, delta_t, func, work, maxerror)
+int adeuler(_ninits, neqn, var, der, p, t, delta_t, func, work, maxerror)
 int _ninits;
 double p[], *t, delta_t, maxerror, **work; int var[]; int der[];
 #define der_(arg)  p[der[arg]]

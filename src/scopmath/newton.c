@@ -57,7 +57,7 @@ static char RCSid[] =
 #include <math.h>
 #include "errcodes.h"
 
-newton(n, index, x, pfunc, value)
+int newton(n, index, x, pfunc, value)
 int n, (*pfunc) ();
 double x[], value[];
 int *index;
@@ -92,7 +92,7 @@ int *index;
 		value[i] = - value[i];	/* Required correction to
 				 		 * function values */
 
-	    if (error = crout(n, jacobian, perm))
+	    if ((error = crout(n, jacobian, perm)) != SUCCESS)
 		break;
 	}
 	solve(n, jacobian, value, perm, delta_x, (int *)0);
@@ -184,7 +184,7 @@ int *index;
 
 #define max(x, y) (fabs(x) > y ? x : y)
 
-buildjacobian(n, index, x, pfunc, value, jacobian)
+int buildjacobian(n, index, x, pfunc, value, jacobian)
 int n, (*pfunc) ();
 double x[], value[], *jacobian[];
 int *index;
@@ -250,9 +250,10 @@ int *index;
  }
     freevector(high_value);
     freevector(low_value);
+    return 0;
 }
 
-build_traj_jacob(n, index, x, pfunc, value, jacobian)
+int build_traj_jacob(n, index, x, pfunc, value, jacobian)
 int n, (*pfunc) ();
 double x[], *jacobian[];
 int *index, *value;
@@ -292,5 +293,6 @@ int *index, *value;
     }
     freevector(high_value);
     freevector(low_value);
+    return 0;
 }
 

@@ -63,7 +63,7 @@ private:
 
 void handle_old_focus() { PanelInputHandler::handle_old_focus(); }
 
-InputHandler* PanelInputHandler::focus_ = nil;
+InputHandler* PanelInputHandler::focus_ = NULL;
 bool PanelInputHandler::sema_ = false;
 
 PanelInputHandler::PanelInputHandler(Glyph* g, Style* s) : InputHandler(g, s){
@@ -84,7 +84,7 @@ void PanelInputHandler::focus(InputHandler* h){
 			sema_ = true;
 		}
 		InputHandler* f = focus_;
-		focus_ = nil;
+		focus_ = NULL;
 		f->focus_out();
 	}
 	focus_ = h;
@@ -96,7 +96,7 @@ void PanelInputHandler::handle_old_focus() {
 //printf("handle_old_focus %p\n", focus_);
 		sema_ = true;
 		InputHandler* f = focus_;
-		focus_ = nil;
+		focus_ = NULL;
 		f->focus_out();
 	}
 }
@@ -123,7 +123,7 @@ ValEdLabel::ValEdLabel(Glyph* g) : MonoGlyph(g) {
 			"yellow");
 		Resource::ref(color_);
 	}
-	tts_ = nil;
+	tts_ = NULL;
 }
 	
 ValEdLabel::~ValEdLabel() {
@@ -187,7 +187,7 @@ ENDGUI
         
 void hoc_xmenu() { IFGUI
 	bool add2menubar = false;
-	char* mk = nil;
+	char* mk = NULL;
 	int i = 2;
 	if (ifarg(i)) {
 		if (hoc_is_str_arg(i)) {
@@ -217,7 +217,7 @@ void hoc_xbutton() { IFGUI
         s1 = gargstr(1);
         if (ifarg(2)) {
 		if (hoc_is_object_arg(2)) {
-			hoc_ivbutton(s1, nil, *hoc_objgetarg(2));
+			hoc_ivbutton(s1, NULL, *hoc_objgetarg(2));
 		}else{
 		        hoc_ivbutton(s1, gargstr(2));
 		}
@@ -242,8 +242,8 @@ void hoc_xstatebutton() { IFGUI
         s1 = gargstr(1);
 
 	if (hoc_is_object_arg(2)) {
-		hoc_ivstatebutton(nil, s1, nil, HocStateButton::PALETTE,
-			*hoc_objgetarg(2), ifarg(3) ? *hoc_objgetarg(3):nil);
+		hoc_ivstatebutton(NULL, s1, NULL, HocStateButton::PALETTE,
+			*hoc_objgetarg(2), ifarg(3) ? *hoc_objgetarg(3):NULL);
 	}else{
 	        if (ifarg(3)) {
         	        s2 = gargstr(3);
@@ -269,7 +269,7 @@ void hoc_xcheckbox() { IFGUI
         s1 = gargstr(1);
 
 	if (hoc_is_object_arg(2)) {
-		hoc_ivstatebutton(nil, s1, nil, HocStateButton::CHECKBOX,
+		hoc_ivstatebutton(NULL, s1, NULL, HocStateButton::CHECKBOX,
 			*hoc_objgetarg(2), ifarg(3) ? *hoc_objgetarg(3) : 0);
 	}else{
 	        if (ifarg(3)) {
@@ -284,7 +284,7 @@ ENDGUI
 
 void hoc_xradiobutton() { IFGUI
         char *s1, *s2 = (char *)0;
-	Object* po = nil;
+	Object* po = NULL;
         bool activate = false;
         s1 = gargstr(1);
         if (ifarg(2)) {
@@ -300,7 +300,7 @@ void hoc_xradiobutton() { IFGUI
         	s2 = s1;
         }
 	if (po) {
-	        hoc_ivradiobutton(s1, nil, activate, po);
+	        hoc_ivradiobutton(s1, NULL, activate, po);
 	}else{
 	        hoc_ivradiobutton(s1, s2, activate);
 	}
@@ -311,8 +311,8 @@ ENDGUI
 
 static void hoc_xvalue_helper() { IFGUI //prompt, variable, deflt,action,canrun,usepointer
         char *s1, *s2, *s3;
-	Object* pyvar = nil;
-	s2 = s3 = nil;
+	Object* pyvar = NULL;
+	s2 = s3 = NULL;
         s1 = gargstr(1);
         if (ifarg(2)) {
 		if (hoc_is_object_arg(2)) {
@@ -327,7 +327,7 @@ static void hoc_xvalue_helper() { IFGUI //prompt, variable, deflt,action,canrun,
         if (ifarg(3) && *getarg(3)) {
 		if (*getarg(3) == 2.) {
 			if (pyvar) {
-				hoc_ivvalue_keep_updated(s1, nil, pyvar);
+				hoc_ivvalue_keep_updated(s1, NULL, pyvar);
 			}else{
 				hoc_ivvalue_keep_updated(s1, s2);
 			}
@@ -336,7 +336,7 @@ static void hoc_xvalue_helper() { IFGUI //prompt, variable, deflt,action,canrun,
 		deflt=true;
 	}
         if (ifarg(4)) {
-		Object* pyact = nil;
+		Object* pyact = NULL;
 		if (pyvar) {
 			pyact = *hoc_objgetarg(4);
 		}else{
@@ -383,7 +383,7 @@ ENDGUI
 static void hoc_xpvalue_helper() { IFGUI //prompt,variable,deflt,action,canrun
         char *s1, *s3;
 	double* pd;
-	HocSymExtension* extra = nil;
+	HocSymExtension* extra = NULL;
 	Symbol* sym;
         s1 = gargstr(1);
         if (ifarg(2)) {
@@ -436,7 +436,7 @@ ENDGUI
 
 void hoc_xvarlabel() { IFGUI
 	if (hoc_is_object_arg(1)) {
-		hoc_ivvarlabel(nil, *hoc_objgetarg(1));
+		hoc_ivvarlabel(NULL, *hoc_objgetarg(1));
 	}else{
 		hoc_ivvarlabel(hoc_pgargstr(1));
 	}
@@ -450,10 +450,10 @@ void hoc_xslider() { IFGUI
 	float low=0, high=100;
 	float resolution=1;
 	int nsteps = 10;
-	char* send = nil;
-	Object* pysend = nil;
-	double* pval = nil;
-	Object* pyvar = nil;
+	char* send = NULL;
+	Object* pysend = NULL;
+	double* pval = NULL;
+	Object* pyvar = NULL;
 	bool vert = 0;
 	if (ifarg(3)) {
 		low = *getarg(2);
@@ -528,7 +528,7 @@ static HocPanel* curHocPanel;
 static HocValEditor* last_fe_constructed_;
 static void checkOpenPanel() {
 	if (!curHocPanel) {
-		hoc_execerror("No panel is open", nil);
+		hoc_execerror("No panel is open", NULL);
 	}
 }
 
@@ -539,8 +539,8 @@ public:
 	bool isEmpty() { return l_.count() == 0; }
 	void push(HocMenu* m);
 	void pop() {if (l_.count()) {l_.item(0)->unref(); l_.remove(0); }}
-	Menu* top() {return (l_.count()) ? l_.item(0)->menu() : nil; }
-	HocItem* hoc_item() {return (l_.count()) ? l_.item(0) : nil; }
+	Menu* top() {return (l_.count()) ? l_.item(0)->menu() : NULL; }
+	HocItem* hoc_item() {return (l_.count()) ? l_.item(0) : NULL; }
 	void clean();
 private:
 	HocMenuList l_;
@@ -571,8 +571,8 @@ private:
 };
 
 OcTelltaleGroup::OcTelltaleGroup() {
-	previous_ = nil;
-	current_ = nil;
+	previous_ = NULL;
+	current_ = NULL;
 }	
 OcTelltaleGroup::~OcTelltaleGroup() {
 }
@@ -585,10 +585,10 @@ void OcTelltaleGroup::update(TelltaleState* t) {
 }	
 void OcTelltaleGroup::remove(TelltaleState* t) {
 	if (previous_ == t) {
-		previous_ = nil;
+		previous_ = NULL;
 	}
 	if (current_ == t) {
-		current_ = nil;
+		current_ = NULL;
 	}
 	TelltaleGroup::remove(t);
 }
@@ -598,13 +598,13 @@ void OcTelltaleGroup::restore() {
 	}else if (current_){
 		TelltaleGroup::update(current_);
 		current_->set(TelltaleState::is_chosen, false);
-		current_ = nil;
+		current_ = NULL;
 	}
 }	
 
 class HocRadioAction : public HocAction {
 public:
-	HocRadioAction(const char* action, OcTelltaleGroup*, Object* pyact = nil);
+	HocRadioAction(const char* action, OcTelltaleGroup*, Object* pyact = NULL);
 	virtual ~HocRadioAction();
 	virtual void help();
 private:
@@ -638,7 +638,7 @@ private:
 	OcTelltaleGroup* g_;
 };
 
-HocRadio::HocRadio() { g_ = nil; }
+HocRadio::HocRadio() { g_ = NULL; }
 HocRadio::~HocRadio() {Resource::unref(g_);}
 void HocRadio::start() {
 	Resource::unref(g_);
@@ -648,7 +648,7 @@ void HocRadio::start() {
 
 void HocRadio::stop() {
 	Resource::unref(g_);
-	g_ = nil;
+	g_ = NULL;
 }
 
 static HocRadio* hoc_radio;
@@ -663,8 +663,8 @@ void hoc_ivpanel(const char* name, bool h) {
 			menuStack->clean();
 		}
 		curHocPanel->unref();
-		curHocPanel = nil;
-		hoc_execerror("Didn't close the previous panel", nil);
+		curHocPanel = NULL;
+		hoc_execerror("Didn't close the previous panel", NULL);
 	}else{
 		curHocPanel = new HocPanel(name, h);
 		curHocPanel->ref();
@@ -676,7 +676,7 @@ void hoc_ivpanelmap(int scroll) {
 	checkOpenPanel();
 	curHocPanel->map_window(scroll);
 	curHocPanel->unref();
-	curHocPanel = nil;
+	curHocPanel = NULL;
 	if (menuStack && !menuStack->isEmpty()) {
 fprintf(stderr, "%s menu not closed\n", menuStack->hoc_item()->getStr());
 		menuStack->clean();
@@ -754,8 +754,8 @@ void hoc_ivvalue_keep_updated(const char* name, const char* variable, Object* py
 	checkOpenPanel();
 	hoc_radio->stop();
 	Symbol* s = hoc_get_symbol(variable);
-	curHocPanel->valueEd(name, variable, nil, false,
-		 hoc_val_pointer(variable), false, true, (s?s->extra:nil), pyvar);
+	curHocPanel->valueEd(name, variable, NULL, false,
+		 hoc_val_pointer(variable), false, true, (s?s->extra:NULL), pyvar);
 }
 
 void hoc_ivvalue(const char* name, const char* variable, bool deflt, Object* pyvar) {
@@ -774,11 +774,11 @@ void hoc_ivvaluerun(const char* name, const char* variable, const char* action,
 	bool deflt, bool canRun, bool usepointer, Object* pyvar, Object* pyact){
 	checkOpenPanel();
 	hoc_radio->stop();
-	Symbol* s = nil;
+	Symbol* s = NULL;
 	if (variable) {s = hoc_get_symbol(variable);}
 	if (usepointer) {
 		curHocPanel->valueEd(name, variable, action, canRun,
-			hoc_val_pointer(variable), deflt, false, (s?s->extra:nil), pyvar, pyact);
+			hoc_val_pointer(variable), deflt, false, (s?s->extra:NULL), pyvar, pyact);
 	}else{
 		curHocPanel->valueEd(name, variable, action, canRun, 0, deflt, false, (s?s->extra:0), pyvar, pyact);
 	}
@@ -925,11 +925,11 @@ static void var_freed(void* pd, int size) {
 	}				
 }
 
-HocPanel::HocPanel(const char* name, bool h) : OcGlyph(nil) {
+HocPanel::HocPanel(const char* name, bool h) : OcGlyph(NULL) {
 	LayoutKit& lk = *LayoutKit::instance();
 	WidgetKit& wk = *WidgetKit::instance();
 	horizontal_ = h;
-	hocmenubar = nil;
+	hocmenubar = NULL;
 	if (h) {
 		box_ = lk.hbox();
 	}else{
@@ -1019,7 +1019,7 @@ void HocPanel::keep_updated(HocUpdateItem* hui, bool add) {
 void HocPanel::paneltool(const char* name, const char* proc, const char* selact, ScenePicker* sp, Object* pycallback, Object* pyselact) {
 	HocCommand* hc = pycallback ? new HocCommand(pycallback) : new HocCommand(proc);
 	HocCommandTool* hct = new HocCommandTool(hc);
-	HocAction* ha = nil;
+	HocAction* ha = NULL;
 	if (selact || pyselact) {
 		ha = new HocAction(selact, pyselact);
 	}
@@ -1165,7 +1165,7 @@ HocMenu* HocPanel::menu(const char* name, bool add2menubar) {
 	if (menuStack->isEmpty()) {
 		Menu* m0;
 		if (!add2menubar) {
-			hocmenubar = nil;
+			hocmenubar = NULL;
 		}
 		if (hocmenubar) {
 			m0 = hocmenubar;
@@ -1237,7 +1237,7 @@ static Coord xvalue_field_size;
 void HocPanel::valueEd(const char* prompt, Object* pyvar, Object* pyact,
 	bool canrun, bool deflt, bool keep_updated)
 {
-	valueEd(prompt, nil, nil, canrun, nil, deflt, keep_updated, nil, pyvar, pyact);
+	valueEd(prompt, NULL, NULL, canrun, NULL, deflt, keep_updated, NULL, pyvar, pyact);
 }
 
 void HocPanel::valueEd(const char* name, const char* variable, const char* action, bool canrun,
@@ -1306,7 +1306,7 @@ void HocPanel::valueEd(const char* name, const char* variable, const char* actio
 		 prompt,
 		 lk->h_fixed_span(fe->field_editor(), xvalue_field_size),
 		 (fe->stepper()?
-		    lk->fixed(fe->stepper(), int(fct), int(fct)) : nil)
+		    lk->fixed(fe->stepper(), int(fct), int(fct)) : NULL)
 		));
 	}
 	item_append(fe);
@@ -1425,7 +1425,7 @@ HocVarLabel::HocVarLabel(char** cpp, PolyGlyph* pg, Object* pyvar) : HocUpdateIt
 	}else{
 		cp_ = *cpp_;
 	}
-	variable_ = nil;
+	variable_ = NULL;
 	p_ = new Patch(LayoutKit::instance()->margin(
 		WidgetKit::instance()->label(cp_), 3
 	));
@@ -1498,7 +1498,7 @@ void HocVarLabel::update_hoc_item() {
 HocMenuAction::HocMenuAction(const char* action, HocMenu* hm)
 : HocAction(action) {
 	hm_ = hm;
-	hp_ = nil;
+	hp_ = NULL;
 }
 HocMenuAction::~HocMenuAction(){
 	Resource::unref(hp_);	
@@ -1508,26 +1508,26 @@ void HocMenuAction::execute() {
 		hm_->menu()->remove_item(0);
 	}
 	Resource::unref(hp_);
-	hp_ = nil;
+	hp_ = NULL;
 	hoc_ivpanel("");
 	menuStack->push(hm_);
 	HocAction::execute();
 	menuStack->pop();
 	checkOpenPanel();
 	hp_ = curHocPanel;
-	curHocPanel = nil;
+	curHocPanel = NULL;
 	hm_->item()->menu(hm_->menu());
 }
 
 //HocAction
 HocAction::HocAction(const char* action, Object* pyact){
-	hi_ = nil;
+	hi_ = NULL;
 	if (pyact) {
 		action_ = new HocCommand(pyact);
 	}else if (action && action[0] != '\0') {
 		action_ = new HocCommand(action);
 	}else{
-		action_ = nil;
+		action_ = NULL;
 	}
 }
 
@@ -1579,13 +1579,13 @@ implementFieldSEditorCallback(HocValAction);
 #endif
 //HocValAction
 HocValAction::HocValAction(const char* action, Object* pyact) : HocAction(action, pyact){
-	fe_ = nil;
+	fe_ = NULL;
 #if UseFieldEditor
 	fea_ = new FieldEditorCallback(HocValAction)(
 #else
 	fea_ = new FieldSEditorCallback(HocValAction)(
 #endif
-		this, &HocValAction::accept, nil);
+		this, &HocValAction::accept, NULL);
 	fea_->ref();
 }
 
@@ -1600,7 +1600,7 @@ void HocValAction::setFieldSEditor(HocValEditor* fe) {
 
 void HocValAction::accept(FieldSEditor*) {
 	if (fe_->active()) {
-		fe_->field_editor()->parent()->focus(nil);
+		fe_->field_editor()->parent()->focus(NULL);
 	}else{
 		fe_->evalField();
 	}
@@ -1644,9 +1644,9 @@ HocDefaultCheckbox* HocDefaultCheckbox::instance(HocDefaultValEditor* dve) {
 	t = new TelltaleState(
 		TelltaleState::is_enabled | TelltaleState::is_toggle
 	);
-	g = k.check_box_look(nil, t);
+	g = k.check_box_look(NULL, t);
 	s = k.style();
-	HocDefaultCheckbox* cb = new HocDefaultCheckbox(dve, g, s, t, nil); 
+	HocDefaultCheckbox* cb = new HocDefaultCheckbox(dve, g, s, t, NULL); 
 	k.end_style();
 	return cb;
 }
@@ -1693,7 +1693,7 @@ void HocDefaultValEditor::def_change(float x0, float y0) {
 		sprintf(form, "Permanently replace default value %s with %s",
 			xvalue_format->string(), xvalue_format->string());
 		sprintf(buf, form, deflt_, x);
-		if (boolean_dialog(buf, "Replace", "Cancel", nil, x0, y0)) {
+		if (boolean_dialog(buf, "Replace", "Cancel", NULL, x0, y0)) {
 			deflt_ = x;
 			most_recent_ = x;
 		}
@@ -1804,7 +1804,7 @@ double MyMath::resolution(double x) {
 	char buf[100];
 	sprintf(buf, xvalue_format->string(), Math::abs(x));
 	char* cp;
-	char* least = nil;
+	char* least = NULL;
 	for (cp = buf; *cp; ++cp) {
 		if (isdigit(*cp)) {
 			least = cp;
@@ -1843,10 +1843,10 @@ HocValEditor::HocValEditor(const char* name, const char* variable, ValEdLabel* p
 	prompt->ref();
 	canrun_ = canrun;
    	active_ = false;
-	domain_limits_ = nil;
-	variable_ = nil;
+	domain_limits_ = NULL;
+	variable_ = NULL;
 	pyvar_ = pyvar;
-	pval_ = nil;
+	pval_ = NULL;
 	if (pd) {
 		pval_ = pd;
 	}
@@ -2014,7 +2014,7 @@ const char* HocValEditor::variable() const {
 	if (variable_) {
 		return variable_->string();
 	}else{
-		return nil;
+		return NULL;
 	}
 }
 
@@ -2049,7 +2049,7 @@ void HocEditorForItem::keystroke(const Event& e) {
 		hve_->active_ = false;
 		hve_->updateField();
 		hve_->active_ = true;
-		parent()->focus(nil);
+		parent()->focus(NULL);
 		return;
 	case '\007':
 		hve_->active_ = false;
@@ -2061,7 +2061,7 @@ void HocEditorForItem::keystroke(const Event& e) {
 	}
 	FieldSEditor::keystroke(e);
 	if (unfocus) {
-		parent()->focus(nil);
+		parent()->focus(NULL);
 	}
 }
 class HocEditorTempData {
@@ -2198,7 +2198,7 @@ void HocEditorForItem::release(const Event& e) {
 InputHandler* HocEditorForItem::focus_in() {
 //printf("HocEditorForItem::focus_in()\n");
 	if (Oc::helpmode()) {
-		return nil;
+		return NULL;
 	}
 	if (!hve_->active_) {
 		//hve_->prompt_->state()->set(TelltaleState::is_active, true);
@@ -2336,7 +2336,7 @@ StepperMenu::StepperMenu() {
 	WidgetKit& k = *WidgetKit::instance();
 	char buf[50];
 	active_ = false;
-	vs_ = nil;
+	vs_ = NULL;
 	MenuItem* m;
 	m = K::menu_item("Res");
 	m->action(new StepperMenuAction(false, 0));
@@ -2577,7 +2577,7 @@ OcSlider::OcSlider(double* pd, float low, float high,
   : HocUpdateItem("")
 {
 	resolution_ = resolution;
-	variable_ = nil;
+	variable_ = NULL;
 	pval_ = pd;
 	pyvar_ = pyvar;
 	if (pyvar_) { hoc_obj_ref(pyvar_); }
@@ -2590,7 +2590,7 @@ OcSlider::OcSlider(double* pd, float low, float high,
 	}else if (pysend) {
 		send_ = new HocCommand(pysend);
 	}else{
-		send_ = nil;
+		send_ = NULL;
 	}
 	bv_->attach(Dimension_X, this);
 	scrolling_ = false;
@@ -2752,7 +2752,7 @@ HocStateButton::HocStateButton(double* pd, const char* text, Button* button,
 	pval_ = pd;
 	pyvar_ = pyvar;
 	if (pyvar_) { hoc_obj_ref(pyvar_); }
-	variable_ = nil;
+	variable_ = NULL;
 	name_ = new CopyString(text);
 	action_ = action;
 	action->hoc_item(this);
@@ -2903,7 +2903,7 @@ HocAction* action, HocItem* hi, Object* pyvar)
 	pval_ = pd;
 	pyvar_ = pyvar;
 	if (pyvar_) { hoc_obj_ref(pyvar_); }
-	variable_ = nil;
+	variable_ = NULL;
 	name_ = new CopyString(text);
 	action_ = action;
 	action->hoc_item(this);
@@ -3060,7 +3060,7 @@ static Member_func vfe_members[] = {
 	0, 0
 };
 void ValueFieldEditor_reg() {
-	class2oc("ValueFieldEditor", vfe_cons, vfe_destruct, vfe_members);
+	class2oc("ValueFieldEditor", vfe_cons, vfe_destruct, vfe_members, NULL, NULL, NULL);
 }
 
 #if HAVE_IV

@@ -299,15 +299,9 @@ extern hoc_List* section_list;	/* Where the Sections live */
 
 extern Section* chk_access();
 extern Section	*sec_alloc();		/* Allocates a single section */
-#if defined(__cplusplus)
-extern void	node_alloc(Section*, int);		/* Allocates node vectors in a section*/
+extern void	node_alloc(Section*, short);		/* Allocates node vectors in a section*/
 extern double section_length(Section*), nrn_diameter(Node*);
 extern double nrn_ghk(double, double, double, double);
-#else
-extern void	node_alloc();		/* Allocates node vectors in a section*/
-extern double section_length(), nrn_diameter();
-extern double nrn_ghk();
-#endif
 extern Node* nrn_parent_node(Node*);
 
 /* loop over sections. Must previously declare Item* qsec. Contains the {! */
@@ -331,6 +325,8 @@ extern int stoprun;
 #if defined(__cplusplus)
 }
 #endif
+
+#include "nrn_ansi.h"
 
 #endif
 

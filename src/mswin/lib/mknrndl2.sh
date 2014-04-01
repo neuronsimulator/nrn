@@ -27,12 +27,19 @@ echo '#include <stdio.h>
 #include "hocdec.h"
 #define IMPORT extern __declspec(dllimport)
 IMPORT int nrnmpi_myid, nrn_nobanner_;
+' > mod_func.c
 
+for i in $prefixes
+do
+	echo extern void _"$i"_reg"();" >> mod_func.c
+done
+
+echo '
 modl_reg(){
 	//nrn_mswindll_stdio(stdin, stdout, stderr);
     if (!nrn_nobanner_) if (nrnmpi_myid < 1) {
 	fprintf(stderr, "Additional mechanisms from files'$newline'");
-' > mod_func.c
+' >> mod_func.c
 
 for i in $files
 do

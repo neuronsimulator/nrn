@@ -29,7 +29,7 @@ extern void hoc_run_stmt(Symbol*);
 }
 
 OcPointer::OcPointer(const char* st, double* d) : Observer() {
-	sti_ = nil;
+	sti_ = NULL;
 	s_ = new char[strlen(st)+1];
 	strcpy(s_, st);
 	p_ = d;
@@ -116,12 +116,12 @@ static void steer_val(void* v) {
 }
 
 void OcPointer_reg() {
-	class2oc("Pointer", cons, destruct, members, nil, nil, s_memb);
+	class2oc("Pointer", cons, destruct, members, NULL, NULL, s_memb);
 	// now make the val variable an actual double
 	Symbol* sv = hoc_lookup("Pointer");
 	Symbol* sx = hoc_table_lookup("val", sv->u.ctemplate->symtable);
 	sx->type = VAR;
-	sx->arayinfo = nil;
+	sx->arayinfo = NULL;
 	sv->u.ctemplate->steer = steer_val;
 }
 
@@ -139,7 +139,7 @@ StmtInfo::~StmtInfo() {
 void StmtInfo::parse() {
 	char buf[256], *d;
 	const char* s;
-	symlist_ = nil;
+	symlist_ = NULL;
 	ParseTopLevel ptl;
 	bool see_arg = false;
 	for (s=stmt_->string(), d = buf; *s; ++s, ++d) {

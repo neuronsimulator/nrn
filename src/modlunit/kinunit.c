@@ -6,8 +6,8 @@
 extern char *indepunits;
 static List *reactnames;
 
-static set_flux_units();
-static react_unit_err();
+static void set_flux_units();
+static void react_unit_err();
 
 void kinunits(type, pass)
 	Item *type;
@@ -89,8 +89,7 @@ diag("Inconsistent flux units", (char *)0);
 	freelist(&reactnames);
 }
 
-static
-set_flux_units(up)
+static void set_flux_units(up)
 	struct unit *up;
 {
 	Symbol *s;
@@ -107,8 +106,7 @@ set_flux_units(up)
 	
 }
 
-static
-react_unit_err(s, up)
+static void react_unit_err(s, up)
 	char *s;
 	struct unit *up;
 {
@@ -121,13 +119,13 @@ Fprintf(stderr, "But the users %s rate units are: %s\n", s, Unit_str(up));
 	diag("inconsistent reaction units", (char *)0);
 }
 
-clear_compartlist() {
+void clear_compartlist() {
 	SYMITER_STAT {
 		ITMA(s->info)[6] = ITEM0;
 	}}
 }
 
-unit_compartlist(q)
+void unit_compartlist(q)
 	Item *q;
 {
 	char *ustr;
@@ -139,7 +137,7 @@ unit_compartlist(q)
 	ITMA(SYM(q)->info)[6] = (Item *) stralloc(unit_str(), (char *)0);
 }
 
-unit_ldifuslist(q, flag)
+void unit_ldifuslist(q, flag)
 	Item *q;
 	int flag;
 {
@@ -166,7 +164,7 @@ volume\nmust be measured in micron3/micron (1-12 m2)");
 	unitonflag = 0;
 }
 
-consreact_push(q)
+void consreact_push(q)
 	Item* q;
 {
 	char* ustr;
@@ -180,7 +178,7 @@ consreact_push(q)
 	}
 }
 
-ureactadd(q)
+void ureactadd(q)
 	Item *q;
 {
 	if (!reactnames) {

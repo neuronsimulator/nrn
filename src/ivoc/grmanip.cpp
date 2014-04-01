@@ -29,8 +29,8 @@ extern "C" {extern double hoc_cross_x_, hoc_cross_y_;}
 
 class LineRubberMarker : public Rubberband {
 public:
-	LineRubberMarker(GPolyLine*, RubberAction*, Canvas* c=nil);
-	LineRubberMarker(Coord, Coord, RubberAction*, Canvas* c=nil);
+	LineRubberMarker(GPolyLine*, RubberAction*, Canvas* c=NULL);
+	LineRubberMarker(Coord, Coord, RubberAction*, Canvas* c=NULL);
 	virtual ~LineRubberMarker();
 	virtual bool event(Event&);
 	virtual void undraw(Coord, Coord);
@@ -48,7 +48,7 @@ private:
 
 class MoveLabelBand : public Rubberband {
 public:
-	MoveLabelBand(GLabel*, RubberAction*, Canvas* = nil);
+	MoveLabelBand(GLabel*, RubberAction*, Canvas* = NULL);
 	virtual ~MoveLabelBand();
 	virtual void draw(Coord, Coord);
 	virtual void press(Event&);
@@ -115,7 +115,7 @@ void GPolyLine::pick(Canvas* c, const Allocation&, int depth, Hit& h) {
 		case Graph::CROSSHAIR:
 			if (near(x, y, 10, c->transformer())) {
 				h.target(depth, this, 0,
-				   new LineRubberMarker(this, nil, c)
+				   new LineRubberMarker(this, NULL, c)
 				);
 			}
 			break;
@@ -148,7 +148,7 @@ void HocMark::pick(Canvas* c, const Allocation& a, int depth, Hit& h) {
 		switch (XYView::current_pick_view()->scene()->tool()) {
 		case Graph::CROSSHAIR:
 				h.target(depth, this, 0,
-					new LineRubberMarker(a.x(), a.y(), nil, c)
+					new LineRubberMarker(a.x(), a.y(), NULL, c)
 				);
 			break;
 		}
@@ -241,15 +241,15 @@ LineRubberMarker::LineRubberMarker(GPolyLine* gl, RubberAction* ra, Canvas* c)
 //printf("LineRubberMarker\n");
 	gl_ = gl;
 	Resource::ref(gl);
-	label_ = nil;
+	label_ = NULL;
 	index_ = -1;
 }
 LineRubberMarker::LineRubberMarker(Coord x, Coord y, RubberAction* ra, Canvas* c)
 	 : Rubberband(ra, c)
 {
 //printf("LineRubberMarker\n");
-	gl_ = nil;
-	label_ = nil;
+	gl_ = NULL;
+	label_ = NULL;
 	index_ = -1;
 	x_ = x;
 	y_ = y;
@@ -340,7 +340,7 @@ void GLabel::pick(Canvas* c, const Allocation&, int depth, Hit& h) {
 		switch (XYView::current_pick_view()->scene()->tool()) {
 		case Scene::MOVE:
 			h.target(depth, this, 0,
-			   new MoveLabelBand(this, nil, c)
+			   new MoveLabelBand(this, NULL, c)
 			);
 			break;
 		case Scene::DELETE:

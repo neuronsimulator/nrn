@@ -75,6 +75,10 @@ static char RCSid[] =
 #include "spmatrix.h"
 #include "spdefs.h"
 
+extern void spcLinkRows(MatrixPtr);
+extern void spcRowExchange(MatrixPtr, int row1, int row2);
+extern void spcColExchange(MatrixPtr, int col1, int col2);
+
 /* avoid "declared implicitly `extern' and later `static' " warnings. */
 static int CountTwins();
 static void SwapCols();

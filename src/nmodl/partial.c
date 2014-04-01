@@ -81,7 +81,7 @@ static Symbol *pv[4]; /* DV, F, V, G */
 static Item *partialcolon;
 static List *parinfo; /* DV, F, V, G, ~ with ident */
 				
-solv_partial(qsol, fun)
+void solv_partial(qsol, fun)
 	Item *qsol;
 	Symbol *fun;
 {
@@ -114,7 +114,7 @@ Sprintf(buf, "if (error=crank(%d, %s, %s, %s, delta_%s, %s, %s, _pbound%d, &_par
    }
 }
 
-partial_eqn(q2, q4, q8, q11) /*V' F V G*/
+void partial_eqn(q2, q4, q8, q11) /*V' F V G*/
 	Item *q2, *q4, *q8, *q11;
 {
 	int i, dim;
@@ -164,7 +164,7 @@ static List *bnd[4];	/* for each condition consisting of
 				symbol, list of tokens for expression
 			in the order DEL y[0]   DEL  y[N]   y[0]   y[N]*/
 
-massagepartial(q1, q2, q3, q6) /*PARTIAL NAME stmtlist '}'*/
+void massagepartial(q1, q2, q3, q6) /*PARTIAL NAME stmtlist '}'*/
 	Item *q1, *q2, *q3, *q6;
 {
 	
@@ -260,7 +260,7 @@ diag("Duplicate boundary condition for ", s->name);
 
 /* ~ optionalDEL var[index] = expr */
 /* type 0 Dirichlet (no DEL), type 1 Neumann (with DEL) */
-partial_bndry(type, qvar, qfirstlast, qexpr, qlast)
+void partial_bndry(type, qvar, qfirstlast, qexpr, qlast)
 	int type;
 	Item *qvar, *qfirstlast, *qexpr, *qlast;
 {

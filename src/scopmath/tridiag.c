@@ -45,10 +45,11 @@ static char RCSid[] =
 /*								*/
 /****************************************************************/
 
+#include <stdlib.h>
 #include <math.h>
 #include "errcodes.h"
 
-tridiag(n, a, b, c, d, soln)
+int tridiag(n, a, b, c, d, soln)
 int n;
 double a[], b[], c[], d[], soln[];
 {

@@ -33,10 +33,10 @@ void nrn_vecsim_remove(void* v) {
 void nrn_vecsim_add(void* v, bool record) {
 	IvocVect* yvec, *tvec, *dvec;
 	extern short* nrn_is_artificial_;
-	double* pvar = nil;
-	char* s = nil;
+	double* pvar = NULL;
+	char* s = NULL;
 	double ddt;
-	Object* ppobj = nil;
+	Object* ppobj = NULL;
 	int iarg = 0;
 
 	yvec = (IvocVect*)v;
@@ -69,8 +69,8 @@ void nrn_vecsim_add(void* v, bool record) {
 		// Vector.record(&SEClamp[0].i, ...)
 		pvar = hoc_pgetarg(iarg+1);
 	}
-	tvec = nil;
-	dvec = nil;
+	tvec = NULL;
+	dvec = NULL;
 	ddt = -1.;
 	int con = 0;
 	if (ifarg(iarg+2)) {
@@ -149,7 +149,7 @@ void VecPlayStep::init(IvocVect* y, IvocVect* t, double dt) {
 	}
 	e_ = new PlayRecordEvent();
 	e_->plr_ = this;
-	si_ = nil;
+	si_ = NULL;
 }
 
 
@@ -246,7 +246,7 @@ void VecPlayContinuous::init(IvocVect* y, IvocVect* t, IvocVect* discon) {
 	}
 	e_ = new PlayRecordEvent();
 	e_->plr_ = this;
-	si_ = nil;
+	si_ = NULL;
 }
 
 

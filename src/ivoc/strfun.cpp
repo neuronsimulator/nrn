@@ -101,7 +101,7 @@ extern Symbol* ivoc_alias_lookup(const char* name, Object* ob) {
 	if (a) {
 		return a->lookup(name);
 	}
-	return nil;
+	return NULL;
 }
 
 extern void ivoc_free_alias(Object* ob) {
@@ -152,7 +152,7 @@ static Object** l_alias_list(void*) {
 	Symbol* sl = hoc_lookup("List");
 	Symbol* st = hoc_table_lookup("String", hoc_top_level_symlist);
 	if (!st || st->type != TEMPLATE) {
-printf("st=%p %s %d\n", st, st?st->name:"nil", st?st->type:0);
+printf("st=%p %s %d\n", st, st?st->name:"NULL", st?st->type:0);
 		hoc_execerror("String is not a template", 0);
 	}
 	Object** po = hoc_temp_objvar(sl, list);
@@ -316,14 +316,14 @@ static Member_ret_obj_func l_obj_members[] = {
 };
 
 static void* l_cons(Object*) {
-	return nil;
+	return NULL;
 }
 
 static void l_destruct(void*) {
 }
 
 void StringFunctions_reg() {
-	class2oc("StringFunctions", l_cons, l_destruct, l_members, nil, l_obj_members);
+	class2oc("StringFunctions", l_cons, l_destruct, l_members, NULL, l_obj_members, NULL);
 }
 
 
@@ -334,7 +334,7 @@ IvocAliases::IvocAliases(Object* ob){
 }
 
 IvocAliases::~IvocAliases(){
-	ob_->aliases = nil;
+	ob_->aliases = NULL;
 	for (TableIterator(SymbolTable) i(*symtab_); i.more(); i.next()) {
 		Symbol* sym = i.cur_value();
 		hoc_free_symspace(sym);
@@ -347,7 +347,7 @@ Symbol* IvocAliases::lookup(const char* name){
 	String s(name);
 	Symbol* sym;
 	if (!symtab_->find(sym, s)) {
-		sym = nil;
+		sym = NULL;
 	}
 	return sym;
 }

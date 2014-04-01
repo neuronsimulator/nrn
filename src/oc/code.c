@@ -7,8 +7,12 @@
 
 #include <errno.h>
 #include "hoc.h"
+#include "code.h"
 #include "hocstr.h"
 #include "parse.h"
+#include "ocfunc.h"
+#include "ocmisc.h"
+#include "hocparse.h"
 #include "equation.h"
 #include <math.h>
 #include <stdio.h>
@@ -17,8 +21,10 @@
 #include "nrnfilewrap.h"
 #if CABLE
 #include "options.h"
+#include "section.h"
 
 int bbs_poll_;
+extern void bbs_handle(void);
 #define BBSPOLL if (--bbs_poll_ == 0) { bbs_handle(); }
 
 int nrn_isecstack();
@@ -26,16 +32,10 @@ int nrn_isecstack();
 #define BBSPOLL /**/
 #endif
 
-extern Objectdata* hoc_objectdata, *hoc_top_level_data;
-extern Object* hoc_thisobject;
-extern Symlist* hoc_symlist, *hoc_top_level_symlist;
-extern double chkarg();
-extern char* hoc_object_name();
-
 # define	STACKCHK	if (stackp >= stacklast) \
 					execerror("Stack too deep.", "Increase with -NSTACK stacksize option");
 
-int tstkchk_actual(i, j) int i, j; {
+int tstkchk_actual(int i, int j) {
 	int k, l;
 	char *s[2];
 	if (i != j) {
@@ -92,11 +92,9 @@ int tstkchk_actual(i, j) int i, j; {
 #endif
 
 #define EPS hoc_epsilon
-extern double EPS;
 
 #define	NSTACK	1000 /* default size */
 #define nstack hoc_nstack
-extern long nstack; /* actual size */
 static Datum	*stack;	/* the stack */
 static Datum	*stackp;	/* next free spot on stack */
 static Datum	*stacklast; /* last stack element */
@@ -120,7 +118,6 @@ typedef struct Frame {	/* proc/func call stack frame */
 } Frame;
 #define NFRAME	200 /* default size */
 #define nframe hoc_nframe
-extern long nframe; /* actual size */
 static Frame *frame, *fp, *framelast; /* first, frame pointer, last */
 
 /* temporary object references come from this pool. This allows the
@@ -186,7 +183,7 @@ Object** hoc_temp_objptr(obj) Object* obj; {
 
 /* should be called after finished with pointer from a popobj */
 
-hoc_tobj_unref(p) Object** p; {
+void hoc_tobj_unref(Object** p) {
 	if (p >= hoc_temp_obj_pool_ && p < hoc_temp_obj_pool_ + TOBJ_POOL_SIZE) {
 		--tobj_count;
 		hoc_obj_unref(*p);
@@ -206,7 +203,7 @@ of &vec.c.x[0] as an argument to a function since intervening pop_defer/unref_de
 pairs could take place.
 */
 static Object* unref_defer_;
-hoc_unref_defer() {
+void hoc_unref_defer(void) {
 	if (unref_defer_) {
 #if 0
 		printf("hoc_unref_defer %s %d\n", hoc_object_name(unref_defer_), unref_defer_->refcount);
@@ -215,7 +212,7 @@ hoc_unref_defer() {
 		unref_defer_ = (Object*)0;
 	}
 }
-hoc_pop_defer() {
+void hoc_pop_defer(void) {
 	Object* obj;
 	if (unref_defer_) {
 #if 0
@@ -240,14 +237,14 @@ printf("hoc_pop_defer %s %d\n", hoc_object_name(unref_defer_), unref_defer_->ref
 /* should be called on each OBJECTTMP on the stack after adjusting the
 stack pointer downward */
 
-hoc_stkobj_unref(o) Object* o; {
+void hoc_stkobj_unref(Object* o) {
 	--tobj_count;
 	hoc_obj_unref(o);
 }
 
 /* check the args of the frame and unref any of type OBJECTTMP */
 
-static void frameobj_clean(f) Frame* f; {
+static void frameobj_clean(Frame* f) {
 	Datum* s;
 	int i, narg;
 	if (f->nargs == 0) {
@@ -264,9 +261,7 @@ static void frameobj_clean(f) Frame* f; {
 	}
 }
 
-extern Symlist *p_symlist;
-
-hoc_init_space()	/* create space for stack and code */
+void hoc_init_space(void)	/* create space for stack and code */
 {
 	if (nframe == 0) {
 		nframe = NFRAME;
@@ -284,9 +279,9 @@ hoc_init_space()	/* create space for stack and code */
 
 #define MAXINITFCNS 10
 static int maxinitfcns;
-static Pfri initfcns[MAXINITFCNS];
+static Pfrv initfcns[MAXINITFCNS];
 
-hoc_prstack() {
+void hoc_prstack(void) {
 	int i;
 	Datum* s;
 	printf("interpreter stack: %ld \n", (stackp - stack)/2);
@@ -300,8 +295,7 @@ hoc_prstack() {
 	}
 }
 
-hoc_on_init_register(pf)
-	Pfri pf;
+void hoc_on_init_register(Pfrv pf)
 {
 	/* modules that may have to be cleaned up after an execerror */
 	if (maxinitfcns < MAXINITFCNS) {
@@ -312,10 +306,9 @@ hoc_on_init_register(pf)
 	}
 }
 
-initcode()	/* initialize for code generation */
+void initcode(void)	/* initialize for code generation */
 {
 	int i;
-	extern int hoc_errno_count;
 	errno = 0;
 	if (hoc_errno_count > 5) {
 fprintf(stderr, "errno set %d times on last execution\n", hoc_errno_count);
@@ -353,22 +346,22 @@ if (tobj_count) {
 
 static Frame *rframe;
 static Datum *rstack;
-static char *parsestr;
+static const char *parsestr;
 
-oc_save_code(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12)
-	Inst*	*a1;
-	Inst*	*a2;
-	Datum*	*a3;
-	Frame*	*a4;
-	int	*a5;
-	int	*a6;
-	Inst*	*a7;
-	Frame*	*a8;
-	Datum*	*a9;
-	Symlist* *a10;
-	Inst*	*a11;
-	int	*a12;
-{
+void oc_save_code(
+	Inst*	*a1,
+	Inst*	*a2,
+	Datum*	*a3,
+	Frame*	*a4,
+	int	*a5,
+	int	*a6,
+	Inst*	*a7,
+	Frame*	*a8,
+	Datum*	*a9,
+	Symlist* *a10,
+	Inst*	*a11,
+	int	*a12
+){
 	*a1 = progbase;
 	*a2 = progp;
 	*a3 = stackp;
@@ -383,20 +376,20 @@ oc_save_code(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12)
 	*a12 = tobj_count;
 }
 
-oc_restore_code(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12)
-	Inst*	*a1;
-	Inst*	*a2;
-	Datum*	*a3;
-	Frame*	*a4;
-	int	*a5;
-	int	*a6;
-	Inst*	*a7;
-	Frame*	*a8;
-	Datum*	*a9;
-	Symlist* *a10;
-	Inst*	*a11;
-	int	*a12;
-{
+void oc_restore_code(
+	Inst*	*a1,
+	Inst*	*a2,
+	Datum*	*a3,
+	Frame*	*a4,
+	int	*a5,
+	int	*a6,
+	Inst*	*a7,
+	Frame*	*a8,
+	Datum*	*a9,
+	Symlist* *a10,
+	Inst*	*a11,
+	int	*a12
+){
 	progbase = *a1;
 	progp = *a2;
 	if (tobj_count > *a12) {
@@ -421,15 +414,11 @@ if (tobj_count != *a12) {
 	prog_parse_recover = *a11;
 }
 
-int hoc_strgets_need() {
+int hoc_strgets_need(void) {
 	return strlen(parsestr);
 }
 
-char *
-hoc_strgets(cbuf, nc)	/* getc for a string, used by parser */
-	char *cbuf;
-	int nc;
-{
+char* hoc_strgets(char* cbuf, int nc) {/* getc for a string, used by parser */
 	strncpy(cbuf, parsestr, nc);
 	if (*parsestr == '\0') {
 		return (char *)0;
@@ -438,10 +427,8 @@ hoc_strgets(cbuf, nc)	/* getc for a string, used by parser */
 	}
 }
 
-static
-rinitcode()	/* initialize for recursive code generation */
+static void rinitcode(void)	/* initialize for recursive code generation */
 {
-	extern int hoc_errno_count;
 	errno = 0;
 	hoc_errno_count = 0;
 	prog_parse_recover = progbase;
@@ -455,7 +442,7 @@ rinitcode()	/* initialize for recursive code generation */
 	do_equation = 0;
 }
 
-int hoc_ParseExec(yystart) int yystart; {
+int hoc_ParseExec(int yystart) {
 	/* can recursively parse and execute what is in cbuf.
 	   may parse single tokens. called from hoc_oc(str).
 	   All these parse and execute routines should be combined into
@@ -466,7 +453,6 @@ int hoc_ParseExec(yystart) int yystart; {
 	 */
 	int yret;
 	
-	extern int hoc_pipeflag, hoc_in_yyparse;
 	Frame *sframe, *sfp;
 	Inst *sprogbase, *sprogp, *spc, *sprog_parse_recover;
 	Datum *sstackp, *sstack;
@@ -518,13 +504,10 @@ int hoc_ParseExec(yystart) int yystart; {
 	return yret;
 }
 	
-int
-hoc_xopen_run(sp, str) /*recursively parse and execute for xopen*/
-	Symbol *sp;	/* if sp != 0 then parse string and save code */
-	char *str;	/*  without executing. Note str must be a 'list'*/
-{
+int hoc_xopen_run(Symbol* sp, const char* str) { /*recursively parse and execute for xopen*/
+/* if sp != 0 then parse string and save code */
+/* without executing. Note str must be a 'list'*/
 	int n=0;
-	extern int hoc_pipeflag;
 	Frame *sframe=rframe, *sfp=fp;
 	Inst *sprogbase=progbase, *sprogp=progp, *spc=pc,
 		*sprog_parse_recover=prog_parse_recover;
@@ -560,27 +543,22 @@ hoc_xopen_run(sp, str) /*recursively parse and execute for xopen*/
 
 static char* stmp[20];
 static int istmp = 0;
-char** hoc_temp_charptr() {
+char** hoc_temp_charptr(void) {
 	istmp = (istmp+1)%20;
 	return stmp+istmp;
 }
 
-int
-hoc_stack_type() {
+int hoc_stack_type(void) {
 	return stackp[-1].i;
 }
 
-pushx(d)		/* push double onto stack */
-	double d;
-{
+void pushx(double d) {		/* push double onto stack */
 	STACKCHK
 	(stackp++)->val = d;
 	(stackp++)->i = NUMBER;
 }
 
-void hoc_pushobj(d)		/* push pointer to object pointer onto stack */
-	Object **d;
-{
+void hoc_pushobj(Object** d) {		/* push pointer to object pointer onto stack */
 	STACKCHK
 	if (d >= hoc_temp_obj_pool_ && d < (hoc_temp_obj_pool_ + TOBJ_POOL_SIZE)) {
 		hoc_push_object(*d);
@@ -590,9 +568,7 @@ void hoc_pushobj(d)		/* push pointer to object pointer onto stack */
 	(stackp++)->i = OBJECTVAR;
 }
 
-hoc_push_object(d)		/* push pointer to object onto stack */
-	Object *d;
-{
+void hoc_push_object(Object* d) {		/* push pointer to object onto stack */
 	STACKCHK
 	(stackp++)->obj = d;
 	(stackp++)->i = OBJECTTMP;	/* would use OBJECT if it existed */
@@ -600,15 +576,13 @@ hoc_push_object(d)		/* push pointer to object onto stack */
 	++tobj_count;
 }
 
-hoc_pushstr(d)		/* push pointer to string pointer onto stack */
-	char **d;
-{
+void hoc_pushstr(char** d) {		/* push pointer to string pointer onto stack */
 	STACKCHK
 	(stackp++)->pstr = d;
 	(stackp++)->i = STRING;
 }
 
-void hoc_push_string() {	/* code for pushing a symbols string */
+void hoc_push_string(void) {	/* code for pushing a symbols string */
 	Objectdata* odsav;
 	Object* obsav = 0;
 	Symlist* slsav;
@@ -639,50 +613,41 @@ void hoc_push_string() {	/* code for pushing a symbols string */
 	}
 }
 
-hoc_pushpx(d)		/* push double pointer onto stack */
-	double *d;
-{
+void hoc_pushpx(double* d) {		/* push double pointer onto stack */
 	STACKCHK
 	(stackp++)->pval = d;
 	(stackp++)->i = VAR;
 }
 
-pushs(d)		/* push symbol pointer onto stack */
-	Symbol * d;
-{
+void pushs(Symbol* d) {		/* push symbol pointer onto stack */
 	STACKCHK
 	(stackp++)->sym = d;
 	(stackp++)->i = SYMBOL;
 }
-pushi(d)		/* push integer onto stack */
-	int d;
-{
+void pushi(int d) {		/* push integer onto stack */
 	STACKCHK
 	(stackp++)->i = d;
 	(stackp++)->i = USERINT;
 }
 
-int
-hoc_stacktype() {
+int hoc_stacktype(void) {
 	if (stackp <= stack) {
 		execerror("stack empty", (char*)0);
 	}
 	return (stackp - 1)->i;
 }
 
-int hoc_argtype(narg) /* type of nth arg */
-	int narg;
-{
+int hoc_argtype(int narg) { /* type of nth arg */
 	if (narg > fp->nargs)
 		execerror(fp->sp->name, "not enough arguments");
 	return(fp->argn[(narg - fp->nargs)*2 + 1].i);
 }
 
-int hoc_is_double_arg(narg) int narg; {
+int hoc_is_double_arg(int narg) {
 	return (hoc_argtype(narg) == NUMBER);
 }
 
-int hoc_is_pdouble_arg(narg) int narg; {
+int hoc_is_pdouble_arg(int narg) {
 	return (hoc_argtype(narg) == VAR);
 }
 
@@ -690,28 +655,21 @@ int hoc_is_str_arg(narg) int narg; {
 	return (hoc_argtype(narg) == STRING);
 }
 
-int hoc_is_object_arg(narg) int narg; {
+int hoc_is_object_arg(int narg) {
 	int type = hoc_argtype(narg);
 	return (type == OBJECTVAR || type == OBJECTTMP);
 }
 
-int hoc_is_tempobj_arg(narg) int narg; {
+int hoc_is_tempobj_arg(int narg) {
 	return (hoc_argtype(narg) == OBJECTTMP);
 }
 
-Datum *
-hoc_look_inside_stack(i, type) /* stack pointer at depth i; i=0 is top */
-	int i;
-	int type;
-{
+Datum* hoc_look_inside_stack(int i, int type) {/* stack pointer at depth i; i=0 is top */
 	tstkchk((stackp - 2*i - 1)->i, type);
 	return stackp - 2*(i + 1);
 }
 
-Object*
-hoc_obj_look_inside_stack(i) /* stack pointer at depth i; i=0 is top */
-	int i;
-{
+Object* hoc_obj_look_inside_stack(int i) { /* stack pointer at depth i; i=0 is top */
 	Datum* d = stackp - 2*i - 2;
 	int type = d[1].i;
 	if (type == OBJECTTMP) {
@@ -725,9 +683,7 @@ int hoc_inside_stacktype(int i) { /* 0 is top */
 	return (stackp - 2*i - 1)->i;
 }
 
-double
-xpop()		/* pop double and return top elem from stack */
-{
+double xpop(void) {	/* pop double and return top elem from stack */
 	if (stackp <= stack)
 		execerror("stack underflow", (char *) 0);
 	--stackp;
@@ -736,7 +692,7 @@ xpop()		/* pop double and return top elem from stack */
 }
 
 #if 0
-pstack() {
+void pstack(void) {
 	char* hoc_object_name();
 	Datum* d;
 	int i;
@@ -773,9 +729,7 @@ pstack() {
 }
 #endif
 
-double *
-hoc_pxpop()		/* pop double pointer and return top elem from stack */
-{
+double* hoc_pxpop(void) {/* pop double pointer and return top elem from stack */
 	if (stackp <= stack)
 		execerror("stack underflow", (char *) 0);
 	--stackp;
@@ -783,9 +737,7 @@ hoc_pxpop()		/* pop double pointer and return top elem from stack */
 	return (--stackp)->pval;
 }
 
-Symbol *
-spop()		/* pop symbol pointer and return top elem from stack */
-{
+Symbol* spop(void) {/* pop symbol pointer and return top elem from stack */
 	if (stackp <= stack)
 		execerror("stack underflow", (char *) 0);
 	--stackp;
@@ -799,9 +751,7 @@ When using objpop, after dealing with the pointer, one should call
 	the object may have been reffed when it was pushed on the stack
 */
 
-Object **
-hoc_objpop()		/* pop pointer to object pointer and return top elem from stack */
-{
+Object** hoc_objpop(void) {/* pop pointer to object pointer and return top elem from stack */
 	if (stackp <= stack)
 		execerror("stack underflow", (char *) 0);
 	--stackp;
@@ -812,9 +762,7 @@ hoc_objpop()		/* pop pointer to object pointer and return top elem from stack */
 	return (--stackp)->pobj;
 }
 
-Object *
-hoc_pop_object()		/* pop object and return top elem from stack */
-{
+Object* hoc_pop_object(void ) {/* pop object and return top elem from stack */
 	if (stackp <= stack)
 		execerror("stack underflow", (char *) 0);
 	--stackp;
@@ -822,9 +770,7 @@ hoc_pop_object()		/* pop object and return top elem from stack */
 	return (--stackp)->obj;
 }
 
-char **
-hoc_strpop()		/* pop pointer to string pointer and return top elem from stack */
-{
+char** hoc_strpop(void) { /* pop pointer to string pointer and return top elem from stack */
 	if (stackp <= stack)
 		execerror("stack underflow", (char *) 0);
 	--stackp;
@@ -832,9 +778,7 @@ hoc_strpop()		/* pop pointer to string pointer and return top elem from stack */
 	return (--stackp)->pstr;
 }
 
-int
-ipop()		/* pop symbol pointer and return top elem from stack */
-{
+int ipop(void) {/* pop symbol pointer and return top elem from stack */
 	if (stackp <= stack)
 		execerror("stack underflow", (char *) 0);
 	--stackp;
@@ -842,9 +786,7 @@ ipop()		/* pop symbol pointer and return top elem from stack */
 	return (--stackp)->i;
 }
 
-nopop()	/* just pop the stack without returning anything */
-{
-	
+void nopop(void) {/* just pop the stack without returning anything */
 	if (stackp <= stack)
 		execerror("stack underflow", (char *) 0);
 	--stackp;
@@ -856,24 +798,24 @@ nopop()	/* just pop the stack without returning anything */
 	}
 }
 
-constpush()	/* push constant onto stack */
+void constpush(void) /* push constant onto stack */
 {
 	pushxm(*((pc++)->sym)->u.pnum);
 }
 
-pushzero()	/* push zero onto stack */
+void pushzero(void) /* push zero onto stack */
 {
 	pushxm(0.);
 }
 
-varpush()	/* push variable onto stack */
+void varpush(void)	/* push variable onto stack */
 {
 	pushsm((pc++)->sym);
 }
 
 # define	relative(pc)	(pc + (pc)->i)
 
-forcode()
+void forcode(void)
 {
 	double d;
 	Inst *savepc = pc;	/* loop body */
@@ -908,7 +850,7 @@ forcode()
 		pc = relative(savepc+1);	/* next statement */
 }
 
-shortfor()
+void shortfor(void)
 {
 	Inst *savepc = pc;
 	double begin, end, *pval;
@@ -968,7 +910,7 @@ if (!ISARRAY(sym)) {
 		pc =relative(savepc+1);
 }
 
-hoc_iterator() {
+void hoc_iterator(void) {
 	/* pc is ITERATOR symbol, argcount, stmtbegin, stmtend */
 	/* for testing execute stmt once */
 	Symbol* sym;
@@ -982,13 +924,13 @@ hoc_iterator() {
 	hoc_iterator_object(sym, argcount, stmtbegin, stmtend, hoc_thisobject);
 }
 
-hoc_iterator_object(sym, argcount, beginpc, endpc, ob)
-	Symbol* sym;
-	int argcount;
-	Inst* beginpc;
-	Inst* endpc;
-	Object* ob;
-{
+void hoc_iterator_object(
+	Symbol* sym,
+	int argcount,
+	Inst* beginpc,
+	Inst* endpc,
+	Object* ob
+){
 	int i;
 	fp++;
 	if (fp >= framelast) {
@@ -1015,7 +957,7 @@ hoc_iterator_object(sym, argcount, beginpc, endpc, ob)
 	}
 }
 
-hoc_iterator_stmt() {
+void hoc_iterator_stmt(void) {
 	Inst* pcsav;
 	Object* ob;
 	Object* obsav;
@@ -1078,7 +1020,7 @@ hoc_execerror("return from within an iterator statement not allowed.",
 
 }
 
-static for_segment2(sym, mode) Symbol* sym; int mode; {
+static void for_segment2(Symbol* sym, int mode) {
 	/* symbol on stack; statement pointed to by pc
 	continuation pointed to by pc+1. template used is shortfor in code.c
 	of hoc system.
@@ -1185,11 +1127,11 @@ if (!ISARRAY(sym)) {
 #endif
 }
 	
-for_segment() {
+void for_segment(void) {
 	for_segment2(spopm(), 1);
 }
 
-for_segment1() {
+void for_segment1(void) {
 	Symbol* sym;
 	double d;
 	int mode;
@@ -1199,7 +1141,7 @@ for_segment1() {
 	for_segment2(sym, mode);	
 }
 
-ifcode()
+void ifcode(void)
 {
 	double d;
 	Inst *savepc = pc;	/* then part */
@@ -1214,24 +1156,22 @@ ifcode()
 		pc = relative(savepc+2);	/* next stmt */
 }
 
-Break()		/* break statement */
+void Break(void)		/* break statement */
 {
 	hoc_returning = 2;
 }
 
-Continue()	/* continue statement */
+void Continue(void)	/* continue statement */
 {
 	hoc_returning = 3;
 }
 
-Stop()		/* stop statement */
+void Stop(void)		/* stop statement */
 {
 	hoc_returning = 4;
 }
 
-hoc_define(sp)	/* put func/proc in symbol table */
-	Symbol *sp;
-{
+void hoc_define(Symbol* sp) {	/* put func/proc in symbol table */
 	Inst *inst, *newinst;
 
 	if (sp->u.u_proc->defn.in != STOP)
@@ -1247,7 +1187,7 @@ hoc_define(sp)	/* put func/proc in symbol table */
 	progp = progbase;	/* next code starts here */
 }
 
-frame_debug()	/* print the call sequence on an execerror */
+void frame_debug(void)	/* print the call sequence on an execerror */
 {
 	Frame *f;
 	int i, j;
@@ -1300,10 +1240,7 @@ Fprintf(stderr, "%s", hoc_object_name(*f->argn[(j - f->nargs)*2].pobj));
 	}
 }
 
-push_frame(sp, narg) /* helpful for explicit function calls */
-	Symbol* sp;
-	int narg;
-{
+void push_frame(Symbol* sp, int narg) { /* helpful for explicit function calls */
 	if (++fp >= framelast) {
 		--fp;
 		execerror(sp->name, "call nested too deeply, increase with -NFRAME framesize option");
@@ -1314,7 +1251,7 @@ push_frame(sp, narg) /* helpful for explicit function calls */
 	fp->ob = hoc_thisobject;
 }
 
-pop_frame() {
+void pop_frame(void) {
 	int i;
 	frameobj_clean(fp);
 	for (i = 0; i < fp->nargs; i++)
@@ -1322,7 +1259,7 @@ pop_frame() {
 	--fp;
 }
 
-call()		/* call a function */
+void call(void)		/* call a function */
 {
 	int i, isec;
 	Symbol *sp = pc[0].sym;	/* symbol table entry */
@@ -1386,7 +1323,7 @@ call()		/* call a function */
 	}
 }
 
-hoc_fake_call(s) Symbol* s; {
+void hoc_fake_call(Symbol* s) {
 	/*fake it so c code can call functions that ret() */
 	/* but these functions better not ask for any arguments */
 	/* don't forget a double is left on the stack and returning = 1 */
@@ -1400,10 +1337,7 @@ hoc_fake_call(s) Symbol* s; {
 	fp->ob = 0;
 }
 
-double hoc_call_func(s, narg)
-	Symbol* s;
-	int narg;
-{
+double hoc_call_func(Symbol* s, int narg) {
 	/* call the symbol as a function, The args better be pushed on the stack
 	first arg first. */
 	if (s->type == BLTIN) {
@@ -1423,8 +1357,7 @@ double hoc_call_func(s, narg)
 	}
 }
 
-ret()		/* common return from func, proc, or iterator */
-{
+void hoc_ret(void) {		/* common return from func, proc, or iterator */
 	int i;
 	/* unref all the auto object pointers */
 	for (i = fp->sp->u.u_proc->nobjauto; i > 0; --i) {
@@ -1439,7 +1372,7 @@ ret()		/* common return from func, proc, or iterator */
 	hoc_returning = 1;
 }
 
-funcret()	/* return from a function */
+void funcret(void)	/* return from a function */
 {
 	double d;
 	if (fp->sp->type != FUNCTION)
@@ -1449,7 +1382,7 @@ funcret()	/* return from a function */
 	pushxm(d);
 }
 
-procret()	/* return from a procedure */
+void procret(void)	/* return from a procedure */
 {
 	if (fp->sp->type == FUNCTION)
 		execerror(fp->sp->name,
@@ -1462,7 +1395,7 @@ procret()	/* return from a procedure */
 					may have compiled it as a function*/
 }
 
-hocobjret()	/* return from a hoc level obfunc */
+void hocobjret(void)	/* return from a hoc level obfunc */
 {
 	Object** d;
 	if (fp->sp->type != HOCOBJFUNCTION)
@@ -1478,7 +1411,7 @@ hocobjret()	/* return from a hoc level obfunc */
 	hoc_tobj_unref(d);
 }
 
-hoc_Numarg()
+void hoc_Numarg(void)
 {
 	int narg;
 	Frame* f = fp - 1;
@@ -1491,7 +1424,7 @@ hoc_Numarg()
 	pushxm((double)narg);
 }
 
-hoc_Argtype()
+void hoc_Argtype(void)
 {
 	int narg, iarg, type, itype;
 	Frame* f = fp - 1;
@@ -1515,19 +1448,13 @@ hoc_Argtype()
 	pushxm((double)itype);
 }
 
-int
-ifarg(narg)	/* true if there is an nth argument */
-	int narg;
-{
+int ifarg(int narg) {	/* true if there is an nth argument */
 	if (narg > fp->nargs)
 		return 0;
 	return 1;
 }
 
-Object **
-hoc_objgetarg(narg)	/* return pointer to nth argument */
-	int narg;
-{
+Object** hoc_objgetarg(int narg) {/* return pointer to nth argument */
 	Datum* d;
 	if (narg > fp->nargs)
 		execerror(fp->sp->name, "not enough arguments");
@@ -1539,10 +1466,7 @@ hoc_objgetarg(narg)	/* return pointer to nth argument */
 	return d[0].pobj;
 }
 
-char **
-hoc_pgargstr(narg)	/* return pointer to nth argument */
-	int narg;
-{
+char** hoc_pgargstr(int narg) {	/* return pointer to nth argument */
 	char ** cpp;
 	Symbol *sym;
 	int type;
@@ -1566,20 +1490,14 @@ hoc_pgargstr(narg)	/* return pointer to nth argument */
 	return cpp;
 }
 
-double* 
-hoc_pgetarg(narg)	/* return pointer to nth argument */
-	int narg;
-{
+double* hoc_pgetarg(int narg) {	/* return pointer to nth argument */
 	if (narg > fp->nargs)
 		execerror(fp->sp->name, "not enough arguments");
 	tstkchk(fp->argn[(narg - fp->nargs)*2 + 1].i, VAR);
 	return fp->argn[(narg - fp->nargs)*2].pval;
 }
 
-double *
-getarg(narg)	/* return pointer to nth argument */
-	int narg;
-{
+double* getarg(int narg) {	/* return pointer to nth argument */
 	if (narg > fp->nargs)
 		execerror(fp->sp->name, "not enough arguments");
 #if 1
@@ -1588,7 +1506,7 @@ getarg(narg)	/* return pointer to nth argument */
 	return &fp->argn[(narg - fp->nargs)*2].val;
 }
 
-int hoc_argindex() {
+int hoc_argindex(void) {
 	int j;
 	j = (int)xpopm();
 	if (j < 1) {
@@ -1597,7 +1515,7 @@ int hoc_argindex() {
 	return j;
 }
 
-arg()	/* push argument onto stack */
+void arg(void)	/* push argument onto stack */
 {
 	int i;
 	i = (pc++)->i;
@@ -1607,7 +1525,7 @@ arg()	/* push argument onto stack */
 	pushxm( *getarg(i));
 }
 
-hoc_stringarg() /* push string arg onto stack */
+void hoc_stringarg(void) /* push string arg onto stack */
 {
 	int i;
 	i = (pc++)->i;
@@ -1617,10 +1535,7 @@ hoc_stringarg() /* push string arg onto stack */
 	hoc_pushstr(hoc_pgargstr(i));
 }
 
-double hoc_opasgn(op, dest, src)
-	int op;
-	double dest, src;
-{
+double hoc_opasgn(int op, double dest, double src) {
 	switch (op) {
 	case '+':
 		return dest + src;
@@ -1637,7 +1552,7 @@ double hoc_opasgn(op, dest, src)
 		return src;
 	}
 }
-argassign()	/* store top of stack in argument */
+void argassign(void)	/* store top of stack in argument */
 {
 	double d;
 	int i, op;
@@ -1654,7 +1569,7 @@ argassign()	/* store top of stack in argument */
 	*getarg(i) = d;
 }
 
-hoc_argrefasgn() {
+void hoc_argrefasgn(void) {
 	double d, *pd;
 	int i, j, op;
 	i = (pc++)->i;
@@ -1675,7 +1590,7 @@ hoc_argrefasgn() {
 	pd[j] = d;
 }
 
-hoc_argref() {
+void hoc_argref(void) {
 	int i, j;
 	double* pd;
 	i = (pc++)->i;
@@ -1690,7 +1605,7 @@ hoc_argref() {
  	pushxm(pd[j]);
 }
 
-hoc_argrefarg() {
+void hoc_argrefarg(void) {
 	double* pd;
 	int i;
 	i = (pc++)->i;
@@ -1701,7 +1616,7 @@ hoc_argrefarg() {
 	hoc_pushpx(pd);
 }
 
-bltin()		/* evaluate built-in on top of stack */
+void bltin(void)		/* evaluate built-in on top of stack */
 {
 	double d;
 	d = xpopm();
@@ -1709,12 +1624,9 @@ bltin()		/* evaluate built-in on top of stack */
 	pushxm(d);
 }
 
-Symbol* hoc_get_symbol(var)
-	char* var;
-{
+Symbol* hoc_get_symbol(const char* var) {
 	Symlist *sl = (Symlist *)0;
-	Symbol *prc, *sym, *hoc_parse_stmt();
-	int eval(), rangepoint(), rangevareval(), hoc_object_eval();
+	Symbol *prc, *sym;
 	Inst* last;
 	prc = hoc_parse_stmt(var, &sl);
 	hoc_run_stmt(prc);
@@ -1733,9 +1645,8 @@ Symbol* hoc_get_symbol(var)
 	return sym;
 }
 
-Symbol* hoc_get_last_pointer_symbol() {/* hard to imagine a kludgier function*/
+Symbol* hoc_get_last_pointer_symbol(void) {/* hard to imagine a kludgier function*/
 	Symbol* sym = (Symbol*)0;
-	int hoc_ob_pointer(), rangevarevalpointer(), hoc_evalpointer(); 
 	Inst* pcv;
 	int istop=0;
 	for (pcv = pc; pcv; --pcv) {
@@ -1762,7 +1673,7 @@ Symbol* hoc_get_last_pointer_symbol() {/* hard to imagine a kludgier function*/
 	return sym;
 }
 
-hoc_autoobject() { /* AUTOOBJ symbol at pc+1. */
+void hoc_autoobject(void) { /* AUTOOBJ symbol at pc+1. */
 		  /* pointer to object pointer left on stack */
 	int i;
 	Symbol *obs;
@@ -1774,7 +1685,7 @@ hoc_autoobject() { /* AUTOOBJ symbol at pc+1. */
 	hoc_pushobj(&(fp->argn[obs->u.u_auto*2].obj));
 }
 
-eval()			/* evaluate variable on stack */
+void eval(void)			/* evaluate variable on stack */
 {
 	Objectdata* odsav;
 	Object* obsav = 0;
@@ -1862,7 +1773,7 @@ if (!ISARRAY(sym)) {
 	pushxm(d);
 }
 
-hoc_evalpointer()			/* leave pointer to variable on stack */
+void hoc_evalpointer(void)			/* leave pointer to variable on stack */
 {
 	Objectdata* odsav;
 	Object* obsav = 0;
@@ -1939,7 +1850,7 @@ if (!ISARRAY(sym)) {
 	hoc_pushpx(d);
 }
 
-add()		/* add top two elems on stack */
+void add(void)		/* add top two elems on stack */
 {
 	double d1, d2;
 	d2 = xpopm();
@@ -1948,7 +1859,7 @@ add()		/* add top two elems on stack */
 	pushxm(d1);
 }
 
-sub()		/* subtract top two elems on stack */
+void hoc_sub(void)		/* subtract top two elems on stack */
 {
 	double d1, d2;
 	d2 = xpopm();
@@ -1957,7 +1868,7 @@ sub()		/* subtract top two elems on stack */
 	pushxm(d1);
 }
 
-mul()		/* multiply top two elems on stack */
+void mul(void)		/* multiply top two elems on stack */
 {
 	double d1, d2;
 	d2 = xpopm();
@@ -1976,10 +1887,7 @@ mul()		/* multiply top two elems on stack */
   floating point division can be done, intdiv returns false.
 */   
 
-static int intdiv(x, y, iptr)
-     double x, y;
-     int * iptr;
-{
+static int intdiv(double x, double y, int* iptr) {
   long ix, iy, iz;
   int done = 0;
   while (!done)
@@ -2006,7 +1914,7 @@ static int intdiv(x, y, iptr)
 }
 #endif
 
-hoc_div()		/* divide top two elems on stack */
+void hoc_div(void)		/* divide top two elems on stack */
 {
 	double d1, d2;
 	d2 = xpopm();
@@ -2027,7 +1935,7 @@ hoc_div()		/* divide top two elems on stack */
 	pushxm(d1);
 }
 
-hoc_cyclic()	/* the modulus function */
+void hoc_cyclic(void)	/* the modulus function */
 {
 	double d1, d2;
 	double r, q;
@@ -2054,14 +1962,14 @@ hoc_cyclic()	/* the modulus function */
 	pushxm(r);
 }
 
-negate()		/* negate top element on stack */
+void negate(void)		/* negate top element on stack */
 {
 	double d;
 	d = xpopm();
 	pushxm(-d);
 }
 
-gt()
+void gt(void)
 {
 	double d1, d2;
 	d2 = xpopm();
@@ -2070,7 +1978,7 @@ gt()
 	pushxm(d1);
 }
 
-lt()
+void lt(void)
 {
 	double d1, d2;
 	d2 = xpopm();
@@ -2079,7 +1987,7 @@ lt()
 	pushxm(d1);
 }
 
-ge()
+void ge(void)
 {
 	double d1, d2;
 	d2 = xpopm();
@@ -2088,7 +1996,7 @@ ge()
 	pushxm(d1);
 }
 
-le()
+void le(void)
 {
 	double d1, d2;
 	d2 = xpopm();
@@ -2097,7 +2005,7 @@ le()
 	pushxm(d1);
 }
 
-eq()
+void eq(void)
 {
 	int t1, t2;
 	double d1, d2;
@@ -2129,7 +2037,7 @@ eq()
 	pushxm(d1);
 }
 
-ne()
+void ne(void)
 {
 	int t1, t2;
 	double d1, d2;
@@ -2161,7 +2069,7 @@ ne()
 	pushxm(d1);
 }
 
-hoc_and()
+void hoc_and(void)
 {
 	double d1, d2;
 	d2 = xpopm();
@@ -2170,7 +2078,7 @@ hoc_and()
 	pushxm(d1);
 }
 
-hoc_or()
+void hoc_or(void)
 {
 	double d1, d2;
 	d2 = xpopm();
@@ -2179,7 +2087,7 @@ hoc_or()
 	pushxm(d1);
 }
 
-hoc_not()
+void hoc_not(void)
 {
 	double d;
 	d = xpopm();
@@ -2187,7 +2095,7 @@ hoc_not()
 	pushxm(d);
 }
 
-power()			/* arg1 raised to arg2 */
+void power(void)			/* arg1 raised to arg2 */
 {
 	double d1, d2;
 	extern double Pow();
@@ -2197,7 +2105,7 @@ power()			/* arg1 raised to arg2 */
 	pushxm(d1);
 }
 
-assign()	/* assign result of execute to top symbol */
+void assign(void)	/* assign result of execute to top symbol */
 {
 	Objectdata* odsav;
 	Object* obsav = 0;
@@ -2313,9 +2221,7 @@ if(!ISARRAY(sym)) {
 	pushxm(d2);
 }
 
-hoc_assign_str(cpp, buf)
-	char** cpp, *buf;
-{
+void hoc_assign_str(char** cpp, const char* buf) {
 	char* s = *cpp;
 	*cpp = (char *)emalloc((unsigned)(strlen(buf) + 1));
 	Strcpy(*cpp, buf);
@@ -2324,9 +2230,7 @@ hoc_assign_str(cpp, buf)
 	}
 }
 
-int
-assstr()	/* assign string on top to stack - 1 */
-{
+void assstr(void) {	/* assign string on top to stack - 1 */
 	char **ps1, **ps2;
 
 	ps1 = hoc_strpop();
@@ -2334,12 +2238,7 @@ assstr()	/* assign string on top to stack - 1 */
 	hoc_assign_str(ps2, *ps1);
 }
 
-char *
-hoc_araystr(sym, index, obd) /* returns array string for multiple dimensions */
-	Symbol *sym;
-	int index;
-	Objectdata* obd;
-{
+char* hoc_araystr(Symbol* sym, int index, Objectdata* obd) { /* returns array string for multiple dimensions */
 	static char name[100];
 	char *cp = name+100;
 	char buf[10];
@@ -2368,11 +2267,7 @@ hoc_araystr(sym, index, obd) /* returns array string for multiple dimensions */
 	return cp;
 }
 
-int
-hoc_array_index(sp, od)  /* subs must be in reverse order on stack */
-	Symbol* sp;
-	Objectdata* od;
-{
+int hoc_array_index(Symbol* sp, Objectdata* od) {  /* subs must be in reverse order on stack */
 	int i;
 	if (ISARRAY(sp)) {
 		if (sp->subtype == 0) {
@@ -2389,11 +2284,7 @@ hoc_array_index(sp, od)  /* subs must be in reverse order on stack */
 	return i;
 }
 
-int
-araypt(sp, type)	/* return subscript - subs in reverse order on stack */
-	Symbol *sp;
-	int type;
-{
+int araypt(Symbol* sp, int type) {	/* return subscript - subs in reverse order on stack */
 	int i, total, varn;
 	int d;
 	register Arrayinfo *aray;
@@ -2425,11 +2316,7 @@ araypt(sp, type)	/* return subscript - subs in reverse order on stack */
 
 /* obsolete */
 #if CABLE && 0
-int
-nrnpnt_araypt(sp, pi)
-	Symbol *sp;
-	int *pi;
-{
+int nrnpnt_araypt(Symbol* sp, int pi) {
 	int i, total;
 	int d;
 	register Arrayinfo *aray = sp->arayinfo;
@@ -2457,7 +2344,7 @@ nrnpnt_araypt(sp, pi)
 }
 #endif
 
-print()		/* pop top value from stack, print it */
+void print(void) /* pop top value from stack, print it */
 {
 #if defined(__GO32__)
 	extern int egagrph;
@@ -2476,7 +2363,7 @@ print()		/* pop top value from stack, print it */
 	}
 }
 
-prexpr()	/* print numeric value */
+void prexpr(void)	/* print numeric value */
 {
 	static HocStr* s;
 	char *hoc_object_name();
@@ -2514,7 +2401,7 @@ prexpr()	/* print numeric value */
 
 }
 
-prstr()		/* print string value */
+void prstr(void)		/* print string value */
 {
 	static HocStr* s;
 	char **cpp;
@@ -2526,15 +2413,13 @@ prstr()		/* print string value */
 }
 
 /*-----------------------------------------------------------------*/
-hoc_delete_symbol()
+void hoc_delete_symbol(void)
                  /* Added 15-JUN-90 by JCW.  This routine deletes a
                  "defined-on-the-fly" variable from the symbol
                  list. */
 		/* modified greatly by Hines. Very unsafe in general. */
 {
 #if 1
-                                       /*---- extern variables ----*/
-    extern Symlist * symlist;
                                        /*---- local variables -----*/
     Symbol * doomed,
            * sp;
@@ -2557,15 +2442,14 @@ hoc_delete_symbol()
 }
 /*----------------------------------------------------------*/
 
-hoc_newline()		/* print newline */
+void hoc_newline(void)		/* print newline */
 {
 	plprint("\n");
 }
 
-varread()	/* read into variable */
+void varread(void)	/* read into variable */
 {
 	double d;
-	extern NrnFILEWrap *fin;
 	Symbol *var = (pc++)->sym;
 
 	assert(var->public != 2);
@@ -2594,10 +2478,8 @@ varread()	/* read into variable */
 	pushxm(d);
 }
 
-extern int zzdebug;
 
-static Inst *
-codechk() {
+static Inst* codechk(void) {
 	if (progp >= prog+NPROG-1)
 		execerror("procedure too big", (char *) 0);
 	if (zzdebug)
@@ -2605,38 +2487,30 @@ codechk() {
 	return progp++;
 }
 
-Inst *
-Code(f)		/* install one instruction or operand */
-	Pfri f;
-{
+Inst* Code(Pfrv f) {		/* install one instruction or operand */
 	progp->pf = f;
 	return codechk();
 }
 
-Inst* codei(f)
-	int f;
+Inst* codei(int f)
 {
 	progp->i = f;
 	return codechk();
 }
 
-codesym(f)
-	Symbol *f;
+void codesym(Symbol* f)
 {
 	progp->sym = f;
 	IGNORE(codechk());
 }
 
-codein(f)
-	Inst *f;
+void codein(Inst* f)
 {
 	progp->in = f;
 	IGNORE(codechk());
 }
 
-insertcode(begin, end, f)
-	Inst *begin, *end;
-	Pfri f;
+void insertcode(Inst* begin, Inst* end, Pfrv f)
 {
 	Inst *i;
 	for (i = end - 1; i != begin; i--) {
@@ -2657,10 +2531,8 @@ insertcode(begin, end, f)
 #if defined(DOS) || defined(__GO32__) || defined (WIN32) || (MAC && !defined(DARWIN))
 static int ntimes;
 #endif
-extern int	intset;
 
-execute(p)	/* run the machine */
-	Inst *p;
+void execute(Inst* p)	/* run the machine */
 {
 	Inst *pcsav;
 	

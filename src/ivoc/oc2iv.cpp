@@ -29,7 +29,7 @@ char** Oc2IV::object_pstr(const char* name, Object* ob) {
 	Symlist* sl;
 	if (ob) {
 		if (ob->ctemplate->constructor) {
-			return nil;
+			return NULL;
 		}else{
 			od = ob->u.dataspace;
 			sl = ob->ctemplate->symtable;
@@ -56,14 +56,14 @@ ParseTopLevel::~ParseTopLevel() {
 void ParseTopLevel::save() {
 	if (restored_ == true) {
 		if (hoc_objectdata == hoc_top_level_data) {
-			obdsav_ = nil;
+			obdsav_ = NULL;
 		}else{
 			obdsav_ = hoc_objectdata;
 		}
 		obsav_ = hoc_thisobject;
 		symsav_ = hoc_symlist;
 		hoc_objectdata = hoc_top_level_data;
-		hoc_thisobject = nil;
+		hoc_thisobject = NULL;
 		hoc_symlist = hoc_top_level_symlist;
 		restored_ = false;
 	}

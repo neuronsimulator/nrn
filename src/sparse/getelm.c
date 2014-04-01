@@ -1,11 +1,11 @@
 #include <../../nrnconf.h>
 #include <stdlib.h>
+#include <hocdec.h>
 #include "lineq.h"
 
-struct elm *
-getelm(el, row, col)
-   register struct elm *el;
-   unsigned row, col;
+#define diag(s) hoc_execerror(s, (char*)0);
+
+struct elm* getelm(struct elm* el, unsigned row, unsigned col)
    /* return pointer to row col element maintaining order in rows */
 {
 	register struct elm *new;

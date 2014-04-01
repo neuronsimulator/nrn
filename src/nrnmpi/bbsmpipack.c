@@ -20,6 +20,7 @@
 #include <mpi.h>
 #include <nrnmpidec.h>
 #include <nrnmpi_impl.h>
+#include <hocdec.h>
 
 #define nrnmpidebugleak 0
 #define debug 0

@@ -17,7 +17,7 @@ static double ste_transition(void* v) {
 	double* var1 = hoc_pgetarg(3);
 	double* var2 = hoc_pgetarg(4);
 	char* stmt = gargstr(5);
-	Object* obj = nil;
+	Object* obj = NULL;
 	if (ifarg(6)) {
 		obj = hoc_obj_get(6);
 	}
@@ -53,7 +53,7 @@ static void ste_destruct(void* v) {
 
 void StateTransitionEvent_reg() {
 	class2oc("StateTransitionEvent", ste_cons, ste_destruct,
-		members, nil, nil);
+		members, NULL, NULL, NULL);
 }
 
 implementPtrList(STEList, StateTransitionEvent)
@@ -97,7 +97,7 @@ void StateTransitionEvent::transition(int src, int dest, double* var1, double* v
 	if (stmt && strlen(stmt) > 0) {
 		st->stmt_ = new HocCommand(stmt, obj);
 	}else{
-		st->stmt_ = nil;
+		st->stmt_ = NULL;
 	}
 }
 
@@ -113,7 +113,7 @@ void StateTransitionEvent::execute(int itrans){
 
 STEState::STEState(){
 	ntrans_ = 0;
-	transitions_ = nil;
+	transitions_ = NULL;
 }
 
 STEState::~STEState(){
@@ -130,7 +130,7 @@ STETransition* STEState::add_transition() {
 		int i;
 		for (i=0; i < ntrans_-1; ++i) {
 			transitions_[i].stmt_ = st[i].stmt_;
-			st[i].stmt_ = nil;
+			st[i].stmt_ = NULL;
 			transitions_[i].var1_ = st[i].var1_;
 			transitions_[i].var2_ = st[i].var2_;
 			transitions_[i].oldval1_ = st[i].oldval1_;
@@ -154,7 +154,7 @@ int STEState::condition(double& tr){
 }
 
 STETransition::STETransition(){
-	stmt_ = nil;
+	stmt_ = NULL;
 }
 
 STETransition::~STETransition(){

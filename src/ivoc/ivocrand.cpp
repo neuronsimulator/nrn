@@ -583,6 +583,6 @@ static Member_func r_members[] = {
 };
 
 void Random_reg() {
-        class2oc("Random", r_cons, r_destruct, r_members);
+        class2oc("Random", r_cons, r_destruct, r_members, NULL, NULL, NULL);
 	random_play_list_ = new RandomPlayList();
 }

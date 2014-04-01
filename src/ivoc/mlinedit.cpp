@@ -14,14 +14,14 @@
 
 class OcText : public Text {
 public:
-	OcText(unsigned rows = 24, unsigned cols = 80, TextBuffer* buf = nil);
+	OcText(unsigned rows = 24, unsigned cols = 80, TextBuffer* buf = NULL);
 	virtual ~OcText();
 	virtual void keystroke(const Event& event);
 };
 
 class OcMLineEditor : public OcGlyph {
 public:
-	OcMLineEditor(unsigned row, unsigned col, const char* buf = nil);
+	OcMLineEditor(unsigned row, unsigned col, const char* buf = NULL);
 	virtual ~OcMLineEditor();
 public:
 	OcText* txt_;
@@ -102,7 +102,7 @@ static void destruct(void* v) {
 }
 
 void TextEditor_reg() {
-	class2oc("TextEditor", cons, destruct, members, nil, nil, retstr_members);
+	class2oc("TextEditor", cons, destruct, members, NULL, NULL, retstr_members);
 }
 
 OcMLineEditor::OcMLineEditor(unsigned row, unsigned col, const char* buf) {

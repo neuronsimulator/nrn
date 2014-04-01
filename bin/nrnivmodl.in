@@ -121,10 +121,15 @@ echo '#include <stdio.h>
 #include "hocdec.h"
 extern int nrnmpi_myid;
 extern int nrn_nobanner_;
-modl_reg(){
+' > mod_func.c
+for i in $bfiles ; do
+	echo 'extern void _'$i'_reg(void);' >> mod_func.c
+done
+echo '
+void modl_reg(){
   if (!nrn_nobanner_) if (nrnmpi_myid < 1) {
     fprintf(stderr, "Additional mechanisms from files'$newline'");
-' > mod_func.c
+' >> mod_func.c
 
 if true ; then # the standard order
 for i in $files

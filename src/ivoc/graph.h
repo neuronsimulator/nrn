@@ -54,8 +54,8 @@ public:
 		int ntics = -1, int nminor=0,
 		int invert = 0, bool number = true);
 	GraphLine* add_var(const char*, const Color*, const Brush*,
-	    bool usepointer, int fixtype = 1, double* p = nil,
-	    const char* lab = nil, Object* obj = nil);
+	    bool usepointer, int fixtype = 1, double* p = NULL,
+	    const char* lab = NULL, Object* obj = NULL);
 	void x_expr(const char*, bool usepointer);
 	void add_polyline(GPolyLine*);
 	void add_graphVector(GraphVector*);
@@ -63,16 +63,16 @@ public:
 	void plot(float);
 	void flush();
 	void fast_flush();
-	void begin_line(const char* s = nil);
-	void begin_line(const Color*, const Brush*, const char* s = nil);
+	void begin_line(const char* s = NULL);
+	void begin_line(const Color*, const Brush*, const char* s = NULL);
 	void line(Coord x, Coord y);
 	void mark(Coord x, Coord y, char style='+', float size=12,
-		const Color* =nil, const Brush* =nil);
+		const Color* =NULL, const Brush* =NULL);
 	void erase();
 	virtual void erase_all();
 	void erase_lines(); // all GPolylines
 	virtual void delete_label(GLabel*);
-	virtual bool change_label(GLabel*, const char*, GLabel* gl=nil);
+	virtual bool change_label(GLabel*, const char*, GLabel* gl=NULL);
 	virtual void help();
 	void keep_lines();
 	void keep_lines_toggle();
@@ -178,7 +178,7 @@ public:
 	void running_start();
 	float running_max();
 	float running_min();
-	Object** new_vect(GLabel* g = nil)const;
+	Object** new_vect(GLabel* g = NULL)const;
 private:
 	int count_, size_, iMinLoc_, iMaxLoc_;
 	int running_min_loc_, running_max_loc_;
@@ -202,8 +202,8 @@ private:
 
 class GPolyLine : public Glyph {
 public:
-	GPolyLine(DataVec* x, const Color* = nil, const Brush* = nil);
-	GPolyLine(DataVec* x, DataVec* y, const Color* = nil, const Brush* = nil);
+	GPolyLine(DataVec* x, const Color* = NULL, const Brush* = NULL);
+	GPolyLine(DataVec* x, DataVec* y, const Color* = NULL, const Brush* = NULL);
 	GPolyLine(GPolyLine*);
 	virtual ~GPolyLine();
 	
@@ -252,8 +252,8 @@ protected:
 
 class GraphLine : public GPolyLine , public Observer {  // An oc variable to plot
 public:
-	GraphLine(const char*, DataVec* x, Symlist**, const Color* = nil, const Brush* = nil,
-		bool usepointer=0, double* pd = nil, Object* obj = nil);
+	GraphLine(const char*, DataVec* x, Symlist**, const Color* = NULL, const Brush* = NULL,
+		bool usepointer=0, double* pd = NULL, Object* obj = NULL);
 	virtual ~GraphLine();
 
 	virtual void pick(Canvas*, const Allocation&, int depth, Hit&);
@@ -290,7 +290,7 @@ private:
 
 class GraphVector : public GPolyLine , public Observer{ // fixed x and vector of pointers
 public:
-	GraphVector(const char*, const Color* = nil, const Brush* = nil);
+	GraphVector(const char*, const Color* = NULL, const Brush* = NULL);
 	virtual ~GraphVector();
 	virtual void request(Requisition&) const;
 	void begin();

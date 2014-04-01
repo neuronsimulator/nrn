@@ -63,7 +63,7 @@ static char RCSid[] =
 #include <assert.h>
 #include "errcodes.h"
 
-expfit(terms, reffile, amplitude, lambda, error)
+int expfit(terms, reffile, amplitude, lambda, error)
 char *reffile;
 double *terms, amplitude[], lambda[], *error;
 {
@@ -212,7 +212,7 @@ FINISH:
  * Files accessed: filename (input)
  *------------------------------------------------------------------------*/
 
-expinit(filename, deltat, data)
+int expinit(filename, deltat, data)
 char *filename;
 double *deltat, **data;
 {
@@ -280,7 +280,7 @@ double *deltat, **data;
  * Files accessed:
  *------------------------------------------------------------------------*/
 
-testfit(ndata, data, terms, amplitude, lambda, h, errfit)
+int testfit(ndata, data, terms, amplitude, lambda, h, errfit)
 int ndata;
 double *terms, data[], amplitude[], lambda[], h, *errfit;
 {
@@ -321,4 +321,5 @@ double *terms, data[], amplitude[], lambda[], h, *errfit;
 	}
     }
     *terms = (double) n;
+    return 0;
 }

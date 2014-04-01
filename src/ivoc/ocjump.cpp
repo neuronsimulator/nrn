@@ -38,7 +38,7 @@ bool hoc_valid_stmt(const char* stmt, Object* ob) {
 }
 
 void hoc_execute1() {
-	Object* ob = nil;
+	Object* ob = NULL;
 	int hem = 1, hemold;
 	if (ifarg(2)) {
 		if (hoc_is_object_arg(2)) {
@@ -67,11 +67,11 @@ public:
 	OcJumpImpl();
 	virtual ~OcJumpImpl();
 	bool execute(Inst* p);
-	bool execute(const char*, Object* ob = nil);
+	bool execute(const char*, Object* ob = NULL);
 	void* fpycall(void*(*f)(void*, void*), void* a, void* b);
 
 /* jmpbuf is not portable and I can't figure out how get a pointer to one.
-therefore hoc_execerror looks at a function pointer and if it's non-nil
+therefore hoc_execerror looks at a function pointer and if it's non-NULL
 (ljmptarget) calls it instead of doing a longjump. That means we are back
 here and can do an explicit longjump using the begin_ */
 	static void ljmptarget();
@@ -267,7 +267,7 @@ void OcJumpImpl::restore(){
 }
 void OcJumpImpl::finish(){
 	if (!prev_) {
-		oc_jump_target_ = nil;
+		oc_jump_target_ = NULL;
 	}
 	oji_ = prev_;
 #if 0

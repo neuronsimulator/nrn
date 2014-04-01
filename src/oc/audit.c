@@ -2,13 +2,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <hocdec.h>
 #include "hocassrt.h"
-
-#if defined(__MWERKS__)
-	extern FILE * popen();
-#endif
-
-extern double chkarg();
 
 static int doaudit;
 static FILE* faudit;
@@ -22,7 +17,7 @@ typedef struct RetrieveAudit {
 
 static RetrieveAudit retrieve_audit;
 
-static void pipesend();
+static void pipesend(int type, const char *s);
 
 /*
 Notes:
@@ -42,7 +37,8 @@ maintain a list of xopen statements with the proper rcs version number.
 #define AUDIT_SCRIPT_DIR "$NEURONHOME/lib/auditscripts"
 #define AUDIT_DIR "AUDIT"
 
-static hoc_audit_init() {
+
+static void hoc_audit_init(void) {
 #if !OCSMALL
 	if (retrieve_audit.mode) {
 		/* clean up. there must have been an execerror */
@@ -56,10 +52,7 @@ static hoc_audit_init() {
 #endif
 }
 
-void hoc_audit_from_hoc_main1(argc, argv, envp)
-	int argc;
-	char** argv;
-	char** envp;
+void hoc_audit_from_hoc_main1(int argc, const char **argv, const char **envp)
 {
 #if !OCSMALL
 	/*ARGSUSED*/
@@ -112,9 +105,7 @@ void hoc_audit_from_hoc_main1(argc, argv, envp)
 }
 
 #if !OCSMALL
-static void pipesend(type, s)
-	int type;
-	char* s;
+static void pipesend(int type, const char *s)
 {
 	int err;
 	if (audit_pipe) {
@@ -129,8 +120,7 @@ static void pipesend(type, s)
 	}
 }
 #endif
-hoc_audit_command(buf)
-	char* buf;
+void hoc_audit_command(const char *buf)
 {
 #if !OCSMALL
 	if(doaudit) {
@@ -139,9 +129,7 @@ hoc_audit_command(buf)
 #endif
 }
 
-hoc_audit_from_xopen1(fname, rcs)
-	char* fname;
-	char* rcs;
+void hoc_audit_from_xopen1(const char *fname, const char *rcs)
 {
 #if !OCSMALL
 	if (!hoc_retrieving_audit() && doaudit && !rcs) {
@@ -150,7 +138,7 @@ hoc_audit_from_xopen1(fname, rcs)
 #endif
 }
 
-hoc_audit_from_final_exit() {
+void hoc_audit_from_final_exit(void) {
 #if !OCSMALL
 	if (faudit) {
 		fclose(faudit);
@@ -164,9 +152,7 @@ hoc_audit_from_final_exit() {
 #endif
 }
 
-void hoc_audit_from_emacs(bufname, filname)
-	char* bufname;
-	char* filname;
+void hoc_audit_from_emacs(const char *bufname, const char *filname)
 {
 #if !OCSMALL
 	char fname[200];
@@ -193,7 +179,7 @@ hoc_warning("audit:Couldn't open temporary emacs buffer file:", fname);
 #endif
 }
 
-hoc_Saveaudit() {
+void hoc_Saveaudit(void) {
 	int err;
 #if !OCSMALL
 	err = hoc_saveaudit();
@@ -202,7 +188,7 @@ hoc_Saveaudit() {
 	hoc_pushx((double)err);
 }
 
-int hoc_saveaudit() {
+int hoc_saveaudit(void) {
 #if !OCSMALL
 	static int n=0;
 	char buf[200];
@@ -226,7 +212,7 @@ int hoc_saveaudit() {
 	return 1;
 }
 
-int hoc_retrieving_audit() {
+int hoc_retrieving_audit(void) {
 #if !OCSMALL
 	return retrieve_audit.mode;
 #else
@@ -234,7 +220,7 @@ int hoc_retrieving_audit() {
 #endif
 }
 
-hoc_Retrieveaudit() {
+void hoc_Retrieveaudit(void) {
 	int err, id;
 #if !OCSMALL
 	if (ifarg(1)) {
@@ -248,7 +234,7 @@ hoc_Retrieveaudit() {
 	hoc_pushx((double)err);
 }
 
-static xopen_audit() {
+static void xopen_audit(void) {
 #if !OCSMALL
 	char buf[200], *bp;
 	strcpy(buf, "rm ");
@@ -267,8 +253,8 @@ static xopen_audit() {
 #ifdef NeXT
 int hoc_retrieve_audit(int id) /* I have no idea why... CMC */
 #else
-int hoc_retrieve_audit(id)
-	int id;
+int hoc_retrieve_audit(int id)
+	       
 #endif
 {
 #if !OCSMALL
@@ -294,8 +280,7 @@ int hoc_retrieve_audit(id)
 	return 1;
 }
 
-hoc_xopen_from_audit(fname)
-	char* fname;
+void hoc_xopen_from_audit(const char *fname)
 {
 #if !OCSMALL
 	char buf[200];
@@ -309,7 +294,7 @@ fprintf(stderr, "Warning: xopen_from_audit files have different names %s %s\n", 
 #endif
 }
 
-hoc_emacs_from_audit() {
+void hoc_emacs_from_audit(void) {
 #if !OCSMALL
 	int i;
 	char buf[200];

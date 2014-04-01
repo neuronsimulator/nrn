@@ -141,9 +141,6 @@ axis.c,v
 # define	XO	100.
 # define	YO	100.
 # define	Ret(a)	hoc_ret(); hoc_pushx(a);
-extern double *getarg();
-extern int ifarg();
-extern int color;
 
 /* This makes it easier to save and restore the 8 plot scale parameters*/
 #define NPARAM	10
@@ -176,29 +173,28 @@ static int regraph_mode[1000];
 static int regraph_color[1000];
 static double regraph_x[1000];
 static double *regraph_y[1000];
-extern double* hoc_pgetarg();
 
-static int PLOT();
-static free_graph();
-static plotstream();
-static plotflush();
-static do_setup();
+static int PLOT(int, int, double, double);
+static void free_graph(void);
+static void plotstream(int, int, double);
+static void plotflush(int);
+static void do_setup(void);
 
-hoc_regraph() {
+void hoc_regraph(void) {
 	if (regraph_index < max_regraph_index) {
 		regraph_y[regraph_index] = hoc_pgetarg(1);
 		regraph_index++;
 	}
 	Ret(1.)
 }
-static open_regraph(){
+static void open_regraph(void){
 	SaveForRegraph=1;
 	regraph_index = 0;
 }
-static close_regraph() {
+static void close_regraph(void) {
 	SaveForRegraph=0;
 }
-static do_regraph() {
+static void do_regraph(void) {
 	int i;
 	for (i=0; i<regraph_index; i++) {
 		if (regraph_color[i] != color) {
@@ -208,9 +204,7 @@ static do_regraph() {
 			*regraph_y[i]);
 	}
 }
-static save_regraph_item(narg, mode, x)
-	int narg, mode;
-	double x;
+static void save_regraph_item(int narg, int mode, double x)
 {
 	regraph_narg[regraph_index] = narg;
 	regraph_mode[regraph_index] = mode;
@@ -222,7 +216,7 @@ static save_regraph_item(narg, mode, x)
 	}
 }
 
-void Plot() {
+void hoc_Plot(void) {
 	double ok;
 	int narg, mode;
 
@@ -259,10 +253,7 @@ void Plot() {
 	Ret(ok);
 }
 
-static int
-PLOT(narg, mode, x, y)
-	int narg, mode;
-	double x, y;
+static int PLOT(int narg, int mode, double x, double y)
 {
 	int ok;
 
@@ -295,12 +286,12 @@ PLOT(narg, mode, x, y)
 	}		
 	return ok;
 }
-hoc_plotx() {
+void hoc_plotx(void) {
 	double val;
 	val = xorg + *getarg(1)*xscale;
 	Ret(val);
 }
-hoc_ploty() {
+void hoc_ploty(void) {
 	double val;
 	val = yorg + *getarg(1)*yscale;
 	Ret(val);
@@ -308,7 +299,7 @@ hoc_ploty() {
 
 # define	WIDTH	10.
 # define	HEIGHT  10.
-axis()
+void hoc_axis(void)
 {
 #if DOS
 	extern int newstyle;
@@ -473,9 +464,6 @@ graph(-1) flushes remaining part of graph
   graphmode(2...) flushes, but next graphs don't start new lines
 */
 
-extern double hoc_run_expr();
-extern Symbol* hoc_parse_expr(), *hoc_parse_stmt();
-extern hoc_run_stmt();
 /* local info for graph */
 static int initialized;	/* true if the setup statements have been executed*/
 static Symlist *graph_sym_list; /*list of expressions and setup statements*/
@@ -495,7 +483,7 @@ typedef struct Grph {	/* holds info for graphing */
 
 static Grph *glist_head, *glist_tail; /* access for the queue */
 
-hoc_Graph() {
+void hoc_Graph(void) {
 	Grph *g;
 	
 if (ifarg(2)) {
@@ -531,8 +519,7 @@ if (ifarg(2)) {
 	Ret(0.);
 }
 
-int
-hoc_Graphmode()
+void hoc_Graphmode(void)
 {
 	int mode;
 if (!badgraph) {
@@ -550,8 +537,7 @@ if (!badgraph) {
 	Ret(0.);
 }
 
-static
-free_graph() {
+static void free_graph(void) {
 	Grph *g, *gnext;
 	/* free all graph space and reinitialize */
 	hoc_free_list(&graph_sym_list);
@@ -567,10 +553,7 @@ free_graph() {
 	grphing = initialized = pcnt = 0;
 }
 
-static
-plotstream(narg, mode, x)
-	int narg, mode;
-	double x;
+static void plotstream(int narg, int mode, double x)
 {
 	Grph *g;
 	
@@ -590,9 +573,7 @@ plotstream(narg, mode, x)
 	}
 }
 
-static
-plotflush(contin)
-	int contin;
+static void plotflush(int contin)
 {
 	/* contin = 1 then flush after this will start with new points
 	   contin = 2 then it will start with last points of this flush
@@ -642,8 +623,7 @@ plotflush(contin)
 	}
 }
 
-static
-do_setup() {
+static void do_setup(void) {
 	Grph *g;
 	double parsav[NPARAM];
 	int i;

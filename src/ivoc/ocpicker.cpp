@@ -20,13 +20,13 @@ public:
 ButtonHandler::ButtonHandler(EventButton eb, OcHandler* a) {
 	eb_ = eb;
 	handler_ = a;
-	rband_ = nil;
+	rband_ = NULL;
 	Resource::ref(a);
 }
 
 ButtonHandler::ButtonHandler(EventButton eb, Rubberband* rb) {
 	eb_ = eb;
-	handler_ = nil;
+	handler_ = NULL;
 	rband_ = rb;
 	Resource::ref(rb);
 }

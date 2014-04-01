@@ -192,7 +192,7 @@ KSSingle::~KSSingle() {
 
 KSSingleState::KSSingleState() {
 	ntrans_ = 0;
-	transitions_ = nil;
+	transitions_ = NULL;
 }
 KSSingleState::~KSSingleState() {
 	if (transitions_) {
@@ -213,7 +213,7 @@ double KSSingleTrans::rate(Point_process* pnt) {
 }
 
 KSSingleNodeData::KSSingleNodeData() {
-	statepop_ = nil;
+	statepop_ = NULL;
 	nsingle_ = 1;
 }
 
@@ -369,7 +369,7 @@ void KSSingle::nextNtrans(KSSingleNodeData* snd) {
 	}
 }
 
-void KSSingle::alloc(Prop* p, int sindex) { // and discard old if not nil
+void KSSingle::alloc(Prop* p, int sindex) { // and discard old if not NULL
 	KSSingleNodeData* snd = (KSSingleNodeData*)(p->dparam[2]._pvoid);
 	if (snd) {
 		delete snd;
@@ -386,7 +386,7 @@ void KSSingle::init(double v, double* s, KSSingleNodeData* snd, NrnThread* nt) {
 	// place steady state population intervals end to end
 	int i;
 	double x = 0;
-	snd->qi_ = nil;
+	snd->qi_ = NULL;
 	snd->t0_ = nt->_t;
 	snd->vlast_ = v;
 	for (i=0; i < nstate_; ++i) {

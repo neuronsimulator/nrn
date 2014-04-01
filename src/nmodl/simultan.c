@@ -7,7 +7,9 @@ extern int sens_parm;
 extern int numlist;
 static List *eqnq;
 
-solv_nonlin(qsol, fun, method, numeqn, listnum)
+static int nonlin_common();
+
+void solv_nonlin(qsol, fun, method, numeqn, listnum)
 	Item *qsol;
 	Symbol *fun, *method;
 	int numeqn, listnum;
@@ -21,7 +23,7 @@ solv_nonlin(qsol, fun, method, numeqn, listnum)
 	sens_nonlin_out(qsol->next, fun);
 }
 
-solv_lineq(qsol, fun, method, numeqn, listnum)
+void solv_lineq(qsol, fun, method, numeqn, listnum)
 	Item *qsol;
 	Symbol *fun, *method;
 	int numeqn, listnum;
@@ -45,13 +47,13 @@ void eqnqueue(q1)
 	return;
 }
 
-static freeqnqueue()
+static void freeqnqueue()
 {
 	freelist(&eqnq);
 }
 
 /* args are --- nonlinblk: NONLINEAR NAME stmtlist '}' */
-massagenonlin(q1, q2, q3, q4, sensused)
+void massagenonlin(q1, q2, q3, q4, sensused)
 	Item *q1, *q2, *q3, *q4;
 	int sensused;
 {
@@ -61,9 +63,9 @@ gives us a current equation number */
 	Symbol *nonfun;
 	
 	/* all this junk is still in the intoken list */
-	Sprintf(buf, "static int %s();\n", SYM(q2)->name);
+	Sprintf(buf, "static void %s();\n", SYM(q2)->name);
 	Linsertstr(procfunc, buf);
-	replacstr(q1, "\nstatic int"); Insertstr(q3, "()\n");
+	replacstr(q1, "\nstatic void"); Insertstr(q3, "()\n");
 	Insertstr(q3->next, " int _counte = -1;\n");
 	nonfun = SYM(q2);
 	if ((nonfun->subtype) & NLINF && nonfun->u.i) {
@@ -79,8 +81,7 @@ gives us a current equation number */
 	}
 }
 
-int
-nonlin_common(q4, sensused)	/* used by massagenonlin() and mixed_eqns() */
+static int nonlin_common(q4, sensused)	/* used by massagenonlin() and mixed_eqns() */
 	Item *q4;
 	int sensused;
 {
@@ -157,8 +158,7 @@ numlist, counts*(1 + sens_parm));
 	return counts;
 }
 
-Item *
-mixed_eqns(q2, q3, q4)	/* name, '{', '}' */
+Item *mixed_eqns(q2, q3, q4)	/* name, '{', '}' */
 	Item *q2, *q3, *q4;
 {
 	int counts;
@@ -205,7 +205,7 @@ static int nstate = 0;
 static Symbol *linblk;
 static Symbol *statsym;
 
-init_linblk(q) /* NAME */
+void init_linblk(q) /* NAME */
 	Item *q;
 {
 	using_array = 0;
@@ -215,7 +215,7 @@ init_linblk(q) /* NAME */
 	numlist++;
 }
 
-init_lineq(q1) /* the colon */
+void init_lineq(q1) /* the colon */
 	Item *q1;
 {
 	if (strcmp(SYM(q1)->name, "~+") == 0) {
@@ -228,7 +228,7 @@ init_lineq(q1) /* the colon */
 
 static char *indexstr;	/* set in lin_state_term, used in linterm */
 
-lin_state_term(q1, q2) /* term last*/
+void lin_state_term(q1, q2) /* term last*/
 	Item *q1, *q2;
 {
 	char *qconcat(); /* but puts extra ) at end */
@@ -256,7 +256,7 @@ lin_state_term(q1, q2) /* term last*/
 	}
 }
 
-linterm(q1, q2, pstate, sign) /*primary, last ,, */
+void linterm(q1, q2, pstate, sign) /*primary, last ,, */
 	Item *q1, *q2;
 	int pstate, sign;
 {
@@ -289,7 +289,7 @@ linterm(q1, q2, pstate, sign) /*primary, last ,, */
 	Insertstr(q2->next, ";\n");
 }
 	
-massage_linblk(q1, q2, q3, q4, sensused) /* LINEAR NAME stmtlist '}' */
+void massage_linblk(q1, q2, q3, q4, sensused) /* LINEAR NAME stmtlist '}' */
 	Item *q1, *q2, *q3, *q4;
 	int sensused;
 {
@@ -303,9 +303,9 @@ assert(q2);
 	if (++nlineq == 0) {
 		diag(linblk->name, " has no equations");
 	}
-	Sprintf(buf, "static int %s();\n", SYM(q2)->name);
+	Sprintf(buf, "static void %s();\n", SYM(q2)->name);
 	Linsertstr(procfunc, buf);
-	replacstr(q1, "\nstatic int"); Insertstr(q3, "()\n");
+	replacstr(q1, "\nstatic void"); Insertstr(q3, "()\n");
 	Insertstr(q3->next, " int _counte = -1;\n");
 	linblk->subtype |= LINF;
 	linblk->u.i = numlist;

@@ -46,7 +46,7 @@ static char RCSid[] = "simeq.c,v 1.3 1999/01/04 12:46:51 hines Exp" ;
 #include "errcodes.h"
 #include <stdlib.h>
 
-simeq(n, coef, soln, index)
+int simeq(n, coef, soln, index)
 int n, *index;
 double *coef[], soln[];
 {

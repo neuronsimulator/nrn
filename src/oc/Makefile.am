@@ -35,7 +35,7 @@ libocxt_la_SOURCES = code.c hoc_init.c hoc_oop.c \
 
 AM_YFLAGS = -d
 
-EXTRA_DIST = hocinc hocusr.c hoc2dec.sh macprt.c mswinprt.c system.c \
+EXTRA_DIST = hocinc hocusr.c macprt.c mswinprt.c system.c \
 	$(nrnmpidynam)
 
 if BUILD_MINGW
@@ -54,18 +54,20 @@ oc_LDADD = libocxt.la liboc.la \
 	$(nrnmpila) \
 	@MEMACSLIBLA@ @NRN_READLINE_LIBS@
 
-hocdec.h: hoc.h hoc2dec.sh
-	./hoc2dec.sh
+## hocdec now primary and hoc.h includes it
+##hocdec.h: hoc.h hoc2dec.sh
+##	./hoc2dec.sh
 	
 ## Header files that need to be installed:
 pkginclude_HEADERS = hoc.h hoclist.h hocdec.h hocassrt.h nrnisaac.h \
+	oc_ansi.h hocparse.h ocfunc.h ocmisc.h nrnjava.h hocgetsym.h \
 	nrnpthread.h hoc_membf.h nrnran123.h scoplib_ansi.h
 
 ## Header files that need to be copied into the distribution but do not need
 ## to be installed:
 noinst_HEADERS = code.h equation.h hocmodl.h hocstr.h \
 	profile.h redef.h parse.h mcran4.h nrnmpi.h nrnrt.h isaac64.h \
-	nrnfilewrap.h nrn_vsscanf.c
+	nrnfilewrap.h nrn_vsscanf.c classreg.h
 
 ## files that depend on the existence of parse.h
 ## this allows parallel make -j to work at the beginning when parse.h

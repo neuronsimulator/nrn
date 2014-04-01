@@ -30,8 +30,8 @@ void nrnbbs_context_wait(){}
 
 #ifdef WIN32
 extern "C" {
-void* dll_lookup(struct DLL*, const char*){return nil;}
-struct DLL* dll_load(const char*){return nil;}
+void* dll_lookup(struct DLL*, const char*){return NULL;}
+struct DLL* dll_load(const char*){return NULL;}
 }
 #endif
 #endif
@@ -60,9 +60,9 @@ public:
 	char* str;
 };
 PathValue::PathValue() {
-	path = nil;
-	str = nil;
-	sym = nil;
+	path = NULL;
+	str = NULL;
+	sym = NULL;
 }
 PathValue::~PathValue() {
 	if (path) {
@@ -155,7 +155,7 @@ String* HocDataPaths::retrieve(double* pd) {
 	if (impl_->table_->find(pv, (void*)pd)) {
 		return pv->path;
 	}else{
-		return nil;
+		return NULL;
 	}
 }
 
@@ -165,7 +165,7 @@ Symbol* HocDataPaths::retrieve_sym(double* pd) {
 	if (impl_->table_->find(pv, (void*)pd)) {
 		return pv->sym;
 	}else{
-		return nil;
+		return NULL;
 	}
 }
 
@@ -186,7 +186,7 @@ String* HocDataPaths::retrieve(char** pd) {
 	if (impl_->table_->find(pv, (void*)pd)) {
 		return pv->path;
 	}else{
-		return nil;
+		return NULL;
 	}
 	
 }
@@ -215,7 +215,7 @@ void HocDataPathImpl::search() {
 		PathValue* pv = i.cur_value();
 		if (pv->str) {
 			char** pstr = (char**)i.cur_key();
-			*pstr = nil;
+			*pstr = NULL;
 		}else{
 			double* pd = (double*)i.cur_key();
 			pv->original = *pd;
@@ -262,7 +262,7 @@ PathValue* HocDataPathImpl::found_v(void* v, const char* buf, Symbol* sym) {
 	sprintf(path, "%s%s", cs.string(), buf);
 	if (!table_->find(pv, v)) {
 		hoc_warning("table lookup failed for pointer for-", path);
-		return nil;
+		return NULL;
 	}
 	if (!pv->path) {
 		pv->path = new CopyString(path);
@@ -273,7 +273,7 @@ PathValue* HocDataPathImpl::found_v(void* v, const char* buf, Symbol* sym) {
     }else{
 	if (!table_->find(pv, v)) {
 		hoc_warning("table lookup failed for pointer for-", sym->name);
-		return nil;
+		return NULL;
 	}
 	if (!pv->sym) {
 		pv->sym = sym;
@@ -329,7 +329,7 @@ sprintf(buf, "%s%s", sym->name, hoc_araystr(sym, i, od));
 			break;
 		case STRING: {
 			char** pstr = object_pstr(sym, od);			
-			if (*pstr == nil) {
+			if (*pstr == NULL) {
 				sprintf(buf, "%s", sym->name);
 				cs = buf;
 				found(pstr, cs.string(), sym);

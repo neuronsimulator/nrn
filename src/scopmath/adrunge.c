@@ -57,8 +57,9 @@ static char RCSid[] =
 
 #include <math.h>
 #include "errcodes.h"
+#include "scoplib.h"
 
-adrunge(_ninits, n, y, d, p, t, dt, dy, work, maxerror)
+int adrunge(_ninits, n, y, d, p, t, dt, dy, work, maxerror)
 int _ninits, n, (*dy) ();
 double p[], *t, dt, **work, maxerror; int y[]; int d[];
 #define d_(arg)  p[d[arg]]

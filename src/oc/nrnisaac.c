@@ -5,11 +5,11 @@
 #endif
 #include <nrnisaac.h>
 #include <isaac64.h>
+#include "hocdec.h"
 
-extern void* hoc_Emalloc(unsigned int);
 typedef struct isaac64_state Rng;
 
-void* nrnisaac_new() {
+void* nrnisaac_new(void) {
 	Rng* rng;
 	rng = (Rng*)hoc_Emalloc(sizeof(Rng)); hoc_malchk();
 	return (void*)rng;

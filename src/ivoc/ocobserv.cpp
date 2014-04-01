@@ -8,7 +8,7 @@ extern "C" {
 
 void hoc_obj_disconnect(Object* ob) {
 	delete ((ObjObservable*)ob->observers);
-	ob->observers = nil;
+	ob->observers = NULL;
 }
 
 void hoc_obj_notify(Object* ob) {
@@ -69,13 +69,13 @@ void ClassObservable::Detach(cTemplate* ct, Observer* view) {
 	
 ClassObservable::ClassObservable(cTemplate* ct) {
 	ct_ = ct;
-	ob_ = nil;
+	ob_ = NULL;
 	message_ = 0;
 	cnt_ = 0;
 }
 
 ClassObservable::~ClassObservable() {
-	ct_->observers = nil;
+	ct_->observers = NULL;
 }
 
 void ClassObservable::attach(Observer* o) {

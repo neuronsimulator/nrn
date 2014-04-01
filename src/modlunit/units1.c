@@ -4,7 +4,7 @@
 #include "model.h"
 #include "parse1.h"
 
-unit_push(q)
+void unit_push(q)
 	Item *q;
 {
 	Unit_push(decode_units(SYM(q)));
@@ -23,7 +23,7 @@ decode_units(sym)
 	return "";
 }
 
-ifcnvfac(q3) /* '(' expr ')' */
+void ifcnvfac(q3) /* '(' expr ')' */
 	Item *q3;
 {
 	Item *q1, *q2;
@@ -48,7 +48,7 @@ ifcnvfac(q3) /* '(' expr ')' */
 y can be any expression. If x has dimensions then y must be a positive integer
 and the units can be computed */
 
-unit_exponent(y, lastok) /*x ^ y*/
+void unit_exponent(y, lastok) /*x ^ y*/
 	Item *y, *lastok;
 {
 	int i;
@@ -71,7 +71,7 @@ unit_exponent(y, lastok) /*x ^ y*/
 }
 
 static Item *qexpr[3];
-unit_cmp(q1, q2, q3)
+void unit_cmp(q1, q2, q3)
 	Item *q1, *q2, *q3;
 {
 	qexpr[0] = q1;
@@ -80,7 +80,7 @@ unit_cmp(q1, q2, q3)
 	Unit_cmp();
 }
 
-print_unit_expr(i)
+void print_unit_expr(i)
 	int i;
 {
 	if (i==1) {
@@ -95,7 +95,7 @@ print_unit_expr(i)
 }
 	
 	
-unit_logic(type, q1, q2, q3)
+void unit_logic(type, q1, q2, q3)
 	int type;
 	Item *q1, *q2, *q3;
 {
@@ -117,7 +117,7 @@ unit_logic(type, q1, q2, q3)
 #define NLEVEL	10 /* 10 levels of call! */
 static int argnumstk[NLEVEL], pargnum = -1;
 
-unit_push_args(q1)
+void unit_push_args(q1)
 	Item *q1;
 {
 	List *larg;
@@ -141,7 +141,7 @@ unit_push_args(q1)
 	}
 }
 
-unit_done_args()
+void unit_done_args()
 {
 	if (argnumstk[pargnum] > 0) {
 		diag("too few arguments", (char *)0);
@@ -150,7 +150,7 @@ unit_done_args()
 	pargnum--;
 }
 
-unit_chk_arg(q1, q2)
+void unit_chk_arg(q1, q2)
 	Item *q1, *q2;
 {
 	if (argnumstk[pargnum] > 0) {
@@ -164,7 +164,7 @@ unit_chk_arg(q1, q2)
 	}
 }
 
-func_unit(q1, q2)
+void func_unit(q1, q2)
 	Item *q1, *q2;
 {
 	Symbol *s, *checklocal();
@@ -179,7 +179,7 @@ func_unit(q1, q2)
 	}
 }
 
-unit_del(i)	/* push 1/delta_x ^ i units */
+void unit_del(i)	/* push 1/delta_x ^ i units */
 	int i;
 {
 	Symbol *s;

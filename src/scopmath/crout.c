@@ -52,7 +52,7 @@ static char RCSid[] =
 #include <math.h>
 #include "errcodes.h"
 
-crout(n, a, perm)
+int crout(n, a, perm)
 int n, perm[];
 double *a[];
 {
@@ -181,7 +181,7 @@ double *a[];
 /*            p[y[i]] contains the solution vector                    */
 /*                                                              */
 /*--------------------------------------------------------------*/
-solve(n, a, b, perm, p, y)
+int solve(n, a, b, perm, p, y)
 int n, perm[];
 double *a[], *b, *p; int y[];
 #define y_(arg)  p[y[arg]]
@@ -242,4 +242,5 @@ double *a[], *b, *p; int y[];
 	p[i] -= sum;
     }
   }
+  return 0;
 }

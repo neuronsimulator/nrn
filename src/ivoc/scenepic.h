@@ -27,16 +27,16 @@ public:
 	ScenePicker(Scene*);
 	virtual ~ScenePicker();
 	
-	MenuItem* add_menu(MenuItem*, Menu* = nil); // not executable from hoc
+	MenuItem* add_menu(MenuItem*, Menu* = NULL); // not executable from hoc
 
-	MenuItem* add_radio_menu(const char*, Action*, Menu* = nil);
-	MenuItem* add_radio_menu(const char*, Rubberband*, Action*, int tool=0, Menu* = nil);
-	MenuItem* add_radio_menu(const char*, OcHandler*, int tool=0, Menu* = nil);
+	MenuItem* add_radio_menu(const char*, Action*, Menu* = NULL);
+	MenuItem* add_radio_menu(const char*, Rubberband*, Action*, int tool=0, Menu* = NULL);
+	MenuItem* add_radio_menu(const char*, OcHandler*, int tool=0, Menu* = NULL);
 	Button* radio_button(const char*, Action*);
 	Button* radio_button(const char*, Rubberband*, Action*, int tool=0);
 
-	MenuItem* add_menu(const char*, Action*, Menu* = nil);
-	MenuItem* add_menu(const char*, MenuItem*, Menu* = nil);
+	MenuItem* add_menu(const char*, Action*, Menu* = NULL);
+	MenuItem* add_menu(const char*, MenuItem*, Menu* = NULL);
 
 	void remove_item(const char*);	
 	void insert_item(const char*, const char*, MenuItem*);

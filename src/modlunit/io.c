@@ -21,6 +21,8 @@ successful reduction */
  */
 static int	linenum = 0;
 static char     inlinebuf[600], *inlinep = inlinebuf + 30, *ctp = inlinebuf + 30;
+static int file_stack_empty();
+
 char* Fgets(buf, size, f) char* buf; int size; FILE* f; {
 	char* p = buf;
 	int c, i;
@@ -116,7 +118,7 @@ Gets(buf)
 }
 
 /* two arguments so we can pass a name to construct an error message. */
-diag(s1, s2)
+void diag(s1, s2)
 	char           *s1, *s2;
 {
 	char           *cp;
@@ -217,7 +219,7 @@ List *_LST(q, file, line) Item *q; char *file; int line; {
 	return (List *)((q)->element);
 }
 
-internal_error(q, file, line)
+void internal_error(q, file, line)
 	Item *q;
 	char *file;
 	int line;
@@ -313,7 +315,7 @@ static FILE* include_open(fname, err)
 	return f;
 }
 
-include_file(q)
+void include_file(q)
 	Item* q;
 {
 	char fname[200];
@@ -342,7 +344,7 @@ include_file(q)
 	linenum = 0;
 }
 
-pop_file_stack() {
+void pop_file_stack() {
 	FileStackItem* fsi;
 	fsi = (FileStackItem*)(SYM(filestack->prev));
 	delete(filestack->prev);	
@@ -354,7 +356,7 @@ pop_file_stack() {
 	free((char*)fsi);
 }
 
-int file_stack_empty() {
+static int file_stack_empty() {
 	if (!filestack) {
 		return 1;
 	}

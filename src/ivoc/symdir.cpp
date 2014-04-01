@@ -89,7 +89,7 @@ private:
 #if CABLE
 	void load_mechanism(Prop*, int, const char*);
 #endif
-	void append(Symbol* sym, Objectdata* od, Object* o = nil);
+	void append(Symbol* sym, Objectdata* od, Object* o = NULL);
 	void append(Object*);
 	void un_append(Object*);
 	void make_pathname(const char*, const char*, const char*, int s  = '.');
@@ -130,10 +130,10 @@ SymDirectory::SymDirectory(const String& parent_path, Object* parent_obj,
   Symbol* sym, int array_index, int) {
 	impl_ = new SymDirectoryImpl();
 #if CABLE
-	impl_->sec_ = nil;
+	impl_->sec_ = NULL;
 #endif
-	impl_->obj_= nil;
-	impl_->t_ = nil;
+	impl_->obj_= NULL;
+	impl_->t_ = NULL;
 	Objectdata* obd;
 	if (parent_obj) {
 		obd = parent_obj->u.dataspace;
@@ -186,10 +186,10 @@ SymDirectory::SymDirectory(const String& parent_path, Object* parent_obj,
 SymDirectory::SymDirectory(Object* ob) {
 	impl_ = new SymDirectoryImpl();
 #if CABLE
-	impl_->sec_ = nil;
+	impl_->sec_ = NULL;
 #endif
 	impl_->obj_= ob;
-	impl_->t_ = nil;
+	impl_->t_ = NULL;
 	int suffix = '.';
 	impl_->make_pathname("", hoc_object_name(ob), "", '.');
 	ObjObservable::Attach(impl_->obj_, impl_);
@@ -202,10 +202,10 @@ SymDirectory::SymDirectory(int type) {
 	ptl.save();
 	impl_ = new SymDirectoryImpl();
 #if CABLE
-	impl_->sec_ = nil;
+	impl_->sec_ = NULL;
 #endif
-	impl_->obj_ = nil;
-	impl_->t_ = nil;
+	impl_->obj_ = NULL;
+	impl_->t_ = NULL;
 	impl_->path_ = "";
 	impl_->load(type);
 	impl_->sort();
@@ -237,7 +237,7 @@ void SymDirectoryImpl::disconnect(Observable*) {
 		delete symbol_list_.item(i);
 	}
 	symbol_list_.remove_all();
-	obj_ = nil;
+	obj_ = NULL;
 }
 
 void SymDirectoryImpl::update(Observable* obs) {
@@ -266,7 +266,7 @@ double* SymDirectory::variable(int index) {
 				if (is_obj_type(ob, "Vector")) {
 					return ivoc_vector_ptr(ob, index);
 				}else{
-					return nil;
+					return NULL;
 				}
 			}else{
 				Objectdata* od;
@@ -302,7 +302,7 @@ return point_process_pointer((Point_process*)ob->u.this_pointer,
 		}
 		return hoc_val_pointer(buf);
 	}
-	return nil;
+	return NULL;
 }
 
 int SymDirectory::whole_vector(int index) {
@@ -358,16 +358,16 @@ Object* SymDirectory::obj(int index) {
 
 //SymbolItem
 SymbolItem::SymbolItem(const char* n, int whole_array) {
-	symbol_ = nil;
+	symbol_ = NULL;
 	index_ = 0;
-	ob_ = nil;
+	ob_ = NULL;
 	name_ = n;
 	whole_array_ = whole_array;
 		
 }
 SymbolItem::SymbolItem(Symbol* sym, Objectdata* od, int index, int whole_array) {
 	symbol_ = sym;
-	ob_ = nil;
+	ob_ = NULL;
 	whole_array_ = whole_array;
 	if (ISARRAY(sym)) {
 		if (whole_array_) {
@@ -392,7 +392,7 @@ int SymbolItem::whole_vector() {
 }
 
 SymbolItem::SymbolItem(Object* ob) {
-	symbol_ = nil;
+	symbol_ = NULL;
 	index_ = 0;
 	ob_ = ob;
 	char buf[10];
@@ -401,7 +401,7 @@ SymbolItem::SymbolItem(Object* ob) {
 }
 
 void SymbolItem::no_object() {
-	ob_ = nil;
+	ob_ = NULL;
 	name_ = "Deleted";
 }
 
@@ -446,7 +446,7 @@ void SymDirectoryImpl::load(int type) {
 		load(type, hoc_symlist);
 		if (hoc_symlist != hoc_built_in_symlist) {
 			Objectdata* sav = hoc_objectdata;
-			hoc_objectdata = nil;
+			hoc_objectdata = NULL;
 			load(type, hoc_built_in_symlist);
 			hoc_objectdata = sav;
 		}
@@ -477,7 +477,7 @@ void SymDirectoryImpl::load_object() {
 	Symlist* sl = obj_->ctemplate->symtable;
 	Objectdata* od;
 	if (obj_->ctemplate->constructor) {
-		od = nil;
+		od = NULL;
 	}else{
 		od = obj_->u.dataspace;
 	}
@@ -496,7 +496,7 @@ void SymDirectoryImpl::load_aliases() {
 	if (!a) return;
 	for (TableIterator(SymbolTable) i(*a->symtab_); i.more(); i.next()) {
 		Symbol* s = i.cur_value();
-		append(s, nil, obj_);
+		append(s, NULL, obj_);
 	}
 }
 
@@ -536,14 +536,6 @@ void SymDirectoryImpl::load_sectionlist() {
 		symbol_list_.append(new SymbolItem(
 			p->dparam[0].sym, p->dparam[6].obj, prop->dparam[5].i));
 	}
-#endif
-}
-
-extern "C" {
-extern int hoc_total_array_data(Symbol*, Objectdata*);
-extern char* hoc_araystr(Symbol*, int, Objectdata*);
-#if CABLE
-extern char* secname(Section*);
 #endif
 }
 

@@ -1,91 +1,22 @@
 #include <../../nrnconf.h>
-/* /local/src/master/nrn/src/oc/nonlin.c,v 1.4 1997/11/24 16:21:38 hines Exp */
-/*
-nonlin.c,v
- * Revision 1.4  1997/11/24  16:21:38  hines
- * minor mac port fixes for new Codewarror pro 2
- *
- * Revision 1.3  1996/02/16  16:19:31  hines
- * OCSMALL used to throw out things not needed by teaching programs
- *
- * Revision 1.2  1994/10/26  17:25:04  hines
- * access name changed to an explicit hoc_access and taken out of redef.h
- *
- * Revision 1.1.1.1  1994/10/12  17:22:12  hines
- * NEURON 3.0 distribution
- *
- * Revision 1.4  92/08/18  07:31:42  hines
- * arrays in different objects can have different sizes.
- * Now one uses araypt(symbol, SYMBOL) or araypt(symbol, OBJECTVAR) to
- * return index of an array variable.
- * 
- * Revision 1.3  91/10/18  14:40:45  hines
- * symbol tables now are type Symlist containing pointers to first and last
- * symbols.  New symbols get added onto the end.
- * 
- * Revision 1.2  91/10/17  15:01:35  hines
- * VAR, STRING now handled with pointer to value located in object data space
- * to allow future multiple objects. Ie symbol for var, string, objectvar
- * has offset into a pointer data space.
- * 
- * Revision 1.1  91/10/11  11:12:14  hines
- * Initial revision
- * 
- * Revision 4.34  91/08/08  16:39:20  hines
- * saber lint free. Fixed problem when neuron uses s_varn for something
- * other than dependent variables by demanding that all depvar variables
- * have a 0 subtype (created by the user in the interpreter).
- * 
- * Revision 4.15  91/03/07  08:30:31  hines
- * re allocation of varnum for arrays was not initialized to 0
- * 
- * Revision 3.46  90/01/24  06:37:59  mlh
- * emalloc() and ecalloc() are macros which return null if out of space
- * and then call execerror.  This ensures that pointers are set to null.
- * If more cleanup necessary then use hoc_Emalloc() followed by hoc_malchk()
- * 
- * Revision 3.28  89/09/29  16:04:00  mlh
- * need to use -1 as falg for unsigned variable
- * 
- * Revision 3.23  89/09/14  14:34:13  mlh
- * for turboc 2.0 void the signal and malloc, and remove calloc
- * 
- * Revision 3.20  89/08/15  08:29:54  mlh
- * compiles under turbo-c 1.5 -- some significant bugs found
- * 
- * Revision 3.7  89/07/13  08:21:41  mlh
- * stack functions involve specific types instead of Datum
- * 
- * Revision 3.4  89/07/12  10:27:57  mlh
- * Lint free
- * 
- * Revision 3.3  89/07/10  15:46:56  mlh
- * Lint pass1 is silent. Inst structure changed to union.
- * 
- * Revision 2.0  89/07/07  11:32:44  mlh
- * Preparation for newcable
- * 
- * Revision 1.1  89/07/07  11:17:22  mlh
- * Initial revision
- * 
-*/
-
-/*version 7.2.1 2-jan-89 */
 #include <stdlib.h>
 #include <math.h>
-# include	"hoc.h"
-# include	"parse.h"
-# include	"equation.h"
-# include	"lineq.h"
+#include "hoc.h"
+#include "parse.h"
+#include "hocparse.h"
+#include "equation.h"
+#include "lineq.h"
+#include "code.h"
 
-extern Symlist	*symlist;
 int	do_equation;	/* switch for determining access to dep vars */
 int	*hoc_access;	/* links to next accessed variables */
 int  var_access;	/* variable number as pointer into access array */
 static double	**varble;	/* pointer to symbol values */
 typedef struct elm *Elm;
 
-dep_make()	/* tag the variable as dependent with a variable number */
+#define diag(s) hoc_execerror(s, (char*)0);
+
+void dep_make(void)/* tag the variable as dependent with a variable number */
 {
 #if !OCSMALL
 	Symbol *sym;
@@ -137,7 +68,7 @@ aray->a_varn = (unsigned *)ecalloc((unsigned)total, sizeof(unsigned));
 }
 
 
-init_access()	/* zero the access array */
+void init_access(void) /* zero the access array */
 {
 #if !OCSMALL
 	if (hoc_access != (int *)0)
@@ -147,14 +78,15 @@ init_access()	/* zero the access array */
 #endif
 }
 
+static void eqn_space(void);	/* reallocate space for matrix */
+static void set_varble(void);	/* set up varble array by searching for tags */
+static void eqn_side(int lhs);
 static unsigned	row;
 static unsigned	maxeqn;
 
-eqn_name()	/* save row number for lhs and/or rhs */
+void eqn_name(void) /* save row number for lhs and/or rhs */
 {
 #if !OCSMALL
-	int	set_varble();	/* found in symbol.c */
-	int	eqn_space();
 
 	if (maxeqn != neqn)	/* discard equations and reallocate space */
 	{
@@ -172,8 +104,7 @@ eqn_name()	/* save row number for lhs and/or rhs */
 #endif
 }
 
-set_varble()	/* set up varble array by searching for tags */
-{
+static void set_varble(void) {	/* set up varble array by searching for tags */
 #if !OCSMALL
 	Symbol	*sp;
 
@@ -199,7 +130,7 @@ varble[(aray->a_varn)[i]] = OPVAL(sp) + i;
 
 static double Delta = .001;	/* variable variation */
 
-eqinit()	/* built in function to initialize equation solver */
+void eqinit(void)	/* built in function to initialize equation solver */
 {
 #if !OCSMALL
 	Symbol	*sp;
@@ -224,7 +155,7 @@ eqinit()	/* built in function to initialize equation solver */
 	pushx(0.);
 }
 
-eqn_init()	/* initialize equation row */
+void eqn_init(void)	/* initialize equation row */
 {
 #if !OCSMALL
 	struct elm *el;
@@ -235,21 +166,19 @@ eqn_init()	/* initialize equation row */
 #endif
 }
 
-eqn_lhs()	/* add terms to left hand side */
+void eqn_lhs(void)	/* add terms to left hand side */
 {
 	eqn_side(1);
 }
 
-eqn_rhs()	/* add terms to right hand side */
+void eqn_rhs(void)	/* add terms to right hand side */
 {
 	eqn_side(0);
 }
 
 
 
-eqn_side(lhs)
-	int lhs;
-{
+static void eqn_side(int lhs) {
 #if !OCSMALL
 	int i;
 	struct elm *el;
@@ -300,8 +229,7 @@ eqn_side(lhs)
 #endif
 }
 
-eqn_space()	/* reallocate space for matrix */
-{
+static void eqn_space(void) {	/* reallocate space for matrix */
 #if !OCSMALL
 	register int i;
 	register struct elm *el;
@@ -342,13 +270,7 @@ eqn_space()	/* reallocate space for matrix */
 #endif
 }
 
-diag(s)	/* hold over from focsim */
-	char *s;
-{
-	execerror(s, (char *)0);
-}
-
-Prmat()
+void hoc_Prmat(void)
 {
 #if !OCSMALL
 	prmat();
@@ -357,7 +279,7 @@ Prmat()
 	pushx(1.);
 }
 
-solve()
+void solve(void)
 {
 #if !OCSMALL
 	/* Sum is a measure of the dependent variable accuracy

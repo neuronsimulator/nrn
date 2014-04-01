@@ -24,13 +24,12 @@ extern void make_mechanism();
 extern void make_pointprocess();
 extern void hoc_construct_point(Object*, int);
 extern Object* hoc_new_opoint(int);
-extern bool special_pnt_call(Object*, Symbol*, int);
 }
 
 static Object* last_created_pp_ob_;
 static bool skip_;
 
-static char** make_m(bool, int&, Symlist*, char*, char*);
+static const char** make_m(bool, int&, Symlist*, char*, char*);
 
 class HocMech {
 public:
@@ -62,7 +61,7 @@ void hoc_construct_point(Object* ob, int narg) {
 	int ptype = pnt_map[type];
 	Point_process* pnt = (Point_process*)create_point_process(ptype, ob);
 	ob->u.dataspace[ob->ctemplate->dataspace_size - 1]._pvoid = (void*)pnt;
-	assert(last_created_pp_ob_ == nil);
+	assert(last_created_pp_ob_ == NULL);
 	last_created_pp_ob_ = ob;
 	if (narg > 0) {
 		double x = hoc_look_inside_stack(narg-1, NUMBER)->val;
@@ -96,7 +95,7 @@ Point_process* ob2pntproc(Object* ob) {
 	return pp;
 }
 
-bool special_pnt_call(Object* ob, Symbol* sym, int narg) {
+int special_pnt_call(Object* ob, Symbol* sym, int narg) {
 	char* name = sym->name;
 	if (strcmp(name, "loc") == 0) {
 		int type = ob->ctemplate->symtable->last->subtype;
@@ -109,16 +108,16 @@ bool special_pnt_call(Object* ob, Symbol* sym, int narg) {
 		Node* node = node_exact(sec, x);	
 		nrn_loc_point_process(ptype, ob2pntproc(ob), sec, node);
 		hoc_pushx(x);
-		return true;
+		return 1;
 	}else if (strcmp(name, "has_loc") == 0) {
 		Point_process* p = ob2pntproc(ob);
-		hoc_pushx(double(p != nil && p->sec != nil));
-		return true;
+		hoc_pushx(double(p != NULL && p->sec != NULL));
+		return 1;
 	}else if (strcmp(name, "get_loc") == 0) {
 		hoc_pushx(get_loc_point_process(ob2pntproc(ob)));
-		return true;
+		return 1;
 	}else{
-		return false;
+		return 0;
 	}
 }	
 
@@ -150,7 +149,7 @@ static void alloc_pnt(Prop* p) {
 			skip_ = false;
 		}
 	}
-	last_created_pp_ob_ = nil;
+	last_created_pp_ob_ = NULL;
 }
 
 Object* hoc_new_opoint(int type) {
@@ -187,14 +186,14 @@ static void after_step(void* nt, Memb_list* ml, int type) {
 
 // note that an sgi CC complained about the alloc token not being interpretable
 //as std::alloc so we changed to hm_alloc
-static HocMech* common_register(char** m, Symbol* classsym, Symlist* slist,  void (hm_alloc)(Prop*), int& type){
+static HocMech* common_register(const char** m, Symbol* classsym, Symlist* slist,  void (hm_alloc)(Prop*), int& type){
 	Pvmi cur, jacob, stat, initialize;	
-	cur = nil;
-	jacob = nil;
-	stat = nil;
-	initialize = nil;
+	cur = NULL;
+	jacob = NULL;
+	stat = NULL;
+	initialize = NULL;
 	HocMech* hm = new HocMech();
-	hm->slist = nil;
+	hm->slist = NULL;
 	hm->mech = classsym;
 	hm->initial = hoc_table_lookup("initial", slist);
 	hm->after_step = hoc_table_lookup("after_step", slist);
@@ -202,7 +201,7 @@ static HocMech* common_register(char** m, Symbol* classsym, Symlist* slist,  voi
 	if (hm->after_step) stat = (Pvmi)after_step;
 	register_mech(m, hm_alloc, cur, jacob, stat, initialize, -1, 0);
 	type = nrn_get_mechtype(m[1]);
-	hoc_register_cvode(type, nil, nil, nil, nil);
+	hoc_register_cvode(type, NULL, NULL, NULL, NULL);
 	memb_func[type].hoc_mech = hm;
 	return hm;
 }
@@ -216,7 +215,7 @@ void make_mechanism() {
 	check(mname);
 	char* classname = gargstr(2);
 //printf("classname=%s\n", classname);
-	char* parnames = nil;
+	char* parnames = NULL;
 	if (ifarg(3)) {
 		parnames = new char[strlen(gargstr(3)) + 1];
 		strcpy(parnames, gargstr(3));
@@ -228,7 +227,7 @@ void make_mechanism() {
 	}
 	cTemplate* tp = classsym->u.ctemplate;
 	Symlist* slist = tp->symtable;
-	char** m = make_m(true, cnt, slist, mname, parnames);
+	const char** m = make_m(true, cnt, slist, mname, parnames);
 
 	common_register(m, classsym, slist, alloc_mech, i);
 		
@@ -246,7 +245,7 @@ void make_mechanism() {
 	}
 	delete [] m;
 	delete [] parnames;
-	ret(1.);
+	hoc_retpushx(1.);
 }
 
 void make_pointprocess() {
@@ -255,7 +254,7 @@ void make_pointprocess() {
 	Symbol* sp, *s2;
 	char* classname = gargstr(1);
 //printf("classname=%s\n", classname);
-	char* parnames = nil;
+	char* parnames = NULL;
 	if (ifarg(2)) {
 		parnames = new char[strlen(gargstr(2)) + 1];
 		strcpy(parnames, gargstr(2));
@@ -275,7 +274,7 @@ fprintf(stderr, "%d object(s) of type %s already exist.\n", tp->count, classsym-
 hoc_execerror("Can't make a template into a PointProcess when instances already exist", 0);
 	}
 	++tp->dataspace_size;
-	char** m = make_m(false, cnt, slist, classsym->name, parnames);
+	const char** m = make_m(false, cnt, slist, classsym->name, parnames);
 	
 	check_list("loc", slist);
 	check_list("get_loc", slist);
@@ -286,7 +285,7 @@ hoc_execerror("Can't make a template into a PointProcess when instances already 
 	sp = hoc_install("has_loc", FUNCTION, 0., &slist); sp->cpublic = 1;
 
 	Symlist* slsav = hoc_symlist;
-	hoc_symlist = nil;
+	hoc_symlist = NULL;
 	HocMech* hm = common_register(m, classsym, slist, alloc_pnt, type);
 	hm->slist = hoc_symlist;
 	hoc_symlist = slsav;
@@ -323,11 +322,12 @@ hoc_execerror("Can't make a template into a PointProcess when instances already 
 	if (parnames) {
 		delete [] parnames;
 	}
-	ret(1.);
+	hoc_retpushx(1.);
 }
 
-static char** make_m(bool suffix, int& cnt, Symlist* slist, char* mname, char* parnames) {
+static const char** make_m(bool suffix, int& cnt, Symlist* slist, char* mname, char* parnames) {
 	char buf[256];
+	char* cc;
 	Symbol* sp;
 	int i, imax;
 	cnt = 0;
@@ -339,17 +339,17 @@ static char** make_m(bool suffix, int& cnt, Symlist* slist, char* mname, char* p
 	}
 	cnt += 6;
 //printf("cnt=%d\n", cnt);
-	char** m = new char*[cnt];
+	const char** m = new const char*[cnt];
 	for (i=0; i<cnt; ++i) { // not all space is used since some variables
 		m[i] = 0;	// are not public
 	}
 	i = 0;
-	m[i] = new char[2];
-	strcpy(m[i], "0");
+	cc = new char[2];
+	strcpy(cc, "0"); m[i] = cc;
 //printf("m[%d]=%s\n", i, m[i]);
 	++i;
-	m[i] = new char[strlen(mname)+1];
-	strcpy(m[i], mname);
+	cc = new char[strlen(mname)+1];
+	strcpy(cc, mname); m[i] = cc;
 //printf("m[%d]=%s\n", i, m[i]);
 	++i;
 	
@@ -367,7 +367,7 @@ static char** make_m(bool suffix, int& cnt, Symlist* slist, char* mname, char* p
 	// when assigning and setting from the var_suffix form.
 
 	// the PARAMETER names are space separated in parnames.
-	char* cp, *csp = nil;
+	char* cp, *csp = NULL;
 	if(parnames) for (cp = parnames; cp && *cp; cp = csp) {
 		csp = strchr(cp, ' ');
 		if (csp) {
@@ -387,20 +387,21 @@ hoc_execerror("Must be a space separated list of names\n", gargstr(3));
 		  || !sp->cpublic || !(sp->type == VAR)) {
 			hoc_execerror(cp, "is not a public variable");
 		}
-		m[i] = new char[strlen(cp) + strlen(m[1]) + 20];
+		cc = new char[strlen(cp) + strlen(m[1]) + 20];
 		//above 20 give enough room for _ and possible array size
 		imax = hoc_total_array_data(sp, 0);
 		if (imax > 1) {
-			sprintf(m[i], "%s[%d]", buf, imax);
+			sprintf(cc, "%s[%d]", buf, imax);
 		}else{
-			sprintf(m[i], "%s", buf);
+			sprintf(cc, "%s", buf);
 		}
+		m[i] = cc;
 //printf("m[%d]=%s\n", i, m[i]);
 		++i;
 	}
 	int j, jmax = i;
 	m[i++] = 0; // CONSTANT ASSIGNED separator
-//printf("m[%d] = nil\n", i);
+//printf("m[%d] = NULL\n", i);
 	for (sp = slist->first; sp; sp = sp->next) {
 		if (sp->type == VAR && sp->cpublic) {
 			if (suffix) {
@@ -419,23 +420,24 @@ hoc_execerror("Must be a space separated list of names\n", gargstr(3));
 			if (b) {
 				continue;
 			}
-			m[i] = new char[strlen(buf) + 20];
+			cc = new char[strlen(buf) + 20];
 			//above 20 give enough room for possible array size
 			imax = hoc_total_array_data(sp, 0);
 			if (imax > 1) {
-				sprintf(m[i], "%s[%d]", buf, imax);
+				sprintf(cc, "%s[%d]", buf, imax);
 			}else{
-				sprintf(m[i], "%s", buf);
+				sprintf(cc, "%s", buf);
 			}
+			m[i] = cc;
 //printf("m[%d]=%s\n", i, m[i]);
 			++i;
 		}
 	}
-//printf("m[%d] = nil\n", i);
+//printf("m[%d] = NULL\n", i);
 	m[i++] = 0; // ASSIGNED STATE separator
-//printf("m[%d] = nil\n", i);
+//printf("m[%d] = NULL\n", i);
 	m[i++] = 0; // STATE NRNPOINTER separator
-//printf("m[%d] = nil\n", i);
+//printf("m[%d] = NULL\n", i);
 	m[i++] = 0; // end
 	return m;
 }

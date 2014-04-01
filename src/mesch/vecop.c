@@ -278,7 +278,7 @@ VEC  *v_linlist(VEC *out,VEC *v1,double a1,...)
    va_start(ap, a1);
    out = sv_mlt(a1,v1,out);
    
-   while (par = va_arg(ap,VEC *)) {   /* NULL ends the list*/
+   while ((par = va_arg(ap,VEC *))) {   /* NULL ends the list*/
       a_par = va_arg(ap,double);
       if (a_par == 0.0) continue;
       if ( out == par )		
@@ -323,7 +323,7 @@ VEC  *v_linlist(va_alist) va_dcl
    a_par = va_arg(ap,double);
    out = sv_mlt(a_par,par,out);
    
-   while (par = va_arg(ap,VEC *)) {   /* NULL ends the list*/
+   while ((par = va_arg(ap,VEC *))) {   /* NULL ends the list*/
       a_par = va_arg(ap,double);
       if (a_par == 0.0) continue;
       if ( out == par )		

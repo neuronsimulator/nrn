@@ -3,26 +3,24 @@
 
 #include	<stdio.h>
 #include	<stdlib.h>
+#include <unistd.h>
 #include	"hoc.h"
+#include "ocmisc.h"
 #include "hocstr.h"
 #include	"hoclist.h"
 #include	"parse.h"
+#include "hocparse.h"
 #include	<setjmp.h>
 #include	<errno.h>
 #include	"nrnfilewrap.h"
+#include "nrnjava.h"
 
-extern NrnFILEWrap*	fin;
-extern int		pipeflag;
 extern jmp_buf		begin;
-extern double		hoc_ac_;
 extern char* neuron_home;
-extern double chkarg();
 
 NrnFILEWrap	*frin;
 FILE	*fout;
 
-extern char** hoc_pgargstr();
-extern char* expand_env_var();
 #if 0 && MAC
 #include <stdarg.h>
 
@@ -38,7 +36,7 @@ void debugfile(const char* format, ...) {
 }
 #endif
 
-int hoc_stdout() {
+void hoc_stdout(void) {
 #if defined(WIN32) && !defined(CYGWIN)
 	extern FILE* hoc_redir_stdout;
 	if (ifarg(1)) {
@@ -89,8 +87,7 @@ int hoc_stdout() {
 #endif
 }
 
-int
-ropen()		/* open file for reading */
+void ropen(void)		/* open file for reading */
 {
 	double d;
 	char *fname;
@@ -106,7 +103,7 @@ ropen()		/* open file for reading */
 	if (fname[0] != 0) {
 		if ((frin = nrn_fw_fopen(fname, "r")) == (NrnFILEWrap *)0)
 		{
-			char* retry;
+			const char* retry;
 			retry = expand_env_var(fname);
 			if ((frin = nrn_fw_fopen(retry, "r")) == (NrnFILEWrap *)0) {
 				d = 0.;
@@ -119,8 +116,7 @@ ropen()		/* open file for reading */
 	pushx(d);
 }
 
-int
-wopen()		/* open file for writing */
+void wopen(void)		/* open file for writing */
 {
 	char *fname;
 	double d;
@@ -144,9 +140,9 @@ wopen()		/* open file for writing */
 	pushx(d);
 }
 
-char* expand_env_var(s) char* s; {
+const char* expand_env_var(const char* s) {
 	static HocStr* hs;
-	char* cp1;
+	const char* cp1;
 	char* cp2;
 	int n;
 	int begin = 1; /* only needed for mac when necessary to prepend a : */
@@ -221,19 +217,15 @@ char* expand_env_var(s) char* s; {
 
 char hoc_xopen_file_[200];
 
-char* hoc_current_xopen() {
+char* hoc_current_xopen(void) {
 	return hoc_xopen_file_;
 }
 
-int hoc_xopen1(fname, rcs)	/* read and execute a hoc program */
-	char* fname;
-	char* rcs;
+int hoc_xopen1(const char* fname, const char* rcs) /* read and execute a hoc program */
 {
 	NrnFILEWrap *savfin;
 	int savpipflag, save_lineno;
 	char st[200];
-	extern hoc_lineno;
-
 
 #if 1
 	if (rcs) {
@@ -265,7 +257,7 @@ int hoc_xopen1(fname, rcs)	/* read and execute a hoc program */
 #else
 	   if ((fin = nrn_fw_fopen(fname, "r")) == NULL) {
 #endif
-		char* retry;
+		const char* retry;
 		fname = retry = expand_env_var(fname);
 #if MAC
 		if ((fin = nrn_fw_fopen(retry, "rb")) == NULL) {
@@ -303,7 +295,7 @@ int hoc_xopen1(fname, rcs)	/* read and execute a hoc program */
 	return 0;
 }
 
-xopen()		/* read and execute a hoc program */
+void xopen(void)		/* read and execute a hoc program */
 {
 
 	if (ifarg(2)) {
@@ -315,24 +307,23 @@ xopen()		/* read and execute a hoc program */
 	pushx(1.);
 }
 
-
-Fprint()	/* fprintf function */
+void Fprint(void)	/* fprintf function */
 {
 	char* buf;
 	double d;
 
-	sprint(&buf, 1);
+	hoc_sprint1(&buf, 1);
 	d = (double)fprintf(fout, "%s", buf);
 	ret();
 	pushx(d);
 }
 
-PRintf()	/* printf function */
+void PRintf(void)	/* printf function */
 {
 	char* buf;
 	double d;
 
-	sprint(&buf, 1);
+	hoc_sprint1(&buf, 1);
 	d = (int)strlen(buf);
 	NOT_PARALLEL_SUB(plprint(buf);)
 	fflush(stdout);
@@ -341,20 +332,19 @@ PRintf()	/* printf function */
 }
 
 
-hoc_Sprint()    /* sprintf function */
+void hoc_Sprint(void)    /* sprintf function */
 { 
 	char **cpp;
 	char *buf;
 	/* This is not guaranteed safe since we may be pointing to double */
 	cpp = hoc_pgargstr(1);
-	sprint(&buf, 2);
+	hoc_sprint1(&buf, 2);
 	hoc_assign_str(cpp, buf);
         ret();
 	pushx(1.);
 }
 
-double hoc_scan(fi)
-	FILE* fi;
+double hoc_scan(FILE* fi)
 {
 	double d;
 	char fs[256];
@@ -388,15 +378,14 @@ double hoc_fw_scan(NrnFILEWrap* fi) {
 		}
 		if (sscanf(fs, "%lf", &d) == 1) {
 			/* but if at end of line, leave at beginning of next*/
-			nrn_fw_fscanf(fi, "\n");
+			nrnignore = nrn_fw_fscanf(fi, "\n");
 			break;
 		}
 	}
 	return d;
 }
 
-int
-Fscan()		/* read a number from input file */
+void Fscan(void)		/* read a number from input file */
 {
 	double d;
 	NrnFILEWrap *fi;
@@ -411,8 +400,7 @@ Fscan()		/* read a number from input file */
 	pushx(d);
 }
 
-int
-hoc_Getstr()	/* read a line (or word) from input file */
+void hoc_Getstr(void)	/* read a line (or word) from input file */
 {
 	char* buf;
 	char **cpp;
@@ -442,11 +430,8 @@ hoc_Getstr()	/* read a line (or word) from input file */
 	pushx((double)strlen(buf));
 }
 
-int
-sprint(ppbuf, argn)	/* convert args to right type for conversion */
-	char** ppbuf;
-	int argn;	/* argument number where format is */
-{
+void hoc_sprint1(char** ppbuf, int argn) {	/* convert args to right type for conversion */
+	/* argn is argument number where format is */
 	static HocStr* hs;
 	char *pbuf, *pfmt, *pfrag, frag[120];
 	int n, convflag, lflag, didit, hoc_argtype();
@@ -576,8 +561,9 @@ static void oc_pclose(FILE* fp) {
 #define oc_pclose pclose
 #endif
 
-static hoc_load(stype)
-	char* stype;
+static int hoc_Load_file(int, const char*);
+
+static void hoc_load(const char* stype)
 {
 	int i=1;
 	char* s;
@@ -613,7 +599,7 @@ fprintf(stderr, "Couldn't find a file that declares %s\n", s);
 }
 
 Pfri p_hoc_load_java;
-hoc_load_java() {
+void hoc_load_java(void) {
 	int r = 0;
 	if (p_hoc_load_java) {	
 		r =  (*p_hoc_load_java)();
@@ -622,23 +608,23 @@ hoc_load_java() {
 	pushx((double)r);
 }
 
-hoc_load_proc() {
+void hoc_load_proc(void) {
 	hoc_load("proc");
 	ret();
 	pushx(1.);
 }
-hoc_load_func() {
+void hoc_load_func(void) {
 	hoc_load("func");
 	ret();
 	pushx(1.);
 }
-hoc_load_template() {
+void hoc_load_template(void) {
 	hoc_load("begintemplate");
 	ret();
 	pushx(1.);
 }
 
-hoc_load_file() {
+void hoc_load_file(void) {
 	int iarg = 1;
 	int i = 0;
 	if (hoc_is_double_arg(iarg)) {
@@ -652,7 +638,7 @@ hoc_load_file() {
 	pushx((double)i);
 }
 
-hoc_Load_file(always, name) int always; char* name; {
+static int hoc_Load_file(int always, const char* name) {
 	/*
 	  if always is 0 then
 	  xopen only if file of that name not already loaded with one of
@@ -668,7 +654,7 @@ hoc_Load_file(always, name) int always; char* name; {
 	int b, is_loaded;
 	int goback;
 	char expname[512];
-	char *base;
+	const char *base;
 	char path[1000], old[1000], fname[1000], cmd[200];
 #if USE_NRNFILEWRAP
 	int f;	
@@ -804,7 +790,7 @@ hoc_Load_file(always, name) int always; char* name; {
 	return b;
 }
 
-hoc_getcwd() {
+void hoc_getcwd(void) {
 	int len;
 	static char* buf;
 	if (!buf) {
@@ -834,7 +820,7 @@ hoc_getcwd() {
 	hoc_pushstr(&buf);
 }
 
-machine_name()
+void hoc_machine_name(void)
 {
 #if !defined(__GO32__) && !defined(WIN32) && !defined(MAC)
   				       /*----- functions called -----*/
@@ -848,11 +834,11 @@ machine_name()
     pushx(0.);
 }
 
-int hoc_chdir(path) char* path; {
+int hoc_chdir(const char* path) {
 	return chdir(expand_env_var(path));
 }
 
-hoc_Chdir() {
+void hoc_Chdir(void) {
 	int i = hoc_chdir(gargstr(1));
 	ret();
 	pushx((double)i);

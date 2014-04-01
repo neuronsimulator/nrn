@@ -6,6 +6,7 @@ the prototypes be of the form "type foo(type arg, ...)"
 #ifndef nrnmpidec_h
 #define nrnmpidec_h
 #include <nrnmpiuse.h>
+typedef long double longdbl;
 #if NRNMPI
 #include <stdlib.h>
 #if defined(__cplusplus)
@@ -86,6 +87,7 @@ extern void nrnmpi_wait(void** request);
 extern void nrnmpi_barrier();
 extern double nrnmpi_dbl_allreduce(double x, int type);
 extern void nrnmpi_dbl_allreduce_vec(double* src, double* dest, int cnt, int type);
+extern void nrnmpi_longdbl_allreduce_vec(longdbl* src, longdbl* dest, int cnt, int type);
 extern void nrnmpi_long_allreduce_vec(long* src, long* dest, int cnt, int type);
 extern void nrnmpi_dbl_allgather(double* s, double* r, int n);
 #if BGPDMA

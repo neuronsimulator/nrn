@@ -28,6 +28,7 @@
 #include <nrnmpiuse.h>
 #if NRNMPI_DYNAMICLOAD
 extern void nrnmpi_dbl_allreduce_vec(double* src, double* dest, int cnt, int type);
+extern void nrnmpi_longdbl_allreduce_vec(long double* src, long double* dest, int cnt, int type);
 extern void nrnmpi_long_allreduce_vec(long* src, long* dest, int cnt, int type);
 extern int nrnmpi_numprocs;
 #endif
@@ -941,7 +942,7 @@ static ldrealtype VAllReduce_long_NrnParallelLD(ldrealtype d, int op, MPI_Comm c
 
   assert(op == 1);
 #if NRNMPI_DYNAMICLOAD
-  nrnmpi_dbl_allreduce_vec(&d, &out, 1, op);
+  nrnmpi_longdbl_allreduce_vec(&d, &out, 1, op);
 #else
   MPI_Allreduce(&d, &out, 1, MPI_LONG_DOUBLE, MPI_SUM, comm);
 #endif

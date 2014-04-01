@@ -3,21 +3,19 @@
 #include "section.h"
 #include "neuron.h"
 #include "parse.h"
-
-extern char* secname();
-extern Object** hoc_objpop();
-extern Object** hoc_objgetarg();
-extern int nrn_isecstack();
+#include "hocparse.h"
+#include "code.h"
+#include "hoc_membf.h"
 
 /*ARGSUSED*/
-static void* constructor(ho)Object* ho;
+static void* constructor(Object* ho)
 {
 	List* sl;
 	sl = newlist();	
 	return (void*)sl;
 }
 
-static void destructor(v) void* v;
+static void destructor(void* v)
 {
 	Item* q;
 	List* sl = (List*)v;
@@ -27,7 +25,7 @@ static void destructor(v) void* v;
 	freelist(&sl);
 }
 
-static double append(v) void* v;
+static double append(void* v)
 {
 	Section* sec = chk_access();
 	lappendsec((List*)v, sec);
@@ -36,7 +34,7 @@ static double append(v) void* v;
 }
 
 
-static Item* children1(sl, sec) List* sl; Section* sec;
+static Item* children1(List* sl, Section* sec)
 {
 	Item* i;
 	Section* ch;
@@ -48,7 +46,7 @@ static Item* children1(sl, sec) List* sl; Section* sec;
 	return i;
 }
 
-static double children(v) void* v;
+static double children(void* v)
 {
 	Section* sec;
 	List* sl;
@@ -58,7 +56,7 @@ static double children(v) void* v;
 	return 1.;
 }
 
-static Item* subtree1(sl, sec) List* sl; Section* sec;
+static Item* subtree1(List* sl, Section* sec)
 {
 	Item* i, *j, *last, *first;
 	Section* s;
@@ -78,7 +76,7 @@ static Item* subtree1(sl, sec) List* sl; Section* sec;
 	return i;
 }
 
-static double subtree(v) void* v;
+static double subtree(void* v)
 {
 	Section* sec;
 	List* sl;
@@ -88,7 +86,7 @@ static double subtree(v) void* v;
 	return 1.;
 }
 
-static double wholetree(v) void* v;
+static double wholetree(void* v)
 {
 	List* sl;
 	Section* s, *sec, *ch;
@@ -102,7 +100,7 @@ static double wholetree(v) void* v;
 	return 1.;
 }
 
-static double allroots(v) void* v;
+static double allroots(void* v)
 {
 	List* sl;
 	Item* qsec;
@@ -117,7 +115,7 @@ static double allroots(v) void* v;
 	return 1.;
 }
 
-static double seclist_remove(v) void* v;
+static double seclist_remove(void* v)
 {
 	Section* sec, *s;
 	Item* q, *q1;
@@ -164,7 +162,7 @@ static double seclist_remove(v) void* v;
 	return (double) i;
 }
 
-static double unique(v) void* v;
+static double unique(void* v)
 {
 	int i; /* number deleted */
 	Section* s;
@@ -187,7 +185,7 @@ static double unique(v) void* v;
 	return (double)i;
 }
 
-static double contains(v) void* v;
+static double contains(void* v)
 {
 	Section* s;
 	Item* q;
@@ -201,9 +199,8 @@ static double contains(v) void* v;
 	return (0.);
 }
 
-static double printnames(v) void* v;
+static double printnames(void* v)
 {
-	char* secname();
 	Item* q;
 	List* sl = (List*)v;
 	ITERATE(q, sl) {
@@ -212,7 +209,7 @@ static double printnames(v) void* v;
 	return 1.;
 }
 
-static struct Member_func {char* name; double (*func)();} members[] = {
+static Member_func members[] = {
 	"append", append,
 	"remove", seclist_remove,
 	"wholetree", wholetree,
@@ -225,7 +222,7 @@ static struct Member_func {char* name; double (*func)();} members[] = {
 	0,0
 };
 
-SectionList_reg() {
+void SectionList_reg(void) {
 	void class2oc();
 /*	printf("SectionList_reg\n");*/
 	class2oc("SectionList", constructor, destructor, members, (void*)0, (void*)0, (void*)0);
@@ -234,7 +231,7 @@ SectionList_reg() {
 #define relative(pc)	(pc + (pc)->i)
 extern int hoc_returning;
 
-static check(ob) Object* ob; {
+static void check(Object* ob) {
 	if (!ob) {
 		hoc_execerror("nil object is not a SectionList", (char*)0);
 	}
@@ -243,7 +240,7 @@ static check(ob) Object* ob; {
 	}
 }
 
-void forall_sectionlist() {
+void forall_sectionlist(void) {
 	Inst* savepc = pc;
 	Item* q, *q1;
 	Section* sec;
@@ -289,7 +286,7 @@ void forall_sectionlist() {
 	}
 }
 
-void hoc_ifseclist() {
+void hoc_ifseclist(void) {
 	Inst *savepc = pc;
 	Item* q;
 	Section* sec = chk_access();

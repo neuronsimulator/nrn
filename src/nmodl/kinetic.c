@@ -14,6 +14,7 @@ order.  Here is the C code from a kinetic block:
 
 /* Sets up derivative form  and implicit form*/
 
+#include <stdlib.h>
 #include "modl.h"
 #include "parse1.h"
 #include "symbol.h"
@@ -106,8 +107,7 @@ static void genmatterms();
 static int nstate_[MAXKINBLK];
 
 #if VECTORIZE
-static char*
-instance_loop() {
+static char* instance_loop() {
 	extern char* cray_pragma();
 	static char buf1[256];
 	Sprintf(buf1, "\n#ifdef WANT_PRAGMA%s#endif\n   _INSTANCE_LOOP {\n",
@@ -122,8 +122,7 @@ static int sparsedeclared(i) int i; {
 	return sparse_declared_[i]++;
 }
 
-char *
-qconcat(q1, q2) /* return names as single string */
+char *qconcat(q1, q2) /* return names as single string */
 	Item *q1, *q2;
 {
 	char *cp, *ovrfl, *cs, *n;
@@ -152,7 +151,7 @@ qconcat(q1, q2) /* return names as single string */
 	return stralloc(buf, (char *)0);
 }
 
-reactname(q1, lastok, q2) /* NAME [] INTEGER   q2 may be null*/
+void reactname(q1, lastok, q2) /* NAME [] INTEGER   q2 may be null*/
 	Item *q1, *lastok, *q2;
 {	/* put on right hand side */
 	Symbol *s, *s1;
@@ -192,14 +191,14 @@ extra parentheses must be prepended as in MATELM((...,(....
 	rterm->sym = s;
 }
 
-leftreact() /* current reaction list is for left hand side */
+void leftreact() /* current reaction list is for left hand side */
 {
 	/* put whole list on left hand side and initialize right hand side */
 	lterm = rterm;
 	rterm = (Rterm *)0;
 }
 
-massagereaction(qREACTION, qREACT1, qlpar, qcomma, qrpar)
+void massagereaction(qREACTION, qREACT1, qlpar, qcomma, qrpar)
 	Item *qREACTION, *qREACT1, *qlpar, *qcomma, *qrpar;
 {
 	Reaction *r1;
@@ -222,7 +221,7 @@ massagereaction(qREACTION, qREACT1, qlpar, qcomma, qrpar)
 	rterm = (Rterm *)0;
 }
 
-flux(qREACTION, qdir, qlast)
+void flux(qREACTION, qdir, qlast)
 	Item *qREACTION, *qdir, *qlast;
 {
 	Reaction *r1;
@@ -298,7 +297,7 @@ ITERATE(q1, ldifuslist) {
    we therefore loop through all the rterms and mark only those
 */
 
-massagekinetic(q1, q2, q3, q4, sensused) /*KINETIC NAME stmtlist '}'*/
+void massagekinetic(q1, q2, q3, q4, sensused) /*KINETIC NAME stmtlist '}'*/
 	Item *q1, *q2, *q3,*q4;
 	int sensused;
 {
@@ -495,7 +494,7 @@ rlist->capacity[SYM(q1)->used - 1] = stralloc(buf1, (char *)0);
 }
 
 #if Glass
-fixrlst(rlst)
+void fixrlst(rlst)
 	Rlist *rlst;
 {
 	if(rlst->position->prev->itemtype==STRING &&
@@ -507,7 +506,7 @@ fixrlst(rlst)
 
 static int ncons;	/* the number of conservation equations */
 
-kinetic_intmethod(fun, meth)
+void kinetic_intmethod(fun, meth)
 	Symbol *fun;
 	char* meth;
 {
@@ -548,7 +547,7 @@ Insertstr(rlst->endbrace, buf);
 	kinlist(fun, rlst);
 }
 
-void genderivterms(r, type, n)
+static void genderivterms(r, type, n)
 	Reaction *r;
 	int type;	/* 0 derivative, 1 implicit */
 	int n;		/* function number, needed only for implicit */
@@ -627,7 +626,7 @@ for (j=0; j<2; j++) {
 	Insertstr(q, "\n"); /* REACTION comment left in */
 }
 
-genfluxterm(r, type, n)
+void genfluxterm(r, type, n)
 	Reaction *r;
 	int type;
 	int n;
@@ -695,7 +694,7 @@ genfluxterm(r, type, n)
 }
 
 static int linmat;	/* 1 if linear */
-kinetic_implicit(fun, dt, mname)
+void kinetic_implicit(fun, dt, mname)
 	Symbol *fun;
 	char *dt, *mname;	/* mname is _advance or sparse */
 {
@@ -934,7 +933,7 @@ Insertstr(rlst->position, "}");
     } /* end of NOT_CVODE_FLAG */
 }
 
-void genmatterms(r, fn)
+static void genmatterms(r, fn)
 	Reaction *r;
 	int fn; /*function number, numlist*/
 {
@@ -1017,7 +1016,7 @@ void genmatterms(r, fn)
 	/* REACTION comment left in */
 }
 
-massageconserve(q1, q3, q5) /* CONSERVE react '=' expr */
+void massageconserve(q1, q3, q5) /* CONSERVE react '=' expr */
 	Item *q1, *q3, *q5;
 {
 /* the list of states is in rterm at this time with the first at the end */
@@ -1048,8 +1047,7 @@ massageconserve(q1, q3, q5) /* CONSERVE react '=' expr */
 	rterm = (Rterm *)0;
 }
 
-static int
-genconservterms(eqnum, r, fn, rlst)
+static int genconservterms(eqnum, r, fn, rlst)
 	Reaction *r;
 	int eqnum, fn; /*function number*/
 	Rlist *rlst;
@@ -1115,8 +1113,7 @@ diag(rt->sym->name, ": only (solved) STATE are allowed in CONSERVE equations.");
 	return eqnum;
 }
 
-static int
-number_states(fun, prlst, pclst)
+static int number_states(fun, prlst, pclst)
 	Symbol *fun;
 	Rlist **prlst, **pclst;
 {
@@ -1220,7 +1217,7 @@ if (vectorize){
 }
 
 /* for now we only check CONSERVE and COMPARTMENT */
-check_block(standard, actual, mes)
+void check_block(standard, actual, mes)
 	int standard, actual;
 	char *mes;
 {
@@ -1251,7 +1248,7 @@ COMPARTMENT index, expr { vectorstates }\n\
  compartlist is a list of triples of item pointers which
  holds the info for massagekinetic.
 */
-massagecompart(qexp, qb1, qb2, indx)
+void massagecompart(qexp, qb1, qb2, indx)
 	Item *qexp, *qb1, *qb2;
 	Symbol *indx;
 {
@@ -1291,7 +1288,7 @@ diag(SYM(q)->name, "must be a (solved) STATE in a COMPARTMENT statement");
 	Lappenditem(compartlist, qb2);
 }
 
-massageldifus(qexp, qb1, qb2, indx)
+void massageldifus(qexp, qb1, qb2, indx)
 	Item *qexp, *qb1, *qb2;
 	Symbol *indx;
 {
@@ -1358,7 +1355,7 @@ diag(SYM(q)->name, "must be a (solved) STATE in a LONGITUDINAL_DIFFUSION stateme
 
 static List* kvect;
 
-kin_vect1(q1, q2, q4)
+void kin_vect1(q1, q2, q4)
 	Item *q1, *q2, *q4;
 {
 	if (!kvect) {
@@ -1383,7 +1380,7 @@ void kin_vect2() {
 	
 }
 
-kin_vect3(q1, q2, q4)
+void kin_vect3(q1, q2, q4)
 	Item *q1, *q2, *q4;
 {
 	Symbol* fun;
@@ -1417,11 +1414,11 @@ _jacob%d[(row)*%d + (col)][_ix]\n",
 static int astmt_state;
 static Item* astmt_last;
 
-ostmt_start() {
+void ostmt_start() {
 	astmt_state = 0;
 }
 
-see_ostmt() {
+void see_ostmt() {
 #if 0 && VECTORIZE
 	if (vectorize) {
 		if (astmt_state) {
@@ -1432,7 +1429,7 @@ see_ostmt() {
 #endif
 }
 
-see_astmt(q1, q2)
+void see_astmt(q1, q2)
 	Item *q1, *q2;
 {
 #if 0 && VECTORIZE
@@ -1448,7 +1445,7 @@ see_astmt(q1, q2)
 #endif
 }
 
-vectorize_if_else_stmt(blocktype) int blocktype; {
+void vectorize_if_else_stmt(blocktype) int blocktype; {
 #if 0 && VECTORIZE
 	if (blocktype == KINETIC && vectorize) {
 		vectorize = 0;
@@ -1476,7 +1473,7 @@ prn(cvode_sbegin, cvode_send);
 	}
 }
 	
-prn(q1,q2) Item *q1, *q2; {
+void prn(q1,q2) Item *q1, *q2; {
 	Item* qq, *q;
 	for (qq = q1; qq != q2; qq=qq->next) {
 		if (qq->itemtype == ITEM) {
@@ -1487,22 +1484,22 @@ prn(q1,q2) Item *q1, *q2; {
 		}
 switch(q->itemtype) {
 case STRING:
-fprintf(stderr, "%lx STRING |%s|\n", (long)q, STR(q));
+fprintf(stderr, "%p STRING |%s|\n", q, STR(q));
 break;
 case SYMBOL:
-fprintf(stderr, "%lx SYMBOL |%s|\n", (long)q, SYM(q)->name);
+fprintf(stderr, "%p SYMBOL |%s|\n", q, SYM(q)->name);
 break;
 case ITEM:
-fprintf(stderr, "%lx ITEM\n", (long)q);
+fprintf(stderr, "%p ITEM\n", q);
 break;
 default:
-fprintf(stderr, "%lx type %d\n", (long)q, q->itemtype);
+fprintf(stderr, "%p type %d\n", q, q->itemtype);
 break;
 }
 	}
 }
 
-cvode_kinetic(qsol, fun, numeqn, listnum)
+void cvode_kinetic(qsol, fun, numeqn, listnum)
 	Item* qsol;
 	Symbol* fun;
 	int numeqn, listnum;

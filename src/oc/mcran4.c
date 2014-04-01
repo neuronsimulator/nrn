@@ -46,6 +46,7 @@ contained the header:
 #include <float.h>
 #include <stdlib.h>
 #include <mcran4.h>
+#include "hocdec.h"
 
 static uint32_t lowindex = 0;
 

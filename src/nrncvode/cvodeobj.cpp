@@ -637,7 +637,7 @@ static void destruct(void* v) {
 #endif
 }
 void Cvode_reg() {
-	class2oc("CVode", cons, destruct, members, nil, omembers);
+	class2oc("CVode", cons, destruct, members, NULL, omembers, NULL);
 	net_cvode_instance = new NetCvode(1);
 	Daspk::dteps_ = 1e-9; // change with cvode.dae_init_dteps(newval)
 }
@@ -1081,7 +1081,7 @@ int Cvode::advance_tn() {
 	int err = SUCCESS;
 	if (neq_ == 0) {
 		t_ += 1e9;
-		if (nth_) { nth_->_t; } else { nt_t = t_; }
+		if (nth_) { nth_->_t = t_; } else { nt_t = t_; }
 		tn_ = t_;
 		return err;
 	}
@@ -1101,7 +1101,7 @@ int Cvode::advance_tn() {
 		// SOLVE after_cvode now interpreted as before cvode since
 		// a step may be abandoned in part by interpolate in response
 		// to events. Now at least the value of t is monotonic
-		if (nth_) { nth_->_t; } else { nt_t = t_; }
+		if (nth_) { nth_->_t = t_; } else { nt_t = t_; }
 		do_nonode(nth_);
 #if PARANEURON
 		opmode_ = 1;

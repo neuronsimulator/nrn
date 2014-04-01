@@ -37,12 +37,12 @@
 // things in libivoc that wouldn't normally be linked because nothing
 // refers to them while libivoc is linking. So force them to link here
 extern "C" {
-bool ivoc_list_look(Object*, Object*, char*, int);
-void class_registration();
+int ivoc_list_look(Object*, Object*, char*, int);
+void hoc_class_registration();
 }
 static void dummy() {
-	ivoc_list_look(nil, nil, nil, 0);
-	class_registration();
+	ivoc_list_look(NULL, NULL, NULL, 0);
+	hoc_class_registration();
 }
 #endif
 

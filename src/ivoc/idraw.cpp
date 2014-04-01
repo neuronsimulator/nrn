@@ -544,9 +544,9 @@ void OcIdraw::stroke(Canvas* can, const Color* c, const Brush* b) {
 
 void OcIdraw::fill(Canvas* can, const Color* c) {
 	if (curved_) {
-		cbspl(can, ipath_, xpath_, ypath_, c, nil, true);
+		cbspl(can, ipath_, xpath_, ypath_, c, NULL, true);
 	}else{
-		polygon(can, ipath_, xpath_, ypath_, c, nil, true);
+		polygon(can, ipath_, xpath_, ypath_, c, NULL, true);
 	}
 }
 

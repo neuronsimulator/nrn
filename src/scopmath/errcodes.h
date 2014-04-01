@@ -9,6 +9,8 @@
  *
  ******************************************************************************/
 
+extern int abort_run(int);
+
 #define ROUNDOFF	1.e-20
 #define ZERO		1.e-8
 #define STEP		1.e-6

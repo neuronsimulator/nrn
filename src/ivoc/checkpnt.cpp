@@ -93,6 +93,7 @@ data depending on type. eg for VAR && NOTUSER it is
 #include <OS/list.h>
 #include <OS/table.h>
 #include "oc2iv.h"
+#include "ocfunc.h"
 #if HAVE_XDR
 #include <rpc/xdr.h>
 #endif
@@ -103,26 +104,20 @@ extern "C" {
 #include "hoclist.h"
 #include "parse.h"
 #include "code.h"
-extern int hoc_arayinstal();
 #include "equation.h"
-	extern Symlist* hoc_built_in_symlist;
-	extern Symlist* hoc_top_level_symlist;
-	void hoc_checkpoint();
 	int hoc_readcheckpoint(char*);
-	extern Objectdata* hoc_top_level_data;
-	extern int hoc_total_array_data(Symbol*, Objectdata*);
 	extern int hoc_resize_toplevel(int);
 }
 
 static struct HocInst {
-	Pfri pi;
+	Pfrv pi;
 	const char* signature;
 } hoc_inst_[] = {
 	0, 0,		//0
 	nopop, 0,
 	eval, 0,
 	add, 0,
-	sub, 0,
+	hoc_sub, 0,
 	mul, 0,
 	hoc_div, 0,
 	negate, 0,
@@ -238,7 +233,7 @@ private:
 };
 
 PortablePointer::PortablePointer() {
-	address_ = nil;
+	address_ = NULL;
 	type_ = 0;
 	size_ = 0;
 }
@@ -430,7 +425,7 @@ int hoc_readcheckpoint(char* fname) {
 		rval = 2;
 	}
 	delete rdckpt_;
-	rdckpt_ = nil;
+	rdckpt_ = NULL;
 	return rval;
 #else
 return 0;
@@ -439,10 +434,10 @@ return 0;
 
 #ifndef MAC
 OcCheckpoint::OcCheckpoint() {
-	ppl_ = nil;
-	func_ = nil;
-	stable_ = nil;
-	otable_ = nil;
+	ppl_ = NULL;
+	func_ = NULL;
+	stable_ = NULL;
+	otable_ = NULL;
 	if (!inst_table_) {
 		short i;
 		for(i=1; hoc_inst_[i].pi; ++i) {
@@ -541,7 +536,7 @@ bool OcCheckpoint::make_sym_table() {
 				if (!b) {
 					printf("make_sym_table failed on second pass1\n");
 				}
-	func_ = nil;
+	func_ = NULL;
 	return b;
 }
 
@@ -576,12 +571,12 @@ bool OcCheckpoint::sym_out(Symbol* s) {
 		if (s->subtype == NOTUSER) {
 			b = b && xdr(s->u.oboff);
 		}
-		arrayinfo(s, nil);
+		arrayinfo(s, NULL);
 		break;
 	case STRING:
 	case OBJECTVAR:
 		b = b && xdr(s->u.oboff);
-		arrayinfo(s, nil);
+		arrayinfo(s, NULL);
 		break;
 	case TEMPLATE:
 	   {
@@ -616,7 +611,7 @@ bool OcCheckpoint::build_map() {
 	return false;
 }
 PortablePointer* find(void*) {
-	return nil;
+	return NULL;
 }
 bool OcCheckpoint::func(Symbol* s) {
 	if (func_) {
@@ -901,7 +896,7 @@ bool OcCheckpoint::sym_values(Symbol* s) {
 				b = b && xdr(d);
 			}else if (s->type == OBJECTVAR) {
 				Object* ob = od.pobj[i];
-				if (ob == nil) {
+				if (ob == NULL) {
 					DEBUG(f_, "  0\n");
 					int i = 0;
 					b = b && xdr(i);
@@ -1033,7 +1028,7 @@ bool OcReadChkPnt::symbols() {
 	Chk(symtable(), "built_in_symlist failure");
 	lookup_ = false;
 	symtable_ = hoc_top_level_symlist;
-	if (symtable_->first != nil) {
+	if (symtable_->first != NULL) {
 		printf("Some user symbols are already defined at the top level\n");
 		return false;
 	}
@@ -1091,17 +1086,17 @@ bool OcReadChkPnt::symbol() {
 				sym->u.oboff = i;
 			}
 		}
-		arrayinfo(sym, nil);
+		arrayinfo(sym, NULL);
 	   }
 		break;
 	case OBJECTVAR:
 	case STRING:
 		Get(i);
 		sym->u.oboff = i;
-		arrayinfo(sym, nil);
+		arrayinfo(sym, NULL);
 		break;
 	case CSTRING:
-		sym->u.cstr = nil;
+		sym->u.cstr = NULL;
 		Get(sym->u.cstr);
 		break;
 	case NUMBER:
@@ -1124,7 +1119,7 @@ bool OcReadChkPnt::symbol() {
 			t->destructor = 0;
 			t->steer = 0;
 			t->id = id;
-			symtable_ = nil;
+			symtable_ = NULL;
 			Chk(symtable(), "");
 			t->symtable = symtable_;
 		}else{
@@ -1193,7 +1188,7 @@ bool OcReadChkPnt::objects() {
 	Symbol* sym;
 	Get(nobj_);
 	pobj_ = new Object*[nobj_ + 1];
-	pobj_[0] = nil;
+	pobj_[0] = NULL;
 	for (;;) {
 		Get(sid);
 		if (sid == -1) {
@@ -1231,7 +1226,7 @@ bool OcReadChkPnt::objects() {
 			Get(pob->index);
 			if (t->constructor) {
 				//have to set this up later
-				pob->u.this_pointer = nil;
+				pob->u.this_pointer = NULL;
 			}else{
 				pob->u.dataspace = new Objectdata[t->dataspace_size];
 			}
@@ -1297,7 +1292,7 @@ bool OcReadChkPnt::objectdata() {
 			n = arrayinfo(sym, od);
 			od[sym->u.oboff].ppstr = new char*[n];
 			for (i=0; i < n; ++i) {
-				od[sym->u.oboff].ppstr[i] = nil;
+				od[sym->u.oboff].ppstr[i] = NULL;
 				Get(od[sym->u.oboff].ppstr[i]);
 			}
 			break;
@@ -1338,13 +1333,13 @@ long OcReadChkPnt::arrayinfo(Symbol* s, Objectdata* od) {
 		}
 	}
 	Arrayinfo** ap;
-	if (od == nil) {
+	if (od == NULL) {
 		ap = &s->arayinfo;
 	}else{
 		ap = &od[s->u.oboff + 1].arayinfo;
 	}
 	if (nsub == 0) {
-		*ap = nil;
+		*ap = NULL;
 		return 1;
 	}
 	if (nsub == -1) {
@@ -1352,7 +1347,7 @@ long OcReadChkPnt::arrayinfo(Symbol* s, Objectdata* od) {
 		if (*ap) {
 			(*ap)->refcount++;
 		}
-		return  long(hoc_total_array_data(s, nil));
+		return  long(hoc_total_array_data(s, NULL));
 	}
 	Arrayinfo* a = (Arrayinfo*)hoc_Emalloc(sizeof(Arrayinfo) + nsub*sizeof(int));
 	if (!a) {
@@ -1360,7 +1355,7 @@ long OcReadChkPnt::arrayinfo(Symbol* s, Objectdata* od) {
 	}
 	*ap = a;
 	a->refcount = 1;
-	a->a_varn = nil;
+	a->a_varn = NULL;
 	a->nsub = nsub;
 
 	long n = 1;

@@ -10,9 +10,9 @@ class SectionList;
 class ShapePlot : public ShapeScene {
 public:
 	enum {TIME=ShapeScene::EXTRASHAPETOOL, SPACE, SHAPE};
-	ShapePlot(Symbol* = nil, SectionList* = nil);
+	ShapePlot(Symbol* = NULL, SectionList* = NULL);
 	virtual ~ShapePlot();
-	virtual void observe(SectionList* = nil);
+	virtual void observe(SectionList* = NULL);
 	virtual void erase_all();
 	virtual void draw(Canvas*, const Allocation&) const;
 	void variable(Symbol*);

@@ -3,14 +3,15 @@
 
 #include	"section.h"
 #include	"membdef.h"
-#include	"membfunc.h"
+#include	"nrniv_mf.h"
 
-static char *mechanism[] = { "0", "capacitance", "cm",0, "i_cap", 0,0 };
-static cap_alloc(), cap_init();
+static const char *mechanism[] = { "0", "capacitance", "cm",0, "i_cap", 0,0 };
+static void cap_alloc(Prop*);
+static void cap_init(NrnThread*, Memb_list*, int);
 
-capac_reg_() {
+void capac_reg_(void) {
 	/* all methods deal with capacitance in special ways */
-	register_mech(mechanism, cap_alloc, (Pfri)0, (Pfri)0, (Pfri)0, cap_init, -1, 1);
+	register_mech(mechanism, cap_alloc, (Pvmi)0, (Pvmi)0, (Pvmi)0, cap_init, -1, 1);
 }
 
 #define cm  vdata[i][0]
@@ -44,7 +45,7 @@ void nrn_cap_jacob(NrnThread* _nt, Memb_list* ml) {
 	}
 }
 
-static cap_init(NrnThread* _nt, Memb_list* ml, int type ) {
+static void cap_init(NrnThread* _nt, Memb_list* ml, int type ) {
 	int count = ml->nodecount;
 	double **vdata = ml->data;
 	int i;
@@ -53,7 +54,7 @@ static cap_init(NrnThread* _nt, Memb_list* ml, int type ) {
 	}
 }
 
-nrn_capacity_current(NrnThread* _nt, Memb_list* ml) {
+void nrn_capacity_current(NrnThread* _nt, Memb_list* ml) {
 	int count = ml->nodecount;
 	Node **vnode = ml->nodelist;
 	double **vdata = ml->data;
@@ -78,7 +79,7 @@ nrn_capacity_current(NrnThread* _nt, Memb_list* ml) {
 }
 
 #if CVODE
-nrn_mul_capacity(NrnThread* _nt, Memb_list* ml) {
+void nrn_mul_capacity(NrnThread* _nt, Memb_list* ml) {
 	int count = ml->nodecount;
 	Node **vnode = ml->nodelist;
 	double **vdata = ml->data;
@@ -99,7 +100,7 @@ nrn_mul_capacity(NrnThread* _nt, Memb_list* ml) {
 	}
 }
 
-nrn_div_capacity(NrnThread* _nt, Memb_list* ml) {
+void nrn_div_capacity(NrnThread* _nt, Memb_list* ml) {
 	int count = ml->nodecount;
 	Node **vnode = ml->nodelist;
 	double **vdata = ml->data;
@@ -124,8 +125,7 @@ nrn_div_capacity(NrnThread* _nt, Memb_list* ml) {
 
 /* the rest can be constructed automatically from the above info*/
 
-static cap_alloc(p)
-	Prop *p;
+static void cap_alloc(Prop* p)
 {
 	double *pd;
 #define nparm 2

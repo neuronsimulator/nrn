@@ -3,9 +3,7 @@
 #include <stdlib.h>
 #include "lineq.h"
 	
-subrow(pivot, rowsub)
-   struct elm *pivot, *rowsub;
-{
+void subrow(struct elm *pivot, struct elm*rowsub) {
 	unsigned row;
 	double r;
 	register struct elm *el;
@@ -20,10 +18,7 @@ subrow(pivot, rowsub)
 			 -= el->value * r;
 }
 
-int
-remelm(el)
-   struct elm *el;
-{
+void remelm(struct elm *el) {
 	if (el->c_right != ELM0)
 		(el->c_right)->c_left = el->c_left;
 	if (el->c_left != ELM0)

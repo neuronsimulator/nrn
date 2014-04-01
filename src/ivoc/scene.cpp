@@ -80,7 +80,7 @@ void SceneInfo::pinfo() {
 }
 
 SceneInfo::SceneInfo() {
-	glyph_ = nil;
+	glyph_ = NULL;
 	x_ = 0;
 	y_ = 0;
 	status_ = 0;
@@ -177,7 +177,7 @@ const Color* Scene::default_background() {
 		String c;
 		if (!s->find_attribute("Scene_background", c )
 		   || (scene_background_ = Color::lookup(
-		       Session::instance()->default_display(), c)) == nil)
+		       Session::instance()->default_display(), c)) == NULL)
 		{
 			scene_background_ = Color::lookup(
 				Session::instance()->default_display(), "#ffffff" );
@@ -193,7 +193,7 @@ const Color* Scene::default_foreground() {
 		String c;
 		if (!s->find_attribute("Scene_foreground", c )
 		   || (scene_foreground_ = Color::lookup(
-		       Session::instance()->default_display(), c)) == nil)
+		       Session::instance()->default_display(), c)) == NULL)
 		{
 			scene_foreground_ = Color::lookup(
 				Session::instance()->default_display(), "#000000" );
@@ -206,7 +206,7 @@ const Color* Scene::default_foreground() {
 Scene::Scene(Coord x1, Coord y1, Coord x2, Coord y2, Glyph* bg) : Glyph() {
     drawing_fixed_item_ = false;
     tool_ = NOTOOL;
-    background_ = nil;
+    background_ = NULL;
     background(bg);
     info_ = new SceneInfo_List();
     views_ = new XYView_PtrList();
@@ -241,9 +241,9 @@ Scene::Scene(Coord x1, Coord y1, Coord x2, Coord y2, Glyph* bg) : Glyph() {
 //	printf ("mbs_=%g\n", mbs_);
     }
     scene_list->append(this);
-    picker_ = nil;
+    picker_ = NULL;
     mark_ = false;
-    hoc_obj_ptr_ = nil;
+    hoc_obj_ptr_ = NULL;
 }
 
 void Scene::background(Glyph* bg) {
@@ -251,7 +251,7 @@ void Scene::background(Glyph* bg) {
 	if (bg) {
 	    background_ = bg;
 	}else{
-		background_ = new Background(nil, default_background());
+		background_ = new Background(NULL, default_background());
 	}
 	Resource::ref(background_);
 }
@@ -280,7 +280,7 @@ XYView* Scene::sceneview(int i) const {
 	if(views_->count()) {
 		return views_->item(i);
 	}else{
-		return nil;
+		return NULL;
 	}
 }
 
@@ -332,7 +332,7 @@ Scene::~Scene() {
 	Resource::unref(info.glyph_);
     }
     delete info_;
-    info_ = nil;
+    info_ = NULL;
     Resource::unref(background_);
     if (picker_) {
     	delete picker_;
@@ -392,7 +392,7 @@ void Scene::dismiss() {
 		OcViewGlyph* g = views_->item(i)->parent();
 		if (g && g->has_window()) {
 			g->window()->dismiss();
-			g->window(nil);
+			g->window(NULL);
 		}
 	}
 }
@@ -582,7 +582,7 @@ GlyphIndex Scene::glyph_index(const Glyph* g) {
 void Scene::request(Requisition& req) const {
 //printf("Scene::request\n");
 #if 0
-    if (background_ != nil) {
+    if (background_ != NULL) {
         background_->request(requisition);
     }
 #endif
@@ -618,7 +618,7 @@ void candam(Canvas* c) {
 void Scene::draw(Canvas* canvas, const Allocation& a) const {
 //printf("Scene::draw");
 //candam(canvas);
-    if (background_ != nil) {
+    if (background_ != NULL) {
     	background_->draw(canvas, a);
     }
 	// the menu selection area
@@ -640,7 +640,7 @@ void Scene::draw(Canvas* canvas, const Allocation& a) const {
         SceneInfo& info = info_->item_ref(index);
 	if (info.status_ & SceneInfoFixed) {
 	    are_fixed = true;
-	}else if (info.glyph_ != nil && (info.status_ & SceneInfoShowing)) {
+	}else if (info.glyph_ != NULL && (info.status_ & SceneInfoShowing)) {
             Allocation& a = info.allocation_;
             Extension b;
 	    b.set(canvas, a);
@@ -663,7 +663,7 @@ void Scene::draw(Canvas* canvas, const Allocation& a) const {
     for (GlyphIndex index = 0; index < count; ++index) {
         SceneInfo& info = info_->item_ref(index);
 	if ((info.status_ & SceneInfoFixed)
-	  && info.glyph_ != nil && (info.status_ & SceneInfoShowing)) {
+	  && info.glyph_ != NULL && (info.status_ & SceneInfoShowing)) {
 		Allocation a = info.allocation_;
 		Coord x, y;
 		if (!(info.status_ & SceneInfoViewFixed)) {
@@ -689,7 +689,7 @@ void Scene::draw(Canvas* canvas, const Allocation& a) const {
 }
 
 void Scene::print(Printer* canvas, const Allocation& a) const {
-    if (background_ != nil) {
+    if (background_ != NULL) {
     	background_->print(canvas, a);
     }
     GlyphIndex count = info_->count();
@@ -698,7 +698,7 @@ void Scene::print(Printer* canvas, const Allocation& a) const {
         SceneInfo& info = info_->item_ref(index);
 	if (info.status_ & SceneInfoFixed) {
 	    are_fixed = true;
-	}else if (info.glyph_ != nil && (info.status_ & SceneInfoShowing)) {
+	}else if (info.glyph_ != NULL && (info.status_ & SceneInfoShowing)) {
             Allocation& a = info.allocation_;
             Extension b;
 	    b.set(canvas, a);
@@ -718,7 +718,7 @@ void Scene::print(Printer* canvas, const Allocation& a) const {
     for (GlyphIndex index = 0; index < count; ++index) {
         SceneInfo& info = info_->item_ref(index);
 	if ((info.status_ & SceneInfoFixed)
-	  && info.glyph_ != nil && (info.status_ & SceneInfoShowing)) {
+	  && info.glyph_ != NULL && (info.status_ & SceneInfoShowing)) {
 		Allocation a = info.allocation_;
 		Coord x, y;
 		if (!(info.status_ & SceneInfoViewFixed)) {
@@ -756,14 +756,14 @@ void Scene::pick(Canvas* c, const Allocation& a, int depth, Hit& h) {
     if (picker_ && picker()->pick(c, this, depth, h)) {
     	return;
     }
-    if (background_ != nil) {
+    if (background_ != NULL) {
         background_->pick(c, a, depth, h);
     }
     GlyphIndex count = info_->count();
 #if 0
     for (GlyphIndex index = 0; index < count; ++index) {
         SceneInfo& info = info_->item_ref(index);
-        if (info.glyph_ != nil && (info.status_ & SceneInfoShowing)) {
+        if (info.glyph_ != NULL && (info.status_ & SceneInfoShowing)) {
             Allocation& a = info.allocation_;
             if (
                 h.right() >= a.left() && h.left() < a.right()
@@ -785,7 +785,7 @@ void Scene::pick(Canvas* c, const Allocation& a, int depth, Hit& h) {
         SceneInfo& info = info_->item_ref(index);
 	if (info.status_ & SceneInfoFixed) {
 	    are_fixed = true;
-	}else if (info.glyph_ != nil && (info.status_ & SceneInfoShowing)) {
+	}else if (info.glyph_ != NULL && (info.status_ & SceneInfoShowing)) {
             Allocation& a = info.allocation_;
             if (
                 h.right() >= a.left() - epsx  && h.left() < a.right() + epsx
@@ -807,7 +807,7 @@ void Scene::pick(Canvas* c, const Allocation& a, int depth, Hit& h) {
     for (GlyphIndex index = 0; index < count; ++index) {
         SceneInfo& info = info_->item_ref(index);
 	if ((info.status_ & SceneInfoFixed)
-	  && info.glyph_ != nil && (info.status_ & SceneInfoShowing)) {
+	  && info.glyph_ != NULL && (info.status_ & SceneInfoShowing)) {
 		Allocation a = info.allocation_;
 		Coord l,r,t,b;
 		if (info.status_ & SceneInfoViewFixed) {

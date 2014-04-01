@@ -32,7 +32,9 @@ extern unsigned *eqord;			/* row order for pivots */
 extern unsigned *varord;			/* column order for pivots */
 extern double *rhs;			/* initially- right hand side
 					finally - answer */
-
-extern int matsol();
-extern struct elm *getelm();
-
+extern int matsol(void);
+extern struct elm *getelm(struct elm*, unsigned, unsigned);
+extern void remelm(struct elm*);
+extern void subrow(struct elm*, struct elm*);
+extern void bksub(void);
+extern void prmat(void);

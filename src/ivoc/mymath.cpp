@@ -69,14 +69,14 @@ static Member_func members[] = {
 };
 
 static void* cons(Object*) {
-	return nil;
+	return NULL;
 }
 
 static void destruct(void*) {
 }
 
 void GUIMath_reg() {
-	class2oc("GUIMath", cons, destruct, members);
+	class2oc("GUIMath", cons, destruct, members, NULL, NULL, NULL);
 }
 
 double MyMath::anint(double x) {

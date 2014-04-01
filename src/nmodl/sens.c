@@ -103,7 +103,7 @@ static List *parmlist;
 extern Symbol *indepsym;
 int sens_parm = 0;
 
-sensparm(qparm)
+void sensparm(qparm)
 	Item *qparm;
 {
 	if (!parmlist)
@@ -112,7 +112,7 @@ sensparm(qparm)
 	sens_parm++;
 }
 
-add_sens_statelist(s)
+void add_sens_statelist(s)
 	Symbol *s;
 {
 	if (!statelist)
@@ -120,7 +120,7 @@ add_sens_statelist(s)
 	Lappendsym(statelist, s);
 }
 
-sensmassage(type, qfun, fn)
+void sensmassage(type, qfun, fn)
 	int type;
 	Item *qfun;
 {

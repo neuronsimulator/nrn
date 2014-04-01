@@ -680,7 +680,7 @@ void nrnbgp_messager_advance() {
 
 BGP_DMASend::BGP_DMASend() {
 	ntarget_hosts_ = 0;
-	target_hosts_ = nil;
+	target_hosts_ = NULL;
 #if 0
 	send2self_ = 0;
 #endif

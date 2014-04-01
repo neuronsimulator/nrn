@@ -23,6 +23,8 @@ static char RCSid[] = "vsparse.c,v 1.5 1999/01/04 12:46:53 hines Exp";
 #include <malloc.h>
 #endif
 
+extern void _modl_set_dt(double);
+
 #define SW_DATA 0
 #define SOLVE 0
 #define _INSTANCE_LOOP for (_ix = _ix1; _ix < _ix2; ++_ix)
@@ -119,8 +121,8 @@ static int vector_matsol();
 static Elm *getelm();
 
 
-static sparseobj2local();
-static local2sparseobj();
+static void sparseobj2local();
+static void local2sparseobj();
 static double d;
 
 double * _vector_getelm( row, col)
@@ -205,19 +207,19 @@ SparseObj * create_sparseobj(ninst,neqn,linflag)
   return so;
 }
 
-static subrow();
-static bksub();
-static int free_elm();
-static create_coef_list();
-static init_coef_list();
+static void subrow();
+static void bksub();
+static void free_elm();
+static void create_coef_list();
+static void init_coef_list();
 static void increase_order();
 static void reduce_order();
-static spar_minorder();
-static get_next_pivot();
-static freelist();
-static check_assert();
-static re_link();
-static delete();
+static void spar_minorder();
+static void get_next_pivot();
+static void freelist();
+static void check_assert();
+static void re_link();
+static void delete();
 
 /*-----------------------------------------------------------------------------
  * THIS NEEDS UPDATING
@@ -254,7 +256,7 @@ static delete();
  *
 */
 
-_vector_sparse(base, bound, count, jacobp, spacep, sparseobj, neqns, state,
+int _vector_sparse(base, bound, count, jacobp, spacep, sparseobj, neqns, state,
 	       deriv, data, t, delta_t, vfun, fun, rhsp, linflag)
      int base;			/* first instances */
      int bound;			/* last instance + 1 */
@@ -487,7 +489,7 @@ static int vector_matsol(so,_ix1,_ix2,converged)
 }
 
 
-static subrow(_ix1, _ix2, pivot, rowsub)
+static void subrow(_ix1, _ix2, pivot, rowsub)
          int _ix1, _ix2;
           Elm *pivot, *rowsub;
 {
@@ -508,7 +510,7 @@ static subrow(_ix1, _ix2, pivot, rowsub)
   }
 }
 
-static bksub(_ix1, _ix2)
+static void bksub(_ix1, _ix2)
          int _ix1, _ix2;
 {
   int _ix;
@@ -527,7 +529,7 @@ static bksub(_ix1, _ix2)
     }
 }
 
-static prmat()
+static void prmat()
 {
 	unsigned i, j;
 	Elm *el;
@@ -594,7 +596,7 @@ static void initeqn(_ix1, _ix2, count, maxeqn) /* reallocate space for matrix */
 }
 
 
-static int free_elm() {
+static void free_elm() {
 	unsigned i;
 	Elm *el;
 	
@@ -719,7 +721,7 @@ static Elm * getelm( row, col, new)
 	return new;
 }
 
-static create_coef_list(_ix1, _ix2, count, n, fun)
+static void create_coef_list(_ix1, _ix2, count, n, fun)
 	int _ix1, _ix2, n, count;
 	int (*fun)();
 {
@@ -733,7 +735,7 @@ static create_coef_list(_ix1, _ix2, count, n, fun)
 }
 
 
-static init_coef_list(_ix1, _ix2) 
+static void init_coef_list(_ix1, _ix2) 
 	int _ix1, _ix2;
 {
         int _ix;
@@ -751,9 +753,9 @@ static init_coef_list(_ix1, _ix2)
 static Item *newitem();
 static List *newlist();
 
-static insert();
+static void insert();
 
-static init_minorder() {
+static void init_minorder() {
 	/* matrix has been set up. Construct the orderlist and orderfind
 	   vector.
 	*/
@@ -800,7 +802,7 @@ static void reduce_order(row) unsigned row; {
 	insert(order);
 }
 
-static spar_minorder() { /* Minimum ordering algorithm to determine the order
+static void spar_minorder() { /* Minimum ordering algorithm to determine the order
 			that the matrix should be solved. Also make sure
 			all needed elements are present.
 			This does not mess up the matrix
@@ -816,7 +818,7 @@ static spar_minorder() { /* Minimum ordering algorithm to determine the order
 	check_assert();
 }
 
-static get_next_pivot(i) unsigned i; {
+static void get_next_pivot(i) unsigned i; {
 	/* get varord[i], etc. from the head of the orderlist. */
 	Item *order;
 	Elm *pivot, *el;
@@ -901,7 +903,7 @@ newlist()
 	return (List *)i;
 }
 
-static freelist(list)	/*free the list but not the elements*/
+static void freelist(list)	/*free the list but not the elements*/
 	List *list;
 {
 	Item *i1, *i2;
@@ -912,7 +914,7 @@ static freelist(list)	/*free the list but not the elements*/
 	Free(list);
 }
 
-static linkitem(item, i)	/*link i before item*/
+static void linkitem(item, i)	/*link i before item*/
 	Item *item;
 	Item *i;
 {
@@ -923,7 +925,7 @@ static linkitem(item, i)	/*link i before item*/
 }
 
 
-static insert(item)
+static void insert(item)
 	Item *item;
 {
 	Item *i;
@@ -936,7 +938,7 @@ static insert(item)
 	linkitem(i, item);
 }
 
-static delete(item)
+static void delete(item)
 	Item *item;
 {
 		
@@ -947,7 +949,7 @@ static delete(item)
 }
 
 static
-check_assert() {
+void check_assert() {
 	/* check that all links are consistent */
 	unsigned i;
 	Elm *el;
@@ -978,7 +980,7 @@ check_assert() {
 
 	/* at this point row links are out of order for diag[i]->col
 	   and col links are out of order for diag[i]->row */
-static re_link(i) unsigned i; {
+static void re_link(i) unsigned i; {
 
 	Elm *el, *dright, *dleft, *dup, *ddown, *elnext;
 	
@@ -1032,7 +1034,7 @@ static re_link(i) unsigned i; {
 	}
 }
 
-static sparseobj2local(so)
+static void sparseobj2local(so)
 	SparseObj* so;
 {
 	rowst = so->rowst;
@@ -1050,7 +1052,7 @@ static sparseobj2local(so)
   r_subrow =  so->r_subrow;
 }
 
-static local2sparseobj(so)
+static void local2sparseobj(so)
 	SparseObj* so;
 {
 	so->rowst = rowst;

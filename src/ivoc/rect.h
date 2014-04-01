@@ -14,7 +14,7 @@ class Color;
 
 class Appear: public Glyph {
 protected:
-	Appear(const Color* color=nil, const Brush* brush=nil);
+	Appear(const Color* color=NULL, const Brush* brush=NULL);
 public:
 	virtual ~Appear();
 	const Color* color() const {return color_;}
@@ -38,7 +38,7 @@ private:
 class Rect : public Appear {
 public:
 	Rect(Coord left, Coord bottom, Coord width, Coord height,
-		const Color* c = nil, const Brush* b = nil);
+		const Color* c = NULL, const Brush* b = NULL);
 	virtual void request(Requisition&) const;
 	virtual void allocate(Canvas*, const Allocation&, Extension&);
 	virtual void draw(Canvas*, const Allocation&) const;
@@ -59,9 +59,9 @@ private:
 
 class Line : public Appear  {
 public:
-	Line(Coord dx, Coord dy, const Color* color=nil, const Brush* brush=nil);
+	Line(Coord dx, Coord dy, const Color* color=NULL, const Brush* brush=NULL);
 	Line(Coord dx, Coord dy, float x_align, float y_align,
-		 const Color* color=nil, const Brush* brush=nil);
+		 const Color* color=NULL, const Brush* brush=NULL);
 	virtual ~Line();
 	
 	virtual void request(Requisition&) const;
@@ -75,7 +75,7 @@ private:
 
 class Circle : public Appear {
 public:
-	Circle(float radius, bool filled=false, const Color* color=nil, const Brush* brush=nil);
+	Circle(float radius, bool filled=false, const Color* color=NULL, const Brush* brush=NULL);
 	virtual ~Circle();
 	
 	virtual void request(Requisition&) const;
@@ -88,7 +88,7 @@ private:
 
 class Triangle : public Appear {
 public:
-	Triangle(float side, bool filled=false, const Color* color=nil, const Brush* brush=nil);
+	Triangle(float side, bool filled=false, const Color* color=NULL, const Brush* brush=NULL);
 	virtual ~Triangle();
 	
 	virtual void request(Requisition&) const;
@@ -106,7 +106,7 @@ private:
 
 class Rectangle : public Appear {
 public:
-	Rectangle(float height, float width, bool filled=false, const Color* color=nil, const Brush* brush=nil);
+	Rectangle(float height, float width, bool filled=false, const Color* color=NULL, const Brush* brush=NULL);
 	virtual ~Rectangle();
 	
 	virtual void request(Requisition&) const;

@@ -20,7 +20,6 @@ extern "C" {
 // from nrnoc
 #include "membfunc.h"
 #include "parse.h"
-extern char* sec_and_position(Section* sec, Node* nd);
 extern Symlist *hoc_built_in_symlist;
 extern Symbol **pointsym;
 extern double* point_process_pointer(Point_process*, Symbol*, int);
@@ -43,8 +42,8 @@ void nrnpointmenu();
 }
 
 #if HAVE_IV
-static void pnodemenu(Prop* p1, double, int type, const char* path, MechSelector* = nil);
-static void mech_menu(Prop* p1, double, int type, const char* path, MechSelector* = nil);
+static void pnodemenu(Prop* p1, double, int type, const char* path, MechSelector* = NULL);
+static void mech_menu(Prop* p1, double, int type, const char* path, MechSelector* = NULL);
 static void point_menu(Object*, int);
 #endif
 
@@ -55,7 +54,7 @@ IFGUI
 ENDGUI
 #endif
 
-	ret(1.);
+	hoc_retpushx(1.);
 }
 
 void nrnsecmenu() {
@@ -64,7 +63,7 @@ IFGUI
 	section_menu(chkarg(1,-1.,1.), (int)chkarg(2,1.,3.));
 ENDGUI
 #endif
-	ret(1.);
+	hoc_retpushx(1.);
 }
 
 #ifdef ultrix
@@ -101,7 +100,7 @@ IFGUI
 		}
 	}
 	hoc_ivmenu(0);
-	ret(1.);
+	hoc_retpushx(1.);
 	return;
    }
 	char* name = gargstr(1);
@@ -115,7 +114,7 @@ IFGUI
 		    		++cnt;
 			}
 		}
-		ret(double(cnt));
+		hoc_retpushx(double(cnt));
 		return;
 	}
 	sprintf(buf, "%s (Globals)", name);
@@ -142,18 +141,18 @@ IFGUI
 	hoc_ivpanelmap();
 ENDGUI
 #endif
-	ret(1.);
+	hoc_retpushx(1.);
 }
 
 void nrnmechmenu() {
-	ret(1.);
+	hoc_retpushx(1.);
 }
 
 #if HAVE_IV
 void section_menu(double x1, int type, MechSelector* ms)
 {
 	char buf[200];
-	char* name;
+	const char* name;
 	Section *sec;
 	Prop *p;
 	Node* node;
@@ -210,7 +209,7 @@ void section_menu(double x1, int type, MechSelector* ms)
 			sprintf(buf,"%s.%s", sname.string(), "v");
 			hoc_ivvalue("v",buf);
 		}else{
-sprintf(buf,"v(%g)", x); hoc_ivpvalue("v",hoc_val_pointer(buf), nil, hoc_lookup("v")->extra);
+sprintf(buf,"v(%g)", x); hoc_ivpvalue("v",hoc_val_pointer(buf), false, hoc_lookup("v")->extra);
 		}
 	}
 	
@@ -333,7 +332,7 @@ IFGUI
 		hoc_ivbutton(sp->name, buf);
 	}
 	hoc_ivmenu(0);
-	ret(1.);
+	hoc_retpushx(1.);
 	return;
    }
 
@@ -380,7 +379,7 @@ hoc_ivbutton(sec_and_position(pp->sec,pp->node), buf);
    }
 ENDGUI
 #endif
-	ret(1.);
+	hoc_retpushx(1.);
 }
 
 void nrnpointmenu()
@@ -391,7 +390,7 @@ IFGUI
 	if (hoc_argtype(1) == OBJECTVAR) {
 		ob = *hoc_objgetarg(1);
 	}else{
-		ob = (Object*)((unsigned long)(*getarg(1)));
+		ob = (Object*)((size_t)(*getarg(1)));
 	}
 	Symbol* sym = hoc_table_lookup(ob->ctemplate->sym->name,
 			ob->ctemplate->symtable);
@@ -405,7 +404,7 @@ IFGUI
 	point_menu(ob, make_label);
 ENDGUI
 #endif
-	ret(1.);
+	hoc_retpushx(1.);
 }
 
 #if HAVE_IV
@@ -486,7 +485,7 @@ static void point_menu(Object* ob, int make_label) {
 static double ms_panel(void* v) {
 #if HAVE_IV
 IFGUI
-	char* label = nil;
+	char* label = NULL;
 	if (ifarg(1)) {
 		label = gargstr(1);
 	}
@@ -620,11 +619,11 @@ static Member_func ms_members[] = {
 };
 
 void MechanismStandard_reg() {
-	class2oc("MechanismStandard", ms_cons, ms_destruct, ms_members);
+	class2oc("MechanismStandard", ms_cons, ms_destruct, ms_members, NULL, NULL, NULL);
 }
 
 MechanismStandard::MechanismStandard(const char* name, int vartype) {
-	glosym_ = nil;
+	glosym_ = NULL;
 	np_ = new NrnProperty(name);
 	name_cnt_ = 0;
 	vartype_ = vartype; // vartype=0 means all but not globals, -1 means globals
@@ -944,7 +943,7 @@ static double mt_is_artificial(void* v) {
 static Object** mt_pp_begin(void* v) {
 	MechanismType* mt = (MechanismType*)v;
 	Point_process* pp = mt->pp_begin();
-	Object* obj = nil;
+	Object* obj = NULL;
 	if (pp) {
 		obj = pp->ob;
 	}
@@ -954,7 +953,7 @@ static Object** mt_pp_begin(void* v) {
 static Object** mt_pp_next(void* v) {
 	MechanismType* mt = (MechanismType*)v;
 	Point_process* pp = mt->pp_next();
-	Object* obj = nil;
+	Object* obj = NULL;
 	if (pp) {
 		obj = pp->ob;
 	}
@@ -991,7 +990,7 @@ static Member_ret_obj_func mt_retobj_members[] = {
 };
 void MechanismType_reg() {
 	class2oc("MechanismType", mt_cons, mt_destruct, mt_members,
-		nil, mt_retobj_members);
+		NULL, mt_retobj_members, NULL);
 }
 
 /* static */ class MechTypeImpl {
@@ -1058,7 +1057,7 @@ Point_process* MechanismType::pp_begin() {
 }
 
 Point_process* MechanismType::pp_next() {
-	Point_process* pp = nil;
+	Point_process* pp = NULL;
 	bool done = mti_->p_iter_ == 0;
 	while (!done) {
 		if (mti_->p_iter_->type == mti_->type_[mti_->select_]) {
@@ -1066,7 +1065,7 @@ Point_process* MechanismType::pp_next() {
 			done = true;
 			// but if it does not belong to this section
 			if (pp->sec != mti_->sec_iter_) {
-				pp = nil;
+				pp = NULL;
 				done = false;
 			}
 		}

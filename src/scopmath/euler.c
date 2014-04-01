@@ -61,7 +61,7 @@ static char RCSid[] =
 #include "errcodes.h"
 
 /* ARGSUSED */
-euler(_ninits, neqn, var, der, p, t, dt, func, work)
+int euler(_ninits, neqn, var, der, p, t, dt, func, work)
 int _ninits;
 double p[], *t, dt, **work; int var[]; int der[];
 #define der_(arg)  p[der[arg]]

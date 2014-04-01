@@ -26,7 +26,7 @@ extern "C"{
 
 #if !defined(carbon)
 char * mktemp(char *){
- 	return nil;
+ 	return NULL;
 }
 #endif
 
@@ -110,7 +110,7 @@ bool mac_open_dll(const char* name, FSSpec* fs) {
 	}
 //	printf("successfully loaded %s\n", name);
 //	printf("mainaddr=%p\n", mainaddr);
-	mainaddr = nil;
+	mainaddr = NULL;
 	long cnt;
 	myErr = CountSymbols(id, &cnt);
 //	printf("symbols exported = %d\n", cnt);
@@ -129,7 +129,7 @@ bool mac_open_dll(const char* name, FSSpec* fs) {
 	if (mainaddr) {
 		Symlist* sav = hoc_symlist;
 		hoc_symlist = hoc_built_in_symlist;
-		hoc_built_in_symlist = nil;
+		hoc_built_in_symlist = NULL;
 		(*(Pfri)mainaddr)();
 		hoc_built_in_symlist = hoc_symlist;
 		hoc_symlist = sav;

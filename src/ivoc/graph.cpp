@@ -314,11 +314,11 @@ double ivoc_gr_menu_tool(void* v) {
 #if HAVE_IV
 IFGUI
     if (hoc_is_object_arg(2)) { // python style
-	HocPanel::paneltool(gargstr(1), nil, nil, ((Scene*)v)->picker(),
-		*hoc_objgetarg(2), ifarg(3) ? *hoc_objgetarg(3) : nil);
+	HocPanel::paneltool(gargstr(1), NULL, NULL, ((Scene*)v)->picker(),
+		*hoc_objgetarg(2), ifarg(3) ? *hoc_objgetarg(3) : NULL);
     }else{
 	HocPanel::paneltool(gargstr(1), gargstr(2),
-		ifarg(3) ? gargstr(3) : nil, ((Scene*)v)->picker());
+		ifarg(3) ? gargstr(3) : NULL, ((Scene*)v)->picker());
     }
 ENDGUI
 	return 1.;
@@ -463,11 +463,11 @@ static void gr_add(void* v, bool var) {
 IFGUI
 	Graph* g = (Graph*)v;
 	GraphLine* gl;
-	Object* obj = nil;
-	char* lab = nil;
-	char* expr = nil;
+	Object* obj = NULL;
+	char* lab = NULL;
+	char* expr = NULL;
 	int ioff = 0; // deal with 0, 1, or 2 optional arguments after first
-	double* pd = nil; // pointer to varname if second arg is varname string
+	double* pd = NULL; // pointer to varname if second arg is varname string
 	int fixtype = g->labeltype();
 	// organize args for backward compatibility and the new
 	// addexpr("label, "expr", obj,.... style
@@ -648,7 +648,7 @@ double ivoc_gr_begin_line(void* v) {
 IFGUI
 	Graph* g = (Graph*)v;
 	int i = 1;
-	char* s = nil;
+	char* s = NULL;
 	if (ifarg(i) && hoc_is_str_arg(1)) {
 		s = gargstr(i++);
 	}
@@ -813,7 +813,7 @@ IFGUI
 			int(*getarg(4)), *getarg(5), *getarg(6), *getarg(7),
 			colors->color(int(*getarg(8))));
 	}else if (ifarg(2)) {
-		char* s = nil;
+		char* s = NULL;
 		if (ifarg(3)) {
 			s = gargstr(3);
 		}
@@ -1114,7 +1114,7 @@ static Member_func gr_members[] = {
 
 static void* gr_cons(Object* ho) {
 #if HAVE_IV
-	Graph* g = nil;
+	Graph* g = NULL;
 IFGUI
 	int i = 1;
 	if (ifarg(1)) {
@@ -1140,7 +1140,7 @@ ENDGUI
 }
 void Graph_reg() {
 //printf("Graph_reg\n");
-	class2oc("Graph", gr_cons, gr_destruct, gr_members);
+	class2oc("Graph", gr_cons, gr_destruct, gr_members, NULL, NULL, NULL);
 #if HAVE_IV
 IFGUI
 	colors = new ColorPalette();
@@ -1156,7 +1156,7 @@ static const char* colorname[] = { "white", "black", "red", "blue", "green",
 ColorPalette::ColorPalette() {
 	int i;
 	for (i=0; i < COLOR_SIZE && colorname[i]; ++i) {
-		color_palette[i] = nil;
+		color_palette[i] = NULL;
 		color(i, colorname[i]);
 	}
 
@@ -1182,11 +1182,11 @@ IFGUI
 	if (i < 0) i = 1;
 	i = i%COLOR_SIZE;
 	return color_palette[i];	
-ENDGUI else return nil;
+ENDGUI else return NULL;
 }
 const Color* ColorPalette::color(int i, const char* name) {
 const Color* c = Color::lookup(Session::instance()->default_display(), name);
-	if (c == nil) {
+	if (c == NULL) {
 			printf("couldn't lookup color \"%s\", you must be missing the\n\
 colormap.ini file or else the name isn't in it\n", name);
 	}
@@ -1221,7 +1221,7 @@ static int brush_pattern[] = {
 BrushPalette::BrushPalette() {
 	int i;
 	for (i=0; i < BRUSH_SIZE; ++i) {
-		brush_palette[i] = nil;
+		brush_palette[i] = NULL;
 	}
 	i = 0;
 	for (int j=0; j < 5; ++j) {
@@ -1243,7 +1243,7 @@ IFGUI
 	if (i < 0) i = 1;
 	i = i%BRUSH_SIZE;
 	return brush_palette[i];	
-ENDGUI else return nil;
+ENDGUI else return NULL;
 }
 const Brush* BrushPalette::brush(int i, int pattern, Coord width) {
 	Brush* b;
@@ -1295,16 +1295,16 @@ implementActionCallback(Graph);
 #define YSCENE 200.
 Graph::Graph(bool b) : Scene(0,0,XSCENE,YSCENE) {
 	loc_ = 0;
-	x_expr_ = nil;
-	x_pval_ = nil;
-	var_name_ = nil;
-	rvp_ = nil;
-	cross_action_ = nil;
+	x_expr_ = NULL;
+	x_pval_ = NULL;
+	var_name_ = NULL;
+	rvp_ = NULL;
+	cross_action_ = NULL;
 	vector_copy_ = false;
 	family_on_ = false;
-	family_label_ = nil;
+	family_label_ = NULL;
 	family_cnt_ = 0;
-	current_polyline_ = nil;
+	current_polyline_ = NULL;
 	label_fixtype_ = 2;
 	label_scale_ = 1.;
 	label_x_align_ = 0;
@@ -1313,13 +1313,13 @@ Graph::Graph(bool b) : Scene(0,0,XSCENE,YSCENE) {
 	label_y_ = 1;
 	label_n_ = 0;
 	picker();
-	picker()->bind_select((OcHandler*)nil);
-	MenuItem* mi = picker()->add_radio_menu("Crosshair",(OcHandler*)nil, CROSSHAIR);
+	picker()->bind_select((OcHandler*)NULL);
+	MenuItem* mi = picker()->add_radio_menu("Crosshair",(OcHandler*)NULL, CROSSHAIR);
 	mi->state()->set(TelltaleState::is_chosen, true);
 	tool(CROSSHAIR);
 	picker()->add_menu("Plot what?",
 		new ActionCallback(Graph)(this, &Graph::choose_sym));
-	picker()->add_radio_menu("Pick Vector",(OcHandler*)nil, PICK);
+	picker()->add_radio_menu("Pick Vector",(OcHandler*)NULL, PICK);
 	picker()->add_radio_menu("Color/Brush",
 		new ActionCallback(Graph)(this, &Graph::change_prop));
 #if 1
@@ -1345,24 +1345,24 @@ picker()->add_menu("Erase Axis", new ActionCallback(Graph)(this, &Graph::erase_a
 		new ActionCallback(Graph)(this, &Graph::family_label_chooser));
 	picker()->add_menu("Erase",
 		new ActionCallback(Graph)(this, &Graph::erase_lines));
-	picker()->add_radio_menu("Move Text",(OcHandler*)nil, Scene::MOVE);
-	picker()->add_radio_menu("Change Text",(OcHandler*)nil, Graph::CHANGELABEL);
-	picker()->add_radio_menu("Delete", (OcHandler*)nil, Scene::DELETE);
-	sc_ = nil;
+	picker()->add_radio_menu("Move Text",(OcHandler*)NULL, Scene::MOVE);
+	picker()->add_radio_menu("Change Text",(OcHandler*)NULL, Graph::CHANGELABEL);
+	picker()->add_radio_menu("Delete", (OcHandler*)NULL, Scene::DELETE);
+	sc_ = NULL;
 	if (!colors) {
 		colors = new ColorPalette();
 	}
 	if (!brushes) {
 		brushes = new BrushPalette();
 	}
-	color_ = nil;
+	color_ = NULL;
 	color(1);
-	brush_ = nil;
+	brush_ = NULL;
 	brush(1);
 	x_ = new DataVec(200);
 	x_->ref();
 	extension_flushed_ = true;
-	symlist_ = nil;
+	symlist_ = NULL;
 	if (b) {
 		XYView* v = new XYView((Scene*)this, XSCENE, YSCENE);
 		Window* w = new ViewWindow(v, "Graph");
@@ -1432,7 +1432,7 @@ void Graph::help() {
 }
 
 void Graph::delete_label(GLabel* glab) {
-	GraphLine* glin = nil;
+	GraphLine* glin = NULL;
 	GlyphIndex i, cnt;
 	cnt = line_list_.count();
 	for (i = 0; i < cnt; ++i) {
@@ -1575,7 +1575,7 @@ void Graph::ascii_save(ostream& o) const {
 		bool matrix_form = true;
 		int col=0;
 		int xcnt = 0;
-		const DataVec* xvec = nil;
+		const DataVec* xvec = NULL;
 		for (i=0; i < lcnt; ++i) {
 			GraphItem* gi = (GraphItem*)component(i);
 			if (gi->is_polyline()) {
@@ -1990,7 +1990,7 @@ void Graph::mark(Coord x, Coord y, char style, float size,
 void Graph::set_cross_action(const char* cp, bool vector_copy) {
 	if (cross_action_) {
 		delete cross_action_;
-		cross_action_ = nil;
+		cross_action_ = NULL;
 	}
 	if (cp && strlen(cp) > 0) {
 		cross_action_ = new HocCommand(cp);
@@ -2144,7 +2144,7 @@ void Graph::family(const char* s) {
 		}else{
 			remove(glyph_index(family_label_));
 			family_label_->unref();
-			family_label_ = nil;
+			family_label_ = NULL;
 		}
 	}else if (s && s[1]) {
 		family_label_ = label(.95, .95, s, 2, 1, 1, 0, color_);
@@ -2281,7 +2281,7 @@ GLabel* Graph::label(float x, float y, const char* s, float n, int fixtype) {
 	label_y_ = y;
 	label_n_ = n;
 	if (!s) {
-		return nil;
+		return NULL;
 	}
 	return label(x, y, s, (fixtype != -1) ? fixtype : label_fixtype_,
 		label_scale_, label_x_align_, label_y_align_ + label_n_, color_);
@@ -2378,10 +2378,10 @@ void Graph::choose_sym() {
 	if (!sc_) {
 		Style* style = new Style(Session::instance()->style());
 		style->attribute("caption", "Variable to graph");
-		sc_ = new SymChooser(nil, WidgetKit::instance(), style);
+		sc_ = new SymChooser(NULL, WidgetKit::instance(), style);
 		sc_->ref();
 	}
-	Window* w = nil;
+	Window* w = NULL;
 	XYView* v = XYView::current_pick_view();
 	if (!v || v->scene() != (Scene*)this || !v->canvas() || !v->canvas()->window()) {
 		if (view_count() > 0 && sceneview(0)->canvas()
@@ -2438,7 +2438,7 @@ void Graph::family_label_chooser() {
 	if (!fsc_) {
 		Style* style = new Style(Session::instance()->style());
 		style->attribute("caption", "Family label variable");
-		fsc_ = new SymChooser(nil, WidgetKit::instance(), style);
+		fsc_ = new SymChooser(NULL, WidgetKit::instance(), style);
 		fsc_->ref();
 	}
 	while (fsc_->post_for_aligned(XYView::current_pick_view()->canvas()->window(), .5, 1.)) {
@@ -2459,14 +2459,14 @@ GraphLine::GraphLine(const char* expr, DataVec* x, Symlist** symlist, const Colo
 {
 	Oc oc;
 	valid_ = true;
-	obj_ = nil;
-	simgraph_x_sav_ = nil;
+	obj_ = NULL;
+	simgraph_x_sav_ = NULL;
 	if (usepointer) {
 		if (pd) {
 			//char buf[256];
 			//sprintf(buf, "%s", expr);
 			//expr_ = oc.parseExpr(buf, symlist);
-			expr_ = nil;
+			expr_ = NULL;
 			pval_ = pd;
 		}else{
 			expr_ = oc.parseExpr(expr, symlist);
@@ -2515,14 +2515,14 @@ GPolyLine::GPolyLine(GPolyLine* gp) {
 
 void GPolyLine::init(DataVec* x, DataVec* y, const Color* c, const Brush* b) {
 	keepable_ = false;
-	glabel_ = nil;
+	glabel_ = NULL;
 	x_ = x;
 	x_->ref();
 	y_ = y;
 	y_->ref();
-	color_ = nil;
+	color_ = NULL;
 	color(c);
-	brush_ = nil;
+	brush_ = NULL;
 	brush(b);
 	Resource::ref(b);
 }
@@ -2563,7 +2563,7 @@ void GraphLine::simgraph_activate(bool act_) {
 		if (simgraph_x_sav_) {
 			Resource::unref(x_);
 			x_ = simgraph_x_sav_;
-			simgraph_x_sav_ = nil;
+			simgraph_x_sav_ = NULL;
 //printf("simgraph inactivate %s x_->size = %d\n", name(), x_->size());
 		}
 	}
@@ -2581,11 +2581,11 @@ void GraphLine::simgraph_continuous(double tt) {
 
 void GraphLine::update(Observable*) { // *pval_ has been freed
 //printf("GraphLine::update pval_ has been freed\n");
-	pval_ = nil;
+	pval_ = NULL;
 	if (obj_) {
-		expr_ = nil;
+		expr_ = NULL;
 	}
-	obj_ = nil;
+	obj_ = NULL;
 }
 
 bool GraphLine::change_expr(const char* expr, Symlist** symlist) {
@@ -2600,7 +2600,7 @@ bool GraphLine::change_expr(const char* expr, Symlist** symlist) {
 		if (pval_) {
 			Oc oc;
 			oc.notify_pointer_disconnect(this);
-			pval_ = nil;
+			pval_ = NULL;
 		}
 		return true;
 	}else{
@@ -2611,10 +2611,10 @@ bool GraphLine::change_expr(const char* expr, Symlist** symlist) {
 void GPolyLine::label(GLabel* l) {
 	Resource::ref(l);
 	if (l && l->gpl_ && l->gpl_->label()) {
-		l->gpl_->label(nil);
+		l->gpl_->label(NULL);
 	}
 	if (glabel_) {
-		glabel_->gpl_ = nil;
+		glabel_->gpl_ = NULL;
 	}
 	Resource::unref(glabel_);
 	glabel_ = l;
@@ -2629,7 +2629,7 @@ GPolyLine::~GPolyLine() {
 	Resource::unref(brush_);
 	Resource::unref(x_);
 	Resource::unref(y_);
-	label(nil);
+	label(NULL);
 }
 void GPolyLine::erase_line(Scene* s, GlyphIndex i) {
 	GLabel* gl = label();
@@ -2939,7 +2939,7 @@ void GraphLine::save_brush(const Brush* brush) {
 //GLabel
 GLabel::GLabel(const char* s, const Color* color, int fixtype, float size, float x_align, float y_align)
 {
-	gpl_ = nil;
+	gpl_ = NULL;
 	WidgetKit& kit = *WidgetKit::instance();
 	label_ = new Label(s, kit.font(), color);
 	label_->ref();
@@ -3055,7 +3055,7 @@ void GLabel::draw(Canvas* c, const Allocation& a1)const {
 //printf("transformer %g %g %g %g %g %g\n", a00, a01, a10, a11, a20, a21);
 	label_->draw(c, a2);
 	c->pop_transform();
-	IfIdraw(text(c, text_.string(), t, nil, color()));
+	IfIdraw(text(c, text_.string(), t, NULL, color()));
 }
 
 //DataVec------------------
@@ -3363,7 +3363,7 @@ void LineExtension::damage(Graph* g) {
 }
 
 void Graph::change_prop() {
-	picker()->bind_select((OcHandler*)nil);
+	picker()->bind_select((OcHandler*)NULL);
 	picker()->set_scene_tool(CHANGECOLOR);
 	ColorBrushWidget::start(this);
 	if (Oc::helpmode()) {

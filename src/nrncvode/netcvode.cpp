@@ -837,7 +837,7 @@ static void destruct(void* v) {
 }
 
 void NetCon_reg() {
-	class2oc("NetCon", cons, destruct, members, nil, omembers);
+	class2oc("NetCon", cons, destruct, members, NULL, omembers, NULL);
 	Symbol* nc = hoc_lookup("NetCon");
 	nc->u.ctemplate->steer = steer_val;
 	Symbol* s;
@@ -6129,7 +6129,7 @@ void NetCvode::recalc_ptrs() {
 static double lvardt_tout_;
 
 static void* lvardt_integrate(NrnThread* nt) {
-	long int err = NVI_SUCCESS;
+	size_t err = NVI_SUCCESS;
 	int id = nt->id;
 	NetCvode* nc = net_cvode_instance;
 	NetCvodeThreadData& p = nc->p[id];

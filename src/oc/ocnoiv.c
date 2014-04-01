@@ -1,124 +1,107 @@
 #include <../../nrnconf.h>
 #include "hoc.h"
+#include "ocfunc.h"
 
 /*ARGSUSED*/
-notify_freed(p)
-	void* p;
-{
+void notify_freed(void* p) {
 }
 
 /*ARGSUSED*/
-notify_freed_val_array(p, size)
-	double* p;
-	int size;
-{
+void notify_freed_val_array(double* p, size_t size) {
 }
 
 /*ARGSUSED*/
-notify_pointer_freed(p)
-	void* p;
-{
+void notify_pointer_freed(void* p) {
 }
 
 /*ARGSUSED*/
-ivoc_help(p)
-	char* p;
-{
+void ivoc_help(const char* p) {
 }
 
-ivoc_cleanup() {}
+void ivoc_cleanup(void) {}
 
-hoc_notify_iv() {hoc_ret(); hoc_pushx(0.);}
-hoc_xpvalue() {	hoc_ret(); hoc_pushx(0.);}
-hoc_xlabel() { hoc_ret(); hoc_pushx(0.);}
-hoc_xbutton() { hoc_ret(); hoc_pushx(0.);}
-hoc_xcheckbox() { hoc_ret(); hoc_pushx(0.);}
-hoc_xstatebutton() { hoc_ret(); hoc_pushx(0.);}
-hoc_xmenu() { hoc_ret(); hoc_pushx(0.);}
-hoc_xvalue() { hoc_ret(); hoc_pushx(0.);}
-hoc_xpanel() { hoc_ret(); hoc_pushx(0.);}
-hoc_xradiobutton() { hoc_ret(); hoc_pushx(0.);}
-hoc_xfixedvalue() { hoc_ret(); hoc_pushx(0.);}
-hoc_xvarlabel() { hoc_ret(); hoc_pushx(0.);}
-hoc_xslider() { hoc_ret(); hoc_pushx(0.);}
-ivoc_style() { hoc_ret(); hoc_pushx(0.);}
-hoc_boolean_dialog() { hoc_ret(); hoc_pushx(0.);}
-hoc_continue_dialog() { hoc_ret(); hoc_pushx(0.);}
-hoc_string_dialog() { hoc_ret(); hoc_pushx(0.);}
-hoc_checkpoint() { hoc_ret(); hoc_pushx(0.);}
-hoc_pwman_place() { hoc_ret(); hoc_pushx(0.);}
-hoc_save_session() { hoc_ret(); hoc_pushx(0.);}
-hoc_print_session() { hoc_ret(); hoc_pushx(0.);}
+void hoc_notify_iv(void) {hoc_ret(); hoc_pushx(0.);}
+void hoc_xpvalue() {	hoc_ret(); hoc_pushx(0.);}
+void hoc_xlabel(void) { hoc_ret(); hoc_pushx(0.);}
+void hoc_xbutton(void) { hoc_ret(); hoc_pushx(0.);}
+void hoc_xcheckbox(void) { hoc_ret(); hoc_pushx(0.);}
+void hoc_xstatebutton(void) { hoc_ret(); hoc_pushx(0.);}
+void hoc_xmenu(void) { hoc_ret(); hoc_pushx(0.);}
+void hoc_xvalue(void) { hoc_ret(); hoc_pushx(0.);}
+void hoc_xpanel(void) { hoc_ret(); hoc_pushx(0.);}
+void hoc_xradiobutton(void) { hoc_ret(); hoc_pushx(0.);}
+void hoc_xfixedvalue(void) { hoc_ret(); hoc_pushx(0.);}
+void hoc_xvarlabel(void) { hoc_ret(); hoc_pushx(0.);}
+void hoc_xslider(void) { hoc_ret(); hoc_pushx(0.);}
+void ivoc_style(void) { hoc_ret(); hoc_pushx(0.);}
+void hoc_boolean_dialog(void) { hoc_ret(); hoc_pushx(0.);}
+void hoc_continue_dialog(void) { hoc_ret(); hoc_pushx(0.);}
+void hoc_string_dialog(void) { hoc_ret(); hoc_pushx(0.);}
+void hoc_checkpoint(void) { hoc_ret(); hoc_pushx(0.);}
+void hoc_pwman_place(void) { hoc_ret(); hoc_pushx(0.);}
+void hoc_save_session(void) { hoc_ret(); hoc_pushx(0.);}
+void hoc_print_session(void) { hoc_ret(); hoc_pushx(0.);}
 
-class_registration() {}
+void hoc_class_registration(void) {}
 
-hoc_execute1() { /* the ivoc version returns safely even if execerror */
-	int ifarg();
-	char* gargstr();
-	Object** hoc_objgetarg();
-	Object* ob = (Object*)0;
-	if (ifarg(2)) {
-		ob = *hoc_objgetarg(2);
-	}
-	hoc_exec_cmd(gargstr(1), ob);
-	return 1;
+void hoc_execute1(void) { /* the ivoc version returns safely even if execerror */
+	hoc_exec_cmd();
 }
 
 #if !defined(SOME_IV)
 /*ARGSUSED*/
-int ivoc_list_look(ob, oblook, path, depth)
-	struct Object *ob, *oblook;
-	char* path;
-	int depth;
+int ivoc_list_look(Object* ob, Object* oblook, char* path, int depth)
 {
 	return 0;
 }
 
 /*ARGSUSED*/
-hoc_obj_disconnect(ob) Object* ob; {}
+void hoc_obj_disconnect(Object* ob) {}
 
 /*ARGSUSED*/
-hoc_obj_notify(ob, create) Object* ob; int create; {}
+void hoc_obj_notify(Object* ob) {}
 
 /*ARGSUSED*/
-hoc_template_notify(ob, create) Object* ob; int create; {}
+void hoc_template_notify(Object* ob, int create) {}
 #endif
 
 /*ARGSUSED*/
-int hoc_readcheckpoint(f) char* f; { return 0; }
+int hoc_readcheckpoint(char* f) { return 0; }
 
 /*ARGSUSED*/
-int vector_arg_px(i, p) int i; double* p; {
+int vector_arg_px(int i, double** p) {
 	hoc_execerror("implemented in ivoc library", "vector_arg_px");
+	return 0;
 }
-int vector_capacity(v) void* v; {return 0;}
-install_vector_method() {}
-int vector_instance_px(){return 0;}
+int vector_capacity(void* v) {return 0;}
+void install_vector_method(const char* name, Pfrd_vp f) {}
+int vector_instance_px(void* vv, double** px){return 0;}
 void vector_resize(v, n) void* v; int n; {
 	hoc_execerror("implemented in ivoc library", "vector_resize");
 }
-void vector_delete(v) void* v; {}
+void vector_delete(void* v) {}
 
-void* vector_arg(i) int i; { return (void*)0;}
-void* vector_new2(v) void* v; { return (void*)0;}
-Object** vector_pobj(v) void* v; { return (Object**)0;}
-double* vector_vec(v) void* v; {
+void* vector_arg(int i) { return (void*)0;}
+void* vector_new2(void* v) { return (void*)0;}
+Object** vector_pobj(void* v) { return (Object**)0;}
+double* vector_vec(void* v) {
 	hoc_execerror("implemented in ivoc library", "vector_vec");
+	return (double*)0;
 }
 
-Object* ivoc_list_item(list, item) Object* list; int item; {
+Object* ivoc_list_item(Object* list, int item) {
 	hoc_execerror("implemented in ivoc library", "ivoc_list_item");
 	return (Object*)0;
 }
 int ivoc_list_count(list) Object* list; { return 0; }
-void bbs_done(){}
+void bbs_done(void){}
 
-Symbol* ivoc_alias_lookup(name, ob) char* name; Object* ob; {return (Symbol*)0;}
-void ivoc_free_alias(ob) Object* ob; {}
+Symbol* ivoc_alias_lookup(const char* name, Object* ob) {return (Symbol*)0;}
+void ivoc_free_alias(Object* ob){}
 
 #if carbon || defined(MINGW)
-void stdin_event_ready() {}
+void stdin_event_ready(void) {}
 #endif
 
-void nrnbbs_context_wait() {}
-void ivoc_final_exit() {}
+void nrnbbs_context_wait(void) {}
+void ivoc_final_exit(void) {}

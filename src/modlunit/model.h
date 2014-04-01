@@ -175,6 +175,8 @@ extern Item
 		*next(),
 		*prev();
 
+#include "modlunit.h" /* void functions */
+
 extern Symbol
 		*install(),	/* Install token in symbol table */
 		*lookup(),	/* lookup name in symbol table */
@@ -212,6 +214,7 @@ extern Symbol
 		*semi,		/* ';'. When seen on output, causes newline */
 		*beginblk,	/* '{'. Used for rudimentary indentation */
 		*endblk;	/* on output. */
+
 
 /* the following is to get lint to shut up */
 #if LINT

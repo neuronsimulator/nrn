@@ -1136,14 +1136,15 @@ int nrn_allow_busywait(int b) {
 #if USE_PTHREAD
 static long waste_;
 static void* waste(void* v) {
-	long i, j, n;
-	n = (long)v;
+	size_t i, j, n;
+	n = (size_t)v;
 	j = 0;
 	for (i=0; i < n; ++i) {
 		j += i;
 	}
 	/* hoping it is  not optimized away */
 	waste_ = j;
+	return (void*)0;
 }
 
 #define _nt_ 32
