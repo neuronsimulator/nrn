@@ -390,7 +390,7 @@ IFGUI
 	if (hoc_argtype(1) == OBJECTVAR) {
 		ob = *hoc_objgetarg(1);
 	}else{
-		ob = (Object*)((unsigned long)(*getarg(1)));
+		ob = (Object*)((size_t)(*getarg(1)));
 	}
 	Symbol* sym = hoc_table_lookup(ob->ctemplate->sym->name,
 			ob->ctemplate->symtable);

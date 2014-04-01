@@ -731,9 +731,6 @@ static void steer_x(void* v) {
 	hoc_pushpx(m->mep(i1, i2));
 }
 
-extern "C" {
-	void* hoc_Emalloc(unsigned long);
-}
 
 #if WIN32 && !USEMATRIX
 extern "C" {

@@ -37,7 +37,7 @@
 // things in libivoc that wouldn't normally be linked because nothing
 // refers to them while libivoc is linking. So force them to link here
 extern "C" {
-bool ivoc_list_look(Object*, Object*, char*, int);
+int ivoc_list_look(Object*, Object*, char*, int);
 void hoc_class_registration();
 }
 static void dummy() {

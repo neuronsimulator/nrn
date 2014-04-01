@@ -525,7 +525,7 @@ int ivocmain (int argc, const char** argv, const char** env) {
 #else
 #if defined(WIN32) || carbon
 IFGUI
-	session = new Session("NEURON", our_argc, our_argv, options, properties);
+	session = new Session("NEURON", our_argc, (char**)our_argv, options, properties);
 ENDGUI
 #else
 IFGUI

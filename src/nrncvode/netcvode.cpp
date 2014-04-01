@@ -6129,7 +6129,7 @@ void NetCvode::recalc_ptrs() {
 static double lvardt_tout_;
 
 static void* lvardt_integrate(NrnThread* nt) {
-	long int err = NVI_SUCCESS;
+	size_t err = NVI_SUCCESS;
 	int id = nt->id;
 	NetCvode* nc = net_cvode_instance;
 	NetCvodeThreadData& p = nc->p[id];
