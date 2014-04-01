@@ -193,6 +193,12 @@ void* hoc_Emalloc(size_t n) {	/* check return from malloc */
 	return p;
 }
 
+void* emalloc(size_t n) {
+	void* p = hoc_Emalloc(n);
+	if (emalloc_error) { hoc_malchk(); }
+	return p;
+}
+
 void* hoc_Ecalloc(size_t n, size_t size) {	/* check return from calloc */
 	void *p;
 
@@ -202,6 +208,12 @@ void* hoc_Ecalloc(size_t n, size_t size) {	/* check return from calloc */
 	p = calloc(n, size);
 	if (p == 0)
 		emalloc_error = 1;
+	return p;
+}
+
+void* ecalloc(size_t n, size_t size) {
+	void* p = hoc_Ecalloc(n, size);
+	if (emalloc_error) { hoc_malchk(); }
 	return p;
 }
 
@@ -242,6 +254,12 @@ void* hoc_Erealloc(void* ptr, size_t size) {/* check return from realloc */
 		free(ptr);
 		emalloc_error = 1;
 	}
+	return p;
+}
+
+void* erealloc(void* ptr, size_t size) {
+	void* p = hoc_Erealloc(ptr, size);
+	if (emalloc_error) { hoc_malchk(); }
 	return p;
 }
 

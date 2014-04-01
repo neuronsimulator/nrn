@@ -270,9 +270,9 @@ typedef struct {		/* units for symbol values */
 
 #include "oc_ansi.h"
 
-#define emalloc(arg)	hoc_Emalloc(arg), hoc_malchk()
-#define ecalloc(arg1,arg2)	hoc_Ecalloc(arg1,arg2), hoc_malchk()
-#define erealloc(arg1,arg2)	hoc_Erealloc(arg1,arg2), hoc_malchk()
+extern void* emalloc(size_t n);
+extern void* ecalloc(size_t n, size_t size);
+extern void* erealloc(void* ptr, size_t n);
 
 extern	Inst *hoc_progp, *hoc_progbase, *hoc_prog, *hoc_prog_parse_recover;
 extern Inst *hoc_pc;
