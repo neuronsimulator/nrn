@@ -336,7 +336,7 @@ IVEC*iv;
       return;
    }
    fprintf(fp,"dim: %d, max_dim: %d\n",iv->dim,iv->max_dim);
-   fprintf(fp,"ive @ 0x%lx\n",(long)(iv->ive));
+   fprintf(fp,"ive @ 0x%p\n", iv->ive);
    for ( i = 0; i < iv->max_dim; i++ )
    {
       if ( (i+1) % 8 )

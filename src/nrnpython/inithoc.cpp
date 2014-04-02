@@ -37,7 +37,6 @@ static int argc_mpi = 2;
 
 static const char* argv_nompi[] = {"NEURON", "-dll", 0};
 static int argc_nompi = 1;
-static int ignore;
 
 static char* env[] = {0};
 #if PY_MAJOR_VERSION >= 3
@@ -92,9 +91,9 @@ printf("NEURON_INIT_MPI exists in env but NEURON cannot initialize MPI because:\
 	} else {
 	  mpi_mes = 3;
 	}
+	assert(mpi_mes != -1); //avoid unused variable warning
 
 #endif
-	ignore = mpi_mes;	
 
 #if !defined(__CYGWIN__)
 	sprintf(buf, "%s/.libs/libnrnmech.so", NRNHOSTCPU);
