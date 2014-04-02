@@ -15,6 +15,7 @@ static char RCSid[] = "sparse.c,v 1.7 1998/03/12 13:17:17 hines Exp";
 
 #include <stdlib.h>
 #include "errcodes.h"
+extern void* emalloc(size_t n);
 
 /* 4/23/93 converted to object so many models can use it */
 
@@ -148,7 +149,6 @@ static int do_flag;
 	varord[el->col] < varord[el->r_down->col]
 */
 	
-extern void *emalloc();
 static int matsol();
 static Elm *getelm();
 
@@ -773,25 +773,6 @@ static void delete(item)
 	item->prev->next = item->next;
 	item->prev = ITEM0;
 	item->next = ITEM0;
-}
-
-void *emalloc(n) unsigned n; { /* check return from malloc */
-#if __TURBOC__ || VMS
-	void *malloc();
-	void *p;
-	p = (void *)malloc(n);
-	if (p == (void *)0) {
-		abort_run(LOWMEM);
-	}
-	return p;
-#else
-	char *p;
-	p = (char *)malloc(n);
-	if (p == (char *)0) {
-		abort_run(LOWMEM);
-	}
-	return (void *)p;
-#endif
 }
 
 static
