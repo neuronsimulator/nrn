@@ -119,6 +119,7 @@ static PropertyData properties[] = {
 {"*NSTACK", "0"}, // see src/oc/code.c for the default value
 {"*Py_NoSiteFlag", "0"}, 
 {"*python", "off"},
+{"*nopython", "off"},
 {"*banner", "on"},
 	 { NULL }
 };
@@ -137,6 +138,7 @@ static OptionDesc options[] = {
 {"-NFRAME", "*NFRAME", OptionValueNext},
 {"--version", "*print_nrn_version", OptionValueImplicit, "on"},
 {"-python", "*python", OptionValueImplicit, "on"},
+{"-nopython", "*nopython", OptionValueImplicit, "on"},
 {"-Py_NoSiteFlag", "*Py_NoSiteFlag", OptionValueImplicit, "1"},
 {"-nobanner", "*banner", OptionValueImplicit, "off"},
 #if defined(WIN32)
@@ -157,6 +159,7 @@ extern "C" {
 	extern const char* nrn_mech_dll;
 #endif
 #if defined(USE_PYTHON)
+	int nrn_nopython;
 	extern int use_python_interpreter;
 	extern void (*p_nrnpython_start)(int);
 #endif
@@ -368,7 +371,8 @@ int ivocmain (int argc, const char** argv, const char** env) {
     -nogui           do not send any gui info to screen\n\
     -notatty         buffered stdout and no prompt\n\
     -python          Python is the interpreter\n\
-    -Py_NoSiteFlag   Set Py_NoSiteFlag=1 before initializeing Python\n\
+    -nopython        Do not initialize Python\n\
+    -Py_NoSiteFlag   Set Py_NoSiteFlag=1 before initializing Python\n\
     -realtime        For hard real-time simulation for dynamic clamp\n\
     --version        print version info\n\
     and all InterViews and X11 options\n\
@@ -586,6 +590,19 @@ ENDGUI
 		hoc_nstack = nrn_optargint("-NSTACK", &our_argc, our_argv, 0);
 		hoc_nframe = nrn_optargint("-NFRAME", &our_argc, our_argv, 0);
 	}
+
+#if defined(USE_PYTHON)
+#if HAVE_IV
+	nrn_nopython = 0;
+	if (session && session->style()->value_is_on("nopython")) {
+		nrn_nopython = 1;
+	}
+#endif
+//	if (nrn_optarg_on("-nopython", &our_argc, our_argv)) {
+//		nrn_nopython = 1;
+//	}
+
+#endif //USE_PYTHON
 
 #if defined(WIN32) && HAVE_IV
 IFGUI
