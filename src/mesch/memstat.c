@@ -81,7 +81,7 @@ static unsigned int mem_hash_idx_end = 0;
 static unsigned int mem_hash(ptr)
 void **ptr;
 {
-   unsigned long lp = (unsigned long)ptr;
+   unsigned long lp = (size_t)ptr;
 
    return (lp % MEM_HASHSIZE);
 }

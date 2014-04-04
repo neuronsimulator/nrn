@@ -3582,7 +3582,7 @@ void* nrnjava_pwm_listen(const char* s, Object* ho) {
 }
 
 // see src/nrnjava/PWMListener.java for the types
-void nrnjava_pwm_event(long ic, int type, int l, int t, int w, int h) {
+void nrnjava_pwm_event(size_t ic, int type, int l, int t, int w, int h) {
 	JavaWindow* jw = (JavaWindow*)ic;
 	PrintableWindowManager* pwm = PrintableWindowManager::current();
 	if (type >= 3 && type <= 6) {
