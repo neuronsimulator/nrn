@@ -269,6 +269,9 @@ preconditioner = None
 def _fixed_step_solve(raw_dt):
     global preconditioner, pinverse, _fixed_step_count
 
+    if dim is None:
+        return
+
     # allow for skipping certain fixed steps
     # warning: this risks numerical errors!
     fixed_step_factor = options.fixed_step_factor
@@ -284,9 +287,7 @@ def _fixed_step_solve(raw_dt):
     b = _rxd_reaction(states) - _diffusion_matrix * states
     
     dim = region._sim_dimension
-    if dim is None:
-        return
-    elif dim == 1:
+    if dim == 1:
         states[:] += _reaction_matrix_solve(dt, states, _diffusion_matrix_solve(dt, dt * b))
 
         # clear the zero-volume "nodes"
