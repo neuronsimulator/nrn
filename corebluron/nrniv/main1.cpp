@@ -26,18 +26,22 @@ int main1(int argc, char** argv, char** env) {
   printf("after mk_mech mallinfo %d\n", nrn_mallinfo());
   mk_netcvode();
 
-  // args are one gid in each group for the <gid>_[12].dat files.
-  int ngrp = argc-1;
-  int* grp;
-  if (ngrp) {
-    grp = new int[ngrp];
-    for (int i = 0; i < ngrp; ++i) {
-      grp[i] = atoi(argv[i+1]);
+  FILE *fp = fopen("files.txt","r");
+  int iNumFiles;
+  assert(fscanf(fp, "%d\n", &iNumFiles) == 1);
+
+  int ngrp = 0;
+  int* grp = new int[iNumFiles / nrnmpi_numprocs + 1];
+
+  for (int iNum = 0; iNum < iNumFiles; ++iNum)
+  {    
+    int iFile;
+    assert(fscanf(fp, "%d\n", &iFile) == 1);
+    if ((iNum % nrnmpi_numprocs) == nrnmpi_myid)
+    {
+      grp[ngrp] = iFile;
+      ngrp++;
     }
-  }else{
-    ngrp = 1;
-    grp = new int[ngrp];
-    grp[0] = 0;
   }
 
   printf("before nrn_setup mallinfo %d\n", nrn_mallinfo());
