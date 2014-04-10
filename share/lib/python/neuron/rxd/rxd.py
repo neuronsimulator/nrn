@@ -269,6 +269,7 @@ preconditioner = None
 def _fixed_step_solve(raw_dt):
     global preconditioner, pinverse, _fixed_step_count
 
+    dim = region._sim_dimension
     if dim is None:
         return
 
@@ -286,7 +287,7 @@ def _fixed_step_solve(raw_dt):
 
     b = _rxd_reaction(states) - _diffusion_matrix * states
     
-    dim = region._sim_dimension
+
     if dim == 1:
         states[:] += _reaction_matrix_solve(dt, states, _diffusion_matrix_solve(dt, dt * b))
 
