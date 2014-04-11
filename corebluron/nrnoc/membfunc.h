@@ -95,7 +95,7 @@ extern void hoc_register_prop_size(int, int, int);
 extern void _nrn_thread_reg0(int i, void(*f)(ThreadDatum*));
 extern void _nrn_thread_reg1(int i, void(*f)(ThreadDatum*));
 
-typedef int (*bbcore_read_t)(void*, int, double*, Datum*, ThreadDatum*, struct NrnThread*);
+typedef void (*bbcore_read_t)(double*, int*, int*, int*, double*, Datum*, ThreadDatum*, struct NrnThread*);
 extern bbcore_read_t* nrn_bbcore_read_;
 
 extern int nrn_fornetcon_cnt_;

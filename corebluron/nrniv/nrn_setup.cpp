@@ -38,9 +38,11 @@
 // delays (nnetcon)
 // for the nmech tml mechanisms that have a nrn_bbcore_write method
 //   type
-//   sz, cnt
-//   int or double array (number specified by the nodecount nrn_bbcore_write
+//   icnt
+//   dcnt
+//   int array (number specified by the nodecount nrn_bbcore_write
 //     to be intepreted by this side's nrn_bbcore_read method)
+//   double array
 // 
 // The critical issue requiring careful attention is that a corebluron
 // process reads many bluron thread files with a result that, although
@@ -513,30 +515,40 @@ void read_phase2(const char* fname, NrnThread& nt) {
   for (int i=0; i < npnt; ++i) {
     int type = read_int();
     assert(nrn_bbcore_read_[type]);
-    int sz = read_int();
-    int cnt = read_int();
-    void* vp;
-    if (sz == sizeof(int)) {
-      vp = read_int_array(NULL, cnt);
-    }else if (sz == sizeof(double)) {
-      vp = read_dbl_array(NULL, cnt);
-    }else{
-      assert(0);
+    int icnt = read_int();
+    int dcnt = read_int();
+    int* iArray = NULL;
+    double* dArray = NULL;
+    if (icnt) 
+    {
+      printf("%d: Reading checkpoint int: %d\n", nrnmpi_myid, chkpnt);
+      iArray = read_int_array(NULL, icnt);
     }
-    int k=0;
+    if (dcnt) 
+    {
+      printf("%d: Reading checkpoint dbl: %d\n", nrnmpi_myid, chkpnt);
+      dArray = read_dbl_array(NULL, dcnt);
+    }
+    int ik = 0;
+    int dk = 0;
     Memb_list* ml = mlmap[type];
     int dsz = nrn_prop_param_size_[type];
     int pdsz = nrn_prop_dparam_size_[type];
     for (int j=0; j < ml->nodecount; ++j) {
       double* d = ml->data + j*dsz;
       Datum* pd = ml->pdata + j*pdsz;
-      k = (*nrn_bbcore_read_[type])(vp, k, d, pd, ml->_thread, &nt);
+//      (*nrn_bbcore_read_[type])(vp, k, d, pd, ml->_thread, &nt);
+      (*nrn_bbcore_read_[type])(dArray, iArray, &dk, &ik, d, pd, ml->_thread, &nt);
     }
-    assert(k == cnt);
-    if (sz == sizeof(int)) {
-      delete [] (int*)vp;
-    }else{
-      delete [] (double*)vp;
+    assert(dk == dcnt);
+    assert(ik == icnt);
+    if (ik) 
+    {
+      delete [] iArray;
+    }
+    if (dk)
+    {
+      delete [] dArray;
     }
   }
   delete [] mlmap;

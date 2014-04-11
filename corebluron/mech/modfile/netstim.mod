@@ -71,7 +71,7 @@ FUNCTION invl(mean (ms)) (ms) {
 	}
 }
 VERBATIM
-#include "mech/cfile/nrnran123.h"
+#include "corebluron/mech/cfile/nrnran123.h"
 ENDVERBATIM
 
 FUNCTION erand() {
@@ -108,28 +108,27 @@ ENDVERBATIM
 }
 
 VERBATIM
-static int bbcore_write(void* d, int offset, int* sz, _threadargsproto_) {
-	if (!noise) { return offset; }
+static void bbcore_write(double* x, int* d, int* xx, int *offset, _threadargsproto_) {
+	if (!noise) { return; }
 	if (d) {
-		uint32_t* di = ((uint32_t*)d) + offset;
+		uint32_t* di = ((uint32_t*)d) + *offset;
 		nrnran123_State** pv = (nrnran123_State**)(&_p_donotuse);
 		nrnran123_getids(*pv, di, di+1);
 printf("Netstim bbcore_write %d %d\n", di[0], di[1]);
 	}
-	*sz = sizeof(uint32_t);
-	return offset + 2;
+	*offset += 2;
 }
-static int bbcore_read(void* d, int offset, _threadargsproto_) {
+static void bbcore_read(double* x, int* d, int* xx, int* offset, _threadargsproto_) {
 	assert(!_p_donotuse);
 	if (noise) {
-		uint32_t* di = ((uint32_t*)d) + offset;
+		uint32_t* di = ((uint32_t*)d) + *offset;
 		nrnran123_State** pv = (nrnran123_State**)(&_p_donotuse);
 		*pv = nrnran123_newstream(di[0], di[1]);
 printf("Netstim bbcore_read %d %d\n", di[0], di[1]);
 	}else{
-		return offset;
+		return;
 	}
-	return offset + 2;
+	*offset += 2;
 }
 ENDVERBATIM
 

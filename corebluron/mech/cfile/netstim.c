@@ -177,8 +177,8 @@ static void nrn_alloc(double* _p, Datum* _ppvar, int _type) {
  
 #define _psize 9
 #define _ppsize 4
- static int bbcore_read(void*, int, _threadargsproto_);
- extern void hoc_reg_bbcore_read(int, int(*)(void*, int, _threadargsproto_));
+ static void bbcore_read(double *, int*, int*, int*, _threadargsproto_);
+ extern void hoc_reg_bbcore_read(int, void(*)(double *, int*, int*, int*, _threadargsproto_));
  _netstim_reg() {
 	int _vectorized = 1;
   _initlists();
@@ -269,7 +269,7 @@ static double _hoc_invl(_vptr) void* _vptr; {
 #endif /*BBCORE*/
  
 /*VERBATIM*/
-#include "nrnran123.h"
+#include "corebluron/mech/cfile/nrnran123.h"
  
 double erand ( _p, _ppvar, _thread, _nt ) double* _p; Datum* _ppvar; ThreadDatum* _thread; _NrnThread* _nt; {
    double _lerand;
@@ -339,28 +339,27 @@ static double _hoc_noiseFromRandom123(_vptr) void* _vptr; {
 #endif /*BBCORE*/
  
 /*VERBATIM*/
-static int bbcore_write(void* d, int offset, int* sz, _threadargsproto_) {
-	if (!noise) { return offset; }
+static void bbcore_write(double* x, int* d, int* xx, int *offset, _threadargsproto_) {
+	if (!noise) { return; }
 	if (d) {
-		uint32_t* di = ((uint32_t*)d) + offset;
+		uint32_t* di = ((uint32_t*)d) + *offset;
 		nrnran123_State** pv = (nrnran123_State**)(&_p_donotuse);
 		nrnran123_getids(*pv, di, di+1);
 printf("Netstim bbcore_write %d %d\n", di[0], di[1]);
 	}
-	*sz = sizeof(uint32_t);
-	return offset + 2;
+	*offset += 2;
 }
-static int bbcore_read(void* d, int offset, _threadargsproto_) {
+static void bbcore_read(double* x, int* d, int* xx, int* offset, _threadargsproto_) {
 	assert(!_p_donotuse);
 	if (noise) {
-		uint32_t* di = ((uint32_t*)d) + offset;
+		uint32_t* di = ((uint32_t*)d) + *offset;
 		nrnran123_State** pv = (nrnran123_State**)(&_p_donotuse);
 		*pv = nrnran123_newstream(di[0], di[1]);
 printf("Netstim bbcore_read %d %d\n", di[0], di[1]);
 	}else{
-		return offset;
+		return;
 	}
-	return offset + 2;
+	*offset += 2;
 }
  
 static int  next_invl ( _p, _ppvar, _thread, _nt ) double* _p; Datum* _ppvar; ThreadDatum* _thread; _NrnThread* _nt; {
