@@ -61,7 +61,7 @@ oc_LDADD = libocxt.la liboc.la \
 ## Header files that need to be installed:
 pkginclude_HEADERS = hoc.h hoclist.h hocdec.h hocassrt.h nrnisaac.h \
 	oc_ansi.h hocparse.h ocfunc.h ocmisc.h nrnjava.h hocgetsym.h \
-	nrnpthread.h hoc_membf.h nrnran123.h scoplib_ansi.h
+	nrnpthread.h hoc_membf.h nrnran123.h scoplib_ansi.h nrnapi.h
 
 ## Header files that need to be copied into the distribution but do not need
 ## to be installed:
