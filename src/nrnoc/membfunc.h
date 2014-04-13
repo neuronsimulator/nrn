@@ -76,6 +76,10 @@ extern BAMech** bamech_;
 
 extern Memb_func* memb_func;
 extern int n_memb_func;
+extern int* nrn_prop_param_size_;
+extern int* nrn_prop_dparam_size_;
+extern void hoc_register_prop_size(int type, int psize, int dpsize);
+
 #if VECTORIZE
 extern Memb_list* memb_list;
 /* for finitialize, order is same up through extracellular, then ions,

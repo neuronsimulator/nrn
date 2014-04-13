@@ -9,9 +9,14 @@ static const char *mechanism[] = { "0", "capacitance", "cm",0, "i_cap", 0,0 };
 static void cap_alloc(Prop*);
 static void cap_init(NrnThread*, Memb_list*, int);
 
+#define nparm 2
+
 void capac_reg_(void) {
+	int mechtype;
 	/* all methods deal with capacitance in special ways */
 	register_mech(mechanism, cap_alloc, (Pvmi)0, (Pvmi)0, (Pvmi)0, cap_init, -1, 1);
+	mechtype = nrn_get_mechtype(mechanism[1]);
+	hoc_register_prop_size(mechtype, nparm, 0);
 }
 
 #define cm  vdata[i][0]
@@ -128,7 +133,6 @@ void nrn_div_capacity(NrnThread* _nt, Memb_list* ml) {
 static void cap_alloc(Prop* p)
 {
 	double *pd;
-#define nparm 2
 	pd = nrn_prop_data_alloc(CAP, nparm, p);
 	pd[0] = DEF_cm;	/*default capacitance/cm^2*/
 	p->param = pd;

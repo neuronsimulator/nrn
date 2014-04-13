@@ -1434,3 +1434,11 @@ printf("Notice: gid compression did not succeed. Probably more than 255 cells on
 	return 0;
 #endif
 }
+
+PreSyn* nrn_gid2outputpresyn(int gid) { // output PreSyn
+        PreSyn* ps;
+        if (gid2out_->find(gid, ps)) {
+	        return ps;
+	}
+	return NULL;
+}

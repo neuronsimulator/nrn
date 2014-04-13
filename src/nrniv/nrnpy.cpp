@@ -13,6 +13,7 @@
 #include "nonvintblock.h"
 
 extern "C" {
+extern int nrn_nopython;
 extern void (*p_nrnpython_start)(int);
 void nrnpython();
 static void (*p_nrnpython_real)();
@@ -87,6 +88,11 @@ static Member_func p_members[] = {0,0};
 void nrnpython_reg() {
 	//printf("nrnpython_reg in nrnpy.cpp\n");
 #if USE_PYTHON
+    if (nrn_nopython) {
+	p_nrnpython_start = 0;
+	p_nrnpython_real = 0;
+	p_nrnpython_reg_real = 0;
+    }else{
 #if NRNPYTHON_DYNAMICLOAD
 	void* handle = python_already_loaded();
 	if (!handle) { // embed python
@@ -100,6 +106,7 @@ void nrnpython_reg() {
 	p_nrnpython_real = nrnpython_real;
 	p_nrnpython_reg_real = nrnpython_reg_real;
 #endif
+    }
 	if (p_nrnpython_reg_real) {
 		(*p_nrnpython_reg_real)();
 		return;

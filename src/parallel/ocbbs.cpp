@@ -37,6 +37,7 @@ extern "C" {
 	Object* (*nrnpy_pickle2po)(char*, size_t);
 	char* (*nrnpy_callpicklef)(char*, size_t, int, size_t*);
 	Object* (*nrnpympi_alltoall)(Object*, int);
+	extern void nrn_prcellstate(int gid, const char* suffix);
 #if PARANEURON
 	double nrnmpi_transfer_wait_;
 	double nrnmpi_splitcell_wait_;
@@ -465,6 +466,11 @@ static double mech_time(void* v) {
 			nrn_mech_wtime_[i] = 0.0;
 		}
 	}
+	return 0;
+}
+
+static double prcellstate(void* v) {
+	nrn_prcellstate(int(*hoc_getarg(1)), hoc_gargstr(2));
 	return 0;
 }
 
@@ -956,6 +962,7 @@ static Member_func members[] = {
 	"checkpoint", checkpoint,
 	"spike_compress", spcompress,
 	"gid_clear", gid_clear,
+	"prcellstate", prcellstate,
 
 	"source_var", source_var,
 	"target_var", target_var,

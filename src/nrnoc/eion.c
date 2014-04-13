@@ -13,6 +13,7 @@
 extern double chkarg();
 extern Section* nrn_noerr_access();
 
+#define	nparm 5
 static const char *mechanism[] = { /*just a template*/
 	"0",
 	"na_ion",
@@ -97,7 +98,7 @@ void ion_charge(void) {
 
 void ion_reg(const char* name, double valence)
 {
-	int i;
+	int i, mechtype;
 	Symbol *s;
 	char buf[7][50];
 	double val;
@@ -125,6 +126,8 @@ void ion_reg(const char* name, double valence)
 		hoc_symbol_units(hoc_lookup(buf[5]), "mA/cm2");
 		hoc_symbol_units(hoc_lookup(buf[6]), "S/cm2");
 		s = hoc_lookup(buf[0]);
+		mechtype = nrn_get_mechtype(mechanism[1]);
+		hoc_register_prop_size(mechtype, nparm, 1 );
 		nrn_writes_conc(nrn_get_mechtype(mechanism[1]), 1);
 		if (ion_global_map_size <= s->subtype) {
 			ion_global_map_size = s->subtype + 1;
@@ -529,7 +532,6 @@ static void ion_alloc(p)
 	double *pd[1];
 	int i=0;
 	
-#define	nparm 5
 	pd[0] = nrn_prop_data_alloc(p->type, nparm, p);
 	p->param_size = nparm;
 

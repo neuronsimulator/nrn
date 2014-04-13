@@ -1035,7 +1035,7 @@ extern void _cvode_abstol( Symbol**, double*, int);\n\n\
 	if (emit_check_table_thread) {
 		lappendstr(defs_list, "    _nrn_thread_table_reg(_mechtype, _check_table_thread);\n");
 	}
-	sprintf(buf, " hoc_register_dparam_size(_mechtype, %d);\n", ppvar_cnt);
+	sprintf(buf, " hoc_register_prop_size(_mechtype, %d, %d);\n", parraycount, ppvar_cnt);
 	Lappendstr(defs_list, buf);
 	/* Models that write concentration need their INITIAL blocks called
 	   before those that read the concentration or reversal potential. */
