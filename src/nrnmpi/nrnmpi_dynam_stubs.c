@@ -13,6 +13,7 @@ static void stub_nrnmpi_init(int nrnmpi_under_nrncontrol, int* pargc, char*** pa
 static void stub_nrnmpi_terminate(){}
 static double stub_nrnmpi_mindelay(double m) { return m; }
 static int stub_nrnmpi_int_allmax(int x) { return x; }
+static void stub_nrnmpi_barrier(){}
 
 void nrnmpi_stubs() {
 	p_nrnmpi_init = stub_nrnmpi_init;
@@ -20,6 +21,7 @@ void nrnmpi_stubs() {
 	p_nrnmpi_wtime = nrn_timeus;
 	p_nrnmpi_mindelay = stub_nrnmpi_mindelay;
 	p_nrnmpi_int_allmax = stub_nrnmpi_int_allmax;
+	p_nrnmpi_barrier = stub_nrnmpi_barrier;
 }
 
 #endif

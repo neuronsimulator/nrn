@@ -356,4 +356,8 @@ public:
 	int ithread_; // for pr()
 };
 
+extern "C" {
+extern PreSyn* nrn_gid2outputpresyn(int gid);
+}
+
 #endif

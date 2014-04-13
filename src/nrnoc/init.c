@@ -128,6 +128,7 @@ short* pnt_receive_size;
  /* values are type numbers of mechanisms which do net_send call */
 int nrn_has_net_event_cnt_;
 int* nrn_has_net_event_;
+int* nrn_prop_param_size_;
 int* nrn_prop_dparam_size_;
 int* nrn_dparam_ptr_start_;
 int* nrn_dparam_ptr_end_;
@@ -270,6 +271,7 @@ void hoc_last_init(void)
 	pnt_receive_size = (short*)ecalloc(memb_func_size_, sizeof(short));
 	nrn_is_artificial_ = (short*)ecalloc(memb_func_size_, sizeof(short));
 	nrn_artcell_qindex_ = (short*)ecalloc(memb_func_size_, sizeof(short));
+	nrn_prop_param_size_ = (int*)ecalloc(memb_func_size_, sizeof(int));
 	nrn_prop_dparam_size_ = (int*)ecalloc(memb_func_size_, sizeof(int));
 	nrn_dparam_ptr_start_ = (int*)ecalloc(memb_func_size_, sizeof(int));
 	nrn_dparam_ptr_end_ = (int*)ecalloc(memb_func_size_, sizeof(int));
@@ -385,6 +387,7 @@ void register_mech(
 		pnt_receive_size = (short*)erealloc(pnt_receive_size, memb_func_size_*sizeof(short));
 		nrn_is_artificial_ = (short*)erealloc(nrn_is_artificial_, memb_func_size_*sizeof(short));
 		nrn_artcell_qindex_ = (short*)erealloc(nrn_artcell_qindex_, memb_func_size_*sizeof(short));
+		nrn_prop_param_size_ = (int*)erealloc(nrn_prop_param_size_, memb_func_size_*sizeof(int));
 		nrn_prop_dparam_size_ = (int*)erealloc(nrn_prop_dparam_size_, memb_func_size_*sizeof(int));
 		nrn_dparam_ptr_start_ = (int*)erealloc(nrn_dparam_ptr_start_, memb_func_size_*sizeof(int));
 		nrn_dparam_ptr_end_ = (int*)erealloc(nrn_dparam_ptr_end_, memb_func_size_*sizeof(int));
@@ -404,6 +407,7 @@ void register_mech(
 		nrn_mk_prop_pools(memb_func_size_);
 	}
 
+	nrn_prop_param_size_[type] = 0; /* fill in later */
 	nrn_prop_dparam_size_[type] = 0; /* fill in later */
 	nrn_dparam_ptr_start_[type] = 0; /* fill in later */
 	nrn_dparam_ptr_end_[type] = 0; /* fill in later */
@@ -565,8 +569,9 @@ void nrn_writes_conc(int type, int unused) {
 	}
 }
 
-void hoc_register_dparam_size(int type, int size) {
-	nrn_prop_dparam_size_[type] = size;
+void hoc_register_prop_size(int type, int psize, int dpsize) {
+	nrn_prop_param_size_[type] = psize;
+	nrn_prop_dparam_size_[type] = dpsize;
 }
 
 #if CVODE
