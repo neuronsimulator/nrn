@@ -17,6 +17,8 @@ int nrn_mallinfo() {
 int nrn_mallinfo() { return 0; }
 #endif
 
+extern void prcellstate(int gid, const char* suffix);
+
 int main1(int argc, char** argv, char** env) {
   (void)env; /* unused */
   printf("enter main1 mallinfo %d\n", nrn_mallinfo());
@@ -50,13 +52,21 @@ int main1(int argc, char** argv, char** env) {
 
   t = 0;
   dt = 0.025;
+  celsius = 34;
   double mindelay = BBS_netpar_mindelay(10.0);
   printf("mindelay = %g\n", mindelay);
   mk_spikevec_buffer(10000);
   nrn_finitialize(1, -65.0);
   printf("after finitialize mallinfo %d\n", nrn_mallinfo());
+
+  prcellstate(30047, "t0");
+
   BBS_netpar_solve(100.);
+  
   output_spikes();
+
+  nrnmpi_barrier();
+
   return 0;
 }
 

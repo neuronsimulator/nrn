@@ -490,7 +490,9 @@ void nrn_spike_exchange() {
 	spbufout_->nspike = nout_;
 #endif
 	wt = nrnmpi_wtime();
+
 	n = nrnmpi_spike_exchange();
+
 	wt_ = nrnmpi_wtime() - wt;
 	wt = nrnmpi_wtime();
 	TBUF
@@ -1012,6 +1014,7 @@ int input_gid_associate(int gid, InputPreSyn* psi) {
 			return 0;
 		}
 		gid2in_->insert(gid, psi);
+                psi->gid_ = gid;
 		return 1;
 	}
 	return 0;
@@ -1061,7 +1064,7 @@ NetCon* BBS_gid_connect(int gid, Point_process* target, NetCon& nc) {
 	return &nc;
 }
 
-static int timeout_ = 20;
+static int timeout_ = 0;
 int nrn_set_timeout(int timeout) {
 	int tt;
 	tt = timeout_;

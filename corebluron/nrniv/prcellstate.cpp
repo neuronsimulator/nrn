@@ -15,6 +15,10 @@ static PV2I* pnt2index; // for deciding if NetCon is to be printed
 static int pntindex; // running count of printed point processes.
 
 static void pr_memb(int type, Memb_list* ml, int* cellnodes, NrnThread& nt, FILE* f) {
+  int is_art = nrn_is_artificial_[type];
+  if (is_art)
+    return;
+
   int header_printed = 0;
   int size = nrn_prop_param_size_[type];
   int psize = nrn_prop_dparam_size_[type];
@@ -62,7 +66,10 @@ static void pr_netcon(NrnThread& nt, FILE* f) {
     for (int j=0; j < nclist[i]->count(); ++j) {
       NetCon* nc = nclist[i]->item(j);
       int srcgid = -1;
-      srcgid = (nc->src_ && (nc->src_->type() == PreSynType)) ? ((PreSyn*)nc->src_)->gid_ : ((InputPreSyn*)nc->src_)->gid_;
+      if (nc->src_)
+      {
+        srcgid = (nc->src_->type() == PreSynType) ? ((PreSyn*)nc->src_)->gid_ : ((InputPreSyn*)nc->src_)->gid_;
+      }
       fprintf(f, "%d %d %d %.15g", i, srcgid, nc->active_?1:0, nc->delay_);
       int wcnt = pnt_receive_size[nc->target_->type];
       for (int k=0; k < wcnt; ++k) {
@@ -81,12 +88,16 @@ static void pr_realcell(PreSyn& ps, NrnThread& nt, FILE* f) {
   pnt2index = new PV2I(1000);
 
   // threshold variable is a voltage
+printf("thvar=%p actual_v=%p end=%p\n", ps.thvar_, nt._actual_v,
+nt._actual_v + nt.end);
+  if (ps.thvar_ < nt._actual_v || ps.thvar_ >= (nt._actual_v + nt.end)) {
+    hoc_execerror("gid not associated with a voltage", 0);
+  }
   int inode = ps.thvar_ - nt._actual_v;
-  assert(inode >= 0 && inode < nt.end);
 
   // and the root node is ...
   int rnode = inode;
-  while (nt._v_parent_index[rnode] > nt.ncell) {
+  while (rnode >= nt.ncell) {
     rnode = nt._v_parent_index[rnode];
   }
 
@@ -139,7 +150,7 @@ void prcellstate(int gid, const char* suffix) {
         sprintf(buf, "%d_%s.corenrn", gid, suffix);
         FILE* f = fopen(buf, "w");
         assert(f);
-        fprintf(f, "gid = %d", gid);
+        fprintf(f, "gid = %d\n", gid);
         fprintf(f, "t = %.15g\n", nt._t);
         if (ps.thvar_) {
           pr_realcell(ps, nt, f);

@@ -197,7 +197,7 @@ TQItem* TQueue::insert(double tt, void* d) {
 	i->data_ = d;
 	i->t_ = tt;
 	i->cnt_ = -1;
-	if (t < least_t_nolock()) {
+	if (tt < least_t_nolock()) {
 		if (least()) {
 			spenq(least(), sptree_);
 		}
