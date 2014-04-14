@@ -40,6 +40,7 @@ nrniv/nrniv_mf.h
 nrniv/nrnmutdec.h
 nrniv/output_spikes.h
 nrniv/pool.h
+nrniv/prcellstate.cpp
 nrniv/sptbinq.h
 nrniv/sptree.h
 nrniv/structpool.h
