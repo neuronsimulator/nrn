@@ -56,12 +56,13 @@ int main1(int argc, char** argv, char** env) {
   double mindelay = BBS_netpar_mindelay(10.0);
   printf("mindelay = %g\n", mindelay);
   mk_spikevec_buffer(10000);
+
   nrn_finitialize(1, -65.0);
   printf("after finitialize mallinfo %d\n", nrn_mallinfo());
 
   prcellstate(30047, "t0");
-
-  BBS_netpar_solve(100.);
+  BBS_netpar_solve(100);
+  prcellstate(30047, "tsmall");
   
   output_spikes();
 

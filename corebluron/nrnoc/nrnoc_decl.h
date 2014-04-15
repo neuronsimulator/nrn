@@ -40,6 +40,7 @@ extern void hoc_last_init(void);
 extern void ion_reg(const char*, double);
 extern void nrn_mk_table_check(void);
 extern void initnrn(void);
+extern void  nrn_capacity_current(NrnThread*, Memb_list*);
 
 #if defined(__cplusplus)
 }

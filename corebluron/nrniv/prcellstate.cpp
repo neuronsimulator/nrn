@@ -28,7 +28,7 @@ static void pr_memb(int type, Memb_list* ml, int* cellnodes, NrnThread& nt, FILE
     if (cellnodes[inode] >= 0) {
       if (!header_printed) {
         header_printed = 1;
-        fprintf(f, "type=%d %s size=%d  psize=%d\n", type, memb_func[type].sym, size, psize);
+        fprintf(f, "type=%d %s size=%d\n", type, memb_func[type].sym, size);
       }
       if (receives_events) {
         fprintf(f, "%d nri %d\n", cellnodes[inode], pntindex);
@@ -86,6 +86,8 @@ static void pr_netcon(NrnThread& nt, FILE* f) {
 static void pr_realcell(PreSyn& ps, NrnThread& nt, FILE* f) {
   //for associating NetCons with Point_process identifiers
   pnt2index = new PV2I(1000);
+
+  pntindex = 0;
 
   // threshold variable is a voltage
 printf("thvar=%p actual_v=%p end=%p\n", ps.thvar_, nt._actual_v,

@@ -19,8 +19,10 @@ void output_spikes() {
   char fname[100];
   sprintf(fname, "out%d.dat", nrnmpi_myid);
   FILE* f = fopen(fname, "w");
-  for (int i=0; i < spikevec_size; ++i) {
-    fprintf(f, "%g\t %d\n", spikevec_time[i], spikevec_gid[i]);
+  for (int i=0; i < spikevec_size; ++i)
+  {
+    if (spikevec_gid[i] > -1)
+      fprintf(f, "%g\t %d\n", spikevec_time[i], spikevec_gid[i]);
   }
   fclose(f);
 }
