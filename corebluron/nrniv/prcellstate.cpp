@@ -65,7 +65,7 @@ static void pr_netcon(NrnThread& nt, FILE* f) {
   for (int i=0; i < pntindex; ++i) {
     for (int j=0; j < nclist[i]->count(); ++j) {
       NetCon* nc = nclist[i]->item(j);
-      int srcgid = -1;
+      int srcgid = -3;
       if (nc->src_)
       {
         srcgid = (nc->src_->type() == PreSynType) ? ((PreSyn*)nc->src_)->gid_ : ((InputPreSyn*)nc->src_)->gid_;

@@ -60,9 +60,9 @@ int main1(int argc, char** argv, char** env) {
   nrn_finitialize(1, -65.0);
   printf("after finitialize mallinfo %d\n", nrn_mallinfo());
 
-  prcellstate(30047, "t0");
-  BBS_netpar_solve(100);
-  prcellstate(30047, "tsmall");
+  prcellstate(14833, "t0");
+  BBS_netpar_solve(4.8);
+  prcellstate(14833, "t1");
   
   output_spikes();
 

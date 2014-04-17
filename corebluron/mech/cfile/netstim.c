@@ -282,7 +282,6 @@ double erand ( _p, _ppvar, _thread, _nt ) double* _p; Datum* _ppvar; ThreadDatum
 		: distribution MUST be set to Random.negexp(1)
 		*/
 		_lerand = nrnran123_negexp((nrnran123_State*)_p_donotuse);
-printf("erand %g\n", _lerand);
 	}else{
 		assert(0);
 	}
@@ -355,7 +354,6 @@ static void bbcore_read(double* x, int* d, int* xx, int* offset, _threadargsprot
 		uint32_t* di = ((uint32_t*)d) + *offset;
 		nrnran123_State** pv = (nrnran123_State**)(&_p_donotuse);
 		*pv = nrnran123_newstream(di[0], di[1]);
-printf("Netstim bbcore_read %d %d\n", di[0], di[1]);
 	}else{
 		return;
 	}
@@ -422,7 +420,10 @@ static _net_receive (_pnt, _args, _lflag) Point_process* _pnt; double* _args; do
 static void initmodel(double* _p, Datum* _ppvar, ThreadDatum* _thread, _NrnThread* _nt) {
   int _i; double _save;{
  {
-   on = 0.0 ;
+   
+/*VERBATIM*/
+          nrnran123_setseq((nrnran123_State*)_p_donotuse, 0, 0);
+ on = 0.0 ;
    ispike = 0.0 ;
    if ( noise < 0.0 ) {
      noise = 0.0 ;

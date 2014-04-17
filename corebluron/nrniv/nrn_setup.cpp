@@ -521,12 +521,10 @@ void read_phase2(const char* fname, NrnThread& nt) {
     double* dArray = NULL;
     if (icnt) 
     {
-      printf("%d: Reading checkpoint int: %d\n", nrnmpi_myid, chkpnt);
       iArray = read_int_array(NULL, icnt);
     }
     if (dcnt) 
     {
-      printf("%d: Reading checkpoint dbl: %d\n", nrnmpi_myid, chkpnt);
       dArray = read_dbl_array(NULL, dcnt);
     }
     int ik = 0;
