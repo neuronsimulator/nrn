@@ -17,11 +17,11 @@ extern HocStr* hoc_cbufstr;
 extern int nrnpy_nositeflag;
 extern char* hoc_ctp;
 extern FILE* hoc_fin;
-extern char* hoc_promptstr;
+extern const char* hoc_promptstr;
 extern char* neuronhome_forward();
 //extern char*(*PyOS_ReadlineFunctionPointer)(FILE*, FILE*, char*);
 #if ((PY_MAJOR_VERSION >= 3) || (PY_MAJOR_VERSION == 2 && PY_MINOR_VERSION > 2))
-static char* nrnpython_getline(FILE*, FILE*, char*);
+static char* nrnpython_getline(FILE*, FILE*, const char*);
 #else
 static char* nrnpython_getline(char*);
 #endif
@@ -207,7 +207,7 @@ void nrnpython_real() {
 }
 
 #if ((PY_MAJOR_VERSION >= 3) || (PY_MAJOR_VERSION == 2 && PY_MINOR_VERSION > 2))
-static char* nrnpython_getline(FILE*, FILE*, char* prompt) {
+static char* nrnpython_getline(FILE*, FILE*, const char* prompt) {
 #else
 static char* nrnpython_getline(char* prompt) {
 #endif

@@ -122,6 +122,7 @@ void pr_profile(void) {}
 #endif
 
 #if READLINE
+extern char* readline(const char* prompt);
 extern void rl_deprep_terminal(void);
 extern void add_history(const char*);
 #endif
@@ -146,7 +147,7 @@ int hoc_usegui;
 #define CBUFSIZE 512
 HocStr* hoc_tmpbuf;
 HocStr* hoc_cbufstr;
-char* hoc_promptstr;
+const char* hoc_promptstr;
 static CHAR	*cbuf;
 CHAR	*ctp;
 int hoc_ictp;
@@ -1692,7 +1693,7 @@ int hoc_get_line(void){ /* supports re-entry. fill cbuf with next line */
 		}
 	}else{
 #if READLINE
-		if (nrn_fw_eq(fin, stdin) && nrn_istty_) { char *line, *readline(); int n;
+		if (nrn_fw_eq(fin, stdin) && nrn_istty_) { char *line; int n;
 #if INTERVIEWS
 #ifdef MINGW
 IFGUI
