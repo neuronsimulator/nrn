@@ -6,6 +6,7 @@ public input, pheader, instantiate
 public id, type, x, y, z, d, pid, iline, header, point2sec, sections, lines
 public idoffset, label, id2pt, id2line, pt2id, pt2sec, sec2pt, file, mark
 public filetype, err, helptxt
+public quiet
 external hoc_sf_
 objref id, type, x, y, z, d, pid, iline, header, lines
 objref file, vectors, sec2point, point2sec, sections
@@ -13,6 +14,7 @@ strdef tstr, line, filetype
 double a[7]
 
 proc init() {
+	quiet = 0
 	filetype = "SWC"
 	vectors = new List()
 	header = new List()
@@ -184,8 +186,10 @@ proc mark_branch() { local i, p
 	// if single point soma set the spherical_soma flag
 	if ( type.x[0] != type.x[1]) {
 		err = 1
+		if (!quiet) {
 printf("\nNotice: %s:\nThe first two points have different types (%d and %d) but\n    a single point NEURON section is not allowed.\n    Interpreting the point as the center of a sphere of\n    radius %g at location (%g, %g, %g)\n    Will represent as 3-point cylinder with L=diam and with all\n    children kept at their 1st point positions and connected\n    with wire to middle point.\n    If this is an incorrect guess, then change the file.\n"\
 , file.getname, type.x[0], type.x[1], d.x[0]/2, x.x[0], y.x[0], z.x[0])
+		}
 	}
 
 	$o1 = new Vector(id.size)
