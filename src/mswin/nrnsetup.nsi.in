@@ -135,7 +135,7 @@ SectionEnd
 Function cyginst
   StrCmp $cpCygwin "no" one +1
     Rename "$INSTDIR\bin\cygwin1.dll" "$INSTDIR\bin\cygwin1.dist"
-    CopyFiles /SILENT /FILESONLY "$CYGWIN\bin\cygwin1.dll" "$INSTDIR\bin\cygwin1.dll" 1000
+    CopyFiles /SILENT /FILESONLY "${CYGWIN}\bin\cygwin1.dll" "$INSTDIR\bin\cygwin1.dll" 1000
 one:
 FunctionEnd
 
