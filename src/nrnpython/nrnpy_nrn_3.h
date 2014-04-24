@@ -195,3 +195,20 @@ static struct PyModuleDef nrnmodule = {
 	NULL
 };
 
+/*
+limited namespace version of nrn module which will not have the mechanism
+names added. (At least one ModelDB model has a mechanism called 'cas')
+*/
+static struct PyModuleDef nrnsectionmodule = {
+	PyModuleDef_HEAD_INIT,
+	"_neuron_section",
+	"NEURON interaction with Python",
+	-1,
+	nrnpy_methods,
+	NULL,
+	NULL,
+	NULL,
+	NULL
+};
+
+
