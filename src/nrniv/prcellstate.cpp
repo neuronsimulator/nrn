@@ -27,7 +27,7 @@ static void pr_memb(int type, Memb_list* ml, int* cellnodes, NrnThread& nt, FILE
     if (cellnodes[inode] >= 0) {
       if (!header_printed) {
         header_printed = 1;
-        fprintf(f, "type=%d %s size=%d  psize=%d\n", type, memb_func[type].sym->name, size, psize);
+        fprintf(f, "type=%d %s size=%d\n", type, memb_func[type].sym->name, size);
       }
       if (receives_events) {
         fprintf(f, "%d nri %d\n", cellnodes[inode], pntindex);
@@ -68,8 +68,8 @@ static void pr_netcon(NrnThread& nt, FILE* f) {
   for (int i=0; i < pntindex; ++i) {
     for (int j=0; j < nclist[i]->count(); ++j) {
       NetCon* nc = nclist[i]->item(j);
-      int srcgid = -1;
-      srcgid = (nc->src_) ? nc->src_->gid_ : -1;
+      int srcgid = -3;
+      srcgid = (nc->src_) ? nc->src_->gid_ : -3;
       fprintf(f, "%d %d %d %.15g", i, srcgid, nc->active_?1:0, nc->delay_);
       int wcnt = pnt_receive_size[nc->target_->prop->type];
       for (int k=0; k < wcnt; ++k) {
@@ -87,6 +87,8 @@ static void pr_realcell(PreSyn& ps, NrnThread& nt, FILE* f) {
   //for associating NetCons with Point_process identifiers
   pnt2index = new PV2I(1000);
 
+  pntindex = 0;
+
   // threshold variable is a voltage
 printf("thvar=%p actual_v=%p end=%p\n", ps.thvar_, nt._actual_v,
 nt._actual_v + nt.end);
@@ -97,7 +99,7 @@ nt._actual_v + nt.end);
 
   // and the root node is ...
   int rnode = inode;
-  while (nt._v_parent_index[rnode] > nt.ncell) {
+  while (rnode >= nt.ncell) {
     rnode = nt._v_parent_index[rnode];
   }
 
