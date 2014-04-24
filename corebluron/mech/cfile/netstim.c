@@ -283,7 +283,8 @@ double erand ( _p, _ppvar, _thread, _nt ) double* _p; Datum* _ppvar; ThreadDatum
 		*/
 		_lerand = nrnran123_negexp((nrnran123_State*)_p_donotuse);
 	}else{
-		assert(0);
+                _lerand = 0.0;
+//		assert(0);
 	}
  
 return _lerand;
@@ -422,7 +423,10 @@ static void initmodel(double* _p, Datum* _ppvar, ThreadDatum* _thread, _NrnThrea
  {
    
 /*VERBATIM*/
-          nrnran123_setseq((nrnran123_State*)_p_donotuse, 0, 0);
+          if (_p_donotuse)
+          {
+            nrnran123_setseq((nrnran123_State*)_p_donotuse, 0, 0);
+          }
  on = 0.0 ;
    ispike = 0.0 ;
    if ( noise < 0.0 ) {

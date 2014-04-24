@@ -61,7 +61,7 @@ int main1(int argc, char** argv, char** env) {
   printf("after finitialize mallinfo %d\n", nrn_mallinfo());
 
   prcellstate(14833, "t0");
-  BBS_netpar_solve(4.8);
+  BBS_netpar_solve(100);
   prcellstate(14833, "t1");
   
   output_spikes();

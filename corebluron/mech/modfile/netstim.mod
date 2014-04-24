@@ -33,7 +33,10 @@ ASSIGNED {
 INITIAL {
 
         VERBATIM
-          nrnran123_setseq((nrnran123_State*)_p_donotuse, 0, 0);
+          if (_p_donotuse)
+          {
+            nrnran123_setseq((nrnran123_State*)_p_donotuse, 0, 0);
+          }
         ENDVERBATIM
 
 	on = 0 : off
@@ -89,7 +92,8 @@ VERBATIM
 		*/
 		_lerand = nrnran123_negexp((nrnran123_State*)_p_donotuse);
 	}else{
-		assert(0);
+                _lerand = 0.0;
+//		assert(0);
 	}
 ENDVERBATIM
 }
