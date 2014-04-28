@@ -66,11 +66,25 @@ static void pr_netcon(NrnThread& nt, FILE* f) {
     for (int j=0; j < nclist[i]->count(); ++j) {
       NetCon* nc = nclist[i]->item(j);
       int srcgid = -3;
-      if (nc->src_)
-      {
-        srcgid = (nc->src_->type() == PreSynType) ? ((PreSyn*)nc->src_)->gid_ : ((InputPreSyn*)nc->src_)->gid_;
+      if (nc->src_) {
+        if (nc->src_->type() == PreSynType) {
+          PreSyn* ps = (PreSyn*)nc->src_;
+          srcgid = ps->gid_;
+          if (srcgid < 0 && ps->pntsrc_) {
+            int type = ps->pntsrc_->type;
+            fprintf(f, "%d %s %d %.15g", i, memb_func[type].sym, nc->active_?1:0, nc->delay_);
+          }else if (srcgid < 0 && ps->thvar_) {
+            fprintf(f, "%d %s %d %.15g", i, "v", nc->active_?1:0, nc->delay_);
+          }else{
+            fprintf(f, "%d %d %d %.15g", i, srcgid, nc->active_?1:0, nc->delay_);
+          }
+        }else{
+          srcgid = ((InputPreSyn*)nc->src_)->gid_;
+          fprintf(f, "%d %d %d %.15g", i, srcgid, nc->active_?1:0, nc->delay_);
+        }
+      }else{
+        fprintf(f, "%d %d %d %.15g", i, srcgid, nc->active_?1:0, nc->delay_);
       }
-      fprintf(f, "%d %d %d %.15g", i, srcgid, nc->active_?1:0, nc->delay_);
       int wcnt = pnt_receive_size[nc->target_->type];
       for (int k=0; k < wcnt; ++k) {
         fprintf(f, " %.15g", nc->u.weight_[k]);
