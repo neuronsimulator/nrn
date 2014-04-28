@@ -70,7 +70,14 @@ static void pr_netcon(NrnThread& nt, FILE* f) {
       NetCon* nc = nclist[i]->item(j);
       int srcgid = -3;
       srcgid = (nc->src_) ? nc->src_->gid_ : -3;
-      fprintf(f, "%d %d %d %.15g", i, srcgid, nc->active_?1:0, nc->delay_);
+      if (srcgid < 0 && nc->src_ && nc->src_->osrc_) {
+        const char* name = nc->src_->osrc_->ctemplate->sym->name;
+        fprintf(f, "%d %s %d %.15g", i, name, nc->active_?1:0, nc->delay_);
+      }else if (srcgid < 0 && nc->src_ && nc->src_->ssrc_) {
+        fprintf(f, "%d %s %d %.15g", i, "v", nc->active_?1:0, nc->delay_);
+      }else{
+        fprintf(f, "%d %d %d %.15g", i, srcgid, nc->active_?1:0, nc->delay_);
+      }
       int wcnt = pnt_receive_size[nc->target_->prop->type];
       for (int k=0; k < wcnt; ++k) {
         fprintf(f, " %.15g", nc->weight_[k]);
@@ -92,10 +99,30 @@ static void pr_realcell(PreSyn& ps, NrnThread& nt, FILE* f) {
   // threshold variable is a voltage
 printf("thvar=%p actual_v=%p end=%p\n", ps.thvar_, nt._actual_v,
 nt._actual_v + nt.end);
+  int inode = -1;
   if (ps.thvar_ < nt._actual_v || ps.thvar_ >= (nt._actual_v + nt.end)) {
-    hoc_execerror("gid not associated with a voltage", 0);
+    if (ps.ssrc_) { /* not cache efficient, search the nodes in this section */
+printf("%s\n", ps.ssrc_?secname(ps.ssrc_):"unknown");
+      for (int i=0; i < ps.ssrc_->nnode; ++i) {
+        Node* nd = ps.ssrc_->pnode[i];
+        if (ps.thvar_ == nd->_v) {
+          inode = nd->v_node_index;
+          break;
+        }
+      }
+      if (inode < 0) { /* check parent node */
+        Node* nd = ps.ssrc_->parentnode;
+        if (ps.thvar_ == nd->_v) {
+          inode = nd->v_node_index;
+        }
+      }
+    }
+    if (inode < 0) {
+      hoc_execerror("gid not associated with a voltage", 0);
+    }
+  }else{
+    inode = ps.thvar_ - nt._actual_v;
   }
-  int inode = ps.thvar_ - nt._actual_v;
 
   // and the root node is ...
   int rnode = inode;
@@ -118,14 +145,16 @@ nt._actual_v + nt.end);
   fprintf(f, " threshold %.15g\n", ps.threshold_);
   fprintf(f, "inode parent area a b\n");
   for (int i=0; i < nt.end; ++i) if (cellnodes[i] >= 0) {
+    Node* nd = nt._v_node[i]; //if not cach_efficient then _actual_area=NULL
     fprintf(f, "%d %d %.15g %.15g %.15g\n",
       cellnodes[i], cellnodes[nt._v_parent_index[i]],
-      nt._actual_area[i], nt._actual_a[i], nt._actual_b[i]);
+      NODEAREA(nd), nt._actual_a[i], nt._actual_b[i]);
   }
   fprintf(f, "inode v\n");
   for (int i=0; i < nt.end; ++i) if (cellnodes[i] >= 0) {
+    Node* nd = nt._v_node[i]; //if not cach_efficient then _actual_v=NULL
     fprintf(f, "%d %.15g\n",
-     cellnodes[i], nt._actual_v[i]);
+     cellnodes[i], NODEV(nd));
   }
   
   // each mechanism
