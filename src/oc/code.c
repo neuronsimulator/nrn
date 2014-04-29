@@ -541,10 +541,10 @@ int hoc_xopen_run(Symbol* sp, const char* str) { /*recursively parse and execute
 	return n;
 }
 
-static char* stmp[20];
+static char* stmp[128];
 static int istmp = 0;
 char** hoc_temp_charptr(void) {
-	istmp = (istmp+1)%20;
+	istmp = (istmp+1)%128;
 	return stmp+istmp;
 }
 
