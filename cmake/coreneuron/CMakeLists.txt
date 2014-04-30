@@ -28,8 +28,12 @@ if(MPI_FOUND)
   set(CMAKE_CXX_COMPILER ${MPI_CXX_COMPILER})
 endif(MPI_FOUND)
 
-option (COREBLURON_TESTS "Build the CORE BLURON regression tests" ON)
-option (COREBLURON_MAIN "Build the CORE BLURON main" ON)
+if(${CMAKE_SYSTEM_PROCESSOR} STREQUAL "ppc64")
+  SET(COREBLURON_LIBRARY_TYPE STATIC)
+endif()
+
+option (COREBLURON_TESTS "Build the CORE BLURON regression tests" OFF)
+option (COREBLURON_MAIN "Build the CORE BLURON main" OFF)
 
 ########################################################################
 #
