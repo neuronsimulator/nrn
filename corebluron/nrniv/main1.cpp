@@ -4,6 +4,7 @@
 #include "corebluron/nrnmpi/nrnmpi.h"
 #include "corebluron/nrniv/nrniv_decl.h"
 #include "corebluron/nrniv/output_spikes.h"
+#include "mpi.h"
 
 #define HAVE_MALLINFO 1
 #if HAVE_MALLINFO
@@ -61,7 +62,13 @@ int main1(int argc, char** argv, char** env) {
   printf("after finitialize mallinfo %d\n", nrn_mallinfo());
 
 //  prcellstate(6967, "t0");
+  double time = MPI_Wtime();
   BBS_netpar_solve(1000);
+  nrnmpi_barrier();
+
+  if (nrnmpi_myid == 0)
+    printf("Time to solution: %g\n", MPI_Wtime() - time);
+
 //  prcellstate(6967, "t1");
   
   output_spikes();
