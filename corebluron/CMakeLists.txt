@@ -88,3 +88,5 @@ mech/cfile/nrnran123.c
 set_source_files_properties(mech/cfile/expsyn.c mech/cfile/hh.c mech/cfile/passive.c mech/cfile/stim.c mech/cfile/netstim.c PROPERTIES COMPILE_FLAGS "-Wno-error")
 
 common_library(corebluron)
+
+install(FILES ${CMAKE_BINARY_DIR}/corebluron/CMakeFiles/corebluron.dir/nrniv/corebluron_main.cpp.o DESTINATION lib)
