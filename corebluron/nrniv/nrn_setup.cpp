@@ -2,6 +2,7 @@
 #include "corebluron/nrnoc/multicore.h"
 #include "corebluron/nrniv/nrniv_decl.h"
 #include "corebluron/nrnoc/nrnoc_decl.h"
+#include "corebluron/nrniv/vrecitem.h"
 #include "corebluron/utils/randoms/nrnran123.h"
 
 // file format defined in cooperation with nrncore/src/nrniv/nrnbbcore_write.cpp
@@ -43,7 +44,12 @@
 //   int array (number specified by the nodecount nrn_bbcore_write
 //     to be intepreted by this side's nrn_bbcore_read method)
 //   double array
-// 
+// #VectorPlay_instances, for each of these instances
+// 4 (VecPlayContinuousType)
+// pd_index vecsize
+// yvec
+// tvec
+//
 // The critical issue requiring careful attention is that a corebluron
 // process reads many bluron thread files with a result that, although
 // the conceptual
@@ -550,6 +556,27 @@ void read_phase2(const char* fname, NrnThread& nt) {
     }
   }
   delete [] mlmap;
+
+  // VecPlayContinuous instances
+  // No attempt at memory efficiency
+  int n = read_int();
+  nt.n_vecplay = n;
+  if (n) {
+    nt._vecplay = new void*[n];
+  }else{
+    nt._vecplay = NULL;
+  }
+  for (int i=0; i < n; ++i) {
+    int vtype = read_int();
+    assert(vtype == VecPlayContinuousType);
+    int ix = read_int();
+    int sz = read_int();
+    IvocVect* yvec = vector_new(sz);
+    read_dbl_array(vector_vec(yvec), sz);
+    IvocVect* tvec = vector_new(sz);
+    read_dbl_array(vector_vec(tvec), sz);
+    nt._vecplay[i] = new VecPlayContinuous(nt._data + ix, yvec, tvec, NULL, nt.id);
+  }
 
   fclose(f);
 }

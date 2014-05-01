@@ -39,6 +39,7 @@ nrniv/sptbinq.h
 nrniv/sptree.h
 nrniv/structpool.h
 nrniv/tqueue.h
+nrniv/vrecitem.h
 mech/cfile/cabvars.h
 )
 
@@ -69,6 +70,7 @@ nrniv/ivvect.cpp
 nrniv/mk_mech.cpp
 nrniv/nrn_setup.cpp
 nrniv/output_spikes.cpp
+nrniv/vrecord.cpp
 mech/cfile/expsyn.c
 mech/cfile/hh.c
 mech/cfile/passive.c

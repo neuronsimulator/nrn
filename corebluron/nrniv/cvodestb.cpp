@@ -3,6 +3,7 @@
 // solver CVode stub to allow cvode as dll for mswindows version.
 
 #include "corebluron/nrniv/netcvode.h"
+#include "corebluron/nrniv/vrecitem.h"
 
 extern "C" {
 bool at_time(NrnThread*, double);
@@ -50,16 +51,17 @@ void nrn_record_init() {
 }
 
 void nrn_play_init() {
-	return;
-	if (net_cvode_instance) {
-//		net_cvode_instance->play_init();
+    for (int ith = 0; ith < nrn_nthread; ++ith) {
+	NrnThread* nt = nrn_threads + ith;
+	for (int i=0; i < nt->n_vecplay; ++i) {
+		((PlayRecord*)nt->_vecplay[i])->play_init();
 	}
+    }
 }
 
 void fixed_play_continuous(NrnThread* nt) {
-	(void)nt; return;
-	if (net_cvode_instance) {
-//		net_cvode_instance->fixed_play_continuous(nt);
+	for (int i=0; i < nt->n_vecplay; ++i) {
+		((PlayRecord*)nt->_vecplay[i])->continuous(nt->_t);
 	}
 }
 

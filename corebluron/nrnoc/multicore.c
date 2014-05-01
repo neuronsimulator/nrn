@@ -508,6 +508,8 @@ void nrn_threads_create(int n, int parallel) {
 				nt->_dt = -1e9;
 				nt->id = i;
 				nt->_stop_stepping = 0;
+				nt->n_vecplay = 0;
+				nt->_vecplay = NULL;
 				nt->tml = (NrnThreadMembList*)0;
 				nt->pntprocs = (Point_process*)0;
 				nt->presyns = (PreSyn*)0;
