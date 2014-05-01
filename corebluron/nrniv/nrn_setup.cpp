@@ -2,7 +2,7 @@
 #include "corebluron/nrnoc/multicore.h"
 #include "corebluron/nrniv/nrniv_decl.h"
 #include "corebluron/nrnoc/nrnoc_decl.h"
-#include "corebluron/mech/cfile/nrnran123.h"
+#include "corebluron/utils/randoms/nrnran123.h"
 
 // file format defined in cooperation with nrncore/src/nrniv/nrnbbcore_write.cpp
 // single integers are ascii one per line. arrays are binary int or double

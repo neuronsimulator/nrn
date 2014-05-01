@@ -6,25 +6,19 @@ nrnoc/md2redef.h
 nrnoc/membfunc.h
 nrnoc/multicore.h
 nrnoc/nrnoc_ml.h
-mech/cfile/nrnran123.h
+utils/randoms/nrnran123.h
 mech/cfile/scoplib.h
 )
 
 set(COREBLURON_HEADERS
-nrnconf.h
 nrnmpi/mpispike.h
 nrnmpi/nrnmpidec.h
 nrnmpi/nrnmpi_def_cinc.h
 nrnmpi/nrnmpi.h
 nrnmpi/nrnmpi_impl.h
 nrnmpi/nrnmpiuse.h
-nrnoc/md1redef.h
-nrnoc/md2redef.h
 nrnoc/membdef.h
-nrnoc/membfunc.h
-nrnoc/multicore.h
 nrnoc/nrnoc_decl.h
-nrnoc/nrnoc_ml.h
 nrnoc/nrnpthread.h
 nrniv/arraypool.h
 nrniv/htlist.h
@@ -46,8 +40,6 @@ nrniv/sptree.h
 nrniv/structpool.h
 nrniv/tqueue.h
 mech/cfile/cabvars.h
-mech/cfile/nrnran123.h
-mech/cfile/scoplib.h
 )
 
 set(COREBLURON_SOURCES
@@ -82,7 +74,7 @@ mech/cfile/hh.c
 mech/cfile/passive.c
 mech/cfile/stim.c
 mech/cfile/netstim.c
-mech/cfile/nrnran123.c
+utils/randoms/nrnran123.c
 )
 
 set_source_files_properties(mech/cfile/expsyn.c mech/cfile/hh.c mech/cfile/passive.c mech/cfile/stim.c mech/cfile/netstim.c PROPERTIES COMPILE_FLAGS "-Wno-error")

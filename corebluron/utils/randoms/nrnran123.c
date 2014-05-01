@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include "corebluron/nrnconf.h"
-#include "corebluron/mech/cfile/nrnran123.h"
+#include "corebluron/utils/randoms/nrnran123.h"
 #include "corebluron/utils/randoms/Random123/philox.h"
 
 static const double SHIFT32   = 1.0 / 4294967297.0;    /* 1/(2^32 + 1) */

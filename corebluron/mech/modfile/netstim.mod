@@ -79,7 +79,7 @@ FUNCTION invl(mean (ms)) (ms) {
 	}
 }
 VERBATIM
-#include "corebluron/mech/cfile/nrnran123.h"
+#include "corebluron/utils/randoms/nrnran123.h"
 ENDVERBATIM
 
 FUNCTION erand() {

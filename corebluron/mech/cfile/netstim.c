@@ -269,7 +269,7 @@ static double _hoc_invl(_vptr) void* _vptr; {
 #endif /*BBCORE*/
  
 /*VERBATIM*/
-#include "corebluron/mech/cfile/nrnran123.h"
+#include "corebluron/utils/randoms/nrnran123.h"
  
 double erand ( _p, _ppvar, _thread, _nt ) double* _p; Datum* _ppvar; ThreadDatum* _thread; _NrnThread* _nt; {
    double _lerand;
