@@ -1,10 +1,11 @@
+#include <vector>
+
 #include "corebluron/nrnconf.h"
 #include "corebluron/nrnoc/multicore.h"
 #include "corebluron/nrnoc/nrnoc_decl.h"
 #include "corebluron/nrnmpi/nrnmpi.h"
 #include "corebluron/nrniv/nrniv_decl.h"
 #include "corebluron/nrniv/output_spikes.h"
-#include "mpi.h"
 
 #define HAVE_MALLINFO 1
 #if HAVE_MALLINFO
@@ -29,24 +30,40 @@ int main1(int argc, char** argv, char** env) {
   printf("after mk_mech mallinfo %d\n", nrn_mallinfo());
   mk_netcvode();
 
-  FILE *fp = fopen("files.txt","r");
-  int iNumFiles;
-  assert(fscanf(fp, "%d\n", &iNumFiles) == 1);
+  /// Assigning threads to a specific task by the first gid written in the file
+  FILE *fp = fopen("files.dat","r");
+  int iNumTasks;
+  assert(fscanf(fp, "%d\n", &iNumTasks) == 1);
 
+  std::vector<int> VecThreads;
   int ngrp = 0;
-  int* grp = new int[iNumFiles / nrnmpi_numprocs + 1];
+  int* grp;
 
-  for (int iNum = 0; iNum < iNumFiles; ++iNum)
+  /// For each MPI task written in bluron
+  for (int iNum = 0; iNum < iNumTasks; ++iNum)
   {    
-    int iFile;
-    assert(fscanf(fp, "%d\n", &iFile) == 1);
-    if ((iNum % nrnmpi_numprocs) == nrnmpi_myid)
+    int iNumThread, iTask, iFirstGid;
+    assert(fscanf(fp, "%d\t%d\n", &iTask, &iNumThread) == 2);
+    
+    /// For each nrn_thread get the file name by the first gid number
+    for (int iThread = 0; iThread < iNumThread; ++iThread)
     {
-      grp[ngrp] = iFile;
-      ngrp++;
+      assert(fscanf(fp, "%d\n", &iFirstGid) == 1);
+      if ((iNum % nrnmpi_numprocs) == nrnmpi_myid)
+      {
+        VecThreads.push_back(iFirstGid);
+      }
     }
   }
 
+  ngrp = VecThreads.size();
+  grp = new int[ngrp];
+  for (int iInt = 0; iInt < ngrp; ++iInt)
+  {
+    grp[iInt] = VecThreads[iInt];
+  }
+
+  /// Reading the files and setting up the data structures
   printf("before nrn_setup mallinfo %d\n", nrn_mallinfo());
   nrn_setup(ngrp, grp, ".");
   printf("after nrn_setup mallinfo %d\n", nrn_mallinfo());
@@ -61,16 +78,18 @@ int main1(int argc, char** argv, char** env) {
   nrn_finitialize(1, -65.0);
   printf("after finitialize mallinfo %d\n", nrn_mallinfo());
 
+  /// Solver execution
 //  prcellstate(6967, "t0");
-  double time = MPI_Wtime();
+  double time = nrnmpi_wtime();
   BBS_netpar_solve(1000);
   nrnmpi_barrier();
 
   if (nrnmpi_myid == 0)
-    printf("Time to solution: %g\n", MPI_Wtime() - time);
+    printf("Time to solution: %g\n", nrnmpi_wtime() - time);
 
 //  prcellstate(6967, "t1");
   
+  /// Outputting spikes
   output_spikes();
 
   nrnmpi_barrier();

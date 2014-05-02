@@ -386,7 +386,10 @@ void nrnmpi_wait(void** request) {
 }
 
 void nrnmpi_barrier() {
-	MPI_Barrier(nrnmpi_comm);
+        if (nrnmpi_numprocs > 1)
+        {
+          MPI_Barrier(nrnmpi_comm);
+        }
 }
 
 double nrnmpi_dbl_allreduce(double x, int type) {
