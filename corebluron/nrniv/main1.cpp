@@ -1,5 +1,3 @@
-#include <vector>
-
 #include "corebluron/nrnconf.h"
 #include "corebluron/nrnoc/multicore.h"
 #include "corebluron/nrnoc/nrnoc_decl.h"
@@ -32,41 +30,30 @@ int main1(int argc, char** argv, char** env) {
 
   /// Assigning threads to a specific task by the first gid written in the file
   FILE *fp = fopen("files.dat","r");
-  int iNumTasks;
-  assert(fscanf(fp, "%d\n", &iNumTasks) == 1);
+  int iNumFiles;
+  assert(fscanf(fp, "%d\n", &iNumFiles) == 1);
 
-  std::vector<int> VecThreads;
   int ngrp = 0;
-  int* grp;
+  int* grp = new int[iNumFiles / nrnmpi_numprocs + 1];
 
-  /// For each MPI task written in bluron
-  for (int iNum = 0; iNum < iNumTasks; ++iNum)
+  /// For each file written in bluron
+  for (int iNum = 0; iNum < iNumFiles; ++iNum)
   {    
-    int iNumThread, iTask, iFirstGid;
-    assert(fscanf(fp, "%d\t%d\n", &iTask, &iNumThread) == 2);
-    
-    /// For each nrn_thread get the file name by the first gid number
-    for (int iThread = 0; iThread < iNumThread; ++iThread)
+    int iFile;
+    assert(fscanf(fp, "%d\n", &iFile) == 1);
+    if ((iNum % nrnmpi_numprocs) == nrnmpi_myid)
     {
-      assert(fscanf(fp, "%d\n", &iFirstGid) == 1);
-      if ((iNum % nrnmpi_numprocs) == nrnmpi_myid)
-      {
-        VecThreads.push_back(iFirstGid);
-      }
+      grp[ngrp] = iFile;
+      ngrp++;
     }
-  }
-
-  ngrp = VecThreads.size();
-  grp = new int[ngrp];
-  for (int iInt = 0; iInt < ngrp; ++iInt)
-  {
-    grp[iInt] = VecThreads[iInt];
   }
 
   /// Reading the files and setting up the data structures
   printf("before nrn_setup mallinfo %d\n", nrn_mallinfo());
   nrn_setup(ngrp, grp, ".");
   printf("after nrn_setup mallinfo %d\n", nrn_mallinfo());
+
+  delete [] grp;
 
   t = 0;
   dt = 0.025;
