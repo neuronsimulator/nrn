@@ -147,6 +147,8 @@ existence of nrnthread_v_transfer (even if one thread).
 #if 1 || PARANEURON
 void (*nrnmpi_v_transfer_)(); /* called by thread 0 */
 void (*nrnthread_v_transfer_)(NrnThread* nt);
+/* if at least one gap junction has a source voltage with extracellular inserted */
+void (*nrnthread_vi_compute_)(NrnThread* nt);
 #endif
 
 #if VECTORIZE
@@ -565,7 +567,7 @@ static void update(NrnThread* _nt)
 #if EXTRACELLULAR
 	nrn_update_2d(_nt);
 #endif
-
+	if (nrnthread_vi_compute_) { (*nrnthread_vi_compute_)(_nt); }
 #if I_MEMBRANE
 	if (_nt->tml) {
 		assert(_nt->tml->index == CAP);
@@ -764,6 +766,9 @@ void nrn_finitialize(int setv, double v) {
 		}
 	}
 #if 1 || PARANEURON
+	if (nrnthread_vi_compute_) FOR_THREADS(_nt){
+		(*nrnthread_vi_compute_)(_nt);
+	}
 	if (nrnmpi_v_transfer_) {
 		(nrnmpi_v_transfer_)();
 	}

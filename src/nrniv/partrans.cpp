@@ -17,6 +17,7 @@ void nrnmpi_setup_transfer();
 void nrn_partrans_clear();
 static void mpi_transfer();
 static void thread_transfer(NrnThread*);
+static void thread_vi_compute(NrnThread*);
 static void mk_ttd();
 extern double t;
 extern int v_structure_change;
@@ -33,8 +34,41 @@ extern double* nrn_recalc_ptr(double*);
 // Note that the source data for nrnthread_v_transfer is in incoming_src_buf,
 // source locations owned by thread, and source locations owned by other threads.
 
+/*
+
+5/16/2014
+Gap junctions with extracellular require that the voltage source be v + vext.
+
+A solution to the v+vext problem is to create a thread specific source
+value buffer just for extracellular nodes.
+ NODEV(_nd) + _nd->extnode->v[0] . 
+ That is, if there is no extracellular the ttd.sv and and poutsrc_
+pointers stay exactly the same.  Whereas, if there is extracellular,
+those would point into the source value buffer of the correct thread. 
+ Of course, it is necessary that the source value buffer be computed
+prior to either parallel transfer or mpi_transfer.  Note that some
+sources that are needed by another thread may not be needed by mpi and
+vice versa.  For the fixed step method, mpi transfer occurs prior to
+thread transfer.  For global variable step methods (cvode and lvardt do
+not work with extracellular anyway):
+ 1) for multisplit, mpi between ms_part3 and ms_part4
+ 2) not multisplit, mpi between transfer_part1 and transfer_part2
+ with thread transfer in ms_part4 and transfer_part2.
+ Therefore it is possible to do the v+vext computation at the beginning
+of mpi transfer except that mpi_transfer is not called if there is only
+one process.  Also, this would be very cache inefficient for threads
+since mpi transfer is done only by thread 0. 
+
+Therefore we need yet another callback.
+ void* nrnthread_vi_compute(NrnThread*)
+ called, if needed, at the end of update(nt) and before mpi transfer in
+nrn_finitialize. 
+
+*/
+
 #if 1 || PARANEURON
 extern void (*nrnthread_v_transfer_)(NrnThread*); // before nonvint and BEFORE INITIAL
+extern void (*nrnthread_vi_compute_)(NrnThread*);
 extern void (*nrnmpi_v_transfer_)(); // before nrnthread_v_transfer and after update. Called by thread 0.
 extern void (*nrn_mk_transfer_thread_data_)();
 #endif
@@ -58,12 +92,25 @@ struct TransferThreadData {
 static TransferThreadData* transfer_thread_data_;
 static int n_transfer_thread_data_;
 
+// for the case where we need vi = v + vext as the source voltage
+struct SourceViBuf {
+	int cnt;
+	Node** nd;
+	double* val;
+};
+static SourceViBuf* source_vi_buf_;
+static int n_source_vi_buf_;
+
 void nrn_partrans_update_ptrs();
 
 declareNrnHash(MapInt2Int, int, int);
 implementNrnHash(MapInt2Int, int, int);
+declareNrnHash(MapNode2PDbl, Node*, double*);
+implementNrnHash(MapNode2PDbl, Node*, double*);
 declarePtrList(DblPList, double)
 implementPtrList(DblPList, double)
+declarePtrList(NodePList, Node)
+implementPtrList(NodePList, Node)
 #define PPList partrans_PPList
 declarePtrList(PPList, Point_process)
 implementPtrList(PPList, Point_process)
@@ -77,13 +124,13 @@ static int insrc_buf_size_, *insrccnt_, *insrcdspl_;
 static int outsrc_buf_size_, *outsrccnt_, *outsrcdspl_;
 static MapInt2Int* sid2insrc_; // received interprocessor sid data is
 // associated with which insrc_buf index. Created by nrnmpi_setup_transfer
-// and used by mkttd
+// and used by mk_ttd
 		
 static DblPList* targets_;
 static IntList* sgid2targets_;
 static PPList* target_pntlist_;
 static IntList* target_parray_index_; // to recompute targets_ for cache_efficint
-static DblPList* sources_;
+static NodePList* visources_;
 static IntList* sgids_;
 static MapInt2Int* sgid2srcindex_;
 
@@ -92,6 +139,26 @@ static int target_ptr_need_update_cnt_ = 0;
 
 static bool is_setup_;
 static void alloclists();
+
+// Find the Node associated with the voltage.
+// Easy if v in the currently accessed section.
+static Node* pv2node(double* pv) {
+	Section* sec = chk_access();
+	Node* nd = sec->parentnode;
+	if (nd) {
+		if (&NODEV(nd) == pv) {
+			return nd;
+		}
+	}
+	for (int i = 0; i < sec->nnode; ++i) {
+		nd = sec->pnode[i];
+		if (&NODEV(nd) == pv) {
+			return nd;
+		}
+	}
+	hoc_execerror("Pointer to v is not in the currently accessed section", 0);
+	return NULL;
+}
 
 void nrnmpi_source_var() {
 	alloclists();
@@ -104,8 +171,8 @@ void nrnmpi_source_var() {
 		sprintf(tmp, "%d", sgid);
 		hoc_execerror("source var gid already in use:", tmp);
 	}
-	(*sgid2srcindex_)[sgid] = sources_->count();
-	sources_->append(psv);
+	(*sgid2srcindex_)[sgid] = visources_->count();
+	visources_->append(pv2node(psv));
 	sgids_->append(sgid);
 //	printf("nrnmpi_source_var source_val=%g sgid=%d\n", *psv, sgid);
 }
@@ -168,18 +235,16 @@ void nrn_partrans_update_ptrs() {
 	// These pointer changes require that the targets be range variables
 	// of a point process and the sources be voltage.
 	int i, n;
-	if (sources_) {
-		n = sources_->count();
-		DblPList* newsrc = new DblPList(n);
-		for (i=0; i < n; ++i) {
-			double* pd = nrn_recalc_ptr(sources_->item(i));
-			newsrc->append(pd);
-		}
-		delete sources_;
-		sources_ = newsrc;
-		// also must update the poutsrc
+	if (visources_) {
+		n = visources_->count();
+		// update the poutsrc that have no extracellular
 		for (i=0; i < outsrc_buf_size_; ++i) {
-			poutsrc_[i] = sources_->item(long(poutsrc_indices_[i]));
+		    Node* nd = visources_->item(long(poutsrc_indices_[i]));
+		    if (!nd->extnode) {
+			poutsrc_[i] = &(NODEV(nd));
+		    }
+		    // pointers into SourceViBuf updated when
+		    // latter is (re-)created
 		}
 	}
 	// the target vgap pointers also need updating but they will not
@@ -193,8 +258,10 @@ static void rm_ttd() {
 	if (!transfer_thread_data_){ return; }
 	for (int i=0; i < n_transfer_thread_data_; ++ i) {
 		TransferThreadData& ttd = transfer_thread_data_[i];
-		if (ttd.tv) delete [] ttd.tv;
-		if (ttd.sv) delete [] ttd.sv;
+		if (ttd.cnt) {
+			delete [] ttd.tv;
+			delete [] ttd.sv;
+		}
 	}
 	delete [] transfer_thread_data_;
 	transfer_thread_data_ = 0;
@@ -202,10 +269,101 @@ static void rm_ttd() {
 	nrnthread_v_transfer_ = 0;
 }
 
+static void rm_svibuf() {
+	if (!source_vi_buf_){ return; }
+	for (int i=0; i < n_source_vi_buf_; ++ i) {
+		SourceViBuf& svib = source_vi_buf_[i];
+		if (svib.cnt) {
+			delete [] svib.nd;
+			delete [] svib.val;
+		}
+	}
+	delete [] source_vi_buf_;
+	source_vi_buf_ = 0;
+	n_source_vi_buf_ = 0;
+	nrnthread_vi_compute_ = 0;
+}
+
+static MapNode2PDbl* mk_svibuf() {
+	rm_svibuf();
+	if (!visources_ || visources_->count() == 0) { return NULL; }
+	// any use of extracellular?
+	int has_ecell = 0;
+	for (int tid = 0; tid < nrn_nthread; ++tid) {
+		if (nrn_threads[tid]._ecell_memb_list) {
+			has_ecell = 1;
+			break;
+		}
+	}
+	if (!has_ecell) { return NULL; }
+
+	source_vi_buf_ = new SourceViBuf[nrn_nthread];
+	n_source_vi_buf_ = nrn_nthread;
+	for (int tid = 0; tid < nrn_nthread; ++tid) {
+		source_vi_buf_[tid].cnt = 0;
+	}
+	// count
+	for (int i=0; i < visources_->count(); ++i) {
+		Node* nd = visources_->item(i);
+		if (nd->extnode) {
+			assert(nd->_nt >= nrn_threads && nd->_nt < (nrn_threads + nrn_nthread));
+			++source_vi_buf_[nd->_nt->id].cnt;
+		}
+	}
+	// allocate
+	for (int tid=0; tid < nrn_nthread; ++tid) {
+		SourceViBuf& svib = source_vi_buf_[tid];
+		if (svib.cnt) {
+			svib.nd = new Node*[svib.cnt];
+			svib.val = new double[svib.cnt];
+		}
+		svib.cnt = 0; // recount on fill
+	}
+	// fill
+	for (int i=0; i < visources_->count(); ++i) {
+		Node* nd = visources_->item(i);
+		if (nd->extnode) {
+			int tid = nd->_nt->id;			
+			SourceViBuf& svib = source_vi_buf_[tid];
+			svib.nd[svib.cnt] = nd;
+			++svib.cnt;
+		}
+	}
+	// now the only problem is how to get TransferThreadData and poutsrc_
+	// to point to the proper SourceViBuf given that sgid2srcindex
+	// only gives us the Node* and we dont want to search linearly
+	// (during setup) everytime we we want to associate.
+	// We can do the poutsrc_ now by creating a temporary Node* to
+	// double* map .. The TransferThreadData can be done later
+	// in mk_ttd using the same map and then deleted.
+	MapNode2PDbl* ndvi2pd = new MapNode2PDbl(1000);
+	for (int tid=0; tid < nrn_nthread; ++tid) {
+		SourceViBuf& svib = source_vi_buf_[tid];
+		for (int i = 0; i < svib.cnt; ++i) {
+			Node* nd = svib.nd[i];
+			(*ndvi2pd)[nd] = svib.val + i;
+		}
+	}
+	for (int i=0; i < outsrc_buf_size_; ++i) {
+		Node* nd = visources_->item(poutsrc_indices_[i]);
+		double* pd = NULL;
+		if (nd->extnode) {
+			assert(ndvi2pd->find(nd, pd));
+			poutsrc_[i] = pd;
+		}
+	}
+	nrnthread_vi_compute_ = thread_vi_compute;
+	return ndvi2pd;
+}
+
 static void mk_ttd() {
 	int i, j, k, tid, n;
+	MapNode2PDbl* ndvi2pd = mk_svibuf();
 	rm_ttd();
-	if (!targets_ || targets_->count() == 0) { return; }
+	if (!targets_ || targets_->count() == 0) {
+		if (ndvi2pd) { delete ndvi2pd; }
+		return;
+	}
 	n = targets_->count();
     if (nrn_nthread > 1) for (i=0; i < n; ++i) {
 	Point_process* pp = target_pntlist_->item(i);
@@ -234,8 +392,10 @@ hoc_execerror("For multiple threads, the target pointer must reference a range v
 	// allocate
 	for (tid = 0; tid < nrn_nthread; ++tid) {
 		TransferThreadData& ttd = transfer_thread_data_[tid];
-		ttd.tv = new double*[ttd.cnt];
-		ttd.sv = new double*[ttd.cnt];
+		if (ttd.cnt) {
+			ttd.tv = new double*[ttd.cnt];
+			ttd.sv = new double*[ttd.cnt];
+		}
 		ttd.cnt = 0;
 	}
 	// count again and fill pointers
@@ -249,9 +409,17 @@ hoc_execerror("For multiple threads, the target pointer must reference a range v
 		j = ttd.cnt++;
 		ttd.tv[j] = targets_->item(i);
 		// perhaps inter- or intra-thread, perhaps interprocessor
+		// if inter- or intra-thread, perhaps SourceViBuf
 		int sid = sgid2targets_->item(i);
 		if (sgid2srcindex_->find(sid, k)) {
-			ttd.sv[j] = sources_->item(k);
+			Node* nd = visources_->item(k);
+			if (nd->extnode) {
+				double* pd;
+				assert(ndvi2pd->find(nd, pd));
+				ttd.sv[j] = pd;
+			}else{
+				ttd.sv[j] = &(NODEV(nd));
+			}
 		}else if (sid2insrc_ && sid2insrc_->find(sid, k)) {
 			ttd.sv[j] = insrc_buf_ + k;
 		}else{
@@ -259,7 +427,22 @@ fprintf(stderr, "No source_var for target_var sid = %d\n", sid);
 			assert(0);
 		}
 	}
+	if (ndvi2pd) { delete ndvi2pd; }
 	nrnthread_v_transfer_ = thread_transfer;
+}
+
+void thread_vi_compute(NrnThread* _nt) {
+	// vi+vext needed by either mpi or thread transfer copied into
+	// the source value buffer for this thread. Note that relevant
+	// poutsrc_ and ttd[_nt->id].sv items
+	// point into this source value buffer
+	if (!source_vi_buf_) { return; }
+	SourceViBuf& svb = source_vi_buf_[_nt->id];
+	for (int i = 0; i < svb.cnt; ++i) {
+		Node* nd = svb.nd[i];
+		assert(nd->extnode);
+		svb.val[i] = NODEV(nd) + nd->extnode->v[0];
+	}
 }
 
 void mpi_transfer() {
@@ -451,7 +634,12 @@ printf("%d    interested in %d\n", nrnmpi_myid, need[insrcdspl_[i]+j]);
 			int sid = need[insrcdspl_[i] + j];
 			int srcindex;
 			if (sgid2srcindex_->find(sid, srcindex)) {
-		    poutsrc_[outsrcdspl_[i] + k] = sources_->item(srcindex);
+				Node* nd = visources_->item(long(srcindex));
+				if (nd->extnode) {
+					// can only do this after mk_svib()
+				}else{
+					poutsrc_[outsrcdspl_[i] + k] = &(NODEV(nd));
+				}
 		    poutsrc_indices_[outsrcdspl_[i] + k] = srcindex;
 		    outsrc_buf_[outsrcdspl_[i] + k] = double(sid); // see step 5
 		    ++k;
@@ -522,7 +710,7 @@ void alloclists() {
 		target_pntlist_ = new PPList(100);
 		target_parray_index_ = new IntList(100);
 		sgid2targets_ = new IntList(100);
-		sources_ = new DblPList(100);
+		visources_ = new NodePList(100);
 		sgids_ = new IntList(100);
 		sgid2srcindex_ = new MapInt2Int(256);
 	}
@@ -531,15 +719,17 @@ void alloclists() {
 void nrn_partrans_clear() {
 	if (!targets_) { return; }
 	nrnthread_v_transfer_ = 0;
+	nrnthread_vi_compute_ = 0;
 	nrnmpi_v_transfer_ = 0;
 	delete sgid2srcindex_;
 	delete sgids_;
-	delete sources_;
+	delete visources_;
 	delete sgid2targets_;
 	delete targets_;
 	delete target_pntlist_;
 	delete target_parray_index_;
 	targets_ = 0;
+	rm_svibuf();
 	rm_ttd();
 	if (insrc_buf_) { delete [] insrc_buf_; insrc_buf_ = 0; }
 	if (outsrc_buf_) { delete [] outsrc_buf_; outsrc_buf_ = 0; }
