@@ -2511,17 +2511,23 @@ Parallel Transfer
 
 
     Syntax:
-        ``pc.source_var(&source_variable, source_global_index)``
+        ``section pc.source_var(&v(x), source_global_index)``
 
 
     Description:
-        Associates the source variable with an integer. This integer has nothing 
+        Associates the source voltage variable with an integer. This integer has nothing 
         to do with and does not conflict with the discrete event gid used by the 
         :ref:`ParallelNetwork` methods. 
-        Must and can only be executed on the machine where the source_variable 
-        exists. 
+        Must and can only be executed on the machine where the source voltage 
+        exists. If extracellular is inserted at this location the voltage
+        transferred is section.v(x) + section.vext[0](x) . I.e. the internal
+        potential (appropriate for gap junctions).
 
-         
+
+    .. warning::
+        An error will be generated if the the first arg pointer is not a
+        voltage in the currently accessed section. This was not an error prior
+        to version 1096:294dac40175f trunk 19 May 2014
 
 ----
 
