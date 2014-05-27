@@ -67,7 +67,12 @@ extern void nrn_fixed_step();
 extern void nrn_fixed_step_group(int);
 
 //temporary 
-static int nrn_errno_check(int) { assert(0); return 1;}
+static int nrn_errno_check(int type) 
+{ 
+  printf("nrn_errno_check() was called on pid %d: errno=%d type=%d\n", nrnmpi_myid, errno, type);
+//  assert(0); 
+  return 1;
+}
 
 }
 

@@ -22,7 +22,7 @@ void output_spikes() {
   for (int i=0; i < spikevec_size; ++i)
   {
     if (spikevec_gid[i] > -1)
-      fprintf(f, "%g\t %d\n", spikevec_time[i], spikevec_gid[i]);
+      fprintf(f, "%g\t%d\n", spikevec_time[i], spikevec_gid[i]);
   }
   fclose(f);
 }

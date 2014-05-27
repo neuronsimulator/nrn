@@ -75,6 +75,8 @@ static InputPreSyn* inputpresyn_; // the global array of instances.
 // InputPreSyn.nc_index_ to + InputPreSyn.nc_cnt_ give the NetCon*
 NetCon** netcon_in_presyn_order_;
 
+static int chkpnt;
+
 void nrn_setup(int ngroup, int* gidgroups, const char *path) {
   char fname[100];
   assert(ngroup > 0);
@@ -128,8 +130,6 @@ static int read_int_(FILE* f) {
 }
 #define read_int() read_int_(f)
 
-static int chkpnt;
-
 static double* read_dbl_array_(double* p, size_t n, FILE* f) {
   double* a;
   if (p) {
@@ -179,6 +179,9 @@ void read_phase1(const char* fname, NrnThread& nt) {
   nt.presyns = new PreSyn[nt.n_presyn];
   nt.netcons = new NetCon[nt.n_netcon];
   nrn_alloc_gid2out(2*nt.n_presyn, nt.n_presyn);
+
+  /// Checkpoint in bluron is defined for both phase 1 and phase 2 since they are written together
+  chkpnt = 0;
   int* output_gid = read_int_array(NULL, nt.n_presyn);
   int* netcon_srcgid = read_int_array(NULL, nt.n_netcon);
   fclose(f);
@@ -341,6 +344,8 @@ void read_phase2(const char* fname, NrnThread& nt) {
   nt.end = read_int();
   int nmech = read_int();
 
+  /// Checkpoint in bluron is defined for both phase 1 and phase 2 since they are written together
+  chkpnt = 2;
   //printf("ncell=%d end=%d nmech=%d\n", nt.ncell, nt.end, nmech);
   //printf("nart=%d\n", nart);
   NrnThreadMembList* tml_last = NULL;

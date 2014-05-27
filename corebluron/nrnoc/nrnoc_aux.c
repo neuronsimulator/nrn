@@ -7,6 +7,8 @@ int nrn_nthread;
 NrnThread* nrn_threads;
 int v_structure_change;
 int diam_changed;
+#define MAXERRCOUNT 5
+int hoc_errno_count;
 
 char* pnt_name(Point_process* pnt) {
   return memb_func[pnt->type].sym;
@@ -60,9 +62,10 @@ void* erealloc(void* ptr, size_t size) {
 
 void* nrn_cacheline_alloc(void** memptr, size_t size) {
 #if HAVE_MEMALIGN
-  if (posix_memalign(memptr, 64, size) != 0 {
+  if (posix_memalign(memptr, 64, size) != 0) {
     fprintf(stderr, "posix_memalign not working\n");
     assert(0);
+  }
 #else
     *memptr = emalloc(size);
 #endif
@@ -85,3 +88,23 @@ int nrn_modeltype() {
 	type = 1;
 	return type;
 }
+
+
+/* used by nmodl and other c, c++ code */
+double hoc_Exp(double x)
+{
+        if (x < -700.) {
+                return 0.;
+        }else if (x > 700) {
+                errno = ERANGE;
+                if (++hoc_errno_count < MAXERRCOUNT) {
+                        fprintf(stderr, "exp(%g) out of range, returning exp(700)\n", x);
+                }
+                if (hoc_errno_count == MAXERRCOUNT) {
+                        fprintf(stderr, "No more errno warnings during this execution\n");
+                }
+                return exp(700.);
+        }
+        return exp(x);
+}
+

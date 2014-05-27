@@ -60,7 +60,7 @@ int main1(int argc, char** argv, char** env) {
   celsius = 34;
   double mindelay = BBS_netpar_mindelay(10.0);
   printf("mindelay = %g\n", mindelay);
-  mk_spikevec_buffer(10000);
+  mk_spikevec_buffer(400000);
 
   nrn_finitialize(1, -65.0);
   printf("after finitialize mallinfo %d\n", nrn_mallinfo());
@@ -74,7 +74,7 @@ int main1(int argc, char** argv, char** env) {
   if (nrnmpi_myid == 0)
     printf("Time to solution: %g\n", nrnmpi_wtime() - time);
 
-//  prcellstate(6967, "t1");
+//  prcellstate(90280, "t1");
   
   /// Outputting spikes
   output_spikes();

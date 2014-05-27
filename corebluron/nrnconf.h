@@ -46,6 +46,7 @@ extern double* makevector(size_t size); /* size in bytes */
 extern void* emalloc(size_t size);
 extern void* ecalloc(size_t n, size_t size);
 extern void* erealloc(void* ptr, size_t size);
+extern double hoc_Exp(double x);
 
 /* will go away at some point */
 typedef struct Point_process {
