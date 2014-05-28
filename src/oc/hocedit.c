@@ -77,9 +77,6 @@ hocedit.c,v
 
 #include "estruct.h"
 
-TERM emacs_term;
-BUFFER *emacs_curbp;
-WINDOW *emacs_curwp;
 extern int emacs_main(int n, char** cpp);
 extern int emacs_refresh(int i, int j);
 extern int emacs_vtinit(void);
