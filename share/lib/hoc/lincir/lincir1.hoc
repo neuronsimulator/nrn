@@ -1467,7 +1467,7 @@ func has_solution() {local ns
 	ns = n_singular()
 	if (noconsist_ == 0 && ns > 0) {
 		prnodes("Matrix equations have no solution")
-		print "cmat" inmat.muls(-1).add(gmat).muls(-1).printf
+		print "cmat" cmat.printf
 		print "gmat" gmat.printf
 		print "singular values" dvec.printf
 sprint(tstr, "Circuit equations have %d inconsistencies", ns)
@@ -1481,7 +1481,7 @@ proc pr_singular() {local ns
 	setup_matrix(1)
 	ns = n_singular()
 	prnodes("Matrix equations")
-	print "cmat" inmat.muls(-1).add(gmat).muls(-1).printf
+	print "cmat" cmat.printf
 	print "gmat" gmat.printf
 	print "singular values" dvec.printf
 	printf("Circuit equations have %d inconsistencies\n", ns)
