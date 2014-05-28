@@ -764,7 +764,14 @@ HOC accessing Python
 
 
     Description:
-        Executes any python statement. 
+        Executes any python statement. Returns 1 on success; 0 if an exception
+        was raised or if python support is not available.
+        
+        In particular, ``python_available = nrnpython("")`` is 1 (true) if
+        python support is available and 0 (false) if python support is not
+        available.
+    
+    Example:
 
         .. code-block::
             python
@@ -775,6 +782,7 @@ HOC accessing Python
             nrnpython("print a") 
             nrnpython("import hoc") 
             nrnpython("hoc.execute('print PI')") 
+            
 
          
 
