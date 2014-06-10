@@ -132,11 +132,11 @@ static struct {		/* Integer Scalars */
 0,0,0
 };
 /* Double Scalars */
-DoubScal scdoub[] = {
+static DoubScal scdoub[] = {
 .
 /FUNCTION/c
 /* Functions */
-VoidFunc function[] = {
+static VoidFunc function[] = {
 .
 /VECTORINT/c
 0, 0
@@ -160,7 +160,7 @@ static struct {		/* Vector integers */
 0,0
 };
 /* Vectors */
-DoubVec vdoub[] = {
+static DoubVec vdoub[] = {
 .
 /ARRAYDOUBLE/c
 0, 0, 0

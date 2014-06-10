@@ -4,7 +4,7 @@ begintemplate MulfitPraxWrap
 // public functions
 public prun, praxis_efun, after_quad, nquad, showopt, save_optimizer
 // public variables
-public saveflag, minerr, nstep
+public minerr, nstep
 
 objref savepath, tl, pf, tobj, opt
 objref start
@@ -20,7 +20,6 @@ proc init() {
 	st = 0
 	currenterr = 1e9
 	attr_praxis(1e-4, .5, 0)
-	saveflag = 0
 	e = 0
 }
 
@@ -49,7 +48,7 @@ func call_opt_efun() {
 
 func prun() {
 	opt = $o1
-	if (saveflag) {
+	if (opt.saveflag) {
 		savepath.wopen("savepath.tmp") // need to put in rank later
 		lines = 0
 	}

@@ -627,7 +627,7 @@ void hoc_execerror_mes(const char* s, const char* t, int prnt){	/* recover from 
 	}
 #endif
 	hoc_execerror_messages = 1;
-	if (pipeflag == 0 && (!nrn_fw_eq(fin, stdin) || !nrn_istty_))
+	if (fin && pipeflag == 0 && (!nrn_fw_eq(fin, stdin) || !nrn_istty_))
 		IGNORE(nrn_fw_fseek(fin, 0L, 2));	/* flush rest of file */
 	hoc_oop_initaftererror();
 #if defined(WIN32) && !defined(CYGWIN)
@@ -1155,7 +1155,7 @@ with the hoc interpreter.
 		hoc_print_first_instance = hpfi;
 		hocstr_delete(hs);
 		if (err) {
-			hoc_execerror("arg not valid statement:", infile);
+			hoc_warning("arg not valid statement:", infile);
 		}
 		return moreinput();
 	} else if (strlen(infile) > 3 && strcmp(infile+strlen(infile) -3, ".py") == 0) {
