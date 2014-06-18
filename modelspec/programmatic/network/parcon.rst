@@ -2431,10 +2431,12 @@ Description:
 
 
     Description:
-        The vector, vec, of size nhosts, is used to accumulate histogram information about the 
+        The vector, vec, of size maxspikes, is used to accumulate histogram information about the 
         maximum number of spikes sent by any cpu during the spike exchange process. 
-        Every spike exchange, one element of the vector is incremented by 1. 
+        Every spike exchange, vec.x[max_spikes_sent_by_any_host] is incremented by 1. 
         It only makes sense to do this on one cpu, normally pc.id == 0. 
+        If some host sends more than maxspikes at the end of an
+        integration interval, no element of vec is incremented.
          
         Note that the current implementation of the spike exchange mechanism uses 
         MPI_Allgather with a fixed buffer size that allows up to nrn_spikebuf_size 
