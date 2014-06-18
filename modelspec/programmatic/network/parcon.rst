@@ -2931,3 +2931,43 @@ Parallel Transfer
         Return the current timestep value for the tid'th thread
 
 
+----
+
+.. method:: ParallelContext.prcellstate
+
+    Syntax:
+        ``pc.precellstate(gid, "suffix")``
+
+    Description:
+        Creates the file <gid>_suffix.nrndat with all the range variable
+        values and synapse/NetCon information associated with the gid.
+        More complete than the HOC version of prcellstate.hoc in the standard
+        library but a more terse in regard to names of variables. The purpose
+        is for diagnosing the reason why a spike raster for a simulation is
+        not the same for different nhost or gid distribution. One examines
+        the diff between corresponding files from different runs.
+
+        The format of the file is:
+
+        .. code-block::
+            none
+
+            gid
+            t
+            # nodes, spike generator node
+            List of node indices, parent node index, area, connection coefficients
+              between node and parent
+            List of node voltages
+            For each mechanism in the cell
+            Mechanism type, mechanism name, # variables for the mechanism instance
+            For each instance of that mechanism in the cell
+              If the mechanism is a POINT_PROCESS with a NET_RECEIVE block,
+                node index, "nri", netreceive index for that POINT_PROCESS instance
+              For each variable
+                node index, variable index, variable value
+            Number of netcons attached to the the cell.
+            For each netcon
+              netreceive index, srcgid or type name of source object, active, delay, weight vector
+
+----
+
