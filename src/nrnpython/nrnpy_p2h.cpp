@@ -66,6 +66,10 @@ static int pysame(Object*, Object*);
 static PyObject* main_module;
 static PyObject* main_namespace;
 static hoc_List* dlist;
+#if NRNPYTHON_DYNAMICLOAD
+extern int nrnpy_site_problem;
+extern int* nrnpy_site_problem_p;
+#endif
 }
 
 class Py2Nrn {
@@ -107,6 +111,9 @@ void nrnpython_reg_real() {
 	nrnpympi_alltoall = py_alltoall;
 	nrnpy_pysame = pysame;
 	dlist = hoc_l_newlist();
+#if NRNPYTHON_DYNAMICLOAD
+	nrnpy_site_problem_p = &nrnpy_site_problem;
+#endif
 }
 
 Py2Nrn::Py2Nrn() {
