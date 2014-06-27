@@ -11,9 +11,12 @@
 #include "nrnoc2iv.h"
 #include "classreg.h"
 #include "nonvintblock.h"
+#include "nrnmpi.h"
 
 extern "C" {
 extern int nrn_nopython;
+extern int nrnpy_nositeflag;
+int* nrnpy_site_problem_p;
 extern void (*p_nrnpython_start)(int);
 void nrnpython();
 static void (*p_nrnpython_real)();
@@ -36,6 +39,7 @@ extern int dlclose(void* handle);
 extern char* dlerror();
 }
 #else
+//#define _GNU_SOURCE
 #include <dlfcn.h>
 #endif
 
@@ -85,6 +89,47 @@ static void p_destruct(void* v) {
 }
 static Member_func p_members[] = {0,0};
 
+#if NRNPYTHON_DYNAMICLOAD
+static char* pyhome;
+static void siteprob(void) {
+	if (nrnpy_site_problem_p && (*nrnpy_site_problem_p)) {
+printf("Py_Initialize exited. PYTHONHOME probably needs to be set correctly.\n");
+		if(pyhome) {
+printf("Our automatic guess based on the Python shared library location:\n    export PYTHONHOME=%s\ndid not work.\n", pyhome);
+		}
+printf("It 'may' help to examine the output of:\npython\nimport site\nsite.__file__\n");
+	}
+}
+
+static void set_pythonhome(void* handle){
+	if (nrnmpi_myid == 0) {atexit(siteprob);}
+#ifdef MINGW
+#else
+	if (getenv("PYTHONHOME") || nrnpy_nositeflag) { return; }
+	Dl_info dl_info;
+	void* s = dlsym(handle, "Py_Initialize");
+        assert(s != NULL);
+	int success = dladdr(s, &dl_info);
+	if (success) {
+		//printf("%s\n", dl_info.dli_fname);
+		pyhome = strdup(dl_info.dli_fname);
+		char* p = pyhome;
+		int n = strlen(p);
+		int seen = 0;
+		for (int i = n-1; i > 0; --i) {
+			if (p[i] == '/') {
+				if (++seen >= 2) {
+					p[i] = '\0' ;
+					break;
+				}
+			}
+		}
+		assert(setenv("PYTHONHOME", p, 1) == 0);
+	}
+#endif
+}
+#endif
+
 void nrnpython_reg() {
 	//printf("nrnpython_reg in nrnpy.cpp\n");
 #if USE_PYTHON
@@ -99,6 +144,10 @@ void nrnpython_reg() {
 		handle = load_python();
 	}
 	if (handle) {
+		// need to worry about the site.py problem
+		// can fix with a proper PYTHONHOME but need to know
+		// what path was used to load the python library.
+		set_pythonhome(handle);
 		load_nrnpython();
 	}
 #else
@@ -109,6 +158,9 @@ void nrnpython_reg() {
     }
 	if (p_nrnpython_reg_real) {
 		(*p_nrnpython_reg_real)();
+		if (nrnpy_site_problem_p) {
+			*nrnpy_site_problem_p = 1;
+		}
 		return;
 	}
 #endif
