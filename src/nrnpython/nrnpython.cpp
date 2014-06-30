@@ -35,6 +35,9 @@ int nrnpy_pyrun(const char*);
 extern int (*p_nrnpy_pyrun)(const char*);
 extern int nrn_global_argc;
 extern char** nrn_global_argv;
+#if NRNPYTHON_DYNAMICLOAD
+int nrnpy_site_problem;
+#endif
 }
 
 void nrnpy_augment_path() {
@@ -112,6 +115,10 @@ void nrnpython_start(int b) {
 		}
 		//printf("Py_NoSiteFlag = %d\n", Py_NoSiteFlag);
 		Py_Initialize();
+#if NRNPYTHON_DYNAMICLOAD
+		// return from Py_Initialize means there was no site problem
+		nrnpy_site_problem = 0;
+#endif
 #if PY_MAJOR_VERSION >= 3
 		wchar_t **argv_copy = copy_argv_wcargv(nrn_global_argc, nrn_global_argv);
 		PySys_SetArgv(nrn_global_argc, argv_copy);
