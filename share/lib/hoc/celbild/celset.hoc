@@ -15,8 +15,12 @@ proc init() {
 }
 func is_subset() { return 1 }
 proc add() {
-	list.append($o1)
-	$o1.sets.append(this)
+	if ($o1.sets.index(this) == -1) { // only add if not already in list
+		list.append($o1)
+		$o1.sets.append(this)
+	}else{
+		printf("Section already present in subset.\n")
+	}
 }
 proc del_all() { local i, j
 	for i=0, list.count-1 {
