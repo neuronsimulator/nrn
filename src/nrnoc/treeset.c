@@ -559,6 +559,8 @@ static Prop **current_prop_list; /* the one prop_alloc is working on
 static int disallow_needmemb = 0; /* point processes cannot use need_memb
 	when inserted at locations 0 or 1 */
 
+Section* nrn_pnt_sec_for_need_;
+
 Prop* need_memb(Symbol* sym)
 {
 	int type;
@@ -584,7 +586,23 @@ Prop* need_memb(Symbol* sym)
 			m->next = *current_prop_list;
 		}
 		*current_prop_list = m;
-	} else {
+	} else if (nrn_pnt_sec_for_need_) {
+		/* The caller was a POINT_PROCESS and we need to make sure
+		that all segments of this section have the ion in order to
+		prevent the possibility of multiple instances of this ion
+		if a density mechanism that needs it is subsequently inserted
+		or if the ion mechanism itself is inserted. Any earlier
+		insertions of the latter or locating this kind of POINT_PROCESS
+		in this section will mean that we no longer get to this arm
+		of the if statement because m above is not nil.
+		*/
+		Section* sec = nrn_pnt_sec_for_need_;
+		Prop** cpl = current_prop_list;
+		nrn_pnt_sec_for_need_ = (Section*)0;
+		mech_insert1(sec, type);
+		current_prop_list = cpl;
+		m = need_memb(sym);
+	}else{
 		m = prop_alloc(current_prop_list, type, (Node*)0);
 	}
 	return m;

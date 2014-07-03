@@ -80,6 +80,7 @@ void destroy_point_process(void* v)
 void nrn_loc_point_process(int pointtype, Point_process* pnt, Section* sec, Node* node)
 {
 	extern Prop *prop_alloc_disallow(), *prop_alloc();
+	extern Section* nrn_pnt_sec_for_need_;
 	Prop* p;
 	double x, nrn_arc_position();
 	
@@ -105,11 +106,14 @@ void nrn_loc_point_process(int pointtype, Point_process* pnt, Section* sec, Node
 	}else{
 		nrn_point_prop_ = (Prop*)0;
 	}
+	nrn_pnt_sec_for_need_ = sec;
 	if (x == 0. || x == 1.) {
 		p = prop_alloc_disallow(&(node->prop), pointsym[pointtype]->subtype, node);
 	}else{
 		p = prop_alloc(&(node->prop), pointsym[pointtype]->subtype, node);
 	}
+	nrn_pnt_sec_for_need_ = (Section*)0;
+
 	nrn_point_prop_ = (Prop*)0;
 	if (pnt->prop) {
 		pnt->prop->param = (double*)0;
