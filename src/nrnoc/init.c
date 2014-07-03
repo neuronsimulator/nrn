@@ -107,6 +107,7 @@ static HocParmUnits _hoc_parm_units[] = {
 	"dt", "ms",
 	"t", "ms",
 	"v", "mV",
+	"i_cap", "mA/cm2",
 	0, 0
 };
 

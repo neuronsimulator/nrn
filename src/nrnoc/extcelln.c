@@ -35,6 +35,8 @@ static HocParmUnits units[] = {
 	"xg", "S/cm2",
 	"xc", "uF/cm2",
 	"e_extracellular", "mV",
+	"vext", "mV",
+	"i_membrane", "mA/cm2",
 	0,0
 };
 
