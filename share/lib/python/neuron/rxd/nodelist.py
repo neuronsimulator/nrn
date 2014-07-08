@@ -44,6 +44,36 @@ class NodeList(list):
             else:
                 raise RxDException('diff must either be a scalar or an iterable of the same length as the NodeList')
         for node in self: node.diff = value
+        
+    def to_grid(self):
+        """Returns a regular grid with the values of the 3d nodes in the list.
+        
+        The grid is a copy only.
+        
+        Nodes that are not 3d will be ignored. If there are no 3d nodes, returns
+        an empty numpy array."""
+        import numpy
+        from .node import Node3D
+        xlo = ylo = zlo = numpy.inf
+        xhi = yhi = zhi = -numpy.inf
+        has_node3d = False
+        for node in self:
+            if isinstance(node, Node3D):
+                has_node3d = True
+                xlo = min(xlo, node.x3d)
+                ylo = min(ylo, node.y3d)
+                zlo = min(zlo, node.z3d)
+                xhi = max(xhi, node.x3d)
+                yhi = max(yhi, node.y3d)
+                zhi = max(zhi, node.z3d)
+                
+        # TODO: finish
+        
+        
+        if not has_node3d:
+            return numpy.zeros((0, 0))
+            
+        
 
     @property
     def volume(self):
