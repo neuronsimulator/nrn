@@ -16,12 +16,6 @@ from .rxdException import RxDException
 _numpy_array = numpy.array
 _numpy_zeros = numpy.zeros
 _scipy_sparse_linalg_bicgstab = scipy.sparse.linalg.bicgstab
-try:
-    _scipy_sparse_diags = scipy.sparse.diags
-except:
-    # we do this because it will still throw an error if scipy < 0.11, but
-    # only when 3D is used
-    _scipy_sparse_diags = None
 _scipy_sparse_eye = scipy.sparse.eye
 _scipy_sparse_linalg_spsolve = scipy.sparse.linalg.spsolve
 _scipy_sparse_dok_matrix = scipy.sparse.dok_matrix
@@ -264,10 +258,15 @@ def _currents(rhs):
                     if c is not None:
                         _rxd_induced_currents[c] += sign * cur
 
+_last_m = None
+_last_preconditioner = None
 _fixed_step_count = 0
-preconditioner = None
+from scipy.sparse.linalg import spilu as _spilu
+from scipy.sparse.linalg import LinearOperator as _LinearOperator
+from scipy.sparse import csc_matrix
 def _fixed_step_solve(raw_dt):
-    global preconditioner, pinverse, _fixed_step_count
+    global pinverse, _fixed_step_count
+    global _last_m, _last_dt, _last_preconditioner
 
     dim = region._sim_dimension
     if dim is None:
@@ -296,12 +295,17 @@ def _fixed_step_solve(raw_dt):
 
         # TODO: refactor so this isn't in section1d... probably belongs in node
         _section1d_transfer_to_legacy()
+        
+        _last_preconditioner = None
     elif dim == 3:
         # the actual advance via implicit euler
         n = len(states)
-        m = _scipy_sparse_eye(n, n) - dt * _euler_matrix
+        if _last_dt != dt or _last_preconditioner is None:
+            _last_m = _scipy_sparse_eye(n, n) - dt * _euler_matrix
+            _last_preconditioner = _LinearOperator((n, n), _spilu(csc_matrix(_last_m)).solve)
+            _last_dt = dt
         # removed diagonal preconditioner since tests showed no improvement in convergence
-        result, info = _scipy_sparse_linalg_bicgstab(m, dt * b)
+        result, info = _scipy_sparse_linalg_bicgstab(_last_m, dt * b, M=_last_preconditioner)
         assert(info == 0)
         states[:] += result
 
@@ -468,7 +472,8 @@ def _reaction_matrix_setup(dt, unexpanded_states):
 
 def _setup():
     # TODO: this is when I should resetup matrices (structure changed event)
-    pass
+    global _last_dt
+    _last_dt = None
 
 def _conductance(d):
     pass
