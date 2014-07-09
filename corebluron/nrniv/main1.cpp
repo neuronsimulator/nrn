@@ -28,8 +28,49 @@ int main1(int argc, char** argv, char** env) {
   printf("after mk_mech mallinfo %d\n", nrn_mallinfo());
   mk_netcvode();
 
+  /// Reading essential inputs
+  double tstop, maxdelay, voltage;
+  int iSpikeBuf;
+  char str[128];
+  FILE *fp = fopen("inputs.dat","r");
+  if (!fp)
+  {
+    if (nrnmpi_myid == 0)
+      printf("\nWARNING! No input data, applying defaults...\n\n");
+
+    t = 0.;
+    tstop = 100.;
+    dt = 0.025;
+    celsius = 34.;
+    voltage = -65.;
+    maxdelay = 10.;
+    iSpikeBuf = 400000;  
+  }
+  else
+  {
+    fgets(str, 128, fp);
+    fscanf(fp, "  StartTime\t%lf\n", &t);
+    fscanf(fp, "  EndTime\t%lf\n", &tstop);
+    fscanf(fp, "  Dt\t\t%lf\n\n", &dt);
+    fgets(str, 128, fp);
+    fscanf(fp, "  Celcius\t%lf\n", &celsius);
+    fscanf(fp, "  Voltage\t%lf\n", &voltage);
+    fscanf(fp, "  MaxDelay\t%lf\n", &maxdelay);
+    fscanf(fp, "  SpikeBuf\t%d\n", &iSpikeBuf);
+    fclose(fp);
+  }
+
   /// Assigning threads to a specific task by the first gid written in the file
-  FILE *fp = fopen("files.dat","r");
+  fp = fopen("files.dat","r");
+  if (!fp)
+  {
+    if (nrnmpi_myid == 0)
+      printf("\nERROR! No input file with nrnthreads, exiting...\n\n");
+
+    nrnmpi_barrier();
+    return -1;
+  }
+  
   int iNumFiles;
   assert(fscanf(fp, "%d\n", &iNumFiles) == 1);
 
@@ -47,6 +88,7 @@ int main1(int argc, char** argv, char** env) {
       ngrp++;
     }
   }
+  fclose(fp);
 
   /// Reading the files and setting up the data structures
   printf("before nrn_setup mallinfo %d\n", nrn_mallinfo());
@@ -55,26 +97,24 @@ int main1(int argc, char** argv, char** env) {
 
   delete [] grp;
 
-  t = 0;
-  dt = 0.025;
-  celsius = 34;
-  double mindelay = BBS_netpar_mindelay(10.0);
+  double mindelay = BBS_netpar_mindelay(maxdelay);
   printf("mindelay = %g\n", mindelay);
-  mk_spikevec_buffer(400000);
+  mk_spikevec_buffer(iSpikeBuf);
 
-  nrn_finitialize(1, -65.0);
+  nrn_finitialize(1, voltage);
   printf("after finitialize mallinfo %d\n", nrn_mallinfo());
 
   /// Solver execution
-//  prcellstate(6967, "t0");
+  prcellstate(83519, "t0");
+
   double time = nrnmpi_wtime();
-  BBS_netpar_solve(1000);
+  BBS_netpar_solve(tstop);//17.015625);
   nrnmpi_barrier();
 
   if (nrnmpi_myid == 0)
     printf("Time to solution: %g\n", nrnmpi_wtime() - time);
 
-//  prcellstate(90280, "t1");
+  prcellstate(83519, "t1");
   
   /// Outputting spikes
   output_spikes();

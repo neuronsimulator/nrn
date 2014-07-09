@@ -79,7 +79,71 @@ mech/cfile/netstim.c
 utils/randoms/nrnran123.c
 )
 
-set_source_files_properties(mech/cfile/expsyn.c mech/cfile/hh.c mech/cfile/passive.c mech/cfile/stim.c mech/cfile/netstim.c PROPERTIES COMPILE_FLAGS "-Wno-error")
+set(MECH_FILES
+mech/cfile/expsyn.c
+mech/cfile/hh.c
+mech/cfile/passive.c
+mech/cfile/stim.c
+mech/cfile/netstim.c
+)
+
+option (COREBLURON_NEURODAMUS_MECHS "Compile CoreBluron with all available mechanisms from Neurodamus" OFF)
+if(COREBLURON_NEURODAMUS_MECHS)
+
+  set(COREBLURON_SOURCES
+  ${COREBLURON_SOURCES}
+  mech/cfile/Ca.c
+  mech/cfile/CaDynamics_E2.c
+  mech/cfile/Ca_HVA.c
+  mech/cfile/Ca_LVAst.c
+  mech/cfile/HDF5reader.c
+  mech/cfile/Ih.c
+  mech/cfile/Im.c
+  mech/cfile/K_Pst.c
+  mech/cfile/K_Tst.c
+  mech/cfile/KdShu2007.c
+  mech/cfile/NaTa_t.c
+  mech/cfile/NaTs2_t.c
+  mech/cfile/Nap_Et2.c
+  mech/cfile/ProbAMPANMDA_EMS.c
+  mech/cfile/ProbGABAAB_EMS.c
+  mech/cfile/SK_E2.c
+  mech/cfile/SKv3_1.c
+  mech/cfile/StochKv.c
+  mech/cfile/netstim_inhpoisson.c
+  mech/cfile/new_calcium_channels.c
+  mech/cfile/mod_func.c
+  )
+
+  set(MECH_FILES
+  ${MECH_FILES}
+  mech/cfile/Ca.c
+  mech/cfile/CaDynamics_E2.c
+  mech/cfile/Ca_HVA.c
+  mech/cfile/Ca_LVAst.c
+  mech/cfile/HDF5reader.c
+  mech/cfile/Ih.c
+  mech/cfile/Im.c
+  mech/cfile/K_Pst.c
+  mech/cfile/K_Tst.c
+  mech/cfile/KdShu2007.c
+  mech/cfile/NaTa_t.c
+  mech/cfile/NaTs2_t.c
+  mech/cfile/Nap_Et2.c
+  mech/cfile/ProbAMPANMDA_EMS.c
+  mech/cfile/ProbGABAAB_EMS.c
+  mech/cfile/SK_E2.c
+  mech/cfile/SKv3_1.c
+  mech/cfile/StochKv.c
+  mech/cfile/netstim_inhpoisson.c
+  mech/cfile/new_calcium_channels.c
+  )
+
+#  set(COREBLURON_LINK_LIBRARIES hdf5)
+endif()
+
+#set_source_files_properties(mech/cfile/expsyn.c mech/cfile/hh.c mech/cfile/passive.c mech/cfile/stim.c mech/cfile/netstim.c PROPERTIES COMPILE_FLAGS "-Wno-error")
+set_source_files_properties(${MECH_FILES} PROPERTIES COMPILE_FLAGS "-Wno-error")
 
 common_library(corebluron)
 
