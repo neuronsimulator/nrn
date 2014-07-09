@@ -49,6 +49,13 @@ class ScalarField:
         self._dx = dx
         self._values = numpy.zeros([len(self._xs), len(self._ys), len(self._zs)], dtype=dtype)
 
+    @property
+    def shape(self):
+        """The shape of the scalar field.
+        
+        This is a convenience property and is equal to self._values.shape."""
+        return self._values.shape
+
     def __getitem__(self, *args):
         """
         Indexing in to the values of the mesh. This is a syntactic shorthand for `values[indices]`.

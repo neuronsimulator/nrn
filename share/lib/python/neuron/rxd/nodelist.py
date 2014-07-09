@@ -45,33 +45,46 @@ class NodeList(list):
                 raise RxDException('diff must either be a scalar or an iterable of the same length as the NodeList')
         for node in self: node.diff = value
         
-    def to_grid(self):
+    def value_to_grid(self):
         """Returns a regular grid with the values of the 3d nodes in the list.
         
         The grid is a copy only.
         
+        Grid points not belonging to the object are assigned a value of NaN.
+        
         Nodes that are not 3d will be ignored. If there are no 3d nodes, returns
-        an empty numpy array."""
+        a 0x0x0 numpy array.
+        
+        Warning: Currently only supports nodelists over 1 region.
+        """
         import numpy
         from .node import Node3D
-        xlo = ylo = zlo = numpy.inf
-        xhi = yhi = zhi = -numpy.inf
-        has_node3d = False
+        
+        # identify regions involved
+        regions = set()
         for node in self:
             if isinstance(node, Node3D):
-                has_node3d = True
-                xlo = min(xlo, node.x3d)
-                ylo = min(ylo, node.y3d)
-                zlo = min(zlo, node.z3d)
-                xhi = max(xhi, node.x3d)
-                yhi = max(yhi, node.y3d)
-                zhi = max(zhi, node.z3d)
-                
-        # TODO: finish
+                regions.add(node.region)
         
+        # default result that falls through if no regions
+        result = numpy.zeros((0, 0, 0))
+
+        if len(regions) > 1:
+            # TODO: the reason for this restriction is the need to make sure
+            #       the mesh lines up
+            raise RxDException('value_to_grid currently only supports 1 region')
         
-        if not has_node3d:
-            return numpy.zeros((0, 0))
+        for r in regions:
+            # TODO: if allowing multiple regions, need to change this
+            result = numpy.empty(r._mesh.shape)
+            result.fill(numpy.nan)
+            
+            for node in self:
+                if isinstance(node, Node3D):
+                    # TODO: if allowing multiple regions, adjust i, j, k as needed
+                    result[node._i, node._j, node._k] = node.value
+        
+        return result
             
         
 
