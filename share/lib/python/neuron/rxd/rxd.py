@@ -488,7 +488,8 @@ def _ode_jacobian(dt, t, ypred, fpred):
 
 # wrapper functions allow swapping in experimental alternatives
 def _w_ode_jacobian(dt, t, ypred, fpred): return _ode_jacobian(dt, t, ypred, fpred)
-def _w_conductance(d): return _conductance(d)
+#def _w_conductance(d): return _conductance(d)
+_w_conductance = None
 def _w_setup(): return _setup()
 def _w_currents(rhs): return _currents(rhs)
 def _w_ode_count(offset): return _ode_count(offset)

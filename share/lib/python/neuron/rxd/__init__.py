@@ -16,6 +16,7 @@ from rxd import re_init
 import dimension3
 from rangevar import RangeVar
 from geometry import membrane, inside, Shell, FractionalVolume, FixedCrossSection, FixedPerimeter, ScalableBorder
+from plugins import set_solver, default_solver, SolverPlugin
 # deprecated:
 # from geometry import ConstantArea, ConstantVolume
 Parameter = Species
@@ -33,3 +34,5 @@ def _model_view(tree):
         species_children = [h.TreeViewItem(rxd_species, str(name)) for name in species_dict]
         rxd_reactions = h.TreeViewItem(rxd_head, '%d Reaction/Rate/MultiCompartmentReaction' % len([r for r in rxd._all_reactions if r() is not None]))        
         tree.append(rxd_head)
+
+
