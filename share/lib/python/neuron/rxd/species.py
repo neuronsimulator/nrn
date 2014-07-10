@@ -224,6 +224,10 @@ class Species(_SpeciesMathable):
         # TODO: if a list of sections is passed in, make that one region
         # _species_count is used to create a unique _real_name for the species
         global _species_count
+        
+        # invalidate any old initialization of external solvers
+        rxd._external_solver_initialized = False
+        
         # TODO: check about the 0<x<1 problem alluded to in the documentation
         h.define_shape()
         self._name = name
@@ -275,6 +279,7 @@ class Species(_SpeciesMathable):
                         
                         
         # TODO: remove the need for this
+        # NOTE: this is used by neuron.rxd.plugins._initialize
         self._dimension = region._sim_dimension
         
         # TODO: remove this line when certain no longer need it (commented out 2013-04-17)

@@ -124,7 +124,7 @@ class Node(object):
         # TODO: don't use an if statement here... put the if statement at node
         #       construction and change the actual function that is pointed to
         if self._data_type == _concentration_node:
-            return _states[self._index]
+            return self.value
         else:
             # TODO: make this return a concentration instead of an error
             raise RxDException('concentration property not yet supported for non-concentration nodes')
@@ -135,7 +135,7 @@ class Node(object):
         # TODO: don't use an if statement here... put the if statement at node
         #       construction and change the actual function that is pointed to
         if self._data_type == _concentration_node:
-            _states[self._index] = value
+            self.value = value
         else:
             # TODO: make this set a concentration instead of raise an error
             raise RxDException('concentration property not yet supported for non-concentration nodes')
@@ -146,7 +146,7 @@ class Node(object):
         # TODO: don't use an if statement here... put the if statement at node
         #       construction and change the actual function that is pointed to
         if self._data_type == _molecule_node:
-            return _states[self._index]
+            return self.value
         else:
             # TODO: make this return a molecule count instead of an error
             raise RxDException('molecules property not yet supported for non-concentration nodes')
@@ -157,7 +157,7 @@ class Node(object):
         # TODO: don't use an if statement here... put the if statement at node
         #       construction and change the actual function that is pointed to
         if self._data_type == _molecule_node:
-            _states[self._index] = value
+            self.value = value
         else:
             # TODO: make this set a molecule count instead of raise an error
             raise RxDException('molecules property not yet supported for non-concentration nodes')
@@ -489,3 +489,21 @@ class Node3D(Node):
     def species(self):
         """The Species whose concentration is recorded at this Node."""
         return self._speciesref()
+    
+    @property
+    def value(self):
+        """Gets the value associated with this Node."""
+        if rxd._external_solver is not None:
+            _states[self._index] = rxd._external_solver.value(self)
+        return _states[self._index]
+    
+    @value.setter
+    def value(self, v):
+        """Sets the value associated with this Node.
+        
+        For Species nodes belonging to a deterministic simulation, this is a concentration.
+        For Species nodes belonging to a stochastic simulation, this is the molecule count.
+        """
+        _states[self._index] = v
+        if rxd._external_solver is not None:
+            rxd._external_solver.update_value(self)

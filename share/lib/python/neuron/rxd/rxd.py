@@ -27,6 +27,9 @@ _section1d_transfer_to_legacy = section1d._transfer_to_legacy
 _ctypes_c_int = ctypes.c_int
 _weakref_ref = weakref.ref
 
+_external_solver = None
+_external_solver_initialized = False
+
 def byeworld():
     # needed to prevent a seg-fault error at shudown in at least some
     # combinations of NEURON and Python, which I think is due to objects
@@ -91,6 +94,7 @@ def _after_advance():
     
 def re_init():
     """reinitializes all rxd concentrations to match HOC values, updates matrices"""
+    global _external_solver_initialized
     h.define_shape()
     
     dim = region._sim_dimension
@@ -114,7 +118,7 @@ def re_init():
     # TODO: is this safe?        
     _cvode_object.re_init()
 
-
+    _external_solver_initialized = False
 def _invalidate_matrices():
     # TODO: make a separate variable for this?
     global last_structure_change_cnt, _diffusion_matrix
@@ -472,8 +476,9 @@ def _reaction_matrix_setup(dt, unexpanded_states):
 
 def _setup():
     # TODO: this is when I should resetup matrices (structure changed event)
-    global _last_dt
+    global _last_dt, _external_solver_initialized
     _last_dt = None
+    _external_solver_initialized = False
 
 def _conductance(d):
     pass
