@@ -1,9 +1,30 @@
+/*
+Copyright (c) 2014 EPFL-BBP, All rights reserved.
+
+THIS SOFTWARE IS PROVIDED BY THE BLUE BRAIN PROJECT "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE BLUE BRAIN PROJECT
+BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
+BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
+IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
+
 #include "corebluron/nrnconf.h"
 #include "corebluron/nrnoc/multicore.h"
 #include "corebluron/nrniv/nrniv_decl.h"
 #include "corebluron/nrnoc/nrnoc_decl.h"
 #include "corebluron/nrniv/vrecitem.h"
 #include "corebluron/utils/randoms/nrnran123.h"
+
+//Endianness
+#include "corebluron/nrniv/order32.h"
+#include "corebluron/nrniv/EndianManager.h"
+#define swap_endian (O32_HOST_ORDER == O32_LITTLE_ENDIAN)
 
 // file format defined in cooperation with nrncore/src/nrniv/nrnbbcore_write.cpp
 // single integers are ascii one per line. arrays are binary int or double
@@ -73,7 +94,7 @@ static void read_phase1(const char* fname, NrnThread& nt);
 static void determine_inputpresyn(void);
 static void read_phase2(const char* fname, NrnThread& nt);
 static void setup_ThreadData(NrnThread& nt);
-static size_t model_size(int prnt);
+static size_t model_size(void);
 
 static int n_inputpresyn_;
 static InputPreSyn* inputpresyn_; // the global array of instances.
@@ -130,7 +151,7 @@ void nrn_setup(int ngroup, int* gidgroups, const char *path) {
     nrn_p_construct();
   }
 
-  model_size(2);
+  model_size();
 }
 
 void setup_ThreadData(NrnThread& nt) {
@@ -147,7 +168,7 @@ void setup_ThreadData(NrnThread& nt) {
 }
 
 static int read_int_(FILE* f) {
-  int i;
+  int i = 0;
   char line[100];
   assert(fgets(line, 100, f));
   assert(sscanf(line, "%d", &i) == 1);
@@ -168,6 +189,11 @@ static double* read_dbl_array_(double* p, size_t n, FILE* f) {
   assert(sscanf(line, "chkpnt %d\n", &i) == 1);
   assert(i == chkpnt++);
   assert(fread(a, sizeof(double), n, f) == n);
+
+  if (swap_endian)
+    for (size_t p=0; p<n; p++)
+      EndianManager::byteSwap(a[p]);
+
   return a;
 }
 #define read_dbl_array(p, n) read_dbl_array_(p, n, f)
@@ -185,6 +211,11 @@ static int* read_int_array_(int* p, size_t n, FILE* f) {
   assert(sscanf(line, "chkpnt %d\n", &i) == 1);
   assert(i == chkpnt++);
   assert(fread(a, sizeof(int), n, f) == n);
+
+  if (swap_endian)
+    for (size_t p=0; p<n; p++)
+      EndianManager::byteSwap(a[p]);
+
   return a;
 }
 #define read_int_array(p,n) read_int_array_(p, n, f)
@@ -414,7 +445,10 @@ void read_phase2(const char* fname, NrnThread& nt) {
 
   nt._data = (double*)ecalloc(nt._ndata, sizeof(double));
   if (nt._nidata) nt._idata = (int*)ecalloc(nt._nidata, sizeof(int));
-  if (nt._nvdata) nt._vdata = (void**)ecalloc(nt._nvdata, sizeof(void*));
+  // see patternstim.cpp
+  int zzz = (&nt == nrn_threads) ? nrn_extra_thread0_vdata : 0;
+  if (nt._nvdata+zzz) 
+    nt._vdata = (void**)ecalloc(nt._nvdata + zzz, sizeof(void*));
   //printf("_ndata=%d _nidata=%d _nvdata=%d\n", nt._ndata, nt._nidata, nt._nvdata);
 
   // The data format defines the order of matrix data
@@ -630,22 +664,23 @@ void read_phase2(const char* fname, NrnThread& nt) {
   fclose(f);
 }
 
-static size_t memb_list_size(NrnThreadMembList* tml, int prnt) {
+static size_t memb_list_size(NrnThreadMembList* tml) {
   size_t sz_ntml = sizeof(NrnThreadMembList);
   size_t sz_ml = sizeof(Memb_list);
   size_t szi = sizeof(int);
   size_t nbyte = sz_ntml + sz_ml;
   nbyte += tml->ml->nodecount*szi;
   nbyte += nrn_prop_dparam_size_[tml->index]*tml->ml->nodecount*sizeof(Datum);
-  if (prnt > 1) {
-    int i = tml->index;
-    printf("%s %d psize=%d ppsize=%d cnt=%d nbyte=%ld\n", memb_func[i].sym, i,
-      nrn_prop_param_size_[i], nrn_prop_dparam_size_[i], tml->ml->nodecount, nbyte);
-  }
+
+#ifdef DEBUG
+  int i = tml->index;
+  printf("%s %d psize=%d ppsize=%d cnt=%d nbyte=%ld\n", memb_func[i].sym, i, nrn_prop_param_size_[i], nrn_prop_dparam_size_[i], tml->ml->nodecount, nbyte);
+#endif
+
   return nbyte;
 }
 
-size_t model_size(int prnt) {
+size_t model_size(void) {
   size_t nbyte = 0;
   size_t szd = sizeof(double);
   size_t szi = sizeof(int);
@@ -666,7 +701,7 @@ size_t model_size(int prnt) {
     // Memb_list size
     int nmech = 0;
     for (tml=nt.tml; tml; tml = tml->next) {
-      nb_nt += memb_list_size(tml, prnt);
+      nb_nt += memb_list_size(tml);
       ++nmech;
     }
 
@@ -675,33 +710,43 @@ size_t model_size(int prnt) {
     nb_nt += nt._ndata*szd + nt._nidata*szi + nt._nvdata*szv;
     nb_nt += nt.end*szi; // _v_parent_index
 
-    if (prnt > 1) {
-      printf("ncell=%d end=%d nmech=%d\n", nt.ncell, nt.end, nmech);
-      printf("ndata=%ld nidata=%ld nvdata=%ld\n", nt._ndata, nt._nidata, nt._nvdata);
-      printf("nbyte so far %ld\n", nb_nt);
-      printf("n_presyn = %d sz=%ld nbyte=%ld\n", nt.n_presyn, sz_ps, nt.n_presyn*sz_ps);
-      printf("n_pntproc=%d sz=%ld nbyte=%ld\n", nt.n_pntproc, sz_pp, nt.n_pntproc*sz_pp);
-      printf("n_netcon=%d sz=%ld nbyte=%ld\n", nt.n_netcon, sz_nc, nt.n_netcon*sz_nc);
-      printf("n_weight = %d\n", nt.n_weight);
-    }
+#ifdef DEBUG
+    printf("ncell=%d end=%d nmech=%d\n", nt.ncell, nt.end, nmech);
+    printf("ndata=%ld nidata=%ld nvdata=%ld\n", nt._ndata, nt._nidata, nt._nvdata);
+    printf("nbyte so far %ld\n", nb_nt);
+    printf("n_presyn = %d sz=%ld nbyte=%ld\n", nt.n_presyn, sz_ps, nt.n_presyn*sz_ps);
+    printf("n_pntproc=%d sz=%ld nbyte=%ld\n", nt.n_pntproc, sz_pp, nt.n_pntproc*sz_pp);
+    printf("n_netcon=%d sz=%ld nbyte=%ld\n", nt.n_netcon, sz_nc, nt.n_netcon*sz_nc);
+    printf("n_weight = %d\n", nt.n_weight);
+#endif
 
     // spike handling
     nb_nt += nt.n_pntproc*sz_pp + nt.n_netcon*sz_nc + nt.n_presyn*sz_ps
              + nt.n_weight*szd;
     nbyte += nb_nt;
-    if (prnt) {printf("%d thread %d total bytes %ld\n", nrnmpi_myid, i, nb_nt);}
+#ifdef DEBUG
+    printf("%d thread %d total bytes %ld\n", nrnmpi_myid, i, nb_nt);
+#endif
   }
 
-  if (prnt) {
-    printf("%d n_inputpresyn=%d sz=%ld nbyte=%ld\n", nrnmpi_myid, n_inputpresyn_, sz_psi, n_inputpresyn_*sz_psi);
-    printf("%d netcon pointers %ld  nbyte=%ld\n", nrnmpi_myid, nccnt, nccnt*sizeof(NetCon*));
-  }
+#ifdef DEBUG
+  printf("%d n_inputpresyn=%d sz=%ld nbyte=%ld\n", nrnmpi_myid, n_inputpresyn_, sz_psi, n_inputpresyn_*sz_psi);
+  printf("%d netcon pointers %ld  nbyte=%ld\n", nrnmpi_myid, nccnt, nccnt*sizeof(NetCon*));
+#endif
+
   nbyte += n_inputpresyn_*sz_psi + nccnt*sizeof(NetCon*);
-  nbyte += output_presyn_size(prnt);
-  nbyte += input_presyn_size(prnt);
+  nbyte += output_presyn_size();
+  nbyte += input_presyn_size();
 
-  if (prnt) {printf("nrnran123 size=%ld cnt=%ld nbyte=%ld\n", nrnran123_state_size(), nrnran123_instance_count(), nrnran123_instance_count()*nrnran123_state_size());}
+#ifdef DEBUG
+  printf("nrnran123 size=%ld cnt=%ld nbyte=%ld\n", nrnran123_state_size(), nrnran123_instance_count(), nrnran123_instance_count()*nrnran123_state_size());
+#endif
+
   nbyte += nrnran123_instance_count() * nrnran123_state_size();
-  if (prnt) {printf("%d total bytes %ld\n", nrnmpi_myid, nbyte);}
+
+#ifdef DEBUG
+  printf("%d total bytes %ld\n", nrnmpi_myid, nbyte);
+#endif
+
   return nbyte;
 }

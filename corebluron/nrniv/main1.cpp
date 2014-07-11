@@ -17,13 +17,30 @@ int nrn_mallinfo() {
 int nrn_mallinfo() { return 0; }
 #endif
 
+void Get_MPIReduceInfo(long long int input, long long int &max, long long int &min, long long int &avg)
+{
+  avg = nrnmpi_longlong_allreduce(input, 1);
+  avg = (long long int)(avg / nrnmpi_numprocs);
+  max = nrnmpi_longlong_allreduce(input, 2);
+  min = nrnmpi_longlong_allreduce(input, 3);
+}
+
 int main1(int argc, char** argv, char** env) {
   (void)env; /* unused */
-  printf("enter main1 mallinfo %d\n", nrn_mallinfo());
+
+  long long int memMax, memMin, memAvg;
+//  printf("enter main1 mallinfo %d\n", nrn_mallinfo());
   nrnmpi_init(1, &argc, &argv);
-  printf("after nrnmpi_init mallinfo %d\n", nrn_mallinfo());
+
+  Get_MPIReduceInfo(nrn_mallinfo(), memMax, memMin, memAvg);
+  if (nrnmpi_myid == 0)
+    printf("after nrnmpi_init mallinfo: max %ld, min %ld, avg %ld\n", memMax, memMin, memAvg);
+
   mk_mech("bbcore_mech.dat");
-  printf("after mk_mech mallinfo %d\n", nrn_mallinfo());
+
+  Get_MPIReduceInfo(nrn_mallinfo(), memMax, memMin, memAvg);
+  if (nrnmpi_myid == 0)
+    printf("after mk_mech mallinfo: max %ld, min %ld, avg %ld\n", memMax, memMin, memAvg);
   mk_netcvode();
 
   /// Reading essential inputs
@@ -89,22 +106,27 @@ int main1(int argc, char** argv, char** env) {
   fclose(fp);
 
   /// Reading the files and setting up the data structures
-  printf("before nrn_setup mallinfo %d\n", nrn_mallinfo());
+  Get_MPIReduceInfo(nrn_mallinfo(), memMax, memMin, memAvg);
+  if (nrnmpi_myid == 0)
+    printf("before nrn_setup mallinfo: max %ld, min %ld, avg %ld\n", memMax, memMin, memAvg);
   nrn_setup(ngrp, grp, ".");
-  printf("after nrn_setup mallinfo %d\n", nrn_mallinfo());
+
+  Get_MPIReduceInfo(nrn_mallinfo(), memMax, memMin, memAvg);
+  if (nrnmpi_myid == 0)
+    printf("after nrn_setup mallinfo: max %ld, min %ld, avg %ld\n", memMax, memMin, memAvg);
 
   delete [] grp;
 
   double mindelay = BBS_netpar_mindelay(maxdelay);
-  printf("mindelay = %g\n", mindelay);
+//  printf("mindelay = %g\n", mindelay);
   mk_spikevec_buffer(iSpikeBuf);
 
   nrn_finitialize(1, voltage);
-  printf("after finitialize mallinfo %d\n", nrn_mallinfo());
+  Get_MPIReduceInfo(nrn_mallinfo(), memMax, memMin, memAvg);
+  if (nrnmpi_myid == 0)
+    printf("after finitialize mallinfo: max %ld, min %ld, avg %ld\n", memMax, memMin, memAvg);
 
   /// Solver execution
-  prcellstate(83519, "t0");
-
   double time = nrnmpi_wtime();
   BBS_netpar_solve(tstop);//17.015625);
   nrnmpi_barrier();
@@ -112,12 +134,12 @@ int main1(int argc, char** argv, char** env) {
   if (nrnmpi_myid == 0)
     printf("Time to solution: %g\n", nrnmpi_wtime() - time);
 
-  prcellstate(83519, "t1");
-  
   /// Outputting spikes
   output_spikes();
 
   nrnmpi_barrier();
+
+  nrnmpi_finalize();
 
   return 0;
 }

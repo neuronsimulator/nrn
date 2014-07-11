@@ -126,6 +126,13 @@ double nrnmpi_wtime() {
 	return 0.0;
 }
 
+
+void nrnmpi_finalize(void) 
+{
+  MPI_Finalize();
+}
+
+
 void nrnmpi_terminate() {
 #if NRNMPI
 	if (nrnmpi_use) {

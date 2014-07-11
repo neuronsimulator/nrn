@@ -1,3 +1,19 @@
+/*
+Copyright (c) 2014 EPFL-BBP, All rights reserved.
+
+THIS SOFTWARE IS PROVIDED BY THE BLUE BRAIN PROJECT "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE BLUE BRAIN PROJECT
+BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
+BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
+IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include "corebluron/nrnconf.h"
@@ -1125,31 +1141,31 @@ void BBS_netpar_solve(double tstop) {
 static double set_mindelay(double maxdelay) {
 	double mindelay = maxdelay;
 	last_maxstep_arg_ = maxdelay;
-	// if all==1 then minimum delay of all NetCon no matter the source.
-	// except if src in same thread as NetCon
-	int all = (nrn_use_selfqueue_ || nrn_nthread > 1);
-	// minumum delay of all NetCon having an InputPreSyn source
-	for (int ith = 0; ith < nrn_nthread; ++ith) {
-		NrnThread* nt = nrn_threads + ith;
-		for (int i = 0; i < nt->n_netcon; ++i) {
-			NetCon& nc = nt->netcons[i];
-			int chk = 0; // ignore nc.delay_
-			if (nc.src_ && nc.src_->type() == InputPreSynType) {
-				chk = 1;
-			}else if (all) {
-				chk = 1;
-				// but ignore if src in same thread as NetCon
-				if (nc.src_ && nc.src_->type() == PreSynType
-				    && ((PreSyn*)nc.src_)->nt_ == nt) {
-					chk = 0;
-				}
-			}
-			if (chk && nc.delay_ < mindelay) {
-				 mindelay = nc.delay_;
-			}
+			
+    // if all==1 then minimum delay of all NetCon no matter the source.
+   // except if src in same thread as NetCon
+   int all = (nrn_use_selfqueue_ || nrn_nthread > 1);
+   // minumum delay of all NetCon having an InputPreSyn source
+   for (int ith = 0; ith < nrn_nthread; ++ith) {
+       NrnThread* nt = nrn_threads + ith;
+       for (int i = 0; i < nt->n_netcon; ++i) {
+           NetCon& nc = nt->netcons[i];
+           int chk = 0; // ignore nc.delay_
+           if (nc.src_ && nc.src_->type() == InputPreSynType) {
+               chk = 1;
+           }else if (all) {
+               chk = 1;
+               // but ignore if src in same thread as NetCon
+               if (nc.src_ && nc.src_->type() == PreSynType
+                   && ((PreSyn*)nc.src_)->nt_ == nt) {
+                   chk = 0;
+               }
+           }
+           if (chk && nc.delay_ < mindelay) {
+                mindelay = nc.delay_;
+           } 
 		}
 	}
-
 #if NRNMPI
 	if (nrnmpi_use) {active_ = 1;}
 	if (use_compress_) {
@@ -1308,23 +1324,27 @@ printf("Notice: gid compression did not succeed. Probably more than 255 cells on
 #endif
 }
 
-size_t output_presyn_size(int prnt) {
+size_t output_presyn_size(void) {
   if (!gid2out_) { return 0; }
   size_t nbyte = gid2out_->bytes();
-  if (prnt > 1) {
-    printf(" gid2out_ table bytes=~%ld size=%d nentry_pool=%d nentry_single=%d nchain=%d max_chain_length=%d\n",
+
+#ifdef DEBUG
+  printf(" gid2out_ table bytes=~%ld size=%d nentry_pool=%d nentry_single=%d nchain=%d max_chain_length=%d\n",
       nbyte, gid2out_->size(), gid2out_->nentry_pool(), gid2out_->nentry_single(), gid2out_->nchain(), gid2out_->max_chain_length());
-  }
+#endif
+
   return nbyte;
 }
 
-size_t input_presyn_size(int prnt) {
+size_t input_presyn_size(void) {
   if (!gid2in_) { return 0; }
   size_t nbyte = gid2in_->bytes();
-  if (prnt > 1) {
-    printf(" gid2in_ table bytes=~%ld size=%d nentry_pool=%d nentry_single=%d nchain=%d max_chain_length=%d\n",
+
+#ifdef DEBUG
+  printf(" gid2in_ table bytes=~%ld size=%d nentry_pool=%d nentry_single=%d nchain=%d max_chain_length=%d\n",
       nbyte, gid2in_->size(), gid2in_->nentry_pool(), gid2in_->nentry_single(), gid2in_->nchain(), gid2in_->max_chain_length());
-  }
+#endif
+
   return nbyte;
 }
 
