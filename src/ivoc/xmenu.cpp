@@ -1419,6 +1419,7 @@ HocVarLabel::HocVarLabel(char** cpp, PolyGlyph* pg, Object* pyvar) : HocUpdateIt
 //purify_watch_rw_4(cpp);
 	pyvar_ = pyvar;
 	cpp_ = cpp;
+	cp_ = NULL;
 	if (pyvar_) {
 		hoc_obj_ref(pyvar_);
 		(*nrnpy_guigetstr)(pyvar_, &cp_);
