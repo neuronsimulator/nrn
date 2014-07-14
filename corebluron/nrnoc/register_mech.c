@@ -152,9 +152,9 @@ int register_mech(const char** m, mod_alloc_t alloc, mod_f_t cur, mod_f_t jacob,
 
 	type = nrn_get_mechtype(m[1]);
 	assert(type);
+#ifdef DEBUG
 	printf("register_mech %s %d\n", m[1], type);
-	nrn_prop_param_size_[type] = 0; /* fill in later */
-	nrn_prop_dparam_size_[type] = 0; /* fill in later */
+#endif
 	nrn_dparam_ptr_start_[type] = 0; /* fill in later */
 	nrn_dparam_ptr_end_[type] = 0; /* fill in later */
 	memb_func[type].sym = (char*)emalloc(strlen(m[1])+1);
@@ -198,6 +198,12 @@ void nrn_writes_conc(int type, int unused) {
 }
 
 void hoc_register_prop_size(int type, int psize, int dpsize) {
+        int pold = nrn_prop_param_size_[type];
+        int dpold = nrn_prop_dparam_size_[type];
+        if (psize != pold || dpsize != dpold) {
+          printf("%s prop sizes differ psize %d %d   dpsize %d %d\n", memb_func[type].sym, psize, pold, dpsize, dpold);
+          exit(1);
+        }
 	nrn_prop_param_size_[type] = psize;
 	nrn_prop_dparam_size_[type] = dpsize;
 	if (dpsize) {

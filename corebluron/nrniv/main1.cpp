@@ -1,3 +1,5 @@
+#include <string.h>
+
 #include "corebluron/nrnconf.h"
 #include "corebluron/nrnoc/multicore.h"
 #include "corebluron/nrnoc/nrnoc_decl.h"
@@ -25,6 +27,16 @@ int main1(int argc, char** argv, char** env) {
   mk_mech("bbcore_mech.dat");
   printf("after mk_mech mallinfo %d\n", nrn_mallinfo());
   mk_netcvode();
+
+  /// PatterStim option
+  int need_patternstim = 0;
+  if (nrnmpi_numprocs == 1 && argc > 1 && strcmp(argv[1], "-pattern") == 0) {
+    // One part done before call to nrn_setup. Other part after.
+    need_patternstim = 1;
+  }
+  if (need_patternstim) {
+    nrn_set_extra_thread0_vdata();
+  }
 
   /// Reading essential inputs
   double tstop, maxdelay, voltage;
@@ -94,6 +106,13 @@ int main1(int argc, char** argv, char** env) {
   printf("after nrn_setup mallinfo %d\n", nrn_mallinfo());
 
   delete [] grp;
+
+
+  /// Invoke PatternStim
+  if (need_patternstim) {
+    nrn_mkPatternStim("out.std");
+  }
+
 
   double mindelay = BBS_netpar_mindelay(maxdelay);
   printf("mindelay = %g\n", mindelay);

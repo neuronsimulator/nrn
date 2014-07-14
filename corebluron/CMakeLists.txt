@@ -70,12 +70,14 @@ nrniv/ivvect.cpp
 nrniv/mk_mech.cpp
 nrniv/nrn_setup.cpp
 nrniv/output_spikes.cpp
+nrniv/patternstim.cpp
 nrniv/vrecord.cpp
 mech/cfile/expsyn.c
 mech/cfile/hh.c
 mech/cfile/passive.c
 mech/cfile/stim.c
 mech/cfile/netstim.c
+mech/cfile/pattern.c
 utils/randoms/nrnran123.c
 )
 
@@ -115,8 +117,13 @@ if(COREBLURON_NEURODAMUS_MECHS)
   mech/cfile/mod_func.c
   )
 
-  set(MECH_FILES
-  ${MECH_FILES}
+set(MECH_FILES
+  mech/cfile/expsyn.c
+  mech/cfile/hh.c
+  mech/cfile/passive.c
+  mech/cfile/stim.c
+  mech/cfile/netstim.c
+  mech/cfile/pattern.c
   mech/cfile/Ca.c
   mech/cfile/CaDynamics_E2.c
   mech/cfile/Ca_HVA.c
