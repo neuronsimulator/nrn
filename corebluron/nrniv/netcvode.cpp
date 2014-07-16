@@ -71,6 +71,7 @@ static int nrn_errno_check(int type)
 { 
   printf("nrn_errno_check() was called on pid %d: errno=%d type=%d\n", nrnmpi_myid, errno, type);
 //  assert(0); 
+  type = 0;
   return 1;
 }
 

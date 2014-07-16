@@ -147,7 +147,7 @@ void setup_ThreadData(NrnThread& nt) {
 }
 
 static int read_int_(FILE* f) {
-  int i;
+  int i = 0;
   char line[100];
   assert(fgets(line, 100, f));
   assert(sscanf(line, "%d", &i) == 1);
@@ -414,7 +414,10 @@ void read_phase2(const char* fname, NrnThread& nt) {
 
   nt._data = (double*)ecalloc(nt._ndata, sizeof(double));
   if (nt._nidata) nt._idata = (int*)ecalloc(nt._nidata, sizeof(int));
-  if (nt._nvdata) nt._vdata = (void**)ecalloc(nt._nvdata, sizeof(void*));
+  // see patternstim.cpp
+  int zzz = (&nt == nrn_threads) ? nrn_extra_thread0_vdata : 0;
+  if (nt._nvdata+zzz) 
+    nt._vdata = (void**)ecalloc(nt._nvdata + zzz, sizeof(void*));
   //printf("_ndata=%d _nidata=%d _nvdata=%d\n", nt._ndata, nt._nidata, nt._nvdata);
 
   // The data format defines the order of matrix data
@@ -639,8 +642,9 @@ static size_t memb_list_size(NrnThreadMembList* tml, int prnt) {
   nbyte += nrn_prop_dparam_size_[tml->index]*tml->ml->nodecount*sizeof(Datum);
   if (prnt > 1) {
     int i = tml->index;
-    printf("%s %d psize=%d ppsize=%d cnt=%d nbyte=%ld\n", memb_func[i].sym, i,
-      nrn_prop_param_size_[i], nrn_prop_dparam_size_[i], tml->ml->nodecount, nbyte);
+#ifdef DEBUG
+    printf("%s %d psize=%d ppsize=%d cnt=%d nbyte=%ld\n", memb_func[i].sym, i, nrn_prop_param_size_[i], nrn_prop_dparam_size_[i], tml->ml->nodecount, nbyte);
+#endif
   }
   return nbyte;
 }
@@ -675,6 +679,7 @@ size_t model_size(int prnt) {
     nb_nt += nt._ndata*szd + nt._nidata*szi + nt._nvdata*szv;
     nb_nt += nt.end*szi; // _v_parent_index
 
+#ifdef DEBUG
     if (prnt > 1) {
       printf("ncell=%d end=%d nmech=%d\n", nt.ncell, nt.end, nmech);
       printf("ndata=%ld nidata=%ld nvdata=%ld\n", nt._ndata, nt._nidata, nt._nvdata);
@@ -684,24 +689,36 @@ size_t model_size(int prnt) {
       printf("n_netcon=%d sz=%ld nbyte=%ld\n", nt.n_netcon, sz_nc, nt.n_netcon*sz_nc);
       printf("n_weight = %d\n", nt.n_weight);
     }
+#endif
 
     // spike handling
     nb_nt += nt.n_pntproc*sz_pp + nt.n_netcon*sz_nc + nt.n_presyn*sz_ps
              + nt.n_weight*szd;
     nbyte += nb_nt;
+#ifdef DEBUG
     if (prnt) {printf("%d thread %d total bytes %ld\n", nrnmpi_myid, i, nb_nt);}
+#endif
   }
 
+#ifdef DEBUG
   if (prnt) {
     printf("%d n_inputpresyn=%d sz=%ld nbyte=%ld\n", nrnmpi_myid, n_inputpresyn_, sz_psi, n_inputpresyn_*sz_psi);
     printf("%d netcon pointers %ld  nbyte=%ld\n", nrnmpi_myid, nccnt, nccnt*sizeof(NetCon*));
   }
+#endif
   nbyte += n_inputpresyn_*sz_psi + nccnt*sizeof(NetCon*);
   nbyte += output_presyn_size(prnt);
   nbyte += input_presyn_size(prnt);
 
+#ifdef DEBUG
   if (prnt) {printf("nrnran123 size=%ld cnt=%ld nbyte=%ld\n", nrnran123_state_size(), nrnran123_instance_count(), nrnran123_instance_count()*nrnran123_state_size());}
+#endif
+
   nbyte += nrnran123_instance_count() * nrnran123_state_size();
+
+#ifdef DEBUG
   if (prnt) {printf("%d total bytes %ld\n", nrnmpi_myid, nbyte);}
+#endif
+
   return nbyte;
 }
