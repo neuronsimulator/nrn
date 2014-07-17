@@ -73,7 +73,7 @@ void VecPlayStep::play_init() {
 }
 
 void VecPlayStep::deliver(double tt, NetCvode* ns) {
-	NrnThread* nt = nrn_threads;
+	NrnThread* nt = nrn_threads + ith_;
 	*pd_ = y_->elem(current_index_++);
 	if (current_index_ < y_->capacity()) {
 		if (t_) {
@@ -132,7 +132,7 @@ void VecPlayContinuous::play_init() {
 }
 
 void VecPlayContinuous::deliver(double tt, NetCvode* ns) {
-	NrnThread* nt = nrn_threads;
+	NrnThread* nt = nrn_threads + ith_;
 //printf("deliver %g\n", tt);
 	last_index_ = ubound_index_;
 	if (discon_indices_) {
