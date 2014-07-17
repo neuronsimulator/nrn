@@ -4,6 +4,7 @@
 #include "corebluron/nrniv/netcon.h"
 #include "corebluron/nrniv/ivtable.h"
 #include "corebluron/nrniv/ivlist.h"
+#include "corebluron/nrnoc/nrnoc_decl.h"
 
 extern void** pnt_receive;
 
@@ -154,7 +155,7 @@ nt._actual_v + nt.end);
   delete pnt2index;
 }
 
-void prcellstate(int gid, const char* suffix) {
+int prcellstate(int gid, const char* suffix) {
   //search the NrnThread.presyns for the gid
   for (int ith=0; ith < nrn_nthread; ++ith) {
     NrnThread& nt = nrn_threads[ith];
@@ -172,8 +173,10 @@ void prcellstate(int gid, const char* suffix) {
           pr_realcell(ps, nt, f);
         }
         fclose(f);
+        return 1;
       }
     }
   }
+  return 0;
 }
 

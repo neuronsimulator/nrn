@@ -17,8 +17,6 @@ int nrn_mallinfo() {
 int nrn_mallinfo() { return 0; }
 #endif
 
-extern void prcellstate(int gid, const char* suffix);
-
 int main1(int argc, char** argv, char** env) {
   (void)env; /* unused */
   printf("enter main1 mallinfo %d\n", nrn_mallinfo());
