@@ -10,6 +10,7 @@
 #define HAVE_MALLINFO 1
 #if HAVE_MALLINFO
 #include <malloc.h>
+
 int nrn_mallinfo() {
   struct mallinfo m = mallinfo();
   return m.hblkhd + m.uordblks;
@@ -19,39 +20,41 @@ int nrn_mallinfo() {
 int nrn_mallinfo() { return 0; }
 #endif
 
-void Get_MPIReduceInfo(long long int input, long long int &max, long long int &min, long long int &avg)
+void Print_MemUsage(char *name)
 {
+  long long int input, max, min, avg;
+  input = nrn_mallinfo();
   avg = nrnmpi_int_allreduce(input, 1);
   avg = (long long int)(avg / nrnmpi_numprocs);
   max = nrnmpi_int_allreduce(input, 2);
   min = nrnmpi_int_allreduce(input, 3);
+
+  if (nrnmpi_myid == 0)
+    printf("%s: max %lld, min %lld, avg %lld\n", name, max, min, avg);
 }
+
 
 int main1(int argc, char** argv, char** env) {
   (void)env; /* unused */
 
-  long long int memMax, memMin, memAvg;
-//  printf("enter main1 mallinfo %d\n", nrn_mallinfo());
   nrnmpi_init(1, &argc, &argv);
 
-  Get_MPIReduceInfo(nrn_mallinfo(), memMax, memMin, memAvg);
-  if (nrnmpi_myid == 0)
-    printf("after nrnmpi_init mallinfo: max %lld, min %lld, avg %lld\n", memMax, memMin, memAvg);
+  Print_MemUsage("after nrnmpi_init mallinfo");
 
   mk_mech("bbcore_mech.dat");
 
-  Get_MPIReduceInfo(nrn_mallinfo(), memMax, memMin, memAvg);
-  if (nrnmpi_myid == 0)
-    printf("after mk_mech mallinfo: max %lld, min %lld, avg %lld\n", memMax, memMin, memAvg);
+  Print_MemUsage("after mk_mech mallinfo");
+
   mk_netcvode();
 
   /// PatterStim option
   int need_patternstim = 0;
-//  if (nrnmpi_numprocs == 1 && argc > 1 && strcmp(argv[1], "-pattern") == 0) {
+
   if (argc > 1 && strcmp(argv[1], "-pattern") == 0) {
     // One part done before call to nrn_setup. Other part after.
     need_patternstim = 1;
   }
+
   if (need_patternstim) {
     nrn_set_extra_thread0_vdata();
   }
@@ -102,6 +105,11 @@ int main1(int argc, char** argv, char** env) {
   
   int iNumFiles;
   assert(fscanf(fp, "%d\n", &iNumFiles) == 1);
+  if (nrnmpi_numprocs > iNumFiles)
+  {
+    printf("\nERROR! The number of CPUs cannot exceed the number of input files\n\n");
+    return -1;
+  }
 
   int ngrp = 0;
   int* grp = new int[iNumFiles / nrnmpi_numprocs + 1];
@@ -120,14 +128,11 @@ int main1(int argc, char** argv, char** env) {
   fclose(fp);
 
   /// Reading the files and setting up the data structures
-  Get_MPIReduceInfo(nrn_mallinfo(), memMax, memMin, memAvg);
-  if (nrnmpi_myid == 0)
-    printf("before nrn_setup mallinfo: max %lld, min %lld, avg %lld\n", memMax, memMin, memAvg);
+  Print_MemUsage("before nrn_setup mallinfo");
+
   nrn_setup(ngrp, grp, ".");
 
-  Get_MPIReduceInfo(nrn_mallinfo(), memMax, memMin, memAvg);
-  if (nrnmpi_myid == 0)
-    printf("after nrn_setup mallinfo: max %lld, min %lld, avg %lld\n", memMax, memMin, memAvg);
+  Print_MemUsage("after nrn_setup mallinfo");
 
   delete [] grp;
 
@@ -142,16 +147,19 @@ int main1(int argc, char** argv, char** env) {
   if (nrnmpi_myid == 0)
     printf("mindelay = %g\n", mindelay);
 
+  Print_MemUsage("before spike buffer");
+
   mk_spikevec_buffer(iSpikeBuf);
 
+  Print_MemUsage("after spike buffer");
+
   nrn_finitialize(1, voltage);
-  Get_MPIReduceInfo(nrn_mallinfo(), memMax, memMin, memAvg);
-  if (nrnmpi_myid == 0)
-    printf("after finitialize mallinfo: max %lld, min %lld, avg %lld\n", memMax, memMin, memAvg);
+
+  Print_MemUsage("after finitialize mallinfo");
 
   /// Solver execution
   double time = nrnmpi_wtime();
-  BBS_netpar_solve(tstop);//17.015625);
+  BBS_netpar_solve(tstop);
   nrnmpi_barrier();
 
   if (nrnmpi_myid == 0)

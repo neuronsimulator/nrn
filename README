@@ -1,0 +1,30 @@
+Welcome to CoreBluron!
+
+CoreBluron is a neuroscience simulation software based on the popular software NEURON (www.neuron.yale.edu). 
+Its goal is to simulate massive cell networks with minimal memory footprint and optimal performance. 
+
+Please follow these instructions in order to build and run the code. 
+
+
+TO BUILD:
+--------
+
+CoreBluron is using MPI for parallelization. Currently the following compilers/MPI libraries for production
+simulations are used:
+- Blue Gene/Q: XLC 12.1.0.7
+- x86_64: icc 13.1, mvapich 2.0
+
+You can use other compilers and MPI library distributions. Make sure that appropriate modules are loaded and
+CMake (minimum required version 2.8) is correctly setting appropriate compilers/libraries. In order to build
+the simulator follow the steps below:
+
+1. Set the correct MPI compilers (wrappers) with the CC and CXX environment flags. 
+   Example: on a Blue Gene Q:
+     export CC=mpixlc
+     export CXX=mpixlcxx
+
+2. To build the binaries and libraries use the CMake build system (from the top level folder of CoreBluron)
+     mkdir build && cd build
+     cmake ..
+     make 
+
