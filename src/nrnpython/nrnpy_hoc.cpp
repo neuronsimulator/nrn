@@ -1187,14 +1187,21 @@ static Py_ssize_t hocobj_len(PyObject* self) {
 			return vector_capacity((Vect*)po->ho_->u.this_pointer);
 		}else if (po->ho_->ctemplate == hoc_list_template_) {
 			return ivoc_list_count(po->ho_);
-		}	
+		}else if (po->ho_->ctemplate == hoc_sectionlist_template_) {
+			PyErr_SetString(PyExc_TypeError, "hoc.SectionList has no len()");
+			return -1;
+		}
 	}else if (po->type_ == 3) {
 		Arrayinfo* a = hocobj_aray(po->sym_, po->ho_);
 		return araylen(a, po);
 	}else if (po->sym_ && po->sym_->type == TEMPLATE) {
 		return po->sym_->u.ctemplate->count;
+	}else if (po->type_ == 7) {
+		PyErr_SetString(PyExc_TypeError, "hoc.allsec() has no len()");
+		return -1;
 	}
-	return 0;
+	PyErr_SetString(PyExc_TypeError, "Most HocObject have no len()");
+	return -1;
 }
 
 static int hocobj_nonzero(PyObject* self) {
