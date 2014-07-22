@@ -10,6 +10,7 @@ extern "C" {
 extern int nrn_mallinfo(void);
 extern void mk_mech(const char* fname);
 extern void mk_netcvode(void);
+extern void nrn_p_construct(void);
 extern void nrn_setup(int ngroup, int* gidgroups, const char *path);
 extern double BBS_netpar_mindelay(double maxdelay);
 extern void BBS_netpar_solve(double);

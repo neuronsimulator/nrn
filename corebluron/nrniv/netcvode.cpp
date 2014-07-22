@@ -346,6 +346,11 @@ NetCvode::~NetCvode() {
 }
 
 
+void nrn_p_construct() {
+	net_cvode_instance->p_construct(nrn_nthread);
+}
+
+
 void NetCvode::p_construct(int n) {
 	int i;
 	if (pcnt_ != n) {

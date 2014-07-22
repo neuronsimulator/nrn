@@ -1125,33 +1125,32 @@ void BBS_netpar_solve(double tstop) {
 static double set_mindelay(double maxdelay) {
 	double mindelay = maxdelay;
 	last_maxstep_arg_ = maxdelay;
-    if (nrn_use_selfqueue_ || nrn_nthread > 1 ) {
-	HTList* q;
-	HTList* psl = net_cvode_instance->psl_;
-	if (psl) for (q = psl->First(); q != psl->End(); q = q->Next()) {
-		PreSyn* ps = (PreSyn*)q->vptr();
-		double md = ps->mindelay();
-		if (mindelay > md) {
-			mindelay = md;
+	// if all==1 then minimum delay of all NetCon no matter the source.
+	// except if src in same thread as NetCon
+	int all = (nrn_use_selfqueue_ || nrn_nthread > 1);
+	// minumum delay of all NetCon having an InputPreSyn source
+	for (int ith = 0; ith < nrn_nthread; ++ith) {
+		NrnThread* nt = nrn_threads + ith;
+		for (int i = 0; i < nt->n_netcon; ++i) {
+			NetCon& nc = nt->netcons[i];
+			int chk = 0; // ignore nc.delay_
+			if (nc.src_ && nc.src_->type() == InputPreSynType) {
+				chk = 1;
+			}else if (all) {
+				chk = 1;
+				// but ignore if src in same thread as NetCon
+				if (nc.src_ && nc.src_->type() == PreSynType
+				    && ((PreSyn*)nc.src_)->nt_ == nt) {
+					chk = 0;
+				}
+			}
+			if (chk && nc.delay_ < mindelay) {
+				 mindelay = nc.delay_;
+			}
 		}
 	}
-	//and now need to also check the InputPreSyn
-	NrnHashIterate(Gid2InputPreSyn, gid2in_, InputPreSyn*, ps) {
-		double md = ps->mindelay();
-		if (mindelay > md) {
-			mindelay = md;
-		}
-	}}}
-    }
+
 #if NRNMPI
-    else{
-	NrnHashIterate(Gid2InputPreSyn, gid2in_, InputPreSyn*, ps) {
-		double md = ps->mindelay();
-		if (mindelay > md) {
-			mindelay = md;
-		}
-	}}}
-    }
 	if (nrnmpi_use) {active_ = 1;}
 	if (use_compress_) {
 		if (mindelay/dt > 255) {
