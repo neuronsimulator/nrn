@@ -1,6 +1,6 @@
 set(COREBLURON_EXEC_HEADERS)
 set(COREBLURON_EXEC_SOURCES main.cpp)
-set(COREBLURON_EXEC_LINK_LIBRARIES corebluron hdf5)
+set(COREBLURON_EXEC_LINK_LIBRARIES corebluron)
 
 # The mechanism registration function will be defined depending on whether we
 # are using neurodamus list of mechanisms
