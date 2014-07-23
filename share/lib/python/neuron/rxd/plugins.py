@@ -9,6 +9,9 @@ from . import species
 from . import node
 
 class SolverPlugin:
+    def __init__(self):
+        _initialize(self)
+
     """Interface for solver plugins."""
     def init(self, species_list, reactions_list):
         """Perform any needed initialization.
@@ -26,11 +29,11 @@ class SolverPlugin:
         # NOTE: when not using shared memory, self._values should be an object
         #       that transfers data only on demand
         
-        self._species(self, species_list)
-        self._reactions(self, reactions_list)
+        self._set_species(species_list)
+        self._set_reactions(reactions_list)
 
     
-    def _species(self, species_list):
+    def _set_species(self, species_list):
         """Set the species to be used.
         
         They should be stored internally with weakrefs.
@@ -51,7 +54,7 @@ class SolverPlugin:
         self._species = [weakref.proxy(s) for s in species_list]
         self._set_mesh()
         
-    def _reactions(self, reactions_list):
+    def _set_reactions(self, reactions_list):
         """Store the reactions.
         
         Invokes self._process_reactions to do any necessary preprocessing.
@@ -184,13 +187,17 @@ def set_solver(plugin_solver_object=None):
     if plugin_solver_object is None:
         _default_solver()
     else:
-        structure_changed_event = rxd._w_setup
-        change_currents = None
+        change_currents = lambda rhs: None
         change_conductance = None
-        rxd._callbacks = [structure_changed_event, None, change_currents,
-            change_conductance,
-            lambda dt: _fixed_step_advance(dt, plugin_solver_object), _cvode_error,
-            _invalidate_plugin, _cvode_error, _cvode_error, _cvode_error, None]
+        rxd._setup = rxd._orig_setup
+        rxd._currents = change_currents
+        rxd._ode_count = _cvode_error
+        rxd._ode_reinit = _invalidate_plugin
+        rxd._ode_fun = _cvode_error
+        rxd._ode_solve = _cvode_error
+        rxd._fixed_step_solve = lambda dt: _fixed_step_advance(dt, plugin_solver_object)
+        rxd._ode_jacobian = _cvode_error
+
         rxd._external_solver = plugin_solver_object
     _invalidate_plugin()
 
@@ -199,7 +206,7 @@ def _invalidate_plugin():
 
 def _initialize(solver):
     all_species = [s() for s in species._defined_species.values() if s() is not None]
-    all_reactions = [r() for r in rxd._all_reactions.values() if r() is not None]
+    all_reactions = [r() for r in rxd._all_reactions if r() is not None]
     
     solver.init(all_species, all_reactions)
     
@@ -228,8 +235,15 @@ def _fixed_step_advance(dt, solver):
 
 def _default_solver():
     """Restore the default solver."""
-    rxd._callbacks = [rxd._w_setup, None, rxd._w_currents, rxd._w_conductance, rxd._w_fixed_step_solve,
-              rxd._w_ode_count, rxd._w_ode_reinit, rxd._w_ode_fun, rxd._w_ode_solve, rxd._w_ode_jacobian, None]
+    rxd._setup = rxd._orig_setup
+    rxd._currents = rxd._orig_currents
+    rxd._ode_count = rxd._orig_ode_count
+    rxd._ode_reinit = rxd._orig_ode_reinit
+    rxd._ode_fun = rxd._orig_ode_fun
+    rxd._ode_solve = rxd._orig_ode_solve
+    rxd._fixed_step_solve = rxd._orig_fixed_step_solve 
+    rxd._ode_jacobian = _orig_ode_jacobian
+
     rxd._external_solver = None
     rxd._external_solver_initialized = False
 

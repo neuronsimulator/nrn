@@ -492,7 +492,14 @@ def _ode_jacobian(dt, t, ypred, fpred):
     hi = lo + len(_nonzero_volume_indices)    
     _reaction_matrix_setup(dt, ypred[lo : hi])
 
-
+_orig_setup = _setup
+_orig_currents = _currents
+_orig_ode_count = _ode_count
+_orig_ode_reinit = _ode_reinit
+_orig_ode_fun = _ode_fun
+_orig_ode_solve = _ode_solve
+_orig_fixed_step_solve = _fixed_step_solve
+_orig_ode_jacobian = _ode_jacobian
 
 # wrapper functions allow swapping in experimental alternatives
 def _w_ode_jacobian(dt, t, ypred, fpred): return _ode_jacobian(dt, t, ypred, fpred)
