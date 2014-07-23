@@ -18,6 +18,7 @@
 #include <netcvode.h>
 #include <hoclist.h>
 #include <ocpointer.h>
+#include <ocptrvector.h>
 
 extern "C" {
 void nrniv_recalc_ptrs();
@@ -32,6 +33,7 @@ static Symbol* grsym_;
 static Symbol* ptrsym_;
 static Symbol* lmsym_;
 static Symbol* pshpsym_;
+static Symbol* ptrvecsym_;
 
 void nrniv_recalc_ptrs() {
 	// PlayRecord and PreSyn pointers
@@ -98,4 +100,18 @@ void nrniv_recalc_ptrs() {
 	nrn_partrans_update_ptrs();
 }
 
-
+void nrn_recalc_ptrvector() {
+	// update pointers used by PtrVector
+	hoc_List* hl;
+	hoc_Item* q;
+	if (!ptrvecsym_) {
+		ptrvecsym_ = hoc_lookup("PtrVector");
+		assert(ptrvecsym_->type == TEMPLATE);
+	}
+	hl = ptrvecsym_->u.ctemplate->olist;
+	ITERATE(q, hl) {
+		Object* obj = OBJ(q);
+		OcPtrVector* op = (OcPtrVector*)obj->u.this_pointer;
+		op->ptr_update();
+	}
+}

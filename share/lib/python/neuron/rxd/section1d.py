@@ -13,6 +13,8 @@ _c_ptr_vector_storage_nrn = None
 _c_ptr_vector_storage = None
 _last_c_ptr_length = None
 
+def _donothing(): pass
+
 def _purge_cptrs():
     """purges all cptr information"""
     global _all_cptrs, _all_cindices, _c_ptr_vector, _last_c_ptr_length
@@ -32,6 +34,7 @@ def _transfer_to_legacy():
     if _last_c_ptr_length != size:
         if size:
             _c_ptr_vector = h.PtrVector(size)
+            _c_ptr_vector.ptr_update_callback(_donothing)
             for i, ptr in enumerate(_all_cptrs):
                 _c_ptr_vector.pset(i, ptr)
             _c_ptr_vector_storage_nrn = h.Vector(size)

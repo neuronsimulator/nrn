@@ -66,6 +66,7 @@ extern int node_index_exact(Section*, double);
 extern void nrn_cachevec(int);
 extern void nrn_ba(NrnThread*, int);
 extern void nrniv_recalc_ptrs(void);
+extern void nrn_recalc_ptrvector(void);
 extern void nrn_recalc_ptrs(double*(*r)(double*));
 extern void nrn_rhs_ext(NrnThread*);
 extern void nrn_setup_ext(NrnThread*);
