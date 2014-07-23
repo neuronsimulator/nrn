@@ -85,9 +85,10 @@ def _unregister_reaction(r):
 
 def _register_reaction(r):
     # TODO: should we search to make sure that (a weakref to) r hasn't already been added?
-    global _all_reactions
+    global _all_reactions, _external_solver_initialized
     _all_reactions.append(_weakref_ref(r))
-
+    _external_solver_initialized = False
+    
 def _after_advance():
     global last_diam_change_cnt
     last_diam_change_cnt = _diam_change_count.value
@@ -119,11 +120,13 @@ def re_init():
     _cvode_object.re_init()
 
     _external_solver_initialized = False
+    
 def _invalidate_matrices():
     # TODO: make a separate variable for this?
-    global last_structure_change_cnt, _diffusion_matrix
+    global last_structure_change_cnt, _diffusion_matrix, _external_solver_initialized
     _diffusion_matrix = None
     last_structure_change_cnt = None
+    _external_solver_initialized = False
 
 _rxd_offset = None
 
