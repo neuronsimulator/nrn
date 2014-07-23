@@ -6,6 +6,7 @@ from .rxdException import RxDException
 from . import rxd
 from . import options
 from . import species
+from . import node
 
 class SolverPlugin:
     """Interface for solver plugins."""
@@ -65,24 +66,7 @@ class SolverPlugin:
         """Do any necessary preprocessing of the reactions."""
     
     def _set_mesh(self):
-        """Use self._species to define a mesh.
-        
-        Plugin developers will probably want to override this method as it
-        provides limited functionality.
-        """
-        mesh = None
-        for s in self._species:
-            if s._dimension != 3:
-                raise RxDException('This plugin only supports 3D simulations')
-            if len(s._regions) != 1:
-                raise RxDException('This plugin only supports 1 region')
-            if mesh is None:
-                mesh = s._regions[0]._mesh
-            if mesh != s._regions[0]._mesh:
-                raise RxDException('This plugin requires a unique mesh')
-        
-        self._mesh = mesh._values
-        self._dx = mesh._dx
+        """Use self._species to define a mesh."""
     
     def _index(self, node):
         """Return the index of a node in the plugin's internal storage."""
@@ -148,6 +132,32 @@ class SolverPlugin:
                 pass
             
         
+class SharedMemorySolverPlugin(SolverPlugin):
+    def __init__(self):
+        SolverPlugin.__init__(self)
+        self._values = node._states
+    def transfer_states_from_neuron(self):
+        """no need to transfer states since shared memory"""
+    def transfer_states_to_neuron(self):
+        """no need to transfer states since shared memory"""
+    def _index(self, node):
+        """shared memory, so trivial index mapping"""
+        return node._index
+        
+def store_simple_3d_mesh(plugin):
+    mesh = None
+    for s in plugin._species:
+        if s._dimension != 3:
+            raise RxDException('This plugin only supports 3D simulations')
+        if len(s._regions) != 1:
+            raise RxDException('This plugin only supports 1 region')
+        if mesh is None:
+            mesh = s._regions[0]._mesh
+        if mesh != s._regions[0]._mesh:
+            raise RxDException('This plugin requires a unique mesh')
+    
+    plugin._mesh = mesh._values
+    plugin._dx = mesh._dx
 
 def _cvode_error(*args, **kwargs):
     raise RxDException("Variable step method not supported for external plugin solvers.")
