@@ -10,11 +10,16 @@ PtrVector
   Description:
 
     Fast scatter and gather from a Vector to a list of pointers (must have
-    same length). The size of the pointer vector is fixed at creation.
+    same length). The size of the pointer vector is fixed at creation
+    and must be an integer greater than 0.
     Pointers to variables are specified with the pset method. At creation,
     all pointers point to an internal dummy variable. So it is possible
     to scatter from a larger Vector into a smaller Vector.
-    
+
+    If :meth:`CVode.cache_efficient` is used, a callback should be registered
+    with the :meth:`PtrVector.ptr_update_callback` method in order to prevent
+    memory segfaults when internal memory is reallocated.
+
   Python Example:
   
     .. code-block::
@@ -44,6 +49,20 @@ PtrVector
   Description:
     Return the number of elements in the PtrVector.
     
+----
+
+.. method:: PtrVector.resize
+
+  Syntax:
+    ``newsize = pv.resize(newsize)``
+
+
+  Description:
+    Old pointer array is freed and new pointer array with specified size
+    is created. All the pointers point to a dummy variable. If the specified
+    new size is the same as the old size, the old existing array is kept.
+    Newsize must be an integer greater than 0.
+
 ----
 
 .. method:: PtrVector.pset
@@ -94,3 +113,19 @@ PtrVector
 
   Description:
     Set the variable pointed to by the ith pointer to the value of x.
+
+----
+
+.. method:: PtrVector.ptr_update_callback
+
+  Syntax:
+    :samp:`0. = pv.ptr_update_callback("hoc_statement", [object])`
+
+    :samp:`0. = pv.ptr_update_callback(pythoncallback)`
+
+  Description:
+    The statement or pythoncallback is executed whenever range variables
+    are re-allocated in order to establish cache efficiency.
+    (see :meth:`CVode.cache_efficient`)  Within the callback, the
+    :meth:`PtrVector.resize` method may be called but the PtrVector should
+    not be destroyed.
