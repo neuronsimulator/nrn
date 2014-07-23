@@ -204,7 +204,9 @@ def _fixed_step_advance(dt, solver):
     if not rxd._external_solver_initialized:
         _initialize(solver)
         
-    # TODO: transfer information about currents
+    import warnings
+    warnings.warn('Plugin support for membrane currents not yet implemented.')
+    
     solver.set_rate_of_change([], [])
     
     # do the advance
