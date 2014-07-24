@@ -89,6 +89,9 @@ Functions
          
         The order of principal actions during an finitialize call is:
         
+        -   Make sure internal structures needed by integration methods are consistent 
+             with the current biophysical spec. 
+        -   Type 3 FInitializeHandler statements executed. 
         -   t = 0 
         -   Clear the event queue. 
         -   Random.play values assigned to variables. 
