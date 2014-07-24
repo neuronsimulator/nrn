@@ -7,6 +7,7 @@ from . import rxd
 from . import options
 from . import species
 from . import node
+from . import section1d
 
 class SolverPlugin:
     def __init__(self):
@@ -31,6 +32,10 @@ class SolverPlugin:
         
         self._set_species(species_list)
         self._set_reactions(reactions_list)
+        self._set_values()
+    
+    def _set_values(self):
+        """update self._values if necessary"""
 
     
     def _set_species(self, species_list):
@@ -136,8 +141,7 @@ class SolverPlugin:
             
         
 class SharedMemorySolverPlugin(SolverPlugin):
-    def __init__(self):
-        SolverPlugin.__init__(self)
+    def _set_values(self):
         self._values = node._states
     def transfer_states_from_neuron(self):
         """no need to transfer states since shared memory"""
@@ -216,7 +220,8 @@ def _initialize(solver):
         raise RxDException('Selected plugin solver does not support the current simulation.')
     
     solver.transfer_states_from_neuron()
-
+    rxd._external_solver_initialized = True
+    
 def _fixed_step_advance(dt, solver):
     if not rxd._external_solver_initialized:
         _initialize(solver)
@@ -231,6 +236,11 @@ def _fixed_step_advance(dt, solver):
     
     # TODO: only collect values that are must-sync
     solver.transfer_states_to_neuron()
+    
+    # transfer any 1D states to the legacy grid
+    section1d._transfer_to_legacy()
+    
+    # TODO: transfer any 3D states to the legacy grid
 
 
 def _default_solver():
