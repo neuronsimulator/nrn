@@ -2144,6 +2144,7 @@ void nrn_recalc_node_ptrs(void) {
 	n_old_thread_ = 0;
 
 	nrn_cache_prop_realloc();
+	nrn_recalc_ptrvector();
 }
 
 #endif /* CACHEVEC */

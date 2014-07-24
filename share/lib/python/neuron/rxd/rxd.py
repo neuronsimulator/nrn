@@ -528,6 +528,8 @@ _h_vector = h.Vector
 _structure_change_count = neuron.nrn_dll_sym('structure_change_cnt', _ctypes_c_int)
 _diam_change_count = neuron.nrn_dll_sym('diam_change_cnt', _ctypes_c_int)
 
+def _donothing(): pass
+
 def _update_node_data(force=False):
     global last_diam_change_cnt, last_structure_change_cnt, _curr_indices, _curr_scales, _curr_ptrs, _cur_map
     global _curr_ptr_vector, _curr_ptr_storage, _curr_ptr_storage_nrn
@@ -556,6 +558,7 @@ def _update_node_data(force=False):
         num = len(_curr_ptrs)
         if num:
             _curr_ptr_vector = _h_ptrvector(num)
+            _curr_ptr_vector.ptr_update_callback(_donothing)
             for i, ptr in enumerate(_curr_ptrs):
                 _curr_ptr_vector.pset(i, ptr)
             
