@@ -95,8 +95,6 @@ Functions
         -   t = 0 
         -   Clear the event queue. 
         -   Random.play values assigned to variables. 
-        -   Make sure internal structures needed by integration methods are consistent 
-             with the current biophysical spec. 
         -   Vector.play at t=0 values assigned to variables. 
         -   All v = arg if the arg is present. 
         -   Type 0 FInitializeHandler statements executed. 
