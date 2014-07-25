@@ -69,7 +69,7 @@ extern void nrn_fixed_step_group(int);
 //temporary 
 static int nrn_errno_check(int type) 
 { 
-//  printf("nrn_errno_check() was called on pid %d: errno=%d type=%d\n", nrnmpi_myid, errno, type);
+  printf("nrn_errno_check() was called on pid %d: errno=%d type=%d\n", nrnmpi_myid, errno, type);
 //  assert(0); 
   return 1;
 }
@@ -1105,7 +1105,7 @@ void WatchCondition::deliver(double tt, NetCvode* ns, NrnThread* nt) {
 	POINT_RECEIVE(typ, pnt_, nil, nrflag_);
 	if (errno) {
 		if (nrn_errno_check(typ)) {
-//hoc_warning("errno set during WatchCondition deliver to NET_RECEIVE", (char*)0);
+hoc_warning("errno set during WatchCondition deliver to NET_RECEIVE", (char*)0);
 		}
 	}
 }
@@ -1179,7 +1179,7 @@ printf("NetCon::deliver nt=%d target=%d\n", nt->id, PP2NT(target_)->id);
 	POINT_RECEIVE(typ, target_, u.weight_, 0);
 	if (errno) {
 		if (nrn_errno_check(typ)) {
-//hoc_warning("errno set during NetCon deliver to NET_RECEIVE", (char*)0);
+hoc_warning("errno set during NetCon deliver to NET_RECEIVE", (char*)0);
 		}
 	}
 }
@@ -1390,7 +1390,7 @@ void SelfEvent::call_net_receive(NetCvode* ns) {
 	POINT_RECEIVE(target_->type, target_, weight_, flag_);
 	if (errno) {
 		if (nrn_errno_check(target_->type)) {
-//hoc_warning("errno set during SelfEvent deliver to NET_RECEIVE", (char*)0);
+hoc_warning("errno set during SelfEvent deliver to NET_RECEIVE", (char*)0);
 		}
 	}
 	NetCvodeThreadData& nctd = ns->p[PP2NT(target_)->id];

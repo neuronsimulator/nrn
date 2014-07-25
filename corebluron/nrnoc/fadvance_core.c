@@ -103,7 +103,7 @@ static void nonvint(NrnThread* _nt) {
 		mod_f_t s = memb_func[tml->index].state;
 		(*s)(_nt, tml->ml, tml->index);
 		if (errno) {
-//hoc_warning("errno set during calculation of states", (char*)0);
+hoc_warning("errno set during calculation of states", (char*)0);
 		}
 	}
 }

@@ -222,24 +222,6 @@ int nrnmpi_int_allmax(int x) {
 	return result;
 }
 
-
-long long int nrnmpi_longlong_allreduce(long long int x, int type) {
-        long long int result;
-        if (nrnmpi_numprocs < 2) { return x; }
-        MPI_Op mpiOp;
-        if (type == 1) {
-                mpiOp = MPI_SUM;
-        }else if (type == 2) {
-                mpiOp = MPI_MAX;
-        }else {
-                mpiOp = MPI_MIN;
-        }
-        MPI_Allreduce(&x, &result, 1, MPI_LONG_LONG_INT, mpiOp, nrnmpi_comm);
-        return result;
-}
-
-
-
 extern void nrnmpi_int_gather(int* s, int* r, int cnt, int root) {
 	MPI_Gather(s, cnt, MPI_INT, r, cnt, MPI_INT, root, nrnmpi_comm);
 }

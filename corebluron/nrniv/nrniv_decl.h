@@ -1,19 +1,3 @@
-/*
-Copyright (c) 2014 EPFL-BBP, All rights reserved.
-
-THIS SOFTWARE IS PROVIDED BY THE BLUE BRAIN PROJECT "AS IS"
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
-THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE BLUE BRAIN PROJECT
-BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
-BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
-WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
-OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
-IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*/
-
 #ifndef nrniv_dec_h
 #define nrniv_dec_h
 
@@ -30,10 +14,6 @@ extern void nrn_p_construct(void);
 extern void nrn_setup(int ngroup, int* gidgroups, const char *path);
 extern double BBS_netpar_mindelay(double maxdelay);
 extern void BBS_netpar_solve(double);
-extern void nrn_mkPatternStim(const char* filename);
-extern int nrn_extra_thread0_vdata;
-extern void nrn_set_extra_thread0_vdata(void);
-extern Point_process* nrn_artcell_instantiate(const char* mechname);
 
 extern void nrn_alloc_gid2out(int size, int poolsize);
 extern void nrn_alloc_gid2in(int size, int poolsize);
@@ -48,8 +28,8 @@ extern void nrn_cleanup_presyn(DiscreteEvent*);
 extern void nrn_outputevent(unsigned char, double);
 extern void ncs2nrn_integrate(double tstop);
 extern void nrn_pending_selfqueue(double, NrnThread*);
-extern size_t output_presyn_size(void);
-extern size_t input_presyn_size(void);
+extern size_t output_presyn_size(int prnt);
+extern size_t input_presyn_size(int prnt);
 
 extern NetCon** netcon_in_presyn_order_;
 
