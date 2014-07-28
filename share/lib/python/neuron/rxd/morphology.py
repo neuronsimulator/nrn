@@ -48,6 +48,7 @@ class MorphologyDB:
         self._children = {sec:[] for sec in _h_allsec()}
         self._parents = {}
         self._connection_pts = {}
+        self._roots = []
         for sec in _h_allsec():
             parent_sec = parent(sec)
             if parent_sec is not None:
@@ -58,7 +59,13 @@ class MorphologyDB:
                     self._connection_pts[pt].append(local_pt)
                 else:
                     self._connection_pts[pt] = [pt, local_pt]
+            else:
+                self._roots.append(sec)
             self._parents[sec] = parent_sec
+    
+    @property
+    def roots(self):
+        return self._roots
     
     def parent(self, sec):
         """Return the (true)parent section of sec"""
@@ -118,6 +125,10 @@ def main():
     conns = morph.connections([s[i] for i in [2, 3, 4, 5, 6, 7, 9, 10, 11, 12]])
     for p1, p2 in conns:
         print '%s(%g)    %s(%g)' % (p1[0].name(), p1[1], p2[0].name(), p2[1])
+    
+    print
+    print
+    print 'roots:', morph.roots
     return 0
     
 if __name__ == '__main__':
