@@ -52,7 +52,7 @@ class MorphologyDB:
             parent_sec = parent(sec)
             if parent_sec is not None:
                 self._children[parent_sec].append(sec)
-                pt = (parent_sec, parent_loc(sec, parent))
+                pt = (parent_sec, parent_loc(sec, parent_sec))
                 local_pt = (sec, _h_section_orientation(sec=sec))
                 if pt in self._connection_pts:
                     self._connection_pts[pt].append(local_pt)
