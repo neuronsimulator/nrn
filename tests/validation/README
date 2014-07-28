@@ -1,0 +1,60 @@
+Welcome to the validation process of CoreBluron!
+
+This process is composed of two validations:
+1) Basic "diff" validation: this is the harshest test, and is based on comparing the output of the simulation line by line.  
+2) First spike validation: this test checks a feature of the output data and introduces a tolerance.
+
+Note: When running the simulation with CoreBluron, each MPI rank writes spike information to out.$mpi_rank file.
+      The supplied "out.dat.ref" files for test cases are produced with the number of MPI ranks of the simulation.
+
+
+REQUIREMENTS:
+-------------
+
+1. Run a simulation following the instructions provided in the CoreBluron/README file
+2. Output of the simulations: a series of out[0-9]*.dat files produced in the test directory
+3. Reference output files: the out.dat.ref and ref.h5 files should be already present in the test directory in order to 
+   compare the new outputs with
+4. Combined and sorted output simulation files. Run these commands to obtain the required files in the test directory:
+   $ cat out[0-9]*.dat > out_corebluron.dat
+   $ sort -k 1n,1n -k 2n,2n out_corebluron.dat > sorted_out_corebluron.dat
+
+Note that you need python version >= 2.7, h5py version >= 2.3 and numpy >= 1.8 installed in order to run the test scripts.
+
+DIFF VALIDATION:
+-------------------
+
+Do a "diff" of the produced output and the reference output in the corresponding TEST* directory
+
+$ diff sorted_out_corebluron.dat out.dat.ref > diff.dat
+$ if [ -s diff.dat ]; then echo "Problem: diff file is not empty"; else echo "Test passed: diff file is empty"; fi
+
+Note that in BBP production simulations across platforms we are using this validation test. For different architectures
+(x86, BG-Q) and compilers (Intel, XLC) we see same results.
+
+If this test is being passed, you dont't have to run "first spike validation" test.
+
+
+FIRST SPIKE VALIDATION:
+-----------------------
+
+If the "diff validation" test shows difference in the reference and obtained outputs, the following test tries to calculate the statistics
+of spikes from different cells. This test looks at the time of the first spike for each cell. We expect differences of maximum one timestep for at most 1% of cells. 
+
+This test is composed of two python scripts. The user is required to produce some data with one python script, and analyze it with a second script.
+The scripts have been tested with python 2.7.4 and require the following packages to be installed:
+- h5py ( Version 2.3.1)
+- numpy ( Version 1.8.1)
+
+The following test example is run against the output data obtained in the corresponding test folder.
+Make sure that you run following commands from the ROOT directory (i.e. root directory contains test directory)
+
+1. To produce the data (the file out.h5), please run the script scan-spikes.py with the following parameters
+$ python validation/scan-spikes.py -i test/sorted_out_corebluron.dat --dt 0.025 test/out.h5
+
+2. To analyze the data, use the script compare-first-spike.py
+$ python validation/compare-first-spike.py -i test/out.h5 -r test/ref.h5
+
+For more information on how to use the scripts, one may run
+$ python <script-name> -h
+
