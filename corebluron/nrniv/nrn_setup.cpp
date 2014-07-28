@@ -73,7 +73,7 @@ static void read_phase1(const char* fname, NrnThread& nt);
 static void determine_inputpresyn(void);
 static void read_phase2(const char* fname, NrnThread& nt);
 static void setup_ThreadData(NrnThread& nt);
-static size_t model_size(int prnt);
+static size_t model_size(void);
 
 static int n_inputpresyn_;
 static InputPreSyn* inputpresyn_; // the global array of instances.
@@ -130,7 +130,7 @@ void nrn_setup(int ngroup, int* gidgroups, const char *path) {
     nrn_p_construct();
   }
 
-  model_size(2);
+  model_size();
 }
 
 void setup_ThreadData(NrnThread& nt) {
@@ -633,23 +633,21 @@ void read_phase2(const char* fname, NrnThread& nt) {
   fclose(f);
 }
 
-static size_t memb_list_size(NrnThreadMembList* tml, int prnt) {
+static size_t memb_list_size(NrnThreadMembList* tml) {
   size_t sz_ntml = sizeof(NrnThreadMembList);
   size_t sz_ml = sizeof(Memb_list);
   size_t szi = sizeof(int);
   size_t nbyte = sz_ntml + sz_ml;
   nbyte += tml->ml->nodecount*szi;
   nbyte += nrn_prop_dparam_size_[tml->index]*tml->ml->nodecount*sizeof(Datum);
-  if (prnt > 1) {
-    int i = tml->index;
 #ifdef DEBUG
-    printf("%s %d psize=%d ppsize=%d cnt=%d nbyte=%ld\n", memb_func[i].sym, i, nrn_prop_param_size_[i], nrn_prop_dparam_size_[i], tml->ml->nodecount, nbyte);
+  int i = tml->index;
+  printf("%s %d psize=%d ppsize=%d cnt=%d nbyte=%ld\n", memb_func[i].sym, i, nrn_prop_param_size_[i], nrn_prop_dparam_size_[i], tml->ml->nodecount, nbyte);
 #endif
-  }
   return nbyte;
 }
 
-size_t model_size(int prnt) {
+size_t model_size(void) {
   size_t nbyte = 0;
   size_t szd = sizeof(double);
   size_t szi = sizeof(int);
@@ -670,7 +668,7 @@ size_t model_size(int prnt) {
     // Memb_list size
     int nmech = 0;
     for (tml=nt.tml; tml; tml = tml->next) {
-      nb_nt += memb_list_size(tml, prnt);
+      nb_nt += memb_list_size(tml);
       ++nmech;
     }
 
@@ -680,15 +678,13 @@ size_t model_size(int prnt) {
     nb_nt += nt.end*szi; // _v_parent_index
 
 #ifdef DEBUG
-    if (prnt > 1) {
-      printf("ncell=%d end=%d nmech=%d\n", nt.ncell, nt.end, nmech);
-      printf("ndata=%ld nidata=%ld nvdata=%ld\n", nt._ndata, nt._nidata, nt._nvdata);
-      printf("nbyte so far %ld\n", nb_nt);
-      printf("n_presyn = %d sz=%ld nbyte=%ld\n", nt.n_presyn, sz_ps, nt.n_presyn*sz_ps);
-      printf("n_pntproc=%d sz=%ld nbyte=%ld\n", nt.n_pntproc, sz_pp, nt.n_pntproc*sz_pp);
-      printf("n_netcon=%d sz=%ld nbyte=%ld\n", nt.n_netcon, sz_nc, nt.n_netcon*sz_nc);
-      printf("n_weight = %d\n", nt.n_weight);
-    }
+    printf("ncell=%d end=%d nmech=%d\n", nt.ncell, nt.end, nmech);
+    printf("ndata=%ld nidata=%ld nvdata=%ld\n", nt._ndata, nt._nidata, nt._nvdata);
+    printf("nbyte so far %ld\n", nb_nt);
+    printf("n_presyn = %d sz=%ld nbyte=%ld\n", nt.n_presyn, sz_ps, nt.n_presyn*sz_ps);
+    printf("n_pntproc=%d sz=%ld nbyte=%ld\n", nt.n_pntproc, sz_pp, nt.n_pntproc*sz_pp);
+    printf("n_netcon=%d sz=%ld nbyte=%ld\n", nt.n_netcon, sz_nc, nt.n_netcon*sz_nc);
+    printf("n_weight = %d\n", nt.n_weight);
 #endif
 
     // spike handling
@@ -696,28 +692,26 @@ size_t model_size(int prnt) {
              + nt.n_weight*szd;
     nbyte += nb_nt;
 #ifdef DEBUG
-    if (prnt) {printf("%d thread %d total bytes %ld\n", nrnmpi_myid, i, nb_nt);}
+    printf("%d thread %d total bytes %ld\n", nrnmpi_myid, i, nb_nt);
 #endif
   }
 
 #ifdef DEBUG
-  if (prnt) {
-    printf("%d n_inputpresyn=%d sz=%ld nbyte=%ld\n", nrnmpi_myid, n_inputpresyn_, sz_psi, n_inputpresyn_*sz_psi);
-    printf("%d netcon pointers %ld  nbyte=%ld\n", nrnmpi_myid, nccnt, nccnt*sizeof(NetCon*));
-  }
+  printf("%d n_inputpresyn=%d sz=%ld nbyte=%ld\n", nrnmpi_myid, n_inputpresyn_, sz_psi, n_inputpresyn_*sz_psi);
+  printf("%d netcon pointers %ld  nbyte=%ld\n", nrnmpi_myid, nccnt, nccnt*sizeof(NetCon*));
 #endif
   nbyte += n_inputpresyn_*sz_psi + nccnt*sizeof(NetCon*);
-  nbyte += output_presyn_size(prnt);
-  nbyte += input_presyn_size(prnt);
+  nbyte += output_presyn_size();
+  nbyte += input_presyn_size();
 
 #ifdef DEBUG
-  if (prnt) {printf("nrnran123 size=%ld cnt=%ld nbyte=%ld\n", nrnran123_state_size(), nrnran123_instance_count(), nrnran123_instance_count()*nrnran123_state_size());}
+  printf("nrnran123 size=%ld cnt=%ld nbyte=%ld\n", nrnran123_state_size(), nrnran123_instance_count(), nrnran123_instance_count()*nrnran123_state_size());
 #endif
 
   nbyte += nrnran123_instance_count() * nrnran123_state_size();
 
 #ifdef DEBUG
-  if (prnt) {printf("%d total bytes %ld\n", nrnmpi_myid, nbyte);}
+  printf("%d total bytes %ld\n", nrnmpi_myid, nbyte);
 #endif
 
   return nbyte;

@@ -24,10 +24,10 @@ void Print_MemUsage(char *name)
 {
   long long int input, max, min, avg;
   input = nrn_mallinfo();
-  avg = nrnmpi_int_allreduce(input, 1);
+  avg = nrnmpi_longlong_allreduce(input, 1);
   avg = (long long int)(avg / nrnmpi_numprocs);
-  max = nrnmpi_int_allreduce(input, 2);
-  min = nrnmpi_int_allreduce(input, 3);
+  max = nrnmpi_longlong_allreduce(input, 2);
+  min = nrnmpi_longlong_allreduce(input, 3);
 
   if (nrnmpi_myid == 0)
     printf("%s: max %lld, min %lld, avg %lld\n", name, max, min, avg);

@@ -14,7 +14,7 @@ static char nmodl_version_[] =
 #endif
 
 static char banner[] =
-"Duke, Yale, and the BlueBrain Project -- Copyright 1984-2013\n";
+"Duke, Yale, and the BlueBrain Project -- Copyright 1984-2014\n";
 
 # define	CHECK(name) /**/
 

@@ -27,24 +27,26 @@ void mk_mech(const char* fname) {
   FILE* f;
   f = fopen(fname, "r");
   assert(f);
-  printf("reading %s\n", fname);
-  int n;
+//  printf("reading %s\n", fname);
+  int n=0;
   assert(fscanf(f, "%d\n", &n) == 1);
   mech2type = new Mech2Type(2*n);
   alloc_mech(n);
   for (int i=2; i < n; ++i) {
     char mname[100];
-    int type, pnttype, is_art, is_ion, dsize, pdsize;
+    int type=0, pnttype=0, is_art=0, is_ion=0, dsize=0, pdsize=0;
     assert(fscanf(f, "%s %d %d %d %d %d %d\n", mname, &type, &pnttype, &is_art, &is_ion, &dsize, &pdsize) == 7);
     assert(i == type);
-    //printf("%s %d %d %d %d %d %d\n", mname, type, pnttype, is_art, is_ion, dsize, pdsize);
+#ifdef DEBUG
+    printf("%s %d %d %d %d %d %d\n", mname, type, pnttype, is_art, is_ion, dsize, pdsize);
+#endif
     set_mechtype(mname, type);
     pnt_map[type] = (char)pnttype;
     nrn_prop_param_size_[type] = dsize;
     nrn_prop_dparam_size_[type] = pdsize;
     nrn_is_artificial_[type] = is_art;
     if (is_ion) {
-      double charge;
+      double charge = 0.;
       assert(fscanf(f, "%lf\n", &charge) == 1);
       // strip the _ion
       char iname[100];

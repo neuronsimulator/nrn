@@ -14,6 +14,10 @@ extern void nrn_p_construct(void);
 extern void nrn_setup(int ngroup, int* gidgroups, const char *path);
 extern double BBS_netpar_mindelay(double maxdelay);
 extern void BBS_netpar_solve(double);
+extern void nrn_mkPatternStim(const char* filename);
+extern int nrn_extra_thread0_vdata;
+extern void nrn_set_extra_thread0_vdata(void);
+extern Point_process* nrn_artcell_instantiate(const char* mechname);
 
 extern void nrn_alloc_gid2out(int size, int poolsize);
 extern void nrn_alloc_gid2in(int size, int poolsize);
@@ -28,8 +32,8 @@ extern void nrn_cleanup_presyn(DiscreteEvent*);
 extern void nrn_outputevent(unsigned char, double);
 extern void ncs2nrn_integrate(double tstop);
 extern void nrn_pending_selfqueue(double, NrnThread*);
-extern size_t output_presyn_size(int prnt);
-extern size_t input_presyn_size(int prnt);
+extern size_t output_presyn_size(void);
+extern size_t input_presyn_size(void);
 
 extern NetCon** netcon_in_presyn_order_;
 

@@ -146,10 +146,8 @@ set(MECH_FILES
   mech/cfile/new_calcium_channels.c
   )
 
-#  set(COREBLURON_LINK_LIBRARIES hdf5)
 endif()
 
-#set_source_files_properties(mech/cfile/expsyn.c mech/cfile/hh.c mech/cfile/passive.c mech/cfile/stim.c mech/cfile/netstim.c PROPERTIES COMPILE_FLAGS "-Wno-error")
 set_source_files_properties(${MECH_FILES} PROPERTIES COMPILE_FLAGS "-Wno-error")
 
 common_library(corebluron)
