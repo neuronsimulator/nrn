@@ -87,6 +87,7 @@ mech/cfile/hh.c
 mech/cfile/passive.c
 mech/cfile/stim.c
 mech/cfile/netstim.c
+mech/cfile/pattern.c
 )
 
 option (COREBLURON_NEURODAMUS_MECHS "Compile CoreBluron with all available mechanisms from Neurodamus" OFF)
@@ -123,7 +124,6 @@ set(MECH_FILES
   mech/cfile/passive.c
   mech/cfile/stim.c
   mech/cfile/netstim.c
-  mech/cfile/pattern.c
   mech/cfile/Ca.c
   mech/cfile/CaDynamics_E2.c
   mech/cfile/Ca_HVA.c

@@ -78,7 +78,7 @@ int main1(int argc, char** argv, char** env) {
   /// Reading essential inputs
   double tstop, maxdelay, voltage;
   int iSpikeBuf;
-  char *str = new char[128];
+  char str[128];
   FILE *fp = fopen("inputs.dat","r");
   if (!fp)
   {
@@ -95,18 +95,17 @@ int main1(int argc, char** argv, char** env) {
   }
   else
   {
-    str = fgets(str, 128, fp);
-    assert(fscanf(fp, "  StartTime\t%lf\n", &t) == 1);
-    assert(fscanf(fp, "  EndTime\t%lf\n", &tstop) == 1);
-    assert(fscanf(fp, "  Dt\t\t%lf\n\n", &dt) == 1);
-    str = fgets(str, 128, fp);
-    assert(fscanf(fp, "  Celsius\t%lf\n", &celsius) == 1);
-    assert(fscanf(fp, "  Voltage\t%lf\n", &voltage) == 1);
-    assert(fscanf(fp, "  MaxDelay\t%lf\n", &maxdelay) == 1);
-    assert(fscanf(fp, "  SpikeBuf\t%d\n", &iSpikeBuf) == 1);
+    fgets(str, 128, fp);
+    fscanf(fp, "  StartTime\t%lf\n", &t);
+    fscanf(fp, "  EndTime\t%lf\n", &tstop);
+    fscanf(fp, "  Dt\t\t%lf\n\n", &dt);
+    fgets(str, 128, fp);
+    fscanf(fp, "  Celsius\t%lf\n", &celsius);
+    fscanf(fp, "  Voltage\t%lf\n", &voltage);
+    fscanf(fp, "  MaxDelay\t%lf\n", &maxdelay);
+    fscanf(fp, "  SpikeBuf\t%d\n", &iSpikeBuf);
     fclose(fp);
   }
-  delete [] str;
 
   /// Assigning threads to a specific task by the first gid written in the file
   fp = fopen("files.dat","r");
