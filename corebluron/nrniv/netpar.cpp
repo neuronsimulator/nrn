@@ -838,6 +838,65 @@ void nrn_fake_fire(int gid, double spiketime, int fake_out) {
 
 }
 
+static int neg_cnt_;
+static Gid2PreSyn** neg_gid2out_;
+
+void netpar_tid_gid2ps_alloc(int nth) {
+  // nth is same as ngroup in nrn_setup.cpp, not necessarily nrn_nthread.
+  neg_cnt_ = nth;
+  neg_gid2out_ = new Gid2PreSyn*[nth];
+  for (int i = 0; i < neg_cnt_; ++i) {
+    neg_gid2out_[i] = NULL;
+  }
+}
+
+void netpar_tid_gid2ps_alloc_item(int ith, int size, int poolsize) {
+  neg_gid2out_[ith] = new Gid2PreSyn(size, poolsize);
+}
+
+void netpar_tid_gid2ps_free() {
+  for (int i = 0; i < neg_cnt_; ++i) {
+    if (neg_gid2out_[i]) {
+      delete neg_gid2out_[i];
+    }
+  }
+  delete [] neg_gid2out_;
+}
+
+void netpar_tid_gid2ps(int tid, int gid, PreSyn** ps, InputPreSyn** psi){
+  // for gid >= 0, just a wrapper for BBS_gid2ps(...) but for gid < 0
+  // returns the PreSyn* in the thread (tid) specific hash table.
+  if (gid >= 0) {
+    BBS_gid2ps(gid, ps, psi);
+  }else{
+    *psi = NULL;
+    if (!neg_gid2out_[tid]->find(gid, *ps)) {
+      *ps = NULL;
+    }
+  }
+}
+  
+void netpar_tid_set_gid2node(int tid, int gid, int nid) {
+  if (gid >= 0) {
+    BBS_set_gid2node(gid, nid);
+  }else{
+    PreSyn* ps;
+    assert(nid == nrnmpi_myid);
+    assert(neg_gid2out_[tid]->find(gid, ps) == 0);
+    neg_gid2out_[tid]->insert(gid, NULL);
+  }
+}
+
+void netpar_tid_cell(int tid, int gid, PreSyn* ps) {
+  if (gid >= 0) {
+    BBS_cell(gid, ps);
+  }else{
+    PreSyn* ps1;
+    assert(neg_gid2out_[tid]->find(gid, ps1));
+    neg_gid2out_[tid]->insert(gid, ps);
+  }
+}
+
 void nrn_alloc_gid2out(int size, int poolsize) {
 #if ALTHASH
 	if (gid2out_) { delete gid2out_; }

@@ -34,12 +34,15 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // output_gids (npresyn) with -(type+1000*index) for those acell with no gid
 // netcon_srcgid (nnetcon) -(type+1000*index) refers to acell with no gid
 //                         -1 means the netcon has no source (not implemented)
-// Note that for multiple threads, the negative gids must be process unique
-// but the file only defines them as thread unique. Since for each NetCon
-// we use BBS_gid2ps(gid) to find the proper PreSyn, we will transform the
-// output_gids and netcon_srcgid using -ith - nth*(type +1000*index)
-// (reasonable balance since the more threads, presumably the fewer non-gid
-//  artificial cells.)
+// Note that the negative gids are only thread unique and not process unique.
+// Therefore BBS_gid2ps(gid) cannot be used to determine the PreSyn for the
+// negative gids since the former hash table is for the whole process. Instead
+// we create a thread specific hash table for the negative gids for each thread
+// when <firstgid>_1.dat is read and then destroy it after <firstgid>_2.dat
+// is finished using it.  An earlier implementation which attempted to
+// encode the thread number into the negative gid
+// (i.e -ith - nth*(type +1000*index)) failed due to not large enough 
+// integer domain size.
 //
 // <firstgid>_2.dat
 // n_output n_real_output, nnode
@@ -113,6 +116,9 @@ void nrn_setup(int ngroup, int* gidgroups, const char *path) {
     nrn_threads_create(ng, 0); // serial threads
   }
 #endif
+
+  netpar_tid_gid2ps_alloc(ngroup);
+
   // bug fix. gid2out is cumulative over all threads and so do not
   // know how many there are til after phase1
   nrn_alloc_gid2out(1000, 100);
@@ -125,6 +131,11 @@ void nrn_setup(int ngroup, int* gidgroups, const char *path) {
     read_phase1(fname, nrn_threads[i]);
   }
 
+  if (nrnmpi_myid == 0)
+  {
+    printf("read_phase1 is done\n");
+    fflush(0);
+  }
   // from the netpar::gid2out_ hash table and the netcon_srcgid array,
   // fill the netpar::gid2in_ hash table, and from the number of entries,
   // allocate the process wide InputPreSyn array
@@ -139,6 +150,14 @@ void nrn_setup(int ngroup, int* gidgroups, const char *path) {
     setup_ThreadData(nrn_threads[i]); // nrncore does this in multicore.c in thread_memblist_setup
     nrn_mk_table_check(); // was done in nrn_thread_memblist_setup in multicore.c
   }
+
+  if (nrnmpi_myid == 0)
+  {
+    printf("read_phase2 is done\n");
+    fflush(0);
+  }
+
+  netpar_tid_gid2ps_free();
 
   if (nrn_nthread > 1) {
     // NetCvode construction assumed one thread. Need nrn_nthread instances
@@ -226,6 +245,7 @@ void read_phase1(const char* fname, NrnThread& nt) {
   int* netcon_srcgid = read_int_array(NULL, nt.n_netcon);
   fclose(f);
   // for checking whether negative gids fit into the gid space
+  // not used for now since negative gids no longer encode the thread id.
   double dmaxint = 1073741824.; //2^30
   for (;;) {
     if (dmaxint*2. == double(int(dmaxint*2.))) {
@@ -237,17 +257,27 @@ void read_phase1(const char* fname, NrnThread& nt) {
       }
     }
   }
+
+  // allocate a proper size neg_gid2out_[tid] (see netpar.cpp);
+  int negcnt = 1; // don't trouble ourselves with size 0 tables.
+  for (int i=0; i < nt.n_presyn; ++i) {
+    if (output_gid[i] < 0) {
+      ++negcnt;
+    }
+  }
+  // I no longer remember how generous we should be with the initial size
+  // of a hash table.
+  netpar_tid_gid2ps_alloc_item(nt.id, negcnt, 100);
+
   for (int i=0; i < nt.n_presyn; ++i) {
     int gid = output_gid[i];
-    // for uniformity of processing, even put the negative (type, index, ith)
-    // coded information in the netpar::gid2out_ hash table. This hash
-    // table can be deleted before the end of setup
-    if (gid < 0) {
-      assert((double(gid) - 1.)*double(nrn_nthread) > -dmaxint);
-      gid = -nt.id + nrn_nthread*gid; // no negative gid overlap
-    }
-    BBS_set_gid2node(gid, nrnmpi_myid);
-    BBS_cell(gid, nt.presyns + i);
+    // Note that the negative (type, index)
+    // coded information goes into the neg_gid2out_[tid] hash table.
+    // See netpar.cpp for the netpar_tid_... function implementations.
+    // Both that table and the process wide gid2out_ table can be deleted
+    // before the end of setup
+    netpar_tid_set_gid2node(nt.id, gid, nrnmpi_myid);
+    netpar_tid_cell(nt.id, gid, nt.presyns + i);
     if (gid < 0) {
       nt.presyns[i].output_index_ = -1;
     }
@@ -257,11 +287,9 @@ void read_phase1(const char* fname, NrnThread& nt) {
   // encode netcon_srcgid_ values in nt.netcons
   // which allows immediate freeing of that array.
   for (int i=0; i < nt.n_netcon; ++i) {
-    int gid = netcon_srcgid[i];
-    if (gid < 0) {
-      gid = -nt.id + nrn_nthread*gid; // no negative gid overlap
-    }
-    nt.netcons[i].u.srcgid_ = gid;
+    nt.netcons[i].u.srcgid_ = netcon_srcgid[i];
+    // do not need to worry about negative gid overlap since only use
+    // it to search for PreSyn in this thread.
   }
   delete [] netcon_srcgid;
 }
@@ -345,7 +373,7 @@ void determine_inputpresyn() {
     for (int i = 0; i < nt.n_netcon; ++i) {
       int gid = nt.netcons[i].u.srcgid_;
       PreSyn* ps; InputPreSyn* psi;
-      BBS_gid2ps(gid, &ps, &psi);
+      netpar_tid_gid2ps(ith, gid, &ps, &psi);
       if (ps) {
         ++ps->nc_cnt_;
       }else if (psi) {
@@ -380,7 +408,7 @@ void determine_inputpresyn() {
       NetCon* nc = nt.netcons + i;
       int gid = nc->u.srcgid_;
       PreSyn* ps; InputPreSyn* psi;
-      BBS_gid2ps(gid, &ps, &psi);
+      netpar_tid_gid2ps(ith, gid, &ps, &psi);
       if (ps) {
         netcon_in_presyn_order_[ps->nc_index_ + ps->nc_cnt_] = nc;
         nc->src_ = ps; // maybe nc->src_ is not needed

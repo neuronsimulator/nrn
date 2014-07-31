@@ -41,6 +41,16 @@ extern int input_gid_register(int gid);
 extern int input_gid_associate(int gid, InputPreSyn* psi);
 extern void BBS_gid2ps(int gid, PreSyn** ps, InputPreSyn** psi);
 
+// only used in nrn_setup.cpp but implemented in netpar.cpp since that
+// is where Gid2PreSyn hash tables are defined.
+extern void netpar_tid_gid2ps_alloc(int nth);
+extern void netpar_tid_gid2ps_alloc_item(int ith, int size, int poolsize);
+extern void netpar_tid_gid2ps_free();
+extern void netpar_tid_gid2ps(int tid, int gid, PreSyn** ps, InputPreSyn** psi);
+extern void netpar_tid_set_gid2node(int tid, int gid, int nid);
+extern void netpar_tid_cell(int tid, int gid, PreSyn* ps);
+
+
 extern NetCon* BBS_gid_connect(int gid, Point_process* target, NetCon&);
 extern void BBS_cell(int gid, PreSyn* ps);
 extern void BBS_set_gid2node(int gid, int rank);

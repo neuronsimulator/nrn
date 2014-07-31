@@ -119,6 +119,7 @@ if(COREBLURON_NEURODAMUS_MECHS)
   )
 
 set(MECH_FILES
+  ${MECH_FILES}
   mech/cfile/expsyn.c
   mech/cfile/hh.c
   mech/cfile/passive.c
