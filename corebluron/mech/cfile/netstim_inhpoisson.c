@@ -716,6 +716,6 @@ static terminal(){}
 static _initlists(){
  double _x; double* _p = &_x;
  int _i; static int _first = 1;
-  if (!_first) return;
+  if (!_first) return 0;
 _first = 0;
 }

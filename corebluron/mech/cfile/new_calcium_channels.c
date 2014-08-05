@@ -620,7 +620,7 @@ static terminal(){}
 static _initlists(){
  double _x; double* _p = &_x;
  int _i; static int _first = 1;
-  if (!_first) return;
+  if (!_first) return 0;
  _slist1[0] = &(mpcal) - _p;  _dlist1[0] = &(Dmpcal) - _p;
  _slist1[1] = &(hpcal) - _p;  _dlist1[1] = &(Dhpcal) - _p;
  _slist1[2] = &(mtcal) - _p;  _dlist1[2] = &(Dmtcal) - _p;

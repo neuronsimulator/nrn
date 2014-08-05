@@ -321,13 +321,13 @@ static int _ode_spec1(), _ode_matsol1();
 _check_rates(_p, _ppvar, _thread, _nt);
 #endif
  _n_rates(_p, _ppvar, _thread, _nt, _lv);
- return;
+ return 0;
  }
 
  static _n_rates(double* _p, Datum* _ppvar, ThreadDatum* _thread, _NrnThread* _nt, double _lv){ int _i, _j;
  double _xi, _theta;
  if (!usetable) {
- _f_rates(_p, _ppvar, _thread, _nt, _lv); return; 
+ _f_rates(_p, _ppvar, _thread, _nt, _lv); return 0; 
 }
  _xi = _mfac_rates * (_lv - _tmin_rates);
  _i = (int) _xi;
@@ -338,7 +338,7 @@ _check_rates(_p, _ppvar, _thread, _nt);
  htau = _t_htau[0];
  ninf = _t_ninf[0];
  ntau = _t_ntau[0];
- return; }
+ return 0; }
  if (_i >= 200) {
  minf = _t_minf[200];
  mtau = _t_mtau[200];
@@ -346,7 +346,7 @@ _check_rates(_p, _ppvar, _thread, _nt);
  htau = _t_htau[200];
  ninf = _t_ninf[200];
  ntau = _t_ntau[200];
- return; }
+ return 0; }
  _theta = _xi - (double)_i;
  minf = _t_minf[_i] + _theta*(_t_minf[_i+1] - _t_minf[_i]);
  mtau = _t_mtau[_i] + _theta*(_t_mtau[_i+1] - _t_mtau[_i]);
@@ -568,7 +568,7 @@ static terminal(){}
 static _initlists(){
  double _x; double* _p = &_x;
  int _i; static int _first = 1;
-  if (!_first) return;
+  if (!_first) return 0;
  _slist1[0] = &(m) - _p;  _dlist1[0] = &(Dm) - _p;
  _slist1[1] = &(h) - _p;  _dlist1[1] = &(Dh) - _p;
  _slist1[2] = &(n) - _p;  _dlist1[2] = &(Dn) - _p;

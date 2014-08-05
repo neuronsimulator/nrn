@@ -402,13 +402,13 @@ static int _hoc_states() {
 _check_trates(_p, _ppvar, _thread, _nt);
 #endif
  _n_trates(_p, _ppvar, _thread, _nt, _lv);
- return;
+ return 0;
  }
 
  static _n_trates(double* _p, Datum* _ppvar, ThreadDatum* _thread, _NrnThread* _nt, double _lv){ int _i, _j;
  double _xi, _theta;
  if (!usetable) {
- _f_trates(_p, _ppvar, _thread, _nt, _lv); return; 
+ _f_trates(_p, _ppvar, _thread, _nt, _lv); return 0; 
 }
  _xi = _mfac_trates * (_lv - _tmin_trates);
  _i = (int) _xi;
@@ -418,14 +418,14 @@ _check_trates(_p, _ppvar, _thread, _nt);
  a = _t_a[0];
  b = _t_b[0];
  tadj = _t_tadj[0];
- return; }
+ return 0; }
  if (_i >= 199) {
  ntau = _t_ntau[199];
  ninf = _t_ninf[199];
  a = _t_a[199];
  b = _t_b[199];
  tadj = _t_tadj[199];
- return; }
+ return 0; }
  _theta = _xi - (double)_i;
  ntau = _t_ntau[_i] + _theta*(_t_ntau[_i+1] - _t_ntau[_i]);
  ninf = _t_ninf[_i] + _theta*(_t_ninf[_i+1] - _t_ninf[_i]);
@@ -663,7 +663,7 @@ double brand ( _p, _ppvar, _thread, _nt, _lP , _lN ) double* _p; Datum* _ppvar; 
         double value = 0.0;
         int i;
         for (i = 0; i < _lN; i++) {
-           if (urand() < _lP) {
+           if (urand(_threadargs_) < _lP) {
               value = value + 1;
            }
         }
@@ -949,7 +949,7 @@ static terminal(){}
 static _initlists(){
  double _x; double* _p = &_x;
  int _i; static int _first = 1;
-  if (!_first) return;
+  if (!_first) return 0;
    _t_ntau = makevector(200*sizeof(double));
    _t_ninf = makevector(200*sizeof(double));
    _t_a = makevector(200*sizeof(double));
