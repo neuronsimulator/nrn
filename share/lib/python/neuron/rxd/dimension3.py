@@ -46,7 +46,8 @@ def centroids_by_segment(sec):
         for j in xrange(len(pts) - 1):
             x0, y0, z0, r0 = local_x3d[j], local_y3d[j], local_z3d[j], local_diam3d[j] / 2.
             x1, y1, z1, r1 = local_x3d[j + 1], local_y3d[j + 1], local_z3d[j + 1], local_diam3d[j + 1] / 2.
-            local_objs.append(Cylinder(x0, y0, z0, x1, y1, z1, 0))
+            if x0 != x1 or y0 != y1 or z0 != z1:
+                local_objs.append(Cylinder(x0, y0, z0, x1, y1, z1, 0))
         objs[sec((i + 0.5) / sec.nseg)] = local_objs
     return objs
 
