@@ -846,9 +846,25 @@ Sprintf(buf, "   _t_%s[_i] = %s;\n", s->name, s->name);
 	Lappendstr(procfunc, "\n}\n");
 
 	/* table lookup */
-	Sprintf(buf, "_xi = _mfac_%s * (%s - _tmin_%s);\n _i = (int) _xi;\n",
+	Sprintf(buf, "_xi = _mfac_%s * (%s - _tmin_%s);\n",
 		fname, arg->name, fname);
 	Lappendstr(procfunc, buf);
+	Lappendstr(procfunc, "if (isnan(_xi)) {\n");
+	if (type == FUNCTION1) {
+ 		Lappendstr(procfunc, " return _xi; }\n");
+ 	}else{
+		ITERATE(q, table) {
+			s = SYM(q);
+			if (s->subtype & ARRAY) {
+Sprintf(buf, " for (_j = 0; _j < %d; _j++) { %s[_j] = _xi;\n}",
+s->araydim, s->name);
+			}else{
+Sprintf(buf, " %s = _xi;\n", s->name);
+			}
+			Lappendstr(procfunc, buf);
+		}
+		Lappendstr(procfunc, " return;\n }\n");
+	}
 	Lappendstr(procfunc, "if (_xi <= 0.) {\n");
 	if (type == FUNCTION1) {
 		Sprintf(buf, "return _t_%s[0];\n", SYM(table->next)->name);
@@ -867,7 +883,7 @@ Sprintf(buf, "%s = _t_%s[0];\n", s->name, s->name);
 		Lappendstr(procfunc, "return;");
 	}
 	Lappendstr(procfunc, "}\n");
-	Sprintf(buf, "if (_i >= %d) {\n", ntab);
+	Sprintf(buf, "if (_xi >= %d.) {\n", ntab);
 	Lappendstr(procfunc, buf);
 	if (type == FUNCTION1) {
 		Sprintf(buf, "return _t_%s[%d];\n", SYM(table->next)->name, ntab);
@@ -887,6 +903,7 @@ Sprintf(buf, "%s = _t_%s[%d];\n", s->name, s->name, ntab);
 	}
 	Lappendstr(procfunc, "}\n");
 	/* table interpolation */
+	Lappendstr(procfunc, "_i = (int) _xi;\n");
 	if (type == FUNCTION1) {
 		s = SYM(table->next);
 Sprintf(buf, "return _t_%s[_i] + (_xi - (double)_i)*(_t_%s[_i+1] - _t_%s[_i]);\n",
