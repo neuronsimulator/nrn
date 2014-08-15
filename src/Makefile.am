@@ -11,7 +11,7 @@ MEMACS_SUBDIRS = memacs
 if BUILD_MINGW
 NMODL_SUBDIRS = modlunit nmodl
 else
-NMODL_SUBDIRS = e_editor modlunit nmodl
+NMODL_SUBDIRS = modlunit nmodl
 endif
 NRNOC_SUBDIRS = sparse sparse13 scopmath Random123 nrnmpi oc nrnoc
 NRNIV_SUBDIRS = sundials mesch gnu ivoc nrncvode parallel nrniv

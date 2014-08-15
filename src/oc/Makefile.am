@@ -35,7 +35,7 @@ libocxt_la_SOURCES = code.c hoc_init.c hoc_oop.c \
 
 AM_YFLAGS = -d
 
-EXTRA_DIST = hocinc hocusr.c macprt.c mswinprt.c system.c \
+EXTRA_DIST = mk_hocusr_h.py hocusr.c macprt.c mswinprt.c system.c \
 	$(nrnmpidynam)
 
 if BUILD_MINGW
