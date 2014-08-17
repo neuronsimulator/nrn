@@ -14,7 +14,7 @@ class Cvode;
 
 extern "C" {
 void cvode_fadvance(double);
-void cvode_finitialize();
+void cvode_finitialize(double t0);
 void nrncvode_set_t(double);
 bool at_time(NrnThread*, double);
 
@@ -114,10 +114,10 @@ void cvode_fadvance(double tstop) { // tstop = -1 means single step
 #endif
 }
 
-void cvode_finitialize(){
+void cvode_finitialize(double t0){
 #if USECVODE
 	if (net_cvode_instance) {
-		net_cvode_instance->re_init();
+		net_cvode_instance->re_init(t0);
 	}
 #endif
 }
