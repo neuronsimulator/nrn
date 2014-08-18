@@ -852,7 +852,7 @@ hoc_warning("errno set during call to INITIAL block", (char*)0);
 		nrn_deliver_events(nrn_threads + i); /* The INITIAL sent events at t=0 */
 	}
 	if (cvode_active_) {
-		cvode_finitialize();
+		cvode_finitialize(t);
 		nrn_record_init();
 	}else{
 		state_discon_allowed_ = 0;

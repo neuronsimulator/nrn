@@ -66,7 +66,7 @@ void nrn_use_daspk(i) int i; { }
 
 #if CVODE
 void cvode_fadvance(t)double t;{}
-void cvode_finitialize(){}
+void cvode_finitialize(double t0){}
 void nrncvode_set_t(double tt) {}
 void cvode_event(x) double x;{}
 void clear_event_queue(){}

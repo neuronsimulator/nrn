@@ -90,7 +90,7 @@ if test "$enable_DiscreteEventObserver" = "yes" ; then
 fi
 
 AC_ARG_WITH([nmodl-only],
-	AC_HELP_STRING([--with-nmodl-only],[When cross compiling, nocmodl and hoc_e need to be compiled for the build machine]), [
+	AC_HELP_STRING([--with-nmodl-only],[When cross compiling, nocmodl need to be compiled for the build machine]), [
 	if test "$with_nmodl_only" = "yes" ; then
 		nmodl_build=yes
 	fi
@@ -99,7 +99,7 @@ AC_ARG_WITH([nmodl-only],
 ])
 
 AC_ARG_WITH([nmodl], 
-	AC_HELP_STRING([--without-nmodl],[When cross compiling, nocmodl and hoc_e should NOT be compiled for the host machine]), [
+	AC_HELP_STRING([--without-nmodl],[When cross compiling, nocmodl should NOT be compiled for the host machine]), [
 	if test "$with_nmodl" = "yes" ; then
 		nmodl_build=yes
 	else
@@ -528,7 +528,7 @@ AC_CONFIG_FILES([
 if test "$nmodl_build" = "yes" ; then
 AC_CONFIG_HEADERS([nmodlconf.h])
 AC_CONFIG_FILES([
-	src/e_editor/Makefile src/modlunit/Makefile src/nmodl/Makefile
+	src/modlunit/Makefile src/nmodl/Makefile
 ])
 fi	
 if test "$with_nmodl_only" != "yes" ; then

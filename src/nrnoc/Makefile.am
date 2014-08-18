@@ -44,9 +44,6 @@ MODFILES = hh.mod feature.mod passive.mod stim.mod syn.mod \
 
 EXTRA_DIST = $(MODFILES)
 
-HOC_E = ../e_editor/hoc_ed
-HOC_E_DEP = ../e_editor/hoc_ed
-
 PTHREAD_CC=@PTHREAD_CC@
 PTHREAD_CFLAGS=@PTHREAD_CFLAGS@
 PTHREAD_LIBS=@PTHREAD_LIBS@
@@ -184,10 +181,10 @@ hocusr.lo: hocusr.h
 ## This wouldn't be hard to replace with a perl script....
 if BUILD_MINGW
 else
-hocusr.h: $(nsrc)/nrnoc/neuron.h $(nsrc)/oc/hocinc $(HOC_E_DEP)
+hocusr.h: $(nsrc)/nrnoc/neuron.h $(nsrc)/oc/mk_hocusr_h.py $(nsrc)/nrnoc/options.h
 	cat $(nsrc)/nrnoc/neuron.h > tmp.c
 	@CPP@ -I$(nsrc)/nrnoc -I$(nsrc)/oc tmp.c | sed '/^#/d' > neuron.tmp
-	$(HOC_E) - neuron.tmp < $(nsrc)/oc/hocinc
+	$(PYTHON) $(nsrc)/oc/mk_hocusr_h.py < neuron.tmp > temp2hoc
 	cat neuron.tmp temp2hoc |sed 's/"nrnhoc_topology"/"topology"/' > hocusr.h
 	rm -f temp1hoc temp2hoc neuron.tmp tmp.c
 endif

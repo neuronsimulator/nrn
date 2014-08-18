@@ -6,7 +6,7 @@ extern "C" {
 #endif
 
 extern void cvode_fadvance(double);
-extern void cvode_finitialize(void);
+extern void cvode_finitialize(double);
 extern void nrncvode_set_t(double);
 extern void deliver_net_events(NrnThread*);
 extern void nrn_deliver_events(NrnThread*);
