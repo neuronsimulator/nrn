@@ -996,17 +996,18 @@ class _SpeciesEditor:
             h.continue_dialog('Nothing to delete')
         self._new_or_display()
         
-    def _set_list(self):
+    def _set_list(self, do_update=True):
         self.ell.remove_all()
         self.append('(NEW)')
         self._names = species.keys()
         self._names.sort()
         for name in self._names:
             self.append(name)
-        try:
-            _the_species_pane._update_panel()
-        except NameError:
-            pass
+        if do_update:
+            try:
+                species_pane_update()
+            except NameError:
+                pass
             
     def append(self, name):
         self.ell.append(h.String(name))
@@ -1033,7 +1034,10 @@ _the_species_editor = _SpeciesEditor()
 # this is a way of faking the Singleton pattern
 def SpeciesEditor():
     if not _the_species_editor.is_mapped:
-        _the_species_editor.map()     
+        _the_species_editor.map()
+    _the_species_editor._set_list(do_update=False)
+    # select (NEW)
+    _the_species_editor.ell.select(0)
 
 class _SpeciesPane:
     def __init__(self):
@@ -1072,10 +1076,22 @@ _the_species_pane = _SpeciesPane()
 
 # this is a way of faking the Singleton pattern
 def SpeciesPane():
-    if not _the_species_pane.is_mapped:
-        _the_species_pane.map()
+    _the_species_pane = _SpeciesPane()
+    _the_species_pane.map()
     return _the_species_pane
 
+def species_pane_update():
+  global _the_rxd_builder
+#  print 'species_pane_update'
+  if _the_rxd_builder:
+    deck = _the_rxd_builder.deck
+#    print deck.hname()
+    deck.remove(1)
+    deck.intercept(1)
+    _the_rxd_builder.speciespane = SpeciesPane()
+    deck.intercept(0)
+    deck.move_last(1)
+    deck.flip_to(rxd_builder_tab - 1)
 
 class SpeciesMultiSelector:
     def __init__(self, selector, allow_with_region=False, allow_without_region=True):
@@ -1525,7 +1541,7 @@ class _ReactionEditor:
         for name in self._names:
             self._append(name)
         try:
-            _the_species_pane._update_panel()
+            species_pane_update()
         except NameError:
             pass
         try:
@@ -1539,4 +1555,3 @@ class _ReactionEditor:
 
     def _append(self, name):
         self.ell.append(h.String(name))
-    
