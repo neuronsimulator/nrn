@@ -20,6 +20,12 @@ include(GitExternal)
 
 set(COREBLURON_DESCRIPTION "BBP core simulator")
 set(COMMON_PROJECT_DOMAIN ch.epfl.bluebrain)
+
+if(${CMAKE_SYSTEM_PROCESSOR} STREQUAL "ppc64")
+  set(COREBLURON_LIBRARY_TYPE STATIC)
+  set(Boost_USE_STATIC_LIBS ON)
+endif()
+
 include(Common)
 include(FindPackages)
 
@@ -27,10 +33,6 @@ if(MPI_FOUND)
   set(CMAKE_C_COMPILER ${MPI_C_COMPILER})
   set(CMAKE_CXX_COMPILER ${MPI_CXX_COMPILER})
 endif(MPI_FOUND)
-
-if(${CMAKE_SYSTEM_PROCESSOR} STREQUAL "ppc64")
-  SET(COREBLURON_LIBRARY_TYPE STATIC)
-endif()
 
 option (COREBLURON_TESTS "Build the CORE BLURON regression tests" OFF)
 option (COREBLURON_MAIN "Build the CORE BLURON main" OFF)
@@ -64,6 +66,7 @@ if(COREBLURON_TESTS)
   #this depends of the associated module
   set(BOOST_DIR $ENV{BOOST_DIR} CACHE PATH "Path to the Boost installation (or to the Boost source)")
   set(BOOST_ROOT ${BOOST_DIR})
+
   find_package (Boost COMPONENTS unit_test_framework system)
   if(Boost_FOUND)
     include_directories(${Boost_INCLUDE_DIRS})

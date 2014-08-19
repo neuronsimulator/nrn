@@ -1,0 +1,8 @@
+#! /bin/sh 
+
+#cd @CMAKE_INSTALL_PREFIX@/share/CoreBluron/tests/10Cells
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:@CMAKE_INSTALL_PREFIX@/lib
+
+# Run the executable
+srun -n2 --account=@BBPPROJECT@ @CMAKE_INSTALL_PREFIX@/bin/corebluron_exec -mpi
+
