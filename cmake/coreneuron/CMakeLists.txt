@@ -62,6 +62,7 @@ endif(COREBLURON_MAIN)
 #
 ########################################################################
 
+set(COREBLURON_TESTS ON CACHE BOOL "Compilation of coreBluron unit test")
 if(COREBLURON_TESTS)
   #this depends of the associated module
   set(BOOST_DIR $ENV{BOOST_DIR} CACHE PATH "Path to the Boost installation (or to the Boost source)")
