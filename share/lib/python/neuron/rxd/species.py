@@ -260,7 +260,7 @@ class Species(_SpeciesMathable):
         if self._name is not None:
             ion_type = h.ion_register(name, charge)
             if ion_type == -1:
-                raise RxDException('Unable to register species: %s' % species)
+                raise RxDException('Unable to register species: %s' % name)
             # insert the species if not already present
             for r in regions:
                 if r.nrn_region in ('i', 'o'):
