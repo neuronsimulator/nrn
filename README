@@ -43,7 +43,7 @@ Follow the previous steps with below modifications:
 2. After building the code, install it using 
      make install
 
-The installation folder will be $PATH_TO_INSTALL_FOLDER, and should contain:
+The installation folder will be $PATH_TO_INSTALL_FOLDER, and should contain (considering the dynamic libraries):
 
      $PATH_TO_INSTALL_FOLDER/lib/libcorebluron.so.0.3.0
      $PATH_TO_INSTALL_FOLDER/lib/libcorebluron.so.0.30

@@ -34,8 +34,6 @@ if(MPI_FOUND)
   set(CMAKE_CXX_COMPILER ${MPI_CXX_COMPILER})
 endif(MPI_FOUND)
 
-option (COREBLURON_TESTS "Build the CORE BLURON regression tests" OFF)
-option (COREBLURON_MAIN "Build the CORE BLURON main" OFF)
 
 ########################################################################
 #
@@ -51,6 +49,7 @@ add_subdirectory(corebluron)
 #
 ########################################################################
 
+option (COREBLURON_MAIN "Build the CORE BLURON main" ON)
 if(COREBLURON_MAIN)
     add_subdirectory(apps)
 endif(COREBLURON_MAIN)
@@ -62,7 +61,7 @@ endif(COREBLURON_MAIN)
 #
 ########################################################################
 
-set(COREBLURON_TESTS ON CACHE BOOL "Compilation of coreBluron unit test")
+option(COREBLURON_TESTS "Compilation of coreBluron unit test" ON)
 if(COREBLURON_TESTS)
   #this depends of the associated module
   set(BOOST_DIR $ENV{BOOST_DIR} CACHE PATH "Path to the Boost installation (or to the Boost source)")
