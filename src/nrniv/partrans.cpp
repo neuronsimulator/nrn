@@ -10,6 +10,18 @@
 #include <nrnhash.h>
 #include <mymath.h>
 
+#ifndef NRNLONGSGID
+#define NRNLONGSGID 0
+#endif
+
+#if NRNLONGSGID
+#define sgid_t int64_t
+#define sgid_allgatherv nrnmpi_long_allgatherv
+#else
+#define sgid_t int
+#define sgid_allgatherv nrnmpi_int_allgatherv
+#endif
+
 extern "C" {
 void nrnmpi_source_var();
 void nrnmpi_target_var();
@@ -77,7 +89,7 @@ extern double nrnmpi_transfer_wait_;
 extern void nrnmpi_barrier();
 extern void nrnmpi_int_allgather(int*, int*, int);
 extern int nrnmpi_int_allmax(int);
-extern void nrnmpi_int_allgatherv(int*, int*, int*, int*);
+extern void sgid_allgatherv(sgid_t*, sgid_t*, int*, int*);
 extern void nrnmpi_dbl_allgatherv(double*, double*, int*, int*);
 extern void nrnmpi_int_alltoallv(int*, int*, int*,  int*, int*, int*);
 extern void nrnmpi_dbl_alltoallv(double*, int*, int*,  double*, int*, int*);
@@ -103,8 +115,8 @@ static int n_source_vi_buf_;
 
 void nrn_partrans_update_ptrs();
 
-declareNrnHash(MapInt2Int, int, int);
-implementNrnHash(MapInt2Int, int, int);
+declareNrnHash(MapSgid2Int, sgid_t, int);
+implementNrnHash(MapSgid2Int, sgid_t, int);
 declareNrnHash(MapNode2PDbl, Node*, double*);
 implementNrnHash(MapNode2PDbl, Node*, double*);
 declarePtrList(DblPList, double)
@@ -116,23 +128,26 @@ declarePtrList(PPList, Point_process)
 implementPtrList(PPList, Point_process)
 declareList(IntList, int)
 implementList(IntList, int)
+declareList(SgidList, sgid_t)
+implementList(SgidList, sgid_t)
 static double* insrc_buf_; // Receives the interprocessor data destined for other threads.
 static double* outsrc_buf_;
 static double** poutsrc_; // prior to mpi copy src value to proper place in outsrc_buf_
 static int* poutsrc_indices_; // for recalc pointers
 static int insrc_buf_size_, *insrccnt_, *insrcdspl_;
 static int outsrc_buf_size_, *outsrccnt_, *outsrcdspl_;
-static MapInt2Int* sid2insrc_; // received interprocessor sid data is
+static MapSgid2Int* sid2insrc_; // received interprocessor sid data is
 // associated with which insrc_buf index. Created by nrnmpi_setup_transfer
 // and used by mk_ttd
 		
 static DblPList* targets_;
-static IntList* sgid2targets_;
+static SgidList* sgid2targets_;
 static PPList* target_pntlist_;
 static IntList* target_parray_index_; // to recompute targets_ for cache_efficint
 static NodePList* visources_;
-static IntList* sgids_;
-static MapInt2Int* sgid2srcindex_;
+static SgidList* sgids_;
+static MapSgid2Int* sgid2srcindex_;
+
 static int max_targets_;
 
 static int target_ptr_update_cnt_ = 0;
@@ -165,17 +180,17 @@ void nrnmpi_source_var() {
 	alloclists();
 	is_setup_ = false;
 	double* psv = hoc_pgetarg(1);
-	int sgid = (int)(*getarg(2));
+	int sgid = (sgid_t)(*getarg(2));
 	int i;
 	if (sgid2srcindex_->find(sgid, i)) {
-		char tmp[10];
-		sprintf(tmp, "%d", sgid);
+		char tmp[40];
+		sprintf(tmp, "%ld", (int64_t)sgid);
 		hoc_execerror("source var gid already in use:", tmp);
 	}
 	(*sgid2srcindex_)[sgid] = visources_->count();
 	visources_->append(pv2node(psv));
 	sgids_->append(sgid);
-//	printf("nrnmpi_source_var source_val=%g sgid=%d\n", *psv, sgid);
+//	printf("nrnmpi_source_var source_val=%g sgid=%ld\n", *psv, (long)sgid);
 }
 
 static int compute_parray_index(Point_process* pp, double* ptv) {
@@ -224,12 +239,12 @@ void nrnmpi_target_var() {
 		pp = ob2pntproc(*hoc_objgetarg(iarg++));
 	}
 	double* ptv = hoc_pgetarg(iarg++);
-	int sgid = (int)(*getarg(iarg++));
+	int sgid = (sgid_t)(*getarg(iarg++));
 	targets_->append(ptv);
 	target_pntlist_->append(pp);
 	target_parray_index_->append(compute_parray_index(pp, ptv));
 	sgid2targets_->append(sgid);
-//	printf("nrnmpi_target_var target_val=%g sgid=%d\n", *ptv, sgid);
+	//printf("nrnmpi_target_var target_val=%g sgid=%ld\n", *ptv, (long)sgid);
 }
 
 void nrn_partrans_update_ptrs() {
@@ -380,7 +395,7 @@ static void mk_ttd() {
 	Point_process* pp = target_pntlist_->item(i);
 	int sgid = sgid2targets_->item(i);
 	if (!pp) {
-fprintf(stderr, "Do not know the POINT_PROCESS target for source id %d\n", sgid);
+fprintf(stderr, "Do not know the POINT_PROCESS target for source id %ld\n", (int64_t)sgid);
 hoc_execerror("For multiple threads, the target pointer must reference a range variable of a POINT_PROCESS.",
 "Note that it is fastest to supply a reference to the POINT_PROCESS as the first arg.");
 	}
@@ -421,7 +436,7 @@ hoc_execerror("For multiple threads, the target pointer must reference a range v
 		ttd.tv[j] = targets_->item(i);
 		// perhaps inter- or intra-thread, perhaps interprocessor
 		// if inter- or intra-thread, perhaps SourceViBuf
-		int sid = sgid2targets_->item(i);
+		sgid_t sid = sgid2targets_->item(i);
 		if (sgid2srcindex_->find(sid, k)) {
 			Node* nd = visources_->item(k);
 			if (nd->extnode) {
@@ -434,7 +449,7 @@ hoc_execerror("For multiple threads, the target pointer must reference a range v
 		}else if (sid2insrc_ && sid2insrc_->find(sid, k)) {
 			ttd.sv[j] = insrc_buf_ + k;
 		}else{
-fprintf(stderr, "No source_var for target_var sid = %d\n", sid);
+fprintf(stderr, "No source_var for target_var sid = %ld\n", (int64_t)sid);
 			assert(0);
 		}
 	}
@@ -569,12 +584,12 @@ void nrnmpi_setup_transfer() {
 	// At the end of this section, needsrc is an array of needsrc_cnt
 	// sids needed by this machine where the sources are on other machines.
 	int needsrc_cnt = 0;
-	MapInt2Int* seen = new MapInt2Int(targets_->count());//for single counting
+	MapSgid2Int* seen = new MapSgid2Int(targets_->count());//for single counting
 	int szalloc = targets_->count();
 	szalloc = szalloc ? szalloc : 1;
-	int* needsrc = new int[szalloc]; // more than we need
+	sgid_t* needsrc = new sgid_t[szalloc]; // more than we need
 	for (int i = 0; i < sgid2targets_->count(); ++i) {
-		int sid = sgid2targets_->item(i);
+		sgid_t sid = sgid2targets_->item(i);
 		// only need it if not a source on this machine
 		int srcindex;
 // Note that although it is mentioned several times that we do not transfer
@@ -607,8 +622,8 @@ void nrnmpi_setup_transfer() {
 	}
 	szalloc = insrcdspl_[nrnmpi_numprocs];
 	szalloc = szalloc ? szalloc : 1;
-	int* need = new int[szalloc];
-	nrnmpi_int_allgatherv(needsrc, need, insrccnt_, insrcdspl_);
+	sgid_t* need = new sgid_t[szalloc];
+	sgid_allgatherv(needsrc, need, insrccnt_, insrcdspl_);
 	delete [] needsrc;
 #if 0
 	nrnmpi_barrier();
@@ -631,7 +646,7 @@ printf("%d    interested in %d\n", nrnmpi_myid, need[insrcdspl_[i]+j]);
 	for (int i=0; i < nrnmpi_numprocs; ++i) {
 		outsrccnt_[i] = 0;
 		for (int j = 0; j < insrccnt_[i]; ++j) {
-			int sid = need[insrcdspl_[i] + j];
+			sgid_t sid = need[insrcdspl_[i] + j];
 			int whocares;
 			if (sgid2srcindex_->find(sid, whocares)) {
 				++outsrccnt_[i];
@@ -647,7 +662,7 @@ printf("%d    interested in %d\n", nrnmpi_myid, need[insrcdspl_[i]+j]);
 	for (int i=0; i < nrnmpi_numprocs; ++i) {
 		int k = 0;
 		for (int j = 0; j < insrccnt_[i]; ++j) {
-			int sid = need[insrcdspl_[i] + j];
+			sgid_t sid = need[insrcdspl_[i] + j];
 			int srcindex;
 			if (sgid2srcindex_->find(sid, srcindex)) {
 				Node* nd = visources_->item(long(srcindex));
@@ -700,13 +715,13 @@ printf("%d step 4  %d sids coming from rank %d\n", nrnmpi_myid, insrccnt_[i], i)
 	errno = 0;
 	// map sid to insrc_buf_ indices.
 	// mk_ttd can then construct the right pointer to the source.
-	sid2insrc_ = new MapInt2Int(insrc_buf_size_);
+	sid2insrc_ = new MapSgid2Int(insrc_buf_size_);
 	for (int i=0; i < insrc_buf_size_; ++i) {
-		int sid = int(insrc_buf_[i]);
+		sgid_t sid = sgid_t(insrc_buf_[i]);
 		int whocares;
 		if (sid2insrc_->find(sid, whocares)) {
 			char buf[200];
-sprintf(buf, "multiple source variables for sid = %d\n", sid);
+sprintf(buf, "multiple source variables for sid = %ld\n", (int64_t)sid);
 			hoc_execerror(buf, 0);
 		}
 		(*sid2insrc_)[sid] = i;
@@ -725,10 +740,10 @@ void alloclists() {
 		targets_ = new DblPList(100);
 		target_pntlist_ = new PPList(100);
 		target_parray_index_ = new IntList(100);
-		sgid2targets_ = new IntList(100);
+		sgid2targets_ = new SgidList(100);
 		visources_ = new NodePList(100);
-		sgids_ = new IntList(100);
-		sgid2srcindex_ = new MapInt2Int(256);
+		sgids_ = new SgidList(100);
+		sgid2srcindex_ = new MapSgid2Int(256);
 	}
 }
 

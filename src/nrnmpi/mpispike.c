@@ -274,6 +274,11 @@ void nrnmpi_int_allgatherv(int* s, int* r, int* n, int* dspl) {
 		r, n, dspl, MPI_INT, nrnmpi_comm);
 }
 
+void nrnmpi_long_allgatherv(int64_t* s, int64_t* r, int* n, int* dspl) {
+	MPI_Allgatherv(s, n[nrnmpi_myid],  MPI_LONG,
+		r, n, dspl, MPI_LONG, nrnmpi_comm);
+}
+
 void nrnmpi_dbl_allgatherv(double* s, double* r, int* n, int* dspl) {
 	MPI_Allgatherv(s, n[nrnmpi_myid],  MPI_DOUBLE,
 		r, n, dspl, MPI_DOUBLE, nrnmpi_comm);
