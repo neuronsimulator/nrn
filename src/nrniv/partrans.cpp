@@ -86,6 +86,7 @@ static IntList* target_parray_index_; // to recompute targets_ for cache_efficin
 static DblPList* sources_;
 static IntList* sgids_;
 static MapInt2Int* sgid2srcindex_;
+static int max_targets_;
 
 static int target_ptr_update_cnt_ = 0;
 static int target_ptr_need_update_cnt_ = 0;
@@ -205,7 +206,19 @@ static void rm_ttd() {
 static void mk_ttd() {
 	int i, j, k, tid, n;
 	rm_ttd();
-	if (!targets_ || targets_->count() == 0) { return; }
+	if (!targets_ || targets_->count() == 0) {
+		// some MPI transfer code paths require that all ranks
+		// have a nrn_thread_v_transfer.
+		// As mentioned in http://static.msi.umn.edu/tutorial/scicomp/general/MPI/content3_new.html
+		// "Communications may, or may not, be synchronized,
+		// depending on how the vendor chose to implement them."
+		// In particular the BG/Q (and one other machine) is sychronizing.
+		// (but see: http://www-01.ibm.com/support/docview.wss?uid=isg1IZ58190 )
+		if (nrnmpi_numprocs > 1 && max_targets_) {
+			nrnthread_v_transfer_ = thread_transfer;
+		}
+		return;
+	}
 	n = targets_->count();
     if (nrn_nthread > 1) for (i=0; i < n; ++i) {
 	Point_process* pp = target_pntlist_->item(i);
@@ -283,6 +296,10 @@ void thread_transfer(NrnThread* _nt) {
 	if (!is_setup_) {
 		hoc_execerror("ParallelContext.setup_transfer()", "needs to be called.");
 	}
+	if (!targets_ || targets_->count() == 0) {
+		return;
+	}
+
 //	fprintf(xxxfile, "%g\n", t);
 	// an edited old comment prior to allowing simultaneous threads and mpi.
 		// for threads we do direct transfers under the assumption
@@ -341,7 +358,8 @@ void nrnmpi_setup_transfer() {
 	if (poutsrc_indices_) { delete [] poutsrc_indices_ ; poutsrc_indices_ = 0; }
 #if PARANEURON
 	// if there are no targets anywhere, we do not need to do anything
-	if (nrnmpi_int_allmax(targets_->count()) == 0) {
+	max_targets_ = nrnmpi_int_allmax(targets_->count());
+	if (max_targets_ == 0) {
 		return;
 	}
     if (nrnmpi_numprocs > 1) {
@@ -540,6 +558,7 @@ void nrn_partrans_clear() {
 	delete target_pntlist_;
 	delete target_parray_index_;
 	targets_ = 0;
+	max_targets_ = 0;
 	rm_ttd();
 	if (insrc_buf_) { delete [] insrc_buf_; insrc_buf_ = 0; }
 	if (outsrc_buf_) { delete [] outsrc_buf_; outsrc_buf_ = 0; }
