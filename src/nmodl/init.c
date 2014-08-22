@@ -190,7 +190,7 @@ static char    *extdef5[] = {	/* the extdef names that are not threadsafe */
 
 List *constructorfunc, *destructorfunc;
 
-init()
+void init()
 {
 	int             i;
 	Symbol         *s;

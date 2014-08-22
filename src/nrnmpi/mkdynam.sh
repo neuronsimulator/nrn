@@ -65,7 +65,7 @@ for i in $names ; do
 	elif test "$i" = "ENDIF" ; then
 		echo "#endif"
 	else
-		echo "	\"f_$i\", &p_$i,"
+		echo "	\"f_$i\", (void**)&p_$i,"
 	fi
 done
 echo '	0,0

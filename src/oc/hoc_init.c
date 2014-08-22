@@ -6,37 +6,7 @@
 #include <math.h>
 #include "equation.h"
 
-extern double chkarg();
-
-extern double	Log(), Log10(), hoc1_Exp(), Sqrt(), integer();
-extern int	System(), Prmat(), solve(), eqinit(), Plt(), hoc_atan2();
-extern int	symbols(), PRintf(), Xred(), hoc_Sred();
-extern int	ropen(), wopen(), xopen(), Fscan(), Fprint();
-extern int	hoc_Graph(), hoc_Graphmode(), Plot(), axis(), hoc_Sprint();
-extern int 	hoc_fmenu(), hoc_Getstr(), hoc_Strcmp();
-extern int	hoc_Lw(), machine_name(), hoc_Saveaudit(), hoc_Retrieveaudit();
-extern int	hoc_plotx(), hoc_ploty(), hoc_regraph();
-extern int	hoc_startsw(), hoc_stopsw(), hoc_object_id();
-extern int	hoc_allobjects(), hoc_allobjectvars();
-extern int	hoc_xpanel(), hoc_xbutton(), hoc_xmenu(), hoc_xslider();
-extern int	hoc_xfixedvalue(), hoc_xvarlabel(), hoc_xradiobutton();
-extern int	hoc_xvalue(), hoc_xpvalue(), hoc_xlabel(), ivoc_style();
-extern int	hoc_boolean_dialog(), hoc_string_dialog(), hoc_continue_dialog();
-extern int	hoc_single_event_run(), hoc_notify_iv();
-extern int	hoc_pointer(), hoc_Numarg(), hoc_Argtype(), hoc_exec_cmd();
-extern int	hoc_load_proc(), hoc_load_func(), hoc_load_template(), hoc_load_file();
-extern int	hoc_load_java();
-extern int      hoc_xcheckbox(), hoc_xstatebutton(), hoc_Symbol_limits();
-extern int	hoc_coredump_on_error(), hoc_checkpoint(), hoc_quit();
-extern int	hoc_object_push(), hoc_object_pop(), hoc_pwman_place();
-extern int	hoc_show_errmess_always(), hoc_execute1(), hoc_secname();
-extern int	hoc_neuronhome(), hoc_Execerror();
-extern int	hoc_sscanf(), hoc_save_session(), hoc_print_session();
-extern int	hoc_Chdir(), hoc_getcwd(), hoc_Symbol_units(), hoc_stdout();
-extern int	hoc_name_declared(), hoc_unix_mac_pc(), hoc_show_winio();
-extern int	hoc_usemcran4(), hoc_mcran4(), hoc_mcran4init();
-extern int	hoc_nrn_load_dll(), hoc_nrnversion(), hoc_object_pushed();
-extern int	hoc_mallinfo();
+#include "ocfunc.h"
 
 #if PVM
 extern int      numprocs(), myproc(), psync();
@@ -44,14 +14,11 @@ extern int      numprocs(), myproc(), psync();
 #if 0
 extern int	hoc_co();
 #endif
-extern int	hoc_regexp_compile(), hoc_regexp_search();
-extern int	hoc_Setcolor();
 #if	DOS || defined(WIN32) /*|| defined(MAC)*/
 extern int	hoc_settext();
-extern hoc_win_exec();
+extern void hoc_win_exec(void);
 extern double	erf(), erfc();	/* supplied by unix */
 #endif
-extern Symlist	*symlist;
 
 #if MAC
 static double Fabs(x) double x; { return (x>0.) ? x : -x; }
@@ -151,30 +118,30 @@ static struct {	/* Built-ins */
 };
 static struct { /* Builtin functions with multiple or variable args */
 	char 	*name;
-	int	(*fun_blt)();
+	void	(*fun_blt)(void);
 } fun_bltin[] = {
 	"atan2",	hoc_atan2,
-	"system",	System,
-	"prmat",	Prmat,
-	"solve",	solve,
-	"eqinit",	eqinit,
-	"plt",		Plt,
-	"axis",		axis,
-	"plot",		Plot,
+	"system",	hoc_System,
+	"prmat",	hoc_Prmat,
+	"solve",	hoc_solve,
+	"eqinit",	hoc_eqinit,
+	"plt",		hoc_Plt,
+	"axis",		hoc_axis,
+	"plot",		hoc_Plot,
 	"plotx",	hoc_plotx,
 	"ploty",	hoc_ploty,
 	"regraph",	hoc_regraph,
-	"symbols",	symbols,
-	"printf",	PRintf,
-	"xred",		Xred,
+	"symbols",	hoc_symbols,
+	"printf",	hoc_PRintf,
+	"xred",		hoc_Xred,
 	"sred",		hoc_Sred,
-	"ropen",	ropen,
-	"wopen",	wopen,
-	"xopen",	xopen,
+	"ropen",	hoc_ropen,
+	"wopen",	hoc_wopen,
+	"xopen",	hoc_xopen,
 	"hoc_stdout",	hoc_stdout,
 	"chdir",	hoc_Chdir,
-	"fprint",	Fprint,
-	"fscan",	Fscan,
+	"fprint",	hoc_Fprint,
+	"fscan",	hoc_Fscan,
 	"sscanf", hoc_sscanf,
 	"sprint",	hoc_Sprint,
 	"graph",	hoc_Graph,
@@ -221,7 +188,7 @@ static struct { /* Builtin functions with multiple or variable args */
 	"unix_mac_pc", hoc_unix_mac_pc,
 	"show_winio", hoc_show_winio,
 	"nrn_load_dll", hoc_nrn_load_dll,
-	"machine_name", machine_name,
+	"machine_name", hoc_machine_name,
 	"saveaudit", hoc_Saveaudit,
 	"retrieveaudit", hoc_Retrieveaudit,
 	"coredump_on_error", hoc_coredump_on_error,
@@ -255,7 +222,7 @@ static struct { /* Builtin functions with multiple or variable args */
 
 static struct { /* functions that return a string */
 	char 	*name;
-	int	(*strfun_blt)();
+	void	(*strfun_blt)(void);
 } strfun_bltin[] = {
 	"secname",	hoc_secname,
 	"units", hoc_Symbol_units,
@@ -267,7 +234,7 @@ static struct { /* functions that return a string */
 
 static struct { /* functions that return an object */
 	char 	*name;
-	int	(*objfun_blt)();
+	void	(*objfun_blt)(void);
 } objfun_bltin[] = {
 	"object_pushed", hoc_object_pushed,
 	0,	0
@@ -286,7 +253,7 @@ char* nrn_mech_dll; /* but actually only for NEURON mswin and linux */
 int use_mcell_ran4_;
 int nrn_xopen_broadcast_;
 
-init()	/* install constants and built-ins table */
+void hoc_init(void)	/* install constants and built-ins table */
 {
 	int i;
 	Symbol *s;
@@ -345,19 +312,17 @@ init()	/* install constants and built-ins table */
 	hoc_access = (int *)0;
 	spinit();
 #if OOP
-	class_registration();
-	{extern Symlist *hoc_built_in_symlist, *hoc_top_level_symlist;
+	hoc_class_registration();
 	 hoc_built_in_symlist = symlist;
 	 symlist = (Symlist *)0;
 	 /* start symlist and top level the same list */
 	 hoc_top_level_symlist = symlist = (Symlist *)emalloc(sizeof(Symlist));
 	 symlist->first = symlist->last = (Symbol *)0;
-	}	
 	hoc_install_hoc_obj();
 #endif
 }
 
-hoc_unix_mac_pc() {
+void hoc_unix_mac_pc(void) {
 	hoc_ret();
 #if defined(DARWIN)
 	hoc_pushx(4.);
@@ -373,7 +338,7 @@ hoc_unix_mac_pc() {
 #endif
 #endif
 }
-hoc_show_winio() {
+void hoc_show_winio(void) {
     int b;
     b = (int)chkarg(1, 0., 1.);
 #if MAC
@@ -388,7 +353,7 @@ hoc_show_winio() {
 
 int nrn_main_launch;
 
-hoc_nrnversion() {
+void hoc_nrnversion(void) {
 	extern char* nrn_version();
 	static char* p;
 	int i;
@@ -401,8 +366,7 @@ hoc_nrnversion() {
 	hoc_pushstr(&p);
 }
 
-hoc_Execerror() {
-	extern hoc_execerror_mes(char*, char*, int);
+void hoc_Execerror(void) {
 	char* c2 = (char*)0;
 	if (ifarg(2)) {
 		c2 = gargstr(2);

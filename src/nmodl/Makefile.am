@@ -19,7 +19,7 @@ AM_YFLAGS = -d
 
 ## The list of .h files that are needed in the distribution.
 noinst_HEADERS = extdef.h extdef2.h extdef5.h modl.h symbol.h parse1.h \
-	difeqdef.h macnmodl.h carbonnmodl.h
+	difeqdef.h macnmodl.h carbonnmodl.h nmodlfunc.h
 
 
 ## files that depend on the existence of parse1.h or diffeq.h (none do)

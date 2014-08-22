@@ -30,7 +30,7 @@ public:
 class SymDirectory : public Resource {
 public:
 	SymDirectory(const String& parent_path, Object* parent_object,
-		Symbol*, int array_index=nil, int node_index=nil);
+		Symbol*, int array_index=0, int node_index=0);
 	SymDirectory(Object*);
 	SymDirectory(int type);
 	virtual ~SymDirectory();
@@ -48,7 +48,7 @@ public:
 	Symbol* symbol(int index) const;
 	int array_index(int index) const;
 	Object* object() const; // the parent_object
-	Object* obj(int index); // non-nil if SymbolItem is an object
+	Object* obj(int index); // non-NULL if SymbolItem is an object
 private:
 	SymDirectoryImpl* impl_;
 };

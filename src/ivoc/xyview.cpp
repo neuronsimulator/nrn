@@ -171,8 +171,8 @@ void XYView::init(Coord x1, Coord y1, Coord xs, Coord ys, Scene* s, Coord xsize,
 	origin(x1, y1);
 	x_span(xs);
 	y_span(ys);
-	canvas(nil);
-	parent_ = nil; //not reffed
+	canvas(NULL);
+	parent_ = NULL; //not reffed
 	append_view(s);
 #if 0
 	if (view_margin_ == fil) {
@@ -189,10 +189,10 @@ Coord XYView::view_margin_ = fil;
 
 XYView_helper::~XYView_helper() {
 	if (v_ == current_pick_view_) {
-		current_pick_view_ = nil;
+		current_pick_view_ = NULL;
 	}
 	if (v_ == current_draw_view_) {
-		current_draw_view_ = nil;
+		current_draw_view_ = NULL;
 	}
 }
 
@@ -242,7 +242,7 @@ Canvas* XYView::canvas() {
 }
 
 void XYView::undraw() {
-	canvas_ = nil;
+	canvas_ = NULL;
 	TransformSetter::undraw();
 }
 
@@ -325,7 +325,7 @@ void XYView::allocate(Canvas* c, const Allocation& a, Extension& ext) {
 		return;
 	}
 #endif
-	if (canvas_ == nil) {
+	if (canvas_ == NULL) {
 		canvas_ = c;
 	}
 	c->push_transform();
@@ -705,14 +705,14 @@ new Background (
 )
 {
 	v_ = v;
-	g_ = nil;
+	g_ = NULL;
 	v_->ref();
-	assert(v_->parent() == nil);
+	assert(v_->parent() == NULL);
 	v_->parent_ = this;
 };
 
 OcViewGlyph::~OcViewGlyph() {
-	v_->parent_ = nil;
+	v_->parent_ = NULL;
 	v_->unref();
 	Resource::unref(g_);
 }

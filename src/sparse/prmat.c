@@ -7,7 +7,7 @@
 #endif
 #include "lineq.h"
 
-prmat()
+void prmat(void)
 {
 	int i, j;
 	struct elm *el;

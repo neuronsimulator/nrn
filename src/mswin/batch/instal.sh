@@ -171,6 +171,7 @@ mkdir $D/usr/share/terminfo/78
 cp /usr/share/terminfo/78/xterm $D/usr/share/terminfo/78/xterm
 
 cp $S/src/mswin/*.ico $D/bin
+cp /usr/lib/default-manifest.o $D/bin
 
 if false ; then
 mkdir $D/mingw

@@ -34,7 +34,7 @@ extern Symbol* nrn_vec_sym;
 
 //implemented in src/ivoc/pwman.cpp
 void* nrnjava_pwm_listen(const char*, Object*);
-void nrnjava_pwm_event(long, int, int, int, int, int);
+void nrnjava_pwm_event(size_t, int, int, int, int, int);
 
 extern "C" {
 

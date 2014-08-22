@@ -171,7 +171,7 @@ PyObject* NRNMUSIC::EventInputPort::index2target(int gi, PyObject* ptarget) {
 	}
 	//assert (!gi_table->find(ps, gi));
 	if (!gi_table->find(ps, gi)) {
-	  ps = new PreSyn(nil, nil, nil);
+	  ps = new PreSyn(NULL, NULL, NULL);
 	  net_cvode_instance->psl_append(ps);
 	  gi_table->insert(gi, ps);
 	}

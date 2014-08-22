@@ -1,10 +1,20 @@
 #ifndef nrn_memb_func_h
 #define nrn_memb_func_h
+
 #if defined(__cplusplus)
 extern "C" {
 #endif
 
+#include "nrnoc_ml.h"
+
 typedef Datum *(*Pfrpdat)();
+typedef void(*Pvmi)(struct NrnThread*, Memb_list*, int);
+typedef void (*Pvmp)(Prop*);
+typedef int (*nrn_ode_count_t)(int);
+typedef void (*nrn_ode_map_t)(int, double**, double**, double*, Datum*, double*, int);
+typedef void (*nrn_ode_synonym_t)(int, double**, Datum**);
+/* eventually replace following with Pvmp */
+typedef void (*nrn_bamech_t)(Node*, double*, Datum*, Datum*, struct NrnThread*);
 
 #define NULL_CUR (Pfri)0
 #define NULL_ALLOC (Pfri)0
@@ -12,20 +22,20 @@ typedef Datum *(*Pfrpdat)();
 #define NULL_INITIALIZE (Pfri)0
 
 typedef struct Memb_func {
-	Pfri	alloc;
-	Pfri	current;
-	Pfri	jacob;
-	Pfri	state;
-	Pfri	initialize;
-	Pfri	destructor;	/* only for point processes */
+	Pvmp	alloc;
+	Pvmi	current;
+	Pvmi	jacob;
+	Pvmi	state;
+	Pvmi	initialize;
+	Pvmp	destructor;	/* only for point processes */
 	Symbol	*sym;
 #if CVODE
-	Pfri	ode_count;
-	Pfri	ode_map;
-	Pfri	ode_spec;
-	Pfri	ode_matsol;
-	Pfri	ode_synonym;
-	Pfri	singchan_; /* managed by kschan for variable step methods */
+	nrn_ode_count_t	ode_count;
+	nrn_ode_map_t	ode_map;
+	Pvmi	ode_spec;
+	Pvmi	ode_matsol;
+	nrn_ode_synonym_t ode_synonym;
+	Pvmi	singchan_; /* managed by kschan for variable step methods */
 #endif
 	int vectorized;
 	int thread_size_; /* how many Datum needed in Memb_list if vectorized */
@@ -38,9 +48,6 @@ typedef struct Memb_func {
 	void (*setdata_)(struct Prop*);
 } Memb_func;
 
-#if VECTORIZE
-#include "nrnoc_ml.h"
-#endif
 
 #define VINDEX	-1
 #define CABLESECTION	1
@@ -61,7 +68,7 @@ typedef struct Memb_func {
 #define BEFORE_STEP 4
 #define BEFORE_AFTER_SIZE 5 /* 1 more than the previous */
 typedef struct BAMech {
-	Pfri f;
+	nrn_bamech_t f;
 	int type;
 	struct BAMech* next;
 } BAMech;
@@ -69,6 +76,10 @@ extern BAMech** bamech_;
 
 extern Memb_func* memb_func;
 extern int n_memb_func;
+extern int* nrn_prop_param_size_;
+extern int* nrn_prop_dparam_size_;
+extern void hoc_register_prop_size(int type, int psize, int dpsize);
+
 #if VECTORIZE
 extern Memb_list* memb_list;
 /* for finitialize, order is same up through extracellular, then ions,

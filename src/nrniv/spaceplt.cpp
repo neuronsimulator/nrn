@@ -229,7 +229,7 @@ ENDGUI
 
 void RangeVarPlot_reg() {
 //printf("RangeVarPlot_reg\n");
-	class2oc("RangeVarPlot", s_cons, s_destruct, s_members);
+	class2oc("RangeVarPlot", s_cons, s_destruct, s_members, NULL, NULL, NULL);
 }
 
 #if HAVE_IV // to end of file
@@ -245,7 +245,7 @@ RangeVarPlot::RangeVarPlot(const char* var) : GraphVector(var) {
 	if (strstr(var, "$1")) {
 		rexp_ = new RangeExpr(var, sec_list_);
 	}else{
-		rexp_ = nil;
+		rexp_ = NULL;
 	}
 	expr_ = var;
 	origin_ = 0.;
@@ -255,11 +255,11 @@ RangeVarPlot::RangeVarPlot(const char* var) : GraphVector(var) {
 RangeVarPlot::~RangeVarPlot() {
 	if (begin_section_) {
 		section_unref(begin_section_);
-		begin_section_ = nil;
+		begin_section_ = NULL;
 	}
 	if (end_section_) {
 		section_unref(end_section_);
-		end_section_ = nil;
+		end_section_ = NULL;
 	}
 	delete sec_list_;
 	if (rexp_) {
@@ -270,7 +270,7 @@ RangeVarPlot::~RangeVarPlot() {
 }
 
 void RangeVarPlot::update(Observable* o) {
-	if (o) { // must be Oc::notify_change_ because free is nil
+	if (o) { // must be Oc::notify_change_ because free is NULL
 		// but do not update if multisplit active
 		if (shape_changed_ != nrn_shape_changed_ && !nrn_multisplit_active_) {
 //printf("RangeVarPlot::update shape_changed %d %d\n", shape_changed_, nrn_shape_changed_);
@@ -419,7 +419,7 @@ void RangeVarPlot::fill_pointers() {
 		}
 		int noexist=0;// don't plot single points that don't exist
 		bool does_exist;
-		double* pval = nil;
+		double* pval = NULL;
 		for (long i=0; i < xcnt; ++i) {
 			Section* sec = sec_list_->item(i).sec;
 			hoc_ac_ = sec_list_->item(i).x;
@@ -463,7 +463,7 @@ does_exist = nrn_exists(sym, node_exact(sec, hoc_ac_));
 void RangeVarPlot::list(Object* ob) {
 	hoc_List* l = (hoc_List*)ob->u.this_pointer;
 	long i, cnt = sec_list_->count();
-	Section* sec = nil;
+	Section* sec = NULL;
 	for (i = 0; i < cnt; ++i) {
 		if (sec_list_->item(i).sec != sec) {
 			sec = sec_list_->item(i).sec;
@@ -588,8 +588,8 @@ printf("debugging\n");
 RangeExpr::RangeExpr(const char* expr, SecPosList* spl) {
 	spl_ = spl;
 	n_ = 0;
-	val_ = nil;
-	exist_ = nil;
+	val_ = NULL;
+	exist_ = NULL;
 	char buf[256];
 	const char* p1;
 	char* p2;

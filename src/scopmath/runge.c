@@ -64,7 +64,7 @@ static char RCSid[] =
 
 #include "errcodes.h"
 
-runge(_ninits, n, y, d, p, t, h, dy, work)
+int runge(_ninits, n, y, d, p, t, h, dy, work)
 int _ninits, n, (*dy) ();
 double p[], *t, h, **work; int y[]; int d[];
 #define d_(arg)  p[d[arg]]

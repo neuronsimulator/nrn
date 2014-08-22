@@ -22,6 +22,10 @@
 static char linebuf[512], *cp;
 int lexcontext;
 
+extern int unput();
+extern int unGetc();
+extern int Getc();
+
 #define debug(arg1,arg2) /*printf("lex:arg1|%s|\n", arg2);*/
 %}
 D	[0-9]
@@ -176,11 +180,11 @@ E	[Ee][-+]?{D}+
 
 %%
 
-lex_start() {
+void lex_start() {
 	BEGIN O;
 }
 
-lex_units() {
+void lex_units() {
 	cp = linebuf;
 	BEGIN to_par;
 }
@@ -197,7 +201,7 @@ int input() {
 #endif
 
 int unput(c) int c; {
-	unGetc(c);
+	return unGetc(c);
 }
 
 int output(c) int c; {
@@ -205,6 +209,7 @@ int output(c) int c; {
 	IGNORE(c);
 #endif
 	diag("internal error: ", "called output");
+	return 0;
 }
 
 int yywrap() {

@@ -30,7 +30,7 @@ OcBrowser::OcBrowser(Action* accept, Action* cancel)
 {}
 
 OcBrowser::OcBrowser()
-   : FileBrowser(WidgetKit::instance(), new OcBrowserAccept(this) ,nil)
+   : FileBrowser(WidgetKit::instance(), new OcBrowserAccept(this) ,NULL)
 {}
 
 OcBrowser::~OcBrowser(){}

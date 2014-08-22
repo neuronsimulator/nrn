@@ -87,7 +87,7 @@ void SymChooserCallback(T)::execute(SymChooser* f, bool accept) { \
 class SymChooser : public Dialog {
 public:
     SymChooser(
-	SymDirectory*, WidgetKit*, Style*, SymChooserAction* = nil, int nbrowser = 3
+	SymDirectory*, WidgetKit*, Style*, SymChooserAction* = NULL, int nbrowser = 3
     );
     virtual ~SymChooser();
 

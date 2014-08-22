@@ -5,7 +5,8 @@ modlunit_SOURCES = parse1.y lex.l consist.c declare.c init.c io.c \
 	units1.c version.c
 
 ## The list of .h files that are needed in the distribution.
-noinst_HEADERS = extargs.h extdef.h model.h symbol.h units.h parse1.h macmunit.h
+noinst_HEADERS = extargs.h extdef.h model.h symbol.h units.h parse1.h \
+ macmunit.h modlunit.h
 
 ## for building a dos version
 EXTRA_DIST = modlunit.mak carbonmunit.h

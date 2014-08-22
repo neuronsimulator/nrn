@@ -66,7 +66,7 @@ VIDEO   **pscreen;                      /* Physical screen. */
  * The original window has "WFCHG" set, so that it will get completely
  * redrawn on the first call to "update".
  */
-void vtinit()
+int vtinit()
 {
     register int i;
     register VIDEO *vp;
@@ -74,7 +74,7 @@ void vtinit()
 
     (*term.t_open)();
 	if (nrow == term.t_nrow && ncol == term.t_ncol) {
-		return;
+		return TRUE;
 	}
     (*term.t_rev)(FALSE);
 	if (vscreen) {
@@ -127,6 +127,7 @@ void vtinit()
 	}
 	nrow = term.t_nrow;
 	ncol = term.t_ncol;
+	return TRUE;
 }
 
 /*
@@ -135,11 +136,12 @@ void vtinit()
  * system prompt will be written in the line). Shut down the channel to the
  * terminal.
  */
-vttidy()
+int vttidy()
 {
     mlerase();
     movecursor(term.t_nrow, 0);
     (*term.t_close)();
+    return TRUE;
 }
 
 /*
@@ -147,10 +149,11 @@ vttidy()
  * screen. There is no checking for nonsense values; this might be a good
  * idea during the early stages.
  */
-vtmove(row, col)
+int vtmove(row, col)
 {
     vtrow = row;
     vtcol = col;
+    return TRUE;
 }
 
 /*
@@ -159,7 +162,7 @@ vtmove(row, col)
  * only puts printing characters into the virtual terminal buffers. Only
  * column overflow is checked.
  */
-vtputc(c)
+int vtputc(c)
     int c;
 {
     register VIDEO      *vp;
@@ -188,13 +191,14 @@ vtputc(c)
         }
     else
 	vp->v_text[vtcol++] = c;
+    return TRUE;
 }
 
 /*	put a character to the virtual screen in an extended line. If we are
 	not yet on left edge, don't print it yet. check for overflow on
 	the right margin						*/
 
-vtpute(c)
+int vtpute(c)
 
 int c;
 
@@ -228,19 +232,21 @@ int c;
 		vp->v_text[vtcol] = c;
 	++vtcol;
     }
+    return TRUE;
 }
 
 /*
  * Erase from the end of the software cursor to the end of the line on which
  * the software cursor is located.
  */
-vteeol()
+int vteeol()
 {
     register VIDEO      *vp;
 
     vp = vscreen[vtrow];
     while (vtcol < term.t_ncol)
         vp->v_text[vtcol++] = ' ';
+    return TRUE;
 }
 
 /*
@@ -250,7 +256,7 @@ vteeol()
  * correct for the current window. Third, make the virtual and physical
  * screens the same.
  */
-update()
+int update()
 {
     register LINE *lp;
     register WINDOW *wp;
@@ -513,6 +519,7 @@ out:
 
     movecursor(currow, curcol - lbound);
     (*term.t_flush)();
+    return TRUE;
 }
 
 /*	updext: update the extended line which the cursor is currently
@@ -521,7 +528,7 @@ out:
 		the cursor is
 								*/
 
-updext()
+int updext()
 
 {
 	register int rcursor;	/* real cursor location */
@@ -544,6 +551,7 @@ updext()
 
 	/* and put a '$' in column 1 */
 	vscreen[currow]->v_text[0] = '$';
+    return TRUE;
 }
 
 /*
@@ -552,7 +560,7 @@ updext()
  * row and column variables. It does try an exploit erase to end of line. The
  * RAINBOW version of this routine uses fast video.
  */
-updateline(row, vline, pline, flags)
+int updateline(row, vline, pline, flags)
     char vline[];	/* what we want it to end up as */
     char pline[];	/* what it looks like now       */
     short *flags;	/* and how we want it that way  */
@@ -686,16 +694,16 @@ updateline(row, vline, pline, flags)
  * change the modeline format by hacking at this routine. Called by "update"
  * any time there is a dirty window.
  */
-modeline(wp)
+int modeline(wp)
     WINDOW *wp;
 {
     register char *cp;
     register int c;
     register int n;		/* cursor position count */
     register BUFFER *bp;
-    register i;			/* loop index */
-    register lchar;		/* character to draw line in buffer with */
-    register firstm;		/* is this the first mode? */
+    register int i;			/* loop index */
+    register int lchar;		/* character to draw line in buffer with */
+    register int firstm;		/* is this the first mode? */
     char tline[NLINE];		/* buffer for part of mode line */
 
     n = wp->w_toprow+wp->w_ntrows;      /* Location. */
@@ -800,9 +808,10 @@ modeline(wp)
         vtputc(lchar);
         ++n;
         }
+    return TRUE;
 }
 
-upmode()	/* update all the mode lines */
+int upmode()	/* update all the mode lines */
 
 {
 	register WINDOW *wp;
@@ -812,6 +821,7 @@ upmode()	/* update all the mode lines */
 		wp->w_flag |= WFMODE;
 		wp = wp->w_wndp;
 	}
+    return TRUE;
 }
 
 /*
@@ -819,7 +829,7 @@ upmode()	/* update all the mode lines */
  * and column "col". The row and column arguments are origin 0. Optimize out
  * random calls. Update "ttrow" and "ttcol".
  */
-movecursor(row, col)
+int movecursor(row, col)
     {
     if (row!=ttrow || col!=ttcol)
         {
@@ -827,6 +837,7 @@ movecursor(row, col)
         ttcol = col;
         (*term.t_move)(row, col);
         }
+    return TRUE;
     }
 
 /*
@@ -834,7 +845,7 @@ movecursor(row, col)
  * is not considered to be part of the virtual screen. It always works
  * immediately; the terminal buffer is flushed via a call to the flusher.
  */
-mlerase()
+int mlerase()
     {
     int i;
     
@@ -849,6 +860,7 @@ mlerase()
     }
     (*term.t_flush)();
     mpresf = FALSE;
+    return TRUE;
     }
 
 /*
@@ -857,7 +869,7 @@ mlerase()
  * with a ^G. Used any time a confirmation is required.
  */
 
-mlyesno(prompt)
+int mlyesno(prompt)
 
 char *prompt;
 
@@ -893,7 +905,7 @@ char *prompt;
  * return. Handle erase, kill, and abort keys.
  */
 
-mlreply(prompt, buf, nbuf)
+int mlreply(prompt, buf, nbuf)
     char *prompt;
     char *buf;
 {
@@ -904,7 +916,7 @@ mlreply(prompt, buf, nbuf)
 	to specify the proper terminator. If the terminator is not
 	a return ('\n') it will echo as "<NL>"
 							*/
-mlreplyt(prompt, buf, nbuf, eolchar)
+int mlreplyt(prompt, buf, nbuf, eolchar)
 
 char *prompt;
 char *buf;
@@ -1079,6 +1091,7 @@ char eolchar;
 			}
 		}
 	}
+    return TRUE;
 }
 
 /*
@@ -1089,7 +1102,7 @@ char eolchar;
  */
 
 /*VARARGS1*/
-mlwrite(fmt, arg)
+int mlwrite(fmt, arg)
     char *fmt;
     {
     register int c;
@@ -1146,6 +1159,7 @@ mlwrite(fmt, arg)
         (*term.t_eeol)();
     (*term.t_flush)();
     mpresf = TRUE;
+    return TRUE;
     }
 
 /*
@@ -1153,7 +1167,7 @@ mlwrite(fmt, arg)
  * the characters in the string all have width "1"; if this is not the case
  * things will get screwed up a little.
  */
-mlputs(s)
+int mlputs(s)
     char *s;
     {
     register int c;
@@ -1163,13 +1177,14 @@ mlputs(s)
         (*term.t_putchar)(c);
         ++ttcol;
         }
+    return TRUE;
     }
 
 /*
  * Write out an integer, in the specified radix. Update the physical cursor
  * position. This will not handle any negative numbers; maybe it should.
  */
-mlputi(i, r)
+int mlputi(i, r)
     {
     register int q;
     static char hexdigits[] = "0123456789ABCDEF";
@@ -1187,12 +1202,13 @@ mlputi(i, r)
 
     (*term.t_putchar)(hexdigits[i%r]);
     ++ttcol;
+    return TRUE;
     }
 
 /*
  * do the same except as a long integer.
  */
-mlputli(l, r)
+int mlputli(l, r)
     long l;
     {
     register long q;
@@ -1210,11 +1226,12 @@ mlputli(l, r)
 
     (*term.t_putchar)((int)(l%r)+'0');
     ++ttcol;
+    return TRUE;
     }
 
 #if RAINBOW
 
-putline(row, col, buf)
+int putline(row, col, buf)
     int row, col;
     char buf[];
     {
@@ -1224,6 +1241,7 @@ putline(row, col, buf)
     if (col + n - 1 > term.t_ncol)
         n = term.t_ncol - col + 1;
     Put_Data(row, col, n, buf);
+    return TRUE;
     }
 #endif
 
@@ -1376,7 +1394,7 @@ onward:;
 	}
 }
 
-kbdtext(buf)	/* add this text string to the current keyboard macro
+int kbdtext(buf)	/* add this text string to the current keyboard macro
 		   definition						*/
 
 char *buf;	/* text to add to keyboard macro */

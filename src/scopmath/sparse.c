@@ -15,6 +15,7 @@ static char RCSid[] = "sparse.c,v 1.7 1998/03/12 13:17:17 hines Exp";
 
 #include <stdlib.h>
 #include "errcodes.h"
+extern void* emalloc(size_t n);
 
 /* 4/23/93 converted to object so many models can use it */
 
@@ -119,8 +120,8 @@ typedef struct SparseObj { /* all the state information */
 
 static SparseObj* old_sparseobj;
 static SparseObj* create_sparseobj();
-static sparseobj2local();
-static local2sparseobj();
+static void sparseobj2local();
+static void local2sparseobj();
 
 static Elm **rowst;		/* link to first element in row (solution order)*/
 static Elm **diag;		/* link to pivot element in row (solution order)*/
@@ -148,23 +149,22 @@ static int do_flag;
 	varord[el->col] < varord[el->r_down->col]
 */
 	
-extern void *emalloc();
 static int matsol();
 static Elm *getelm();
 
-static subrow();
-static bksub();
-static int free_elm();
-static create_coef_list();
-static init_coef_list();
+static void subrow();
+static void bksub();
+static void free_elm();
+static void create_coef_list();
+static void init_coef_list();
 static void increase_order();
 static void reduce_order();
-static spar_minorder();
-static get_next_pivot();
-static freelist();
-static check_assert();
-static re_link();
-static delete();
+static void spar_minorder();
+static void get_next_pivot();
+static void freelist();
+static void check_assert();
+static void re_link();
+static void delete();
 
 
 /* sparse matrix dynamic allocation:
@@ -172,7 +172,7 @@ create_coef_list makes a list for fast setup, does minimum ordering and
 ensures all elements needed are present */
 /* this could easily be made recursive but it isn't right now */
 
-sparse(v, n, s, d, p, t, dt, fun, prhs, linflag)
+int sparse(v, n, s, d, p, t, dt, fun, prhs, linflag)
 	void** v;
 	int n, linflag;  /* linflag was not explicitly declared */
 	int (*fun)();
@@ -236,7 +236,7 @@ if (!linflag && s_(i-1) < 0.) { s_(i-1) = 0.; }
 }
 
 /* for solving ax=b */
-_cvode_sparse(v, n, x, p, fun, prhs)
+int _cvode_sparse(v, n, x, p, fun, prhs)
 	void** v;
 	int n;
 	int (*fun)();
@@ -302,7 +302,7 @@ matsol()
 }
 
 
-static subrow(pivot, rowsub)
+static void subrow(pivot, rowsub)
  Elm *pivot, *rowsub;
 {
 	double r;
@@ -321,7 +321,7 @@ static subrow(pivot, rowsub)
 	}
 }
 
-static bksub()
+static void bksub()
 {
 	unsigned i;
 	Elm *el;
@@ -339,7 +339,7 @@ static bksub()
 }
 
 
-static prmat()
+static void prmat()
 {
 	unsigned i, j;
 	Elm *el;
@@ -399,8 +399,7 @@ static void initeqn(maxeqn)	/* reallocate space for matrix */
 	neqn = maxeqn;
 }
 
-static int
-free_elm() {
+static void free_elm() {
 	unsigned i;
 	Elm *el;
 	
@@ -540,7 +539,7 @@ _getelm(row, col) int row, col; {
 	return &el->value;
 }
 
-static create_coef_list(n, fun)
+static void create_coef_list(n, fun)
 	int n;
 	int (*fun)();
 {
@@ -559,7 +558,7 @@ static create_coef_list(n, fun)
 	phase = 0;
 }
 
-static init_coef_list() {
+static void init_coef_list() {
 	unsigned i;
 	Elm *el;
 	
@@ -575,9 +574,9 @@ static init_coef_list() {
 static Item *newitem();
 static List *newlist();
 
-static insert();
+static void insert();
 
-static init_minorder() {
+static void init_minorder() {
 	/* matrix has been set up. Construct the orderlist and orderfind
 	   vector.
 	*/
@@ -630,7 +629,7 @@ static void reduce_order(row) unsigned row; {
 	insert(order);
 }
 
-static spar_minorder() { /* Minimum ordering algorithm to determine the order
+static void spar_minorder() { /* Minimum ordering algorithm to determine the order
 			that the matrix should be solved. Also make sure
 			all needed elements are present.
 			This does not mess up the matrix
@@ -646,7 +645,7 @@ static spar_minorder() { /* Minimum ordering algorithm to determine the order
 	check_assert();
 }
 
-static get_next_pivot(i) unsigned i; {
+static void get_next_pivot(i) unsigned i; {
 	/* get varord[i], etc. from the head of the orderlist. */
 	Item *order;
 	Elm *pivot, *el;
@@ -731,7 +730,7 @@ newlist()
 	return (List *)i;
 }
 
-static freelist(list)	/*free the list but not the elements*/
+static void freelist(list)	/*free the list but not the elements*/
 	List *list;
 {
 	Item *i1, *i2;
@@ -742,7 +741,7 @@ static freelist(list)	/*free the list but not the elements*/
 	Free(list);
 }
 
-static linkitem(item, i)	/*link i before item*/
+static void linkitem(item, i)	/*link i before item*/
 	Item *item;
 	Item *i;
 {
@@ -753,7 +752,7 @@ static linkitem(item, i)	/*link i before item*/
 }
 
 
-static insert(item)
+static void insert(item)
 	Item *item;
 {
 	Item *i;
@@ -766,7 +765,7 @@ static insert(item)
 	linkitem(i, item);
 }
 
-static delete(item)
+static void delete(item)
 	Item *item;
 {
 		
@@ -776,27 +775,8 @@ static delete(item)
 	item->next = ITEM0;
 }
 
-void *emalloc(n) unsigned n; { /* check return from malloc */
-#if __TURBOC__ || VMS
-	void *malloc();
-	void *p;
-	p = (void *)malloc(n);
-	if (p == (void *)0) {
-		abort_run(LOWMEM);
-	}
-	return p;
-#else
-	char *p;
-	p = (char *)malloc(n);
-	if (p == (char *)0) {
-		abort_run(LOWMEM);
-	}
-	return (void *)p;
-#endif
-}
-
 static
-check_assert() {
+void check_assert() {
 	/* check that all links are consistent */
 	unsigned i;
 	Elm *el;
@@ -827,7 +807,7 @@ check_assert() {
 
 	/* at this point row links are out of order for diag[i]->col
 	   and col links are out of order for diag[i]->row */
-static re_link(i) unsigned i; {
+static void re_link(i) unsigned i; {
 
 	Elm *el, *dright, *dleft, *dup, *ddown, *elnext;
 	
@@ -902,7 +882,7 @@ static SparseObj* create_sparseobj() {
 	return so;
 }
 
-static sparseobj2local(so)
+static void sparseobj2local(so)
 	SparseObj* so;
 {
 	rowst = so->rowst;
@@ -918,7 +898,7 @@ static sparseobj2local(so)
 	do_flag = so->do_flag;
 }
 
-static local2sparseobj(so)
+static void local2sparseobj(so)
 	SparseObj* so;
 {
 	so->rowst = rowst;

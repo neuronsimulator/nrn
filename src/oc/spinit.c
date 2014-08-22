@@ -31,7 +31,6 @@ spinit.c,v
 */
 
 
-hoc_spinit()	/* Dummy special init */
+void hoc_spinit(void)	/* Dummy special init */
 {
-	return 0;
 }

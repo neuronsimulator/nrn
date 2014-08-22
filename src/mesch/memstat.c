@@ -81,7 +81,7 @@ static unsigned int mem_hash_idx_end = 0;
 static unsigned int mem_hash(ptr)
 void **ptr;
 {
-   unsigned long lp = (unsigned long)ptr;
+   unsigned long lp = (size_t)ptr;
 
    return (lp % MEM_HASHSIZE);
 }
@@ -339,7 +339,7 @@ int mem_stat_reg_vars(int list,int type,...)
    void **par;
    
    va_start(ap, type);
-   while (par = va_arg(ap,void **)) {   /* NULL ends the list*/
+   while ((par = va_arg(ap,void **))) {   /* NULL ends the list*/
       mem_stat_reg_list(par,type,list);
       i++;
    } 
@@ -371,7 +371,7 @@ int mem_stat_reg_vars(va_alist) va_dcl
    va_start(ap);
    list = va_arg(ap,int);
    type = va_arg(ap,int);
-   while (par = va_arg(ap,void **)) {   /* NULL ends the list*/
+   while ((par = va_arg(ap,void **))) {   /* NULL ends the list*/
       mem_stat_reg_list(par,type,list);
       i++;
    } 

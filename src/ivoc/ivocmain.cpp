@@ -8,8 +8,8 @@ long hoc_nframe, hoc_nstack;
 #if !HAVE_IV
 #define Session void
 extern "C" {
-	int hoc_main1(int, char**, char**);
-	void hoc_main1_init(char*, char**);
+	int hoc_main1(int, const char**, const char**);
+	void hoc_main1_init(const char*, const char**);
 }
 #endif
 
@@ -119,8 +119,9 @@ static PropertyData properties[] = {
 {"*NSTACK", "0"}, // see src/oc/code.c for the default value
 {"*Py_NoSiteFlag", "0"}, 
 {"*python", "off"},
+{"*nopython", "off"},
 {"*banner", "on"},
-	 { nil }
+	 { NULL }
 };
 
 static OptionDesc options[] = {
@@ -137,12 +138,13 @@ static OptionDesc options[] = {
 {"-NFRAME", "*NFRAME", OptionValueNext},
 {"--version", "*print_nrn_version", OptionValueImplicit, "on"},
 {"-python", "*python", OptionValueImplicit, "on"},
+{"-nopython", "*nopython", OptionValueImplicit, "on"},
 {"-Py_NoSiteFlag", "*Py_NoSiteFlag", OptionValueImplicit, "1"},
 {"-nobanner", "*banner", OptionValueImplicit, "off"},
 #if defined(WIN32)
 {"-mswin_scale", "*mswin_scale", OptionValueNext},
 #endif
-	 { nil }
+	 { NULL }
 };
 #endif // HAVE_IV
 
@@ -157,6 +159,7 @@ extern "C" {
 	extern const char* nrn_mech_dll;
 #endif
 #if defined(USE_PYTHON)
+	int nrn_nopython;
 	extern int use_python_interpreter;
 	extern void (*p_nrnpython_start)(int);
 #endif
@@ -241,10 +244,10 @@ void mac_open_app(){
 #endif
 
 extern "C" {
-	int ivocmain(int, char**, char**);
-	int (*p_neosim_main)(int, char**, char**);
+	int ivocmain(int, const char**, const char**);
+	int (*p_neosim_main)(int, const char**, const char**);
 	extern int nrn_global_argc;
-	extern char** nrn_global_argv;
+	extern const char** nrn_global_argv;
 	int always_false;
 	int nrn_is_python_extension;
 }
@@ -277,7 +280,7 @@ static bool nrn_optarg_on(const char* opt, int* argc, char** argv);
 static char* nrn_optarg(const char* opt, int* argc, char** argv);
 static int nrn_optargint(const char* opt, int* argc, char** argv, int dflt);
 
-static bool nrn_optarg_on(const char* opt, int* pargc, char** argv) {
+static bool nrn_optarg_on(const char* opt, int* pargc, const char** argv) {
 	char* a;
 	int i;
 	for (i=0; i < *pargc; ++i) {
@@ -293,8 +296,8 @@ static bool nrn_optarg_on(const char* opt, int* pargc, char** argv) {
 	return false;
 }
 
-static char* nrn_optarg(const char* opt, int* pargc, char** argv) {
-	char* a;
+static const char* nrn_optarg(const char* opt, int* pargc, const char** argv) {
+	const char* a;
 	int i;
 	for (i=0; i < *pargc - 1; ++i) {
 		if (strcmp(opt, argv[i]) == 0) {
@@ -310,8 +313,8 @@ static char* nrn_optarg(const char* opt, int* pargc, char** argv) {
 	return 0;
 }
 
-static int nrn_optargint(const char* opt, int* pargc, char** argv, int dflt) {
-	char* a;
+static int nrn_optargint(const char* opt, int* pargc, const char** argv, int dflt) {
+	const char* a;
 	int i;
 	i = dflt;
 	a = nrn_optarg(opt, pargc, argv);
@@ -327,7 +330,7 @@ void nrn_InitializeJavaVM();
 #endif
 
 #if 0 //for debugging
-void prargs(const char* s, int argc, char** argv) {
+void prargs(const char* s, int argc, const char** argv) {
 	int i;
 	printf("%s argc=%d\n", s, argc);
 	for (i=0; i < argc; ++i) {
@@ -338,7 +341,7 @@ void prargs(const char* s, int argc, char** argv) {
 
 // see nrnmain.cpp for the real main()
 
-int ivocmain (int argc, char** argv, char** env) {
+int ivocmain (int argc, const char** argv, const char** env) {
 // third arg should not be used as it might become invalid
 // after putenv or setenv. Instead, if necessary use
 // #include <unistd.h>
@@ -347,7 +350,7 @@ int ivocmain (int argc, char** argv, char** env) {
 //	prargs("at beginning", argc, argv);
 	force_load();
 	nrn_global_argc = argc;
-	nrn_global_argv = new char*[argc];
+	nrn_global_argv = new const char*[argc];
 	for (i = 0; i < argc; ++i) {
 		nrn_global_argv[i] = argv[i];
 	}
@@ -368,7 +371,8 @@ int ivocmain (int argc, char** argv, char** env) {
     -nogui           do not send any gui info to screen\n\
     -notatty         buffered stdout and no prompt\n\
     -python          Python is the interpreter\n\
-    -Py_NoSiteFlag   Set Py_NoSiteFlag=1 before initializeing Python\n\
+    -nopython        Do not initialize Python\n\
+    -Py_NoSiteFlag   Set Py_NoSiteFlag=1 before initializing Python\n\
     -realtime        For hard real-time simulation for dynamic clamp\n\
     --version        print version info\n\
     and all InterViews and X11 options\n\
@@ -453,9 +457,9 @@ int ivocmain (int argc, char** argv, char** env) {
 	hoc_print_first_instance = 0;
 #endif
 	int our_argc = argc;
-	char** our_argv = argv;
+	const char** our_argv = argv;
 	int exit_status = 0;
-	Session* session = nil;
+	Session* session = NULL;
 #if !defined(WIN32)&&!defined(MAC) && !defined(CYGWIN)
 // Gary Holt's first pass at this was:
 //
@@ -482,11 +486,13 @@ int ivocmain (int argc, char** argv, char** env) {
 #endif
 		// putenv and setenv may invalidate env but we no longer
 		// use it so following should not be needed
+#if 0
 #if HAVE_UNISTD_H && !defined(__APPLE__)
 	env = environ;
 #endif
 #if defined (__APPLE__)
 	env = (*_NSGetEnviron());
+#endif
 #endif
 	}
 
@@ -523,12 +529,12 @@ int ivocmain (int argc, char** argv, char** env) {
 #else
 #if defined(WIN32) || carbon
 IFGUI
-	session = new Session("NEURON", our_argc, our_argv, options, properties);
+	session = new Session("NEURON", our_argc, (char**)our_argv, options, properties);
 ENDGUI
 #else
 IFGUI
 	if (getenv("DISPLAY")) {
-		session = new Session("NEURON", our_argc, our_argv, options, properties);
+		session = new Session("NEURON", our_argc, (char**)our_argv, options, properties);
 	}else{
 		fprintf(stderr, "Warning: no DISPLAY environment variable.\
 \n--No graphics will be displayed.\n");
@@ -584,6 +590,19 @@ ENDGUI
 		hoc_nstack = nrn_optargint("-NSTACK", &our_argc, our_argv, 0);
 		hoc_nframe = nrn_optargint("-NFRAME", &our_argc, our_argv, 0);
 	}
+
+#if defined(USE_PYTHON)
+#if HAVE_IV
+	nrn_nopython = 0;
+	if (session && session->style()->value_is_on("nopython")) {
+		nrn_nopython = 1;
+	}
+#endif
+//	if (nrn_optarg_on("-nopython", &our_argc, our_argv)) {
+//		nrn_nopython = 1;
+//	}
+
+#endif //USE_PYTHON
 
 #if defined(WIN32) && HAVE_IV
 IFGUI

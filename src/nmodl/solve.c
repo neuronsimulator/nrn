@@ -26,7 +26,7 @@ Symbol* cvode_nrn_current_solve_;
 #endif
 
 static void whileloop();
-static check_ss_consist();
+static void check_ss_consist();
 
 /* Need list of solve statements. We impress the
 general list structure to handle it.  The element is a pointer to an
@@ -35,7 +35,7 @@ item which is the first item in the statement sequence in another list.
 static List *solvq;	/* list of the solve statement locations */
 int numlist = 0;	/* number of slist's */
 
-solvequeue(q1, q2, blocktype, qerr) /*solve NAME=q1 [using METHOD=q2]*/
+void solvequeue(q1, q2, blocktype, qerr) /*solve NAME=q1 [using METHOD=q2]*/
 				/* q2 = 0 means method wasn't there */
 				/* qerr in ITEM0 or else the closing
 				   brace of an IFERROR stmt */
@@ -130,7 +130,7 @@ current_line());
 }
 			
 /* go through the solvq list and construct the proper while loop and calls*/
-solvhandler()
+void solvhandler()
 {
 	Item *lq, *qsol, *follow;
 	List *errstmt;
@@ -345,7 +345,7 @@ fprintf(stderr, "Notice: SOLVE with ERROR is not thread safe.\n");
 	}
 }
 
-save_dt(q)	/* save and restore the value of indepvar */
+void save_dt(q)	/* save and restore the value of indepvar */
 	Item *q;
 {
 	/*ARGSUSED*/
@@ -513,8 +513,7 @@ if (type == DERF) {
 invoke same integrator (default is advance) and DERIVATIVE blocks whenever
 solved must invoke the derivimplicit method.
 */
-static
-check_ss_consist(qchk)
+static void check_ss_consist(qchk)
 	Item *qchk;
 {
 	Item *q;

@@ -48,8 +48,8 @@ void nrn_nvkludge_dummy() {
 	hoc_spec_table();
 	ncyg_fprintf();
 #endif
-	nrn_vecsim_add(nil, false);
-	nrn_vecsim_remove(nil);
+	nrn_vecsim_add(NULL, false);
+	nrn_vecsim_remove(NULL);
 #if NRNMPI
 	nrn_timeout(0);
 #endif

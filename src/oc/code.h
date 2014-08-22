@@ -1,35 +1,42 @@
+#ifndef hoc_code_h
+#define hoc_code_h
 
-extern	int eval(), add(), sub(), mul(), hoc_div(), hoc_cyclic(), negate(), power();
-extern	int assign(), bltin(), varpush(), constpush(), print(), varread();
-extern	int nopop(), prexpr(), prstr(), assstr(), pushzero();
-extern	int gt(), lt(), eq(), ge(), le(), ne(), hoc_and(), hoc_or(), hoc_not();
-extern	int ifcode(), forcode(), shortfor(), call(), arg(), argassign();
-extern int hoc_argrefasgn(), hoc_argref(), hoc_iterator(), hoc_iterator_stmt();
-extern	int funcret(), procret(), Break(), Continue(), Stop();
-extern	int debug(), edit(), hoc_evalpointer();
-extern	int hoc_newline(), hoc_delete_symbol(), hoc_stringarg(), hoc_push_string();
-extern	int hoc_parallel_begin(), hoc_parallel_end(), hoc_argrefarg();
+#include "redef.h"
+
+extern void eval(void), add(void), hoc_sub(void), mul(void), hoc_div(void), hoc_cyclic(void), negate(void), power(void);
+extern void assign(void), bltin(void), varpush(void), constpush(void), print(void), varread(void);
+extern void nopop(void), prexpr(void), prstr(void), assstr(void), pushzero(void);
+extern void gt(void), lt(void), eq(void), ge(void), le(void), ne(void), hoc_and(void), hoc_or(void), hoc_not(void);
+extern void ifcode(void), forcode(void), shortfor(void), call(void), arg(void), argassign(void);
+extern void hoc_argrefasgn(void), hoc_argref(void), hoc_iterator(void), hoc_iterator_stmt(void);
+extern void funcret(void), procret(void), Break(void), Continue(void), Stop(void);
+extern void debug(void), edit(void), hoc_evalpointer(void);
+extern void hoc_newline(void), hoc_delete_symbol(void), hoc_stringarg(void), hoc_push_string(void);
+extern void hoc_parallel_begin(void), hoc_parallel_end(void), hoc_argrefarg(void);
+extern void hoc_arayinstal(void);
 
 /* OOP */
-extern int hoc_objectvar(), hoc_object_component(), hoc_object_eval();
-extern int hoc_object_asgn(), hoc_objvardecl(), hoc_cmp_otype(), hoc_newobj();
-extern int hoc_asgn_obj_to_str(), hoc_known_type(), hoc_push_string();
-extern int hoc_objectarg(), hoc_ob_pointer(), hoc_constobject();
-extern int hoc_push_current_object(), hoc_newobj_arg();
-extern int hoc_autoobject(), hocobjret(), hoc_newobj_ret();
+extern void hoc_objectvar(void), hoc_object_component(void), hoc_object_eval(void);
+extern void hoc_object_asgn(void), hoc_objvardecl(void), hoc_cmp_otype(void), hoc_newobj(void);
+extern void hoc_asgn_obj_to_str(void), hoc_known_type(void), hoc_push_string(void);
+extern void hoc_objectarg(void), hoc_ob_pointer(void), hoc_constobject(void);
+extern void hoc_push_current_object(void), hoc_newobj_arg(void);
+extern void hoc_autoobject(void), hocobjret(void), hoc_newobj_ret(void);
 /* END OOP */
 
 /* NEWCABLE */
-extern	int connectsection(), add_section(), range_const(), range_interpolate();
-extern	int clear_sectionlist(), install_sectionlist();
-extern  int rangevareval(), sec_access(), mech_access();
-extern	int for_segment(), for_segment1();
-extern	int sec_access_temp(), sec_access_push(), sec_access_pop();
-extern	int rangepoint(), forall_section(), hoc_ifsec();
-extern	int rangevarevalpointer();
-extern	int connectpointer(), connect_point_process_pointer(), nrn_cppp();
-extern  int ob_sec_access(), sec_access_object();
-extern	int forall_sectionlist(), connect_obsec_syntax();
-extern	int hoc_ifseclist(), mech_uninsert();
-extern	int simpleconnectsection(), range_interpolate_single();
+extern void connectsection(void), add_section(void), range_const(void), range_interpolate(void);
+extern void clear_sectionlist(void), install_sectionlist(void);
+extern void rangevareval(void), sec_access(void), mech_access(void);
+extern void for_segment(void), for_segment1(void);
+extern void sec_access_temp(void), sec_access_push(void), sec_access_pop(void);
+extern void rangepoint(void), forall_section(void), hoc_ifsec(void);
+extern void rangevarevalpointer(void);
+extern void connectpointer(void), connect_point_process_pointer(void), nrn_cppp(void);
+extern void ob_sec_access(void), sec_access_object(void);
+extern void forall_sectionlist(void), connect_obsec_syntax(void);
+extern void hoc_ifseclist(void), mech_uninsert(void);
+extern void simpleconnectsection(void), range_interpolate_single(void);
 /* END NEWCABLE*/
+
+#endif

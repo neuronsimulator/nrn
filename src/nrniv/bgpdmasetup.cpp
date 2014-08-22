@@ -282,7 +282,7 @@ static void setup_presyn_dma_lists() {
 
 #if TWOPHASE
 	// Need to use the bgp union slot for dma_send_phase2_.
-	// Only will be non-nil if the input is a phase 2 sender.
+	// Only will be non-NULL if the input is a phase 2 sender.
 	NrnHashIterate(Gid2PreSyn, gid2in_, PreSyn*, ps) {
 		ps->bgp.srchost_ = 0;
 	}}}

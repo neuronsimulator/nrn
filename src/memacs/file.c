@@ -37,7 +37,7 @@ file.c,v
  * "read a file into the current buffer" code.
  * Bound to "C-X C-R".
  */
-fileread(f, n)
+int fileread(f, n)
 {
         register int    s;
         char fname[NFILEN];
@@ -66,7 +66,7 @@ fileread(f, n)
  * "insert a file into the current buffer" code.
  * Bound to "C-X C-I".
  */
-insfile(f, n)
+int insfile(f, n)
 {
         register int    s;
         char fname[NFILEN];
@@ -88,7 +88,7 @@ insfile(f, n)
  * text, and switch to the new buffer.
  * Bound to C-X C-F.
  */
-filefind(f, n)
+int filefind(f, n)
 {
         char fname[NFILEN];	/* file user wishes to find */
         register int s;		/* status return */
@@ -99,7 +99,7 @@ filefind(f, n)
 	return(getfile(fname, TRUE));
 }
 
-viewfile(f, n)	/* visit a file in VIEW mode */
+int viewfile(f, n)	/* visit a file in VIEW mode */
 {
         char fname[NFILEN];	/* file user wishes to find */
         register int s;		/* status return */
@@ -122,7 +122,7 @@ viewfile(f, n)	/* visit a file in VIEW mode */
 	return(s);
 }
 
-getfile(fname, lockfl)
+int getfile(fname, lockfl)
 
 char fname[];		/* file name to find */
 int lockfl;		/* check the file for locks? */
@@ -182,7 +182,7 @@ int lockfl;		/* check the file for locks? */
  * an argument. If the filename ends in a ".c", CMODE is
  * set for the current buffer.
  */
-readin(fname, lockfl)
+int readin(fname, lockfl)
 
 char    fname[];	/* name of file to read */
 int	lockfl;		/* check for file locks? */
@@ -212,7 +212,7 @@ int	lockfl;		/* check for file locks? */
 	if ((int)strlen(fname) > 1) {		/* check if a 'C' file	*/
 		sptr = fname + strlen(fname) - 2;
 		if (*sptr == '.' &&
-		   *(sptr + 1) == 'c' || *(sptr + 1) == 'h')
+		   (*(sptr + 1) == 'c' || *(sptr + 1) == 'h'))
 			bp->b_mode |= MDCMOD;
 		else bp->b_mode |= MDWRAP;
 	}
@@ -275,7 +275,7 @@ out:
  * I suppose that this information could be put in
  * a better place than a line of code.
  */
-makename(bname, fname)
+int makename(bname, fname)
 char    bname[];
 char    fname[];
 {
@@ -310,6 +310,7 @@ char    fname[];
         while (cp2!=&bname[NBUFN-1] && *cp1!=0 && *cp1!=';')
                 *cp2++ = *cp1++;
         *cp2 = 0;
+	return TRUE;
 }
 
 /*
@@ -321,7 +322,7 @@ char    fname[];
  * is more compatable with Gosling EMACS than
  * with ITS EMACS. Bound to "C-X C-W".
  */
-filewrite(f, n)
+int filewrite(f, n)
 {
         register WINDOW *wp;
         register int    s;
@@ -362,7 +363,7 @@ filewrite(f, n)
  * name for the buffer. Bound to "C-X C-S". May
  * get called by "C-Z".
  */
-filesave(f, n)
+int filesave(f, n)
 {
         register WINDOW *wp;
         register int    s;
@@ -399,7 +400,7 @@ filesave(f, n)
  * a macro for this. Most of the grief is error
  * checking of some sort.
  */
-writeout(fn)
+int writeout(fn)
 char    *fn;
 {
         register int    s;
@@ -441,7 +442,7 @@ char    *fn;
  * as needing an update. You can type a blank line at the
  * prompt if you wish.
  */
-filename(f, n)
+int filename(f, n)
 {
         register WINDOW *wp;
         register int    s;
@@ -469,7 +470,7 @@ filename(f, n)
  * buffer, Called by insert file command. Return the final
  * status of the read.
  */
-ifile(fname)
+int ifile(fname)
 char    fname[];
 {
         register LINE   *lp0;

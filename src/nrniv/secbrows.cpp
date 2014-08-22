@@ -53,13 +53,13 @@ static Member_func sb_members[] = {
 static void* sb_cons(Object*) {
 	Object* ob;
 #if HAVE_IV
-	OcSectionBrowser* b = nil;
+	OcSectionBrowser* b = NULL;
 IFGUI
 	if (ifarg(1)) {
 		ob = *hoc_objgetarg(1);
 		b = new OcSectionBrowser(ob);
 	}else{
-		b = new OcSectionBrowser(nil);
+		b = new OcSectionBrowser(NULL);
 	}
 	b->ref();
 	Window* w = new StandardWindow(b->standard_glyph());
@@ -76,7 +76,7 @@ static void sb_destruct(void* v) {
 #endif
 }
 void SectionBrowser_reg() {
-	class2oc("SectionBrowser", sb_cons, sb_destruct, sb_members);
+	class2oc("SectionBrowser", sb_cons, sb_destruct, sb_members, NULL, NULL, NULL);
 }
 
 #if HAVE_IV
@@ -113,8 +113,8 @@ OcSectionBrowser::OcSectionBrowser(Object* ob) : OcBrowser() {
 		append_item(secname(psec_[i]));
 		section_ref(psec_[i]);
 	}
-	select_ = nil;
-	accept_ = nil;
+	select_ = NULL;
+	accept_ = NULL;
 }
 
 OcSectionBrowser::~OcSectionBrowser() {
@@ -179,14 +179,14 @@ void OcSectionBrowser::select(GlyphIndex i){
 	}
 }
 //-----------------------------------------
-MechVarType::MechVarType() : MonoGlyph(nil) {
+MechVarType::MechVarType() : MonoGlyph(NULL) {
 	int i;
 	LayoutKit& lk = *LayoutKit::instance();
 	WidgetKit& wk = *WidgetKit::instance();
 	Button* b[3];
-	b[0] = wk.palette_button("Parameters", nil);
-	b[1] = wk.palette_button("States", nil);
-	b[2] = wk.palette_button("Assigned", nil);
+	b[0] = wk.palette_button("Parameters", NULL);
+	b[1] = wk.palette_button("States", NULL);
+	b[2] = wk.palette_button("Assigned", NULL);
 	PolyGlyph* vb = lk.vbox(b[0],b[1],b[2]);
 	for (i=0; i < 3; ++i) {
 		tts_[i] = b[i]->state();
@@ -213,7 +213,7 @@ bool MechVarType::select(int i) {
 //---------------------------------------------------------------------
 
 #define MSBEGIN 2
-MechSelector::MechSelector() : MonoGlyph(nil){
+MechSelector::MechSelector() : MonoGlyph(NULL){
 	int i;
 	LayoutKit& lk = *LayoutKit::instance();
 	WidgetKit& wk = *WidgetKit::instance();
@@ -221,7 +221,7 @@ MechSelector::MechSelector() : MonoGlyph(nil){
 	Button* b;
 	tts_ = new TelltaleState*[n_memb_func];
 	for (i=MSBEGIN; i < n_memb_func; ++i) {
-		b = wk.palette_button(memb_func[i].sym->name, nil);
+		b = wk.palette_button(memb_func[i].sym->name, NULL);
 		b->state()->set(TelltaleState::is_chosen, true);
 		vsb->append(b);
 		tts_[i] = b->state();
@@ -327,7 +327,7 @@ SectionBrowserImpl::~SectionBrowserImpl() {
 }
 
 SectionBrowser::SectionBrowser()
-  : OcBrowser(new BrowserAccept(this), nil)
+  : OcBrowser(new BrowserAccept(this), NULL)
 {
 	LayoutKit& lk = *LayoutKit::instance();
 	WidgetKit& wk = *WidgetKit::instance();
@@ -338,7 +338,7 @@ SectionBrowser::SectionBrowser()
 }
 
 SectionBrowser::SectionBrowser(Object*)
-  : OcBrowser(nil, nil)
+  : OcBrowser(NULL, NULL)
 {
 }
 
@@ -422,7 +422,7 @@ PPBImpl::~PPBImpl() {
 }
 
 PointProcessBrowser::PointProcessBrowser(OcList* ocl)
-  : OcBrowser(new PBrowserAccept(this), nil)
+  : OcBrowser(new PBrowserAccept(this), NULL)
 {
 	ppbi_ = new PPBImpl(ocl);
 	long i, cnt = ocl->count();

@@ -159,7 +159,7 @@ if test "$CFLAGS" != "-mno-cygwin" ; then
 
       echo 'make libnrnpython@npy_apiver@.dll'
       $CXX -shared ../nrnpython/.libs/*.o -L. -lnrniv -o libnrnpython@npy_apiver@.dll \
-        -L/c/Python27/libs -lpython27 \
+        @NRNPYTHON_PYLIBLINK@ \
         -L${IVLIBDIR} -lIVhines \
         -lreadline \
         -Wl,--enable-auto-image-base \

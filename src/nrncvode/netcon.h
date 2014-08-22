@@ -15,7 +15,7 @@
 #if 0
 #define STATISTICS(arg) ++arg
 #else
-#define STATISTICS /**/
+#define STATISTICS(arg) /**/
 #endif
 
 class PreSyn;
@@ -355,5 +355,9 @@ public:
 	double wx_, ws_; // exchange time and "spikes to Presyn" time
 	int ithread_; // for pr()
 };
+
+extern "C" {
+extern PreSyn* nrn_gid2outputpresyn(int gid);
+}
 
 #endif

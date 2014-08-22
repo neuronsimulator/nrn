@@ -61,21 +61,22 @@ int             ilint;
 Item           *qlint;
 #endif
 
+extern int yyparse();
+
 #if NMODL && VECTORIZE
 extern int vectorize;
 extern int numlist;
 extern char* nmodl_version_;
-extern usederivstatearray;
+extern int usederivstatearray;
 #endif
 
 /*SUPPRESS 763*/
 static char pgm_name[] =	"nmodl";
 extern char *RCS_version;
 extern char *RCS_date;
-static openfiles();
+static void openfiles();
 
-int
-main(argc, argv)
+int main(argc, argv)
 	int             argc;
 	char           *argv[]; {
 	/*
@@ -200,7 +201,7 @@ fprintf(stderr, "The %s.c file may be manually edited to fix these errors.\n", m
 	return 0;
 }
 
-static          openfiles(argc, argv)
+static void openfiles(argc, argv)
 	int             argc;
 	char           *argv[];
 {

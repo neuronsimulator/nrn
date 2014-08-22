@@ -164,7 +164,7 @@ static char *extargs[] = { /* units of args to external functions */
 	0
 };
 
-init()
+void init()
 {
 	int             i;
 	Symbol         *s;

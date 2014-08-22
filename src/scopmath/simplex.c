@@ -64,7 +64,7 @@ static double *vrefl, *vnew, *vcent, *v0;	/* Work space vectors */
    in the error function */
 static double **limits;		/* Limits on values of parameters */
 
-simplex(nparms, parms, pp, pfunc, value)
+int simplex(nparms, parms, pp, pfunc, value)
 int nparms, (*pfunc) ();
 double pp[];
 int *parms, *value;
@@ -242,7 +242,7 @@ int *parms, *value;
     return EXCEED_ITERS;
 }
 
-getcentroid(vcent, ignore)
+int getcentroid(vcent, ignore)
 double *vcent;
 int ignore;
 {
@@ -262,18 +262,20 @@ int ignore;
 		*vp1++ += *vp2++;
     for (j = 0, vp1 = vcent; j < n; j++)
 	*vp1++ /= fn;
+    return 0;
 }
 
-copyvec(v1, v2)			/* Copy vector 1 into vector 2 */
+int copyvec(v1, v2)			/* Copy vector 1 into vector 2 */
 double *v1, *v2;
 {
     int i;
 
     for (i = 0; i < n; i++)
 	*v2++ = *v1++;
+    return 0;
 }
 
-reflect(v0, v1, v2, coef)	/* Projection operator */
+int reflect(v0, v1, v2, coef)	/* Projection operator */
 double *v0, *v1, *v2, coef;
 {
     int i;
@@ -295,6 +297,8 @@ double *v0, *v1, *v2, coef;
 	    *v2 = limits[i][1];
 #endif
     }
+    return 0;
+
 }
 
 double
@@ -318,7 +322,7 @@ int (*func) ();
     return (temp);
 }
 
-getminimum(vec,pp, parms)
+int getminimum(vec,pp, parms)
 double vec[], *pp; int *parms;
 {
     extern int freevector(), freematrix();
@@ -334,4 +338,5 @@ double vec[], *pp; int *parms;
     freevector(vnew);
     freevector(vcent);
     freematrix(limits);
+    return 0;
 }

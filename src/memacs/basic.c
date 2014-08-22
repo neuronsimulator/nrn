@@ -29,7 +29,7 @@ basic.c,v
  * beginning of the current line.
  * Trivial.
  */
-gotobol(f, n)
+int gotobol(f, n)
 {
 	LINTUSE(f) LINTUSE(n)
         curwp->w_doto  = 0;
@@ -42,7 +42,7 @@ gotobol(f, n)
  * location. Error if you try and move out of the buffer. Set the flag if the
  * line pointer for dot changes.
  */
-backchar(f, n)
+int backchar(f, n)
 register int    n;
 {
         register LINE   *lp;
@@ -66,7 +66,7 @@ register int    n;
 /*
  * Move the cursor to the end of the current line. Trivial. No errors.
  */
-gotoeol(f, n)
+int gotoeol(f, n)
 {
 	LINTUSE(f) LINTUSE(n)
         curwp->w_doto  = llength(curwp->w_dotp);
@@ -79,7 +79,7 @@ gotoeol(f, n)
  * location, and move ".". Error if you try and move off the end of the
  * buffer. Set the flag if the line pointer for dot changes.
  */
-forwchar(f, n)
+int forwchar(f, n)
 register int    n;
 {
         if (n < 0)
@@ -97,7 +97,7 @@ register int    n;
         return (TRUE);
 }
 
-gotoline(f, n)		/* move to a particular line.
+int gotoline(f, n)		/* move to a particular line.
 			   argument (n) must be a positive integer for
 			   this to actually do anything		*/
 
@@ -116,7 +116,7 @@ gotoline(f, n)		/* move to a particular line.
  * considered to be hard motion; it really isn't if the original value of dot
  * is the same as the new value of dot. Normally bound to "M-<".
  */
-gotobob(f, n)
+int gotobob(f, n)
 {
 	LINTUSE(f) LINTUSE(n)
         curwp->w_dotp  = lforw(curbp->b_linep);
@@ -130,7 +130,7 @@ gotobob(f, n)
  * (ZJ). The standard screen code does most of the hard parts of update.
  * Bound to "M->".
  */
-gotoeob(f, n)
+int gotoeob(f, n)
 {
 	LINTUSE(f) LINTUSE(n)
         curwp->w_dotp  = curbp->b_linep;
@@ -145,7 +145,7 @@ gotoeob(f, n)
  * controls how the goal column is set. Bound to "C-N". No errors are
  * possible.
  */
-forwline(f, n)
+int forwline(f, n)
 {
         register LINE   *dlp;
 
@@ -169,7 +169,7 @@ forwline(f, n)
  * alternate. Figure out the new line and call "movedot" to perform the
  * motion. No errors are possible. Bound to "C-P".
  */
-backline(f, n)
+int backline(f, n)
 {
         register LINE   *dlp;
 
@@ -187,7 +187,7 @@ backline(f, n)
         return (TRUE);
 }
 
-gotobop(f, n)	/* go back to the begining of the current paragraph
+int gotobop(f, n)	/* go back to the begining of the current paragraph
 		   here we look for a <NL><NL> or <NL><TAB> or <NL><SPACE>
 		   combination to delimit the begining of a paragraph	*/
 
@@ -226,7 +226,7 @@ int f, n;	/* default Flag & Numeric argument */
 	return TRUE;
 }
 
-gotoeop(f, n)	/* go forword to the end of the current paragraph
+int gotoeop(f, n)	/* go forword to the end of the current paragraph
 		   here we look for a <NL><NL> or <NL><TAB> or <NL><SPACE>
 		   combination to delimit the begining of a paragraph	*/
 
@@ -275,7 +275,7 @@ int f, n;	/* default Flag & Numeric argument */
  * column, return the best choice for the offset. The offset is returned.
  * Used by "C-N" and "C-P".
  */
-getgoal(dlp)
+int getgoal(dlp)
 register LINE   *dlp;
 {
         register int    c;
@@ -311,7 +311,7 @@ register LINE   *dlp;
  * the overlap; this value is the default overlap value in ITS EMACS. Because
  * this zaps the top line in the display window, we have to do a hard update.
  */
-forwpage(f, n)
+int forwpage(f, n)
 register int    n;
 {
         register LINE   *lp;
@@ -342,7 +342,7 @@ register int    n;
  * EMACS manual. Bound to "M-V". We do a hard update for exactly the same
  * reason.
  */
-backpage(f, n)
+int backpage(f, n)
 register int    n;
 {
         register LINE   *lp;
@@ -371,7 +371,7 @@ register int    n;
  * Set the mark in the current window to the value of "." in the window. No
  * errors are possible. Bound to "M-.".
  */
-setmark(f, n)
+int setmark(f, n)
 {
 	LINTUSE(f) LINTUSE(n)
         curwp->w_markp = curwp->w_dotp;
@@ -386,7 +386,7 @@ setmark(f, n)
  * that moves the mark about. The only possible error is "no mark". Bound to
  * "C-X C-X".
  */
-swapmark(f, n)
+int swapmark(f, n)
 {
         register LINE   *odotp;
         register int    odoto;

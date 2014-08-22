@@ -66,6 +66,10 @@ static int pysame(Object*, Object*);
 static PyObject* main_module;
 static PyObject* main_namespace;
 static hoc_List* dlist;
+#if NRNPYTHON_DYNAMICLOAD
+extern int nrnpy_site_problem;
+extern int* nrnpy_site_problem_p;
+#endif
 }
 
 class Py2Nrn {
@@ -89,7 +93,7 @@ Member_func p_members[] = {0,0};
 
 void nrnpython_reg_real() {
 	//printf("nrnpython_reg_real()\n");
-	class2oc("PythonObject", p_cons, p_destruct, p_members);
+	class2oc("PythonObject", p_cons, p_destruct, p_members, NULL, NULL, NULL);
 	Symbol* s = hoc_lookup("PythonObject");
 	nrnpy_pyobj_sym_ = s;
 	nrnpy_py2n_component = py2n_component;
@@ -107,6 +111,9 @@ void nrnpython_reg_real() {
 	nrnpympi_alltoall = py_alltoall;
 	nrnpy_pysame = pysame;
 	dlist = hoc_l_newlist();
+#if NRNPYTHON_DYNAMICLOAD
+	nrnpy_site_problem_p = &nrnpy_site_problem;
+#endif
 }
 
 Py2Nrn::Py2Nrn() {

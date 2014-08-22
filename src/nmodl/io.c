@@ -10,11 +10,12 @@
 #undef METHOD
 #include "parse1.h"
 
-static isend();
+static int isend();
+static void pop_file_stack();
+static int file_stack_empty();
 int in_comment_;
 
-char           *
-inputline()
+char *inputline()
 {
 	/* and removes comment, newline, beginning and trailing blanks */
 	/* used to get the TITLE line */
@@ -44,7 +45,7 @@ inputline()
 
 static int      linenum = 0;
 
-inblock(s)
+void inblock(s)
 	char           *s;
 {				/* copy input verbatim to intoken up to END*s
 				 * error if we get the whole input */
@@ -67,8 +68,7 @@ inblock(s)
 	}
 }
 
-static 
-isend(s, buf)
+static int isend(s, buf)
 	char           *s, *buf;
 {
 	/* if first chars in buf form a keyword return 1 */
@@ -77,7 +77,7 @@ isend(s, buf)
 
 	cp = buf;
 	Sprintf(test, "END%s", s);
-	while (*cp == ' ' || *cp == '\t' && *cp != '\n')
+	while (*cp == ' ' || *cp == '\t')
 		cp++;
 	if (isalpha(*cp)) {
 		for (wp = word; isalpha(*cp);) {
@@ -142,8 +142,7 @@ char* Fgets(buf, size, f) char* buf; int size; FILE* f; {
 	return (char*)0;
 }
 
-int
-Getc()
+int Getc()
 {
 	int             c;
 	if (ctp == (char *) 0 || *ctp == '\0') {
@@ -181,8 +180,7 @@ int unGetc(c)
 	return c;
 }
 
-char           *
-Gets(buf)
+char *Gets(buf)
 	char           *buf;
 {
 	char           *cp;
@@ -205,7 +203,7 @@ Gets(buf)
 }
 
 #if 0				/* not currently used */
-unGets(buf)			/* all this because we don't have an ENDBLOCK
+void unGets(buf)		/* all this because we don't have an ENDBLOCK
 				 * keyword */
 	char           *buf;
 {
@@ -235,7 +233,7 @@ char* current_line() { /* assumes we actually want the previous line */
 }
 
 /* two arguments so we can pass a name to construct an error message. */
-diag(s1, s2)
+void diag(s1, s2)
 	char           *s1, *s2;
 {
 	char           *cp;
@@ -274,14 +272,13 @@ static Symbol  *symq[20], **symhead = symq, **symtail = symq;
  * meaningful models.  It was this insanity which prompted us to allow use of
  * variables before declaration 
  */
-enquextern(sym)
+void enquextern(sym)
 	Symbol         *sym;
 {
 	*symtail++ = sym;
 }
 
-FILE           *
-dequextern()
+FILE *dequextern()
 {
 	char            fname[20];
 	FILE           *f;
@@ -386,7 +383,7 @@ static FILE* include_open(fname, err)
 	return f;
 }
 
-include_file(q)
+void include_file(q)
 	Item* q;
 {
 	char fname[200];
@@ -415,7 +412,7 @@ include_file(q)
 	linenum = 0;
 }
 
-pop_file_stack() {
+static void pop_file_stack() {
 	FileStackItem* fsi;
 	fsi = (FileStackItem*)(SYM(filestack->prev));
 	delete(filestack->prev);	
@@ -427,7 +424,7 @@ pop_file_stack() {
 	free((char*)fsi);
 }
 
-int file_stack_empty() {
+static int  file_stack_empty() {
 	if (!filestack) {
 		return 1;
 	}

@@ -33,7 +33,7 @@ static void Vect2VEC(Vect* v1, VEC& v2) {
 #endif
 }
 
-OcMatrix::OcMatrix(int type) {obj_ = nil; type_ = type;}
+OcMatrix::OcMatrix(int type) {obj_ = NULL; type_ = type;}
 OcMatrix::~OcMatrix() {}
 
 OcMatrix* OcMatrix::instance(int nrow, int ncol, int type) {
@@ -86,8 +86,8 @@ OcFullMatrix* OcMatrix::full() {
 }
 
 OcFullMatrix::OcFullMatrix(int nrow, int ncol) :OcMatrix(MFULL){
-	lu_factor_ = nil;
-	lu_pivot_ = nil;
+	lu_factor_ = NULL;
+	lu_pivot_ = NULL;
 	m_ = m_get(nrow, ncol);
 }
 OcFullMatrix::~OcFullMatrix() {
@@ -154,7 +154,7 @@ void OcFullMatrix::symmeigen(Matrix* mout, Vect* vout) {
 void OcFullMatrix::svd1(Matrix* u, Matrix* v, Vect* d) {
 	VEC v1;
 	Vect2VEC(d, v1);
-	svd(m_, u?u->full()->m_:nil, v?v->full()->m_:nil, &v1);
+	svd(m_, u?u->full()->m_:NULL, v?v->full()->m_:NULL, &v1);
 }
 
 void OcFullMatrix::getrow(int k, Vect* out) {
@@ -350,8 +350,8 @@ OcSparseMatrix::OcSparseMatrix(int nrow, int ncol) : OcMatrix(MSPARSE){
       
 	int len = 4;
 	m_ = sp_get(nrow, ncol, len);
-	lu_factor_ = nil;
-	lu_pivot_ = nil;
+	lu_factor_ = NULL;
+	lu_pivot_ = NULL;
 }
 OcSparseMatrix::~OcSparseMatrix() {
 	if (lu_factor_) {
@@ -361,14 +361,14 @@ OcSparseMatrix::~OcSparseMatrix() {
 	SP_FREE(m_);
 }
 
-// returns pointer to sparse element. nil if it does not exist.
+// returns pointer to sparse element. NULL if it does not exist.
 double* OcSparseMatrix::pelm(int i, int j) {
 	SPROW* r = m_->row + i;
 	int idx = sprow_idx(r, j);
 	if (idx >= 0) {
 		return &r->elt[idx].val;
 	}else{
-		return nil;
+		return NULL;
 	}
 }
 
@@ -431,7 +431,7 @@ void OcSparseMatrix::setrow(int k, Vect* in) {
 	int i, n = ncol();
 	double* p;
 	for (i=0; i < n; ++i) {
-		if ((p = pelm(k, i)) != nil) {
+		if ((p = pelm(k, i)) != NULL) {
 #ifdef WIN32
 			*p = v_elem(in, i);
 		}else if (v_elem(in, i)) {
@@ -451,7 +451,7 @@ void OcSparseMatrix::setcol(int k, Vect* in) {
 	int i, n = nrow();
 	double* p;
 	for (i=0; i < n; ++i) {
-		if ((p = pelm(i, k)) != nil) {
+		if ((p = pelm(i, k)) != NULL) {
 #ifdef WIN32
 			*p = v_elem(in, i);
 		}else if (v_elem(in, i)) {
@@ -472,7 +472,7 @@ void OcSparseMatrix::setdiag(int k, Vect* in) {
 	double* p;
 	if (k >= 0) {
 		for (i=0, j=k; i < row && j < col; ++i, ++j) {
-			if ((p = pelm(i, j)) != nil) {
+			if ((p = pelm(i, j)) != NULL) {
 #ifdef WIN32
 				*p = v_elem(in, i);
 			}else if (v_elem(in, i)) {
@@ -486,7 +486,7 @@ void OcSparseMatrix::setdiag(int k, Vect* in) {
 		}
 	}else{
 		for (i= -k, j=0; i < row && j < col; ++i, ++j) {
-			if ((p = pelm(i, j)) != nil) {
+			if ((p = pelm(i, j)) != NULL) {
 #ifdef WIN32
 				*p = v_elem(in, i);
 			}else if (v_elem(in, i)) {

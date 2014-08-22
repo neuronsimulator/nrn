@@ -132,11 +132,11 @@ static void subrow(SparseObj* so,Elm* pivot, Elm* rowsub);
 static void bksub(SparseObj* so);
 static void prmat(SparseObj* so);
 static void initeqn(SparseObj* so, unsigned maxeqn);
-static int free_elm(SparseObj* so);
+static void free_elm(SparseObj* so);
 static Elm* getelm(SparseObj* so,unsigned row, unsigned col, Elm* new);
 double* _nrn_thread_getelm(SparseObj* so, int row, int col);
-static create_coef_list(SparseObj* so, int n, FUN fun, double* p, void* ppvar, void* thread, void* nt);
-static init_coef_list(SparseObj* so);
+static void create_coef_list(SparseObj* so, int n, FUN fun, double* p, void* ppvar, void* thread, void* nt);
+static void init_coef_list(SparseObj* so);
 static void init_minorder(SparseObj* so);
 static void increase_order(SparseObj* so, unsigned row);
 static void reduce_order(SparseObj* so, unsigned row);
@@ -363,7 +363,7 @@ static void initeqn(SparseObj* so, unsigned maxeqn)	/* reallocate space for matr
 	so->neqn = maxeqn;
 }
 
-static int free_elm(SparseObj* so) {
+static void free_elm(SparseObj* so) {
 	unsigned i;
 	Elm *el, *elnext;
 	
@@ -498,7 +498,7 @@ double* _nrn_thread_getelm(SparseObj* so, int row, int col) {
 	return &el->value;
 }
 
-static create_coef_list(SparseObj* so, int n, FUN fun, double* p, void* ppvar, void* thread, void* nt)
+static void create_coef_list(SparseObj* so, int n, FUN fun, double* p, void* ppvar, void* thread, void* nt)
 {
 	initeqn(so, (unsigned)n);
 	so->phase = 1;
@@ -515,7 +515,7 @@ static create_coef_list(SparseObj* so, int n, FUN fun, double* p, void* ppvar, v
 	so->phase = 0;
 }
 
-static init_coef_list(SparseObj* so) {
+static void init_coef_list(SparseObj* so) {
 	unsigned i;
 	Elm *el;
 	

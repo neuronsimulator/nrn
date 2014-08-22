@@ -1,3 +1,3 @@
 #include <../../nrnconf.h>
-modl_reg(){} /* dummy modl registration: see hocusr.c */
+void modl_reg(void){} /* dummy modl registration: see hocusr.c */
 

@@ -11,11 +11,14 @@
 */
 #include <stdlib.h>
 
-main(argc, argv)
+extern int emacs_main();
+
+int main(argc, argv)
 	int argc;
 	char **argv;
 {
 	emacs_main(argc, argv);
+	return 0;
 }
 
 /*
@@ -29,8 +32,9 @@ void set_intset(){}
 void hoc_quit(){winio_closeall();}
 #endif
 
-emacs_exit(status)
+int emacs_exit(status)
 	int status;
 {
 	exit(status);
+	return 0;
 }

@@ -60,6 +60,8 @@ hocedit.c,v
 /* example to show how microemacs can be embedded in a larger program */
 
 #include <stdio.h>
+#include <hocdec.h>
+#include <hocparse.h>
 #include <setjmp.h>
 
 #if MAC
@@ -75,24 +77,18 @@ hocedit.c,v
 
 #include "estruct.h"
 
-#if LINT
-int ilint;
-#define IGNORE(arg)	{if (arg);}
-#define Fprintf		ilint = fprintf
 TERM emacs_term;
 BUFFER *emacs_curbp;
 WINDOW *emacs_curwp;
-emacs_main(n, cpp) int n; char **cpp; {if (n && cpp);}
-int emacs_refresh(i, j) int i,j; {if (i && j); return 1;}
-#else
+extern int emacs_main(int n, char** cpp);
+extern int emacs_refresh(int i, int j);
+extern int emacs_vtinit(void);
 #define IGNORE(arg)	arg
 #define Fprintf		fprintf
-#endif
 
 extern TERM emacs_term;
 extern BUFFER *emacs_curbp;
 extern WINDOW *emacs_curwp;
-extern int emacs_refresh();
 
 extern int hoc_pipeflag;
 extern int hoc_lineno;
@@ -107,7 +103,7 @@ static char *argv[] = { "embedded", (char *)0};
 
 #endif /* !OCSMALL */
 
-void hoc_edit()
+void hoc_edit(void)
 {
 #if !OCSMALL
 #if	DOS || defined(__GO32__) /*must erase screen if in graphics mode*/
@@ -128,13 +124,13 @@ void hoc_edit()
 		emacs_main(1, argv);
 	} else {
 		emacs_vtinit();
-		IGNORE(emacs_refresh(0, 1));
+		emacs_refresh(0, 1);
 		emacs_main(-1, argv);
 	}
 #endif
 }
 
-hoc_edit_quit()
+void hoc_edit_quit(void)
 {
 #if !OCSMALL
 	char s[2];
@@ -147,7 +143,7 @@ hoc_edit_quit()
 #endif
 }
 
-emacs_exit(status) {
+int emacs_exit(int status) {
 #if !OCSMALL
 	if (status) {
 		Fprintf(stderr, "emacs--status = %d\n", status);
@@ -167,13 +163,14 @@ emacs_exit(status) {
 	}
 	longjmp(emacs_begin, 1);
 #endif
+	return 0;
 }
 
 #if !OCSMALL
 	static LINE *lastlp;
 #endif
 
-hoc_pipeflush()
+void hoc_pipeflush(void)
 {
 #if !OCSMALL
 if (hoc_pipeflag == 1) {
@@ -195,7 +192,7 @@ if (hoc_pipeflag == 1) {
 #endif
 }
 
-int hoc_pipegets_need() {
+size_t hoc_pipegets_need(void) {
 	int hoc_strgets_need();
 #if !OCSMALL
 	if (hoc_pipeflag == 1) {
@@ -212,11 +209,7 @@ int hoc_pipegets_need() {
 #endif
 }
 
-char *
-hoc_pipegets(cbuf, nc)
-	char *cbuf;
-	int nc;
-{
+char* hoc_pipegets(char* cbuf, int nc) {
 	char *hoc_strgets(), *cp=cbuf;
 	
 	nc--;

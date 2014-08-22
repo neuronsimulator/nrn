@@ -512,7 +512,7 @@ static PyObject* seg_point_processes(NPySegObj* self) {
 	return result;
 }
 
-static PyObject* node_index(NPySegObj* self) {
+static PyObject* node_index1(NPySegObj* self) {
 	Node* nd = node_exact(self->pysec_->sec_, self->x_);
 	PyObject* result = Py_BuildValue("i", nd->v_node_index);
 	return result;
@@ -1141,7 +1141,7 @@ static PyMethodDef NPySecObj_methods[] = {
 static PyMethodDef NPySegObj_methods[] = {
 	{"point_processes", (PyCFunction)seg_point_processes, METH_NOARGS,
 	  "seg.point_processes() returns list of POINT_PROCESS instances in the segment."},
-	{"node_index", (PyCFunction)node_index, METH_NOARGS,
+	{"node_index", (PyCFunction)node_index1, METH_NOARGS,
 	  "seg.node_index() returns index of v, rhs, etc. in the _actual arrays of the appropriate NrnThread."},
 	{"area", (PyCFunction)seg_area, METH_NOARGS,
 	 "Segment area (um2) (same as h.area(sec(x), sec=sec))"

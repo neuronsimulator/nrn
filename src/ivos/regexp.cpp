@@ -42,7 +42,7 @@
 /*
  * Forward declarations for regcomp()'s friends.
  */
-static regexp* regcomp(char* exp);
+static regexp* regcomp(const char* exp);
 static char* reg(int paren, int* flagp);
 static char* regbranch(int* flagp);
 static char* regpiece(int* flagp);
@@ -53,7 +53,7 @@ static void regc(char b);
 static void reginsert(char op, char* opnd);
 static void regtail(char* p, char* val);
 static void regoptail(char* p, char* val);
-static void regerror(char* s);
+static void regerror(const char* s);
 static int regexec(register regexp* prog, register char* string);
 static int regtry(regexp* prog, char* string);
 static int regmatch(char* prog);
@@ -376,7 +376,7 @@ int Regexp::EndOfMatch (int subexp) {
 /*
  * Global work variables for regcomp().
  */
-static char *regparse;		/* Input-scan pointer. */
+static const char *regparse;		/* Input-scan pointer. */
 static int regnpar;		/* () count. */
 static char regdummy;
 static char *regcode;		/* Code-emit pointer; &regdummy = don't. */
@@ -398,7 +398,7 @@ static long regsize;		/* Code size. */
  * of the structure of the compiled regexp.
  */
 static regexp *
-regcomp(char* exp) {
+regcomp(const char* exp) {
 	register regexp *r;
 	register char *scan;
 	register char *longest;
@@ -1209,7 +1209,7 @@ regnext(register char* p) {
 }
 
 static void
-regerror(char* s) {
+regerror(const char* s) {
 	cerr << "regexp: " << s << "\n";
 }
 

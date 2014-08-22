@@ -33,10 +33,10 @@ void nrn_vecsim_remove(void* v) {
 void nrn_vecsim_add(void* v, bool record) {
 	IvocVect* yvec, *tvec, *dvec;
 	extern short* nrn_is_artificial_;
-	double* pvar = nil;
-	char* s = nil;
+	double* pvar = NULL;
+	char* s = NULL;
 	double ddt;
-	Object* ppobj = nil;
+	Object* ppobj = NULL;
 	int iarg = 0;
 
 	yvec = (IvocVect*)v;
@@ -69,8 +69,8 @@ void nrn_vecsim_add(void* v, bool record) {
 		// Vector.record(&SEClamp[0].i, ...)
 		pvar = hoc_pgetarg(iarg+1);
 	}
-	tvec = nil;
-	dvec = nil;
+	tvec = NULL;
+	dvec = NULL;
 	ddt = -1.;
 	int con = 0;
 	if (ifarg(iarg+2)) {
@@ -149,7 +149,7 @@ void VecPlayStep::init(IvocVect* y, IvocVect* t, double dt) {
 	}
 	e_ = new PlayRecordEvent();
 	e_->plr_ = this;
-	si_ = nil;
+	si_ = NULL;
 }
 
 
@@ -190,7 +190,7 @@ void VecPlayStep::play_init() {
 }
 
 void VecPlayStep::deliver(double tt, NetCvode* ns) {
-	NrnThread* nt = nrn_threads;
+	NrnThread* nt = nrn_threads + ith_;
 	if (cvode_) {
 		cvode_->set_init_flag();
 		if (cvode_->nth_) { nt = cvode_->nth_; }
@@ -246,7 +246,7 @@ void VecPlayContinuous::init(IvocVect* y, IvocVect* t, IvocVect* discon) {
 	}
 	e_ = new PlayRecordEvent();
 	e_->plr_ = this;
-	si_ = nil;
+	si_ = NULL;
 }
 
 
@@ -294,7 +294,7 @@ void VecPlayContinuous::play_init() {
 }
 
 void VecPlayContinuous::deliver(double tt, NetCvode* ns) {
-	NrnThread* nt = nrn_threads;
+	NrnThread* nt = nrn_threads + ith_;
 //printf("deliver %g\n", tt);
 	if (cvode_) {
 		cvode_->set_init_flag();

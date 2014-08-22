@@ -18,14 +18,12 @@ access s1.sec	// soma becomes the default section
 #include <stdlib.h>
 #include "section.h"
 #include "parse.h"
-extern char* secname();
-extern char* hoc_object_name();
-extern Section* nrn_trueparent();
+#include "hoc_membf.h"
 
 Symbol* nrn_sec_sym, *nrn_parent_sym, *nrn_root_sym, *nrn_child_sym;
 Symbol* nrn_trueparent_sym;
 
-static hoc_Item** sec2pitm(sec) Section* sec; {
+static hoc_Item** sec2pitm(Section* sec) {
 	extern Objectdata* hoc_top_level_data;
 	Symbol* sym;
 	Object* ob;
@@ -44,26 +42,26 @@ static hoc_Item** sec2pitm(sec) Section* sec; {
 }
 
 /*ARGSUSED*/
-static void* cons(ho)Object* ho; {
+static void* cons(Object* ho) {
 	Section* sec = chk_access();
 	section_ref(sec);
 	return (void*)(sec);
 }
 
-static void destruct(v) void* v; {
+static void destruct(void* v) {
 	Section* sec = (Section*)v;
 	section_unref(sec);
 }
 
 #if 0
-static double dummy(v) void* v; {
+static double dummy(void* v) {
 	Section* sec = (Section*)v;
 	printf("%s\n", secname(sec));
 	return 0.;
 }
 #endif
 
-static double s_unname(v) void* v; {
+static double s_unname(void* v) {
 	hoc_Item** pitm;
 	Section* sec;
 	sec = (Section*)v;
@@ -73,7 +71,7 @@ static double s_unname(v) void* v; {
 	return 1.;
 }
 
-static double s_rename(v) void* v; {
+static double s_rename(void* v) {
 	extern Object* hoc_thisobject, **hoc_objgetarg();
 	extern Objectdata* hoc_top_level_data;
 	extern Symbol* hoc_table_lookup();
@@ -259,7 +257,7 @@ static double s_cas(void* v) { /* return 1 if currently accessed section */
 	return 0.;
 }
 
-static struct Member_func {char* name; double (*func)();} members[] = {
+static Member_func members[] = {
 	"sec", s_rename,	/* will actually become a SECTIONREF below */
 	"parent", s_rename,
 	"trueparent", s_rename,
@@ -275,10 +273,7 @@ static struct Member_func {char* name; double (*func)();} members[] = {
 	0, 0
 };
 
-Section* nrn_sectionref_steer(sec, sym, pnindex)
-	Section* sec;
-	Symbol* sym;
-	int* pnindex;
+Section* nrn_sectionref_steer(Section* sec, Symbol* sym, int* pnindex)
 {
 	Section* s;
 	if (sym == nrn_parent_sym) {
@@ -310,7 +305,7 @@ Section* nrn_sectionref_steer(sec, sym, pnindex)
 	return s;
 }
 
-SectionRef_reg() {
+void SectionRef_reg(void) {
 	Symbol* s, *sr, *hoc_table_lookup();
 	extern void class2oc();
 	
@@ -338,5 +333,3 @@ SectionRef_reg() {
 	s->arayinfo->nsub = 1;
 	s->arayinfo->sub[0] = 0;
 }
-
-

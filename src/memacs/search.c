@@ -45,7 +45,7 @@ search.c,v
 #define	PTBEG	1	/* leave the point at the begining on search */
 #define	PTEND	2	/* leave the point at the end on search */
 
-forwsearch(f, n)
+int forwsearch(f, n)
 
 {
 	register int status;
@@ -72,7 +72,7 @@ forwsearch(f, n)
 	return(status);
 }
 
-forwhunt(f, n)
+int forwhunt(f, n)
 
 {
 	register int status;
@@ -107,7 +107,7 @@ forwhunt(f, n)
  * pointing at the first character of the pattern [the last character that was
  * matched]. Bound to "C-R".
  */
-backsearch(f, n)
+int backsearch(f, n)
 
 {
 	register int s;
@@ -126,7 +126,7 @@ backsearch(f, n)
 	return emacs_bsearch(f,n);
 }
 
-backhunt(f, n)	/* hunt backward for the last search string entered */
+int backhunt(f, n)	/* hunt backward for the last search string entered */
 
 {
 	/* resolve null and negative arguments */
@@ -145,7 +145,7 @@ backhunt(f, n)	/* hunt backward for the last search string entered */
 	return emacs_bsearch(f,n);
 }
 
-emacs_bsearch(f, n)
+int emacs_bsearch(f, n)
 
 {
 	register LINE *clp;
@@ -231,7 +231,7 @@ next:;
  * Compare two characters. The "bc" comes from the buffer. It has it's case
  * folded out. The "pc" is from the pattern.
  */
-eq(bc, pc)
+int eq(bc, pc)
 	int bc;
 	int pc;
 
@@ -258,7 +258,7 @@ eq(bc, pc)
  * change to using <ESC> to delemit the end-of-pattern to allow <NL>s in
  * the search string.
  */
-readpattern(prompt)
+int readpattern(prompt)
 
 char *prompt;
 
@@ -281,7 +281,7 @@ char *prompt;
 	return(s);
 }
 
-sreplace(f, n)	/*	Search and replace (ESC-R)	*/
+int sreplace(f, n)	/*	Search and replace (ESC-R)	*/
 
 int f;		/* default flag */
 int n;		/* # of repetitions wanted */
@@ -290,7 +290,7 @@ int n;		/* # of repetitions wanted */
 	return(replaces(FALSE, f, n));
 }
 
-qreplace(f, n)	/*	search and replace with query (ESC-CTRL-R)	*/
+int qreplace(f, n)	/*	search and replace with query (ESC-CTRL-R)	*/
 
 int f;		/* default flag */
 int n;		/* # of repetitions wanted */
@@ -302,7 +302,7 @@ int n;		/* # of repetitions wanted */
 /*	replaces:	search for a string and replace it with another
 			string. query might be enabled (according to
 			kind).						*/
-replaces(kind, f, n)
+int replaces(kind, f, n)
 
 int kind;	/* Query enabled flag */
 int f;		/* default flag */
@@ -446,7 +446,7 @@ mlwrite("(Y)es, (N)o, (!)Do the rest, (^G)Abort, (.)Abort back, (?)Help: ");
 	return(TRUE);
 }
 
-forscan(patrn,leavep)	/*	search forward for a <patrn>	*/
+int forscan(patrn,leavep)	/*	search forward for a <patrn>	*/
 
 char *patrn;		/* string to scan for */
 int leavep;		/* place to leave point
@@ -533,7 +533,7 @@ fail:;			/* continue to search */
 
 /* 	expandp:	expand control key sequences for output		*/
 
-expandp(srcstr, deststr, maxlength)
+int expandp(srcstr, deststr, maxlength)
 
 char *srcstr;	/* string to expand */
 char *deststr;	/* destination of expanded string */

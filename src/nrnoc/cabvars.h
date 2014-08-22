@@ -13,7 +13,7 @@ static struct {		/* USERPROPERTY */
 	0, 0, 0
 };
 
-extern  capac_reg_(), passive0_reg_(), _passive_reg_(),
+extern  void capac_reg_(), passive0_reg_(), _passive_reg_(),
 #if EXTRACELLULAR
 	extracell_reg_(),
 #endif
@@ -37,7 +37,7 @@ extern  capac_reg_(), passive0_reg_(), _passive_reg_(),
 	_feature_reg_(),
 	_hh_reg_();
 
-static Pfri mechanism[] = { /* type will start at 3 */
+static Pfrv mechanism[] = { /* type will start at 3 */
 	capac_reg_,
 	_passive_reg_,
 #if EXTRACELLULAR
@@ -67,12 +67,12 @@ static Pfri mechanism[] = { /* type will start at 3 */
 	0
 };
 
-static char *morph_mech[] = { /* this is type 2 */
+static const char *morph_mech[] = { /* this is type 2 */
 	"0", "morphology", "diam", 0,0,0,
 };
 
-extern cab_alloc();
-extern morph_alloc();
+extern void cab_alloc(Prop*);
+extern void morph_alloc(Prop*);
 
 extern Memb_func* memb_func;
 #if 0

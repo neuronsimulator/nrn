@@ -1,34 +1,4 @@
 #include <../../nrnconf.h>
-/* /local/src/master/nrn/src/oc/list.c,v 1.1.1.1 1994/10/12 17:22:11 hines Exp */
-/*
-list.c,v
- * Revision 1.1.1.1  1994/10/12  17:22:11  hines
- * NEURON 3.0 distribution
- *
- * Revision 2.43  93/04/20  08:39:02  hines
- * lists can have void* elements (use insertvoid lappendvoid VOIDITM(q) )
- * 
- * Revision 1.3  92/10/29  09:20:13  hines
- * some errors in freeing objects fixed and replace usage of getarg for
- * non numbers.
- * 
- * Revision 1.2  92/10/27  12:08:14  hines
- * list.c hoclist.h moved from nrnoc to oc
- * all templates maintain a list of their objects
- * 
- * Revision 1.1  92/10/27  11:40:21  hines
- * Initial revision
- * 
- * Revision 2.75  92/08/07  16:11:58  hines
- * sections as objects. nsection and section gone. now list of sections
- * in nmodl list style in its place. vectorization no longer optional
- * probably many bugs at this point but all examples run correctly.
- * Need tests with complete code coverage.
- * 
- * Revision 1.1  92/08/06  14:38:19  hines
- * Initial revision
- * 
-*/
 
 /* The following routines support the concept of a list.
 That is, one can insert at the head of a list or append to the tail of a
@@ -67,17 +37,13 @@ following function calls.
 
 #define Free free
 
-static Item *
-newitem()
-{
+static Item* newitem(void) {
 	Item* q;
 	q = (Item *)emalloc(sizeof(Item));
 	return q;
 }
 
-List *
-newlist()
-{
+List* newlist(void) {
 	Item *i;
 	i = newitem();
 	i->prev = i;
@@ -87,9 +53,7 @@ newlist()
 	return (List *)i;
 }
 
-void freelist(plist)	/*free the list but not the elements*/
-	List **plist;
-{
+void freelist(List** plist) {	/*free the list but not the elements*/
 	Item *i1, *i2;
 	if (!(*plist)) {
 		return;
@@ -102,10 +66,7 @@ void freelist(plist)	/*free the list but not the elements*/
 	*plist = (List *)0;
 }
 
-static Item *
-linkitem(item)
-	Item *item;
-{
+static Item* linkitem(Item* item) {
 	Item *i;
 
 	i = newitem();
@@ -116,26 +77,19 @@ linkitem(item)
 	return i;
 }
 
-Item *next(item)
-	Item *item;
-{
+Item* next(Item* item) {
 	assert(item->next->element.lst); /* never return the list item */
 	return item->next;
 }
 
-Item *prev(item)
-	Item *item;
-{
+Item* prev(Item* item) {
 	assert(item->prev->element.lst); /* never return the list item */
 	return item->prev;
 }
 
-Item *
-insertstr(item, str) /* insert a copy of the string before item */
+Item* insertstr(Item* item, const char* str) {
+/* insert a copy of the string before item */
 /* a copy is made because strings are often assembled into a reusable buffer*/
-	Item *item;
-	char *str;
-{
 	Item *i;
 
 	i = linkitem(item);
@@ -144,10 +98,8 @@ insertstr(item, str) /* insert a copy of the string before item */
 	return i;
 }
 
-Item *
-insertitem(item, itm) /* insert a item pointer before item */
-	Item *item, *itm;
-{
+Item* insertitem(Item* item, Item* itm) {
+/* insert a item pointer before item */
 	Item *i;
 
 	i = linkitem(item);
@@ -156,11 +108,8 @@ insertitem(item, itm) /* insert a item pointer before item */
 	return i;
 }
 
-Item *
-insertlist(item, lst) /* insert a item pointer before item */
-	Item *item;
-	List *lst;
-{
+Item* insertlist(Item* item, List* lst) {
+/* insert a item pointer before item */
 	Item *i;
 
 	i = linkitem(item);
@@ -169,12 +118,9 @@ insertlist(item, lst) /* insert a item pointer before item */
 	return i;
 }
 	
-Item *
-insertsym(item, sym) /* insert a symbol before item */
+Item* insertsym(Item* item, struct Symbol* sym) {
+/* insert a symbol before item */
 /* a copy is not made because we need the same symbol in different lists */
-	Item *item;
-	Symbol *sym;
-{
 	Item *i;
 
 	i = linkitem(item);
@@ -183,12 +129,8 @@ insertsym(item, sym) /* insert a symbol before item */
 	return i;
 }
 
-Item *
-insertsec(item, sec) /* insert a section before item */
-/* a copy is not made because we need the same symbol in different lists */
-	Item *item;
-	struct Section *sec;
-{
+Item* insertsec(Item* item, struct Section* sec) {
+/* insert a section before item */
 	Item *i;
 
 	i = linkitem(item);
@@ -197,12 +139,8 @@ insertsec(item, sec) /* insert a section before item */
 	return i;
 }
 	
-Item *
-insertobj(item, obj) /* insert a object before item */
-/* a copy is not made because we need the same symbol in different lists */
-	Item *item;
-	struct Object *obj;
-{
+Item* insertobj(Item* item, struct Object* obj) {
+/* insert a object before item */
 	Item *i;
 
 	i = linkitem(item);
@@ -211,12 +149,8 @@ insertobj(item, obj) /* insert a object before item */
 	return i;
 }
 	
-Item *
-insertvoid(item, obj) /* insert a void pointer before item */
-/* a copy is not made because we need the same symbol in different lists */
-	Item *item;
-	void *obj;
-{
+Item* insertvoid(Item* item, void* obj) {
+/* insert a void pointer before item */
 	Item *i;
 
 	i = linkitem(item);
@@ -225,90 +159,53 @@ insertvoid(item, obj) /* insert a void pointer before item */
 	return i;
 }
 	
-Item *
-linsertstr(list, str)
-	List *list;
-	char *str;
-{
+Item* linsertstr(List* list, const char* str) {
 	return insertstr(list->next, str);
 }
 
-Item *
-lappendstr(list, str)
-	List *list;
-	char *str;
-{
+Item* lappendstr(List* list, const char* str) {
 	return insertstr(list, str);
 }
 
-Item *
-linsertsym(list, sym)
-	List *list;
-	Symbol *sym;
-{
+Item* linsertsym(List* list, struct Symbol* sym) {
 	return insertsym(list->next, sym);
 }
 
-Item *
-lappendsym(list, sym)
-	List *list;
-	Symbol *sym;
-{
+Item* lappendsym(List* list, struct Symbol* sym) {
 	return insertsym(list, sym);
 }
 
-Item *
-lappenditem(list, item)
-	List *list;
-	Item *item;
-{
+Item* lappenditem(List* list, Item* item) {
 	return insertitem(list, item);
 }
 
-Item *
-lappendlst(list, lst)
-	List *list, *lst;
-{
+Item* lappendlst(List* list, List* lst) {
 	return insertlist(list, lst);
 }
 
-Item *
-lappendsec(list, sec)
-	List *list;
-	struct Section* sec;
-{
+Item* lappendsec(List* list, struct Section* sec) {
 	return insertsec(list, sec);
 }
 
-Item *
-lappendobj(list, obj)
-	List *list;
-	struct Object* obj;
-{
+Item* lappendobj(List* list, struct Object* obj) {
 	return insertobj(list, obj);
 }
 
-Item *
-lappendvoid(list, obj)
-	List *list;
-	void* obj;
-{
+Item* lappendvoid(List* list, void* obj) {
 	return insertvoid(list, obj);
 }
 
-delete(item)
-	Item *item;
-{
+void delete(Item* item) {
 	assert(item->itemtype); /* can't delete list */
 	item->next->prev = item->prev;
 	item->prev->next = item->next;
 	Free(item);
 }
 
-char *stralloc(buf, rel) char *buf,*rel; {
+char* stralloc(const char* buf, char* rel) {
 	/* allocate space, copy buf, and free rel */
 	char *s;
-	s = emalloc((unsigned)(strlen(buf) + 1));
+	s = (char*)emalloc((unsigned)(strlen(buf) + 1));
 	Strcpy(s, buf);
 	if (rel) {
 		Free(rel);
@@ -316,9 +213,7 @@ char *stralloc(buf, rel) char *buf,*rel; {
 	return s;
 }
 
-delitems(q1, q2) /* delete tokens from q1 to q2 */
-	Item *q1, *q2;
-{
+void delitems(Item* q1, Item* q2) { /* delete tokens from q1 to q2 */
 	/* It is a serious error if q2 precedes q1 */
 	Item *q;
 	for (q = q1; q != q2;) {
@@ -329,9 +224,7 @@ delitems(q1, q2) /* delete tokens from q1 to q2 */
 		
 }
 
-move(q1, q2, q3)	/* move q1 to q2 and insert before q3*/
-	Item *q1, *q2, *q3;
-{
+void move(Item* q1, Item* q2, Item* q3)	{/* move q1 to q2 and insert before q3*/
 	/* it is a serious error if q2 precedes q1 */
 	assert(q1 && q2);
 	assert(q1->itemtype && q2->itemtype);
@@ -344,17 +237,12 @@ move(q1, q2, q3)	/* move q1 to q2 and insert before q3*/
 	q2->next = q3;
 }
 
-movelist(q1, q2, s)	/* move q1 to q2 from old list to end of list s*/
-	Item *q1, *q2;
-	List *s;
-{
+void movelist(Item* q1, Item* q2, List* s) {
+/* move q1 to q2 from old list to end of list s*/
 	move(q1, q2, s);
 }
 
-replacstr(q, s)
-	Item *q;
-	char *s;
-{
+void replacstr(Item* q, const char* s) {
 	q->itemtype = STRING;
 	q->element.str = stralloc(s, (char *)0);
 

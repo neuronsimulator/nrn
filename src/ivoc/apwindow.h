@@ -45,7 +45,7 @@ public:
 	virtual Glyph* glyph() const {return glyph_;}
 	virtual void configure();
 	virtual void set_attributes();
-	MenuItem* append_menubar(const char*);	// return nil if no dismiss menubar
+	MenuItem* append_menubar(const char*);	// return NULL if no dismiss menubar
 	
 	static bool is_transient() { return is_transient_; }
 private:
@@ -105,7 +105,7 @@ private:
 class StandardWindow : public PrintableWindow {
 public:
     	StandardWindow(
-    	  Glyph* main, Glyph* info=nil, Menu* m=nil, Glyph* l=nil, Glyph* r=nil
+    	  Glyph* main, Glyph* info=NULL, Menu* m=NULL, Glyph* l=NULL, Glyph* r=NULL
     	);
 	virtual ~StandardWindow();
 	Menu* menubar();

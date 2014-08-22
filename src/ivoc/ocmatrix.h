@@ -22,7 +22,7 @@ public:
 	static OcMatrix* instance(int nrow, int ncol, int type = MFULL);
 	virtual ~OcMatrix();
 
-	virtual double* mep(int i, int j) {unimp(); return nil;} //matrix element pointer
+	virtual double* mep(int i, int j) {unimp(); return NULL;} //matrix element pointer
 	inline double& operator() (int i, int j) {return *mep(i, j);};	
 	
 	virtual double getval(int i, int j) { unimp(); return 0.; }
@@ -125,7 +125,7 @@ public:
 	virtual ~OcSparseMatrix();
 
 	virtual double* mep(int, int);
-	virtual double* pelm(int, int); // nil if element does not exist
+	virtual double* pelm(int, int); // NULL if element does not exist
 	virtual int nrow();
 	virtual int ncol();
 	virtual double getval(int, int);

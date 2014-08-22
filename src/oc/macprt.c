@@ -107,7 +107,7 @@ hoc_win_normal_cursor() {
 hoc_win_wait_cursor() {
 }
 
-plprint(char* s) {
+void plprint(const char* s) {
 	printf("%s", s);
 }
 int hoc_plttext;
@@ -126,8 +126,8 @@ hoc_Plt() {ret(); pushx(0.);}
 hoc_Setcolor(){ret(); pushx(0.);}
 hoc_Lw(){ret(); pushx(0.);}
 hoc_settext(){ret(); pushx(0.);}
-Plot(){ret();pushx(0.);}
-axis(){ret();pushx(0.);}
+hoc_Plot(){ret();pushx(0.);}
+hoc_axis(){ret();pushx(0.);}
 hoc_fmenu() {ret();pushx(0.);}
 
 //int gethostname() {printf("no gethostname\n");}

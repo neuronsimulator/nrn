@@ -35,7 +35,7 @@ window.c,v
  * redisplay code does). With no argument it defaults to 1. Bound to M-!.
  * Because of the default, it works like in Gosling.
  */
-reposition(f, n)
+int reposition(f, n)
     {
     if (f == FALSE)	/* default to 0 to center screen */
 	n = 0;
@@ -48,7 +48,7 @@ reposition(f, n)
  * Refresh the screen. With no argument, it just does the refresh. With an
  * argument it recenters "." in the current window. Bound to "C-L".
  */
-refresh(f, n)
+int refresh(f, n)
     {
 	LINTUSE(n)
     if (f == FALSE)
@@ -67,7 +67,7 @@ refresh(f, n)
  * window. There are no real errors, although the command does nothing if
  * there is only 1 window on the screen. Bound to "C-X C-N".
  */
-nextwind(f, n)
+int nextwind(f, n)
     {
     register WINDOW *wp;
 
@@ -86,7 +86,7 @@ nextwind(f, n)
  * current window. There arn't any errors, although the command does not do a
  * lot if there is 1 window.
  */
-prevwind(f, n)
+int prevwind(f, n)
     {
     register WINDOW *wp1;
     register WINDOW *wp2;
@@ -114,7 +114,7 @@ prevwind(f, n)
  * a new dot. We share the code by having "move down" just be an interface to
  * "move up". Magic. Bound to "C-X C-N".
  */
-mvdnwind(f, n)
+int mvdnwind(f, n)
     int n;
     {
     return (mvupwind(f, -n));
@@ -127,7 +127,7 @@ mvdnwind(f, n)
  * (this command does not really move "."; it moves the frame). Bound to
  * "C-X C-P".
  */
-mvupwind(f, n)
+int mvupwind(f, n)
     int n;
     {
     register LINE *lp;
@@ -177,7 +177,7 @@ mvupwind(f, n)
  * the buffer structures right if the distruction of a window makes a buffer
  * become undisplayed.
  */
-onlywind(f, n)
+int onlywind(f, n)
 {
         register WINDOW *wp;
         register LINE   *lp;
@@ -224,7 +224,7 @@ onlywind(f, n)
  * The only other error that is possible is a "malloc" failure allocating the
  * structure for the new window. Bound to "C-X 2".
  */
-splitwind(f, n)
+int splitwind(f, n)
 {
         register WINDOW *wp;
         register LINE   *lp;
@@ -301,7 +301,7 @@ splitwind(f, n)
  * all the hard work. You don't just set "force reframe" because dot would
  * move. Bound to "C-X Z".
  */
-enlargewind(f, n)
+int enlargewind(f, n)
 {
         register WINDOW *adjwp;
         register LINE   *lp;
@@ -347,7 +347,7 @@ enlargewind(f, n)
  * window descriptions. Ask the redisplay to do all the hard work. Bound to
  * "C-X C-Z".
  */
-shrinkwind(f, n)
+int shrinkwind(f, n)
 {
         register WINDOW *adjwp;
         register LINE   *lp;
@@ -393,8 +393,7 @@ shrinkwind(f, n)
  * Pick the uppermost window that isn't the current window. An LRU algorithm
  * might be better. Return a pointer, or NULL on error.
  */
-WINDOW  *
-wpopup()
+WINDOW  *wpopup()
 {
         register WINDOW *wp;
 
@@ -407,18 +406,20 @@ wpopup()
         return (wp);
 }
 
-scrnextup(f, n)		/* scroll the next window up (back) a page */
+int scrnextup(f, n)		/* scroll the next window up (back) a page */
 
 {
 	IGNORE(nextwind(FALSE, 1));
 	IGNORE(backpage(f, n));
 	IGNORE(prevwind(FALSE, 1));
+	return TRUE;
 }
 
-scrnextdw(f, n)		/* scroll the next window down (forward) a page */
+int scrnextdw(f, n)		/* scroll the next window down (forward) a page */
 
 {
 	IGNORE(nextwind(FALSE, 1));
 	IGNORE(forwpage(f, n));
 	IGNORE(prevwind(FALSE, 1));
+	return TRUE;
 }

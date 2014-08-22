@@ -1756,6 +1756,7 @@ static Object** vec_as_numpy_helper(int size, double* data) {
 		}
 	}
 	hoc_execerror("Vector.as_numpy() error", 0);
+	return NULL;
 }
 
 static Object** nrnpy_vec_to_python(void* v) {
@@ -1782,7 +1783,6 @@ static Object** nrnpy_vec_to_python(void* v) {
 		if (size != PySequence_Size(po)) {
 			hoc_execerror(hoc_object_name(ho), "Python Sequence not same size as Vector");
 		}
-		Py_INCREF(po);
 	}else{
 
 
@@ -1792,6 +1792,7 @@ static Object** nrnpy_vec_to_python(void* v) {
 
 	
 		ho = nrnpy_po2ho(po);
+		Py_DECREF(po);
 		--ho->refcount;
 	}
 //	printf("size = %d\n", size);

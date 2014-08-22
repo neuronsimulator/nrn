@@ -119,7 +119,7 @@ void _nrn_single_react(int i, int j, double rate) {
 
 
 SingleChan::SingleChan(const char* name) {
-	r_ = nil;
+	r_ = NULL;
 	erand_ = &SingleChan::erand1;
 	nprop_ = new NrnProperty(name);
 	int i;
@@ -136,14 +136,14 @@ SingleChan::SingleChan(const char* name) {
 }
 
 SingleChan::SingleChan(OcMatrix* m) {
-	r_ = nil;
+	r_ = NULL;
 	erand_ = &SingleChan::erand1;
-	state_ = nil;
-	nprop_ = nil;
+	state_ = NULL;
+	nprop_ = NULL;
 	info_ = new SingleChanInfo();
 	info_->type_ = -1;
-	info_->f_ = nil;
-	info_->slist_ = nil;
+	info_->f_ = NULL;
+	info_->slist_ = NULL;
 	info_->n_ = 0;
 	set_rates(m);
 }
@@ -172,7 +172,7 @@ void SingleChan::set_rates(double v) {
 	}
 }
 void SingleChan::set_rates(OcMatrix* m) {
-	assert(nprop_ == nil);
+	assert(nprop_ == NULL);
 	if (state_) {
 		delete [] state_;
 	}
@@ -204,7 +204,7 @@ void SingleChan::set_rates(int i, int j, double tau) {
 }
 
 const char*  SingleChan::name(int i) {
-	return nil;
+	return NULL;
 }
 int SingleChan::index(const char* name) {
 	return -1;
@@ -407,5 +407,5 @@ static void destruct(void* v) {
 }
 
 void SingleChan_reg() {
-	class2oc("SingleChan", cons, destruct, members);
+	class2oc("SingleChan", cons, destruct, members, NULL, NULL, NULL);
 }

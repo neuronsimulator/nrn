@@ -27,6 +27,8 @@
 #include "model.h"
 #include "parse1.h"
 
+extern int yyparse();
+
 FILE
 	* fin,			/* input file descriptor for filename.mod */
 				/* or file2 from the second argument */
@@ -46,8 +48,8 @@ Item           *qlint;
 static char pgm_name[] =	"model";
 extern char *RCS_version;
 extern char *RCS_date;
-static openfiles();
-static debug_item();
+static void openfiles();
+static void debug_item();
 #if MAC
 #include <sioux.h>
 #endif
@@ -133,7 +135,7 @@ main(argc, argv)
 	return 0;
 }
 
-static          openfiles(argc, argv)
+static void openfiles(argc, argv)
 	int             argc;
 	char           *argv[];
 {
@@ -160,7 +162,7 @@ static          openfiles(argc, argv)
 	}
 }
 
-printlist(list)
+void printlist(list)
 	List *list;
 {
 	Item *q;
@@ -170,7 +172,7 @@ printlist(list)
 	}
 }
 
-printitems(q1, q2)
+void printitems(q1, q2)
 	Item *q1, *q2;
 {
 	Item *q;
@@ -180,7 +182,7 @@ printitems(q1, q2)
 	}
 }
 
-printitem(q, fp)
+void printitem(q, fp)
 	Item *q;
 	FILE *fp;
 {
@@ -204,13 +206,13 @@ printitem(q, fp)
 	fflush(fp);
 }
 
-debugitem(q)
+void debugitem(q)
 	Item *q;
 {
 	debug_item(q, 0, stderr);
 }
 
-static debug_item(q, indent, file)
+static void debug_item(q, indent, file)
 	Item *q;
 	int indent;
 	FILE *file;
@@ -227,7 +229,7 @@ static debug_item(q, indent, file)
 	}else
 	switch (q->itemtype) {
 		case SYMBOL:
-		Fprintf(file, "SYMBOL |%s| %lx\n", SYM(q)->name, (long)SYM(q));
+		Fprintf(file, "SYMBOL |%s| %p\n", SYM(q)->name, SYM(q));
 		break;
 	case STRING:
 		Fprintf(file, "STRING |%s|\n", STR(q));
@@ -252,7 +254,7 @@ static debug_item(q, indent, file)
 		break;
 	case ITEMARRAY: {Item **qa; int i; long n;
 		qa = ITMA(q);
-		n = (long)qa[-1];
+		n = (size_t)qa[-1];
 		Fprintf(file, "ITEMARRAY %ld\n", n);
 		for (i=0; i<n; i++) {
 			debug_item(qa[i], indent+2, file);

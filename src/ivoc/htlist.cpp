@@ -42,7 +42,7 @@ HTList::HTList (void* p) { _next = this; _prev = this; _object = p; }
 
 HTList::~HTList () {
     HTList* next = _next;
-    if (next != this && next != nil) {
+    if (next != this && next != NULL) {
         Remove(this);
         delete next;
     }
@@ -65,13 +65,13 @@ void HTList::Prepend (HTList* e) {
 void HTList::Remove (HTList* e) {
     e->_prev->_next = e->_next;
     e->_next->_prev = e->_prev;
-    e->_prev = e->_next = nil;
+    e->_prev = e->_next = NULL;
 }
 
 void HTList::Remove() {
 	if (_prev) { _prev->_next = _next; }
 	if (_next) { _next->_prev = _prev; }
-	_prev = _next = nil;
+	_prev = _next = NULL;
 }
 void HTList::RemoveAll() {
 	while(!IsEmpty()) {
@@ -82,7 +82,7 @@ void HTList::Delete (void* p) {
     register HTList* e;
 
     e = Find(p);
-    if (e != nil) {
+    if (e != NULL) {
 	Remove(e);
 	delete e;
     }
@@ -96,7 +96,7 @@ HTList* HTList::Find (void* p) {
 	    return e;
 	}
     }
-    return nil;
+    return NULL;
 }
 
 HTList* HTList::operator[] (int count) {
@@ -109,5 +109,5 @@ HTList* HTList::operator[] (int count) {
     if (i == count) {
 	return pos;
     }
-    return nil;
+    return NULL;
 }	

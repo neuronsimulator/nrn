@@ -3,6 +3,7 @@
 /* Mostly from Berkeley */
 #include	<stdio.h>
 #include	<stdlib.h>
+#include	<signal.h>
 #include	<string.h>
 #include	"units.h"
 #include	<assert.h>
@@ -17,6 +18,7 @@
 int	unitonflag = 1;
 static int	UnitsOn = 0;
 extern double	fabs();
+extern void diag();
 #define	IFUNITS	{if (!UnitsOn) return;}
 #define OUTTOLERANCE(arg1,arg2) (fabs(arg2/arg1 - 1.) > 1.e-5)
 
@@ -47,11 +49,11 @@ static int	lookup();
 static struct	table	*hash();
 
 static void chkfperror();
-static units();
-static pu();
-static convr();
+static void units();
+static int pu();
+static int convr();
 static void init();
-static get();
+static int get();
 
 extern void Unit_push(char*);
 
@@ -172,7 +174,7 @@ unit_mag() {	/* return unit magnitude that is on stack */
 	return usp->factor;
 }
 
-unit_mag_mul(d)
+void unit_mag_mul(d)
 	double d;
 {
 	usp->factor *= d;
@@ -358,7 +360,7 @@ unit_cmp_exact() { /* returns 1 if top two units on stack are same */
 }
 
 /* ARGSUSED */
-static print_unit_expr(i) int i; {}
+static void print_unit_expr(i) int i; {}
 
 void Unit_cmp() {
 	/*compares top two units on stack. If not conformable then
@@ -407,8 +409,7 @@ Unit_str(usp), usp->factor/up->factor);
 	return;
 }
 
-int
-unit_diff() {
+int unit_diff() {
 	/*compares top two units on stack. If not conformable then
 	return 1, if not same factor return 2 if same return 0
 	*/
@@ -531,7 +532,7 @@ fprintf(stderr, "Cant open units table in either of:\n%s\n", buf);
 }
 
 #if 0
-main(argc, argv)
+void main(argc, argv)
 char *argv[];
 {
 	register i;
@@ -589,7 +590,7 @@ fp:
 }
 #endif
 
-static units(up)
+static void units(up)
 struct unit *up;
 {
 	printf("\t%s\n", Unit_str(up));
@@ -600,7 +601,7 @@ char *Unit_str(up)
 struct unit *up;
 {
 	register struct unit *p;
-	register f, i;
+	register int f, i;
 	static char buf[256];
 
 	p = up;
@@ -622,7 +623,7 @@ struct unit *up;
 	return buf;
 }
 
-static pu(u, i, f)
+static int pu(u, i, f)
 {
 
 	if(u > 0) {
@@ -644,11 +645,11 @@ static pu(u, i, f)
 	return(0);
 }
 
-static convr(up)
+static int convr(up)
 struct unit *up;
 {
 	register struct unit *p;
-	register c;
+	register int c;
 	register char *cp;
 	char name[20];
 	int den, err;
@@ -702,7 +703,7 @@ struct unit *up;
 {
 	register struct unit *p;
 	register struct table *q;
-	register i;
+	register int i;
 	char *cp1, *cp2;
 	double e;
 
@@ -753,7 +754,7 @@ loop:
 	return(1);
 }
 
-static equal(s1, s2)
+static int equal(s1, s2)
 char *s1, *s2;
 {
 	register char *c1, *c2;
@@ -864,7 +865,7 @@ redef:
 static double
 getflt()
 {
-	register c, i, dp;
+	register int c, i, dp;
 	double d, e;
 	int f;
 
@@ -918,9 +919,9 @@ l1:
 	return(d);
 }
 
-static get()
+static int get()
 {
-	register c;
+	register int c;
 
 	/*SUPPRESS 560*/
 	if((c=peekc) != 0) {

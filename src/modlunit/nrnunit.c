@@ -1,5 +1,6 @@
 #include <../../nmodlconf.h>
 #include "model.h"
+#include "units.h"
 #include "parse1.h"
 
 #define IONCUR  0
@@ -9,17 +10,17 @@
 
 static int point_process = 0;
 static List *current, *concen, *potential;
-static unit_chk();
+static void unit_chk();
 static int iontype();
 
-nrn_unit_init() {
+void nrn_unit_init() {
 	current = newlist();
 	concen = newlist();
 	potential = newlist();
 }
 
 #if NRNUNIT
-nrn_unit_chk() {
+void nrn_unit_chk() {
 	Item *q;
 	
 	unit_chk("v", "millivolt");
@@ -44,8 +45,7 @@ nrn_unit_chk() {
 	}
 }
 
-static
-unit_chk(name, unit)
+static void unit_chk(name, unit)
 	char *name, *unit;
 {
 	Symbol *s;
@@ -64,7 +64,7 @@ Sprintf(buf, "%s must have the units, %s, instead of %s.\n",
 	}
 }
 
-nrn_list(qtype, qlist)
+void nrn_list(qtype, qlist)
 	Item *qtype, *qlist;
 {
 	List **plist;
@@ -95,7 +95,7 @@ nrn_list(qtype, qlist)
 	}
 }
 
-nrn_use(qion, qreadlist, qwritelist)
+void nrn_use(qion, qreadlist, qwritelist)
 	Item *qion, *qreadlist, *qwritelist;
 {
 	int i;

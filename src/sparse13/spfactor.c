@@ -191,6 +191,8 @@ static int ZeroPivot();
  *  Error is cleared in this function.
  */
 
+extern void spcLinkRows(MatrixPtr);
+
 int
 spOrderAndFactor( eMatrix, RHS, RelThreshold, AbsThreshold, DiagPivoting )
 

@@ -62,7 +62,7 @@ libivoc_la_SOURCES = ivoc.cpp xmenu.cpp graph.cpp rubband.cpp grmanip.cpp \
 	$(sysdep_sources) ivocman1.cpp ocptrvector.cpp
 
 noinst_HEADERS = apwindow.h axis.h bndedval.h cbwidget.h checkpnt.h \
-	classreg.h datapath.h dbrowser.h epsprint.h field.h fourier.h \
+	datapath.h dbrowser.h epsprint.h field.h fourier.h \
 	graph.h hocmark.h idraw.h ivoc.h ivocconf.h mymath.h htlist.h \
 	objcmd.h oc2iv.h ocbox.h ocbrowsr.h occlass.h ocdeck.h ocfile.h \
 	ocglyph.h ocinput.h ocjump.h oclist.h ocmatrix.h ocobserv.h \

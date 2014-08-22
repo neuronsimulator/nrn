@@ -18,8 +18,8 @@
 #include <stdio.h>
 
 Appear::Appear(const Color* c, const Brush* b) {
-	color_ = nil;
-	brush_ = nil;
+	color_ = NULL;
+	brush_ = NULL;
 	color(c);
 	brush(b);
 }

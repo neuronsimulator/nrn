@@ -94,7 +94,7 @@ Member_func t_members[] = {
 };
 
 void OcTimer_reg() {
-	class2oc("Timer", t_cons, t_destruct, t_members);
+	class2oc("Timer", t_cons, t_destruct, t_members, NULL, NULL, NULL);
 }
 #if HAVE_IV
 OcTimer::OcTimer(const char* cmd) {

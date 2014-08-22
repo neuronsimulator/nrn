@@ -25,10 +25,10 @@ class ShapeChangeObserver;
 class ShapeScene : public Graph { // entire neuron
 public:
 	enum {SECTION=Graph::EXTRAGRAPHTOOL, ROTATE, EXTRASHAPETOOL};
-	ShapeScene(SectionList* = nil);
+	ShapeScene(SectionList* = NULL);
 	virtual ~ShapeScene();
 	virtual void erase_all();
-	virtual void observe(SectionList* = nil);
+	virtual void observe(SectionList* = NULL);
 	virtual void flush();
 	virtual ShapeSection* selected();
 	virtual float arc_selected();
@@ -52,7 +52,7 @@ public:
 	virtual SectionHandler* section_handler();
 	virtual SectionHandler* section_handler(ShapeSection*);
 	PolyGlyph* shape_section_list();
-	virtual void transform3d(Rubberband* rb = nil);
+	virtual void transform3d(Rubberband* rb = NULL);
 	virtual ShapeSection* shape_section(Section*);
 	virtual void name(const char*);
 	virtual void save_phase2(ostream&);

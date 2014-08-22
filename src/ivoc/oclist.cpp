@@ -36,7 +36,7 @@ void handle_old_focus();
 #if HAVE_IV
 /*static*/ class OcListBrowser : public OcBrowser {
 public:
-	OcListBrowser(OcList*, const char* = nil, Object* pystract=nil);
+	OcListBrowser(OcList*, const char* = NULL, Object* pystract=NULL);
 	OcListBrowser(OcList*, char**, const char*);
 	virtual ~OcListBrowser();
 	virtual void drag(const Event& e);
@@ -44,8 +44,8 @@ public:
 	virtual void dragselect(GlyphIndex);
 	virtual void reload();
 	virtual void reload(GlyphIndex);
-	virtual void set_select_action(const char*, bool on_rel = false, Object* pyact=nil);
-	virtual void set_accept_action(const char*, Object* pyact=nil);
+	virtual void set_select_action(const char*, bool on_rel = false, Object* pyact=NULL);
+	virtual void set_accept_action(const char*, Object* pyact=NULL);
 	virtual void accept();
 	virtual void release(const Event&);
 	virtual InputHandler* focus_in();
@@ -263,7 +263,7 @@ IFGUI
 	}
 	if (ifarg(2)) {
 		if (hoc_is_object_arg(2)) {
-			o->create_browser(s, nil, *hoc_objgetarg(2));
+			o->create_browser(s, NULL, *hoc_objgetarg(2));
 			return 1.;
 		}
 		i = gargstr(2);
@@ -296,7 +296,7 @@ IFGUI
 			on_rel = (bool)chkarg(2, 0, 1);
 		}
 		if (hoc_is_object_arg(1)) {
-			b->set_select_action(nil, on_rel, *hoc_objgetarg(1));
+			b->set_select_action(NULL, on_rel, *hoc_objgetarg(1));
 		}else{
 			b->set_select_action(gargstr(1), on_rel);
 		}
@@ -327,7 +327,7 @@ IFGUI
 	OcListBrowser* b = ((OcList*)v)->browser();
 	if (b) {
 		if (hoc_is_object_arg(1)) {
-			b->set_accept_action(nil, *hoc_objgetarg(1));
+			b->set_accept_action(NULL, *hoc_objgetarg(1));
 		}else{
 			b->set_accept_action(gargstr(1));
 		}
@@ -413,8 +413,8 @@ Object* ivoc_list_item(Object* olist, int i) {
 
 OcList::OcList(long n) {
 	oli_ = new OcListImpl(n);
-	b_ = nil;
-	ct_ = nil;
+	b_ = NULL;
+	ct_ = NULL;
 }
 
 OcList::OcList(const char* name) {
@@ -429,7 +429,7 @@ OcList::OcList(const char* name) {
 	int cnt = ct_->count;
 	cnt = (cnt)?cnt:5;
 	oli_ = new OcListImpl(cnt);
-	b_ = nil;
+	b_ = NULL;
 	hoc_Item* q;
 	ITERATE(q, ct_->olist) {
 		append(OBJ(q));
@@ -451,12 +451,12 @@ OcList::~OcList() {
 	}
 	Resource::unref(b_);
 #endif
-	b_ = nil;
+	b_ = NULL;
 	remove_all();
 	delete oli_;
 }
 
-static bool l_chkpt(void** vp) {
+static int l_chkpt(void** vp) {
 #if HAVE_IV && !MAC
 	OcList* o;
 	Checkpoint& chk = *Checkpoint::instance();
@@ -482,19 +482,19 @@ static bool l_chkpt(void** vp) {
 		*vp = (void*)o;
 	}
 #endif
-	return true;
+	return 1;
 }
 
 void OcList_reg() {
 //printf("Oclist_reg\n");
-	class2oc("List", l_cons, l_destruct, l_members, l_chkpt, l_retobj_members);
+	class2oc("List", l_cons, l_destruct, l_members, l_chkpt, l_retobj_members, NULL);
 	list_class_sym_ = hoc_lookup("List");
 }
 
 extern "C" {
 extern bool hoc_objectpath_impl(Object* ob, Object* oblook, char* path, int depth);
 extern void hoc_path_prepend(char*, const char*, const char*);
-bool ivoc_list_look(Object* ob, Object* oblook, char* path, int) {
+int ivoc_list_look(Object* ob, Object* oblook, char* path, int) {
 	if (oblook->ctemplate->constructor == l_cons) {
 		OcList* o = (OcList*)oblook->u.this_pointer;
 		long i, cnt = o->count();
@@ -559,12 +559,12 @@ OcListBrowser* OcList::browser() { return b_;}
 
 OcListBrowser::OcListBrowser(OcList* ocl, const char* items, Object* pystract) : OcBrowser() {
 	ocl_ = ocl; // not reffed because this is reffed by ocl
-	ocg_ = nil; // do not ref
-	select_action_ = nil;
-	accept_action_ = nil;
-	plabel_ = nil;
-	label_action_ = nil;
-	label_pystract_ = nil;
+	ocg_ = NULL; // do not ref
+	select_action_ = NULL;
+	accept_action_ = NULL;
+	plabel_ = NULL;
+	label_action_ = NULL;
+	label_pystract_ = NULL;
 	if (pystract) {
 		label_pystract_ = new HocCommand(pystract);
 	}	
@@ -573,7 +573,7 @@ OcListBrowser::OcListBrowser(OcList* ocl, const char* items, Object* pystract) :
 	if (items) {
 		items_ = new CopyString(items);
 	}else{
-		items_ = nil;
+		items_ = NULL;
 	}
 	reload();
 }
@@ -582,15 +582,15 @@ OcListBrowser::OcListBrowser(OcList* ocl, char** pstr, const char* action)
   : OcBrowser()
 {
 	ocl_ = ocl;
-	ocg_ = nil;
-	select_action_ = nil;
-	accept_action_ = nil;
+	ocg_ = NULL;
+	select_action_ = NULL;
+	accept_action_ = NULL;
 	on_release_ = false;
 	ignore_ = false;
 	plabel_ = pstr;
-	items_ = nil;
+	items_ = NULL;
 	label_action_ = new HocCommand(action);
-	label_pystract_ = nil;
+	label_pystract_ = NULL;
 	reload();
 }
 
@@ -755,7 +755,7 @@ void OcListBrowser::ocglyph(Window* w) {
 
 void OcListBrowser::ocglyph_unmap() {
 	OcGlyph* o = ocg_;
-	ocg_ = nil;
+	ocg_ = NULL;
 	if (o){
 		if (o->has_window()) {
 			delete o->window();

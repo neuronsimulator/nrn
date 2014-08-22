@@ -37,6 +37,7 @@ fsyng(i)
 #include <stdlib.h>
 #include "neuron.h"
 #include "section.h"
+#include "nrniv_mf.h"
 
 #define nt_t nrn_threads->_t
 
@@ -53,13 +54,12 @@ typedef struct Stimulus {
 	Section* sec;
 } Stimulus;
 
-static maxstim = 0;		/* size of stimulus array */
+static int maxstim = 0;		/* size of stimulus array */
 static Stimulus *pstim;		/* pointer to stimulus array */
+static void free_syn(void);
+static void stim_record(int);
 
-extern double *getarg(), chkarg();
-extern char *secname();
-
-void print_syn() {
+void print_syn(void) {
 	int i;
 	
 	if (maxstim == 0) return;
@@ -75,32 +75,31 @@ void print_syn() {
 
 static double stimulus();
 
-fsyni() {
+void fsyni(void) {
 	int i;
-	double cur, g;
+	double cur;
 	
 	i = chkarg(1, 0., (double)(maxstim-1));
-	if ((cur = stimulus(i, &g)) != 0.) {
+	if ((cur = stimulus(i)) != 0.) {
 		cur *= pstim[i].mag / pstim[i].mag_seg;
 	}
-	ret(cur);
+	hoc_retpushx(cur);
 }
 
-fsyng() {
+void fsyng(void) {
 	int i;
 	double g;
 	
 	i = chkarg(1, 0., (double)(maxstim-1));
-	IGNORE(stimulus(i, &g));
+	IGNORE(stimulus(i));
+	g = pstim[i].g;
 	if (g != 0.) {
 		g *= pstim[i].mag / pstim[i].mag_seg;
 	}
-	ret(g);
+	hoc_retpushx(g);
 }
 
-static stim_record();
-
-fsyn() {
+void fsyn(void) {
 	int i;
 
 	if (nrn_nthread > 1) {
@@ -135,10 +134,10 @@ fsyn() {
 			stim_record(i);
 		}
 	}
-	ret(0.);
+	hoc_retpushx(0.);
 }
 
-free_syn() {
+static void free_syn(void) {
 	int i;
 	if (maxstim) {
 		for (i=0; i < maxstim; ++i) {
@@ -151,9 +150,7 @@ free_syn() {
 	}
 }
 
-static
-stim_record(i)	/*fill in the section info*/
-	int i;
+static void stim_record(int i)	/*fill in the section info*/
 {
 	Node *node_ptr();
 	double area;
@@ -171,7 +168,7 @@ stim_record(i)	/*fill in the section info*/
 	}
 }
 
-synapse_prepare() {
+void synapse_prepare(void) {
 	int i;
 	
 	for (i=0; i<maxstim; i++) {
@@ -181,9 +178,7 @@ synapse_prepare() {
 
 static double alpha();
 
-static double
-stimulus(i)
-	int i;
+static double stimulus(int i)
 {
 	double x, g;
 	
@@ -199,9 +194,7 @@ stimulus(i)
 	return pstim[i].g * (NODEV(pstim[i].pnd) - pstim[i].erev);
 }
 
-static double
-alpha(x)
-	double x;
+static double alpha(double x)
 {
 	double exp();
 	
@@ -211,7 +204,7 @@ alpha(x)
 	return 0.0;
 }
 
-activsynapse_rhs() {
+void activsynapse_rhs(void) {
 	
 	int i;
 	for (i=0; i<maxstim; i++) {
@@ -221,7 +214,7 @@ activsynapse_rhs() {
 	}
 }
 
-activsynapse_lhs() {
+void activsynapse_lhs() {
 	
 	int i;
 

@@ -31,7 +31,7 @@ random.c,v
 /*
  * Set fill column to n.
  */
-setfillcol(f, n)
+int setfillcol(f, n)
 {
 	LINTUSE(f)
         fillcol = n;
@@ -46,7 +46,7 @@ setfillcol(f, n)
  * column, but the column that would be used on an infinite width display.
  * Normally this is bound to "C-X =".
  */
-showcpos(f, n)
+int showcpos(f, n)
 {
         register LINE   *clp;
         register long   nch;
@@ -96,7 +96,7 @@ showcpos(f, n)
 /*
  * Return current column.  Stop at first non-blank given TRUE argument.
  */
-getccol(bflg)
+int getccol(bflg)
 int bflg;
 {
         register int c, i, col;
@@ -125,7 +125,7 @@ int bflg;
  * work. This fixes up a very common typo with a single stroke. Normally bound
  * to "C-T". This always works within a line, so "WFEDIT" is good enough.
  */
-twiddle(f, n)
+int twiddle(f, n)
 {
         register LINE   *dotp;
         register int    doto;
@@ -155,7 +155,7 @@ twiddle(f, n)
  * its line splitting meaning. The character is always read, even if it is
  * inserted 0 times, for regularity. Bound to "C-Q"
  */
-quote(f, n)
+int quote(f, n)
 {
         register int    s;
         register int    c;
@@ -182,7 +182,7 @@ quote(f, n)
  * Set tab size if given non-default argument (n <> 1).  Otherwise, insert a
  * tab into file.
  */
-tab(f, n)
+int tab(f, n)
 {
 	LINTUSE(f)
         if (n < 0)
@@ -201,7 +201,7 @@ tab(f, n)
  * done in this slightly funny way because the tab (in ASCII) has been turned
  * into "C-I" (in 10 bit code) already. Bound to "C-I".
  */
-tab(f, n)
+int tab(f, n)
 {
         if (n < 0)
                 return (FALSE);
@@ -220,7 +220,7 @@ tab(f, n)
  * and then back up over them. Everything is done by the subcommand
  * procerssors. They even handle the looping. Normally this is bound to "C-O".
  */
-openline(f, n)
+int openline(f, n)
 {
         register int    i;
         register int    s;
@@ -244,7 +244,7 @@ openline(f, n)
  * Insert a newline. Bound to "C-M". If we are in CMODE, do automatic
  * indentation as specified.
  */
-newline(f, n)
+int newline(f, n)
 {
 	register int    s;
 
@@ -267,7 +267,7 @@ newline(f, n)
 	return (TRUE);
 }
 
-cinsert()	/* insert a newline and indentation for C */
+int cinsert()	/* insert a newline and indentation for C */
 
 {
 	register char *cptr;	/* string pointer into text to copy */
@@ -308,7 +308,7 @@ cinsert()	/* insert a newline and indentation for C */
 	return(TRUE);
 }
 
-insbrace(n, c)	/* insert a brace into the text here...we are in CMODE */
+int insbrace(n, c)	/* insert a brace into the text here...we are in CMODE */
 
 int n;	/* repeat count */
 int c;	/* brace to insert (always { for now) */
@@ -343,7 +343,7 @@ int c;	/* brace to insert (always { for now) */
 	return(linsert(n, c));
 }
 
-inspound()	/* insert a # into the text here...we are in CMODE */
+int inspound()	/* insert a # into the text here...we are in CMODE */
 
 {
 	register int ch;	/* last character before input */
@@ -376,7 +376,7 @@ inspound()	/* insert a # into the text here...we are in CMODE */
  * the line. Normally this command is bound to "C-X C-O". Any argument is
  * ignored.
  */
-deblank(f, n)
+int deblank(f, n)
 {
         register LINE   *lp1;
         register LINE   *lp2;
@@ -407,7 +407,7 @@ deblank(f, n)
  * of tabs and spaces. Return TRUE if all ok. Return FALSE if one of the
  * subcomands failed. Normally bound to "C-J".
  */
-indent(f, n)
+int indent(f, n)
 {
         register int    nicol;
         register int    c;
@@ -446,7 +446,7 @@ indent(f, n)
  * If any argument is present, it kills rather than deletes, to prevent loss
  * of text if typed with a big argument. Normally bound to "C-D".
  */
-forwdel(f, n)
+int forwdel(f, n)
 {
 	if (curbp->b_mode&MDVIEW)	/* don't allow this command if	*/
 		return(rdonly());	/* we are in read only mode	*/
@@ -466,7 +466,7 @@ forwdel(f, n)
  * forward, this actually does a kill if presented with an argument. Bound to
  * both "RUBOUT" and "C-H".
  */
-backdel(f, n)
+int backdel(f, n)
 {
         register int    s;
 
@@ -492,7 +492,7 @@ backdel(f, n)
  * number of newlines. If called with a negative argument it kills backwards
  * that number of newlines. Normally bound to "C-K".
  */
-killtext(f, n)
+int killtext(f, n)
 {
         register int    chunk;
         register LINE   *nextp;
@@ -530,7 +530,7 @@ killtext(f, n)
  * ms done by the standard insert routines. All you do is run the loop, and
  * check for errors. Bound to "C-Y".
  */
-yank(f, n)
+int yank(f, n)
 {
         register int    c;
         register int    i;
@@ -557,43 +557,47 @@ yank(f, n)
         return (TRUE);
 }
 
-setmode(f, n)	/* prompt and set an editor mode */
+int setmode(f, n)	/* prompt and set an editor mode */
 
 int f, n;	/* default and argument */
 
 {
 	LINTUSE(f) LINTUSE(n)
 	IGNORE(adjustmode(TRUE, FALSE));
+        return (TRUE);
 }
 
-delmode(f, n)	/* prompt and delete an editor mode */
+int delmode(f, n)	/* prompt and delete an editor mode */
 
 int f, n;	/* default and argument */
 
 {
 	LINTUSE(f) LINTUSE(n)
 	IGNORE(adjustmode(FALSE, FALSE));
+        return (TRUE);
 }
 
-setgmode(f, n)	/* prompt and set a global editor mode */
+int setgmode(f, n)	/* prompt and set a global editor mode */
 
 int f, n;	/* default and argument */
 
 {
 	LINTUSE(f) LINTUSE(n)
 	IGNORE(adjustmode(TRUE, TRUE));
+        return (TRUE);
 }
 
-delgmode(f, n)	/* prompt and delete a global editor mode */
+int delgmode(f, n)	/* prompt and delete a global editor mode */
 
 int f, n;	/* default and argument */
 
 {
 	LINTUSE(f) LINTUSE(n)
 	IGNORE(adjustmode(FALSE, TRUE));
+        return (TRUE);
 }
 
-adjustmode(kind, global)	/* change the editor mode status */
+int adjustmode(kind, global)	/* change the editor mode status */
 
 int kind;	/* true = set,		false = delete */
 int global;	/* true = global flag,	false = current buffer flag */

@@ -21,9 +21,9 @@ public:
 	long index(Object*);
 	Object* object(long);
 	void remove_all();
-	bool refs_items() { return ct_ == nil; }
+	bool refs_items() { return ct_ == NULL; }
 
-	void create_browser(const char* name, const char* items=nil, Object* pystract=nil);
+	void create_browser(const char* name, const char* items=NULL, Object* pystract=NULL);
 	void create_browser(const char* name, char** pstr, const char* action);
 	OcListBrowser* browser();
 

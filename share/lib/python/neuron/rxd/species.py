@@ -233,6 +233,11 @@ class Species(_SpeciesMathable):
             self._offset = 0
         self._has_adjusted_offsets = False
         self._assign_parents()
+        for sec in self._secs:
+            # NOTE: can only init_diffusion_rates after the roots (parents)
+            #       have been assigned
+            sec._init_diffusion_rates()
+
         self._update_region_indices()
 
     @property

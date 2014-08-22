@@ -55,7 +55,7 @@ SPROW *r;
    
    fprintf(fp,"row: len = %d, maxlen = %d, diag idx = %d\n",
 	   r->len,r->maxlen,r->diag);
-   fprintf(fp,"element list @ 0x%lx\n",(long)(r->elt));
+   fprintf(fp,"element list @ 0x%p\n",(r->elt));
    if ( ! r->elt )
    {
       fprintf(fp,"*** NULL element list ***\n");

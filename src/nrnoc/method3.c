@@ -125,7 +125,7 @@ int spatial_method() {
 		}
 		_method3 = new_method;
 	}
-	ret((double) _method3);
+	hoc_retpushx((double) _method3);
 }
 		
 /*

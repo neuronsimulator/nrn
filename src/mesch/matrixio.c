@@ -466,16 +466,16 @@ MAT     *a;
      
      if ( a == (MAT *)NULL )
      {  fprintf(fp,"Matrix: NULL\n");   return;         }
-     fprintf(fp,"Matrix: %d by %d @ 0x%lx\n",a->m,a->n,(long)a);
+     fprintf(fp,"Matrix: %d by %d @ 0x%p\n",a->m,a->n,a);
      fprintf(fp,"\tmax_m = %d, max_n = %d, max_size = %d\n",
 	     a->max_m, a->max_n, a->max_size);
      if ( a->me == (Real **)NULL )
      {  fprintf(fp,"NULL\n");           return;         }
-     fprintf(fp,"a->me @ 0x%lx\n",(long)(a->me));
-     fprintf(fp,"a->base @ 0x%lx\n",(long)(a->base));
+     fprintf(fp,"a->me @ 0x%p\n",(a->me));
+     fprintf(fp,"a->base @ 0x%p\n",(a->base));
      for ( i=0; i<a->m; i++ )   /* for each row... */
      {
-	  fprintf(fp,"row %u: @ 0x%lx ",i,(long)(a->me[i]));
+	  fprintf(fp,"row %u: @ 0x%p ",i,(a->me[i]));
 	  for ( j=0, tmp=2; j<a->n; j++, tmp++ )
 	  {             /* for each col in row... */
 	       fprintf(fp,format,a->me[i][j]);
@@ -493,10 +493,10 @@ PERM    *px;
      
      if ( ! px )
      {  fprintf(fp,"Permutation: NULL\n");      return;         }
-     fprintf(fp,"Permutation: size: %u @ 0x%lx\n",px->size,(long)(px));
+     fprintf(fp,"Permutation: size: %u @ 0x%p\n",px->size,(px));
      if ( ! px->pe )
      {  fprintf(fp,"NULL\n");   return;         }
-     fprintf(fp,"px->pe @ 0x%lx\n",(long)(px->pe));
+     fprintf(fp,"px->pe @ 0x%p\n",(px->pe));
      for ( i=0; i<px->size; i++ )
 	  fprintf(fp,"%u->%u ",i,px->pe[i]);
      fprintf(fp,"\n");
@@ -511,10 +511,10 @@ VEC     *x;
      
      if ( ! x )
      {  fprintf(fp,"Vector: NULL\n");   return;         }
-     fprintf(fp,"Vector: dim: %d @ 0x%lx\n",x->dim,(long)(x));
+     fprintf(fp,"Vector: dim: %d @ 0x%p\n",x->dim,(x));
      if ( ! x->ve )
      {  fprintf(fp,"NULL\n");   return;         }
-     fprintf(fp,"x->ve @ 0x%lx\n",(long)(x->ve));
+     fprintf(fp,"x->ve @ 0x%p\n",(x->ve));
      for ( i=0, tmp=0; i<x->dim; i++, tmp++ )
      {
 	  fprintf(fp,format,x->ve[i]);

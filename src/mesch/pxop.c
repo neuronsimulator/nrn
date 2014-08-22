@@ -275,7 +275,7 @@ PERM	*px;
 	if ( px==(PERM *)NULL )
 		error(E_NULL,"px_sign");
 	px2 = px_copy(px,PNULL);
-	numtransp = myqsort(px2->pe,px2->size);
+	numtransp = myqsort((int*)px2->pe,px2->size);
 	px_free(px2);
 
 	return ( numtransp % 2 ) ? -1 : 1;

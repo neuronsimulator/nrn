@@ -105,7 +105,7 @@ void Oc::help(const char* s) {
 printf("error on the help pipe, restarting\n\
 but will be missing this sessions hoc help text\n");
 		pclose(help_pipe);
-		help_pipe = nil;
+		help_pipe = NULL;
 	}
 	if (!help_pipe) {
 		printf("Starting the help system\n");

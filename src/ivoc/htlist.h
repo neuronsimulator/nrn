@@ -34,7 +34,7 @@ for fast insertion, deletion, iteration
 
 class HTList {
 public:
-    HTList(void* = nil);
+    HTList(void* = NULL);
     virtual ~HTList();
 
     bool IsEmpty();

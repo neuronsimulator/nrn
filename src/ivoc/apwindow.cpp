@@ -105,7 +105,7 @@ void WinDismiss::execute() {
 #endif
 	dismiss_defer();
 	win_defer_ = win_;
-	win_ = nil;
+	win_ = NULL;
 }
 
 // the win_defer_longer_ mechanism is a hack to both avoid changing InterViews and to
@@ -125,7 +125,7 @@ bool WinDismiss::event(Event&) {
 	if (!win_) {
 		dismiss_defer();
 		win_defer_ = win_defer_longer_;
-		win_defer_longer_ = nil;
+		win_defer_longer_ = NULL;
 	}
 	return true;
 }
@@ -139,7 +139,7 @@ void WinDismiss::dismiss_defer() {
 	if (win_defer_ && win_defer_ != win_defer_longer_) {
 //printf("WinDismiss::dismiss_defer %p %p\n", win_defer_, win_defer_longer_);
 		DismissableWindow* w = win_defer_; //prevents BadDrawable X Errors
-		win_defer_ = nil;
+		win_defer_ = NULL;
 		delete w;
 	}
 }
@@ -172,7 +172,7 @@ DismissableWindow::DismissableWindow(Glyph* g, bool force_menubar)
 	wd_ = new WinDismiss(this);
 	wd_->ref();
 	wm_delete(wd_);
-	dbutton_ = nil;
+	dbutton_ = NULL;
 	Style* style = Session::instance()->style();
 	String str("Close");
 #if MAC
@@ -192,7 +192,7 @@ DismissableWindow::DismissableWindow(Glyph* g, bool force_menubar)
 		MenuItem* mi = append_menubar(str.string());
 		mi->action(dbutton_);
 	}else{
-		menubar_ = nil;
+		menubar_ = NULL;
 	}
 	if (style->find_attribute("use_transient_windows", str) && str == "yes") {
 		is_transient_ = true;
@@ -217,7 +217,7 @@ MenuItem* DismissableWindow::append_menubar(const char* name) {
 		menubar_ ->append_item(mi);
 		return mi;
 	}
-	return nil;
+	return NULL;
 }
 
 void DismissableWindow::dismiss() {
@@ -311,9 +311,9 @@ mi->action(new ActionCallback(PrintableWindow)(this,&PrintableWindow::hide));
 };
 PrintableWindow::~PrintableWindow(){
 //printf("~PrintableWindow %p\n", this);
-	((OcGlyph*)glyph())->window(nil);
+	((OcGlyph*)glyph())->window(NULL);
 	if (leader_ == this) {
-		leader_ = nil; // mswin deletes everthing on quit
+		leader_ = NULL; // mswin deletes everthing on quit
 	}
 	PrintableWindowManager::current()->remove(this);
 }
@@ -386,7 +386,7 @@ void PrintableWindow::map() {
 	// it's bound due to the map and according to my checking it will not become
 	// unbound til window deletion
 	EventHandlerUPP myHandleCollapse = NewEventHandlerUPP((EventHandlerProcPtr)MyHandleCollapse);
-	InstallWindowEventHandler(Window::rep()->macWindow(), myHandleCollapse, 1, myCollapseTypeSpec, (void*)this, nil);
+	InstallWindowEventHandler(Window::rep()->macWindow(), myHandleCollapse, 1, myCollapseTypeSpec, (void*)this, NULL);
 #endif
 #endif
 		single_event_run();
@@ -408,7 +408,7 @@ xtop_ = xtop();
 	notify();
 }
 
-OcGlyphContainer* PrintableWindow::intercept_ = nil;
+OcGlyphContainer* PrintableWindow::intercept_ = NULL;
 
 OcGlyphContainer* PrintableWindow::intercept(OcGlyphContainer* b) {
 	OcGlyphContainer* i = intercept_;
@@ -541,11 +541,11 @@ Glyph* StandardWindow::lbox() { return l_; }
 Glyph* StandardWindow::rbox() { return r_; }
 
 OcGlyph::OcGlyph(Glyph* body) : MonoGlyph(body) {
-	w_ = nil;
+	w_ = NULL;
 	parents_ = 0;
 	def_w_ = -1;
 	def_h_ = -1;
-	d_ = nil;
+	d_ = NULL;
 	session_priority_ = 1;
 }
 
@@ -564,10 +564,10 @@ void OcGlyph::save(ostream&) {
 	printf("OcGlyph::save (not implemented for relevant class)\n");
 }
 
-bool OcGlyph::has_window() { return (w_ != nil); }
+bool OcGlyph::has_window() { return (w_ != NULL); }
 
 PrintableWindow* OcGlyph::window() { return w_;}
-void OcGlyph::window(PrintableWindow* w) { w_ = w; parents(w_ != nil);}
+void OcGlyph::window(PrintableWindow* w) { w_ = w; parents(w_ != NULL);}
 
 PrintableWindow* OcGlyph::make_window(Coord left, Coord top, Coord w,
   Coord h) {

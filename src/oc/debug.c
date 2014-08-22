@@ -9,10 +9,10 @@ int zzdebug;
 #if	DOS
 #define prcod(c1,c2)	else if (p->pf == c1) Printf("%p %p %s", p, p->pf, c2);
 #else
-#define prcod(c1,c2)	else if (p->pf == c1) Printf("%lx %lx %s", (long)p, (long)p->pf, c2);
+#define prcod(c1,c2)	else if (p->pf == c1) Printf("%p %p %s", p, p->pf, c2);
 #endif
 
-debug()		/* print the machine */
+void debug(void)		/* print the machine */
 {
 	if (zzdebug == 0)
 		zzdebug = 1;
@@ -20,18 +20,15 @@ debug()		/* print the machine */
 		zzdebug = 0;
 }
 
-debugzz(p)	/* running copy of calls to execute */
-	Inst *p;
+void debugzz(Inst* p)	/* running copy of calls to execute */
 {
 #if !OCSMALL
-	int pushx();
 	{
 		if(p->in == STOP) Printf("STOP\n");
-		prcod(pushx, "PUSH\n")
 		prcod(nopop, "POP\n")
 		prcod(eval, "EVAL\n")
 		prcod(add, "ADD\n")
-		prcod(sub, "SUB\n")
+		prcod(hoc_sub, "SUB\n")
 		prcod(mul, "MUL\n")
 		prcod(hoc_div, "DIV\n")
 		prcod(negate, "NEGATE\n")
@@ -133,13 +130,13 @@ debugzz(p)	/* running copy of calls to execute */
 #endif
 		else
 		{
-			long offset = (long)p->in;
+			size_t offset = (size_t)p->in;
 			if (offset < 1000)
 				Printf("relative %d\n", p->i);
 			else {
-			offset = (long)(p->in) - (long)p;
-			if (offset > (long)prog - (long)p
-			&& offset < (long)(&prog[2000]) - (long)p )
+			offset = (size_t)(p->in) - (size_t)p;
+			if (offset > (size_t)prog - (size_t)p
+			&& offset < (size_t)(&prog[2000]) - (size_t)p )
 				Printf("relative %ld\n", p->in - p);
 			else if (p->sym->name != (char *) 0)
 				{

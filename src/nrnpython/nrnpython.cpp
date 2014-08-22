@@ -17,10 +17,12 @@ extern HocStr* hoc_cbufstr;
 extern int nrnpy_nositeflag;
 extern char* hoc_ctp;
 extern FILE* hoc_fin;
-extern char* hoc_promptstr;
+extern const char* hoc_promptstr;
 extern char* neuronhome_forward();
 //extern char*(*PyOS_ReadlineFunctionPointer)(FILE*, FILE*, char*);
-#if ((PY_MAJOR_VERSION >= 3) || (PY_MAJOR_VERSION == 2 && PY_MINOR_VERSION > 2))
+#if (PY_MAJOR_VERSION >= 3 && PY_MINOR_VERSION >= 4)
+static char* nrnpython_getline(FILE*, FILE*, const char*);
+#elif ((PY_MAJOR_VERSION >= 3) || (PY_MAJOR_VERSION == 2 && PY_MINOR_VERSION > 2))
 static char* nrnpython_getline(FILE*, FILE*, char*);
 #else
 static char* nrnpython_getline(char*);
@@ -31,6 +33,9 @@ extern char** nrn_global_argv;
 void nrnpy_augment_path();
 int nrnpy_pyrun(const char*);
 extern int (*p_nrnpy_pyrun)(const char*);
+#if NRNPYTHON_DYNAMICLOAD
+int nrnpy_site_problem;
+#endif
 }
 
 void nrnpy_augment_path() {
@@ -108,6 +113,10 @@ void nrnpython_start(int b) {
 		}
 		//printf("Py_NoSiteFlag = %d\n", Py_NoSiteFlag);
 		Py_Initialize();
+#if NRNPYTHON_DYNAMICLOAD
+		// return from Py_Initialize means there was no site problem
+		nrnpy_site_problem = 0;
+#endif
 #if PY_MAJOR_VERSION >= 3
 		wchar_t **argv_copy = copy_argv_wcargv(nrn_global_argc, nrn_global_argv);
 		PySys_SetArgv(nrn_global_argc, argv_copy);
@@ -203,10 +212,12 @@ void nrnpython_real() {
 	PyGILState_Release(gilsav);
 	HocContextRestore
 #endif
-	ret(double(retval));
+	hoc_retpushx(double(retval));
 }
 
-#if ((PY_MAJOR_VERSION >= 3) || (PY_MAJOR_VERSION == 2 && PY_MINOR_VERSION > 2))
+#if (PY_MAJOR_VERSION >= 3 && PY_MINOR_VERSION >= 4)
+static char* nrnpython_getline(FILE*, FILE*, const char* prompt) {
+#elif ((PY_MAJOR_VERSION >= 3) || (PY_MAJOR_VERSION == 2 && PY_MINOR_VERSION > 2))
 static char* nrnpython_getline(FILE*, FILE*, char* prompt) {
 #else
 static char* nrnpython_getline(char* prompt) {

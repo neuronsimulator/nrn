@@ -67,6 +67,10 @@ int newton();			/* (n, &soln, p, funcval, &value) */
 int simplex();			/* (n, &soln, p, funcval, &value) */
 int buildjacobian();		/* (n, &var, p, funcval, value, jacobian) */
 
+int nrn_newton_thread();
+void nrn_destroy_newtonspace();
+int derivimplicit_thread();
+
 /*  Sensitivity analysis */
 
 

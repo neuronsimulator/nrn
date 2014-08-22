@@ -15,9 +15,9 @@ static double pp_append(void* v) {
 IFGUI
 	Object* ob = *hoc_objgetarg(1);
 	((PPShape*)v)->pp_append(ob);
-	return 1.;
 ENDGUI
 #endif
+	return 1.;
 }
 
 static Member_func pp_members[] = {
@@ -37,8 +37,8 @@ IFGUI
 	p->hoc_obj_ptr(ho);
 	return (void*)p;
 ENDGUI
-	return 0;
 #endif
+	return 0;
 }
 
 static void pp_destruct(void* v) {
@@ -51,7 +51,7 @@ ENDGUI
 
 void PPShape_reg() {
 //	printf("PPShape_reg\n");
-	class2oc("PPShape", pp_cons, pp_destruct, pp_members);
+	class2oc("PPShape", pp_cons, pp_destruct, pp_members, NULL, NULL, NULL);
 }
 
 #if HAVE_IV // to end of file
@@ -62,7 +62,7 @@ public:
 };
 
 
-PPShape::PPShape(OcList* ocl) : ShapeScene(nil) {
+PPShape::PPShape(OcList* ocl) : ShapeScene(NULL) {
 	si_ = new PPShapeImpl;
 	si_->ocl_ = ocl;
 	Resource::ref(si_->ocl_);

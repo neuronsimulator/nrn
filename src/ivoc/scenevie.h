@@ -209,9 +209,9 @@ private:
 	
 class Scene : public Glyph , public Observable{
 public:
-	Scene(Coord x1, Coord y1, Coord x2, Coord y2, Glyph* background=nil);
+	Scene(Coord x1, Coord y1, Coord x2, Coord y2, Glyph* background=NULL);
 	virtual ~Scene();
-	virtual void background(Glyph* bg=nil);
+	virtual void background(Glyph* bg=NULL);
 	virtual Coord x1() const, y1() const, x2() const, y2() const;
 	virtual void new_size(Coord x1, Coord y1, Coord x2, Coord y2);
 	virtual void wholeplot(Coord& x1, Coord& y1, Coord& x2, Coord& y2)const;

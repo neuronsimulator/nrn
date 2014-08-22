@@ -11,7 +11,7 @@ public:
 	MechanismStandard(const char*, int vartype);
 	virtual ~MechanismStandard();
 
-	void panel(const char* label = nil);
+	void panel(const char* label = NULL);
 	void action(const char*);
 
    int count();

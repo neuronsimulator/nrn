@@ -1,4 +1,5 @@
 #include <../../nmodlconf.h>
+#include <stdlib.h>
 #include "model.h"
 #include "parse1.h"
 #include "symbol.h"
@@ -14,8 +15,9 @@ char *indepunits = "";
 /* subtype of variables using explicit declarations */
 
 static int promote();
+static int nprime();
 
-declare(subtype, q, qa)
+void declare(subtype, q, qa)
 	long subtype;
 	Item *q, *qa;
 {
@@ -57,9 +59,10 @@ static int promote(sym, sub)
 {
 	/*ARGSUSED*/
 	diag("promotion not programmed yet", (char *)0);
+	return 0;
 }
 		
-declare_indep(sym)
+void declare_indep(sym)
 	Symbol *sym;
 {
 	Item **qa;
@@ -84,7 +87,7 @@ diag("Only one SWEEP declaration is allowed", (char *)0);
 	}
 }
 
-define_value(q1, q2)
+void define_value(q1, q2)
 	Item *q1, *q2;
 {
 	Symbol *s;
@@ -104,7 +107,7 @@ define_value(q1, q2)
 }
 
 /* fix up array info */
-declare_array(s)
+void declare_array(s)
 	Symbol *s;
 {
 	Item *q;
@@ -118,7 +121,7 @@ declare_array(s)
 	}
 }
 
-decdim(s, q)
+void decdim(s, q)
 	Symbol *s;
 	Item *q;
 {
@@ -140,7 +143,7 @@ Item *
 listtype(q)
 	Item *q;
 {
-	static i=0;
+	static int i=0;
 	
 	if (i > 1) {
 		diag("internal error inlisttype: First element of LIST is a LIST", (char *)0);
@@ -162,7 +165,7 @@ listtype(q)
 	return q;
 }
 
-declare_implied()
+void declare_implied()
 {
 	Symbol *sbase, *basestate();
 	
@@ -236,8 +239,7 @@ basestate(s)	/* base state symbol for state''' or state0 */
 #define index strchr
 #endif
 
-int
-nprime(s)
+static int nprime(s)
 	char *s;
 {
 	char *cp;
@@ -246,7 +248,7 @@ nprime(s)
 	return strlen(s) - (cp - s);
 }			
 
-install_cfactor(qname, q1, q2) /* declare conversion factor */
+void install_cfactor(qname, q1, q2) /* declare conversion factor */
 	Item *qname, *q1, *q2;
 {
 	declare(CNVFAC, qname, ITEM0);

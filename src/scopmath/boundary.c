@@ -51,8 +51,8 @@ static char RCSid[] =
 /*			f(xvalue), g(xvalue), q(xvalue)		*/
 /*								*/
 /*--------------------------------------------------------------*/
-
-boundary(npts, x, y, f, g, q)
+#include "scoplib.h"
+int boundary(npts, x, y, f, g, q)
 int npts;
 double x[], y[], (*f) (), (*g) (), (*q) ();
 {

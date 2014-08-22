@@ -6,17 +6,12 @@
 #include <errno.h>
 #include <stdio.h>
 #include "nrnmpiuse.h"
-# include	"redef.h"
+#include "ocfunc.h"
+# include	"hoc.h"
 
-/*extern int	errno;*/
 #define EPS hoc_epsilon
-extern double EPS;
 #define MAXERRCOUNT 5
 int hoc_errno_count;
-
-#if LINT
-int	errno;
-#endif
 
 #if _CRAY
 #define log logl
@@ -26,34 +21,27 @@ int	errno;
 #define pow powl
 #endif
 
-double	errcheck();
+static double errcheck(double, const char*);
 
-int hoc_atan2() {
-	double d, *hoc_getarg();
+void hoc_atan2(void) {
+	double d;
 	d = atan2(*hoc_getarg(1), *hoc_getarg(2));
 	hoc_ret();
-	pushx(d);
-	return 0;
+	hoc_pushx(d);
 }
 
-double
-Log(x)
-	double x;
+double Log(double x)
 {
 	return	errcheck(log(x), "log");
 }
 
-double
-Log10(x)
-	double x;
+double Log10(double x)
 {
 	return errcheck(log10(x), "log10");
 }
 
 /* used by nmodl and other c, c++ code */
-double
-hoc_Exp(x)
-	double x;
+double hoc_Exp(double x)
 {
 	if (x < -700.) {
 		return 0.;
@@ -71,9 +59,7 @@ hoc_Exp(x)
 }
 
 /* used by interpreter */
-double
-hoc1_Exp(x)
-	double x;
+double hoc1_Exp(double x)
 {
 	if (x < -700.) {
 		return 0.;
@@ -84,23 +70,17 @@ hoc1_Exp(x)
 	return errcheck(exp(x), "exp");
 }
 
-double
-Sqrt(x)
-	double x;
+double Sqrt(double x)
 {
 	return errcheck(sqrt(x), "sqrt");
 }
 
-double
-Pow(x, y)
-	double x, y;
+double Pow(double x, double y)
 {
 	return errcheck(pow(x, y), "exponentiation");
 }
 
-double
-integer(x)
-	double x;
+double integer(double x)
 {
 	if (x < 0) {
 		return (double)(long)(x - EPS);
@@ -109,21 +89,18 @@ integer(x)
 	}
 }
 
-double
-errcheck(d, s)	/* check result of library call */
-	double d;
-	char *s;
+double errcheck(double d, const char* s)	/* check result of library call */
 {
 	if (errno == EDOM)
 	{
 		errno = 0;
-		execerror(s, "argument out of domain");
+		hoc_execerror(s, "argument out of domain");
 	}
 	else if (errno == ERANGE)
 	{
 		errno = 0;
 #if 0
-		execerror(s, "result out of range");
+		hoc_execerror(s, "result out of range");
 #else
 		if (++hoc_errno_count > MAXERRCOUNT) {
 		}else{
@@ -137,7 +114,7 @@ fprintf(stderr, "No more errno warnings during this execution\n");
 	return d;
 }
 
-int hoc_errno_check() {
+int hoc_errno_check(void) {
 	int ierr;
 #if LINDA
 	static parallel_eagain = 0;

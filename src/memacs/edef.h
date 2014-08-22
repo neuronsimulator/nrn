@@ -149,6 +149,8 @@ extern  LINE    *lalloc();              /* Allocate a line              */
 extern  TERM    term;                   /* Terminal information.        */
 #endif
 
+#include "intfunc.h"
+
 #if LINT
 #define IGNORE(arg)	{if (arg);}
 #define LINTUSE(arg)	{if (arg);}

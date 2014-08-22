@@ -24,7 +24,9 @@
 #define myfabs fabs
 #endif
 
-#define SQUARE(a) ((x_=(a)) == 0.0 ? 0.0 : x_*x_)
+// Apple LLVM version 5.1 (clang-503.0.38) generates "unsequenced modification warning".
+// #define SQUARE(a) ((x_=(a)) == 0.0 ? 0.0 : x_*x_)
+static inline double SQUARE(double a) { return a*a; }
 
 extern "C" {
 void hoc_execerror(const char*, const char*);

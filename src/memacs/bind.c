@@ -27,7 +27,7 @@ bind.c,v
 #include	"edef.h"
 #include	"epath.h"
 
-deskey(f, n)	/* describe the command for a certain key */
+int deskey(f, n)	/* describe the command for a certain key */
 {
 	register int c;		/* command character to describe */
 	register char *ptr;	/* string pointer to scan output strings */
@@ -82,9 +82,10 @@ deskey(f, n)	/* describe the command for a certain key */
 	ptr = &outseq[0];
 	while (*ptr)
 		(*term.t_putchar)(*ptr++);
+	return TRUE;
 }
 
-cmdstr(c, seq)	/* change a key command to a string we can print out */
+int cmdstr(c, seq)	/* change a key command to a string we can print out */
 
 int c;		/* sequence to translate */
 char *seq;	/* destination string for sequence */
@@ -123,9 +124,10 @@ char *seq;	/* destination string for sequence */
 
 	*ptr++ = c;
 	*ptr = 0;	/* terminate the string */
+	return TRUE;
 }
 
-help(f, n)	/* give me some help!!!!
+int help(f, n)	/* give me some help!!!!
 		   bring up a fake buffer and read the help file
 		   into it with view mode			*/
 {
@@ -189,13 +191,13 @@ char *fname;	/* name to attempt to match */
 /* bindtokey:	add a new key to the key binding table
 */
 
-bindtokey(f, n)
+int bindtokey(f, n)
 
 int f, n;	/* command arguments [IGNORED] */
 
 {
 	register int c;		/* command key to bind */
-	register (*kfunc)();	/* ptr to the requexted function to bind to */
+	register int (*kfunc)();	/* ptr to the requexted function to bind to */
 	register char *ptr;	/* ptr to dump out input key string */
 	register KEYTAB *ktp;	/* pointer into the command table */
 	register int found;	/* matched command flag */
@@ -259,7 +261,7 @@ int f, n;	/* command arguments [IGNORED] */
 /* unbindkey:	delete a key from the key binding table
 */
 
-unbindkey(f, n)
+int unbindkey(f, n)
 
 int f, n;	/* command arguments [IGNORED] */
 
@@ -322,12 +324,12 @@ int f, n;	/* command arguments [IGNORED] */
 /* namedcmd:	execute a named command even if it is not bound
 */
 
-namedcmd(f, n)
+int namedcmd(f, n)
 
 int f, n;	/* command arguments [passed through to command executed] */
 
 {
-	register (*kfunc)();	/* ptr to the requexted function to bind to */
+	register int (*kfunc)();	/* ptr to the requexted function to bind to */
 	int (*getname())();
 
 	/* prompt the user to type a named command */
@@ -344,7 +346,7 @@ int f, n;	/* command arguments [passed through to command executed] */
 	return((*kfunc)(f, n));
 }
 
-desbind(f, n)	/* describe bindings
+int desbind(f, n)	/* describe bindings
 		   bring up a fake buffer and list the key bindings
 		   into it with view mode			*/
 {
@@ -453,7 +455,7 @@ desbind(f, n)	/* describe bindings
 /*	execcmd:	Execute a command line command to be typed in
 			by the user					*/
 
-execcmd(f, n)
+int execcmd(f, n)
 
 int f, n;	/* default Flag and Numeric argument */
 
@@ -479,7 +481,7 @@ int f, n;	/* default Flag and Numeric argument */
 		{# arg} <command-name> {<argument string(s)>}
 */
 
-docmd(cline)
+int docmd(cline)
 
 char *cline;	/* command line to execute */
 
@@ -578,7 +580,7 @@ char *src, *tok;	/* source string, destination token */
 /* nxtarg:	grab the next token out of sarg, return it, and
 		chop it of sarg					*/
 
-nxtarg(tok)
+int nxtarg(tok)
 
 char *tok;	/* buffer to put token into */
 
@@ -591,7 +593,7 @@ char *tok;	/* buffer to put token into */
 	return(TRUE);
 }
 
-getckey()	/* get a command key sequence from the keyboard	*/
+int getckey()	/* get a command key sequence from the keyboard	*/
 
 {
 	register int c;		/* character fetched */
@@ -649,7 +651,7 @@ getckey()	/* get a command key sequence from the keyboard	*/
 
 /*	execbuf:	Execute the contents of a named buffer	*/
 
-execbuf(f, n)
+int execbuf(f, n)
 
 int f, n;	/* default flag and numeric arg */
 
@@ -677,7 +679,7 @@ int f, n;	/* default flag and numeric arg */
 /*	dobuf:	execute the contents of the buffer pointed to
 		by the passed BP				*/
 
-dobuf(bp)
+int dobuf(bp)
 
 BUFFER *bp;	/* buffer to execute */
 
@@ -726,7 +728,7 @@ BUFFER *bp;	/* buffer to execute */
         return(TRUE);
 }
 
-execfile(f, n)	/* execute a series of commands in a file
+int execfile(f, n)	/* execute a series of commands in a file
 */
 
 int f, n;	/* default flag and numeric arg to pass on to file */
@@ -751,7 +753,7 @@ int f, n;	/* default flag and numeric arg to pass on to file */
 /*	dofile:	yank a file into a buffer and execute it
 		if there are no errors, delete the buffer on exit */
 
-dofile(fname)
+int dofile(fname)
 
 char *fname;	/* file name to execute */
 
@@ -788,7 +790,7 @@ char *fname;	/* file name to execute */
 
 /* execute the startup file */
 
-startup()
+int startup()
 
 {
 	register int status;	/* status of I/O operations */

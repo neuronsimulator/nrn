@@ -75,7 +75,7 @@ void Graph::simgraph() {
 	}
 }
 
-GLineRecord::GLineRecord(GraphLine* gl) : PlayRecord(nil){
+GLineRecord::GLineRecord(GraphLine* gl) : PlayRecord(NULL){
 	//shouldnt be necessary but just in case
 //	printf("GLineRecord %p name=%s\n", this, gl->name());
 	gl_ = gl;

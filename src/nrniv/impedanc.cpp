@@ -285,18 +285,18 @@ static Member_func members[] = {
 };
 
 void Impedance_reg() {
-	class2oc("Impedance", cons, destruct, members, 0);
+	class2oc("Impedance", cons, destruct, members, NULL, NULL, NULL);
 }
 
 Imp::Imp(){
 	n = 0;
-	d = nil;
-	pivot = nil;
-	transfer = nil;
-	input = nil;
-	nli_ = nil;
+	d = NULL;
+	pivot = NULL;
+	transfer = NULL;
+	input = NULL;
+	nli_ = NULL;
 	
-	sloc_ = nil;
+	sloc_ = NULL;
 	xloc_ = 0.;
 	istim = 0;
 	deltafac_ = .001;
@@ -315,11 +315,11 @@ void Imp::impfree(){
 		delete [] transfer;
 		delete [] input;
 		delete [] pivot;
-		d = nil;
+		d = NULL;
 	}
 	if (nli_) {
 		delete nli_;
-		nli_ = nil;
+		nli_ = NULL;
 	}
 }
 
@@ -328,7 +328,7 @@ void Imp::check() {
 	nrn_thread_error("Impedance works with only one thread");
 	if (sloc_ && !sloc_->prop) {
 		section_unref(sloc_);
-		sloc_ = nil;
+		sloc_ = NULL;
 	}
 	if (tree_changed) {
 		setup_topology();
@@ -413,7 +413,7 @@ void Imp::compute(double freq, bool nonlin){
 	}else{
 		if (nli_) {
 			delete nli_;
-			nli_ = nil;
+			nli_ = NULL;
 		}
 		setmat(omega);
 		LUDecomp();

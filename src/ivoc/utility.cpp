@@ -351,7 +351,7 @@ bool Graph::label_chooser(const char* caption, char* buf, GLabel* gl, Coord x, C
 LabelChooserAction::LabelChooserAction(GLabel* gl) {
 	gl_ = gl;
 	gl->ref();
-	ts_ = nil;
+	ts_ = NULL;
 }
 LabelChooserAction::~LabelChooserAction() {
 	gl_->unref();
@@ -416,7 +416,7 @@ bool OcGlyph::dialog(const char* label, const char* accept,
 	ok = oc_post_dialog(d_, 400., 400.);
 	handle_old_focus();
 	d_->unref();
-	d_ = nil;
+	d_ = NULL;
 	return ok;
 }
 
@@ -424,7 +424,7 @@ OcGlyphDialog::OcGlyphDialog(Glyph* g, Style* s) : Dialog(g, s) {}
 OcGlyphDialog::~OcGlyphDialog() {}
 void OcGlyphDialog::pick(Canvas* c, const Allocation& a, int depth, Hit& h){
     const Event* e = h.event();
-    EventType t = (e == nil) ? Event::undefined : e->type();
+    EventType t = (e == NULL) ? Event::undefined : e->type();
     switch (t) {
     case Event::key:
 	if (e && inside(*e)) {

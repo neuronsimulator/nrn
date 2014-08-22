@@ -26,18 +26,16 @@ fclampi()
 #include <stdlib.h>
 #include "neuron.h"
 #include "section.h"
+#include "nrniv_mf.h"
 
 static double loc;
 static Node *pnd;
 static Section* sec;
 static double gtemp;
-static maxlevel = 0;		/* size of clamp array */
+static int maxlevel = 0;		/* size of clamp array */
 static double *duration, *vc, *tswitch; /* maxlevel of them */
 static int oldsw = 0;
 static double clampval();
-
-extern double *getarg(), chkarg();
-extern char *secname();
 
 extern void clamp_prepare();
 
@@ -55,31 +53,33 @@ void print_clamp() {
 	}
 }
 
-fclampv() {
+void fclampv(void) {
 
 	if (maxlevel) {
-		ret(clampval());
+		hoc_retpushx(clampval());
 	}else{
-		ret(0.);
+		hoc_retpushx(0.);
 	}
 }
 
-fclampi() {
+void fclampi(void) {
 	double v;
 	
 	if (maxlevel) {
 		v = clampval();
 		if (gtemp) {
-			ret( -(NODEV(pnd) - v)/clamp_resist );
+			hoc_retpushx( -(NODEV(pnd) - v)/clamp_resist );
 		}else{
-			ret(0.);
+			hoc_retpushx(0.);
 		}
 	}else{
-		ret(0.);
+		hoc_retpushx(0.);
 	}
 }
+
+static void free_clamp(void);
 	
-int fclamp() {
+void fclamp(void) {
 	int i;
 
 	if (nrn_nthread > 1) {
@@ -101,8 +101,7 @@ int fclamp() {
 			tswitch[num+1] = tswitch[num] + duration[num];
 		}
 		oldsw = 0;
-		ret(tswitch[maxlevel-1]);
-		return 0;
+		hoc_retpushx(tswitch[maxlevel-1]);
 	} else {
 		free_clamp();
 		maxlevel = i;
@@ -122,11 +121,10 @@ int fclamp() {
 			clamp_prepare();
 		}
 	}
-	ret(0.);
-	return 0;
+	hoc_retpushx(0.);
 }
 
-free_clamp() {
+static void free_clamp(void) {
 	if (maxlevel) {
 		free((char *)duration);
 		free((char *)vc);
@@ -137,7 +135,7 @@ free_clamp() {
 	}
 }
 	
-void clamp_prepare()	/*fill in the section info*/
+void clamp_prepare(void)	/*fill in the section info*/
 {
 	Node *node_ptr();
 	double area;
@@ -156,7 +154,7 @@ void clamp_prepare()	/*fill in the section info*/
 	}
 }
 
-void activclamp_rhs() {
+void activclamp_rhs(void) {
 	double v;
 	if (!maxlevel) {
 		return;
@@ -174,7 +172,7 @@ void activclamp_rhs() {
 #endif
 }
 
-void activclamp_lhs() {
+void activclamp_lhs(void) {
 	double v;
 	if (!maxlevel) {
 		return;
@@ -182,8 +180,7 @@ void activclamp_lhs() {
 	NODED(pnd) += gtemp;
 }
 
-static double
-clampval() {
+static double clampval(void) {
 	gtemp = 1.e2/clamp_resist/NODEAREA(pnd);
 	for (;;) {
 #if CVODE

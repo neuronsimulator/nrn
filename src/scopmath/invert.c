@@ -47,7 +47,7 @@ static char RCSid[] =
 #include <stdlib.h>
 #include "errcodes.h"
 
-invert(n, matrix)
+int invert(n, matrix)
 int n;
 double *matrix[];
 {

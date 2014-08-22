@@ -137,7 +137,7 @@ void SymBrowserAccept::execute(){
 
 static void* scons(Object*) {
 #if HAVE_IV
-	SymChooser* sc = nil;
+	SymChooser* sc = NULL;
 IFGUI
 	const char* caption = "Choose a Variable Name or";
 	if (ifarg(1)) {
@@ -151,9 +151,9 @@ IFGUI
 		if (sym) {
 			type = sym->type;
 		}
-		sc = new SymChooser(new SymDirectory(type), WidgetKit::instance(), style, nil, 1);
+		sc = new SymChooser(new SymDirectory(type), WidgetKit::instance(), style, NULL, 1);
 	}else{
-		sc = new SymChooser(nil, WidgetKit::instance(), style);
+		sc = new SymChooser(NULL, WidgetKit::instance(), style);
 	}
 	Resource::ref(sc);
 ENDGUI
@@ -198,7 +198,7 @@ static Member_func members[] = {
 	0, 0
 };
 void SymChooser_reg() {
-	class2oc("SymChooser", scons, sdestruct, members);
+	class2oc("SymChooser", scons, sdestruct, members, NULL, NULL, NULL);
 }
 #if HAVE_IV
 
@@ -213,7 +213,7 @@ implementFieldEditorCallback(SymChooserImpl)
 SymChooser::SymChooser(
     SymDirectory* dir, WidgetKit* kit, Style* s, SymChooserAction* a,
     int nbrowser
-) : Dialog(nil, s) {
+) : Dialog(NULL, s) {
     impl_ = new SymChooserImpl(nbrowser);
     SymChooserImpl& fc = *impl_;
     if (dir) {
@@ -260,7 +260,7 @@ void SymChooser::reread() {
 void SymChooser::dismiss(bool accept) {
     Dialog::dismiss(accept);
     SymChooserImpl& fc = *impl_;
-    if (fc.action_ != nil) {
+    if (fc.action_ != NULL) {
 	fc.action_->execute(this, accept);
     }
 }
@@ -272,8 +272,8 @@ SymChooserImpl::SymChooserImpl(int nbrowser) {
 	fbrowser_ = new FileBrowser*[nbrowser];
 	last_index_ = -1;
 	for (int i=0; i < nbrowser_; ++i) {
-		dir_[i] = nil;
-		fbrowser_[i] = nil;
+		dir_[i] = NULL;
+		fbrowser_[i] = NULL;
 	}
 }
 SymChooserImpl::~SymChooserImpl() {
@@ -285,7 +285,7 @@ void SymChooserImpl::init(
     SymChooser* chooser, Style* s, SymChooserAction* a
 ) {
     fchooser_ = chooser;
-    filter_map_ = nil;
+    filter_map_ = NULL;
     Resource::ref(a);
     action_ = a;
     style_ = new Style(s);
@@ -345,14 +345,14 @@ void SymChooserImpl::build() {
     editor_ = DialogKit::instance()->field_editor(
 	"", s,
 	new FieldEditorCallback(SymChooserImpl)(
-	    this, &SymChooserImpl::editor_accept, nil
+	    this, &SymChooserImpl::editor_accept, NULL
 	)
     );
     browser_index_ = 0;
     for (i=0; i < nbrowser_; ++i) {
 	fbrowser_[i] = new FileBrowser(kit_,
 		new SymBrowserAccept(this, i),
-		nil);
+		NULL);
     }
     fchooser_->remove_all_input_handlers();
     fchooser_->append_input_handler(editor_);
@@ -394,7 +394,7 @@ void SymChooserImpl::build() {
     g->append(layout.vspace(15.0));
     if (s->value_is_on("filter")) {
 	FieldEditorAction* action = new FieldEditorCallback(SymChooserImpl)(
-	    this, &SymChooserImpl::filter_accept, nil
+	    this, &SymChooserImpl::filter_accept, NULL
 	);
 	filter_ = add_filter(
 	    s, "filterPattern", "", "filterCaption", "Filter:", g, action
@@ -405,11 +405,11 @@ void SymChooserImpl::build() {
 		"directoryFilterCaption", "Name Filter:", g, action
 	    );
 	} else {
-	    directory_filter_ = nil;
+	    directory_filter_ = NULL;
 	}
     } else {
-	filter_ = nil;
-	directory_filter_ = nil;
+	filter_ = NULL;
+	directory_filter_ = NULL;
     }
     g->append(
 	layout.hbox(
@@ -584,14 +584,14 @@ FieldEditor* SymChooserImpl::add_filter(
 }
 
 bool SymChooserImpl::filtered(const String& name, FieldEditor* e) {
-    if (e == nil) {
+    if (e == NULL) {
 	return true;
     }
     const String* s = e->text();
-    if (s == nil || s->length() == 0) {
+    if (s == NULL || s->length() == 0) {
 	return true;
     }
-    return s == nil || s->length() == 0 || SymDirectory::match(name, *s);
+    return s == NULL || s->length() == 0 || SymDirectory::match(name, *s);
 }
 
 void SymChooserImpl::accept_browser_index(int bindex) {
@@ -634,7 +634,7 @@ double* SymChooserImpl::selected_var() {
 		SymDirectory* dir = dir_[browser_index_];
 		return dir->variable(last_index_);
 	}else{
-		return nil;
+		return NULL;
 	}
 }
 
@@ -680,7 +680,7 @@ void SymChooserImpl::accept_browser() {
 }
 
 void SymChooserImpl::cancel_browser() {
-    selected_ = nil;
+    selected_ = NULL;
     fchooser_->dismiss(false);
 }
 

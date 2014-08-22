@@ -102,7 +102,7 @@ static void destruct(void* v) {
 }
 
 void TQueue_reg() {
-	class2oc("TQueue", cons, destruct, members);
+	class2oc("TQueue", cons, destruct, members, NULL, NULL, NULL);
 }
 
 //----------------

@@ -35,9 +35,9 @@ following function calls.
 
 #define DEBUG 0
 #if DEBUG
-static debugtoken=1;
+static int debugtoken=1;
 #else
-static debugtoken=0;
+static int debugtoken=0;
 #endif
 
 static Item *
@@ -189,7 +189,7 @@ lappenditem(list, item)
 	return insertitem(list, item);
 }
 
-delete(item)
+void delete(item)
 	Item *item;
 {
 	assert(item->itemtype); /* can't delete list */
@@ -221,7 +221,7 @@ char *emalloc(n) unsigned n; { /* check return from malloc */
 }
 #endif /*LINT*/
 
-memory_usage() {
+void memory_usage() {
 	Fprintf(stderr, "malloc'ed a total of %ld bytes in %ld pieces\n",
 		mallocsize, mallocpieces);
 }
@@ -237,7 +237,7 @@ char *stralloc(buf, rel) char *buf,*rel; {
 	return s;
 }
 
-deltokens(q1, q2) /* delete tokens from q1 to q2 */
+void deltokens(q1, q2) /* delete tokens from q1 to q2 */
 	Item *q1, *q2;
 {
 	/* It is a serious error if q2 precedes q1 */
@@ -250,7 +250,7 @@ deltokens(q1, q2) /* delete tokens from q1 to q2 */
 		
 }
 
-move(q1, q2, q3)	/* move q1 to q2 and insert before q3*/
+void move(q1, q2, q3)	/* move q1 to q2 and insert before q3*/
 	Item *q1, *q2, *q3;
 {
 	/* it is a serious error if q2 precedes q1 */
@@ -265,14 +265,14 @@ move(q1, q2, q3)	/* move q1 to q2 and insert before q3*/
 	q2->next = q3;
 }
 
-movelist(q1, q2, s)	/* move q1 to q2 from old list to end of list s*/
+void movelist(q1, q2, s)	/* move q1 to q2 from old list to end of list s*/
 	Item *q1, *q2;
 	List *s;
 {
 	move(q1, q2, s);
 }
 
-replacstr(q, s)
+void replacstr(q, s)
 	Item *q;
 	char *s;
 {
@@ -374,7 +374,7 @@ makelist(va_alist)
 	return ql;
 }
 
-append(ql, q)
+void append(ql, q)
 	Item *ql, *q;
 {
 	assert(ql->itemtype == LIST);
@@ -425,6 +425,6 @@ itemarray(va_alist)
 		qa[i] = q;
 	}
 	va_end (ap);
-	ITMA(ql)[-1] = (Item *)((long)narg);
+	ITMA(ql)[-1] = (Item *)((size_t)narg);
 	return ql;
 }

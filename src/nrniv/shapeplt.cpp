@@ -255,11 +255,11 @@ static Member_func sh_members[] = {
 };
 static void* sh_cons(Object* ho) {
 #if HAVE_IV
-	ShapePlot* sh = nil;
+	ShapePlot* sh = NULL;
 IFGUI
 	int i=1;
 	int iarg=1;
-	SectionList* sl = nil;
+	SectionList* sl = NULL;
 	// first arg may be an object.
 	if (ifarg(iarg)) {
 		if (hoc_is_object_arg(iarg)) {
@@ -271,7 +271,7 @@ IFGUI
 	if (ifarg(iarg)) {
 		i = int(chkarg(iarg,0,1));
 	}
-	sh = new ShapePlot(nil, sl);
+	sh = new ShapePlot(NULL, sl);
 	Resource::unref(sl);
 	sh->ref();
 	sh->hoc_obj_ptr(ho);
@@ -295,7 +295,7 @@ ENDGUI
 }
 void PlotShape_reg() {
 //	printf("PlotShape_reg\n");
-	class2oc("PlotShape", sh_cons, sh_destruct, sh_members);
+	class2oc("PlotShape", sh_cons, sh_destruct, sh_members, NULL, NULL, NULL);
 }
 
 #if HAVE_IV
@@ -390,7 +390,7 @@ void ShapePlot::update_ptrs() {
 
 void ShapePlot::erase_all() {
 	Resource::unref(spi_->colorbar_);
-	spi_->colorbar_ = nil;
+	spi_->colorbar_ = NULL;
 	ShapeScene::erase_all();
 }
 void ShapePlotImpl::update(Observable*) {
@@ -456,7 +456,7 @@ void ShapePlot::fast_flush() {
 #if defined(WIN32)
 // if x,y is not on the screen then use right, top. Otherwise InvalidateRect
 // will not take effect.
-			Window* w = v->canvas() ? v->canvas()->window() : nil;
+			Window* w = v->canvas() ? v->canvas()->window() : NULL;
 			if (w) {
 				if (w->left() < 0) {
 					x = v->right();
@@ -554,13 +554,13 @@ ShapePlotImpl::ShapePlotImpl(ShapePlot* sp, Symbol* sym) {
 	graphid_ = 0;
 	showing_ = false;
 	fast_ = false;
-	colorbar_ = nil;
+	colorbar_ = NULL;
 	if (sym) {
 		sym_ = sym;
 	}else{
 		sym_ = hoc_table_lookup("v", hoc_built_in_symlist);
 	}
-	variable_ = nil;
+	variable_ = NULL;
 	time_sh_ = new MakeTimePlot(this);
 	time_sh_->ref();
 }
@@ -599,7 +599,7 @@ void ShapePlotImpl::select_variable() {
 	Oc oc;
         Style* style = new Style(Session::instance()->style());
         style->attribute("caption", "Variable in the shape domain");
-        sc = new SymChooser(new SymDirectory(RANGEVAR) , WidgetKit::instance(), style, nil, 1);
+        sc = new SymChooser(new SymDirectory(RANGEVAR) , WidgetKit::instance(), style, NULL, 1);
         sc->ref();
         while (sc->post_for(XYView::current_pick_view()->canvas()->window())) {
 		Symbol* s;
@@ -636,7 +636,7 @@ void ShapePlotImpl::time() {
 	sp_->color(colors->color(1));
 	sp_->section_handler(time_sh_);
 	show_shape_val(false);
-	sp_->picker()->bind_select((OcHandler*)nil);
+	sp_->picker()->bind_select((OcHandler*)NULL);
 }
 
 void ShapePlotImpl::space() {
@@ -648,7 +648,7 @@ void ShapePlotImpl::space() {
 	graphid_ = 0;
 	colorid_ = 1;
 	sp_->color(colors->color(1));
-	sp_->section_handler((SectionHandler*)nil);
+	sp_->section_handler((SectionHandler*)NULL);
 	show_shape_val(false);
 	sp_->picker()->bind_select(new RubberLine(new MakeSpacePlot(this)));
 }
@@ -660,8 +660,8 @@ void ShapePlotImpl::shape() {
 	}
 	sp_->tool(ShapePlot::SHAPE);
 //printf("shape\n");
-	sp_->section_handler((SectionHandler*)nil);
-	sp_->picker()->bind_select((OcHandler*)nil);
+	sp_->section_handler((SectionHandler*)NULL);
+	sp_->picker()->bind_select((OcHandler*)NULL);
 	show_shape_val(true);
 }
 
@@ -869,7 +869,7 @@ ColorValue::ColorValue(){
 		Resource::ref(gray);
 	}
 	csize_ = 0;
-	crange_ = nil;
+	crange_ = NULL;
 	set_scale(0, 1);
 }
 
@@ -929,7 +929,7 @@ void ColorValueGlyphItem::draw(Canvas* c, const Allocation& a)const {
 	body()->draw(c, a);
 	if (OcIdraw::idraw_stream) {
 		OcIdraw::pict();
-		OcIdraw::rect(c, a.left(), a.bottom(), a.right(), a.top(), color_, nil, true);
+		OcIdraw::rect(c, a.left(), a.bottom(), a.right(), a.top(), color_, NULL, true);
 		Transformer t;
 		t.translate(a.left(), a.bottom());
 		OcIdraw::text(c, label_.string(), t);
@@ -959,7 +959,7 @@ void ColorValue::colormap(int size, bool global) {
 			crange_[i]->unref();
 		}
 		delete [] crange_;
-		crange_ = nil;
+		crange_ = NULL;
 		csize_ = 0;
 	}
     if (global) {
@@ -1017,7 +1017,7 @@ FastShape::~FastShape() {
 
 Hinton::Hinton(double* pd, Coord xsize, Coord ysize, ShapeScene* ss) {
 	pd_ = pd;
-	old_ = nil; // not referenced
+	old_ = NULL; // not referenced
 	xsize_ = xsize/2;
 	ysize_ = ysize/2;
 	ss_ = ss;
@@ -1029,7 +1029,7 @@ Hinton::~Hinton() {
 	oc.notify_pointer_disconnect(this);
 }
 void Hinton::update(Observable*) {
-	pd_ = nil;
+	pd_ = NULL;
 	ss_->remove(ss_->glyph_index(this));
 }
 void Hinton::request(Requisition& req) const {
@@ -1051,7 +1051,7 @@ void Hinton::draw(Canvas* c, const Allocation& a) const {
 		const Color* color = ss_->color_value()->get_color(*pd_);
 		c->fill_rect(x - xsize_, y - ysize_, x + xsize_, y + ysize_, color);
 		((Hinton*)this)->old_ = color;
-		IfIdraw(rect(c, x - xsize_, y - ysize_, x + xsize_, y + ysize_, color, nil, true));
+		IfIdraw(rect(c, x - xsize_, y - ysize_, x + xsize_, y + ysize_, color, NULL, true));
 	}
 }
 void Hinton::fast_draw(Canvas* c, Coord x, Coord y, bool) const {

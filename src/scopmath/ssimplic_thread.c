@@ -3,9 +3,13 @@
 #define s_(arg)	p[s[arg]]
 
 extern double _modl_get_dt_thread(void*);
+extern void _modl_set_dt_thread(double, void*);
+extern int sparse_thread();
+extern int derivimplicit_thread();
+
 static int check_state();
 
-_ss_sparse_thread(v, n, s, d, p, t, dt, fun, linflag, ppvar, thread, nt)
+int _ss_sparse_thread(v, n, s, d, p, t, dt, fun, linflag, ppvar, thread, nt)
 	void** v;
         int n, linflag;
         int (*fun)();
@@ -54,7 +58,7 @@ _ss_derivimplicit_thread(int n, int* slist, int* dlist, double* p,
 	
    err = derivimplicit_thread(n, slist, dlist, p, fun, ppvar, thread, nt);
 
-	_modl_set_dt_thread(dtsav);
+	_modl_set_dt_thread(dtsav, nt);
 	return err;
 }
 

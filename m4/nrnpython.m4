@@ -230,7 +230,6 @@ PYLIB="${PYLIBLINK} ${PYLINKFORSHARED} -R${PYLIBDIR}"
 		NRNPYTHON_LIBLA="../nrnpython/libnrnpython.la $PYLIB"
 		NRNPYTHON_DEP="../nrnpython/libnrnpython.la"
 		NRNPYTHON_INCLUDES="-I${PYINCDIR}"
-		NRNPYTHON_PYLIBLINK="$PYLIBLINK"
 		NRNPYTHON_EXEC="${ac_nrn_python}"
 		build_nrnpython=yes
 		if test "$CYGWIN" = "yes" ; then
@@ -242,6 +241,7 @@ PYLIB="${PYLIBLINK} ${PYLINKFORSHARED} -R${PYLIBDIR}"
 			AC_NRN_RUNPYTHON
 		fi
 	  fi
+		NRNPYTHON_PYLIBLINK="$PYLIBLINK"
 		npy_NRNPYTHON_INCLUDES="-I${PYINCDIR}"
 		build_nrnpython=yes
 

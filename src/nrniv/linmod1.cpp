@@ -30,7 +30,7 @@ public:
 	virtual void update(Observable*);
 	void create();
 	void lmfree();
-	bool valid() { return model_ != nil; }
+	bool valid() { return model_ != NULL; }
 	void update_ptrs();
 
 	LinearModelAddition* model_;
@@ -72,13 +72,13 @@ static void destruct(void* v) {
 }
 
 void LinearMechanism_reg() {
-	class2oc("LinearMechanism", cons, destruct, members);
+	class2oc("LinearMechanism", cons, destruct, members, NULL, NULL, NULL);
 }
 
 LinearMechanism::LinearMechanism() {
-	model_ = nil;
-	c_ = nil; g_ = nil; y_ = nil; b_ = nil; nnode_ = 0; nodes_ = nil;
-	y0_ = nil; elayer_ = nil; f_callable_ = nil;
+	model_ = NULL;
+	c_ = NULL; g_ = NULL; y_ = NULL; b_ = NULL; nnode_ = 0; nodes_ = NULL;
+	y0_ = NULL; elayer_ = NULL; f_callable_ = NULL;
 }
 
 LinearMechanism::~LinearMechanism() {
@@ -89,18 +89,18 @@ LinearMechanism::~LinearMechanism() {
 void LinearMechanism::lmfree() {
     if (f_callable_) {
         hoc_obj_unref(f_callable_);
-        f_callable_ = nil;
+        f_callable_ = NULL;
     }
 	if (model_) {
 		delete model_;
-		model_ = nil;
+		model_ = NULL;
 	}
 	if (nodes_) {
 		nrn_notify_pointer_disconnect(this);
 		nnode_ = 0;
 		delete [] nodes_;
-		nodes_ = nil;
-		elayer_ = nil;
+		nodes_ = NULL;
+		elayer_ = NULL;
 	}
 }
 

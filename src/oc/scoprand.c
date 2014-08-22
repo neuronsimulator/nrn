@@ -55,8 +55,7 @@ static uint32_t value = 1;
  *
  *--------------------------------------------------------------------------- */
 
-double 
-scop_random()
+double scop_random(void)
 {
   extern int use_mcell_ran4_;
   if (use_mcell_ran4_) {
@@ -95,8 +94,7 @@ scop_random()
  *
  */
 
-set_seed(seed)
-double seed;
+void set_seed(double seed)
 {
     value = (uint32_t)seed;
 }

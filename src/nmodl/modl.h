@@ -227,6 +227,7 @@ extern Symbol
 		*copylocal(),	/* install LOCAL variable symbol */
 		*ifnew_parminstall();	/* new .var info only if
 					 * not already done. */
+#include "nmodlfunc.h"
 
 extern char     finname[],	/* the input file prefix */
                 buf[];		/* general purpose temporary buffer */

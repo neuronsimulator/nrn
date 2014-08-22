@@ -53,6 +53,10 @@ class Section1D(rxdsection.RxDSection):
         self._offset = node._allocate(sec.nseg + 1)
         self._nseg = sec.nseg
         self._region = r
+        # NOTE: you must do _init_diffusion_rates after assigning parents
+    
+    def _init_diffusion_rates(self):
+        # call only after roots are set
         node._diffs[self._offset : self._offset + self.nseg] = self._diff
     
     def _update_node_data(self):

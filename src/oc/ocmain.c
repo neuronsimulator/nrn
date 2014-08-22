@@ -3,9 +3,10 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <hocdec.h>
 
 int hoc_nstack, hoc_nframe;
-extern char* neuron_home;
+extern const char* neuron_home;
 
 #if MAC
 char hoc_console_buffer[256];
@@ -21,11 +22,8 @@ int ilint;
 void* cvode_pmem;
 #endif
 
-#ifdef __cplusplus
-static void setnrnhome(char* arg) {
-#else
-static void setnrnhome(arg) char* arg; {
-#endif
+static void setnrnhome(const char* arg) {
+
 #if !defined(WIN32)&&!defined(MAC)
 /*
  Gary Holt's first pass at this was:
@@ -57,19 +55,13 @@ static void setnrnhome(arg) char* arg; {
 #endif
 }
 
-#if __cplusplus
-int main(int argc, char** argv, char** envp)
-#else
 #if LINDA /* LINDA (SAF) */
-real_main(argc, argv, envp)
+real_main(int argc, const char** argv, const char**envp) {
 #else
-main(argc, argv, envp)
+int main(int argc, const char** argv, const char** envp) {
 #endif
-	char *argv[], *envp[];
-#endif
-{
 	int err;
-	nrn_isdouble((char*)0,0,0);
+	nrn_isdouble((void*)0, 0., 0.);
 #if MAC
 int our_argc = 1;
 char *our_argv[1];

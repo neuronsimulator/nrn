@@ -49,6 +49,8 @@ typedef struct event
     struct event *next_event;
 }   event_t;
 
+static void init_event();
+
 double
 schedule(reset_integ, old_value, t, filename)
 double *old_value, t;
@@ -103,7 +105,7 @@ char *filename;
 	return (0.0);
 }
 
-init_event(new_event, filename)
+static void init_event(new_event, filename)
 event_t **new_event;
 char *filename;
 {

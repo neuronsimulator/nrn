@@ -10,7 +10,7 @@ List	*symlist[128];	/* symbol table: linked list
 
 List *symlistlist;	 /* for a stack of local symbol lists */
 
-symbol_init() {
+void symbol_init() {
 	int i;
 	symlistlist = newlist();
 	for (i=0; i<128; i++) {	/* more than we need */
@@ -83,7 +83,7 @@ install(s, t)	/* install s in the list symbol table with type t*/
 	return sp;
 }
 
-pushlocal(q1, qdim)
+void pushlocal(q1, qdim)
 	Item *q1, *qdim;
 {
 	Item * q;
@@ -94,7 +94,7 @@ pushlocal(q1, qdim)
 	}
 }
 
-poplocal()
+void poplocal()
 {
 	List *sl;
 	Item *i, *j;
@@ -108,7 +108,7 @@ poplocal()
 	delete(symlistlist->next);
 }
 
-install_local(q, qdim)
+void install_local(q, qdim)
 	Item *q, *qdim;
 {
 	Symbol *s;

@@ -25,7 +25,7 @@ implementPtrList(FIHList, FInitialHandler)
 
 class FInitialHandler {
 public:
-	FInitialHandler(int, const char*, Object*, Object* pyact=nil);
+	FInitialHandler(int, const char*, Object*, Object* pyact=NULL);
 	virtual ~FInitialHandler();
 	HocCommand* stmt_;
 	int type_;
@@ -81,15 +81,15 @@ static void* finithnd_cons(Object*) {
 		type = (int)chkarg(ia, 0, 3);
 		++ia;
 	}
-	char* s = nil;
-	Object* pyact = nil;
+	char* s = NULL;
+	Object* pyact = NULL;
 	if (hoc_is_object_arg(ia)) {
 		pyact = *hoc_objgetarg(ia);
 	}else{
 		s =gargstr(ia);
 	}
 	++ia;
-	Object* obj = nil;
+	Object* obj = NULL;
 	if (ifarg(ia)) {
 		obj = *hoc_objgetarg(ia);
 	}
@@ -104,7 +104,7 @@ static void finithnd_destruct(void* v) {
 
 void FInitializeHandler_reg() {
 	class2oc("FInitializeHandler", finithnd_cons, finithnd_destruct,
-		members, nil, nil);
+		members, NULL, NULL, NULL);
 }
 
 FIHList* FInitialHandler::fihlist_[4];

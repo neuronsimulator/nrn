@@ -248,7 +248,7 @@ main1.c,v
 
 static int vquick = 0;	/*mlh 3/2/88 flag for very quick exit (expect
 						to return)*/
-emacs_main(argc, argv)	/*mlh 2/29/88 can be embedded in larger program*/
+int emacs_main(argc, argv)	/*mlh 2/29/88 can be embedded in larger program*/
 char    *argv[];
 {
         register int    c;
@@ -390,7 +390,7 @@ loop:
                 n = 4;                          /* with argument of 4 */
                 mflag = 0;                      /* that can be discarded. */
                 mlwrite("Arg: 4");
-                while ((c=getkey()) >='0' && c<='9' || c==(CTRL|'U') || c=='-'){
+                while ((c=getkey()) >='0' && (c<='9' || c==(CTRL|'U') || c=='-')){
                         if (c == (CTRL|'U'))
                                 n = n*4;
                         /*
@@ -455,7 +455,7 @@ loop:
  * as an argument, because the main routine may have been told to read in a
  * file by default, and we want the buffer name to be right.
  */
-edinit(bname)
+int edinit(bname)
 char    bname[];
 {
         register BUFFER *bp;
@@ -481,6 +481,7 @@ char    bname[];
         wp->w_ntrows = term.t_nrow-1;           /* "-1" for mode line.  */
         wp->w_force = 0;
         wp->w_flag  = WFMODE|WFHARD;            /* Full.                */
+	return 0;
 }
 
 /*
@@ -489,7 +490,7 @@ char    bname[];
  * and arranges to move it to the "lastflag", so that the next command can
  * look at it. Return the status of command.
  */
-execute(c, f, n)
+int execute(c, f, n)
 {
         register KEYTAB *ktp;
         register int    status;
@@ -553,7 +554,7 @@ execute(c, f, n)
  * Do the standard keyboard preprocessing. Convert the keys to the internal
  * character set.
  */
-getkey()
+int getkey()
 {
 	int    c;
 #if	AMIGA
@@ -626,7 +627,7 @@ getkey()
  * Get a key.
  * Apply control modifications to the read key.
  */
-getctl()
+int getctl()
 {
         register int    c;
 
@@ -647,7 +648,7 @@ getctl()
  * We do a very quick exit if vquick is non zero
  */
 
-quickexit(f, n)
+int quickexit(f, n)
 {
 #if (MLH == 0)
 	register BUFFER *bp;	/* scanning pointer to buffers */
@@ -700,7 +701,7 @@ quickexit(f, n)
  * Quit command. If an argument, always quit. Otherwise confirm if a buffer
  * has been changed and not written out. Normally bound to "C-X C-C".
  */
-quit(f, n)
+int quit(f, n)
 {
         register int    s;
 
@@ -729,7 +730,7 @@ quit(f, n)
  * Error if not at the top level in keyboard processing. Set up variables and
  * return.
  */
-ctlxlp(f, n)
+int ctlxlp(f, n)
 {
 	LINTUSE(f) LINTUSE(n)
         if (kbdmip!=NULL || kbdmop!=NULL) {
@@ -745,7 +746,7 @@ ctlxlp(f, n)
  * End keyboard macro. Check for the same limit conditions as the above
  * routine. Set up the variables and return to the caller.
  */
-ctlxrp(f, n)
+int ctlxrp(f, n)
 {
 	LINTUSE(f) LINTUSE(n)
         if (kbdmip == NULL) {
@@ -762,7 +763,7 @@ ctlxrp(f, n)
  * The command argument is the number of times to loop. Quit as soon as a
  * command gets an error. Return TRUE if all ok, else FALSE.
  */
-ctlxe(f, n)
+int ctlxe(f, n)
 {
         register int    c;
         register int    af;
@@ -798,7 +799,7 @@ ctlxe(f, n)
  * Beep the beeper. Kill off any keyboard macro, etc., that is in progress.
  * Sometimes called as a routine, to do general aborting of stuff.
  */
-ctrlg(f, n)
+int ctrlg(f, n)
 {
 	LINTUSE(f) LINTUSE(n)
         (*term.t_beep)();
@@ -813,7 +814,7 @@ ctrlg(f, n)
 /* tell the user that this command is illegal while we are in
    VIEW (read-only) mode				*/
 
-rdonly()
+int rdonly()
 
 {
 	(*term.t_beep)();

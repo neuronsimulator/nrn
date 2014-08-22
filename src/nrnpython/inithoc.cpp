@@ -22,6 +22,7 @@ extern void nrnpy_hoc();
 #if NRNMPI_DYNAMICLOAD
 	extern void nrnmpi_stubs();
 	extern char* nrnmpi_load(int is_python);
+	extern int nrnpy_site_problem;
 #endif
 
 extern int nrn_is_python_extension;
@@ -91,9 +92,9 @@ printf("NEURON_INIT_MPI exists in env but NEURON cannot initialize MPI because:\
 	} else {
 	  mpi_mes = 3;
 	}
+	assert(mpi_mes != -1); //avoid unused variable warning
 
 #endif
-	
 
 #if !defined(__CYGWIN__)
 	sprintf(buf, "%s/.libs/libnrnmech.so", NRNHOSTCPU);
@@ -131,6 +132,9 @@ printf("NEURON_INIT_MPI exists in env but NEURON cannot initialize MPI because:\
 	nrn_main_launch = 2;
 	ivocmain(argc, argv, env);
 //	nrnpy_augment_path();
+#if NRNPYTHON_DYNAMICLOAD
+	nrnpy_site_problem = 0;
+#endif
 #if PY_MAJOR_VERSION >= 3
 	return nrnpy_hoc();
 #else

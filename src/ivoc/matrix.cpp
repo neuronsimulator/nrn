@@ -1,8 +1,5 @@
 #include <../../nrnconf.h>
 #include "classreg.h"
-#ifndef nil
-#define nil 0
-#endif
 
 #include <stdio.h>
 #include <math.h>
@@ -238,7 +235,7 @@ static Object** m_mulv(void* v) {
 }
 
 
-static Matrix* get_out_mat(Matrix* mat, int n, int m, int i, const char* mes = nil);
+static Matrix* get_out_mat(Matrix* mat, int n, int m, int i, const char* mes = NULL);
 
 static Matrix* get_out_mat(Matrix* mat, int n, int m, int i, const char* mes) {
 	Matrix* out;
@@ -246,7 +243,7 @@ static Matrix* get_out_mat(Matrix* mat, int n, int m, int i, const char* mes) {
 		out = matrix_arg(i);
 	}else{
 		out = Matrix::instance(n, m, Matrix::MFULL);
-		out->obj_ = nil;
+		out->obj_ = NULL;
 	}
 	if (mat == out && mes) {
 		hoc_execerror(mes, " matrix operation cannot be done in place");
@@ -254,7 +251,7 @@ static Matrix* get_out_mat(Matrix* mat, int n, int m, int i, const char* mes) {
 	return out;
 }
 
-static Matrix* get_out_mat(Matrix* m, int i , const char* mes = nil) {
+static Matrix* get_out_mat(Matrix* m, int i , const char* mes = NULL) {
 	return get_out_mat(m, m->nrow(), m->ncol(), i, mes);
 }
 
@@ -343,7 +340,7 @@ static Object** m_symmeig(void* v) {
 
 static Object** m_svd(void* vv) {
 	Matrix* m = (Matrix*)vv;
-	Matrix *u=nil, *v=nil;
+	Matrix *u=NULL, *v=NULL;
 	if (ifarg(2)) {
 		u = matrix_arg(1);
 		v = matrix_arg(2);
@@ -560,7 +557,7 @@ static Object** m_solv(void* v) {
 #else
 	check_capac(vin->capacity(), m->ncol());
 #endif
-	Vect* vout = nil;
+	Vect* vout = NULL;
 	bool f = false;
 	bool use_lu = false;
 	// args 2 and 3 are optional [vout, use previous LU factorization]
@@ -734,9 +731,6 @@ static void steer_x(void* v) {
 	hoc_pushpx(m->mep(i1, i2));
 }
 
-extern "C" {
-	void* hoc_Emalloc(unsigned long);
-}
 
 #if WIN32 && !USEMATRIX
 extern "C" {
@@ -745,14 +739,14 @@ void Matrix_reg();
 #endif
 
 void Matrix_reg() {
-	class2oc("Matrix", m_cons, m_destruct, m_members, nil, m_retobj_members);
+	class2oc("Matrix", m_cons, m_destruct, m_members, NULL, m_retobj_members, NULL);
 	smat_ = hoc_lookup("Matrix");
 	// now make the x variable an actual double
 	Symbol* sx = hoc_table_lookup("x", smat_->u.ctemplate->symtable);
 	sx->type = VAR;
 	sx->arayinfo = (Arrayinfo *)hoc_Emalloc(sizeof(Arrayinfo) + 2*sizeof(int));
 	sx->arayinfo->refcount = 1;
-	sx->arayinfo->a_varn = nil;
+	sx->arayinfo->a_varn = NULL;
 	sx->arayinfo->nsub = 2;
 	sx->arayinfo->sub[0] = 1;
 	sx->arayinfo->sub[1] = 1;

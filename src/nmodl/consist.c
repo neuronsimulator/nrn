@@ -18,7 +18,7 @@ extern Symbol *indepsym;
 			err=1;\
 		}
 
-consistency()
+void consistency()
 {
 	Symbol         *s;
 	Item           *qs;
@@ -27,7 +27,7 @@ consistency()
 
 
 	/* the scop_indep can also be a automatic parameter */
-	if (scop_indep != indepsym && scop_indep->subtype == PARM | INDEP) {
+	if (scop_indep != indepsym && scop_indep->subtype == (PARM | INDEP)) {
 		scop_indep->subtype = INDEP;
 	}
 	

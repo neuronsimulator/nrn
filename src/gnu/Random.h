@@ -34,6 +34,7 @@ protected:
     RNG *pGenerator;
 public:
     Random(RNG *generator);
+    virtual ~Random() {}
     virtual double operator()() = 0;
 
     RNG *generator();

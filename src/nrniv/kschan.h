@@ -251,7 +251,7 @@ public:
 	virtual void jacob(int, int *, double**, Datum**, NrnThread*);
 	virtual void state(int, int *, Node**, double**, Datum**, NrnThread*);
 #endif /* CACHEVEC */
-	void add_channel(char**);
+	void add_channel(const char**);
 	//for cvode
 	virtual int count();
 	virtual void map(int, double**, double**, double*, Datum*, double*);
@@ -309,9 +309,9 @@ private:
 	Prop* needion(Symbol*, Node*, Prop*);
 	void state_consist(int shift = 0);
 	void sname_install();
-	Symbol* looksym(const char*, Symbol* tmplt = nil);
-	Symbol* installsym(const char*, int, Symbol* tmplt = nil);
-	void freesym(Symbol*, Symbol* tmplt = nil);
+	Symbol* looksym(const char*, Symbol* tmplt = NULL);
+	Symbol* installsym(const char*, int, Symbol* tmplt = NULL);
+	void freesym(Symbol*, Symbol* tmplt = NULL);
 	Symbol** newppsym(int);
 	void delete_schan_node_data();
 	void alloc_schan_node_data();
@@ -352,7 +352,7 @@ public:
 	KSState* state_; // the state names
 	KSGateComplex* gc_;
 	KSTransition* trans_; // array of transitions
-	Symbol* ion_sym_; // if nil then non-specific and e_suffix is a parameter
+	Symbol* ion_sym_; // if NULL then non-specific and e_suffix is a parameter
 	int  nligand_;
 	Symbol** ligands_;
 	Object* obj_;

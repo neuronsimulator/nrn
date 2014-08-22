@@ -20,7 +20,7 @@ my_off64_t lseek64(int fd, my_off64_t offset, int whence) {
 /* mingw does not have dlfcn.h */
 #if !defined(HAVE_DLFCN_H) || defined(__MINGW32__)
 
-void* dlopen(char *name, int mode) {
+void* dlopen(const char *name, int mode) {
 	void *ret;
 	/* handle for the named library */
 	ret = (void *) LoadLibrary(name);
@@ -31,9 +31,9 @@ void* dlopen(char *name, int mode) {
 	return ret;
 }
 
-void* dlopen_noerr(char *name, int mode) {return (void*)LoadLibrary(name);}
+void* dlopen_noerr(const char *name, int mode) {return (void*)LoadLibrary(name);}
 
-void* dlsym(void *handle, char *name) {
+void* dlsym(void *handle, const char *name) {
 	void *ret = (void *) GetProcAddress ((HMODULE) handle, name);
 	if (!ret) {
 		fprintf(stderr, "Could not GetProcAddress for \"%s\"\n", name);

@@ -82,7 +82,7 @@ static double **Nord, **jacobian, h, *diff, *corr_fn, b[6] = {1., 2. / 3., 6. / 
 },
     err_coeff[6] = {0.5, 4. / 9., 18. / 22., 288. / 125., 1200. / 137., 43200. / 1029.};
 
-gear(_ninits, n, y, d, p, t, dt, dy, work, maxerror)
+int gear(_ninits, n, y, d, p, t, dt, dy, work, maxerror)
 int _ninits, n, (*dy) ();
 double p[], *t, dt, **work, maxerror; int y[]; int d[];
 #define d_(arg)  p[d[arg]]
@@ -153,7 +153,7 @@ double p[], *t, dt, **work, maxerror; int y[]; int d[];
  *
  *--------------------------------------------------------------*/
 
-init_gear(n, work, y, dy, p, d, tend, maxerror)
+int init_gear(n, work, y, dy, p, d, tend, maxerror)
 int n, (*dy) ();
 double **work, p[], tend, maxerror; int y[]; int d[];
 {
@@ -226,7 +226,7 @@ double **work, p[], tend, maxerror; int y[]; int d[];
  *
  *--------------------------------------------------------------*/
 
-prep_jac(n, y, d, p, dy)
+int prep_jac(n, y, d, p, dy)
 int n, (*dy) ();
 double p[]; int y[]; int d[];
 {
@@ -256,7 +256,7 @@ double p[]; int y[]; int d[];
  *
  *--------------------------------------------------------------*/
 
-predictor(n, work)
+int predictor(n, work)
 int n;
 double *work;
 {
@@ -278,6 +278,7 @@ double *work;
 	for (j = 1; j <= order; j++)
 	    for (k = order - 1; k >= j - 1; k--)
 		Nord[i][k] += Nord[i][k + 1];
+    return 0;
 }
 
 /*--------------------------------------------------------------
@@ -287,7 +288,7 @@ double *work;
  *
  *--------------------------------------------------------------*/
 
-corrector(n, y, d, p, dy, t, tend, maxerror, work)
+int corrector(n, y, d, p, dy, t, tend, maxerror, work)
 int n, (*dy) ();
 double p[], *t, tend, maxerror, *work; int y[]; int d[];
 {
@@ -397,7 +398,7 @@ double p[], *t, tend, maxerror, *work; int y[]; int d[];
  *
  *--------------------------------------------------------------*/
 
-conv_test(n, iter, maxerror)
+int conv_test(n, iter, maxerror)
 int n, iter;
 double maxerror;
 {
@@ -453,7 +454,7 @@ double maxerror;
  *
  *--------------------------------------------------------------*/
 
-interpolate(n, p, y, t, tend)
+int interpolate(n, p, y, t, tend)
 int n;
 double *p, t, tend; int y[];
 {
@@ -467,6 +468,7 @@ double *p, t, tend; int y[];
 	for (j = order; j >= 0; j--)
 	    y_(i) = Nord[i][j] + s * (y_(i));
     }
+    return 0;
 }
 
 /*--------------------------------------------------------------
@@ -476,7 +478,7 @@ double *p, t, tend; int y[];
  *
  *--------------------------------------------------------------*/
 
-retry_step(n, t, y, d, p, dy, maxerror, work)
+int retry_step(n, t, y, d, p, dy, maxerror, work)
 int n, (*dy) ();
 double *t, p[], maxerror, *work; int y[]; int d[];
 {
@@ -524,7 +526,7 @@ double *t, p[], maxerror, *work; int y[]; int d[];
  *
  *--------------------------------------------------------------*/
 
-change_order(incr, n, work)
+int change_order(incr, n, work)
 int incr, n;
 double *work;
 {
@@ -544,6 +546,7 @@ double *work;
 	    break;
     }
     good_order = 0;
+    return 0;
 }
 
 /*--------------------------------------------------------------
@@ -553,7 +556,7 @@ double *work;
  *
  *--------------------------------------------------------------*/
 
-change_h(incr, n, maxerror, work)
+int change_h(incr, n, maxerror, work)
 int incr, n;
 double maxerror, *work;
 {
