@@ -245,10 +245,20 @@ extern void nrnmpi_int_gatherv(int* s, int scnt,
 		r, rcnt, rdispl, MPI_INT, root, nrnmpi_comm);
 }
 
+extern void nrnmpi_int_alltoall(int* s, int* r, int n) {
+	MPI_Alltoall(s, n, MPI_INT, r, n, MPI_INT, nrnmpi_comm);
+}
+
 extern void nrnmpi_int_alltoallv(int* s, int* scnt, int* sdispl,
     int* r, int* rcnt, int* rdispl) {
 	MPI_Alltoallv(s, scnt, sdispl, MPI_INT,
 		r, rcnt, rdispl, MPI_INT, nrnmpi_comm);
+}
+
+extern void nrnmpi_long_alltoallv(int64_t* s, int* scnt, int* sdispl,
+    int64_t* r, int* rcnt, int* rdispl) {
+	MPI_Alltoallv(s, scnt, sdispl, MPI_LONG,
+		r, rcnt, rdispl, MPI_LONG, nrnmpi_comm);
 }
 
 extern void nrnmpi_dbl_alltoallv(double* s, int* scnt, int* sdispl,

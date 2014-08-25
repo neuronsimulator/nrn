@@ -16,10 +16,10 @@
 
 #if NRNLONGSGID
 #define sgid_t int64_t
-#define sgid_allgatherv nrnmpi_long_allgatherv
+#define sgid_alltoallv nrnmpi_long_alltoallv
 #else
 #define sgid_t int
-#define sgid_allgatherv nrnmpi_int_allgatherv
+#define sgid_alltoallv nrnmpi_int_alltoallv
 #endif
 
 extern "C" {
@@ -89,8 +89,7 @@ extern double nrnmpi_transfer_wait_;
 extern void nrnmpi_barrier();
 extern void nrnmpi_int_allgather(int*, int*, int);
 extern int nrnmpi_int_allmax(int);
-extern void sgid_allgatherv(sgid_t*, sgid_t*, int*, int*);
-extern void nrnmpi_dbl_allgatherv(double*, double*, int*, int*);
+extern void sgid_alltoallv(sgid_t*, int*, int*, sgid_t*, int*, int*);
 extern void nrnmpi_int_alltoallv(int*, int*, int*,  int*, int*, int*);
 extern void nrnmpi_dbl_alltoallv(double*, int*, int*,  double*, int*, int*);
 #endif
@@ -535,12 +534,20 @@ void thread_transfer(NrnThread* _nt) {
 // "  But this was a mistake as many mpi implementations do not allow overlap
 // of send and receive buffers.
 
+// 22-08-2014  For setup of the All2allv pattern, use the rendezvous rank
+// idiom.
+#define HAVEWANT_t sgid_t
+#define HAVEWANT_alltoallv sgid_alltoallv
+#define HAVEWANT2Int MapSgid2Int
+#include "have2want.cpp"
+
 void nrnmpi_setup_transfer() {
 #if !PARANEURON
 	if (nrnmpi_numprocs > 1) {
 		hoc_execerror("To use ParallelContext.setup_transfer when nhost > 1, NEURON must be configured with --with-paranrn", 0);
 	}
 #endif
+	int nhost = nrnmpi_numprocs;
 //	char ctmp[100];
 //	sprintf(ctmp, "vartrans%d", nrnmpi_myid);
 //	xxxfile = fopen(ctmp, "w");
@@ -566,6 +573,11 @@ void nrnmpi_setup_transfer() {
 		outsrcdspl_ = new int[nrnmpi_numprocs+1];
 	}
 
+	// This is an old comment prior to using the want_to_have rendezvous
+	// rank function in want2have.cpp. The old method did not scale
+	// to more sgids than could fit on a single rank, because
+	// each rank sent its "need" list to every rank.
+	// <old comment>
 	// This machine needs to send which sources to which other machines.
 	// It does not need to send to itself.
 	// Which targets have sources on other machines.(none if nrnmpi_numprocs=1)
@@ -576,13 +588,24 @@ void nrnmpi_setup_transfer() {
 	// 4) Notify target machines which sids the source machine will send
 	// 5) The target machines can figure out where the sids are coming from
 	//    and therefore construct insrc_buf, etc.
+	// <new comment>
+	// 1) List sources needed by this rank and sources that this rank owns.
+	// 2) Call the have_to_want function. Returns two sets of three
+	//    vectors. The first set of three vectors is a an sgid buffer,
+	//    along with counts and displacements. The sgids in the ith region
+	//    of the buffer are the sgids from this rank that are
+	//    wanted by the ith rank. For the second set, the sgids in the ith
+	//    region are the sgids on the ith rank that are wanted by this rank.
+	// 3) First return triple creates the proper outsrc_buf_.
+	// 4) The second triple is creates the insrc_buf_.
 
 	// 1)
 	// It will often be the case that multiple targets will need the
-	// same source. We desire to count the needed interprocessor sids only
-	// once. We do not want to count needed intraprocessor sids.
+	// same source. We count the needed sids only once regardless of
+	// how often they are used.
 	// At the end of this section, needsrc is an array of needsrc_cnt
-	// sids needed by this machine where the sources are on other machines.
+	// sids needed by this machine. The 'seen' table values are unused
+	// but the keys are all the (unique) sgid needed by this process.
 	int needsrc_cnt = 0;
 	MapSgid2Int* seen = new MapSgid2Int(targets_->count());//for single counting
 	int szalloc = targets_->count();
@@ -592,10 +615,10 @@ void nrnmpi_setup_transfer() {
 		sgid_t sid = sgid2targets_->item(i);
 		// only need it if not a source on this machine
 		int srcindex;
-// Note that although it is mentioned several times that we do not transfer
+// Note that although old comment possibly mention that we do not transfer
 // intraprocessor sids, it is actually a good idea to do so in order to
 // produce a reasonable error message about using the same sid for multiple
-// source variables. Hence the follogwing statement is commented out.
+// source variables. Hence the following statement is commented out.
 //		if (!sgid2srcindex_->find(sid, srcindex)) {
 			if (!seen->find(sid, srcindex)) {
 				(*seen)[sid] = srcindex;
@@ -603,129 +626,95 @@ void nrnmpi_setup_transfer() {
 			}
 //		}
 	}
-	delete seen;
 #if 0
 	for (int i=0; i < needsrc_cnt; ++i) {
 		printf("%d step 1 need %d\n", nrnmpi_myid, needsrc[i]);
 	}
 #endif
 
-	// 2)
-	// reuse insrccnt to send the needsrc_cnt to all machines
-	insrccnt_[nrnmpi_myid] = needsrc_cnt;
-	int cnt = insrccnt_[nrnmpi_myid];
-	nrnmpi_int_allgather(&cnt, insrccnt_, 1);
-	// send the needsrc info to all machines
-	insrcdspl_[0] = 0;
-	for (int i=0; i < nrnmpi_numprocs; ++i) {
-		insrcdspl_[i+1] = insrcdspl_[i] + insrccnt_[i];
+	// 1 continued) Create an array of sources this rank owns.
+	// This already exists as a vector in the SgidList* sgids_ but
+	// that is private so go ahead and copy.
+	sgid_t* ownsrc = new sgid_t[sgids_->count() + 1]; // not 0 length if count is 0
+	for (int i=0; i < sgids_->count(); ++i) {
+		ownsrc[i] = sgids_->item(i);
 	}
-	szalloc = insrcdspl_[nrnmpi_numprocs];
-	szalloc = szalloc ? szalloc : 1;
-	sgid_t* need = new sgid_t[szalloc];
-	sgid_allgatherv(needsrc, need, insrccnt_, insrcdspl_);
-	delete [] needsrc;
-#if 0
-	nrnmpi_barrier();
-	if (nrnmpi_myid == 0) {
-		for (int i = 0; i < nrnmpi_numprocs; ++i) {
-printf("%d step 2 need count %d from rank %d\n", nrnmpi_myid, insrccnt_[i], i);
-			for (int j=0; j < insrccnt_[i]; ++j) {
-printf("%d    interested in %d\n", nrnmpi_myid, need[insrcdspl_[i]+j]);
-			}
-		}
-	}
-	nrnmpi_barrier();
-#endif
+	
+	// 2) Call the have_to_want function.
+	sgid_t* send_to_want;
+	int *send_to_want_cnt, *send_to_want_displ;
+	sgid_t* recv_from_have;
+	int *recv_from_have_cnt, *recv_from_have_displ;
 
-	// 3)
+	have_to_want(ownsrc, sgids_->count(), needsrc, needsrc_cnt,
+		send_to_want, send_to_want_cnt, send_to_want_displ,
+		recv_from_have, recv_from_have_cnt, recv_from_have_displ,
+		default_rendezvous);
+
+	// sanity check. all the sgids we are asked to send, we actually have
+	int n = send_to_want_displ[nhost];
+#if 0 // done in passing in step 3 below
+	for (int i=0; i < n; ++i) {
+		sgid_t sgid = send_to_want[i];
+		int x;
+		assert(sgid2srcindex_->find(sgid, x));
+	}
+#endif
+	// sanity check. all the sgids we receive, we actually need.
+	// also set the seen value to the proper recv_from_have index.
+	// i.e it is the sid2insrc_ in step 4.
+	n = recv_from_have_displ[nhost];
+	for (int i=0; i < n; ++i) {
+		sgid_t sgid = recv_from_have[i];
+		int x;
+		assert(seen->find(sgid, x));
+		(*seen)[sgid] = i;
+	}
+
+	// clean up a little
+	delete [] ownsrc;
+	delete [] needsrc;
+	delete [] recv_from_have;
+
+	// 3) First return triple creates the proper outsrc_buf_.
 	// Now that we know what machines are interested in our sids...
 	// construct outsrc_buf, outsrc_buf_size, outsrccnt_, outsrcdspl_
 	// and poutsrc_;
-	outsrcdspl_[0] = 0;
-	for (int i=0; i < nrnmpi_numprocs; ++i) {
-		outsrccnt_[i] = 0;
-		for (int j = 0; j < insrccnt_[i]; ++j) {
-			sgid_t sid = need[insrcdspl_[i] + j];
-			int whocares;
-			if (sgid2srcindex_->find(sid, whocares)) {
-				++outsrccnt_[i];
-			}
-		}
-		outsrcdspl_[i+1] = outsrcdspl_[i] + outsrccnt_[i];
-	}
+	outsrccnt_ = send_to_want_cnt;
+	outsrcdspl_ = send_to_want_displ;
 	outsrc_buf_size_ = outsrcdspl_[nrnmpi_numprocs];
 	szalloc = outsrc_buf_size_ ? outsrc_buf_size_ : 1;
 	outsrc_buf_ = new double[szalloc];
 	poutsrc_ = new double*[szalloc];
 	poutsrc_indices_ = new int[szalloc];
-	for (int i=0; i < nrnmpi_numprocs; ++i) {
-		int k = 0;
-		for (int j = 0; j < insrccnt_[i]; ++j) {
-			sgid_t sid = need[insrcdspl_[i] + j];
-			int srcindex;
-			if (sgid2srcindex_->find(sid, srcindex)) {
-				Node* nd = visources_->item(long(srcindex));
-				if (nd->extnode) {
-					// can only do this after mk_svib()
-				}else{
-					poutsrc_[outsrcdspl_[i] + k] = &(NODEV(nd));
-				}
-		    poutsrc_indices_[outsrcdspl_[i] + k] = srcindex;
-		    outsrc_buf_[outsrcdspl_[i] + k] = double(sid); // see step 5
-		    ++k;
-#if 0
-printf("%d step 3 send sid %d to rank %d\n", nrnmpi_myid, sid, i);
-#endif
-			}
+	for (int i=0; i < outsrc_buf_size_; ++i) {
+		sgid_t sid = send_to_want[i];
+		int srcindex;
+		assert(sgid2srcindex_->find(sid, srcindex));
+		Node* nd = visources_->item(long(srcindex));
+		if (nd->extnode) {
+			// can only do this after mk_svib()
+		}else{
+			poutsrc_[i] = &(NODEV(nd));
 		}
+		poutsrc_indices_[i] = srcindex;
+		outsrc_buf_[i] = double(sid); // see step 5
 	}
-	delete [] need;
+	delete [] send_to_want;
 
-	//4)
-	// tell the target machines what sids the source machines will be
-	// sending.
-	insrcdspl_[0] = 0;
-	int* ones = new int[nrnmpi_numprocs];
-	for (int i=0; i < nrnmpi_numprocs; ++i) {
-		ones[i] = 1;
-		insrcdspl_[i+1] = insrcdspl_[i] + ones[i];
-	}
-	nrnmpi_int_alltoallv(outsrccnt_, ones, insrcdspl_, insrccnt_, ones, insrcdspl_);
-	insrcdspl_[0] = 0;
-	for (int i = 0; i < nrnmpi_numprocs; ++i) {
-		insrcdspl_[i+1] = insrcdspl_[i] + insrccnt_[i];
-	}
+	// 4) The second triple is creates the insrc_buf_.
+	// From the recv_from_have and seen table, construct the insrc...
+	insrccnt_ = recv_from_have_cnt;
+	insrcdspl_ = recv_from_have_displ;
 	insrc_buf_size_ = insrcdspl_[nrnmpi_numprocs];
 	szalloc = insrc_buf_size_ ? insrc_buf_size_ : 1;
 	insrc_buf_ = new double[szalloc];
-	delete [] ones;
-#if 0
-for (int i=0; i < nrnmpi_numprocs; ++i) {
-printf("%d step 4  %d sids coming from rank %d\n", nrnmpi_myid, insrccnt_[i], i);
-}
-#endif
 
-	//5)
-	// send the sids sent by this machine so the target machines
-	// can create transfer information (use double(sid) in outsrc_buf
-	// that was setup in step 3.
-	nrnmpi_dbl_alltoallv(outsrc_buf_, outsrccnt_, outsrcdspl_,
-		insrc_buf_, insrccnt_, insrcdspl_);		
-	errno = 0;
 	// map sid to insrc_buf_ indices.
 	// mk_ttd can then construct the right pointer to the source.
-	sid2insrc_ = new MapSgid2Int(insrc_buf_size_);
-	for (int i=0; i < insrc_buf_size_; ++i) {
-		sgid_t sid = sgid_t(insrc_buf_[i]);
-		int whocares;
-		if (sid2insrc_->find(sid, whocares)) {
-			char buf[200];
-sprintf(buf, "multiple source variables for sid = %ld\n", (int64_t)sid);
-			hoc_execerror(buf, 0);
-		}
-		(*sid2insrc_)[sid] = i;
-	}
+	sid2insrc_ = seen; // since seen was constructed and then modified
+		// way above this. Might be better to reconstruct here.
+
 	nrnmpi_v_transfer_ = mpi_transfer;
     }	
 #endif //PARANEURON

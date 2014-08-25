@@ -14,8 +14,8 @@ PARINC1 = $(PARINC)
 else
 PARSRC1 =
 PARINC1 =
-EXTRA_DIST = $(PARSRC) $(PARINC)
 endif
+EXTRA_DIST = $(PARSRC) $(PARINC) have2want.cpp
 
 if BUILD_NRNMPI_DYNAMIC
 nrnmpila =
