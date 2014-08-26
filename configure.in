@@ -220,6 +220,9 @@ dnl have to be done with a CFLAGS="-mno-cygwin" (obsolete after gcc2.3)
 dnl What to do about Python
 AC_NRN_PYTHON
 
+dnl Python that runs on the build machine needed to create hocusr.h
+AC_CHECK_PROG(PYTHON_BLD, python, python)
+
 dnl Only needed if making a distribution. In that case cython must work.
 dnl Otherwise, to make a distribution, need to modify
 dnl src/neuronmusic/Makefile.am and remove neuronmusic.cpp fromt the list
@@ -419,6 +422,7 @@ AC_TYPE_PID_T
 AC_TYPE_SIZE_T
 m4_pattern_allow([^AC_TYPE_INT32_T$])
 m4_pattern_allow([^AC_TYPE_UINT32_T$])
+AC_TYPE_INT64_T
 
 dnl This causes a warning message from automake and autoconf because, I
 dnl suppose, it hasn't been updated.  There's nothing that can be done about

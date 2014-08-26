@@ -9,6 +9,9 @@
 #include <nrnmpi.h>
 #include <nrnhash.h>
 #include <mymath.h>
+#if defined(HAVE_STDINT_H)
+#include <stdint.h>
+#endif
 
 #ifndef NRNLONGSGID
 #define NRNLONGSGID 0
@@ -539,7 +542,9 @@ void thread_transfer(NrnThread* _nt) {
 #define HAVEWANT_t sgid_t
 #define HAVEWANT_alltoallv sgid_alltoallv
 #define HAVEWANT2Int MapSgid2Int
+#if PARANEURON
 #include "have2want.cpp"
+#endif
 
 void nrnmpi_setup_transfer() {
 #if !PARANEURON

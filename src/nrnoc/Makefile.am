@@ -184,7 +184,7 @@ else
 hocusr.h: $(nsrc)/nrnoc/neuron.h $(nsrc)/oc/mk_hocusr_h.py $(nsrc)/nrnoc/options.h
 	cat $(nsrc)/nrnoc/neuron.h > tmp.c
 	@CPP@ -I$(nsrc)/nrnoc -I$(nsrc)/oc tmp.c | sed '/^#/d' > neuron.tmp
-	$(PYTHON) $(nsrc)/oc/mk_hocusr_h.py < neuron.tmp > temp2hoc
+	$(PYTHON_BLD) $(nsrc)/oc/mk_hocusr_h.py < neuron.tmp > temp2hoc
 	cat neuron.tmp temp2hoc |sed 's/"nrnhoc_topology"/"topology"/' > hocusr.h
 	rm -f temp1hoc temp2hoc neuron.tmp tmp.c
 endif
