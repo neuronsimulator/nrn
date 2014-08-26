@@ -50,6 +50,7 @@ static int* cnt2displ(int* cnt) {
   for (int i=0; i < nrnmpi_numprocs; ++i) {
     displ[i+1] = displ[i] + cnt[i];
   }
+  return displ;
 }
 
 static int* srccnt2destcnt(int* srccnt) {

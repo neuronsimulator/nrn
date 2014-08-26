@@ -179,7 +179,7 @@ void nrnmpi_source_var() {
 	alloclists();
 	is_setup_ = false;
 	double* psv = hoc_pgetarg(1);
-	int sgid = (sgid_t)(*getarg(2));
+	sgid_t sgid = (sgid_t)(*getarg(2));
 	int i;
 	if (sgid2srcindex_->find(sgid, i)) {
 		char tmp[40];
@@ -238,7 +238,7 @@ void nrnmpi_target_var() {
 		pp = ob2pntproc(*hoc_objgetarg(iarg++));
 	}
 	double* ptv = hoc_pgetarg(iarg++);
-	int sgid = (sgid_t)(*getarg(iarg++));
+	sgid_t sgid = (sgid_t)(*getarg(iarg++));
 	targets_->append(ptv);
 	target_pntlist_->append(pp);
 	target_parray_index_->append(compute_parray_index(pp, ptv));
