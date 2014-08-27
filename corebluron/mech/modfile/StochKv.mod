@@ -310,7 +310,7 @@ VERBATIM
         double value = 0.0;
         int i;
         for (i = 0; i < _lN; i++) {
-           if (urand() < _lP) {
+           if (urand(_threadargs_) < _lP) {
               value = value + 1;
            }
         }

@@ -47,5 +47,6 @@ void output_spikes() {
 void validation(std::vector<std::pair<double,int> >& res)
 {
    for (int i=0; i < spikevec_size; ++i)
+    if (spikevec_gid[i] > -1)
        res.push_back(std::make_pair(spikevec_time[i], spikevec_gid[i]));
 }
