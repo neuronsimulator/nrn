@@ -7,6 +7,8 @@ nrnoc/membfunc.h
 nrnoc/multicore.h
 nrnoc/nrnoc_ml.h
 utils/randoms/nrnran123.h
+utils/endianness.h
+utils/swap_endian.h
 mech/cfile/scoplib.h
 )
 
@@ -32,6 +34,7 @@ nrniv/nrnhash.h
 nrniv/nrniv_decl.h
 nrniv/nrniv_mf.h
 nrniv/nrnmutdec.h
+nrniv/nrn_datareader.h
 nrniv/output_spikes.h
 nrniv/pool.h
 nrniv/prcellstate.cpp
@@ -69,6 +72,7 @@ nrniv/ivlistimpl.cpp
 nrniv/ivvect.cpp
 nrniv/mk_mech.cpp
 nrniv/nrn_setup.cpp
+nrniv/nrn_datareader.cpp
 nrniv/output_spikes.cpp
 nrniv/patternstim.cpp
 nrniv/vrecord.cpp

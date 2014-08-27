@@ -20,6 +20,7 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "corebluron/nrnoc/nrnoc_decl.h"
 #include "corebluron/nrniv/vrecitem.h"
 #include "corebluron/utils/randoms/nrnran123.h"
+#include "corebluron/nrniv/nrn_datareader.h"
 
 // file format defined in cooperation with nrncore/src/nrniv/nrnbbcore_write.cpp
 // single integers are ascii one per line. arrays are binary int or double
@@ -88,9 +89,9 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // files with the first containing output_gids and netcon_srcgid which are
 // stored in the nt.presyns array and nt.netcons array respectively
 
-static void read_phase1(const char* fname, NrnThread& nt);
+static void read_phase1(data_reader &F,NrnThread& nt);
 static void determine_inputpresyn(void);
-static void read_phase2(const char* fname, NrnThread& nt);
+static void read_phase2(data_reader &F, NrnThread& nt);
 static void setup_ThreadData(NrnThread& nt);
 static size_t model_size(void);
 
@@ -102,7 +103,7 @@ NetCon** netcon_in_presyn_order_;
 
 static int chkpnt;
 
-void nrn_setup(int ngroup, int* gidgroups, const char *path) {
+void nrn_setup(int ngroup, int* gidgroups, const char *path, enum endian::endianness file_endian) {
   char fname[100];
   assert(ngroup > 0);
 #if 0
@@ -126,9 +127,12 @@ void nrn_setup(int ngroup, int* gidgroups, const char *path) {
   // nt.presyns and nt.netcons arrays.
   // Generates the gid2out hash table which is needed
   // to later count the required number of InputPreSyn
+  data_reader *file_reader=new data_reader[ngroup];
   for (int i = 0; i < ngroup; ++i) {
     sprintf(fname, "%s/%d_1.dat", path, gidgroups[i]);
-    read_phase1(fname, nrn_threads[i]);
+    file_reader[i].open(fname,file_endian);
+    read_phase1(file_reader[i], nrn_threads[i]);
+    file_reader[i].close();
   }
 
   if (nrnmpi_myid == 0)
@@ -146,10 +150,13 @@ void nrn_setup(int ngroup, int* gidgroups, const char *path) {
   // thread.
   for (int i = 0; i < ngroup; ++i) {
     sprintf(fname, "%s/%d_2.dat", path, gidgroups[i]);
-    read_phase2(fname, nrn_threads[i]);
+    file_reader[i].open(fname,file_endian);
+    read_phase2(file_reader[i], nrn_threads[i]);
+    file_reader[i].close();
     setup_ThreadData(nrn_threads[i]); // nrncore does this in multicore.c in thread_memblist_setup
     nrn_mk_table_check(); // was done in nrn_thread_memblist_setup in multicore.c
   }
+  delete [] file_reader;
 
   if (nrnmpi_myid == 0)
   {
@@ -181,49 +188,6 @@ void setup_ThreadData(NrnThread& nt) {
   }
 }
 
-static int read_int_(FILE* f) {
-  int i = 0;
-  char line[100];
-  assert(fgets(line, 100, f));
-  assert(sscanf(line, "%d", &i) == 1);
-  return i;
-}
-#define read_int() read_int_(f)
-
-static double* read_dbl_array_(double* p, size_t n, FILE* f) {
-  double* a;
-  if (p) {
-    a = p;
-  }else{
-    a = new double[n];
-  }
-  int i= -1;
-  char line[100];
-  assert(fgets(line, 100, f));
-  assert(sscanf(line, "chkpnt %d\n", &i) == 1);
-  assert(i == chkpnt++);
-  assert(fread(a, sizeof(double), n, f) == n);
-  return a;
-}
-#define read_dbl_array(p, n) read_dbl_array_(p, n, f)
-
-static int* read_int_array_(int* p, size_t n, FILE* f) {
-  int* a;
-  if (p) {
-    a = p;
-  }else{
-    a = new int[n];
-  }
-  int i= -1;
-  char line[100];
-  assert(fgets(line, 100, f));
-  assert(sscanf(line, "chkpnt %d\n", &i) == 1);
-  assert(i == chkpnt++);
-  assert(fread(a, sizeof(int), n, f) == n);
-  return a;
-}
-#define read_int_array(p,n) read_int_array_(p, n, f)
-
 void nrnthreads_free_helper(NrnThread* nt) {
 	if (nt->pntprocs) delete[] nt->pntprocs;
 	if (nt->presyns) delete [] nt->presyns;
@@ -231,19 +195,18 @@ void nrnthreads_free_helper(NrnThread* nt) {
 	if (nt->weights) delete [] nt->weights;
 }
 
-void read_phase1(const char* fname, NrnThread& nt) {
-  FILE* f = fopen(fname, "r");
-  assert(f);
-  nt.n_presyn = read_int();
-  nt.n_netcon = read_int();
+void read_phase1(data_reader &F, NrnThread& nt) {
+  nt.n_presyn = F.read_int();
+  nt.n_netcon = F.read_int();
   nt.presyns = new PreSyn[nt.n_presyn];
   nt.netcons = new NetCon[nt.n_netcon];
 
   /// Checkpoint in bluron is defined for both phase 1 and phase 2 since they are written together
   chkpnt = 0;
-  int* output_gid = read_int_array(NULL, nt.n_presyn);
-  int* netcon_srcgid = read_int_array(NULL, nt.n_netcon);
-  fclose(f);
+  int* output_gid = F.read_int_array(nt.n_presyn);
+  int* netcon_srcgid = F.read_int_array(nt.n_netcon);
+  F.close();
+
   // for checking whether negative gids fit into the gid space
   // not used for now since negative gids no longer encode the thread id.
   double dmaxint = 1073741824.; //2^30
@@ -422,15 +385,13 @@ void determine_inputpresyn() {
   }
 }
 
-void read_phase2(const char* fname, NrnThread& nt) {
-  FILE* f = fopen(fname, "r");
+void read_phase2(data_reader &F, NrnThread& nt) {
   NrnThreadMembList* tml;
-  assert(f);
-  int n_outputgid = read_int();
+  int n_outputgid = F.read_int();
   assert(n_outputgid > 0); // avoid n_outputgid unused warning
-  nt.ncell = read_int();
-  nt.end = read_int();
-  int nmech = read_int();
+  nt.ncell = F.read_int();
+  nt.end = F.read_int();
+  int nmech = F.read_int();
 
   /// Checkpoint in bluron is defined for both phase 1 and phase 2 since they are written together
   chkpnt = 2;
@@ -441,8 +402,8 @@ void read_phase2(const char* fname, NrnThread& nt) {
     tml = (NrnThreadMembList*)emalloc(sizeof(NrnThreadMembList));
     tml->ml = (Memb_list*)emalloc(sizeof(Memb_list));
     tml->next = NULL;
-    tml->index = read_int();
-    tml->ml->nodecount = read_int();;
+    tml->index = F.read_int();
+    tml->ml->nodecount = F.read_int();;
     //printf("index=%d nodecount=%d membfunc=%s\n", tml->index, tml->ml->nodecount, memb_func[tml->index].sym?memb_func[tml->index].sym:"None");
     if (nt.tml) {
       tml_last->next = tml;
@@ -451,10 +412,10 @@ void read_phase2(const char* fname, NrnThread& nt) {
     }
     tml_last = tml;
   }
-  nt._ndata = read_int();
-  nt._nidata = read_int();
-  nt._nvdata = read_int();
-  nt.n_weight = read_int();
+  nt._ndata = F.read_int();
+  nt._nidata = F.read_int();
+  nt._nvdata = F.read_int();
+  nt.n_weight = F.read_int();
 
   nt._data = (double*)ecalloc(nt._ndata, sizeof(double));
   if (nt._nidata) nt._idata = (int*)ecalloc(nt._nidata, sizeof(int));
@@ -494,11 +455,11 @@ void read_phase2(const char* fname, NrnThread& nt) {
   assert(offset == nt._ndata);
 
   // matrix info
-  nt._v_parent_index = read_int_array(NULL, nt.end);
-  read_dbl_array(nt._actual_a, nt.end);
-  read_dbl_array(nt._actual_b, nt.end);
-  read_dbl_array(nt._actual_area, nt.end);
-  read_dbl_array(nt._actual_v, nt.end);
+  nt._v_parent_index = F.read_int_array(nt.end);
+  F.read_dbl_array(nt._actual_a, nt.end);
+  F.read_dbl_array(nt._actual_b, nt.end);
+  F.read_dbl_array(nt._actual_area, nt.end);
+  F.read_dbl_array(nt._actual_v, nt.end);
 
   Memb_list** mlmap = new Memb_list*[n_memb_func];
   int synoffset = 0;
@@ -515,10 +476,10 @@ void read_phase2(const char* fname, NrnThread& nt) {
     int n = ml->nodecount;
     int szp = nrn_prop_param_size_[type];
     int szdp = nrn_prop_dparam_size_[type];
-    if (!is_art) {ml->nodeindices = read_int_array(NULL, ml->nodecount);}
-    read_dbl_array(ml->data, n*szp);
+    if (!is_art) {ml->nodeindices = F.read_int_array(ml->nodecount);}
+    F.read_dbl_array(ml->data, n*szp);
     if (szdp) {
-      ml->pdata = read_int_array(NULL, n*szdp);
+      ml->pdata = F.read_int_array(n*szdp);
     }else{
       ml->pdata = NULL;
     }
@@ -545,8 +506,8 @@ void read_phase2(const char* fname, NrnThread& nt) {
   // Here we associate the real cells with voltage pointers and
   // acell PreSyn with the Point_process.
   //nt.presyns order same as output_vindex order
-  int* output_vindex = read_int_array(NULL, nt.n_presyn);
-  double* output_threshold = read_dbl_array(NULL, nt.ncell);
+  int* output_vindex = F.read_int_array(nt.n_presyn);
+  double* output_threshold = F.read_dbl_array(nt.ncell);
   for (int i=0; i < nt.n_presyn; ++i) { // real cells
     PreSyn* ps = nt.presyns + i;
     int ix = output_vindex[i];
@@ -578,8 +539,8 @@ void read_phase2(const char* fname, NrnThread& nt) {
 
   // Make NetCon.target_ point to proper Point_process. Only the NetCon
   // with pnttype[i] > 0 have a target.
-  int* pnttype = read_int_array(NULL, nnetcon);
-  int* pntindex = read_int_array(NULL, nnetcon);
+  int* pnttype = F.read_int_array(nnetcon);
+  int* pntindex = F.read_int_array(nnetcon);
   for (int i=0; i < nnetcon; ++i) {
     int type = pnttype[i];
     if (type > 0) {
@@ -594,7 +555,7 @@ void read_phase2(const char* fname, NrnThread& nt) {
   delete [] pnt_offset;
 
   // weights in netcons order in groups defined by Point_process target type.
-  nt.weights = read_dbl_array(NULL, nweight);
+  nt.weights = F.read_dbl_array(nweight);
   int iw = 0;
   for (int i=0; i < nnetcon; ++i) {
     NetCon& nc = nt.netcons[i];
@@ -605,7 +566,7 @@ void read_phase2(const char* fname, NrnThread& nt) {
   delete [] pnttype;
 
   // delays in netcons order
-  double* delay = read_dbl_array(NULL, nnetcon);
+  double* delay = F.read_dbl_array(nnetcon);
   for (int i=0; i < nnetcon; ++i) {
     NetCon& nc = nt.netcons[i];
     nc.delay_ = delay[i];
@@ -613,21 +574,21 @@ void read_phase2(const char* fname, NrnThread& nt) {
   delete [] delay;
 
   // BBCOREPOINTER information
-  npnt = read_int();
+  npnt = F.read_int();
   for (int i=0; i < npnt; ++i) {
-    int type = read_int();
+    int type = F.read_int();
     assert(nrn_bbcore_read_[type]);
-    int icnt = read_int();
-    int dcnt = read_int();
+    int icnt = F.read_int();
+    int dcnt = F.read_int();
     int* iArray = NULL;
     double* dArray = NULL;
     if (icnt) 
     {
-      iArray = read_int_array(NULL, icnt);
+      iArray = F.read_int_array(icnt);
     }
     if (dcnt) 
     {
-      dArray = read_dbl_array(NULL, dcnt);
+      dArray = F.read_dbl_array(dcnt);
     }
     int ik = 0;
     int dk = 0;
@@ -655,7 +616,7 @@ void read_phase2(const char* fname, NrnThread& nt) {
 
   // VecPlayContinuous instances
   // No attempt at memory efficiency
-  int n = read_int();
+  int n = F.read_int();
   nt.n_vecplay = n;
   if (n) {
     nt._vecplay = new void*[n];
@@ -663,18 +624,16 @@ void read_phase2(const char* fname, NrnThread& nt) {
     nt._vecplay = NULL;
   }
   for (int i=0; i < n; ++i) {
-    int vtype = read_int();
+    int vtype = F.read_int();
     assert(vtype == VecPlayContinuousType);
-    int ix = read_int();
-    int sz = read_int();
+    int ix = F.read_int();
+    int sz = F.read_int();
     IvocVect* yvec = vector_new(sz);
-    read_dbl_array(vector_vec(yvec), sz);
+    F.read_dbl_array(vector_vec(yvec), sz);
     IvocVect* tvec = vector_new(sz);
-    read_dbl_array(vector_vec(tvec), sz);
+    F.read_dbl_array(vector_vec(tvec), sz);
     nt._vecplay[i] = new VecPlayContinuous(nt._data + ix, yvec, tvec, NULL, nt.id);
   }
-
-  fclose(f);
 }
 
 static size_t memb_list_size(NrnThreadMembList* tml) {

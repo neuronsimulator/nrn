@@ -22,6 +22,7 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "corebluron/nrnmpi/nrnmpi.h"
 #include "corebluron/nrniv/nrniv_decl.h"
 #include "corebluron/nrniv/output_spikes.h"
+#include "corebluron/utils/endianness.h"
 
 #define HAVE_MALLINFO 1
 #if HAVE_MALLINFO
@@ -49,6 +50,11 @@ void Print_MemUsage(const char *name)
     printf("%s: max %lld, min %lld, avg %lld\n", name, max, min, avg);
 }
 
+int fatal_error(const char *msg) {
+  if (nrnmpi_myid == 0) printf("\nERROR! %s\n\n",msg);
+  nrnmpi_barrier();
+  return -1;
+}
 
 int main1(int argc, char** argv, char** env) {
   (void)env; /* unused */
@@ -79,6 +85,7 @@ int main1(int argc, char** argv, char** env) {
   double tstop, maxdelay, voltage;
   int iSpikeBuf;
   char str[128];
+  char endianstr[128]="native";
   FILE *fp = fopen("inputs.dat","r");
   if (!fp)
   {
@@ -104,26 +111,29 @@ int main1(int argc, char** argv, char** env) {
     fscanf(fp, "  Voltage\t%lf\n", &voltage);
     fscanf(fp, "  MaxDelay\t%lf\n", &maxdelay);
     fscanf(fp, "  SpikeBuf\t%d\n", &iSpikeBuf);
+    fscanf(fp, "  Endianness\t%20s\n", endianstr);
     fclose(fp);
   }
+
+  enum endian::endianness file_endian=endian::native_endian;
+  if (!strcmp(endianstr,"little")) file_endian=endian::little_endian;
+  else if (!strcmp(endianstr,"big")) file_endian=endian::big_endian;
+  else if (!strcmp(endianstr,"native")) file_endian=endian::native_endian;
+  else 
+    return fatal_error("Failed to parse Endianness field in inputs.dat");
 
   /// Assigning threads to a specific task by the first gid written in the file
   fp = fopen("files.dat","r");
   if (!fp)
   {
-    if (nrnmpi_myid == 0)
-      printf("\nERROR! No input file with nrnthreads, exiting...\n\n");
-
-    nrnmpi_barrier();
-    return -1;
+    return fatal_error("No input file with nrnthreads, exiting...");
   }
   
   int iNumFiles;
   assert(fscanf(fp, "%d\n", &iNumFiles) == 1);
   if (nrnmpi_numprocs > iNumFiles)
   {
-    printf("\nERROR! The number of CPUs cannot exceed the number of input files\n\n");
-    return -1;
+    return fatal_error("The number of CPUs cannot exceed the number of input files");
   }
 
   int ngrp = 0;
@@ -145,7 +155,7 @@ int main1(int argc, char** argv, char** env) {
   /// Reading the files and setting up the data structures
   Print_MemUsage("before nrn_setup mallinfo");
 
-  nrn_setup(ngrp, grp, ".");
+  nrn_setup(ngrp, grp, ".", file_endian);
 
   Print_MemUsage("after nrn_setup mallinfo");
 

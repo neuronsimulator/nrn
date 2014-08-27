@@ -8,3 +8,4 @@
   Voltage	-65.
   MaxDelay	10.
   SpikeBuf	10000
+  Endianness    big
