@@ -40,7 +40,13 @@ void hoc_execerror(const char* s1, const char* s2) {
 }
 
 void hoc_warning(const char* s1, const char* s2) {
+#ifdef DEBUG
   printf("warning: %s %s\n", s1, s2?s2:"");
+#else
+  /// This line is to avoid a Werror on the arguments which are not used
+  if (s1 == s2)
+    return;
+#endif
 }
 
 double* makevector(size_t size) {
