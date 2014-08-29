@@ -82,16 +82,16 @@ void artcell_net_move(void**, Point_process*, double);
 extern void nrn_fixed_step();
 extern void nrn_fixed_step_group(int);
 
+#ifdef DEBUG
 //temporary 
 static int nrn_errno_check(int type) 
 { 
-#ifdef DEBUG
   printf("nrn_errno_check() was called on pid %d: errno=%d type=%d\n", nrnmpi_myid, errno, type);
-//  assert(0); 
-#endif
-  type = 0;
+//  assert(0);
+  type = 0; 
   return 1;
 }
+#endif
 
 }
 
@@ -1122,11 +1122,13 @@ void WatchCondition::deliver(double tt, NetCvode* ns, NrnThread* nt) {
 	PP2t(pnt_) = tt;
 	STATISTICS(watch_deliver_);
 	POINT_RECEIVE(typ, pnt_, nil, nrflag_);
+#ifdef DEBUG
 	if (errno) {
 		if (nrn_errno_check(typ)) {
 hoc_warning("errno set during WatchCondition deliver to NET_RECEIVE", (char*)0);
 		}
 	}
+#endif
 }
 
 NrnThread* WatchCondition::thread() { return PP2NT(pnt_); }
@@ -1196,11 +1198,13 @@ printf("NetCon::deliver nt=%d target=%d\n", nt->id, PP2NT(target_)->id);
 //printf("NetCon::deliver t=%g tt=%g %s\n", t, tt, pnt_name(target_));
 	STATISTICS(netcon_deliver_);
 	POINT_RECEIVE(typ, target_, u.weight_, 0);
+#ifdef DEBUG
 	if (errno) {
 		if (nrn_errno_check(typ)) {
 hoc_warning("errno set during NetCon deliver to NET_RECEIVE", (char*)0);
 		}
 	}
+#endif
 }
 
 NrnThread* NetCon::thread() { return PP2NT(target_); }
@@ -1407,11 +1411,13 @@ NrnThread* SelfEvent::thread() { return PP2NT(target_); }
 void SelfEvent::call_net_receive(NetCvode* ns) {
 	STATISTICS(selfevent_deliver_);
 	POINT_RECEIVE(target_->type, target_, weight_, flag_);
+#ifdef DEBUG
 	if (errno) {
 		if (nrn_errno_check(target_->type)) {
 hoc_warning("errno set during SelfEvent deliver to NET_RECEIVE", (char*)0);
 		}
 	}
+#endif
 	NetCvodeThreadData& nctd = ns->p[PP2NT(target_)->id];
 	--nctd.unreffed_event_cnt_;
 	nctd.sepool_->hpfree(this);

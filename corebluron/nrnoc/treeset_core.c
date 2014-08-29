@@ -40,9 +40,11 @@ static void nrn_rhs(NrnThread* _nt) {
 	for (tml = _nt->tml; tml; tml = tml->next) if (memb_func[tml->index].current) {
 		mod_f_t s = memb_func[tml->index].current;
 		(*s)(_nt, tml->ml, tml->index);
+#ifdef DEBUG
 		if (errno) {
 hoc_warning("errno set during calculation of currents", (char*)0);
 		}
+#endif
 	}
 	/* now the internal axial currents.
 	The extracellular mechanism contribution is already done.
@@ -80,9 +82,11 @@ static void nrn_lhs(NrnThread* _nt) {
 	for (tml = _nt->tml; tml; tml = tml->next) if (memb_func[tml->index].jacob) {
 		mod_f_t s = memb_func[tml->index].jacob;
 		(*s)(_nt, tml->ml, tml->index);
+#ifdef DEBUG
 		if (errno) {
 hoc_warning("errno set during calculation of jacobian", (char*)0);
 		}
+#endif
 	}
 /* now the cap current can be computed because any change to cm by another model
 has taken effect
