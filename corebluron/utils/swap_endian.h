@@ -76,11 +76,18 @@ namespace endian {
                     swap_endian_fast<K,Unroll,Aligned>::eval(d);
                 else if (is_implemented<swap_endian_basic<K,Unroll,Aligned> >::value)
                     swap_endian_basic<K,Unroll,Aligned>::eval(d);
-                else {
+                else if (Unroll%2==0 || !Aligned) {
                     swap_endian<K,Unroll/2,Aligned>::eval(d);
                     swap_endian<K,Unroll/2,Aligned>::eval(d+K*(Unroll/2));
                     if (Unroll%1)
                         swap_endian<K,1,Aligned>::eval(d+K*(Unroll-1));
+                }
+                else {
+                    // Unroll is odd: can't make guarantees that we're aligned wrt
+                    // (Unroll/2).
+                    swap_endian<K,Unroll/2,false>::eval(d);
+                    swap_endian<K,Unroll/2,false>::eval(d+K*(Unroll/2));
+                    swap_endian<K,1,Aligned>::eval(d+K*(Unroll-1));
                 }
             }
         };
@@ -288,6 +295,7 @@ namespace endian {
                 while (n-->0) swap_endian<sizeof(V),1,false>::eval((unsigned char *)b++);
             }
         }
+
     }
 
     /** Reverse the endianness of a value in-place.
@@ -301,6 +309,18 @@ namespace endian {
         return v;
     }
 
+    namespace impl {
+        template <typename I,bool unroll>
+        struct swap_endian_range_dispatch {
+            static void eval(I b,I e) { while (b!=e) ::endian::swap_endian(*b++); }
+        };
+
+        template <typename I>
+        struct swap_endian_range_dispatch<I,true> {
+            static void eval(I b,I e) { swap_endian_unroll(b,e); }
+        };
+    }
+
     /** Reverse the endianness of the values in the given range.
      *
      * /tparam I iterator type
@@ -311,12 +331,15 @@ namespace endian {
      */
     template <typename I>
     void swap_endian_range(I b,I e) {
+        impl::swap_endian_range_dispatch<I,impl::is_pointer<I>::value>::eval(b,e);
+    }
+    /*
         if (impl::is_pointer<I>::value)
             impl::swap_endian_unroll(b,e);
         else {
             while (b!=e) swap_endian(*b++);
         }
-    }
+    */
 
 } // namespace endian
 

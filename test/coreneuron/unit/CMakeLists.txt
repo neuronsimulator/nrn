@@ -1,4 +1,6 @@
 include(FindSLURM)
+include(TestScriptUtils)
+
 function(make_mpi_exeprefix nproc exeprefix)
 if(SLURM_FOUND AND SLURM_SACCTMGR_COMMAND)
     if("$ENV{SLURM_ACCOUNT}" STREQUAL "")
@@ -16,6 +18,7 @@ elseif(MPIEXEC)
 endif()
 endfunction()
 
+add_subdirectory (unit/endian)
 add_subdirectory (integration)
 #add_subdirectory (regression)
 add_subdirectory (validation)
