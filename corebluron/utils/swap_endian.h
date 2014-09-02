@@ -79,7 +79,7 @@ namespace endian {
                 else if (Unroll%2==0 || !Aligned) {
                     swap_endian<K,Unroll/2,Aligned>::eval(d);
                     swap_endian<K,Unroll/2,Aligned>::eval(d+K*(Unroll/2));
-                    if (Unroll%1)
+                    if (Unroll%2)
                         swap_endian<K,1,Aligned>::eval(d+K*(Unroll-1));
                 }
                 else {

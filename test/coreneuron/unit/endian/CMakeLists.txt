@@ -5,6 +5,11 @@ if(Boost_FOUND)
     set(TEST_LABEL unit)
     make_mpi_exeprefix(1 TEST_PREFIX)
     include_directories(${CMAKE_SOURCE_DIR}/corebluron ${Boost_INCLUDE_DIRS})
+
+    # Need to test the endian code against aggressive compiler optimization:
+    # -O5 is xlc highest level, though clang may well complain.
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O5")
+
     include(CommonCPPCTest)
 endif()
 
