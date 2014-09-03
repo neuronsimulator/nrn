@@ -225,9 +225,21 @@ AC_CHECK_PROG(PYTHON_BLD, python, python)
 
 dnl Only needed if making a distribution. In that case cython must work.
 dnl Otherwise, to make a distribution, need to modify
-dnl src/neuronmusic/Makefile.am and remove neuronmusic.cpp fromt the list
+dnl src/neuronmusic/Makefile.am and remove neuronmusic.cpp from the list
 dnl of extra dist files.
-AC_CHECK_PROG(CYTHON, cython, cython, echo)
+dnl Also needed for neuron.rxd.geometry3d module
+AC_CHECK_PROG(have_cython, cython, yes, no)
+AC_CHECK_PROG(CYTHON, cython, cython, cython)
+AM_CONDITIONAL(HAVE_CYTHON, test x$have_cython = xyes)
+
+if test "x$BUILD_RX3D" = "x" ; then
+	if test x$have_cython = xyes -o -f share/lib/python/neuron/rxd/geometry3d/ctng.cpp ; then
+		BUILD_RX3D=1
+	else
+		BUILD_RX3D=0
+	fi
+fi
+AC_SUBST(BUILD_RX3D)
 
 MINGW_CFLAG=""
 EXTRA_CYGWIN_FLAGS='$(EXTRA_CYGWIN)'

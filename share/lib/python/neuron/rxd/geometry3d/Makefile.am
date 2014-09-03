@@ -1,9 +1,10 @@
-
-CYTHON = @CYTHON@
-PYTHON = @PYTHON@
 geosrc = $(top_srcdir)/share/lib/python/neuron/rxd/geometry3d
 
+if HAVE_CYTHON
 all: graphicsPrimitives.cpp surfaces.cpp ctng.cpp
+else
+all:
+endif
 
 ctng.cpp: ctng.pyx
 	$(CYTHON) $(geosrc)/ctng.pyx -o ctng.cpp
@@ -20,6 +21,7 @@ EXTRA_DIST = ctng.cpp ctng.pyx surfaces.cpp surfaces.pyx \
 	graphicsPrimitives.cpp graphicsPrimitives.pyx \
 	marching_cubes2.c llgramarea.c
 
+if HAVE_CYTHON
 install-exec-am: ctng.cpp surfaces.cpp graphicsPrimitives.cpp
 	if test ! -f graphicsPrimitives.cpp ; then \
 		cp $(geosrc)/graphicsPrimitives.cpp  . ; \
@@ -36,11 +38,9 @@ install-exec-am: ctng.cpp surfaces.cpp graphicsPrimitives.cpp
 	if test "$(PYTHON)" != "" ; then \
 		$(PYTHON) setup.py build_ext --inplace ; \
 	fi
+endif
 
 clean-generic:
 	rm -r -f build
-	if test "$(CYTHON)" != "echo" ; then \
-		rm -f ctng.cpp graphicsPrimitives.cpp surfaces.cpp ; \
-		rm -fr build/ ; \
-		rm -fr *.so ; \
-	fi
+	rm -f ctng.cpp graphicsPrimitives.cpp surfaces.cpp
+	rm -fr *.so

@@ -1,6 +1,9 @@
 from .rxdException import RxDException
 from neuron import h
-from . import geometry3d, dimension3
+try:
+  from . import geometry3d, dimension3
+except:
+  pass
 import copy
 import itertools
 import numpy

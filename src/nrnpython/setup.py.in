@@ -10,6 +10,7 @@ extern_defines = "@NRNPYTHON_DEFINES@"
 nrnpython_exec = "@NRNPYTHON_EXEC@"
 nrnpython_pyver = "@NRNPYTHON_PYVER@"
 nrn_srcdir = "@NRN_SRCDIR@"
+build_rx3d = @BUILD_RX3D@
 ivlibdir = "@IV_LIBDIR@"
 if ivlibdir == "" :
     ivlibdir = '.'
@@ -95,7 +96,8 @@ for scheme in INSTALL_SCHEMES.values():
     scheme['data'] = scheme['purelib']
 
 ext_modules = [hoc_module]
-try:
+if build_rx3d:
+  try:
     import numpy
     # TODO: do we need to use os.path.join?
     src_path = nrn_srcdir + '/share/lib/python/neuron/rxd/geometry3d/'
@@ -111,13 +113,17 @@ try:
                    Extension("neuron.rxd.geometry3d.surfaces",
                              sources=[build_path + "surfaces.cpp", src_path + "marching_cubes2.c", src_path + "llgramarea.c"],
                              include_dirs=include_dirs)]    
-except:
+  except:
     pass
+
+packages=['neuron','neuron.neuroml','neuron.tests', 'neuron.rxd']
+if build_rx3d:
+  packages +=['neuron.rxd.geometry3d']
 
 setup(name="NEURON", version="@PACKAGE_VERSION@",
       description = "NEURON bindings for python",
       package_dir = {'':instdir+'/share/nrn/lib/python'},
-      packages=['neuron','neuron.neuroml','neuron.tests', 'neuron.rxd', 'neuron.rxd.geometry3d'],
+      packages=packages,
       data_files = [('neuron', [nrn_srcdir + '/share/lib/python/neuron/help_data.dat'])],
       ext_modules=ext_modules
 )
