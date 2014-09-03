@@ -97,7 +97,7 @@ static int isend(s, buf)
  * is at the end of a line.  We also count lines so the user can go right to
  * the error in most cases 
  */
-static char     inlinebuf[2][600], *inlinep = inlinebuf[0] + 30, *ctp = inlinebuf[0] + 30;
+static char     inlinebuf[2][NRN_BUFSIZE], *inlinep = inlinebuf[0] + 30, *ctp = inlinebuf[0] + 30;
 static int whichbuf;
 
 char* Fgets(buf, size, f) char* buf; int size; FILE* f; {
@@ -217,7 +217,7 @@ void unGets(buf)		/* all this because we don't have an ENDBLOCK
 #endif
 
 char* current_line() { /* assumes we actually want the previous line */
-	static char buf[256];
+	static char buf[NRN_BUFSIZE];
 	char* p;
 	sprintf(buf,"at line %d in file %s:\\n%s", linenum-1, finname,
 		inlinebuf[whichbuf?0:1]+30);
@@ -304,7 +304,7 @@ typedef struct FileStackItem {
 	char* ctp;
 	int linenum;
 	FILE* fp;
-	char finname[200];
+	char finname[NRN_BUFSIZE];
 } FileStackItem;
 
 static List* filestack;
@@ -330,7 +330,7 @@ static FILE* include_open(fname, err)
 	FILE* f = (FILE*)0;
 	FileStackItem* fsi;
 	char* dirs, *colon;
-	char buf2[200];
+	char buf2[NRN_BUFSIZE];
 	if(fname[0] == '/') { /* highest precedence is complete filename */
 		return fopen(fname, "r");
 	}
@@ -386,7 +386,7 @@ static FILE* include_open(fname, err)
 void include_file(q)
 	Item* q;
 {
-	char fname[200];
+	char fname[NRN_BUFSIZE];
 	FileStackItem* fsi;
 	if (!filestack) {
 		filestack = newlist();

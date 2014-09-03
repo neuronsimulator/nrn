@@ -109,7 +109,7 @@ static int nstate_[MAXKINBLK];
 #if VECTORIZE
 static char* instance_loop() {
 	extern char* cray_pragma();
-	static char buf1[256];
+	static char buf1[NRN_BUFSIZE];
 	Sprintf(buf1, "\n#ifdef WANT_PRAGMA%s#endif\n   _INSTANCE_LOOP {\n",
 		cray_pragma());
 	return buf1;
@@ -464,7 +464,7 @@ Sprintf(buf, "{int _reset=0;\n");
 		rlist->capacity[i] = "";
 	}
 	if (compartlist) {
-		char buf1[512];
+		char buf1[NRN_BUFSIZE];
 		Item *q, *qexp, *qb, *qend, *q1;
 		ITERATE(q, compartlist) {
 			qexp = ITM(q); q = q->next;
@@ -1054,7 +1054,7 @@ static int genconservterms(eqnum, r, fn, rlst)
 {
 	Item *q;
 	Rterm *rt, *rtdiag;
-	char eqstr[512];
+	char eqstr[NRN_BUFSIZE];
 	
 	q = r->position;
 	/* find the term used for the equation number (important if array)*/
@@ -1078,7 +1078,7 @@ static int genconservterms(eqnum, r, fn, rlst)
 	Sprintf(buf, "_RHS%s) = %s;\n", eqstr, r->krate[0]);
 	Insertstr(q, buf);
 	for (rt = r->rterm[0]; rt; rt = rt->rnext) {
-		char buf1[512];
+		char buf1[NRN_BUFSIZE];
 		if (rlst->capacity[rt->sym->used][0]) {
 			Sprintf(buf1, " * %s", rlst->capacity[rt->sym->used]);
 		} else {

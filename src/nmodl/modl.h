@@ -67,6 +67,15 @@
  special structures for Reaction, Rlist, etc.
  */
 
+/* For char buffers that might be called on to hold long path names */
+/* Note that paths can exceed MAX_PATH from <limits.h> on some systems */
+#define NRN_BUFSIZE 8192
+#include <limits.h>
+#if MAX_PATH > NRN_BUFSIZE
+#undef NRN_BUFSIZE
+#define NRN_BUFSIZE MAX_PATH
+#endif
+
 typedef struct Item    List;		/* list of mixed items */
 typedef struct Item {
 	short           itemtype;

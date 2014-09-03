@@ -148,7 +148,7 @@ void parm_array_install(n, num, units, limits, index)
 	Symbol         *n;
 	char           *num, *units, *limits;
 {
-	char buf[512];
+	char buf[NRN_BUFSIZE];
 
 	previous_subtype = n->subtype;	
 	previous_str = n->u.str;
@@ -165,7 +165,7 @@ void parminstall(n, num, units, limits)
 	Symbol         *n;
 	char           *num, *units, *limits;
 {
-	char buf[512];
+	char buf[NRN_BUFSIZE];
 
 	previous_subtype = n->subtype;	
 	previous_str = n->u.str;
@@ -208,7 +208,7 @@ void steppedinstall(n, q1, q2, units)
 {
 	int             i;
 
-	char buf[512];
+	char buf[NRN_BUFSIZE];
 	static int      seestep = 0;
 
 	previous_subtype = n->subtype;
@@ -250,7 +250,7 @@ void indepinstall(n, from, to, with, qstart, units, scop)
 	Item		*qstart;	/* ITEM0 if not present */
 	int scop;	/*1 if declaring the scop independent*/
 {
-	char buf[512];
+	char buf[NRN_BUFSIZE];
 
 /* scop_indep may turn out to be different from indepsym. If this is the case
    then indepsym will be a constant in the .var file (see parout.c).
@@ -313,7 +313,7 @@ void depinstall(type, n, index, from, to, units, qs, makeconst, abstol)
 	char           *from, *to, *units, *abstol;
 	Item           *qs;
 {
-	char buf[512], *pstr;
+	char buf[NRN_BUFSIZE], *pstr;
 	int             c;
 
 	if (!type && strlen(abstol)>0) {

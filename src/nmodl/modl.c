@@ -51,9 +51,9 @@ FILE	*fctlout,		/* filename.ctl */
 #endif
 
 
-char		*modprefix, prefix_[200];	/* the first argument */
+char		*modprefix, prefix_[NRN_BUFSIZE];	/* the first argument */
 
-char            finname[200];	/* filename.mod  or second argument */
+char            finname[NRN_BUFSIZE];	/* filename.mod  or second argument */
 
 #if LINT
 char           *clint;
@@ -105,7 +105,7 @@ int main(argc, argv)
 	modl_units(); /* since we will be changing the cwd */
 	mac_cmdline(&argc, &argv);
 	{
-	char cs[256], *cp;
+	char cs[NRN_BUFSIZE], *cp;
 	strncpy(cs, argv[1], 256);
 	cp  = strrchr(cs, ':');
 	if (cp) {

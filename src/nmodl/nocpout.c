@@ -1141,7 +1141,7 @@ if (_nd->_extnode) {\n\
 	Lappendstr(defs_list, "\
 	hoc_register_var(hoc_scdoub, hoc_vdoub, hoc_intfunc);\n");
 	if (GETWD(buf)) {
-		char buf1[256];
+		char buf1[NRN_BUFSIZE];
 #if defined(MINGW)
 {		char* cp;
 		for (cp = buf; *cp; ++cp) {
@@ -1402,7 +1402,7 @@ void units_reg() {
 	Symbol* s;
 	Item* q;
 	double d1, d2;
-	char u[200];
+	char u[NRN_BUFSIZE];
 	
 	Lappendstr(defs_list, "static HocParmUnits _hoc_parm_units[] = {\n");
 	ITERATE (q, syminorder) {

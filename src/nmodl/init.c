@@ -8,7 +8,7 @@ extern List    *firstlist;
 extern List    *syminorder;
 Symbol         *semi, *beginblk, *endblk;
 List           *intoken;
-char		buf[512];	/* volatile temporary buffer */
+char		buf[NRN_BUFSIZE];	/* volatile temporary buffer */
 
 static struct {			/* Keywords */
 	char           *name;
