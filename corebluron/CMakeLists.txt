@@ -153,7 +153,7 @@ set(MECH_FILES
 
 endif()
 
-set_source_files_properties(${MECH_FILES} PROPERTIES COMPILE_FLAGS "-Wno-error")
+set_source_files_properties(${MECH_FILES} "nrniv/main1.cpp" PROPERTIES COMPILE_FLAGS "-Wno-error")
 
 common_library(corebluron)
 

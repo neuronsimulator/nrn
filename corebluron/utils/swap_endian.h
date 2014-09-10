@@ -97,6 +97,14 @@ namespace endian {
             static void eval(unsigned char *) {}
         };
         
+        // This is necessary to convince older versions of gcc that
+        // we really aren't ever going to statically divide by zero.
+        //
+        template <size_t Unroll,bool Aligned>
+        struct swap_endian<0,Unroll,Aligned> {
+            static void eval(unsigned char *) {}
+        };
+ 
         // specialise swap_endian_basic for integer data sizes
 
         template <bool Aligned>

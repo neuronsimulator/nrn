@@ -7,8 +7,9 @@ if(Boost_FOUND)
     include_directories(${CMAKE_SOURCE_DIR}/corebluron ${Boost_INCLUDE_DIRS})
 
     # Need to test the endian code against aggressive compiler optimization:
-    # -O5 is xlc highest level, though clang may well complain.
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O5")
+    # -O4 is xlc highest level without link-level optimization.
+    # clang may well complain.
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O4")
 
     include(CommonCPPCTest)
 endif()
