@@ -228,7 +228,9 @@ dnl Otherwise, to make a distribution, need to modify
 dnl src/neuronmusic/Makefile.am and remove neuronmusic.cpp from the list
 dnl of extra dist files.
 dnl Also needed for neuron.rxd.geometry3d module
-AC_CHECK_PROG(have_cython, cython, yes, no)
+if test "x$have_cython" != "xno" ; then
+  AC_CHECK_PROG(have_cython, cython, yes, no)
+fi
 AC_CHECK_PROG(CYTHON, cython, cython, cython)
 AM_CONDITIONAL(HAVE_CYTHON, test x$have_cython = xyes)
 
