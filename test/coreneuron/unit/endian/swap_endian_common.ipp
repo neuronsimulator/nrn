@@ -28,6 +28,10 @@
 
 #include <stdint.h>
 
+#ifdef SWAP_ENDIAN_BROKEN_MEMCPY
+#define memcpy(d,s,n) ::endian::impl::safe_memcpy((d),(s),(n))
+#endif
+
 /* Some of the tests require an unaligned fill: can't ask std::fill to
  * do this and not expect issues with alignment */
 template <typename T>

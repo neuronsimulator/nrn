@@ -19,6 +19,24 @@
 #define SWAP_ENDIAN_MAX_UNROLL 8
 #endif
 
+#if defined(__GNUC__) && __GNUC__==4 && __GNUC_MINOR__<6
+#define SWAP_ENDIAN_BROKEN_MEMCPY
+#endif
+
+#ifdef SWAP_ENDIAN_BROKEN_MEMCPY
+#define memcpy(d,s,n) ::endian::impl::safe_memcpy((d),(s),(n))
+namespace endian {
+    namespace impl {
+        static inline void *safe_memcpy(void *d,void *s,size_t n) {
+            char *d_=(char *)d;
+            char *s_=(char *)s;
+            while (n-->0) *d_++=*s_++;
+            return d;
+        }
+    }
+}
+#endif
+
 namespace endian {
 
     namespace impl {
@@ -92,21 +110,19 @@ namespace endian {
             }
         };
 
+        // This specialization is required ONLY to convince gcc 4.4.7
+        // that it will never divide by zero statically.
+        template <size_t K,bool Aligned>
+        struct swap_endian<K,0,Aligned> {
+            static void eval(unsigned char *) {}
+        };
+
         template <size_t Unroll,bool Aligned>
         struct swap_endian<1,Unroll,Aligned> {
             static void eval(unsigned char *) {}
         };
-        
-        // This is necessary to convince older versions of gcc that
-        // we really aren't ever going to statically divide by zero.
-        //
-        template <size_t Unroll,bool Aligned>
-        struct swap_endian<0,Unroll,Aligned> {
-            static void eval(unsigned char *) {}
-        };
- 
-        // specialise swap_endian_basic for integer data sizes
 
+        // specialise swap_endian_basic for integer data sizes
         template <bool Aligned>
         struct swap_endian_basic<2,1,Aligned> {
             static void eval(unsigned char *d) {
@@ -341,14 +357,11 @@ namespace endian {
     void swap_endian_range(I b,I e) {
         impl::swap_endian_range_dispatch<I,impl::is_pointer<I>::value>::eval(b,e);
     }
-    /*
-        if (impl::is_pointer<I>::value)
-            impl::swap_endian_unroll(b,e);
-        else {
-            while (b!=e) swap_endian(*b++);
-        }
-    */
 
 } // namespace endian
+
+#ifdef SWAP_ENDIAN_BROKEN_MEMCPY
+#undef memcpy
+#endif
 
 #endif // ifndef swap_endian_h
