@@ -34,6 +34,14 @@ function(GIT_EXTERNAL DIR REPO TAG)
   endif()
 
   if(IS_DIRECTORY "${DIR}/.git")
+    execute_process(COMMAND ${GIT_EXECUTABLE} rev-parse --short HEAD
+      OUTPUT_VARIABLE currentref OUTPUT_STRIP_TRAILING_WHITESPACE
+      WORKING_DIRECTORY ${DIR})
+    if(currentref STREQUAL TAG) # nothing to do
+      return()
+    endif()
+
+    # reset generated files
     foreach(GIT_EXTERNAL_RESET_FILE ${GIT_EXTERNAL_RESET})
       execute_process(
         COMMAND "${GIT_EXECUTABLE}" reset -q "${GIT_EXTERNAL_RESET_FILE}"
@@ -45,6 +53,7 @@ function(GIT_EXTERNAL DIR REPO TAG)
         WORKING_DIRECTORY "${DIR}")
     endforeach()
 
+    # fetch latest update
     execute_process(COMMAND "${GIT_EXECUTABLE}" fetch --all -q
       RESULT_VARIABLE nok ERROR_VARIABLE error
       WORKING_DIRECTORY "${DIR}")
@@ -52,6 +61,7 @@ function(GIT_EXTERNAL DIR REPO TAG)
       message(STATUS "Update of ${DIR} failed:\n   ${error}")
     endif()
 
+    # checkout requested tag
     execute_process(
       COMMAND "${GIT_EXECUTABLE}" checkout -q "${TAG}"
       RESULT_VARIABLE nok ERROR_VARIABLE error

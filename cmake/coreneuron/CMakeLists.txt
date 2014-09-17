@@ -9,16 +9,16 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 PROJECT(CoreBluron)
 
-set(RELEASE_VERSION OFF)  # OFF or ABI version
-set(LAST_RELEASE 0.1.0)
-set (VERSION_MAJOR "0")
-set (VERSION_MINOR "2")
-set (VERSION_PATCH "0")
+set(LAST_RELEASE 0.2.0)
+set(VERSION_MAJOR "0")
+set(VERSION_MINOR "3")
+set(VERSION_PATCH "0")
+set(VERSION_ABI 1)
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/CMake ${CMAKE_SOURCE_DIR}/CMake/common)
 include(GitExternal)
 
-set(COREBLURON_DESCRIPTION "BBP core simulator")
+set(COREBLURON_DESCRIPTION "BBP CoreBluron simulator")
 set(COMMON_PROJECT_DOMAIN ch.epfl.bluebrain)
 
 if(${CMAKE_SYSTEM_PROCESSOR} STREQUAL "ppc64")
@@ -63,18 +63,14 @@ endif(COREBLURON_MAIN)
 
 option(COREBLURON_TESTS "Compilation of coreBluron unit test" ON)
 if(COREBLURON_TESTS)
-  #this depends of the associated module
-  set(BOOST_DIR $ENV{BOOST_DIR} CACHE PATH "Path to the Boost installation (or to the Boost source)")
-  set(BOOST_ROOT ${BOOST_DIR})
-
-  find_package (Boost COMPONENTS unit_test_framework system)
-  if(Boost_FOUND)
-    include_directories(${Boost_INCLUDE_DIRS})
+  if(NOT Boost_FOUND)
+    message("Disabling tests: Boost libraries not found")
+    set(COREBLURON_TESTS OFF)
   else()
-    message(FATAL_ERROR "Boost libraries not found. Please specify location using the BOOST_DIR variable")
+    add_subdirectory(tests)
   endif()
-  add_subdirectory(tests)
 endif(COREBLURON_TESTS)
+
 
 include(CPackConfig)
 include(DoxygenRule)
