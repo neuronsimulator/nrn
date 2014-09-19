@@ -6,6 +6,9 @@
 # Author: Aleksandr Ovcharenko
 # Core Bluron
 
+
+# Initial Setup
+
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 PROJECT(CoreBluron)
 
@@ -19,7 +22,6 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/CMake ${CMAKE_SOURCE_DIR}/CMak
 include(GitExternal)
 
 set(COREBLURON_DESCRIPTION "BBP CoreBluron simulator")
-set(COMMON_PROJECT_DOMAIN ch.epfl.bluebrain)
 
 if(${CMAKE_SYSTEM_PROCESSOR} STREQUAL "ppc64")
   set(COREBLURON_LIBRARY_TYPE STATIC)
@@ -35,19 +37,12 @@ if(MPI_FOUND)
 endif(MPI_FOUND)
 
 
-########################################################################
-#
 # Core library
-#
-########################################################################
 
 add_subdirectory(corebluron)
 
-########################################################################
-#
+
 # Main
-#
-########################################################################
 
 option (COREBLURON_MAIN "Build the CORE BLURON main" ON)
 if(COREBLURON_MAIN)
@@ -55,11 +50,7 @@ if(COREBLURON_MAIN)
 endif(COREBLURON_MAIN)
 
 
-########################################################################
-#
 # Tests
-#
-########################################################################
 
 option(COREBLURON_TESTS "Compilation of coreBluron unit test" ON)
 if(COREBLURON_TESTS)
@@ -72,5 +63,9 @@ if(COREBLURON_TESTS)
 endif(COREBLURON_TESTS)
 
 
-include(CPackConfig)
+# Documentation
+
+set(GIT_DOCUMENTATION_REPO BBPDocumentation)
+set(COMMON_ORGANIZATION_NAME BBP)
+set(COMMON_PROJECT_DOMAIN ch.epfl.bluebrain)
 include(DoxygenRule)
