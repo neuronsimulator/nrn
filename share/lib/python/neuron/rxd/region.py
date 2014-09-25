@@ -28,43 +28,51 @@ def _sort_secs(secs):
 # TODO: remove the need for this
 _sim_dimension = None
 
-class Region:
-    def __repr__(self):
-        return 'Region(..., nrn_region=%r, geometry=%r, dimension=%r, dx=%r)' % (self.nrn_region, self._geometry, _sim_dimension, self._dx)
+class Region(object):
+    """Declare a conceptual region of the neuron.
     
-    def __init__(self, sections, nrn_region=None, geometry=None, dimension=1, dx=None):
+    Examples: Cytosol, ER, extracellular space
+    """
+    def __repr__(self):
+        return 'Region(..., nrn_region=%r, geometry=%r, dimension=%r, dx=%r, name=%r)' % (self.nrn_region, self._geometry, _sim_dimension, self._dx, self._name)
+    
+    def do_init(self):
         global _region_count, _sim_dimension
+        
+        del self.allow_setting
+        
+        # parameters that were defined in old init
+        # TODO: remove need for this bit
+        nrn_region = self.nrn_region
+        dimension = self._dimension
+        dx = self.dx
+        
+        
         # TODO: validate sections (should be list of nrn.Section)
         if dimension == 3:
-            if hasattr(sections, 'sections'):
+            if hasattr(self._secs, 'sections'):
                 # TODO: Import3D. Won't work with currents, but no problem since need to remove anyways
-                self._secs = sections #copy.copy(sections)
+                pass
             else:
-                self._secs = _sort_secs(sections)
+                self._secs = _sort_secs(self._secs)
             
         else:
-            self._secs = _sort_secs(sections)
-        if nrn_region not in (None, 'i', 'o'):
-            raise RxDException('nrn_region must be one of: None, "i", "o"')
-        self._nrn_region = nrn_region
+            self._secs = _sort_secs(self._secs)
+
         if dimension == 3 and geometry is not None:        
             raise RxDException('custom geometries not yet supported in 3d mode')
         if _sim_dimension is not None and dimension != _sim_dimension:
             raise RxDException('only one type of dimension per simulation supported for now (should change later)')
-        _sim_dimension = dimension
-        if geometry is None:
-            geometry = geo.inside
+        _sim_dimension = self._dimension
         if dimension not in (1, 3):
             raise RxDException('only 1 and 3 dimensional simulations currently supported')
         if dimension != 3 and dx is not None:
             raise RxDException('dx option only accepted if dimension = 3')
         if dimension == 3 and dx is None:
             dx = 0.25
-        self._geometry = geometry
         
         self._id = _region_count
         _region_count += 1
-        self._dimension = dimension
         if dimension == 3:
             if nrn_region == 'o':
                 raise RxDException('3d version does not support nrn_region="o" yet')
@@ -126,15 +134,81 @@ class Region:
             self._ys = ys
             self._zs = zs
             self._segs = segs            
-        self._dx = dx
+        self._dx = self.dx
+    
+    def __init__(self, secs=None, nrn_region=None, geometry=None, dimension=1, dx=None, name=None):
+        """
+        In NEURON 7.4+, secs is optional at initial region declaration, but it
+        must be specified before the reaction-diffusion model is instantiated.
+        
+        .. note:: dimension and dx will be deprecated in a future version
+        """
+        self.allow_setting = True
+        self.secs = secs
+        self.nrn_region = nrn_region
+        self.geometry = geometry
+        self._dimension = dimension
+        self._name = name
+        self.dx = dx
+        self.do_init()
 
     @property
     def nrn_region(self):
+        """Get or set the classic NEURON region associated with this object.
+        
+        There are three possible values:
+            * `'i'` -- just inside the plasma membrane
+            * `'o'` -- just outside the plasma membrane
+            * `None` -- none of the above
+        
+        .. note:: Setting only supported in NEURON 7.4+, and then only before the reaction-diffusion model is instantiated.
+        """        
         return self._nrn_region
+    
+    @nrn_region.setter
+    def nrn_region(self, value):
+        if hasattr(self, 'allow_setting'):
+            if value not in (None, 'i', 'o'):
+                raise RxDException('nrn_region must be one of: None, "i", "o"')
+            else:
+                self._nrn_region = value
+        else:
+            raise RxDException('Cannot set nrn_region now; model already instantiated')
 
+    @property
+    def geometry(self):
+        """Get or set the geometry associated with this region.
+        
+        Setting the geometry to `None` will cause it to default to `rxd.geometry.inside`.
+        
+        .. note:: New in NEURON 7.4+. Setting allowed only before the reaction-diffusion model is instantiated.
+        """        
+        return self._geometry
+
+    @geometry.setter
+    def geometry(self, value):
+        if hasattr(self, 'allow_setting'):
+            if value is None:
+                value = geo.inside
+            self._geometry = value
+        else:
+            raise RxDException('Cannot set geometry now; model already instantiated')
+
+    @property
+    def name(self):
+        """Get or set the Region's name.
+
+        .. note:: New in NEURON 7.4+. 
+        """        
+        return self._name
+
+    @name.setter
+    def name(self, value):
+        self._name = value
 
     @property
     def dimension(self):
+        """Do not use. This will be deprecated in a future development release."""
         return self._dimension
     
     @property
@@ -143,6 +217,21 @@ class Region:
     
     @property
     def secs(self):
-        # return a copy of the section list
+        """Get or set the sections associated with this region.
+        
+        The sections may be expressed as a NEURON SectionList or as any Python
+        iterable of sections.
+        
+        Note: The return value is a copy of the internal section list; modifying
+              it will not change the Region.
+        
+        .. note:: Setting is new in NEURON 7.4+ and allowed only before the reaction-diffusion model is instantiated.
+        """
         return copy.copy(self._secs)
-    
+
+    @secs.setter
+    def secs(self, value):
+        if hasattr(self, 'allow_setting'):
+            self._secs = value
+        else:
+            raise RxDException('Cannot set secs now; model already instantiated')    
