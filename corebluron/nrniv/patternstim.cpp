@@ -82,6 +82,8 @@ int read_raster_file(const char* fname, double** tvec, int** gidvec) {
 
   double st;
   int gid;
+  char dummy[100];
+  assert(fgets(dummy, 100, f));
   while (fscanf(f, "%lf %d\n", &st, &gid) == 2) {
     if (size >= bufsize) {
 	bufsize *= 2;

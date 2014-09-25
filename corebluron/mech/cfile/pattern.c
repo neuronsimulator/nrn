@@ -1,19 +1,3 @@
-/*
-Copyright (c) 2014 EPFL-BBP, All rights reserved.
-
-THIS SOFTWARE IS PROVIDED BY THE BLUE BRAIN PROJECT "AS IS"
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
-THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE BLUE BRAIN PROJECT
-BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
-BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
-WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
-OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
-IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*/
-
 /* Created by Language version: 6.2.0 */
 /* VECTORIZED */
 #include <stdio.h>
@@ -321,7 +305,7 @@ static double _hoc_sendgroup(_vptr) void* _vptr; {
 static void bbcore_write(double* x, int* d, int* xx, int *offset, _threadargsproto_){}
 static void bbcore_read(double* x, int* d, int* xx, int* offset, _threadargsproto_){}
 
-void pattern_stim_setup_helper(int size, double* tv, double* gv, _threadargsproto_) {
+void pattern_stim_setup_helper(int size, double* tv, int* gv, _threadargsproto_) {
 	INFOCAST;
 	Info* info = mkinfo(_threadargs_);
 	*ip = info;
@@ -383,6 +367,6 @@ static terminal(){}
 static _initlists(){
  double _x; double* _p = &_x;
  int _i; static int _first = 1;
-  if (!_first) return 0;
+  if (!_first) return;
 _first = 0;
 }

@@ -185,6 +185,7 @@ int prcellstate(int gid, const char* suffix) {
         assert(f);
         fprintf(f, "gid = %d\n", gid);
         fprintf(f, "t = %.15g\n", nt._t);
+        fprintf(f, "celsius = %.15g\n", celsius);
         if (ps.thvar_) {
           pr_realcell(ps, nt, f);
         }

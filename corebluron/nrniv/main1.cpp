@@ -23,6 +23,7 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "corebluron/nrniv/nrniv_decl.h"
 #include "corebluron/nrniv/output_spikes.h"
 #include "corebluron/utils/endianness.h"
+#include "corebluron/nrniv/nrnoptarg.h"
 
 #define HAVE_MALLINFO 1
 #if HAVE_MALLINFO
@@ -56,6 +57,14 @@ int fatal_error(const char *msg) {
   return -1;
 }
 
+static const char* datpath;
+const char* add_datpath(const char* fname) {
+  static char rval[1000];
+  sprintf(rval, "%s/%s", datpath, fname);
+  return rval;
+}
+
+
 int main1(int argc, char** argv, char** env) {
   (void)env; /* unused */
 
@@ -63,21 +72,24 @@ int main1(int argc, char** argv, char** env) {
 
   Print_MemUsage("after nrnmpi_init mallinfo");
 
-  mk_mech("bbcore_mech.dat");
+  datpath = nrn_optarg("-datpath", &argc, argv);
+  if (!datpath) {
+    datpath = ".";
+  }
+
+  mk_mech(add_datpath("bbcore_mech.dat"));
 
   Print_MemUsage("after mk_mech mallinfo");
 
   mk_netcvode();
 
+  int prcellgid = nrn_optargint("-prcellgid", &argc, argv, -1);
+
   /// PatterStim option
-  int need_patternstim = 0;
+  const char* patternstim = nrn_optarg("-pattern", &argc, argv);
 
-  if (argc > 1 && strcmp(argv[1], "-pattern") == 0) {
-    // One part done before call to nrn_setup. Other part after.
-    need_patternstim = 1;
-  }
-
-  if (need_patternstim) {
+  // One part done before call to nrn_setup. Other part after.
+  if (patternstim) {
     nrn_set_extra_thread0_vdata();
   }
 
@@ -85,7 +97,6 @@ int main1(int argc, char** argv, char** env) {
   double tstop, maxdelay, voltage;
   int iSpikeBuf;
   char str[128];
-  char endianstr[128]="native";
   FILE *fp = fopen("inputs.dat","r");
   if (!fp)
   {
@@ -102,28 +113,50 @@ int main1(int argc, char** argv, char** env) {
   }
   else
   {
+    int a;
     fgets(str, 128, fp);
-    fscanf(fp, "  StartTime\t%lf\n", &t);
-    fscanf(fp, "  EndTime\t%lf\n", &tstop);
-    fscanf(fp, "  Dt\t\t%lf\n\n", &dt);
-    fgets(str, 128, fp);
-    fscanf(fp, "  Celsius\t%lf\n", &celsius);
-    fscanf(fp, "  Voltage\t%lf\n", &voltage);
-    fscanf(fp, "  MaxDelay\t%lf\n", &maxdelay);
-    fscanf(fp, "  SpikeBuf\t%d\n", &iSpikeBuf);
-    fscanf(fp, "  Endianness\t%20s\n", endianstr);
+    assert(1 == fscanf(fp, "  StartTime\t%lf\n", &t));
+    assert(1 == fscanf(fp, "  EndTime\t%lf\n", &tstop));
+    assert(1 == fscanf(fp, "  Dt\t\t%lf\n\n", &dt));
+//    fgets(str, 128, fp);
+    assert(1 == fscanf(fp, "  Celsius\t%lf\n", &celsius));
+    assert(1 == fscanf(fp, "  Voltage\t%lf\n", &voltage));
+    assert(1 == fscanf(fp, "  MaxDelay\t%lf\n", &maxdelay));
+    assert(1 == fscanf(fp, "  SpikeBuf\t%d\n", &iSpikeBuf));
     fclose(fp);
   }
 
-  enum endian::endianness file_endian=endian::native_endian;
-  if (!strcmp(endianstr,"little")) file_endian=endian::little_endian;
-  else if (!strcmp(endianstr,"big")) file_endian=endian::big_endian;
-  else if (!strcmp(endianstr,"native")) file_endian=endian::native_endian;
-  else 
-    return fatal_error("Failed to parse Endianness field in inputs.dat");
+  const char* ts = nrn_optarg("-tstop", &argc, argv);
+  if (ts) {
+    assert(1 == sscanf(ts, "%lf", &tstop));
+  }
+
+  if (nrnmpi_myid == 0) {
+    printf("t=%g tstop=%g dt=%g celsius=%g voltage=%g maxdelay=%g\n\
+iSpikeBuf=%d\n", t, tstop, dt, celsius, voltage, maxdelay,
+iSpikeBuf);
+  }
+
+  enum endian::endianness file_endian=endian::little_endian;
+  if (endian::is_little_endian()) {
+    if (nrn_need_byteswap){
+      file_endian = endian::big_endian;
+    }
+  }else if (endian::is_big_endian()) {
+    if (!nrn_need_byteswap){
+      file_endian = endian::big_endian;
+    }
+  }else{
+    return fatal_error("Could not figure out whether to byteswap.");
+  }
 
   /// Assigning threads to a specific task by the first gid written in the file
-  fp = fopen("files.dat","r");
+  const char* filesdat;
+  filesdat = nrn_optarg("-filesdat", &argc, argv);
+  if (!filesdat) {
+    filesdat = strdup(add_datpath("files.dat"));
+  }
+  fp = fopen(filesdat,"r");
   if (!fp)
   {
     return fatal_error("No input file with nrnthreads, exiting...");
@@ -155,7 +188,7 @@ int main1(int argc, char** argv, char** env) {
   /// Reading the files and setting up the data structures
   Print_MemUsage("before nrn_setup mallinfo");
 
-  nrn_setup(ngrp, grp, ".", file_endian);
+  nrn_setup(ngrp, grp, datpath, file_endian);
 
   Print_MemUsage("after nrn_setup mallinfo");
 
@@ -163,8 +196,8 @@ int main1(int argc, char** argv, char** env) {
 
 
   /// Invoke PatternStim
-  if (need_patternstim) {
-    nrn_mkPatternStim("out.std");
+  if (patternstim) {
+    nrn_mkPatternStim(patternstim);
   }
 
 
@@ -182,10 +215,21 @@ int main1(int argc, char** argv, char** env) {
 
   Print_MemUsage("after finitialize mallinfo");
 
+  char prcellname[1000];
+  if (prcellgid >= 0) {
+    sprintf(prcellname, "t%g", t);
+    prcellstate(prcellgid, prcellname);
+  }
+
   /// Solver execution
   double time = nrnmpi_wtime();
   BBS_netpar_solve(tstop);
   nrnmpi_barrier();
+
+  if (prcellgid >= 0) {
+    sprintf(prcellname, "t%g", t);
+    prcellstate(prcellgid, prcellname);
+  }
 
   if (nrnmpi_myid == 0)
     printf("Time to solution: %g\n", nrnmpi_wtime() - time);

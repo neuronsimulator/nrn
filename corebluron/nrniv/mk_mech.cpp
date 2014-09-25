@@ -21,6 +21,17 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "corebluron/nrniv/nrniv_decl.h"
 #include "corebluron/nrniv/ivtable.h"
 
+int nrn_need_byteswap;
+// following copied (except for nrn_need_byteswap line) from NEURON ivocvect.cpp
+#define BYTEHEADER uint32_t _II__;  char *_IN__; char _OUT__[16]; int BYTESWAP_FLAG=0;
+#define BYTESWAP(_X__,_TYPE__) \
+    BYTESWAP_FLAG = nrn_need_byteswap; \
+    if (BYTESWAP_FLAG == 1) { \
+        _IN__ = (char *) &(_X__); \
+        for (_II__=0;_II__< sizeof(_TYPE__);_II__++) { \
+                _OUT__[_II__] = _IN__[sizeof(_TYPE__)-_II__-1]; } \
+        (_X__) = *((_TYPE__ *) &_OUT__); \
+    }
 
 class StringKey {
 public:
@@ -73,6 +84,19 @@ void mk_mech(const char* fname) {
     }
     //printf("%s %d %d\n", mname, nrn_get_mechtype(mname), type);
   }
+
+  // an int32_t binary 1 is at this position. After reading can decide if
+  // binary info in files needs to be byteswapped.
+  int32_t x;
+  assert(fread(&x, sizeof(int32_t), 1, f) == 1);
+  nrn_need_byteswap = 0;
+  if (x != 1) {
+    BYTEHEADER;
+    nrn_need_byteswap = 1;
+    BYTESWAP(x, int32_t);
+    assert(x == 1);
+  }
+
   fclose(f);
   hoc_last_init();
 }

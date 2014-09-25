@@ -36,6 +36,7 @@ extern void nrn_mkPatternStim(const char* filename);
 extern int nrn_extra_thread0_vdata;
 extern void nrn_set_extra_thread0_vdata(void);
 extern Point_process* nrn_artcell_instantiate(const char* mechname);
+extern int nrn_need_byteswap;
 
 extern void nrn_alloc_gid2out(int size, int poolsize);
 extern void nrn_alloc_gid2in(int size, int poolsize);

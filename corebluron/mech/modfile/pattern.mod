@@ -99,7 +99,7 @@ VERBATIM
 static void bbcore_write(double* x, int* d, int* xx, int *offset, _threadargsproto_){}
 static void bbcore_read(double* x, int* d, int* xx, int* offset, _threadargsproto_){}
 
-void pattern_stim_setup_helper(int size, double* tv, double* gv, _threadargsproto_) {
+void pattern_stim_setup_helper(int size, double* tv, int* gv, _threadargsproto_) {
 	INFOCAST;
 	Info* info = mkinfo(_threadargs_);
 	*ip = info;

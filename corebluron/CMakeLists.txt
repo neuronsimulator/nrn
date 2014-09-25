@@ -30,6 +30,7 @@ nrniv/ivtable.h
 nrniv/netcon.h
 nrniv/netcvode.h
 nrniv/nrnhash_alt.h
+nrniv/nrnoptarg.h
 nrniv/nrnhash.h
 nrniv/nrniv_decl.h
 nrniv/nrniv_mf.h
@@ -73,6 +74,7 @@ nrniv/ivvect.cpp
 nrniv/mk_mech.cpp
 nrniv/nrn_setup.cpp
 nrniv/nrn_datareader.cpp
+nrniv/optarg.cpp
 nrniv/output_spikes.cpp
 nrniv/patternstim.cpp
 nrniv/vrecord.cpp
