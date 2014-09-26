@@ -82,12 +82,15 @@ class MultiCompartmentReaction(GeneralizedReaction):
         if not isinstance(scheme, rxdmath._Reaction):
             raise RxDException('%r not a recognized reaction scheme' % self._scheme)
         self._dir = scheme._dir
-        self._update_rates()
         if not membrane._geometry.is_area():
             raise RxDException('must specify a membrane not a volume for the boundary')
         self._regions = [membrane]
         #self._update_indices()
         rxd._register_reaction(self)
+        self._do_init()
+        
+    def _do_init(self):
+        self._update_rates()
 
 
     def _update_rates(self):

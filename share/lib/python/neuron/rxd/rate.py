@@ -27,8 +27,11 @@ class Rate(GeneralizedReaction):
         else:
             self._involved_species = [weakref.ref(species)]
         self._trans_membrane = False
-        self._update_indices()
         rxd._register_reaction(self)
+        self._do_init()
+        
+    def _do_init(self):
+        self._update_indices()
     
     def __repr__(self):
         return 'Rate(%r, %r, regions=%r, membrane_flux=%r)' % (self._species, self._original_rate, self._regions, self._membrane_flux)

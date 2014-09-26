@@ -9,6 +9,8 @@ import warnings
 import itertools
 from .rxdException import RxDException
 
+# The difference here is that defined species only exists after rxd initialization
+_all_species = []
 _defined_species = {}
 def _get_all_species():
     return _defined_species
@@ -233,6 +235,7 @@ class Species(_SpeciesMathable):
         self.name = name
         self.charge = charge
         self.initial = initial
+        _all_species.append(weakref.ref(self))
         self._do_init()
 
     

@@ -8,7 +8,9 @@ import copy
 import itertools
 import numpy
 from . import geometry as geo
+import weakref
 
+_all_regions = []
 _region_count = 0
 
 def _sort_secs(secs):
@@ -150,6 +152,7 @@ class Region(object):
         self._dimension = dimension
         self._name = name
         self.dx = dx
+        _all_regions.append(weakref.ref(self))
         self._do_init()
 
     @property

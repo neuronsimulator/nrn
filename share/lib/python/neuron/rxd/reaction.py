@@ -66,8 +66,6 @@ class Reaction(GeneralizedReaction):
         self._membrane_flux = False
         self._dir = scheme._dir
         self._custom_dynamics = custom_dynamics
-        self._update_rates()
-
 
         self._trans_membrane = False
         if not hasattr(regions, '__len__'):
@@ -75,6 +73,10 @@ class Reaction(GeneralizedReaction):
         self._regions = regions
         #self._update_indices()
         rxd._register_reaction(self)
+        self._do_init()
+
+    def _do_init(self):
+        self._update_rates()
 
     def _update_rates(self):
         lhs = self._scheme._lhs._items
@@ -110,9 +112,11 @@ class Reaction(GeneralizedReaction):
     
     @property
     def f_rate(self):
+        """Get or set the forward reaction rate"""
         return self._original_rate_f
     @property
     def b_rate(self):
+        """Get or set the backward reaction rate"""
         return self._original_rate_b
     @f_rate.setter
     def f_rate(self, value):
