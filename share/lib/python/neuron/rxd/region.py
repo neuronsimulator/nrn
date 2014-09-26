@@ -39,7 +39,7 @@ class Region(object):
     def do_init(self):
         global _region_count, _sim_dimension
         
-        del self.allow_setting
+        del self._allow_setting
         
         # parameters that were defined in old init
         # TODO: remove need for this bit
@@ -143,7 +143,7 @@ class Region(object):
         
         .. note:: dimension and dx will be deprecated in a future version
         """
-        self.allow_setting = True
+        self._allow_setting = True
         self.secs = secs
         self.nrn_region = nrn_region
         self.geometry = geometry
@@ -167,7 +167,7 @@ class Region(object):
     
     @nrn_region.setter
     def nrn_region(self, value):
-        if hasattr(self, 'allow_setting'):
+        if hasattr(self, '_allow_setting'):
             if value not in (None, 'i', 'o'):
                 raise RxDException('nrn_region must be one of: None, "i", "o"')
             else:
@@ -187,7 +187,7 @@ class Region(object):
 
     @geometry.setter
     def geometry(self, value):
-        if hasattr(self, 'allow_setting'):
+        if hasattr(self, '_allow_setting'):
             if value is None:
                 value = geo.inside
             self._geometry = value
@@ -231,7 +231,7 @@ class Region(object):
 
     @secs.setter
     def secs(self, value):
-        if hasattr(self, 'allow_setting'):
+        if hasattr(self, '_allow_setting'):
             self._secs = value
         else:
             raise RxDException('Cannot set secs now; model already instantiated')    

@@ -79,9 +79,12 @@ class _SpeciesMathable(object):
     
     @d.setter
     def d(self, value):
-        _volumes, _surface_area, _diffs = node._get_data()
-        _diffs[self.indices()] = value
-        rxd._setup_matrices()
+        if hasattr(self, '_allow_setting'):
+            self._d = value
+        else:
+            _volumes, _surface_area, _diffs = node._get_data()
+            _diffs[self.indices()] = value
+            rxd._setup_matrices()
 
 class SpeciesOnRegion(_SpeciesMathable):
     def __init__(self, species, region):
@@ -221,16 +224,38 @@ class Species(_SpeciesMathable):
 
         charge must match the charges specified in NMODL files for the same ion, if any."""
 
+        # TODO: check if "name" already defined elsewhere (if non-None)
+        #       if so, make sure other fields consistent, expand regions as appropriate
+
+        self._allow_setting = True
+        self.regions = regions
+        self.d = d
+        self.name = name
+        self.charge = charge
+        self.initial = initial
+        self.do_init()
+
+    
+    def do_init(self):
+
         # TODO: if a list of sections is passed in, make that one region
         # _species_count is used to create a unique _real_name for the species
         global _species_count
+
+
+        regions = self._regions
+        self._real_name = self._name
+        initial = self.initial
+        charge = self._charge
+        d = self._d
+        
         
         # invalidate any old initialization of external solvers
         rxd._external_solver_initialized = False
         
         # TODO: check about the 0<x<1 problem alluded to in the documentation
         h.define_shape()
-        self._name = name
+        name = self.name
         if name is not None:
             if not isinstance(name, str):
                 raise RxDException('Species name must be a string')
@@ -249,11 +274,6 @@ class Species(_SpeciesMathable):
             regions = list([regions])
         if not all(isinstance(r, region.Region) for r in regions):
             raise RxDException('regions list must consist of Region objects only')
-        self._regions = regions
-        self._real_name = name
-        self.initial = initial
-        self._charge = charge
-        self._d = d
         self._species = weakref.ref(self)        
         # at this point self._name is None if unnamed or a string == name if
         # named
@@ -398,8 +418,34 @@ class Species(_SpeciesMathable):
 
     @property
     def charge(self):
-        """The charge of the species."""
+        """Get or set the charge of the Species.
+        
+        .. note:: Setting is new in NEURON 7.4+ and is allowed only before the reaction-diffusion model is instantiated.
+        """
         return self._charge
+
+    @charge.setter
+    def charge(self, value):
+        if hasattr(self, '_allow_setting'):
+            self._charge = value
+        else:
+            raise RxDException('Cannot set charge now; model already instantiated')
+
+    @property
+    def regions(self):
+        """Set the regions where the Species is present
+        
+        .. note:: New in NEURON 7.4+. Setting is allowed only before the reaction-diffusion model is instantiated.
+        """
+        raise RxDException('regions is write only')
+
+    @regions.setter
+    def regions(self, value):
+        if hasattr(self, '_allow_setting'):
+            self._regions = value
+        else:
+            raise RxDException('Cannot set regions now; model already instantiated')
+
         
     def _update_region_indices(self):
         self._region_indices = {}
@@ -575,11 +621,21 @@ class Species(_SpeciesMathable):
 
     @property
     def name(self):
-        """The name of the Species.
+        """Get or set the name of the Species.
 
         This is used only for syncing with the non-reaction-diffusion parts of NEURON.
+        
+        .. note:: Setting only supported in NEURON 7.4+, and then only before the reaction-diffusion model is instantiated.
         """
         return self._name
+    
+    @name.setter
+    def name(self, value):
+        if hasattr(self, '_allow_setting'):
+            self._name = value
+        else:
+            raise RxDException('Cannot set name now; model already instantiated')
+
 
     def __repr__(self):
         return 'Species(regions=%r, d=%r, name=%r, charge=%r, initial=%r)' % (self._regions, self._d, self._name, self._charge, self.initial)
