@@ -233,10 +233,10 @@ class Species(_SpeciesMathable):
         self.name = name
         self.charge = charge
         self.initial = initial
-        self.do_init()
+        self._do_init()
 
     
-    def do_init(self):
+    def _do_init(self):
 
         # TODO: if a list of sections is passed in, make that one region
         # _species_count is used to create a unique _real_name for the species

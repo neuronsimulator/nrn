@@ -36,7 +36,7 @@ class Region(object):
     def __repr__(self):
         return 'Region(..., nrn_region=%r, geometry=%r, dimension=%r, dx=%r, name=%r)' % (self.nrn_region, self._geometry, _sim_dimension, self._dx, self._name)
     
-    def do_init(self):
+    def _do_init(self):
         global _region_count, _sim_dimension
         
         del self._allow_setting
@@ -150,7 +150,7 @@ class Region(object):
         self._dimension = dimension
         self._name = name
         self.dx = dx
-        self.do_init()
+        self._do_init()
 
     @property
     def nrn_region(self):
