@@ -30,4 +30,7 @@ extern int* spikevec_gid;
 
 void validation(std::vector<std::pair<double,int> >& res);
 
+void spikevec_lock();
+void spikevec_unlock();
+
 #endif

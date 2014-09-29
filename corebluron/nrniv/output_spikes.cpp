@@ -18,18 +18,25 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "corebluron/nrniv/nrniv_decl.h"
 #include "corebluron/nrniv/output_spikes.h"
 #include "corebluron/nrnmpi/nrnmpi.h"
+#include "corebluron/nrniv/nrnmutdec.h"
 
 int spikevec_buffer_size;
 int spikevec_size;
 double* spikevec_time;
 int* spikevec_gid;
 
+static MUTDEC
+
 void mk_spikevec_buffer(int sz) {
   spikevec_buffer_size = sz;
   spikevec_size = 0;
   spikevec_time = new double[sz];
   spikevec_gid = new int[sz];
+  MUTCONSTRUCT(1);
 }
+
+void spikevec_lock() { MUTLOCK }
+void spikevec_unlock() { MUTUNLOCK }
 
 void output_spikes() {
   char fname[100];

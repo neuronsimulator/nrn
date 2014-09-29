@@ -1015,11 +1015,15 @@ void BBS_spike_record(int gid, IvocVect* spikevec, IvocVect* gidvec) {
     if (gid >= 0) {
 	assert(gid2out_->find(gid, ps));
 	assert(ps);
+        MUTLOCK
 	ps->record(spikevec, gidvec, gid);
+        MUTUNLOCK
     }else{ // record all output spikes
 	NrnHashIterate(Gid2PreSyn, gid2out_, PreSyn*, ps2) {
 		if (ps2->output_index_ >= 0) {
+     			MUTLOCK
 			ps2->record(spikevec, gidvec, ps2->output_index_);
+			MUTUNLOCK 
 		}
 	}}}
     }

@@ -265,6 +265,7 @@ NetCvodeThreadData::~NetCvodeThreadData() {
 void NetCvodeThreadData::interthread_send(double td, DiscreteEvent* db, NrnThread* nt) {
 	//bin_event(td, db, nt);
 	(void)nt; // avoid unused warning
+	
 	MUTLOCK
 	if(ite_cnt_ >= ite_size_) {
 		ite_size_ *= 2;
@@ -279,8 +280,15 @@ void NetCvodeThreadData::interthread_send(double td, DiscreteEvent* db, NrnThrea
 	InterThreadEvent& ite = inter_thread_events_[ite_cnt_++];
 	ite.de_ = db;
 	ite.t_ = td;
-	int& b = net_cvode_instance->enqueueing_;
-	if (!b) { b = 1; }
+
+	/* this is race condition for pthread implementation.
+	 * we are not using cvode in corebluron and hence 
+	 * it's safe to comment out following lines. Remember 
+	 * some locks are per thread and hence not safe to 
+	 * lock global variables 
+	 */
+	//int& b = net_cvode_instance->enqueueing_;
+	//if (!b) { b = 1; }
 	MUTUNLOCK
 }
 
@@ -1041,10 +1049,12 @@ void PreSyn::record(double tt) {
 		}
 	}
 #else
+	spikevec_lock();
 	assert(spikevec_size < spikevec_buffer_size);
 	spikevec_gid[spikevec_size] = gid_;
 	spikevec_time[spikevec_size] = tt;
 	++spikevec_size;
+	spikevec_unlock();
 #endif
 }
 

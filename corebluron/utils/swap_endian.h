@@ -46,7 +46,7 @@ namespace endian {
         template <typename V>
         struct is_pointer<V *> { enum { value=true }; };
 
-        struct not_implemented { static void eval(...); };
+        struct not_implemented { static void eval(...) { abort(); } };
 
         /** Check to ensure a class is not derived from not_implemented */
         template <typename C>
