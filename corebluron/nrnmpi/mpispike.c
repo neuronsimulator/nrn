@@ -341,8 +341,10 @@ double nrnmpi_dbl_allmin(double x) {
 
 static void pgvts_op(double* in, double* inout, int* len, MPI_Datatype* dptr){
 	int i, r=0;
-	assert(*dptr == MPI_DOUBLE);
-	assert(*len == 4);
+	if(*dptr != MPI_DOUBLE)
+          printf("ERROR in mpispike.c! *dptr should be MPI_DOUBLE.");
+	if(*len != 4)
+          printf("ERROR in mpispike.c! *len should be 4.");
 	if (in[0] < inout[0]) {
  		/* least time has highest priority */
  		r = 1;

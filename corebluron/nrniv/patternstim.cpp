@@ -28,6 +28,7 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "corebluron/nrniv/nrniv_decl.h"
 #include "corebluron/nrnoc/nrnoc_decl.h"
 #include "corebluron/nrniv/output_spikes.h"
+#include "corebluron/nrniv/nrn_assert.h"
 
 extern "C" {
 void _pattern_reg(void);
@@ -83,7 +84,7 @@ int read_raster_file(const char* fname, double** tvec, int** gidvec) {
   double st;
   int gid;
   char dummy[100];
-  assert(fgets(dummy, 100, f));
+  nrn_assert(fgets(dummy, 100, f));
   while (fscanf(f, "%lf %d\n", &st, &gid) == 2) {
     if (size >= bufsize) {
 	bufsize *= 2;

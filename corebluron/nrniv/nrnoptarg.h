@@ -17,9 +17,17 @@
   the following arg if relevant) and argc is decremented.
 */
 
-extern bool nrn_optarg_on(const char* opt, int* argc, char** argv);
-extern const char* nrn_optarg(const char* opt, int* argc, char** argv);
-extern int nrn_optargint(const char* opt, int* argc, char** argv, int dflt);
+#include <getopt.h>
+
+typedef struct cb_parameters
+{
+  double tstart, tstop, dt, celsius, voltage, maxdelay;
+  int spikebuf, prcellgid, threading;
+  char *patternstim, *filesdat, *datpath, *outpath;
+} cb_input_params;
+
+/// Get CoreBluron input parameters from the command line
+void Get_cb_opts(int argc, char** argv, cb_input_params* input_params);
 
 #endif
 

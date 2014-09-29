@@ -29,6 +29,7 @@ nrniv/ivocvect.h
 nrniv/ivtable.h
 nrniv/netcon.h
 nrniv/netcvode.h
+nrniv/nrn_assert.h
 nrniv/nrnhash_alt.h
 nrniv/nrnoptarg.h
 nrniv/nrnhash.h
@@ -74,7 +75,7 @@ nrniv/ivvect.cpp
 nrniv/mk_mech.cpp
 nrniv/nrn_setup.cpp
 nrniv/nrn_datareader.cpp
-nrniv/optarg.cpp
+nrniv/nrnoptarg.cpp
 nrniv/output_spikes.cpp
 nrniv/patternstim.cpp
 nrniv/vrecord.cpp
@@ -155,7 +156,7 @@ set(MECH_FILES
 
 endif()
 
-set_source_files_properties(${MECH_FILES} "nrniv/main1.cpp" PROPERTIES COMPILE_FLAGS "-Wno-error")
+set_source_files_properties(${MECH_FILES} PROPERTIES COMPILE_FLAGS "-Wno-error")
 
 common_library(corebluron)
 

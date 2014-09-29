@@ -20,6 +20,7 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "corebluron/nrnoc/multicore.h"
 #include "corebluron/nrnmpi/nrnmpi.h"
 #include "corebluron/nrniv/nrnhash_alt.h"
+#include "corebluron/nrniv/nrn_assert.h"
 
 #define ALTHASH 1
 #undef MD
@@ -818,7 +819,7 @@ static void mk_localgid_rep() {
 // high so that they do not themselves generate spikes.
 void nrn_fake_fire(int gid, double spiketime, int fake_out) {
 	assert(gid2in_);
-	PreSyn* ps;
+	PreSyn* ps = NULL;
 	InputPreSyn* psi;
 	if (gid2in_->find(gid, psi)) {
 		assert(psi);
@@ -881,8 +882,8 @@ void netpar_tid_set_gid2node(int tid, int gid, int nid) {
     BBS_set_gid2node(gid, nid);
   }else{
     PreSyn* ps;
-    assert(nid == nrnmpi_myid);
-    assert(neg_gid2out_[tid]->find(gid, ps) == 0);
+    nrn_assert(nid == nrnmpi_myid);
+    nrn_assert(neg_gid2out_[tid]->find(gid, ps) == 0);
     neg_gid2out_[tid]->insert(gid, NULL);
   }
 }
@@ -892,7 +893,7 @@ void netpar_tid_cell(int tid, int gid, PreSyn* ps) {
     BBS_cell(gid, ps);
   }else{
     PreSyn* ps1;
-    assert(neg_gid2out_[tid]->find(gid, ps1));
+    nrn_assert(neg_gid2out_[tid]->find(gid, ps1));
     neg_gid2out_[tid]->insert(gid, ps);
   }
 }
@@ -1004,8 +1005,8 @@ void BBS_cell(int gid, PreSyn* ps) {
 
 void BBS_outputcell(int gid) {
 	PreSyn* ps;
-	assert(gid2out_->find(gid, ps));
-	assert(ps);
+	nrn_assert(gid2out_->find(gid, ps));
+	nrn_assert(ps);
 	ps->output_index_ = gid;
 	ps->gid_ = gid;
 }
@@ -1013,8 +1014,8 @@ void BBS_outputcell(int gid) {
 void BBS_spike_record(int gid, IvocVect* spikevec, IvocVect* gidvec) {
 	PreSyn* ps;
     if (gid >= 0) {
-	assert(gid2out_->find(gid, ps));
-	assert(ps);
+	nrn_assert(gid2out_->find(gid, ps));
+	nrn_assert(ps);
         MUTLOCK
 	ps->record(spikevec, gidvec, gid);
         MUTUNLOCK

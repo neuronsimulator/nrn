@@ -18,15 +18,13 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
    actually used.
 */
 
-#include <assert.h>
+#include <stdio.h>
+#include <stdlib.h>
 
-double* hoc_pgetarg(int iarg) { (void)iarg; assert(0); }
-double* getarg(int iarg) { (void)iarg; assert(0); }
-char* gargstr(int iarg) { (void)iarg; assert(0); }
-int hoc_is_str_arg(int iarg) { (void)iarg; assert(0); }
-int ifarg(int iarg) { (void)iarg; assert(0); }
-double chkarg(int iarg, double low, double high) {
-	(void)iarg; (void)low; (void)high;
-	 assert(0);
-}
-void* vector_arg(int i) { (void) i; assert(0); }
+double* hoc_pgetarg(int iarg) { (void)iarg; printf("ERROR in hocstub.c! Function hoc_pgetarg() should never be called! Exiting..."); abort(); }
+double* getarg(int iarg) { (void)iarg; printf("ERROR in hocstub.c! Function getarg() should never be called! Exiting..."); abort(); }
+char* gargstr(int iarg) { (void)iarg; printf("ERROR in hocstub.c! Function gargstr() should never be called! Exiting..."); abort(); }
+int hoc_is_str_arg(int iarg) { (void)iarg; printf("ERROR in hocstub.c! Function hoc_is_str_arg() should never be called! Exiting..."); abort(); }
+int ifarg(int iarg) { (void)iarg; printf("ERROR in hocstub.c! Function ifarg() should never be called! Exiting..."); abort(); }
+double chkarg(int iarg, double low, double high) { (void)iarg; (void)low; (void)high; printf("ERROR in hocstub.c! Function chkarg() should never be called! Exiting..."); abort(); }
+void* vector_arg(int i) { (void) i; printf("ERROR in hocstub.c! Function vector_arg() should never be called! Exiting..."); abort(); }

@@ -20,6 +20,7 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "corebluron/nrnoc/nrnoc_decl.h"
 #include "corebluron/nrniv/nrniv_decl.h"
 #include "corebluron/nrniv/ivtable.h"
+#include "corebluron/nrniv/nrn_assert.h"
 
 int nrn_need_byteswap;
 // following copied (except for nrn_need_byteswap line) from NEURON ivocvect.cpp
@@ -50,20 +51,22 @@ implementTable(Mech2Type, StringKey, int)
 static void set_mechtype(const char* name, int type);
 static Mech2Type* mech2type;
 
-void mk_mech(const char* fname) {
+void mk_mech(const char* datpath) {
+  char fname[1024];
+  sprintf(fname, "%s/%s", datpath, "bbcore_mech.dat");
   FILE* f;
   f = fopen(fname, "r");
   assert(f);
 //  printf("reading %s\n", fname);
   int n=0;
-  assert(fscanf(f, "%d\n", &n) == 1);
+  nrn_assert(fscanf(f, "%d\n", &n) == 1);
   mech2type = new Mech2Type(2*n);
   alloc_mech(n);
   for (int i=2; i < n; ++i) {
     char mname[100];
     int type=0, pnttype=0, is_art=0, is_ion=0, dsize=0, pdsize=0;
-    assert(fscanf(f, "%s %d %d %d %d %d %d\n", mname, &type, &pnttype, &is_art, &is_ion, &dsize, &pdsize) == 7);
-    assert(i == type);
+    nrn_assert(fscanf(f, "%s %d %d %d %d %d %d\n", mname, &type, &pnttype, &is_art, &is_ion, &dsize, &pdsize) == 7);
+    nrn_assert(i == type);
 #ifdef DEBUG
     printf("%s %d %d %d %d %d %d\n", mname, type, pnttype, is_art, is_ion, dsize, pdsize);
 #endif
@@ -74,7 +77,7 @@ void mk_mech(const char* fname) {
     nrn_is_artificial_[type] = is_art;
     if (is_ion) {
       double charge = 0.;
-      assert(fscanf(f, "%lf\n", &charge) == 1);
+      nrn_assert(fscanf(f, "%lf\n", &charge) == 1);
       // strip the _ion
       char iname[100];
       strcpy(iname, mname);

@@ -132,7 +132,6 @@ void alloc_mech(int n) {
 }
 
 void hoc_last_init() {
-	void (**m)();
 
 	initnrn();
  	if (nrnmpi_myid < 1) if (nrn_nobanner_ == 0) { 
@@ -144,8 +143,9 @@ void hoc_last_init() {
 /* will have to put this back if any mod file refers to diam */
 	register_mech(morph_mech, morph_alloc, (Pfri)0, (Pfri)0, (Pfri)0, (Pfri)0, -1, 0);
 #endif
-	for (m = mechanism; *m; m++) {
-		(*m)();
+        int i;
+	for (i=0; mechanism[i]; i++) {
+		(*mechanism[i])();
 	}
 	modl_reg();
 }

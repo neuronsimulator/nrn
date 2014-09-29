@@ -20,7 +20,7 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <vector>
 #include <utility> 
 
-void output_spikes(void);
+void output_spikes(char *outpath);
 void mk_spikevec_buffer(int);
 
 extern int spikevec_buffer_size;

@@ -21,6 +21,7 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "corebluron/nrniv/vrecitem.h"
 #include "corebluron/utils/randoms/nrnran123.h"
 #include "corebluron/nrniv/nrn_datareader.h"
+#include "corebluron/nrniv/nrn_assert.h"
 
 // file format defined in cooperation with nrncore/src/nrniv/nrnbbcore_write.cpp
 // single integers are ascii one per line. arrays are binary int or double
@@ -103,7 +104,7 @@ NetCon** netcon_in_presyn_order_;
 
 static int chkpnt;
 
-void nrn_setup(int ngroup, int* gidgroups, const char *path, enum endian::endianness file_endian) {
+void nrn_setup(int ngroup, int* gidgroups, const char *path, enum endian::endianness file_endian, int threading) {
   char fname[100];
   assert(ngroup > 0);
 #if 0
@@ -114,7 +115,7 @@ void nrn_setup(int ngroup, int* gidgroups, const char *path, enum endian::endian
   // Fortunately, empty threads work fine.
   { int ng = ngroup;
     if (ng == 1) { ng += 1; }
-    nrn_threads_create(ng, 0); // serial threads
+    nrn_threads_create(ng, threading); // serial/parallel threads
   }
 #endif
 
@@ -388,7 +389,7 @@ void determine_inputpresyn() {
 void read_phase2(data_reader &F, NrnThread& nt) {
   NrnThreadMembList* tml;
   int n_outputgid = F.read_int();
-  assert(n_outputgid > 0); // avoid n_outputgid unused warning
+  nrn_assert(n_outputgid > 0); // avoid n_outputgid unused warning
   nt.ncell = F.read_int();
   nt.end = F.read_int();
   int nmech = F.read_int();
@@ -625,7 +626,7 @@ void read_phase2(data_reader &F, NrnThread& nt) {
   }
   for (int i=0; i < n; ++i) {
     int vtype = F.read_int();
-    assert(vtype == VecPlayContinuousType);
+    nrn_assert(vtype == VecPlayContinuousType);
     int ix = F.read_int();
     int sz = F.read_int();
     IvocVect* yvec = vector_new(sz);

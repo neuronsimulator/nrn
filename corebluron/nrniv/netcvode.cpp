@@ -25,6 +25,7 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "corebluron/nrniv/ivocvect.h"
 #include "corebluron/nrniv/nrniv_decl.h"
 #include "corebluron/nrniv/output_spikes.h"
+#include "corebluron/nrniv/nrn_assert.h"
 
 #define UNIT_ROUNDOFF DBL_EPSILON
 #define PP2NT(pp) ((NrnThread*)((pp)->_vnt))
@@ -1169,7 +1170,7 @@ void DiscreteEvent::pr(const char* s, double tt, NetCvode* ns) {
 
 void NetCon::send(double tt, NetCvode* ns, NrnThread* nt) {
 	if (active_ && target_) {
-		assert(PP2NT(target_) == nt);
+		nrn_assert(PP2NT(target_) == nt)
 		STATISTICS(netcon_send_active_);
 #if BBTQ == 5
 		ns->bin_event(tt, this, PP2NT(target_));

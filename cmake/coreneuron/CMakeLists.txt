@@ -12,7 +12,6 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 PROJECT(CoreBluron)
 
-set(LAST_RELEASE 0.2.0)
 set(VERSION_MAJOR "0")
 set(VERSION_MINOR "3")
 set(VERSION_PATCH "0")
@@ -69,3 +68,4 @@ set(GIT_DOCUMENTATION_REPO BBPDocumentation)
 set(COMMON_ORGANIZATION_NAME BBP)
 set(COMMON_PROJECT_DOMAIN ch.epfl.bluebrain)
 include(DoxygenRule)
+include(CPackConfig)

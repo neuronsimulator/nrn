@@ -18,6 +18,8 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "corebluron/nrnconf.h"
 #include "corebluron/nrnoc/multicore.h"
 
+extern void nrnmpi_finalize(void);
+
 int stoprun;
 int nrn_nthread;
 NrnThread* nrn_threads;
@@ -31,6 +33,7 @@ char* pnt_name(Point_process* pnt) {
 }
 
 void nrn_exit(int err) {
+  nrnmpi_finalize();
   exit(err);
 }
 
