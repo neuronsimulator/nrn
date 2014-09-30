@@ -8,6 +8,7 @@ import numpy
 import warnings
 import itertools
 from .rxdException import RxDException
+import initializer
 
 # The difference here is that defined species only exists after rxd initialization
 _all_species = []
@@ -236,8 +237,10 @@ class Species(_SpeciesMathable):
         self.charge = charge
         self.initial = initial
         _all_species.append(weakref.ref(self))
-        self._do_init()
 
+        # initialize self if the rest of rxd is already initialized
+        if initializer.is_initialized():
+            self._do_init()
     
     def _do_init(self):
 
@@ -463,6 +466,7 @@ class Species(_SpeciesMathable):
         """return the indices corresponding to this species in the given region
         
         if r is None, then returns all species indices"""
+        initializer._do_init()
         if self._dimension == 1:
             if r in self._region_indices:
                 return self._region_indices[r]
@@ -614,6 +618,7 @@ class Species(_SpeciesMathable):
         """A NodeList of all the nodes corresponding to the species.
         
         This can then be further restricted using the callable property of NodeList objects."""
+        initializer._do_init()
         if self._dimension == 1:
             return nodelist.NodeList(itertools.chain.from_iterable([s.nodes for s in self._secs]))
         elif self._dimension == 3:

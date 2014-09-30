@@ -1,6 +1,6 @@
 from .rxdException import RxDException
 import weakref
-from . import species, rxdmath, rxd
+from . import species, rxdmath, rxd, initializer
 import numpy
 from .rangevar import RangeVar
 import itertools
@@ -28,7 +28,11 @@ class Rate(GeneralizedReaction):
             self._involved_species = [weakref.ref(species)]
         self._trans_membrane = False
         rxd._register_reaction(self)
-        self._do_init()
+
+        # initialize self if the rest of rxd is already initialized
+        if initializer.is_initialized():
+            self._do_init()
+
         
     def _do_init(self):
         self._update_indices()

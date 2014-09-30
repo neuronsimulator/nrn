@@ -1,10 +1,9 @@
 import weakref
-from . import species, rxdmath, rxd, node
+from . import species, rxdmath, rxd, node, initializer
 import numpy
 import copy
 from .generalizedReaction import GeneralizedReaction, ref_list_with_mult, get_scheme_rate1_rate2_regions_custom_dynamics_mass_action
 from .rxdException import RxDException
-
 
 class Reaction(GeneralizedReaction):
     def __init__(self, *args, **kwargs):
@@ -73,7 +72,11 @@ class Reaction(GeneralizedReaction):
         self._regions = regions
         #self._update_indices()
         rxd._register_reaction(self)
-        self._do_init()
+
+        # initialize self if the rest of rxd is already initialized
+        if initializer.is_initialized():
+            self._do_init()
+
 
     def _do_init(self):
         self._update_rates()

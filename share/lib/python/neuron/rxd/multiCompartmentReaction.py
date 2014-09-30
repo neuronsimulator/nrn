@@ -1,5 +1,5 @@
 import weakref
-from . import rxdmath, rxd, node, species, region
+from . import rxdmath, rxd, node, species, region, initializer
 import numpy
 from .generalizedReaction import GeneralizedReaction, molecules_per_mM_um3, get_scheme_rate1_rate2_regions_custom_dynamics_mass_action
 from neuron import h
@@ -87,7 +87,11 @@ class MultiCompartmentReaction(GeneralizedReaction):
         self._regions = [membrane]
         #self._update_indices()
         rxd._register_reaction(self)
-        self._do_init()
+
+        # initialize self if the rest of rxd is already initialized
+        if initializer.is_initialized():
+            self._do_init()
+
         
     def _do_init(self):
         self._update_rates()

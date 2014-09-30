@@ -9,6 +9,7 @@ import itertools
 import numpy
 from . import geometry as geo
 import weakref
+import initializer
 
 _all_regions = []
 _region_count = 0
@@ -153,7 +154,11 @@ class Region(object):
         self._name = name
         self.dx = dx
         _all_regions.append(weakref.ref(self))
-        self._do_init()
+
+        # initialize self if the rest of rxd is already initialized
+        if initializer.is_initialized():
+            self._do_init()
+
 
     @property
     def nrn_region(self):

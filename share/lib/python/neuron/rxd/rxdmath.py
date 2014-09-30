@@ -5,6 +5,7 @@ import rxdmath
 import weakref
 import functools
 from .rxdException import RxDException
+from . import initializer
 
 def _vectorized(f, objs):
     if hasattr(objs, '__len__'):
@@ -53,6 +54,7 @@ def analyze_reaction(r):
         
 # TODO: change this so that inputs are all automatically converted to numpy.array(s)
 def _compile(arith):
+    initializer._do_init()
     try:
         s = arith._semi_compile
         species_dict = {}

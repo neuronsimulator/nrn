@@ -11,6 +11,7 @@ import ctypes
 import atexit
 import options
 from .rxdException import RxDException
+import initializer 
 
 # aliases to avoid repeatedly doing multiple hash-table lookups
 _numpy_array = numpy.array
@@ -132,6 +133,7 @@ _rxd_offset = None
 
 def _ode_count(offset):
     global _rxd_offset
+    initializer._do_init()
     _rxd_offset = offset
     if _diffusion_matrix is None: _setup_matrices()
     return len(_nonzero_volume_indices)
@@ -140,6 +142,7 @@ def _ode_reinit(y):
     y[_rxd_offset : _rxd_offset + len(_nonzero_volume_indices)] = _node_get_states()[_nonzero_volume_indices]
 
 def _ode_fun(t, y, ydot):
+    initializer.assert_initialized()
     current_dimension = region._sim_dimension
     lo = _rxd_offset
     hi = lo + len(_nonzero_volume_indices)
@@ -188,6 +191,7 @@ def _ode_fun(t, y, ydot):
     states[_zero_volume_indices] = 0
 
 def _ode_solve(dt, t, b, y):
+    initializer.assert_initialized()
     if _diffusion_matrix is None: _setup_matrices()
     lo = _rxd_offset
     hi = lo + len(_nonzero_volume_indices)
@@ -215,6 +219,7 @@ def _ode_solve(dt, t, b, y):
 _rxd_induced_currents = None
 
 def _currents(rhs):
+    initializer._do_init()
     # setup membrane fluxes from our stuff
     # TODO: cache the memb_cur_ptrs, memb_cur_charges, memb_net_charges, memb_cur_mapped
     #       because won't change very often
@@ -272,6 +277,7 @@ from scipy.sparse.linalg import spilu as _spilu
 from scipy.sparse.linalg import LinearOperator as _LinearOperator
 from scipy.sparse import csc_matrix
 def _fixed_step_solve(raw_dt):
+    initializer._do_init()
     global pinverse, _fixed_step_count
     global _last_m, _last_dt, _last_preconditioner
 
@@ -359,6 +365,7 @@ _cur_node_indices = None
 _diffusion_a_ptr, _diffusion_b_ptr, _diffusion_p_ptr = None, None, None
 
 def _diffusion_matrix_solve(dt, rhs):
+    # only get here if already initialized
     global _last_dt
     global _diffusion_a_ptr, _diffusion_d, _diffusion_b_ptr, _diffusion_p_ptr, _c_diagonal
 
@@ -404,6 +411,8 @@ def _diffusion_matrix_solve(dt, rhs):
     return result
 
 def _get_jac(dt, states):
+    # only get here if already initialized
+    
     # now handle the reaction contribution to the Jacobian
     # this works as long as (I - dt(Jdiff + Jreact)) \approx (I - dtJreact)(I - dtJdiff)
     count = 0
@@ -478,6 +487,7 @@ def _reaction_matrix_setup(dt, unexpanded_states):
         _react_matrix_solver = lambda x: x
 
 def _setup():
+    initializer._do_init()
     # TODO: this is when I should resetup matrices (structure changed event)
     global _last_dt, _external_solver_initialized
     _last_dt = None
@@ -672,6 +682,8 @@ def _setup_matrices():
 
 
 def _init():
+    initializer._do_init()
+    
     # TODO: check about the 0<x<1 problem alluded to in the documentation
     h.define_shape()
     
