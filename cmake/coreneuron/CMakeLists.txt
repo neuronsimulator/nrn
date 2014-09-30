@@ -27,6 +27,12 @@ if(${CMAKE_SYSTEM_PROCESSOR} STREQUAL "ppc64")
   set(Boost_USE_STATIC_LIBS ON)
 endif()
 
+# Threading
+option (COREBLURON_OPENMP "Build the CORE BLURON with OpenMP implementation" OFF)
+if(COREBLURON_OPENMP)
+  find_package(OpenMP)
+endif(COREBLURON_OPENMP)
+
 include(Common)
 include(FindPackages)
 

@@ -18,6 +18,16 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define nrnpthread_h
 
 /* Configure with use_pthread=no if pthread.h exists but you do not want to use it */
+
+/* if we enable OpenMP at compile time, disable Pthread */
+#if defined(_OPENMP)
+
+#define USE_PTHREAD 0
+
+#else
+
 #define USE_PTHREAD 1
+
+#endif
 
 #endif

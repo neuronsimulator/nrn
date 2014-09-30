@@ -17,6 +17,25 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef nrnmutdec_h
 #define nrnmutdec_h
 
+#if defined(_OPENMP)
+
+#include <omp.h>
+#define USE_PTHREAD 0
+
+#define MUTDEC omp_lock_t* mut_;
+#define MUTCONSTRUCTED (mut_ != (omp_lock_t*)0)
+#if defined(__cplusplus)
+#define MUTCONSTRUCT(mkmut) {if (mkmut) {mut_= new omp_lock_t; omp_init_lock(mut_);}else{mut_ = 0;}}
+#define MUTDESTRUCT {if (mut_){omp_destroy_lock(mut_); delete mut_; mut_ = (omp_lock_t*)0;}}
+#else
+#define MUTCONSTRUCT(mkmut) {if (mkmut) {mut_=(omp_lock_t*)malloc(sizeof(omp_lock_t)); omp_init_lock(mut_);}else{mut_ = 0;}}
+#define MUTDESTRUCT {if (mut_){omp_destroy_lock(mut_); free((char*)mut_); mut_ = (omp_lock_t*)0;}}
+#endif
+#define MUTLOCK {if (mut_)  {omp_set_lock(mut_);}}
+#define MUTUNLOCK {if (mut_) {omp_unset_lock(mut_);}}
+
+#else /* _OPENMP */
+
 #define USE_PTHREAD 1
 #if USE_PTHREAD
 
@@ -49,4 +68,6 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define MUTUNLOCK /**/
 #endif
 
-#endif
+#endif /* USE_PTHREAD */
+
+#endif 

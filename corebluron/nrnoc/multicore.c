@@ -686,8 +686,19 @@ void nrn_hoc_unlock() {
 #endif
 }
 
+
 void nrn_multithread_job(void*(*job)(NrnThread*)) {
 	int i;
+#if defined(_OPENMP)
+
+	#pragma omp parallel for default(none) private(i) \
+	shared(nrn_threads, job, nrn_nthread, nrnmpi_myid) schedule(static, 1)
+	for(i=0; i < nrn_nthread; ++i) {
+		(*job)(nrn_threads + i);
+	}
+#else
+
+/* old implementation */
 #if USE_PTHREAD
 	BENCHDECLARE
 	if (nrn_thread_parallel_) {
@@ -713,8 +724,9 @@ void nrn_multithread_job(void*(*job)(NrnThread*)) {
 		(*job)(nrn_threads);
 		BENCHADD(nrn_nthread)
 	}
-}
+#endif
 
+}
 
 void nrn_onethread_job(int i, void*(*job)(NrnThread*)) {
 	BENCHDECLARE

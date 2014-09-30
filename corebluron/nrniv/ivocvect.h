@@ -37,7 +37,7 @@ public:
 	int buffer_size();
 	void buffer_size(int);
 
-#if USE_PTHREAD
+#if (USE_PTHREAD || defined(_OPENMP))
 	void mutconstruct(int mkmut) {if (!mut_) MUTCONSTRUCT(mkmut)}
 #else
 	void mutconstruct(int) {}
