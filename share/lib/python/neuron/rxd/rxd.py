@@ -1,5 +1,5 @@
 import neuron
-from neuron import h
+from neuron import h, nrn
 from . import species, node, section1d, region
 from .nodelist import NodeList
 import weakref
@@ -76,6 +76,30 @@ nrn_tree_solve = neuron.nrn_dll_sym('nrn_tree_solve')
 nrn_tree_solve.restype = None
 
 _dptr = _double_ptr
+
+def set_solve_type(domain=None, dimension=None, dx=None, nsubseg=None, method=None):
+    """Specify the numerical discretization and solver options.
+    
+    domain -- a section or Python iterable of sections"""
+    if domain is None:
+        domain = h.allsec()
+    elif isinstance(domain, nrn.Section):
+        domain = [domain]
+    
+    # NOTE: These attributes are set on a per-nrn.Section basis; they cannot 
+    #       assume Section1D objects exist because they might be specified before
+    #       those objects are created
+    
+    # domain is now always an iterable (or invalid)
+    if method is not None:
+        raise RxDException('using set_solve_type to specify method is not yet implemented')
+    if dimension is not None:
+        raise RxDException('using set_solve_type to specify dimension is not yet implemented')
+    if dx is not None:
+        raise RxDException('using set_solve_type to specify dx is not yet implemented')
+    if nsubseg is not None:
+        raise RxDException('using set_solve_type to specify nsubseg is not yet implemented')
+    
 
 def _unregister_reaction(r):
     global _all_reactions
