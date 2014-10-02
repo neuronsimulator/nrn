@@ -45,7 +45,7 @@ class MorphologyDB:
     """
     def __init__(self):
         """Create a MorphologyDB with the current NEURON morphology"""
-        self._children = {sec:[] for sec in _h_allsec()}
+        self._children = dict([(sec,[]) for sec in _h_allsec() ])
         self._parents = {}
         self._connection_pts = {}
         self._roots = []
