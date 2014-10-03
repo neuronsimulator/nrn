@@ -211,6 +211,8 @@ public:
 	int enqueueing_;
 	int use_long_double_;
 public:
+	MUTDEC // only for enqueueing_ so far.
+	void set_enqueueing();
 	double allthread_least_t(int& tid);
 	int solve_when_threads(double);
 	void deliver_events_when_threads(double);
