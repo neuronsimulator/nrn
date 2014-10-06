@@ -186,7 +186,7 @@ void nrnmpi_source_var() {
 	int i;
 	if (sgid2srcindex_->find(sgid, i)) {
 		char tmp[40];
-		sprintf(tmp, "%ld", (int64_t)sgid);
+		sprintf(tmp, "%lld", (int64_t)sgid);
 		hoc_execerror("source var gid already in use:", tmp);
 	}
 	(*sgid2srcindex_)[sgid] = visources_->count();
@@ -397,7 +397,7 @@ static void mk_ttd() {
 	Point_process* pp = target_pntlist_->item(i);
 	int sgid = sgid2targets_->item(i);
 	if (!pp) {
-fprintf(stderr, "Do not know the POINT_PROCESS target for source id %ld\n", (int64_t)sgid);
+fprintf(stderr, "Do not know the POINT_PROCESS target for source id %lld\n", (int64_t)sgid);
 hoc_execerror("For multiple threads, the target pointer must reference a range variable of a POINT_PROCESS.",
 "Note that it is fastest to supply a reference to the POINT_PROCESS as the first arg.");
 	}
@@ -451,7 +451,7 @@ hoc_execerror("For multiple threads, the target pointer must reference a range v
 		}else if (sid2insrc_ && sid2insrc_->find(sid, k)) {
 			ttd.sv[j] = insrc_buf_ + k;
 		}else{
-fprintf(stderr, "No source_var for target_var sid = %ld\n", (int64_t)sid);
+fprintf(stderr, "No source_var for target_var sid = %lld\n", (int64_t)sid);
 			assert(0);
 		}
 	}
