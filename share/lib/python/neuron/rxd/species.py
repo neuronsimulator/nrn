@@ -342,10 +342,9 @@ class Species(_SpeciesMathable):
             node._volumes[range(self._offset, self._offset + len(xs))] = r._vol
             node._surface_area[self._offset : self._offset + len(xs)] = r._sa
             node._diffs[range(self._offset, self._offset + len(xs))] = d
-            self._register_cptrs()
-
         else:
             raise RxDException('unsupported dimension: %r' % self._dimension)
+        self._register_cptrs()
 
     @property
     def states(self):
