@@ -69,9 +69,6 @@ int main1(int argc, char** argv, char** env) {
 
   Get_cb_opts(argc, argv, &input_params);
 
-  t = input_params.tstart;
-  dt = input_params.dt;
-  celsius = input_params.celsius;
   char prcellname[1024], datpath[1024], outpath[1024], filesdat[1024];
 
   /// Overall path for the .dat files
@@ -94,7 +91,18 @@ int main1(int argc, char** argv, char** env) {
     strcpy(filesdat, input_params.filesdat);
   }
 
-  if (nrnmpi_myid == 0) 
+  Print_MemUsage("after nrnmpi_init mallinfo");
+
+  mk_mech(datpath);
+
+  Print_MemUsage("after mk_mech mallinfo");
+
+  mk_netcvode();
+
+  t = input_params.tstart;
+  dt = input_params.dt;
+  celsius = input_params.celsius;
+  if (nrnmpi_myid == 0)
   {
     printf("    t=%g tstop=%g dt=%g celsius=%g voltage=%g maxdelay=%g spikebuf=%d\n\
     datpath: %s\n    filesdat: %s\n", t, input_params.tstop, dt, celsius, input_params.voltage, input_params.maxdelay, input_params.spikebuf, datpath, filesdat);
@@ -103,14 +111,6 @@ int main1(int argc, char** argv, char** env) {
     if (input_params.patternstim)
       printf("    patternstim is defined and will be read from the file: %s\n", input_params.patternstim);
   }
-
-  Print_MemUsage("after nrnmpi_init mallinfo");
-
-  mk_mech(datpath);
-
-  Print_MemUsage("after mk_mech mallinfo");
-
-  mk_netcvode();
 
   // One part done before call to nrn_setup. Other part after.
   if (input_params.patternstim) {
