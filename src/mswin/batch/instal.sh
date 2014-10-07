@@ -133,10 +133,13 @@ done
 # do not forget the ones used by the python dlls
 if false ; then
 # too many, putting duplicates in bin, setup is 13.69MB, only cygcrypto below
-for i in /lib/python2.7/lib-dynload/*.dll ; do
+for i in /lib/python2.7/lib-dynload/*.dll /lib/python2.7/site-packages/numpy/linalg/lapack_lite.dll ; do
 	cygcheck $i | sed 's/^ *//' >> $D/bin/temp.tmp
 done
 fi
+for i in /lib/python2.7/site-packages/numpy/linalg/lapack_lite.dll ; do
+	cygcheck $i | sed 's/^ *//' >> $D/bin/temp.tmp
+done
 
 for i in ` sort $D/bin/temp.tmp | uniq | sed '
 	/WINDOWS/d
@@ -277,7 +280,7 @@ if test ! -f $pz ; then
 	zip -d $pz \*/\*.pyo
 	zip -d $pz \*/\*.pyc
 	for i in bsddb email encodings idlelib test ; do
-		zip -d $pz \*/${i}*
+		zip -d $pz \*/${i}/\*
 	done
 	for i in __init__ aliases ascii ; do
 		zip $pz $pd/encodings/$i.py
