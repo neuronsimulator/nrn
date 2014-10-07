@@ -110,6 +110,8 @@ extern void hoc_fake_call(Symbol*);
 extern void hoc_last_init(void);
 extern void hoc_obj_notify(Object*);
 extern int ivoc_list_count(Object*);
+extern double hoc_func_table(void* functable, int n, double* args);
+extern void hoc_spec_table(void** pfunctable, int n);
 
 #if defined(__cplusplus)
 class IvocVect;

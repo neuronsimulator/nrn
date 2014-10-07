@@ -1095,11 +1095,6 @@ void function_table(s, qpar1, qpar2, qb1, qb2) /* s ( ... ) { ... } */
 	Symbol* t;
 	int i;
 	Item* q, *q1, *q2;
-	static int first = 1;
-	if (first) {
-		first = 0;
-		linsertstr(procfunc, "\nextern double hoc_func_table();\n");
-	}	
 	for (i=0, q=qpar1->next; q != qpar2; q = q->next) {
 #if VECTORIZE
 		if (q->itemtype == STRING || SYM(q)->name[0] != '_') {
@@ -1126,6 +1121,7 @@ void function_table(s, qpar1, qpar2, qb1, qb2) /* s ( ... ) { ... } */
 	t->subtype |= FUNCT;
 	t->usage |= FUNCT;
 	t->no_threadargs = 1;
+	t->varnum = 0;
 
 	sprintf(buf,"double %s", t->name);
 	lappendstr(procfunc, buf);

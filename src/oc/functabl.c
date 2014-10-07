@@ -93,10 +93,11 @@ static double interp(double frac, double x1, double x2)
 	}
 }
 
-double hoc_func_table(FuncTable* ft, int n, double* args)
+double hoc_func_table(void* vpft, int n, double* args)
 {
 	int i, j;
 	double* tab;
+	FuncTable* ft = (FuncTable*)vpft;
 	if (!ft) {
 		hoc_execerror("table not specified in hoc_func_table", (char*)0);
 	}
@@ -137,9 +138,10 @@ printf("calculating y2: fx=%g fy=%g j1=%d y2=%g tabj1=%g\n", ft->targs[0].frac, 
 #endif
 }
 
-void hoc_spec_table(FuncTable** ppt, int n)
+void hoc_spec_table(void** vppt, int n)
 {
 	int i, argcnt;
+	FuncTable** ppt = (FuncTable**)vppt;
 	FuncTable* ft;
 	TableArg* ta;
 	if (!*ppt) {
