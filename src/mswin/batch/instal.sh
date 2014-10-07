@@ -36,6 +36,7 @@ rm -r -f $D
 mkdir $D
 mkdir $D/bin
 mkdir $D/lib
+mkdir $D/tmp
 
 # copy and strip the various executables we built
 cp $B/src/nrniv/mos2nrn.exe $D/bin/mos2nrn.exe
