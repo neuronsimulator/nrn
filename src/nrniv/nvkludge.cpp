@@ -20,8 +20,6 @@ extern int (*nrnpy_guigetstr)(Object*, char**);
 
 #if defined(CYGWIN)
 extern "C" {
-extern double hoc_func_table(); // needed by dll.cpp
-extern double hoc_spec_table(); // needed by dll.cpp
 extern int ncyg_fprintf();
 }
 #endif
@@ -44,8 +42,8 @@ void nrn_nvkludge_dummy() {
 #if HAVE_IV
 	Oc::valid_expr(0);
 #endif
-	hoc_func_table();
-	hoc_spec_table();
+	hoc_func_table(0,0,0);
+	hoc_spec_table(0,0);
 	ncyg_fprintf();
 #endif
 	nrn_vecsim_add(NULL, false);
