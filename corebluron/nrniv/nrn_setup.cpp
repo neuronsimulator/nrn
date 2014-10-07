@@ -129,11 +129,19 @@ void nrn_setup(int ngroup, int* gidgroups, const char *path, enum endian::endian
   // Generates the gid2out hash table which is needed
   // to later count the required number of InputPreSyn
   data_reader *file_reader=new data_reader[ngroup];
+
+  /* parallel initialization is not implemented but ordered clause
+   * will allow to do correct memory initialization on NUMA node
+   */
+  #pragma omp parallel for ordered
   for (int i = 0; i < ngroup; ++i) {
-    sprintf(fname, "%s/%d_1.dat", path, gidgroups[i]);
-    file_reader[i].open(fname,file_endian);
-    read_phase1(file_reader[i], nrn_threads[i]);
-    file_reader[i].close();
+    #pragma omp ordered 
+    {
+      sprintf(fname, "%s/%d_1.dat", path, gidgroups[i]);
+      file_reader[i].open(fname,file_endian);
+      read_phase1(file_reader[i], nrn_threads[i]);
+      file_reader[i].close();
+    }
   }
 
   if (nrnmpi_myid == 0)
@@ -149,13 +157,17 @@ void nrn_setup(int ngroup, int* gidgroups, const char *path, enum endian::endian
 
   // read the rest of the gidgroup's data and complete the setup for each
   // thread.
+  #pragma omp parallel for ordered
   for (int i = 0; i < ngroup; ++i) {
-    sprintf(fname, "%s/%d_2.dat", path, gidgroups[i]);
-    file_reader[i].open(fname,file_endian);
-    read_phase2(file_reader[i], nrn_threads[i]);
-    file_reader[i].close();
-    setup_ThreadData(nrn_threads[i]); // nrncore does this in multicore.c in thread_memblist_setup
-    nrn_mk_table_check(); // was done in nrn_thread_memblist_setup in multicore.c
+    #pragma omp ordered 
+    {
+      sprintf(fname, "%s/%d_2.dat", path, gidgroups[i]);
+      file_reader[i].open(fname,file_endian);
+      read_phase2(file_reader[i], nrn_threads[i]);
+      file_reader[i].close();
+      setup_ThreadData(nrn_threads[i]); // nrncore does this in multicore.c in thread_memblist_setup
+      nrn_mk_table_check(); // was done in nrn_thread_memblist_setup in multicore.c
+    }
   }
   delete [] file_reader;
 
