@@ -633,17 +633,20 @@ static void bbcore_write(double* x, int* d, int* xx, int* offset, _threadargspro
 	  }else{
 		nrnran123_State** pv = (nrnran123_State**)(&_p_rng);
 		nrnran123_getids(*pv, di, di+1);
-//printf("StochKv.mod bbcore_write %d %d\n", di[0], di[1]);
 	  }
+//printf("StochKv.mod %p: bbcore_write offset=%d %d %d\n", _p, *offset, d?di[0]:-1, d?di[1]:-1);
 	}
 	*offset += 2;
 }
 static void bbcore_read(double* x, int* d, int* xx, int* offset, _threadargsproto_) {
 	assert(!_p_rng);
 	uint32_t* di = ((uint32_t*)d) + *offset;
-	nrnran123_State** pv = (nrnran123_State**)(&_p_rng);
-	*pv = nrnran123_newstream(di[0], di[1]);
-//printf("StochKv.mod bbcore_read %d %d\n", di[0], di[1]);
+        if (di[0] != 0 || di[1] != 0)
+        {
+	  nrnran123_State** pv = (nrnran123_State**)(&_p_rng);
+	  *pv = nrnran123_newstream(di[0], di[1]);
+        }
+//printf("StochKv.mod %p: bbcore_read offset=%d %d %d\n", _p, *offset, di[0], di[1]);
 	*offset += 2;
 }
  

@@ -116,6 +116,7 @@ if(NOT GIT_EXTERNALS)
 endif()
 
 if(EXISTS ${GIT_EXTERNALS})
+  include(${GIT_EXTERNALS})
   file(READ ${GIT_EXTERNALS} GIT_EXTERNAL_FILE)
   string(REGEX REPLACE "\n" ";" GIT_EXTERNAL_FILE "${GIT_EXTERNAL_FILE}")
   foreach(LINE ${GIT_EXTERNAL_FILE})
@@ -168,6 +169,7 @@ if(EXISTS ${GIT_EXTERNALS})
           set(GIT_EXTERNAL_SCRIPT
             "${CMAKE_CURRENT_BINARY_DIR}/gitupdate${GIT_EXTERNAL_NAME}.cmake")
           file(WRITE "${GIT_EXTERNAL_SCRIPT}" "
+include(${CMAKE_CURRENT_LIST_DIR}/GitExternal.cmake)
 execute_process(COMMAND ${GIT_EXECUTABLE} fetch --all -q
   WORKING_DIRECTORY ${DIR})
 execute_process(
@@ -175,6 +177,7 @@ execute_process(
   OUTPUT_VARIABLE newref WORKING_DIRECTORY ${DIR})
 if(newref)
   file(APPEND ${GIT_EXTERNALS} \"# ${DIR} ${REPO} \${newref}\")
+  git_external(${DIR} ${REPO} \${newref})
 else()
   file(APPEND ${GIT_EXTERNALS} \"# ${DIR} ${REPO} ${TAG}\n\")
 endif()")

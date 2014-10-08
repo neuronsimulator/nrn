@@ -435,12 +435,19 @@ static void bbcore_read(double* dArray, int* iArray, int* doffset, int* ioffset,
         assert(!_p_vecRate);
         assert(!_p_vecTbins);
         uint32_t* ia = ((uint32_t*)iArray) + *ioffset;
-        nrnran123_State** pv = (nrnran123_State**)(&_p_exp_rng);
-        *pv = nrnran123_newstream(ia[0], ia[1]);
+        nrnran123_State** pv;
+        if (ia[0] != 0 || ia[1] != 0)
+        {
+          pv = (nrnran123_State**)(&_p_exp_rng);
+          *pv = nrnran123_newstream(ia[0], ia[1]);
+        }
 
         ia = ia + 2;
-        pv = (nrnran123_State**)(&_p_uniform_rng);
-        *pv = nrnran123_newstream(ia[0], ia[1]);
+        if (ia[0] != 0 || ia[1] != 0)
+        {
+          pv = (nrnran123_State**)(&_p_uniform_rng);
+          *pv = nrnran123_newstream(ia[0], ia[1]);
+        }
 
         ia = ia + 2;
         int dsize = ia[0];

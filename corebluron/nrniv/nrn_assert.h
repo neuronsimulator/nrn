@@ -2,7 +2,8 @@
 #define _H_NRN_ASSERT
 
 #include <stdio.h>
-#include <cstdarg>
+#include <stdlib.h>
+#include <stdarg.h>
 
 /* Preserving original behaviour requires that we abort() on
  * parse failures.

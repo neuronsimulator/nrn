@@ -19,10 +19,10 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "corebluron/nrnmpi/nrnmpi.h"
 #include "corebluron/nrnmpi/mpispike.h"
 #include "corebluron/nrnmpi/nrnmpi_def_cinc.h"
+#include "corebluron/nrniv/nrn_assert.h"
 
 #if NRNMPI
 #include <mpi.h>
-#define asrt(arg) assert(arg == MPI_SUCCESS)
 #define USE_HPM 0
 #if USE_HPM
 #include <libhpm.h>
@@ -97,15 +97,15 @@ for (i=0; i < *pargc; ++i) {
 		}
 
 		{
-			asrt(MPI_Comm_dup(MPI_COMM_WORLD, &nrnmpi_world_comm));
+			nrn_assert(MPI_Comm_dup(MPI_COMM_WORLD, &nrnmpi_world_comm));
 		}
 	}
 	grp_bbs = MPI_GROUP_NULL;
 	grp_net = MPI_GROUP_NULL;
-	asrt(MPI_Comm_dup(nrnmpi_world_comm, &nrnmpi_comm));
-	asrt(MPI_Comm_dup(nrnmpi_world_comm, &nrn_bbs_comm));
-	asrt(MPI_Comm_rank(nrnmpi_world_comm, &nrnmpi_myid_world));
-	asrt(MPI_Comm_size(nrnmpi_world_comm, &nrnmpi_numprocs_world));
+	nrn_assert(MPI_Comm_dup(nrnmpi_world_comm, &nrnmpi_comm));
+	nrn_assert(MPI_Comm_dup(nrnmpi_world_comm, &nrn_bbs_comm));
+	nrn_assert(MPI_Comm_rank(nrnmpi_world_comm, &nrnmpi_myid_world));
+	nrn_assert(MPI_Comm_size(nrnmpi_world_comm, &nrnmpi_numprocs_world));
 	nrnmpi_numprocs = nrnmpi_numprocs_bbs = nrnmpi_numprocs_world;
 	nrnmpi_myid = nrnmpi_myid_bbs = nrnmpi_myid_world;
 	nrnmpi_spike_initialize();

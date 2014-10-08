@@ -41,7 +41,7 @@ void Get_cb_opts(int argc, char** argv, cb_input_params* input_params)
           {"pattern",   required_argument, 0, 'p'},
           {"spikebuf",  required_argument, 0, 'b'},
           {"prcellgid", required_argument, 0, 'g'},
-          {"threading", no_argument,       0, 'm'},
+          {"threading", no_argument,       0, 'c'},
           {"datpath",   required_argument, 0, 'd'},
           {"filesdat",  required_argument, 0, 'f'},
           {"outpath",   required_argument, 0, 'o'},
@@ -51,7 +51,7 @@ void Get_cb_opts(int argc, char** argv, cb_input_params* input_params)
       /* getopt_long stores the option index here. */
       int option_index = 0;
 
-      c = getopt_long (argc, argv, "s:e:t:p:b:g:m:d:f:o:h",
+      c = getopt_long (argc, argv, "s:e:t:p:b:g:c:d:f:o:h",
                        long_options, &option_index);
 
       /* Detect the end of the options. */
@@ -94,7 +94,7 @@ void Get_cb_opts(int argc, char** argv, cb_input_params* input_params)
           input_params->prcellgid = atoi(optarg);
           break;
 
-        case 'm':
+        case 'c':
           input_params->threading = 1;
           break;
 
@@ -127,7 +127,7 @@ void Get_cb_opts(int argc, char** argv, cb_input_params* input_params)
               Set the spike buffer to be of the size SIZE (int). The default value is '100000'.\n\n\
        -g NUMBER, --prcellgid=NUMBER\n\
               Output prcellstate information for the gid NUMBER (int). The default value is '-1'.\n\n\
-       -m, --threading\n\
+       -c, --threading\n\
               Optiong to enable threading. The default implies no threading.\n\n\
        -d PATH, --datpath=PATH\n\
               Set the path with required CoreBluron data to PATH (char*). The default value is '.'.\n\n\

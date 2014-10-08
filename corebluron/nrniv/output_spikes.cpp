@@ -45,7 +45,7 @@ void output_spikes(char *outpath) {
   for (int i=0; i < spikevec_size; ++i)
   {
     if (spikevec_gid[i] > -1)
-      fprintf(f, "%.10g\t%d\n", spikevec_time[i], spikevec_gid[i]);
+      fprintf(f, "%.16g\t%d\n", spikevec_time[i], spikevec_gid[i]);
   }
   fclose(f);
 }
