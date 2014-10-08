@@ -44,23 +44,31 @@ class Region(object):
         
         del self._allow_setting
         
+        from . import rxd
+        
         # parameters that were defined in old init
         # TODO: remove need for this bit
         nrn_region = self.nrn_region
         dimension = self._dimension
         dx = self.dx
         
+        self._secs1d = []
+        self._secs3d = []
         
-        # TODO: validate sections (should be list of nrn.Section)
-        if dimension == 3:
-            if hasattr(self._secs, 'sections'):
-                # TODO: Import3D. Won't work with currents, but no problem since need to remove anyways
-                pass
+        dims = rxd._dimensions
+        for sec in self._secs:
+            dim = dims[sec]
+            if dim == 1:
+                self._secs1d.append(sec)
+            elif dim == 3:
+                self._secs3d.append(sec)
             else:
-                self._secs = _sort_secs(self._secs)
-            
-        else:
-            self._secs = _sort_secs(self._secs)
+                raise RxDException('unknown dimension: %r' % dim)
+
+        
+        # TODO: I used to not sort secs in 3D if hasattr(self._secs, 'sections'); figure out why
+        self._secs = _sort_secs(self._secs)
+        self._secs1d = _sort_secs(self._secs1d)
 
         if dimension == 3 and geometry is not None:        
             raise RxDException('custom geometries not yet supported in 3d mode')
@@ -76,17 +84,17 @@ class Region(object):
         
         self._id = _region_count
         _region_count += 1
-        if dimension == 3:
+        if self._secs3d:
             if nrn_region == 'o':
                 raise RxDException('3d version does not support nrn_region="o" yet')
 
-            self._mesh, sa, vol, self._tri = geometry3d.voxelize2(self._secs, dx=dx)
+            self._mesh, sa, vol, self._tri = geometry3d.voxelize2(self._secs3d, dx=dx)
             sa_values = sa.values
             vol_values = vol.values
             self._objs = {}
             # TODO: remove this when can store soma outlines
             if not hasattr(sections, 'sections'):
-                for sec in self._secs:
+                for sec in self._secs3d:
                     self._objs.update(dimension3.centroids_by_segment(sec))
             mesh_values = self._mesh.values
             xs, ys, zs = mesh_values.nonzero()
@@ -129,14 +137,15 @@ class Region(object):
 
                 if is_surf:
                     surface_nodes_by_seg[seg].append(len(segs) - 1)
-                    
+            
+            # NOTE: This stuff is for 3D part only
             self._surface_nodes_by_seg = surface_nodes_by_seg
             self._nodes_by_seg = nodes_by_seg
             self._on_surface = on_surface
             self._xs = xs
             self._ys = ys
             self._zs = zs
-            self._segs = segs            
+            self._segs = segs
         self._dx = self.dx
     
     def __init__(self, secs=None, nrn_region=None, geometry=None, dimension=1, dx=None, name=None):

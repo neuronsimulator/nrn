@@ -12,6 +12,7 @@ import atexit
 import options
 from .rxdException import RxDException
 import initializer 
+import collections
 
 # aliases to avoid repeatedly doing multiple hash-table lookups
 _numpy_array = numpy.array
@@ -36,7 +37,11 @@ def byeworld():
     # combinations of NEURON and Python, which I think is due to objects
     # getting deleted out-of-order
     global _react_matrix_solver
-    del _react_matrix_solver
+    try:
+        del _react_matrix_solver
+    except NameError:
+        # if it already didn't exist, that's fine
+        pass
     
 atexit.register(byeworld)
 
@@ -77,12 +82,18 @@ nrn_tree_solve.restype = None
 
 _dptr = _double_ptr
 
+_dimensions = collections.defaultdict(lambda: 1)
+_default_dx = 0.25
+_default_method = 'deterministic'
+
 def set_solve_type(domain=None, dimension=None, dx=None, nsubseg=None, method=None):
     """Specify the numerical discretization and solver options.
     
     domain -- a section or Python iterable of sections"""
+    setting_default = False
     if domain is None:
         domain = h.allsec()
+        setting_default = True
     elif isinstance(domain, nrn.Section):
         domain = [domain]
     
@@ -94,7 +105,13 @@ def set_solve_type(domain=None, dimension=None, dx=None, nsubseg=None, method=No
     if method is not None:
         raise RxDException('using set_solve_type to specify method is not yet implemented')
     if dimension is not None:
-        raise RxDException('using set_solve_type to specify dimension is not yet implemented')
+        if dimension not in (1, 3):
+            raise RxDException('invalid option to set_solve_type: dimension must be 1 or 3')
+        factory = lambda: dimension
+        if setting_default:
+            _dimensions.default_factory = factory
+        for sec in domain:
+            _dimensions[sec] = factory 
     if dx is not None:
         raise RxDException('using set_solve_type to specify dx is not yet implemented')
     if nsubseg is not None:

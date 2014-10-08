@@ -311,39 +311,40 @@ class Species(_SpeciesMathable):
         # TODO: remove this line when certain no longer need it (commented out 2013-04-17)
         # self._real_secs = region._sort_secs(sum([r.secs for r in regions], []))
         
-        if self._dimension == 1:
-            # TODO: at this point the sections are sorted within each region, but for
-            #       tree solver (which not currently using) would need sorted across
-            #       all regions if diffusion between multiple regions
-            self._secs = [Section1D(self, sec, d, r) for r in regions for sec in r.secs]
-            if self._secs:
-                self._offset = self._secs[0]._offset
-            else:
-                self._offset = 0
-            self._has_adjusted_offsets = False
-            self._assign_parents()
-            for sec in self._secs:
-                # NOTE: can only init_diffusion_rates after the roots (parents)
-                #       have been assigned
-                sec._init_diffusion_rates()
-            self._update_region_indices()
-        elif self._dimension == 3:
+        # 1D section objects; NOT all sections this species lives on
+        # TODO: this may be a problem... debug thoroughly
+        self._secs = [Section1D(self, sec, d, r) for r in regions for sec in r._secs1d]
+        if self._secs:
+            self._offset = self._secs[0]._offset
+        else:
+            self._offset = 0
+       
+        # NOTE: if no 3D nodes, then _3doffset is not meaningful
+        self._3doffset = 0
+        self._nodes = []
+        if r._secs3d:
             if len(regions) != 1:
                 raise RxDException('3d currently only supports 1 region per species')
             r = self._regions[0]
             selfref = weakref.ref(self)
-            self._nodes = []
             xs, ys, zs, segs = r._xs, r._ys, r._zs, r._segs
-            self._offset = node._allocate(len(xs))
+            self._3doffset = node._allocate(len(xs))
             for i, x, y, z, seg in zip(xrange(len(xs)), xs, ys, zs, segs):
-                self._nodes.append(node.Node3D(i + self._offset, x, y, z, r, seg, selfref))
+                self._nodes.append(node.Node3D(i + self._3doffset, x, y, z, r, seg, selfref))
             # the region is now responsible for computing the correct volumes and surface areas
                 # this is done so that multiple species can use the same region without recomputing it
-            node._volumes[range(self._offset, self._offset + len(xs))] = r._vol
-            node._surface_area[self._offset : self._offset + len(xs)] = r._sa
-            node._diffs[range(self._offset, self._offset + len(xs))] = d
-        else:
-            raise RxDException('unsupported dimension: %r' % self._dimension)
+            node._volumes[range(self._3doffset, self._3doffset + len(xs))] = r._vol
+            node._surface_area[self._3doffset : self._3doffset + len(xs)] = r._sa
+            node._diffs[range(self._3doffset, self._3doffset + len(xs))] = d
+        
+        self._has_adjusted_offsets = False
+        self._assign_parents()
+        for sec in self._secs:
+            # NOTE: can only init_diffusion_rates after the roots (parents)
+            #       have been assigned
+            sec._init_diffusion_rates()
+        self._update_region_indices()
+        
         self._register_cptrs()
 
     @property
@@ -461,24 +462,25 @@ class Species(_SpeciesMathable):
         # a list of all indices
         self._region_indices[None] = list(itertools.chain.from_iterable(self._region_indices.values()))
     
+    def _indices3d(self, r=None):
+        """return the indices of just the 3D nodes corresponding to this species in the given region"""
+        # TODO: this will need changed if 3D is to support more than one region
+        if r is None or r == self._regions[0]:
+            return range(self._3doffset, self._3doffset + len(self._nodes))
+        else:
+            return []
+
+    def _indices1d(self, r=None):
+        """return the indices of just the 1D nodes corresponding to this species in the given region"""
+        return self._region_indices.get(r, [])
+    
     def indices(self, r=None):
         """return the indices corresponding to this species in the given region
         
         if r is None, then returns all species indices"""
+        # TODO: beware, may really want self._indices3d or self._indices1d
         initializer._do_init()
-        if self._dimension == 1:
-            if r in self._region_indices:
-                return self._region_indices[r]
-            else:
-                return []
-        elif self._dimension == 3:
-            # TODO: change this when supporting more than one region
-            if r is None or r == self._regions[0]:
-                return range(self._offset, self._offset + len(self.nodes))
-            else:
-                return []
-        else:
-            raise RxDException('unsupported dimension')
+        return self._indices1d(r) + self._indices3d(r)
         
     
     def _setup_diffusion_matrix(self, g):
@@ -513,7 +515,7 @@ class Species(_SpeciesMathable):
                     sign = 1
                 else:
                     raise RxDException('bad nrn_region for setting up currents (should never get here)')
-                local_indices = self.indices()
+                local_indices = self._indices3d
                 offset = self._offset
                 charge = self.charge
                 name = '%s%s' % (self.name, nrn_region)
@@ -595,22 +597,21 @@ class Species(_SpeciesMathable):
     def _import_concentration(self, init=True):
         """Read concentrations from the standard NEURON grid"""
         if self._name is None: return
-        if self._dimension == 1:
-            for sec in self._secs: sec._import_concentration(init)
-        elif self._dimension == 3:
+        
+        # start with the 1D stuff
+        for sec in self._secs: sec._import_concentration(init)
+
+        # now the 3D stuff
+        nodes = self._nodes
+        if nodes:
             assert(len(self._regions) == 1)
             r = self._regions[0]
             if r._nrn_region is None: return
             # TODO: replace this with a pointer vec for speed
-            nodes = self._nodes
             for seg, ptr in zip(self._seg_order, self._concentration_ptrs):
                 value = ptr[0]
                 for node in r._nodes_by_seg[seg]:
                     nodes[node].concentration = value
-        else:
-            raise RxDException('unrecognized dimension')
-            
-            
     
     @property
     def nodes(self):
@@ -618,12 +619,9 @@ class Species(_SpeciesMathable):
         
         This can then be further restricted using the callable property of NodeList objects."""
         initializer._do_init()
-        if self._dimension == 1:
-            return nodelist.NodeList(itertools.chain.from_iterable([s.nodes for s in self._secs]))
-        elif self._dimension == 3:
-            return nodelist.NodeList(self._nodes)
-        else:
-            raise RxDException('nodes does not currently support species with dimension = %r.' % self._dimension)
+        
+        # The first part here is for the 1D -- which doesn't keep live node objects -- the second part is for 3D
+        return nodelist.NodeList(list(itertools.chain.from_iterable([s.nodes for s in self._secs])) + self._nodes)
 
 
     @property
