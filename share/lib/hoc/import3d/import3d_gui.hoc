@@ -1096,7 +1096,7 @@ g.line(mean.x[0] + 20*major.x[0], mean.x[1] + 20*major.x[1]) g.flush
 //printf("removed side2 %d %g\n", j, side2.x[j])
 			side2.remove(j)
 			rad2.remove(j)
-			if (j != d.size()) { j += 1 }
+			if (j != side2.size()) { j += 1 }
 		}
 	}
 	// can interpolate so diams on either side of major have same d
