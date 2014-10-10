@@ -21,6 +21,7 @@ void Get_cb_opts(int argc, char** argv, cb_input_params* input_params)
   input_params->filesdat = NULL;
   input_params->datpath = NULL;
   input_params->outpath = NULL;
+  input_params->forwardskip = 0.;
 
   /// Do not currently change
   input_params->celsius = 34.;
@@ -45,13 +46,14 @@ void Get_cb_opts(int argc, char** argv, cb_input_params* input_params)
           {"datpath",   required_argument, 0, 'd'},
           {"filesdat",  required_argument, 0, 'f'},
           {"outpath",   required_argument, 0, 'o'},
+          {"forwardskip",required_argument, 0,'k'},
           {"help",      no_argument,       0, 'h'},
           {0, 0, 0, 0}
         };
       /* getopt_long stores the option index here. */
       int option_index = 0;
 
-      c = getopt_long (argc, argv, "s:e:t:p:b:g:c:d:f:o:h",
+      c = getopt_long (argc, argv, "s:e:t:p:b:g:c:d:f:o:k:h",
                        long_options, &option_index);
 
       /* Detect the end of the options. */
@@ -110,6 +112,10 @@ void Get_cb_opts(int argc, char** argv, cb_input_params* input_params)
           input_params->outpath = optarg;
           break;
 
+        case 'k':
+          input_params->forwardskip = atof(optarg);
+          break;
+
         case 'h':
         case '?':
           if (nrnmpi_myid == 0)
@@ -134,7 +140,9 @@ void Get_cb_opts(int argc, char** argv, cb_input_params* input_params)
        -f FILE, --filesdat=FILE\n\
               Absolute path with the name for the required file FILE (char*). The default value is 'files.dat'.\n\
        -o PATH, --outpath=PATH\n\
-              Set the path for the output data to PATH (char*). The default value is '.'.\n");
+              Set the path for the output data to PATH (char*). The default value is '.'.\n\
+       -k NUMBER, --forwardskip=TIME\n\
+              Set forwardskip to TIME (double). The default value is '0.'.\n");
           nrn_exit(0);
 
         default:

@@ -21,7 +21,7 @@
 
 typedef struct cb_parameters
 {
-  double tstart, tstop, dt, celsius, voltage, maxdelay;
+  double tstart, tstop, dt, celsius, voltage, maxdelay, forwardskip;
   int spikebuf, prcellgid, threading;
   char *patternstim, *filesdat, *datpath, *outpath;
 } cb_input_params;

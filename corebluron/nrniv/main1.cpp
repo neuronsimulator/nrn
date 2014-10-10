@@ -104,8 +104,8 @@ int main1(int argc, char** argv, char** env) {
   celsius = input_params.celsius;
   if (nrnmpi_myid == 0)
   {
-    printf("    t=%g tstop=%g dt=%g celsius=%g voltage=%g maxdelay=%g spikebuf=%d\n\
-    datpath: %s\n    filesdat: %s\n", t, input_params.tstop, dt, celsius, input_params.voltage, input_params.maxdelay, input_params.spikebuf, datpath, filesdat);
+    printf("    t=%g tstop=%g dt=%g forwardskip=%g celsius=%g voltage=%g maxdelay=%g spikebuf=%d\n\
+    datpath: %s\n    filesdat: %s\n", t, input_params.tstop, dt, input_params.forwardskip, celsius, input_params.voltage, input_params.maxdelay, input_params.spikebuf, datpath, filesdat);
     if (input_params.prcellgid >= 0)
       printf("    prcellstate will be called for gid %d\n", input_params.prcellgid);
     if (input_params.patternstim)
@@ -192,6 +192,21 @@ int main1(int argc, char** argv, char** env) {
   if (input_params.prcellgid >= 0) {
     sprintf(prcellname, "t%g", t);
     prcellstate(input_params.prcellgid, prcellname);
+  }
+
+  if (input_params.forwardskip > 0.0) {
+    double savedt = dt;
+    double savet = t;
+    dt = input_params.forwardskip * 0.1;
+    t = -1e9;
+    for (int step=0; step < 10; ++step) {
+      nrn_fixed_step();
+    }
+    if (input_params.prcellgid >= 0) {
+      prcellstate(input_params.prcellgid, "fs");
+    }
+    dt = savedt;
+    t = savet;
   }
 
   /// Solver execution
