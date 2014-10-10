@@ -102,7 +102,6 @@ static InputPreSyn* inputpresyn_; // the global array of instances.
 // InputPreSyn.nc_index_ to + InputPreSyn.nc_cnt_ give the NetCon*
 NetCon** netcon_in_presyn_order_;
 
-static int chkpnt;
 
 void nrn_setup(int ngroup, int* gidgroups, const char *path, enum endian::endianness file_endian, int threading) {
   char fname[100];
@@ -133,15 +132,12 @@ void nrn_setup(int ngroup, int* gidgroups, const char *path, enum endian::endian
   /* parallel initialization is not implemented but ordered clause
    * will allow to do correct memory initialization on NUMA node
    */
-  #pragma omp parallel for ordered
+  #pragma omp parallel for schedule(static,1) private(fname)
   for (int i = 0; i < ngroup; ++i) {
-    #pragma omp ordered 
-    {
       sprintf(fname, "%s/%d_1.dat", path, gidgroups[i]);
       file_reader[i].open(fname,file_endian);
       read_phase1(file_reader[i], nrn_threads[i]);
       file_reader[i].close();
-    }
   }
 
   if (nrnmpi_myid == 0)
@@ -157,18 +153,15 @@ void nrn_setup(int ngroup, int* gidgroups, const char *path, enum endian::endian
 
   // read the rest of the gidgroup's data and complete the setup for each
   // thread.
-  #pragma omp parallel for ordered
+  #pragma omp parallel for schedule(static) private(fname)
   for (int i = 0; i < ngroup; ++i) {
-    #pragma omp ordered 
-    {
       sprintf(fname, "%s/%d_2.dat", path, gidgroups[i]);
       file_reader[i].open(fname,file_endian);
       read_phase2(file_reader[i], nrn_threads[i]);
       file_reader[i].close();
       setup_ThreadData(nrn_threads[i]); // nrncore does this in multicore.c in thread_memblist_setup
-      nrn_mk_table_check(); // was done in nrn_thread_memblist_setup in multicore.c
-    }
   }
+  nrn_mk_table_check(); // was done in nrn_thread_memblist_setup in multicore.c
   delete [] file_reader;
 
   if (nrnmpi_myid == 0)
@@ -215,7 +208,6 @@ void read_phase1(data_reader &F, NrnThread& nt) {
   nt.netcons = new NetCon[nt.n_netcon];
 
   /// Checkpoint in bluron is defined for both phase 1 and phase 2 since they are written together
-  chkpnt = 0;
   int* output_gid = F.read_int_array(nt.n_presyn);
   int* netcon_srcgid = F.read_int_array(nt.n_netcon);
   F.close();
@@ -252,8 +244,13 @@ void read_phase1(data_reader &F, NrnThread& nt) {
     // See netpar.cpp for the netpar_tid_... function implementations.
     // Both that table and the process wide gid2out_ table can be deleted
     // before the end of setup
-    netpar_tid_set_gid2node(nt.id, gid, nrnmpi_myid);
-    netpar_tid_cell(nt.id, gid, nt.presyns + i);
+
+    #pragma omp critical 
+    {
+    	netpar_tid_set_gid2node(nt.id, gid, nrnmpi_myid);
+    	netpar_tid_cell(nt.id, gid, nt.presyns + i);
+    }
+
     if (gid < 0) {
       nt.presyns[i].output_index_ = -1;
     }
@@ -407,7 +404,6 @@ void read_phase2(data_reader &F, NrnThread& nt) {
   int nmech = F.read_int();
 
   /// Checkpoint in bluron is defined for both phase 1 and phase 2 since they are written together
-  chkpnt = 2;
   //printf("ncell=%d end=%d nmech=%d\n", nt.ncell, nt.end, nmech);
   //printf("nart=%d\n", nart);
   NrnThreadMembList* tml_last = NULL;

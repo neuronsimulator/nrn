@@ -118,9 +118,11 @@ static void nonvint(NrnThread* _nt) {
 	for (tml = _nt->tml; tml; tml = tml->next) if (memb_func[tml->index].state) {
 		mod_f_t s = memb_func[tml->index].state;
 		(*s)(_nt, tml->ml, tml->index);
+#ifdef DEBUG
 		if (errno) {
 hoc_warning("errno set during calculation of states", (char*)0);
 		}
+#endif
 	}
 }
 
