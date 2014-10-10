@@ -240,10 +240,17 @@ class Species(_SpeciesMathable):
 
         # initialize self if the rest of rxd is already initialized
         if initializer.is_initialized():
+            # TODO: remove this limitation
+            raise RxDException('temporarily cannot add new species after rxd is initialized because 1D and 3D blocks need to be kept together')
             self._do_init()
     
     def _do_init(self):
-
+        self._do_init1()
+        self._do_init2()
+        self._do_init3()
+        self._do_init4()
+        
+    def _do_init1(self):
         # TODO: if a list of sections is passed in, make that one region
         # _species_count is used to create a unique _real_name for the species
         global _species_count
@@ -253,8 +260,6 @@ class Species(_SpeciesMathable):
         self._real_name = self._name
         initial = self.initial
         charge = self._charge
-        d = self._d
-        
         
         # invalidate any old initialization of external solvers
         rxd._external_solver_initialized = False
@@ -278,6 +283,7 @@ class Species(_SpeciesMathable):
             regions = list(regions)
         else:
             regions = list([regions])
+        self._regions = regions
         if not all(isinstance(r, region.Region) for r in regions):
             raise RxDException('regions list must consist of Region objects only')
         self._species = weakref.ref(self)        
@@ -305,33 +311,41 @@ class Species(_SpeciesMathable):
         
         # TODO: remove this line when certain no longer need it (commented out 2013-04-17)
         # self._real_secs = region._sort_secs(sum([r.secs for r in regions], []))
-        
+    
+    def _do_init2(self):
         # 1D section objects; NOT all sections this species lives on
         # TODO: this may be a problem... debug thoroughly
-        self._secs = [Section1D(self, sec, d, r) for r in regions for sec in r._secs1d]
+        d = self._d
+        self._secs = [Section1D(self, sec, d, r) for r in self._regions for sec in r._secs1d]
         if self._secs:
             self._offset = self._secs[0]._offset
         else:
             self._offset = 0
+
+    def _do_init3(self):
+        # 3D sections
        
         # NOTE: if no 3D nodes, then _3doffset is not meaningful
         self._3doffset = 0
         self._nodes = []
-        if r._secs3d:
-            if len(regions) != 1:
-                raise RxDException('3d currently only supports 1 region per species')
+        if self._regions:
             r = self._regions[0]
-            selfref = weakref.ref(self)
-            xs, ys, zs, segs = r._xs, r._ys, r._zs, r._segs
-            self._3doffset = node._allocate(len(xs))
-            for i, x, y, z, seg in zip(xrange(len(xs)), xs, ys, zs, segs):
-                self._nodes.append(node.Node3D(i + self._3doffset, x, y, z, r, seg, selfref))
-            # the region is now responsible for computing the correct volumes and surface areas
-                # this is done so that multiple species can use the same region without recomputing it
-            node._volumes[range(self._3doffset, self._3doffset + len(xs))] = r._vol
-            node._surface_area[self._3doffset : self._3doffset + len(xs)] = r._sa
-            node._diffs[range(self._3doffset, self._3doffset + len(xs))] = d
-        
+            if r._secs3d:
+                if len(regions) != 1:
+                    raise RxDException('3d currently only supports 1 region per species')
+                selfref = weakref.ref(self)
+                xs, ys, zs, segs = r._xs, r._ys, r._zs, r._segs
+                self._3doffset = node._allocate(len(xs))
+                for i, x, y, z, seg in zip(xrange(len(xs)), xs, ys, zs, segs):
+                    self._nodes.append(node.Node3D(i + self._3doffset, x, y, z, r, seg, selfref))
+                # the region is now responsible for computing the correct volumes and surface areas
+                    # this is done so that multiple species can use the same region without recomputing it
+                node._volumes[range(self._3doffset, self._3doffset + len(xs))] = r._vol
+                node._surface_area[self._3doffset : self._3doffset + len(xs)] = r._sa
+                node._diffs[range(self._3doffset, self._3doffset + len(xs))] = d
+
+    def _do_init4(self):
+        # final initialization        
         self._has_adjusted_offsets = False
         self._assign_parents()
         for sec in self._secs:
@@ -444,6 +458,7 @@ class Species(_SpeciesMathable):
 
         
     def _update_region_indices(self):
+        # TODO: should this include 3D nodes? currently 1D only. (What faces the user?)
         self._region_indices = {}
         for s in self._secs:
             if s._region not in self._region_indices:

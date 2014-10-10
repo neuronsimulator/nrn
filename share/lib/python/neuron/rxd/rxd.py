@@ -214,15 +214,11 @@ def _ode_fun(t, y, ydot):
         if d:
             states[i] = -v / d
     """
-    if current_dimension == 1:
-        # TODO: refactor so this isn't in section1d?
-        _section1d_transfer_to_legacy()        
-    elif current_dimension == 3:
-        for sr in _species_get_all_species().values():
-            s = sr()
-            if s is not None: s._transfer_to_legacy()
-    else:
-        raise RxDException('unknown dimension: %r' % current_dimension)
+    # TODO: make this so that the section1d parts use cptrs (can't do this directly for 3D because sum, but could maybe move that into the C)
+    # the old way: _section1d_transfer_to_legacy()
+    for sr in _species_get_all_species().values():
+        s = sr()
+        if s is not None: s._transfer_to_legacy()
 
     
     if ydot is not None:

@@ -10,9 +10,14 @@ import numpy
 from . import geometry as geo
 import weakref
 import initializer
+import warnings
 
 _all_regions = []
 _region_count = 0
+
+
+# TODO: remove this (temporary debugging line)
+_sim_dimension = 1
 
 def _sort_secs(secs):
     # sort the sections
@@ -27,20 +32,18 @@ def _sort_secs(secs):
             raise RxDException('still need to deal with backwards sections')
     return [secs_names[sec.name()] for sec in all_sorted if sec.name() in secs_names]
 
-
-# TODO: remove the need for this
-_sim_dimension = None
-
 class Region(object):
     """Declare a conceptual region of the neuron.
     
     Examples: Cytosol, ER, extracellular space
     """
     def __repr__(self):
-        return 'Region(..., nrn_region=%r, geometry=%r, dimension=%r, dx=%r, name=%r)' % (self.nrn_region, self._geometry, _sim_dimension, self._dx, self._name)
+        # Note: this used to print out dimension, but that's now on a per-segment basis
+        # TODO: remove the note when that is fully true
+        return 'Region(..., nrn_region=%r, geometry=%r, dx=%r, name=%r)' % (self.nrn_region, self._geometry, self._dx, self._name)
     
     def _do_init(self):
-        global _region_count, _sim_dimension
+        global _region_count
         
         del self._allow_setting
         
@@ -49,7 +52,12 @@ class Region(object):
         # parameters that were defined in old init
         # TODO: remove need for this bit
         nrn_region = self.nrn_region
-        dimension = self._dimension
+
+
+        # TODO: self.dx needs to be removed... eventually that should be on a per-section basis
+        #       right now, it has to be consistent but this is unenforced
+        if self.dx is None:
+            self.dx = 0.25
         dx = self.dx
         
         self._secs1d = []
@@ -69,18 +77,9 @@ class Region(object):
         # TODO: I used to not sort secs in 3D if hasattr(self._secs, 'sections'); figure out why
         self._secs = _sort_secs(self._secs)
         self._secs1d = _sort_secs(self._secs1d)
-
-        if dimension == 3 and geometry is not None:        
+        
+        if self._secs3d and geometry is not None:        
             raise RxDException('custom geometries not yet supported in 3d mode')
-        if _sim_dimension is not None and dimension != _sim_dimension:
-            raise RxDException('only one type of dimension per simulation supported for now (should change later)')
-        _sim_dimension = self._dimension
-        if dimension not in (1, 3):
-            raise RxDException('only 1 and 3 dimensional simulations currently supported')
-        if dimension != 3 and dx is not None:
-            raise RxDException('dx option only accepted if dimension = 3')
-        if dimension == 3 and dx is None:
-            dx = 0.25
         
         self._id = _region_count
         _region_count += 1
@@ -148,7 +147,7 @@ class Region(object):
             self._segs = segs
         self._dx = self.dx
     
-    def __init__(self, secs=None, nrn_region=None, geometry=None, dimension=1, dx=None, name=None):
+    def __init__(self, secs=None, nrn_region=None, geometry=None, dimension=None, dx=None, name=None):
         """
         In NEURON 7.4+, secs is optional at initial region declaration, but it
         must be specified before the reaction-diffusion model is instantiated.
@@ -159,7 +158,11 @@ class Region(object):
         self.secs = secs
         self.nrn_region = nrn_region
         self.geometry = geometry
-        self._dimension = dimension
+        
+        if dimension is not None:
+            warnings.warn('dimension argument was a development feature only; use set_solve_method instead... the current version sets all the sections to your requested dimension, but this will override any previous settings')
+            import neuron
+            neuron.rxd.set_solve_method(secs, dimension=dimension)
         self._name = name
         self.dx = dx
         _all_regions.append(weakref.ref(self))
@@ -222,11 +225,6 @@ class Region(object):
     @name.setter
     def name(self, value):
         self._name = value
-
-    @property
-    def dimension(self):
-        """Do not use. This will be deprecated in a future development release."""
-        return self._dimension
     
     @property
     def _semi_compile(self):
