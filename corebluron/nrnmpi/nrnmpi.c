@@ -97,15 +97,15 @@ for (i=0; i < *pargc; ++i) {
 		}
 
 		{
-			nrn_assert(MPI_Comm_dup(MPI_COMM_WORLD, &nrnmpi_world_comm));
+			nrn_assert(MPI_Comm_dup(MPI_COMM_WORLD, &nrnmpi_world_comm) == MPI_SUCCESS);
 		}
 	}
 	grp_bbs = MPI_GROUP_NULL;
 	grp_net = MPI_GROUP_NULL;
-	nrn_assert(MPI_Comm_dup(nrnmpi_world_comm, &nrnmpi_comm));
-	nrn_assert(MPI_Comm_dup(nrnmpi_world_comm, &nrn_bbs_comm));
-	nrn_assert(MPI_Comm_rank(nrnmpi_world_comm, &nrnmpi_myid_world));
-	nrn_assert(MPI_Comm_size(nrnmpi_world_comm, &nrnmpi_numprocs_world));
+	nrn_assert(MPI_Comm_dup(nrnmpi_world_comm, &nrnmpi_comm) == MPI_SUCCESS);
+	nrn_assert(MPI_Comm_dup(nrnmpi_world_comm, &nrn_bbs_comm) == MPI_SUCCESS);
+	nrn_assert(MPI_Comm_rank(nrnmpi_world_comm, &nrnmpi_myid_world) == MPI_SUCCESS);
+	nrn_assert(MPI_Comm_size(nrnmpi_world_comm, &nrnmpi_numprocs_world) == MPI_SUCCESS);
 	nrnmpi_numprocs = nrnmpi_numprocs_bbs = nrnmpi_numprocs_world;
 	nrnmpi_myid = nrnmpi_myid_bbs = nrnmpi_myid_world;
 	nrnmpi_spike_initialize();
