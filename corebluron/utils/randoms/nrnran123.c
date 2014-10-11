@@ -19,6 +19,7 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "corebluron/nrnconf.h"
 #include "corebluron/utils/randoms/nrnran123.h"
 #include "corebluron/utils/randoms/Random123/philox.h"
+#include "corebluron/nrniv/nrnmutdec.h"
 
 static const double SHIFT32   = 1.0 / 4294967297.0;    /* 1/(2^32 + 1) */
 
@@ -43,12 +44,21 @@ uint32_t nrnran123_get_globalindex() {
 	return k.v[0];
 }
 
+static MUTDEC
+void nrnran123_mutconstruct() {
+	if (!mut_) {
+		MUTCONSTRUCT(1);
+	}
+}
+
 nrnran123_State* nrnran123_newstream(uint32_t id1, uint32_t id2) {
 	nrnran123_State* s = (nrnran123_State*)ecalloc(sizeof(nrnran123_State), 1);
 	s->c.v[2] = id1;
 	s->c.v[3] = id2;
 	nrnran123_setseq(s, 0, 0);
+	MUTLOCK
 	++instance_count_;
+	MUTUNLOCK
 	return s;
 }
 

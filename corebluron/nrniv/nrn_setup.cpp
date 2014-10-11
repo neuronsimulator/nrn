@@ -22,6 +22,7 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "corebluron/utils/randoms/nrnran123.h"
 #include "corebluron/nrniv/nrn_datareader.h"
 #include "corebluron/nrniv/nrn_assert.h"
+#include "corebluron/nrniv/nrnmutdec.h"
 
 // file format defined in cooperation with nrncore/src/nrniv/nrnbbcore_write.cpp
 // single integers are ascii one per line. arrays are binary int or double
@@ -90,6 +91,7 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // files with the first containing output_gids and netcon_srcgid which are
 // stored in the nt.presyns array and nt.netcons array respectively
 
+static MUTDEC
 static void read_phase1(data_reader &F,NrnThread& nt);
 static void determine_inputpresyn(void);
 static void read_phase2(data_reader &F, NrnThread& nt);
@@ -102,10 +104,49 @@ static InputPreSyn* inputpresyn_; // the global array of instances.
 // InputPreSyn.nc_index_ to + InputPreSyn.nc_cnt_ give the NetCon*
 NetCon** netcon_in_presyn_order_;
 
+// Wrap read_phase1 and read_phase2 calls to allow using  nrn_multithread_job.
+// Args marshaled by store_phase_args are used by phase1_wrapper
+// and phase2_wrapper.
+static int ngroup_w;
+static int* gidgroups_w;
+static const char* path_w;
+static data_reader* file_reader_w;
+static enum endian::endianness file_endian_w;
+static void store_phase_args(int ngroup, int* gidgroups, data_reader* file_reader,
+  const char* path, enum endian::endianness file_endian) {
+  ngroup_w = ngroup;
+  gidgroups_w = gidgroups;
+  file_reader_w = file_reader;
+  path_w = path;
+  file_endian_w = file_endian;
+}
+
+#define implement_phase_wrapper(A) \
+static void* phase##A##_wrapper_w(NrnThread* nt) { \
+  int i = nt->id; \
+  char fname[1000]; \
+  if (i < ngroup_w) { \
+    sprintf(fname, "%s/%d_"#A".dat", path_w, gidgroups_w[i]); \
+    file_reader_w[i].open(fname,file_endian_w); \
+    read_phase##A(file_reader_w[i], *nt); \
+    file_reader_w[i].close(); \
+    if (A == 2) { \
+      setup_ThreadData(*nt); \
+    } \
+  } \
+  return NULL; \
+} \
+static void phase##A##_wrapper() { \
+  nrn_multithread_job(phase##A##_wrapper_w); \
+} \
+// end of implement_phase_wrapper
+
+implement_phase_wrapper(1)
+implement_phase_wrapper(2)
 
 void nrn_setup(int ngroup, int* gidgroups, const char *path, enum endian::endianness file_endian, int threading) {
-  char fname[100];
   assert(ngroup > 0);
+  MUTCONSTRUCT(1)
 #if 0
   nrn_threads_create(ngroup, 0); // serial threads
 #else
@@ -129,16 +170,9 @@ void nrn_setup(int ngroup, int* gidgroups, const char *path, enum endian::endian
   // to later count the required number of InputPreSyn
   data_reader *file_reader=new data_reader[ngroup];
 
-  /* parallel initialization is not implemented but ordered clause
-   * will allow to do correct memory initialization on NUMA node
-   */
-  #pragma omp parallel for schedule(static,1) private(fname)
-  for (int i = 0; i < ngroup; ++i) {
-      sprintf(fname, "%s/%d_1.dat", path, gidgroups[i]);
-      file_reader[i].open(fname,file_endian);
-      read_phase1(file_reader[i], nrn_threads[i]);
-      file_reader[i].close();
-  }
+  /* nrn_multithread_job supports serial, pthread, and openmp. */
+  store_phase_args(ngroup, gidgroups, file_reader, path, file_endian);
+  phase1_wrapper();
 
   if (nrnmpi_myid == 0)
   {
@@ -153,14 +187,9 @@ void nrn_setup(int ngroup, int* gidgroups, const char *path, enum endian::endian
 
   // read the rest of the gidgroup's data and complete the setup for each
   // thread.
-  #pragma omp parallel for schedule(static) private(fname)
-  for (int i = 0; i < ngroup; ++i) {
-      sprintf(fname, "%s/%d_2.dat", path, gidgroups[i]);
-      file_reader[i].open(fname,file_endian);
-      read_phase2(file_reader[i], nrn_threads[i]);
-      file_reader[i].close();
-      setup_ThreadData(nrn_threads[i]); // nrncore does this in multicore.c in thread_memblist_setup
-  }
+  /* nrn_multithread_job supports serial, pthread, and openmp. */
+  phase2_wrapper();
+
   nrn_mk_table_check(); // was done in nrn_thread_memblist_setup in multicore.c
   delete [] file_reader;
 
@@ -188,7 +217,9 @@ void setup_ThreadData(NrnThread& nt) {
     if (mf.thread_size_) {
       ml->_thread = (ThreadDatum*)ecalloc(mf.thread_size_, sizeof(ThreadDatum));
       if (mf.thread_mem_init_) {
+        MUTLOCK
         (*mf.thread_mem_init_)(ml->_thread);
+        MUTUNLOCK
       }
     }
   }
@@ -245,11 +276,10 @@ void read_phase1(data_reader &F, NrnThread& nt) {
     // Both that table and the process wide gid2out_ table can be deleted
     // before the end of setup
 
-    #pragma omp critical 
-    {
-    	netpar_tid_set_gid2node(nt.id, gid, nrnmpi_myid);
-    	netpar_tid_cell(nt.id, gid, nt.presyns + i);
-    }
+    MUTLOCK
+    netpar_tid_set_gid2node(nt.id, gid, nrnmpi_myid);
+    netpar_tid_cell(nt.id, gid, nt.presyns + i);
+    MUTUNLOCK
 
     if (gid < 0) {
       nt.presyns[i].output_index_ = -1;

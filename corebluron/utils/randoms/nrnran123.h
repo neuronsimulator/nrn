@@ -45,6 +45,9 @@ http://www.deshawresearch.com/resources_random123.html
 extern "C" {
 #endif
 
+/* do this on launch to make nrnran123_newstream threadsafe */
+extern void nrnran123_mutconstruct(void);
+
 typedef struct nrnran123_State nrnran123_State;
 
 typedef struct nrnran123_array4x32 {

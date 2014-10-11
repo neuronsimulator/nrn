@@ -248,6 +248,9 @@ void nrn_malloc_unlock() {
 
 /* when PERMANENT is 0, we avoid false warnings with helgrind, but a bit slower */
 /* when 0, create/join instead of wait on condition. */
+#if !defined(NDEBUG)
+#define PERMANENT 0
+#endif
 #ifndef PERMANENT
 #define PERMANENT 1
 #endif
@@ -259,10 +262,12 @@ typedef volatile struct {
         void* (*job)(NrnThread*);
 } slave_conf_t;
 
+static pthread_t* slave_threads;
+#if PERMANENT
 static pthread_cond_t* cond;
 static pthread_mutex_t* mut;
-static pthread_t* slave_threads;
 static slave_conf_t* wc;
+#endif
 
 static void wait_for_workers() {
 	int i;
@@ -297,8 +302,8 @@ static void send_job_to_slave(int i, void* (*job)(NrnThread*)) {
 	pthread_mutex_lock(mut + i);
 	wc[i].job = job;
 	wc[i].flag = 1;
-	pthread_mutex_unlock(mut + i);
 	pthread_cond_signal(cond + i);
+	pthread_mutex_unlock(mut + i);
 #else
 	pthread_create(slave_threads + i, (void*)0, (void*(*)(void*))job, (void*)(nrn_threads + i));
 #endif
@@ -317,6 +322,7 @@ void setaffinity(int i) {
 #endif
 }
 
+#if PERMANENT
 static void* slave_main(void* arg) {
 	slave_conf_t* my_wc = (slave_conf_t*)arg;
 	pthread_mutex_t *my_mut = mut + my_wc->thread_id;
@@ -362,18 +368,20 @@ static void* slave_main(void* arg) {
 		}
 		pthread_mutex_lock(my_mut);
 		my_wc->flag = 0;
-		pthread_mutex_unlock(my_mut);
 		pthread_cond_signal(my_cond);
+		pthread_mutex_unlock(my_mut);
 	    }
 	}
 	return (void*)0;
 }
 
+#endif
+
 static void threads_create_pthread(){
     setaffinity(nrnmpi_myid);
     if (nrn_nthread > 1) {
-	int i;
 #if PERMANENT
+	int i;
 	CACHELINE_ALLOC(wc, slave_conf_t, nrn_nthread);
 	slave_threads = (pthread_t *)emalloc(sizeof(pthread_t)*nrn_nthread);
 	cond = (pthread_cond_t *)emalloc(sizeof(pthread_cond_t)*nrn_nthread);
@@ -408,15 +416,15 @@ static void threads_create_pthread(){
 }
 
 static void threads_free_pthread(){
-	int i;
 	if (slave_threads) {
 #if PERMANENT
+		int i;
 		wait_for_workers();
 		for (i=1; i < nrn_nthread; ++i) {
 			pthread_mutex_lock(mut + i);
 			wc[i].flag = -1;
-			pthread_mutex_unlock(mut + i);
 			pthread_cond_signal(cond + i);
+			pthread_mutex_unlock(mut + i);
 			pthread_join(slave_threads[i], (void*)0);
 			pthread_cond_destroy(cond + i);
 			pthread_mutex_destroy(mut + i);

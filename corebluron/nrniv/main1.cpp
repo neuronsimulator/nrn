@@ -25,6 +25,7 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "corebluron/utils/endianness.h"
 #include "corebluron/nrniv/nrnoptarg.h"
 #include "corebluron/nrniv/nrn_assert.h"
+#include "corebluron/utils/randoms/nrnran123.h"
 
 #define HAVE_MALLINFO 1
 #if HAVE_MALLINFO
@@ -63,6 +64,7 @@ int main1(int argc, char** argv, char** env) {
   (void)env; /* unused */
 
   nrnmpi_init(1, &argc, &argv);
+  nrnran123_mutconstruct(); // only because of instance_count_
 
   /// Getting essential inputs
   cb_input_params input_params;

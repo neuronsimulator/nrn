@@ -91,7 +91,7 @@ void mk_mech(const char* datpath) {
   // an int32_t binary 1 is at this position. After reading can decide if
   // binary info in files needs to be byteswapped.
   int32_t x;
-  assert(fread(&x, sizeof(int32_t), 1, f) == 1);
+  nrn_assert(fread(&x, sizeof(int32_t), 1, f) == 1);
   nrn_need_byteswap = 0;
   if (x != 1) {
     BYTEHEADER;
