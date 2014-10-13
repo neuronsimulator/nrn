@@ -18,6 +18,9 @@ def _get_all_species():
 
 _species_count = 0
 
+_has_1d = False
+_has_3d = False
+
 
 
 class _SpeciesMathable(object):
@@ -315,14 +318,17 @@ class Species(_SpeciesMathable):
     def _do_init2(self):
         # 1D section objects; NOT all sections this species lives on
         # TODO: this may be a problem... debug thoroughly
+        global _has_1d
         d = self._d
         self._secs = [Section1D(self, sec, d, r) for r in self._regions for sec in r._secs1d]
         if self._secs:
             self._offset = self._secs[0]._offset
+            _has_1d = True
         else:
             self._offset = 0
 
     def _do_init3(self):
+        global _has_3d
         # 3D sections
        
         # NOTE: if no 3D nodes, then _3doffset is not meaningful
@@ -343,6 +349,7 @@ class Species(_SpeciesMathable):
                 node._volumes[range(self._3doffset, self._3doffset + len(xs))] = r._vol
                 node._surface_area[self._3doffset : self._3doffset + len(xs)] = r._sa
                 node._diffs[range(self._3doffset, self._3doffset + len(xs))] = d
+                _has_3d = True
 
     def _do_init4(self):
         # final initialization        

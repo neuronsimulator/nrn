@@ -15,10 +15,6 @@ import warnings
 _all_regions = []
 _region_count = 0
 
-
-# TODO: remove this (temporary debugging line)
-_sim_dimension = 1
-
 def _sort_secs(secs):
     # sort the sections
     root_secs = h.SectionList()

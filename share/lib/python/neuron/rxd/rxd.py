@@ -140,9 +140,9 @@ def re_init():
     global _external_solver_initialized
     h.define_shape()
     
-    dim = region._sim_dimension
+    if not species._has_3d:
+        # TODO: if we do have 3D, make sure that we do the necessary parts of this
     
-    if dim == 1:
         # update current pointers
         section1d._purge_cptrs()
         for sr in _species_get_all_species().values():
@@ -152,9 +152,6 @@ def re_init():
         
         # update matrix equations
         _setup_matrices()
-
-    elif dim != 3:            
-        raise RxDException('unknown dimension')
     for sr in _species_get_all_species().values():
         s = sr()
         if s is not None: s.re_init()
@@ -184,7 +181,6 @@ def _ode_reinit(y):
 
 def _ode_fun(t, y, ydot):
     initializer.assert_initialized()
-    current_dimension = region._sim_dimension
     lo = _rxd_offset
     hi = lo + len(_nonzero_volume_indices)
     if lo == hi: return
@@ -234,13 +230,15 @@ def _ode_solve(dt, t, b, y):
     hi = lo + len(_nonzero_volume_indices)
     n = len(_node_get_states())
     # TODO: this will need changed when can have both 1D and 3D
-    if region._sim_dimension == 3:
+    if species._has_3d:
+        # TODO: make sure can handle both 1D and 3D
         m = _scipy_sparse_eye(n, n) - dt * _euler_matrix
         # removed diagonal preconditioner since tests showed no improvement in convergence
         result, info = _scipy_sparse_linalg_bicgstab(m, dt * b)
         assert(info == 0)
         b[lo : hi] = _react_matrix_solver(result)
-    elif region._sim_dimension == 1:
+    else:
+        # 1D only; use Hines solver
         full_b = numpy.zeros(n)
         full_b[_nonzero_volume_indices] = b[lo : hi]
         b[lo : hi] = _react_matrix_solver(_diffusion_matrix_solve(dt, full_b))[_nonzero_volume_indices]
@@ -250,8 +248,6 @@ def _ode_solve(dt, t, b, y):
         #b[lo : hi] = _reaction_matrix_solve(dt, full_y, _diffusion_matrix_solve(dt, full_b))[_nonzero_volume_indices]
         # this line doesn't include the reaction contributions to the Jacobian
         #b[lo : hi] = _diffusion_matrix_solve(dt, full_b)[_nonzero_volume_indices]
-    elif region._sim_dimension is not None:
-        raise RxDException('unknown simulation dimension: %r' % region._sim_dimension)
 
 _rxd_induced_currents = None
 
@@ -318,8 +314,7 @@ def _fixed_step_solve(raw_dt):
     global pinverse, _fixed_step_count
     global _last_m, _last_dt, _last_preconditioner
 
-    dim = region._sim_dimension
-    if dim is None:
+    if species._species_count == 0:
         return
 
     # allow for skipping certain fixed steps
@@ -337,7 +332,8 @@ def _fixed_step_solve(raw_dt):
     b = _rxd_reaction(states) - _diffusion_matrix * states
     
 
-    if dim == 1:
+    if not species._has_3d:
+        # use Hines solver since 1D only
         states[:] += _reaction_matrix_solve(dt, states, _diffusion_matrix_solve(dt, dt * b))
 
         # clear the zero-volume "nodes"
@@ -347,7 +343,8 @@ def _fixed_step_solve(raw_dt):
         _section1d_transfer_to_legacy()
         
         _last_preconditioner = None
-    elif dim == 3:
+    else:
+        # TODO: this looks to be semi-implicit method because it doesn't take into account the reaction contribution to the Jacobian; do we care?
         # the actual advance via implicit euler
         n = len(states)
         if _last_dt != dt or _last_preconditioner is None:
@@ -366,7 +363,8 @@ def _fixed_step_solve(raw_dt):
 def _rxd_reaction(states):
     # TODO: this probably shouldn't be here
     # TODO: this was included in the 3d, probably shouldn't be there either
-    if _diffusion_matrix is None and region._sim_dimension == 1: _setup_matrices()
+    # TODO: if its None and there is 3D... should we do anything special?
+    if _diffusion_matrix is None and not species._has_3d: _setup_matrices()
 
     b = _numpy_zeros(len(states))
     
@@ -584,8 +582,8 @@ def _update_node_data(force=False):
         _cur_map = {}
         last_diam_change_cnt = _diam_change_count.value
         last_structure_change_cnt = _structure_change_count.value
-        if region._sim_dimension == 1:
-            # TODO: merge this with the 3d case
+        if not species._has_3d:
+            # TODO: merge this with the 3d/hybrid case?
             for sr in _species_get_all_species().values():
                 s = sr()
                 if s is not None: s._update_node_data()
@@ -627,7 +625,8 @@ def _setup_matrices():
 
     n = len(_node_get_states())
         
-    if region._sim_dimension == 3:
+    if species._has_3d:
+        # TODO: if we also have 1D, be sure to do that too
         _euler_matrix = _scipy_sparse_dok_matrix((n, n), dtype=float)
 
         for sr in _species_get_all_species().values():
@@ -635,15 +634,16 @@ def _setup_matrices():
             if s is not None: s._setup_matrices3d(_euler_matrix)
 
         _euler_matrix = _euler_matrix.tocsr()
+        # TODO: to support hybrid, make this empty instead (but trace through to see if ever used)
         _diffusion_matrix = -_euler_matrix
         _update_node_data(True)
 
-        # TODO: this will need changed when can have both 1D and 3D simultaneously
+        # NOTE: if we also have 1D, this will be replaced with the correct values below
         _zero_volume_indices = []
         _nonzero_volume_indices = range(len(_node_get_states()))
         
 
-    else:
+    if species._has_1d:
         # TODO: initialization is slow. track down why
         
         _last_dt = None
@@ -724,24 +724,16 @@ def _init():
     # TODO: check about the 0<x<1 problem alluded to in the documentation
     h.define_shape()
     
-    
-    dim = region._sim_dimension
-    if dim == 3:
-        for sr in _species_get_all_species().values():
-            s = sr()
-            if s is not None:
-                # s._register_cptrs()
-                s._finitialize()
-        _setup_matrices()
-    elif dim == 1:
+    if species._has_1d:
         section1d._purge_cptrs()
-        
-        for sr in _species_get_all_species().values():
-            s = sr()
-            if s is not None:
-                s._register_cptrs()
-                s._finitialize()
-        _setup_matrices()
+    
+    for sr in _species_get_all_species().values():
+        s = sr()
+        if s is not None:
+            # TODO: are there issues with hybrid or 3D here? (I don't think so, but here's a bookmark just in case)
+            s._register_cptrs()
+            s._finitialize()
+    _setup_matrices()
 
 #
 # register the initialization handler and the advance handler
