@@ -633,9 +633,10 @@ def _setup_matrices():
             s = sr()
             if s is not None: s._setup_matrices3d(_euler_matrix)
 
-        _euler_matrix = _euler_matrix.tocsr()
         # TODO: to support hybrid, make this empty instead (but trace through to see if ever used)
         _diffusion_matrix = -_euler_matrix
+
+        _euler_matrix = _euler_matrix.tocsr()
         _update_node_data(True)
 
         # NOTE: if we also have 1D, this will be replaced with the correct values below
@@ -644,6 +645,8 @@ def _setup_matrices():
         
 
     if species._has_1d:
+        n = species._1d_submatrix_n()
+    
         # TODO: initialization is slow. track down why
         
         _last_dt = None
@@ -667,10 +670,13 @@ def _setup_matrices():
             
             
             # create the matrix G
-            _diffusion_matrix = _scipy_sparse_dok_matrix((n, n))
+            if not species._has_3d:
+                # if we have both, then put the 1D stuff into the matrix that already exists for 3D
+                _diffusion_matrix = _scipy_sparse_dok_matrix((n, n))
             for sr in _species_get_all_species().values():
                 s = sr()
                 if s is not None:
+                    #print '_diffusion_matrix.shape = %r, n = %r, species._has_3d = %r' % (_diffusion_matrix.shape, n, species._has_3d)
                     s._setup_diffusion_matrix(_diffusion_matrix)
                     s._setup_c_matrix(_linmodadd_c)
             
@@ -698,6 +704,9 @@ def _setup_matrices():
             _linmodadd_c = _linmodadd_c.tocsr()
             _diffusion_matrix = _diffusion_matrix.tocsr()
             
+            if species._has_3d:
+                _euler_matrix = -_diffusion_matrix
+            
         volumes = node._get_data()[0]
         _zero_volume_indices = numpy.where(volumes == 0)[0]
         _nonzero_volume_indices = volumes.nonzero()[0]
@@ -716,6 +725,8 @@ def _setup_matrices():
                     matrixdata[indptr[row] : indptr[row + 1]] = 0
             global _mat_for_zero_volume_nodes
             _mat_for_zero_volume_nodes = matrix
+            # TODO: _mat_for_zero_volume_nodes is used for CVode.
+            #       Figure out if/how it has to be changed for hybrid 1D/3D sims (probably just augment with identity? or change how its used to avoid multiplying by I)
 
 
 def _init():

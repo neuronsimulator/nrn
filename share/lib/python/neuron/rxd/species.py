@@ -21,6 +21,14 @@ _species_count = 0
 _has_1d = False
 _has_3d = False
 
+def _1d_submatrix_n():
+    if not _has_1d:
+        return 0
+    elif not _has_3d:
+        return len(node._states)
+    else:
+        return numpy.min([sp()._indices3d() for sp in _get_all_species().values() if sp() is not None])
+            
 
 
 class _SpeciesMathable(object):
@@ -243,8 +251,10 @@ class Species(_SpeciesMathable):
 
         # initialize self if the rest of rxd is already initialized
         if initializer.is_initialized():
-            # TODO: remove this limitation
-            raise RxDException('temporarily cannot add new species after rxd is initialized because 1D and 3D blocks need to be kept together')
+            if _has_3d:
+                # TODO: remove this limitation
+                #       it's especially not a problem if the new stuff is 3D
+                raise RxDException('temporarily cannot add new species after rxd is initialized because 1D and 3D blocks need to be kept together')
             self._do_init()
     
     def _do_init(self):
