@@ -69,6 +69,8 @@ class Node(object):
             return self._in_sec(condition)
         elif isinstance(condition, region.Region):
             return self.region == condition
+        elif isinstance(condition, nrn.Segment):
+            return self.segment == condition
         try:
             dx = 1. / self.sec.nseg / 2.
             if 0 < condition <= 1:

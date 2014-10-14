@@ -41,14 +41,14 @@ static void make_spike_type() {
 
 	block_lengths[0] = block_lengths[1] = 1;
 
-	MPI_Address(&s, &addresses[0]);
-	MPI_Address(&(s.gid), &addresses[1]);
-	MPI_Address(&(s.spiketime), &addresses[2]);
+	MPI_Get_address(&s, &addresses[0]);
+	MPI_Get_address(&(s.gid), &addresses[1]);
+	MPI_Get_address(&(s.spiketime), &addresses[2]);
 
 	displacements[0] = addresses[1] - addresses[0];
 	displacements[1] = addresses[2] - addresses[0];
 
-	MPI_Type_struct(2, block_lengths, displacements, typelist, &spike_type);
+	MPI_Type_create_struct(2, block_lengths, displacements, typelist, &spike_type);
 	MPI_Type_commit(&spike_type);
 
 	MPI_Op_create((MPI_User_function*)pgvts_op, 1, &mpi_pgvts_op);

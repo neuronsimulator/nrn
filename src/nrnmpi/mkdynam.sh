@@ -14,8 +14,8 @@ sed -n '
 $p
 ' nrnmpidec.h | tr '@' '\n' | sed '
 /p_nrnmpi/ {
-s/, [a-zA-Z_*]* /, /g
-s/)([a-zA-Z_*]* /)(/
+s/, [a-zA-Z0-9_*]* /, /g
+s/)([a-zA-Z_0-9*]* /)(/
 s/char\* //g
 }
 '> nrnmpi_dynam_wrappers.inc

@@ -80,10 +80,12 @@ hoc_module = Extension(
       libraries = [
 	"nrnpython@npy_apiver@",
         "nrnoc", "oc", "nrniv", "ivoc",
-        "memacs", "meschach", "neuron_gnu",
+        @BUILD_MEMACS_TRUE@"memacs",
+	"meschach", "neuron_gnu",
 	@BUILD_NRNMPI_DYNAMIC_FALSE@"nrnmpi",
-        "scopmath", "sparse13", "sundials", "@IVHINES@",
-	"readline"
+        "scopmath", "sparse13", "sundials",
+	"readline",
+	"@IVHINES@",
       ],
       include_dirs = include_dirs,
       define_macros=defines

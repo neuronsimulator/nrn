@@ -1098,9 +1098,15 @@ td, db->type(), nt->id, (db->type() == 2) ? PP2NT(((NetCon*)db)->target_)->id:-1
 	InterThreadEvent& ite = inter_thread_events_[ite_cnt_++];
 	ite.de_ = db;
 	ite.t_ = td;
-	int& b = net_cvode_instance->enqueueing_;
-	if (!b) { b = 1; }
+	// race since each NetCvodeThreadData has its own lock and enqueueing_
+	// is a NetCvode instance variable. enqueuing_ is not logically
+	// needed but can avoid a nrn_multithread_job call in allthread_least_t
+	// which does nothing if there are no interthread events.
+	//int& b = net_cvode_instance->enqueueing_;
+	//if (!b) { b = 1; }
 	MUTUNLOCK
+	// have decided to lock net_cvode_instance and set it
+	net_cvode_instance->set_enqueueing();
 }
 
 void NetCvodeThreadData::enqueue(NetCvode* nc, NrnThread* nt) {
@@ -1172,6 +1178,7 @@ NetCvode::NetCvode(bool single) {
 }
 
 NetCvode::~NetCvode() {
+	MUTDESTRUCT
 	if (net_cvode_instance == (NetCvode*)this) {
 		net_cvode_instance = nil;
 	}	
@@ -2735,6 +2742,7 @@ void NetCvode::clear_events() {
 		// and have already been reclaimed by SelfEvent::reclaim()
 	}
 #endif
+	MUTCONSTRUCT(1)
 	enqueueing_ = 0;
 	for (i=0; i < nrn_nthread; ++i) {
 		NetCvodeThreadData& d = p[i];
@@ -6277,9 +6285,19 @@ void* nrn_interthread_enqueue(NrnThread* nt) {
 	return 0;
 }
 
+void NetCvode::set_enqueueing() {
+	MUTLOCK
+	enqueueing_ = 1;
+	MUTUNLOCK
+}
+
 double NetCvode::allthread_least_t(int& tid) {
 	// reduce (take minimum) of p[i].tqe_->least_t()
 	double tt, min = 1e50;
+// setting enqueueing_ in interthread_send was a race. Logically it is not
+// needed. It is not clear if higher performance would result in having
+// a MUTEX for the NetCvode instance but that is the current implementation
+// instead of commenting out the enqueuing related lines.
 	if (enqueueing_) {
 		nrn_multithread_job(nrn_interthread_enqueue);
 		enqueueing_ = 0;

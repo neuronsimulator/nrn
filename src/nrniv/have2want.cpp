@@ -121,7 +121,7 @@ static void have_to_want(
       int srcrank;
       if (havekey2rank.find(key, srcrank)) {
 	char buf[200];
-sprintf(buf, "key %ld owned by multiple ranks\n", (int64_t)key);
+sprintf(buf, "key %lld owned by multiple ranks\n", (int64_t)key);
         hoc_execerror(buf, 0);
       }
       havekey2rank[key] = r;
@@ -152,7 +152,7 @@ sprintf(buf, "key %ld owned by multiple ranks\n", (int64_t)key);
       int srcrank;
       if (!havekey2rank.find(key, srcrank)) {
 	char buf[200];
-sprintf(buf, "key = %ld is wanted but does not exist\n", (int64_t)key);
+sprintf(buf, "key = %lld is wanted but does not exist\n", (int64_t)key);
         hoc_execerror(buf, 0);
       }
       want_r_ownerranks[ix] = srcrank;

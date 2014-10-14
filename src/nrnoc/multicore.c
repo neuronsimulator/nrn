@@ -277,8 +277,8 @@ static void send_job_to_slave(int i, void* (*job)(NrnThread*)) {
 	pthread_mutex_lock(mut + i);
 	wc[i].job = job;
 	wc[i].flag = 1;
-	pthread_mutex_unlock(mut + i);
 	pthread_cond_signal(cond + i);
+	pthread_mutex_unlock(mut + i);
 #else
 	pthread_create(slave_threads + i, (void*)0, (void*(*)(void*))job, (void*)(nrn_threads + i));
 #endif
@@ -341,8 +341,8 @@ static void* slave_main(void* arg) {
 		}
 		pthread_mutex_lock(my_mut);
 		my_wc->flag = 0;
-		pthread_mutex_unlock(my_mut);
 		pthread_cond_signal(my_cond);
+		pthread_mutex_unlock(my_mut);
 	    }
 	}
 	return (void*)0;
@@ -394,8 +394,8 @@ static void threads_free_pthread(){
 		for (i=1; i < nrn_nthread; ++i) {
 			pthread_mutex_lock(mut + i);
 			wc[i].flag = -1;
-			pthread_mutex_unlock(mut + i);
 			pthread_cond_signal(cond + i);
+			pthread_mutex_unlock(mut + i);
 			pthread_join(slave_threads[i], (void*)0);
 			pthread_cond_destroy(cond + i);
 			pthread_mutex_destroy(mut + i);

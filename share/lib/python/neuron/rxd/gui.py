@@ -906,7 +906,7 @@ class SpeciesPanel:
         self.vbox.intercept(0)
         self.vbox.map()
     def regions(self):
-        return {name: loc.regions() for name, loc in zip(self.species_locs.keys(), self.species_locs.values())}
+        return dict([(name, loc.regions()) for name, loc in zip(self.species_locs.keys(), self.species_locs.values())])
 
         
 class _SpeciesEditor:
