@@ -84,7 +84,7 @@ static double set_mindelay(double maxdelay);
 
 extern "C" {
 void nrn_timeout(int);
-void nrn_spike_exchange();
+void nrn_spike_exchange(NrnThread*);
 extern int nrnmpi_int_allmax(int);
 extern void nrnmpi_int_allgather(int*, int*, int);
 void nrn2ncs_outputevent(int netcon_output_index, double firetime);
@@ -198,7 +198,7 @@ static double wt1_; // time to find the PreSyns and send the spikes.
 static bool use_compress_;
 static int spfixout_capacity_;
 static int idxout_;
-static void nrn_spike_exchange_compressed();
+static void nrn_spike_exchange_compressed(NrnThread*);
 #endif // NRNMPI
 
 #if BGPDMA & 4
@@ -267,10 +267,10 @@ void NetParEvent::deliver(double tt, NetCvode* nc, NrnThread* nt){
 	if (use_bgpdma_) {
 		bgp_dma_receive();
 	}else{
-		nrn_spike_exchange();
+		nrn_spike_exchange(nt);
 	}
 #else    
-	nrn_spike_exchange();
+	nrn_spike_exchange(nt);
 #endif
 	wx_ += wt_;
 	ws_ += wt1_;
@@ -483,7 +483,7 @@ void nrn_spike_exchange_init() {
 }
 
 #if NRNMPI
-void nrn_spike_exchange() {
+void nrn_spike_exchange(NrnThread* nt) {
 	if (!active_) { return; }
 #if BGPDMA
 	if (use_bgpdma_) {
@@ -491,7 +491,7 @@ void nrn_spike_exchange() {
 		return;
 	}
 #endif
-	if (use_compress_) { nrn_spike_exchange_compressed(); return; }
+	if (use_compress_) { nrn_spike_exchange_compressed(nt); return; }
 	TBUF
 #if TBUFSIZE
 	nrnmpi_barrier();
@@ -560,7 +560,7 @@ void nrn_spike_exchange() {
 		for (j=0; j < nn; ++j) {
 			InputPreSyn* ps;
 			if (gid2in_->find(spbufin_[i].gid[j], ps)) {
-				ps->send(spbufin_[i].spiketime[j], net_cvode_instance, nrn_threads);
+				ps->send(spbufin_[i].spiketime[j], net_cvode_instance, nt);
 #if NRNSTAT
 				++nrecv_useful_;
 #endif
@@ -572,7 +572,7 @@ void nrn_spike_exchange() {
 	for (i = 0; i < n; ++i) {
 		InputPreSyn* ps;
 		if (gid2in_->find(spikein_[i].gid, ps)) {
-			ps->send(spikein_[i].spiketime, net_cvode_instance, nrn_threads);
+			ps->send(spikein_[i].spiketime, net_cvode_instance, nt);
 #if NRNSTAT
 			++nrecv_useful_;
 #endif
@@ -582,7 +582,7 @@ void nrn_spike_exchange() {
 	TBUF
 }
 		
-void nrn_spike_exchange_compressed() {
+void nrn_spike_exchange_compressed(NrnThread* nt) {
 	if (!active_) { return; }
 	TBUF
 #if TBUFSIZE
@@ -664,7 +664,7 @@ void nrn_spike_exchange_compressed() {
 			idx += localgid_size_;
 			InputPreSyn* ps;
 			if (gps->find(lgid, ps)) {
-				ps->send(firetime + 1e-10, net_cvode_instance, nrn_threads);
+				ps->send(firetime + 1e-10, net_cvode_instance, nt);
 #if NRNSTAT
 				++nrecv_useful_;
 #endif
@@ -676,7 +676,7 @@ void nrn_spike_exchange_compressed() {
 			idxov += localgid_size_;
 			InputPreSyn* ps;
 			if (gps->find(lgid, ps)) {
-				ps->send(firetime+1e-10, net_cvode_instance, nrn_threads);
+				ps->send(firetime+1e-10, net_cvode_instance, nt);
 #if NRNSTAT
 				++nrecv_useful_;
 #endif
@@ -697,7 +697,7 @@ void nrn_spike_exchange_compressed() {
 			idx += localgid_size_;
 			InputPreSyn* ps;
 			if (gid2in_->find(gid, ps)) {
-				ps->send(firetime+1e-10, net_cvode_instance, nrn_threads);
+				ps->send(firetime+1e-10, net_cvode_instance, nt);
 #if NRNSTAT
 				++nrecv_useful_;
 #endif
@@ -712,7 +712,7 @@ void nrn_spike_exchange_compressed() {
 		idx += localgid_size_;
 		InputPreSyn* ps;
 		if (gid2in_->find(gid, ps)) {
-			ps->send(firetime+1e-10, net_cvode_instance, nrn_threads);
+			ps->send(firetime+1e-10, net_cvode_instance, nt);
 #if NRNSTAT
 			++nrecv_useful_;
 #endif
@@ -817,6 +817,7 @@ static void mk_localgid_rep() {
 // effects of output spikes from the simulated cells. In this case
 // set the third arg to 1 and set the output cell thresholds very
 // high so that they do not themselves generate spikes.
+// Can only be called by thread 0 because of the ps->send.
 void nrn_fake_fire(int gid, double spiketime, int fake_out) {
 	assert(gid2in_);
 	PreSyn* ps = NULL;
@@ -1182,10 +1183,10 @@ void BBS_netpar_solve(double tstop) {
 		bgp_dma_receive();
 #endif
 	}else{
-		nrn_spike_exchange();
+		nrn_spike_exchange(nrn_threads);
 	}
 #else
-	nrn_spike_exchange();
+	nrn_spike_exchange(nrn_threads);
 #endif
 	nrn_timeout(0);
 //	impl_->wait_time_ += wt_;

@@ -68,8 +68,6 @@ static void prnt(const TQItem* b, int level) {
 }
 
 TQueue::TQueue(TQItemPool* tp, int mkmut) {
-	//to avoid race condition with threading, temporarily adding mutex locks
-	mkmut = 1;
 	MUTCONSTRUCT(mkmut)
 	tpool_ = tp;
 	nshift_ = 0;

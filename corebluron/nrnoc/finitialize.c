@@ -99,6 +99,6 @@ void nrn_finitialize(int setv, double v) {
 		nrn_deliver_events(nrn_threads + i); /* The record events at t=0 */
 	}
 #if NRNMPI
-	nrn_spike_exchange();
+	nrn_spike_exchange(nrn_threads);
 #endif
 }

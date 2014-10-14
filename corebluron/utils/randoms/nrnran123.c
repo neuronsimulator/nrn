@@ -63,7 +63,9 @@ nrnran123_State* nrnran123_newstream(uint32_t id1, uint32_t id2) {
 }
 
 void nrnran123_deletestream(nrnran123_State* s) {
+	MUTLOCK
 	--instance_count_;
+	MUTUNLOCK
 	free(s);
 }
 

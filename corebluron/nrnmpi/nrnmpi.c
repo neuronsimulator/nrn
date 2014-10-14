@@ -20,6 +20,7 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "corebluron/nrnmpi/mpispike.h"
 #include "corebluron/nrnmpi/nrnmpi_def_cinc.h"
 #include "corebluron/nrniv/nrn_assert.h"
+#include "corebluron/nrnoc/nrnpthread.h"
 
 #if NRNMPI
 #include <mpi.h>
@@ -92,8 +93,12 @@ for (i=0; i < *pargc; ++i) {
 #endif
 		MPI_Initialized(&flag);
 
-		if (!flag && MPI_Init(pargc, pargv) != MPI_SUCCESS) {
-		  printf("MPI_INIT failed\n");
+		if (!flag) {
+#if (USE_PTHREAD || defined(_OPENMP))
+nrn_assert(MPI_Init_thread(pargc, pargv, MPI_THREAD_SERIALIZED, NULL) == MPI_SUCCESS);
+#else
+			nrn_assert(MPI_Init(pargc, pargv) == MPI_SUCCESS);
+#endif
 		}
 
 		{
