@@ -463,7 +463,8 @@ class Node3D(Node):
     
     @property
     def x(self):
-        raise RxDException('need to reimplement x for 3d nodes')
+        # TODO: can we make this more accurate?
+        return self._seg.x
     
     @property
     def segment(self):
