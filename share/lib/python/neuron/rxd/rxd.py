@@ -111,7 +111,7 @@ def set_solve_type(domain=None, dimension=None, dx=None, nsubseg=None, method=No
         if setting_default:
             _dimensions.default_factory = factory
         for sec in domain:
-            _dimensions[sec] = factory 
+            _dimensions[sec] = dimension 
     if dx is not None:
         raise RxDException('using set_solve_type to specify dx is not yet implemented')
     if nsubseg is not None:

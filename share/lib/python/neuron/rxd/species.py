@@ -347,7 +347,7 @@ class Species(_SpeciesMathable):
         if self._regions:
             r = self._regions[0]
             if r._secs3d:
-                if len(regions) != 1:
+                if len(self._regions) != 1:
                     raise RxDException('3d currently only supports 1 region per species')
                 selfref = weakref.ref(self)
                 xs, ys, zs, segs = r._xs, r._ys, r._zs, r._segs
@@ -358,7 +358,7 @@ class Species(_SpeciesMathable):
                     # this is done so that multiple species can use the same region without recomputing it
                 node._volumes[range(self._3doffset, self._3doffset + len(xs))] = r._vol
                 node._surface_area[self._3doffset : self._3doffset + len(xs)] = r._sa
-                node._diffs[range(self._3doffset, self._3doffset + len(xs))] = d
+                node._diffs[range(self._3doffset, self._3doffset + len(xs))] = self._d
                 _has_3d = True
 
     def _do_init4(self):

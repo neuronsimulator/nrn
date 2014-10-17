@@ -67,15 +67,15 @@ class Region(object):
             elif dim == 3:
                 self._secs3d.append(sec)
             else:
-                raise RxDException('unknown dimension: %r' % dim)
+                raise RxDException('unknown dimension: %r in section %r' % (dim, sec.name()))
 
         
         # TODO: I used to not sort secs in 3D if hasattr(self._secs, 'sections'); figure out why
         self._secs = _sort_secs(self._secs)
         self._secs1d = _sort_secs(self._secs1d)
         
-        if self._secs3d and geometry is not None:        
-            raise RxDException('custom geometries not yet supported in 3d mode')
+        if self._secs3d and self._geometry != geo.inside:        
+            raise RxDException('custom geometries (%r) not yet supported in 3d mode' % self._geometry)
         
         self._id = _region_count
         _region_count += 1
@@ -88,7 +88,7 @@ class Region(object):
             vol_values = vol.values
             self._objs = {}
             # TODO: remove this when can store soma outlines
-            if not hasattr(sections, 'sections'):
+            if not hasattr(self.secs, 'sections'):
                 for sec in self._secs3d:
                     self._objs.update(dimension3.centroids_by_segment(sec))
             mesh_values = self._mesh.values
