@@ -544,7 +544,7 @@ class Species(_SpeciesMathable):
                 charge = self.charge
                 name = '%s%s' % (self.name, nrn_region)
                 sign_tenthousand_over_charge_faraday = sign * 10000. / (charge * rxd.FARADAY)
-                for i, nodeobj in enumerate(self.nodes):
+                for i, nodeobj in enumerate(self._nodes):
                     if surface_area[i]:
                         seg = nodeobj.segment
                         cur_map[name][seg] = len(indices)

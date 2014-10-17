@@ -584,14 +584,15 @@ def _update_node_data(force=False):
         _cur_map = {}
         last_diam_change_cnt = _diam_change_count.value
         last_structure_change_cnt = _structure_change_count.value
-        if not species._has_3d:
-            # TODO: merge this with the 3d/hybrid case?
-            for sr in _species_get_all_species().values():
-                s = sr()
-                if s is not None: s._update_node_data()
-            for sr in _species_get_all_species().values():
-                s = sr()
-                if s is not None: s._update_region_indices()
+        #if not species._has_3d:
+        # TODO: merge this with the 3d/hybrid case?
+        for sr in _species_get_all_species().values():
+            s = sr()
+            if s is not None: s._update_node_data()
+        for sr in _species_get_all_species().values():
+            s = sr()
+            if s is not None: s._update_region_indices()
+        #end#if
         for rptr in _all_reactions:
             r = rptr()
             if r is not None: r._update_indices()
