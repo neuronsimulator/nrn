@@ -2,6 +2,14 @@ import itertools
 
 # TODO: monkey-patch everything that requires an init so only even attempts once
 
+def _do_ion_register():
+    from . import species
+    for obj in species._all_species:
+        obj = obj()
+        if obj is not None:
+            obj._ion_register()
+
+
 has_initialized = False
 def _do_init():
     global has_initialized

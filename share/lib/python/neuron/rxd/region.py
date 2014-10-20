@@ -238,7 +238,10 @@ class Region(object):
         
         .. note:: Setting is new in NEURON 7.4+ and allowed only before the reaction-diffusion model is instantiated.
         """
-        return copy.copy(self._secs)
+        if hasattr(self._secs, '__len__'):
+            return list(self._secs)
+        else:
+            return [self._secs]
 
     @secs.setter
     def secs(self, value):
