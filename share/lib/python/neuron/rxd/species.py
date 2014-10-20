@@ -283,26 +283,8 @@ class Species(_SpeciesMathable):
         self._species = weakref.ref(self)        
         # at this point self._name is None if unnamed or a string == name if
         # named
-        if self._name is not None:
-            ion_type = h.ion_register(name, charge)
-            if ion_type == -1:
-                raise RxDException('Unable to register species: %s' % name)
-            # insert the species if not already present
-            for r in regions:
-                if r.nrn_region in ('i', 'o'):
-                    for s in r.secs:
-                        try:
-                            ion_forms = [name + 'i', name + 'o', 'i' + name, 'e' + name]
-                            for i in ion_forms:
-                                # this throws an exception if one of the ion forms is missing
-                                temp = s.__getattribute__(name + 'i')
-                        except:
-                            s.insert(name + '_ion')
-                        # set to recalculate reversal potential automatically
-                        # the last 1 says to set based on global initial concentrations
-                        # e.g. nai0_na_ion, etc...
-                        h.ion_style(name + '_ion', 3, 2, 1, 1, 1, sec=s)
-                        
+        
+        self._ion_register()                     
                         
         # TODO: remove the need for this
         # NOTE: this is used by neuron.rxd.plugins._initialize
@@ -345,6 +327,31 @@ class Species(_SpeciesMathable):
         else:
             raise RxDException('unsupported dimension: %r' % self._dimension)
         self._register_cptrs()
+
+
+    def _ion_register(self):
+        charge = self._charge
+        if self._name is not None:
+            ion_type = h.ion_register(self._name, charge)
+            if ion_type == -1:
+                raise RxDException('Unable to register species: %s' % self._name)
+            # insert the species if not already present
+            regions = self._regions if hasattr(self._regions, '__len__') else [self._regions]
+            for r in regions:
+                if r.nrn_region in ('i', 'o'):
+                    for s in r.secs:
+                        try:
+                            ion_forms = [self._name + 'i', self._name + 'o', 'i' + self._name, 'e' + self._name]
+                            for i in ion_forms:
+                                # this throws an exception if one of the ion forms is missing
+                                temp = s.__getattribute__(self._name + 'i')
+                        except:
+                            s.insert(self._name + '_ion')
+                        # set to recalculate reversal potential automatically
+                        # the last 1 says to set based on global initial concentrations
+                        # e.g. nai0_na_ion, etc...
+                        print 'last part of that function'
+                        h.ion_style(self._name + '_ion', 3, 2, 1, 1, 1, sec=s)
 
     @property
     def states(self):

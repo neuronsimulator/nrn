@@ -731,9 +731,10 @@ def _init():
         _setup_matrices()
 
 #
-# register the initialization handler and the advance handler
+# register the initialization handler and the ion register handler
 #
 _fih = h.FInitializeHandler(_init)
+_fih2 = h.FInitializeHandler(3, initializer._do_ion_register)
 
 #
 # register scatter/gather mechanisms
