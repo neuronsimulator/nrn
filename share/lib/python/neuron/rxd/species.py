@@ -377,7 +377,6 @@ class Species(_SpeciesMathable):
                         # set to recalculate reversal potential automatically
                         # the last 1 says to set based on global initial concentrations
                         # e.g. nai0_na_ion, etc...
-                        print 'last part of that function'
                         h.ion_style(self._name + '_ion', 3, 2, 1, 1, 1, sec=s)
 
     @property
