@@ -562,14 +562,12 @@ class Species(_SpeciesMathable):
 
     
     def _has_region_section(self, region, sec):
-        sec_name = sec.name()
-        return any((s._region == region and s._sec.name() == sec_name) for s in self._secs)
+        return any((s._region == region and s._sec == sec) for s in self._secs)
 
     def _region_section(self, region, sec):
         """return the Section1D (or whatever) associated with the region and section"""
-        sec_name = sec.name()
         for s in self._secs:
-            if s._region == region and s._sec.name() == sec_name:
+            if s._region == region and s._sec == sec:
                 return s
         else:
             raise RxDException('requested section not in species')

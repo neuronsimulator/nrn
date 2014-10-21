@@ -192,7 +192,7 @@ class Section1D(rxdsection.RxDSection):
             if parent_sec is None:
                 pt = (self._region, None)
             else:
-                pt = (self._region, parent_sec.name())
+                pt = (self._region, parent_sec)
             if parent_sec is None or pt not in missing:
                 missing[pt] = root_id
                 root_id += 1
