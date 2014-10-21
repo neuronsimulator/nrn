@@ -318,6 +318,8 @@ class Species(_SpeciesMathable):
             _has_1d = True
         else:
             self._offset = 0
+        self._has_adjusted_offsets = False
+        self._assign_parents()
 
     def _do_init3(self):
         global _has_3d
@@ -344,9 +346,7 @@ class Species(_SpeciesMathable):
                 _has_3d = True
 
     def _do_init4(self):
-        # final initialization        
-        self._has_adjusted_offsets = False
-        self._assign_parents()
+        # final initialization
         for sec in self._secs:
             # NOTE: can only init_diffusion_rates after the roots (parents)
             #       have been assigned

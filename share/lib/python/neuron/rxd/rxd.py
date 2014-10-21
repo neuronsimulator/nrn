@@ -731,6 +731,14 @@ def _setup_matrices():
             # TODO: _mat_for_zero_volume_nodes is used for CVode.
             #       Figure out if/how it has to be changed for hybrid 1D/3D sims (probably just augment with identity? or change how its used to avoid multiplying by I)
 
+    if species._has_1d and species._has_3d:
+        # TODO: add connections to matrix; for now: find them
+        for sr in _species_get_all_species().values():
+            s = sr()
+            if s is not None:
+                if s._nodes and s._secs:
+                    # have both 1D and 3D, so find the neighbors
+                    pass
 
 def _init():
     initializer._do_init()
