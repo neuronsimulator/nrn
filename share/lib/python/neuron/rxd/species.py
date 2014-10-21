@@ -393,7 +393,7 @@ class Species(_SpeciesMathable):
         xs, ys, zs = region_mesh.nonzero()
         diffs = node._diffs
         for i in xrange(len(xs)):
-            indices[(xs[i], ys[i], zs[i])] = i
+            indices[(xs[i], ys[i], zs[i])] = i + self._3doffset
         dx = self._regions[0]._dx
         areal = dx * dx
         arear = dx * dx
