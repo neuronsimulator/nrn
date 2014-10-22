@@ -50,6 +50,8 @@ static int nrnmpi_under_nrncontrol_;
 void nrnmpi_init(int nrnmpi_under_nrncontrol, int* pargc, char*** pargv) {
 #if NRNMPI
 	int i, b, flag;
+	int required = MPI_THREAD_SERIALIZED;
+	int provided;
 	static int called = 0;
 	if (called) { return; }
 	called = 1;
@@ -95,7 +97,8 @@ for (i=0; i < *pargc; ++i) {
 
 		if (!flag) {
 #if (USE_PTHREAD || defined(_OPENMP))
-nrn_assert(MPI_Init_thread(pargc, pargv, MPI_THREAD_SERIALIZED, NULL) == MPI_SUCCESS);
+	nrn_assert(MPI_Init_thread(pargc, pargv, required, &provided) == MPI_SUCCESS);
+	nrn_assert(required == provided);
 #else
 			nrn_assert(MPI_Init(pargc, pargv) == MPI_SUCCESS);
 #endif
