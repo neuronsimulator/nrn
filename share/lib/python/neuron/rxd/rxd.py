@@ -1,6 +1,6 @@
 import neuron
 from neuron import h, nrn
-from . import species, node, section1d, region
+from . import species, node, section1d, region, morphology
 from .nodelist import NodeList
 import weakref
 import numpy
@@ -738,7 +738,26 @@ def _setup_matrices():
             if s is not None:
                 if s._nodes and s._secs:
                     # have both 1D and 3D, so find the neighbors
-                    pass
+                    # for each of the 3D sections, find the parent sections
+                    for r in s._regions:
+                        for sec in r._secs3d:
+                            parent_sec = morphology.parent(sec)
+                            # are any of these a match with a 1d section?
+                            if s._has_region_section(r, parent_sec):
+                                # this section has a 1d section that is a parent
+                                print '%r(%g) connects to the 1d section %r(%g)' % (sec, h.section_orientation(sec=sec), parent_sec, h.parent_connection(sec=sec))
+                            else:
+                                for sec1d in r._secs1d:
+                                    parent_1d = morphology.parent(sec1d)
+                                    if parent_1d == sec:
+                                        # is it the parent of a 1d section?
+                                        print '%r(%g) connects to the 1d section %r(%g)' % (sec, h.parent_connection(sec=sec1d), sec1d, h.section_orientation(sec=sec1d))
+                                        break
+                                    elif parent_1d == parent_sec:
+                                        # does it connect to the parent of a 1d section?
+                                        print '%r(%g) connects to the 1d section %r(%g)' % (sec, h.section_orientation(sec=sec), sec1d, h.section_orientation(sec=sec1d))
+                                        break
+
 
 def _init():
     initializer._do_init()
