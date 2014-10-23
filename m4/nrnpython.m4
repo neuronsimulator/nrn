@@ -92,6 +92,7 @@ and PYINCDIR to find Python.h
 ]),
 		[ac_nrn_python="$withval"], [ac_nrn_python=no]
 	)
+	AM_CONDITIONAL(NRN_PYTHON_ON, test x$ac_nrn_python != xno)
 	nrn_temp_cflags="$CFLAGS"
 	AC_ARG_ENABLE([cygwin],
 		AC_HELP_STRING([--disable-cygwin],

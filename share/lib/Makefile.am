@@ -11,4 +11,11 @@ neuronhome_SCRIPTS = cleanup hocload.sh
 
 EXTRA_DIST = $(data_and_dist) $(neuronhome_SCRIPTS)
 
+DIST_SUBDIRS = auditscripts hoc python
+
+if NRN_PYTHON_ON
 SUBDIRS = auditscripts hoc python
+else
+SUBDIRS = auditscripts hoc
+endif
+
