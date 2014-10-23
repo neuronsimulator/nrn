@@ -83,7 +83,7 @@ void* dll_load(v, s) void* v; char* s; {return 0;}
 #endif
 
 void nrn_spike_exchange_init(){}
-void nrn_spike_exchange(){}
+void nrn_spike_exchange(NrnThread* nt){}
 void nrn_fake_fire(i,x,j)int i, j; double x;{}
 void nrn_daq_ao() {}
 void nrn_daq_ai() {}
