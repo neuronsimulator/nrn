@@ -502,6 +502,7 @@ void hoc_sprint1(char** ppbuf, int argn) {	/* convert args to right type for con
 		case '%':
 			lflag = 0;
 			convflag = 0;
+			*(--pfrag) = 0;
 			break;
 
 		default:
