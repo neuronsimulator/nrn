@@ -143,6 +143,65 @@ class Region(object):
             self._segs = segs
         self._dx = self.dx
     
+    def _indices_from_sec_x(self, sec, position):
+        # TODO: the assert is here because the diameter is not computed correctly
+        #       unless it coincides with a 3d point, which we only know to exist at the
+        #       endpoints and because the section does not proceed linearly between
+        #       the endpoints (in general)... which affects the computation of the
+        #       normal vector as well
+        assert(position in (0, 1))
+        # NOTE: some care is necessary in constructing normal vector... must be
+        #       based on end frusta, not on vector between end points
+        if position == 0:
+            x = h.x3d(0, sec=sec)
+            y = h.y3d(0, sec=sec)
+            z = h.z3d(0, sec=sec)
+            nx = h.x3d(1, sec=sec) - x
+            ny = h.y3d(1, sec=sec) - y
+            nz = h.z3d(1, sec=sec) - z
+        elif position == 1:
+            n = int(h.n3d(sec=sec))
+            x = h.x3d(n - 1, sec=sec)
+            y = h.y3d(n - 1, sec=sec)
+            z = h.z3d(n - 1, sec=sec)
+            # NOTE: sign of the normal is irrelevant
+            nx = x - h.x3d(n - 2, sec=sec)
+            ny = y - h.y3d(n - 2, sec=sec)
+            nz = z - h.z3d(n - 2, sec=sec)
+        else:
+            raise RxDException('should never get here')
+        # x, y, z = x * x1 + (1 - x) * x0, x * y1 + (1 - x) * y0, x * z1 + (1 - x) * z1
+        r = sec(position).diam * 0.5
+        plane_of_disc = geometry3d.graphicsPrimitives.Plane(x, y, z, nx, ny, nz)
+        potential_coordinates = []
+        mesh = self._mesh
+        xs, ys, zs = mesh._xs, mesh._ys, mesh._zs
+        xlo, ylo, zlo = xs[0], ys[0], zs[0]
+        # locate the indices of the cube containing the sphere containing the disc
+        # TODO: write this more efficiently
+        i_indices = [i for i, a in enumerate(xs) if abs(a - x) < r]
+        j_indices = [i for i, a in enumerate(ys) if abs(a - y) < r]
+        k_indices = [i for i, a in enumerate(zs) if abs(a - z) < r]
+        sphere_indices = [(i, j, k)
+                          for i, j, k in itertools.product(i_indices, j_indices, k_indices)
+                          if (xs[i] - x) ** 2 + (ys[j] - y) ** 2 + (zs[k] - z) ** 2 < r ** 2]
+        dx2 = self.dx * 0.5
+        dx = self.dx
+        disc_indices = []
+        for i, j, k in sphere_indices:
+#            a, b, c = xs[i], ys[j], zs[k]
+            # TODO: no need to compute all; can stop when some True and some False
+#            on_side1 = [plane_of_disc.distance(x, y, z) >= 0 for x, y, z in itertools.product([a - dx2, a + dx2], [b - dx2, b + dx2], [c - dx2, c + dx2])]
+            # NOTE: the expression is structured this way to make sure it tests the exact same corner coordinates for corners shared by multiple voxels and that there are no round-off issues (an earlier attempt had round-off issues that resulted in double-thick discs when the frustum ended exactly on a grid plane)
+            on_side1 = [plane_of_disc.distance(x, y, z) >= 0 for x, y, z in itertools.product([(xlo + (i - 1) * dx) + dx2, (xlo + i * dx) + dx2], [(ylo + (j - 1) * dx) + dx2, (ylo + j * dx) + dx2], [(zlo + (k - 1) * dx) + dx2, (zlo + k * dx) + dx2])]
+            # need both sides to have at least one corner
+            if any(on_side1) and not all(on_side1):
+                # if we're here, then we've found a point on the disc.
+                disc_indices.append((i, j, k))
+        return disc_indices
+        
+        
+    
     def __init__(self, secs=None, nrn_region=None, geometry=None, dimension=None, dx=None, name=None):
         """
         In NEURON 7.4+, secs is optional at initial region declaration, but it

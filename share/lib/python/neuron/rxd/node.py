@@ -429,6 +429,7 @@ class Node3D(Node):
         self._i = i
         self._j = j
         self._k = k
+        # TODO: store region as a weakref! (weakref.proxy?)
         self._r = r
         self._seg = seg
         self._speciesref = speciesref

@@ -733,6 +733,8 @@ def _setup_matrices():
 
     if species._has_1d and species._has_3d:
         # TODO: add connections to matrix; for now: find them
+        hybrid_neighbors = collections.defaultdict(lambda: [])
+        hybrid_diams = {}
         for sr in _species_get_all_species().values():
             s = sr()
             if s is not None:
@@ -745,20 +747,66 @@ def _setup_matrices():
                             # are any of these a match with a 1d section?
                             if s._has_region_section(r, parent_sec):
                                 # this section has a 1d section that is a parent
-                                print '%r(%g) connects to the 1d section %r(%g)' % (sec, h.section_orientation(sec=sec), parent_sec, h.parent_connection(sec=sec))
+                                index1d, indices3d = _get_node_indices(s, r, sec, h.section_orientation(sec=sec), parent_sec, h.parent_connection(sec=sec))
+                                hybrid_neighbors[index1d] += indices3d
+                                hybrid_diams[index1d] = parent_sec(h.parent_connection(sec=sec)).diam
                             else:
                                 for sec1d in r._secs1d:
                                     parent_1d = morphology.parent(sec1d)
                                     if parent_1d == sec:
-                                        # is it the parent of a 1d section?
-                                        print '%r(%g) connects to the 1d section %r(%g)' % (sec, h.parent_connection(sec=sec1d), sec1d, h.section_orientation(sec=sec1d))
+                                        # it is the parent of a 1d section
+                                        index1d, indices3d = _get_node_indices(s, r, sec, h.parent_connection(sec=sec1d), sec1d, h.section_orientation(sec=sec1d))
+                                        hybrid_neighbors[index1d] += indices3d
+                                        hybrid_diams[index1d] = sec1d(h.section_orientation(sec=sec1d)).diam
                                         break
                                     elif parent_1d == parent_sec:
-                                        # does it connect to the parent of a 1d section?
-                                        print '%r(%g) connects to the 1d section %r(%g)' % (sec, h.section_orientation(sec=sec), sec1d, h.section_orientation(sec=sec1d))
+                                        # it connects to the parent of a 1d section
+                                        index1d, indices3d = _get_node_indices(s, r, sec, h.section_orientation(sec=sec), sec1d, h.section_orientation(sec=sec1d))
+                                        hybrid_neighbors[index1d] += indices3d
+                                        hybrid_diams[index1d] = sec1d(h.section_orientation(sec=sec1d)).diam
                                         break
+        for index1d in hybrid_neighbors.keys():
+            neighbors3d = set(hybrid_neighbors[index1d])
+            # TODO: add the entries in the matrix; be sure the total mass is conserved
 
 
+def _get_node_indices(species, region, sec3d, x3d, sec1d, x1d):
+    # TODO: remove need for this assumption
+    assert(x1d in (0, 1))
+    disc_indices = region._indices_from_sec_x(sec3d, x3d)
+    #print '%r(%g) connects to the 1d section %r(%g)' % (sec3d, x3d, sec1d, x1d)
+    #print 'disc indices: %r' % disc_indices
+    indices3d = []
+    for node in species._nodes:
+        if node._r == region:
+            for i, j, k in disc_indices:
+                if node._i == i and node._j == j and node._k == k:
+                    indices3d.append(node._index)
+                    #print 'found node %d with coordinates (%g, %g, %g)' % (node._index, node.x3d, node.y3d, node.z3d)
+    # discard duplicates...
+    # TODO: really, need to figure out all the 3d nodes connecting to a given 1d endpoint, then unique that
+    indices3d = list(set(indices3d))
+    #print '3d matrix indices: %r' % indices3d
+    # TODO: remove the need for this assertion
+    if x1d == h.section_orientation(sec=sec1d):
+        # TODO: make this whole thing more efficient
+        # the parent node is the nonzero index on the first row before the diagonal
+        first_row = min([node._index for node in species.nodes(region)(sec1d)])
+        for j in xrange(first_row):
+            if _euler_matrix[first_row, j] != 0:
+                index_1d = j
+                break
+        else:
+            raise RxDException('should never get here; could not find parent')
+    elif x1d == 1 - h.section_orientation(sec=sec1d):
+        # the ending zero-volume node is the one after the last node
+        # TODO: make this more efficient
+        index_1d = max([node._index for node in species.nodes(region)(sec1d)]) + 1
+    else:
+        raise RxDException('should never get here; _get_node_indices apparently only partly converted to allow connecting to 1d in middle')
+    #print '1d index is %d' % index_1d
+    return index_1d, indices3d
+    
 def _init():
     initializer._do_init()
     

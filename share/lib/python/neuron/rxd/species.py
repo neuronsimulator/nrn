@@ -192,6 +192,8 @@ class SpeciesOnRegion(_SpeciesMathable):
 
 # 3d matrix stuff
 def _setup_matrices_process_neighbors(pt1, pt2, indices, euler_matrix, index, diffs, vol, areal, arear, dx):
+    # TODO: validate this before release! is ignoring reflective boundaries the right thing to do?
+    #       (make sure that any changes here also work with boundaries that aren't really reflective, but have a 1d section attached)
     d = diffs[index]
     if pt1 in indices:
         ileft = indices[pt1]
