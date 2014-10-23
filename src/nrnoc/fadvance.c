@@ -874,7 +874,7 @@ hoc_warning("errno set during call to INITIAL block", (char*)0);
 		nrn_deliver_events(nrn_threads + i); /* The record events at t=0 */
 	}
 #if NRNMPI
-	nrn_spike_exchange();
+	nrn_spike_exchange(nrn_threads);
 #endif
 	if (nrn_allthread_handle) { (*nrn_allthread_handle)(); }
 	

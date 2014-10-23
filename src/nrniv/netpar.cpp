@@ -85,7 +85,7 @@ static double set_mindelay(double maxdelay);
 
 extern "C" {
 void nrn_timeout(int);
-void nrn_spike_exchange();
+void nrn_spike_exchange(NrnThread*);
 extern int nrnmpi_int_allmax(int);
 extern void nrnmpi_int_allgather(int*, int*, int);
 void nrn2ncs_outputevent(int netcon_output_index, double firetime);
@@ -191,7 +191,7 @@ static double wt1_; // time to find the PreSyns and send the spikes.
 static bool use_compress_;
 static int spfixout_capacity_;
 static int idxout_;
-static void nrn_spike_exchange_compressed();
+static void nrn_spike_exchange_compressed(NrnThread*);
 #endif // NRNMPI
 
 #if BGPDMA & 4
@@ -205,7 +205,7 @@ int use_dcmf_record_replay;
 int use_bgpdma_; // can be 0, 1, or 2 : allgather, multisend (ISend, bgpdma)
 static void bgp_dma_setup();
 static void bgp_dma_init();
-static void bgp_dma_receive();
+static void bgp_dma_receive(NrnThread*);
 extern void bgp_dma_send(PreSyn*, double t);
 static void bgpdma_cleanup_presyn(PreSyn*);
 #endif
@@ -262,12 +262,12 @@ void NetParEvent::deliver(double tt, NetCvode* nc, NrnThread* nt){
 	last_nt_ = nt;
 #if BGPDMA
 	if (use_bgpdma_) {
-		bgp_dma_receive();
+		bgp_dma_receive(nt);
 	}else{
-		nrn_spike_exchange();
+		nrn_spike_exchange(nt);
 	}
 #else    
-	nrn_spike_exchange();
+	nrn_spike_exchange(nt);
 #endif
 	wx_ += wt_;
 	ws_ += wt1_;
@@ -527,15 +527,15 @@ void nrn_spike_exchange_init() {
 }
 
 #if NRNMPI
-void nrn_spike_exchange() {
+void nrn_spike_exchange(NrnThread* nt) {
 	if (!active_) { return; }
 #if BGPDMA
 	if (use_bgpdma_) {
-		bgp_dma_receive();
+		bgp_dma_receive(nt);
 		return;
 	}
 #endif
-	if (use_compress_) { nrn_spike_exchange_compressed(); return; }
+	if (use_compress_) { nrn_spike_exchange_compressed(nt); return; }
 	TBUF
 #if TBUFSIZE
 	nrnmpi_barrier();
@@ -602,7 +602,7 @@ void nrn_spike_exchange() {
 		for (j=0; j < nn; ++j) {
 			PreSyn* ps;
 			if (gid2in_->find(spbufin_[i].gid[j], ps)) {
-				ps->send(spbufin_[i].spiketime[j], net_cvode_instance, nrn_threads);
+				ps->send(spbufin_[i].spiketime[j], net_cvode_instance, nt);
 #if NRNSTAT
 				++nrecv_useful_;
 #endif
@@ -614,7 +614,7 @@ void nrn_spike_exchange() {
 	for (i = 0; i < n; ++i) {
 		PreSyn* ps;
 		if (gid2in_->find(spikein_[i].gid, ps)) {
-			ps->send(spikein_[i].spiketime, net_cvode_instance, nrn_threads);
+			ps->send(spikein_[i].spiketime, net_cvode_instance, nt);
 #if NRNSTAT
 			++nrecv_useful_;
 #endif
@@ -624,7 +624,7 @@ void nrn_spike_exchange() {
 	TBUF
 }
 		
-void nrn_spike_exchange_compressed() {
+void nrn_spike_exchange_compressed(NrnThread* nt) {
 	if (!active_) { return; }
 	TBUF
 #if TBUFSIZE
@@ -707,7 +707,7 @@ void nrn_spike_exchange_compressed() {
 			idx += localgid_size_;
 			PreSyn* ps;
 			if (gps->find(lgid, ps)) {
-				ps->send(firetime + 1e-10, net_cvode_instance, nrn_threads);
+				ps->send(firetime + 1e-10, net_cvode_instance, nt);
 #if NRNSTAT
 				++nrecv_useful_;
 #endif
@@ -719,7 +719,7 @@ void nrn_spike_exchange_compressed() {
 			idxov += localgid_size_;
 			PreSyn* ps;
 			if (gps->find(lgid, ps)) {
-				ps->send(firetime+1e-10, net_cvode_instance, nrn_threads);
+				ps->send(firetime+1e-10, net_cvode_instance, nt);
 #if NRNSTAT
 				++nrecv_useful_;
 #endif
@@ -740,7 +740,7 @@ void nrn_spike_exchange_compressed() {
 			idx += localgid_size_;
 			PreSyn* ps;
 			if (gid2in_->find(gid, ps)) {
-				ps->send(firetime+1e-10, net_cvode_instance, nrn_threads);
+				ps->send(firetime+1e-10, net_cvode_instance, nt);
 #if NRNSTAT
 				++nrecv_useful_;
 #endif
@@ -755,7 +755,7 @@ void nrn_spike_exchange_compressed() {
 		idx += localgid_size_;
 		PreSyn* ps;
 		if (gid2in_->find(gid, ps)) {
-			ps->send(firetime+1e-10, net_cvode_instance, nrn_threads);
+			ps->send(firetime+1e-10, net_cvode_instance, nt);
 #if NRNSTAT
 			++nrecv_useful_;
 #endif
@@ -860,6 +860,7 @@ static void mk_localgid_rep() {
 // effects of output spikes from the simulated cells. In this case
 // set the third arg to 1 and set the output cell thresholds very
 // high so that they do not themselves generate spikes.
+// Can only be called by thread 0 because of the ps->send.
 void nrn_fake_fire(int gid, double spiketime, int fake_out) {
 	assert(gid2in_);
 	PreSyn* ps;
@@ -1208,16 +1209,16 @@ void BBS::netpar_solve(double tstop) {
 	if (use_bgpdma_) {
 #if BGP_INTERVAL == 2
 		for (int i=0; i < n_bgp_interval; ++i) {
-			bgp_dma_receive();
+			bgp_dma_receive(nrn_threads);
 		}
 #else
-		bgp_dma_receive();
+		bgp_dma_receive(nrn_threads);
 #endif
 	}else{
-		nrn_spike_exchange();
+		nrn_spike_exchange(nrn_threads);
 	}
 #else
-	nrn_spike_exchange();
+	nrn_spike_exchange(nrn_threads);
 #endif
 	nrn_timeout(0);
 	impl_->wait_time_ += wt_;

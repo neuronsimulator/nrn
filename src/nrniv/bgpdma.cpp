@@ -887,8 +887,9 @@ static void determine_target_hosts();
 static int gathersrcgid(int hostbegin, int totalngid, int* ngid,
 	int* thishostgid, int* n, int* displ, int bsize, int* buf);
 
-void bgp_dma_receive() {
+void bgp_dma_receive(NrnThread* nt) {
 //	nrn_spike_exchange();
+	assert(nt == nrn_threads);
 	TBUF
 	double w1, w2;
 	int ncons = 0;

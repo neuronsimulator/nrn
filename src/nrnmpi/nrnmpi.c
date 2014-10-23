@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include "nrnpthread.h"
 
 /* do not want the redef in the dynamic load case */
 #include <nrnmpiuse.h>
@@ -101,9 +102,16 @@ for (i=0; i < *pargc; ++i) {
 		}
 #endif
 		MPI_Initialized(&flag);
-
-		if (!flag && MPI_Init(pargc, pargv) != MPI_SUCCESS) {
-		  printf("MPI_INIT failed\n");
+		
+		if (!flag) {
+#if (USE_PTHREAD)
+			int required = MPI_THREAD_SERIALIZED;
+			int provided;
+			asrt(MPI_Init_thread(pargc, pargv, required, &provided));
+			asrt(required == provided);
+#else
+			asrt(MPI_Init(pargc, pargv));
+#endif
 		}
 
 #if NRN_MUSIC
