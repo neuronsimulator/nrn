@@ -22,6 +22,8 @@ extern void nrnpy_hoc();
 #if NRNMPI_DYNAMICLOAD
 	extern void nrnmpi_stubs();
 	extern char* nrnmpi_load(int is_python);
+#endif
+#if NRNPYTHON_DYNAMICLOAD
 	extern int nrnpy_site_problem;
 #endif
 
