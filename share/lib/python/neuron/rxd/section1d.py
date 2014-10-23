@@ -150,6 +150,7 @@ class Section1D(rxdsection.RxDSection):
                 # on right edge, only half distance
                 # TODO: verify this is the right thing to do
                 rate_r *= 2
+            # TODO: does this try/except add overhead? remove
             try:
                 g[io, io] += rate_r + rate_l
                 g[io, io + 1] -= rate_r

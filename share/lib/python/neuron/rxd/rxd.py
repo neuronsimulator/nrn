@@ -626,17 +626,17 @@ def _setup_matrices():
     global _cur_node_indices
     global _zero_volume_indices, _nonzero_volume_indices
 
+    # TODO: this sometimes seems to get called twice. Figure out why and fix, if possible.
+
     n = len(_node_get_states())
         
     if species._has_3d:
-        # TODO: if we also have 1D, be sure to do that too
         _euler_matrix = _scipy_sparse_dok_matrix((n, n), dtype=float)
 
         for sr in _species_get_all_species().values():
             s = sr()
             if s is not None: s._setup_matrices3d(_euler_matrix)
 
-        # TODO: to support hybrid, make this empty instead (but trace through to see if ever used)
         _diffusion_matrix = -_euler_matrix
 
         _euler_matrix = _euler_matrix.tocsr()
@@ -705,7 +705,6 @@ def _setup_matrices():
             #_cvode_object.re_init()    
 
             _linmodadd_c = _linmodadd_c.tocsr()
-            _diffusion_matrix = _diffusion_matrix.tocsr()
             
             if species._has_3d:
                 _euler_matrix = -_diffusion_matrix
@@ -714,27 +713,12 @@ def _setup_matrices():
         _zero_volume_indices = numpy.where(volumes == 0)[0]
         _nonzero_volume_indices = volumes.nonzero()[0]
 
-        if n:
-            matrix = _diffusion_matrix[_zero_volume_indices].tocsr()
-            indptr = matrix.indptr
-            matrixdata = matrix.data
-            count = len(_zero_volume_indices)
-            for row, i in enumerate(_zero_volume_indices):
-                d = _diffusion_matrix[i, i]
-                if d:
-                    matrixdata[indptr[row] : indptr[row + 1]] /= -d
-                    matrix[row, i] = 0
-                else:
-                    matrixdata[indptr[row] : indptr[row + 1]] = 0
-            global _mat_for_zero_volume_nodes
-            _mat_for_zero_volume_nodes = matrix
-            # TODO: _mat_for_zero_volume_nodes is used for CVode.
-            #       Figure out if/how it has to be changed for hybrid 1D/3D sims (probably just augment with identity? or change how its used to avoid multiplying by I)
 
     if species._has_1d and species._has_3d:
         # TODO: add connections to matrix; for now: find them
         hybrid_neighbors = collections.defaultdict(lambda: [])
         hybrid_diams = {}
+        dxs = set()
         for sr in _species_get_all_species().values():
             s = sr()
             if s is not None:
@@ -742,6 +726,7 @@ def _setup_matrices():
                     # have both 1D and 3D, so find the neighbors
                     # for each of the 3D sections, find the parent sections
                     for r in s._regions:
+                        dxs.add(r._dx)
                         for sec in r._secs3d:
                             parent_sec = morphology.parent(sec)
                             # are any of these a match with a 1d section?
@@ -765,9 +750,73 @@ def _setup_matrices():
                                         hybrid_neighbors[index1d] += indices3d
                                         hybrid_diams[index1d] = sec1d(h.section_orientation(sec=sec1d)).diam
                                         break
+        if len(dxs) > 1:
+            raise RxDException('currently require a unique value for dx')
+        dx = dxs.pop()
+        diffs = node._diffs
+        n = len(_node_get_states())
+        # TODO: validate that we're doing the right thing at boundaries
         for index1d in hybrid_neighbors.keys():
             neighbors3d = set(hybrid_neighbors[index1d])
-            # TODO: add the entries in the matrix; be sure the total mass is conserved
+            # NOTE: splitting the connection area equally across all the connecting nodes
+            area = (numpy.pi * 0.25 * hybrid_diams[index1d] ** 2) / len(neighbors3d)
+            for i in neighbors3d:
+                d = diffs[i]
+                vol = node._volumes[i]
+                rate = d * area / (vol * dx / 2.)
+                # make the connections on the 3d side
+                _euler_matrix[i, i] -= rate
+                _euler_matrix[i, index1d] += rate
+                # make the connections on the 1d side (scale by vol because conserving mass not volume)
+                _euler_matrix[index1d, index1d] -= rate * vol
+                _euler_matrix[index1d, i] += rate * vol
+            #print 'index1d row sum:', sum(_euler_matrix[index1d, j] for j in xrange(n))
+            #print 'index1d col sum:', sum(_euler_matrix[j, index1d] for j in xrange(n))
+    
+    # we do this last because of performance issues with changing sparsity of csr matrices
+    if _diffusion_matrix is not None:
+        _diffusion_matrix = _diffusion_matrix.tocsr()
+    if _euler_matrix is not None:
+        _euler_matrix = _euler_matrix.tocsr()
+
+    if species._has_1d:
+        if species._has_3d:
+            _diffusion_matrix = -_euler_matrix
+        n = species._1d_submatrix_n()
+        if n:
+            matrix = _diffusion_matrix[_zero_volume_indices].tocsr()
+            indptr = matrix.indptr
+            matrixdata = matrix.data
+            count = len(_zero_volume_indices)
+            for row, i in enumerate(_zero_volume_indices):
+                d = _diffusion_matrix[i, i]
+                if d:
+                    matrixdata[indptr[row] : indptr[row + 1]] /= -d
+                    matrix[row, i] = 0
+                else:
+                    matrixdata[indptr[row] : indptr[row + 1]] = 0
+            global _mat_for_zero_volume_nodes
+            _mat_for_zero_volume_nodes = matrix
+            # TODO: _mat_for_zero_volume_nodes is used for CVode.
+            #       Figure out if/how it has to be changed for hybrid 1D/3D sims (probably just augment with identity? or change how its used to avoid multiplying by I)
+    
+
+
+        """
+    if pt1 in indices:
+        ileft = indices[pt1]
+        dleft = (d + diffs[ileft]) * 0.5
+        left = dleft * areal / (vol * dx)
+        euler_matrix[index, ileft] += left
+        euler_matrix[index, index] -= left
+    if pt2 in indices:
+        iright = indices[pt2]
+        dright = (d + diffs[iright]) * 0.5
+        right = dright * arear / (vol * dx)
+        euler_matrix[index, iright] += right
+        euler_matrix[index, index] -= right
+"""                
+                
 
 
 def _get_node_indices(species, region, sec3d, x3d, sec1d, x1d):
