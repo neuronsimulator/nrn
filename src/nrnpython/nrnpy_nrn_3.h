@@ -44,6 +44,52 @@ static PyTypeObject nrnpy_SectionType = {
 	0,			/*tp_is_gc*/
 };
 
+static PyTypeObject nrnpy_AllsegIterType = {
+	/* The ob_type field must be initialized in the module init function
+	 * to be portable to Windows without using C++. */
+	PyVarObject_HEAD_INIT(NULL, 0)
+	"nrn.AllsegIter",		/*tp_name*/
+	sizeof(NPyAllsegIter),	/*tp_basicsize*/
+	0,			/*tp_itemsize*/
+	/* methods */
+	(destructor)NPyAllsegIter_dealloc, /*tp_dealloc*/
+	0,			/*tp_print*/
+	(getattrfunc)0,		/*tp_getattr*/
+	(setattrfunc)0,		/*tp_setattr*/
+	0,			/*tp_reserved*/
+	0,			/*tp_repr*/
+	0,			/*tp_as_number*/
+	0,			/*tp_as_sequence*/
+	0,			/*tp_as_mapping*/
+	(hashfunc)0, /*tp_hash*/
+	(ternaryfunc)0, /*tp_call*/
+	0,			/*tp_str*/
+	(getattrofunc)0, /*tp_getattro*/
+	(setattrofunc)0,	/*tp_setattro*/
+	0,			/*tp_as_buffer*/
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /*tp_flags*/
+	"Iterate over all Segments of a Section, including x=0 and 1",	/*tp_doc*/
+	0,			/*tp_traverse*/
+	0,			/*tp_clear*/
+	(richcmpfunc)0,	/*tp_richcompare*/
+	0,			/*tp_weaklistoffset*/
+	(getiterfunc)allseg_iter, /*tp_iter*/
+	(iternextfunc)allseg_next,/*tp_iternext*/
+	0,			/*tp_methods*/
+	0,			/*tp_members*/
+	0,			/*tp_getset*/
+	0,			/*tp_base*/
+	0,			/*tp_dict*/
+	0,			/*tp_descr_get*/
+	0,			/*tp_descr_set*/
+	0,			/*tp_dictoffset*/
+	(initproc)NPyAllsegIter_init, /*tp_init*/
+	0,			/*tp_alloc*/
+	NPyAllsegIter_new,	/*tp_new*/
+	0,			/*tp_free*/
+	0,			/*tp_is_gc*/
+};
+
 static PyTypeObject nrnpy_SegmentType = {
 	/* The ob_type field must be initialized in the module init function
 	 * to be portable to Windows without using C++. */
@@ -61,7 +107,7 @@ static PyTypeObject nrnpy_SegmentType = {
 	0,			/*tp_as_number*/
 	0,			/*tp_as_sequence*/
 	0,			/*tp_as_mapping*/
-	(hashfunc) pyseg_hash, /*tp_hash*/
+	(hashfunc)pyseg_hash,	/*tp_hash*/
 	0,			/*tp_call*/
 	0,			/*tp_str*/
 	(getattrofunc)segment_getattro, /*tp_getattro*/
@@ -71,7 +117,7 @@ static PyTypeObject nrnpy_SegmentType = {
 	"Segment objects",	/*tp_doc*/
 	0,			/*tp_traverse*/
 	0,			/*tp_clear*/
-    (richcmpfunc) pyseg_richcmp,	/* tp_richcompare */
+	(richcmpfunc) pyseg_richcmp,	/* tp_richcompare */
 	0,			/*tp_weaklistoffset*/
 	(getiterfunc)segment_iter, /*tp_iter*/
 	(iternextfunc)segment_next, /*tp_iternext*/
