@@ -1643,8 +1643,9 @@ static PyObject* hocobj_same(PyHocObject* pself, PyObject* args) {
 				Py_RETURN_TRUE;
 			}
 		}
+		Py_RETURN_FALSE;
 	}
-	Py_RETURN_FALSE;
+	return NULL;
 }
 
 
