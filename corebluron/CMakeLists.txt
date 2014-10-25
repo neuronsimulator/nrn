@@ -9,6 +9,7 @@ nrnoc/nrnoc_ml.h
 utils/randoms/nrnran123.h
 utils/endianness.h
 utils/swap_endian.h
+utils/memory_utils.h
 mech/cfile/scoplib.h
 )
 
@@ -86,6 +87,7 @@ mech/cfile/stim.c
 mech/cfile/netstim.c
 mech/cfile/pattern.c
 utils/randoms/nrnran123.c
+utils/memory_utils.cpp
 )
 
 set(MECH_FILES

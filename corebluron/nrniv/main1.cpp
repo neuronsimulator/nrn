@@ -14,7 +14,11 @@ OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
 IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <string.h>
+/**
+ * @file main1.cpp
+ * @date 26 Oct 2014
+ * @brief File containing main driver routine for CoreNeuron
+ */
 
 #include "corebluron/nrnconf.h"
 #include "corebluron/nrnoc/multicore.h"
@@ -23,221 +27,142 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "corebluron/nrniv/nrniv_decl.h"
 #include "corebluron/nrniv/output_spikes.h"
 #include "corebluron/utils/endianness.h"
+#include "corebluron/utils/memory_utils.h"
 #include "corebluron/nrniv/nrnoptarg.h"
-#include "corebluron/nrniv/nrn_assert.h"
 #include "corebluron/utils/randoms/nrnran123.h"
 
-#define HAVE_MALLINFO 1
-#if HAVE_MALLINFO
-#include <malloc.h>
-
-int nrn_mallinfo() {
-  struct mallinfo m = mallinfo();
-  return m.hblkhd + m.uordblks;
-  return 0;
-}
-#else
-int nrn_mallinfo() { return 0; }
-#endif
-
-void Print_MemUsage(const char *name)
+int main1( int argc, char **argv, char **env )
 {
-  long long int input, max, min, avg;
-  input = nrn_mallinfo();
-  avg = nrnmpi_longlong_allreduce(input, 1);
-  avg = (long long int)(avg / nrnmpi_numprocs);
-  max = nrnmpi_longlong_allreduce(input, 2);
-  min = nrnmpi_longlong_allreduce(input, 3);
+    char prcellname[1024], filesdat[1024];
 
-  if (nrnmpi_myid == 0)
-    printf("%s: max %lld, min %lld, avg %lld\n", name, max, min, avg);
+    ( void )env; /* unused */
+
+    // mpi initialisation
+    nrnmpi_init( 1, &argc, &argv );
+
+    // initialise coreneuron parameters
+    initnrn();
+
+    // create mutex for nrn123, protect instance_count_
+    nrnran123_mutconstruct();
+
+    // handles coreneuron configuration parameters
+    cb_input_params input_params;
+
+    // read command line parameters
+    input_params.read_cb_opts( argc, argv );
+
+    // if multi-threading enabled, make sure mpi library supports it
+    if ( input_params.threading ) {
+        nrnmpi_check_threading_support();
+    }
+
+    // set global variables for start time, timestep and temperature
+    t = input_params.tstart;
+    dt = input_params.dt;
+    celsius = input_params.celsius;
+
+    // full path of files.dat file
+    input_params.get_filesdat_path( filesdat );
+
+    // memory footprint after mpi initialisation
+    report_mem_usage( "After MPI_Init" );
+
+    // reads mechanism information from bbcore_mech.dat
+    mk_mech( input_params.datpath );
+
+    report_mem_usage( "After mk_mech" );
+
+    // create net_cvode instance
+    mk_netcvode();
+
+    // One part done before call to nrn_setup. Other part after.
+    if ( input_params.patternstim ) {
+        nrn_set_extra_thread0_vdata();
+    }
+
+    report_mem_usage( "Before nrn_setup" );
+
+    // reading *.dat files and setting up the data structures
+    nrn_setup( input_params.datpath, filesdat, nrn_need_byteswap, input_params.threading );
+
+    report_mem_usage( "After nrn_setup " );
+
+    // Invoke PatternStim
+    if ( input_params.patternstim ) {
+        nrn_mkPatternStim( input_params.patternstim );
+    }
+
+    // find mindelay and set configuration parameter
+    double mindelay = BBS_netpar_mindelay( input_params.maxdelay );
+
+    input_params.set_mindelay( mindelay );
+
+    // show all configuration parameters for current run
+    input_params.show_cb_opts();
+
+    // alloctae buffer for mpi communication
+    mk_spikevec_buffer( input_params.spikebuf );
+
+    report_mem_usage( "After mk_spikevec_buffer" );
+
+    nrn_finitialize( 1, input_params.voltage );
+
+    report_mem_usage( "After nrn_finitialize" );
+
+    // call prcellstae for prcellgid
+    if ( input_params.prcellgid >= 0 ) {
+        sprintf( prcellname, "t%g", t );
+        prcellstate( input_params.prcellgid, prcellname );
+    }
+
+    // handle forwardskip
+    if ( input_params.forwardskip > 0.0 ) {
+        handle_forward_skip( input_params.forwardskip, input_params.prcellgid );
+    }
+
+    /// Solver execution
+    BBS_netpar_solve( input_params.tstop );
+
+    // prcellstate after end of solver
+    if ( input_params.prcellgid >= 0 ) {
+        sprintf( prcellname, "t%g", t );
+        prcellstate( input_params.prcellgid, prcellname );
+    }
+
+    // write spike information to input_params.outpath
+    output_spikes( input_params.outpath );
+
+    // mpi finalize
+    nrnmpi_finalize();
+
+    return 0;
 }
 
-int fatal_error(const char *msg) {
-  if (nrnmpi_myid == 0) printf("\nERROR! %s\n\n",msg);
-  nrnmpi_barrier();
-  return -1;
-}
 
-
-int main1(int argc, char** argv, char** env) {
-  (void)env; /* unused */
-
-  nrnmpi_init(1, &argc, &argv);
-  nrnran123_mutconstruct(); // only because of instance_count_
-
-  /// Getting essential inputs
-  cb_input_params input_params;
-
-  Get_cb_opts(argc, argv, &input_params);
-
-  char prcellname[1024], datpath[1024], outpath[1024], filesdat[1024];
-
-  /// Overall path for the .dat files
-  if (!input_params.datpath) 
-  {
-    strcpy(datpath, ".");
-  }
-  else
-  {
-    strcpy(datpath, input_params.datpath);
-  }
-
-  /// Specific name for files.dat, if different
-  if (!input_params.filesdat)
-  {
-    sprintf(filesdat, "%s/%s", datpath, "files.dat");
-  }
-  else
-  {
-    strcpy(filesdat, input_params.filesdat);
-  }
-
-  Print_MemUsage("after nrnmpi_init mallinfo");
-
-  mk_mech(datpath);
-
-  Print_MemUsage("after mk_mech mallinfo");
-
-  mk_netcvode();
-
-  t = input_params.tstart;
-  dt = input_params.dt;
-  celsius = input_params.celsius;
-  if (nrnmpi_myid == 0)
-  {
-    printf("    t=%g tstop=%g dt=%g forwardskip=%g celsius=%g voltage=%g maxdelay=%g spikebuf=%d\n\
-    datpath: %s\n    filesdat: %s\n", t, input_params.tstop, dt, input_params.forwardskip, celsius, input_params.voltage, input_params.maxdelay, input_params.spikebuf, datpath, filesdat);
-    if (input_params.prcellgid >= 0)
-      printf("    prcellstate will be called for gid %d\n", input_params.prcellgid);
-    if (input_params.patternstim)
-      printf("    patternstim is defined and will be read from the file: %s\n", input_params.patternstim);
-  }
-
-  // One part done before call to nrn_setup. Other part after.
-  if (input_params.patternstim) {
-    nrn_set_extra_thread0_vdata();
-  }
-
-  enum endian::endianness file_endian=endian::little_endian;
-  if (endian::is_little_endian()) {
-    if (nrn_need_byteswap){
-      file_endian = endian::big_endian;
-    }
-  }else if (endian::is_big_endian()) {
-    if (!nrn_need_byteswap){
-      file_endian = endian::big_endian;
-    }
-  }else{
-    return fatal_error("Could not figure out whether to byteswap.");
-  }
-
-  /// Assigning threads to a specific task by the first gid written in the file
-  FILE *fp = fopen(filesdat,"r");
-  if (!fp)
-  {
-    return fatal_error("No input file with nrnthreads, exiting...");
-  }
-  
-  int iNumFiles = 0;
-  nrn_assert(fscanf(fp, "%d\n", &iNumFiles)==1);
-  if (nrnmpi_numprocs > iNumFiles)
-  {
-    return fatal_error("The number of CPUs cannot exceed the number of input files");
-  }
-
-  int ngrp = 0;
-  int* grp = new int[iNumFiles / nrnmpi_numprocs + 1];
-
-  /// For each file written in bluron
-  for (int iNum = 0; iNum < iNumFiles; ++iNum)
-  {    
-    int iFile;
-    nrn_assert(fscanf(fp, "%d\n", &iFile)==1);
-    if ((iNum % nrnmpi_numprocs) == nrnmpi_myid)
-    {
-      grp[ngrp] = iFile;
-      ngrp++;
-    }
-  }
-  fclose(fp);
-
-  /// Reading the files and setting up the data structures
-  Print_MemUsage("before nrn_setup mallinfo");
-
-  nrn_setup(ngrp, grp, datpath, file_endian, input_params.threading);
-
-  Print_MemUsage("after nrn_setup mallinfo");
-
-  delete [] grp;
-
-
-  /// Invoke PatternStim
-  if (input_params.patternstim) {
-    nrn_mkPatternStim(input_params.patternstim);
-  }
-
-  double mindelay = BBS_netpar_mindelay(input_params.maxdelay);
-  if (nrnmpi_myid == 0)
-    printf("mindelay = %g\n", mindelay);
-
-  Print_MemUsage("before spike buffer");
-
-  mk_spikevec_buffer(input_params.spikebuf);
-
-  Print_MemUsage("after spike buffer");
-
-  nrn_finitialize(1, input_params.voltage);
-
-  Print_MemUsage("after finitialize mallinfo");
-
-  if (input_params.prcellgid >= 0) {
-    sprintf(prcellname, "t%g", t);
-    prcellstate(input_params.prcellgid, prcellname);
-  }
-
-  if (input_params.forwardskip > 0.0) {
+/* perform forwardskip and call prcellstate for prcellgid */
+void handle_forward_skip( double forwardskip, int prcellgid )
+{
     double savedt = dt;
     double savet = t;
-    dt = input_params.forwardskip * 0.1;
+
+    dt = forwardskip * 0.1;
     t = -1e9;
-    for (int step=0; step < 10; ++step) {
-      nrn_fixed_step();
+
+    for ( int step = 0; step < 10; ++step ) {
+        nrn_fixed_step();
     }
-    if (input_params.prcellgid >= 0) {
-      prcellstate(input_params.prcellgid, "fs");
+
+    if ( prcellgid >= 0 ) {
+        prcellstate( prcellgid, "fs" );
     }
+
     dt = savedt;
     t = savet;
-  }
-
-  /// Solver execution
-  double time = nrnmpi_wtime();
-  BBS_netpar_solve(input_params.tstop);
-  nrnmpi_barrier();
-
-  if (input_params.prcellgid >= 0) {
-    sprintf(prcellname, "t%g", t);
-    prcellstate(input_params.prcellgid, prcellname);
-  }
-
-  if (nrnmpi_myid == 0)
-    printf("Time to solution: %g\n", nrnmpi_wtime() - time);
-
-  /// Outputting spikes
-  if (!input_params.outpath)
-    strcpy(outpath, ".");
-  else
-    strcpy(outpath, input_params.outpath);
-  output_spikes(outpath);
-
-  nrnmpi_barrier();
-
-  nrnmpi_finalize();
-
-  return 0;
 }
 
-const char* nrn_version(int) {
-  return "version id unimplemented";
+
+const char *nrn_version( int )
+{
+    return "version id unimplemented";
 }

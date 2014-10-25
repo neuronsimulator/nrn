@@ -25,11 +25,10 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 extern "C" {
 #endif
 
-extern int nrn_mallinfo(void);
 extern void mk_mech(const char* fname);
 extern void mk_netcvode(void);
 extern void nrn_p_construct(void);
-extern void nrn_setup(int ngroup, int* gidgroups, const char *path, enum endian::endianness file_endian, int threading);
+extern void nrn_setup(const char *path, const char *filesdat, int byte_swap, int threading);
 extern double BBS_netpar_mindelay(double maxdelay);
 extern void BBS_netpar_solve(double);
 extern void nrn_mkPatternStim(const char* filename);
@@ -63,6 +62,8 @@ extern void ncs2nrn_integrate(double tstop);
 extern void nrn_pending_selfqueue(double, NrnThread*);
 extern size_t output_presyn_size(void);
 extern size_t input_presyn_size(void);
+
+extern void handle_forward_skip(double forwardskip, int prcellgid);
 
 extern NetCon** netcon_in_presyn_order_;
 

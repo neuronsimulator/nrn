@@ -38,7 +38,7 @@ void mk_spikevec_buffer(int sz) {
 void spikevec_lock() { MUTLOCK }
 void spikevec_unlock() { MUTUNLOCK }
 
-void output_spikes(char *outpath) {
+void output_spikes(const char *outpath) {
   char fname[100];
   sprintf(fname, "%s/out%d.dat", outpath, nrnmpi_myid);
   FILE* f = fopen(fname, "w");

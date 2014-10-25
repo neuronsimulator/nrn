@@ -98,7 +98,6 @@ for (i=0; i < *pargc; ++i) {
 		if (!flag) {
 #if (USE_PTHREAD || defined(_OPENMP))
 	nrn_assert(MPI_Init_thread(pargc, pargv, required, &provided) == MPI_SUCCESS);
-	nrn_assert(required == provided);
 #else
 			nrn_assert(MPI_Init(pargc, pargv) == MPI_SUCCESS);
 #endif
@@ -136,8 +135,6 @@ for (i=0; i < *pargc; ++i) {
 #endif
 
 #endif /* NRNMPI */
-
-
 
 }
 
@@ -188,6 +185,29 @@ void nrnmpi_abort(int errcode) {
 	}
 #else
 	abort();
+#endif
+}
+
+void nrnmpi_fatal_error(const char *msg) {
+
+  if(nrnmpi_myid == 0) {
+    printf("%s\n", msg);
+  }
+  
+  nrnmpi_abort(-1);
+}
+
+// check if appropriate threading level supported (i.e. MPI_THREAD_SERIALIZED)
+void nrnmpi_check_threading_support() {
+#if NRNMPI
+    int th = 0;
+	if (nrnmpi_use) {
+            MPI_Query_thread( &th );
+            if( th < MPI_THREAD_SERIALIZED) {
+                nrnmpi_fatal_error("\n Current MPI library doesn't support MPI_THREAD_SERIALIZED,\
+                        \n Run without enabling multi-threading!");
+            }
+	}
 #endif
 }
 

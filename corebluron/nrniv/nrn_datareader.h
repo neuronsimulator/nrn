@@ -39,10 +39,10 @@ class data_reader {
 public:
     data_reader(): reorder_on_read(false),chkpnt(0) {}
 
-    explicit data_reader(const char *filename,enum endian::endianness=endian::native_endian);
+    explicit data_reader(const char *filename,bool reorder=false);
     
     /** Preserving chkpnt state, move to a new file. */
-    void open(const char *filename,enum endian::endianness=endian::native_endian);
+    void open(const char *filename, bool reorder);
 
     /** Query chkpnt state. */
     int checkpoint() const { return chkpnt; }

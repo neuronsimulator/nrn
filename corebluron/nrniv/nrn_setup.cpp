@@ -111,14 +111,14 @@ static int ngroup_w;
 static int* gidgroups_w;
 static const char* path_w;
 static data_reader* file_reader_w;
-static enum endian::endianness file_endian_w;
+static bool byte_swap_w;
 static void store_phase_args(int ngroup, int* gidgroups, data_reader* file_reader,
-  const char* path, enum endian::endianness file_endian) {
+  const char* path, int byte_swap) {
   ngroup_w = ngroup;
   gidgroups_w = gidgroups;
   file_reader_w = file_reader;
   path_w = path;
-  file_endian_w = file_endian;
+  byte_swap_w = (bool) byte_swap;
 }
 
 #define implement_phase_wrapper(A) \
@@ -127,7 +127,7 @@ static void* phase##A##_wrapper_w(NrnThread* nt) { \
   char fname[1000]; \
   if (i < ngroup_w) { \
     sprintf(fname, "%s/%d_"#A".dat", path_w, gidgroups_w[i]); \
-    file_reader_w[i].open(fname,file_endian_w); \
+    file_reader_w[i].open(fname,byte_swap_w); \
     read_phase##A(file_reader_w[i], *nt); \
     file_reader_w[i].close(); \
     if (A == 2) { \
@@ -144,7 +144,48 @@ static void phase##A##_wrapper() { \
 implement_phase_wrapper(1)
 implement_phase_wrapper(2)
 
-void nrn_setup(int ngroup, int* gidgroups, const char *path, enum endian::endianness file_endian, int threading) {
+/* read files.dat file and distribute cellgroups to all mpi ranks */
+void nrn_read_filesdat(int &ngrp, int * &grp, const char *filesdat)
+{
+    FILE *fp = fopen( filesdat, "r" );
+  
+    if ( !fp ) {
+ 	nrnmpi_fatal_error( "No input file with nrnthreads, exiting..." );
+    }
+
+    int iNumFiles = 0;
+    nrn_assert( fscanf( fp, "%d\n", &iNumFiles ) == 1 );
+
+    if ( nrnmpi_numprocs > iNumFiles ) {
+        nrnmpi_fatal_error( "The number of CPUs cannot exceed the number of input files" );
+    }
+
+    ngrp = 0;
+    grp = new int[iNumFiles / nrnmpi_numprocs + 1];
+
+    // irerate over gids in files.dat
+    for ( int iNum = 0; iNum < iNumFiles; ++iNum ) {
+        int iFile;
+
+        nrn_assert( fscanf( fp, "%d\n", &iFile ) == 1 );
+        if ( ( iNum % nrnmpi_numprocs ) == nrnmpi_myid ) {
+            grp[ngrp] = iFile;
+            ngrp++;
+        }
+    }
+
+    fclose( fp );
+}
+
+void nrn_setup(const char *path, const char *filesdat, int byte_swap, int threading) {
+
+  int ngroup = 0;
+  int *gidgroups = NULL;
+
+  double time = nrnmpi_wtime(); 
+
+  nrn_read_filesdat(ngroup, gidgroups, filesdat);
+
   assert(ngroup > 0);
   MUTCONSTRUCT(1)
 #if 0
@@ -170,15 +211,11 @@ void nrn_setup(int ngroup, int* gidgroups, const char *path, enum endian::endian
   // to later count the required number of InputPreSyn
   data_reader *file_reader=new data_reader[ngroup];
 
+
   /* nrn_multithread_job supports serial, pthread, and openmp. */
-  store_phase_args(ngroup, gidgroups, file_reader, path, file_endian);
+  store_phase_args(ngroup, gidgroups, file_reader, path, byte_swap);
   phase1_wrapper();
 
-  if (nrnmpi_myid == 0)
-  {
-    printf("read_phase1 is done\n");
-    fflush(0);
-  }
   // from the netpar::gid2out_ hash table and the netcon_srcgid array,
   // fill the netpar::gid2in_ hash table, and from the number of entries,
   // allocate the process wide InputPreSyn array
@@ -193,12 +230,6 @@ void nrn_setup(int ngroup, int* gidgroups, const char *path, enum endian::endian
   nrn_mk_table_check(); // was done in nrn_thread_memblist_setup in multicore.c
   delete [] file_reader;
 
-  if (nrnmpi_myid == 0)
-  {
-    printf("read_phase2 is done\n");
-    fflush(0);
-  }
-
   netpar_tid_gid2ps_free();
 
   if (nrn_nthread > 1) {
@@ -208,6 +239,12 @@ void nrn_setup(int ngroup, int* gidgroups, const char *path, enum endian::endian
   }
 
   model_size();
+  delete []gidgroups;
+
+  if ( nrnmpi_myid == 0 ) {
+	  printf( " Nrn Setup Done (time: %g)\n", nrnmpi_wtime() - time );
+  }
+
 }
 
 void setup_ThreadData(NrnThread& nt) {

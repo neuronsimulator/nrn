@@ -40,7 +40,7 @@ extern int _CaDynamics_E2_reg(void),
 
 void modl_reg(){
   if (!nrn_nobanner_) if (nrnmpi_myid < 1) {
-    fprintf(stderr, "Additional mechanisms from files\n");
+    fprintf(stderr, " Additional mechanisms from files\n");
 
     fprintf(stderr," CaDynamics_E2.mod");
     fprintf(stderr," Ca_HVA.mod");
@@ -49,6 +49,7 @@ void modl_reg(){
     fprintf(stderr," HDF5reader.mod");
     fprintf(stderr," Ih.mod");
     fprintf(stderr," Im.mod");
+    fprintf(stderr, "\n");
     fprintf(stderr," KdShu2007.mod");
     fprintf(stderr," K_Pst.mod");
     fprintf(stderr," K_Tst.mod");
@@ -56,13 +57,14 @@ void modl_reg(){
     fprintf(stderr," NaTa_t.mod");
     fprintf(stderr," NaTs2_t.mod");
     fprintf(stderr," netstim_inhpoisson.mod");
+    fprintf(stderr, "\n");
     fprintf(stderr," new_calcium_channels.mod");
     fprintf(stderr," ProbAMPANMDA_EMS.mod");
     fprintf(stderr," ProbGABAAB_EMS.mod");
     fprintf(stderr," SK_E2.mod");
     fprintf(stderr," SKv3_1.mod");
     fprintf(stderr," StochKv.mod");
-    fprintf(stderr, "\n");
+    fprintf(stderr, "\n\n");
   }
   _CaDynamics_E2_reg();
   _Ca_HVA_reg();

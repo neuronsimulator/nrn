@@ -36,11 +36,17 @@ endif(COREBLURON_OPENMP)
 include(Common)
 include(FindPackages)
 
+INCLUDE (CheckIncludeFiles)
+CHECK_INCLUDE_FILES (malloc.h have_malloc_h)
+
+if(have_malloc_h)
+  add_definitions(-DHAVE_MALLOC_H)
+endif()
+
 if(MPI_FOUND)
   set(CMAKE_C_COMPILER ${MPI_C_COMPILER})
   set(CMAKE_CXX_COMPILER ${MPI_CXX_COMPILER})
 endif(MPI_FOUND)
-
 
 # Core library
 

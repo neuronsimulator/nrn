@@ -4,16 +4,13 @@
 #include "corebluron/nrniv/nrn_assert.h"
 
 
-data_reader::data_reader(const char *filename,enum endian::endianness file_endianness) {
-    this->open(filename,file_endianness);
+data_reader::data_reader(const char *filename, bool reorder) {
+    this->open(filename,reorder);
     checkpoint(0);
 }
 
-void data_reader::open(const char *filename,enum endian::endianness file_endianness) {
-    reorder_on_read=(file_endianness!=endian::native_endian);
-    if (reorder_on_read)
-        nrn_assert(file_endianness!=endian::mixed_endian &&
-                endian::native_endian!=endian::mixed_endian);
+void data_reader::open(const char *filename, bool reorder) {
+    reorder_on_read=reorder;
 
     close();
     F.open(filename);

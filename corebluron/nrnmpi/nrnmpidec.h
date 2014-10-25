@@ -76,6 +76,8 @@ extern void nrnmpi_terminate();
 extern void nrnmpi_abort(int errcode);
 extern void nrnmpi_subworld_size(int n);
 extern int nrn_wrap_mpi_init(int* flag);
+extern void nrnmpi_fatal_error(const char *msg);
+extern void nrnmpi_check_threading_support();
 
 /* from mpispike.c */
 extern void nrnmpi_spike_initialize(void);
@@ -83,7 +85,6 @@ extern int nrnmpi_spike_exchange(void);
 extern int nrnmpi_spike_exchange_compressed(void);
 extern double nrnmpi_mindelay(double maxdel);
 extern int nrnmpi_int_allmax(int i);
-extern long long int nrnmpi_longlong_allreduce(long long int x, int type);
 extern void nrnmpi_int_gather(int* s, int* r, int cnt, int root);
 extern void nrnmpi_int_gatherv(int* s, int scnt, int* r, int* rcnt, int* rdispl, int root);
 extern void nrnmpi_int_allgather(int* s, int* r, int n);

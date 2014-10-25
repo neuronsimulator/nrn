@@ -1154,6 +1154,9 @@ int nrn_set_timeout(int timeout) {
 }
 
 void BBS_netpar_solve(double tstop) {
+
+        double time = nrnmpi_wtime();
+
 #if NRNMPI
 	double mt, md;
 	tstopunset;
@@ -1201,6 +1204,11 @@ void BBS_netpar_solve(double tstop) {
 	ncs2nrn_integrate(tstop);
 #endif
 	tstopunset;
+
+        nrnmpi_barrier();
+	if ( nrnmpi_myid == 0 ) {
+        	printf( " Solver Time : %g\n", nrnmpi_wtime() - time );
+    	}
 }
 
 static double set_mindelay(double maxdelay) {

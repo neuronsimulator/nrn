@@ -1,33 +1,60 @@
+/**
+ * @file nrnoptarg.h
+ * @date 26 Oct 2014
+ *
+ * @brief structure storing all command line arguments for coreneuron
+ */
+
 #ifndef nrnoptarg_h
 #define nrnoptarg_h
 
-/*
-  Optional arguments of form
-  name 
-  name string 
-  name integer
-
-  nrn_optarg_on(name, ...) returns true if name is in the arg list
-    and false otherwise
-  nrn_optarg(name, ...) returns the next arg string after the name
-     or else NULL.
-  nrn_optargint(name, ..., default) returns the next arg (must be
-    an int) after the name or else the default
-  If the name exists it is removed from the argv list (as well as
-  the following arg if relevant) and argc is decremented.
-*/
-
 #include <getopt.h>
 
-typedef struct cb_parameters
-{
-  double tstart, tstop, dt, celsius, voltage, maxdelay, forwardskip;
-  int spikebuf, prcellgid, threading;
-  char *patternstim, *filesdat, *datpath, *outpath;
-} cb_input_params;
+typedef struct cb_parameters {
 
-/// Get CoreBluron input parameters from the command line
-void Get_cb_opts(int argc, char** argv, cb_input_params* input_params);
+    double tstart; 		/**< start time of simulation in msec*/
+    double tstop;		/**< stop time of simulation in msec*/
+    double dt;			/**< timestep to use in msec*/
+
+    double celsius;
+    double voltage;
+    double maxdelay;
+
+    double forwardskip;
+
+    int spikebuf;		/**< internal buffer used on evry rank for spikes */
+    int prcellgid; 		/**< gid of cell for prcellstate */
+
+    int threading;		/**< enable pthread/openmp  */
+
+    const char *patternstim;
+    const char *datpath;		/**< directory path where .dat files */
+    const char *outpath; 		/**< directory where spikes will be written */
+    const char *filesdat; 		/**< name of file containing list of gids dat files read in */
+   
+    double mindelay;
+
+    /** default constructor */ 
+    cb_parameters();
+
+    /** show help message for command line args */ 
+    void show_cb_opts_help();
+
+    /** show all parameter values */ 
+    void show_cb_opts();
+
+    /** read options from command line */ 
+    void read_cb_opts( int argc, char **argv );
+
+    /** return full path of files.dat file */ 
+    void get_filesdat_path( char *path );
+
+    /** store/set computed mindelay argument */ 
+    void set_mindelay(double mdelay) {
+        mindelay = mdelay;
+    }
+
+} cb_input_params;
 
 #endif
 

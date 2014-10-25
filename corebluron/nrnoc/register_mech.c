@@ -30,7 +30,7 @@ static char nmodl_version_[] =
 #endif
 
 static char banner[] =
-"Duke, Yale, and the BlueBrain Project -- Copyright 1984-2014\n";
+"Duke, Yale, and the BlueBrain Project -- Copyright 1984-2014";
 
 # define	CHECK(name) /**/
 
@@ -133,10 +133,11 @@ void alloc_mech(int n) {
 
 void hoc_last_init() {
 
-	initnrn();
  	if (nrnmpi_myid < 1) if (nrn_nobanner_ == 0) { 
-	    fprintf(stderr, "%s\n", nrn_version(1));
-	    fprintf(stderr, "%s\n", banner);
+	    fprintf(stderr, " \n");
+	    fprintf(stderr, " %s\n", banner);
+	    fprintf(stderr, " %s\n", nrn_version(1));
+	    fprintf(stderr, " \n");
 	    fflush(stderr);
  	} 
 #if 0
