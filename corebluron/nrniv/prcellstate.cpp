@@ -22,8 +22,6 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "corebluron/nrniv/ivlist.h"
 #include "corebluron/nrnoc/nrnoc_decl.h"
 
-extern void** pnt_receive;
-
 declarePtrList(NetConList, NetCon) // NetCons in same order as Point_process
 implementPtrList(NetConList, NetCon) // and there may be several per pp.
 declareTable(PV2I, void*, int)

@@ -1,19 +1,3 @@
-/*
-Copyright (c) 2014 EPFL-BBP, All rights reserved.
-
-THIS SOFTWARE IS PROVIDED BY THE BLUE BRAIN PROJECT "AS IS"
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
-THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE BLUE BRAIN PROJECT
-BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
-BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
-WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
-OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
-IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*/
-
 /* Created by Language version: 6.2.0 */
 /* VECTORIZED */
 #include <stdio.h>
@@ -21,6 +5,10 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <math.h>
 #include "corebluron/mech/cfile/scoplib.h"
 #undef PI
+#ifdef _PROF_HPM 
+void HPM_Start(const char *); 
+void HPM_Stop(const char *); 
+#endif 
  
 #include "corebluron/nrnoc/md1redef.h"
 #include "corebluron/nrnconf.h"
@@ -31,11 +19,14 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 extern int _method3;
 #endif
 
+#if !NRNGPU
 #undef exp
 #define exp hoc_Exp
-extern double hoc_Exp();
+extern double hoc_Exp(double);
+#endif
  
 #define _threadargscomma_ _p, _ppvar, _thread, _nt,
+#define _threadargsprotocomma_ double* _p, Datum* _ppvar, ThreadDatum* _thread, _NrnThread* _nt,
 #define _threadargs_ _p, _ppvar, _thread, _nt
 #define _threadargsproto_ double* _p, Datum* _ppvar, ThreadDatum* _thread, _NrnThread* _nt
  	/*SUPPRESS 761*/
@@ -97,6 +88,10 @@ extern double hoc_Exp();
 #define h _mlhh
 #endif
 #endif
+ 
+#if defined(__cplusplus)
+extern "C" {
+#endif
  static int hoc_nrnpointerindex =  2;
  static ThreadDatum* _extcall_thread;
  /* external NEURON variables */
@@ -111,6 +106,8 @@ extern double hoc_Exp();
 #endif /*BBCORE*/
  static int _mechtype;
 extern int nrn_get_mechtype();
+extern void hoc_register_prop_size(int, int, int);
+extern Memb_func* memb_func;
  static int _pointtype;
  
 #if 0 /*BBCORE*/
@@ -132,11 +129,10 @@ extern int nrn_get_mechtype();
  
 #if 0 /*BBCORE*/
  /* connect user functions to hoc names */
- static IntFunc hoc_intfunc[] = {
+ static VoidFunc hoc_intfunc[] = {
  0,0
 };
- static struct Member_func {
-	char* _name; double (*_member)();} _member_func[] = {
+ static Member_func _member_func[] = {
  "loc", _hoc_loc_pnt,
  "has_loc", _hoc_has_loc,
  "get_loc", _hoc_get_loc_pnt,
@@ -150,8 +146,8 @@ extern int nrn_get_mechtype();
 #endif /*BBCORE*/
 #define toggleVerbose toggleVerbose_ProbGABAAB_EMS
 #define urand urand_ProbGABAAB_EMS
- extern double toggleVerbose();
- extern double urand();
+ extern double toggleVerbose( _threadargsproto_ );
+ extern double urand( _threadargsproto_ );
  /* declare global and static user variables */
 #define gmax gmax_ProbGABAAB_EMS
  double gmax = 0.001;
@@ -204,8 +200,11 @@ extern int nrn_get_mechtype();
  
 #endif /*BBCORE*/
  static double _sav_indep;
- static void nrn_alloc(), nrn_init(), nrn_state();
- static void nrn_cur(), nrn_jacob();
+ static void nrn_alloc(double*, Datum*, int);
+static void  nrn_init(_NrnThread*, _Memb_list*, int);
+static void nrn_state(_NrnThread*, _Memb_list*, int);
+ static void nrn_cur(_NrnThread*, _Memb_list*, int);
+static void  nrn_jacob(_NrnThread*, _Memb_list*, int);
  
 #if 0 /*BBCORE*/
  static void _hoc_destroy_pnt(_vptr) void* _vptr; {
@@ -214,7 +213,7 @@ extern int nrn_get_mechtype();
  
 #endif /*BBCORE*/
  
-static int _ode_count();
+static int _ode_count(int);
  /* connect range variables in _p that hoc is supposed to know about */
  static const char *_mechanism[] = {
  "6.2.0",
@@ -276,19 +275,20 @@ static void nrn_alloc(double* _p, Datum* _ppvar, int _type) {
 #endif /* BBCORE */
  
 }
- static _initlists();
- static _net_receive();
- typedef (*_Pfrv)();
- extern _Pfrv* pnt_receive;
- extern short* pnt_receive_size;
- static _net_init();
- extern _Pfrv* pnt_receive_init;
+ static void _initlists();
+ static void _net_receive(Point_process*, double*, double);
+ static void _net_init(Point_process*, double*, double);
  
 #define _psize 39
 #define _ppsize 3
  static void bbcore_read(double *, int*, int*, int*, _threadargsproto_);
  extern void hoc_reg_bbcore_read(int, void(*)(double *, int*, int*, int*, _threadargsproto_));
- _ProbGABAAB_EMS_reg() {
+ extern Symbol* hoc_lookup(const char*);
+extern void _nrn_thread_reg(int, int, void(*f)(Datum*));
+extern void _nrn_thread_table_reg(int, void(*)(double*, Datum*, ThreadDatum*, _NrnThread*, int));
+extern void _cvode_abstol( Symbol**, double*, int);
+
+ void _ProbGABAAB_EMS_reg() {
 	int _vectorized = 1;
   _initlists();
  
@@ -313,14 +313,14 @@ static char *modelname = "GABAAB receptor with presynaptic short-term plasticity
 static int error;
 static int _ninits = 0;
 static int _match_recurse=1;
-static _modl_cleanup(){ _match_recurse=1;}
-static setRNG();
-static state();
+static void _modl_cleanup(){ _match_recurse=1;}
+static int setRNG(_threadargsproto_);
+static int state(_threadargsproto_);
  
 /*VERBATIM*/
-#include "corebluron/utils/randoms/nrnran123.h"
+#include "nrnran123.h"
  
-static int  state ( _p, _ppvar, _thread, _nt ) double* _p; Datum* _ppvar; ThreadDatum* _thread; _NrnThread* _nt; {
+static int  state ( _threadargsproto_ ) {
    A_GABAA = A_GABAA * A_GABAA_step ;
    B_GABAA = B_GABAA * B_GABAA_step ;
    A_GABAB = A_GABAB * A_GABAB_step ;
@@ -329,7 +329,7 @@ static int  state ( _p, _ppvar, _thread, _nt ) double* _p; Datum* _ppvar; Thread
  
 #if 0 /*BBCORE*/
  
-static double _hoc_state(_vptr) void* _vptr; {
+static double _hoc_state(void* _vptr) {
  double _r;
    double* _p; Datum* _ppvar; ThreadDatum* _thread; _NrnThread* _nt;
    _p = ((Point_process*)_vptr)->_prop->param;
@@ -337,13 +337,13 @@ static double _hoc_state(_vptr) void* _vptr; {
   _thread = _extcall_thread;
   _nt = (_NrnThread*)((Point_process*)_vptr)->_vnt;
  _r = 1.;
- state ( _p, _ppvar, _thread, _nt ) ;
+ state ( _p, _ppvar, _thread, _nt );
  return(_r);
 }
  
 #endif /*BBCORE*/
  
-static _net_receive (_pnt, _args, _lflag) Point_process* _pnt; double* _args; double _lflag; 
+static void _net_receive (_pnt, _args, _lflag) Point_process* _pnt; double* _args; double _lflag; 
 {  double* _p; Datum* _ppvar; ThreadDatum* _thread; _NrnThread* _nt;
    _thread = (ThreadDatum*)0; _nt = (_NrnThread*)_pnt->_vnt;   _p = _pnt->_data; _ppvar = _pnt->_pdata;
   assert(_tsav <= t); _tsav = t; {
@@ -397,7 +397,7 @@ static _net_receive (_pnt, _args, _lflag) Point_process* _pnt; double* _args; do
      }
    } }
  
-static _net_init(_pnt, _args, _lflag) Point_process* _pnt; double* _args; double _lflag; {
+static void _net_init(Point_process* _pnt, double* _args, double _lflag) {
        double* _p = _pnt->_data;
     Datum* _ppvar = _pnt->_pdata;
     ThreadDatum* _thread = (ThreadDatum*)0;
@@ -405,7 +405,7 @@ static _net_init(_pnt, _args, _lflag) Point_process* _pnt; double* _args; double
  _args[4] = t ;
    }
  
-static int  setRNG ( _p, _ppvar, _thread, _nt ) double* _p; Datum* _ppvar; ThreadDatum* _thread; _NrnThread* _nt; {
+static int  setRNG ( _threadargsproto_ ) {
    
 /*VERBATIM*/
     {
@@ -424,7 +424,7 @@ static int  setRNG ( _p, _ppvar, _thread, _nt ) double* _p; Datum* _ppvar; Threa
  
 #if 0 /*BBCORE*/
  
-static double _hoc_setRNG(_vptr) void* _vptr; {
+static double _hoc_setRNG(void* _vptr) {
  double _r;
    double* _p; Datum* _ppvar; ThreadDatum* _thread; _NrnThread* _nt;
    _p = ((Point_process*)_vptr)->_prop->param;
@@ -432,13 +432,13 @@ static double _hoc_setRNG(_vptr) void* _vptr; {
   _thread = _extcall_thread;
   _nt = (_NrnThread*)((Point_process*)_vptr)->_vnt;
  _r = 1.;
- setRNG ( _p, _ppvar, _thread, _nt ) ;
+ setRNG ( _p, _ppvar, _thread, _nt );
  return(_r);
 }
  
 #endif /*BBCORE*/
  
-double urand ( _p, _ppvar, _thread, _nt ) double* _p; Datum* _ppvar; ThreadDatum* _thread; _NrnThread* _nt; {
+double urand ( _threadargsproto_ ) {
    double _lurand;
  
 /*VERBATIM*/
@@ -462,14 +462,14 @@ return _lurand;
  
 #if 0 /*BBCORE*/
  
-static double _hoc_urand(_vptr) void* _vptr; {
+static double _hoc_urand(void* _vptr) {
  double _r;
    double* _p; Datum* _ppvar; ThreadDatum* _thread; _NrnThread* _nt;
    _p = ((Point_process*)_vptr)->_prop->param;
   _ppvar = ((Point_process*)_vptr)->_prop->dparam;
   _thread = _extcall_thread;
   _nt = (_NrnThread*)((Point_process*)_vptr)->_vnt;
- _r =  urand ( _p, _ppvar, _thread, _nt ) ;
+ _r =  urand ( _p, _ppvar, _thread, _nt );
  return(_r);
 }
  
@@ -488,16 +488,13 @@ static void bbcore_write(double* x, int* d, int* xx, int* offset, _threadargspro
 static void bbcore_read(double* x, int* d, int* xx, int* offset, _threadargsproto_) {
 	assert(!_p_rng);
 	uint32_t* di = ((uint32_t*)d) + *offset;
-        if (di[0] != 0 || di[1] != 0)
-        {
-	  nrnran123_State** pv = (nrnran123_State**)(&_p_rng);
-	  *pv = nrnran123_newstream(di[0], di[1]);
-        }
+	nrnran123_State** pv = (nrnran123_State**)(&_p_rng);
+	*pv = nrnran123_newstream(di[0], di[1]);
 //printf("ProbGABAAB_EMS bbcore_read %d %d\n", di[0], di[1]);
 	*offset += 2;
 }
  
-double toggleVerbose ( _p, _ppvar, _thread, _nt ) double* _p; Datum* _ppvar; ThreadDatum* _thread; _NrnThread* _nt; {
+double toggleVerbose ( _threadargsproto_ ) {
    double _ltoggleVerbose;
  verboseLevel = 1.0 - verboseLevel ;
    
@@ -506,20 +503,20 @@ return _ltoggleVerbose;
  
 #if 0 /*BBCORE*/
  
-static double _hoc_toggleVerbose(_vptr) void* _vptr; {
+static double _hoc_toggleVerbose(void* _vptr) {
  double _r;
    double* _p; Datum* _ppvar; ThreadDatum* _thread; _NrnThread* _nt;
    _p = ((Point_process*)_vptr)->_prop->param;
   _ppvar = ((Point_process*)_vptr)->_prop->dparam;
   _thread = _extcall_thread;
   _nt = (_NrnThread*)((Point_process*)_vptr)->_vnt;
- _r =  toggleVerbose ( _p, _ppvar, _thread, _nt ) ;
+ _r =  toggleVerbose ( _p, _ppvar, _thread, _nt );
  return(_r);
 }
  
 #endif /*BBCORE*/
  
-static int _ode_count(_type)int _type; { hoc_execerror("ProbGABAAB_EMS", "cannot be used with CVODE");}
+static int _ode_count(int _type){ hoc_execerror("ProbGABAAB_EMS", "cannot be used with CVODE"); return 0;}
 
 static void initmodel(double* _p, Datum* _ppvar, ThreadDatum* _thread, _NrnThread* _nt) {
   int _i; double _save;{
@@ -571,7 +568,8 @@ for (_iml = 0; _iml < _cntml; ++_iml) {
     _v = VEC_V(_ni[_iml]);
  v = _v;
  initmodel(_p, _ppvar, _thread, _nt);
-}}
+}
+}
 
 static double _nrn_current(double* _p, Datum* _ppvar, ThreadDatum* _thread, _NrnThread* _nt, double _v){double _current=0.;v=_v;{ {
    g_GABAA = gmax * ( B_GABAA - A_GABAA ) ;
@@ -605,7 +603,9 @@ for (_iml = 0; _iml < _cntml; ++_iml) {
  _rhs *= 1.e2/(_nd_area);
 	VEC_RHS(_ni[_iml]) -= _rhs;
  
-}}
+}
+ 
+}
 
 static void nrn_jacob(_NrnThread* _nt, _Memb_list* _ml, int _type) {
 double* _p; Datum* _ppvar; ThreadDatum* _thread;
@@ -619,9 +619,14 @@ for (_iml = 0; _iml < _cntml; ++_iml) {
  _p = _ml->_data + _iml*_psize;
 	VEC_D(_ni[_iml]) += _g;
  
-}}
+}
+ 
+}
 
 static void nrn_state(_NrnThread* _nt, _Memb_list* _ml, int _type) {
+#ifdef _PROF_HPM 
+HPM_Start("nrn_state_ProbGABAAB_EMS"); 
+#endif 
  double _break, _save;
 double* _p; Datum* _ppvar; ThreadDatum* _thread;
 double _v; int* _ni; int _iml, _cntml;
@@ -643,14 +648,21 @@ for (_iml = 0; _iml < _cntml; ++_iml) {
 }}
  t = _save;
  }}}
+#ifdef _PROF_HPM 
+HPM_Stop("nrn_state_ProbGABAAB_EMS"); 
+#endif 
 
 }
 
-static terminal(){}
+static void terminal(){}
 
-static _initlists(){
+static void _initlists(){
  double _x; double* _p = &_x;
  int _i; static int _first = 1;
-  if (!_first) return 0;
+  if (!_first) return;
 _first = 0;
 }
+
+#if defined(__cplusplus)
+} /* extern "C" */
+#endif

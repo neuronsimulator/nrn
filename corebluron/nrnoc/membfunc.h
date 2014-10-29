@@ -29,6 +29,7 @@ struct NrnThread;
 
 typedef void (*mod_alloc_t)(double*, Datum*, int);
 typedef void (*mod_f_t)(struct NrnThread*, Memb_list*, int);
+typedef void (*pnt_receive_t)(Point_process*, double*, double);
 
 #define NULL_ALLOC (mod_alloc_t)0
 #define NULL_CUR (mod_f_t)0
@@ -96,6 +97,8 @@ extern int* nrn_prop_dparam_size_;
 extern char* pnt_map;
 extern short* nrn_is_artificial_;
 extern short* pnt_receive_size;
+extern pnt_receive_t* pnt_receive;
+extern pnt_receive_t* pnt_receive_init;
 
 extern int nrn_get_mechtype(const char*);
 extern int register_mech(const char** m, mod_alloc_t alloc, mod_f_t cur, mod_f_t jacob,

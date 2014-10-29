@@ -1,3 +1,5 @@
+include_directories(utils/randoms)
+
 set(COREBLURON_PUBLIC_HEADERS
 ${COMMON_INCLUDES}
 nrnconf.h

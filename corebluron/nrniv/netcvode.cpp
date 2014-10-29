@@ -69,8 +69,8 @@ static DiscreteEvent* tstop_event_;
 
 extern "C" {
 extern int nrn_modeltype();
-extern ReceiveFunc* pnt_receive;
-extern ReceiveFunc* pnt_receive_init;
+extern pnt_receive_t* pnt_receive;
+extern pnt_receive_t* pnt_receive_init;
 extern short* nrn_artcell_qindex_;
 extern bool nrn_use_localgid_;
 extern void nrn_outputevent(unsigned char, double);

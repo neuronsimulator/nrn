@@ -30,7 +30,6 @@ THREADSAFE
 
 VERBATIM
 extern int ifarg(int iarg);
-extern void* vector_new(int n);
 extern double* vector_vec(void* vv);
 extern int vector_capacity(void* vv);
 extern void* vector_arg(int iarg);
@@ -249,19 +248,26 @@ static void bbcore_read(double* dArray, int* iArray, int* doffset, int* ioffset,
         assert(!_p_vecRate);
         assert(!_p_vecTbins);
         uint32_t* ia = ((uint32_t*)iArray) + *ioffset;
-        nrnran123_State** pv = (nrnran123_State**)(&_p_exp_rng);
-        *pv = nrnran123_newstream(ia[0], ia[1]);
+        nrnran123_State** pv;
+        if (ia[0] != 0 || ia[1] != 0)
+        {
+          pv = (nrnran123_State**)(&_p_exp_rng);
+          *pv = nrnran123_newstream(ia[0], ia[1]);
+        }
 
         ia = ia + 2;
-        pv = (nrnran123_State**)(&_p_uniform_rng);
-        *pv = nrnran123_newstream(ia[0], ia[1]);
+        if (ia[0] != 0 || ia[1] != 0)
+        {
+          pv = (nrnran123_State**)(&_p_uniform_rng);
+          *pv = nrnran123_newstream(ia[0], ia[1]);
+        }
 
         ia = ia + 2;
         int dsize = ia[0];
         *ioffset += 5;
 
         double *da = dArray + *doffset;
-        _p_vecRate = vector_new(dsize);  /* works for dsize=0 */
+        _p_vecRate = vector_new1(dsize);  /* works for dsize=0 */
         double *dv = vector_vec(_p_vecRate);
         int iInt;
         for (iInt = 0; iInt < dsize; ++iInt)
@@ -271,7 +277,7 @@ static void bbcore_read(double* dArray, int* iArray, int* doffset, int* ioffset,
         *doffset += dsize;
 
         da = dArray + *doffset;
-        _p_vecTbins = vector_new(dsize);
+        _p_vecTbins = vector_new1(dsize);
         dv = vector_vec(_p_vecTbins);
         for (iInt = 0; iInt < dsize; ++iInt)
         {     

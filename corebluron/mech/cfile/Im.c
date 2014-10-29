@@ -1,19 +1,3 @@
-/*
-Copyright (c) 2014 EPFL-BBP, All rights reserved.
-
-THIS SOFTWARE IS PROVIDED BY THE BLUE BRAIN PROJECT "AS IS"
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
-THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE BLUE BRAIN PROJECT
-BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
-BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
-WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
-OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
-IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*/
-
 /* Created by Language version: 6.2.0 */
 /* VECTORIZED */
 #include <stdio.h>
@@ -21,6 +5,10 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <math.h>
 #include "corebluron/mech/cfile/scoplib.h"
 #undef PI
+#ifdef _PROF_HPM 
+void HPM_Start(const char *); 
+void HPM_Stop(const char *); 
+#endif 
  
 #include "corebluron/nrnoc/md1redef.h"
 #include "corebluron/nrnconf.h"
@@ -31,11 +19,14 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 extern int _method3;
 #endif
 
+#if !NRNGPU
 #undef exp
 #define exp hoc_Exp
-extern double hoc_Exp();
+extern double hoc_Exp(double);
+#endif
  
 #define _threadargscomma_ _p, _ppvar, _thread, _nt,
+#define _threadargsprotocomma_ double* _p, Datum* _ppvar, ThreadDatum* _thread, _NrnThread* _nt,
 #define _threadargs_ _p, _ppvar, _thread, _nt
 #define _threadargsproto_ double* _p, Datum* _ppvar, ThreadDatum* _thread, _NrnThread* _nt
  	/*SUPPRESS 761*/
@@ -71,21 +62,27 @@ extern double hoc_Exp();
 #define h _mlhh
 #endif
 #endif
+ 
+#if defined(__cplusplus)
+extern "C" {
+#endif
  static int hoc_nrnpointerindex =  -1;
  static ThreadDatum* _extcall_thread;
  /* external NEURON variables */
  
 #if 0 /*BBCORE*/
  /* declaration of user functions */
- static int _hoc_rates();
+ static void _hoc_rates(void);
  
 #endif /*BBCORE*/
  static int _mechtype;
 extern int nrn_get_mechtype();
+extern void hoc_register_prop_size(int, int, int);
+extern Memb_func* memb_func;
  
 #if 0 /*BBCORE*/
  /* connect user functions to hoc names */
- static IntFunc hoc_intfunc[] = {
+ static VoidFunc hoc_intfunc[] = {
  "setdata_Im", _hoc_setdata,
  "rates_Im", _hoc_rates,
  0, 0
@@ -121,8 +118,11 @@ extern int nrn_get_mechtype();
  
 #endif /*BBCORE*/
  static double _sav_indep;
- static void nrn_alloc(), nrn_init(), nrn_state();
- static void nrn_cur(), nrn_jacob();
+ static void nrn_alloc(double*, Datum*, int);
+static void  nrn_init(_NrnThread*, _Memb_list*, int);
+static void nrn_state(_NrnThread*, _Memb_list*, int);
+ static void nrn_cur(_NrnThread*, _Memb_list*, int);
+static void  nrn_jacob(_NrnThread*, _Memb_list*, int);
  /* connect range variables in _p that hoc is supposed to know about */
  static const char *_mechanism[] = {
  "6.2.0",
@@ -151,12 +151,17 @@ static void nrn_alloc(double* _p, Datum* _ppvar, int _type) {
 #endif /* BBCORE */
  
 }
- static _initlists();
+ static void _initlists();
  static void _update_ion_pointer(Datum*);
  
 #define _psize 12
 #define _ppsize 3
- _Im_reg() {
+ extern Symbol* hoc_lookup(const char*);
+extern void _nrn_thread_reg(int, int, void(*f)(Datum*));
+extern void _nrn_thread_table_reg(int, void(*)(double*, Datum*, ThreadDatum*, _NrnThread*, int));
+extern void _cvode_abstol( Symbol**, double*, int);
+
+ void _Im_reg() {
 	int _vectorized = 1;
   _initlists();
  _k_type = nrn_get_mechtype("k_ion"); 
@@ -175,12 +180,13 @@ static char *modelname = "";
 static int error;
 static int _ninits = 0;
 static int _match_recurse=1;
-static _modl_cleanup(){ _match_recurse=1;}
-static rates();
+static void _modl_cleanup(){ _match_recurse=1;}
+static int rates(_threadargsproto_);
  
-static int _ode_spec1(), _ode_matsol1();
+static int _ode_spec1(_threadargsproto_);
+static int _ode_matsol1(_threadargsproto_);
  static int _slist1[1], _dlist1[1];
- static int states();
+ static int states(_threadargsproto_);
  
 /*CVODE*/
  static int _ode_spec1 (double* _p, Datum* _ppvar, ThreadDatum* _thread, _NrnThread* _nt) {int _reset = 0; {
@@ -192,6 +198,7 @@ static int _ode_spec1(), _ode_matsol1();
  static int _ode_matsol1 (double* _p, Datum* _ppvar, ThreadDatum* _thread, _NrnThread* _nt) {
  rates ( _threadargs_ ) ;
  Dm = Dm  / (1. - dt*( ( ( ( - 1.0 ) ) ) / mTau )) ;
+ return 0;
 }
  /*END CVODE*/
  static int states (double* _p, Datum* _ppvar, ThreadDatum* _thread, _NrnThread* _nt) { {
@@ -201,7 +208,7 @@ static int _ode_spec1(), _ode_matsol1();
   return 0;
 }
  
-static int  rates ( _p, _ppvar, _thread, _nt ) double* _p; Datum* _ppvar; ThreadDatum* _thread; _NrnThread* _nt; {
+static int  rates ( _threadargsproto_ ) {
    double _lqt ;
  _lqt = pow( 2.3 , ( ( 34.0 - 21.0 ) / 10.0 ) ) ;
     mAlpha = 3.3e-3 * exp ( 2.5 * 0.04 * ( v - - 35.0 ) ) ;
@@ -212,15 +219,15 @@ static int  rates ( _p, _ppvar, _thread, _nt ) double* _p; Datum* _ppvar; Thread
  
 #if 0 /*BBCORE*/
  
-static int _hoc_rates() {
+static void _hoc_rates(void) {
   double _r;
    double* _p; Datum* _ppvar; ThreadDatum* _thread; _NrnThread* _nt;
    if (_extcall_prop) {_p = _extcall_prop->param; _ppvar = _extcall_prop->dparam;}else{ _p = (double*)0; _ppvar = (Datum*)0; }
   _thread = _extcall_thread;
   _nt = nrn_threads;
  _r = 1.;
- rates ( _p, _ppvar, _thread, _nt ) ;
- ret(_r);
+ rates ( _p, _ppvar, _thread, _nt ;
+ hoc_retpushx(_r);
 }
  
 #endif /*BBCORE*/
@@ -252,7 +259,8 @@ for (_iml = 0; _iml < _cntml; ++_iml) {
  v = _v;
   ek = _ion_ek;
  initmodel(_p, _ppvar, _thread, _nt);
- }}
+ }
+}
 
 static double _nrn_current(double* _p, Datum* _ppvar, ThreadDatum* _thread, _NrnThread* _nt, double _v){double _current=0.;v=_v;{ {
    gIm = gImbar * m ;
@@ -285,7 +293,9 @@ for (_iml = 0; _iml < _cntml; ++_iml) {
   _ion_ik += ik ;
 	VEC_RHS(_ni[_iml]) -= _rhs;
  
-}}
+}
+ 
+}
 
 static void nrn_jacob(_NrnThread* _nt, _Memb_list* _ml, int _type) {
 double* _p; Datum* _ppvar; ThreadDatum* _thread;
@@ -299,9 +309,14 @@ for (_iml = 0; _iml < _cntml; ++_iml) {
  _p = _ml->_data + _iml*_psize;
 	VEC_D(_ni[_iml]) += _g;
  
-}}
+}
+ 
+}
 
 static void nrn_state(_NrnThread* _nt, _Memb_list* _ml, int _type) {
+#ifdef _PROF_HPM 
+HPM_Start("nrn_state_Im"); 
+#endif 
  double _break, _save;
 double* _p; Datum* _ppvar; ThreadDatum* _thread;
 double _v; int* _ni; int _iml, _cntml;
@@ -324,15 +339,22 @@ for (_iml = 0; _iml < _cntml; ++_iml) {
 }}
  t = _save;
  } }}
+#ifdef _PROF_HPM 
+HPM_Stop("nrn_state_Im"); 
+#endif 
 
 }
 
-static terminal(){}
+static void terminal(){}
 
-static _initlists(){
+static void _initlists(){
  double _x; double* _p = &_x;
  int _i; static int _first = 1;
-  if (!_first) return 0;
+  if (!_first) return;
  _slist1[0] = &(m) - _p;  _dlist1[0] = &(Dm) - _p;
 _first = 0;
 }
+
+#if defined(__cplusplus)
+} /* extern "C" */
+#endif

@@ -5,6 +5,10 @@
 #include <math.h>
 #include "corebluron/mech/cfile/scoplib.h"
 #undef PI
+#ifdef _PROF_HPM 
+void HPM_Start(const char *); 
+void HPM_Stop(const char *); 
+#endif 
  
 #include "corebluron/nrnoc/md1redef.h"
 #include "corebluron/nrnconf.h"
@@ -15,11 +19,14 @@
 extern int _method3;
 #endif
 
+#if !NRNGPU
 #undef exp
 #define exp hoc_Exp
-extern double hoc_Exp();
+extern double hoc_Exp(double);
+#endif
  
 #define _threadargscomma_ _p, _ppvar, _thread, _nt,
+#define _threadargsprotocomma_ double* _p, Datum* _ppvar, ThreadDatum* _thread, _NrnThread* _nt,
 #define _threadargs_ _p, _ppvar, _thread, _nt
 #define _threadargsproto_ double* _p, Datum* _ppvar, ThreadDatum* _thread, _NrnThread* _nt
  	/*SUPPRESS 761*/
@@ -45,6 +52,10 @@ extern double hoc_Exp();
 #define h _mlhh
 #endif
 #endif
+ 
+#if defined(__cplusplus)
+extern "C" {
+#endif
  static int hoc_nrnpointerindex =  2;
  static ThreadDatum* _extcall_thread;
  /* external NEURON variables */
@@ -57,6 +68,8 @@ extern double hoc_Exp();
 #endif /*BBCORE*/
  static int _mechtype;
 extern int nrn_get_mechtype();
+extern void hoc_register_prop_size(int, int, int);
+extern Memb_func* memb_func;
  static int _pointtype;
  
 #if 0 /*BBCORE*/
@@ -78,11 +91,10 @@ extern int nrn_get_mechtype();
  
 #if 0 /*BBCORE*/
  /* connect user functions to hoc names */
- static IntFunc hoc_intfunc[] = {
+ static VoidFunc hoc_intfunc[] = {
  0,0
 };
- static struct Member_func {
-	char* _name; double (*_member)();} _member_func[] = {
+ static Member_func _member_func[] = {
  "loc", _hoc_loc_pnt,
  "has_loc", _hoc_has_loc,
  "get_loc", _hoc_get_loc_pnt,
@@ -94,8 +106,8 @@ extern int nrn_get_mechtype();
 #endif /*BBCORE*/
 #define initps initps_PatternStim
 #define sendgroup sendgroup_PatternStim
- extern double initps();
- extern double sendgroup();
+ extern double initps( _threadargsproto_ );
+ extern double sendgroup( _threadargsproto_ );
  /* declare global and static user variables */
  
 #if 0 /*BBCORE*/
@@ -120,7 +132,9 @@ extern int nrn_get_mechtype();
  
 #endif /*BBCORE*/
  static double _sav_indep;
- static void nrn_alloc(), nrn_init(), nrn_state();
+ static void nrn_alloc(double*, Datum*, int);
+static void  nrn_init(_NrnThread*, _Memb_list*, int);
+static void nrn_state(_NrnThread*, _Memb_list*, int);
  
 #if 0 /*BBCORE*/
  static void _hoc_destroy_pnt(_vptr) void* _vptr; {
@@ -148,19 +162,21 @@ static void nrn_alloc(double* _p, Datum* _ppvar, int _type) {
 #endif /* BBCORE */
  
 }
- static _initlists();
+ static void _initlists();
  
 #define _tqitem &(_nt->_vdata[_ppvar[3]])
- static _net_receive();
- typedef (*_Pfrv)();
- extern _Pfrv* pnt_receive;
- extern short* pnt_receive_size;
+ static void _net_receive(Point_process*, double*, double);
  
 #define _psize 3
 #define _ppsize 4
  static void bbcore_read(double *, int*, int*, int*, _threadargsproto_);
  extern void hoc_reg_bbcore_read(int, void(*)(double *, int*, int*, int*, _threadargsproto_));
- _pattern_reg() {
+ extern Symbol* hoc_lookup(const char*);
+extern void _nrn_thread_reg(int, int, void(*f)(Datum*));
+extern void _nrn_thread_table_reg(int, void(*)(double*, Datum*, ThreadDatum*, _NrnThread*, int));
+extern void _cvode_abstol( Symbol**, double*, int);
+
+ void _pattern_reg() {
 	int _vectorized = 1;
   _initlists();
  
@@ -185,9 +201,9 @@ static char *modelname = "";
 static int error;
 static int _ninits = 0;
 static int _match_recurse=1;
-static _modl_cleanup(){ _match_recurse=1;}
+static void _modl_cleanup(){ _match_recurse=1;}
  
-static _net_receive (_pnt, _args, _lflag) Point_process* _pnt; double* _args; double _lflag; 
+static void _net_receive (_pnt, _args, _lflag) Point_process* _pnt; double* _args; double _lflag; 
 {  double* _p; Datum* _ppvar; ThreadDatum* _thread; _NrnThread* _nt;
    _thread = (ThreadDatum*)0; _nt = (_NrnThread*)_pnt->_vnt;   _p = _pnt->_data; _ppvar = _pnt->_pdata;
   assert(_tsav <= t); _tsav = t;   if (_lflag == 1. ) {*(_tqitem) = 0;}
@@ -226,7 +242,7 @@ Info* mkinfo(_threadargsproto_) {
 	return info;
 }
  
-double initps ( _p, _ppvar, _thread, _nt ) double* _p; Datum* _ppvar; ThreadDatum* _thread; _NrnThread* _nt; {
+double initps ( _threadargsproto_ ) {
    double _linitps;
  
 /*VERBATIM*/
@@ -245,20 +261,20 @@ return _linitps;
  
 #if 0 /*BBCORE*/
  
-static double _hoc_initps(_vptr) void* _vptr; {
+static double _hoc_initps(void* _vptr) {
  double _r;
    double* _p; Datum* _ppvar; ThreadDatum* _thread; _NrnThread* _nt;
    _p = ((Point_process*)_vptr)->_prop->param;
   _ppvar = ((Point_process*)_vptr)->_prop->dparam;
   _thread = _extcall_thread;
   _nt = (_NrnThread*)((Point_process*)_vptr)->_vnt;
- _r =  initps ( _p, _ppvar, _thread, _nt ) ;
+ _r =  initps ( _p, _ppvar, _thread, _nt );
  return(_r);
 }
  
 #endif /*BBCORE*/
  
-double sendgroup ( _p, _ppvar, _thread, _nt ) double* _p; Datum* _ppvar; ThreadDatum* _thread; _NrnThread* _nt; {
+double sendgroup ( _threadargsproto_ ) {
    double _lsendgroup;
  
 /*VERBATIM*/
@@ -288,14 +304,14 @@ return _lsendgroup;
  
 #if 0 /*BBCORE*/
  
-static double _hoc_sendgroup(_vptr) void* _vptr; {
+static double _hoc_sendgroup(void* _vptr) {
  double _r;
    double* _p; Datum* _ppvar; ThreadDatum* _thread; _NrnThread* _nt;
    _p = ((Point_process*)_vptr)->_prop->param;
   _ppvar = ((Point_process*)_vptr)->_prop->dparam;
   _thread = _extcall_thread;
   _nt = (_NrnThread*)((Point_process*)_vptr)->_vnt;
- _r =  sendgroup ( _p, _ppvar, _thread, _nt ) ;
+ _r =  sendgroup ( _p, _ppvar, _thread, _nt );
  return(_r);
 }
  
@@ -338,13 +354,17 @@ for (_iml = 0; _iml < _cntml; ++_iml) {
  _p = _ml->_data + _iml*_psize; _ppvar = _ml->_pdata + _iml*_ppsize;
  _tsav = -1e20;
  initmodel(_p, _ppvar, _thread, _nt);
-}}
+}
+}
 
 static double _nrn_current(double* _p, Datum* _ppvar, ThreadDatum* _thread, _NrnThread* _nt, double _v){double _current=0.;v=_v;{
 } return _current;
 }
 
 static void nrn_state(_NrnThread* _nt, _Memb_list* _ml, int _type) {
+#ifdef _PROF_HPM 
+HPM_Start("nrn_state_pattern"); 
+#endif 
  double _break, _save;
 double* _p; Datum* _ppvar; ThreadDatum* _thread;
 double _v; int* _ni; int _iml, _cntml;
@@ -359,15 +379,21 @@ for (_iml = 0; _iml < _cntml; ++_iml) {
  v=_v;
 {
 }}
+#ifdef _PROF_HPM 
+HPM_Stop("nrn_state_pattern"); 
+#endif 
 
 }
 
-static terminal(){}
+static void terminal(){}
 
-static _initlists(){
+static void _initlists(){
  double _x; double* _p = &_x;
  int _i; static int _first = 1;
-  if (!_first) return 0;
+  if (!_first) return;
 _first = 0;
- return 0;
 }
+
+#if defined(__cplusplus)
+} /* extern "C" */
+#endif

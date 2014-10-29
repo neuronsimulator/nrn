@@ -1,19 +1,3 @@
-/*
-Copyright (c) 2014 EPFL-BBP, All rights reserved.
-
-THIS SOFTWARE IS PROVIDED BY THE BLUE BRAIN PROJECT "AS IS"
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
-THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE BLUE BRAIN PROJECT
-BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
-BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
-WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
-OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
-IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*/
-
 /* Created by Language version: 6.2.0 */
 /* VECTORIZED */
 #include <stdio.h>
@@ -21,6 +5,10 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <math.h>
 #include "corebluron/mech/cfile/scoplib.h"
 #undef PI
+#ifdef _PROF_HPM 
+void HPM_Start(const char *); 
+void HPM_Stop(const char *); 
+#endif 
  
 #include "corebluron/nrnoc/md1redef.h"
 #include "corebluron/nrnconf.h"
@@ -31,11 +19,14 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 extern int _method3;
 #endif
 
+#if !NRNGPU
 #undef exp
 #define exp hoc_Exp
-extern double hoc_Exp();
+extern double hoc_Exp(double);
+#endif
  
 #define _threadargscomma_ _p, _ppvar, _thread, _nt,
+#define _threadargsprotocomma_ double* _p, Datum* _ppvar, ThreadDatum* _thread, _NrnThread* _nt,
 #define _threadargs_ _p, _ppvar, _thread, _nt
 #define _threadargsproto_ double* _p, Datum* _ppvar, ThreadDatum* _thread, _NrnThread* _nt
  	/*SUPPRESS 761*/
@@ -100,6 +91,10 @@ extern double hoc_Exp();
 #define h _mlhh
 #endif
 #endif
+ 
+#if defined(__cplusplus)
+extern "C" {
+#endif
  static int hoc_nrnpointerindex =  -1;
  static ThreadDatum* _extcall_thread;
  /* external NEURON variables */
@@ -107,19 +102,21 @@ extern double hoc_Exp();
  
 #if 0 /*BBCORE*/
  /* declaration of user functions */
- static int _hoc_okctau();
- static int _hoc_okvctau();
- static int _hoc_okcinf();
- static int _hoc_okvcinf();
- static int _hoc_settables();
+ static void _hoc_okctau(void);
+ static void _hoc_okvctau(void);
+ static void _hoc_okcinf(void);
+ static void _hoc_okvcinf(void);
+ static void _hoc_settables(void);
  
 #endif /*BBCORE*/
  static int _mechtype;
 extern int nrn_get_mechtype();
+extern void hoc_register_prop_size(int, int, int);
+extern Memb_func* memb_func;
  
 #if 0 /*BBCORE*/
  /* connect user functions to hoc names */
- static IntFunc hoc_intfunc[] = {
+ static VoidFunc hoc_intfunc[] = {
  "setdata_cc", _hoc_setdata,
  "okctau_cc", _hoc_okctau,
  "okvctau_cc", _hoc_okvctau,
@@ -134,10 +131,10 @@ extern int nrn_get_mechtype();
 #define okvctau okvctau_cc
 #define okcinf okcinf_cc
 #define okvcinf okvcinf_cc
- extern double okctau();
- extern double okvctau();
- extern double okcinf();
- extern double okvcinf();
+ extern double okctau( _threadargsprotocomma_ double );
+ extern double okvctau( _threadargsprotocomma_ double );
+ extern double okcinf( _threadargsprotocomma_ double );
+ extern double okvcinf( _threadargsprotocomma_ double );
  /* declare global and static user variables */
 #define b b_cc
  double b = 2.5;
@@ -216,8 +213,11 @@ extern int nrn_get_mechtype();
  
 #endif /*BBCORE*/
  static double _sav_indep;
- static void nrn_alloc(), nrn_init(), nrn_state();
- static void nrn_cur(), nrn_jacob();
+ static void nrn_alloc(double*, Datum*, int);
+static void  nrn_init(_NrnThread*, _Memb_list*, int);
+static void nrn_state(_NrnThread*, _Memb_list*, int);
+ static void nrn_cur(_NrnThread*, _Memb_list*, int);
+static void  nrn_jacob(_NrnThread*, _Memb_list*, int);
  /* connect range variables in _p that hoc is supposed to know about */
  static const char *_mechanism[] = {
  "6.2.0",
@@ -270,12 +270,17 @@ static void nrn_alloc(double* _p, Datum* _ppvar, int _type) {
 #endif /* BBCORE */
  
 }
- static _initlists();
+ static void _initlists();
  static void _update_ion_pointer(Datum*);
  
 #define _psize 37
 #define _ppsize 7
- _new_calcium_channels_reg() {
+ extern Symbol* hoc_lookup(const char*);
+extern void _nrn_thread_reg(int, int, void(*f)(Datum*));
+extern void _nrn_thread_table_reg(int, void(*)(double*, Datum*, ThreadDatum*, _NrnThread*, int));
+extern void _cvode_abstol( Symbol**, double*, int);
+
+ void _new_calcium_channels_reg() {
 	int _vectorized = 1;
   _initlists();
  _ca_type = nrn_get_mechtype("ca_ion"); _k_type = nrn_get_mechtype("k_ion"); 
@@ -298,12 +303,13 @@ static char *modelname = "";
 static int error;
 static int _ninits = 0;
 static int _match_recurse=1;
-static _modl_cleanup(){ _match_recurse=1;}
-static settables();
+static void _modl_cleanup(){ _match_recurse=1;}
+static int settables(_threadargsprotocomma_ double);
  
-static int _ode_spec1(), _ode_matsol1();
+static int _ode_spec1(_threadargsproto_);
+static int _ode_matsol1(_threadargsproto_);
  static int _slist1[6], _dlist1[6];
- static int states();
+ static int states(_threadargsproto_);
  
 /*CVODE*/
  static int _ode_spec1 (double* _p, Datum* _ppvar, ThreadDatum* _thread, _NrnThread* _nt) {int _reset = 0; {
@@ -335,6 +341,7 @@ static int _ode_spec1(), _ode_matsol1();
  _linf = okcinf ( _threadargscomma_ v ) ;
  _ltau = okctau ( _threadargscomma_ v ) ;
  Dokc = Dokc  / (1. - dt*( ( ( ( - 1.0 ) ) ) / _ltau )) ;
+ return 0;
 }
  /*END CVODE*/
  static int states (double* _p, Datum* _ppvar, ThreadDatum* _thread, _NrnThread* _nt) { {
@@ -354,9 +361,7 @@ static int _ode_spec1(), _ode_matsol1();
   return 0;
 }
  
-static int  settables ( _p, _ppvar, _thread, _nt, _lv ) double* _p; Datum* _ppvar; ThreadDatum* _thread; _NrnThread* _nt; 
-	double _lv ;
- {
+static int  settables ( _threadargsprotocomma_ double _lv ) {
    mpcalinf = 1.0 / ( 1.0 + exp ( - ( ( _lv + 57.0 + mpcalinfhalfshift ) / ( 6.2 + mpcalinfslopechange ) ) ) ) ;
    hpcalinf = 1.0 / ( 1.0 + exp ( - ( ( _lv + 81.0 + hpcalinfhalfshift ) / ( 4.0 + hpcalinfslopechange ) ) ) ) ;
    mpcaltau = ( 0.612 + ( 1.0 / ( exp ( - ( _lv + 132.0 ) / 16.7 ) + exp ( ( _lv + 16.8 ) / 18.2 ) ) ) ) * captempfactor ;
@@ -379,22 +384,20 @@ static int  settables ( _p, _ppvar, _thread, _nt, _lv ) double* _p; Datum* _ppva
  
 #if 0 /*BBCORE*/
  
-static int _hoc_settables() {
+static void _hoc_settables(void) {
   double _r;
    double* _p; Datum* _ppvar; ThreadDatum* _thread; _NrnThread* _nt;
    if (_extcall_prop) {_p = _extcall_prop->param; _ppvar = _extcall_prop->dparam;}else{ _p = (double*)0; _ppvar = (Datum*)0; }
   _thread = _extcall_thread;
   _nt = nrn_threads;
  _r = 1.;
- settables ( _p, _ppvar, _thread, _nt, *getarg(1) ) ;
- ret(_r);
+ settables ( _p, _ppvar, _thread, _nt, *getarg(1) ;
+ hoc_retpushx(_r);
 }
  
 #endif /*BBCORE*/
  
-double okvcinf ( _p, _ppvar, _thread, _nt, _lVm ) double* _p; Datum* _ppvar; ThreadDatum* _thread; _NrnThread* _nt; 
-	double _lVm ;
- {
+double okvcinf ( _threadargsprotocomma_ double _lVm ) {
    double _lokvcinf;
   _lokvcinf = ( cai / ( cai + cal_base ) ) * 1.0 / ( 1.0 + exp ( - ( ( _lVm + 28.3 + okvcvhalfshift ) / ( 12.6 + okvcslopechange ) ) ) ) ;
     
@@ -403,21 +406,19 @@ return _lokvcinf;
  
 #if 0 /*BBCORE*/
  
-static int _hoc_okvcinf() {
+static void _hoc_okvcinf(void) {
   double _r;
    double* _p; Datum* _ppvar; ThreadDatum* _thread; _NrnThread* _nt;
    if (_extcall_prop) {_p = _extcall_prop->param; _ppvar = _extcall_prop->dparam;}else{ _p = (double*)0; _ppvar = (Datum*)0; }
   _thread = _extcall_thread;
   _nt = nrn_threads;
- _r =  okvcinf ( _p, _ppvar, _thread, _nt, *getarg(1) ) ;
- ret(_r);
+ _r =  okvcinf ( _p, _ppvar, _thread, _nt, *getarg(1) ;
+ hoc_retpushx(_r);
 }
  
 #endif /*BBCORE*/
  
-double okvctau ( _p, _ppvar, _thread, _nt, _lVm ) double* _p; Datum* _ppvar; ThreadDatum* _thread; _NrnThread* _nt; 
-	double _lVm ;
- {
+double okvctau ( _threadargsprotocomma_ double _lVm ) {
    double _lokvctau;
   _lokvctau = ( 90.3 - ( 75.1 / ( 1.0 + exp ( - ( _lVm + 46.0 ) / 22.7 ) ) ) ) * okvctempfactor ;
     
@@ -426,21 +427,19 @@ return _lokvctau;
  
 #if 0 /*BBCORE*/
  
-static int _hoc_okvctau() {
+static void _hoc_okvctau(void) {
   double _r;
    double* _p; Datum* _ppvar; ThreadDatum* _thread; _NrnThread* _nt;
    if (_extcall_prop) {_p = _extcall_prop->param; _ppvar = _extcall_prop->dparam;}else{ _p = (double*)0; _ppvar = (Datum*)0; }
   _thread = _extcall_thread;
   _nt = nrn_threads;
- _r =  okvctau ( _p, _ppvar, _thread, _nt, *getarg(1) ) ;
- ret(_r);
+ _r =  okvctau ( _p, _ppvar, _thread, _nt, *getarg(1) ;
+ hoc_retpushx(_r);
 }
  
 #endif /*BBCORE*/
  
-double okcinf ( _p, _ppvar, _thread, _nt, _lVm ) double* _p; Datum* _ppvar; ThreadDatum* _thread; _NrnThread* _nt; 
-	double _lVm ;
- {
+double okcinf ( _threadargsprotocomma_ double _lVm ) {
    double _lokcinf;
  double _la ;
   _la = 1.25 * ( pow( 10.0 , 8.0 ) ) * ( cai ) * ( cai ) ;
@@ -451,21 +450,19 @@ return _lokcinf;
  
 #if 0 /*BBCORE*/
  
-static int _hoc_okcinf() {
+static void _hoc_okcinf(void) {
   double _r;
    double* _p; Datum* _ppvar; ThreadDatum* _thread; _NrnThread* _nt;
    if (_extcall_prop) {_p = _extcall_prop->param; _ppvar = _extcall_prop->dparam;}else{ _p = (double*)0; _ppvar = (Datum*)0; }
   _thread = _extcall_thread;
   _nt = nrn_threads;
- _r =  okcinf ( _p, _ppvar, _thread, _nt, *getarg(1) ) ;
- ret(_r);
+ _r =  okcinf ( _p, _ppvar, _thread, _nt, *getarg(1) ;
+ hoc_retpushx(_r);
 }
  
 #endif /*BBCORE*/
  
-double okctau ( _p, _ppvar, _thread, _nt, _lVm ) double* _p; Datum* _ppvar; ThreadDatum* _thread; _NrnThread* _nt; 
-	double _lVm ;
- {
+double okctau ( _threadargsprotocomma_ double _lVm ) {
    double _lokctau;
  double _la ;
   _la = 1.25 * ( pow( 10.0 , 8.0 ) ) * ( cai ) * ( cai ) ;
@@ -476,14 +473,14 @@ return _lokctau;
  
 #if 0 /*BBCORE*/
  
-static int _hoc_okctau() {
+static void _hoc_okctau(void) {
   double _r;
    double* _p; Datum* _ppvar; ThreadDatum* _thread; _NrnThread* _nt;
    if (_extcall_prop) {_p = _extcall_prop->param; _ppvar = _extcall_prop->dparam;}else{ _p = (double*)0; _ppvar = (Datum*)0; }
   _thread = _extcall_thread;
   _nt = nrn_threads;
- _r =  okctau ( _p, _ppvar, _thread, _nt, *getarg(1) ) ;
- ret(_r);
+ _r =  okctau ( _p, _ppvar, _thread, _nt, *getarg(1) ;
+ hoc_retpushx(_r);
 }
  
 #endif /*BBCORE*/
@@ -527,7 +524,8 @@ for (_iml = 0; _iml < _cntml; ++_iml) {
   cai = _ion_cai;
   ek = _ion_ek;
  initmodel(_p, _ppvar, _thread, _nt);
-  }}
+  }
+}
 
 static double _nrn_current(double* _p, Datum* _ppvar, ThreadDatum* _thread, _NrnThread* _nt, double _v){double _current=0.;v=_v;{ {
    gcap = gcapbar * mpcal * mpcal * hpcal ;
@@ -571,7 +569,9 @@ for (_iml = 0; _iml < _cntml; ++_iml) {
   _ion_ik += ik ;
 	VEC_RHS(_ni[_iml]) -= _rhs;
  
-}}
+}
+ 
+}
 
 static void nrn_jacob(_NrnThread* _nt, _Memb_list* _ml, int _type) {
 double* _p; Datum* _ppvar; ThreadDatum* _thread;
@@ -585,9 +585,14 @@ for (_iml = 0; _iml < _cntml; ++_iml) {
  _p = _ml->_data + _iml*_psize;
 	VEC_D(_ni[_iml]) += _g;
  
-}}
+}
+ 
+}
 
 static void nrn_state(_NrnThread* _nt, _Memb_list* _ml, int _type) {
+#ifdef _PROF_HPM 
+HPM_Start("nrn_state_new_calcium_channels"); 
+#endif 
  double _break, _save;
 double* _p; Datum* _ppvar; ThreadDatum* _thread;
 double _v; int* _ni; int _iml, _cntml;
@@ -612,15 +617,18 @@ for (_iml = 0; _iml < _cntml; ++_iml) {
 }}
  t = _save;
  }  }}
+#ifdef _PROF_HPM 
+HPM_Stop("nrn_state_new_calcium_channels"); 
+#endif 
 
 }
 
-static terminal(){}
+static void terminal(){}
 
-static _initlists(){
+static void _initlists(){
  double _x; double* _p = &_x;
  int _i; static int _first = 1;
-  if (!_first) return 0;
+  if (!_first) return;
  _slist1[0] = &(mpcal) - _p;  _dlist1[0] = &(Dmpcal) - _p;
  _slist1[1] = &(hpcal) - _p;  _dlist1[1] = &(Dhpcal) - _p;
  _slist1[2] = &(mtcal) - _p;  _dlist1[2] = &(Dmtcal) - _p;
@@ -629,3 +637,7 @@ static _initlists(){
  _slist1[5] = &(okc) - _p;  _dlist1[5] = &(Dokc) - _p;
 _first = 0;
 }
+
+#if defined(__cplusplus)
+} /* extern "C" */
+#endif

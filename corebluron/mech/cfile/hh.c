@@ -1,19 +1,3 @@
-/*
-Copyright (c) 2014 EPFL-BBP, All rights reserved.
-
-THIS SOFTWARE IS PROVIDED BY THE BLUE BRAIN PROJECT "AS IS"
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
-THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE BLUE BRAIN PROJECT
-BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
-BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
-WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
-OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
-IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*/
-
 /* Created by Language version: 6.2.0 */
 /* VECTORIZED */
 #include <stdio.h>
@@ -21,6 +5,10 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <math.h>
 #include "corebluron/mech/cfile/scoplib.h"
 #undef PI
+#ifdef _PROF_HPM 
+void HPM_Start(const char *); 
+void HPM_Stop(const char *); 
+#endif 
  
 #include "corebluron/nrnoc/md1redef.h"
 #include "corebluron/nrnconf.h"
@@ -30,8 +18,15 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #if METHOD3
 extern int _method3;
 #endif
+
+#if !NRNGPU
+#undef exp
+#define exp hoc_Exp
+extern double hoc_Exp(double);
+#endif
  
 #define _threadargscomma_ _p, _ppvar, _thread, _nt,
+#define _threadargsprotocomma_ double* _p, Datum* _ppvar, ThreadDatum* _thread, _NrnThread* _nt,
 #define _threadargs_ _p, _ppvar, _thread, _nt
 #define _threadargsproto_ double* _p, Datum* _ppvar, ThreadDatum* _thread, _NrnThread* _nt
  	/*SUPPRESS 761*/
@@ -77,6 +72,10 @@ extern int _method3;
 #define h _mlhh
 #endif
 #endif
+ 
+#if defined(__cplusplus)
+extern "C" {
+#endif
  static int hoc_nrnpointerindex =  -1;
  static ThreadDatum* _extcall_thread;
  /* external NEURON variables */
@@ -84,16 +83,18 @@ extern int _method3;
  
 #if 0 /*BBCORE*/
  /* declaration of user functions */
- static int _hoc_rates();
- static int _hoc_vtrap();
+ static void _hoc_rates(void);
+ static void _hoc_vtrap(void);
  
 #endif /*BBCORE*/
  static int _mechtype;
 extern int nrn_get_mechtype();
+extern void hoc_register_prop_size(int, int, int);
+extern Memb_func* memb_func;
  
 #if 0 /*BBCORE*/
  /* connect user functions to hoc names */
- static IntFunc hoc_intfunc[] = {
+ static VoidFunc hoc_intfunc[] = {
  "setdata_hh", _hoc_setdata,
  "rates_hh", _hoc_rates,
  "vtrap_hh", _hoc_vtrap,
@@ -102,7 +103,7 @@ extern int nrn_get_mechtype();
  
 #endif /*BBCORE*/
 #define vtrap vtrap_hh
- extern double vtrap();
+ extern double vtrap( _threadargsprotocomma_ double , double );
  
 static void _check_rates(double*, Datum*, ThreadDatum*, _NrnThread*); 
 static void _check_table_thread(double* _p, Datum* _ppvar, ThreadDatum* _thread, _NrnThread* _nt, int _type) {
@@ -174,8 +175,11 @@ static double _thread1data[6];
  
 #endif /*BBCORE*/
  static double _sav_indep;
- static void nrn_alloc(), nrn_init(), nrn_state();
- static void nrn_cur(), nrn_jacob();
+ static void nrn_alloc(double*, Datum*, int);
+static void  nrn_init(_NrnThread*, _Memb_list*, int);
+static void nrn_state(_NrnThread*, _Memb_list*, int);
+ static void nrn_cur(_NrnThread*, _Memb_list*, int);
+static void  nrn_jacob(_NrnThread*, _Memb_list*, int);
  /* connect range variables in _p that hoc is supposed to know about */
  static const char *_mechanism[] = {
  "6.2.0",
@@ -219,14 +223,19 @@ static void nrn_alloc(double* _p, Datum* _ppvar, int _type) {
 #endif /* BBCORE */
  
 }
- static _initlists();
+ static void _initlists();
  static void _thread_mem_init(ThreadDatum*);
  static void _thread_cleanup(ThreadDatum*);
  static void _update_ion_pointer(Datum*);
  
 #define _psize 19
 #define _ppsize 6
- _hh_reg() {
+ extern Symbol* hoc_lookup(const char*);
+extern void _nrn_thread_reg(int, int, void(*f)(Datum*));
+extern void _nrn_thread_table_reg(int, void(*)(double*, Datum*, ThreadDatum*, _NrnThread*, int));
+extern void _cvode_abstol( Symbol**, double*, int);
+
+ void _hh_reg() {
 	int _vectorized = 1;
   _initlists();
  _na_type = nrn_get_mechtype("na_ion"); _k_type = nrn_get_mechtype("k_ion"); 
@@ -259,14 +268,15 @@ static char *modelname = "hh.mod   squid sodium, potassium, and leak channels";
 static int error;
 static int _ninits = 0;
 static int _match_recurse=1;
-static _modl_cleanup(){ _match_recurse=1;}
-static _f_rates();
-static rates();
+static void _modl_cleanup(){ _match_recurse=1;}
+static int _f_rates(_threadargsprotocomma_ double);
+static int rates(_threadargsprotocomma_ double);
  
-static int _ode_spec1(), _ode_matsol1();
- static _n_rates();
+static int _ode_spec1(_threadargsproto_);
+static int _ode_matsol1(_threadargsproto_);
+ static void _n_rates(_threadargsprotocomma_ double _lv);
  static int _slist1[3], _dlist1[3];
- static int states();
+ static int states(_threadargsproto_);
  
 /*CVODE*/
  static int _ode_spec1 (double* _p, Datum* _ppvar, ThreadDatum* _thread, _NrnThread* _nt) {int _reset = 0; {
@@ -282,6 +292,7 @@ static int _ode_spec1(), _ode_matsol1();
  Dm = Dm  / (1. - dt*( ( ( ( - 1.0 ) ) ) / mtau )) ;
  Dh = Dh  / (1. - dt*( ( ( ( - 1.0 ) ) ) / htau )) ;
  Dn = Dn  / (1. - dt*( ( ( ( - 1.0 ) ) ) / ntau )) ;
+ return 0;
 }
  /*END CVODE*/
  static int states (double* _p, Datum* _ppvar, ThreadDatum* _thread, _NrnThread* _nt) { {
@@ -316,7 +327,7 @@ static int _ode_spec1(), _ode_matsol1();
   }
  }
 
- static rates(double* _p, Datum* _ppvar, ThreadDatum* _thread, _NrnThread* _nt, double _lv) { 
+ static int rates(double* _p, Datum* _ppvar, ThreadDatum* _thread, _NrnThread* _nt, double _lv) { 
 #if 0
 _check_rates(_p, _ppvar, _thread, _nt);
 #endif
@@ -324,13 +335,21 @@ _check_rates(_p, _ppvar, _thread, _nt);
  return 0;
  }
 
- static _n_rates(double* _p, Datum* _ppvar, ThreadDatum* _thread, _NrnThread* _nt, double _lv){ int _i, _j;
+ static void _n_rates(double* _p, Datum* _ppvar, ThreadDatum* _thread, _NrnThread* _nt, double _lv){ int _i, _j;
  double _xi, _theta;
  if (!usetable) {
- _f_rates(_p, _ppvar, _thread, _nt, _lv); return 0; 
+ _f_rates(_p, _ppvar, _thread, _nt, _lv); return; 
 }
  _xi = _mfac_rates * (_lv - _tmin_rates);
- _i = (int) _xi;
+ if (isnan(_xi)) {
+  minf = _xi;
+  mtau = _xi;
+  hinf = _xi;
+  htau = _xi;
+  ninf = _xi;
+  ntau = _xi;
+  return;
+ }
  if (_xi <= 0.) {
  minf = _t_minf[0];
  mtau = _t_mtau[0];
@@ -338,15 +357,16 @@ _check_rates(_p, _ppvar, _thread, _nt);
  htau = _t_htau[0];
  ninf = _t_ninf[0];
  ntau = _t_ntau[0];
- return 0; }
- if (_i >= 200) {
+ return; }
+ if (_xi >= 200.) {
  minf = _t_minf[200];
  mtau = _t_mtau[200];
  hinf = _t_hinf[200];
  htau = _t_htau[200];
  ninf = _t_ninf[200];
  ntau = _t_ntau[200];
- return 0; }
+ return; }
+ _i = (int) _xi;
  _theta = _xi - (double)_i;
  minf = _t_minf[_i] + _theta*(_t_minf[_i+1] - _t_minf[_i]);
  mtau = _t_mtau[_i] + _theta*(_t_mtau[_i+1] - _t_mtau[_i]);
@@ -357,9 +377,7 @@ _check_rates(_p, _ppvar, _thread, _nt);
  }
 
  
-static int  _f_rates ( _p, _ppvar, _thread, _nt, _lv ) double* _p; Datum* _ppvar; ThreadDatum* _thread; _NrnThread* _nt; 
-	double _lv ;
- {
+static int  _f_rates ( _threadargsprotocomma_ double _lv ) {
    double _lalpha , _lbeta , _lsum , _lq10 ;
   _lq10 = pow( 3.0 , ( ( celsius - 6.3 ) / 10.0 ) ) ;
    _lalpha = .1 * vtrap ( _threadargscomma_ - ( _lv + 40.0 ) , 10.0 ) ;
@@ -381,7 +399,7 @@ static int  _f_rates ( _p, _ppvar, _thread, _nt, _lv ) double* _p; Datum* _ppvar
  
 #if 0 /*BBCORE*/
  
-static int _hoc_rates() {
+static void _hoc_rates(void) {
   double _r;
    double* _p; Datum* _ppvar; ThreadDatum* _thread; _NrnThread* _nt;
    if (_extcall_prop) {_p = _extcall_prop->param; _ppvar = _extcall_prop->dparam;}else{ _p = (double*)0; _ppvar = (Datum*)0; }
@@ -392,15 +410,13 @@ static int _hoc_rates() {
  _check_rates(_p, _ppvar, _thread, _nt);
 #endif
  _r = 1.;
- rates ( _p, _ppvar, _thread, _nt, *getarg(1) ) ;
- ret(_r);
+ rates ( _p, _ppvar, _thread, _nt, *getarg(1) ;
+ hoc_retpushx(_r);
 }
  
 #endif /*BBCORE*/
  
-double vtrap ( _p, _ppvar, _thread, _nt, _lx , _ly ) double* _p; Datum* _ppvar; ThreadDatum* _thread; _NrnThread* _nt; 
-	double _lx , _ly ;
- {
+double vtrap ( _threadargsprotocomma_ double _lx , double _ly ) {
    double _lvtrap;
  if ( fabs ( _lx / _ly ) < 1e-6 ) {
      _lvtrap = _ly * ( 1.0 - _lx / _ly / 2.0 ) ;
@@ -414,14 +430,14 @@ return _lvtrap;
  
 #if 0 /*BBCORE*/
  
-static int _hoc_vtrap() {
+static void _hoc_vtrap(void) {
   double _r;
    double* _p; Datum* _ppvar; ThreadDatum* _thread; _NrnThread* _nt;
    if (_extcall_prop) {_p = _extcall_prop->param; _ppvar = _extcall_prop->dparam;}else{ _p = (double*)0; _ppvar = (Datum*)0; }
   _thread = _extcall_thread;
   _nt = nrn_threads;
- _r =  vtrap ( _p, _ppvar, _thread, _nt, *getarg(1) , *getarg(2) ) ;
- ret(_r);
+ _r =  vtrap ( _p, _ppvar, _thread, _nt, *getarg(1) , *getarg(2) ;
+ hoc_retpushx(_r);
 }
  
 #endif /*BBCORE*/
@@ -477,7 +493,8 @@ for (_iml = 0; _iml < _cntml; ++_iml) {
   ena = _ion_ena;
   ek = _ion_ek;
  initmodel(_p, _ppvar, _thread, _nt);
-  }}
+  }
+}
 
 static double _nrn_current(double* _p, Datum* _ppvar, ThreadDatum* _thread, _NrnThread* _nt, double _v){double _current=0.;v=_v;{ {
    gna = gnabar * m * m * m * h ;
@@ -520,7 +537,9 @@ for (_iml = 0; _iml < _cntml; ++_iml) {
   _ion_ik += ik ;
 	VEC_RHS(_ni[_iml]) -= _rhs;
  
-}}
+}
+ 
+}
 
 static void nrn_jacob(_NrnThread* _nt, _Memb_list* _ml, int _type) {
 double* _p; Datum* _ppvar; ThreadDatum* _thread;
@@ -534,9 +553,14 @@ for (_iml = 0; _iml < _cntml; ++_iml) {
  _p = _ml->_data + _iml*_psize;
 	VEC_D(_ni[_iml]) += _g;
  
-}}
+}
+ 
+}
 
 static void nrn_state(_NrnThread* _nt, _Memb_list* _ml, int _type) {
+#ifdef _PROF_HPM 
+HPM_Start("nrn_state_hh"); 
+#endif 
  double _break, _save;
 double* _p; Datum* _ppvar; ThreadDatum* _thread;
 double _v; int* _ni; int _iml, _cntml;
@@ -560,15 +584,18 @@ for (_iml = 0; _iml < _cntml; ++_iml) {
 }}
  t = _save;
  }  }}
+#ifdef _PROF_HPM 
+HPM_Stop("nrn_state_hh"); 
+#endif 
 
 }
 
-static terminal(){}
+static void terminal(){}
 
-static _initlists(){
+static void _initlists(){
  double _x; double* _p = &_x;
  int _i; static int _first = 1;
-  if (!_first) return 0;
+  if (!_first) return;
  _slist1[0] = &(m) - _p;  _dlist1[0] = &(Dm) - _p;
  _slist1[1] = &(h) - _p;  _dlist1[1] = &(Dh) - _p;
  _slist1[2] = &(n) - _p;  _dlist1[2] = &(Dn) - _p;
@@ -580,3 +607,7 @@ static _initlists(){
    _t_ntau = makevector(201*sizeof(double));
 _first = 0;
 }
+
+#if defined(__cplusplus)
+} /* extern "C" */
+#endif
