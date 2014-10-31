@@ -22,7 +22,6 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "corebluron/nrniv/vrecitem.h"
 
 extern "C" {
-bool at_time(NrnThread*, double);
 #define nt_t nrn_threads->_t
 #define nt_dt nrn_threads->_dt
 
@@ -99,7 +98,7 @@ void nrn_solver_prepare() {
 	}
 }
 
-bool at_time(NrnThread* nt, double te) {
+int at_time(NrnThread* nt, double te) {
 	double x = te - 1e-11;
 	if (x <= nt->_t && x > (nt->_t - nt->_dt)) {
 		return 1;

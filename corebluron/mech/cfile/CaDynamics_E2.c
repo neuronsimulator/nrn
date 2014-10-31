@@ -25,6 +25,15 @@ extern int _method3;
 extern double hoc_Exp(double);
 #endif
  
+#define _nrn_init _nrn_init__CaDynamics_E2
+#define _nrn_initial _nrn_initial__CaDynamics_E2
+#define _nrn_cur _nrn_cur__CaDynamics_E2
+#define _nrn_current _nrn_current__CaDynamics_E2
+#define _nrn_jacob _nrn_jacob__CaDynamics_E2
+#define _nrn_state _nrn_state__CaDynamics_E2
+#define _net_receive _net_receive__CaDynamics_E2 
+#define states states__CaDynamics_E2 
+ 
 #define _threadargscomma_ _p, _ppvar, _thread, _nt,
 #define _threadargsprotocomma_ double* _p, Datum* _ppvar, ThreadDatum* _thread, _NrnThread* _nt,
 #define _threadargs_ _p, _ppvar, _thread, _nt
@@ -273,9 +282,8 @@ static void nrn_state(_NrnThread* _nt, _Memb_list* _ml, int _type) {
 #ifdef _PROF_HPM 
 HPM_Start("nrn_state_CaDynamics_E2"); 
 #endif 
- double _break, _save;
 double* _p; Datum* _ppvar; ThreadDatum* _thread;
-double _v; int* _ni; int _iml, _cntml;
+double _v = 0.0; int* _ni; int _iml, _cntml;
 #if CACHEVEC
     _ni = _ml->_nodeindices;
 #endif
@@ -284,18 +292,12 @@ _thread = _ml->_thread;
 for (_iml = 0; _iml < _cntml; ++_iml) {
  _p = _ml->_data + _iml*_psize; _ppvar = _ml->_pdata + _iml*_ppsize;
     _v = VEC_V(_ni[_iml]);
- _break = t + .5*dt; _save = t;
  v=_v;
 {
   ica = _ion_ica;
   cai = _ion_cai;
- { {
- for (; t < _break; t += dt) {
-   states(_p, _ppvar, _thread, _nt);
-  
-}}
- t = _save;
- } {
+ {   states(_p, _ppvar, _thread, _nt);
+  } {
    }
   _ion_cai = cai;
 }}

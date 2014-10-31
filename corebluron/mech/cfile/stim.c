@@ -25,6 +25,14 @@ extern int _method3;
 extern double hoc_Exp(double);
 #endif
  
+#define _nrn_init _nrn_init__IClamp
+#define _nrn_initial _nrn_initial__IClamp
+#define _nrn_cur _nrn_cur__IClamp
+#define _nrn_current _nrn_current__IClamp
+#define _nrn_jacob _nrn_jacob__IClamp
+#define _nrn_state _nrn_state__IClamp
+#define _net_receive _net_receive__IClamp 
+ 
 #define _threadargscomma_ _p, _ppvar, _thread, _nt,
 #define _threadargsprotocomma_ double* _p, Datum* _ppvar, ThreadDatum* _thread, _NrnThread* _nt,
 #define _threadargs_ _p, _ppvar, _thread, _nt
