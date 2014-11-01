@@ -14,6 +14,8 @@ void HPM_Stop(const char *);
 #include "corebluron/nrnconf.h"
 #include "corebluron/nrnoc/multicore.h"
 
+#include "corebluron/utils/randoms/nrnran123.h"
+
 #include "corebluron/nrnoc/md2redef.h"
 #if METHOD3
 extern int _method3;
@@ -25,6 +27,16 @@ extern int _method3;
 extern double hoc_Exp(double);
 #endif
  
+#if !defined(LAYOUT)
+/* 1 means AoS, >1 means AoSoA, <= 0 means SOA */
+#define LAYOUT 1
+#endif
+#if LAYOUT >= 1
+#define _STRIDE LAYOUT
+#else
+#define _STRIDE _cntml
+#endif
+ 
 #define _nrn_init _nrn_init__HDF5Reader
 #define _nrn_initial _nrn_initial__HDF5Reader
 #define _nrn_cur _nrn_cur__HDF5Reader
@@ -33,10 +45,17 @@ extern double hoc_Exp(double);
 #define _nrn_state _nrn_state__HDF5Reader
 #define _net_receive _net_receive__HDF5Reader 
  
+#if LAYOUT == 0 /*SoA*/
+#define _threadargscomma_ _cntml, _p, _ppvar, _thread, _nt,
+#define _threadargsprotocomma_ int _cntml, double* _p, Datum* _ppvar, ThreadDatum* _thread, _NrnThread* _nt,
+#define _threadargs_ _cntml, _p, _ppvar, _thread, _nt
+#define _threadargsproto_ int _cntml, double* _p, Datum* _ppvar, ThreadDatum* _thread, _NrnThread* _nt
+#else
 #define _threadargscomma_ _p, _ppvar, _thread, _nt,
 #define _threadargsprotocomma_ double* _p, Datum* _ppvar, ThreadDatum* _thread, _NrnThread* _nt,
 #define _threadargs_ _p, _ppvar, _thread, _nt
 #define _threadargsproto_ double* _p, Datum* _ppvar, ThreadDatum* _thread, _NrnThread* _nt
+#endif
  	/*SUPPRESS 761*/
 	/*SUPPRESS 762*/
 	/*SUPPRESS 763*/
@@ -46,9 +65,9 @@ extern double hoc_Exp(double);
  
 #define t _nt->_t
 #define dt _nt->_dt
-#define v _p[0]
-#define _tsav _p[1]
-#define _nd_area  _nt->_data[_ppvar[0]]
+#define v _p[0*_STRIDE]
+#define _tsav _p[1*_STRIDE]
+#define _nd_area  _nt->_data[_ppvar[0*_STRIDE]]
 #define _p_ptr	_nt->_vdata[_ppvar[2]]
  
 #if MAC
@@ -152,9 +171,9 @@ static void nrn_state(_NrnThread*, _Memb_list*, int);
  0};
  
 static void nrn_alloc(double* _p, Datum* _ppvar, int _type) {
- 	/*initialize range parameters*/
  
 #if 0 /*BBCORE*/
+ 	/*initialize range parameters*/
  
 #endif /* BBCORE */
  
@@ -168,7 +187,7 @@ static void nrn_alloc(double* _p, Datum* _ppvar, int _type) {
  extern void hoc_reg_bbcore_read(int, void(*)(double *, int*, int*, int*, _threadargsproto_));
  extern Symbol* hoc_lookup(const char*);
 extern void _nrn_thread_reg(int, int, void(*f)(Datum*));
-extern void _nrn_thread_table_reg(int, void(*)(double*, Datum*, ThreadDatum*, _NrnThread*, int));
+extern void _nrn_thread_table_reg(int, void(*)(_threadargsproto_, int));
 extern void _cvode_abstol( Symbol**, double*, int);
 
  void _HDF5reader_reg() {
@@ -184,6 +203,7 @@ extern void _cvode_abstol( Symbol**, double*, int);
 	 NULL/*_hoc_create_pnt*/, NULL/*_hoc_destroy_pnt*/, /*_member_func,*/
 	 1);
  _mechtype = nrn_get_mechtype(_mechanism[1]);
+ _nrn_layout_reg(_mechtype, LAYOUT);
    hoc_reg_bbcore_read(_mechtype, bbcore_read);
   hoc_register_prop_size(_mechtype, _psize, _ppsize);
  add_nrn_artcell(_mechtype, 0);
@@ -210,10 +230,11 @@ static void bbcore_read(double* x, int* d, int* xx, int* dd, _threadargsproto_) 
 static void _net_receive (_pnt, _args, _lflag) Point_process* _pnt; double* _args; double _lflag; 
 {  double* _p; Datum* _ppvar; ThreadDatum* _thread; _NrnThread* _nt;
    _thread = (ThreadDatum*)0; _nt = (_NrnThread*)_pnt->_vnt;   _p = _pnt->_data; _ppvar = _pnt->_pdata;
+  int _cntml = 0; assert(0);
   assert(_tsav <= t); _tsav = t; {
    } }
 
-static void initmodel(double* _p, Datum* _ppvar, ThreadDatum* _thread, _NrnThread* _nt) {
+static void initmodel(_threadargsproto_) {
   int _i; double _save;{
  {
    }
@@ -224,19 +245,26 @@ static void initmodel(double* _p, Datum* _ppvar, ThreadDatum* _thread, _NrnThrea
 static void nrn_init(_NrnThread* _nt, _Memb_list* _ml, int _type){
 double* _p; Datum* _ppvar; ThreadDatum* _thread;
 double _v; int* _ni; int _iml, _cntml;
-#if CACHEVEC
     _ni = _ml->_nodeindices;
-#endif
 _cntml = _ml->_nodecount;
 _thread = _ml->_thread;
+#if LAYOUT == 1 /*AoS*/
 for (_iml = 0; _iml < _cntml; ++_iml) {
  _p = _ml->_data + _iml*_psize; _ppvar = _ml->_pdata + _iml*_ppsize;
+#endif
+#if LAYOUT == 0 /*SoA*/
+for (_iml = 0; _iml < _cntml; ++_iml) {
+ _p = _ml->_data + _iml; _ppvar = _ml->_pdata + _iml;
+#endif
+#if LAYOUT > 1 /*AoSoA*/
+#error AoSoA not implemented.
+#endif
  _tsav = -1e20;
- initmodel(_p, _ppvar, _thread, _nt);
+ initmodel(_threadargs_);
 }
 }
 
-static double _nrn_current(double* _p, Datum* _ppvar, ThreadDatum* _thread, _NrnThread* _nt, double _v){double _current=0.;v=_v;{
+static double _nrn_current(_threadargsproto_, double _v){double _current=0.;v=_v;{
 } return _current;
 }
 
@@ -246,13 +274,20 @@ HPM_Start("nrn_state_HDF5reader");
 #endif 
 double* _p; Datum* _ppvar; ThreadDatum* _thread;
 double _v = 0.0; int* _ni; int _iml, _cntml;
-#if CACHEVEC
     _ni = _ml->_nodeindices;
-#endif
 _cntml = _ml->_nodecount;
 _thread = _ml->_thread;
+#if LAYOUT == 1 /*AoS*/
 for (_iml = 0; _iml < _cntml; ++_iml) {
  _p = _ml->_data + _iml*_psize; _ppvar = _ml->_pdata + _iml*_ppsize;
+#endif
+#if LAYOUT == 0 /*SoA*/
+for (_iml = 0; _iml < _cntml; ++_iml) {
+ _p = _ml->_data + _iml; _ppvar = _ml->_pdata + _iml;
+#endif
+#if LAYOUT > 1 /*AoSoA*/
+#error AoSoA not implemented.
+#endif
  v=_v;
 {
 }}
@@ -267,6 +302,7 @@ static void terminal(){}
 static void _initlists(){
  double _x; double* _p = &_x;
  int _i; static int _first = 1;
+ int _cntml=0; assert(0);
   if (!_first) return;
 _first = 0;
 }

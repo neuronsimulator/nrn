@@ -14,6 +14,8 @@ void HPM_Stop(const char *);
 #include "corebluron/nrnconf.h"
 #include "corebluron/nrnoc/multicore.h"
 
+#include "corebluron/utils/randoms/nrnran123.h"
+
 #include "corebluron/nrnoc/md2redef.h"
 #if METHOD3
 extern int _method3;
@@ -25,6 +27,16 @@ extern int _method3;
 extern double hoc_Exp(double);
 #endif
  
+#if !defined(LAYOUT)
+/* 1 means AoS, >1 means AoSoA, <= 0 means SOA */
+#define LAYOUT 1
+#endif
+#if LAYOUT >= 1
+#define _STRIDE LAYOUT
+#else
+#define _STRIDE _cntml
+#endif
+ 
 #define _nrn_init _nrn_init__ExpSyn
 #define _nrn_initial _nrn_initial__ExpSyn
 #define _nrn_cur _nrn_cur__ExpSyn
@@ -34,10 +46,17 @@ extern double hoc_Exp(double);
 #define _net_receive _net_receive__ExpSyn 
 #define state state__ExpSyn 
  
+#if LAYOUT == 0 /*SoA*/
+#define _threadargscomma_ _cntml, _p, _ppvar, _thread, _nt,
+#define _threadargsprotocomma_ int _cntml, double* _p, Datum* _ppvar, ThreadDatum* _thread, _NrnThread* _nt,
+#define _threadargs_ _cntml, _p, _ppvar, _thread, _nt
+#define _threadargsproto_ int _cntml, double* _p, Datum* _ppvar, ThreadDatum* _thread, _NrnThread* _nt
+#else
 #define _threadargscomma_ _p, _ppvar, _thread, _nt,
 #define _threadargsprotocomma_ double* _p, Datum* _ppvar, ThreadDatum* _thread, _NrnThread* _nt,
 #define _threadargs_ _p, _ppvar, _thread, _nt
 #define _threadargsproto_ double* _p, Datum* _ppvar, ThreadDatum* _thread, _NrnThread* _nt
+#endif
  	/*SUPPRESS 761*/
 	/*SUPPRESS 762*/
 	/*SUPPRESS 763*/
@@ -47,15 +66,15 @@ extern double hoc_Exp(double);
  
 #define t _nt->_t
 #define dt _nt->_dt
-#define tau _p[0]
-#define e _p[1]
-#define i _p[2]
-#define g _p[3]
-#define Dg _p[4]
-#define v _p[5]
-#define _g _p[6]
-#define _tsav _p[7]
-#define _nd_area  _nt->_data[_ppvar[0]]
+#define tau _p[0*_STRIDE]
+#define e _p[1*_STRIDE]
+#define i _p[2*_STRIDE]
+#define g _p[3*_STRIDE]
+#define Dg _p[4*_STRIDE]
+#define v _p[5*_STRIDE]
+#define _g _p[6*_STRIDE]
+#define _tsav _p[7*_STRIDE]
+#define _nd_area  _nt->_data[_ppvar[0*_STRIDE]]
  
 #if MAC
 #if !defined(v)
@@ -170,11 +189,11 @@ static void  nrn_jacob(_NrnThread*, _Memb_list*, int);
  0};
  
 static void nrn_alloc(double* _p, Datum* _ppvar, int _type) {
+ 
+#if 0 /*BBCORE*/
  	/*initialize range parameters*/
  	tau = 0.1;
  	e = 0;
- 
-#if 0 /*BBCORE*/
  
 #endif /* BBCORE */
  
@@ -186,7 +205,7 @@ static void nrn_alloc(double* _p, Datum* _ppvar, int _type) {
 #define _ppsize 2
  extern Symbol* hoc_lookup(const char*);
 extern void _nrn_thread_reg(int, int, void(*f)(Datum*));
-extern void _nrn_thread_table_reg(int, void(*)(double*, Datum*, ThreadDatum*, _NrnThread*, int));
+extern void _nrn_thread_table_reg(int, void(*)(_threadargsproto_, int));
 extern void _cvode_abstol( Symbol**, double*, int);
 
  void _expsyn_reg() {
@@ -202,6 +221,7 @@ extern void _cvode_abstol( Symbol**, double*, int);
 	 NULL/*_hoc_create_pnt*/, NULL/*_hoc_destroy_pnt*/, /*_member_func,*/
 	 1);
  _mechtype = nrn_get_mechtype(_mechanism[1]);
+ _nrn_layout_reg(_mechtype, LAYOUT);
   hoc_register_prop_size(_mechtype, _psize, _ppsize);
  pnt_receive[_mechtype] = _net_receive;
  pnt_receive_size[_mechtype] = 1;
@@ -220,17 +240,17 @@ static int _ode_matsol1(_threadargsproto_);
  static int state(_threadargsproto_);
  
 /*CVODE*/
- static int _ode_spec1 (double* _p, Datum* _ppvar, ThreadDatum* _thread, _NrnThread* _nt) {int _reset = 0; {
+ static int _ode_spec1 (_threadargsproto_) {int _reset = 0; {
    Dg = - g / tau ;
    }
  return _reset;
 }
- static int _ode_matsol1 (double* _p, Datum* _ppvar, ThreadDatum* _thread, _NrnThread* _nt) {
+ static int _ode_matsol1 (_threadargsproto_) {
  Dg = Dg  / (1. - dt*( ( - 1.0 ) / tau )) ;
  return 0;
 }
  /*END CVODE*/
- static int state (double* _p, Datum* _ppvar, ThreadDatum* _thread, _NrnThread* _nt) { {
+ static int state (_threadargsproto_) { {
     g = g + (1. - exp(dt*(( - 1.0 ) / tau)))*(- ( 0.0 ) / ( ( - 1.0 ) / tau ) - g) ;
    }
   return 0;
@@ -239,11 +259,12 @@ static int _ode_matsol1(_threadargsproto_);
 static void _net_receive (_pnt, _args, _lflag) Point_process* _pnt; double* _args; double _lflag; 
 {  double* _p; Datum* _ppvar; ThreadDatum* _thread; _NrnThread* _nt;
    _thread = (ThreadDatum*)0; _nt = (_NrnThread*)_pnt->_vnt;   _p = _pnt->_data; _ppvar = _pnt->_pdata;
+  int _cntml = 0; assert(0);
   assert(_tsav <= t); _tsav = t; {
    g = g + _args[0] ;
    } }
 
-static void initmodel(double* _p, Datum* _ppvar, ThreadDatum* _thread, _NrnThread* _nt) {
+static void initmodel(_threadargsproto_) {
   int _i; double _save;{
   g = g0;
  {
@@ -256,21 +277,28 @@ static void initmodel(double* _p, Datum* _ppvar, ThreadDatum* _thread, _NrnThrea
 static void nrn_init(_NrnThread* _nt, _Memb_list* _ml, int _type){
 double* _p; Datum* _ppvar; ThreadDatum* _thread;
 double _v; int* _ni; int _iml, _cntml;
-#if CACHEVEC
     _ni = _ml->_nodeindices;
-#endif
 _cntml = _ml->_nodecount;
 _thread = _ml->_thread;
+#if LAYOUT == 1 /*AoS*/
 for (_iml = 0; _iml < _cntml; ++_iml) {
  _p = _ml->_data + _iml*_psize; _ppvar = _ml->_pdata + _iml*_ppsize;
+#endif
+#if LAYOUT == 0 /*SoA*/
+for (_iml = 0; _iml < _cntml; ++_iml) {
+ _p = _ml->_data + _iml; _ppvar = _ml->_pdata + _iml;
+#endif
+#if LAYOUT > 1 /*AoSoA*/
+#error AoSoA not implemented.
+#endif
  _tsav = -1e20;
     _v = VEC_V(_ni[_iml]);
  v = _v;
- initmodel(_p, _ppvar, _thread, _nt);
+ initmodel(_threadargs_);
 }
 }
 
-static double _nrn_current(double* _p, Datum* _ppvar, ThreadDatum* _thread, _NrnThread* _nt, double _v){double _current=0.;v=_v;{ {
+static double _nrn_current(_threadargsproto_, double _v){double _current=0.;v=_v;{ {
    i = g * ( v - e ) ;
    }
  _current += i;
@@ -281,16 +309,23 @@ static double _nrn_current(double* _p, Datum* _ppvar, ThreadDatum* _thread, _Nrn
 static void nrn_cur(_NrnThread* _nt, _Memb_list* _ml, int _type) {
 double* _p; Datum* _ppvar; ThreadDatum* _thread;
 int* _ni; double _rhs, _v; int _iml, _cntml;
-#if CACHEVEC
     _ni = _ml->_nodeindices;
-#endif
 _cntml = _ml->_nodecount;
 _thread = _ml->_thread;
+#if LAYOUT == 1 /*AoS*/
 for (_iml = 0; _iml < _cntml; ++_iml) {
  _p = _ml->_data + _iml*_psize; _ppvar = _ml->_pdata + _iml*_ppsize;
+#endif
+#if LAYOUT == 0 /*SoA*/
+for (_iml = 0; _iml < _cntml; ++_iml) {
+ _p = _ml->_data + _iml; _ppvar = _ml->_pdata + _iml;
+#endif
+#if LAYOUT > 1 /*AoSoA*/
+#error AoSoA not implemented.
+#endif
     _v = VEC_V(_ni[_iml]);
- _g = _nrn_current(_p, _ppvar, _thread, _nt, _v + .001);
- 	{ _rhs = _nrn_current(_p, _ppvar, _thread, _nt, _v);
+ _g = _nrn_current(_threadargs_, _v + .001);
+ 	{ _rhs = _nrn_current(_threadargs_, _v);
  	}
  _g = (_g - _rhs)/.001;
  _g *=  1.e2/(_nd_area);
@@ -304,13 +339,20 @@ for (_iml = 0; _iml < _cntml; ++_iml) {
 static void nrn_jacob(_NrnThread* _nt, _Memb_list* _ml, int _type) {
 double* _p; Datum* _ppvar; ThreadDatum* _thread;
 int* _ni; int _iml, _cntml;
-#if CACHEVEC
     _ni = _ml->_nodeindices;
-#endif
 _cntml = _ml->_nodecount;
 _thread = _ml->_thread;
+#if LAYOUT == 1 /*AoS*/
 for (_iml = 0; _iml < _cntml; ++_iml) {
- _p = _ml->_data + _iml*_psize;
+ _p = _ml->_data + _iml*_psize; _ppvar = _ml->_pdata + _iml*_ppsize;
+#endif
+#if LAYOUT == 0 /*SoA*/
+for (_iml = 0; _iml < _cntml; ++_iml) {
+ _p = _ml->_data + _iml; _ppvar = _ml->_pdata + _iml;
+#endif
+#if LAYOUT > 1 /*AoSoA*/
+#error AoSoA not implemented.
+#endif
 	VEC_D(_ni[_iml]) += _g;
  
 }
@@ -323,17 +365,24 @@ HPM_Start("nrn_state_expsyn");
 #endif 
 double* _p; Datum* _ppvar; ThreadDatum* _thread;
 double _v = 0.0; int* _ni; int _iml, _cntml;
-#if CACHEVEC
     _ni = _ml->_nodeindices;
-#endif
 _cntml = _ml->_nodecount;
 _thread = _ml->_thread;
+#if LAYOUT == 1 /*AoS*/
 for (_iml = 0; _iml < _cntml; ++_iml) {
  _p = _ml->_data + _iml*_psize; _ppvar = _ml->_pdata + _iml*_ppsize;
+#endif
+#if LAYOUT == 0 /*SoA*/
+for (_iml = 0; _iml < _cntml; ++_iml) {
+ _p = _ml->_data + _iml; _ppvar = _ml->_pdata + _iml;
+#endif
+#if LAYOUT > 1 /*AoSoA*/
+#error AoSoA not implemented.
+#endif
     _v = VEC_V(_ni[_iml]);
  v=_v;
 {
- {   state(_p, _ppvar, _thread, _nt);
+ {   state(_threadargs_);
   }}}
 #ifdef _PROF_HPM 
 HPM_Stop("nrn_state_expsyn"); 
@@ -346,6 +395,7 @@ static void terminal(){}
 static void _initlists(){
  double _x; double* _p = &_x;
  int _i; static int _first = 1;
+ int _cntml=0; assert(0);
   if (!_first) return;
  _slist1[0] = &(g) - _p;  _dlist1[0] = &(Dg) - _p;
 _first = 0;

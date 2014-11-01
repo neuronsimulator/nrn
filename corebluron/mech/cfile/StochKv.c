@@ -14,6 +14,8 @@ void HPM_Stop(const char *);
 #include "corebluron/nrnconf.h"
 #include "corebluron/nrnoc/multicore.h"
 
+#include "corebluron/utils/randoms/nrnran123.h"
+
 #include "corebluron/nrnoc/md2redef.h"
 #if METHOD3
 extern int _method3;
@@ -23,6 +25,16 @@ extern int _method3;
 #undef exp
 #define exp hoc_Exp
 extern double hoc_Exp(double);
+#endif
+ 
+#if !defined(LAYOUT)
+/* 1 means AoS, >1 means AoSoA, <= 0 means SOA */
+#define LAYOUT 1
+#endif
+#if LAYOUT >= 1
+#define _STRIDE LAYOUT
+#else
+#define _STRIDE _cntml
 #endif
  
 #define _nrn_init _nrn_init__StochKv
@@ -38,10 +50,17 @@ extern double hoc_Exp(double);
 #define states states__StochKv 
 #define trates trates__StochKv 
  
+#if LAYOUT == 0 /*SoA*/
+#define _threadargscomma_ _cntml, _p, _ppvar, _thread, _nt,
+#define _threadargsprotocomma_ int _cntml, double* _p, Datum* _ppvar, ThreadDatum* _thread, _NrnThread* _nt,
+#define _threadargs_ _cntml, _p, _ppvar, _thread, _nt
+#define _threadargsproto_ int _cntml, double* _p, Datum* _ppvar, ThreadDatum* _thread, _NrnThread* _nt
+#else
 #define _threadargscomma_ _p, _ppvar, _thread, _nt,
 #define _threadargsprotocomma_ double* _p, Datum* _ppvar, ThreadDatum* _thread, _NrnThread* _nt,
 #define _threadargs_ _p, _ppvar, _thread, _nt
 #define _threadargsproto_ double* _p, Datum* _ppvar, ThreadDatum* _thread, _NrnThread* _nt
+#endif
  	/*SUPPRESS 761*/
 	/*SUPPRESS 762*/
 	/*SUPPRESS 763*/
@@ -51,33 +70,33 @@ extern double hoc_Exp(double);
  
 #define t _nt->_t
 #define dt _nt->_dt
-#define gamma _p[0]
-#define eta _p[1]
-#define gkbar _p[2]
-#define deterministic _p[3]
-#define ik _p[4]
-#define gk _p[5]
-#define N _p[6]
-#define n _p[7]
-#define N0 _p[8]
-#define N1 _p[9]
-#define n0_n1 _p[10]
-#define n1_n0 _p[11]
-#define ek _p[12]
-#define scale_dens _p[13]
-#define n0_n1_new _p[14]
-#define Dn _p[15]
-#define DN0 _p[16]
-#define DN1 _p[17]
-#define Dn0_n1 _p[18]
-#define Dn1_n0 _p[19]
-#define v _p[20]
-#define _g _p[21]
-#define _ion_ek		_nt->_data[_ppvar[0]]
-#define _ion_ik	_nt->_data[_ppvar[1]]
-#define _ion_dikdv	_nt->_data[_ppvar[2]]
+#define gamma _p[0*_STRIDE]
+#define eta _p[1*_STRIDE]
+#define gkbar _p[2*_STRIDE]
+#define deterministic _p[3*_STRIDE]
+#define ik _p[4*_STRIDE]
+#define gk _p[5*_STRIDE]
+#define N _p[6*_STRIDE]
+#define n _p[7*_STRIDE]
+#define N0 _p[8*_STRIDE]
+#define N1 _p[9*_STRIDE]
+#define n0_n1 _p[10*_STRIDE]
+#define n1_n0 _p[11*_STRIDE]
+#define ek _p[12*_STRIDE]
+#define scale_dens _p[13*_STRIDE]
+#define n0_n1_new _p[14*_STRIDE]
+#define Dn _p[15*_STRIDE]
+#define DN0 _p[16*_STRIDE]
+#define DN1 _p[17*_STRIDE]
+#define Dn0_n1 _p[18*_STRIDE]
+#define Dn1_n0 _p[19*_STRIDE]
+#define v _p[20*_STRIDE]
+#define _g _p[21*_STRIDE]
+#define _ion_ek		_nt->_data[_ppvar[0*_STRIDE]]
+#define _ion_ik	_nt->_data[_ppvar[1*_STRIDE]]
+#define _ion_dikdv	_nt->_data[_ppvar[2*_STRIDE]]
 #define _p_rng	_nt->_vdata[_ppvar[3]]
-#define area	_nt->_data[_ppvar[4]]
+#define area	_nt->_data[_ppvar[4*_STRIDE]]
  
 #if MAC
 #if !defined(v)
@@ -142,9 +161,9 @@ extern Memb_func* memb_func;
  extern double strap( _threadargsprotocomma_ double );
  extern double urand( _threadargsproto_ );
  
-static void _check_trates(double*, Datum*, ThreadDatum*, _NrnThread*); 
-static void _check_table_thread(double* _p, Datum* _ppvar, ThreadDatum* _thread, _NrnThread* _nt, int _type) {
-   _check_trates(_p, _ppvar, _thread, _nt);
+static void _check_trates(_threadargsproto_); 
+static void _check_table_thread(_threadargsproto_, int _type) {
+   _check_trates(_threadargs_);
  }
  /* declare global and static user variables */
  static int _thread1data_inuse = 0;
@@ -273,13 +292,13 @@ static int _ode_count(int);
  static int _k_type;
  
 static void nrn_alloc(double* _p, Datum* _ppvar, int _type) {
+ 
+#if 0 /*BBCORE*/
  	/*initialize range parameters*/
  	gamma = 30;
  	eta = 0;
  	gkbar = 0.75;
  	deterministic = 0;
- 
-#if 0 /*BBCORE*/
  prop_ion = need_memb(_k_sym);
  nrn_promote(prop_ion, 0, 1);
  	_ppvar[0]._pval = &prop_ion->param[0]; /* ek */
@@ -300,7 +319,7 @@ static void nrn_alloc(double* _p, Datum* _ppvar, int _type) {
  extern void hoc_reg_bbcore_read(int, void(*)(double *, int*, int*, int*, _threadargsproto_));
  extern Symbol* hoc_lookup(const char*);
 extern void _nrn_thread_reg(int, int, void(*f)(Datum*));
-extern void _nrn_thread_table_reg(int, void(*)(double*, Datum*, ThreadDatum*, _NrnThread*, int));
+extern void _nrn_thread_table_reg(int, void(*)(_threadargsproto_, int));
 extern void _cvode_abstol( Symbol**, double*, int);
 
  void _StochKv_reg() {
@@ -317,6 +336,7 @@ extern void _cvode_abstol( Symbol**, double*, int);
   _thread_mem_init(_extcall_thread);
   _thread1data_inuse = 0;
  _mechtype = nrn_get_mechtype(_mechanism[1]);
+ _nrn_layout_reg(_mechtype, LAYOUT);
      _nrn_thread_reg1(_mechtype, _thread_mem_init);
      _nrn_thread_reg0(_mechtype, _thread_cleanup);
      _nrn_thread_table_reg(_mechtype, _check_table_thread);
@@ -366,13 +386,13 @@ static void _hoc_states(void) {
   _thread = _extcall_thread;
   _nt = nrn_threads;
  _r = 1.;
- states ( _p, _ppvar, _thread, _nt ;
+ states ( _threadargs_ ;
  hoc_retpushx(_r);
 }
  
 #endif /*BBCORE*/
  static double _mfac_trates, _tmin_trates;
-  static void _check_trates(double* _p, Datum* _ppvar, ThreadDatum* _thread, _NrnThread* _nt) {
+  static void _check_trates(_threadargsproto_) {
   static int _maktable=1; int _i, _j, _ix = 0;
   double _xi, _tmax;
   static double _sav_dt;
@@ -397,7 +417,7 @@ static void _hoc_states(void) {
    _tmax =  vmax ;
    _dx = (_tmax - _tmin_trates)/199.; _mfac_trates = 1./_dx;
    for (_i=0, _x=_tmin_trates; _i < 200; _x += _dx, _i++) {
-    _f_trates(_p, _ppvar, _thread, _nt, _x);
+    _f_trates(_threadargs_, _x);
     _t_ntau[_i] = ntau;
     _t_ninf[_i] = ninf;
     _t_a[_i] = a;
@@ -415,18 +435,18 @@ static void _hoc_states(void) {
   }
  }
 
- static int trates(double* _p, Datum* _ppvar, ThreadDatum* _thread, _NrnThread* _nt, double _lv) { 
+ static int trates(_threadargsproto_, double _lv) { 
 #if 0
-_check_trates(_p, _ppvar, _thread, _nt);
+_check_trates(_threadargs_);
 #endif
- _n_trates(_p, _ppvar, _thread, _nt, _lv);
+ _n_trates(_threadargs_, _lv);
  return 0;
  }
 
- static void _n_trates(double* _p, Datum* _ppvar, ThreadDatum* _thread, _NrnThread* _nt, double _lv){ int _i, _j;
+ static void _n_trates(_threadargsproto_, double _lv){ int _i, _j;
  double _xi, _theta;
  if (!usetable) {
- _f_trates(_p, _ppvar, _thread, _nt, _lv); return; 
+ _f_trates(_threadargs_, _lv); return; 
 }
  _xi = _mfac_trates * (_lv - _tmin_trates);
  if (isnan(_xi)) {
@@ -481,10 +501,10 @@ static void _hoc_trates(void) {
   _nt = nrn_threads;
  
 #if 1
- _check_trates(_p, _ppvar, _thread, _nt);
+ _check_trates(_threadargs_);
 #endif
  _r = 1.;
- trates ( _p, _ppvar, _thread, _nt, *getarg(1) ;
+ trates ( _threadargs_, *getarg(1) ;
  hoc_retpushx(_r);
 }
  
@@ -510,7 +530,7 @@ static void _hoc_SigmoidRate(void) {
    if (_extcall_prop) {_p = _extcall_prop->param; _ppvar = _extcall_prop->dparam;}else{ _p = (double*)0; _ppvar = (Datum*)0; }
   _thread = _extcall_thread;
   _nt = nrn_threads;
- _r =  SigmoidRate ( _p, _ppvar, _thread, _nt, *getarg(1) , *getarg(2) , *getarg(3) , *getarg(4) ;
+ _r =  SigmoidRate ( _threadargs_, *getarg(1) , *getarg(2) , *getarg(3) , *getarg(4) ;
  hoc_retpushx(_r);
 }
  
@@ -539,7 +559,7 @@ static void _hoc_strap(void) {
    if (_extcall_prop) {_p = _extcall_prop->param; _ppvar = _extcall_prop->dparam;}else{ _p = (double*)0; _ppvar = (Datum*)0; }
   _thread = _extcall_thread;
   _nt = nrn_threads;
- _r =  strap ( _p, _ppvar, _thread, _nt, *getarg(1) ;
+ _r =  strap ( _threadargs_, *getarg(1) ;
  hoc_retpushx(_r);
 }
  
@@ -562,7 +582,7 @@ static void _hoc_ChkProb(void) {
   _thread = _extcall_thread;
   _nt = nrn_threads;
  _r = 1.;
- ChkProb ( _p, _ppvar, _thread, _nt, *getarg(1) ;
+ ChkProb ( _threadargs_, *getarg(1) ;
  hoc_retpushx(_r);
 }
  
@@ -598,7 +618,7 @@ static void _hoc_setRNG(void) {
   _thread = _extcall_thread;
   _nt = nrn_threads;
  _r = 1.;
- setRNG ( _p, _ppvar, _thread, _nt ;
+ setRNG ( _threadargs_ ;
  hoc_retpushx(_r);
 }
  
@@ -635,7 +655,7 @@ static void _hoc_urand(void) {
    if (_extcall_prop) {_p = _extcall_prop->param; _ppvar = _extcall_prop->dparam;}else{ _p = (double*)0; _ppvar = (Datum*)0; }
   _thread = _extcall_thread;
   _nt = nrn_threads;
- _r =  urand ( _p, _ppvar, _thread, _nt ;
+ _r =  urand ( _threadargs_ ;
  hoc_retpushx(_r);
 }
  
@@ -698,7 +718,7 @@ static void _hoc_brand(void) {
    if (_extcall_prop) {_p = _extcall_prop->param; _ppvar = _extcall_prop->dparam;}else{ _p = (double*)0; _ppvar = (Datum*)0; }
   _thread = _extcall_thread;
   _nt = nrn_threads;
- _r =  brand ( _p, _ppvar, _thread, _nt, *getarg(1) , *getarg(2) ;
+ _r =  brand ( _threadargs_, *getarg(1) , *getarg(2) ;
  hoc_retpushx(_r);
 }
  
@@ -812,7 +832,7 @@ static void _hoc_BnlDev(void) {
    if (_extcall_prop) {_p = _extcall_prop->param; _ppvar = _extcall_prop->dparam;}else{ _p = (double*)0; _ppvar = (Datum*)0; }
   _thread = _extcall_thread;
   _nt = nrn_threads;
- _r =  BnlDev ( _p, _ppvar, _thread, _nt, *getarg(1) , *getarg(2) ;
+ _r =  BnlDev ( _threadargs_, *getarg(1) , *getarg(2) ;
  hoc_retpushx(_r);
 }
  
@@ -837,7 +857,7 @@ static void _thread_cleanup(ThreadDatum* _thread) {
  static void _update_ion_pointer(Datum* _ppvar) {
  }
 
-static void initmodel(double* _p, Datum* _ppvar, ThreadDatum* _thread, _NrnThread* _nt) {
+static void initmodel(_threadargsproto_) {
   int _i; double _save;{
   N1 = N10;
   N0 = N00;
@@ -868,25 +888,32 @@ static void initmodel(double* _p, Datum* _ppvar, ThreadDatum* _thread, _NrnThrea
 static void nrn_init(_NrnThread* _nt, _Memb_list* _ml, int _type){
 double* _p; Datum* _ppvar; ThreadDatum* _thread;
 double _v; int* _ni; int _iml, _cntml;
-#if CACHEVEC
     _ni = _ml->_nodeindices;
-#endif
 _cntml = _ml->_nodecount;
 _thread = _ml->_thread;
+#if LAYOUT == 1 /*AoS*/
 for (_iml = 0; _iml < _cntml; ++_iml) {
  _p = _ml->_data + _iml*_psize; _ppvar = _ml->_pdata + _iml*_ppsize;
+#endif
+#if LAYOUT == 0 /*SoA*/
+for (_iml = 0; _iml < _cntml; ++_iml) {
+ _p = _ml->_data + _iml; _ppvar = _ml->_pdata + _iml;
+#endif
+#if LAYOUT > 1 /*AoSoA*/
+#error AoSoA not implemented.
+#endif
 
 #if 0
- _check_trates(_p, _ppvar, _thread, _nt);
+ _check_trates(_threadargs_);
 #endif
     _v = VEC_V(_ni[_iml]);
  v = _v;
   ek = _ion_ek;
- initmodel(_p, _ppvar, _thread, _nt);
+ initmodel(_threadargs_);
  }
 }
 
-static double _nrn_current(double* _p, Datum* _ppvar, ThreadDatum* _thread, _NrnThread* _nt, double _v){double _current=0.;v=_v;{ {
+static double _nrn_current(_threadargsproto_, double _v){double _current=0.;v=_v;{ {
    gk = ( strap ( _threadargscomma_ N1 ) * scale_dens * tadj ) ;
    ik = 1e-4 * gk * ( v - ek ) ;
    }
@@ -898,19 +925,26 @@ static double _nrn_current(double* _p, Datum* _ppvar, ThreadDatum* _thread, _Nrn
 static void nrn_cur(_NrnThread* _nt, _Memb_list* _ml, int _type) {
 double* _p; Datum* _ppvar; ThreadDatum* _thread;
 int* _ni; double _rhs, _v; int _iml, _cntml;
-#if CACHEVEC
     _ni = _ml->_nodeindices;
-#endif
 _cntml = _ml->_nodecount;
 _thread = _ml->_thread;
+#if LAYOUT == 1 /*AoS*/
 for (_iml = 0; _iml < _cntml; ++_iml) {
  _p = _ml->_data + _iml*_psize; _ppvar = _ml->_pdata + _iml*_ppsize;
+#endif
+#if LAYOUT == 0 /*SoA*/
+for (_iml = 0; _iml < _cntml; ++_iml) {
+ _p = _ml->_data + _iml; _ppvar = _ml->_pdata + _iml;
+#endif
+#if LAYOUT > 1 /*AoSoA*/
+#error AoSoA not implemented.
+#endif
     _v = VEC_V(_ni[_iml]);
   ek = _ion_ek;
- _g = _nrn_current(_p, _ppvar, _thread, _nt, _v + .001);
+ _g = _nrn_current(_threadargs_, _v + .001);
  	{ double _dik;
   _dik = ik;
- _rhs = _nrn_current(_p, _ppvar, _thread, _nt, _v);
+ _rhs = _nrn_current(_threadargs_, _v);
   _ion_dikdv += (_dik - ik)/.001 ;
  	}
  _g = (_g - _rhs)/.001;
@@ -924,13 +958,20 @@ for (_iml = 0; _iml < _cntml; ++_iml) {
 static void nrn_jacob(_NrnThread* _nt, _Memb_list* _ml, int _type) {
 double* _p; Datum* _ppvar; ThreadDatum* _thread;
 int* _ni; int _iml, _cntml;
-#if CACHEVEC
     _ni = _ml->_nodeindices;
-#endif
 _cntml = _ml->_nodecount;
 _thread = _ml->_thread;
+#if LAYOUT == 1 /*AoS*/
 for (_iml = 0; _iml < _cntml; ++_iml) {
- _p = _ml->_data + _iml*_psize;
+ _p = _ml->_data + _iml*_psize; _ppvar = _ml->_pdata + _iml*_ppsize;
+#endif
+#if LAYOUT == 0 /*SoA*/
+for (_iml = 0; _iml < _cntml; ++_iml) {
+ _p = _ml->_data + _iml; _ppvar = _ml->_pdata + _iml;
+#endif
+#if LAYOUT > 1 /*AoSoA*/
+#error AoSoA not implemented.
+#endif
 	VEC_D(_ni[_iml]) += _g;
  
 }
@@ -943,18 +984,25 @@ HPM_Start("nrn_state_StochKv");
 #endif 
 double* _p; Datum* _ppvar; ThreadDatum* _thread;
 double _v = 0.0; int* _ni; int _iml, _cntml;
-#if CACHEVEC
     _ni = _ml->_nodeindices;
-#endif
 _cntml = _ml->_nodecount;
 _thread = _ml->_thread;
+#if LAYOUT == 1 /*AoS*/
 for (_iml = 0; _iml < _cntml; ++_iml) {
  _p = _ml->_data + _iml*_psize; _ppvar = _ml->_pdata + _iml*_ppsize;
+#endif
+#if LAYOUT == 0 /*SoA*/
+for (_iml = 0; _iml < _cntml; ++_iml) {
+ _p = _ml->_data + _iml; _ppvar = _ml->_pdata + _iml;
+#endif
+#if LAYOUT > 1 /*AoSoA*/
+#error AoSoA not implemented.
+#endif
     _v = VEC_V(_ni[_iml]);
  v=_v;
 {
   ek = _ion_ek;
- {  { states(_p, _ppvar, _thread, _nt); }
+ {  { states(_threadargs_); }
   } }}
 #ifdef _PROF_HPM 
 HPM_Stop("nrn_state_StochKv"); 
@@ -967,6 +1015,7 @@ static void terminal(){}
 static void _initlists(){
  double _x; double* _p = &_x;
  int _i; static int _first = 1;
+ int _cntml=0; assert(0);
   if (!_first) return;
    _t_ntau = makevector(200*sizeof(double));
    _t_ninf = makevector(200*sizeof(double));

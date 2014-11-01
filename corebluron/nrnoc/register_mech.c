@@ -65,6 +65,7 @@ int nrn_has_net_event_cnt_;
 int* nrn_has_net_event_;
 int* nrn_prop_param_size_;
 int* nrn_prop_dparam_size_;
+int* nrn_mech_data_layout_; /* 1 AoS (default), >1 AoSoA, 0 SoA */
 int* nrn_dparam_ptr_start_;
 int* nrn_dparam_ptr_end_;
 short* nrn_is_artificial_;
@@ -123,6 +124,8 @@ void alloc_mech(int n) {
 	nrn_artcell_qindex_ = (short*)ecalloc(memb_func_size_, sizeof(short));
 	nrn_prop_param_size_ = (int*)ecalloc(memb_func_size_, sizeof(int));
 	nrn_prop_dparam_size_ = (int*)ecalloc(memb_func_size_, sizeof(int));
+	nrn_mech_data_layout_ = (int*)ecalloc(memb_func_size_, sizeof(int));
+	{int i; for (i=0; i < memb_func_size_; ++i) { nrn_mech_data_layout_[i] = 1; }}
 	nrn_dparam_ptr_start_ = (int*)ecalloc(memb_func_size_, sizeof(int));
 	nrn_dparam_ptr_end_ = (int*)ecalloc(memb_func_size_, sizeof(int));
 	memb_order_ = (short*)ecalloc(memb_func_size_, sizeof(short));
@@ -212,6 +215,10 @@ void nrn_writes_conc(int type, int unused) {
 	if (nrn_is_ion(type)) {
 		++lastion;
 	}
+}
+
+void _nrn_layout_reg(int type, int layout) {
+	nrn_mech_data_layout_[type] = layout;
 }
 
 void hoc_register_prop_size(int type, int psize, int dpsize) {
