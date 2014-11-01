@@ -472,11 +472,13 @@ void second_order_cur(NrnThread* _nt) {
 #define dc 4
   if (secondorder == 2) {
 	for (tml = _nt->tml; tml; tml = tml->next) if (memb_func[tml->index].alloc == ion_alloc) {
+		int* ni;
 		ml = tml->ml;
 		i2 = ml->nodecount;
+		ni = ml->nodeindices;
 		for (i = 0; i < i2; ++i) {
 			ml->data[i*nparm + c] += ml->data[i*nparm + dc]
-			   * ( VEC_RHS(i) )
+			   * ( VEC_RHS(ni[i]) )
 			;
 		}
 	}
