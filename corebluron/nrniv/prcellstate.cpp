@@ -86,7 +86,7 @@ static void pr_netcon(NrnThread& nt, FILE* f) {
           PreSyn* ps = (PreSyn*)nc->src_;
           srcgid = ps->gid_;
           if (srcgid < 0 && ps->pntsrc_) {
-            int type = ps->pntsrc_->type;
+            int type = ps->pntsrc_->_type;
             fprintf(f, "%d %s %d %.15g", i, memb_func[type].sym, nc->active_?1:0, nc->delay_);
           }else if (srcgid < 0 && ps->thvar_) {
             fprintf(f, "%d %s %d %.15g", i, "v", nc->active_?1:0, nc->delay_);
@@ -100,7 +100,7 @@ static void pr_netcon(NrnThread& nt, FILE* f) {
       }else{
         fprintf(f, "%d %d %d %.15g", i, srcgid, nc->active_?1:0, nc->delay_);
       }
-      int wcnt = pnt_receive_size[nc->target_->type];
+      int wcnt = pnt_receive_size[nc->target_->_type];
       for (int k=0; k < wcnt; ++k) {
         fprintf(f, " %.15g", nc->u.weight_[k]);
       }

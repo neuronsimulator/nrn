@@ -33,7 +33,7 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 extern "C" {
 void _pattern_reg(void);
 extern void pattern_stim_setup_helper(int size, double* tvec, int* gidvec,
-  double* _p, Datum* _ppvar, ThreadDatum* _thread, NrnThread* _nt);
+  int cnt, double* _p, Datum* _ppvar, ThreadDatum* _thread, NrnThread* _nt);
 }
 
 static int read_raster_file(const char* fname, double** tvec, int** gidvec);
@@ -70,7 +70,22 @@ void nrn_mkPatternStim(const char* fname) {
 #endif
 
   Point_process* pnt = nrn_artcell_instantiate("PatternStim");
-  pattern_stim_setup_helper(size, tvec, gidvec, pnt->data, pnt->pdata, NULL, nrn_threads); 
+  int layout = nrn_mech_data_layout_[type];
+  int sz = nrn_prop_param_size_[type];
+  int psz = nrn_prop_dparam_size_[type];
+  Memb_list& ml = memb_list[type];
+  int _cntml = ml.nodecount;
+  int _iml = pnt->_i_instance;
+  double* _p = ml.data;
+  Datum* _ppvar = ml.pdata;
+  if (layout == 1) {
+    _p += _iml*sz; _ppvar += _iml*psz;
+  }else if (layout == 0) {
+    _p += _iml; _ppvar += _iml;
+  }else{
+    assert(0);
+  }    
+  pattern_stim_setup_helper(size, tvec, gidvec, _cntml, _p, _ppvar, NULL, nrn_threads); 
 }
 
 int read_raster_file(const char* fname, double** tvec, int** gidvec) {
@@ -133,6 +148,7 @@ Point_process* nrn_artcell_instantiate(const char* mechname) {
   // NrnThread arrays but there should not be many of these instances.
   int psize = nrn_prop_param_size_[type];
   int dsize = nrn_prop_dparam_size_[type];
+  // int layout = nrn_mech_data_layout_[type]; // not needed because singleton
   Memb_list* ml = tml->ml;
   ml->nodecount = 1;
   ml->nodeindices = NULL;
@@ -169,10 +185,9 @@ Point_process* nrn_artcell_instantiate(const char* mechname) {
   // 
 
   Point_process* pnt = new Point_process;
-  pnt->type = type;
-  pnt->data = ml->data;
-  pnt->pdata = ml->pdata;
-  pnt->_vnt = (void*)nt;
+  pnt->_type = type;
+  pnt->_tid = nt->id;
+  pnt->_i_instance = 0;
   // as though all dparam index into _vdata
   assert(dsize <= nrn_extra_thread0_vdata);
   for (int i=0; i < dsize; ++i) {

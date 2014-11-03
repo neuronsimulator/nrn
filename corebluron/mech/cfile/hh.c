@@ -286,6 +286,12 @@ extern void _cvode_abstol( Symbol**, double*, int);
      _nrn_thread_reg0(_mechtype, _thread_cleanup);
      _nrn_thread_table_reg(_mechtype, _check_table_thread);
   hoc_register_prop_size(_mechtype, _psize, _ppsize);
+  hoc_register_dparam_semantics(_mechtype, 0, "na_ion");
+  hoc_register_dparam_semantics(_mechtype, 1, "na_ion");
+  hoc_register_dparam_semantics(_mechtype, 2, "na_ion");
+  hoc_register_dparam_semantics(_mechtype, 3, "k_ion");
+  hoc_register_dparam_semantics(_mechtype, 4, "k_ion");
+  hoc_register_dparam_semantics(_mechtype, 5, "k_ion");
  }
  static double *_t_minf;
  static double *_t_mtau;

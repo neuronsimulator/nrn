@@ -234,9 +234,40 @@ void hoc_register_prop_size(int type, int psize, int dpsize) {
 	  memb_func[type].dparam_semantics = (int*)ecalloc(dpsize, sizeof(int));
 	}
 }
-void hoc_register_dparam_semantics(int type, int i, const char* name) {
-  /* already set up */
-  (void)type; (void)i; (void)name; /* unused */
+void hoc_register_dparam_semantics(int type, int ix, const char* name) {
+	/* needed for SoA to possibly reorder name_ion and some "pointer" pointers. */
+	/* only interested in area, iontype, cvode_ieq,
+	   netsend, pointer, pntproc, bbcorepointer
+	   xx_ion and #xx_ion which will get
+	   a semantics value of -1, -2, -3,
+	   -4, -5, -6, -7,
+	   type, and type+1000 respectively
+	*/
+	if (strcmp(name, "area") == 0) {
+		memb_func[type].dparam_semantics[ix] = -1;
+	}else if (strcmp(name, "iontype") == 0) {
+		memb_func[type].dparam_semantics[ix] = -2;
+	}else if (strcmp(name, "cvodeieq") == 0) {
+		memb_func[type].dparam_semantics[ix] = -3;
+	}else if (strcmp(name, "netsend") == 0) {
+		memb_func[type].dparam_semantics[ix] = -4;
+	}else if (strcmp(name, "pointer") == 0) {
+		memb_func[type].dparam_semantics[ix] = -5;
+	}else if (strcmp(name, "pntproc") == 0) {
+		memb_func[type].dparam_semantics[ix] = -6;
+	}else if (strcmp(name, "bbcorepointer") == 0) {
+		memb_func[type].dparam_semantics[ix] = -7;
+	}else{
+		int etype;
+		int i = 0;
+		if (name[0] == '#') { i = 1; }
+		etype = nrn_get_mechtype(name+i);
+		memb_func[type].dparam_semantics[ix] = etype + i*1000;
+	}
+#if 0
+	printf("dparam semantics %s ix=%d %s %d\n", memb_func[type].sym,
+	  ix, name, memb_func[type].dparam_semantics[ix]);
+#endif
 }
 
 void register_destructor(Pfri d) {

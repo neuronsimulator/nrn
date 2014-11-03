@@ -251,6 +251,13 @@ extern void _cvode_abstol( Symbol**, double*, int);
  _nrn_layout_reg(_mechtype, LAYOUT);
    hoc_reg_bbcore_read(_mechtype, bbcore_read);
   hoc_register_prop_size(_mechtype, _psize, _ppsize);
+  hoc_register_dparam_semantics(_mechtype, 0, "area");
+  hoc_register_dparam_semantics(_mechtype, 1, "pntproc");
+  hoc_register_dparam_semantics(_mechtype, 2, "bbcorepointer");
+  hoc_register_dparam_semantics(_mechtype, 3, "bbcorepointer");
+  hoc_register_dparam_semantics(_mechtype, 4, "bbcorepointer");
+  hoc_register_dparam_semantics(_mechtype, 5, "bbcorepointer");
+  hoc_register_dparam_semantics(_mechtype, 6, "netsend");
  add_nrn_artcell(_mechtype, 6);
  add_nrn_has_net_event(_mechtype);
  pnt_receive[_mechtype] = _net_receive;
@@ -633,8 +640,21 @@ static double _hoc_update_time(void* _vptr) {
  
 static void _net_receive (_pnt, _args, _lflag) Point_process* _pnt; double* _args; double _lflag; 
 {  double* _p; Datum* _ppvar; ThreadDatum* _thread; _NrnThread* _nt;
-   _thread = (ThreadDatum*)0; _nt = (_NrnThread*)_pnt->_vnt;   _p = _pnt->_data; _ppvar = _pnt->_pdata;
-  int _cntml = 0; assert(0);
+   _Memb_list* _ml; int _cntml; int _iml;
+ 
+   _thread = (ThreadDatum*)0; _nt = nrn_threads + _pnt->_tid;
+   _ml = memb_list + _pnt->_type;
+   _cntml = _ml->_nodecount;
+   _iml = _pnt->_i_instance;
+#if LAYOUT == 1 /*AoS*/
+   _p = _ml->_data + _iml*_psize; _ppvar = _ml->_pdata + _iml*_ppsize;
+#endif
+#if LAYOUT == 0 /*SoA*/
+   _p = _ml->_data + _iml; _ppvar = _ml->_pdata + _iml;
+#endif
+#if LAYOUT > 1 /*AoSoA*/
+#error AoSoA not implemented.
+#endif
   assert(_tsav <= t); _tsav = t;   if (_lflag == 1. ) {*(_tqitem) = 0;}
  {
    if ( _lflag  == 0.0 ) {

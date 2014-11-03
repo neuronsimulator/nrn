@@ -29,7 +29,7 @@ int diam_changed;
 int hoc_errno_count;
 
 char* pnt_name(Point_process* pnt) {
-  return memb_func[pnt->type].sym;
+  return memb_func[pnt->_type].sym;
 }
 
 void nrn_exit(int err) {

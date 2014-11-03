@@ -462,6 +462,34 @@ void determine_inputpresyn() {
   }
 }
 
+static int i_layout(int icnt, int cnt, int isz, int sz, int layout) {
+  if (layout == 1) {
+    return icnt*sz + isz;
+  }else if (layout == 0) {
+    return icnt + isz*cnt;
+  }
+  assert(0);
+  return 0;
+}
+
+#define MECHLAYOUT(TPE,TYPE) \
+static void mech##TPE##layout(data_reader &F, TYPE* data, int cnt, int sz, int layout){\
+  if (layout == 1) { /* AoS */\
+    F.read##TPE##array(data, cnt*sz);\
+  }else if (layout == 0) { /* SoA */\
+    TYPE* d = F.read##TPE##array(cnt*sz);\
+    for (int i=0; i < cnt; ++i) {\
+      for (int j=0; j < cnt; ++j) {\
+        data[i + j*cnt] = d[i*sz + j];\
+      }\
+    }\
+    delete [] d;\
+  }\
+}
+
+MECHLAYOUT(_dbl_,double)
+MECHLAYOUT(_int_,int)
+
 void read_phase2(data_reader &F, NrnThread& nt) {
   NrnThreadMembList* tml;
   int n_outputgid = F.read_int();
@@ -553,9 +581,11 @@ void read_phase2(data_reader &F, NrnThread& nt) {
     int szp = nrn_prop_param_size_[type];
     int szdp = nrn_prop_dparam_size_[type];
     if (!is_art) {ml->nodeindices = F.read_int_array(ml->nodecount);}
-    F.read_dbl_array(ml->data, n*szp);
+    int layout = nrn_mech_data_layout_[type];
+    mech_dbl_layout(F, ml->data, n, szp, layout);
     if (szdp) {
-      ml->pdata = F.read_int_array(n*szdp);
+      ml->pdata = new int[n*szdp];
+      mech_int_layout(F, ml->pdata, n, szdp, layout);
     }else{
       ml->pdata = NULL;
     }
@@ -567,12 +597,11 @@ void read_phase2(data_reader &F, NrnThread& nt) {
       synoffset += cnt;
       for (int i=0; i < cnt; ++i) {
         Point_process* pp = pnt + i;
-        pp->type = type;
-        pp->data = ml->data + i*szp;
-        pp->pdata = ml->pdata + i*szdp;
-        nt._vdata[pp->pdata[1]] = pp;
-        pp->presyn_ = NULL;
-        pp->_vnt = &nt;
+        pp->_type = type;
+	pp->_i_instance = i;
+        nt._vdata[ml->pdata[i_layout(i, cnt, 1, szdp, layout)]] = pp;
+        pp->_presyn = NULL;
+        pp->_tid = nt.id;
       }
     }
   }
@@ -593,7 +622,7 @@ void read_phase2(data_reader &F, NrnThread& nt) {
       int type = ix - index*1000;
       Point_process* pnt = nt.pntprocs + (pnt_offset[type] + index);
       ps->pntsrc_ = pnt;
-      pnt->presyn_ = ps;
+      pnt->_presyn = ps;
       if (ps->gid_ < 0) {
         ps->gid_ = -1;
       }

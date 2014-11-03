@@ -28,7 +28,7 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "corebluron/nrniv/nrn_assert.h"
 
 #define UNIT_ROUNDOFF DBL_EPSILON
-#define PP2NT(pp) ((NrnThread*)((pp)->_vnt))
+#define PP2NT(pp) (nrn_threads + (pp)->_tid)
 #define PP2t(pp) (PP2NT(pp)->_t)
 #define POINT_RECEIVE(type, tar, w, f) (*pnt_receive[type])(tar, w, f)
 #define nt_t nrn_threads->_t
@@ -161,7 +161,7 @@ void artcell_net_send(void** v, double* weight, Point_process* pnt, double td, d
 
 void net_event(Point_process* pnt, double time) {
 	STATISTICS(net_event_cnt_);
-	PreSyn* ps = (PreSyn*)pnt->presyn_;
+	PreSyn* ps = (PreSyn*)pnt->_presyn;
 	if (ps) {
 		if (time < PP2t(pnt)) {
 			char buf[100];
@@ -686,7 +686,7 @@ void NetCvode::init_events() {
 			for (i=ps->nc_cnt_-1; i >= 0; --i) {
 				NetCon* d = netcon_in_presyn_order_[ps->nc_index_ + i];
 				if (d->target_) {
-					int type = d->target_->type;
+					int type = d->target_->_type;
 					if (pnt_receive_init[type]) {
 (*pnt_receive_init[type])(d->target_, d->u.weight_, 0);
 					}else{
@@ -776,10 +776,10 @@ bool NetCvode::deliver_event(double til, NrnThread* nt) {
 
 void net_move(void** v, Point_process* pnt, double tt) {
 	if (!(*v)) {
-		hoc_execerror( "No event with flag=1 for net_move in ", memb_func[pnt->type].sym);
+		hoc_execerror( "No event with flag=1 for net_move in ", memb_func[pnt->_type].sym);
 	}
 	TQItem* q = (TQItem*)(*v);
-//printf("net_move tt=%g %s *v=%p\n", tt, memb_func[pnt->type].sym, *v);
+//printf("net_move tt=%g %s *v=%p\n", tt, memb_func[pnt->_type].sym, *v);
 	if (tt < PP2t(pnt)) {
 		SelfEvent* se = (SelfEvent*)q->data_;
 		char buf[100];
@@ -824,7 +824,7 @@ void NetCvode::move_event(TQItem* q, double tnew, NrnThread* nt) {
 #if PRINT_EVENT
 if (print_event_) {
 	SelfEvent* se = (SelfEvent*)q->data_;
-printf("NetCvode::move_event self event target %s t=%g, old=%g new=%g\n", memb_func[se->target_->type].sym, nt->_t, q->t_, tnew);
+printf("NetCvode::move_event self event target %s t=%g, old=%g new=%g\n", memb_func[se->target_->_type].sym, nt->_t, q->t_, tnew);
 }
 #endif
 	p[tid].tqe_->move(q, tnew);
@@ -879,7 +879,7 @@ void NetCon::init(DiscreteEvent* src, Point_process* target) {
 	}
 	target_ = target;
 	active_ = true;
-	if (!pnt_receive[target_->type]) {
+	if (!pnt_receive[target_->_type]) {
 hoc_execerror("No NET_RECEIVE in target PointProcess:", pnt_name(target));
 	}
 	// set by nrn_setup.cpp
@@ -1110,7 +1110,7 @@ void WatchCondition::activate(double flag) {
 
 void WatchCondition::asf_err() {
 fprintf(stderr, "WATCH condition with flag=%g for %s\n",
-	nrflag_, memb_func[pnt_->type].sym);
+	nrflag_, memb_func[pnt_->_type].sym);
 }
 
 void PreSyn::asf_err() {
@@ -1129,7 +1129,7 @@ void WatchCondition::send(double tt, NetCvode* nc, NrnThread* nt) {
 
 void WatchCondition::deliver(double tt, NetCvode* ns, NrnThread* nt) {
 	(void)ns; (void)nt; // avoid unused arg warning
-	int typ = pnt_->type;
+	int typ = pnt_->_type;
 	PP2t(pnt_) = tt;
 	STATISTICS(watch_deliver_);
 	POINT_RECEIVE(typ, pnt_, nil, nrflag_);
@@ -1189,7 +1189,7 @@ if (PP2NT(target_) != nt) {
 printf("NetCon::deliver nt=%d target=%d\n", nt->id, PP2NT(target_)->id);
 }
 	assert(PP2NT(target_) == nt);
-	int typ = target_->type;
+	int typ = target_->_type;
 	if (nrn_use_selfqueue_ && nrn_is_artificial_[typ]) {
 		assert(0);
 		// need to figure out what to do
@@ -1399,7 +1399,7 @@ SelfEvent::SelfEvent() {}
 SelfEvent::~SelfEvent() {}
 
 void SelfEvent::deliver(double tt, NetCvode* ns, NrnThread* nt) {
-	int typ = target_->type;
+	int typ = target_->_type;
 	assert(nt == PP2NT(target_));
 	if (nrn_use_selfqueue_ && nrn_is_artificial_[typ]) { // handle possible earlier flag=1 self event
 		if (flag_ == 1.0) { *movable_ = 0; }
@@ -1421,10 +1421,10 @@ NrnThread* SelfEvent::thread() { return PP2NT(target_); }
 
 void SelfEvent::call_net_receive(NetCvode* ns) {
 	STATISTICS(selfevent_deliver_);
-	POINT_RECEIVE(target_->type, target_, weight_, flag_);
+	POINT_RECEIVE(target_->_type, target_, weight_, flag_);
 #ifdef DEBUG
 	if (errno) {
-		if (nrn_errno_check(target_->type)) {
+		if (nrn_errno_check(target_->_type)) {
 hoc_warning("errno set during SelfEvent deliver to NET_RECEIVE", (char*)0);
 		}
 	}

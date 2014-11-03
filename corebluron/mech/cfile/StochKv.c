@@ -342,6 +342,10 @@ extern void _cvode_abstol( Symbol**, double*, int);
      _nrn_thread_table_reg(_mechtype, _check_table_thread);
    hoc_reg_bbcore_read(_mechtype, bbcore_read);
   hoc_register_prop_size(_mechtype, _psize, _ppsize);
+  hoc_register_dparam_semantics(_mechtype, 0, "k_ion");
+  hoc_register_dparam_semantics(_mechtype, 1, "k_ion");
+  hoc_register_dparam_semantics(_mechtype, 2, "k_ion");
+  hoc_register_dparam_semantics(_mechtype, 3, "bbcorepointer");
  }
  static double *_t_ntau;
  static double *_t_ninf;
