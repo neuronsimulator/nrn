@@ -25,12 +25,11 @@ extern int _method3;
 extern double hoc_Exp(double);
 #endif
  
-#define _nrn_init _nrn_init__InhPoissonStim
-#define _nrn_initial _nrn_initial__InhPoissonStim
-#define _nrn_cur _nrn_cur__InhPoissonStim
+#define nrn_init _nrn_init__InhPoissonStim
+#define nrn_cur _nrn_cur__InhPoissonStim
 #define _nrn_current _nrn_current__InhPoissonStim
-#define _nrn_jacob _nrn_jacob__InhPoissonStim
-#define _nrn_state _nrn_state__InhPoissonStim
+#define nrn_jacob _nrn_jacob__InhPoissonStim
+#define nrn_state _nrn_state__InhPoissonStim
 #define _net_receive _net_receive__InhPoissonStim 
 #define generate_next_event generate_next_event__InhPoissonStim 
 #define setRate setRate__InhPoissonStim 

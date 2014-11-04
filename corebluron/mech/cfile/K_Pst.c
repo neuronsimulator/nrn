@@ -25,12 +25,11 @@ extern int _method3;
 extern double hoc_Exp(double);
 #endif
  
-#define _nrn_init _nrn_init__K_Pst
-#define _nrn_initial _nrn_initial__K_Pst
-#define _nrn_cur _nrn_cur__K_Pst
+#define nrn_init _nrn_init__K_Pst
+#define nrn_cur _nrn_cur__K_Pst
 #define _nrn_current _nrn_current__K_Pst
-#define _nrn_jacob _nrn_jacob__K_Pst
-#define _nrn_state _nrn_state__K_Pst
+#define nrn_jacob _nrn_jacob__K_Pst
+#define nrn_state _nrn_state__K_Pst
 #define _net_receive _net_receive__K_Pst 
 #define rates rates__K_Pst 
 #define states states__K_Pst 

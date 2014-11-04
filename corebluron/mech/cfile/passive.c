@@ -25,12 +25,11 @@ extern int _method3;
 extern double hoc_Exp(double);
 #endif
  
-#define _nrn_init _nrn_init__pas
-#define _nrn_initial _nrn_initial__pas
-#define _nrn_cur _nrn_cur__pas
+#define nrn_init _nrn_init__pas
+#define nrn_cur _nrn_cur__pas
 #define _nrn_current _nrn_current__pas
-#define _nrn_jacob _nrn_jacob__pas
-#define _nrn_state _nrn_state__pas
+#define nrn_jacob _nrn_jacob__pas
+#define nrn_state _nrn_state__pas
 #define _net_receive _net_receive__pas 
  
 #define _threadargscomma_ _p, _ppvar, _thread, _nt,

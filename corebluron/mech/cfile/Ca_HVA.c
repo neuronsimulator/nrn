@@ -25,12 +25,11 @@ extern int _method3;
 extern double hoc_Exp(double);
 #endif
  
-#define _nrn_init _nrn_init__Ca_HVA
-#define _nrn_initial _nrn_initial__Ca_HVA
-#define _nrn_cur _nrn_cur__Ca_HVA
+#define nrn_init _nrn_init__Ca_HVA
+#define nrn_cur _nrn_cur__Ca_HVA
 #define _nrn_current _nrn_current__Ca_HVA
-#define _nrn_jacob _nrn_jacob__Ca_HVA
-#define _nrn_state _nrn_state__Ca_HVA
+#define nrn_jacob _nrn_jacob__Ca_HVA
+#define nrn_state _nrn_state__Ca_HVA
 #define _net_receive _net_receive__Ca_HVA 
 #define rates rates__Ca_HVA 
 #define states states__Ca_HVA 

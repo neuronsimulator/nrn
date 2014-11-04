@@ -25,12 +25,11 @@ extern int _method3;
 extern double hoc_Exp(double);
 #endif
  
-#define _nrn_init _nrn_init__NaTa_t
-#define _nrn_initial _nrn_initial__NaTa_t
-#define _nrn_cur _nrn_cur__NaTa_t
+#define nrn_init _nrn_init__NaTa_t
+#define nrn_cur _nrn_cur__NaTa_t
 #define _nrn_current _nrn_current__NaTa_t
-#define _nrn_jacob _nrn_jacob__NaTa_t
-#define _nrn_state _nrn_state__NaTa_t
+#define nrn_jacob _nrn_jacob__NaTa_t
+#define nrn_state _nrn_state__NaTa_t
 #define _net_receive _net_receive__NaTa_t 
 #define rates rates__NaTa_t 
 #define states states__NaTa_t 

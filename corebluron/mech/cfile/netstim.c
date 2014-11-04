@@ -25,12 +25,11 @@ extern int _method3;
 extern double hoc_Exp(double);
 #endif
  
-#define _nrn_init _nrn_init__NetStim
-#define _nrn_initial _nrn_initial__NetStim
-#define _nrn_cur _nrn_cur__NetStim
+#define nrn_init _nrn_init__NetStim
+#define nrn_cur _nrn_cur__NetStim
 #define _nrn_current _nrn_current__NetStim
-#define _nrn_jacob _nrn_jacob__NetStim
-#define _nrn_state _nrn_state__NetStim
+#define nrn_jacob _nrn_jacob__NetStim
+#define nrn_state _nrn_state__NetStim
 #define _net_receive _net_receive__NetStim 
 #define init_sequence init_sequence__NetStim 
 #define next_invl next_invl__NetStim 
