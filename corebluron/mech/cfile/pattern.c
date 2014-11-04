@@ -37,12 +37,11 @@ extern double hoc_Exp(double);
 #define _STRIDE _cntml
 #endif
  
-#define _nrn_init _nrn_init__PatternStim
-#define _nrn_initial _nrn_initial__PatternStim
-#define _nrn_cur _nrn_cur__PatternStim
+#define nrn_init _nrn_init__PatternStim
+#define nrn_cur _nrn_cur__PatternStim
 #define _nrn_current _nrn_current__PatternStim
-#define _nrn_jacob _nrn_jacob__PatternStim
-#define _nrn_state _nrn_state__PatternStim
+#define nrn_jacob _nrn_jacob__PatternStim
+#define nrn_state _nrn_state__PatternStim
 #define _net_receive _net_receive__PatternStim 
  
 #if LAYOUT == 0 /*SoA*/

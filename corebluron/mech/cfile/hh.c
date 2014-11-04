@@ -37,12 +37,11 @@ extern double hoc_Exp(double);
 #define _STRIDE _cntml
 #endif
  
-#define _nrn_init _nrn_init__hh
-#define _nrn_initial _nrn_initial__hh
-#define _nrn_cur _nrn_cur__hh
+#define nrn_init _nrn_init__hh
+#define nrn_cur _nrn_cur__hh
 #define _nrn_current _nrn_current__hh
-#define _nrn_jacob _nrn_jacob__hh
-#define _nrn_state _nrn_state__hh
+#define nrn_jacob _nrn_jacob__hh
+#define nrn_state _nrn_state__hh
 #define _net_receive _net_receive__hh 
 #define _f_rates _f_rates__hh 
 #define rates rates__hh 

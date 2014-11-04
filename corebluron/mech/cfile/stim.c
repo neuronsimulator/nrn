@@ -37,12 +37,11 @@ extern double hoc_Exp(double);
 #define _STRIDE _cntml
 #endif
  
-#define _nrn_init _nrn_init__IClamp
-#define _nrn_initial _nrn_initial__IClamp
-#define _nrn_cur _nrn_cur__IClamp
+#define nrn_init _nrn_init__IClamp
+#define nrn_cur _nrn_cur__IClamp
 #define _nrn_current _nrn_current__IClamp
-#define _nrn_jacob _nrn_jacob__IClamp
-#define _nrn_state _nrn_state__IClamp
+#define nrn_jacob _nrn_jacob__IClamp
+#define nrn_state _nrn_state__IClamp
 #define _net_receive _net_receive__IClamp 
  
 #if LAYOUT == 0 /*SoA*/

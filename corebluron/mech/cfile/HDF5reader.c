@@ -37,12 +37,11 @@ extern double hoc_Exp(double);
 #define _STRIDE _cntml
 #endif
  
-#define _nrn_init _nrn_init__HDF5Reader
-#define _nrn_initial _nrn_initial__HDF5Reader
-#define _nrn_cur _nrn_cur__HDF5Reader
+#define nrn_init _nrn_init__HDF5Reader
+#define nrn_cur _nrn_cur__HDF5Reader
 #define _nrn_current _nrn_current__HDF5Reader
-#define _nrn_jacob _nrn_jacob__HDF5Reader
-#define _nrn_state _nrn_state__HDF5Reader
+#define nrn_jacob _nrn_jacob__HDF5Reader
+#define nrn_state _nrn_state__HDF5Reader
 #define _net_receive _net_receive__HDF5Reader 
  
 #if LAYOUT == 0 /*SoA*/
