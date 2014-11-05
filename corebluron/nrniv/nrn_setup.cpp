@@ -606,6 +606,49 @@ void read_phase2(data_reader &F, NrnThread& nt) {
     }
   }
 
+  // Some pdata may index into data which has been reordered from AoS to
+  // SoA. The two possibilities are if semantics is -5 (pointer)
+  // or 0-999 (ion variables). Note that pdata has a layout and the
+  // type block in nt.data into which it indexes, has a layout.
+  for (tml = nt.tml; tml; tml = tml->next) {
+    int type = tml->index;
+    int layout = nrn_mech_data_layout_[type];
+    int* pdata = tml->ml->pdata;
+    int cnt = tml->ml->nodecount;
+    int szdp = nrn_prop_dparam_size_[type];
+    int* semantics = memb_func[type].dparam_semantics;
+    for (int i=0; i < szdp; ++i) {
+      int s = semantics[i];	
+      if (s == -5) { //pointer
+        nrn_assert(0); // not implemented yet
+      }else if (s >=0 && s < 1000) { //ion
+        int etype = s;
+        elayout = nrn_mech_data_layout_[etype];
+        if (elayout == 1) { continue; } /* ion is AoS so nothing to do */
+        assert(elayout == 0);
+        /* ion is SoA so must recalculate pdata values */
+        Memb_list* eml = mlmap[etype];
+        int edata0 = eml->data - nt.data;
+        int ecnt = eml->nodecount;
+        int esz = nrn_prop_param_size_[etype];
+        for (int iml=0; iml < cnt; ++iml) {
+          int* pd = pdata;
+          if (layout == 0) {
+            pd += i*cnt + iml;
+          }else if (layout == 1) {
+            pd += i + iml*szdp
+          }
+          ix = *pd - edata0;
+          nrn_assert((ix >= 0) && (ix < ecnt*esz));
+          /* Original pd order assumed ecnt groups of esz */
+          int i_ecnt = ix / esz;
+          int i_esz = ix % esz;
+          /* But ion order is really esz groups of ecnt */
+          *pd = edata0 + i_ecnt + i_esz*ecnt;
+        }
+      }
+    }
+
   // Real cells are at the beginning of the nt.presyns followed by
   // acells (with and without gids mixed together)
   // Here we associate the real cells with voltage pointers and
