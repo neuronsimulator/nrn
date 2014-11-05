@@ -623,12 +623,12 @@ void read_phase2(data_reader &F, NrnThread& nt) {
         nrn_assert(0); // not implemented yet
       }else if (s >=0 && s < 1000) { //ion
         int etype = s;
-        elayout = nrn_mech_data_layout_[etype];
+        int elayout = nrn_mech_data_layout_[etype];
         if (elayout == 1) { continue; } /* ion is AoS so nothing to do */
         assert(elayout == 0);
         /* ion is SoA so must recalculate pdata values */
         Memb_list* eml = mlmap[etype];
-        int edata0 = eml->data - nt.data;
+        int edata0 = eml->data - nt._data;
         int ecnt = eml->nodecount;
         int esz = nrn_prop_param_size_[etype];
         for (int iml=0; iml < cnt; ++iml) {
@@ -636,9 +636,9 @@ void read_phase2(data_reader &F, NrnThread& nt) {
           if (layout == 0) {
             pd += i*cnt + iml;
           }else if (layout == 1) {
-            pd += i + iml*szdp
+            pd += i + iml*szdp;
           }
-          ix = *pd - edata0;
+          int ix = *pd - edata0;
           nrn_assert((ix >= 0) && (ix < ecnt*esz));
           /* Original pd order assumed ecnt groups of esz */
           int i_ecnt = ix / esz;
@@ -648,6 +648,7 @@ void read_phase2(data_reader &F, NrnThread& nt) {
         }
       }
     }
+  }
 
   // Real cells are at the beginning of the nt.presyns followed by
   // acells (with and without gids mixed together)
