@@ -42,8 +42,8 @@ NEURON {
     SUFFIX StochKv
     THREADSAFE
     USEION k READ ek WRITE ik
-    RANGE N,eta, gk, gamma, deterministic, gkbar, ik
-    GLOBAL ninf, ntau,a,b,P_a,P_b
+    RANGE N,eta, gk, gamma, gkbar, ik, N0, N1, n0_n1, n1_n0
+    GLOBAL ninf, ntau,a,b,P_a,P_b, deterministic
     GLOBAL Ra, Rb
     GLOBAL vmin, vmax, q10, temp, tadj
     BBCOREPOINTER rng
@@ -104,6 +104,8 @@ ASSIGNED {
 
 STATE {
     n         : state variable of deterministic description
+}
+ASSIGNED {
     N0 N1       : N states populations
     n0_n1 n1_n0 : number of channels moving from one state to the other 
 }
@@ -115,15 +117,18 @@ ENDCOMMENT
    
 VERBATIM
 #include "nrnran123.h"
+extern int cvode_active_;
 ENDVERBATIM
 : ----------------------------------------------------------------
 : initialization
 INITIAL { 
 
     VERBATIM
-	if (_p_rng) 
-	{
+	if (_p_rng) {
 	      nrnran123_setseq((nrnran123_State*)_p_rng, 0, 0);
+	}
+	if (cvode_active_ && !deterministic) {
+		hoc_execerror("StochKv with deterministic=0", "cannot be used with cvode");
 	}
     ENDVERBATIM
 
@@ -133,7 +138,10 @@ INITIAL {
     scale_dens = gamma/area
     N = floor(eta*area + 0.5)
     
-    N1 = floor(n * N + 0.5)
+    N1 = n*N
+    if (!deterministic) {
+      N1 = floor(N1 + 0.5)
+    }
     N0 = N-N1       : any round off into non-conducting state
     
     n0_n1 = 0
@@ -143,7 +151,7 @@ INITIAL {
 : ----------------------------------------------------------------
 : Breakpoint for each integration step
 BREAKPOINT {
-  SOLVE states
+  SOLVE states METHOD cnexp
   
   gk =  (strap(N1) * scale_dens * tadj)
   
@@ -153,9 +161,17 @@ BREAKPOINT {
 
 : ----------------------------------------------------------------
 : states - updates number of channels in each state
-PROCEDURE states() {
+DERIVATIVE states {
 
     trates(v)
+
+    n' = a - (a + b)*n
+    if (deterministic || dt > 1) { : ForwardSkip is also deterministic
+	N1 = n*N
+        if (!deterministic) {
+            N1 = floor(N1 + 0.5)
+        }
+    }else{
     
     P_a = strap(a*dt)
     P_b = strap(b*dt)
@@ -171,6 +187,10 @@ PROCEDURE states() {
     : move the channels
     N0    = strap(N0 - n0_n1 + n1_n0)
     N1    = N - N0
+
+    }
+
+    N0 = N-N1       : any round off into non-conducting state
 }
 
 : ----------------------------------------------------------------
@@ -211,7 +231,7 @@ FUNCTION strap(x) {
     if (x < 0) {
         strap = 0
 VERBATIM
-        fprintf (stderr,"skv.mod:strap: negative state");
+        fprintf (stderr,"skv.mod:strap: negative state at time %lf\n", t);
 ENDVERBATIM
     } else {
         strap = x
@@ -233,7 +253,7 @@ PROCEDURE ChkProb(p) {
 PROCEDURE setRNG() {
 VERBATIM
     {
-#if !NRNBBCORE
+#if !defined(NRNBBCORE) || !NRNBBCORE
 	nrnran123_State** pv = (nrnran123_State**)(&_p_rng);
 	uint32_t a2 = 0;
 	if (*pv) {
@@ -281,17 +301,20 @@ static void bbcore_write(double* x, int* d, int* xx, int* offset, _threadargspro
 	  }else{
 		nrnran123_State** pv = (nrnran123_State**)(&_p_rng);
 		nrnran123_getids(*pv, di, di+1);
-//printf("StochKv.mod bbcore_write %d %d\n", di[0], di[1]);
 	  }
+//printf("StochKv.mod %p: bbcore_write offset=%d %d %d\n", _p, *offset, d?di[0]:-1, d?di[1]:-1);
 	}
 	*offset += 2;
 }
 static void bbcore_read(double* x, int* d, int* xx, int* offset, _threadargsproto_) {
 	assert(!_p_rng);
 	uint32_t* di = ((uint32_t*)d) + *offset;
-	nrnran123_State** pv = (nrnran123_State**)(&_p_rng);
-	*pv = nrnran123_newstream(di[0], di[1]);
-//printf("StochKv.mod bbcore_read %d %d\n", di[0], di[1]);
+        if (di[0] != 0 || di[1] != 0)
+        {
+	  nrnran123_State** pv = (nrnran123_State**)(&_p_rng);
+	  *pv = nrnran123_newstream(di[0], di[1]);
+        }
+//printf("StochKv.mod %p: bbcore_read offset=%d %d %d\n", _p, *offset, di[0], di[1]);
 	*offset += 2;
 }
 ENDVERBATIM
@@ -363,13 +386,11 @@ FUNCTION BnlDev (ppr, nnr) {
 
 VERBATIM
         int j;
-        static int nold=(-1);
         double am,em,g,angle,p,bnl,sq,bt,y;
-        static double pold=(-1.0),pc,plog,pclog,en,oldg;
+        double pc,plog,pclog,en,oldg;
         
         /* prepare to always ignore errors within this routine */
          
-        
         p=(_lppr <= 0.5 ? _lppr : 1.0-_lppr);
         am=_lnnr*p;
         if (_lnnr < 25) {
@@ -387,16 +408,14 @@ VERBATIM
             bnl=(j <= _lnnr ? j : _lnnr);
         }
         else {
-            if (_lnnr != nold) {
+            {
                 en=_lnnr;
                 oldg=gammln(en+1.0);
-                nold=_lnnr;
             }
-            if (p != pold) {
+            {
                 pc=1.0-p;
-                 plog=log(p);
+                plog=log(p);
                 pclog=log(pc);
-                pold=p;
             }
             sq=sqrt(2.0*am*pc);
             do {

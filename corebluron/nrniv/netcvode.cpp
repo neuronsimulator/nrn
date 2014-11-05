@@ -53,6 +53,7 @@ implementPtrList(NetConPList, NetCon)
 
 double NetCvode::eps_;
 NetCvode* net_cvode_instance;
+int cvode_active_;
 int nrn_use_selfqueue_;
 #if BBTQ == 5
 bool nrn_use_bin_queue_;

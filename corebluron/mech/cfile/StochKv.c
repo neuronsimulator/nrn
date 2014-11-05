@@ -53,25 +53,20 @@ extern double hoc_Exp(double);
 #define gamma _p[0]
 #define eta _p[1]
 #define gkbar _p[2]
-#define deterministic _p[3]
-#define ik _p[4]
-#define gk _p[5]
-#define N _p[6]
-#define n _p[7]
-#define N0 _p[8]
-#define N1 _p[9]
-#define n0_n1 _p[10]
-#define n1_n0 _p[11]
-#define ek _p[12]
-#define scale_dens _p[13]
-#define n0_n1_new _p[14]
-#define Dn _p[15]
-#define DN0 _p[16]
-#define DN1 _p[17]
-#define Dn0_n1 _p[18]
-#define Dn1_n0 _p[19]
-#define v _p[20]
-#define _g _p[21]
+#define ik _p[3]
+#define gk _p[4]
+#define N _p[5]
+#define N0 _p[6]
+#define N1 _p[7]
+#define n0_n1 _p[8]
+#define n1_n0 _p[9]
+#define n _p[10]
+#define ek _p[11]
+#define scale_dens _p[12]
+#define n0_n1_new _p[13]
+#define Dn _p[14]
+#define v _p[15]
+#define _g _p[16]
 #define _ion_ek		_nt->_data[_ppvar[0]]
 #define _ion_ik	_nt->_data[_ppvar[1]]
 #define _ion_dikdv	_nt->_data[_ppvar[2]]
@@ -103,7 +98,6 @@ extern "C" {
  static void _hoc_brand(void);
  static void _hoc_setRNG(void);
  static void _hoc_strap(void);
- static void _hoc_states(void);
  static void _hoc_trates(void);
  static void _hoc_urand(void);
  
@@ -123,7 +117,6 @@ extern Memb_func* memb_func;
  "brand_StochKv", _hoc_brand,
  "setRNG_StochKv", _hoc_setRNG,
  "strap_StochKv", _hoc_strap,
- "states_StochKv", _hoc_states,
  "trates_StochKv", _hoc_trates,
  "urand_StochKv", _hoc_urand,
  0, 0
@@ -161,6 +154,8 @@ static double _thread1data[7];
 #define a _thread[_gth]._pval[2]
 #define b_StochKv _thread1data[3]
 #define b _thread[_gth]._pval[3]
+#define deterministic deterministic_StochKv
+ double deterministic = 0;
 #define ntau_StochKv _thread1data[4]
 #define ntau _thread[_gth]._pval[4]
 #define ninf_StochKv _thread1data[5]
@@ -207,11 +202,7 @@ static double _thread1data[7];
 };
  
 #endif /*BBCORE*/
- static double N10 = 0;
- static double N00 = 0;
  static double delta_t = 1;
- static double n1_n00 = 0;
- static double n0_n10 = 0;
  static double n0 = 0;
  
 #if 0 /*BBCORE*/
@@ -223,6 +214,7 @@ static double _thread1data[7];
  "Rb_StochKv", &Rb_StochKv,
  "temp_StochKv", &temp_StochKv,
  "q10_StochKv", &q10_StochKv,
+ "deterministic_StochKv", &deterministic_StochKv,
  "vmin_StochKv", &vmin_StochKv,
  "vmax_StochKv", &vmax_StochKv,
  "a_StochKv", &a_StochKv,
@@ -246,8 +238,6 @@ static void  nrn_init(_NrnThread*, _Memb_list*, int);
 static void nrn_state(_NrnThread*, _Memb_list*, int);
  static void nrn_cur(_NrnThread*, _Memb_list*, int);
 static void  nrn_jacob(_NrnThread*, _Memb_list*, int);
- 
-static int _ode_count(int);
  /* connect range variables in _p that hoc is supposed to know about */
  static const char *_mechanism[] = {
  "6.2.0",
@@ -255,17 +245,16 @@ static int _ode_count(int);
  "gamma_StochKv",
  "eta_StochKv",
  "gkbar_StochKv",
- "deterministic_StochKv",
  0,
  "ik_StochKv",
  "gk_StochKv",
  "N_StochKv",
- 0,
- "n_StochKv",
  "N0_StochKv",
  "N1_StochKv",
  "n0_n1_StochKv",
  "n1_n0_StochKv",
+ 0,
+ "n_StochKv",
  0,
  "rng_StochKv",
  0};
@@ -276,7 +265,6 @@ static void nrn_alloc(double* _p, Datum* _ppvar, int _type) {
  	gamma = 30;
  	eta = 0;
  	gkbar = 0.75;
- 	deterministic = 0;
  
 #if 0 /*BBCORE*/
  prop_ion = need_memb(_k_sym);
@@ -293,7 +281,7 @@ static void nrn_alloc(double* _p, Datum* _ppvar, int _type) {
  static void _thread_cleanup(ThreadDatum*);
  static void _update_ion_pointer(Datum*);
  
-#define _psize 22
+#define _psize 17
 #define _ppsize 5
  static void bbcore_read(double *, int*, int*, int*, _threadargsproto_);
  extern void hoc_reg_bbcore_read(int, void(*)(double *, int*, int*, int*, _threadargsproto_));
@@ -337,39 +325,71 @@ static void _modl_cleanup(){ _match_recurse=1;}
 static int ChkProb(_threadargsprotocomma_ double);
 static int _f_trates(_threadargsprotocomma_ double);
 static int setRNG(_threadargsproto_);
-static int states(_threadargsproto_);
 static int trates(_threadargsprotocomma_ double);
+ 
+static int _ode_spec1(_threadargsproto_);
+static int _ode_matsol1(_threadargsproto_);
  static void _n_trates(_threadargsprotocomma_ double _lv);
+ static int _slist1[1], _dlist1[1];
+ static int states(_threadargsproto_);
  
 /*VERBATIM*/
 #include "nrnran123.h"
+extern int cvode_active_;
  
-static int  states ( _threadargsproto_ ) {
+/*CVODE*/
+ static int _ode_spec1 (double* _p, Datum* _ppvar, ThreadDatum* _thread, _NrnThread* _nt) {int _reset = 0; {
    trates ( _threadargscomma_ v ) ;
-   P_a = strap ( _threadargscomma_ a * dt ) ;
-   P_b = strap ( _threadargscomma_ b * dt ) ;
-   ChkProb ( _threadargscomma_ P_a ) ;
-   ChkProb ( _threadargscomma_ P_b ) ;
-   n0_n1 = BnlDev ( _threadargscomma_ P_a , N0 ) ;
-   n1_n0 = BnlDev ( _threadargscomma_ P_b , N1 ) ;
-   N0 = strap ( _threadargscomma_ N0 - n0_n1 + n1_n0 ) ;
-   N1 = N - N0 ;
-    return 0; }
- 
-#if 0 /*BBCORE*/
- 
-static void _hoc_states(void) {
-  double _r;
-   double* _p; Datum* _ppvar; ThreadDatum* _thread; _NrnThread* _nt;
-   if (_extcall_prop) {_p = _extcall_prop->param; _ppvar = _extcall_prop->dparam;}else{ _p = (double*)0; _ppvar = (Datum*)0; }
-  _thread = _extcall_thread;
-  _nt = nrn_threads;
- _r = 1.;
- states ( _p, _ppvar, _thread, _nt ;
- hoc_retpushx(_r);
+   Dn = a - ( a + b ) * n ;
+   if ( deterministic  || dt > 1.0 ) {
+     N1 = n * N ;
+     if (  ! deterministic ) {
+       N1 = floor ( N1 + 0.5 ) ;
+       }
+     }
+   else {
+     P_a = strap ( _threadargscomma_ a * dt ) ;
+     P_b = strap ( _threadargscomma_ b * dt ) ;
+     ChkProb ( _threadargscomma_ P_a ) ;
+     ChkProb ( _threadargscomma_ P_b ) ;
+     n0_n1 = BnlDev ( _threadargscomma_ P_a , N0 ) ;
+     n1_n0 = BnlDev ( _threadargscomma_ P_b , N1 ) ;
+     N0 = strap ( _threadargscomma_ N0 - n0_n1 + n1_n0 ) ;
+     N1 = N - N0 ;
+     }
+   N0 = N - N1 ;
+   }
+ return _reset;
 }
- 
-#endif /*BBCORE*/
+ static int _ode_matsol1 (double* _p, Datum* _ppvar, ThreadDatum* _thread, _NrnThread* _nt) {
+ trates ( _threadargscomma_ v ) ;
+ Dn = Dn  / (1. - dt*( ( - (( a + b ))*(1.0) ) )) ;
+ return 0;
+}
+ /*END CVODE*/
+ static int states (double* _p, Datum* _ppvar, ThreadDatum* _thread, _NrnThread* _nt) { {
+   trates ( _threadargscomma_ v ) ;
+    n = n + (1. - exp(dt*(( - (( a + b ))*(1.0) ))))*(- ( a ) / ( ( - (( a + b ))*(1.0)) ) - n) ;
+   if ( deterministic  || dt > 1.0 ) {
+     N1 = n * N ;
+     if (  ! deterministic ) {
+       N1 = floor ( N1 + 0.5 ) ;
+       }
+     }
+   else {
+     P_a = strap ( _threadargscomma_ a * dt ) ;
+     P_b = strap ( _threadargscomma_ b * dt ) ;
+     ChkProb ( _threadargscomma_ P_a ) ;
+     ChkProb ( _threadargscomma_ P_b ) ;
+     n0_n1 = BnlDev ( _threadargscomma_ P_a , N0 ) ;
+     n1_n0 = BnlDev ( _threadargscomma_ P_b , N1 ) ;
+     N0 = strap ( _threadargscomma_ N0 - n0_n1 + n1_n0 ) ;
+     N1 = N - N0 ;
+     }
+   N0 = N - N1 ;
+   }
+  return 0;
+}
  static double _mfac_trates, _tmin_trates;
   static void _check_trates(double* _p, Datum* _ppvar, ThreadDatum* _thread, _NrnThread* _nt) {
   static int _maktable=1; int _i, _j, _ix = 0;
@@ -521,7 +541,7 @@ double strap ( _threadargsprotocomma_ double _lx ) {
      _lstrap = 0.0 ;
      
 /*VERBATIM*/
-        fprintf (stderr,"skv.mod:strap: negative state");
+        fprintf (stderr,"skv.mod:strap: negative state at time %lf\n", t);
  }
    else {
      _lstrap = _lx ;
@@ -571,7 +591,7 @@ static int  setRNG ( _threadargsproto_ ) {
    
 /*VERBATIM*/
     {
-#if !NRNBBCORE
+#if !defined(NRNBBCORE) || !NRNBBCORE
 	nrnran123_State** pv = (nrnran123_State**)(&_p_rng);
 	uint32_t a2 = 0;
 	if (*pv) {
@@ -650,17 +670,20 @@ static void bbcore_write(double* x, int* d, int* xx, int* offset, _threadargspro
 	  }else{
 		nrnran123_State** pv = (nrnran123_State**)(&_p_rng);
 		nrnran123_getids(*pv, di, di+1);
-//printf("StochKv.mod bbcore_write %d %d\n", di[0], di[1]);
 	  }
+//printf("StochKv.mod %p: bbcore_write offset=%d %d %d\n", _p, *offset, d?di[0]:-1, d?di[1]:-1);
 	}
 	*offset += 2;
 }
 static void bbcore_read(double* x, int* d, int* xx, int* offset, _threadargsproto_) {
 	assert(!_p_rng);
 	uint32_t* di = ((uint32_t*)d) + *offset;
-	nrnran123_State** pv = (nrnran123_State**)(&_p_rng);
-	*pv = nrnran123_newstream(di[0], di[1]);
-//printf("StochKv.mod bbcore_read %d %d\n", di[0], di[1]);
+        if (di[0] != 0 || di[1] != 0)
+        {
+	  nrnran123_State** pv = (nrnran123_State**)(&_p_rng);
+	  *pv = nrnran123_newstream(di[0], di[1]);
+        }
+//printf("StochKv.mod %p: bbcore_read offset=%d %d %d\n", _p, *offset, di[0], di[1]);
 	*offset += 2;
 }
  
@@ -741,13 +764,11 @@ double BnlDev ( _threadargsprotocomma_ double _lppr , double _lnnr ) {
  
 /*VERBATIM*/
         int j;
-        static int nold=(-1);
         double am,em,g,angle,p,bnl,sq,bt,y;
-        static double pold=(-1.0),pc,plog,pclog,en,oldg;
+        double pc,plog,pclog,en,oldg;
         
         /* prepare to always ignore errors within this routine */
          
-        
         p=(_lppr <= 0.5 ? _lppr : 1.0-_lppr);
         am=_lnnr*p;
         if (_lnnr < 25) {
@@ -765,16 +786,14 @@ double BnlDev ( _threadargsprotocomma_ double _lppr , double _lnnr ) {
             bnl=(j <= _lnnr ? j : _lnnr);
         }
         else {
-            if (_lnnr != nold) {
+            {
                 en=_lnnr;
                 oldg=gammln(en+1.0);
-                nold=_lnnr;
             }
-            if (p != pold) {
+            {
                 pc=1.0-p;
-                 plog=log(p);
+                plog=log(p);
                 pclog=log(pc);
-                pold=p;
             }
             sq=sqrt(2.0*am*pc);
             do {
@@ -817,8 +836,6 @@ static void _hoc_BnlDev(void) {
  
 #endif /*BBCORE*/
  
-static int _ode_count(int _type){ hoc_execerror("StochKv", "cannot be used with CVODE"); return 0;}
- 
 static void _thread_mem_init(ThreadDatum* _thread) {
   if (_thread1data_inuse) {_thread[_gth]._pval = (double*)ecalloc(7, sizeof(double));
  }else{
@@ -838,24 +855,25 @@ static void _thread_cleanup(ThreadDatum* _thread) {
 
 static void initmodel(double* _p, Datum* _ppvar, ThreadDatum* _thread, _NrnThread* _nt) {
   int _i; double _save;{
-  N1 = N10;
-  N0 = N00;
-  n1_n0 = n1_n00;
-  n0_n1 = n0_n10;
   n = n0;
  {
    
 /*VERBATIM*/
-	if (_p_rng) 
-	{
+	if (_p_rng) {
 	      nrnran123_setseq((nrnran123_State*)_p_rng, 0, 0);
+	}
+	if (cvode_active_ && !deterministic) {
+		hoc_execerror("StochKv with deterministic=0", "cannot be used with cvode");
 	}
  eta = gkbar / gamma ;
    trates ( _threadargscomma_ v ) ;
    n = ninf ;
    scale_dens = gamma / area ;
    N = floor ( eta * area + 0.5 ) ;
-   N1 = floor ( n * N + 0.5 ) ;
+   N1 = n * N ;
+   if (  ! deterministic ) {
+     N1 = floor ( N1 + 0.5 ) ;
+     }
    N0 = N - N1 ;
    n0_n1 = 0.0 ;
    n1_n0 = 0.0 ;
@@ -953,7 +971,7 @@ for (_iml = 0; _iml < _cntml; ++_iml) {
  v=_v;
 {
   ek = _ion_ek;
- {  { states(_p, _ppvar, _thread, _nt); }
+ {   states(_p, _ppvar, _thread, _nt);
   } }}
 #ifdef _PROF_HPM 
 HPM_Stop("nrn_state_StochKv"); 
@@ -967,6 +985,7 @@ static void _initlists(){
  double _x; double* _p = &_x;
  int _i; static int _first = 1;
   if (!_first) return;
+ _slist1[0] = &(n) - _p;  _dlist1[0] = &(Dn) - _p;
    _t_ntau = makevector(200*sizeof(double));
    _t_ninf = makevector(200*sizeof(double));
    _t_a = makevector(200*sizeof(double));
