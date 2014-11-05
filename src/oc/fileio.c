@@ -500,9 +500,9 @@ void hoc_sprint1(char** ppbuf, int argn) {	/* convert args to right type for con
 			break;
 
 		case '%':
-			lflag = 0;
-			convflag = 0;
-			*(--pfrag) = 0;
+			Sprintf(pbuf, frag);
+			didit = 1;
+			argn--; /* an arg was not consumed */
 			break;
 
 		default:
