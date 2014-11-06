@@ -74,7 +74,9 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //   double array
 // #VectorPlay_instances, for each of these instances
 // 4 (VecPlayContinuousType)
-// pd_index vecsize
+// mtype
+// index (from Memb_list.data)
+// vecsize
 // yvec
 // tvec
 //
@@ -462,7 +464,19 @@ void determine_inputpresyn() {
   }
 }
 
-static int i_layout(int icnt, int cnt, int isz, int sz, int layout) {
+int nrn_param_layout(int i, int mtype, NrnThread* nt) {
+  int layout = nrn_mech_data_layout_[mtype];
+  if (layout == 1) { return i; }
+  assert(layout == 0);
+  Memb_list* ml = nt->_ml_list[mtype];
+  int sz = nrn_prop_param_size_[mtype];
+  int cnt = ml->nodecount;
+  int i_cnt = i / sz;
+  int i_sz = i % sz;
+  return i_cnt + i_sz*cnt;
+}
+
+int nrn_i_layout(int icnt, int cnt, int isz, int sz, int layout) {
   if (layout == 1) {
     return icnt*sz + isz;
   }else if (layout == 0) {
@@ -601,7 +615,7 @@ void read_phase2(data_reader &F, NrnThread& nt) {
         Point_process* pp = pnt + i;
         pp->_type = type;
 	pp->_i_instance = i;
-        nt._vdata[ml->pdata[i_layout(i, cnt, 1, szdp, layout)]] = pp;
+        nt._vdata[ml->pdata[nrn_i_layout(i, cnt, 1, szdp, layout)]] = pp;
         pp->_presyn = NULL;
         pp->_tid = nt.id;
       }
@@ -788,13 +802,16 @@ void read_phase2(data_reader &F, NrnThread& nt) {
   for (int i=0; i < n; ++i) {
     int vtype = F.read_int();
     nrn_assert(vtype == VecPlayContinuousType);
+    int mtype = F.read_int();
+    Memb_list* ml = nt._ml_list[mtype];
     int ix = F.read_int();
     int sz = F.read_int();
     IvocVect* yvec = vector_new(sz);
     F.read_dbl_array(vector_vec(yvec), sz);
     IvocVect* tvec = vector_new(sz);
     F.read_dbl_array(vector_vec(tvec), sz);
-    nt._vecplay[i] = new VecPlayContinuous(nt._data + ix, yvec, tvec, NULL, nt.id);
+    ix = nrn_param_layout(ix, mtype, &nt);
+    nt._vecplay[i] = new VecPlayContinuous(ml->data + ix, yvec, tvec, NULL, nt.id);
   }
 }
 

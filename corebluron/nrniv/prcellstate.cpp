@@ -38,6 +38,8 @@ static void pr_memb(int type, Memb_list* ml, int* cellnodes, NrnThread& nt, FILE
   int size = nrn_prop_param_size_[type];
   int psize = nrn_prop_dparam_size_[type];
   int receives_events = pnt_receive[type] ? 1 : 0;
+  int layout = nrn_mech_data_layout_[type];
+  int cnt = ml->nodecount;
   for (int i = 0; i < ml->nodecount; ++i) {
     int inode = ml->nodeindices[i];
     if (cellnodes[inode] >= 0) {
@@ -47,12 +49,14 @@ static void pr_memb(int type, Memb_list* ml, int* cellnodes, NrnThread& nt, FILE
       }
       if (receives_events) {
         fprintf(f, "%d nri %d\n", cellnodes[inode], pntindex);
-        Point_process* pp = (Point_process*)nt._vdata[ml->pdata[i*psize + 1]];
+        int k = nrn_i_layout(i, cnt, 1, psize, layout);
+        Point_process* pp = (Point_process*)nt._vdata[ml->pdata[k]];
         pnt2index->insert(pp, pntindex);
         ++pntindex;
       }
       for (int j=0; j < size; ++j) {
-        fprintf(f, " %d %d %.15g\n", cellnodes[inode], j, ml->data[i*size+j]);
+        int k = nrn_i_layout(i, cnt, j, size, layout);
+        fprintf(f, " %d %d %.15g\n", cellnodes[inode], j, ml->data[k]);
       }
     }
   }

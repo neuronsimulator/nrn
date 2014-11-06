@@ -59,6 +59,7 @@ extern void nrn_mk_table_check(void);
 extern void initnrn(void);
 extern void  nrn_capacity_current(NrnThread*, Memb_list*);
 extern int prcellstate(int gid, const char* suffix);
+extern int nrn_i_layout(int i, int cnt, int j, int size, int layout);
 
 #if defined(__cplusplus)
 }
