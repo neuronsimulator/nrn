@@ -15,10 +15,15 @@ extern PyObject* nrn_ptr_richcmp(void* self_ptr, void* other_ptr, int op);
 typedef struct {
 	PyObject_HEAD
 	Section* sec_;
-	int allseg_iter_;
 	char* name_;
 	PyObject* cell_;
 } NPySecObj;
+
+typedef struct {
+	PyObject_HEAD
+	NPySecObj* pysec_;
+	int allseg_iter_;
+} NPyAllsegIter;
 
 typedef struct {
 	PyObject_HEAD
@@ -48,6 +53,7 @@ typedef struct {
 }NPyRangeVar;
 
 static PyTypeObject* psection_type;
+static PyTypeObject* pallsegiter_type;
 static PyTypeObject* psegment_type;
 static PyTypeObject* pmech_generic_type;
 static PyTypeObject* range_type;
@@ -140,6 +146,12 @@ static void NPySecObj_dealloc(NPySecObj* self) {
 	((PyObject*)self)->ob_type->tp_free((PyObject*)self);
 }
 
+static void NPyAllsegIter_dealloc(NPyAllsegIter* self) {
+//printf("NPyAllsegIter_dealloc %p %s\n", self, secname(self->sec_));
+	Py_XDECREF(self->pysec_);
+	((PyObject*)self)->ob_type->tp_free((PyObject*)self);
+}
+
 static void NPySegObj_dealloc(NPySegObj* self) {
 //printf("NPySegObj_dealloc %p\n", self);
 	Py_XDECREF(self->pysec_);
@@ -171,7 +183,6 @@ static int NPySecObj_init(NPySecObj* self, PyObject* args, PyObject* kwds) {
 //printf("NPySecObj_init %p %p\n", self, self->sec_);
 	static const char* kwlist[] = {"cell", "name", NULL};
 	if (self != NULL && !self->sec_) {
-		self->allseg_iter_ = 0;
 		if (self->name_) { delete [] self->name_; }
 		self->name_ = 0;
 		self->cell_ = 0;
@@ -193,12 +204,40 @@ static int NPySecObj_init(NPySecObj* self, PyObject* args, PyObject* kwds) {
 	return 0;
 }
 
+static int NPyAllsegIter_init(NPyAllsegIter* self, PyObject* args, PyObject* kwds) {
+	NPySecObj* pysec;
+//printf("NPyAllsegIter_init %p %p\n", self, self->sec_);
+	if (self != NULL && !self->pysec_) {
+		if (!PyArg_ParseTuple(args, "O!", psection_type, &pysec)){
+			return -1;
+		}
+		self->allseg_iter_ = 0;
+		self->pysec_ = pysec;
+		Py_INCREF(pysec);
+	}
+	return 0;
+}
+
 PyObject* NPySecObj_new(PyTypeObject* type, PyObject* args, PyObject* kwds) {
 	NPySecObj* self;
 	self = (NPySecObj*)type->tp_alloc(type, 0);
 //printf("NPySecObj_new %p\n", self);
 	if (self != NULL) {
 		if (NPySecObj_init(self, args, kwds) != 0) {
+			Py_DECREF(self);
+			return NULL;
+		}
+	
+	}
+	return (PyObject*)self;
+}
+
+PyObject* NPyAllsegIter_new(PyTypeObject* type, PyObject* args, PyObject* kwds) {
+	NPyAllsegIter* self;
+	self = (NPyAllsegIter*)type->tp_alloc(type, 0);
+//printf("NPyAllsegIter_new %p\n", self);
+	if (self != NULL) {
+		if (NPyAllsegIter_init(self, args, kwds) != 0) {
 			Py_DECREF(self);
 			return NULL;
 		}
@@ -484,18 +523,49 @@ static PyObject* section_iter(NPySecObj* self) {
 		return NULL;
 	}
 	seg->x_ = -1.;
-	seg->alliter_ = self->allseg_iter_;
-	self->allseg_iter_ = 0;
+	seg->alliter_ = 0;
 	seg->pysec_ = self;
 	Py_INCREF(self);
 	return (PyObject*)seg;
 }
 
-static PyObject* allseg(NPySecObj* self, PyObject* args) {
+static PyObject* allseg(NPySecObj* self) {
 	//printf("allseg\n");
+	NPyAllsegIter* ai = PyObject_New(NPyAllsegIter, pallsegiter_type);
+	ai->pysec_ = self;
 	Py_INCREF(self);
-	self->allseg_iter_ = 1;
+	ai->allseg_iter_ = -1;
+	return (PyObject*)ai;
+}
+
+static PyObject* allseg_iter(NPyAllsegIter* self) {
+	self->allseg_iter_=-1;
 	return (PyObject*)self;
+}
+
+static PyObject* allseg_next(NPyAllsegIter* self) {
+	NPySegObj* seg;
+	int n1 = self->pysec_->sec_->nnode - 1;
+	if (self->allseg_iter_ > n1) {
+		// end of iteration
+		return NULL;
+	}
+	seg = PyObject_New(NPySegObj, psegment_type);
+	if (seg == NULL) {
+		// error
+		return NULL;
+	}
+	seg->pysec_ = self->pysec_;
+	Py_INCREF(self->pysec_);
+	if (self->allseg_iter_ == -1) {
+		seg->x_ = 0.;
+	}else if (self->allseg_iter_ == n1) {
+		seg->x_ = 1.;
+	}else{
+		seg->x_ = (double(self->allseg_iter_) + 0.5)/((double)n1);
+	}
+	++self->allseg_iter_;
+	return (PyObject*)seg;
 }
 
 static PyObject* seg_point_processes(NPySegObj* self) {
@@ -1254,6 +1324,12 @@ myPyMODINIT_FUNC nrnpy_nrn(void)
     if (PyType_Ready(&nrnpy_SectionType) < 0)
         goto fail;
     Py_INCREF(&nrnpy_SectionType);
+
+    pallsegiter_type = &nrnpy_AllsegIterType;
+    nrnpy_AllsegIterType.tp_new = PyType_GenericNew;
+    if (PyType_Ready(&nrnpy_AllsegIterType) < 0)
+        goto fail;
+    Py_INCREF(&nrnpy_AllsegIterType);
 
     psegment_type = &nrnpy_SegmentType;
     nrnpy_SegmentType.tp_new = PyType_GenericNew;

@@ -116,7 +116,7 @@ typedef struct Frame {	/* proc/func call stack frame */
 	Object	*iter_stmt_ob;	/* context of Iterator statement */
 	Object	*ob;	/* for stack frame debug message */
 } Frame;
-#define NFRAME	200 /* default size */
+#define NFRAME	512 /* default size */
 #define nframe hoc_nframe
 static Frame *frame, *fp, *framelast; /* first, frame pointer, last */
 
