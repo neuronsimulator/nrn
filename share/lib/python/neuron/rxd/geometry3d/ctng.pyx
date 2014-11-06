@@ -6,6 +6,7 @@ cimport numpy
 from numpy import linalg
 cimport cython
 from neuron.rxd.rxdException import RxDException
+import neuron
 
 cdef extern from "math.h":
     double sqrt(double)
@@ -165,6 +166,104 @@ cdef list join_outside(double x0, double y0, double z0, double r0, double x1, do
     
     return result
 
+
+@cython.wraparound(False)
+@cython.boundscheck(False)
+def soma_objects(x, y, z, double x0, double y0, double z0, int n_soma_step):
+    cdef double diam1, diam2, somax, somay, somaz
+    cdef list objects = []
+    cdef list f_pts
+    
+    somax, somay, somaz = x0, y0, z0
+
+    xshifted = [xx - x0 for xx in x]
+    yshifted = [yy - y0 for yy in y]
+    # this is a hack to pretend everything is on the same z level
+    zshifted = [0] * len(x)
+
+    # locate the major and minor axis, adapted from import3d_gui.hoc
+    m = h.Matrix(3, 3)
+    for i, p in enumerate([xshifted, yshifted, zshifted]):
+        for j, q in enumerate([xshifted, yshifted, zshifted]):
+            if j < i: continue
+            v = numpy.dot(p, q)
+            m.setval(i, j, v)
+            m.setval(j, i, v)
+    # CTNG:majoraxis
+    tobj = m.symmeig(m)
+    # major axis is the one with largest eigenvalue
+    major = m.getcol(tobj.max_ind())
+    # minor is normal and in xy plane
+    minor = m.getcol(3 - tobj.min_ind() - tobj.max_ind())
+    #minor.x[2] = 0
+    minor.div(minor.mag())
+
+    x1 = x0; y1 = y0
+    x2 = x1 + major.x[0]; y2 = y1 + major.x[1]
+
+    xs_loop = x + [x[0]]
+    ys_loop = y + [y[0]]
+
+    # locate the extrema of the major axis CTNG:somaextrema
+    # this is defined by the furthest points on it that lie on the minor axis
+    pts = []
+    pts_sources = {}
+    for x3, y3 in zip(x, y):
+        x4, y4 = x3 + minor.x[0], y3 + minor.x[1]
+        pt = seg_line_intersection(x1, y1, x2, y2, x3, y3, x4, y4, False)
+        if pt is not None:
+            pts.append(pt)
+            if pt not in pts_sources:
+                pts_sources[pt] = []
+            pts_sources[pt].append((x3, y3))
+
+    major_p1, major_p2 = extreme_pts(pts)
+
+    extreme1 = pts_sources[major_p1]
+    extreme2 = pts_sources[major_p2]
+
+    major_p1, major_p2 = numpy.array(major_p1), numpy.array(major_p2)
+    del pts_sources
+
+    if len(extreme1) != 1 or len(extreme2) != 1:
+        raise RxDException('multiple most extreme points')
+    extreme1 = extreme1[0]
+    extreme2 = extreme2[0]
+    major_length = linalg.norm(major_p1 - major_p2)
+    delta_x, delta_y = major_p2 - major_p1
+    delta_x /= n_soma_step
+    delta_y /= n_soma_step
+
+    f_pts = [extreme1]
+    f_diams = [0]
+
+    # CTNG:slicesoma
+    for i in xrange(1, n_soma_step):
+        x0, y0 = major_p1[0] + i * delta_x, major_p1[1] + i * delta_y
+        # slice in dir of minor axis
+        x1, y1 = x0 + minor.x[0], y0 + minor.x[1]
+        pts = []
+        for i in xrange(len(x)):
+            pt = seg_line_intersection(xs_loop[i], ys_loop[i], xs_loop[i + 1], ys_loop[i + 1], x0, y0, x1, y1, True)
+            if pt is not None: pts.append(pt)
+        p1, p2 = extreme_pts(pts)
+        p1, p2 = numpy.array(p1), numpy.array(p2)
+        cx, cy = (p1 + p2) / 2.
+        f_pts.append((cx, cy))
+        f_diams.append(linalg.norm(p1 - p2))
+
+    f_pts.append(extreme2)
+    f_diams.append(0)
+
+    for i in xrange(len(f_pts) - 1):
+        pt1x, pt1y = f_pts[i]
+        pt2x, pt2y = f_pts[i + 1]
+        diam1 = f_diams[i]
+        diam2 = f_diams[i + 1]
+        objects.append(SkewCone(pt1x, pt1y, z0, diam1 * 0.5, pt1x + delta_x, pt1y + delta_y, z0, diam2 * 0.5, pt2x, pt2y, z0))
+
+    return objects, f_pts
+    
 @cython.wraparound(False)
 @cython.boundscheck(False)
 def constructive_neuronal_geometry(source, int n_soma_step, double dx):    
@@ -198,93 +297,10 @@ def constructive_neuronal_geometry(source, int n_soma_step, double dx):
                     # compute the center of the contour based on uniformly spaced points around the perimeter
                     center_vec = sec.contourcenter(sec.raw.getrow(0), sec.raw.getrow(1), sec.raw.getrow(2))
                     x0, y0, z0 = [center_vec.x[i] for i in xrange(3)]
-                    somax, somay, somaz = x0, y0, z0
-                    
-                    xshifted = [xx - x0 for xx in x]
-                    yshifted = [yy - y0 for yy in y]
-                    # this is a hack to pretend everything is on the same z level
-                    zshifted = [0] * len(x)
-
-                    # locate the major and minor axis, adapted from import3d_gui.hoc
-                    m = h.Matrix(3, 3)
-                    for i, p in enumerate([xshifted, yshifted, zshifted]):
-                        for j, q in enumerate([xshifted, yshifted, zshifted]):
-                            if j < i: continue
-                            v = numpy.dot(p, q)
-                            m.setval(i, j, v)
-                            m.setval(j, i, v)
-                    # CTNG:majoraxis
-                    tobj = m.symmeig(m)
-                    # major axis is the one with largest eigenvalue
-                    major = m.getcol(tobj.max_ind())
-                    # minor is normal and in xy plane
-                    minor = m.getcol(3 - tobj.min_ind() - tobj.max_ind())
-                    #minor.x[2] = 0
-                    minor.div(minor.mag())
-                    
-                    x1 = x0; y1 = y0
-                    x2 = x1 + major.x[0]; y2 = y1 + major.x[1]
-                    
-                    xs_loop = x + [x[0]]
-                    ys_loop = y + [y[0]]
-                    
-                    # locate the extrema of the major axis CTNG:somaextrema
-                    # this is defined by the furthest points on it that lie on the minor axis
-                    pts = []
-                    pts_sources = {}
-                    for x3, y3 in zip(x, y):
-                        x4, y4 = x3 + minor.x[0], y3 + minor.x[1]
-                        pt = seg_line_intersection(x1, y1, x2, y2, x3, y3, x4, y4, False)
-                        if pt is not None:
-                            pts.append(pt)
-                            if pt not in pts_sources:
-                                pts_sources[pt] = []
-                            pts_sources[pt].append((x3, y3))
-
-                    major_p1, major_p2 = extreme_pts(pts)
-                    
-                    extreme1 = pts_sources[major_p1]
-                    extreme2 = pts_sources[major_p2]
-
-                    major_p1, major_p2 = numpy.array(major_p1), numpy.array(major_p2)
-                    del pts_sources
-                    
-                    if len(extreme1) != 1 or len(extreme2) != 1:
-                        raise RxDException('multiple most extreme points')
-                    extreme1 = extreme1[0]
-                    extreme2 = extreme2[0]
-                    major_length = linalg.norm(major_p1 - major_p2)
-                    delta_x, delta_y = major_p2 - major_p1
-                    delta_x /= n_soma_step
-                    delta_y /= n_soma_step
-                    
-                    f_pts = [extreme1]
-                    f_diams = [0]
-                    
-                    # CTNG:slicesoma
-                    for i in xrange(1, n_soma_step):
-                        x0, y0 = major_p1[0] + i * delta_x, major_p1[1] + i * delta_y
-                        # slice in dir of minor axis
-                        x1, y1 = x0 + minor.x[0], y0 + minor.x[1]
-                        pts = []
-                        for i in xrange(len(x)):
-                            pt = seg_line_intersection(xs_loop[i], ys_loop[i], xs_loop[i + 1], ys_loop[i + 1], x0, y0, x1, y1, True)
-                            if pt is not None: pts.append(pt)
-                        p1, p2 = extreme_pts(pts)
-                        p1, p2 = numpy.array(p1), numpy.array(p2)
-                        cx, cy = (p1 + p2) / 2.
-                        f_pts.append((cx, cy))
-                        f_diams.append(linalg.norm(p1 - p2))
-                    
-                    f_pts.append(extreme2)
-                    f_diams.append(0)
-                    
-                    for i in xrange(len(f_pts) - 1):
-                        pt1x, pt1y = f_pts[i]
-                        pt2x, pt2y = f_pts[i + 1]
-                        diam1 = f_diams[i]
-                        diam2 = f_diams[i + 1]
-                        objects.append(SkewCone(pt1x, pt1y, z0, diam1 * 0.5, pt1x + delta_x, pt1y + delta_y, z0, diam2 * 0.5, pt2x, pt2y, z0))
+                    somaz = z0
+                    new_objects, f_pts = soma_objects(x, y, z, x0, y0, z0, n_soma_step)
+                    objects += new_objects
+                    # TODO: support multiple somas by appending to f_pts
                 else:
                     parent_sec_name.append(sec.parentsec.hname())
                     branches.append(sec)        
@@ -293,7 +309,21 @@ def constructive_neuronal_geometry(source, int n_soma_step, double dx):
         soma_sec = None
         branches = []
         for sec in source:
-            branches.append(sec)
+            # TODO: make this more general (support for 3D contour outline)
+            if sec.hname() == 'soma[0]' and 'soma' in neuron._sec_db:
+                is_stack, x, y, z, x0, y0, z0 = neuron._sec_db['soma']
+                if not is_stack:
+                    soma_sec = sec.hname()
+                    x = x.to_python(); y = y.to_python(); z = z.to_python()
+                    new_objects, f_pts = soma_objects(x, y, z, x0, y0, z0, n_soma_step)
+                    objects += new_objects
+                    somaz = z0
+                else:
+                    import warnings
+                    warnings.warn('soma stack ignored; using centroid instead')
+                    branches.append(sec)
+            else:
+                branches.append(sec)
         # this is ignored in this case, but needs to be same length
         # so this way no extra memory except the pointer
         parent_sec_name = branches
@@ -310,6 +340,7 @@ def constructive_neuronal_geometry(source, int n_soma_step, double dx):
         all_cones = []
         pts_cones_db = {}
         diam_db = {}
+        # TODO: don't use name; use hash!
         for branch, psec in zip(branches, parent_sec_name):
             if source_is_import3d:
                 x, y, z = [numpy.array(branch.raw.getrow(i).to_python()) for i in range(3)]

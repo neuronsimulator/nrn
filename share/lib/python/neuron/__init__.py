@@ -457,8 +457,10 @@ def nrn_dll(printpath=False):
 _sec_db = {}
 def _declare_contour(secobj, secname):
     j = secobj.first
-    # (is_stack, x, y, z)
-    _sec_db[secname] = (True if secobj.contour_list else False, secobj.raw.getrow(0).c(j), secobj.raw.getrow(1).c(j), secobj.raw.getrow(2).c(j))
+    center_vec = secobj.contourcenter(secobj.raw.getrow(0), secobj.raw.getrow(1), secobj.raw.getrow(2))
+    x0, y0, z0 = [center_vec.x[i] for i in xrange(3)]    
+    # (is_stack, x, y, z, xcenter, ycenter, zcenter)
+    _sec_db[secname] = (True if secobj.contour_list else False, secobj.raw.getrow(0).c(j), secobj.raw.getrow(1).c(j), secobj.raw.getrow(2).c(j), x0, y0, z0)
 
 try:
   import ctypes
