@@ -47,6 +47,7 @@ typedef struct NrnThread {
 	double cj;
 
 	NrnThreadMembList* tml;
+	Memb_list** _ml_list;
         Point_process* pntprocs; // synapses and artificial cells with and without gid
 	PreSyn* presyns; // all the output PreSyn with and without gid
         NetCon* netcons;

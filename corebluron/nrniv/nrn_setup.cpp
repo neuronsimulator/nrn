@@ -479,7 +479,7 @@ static void mech##TPE##layout(data_reader &F, TYPE* data, int cnt, int sz, int l
   }else if (layout == 0) { /* SoA */\
     TYPE* d = F.read##TPE##array(cnt*sz);\
     for (int i=0; i < cnt; ++i) {\
-      for (int j=0; j < cnt; ++j) {\
+      for (int j=0; j < sz; ++j) {\
         data[i + j*cnt] = d[i*sz + j];\
       }\
     }\
@@ -502,12 +502,14 @@ void read_phase2(data_reader &F, NrnThread& nt) {
   //printf("ncell=%d end=%d nmech=%d\n", nt.ncell, nt.end, nmech);
   //printf("nart=%d\n", nart);
   NrnThreadMembList* tml_last = NULL;
+  nt._ml_list = (Memb_list**)ecalloc(n_memb_func, sizeof(Memb_list*));
   for (int i=0; i < nmech; ++i) {
     tml = (NrnThreadMembList*)emalloc(sizeof(NrnThreadMembList));
     tml->ml = (Memb_list*)emalloc(sizeof(Memb_list));
     tml->next = NULL;
     tml->index = F.read_int();
     tml->ml->nodecount = F.read_int();;
+    nt._ml_list[tml->index] = tml->ml;
     //printf("index=%d nodecount=%d membfunc=%s\n", tml->index, tml->ml->nodecount, memb_func[tml->index].sym?memb_func[tml->index].sym:"None");
     if (nt.tml) {
       tml_last->next = tml;
@@ -744,11 +746,22 @@ void read_phase2(data_reader &F, NrnThread& nt) {
     Memb_list* ml = mlmap[type];
     int dsz = nrn_prop_param_size_[type];
     int pdsz = nrn_prop_dparam_size_[type];
-    for (int j=0; j < ml->nodecount; ++j) {
-      double* d = ml->data + j*dsz;
-      Datum* pd = ml->pdata + j*pdsz;
+    int cntml = ml->nodecount;
+    int layout = nrn_mech_data_layout_[type];
+    for (int j=0; j < cntml; ++j) {
+      double* d = ml->data;
+      Datum* pd = ml->pdata;
+      if (layout == 1) {
+        d += j*dsz;
+        pd += j*pdsz;
+      }else if (layout == 0) {
+        d += j;
+        pd += j;
+      }else{
+        assert(0);
+      }
 //      (*nrn_bbcore_read_[type])(vp, k, d, pd, ml->_thread, &nt);
-      (*nrn_bbcore_read_[type])(dArray, iArray, &dk, &ik, d, pd, ml->_thread, &nt);
+      (*nrn_bbcore_read_[type])(dArray, iArray, &dk, &ik, cntml, d, pd, ml->_thread, &nt);
     }
     assert(dk == dcnt);
     assert(ik == icnt);

@@ -70,14 +70,15 @@ void nrn_mkPatternStim(const char* fname) {
 #endif
 
   Point_process* pnt = nrn_artcell_instantiate("PatternStim");
+  NrnThread* nt = nrn_threads + pnt->_tid;
+  Memb_list* ml =  nt->_ml_list[type];
   int layout = nrn_mech_data_layout_[type];
   int sz = nrn_prop_param_size_[type];
   int psz = nrn_prop_dparam_size_[type];
-  Memb_list& ml = memb_list[type];
-  int _cntml = ml.nodecount;
+  int _cntml = ml->nodecount;
   int _iml = pnt->_i_instance;
-  double* _p = ml.data;
-  Datum* _ppvar = ml.pdata;
+  double* _p = ml->data;
+  Datum* _ppvar = ml->pdata;
   if (layout == 1) {
     _p += _iml*sz; _ppvar += _iml*psz;
   }else if (layout == 0) {
@@ -85,7 +86,7 @@ void nrn_mkPatternStim(const char* fname) {
   }else{
     assert(0);
   }    
-  pattern_stim_setup_helper(size, tvec, gidvec, _cntml, _p, _ppvar, NULL, nrn_threads); 
+  pattern_stim_setup_helper(size, tvec, gidvec, _cntml, _p, _ppvar, NULL, nt); 
 }
 
 int read_raster_file(const char* fname, double** tvec, int** gidvec) {
@@ -129,8 +130,10 @@ Point_process* nrn_artcell_instantiate(const char* mechname) {
 
   // see nrn_setup.cpp:read_phase2 for how it creates NrnThreadMembList instances.
   // create and append to nt.tml
+  assert(nt->_ml_list[type] == NULL); //FIXME
   NrnThreadMembList* tml = (NrnThreadMembList*)emalloc(sizeof(NrnThreadMembList));
   tml->ml = (Memb_list*)emalloc(sizeof(Memb_list));
+  nt->_ml_list[type] = tml->ml;
   tml->index = type;
   tml->next = NULL;
   if (!nt->tml) {

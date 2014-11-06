@@ -535,6 +535,7 @@ void nrn_threads_create(int n, int parallel) {
 				nt->n_vecplay = 0;
 				nt->_vecplay = NULL;
 				nt->tml = (NrnThreadMembList*)0;
+				nt->_ml_list = (Memb_list**)0;
 				nt->pntprocs = (Point_process*)0;
 				nt->presyns = (PreSyn*)0;
 				nt->netcons = (NetCon*)0;
@@ -579,6 +580,7 @@ void nrn_threads_free() {
 	for (it = 0; it < nrn_nthread; ++it) {
 		NrnThread* nt = nrn_threads + it;
 		NrnThreadMembList* tml, *tml2;
+		if (nt->_ml_list) { free(nt->_ml_list); }
 		for (tml = nt->tml; tml; tml = tml2) {
 			Memb_list* ml = tml->ml;
 			tml2 = tml->next;
