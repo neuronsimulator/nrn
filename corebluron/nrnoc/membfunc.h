@@ -48,7 +48,7 @@ typedef struct Memb_func {
 	int thread_size_; /* how many Datum needed in Memb_list if vectorized */
 	void (*thread_mem_init_)(ThreadDatum*); /* after Memb_list._thread is allocated */
 	void (*thread_cleanup_)(ThreadDatum*); /* before Memb_list._thread is freed */
-    void (*thread_table_check_)(double*, Datum*, ThreadDatum*, void*, int);
+    void (*thread_table_check_)(int, double*, Datum*, ThreadDatum*, void*, int);
 	int is_point;
 	void (*setdata_)(double*, Datum*);
 	int* dparam_semantics; /* for nrncore writing. */
