@@ -30,6 +30,7 @@ char** nrn_global_argv;
 #if defined(USE_PYTHON)
 int use_python_interpreter = 0;
 void (*p_nrnpython_start)();
+void (*p_nrnpython_finalize)();
 #endif
 int (*p_nrnpy_pyrun)(const char* fname);
 
@@ -1013,6 +1014,10 @@ void hoc_quit(void) {
 #endif
 	hoc_final_exit();
 	ivoc_final_exit();
+#if defined(USE_PYTHON)
+	/* if python was launched and neuron is an extension */
+	if (p_nrnpython_finalize) {(*p_nrnpython_finalize)();}
+#endif
 	exit(0);
 }
 
