@@ -74,7 +74,9 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //   double array
 // #VectorPlay_instances, for each of these instances
 // 4 (VecPlayContinuousType)
-// pd_index vecsize
+// mtype
+// index (from Memb_list.data)
+// vecsize
 // yvec
 // tvec
 //
@@ -474,12 +476,14 @@ void read_phase2(data_reader &F, NrnThread& nt) {
   //printf("ncell=%d end=%d nmech=%d\n", nt.ncell, nt.end, nmech);
   //printf("nart=%d\n", nart);
   NrnThreadMembList* tml_last = NULL;
+  nt._ml_list = (Memb_list**)ecalloc(n_memb_func, sizeof(Memb_list*));
   for (int i=0; i < nmech; ++i) {
     tml = (NrnThreadMembList*)emalloc(sizeof(NrnThreadMembList));
     tml->ml = (Memb_list*)emalloc(sizeof(Memb_list));
     tml->next = NULL;
     tml->index = F.read_int();
     tml->ml->nodecount = F.read_int();;
+    nt._ml_list[tml->index] = tml->ml;
     //printf("index=%d nodecount=%d membfunc=%s\n", tml->index, tml->ml->nodecount, memb_func[tml->index].sym?memb_func[tml->index].sym:"None");
     if (nt.tml) {
       tml_last->next = tml;
@@ -702,13 +706,15 @@ void read_phase2(data_reader &F, NrnThread& nt) {
   for (int i=0; i < n; ++i) {
     int vtype = F.read_int();
     nrn_assert(vtype == VecPlayContinuousType);
+    int mtype = F.read_int();
+    Memb_list* ml = nt._ml_list[mtype];
     int ix = F.read_int();
     int sz = F.read_int();
     IvocVect* yvec = vector_new(sz);
     F.read_dbl_array(vector_vec(yvec), sz);
     IvocVect* tvec = vector_new(sz);
     F.read_dbl_array(vector_vec(tvec), sz);
-    nt._vecplay[i] = new VecPlayContinuous(nt._data + ix, yvec, tvec, NULL, nt.id);
+    nt._vecplay[i] = new VecPlayContinuous(ml->data + ix, yvec, tvec, NULL, nt.id);
   }
 }
 
