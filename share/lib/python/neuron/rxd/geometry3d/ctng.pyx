@@ -7,6 +7,7 @@ from numpy import linalg
 cimport cython
 from neuron.rxd.rxdException import RxDException
 import neuron
+import neuron.rxd.morphology
 
 cdef extern from "math.h":
     double sqrt(double)
@@ -277,6 +278,8 @@ def constructive_neuronal_geometry(source, int n_soma_step, double dx):
     #cdef numpy.ndarray[numpy.float_t, ndim=1] x, y, z, xs_loop, ys_loop
 
     source_is_import3d = False
+    branches = []
+    parent_sec_name = []
     # TODO: come up with a better way of checking type
     if hasattr(source, 'sections'):
         source_is_import3d = True
@@ -287,8 +290,6 @@ def constructive_neuronal_geometry(source, int n_soma_step, double dx):
             raise RxDException('more than one contour is not currently supported')
         if num_contours == 1:
             # CTNG:soma
-            branches = []
-            parent_sec_name = []
             for sec in cell.sections:
                 if sec.iscontour_:
                     soma_sec = sec.hname()
@@ -307,13 +308,14 @@ def constructive_neuronal_geometry(source, int n_soma_step, double dx):
     else:
         h.define_shape()
         soma_sec = None
-        branches = []
         for sec in source:
             # TODO: make this more general (support for 3D contour outline)
             if sec.hname() == 'soma[0]' and 'soma' in neuron._sec_db:
                 is_stack, x, y, z, x0, y0, z0 = neuron._sec_db['soma']
                 if not is_stack:
-                    soma_sec = sec.hname()
+                    # yes, this should be sec while the other should be sec.hname()
+                    # the difference is because of how we're keeping track of the parent
+                    soma_sec = sec
                     x = x.to_python(); y = y.to_python(); z = z.to_python()
                     new_objects, f_pts = soma_objects(x, y, z, x0, y0, z0, n_soma_step)
                     objects += new_objects
@@ -322,11 +324,11 @@ def constructive_neuronal_geometry(source, int n_soma_step, double dx):
                     import warnings
                     warnings.warn('soma stack ignored; using centroid instead')
                     branches.append(sec)
+                    parent_sec_name.append(None)
             else:
                 branches.append(sec)
-        # this is ignored in this case, but needs to be same length
-        # so this way no extra memory except the pointer
-        parent_sec_name = branches
+                parent_sec_name.append(neuron.rxd.morphology.parent(sec))
+
 
 
     #####################################################################
@@ -354,13 +356,14 @@ def constructive_neuronal_geometry(source, int n_soma_step, double dx):
             # make sure that all the ones that connect to the soma do in fact connect
             # do this by connecting to local center axis
             # CTNG:connectdends
-
+            #print 'psec, soma_sec = %r, %r' % (psec, soma_sec)
             if psec == soma_sec:
                 pt = (x[1], y[1], z[1])
                 cp = closest_pt(pt, f_pts, somaz)
                 # NEURON includes the wire point at the center; we want to connect
                 # to the closest place on the soma's axis instead with full diameter
                 # x, y, z, d = [cp[0]] + [X for X in x[1 :]], [cp[1]] + [Y for Y in y[1:]], [somaz] + [Z for Z in z[1:]], [d[1]] + [D for D in d[1 :]]
+                #print 'psec == soma_sec, cp = %r' % cp
                 x[0], y[0] = cp
                 z[0] = somaz
                 d[0] = d[1]
