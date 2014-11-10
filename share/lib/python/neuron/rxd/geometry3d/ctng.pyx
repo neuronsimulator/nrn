@@ -279,6 +279,7 @@ def constructive_neuronal_geometry(source, int n_soma_step, double dx):
 
     source_is_import3d = False
     branches = []
+    f_pts = []
     parent_sec_name = []
     # TODO: come up with a better way of checking type
     if hasattr(source, 'sections'):
@@ -357,7 +358,7 @@ def constructive_neuronal_geometry(source, int n_soma_step, double dx):
             # do this by connecting to local center axis
             # CTNG:connectdends
             #print 'psec, soma_sec = %r, %r' % (psec, soma_sec)
-            if psec == soma_sec:
+            if psec == soma_sec and f_pts:
                 pt = (x[1], y[1], z[1])
                 cp = closest_pt(pt, f_pts, somaz)
                 # NEURON includes the wire point at the center; we want to connect
