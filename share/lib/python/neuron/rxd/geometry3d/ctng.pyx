@@ -39,6 +39,16 @@ cdef tuple closest_pt(tuple pt, list pts, z2):
             closest = p
     return closest
 
+cdef tuple closest_pt3(tuple pt, list pts):
+    dist = float('inf')
+    closest = None
+    for p in pts:
+        d = linalg.norm(numpy.array(pt) - numpy.array(p))
+        if d < dist:
+            dist = d
+            closest = p
+    return closest
+    
 cdef double project(double fromx, double fromy, double fromz, double tox, double toy, double toz):
     """scalar projection"""
     return (fromx * tox + fromy * toy + fromz * toz) / (tox ** 2 + toy ** 2 + toz ** 2) ** 0.5
@@ -250,18 +260,18 @@ def soma_objects(x, y, z, double x0, double y0, double z0, int n_soma_step):
         p1, p2 = extreme_pts(pts)
         p1, p2 = numpy.array(p1), numpy.array(p2)
         cx, cy = (p1 + p2) / 2.
-        f_pts.append((cx, cy))
+        f_pts.append((cx, cy, somaz))
         f_diams.append(linalg.norm(p1 - p2))
 
     f_pts.append(extreme2)
     f_diams.append(0)
 
     for i in xrange(len(f_pts) - 1):
-        pt1x, pt1y = f_pts[i]
-        pt2x, pt2y = f_pts[i + 1]
+        pt1x, pt1y, pt1z = f_pts[i]
+        pt2x, pt2y, pt2z = f_pts[i + 1]
         diam1 = f_diams[i]
         diam2 = f_diams[i + 1]
-        objects.append(SkewCone(pt1x, pt1y, z0, diam1 * 0.5, pt1x + delta_x, pt1y + delta_y, z0, diam2 * 0.5, pt2x, pt2y, z0))
+        objects.append(SkewCone(pt1x, pt1y, pt1z, diam1 * 0.5, pt1x + delta_x, pt1y + delta_y, pt1z, diam2 * 0.5, pt2x, pt2y, pt2z))
 
     return objects, f_pts
     
@@ -360,7 +370,7 @@ def constructive_neuronal_geometry(source, int n_soma_step, double dx):
             #print 'psec, soma_sec = %r, %r' % (psec, soma_sec)
             if psec == soma_sec and f_pts:
                 pt = (x[1], y[1], z[1])
-                cp = closest_pt(pt, f_pts, somaz)
+                cp = closest_pt3(pt, f_pts)
                 # NEURON includes the wire point at the center; we want to connect
                 # to the closest place on the soma's axis instead with full diameter
                 # x, y, z, d = [cp[0]] + [X for X in x[1 :]], [cp[1]] + [Y for Y in y[1:]], [somaz] + [Z for Z in z[1:]], [d[1]] + [D for D in d[1 :]]
