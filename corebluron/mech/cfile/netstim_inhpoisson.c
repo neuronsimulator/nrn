@@ -251,6 +251,7 @@ static int update_time(_threadargsproto_);
 /*VERBATIM*/
 extern int ifarg(int iarg);
 extern double* vector_vec(void* vv);
+extern void* vector_new1(int _i);
 extern int vector_capacity(void* vv);
 extern void* vector_arg(int iarg);
 double nrn_random_pick(void* r);
