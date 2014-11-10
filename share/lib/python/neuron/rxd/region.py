@@ -215,9 +215,9 @@ class Region(object):
         self.geometry = geometry
         
         if dimension is not None:
-            warnings.warn('dimension argument was a development feature only; use set_solve_method instead... the current version sets all the sections to your requested dimension, but this will override any previous settings')
+            warnings.warn('dimension argument was a development feature only; use set_solve_type instead... the current version sets all the sections to your requested dimension, but this will override any previous settings')
             import neuron
-            neuron.rxd.set_solve_method(secs, dimension=dimension)
+            neuron.rxd.set_solve_type(secs, dimension=dimension)
         self._name = name
         self.dx = dx
         _all_regions.append(weakref.ref(self))
