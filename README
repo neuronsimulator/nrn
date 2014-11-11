@@ -30,6 +30,12 @@ the simulator follow the steps below:
 
 Above steps will create binaries and libraries under build/bin and build/lib folders respectively. 
 
+If you are building standlone executable (without Neurodamus) and would like to
+include all mechanisms, use command:
+     cmake .. -DCOREBLURON_NEURODAMUS_MECHS=ON -DCOREBLURON_MAIN=ON  
+
+By default this will build CoreBluron with Pthread implementation. You can enable
+OpenMP with -DCOREBLURON_OPENMP=ON
 
 
 TO INSTALL:
@@ -51,7 +57,6 @@ The installation folder will be $PATH_TO_INSTALL_FOLDER, and should contain (con
      $PATH_TO_INSTALL_FOLDER/bin/corebluron_exec
 
 
-
 CUSTOM BUILD:
 ------------
 
@@ -63,7 +68,6 @@ For example, on a Blue Gene Q:
               -DCMAKE_C_FLAGS="-O5 -qtune=qp -qarch=qp -q64 -qhot=simd -qsmp -qthreaded -qipa=level=2"
 
 Note that one should explicitly specify the compilation flags.
-
 
 
 CMAKE CONFIGURATION:
@@ -90,7 +94,7 @@ RUNNING SIMULATION:
 
 Once the CoreBluron is built, one can run parallel simulator with any MPI launcher as:
  
-1. Change to the directory containing simulation input test data (bbcore_mech.dat, files.dat, inputs.dat, *_1.dat, *_2.dat).
+1. Change to the directory containing simulation input test data (bbcore_mech.dat, files.dat, *_1.dat, *_2.dat).
 
 2. Set environmental variables by adding lib folder (in build/lib or $PATH_TO_INSTALL_FOLDER/lib) to the LD_LIBRARY_PATH :
      export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$PATH_TO_INSTALL_FOLDER/lib
@@ -99,6 +103,13 @@ Once the CoreBluron is built, one can run parallel simulator with any MPI launch
      srun -n $NUM_MPIS $PATH_TO_COREBLURON_EXEC -mpi   (assuming slurm batch system)
      where $NUM_MPIS is number of MPI ranks and $PATH_TO_COREBLURON_EXEC is path of corebluron executable.
  
+This will run CoreBluron with default configuration parameters. In order to see the command line options, you can use:
+
+COREBLURON_EXEC --help
+
+For example, you can run simulation using 10 mpi processes for 10 milliseconds using:
+
+srun -n 10 corebluron_exe -mpi -e 10                (note: by defualt it runs pure mpi job, add --threading to enable pthread/openmp)
 
 
 RESULTS VALIDATION:
@@ -115,31 +126,10 @@ have been used to prepare the validation test cases.
 HOW TO MODIFY TEST INPUT PARAMETERS:
 -----------------------------------
 
-1. MODIFY SIMULATION RUNTIME
-One can increase/decrease the simulation time of tests by modifying "EndTime" value in the "input.dat" file provided in each test case
-directory. The format of this file is: 
+1. MODIFY SIMULATION PARAMETER
+Use --help command line options to list of arguments/parameters that can be passed to CoreBluron
 
-# User parameters
-  StartTime     0.          => this number should not be modified
-  EndTime       100.        => only change this number if you want to reduce the time to solution of the total simulation (for testing only)
-  Dt            0.025       => this number should not be modified
-
-
-2. MODIFY SPIKE BUFFER SIZE
-If the "EndTime" is significantly increased, the produced amount of spikes might not fit in the allocated buffer size. The buffer
-size is defined under the "SpikeBuf" variable in the file "input.dat" as follows:
-
-# Developer parameters
-  Celsius       34.         => this number should not be modified
-  Voltage       -65.        => this number should not be modified
-  MaxDelay      10.         => this number should not be modified
-  SpikeBuf      1000        => spike buffer size (double precision array of size SpikeBuf corresponding to the maximum number of spikes per MPI task)
-
-Although parameters from this section of the file are advised to remain untouched, to avoid a segfault
-("Assertion `spikevec_size < spikevec_buffer_size' failed.") with the increased "EndTime", one could increase the spike buffer size.
-
-
-3. MODIFY USE CASE SIZE (Number of cells/neurons)
+2. MODIFY USE CASE SIZE (Number of cells/neurons)
 It is possible to run tests with different number of MPI ranks. In every simulation input data directory one can find the file named
 "files.dat". This file has following format (example):
 
@@ -148,10 +138,11 @@ It is possible to run tests with different number of MPI ranks. In every simulat
 491530     -> second cell id
 ....
 
-
 As shown above, first number is always the number of entries in the files and then there is a list of cell ids per line.
 Once the simulation has been started, CoreBluron will distribute the cell ids in round robin fashion. (Remeber that each cell id belongs to 
-input file named cellid_1.dat and cellid_2.dat in the simulation input data directory).
+input file named cellid_1.dat and cellid_2.dat in the simulation input data directory). If threading is enabled, then each rank assigns
+cell ids to threads in round robin process. Hence, it is important to select no of mpi ranks and threads so that each rank/thread get equal
+no of cell ids to avoid load imbalance.
 
 Note: Make sure that the number of MPI ranks is not greater than the number of cell ids in "files.dat". Also make sure that the number
 of cell ids is not greater than the maximum number of files provided for each test case.
