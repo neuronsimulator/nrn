@@ -93,10 +93,15 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // files with the first containing output_gids and netcon_srcgid which are
 // stored in the nt.presyns array and nt.netcons array respectively
 
+int nrn_setup_multiple = 1; /* default */
+static int maxgid;
+// no gid in any file can be greater than maxgid. maxgid will be set so that
+// maxgid * nrn_setup_multiple < 0x7fffffff
+
 static MUTDEC
-static void read_phase1(data_reader &F,NrnThread& nt);
+static void read_phase1(data_reader &F, int imult, NrnThread& nt);
 static void determine_inputpresyn(void);
-static void read_phase2(data_reader &F, NrnThread& nt);
+static void read_phase2(data_reader &F, int imult, NrnThread& nt);
 static void setup_ThreadData(NrnThread& nt);
 static size_t model_size(void);
 
@@ -111,13 +116,15 @@ NetCon** netcon_in_presyn_order_;
 // and phase2_wrapper.
 static int ngroup_w;
 static int* gidgroups_w;
+static int* imult_w;
 static const char* path_w;
 static data_reader* file_reader_w;
 static bool byte_swap_w;
-static void store_phase_args(int ngroup, int* gidgroups, data_reader* file_reader,
+static void store_phase_args(int ngroup, int* gidgroups, int* imult, data_reader* file_reader,
   const char* path, int byte_swap) {
   ngroup_w = ngroup;
   gidgroups_w = gidgroups;
+  imult_w = imult;
   file_reader_w = file_reader;
   path_w = path;
   byte_swap_w = (bool) byte_swap;
@@ -130,7 +137,7 @@ static void* phase##A##_wrapper_w(NrnThread* nt) { \
   if (i < ngroup_w) { \
     sprintf(fname, "%s/%d_"#A".dat", path_w, gidgroups_w[i]); \
     file_reader_w[i].open(fname,byte_swap_w); \
-    read_phase##A(file_reader_w[i], *nt); \
+    read_phase##A(file_reader_w[i], imult_w[i], *nt); \
     file_reader_w[i].close(); \
     if (A == 2) { \
       setup_ThreadData(*nt); \
@@ -147,7 +154,7 @@ implement_phase_wrapper(1)
 implement_phase_wrapper(2)
 
 /* read files.dat file and distribute cellgroups to all mpi ranks */
-void nrn_read_filesdat(int &ngrp, int * &grp, const char *filesdat)
+void nrn_read_filesdat(int &ngrp, int * &grp, int multiple, int * &imult, const char *filesdat)
 {
     FILE *fp = fopen( filesdat, "r" );
   
@@ -158,21 +165,29 @@ void nrn_read_filesdat(int &ngrp, int * &grp, const char *filesdat)
     int iNumFiles = 0;
     nrn_assert( fscanf( fp, "%d\n", &iNumFiles ) == 1 );
 
+#if 0
     if ( nrnmpi_numprocs > iNumFiles ) {
         nrnmpi_fatal_error( "The number of CPUs cannot exceed the number of input files" );
     }
+#endif
 
     ngrp = 0;
-    grp = new int[iNumFiles / nrnmpi_numprocs + 1];
+    grp = new int[iNumFiles * multiple / nrnmpi_numprocs + 1];
+    imult = new int[iNumFiles * multiple / nrnmpi_numprocs + 1];
 
     // irerate over gids in files.dat
-    for ( int iNum = 0; iNum < iNumFiles; ++iNum ) {
+    for ( int iNum = 0; iNum < iNumFiles*multiple; ++iNum ) {
         int iFile;
 
         nrn_assert( fscanf( fp, "%d\n", &iFile ) == 1 );
         if ( ( iNum % nrnmpi_numprocs ) == nrnmpi_myid ) {
             grp[ngrp] = iFile;
+            imult[ngrp] = iNum / iNumFiles;
             ngrp++;
+        }
+	if ((iNum + 1)%iNumFiles == 0) {
+          rewind(fp);
+          fscanf( fp, "%*d\n");
         }
     }
 
@@ -183,10 +198,12 @@ void nrn_setup(const char *path, const char *filesdat, int byte_swap, int thread
 
   int ngroup = 0;
   int *gidgroups = NULL;
+  int *imult = NULL;
 
   double time = nrnmpi_wtime(); 
 
-  nrn_read_filesdat(ngroup, gidgroups, filesdat);
+  maxgid = 0x7fffffff / nrn_setup_multiple;
+  nrn_read_filesdat(ngroup, gidgroups, nrn_setup_multiple, imult, filesdat);
 
   assert(ngroup > 0);
   MUTCONSTRUCT(1)
@@ -215,7 +232,7 @@ void nrn_setup(const char *path, const char *filesdat, int byte_swap, int thread
 
 
   /* nrn_multithread_job supports serial, pthread, and openmp. */
-  store_phase_args(ngroup, gidgroups, file_reader, path, byte_swap);
+  store_phase_args(ngroup, gidgroups, imult, file_reader, path, byte_swap);
   phase1_wrapper();
 
   // from the netpar::gid2out_ hash table and the netcon_srcgid array,
@@ -271,7 +288,8 @@ void nrnthreads_free_helper(NrnThread* nt) {
 	if (nt->weights) delete [] nt->weights;
 }
 
-void read_phase1(data_reader &F, NrnThread& nt) {
+void read_phase1(data_reader &F, int imult, NrnThread& nt) {
+  int zz = imult*maxgid; // offset for each gid
   nt.n_presyn = F.read_int();
   nt.n_netcon = F.read_int();
   nt.presyns = new PreSyn[nt.n_presyn];
@@ -281,6 +299,21 @@ void read_phase1(data_reader &F, NrnThread& nt) {
   int* output_gid = F.read_int_array(nt.n_presyn);
   int* netcon_srcgid = F.read_int_array(nt.n_netcon);
   F.close();
+
+  // offset the (non-negative) gids according to multiple
+  // make sure everything fits into gid space.
+  for (int i=0; i < nt.n_presyn; ++i) {
+    if (output_gid[i] >= 0) {
+      nrn_assert(output_gid[i] < maxgid);
+      output_gid[i] += zz;
+    }
+  }
+  for (int i=0; i < nt.n_netcon; ++i) {
+    if (netcon_srcgid[i] >= 0) {
+      nrn_assert(netcon_srcgid[i] < maxgid);
+      netcon_srcgid[i] += zz;
+    }
+  }
 
   // for checking whether negative gids fit into the gid space
   // not used for now since negative gids no longer encode the thread id.
@@ -464,7 +497,8 @@ void determine_inputpresyn() {
   }
 }
 
-void read_phase2(data_reader &F, NrnThread& nt) {
+void read_phase2(data_reader &F, int imult, NrnThread& nt) {
+  nrn_assert(imult >= 0); // avoid imult unused warning
   NrnThreadMembList* tml;
   int n_outputgid = F.read_int();
   nrn_assert(n_outputgid > 0); // avoid n_outputgid unused warning

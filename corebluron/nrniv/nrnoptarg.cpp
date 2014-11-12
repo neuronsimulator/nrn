@@ -28,6 +28,8 @@ cb_parameters::cb_parameters()
     datpath = ".";
     outpath = ".";
     filesdat = "files.dat";
+
+    multiple = 1;
 }
 
 void cb_parameters::get_filesdat_path( char *path )
@@ -43,8 +45,8 @@ void cb_parameters::show_cb_opts()
         printf( "\n tstart: %g, tstop: %g, dt: %g", tstart, tstop, dt );
         printf( " celsius: %g, voltage: %g, maxdelay: %g", celsius, voltage, maxdelay );
 
-        printf( "\n forwardskip: %g, spikebuf: %d, prcellgid: %d, threading : %d, mindelay : %g", \
-                forwardskip, spikebuf, prcellgid, threading, mindelay);
+        printf( "\n forwardskip: %g, spikebuf: %d, prcellgid: %d, multiple: %d, threading : %d, mindelay : %g", \
+                forwardskip, spikebuf, prcellgid, multiple, threading, mindelay);
 
         printf( "\n patternstim: %s, datpath: %s, filesdat: %s, outpath: %s", \
                 patternstim, datpath, filesdat, outpath );
@@ -88,6 +90,8 @@ void cb_parameters::show_cb_opts_help()
               Set the path for the output data to PATH (char*). The default value is '.'.\n\
        -k TIME, --forwardskip=TIME\n\
               Set forwardskip to TIME (double). The default value is '0.'.\n\
+       -z MULTIPLE, --multiple=MULTIPLE\n\
+              Model size is normal size * MULTIPLE (int). The default value is '1'.\n\
        -mpi\n\
               Enable MPI. In order to initialize MPI environment this argument must be specified.\n" );
 }
@@ -111,6 +115,7 @@ void cb_parameters::read_cb_opts( int argc, char **argv )
             {"filesdat",  required_argument, 0, 'f'},
             {"outpath",   required_argument, 0, 'o'},
             {"forwardskip", required_argument, 0, 'k'},
+            {"multiple", required_argument, 0, 'z'},
             {"mpi",       optional_argument, 0, 'm'},
             {"help",      no_argument,       0, 'h'},
             {0, 0, 0, 0}
@@ -185,6 +190,10 @@ void cb_parameters::read_cb_opts( int argc, char **argv )
 
             case 'k':
                 forwardskip = atof( optarg );
+                break;
+
+            case 'z':
+                multiple = atoi( optarg );
                 break;
 
             case 'm':

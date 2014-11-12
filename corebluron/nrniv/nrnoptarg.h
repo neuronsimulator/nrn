@@ -34,6 +34,8 @@ typedef struct cb_parameters {
    
     double mindelay;
 
+    int multiple;
+
     /** default constructor */ 
     cb_parameters();
 
