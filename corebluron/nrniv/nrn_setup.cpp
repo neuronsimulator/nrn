@@ -769,13 +769,11 @@ void read_phase2(data_reader &F, NrnThread& nt) {
         d += j*dsz;
         pd += j*pdsz;
       }else if (layout == 0) {
-        d += j;
-        pd += j;
+        ;
       }else{
         assert(0);
       }
-//      (*nrn_bbcore_read_[type])(vp, k, d, pd, ml->_thread, &nt);
-      (*nrn_bbcore_read_[type])(dArray, iArray, &dk, &ik, cntml, d, pd, ml->_thread, &nt);
+      (*nrn_bbcore_read_[type])(dArray, iArray, &dk, &ik, j, cntml, d, pd, ml->_thread, &nt);
     }
     assert(dk == dcnt);
     assert(ik == icnt);
