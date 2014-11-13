@@ -672,7 +672,7 @@ void nrn_thread_table_check() {
 		NrnThreadMembList* tml = (NrnThreadMembList*)table_check_[i+1]._pvoid;
 		Memb_list* ml = tml->ml;
 		(*memb_func[tml->index].thread_table_check_)(
-			ml->nodecount, ml->data, ml->pdata, ml->_thread, nt, tml->index
+			0, ml->nodecount, ml->data, ml->pdata, ml->_thread, nt, tml->index
 		);
 	}
 }

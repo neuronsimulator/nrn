@@ -351,7 +351,7 @@ void _nrn_thread_reg1(int i, void(*f)(ThreadDatum*)) {
 	memb_func[i].thread_mem_init_ = f;
 }
 
-void _nrn_thread_table_reg(int i, void(*f)(int, double*, Datum*, ThreadDatum*, void*, int)) {
+void _nrn_thread_table_reg(int i, void(*f)(int, int, double*, Datum*, ThreadDatum*, void*, int)) {
 	memb_func[i].thread_table_check_ = f;
 }
 
