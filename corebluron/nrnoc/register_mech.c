@@ -237,9 +237,12 @@ void register_destructor(Pfri d) {
 }
 
 int point_reg_helper(Symbol* s2) {
+    int type;
 	pointsym[pointtype] = s2;
-	pnt_map[n_memb_func-1] = pointtype;
-	memb_func[n_memb_func-1].is_point = 1;
+    type = nrn_get_mechtype(s2);
+	pnt_map[type] = pointtype;
+	memb_func[type].is_point = 1;
+
 	return pointtype++;
 }
 
