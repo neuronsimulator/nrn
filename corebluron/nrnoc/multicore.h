@@ -73,6 +73,7 @@ typedef struct NrnThread {
 	double* _actual_b;
 	double* _actual_v;
 	double* _actual_area;
+	double* _shadow_rhs; /* Not pointer into _data. Avoid race for multiple POINT_PROCESS in same compartment */
 	int* _v_parent_index;
 	char* _sp13mat; /* handle to general sparse matrix */
 	struct Memb_list* _ecell_memb_list; /* normally nil */

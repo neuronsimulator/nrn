@@ -517,12 +517,19 @@ void read_phase2(data_reader &F, NrnThread& nt) {
   //printf("nart=%d\n", nart);
   NrnThreadMembList* tml_last = NULL;
   nt._ml_list = (Memb_list**)ecalloc(n_memb_func, sizeof(Memb_list*));
+  int shadow_rhs_cnt = 0;
   for (int i=0; i < nmech; ++i) {
     tml = (NrnThreadMembList*)emalloc(sizeof(NrnThreadMembList));
     tml->ml = (Memb_list*)emalloc(sizeof(Memb_list));
     tml->next = NULL;
     tml->index = F.read_int();
     tml->ml->nodecount = F.read_int();;
+    if (memb_func[tml->index].is_point && nrn_is_artificial_[tml->index] == 0){
+      // Avoid race for multiple PointProcess instances in same compartment.
+      if (tml->ml->nodecount > shadow_rhs_cnt) {
+        shadow_rhs_cnt = tml->ml->nodecount;
+      }
+    }
     nt._ml_list[tml->index] = tml->ml;
     //printf("index=%d nodecount=%d membfunc=%s\n", tml->index, tml->ml->nodecount, memb_func[tml->index].sym?memb_func[tml->index].sym:"None");
     if (nt.tml) {
@@ -532,6 +539,11 @@ void read_phase2(data_reader &F, NrnThread& nt) {
     }
     tml_last = tml;
   }
+  nt._shadow_rhs = NULL;
+  if (shadow_rhs_cnt) {
+    nt._shadow_rhs = (double*)ecalloc(shadow_rhs_cnt, sizeof(double));
+  }
+
   nt._ndata = F.read_int();
   nt._nidata = F.read_int();
   nt._nvdata = F.read_int();
