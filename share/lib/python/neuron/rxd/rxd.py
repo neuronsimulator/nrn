@@ -233,10 +233,12 @@ def _ode_solve(dt, t, b, y):
     if species._has_3d:
         if species._has_1d:
             raise Exception('development issue: cvode currently does not support hybrid simulations (fix by shifting for zero volume indices)')
+        # NOTE: only working on the rxd part
+        rxd_b = b[lo : hi]
         # TODO: make sure can handle both 1D and 3D
         m = _scipy_sparse_eye(n, n) - dt * _euler_matrix
         # removed diagonal preconditioner since tests showed no improvement in convergence
-        result, info = _scipy_sparse_linalg_bicgstab(m, dt * b)
+        result, info = _scipy_sparse_linalg_bicgstab(m, dt * rxd_b)
         assert(info == 0)
         b[lo : hi] = _react_matrix_solver(result)
     else:
