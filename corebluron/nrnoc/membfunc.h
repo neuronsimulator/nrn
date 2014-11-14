@@ -112,6 +112,8 @@ extern void nrn_cap_jacob(struct NrnThread*, Memb_list*);
 extern void nrn_writes_conc(int, int);
 extern void nrn_wrote_conc(int, double*, int);
 extern void hoc_register_prop_size(int, int, int);
+extern void hoc_register_dparam_semantics(int type, int, const char* name);
+
 extern void _nrn_layout_reg(int, int);
 extern int* nrn_mech_data_layout_;
 extern void _nrn_thread_reg0(int i, void(*f)(ThreadDatum*));
