@@ -743,7 +743,8 @@ static void mk_localgid_rep() {
 		if (ps->output_index_ >= 0) {
 			++ngid;
 		}
-	}}}
+	}
+    NrnHashIterateEnd
 	int ngidmax = nrnmpi_int_allmax(ngid);
 	if (ngidmax > 256) {
 		//do not compress
@@ -766,7 +767,8 @@ static void mk_localgid_rep() {
 			sbuf[ngid] = ps->output_index_;
 			++ngid;
 		}
-	}}}
+	}
+    NrnHashIterateEnd
 	--sbuf;
 
 	// exchange everything
@@ -1035,7 +1037,8 @@ void BBS_spike_record(int gid, IvocVect* spikevec, IvocVect* gidvec) {
 			ps2->record(spikevec, gidvec, ps2->output_index_);
 			MUTUNLOCK 
 		}
-	}}}
+	}
+    NrnHashIterateEnd
     }
 }
 
@@ -1069,13 +1072,15 @@ void gid_connect_allocate() {
 			ps->ncl_ = new NetCon*[ps->nc_cnt_];
 		}
 		ps->nc_cnt_ = 0;
-	}}}
+	}
+    NrnHashIterateEnd
 	NrnHashIterate(Gid2InputPreSyn, gid2in_, InputPreSyn*, psi) {
 		if (psi->nc_cnt_ > 0) {
 			psi->ncl_ = new NetCon*[psi->nc_cnt_];
 		}
 		psi->nc_cnt_ = 0;
-	}}}
+	}
+    NrnHashIterateEnd
 }
 #endif
 
