@@ -183,7 +183,6 @@ extern void _cvode_abstol( Symbol**, double*, int);
  	nrn_writes_conc(_mechtype, 0);
  }
  static double FARADAY = 96485.3;
-static int _reset;
 static char *modelname = "";
 
 static int error;
