@@ -72,6 +72,8 @@ void cb_parameters::show_cb_opts_help()
               Set the stop time to TIME (double). The default value is '100.'\n\n\
        -t TIME, --dt=TIME\n\
               Set the dt time to TIME (double). The default value is '0.025'.\n\n\
+       -l NUMBER, --celsius=NUMBER\n\
+              Set the celsius temperature to NUMBER (double). The default value is '34.'.\n\n\
        -p FILE, --pattern=FILE\n\
               Apply patternstim with the spike file FILE (char*). The default value is 'NULL'.\n\n\
        -b SIZE, --spikebuf=SIZE\n\
@@ -94,6 +96,7 @@ void cb_parameters::show_cb_opts_help()
 
 void cb_parameters::read_cb_opts( int argc, char **argv )
 {
+    optind = 1;
     int c;
 
     while ( 1 ) {
@@ -103,6 +106,7 @@ void cb_parameters::read_cb_opts( int argc, char **argv )
             {"tstart",    required_argument, 0, 's'},
             {"tstop",     required_argument, 0, 'e'},
             {"dt",        required_argument, 0, 't'},
+            {"celsius",   required_argument, 0, 'l'},
             {"pattern",   required_argument, 0, 'p'},
             {"spikebuf",  required_argument, 0, 'b'},
             {"prcellgid", required_argument, 0, 'g'},
@@ -118,7 +122,7 @@ void cb_parameters::read_cb_opts( int argc, char **argv )
         /* getopt_long stores the option index here. */
         int option_index = 0;
 
-        c = getopt_long( argc, argv, "s:e:t:p:b:g:c:d:f:o:k:m:h",
+        c = getopt_long( argc, argv, "s:e:t:l:p:b:g:c:d:f:o:k:m:h",
                          long_options, &option_index );
 
         /* Detect the end of the options. */
@@ -153,6 +157,10 @@ void cb_parameters::read_cb_opts( int argc, char **argv )
 
             case 't':
                 dt = atof( optarg );
+                break;
+
+            case 'l':
+                celsius = atof(optarg);
                 break;
 
             case 'p':

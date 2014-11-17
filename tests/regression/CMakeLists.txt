@@ -2,4 +2,4 @@
 set(TEST_LIBRARIES ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY} corebluron)
 
 # CommonCTest, in the current folder recursively compiles targets for *.cpp files using TEST_LIBRARIES
-include(CommonCTest)
+#include(CommonCTest)

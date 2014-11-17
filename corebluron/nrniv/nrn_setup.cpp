@@ -261,15 +261,10 @@ void setup_ThreadData(NrnThread& nt) {
         MUTUNLOCK
       }
     }
+    else ml->_thread = NULL;
   }
 }
 
-void nrnthreads_free_helper(NrnThread* nt) {
-	if (nt->pntprocs) delete[] nt->pntprocs;
-	if (nt->presyns) delete [] nt->presyns;
-	if (nt->netcons) delete [] nt->netcons;
-	if (nt->weights) delete [] nt->weights;
-}
 
 void read_phase1(data_reader &F, NrnThread& nt) {
   nt.n_presyn = F.read_int();
@@ -464,6 +459,62 @@ void determine_inputpresyn() {
   }
 }
 
+/* nrn_threads_free() presumes all NrnThread and NrnThreadMembList data is
+ * allocated with malloc(). This is not the case here, so let's try and fix
+ * things up first. */
+
+void nrn_cleanup() {
+
+  nrnmpi_gid_clear();
+
+  for (int it = 0; it < nrn_nthread; ++it) {
+    NrnThread* nt = nrn_threads + it;
+    NrnThreadMembList * next_tml = NULL;
+    for (NrnThreadMembList *tml = nt->tml; tml; tml = next_tml) {
+      Memb_list* ml = tml->ml;
+
+      ml->data = NULL; // this was pointing into memory owned by nt
+      delete[] ml->pdata;
+      ml->pdata = NULL;
+      delete[] ml->nodeindices;
+      ml->nodeindices = NULL;
+
+      next_tml = tml->next;
+      free(tml->ml);
+      free(tml);
+    }
+
+    nt->_actual_rhs = NULL;
+    nt->_actual_d = NULL;
+    nt->_actual_a = NULL;
+    nt->_actual_b = NULL;
+
+    delete[] nt->_v_parent_index;
+    nt->_v_parent_index = NULL;
+
+    free(nt->_data);
+    nt->_data = NULL;
+
+    free(nt->_idata);
+    nt->_idata = NULL;
+
+    free(nt->_vdata);
+    nt->_vdata = NULL;
+
+    if (nt->pntprocs) delete[] nt->pntprocs;
+    if (nt->presyns) delete [] nt->presyns;
+    if (nt->netcons) delete [] nt->netcons;
+    if (nt->weights) delete [] nt->weights;
+
+    free(nt->_ml_list);
+  }
+
+  delete [] inputpresyn_;
+  delete [] netcon_in_presyn_order_;
+
+  nrn_threads_free();
+}
+
 void read_phase2(data_reader &F, NrnThread& nt) {
   NrnThreadMembList* tml;
   int n_outputgid = F.read_int();
@@ -499,10 +550,13 @@ void read_phase2(data_reader &F, NrnThread& nt) {
 
   nt._data = (double*)ecalloc(nt._ndata, sizeof(double));
   if (nt._nidata) nt._idata = (int*)ecalloc(nt._nidata, sizeof(int));
+  else nt._idata = NULL;
   // see patternstim.cpp
   int zzz = (&nt == nrn_threads) ? nrn_extra_thread0_vdata : 0;
   if (nt._nvdata+zzz) 
     nt._vdata = (void**)ecalloc(nt._nvdata + zzz, sizeof(void*));
+  else
+    nt._vdata = NULL;
   //printf("_ndata=%d _nidata=%d _nvdata=%d\n", nt._ndata, nt._nidata, nt._nvdata);
 
   // The data format defines the order of matrix data
@@ -557,6 +611,7 @@ void read_phase2(data_reader &F, NrnThread& nt) {
     int szp = nrn_prop_param_size_[type];
     int szdp = nrn_prop_dparam_size_[type];
     if (!is_art) {ml->nodeindices = F.read_int_array(ml->nodecount);}
+    else {ml->nodeindices = NULL;}
     F.read_dbl_array(ml->data, n*szp);
     if (szdp) {
       ml->pdata = F.read_int_array(n*szdp);
