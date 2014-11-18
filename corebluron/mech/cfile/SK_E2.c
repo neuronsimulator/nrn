@@ -192,7 +192,6 @@ extern void _cvode_abstol( Symbol**, double*, int);
  _mechtype = nrn_get_mechtype(_mechanism[1]);
   hoc_register_prop_size(_mechtype, _psize, _ppsize);
  }
-static int _reset;
 static char *modelname = "";
 
 static int error;

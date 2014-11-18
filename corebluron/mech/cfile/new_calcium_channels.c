@@ -306,7 +306,6 @@ extern void _cvode_abstol( Symbol**, double*, int);
  }
  static double FARADAY = 96.4853;
  static double R = 8.31342;
-static int _reset;
 static char *modelname = "";
 
 static int error;

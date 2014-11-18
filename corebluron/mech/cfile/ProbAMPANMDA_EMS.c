@@ -79,13 +79,14 @@ extern double hoc_Exp(double);
 #define B_NMDA _p[29]
 #define factor_AMPA _p[30]
 #define factor_NMDA _p[31]
-#define DA_AMPA _p[32]
-#define DB_AMPA _p[33]
-#define DA_NMDA _p[34]
-#define DB_NMDA _p[35]
-#define v _p[36]
-#define _g _p[37]
-#define _tsav _p[38]
+#define mggate _p[32]
+#define DA_AMPA _p[33]
+#define DB_AMPA _p[34]
+#define DA_NMDA _p[35]
+#define DB_NMDA _p[36]
+#define v _p[37]
+#define _g _p[38]
+#define _tsav _p[39]
 #define _nd_area  _nt->_data[_ppvar[0]]
 #define _p_rng	_nt->_vdata[_ppvar[2]]
  
@@ -158,13 +159,8 @@ extern Memb_func* memb_func;
  extern double toggleVerbose( _threadargsproto_ );
  extern double urand( _threadargsproto_ );
  /* declare global and static user variables */
- static int _thread1data_inuse = 0;
-static double _thread1data[1];
-#define _gth 0
 #define gmax gmax_ProbAMPANMDA_EMS
  double gmax = 0.001;
-#define mggate_ProbAMPANMDA_EMS _thread1data[0]
-#define mggate _thread[_gth]._pval[0]
  
 #if 0 /*BBCORE*/
  /* some parameters have upper and lower limits */
@@ -205,7 +201,6 @@ static double _thread1data[1];
 #if 0 /*BBCORE*/
  /* connect global user variables to hoc */
  static DoubScal hoc_scdoub[] = {
- "mggate_ProbAMPANMDA_EMS", &mggate_ProbAMPANMDA_EMS,
  "gmax_ProbAMPANMDA_EMS", &gmax_ProbAMPANMDA_EMS,
  0,0
 };
@@ -293,10 +288,8 @@ static void nrn_alloc(double* _p, Datum* _ppvar, int _type) {
  static void _initlists();
  static void _net_receive(Point_process*, double*, double);
  static void _net_init(Point_process*, double*, double);
- static void _thread_mem_init(ThreadDatum*);
- static void _thread_cleanup(ThreadDatum*);
  
-#define _psize 39
+#define _psize 40
 #define _ppsize 3
  static void bbcore_read(double *, int*, int*, int*, _threadargsproto_);
  extern void hoc_reg_bbcore_read(int, void(*)(double *, int*, int*, int*, _threadargsproto_));
@@ -316,20 +309,14 @@ extern void _cvode_abstol( Symbol**, double*, int);
 	 nrn_alloc,nrn_cur, nrn_jacob, nrn_state, nrn_init,
 	 hoc_nrnpointerindex,
 	 NULL/*_hoc_create_pnt*/, NULL/*_hoc_destroy_pnt*/, /*_member_func,*/
-	 2);
-  _extcall_thread = (ThreadDatum*)ecalloc(1, sizeof(ThreadDatum));
-  _thread_mem_init(_extcall_thread);
-  _thread1data_inuse = 0;
+	 1);
  _mechtype = nrn_get_mechtype(_mechanism[1]);
-     _nrn_thread_reg1(_mechtype, _thread_mem_init);
-     _nrn_thread_reg0(_mechtype, _thread_cleanup);
    hoc_reg_bbcore_read(_mechtype, bbcore_read);
   hoc_register_prop_size(_mechtype, _psize, _ppsize);
  pnt_receive[_mechtype] = _net_receive;
  pnt_receive_init[_mechtype] = _net_init;
  pnt_receive_size[_mechtype] = 5;
  }
-static int _reset;
 static char *modelname = "Probabilistic AMPA and NMDA receptor with presynaptic short-term plasticity ";
 
 static int error;
@@ -510,8 +497,11 @@ static void bbcore_write(double* x, int* d, int* xx, int* offset, _threadargspro
 static void bbcore_read(double* x, int* d, int* xx, int* offset, _threadargsproto_) {
 	assert(!_p_rng);
 	uint32_t* di = ((uint32_t*)d) + *offset;
-	nrnran123_State** pv = (nrnran123_State**)(&_p_rng);
-	*pv = nrnran123_newstream(di[0], di[1]);
+        if (di[0] != 0 || di[1] != 0)
+        {
+	  nrnran123_State** pv = (nrnran123_State**)(&_p_rng);
+	  *pv = nrnran123_newstream(di[0], di[1]);
+        }
 //printf("ProbAMPANMDA_EMS bbcore_read %d %d\n", di[0], di[1]);
 	*offset += 2;
 }
@@ -539,21 +529,6 @@ static double _hoc_toggleVerbose(void* _vptr) {
 #endif /*BBCORE*/
  
 static int _ode_count(int _type){ hoc_execerror("ProbAMPANMDA_EMS", "cannot be used with CVODE"); return 0;}
- 
-static void _thread_mem_init(ThreadDatum* _thread) {
-  if (_thread1data_inuse) {_thread[_gth]._pval = (double*)ecalloc(1, sizeof(double));
- }else{
- _thread[_gth]._pval = _thread1data; _thread1data_inuse = 1;
- }
- }
- 
-static void _thread_cleanup(ThreadDatum* _thread) {
-  if (_thread[_gth]._pval == _thread1data) {
-   _thread1data_inuse = 0;
-  }else{
-   free((void*)_thread[_gth]._pval);
-  }
- }
 
 static void initmodel(double* _p, Datum* _ppvar, ThreadDatum* _thread, _NrnThread* _nt) {
   int _i; double _save;{

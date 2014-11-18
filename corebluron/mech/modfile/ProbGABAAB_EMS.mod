@@ -146,6 +146,7 @@ INITIAL{
         
         factor_GABAB = -exp(-tp_GABAB/tau_r_GABAB)+exp(-tp_GABAB/tau_d_GABAB) :GABAB Normalization factor - so that when t = tp_GABAB, gsyn = gpeak
         factor_GABAB = 1/factor_GABAB
+        
         A_GABAA_step = exp(dt*(( - 1.0 ) / tau_r_GABAA))
         B_GABAA_step = exp(dt*(( - 1.0 ) / tau_d_GABAA))
         A_GABAB_step = exp(dt*(( - 1.0 ) / tau_r_GABAB))
@@ -301,8 +302,11 @@ static void bbcore_write(double* x, int* d, int* xx, int* offset, _threadargspro
 static void bbcore_read(double* x, int* d, int* xx, int* offset, _threadargsproto_) {
 	assert(!_p_rng);
 	uint32_t* di = ((uint32_t*)d) + *offset;
-	nrnran123_State** pv = (nrnran123_State**)(&_p_rng);
-	*pv = nrnran123_newstream(di[0], di[1]);
+        if (di[0] != 0 || di[1] != 0)
+        {
+	  nrnran123_State** pv = (nrnran123_State**)(&_p_rng);
+	  *pv = nrnran123_newstream(di[0], di[1]);
+        }
 //printf("ProbGABAAB_EMS bbcore_read %d %d\n", di[0], di[1]);
 	*offset += 2;
 }

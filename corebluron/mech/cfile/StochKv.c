@@ -315,7 +315,6 @@ extern void _cvode_abstol( Symbol**, double*, int);
  static double *_t_a;
  static double *_t_b;
  static double *_t_tadj;
-static int _reset;
 static char *modelname = "skm95.mod  ";
 
 static int error;

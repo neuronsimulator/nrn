@@ -95,6 +95,9 @@ int main1( int argc, char **argv, char **env )
         nrn_mkPatternStim( input_params.patternstim );
     }
 
+    /// Setting the timeout
+    nrn_set_timeout(20.);
+
     // find mindelay and set configuration parameter
     double mindelay = BBS_netpar_mindelay( input_params.maxdelay );
 
@@ -135,6 +138,9 @@ int main1( int argc, char **argv, char **env )
     // write spike information to input_params.outpath
     output_spikes( input_params.outpath );
 
+    // Cleaning the memory
+    nrn_cleanup();
+
     // mpi finalize
     nrnmpi_finalize();
 
@@ -161,6 +167,7 @@ void handle_forward_skip( double forwardskip, int prcellgid )
 
     dt = savedt;
     t = savet;
+    dt2thread(-1.);
 }
 
 

@@ -272,7 +272,6 @@ extern void _cvode_abstol( Symbol**, double*, int);
  static double *_t_htau;
  static double *_t_ninf;
  static double *_t_ntau;
-static int _reset;
 static char *modelname = "hh.mod   squid sodium, potassium, and leak channels";
 
 static int error;

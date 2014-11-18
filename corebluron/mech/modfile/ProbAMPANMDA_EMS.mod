@@ -66,7 +66,6 @@ PARAMETER {
         Fac = 10   (ms)  :  relaxation time constant from facilitation
         e = 0     (mV)  : AMPA and NMDA reversal potential
         mg = 1   (mM)  : initial concentration of mg2+
-        mggate
         gmax = .001 (uS) : weight conversion factor (from nS to uS)
         u0 = 0 :initial value of u, which is the running value of release probability
         synapseID = 0
@@ -100,6 +99,7 @@ ASSIGNED {
         A_NMDA_step
         B_NMDA_step
         rng
+        mggate
 
 	: Recording these three, you can observe full state of model
 	: tsyn_fac gives you presynaptic times, Rstate gives you 
@@ -301,8 +301,11 @@ static void bbcore_write(double* x, int* d, int* xx, int* offset, _threadargspro
 static void bbcore_read(double* x, int* d, int* xx, int* offset, _threadargsproto_) {
 	assert(!_p_rng);
 	uint32_t* di = ((uint32_t*)d) + *offset;
-	nrnran123_State** pv = (nrnran123_State**)(&_p_rng);
-	*pv = nrnran123_newstream(di[0], di[1]);
+        if (di[0] != 0 || di[1] != 0)
+        {
+	  nrnran123_State** pv = (nrnran123_State**)(&_p_rng);
+	  *pv = nrnran123_newstream(di[0], di[1]);
+        }
 //printf("ProbAMPANMDA_EMS bbcore_read %d %d\n", di[0], di[1]);
 	*offset += 2;
 }

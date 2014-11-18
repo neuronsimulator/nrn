@@ -189,7 +189,6 @@ extern void _cvode_abstol( Symbol**, double*, int);
  pnt_receive[_mechtype] = _net_receive;
  pnt_receive_size[_mechtype] = 1;
  }
-static int _reset;
 static char *modelname = "";
 
 static int error;

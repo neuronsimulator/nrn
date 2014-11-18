@@ -894,7 +894,7 @@ NetCon::~NetCon() {
 }
 
 void NetCon::rmsrc() {
-assert(0);
+//assert(0);
 #if 0 //replace ps.dil if needed
 	if (src_) {
 	    if (src_->type() == PreSynType) {
@@ -1001,17 +1001,11 @@ PreSyn::~PreSyn() {
 			}
 		}
 	}
-	for (int i=0; i < nc_cnt_; ++i) {
-		netcon_in_presyn_order_[nc_index_ + i]->src_ = NULL;
-	}
 }
 
 InputPreSyn::~InputPreSyn() {
 //	printf("~InputPreSyn %p\n", this);
 	nrn_cleanup_presyn(this);
-	for (int i=0; i < nc_cnt_; ++i) {
-		netcon_in_presyn_order_[nc_index_ + i]->src_ = NULL;
-	}
 }
 
 void PreSyn::vecinit() {

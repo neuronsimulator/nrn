@@ -222,7 +222,6 @@ extern void _cvode_abstol( Symbol**, double*, int);
      _nrn_thread_reg0(_mechtype, _thread_cleanup);
   hoc_register_prop_size(_mechtype, _psize, _ppsize);
  }
-static int _reset;
 static char *modelname = "K-D";
 
 static int error;
