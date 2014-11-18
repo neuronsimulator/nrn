@@ -29,5 +29,5 @@ remove_word(CMAKE_CXX_FLAGS "-Wshadow")
 
 add_subdirectory (unit/endian)
 add_subdirectory (integration)
-#add_subdirectory (regression)
+add_subdirectory (regression)
 add_subdirectory (validation)

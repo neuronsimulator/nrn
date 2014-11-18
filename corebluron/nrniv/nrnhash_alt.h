@@ -354,4 +354,6 @@ bool NrnHashIterator(NrnHash)::next() { \
 		Value value = i__.cur_value(); \
 // need to close with two extra }}
 
+#define NrnHashIterateEnd }}
+
 #endif

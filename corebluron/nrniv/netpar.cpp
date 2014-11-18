@@ -58,7 +58,6 @@ extern int vector_capacity(IvocVect*); //ivocvect.h conflicts with STL
 extern double* vector_vec(IvocVect*);
 extern void nrn_fake_fire(int gid, double firetime, int fake_out);
 int nrnmpi_spike_compress(int nspike, bool gid_compress, int xchng_meth);
-int nrn_set_timeout(int);
 void nrn_spike_exchange_init();
 extern double nrn_bgp_receive_time(int);
 
@@ -90,6 +89,14 @@ extern void nrnmpi_int_allgather(int*, int*, int);
 void nrn2ncs_outputevent(int netcon_output_index, double firetime);
 }
 
+
+void nrnmpi_gid_clear(void)
+{
+  gid2in_->remove_all();
+  gid2out_->remove_all();
+}
+
+
 #ifdef USENCS
 extern int ncs_bgp_sending_info( int ** );
 extern int ncs_bgp_target_hosts( int, int** );
@@ -110,6 +117,7 @@ double ncs_netcon_localmindelay( int srcgid )
     
     return ps->mindelay();
 }
+
 
 //get the number of netcons for an object, if it sends here
 int ncs_netcon_count( int srcgid, bool localNetCons )
@@ -735,7 +743,8 @@ static void mk_localgid_rep() {
 		if (ps->output_index_ >= 0) {
 			++ngid;
 		}
-	}}}
+	}
+    NrnHashIterateEnd
 	int ngidmax = nrnmpi_int_allmax(ngid);
 	if (ngidmax > 256) {
 		//do not compress
@@ -758,7 +767,8 @@ static void mk_localgid_rep() {
 			sbuf[ngid] = ps->output_index_;
 			++ngid;
 		}
-	}}}
+	}
+    NrnHashIterateEnd
 	--sbuf;
 
 	// exchange everything
@@ -978,7 +988,7 @@ int BBS_gid_exists(int gid) {
 }
 
 void nrn_cleanup_presyn(DiscreteEvent*) {
-	assert(0);
+    // for multi-send, need to cleanup the list of hosts here
 }
 
 void BBS_cell(int gid, PreSyn* ps) {
@@ -1027,7 +1037,8 @@ void BBS_spike_record(int gid, IvocVect* spikevec, IvocVect* gidvec) {
 			ps2->record(spikevec, gidvec, ps2->output_index_);
 			MUTUNLOCK 
 		}
-	}}}
+	}
+    NrnHashIterateEnd
     }
 }
 
@@ -1061,13 +1072,15 @@ void gid_connect_allocate() {
 			ps->ncl_ = new NetCon*[ps->nc_cnt_];
 		}
 		ps->nc_cnt_ = 0;
-	}}}
+	}
+    NrnHashIterateEnd
 	NrnHashIterate(Gid2InputPreSyn, gid2in_, InputPreSyn*, psi) {
 		if (psi->nc_cnt_ > 0) {
 			psi->ncl_ = new NetCon*[psi->nc_cnt_];
 		}
 		psi->nc_cnt_ = 0;
-	}}}
+	}
+    NrnHashIterateEnd
 }
 #endif
 

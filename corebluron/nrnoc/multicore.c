@@ -512,9 +512,6 @@ void nrn_threads_create(int n, int parallel) {
 	NrnThread* nt;
 	if (nrn_nthread != n) {
 /*printf("sizeof(NrnThread)=%d   sizeof(Memb_list)=%d\n", sizeof(NrnThread), sizeof(Memb_list));*/
-		threads_free_pthread();
-		nrn_threads_free();
-		free((char*)nrn_threads);
 #if BENCHMARKING
 #endif
 		nrn_threads = (NrnThread*)0;
@@ -558,6 +555,7 @@ void nrn_threads_create(int n, int parallel) {
 				nt->_actual_v = 0;
 				nt->_actual_area = 0;
 				nt->_v_parent_index = 0;
+                nt->_shadow_rhs = 0;
 				nt->_ecell_memb_list = 0;
 				nt->_sp13mat = 0;
 				nt->_ctime = 0.0;
@@ -576,52 +574,13 @@ void nrn_threads_create(int n, int parallel) {
 }
 
 void nrn_threads_free() {
-	int it, i;
-	for (it = 0; it < nrn_nthread; ++it) {
-		NrnThread* nt = nrn_threads + it;
-		NrnThreadMembList* tml, *tml2;
-		if (nt->_ml_list) { free(nt->_ml_list); }
-		for (tml = nt->tml; tml; tml = tml2) {
-			Memb_list* ml = tml->ml;
-			tml2 = tml->next;
-			free((char*)ml->nodeindices);
-			free((char*)ml->data);
-			free((char*)ml->pdata);
-			if (ml->_thread) {
-				if (memb_func[tml->index].thread_cleanup_) {
-	(*memb_func[tml->index].thread_cleanup_)(ml->_thread);
-				}
-				free((char*)ml->_thread);
-			}
-			free((char*)ml);
-			free((char*)tml);
-		}
-		for (i=0; i < BEFORE_AFTER_SIZE; ++i) {
-			NrnThreadBAList* tbl, *tbl2;
-			for (tbl = nt->tbl[i]; tbl; tbl = tbl2) {
-				tbl2 = tbl->next;
-				free((char*)tbl);
-			}
-			nt->tbl[i] = (NrnThreadBAList*)0;
-		}
-		nt->tml = (NrnThreadMembList*)0;
-		if (nt->_actual_rhs) {free((char*)nt->_actual_rhs); nt->_actual_rhs = 0;}
-		if (nt->_actual_d) {free((char*)nt->_actual_d); nt->_actual_d = 0;}
-		if (nt->_actual_a) {free((char*)nt->_actual_a); nt->_actual_a = 0;}
-		if (nt->_actual_b) {free((char*)nt->_actual_b); nt->_actual_b = 0;}
-		if (nt->_v_parent_index) {free((char*)nt->_v_parent_index); nt->_v_parent_index = 0;}
-		nt->_ecell_memb_list = 0;
-		if (nt->_sp13mat) {
-			assert(0);
-			/* spDestroy(nt->_sp13mat); */
-			nt->_sp13mat = 0;
-		}
-		nt->_actual_v = 0;		
-		nt->_actual_area = 0;
-		nt->end = 0;
-		nt->ncell = 0;
-		nrnthreads_free_helper(nt);
-	}
+  if(nrn_nthread)
+  {
+    threads_free_pthread();
+    free((char*)nrn_threads);
+    nrn_threads = 0;
+    nrn_nthread = 0;
+  }
 }
 
 void nrn_mk_table_check() {
@@ -701,7 +660,8 @@ void nrn_multithread_job(void*(*job)(NrnThread*)) {
 	int i;
 #if defined(_OPENMP)
 
-	#pragma omp parallel for default(none) private(i) \
+    // default(none) removed to avoid issue with opari2
+	#pragma omp parallel for private(i) \
 	shared(nrn_threads, job, nrn_nthread, nrnmpi_myid) schedule(static, 1)
 	for(i=0; i < nrn_nthread; ++i) {
 		(*job)(nrn_threads + i);

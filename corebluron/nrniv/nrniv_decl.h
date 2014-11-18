@@ -29,6 +29,7 @@ extern void mk_mech(const char* fname);
 extern void mk_netcvode(void);
 extern void nrn_p_construct(void);
 extern void nrn_setup(const char *path, const char *filesdat, int byte_swap, int threading);
+extern void nrn_cleanup();
 extern double BBS_netpar_mindelay(double maxdelay);
 extern void BBS_netpar_solve(double);
 extern void nrn_mkPatternStim(const char* filename);
@@ -66,6 +67,9 @@ extern size_t input_presyn_size(void);
 extern void handle_forward_skip(double forwardskip, int prcellgid);
 
 extern NetCon** netcon_in_presyn_order_;
+
+extern int nrn_set_timeout(int);
+extern void nrnmpi_gid_clear(void);
 
 #if defined(__cplusplus)
 }
