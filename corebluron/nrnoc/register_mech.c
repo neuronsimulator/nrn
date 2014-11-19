@@ -71,13 +71,19 @@ short* nrn_is_artificial_;
 
 bbcore_read_t* nrn_bbcore_read_;
 void hoc_reg_bbcore_read(int type, bbcore_read_t f) {
-	nrn_bbcore_read_[type] = f;
+  if (type == -1)
+    return;
+
+  nrn_bbcore_read_[type] = f;
 }
 
 void  add_nrn_has_net_event(type) int type; {
-	++nrn_has_net_event_cnt_;
-	nrn_has_net_event_ = (int*)erealloc(nrn_has_net_event_, nrn_has_net_event_cnt_*sizeof(int));
-	nrn_has_net_event_[nrn_has_net_event_cnt_ - 1] = type;
+  if (type == -1)
+    return;
+
+  ++nrn_has_net_event_cnt_;
+  nrn_has_net_event_ = (int*)erealloc(nrn_has_net_event_, nrn_has_net_event_cnt_*sizeof(int));
+  nrn_has_net_event_[nrn_has_net_event_cnt_ - 1] = type;
 }
 
 /* values are type numbers of mechanisms which have FOR_NETCONS statement */
@@ -86,11 +92,16 @@ int* nrn_fornetcon_type_; /* what are the type numbers */
 int* nrn_fornetcon_index_; /* what is the index into the ppvar array */
 
 void add_nrn_fornetcons(int type, int indx) {
-	int i = nrn_fornetcon_cnt_++;
-	nrn_fornetcon_type_ = (int*)erealloc(nrn_fornetcon_type_, (i+1)*sizeof(int));
-	nrn_fornetcon_index_ = (int*)erealloc(nrn_fornetcon_index_, (i+1)*sizeof(int));
-	nrn_fornetcon_type_[i] = type;
-	nrn_fornetcon_index_[i]= indx;
+  int i;
+
+  if (type == -1)
+    return;
+
+  i = nrn_fornetcon_cnt_++;
+  nrn_fornetcon_type_ = (int*)erealloc(nrn_fornetcon_type_, (i+1)*sizeof(int));
+  nrn_fornetcon_index_ = (int*)erealloc(nrn_fornetcon_index_, (i+1)*sizeof(int));
+  nrn_fornetcon_type_[i] = type;
+  nrn_fornetcon_index_[i]= indx;
 }
 
 /* array is parallel to memb_func. All are 0 except 1 for ARTIFICIAL_CELL */
@@ -98,8 +109,11 @@ short* nrn_is_artificial_;
 short* nrn_artcell_qindex_;
 
 void  add_nrn_artcell(int type, int qi){
-	nrn_is_artificial_[type] = 1;
-	nrn_artcell_qindex_[type] = qi;
+  if (type == -1)
+    return;
+
+  nrn_is_artificial_[type] = 1;
+  nrn_artcell_qindex_[type] = qi;
 }
 
 int nrn_is_cable() {return 1;}
@@ -168,6 +182,11 @@ int register_mech(const char** m, mod_alloc_t alloc, mod_f_t cur, mod_f_t jacob,
 	(void)nrnpointerindex; /*unused*/
 
 	type = nrn_get_mechtype(m[1]);
+
+        // No mechanism in the .dat files
+        if (type == -1)
+           return type;
+
 	assert(type);
 #ifdef DEBUG
 	printf("register_mech %s %d\n", m[1], type);
@@ -199,33 +218,40 @@ int register_mech(const char** m, mod_alloc_t alloc, mod_f_t cur, mod_f_t jacob,
 }
 
 void nrn_writes_conc(int type, int unused) {
-	static int lastion = EXTRACELL+1;
-	int i;
-	(void)unused; /* unused */
-	for (i=n_memb_func - 2; i >= lastion; --i) {
-		memb_order_[i+1] = memb_order_[i];
-	}
-	memb_order_[lastion] = type;
+  static int lastion = EXTRACELL+1;
+  int i;
+  (void)unused; /* unused */
+  if (type == -1)
+    return;
+
+  for (i=n_memb_func - 2; i >= lastion; --i) {
+    memb_order_[i+1] = memb_order_[i];
+  }
+  memb_order_[lastion] = type;
 #if 0
 	printf("%s reordered from %d to %d\n", memb_func[type].sym->name, type, lastion);
 #endif
-	if (nrn_is_ion(type)) {
-		++lastion;
-	}
+  if (nrn_is_ion(type)) {
+    ++lastion;
+  }
 }
 
 void hoc_register_prop_size(int type, int psize, int dpsize) {
-        int pold = nrn_prop_param_size_[type];
-        int dpold = nrn_prop_dparam_size_[type];
-        if (psize != pold || dpsize != dpold) {
-          printf("%s prop sizes differ psize %d %d   dpsize %d %d\n", memb_func[type].sym, psize, pold, dpsize, dpold);
-          exit(1);
-        }
-	nrn_prop_param_size_[type] = psize;
-	nrn_prop_dparam_size_[type] = dpsize;
-	if (dpsize) {
-	  memb_func[type].dparam_semantics = (int*)ecalloc(dpsize, sizeof(int));
-	}
+  int pold, dpold;
+  if (type == -1)
+    return;  
+
+  pold = nrn_prop_param_size_[type];
+  dpold = nrn_prop_dparam_size_[type];
+  if (psize != pold || dpsize != dpold) {
+    printf("%s prop sizes differ psize %d %d   dpsize %d %d\n", memb_func[type].sym, psize, pold, dpsize, dpold);
+    exit(1);
+  }
+  nrn_prop_param_size_[type] = psize;
+  nrn_prop_dparam_size_[type] = dpsize;
+  if (dpsize) {
+    memb_func[type].dparam_semantics = (int*)ecalloc(dpsize, sizeof(int));
+  }
 }
 void hoc_register_dparam_semantics(int type, int i, const char* name) {
   /* already set up */
@@ -237,13 +263,18 @@ void register_destructor(Pfri d) {
 }
 
 int point_reg_helper(Symbol* s2) {
-    int type;
-	pointsym[pointtype] = s2;
-    type = nrn_get_mechtype(s2);
-	pnt_map[type] = pointtype;
-	memb_func[type].is_point = 1;
+  int type;
+  type = nrn_get_mechtype(s2);
 
-	return pointtype++;
+  // No mechanism in the .dat files
+  if (type == -1)
+    return type;
+
+  pointsym[pointtype] = s2;
+  pnt_map[type] = pointtype;
+  memb_func[type].is_point = 1;
+
+  return pointtype++;
 }
 
 int point_register_mech(const char** m,
@@ -290,8 +321,11 @@ void state_discontinuity(int i, double* pd, double d) {
 }
 
 void hoc_reg_ba(int mt, mod_f_t f, int type) {
-	BAMech* bam;
-	switch (type) { /* see bablk in src/nmodl/nocpout.c */
+  BAMech* bam;
+  if (type == -1)
+    return;  
+
+  switch (type) { /* see bablk in src/nmodl/nocpout.c */
 	case 11: type = BEFORE_BREAKPOINT; break;
 	case 22: type = AFTER_SOLVE; break;
 	case 13: type = BEFORE_INITIAL; break;
@@ -300,26 +334,38 @@ void hoc_reg_ba(int mt, mod_f_t f, int type) {
 	default:
 printf("before-after processing type %d for %s not implemented\n", type, memb_func[mt].sym);
 		nrn_exit(1);
-	}
-	bam = (BAMech*)emalloc(sizeof(BAMech));
-	bam->f = f;
-	bam->type = mt;
-	bam->next = bamech_[type];
-	bamech_[type] = bam;
+  }
+  bam = (BAMech*)emalloc(sizeof(BAMech));
+  bam->f = f;
+  bam->type = mt;
+  bam->next = bamech_[type];
+  bamech_[type] = bam;
 }
 
 void _nrn_thread_reg0(int i, void(*f)(ThreadDatum*)) {
-	memb_func[i].thread_cleanup_ = f;
+  if (i == -1)
+    return;
+
+  memb_func[i].thread_cleanup_ = f;
 }
 
 void _nrn_thread_reg1(int i, void(*f)(ThreadDatum*)) {
-	memb_func[i].thread_mem_init_ = f;
+  if (i == -1)
+    return;
+
+  memb_func[i].thread_mem_init_ = f;
 }
 
 void _nrn_thread_table_reg(int i, void(*f)(double*, Datum*, ThreadDatum*, void*, int)) {
-	memb_func[i].thread_table_check_ = f;
+  if (i == -1)
+    return;
+
+  memb_func[i].thread_table_check_ = f;
 }
 
 void _nrn_setdata_reg(int i, void(*call)(double*, Datum*)) {
-	memb_func[i].setdata_ = call;
+  if (i == -1)
+    return;
+
+  memb_func[i].setdata_ = call;
 }
