@@ -55,18 +55,24 @@ extern double hoc_Exp(double);
 #define gna _p[4]
 #define gk _p[5]
 #define il _p[6]
-#define m _p[7]
-#define h _p[8]
-#define n _p[9]
-#define Dm _p[10]
-#define Dh _p[11]
-#define Dn _p[12]
-#define ena _p[13]
-#define ek _p[14]
-#define ina _p[15]
-#define ik _p[16]
-#define v _p[17]
-#define _g _p[18]
+#define minf _p[7]
+#define hinf _p[8]
+#define ninf _p[9]
+#define mtau _p[10]
+#define htau _p[11]
+#define ntau _p[12]
+#define m _p[13]
+#define h _p[14]
+#define n _p[15]
+#define Dm _p[16]
+#define Dh _p[17]
+#define Dn _p[18]
+#define ena _p[19]
+#define ek _p[20]
+#define ina _p[21]
+#define ik _p[22]
+#define v _p[23]
+#define _g _p[24]
 #define _ion_ena		_nt->_data[_ppvar[0]]
 #define _ion_ina	_nt->_data[_ppvar[1]]
 #define _ion_dinadv	_nt->_data[_ppvar[2]]
@@ -120,21 +126,6 @@ static void _check_table_thread(double* _p, Datum* _ppvar, ThreadDatum* _thread,
    _check_rates(_p, _ppvar, _thread, _nt);
  }
  /* declare global and static user variables */
- static int _thread1data_inuse = 0;
-static double _thread1data[6];
-#define _gth 0
-#define htau_hh _thread1data[0]
-#define htau _thread[_gth]._pval[0]
-#define hinf_hh _thread1data[1]
-#define hinf _thread[_gth]._pval[1]
-#define mtau_hh _thread1data[2]
-#define mtau _thread[_gth]._pval[2]
-#define minf_hh _thread1data[3]
-#define minf _thread[_gth]._pval[3]
-#define ntau_hh _thread1data[4]
-#define ntau _thread[_gth]._pval[4]
-#define ninf_hh _thread1data[5]
-#define ninf _thread[_gth]._pval[5]
 #define usetable usetable_hh
  double usetable = 1;
  
@@ -148,9 +139,6 @@ static double _thread1data[6];
  0,0,0
 };
  static HocParmUnits _hoc_parm_units[] = {
- "mtau_hh", "ms",
- "htau_hh", "ms",
- "ntau_hh", "ms",
  "gnabar_hh", "S/cm2",
  "gkbar_hh", "S/cm2",
  "gl_hh", "S/cm2",
@@ -158,6 +146,9 @@ static double _thread1data[6];
  "gna_hh", "S/cm2",
  "gk_hh", "S/cm2",
  "il_hh", "mA/cm2",
+ "mtau_hh", "ms",
+ "htau_hh", "ms",
+ "ntau_hh", "ms",
  0,0
 };
  
@@ -170,12 +161,6 @@ static double _thread1data[6];
 #if 0 /*BBCORE*/
  /* connect global user variables to hoc */
  static DoubScal hoc_scdoub[] = {
- "minf_hh", &minf_hh,
- "hinf_hh", &hinf_hh,
- "ninf_hh", &ninf_hh,
- "mtau_hh", &mtau_hh,
- "htau_hh", &htau_hh,
- "ntau_hh", &ntau_hh,
  "usetable_hh", &usetable_hh,
  0,0
 };
@@ -202,6 +187,12 @@ static void  nrn_jacob(_NrnThread*, _Memb_list*, int);
  "gna_hh",
  "gk_hh",
  "il_hh",
+ "minf_hh",
+ "hinf_hh",
+ "ninf_hh",
+ "mtau_hh",
+ "htau_hh",
+ "ntau_hh",
  0,
  "m_hh",
  "h_hh",
@@ -234,11 +225,9 @@ static void nrn_alloc(double* _p, Datum* _ppvar, int _type) {
  
 }
  static void _initlists();
- static void _thread_mem_init(ThreadDatum*);
- static void _thread_cleanup(ThreadDatum*);
  static void _update_ion_pointer(Datum*);
  
-#define _psize 19
+#define _psize 25
 #define _ppsize 6
  extern Symbol* hoc_lookup(const char*);
 extern void _nrn_thread_reg(int, int, void(*f)(Datum*));
@@ -256,13 +245,8 @@ extern void _cvode_abstol( Symbol**, double*, int);
  	_k_sym = hoc_lookup("k_ion");
  
 #endif /*BBCORE*/
- 	register_mech(_mechanism, nrn_alloc,nrn_cur, nrn_jacob, nrn_state, nrn_init, hoc_nrnpointerindex, 2);
-  _extcall_thread = (ThreadDatum*)ecalloc(1, sizeof(ThreadDatum));
-  _thread_mem_init(_extcall_thread);
-  _thread1data_inuse = 0;
+ 	register_mech(_mechanism, nrn_alloc,nrn_cur, nrn_jacob, nrn_state, nrn_init, hoc_nrnpointerindex, 1);
  _mechtype = nrn_get_mechtype(_mechanism[1]);
-     _nrn_thread_reg1(_mechtype, _thread_mem_init);
-     _nrn_thread_reg0(_mechtype, _thread_cleanup);
      _nrn_thread_table_reg(_mechtype, _check_table_thread);
   hoc_register_prop_size(_mechtype, _psize, _ppsize);
  }
@@ -450,21 +434,6 @@ static void _hoc_vtrap(void) {
 }
  
 #endif /*BBCORE*/
- 
-static void _thread_mem_init(ThreadDatum* _thread) {
-  if (_thread1data_inuse) {_thread[_gth]._pval = (double*)ecalloc(6, sizeof(double));
- }else{
- _thread[_gth]._pval = _thread1data; _thread1data_inuse = 1;
- }
- }
- 
-static void _thread_cleanup(ThreadDatum* _thread) {
-  if (_thread[_gth]._pval == _thread1data) {
-   _thread1data_inuse = 0;
-  }else{
-   free((void*)_thread[_gth]._pval);
-  }
- }
  static void _update_ion_pointer(Datum* _ppvar) {
  }
 
