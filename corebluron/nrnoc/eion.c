@@ -21,6 +21,16 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "corebluron/nrnoc/membdef.h"
 #include "corebluron/nrnoc/nrnoc_decl.h"
 
+#if !defined(LAYOUT)
+/* 1 means AoS, >1 means AoSoA, <= 0 means SOA */
+#define LAYOUT 1
+#endif
+#if LAYOUT >= 1
+#define _STRIDE LAYOUT
+#else
+#define _STRIDE _cntml + _iml
+#endif
+
 extern void hoc_register_prop_size(int, int, int);
 
 #define	nparm 5
@@ -73,6 +83,7 @@ void ion_reg(const char* name, double valence) {
 	if (memb_func[mechtype].alloc != ion_alloc) {
 		register_mech((const char**)mechanism, ion_alloc, ion_cur, (mod_f_t)0, (mod_f_t)0, (mod_f_t)ion_init, -1, 1);
 		mechtype = nrn_get_mechtype(mechanism[1]);
+		_nrn_layout_reg(mechtype, LAYOUT);
 		hoc_register_prop_size(mechtype, nparm, 1 );
 		nrn_writes_conc(mechtype, 1);
 		if (ion_global_map_size <= mechtype) {
@@ -172,11 +183,11 @@ double nrn_ghk(double v, double ci, double co, double z) {
 }
 
 #if VECTORIZE
-#define erev	pd[0]	/* From Eion */
-#define conci	pd[1]
-#define conco	pd[2]
-#define cur	pd[3]
-#define dcurdv	pd[4]
+#define erev	pd[0*_STRIDE]	/* From Eion */
+#define conci	pd[1*_STRIDE]
+#define conco	pd[2*_STRIDE]
+#define cur	pd[3*_STRIDE]
+#define dcurdv	pd[4*_STRIDE]
 
 /*
  handle erev, conci, conc0 "in the right way" according to ion_style
@@ -356,6 +367,7 @@ int nrn_vartype(sym) Symbol* sym; {
 
 /* the ion mechanism it flag  defines how _AMBIGUOUS is to be interpreted */
 void nrn_promote(Datum* dparam, int conc, int rev){
+	assert(0);
 	int oldconc, oldrev;
 	int* it = &dparam[0];
 	oldconc = (*it & 03);
@@ -386,16 +398,22 @@ void nrn_promote(Datum* dparam, int conc, int rev){
 
 /* Must be called prior to any channels which update the currents */
 static void ion_cur(NrnThread* nt, Memb_list* ml, int type) {
-	int count = ml->nodecount;
-	int i;
-/*printf("ion_cur %s\n", memb_func[type].sym->name);*/
-#if _CRAY
-#pragma _CRI ivdep
-#endif
+	int _cntml = ml->nodecount;
+	int _iml;
+	double* pd; Datum* ppd;
 	(void)nt; /* unused */
-	for (i=0; i < count; ++i) {
-		double *pd = ml->data + i*nparm;
-		Datum *ppd = ml->pdata + i*1;
+/*printf("ion_cur %s\n", memb_func[type].sym->name);*/
+#if LAYOUT == 1 /*AoS*/
+	for (_iml = 0; _iml < _cntml; ++_iml) {
+	  pd = ml->data + _iml*nparm; ppd = ml->pdata + _iml*1;
+#endif
+#if LAYOUT == 0 /*SoA*/
+	pd = ml->data; ppd = ml->pdata;
+	for (_iml = 0; _iml < _cntml; ++_iml) {
+#endif
+#if LAYOUT > 1 /*AoSoA*/
+#error AoSoA not implemented.
+#endif
 		dcurdv = 0.;
 		cur = 0.;
 		if (iontype & 0100) {
@@ -408,27 +426,26 @@ static void ion_cur(NrnThread* nt, Memb_list* ml, int type) {
 	concentrations based on their own states
 */
 static void ion_init(NrnThread* nt, Memb_list* ml, int type) {
-	int count = ml->nodecount;
-	int i;
-/*printf("ion_init %s\n", memb_func[type].sym->name);*/
-#if _CRAY
-#pragma _CRI ivdep
-#endif
+	int _cntml = ml->nodecount;
+	int _iml;
+	double* pd; Datum* ppd;
 	(void)nt; /* unused */
-	for (i=0; i < count; ++i) {
-		double *pd = ml->data + i*nparm;
-		Datum *ppd = ml->pdata + i*1;
+/*printf("ion_init %s\n", memb_func[type].sym->name);*/
+#if LAYOUT == 1 /*AoS*/
+	for (_iml = 0; _iml < _cntml; ++_iml) {
+	  pd = ml->data + _iml*nparm; ppd = ml->pdata + _iml*1;
+#endif
+#if LAYOUT == 0 /*SoA*/
+	pd = ml->data; ppd = ml->pdata;
+	for (_iml = 0; _iml < _cntml; ++_iml) {
+#endif
+#if LAYOUT > 1 /*AoSoA*/
+#error AoSoA not implemented.
+#endif
 		if (iontype & 04) {
 			conci = conci0;
 			conco = conco0;
 		}
-	}
-#if _CRAY
-#pragma _CRI ivdep
-#endif
-	for (i=0; i < count; ++i) {
-		double *pd = ml->data + i*nparm;
-		Datum *ppd = ml->pdata + i*1;
 		if (iontype & 040) {
 			erev = nrn_nernst(conci, conco, charge);
 		}
@@ -438,6 +455,7 @@ static void ion_init(NrnThread* nt, Memb_list* ml, int type) {
 static void ion_alloc(double* data, Datum* pdata, int type) {
 	double *pd;
 	(void)pdata; /* unused */
+	assert(0);
 	pd = data;	
 
 	cur = 0.;
@@ -467,19 +485,27 @@ void second_order_cur(NrnThread* _nt) {
 	extern int secondorder;
 	NrnThreadMembList* tml;
 	Memb_list* ml;
-	int i, i2;
-#define c 3
-#define dc 4
+	int _iml, _cntml;
+	int* ni;
+	double* pd;
+	(void)_nt; /* unused */
   if (secondorder == 2) {
 	for (tml = _nt->tml; tml; tml = tml->next) if (memb_func[tml->index].alloc == ion_alloc) {
-		int* ni;
 		ml = tml->ml;
-		i2 = ml->nodecount;
+		_cntml = ml->nodecount;
 		ni = ml->nodeindices;
-		for (i = 0; i < i2; ++i) {
-			ml->data[i*nparm + c] += ml->data[i*nparm + dc]
-			   * ( VEC_RHS(ni[i]) )
-			;
+#if LAYOUT == 1 /*AoS*/
+		for (_iml = 0; _iml < _cntml; ++_iml) {
+		  pd = ml->data + _iml*nparm;
+#endif
+#if LAYOUT == 0 /*SoA*/
+		pd = ml->data; ppd = ml->pdata;
+		for (_iml = 0; _iml < _cntml; ++_iml) {
+#endif
+#if LAYOUT > 1 /*AoSoA*/
+#error AoSoA not implemented.
+#endif
+			cur += dcurdv * ( VEC_RHS(ni[_iml]) );
 		}
 	}
    }
