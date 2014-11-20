@@ -43,9 +43,10 @@ NEURON {
     THREADSAFE
     USEION k READ ek WRITE ik
     RANGE N,eta, gk, gamma, gkbar, ik, N0, N1, n0_n1, n1_n0
-    GLOBAL ninf, ntau,a,b,P_a,P_b, deterministic
+    RANGE ninf, ntau,a,b,P_a,P_b, tadj
+    GLOBAL deterministic
     GLOBAL Ra, Rb
-    GLOBAL vmin, vmax, q10, temp, tadj
+    GLOBAL vmin, vmax, q10, temp
     BBCOREPOINTER rng
 }
 

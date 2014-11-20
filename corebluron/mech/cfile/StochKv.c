@@ -53,20 +53,27 @@ extern double hoc_Exp(double);
 #define gamma _p[0]
 #define eta _p[1]
 #define gkbar _p[2]
-#define ik _p[3]
-#define gk _p[4]
-#define N _p[5]
-#define N0 _p[6]
-#define N1 _p[7]
-#define n0_n1 _p[8]
-#define n1_n0 _p[9]
-#define n _p[10]
-#define ek _p[11]
-#define scale_dens _p[12]
-#define n0_n1_new _p[13]
-#define Dn _p[14]
-#define v _p[15]
-#define _g _p[16]
+#define a _p[3]
+#define b _p[4]
+#define ik _p[5]
+#define gk _p[6]
+#define ninf _p[7]
+#define ntau _p[8]
+#define tadj _p[9]
+#define N _p[10]
+#define P_a _p[11]
+#define P_b _p[12]
+#define N0 _p[13]
+#define N1 _p[14]
+#define n0_n1 _p[15]
+#define n1_n0 _p[16]
+#define n _p[17]
+#define ek _p[18]
+#define scale_dens _p[19]
+#define n0_n1_new _p[20]
+#define Dn _p[21]
+#define v _p[22]
+#define _g _p[23]
 #define _ion_ek		_nt->_data[_ppvar[0]]
 #define _ion_ik	_nt->_data[_ppvar[1]]
 #define _ion_dikdv	_nt->_data[_ppvar[2]]
@@ -139,35 +146,18 @@ static void _check_table_thread(double* _p, Datum* _ppvar, ThreadDatum* _thread,
    _check_trates(_p, _ppvar, _thread, _nt);
  }
  /* declare global and static user variables */
- static int _thread1data_inuse = 0;
-static double _thread1data[7];
-#define _gth 0
-#define P_b_StochKv _thread1data[0]
-#define P_b _thread[_gth]._pval[0]
-#define P_a_StochKv _thread1data[1]
-#define P_a _thread[_gth]._pval[1]
 #define Rb Rb_StochKv
  double Rb = 0.002;
 #define Ra Ra_StochKv
  double Ra = 0.02;
-#define a_StochKv _thread1data[2]
-#define a _thread[_gth]._pval[2]
-#define b_StochKv _thread1data[3]
-#define b _thread[_gth]._pval[3]
 #define deterministic deterministic_StochKv
  double deterministic = 0;
-#define ntau_StochKv _thread1data[4]
-#define ntau _thread[_gth]._pval[4]
-#define ninf_StochKv _thread1data[5]
-#define ninf _thread[_gth]._pval[5]
 #define qa qa_StochKv
  double qa = 9;
 #define q10 q10_StochKv
  double q10 = 2.3;
 #define tha tha_StochKv
  double tha = -40;
-#define tadj_StochKv _thread1data[6]
-#define tadj _thread[_gth]._pval[6]
 #define temp temp_StochKv
  double temp = 23;
 #define usetable usetable_StochKv
@@ -190,14 +180,14 @@ static double _thread1data[7];
  "temp_StochKv", "degC",
  "vmin_StochKv", "mV",
  "vmax_StochKv", "mV",
- "a_StochKv", "/ms",
- "b_StochKv", "/ms",
- "ntau_StochKv", "ms",
  "gamma_StochKv", "pS",
  "eta_StochKv", "1/um2",
  "gkbar_StochKv", "S/cm2",
+ "a_StochKv", "/ms",
+ "b_StochKv", "/ms",
  "ik_StochKv", "mA/cm2",
  "gk_StochKv", "S/cm2",
+ "ntau_StochKv", "ms",
  0,0
 };
  
@@ -217,13 +207,6 @@ static double _thread1data[7];
  "deterministic_StochKv", &deterministic_StochKv,
  "vmin_StochKv", &vmin_StochKv,
  "vmax_StochKv", &vmax_StochKv,
- "a_StochKv", &a_StochKv,
- "b_StochKv", &b_StochKv,
- "ninf_StochKv", &ninf_StochKv,
- "ntau_StochKv", &ntau_StochKv,
- "tadj_StochKv", &tadj_StochKv,
- "P_a_StochKv", &P_a_StochKv,
- "P_b_StochKv", &P_b_StochKv,
  "usetable_StochKv", &usetable_StochKv,
  0,0
 };
@@ -246,9 +229,16 @@ static void  nrn_jacob(_NrnThread*, _Memb_list*, int);
  "eta_StochKv",
  "gkbar_StochKv",
  0,
+ "a_StochKv",
+ "b_StochKv",
  "ik_StochKv",
  "gk_StochKv",
+ "ninf_StochKv",
+ "ntau_StochKv",
+ "tadj_StochKv",
  "N_StochKv",
+ "P_a_StochKv",
+ "P_b_StochKv",
  "N0_StochKv",
  "N1_StochKv",
  "n0_n1_StochKv",
@@ -277,11 +267,9 @@ static void nrn_alloc(double* _p, Datum* _ppvar, int _type) {
  
 }
  static void _initlists();
- static void _thread_mem_init(ThreadDatum*);
- static void _thread_cleanup(ThreadDatum*);
  static void _update_ion_pointer(Datum*);
  
-#define _psize 17
+#define _psize 24
 #define _ppsize 5
  static void bbcore_read(double *, int*, int*, int*, _threadargsproto_);
  extern void hoc_reg_bbcore_read(int, void(*)(double *, int*, int*, int*, _threadargsproto_));
@@ -299,13 +287,8 @@ extern void _cvode_abstol( Symbol**, double*, int);
  	_k_sym = hoc_lookup("k_ion");
  
 #endif /*BBCORE*/
- 	register_mech(_mechanism, nrn_alloc,nrn_cur, nrn_jacob, nrn_state, nrn_init, hoc_nrnpointerindex, 2);
-  _extcall_thread = (ThreadDatum*)ecalloc(1, sizeof(ThreadDatum));
-  _thread_mem_init(_extcall_thread);
-  _thread1data_inuse = 0;
+ 	register_mech(_mechanism, nrn_alloc,nrn_cur, nrn_jacob, nrn_state, nrn_init, hoc_nrnpointerindex, 1);
  _mechtype = nrn_get_mechtype(_mechanism[1]);
-     _nrn_thread_reg1(_mechtype, _thread_mem_init);
-     _nrn_thread_reg0(_mechtype, _thread_cleanup);
      _nrn_thread_table_reg(_mechtype, _check_table_thread);
    hoc_reg_bbcore_read(_mechtype, bbcore_read);
   hoc_register_prop_size(_mechtype, _psize, _ppsize);
@@ -834,21 +817,6 @@ static void _hoc_BnlDev(void) {
 }
  
 #endif /*BBCORE*/
- 
-static void _thread_mem_init(ThreadDatum* _thread) {
-  if (_thread1data_inuse) {_thread[_gth]._pval = (double*)ecalloc(7, sizeof(double));
- }else{
- _thread[_gth]._pval = _thread1data; _thread1data_inuse = 1;
- }
- }
- 
-static void _thread_cleanup(ThreadDatum* _thread) {
-  if (_thread[_gth]._pval == _thread1data) {
-   _thread1data_inuse = 0;
-  }else{
-   free((void*)_thread[_gth]._pval);
-  }
- }
  static void _update_ion_pointer(Datum* _ppvar) {
  }
 

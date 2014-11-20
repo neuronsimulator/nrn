@@ -50,12 +50,16 @@ extern double hoc_Exp(double);
 #define gkbar _p[0]
 #define ek _p[1]
 #define ik _p[2]
-#define m _p[3]
-#define h _p[4]
-#define Dm _p[5]
-#define Dh _p[6]
-#define v _p[7]
-#define _g _p[8]
+#define minf _p[3]
+#define mtau _p[4]
+#define hinf _p[5]
+#define htau _p[6]
+#define m _p[7]
+#define h _p[8]
+#define Dm _p[9]
+#define Dh _p[10]
+#define v _p[11]
+#define _g _p[12]
 #define _ion_ik	_nt->_data[_ppvar[0]]
 #define _ion_dikdv	_nt->_data[_ppvar[1]]
  
@@ -96,21 +100,10 @@ extern Memb_func* memb_func;
  
 #endif /*BBCORE*/
  /* declare global and static user variables */
- static int _thread1data_inuse = 0;
-static double _thread1data[4];
-#define _gth 0
-#define htau_KdShu2007 _thread1data[0]
-#define htau _thread[_gth]._pval[0]
-#define hinf_KdShu2007 _thread1data[1]
-#define hinf _thread[_gth]._pval[1]
 #define kh kh_KdShu2007
  double kh = 7.3;
 #define km km_KdShu2007
  double km = 8;
-#define mtau_KdShu2007 _thread1data[2]
-#define mtau _thread[_gth]._pval[2]
-#define minf_KdShu2007 _thread1data[3]
-#define minf _thread[_gth]._pval[3]
 #define q10 q10_KdShu2007
  double q10 = 2.3;
 #define vhalfh vhalfh_KdShu2007
@@ -126,11 +119,11 @@ static double _thread1data[4];
  static HocParmUnits _hoc_parm_units[] = {
  "vhalfm_KdShu2007", "mV",
  "vhalfh_KdShu2007", "mV",
- "mtau_KdShu2007", "ms",
- "htau_KdShu2007", "ms",
  "gkbar_KdShu2007", "mho/cm2",
  "ek_KdShu2007", "mV",
  "ik_KdShu2007", "mA/cm2",
+ "mtau_KdShu2007", "ms",
+ "htau_KdShu2007", "ms",
  0,0
 };
  
@@ -147,10 +140,6 @@ static double _thread1data[4];
  "vhalfh_KdShu2007", &vhalfh_KdShu2007,
  "kh_KdShu2007", &kh_KdShu2007,
  "q10_KdShu2007", &q10_KdShu2007,
- "minf_KdShu2007", &minf_KdShu2007,
- "mtau_KdShu2007", &mtau_KdShu2007,
- "hinf_KdShu2007", &hinf_KdShu2007,
- "htau_KdShu2007", &htau_KdShu2007,
  0,0
 };
  static DoubVec hoc_vdoub[] = {
@@ -172,6 +161,10 @@ static void  nrn_jacob(_NrnThread*, _Memb_list*, int);
  "ek_KdShu2007",
  0,
  "ik_KdShu2007",
+ "minf_KdShu2007",
+ "mtau_KdShu2007",
+ "hinf_KdShu2007",
+ "htau_KdShu2007",
  0,
  "m_KdShu2007",
  "h_KdShu2007",
@@ -193,11 +186,9 @@ static void nrn_alloc(double* _p, Datum* _ppvar, int _type) {
  
 }
  static void _initlists();
- static void _thread_mem_init(ThreadDatum*);
- static void _thread_cleanup(ThreadDatum*);
  static void _update_ion_pointer(Datum*);
  
-#define _psize 9
+#define _psize 13
 #define _ppsize 2
  extern Symbol* hoc_lookup(const char*);
 extern void _nrn_thread_reg(int, int, void(*f)(Datum*));
@@ -213,13 +204,8 @@ extern void _cvode_abstol( Symbol**, double*, int);
  	_k_sym = hoc_lookup("k_ion");
  
 #endif /*BBCORE*/
- 	register_mech(_mechanism, nrn_alloc,nrn_cur, nrn_jacob, nrn_state, nrn_init, hoc_nrnpointerindex, 2);
-  _extcall_thread = (ThreadDatum*)ecalloc(1, sizeof(ThreadDatum));
-  _thread_mem_init(_extcall_thread);
-  _thread1data_inuse = 0;
+ 	register_mech(_mechanism, nrn_alloc,nrn_cur, nrn_jacob, nrn_state, nrn_init, hoc_nrnpointerindex, 1);
  _mechtype = nrn_get_mechtype(_mechanism[1]);
-     _nrn_thread_reg1(_mechtype, _thread_mem_init);
-     _nrn_thread_reg0(_mechtype, _thread_cleanup);
   hoc_register_prop_size(_mechtype, _psize, _ppsize);
  }
 static char *modelname = "K-D";
@@ -281,21 +267,6 @@ static void _hoc_trates(void) {
 }
  
 #endif /*BBCORE*/
- 
-static void _thread_mem_init(ThreadDatum* _thread) {
-  if (_thread1data_inuse) {_thread[_gth]._pval = (double*)ecalloc(4, sizeof(double));
- }else{
- _thread[_gth]._pval = _thread1data; _thread1data_inuse = 1;
- }
- }
- 
-static void _thread_cleanup(ThreadDatum* _thread) {
-  if (_thread[_gth]._pval == _thread1data) {
-   _thread1data_inuse = 0;
-  }else{
-   free((void*)_thread[_gth]._pval);
-  }
- }
  static void _update_ion_pointer(Datum* _ppvar) {
  }
 

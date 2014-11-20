@@ -54,10 +54,6 @@ void cb_parameters::show_cb_opts()
             printf( "\n prcellstate will be called for gid %d", prcellgid );
         }
 
-        if ( patternstim ) {
-            printf( "\n patternstim will be read from the file: %s", patternstim );
-        }
-
         printf( "\n\n" );
     }
 }
