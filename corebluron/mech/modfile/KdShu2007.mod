@@ -6,7 +6,7 @@ NEURON {
 	SUFFIX KdShu2007
 	USEION k WRITE ik
 	RANGE  gkbar, ik, ek
-	GLOBAL minf, mtau, hinf, htau
+	RANGE minf, mtau, hinf, htau
 }
 
 PARAMETER {

@@ -115,9 +115,13 @@ static void set_mechtype(const char* name, int type) {
 int nrn_get_mechtype(const char* name) {
   int type;
   StringKey s(name);
-  if (!mech2type->find(type, s)) {
+  if (!mech2type->find(type, s))
+    return -1;
+/*
+ {
     printf("could not find %s\n", name);
     abort();
   }
+*/
   return type;
 }
