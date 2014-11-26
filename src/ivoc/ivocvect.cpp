@@ -45,14 +45,14 @@ extern "C" {extern void exit(int status);};
 #include "graph.h"
 #endif
 
-#define BrainDamaged 1  //The Sun CC compiler but it doesn't hurt to leave it in
-#if BrainDamaged
 #ifndef PI
 #ifndef M_PI
 	#define M_PI 3.14159265358979323846
 #endif
 #define PI M_PI
 #endif
+#define BrainDamaged 0  //The Sun CC compiler but it doesn't hurt to leave it in
+#if BrainDamaged
 #define FWrite(arg1,arg2,arg3,arg4) if (fwrite((char*)(arg1),arg2,arg3,arg4) != arg3) { hoc_execerror("fwrite error", 0); }
 #define FRead(arg1,arg2,arg3,arg4) if (fread((char*)(arg1),arg2,arg3,arg4) != arg3) { hoc_execerror("fread error", 0); }
 #else
