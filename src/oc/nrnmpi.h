@@ -26,6 +26,7 @@ extern "C" {
 #endif
 
 extern int nrnmpi_use; /* NEURON does MPI init and terminate?*/
+extern int nrn_cannot_use_threads_and_mpi; /* 0 if required <= provided from MPI_Init_thread */
 
 #if defined(__cplusplus)
 }

@@ -349,6 +349,11 @@ static void* slave_main(void* arg) {
 }
 
 static void threads_create_pthread(){
+    if (nrn_nthread > 1 && nrnmpi_numprocs > 1 && nrn_cannot_use_threads_and_mpi == 1) {
+	if (nrnmpi_myid == 0) { printf("This MPI is not threadsafe so pthreads are disabled.\n"); }
+	nrn_thread_parallel_ = 0;
+	return;
+    }
     setaffinity(nrnmpi_myid);
     if (nrn_nthread > 1) {
 	int i;
