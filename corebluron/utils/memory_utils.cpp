@@ -17,24 +17,32 @@
 #include "memory_utils.h"
 #include "corebluron/nrnmpi/nrnmpi.h"
 
-#ifdef HAVE_MALLOC_H
+#ifdef HAVE_MEMORY_H
+#include <spi/include/kernel/memory.h>
+#elif defined HAVE_MALLOC_H
 #include <malloc.h>
 #endif
 
 
 double nrn_mallinfo( void )
 {
-  double kbs = -1.0; // -ve mem usage if mallinfo is not supported
+  double mbs = -1.0; // -ve mem usage if mallinfo is not supported
 
+
+// On BG-Q, Use kernel/memory.h to get heap statistics
+#ifdef HAVE_MEMORY_H
+  uint64_t heap = 0;
+  Kernel_GetMemorySize(KERNEL_MEMSIZE_HEAP, &heap);
+  mbs = heap / (1024.0 * 1024.0);
 // if malloc.h available, collect information from mallinfo  
-#ifdef HAVE_MALLOC_H
+#elif defined HAVE_MALLOC_H
   struct mallinfo m;
   
   m =  mallinfo();
-  kbs = ( m.hblkhd + m.uordblks ) /  1024.0;
+  mbs = ( m.hblkhd + m.uordblks ) /  (1024.0 * 1024.0);
 #endif
   
-  return kbs;
+  return mbs;
 }
 
 
@@ -52,12 +60,12 @@ void report_mem_usage( const char *message, bool all_ranks )
   
   // all ranks prints information if all_ranks is true
   if ( all_ranks ) {
-    printf( " Memory (KBs) (Rank : %2d) : %30s : Cur %.4lf, Max %.4lf, Min %.4lf, Avg %.4lf \n", \
+    printf( " Memory (MBs) (Rank : %2d) : %30s : Cur %.4lf, Max %.4lf, Min %.4lf, Avg %.4lf \n", \
             nrnmpi_myid, message, cur_mem, mem_max, mem_min, mem_avg );
   }
   else if ( nrnmpi_myid == 0 ) {
   
-    printf( " Memory (KBs) : %25s : Max %.4lf, Min %.4lf, Avg %.4lf \n", \
+    printf( " Memory (MBs) : %25s : Max %.4lf, Min %.4lf, Avg %.4lf \n", \
             message, mem_max, mem_min, mem_avg );
   }
 }
