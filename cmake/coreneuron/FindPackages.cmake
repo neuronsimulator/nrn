@@ -2,30 +2,58 @@
 
 include(System)
 list(APPEND FIND_PACKAGES_DEFINES ${SYSTEM})
+# Copyright (c) 2014 Stefan.Eilemann@epfl.ch
+
+# Provides common_package(Name args) which improves find_package.
+# First invokes find_package with all the given arguments, and then
+# falls back to using pkg_config if available. The pkg_config path
+# does only implement the version, REQUIRED and QUIET find_package
+# arguments (e.g. no COMPONENTS)
+
 find_package(PkgConfig)
+set(ENV{PKG_CONFIG_PATH}
+  "${CMAKE_INSTALL_PREFIX}/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}")
 
-set(ENV{PKG_CONFIG_PATH} "${CMAKE_INSTALL_PREFIX}/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}")
-if(PKG_CONFIG_EXECUTABLE)
-  find_package(MPI )
-  if((NOT MPI_FOUND) AND (NOT MPI_FOUND))
-    pkg_check_modules(MPI MPI)
-  endif()
-  if((NOT MPI_FOUND) AND (NOT MPI_FOUND))
-    message(FATAL_ERROR "Could not find MPI")
-  endif()
-else()
-  find_package(MPI   REQUIRED)
-endif()
+macro(COMMON_PACKAGE Name)
+  string(TOUPPER ${Name} COMMON_PACKAGE_NAME)
+  set(COMMON_PACKAGE_ARGS ${ARGN}) # ARGN is not a list. make one.
+  set(COMMON_PACKAGE_VERSION)
 
-if(PKG_CONFIG_EXECUTABLE)
-  find_package(Boost 1.41.0 COMPONENTS system unit_test_framework)
-  if((NOT Boost_FOUND) AND (NOT BOOST_FOUND))
-    pkg_check_modules(Boost Boost>=1.41.0)
+  if(COMMON_PACKAGE_ARGS)
+    list(GET COMMON_PACKAGE_ARGS 0 COMMON_PACKAGE_VERSION)
+    if(COMMON_PACKAGE_VERSION MATCHES "^[0-9.]+$") # is a version
+      set(COMMON_PACKAGE_VERSION ">=${COMMON_PACKAGE_VERSION}")
+    else()
+      set(COMMON_PACKAGE_VERSION)
+    endif()
   endif()
-else()
-  find_package(Boost 1.41.0  COMPONENTS system unit_test_framework)
-endif()
 
+  list(FIND COMMON_PACKAGE_ARGS "QUIET" COMMON_PACKAGE_QUIET_POS)
+  if(COMMON_PACKAGE_QUIET_POS EQUAL -1)
+    set(COMMON_PACKAGE_QUIET)
+  else()
+    set(COMMON_PACKAGE_QUIET "QUIET")
+  endif()
+
+  list(FIND COMMON_PACKAGE_ARGS "REQUIRED" COMMON_PACKAGE_REQUIRED_POS)
+  if(COMMON_PACKAGE_REQUIRED_POS EQUAL -1) # Optional find
+    find_package(${Name} ${COMMON_PACKAGE_ARGS}) # try standard cmake way
+    if((NOT ${Name}_FOUND) AND (NOT ${COMMON_PACKAGE_NAME}_FOUND) AND PKG_CONFIG_EXECUTABLE)
+      pkg_check_modules(${Name} ${Name}${COMMON_PACKAGE_VERSION}
+        ${COMMON_PACKAGE_QUIET}) # try pkg_config way
+    endif()
+  else() # required find
+    list(REMOVE_AT COMMON_PACKAGE_ARGS ${COMMON_PACKAGE_REQUIRED_POS})
+    find_package(${Name} ${COMMON_PACKAGE_ARGS}) # try standard cmake way
+    if((NOT ${Name}_FOUND) AND (NOT ${COMMON_PACKAGE_NAME}_FOUND) AND PKG_CONFIG_EXECUTABLE)
+      pkg_check_modules(${Name} REQUIRED ${Name}${COMMON_PACKAGE_VERSION}
+        ${COMMON_PACKAGE_QUIET}) # try pkg_config way (and fail if needed)
+    endif()
+  endif()
+endmacro()
+
+common_package(MPI   REQUIRED )
+common_package(Boost 1.41.0   COMPONENTS system unit_test_framework)
 
 if(EXISTS ${PROJECT_SOURCE_DIR}/CMake/FindPackagesPost.cmake)
   include(${PROJECT_SOURCE_DIR}/CMake/FindPackagesPost.cmake)
@@ -40,6 +68,9 @@ elseif(MPI_FOUND)
 endif()
 if(MPI_name)
   list(APPEND FIND_PACKAGES_DEFINES COREBLURON_USE_MPI)
+  if(NOT COMMON_LIBRARY_TYPE MATCHES "SHARED")
+    list(APPEND COREBLURON_DEPENDENT_LIBRARIES MPI)
+  endif()
   set(FIND_PACKAGES_FOUND "${FIND_PACKAGES_FOUND} MPI")
   link_directories(${${MPI_name}_LIBRARY_DIRS})
   if(NOT "${${MPI_name}_INCLUDE_DIRS}" MATCHES "-NOTFOUND")
@@ -56,6 +87,9 @@ elseif(Boost_FOUND)
 endif()
 if(Boost_name)
   list(APPEND FIND_PACKAGES_DEFINES COREBLURON_USE_BOOST)
+  if(NOT COMMON_LIBRARY_TYPE MATCHES "SHARED")
+    list(APPEND COREBLURON_DEPENDENT_LIBRARIES Boost)
+  endif()
   set(FIND_PACKAGES_FOUND "${FIND_PACKAGES_FOUND} Boost")
   link_directories(${${Boost_name}_LIBRARY_DIRS})
   if(NOT "${${Boost_name}_INCLUDE_DIRS}" MATCHES "-NOTFOUND")
