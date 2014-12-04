@@ -500,7 +500,8 @@ void hoc_sprint1(char** ppbuf, int argn) {	/* convert args to right type for con
 			break;
 
 		case '%':
-			Sprintf(pbuf, frag);
+			pfrag[-1] = 0;
+			strcpy(pbuf, frag);
 			didit = 1;
 			argn--; /* an arg was not consumed */
 			break;
