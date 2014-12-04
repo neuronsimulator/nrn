@@ -56,8 +56,8 @@ extern "C" {extern void exit(int status);};
 #define FWrite(arg1,arg2,arg3,arg4) if (fwrite((char*)(arg1),arg2,arg3,arg4) != arg3) { hoc_execerror("fwrite error", 0); }
 #define FRead(arg1,arg2,arg3,arg4) if (fread((char*)(arg1),arg2,arg3,arg4) != arg3) { hoc_execerror("fread error", 0); }
 #else
-#define FWrite(arg1,arg2,arg3,arg4) fwrite(arg1,arg2,arg3,arg4)
-#define FRead(arg1,arg2,arg3,arg4) fread(arg1,arg2,arg3,arg4)
+#define FWrite(arg1,arg2,arg3,arg4) if (fwrite(arg1,arg2,arg3,arg4) != arg3){}
+#define FRead(arg1,arg2,arg3,arg4) if (fread(arg1,arg2,arg3,arg4) != arg3) {}
 #endif
 
 static double dmaxint_;
