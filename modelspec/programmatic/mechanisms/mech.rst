@@ -875,6 +875,8 @@ Mechanisms
          
         i_membrane correctly does not include contributions from ELECTRODE_CURRENT 
         point processes. 
+
+        See i_membrane_ at :meth:`CVode.use_fast_imem`.
          
         The figure illustrates the form the electrical equivalent circuit 
         when this mechanism is present. Note that previous documentation 
