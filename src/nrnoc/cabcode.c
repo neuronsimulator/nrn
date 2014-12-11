@@ -907,6 +907,9 @@ void nrn_rangeconst(Section* sec, Symbol* s, double* pd, int op)
 			NODEV(sec->pnode[i]) = *pd;
 		}
 	}else{
+		if (s->u.rng.type == IMEMFAST){
+			hoc_execerror("i_membrane_ cannot be assigned a value", 0);
+		}
 		indx = range_vec_indx(s);
 		if (s->u.rng.type == MORPHOLOGY) {
 			if (!can_change_morph(sec)) {
@@ -1169,6 +1172,9 @@ void range_interpolate(void) /*symbol at pc, 4 values on stack*/
 		}
 		return;
 	}
+	if (s->u.rng.type == IMEMFAST){
+		hoc_execerror("i_membrane_ cannot be assigned a value", 0);
+	}
 	if (s->u.rng.type == MORPHOLOGY) {
 		if (!can_change_morph(sec)) {
 			return;
@@ -1235,6 +1241,8 @@ int nrn_exists(Symbol* s, Node* node)
 	}else if (nrn_vext_pd(s, 0, node)) {
 		return 1;
 #endif
+	}else if (s->u.rng.type == IMEMFAST && nrn_use_fast_imem){
+		return 1;
 	}else{
 		return 0;
 	}
@@ -1250,6 +1258,18 @@ double* nrn_rangepointer(Section* sec, Symbol* s, double d)
 	if (s->u.rng.type == VINDEX) {
 		nd = node_ptr(sec, d, (double *)0);
 		return &NODEV(nd);
+	}
+	if (s->u.rng.type == IMEMFAST) {
+		if (nrn_use_fast_imem) {
+			nd = node_ptr(sec, d, (double *)0);
+			if (!nd->_nt) {
+				v_setup_vectors();
+				assert(nd->_nt);
+			}
+			return nd->_nt->_nrn_fast_imem->_nrn_sav_rhs + nd->v_node_index;
+		}else{
+			hoc_execerror("cvode.use_fast_imem(1) has not been executed so i_membrane_ does not exist", 0);
+		}
 	}
 	indx = range_vec_indx(s);
 #if EXTRACELLULAR
@@ -1277,6 +1297,18 @@ double* nrnpy_rangepointer(Section* sec, Symbol* s, double d, int* err)
 	*err = 0;
 	if (s->u.rng.type == VINDEX) {
 		return &NODEV(node_ptr(sec, d, (double *)0));
+	}
+	if (s->u.rng.type == IMEMFAST) {
+		if (nrn_use_fast_imem) {
+			nd = node_ptr(sec, d, (double *)0);
+			if (!nd->_nt) {
+				v_setup_vectors();
+				assert(nd->_nt);
+			}
+			return nd->_nt->_nrn_fast_imem->_nrn_sav_rhs + nd->v_node_index;
+		}else{
+			return (double*)0;
+		}
 	}
 #if EXTRACELLULAR
 	if (s->u.rng.type == EXTRACELL) {
@@ -1306,6 +1338,19 @@ void rangevarevalpointer(void) /* symbol at pc, location on stack, return pointe
 	if (s->u.rng.type == VINDEX) {
 		nd = node_ptr(sec, d, (double *)0);
 		hoc_pushpx(&NODEV(nd));
+		return;
+	}
+	if (s->u.rng.type == IMEMFAST) {
+		if (nrn_use_fast_imem) {
+			nd = node_ptr(sec, d, (double *)0);
+			if (!nd->_nt) {
+				v_setup_vectors();
+				assert(nd->_nt);
+			}
+			hoc_pushpx(nd->_nt->_nrn_fast_imem->_nrn_sav_rhs + nd->v_node_index);
+		}else{
+			hoc_execerror("cvode.use_fast_imem(1) has not been executed so i_membrane_ does not exist", 0);
+		}
 		return;
 	}
 	indx = range_vec_indx(s);

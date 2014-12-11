@@ -49,6 +49,7 @@ typedef struct Memb_func {
 } Memb_func;
 
 
+#define IMEMFAST -2
 #define VINDEX	-1
 #define CABLESECTION	1
 #define MORPHOLOGY	2

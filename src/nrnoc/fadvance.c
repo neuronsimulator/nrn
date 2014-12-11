@@ -160,6 +160,7 @@ int cvode_active_;
 #endif
 
 int stoprun;
+int nrn_use_fast_imem;
 
 #define PROFILE 0
 #include "profile.h"
@@ -574,7 +575,25 @@ static void update(NrnThread* _nt)
 		nrn_capacity_current(_nt, _nt->tml->ml);
 	}
 #endif
+	if (nrn_use_fast_imem) { nrn_calc_fast_imem(_nt); }
+}
 
+void nrn_calc_fast_imem(NrnThread* _nt) {
+	int i;
+	int i1 = 0;
+	int i3 = _nt->end;
+	double* pd = _nt->_nrn_fast_imem->_nrn_sav_d;
+	double* prhs = _nt->_nrn_fast_imem->_nrn_sav_rhs;
+    if (use_cachevec) {
+	for (i = i1; i < i3 ; ++i) {
+		prhs[i] = (pd[i]*VEC_RHS(i) + prhs[i])*VEC_AREA(i)*0.01;
+	}
+    }else{
+	for (i = i1; i < i3 ; ++i) {
+		Node* nd = _nt->_v_node[i];
+		prhs[i] = (pd[i]*NODERHS(nd) + prhs[i])*NODEAREA(nd)*0.01;
+	}
+    }
 }
 
 void fcurrent(void)
@@ -858,6 +877,9 @@ hoc_warning("errno set during call to INITIAL block", (char*)0);
 		state_discon_allowed_ = 0;
 		for (i=0; i < nrn_nthread; ++i) {
 			setup_tree_matrix(nrn_threads + i);
+			if (nrn_use_fast_imem) {
+				nrn_calc_fast_imem(nrn_threads + i);
+			}
 		}
 		state_discon_allowed_ = 1;
 #if 0 && NRN_DAQ

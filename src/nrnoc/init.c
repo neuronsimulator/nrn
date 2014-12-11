@@ -299,6 +299,10 @@ void hoc_last_init(void)
 	CHECK("v");
 	s = hoc_install("v", RANGEVAR, 0.0, &hoc_symlist);
 	s->u.rng.type = VINDEX;
+
+	CHECK("i_membrane_");
+	s = hoc_install("i_membrane_", RANGEVAR, 0.0, &hoc_symlist);
+	s->u.rng.type = IMEMFAST;
 	
 	for (i = 0; usrprop[i].name; i++) {
 		CHECK(usrprop[i].name);

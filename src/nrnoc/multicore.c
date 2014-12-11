@@ -537,6 +537,7 @@ void nrn_threads_create(int n, int parallel) {
 				nt->_sp13mat = 0;
 				nt->_ctime = 0.0;
 				nt->_vcv = 0;
+				nt->_nrn_fast_imem = 0;
 			}
 		}
 		v_structure_change = 1;
@@ -549,6 +550,28 @@ void nrn_threads_create(int n, int parallel) {
 		}
 	}
 	/*printf("nrn_threads_create %d %d\n", nrn_nthread, nrn_thread_parallel_);*/
+}
+
+static void nrn_fast_imem_free(NrnThread* nt) {
+	if (nt->_nrn_fast_imem) {
+		if (nt->_nrn_fast_imem->_nrn_sav_rhs) {
+			free(nt->_nrn_fast_imem->_nrn_sav_rhs);
+			free(nt->_nrn_fast_imem->_nrn_sav_d);
+		}
+		free(nt->_nrn_fast_imem);
+		nt->_nrn_fast_imem = 0;
+	}
+}
+
+void nrn_fast_imem_alloc(NrnThread* nt) {
+	nrn_fast_imem_free(nt);
+	if (nrn_use_fast_imem) {
+		nt->_nrn_fast_imem = ecalloc(1, sizeof(_nrn_Fast_Imem));
+		if (nt->end) {
+			CACHELINE_ALLOC(nt->_nrn_fast_imem->_nrn_sav_rhs, double, nt->end);
+			CACHELINE_ALLOC(nt->_nrn_fast_imem->_nrn_sav_d, double, nt->end);
+		}
+	}
 }
 
 void nrn_threads_free() {
@@ -601,6 +624,7 @@ void nrn_threads_free() {
 			spDestroy(nt->_sp13mat);
 			nt->_sp13mat = 0;
 		}
+		nrn_fast_imem_free(nt);
 		/* following freed by nrn_recalc_node_ptrs */
 		nrn_old_thread_save();
 		nt->_actual_v = 0;		
@@ -676,6 +700,7 @@ hoc_execerror(memb_func[i].sym->name, "is not thread safe");
 			tml->ml->nodecount = 0; /* counted again below */
 		}
 	}
+	nrn_fast_imem_alloc(_nt);
 
 	/* fill */
 	for (i = 0; i < _nt->end; ++i) {

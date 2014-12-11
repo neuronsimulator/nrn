@@ -503,13 +503,18 @@ for (i=0; i < z.nvsize_; ++i) {
 	if (z.cmlcap_) {
 		Memb_list* ml = z.cmlcap_->ml;
 		int n = ml->nodecount;
+		double* p = NULL;
+		if (nt->_nrn_fast_imem) {
+			p = nt->_nrn_fast_imem->_nrn_sav_rhs;
+		}
 		for (i=0; i < n; ++i) {
 			double* cd = ml->data[i];
 			Node* nd = ml->nodelist[i];
 			int j = nd->eqn_index_ - 1;
 			Extnode* nde = nd->extnode;
+			double cdvm;
 			if (nde) {
-				double cdvm = 1e-3 * cd[0] * (yprime[j] - yprime[j+1]);
+				cdvm = 1e-3 * cd[0] * (yprime[j] - yprime[j+1]);
 				delta[j] -= cdvm;
 				delta[j+1] += cdvm;
 				// i_cap
@@ -520,9 +525,14 @@ for (i=0; i < z.nvsize_; ++i) {
 				nde->param[3+3*nlayer] += cdvm;
 #endif
 			}else{
-				double cdvm = 1e-3 * cd[0] * yprime[j];
+				cdvm = 1e-3 * cd[0] * yprime[j];
 				delta[j] -= cdvm;
 				cd[1] = cdvm;
+			}
+			if (p) {
+				int i = nd->v_node_index;
+				p[i] += cdvm;
+				p[i] *= NODEAREA(nd) * 0.01;
 			}
 		}
 	}

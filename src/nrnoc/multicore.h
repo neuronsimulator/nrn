@@ -45,6 +45,11 @@ typedef struct NrnThreadBAList {
 	struct NrnThreadBAList* next;
 } NrnThreadBAList;
 
+typedef struct _nrn_Fast_Imem {
+	double* _nrn_sav_rhs;
+	double* _nrn_sav_d;
+} _nrn_Fast_Imem;
+
 typedef struct NrnThread {
 	double _t;
 	double _dt;
@@ -66,6 +71,7 @@ typedef struct NrnThread {
 	Node** _v_parent;
 	char* _sp13mat; /* handle to general sparse matrix */
 	Memb_list* _ecell_memb_list; /* normally nil */
+	_nrn_Fast_Imem* _nrn_fast_imem;
 	void* _vcv; /* replaces old cvode_instance and nrn_cvode_ */
 
 #if 1
