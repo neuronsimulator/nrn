@@ -552,25 +552,69 @@ void nrn_threads_create(int n, int parallel) {
 	/*printf("nrn_threads_create %d %d\n", nrn_nthread, nrn_thread_parallel_);*/
 }
 
-static void nrn_fast_imem_free(NrnThread* nt) {
-	if (nt->_nrn_fast_imem) {
-		if (nt->_nrn_fast_imem->_nrn_sav_rhs) {
-			free(nt->_nrn_fast_imem->_nrn_sav_rhs);
-			free(nt->_nrn_fast_imem->_nrn_sav_d);
+/*
+Avoid invalidating pointers to i_membrane_ unless the number of compartments
+in a thread has changed.
+*/
+static int fast_imem_nthread_ = 0;
+static int* fast_imem_size_ = NULL;
+static _nrn_Fast_Imem* fast_imem_;
+
+static void fast_imem_free() {
+	int i;
+	for (i = 0; i < nrn_nthread; ++i) {
+		nrn_threads[i]._nrn_fast_imem = NULL;
+	}
+	for (i = 0; i < fast_imem_nthread_; ++i) {
+		if (fast_imem_size_[i] > 0) {
+			free(fast_imem_[i]._nrn_sav_rhs);
+			free(fast_imem_[i]._nrn_sav_d);
 		}
-		free(nt->_nrn_fast_imem);
-		nt->_nrn_fast_imem = 0;
+	}
+	if (fast_imem_nthread_) {
+		free(fast_imem_size_);
+		free(fast_imem_);
+		fast_imem_nthread_ = 0;
+		fast_imem_size_ = NULL;
+		fast_imem_ = NULL;
 	}
 }
 
-void nrn_fast_imem_alloc(NrnThread* nt) {
-	nrn_fast_imem_free(nt);
-	if (nrn_use_fast_imem) {
-		nt->_nrn_fast_imem = ecalloc(1, sizeof(_nrn_Fast_Imem));
-		if (nt->end) {
-			CACHELINE_ALLOC(nt->_nrn_fast_imem->_nrn_sav_rhs, double, nt->end);
-			CACHELINE_ALLOC(nt->_nrn_fast_imem->_nrn_sav_d, double, nt->end);
+static void fast_imem_alloc() {
+	int i;
+	if (fast_imem_nthread_ != nrn_nthread) {
+		fast_imem_free();
+		fast_imem_nthread_ = nrn_nthread;
+		fast_imem_size_ = ecalloc(nrn_nthread, sizeof(int));
+		fast_imem_ = (_nrn_Fast_Imem*)ecalloc(nrn_nthread, sizeof(_nrn_Fast_Imem));
+	}
+	for (i=0; i < nrn_nthread; ++i) {
+		NrnThread* nt = nrn_threads + i;
+		int n = nt->end;
+		_nrn_Fast_Imem* fi = fast_imem_ + i;
+		if (n != fast_imem_size_[i]) {
+			if (fast_imem_size_[i] > 0) {
+				free(fi->_nrn_sav_rhs);
+				free(fi->_nrn_sav_d);
+			}
+			if (n > 0) {
+				CACHELINE_ALLOC(fi->_nrn_sav_rhs, double, n);
+				CACHELINE_ALLOC(fi->_nrn_sav_d, double, n);
+			}
+			fast_imem_size_[i] = n;
 		}
+	}
+}
+
+void nrn_fast_imem_alloc() {
+	if (nrn_use_fast_imem) {
+		int i;
+		fast_imem_alloc();
+		for (i=0; i < nrn_nthread; ++i) {
+		  nrn_threads[i]._nrn_fast_imem = fast_imem_ + i;
+		}
+	}else{
+		fast_imem_free();
 	}
 }
 
@@ -624,7 +668,7 @@ void nrn_threads_free() {
 			spDestroy(nt->_sp13mat);
 			nt->_sp13mat = 0;
 		}
-		nrn_fast_imem_free(nt);
+		nt->_nrn_fast_imem = NULL;
 		/* following freed by nrn_recalc_node_ptrs */
 		nrn_old_thread_save();
 		nt->_actual_v = 0;		
@@ -700,7 +744,6 @@ hoc_execerror(memb_func[i].sym->name, "is not thread safe");
 			tml->ml->nodecount = 0; /* counted again below */
 		}
 	}
-	nrn_fast_imem_alloc(_nt);
 
 	/* fill */
 	for (i = 0; i < _nt->end; ++i) {
@@ -774,6 +817,7 @@ static void nrn_thread_memblist_setup() {
 	for (it=0; it < nrn_nthread; ++it) {
 		thread_memblist_setup(nrn_threads + it, mlcnt, vmap);
 	}
+	nrn_fast_imem_alloc();
 	free((char*)vmap);
 	free((char*)mlcnt);
 	nrn_mk_table_check();

@@ -562,9 +562,7 @@ static double use_fast_imem(void* v) {
 	int i = nrn_use_fast_imem;
 	if (ifarg(1)) {
 		nrn_use_fast_imem = int(chkarg(1, 0., 1.));
-		for (int id = 0; id < nrn_nthread; ++id) {
-			nrn_fast_imem_alloc(nrn_threads + id);
-		}
+		nrn_fast_imem_alloc();
 	}
 	return double(i);
 }
