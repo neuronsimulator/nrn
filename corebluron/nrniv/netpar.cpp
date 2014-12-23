@@ -238,8 +238,6 @@ static int n_npe_; // just to compare with nrn_nthread
 #if (USE_PTHREAD || defined(_OPENMP))
 static MUTDEC
 #endif
-static int seqcnt_;
-static NrnThread* last_nt_;
 #endif
 
 NetParEvent::NetParEvent(){
@@ -252,7 +250,6 @@ void NetParEvent::send(double tt, NetCvode* nc, NrnThread* nt){
 	nc->event(tt + usable_mindelay_, this, nt);
 }
 void NetParEvent::deliver(double tt, NetCvode* nc, NrnThread* nt){
-	int seq;
 	if (nrn_use_selfqueue_) { //first handle pending flag=1 self events
 		nrn_pending_selfqueue(tt, nt);
 	}
@@ -264,13 +261,11 @@ void NetParEvent::deliver(double tt, NetCvode* nc, NrnThread* nt){
 	net_cvode_instance->deliver_events(tt, nt);
 	nt->_stop_stepping = 1;
 	nt->_t = tt;
-#if NRNMPI
-    if (nrnmpi_numprocs > 0) {
-	MUTLOCK
-	seq = ++seqcnt_;
-	MUTUNLOCK
-      if (seq == nrn_nthread) {
-	last_nt_ = nt;
+	send(tt, nc, nt);
+}
+
+void nrn_netparevent_finish_deliver() {
+	NrnThread* nt = nrn_threads;
 #if BGPDMA
 	if (use_bgpdma_) {
 		bgp_dma_receive();
@@ -280,13 +275,8 @@ void NetParEvent::deliver(double tt, NetCvode* nc, NrnThread* nt){
 #else    
 	nrn_spike_exchange(nt);
 #endif
-	wx_ += wt_;
-	ws_ += wt1_;
-	seqcnt_ = 0;
-     }
-   }
-#endif
-	send(tt, nc, nt);
+	//wx_ += wt_;
+	//ws_ += wt1_;
 }
 
 void NetParEvent::pr(const char* m, double tt, NetCvode*){
