@@ -69,9 +69,9 @@ unzip -n nrnzip.zip
 
 for MOSINIT in mosinit.py mosinit.hoc ; do
   if [ -r $MOSINIT ] ; then
-	first=./mosinit.hoc
+	first=./$MOSINIT
   else
-	first=`find . -name mosinit.hoc -print |sed -n 1p`
+	first=`find . -name $MOSINIT -print |sed -n 1p`
   fi
   if [ "$first" ] ; then
     break  
