@@ -1192,13 +1192,36 @@ int can_change_morph(Section* sec)
 	return pt3dconst_ == 0;
 }
 	
+static void stor_pt3d_vec(Section* sec, IvocVect* xv, IvocVect* yv, IvocVect* zv, IvocVect* dv) {
+	int i;
+	int n = vector_capacity(xv);
+	double* x = vector_vec(xv);
+	double* y = vector_vec(yv);
+	double* z = vector_vec(zv);
+	double* d = vector_vec(dv);
+	nrn_pt3dbufchk(sec, n);
+	sec->npt3d = n;
+	for (i=0; i < n; i++) {
+		sec->pt3d[i].x = x[i];
+		sec->pt3d[i].y = y[i];
+		sec->pt3d[i].z = z[i];
+		sec->pt3d[i].d = d[i];
+	}
+	nrn_pt3dmodified(sec, 0);
+}
+
 void pt3dadd(void) {
 	/*pt3add(x,y,z, d) stores 3d point at end of current pt3d list.
 	  first point assumed to be at arc length position 0. Last point
 	  at 1. arc length increases monotonically.
 	*/
-	stor_pt3d(chk_access(), *getarg(1), *getarg(2),
-		*getarg(3), *getarg(4));
+	if (hoc_is_object_arg(1)) {
+		stor_pt3d_vec(chk_access(), vector_arg(1), vector_arg(2),
+			vector_arg(3), vector_arg(4));
+	}else{
+		stor_pt3d(chk_access(), *getarg(1), *getarg(2),
+			*getarg(3), *getarg(4));
+	}
 	hoc_retpushx(1.);
 }
 
