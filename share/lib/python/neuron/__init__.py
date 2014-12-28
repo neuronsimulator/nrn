@@ -496,3 +496,6 @@ def _has_scipy():
     return 1
         
         
+def _pkl(arg):
+  #print 'neuron._pkl arg is ', arg
+  return h.Vector(0)
