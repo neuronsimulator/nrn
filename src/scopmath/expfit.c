@@ -62,6 +62,7 @@ static char RCSid[] =
 #include <math.h>
 #include <assert.h>
 #include "errcodes.h"
+#include "scoplib.h"
 
 int expfit(terms, reffile, amplitude, lambda, error)
 char *reffile;
