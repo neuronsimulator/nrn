@@ -455,7 +455,11 @@ static void ion_init(NrnThread* nt, Memb_list* ml, int type) {
 static void ion_alloc(double* data, Datum* pdata, int type) {
 	double *pd;
 	(void)pdata; /* unused */
+	(void)data; /* unused */
+	(void)type; /* unused */
 	assert(0);
+
+#if 0
 	pd = data;	
 
 	cur = 0.;
@@ -479,6 +483,8 @@ static void ion_alloc(double* data, Datum* pdata, int type) {
 	}
 	
 	pdata = 0;
+#endif
+    
 }
 
 void second_order_cur(NrnThread* _nt) {
@@ -499,7 +505,7 @@ void second_order_cur(NrnThread* _nt) {
 		  pd = ml->data + _iml*nparm;
 #endif
 #if LAYOUT == 0 /*SoA*/
-		pd = ml->data; ppd = ml->pdata;
+		pd = ml->data;
 		for (_iml = 0; _iml < _cntml; ++_iml) {
 #endif
 #if LAYOUT > 1 /*AoSoA*/
