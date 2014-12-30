@@ -453,7 +453,6 @@ static void ion_init(NrnThread* nt, Memb_list* ml, int type) {
 }
 
 static void ion_alloc(double* data, Datum* pdata, int type) {
-	double *pd;
 	(void)pdata; /* unused */
 	(void)data; /* unused */
 	(void)type; /* unused */
