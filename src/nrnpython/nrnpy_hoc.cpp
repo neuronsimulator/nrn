@@ -567,13 +567,22 @@ static PyObject* hocobj_call(PyHocObject* self, PyObject* args, PyObject* kwrds)
 		}
 #endif
 		section = PyDict_GetItemString(kwrds, "sec");
+		int num_kwargs = PyDict_Size(kwrds);
+		if (num_kwargs > 1) {
+		    PyErr_SetString(PyExc_RuntimeError, "invalid keyword argument");
+		    return NULL;
+	    }
 		if (section) {
-			//printf("sec=%s\n", PyString_AsString(PyObject_Str(section)));
 			section = nrnpy_pushsec(section);
 			if (!section) {
 				PyErr_SetString(PyExc_TypeError, "sec is not a Section");
 				return NULL;				
 			}
+		} else {
+		    if (num_kwargs) {
+		        PyErr_SetString(PyExc_RuntimeError, "invalid keyword argument");
+		        return NULL;
+	        }
 		}
 	}
 	if (self->type_ == 0) {
