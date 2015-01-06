@@ -198,14 +198,14 @@ void nrnmpi_fatal_error(const char *msg) {
   nrnmpi_abort(-1);
 }
 
-// check if appropriate threading level supported (i.e. MPI_THREAD_SERIALIZED)
+// check if appropriate threading level supported (i.e. MPI_THREAD_FUNNELED)
 void nrnmpi_check_threading_support() {
 #if NRNMPI
     int th = 0;
 	if (nrnmpi_use) {
             MPI_Query_thread( &th );
-            if( th < MPI_THREAD_SERIALIZED) {
-                nrnmpi_fatal_error("\n Current MPI library doesn't support MPI_THREAD_SERIALIZED,\
+            if( th < MPI_THREAD_FUNNELED) {
+                nrnmpi_fatal_error("\n Current MPI library doesn't support MPI_THREAD_FUNNELED,\
                         \n Run without enabling multi-threading!");
             }
 	}
