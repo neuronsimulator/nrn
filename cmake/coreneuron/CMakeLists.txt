@@ -43,6 +43,14 @@ if(have_malloc_h)
   add_definitions(-DHAVE_MALLOC_H)
 endif()
 
+if(${CMAKE_SYSTEM_PROCESSOR} STREQUAL "ppc64")
+  CHECK_INCLUDE_FILES("spi/include/kernel/memory.h" have_memory_h)
+  if(have_memory_h)
+    add_definitions(-DHAVE_MEMORY_H)
+  endif()
+endif()
+
+
 if(MPI_FOUND)
   set(CMAKE_C_COMPILER ${MPI_C_COMPILER})
   set(CMAKE_CXX_COMPILER ${MPI_CXX_COMPILER})
