@@ -49,6 +49,7 @@ void nrn_fixed_step_minimal() {
 /*printf("nrn_fixed_step_minimal t=%g\n", t);*/
 	nrn_thread_table_check();
 	nrn_multithread_job(nrn_fixed_step_thread);
+	nrn_spike_exchange(nrn_threads);
 	t = nrn_threads[0]._t;
 }
 
@@ -68,6 +69,7 @@ void nrn_fixed_step_group_minimal(int n) {
 	while(step_group_end < step_group_n) {
 /*printf("step_group_end=%d step_group_n=%d\n", step_group_end, step_group_n);*/
 		nrn_multithread_job(nrn_fixed_step_group_thread);
+		nrn_spike_exchange(nrn_threads);
 		if (stoprun) { break; }
 		step_group_begin = step_group_end;
 	}

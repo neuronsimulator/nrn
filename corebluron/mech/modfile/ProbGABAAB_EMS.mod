@@ -314,4 +314,5 @@ ENDVERBATIM
 
 FUNCTION toggleVerbose() {
     verboseLevel = 1 - verboseLevel
+    toggleVerbose = verboseLevel
 }
