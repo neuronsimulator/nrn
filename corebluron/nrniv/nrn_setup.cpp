@@ -94,9 +94,35 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // stored in the nt.presyns array and nt.netcons array respectively
 
 int nrn_setup_multiple = 1; /* default */
+int nrn_setup_extracon = 0; /* default */
 static int maxgid;
 // no gid in any file can be greater than maxgid. maxgid will be set so that
 // maxgid * nrn_setup_multiple < 0x7fffffff
+
+// nrn_setup_extracon extra connections per NrnThread.
+// i.e. nrn_setup_extracon * nrn_setup_multiple * nrn_nthread
+// extra connections on this process.
+// The targets of the connections on a NrnThread are randomly selected
+// (with replacement) from the set of ProbAMPANMDA_EMS on the thread.
+// (This synapse type is not strictly appropriate to be used as
+// a generalized synapse with multiple input streams since some of its
+// range variables store quantities that should be stream specific
+// and therefore should be stored in the NetCon weight vector. But it
+// might be good enough for our purposes. In any case, we'd like to avoid
+// creating new POINT_PROCESS instances with all the extra complexities
+// involved in adjusting the data arrays.)
+// The nrn_setup_extracon value is used to allocate the appropriae
+// amount of extra space for NrnThread.netcons and NrnThread.weights
+//
+// The most difficult problem is to augment the rank wide inputpresyn_ list.
+// We wish to randomly choose source gids for the extracon NetCons from the
+// set of gids not in "multiple" instance of the model the NrnThread is a
+// member of. We need to take into account the possibilty of multiple
+// NrnThread in multiple "multiple" instances having extra NetCon with the
+// same source gid. That some of the source gids may be already be
+// associated with already existing PreSyn on this rank is a minor wrinkle.
+// This is done between phase1 and phase2 during the call to
+// determine_inputpresyn().
 
 static MUTDEC
 static void read_phase1(data_reader &F, int imult, NrnThread& nt);
