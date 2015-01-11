@@ -314,7 +314,7 @@ void read_phase1(data_reader &F, int imult, NrnThread& nt) {
   nt.n_presyn = F.read_int();
   nt.n_netcon = F.read_int();
   nt.presyns = new PreSyn[nt.n_presyn];
-  nt.netcons = new NetCon[nt.n_netcon];
+  nt.netcons = new NetCon[nt.n_netcon + nrn_setup_extracon];
 
   /// Checkpoint in bluron is defined for both phase 1 and phase 2 since they are written together
   int* output_gid = F.read_int_array(nt.n_presyn);
@@ -388,6 +388,51 @@ void read_phase1(data_reader &F, int imult, NrnThread& nt) {
     // it to search for PreSyn in this thread.
   }
   delete [] netcon_srcgid;
+
+ if (nrn_setup_extracon > 0) {
+  // very simplistic
+  // Use this threads positive source gids - zz in nt.netcon order as the
+  // source gids for extracon.
+  // The edge cases are:
+  // The 0th duplicate uses uses source gids for the last duplicate.
+  // If there are fewer positive source gids than extracon, then keep
+  // rotating through the nt.netcon .
+  // If there are no positive source gids, use a source gid of -1.
+  // Would not be difficult to modify so that random positive source was
+  // used, and/or random connect to another duplicate.
+  // Note that we increment the nt.n_netcon at the end of this function.
+  int sidoffset; // how much to increment the corresponding positive gid
+  // like ring connectivity
+  if (imult > 0) {
+    sidoffset = -maxgid;
+  }else if (nrn_setup_multiple > 1) {
+    sidoffset = (nrn_setup_multiple - 1)*maxgid;
+  }else{
+    sidoffset = 0;
+  }
+  // set up the extracon srcgid_
+  int j = 0; //rotate through the n_netcon u.srcgid_
+  for (int i=0; i < nrn_setup_extracon; ++i) {
+    int sid = -1;
+    for (int k=0; k < nt.n_netcon; ++k) {
+      // potentially rotate j through the entire n_netcon but no further
+      sid = nt.netcons[j].u.srcgid_;
+      j = (j + 1)%nt.n_netcon;
+      if (sid >= 0) {
+        break;
+      }
+    }
+    if (sid < 0) {// only connect to real cells.
+      sid = -1;
+    }else{
+      sid += sidoffset;
+    }
+    nt.netcons[i + nt.n_netcon].u.srcgid_ = sid;
+  }
+ }
+
+  // finally increment the n_netcon
+  nt.n_netcon += nrn_setup_extracon;
 }
 
 void determine_inputpresyn() {
@@ -726,10 +771,12 @@ void read_phase2(data_reader &F, int imult, NrnThread& nt) {
   delete [] output_vindex;
   delete [] output_threshold;
 
-  int nnetcon = nt.n_netcon;
+  // do extracon later as the target and weight info
+  // is not directly in the file
+  int nnetcon = nt.n_netcon - nrn_setup_extracon;
   int nweight = nt.n_weight;
 //printf("nnetcon=%d nweight=%d\n", nnetcon, nweight);
-  // it may happen that Point_process structures will be made unnecessary
+  // It may happen that Point_process structures will be made unnecessary
   // by factoring into NetCon.
 
   // Make NetCon.target_ point to proper Point_process. Only the NetCon
@@ -746,11 +793,47 @@ void read_phase2(data_reader &F, int imult, NrnThread& nt) {
       nc.active_ = true;
     }
   }
+
+  int extracon_target_type = -1;
+  int extracon_target_nweight = 0;
+ if (nrn_setup_extracon > 0) {
+  // Fill in the extracon target_ and active_.
+  // Simplistic.
+  // Rotate through the pntindex and use only pnttype for ProbAMPANMDA_EMS
+  // (which happens to have a weight vector length of 5.)
+  // Edge case: if there is no such synapse, let the target_ be NULL
+  //   and the netcon be inactive.
+  // Same pattern as algorithm for extracon u.srcgid above in phase1.
+  extracon_target_type = nrn_get_mechtype("ProbAMPANMDA_EMS");
+  assert(extracon_target_type > 0);
+  extracon_target_nweight = pnt_receive_size[extracon_target_type];
+  int j = 0;
+  for (int i=0; i < nrn_setup_extracon; ++i) {
+    int active = 0;
+    for (int k=0; k < nnetcon; ++k) {
+      if (pnttype[j] == extracon_target_type) {
+        active = 1;
+        break;
+      }
+      j = (j + 1)%nnetcon;
+    }
+    NetCon& nc = nt.netcons[i + nnetcon];
+    nc.active_ = active;
+    if (active) {
+      nc.target_ = nt.pntprocs + (pnt_offset[extracon_target_type] + pntindex[j]);
+    }else{
+      nc.target_ = NULL;
+    }
+  }
+ }
+
   delete [] pntindex;
   delete [] pnt_offset;
 
   // weights in netcons order in groups defined by Point_process target type.
-  nt.weights = F.read_dbl_array(nweight);
+  nt.n_weight += nrn_setup_extracon*extracon_target_nweight;
+  nt.weights = new double[nt.n_weight];
+  F.read_dbl_array(nt.weights, nweight);
   int iw = 0;
   for (int i=0; i < nnetcon; ++i) {
     NetCon& nc = nt.netcons[i];
@@ -767,6 +850,15 @@ void read_phase2(data_reader &F, int imult, NrnThread& nt) {
     nc.delay_ = delay[i];
   }
   delete [] delay;
+
+ if (nrn_setup_extracon > 0) {
+  // simplistic. delay is 1 and weight is 0.001
+  for (int i=0; i < nrn_setup_extracon; ++i) {
+    NetCon& nc = nt.netcons[nnetcon + i];
+    nc.delay_ = 1.0;
+    nc.u.weight_ = nt.weights + (nweight + i*extracon_target_nweight);
+  }
+ }
 
   // BBCOREPOINTER information
   npnt = F.read_int();
