@@ -118,6 +118,7 @@ class IvocVect;
 #else
 #define IvocVect void
 #endif
+extern void vector_append(IvocVect*, double);
 extern int vector_arg_px(int, double**);
 extern int vector_instance_px(void*, double**);
 extern void install_vector_method(const char*, double(*)(void*));

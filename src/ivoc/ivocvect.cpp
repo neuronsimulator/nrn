@@ -279,6 +279,11 @@ double* vector_vec(Vect* v){return v->vec();}
 Object** vector_pobj(Vect* v){return &v->obj_;}
 char* vector_get_label(Vect* v) { return v->label_; }
 void vector_set_label(Vect* v, char* s) { v->label(s); }
+void vector_append(Vect* v, double x){
+  long n = v->capacity();
+  v->resize_chunk(n+1);
+  v->elem(n) = x;
+}
 
 #ifdef WIN32
 #if !defined(USEMATRIX) || USEMATRIX == 0
