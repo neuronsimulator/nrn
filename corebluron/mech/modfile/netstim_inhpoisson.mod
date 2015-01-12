@@ -221,7 +221,7 @@ static void bbcore_write(double* dArray, int* iArray, int* doffset, int* ioffset
                 {
                   dv = vector_vec(vec);
                 }
-                int iInt;
+                uint32_t iInt;
                 for (iInt = 0; iInt < dsize; ++iInt)
                 {
                   da[iInt] = dv[iInt];
@@ -264,13 +264,13 @@ static void bbcore_read(double* dArray, int* iArray, int* doffset, int* ioffset,
         }
 
         ia = ia + 2;
-        int dsize = ia[0];
+        uint32_t dsize = ia[0];
         *ioffset += 5;
 
         double *da = dArray + *doffset;
         _p_vecRate = vector_new1(dsize);  /* works for dsize=0 */
         double *dv = vector_vec(_p_vecRate);
-        int iInt;
+        uint32_t iInt;
         for (iInt = 0; iInt < dsize; ++iInt)
         {
           dv[iInt] = da[iInt];
