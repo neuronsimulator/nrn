@@ -122,6 +122,9 @@ extern int nrn_vartype(Symbol*); // nrnocCONST, DEP, STATE
 extern void recalc_diam(void);
 extern double nrn_call_mech_func(Symbol*, int narg, Prop*, int type);
 extern Prop* nrn_mechanism_check(int type, Section* sec, int inode);
+extern int nrn_use_fast_imem;
+extern void nrn_fast_imem_alloc();
+extern void nrn_calc_fast_imem(NrnThread*);
 
 extern void nrn_pt3dclear(Section*);
 extern void nrn_length_change(Section*, double);

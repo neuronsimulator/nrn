@@ -45,19 +45,19 @@ extern "C" {extern void exit(int status);};
 #include "graph.h"
 #endif
 
-#define BrainDamaged 1  //The Sun CC compiler but it doesn't hurt to leave it in
-#if BrainDamaged
 #ifndef PI
 #ifndef M_PI
 	#define M_PI 3.14159265358979323846
 #endif
 #define PI M_PI
 #endif
+#define BrainDamaged 0  //The Sun CC compiler but it doesn't hurt to leave it in
+#if BrainDamaged
 #define FWrite(arg1,arg2,arg3,arg4) if (fwrite((char*)(arg1),arg2,arg3,arg4) != arg3) { hoc_execerror("fwrite error", 0); }
 #define FRead(arg1,arg2,arg3,arg4) if (fread((char*)(arg1),arg2,arg3,arg4) != arg3) { hoc_execerror("fread error", 0); }
 #else
-#define FWrite(arg1,arg2,arg3,arg4) fwrite(arg1,arg2,arg3,arg4)
-#define FRead(arg1,arg2,arg3,arg4) fread(arg1,arg2,arg3,arg4)
+#define FWrite(arg1,arg2,arg3,arg4) if (fwrite(arg1,arg2,arg3,arg4) != arg3){}
+#define FRead(arg1,arg2,arg3,arg4) if (fread(arg1,arg2,arg3,arg4) != arg3) {}
 #endif
 
 static double dmaxint_;
@@ -279,6 +279,11 @@ double* vector_vec(Vect* v){return v->vec();}
 Object** vector_pobj(Vect* v){return &v->obj_;}
 char* vector_get_label(Vect* v) { return v->label_; }
 void vector_set_label(Vect* v, char* s) { v->label(s); }
+void vector_append(Vect* v, double x){
+  long n = v->capacity();
+  v->resize_chunk(n+1);
+  v->elem(n) = x;
+}
 
 #ifdef WIN32
 #if !defined(USEMATRIX) || USEMATRIX == 0

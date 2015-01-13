@@ -377,6 +377,11 @@ void nrn_rhs(NrnThread* _nt) {
 		}
 	    }
 	}
+	if (_nt->_nrn_fast_imem) {
+		for (i = i1; i < i3; ++i) {
+			_nt->_nrn_fast_imem->_nrn_sav_rhs[i] = 0.;
+		}
+	}
 
 	nrn_ba(_nt, BEFORE_BREAKPOINT);
 	/* note that CAP has no current */
@@ -393,6 +398,22 @@ hoc_warning("errno set during calculation of currents", (char*)0);
 	}
 	activsynapse_rhs();
 
+	if (_nt->_nrn_fast_imem) {
+		/* _nrn_save_rhs has only the contribution of electrode current
+		   so here we transform so it only has membrane current contribution
+		*/
+		double* p = _nt->_nrn_fast_imem->_nrn_sav_rhs;
+		if (use_cachevec) {
+			for (i = i1; i < i3; ++i) {
+				p[i] -= VEC_RHS(i);
+			}
+		}else{
+			for (i = i1; i < i3; ++i) {
+				Node* nd = _nt->_v_node[i];
+				p[i] -= NODERHS(nd);
+			}
+		}
+	}
 #if EXTRACELLULAR
 	/* Cannot have any axial terms yet so that i(vm) can be calculated from
 	i(vm)+is(vi) and is(vi) which are stored in rhs vector. */
@@ -474,6 +495,12 @@ void nrn_lhs(NrnThread* _nt) {
 	    }
 	}
 
+	if (_nt->_nrn_fast_imem) {
+		for (i = i1; i < i3; ++i) {
+			_nt->_nrn_fast_imem->_nrn_sav_d[i] = 0.;
+		}
+	}
+
 	/* note that CAP has no jacob */
 	for (tml = _nt->tml; tml; tml = tml->next) if (memb_func[tml->index].jacob) {
 		Pvmi s = memb_func[tml->index].jacob;
@@ -495,6 +522,28 @@ has taken effect
 
 	activsynapse_lhs();
 
+
+	if (_nt->_nrn_fast_imem) {
+		/* _nrn_save_d has only the contribution of electrode current
+		   so here we transform so it only has membrane current contribution
+		*/
+		double* p = _nt->_nrn_fast_imem->_nrn_sav_d;
+	    if (use_sparse13) {
+		for (i = i1; i < i3; ++i) {
+			Node* nd = _nt->_v_node[i];
+			p[i] += NODED(nd);
+		}
+	    }else if (use_cachevec) {
+		for (i = i1; i < i3; ++i) {
+			p[i] += VEC_D(i);
+		}
+	    }else{
+		for (i = i1; i < i3; ++i) {
+			Node* nd = _nt->_v_node[i];
+			p[i] += NODED(nd);
+		}
+	    }
+	}
 #if EXTRACELLULAR
 	 /* nde->_d[0] contains the -ELECTRODE_CURRENT contribution to nd->_d */
 	nrn_setup_ext(_nt);
@@ -1143,13 +1192,36 @@ int can_change_morph(Section* sec)
 	return pt3dconst_ == 0;
 }
 	
+static void stor_pt3d_vec(Section* sec, IvocVect* xv, IvocVect* yv, IvocVect* zv, IvocVect* dv) {
+	int i;
+	int n = vector_capacity(xv);
+	double* x = vector_vec(xv);
+	double* y = vector_vec(yv);
+	double* z = vector_vec(zv);
+	double* d = vector_vec(dv);
+	nrn_pt3dbufchk(sec, n);
+	sec->npt3d = n;
+	for (i=0; i < n; i++) {
+		sec->pt3d[i].x = x[i];
+		sec->pt3d[i].y = y[i];
+		sec->pt3d[i].z = z[i];
+		sec->pt3d[i].d = d[i];
+	}
+	nrn_pt3dmodified(sec, 0);
+}
+
 void pt3dadd(void) {
 	/*pt3add(x,y,z, d) stores 3d point at end of current pt3d list.
 	  first point assumed to be at arc length position 0. Last point
 	  at 1. arc length increases monotonically.
 	*/
-	stor_pt3d(chk_access(), *getarg(1), *getarg(2),
-		*getarg(3), *getarg(4));
+	if (hoc_is_object_arg(1)) {
+		stor_pt3d_vec(chk_access(), vector_arg(1), vector_arg(2),
+			vector_arg(3), vector_arg(4));
+	}else{
+		stor_pt3d(chk_access(), *getarg(1), *getarg(2),
+			*getarg(3), *getarg(4));
+	}
 	hoc_retpushx(1.);
 }
 

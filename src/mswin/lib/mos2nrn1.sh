@@ -67,14 +67,19 @@ cd "$simdir"
 
 unzip -n nrnzip.zip
 
-if [ -r mosinit.hoc ] ; then
-	first=./mosinit.hoc
-else
-	first=`find . -name mosinit.hoc -print |sed -n 1p`
-fi
+for MOSINIT in mosinit.py mosinit.hoc ; do
+  if [ -r $MOSINIT ] ; then
+	first=./$MOSINIT
+  else
+	first=`find . -name $MOSINIT -print |sed -n 1p`
+  fi
+  if [ "$first" ] ; then
+    break  
+  fi
+done
 
 if [ -z "$first" ] ; then
-	echo "Missing the mosinit.hoc file"
+	echo "Missing the mosinit.hoc or mosinit.py file"
 	cleanup
 fi
 cd `dirname $first`
@@ -84,7 +89,14 @@ if [ -f moslocal.tmp ] ; then
 	askread="no"
 fi
 
-moddirs="`sed -n '1s;^//moddir;;p' < $first`"
+if [ "$MOSINIT" = "mosinit.hoc" ] ; then
+  moddirs="`sed -n '1s;^//moddir;;p' < $first`"
+  MOSINITARGS="$first"
+else
+  moddirs="`sed -n '1s;^#moddir;;p' < $first | tr -d '\r'`"
+  MOSINITARGS="-python $first"    
+fi
+
 if test "$moddirs" != "" ; then
 	modfiles='yes'
 	mkdir i686cygwin
@@ -119,7 +131,7 @@ if [ "$a" != "y" -a "$a" != "" ] ; then
 fi
 a=R
 while test "$a" = "R" ; do
-	nrniv mosinit.hoc
+	nrniv $MOSINITARGS
 	echo ""
 	asklaunch
 done

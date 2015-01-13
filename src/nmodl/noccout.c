@@ -300,6 +300,7 @@ P("#include \"md2redef.h\"\n");
 		P("  {\n");
 		P("	NODERHS(_nd) += _rhs;\n");
 		P("  }\n");
+		P("  if (_nt->_nrn_fast_imem) { _nt->_nrn_fast_imem->_nrn_sav_rhs[_ni[_iml]] += _rhs; }\n");
 #endif
 		P("#if EXTRACELLULAR\n");
 		P(" if (_nd->_extnode) {\n");
@@ -346,6 +347,7 @@ P("#include \"md2redef.h\"\n");
 		P("  {\n");
 		P("	NODED(_nd) -= _g;\n");
 		P("  }\n");
+		P("  if (_nt->_nrn_fast_imem) { _nt->_nrn_fast_imem->_nrn_sav_d[_ni[_iml]] -= _g; }\n");
 #endif
 		P("#if EXTRACELLULAR\n");
 		P(" if (_nd->_extnode) {\n");
@@ -756,6 +758,7 @@ P("#include \"md2redef.h\"\n");
 		P("  {\n");
 		P("	NODERHS(_nd) += _rhs;\n");
 		P("  }\n");
+		P("  if (_nt->_nrn_fast_imem) { _nt->_nrn_fast_imem->_nrn_sav_rhs[_ni[_iml]] += _rhs; }\n");
 #endif
 		P("#if EXTRACELLULAR\n");
 		P(" if (_nd->_extnode) {\n");
@@ -803,6 +806,7 @@ P("#include \"md2redef.h\"\n");
 		P("  {\n");
 		P("	NODED(_nd) -= _g;\n");
 		P("  }\n");
+		P("  if (_nt->_nrn_fast_imem) { _nt->_nrn_fast_imem->_nrn_sav_d[_ni[_iml]] -= _g; }\n");
 #endif
 		P("#if EXTRACELLULAR\n");
 		P(" if (_nd->_extnode) {\n");

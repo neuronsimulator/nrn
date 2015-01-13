@@ -79,6 +79,7 @@ int vector_instance_px(void* vv, double** px){return 0;}
 void vector_resize(v, n) void* v; int n; {
 	hoc_execerror("implemented in ivoc library", "vector_resize");
 }
+void vector_append(void* vv, double x) {}
 void vector_delete(void* v) {}
 
 void* vector_arg(int i) { return (void*)0;}

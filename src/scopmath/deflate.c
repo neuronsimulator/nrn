@@ -16,6 +16,7 @@ static char RCSid[] =
 #include <stdio.h>
 #include <math.h>
 #include "errcodes.h"
+#include "scoplib.h"
 
 #define CONTINUE 0
 

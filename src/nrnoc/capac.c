@@ -125,6 +125,12 @@ void nrn_div_capacity(NrnThread* _nt, Memb_list* ml) {
 			NODERHS(vnode[i]) /= 1.e-3*cm;
 		}
 	}
+	if (_nt->_nrn_fast_imem) {
+		double* p = _nt->_nrn_fast_imem->_nrn_sav_rhs;
+		for (i=0; i < count; ++i) {
+			p[vnode[i]->v_node_index] += i_cap;
+		}
+	}
 }
 #endif /*CVODE*/
 

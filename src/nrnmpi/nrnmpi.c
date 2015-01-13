@@ -108,6 +108,9 @@ for (i=0; i < *pargc; ++i) {
 			int required = MPI_THREAD_SERIALIZED;
 			int provided;
 			asrt(MPI_Init_thread(pargc, pargv, required, &provided));
+			if( required > provided) {
+				nrn_cannot_use_threads_and_mpi = 1;
+			}
 #else
 			asrt(MPI_Init(pargc, pargv));
 #endif

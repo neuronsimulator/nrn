@@ -698,6 +698,13 @@ void Cvode::fun_thread_transfer_part2(double* ydot, NrnThread* nt){
 	do_ode(nt);
 	// divide by cm and compute capacity current
 	if (z.cmlcap_) nrn_div_capacity(nt, z.cmlcap_->ml);
+	if (nt->_nrn_fast_imem) {
+		double* p = nt->_nrn_fast_imem->_nrn_sav_rhs;
+		for (int i = 0; i < z.v_node_count_; ++i) {
+			Node* nd = z.v_node_[i];
+			p[nd->v_node_index] *= NODEAREA(nd) * 0.01;
+		}
+	}
 	gather_ydot(ydot, nt->id);
 	before_after(z.after_solve_, nt);
 //for (int i=0; i < z.neq_; ++i) { printf("\t%d %g %g\n", i, y[i], ydot?ydot[i]:-1e99);}

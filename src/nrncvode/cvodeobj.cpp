@@ -558,6 +558,15 @@ static double extra_scatter_gather_remove(void* v) {
 	return 0.;
 }
 
+static double use_fast_imem(void* v) {
+	int i = nrn_use_fast_imem;
+	if (ifarg(1)) {
+		nrn_use_fast_imem = int(chkarg(1, 0., 1.));
+		nrn_fast_imem_alloc();
+	}
+	return double(i);
+}
+
 static Member_func members[] = {
 	"solve", solve,
 	"atol", nrn_atol,
@@ -606,6 +615,7 @@ static Member_func members[] = {
 	"diam_change_count", nrn_diam_change_count,
 	"extra_scatter_gather", extra_scatter_gather,
 	"extra_scatter_gather_remove", extra_scatter_gather_remove,
+	"use_fast_imem", use_fast_imem,
 	0,0
 };
 

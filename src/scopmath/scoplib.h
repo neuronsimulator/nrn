@@ -97,6 +97,7 @@ int derivs();			/* (nbase, x, y, mesh, der) */
 double spline();		/* (nbase, x, y, mesh, der, x_inter) */
 double force();			/* (t, filename) */
 double stepforce();			/* (..., t, filename) */
+#define deflate scoplib_deflate /* causes python gzip to fail if nrniv launched. i.e zlib declares global deflate */
 int deflate();			/* (degree, coeff, root) */
 int expfit();			/* (terms, reffile, amplitude, decay,
 				 * &fiterror) */

@@ -663,8 +663,10 @@ static Object** pp_get_segment(void* vptr) {
 		}
 		pseg->x_ = nrn_arc_position(sec, pnt->node);
 	}
-	Py_INCREF(pyseg);
-	return hoc_temp_objptr(nrnpy_pyobject_in_obj(pyseg));
+	Object* ho = nrnpy_pyobject_in_obj(pyseg);
+	Py_DECREF(pyseg);
+	--ho->refcount;
+	return hoc_temp_objptr(ho);
 }
 
 static void rv_noexist(Section* sec, const char* n, double x, int err) {

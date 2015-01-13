@@ -140,9 +140,6 @@ static  PyObject* hoc_ac(PyObject* self, PyObject* args) {
 static PyMethodDef HocMethods[] = {
 	{"execute", nrnexec, METH_VARARGS, "Execute a hoc command, return 1 on success, 0 on failure." },
 	{"hoc_ac", hoc_ac, METH_VARARGS, "Get (or set) the scalar hoc_ac_." },
-
-
-
 	{NULL, NULL, 0, NULL}
 };
 
@@ -570,13 +567,22 @@ static PyObject* hocobj_call(PyHocObject* self, PyObject* args, PyObject* kwrds)
 		}
 #endif
 		section = PyDict_GetItemString(kwrds, "sec");
+		int num_kwargs = PyDict_Size(kwrds);
+		if (num_kwargs > 1) {
+		    PyErr_SetString(PyExc_RuntimeError, "invalid keyword argument");
+		    return NULL;
+	    }
 		if (section) {
-			//printf("sec=%s\n", PyString_AsString(PyObject_Str(section)));
 			section = nrnpy_pushsec(section);
 			if (!section) {
 				PyErr_SetString(PyExc_TypeError, "sec is not a Section");
 				return NULL;				
 			}
+		} else {
+		    if (num_kwargs) {
+		        PyErr_SetString(PyExc_RuntimeError, "invalid keyword argument");
+		        return NULL;
+	        }
 		}
 	}
 	if (self->type_ == 0) {
@@ -1838,6 +1844,142 @@ hoc_execerror("Could not set a Python Sequence item", buf);
 	return hoc_temp_objptr(ho);
 }
 
+// poorly follows __reduce__ and __setstate__
+// from numpy/core/src/multiarray/methods.c
+static PyObject* hocpickle_reduce(PyObject* self, PyObject* args) {
+  //printf("hocpickle_reduce\n");
+  PyHocObject* pho = (PyHocObject*)self;
+  if (!is_obj_type(pho->ho_, "Vector")) {
+    PyErr_SetString(PyExc_TypeError, "HocObject: Only Vector instance can be pickled");
+    return NULL;
+  }
+  Vect* vec = (Vect*)pho->ho_->u.this_pointer;
+
+  // neuron module has a _pkl method that returns h.Vector(0)
+  PyObject* mod = PyImport_ImportModule("neuron");
+  if (mod == NULL) {
+    return NULL;
+  }
+  PyObject* obj = PyObject_GetAttrString(mod, "_pkl");
+  Py_DECREF(mod);
+  if (obj == NULL) {
+    PyErr_SetString(PyExc_Exception, "neuron module has no _pkl method.");
+    return NULL;
+  }
+
+  PyObject* ret = PyTuple_New(3);
+  if (ret == NULL) {
+    return NULL;
+  }
+  PyTuple_SET_ITEM(ret, 0, obj);
+  PyTuple_SET_ITEM(ret, 1, Py_BuildValue("(N)", PyInt_FromLong(0)));
+    // see numpy implementation if more ret[1] stuff needed in case we
+    // pickle anything but a hoc Vector. I don't think ret[1] can be None.
+
+  // Fill object's state. Tuple with 4 args:
+  // pickle version, 2.0 bytes to determine if swapbytes needed,
+  // vector size, string data
+  PyObject* state = PyTuple_New(4);
+  if (state == NULL) {
+    Py_DECREF(ret);
+    return NULL;
+  }
+  PyTuple_SET_ITEM(state, 0, PyInt_FromLong(1));
+  double x = 2.0;
+  PyObject* str = PyBytes_FromStringAndSize((const char*)(&x), sizeof(double));
+  if (str == NULL) {
+    Py_DECREF(ret);
+    Py_DECREF(state);
+    return NULL;
+  }
+  PyTuple_SET_ITEM(state, 1, str);
+  PyTuple_SET_ITEM(state, 2, PyInt_FromLong(vec->capacity()));
+  str = PyBytes_FromStringAndSize((const char*)vector_vec(vec), vec->capacity()*sizeof(double));
+  if (str == NULL) {
+    Py_DECREF(ret);
+    Py_DECREF(state);
+    return NULL;
+  }
+  PyTuple_SET_ITEM(state, 3, str);
+  PyTuple_SET_ITEM(ret, 2, state);
+  return ret;
+}
+
+// following copied (except for nrn_need_byteswap line) from NEURON ivocvect.cpp
+#define BYTEHEADER uint32_t _II__;  char *_IN__; char _OUT__[16]; int BYTESWAP_FLAG=0;
+#define BYTESWAP(_X__,_TYPE__) \
+    if (BYTESWAP_FLAG == 1) { \
+        _IN__ = (char *) &(_X__); \
+        for (_II__=0;_II__< sizeof(_TYPE__);_II__++) { \
+                _OUT__[_II__] = _IN__[sizeof(_TYPE__)-_II__-1]; } \
+        (_X__) = *((_TYPE__ *) &_OUT__); \
+    }
+
+static PyObject* hocpickle_setstate(PyObject* self, PyObject* args) {
+  BYTEHEADER
+  int version = -1;
+  int size = -1;
+  PyObject* rawdata = NULL;
+  PyObject* endian_data;
+  PyHocObject* pho = (PyHocObject*)self;
+  //printf("hocpickle_setstate %s\n", hoc_object_name(pho->ho_));
+  Vect* vec = (Vect*)pho->ho_->u.this_pointer;
+  if (!PyArg_ParseTuple(args, "(iOiO)",
+      &version,
+      &endian_data,
+      &size,
+      &rawdata)) {
+    return NULL;
+  }
+  Py_INCREF(endian_data);
+  Py_INCREF(rawdata);
+  //printf("hocpickle version=%d size=%d\n", version, size);
+  vector_resize(vec, size);
+  if (!PyBytes_Check(rawdata) || !PyBytes_Check(endian_data)) {
+    PyErr_SetString(PyExc_TypeError, "pickle not returning string");
+    Py_DECREF(endian_data);
+    Py_DECREF(rawdata);
+    return NULL;
+  }
+  char* datastr;
+  Py_ssize_t len;
+  if (PyBytes_AsStringAndSize(endian_data, &datastr, &len) < 0) {
+    Py_DECREF(endian_data);
+    Py_DECREF(rawdata);
+    return NULL;
+  }
+  if (len != sizeof(double)) {
+    PyErr_SetString(PyExc_ValueError, "endian_data size is not sizeof(double)");
+    Py_DECREF(endian_data);
+    Py_DECREF(rawdata);
+    return NULL;
+  }
+  BYTESWAP_FLAG = 0;
+  if (*((double*)datastr) != 2.0) {
+    BYTESWAP_FLAG = 1;
+  }
+  Py_DECREF(endian_data);
+  //printf("byteswap = %d\n", BYTESWAP_FLAG);
+  if (PyBytes_AsStringAndSize(rawdata, &datastr, &len) < 0) {
+    Py_DECREF(rawdata);
+    return NULL;
+  }
+  if (len != size*sizeof(double)) {
+    PyErr_SetString(PyExc_ValueError, "buffer size does not match array size");
+    Py_DECREF(rawdata);
+    return NULL;
+  }
+  if (BYTESWAP_FLAG) {
+    double* x = (double*)datastr;
+    for (int i=0; i < size; ++i) {
+      BYTESWAP(x[i], double)
+    }
+  }
+  memcpy((char*)vector_vec(vec), datastr, len);
+  Py_DECREF(rawdata);
+  Py_INCREF(Py_None);
+  return Py_None;
+}
 
 static PyMethodDef hocobj_methods[] = {
 	{"ref", mkref, METH_VARARGS, "Wrap to allow call by reference in a hoc function"},
@@ -1849,6 +1991,8 @@ static PyMethodDef hocobj_methods[] = {
 	{"hocobjptr", hocobj_vptr, METH_NOARGS, "Hoc Object pointer as a long int"},
 	{"same", (PyCFunction)hocobj_same, METH_VARARGS, "o1.same(o2) return True if o1 and o2 wrap the same internal HOC Object"},
 	{"hname", hocobj_name, METH_NOARGS, "More specific than __str__() or __attr__()."},
+	{"__reduce__", hocpickle_reduce, METH_VARARGS, "pickle interface"},
+	{"__setstate__", hocpickle_setstate, METH_VARARGS, "pickle interface"},
 	{NULL, NULL, 0, NULL}
 };
 
