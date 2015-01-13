@@ -101,62 +101,75 @@ mech/cfile/netstim.c
 mech/cfile/pattern.c
 )
 
-option (COREBLURON_NEURODAMUS_MECHS "Compile CoreBluron with all available mechanisms from Neurodamus" OFF)
+option(COREBLURON_NEURODAMUS_MECHS "Compile CoreBluron with all available mechanisms from Neurodamus" ON)
 if(COREBLURON_NEURODAMUS_MECHS)
+  find_program(MOD2C nocmodl_core)
+  if(MOD2C STREQUAL "MOD2C-NOTFOUND")
+    message(FATAL_ERROR "Unable to locate nocmodl_core executable")
+  endif()
 
-  set(COREBLURON_SOURCES
-  ${COREBLURON_SOURCES}
-  mech/cfile/Ca.c
-  mech/cfile/CaDynamics_E2.c
-  mech/cfile/Ca_HVA.c
-  mech/cfile/Ca_LVAst.c
-  mech/cfile/HDF5reader.c
-  mech/cfile/Ih.c
-  mech/cfile/Im.c
-  mech/cfile/K_Pst.c
-  mech/cfile/K_Tst.c
-  mech/cfile/KdShu2007.c
-  mech/cfile/NaTa_t.c
-  mech/cfile/NaTs2_t.c
-  mech/cfile/Nap_Et2.c
-  mech/cfile/ProbAMPANMDA_EMS.c
-  mech/cfile/ProbGABAAB_EMS.c
-  mech/cfile/SK_E2.c
-  mech/cfile/SKv3_1.c
-  mech/cfile/StochKv.c
-  mech/cfile/netstim_inhpoisson.c
-  mech/cfile/new_calcium_channels.c
-  mech/cfile/mod_func.c
-  )
+  # nocmodl_core wants MODLUNIT set to point to its units file,
+  # but CMake does not support setting an environment for custom_commands.
+  get_filename_component(mod2c_install_prefix ${MOD2C} DIRECTORY)
+  find_file(MOD2C_UNITS nrnunits.lib HINT "${mod2c_install_prefix}" PATH_SUFFIXES "share")
+  if(NOT MOD2C_UNITS STREQUAL "MOD2C_UNITS-NOTFOUND")
+    set(MOD2C env "MODLUNIT=${MOD2C_UNITS}" ${MOD2C})
+  endif()
 
-set(MECH_FILES
-  ${MECH_FILES}
-  mech/cfile/expsyn.c
-  mech/cfile/hh.c
-  mech/cfile/passive.c
-  mech/cfile/stim.c
-  mech/cfile/netstim.c
-  mech/cfile/Ca.c
-  mech/cfile/CaDynamics_E2.c
-  mech/cfile/Ca_HVA.c
-  mech/cfile/Ca_LVAst.c
-  mech/cfile/HDF5reader.c
-  mech/cfile/Ih.c
-  mech/cfile/Im.c
-  mech/cfile/K_Pst.c
-  mech/cfile/K_Tst.c
-  mech/cfile/KdShu2007.c
-  mech/cfile/NaTa_t.c
-  mech/cfile/NaTs2_t.c
-  mech/cfile/Nap_Et2.c
-  mech/cfile/ProbAMPANMDA_EMS.c
-  mech/cfile/ProbGABAAB_EMS.c
-  mech/cfile/SK_E2.c
-  mech/cfile/SKv3_1.c
-  mech/cfile/StochKv.c
-  mech/cfile/netstim_inhpoisson.c
-  mech/cfile/new_calcium_channels.c
-  )
+  # Macro sets up build rule for .c files from .mod files.
+  # Parameters:
+  #    name     An arbitrary name to keep track of output .c files
+  #    input    The path to the mod file
+  #
+  # Because nocmodl_core wants to write the .c file in the same directory
+  # as the mod file, we copy the mod file to the binary directory first
+  #
+  # The macro appends the names of the output files to MOD2C_${name}_OUTPUTS
+
+  macro(mod2c_target name input)
+    get_filename_component(mod2c_source_ ${input} ABSOLUTE)
+    get_filename_component(mod2c_modname_ ${input} NAME)
+    string(REGEX REPLACE "\\.mod$" ".c" mod2c_cname_ "${mod2c_modname_}")
+
+    set(mod2c_output_ "${CMAKE_CURRENT_BINARY_DIR}/${mod2c_cname_}")
+    list(APPEND MOD2C_${name}_OUTPUTS "${mod2c_output_}")
+
+    add_custom_command(OUTPUT "${mod2c_output_}"
+      DEPENDS ${input}
+      COMMAND ${CMAKE_COMMAND} -E copy "${mod2c_source_}" "${CMAKE_CURRENT_BINARY_DIR}"
+      COMMAND ${MOD2C} "${mod2c_modname_}"
+      WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
+  endmacro()
+
+  set(MODLIBPATH "${CMAKE_CURRENT_SOURCE_DIR}/mech/neurodamus/lib/modlib")
+  set(MODLISTFILE "${CMAKE_CURRENT_SOURCE_DIR}/mech/coreneuron_modlist.txt")
+  if(EXISTS "${MODLISTFILE}")
+    file(READ "${MODLISTFILE}" MECH_MODS)
+    string(REGEX REPLACE "[ \t\n]+" ";" MECH_MODS "${MECH_MODS}")
+    list(REMOVE_ITEM MECH_MODS "")
+  else()
+    message(FATAL_ERROR "Cannot find coreneuron_modlist.txt listing .mod files to include. Consider setting COREBLURON_NEURODAMUS_MECHS to OFF")
+  endif()
+  
+  foreach(MOD ${MECH_MODS})
+      mod2c_target(MECH "${MODLIBPATH}/${MOD}")
+  endforeach()
+
+  # Also need to generate mod_func.c from module list
+  set(MOD_FUNC_C "${CMAKE_CURRENT_BINARY_DIR}/mod_func.c")
+  set(MOD_FUNC_C_PL "${CMAKE_CURRENT_SOURCE_DIR}/mech/mod_func.c.pl")
+
+  add_custom_command(OUTPUT "${MOD_FUNC_C}"
+	DEPENDS "${MODLISTFILE}" "${MOD_FUNC_C_PL}"
+	COMMAND perl "${MOD_FUNC_C_PL}" ${MODLISTFILE} > "${MOD_FUNC_C}"
+	WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
+
+  set(COREBLURON_SOURCES ${COREBLURON_SOURCES}
+    ${MOD_FUNC_C}
+    ${MOD2C_MECH_OUTPUTS})
+
+  set(MECH_FILES ${MECH_FILES}
+    ${MOD2C_MECH_OUTPUTS})
 
 endif()
 

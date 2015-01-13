@@ -97,7 +97,11 @@ for (i=0; i < *pargc; ++i) {
 #if (USE_PTHREAD || defined(_OPENMP))
 			int required = MPI_THREAD_FUNNELED;
 			int provided;
-	nrn_assert(MPI_Init_thread(pargc, pargv, required, &provided) == MPI_SUCCESS);
+                        nrn_assert(MPI_Init_thread(pargc, pargv, required, &provided) == MPI_SUCCESS);
+                        
+                        /* debugging assert failure */
+                        fprintf(stderr,"MPI_Init: required=%d; provided=%d\n",required,provided);
+                        /* */
 			nrn_assert(required <= provided);
 #else
 			nrn_assert(MPI_Init(pargc, pargv) == MPI_SUCCESS);
