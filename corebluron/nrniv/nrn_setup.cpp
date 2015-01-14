@@ -857,6 +857,7 @@ void read_phase2(data_reader &F, int imult, NrnThread& nt) {
     NetCon& nc = nt.netcons[nnetcon + i];
     nc.delay_ = 1.0;
     nc.u.weight_ = nt.weights + (nweight + i*extracon_target_nweight);
+    nc.u.weight_[0] = 2.0;  // this value 2.0 is extracted from .dat files
   }
  }
 
