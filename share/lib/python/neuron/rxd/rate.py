@@ -24,6 +24,9 @@ class Rate(GeneralizedReaction):
             raise RxDException('if membrane_flux then must specify the (unique) membrane regions')
         self._trans_membrane = False
         rxd._register_reaction(self)
+        
+        # be careful, this could keep states alive
+        self._original_rate = rate
 
         # initialize self if the rest of rxd is already initialized
         if initializer.is_initialized():
@@ -31,6 +34,7 @@ class Rate(GeneralizedReaction):
 
         
     def _do_init(self):
+        rate = self._original_rate
         if not isinstance(rate, RangeVar):
             self._rate, self._involved_species = rxdmath._compile(rate)
         else:
