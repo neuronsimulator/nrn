@@ -22,10 +22,6 @@ class Rate(GeneralizedReaction):
         if membrane_flux and regions is None:
             # TODO: rename regions to region?
             raise RxDException('if membrane_flux then must specify the (unique) membrane regions')
-        if not isinstance(rate, RangeVar):
-            self._rate, self._involved_species = rxdmath._compile(rate)
-        else:
-            self._involved_species = [weakref.ref(species)]
         self._trans_membrane = False
         rxd._register_reaction(self)
 
@@ -35,6 +31,10 @@ class Rate(GeneralizedReaction):
 
         
     def _do_init(self):
+        if not isinstance(rate, RangeVar):
+            self._rate, self._involved_species = rxdmath._compile(rate)
+        else:
+            self._involved_species = [weakref.ref(species)]
         self._update_indices()
     
     def __repr__(self):
