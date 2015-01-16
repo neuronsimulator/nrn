@@ -6,6 +6,9 @@ the prototypes be of the form "type foo(type arg, ...)"
 #ifndef nrnmpidec_h
 #define nrnmpidec_h
 #include <nrnmpiuse.h>
+#if defined(HAVE_STDINT_H)
+#include <stdint.h>
+#endif
 typedef long double longdbl;
 #if NRNMPI
 #include <stdlib.h>

@@ -7,6 +7,8 @@
 
 extern void Fig_file(const char*, int);
 
+#if !defined(CYGWIN)
+
 void Plt(void)
 {
 	int mode;
@@ -63,3 +65,4 @@ void hoc_Lw(void)
 	pushx(0.);
 }
 
+#endif /*!defined(CYGWIN)*/
