@@ -170,10 +170,12 @@ def _invalidate_matrices():
 _rxd_offset = None
 
 def _ode_count(offset):
+    global last_structure_change_cnt
     global _rxd_offset
     initializer._do_init()
     _rxd_offset = offset
-    if _diffusion_matrix is None: _setup_matrices()
+    if _diffusion_matrix is None or last_structure_change_cnt != _structure_change_count.value: _setup_matrices()
+    last_structure_change_cnt = _structure_change_count.value
     return len(_nonzero_volume_indices)
 
 def _ode_reinit(y):

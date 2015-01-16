@@ -240,6 +240,9 @@ class Species(_SpeciesMathable):
 
         charge must match the charges specified in NMODL files for the same ion, if any."""
 
+        import neuron
+        import ctypes
+
         # TODO: check if "name" already defined elsewhere (if non-None)
         #       if so, make sure other fields consistent, expand regions as appropriate
 
@@ -250,6 +253,9 @@ class Species(_SpeciesMathable):
         self.charge = charge
         self.initial = initial
         _all_species.append(weakref.ref(self))
+
+        # declare an update to the structure of the model (the number of differential equations has changed)
+        neuron.nrn_dll_sym('structure_change_cnt', ctypes.c_int).value += 1
 
         # initialize self if the rest of rxd is already initialized
         if initializer.is_initialized():
