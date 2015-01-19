@@ -19,6 +19,7 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "corebluron/nrniv/output_spikes.h"
 #include "corebluron/nrnmpi/nrnmpi.h"
 #include "corebluron/nrniv/nrnmutdec.h"
+#include "corebluron/utils/sdprintf.h"
 
 int spikevec_buffer_size;
 int spikevec_size;
@@ -39,8 +40,8 @@ void spikevec_lock() { MUTLOCK }
 void spikevec_unlock() { MUTUNLOCK }
 
 void output_spikes(const char *outpath) {
-  char fname[100];
-  sprintf(fname, "%s/out%d.dat", outpath, nrnmpi_myid);
+  char fnamebuf[100];
+  sd_ptr fname=sdprintf(fnamebuf, sizeof(fnamebuf), "%s/out%d.dat", outpath, nrnmpi_myid);
   FILE* f = fopen(fname, "w");
   for (int i=0; i < spikevec_size; ++i)
   {

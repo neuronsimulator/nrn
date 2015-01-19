@@ -21,6 +21,7 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "corebluron/nrniv/ivtable.h"
 #include "corebluron/nrniv/ivlist.h"
 #include "corebluron/nrnoc/nrnoc_decl.h"
+#include "corebluron/utils/sdprintf.h"
 
 declarePtrList(NetConList, NetCon) // NetCons in same order as Point_process
 implementPtrList(NetConList, NetCon) // and there may be several per pp.
@@ -178,8 +179,8 @@ int prcellstate(int gid, const char* suffix) {
       if (ps.output_index_ == gid) {
         // found it so create a <gid>_<suffix>.corenrn file
         char buf[200];
-        sprintf(buf, "%d_%s.corenrn", gid, suffix);
-        FILE* f = fopen(buf, "w");
+        sd_ptr filename=sdprintf(buf, sizeof(buf), "%d_%s.corenrn", gid, suffix);
+        FILE* f = fopen(filename, "w");
         assert(f);
         fprintf(f, "gid = %d\n", gid);
         fprintf(f, "t = %.15g\n", nt._t);
