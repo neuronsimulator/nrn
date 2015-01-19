@@ -118,6 +118,7 @@ class SpeciesOnRegion(_SpeciesMathable):
         return (self._species() == other._species()) and (self._region() == other._region()) and (self._species() is not None) and (self._region() is not None)
     
     def __hash__(self):
+        # TODO: replace this to reduce collision risk; how much of a problme is that?
         return 1000 * (hash(self._species()) % 1000) + (hash(self._region()) % 1000)
     
     
@@ -262,6 +263,8 @@ class Species(_SpeciesMathable):
             if _has_3d:
                 # TODO: remove this limitation
                 #       it's especially not a problem if the new stuff is 3D
+                #       one strategy would be to just redo the whole thing; what are the implications of that?
+                #       (pointers would be invalid; anything else?)
                 raise RxDException('temporarily cannot add new species after rxd is initialized because 1D and 3D blocks need to be kept together')
             self._do_init()
     
