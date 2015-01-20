@@ -75,7 +75,7 @@ class Region(object):
         self._secs = _sort_secs(self._secs)
         self._secs1d = _sort_secs(self._secs1d)
         
-        if self._secs3d and self._geometry != geo.inside:        
+        if self._secs3d and not(hasattr(self._geometry, 'volumes3d')):
             raise RxDException('custom geometries (%r) not yet supported in 3d mode' % self._geometry)
         
         self._id = _region_count

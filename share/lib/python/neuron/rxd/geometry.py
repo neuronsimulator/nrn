@@ -122,6 +122,7 @@ _always_false = constant_function(False)
 _always_0 = constant_function(0)
 
 inside = RxDGeometry()
+inside.volumes3d = True
 inside.volumes1d = _volumes1d
 inside.surface_areas1d = _surface_areas1d
 inside.neighbor_areas1d = _neighbor_areas1d
