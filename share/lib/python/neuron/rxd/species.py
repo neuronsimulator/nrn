@@ -407,13 +407,13 @@ class Species(_SpeciesMathable):
         for i in xrange(len(xs)):
             indices[(xs[i], ys[i], zs[i])] = i + self._3doffset
         dx = self._regions[0]._dx
-        areal = dx * dx
-        arear = dx * dx
+        # TODO: in principle, these areas are functions of the position, but will often be the same; allow a flag?
+        areazl = areazr = areayl = areayr = areaxl = areaxr = dx * dx
         for nodeobj in self._nodes:
             i, j, k, index, vol = nodeobj._i, nodeobj._j, nodeobj._k, nodeobj._index, nodeobj.volume
-            _setup_matrices_process_neighbors((i, j, k - 1), (i, j, k + 1), indices, euler_matrix, index, diffs, vol, areal, arear, dx)
-            _setup_matrices_process_neighbors((i, j - 1, k), (i, j + 1, k), indices, euler_matrix, index, diffs, vol, areal, arear, dx)
-            _setup_matrices_process_neighbors((i - 1, j, k), (i + 1, j, k), indices, euler_matrix, index, diffs, vol, areal, arear, dx)
+            _setup_matrices_process_neighbors((i, j, k - 1), (i, j, k + 1), indices, euler_matrix, index, diffs, vol, areazl, areazr, dx)
+            _setup_matrices_process_neighbors((i, j - 1, k), (i, j + 1, k), indices, euler_matrix, index, diffs, vol, areayl, areayr, dx)
+            _setup_matrices_process_neighbors((i - 1, j, k), (i + 1, j, k), indices, euler_matrix, index, diffs, vol, areaxl, areaxr, dx)
             
 
 

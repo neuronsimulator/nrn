@@ -76,19 +76,20 @@ class Region(object):
         self._secs1d = _sort_secs(self._secs1d)
         
         if self._secs3d and not(hasattr(self._geometry, 'volumes3d')):
-            raise RxDException('custom geometries (%r) not yet supported in 3d mode' % self._geometry)
+            raise RxDException('selected geometry (%r) does not support 3d mode' % self._geometry)
         
         self._id = _region_count
         _region_count += 1
         if self._secs3d:
             if nrn_region == 'o':
-                raise RxDException('3d version does not support nrn_region="o" yet')
+                raise RxDException('3d simulations do not support nrn_region="o" yet')
 
             self._mesh, sa, vol, self._tri = geometry3d.voxelize2(self._secs3d, dx=dx)
             sa_values = sa.values
             vol_values = vol.values
             self._objs = {}
             # TODO: remove this when can store soma outlines
+            # TODO: well, we can do that now, but what's this about?
             if not hasattr(self.secs, 'sections'):
                 for sec in self._secs3d:
                     self._objs.update(dimension3.centroids_by_segment(sec))
