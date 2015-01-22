@@ -42,7 +42,7 @@ class Rate(GeneralizedReaction):
         self._update_indices()
     
     def __repr__(self):
-        return 'Rate(%r, %r, regions=%r, membrane_flux=%r)' % (self._species, self._original_rate, self._regions, self._membrane_flux)
+        return 'Rate(%r, %r, regions=%r, membrane_flux=%r)' % (self._species(), self._original_rate, self._regions, self._membrane_flux)
     
     def _rate_from_rangevar(self, *args):
         return self._original_rate._rangevar_vec()
