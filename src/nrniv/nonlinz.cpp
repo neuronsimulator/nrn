@@ -501,6 +501,7 @@ void NonLinImpRep::current(int im, Memb_list* ml, int in) { // assume there is i
 	mfake.pdata = ml->pdata + in;
 	mfake.prop = ml->prop + in;
 	mfake.nodecount = 1;
+	mfake._thread = ml->_thread;
 	(*s)(nrn_threads, &mfake, im);
 }
 
