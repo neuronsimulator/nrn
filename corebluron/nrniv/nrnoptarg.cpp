@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "corebluron/nrniv/nrnoptarg.h"
+#include "corebluron/utils/sdprintf.h"
 
 extern "C" void nrn_exit( int );
 extern int nrnmpi_myid;
@@ -33,9 +34,10 @@ cb_parameters::cb_parameters()
     extracon = 0;
 }
 
-void cb_parameters::get_filesdat_path( char *path )
+sd_ptr cb_parameters::get_filesdat_path( char *path_buf, size_t bufsz )
 {
-    sprintf( path, "%s/%s", datpath, filesdat );
+    // shouldn't we check if filesdat is absolute or relative? -- sgy 20150119
+    return sdprintf( path_buf, bufsz, "%s/%s", datpath, filesdat );
 }
 
 void cb_parameters::show_cb_opts()

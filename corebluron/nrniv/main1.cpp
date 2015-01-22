@@ -30,10 +30,11 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "corebluron/utils/memory_utils.h"
 #include "corebluron/nrniv/nrnoptarg.h"
 #include "corebluron/utils/randoms/nrnran123.h"
+#include "corebluron/utils/sdprintf.h"
 
 int main1( int argc, char **argv, char **env )
 {
-    char prcellname[1024], filesdat[1024];
+    char prcellname[1024], filesdat_buf[1024];
 
     ( void )env; /* unused */
 
@@ -63,7 +64,7 @@ int main1( int argc, char **argv, char **env )
     celsius = input_params.celsius;
 
     // full path of files.dat file
-    input_params.get_filesdat_path( filesdat );
+    sd_ptr filesdat=input_params.get_filesdat_path(filesdat_buf,sizeof(filesdat_buf));
 
     // memory footprint after mpi initialisation
     report_mem_usage( "After MPI_Init" );

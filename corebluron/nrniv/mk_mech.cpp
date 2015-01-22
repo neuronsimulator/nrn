@@ -21,6 +21,7 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "corebluron/nrniv/nrniv_decl.h"
 #include "corebluron/nrniv/ivtable.h"
 #include "corebluron/nrniv/nrn_assert.h"
+#include "corebluron/utils/sdprintf.h"
 
 int nrn_need_byteswap;
 // following copied (except for nrn_need_byteswap line) from NEURON ivocvect.cpp
@@ -52,8 +53,8 @@ static void set_mechtype(const char* name, int type);
 static Mech2Type* mech2type;
 
 void mk_mech(const char* datpath) {
-  char fname[1024];
-  sprintf(fname, "%s/%s", datpath, "bbcore_mech.dat");
+  char fnamebuf[1024];
+  sd_ptr fname=sdprintf(fnamebuf, sizeof(fnamebuf), "%s/%s", datpath, "bbcore_mech.dat");
   FILE* f;
   f = fopen(fname, "r");
   assert(f);

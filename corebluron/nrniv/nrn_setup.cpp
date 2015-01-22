@@ -20,6 +20,7 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "corebluron/nrnoc/nrnoc_decl.h"
 #include "corebluron/nrniv/vrecitem.h"
 #include "corebluron/utils/randoms/nrnran123.h"
+#include "corebluron/utils/sdprintf.h"
 #include "corebluron/nrniv/nrn_datareader.h"
 #include "corebluron/nrniv/nrn_assert.h"
 #include "corebluron/nrniv/nrnmutdec.h"
@@ -159,9 +160,9 @@ static void store_phase_args(int ngroup, int* gidgroups, int* imult, data_reader
 #define implement_phase_wrapper(A) \
 static void* phase##A##_wrapper_w(NrnThread* nt) { \
   int i = nt->id; \
-  char fname[1000]; \
+  char fnamebuf[1000]; \
   if (i < ngroup_w) { \
-    sprintf(fname, "%s/%d_"#A".dat", path_w, gidgroups_w[i]); \
+    sd_ptr fname = sdprintf(fnamebuf, sizeof(fnamebuf), "%s/%d_"#A".dat", path_w, gidgroups_w[i]); \
     file_reader_w[i].open(fname,byte_swap_w); \
     read_phase##A(file_reader_w[i], imult_w[i], *nt); \
     file_reader_w[i].close(); \

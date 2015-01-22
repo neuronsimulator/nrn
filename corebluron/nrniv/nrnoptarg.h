@@ -9,6 +9,7 @@
 #define nrnoptarg_h
 
 #include <getopt.h>
+#include "corebluron/utils/sdprintf.h"
 
 typedef struct cb_parameters {
 
@@ -50,7 +51,7 @@ typedef struct cb_parameters {
     void read_cb_opts( int argc, char **argv );
 
     /** return full path of files.dat file */ 
-    void get_filesdat_path( char *path );
+    sd_ptr get_filesdat_path( char *path_buf, size_t bufsz );
 
     /** store/set computed mindelay argument */ 
     void set_mindelay(double mdelay) {
