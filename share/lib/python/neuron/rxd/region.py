@@ -91,7 +91,7 @@ class Region(object):
             if nrn_region == 'o':
                 raise RxDException('3d simulations do not support nrn_region="o" yet')
 
-            self._mesh, sa, vol, self._tri = geometry3d.voxelize2(self._secs3d, dx=dx)
+            self._mesh, sa, vol, self._tri = self._geometry.volumes3d(self._secs3d, dx=dx)
             sa_values = sa.values
             vol_values = vol.values
             self._objs = {}

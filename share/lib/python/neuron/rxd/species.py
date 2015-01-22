@@ -404,6 +404,7 @@ class Species(_SpeciesMathable):
     def _setup_matrices3d(self, euler_matrix):
         # TODO: this doesn't handle multiple regions
         region_mesh = self._regions[0]._mesh.values
+        assert(len(self._regions) == 1)
         indices = {}
         xs, ys, zs = region_mesh.nonzero()
         diffs = node._diffs
@@ -411,13 +412,21 @@ class Species(_SpeciesMathable):
             indices[(xs[i], ys[i], zs[i])] = i + self._3doffset
         dx = self._regions[0]._dx
         # TODO: in principle, these areas are functions of the position, but will often be the same; allow a flag?
-        areazl = areazr = areayl = areayr = areaxl = areaxr = dx * dx
-        for nodeobj in self._nodes:
-            i, j, k, index, vol = nodeobj._i, nodeobj._j, nodeobj._k, nodeobj._index, nodeobj.volume
-            _setup_matrices_process_neighbors((i, j, k - 1), (i, j, k + 1), indices, euler_matrix, index, diffs, vol, areazl, areazr, dx)
-            _setup_matrices_process_neighbors((i, j - 1, k), (i, j + 1, k), indices, euler_matrix, index, diffs, vol, areayl, areayr, dx)
-            _setup_matrices_process_neighbors((i - 1, j, k), (i + 1, j, k), indices, euler_matrix, index, diffs, vol, areaxl, areaxr, dx)
-            
+        naf = self._regions[0]._geometry.neighbor_area_fraction
+        if not callable(naf):
+            areazl = areazr = areayl = areayr = areaxl = areaxr = dx * dx * naf 
+            for nodeobj in self._nodes:
+                i, j, k, index, vol = nodeobj._i, nodeobj._j, nodeobj._k, nodeobj._index, nodeobj.volume
+                _setup_matrices_process_neighbors((i, j, k - 1), (i, j, k + 1), indices, euler_matrix, index, diffs, vol, areazl, areazr, dx)
+                _setup_matrices_process_neighbors((i, j - 1, k), (i, j + 1, k), indices, euler_matrix, index, diffs, vol, areayl, areayr, dx)
+                _setup_matrices_process_neighbors((i - 1, j, k), (i + 1, j, k), indices, euler_matrix, index, diffs, vol, areaxl, areaxr, dx)
+        else:
+            for nodeobj in self._nodes:
+                i, j, k, index, vol = nodeobj._i, nodeobj._j, nodeobj._k, nodeobj._index, nodeobj.volume
+                areaxl, areaxr, areayl, areayr, areazl, areazr = naf(i, j, k)
+                _setup_matrices_process_neighbors((i, j, k - 1), (i, j, k + 1), indices, euler_matrix, index, diffs, vol, areazl, areazr, dx)
+                _setup_matrices_process_neighbors((i, j - 1, k), (i, j + 1, k), indices, euler_matrix, index, diffs, vol, areayl, areayr, dx)
+                _setup_matrices_process_neighbors((i - 1, j, k), (i + 1, j, k), indices, euler_matrix, index, diffs, vol, areaxl, areaxr, dx)
 
 
     def re_init(self):

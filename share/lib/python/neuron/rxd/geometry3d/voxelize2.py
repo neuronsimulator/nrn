@@ -135,15 +135,16 @@ def voxelize2(source, dx=0.25, xlo=None, xhi=None, ylo=None, yhi=None, zlo=None,
     # triangulate the surface
     triangles = surfaces._triangulate_surface_given_chunks(objects, xs, ys, zs, False, chunk_size, chunk_objs, nx, ny, nz, True, sa_grid)
 
-    """
+    
     # for each triangle, compute the area. Add it to the appropriate spots in sa_grid
+    # TODO: move this to C? or at least cythonize it?
     for tdata in triangles.reshape(len(triangles) / 9, 9):
         v0, v1, v2 = tdata[0 : 3], tdata[3 : 6], tdata[6 : 9]
         centerx, centery, centerz = (v0 + v1 + v2) / 3
         i, j, k = (centerx - xlo) / dx, (centery - ylo) / dx, (centerz - zlo) / dx
         sa_grid[i, j, k] += 0.5 * norm(numpy.cross(v1 - v0, v2 - v0))
     
-    """
+    
     # now ensure that any grid containing surface is included in the voxelization
     # TODO: change this when supporting multiple non-overlapping regions in one 3d Domain
     grid[sa_grid.nonzero()] = 1
@@ -157,9 +158,9 @@ def voxelize2(source, dx=0.25, xlo=None, xhi=None, ylo=None, yhi=None, zlo=None,
     volume_values[grid.nonzero()] = dx ** 3
 
     # correct the boundary node volumes
-    surface_nodes = sa_grid.nonzero()
-    for i, j, k in zip(*surface_nodes):
-        volume_values[i, j, k] = surfaces.volume_inside_cell(i, j, k, chunk_objs[i // chunk_size][j // chunk_size][k // chunk_size], xs, ys, zs)
+    #surface_nodes = sa_grid.nonzero()
+    #for i, j, k in zip(*surface_nodes):
+    #    volume_values[i, j, k] = surfaces.volume_inside_cell(i, j, k, chunk_objs[i // chunk_size][j // chunk_size][k // chunk_size], xs, ys, zs)
     
     return mesh, surface_areas, volumes, triangles.reshape(len(triangles) / 9, 9)
 

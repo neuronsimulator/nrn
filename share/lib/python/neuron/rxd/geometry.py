@@ -2,6 +2,7 @@ import warnings
 import numpy
 from neuron import h, nrn
 from .rxdException import RxDException
+from neuron.rxd import geometry3d
 
 class RxDGeometry:
     def volumes1d(self, sec):
@@ -122,7 +123,9 @@ _always_false = constant_function(False)
 _always_0 = constant_function(0)
 
 inside = RxDGeometry()
-inside.volumes3d = True
+inside.volumes3d = geometry3d.voxelize2
+# neighbor_area_fraction can be a constant or a function
+inside.neighbor_area_fraction = 1
 inside.volumes1d = _volumes1d
 inside.surface_areas1d = _surface_areas1d
 inside.neighbor_areas1d = _neighbor_areas1d
@@ -164,6 +167,14 @@ class FractionalVolume(RxDGeometry):
         self._volume_fraction = volume_fraction
         self._surface_fraction = surface_fraction
         self._neighbor_areas_fraction = neighbor_areas_fraction
+        # TODO: does the else case ever make sense?
+        self.neighbor_area_fraction = volume_fraction if neighbor_areas_fraction is None else neighbor_areas_fraction
+        
+    def volumes3d(source, dx=0.25, xlo=None, xhi=None, ylo=None, yhi=None, zlo=None, zhi=None, n_soma_step=100):
+        mesh, surface_areas, volumes, triangles = geometry3d.voxelize2(source, dx=dx, xlo=xlo, xhi=xhi, ylo=ylo, yhi=yhi, zlo=zlo, zhi=zhi, n_soma_step=n_soma_step)
+        surface_areas *= self._surface_fraction
+        volumes *= self._volume_fraction
+        return mesh, surface_areas, volumes, triangles
     
     def __repr__(self):
         return 'FractionalVolume(volume_fraction=%r, surface_fraction=%r, neighbor_areas_fraction=%r)' % (self._volume_fraction, self._surface_fraction, self._neighbor_areas_fraction)
