@@ -85,6 +85,8 @@ int main1( int argc, char **argv, char **env )
 
     //pass by flag so existing tests do not need a changed nrn_setup prototype.
     nrn_setup_multiple = input_params.multiple;
+    nrn_setup_extracon = input_params.extracon;
+
     // reading *.dat files and setting up the data structures
     nrn_setup( input_params.datpath, filesdat, nrn_need_byteswap, input_params.threading );
 

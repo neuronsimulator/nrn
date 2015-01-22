@@ -30,6 +30,7 @@ extern void mk_netcvode(void);
 extern void nrn_p_construct(void);
 extern void nrn_setup(const char *path, const char *filesdat, int byte_swap, int threading);
 extern int nrn_setup_multiple;
+extern int nrn_setup_extracon;
 extern void nrn_cleanup();
 extern double BBS_netpar_mindelay(double maxdelay);
 extern void BBS_netpar_solve(double);
