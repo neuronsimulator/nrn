@@ -38,6 +38,13 @@ class Region(object):
         # TODO: remove the note when that is fully true
         self._dx = None
         return 'Region(..., nrn_region=%r, geometry=%r, dx=%r, name=%r)' % (self.nrn_region, self._geometry, self._dx, self._name)
+
+    def _short_repr(self):
+        if self._name is not None:
+            return 'Region(<%r>)' % self._name
+        else:
+            return self.__repr__()
+
     
     def _do_init(self):
         global _region_count

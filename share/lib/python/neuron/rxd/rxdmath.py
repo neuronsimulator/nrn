@@ -92,6 +92,11 @@ class _Function:
         self._fname = fname
     def __repr__(self):
         return '%s(%r)' % (self._fname, self._obj)
+    def _short_repr(self):
+        try:
+            return '%s(%s)' % (self._fname, self._obj._short_repr())
+        except:
+            return self.__repr__()
     @property
     def _semi_compile(self):
         return '%s(%s)' % (self._f, self._obj._semi_compile)
@@ -106,6 +111,11 @@ class _Function2:
         self._fname = fname
     def __repr__(self):
         return '%s(%r, %r)' % (self._fname, self._obj1, self._obj2)
+    def _short_repr(self):
+        try:
+            return '%s(%s, %s)' % (self._fname, self._obj1._short_repr(), self._obj2._short_repr())
+        except:
+            return self.__repr__()
     @property
     def _semi_compile(self):
         return '%s(%s, %s)' % (self._f, self._obj1._semi_compile, self._obj2._semi_compile)
@@ -230,7 +240,7 @@ class _Reaction:
         self._rhs = rhs
         self._dir = direction
     def __repr__(self):
-        return '%s%s%s' % (self._lhs, self._dir, self._rhs)
+        return '%s%s%s' % (self._lhs._short_repr(), self._dir, self._rhs._short_repr())
     def __nonzero__(self):
         return False
 
@@ -258,7 +268,36 @@ class _Arithmeticed:
             # this could happen in 3D
             raise RxDException('found %d values; expected 1.' % len(value))
         return value[0]
-            
+    
+    def _short_repr(self):
+        items = []
+        counts = []
+        for item, count in zip(self._items.keys(), self._items.values()):
+            if count:
+                if isinstance(item, species._SpeciesMathable):
+                    items.append(str(item))
+                    counts.append(count)
+                else:
+                    items.append(repr(item))
+                    counts.append(count)
+        result = ''
+        for i, c in zip(items, counts):
+            try:
+                short_i = '%s' % i._short_repr()
+            except:
+                short_i = '%s' % i
+            if result and c > 0:
+                result += '+'
+            if c == -1:
+                result += '-(%s)' % short_i
+            elif c != 1:
+                result += '%d*(%s)' % (c, short_i)
+            elif c == 1:
+                result += i
+        if not result:
+            result = '0'
+        return result
+                    
     def __repr__(self):
         items = []
         counts = []

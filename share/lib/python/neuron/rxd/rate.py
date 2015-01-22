@@ -7,6 +7,20 @@ import itertools
 from .generalizedReaction import GeneralizedReaction
 
 class Rate(GeneralizedReaction):
+    """Declare a contribution to the rate of change of a species or other state variable.
+    
+    Example:
+    
+        constant_production = rxd.Rate(protein, k)
+        
+    If this was the only contribution to protein dynamics and there was no
+    diffusion, the above would be equivalent to:
+    
+        dprotein/dt = k
+        
+    If there are multiple rxd.Rate objects (or an rxd.Reaction, etc) acting on
+    the same species, then their effects are summed.
+    """
     def __init__(self, species, rate, regions=None, membrane_flux=False):
         """create a rate of change for a species on a given region or set of regions
         
@@ -42,7 +56,11 @@ class Rate(GeneralizedReaction):
         self._update_indices()
     
     def __repr__(self):
-        return 'Rate(%r, %r, regions=%r, membrane_flux=%r)' % (self._species(), self._original_rate, self._regions, self._membrane_flux)
+        if len(self._regions) != 1 or self._regions[0] is not None:
+            regions_short = '[' + ', '.join(r._short_repr() for r in self._regions) + ']'
+            return 'Rate(%s, %s, regions=%s, membrane_flux=%r)' % (self._species()._short_repr(), self._original_rate._short_repr(), regions_short, self._membrane_flux)
+        else:
+            return 'Rate(%s, %s, membrane_flux=%r)' % (self._species()._short_repr(), self._original_rate._short_repr(), self._membrane_flux)
     
     def _rate_from_rangevar(self, *args):
         return self._original_rate._rangevar_vec()
