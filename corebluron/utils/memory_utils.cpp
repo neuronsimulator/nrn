@@ -1,5 +1,5 @@
 /**
- * @file memory_utils.c
+ * @file memory_utils.cpp
  * @date 25th Oct 2014
  *
  * @brief Provides functionality to report current memory usage

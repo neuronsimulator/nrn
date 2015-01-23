@@ -50,6 +50,7 @@ nrniv/structpool.h
 nrniv/tqueue.h
 nrniv/vrecitem.h
 mech/cfile/cabvars.h
+utils/nrn_stats.h
 )
 
 set(COREBLURON_SOURCES
@@ -92,6 +93,7 @@ mech/cfile/pattern.c
 utils/randoms/nrnran123.c
 utils/memory_utils.cpp
 utils/sdprintf.cpp
+utils/nrn_stats.cpp
 )
 
 set(MECH_FILES

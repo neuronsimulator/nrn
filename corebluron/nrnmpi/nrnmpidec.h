@@ -106,6 +106,7 @@ extern void nrnmpi_postrecv_doubles(double* pd, int cnt, int src, int tag, void*
 extern void nrnmpi_wait(void** request);
 extern void nrnmpi_barrier(void);
 extern double nrnmpi_dbl_allreduce(double x, int type);
+extern long nrnmpi_long_allreduce(long x, int type);
 extern void nrnmpi_dbl_allreduce_vec(double* src, double* dest, int cnt, int type);
 extern void nrnmpi_long_allreduce_vec(long* src, long* dest, int cnt, int type);
 extern void nrnmpi_dbl_allgather(double* s, double* r, int n);

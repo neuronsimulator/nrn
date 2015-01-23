@@ -28,6 +28,7 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "corebluron/nrniv/output_spikes.h"
 #include "corebluron/utils/endianness.h"
 #include "corebluron/utils/memory_utils.h"
+#include "corebluron/utils/nrn_stats.h"
 #include "corebluron/nrniv/nrnoptarg.h"
 #include "corebluron/utils/randoms/nrnran123.h"
 #include "corebluron/utils/sdprintf.h"
@@ -128,6 +129,9 @@ int main1( int argc, char **argv, char **env )
     if ( input_params.forwardskip > 0.0 ) {
         handle_forward_skip( input_params.forwardskip, input_params.prcellgid );
     }
+
+    // Report global cell statistics
+    report_cell_stats();
 
     /// Solver execution
     BBS_netpar_solve( input_params.tstop );

@@ -425,6 +425,21 @@ double nrnmpi_dbl_allreduce(double x, int type) {
 	return result;
 }
 
+long nrnmpi_long_allreduce(long x, int type) {
+	long result;
+	MPI_Op tt;
+	if (nrnmpi_numprocs < 2) { return x; }
+	if (type == 1) {
+		tt = MPI_SUM;
+	}else if (type == 2) {
+		tt = MPI_MAX;
+	}else{
+		tt = MPI_MIN;
+	}
+	MPI_Allreduce(&x, &result, 1, MPI_LONG, tt, nrnmpi_comm);
+	return result;
+}
+
 void nrnmpi_dbl_allreduce_vec(double* src, double* dest, int cnt, int type) {
 	int i;
 	MPI_Op tt;
