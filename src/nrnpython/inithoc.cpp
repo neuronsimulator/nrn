@@ -1,5 +1,6 @@
 #include "nrnmpiuse.h"
 #include <stdio.h>
+#include <stdint.h>
 #include "nrnmpi.h"
 #include "nrnpython_config.h"
 #include <Python.h>
