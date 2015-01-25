@@ -45,7 +45,7 @@ static int argc_nompi = 1;
 
 static void nrnpython_finalize() {
   Py_Finalize();
-#if linux || DARWIN
+#if linux
   system("stty sane");
 #endif
 }
