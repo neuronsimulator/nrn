@@ -50,6 +50,7 @@ nrniv/structpool.h
 nrniv/tqueue.h
 nrniv/vrecitem.h
 mech/cfile/cabvars.h
+mech/cfile/HDF5reader.c
 )
 
 set(COREBLURON_SOURCES
@@ -83,24 +84,9 @@ nrniv/nrnoptarg.cpp
 nrniv/output_spikes.cpp
 nrniv/patternstim.cpp
 nrniv/vrecord.cpp
-mech/cfile/expsyn.c
-mech/cfile/hh.c
-mech/cfile/passive.c
-mech/cfile/stim.c
-mech/cfile/netstim.c
-mech/cfile/pattern.c
 utils/randoms/nrnran123.c
 utils/memory_utils.cpp
 utils/sdprintf.cpp
-)
-
-set(MECH_FILES
-mech/cfile/expsyn.c
-mech/cfile/hh.c
-mech/cfile/passive.c
-mech/cfile/stim.c
-mech/cfile/netstim.c
-mech/cfile/pattern.c
 )
 
 option(COREBLURON_NEURODAMUS_MECHS "Compile CoreBluron with all available mechanisms from Neurodamus" ON)
@@ -144,6 +130,10 @@ if(COREBLURON_NEURODAMUS_MECHS)
   endmacro()
 
   set(MODLIBPATH "${CMAKE_CURRENT_SOURCE_DIR}/mech/neurodamus/lib/modlib")
+  set(STDMODLIBPATH "${CMAKE_CURRENT_SOURCE_DIR}/mech/modfile")
+
+  set(MECH_MODS_STD expsyn.mod  hh.mod  netstim.mod  passive.mod  pattern.mod stim.mod)
+
   set(MODLISTFILE "${CMAKE_CURRENT_SOURCE_DIR}/mech/coreneuron_modlist.txt")
   if(EXISTS "${MODLISTFILE}")
     file(READ "${MODLISTFILE}" MECH_MODS)
@@ -157,13 +147,17 @@ if(COREBLURON_NEURODAMUS_MECHS)
       mod2c_target(MECH "${MODLIBPATH}/${MOD}")
   endforeach()
 
+  foreach(MOD ${MECH_MODS_STD})
+      mod2c_target(MECH "${STDMODLIBPATH}/${MOD}")
+  endforeach()
+
   # Also need to generate mod_func.c from module list
   set(MOD_FUNC_C "${CMAKE_CURRENT_BINARY_DIR}/mod_func.c")
   set(MOD_FUNC_C_PL "${CMAKE_CURRENT_SOURCE_DIR}/mech/mod_func.c.pl")
 
   add_custom_command(OUTPUT "${MOD_FUNC_C}"
 	DEPENDS "${MODLISTFILE}" "${MOD_FUNC_C_PL}"
-	COMMAND perl "${MOD_FUNC_C_PL}" ${MODLISTFILE} > "${MOD_FUNC_C}"
+	COMMAND echo HDF5reader.mod | perl "${MOD_FUNC_C_PL}" - ${MODLISTFILE} > "${MOD_FUNC_C}"
 	WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
 
   set(COREBLURON_SOURCES ${COREBLURON_SOURCES}
