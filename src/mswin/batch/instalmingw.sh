@@ -196,14 +196,14 @@ fi
 
 if true ; then
 cd $S/src/mswin
-cp bin/mknrndll $DB
+cp bin/mknrndll bin/neurondemo bin/nrngui $DB
 rm -f $Z
 zip -l $Z notes.txt
 #do the lib shell scripts in unix format
 zip $Z lib/*.sh lib/*.sed
 #do the specified unix bin shell scripts in unix format
 cd $S
-cp bin/mkthreadsafe bin/sortspike $DB
+cp bin/mkthreadsafe bin/mk_nrnpyenv.sh bin/sortspike $DB
 unzip -d $D -o $Z
 
 cd $B/src/mswin

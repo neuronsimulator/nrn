@@ -1,4 +1,4 @@
-if ! nrniv $* ; then
+if ! $* ; then
 echo '
 NEURON exited abnormally. Press the return key to close this window
 '
