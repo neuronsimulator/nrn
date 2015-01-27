@@ -53,6 +53,7 @@ macro(COMMON_PACKAGE Name)
 endmacro()
 
 common_package(MPI   REQUIRED )
+common_package(mod2c 1.0  REQUIRED )
 common_package(Boost 1.41.0   COMPONENTS system unit_test_framework)
 
 if(EXISTS ${PROJECT_SOURCE_DIR}/CMake/FindPackagesPost.cmake)
@@ -78,6 +79,25 @@ if(MPI_name)
   endif()
 endif()
 
+if(MOD2C_FOUND)
+  set(mod2c_name MOD2C)
+  set(mod2c_FOUND TRUE)
+elseif(mod2c_FOUND)
+  set(mod2c_name mod2c)
+  set(MOD2C_FOUND TRUE)
+endif()
+if(mod2c_name)
+  list(APPEND FIND_PACKAGES_DEFINES COREBLURON_USE_MOD2C)
+  if(NOT COMMON_LIBRARY_TYPE MATCHES "SHARED")
+    list(APPEND COREBLURON_DEPENDENT_LIBRARIES mod2c)
+  endif()
+  set(FIND_PACKAGES_FOUND "${FIND_PACKAGES_FOUND} mod2c")
+  link_directories(${${mod2c_name}_LIBRARY_DIRS})
+  if(NOT "${${mod2c_name}_INCLUDE_DIRS}" MATCHES "-NOTFOUND")
+    include_directories(${${mod2c_name}_INCLUDE_DIRS})
+  endif()
+endif()
+
 if(BOOST_FOUND)
   set(Boost_name BOOST)
   set(Boost_FOUND TRUE)
@@ -99,7 +119,7 @@ endif()
 
 set(COREBLURON_BUILD_DEBS autoconf;automake;cmake;doxygen;git;git-review;pkg-config;subversion)
 
-set(COREBLURON_DEPENDS MPI;Boost)
+set(COREBLURON_DEPENDS MPI;mod2c;Boost)
 
 # Write defines.h and options.cmake
 if(NOT PROJECT_INCLUDE_NAME)
