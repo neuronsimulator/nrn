@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# eval "`sh mk_nrnpyenv.sh`"
+# eval "`sh nrnpyenv.sh`"
 # if PYTHONHOME does not exist,
 # will set bash environment variables so that nrniv -python has same
 # environment as python

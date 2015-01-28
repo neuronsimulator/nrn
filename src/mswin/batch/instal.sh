@@ -255,7 +255,7 @@ zip -l $Z notes.txt
 zip $Z bin/mknrndll bin/neurondemo bin/nrngui lib/*.sh lib/*.bsh lib/minttyrc lib/*.sed
 #do the specified unix bin shell scripts in unix format
 cd $S
-zip $Z bin/mkthreadsafe bin/mk_nrnpyenv.sh bin/sortspike
+zip $Z bin/mkthreadsafe bin/nrnpyenv.sh bin/set_nrnpyenv.sh bin/sortspike
 unzip -d $D -o $Z
 rm $Z
 cd $B/src/mswin

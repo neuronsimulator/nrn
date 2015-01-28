@@ -4,6 +4,8 @@ echo -e "\033]0;nrngui\007"
 
 NRNGUI="nrngui"
 
+source set_nrnpyenv.sh
+
 if test "x$1" != x ; then
 	if test -f "$1" ; then
 		dname=`dirname "$1"`
