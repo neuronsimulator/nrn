@@ -170,7 +170,7 @@ class FractionalVolume(RxDGeometry):
         # TODO: does the else case ever make sense?
         self.neighbor_area_fraction = volume_fraction if neighbor_areas_fraction is None else neighbor_areas_fraction
         
-    def volumes3d(source, dx=0.25, xlo=None, xhi=None, ylo=None, yhi=None, zlo=None, zhi=None, n_soma_step=100):
+    def volumes3d(self, source, dx=0.25, xlo=None, xhi=None, ylo=None, yhi=None, zlo=None, zhi=None, n_soma_step=100):
         mesh, surface_areas, volumes, triangles = geometry3d.voxelize2(source, dx=dx, xlo=xlo, xhi=xhi, ylo=ylo, yhi=yhi, zlo=zlo, zhi=zhi, n_soma_step=n_soma_step)
         surface_areas *= self._surface_fraction
         volumes *= self._volume_fraction
