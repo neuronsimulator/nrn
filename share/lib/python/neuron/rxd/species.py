@@ -343,22 +343,24 @@ class Species(_SpeciesMathable):
         # NOTE: if no 3D nodes, then _3doffset is not meaningful
         self._3doffset = 0
         self._nodes = []
+        selfref = weakref.ref(self)
+        self_has_3d = False
         if self._regions:
-            r = self._regions[0]
-            if r._secs3d:
-                if len(self._regions) != 1:
-                    raise RxDException('3d currently only supports 1 region per species')
-                selfref = weakref.ref(self)
-                xs, ys, zs, segs = r._xs, r._ys, r._zs, r._segs
-                self._3doffset = node._allocate(len(xs))
-                for i, x, y, z, seg in zip(xrange(len(xs)), xs, ys, zs, segs):
-                    self._nodes.append(node.Node3D(i + self._3doffset, x, y, z, r, seg, selfref))
-                # the region is now responsible for computing the correct volumes and surface areas
-                    # this is done so that multiple species can use the same region without recomputing it
-                node._volumes[range(self._3doffset, self._3doffset + len(xs))] = r._vol
-                node._surface_area[self._3doffset : self._3doffset + len(xs)] = r._sa
-                node._diffs[range(self._3doffset, self._3doffset + len(xs))] = self._d
-                _has_3d = True
+            for r in self._regions:
+                if r._secs3d:
+                    xs, ys, zs, segs = r._xs, r._ys, r._zs, r._segs
+                    if not self_has_3d:
+                        # TODO: do we need to do anything to help other stuff find the offset for different regions?
+                        self._3doffset = node._allocate(len(xs))
+                    for i, x, y, z, seg in zip(xrange(len(xs)), xs, ys, zs, segs):
+                        self._nodes.append(node.Node3D(i + self._3doffset, x, y, z, r, seg, selfref))
+                    # the region is now responsible for computing the correct volumes and surface areas
+                        # this is done so that multiple species can use the same region without recomputing it
+                    node._volumes[range(self._3doffset, self._3doffset + len(xs))] = r._vol
+                    node._surface_area[self._3doffset : self._3doffset + len(xs)] = r._sa
+                    node._diffs[range(self._3doffset, self._3doffset + len(xs))] = self._d
+                    self_has_3d = True
+                    _has_3d = True
 
     def _do_init4(self):
         # final initialization
