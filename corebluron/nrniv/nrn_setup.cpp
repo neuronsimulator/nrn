@@ -709,6 +709,13 @@ void read_phase2(data_reader &F, NrnThread& nt) {
     int cnt = tml->ml->nodecount;
     int szdp = nrn_prop_dparam_size_[type];
     int* semantics = memb_func[type].dparam_semantics;
+
+    if( szdp ) {
+        if(!semantics) continue; // temporary for HDFReport, Binreport which will be skipped in bbcore_write of HBPNeuron
+        nrn_assert(semantics);
+    }
+
+
     for (int i=0; i < szdp; ++i) {
       int s = semantics[i];	
       if (s == -5) { //pointer

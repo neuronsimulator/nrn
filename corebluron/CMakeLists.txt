@@ -50,7 +50,6 @@ nrniv/structpool.h
 nrniv/tqueue.h
 nrniv/vrecitem.h
 mech/cfile/cabvars.h
-mech/cfile/HDF5reader.c
 )
 
 set(COREBLURON_SOURCES
@@ -157,7 +156,7 @@ if(COREBLURON_NEURODAMUS_MECHS)
 
   add_custom_command(OUTPUT "${MOD_FUNC_C}"
 	DEPENDS "${MODLISTFILE}" "${MOD_FUNC_C_PL}"
-	COMMAND echo HDF5reader.mod | perl "${MOD_FUNC_C_PL}" - ${MODLISTFILE} > "${MOD_FUNC_C}"
+    COMMAND perl "${MOD_FUNC_C_PL}" ${MODLISTFILE} > "${MOD_FUNC_C}"
 	WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
 
   set(COREBLURON_SOURCES ${COREBLURON_SOURCES}
