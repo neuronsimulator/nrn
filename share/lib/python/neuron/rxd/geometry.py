@@ -172,8 +172,8 @@ class FractionalVolume(RxDGeometry):
         
     def volumes3d(self, source, dx=0.25, xlo=None, xhi=None, ylo=None, yhi=None, zlo=None, zhi=None, n_soma_step=100):
         mesh, surface_areas, volumes, triangles = geometry3d.voxelize2(source, dx=dx, xlo=xlo, xhi=xhi, ylo=ylo, yhi=yhi, zlo=zlo, zhi=zhi, n_soma_step=n_soma_step)
-        surface_areas *= self._surface_fraction
-        volumes *= self._volume_fraction
+        surface_areas._values *= self._surface_fraction
+        volumes._values *= self._volume_fraction
         return mesh, surface_areas, volumes, triangles
     
     def __repr__(self):
