@@ -557,33 +557,30 @@ class Species(_SpeciesMathable):
         # 3D part
         if self._nodes:
             # TODO: this is very similar to the 1d code; merge
-            # TODO: this needs changed when supporting more than one region
-            assert(len(self._regions) == 1)
-            nrn_region = self._regions[0].nrn_region
-            if nrn_region is not None and self.name is not None and self.charge != 0:
+            if self.name is not None and self.charge != 0:
                 ion_curr = '_ref_i%s' % self.name
                 volumes, surface_area, diffs = node._get_data()
-                # TODO: this implicitly assumes that o and i border the membrane
-                # different signs depending on if an outward current decreases the region's concentration or increases it
-                if nrn_region == 'i':
-                    sign = -1
-                elif nrn_region == 'o':
-                    sign = 1
-                else:
-                    raise RxDException('bad nrn_region for setting up currents (should never get here)')
+                # NOTE: this implicitly assumes that o and i border the membrane
                 local_indices = self._indices3d()
                 offset = self._offset
                 charge = self.charge
                 name = '%s%s' % (self.name, nrn_region)
-                sign_tenthousand_over_charge_faraday = sign * 10000. / (charge * rxd.FARADAY)
+                tenthousand_over_charge_faraday = 10000. / (charge * rxd.FARADAY)
                 for i, nodeobj in enumerate(self._nodes):
                     if surface_area[i]:
+                        r = nodeobj.region
+                        if r.nrn_region == 'i':
+                            sign = -1
+                        elif r.nrn_region == 'o':
+                            sign = 1
+                        else:
+                            continue
                         seg = nodeobj.segment
                         cur_map[name][seg] = len(indices)
                         indices.append(local_indices[i])
                         if volumes[i + offset] == 0:
                             print '0 volume at position %d; surface area there: %g' % (i + offset, surface_area[i + offset])
-                        scales.append(sign_tenthousand_over_charge_faraday * surface_area[i + offset] / volumes[i + offset])
+                        scales.append(sign * tenthousand_over_charge_faraday * surface_area[i + offset] / volumes[i + offset])
                         ptrs.append(seg.__getattribute__(ion_curr))
 
     
@@ -637,7 +634,7 @@ class Species(_SpeciesMathable):
         # 3D part
         nodes = self._nodes
         if nodes:
-            assert(len(self._regions) == 1)
+            assert(len(self._regions) == 1)  # see TODO below for why this matters... sum over all nodes in all regions in a seg
             r = self._regions[0]
             if r._nrn_region is None: return
             
@@ -647,6 +644,7 @@ class Species(_SpeciesMathable):
             # TODO: based on tests with real world problems, seems like should use dx ** 3 rather than .volume
             for seg, ptr in zip(self._seg_order, self._concentration_ptrs):
                 # concentration = total mass / volume
+                # TODO: note that this needs to sum over all nodes in all regions by seg, not just those in regions[0]
                 ptr[0] = sum(nodes[node].concentration * nodes[node].volume for node in r._nodes_by_seg[seg]) / sum(nodes[node].volume for node in r._nodes_by_seg[seg])
     
     def _import_concentration(self, init=True):
