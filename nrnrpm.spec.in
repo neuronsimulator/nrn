@@ -59,7 +59,7 @@ NEURON has benefited from judicious revision and selective enhancement, guided a
 # links in /usr/local/bin and /usr/local/nrn and /usr/local/iv directories
 (
 cd /usr/local/bin
-rm -r -f memacs neurondemo nrnivmodl modlunit
+rm -r -f memacs neurondemo nrnivmodl modlunit nrnpyenv.sh
 rm -r -f nrngui nrniv 
 rm -r -f iclass idraw idemo
 cd ..
@@ -83,6 +83,7 @@ ln -s /usr/local/nrn/%{_target_cpu}/bin/modlunit /usr/local/bin/modlunit
 ln -s /usr/local/nrn/%{_target_cpu}/bin/nrnivmodl /usr/local/bin/nrnivmodl
 ln -s /usr/local/nrn/%{_target_cpu}/bin/nrngui /usr/local/bin/nrngui
 ln -s /usr/local/nrn/%{_target_cpu}/bin/nrniv /usr/local/bin/nrniv
+ln -s /usr/local/nrn/%{_target_cpu}/bin/nrnpyenv.sh /usr/local/bin/nrnpyenv.sh
 #
 # iv bin symbolic links
 #
@@ -105,6 +106,7 @@ ln -s /usr/local/iv/%{_target_cpu}/bin/idraw /usr/local/bin/idraw
 /usr/local/bin/nrnivmodl
 /usr/local/bin/nrngui
 /usr/local/bin/nrniv
+/usr/local/bin/nrnpyenv.sh
 #
 # nrn files
 #

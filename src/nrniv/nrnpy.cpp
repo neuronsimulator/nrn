@@ -97,7 +97,7 @@ printf("Py_Initialize exited. PYTHONHOME probably needs to be set correctly.\n")
 		if(pyhome) {
 printf("Our automatic guess based on the Python shared library location:\n    export PYTHONHOME=%s\ndid not work.\n", pyhome);
 		}
-printf("It will help to examine the output of:\nmk_nrnpyenv.sh\n\
+printf("It will help to examine the output of:\nnrnpyenv.sh\n\
 and set the indicated environment variables, or avoid python by adding\n\
 nopython: on\n\
 to %s/lib/nrn.defaults (or .nrn.defaults in your $HOME directory)\n",
