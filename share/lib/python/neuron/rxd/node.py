@@ -71,17 +71,8 @@ class Node(object):
             return self.region == condition
         elif isinstance(condition, nrn.Segment):
             return self.segment == condition
-        try:
-            dx = 1. / self.sec.nseg / 2.
-            if 0 < condition <= 1:
-                return -dx < self.x - condition <= dx
-            elif condition == 0:
-                # nodes at dx, 3dx, 5dx, 7dx, etc... so this allows for roundoff errors
-                return self.x < 2. * dx
-                
-        except:
-            raise RxDException('unrecognized node condition: %r' % condition)
-
+        raise RxDException('selector %r not supported for this node type' % condition)
+        
     @property
     def _ref_concentration(self):
         """Returns a HOC reference to the Node's concentration
@@ -329,7 +320,33 @@ class Node1D(Node):
                        numpy.interp(loc1d, normalized_arc3d, y3d),
                        numpy.interp(loc1d, normalized_arc3d, z3d))
         
+    def satisfies(self, condition):
+        """Tests if a Node satisfies a given condition.
 
+        If a nrn.Section object or RxDSection is provided, returns True if the Node lies in the section; else False.
+        If a Region object is provided, returns True if the Node lies in the Region; else False.
+        If a number between 0 and 1 is provided, returns True if the normalized position lies within the Node; else False.
+        """
+        if isinstance(condition, nrn.Section) or isinstance(condition, rxdsection.RxDSection):
+            return self._in_sec(condition)
+        elif isinstance(condition, region.Region):
+            return self.region == condition
+        elif isinstance(condition, nrn.Segment):
+            return self.segment == condition
+        try:
+            if 0 <= condition <= 1:
+                dx = 1. / self._sec.nseg
+                check_index = int(condition * self._sec.nseg)
+                if check_index >= self._sec.nseg:
+                    # if here, then at the 1 end
+                    check_index = self._sec.nseg - 1
+                # self_index should be unique (no repeats due to roundoff error) because the inside should always be 0.5 over an integer
+                self_index = int(self._location * self._sec.nseg)
+                return check_index == self_index
+                
+        except:
+            raise RxDException('unrecognized node condition: %r' % condition)
+            
     @property
     def x3d(self):
         """x coordinate"""
@@ -447,7 +464,32 @@ class Node3D(Node):
         # TODO: should I have the commented out line?
         #rxd._update_node_data()
         return _surface_area[self._index]
-    
+        
+    def satisfies(self, condition):
+        """Tests if a Node satisfies a given condition.
+
+        If a nrn.Section object or RxDSection is provided, returns True if the Node lies in the section; else False.
+        If a Region object is provided, returns True if the Node lies in the Region; else False.
+        If a number between 0 and 1 is provided, returns True if the normalized position lies within the Node; else False.
+        """
+        if isinstance(condition, nrn.Section) or isinstance(condition, rxdsection.RxDSection):
+            return self._in_sec(condition)
+        elif isinstance(condition, region.Region):
+            return self.region == condition
+        elif isinstance(condition, nrn.Segment):
+            return self.segment == condition
+        position_type = False
+        try:
+            if 0 <= condition <= 1:
+                position_type = True
+        except:
+            raise RxDException('unrecognized node condition: %r' % condition)    
+        if position_type:
+            # TODO: the trouble here is that you can't do this super-directly based on x
+            #       the way to do this is to find the minimum and maximum x values contained in the grid
+            #       the extra difficulty with that is to handle boundary cases correctly
+            #       (to test, consider a section 1 node wide by 15 discretized pieces long, access at 1./15, 2./15, etc...)
+            raise RxDException('selecting nodes by normalized position not yet supported for 3D nodes; see comments in source about how to fix this')
     @property
     def x3d(self):
         # TODO: need to modify this to work with 1d
