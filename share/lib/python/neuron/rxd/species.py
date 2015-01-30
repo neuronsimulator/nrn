@@ -464,16 +464,17 @@ class Species(_SpeciesMathable):
         for sec in self._secs:
             sec._register_cptrs()
         # 3D stuff
-        if self._nodes:
-            assert(len(self._regions) == 1)
-            r = self._regions[0]
-            nrn_region = r._nrn_region
-            self._concentration_ptrs = []
-            if nrn_region is not None and self.name is not None:
-                ion = '_ref_' + self.name + nrn_region
-                self._seg_order = r._nodes_by_seg.keys()
-                for seg in self._seg_order:
-                    self._concentration_ptrs.append(seg.__getattribute__(ion))    
+        self._concentration_ptrs = []
+        self._seg_order = []
+        if self._nodes and self.name is not None:
+            for r in self._regions:
+                nrn_region = r._nrn_region
+                if nrn_region is not None:
+                    ion = '_ref_' + self.name + nrn_region
+                    current_region_segs = r._nodes_by_seg.keys()
+                    self._seg_order += current_region_segs
+                    for seg in current_region_segs:
+                        self._concentration_ptrs.append(seg.__getattribute__(ion))    
 
     @property
     def charge(self):
@@ -635,17 +636,17 @@ class Species(_SpeciesMathable):
         nodes = self._nodes
         if nodes:
             assert(len(self._regions) == 1)  # see TODO below for why this matters... sum over all nodes in all regions in a seg
-            r = self._regions[0]
-            if r._nrn_region is None: return
-            
-            # TODO: set volume based on surface nodes or all nodes?
-            #       the problem with surface nodes is that surface to volume ratio of these varies greatly
-            #
-            # TODO: based on tests with real world problems, seems like should use dx ** 3 rather than .volume
-            for seg, ptr in zip(self._seg_order, self._concentration_ptrs):
-                # concentration = total mass / volume
-                # TODO: note that this needs to sum over all nodes in all regions by seg, not just those in regions[0]
-                ptr[0] = sum(nodes[node].concentration * nodes[node].volume for node in r._nodes_by_seg[seg]) / sum(nodes[node].volume for node in r._nodes_by_seg[seg])
+            for r in self._regions:
+                nrn_region = r._nrn_region
+                if nrn_region is not None:
+                    # TODO: set volume based on surface nodes or all nodes?
+                    #       the problem with surface nodes is that surface to volume ratio of these varies greatly
+                    #
+                    # TODO: based on tests with real world problems, seems like should use dx ** 3 rather than .volume
+                    for seg, ptr in zip(self._seg_order, self._concentration_ptrs):
+                        # concentration = total mass / volume
+                        # TODO: note that this needs to sum over all nodes in all regions by seg, not just those in regions[0]
+                        ptr[0] = sum(nodes[node].concentration * nodes[node].volume for node in r._nodes_by_seg[seg]) / sum(nodes[node].volume for node in r._nodes_by_seg[seg])
     
     def _import_concentration(self, init=True):
         """Read concentrations from the standard NEURON grid"""
@@ -657,14 +658,18 @@ class Species(_SpeciesMathable):
         # now the 3D stuff
         nodes = self._nodes
         if nodes:
-            assert(len(self._regions) == 1)
-            r = self._regions[0]
-            if r._nrn_region is None: return
             # TODO: replace this with a pointer vec for speed
-            for seg, ptr in zip(self._seg_order, self._concentration_ptrs):
-                value = ptr[0]
-                for node in r._nodes_by_seg[seg]:
-                    nodes[node].concentration = value
+            #       not a huge priority since import happens rarely if at all
+            i = 0
+            seg_order = self._seg_order
+            conc_ptr = self._concentration_ptrs
+            for r in self._regions:
+                if r._nrn_region is not None:
+                    seg, ptr = seg_order[i], conc_ptr[i]
+                    i += 1
+                    value = ptr[0]
+                    for node in r._nodes_by_seg[seg]:
+                        nodes[node].concentration = value
     
     @property
     def nodes(self):
