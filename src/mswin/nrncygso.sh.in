@@ -170,6 +170,7 @@ if test "$CFLAGS" != "-mno-cygwin" ; then
       $CXX -shared \
         ../nrnpython/.libs/inithoc.o \
         -L. -lnrniv -lnrnpython@npy_apiver@\
+        @NRNPYTHON_PYLIBLINK@ \
         -o hocmodule.dll \
         -Wl,--enable-auto-image-base \
         ${LDFLAGS} \

@@ -4,6 +4,8 @@ echo -e "\033]0;neurondemo\007"
 
 NRNGUI="neurondemo"
 
+source set_nrnpyenv.sh
+
 if test "x$1" != x ; then
 	if test -f "$1" ; then
 		dname=`dirname "$1"`

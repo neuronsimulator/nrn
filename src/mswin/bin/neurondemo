@@ -1,0 +1,4 @@
+#!/bin/bash
+cd "$N/demo"
+export NRNDEMO="$N/demo/"
+nrniv -dll "$N/demo/release/nrnmech.dll" demo.hoc "$@"

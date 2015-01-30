@@ -1,5 +1,6 @@
 #include "nrnmpiuse.h"
 #include <stdio.h>
+#include <stdint.h>
 #include "nrnmpi.h"
 #include "nrnpython_config.h"
 #include <Python.h>
@@ -44,7 +45,7 @@ static int argc_nompi = 1;
 
 static void nrnpython_finalize() {
   Py_Finalize();
-#if linux || DARWIN
+#if linux
   system("stty sane");
 #endif
 }

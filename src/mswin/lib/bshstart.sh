@@ -33,3 +33,7 @@ if test ! -e /tmp ; then
 fi
 fi
 cd c:/
+
+if test "$cyg" = "no" ; then 
+source set_nrnpyenv.sh
+fi #cyg = no
