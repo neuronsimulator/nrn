@@ -709,26 +709,17 @@ static void node_realloc(Section* sec, short nseg)
 
 	/* sprinkle nodes from pn1 to pn2 */
 	if (n1 < n2) {
-		i = -1;
+		/* the ones that are reused */
 		for (i1 = 0; i1 < n1; ++i1) {
 			x = (i1+.5)/(double)n1;
 			i2 = (int)(n2*x); /* because we want to round to n2*x-.5 */
 			pn2[i2] = pn1[i1];
-			if (i1 == 0) {
-				while(++i < i2) {
-					pn2[i] = node_clone(pn1[i1]);
-				}
-			}else{
-				while(++i < i2) {
-					double a, b;
-					a = 1./(double)n1;
-					b = ((i+.5)/(double)n2 ) - x;
-				   pn2[i] = node_interp(pn1[i1-1], pn1[i1], b/a);
-				}
-			}
 		}
-		while(++i < n2) {
-			pn2[i] = node_clone(pn1[n1-1]);
+		/* the ones that are cloned */
+		for (i2 = 0; i2 < n2; ++i2) if (pn2[i2] == NULL) {
+			x = (i2 + 0.5)/(double)n2;
+			i1 = (int)(n1*x);
+			pn2[i2] = node_clone(pn1[i1]);
 		}
 		for (i1 = 0; i1 < n1; ++i1) {
 			pn1[i1] = (Node*)0;
