@@ -342,6 +342,7 @@ class Species(_SpeciesMathable):
        
         # NOTE: if no 3D nodes, then _3doffset is not meaningful
         self._3doffset = 0
+        self._3doffset_by_region = {}
         self._nodes = []
         selfref = weakref.ref(self)
         self_has_3d = False
@@ -350,15 +351,19 @@ class Species(_SpeciesMathable):
                 if r._secs3d:
                     xs, ys, zs, segs = r._xs, r._ys, r._zs, r._segs
                     if not self_has_3d:
-                        # TODO: do we need to do anything to help other stuff find the offset for different regions?
                         self._3doffset = node._allocate(len(xs))
+                        _3doffset = self._3doffset
+                    else:
+                        _3doffset = node._allocate(len(xs))
+                    self._3doffset_by_region[r] = _3doffset
+                    
                     for i, x, y, z, seg in zip(xrange(len(xs)), xs, ys, zs, segs):
-                        self._nodes.append(node.Node3D(i + self._3doffset, x, y, z, r, seg, selfref))
+                        self._nodes.append(node.Node3D(i + _3doffset, x, y, z, r, seg, selfref))
                     # the region is now responsible for computing the correct volumes and surface areas
                         # this is done so that multiple species can use the same region without recomputing it
-                    node._volumes[range(self._3doffset, self._3doffset + len(xs))] = r._vol
-                    node._surface_area[self._3doffset : self._3doffset + len(xs)] = r._sa
-                    node._diffs[range(self._3doffset, self._3doffset + len(xs))] = self._d
+                    node._volumes[_3doffset : _3doffset + len(xs)] = r._vol
+                    node._surface_area[_3doffset : _3doffset + len(xs)] = r._sa
+                    node._diffs[_3doffset : _3doffset + len(xs)] = self._d
                     self_has_3d = True
                     _has_3d = True
 
@@ -404,31 +409,30 @@ class Species(_SpeciesMathable):
 
 
     def _setup_matrices3d(self, euler_matrix):
-        # TODO: this doesn't handle multiple regions
-        region_mesh = self._regions[0]._mesh.values
-        assert(len(self._regions) == 1)
-        indices = {}
-        xs, ys, zs = region_mesh.nonzero()
-        diffs = node._diffs
-        for i in xrange(len(xs)):
-            indices[(xs[i], ys[i], zs[i])] = i + self._3doffset
-        dx = self._regions[0]._dx
-        # TODO: in principle, these areas are functions of the position, but will often be the same; allow a flag?
-        naf = self._regions[0]._geometry.neighbor_area_fraction
-        if not callable(naf):
-            areazl = areazr = areayl = areayr = areaxl = areaxr = dx * dx * naf 
-            for nodeobj in self._nodes:
-                i, j, k, index, vol = nodeobj._i, nodeobj._j, nodeobj._k, nodeobj._index, nodeobj.volume
-                _setup_matrices_process_neighbors((i, j, k - 1), (i, j, k + 1), indices, euler_matrix, index, diffs, vol, areazl, areazr, dx)
-                _setup_matrices_process_neighbors((i, j - 1, k), (i, j + 1, k), indices, euler_matrix, index, diffs, vol, areayl, areayr, dx)
-                _setup_matrices_process_neighbors((i - 1, j, k), (i + 1, j, k), indices, euler_matrix, index, diffs, vol, areaxl, areaxr, dx)
-        else:
-            for nodeobj in self._nodes:
-                i, j, k, index, vol = nodeobj._i, nodeobj._j, nodeobj._k, nodeobj._index, nodeobj.volume
-                areaxl, areaxr, areayl, areayr, areazl, areazr = naf(i, j, k)
-                _setup_matrices_process_neighbors((i, j, k - 1), (i, j, k + 1), indices, euler_matrix, index, diffs, vol, areazl, areazr, dx)
-                _setup_matrices_process_neighbors((i, j - 1, k), (i, j + 1, k), indices, euler_matrix, index, diffs, vol, areayl, areayr, dx)
-                _setup_matrices_process_neighbors((i - 1, j, k), (i + 1, j, k), indices, euler_matrix, index, diffs, vol, areaxl, areaxr, dx)
+        for r in self._regions:
+            region_mesh = r._mesh.values
+            indices = {}
+            xs, ys, zs = region_mesh.nonzero()
+            diffs = node._diffs
+            offset = self._3doffset_by_region[r]
+            for i in xrange(len(xs)):
+                indices[(xs[i], ys[i], zs[i])] = i + offset
+            dx = self._regions[0]._dx
+            naf = self._regions[0]._geometry.neighbor_area_fraction
+            if not callable(naf):
+                areazl = areazr = areayl = areayr = areaxl = areaxr = dx * dx * naf 
+                for nodeobj in self._nodes:
+                    i, j, k, index, vol = nodeobj._i, nodeobj._j, nodeobj._k, nodeobj._index, nodeobj.volume
+                    _setup_matrices_process_neighbors((i, j, k - 1), (i, j, k + 1), indices, euler_matrix, index, diffs, vol, areazl, areazr, dx)
+                    _setup_matrices_process_neighbors((i, j - 1, k), (i, j + 1, k), indices, euler_matrix, index, diffs, vol, areayl, areayr, dx)
+                    _setup_matrices_process_neighbors((i - 1, j, k), (i + 1, j, k), indices, euler_matrix, index, diffs, vol, areaxl, areaxr, dx)
+            else:
+                for nodeobj in self._nodes:
+                    i, j, k, index, vol = nodeobj._i, nodeobj._j, nodeobj._k, nodeobj._index, nodeobj.volume
+                    areaxl, areaxr, areayl, areayr, areazl, areazr = naf(i, j, k)
+                    _setup_matrices_process_neighbors((i, j, k - 1), (i, j, k + 1), indices, euler_matrix, index, diffs, vol, areazl, areazr, dx)
+                    _setup_matrices_process_neighbors((i, j - 1, k), (i, j + 1, k), indices, euler_matrix, index, diffs, vol, areayl, areayr, dx)
+                    _setup_matrices_process_neighbors((i - 1, j, k), (i + 1, j, k), indices, euler_matrix, index, diffs, vol, areaxl, areaxr, dx)
 
 
     def re_init(self):
