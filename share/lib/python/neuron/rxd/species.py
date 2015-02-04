@@ -569,19 +569,22 @@ class Species(_SpeciesMathable):
                 local_indices = self._indices3d()
                 offset = self._offset
                 charge = self.charge
-                name = '%s%s' % (self.name, nrn_region)
+                namei = self._name + 'i'
+                nameo = self._name + 'o'
                 tenthousand_over_charge_faraday = 10000. / (charge * rxd.FARADAY)
                 for i, nodeobj in enumerate(self._nodes):
                     if surface_area[i]:
                         r = nodeobj.region
-                        if r.nrn_region == 'i':
+                        nrn_region = r.nrn_region
+                        if nrn_region == 'i':
                             sign = -1
-                        elif r.nrn_region == 'o':
+                            cur_map[namei][seg] = len(indices)
+                        elif nrn_region == 'o':
                             sign = 1
+                            cur_map[nameo][seg] = len(indices)
                         else:
                             continue
                         seg = nodeobj.segment
-                        cur_map[name][seg] = len(indices)
                         indices.append(local_indices[i])
                         if volumes[i + offset] == 0:
                             print '0 volume at position %d; surface area there: %g' % (i + offset, surface_area[i + offset])
