@@ -642,18 +642,19 @@ class Species(_SpeciesMathable):
         # 3D part
         nodes = self._nodes
         if nodes:
-            assert(len(self._regions) == 1)  # see TODO below for why this matters... sum over all nodes in all regions in a seg
-            for r in self._regions:
-                nrn_region = r._nrn_region
-                if nrn_region is not None:
-                    # TODO: set volume based on surface nodes or all nodes?
-                    #       the problem with surface nodes is that surface to volume ratio of these varies greatly
-                    #
-                    # TODO: based on tests with real world problems, seems like should use dx ** 3 rather than .volume
-                    for seg, ptr in zip(self._seg_order, self._concentration_ptrs):
-                        # concentration = total mass / volume
-                        # TODO: note that this needs to sum over all nodes in all regions by seg, not just those in regions[0]
-                        ptr[0] = sum(nodes[node].concentration * nodes[node].volume for node in r._nodes_by_seg[seg]) / sum(nodes[node].volume for node in r._nodes_by_seg[seg])
+            non_none_regions = [r for r in self._regions if r._nrn_region is not None]
+            if non_none_regions:
+                if any(r._nrn_region != 'i' for r in non_none_regions):
+                    raise RxDException('only "i" nrn_region supported for 3D simulations')
+                    # TODO: remove this requirement
+                    #       the issue here is that the code below would need to keep track of which nodes are in which nrn_region
+                    #       that's not that big of a deal, but when this was coded, there were other things preventing this from working                    
+                for seg, ptr in zip(self._seg_order, self._concentration_ptrs):
+                    all_nodes_in_seg = itertools.chain.from_iterable(r._nodes_by_seg[seg] for r in non_none_regions)
+                    if all_nodes_in_seg:
+                        #print sum([nodes[node].volume for node in all_nodes_in_seg])
+                        # TODO: if everything is 3D, then this should always have something, but for sections that aren't in 3D, won't have anything here
+                        ptr[0] = sum(nodes[node].concentration * nodes[node].volume for node in all_nodes_in_seg) / sum(nodes[node].volume for node in all_nodes_in_seg)
     
     def _import_concentration(self, init=True):
         """Read concentrations from the standard NEURON grid"""
