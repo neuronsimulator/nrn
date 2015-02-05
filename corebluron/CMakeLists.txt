@@ -90,12 +90,12 @@ utils/sdprintf.cpp
 
 option(COREBLURON_NEURODAMUS_MECHS "Compile CoreBluron with all available mechanisms from Neurodamus" ON)
 if(COREBLURON_NEURODAMUS_MECHS)
-  find_program(MOD2C nocmodl_core)
+  find_program(MOD2C mod2c_core)
   if(MOD2C STREQUAL "MOD2C-NOTFOUND")
-    message(FATAL_ERROR "Unable to locate nocmodl_core executable")
+    message(FATAL_ERROR "Unable to locate mod2c_core executable")
   endif()
 
-  # nocmodl_core wants MODLUNIT set to point to its units file,
+  # mod2c_core wants MODLUNIT set to point to its units file,
   # but CMake does not support setting an environment for custom_commands.
   get_filename_component(mod2c_install_prefix ${MOD2C} DIRECTORY)
   find_file(MOD2C_UNITS nrnunits.lib HINT "${mod2c_install_prefix}" PATH_SUFFIXES "share")
