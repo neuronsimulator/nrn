@@ -88,87 +88,156 @@ utils/memory_utils.cpp
 utils/sdprintf.cpp
 )
 
-option(COREBLURON_NEURODAMUS_MECHS "Compile CoreBluron with all available mechanisms from Neurodamus" ON)
-if(COREBLURON_NEURODAMUS_MECHS)
-  find_program(MOD2C mod2c_core)
-  if(MOD2C STREQUAL "MOD2C-NOTFOUND")
-    message(FATAL_ERROR "Unable to locate mod2c_core executable")
-  endif()
+# Compile and include MOD files
 
-  # mod2c_core wants MODLUNIT set to point to its units file,
-  # but CMake does not support setting an environment for custom_commands.
-  get_filename_component(mod2c_install_prefix ${MOD2C} DIRECTORY)
-  find_file(MOD2C_UNITS nrnunits.lib HINT "${mod2c_install_prefix}" PATH_SUFFIXES "share")
-  if(NOT MOD2C_UNITS STREQUAL "MOD2C_UNITS-NOTFOUND")
-    set(MOD2C env "MODLUNIT=${MOD2C_UNITS}" ${MOD2C})
-  endif()
+find_program(MOD2C mod2c_core)
+if(MOD2C STREQUAL "MOD2C-NOTFOUND")
+message(FATAL_ERROR "Unable to locate mod2c_core executable")
+endif()
 
-  # Macro sets up build rule for .c files from .mod files.
-  # Parameters:
-  #    name     An arbitrary name to keep track of output .c files
-  #    input    The path to the mod file
-  #
-  # Because nocmodl_core wants to write the .c file in the same directory
-  # as the mod file, we copy the mod file to the binary directory first
-  #
-  # The macro appends the names of the output files to MOD2C_${name}_OUTPUTS
+# mod2c_core wants MODLUNIT set to point to its units file,
+# but CMake does not support setting an environment for custom_commands.
 
-  macro(mod2c_target name input)
+get_filename_component(mod2c_install_prefix ${MOD2C} DIRECTORY)
+find_file(MOD2C_UNITS nrnunits.lib HINT "${mod2c_install_prefix}" PATH_SUFFIXES "share")
+if(NOT MOD2C_UNITS STREQUAL "MOD2C_UNITS-NOTFOUND")
+set(MOD2C env "MODLUNIT=${MOD2C_UNITS}" ${MOD2C})
+endif()
+
+# Macro sets up build rule for .c files from .mod files.
+# Parameters:
+#    name     An arbitrary name to keep track of output .c files
+#    input    The path to the mod file
+#
+# Because mod2c_core wants to write the .c file in the same directory
+# as the mod file, we copy the mod file to the binary directory first
+#
+# The macro appends the names of the output files to MOD2C_${name}_OUTPUTS
+# and the names of the mod files (without directories) to MOD2C_${name}_MODS
+
+macro(mod2c_target name input)
     get_filename_component(mod2c_source_ ${input} ABSOLUTE)
     get_filename_component(mod2c_modname_ ${input} NAME)
     string(REGEX REPLACE "\\.mod$" ".c" mod2c_cname_ "${mod2c_modname_}")
 
     set(mod2c_output_ "${CMAKE_CURRENT_BINARY_DIR}/${mod2c_cname_}")
     list(APPEND MOD2C_${name}_OUTPUTS "${mod2c_output_}")
+    list(APPEND MOD2C_${name}_MODS "${mod2c_modname_}")
 
     add_custom_command(OUTPUT "${mod2c_output_}"
       DEPENDS ${input}
       COMMAND ${CMAKE_COMMAND} -E copy "${mod2c_source_}" "${CMAKE_CURRENT_BINARY_DIR}"
       COMMAND ${MOD2C} "${mod2c_modname_}"
       WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
-  endmacro()
+endmacro()
 
+# Macro mod2c_from_file attempts to add modules specified in a file.
+# Parameters:
+#     name        Key for mod2c_target
+#     modlist     Path to the file containing the list of mod files.
+#     searchpath  List of directories to search for mod files.
+#
+# This has to be a macro in order to properly accumulate the MOD2C_xxx_OUTPUTS
+# variables. Go CMake! You rock!
+
+macro(mod2c_from_file name modlist searchpath)
+    if((NOT EXISTS "${modlist}") OR (IS_DIRECTORY "${modlist}"))
+        message(WARNING "Unable to read MOD list file: ${modlist}")
+    else()
+	unset(tmp_path_ CACHE)
+	file(READ "${modlist}" mods_)
+	string(REGEX REPLACE "[ \t\n]+" ";" mods_ "${mods_}")
+	list(REMOVE_ITEM mods_ "")
+
+	foreach(mod_ ${mods_})
+	    unset(modpath_)
+	    if(NOT IS_ABSOLUTE "${mod_}")
+		find_path(tmp_path_ "${mod_}" PATH ${searchpath} NO_DEFAULT_PATH)
+		if(tmp_path_)
+		    set(modpath_ "${tmp_path_}/${mod_}")
+		endif()
+		unset(tmp_path_ CACHE)
+	    else()
+		set(modpath_ "${mod_}")
+	    endif()
+	    if((NOT EXISTS "${modpath_}") OR (IS_DIRECTORY "${modpath_}"))
+		unset(modpath_)
+	    endif()
+
+	    if(modpath_)
+		mod2c_target(${name} "${modpath_}")
+	    else()
+		message(WARNING "Unable to locate MOD file: ${mod_}")
+	    endif()
+	endforeach()
+    endif()
+endmacro()
+
+# Standard MOD files are always built
+
+set(STDMODLIBPATH "${CMAKE_CURRENT_SOURCE_DIR}/mech/modfile")
+set(MECH_STDMODS expsyn.mod  hh.mod  netstim.mod  passive.mod  pattern.mod stim.mod)
+
+foreach(MOD ${MECH_STDMODS})
+  mod2c_target(STDMECH "${STDMODLIBPATH}/${MOD}")
+endforeach()
+
+# Additional MOD files: these can come from Neurodamus and/or from a configure-time
+# variable (see COREBLURON_ADDITIONAL_MECHS below)
+
+set(MECH_FILE_LISTS)
+
+# Neurodamus mechanisms are built by default
+
+option(COREBLURON_NEURODAMUS_MECHS "Compile CoreBluron with all available mechanisms from Neurodamus" ON)
+
+if(COREBLURON_NEURODAMUS_MECHS)
   set(MODLIBPATH "${CMAKE_CURRENT_SOURCE_DIR}/mech/neurodamus/lib/modlib")
-  set(STDMODLIBPATH "${CMAKE_CURRENT_SOURCE_DIR}/mech/modfile")
-
-  set(MECH_MODS_STD expsyn.mod  hh.mod  netstim.mod  passive.mod  pattern.mod stim.mod)
-
   set(MODLISTFILE "${CMAKE_CURRENT_SOURCE_DIR}/mech/coreneuron_modlist.txt")
+
   if(EXISTS "${MODLISTFILE}")
-    file(READ "${MODLISTFILE}" MECH_MODS)
-    string(REGEX REPLACE "[ \t\n]+" ";" MECH_MODS "${MECH_MODS}")
-    list(REMOVE_ITEM MECH_MODS "")
+    list(APPEND MECH_FILE_LISTS "${MODLISTFILE}")
+    mod2c_from_file(OPTMECH "${MODLISTFILE}" "${MODLIBPATH}")
   else()
     message(FATAL_ERROR "Cannot find coreneuron_modlist.txt listing .mod files to include. Consider setting COREBLURON_NEURODAMUS_MECHS to OFF")
   endif()
-  
-  foreach(MOD ${MECH_MODS})
-      mod2c_target(MECH "${MODLIBPATH}/${MOD}")
-  endforeach()
-
-  foreach(MOD ${MECH_MODS_STD})
-      mod2c_target(MECH "${STDMODLIBPATH}/${MOD}")
-  endforeach()
-
-  # Also need to generate mod_func.c from module list
-  set(MOD_FUNC_C "${CMAKE_CURRENT_BINARY_DIR}/mod_func.c")
-  set(MOD_FUNC_C_PL "${CMAKE_CURRENT_SOURCE_DIR}/mech/mod_func.c.pl")
-
-  add_custom_command(OUTPUT "${MOD_FUNC_C}"
-	DEPENDS "${MODLISTFILE}" "${MOD_FUNC_C_PL}"
-    COMMAND perl "${MOD_FUNC_C_PL}" ${MODLISTFILE} > "${MOD_FUNC_C}"
-	WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
-
-  set(COREBLURON_SOURCES ${COREBLURON_SOURCES}
-    ${MOD_FUNC_C}
-    ${MOD2C_MECH_OUTPUTS})
-
-  set(MECH_FILES ${MECH_FILES}
-    ${MOD2C_MECH_OUTPUTS})
-
 endif()
 
-set_source_files_properties(${MECH_FILES} PROPERTIES COMPILE_FLAGS "-Wno-error")
+# Additional optional mechanisms specified in COREBLURON_ADDITIONAL_MECHS
+# and COREBLURON_ADDITIONAL_MECHPATH (set as a PATH cache variable, but
+# can in fact be a list of paths.)
+
+set(COREBLURON_ADDITIONAL_MECHPATH "" CACHE PATH "Search path for optional additional mechanism MOD files")
+set(COREBLURON_ADDITIONAL_MECHS "" CACHE FILEPATH "File containing list of additional mechanism MOD files")
+
+if(EXISTS ${COREBLURON_ADDITIONAL_MECHS})
+    list(APPEND MECH_FILE_LISTS "${COREBLURON_ADDITIONAL_MECHS}")
+    mod2c_from_file(OPTMECH "${COREBLURON_ADDITIONAL_MECHS}" "${COREBLURON_ADDITIONAL_MECHPATH}")
+endif()
+
+# For 'non-standard' mod files, need to generate registering function in mod_func.c
+
+set(MOD_FUNC_C "${CMAKE_CURRENT_BINARY_DIR}/mod_func.c")
+set(MOD_FUNC_C_PL "${CMAKE_CURRENT_SOURCE_DIR}/mech/mod_func.c.pl")
+
+add_custom_command(OUTPUT "${MOD_FUNC_C}"
+    DEPENDS ${MECH_FILE_LISTS} "${MOD_FUNC_C_PL}"
+    COMMAND perl "${MOD_FUNC_C_PL}" ${MOD2C_OPTMECH_MODS} > "${MOD_FUNC_C}"
+    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
+
+# ... and add a reconfigure dependency on the files that listed them
+
+foreach(depfile ${MECH_FILE_LISTS})
+    configure_file("${depfile}" "${CMAKE_CURRENT_BINARY_DIR}/dummy_reconfigure_dep")
+endforeach()
+
+# Add generated sources from MOD files
+
+set(GENERATED_MECH_C_FILES ${MOD_FUNC_C} ${MOD2C_STDMECH_OUTPUTS} ${MOD2C_OPTMECH_OUTPUTS})
+set_source_files_properties(${GENERATED_MECH_C_FILES} PROPERTIES COMPILE_FLAGS "-Wno-error")
+
+set(COREBLURON_SOURCES ${COREBLURON_SOURCES} ${GENERATED_MECH_C_FILES})
+
 
 common_library(corebluron)
 
