@@ -9,7 +9,8 @@ lib_LTLIBRARIES = libneuron_gnu.la
 
 ##change from stream.h to ivstream.h means we have to specify the
 ##interviews install location
-INCLUDES = @IV_INCLUDE@
+includes = @IV_INCLUDE@
+AM_CPPFLAGS = $(includes)
 AM_CXXFLAGS = @MINGW_CFLAG@
 
 libneuron_gnu_la_SOURCES = ACG.cpp Binomial.cpp Complex.cpp DiscUnif.cpp \

@@ -155,14 +155,14 @@ AC_HELP_STRING([--without-metis],[default.])
 		CFLAGS="$CFLAGS $METISINCLUDE"
 		LIBS="$METISLIB $LIBS"
 		AC_LANG_PUSH(C)
-		AC_LINK_IFELSE([
+		AC_LINK_IFELSE([AC_LANG_SOURCE([
 #include <stdio.h>
 #include <metis.h>
 int main() {
 	sizeof(idxtype) == sizeof(int);
 	return 0;
 }
-		],[
+		])],[
 			if grep 'define *IDXTYPE_INT' $METISDIR/Lib/struct.h ; then
 				NRN_DEFINE(NRNIDXTYPE,int,[Define int or short depending on idxtype in metis struct.h])
 			else

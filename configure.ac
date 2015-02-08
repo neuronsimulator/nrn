@@ -4,6 +4,8 @@ dnl disable caching. When configure fails, it is best to start from scratch.
 define([AC_CACHE_LOAD], )dnl
 define([AC_CACHE_SAVE], )dnl
 
+AC_CONFIG_MACRO_DIR([m4])
+
 dnl when you change following also update svn2nrn_h.sh and hg2nrnversion_h.sh
 AC_INIT([nrn],[7.4])
 PACKAGE_VERSION_MAJOR=`echo "$PACKAGE_VERSION" | sed 's/\..*//'`

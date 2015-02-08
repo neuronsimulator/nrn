@@ -9,9 +9,9 @@ nocmodl_SOURCES = parse1.y diffeq.y lex.l consist.c deriv.c discrete.c \
 	init.c io.c kinetic.c list.c modl.c nocpout.c noccout.c parsact.c \
 	partial.c sens.c simultan.c solve.c symbol.c units.c version.c
 
-AM_CPPFLAGS = -DNMODL=1 -DNOCMODL=1 -DCVODE=1 -DVECTORIZE=1
 nsrc=$(top_srcdir)/src
-INCLUDES = -I$(nsrc)/src/modlunit
+includes = -I$(nsrc)/src/modlunit
+AM_CPPFLAGS = -DNMODL=1 -DNOCMODL=1 -DCVODE=1 -DVECTORIZE=1 $(includes)
 
 EXTRA_DIST = cout.c lex.c nmodl.mak
 

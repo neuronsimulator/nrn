@@ -3,7 +3,8 @@
 
 IV_INCLUDES = @IV_INCLUDE@
 
-INCLUDES = $(IV_INCLUDES)
+includes = $(IV_INCLUDES)
+AM_CPPFLAGS = $(includes)
 
 bin_PROGRAMS = mos2nrn
 

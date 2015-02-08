@@ -9,11 +9,11 @@ DEFS = -Dmotif_kit -Dsgi_motif_kit -Dopenlook_kit -Dbw_kit \
 # vanilla interviews is also installed, we don't use it.
 IV_INCLUDES = @IV_INCLUDE@ $(X_CFLAGS)
 nsrc=$(top_srcdir)/src
-INCLUDES = -I$(nsrc)/gnu -I$(nsrc)/mesch -I$(top_builddir)/src/oc -I$(nsrc)/oc -I$(nsrc)/nrnmpi $(IV_INCLUDES)
+includes = -I$(nsrc)/gnu -I$(nsrc)/mesch -I$(top_builddir)/src/oc -I$(nsrc)/oc -I$(nsrc)/nrnmpi $(IV_INCLUDES)
 
 IV_LIBS = @IV_LIBS_LIBTOOL@
 IVOS_DIR = @IVOS_DIR@
-AM_CXXFLAGS = @MINGW_CFLAG@
+AM_CXXFLAGS = @MINGW_CFLAG@ $(includes)
 
 # sometime multiple definitions are an error
 nrniv_iv_sources = classreg.cpp datapath.cpp ocjump.cpp symdir.cpp

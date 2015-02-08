@@ -1,5 +1,6 @@
 if grep -q xlc depcomp ; then
-	echo "depcomp already extended to handle xlc. No change to file."
+	#echo "depcomp already extended to handle xlc. No change to file."
+	true;
 else
 	sed '/^aix)/,/;;/ {
 			H
