@@ -33,6 +33,7 @@ static void nrn_rhs(NrnThread* _nt) {
 	
 	for (i = i1; i < i3; ++i) {
 		VEC_RHS(i) = 0.;
+		VEC_D(i) = 0.;
 	}
 
 	nrn_ba(_nt, BEFORE_BREAKPOINT);
@@ -73,10 +74,6 @@ static void nrn_lhs(NrnThread* _nt) {
 	i1 = 0;
 	i2 = i1 + _nt->ncell;
 	i3 = _nt->end;
-
-	for (i = i1; i < i3; ++i) {
-		VEC_D(i) = 0.;
-	}
 
 	/* note that CAP has no jacob */
 	for (tml = _nt->tml; tml; tml = tml->next) if (memb_func[tml->index].jacob) {

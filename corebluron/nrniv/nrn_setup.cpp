@@ -548,6 +548,7 @@ void nrn_cleanup() {
     if (nt->netcons) delete [] nt->netcons;
     if (nt->weights) delete [] nt->weights;
     if(nt->_shadow_rhs) free(nt->_shadow_rhs);
+    if(nt->_shadow_d) free(nt->_shadow_d);
 
     free(nt->_ml_list);
   }
@@ -596,6 +597,7 @@ void read_phase2(data_reader &F, NrnThread& nt) {
 
   if (shadow_rhs_cnt) {
     nt._shadow_rhs = (double*)ecalloc(shadow_rhs_cnt, sizeof(double));
+    nt._shadow_d = (double*)ecalloc(shadow_rhs_cnt, sizeof(double));
   }
 
   nt._ndata = F.read_int();
