@@ -33,7 +33,7 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 extern "C" {
 void _pattern_reg(void);
 extern void pattern_stim_setup_helper(int size, double* tvec, int* gidvec,
-  int icnt, int cnt, double* _p, Datum* _ppvar, ThreadDatum* _thread, NrnThread* _nt);
+  int icnt, int cnt, double* _p, Datum* _ppvar, ThreadDatum* _thread, NrnThread* _nt, double v);
 }
 
 static int read_raster_file(const char* fname, double** tvec, int** gidvec);
@@ -86,7 +86,7 @@ void nrn_mkPatternStim(const char* fname) {
   }else{
     assert(0);
   }    
-  pattern_stim_setup_helper(size, tvec, gidvec, _iml, _cntml, _p, _ppvar, NULL, nt); 
+  pattern_stim_setup_helper(size, tvec, gidvec, _iml, _cntml, _p, _ppvar, NULL, nt, 0.0);
 }
 
 int read_raster_file(const char* fname, double** tvec, int** gidvec) {

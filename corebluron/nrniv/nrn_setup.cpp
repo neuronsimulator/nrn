@@ -543,12 +543,35 @@ void nrn_cleanup() {
     free(nt->_vdata);
     nt->_vdata = NULL;
 
-    if (nt->pntprocs) delete[] nt->pntprocs;
-    if (nt->presyns) delete [] nt->presyns;
-    if (nt->netcons) delete [] nt->netcons;
-    if (nt->weights) delete [] nt->weights;
-    if(nt->_shadow_rhs) free(nt->_shadow_rhs);
-    if(nt->_shadow_d) free(nt->_shadow_d);
+    if (nt->pntprocs) {
+        delete[] nt->pntprocs;
+        nt->pntprocs = NULL;
+    }
+
+    if (nt->presyns) {
+        delete [] nt->presyns;
+        nt->presyns = NULL;
+    }
+
+    if (nt->netcons) {
+        delete [] nt->netcons;
+        nt->netcons = NULL;
+    }
+
+    if (nt->weights) {
+        delete [] nt->weights;
+        nt->weights = NULL;
+    }
+
+    if (nt->_shadow_rhs) {
+        free(nt->_shadow_rhs);
+        nt->_shadow_rhs = NULL;
+    }
+
+    if (nt->_shadow_d) {
+        free(nt->_shadow_d);
+        nt->_shadow_d = NULL;
+    }
 
     free(nt->_ml_list);
   }
@@ -858,7 +881,7 @@ void read_phase2(data_reader &F, NrnThread& nt) {
       }else{
         assert(0);
       }
-      (*nrn_bbcore_read_[type])(dArray, iArray, &dk, &ik, j, cntml, d, pd, ml->_thread, &nt);
+      (*nrn_bbcore_read_[type])(dArray, iArray, &dk, &ik, j, cntml, d, pd, ml->_thread, &nt, 0.0);
     }
     assert(dk == dcnt);
     assert(ik == icnt);
