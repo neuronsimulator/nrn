@@ -109,7 +109,7 @@ endif()
 #    name     An arbitrary name to keep track of output .c files
 #    input    The path to the mod file
 #
-# Because nocmodl_core wants to write the .c file in the same directory
+# Because mod2c_core wants to write the .c file in the same directory
 # as the mod file, we copy the mod file to the binary directory first
 #
 # The macro appends the names of the output files to MOD2C_${name}_OUTPUTS
