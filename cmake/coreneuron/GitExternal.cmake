@@ -35,6 +35,13 @@ endif()
 include(CMakeParseArguments)
 
 set(GIT_EXTERNAL_USER $ENV{GIT_EXTERNAL_USER})
+if(NOT GIT_EXTERNAL_USER)
+  if(MSVC)
+    set(GIT_EXTERNAL_USER $ENV{USERNAME})
+  else()
+    set(GIT_EXTERNAL_USER $ENV{USER})
+  endif()
+endif()
 set(GIT_EXTERNAL_USER_FORK ${GIT_EXTERNAL_USER} CACHE STRING
   "Github user name used to setup remote for user forks")
 
@@ -99,7 +106,7 @@ function(GIT_EXTERNAL DIR REPO TAG)
       endforeach()
 
       # fetch latest update
-      execute_process(COMMAND "${GIT_EXECUTABLE}" fetch --all -q
+      execute_process(COMMAND "${GIT_EXECUTABLE}" fetch origin -q
         RESULT_VARIABLE nok ERROR_VARIABLE error
         WORKING_DIRECTORY "${DIR}")
       if(nok)
@@ -192,7 +199,7 @@ if(EXISTS ${GIT_EXTERNALS} AND NOT GIT_EXTERNAL_SCRIPT_MODE)
             "${CMAKE_CURRENT_BINARY_DIR}/gitupdate${GIT_EXTERNAL_NAME}.cmake")
           file(WRITE "${GIT_EXTERNAL_SCRIPT}" "
 include(${CMAKE_CURRENT_LIST_DIR}/GitExternal.cmake)
-execute_process(COMMAND ${GIT_EXECUTABLE} fetch --all -q
+execute_process(COMMAND ${GIT_EXECUTABLE} fetch origin -q
   WORKING_DIRECTORY ${DIR})
 execute_process(
   COMMAND ${GIT_EXECUTABLE} show-ref --hash=7 refs/remotes/origin/master
