@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Check that corebluron cmake honours module finding
+# Check that coreneuron cmake honours module finding
 # variables.
 
 # To be filled in by CMake:
@@ -10,7 +10,7 @@ shoudhave=(@BACM_MUST_HAVE@)
 shoudnthave=(@BACM_MUST_NOT_HAVE@)
 
 
-# Perform a dummy build of corebluron with various
+# Perform a dummy build of coreneuron with various
 # configuration options. Print out the mechanisms
 # found by scanning the generated mod_func.c file.
 #
@@ -50,10 +50,10 @@ function check_modl_reg_mechs() {
 	exit 1;
     fi
 
-    make corebluron >& make.out
+    make coreneuron >& make.out
 
-    if [ -e corebluron/mod_func.c ]; then
-	sed -e '/printf.*\.mod/!d' -e 's/.*" *\(.*\)\.mod.*/\1.mod/' corebluron/mod_func.c
+    if [ -e coreneuron/mod_func.c ]; then
+	sed -e '/printf.*\.mod/!d' -e 's/.*" *\(.*\)\.mod.*/\1.mod/' coreneuron/mod_func.c
     else
 	echo "Missing mod_func.c" >&2
 	exit 1

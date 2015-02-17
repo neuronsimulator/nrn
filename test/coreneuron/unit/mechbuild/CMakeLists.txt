@@ -33,7 +33,7 @@ set(nd_mods "Ca.mod")
 
 # Test: no Neurodamus mechs, but all customs 
 
-set(BACM_CMAKEOPTS "-DCOREBLURON_NEURODAMUS_MECHS=OFF -DCOREBLURON_ADDITIONAL_MECHS=${extra_mechs_file} -DCOREBLURON_ADDITIONAL_MECHPATH='${extra_mechs_dir1};${extra_mechs_dir2}'")
+set(BACM_CMAKEOPTS "-DCORENEURON_NEURODAMUS_MECHS=OFF -DCORENEURON_ADDITIONAL_MECHS=${extra_mechs_file} -DCORENEURON_ADDITIONAL_MECHPATH='${extra_mechs_dir1};${extra_mechs_dir2}'")
 
 set(BACM_MUST_HAVE ${all_extra_mods})
 list_to_spacesep(BACM_MUST_HAVE)
@@ -45,7 +45,7 @@ make_bacm_test(bacm-extra-no-nd)
 
 # Test: Neurodamus mechs, only part of extra 
 
-set(BACM_CMAKEOPTS "-DCOREBLURON_NEURODAMUS_MECHS=ON -DCOREBLURON_ADDITIONAL_MECHS=${extra_mechs_file} -DCOREBLURON_ADDITIONAL_MECHPATH='${extra_mechs_dir2}'")
+set(BACM_CMAKEOPTS "-DCORENEURON_NEURODAMUS_MECHS=ON -DCORENEURON_ADDITIONAL_MECHS=${extra_mechs_file} -DCORENEURON_ADDITIONAL_MECHPATH='${extra_mechs_dir2}'")
 
 set(BACM_MUST_HAVE ${extra_mechs2} ${nd_mods})
 list_to_spacesep(BACM_MUST_HAVE)

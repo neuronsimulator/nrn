@@ -1,5 +1,5 @@
-#ifndef COREBLURON_TEST_HEADER_HPP
-#define COREBLURON_TEST_HEADER_HPP
+#ifndef CORENEURON_TEST_HEADER_HPP
+#define CORENEURON_TEST_HEADER_HPP
 
 #define BOOST_TEST_MODULE math
 #define BOOST_TEST_MAIN
@@ -9,12 +9,12 @@
 #include <boost/test/unit_test.hpp>
 #include <boost/test/test_case_template.hpp>
 
-namespace corebluron {
+namespace coreneuron {
     namespace test {
    
     //something later
 
     } // end namespace test
-} // end namespace COREBLURON
+} // end namespace CORENEURON
 
-#endif // COREBLURON_TEST_HEADER_HPP
+#endif // CORENEURON_TEST_HEADER_HPP

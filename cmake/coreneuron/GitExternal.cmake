@@ -232,7 +232,7 @@ endif()")
             COMMAND ${GIT_EXECUTABLE} add -f .
             COMMAND ${GIT_EXECUTABLE} commit -m "Flatten ${REPO} into ${DIR} at ${TAG}" . ${CMAKE_CURRENT_SOURCE_DIR}/.gitexternals
             COMMENT "Flatten ${REPO} into ${DIR}"
-            DEPENDS make-branch
+            DEPENDS make_branch_${PROJECT_NAME}
             WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/${DIR}")
           add_dependencies(flatten_git_external
             flatten_git_external_${GIT_EXTERNAL_NAME})

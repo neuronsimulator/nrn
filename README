@@ -1,6 +1,6 @@
-Welcome to CoreBluron!
+Welcome to CoreNeuron!
 
-CoreBluron is a neuroscience simulation software based on the popular software NEURON (www.neuron.yale.edu). 
+CoreNeuron is a neuroscience simulation software based on the popular software NEURON (www.neuron.yale.edu). 
 Its goal is to simulate massive cell networks with minimal memory footprint and optimal performance. 
 
 Please follow these instructions in order to build and run the code. 
@@ -9,7 +9,7 @@ Please follow these instructions in order to build and run the code.
 TO BUILD:
 --------
 
-CoreBluron is using MPI for parallelization. Currently the following compilers/MPI libraries for production
+CoreNeuron is using MPI for parallelization. Currently the following compilers/MPI libraries for production
 simulations are used:
 - Blue Gene/Q: XLC 12.1.0.7 (V1R2M1 drivers)
 - x86_64: icc 13.1, mvapich 2.0
@@ -23,7 +23,7 @@ the simulator follow the steps below:
      export CC=mpixlc
      export CXX=mpixlcxx
 
-2. To build the binaries and libraries use the CMake build system (from the top level folder of CoreBluron)
+2. To build the binaries and libraries use the CMake build system (from the top level folder of CoreNeuron)
      mkdir build && cd build
      cmake ..
      make 
@@ -32,10 +32,10 @@ Above steps will create binaries and libraries under build/bin and build/lib fol
 
 If you are building standlone executable (without Neurodamus) and would like to
 include all mechanisms, use command:
-     cmake .. -DCOREBLURON_NEURODAMUS_MECHS=ON -DCOREBLURON_MAIN=ON  
+     cmake .. -DCORENEURON_NEURODAMUS_MECHS=ON -DCORENEURON_MAIN=ON  
 
-By default this will build CoreBluron with Pthread implementation. You can enable
-OpenMP with -DCOREBLURON_OPENMP=ON
+By default this will build CoreNeuron with Pthread implementation. You can enable
+OpenMP with -DCORENEURON_OPENMP=ON
 
 
 TO INSTALL:
@@ -51,10 +51,10 @@ Follow the previous steps with below modifications:
 
 The installation folder will be $PATH_TO_INSTALL_FOLDER, and should contain (considering the dynamic libraries):
 
-     $PATH_TO_INSTALL_FOLDER/lib/libcorebluron.so.0.3.0
-     $PATH_TO_INSTALL_FOLDER/lib/libcorebluron.so.0.30
-     $PATH_TO_INSTALL_FOLDER/lib/libcorebluron.so
-     $PATH_TO_INSTALL_FOLDER/bin/corebluron_exec
+     $PATH_TO_INSTALL_FOLDER/lib/libcoreneuron.so.0.3.0
+     $PATH_TO_INSTALL_FOLDER/lib/libcoreneuron.so.0.30
+     $PATH_TO_INSTALL_FOLDER/lib/libcoreneuron.so
+     $PATH_TO_INSTALL_FOLDER/bin/coreneuron_exec
 
 
 CUSTOM BUILD:
@@ -73,26 +73,26 @@ Note that one should explicitly specify the compilation flags.
 CMAKE CONFIGURATION:
 --------------------
 
-We have integrated the BBP CMake tree with the CoreBluron simulator.
+We have integrated the BBP CMake tree with the CoreNeuron simulator.
 There are custom CMake configuration options for compilers and MPI libraries which you can find under CMake/common/oss.
 Building on x86 and BG-Q platform should work with the above instructions.
 On other systems (like Cray) you might need to pass additional CMake otpions like MPI_C_COMPILER, MPI_C_INCLUDE_PATH etc.
 
-On Cray's Piz Diant system the following command line was used to build CoreBluron:
+On Cray's Piz Diant system the following command line was used to build CoreNeuron:
 
 $ export CC=`which cc` export CXX=`which CC`
 $ cmake -DMPI_C_INCLUDE_PATH=$PATH_TO_MPI_C_INCLUDE_PATH -DMPI_C_LIBRARIES=$PATH_TO_MPI_C_LIBRARIES -DMPI_CXX_INCLUDE_PATH=$PATH_TO_MPI_CXX_INCLUDE_PATH -DMPI_CXX_LIBRARIES=$PATH_TO_MPI_CXX_LIBRARIES -DMPI_C_COMPILER=$CC -DMPI_CXX_COMPILER=$CXX
 
-If you want to create static library of CoreBluron, set corresponding option in CMakeList.txt:
+If you want to create static library of CoreNeuron, set corresponding option in CMakeList.txt:
 
-SET(COREBLURON_LIBRARY_TYPE STATIC)
+SET(CORENEURON_LIBRARY_TYPE STATIC)
 
 
 
 RUNNING SIMULATION:
 ------------------
 
-Once the CoreBluron is built, one can run parallel simulator with any MPI launcher as:
+Once the CoreNeuron is built, one can run parallel simulator with any MPI launcher as:
  
 1. Change to the directory containing simulation input test data (bbcore_mech.dat, files.dat, *_1.dat, *_2.dat).
 
@@ -100,22 +100,22 @@ Once the CoreBluron is built, one can run parallel simulator with any MPI launch
      export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$PATH_TO_INSTALL_FOLDER/lib
 
 3. And run simulator with any MPI launcher as:
-     srun -n $NUM_MPIS $PATH_TO_COREBLURON_EXEC -mpi   (assuming slurm batch system)
-     where $NUM_MPIS is number of MPI ranks and $PATH_TO_COREBLURON_EXEC is path of corebluron executable.
+     srun -n $NUM_MPIS $PATH_TO_CORENEURON_EXEC -mpi   (assuming slurm batch system)
+     where $NUM_MPIS is number of MPI ranks and $PATH_TO_CORENEURON_EXEC is path of coreneuron executable.
  
-This will run CoreBluron with default configuration parameters. In order to see the command line options, you can use:
+This will run CoreNeuron with default configuration parameters. In order to see the command line options, you can use:
 
-COREBLURON_EXEC --help
+CORENEURON_EXEC --help
 
 For example, you can run simulation using 10 mpi processes for 10 milliseconds using:
 
-srun -n 10 corebluron_exe -mpi -e 10                (note: by defualt it runs pure mpi job, add --threading to enable pthread/openmp)
+srun -n 10 coreneuron_exe -mpi -e 10                (note: by defualt it runs pure mpi job, add --threading to enable pthread/openmp)
 
 
 RESULTS VALIDATION:
 ------------------
 
-When running the simulation with CoreBluron, each MPI rank writes spike information to out.$mpi_rank file. Those files 
+When running the simulation with CoreNeuron, each MPI rank writes spike information to out.$mpi_rank file. Those files 
 should be combined, sorted and renamed to "out.dat.ref" file to further be able to follow the validation steps.
 
 To validate the results against the reference solution, make sure to use a default simulation time used to produce a reference
@@ -127,7 +127,7 @@ HOW TO MODIFY TEST INPUT PARAMETERS:
 -----------------------------------
 
 1. MODIFY SIMULATION PARAMETER
-Use --help command line options to list of arguments/parameters that can be passed to CoreBluron
+Use --help command line options to list of arguments/parameters that can be passed to CoreNeuron
 
 2. MODIFY USE CASE SIZE (Number of cells/neurons)
 It is possible to run tests with different number of MPI ranks. In every simulation input data directory one can find the file named
@@ -139,7 +139,7 @@ It is possible to run tests with different number of MPI ranks. In every simulat
 ....
 
 As shown above, first number is always the number of entries in the files and then there is a list of cell ids per line.
-Once the simulation has been started, CoreBluron will distribute the cell ids in round robin fashion. (Remeber that each cell id belongs to 
+Once the simulation has been started, CoreNeuron will distribute the cell ids in round robin fashion. (Remeber that each cell id belongs to 
 input file named cellid_1.dat and cellid_2.dat in the simulation input data directory). If threading is enabled, then each rank assigns
 cell ids to threads in round robin process. Hence, it is important to select no of mpi ranks and threads so that each rank/thread get equal
 no of cell ids to avoid load imbalance.
