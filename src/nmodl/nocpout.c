@@ -887,9 +887,8 @@ Sprintf(buf, "	_ppvar = nrn_prop_datum_alloc(_mechtype, %d, _prop);\n", ppvar_cn
 		Lappendstr(defs_list, "if (!nrn_point_prop_) {_constructor(_prop);}\n");
 		    if (vectorize) {
 			Lappendstr(procfunc, "\n\
-static _constructor(_prop)\n\
-	Prop *_prop; double* _p; Datum* _ppvar; Datum* _thread;\n\
-{\n\
+static void _constructor(Prop* _prop) {\n\
+	double* _p; Datum* _ppvar; Datum* _thread;\n\
 	_thread = (Datum*)0;\n\
 	_p = _prop->param; _ppvar = _prop->dparam;\n\
 {\n\
@@ -1173,11 +1172,10 @@ sprintf(buf1, "\tivoc_help(\"help ?1 %s %s/%s\\n\");\n", mechname, buf, finname)
 	if (destructorfunc->next != destructorfunc) {
 	    if (vectorize) {
 		Lappendstr(procfunc, "\n\
-static _destructor(_prop)\n\
-	Prop *_prop; double* _p; Datum* _ppvar; Datum* _thread;\n\
-{\n\
+static void _destructor(Prop* _prop) {\n\
+	double* _p; Datum* _ppvar; Datum* _thread;\n\
 	_thread = (Datum*)0;\n\
-	_p = prop->param; _ppvar = _prop->dparam;\n\
+	_p = _prop->param; _ppvar = _prop->dparam;\n\
 {\n\
 ");
 	    }else{
