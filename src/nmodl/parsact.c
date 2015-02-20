@@ -15,6 +15,7 @@ Symbol         *stepsym;	/* one or fewer stepped variables */
 List		*indeplist;	/* FROM TO WITH START UNITS */
 extern List    *syminorder;	/* Order in which variables are output to
 				 * .var file */
+
 #if CVODE
 extern List* state_discon_list_;
 extern int net_send_seen_;

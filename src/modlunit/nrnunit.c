@@ -13,6 +13,9 @@ static List *current, *concen, *potential;
 static void unit_chk();
 static int iontype();
 
+int breakpoint_local_seen_;
+int conductance_seen_;
+
 void nrn_unit_init() {
 	current = newlist();
 	concen = newlist();
@@ -30,6 +33,7 @@ void nrn_unit_chk() {
 	unit_chk("diam", "micron");
 	unit_chk("area", "micron2");
 
+    if (breakpoint_local_seen_ == 0 || conductance_seen_ == 0) {
 	ITERATE(q, current) {
 		if (point_process) {
 			unit_chk(SYM(q)->name, "nanoamp");
@@ -37,6 +41,7 @@ void nrn_unit_chk() {
 			unit_chk(SYM(q)->name, "milliamp/cm2");
 		}
 	}
+    }
 	ITERATE(q, concen) {
 		unit_chk(SYM(q)->name, "milli/liter");
 	}

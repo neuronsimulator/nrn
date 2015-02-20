@@ -134,3 +134,7 @@ void save_dt();
 void symbol_init();
 void pushlocal();
 void poplocal();
+
+void conductance_hint(int blocktype, Item* q1, Item* q2);
+void possible_local_current(int blocktype, List* symlist);
+Symbol* breakpoint_current(Symbol* s);

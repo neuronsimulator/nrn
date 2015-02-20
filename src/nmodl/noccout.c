@@ -17,6 +17,8 @@ List           *procfunc, *initfunc, *modelfunc, *termfunc, *initlist, *firstlis
 List		*nrnstate;
 extern List	*currents, *set_ion_variables(), *get_ion_variables();
 extern List	*begin_dion_stmt(), *end_dion_stmt();
+extern List* conductance_;
+static void conductance_cout();
 #endif
 
 extern Symbol  *indepsym;
@@ -29,6 +31,7 @@ extern int	brkpnt_exists;
 extern int	artificial_cell;
 extern int	net_receive_;
 extern int	debugging_;
+extern int	point_process;
 
 #if CVODE
 extern Symbol* cvode_nrn_cur_solve_;
@@ -101,7 +104,6 @@ void c_out()
 {
 #if NMODL
 	Item *q;
-	extern int point_process;
 #endif
 	
 	Fprintf(fcout, "/* Created by Language version: %s */\n", nmodl_version_);
@@ -616,7 +618,6 @@ if (vectorize) {
 void c_out_vectorize()
 {
 	Item *q;
-	extern int point_process;
 	
 	/* things which must go first and most declarations */
 	P("/* VECTORIZED */\n");
@@ -689,6 +690,7 @@ P("#include \"md2redef.h\"\n");
 	P("}}\n");
 
 	/* standard modl EQUATION without solve computes current */
+     if (!conductance_) {
 	P("\nstatic double _nrn_current(double* _p, Datum* _ppvar, Datum* _thread, _NrnThread* _nt, double _v){double _current=0.;v=_v;");
 #if CVODE
 	if (cvode_nrn_current_solve_) {
@@ -700,10 +702,14 @@ P("#include \"md2redef.h\"\n");
 		printlist(modelfunc);
 	}
 	ITERATE(q, currents) {
+		if (SYM(q) != breakpoint_current(SYM(q))) {
+diag("current can only be LOCAL in a BREAKPOINT if CONDUCTANCE statements are used. ", SYM(q)->name);
+		}
 		Sprintf(buf, " _current += %s;\n", SYM(q)->name);
 		P(buf);
 	}
 	P("\n} return _current;\n}\n");
+     }
 
 	/* For the classic BREAKPOINT block, the neuron current also has to compute the dcurrent/dv as well
 	   as make sure all currents accumulated properly (currents list) */
@@ -731,6 +737,12 @@ P("#include \"md2redef.h\"\n");
 	  }
    if (currents->next != currents) {
 #endif
+     if (conductance_) {
+	P(" {\n");
+	  conductance_cout();
+	  printlist(set_ion_variables(0));
+	P(" }\n");
+     }else{
 	  P(" _g = _nrn_current(_p, _ppvar, _thread, _nt, _v + .001);\n");
 	  printlist(begin_dion_stmt());
 	if (state_discon_list_) {
@@ -742,6 +754,7 @@ P("#include \"md2redef.h\"\n");
 	  P(" _g = (_g - _rhs)/.001;\n");
 	  /* set the ion variable values */
 	  printlist(set_ion_variables(0));
+     } /* end of not conductance */
 	  if (point_process) {
 		P(" _g *=  1.e2/(_nd_area);\n");
 		P(" _rhs *= 1.e2/(_nd_area);\n");
@@ -922,3 +935,85 @@ char* cray_pragma() {
 }
 
 #endif /*VECTORIZE*/
+
+static void conductance_cout() {
+  int i=0;
+  Item* q;
+  List* m;
+
+  /* replace v with _v */
+  m = newlist();
+  ITERATE(q, modelfunc) {
+    if (q->itemtype == SYMBOL) {
+      if (strcmp(SYM(q)->name, "v") == 0) {
+        lappendstr(m, "_v");
+      }else{
+        lappendsym(m, SYM(q));
+      }
+    }else if (q->itemtype == STRING) {
+      lappendstr(m, STR(q));
+    }else{
+      diag("modelfunc contains item which is not a SYMBOL or STRING", (char*)0);
+    }
+  }
+  /* eliminate first { */
+  ITERATE(q, m) {
+    if (q->itemtype == SYMBOL) {
+      if (strcmp(SYM(q)->name, "{") == 0) {
+        delete(q);
+        break;
+      }
+    }
+  }
+  /* eliminate last } */
+  for (q = m->prev; q != m; q = q->prev) {
+    if (q->itemtype == SYMBOL) {
+      if (strcmp(SYM(q)->name, "}") == 0) {
+        delete(q);
+        break;
+      }
+    }
+  }
+
+  printlist(m);
+
+  ITERATE(q, currents) {
+    if (i == 0) {
+      sprintf(buf, "  _rhs = %s", breakpoint_current(SYM(q))->name);
+    }else{
+      sprintf(buf, " + %s", breakpoint_current(SYM(q))->name);
+    }
+    P(buf);
+    i += 1;
+  }
+  if (i > 0) {
+    P(";\n");    
+  }
+
+  i = 0;
+  ITERATE(q, conductance_) {
+    if (i == 0) {
+      sprintf(buf, "  _g = %s", SYM(q)->name);
+    }else{
+      sprintf(buf, " + %s", SYM(q)->name);
+    }
+    P(buf);
+    i += 1;
+    q = q->next;
+  }
+  if (i > 0) {
+    P(";\n");
+  }
+
+  ITERATE(q, conductance_) {
+    if (SYM(q->next)) {
+      sprintf(buf, "  _ion_di%sdv += %s", SYM(q->next)->name, SYM(q)->name);
+      P(buf);
+      if (point_process) {
+        P("* 1.e2/(_nd_area)");
+      }
+      P(";\n");
+    }
+    q = q->next;
+  }
+}

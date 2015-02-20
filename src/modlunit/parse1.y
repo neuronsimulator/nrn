@@ -23,6 +23,9 @@ extern int declare_level;
 extern int parse_pass, restart_pass;
 extern List *solvelist;
 
+extern int conductance_seen_;
+extern int breakpoint_local_seen_;
+
 #define IFP(n)	if (parse_pass == n)
 #define IFR(n)	if (restart_pass == n)
 #define P1	IFP(1)
@@ -100,6 +103,8 @@ extern int lexcontext;
 %token	<qp>	FOR_NETCONS WATCH THREADSAFE
 %type	<qp>	neuronblk nrnuse nrnlist valence constructblk destructblk
 %type	<qp>	initstmt bablk
+%token  <qp>    CONDUCTANCE
+%type   <qp>    conducthint
 
 /* precedence in expressions--- low to high */
 %left   OR
@@ -363,7 +368,12 @@ stmtlist: '{' stmtlist1 '}'
 	| '{' locallist stmtlist1 '}'
 		{P1{poplocal();}}
 	;
-locallist: LOCAL locallist1
+conducthint: CONDUCTANCE Name
+		{$$ = ITEM0; conductance_seen_ = 1;}
+        | CONDUCTANCE Name USEION NAME
+		{$$ = ITEM0; conductance_seen_ = 1;}
+        ; 
+locallist: LOCAL locallist1 { if (blocktype == BREAKPOINT) breakpoint_local_seen_ = 1; }
 	| LOCAL error {myerr("Illegal LOCAL declaration");}
 	;
 locallist1: NAME locoptarray
@@ -387,6 +397,7 @@ stmt:	asgn
 	| ifstmt
 	| stmtlist
 	| funccall
+	| conducthint
 	| solveblk
 	| verbatim 
 	| comment
