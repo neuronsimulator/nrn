@@ -18,7 +18,7 @@ try:
 except:
   pass
 from rangevar import RangeVar
-from geometry import membrane, inside, Shell, FractionalVolume, FixedCrossSection, FixedPerimeter, ScalableBorder
+from geometry import membrane, inside, Shell, FractionalVolume, FixedCrossSection, FixedPerimeter, ScalableBorder, DistributedBoundary
 from plugins import set_solver
 # deprecated:
 # from geometry import ConstantArea, ConstantVolume
