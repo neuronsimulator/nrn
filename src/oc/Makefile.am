@@ -1,11 +1,11 @@
 ## Basic HOC library:
 lib_LTLIBRARIES = liboc.la libocxt.la
 
-AM_CPPFLAGS = -DOOP=1 -DINTERVIEWS=1 -DHOC=1
-AM_CFLAGS = @MINGW_CFLAG@
-
 nsrc=$(top_srcdir)/src
-INCLUDES = -I$(nsrc) -I$(nsrc)/memacs -I$(nsrc)/sparse -I$(nsrc)/nrnmpi $(X_CFLAGS)
+includes = -I$(nsrc) -I$(nsrc)/memacs -I$(nsrc)/sparse -I$(nsrc)/nrnmpi $(X_CFLAGS)
+
+AM_CPPFLAGS = -DOOP=1 -DINTERVIEWS=1 -DHOC=1 $(includes)
+AM_CFLAGS = @MINGW_CFLAG@
 
 RanFiles = isaac64.c mcran4.c nrnisaac.c nrnran123.c
 

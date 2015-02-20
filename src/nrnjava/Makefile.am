@@ -24,10 +24,10 @@ IV_INCLUDES = @IV_INCLUDE@ $(X_CFLAGS)
 
 S=$(srcdir)
 nsrc=$(top_srcdir)/src
-INCLUDES = -I$(nsrc)/nrniv -I$(nsrc)/CVODE -I$(nsrc)/nrncvode -I$(nsrc)/sparse13 -I$(nsrc)/gnu \
+includes = -I$(nsrc)/nrniv -I$(nsrc)/CVODE -I$(nsrc)/nrncvode -I$(nsrc)/sparse13 -I$(nsrc)/gnu \
 	-I. -I$(nsrc)/ivoc -I$(nsrc)/nrnoc -I../oc -I$(nsrc)/oc  $(IV_INCLUDES)
 
-AM_CPPFLAGS = -DOOP=1 -DCABLE=1 -DUSECVODE=1 -DUSEMATRIX=1 -DUSEBBS=1 $(JNIFLAGS)
+AM_CPPFLAGS = -DOOP=1 -DCABLE=1 -DUSECVODE=1 -DUSEMATRIX=1 -DUSEBBS=1 $(JNIFLAGS) $(includes)
 
 if BUILD_NRNJAVA
 

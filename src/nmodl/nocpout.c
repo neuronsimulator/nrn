@@ -136,6 +136,8 @@ static int decode_tolerance();
 /* NEURON block information */
 List *currents;
 List *useion;
+List* conductance_;
+List* breakpoint_local_current_;
 static List *rangeparm;
 static List *rangedep;
 static List *rangestate;
@@ -887,9 +889,8 @@ Sprintf(buf, "	_ppvar = nrn_prop_datum_alloc(_mechtype, %d, _prop);\n", ppvar_cn
 		Lappendstr(defs_list, "if (!nrn_point_prop_) {_constructor(_prop);}\n");
 		    if (vectorize) {
 			Lappendstr(procfunc, "\n\
-static _constructor(_prop)\n\
-	Prop *_prop; double* _p; Datum* _ppvar; Datum* _thread;\n\
-{\n\
+static void _constructor(Prop* _prop) {\n\
+	double* _p; Datum* _ppvar; Datum* _thread;\n\
 	_thread = (Datum*)0;\n\
 	_p = _prop->param; _ppvar = _prop->dparam;\n\
 {\n\
@@ -1173,11 +1174,10 @@ sprintf(buf1, "\tivoc_help(\"help ?1 %s %s/%s\\n\");\n", mechname, buf, finname)
 	if (destructorfunc->next != destructorfunc) {
 	    if (vectorize) {
 		Lappendstr(procfunc, "\n\
-static _destructor(_prop)\n\
-	Prop *_prop; double* _p; Datum* _ppvar; Datum* _thread;\n\
-{\n\
+static void _destructor(Prop* _prop) {\n\
+	double* _p; Datum* _ppvar; Datum* _thread;\n\
 	_thread = (Datum*)0;\n\
-	_p = prop->param; _ppvar = _prop->dparam;\n\
+	_p = _prop->param; _ppvar = _prop->dparam;\n\
 {\n\
 ");
 	    }else{
@@ -1573,6 +1573,18 @@ void bablk(ba, type, q1, q2)
 	lappendstr(ba_list_, buf);
 }
 
+int ion_declared(Symbol* s) {
+	Item* q;
+	int used = 0;
+	ITERATE(q, useion) {
+		if (SYM(q) == s) {
+			used = 1;
+		}
+		q = q->next->next->next;
+	}
+	return used;	
+}
+
 void nrn_use(q1, q2, q3, q4)
 	Item *q1, *q2, *q3, *q4;
 {
@@ -1583,13 +1595,7 @@ void nrn_use(q1, q2, q3, q4)
 	
 	ion = SYM(q1);
 	/* is it already used */
-	used = 0;
-	ITERATE(q, useion) {
-		if (SYM(q) == SYM(q1)) {
-			used = 1;
-		}
-		q = q->next->next->next;
-	}
+	used = ion_declared(SYM(q1));
 	if (used) { /* READ gets promoted to WRITE */
 		diag("mergeing of neuron models not supported yet", (char *)0);
 	}else{ /* create all the ionic variables */
@@ -1815,7 +1821,7 @@ List *set_ion_variables(block)
 		ITERATE(q1, LST(q)) {
 			if (SYM(q1)->nrntype & NRNCUROUT) {
 				if ( block == 0) {
-Sprintf(buf, " _ion_%s += %s", SYM(q1)->name, SYM(q1)->name);
+Sprintf(buf, " _ion_%s += %s", SYM(q1)->name, breakpoint_current(SYM(q1))->name);
 					Lappendstr(l, buf);
 					if (point_process) {
 						Sprintf(buf, "* 1.e2/ (_nd_area);\n");
@@ -2621,3 +2627,52 @@ void threadsafe_seen(Item* q1, Item* q2) {
 	}
 }
 
+void conductance_hint(int blocktype, Item* q1, Item* q2) {
+	Item* q;
+	if (blocktype != BREAKPOINT) {
+		diag("CONDUCTANCE can only appear in BREAKPOINT block", (char*)0);
+	}
+	if (!conductance_) {
+		conductance_ = newlist();
+	}
+	lappendsym(conductance_, SYM(q1->next));
+	if (q2 != q1->next) {
+		Symbol* s = SYM(q2);
+		if (!ion_declared(s)) {
+			diag(s->name, " not declared as USEION in NEURON block");
+		}
+		lappendsym(conductance_, s);
+	}else{
+		lappendsym(conductance_, SYM0);
+	}
+	deltokens(q1, q2);
+}
+
+void possible_local_current(int blocktype, List* symlist) {
+	Item* q; Item* q2;
+	if (blocktype != BREAKPOINT) { return; }
+	ITERATE(q, currents) {
+		ITERATE(q2, symlist) {
+			char* n = SYM(q2)->name + 2; /* start after the _l */
+			if (strcmp(SYM(q)->name, n) == 0) {
+				if (!breakpoint_local_current_) {
+					breakpoint_local_current_ = newlist();
+				}
+				lappendsym(breakpoint_local_current_, SYM(q));
+				lappendsym(breakpoint_local_current_, SYM(q2));
+			}
+		}
+	}
+}
+
+Symbol* breakpoint_current(Symbol* s) {
+	if (breakpoint_local_current_) {
+		Item* q;
+		ITERATE(q, breakpoint_local_current_) {
+			if (SYM(q) == s) {
+				return SYM(q->next);
+			}
+		}
+	}
+	return s;
+}

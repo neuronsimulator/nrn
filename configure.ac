@@ -8,6 +8,7 @@ dnl when you change following also update svn2nrn_h.sh and hg2nrnversion_h.sh
 AC_INIT([nrn],[7.4])
 PACKAGE_VERSION_MAJOR=`echo "$PACKAGE_VERSION" | sed 's/\..*//'`
 PACKAGE_VERSION_MINOR=`echo "$PACKAGE_VERSION" | sed 's/^.*\.//'`
+AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_SRCDIR(src/memacs/main.c)
 AM_INIT_AUTOMAKE
 

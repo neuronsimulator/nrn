@@ -5,4 +5,4 @@ bin_SCRIPTS = nrnivmodl nrnocmodl neurondemo mkthreadsafe \
 	mos2nrn2.sh hel2mos1.sh bbswork.sh nrngui sortspike \
 	nrnpyenv.sh set_nrnpyenv.sh
 
-EXTRA_DIST = bbswork.sh mkthreadsafe sortspike
+EXTRA_DIST = bbswork.sh mkthreadsafe sortspike nrnpyenv.sh set_nrnpyenv.sh

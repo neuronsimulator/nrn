@@ -14,10 +14,12 @@ EXTRA_DIST = $(PARSRC) $(PARINC)
 endif
 
 if BUILD_NRNMPI_DYNAMIC
-INCLUDES = -I$(top_srcdir)/src/nrnmpi
+includes = -I$(top_srcdir)/src/nrnmpi
+else
+includes =
 endif
 
-AM_CFLAGS = @MINGW_CFLAG@
+AM_CFLAGS = @MINGW_CFLAG@ $(includes)
 
 libshared_la_SOURCES = band.c dense.c iterative.c \
 	nvector.c nvector_serial.c smalldense.c spgmr.c sundialsmath.c \

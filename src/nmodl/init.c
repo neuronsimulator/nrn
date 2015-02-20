@@ -26,6 +26,7 @@ static struct {			/* Keywords */
 	                "DERIVATIVE", DERIVATIVE,
 	                "EQUATION", EQUATION,
 	                "BREAKPOINT", BREAKPOINT,
+	                "CONDUCTANCE", CONDUCTANCE,
 	                "SOLVE", SOLVE,
 	                "STATE", STATE,
 	                "STEPPED", STEPPED,

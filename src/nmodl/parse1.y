@@ -117,6 +117,8 @@ static int nr_argcnt_, argcnt_; /* for matching number of args in NET_RECEIVE
 %token	<qp>	GLOBAL SECTION RANGE POINTER EXTERNAL BEFORE AFTER WATCH
 %token	<qp>	ELECTRODE_CURRENT CONSTRUCTOR DESTRUCTOR NETRECEIVE FOR_NETCONS
 %type	<qp>	neuronblk nrnuse nrnlist optnrnlist valence initstmt bablk
+%token	<qp>	CONDUCTANCE
+%type	<qp>	conducthint
 
 /* precedence in expressions--- low to high */
 %left   OR
@@ -392,6 +394,11 @@ stmtlist: '{' {pushlocal();} stmtlist1 {poplocal();}
 	| '{' locallist stmtlist1
 		{poplocal();}
 	;
+conducthint: CONDUCTANCE Name
+		{conductance_hint(blocktype, $1, $2);}
+	| CONDUCTANCE Name USEION NAME
+		{conductance_hint(blocktype, $1, $4);}
+	;
 locallist: LOCAL
 		{
 		  if (toplocal1_) {freelist(&toplocal1_);}
@@ -400,6 +407,7 @@ locallist: LOCAL
 	   locallist1
 		{ replacstr($1, "double");
 		  Insertstr(lastok->next, ";\n");
+		  possible_local_current(blocktype, toplocal1_);
 		}
 	| LOCAL error {myerr("Illegal LOCAL declaration");}
 	;
@@ -448,6 +456,7 @@ ostmt:	fromstmt
 	| ifstmt
 	| stmtlist '}'
 	| solveblk
+	| conducthint
 	| VERBATIM 
 		{inblock(SYM($1)->name);
 		replacstr($1, "\n/*VERBATIM*/\n");

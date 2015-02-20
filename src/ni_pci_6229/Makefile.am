@@ -15,11 +15,13 @@ NOD = $(NIA)/make/build
 nsrc=$(top_srcdir)/src
 
 IV_INCLUDES = @IV_INCLUDE@
-INCLUDES = \
+includes = \
 	-I$(nsrc)/nrniv -I$(nsrc)/ivoc -I$(nsrc)/nrnoc -I$(nsrc)/oc \
 	-I/usr/local/vxipnp/linux/include \
 	-I$(NIA)/osinterface -I$(NIA)/chipobjects -I$(NIA)/examples \
 	$(IV_INCLUDES)
+
+AM_CPPFLAGS = $(includes)
 
 LO = \
 $(NOD)/osiBus.o \
