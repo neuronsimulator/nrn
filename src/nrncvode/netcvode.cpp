@@ -1130,6 +1130,7 @@ ite.t_, ite.de_->type(), nt->id, (ite.de_->type() == 2) ? PP2NT(((NetCon*)(ite.d
 NetCvode::NetCvode(bool single) {
 	use_long_double_ = 0;
 	empty_ = true; // no equations (only artificial cells).
+	MUTCONSTRUCT(0);
 	maxorder_ = 5;
 	maxstep_ = 1e9;
 	minstep_ = 0.;
