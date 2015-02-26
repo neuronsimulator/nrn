@@ -20,7 +20,7 @@ extern void hoc_xpanel(void), hoc_xbutton(void), hoc_xmenu(void), hoc_xslider(vo
 extern void hoc_xfixedvalue(void), hoc_xvarlabel(void), hoc_xradiobutton(void);
 extern void hoc_xvalue(void), hoc_xpvalue(void), hoc_xlabel(void), ivoc_style(void);
 extern void hoc_boolean_dialog(void), hoc_string_dialog(void), hoc_continue_dialog(void);
-extern void hoc_single_event_run(void), hoc_notify_iv(void);
+extern void hoc_single_event_run(void), hoc_notify_iv(void), nrniv_bind_thread(void);
 extern void hoc_pointer(void), hoc_Numarg(void), hoc_Argtype(void), hoc_exec_cmd(void);
 extern void hoc_load_proc(void), hoc_load_func(void), hoc_load_template(void), hoc_load_file(void);
 extern void hoc_xcheckbox(void), hoc_xstatebutton(void), hoc_Symbol_limits(void);     

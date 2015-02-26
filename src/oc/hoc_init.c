@@ -173,6 +173,7 @@ static struct { /* Builtin functions with multiple or variable args */
 	"string_dialog",	hoc_string_dialog,
 	"doEvents",	hoc_single_event_run,
 	"doNotify",	hoc_notify_iv,
+	"nrniv_bind_thread",	nrniv_bind_thread,
 	"ivoc_style",	ivoc_style,
 	"numarg",	hoc_Numarg,
 	"argtype",	hoc_Argtype,

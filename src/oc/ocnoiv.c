@@ -21,6 +21,7 @@ void ivoc_help(const char* p) {
 void ivoc_cleanup(void) {}
 
 void hoc_notify_iv(void) {hoc_ret(); hoc_pushx(0.);}
+void nrniv_bind_thread(void) {hoc_ret(); hoc_pushx(0.);}
 void hoc_xpvalue() {	hoc_ret(); hoc_pushx(0.);}
 void hoc_xlabel(void) { hoc_ret(); hoc_pushx(0.);}
 void hoc_xbutton(void) { hoc_ret(); hoc_pushx(0.);}
