@@ -41,7 +41,7 @@ static long ListImpl_best_new_sizes[] = {
 
 long ListImpl_best_new_count(long count, unsigned int size, unsigned int m) {
     for (size_t i = 0; i < sizeof(ListImpl_best_new_sizes)/sizeof(long); i++) {
-        if (count * size < ListImpl_best_new_sizes[i]) {
+        if ( (long(count * size)) < ListImpl_best_new_sizes[i]) {
             return ListImpl_best_new_sizes[i] / size;
         }
     }

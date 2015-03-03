@@ -6,6 +6,7 @@
 #include <cstring>
 #include <cstddef>
 #include <stdint.h>
+#include <stdlib.h>
 
 #ifdef SWAP_ENDIAN_ASSERT
 #include <cassert>
