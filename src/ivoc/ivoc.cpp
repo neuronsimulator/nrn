@@ -456,7 +456,9 @@ extern "C" {extern void nrniv_bind_call(void);}
 #endif
 
 void hoc_notify_iv() { IFGUI
+#ifdef MINGW
 	nrniv_bind_call();
+#endif
 	Resource::flush();
 	Oc oc;
 	oc.notify();
