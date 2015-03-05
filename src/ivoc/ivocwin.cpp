@@ -297,7 +297,7 @@ void nrniv_bind_thread() {
 IFGUI
 	bindq_ = new VoidPQueue(10);
         bind_tid_ = int(*hoc_getarg(1));
-        printf("nrniv_bind_thread %d\n", bind_tid_);
+        //printf("nrniv_bind_thread %d\n", bind_tid_);
 	iv_bind_enqueue_ = iv_bind_enqueue;
 ENDGUI
         hoc_pushx(1.);
