@@ -36,4 +36,6 @@ cd c:/
 
 if test "$cyg" = "no" ; then 
 source set_nrnpyenv.sh
+export NEURONHOME=$N
+export PYTHONPATH=$PYTHONPATH:$N/lib/python
 fi #cyg = no
