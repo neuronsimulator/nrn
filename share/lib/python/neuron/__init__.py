@@ -112,9 +112,9 @@ try:
     if n is None:
       print 'NEURONHOME environment variable should be set to where NEURON was installed.'
       n = '\\'.join(__file__.split('\\')[:-4])
-      if os.path.isfile(n+'\\bin64\\nrniv.dll'):
+      if os.path.isfile(n+'\\bin\\nrniv.dll'):
         os.putenv('NEURONHOME', '/'.join(n.split('\\')))
-    n += '\\bin64'
+    n += '\\bin'
     try:
       os.chdir(n)
       import hoc

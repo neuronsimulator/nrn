@@ -14,11 +14,11 @@ else
 	B=`cygpath -u -a $top_builddir | sed 's/\/$//'`
 	export B
 fi
-if test "$marshall_dir" = "" ; then
+if test "$marshal_dir" = "" ; then
 	echo "instal.sh should be executed at top level with make mswin"
 else
-	mkdir $marshall_dir
-	D="`cygpath -u -a $marshall_dir`"/nrn
+	mkdir $marshal_dir
+	D="`cygpath -u -a $marshal_dir`"/nrn
 	export D
 fi
 
@@ -30,7 +30,7 @@ echo "MSWIN install from $S and $B to $D"
 
 set -x
 
-if true ; then # false means skip the entire marshalling of nrn
+if true ; then # false means skip the entire marshaling of nrn
 
 rm -r -f $D
 mkdir $D
@@ -321,21 +321,21 @@ rm *.o
 # c:\nrn\bin\neuron.exe -dll c:/nrn/demo/release/nrnmech.dll demo.hoc
 # start in c:\nrn\demo
 
-fi # end of nrn marshalling
+fi # end of nrn marshaling
 
-if true ; then # false means skip marshalling of html
+if true ; then # false means skip marshaling of html
 
 hparent=$S/..
 if test -d "$hparent/html" ; then
 	cd $hparent
 	rm html.zip
 	zip -r html.zip html -x \*.svn\*
-	rm -r -f $marshall_dir/html
-	unzip -d $marshall_dir html.zip
+	rm -r -f $marshal_dir/html
+	unzip -d $marshal_dir html.zip
 	rm html.zip
 fi
 
-fi # end of html marshalling
+fi # end of html marshaling
 
 set +v
 echo "Will now complete the creation of the installer by launching"

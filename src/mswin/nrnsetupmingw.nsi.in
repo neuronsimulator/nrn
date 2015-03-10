@@ -10,6 +10,7 @@
 !define Version "@PACKAGE_VERSION@"
 !define VerNoDot "@PACKAGE_VERSION_MAJOR@@PACKAGE_VERSION_MINOR@"
 !define binsuffix "@binsuffix@"
+!define marshaldir "@dos_marshal_dir@"
 !define cpu "@host_cpu@"
 
 ; The name of the installer
@@ -22,6 +23,8 @@ RequestExecutionLevel user
 
 SetCompressor bzip2
 
+!include "EnvVarUpdate.nsh"
+
 ; Declaration of user variables
 var "uINSTDIR" ; posix version of $INSTDIR
 var "launch1" ; help launch nrngui, neurondemo, nrniv, bash from icon
@@ -31,9 +34,10 @@ var "launch3"
 ; The basic program group name
 !define NEURON  "NEURON ${Version} ${cpu}"
 ; The default directory
-!define NRN "nrn${VerNoDot}w${binsuffix}"
+;!define NRN "nrn${VerNoDot}w${binsuffix}"
+!define NRN "nrn"
 ; where to get the files
-!define MARSHALL "c:\marshalnrn${binsuffix}"
+!define MARSHAL "${marshaldir}"
 
 ; The default installation directory
 ;InstallDir $PROGRAMFILES\${NRN}
@@ -55,8 +59,8 @@ FunctionEnd
 ; The text to prompt the user to enter a directory
 ComponentText "This will install ${NEURON} on your computer. Select which optional things you want installed."
 
-Page components
 Page directory "" "" stayInDirectory
+Page components
 Page instfiles
 
 ; Get the install path. It cannot have spaces
@@ -88,7 +92,7 @@ Section "${NEURON} (required)"
   ; Set output path to the installation directory.
   SetOutPath $INSTDIR
   ; Put file there
-  File /r "${MARSHALL}\nrn${binsuffix}\*.*"
+  File /r "${MARSHAL}\nrn${binsuffix}\*.*"
   ; Write the installation path into the registry
   WriteRegStr HKLM "Software\NEURON\${NRN}" "Install_Dir" "$INSTDIR"
   ; Write the uninstall keys for Windows
@@ -158,9 +162,25 @@ Section "Desktop ${NEURON} folder with Shortcuts"
 SectionEnd
 
 ; optional section
-Section "Documentation"
+;Section /o "" nrnenvvar
+;Section /o "!For all users, Set NEURONHOME and append to PYTHONPATH. This is needed if you wish to launch Python from a terminal other than the bash icon." nrnenvvar
+Section /o "!Set DOS environment. (Useful if you wish to launch Python from a terminal not started by the bash icon.)" nrnenvvar
+  ${EnvVarUpdate} $0 "NEURONHOME" "A" "HKCU" "$INSTDIR"
+  ${EnvVarUpdate} $0 "PYTHONPATH" "A" "HKCU" "$INSTDIR\lib\python"
+  FileOpen $r1 "$INSTDIR\lib\nrnenvinst.dat" "w"
+  FileWrite $r1 "If $INSTDIR\lib\nrnenvinst.dat exists then, on uninstall, the NEURONHOME and PYTHONPATH environment variables will be removed."
+  FileClose $r1
+SectionEnd
+
+;Function .onSelChange
+;Function .onMouseOverSection
+;  SectionSetText ${nrnenvvar} "!For all users, Set NEURONHOME=$INSTDIR and append $INSTDIR\lib\python to PYTHONPATH. This is needed if you wish to launch Python from a terminal other than the bash icon."
+;FunctionEnd
+
+; optional section
+Section /o "Documentation"
   SetOutPath "$INSTDIR"
-  File /r "${MARSHALL}\html"
+  File /r "${MARSHAL}\html"
   IfFileExists "$INSTDIR\lib\smsinst.dat" +1 next
     CreateShortCut "$SMPROGRAMS\${NEURON}\Documentation.lnk" "$INSTDIR\html\helpfils.html"
 next:
@@ -182,6 +202,11 @@ Section "Uninstall"
 
   DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${NEURON}"
   DeleteRegKey HKLM "Software\NEURON\${NRN}"
+  ; unset the environment variables
+  IfFileExists "$INSTDIR\lib\nrnenvinst.dat" +1 env
+    ${un.EnvVarUpdate} $0 "NEURONHOME" "R" "HKCU" "$INSTDIR"
+    ${un.EnvVarUpdate} $0 "PYTHONPATH" "R" "HKCU" "$INSTDIR\lib\python"
+env:
   ; remove registry keys if we own them
   IfFileExists "$INSTDIR\lib\associate.dat" +1 asoc
     DeleteRegKey HKCR "NEURONFile"
@@ -223,6 +248,7 @@ SectionEnd
  ;   Pop $R0
  ;  ($R0 at this point is "ass string")
 
+/*
  Function StrStr
  Exch $R1 ; st=haystack,old$R1, $R1=needle
    Exch    ; st=old$R1,haystack
@@ -251,6 +277,7 @@ SectionEnd
    Pop $R2
    Exch $R1
  FunctionEnd
+*/
 
 ; nrniv args need forward slashes
 ; d2u
@@ -287,4 +314,5 @@ Function d2u
   Exch $R1
 FunctionEnd
 ; eof
+
 

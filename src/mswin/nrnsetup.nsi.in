@@ -33,9 +33,10 @@ var "uINSTDIR" ; posix version of $INSTDIR
 ; The basic program group name
 !define NEURON  "NEURON ${Version}"
 ; The default directory
-!define NRN "nrn${VerNoDot}"
+;!define NRN "nrn${VerNoDot}"
+!define NRN "nrn"
 ; where to get the files
-!define MARSHALL "c:\marshalnrn"
+!define MARSHAL "c:\marshalnrn"
 ; where is cygwin
 !define CYGWIN "e:\cygwin"
 
@@ -115,7 +116,7 @@ Section "${NEURON} (required)"
   ; Set output path to the installation directory.
   SetOutPath $INSTDIR
   ; Put file there
-  File /r "${MARSHALL}\nrn\*.*"
+  File /r "${MARSHAL}\nrn\*.*"
   ; otherwise cannot figure out how to put the installation folder in the file
   FileOpen $r1 "$INSTDIR\lib\nrnstart.bsh" "w"
   FileWrite $r1 "#!/bin/bash$\n"
@@ -202,7 +203,7 @@ SectionEnd
 ; optional section
 Section "Documentation"
   SetOutPath "$INSTDIR"
-  File /nonfatal /r "${MARSHALL}\html"
+  File /nonfatal /r "${MARSHAL}\html"
   IfFileExists "$INSTDIR\lib\smsinst.dat" +1 next
     CreateShortCut "$SMPROGRAMS\${NEURON}\Documentation.lnk" "$INSTDIR\html\helpfils.html"
 next:
