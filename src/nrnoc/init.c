@@ -364,7 +364,7 @@ static int pointtype = 1; /* starts at 1 since 0 means not point in pnt_map*/
 int n_memb_func;
 
 /* if vectorized then thread_data_size added to it */
-void register_mech(
+void nrn_register_mech_common(
 	const char **m,
 	Pvmp alloc,
 	Pvmi cur,
@@ -552,11 +552,26 @@ IGNORE(fprintf(stderr, CHKmes, buf));
 			s->u.ppsym[k] = s2;
 		}
 	}
-	if (!memb_func[type].is_point && nrnpy_reg_mech_p_) {
-		(*nrnpy_reg_mech_p_)(type);
-	}
 	++type;
 	n_memb_func = type;
+}
+
+void register_mech(
+	const char **m,
+	Pvmp alloc,
+	Pvmi cur,
+	Pvmi jacob,
+	Pvmi stat,
+	Pvmi initialize,
+	int nrnpointerindex, /* if -1 then there are none */
+	int vectorized
+){
+	int type = n_memb_func;
+	nrn_register_mech_common(m, alloc, cur, jacob, stat, initialize,
+		nrnpointerindex, vectorized);
+	if (nrnpy_reg_mech_p_) {
+		(*nrnpy_reg_mech_p_)(type);
+	}
 }
 
 void nrn_writes_conc(int type, int unused) {
@@ -637,7 +652,8 @@ int point_register_mech(
 	hoc_symlist = s->u.template->symtable;
 	s->u.template->steer = steer_point_process;
 	s->u.template->is_point_ = pointtype;
-	register_mech(m, alloc, cur, jacob, stat, initialize, nrnpointerindex, vectorized);
+	nrn_register_mech_common(m, alloc, cur, jacob, stat, initialize,
+		nrnpointerindex, vectorized);
 	nrn_pnt_template_[n_memb_func-1] = s->u.template;
 	s2 = hoc_lookup(m[1]);
 	hoc_symlist = sl;
