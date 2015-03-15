@@ -144,11 +144,16 @@ unzip -d $D -o $S/../mingw${BIT}_nrndist.zip
 
 # in case this is an mpi version distribute the appropriate administrative tools.
 if test "$PARANEURON"="yes" ; then
-	mpiinstalled=/c/mpich2/bin
+	mpiinstalled=/c/ms-mpi
 	# gforker
-	cp $mpiinstalled/mpiexec.exe $DB
+	cp $mpiinstalled/bin/mpiexec.exe $DB
 	#cp /c/Windows/System32/mpich2mpi.dll $DB
-	cp $S/../mpich2mpi.dll $DB
+	#cp $S/../mpich2mpi.dll $DB
+	if test $host_cpu = x86_64 ; then
+		cp $mpiinstalled/lib/x64/msmpi.dll $DB
+	else
+		cp $mpiinstalled/lib/x64/msmpi.dll $DB
+	fi
 	# and make the basic tests available
 	for i in test0.hoc test0.py ; do
 		cp $S/src/parallel/$i $D

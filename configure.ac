@@ -148,6 +148,8 @@ esac
 
 echo "CYGWIN=$CYGWIN"
 echo "MINGW=$MINGW"
+dnl for mswin, rebase will be skipped only for mingw64
+nrnskip_rebase=''
 
 if test "$CYGWIN" = "yes" -o "$MINGW" = "yes" ; then
 	nrndef_mswin=""
@@ -364,6 +366,7 @@ elif test "$MINGW" = "yes" ; then
 			marshal_dir='c:/marshalnrn64'
 			dos_marshal_dir='c:\marshalnrn64'
 			binsuffix=""
+			nrnskip_rebase='#'
 		else
 			marshal_dir='c:/marshalnrn'
 			dos_marshal_dir='c:\marshalnrn'
@@ -385,6 +388,7 @@ else
 	fi
 fi
 AC_SUBST(enable_carbon)
+AC_SUBST(nrnskip_rebase)
 
 dnl Real time dynamic clamp
 AC_NRN_REALTIME
