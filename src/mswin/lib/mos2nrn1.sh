@@ -5,7 +5,11 @@
 
 NEURONHOME=$N
 export NEURONHOME
-zipfile=`cygpath -u "$1"`
+if test "$MINGW" = "yes" ; then
+  zipfile="$1"
+else
+  zipfile=`cygpath -u "$1"`
+fi
 
 current="`pwd`"
 simdir="$TEMP/$$"

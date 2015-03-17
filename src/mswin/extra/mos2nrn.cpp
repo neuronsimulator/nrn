@@ -55,12 +55,26 @@ int main(int argc, char** argv) {
 	char* buf;
 	char* args;
 	char* msg;
+	char* temp;
 
 	setneuronhome();
 	nh = hoc_dos2unixpath(nrnhome);
 	args = argstr(argc, argv);
-	buf = new char[strlen(args) + 3*strlen(nh) + 200];
+	temp = getenv("TEMP");
+	if (!temp) { temp = "c:/tmp"; }
+	temp = hoc_dos2unixpath(temp);
+	buf = new char[strlen(args) + 3*strlen(nh) + 200 + strlen(temp)];
+	
+#if defined(MINGW)
+	if (nh[1] == ':') {
+		nh[1] = nh[0];
+		nh[0] = '/';
+	}
+	
+	sprintf(buf, "%s\\mingw\\bin\\bash.exe %s/lib/mos2nrn3.sh %s %s %s", nrnhome, nh, temp, nh, args);
+#else
 	sprintf(buf, "%s\\bin\\sh %s/lib/mos2nrn.sh %s %s", nrnhome, nh, nh, args);
+#endif
 	msg = new char[strlen(buf) + 100];
 	err = WinExec(buf, SW_SHOW);
 	if (err < 32) {

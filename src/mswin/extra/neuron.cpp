@@ -43,7 +43,7 @@ static char* argstr(int argc, char** argv) {
 		// the latter will be converted back to space in src/oc/hoc.c
 		// cygwin 7 need to convert x: and x:/ and x:\ to
 		// /cygdrive/x/
-		u = hoc_dos2cygdrivepath(argv[i], 1);
+		u = hoc_dos2unixpath(argv[i]);
 		for (a = u; *a; ++a) {
 			if (*a == ' ') {
 				s[j++] = '@';
@@ -67,12 +67,24 @@ int main(int argc, char** argv) {
 	char* args;
 	char* msg;
 
+#if !defined(MINGW)
 	ShowWindow(GetConsoleWindow(), SW_HIDE);
+#endif
 	setneuronhome();
-	nh = hoc_dos2cygdrivepath(nrnhome, 1);
+	nh = hoc_dos2unixpath(nrnhome);
 	args = argstr(argc, argv);
 	buf = new char[strlen(args) + 6*strlen(nh) + 200];
+#if defined(MINGW)
+	//sprintf(buf, "%s\\mingw\\bin\\bash.exe -rcfile %s/lib/nrnstart.bsh -i %s/lib/neuron2.sh nrngui %s", nrnhome, nh, nh, args);
+	if (nh[1] == ':') {
+		nh[1] = nh[0];
+		nh[0] = '/';
+	}
+	sprintf(buf, "%s\\mingw\\bin\\bash.exe -i %s/lib/neuron3.sh %s nrngui %s", nrnhome, nh, nh, args);
+//MessageBox(0, buf, "NEURON", MB_OK);
+#else
 	sprintf(buf, "%s\\bin\\mintty -c %s/lib/minttyrc %s/bin/bash --rcfile %s/lib/nrnstart.bsh %s/lib/neuron.sh %s %s", nrnhome, nh, nh, nh, nh, nh, args);
+#endif
 	msg = new char[strlen(buf) + 100];
 	err = WinExec(buf, SW_SHOW);
 	if (err < 32) {
