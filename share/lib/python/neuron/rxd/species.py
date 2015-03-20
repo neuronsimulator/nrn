@@ -277,6 +277,7 @@ class Species(_SpeciesMathable):
         self._do_init2()
         self._do_init3()
         self._do_init4()
+        self._do_init5()
         
     def _do_init1(self):
         # TODO: if a list of sections is passed in, make that one region
@@ -374,7 +375,8 @@ class Species(_SpeciesMathable):
             #       have been assigned
             sec._init_diffusion_rates()
         self._update_region_indices()
-        
+
+    def _do_init5(self):
         self._register_cptrs()
 
 
@@ -620,7 +622,7 @@ class Species(_SpeciesMathable):
             self._has_adjusted_offsets = True
     
     
-    def _finitialize(self):
+    def _finitialize(self, skip_transfer=False):
         if self.initial is not None:
             if callable(self.initial):
                 for node in self.nodes:
@@ -628,7 +630,8 @@ class Species(_SpeciesMathable):
             else:
                 for node in self.nodes:
                     node.concentration = self.initial
-            self._transfer_to_legacy()            
+            if not skip_transfer:
+                self._transfer_to_legacy()            
         else:
             self._import_concentration()
     
