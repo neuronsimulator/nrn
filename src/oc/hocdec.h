@@ -60,6 +60,7 @@ typedef union Inst { /* machine instruction list type */
 	Pfrs_vp	pfs_vp;
 	HocUnion Inst	*in;
 	HocStruct Symbol	*sym;
+	void*	ptr;
 	int	i;
 } Inst;
 

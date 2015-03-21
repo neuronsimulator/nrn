@@ -136,7 +136,7 @@ void nrn_popsec(void) {
 #if 0
 			printf("sec freed after pop\n");
 #endif
-			free((char*)sec);
+			nrn_section_free(sec);
 		}
 	}
 }
@@ -721,6 +721,60 @@ Section* nrn_sec_pop(void)
 	Section* sec = chk_access();
 	nrn_popsec();
 	return sec;
+}
+
+void hoc_sec_internal_push(void) {
+	Section* sec = (Section*)((pc++)->ptr);
+	nrn_pushsec(sec);
+}
+
+void* hoc_sec_internal_name2ptr(const char* s, int eflag) {
+	/*
+	  syntax is __nrnsec_0xff... and need to verify that ff... is a pointer
+	  to a Section. To avoid invalid memory read errors, we changed
+	  the section allocation/free in solve.c to use a SectionPool which
+	  allows checking to see if a void* is a possible Section* from
+	  the pool.
+	*/
+	int n;
+	Section* sec;
+	void* vp = NULL;
+	int err = 0;
+	n = strlen(s);
+	if (n < 12 || strncmp(s, "__nrnsec_0x", 11) != 0) {
+		err = 1;
+	}else{
+		if (sizeof(void*) == sizeof(long)) {
+			if (sscanf(s+9, "%lx", (long*)&vp) != 1) {
+				err = 1;
+			}
+		}else{
+			if (sscanf(s+9, "%Lx", (long long*)&vp) != 1) {
+				err = 1;
+			}
+		}
+	}
+	if (err) {
+		if (eflag) {
+			hoc_execerror("Invalid internal section name:", s);
+		}else{
+			hoc_warning("Invalid internal section name:", s);
+		}
+		return NULL;
+	}
+	sec = (Section*)vp;
+	if (nrn_is_valid_section_ptr(vp) == 0
+	  || !sec->prop || !sec->prop->dparam
+	  || !sec->prop->dparam[8].itm
+	  || sec->prop->dparam[8].itm->itemtype != SECTION) {
+		if (eflag) {
+			hoc_execerror("Section associated with internal name does not exist:", s);
+		}else{
+			hoc_warning("Section associated with internal name does not exist:", s);
+		}
+		vp = NULL;
+	}
+	return vp;
 }
 
 /* in an object syntax a section may either be last or next to last
@@ -1769,6 +1823,8 @@ char* hoc_section_pathname(Section* sec)
 		}else{
 			Sprintf(name, "%s%s", s->name, hoc_araystr(s, indx, hoc_objectdata));
 		}
+	}else if (sec && sec->prop && sec->prop->dparam[PROP_PY_INDEX]._pvoid) {
+		sprintf(name, "__nrnsec_%p", sec);
 	}else{
 		name[0] = '\0';
 	}

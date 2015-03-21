@@ -339,10 +339,18 @@ int yylex(void)			/* hoc6 */
 		char sbuf[256], *p = sbuf;
 		do
 		{
+			if (p >= (sbuf + 255)) {
+				sbuf[255] = '\0';
+				hoc_execerror("Name too long:", sbuf);
+			}
 			*p++ = c;
 		} while ((c=Getc(fin)) != EOF && (isalnum(c) || c == '_'));
 		IGNORE(unGetc(c, fin));
 		*p = '\0';
+		if (strncmp(sbuf, "__nrnsec_0x", 11) == 0) {
+			yylval.ptr = hoc_sec_internal_name2ptr(sbuf, 1);
+			return INTERNALSECTIONNAME;
+		}
 		if ((s=lookup(sbuf)) == 0)
 			s = install(sbuf, UNDEF, 0.0, &symlist);
 		yylval.sym = s;

@@ -22,6 +22,7 @@ public: \
 	void hpfree(T*); \
 	int maxget() { return maxget_;} \
 	void free_all(); \
+	int is_valid_ptr(void*); \
 private: \
 	void grow(); \
 private: \
@@ -84,6 +85,21 @@ Pool::~Pool() { \
 	if (items_) { \
 		delete [] items_; \
 	} \
+} \
+ \
+int Pool::is_valid_ptr(void* v) { \
+	Pool* pp; \
+	for(pp = this; pp; pp = pp->chain_) { \
+		void* vp = (void*)(pp->pool_); \
+		if (v >= vp && v < (void*)(pp->pool_ + pp->pool_size_)) { \
+			if (( ((char*)v - (char*)vp)%sizeof(T) ) == 0) { \
+			 	return 1; \
+			}else{ \
+				return 0; \
+			} \
+		} \
+	} \
+	return 0; \
 } \
  \
 T* Pool::alloc() { \

@@ -2498,6 +2498,12 @@ Inst* codei(int f)
 	return codechk();
 }
 
+Inst* hoc_codeptr(void* vp)
+{
+	progp->ptr = vp;
+	return codechk();
+}
+
 void codesym(Symbol* f)
 {
 	progp->sym = f;

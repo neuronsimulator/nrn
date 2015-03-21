@@ -83,6 +83,7 @@ static void hoc_opasgn_invalid(int op);
 	Symbol	*sym;			/* symbol table pointer */
 	Inst	*inst;			/* machine instruction */
 	int	narg;			/* number of arguments */
+	void*	ptr;
 }
 
 %token		EQNEQ
@@ -93,6 +94,7 @@ static void hoc_opasgn_invalid(int op);
 %token	<sym>	ITERATOR ITERKEYWORD ITERSTMT STRINGFUNC OBJECTFUNC
 %token	<sym>	LOCALOBJ AUTOOBJ
 %token	<narg>	ARG NUMZERO ARGREF
+%token	<ptr>	INTERNALSECTIONNAME
 %type	<inst>	expr stmt asgn prlist delsym stmtlist strnasgn
 %type	<inst>	cond while if begin end for_init for_st for_cond for_inc
 %type	<inst>	eqn_list dep_list varname wholearray array pointer
@@ -518,6 +520,11 @@ iterator: ITERATOR '(' arglist ')'
 /* NEWCABLE */
 section: SECTION {pushs($1); pushi(CHECK);} wholearray
 		{code(sec_access_push); codesym(spop()); $$ = $3;}
+	| INTERNALSECTIONNAME
+		{
+		  $$ = code(hoc_sec_internal_push);
+		  hoc_codeptr($1);
+		}
 	;
 
 section_or_ob: section '(' expr ')' {TPD;}

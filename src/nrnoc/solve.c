@@ -443,7 +443,13 @@ Section* sec_alloc(void)
 {
 	Section  *sec;
 
-	sec = (Section *)emalloc(sizeof(Section));
+	/* changed from emalloc to allocation from a SectionPool in order
+	   to allow safe checking of whether a void* is a possible Section*
+	   without the possibility of invalid memory read errors.
+	   Note that freeing sections must be done
+	   with nrn_section_free(Section*)
+	*/
+	sec = nrn_section_alloc();
 	sec->refcount = 0;
 	sec->nnode = 0;
 	sec->parentsec = sec->sibling = sec->child = (Section*)0;
@@ -515,7 +521,7 @@ void section_unref(Section* sec)
 printf("section_unref: freed\n");
 #endif
 		assert (!sec->parentsec);
-		free((char*)sec);
+		nrn_section_free(sec);
 	}
 }
 void section_ref(Section* sec)

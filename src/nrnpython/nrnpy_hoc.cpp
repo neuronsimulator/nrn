@@ -837,6 +837,20 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* name) {
 		nrnpy_pystring_asstring_free(n);
 		return NULL;
 	      }
+	    }else if (self->type_ == 0 && strncmp(n, "__nrnsec_0x", 11) == 0) {
+		Section* sec = (Section*)hoc_sec_internal_name2ptr(n, 0);
+		if (sec == NULL) {
+			PyErr_SetString(PyExc_NameError, n);
+		}else if (sec && sec->prop && sec->prop->dparam[PROP_PY_INDEX]._pvoid) {
+			result = (PyObject*)sec->prop->dparam[PROP_PY_INDEX]._pvoid;
+			Py_INCREF(result);
+		}else{
+			nrn_pushsec(sec);
+			result = nrnpy_cas(NULL, NULL);
+			nrn_popsec();
+		}
+		nrnpy_pystring_asstring_free(n);
+		return result;
 	    }else{
 		// ipython wants to know if there is a __getitem__
 		// even though it does not use it.

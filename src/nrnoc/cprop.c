@@ -12,6 +12,7 @@ greater cache efficiency
 
 void nrn_mk_prop_pools(int n) {}
 void nrn_cache_prop_realloc() {}
+int nrn_is_valid_section_ptr(void* v) { return 0; }
 
 double* nrn_prop_data_alloc(int type, int count, Prop* p) {
 	double* pd = (double*)hoc_Ecalloc(count, sizeof(double)); hoc_malchk();
@@ -31,5 +32,10 @@ void nrn_prop_datum_free(int type, Datum* ppd) {
 		free(ppd);
 	}
 }
-
+Section* nrn_section_alloc() {
+	return (Section *)emalloc(sizeof(Section));
+}
+void nrn_section_free(Section* s) {
+	free(s);
+}
 

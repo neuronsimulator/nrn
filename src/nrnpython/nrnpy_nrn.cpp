@@ -108,7 +108,8 @@ static char* pysec_name(Section* sec) {
 		if (ps->name_) {
 			sprintf(cp, "%s", ps->name_);
 		}else{
-			sprintf(cp, "PySec_%p", ps);
+			//sprintf(cp, "PySec_%p", ps);
+			sprintf(buf, "__nrnsec_%p", sec);
 		}
 		return buf;
 	}
@@ -353,6 +354,14 @@ static int NPyRangeVar_init(NPyRangeVar* self, PyObject* args, PyObject* kwds) {
 static PyObject* NPySecObj_name(NPySecObj* self) {
 	PyObject* result;
 	result = PyString_FromString(secname(self->sec_));
+	return result;
+}
+
+static PyObject* hoc_internal_name(NPySecObj* self) {
+	PyObject* result;
+	char buf[256];
+	sprintf(buf, "__nrnsec_%p", self->sec_);
+	result = PyString_FromString(buf);
 	return result;
 }
 
@@ -1209,6 +1218,9 @@ static PyMethodDef NPySecObj_methods[] = {
 	},
 	{"same", (PyCFunction)pysec_same, METH_VARARGS,
 	 "sec1.same(sec2) returns True if sec1 and sec2 wrap the same NEURON Section"
+	},
+	{"hoc_internal_name", (PyCFunction)hoc_internal_name, METH_NOARGS,
+	 "Hoc accepts this name wherever a section is syntactically valid."
 	},
 	{NULL}
 };

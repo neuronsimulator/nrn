@@ -303,6 +303,9 @@ extern void	node_alloc(Section*, short);		/* Allocates node vectors in a section
 extern double section_length(Section*), nrn_diameter(Node*);
 extern double nrn_ghk(double, double, double, double);
 extern Node* nrn_parent_node(Node*);
+extern Section* nrn_section_alloc();
+extern void nrn_section_free(Section*);
+extern int nrn_is_valid_section_ptr(void*);
 
 /* loop over sections. Must previously declare Item* qsec. Contains the {! */
 #define ForAllSections(sec) \
