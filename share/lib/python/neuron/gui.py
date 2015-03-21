@@ -24,6 +24,7 @@ class LoopTimer(threading.Thread) :
     @param interval: time in seconds between call to fun()
     @param fun: the function to call on timer update
     """
+    self.started = False
     self.interval = interval
     self.fun = fun
     threading.Thread.__init__(self)
@@ -31,7 +32,7 @@ class LoopTimer(threading.Thread) :
 
   def run(self) :
     h.nrniv_bind_thread(threading.current_thread().ident);
-    h.load_file("nrngui.hoc")
+    self.started = True;
     while True:
       self.fun()
       time.sleep(self.interval)
@@ -39,6 +40,8 @@ class LoopTimer(threading.Thread) :
 if h.nrnversion(9) == '2' or h.nrnversion(8).find('mingw') > 0:
   timer = LoopTimer(0.1, process_events)
   timer.start()
-else:
-    h.load_file("nrngui.hoc")
+  while not timer.started:
+    time.sleep(0.001)
+
+h.load_file("nrngui.hoc")
 
