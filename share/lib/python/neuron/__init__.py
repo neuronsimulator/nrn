@@ -427,7 +427,7 @@ def nrn_dll_sym_nt(name, type):
     import ctypes
     import os
     if len(nt_dlls) is 0:
-      b = 'bin64'
+      b = 'bin'
       if h.nrnversion(8).find('i686') is 0:
         b = 'bin'
       path = os.path.join(h.neuronhome().replace('/','\\'), b)
