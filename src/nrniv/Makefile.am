@@ -56,7 +56,9 @@ mos2nrn.exe: $(nsrc)/mswin/extra/mos2nrn.cpp
 	$(CXX) -g -O2 -DMINGW -o mos2nrn.exe $(nsrc)/mswin/extra/mos2nrn.cpp
 
 neuron.exe: $(nsrc)/mswin/extra/neuron.cpp
-	$(CXX) -g -O2 -DMINGW -o neuron.exe $(nsrc)/mswin/extra/neuron.cpp
+	echo "id ICON \"$(nsrc)/mswin/nrniv10.ico\"" > nrnicon.rc
+	windres nrnicon.rc -O coff -o nrnicon.res
+	$(CXX) -g -O2 -DMINGW -o neuron.exe $(nsrc)/mswin/extra/neuron.cpp nrnicon.res
 
 else
 nrniv_LDFLAGS =
