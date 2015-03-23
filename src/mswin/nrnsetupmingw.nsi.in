@@ -44,6 +44,9 @@ var "launch3"
 ; Do not want spaces in the installation path
 InstallDir c:\${NRN}
 
+;HKCU file association requires a subkey of Software\Classes\...
+!define ASSOCPREFIX "Software\Classes\"
+
 ; Registry key to check for directory (so if you install again, it will 
 ; overwrite the old one automatically)
 InstallDirRegKey HKCU "Software\NEURON\${NRN}" "Install_Dir"
@@ -105,16 +108,16 @@ SectionEnd
 Section "Associate .hoc and .nrnzip"
   ; I am trying to follow the makensis.nsi
   ; I do not know why we should back up old values
-  WriteRegStr HKCU ".hoc" "" "NEURONFile"
-  WriteRegStr HKCU "NEURONFile" "" "NEURON model file"
-  WriteRegStr HKCU "NEURONFile\shell" "" "open"
-  WriteRegStr HKCU "NEURONFile\DefaultIcon" "" "$INSTDIR\bin${binsuffix}\nrniv10.ico"
-  WriteRegStr HKCU "NEURONFile\shell\open\command" "" '"$INSTDIR\bin${binsuffix}\neuron.exe" "%1"'
-  WriteRegStr HKCU ".nrnzip" "" "NEURONArchive"
-  WriteRegStr HKCU "NEURONArchive" "" "NEURON model archive"
-  WriteRegStr HKCU "NEURONArchive\shell" "" "open"
-  WriteRegStr HKCU "NEURONArchive\DefaultIcon" "" "$INSTDIR\bin${binsuffix}\nrniv.ico"
-  WriteRegStr HKCU "NEURONArchive\shell\open\command" "" '"$INSTDIR\bin\mos2nrn.exe" "%1"'
+  WriteRegStr HKCU "${ASSOCPREFIX}.hoc" "" "NEURONFile"
+  WriteRegStr HKCU "${ASSOCPREFIX}NEURONFile" "" "NEURON model file"
+  WriteRegStr HKCU "${ASSOCPREFIX}NEURONFile\shell" "" "open"
+  WriteRegStr HKCU "${ASSOCPREFIX}NEURONFile\DefaultIcon" "" "$INSTDIR\bin${binsuffix}\nrniv10.ico"
+  WriteRegStr HKCU "${ASSOCPREFIX}NEURONFile\shell\open\command" "" '"$INSTDIR\bin${binsuffix}\neuron.exe" "%1"'
+  WriteRegStr HKCU "${ASSOCPREFIX}.nrnzip" "" "NEURONArchive"
+  WriteRegStr HKCU "${ASSOCPREFIX}NEURONArchive" "" "NEURON model archive"
+  WriteRegStr HKCU "${ASSOCPREFIX}NEURONArchive\shell" "" "open"
+  WriteRegStr HKCU "${ASSOCPREFIX}NEURONArchive\DefaultIcon" "" "$INSTDIR\bin${binsuffix}\nrniv.ico"
+  WriteRegStr HKCU "${ASSOCPREFIX}NEURONArchive\shell\open\command" "" '"$INSTDIR\bin\mos2nrn.exe" "%1"'
   FileOpen $r1 "$INSTDIR\lib\associate.dat" "w"
   FileWrite $r1 "If $INSTDIR\lib\associate.dat exists then, on uninstall, .hoc and .nrnzip associations will be removed."
   FileClose $r1
@@ -209,10 +212,10 @@ Section "Uninstall"
 env:
   ; remove registry keys if we own them
   IfFileExists "$INSTDIR\lib\associate.dat" +1 asoc
-    DeleteRegKey HKCU "NEURONFile"
-    DeleteRegKey HKCU "NEURONArchive"
-    DeleteRegKey HKCU ".hoc"
-    DeleteRegKey HKCU ".nrnzip"
+    DeleteRegKey HKCU "${ASSOCPREFIX}NEURONFile"
+    DeleteRegKey HKCU "${ASSOCPREFIX}NEURONArchive"
+    DeleteRegKey HKCU "${ASSOCPREFIX}.hoc"
+    DeleteRegKey HKCU "${ASSOCPREFIX}.nrnzip"
 asoc:
   ; remove directories used.
   IfFileExists "$INSTDIR\lib\smsinst.dat" +1 one
@@ -316,5 +319,3 @@ Function d2u
   Exch $R1
 FunctionEnd
 ; eof
-
-
