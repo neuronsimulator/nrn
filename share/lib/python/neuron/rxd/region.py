@@ -95,11 +95,12 @@ class Region(object):
             sa_values = sa.values
             vol_values = vol.values
             self._objs = {}
-            # TODO: remove this when can store soma outlines
-            # TODO: well, we can do that now, but what's this about?
+            # TODO: handle soma outlines correctly
             if not hasattr(self.secs, 'sections'):
                 for sec in self._secs3d:
-                    self._objs.update(dimension3.centroids_by_segment(sec))
+                    # NOTE: previously used centroids_by_segment instead
+                    #       but that did bad things with spines
+                    self._objs.update(dimension3.objects_by_segment(sec))
             mesh_values = self._mesh.values
             xs, ys, zs = mesh_values.nonzero()
             mesh_xs, mesh_ys, mesh_zs = self._mesh._xs, self._mesh._ys, self._mesh._zs
@@ -126,7 +127,9 @@ class Region(object):
                 myx, myy, myz = mesh_xs[x], mesh_ys[y], mesh_zs[z]
                 for s, obs in zip(self._objs.keys(), self._objs.values()):
                     for o in obs:
-                        dist = o.distance(myx, myy, myz)
+                        # _distance is like distance except ignores end plates
+                        # when inside
+                        dist = o._distance(myx, myy, myz)
                         if dist < closest_dist:
                             closest = s
                             closest_dist = dist
@@ -134,6 +137,7 @@ class Region(object):
                 segs.append(seg)
                 
                 # TODO: predeclare these so don't have to check each time
+                # TODO: don't use segments; use internal names to avoid keeping sections alive
                 if seg not in nodes_by_seg:
                     nodes_by_seg[seg] = []
                     surface_nodes_by_seg[seg] = []
@@ -149,6 +153,7 @@ class Region(object):
             self._xs = xs
             self._ys = ys
             self._zs = zs
+            # TODO: don't do this! This might keep the section alive!
             self._segs = segs
         self._dx = self.dx
     
