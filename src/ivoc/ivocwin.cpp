@@ -186,6 +186,125 @@ int stdin_event_ready() {
   PostThreadMessage(main_threadid, WM_QUIT, 0, 0);
   return 1;
 }
+
+#include <nrnmutdec.h>
+
+class VoidPQueue {
+public:
+  VoidPQueue(int n);
+  virtual ~VoidPQueue();
+  void put(void*, int);
+  void* get(int&);
+private:
+  void resize(int n);
+  MUTDEC;
+  int size_, head_, tail_;
+  void** q_;
+  int* type_;
+};
+
+VoidPQueue::VoidPQueue(int n) {
+  MUTCONSTRUCT(1);
+  head_ = 0;
+  tail_ = 0;
+  size_ = (n > 0) ? n : 10;
+  q_ = new void*[size_];
+  type_ = new int[size_];
+}
+VoidPQueue::~VoidPQueue() {
+  MUTDESTRUCT;
+  if (size_) {
+    delete [] q_;
+    delete [] type_;
+  }
+}
+void VoidPQueue::put(void* v, int type) {
+  MUTLOCK;
+  q_[head_] = v;  
+  type_[head_] = type;
+  head_++;
+  if (head_ >= size_) {
+    head_ = 0;
+  }
+  if (head_ == tail_) {
+    resize(size_*2);
+  }
+  MUTUNLOCK;
+}
+void* VoidPQueue::get(int& type) {
+  MUTLOCK;
+  void* v = NULL;
+  type = 0;
+  if (head_ != tail_) {
+    v = q_[tail_];
+    type = type_[tail_];
+    tail_++;
+    if (tail_ >= size_) {
+      tail_ = 0;
+    }
+  }
+  MUTUNLOCK;
+  return v;
+}
+void VoidPQueue::resize(int n) {
+  void** qold = q_;
+  int* typeold = type_;
+  q_ = new void*[n];
+  type_ = new int[n];
+  for (int i=0; i < size_; ++i) {
+    q_[i] = qold[head_];
+    type_[i] = typeold[head_];
+    head_++;
+    if (head_ >= size_) {
+      head_ = 0;
+    }
+  }  
+  delete [] qold;
+  delete [] typeold;
+  tail_ = 0;
+  head_ = size_-1;
+  size_ = n;
+}
+
+
+extern "C" {
+static int bind_tid_;
+void nrniv_bind_thread(void);
+extern int (*iv_bind_enqueue_)(void* w, int type);
+extern void iv_bind_call(void* w, int type);
+static VoidPQueue* bindq_;
+
+static int iv_bind_enqueue(void* w, int type) {
+	//printf("iv_bind_enqueue %p thread %d\n", w, GetCurrentThreadId());
+	if (GetCurrentThreadId() == bind_tid_) {
+		return 0;
+	}
+	bindq_->put(w, type);
+	return 1;
+}
+
+void nrniv_bind_call() {
+	if (!bindq_) { return; }
+	void* w;
+	int type;
+	while((w = bindq_->get(type)) != NULL) {
+		//printf("nrniv_bind_call %p\n", w);
+		iv_bind_call(w, type);
+	}
+}
+
+void nrniv_bind_thread() {
+IFGUI
+	bindq_ = new VoidPQueue(10);
+        bind_tid_ = int(*hoc_getarg(1));
+        //printf("nrniv_bind_thread %d\n", bind_tid_);
+	iv_bind_enqueue_ = iv_bind_enqueue;
+ENDGUI
+        hoc_pushx(1.);
+        hoc_ret();
+}
+} // end of extern "C"
+
 #endif
 
 #endif //HAVE_IV

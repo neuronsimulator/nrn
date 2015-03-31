@@ -14,6 +14,7 @@ greater cache efficiency
 #include <membfunc.h>
 #include <nrnmenu.h>
 #include <arraypool.h>
+#include <structpool.h>
 
 extern "C" {
 extern void nrn_mk_prop_pools(int);
@@ -297,6 +298,25 @@ void nrn_prop_datum_free(int type, Datum* ppd) {
 	}
 }
 
+declareStructPool(SectionPool, Section)
+implementStructPool(SectionPool, Section)
+static SectionPool* secpool_;
+
+Section* nrn_section_alloc() {
+	if (!secpool_) {
+		secpool_ = new SectionPool(1000);
+	}
+	Section* s = secpool_->alloc();
+	return s;
+}
+void nrn_section_free(Section* s) {
+	secpool_->hpfree(s);
+}
+
+int nrn_is_valid_section_ptr(void* v) {
+	if (!secpool_) {return 0; }
+	return secpool_->is_valid_ptr(v);
+}
 
 int nrn_prop_is_cache_efficient() {
 	DoubleArrayPool** p = new DoubleArrayPool*[npools_];

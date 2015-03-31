@@ -358,14 +358,14 @@ int find_triangles(double value0, double value1, double value2, double value3, d
     if (value7 < 0) cubeIndex |= 128;
     
     
-    if isinf(value0) printf("value0 is inf\n");
-    if isinf(value1) printf("value1 is inf\n");
-    if isinf(value2) printf("value2 is inf\n");
-    if isinf(value3) printf("value3 is inf\n");
-    if isinf(value4) printf("value4 is inf\n");
-    if isinf(value5) printf("value5 is inf\n");
-    if isinf(value6) printf("value6 is inf\n");
-    if isinf(value7) printf("value7 is inf\n");
+    if (isinf(value0)) printf("value0 is inf\n");
+    if (isinf(value1)) printf("value1 is inf\n");
+    if (isinf(value2)) printf("value2 is inf\n");
+    if (isinf(value3)) printf("value3 is inf\n");
+    if (isinf(value4)) printf("value4 is inf\n");
+    if (isinf(value5)) printf("value5 is inf\n");
+    if (isinf(value6)) printf("value6 is inf\n");
+    if (isinf(value7)) printf("value7 is inf\n");
     
     int et = edgeTable[cubeIndex];
     

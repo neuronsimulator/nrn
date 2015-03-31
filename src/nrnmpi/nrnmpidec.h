@@ -60,7 +60,6 @@ extern double nrnmpi_wtime();
 extern void nrnmpi_terminate();
 extern void nrnmpi_abort(int errcode);
 extern void nrnmpi_subworld_size(int n);
-extern int nrn_wrap_mpi_init(int* flag);
 
 /* from mpispike.c */
 extern void nrnmpi_spike_initialize();

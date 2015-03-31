@@ -160,18 +160,18 @@ EOF
 exit 1
 ])
 	dnl Make sure we are up to date for nrn7.3
-	AC_MSG_CHECKING([if InterViews is up to date with respect to nrn-7.3 and later])
+	AC_MSG_CHECKING([if InterViews is up to date with respect to nrn-7.4 and later])
 	AC_TRY_COMPILE(
 	 [#include <ivversion.h>],
 	 [
-#if (iv_hines_version < 18)
+#if (iv_hines_version < 19)
 #error InterViews version is iv_hines_version
 #endif
 	 ],
 	 [AC_MSG_RESULT(ok)],
 	 [cat << EOF
 failed
-The installed version of InterViews is out of date. Install iv-18.tar.gz
+The installed version of InterViews is out of date. Install iv-19.tar.gz
 EOF
 exit 1
 	 ])

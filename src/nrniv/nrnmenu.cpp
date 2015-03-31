@@ -387,7 +387,7 @@ void nrnpointmenu()
 #if HAVE_IV
 IFGUI
 	Object* ob;
-	if (hoc_argtype(1) == OBJECTVAR) {
+	if (hoc_is_object_arg(1)) {
 		ob = *hoc_objgetarg(1);
 	}else{
 		ob = (Object*)((size_t)(*getarg(1)));

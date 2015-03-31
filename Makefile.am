@@ -41,7 +41,7 @@ if BUILD_CYGWIN
 #install from the build directories to the mswin destination
 #uses the classical positions of files
 mswin:
-	top_srcdir=$(top_srcdir) marshall_dir=$(marshall_dir) \
+	top_srcdir=$(top_srcdir) marshal_dir=$(marshal_dir) \
 	top_builddir=$(top_builddir) \
 	ivbindir=$(IV_LIBDIR)/../bin \
 	CC=$(CC) \
@@ -54,7 +54,7 @@ if BUILD_MINGW
 #install from the build directories to the mswin destination
 #uses the classical positions of files
 mswin:
-	top_srcdir=$(top_srcdir) marshall_dir=$(marshall_dir) \
+	top_srcdir=$(top_srcdir) marshal_dir=$(marshal_dir) \
 	top_builddir=$(top_builddir) \
 	ivbindir=$(IV_LIBDIR)/../bin \
 	CC=$(CC) \

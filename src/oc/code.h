@@ -37,6 +37,7 @@ extern void ob_sec_access(void), sec_access_object(void);
 extern void forall_sectionlist(void), connect_obsec_syntax(void);
 extern void hoc_ifseclist(void), mech_uninsert(void);
 extern void simpleconnectsection(void), range_interpolate_single(void);
+extern void hoc_sec_internal_push(void);
 /* END NEWCABLE*/
 
 #endif

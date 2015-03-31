@@ -112,6 +112,7 @@ extern void hoc_obj_notify(Object*);
 extern int ivoc_list_count(Object*);
 extern double hoc_func_table(void* functable, int n, double* args);
 extern void hoc_spec_table(void** pfunctable, int n);
+extern void* hoc_sec_internal_name2ptr(const char* s, int eflag);
 
 #if defined(__cplusplus)
 class IvocVect;

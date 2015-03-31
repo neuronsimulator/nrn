@@ -148,6 +148,8 @@ esac
 
 echo "CYGWIN=$CYGWIN"
 echo "MINGW=$MINGW"
+dnl for mswin, rebase will be skipped only for mingw64
+nrnskip_rebase=''
 
 if test "$CYGWIN" = "yes" -o "$MINGW" = "yes" ; then
 	nrndef_mswin=""
@@ -341,35 +343,39 @@ if test "$CYGWIN" = "yes" ; then
 	echo " CYGWIN and no X11 so make MSWwin version"
 	build_cygwin=yes
 	AC_DEFINE(CYGWIN,,[define if using cygwin])
-	if test "$marshall_dir" = "" ; then
+	if test "$marshal_dir" = "" ; then
 		#do not change without changing instal.sh and nrnsetup.nsi
-		marshall_dir=/cygdrive/c/marshalnrn
+		marshal_dir=/cygdrive/c/marshalnrn
 		binsuffix=""
 	fi
 	if  test "$LDFLAGS" = "" ; then
 		LDFLAGS='-Wl,--enable-auto-import'
 	fi
-	AC_MSG_NOTICE(['make mswin' will marshal for building the installer in the marshall_dir = $marshall_dir])
-	AC_SUBST(marshall_dir)
+	AC_MSG_NOTICE(['make mswin' will marshal for building the installer in the marshal_dir = $marshal_dir])
+	AC_SUBST(marshal_dir)
 	AC_SUBST(binsuffix)
 elif test "$MINGW" = "yes" ; then
 	no_x=yes
 	echo " MINGW and no X11 so make MSWwin version"
 	build_mingw=yes
 	AC_DEFINE(MINGW,,[define if using mingw])
-	if test "$marshall_dir" = "" ; then
+	if test "$marshal_dir" = "" ; then
 		#do not change without changing instalmingw.sh
 		# and nrnsetupmingw.nsi
 		if test "$host_cpu" = x86_64 ; then
-			marshall_dir='c:/marshalnrn64'
-			binsuffix="64"
+			marshal_dir='c:/marshalnrn64'
+			dos_marshal_dir='c:\marshalnrn64'
+			binsuffix=""
+			nrnskip_rebase='#'
 		else
-			marshall_dir='c:/marshalnrn'
+			marshal_dir='c:/marshalnrn'
+			dos_marshal_dir='c:\marshalnrn'
 			binsuffix=""
 		fi
 	fi
-	AC_MSG_NOTICE(['make mswin' will marshal for building the installer in the marshall_dir = $marshall_dir])
-	AC_SUBST(marshall_dir)
+	AC_MSG_NOTICE(['make mswin' will marshal for building the installer in the marshal_dir = $marshal_dir])
+	AC_SUBST(marshal_dir)
+	AC_SUBST(dos_marshal_dir)
 	AC_SUBST(binsuffix)
 elif test "$enable_carbon" = "yes" ; then
 	no_x=yes
@@ -382,6 +388,7 @@ else
 	fi
 fi
 AC_SUBST(enable_carbon)
+AC_SUBST(nrnskip_rebase)
 
 dnl Real time dynamic clamp
 AC_NRN_REALTIME
@@ -580,6 +587,7 @@ AC_CONFIG_FILES([
 	src/mac/Makefile src/mswin/Makefile src/mswin/batch/Makefile
 	src/mswin/nrnsetup.nsi src/mswin/nrncygso.sh src/mswin/lib/mknrndll.mak
 	src/mswin/nrnsetupmingw.nsi
+	src/mswin/EnvVarUpdate.nsh
 	src/mswin/extra/Makefile src/mswin/rdln/Makefile
 	src/mswin/windll/Makefile
 	src/mswin/wnrnbbs/Makefile src/mswin/lib/Makefile

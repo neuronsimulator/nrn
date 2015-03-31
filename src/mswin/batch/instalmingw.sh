@@ -6,7 +6,7 @@
 if false ; then
 echo "top_srcdir $top_srcdir"
 echo "top_builddir $top_builddir"
-echo "marshall_dir $marshall_dir"
+echo "marshal_dir $marshal_dir"
 echo "ivbindir $ivbindir"
 echo "host_cpu $host_cpu"
 echo "CC $CC"
@@ -25,17 +25,17 @@ else
 	B=`(cd $top_builddir ; readlink -f .)`
 	export B
 fi
-if test "$marshall_dir" = "" ; then
+if test "$marshal_dir" = "" ; then
 	echo "instalmingw.sh should be executed at top level with make mswin"
 else
-	if test ! -d $marshall_dir ; then
-		mkdir $marshall_dir
+	if test ! -d $marshal_dir ; then
+		mkdir $marshal_dir
 	fi
-	D=`(cd $marshall_dir ; readlink -f .)`
+	D=`(cd $marshal_dir ; readlink -f .)`
 	if test $host_cpu = x86_64 ; then
 		BIT=64
-		D=$D/nrn64
-		DB=$D/bin64
+		D=$D/nrn
+		DB=$D/bin
 	else
 		BIT=32
 		D=$D/nrn
@@ -60,7 +60,7 @@ echo "MSWIN install from $S and $B to $D"
 
 set -x
 
-if true ; then # false means skip the entire marshalling of nrn
+if true ; then # false means skip the entire marshaling of nrn
 
 MG=$D/mingw
 
@@ -144,11 +144,16 @@ unzip -d $D -o $S/../mingw${BIT}_nrndist.zip
 
 # in case this is an mpi version distribute the appropriate administrative tools.
 if test "$PARANEURON"="yes" ; then
-	mpiinstalled=/c/mpich2/bin
+	mpiinstalled=/c/ms-mpi
 	# gforker
-	cp $mpiinstalled/mpiexec.exe $DB
+	cp $mpiinstalled/bin/mpiexec.exe $DB
 	#cp /c/Windows/System32/mpich2mpi.dll $DB
-	cp $S/../mpich2mpi.dll $DB
+	#cp $S/../mpich2mpi.dll $DB
+	if test $host_cpu = x86_64 ; then
+		cp $mpiinstalled/lib/x64/msmpi.dll $DB
+	else
+		cp $mpiinstalled/lib/x64/msmpi.dll $DB
+	fi
 	# and make the basic tests available
 	for i in test0.hoc test0.py ; do
 		cp $S/src/parallel/$i $D
@@ -249,9 +254,9 @@ fi
 # c:\nrn\bin\neuron.exe -dll c:/nrn/demo/release/nrnmech.dll demo.hoc
 # start in c:\nrn\demo
 
-fi # end of nrn marshalling
+fi # end of nrn marshaling
 
-if true ; then # false means skip marshalling of html
+if true ; then # false means skip marshaling of html
 
 hparent=$S/..
 if false ; then
@@ -265,12 +270,12 @@ if test -d "$hparent/html" ; then
 	cd $hparent
 	rm html.zip
 	zip -r html.zip html -x \*.svn\*
-	rm -r -f $marshall_dir/html
-	unzip -d $marshall_dir html.zip
+	rm -r -f $marshal_dir/html
+	unzip -d $marshal_dir html.zip
 	rm html.zip
 fi
 
-fi # end of html marshalling
+fi # end of html marshaling
 
 set +v
 echo "Will now complete the creation of the installer by launching"

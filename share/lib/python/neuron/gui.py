@@ -7,8 +7,6 @@ the NEURON GUI event loop.
 
 
 from neuron import h
-h('load_file("nrngui.hoc")')
-#h('load_file("hh.ses")')
 
 import threading
 import time
@@ -26,16 +24,24 @@ class LoopTimer(threading.Thread) :
     @param interval: time in seconds between call to fun()
     @param fun: the function to call on timer update
     """
+    self.started = False
     self.interval = interval
     self.fun = fun
     threading.Thread.__init__(self)
     self.setDaemon(True)
 
   def run(self) :
+    h.nrniv_bind_thread(threading.current_thread().ident);
+    self.started = True;
     while True:
       self.fun()
       time.sleep(self.interval)
 
-if (h.nrnversion(9) == '2'):
-  timer = LoopTimer(.2, process_events)
+if h.nrnversion(9) == '2' or h.nrnversion(8).find('mingw') > 0:
+  timer = LoopTimer(0.1, process_events)
   timer.start()
+  while not timer.started:
+    time.sleep(0.001)
+
+h.load_file("nrngui.hoc")
+

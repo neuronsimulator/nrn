@@ -137,6 +137,13 @@ void notify_freed_val_array(double* p, size_t size) {
 }
 } // end extern "C"
 
+#ifndef MINGW // actual implementation in ivocwin.cpp
+extern "C" {void nrniv_bind_thread(void);}
+void nrniv_bind_thread() {
+	hoc_pushx(1.);
+	hoc_ret();
+}
+#endif
 
 #if HAVE_IV // to end of file
 
@@ -443,7 +450,14 @@ void single_event_run() {
 	WinDismiss::dismiss_defer();	// in case window was dismissed
 }
 
+#ifdef MINGW
+extern "C" {extern void nrniv_bind_call(void);}
+#endif
+
 void hoc_notify_iv() { IFGUI
+#ifdef MINGW
+	nrniv_bind_call();
+#endif
 	Resource::flush();
 	Oc oc;
 	oc.notify();
