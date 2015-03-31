@@ -12,13 +12,13 @@ from rate import Rate
 from reaction import Reaction
 import geometry
 from multiCompartmentReaction import MultiCompartmentReaction
-from rxd import re_init
+from rxd import re_init, set_solve_type
 try:
   import dimension3
 except:
   pass
 from rangevar import RangeVar
-from geometry import membrane, inside, Shell, FractionalVolume, FixedCrossSection, FixedPerimeter, ScalableBorder
+from geometry import membrane, inside, Shell, FractionalVolume, FixedCrossSection, FixedPerimeter, ScalableBorder, DistributedBoundary
 from plugins import set_solver
 # deprecated:
 # from geometry import ConstantArea, ConstantVolume

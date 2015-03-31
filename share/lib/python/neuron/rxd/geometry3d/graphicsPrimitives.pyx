@@ -288,6 +288,29 @@ cdef class Cylinder:
         return d
 
 
+    cpdef double _distance(self, double px, double py, double pz):
+        """returns the distance to the cylinder, but not including the end plate
+           if inside (and including the end plate if outside)"""
+        cdef double nx, ny, nz, y, yy, xx, d
+        nx, ny, nz = px - self.cx, py - self.cy, pz - self.cz
+        y = abs(self.axisx * nx + self.axisy * ny + self.axisz * nz)
+        yy = y * y
+        xx = nx * nx + ny * ny + nz * nz - yy
+        if y < self.h:
+            # this is the part where we ignore the end plate if inside
+            d = sqrt(xx) - self.r
+        else:
+            y -= self.h
+            if xx < self.rr:
+                d = y
+            else:
+                yy = y * y
+                x = sqrt(xx) - self.r
+                d = sqrt(yy + x * x)
+                
+        for clip in self.clips:
+            d = max(d, clip.distance(px, py, pz))
+        return d
 
 
         
@@ -574,7 +597,47 @@ cdef class Cone:
                         # end faces could be closer than the cone itself
                         d = max(rx, y - self.length)
 
+        for clip in self.clips:
+            d = max(d, clip.distance(px, py, pz))
+        return d
 
+
+    cpdef double _distance(self, double px, double py, double pz):
+        """returns the distance to the frustum, but not including the end plate
+           if inside (and including the end plate if outside)"""
+        cdef double nx, ny, nz, y, yy, xx, ry, rx, d
+        nx, ny, nz = px - self.x0, py - self.y0, pz - self.z0
+        y = nx * self.axisx + ny * self.axisy + nz * self.axisz
+        yy = y * y
+        xx = nx * nx + ny * ny + nz * nz - yy
+        # in principle, xx >= 0, however roundoff errors may cause trouble
+        if xx < 0: xx = 0
+
+        if y < 0:
+            # always nonnegative distance in this case (i.e. outside)
+            if xx < self.rra:
+                d = -y
+            else:
+                x = sqrt(xx) - self.r0
+                d = sqrt(x * x + yy)
+        elif xx < self.rrb and y > self.length:
+            # outside
+            d = y - self.length
+        else:
+            x = sqrt(xx) - self.r0
+            # y >= 0 always at this point (and if outside, not in the cylinder extending through the small end face)
+            ry = x * self.side1 + y * self.side2
+            if ry < 0:
+                # if ry < 0 (and y > 0 from above), then outside the cone
+                d = sqrt(x * x + yy)
+            else:
+                rx = x * self.side2 - y * self.side1
+                if ry > self.conelength and y > self.length:
+                    ry -= self.conelength
+                    d = sqrt(rx * rx + ry * ry)
+                else:
+                    d = rx
+                    # this is the part where we are ignoring the end faces
 
         for clip in self.clips:
             d = max(d, clip.distance(px, py, pz))

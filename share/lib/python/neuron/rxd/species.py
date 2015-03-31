@@ -8,13 +8,27 @@ import numpy
 import warnings
 import itertools
 from .rxdException import RxDException
+import initializer
 
+# The difference here is that defined species only exists after rxd initialization
+_all_species = []
 _defined_species = {}
 def _get_all_species():
     return _defined_species
 
 _species_count = 0
 
+_has_1d = False
+_has_3d = False
+
+def _1d_submatrix_n():
+    if not _has_1d:
+        return 0
+    elif not _has_3d:
+        return len(node._states)
+    else:
+        return numpy.min([sp()._indices3d() for sp in _get_all_species().values() if sp() is not None])
+            
 
 
 class _SpeciesMathable(object):
@@ -79,9 +93,12 @@ class _SpeciesMathable(object):
     
     @d.setter
     def d(self, value):
-        _volumes, _surface_area, _diffs = node._get_data()
-        _diffs[self.indices()] = value
-        rxd._setup_matrices()
+        if hasattr(self, '_allow_setting'):
+            self._d = value
+        else:
+            _volumes, _surface_area, _diffs = node._get_data()
+            _diffs[self.indices()] = value
+            rxd._setup_matrices()
 
 class SpeciesOnRegion(_SpeciesMathable):
     def __init__(self, species, region):
@@ -101,11 +118,15 @@ class SpeciesOnRegion(_SpeciesMathable):
         return (self._species() == other._species()) and (self._region() == other._region()) and (self._species() is not None) and (self._region() is not None)
     
     def __hash__(self):
+        # TODO: replace this to reduce collision risk; how much of a problme is that?
         return 1000 * (hash(self._species()) % 1000) + (hash(self._region()) % 1000)
     
     
     def __repr__(self):
         return '%r[%r]' % (self._species(), self._region())
+        
+    def _short_repr(self):
+        return '%r[%r]' % (self._species()._short_repr(), self._region()._short_repr())
 
     def indices(self, r=None):
         """If no Region is specified or if r is the Region specified in the constructor,
@@ -158,6 +179,7 @@ class SpeciesOnRegion(_SpeciesMathable):
         constructs all Node objects belonging to the Species ca and then culls the list to only include those also
         belonging to the Region cyt.
         """
+        initializer._do_init()
         return nodelist.NodeList(itertools.chain.from_iterable([s.nodes for s in self._species()._secs if s._region == self._region()]))
     
     @property
@@ -175,6 +197,8 @@ class SpeciesOnRegion(_SpeciesMathable):
 
 # 3d matrix stuff
 def _setup_matrices_process_neighbors(pt1, pt2, indices, euler_matrix, index, diffs, vol, areal, arear, dx):
+    # TODO: validate this before release! is ignoring reflective boundaries the right thing to do?
+    #       (make sure that any changes here also work with boundaries that aren't really reflective, but have a 1d section attached)
     d = diffs[index]
     if pt1 in indices:
         ileft = indices[pt1]
@@ -221,16 +245,57 @@ class Species(_SpeciesMathable):
 
         charge must match the charges specified in NMODL files for the same ion, if any."""
 
+        import neuron
+        import ctypes
+
+        # TODO: check if "name" already defined elsewhere (if non-None)
+        #       if so, make sure other fields consistent, expand regions as appropriate
+
+        self._allow_setting = True
+        self.regions = regions
+        self.d = d
+        self.name = name
+        self.charge = charge
+        self.initial = initial
+        _all_species.append(weakref.ref(self))
+
+        # declare an update to the structure of the model (the number of differential equations has changed)
+        neuron.nrn_dll_sym('structure_change_cnt', ctypes.c_int).value += 1
+
+        # initialize self if the rest of rxd is already initialized
+        if initializer.is_initialized():
+            if _has_3d:
+                # TODO: remove this limitation
+                #       it's especially not a problem if the new stuff is 3D
+                #       one strategy would be to just redo the whole thing; what are the implications of that?
+                #       (pointers would be invalid; anything else?)
+                raise RxDException('temporarily cannot add new species after rxd is initialized because 1D and 3D blocks need to be kept together')
+            self._do_init()
+    
+    def _do_init(self):
+        self._do_init1()
+        self._do_init2()
+        self._do_init3()
+        self._do_init4()
+        self._do_init5()
+        
+    def _do_init1(self):
         # TODO: if a list of sections is passed in, make that one region
         # _species_count is used to create a unique _real_name for the species
         global _species_count
+
+
+        regions = self._regions
+        self._real_name = self._name
+        initial = self.initial
+        charge = self._charge
         
         # invalidate any old initialization of external solvers
         rxd._external_solver_initialized = False
         
         # TODO: check about the 0<x<1 problem alluded to in the documentation
         h.define_shape()
-        self._name = name
+        name = self.name
         if name is not None:
             if not isinstance(name, str):
                 raise RxDException('Species name must be a string')
@@ -247,79 +312,96 @@ class Species(_SpeciesMathable):
             regions = list(regions)
         else:
             regions = list([regions])
+        self._regions = regions
         if not all(isinstance(r, region.Region) for r in regions):
             raise RxDException('regions list must consist of Region objects only')
-        self._regions = regions
-        self._real_name = name
-        self.initial = initial
-        self._charge = charge
-        self._d = d
         self._species = weakref.ref(self)        
         # at this point self._name is None if unnamed or a string == name if
         # named
+        self._ion_register()                     
+        
+        # TODO: remove this line when certain no longer need it (commented out 2013-04-17)
+        # self._real_secs = region._sort_secs(sum([r.secs for r in regions], []))
+    
+    def _do_init2(self):
+        # 1D section objects; NOT all sections this species lives on
+        # TODO: this may be a problem... debug thoroughly
+        global _has_1d
+        d = self._d
+        self._secs = [Section1D(self, sec, d, r) for r in self._regions for sec in r._secs1d]
+        if self._secs:
+            self._offset = self._secs[0]._offset
+            _has_1d = True
+        else:
+            self._offset = 0
+        self._has_adjusted_offsets = False
+        self._assign_parents()
+
+    def _do_init3(self):
+        global _has_3d
+        # 3D sections
+       
+        # NOTE: if no 3D nodes, then _3doffset is not meaningful
+        self._3doffset = 0
+        self._3doffset_by_region = {}
+        self._nodes = []
+        selfref = weakref.ref(self)
+        self_has_3d = False
+        if self._regions:
+            for r in self._regions:
+                if r._secs3d:
+                    xs, ys, zs, segs = r._xs, r._ys, r._zs, r._segs
+                    if not self_has_3d:
+                        self._3doffset = node._allocate(len(xs))
+                        _3doffset = self._3doffset
+                    else:
+                        _3doffset = node._allocate(len(xs))
+                    self._3doffset_by_region[r] = _3doffset
+                    
+                    for i, x, y, z, seg in zip(xrange(len(xs)), xs, ys, zs, segs):
+                        self._nodes.append(node.Node3D(i + _3doffset, x, y, z, r, seg, selfref))
+                    # the region is now responsible for computing the correct volumes and surface areas
+                        # this is done so that multiple species can use the same region without recomputing it
+                    node._volumes[_3doffset : _3doffset + len(xs)] = r._vol
+                    node._surface_area[_3doffset : _3doffset + len(xs)] = r._sa
+                    node._diffs[_3doffset : _3doffset + len(xs)] = self._d
+                    self_has_3d = True
+                    _has_3d = True
+
+    def _do_init4(self):
+        # final initialization
+        for sec in self._secs:
+            # NOTE: can only init_diffusion_rates after the roots (parents)
+            #       have been assigned
+            sec._init_diffusion_rates()
+        self._update_region_indices()
+
+    def _do_init5(self):
+        self._register_cptrs()
+
+
+    def _ion_register(self):
+        charge = self._charge
         if self._name is not None:
-            ion_type = h.ion_register(name, charge)
+            ion_type = h.ion_register(self._name, charge)
             if ion_type == -1:
-                raise RxDException('Unable to register species: %s' % name)
+                raise RxDException('Unable to register species: %s' % self._name)
             # insert the species if not already present
+            regions = self._regions if hasattr(self._regions, '__len__') else [self._regions]
             for r in regions:
                 if r.nrn_region in ('i', 'o'):
                     for s in r.secs:
                         try:
-                            ion_forms = [name + 'i', name + 'o', 'i' + name, 'e' + name]
+                            ion_forms = [self._name + 'i', self._name + 'o', 'i' + self._name, 'e' + self._name]
                             for i in ion_forms:
                                 # this throws an exception if one of the ion forms is missing
-                                temp = s.__getattribute__(name + 'i')
+                                temp = s.__getattribute__(self._name + 'i')
                         except:
-                            s.insert(name + '_ion')
+                            s.insert(self._name + '_ion')
                         # set to recalculate reversal potential automatically
                         # the last 1 says to set based on global initial concentrations
                         # e.g. nai0_na_ion, etc...
-                        h.ion_style(name + '_ion', 3, 2, 1, 1, 1, sec=s)
-                        
-                        
-        # TODO: remove the need for this
-        # NOTE: this is used by neuron.rxd.plugins._initialize
-        self._dimension = region._sim_dimension
-        
-        # TODO: remove this line when certain no longer need it (commented out 2013-04-17)
-        # self._real_secs = region._sort_secs(sum([r.secs for r in regions], []))
-        
-        if self._dimension == 1:
-            # TODO: at this point the sections are sorted within each region, but for
-            #       tree solver (which not currently using) would need sorted across
-            #       all regions if diffusion between multiple regions
-            self._secs = [Section1D(self, sec, d, r) for r in regions for sec in r.secs]
-            if self._secs:
-                self._offset = self._secs[0]._offset
-            else:
-                self._offset = 0
-            self._has_adjusted_offsets = False
-            self._assign_parents()
-            for sec in self._secs:
-                # NOTE: can only init_diffusion_rates after the roots (parents)
-                #       have been assigned
-                sec._init_diffusion_rates()
-            self._update_region_indices()
-        elif self._dimension == 3:
-            if len(regions) != 1:
-                raise RxDException('3d currently only supports 1 region per species')
-            r = self._regions[0]
-            selfref = weakref.ref(self)
-            self._nodes = []
-            xs, ys, zs, segs = r._xs, r._ys, r._zs, r._segs
-            self._offset = node._allocate(len(xs))
-            for i, x, y, z, seg in zip(xrange(len(xs)), xs, ys, zs, segs):
-                self._nodes.append(node.Node3D(i + self._offset, x, y, z, r, seg, selfref))
-            # the region is now responsible for computing the correct volumes and surface areas
-                # this is done so that multiple species can use the same region without recomputing it
-            node._volumes[range(self._offset, self._offset + len(xs))] = r._vol
-            node._surface_area[self._offset : self._offset + len(xs)] = r._sa
-            node._diffs[range(self._offset, self._offset + len(xs))] = d
-            self._register_cptrs()
-
-        else:
-            raise RxDException('unsupported dimension: %r' % self._dimension)
+                        h.ion_style(self._name + '_ion', 3, 2, 1, 1, 1, sec=s)
 
     @property
     def states(self):
@@ -329,25 +411,30 @@ class Species(_SpeciesMathable):
 
 
     def _setup_matrices3d(self, euler_matrix):
-        assert(self._dimension == 3)
-        # TODO: don't do Euler!
-        # TODO: this doesn't handle multiple regions
-        region_mesh = self._regions[0]._mesh.values
-        indices = {}
-        xs, ys, zs = region_mesh.nonzero()
-        # TODO: make sure diffusion constants are set per node for 3D nodes
-        diffs = node._diffs
-        for i in xrange(len(xs)):
-            indices[(xs[i], ys[i], zs[i])] = i
-        dx = self._regions[0]._dx
-        areal = dx * dx
-        arear = dx * dx
-        for nodeobj in self.nodes:
-            i, j, k, index, vol = nodeobj._i, nodeobj._j, nodeobj._k, nodeobj._index, nodeobj.volume
-            _setup_matrices_process_neighbors((i, j, k - 1), (i, j, k + 1), indices, euler_matrix, index, diffs, vol, areal, arear, dx)
-            _setup_matrices_process_neighbors((i, j - 1, k), (i, j + 1, k), indices, euler_matrix, index, diffs, vol, areal, arear, dx)
-            _setup_matrices_process_neighbors((i - 1, j, k), (i + 1, j, k), indices, euler_matrix, index, diffs, vol, areal, arear, dx)
-            
+        for r in self._regions:
+            region_mesh = r._mesh.values
+            indices = {}
+            xs, ys, zs = region_mesh.nonzero()
+            diffs = node._diffs
+            offset = self._3doffset_by_region[r]
+            for i in xrange(len(xs)):
+                indices[(xs[i], ys[i], zs[i])] = i + offset
+            dx = self._regions[0]._dx
+            naf = self._regions[0]._geometry.neighbor_area_fraction
+            if not callable(naf):
+                areazl = areazr = areayl = areayr = areaxl = areaxr = dx * dx * naf 
+                for nodeobj in self._nodes:
+                    i, j, k, index, vol = nodeobj._i, nodeobj._j, nodeobj._k, nodeobj._index, nodeobj.volume
+                    _setup_matrices_process_neighbors((i, j, k - 1), (i, j, k + 1), indices, euler_matrix, index, diffs, vol, areazl, areazr, dx)
+                    _setup_matrices_process_neighbors((i, j - 1, k), (i, j + 1, k), indices, euler_matrix, index, diffs, vol, areayl, areayr, dx)
+                    _setup_matrices_process_neighbors((i - 1, j, k), (i + 1, j, k), indices, euler_matrix, index, diffs, vol, areaxl, areaxr, dx)
+            else:
+                for nodeobj in self._nodes:
+                    i, j, k, index, vol = nodeobj._i, nodeobj._j, nodeobj._k, nodeobj._index, nodeobj.volume
+                    areaxl, areaxr, areayl, areayr, areazl, areazr = naf(i, j, k)
+                    _setup_matrices_process_neighbors((i, j, k - 1), (i, j, k + 1), indices, euler_matrix, index, diffs, vol, areazl, areazr, dx)
+                    _setup_matrices_process_neighbors((i, j - 1, k), (i, j + 1, k), indices, euler_matrix, index, diffs, vol, areayl, areayr, dx)
+                    _setup_matrices_process_neighbors((i - 1, j, k), (i + 1, j, k), indices, euler_matrix, index, diffs, vol, areaxl, areaxr, dx)
 
 
     def re_init(self):
@@ -365,7 +452,7 @@ class Species(_SpeciesMathable):
             sec._update_node_data()
             
     def concentrations(self):
-        if self._dimension != 3:
+        if self._secs:
             raise RxDException('concentrations only supports 3d and that is deprecated')
         warnings.warn('concentrations is deprecated; do not use')
         r = self._regions[0]
@@ -379,29 +466,55 @@ class Species(_SpeciesMathable):
         
 
     def _register_cptrs(self):
-        if self._dimension == 1:
-            for sec in self._secs:
-                sec._register_cptrs()
-        elif self._dimension == 3:
-            assert(len(self._regions) == 1)
-            r = self._regions[0]
-            nrn_region = r._nrn_region
-            self._concentration_ptrs = []
-            if nrn_region is not None and self.name is not None:
-                ion = '_ref_' + self.name + nrn_region
-                self._seg_order = r._nodes_by_seg.keys()
-                for seg in self._seg_order:
-                    self._concentration_ptrs.append(seg.__getattribute__(ion))
-        else:
-            raise RxDException('species._register_cptrs does not currently support dimension = %r' % self._dimension)
-    
+        # 1D stuff
+        for sec in self._secs:
+            sec._register_cptrs()
+        # 3D stuff
+        self._concentration_ptrs = []
+        self._seg_order = []
+        if self._nodes and self.name is not None:
+            for r in self._regions:
+                nrn_region = r._nrn_region
+                if nrn_region is not None:
+                    ion = '_ref_' + self.name + nrn_region
+                    current_region_segs = r._nodes_by_seg.keys()
+                    self._seg_order += current_region_segs
+                    for seg in current_region_segs:
+                        self._concentration_ptrs.append(seg.__getattribute__(ion))    
 
     @property
     def charge(self):
-        """The charge of the species."""
+        """Get or set the charge of the Species.
+        
+        .. note:: Setting is new in NEURON 7.4+ and is allowed only before the reaction-diffusion model is instantiated.
+        """
         return self._charge
+
+    @charge.setter
+    def charge(self, value):
+        if hasattr(self, '_allow_setting'):
+            self._charge = value
+        else:
+            raise RxDException('Cannot set charge now; model already instantiated')
+
+    @property
+    def regions(self):
+        """Set the regions where the Species is present
+        
+        .. note:: New in NEURON 7.4+. Setting is allowed only before the reaction-diffusion model is instantiated.
+        """
+        raise RxDException('regions is write only')
+
+    @regions.setter
+    def regions(self, value):
+        if hasattr(self, '_allow_setting'):
+            self._regions = value
+        else:
+            raise RxDException('Cannot set regions now; model already instantiated')
+
         
     def _update_region_indices(self):
+        # TODO: should this include 3D nodes? currently 1D only. (What faces the user?)
         self._region_indices = {}
         for s in self._secs:
             if s._region not in self._region_indices:
@@ -410,23 +523,25 @@ class Species(_SpeciesMathable):
         # a list of all indices
         self._region_indices[None] = list(itertools.chain.from_iterable(self._region_indices.values()))
     
+    def _indices3d(self, r=None):
+        """return the indices of just the 3D nodes corresponding to this species in the given region"""
+        # TODO: this will need changed if 3D is to support more than one region
+        if r is None or r == self._regions[0]:
+            return range(self._3doffset, self._3doffset + len(self._nodes))
+        else:
+            return []
+
+    def _indices1d(self, r=None):
+        """return the indices of just the 1D nodes corresponding to this species in the given region"""
+        return self._region_indices.get(r, [])
+    
     def indices(self, r=None):
         """return the indices corresponding to this species in the given region
         
         if r is None, then returns all species indices"""
-        if self._dimension == 1:
-            if r in self._region_indices:
-                return self._region_indices[r]
-            else:
-                return []
-        elif self._dimension == 3:
-            # TODO: change this when supporting more than one region
-            if r is None or r == self._regions[0]:
-                return range(self._offset, self._offset + len(self.nodes))
-            else:
-                return []
-        else:
-            raise RxDException('unsupported dimension')
+        # TODO: beware, may really want self._indices3d or self._indices1d
+        initializer._do_init()
+        return self._indices1d(r) + self._indices3d(r)
         
     
     def _setup_diffusion_matrix(self, g):
@@ -443,51 +558,49 @@ class Species(_SpeciesMathable):
         if self.name:
             cur_map[self.name + 'i'] = {}
             cur_map[self.name + 'o'] = {}
-        if self._dimension == 1:
-            for s in self._secs:
-                s._setup_currents(indices, scales, ptrs, cur_map)
-        elif self._dimension == 3:
+        # 1D part
+        for s in self._secs:
+            s._setup_currents(indices, scales, ptrs, cur_map)
+        # 3D part
+        if self._nodes:
             # TODO: this is very similar to the 1d code; merge
-            # TODO: this needs changed when supporting more than one region
-            nrn_region = self._regions[0].nrn_region
-            if nrn_region is not None and self.name is not None and self.charge != 0:
+            if self.name is not None and self.charge != 0:
                 ion_curr = '_ref_i%s' % self.name
                 volumes, surface_area, diffs = node._get_data()
-                # TODO: this implicitly assumes that o and i border the membrane
-                # different signs depending on if an outward current decreases the region's concentration or increases it
-                if nrn_region == 'i':
-                    sign = -1
-                elif nrn_region == 'o':
-                    sign = 1
-                else:
-                    raise RxDException('bad nrn_region for setting up currents (should never get here)')
-                local_indices = self.indices()
+                # NOTE: this implicitly assumes that o and i border the membrane
+                local_indices = self._indices3d()
                 offset = self._offset
                 charge = self.charge
-                name = '%s%s' % (self.name, nrn_region)
-                sign_tenthousand_over_charge_faraday = sign * 10000. / (charge * rxd.FARADAY)
-                for i, nodeobj in enumerate(self.nodes):
+                namei = self._name + 'i'
+                nameo = self._name + 'o'
+                tenthousand_over_charge_faraday = 10000. / (charge * rxd.FARADAY)
+                for i, nodeobj in enumerate(self._nodes):
                     if surface_area[i]:
+                        r = nodeobj.region
+                        nrn_region = r.nrn_region
+                        if nrn_region == 'i':
+                            sign = -1
+                            cur_map[namei][seg] = len(indices)
+                        elif nrn_region == 'o':
+                            sign = 1
+                            cur_map[nameo][seg] = len(indices)
+                        else:
+                            continue
                         seg = nodeobj.segment
-                        cur_map[name][seg] = len(indices)
                         indices.append(local_indices[i])
                         if volumes[i + offset] == 0:
                             print '0 volume at position %d; surface area there: %g' % (i + offset, surface_area[i + offset])
-                        scales.append(sign_tenthousand_over_charge_faraday * surface_area[i + offset] / volumes[i + offset])
+                        scales.append(sign * tenthousand_over_charge_faraday * surface_area[i + offset] / volumes[i + offset])
                         ptrs.append(seg.__getattribute__(ion_curr))
-        else:
-            raise RxDException('unknown dimension')
 
     
     def _has_region_section(self, region, sec):
-        sec_name = sec.name()
-        return any((s._region == region and s._sec.name() == sec_name) for s in self._secs)
+        return any((s._region == region and s._sec == sec) for s in self._secs)
 
     def _region_section(self, region, sec):
         """return the Section1D (or whatever) associated with the region and section"""
-        sec_name = sec.name()
         for s in self._secs:
-            if s._region == region and s._sec.name() == sec_name:
+            if s._region == region and s._sec == sec:
                 return s
         else:
             raise RxDException('requested section not in species')
@@ -509,7 +622,7 @@ class Species(_SpeciesMathable):
             self._has_adjusted_offsets = True
     
     
-    def _finitialize(self):
+    def _finitialize(self, skip_transfer=False):
         if self.initial is not None:
             if callable(self.initial):
                 for node in self.nodes:
@@ -517,72 +630,94 @@ class Species(_SpeciesMathable):
             else:
                 for node in self.nodes:
                     node.concentration = self.initial
-            self._transfer_to_legacy()            
+            if not skip_transfer:
+                self._transfer_to_legacy()            
         else:
             self._import_concentration()
     
     def _transfer_to_legacy(self):
         """Transfer concentrations to the standard NEURON grid"""
         if self._name is None: return
-        if self._dimension == 1:
-            for sec in self._secs: sec._transfer_to_legacy()
-        elif self._dimension == 3:
-            assert(len(self._regions) == 1)
-            r = self._regions[0]
-            if r._nrn_region is None: return
-            
-            # TODO: set volume based on surface nodes or all nodes?
-            #       the problem with surface nodes is that surface to volume ratio of these varies greatly
-            nodes = self._nodes
-            for seg, ptr in zip(self._seg_order, self._concentration_ptrs):
-                # concentration = total mass / volume
-                ptr[0] = sum(nodes[node].concentration * nodes[node].volume for node in r._nodes_by_seg[seg]) / sum(nodes[node].volume for node in r._nodes_by_seg[seg])
-        else:
-            raise RxDException('unrecognized dimension')
+        
+        # 1D part
+        for sec in self._secs: sec._transfer_to_legacy()
+        
+        # 3D part
+        nodes = self._nodes
+        if nodes:
+            non_none_regions = [r for r in self._regions if r._nrn_region is not None]
+            if non_none_regions:
+                if any(r._nrn_region != 'i' for r in non_none_regions):
+                    raise RxDException('only "i" nrn_region supported for 3D simulations')
+                    # TODO: remove this requirement
+                    #       the issue here is that the code below would need to keep track of which nodes are in which nrn_region
+                    #       that's not that big of a deal, but when this was coded, there were other things preventing this from working                    
+                for seg, ptr in zip(self._seg_order, self._concentration_ptrs):
+                    all_nodes_in_seg = list(itertools.chain.from_iterable(r._nodes_by_seg[seg] for r in non_none_regions))
+                    if all_nodes_in_seg:
+                        # TODO: if everything is 3D, then this should always have something, but for sections that aren't in 3D, won't have anything here
+                        ptr[0] = sum(nodes[node].concentration * nodes[node].volume for node in all_nodes_in_seg) / sum(nodes[node].volume for node in all_nodes_in_seg)
     
     def _import_concentration(self, init=True):
         """Read concentrations from the standard NEURON grid"""
         if self._name is None: return
-        if self._dimension == 1:
-            for sec in self._secs: sec._import_concentration(init)
-        elif self._dimension == 3:
-            assert(len(self._regions) == 1)
-            r = self._regions[0]
-            if r._nrn_region is None: return
+        
+        # start with the 1D stuff
+        for sec in self._secs: sec._import_concentration(init)
+
+        # now the 3D stuff
+        nodes = self._nodes
+        if nodes:
             # TODO: replace this with a pointer vec for speed
-            nodes = self._nodes
-            for seg, ptr in zip(self._seg_order, self._concentration_ptrs):
-                value = ptr[0]
-                for node in r._nodes_by_seg[seg]:
-                    nodes[node].concentration = value
-        else:
-            raise RxDException('unrecognized dimension')
-            
-            
+            #       not a huge priority since import happens rarely if at all
+            i = 0
+            seg_order = self._seg_order
+            conc_ptr = self._concentration_ptrs
+            for r in self._regions:
+                if r._nrn_region is not None:
+                    seg, ptr = seg_order[i], conc_ptr[i]
+                    i += 1
+                    value = ptr[0]
+                    for node in r._nodes_by_seg[seg]:
+                        nodes[node].concentration = value
     
     @property
     def nodes(self):
         """A NodeList of all the nodes corresponding to the species.
         
         This can then be further restricted using the callable property of NodeList objects."""
-        if self._dimension == 1:
-            return nodelist.NodeList(itertools.chain.from_iterable([s.nodes for s in self._secs]))
-        elif self._dimension == 3:
-            return nodelist.NodeList(self._nodes)
-        else:
-            raise RxDException('nodes does not currently support species with dimension = %r.' % self._dimension)
+        initializer._do_init()
+        
+        # The first part here is for the 1D -- which doesn't keep live node objects -- the second part is for 3D
+        return nodelist.NodeList(list(itertools.chain.from_iterable([s.nodes for s in self._secs])) + self._nodes)
 
 
     @property
     def name(self):
-        """The name of the Species.
+        """Get or set the name of the Species.
 
         This is used only for syncing with the non-reaction-diffusion parts of NEURON.
+        
+        .. note:: Setting only supported in NEURON 7.4+, and then only before the reaction-diffusion model is instantiated.
         """
         return self._name
+    
+    @name.setter
+    def name(self, value):
+        if hasattr(self, '_allow_setting'):
+            self._name = value
+        else:
+            raise RxDException('Cannot set name now; model already instantiated')
+
 
     def __repr__(self):
         return 'Species(regions=%r, d=%r, name=%r, charge=%r, initial=%r)' % (self._regions, self._d, self._name, self._charge, self.initial)
+    
+    def _short_repr(self):
+        if self._name is not None:
+            return 'Species(<%s>)' % self._name
+        else:
+            return self.__repr__()
     
     def __str__(self):
         if self._name is None:

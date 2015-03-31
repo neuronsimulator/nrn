@@ -1,12 +1,26 @@
 from .rxdException import RxDException
 import weakref
-from . import species, rxdmath, rxd
+from . import species, rxdmath, rxd, initializer
 import numpy
 from .rangevar import RangeVar
 import itertools
 from .generalizedReaction import GeneralizedReaction
 
 class Rate(GeneralizedReaction):
+    """Declare a contribution to the rate of change of a species or other state variable.
+    
+    Example:
+    
+        constant_production = rxd.Rate(protein, k)
+        
+    If this was the only contribution to protein dynamics and there was no
+    diffusion, the above would be equivalent to:
+    
+        dprotein/dt = k
+        
+    If there are multiple rxd.Rate objects (or an rxd.Reaction, etc) acting on
+    the same species, then their effects are summed.
+    """
     def __init__(self, species, rate, regions=None, membrane_flux=False):
         """create a rate of change for a species on a given region or set of regions
         
@@ -22,16 +36,31 @@ class Rate(GeneralizedReaction):
         if membrane_flux and regions is None:
             # TODO: rename regions to region?
             raise RxDException('if membrane_flux then must specify the (unique) membrane regions')
+        self._trans_membrane = False
+        rxd._register_reaction(self)
+        
+        # be careful, this could keep states alive
+        self._original_rate = rate
+
+        # initialize self if the rest of rxd is already initialized
+        if initializer.is_initialized():
+            self._do_init()
+
+        
+    def _do_init(self):
+        rate = self._original_rate
         if not isinstance(rate, RangeVar):
             self._rate, self._involved_species = rxdmath._compile(rate)
         else:
             self._involved_species = [weakref.ref(species)]
-        self._trans_membrane = False
         self._update_indices()
-        rxd._register_reaction(self)
     
     def __repr__(self):
-        return 'Rate(%r, %r, regions=%r, membrane_flux=%r)' % (self._species(), self._original_rate, self._regions, self._membrane_flux)
+        if len(self._regions) != 1 or self._regions[0] is not None:
+            regions_short = '[' + ', '.join(r._short_repr() for r in self._regions) + ']'
+            return 'Rate(%s, %s, regions=%s, membrane_flux=%r)' % (self._species()._short_repr(), self._original_rate._short_repr(), regions_short, self._membrane_flux)
+        else:
+            return 'Rate(%s, %s, membrane_flux=%r)' % (self._species()._short_repr(), self._original_rate._short_repr(), self._membrane_flux)
     
     def _rate_from_rangevar(self, *args):
         return self._original_rate._rangevar_vec()
