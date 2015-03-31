@@ -365,6 +365,87 @@ static PyObject* hoc_internal_name(NPySecObj* self) {
 	return result;
 }
 
+static NPySecObj* newpysechelp(Section* sec) {
+	if (!sec || !sec->prop) {
+		return NULL;
+	}
+	section_ref(sec);
+	NPySecObj* pysec = NULL;
+	if (sec->prop->dparam[PROP_PY_INDEX]._pvoid) {
+		pysec = (NPySecObj*)sec->prop->dparam[PROP_PY_INDEX]._pvoid;
+		Py_INCREF(pysec);
+		assert(pysec->sec_ == sec);
+	}else{
+		pysec = (NPySecObj*)psection_type->tp_alloc(psection_type, 0);
+		pysec->sec_ = sec;
+		pysec->name_ = 0;
+		pysec->cell_ = 0;
+	}
+	return pysec;
+}
+
+static PyObject* newpyseghelp(Section* sec, double x) {
+	NPySegObj* seg = (NPySegObj*)PyObject_New(NPySegObj, psegment_type);
+	if (seg == NULL) {
+		return NULL;
+	}
+	seg->x_ = x;
+	seg->alliter_ = 0;
+	seg->pysec_ = newpysechelp(sec);
+	return (PyObject*)seg;
+}
+
+static PyObject* pysec_parentseg(NPySecObj* self) {
+	Section* psec = self->sec_->parentsec;
+	if (psec == NULL || psec->prop == NULL) {
+		Py_INCREF(Py_None);
+		return Py_None;
+	}
+	double x = nrn_connection_position(self->sec_);
+	return newpyseghelp(psec, x);
+}
+
+static PyObject* pysec_trueparentseg(NPySecObj* self) {
+	Section * sec = self->sec_;
+	Section* psec = NULL;
+	for (psec = sec->parentsec; psec ; psec = psec->parentsec) {
+		if (psec == NULL || psec->prop == NULL) {
+			Py_INCREF(Py_None);
+			return Py_None;
+		}
+		if (nrn_at_beginning(sec)) {
+			sec = psec;
+		}else{
+			break;
+		}
+	}
+	if (psec == NULL) {
+		Py_INCREF(Py_None);
+		return Py_None;
+	}
+
+	double x = nrn_connection_position(sec);
+	return newpyseghelp(psec, x);
+}
+
+static PyObject* pysec_orientation(NPySecObj* self) {
+	double x = nrn_section_orientation(self->sec_);
+	return Py_BuildValue("d", x);
+}
+
+static PyObject* pysec_children(NPySecObj* self) {
+	Section* sec = self->sec_;
+	PyObject* result = PyList_New(0);
+	if (!result) { return NULL; }
+	for (Section* s = sec->child; s; s = s->sibling) {
+		PyObject* item = (PyObject*)newpysechelp(s);
+		if (!item) { return NULL; }
+		if (PyList_Append(result, item) != 0) { return NULL; }
+		Py_XDECREF(item);
+	}
+	return result;
+}
+
 static PyObject* pysec2cell(NPySecObj* self) {
 	PyObject* result;
 	if (self->cell_) {
@@ -1222,6 +1303,18 @@ static PyMethodDef NPySecObj_methods[] = {
 	{"hoc_internal_name", (PyCFunction)hoc_internal_name, METH_NOARGS,
 	 "Hoc accepts this name wherever a section is syntactically valid."
 	},
+	{"parentseg", (PyCFunction)pysec_parentseg, METH_NOARGS,
+	 "Return the nrn.Segment specified by the connect method. Possibly None."
+	},
+	{"trueparentseg", (PyCFunction)pysec_trueparentseg, METH_NOARGS,
+	 "Return the nrn.Segment this section connects to which is closer to the root. Possibly None. (same as parentseg unless parentseg.x == parentseg.sec.orientation()"
+	},
+	{"orientation", (PyCFunction)pysec_orientation, METH_NOARGS,
+	 "Returns 0.0 or 1.0  depending on the x value closest to parent."
+	},
+	{"children", (PyCFunction)pysec_children, METH_NOARGS,
+	 "Return list of child sections. Possibly an empty list"
+	},
 	{NULL}
 };
 
@@ -1283,19 +1376,7 @@ static PySequenceMethods rv_seqmeth = {
 PyObject* nrnpy_cas(PyObject* self, PyObject* args) {
 	Section* sec = chk_access();
 	//printf("nrnpy_cas %s\n", secname(sec));
-	section_ref(sec);
-	NPySecObj* pysec = NULL;
-	if (sec->prop->dparam[PROP_PY_INDEX]._pvoid) {
-		pysec = (NPySecObj*)sec->prop->dparam[PROP_PY_INDEX]._pvoid;
-		Py_INCREF(pysec);
-		assert(pysec->sec_ == sec);
-	}else{
-		pysec = (NPySecObj*)psection_type->tp_alloc(psection_type, 0);
-		pysec->sec_ = sec;
-		pysec->name_ = 0;
-		pysec->cell_ = 0;
-	}
-	return (PyObject*)pysec;
+	return (PyObject*)newpysechelp(sec);
 }
 
 static PyMethodDef nrnpy_methods[] = {
