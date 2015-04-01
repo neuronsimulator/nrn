@@ -28,6 +28,7 @@ public:
 	void put_pending(const char* key, int cid);
 	static BBSDirectServer* server_;
 	static void handle(); // all remote requests
+	static void handle_block();
 	static void handle1(int size, int tag, int source);
 	void start();
 	void done();

@@ -33,6 +33,7 @@ public:
 
 	int submit(int userid);
 	bool working(int &id, double& x, int& userid);
+	void master_works(int flag);
 	void context();
 
 	bool is_master();

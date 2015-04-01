@@ -41,6 +41,7 @@ public:
 	virtual void post_todo(int parentid);
 	virtual void post_result(int id);
 	virtual int look_take_result(int pid); // returns id, or 0 if nothing
+	virtual int master_take_result(int pid); // returns id
 	virtual int look_take_todo(); // returns id, or 0 if nothing
 	virtual int take_todo(); // returns id
 	virtual void save_args(int);

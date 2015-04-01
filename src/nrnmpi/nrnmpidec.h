@@ -49,6 +49,7 @@ extern void nrnmpi_pkstr(const char* s, bbsmpibuf* buf);
 extern void nrnmpi_pkpickle(const char* s, size_t size, bbsmpibuf* buf);
 
 extern int nrnmpi_iprobe(int* size, int* tag, int* source);
+extern void nrnmpi_probe(int* size, int* tag, int* source);
 extern void nrnmpi_bbssend(int dest, int tag, bbsmpibuf* r);
 extern int nrnmpi_bbsrecv(int source, bbsmpibuf* r);
 extern int nrnmpi_bbssendrecv(int dest, int tag, bbsmpibuf* s, bbsmpibuf* r);

@@ -258,6 +258,12 @@ static double worker(void* v) {
 	return 0.;
 }
 
+static double master_works(void* v) {
+	OcBBS* bbs = (OcBBS*)v;
+	bbs->master_works(int(chkarg(1, 0, 1)));
+	return 0.;
+}
+
 static double done(void* v) {
 	OcBBS* bbs = (OcBBS*)v;
 	bbs->done();
@@ -929,6 +935,7 @@ static Member_func members[] = {
 	"look", look,
 	"look_take", look_take,
 	"runworker", worker,
+	"master_works_on_jobs", master_works,
 	"done", done,
 	"id", nrn_rank,
 	"nhost", nhost,

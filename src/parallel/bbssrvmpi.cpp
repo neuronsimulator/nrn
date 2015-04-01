@@ -42,6 +42,14 @@ void BBSDirectServer::done() {
 		((bbs_poll_ < 0) ? -bbs_poll_ : bbs_poll_));
 }
 
+void BBSDirectServer::handle_block() {
+		int size;
+		int tag;
+		int source;
+		nrnmpi_probe(&size, &tag, &source);
+		handle1(size, tag, source);
+}
+
 void BBSDirectServer::handle() {
 		int size;
 		int tag;

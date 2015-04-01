@@ -29,6 +29,7 @@ public:
 	virtual void post_todo(int parentid) = 0;
 	virtual void post_result(int id) = 0;
 	virtual int look_take_result(int pid) = 0; // returns id, or 0 if nothing
+	virtual int master_take_result(int pid); // returns id
 	virtual int look_take_todo() = 0; // returns id, or 0 if nothing
 	virtual int take_todo() = 0; // returns id
 	virtual void save_args(int userid) = 0;
@@ -60,6 +61,7 @@ public:
 	static bool use_pvm_;
 	static int mytid_;
 	static int debug_;
+	static bool master_works_;
 protected:
 	char* execute_helper(size_t*, int id); // involves hoc specific details in ocbbs.c
 	void subworld_worker_execute(); //shadows execute_helper. ie. each of

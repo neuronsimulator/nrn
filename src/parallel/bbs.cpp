@@ -28,6 +28,7 @@ extern "C" {
 bool BBSImpl::is_master_ = false;
 bool BBSImpl::started_ = false;
 bool BBSImpl::done_ = false;
+bool BBSImpl::master_works_ = true;
 
 #undef debug
 #define debug BBSImpl::debug_
@@ -93,6 +94,7 @@ void BBS::init(int) {
 	if (!BBSImpl::started_) {
 		BBSImpl::use_pvm_ = false;
 		BBSImpl::is_master_ = (nrnmpi_myid_bbs == 0) ? true : false;
+		BBSImpl::master_works_ = true;
 //printf("%d BBS::init is_master=%d\n", nrnmpi_myid_bbs, BBSImpl::is_master_);
 	}
 	// Just as with PVM which stored buffers on the bulletin board
@@ -121,6 +123,7 @@ void BBS::init(int) {
 	if (!BBSImpl::started_) {
 		BBSImpl::use_pvm_ = false;
 		BBSImpl::is_master_ = true;
+		BBSImpl::master_works_ = true;
 	}
 	impl_ = new BBSLocal();
 }
@@ -385,6 +388,16 @@ bool BBS::working(int& id, double& x, int& userid) {
 	return impl_->working(id, x, userid);
 }
 
+void BBS::master_works(int flag) {
+	if (impl_->is_master() && nrnmpi_numprocs_bbs > 1) {
+		impl_->master_works_ = flag ? true : false;
+	}
+}
+
+int BBSImpl::master_take_result(int pid) {
+	assert(0);
+}
+
 bool BBSImpl::working(int& id, double& x, int& userid) {
 	int cnt=0;
 	int rtype;
@@ -400,7 +413,12 @@ bool BBSImpl::working(int& id, double& x, int& userid) {
 	}
 	for (;;) {
 		++cnt;
-		if ((id = look_take_result(working_id_)) != 0) {
+		if (master_works_) {
+			id = look_take_result(working_id_);
+		}else{
+			id = master_take_result(working_id_);
+		}
+		if (id != 0) {
 			userid = upkint();
 			rtype = upkint();
 			if (rtype == 0) {

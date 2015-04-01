@@ -233,6 +233,19 @@ printf("%d look_take_result return id=%d\n", nrnmpi_myid_bbs, id);
 	return id;
 }
 
+int BBSDirect::master_take_result(int pid) {
+	assert(is_master());
+	assert(nrnmpi_numprocs_bbs > 1);
+	for (;;) {
+		int id = look_take_result(pid);
+		if (id) {
+			return id;
+		}
+		// wait for a message (no MPI_Iprobe)
+		BBSDirectServer::handle_block();
+	}
+}
+
 void BBSDirect::save_args(int userid) {
 #if defined(HAVE_STL)
 	nrnmpi_ref(sendbuf_);

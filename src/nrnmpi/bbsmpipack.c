@@ -323,6 +323,15 @@ int nrnmpi_iprobe(int* size, int* tag, int* source) {
 	return flag;
 }
 
+void nrnmpi_probe(int* size, int* tag, int* source) {
+	int flag = 0;
+	MPI_Status status;
+	MPI_Probe(MPI_ANY_SOURCE, MPI_ANY_TAG, nrn_bbs_comm, &status);
+	if (source) *source = status.MPI_SOURCE;
+	if (tag) *tag = status.MPI_TAG;
+	if (size) MPI_Get_count(&status, MPI_PACKED, size);
+}
+
 bbsmpibuf* nrnmpi_newbuf(int size) {
 	bbsmpibuf* buf;
 	buf = (bbsmpibuf*)hoc_Emalloc(sizeof(bbsmpibuf)); hoc_malchk();
