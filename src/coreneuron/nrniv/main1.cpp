@@ -96,7 +96,7 @@ int main1( int argc, char **argv, char **env )
     }
 
     /// Setting the timeout
-    nrn_set_timeout(20.);
+    nrn_set_timeout(200.);
 
     // find mindelay and set configuration parameter
     double mindelay = BBS_netpar_mindelay( input_params.maxdelay );
