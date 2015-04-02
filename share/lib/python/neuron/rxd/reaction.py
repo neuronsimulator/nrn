@@ -1,10 +1,9 @@
 import weakref
-from . import species, rxdmath, rxd, node
+from . import species, rxdmath, rxd, node, initializer
 import numpy
 import copy
 from .generalizedReaction import GeneralizedReaction, ref_list_with_mult, get_scheme_rate1_rate2_regions_custom_dynamics_mass_action
 from .rxdException import RxDException
-
 
 class Reaction(GeneralizedReaction):
     def __init__(self, *args, **kwargs):
@@ -66,8 +65,6 @@ class Reaction(GeneralizedReaction):
         self._membrane_flux = False
         self._dir = scheme._dir
         self._custom_dynamics = custom_dynamics
-        self._update_rates()
-
 
         self._trans_membrane = False
         if not hasattr(regions, '__len__'):
@@ -75,6 +72,14 @@ class Reaction(GeneralizedReaction):
         self._regions = regions
         #self._update_indices()
         rxd._register_reaction(self)
+
+        # initialize self if the rest of rxd is already initialized
+        if initializer.is_initialized():
+            self._do_init()
+
+
+    def _do_init(self):
+        self._update_rates()
 
     def _update_rates(self):
         lhs = self._scheme._lhs._items
@@ -110,9 +115,11 @@ class Reaction(GeneralizedReaction):
     
     @property
     def f_rate(self):
+        """Get or set the forward reaction rate"""
         return self._original_rate_f
     @property
     def b_rate(self):
+        """Get or set the backward reaction rate"""
         return self._original_rate_b
     @f_rate.setter
     def f_rate(self, value):
@@ -132,7 +139,11 @@ class Reaction(GeneralizedReaction):
     
     
     def __repr__(self):
-        return 'Reaction(%r, %r, rate_b=%r, regions=%r, custom_dynamics=%r)' % (self._scheme, self._original_rate_f, self._original_rate_b, self._regions, self._custom_dynamics)
+        if len(self._regions) != 1 or self._regions[0] is not None:
+            regions_short = '[' + ', '.join(r._short_repr() for r in self._regions) + ']'
+            return 'Reaction(%s, %s, rate_b=%s, regions=%s, custom_dynamics=%r)' % (self._scheme._short_repr(), self._original_rate_f._short_repr(), self._original_rate_b._short_repr(), regions_short, self._custom_dynamics)
+        else:
+            return 'Reaction(%s, %s, rate_b=%s, custom_dynamics=%r)' % (self._scheme._short_repr(), self._original_rate_f._short_repr(), self._original_rate_b._short_repr(), self._custom_dynamics)
     
     
     def _do_memb_scales(self):

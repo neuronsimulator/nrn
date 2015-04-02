@@ -45,6 +45,7 @@ neuron/rxd/gui.py \
 neuron/rxd/plugins.py \
 neuron/rxd/rangevar.py \
 neuron/rxd/dimension3.py \
+neuron/rxd/initializer.py \
 neuron/rxd/geometry3d/*.* \
 \
 neuron/help_data.dat

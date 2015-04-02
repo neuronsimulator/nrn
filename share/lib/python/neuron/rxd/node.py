@@ -446,6 +446,7 @@ class Node3D(Node):
         self._i = i
         self._j = j
         self._k = k
+        # TODO: store region as a weakref! (weakref.proxy?)
         self._r = r
         self._seg = seg
         self._speciesref = speciesref
@@ -505,7 +506,8 @@ class Node3D(Node):
     
     @property
     def x(self):
-        raise RxDException('need to reimplement x for 3d nodes')
+        # TODO: can we make this more accurate?
+        return self._seg.x
     
     @property
     def segment(self):

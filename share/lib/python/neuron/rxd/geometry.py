@@ -2,6 +2,7 @@ import warnings
 import numpy
 from neuron import h, nrn
 from .rxdException import RxDException
+from neuron.rxd import geometry3d
 
 class RxDGeometry:
     def volumes1d(self, sec):
@@ -122,6 +123,9 @@ _always_false = constant_function(False)
 _always_0 = constant_function(0)
 
 inside = RxDGeometry()
+inside.volumes3d = geometry3d.voxelize2
+# neighbor_area_fraction can be a constant or a function
+inside.neighbor_area_fraction = 1
 inside.volumes1d = _volumes1d
 inside.surface_areas1d = _surface_areas1d
 inside.neighbor_areas1d = _neighbor_areas1d
@@ -145,6 +149,55 @@ class Enum:
 _lo_hi_shell = Enum()
 
 
+class DistributedBoundary(RxDGeometry):
+    """Boundary that scales with area.
+    
+    DistributedBoundary(area_per_vol, perim_per_area=0)
+    
+    area_per_vol is the area of the boundary as a function of the volume
+    containing it. e.g.    
+    
+    g = DistributedBoundary(2) defines a geometry with 2 um^2 of area per
+    every um^3 of volume.
+    
+    perim_per_area is the perimeter (in um) per 1 um^2 cross section of the
+    volume. For use in reaction-diffusion problems, it may be safely omitted
+    if and only if no species in the corresponding region diffuses.
+    
+    This is often useful for separating FractionalVolume objects.
+    
+    It is assumed that the area is always strictly on the interior.
+    """
+    def __init__(self, area_per_vol, perim_per_area=0):
+        self._area_per_vol = area_per_vol
+        self._perim_per_area = 0
+
+        self.surface_areas1d = _always_0
+        self.neighbor_areas1d = scale_by_constant(perim_per_area, _neighbor_areas1d)
+        self.volumes1d = scale_by_constant(area_per_vol, _volumes1d)
+        self.is_volume = _always_false
+        self.is_area = _always_true
+    
+    @property
+    def neighbor_area_fraction(self):
+        # TODO: validate that this gives consistent results between 1D and 3D
+        return self._perim_per_area
+        
+    def volumes3d(self, source, dx=0.25, xlo=None, xhi=None, ylo=None, yhi=None, zlo=None, zhi=None, n_soma_step=100):
+        mesh, surface_areas, volumes, triangles = geometry3d.voxelize2(source, dx=dx, xlo=xlo, xhi=xhi, ylo=ylo, yhi=yhi, zlo=zlo, zhi=zhi, n_soma_step=n_soma_step)
+        volumes._values *= self._area_per_vol # volume on 2D boundaries is actually the area; the amount of space for holding things
+        surface_areas._values *= 0 
+        return mesh, surface_areas, volumes, triangles
+    
+    def __repr__(self):
+        if self._perim_per_area == 0:
+            return 'DistributedBoundary(%g)' % (self._area_per_vol)
+        else:
+            return 'DistributedBoundary(%g, perim_per_area=%g)' % (self._area_per_vol, self._perim_per_area)
+
+
+
+
 class FractionalVolume(RxDGeometry):
     def __init__(self, volume_fraction=1, surface_fraction=0, neighbor_areas_fraction=None):
         if neighbor_areas_fraction is None:
@@ -163,6 +216,14 @@ class FractionalVolume(RxDGeometry):
         self._volume_fraction = volume_fraction
         self._surface_fraction = surface_fraction
         self._neighbor_areas_fraction = neighbor_areas_fraction
+        # TODO: does the else case ever make sense?
+        self.neighbor_area_fraction = volume_fraction if neighbor_areas_fraction is None else neighbor_areas_fraction
+        
+    def volumes3d(self, source, dx=0.25, xlo=None, xhi=None, ylo=None, yhi=None, zlo=None, zhi=None, n_soma_step=100):
+        mesh, surface_areas, volumes, triangles = geometry3d.voxelize2(source, dx=dx, xlo=xlo, xhi=xhi, ylo=ylo, yhi=yhi, zlo=zlo, zhi=zhi, n_soma_step=n_soma_step)
+        surface_areas._values *= self._surface_fraction
+        volumes._values *= self._volume_fraction
+        return mesh, surface_areas, volumes, triangles
     
     def __repr__(self):
         return 'FractionalVolume(volume_fraction=%r, surface_fraction=%r, neighbor_areas_fraction=%r)' % (self._volume_fraction, self._surface_fraction, self._neighbor_areas_fraction)
@@ -211,10 +272,12 @@ class FixedPerimeter(RxDGeometry):
 class ScalableBorder(RxDGeometry):
     """a membrane that scales proportionally with the diameter
     
-    Example uses:
+    Example use:
     
     - the boundary between radial shells
-    - the boundary of between FractionalVolume geometries
+    
+    Sometimes useful for the boundary between FractionalVolume objects, but
+    see also DistributedBoundary which scales with area.
     """
     def __init__(self, scale, on_cell_surface=False):
         self.volumes1d = _make_surfacearea1d_function(scale)

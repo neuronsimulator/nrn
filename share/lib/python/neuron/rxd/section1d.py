@@ -150,9 +150,14 @@ class Section1D(rxdsection.RxDSection):
                 # on right edge, only half distance
                 # TODO: verify this is the right thing to do
                 rate_r *= 2
-            g[io, io] += rate_r + rate_l
-            g[io, io + 1] -= rate_r
-            g[io, il] -= rate_l
+            # TODO: does this try/except add overhead? remove
+            try:
+                g[io, io] += rate_r + rate_l
+                g[io, io + 1] -= rate_r
+                g[io, il] -= rate_l
+            except IndexError:
+                print 'indexerror: g.shape = %r, io = %r, il = %r, len(node._states) = %r' % (g.shape, io, il, len(node._states))
+                raise
             # TODO: verify that these are correct
             if i == 0:
                 # for 0 volume nodes, must conserve MASS not concentration
@@ -188,7 +193,7 @@ class Section1D(rxdsection.RxDSection):
             if parent_sec is None:
                 pt = (self._region, None)
             else:
-                pt = (self._region, parent_sec.name())
+                pt = (self._region, parent_sec)
             if parent_sec is None or pt not in missing:
                 missing[pt] = root_id
                 root_id += 1

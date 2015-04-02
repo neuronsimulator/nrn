@@ -1,6 +1,6 @@
 import neuron
-from neuron import h
-from . import species, node, section1d, region
+from neuron import h, nrn
+from . import species, node, section1d, region, morphology
 from .nodelist import NodeList
 import weakref
 import numpy
@@ -11,6 +11,8 @@ import ctypes
 import atexit
 import options
 from .rxdException import RxDException
+import initializer 
+import collections
 
 # aliases to avoid repeatedly doing multiple hash-table lookups
 _numpy_array = numpy.array
@@ -35,7 +37,11 @@ def byeworld():
     # combinations of NEURON and Python, which I think is due to objects
     # getting deleted out-of-order
     global _react_matrix_solver
-    del _react_matrix_solver
+    try:
+        del _react_matrix_solver
+    except NameError:
+        # if it already didn't exist, that's fine
+        pass
     
 atexit.register(byeworld)
 
@@ -76,6 +82,42 @@ nrn_tree_solve.restype = None
 
 _dptr = _double_ptr
 
+_dimensions = collections.defaultdict(lambda: 1)
+_default_dx = 0.25
+_default_method = 'deterministic'
+
+def set_solve_type(domain=None, dimension=None, dx=None, nsubseg=None, method=None):
+    """Specify the numerical discretization and solver options.
+    
+    domain -- a section or Python iterable of sections"""
+    setting_default = False
+    if domain is None:
+        domain = h.allsec()
+        setting_default = True
+    elif isinstance(domain, nrn.Section):
+        domain = [domain]
+    
+    # NOTE: These attributes are set on a per-nrn.Section basis; they cannot 
+    #       assume Section1D objects exist because they might be specified before
+    #       those objects are created
+    
+    # domain is now always an iterable (or invalid)
+    if method is not None:
+        raise RxDException('using set_solve_type to specify method is not yet implemented')
+    if dimension is not None:
+        if dimension not in (1, 3):
+            raise RxDException('invalid option to set_solve_type: dimension must be 1 or 3')
+        factory = lambda: dimension
+        if setting_default:
+            _dimensions.default_factory = factory
+        for sec in domain:
+            _dimensions[sec] = dimension 
+    if dx is not None:
+        raise RxDException('using set_solve_type to specify dx is not yet implemented')
+    if nsubseg is not None:
+        raise RxDException('using set_solve_type to specify nsubseg is not yet implemented')
+    
+
 def _unregister_reaction(r):
     global _all_reactions
     for i, r2 in enumerate(_all_reactions):
@@ -98,9 +140,9 @@ def re_init():
     global _external_solver_initialized
     h.define_shape()
     
-    dim = region._sim_dimension
+    if not species._has_3d:
+        # TODO: if we do have 3D, make sure that we do the necessary parts of this
     
-    if dim == 1:
         # update current pointers
         section1d._purge_cptrs()
         for sr in _species_get_all_species().values():
@@ -110,9 +152,6 @@ def re_init():
         
         # update matrix equations
         _setup_matrices()
-
-    elif dim != 3:            
-        raise RxDException('unknown dimension')
     for sr in _species_get_all_species().values():
         s = sr()
         if s is not None: s.re_init()
@@ -131,16 +170,19 @@ def _invalidate_matrices():
 _rxd_offset = None
 
 def _ode_count(offset):
+    global last_structure_change_cnt
     global _rxd_offset
+    initializer._do_init()
     _rxd_offset = offset
-    if _diffusion_matrix is None: _setup_matrices()
+    if _diffusion_matrix is None or last_structure_change_cnt != _structure_change_count.value: _setup_matrices()
+    last_structure_change_cnt = _structure_change_count.value
     return len(_nonzero_volume_indices)
 
 def _ode_reinit(y):
     y[_rxd_offset : _rxd_offset + len(_nonzero_volume_indices)] = _node_get_states()[_nonzero_volume_indices]
 
 def _ode_fun(t, y, ydot):
-    current_dimension = region._sim_dimension
+    initializer.assert_initialized()
     lo = _rxd_offset
     hi = lo + len(_nonzero_volume_indices)
     if lo == hi: return
@@ -170,15 +212,11 @@ def _ode_fun(t, y, ydot):
         if d:
             states[i] = -v / d
     """
-    if current_dimension == 1:
-        # TODO: refactor so this isn't in section1d?
-        _section1d_transfer_to_legacy()        
-    elif current_dimension == 3:
-        for sr in _species_get_all_species().values():
-            s = sr()
-            if s is not None: s._transfer_to_legacy()
-    else:
-        raise RxDException('unknown dimension: %r' % current_dimension)
+    # TODO: make this so that the section1d parts use cptrs (can't do this directly for 3D because sum, but could maybe move that into the C)
+    # the old way: _section1d_transfer_to_legacy()
+    for sr in _species_get_all_species().values():
+        s = sr()
+        if s is not None: s._transfer_to_legacy()
 
     
     if ydot is not None:
@@ -188,18 +226,25 @@ def _ode_fun(t, y, ydot):
     states[_zero_volume_indices] = 0
 
 def _ode_solve(dt, t, b, y):
+    initializer.assert_initialized()
     if _diffusion_matrix is None: _setup_matrices()
     lo = _rxd_offset
     hi = lo + len(_nonzero_volume_indices)
     n = len(_node_get_states())
     # TODO: this will need changed when can have both 1D and 3D
-    if region._sim_dimension == 3:
+    if species._has_3d:
+        if species._has_1d:
+            raise Exception('development issue: cvode currently does not support hybrid simulations (fix by shifting for zero volume indices)')
+        # NOTE: only working on the rxd part
+        rxd_b = b[lo : hi]
+        # TODO: make sure can handle both 1D and 3D
         m = _scipy_sparse_eye(n, n) - dt * _euler_matrix
         # removed diagonal preconditioner since tests showed no improvement in convergence
-        result, info = _scipy_sparse_linalg_bicgstab(m, dt * b)
+        result, info = _scipy_sparse_linalg_bicgstab(m, dt * rxd_b)
         assert(info == 0)
         b[lo : hi] = _react_matrix_solver(result)
-    elif region._sim_dimension == 1:
+    else:
+        # 1D only; use Hines solver
         full_b = numpy.zeros(n)
         full_b[_nonzero_volume_indices] = b[lo : hi]
         b[lo : hi] = _react_matrix_solver(_diffusion_matrix_solve(dt, full_b))[_nonzero_volume_indices]
@@ -209,12 +254,11 @@ def _ode_solve(dt, t, b, y):
         #b[lo : hi] = _reaction_matrix_solve(dt, full_y, _diffusion_matrix_solve(dt, full_b))[_nonzero_volume_indices]
         # this line doesn't include the reaction contributions to the Jacobian
         #b[lo : hi] = _diffusion_matrix_solve(dt, full_b)[_nonzero_volume_indices]
-    elif region._sim_dimension is not None:
-        raise RxDException('unknown simulation dimension: %r' % region._sim_dimension)
 
 _rxd_induced_currents = None
 
 def _currents(rhs):
+    initializer._do_init()
     # setup membrane fluxes from our stuff
     # TODO: cache the memb_cur_ptrs, memb_cur_charges, memb_net_charges, memb_cur_mapped
     #       because won't change very often
@@ -272,11 +316,11 @@ from scipy.sparse.linalg import spilu as _spilu
 from scipy.sparse.linalg import LinearOperator as _LinearOperator
 from scipy.sparse import csc_matrix
 def _fixed_step_solve(raw_dt):
+    initializer._do_init()
     global pinverse, _fixed_step_count
     global _last_m, _last_dt, _last_preconditioner
 
-    dim = region._sim_dimension
-    if dim is None:
+    if species._species_count == 0:
         return
 
     # allow for skipping certain fixed steps
@@ -294,7 +338,8 @@ def _fixed_step_solve(raw_dt):
     b = _rxd_reaction(states) - _diffusion_matrix * states
     
 
-    if dim == 1:
+    if not species._has_3d:
+        # use Hines solver since 1D only
         states[:] += _reaction_matrix_solve(dt, states, _diffusion_matrix_solve(dt, dt * b))
 
         # clear the zero-volume "nodes"
@@ -304,7 +349,8 @@ def _fixed_step_solve(raw_dt):
         _section1d_transfer_to_legacy()
         
         _last_preconditioner = None
-    elif dim == 3:
+    else:
+        # TODO: this looks to be semi-implicit method because it doesn't take into account the reaction contribution to the Jacobian; do we care?
         # the actual advance via implicit euler
         n = len(states)
         if _last_dt != dt or _last_preconditioner is None:
@@ -323,7 +369,8 @@ def _fixed_step_solve(raw_dt):
 def _rxd_reaction(states):
     # TODO: this probably shouldn't be here
     # TODO: this was included in the 3d, probably shouldn't be there either
-    if _diffusion_matrix is None and region._sim_dimension == 1: _setup_matrices()
+    # TODO: if its None and there is 3D... should we do anything special?
+    if _diffusion_matrix is None and not species._has_3d: _setup_matrices()
 
     b = _numpy_zeros(len(states))
     
@@ -359,6 +406,7 @@ _cur_node_indices = None
 _diffusion_a_ptr, _diffusion_b_ptr, _diffusion_p_ptr = None, None, None
 
 def _diffusion_matrix_solve(dt, rhs):
+    # only get here if already initialized
     global _last_dt
     global _diffusion_a_ptr, _diffusion_d, _diffusion_b_ptr, _diffusion_p_ptr, _c_diagonal
 
@@ -404,6 +452,8 @@ def _diffusion_matrix_solve(dt, rhs):
     return result
 
 def _get_jac(dt, states):
+    # only get here if already initialized
+    
     # now handle the reaction contribution to the Jacobian
     # this works as long as (I - dt(Jdiff + Jreact)) \approx (I - dtJreact)(I - dtJdiff)
     count = 0
@@ -478,6 +528,7 @@ def _reaction_matrix_setup(dt, unexpanded_states):
         _react_matrix_solver = lambda x: x
 
 def _setup():
+    initializer._do_init()
     # TODO: this is when I should resetup matrices (structure changed event)
     global _last_dt, _external_solver_initialized
     _last_dt = None
@@ -537,14 +588,15 @@ def _update_node_data(force=False):
         _cur_map = {}
         last_diam_change_cnt = _diam_change_count.value
         last_structure_change_cnt = _structure_change_count.value
-        if region._sim_dimension == 1:
-            # TODO: merge this with the 3d case
-            for sr in _species_get_all_species().values():
-                s = sr()
-                if s is not None: s._update_node_data()
-            for sr in _species_get_all_species().values():
-                s = sr()
-                if s is not None: s._update_region_indices()
+        #if not species._has_3d:
+        # TODO: merge this with the 3d/hybrid case?
+        for sr in _species_get_all_species().values():
+            s = sr()
+            if s is not None: s._update_node_data()
+        for sr in _species_get_all_species().values():
+            s = sr()
+            if s is not None: s._update_region_indices()
+        #end#if
         for rptr in _all_reactions:
             r = rptr()
             if r is not None: r._update_indices()
@@ -578,25 +630,30 @@ def _setup_matrices():
     global _cur_node_indices
     global _zero_volume_indices, _nonzero_volume_indices
 
+    # TODO: this sometimes seems to get called twice. Figure out why and fix, if possible.
+
     n = len(_node_get_states())
         
-    if region._sim_dimension == 3:
+    if species._has_3d:
         _euler_matrix = _scipy_sparse_dok_matrix((n, n), dtype=float)
 
         for sr in _species_get_all_species().values():
             s = sr()
             if s is not None: s._setup_matrices3d(_euler_matrix)
 
-        _euler_matrix = _euler_matrix.tocsr()
         _diffusion_matrix = -_euler_matrix
+
+        _euler_matrix = _euler_matrix.tocsr()
         _update_node_data(True)
 
-        # TODO: this will need changed when can have both 1D and 3D simultaneously
+        # NOTE: if we also have 1D, this will be replaced with the correct values below
         _zero_volume_indices = []
         _nonzero_volume_indices = range(len(_node_get_states()))
         
 
-    else:
+    if species._has_1d:
+        n = species._1d_submatrix_n()
+    
         # TODO: initialization is slow. track down why
         
         _last_dt = None
@@ -620,10 +677,13 @@ def _setup_matrices():
             
             
             # create the matrix G
-            _diffusion_matrix = _scipy_sparse_dok_matrix((n, n))
+            if not species._has_3d:
+                # if we have both, then put the 1D stuff into the matrix that already exists for 3D
+                _diffusion_matrix = _scipy_sparse_dok_matrix((n, n))
             for sr in _species_get_all_species().values():
                 s = sr()
                 if s is not None:
+                    #print '_diffusion_matrix.shape = %r, n = %r, species._has_3d = %r' % (_diffusion_matrix.shape, n, species._has_3d)
                     s._setup_diffusion_matrix(_diffusion_matrix)
                     s._setup_c_matrix(_linmodadd_c)
             
@@ -649,12 +709,84 @@ def _setup_matrices():
             #_cvode_object.re_init()    
 
             _linmodadd_c = _linmodadd_c.tocsr()
-            _diffusion_matrix = _diffusion_matrix.tocsr()
+            
+            if species._has_3d:
+                _euler_matrix = -_diffusion_matrix
             
         volumes = node._get_data()[0]
         _zero_volume_indices = numpy.where(volumes == 0)[0]
         _nonzero_volume_indices = volumes.nonzero()[0]
 
+
+    if species._has_1d and species._has_3d:
+        # TODO: add connections to matrix; for now: find them
+        hybrid_neighbors = collections.defaultdict(lambda: [])
+        hybrid_diams = {}
+        dxs = set()
+        for sr in _species_get_all_species().values():
+            s = sr()
+            if s is not None:
+                if s._nodes and s._secs:
+                    # have both 1D and 3D, so find the neighbors
+                    # for each of the 3D sections, find the parent sections
+                    for r in s._regions:
+                        dxs.add(r._dx)
+                        for sec in r._secs3d:
+                            parent_sec = morphology.parent(sec)
+                            # are any of these a match with a 1d section?
+                            if s._has_region_section(r, parent_sec):
+                                # this section has a 1d section that is a parent
+                                index1d, indices3d = _get_node_indices(s, r, sec, h.section_orientation(sec=sec), parent_sec, h.parent_connection(sec=sec))
+                                hybrid_neighbors[index1d] += indices3d
+                                hybrid_diams[index1d] = parent_sec(h.parent_connection(sec=sec)).diam
+                            else:
+                                for sec1d in r._secs1d:
+                                    parent_1d = morphology.parent(sec1d)
+                                    if parent_1d == sec:
+                                        # it is the parent of a 1d section
+                                        index1d, indices3d = _get_node_indices(s, r, sec, h.parent_connection(sec=sec1d), sec1d, h.section_orientation(sec=sec1d))
+                                        hybrid_neighbors[index1d] += indices3d
+                                        hybrid_diams[index1d] = sec1d(h.section_orientation(sec=sec1d)).diam
+                                        break
+                                    elif parent_1d == parent_sec:
+                                        # it connects to the parent of a 1d section
+                                        index1d, indices3d = _get_node_indices(s, r, sec, h.section_orientation(sec=sec), sec1d, h.section_orientation(sec=sec1d))
+                                        hybrid_neighbors[index1d] += indices3d
+                                        hybrid_diams[index1d] = sec1d(h.section_orientation(sec=sec1d)).diam
+                                        break
+        if len(dxs) > 1:
+            raise RxDException('currently require a unique value for dx')
+        dx = dxs.pop()
+        diffs = node._diffs
+        n = len(_node_get_states())
+        # TODO: validate that we're doing the right thing at boundaries
+        for index1d in hybrid_neighbors.keys():
+            neighbors3d = set(hybrid_neighbors[index1d])
+            # NOTE: splitting the connection area equally across all the connecting nodes
+            area = (numpy.pi * 0.25 * hybrid_diams[index1d] ** 2) / len(neighbors3d)
+            for i in neighbors3d:
+                d = diffs[i]
+                vol = node._volumes[i]
+                rate = d * area / (vol * dx / 2.)
+                # make the connections on the 3d side
+                _euler_matrix[i, i] -= rate
+                _euler_matrix[i, index1d] += rate
+                # make the connections on the 1d side (scale by vol because conserving mass not volume)
+                _euler_matrix[index1d, index1d] -= rate * vol
+                _euler_matrix[index1d, i] += rate * vol
+            #print 'index1d row sum:', sum(_euler_matrix[index1d, j] for j in xrange(n))
+            #print 'index1d col sum:', sum(_euler_matrix[j, index1d] for j in xrange(n))
+    
+    # we do this last because of performance issues with changing sparsity of csr matrices
+    if _diffusion_matrix is not None:
+        _diffusion_matrix = _diffusion_matrix.tocsr()
+    if _euler_matrix is not None:
+        _euler_matrix = _euler_matrix.tocsr()
+
+    if species._has_1d:
+        if species._has_3d:
+            _diffusion_matrix = -_euler_matrix
+        n = species._1d_submatrix_n()
         if n:
             matrix = _diffusion_matrix[_zero_volume_indices].tocsr()
             indptr = matrix.indptr
@@ -669,35 +801,87 @@ def _setup_matrices():
                     matrixdata[indptr[row] : indptr[row + 1]] = 0
             global _mat_for_zero_volume_nodes
             _mat_for_zero_volume_nodes = matrix
+            # TODO: _mat_for_zero_volume_nodes is used for CVode.
+            #       Figure out if/how it has to be changed for hybrid 1D/3D sims (probably just augment with identity? or change how its used to avoid multiplying by I)
+    
 
 
+        """
+    if pt1 in indices:
+        ileft = indices[pt1]
+        dleft = (d + diffs[ileft]) * 0.5
+        left = dleft * areal / (vol * dx)
+        euler_matrix[index, ileft] += left
+        euler_matrix[index, index] -= left
+    if pt2 in indices:
+        iright = indices[pt2]
+        dright = (d + diffs[iright]) * 0.5
+        right = dright * arear / (vol * dx)
+        euler_matrix[index, iright] += right
+        euler_matrix[index, index] -= right
+"""                
+                
+
+
+def _get_node_indices(species, region, sec3d, x3d, sec1d, x1d):
+    # TODO: remove need for this assumption
+    assert(x1d in (0, 1))
+    disc_indices = region._indices_from_sec_x(sec3d, x3d)
+    #print '%r(%g) connects to the 1d section %r(%g)' % (sec3d, x3d, sec1d, x1d)
+    #print 'disc indices: %r' % disc_indices
+    indices3d = []
+    for node in species._nodes:
+        if node._r == region:
+            for i, j, k in disc_indices:
+                if node._i == i and node._j == j and node._k == k:
+                    indices3d.append(node._index)
+                    #print 'found node %d with coordinates (%g, %g, %g)' % (node._index, node.x3d, node.y3d, node.z3d)
+    # discard duplicates...
+    # TODO: really, need to figure out all the 3d nodes connecting to a given 1d endpoint, then unique that
+    indices3d = list(set(indices3d))
+    #print '3d matrix indices: %r' % indices3d
+    # TODO: remove the need for this assertion
+    if x1d == h.section_orientation(sec=sec1d):
+        # TODO: make this whole thing more efficient
+        # the parent node is the nonzero index on the first row before the diagonal
+        first_row = min([node._index for node in species.nodes(region)(sec1d)])
+        for j in xrange(first_row):
+            if _euler_matrix[first_row, j] != 0:
+                index_1d = j
+                break
+        else:
+            raise RxDException('should never get here; could not find parent')
+    elif x1d == 1 - h.section_orientation(sec=sec1d):
+        # the ending zero-volume node is the one after the last node
+        # TODO: make this more efficient
+        index_1d = max([node._index for node in species.nodes(region)(sec1d)]) + 1
+    else:
+        raise RxDException('should never get here; _get_node_indices apparently only partly converted to allow connecting to 1d in middle')
+    #print '1d index is %d' % index_1d
+    return index_1d, indices3d
+    
 def _init():
+    initializer._do_init()
+    
     # TODO: check about the 0<x<1 problem alluded to in the documentation
     h.define_shape()
     
-    
-    dim = region._sim_dimension
-    if dim == 3:
-        for sr in _species_get_all_species().values():
-            s = sr()
-            if s is not None:
-                # s._register_cptrs()
-                s._finitialize()
-        _setup_matrices()
-    elif dim == 1:
+    if species._has_1d:
         section1d._purge_cptrs()
-        
-        for sr in _species_get_all_species().values():
-            s = sr()
-            if s is not None:
-                s._register_cptrs()
-                s._finitialize()
-        _setup_matrices()
+    
+    for sr in _species_get_all_species().values():
+        s = sr()
+        if s is not None:
+            # TODO: are there issues with hybrid or 3D here? (I don't think so, but here's a bookmark just in case)
+            s._register_cptrs()
+            s._finitialize()
+    _setup_matrices()
 
 #
-# register the initialization handler and the advance handler
+# register the initialization handler and the ion register handler
 #
 _fih = h.FInitializeHandler(_init)
+_fih2 = h.FInitializeHandler(3, initializer._do_ion_register)
 
 #
 # register scatter/gather mechanisms
