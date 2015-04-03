@@ -580,13 +580,14 @@ class Species(_SpeciesMathable):
                         nrn_region = r.nrn_region
                         if nrn_region == 'i':
                             sign = -1
+                            seg = nodeobj.segment
                             cur_map[namei][seg] = len(indices)
                         elif nrn_region == 'o':
                             sign = 1
+                            seg = nodeobj.segment
                             cur_map[nameo][seg] = len(indices)
                         else:
                             continue
-                        seg = nodeobj.segment
                         indices.append(local_indices[i])
                         if volumes[i + offset] == 0:
                             print '0 volume at position %d; surface area there: %g' % (i + offset, surface_area[i + offset])
