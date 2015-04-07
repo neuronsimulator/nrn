@@ -27,8 +27,8 @@ sys.path = ['.'] + sys.path
 
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
-extensions = ['sphinx.ext.autodoc', 'sphinx.ext.intersphinx', 'sphinx.ext.mathjax', 'numpydoc', 'matplotlib.sphinxext.plot_directive'] #'sphinx.ext.autosummary'
-
+extensions = ['sphinx.ext.autodoc', 'sphinx.ext.intersphinx', 'sphinx.ext.mathjax', 'numpydoc', 'matplotlib.sphinxext.plot_directive', 'sphinx.ext.autosummary']
+numpydoc_show_class_members = False 
 # see here for info on autosummary: http://sphinx-doc.org/latest/ext/autosummary.html
 
 # Add any paths that contain templates here, relative to this directory.

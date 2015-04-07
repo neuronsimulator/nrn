@@ -4,10 +4,11 @@ NEURON 7.3 documentation
 
 Quick Links
 -----------
-- :ref:`genindex`
+- :ref:`genindex`, `Download in zip format <http://www.neuron.yale.edu/neuron/static/new_doc/nrnhelp.zip>`_
 - Old documentation: `Quick Index <http://www.neuron.yale.edu/neuron/static/docs/help/quick_reference.html>`_ (contributed by `Mike Neubig <neubig@salk.edu>`_\ ),
   `Index <http://www.neuron.yale.edu/neuron/static/docs/help/index.html>`_\ ,
-  `Contents <http://www.neuron.yale.edu/neuron/static/docs/help/hier.html>`_
+  `Contents <http://www.neuron.yale.edu/neuron/static/docs/help/hier.html>`_,
+  `Download in zip format <http://www.neuron.yale.edu/neuron/static/docs/nrnhelp.zip>`_
 - Commonly used:
     :class:`Deck`, `File <programming/io/file.html>`_, `Glyph <visualization/glyph.html>`_,
     `Graph <visualization/graph.html>`_, `GUIMath <programming/math/guimath.html>`_,

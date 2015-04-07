@@ -1208,16 +1208,16 @@ CVode
 
 
     Description:
-        When true, compute i_membrane_ for all segments during a simulation.
+        When true, compute i_membrane\_ for all segments during a simulation.
         This is closely related to i_membrane which is computed when the
-        extracellular mechanism is inserted. However, i_membrane_ (note
-        the trailing '_'), has dimensions of nA instead of mA/cm2 (ie. total
+        extracellular mechanism is inserted. However, i_membrane\_ (note
+        the trailing '\_'), has dimensions of nA instead of mA/cm2 (ie. total
         membrane current out of the segment), is available
         at 0 area nodes (locations 0 and 1 of every section), does not require
         that extracellular be inserted (and so is much faster), and works
         during parallel simuations with variable step methods. (ie. does not
         require IDA which is currently not available in parallel).
-        i_membrane_ exists as a range variable only when this function has
+        i_membrane\_ exists as a range variable only when this function has
         been called with an argument of 1.
 
          

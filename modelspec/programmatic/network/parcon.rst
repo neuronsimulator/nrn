@@ -2969,5 +2969,4 @@ Parallel Transfer
             For each netcon
               netreceive index, srcgid or type name of source object, active, delay, weight vector
 
-----
 
