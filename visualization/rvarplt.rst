@@ -39,7 +39,7 @@ RangeVarPlot
         currently accessed section.) 
 
     .. seealso::
-        :func:`distance`
+        :func:`distance`, :meth:`Graph.addobject`
 
     Example:
         An example is plotting the 
@@ -54,7 +54,7 @@ RangeVarPlot
             rvp... //specify range begin and end 
             imp... //specify impedance computation 
             g = new Graph() 
-            g.addobject(*rvp*) 
+            g.addobject(rvp) 
 
 
          
