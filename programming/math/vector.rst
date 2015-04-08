@@ -260,9 +260,9 @@ Vector
         Appends 10 elements, each having a value of 0, to ``vec``. 
 
         .. code-block::
-            none
+            python
 
-            ``vec.resize(10)`` 
+            vec.resize(10)
 
         removes the last 20 elements from the  ``vec``.The values of the first 
         10 elements are unchanged. 
