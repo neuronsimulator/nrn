@@ -3,5 +3,6 @@
 http://neuron.yale.edu/hg/nrnhelprst/
 ** to compile to html
 make html
+** will put results on your neurosimlab webspace
 
 
