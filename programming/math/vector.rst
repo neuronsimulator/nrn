@@ -32,7 +32,8 @@ Vector
         ``obj = new Vector(size)``
 
         ``obj = new Vector(size, init)``
-
+        
+        ``obj = new Vector(python_iterable)``
 
     Description:
         The vector class provides convenient functions for manipulating one-dimensional 
@@ -92,7 +93,7 @@ Vector
         temporary objects to break the process into several separate expressions. 
          
 
-    Example:
+    HOC examples:
 
         .. code-block::
             none
@@ -111,10 +112,35 @@ Vector
         will create a vector with 1 index which has value of 0. It is seldom 
         necessary to specify a size for a new vector since most operations, if necessary, 
         increase or decrease the number of available elements as needed. 
+        
+    Python examples:
+    
+        .. code-block::
+            python
+            
+            from neuron import h
+            v = h.Vector([1, 2, 3])
+        
+        will create a vector of length 3 whose entries are: 1, 2, and 3. The
+        constructor takes any Python iterable. In particular, it also works
+        with numpy arrays:
+        
+        .. code-block::
+            python
+            
+            from neuron import h
+            import numpy
+            
+            x = numpy.linspace(0, 2 * numpy.pi, 50)
+            y = h.Vector(numpy.sin(x))
+        
+        produces a vector ``y`` of length 50 corresponding to the sine of evenly
+        spaced points between 0 and 2 pi, inclusive.
          
 
     .. seealso::
-        :ref:`double <keyword_double>`,	:data:`Vector.x`, :meth:`Vector.resize`
+        :ref:`double <keyword_double>`,	:data:`Vector.x`, :meth:`Vector.resize`,
+        :meth:`Vector.apply`
 
          
 
