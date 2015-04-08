@@ -27,7 +27,7 @@ Vector
          
 
     Syntax:
-        ``obj = new Vector()``
+        ``obj = h.Vector()``
 
         ``obj = new Vector(size)``
 
