@@ -1,0 +1,1 @@
+Search.setIndex({envversion:42,terms:{vector:0},objtypes:{},objnames:{},filenames:["index","vector"],titles:["NEURON 7.4 documentation","vector"],objects:{},titleterms:{quick:0,neuron:0,link:0,document:0,vector:1}})

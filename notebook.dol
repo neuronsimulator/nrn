@@ -1,0 +1,7 @@
+* 15apr08 initial setup, compile instructions
+** adapted from the NEURON 7.3 documentation
+http://neuron.yale.edu/hg/nrnhelprst/
+** to compile to html
+make html
+
+
