@@ -43,9 +43,10 @@ clean:
 
 html:
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
-	cp -r $(BUILDDIR)/html/ $HOME/public_html/pyhelp/
+	\cp -r $(BUILDDIR)/html/* $(HOME)/public_html/pyhelp/
 	@echo
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html."
+	@echo "Access them via http://neurosimlab.org/$(USER)/pyhelp/"
 
 dirhtml:
 	$(SPHINXBUILD) -b dirhtml $(ALLSPHINXOPTS) $(BUILDDIR)/dirhtml
