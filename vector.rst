@@ -318,6 +318,7 @@ Vector
 
     Syntax:
         ``s = vec.label()``
+        
         ``s = vec.label(str_type)``
 
     Description:
