@@ -2055,7 +2055,7 @@ Vector
 
 
     Syntax:
-        ``error = data_vec.fit(fit_vec,"fcn",indep_vec,&p1,[&p2],...,[&pN])``
+        ``error = data_vec.fit(fit_vec,"fcn",indep_vec, pointer1, [pointer2], ... [pointerN])``
 
 
     Description:
