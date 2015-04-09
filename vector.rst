@@ -330,7 +330,7 @@ Vector
         .. code-block::
             python
 
-            objref vec 
+            from neuron import h
             vec = h.Vector() 
             print vec.label() 
             vec.label("hello") 
@@ -688,6 +688,12 @@ Vector
 
         returns a 0.  The vector does not contain an element whose value is 50. 
 
+    .. note::
+    
+        An h.Vector is a Python iterable, so you can also use Python's ``in``
+        keyword: ``5 in h.Vector([1, 5])`` returns True.
+    
+        
          
 
 ----
@@ -812,7 +818,7 @@ Vector
 
 
     Syntax:
-        ``newvec = vsrc.c``
+        ``newvec = vsrc.c()``
 
         ``newvec = vsrc.c(srcstart)``
 
@@ -838,7 +844,7 @@ Vector
 
 
     Syntax:
-        ``newvec = vsrc.cl``
+        ``newvec = vsrc.cl()``
 
         ``newvec = vsrc.cl(srcstart)``
 
@@ -1086,7 +1092,7 @@ Vector
             print "note roundoff error, vs.x[3] - .3 =", vs.x[3] - .3 
             print vs.indwhere("==", .5) 
              
-            vd = vs.c.indvwhere(vs, "[)", .3, .7) 
+            vd = vs.c().indvwhere(vs, "[)", .3, .7) 
             vd.printf()
 
 
@@ -2184,17 +2190,17 @@ Vector
             #... 
             xs = h.Vector(10) 
             xs.indgen() 
-            ys = xs.c.mul(xs) 
+            ys = xs.c().mul(xs) 
             ys.line(g, xs, 1, 0) # black reference line 
              
             xd = h.Vector() 
              
             xd.indgen(-.5, 10.5, .1) 
-            yd = ys.c.interpolate(xd, xs) 
+            yd = ys.c().interpolate(xd, xs) 
             yd.line(g, xd, 3, 0) # blue more points than reference 
              
             xd.indgen(-.5, 13, 3) 
-            yd = ys.c.interpolate(xd, xs) 
+            yd = ys.c().interpolate(xd, xs) 
             yd.line(g, xd, 2, 0) # red fewer points than reference 
 
 
@@ -2580,10 +2586,10 @@ Vector
             vec = h.Vector() 
             vec.indgen(1,5,1) 
             vec.printf()
-            vec.c.rotate(2).printf()
-            vec.c.rotate(2, 0).printf() 
-            vec.c.rotate(-2).printf() 
-            vec.c.rotate(-2, 0).printf() 
+            vec.c().rotate(2).printf()
+            vec.c().rotate(2, 0).printf() 
+            vec.c().rotate(-2).printf() 
+            vec.c().rotate(-2, 0).printf() 
 
 
          
@@ -3586,6 +3592,8 @@ Refer to this source for further information.
         .. code-block::
             python
 
+            from neuron import h, gui
+
             b = h.VBox() 
             b.intercept(1) 
             g1 = h.Graph() 
@@ -3599,20 +3607,20 @@ Refer to this source for further information.
             MINSUM = 50 
             DT = 1000	# ms per bin of v1 (vsrchist) 
             TRIALS = 1 
-             
+
             v1 = h.Vector(VECSIZE) 
-               
+
             r = h.Random() 
-                        
-               
-            for (ii=0; ii<VECSIZE; ii+=1) { 
-            	v1.x[ii] = int(r.uniform(0,10)) 
-            } 
+                    
+            for ii in xrange(VECSIZE):
+                v1.x[ii] = int(r.uniform(0, 10))
+
             v1.plot(g1) 
-             
+
             v2 = h.Vector() 
-            v2.psth(v1,DT,TRIALS,MINSUM) 
+            v2.psth(v1, DT, TRIALS, MINSUM) 
             v2.plot(g2) 
+
 
 
          
