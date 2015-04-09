@@ -675,7 +675,7 @@ Vector
         .. code-block::
             python
 
-            vec = h.Vector (10) 
+            vec = h.Vector(10) 
             vec.indgen(5) 
             vec.contains(30) 
 
@@ -771,7 +771,7 @@ Vector
             v3 = h.Vector() 
             v3.copy(v1, 0, 0, -1, 2, 1) 
             v3.copy(v2, 1, 0, -1, 2, 1) 
-            v3.printf 
+            v3.printf()
 
 
     Example:
@@ -820,7 +820,7 @@ Vector
 
 
     Description:
-        Return a h.vector which is a copy of the vsrc vector, but does not copy 
+        Return a h.Vector which is a copy of the vsrc Vector, but does not copy 
         the label. For a complete copy including the label use :meth:`Vector.cl`. 
         (Identical to the :meth:`Vector.at` function but has a short name that suggests 
         copy or clone). Useful in the construction of filter chains. 
@@ -846,7 +846,7 @@ Vector
 
 
     Description:
-        Return a h.vector which is a copy, including the label, of the vsrc vector. 
+        Return a h.Vector which is a copy, including the label, of the vsrc vector. 
         (Similar to the :meth:`Vector.c` function which does not copy the label) 
         Useful in the construction of filter chains. 
         Note that with no arguments, it is not necessary to type the 
@@ -870,7 +870,7 @@ Vector
 
 
     Description:
-        Return a h.vector consisting of all or part of another. 
+        Return a h.Vector consisting of all or part of another. 
          
         This function predates the introduction of the vsrc.c, "clone", function 
         which is synonymous but is retained for backward compatibility. 
@@ -908,15 +908,58 @@ Vector
 
 
     Syntax:
-        ``double px[n]``
-
-        ``obj = vdest.from_double(n, &px)``
+        ``obj = vdest.from_double(n, pointer)``
 
 
     Description:
         Resizes the vector to size n and copies the values from the double array 
-        to the vector. 
+        to the vector.
+        
+    Examples:
+    
+        Interacting with a HOC array:
+        
+        .. code-block::
+            python
+            
+            from neuron import h
+            
+            # create and populate a HOC array
+            h('double px[5]')
+            h.px[0] = 5
+            h.px[3] = 2
+            
+            # transfer the data
+            v.from_double(5, h._ref_px[0])
+            
+            # print out the vector
+            v.printf()
+        
+        Copying from a numpy array into an existing vector:
+        
+        .. code-block::
+            python
+            
+            from neuron import h
+            import neuron
+            import numpy
 
+            a = numpy.array([5, 1, 6], 'd')
+            v = h.Vector()
+
+            v.from_double(3, neuron.numpy_element_ref(a, 0))
+
+            v.printf()
+            
+            
+            
+        
+    .. note::
+    
+        To create         
+        a new vector from a numpy array just use
+        ``v = h.Vector(python_iterable)``.
+            
 
 ----
 
@@ -1401,7 +1444,7 @@ Vector
 
 
     .. seealso::
-        :meth:`Graph.vector`
+        :meth:`Graph.Vector`
 
          
 
@@ -1715,7 +1758,7 @@ Vector
 
 
     Description:
-        Return a h.vector consisting of the elements of ``vsrc`` whose indices are given 
+        Return a h.Vector consisting of the elements of ``vsrc`` whose indices are given 
         by the elements of ``vindex``. 
          
 
@@ -2414,7 +2457,7 @@ Vector
 
 
     Description:
-        Return a h.vector of indices which sort the vsrc elements in numerical 
+        Return a h.Vector of indices which sort the vsrc elements in numerical 
         order. That is vsrc.index(vsrc.sortindex) is equivalent to vsrc.sort(). 
         If vdest is present, use that as the destination vector for the indices. 
         This, if it is large enough, avoids the destruct/construct of vdest. 
