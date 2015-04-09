@@ -29,23 +29,27 @@ Vector
     Syntax:
         ``obj = h.Vector()``
 
-        ``obj = new Vector(size)``
+        ``obj = h.Vector(size)``
 
-        ``obj = new Vector(size, init)``
+        ``obj = h.Vector(size, init)``
         
-        ``obj = new Vector(python_iterable)``
+        ``obj = h.Vector(python_iterable)``
 
     Description:
-        The vector class provides convenient functions for manipulating one-dimensional 
-        arrays of numbers. An object created with this class can be thought of as 
+        NEURON's Vector class provides functionality that is similar (and partly interchangeable) with a numpy
+	one-dimensional array of doubles.  
+	The reason for the continued use of Vector is both due to back-compatibility and due to the many faster C-level
+	extensions that have been written as NMOD programs that make use of this class.
+
+        A Vector object created with this class can be thought of as 
         containing a ``double x[]`` variable. Individual elements of this array can 
-        be manipulated with the normal :samp:`{objref}.x[{index}]` notation. 
-        Most of the Vector functions apply their operations to each element of the 
-        x array thus avoiding the often tedious scaffolding required by an otherwise 
-        un-encapsulated double array. 
-         
-        A vector can be created with length *size* and with each element set 
-        to the value of *init*. 
+        be manipulated with a :samp:`{objref}.x[{index}]` notation. 
+	Alternatively, a :samp:`{objref}[{index}]` notation can be used to access Vector elements **but 
+	cannot be used to set elements.**  Vector slices are not directly supported but are replicated with the functionality
+	of Vector.c() (see below).
+
+        A vector can be created with length *size* and with each element set to the value of *init* or can be created using
+	a Python iterable.
          
         Vector methods that modify the elements are generally of the form 
 
@@ -56,69 +60,63 @@ Vector
 
         in which the values of vsrcdest on entry to the 
         method are used as source values by the method to compute values which replace 
-        the old values in vsrcdest and the original vsrcdest object reference is 
-        the return value of the method. For example, v1 = v2 + v3 would be 
-        written, 
+        the old values in vsrcdest.  The return value is simply an additional reference to the same Vector.
+
+        For example, v1 = v2 + v3 would be written, 
 
         .. code-block::
             none
 
             v1 = v2.add(v3) 
 
-        However, this results in two, often serious, side effects. First, 
-        the v2 elements are changed and so the original values are lost. Furthermore 
+        However, this results in two, sometimes undesirable, side effects. First, 
+        the v2 elements are changed so that the original values are lost. Furthermore, 
         v1 at the end is a reference to the same Vector object pointed to by v2. 
         That is, if you subsequently change the elements of v2, the elements 
-        of v1 will change as well since v1 and v2 are in fact labels for the same object. 
+        of v1 will change as well since v1 and v2 are in fact both labels for the same object. 
          
-        When these side effects need to be avoided, one uses the Vector.c function 
-        which returns a 
-        reference to a completely new Vector which is an identical copy. ie. 
+        To avoid these side effects, one can use the Vector.c() function 
+        which returns a reference to a new h.Vector which is a copy of the original. ie. 
 
         .. code-block::
             none
 
-            	v1 = v2.c.add(v3) 
+            	v1 = v2.c().add(v3) 
 
-        leaves v2 unchanged, and v1 points to a completely new Vector. 
+        leaves v2 unchanged, and v1 points to a new h.Vector. 
         One can build up elaborate vector expressions in this manner, ie 
         v1 = v2*s2 + v3*s3 + v4*s4 could be written 
 
         .. code-block::
             none
 
-            	v1 = v2.c.mul(s2).add(v3.c.mul(s3)).add(v4.c.mul(s4)) 
+            	v1 = v2.c().mul(s2).add(v3.c().mul(s3)).add(v4.c().mul(s4)) 
 
-        but if the expressions get too complex it is probably clearer to employ 
+        If the expressions get too complex it is probably clearer to employ 
         temporary objects to break the process into several separate expressions. 
          
 
-    HOC examples:
+    Examples:
 
         .. code-block::
             none
 
-            objref vec
-            vec = new Vector(20,5)
+            vec = h.Vector(20,5)
 
         will create a vector with 20 indices, each having the value of 5. 
 
         .. code-block::
-            none
+            python
 
-            objref vec1
-            vec1 = new Vector()
+            vec1 = h.Vector()
 
-        will create a vector with 1 index which has value of 0. It is seldom 
-        necessary to specify a size for a new vector since most operations, if necessary, 
-        increase or decrease the number of available elements as needed. 
+        will create a vector with 0 size.  It is seldom 
+        necessary to specify a size for a Vector since most operations, if necessary, 
+        increase or decrease the number of elements as needed. 
         
-    Python examples:
-    
         .. code-block::
             python
             
-            from neuron import h
             v = h.Vector([1, 2, 3])
         
         will create a vector of length 3 whose entries are: 1, 2, and 3. The
@@ -128,7 +126,6 @@ Vector
         .. code-block::
             python
             
-            from neuron import h
             import numpy
             
             x = numpy.linspace(0, 2 * numpy.pi, 50)
@@ -139,11 +136,8 @@ Vector
          
 
     .. seealso::
-        :ref:`double <keyword_double>`,	:data:`Vector.x`, :meth:`Vector.resize`,
-        :meth:`Vector.apply`
-
+        :data:`Vector.x`, :meth:`Vector.resize`, :meth:`Vector.apply`
          
-
 ----
 
 
@@ -156,44 +150,29 @@ Vector
 
 
     Description:
-        Elements of a vector can be accessed with ``vec.x[index]`` notation. 
+        Elements of a vector can be accessed with ``vec.x[index]`` notation for either access or assignment. 
         Vector indices range from 0 to Vector.size()-1. 
-        This 
-        notation is superior to the older ``vec.get()`` and ``vec.set()`` notations for 
-        three reasons: 
-         
-        1.  It performs the roles of both 
-            ``vec.get`` and ``vec.set`` with a syntax that is consistent with the normal 
-            syntax for a ``double`` array inside of an object. 
-        2.  It can be viewed by a field editor (since it can appear on the left hand 
-            side of an assignment statement). 
-        3.  You can take its  address for functions which require that kind of argument. 
+        Vector contents can also be accessed with ``vec.get(index)`` or set with ``vec.set(index, value)``
 
     Example:
-        ``print vec.x[0]`` prints the value of the 0th (first) element. 
+        ``print vec.x[0], vec[0]`` prints the value of the 0th (first) element twice. 
          
-        ``vec.x[i] = 3`` sets the i'th element to 3. 
-         
+        ``vec.x[i] = 3`` sets the i'th element to 3. **Cannot** use vec[i] here.
 
         .. code-block::
             none
 
-            xpanel("show a field editor") 
-            xvalue("vec.x[3]") 
-            xpvalue("last element", &vec.x[vec.size() - 1]) 
-            xpanel() 
+            h.xpanel("show a field editor") 
+            h.xpvalue("last element", vec._ref_x[int(vec.size()) - 1]) 
+            h.xpanel() 
 
         Note, however, that there is a potential difficulty with the :func:`xpvalue` field 
         editor since, if vec is ever resized, then the pointer will be invalid. In 
         this case, the field editor will display the string, "Free'd". 
 
-    .. warning::
-        ``vec.x[-1]`` returns the value of the first element of the vector, just as 
-        would ``vec.x[0]``. 
-         
-        ``vec.x(i)`` returns the value of index *i* just as does ``vec.x[i]``. 
-
-         
+	.. warning::
+        ``vec.x[-1]`` or ``vec[-1]`` returns the value of the last element of the vector but ``vec._ref_x`` cannot be accessed in
+	this way.
 
 ----
 
@@ -237,7 +216,7 @@ Vector
 
     Description:
         Resize the vector.  If the vector is made smaller, then trailing elements 
-        will be deleted.  If it is expanded, new elements will be initialized to 0 
+        will be deleted.  If it is expanded, h.elements will be initialized to 0 
         and original elements will remain unchanged. 
          
         Warning: Any function that 
@@ -254,7 +233,7 @@ Vector
             none
 
             objref vec 
-            vec = new Vector(20,5) 
+            vec = h.Vector(20,5) 
             vec.resize(30)
         
         Appends 10 elements, each having a value of 0, to ``vec``. 
@@ -290,8 +269,8 @@ Vector
         vector. This is NOT the size of the vector. The vector size can efficiently 
         grow up to this value without reallocating memory. 
          
-        With an argument, frees the old memory space and allocates new 
-        memory space for the vector, copying old element values to the new elements. 
+        With an argument, frees the old memory space and allocates h.
+        memory space for the vector, copying old element values to the h.elements. 
         If the request is less than the size, the size is truncated to the request. 
         For vectors that grow continuously, it may be more efficient to 
         allocate enough space at the outset, or else occasionally change the 
@@ -305,7 +284,7 @@ Vector
             none
 
             objref y 
-            y = new Vector(10) 
+            y = h.Vector(10) 
             y.size() 
             y.buffer_size() 
             y.resize(5) 
@@ -379,7 +358,7 @@ Vector
             none
 
             objref vec 
-            vec = new Vector(20,5) 
+            vec = h.Vector(20,5) 
             vec.fill(9,2,7) 
 
         assigns 9 to vec.x[2] through vec.x[7] 
@@ -416,7 +395,7 @@ Vector
             none
 
             objref vec 
-            vec = new Vector() 
+            vec = h.Vector() 
             print vec.label() 
             vec.label("hello") 
             print vec.label() 
@@ -499,7 +478,7 @@ Vector
             none
 
             objref dv 
-            dv = new Vector() 
+            dv = h.Vector() 
             dv.record(&terminal.v(.5)) 
             init()	// or push the "Init and Run" button on the control panel 
             run() 
@@ -509,7 +488,7 @@ Vector
         To remove 
         dv from the list of record vectors, the easiest method is to destroy the instance 
         with 
-        ``dv = new Vector()`` 
+        ``dv = h.Vector()`` 
 
     .. seealso::
         :func:`finitialize`, :func:`fadvance`, :func:`play`, :data:`t`, :func:`play_remove`
@@ -698,7 +677,7 @@ Vector
             none
 
             objref vec 
-            vec = new Vector(100) 
+            vec = h.Vector(100) 
             vec.indgen(5) 
 
         creates a vector with 100 elements going from 0 to 495 in increments of 5. 
@@ -744,9 +723,9 @@ Vector
             none
 
             objref vec, vec1, vec2 
-            vec = new Vector (10,4) 
-            vec1 = new Vector (10,5) 
-            vec2 = new Vector (10,6) 
+            vec = h.Vector (10,4) 
+            vec1 = h.Vector (10,5) 
+            vec2 = h.Vector (10,6) 
             vec.append(vec1, vec2, 7, 8, 9) 
 
         turns ``vec`` into a 33 element vector, whose first ten elements = 4, whose 
@@ -815,7 +794,7 @@ Vector
         .. code-block::
             none
 
-            vec = new Vector (10) 
+            vec = h.Vector (10) 
             vec.indgen(5) 
             vec.contains(30) 
 
@@ -889,11 +868,11 @@ Vector
         
  
             objref v1, v2 
-            v1 = new Vector(30) 
+            v1 = h.Vector(30) 
             v1.indgen() 
             v1.printf() 
             @code... 
-            v2 = new Vector() 
+            v2 = h.Vector() 
             v2.copy(v1, 0, 1, -1, 1, 2) 
             v2.printf() 
 
@@ -903,14 +882,14 @@ Vector
             none
             
             objref v1, v2, v3 
-            v1 = new Vector(15) 
+            v1 = h.Vector(15) 
             v1.indgen() 
             v1.printf() 
-            v2 = new Vector(15) 
+            v2 = h.Vector(15) 
             v2.indgen(10) 
             v2.printf() 
             @code... 
-            v3 = new Vector() 
+            v3 = h.Vector() 
             v3.copy(v1, 0, 0, -1, 2, 1) 
             v3.copy(v2, 1, 0, -1, 2, 1) 
             v3.printf 
@@ -921,8 +900,8 @@ Vector
         .. code-block::
             none
 
-            vec = new Vector(100,10) 
-            vec1 = new Vector() 
+            vec = h.Vector(100,10) 
+            vec1 = h.Vector() 
             vec1.indgen(5,105,10) 
             vec.copy(vec1, 50, 3, 6) 
 
@@ -936,7 +915,7 @@ Vector
         .. code-block::
             none
 
-            vec = new Vector(20) 
+            vec = h.Vector(20) 
             vec.indgen() 
             vec.copy(vec, 10) 
 
@@ -962,7 +941,7 @@ Vector
 
 
     Description:
-        Return a new vector which is a copy of the vsrc vector, but does not copy 
+        Return a h.vector which is a copy of the vsrc vector, but does not copy 
         the label. For a complete copy including the label use :meth:`Vector.cl`. 
         (Identical to the :meth:`Vector.at` function but has a short name that suggests 
         copy or clone). Useful in the construction of filter chains. 
@@ -988,7 +967,7 @@ Vector
 
 
     Description:
-        Return a new vector which is a copy, including the label, of the vsrc vector. 
+        Return a h.vector which is a copy, including the label, of the vsrc vector. 
         (Similar to the :meth:`Vector.c` function which does not copy the label) 
         Useful in the construction of filter chains. 
         Note that with no arguments, it is not necessary to type the 
@@ -1012,18 +991,18 @@ Vector
 
 
     Description:
-        Return a new vector consisting of all or part of another. 
+        Return a h.vector consisting of all or part of another. 
          
         This function predates the introduction of the vsrc.c, "clone", function 
         which is synonymous but is retained for backward compatibility. 
          
-        It merely avoids the necessity of a ``vdest = new Vector()`` command and 
+        It merely avoids the necessity of a ``vdest = h.Vector()`` command and 
         is equivalent to 
 
         .. code-block::
             none
 
-            vdest = new Vector() 
+            vdest = h.Vector() 
             vdest.copy(vsrc, start, end) 
 
 
@@ -1033,7 +1012,7 @@ Vector
             none
 
             objref vec, vec1 
-            vec = new Vector() 
+            vec = h.Vector() 
             vec.indgen(10,50,2) 
             vec1 = vec.at(2, 10) 
 
@@ -1094,8 +1073,8 @@ Vector
         .. code-block::
             none
 
-            vec = new Vector(25) 
-            vec1 = new Vector() 
+            vec = h.Vector(25) 
+            vec1 = h.Vector() 
             vec.indgen(10) 
             vec1.where(vec, ">=", 50) 
 
@@ -1106,15 +1085,15 @@ Vector
             none
 
             objref r 
-            r = new Random() 
-            vec = new Vector(25) 
-            vec1 = new Vector() 
+            r = h.Random() 
+            vec = h.Vector(25) 
+            vec1 = h.Vector() 
             r.uniform(10,20) 
             vec.fill(r) 
             vec1.where(vec, ">", 15) 
 
         creates ``vec1`` with random elements gotten from ``vec`` which have values 
-        greater than 15.  The new elements in vec1 will be ordered 
+        greater than 15.  The h.elements in vec1 will be ordered 
         according to the order of their appearance in ``vec``. 
 
     .. seealso::
@@ -1179,7 +1158,7 @@ Vector
         .. code-block::
             none
 
-            vs = new Vector() 
+            vs = h.Vector() 
              
             {vs.indgen(0, .9, .1) 
             vs.printf()} 
@@ -1335,14 +1314,14 @@ Vector
             none
 
             objref v1, v2, f 
-            v1 = new Vector() 
+            v1 = h.Vector() 
             v1.indgen(20,30,2) 
             v1.printf() 
-            f = new File() 
+            f = h.File() 
             f.wopen("temp.tmp") 
             v1.vwrite(f) 
              
-            v2 = new Vector() 
+            v2 = h.Vector() 
             f.ropen("temp.tmp") 
             v2.vread(f) 
             v2.printf() 
@@ -1386,13 +1365,13 @@ Vector
         .. code-block::
             none
 
-            vec = new Vector() 
+            vec = h.Vector() 
             vec.indgen(0, 1, 0.1) 
             vec.printf("%8.4f\n") 
 
         prints the numbers 0.0000 through 0.9000 in increments of 0.1.  Each number will 
         take up a total of eight spaces, will have four decimal places 
-        and will be printed on a new line. 
+        and will be printed on a h.line. 
 
     .. warning::
         No error checking is done on the format string and invalid formats can cause 
@@ -1536,9 +1515,9 @@ Vector
             none
 
             objref vec, g 
-            g = new Graph() 
+            g = h.Graph() 
             g.size(0,10,-1,1) 
-            vec = new Vector() 
+            vec = h.Vector() 
             vec.indgen(0,10, .1) 
             vec.apply("sin") 
             vec.plot(g, .1) 
@@ -1591,9 +1570,9 @@ Vector
             none
 
             objref vec, g 
-            g = new Graph() 
+            g = h.Graph() 
             g.size(0,10,-1,1) 
-            vec = new Vector() 
+            vec = h.Vector() 
             vec.indgen(0,10, .1) 
             vec.apply("sin") 
             for i=0,3 { vec.line(g, .1) vec.rotate(10) } 
@@ -1637,11 +1616,11 @@ Vector
 
             objref vec, xvec, errvec 
             objref g 
-            g = new Graph() 
+            g = h.Graph() 
             g.size(0,100, 0,250) 
-            vec = new Vector() 
-            xvec = new Vector() 
-            errvec = new Vector() 
+            vec = h.Vector() 
+            xvec = h.Vector() 
+            errvec = h.Vector() 
              
             vec.indgen(0,200,20) 
             xvec.indgen(0,100,10) 
@@ -1708,7 +1687,7 @@ Vector
          
         This function returns a vector that contains the counts in each bin, so while it is 
         necessary to declare an object reference (``objref newvect``), it is not necessary 
-        to execute ``newvect = new Vector()``. 
+        to execute ``newvect = h.Vector()``. 
          
         The first element of ``newvect`` is 0 (``newvect.x[0] = 0``). 
         For ``ii > 0``, ``newvect.x[ii]`` equals the number of 
@@ -1729,24 +1708,24 @@ Vector
 
             objref interval, hist, rand 
              
-            rand = new Random() 
+            rand = h.Random() 
             rand.negexp(1) 
              
-            interval = new Vector(100) 
+            interval = h.Vector(100) 
             interval.setrand(rand) // random intervals 
              
             hist = interval.histogram(0, 10, .1) 
              
             // and for a manhattan style plot ... 
             objref g, v2, v3 
-            g = new Graph() 
+            g = h.Graph() 
             g.size(0,10,0,30) 
             // create an index vector with 0,0, 1,1, 2,2, 3,3, ... 
-            v2 = new Vector(2*hist.size())      
+            v2 = h.Vector(2*hist.size())      
             v2.indgen(.5)  
             v2.apply("int")  
             //  
-            v3 = new Vector(1)  
+            v3 = h.Vector(1)  
             v3.index(hist, v2)  
             v3.rotate(-1)            // so different y's within each pair 
             v3.x[0] = 0  
@@ -1806,7 +1785,7 @@ Vector
          
         This function returns a vector, so while it is 
         necessary to declare a vector object (``objref vectobj``), it is not necessary 
-        to declare *vectobj* as a ``new Vector()``. 
+        to declare *vectobj* as a ``h.Vector()``. 
          
         To plot, use ``v.indgen(low,high,width)`` for the x-vector argument. 
 
@@ -1817,17 +1796,17 @@ Vector
 
             objref r, data, hist, x, g 
              
-            r = new Random() 
+            r = h.Random() 
             r.normal(1, 2) 
              
-            data = new Vector(100) 
+            data = h.Vector(100) 
             data.setrand(r) 
              
             hist = data.sumgauss(-4, 6, .5, 1) 
-            x = new Vector(hist.size()) 
+            x = h.Vector(hist.size()) 
             x.indgen(-4, 6, .5) 
              
-            g = new Graph() 
+            g = h.Graph() 
             g.size(-4, 6, 0, 30) 
             hist.plot(g, x) 
 
@@ -1870,7 +1849,7 @@ Vector
 
 
     Description:
-        Return a new vector consisting of the elements of ``vsrc`` whose indices are given 
+        Return a h.vector consisting of the elements of ``vsrc`` whose indices are given 
         by the elements of ``vindex``. 
          
 
@@ -1880,8 +1859,8 @@ Vector
             none
 
             objref vec, vec1, vec2 
-            vec = new Vector(100) 
-            vec2 = new Vector() 
+            vec = h.Vector(100) 
+            vec2 = h.Vector() 
             vec.indgen(5) 
             vec2.indgen(49, 59, 1) 
             vec1 = vec.ind(vec2) 
@@ -1915,10 +1894,10 @@ Vector
             none
 
             objref vec, g, r 
-            vec = new Vector(50) 
-            g = new Graph() 
+            vec = h.Vector(50) 
+            g = h.Graph() 
             g.size(0,50,0,100) 
-            r = new Random() 
+            r = h.Random() 
             r.poisson(.2) 
             vec.plot(g) 
              
@@ -2032,7 +2011,7 @@ Vector
             none
 
             objref vec 
-            vec = new Vector() 
+            vec = h.Vector() 
             vec.indgen(0, 10, 2) 
             func sq(){ 
             	return $1*$1 
@@ -2219,7 +2198,7 @@ Vector
             none
 
             objref g, dvec, fvec, ivec 
-            g = new Graph() 
+            g = h.Graph() 
             g.size(0,3,0,3) 
              
             func fun() {local f 
@@ -2232,10 +2211,10 @@ Vector
             } 
              
              
-            dvec = new Vector(2) 
-            fvec = new Vector(2) 
+            dvec = h.Vector(2) 
+            fvec = h.Vector(2) 
             fvec.fill(1) 
-            ivec = new Vector(2) 
+            ivec = h.Vector(2) 
             ivec.indgen() 
              
             a = 2 
@@ -2276,17 +2255,17 @@ Vector
             none
                 
             objref g 
-            g = new Graph() 
+            g = h.Graph() 
             g.size(0,10,0,100) 
 
             //... 
             objref xs, ys, xd, yd 
-            xs = new Vector(10) 
+            xs = h.Vector(10) 
             xs.indgen() 
             ys = xs.c.mul(xs) 
             ys.line(g, xs, 1, 0) // black reference line 
              
-            xd = new Vector() 
+            xd = h.Vector() 
              
             xd.indgen(-.5, 10.5, .1) 
             yd = ys.c.interpolate(xd, xs) 
@@ -2355,8 +2334,8 @@ Vector
             none
 
             objref vec, vec1 
-            vec = new Vector() 
-            vec1 = new Vector() 
+            vec = h.Vector() 
+            vec1 = h.Vector() 
             vec.indgen(0, 5, 1) 
             func sq(){ 
             	return $1*$1 
@@ -2450,8 +2429,8 @@ Vector
             none
 
             objref vec, vec1 
-            vec = new Vector() 
-            vec1 = new Vector() 
+            vec = h.Vector() 
+            vec1 = h.Vector() 
             vec.indgen(0, 5, 1)	//vec will have 6 values from 0 to 5, with increment=1 
             vec.apply("sq")		//sq() squares an element  
             			//and is defined in the example for .deriv 
@@ -2474,7 +2453,7 @@ Vector
             none
 
             objref vec2 
-            vec2 = new Vector(6) 
+            vec2 = h.Vector(6) 
             vec.indgen(0, 5.1, 0.1)	//vec will have 51 values from 0 to 5, with increment=0.1 
             vec.apply("sq")		//sq() squares an element  
             			//and is defined in the example for .deriv 
@@ -2578,7 +2557,7 @@ Vector
 
 
     Description:
-        Return a new vector of indices which sort the vsrc elements in numerical 
+        Return a h.vector of indices which sort the vsrc elements in numerical 
         order. That is vsrc.index(vsrc.sortindex) is equivalent to vsrc.sort(). 
         If vdest is present, use that as the destination vector for the indices. 
         This, if it is large enough, avoids the destruct/construct of vdest. 
@@ -2589,9 +2568,9 @@ Vector
             none
 
             objref a, r, si 
-            r = new Random() 
+            r = h.Random() 
             r.uniform(0,100) 
-            a = new Vector(10) 
+            a = h.Vector(10) 
             a.setrand(r) 
             a.printf 
              
@@ -2674,7 +2653,7 @@ Vector
             none
 
             objref vec 
-            vec = new Vector() 
+            vec = h.Vector() 
             vec.indgen(1,5,1) 
             vec.printf 
             vec.c.rotate(2).printf 
@@ -2852,7 +2831,7 @@ Vector
             none
 
             objref v1 
-            v1 = new Vector() 
+            v1 = h.Vector() 
             v1.indgen(-.5, .5, .1) 
             v1.printf() 
             v1.abs.printf() 
@@ -2885,10 +2864,10 @@ Vector
             none
 
             objref vec, vec1, vec2, vec3 
-            vec = new Vector() 
-            vec1 = new Vector() 
-            vec2 = new Vector() 
-            vec3 = new Vector(6) 
+            vec = h.Vector() 
+            vec1 = h.Vector() 
+            vec2 = h.Vector() 
+            vec3 = h.Vector(6) 
             vec.indgen(0, 5.1, 0.1)	//vec will have 51 values from 0 to 5, with increment=0.1 
             vec1.integral(vec, 0.1)	//Euler integral of vec elements approximating 
             			//an x-squared function, dx = 0.1 
@@ -3303,9 +3282,9 @@ Refer to this source for further information.
             none
 
             objref v1, v2, v3 
-            v1 = new Vector(16) 
-            v2 = new Vector(16) 
-            v3 = new Vector() 
+            v1 = h.Vector(16) 
+            v2 = h.Vector(16) 
+            v3 = h.Vector() 
             v1.x[5] = v1.x[6] = 1 
             v2.x[3] = v2.x[4] = 3 
             v3.convlv(v1, v2) 
@@ -3399,16 +3378,16 @@ Refer to this source for further information.
             objref v1, v2, v3 
              
             proc setup_gui() { 
-            box = new VBox() 
+            box = h.VBox() 
             box.intercept(1) 
             xpanel("", 1) 
             xradiobutton("sin   ", "c=0  p()") 
             xradiobutton("cos   ", "c=1  p()") 
             xvalue("freq (waves/domain)", "f", 1, "p()") 
             xpanel() 
-            g1 = new Graph() 
-            g2 = new Graph() 
-            g3 = new Graph() 
+            g1 = h.Graph() 
+            g2 = h.Graph() 
+            g3 = h.Graph() 
             box.intercept(0) 
             box.map() 
             g1.size(0,N, -1, 1) 
@@ -3423,15 +3402,15 @@ Refer to this source for further information.
             setup_gui() // construct the gui for this example 
              
             proc p() { 
-            v1 = new Vector(N) 
+            v1 = h.Vector(N) 
             v1.sin(f, c*PI/2, 1000/N) 
             v1.plot(g1) 
              
-            v2 = new Vector() 
+            v2 = h.Vector() 
             v2.fft(v1, 1)		// forward 
             v2.plot(g2) 
              
-            v3 = new Vector() 
+            v3 = h.Vector() 
             v3.fft(v2, -1)		// inverse 
             v3.plot(g3)		// amplitude N/2 times the original 
             } 
@@ -3539,20 +3518,20 @@ Refer to this source for further information.
             objref box, g1, g2, g3, g4, b1 
              
             proc setup_gui() { 
-            box = new VBox() 
+            box = h.VBox() 
             box.intercept(1) 
             xpanel("") 
             xvalue("delay (points)", "delay", 1, "p()") 
             xvalue("duration (points)", "duration", 1, "p()") 
             xpanel() 
-            g1 = new Graph() 
-            b1 = new HBox() 
+            g1 = h.Graph() 
+            b1 = h.HBox() 
             b1.intercept(1) 
-            g2 = new Graph() 
-            g3 = new Graph() 
+            g2 = h.Graph() 
+            g3 = h.Graph() 
             b1.intercept(0) 
             b1.map() 
-            g4 = new Graph() 
+            g4 = h.Graph() 
             box.intercept(0) 
             box.map() 
             g1.size(0,N, -1, 1) 
@@ -3566,17 +3545,17 @@ Refer to this source for further information.
             duration = N/2 
             setup_gui() 
             proc p() { 
-            v1 = new Vector(N) 
+            v1 = h.Vector(N) 
             v1.fill(1, delay, delay+duration-1) 
             v1.plot(g1) 
              
-            v2 = new Vector() 
-            v3 = new Vector() 
+            v2 = h.Vector() 
+            v3 = h.Vector() 
             FFT(1, v1, v2, v3) 
             v2.plot(g2) 
             v3.plot(g3) 
              
-            v4 = new Vector() 
+            v4 = h.Vector() 
             FFT(-1, v4, v2, v3) 
             v4.plot(g4) 
             } 
@@ -3686,11 +3665,11 @@ Refer to this source for further information.
             none
 
             objref g1, g2, b 
-            b = new VBox() 
+            b = h.VBox() 
             b.intercept(1) 
-            g1 = new Graph() 
+            g1 = h.Graph() 
             g1.size(0,200,0,10) 
-            g2 = new Graph() 
+            g2 = h.Graph() 
             g2.size(0,200,0,10) 
             b.intercept(0) 
             b.map("psth and mean freq") 
@@ -3701,10 +3680,10 @@ Refer to this source for further information.
             TRIALS = 1 
              
             objref v1, v2 
-            v1 = new Vector(VECSIZE) 
+            v1 = h.Vector(VECSIZE) 
                
             objref r 
-            r = new Random() 
+            r = h.Random() 
                         
                
             for (ii=0; ii<VECSIZE; ii+=1) { 
@@ -3712,7 +3691,7 @@ Refer to this source for further information.
             } 
             v1.plot(g1) 
              
-            v2 = new Vector() 
+            v2 = h.Vector() 
             v2.psth(v1,DT,TRIALS,MINSUM) 
             v2.plot(g2) 
 
