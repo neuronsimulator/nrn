@@ -289,7 +289,7 @@ Vector
 .. method:: Vector.fill
 
     Syntax:
-        ``obj = vsrcdest.fil(value)``
+        ``obj = vsrcdest.fill(value)``
 
         ``obj = vsrcdest.fill(value, start, end)``
 
