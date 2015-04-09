@@ -642,12 +642,8 @@ Vector
         The arguments may be either scalars or vectors. 
          
         ``obj.insrt(obj.size, ...)`` is equivalent to ``obj.append(...)`` 
-
          
-
 ----
-
-
 
 .. method:: Vector.remove
 
@@ -657,28 +653,22 @@ Vector
 
         ``obj = vsrcdest.remove(start, end)``
 
-
     Description:
         Remove the indexed element (or inclusive range) from the vector. 
         The vector is resized. 
 
-         
-
 ----
-
-
 
 .. method:: Vector.contains
 
-
     Syntax:
-        ``boolean = vsrc.contains(value)``
-
+        ``numerical_truth_value = vsrc.contains(value)``
 
     Description:
         Return whether or not 
         the vector contains *value* as at least one 
         of its elements (to within :data:`float_epsilon`). A return value of 1 signifies true; 0 signifies false. 
+	This can be made into a boolean truth value with Python function bool()
 
     Example:
 
@@ -3059,13 +3049,13 @@ Vector
 
 
     Syntax:
-        ``boolean = vec.eq(vec1)``
+        ``numerical_truth_value = vec.eq(vec1)``
 
 
     Description:
         Test equality of vectors.  Returns 1 if all elements of vec == 
         corresponding elements of *vec1* (to within :data:`float_epsilon`). 
-        Otherwise it returns 0. 
+        Otherwise it returns 0.   This can be made into a boolean truth value with Python function bool()
 
          
 
