@@ -1432,15 +1432,26 @@ Vector
         .. code-block::
             python
 
+            from neuron import h, gui
+            import time
+            
             g = h.Graph() 
             g.size(0,10,-1,1) 
             vec = h.Vector() 
             vec.indgen(0,10, .1) 
             vec.apply("sin") 
             vec.plot(g, .1) 
-            xpanel("") 
-            xbutton("run", "for i=0,vec.size()-1 { vec.rotate(1) g.flush() doNotify()}") 
-            xpanel() 
+            def do_run():
+                for i in xrange(int(vec.size())):
+                    vec.rotate(1)
+                    g.flush()
+                    h.doNotify()
+                    time.sleep(0.01)
+
+            h.xpanel("") 
+            h.xbutton("run", do_run) 
+            h.xpanel() 
+
 
 
     .. seealso::
