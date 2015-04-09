@@ -15,17 +15,9 @@ Vector
         none
 
         --------------------------- 
-        Zach Mainen 
-        Computational Neurobiology Laboratory 
-        Salk Institute  
-        10010 N. Torrey Pines Rd. 
-        La Jolla, CA 92037 
-        zach@salk.edu 
+        Zach Mainen and Michael Hines
         ---------------------------- 
-
          
-         
-
     Syntax:
         ``obj = h.Vector()``
 
@@ -160,7 +152,7 @@ Vector
         ``vec.x[i] = 3`` sets the i'th element to 3. **Cannot** use vec[i] here.
 
         .. code-block::
-            none
+            python
 
             h.xpanel("show a field editor") 
             h.xpvalue("last element", vec._ref_x[int(vec.size()) - 1]) 
@@ -176,8 +168,6 @@ Vector
 
 ----
 
-
-
 .. method:: Vector.size
 
 
@@ -187,12 +177,12 @@ Vector
 
     Description:
         Return the number of elements in the vector. The last element has the index: 
-        ``vec.size() - 1``. Most explicit for loops over a vector can take the form: 
+        ``vec.size() - 1`` which can be abbreviated using -1 as above. for loops can use Vector as an iterable
 
         .. code-block::
-            none
+            python
 
-            for i=0, vec.size()-1 {... vec.x[i] ...} 
+            for i in vec: print i
 
         Note: There is a distinction between the size of a vector and the 
         amount of memory allocated to hold the vector. Generally, memory is only 
@@ -200,28 +190,22 @@ Vector
         previously allocated to the vector. Thus the memory used by vectors 
         tends to grow but not shrink. To reduce the memory used by a vector, one 
         can explicitly call :func:`buffer_size` . 
-
          
-
 ----
 
-
-
 .. method:: Vector.resize
-
 
     Syntax:
         ``obj = vsrcdest.resize(new_size)``
 
-
     Description:
         Resize the vector.  If the vector is made smaller, then trailing elements 
-        will be deleted.  If it is expanded, h.elements will be initialized to 0 
+        will be zeroed.  If it is expanded, h.elements will be initialized to 0 
         and original elements will remain unchanged. 
          
         Warning: Any function that 
-        resizes the vector to a larger size than its available space 
-        will make existing pointers to the elements invalid 
+        resizes the vector to a larger size than its available space will reallocate and thereby
+        make existing pointers to the elements invalid 
         (see note in :meth:`Vector.size`). 
         For example, resizing vectors that have been plotted will remove that vector 
         from the plot list. Other functions may not be so forgiving and result in 
@@ -230,47 +214,32 @@ Vector
     Example:
 
         .. code-block::
-            none
-
-            objref vec 
-            vec = h.Vector(20,5) 
-            vec.resize(30)
-        
-        Appends 10 elements, each having a value of 0, to ``vec``. 
-
-        .. code-block::
             python
 
-            vec.resize(10)
-
-        removes the last 20 elements from the  ``vec``.The values of the first 
-        10 elements are unchanged. 
-
+            vec = h.Vector(20,5) 
+            vec.resize(30) # Appends 10 elements, each having a value of 0
+            vec.printf()
+            vec.resize(10) # removes the last 20 elements; values of the first 10 elements are unchanged
+        
     .. seealso::
         :meth:`Vector.buffer_size`
 
-         
-
 ----
 
-
-
 .. method:: Vector.buffer_size
-
 
     Syntax:
         ``space = vsrc.buffer_size()``
 
         ``space = vsrc.buffer_size(request)``
 
-
     Description:
         Returns the length of the double precision array memory allocated to hold the 
         vector. This is NOT the size of the vector. The vector size can efficiently 
         grow up to this value without reallocating memory. 
          
-        With an argument, frees the old memory space and allocates h.
-        memory space for the vector, copying old element values to the h.elements. 
+        With an argument, frees the old memory space and allocates new 
+        memory space for the vector, copying old element values to the new elements. 
         If the request is less than the size, the size is truncated to the request. 
         For vectors that grow continuously, it may be more efficient to 
         allocate enough space at the outset, or else occasionally change the 
@@ -281,24 +250,18 @@ Vector
     Example:
 
         .. code-block::
-            none
+            python
 
-            objref y 
             y = h.Vector(10) 
             y.size() 
             y.buffer_size() 
             y.resize(5) 
-            y.size 
+            y.size()
             y.buffer_size() 
             y.buffer_size(100) 
             y.size() 
 
-
-         
-
 ----
-
-
 
 .. method:: Vector.get
 
@@ -306,17 +269,10 @@ Vector
     Syntax:
         ``x = vec.get(index)``
 
-
     Description:
-        Return the value of a vector element index.  This function 
-        is superseded by the ``vec.x[]`` notation but is retained for backward 
-        compatibility. 
-
-         
+        Return the value of a vector element index.
 
 ----
-
-
 
 .. method:: Vector.set
 
@@ -326,38 +282,27 @@ Vector
 
 
     Description:
-        Set vector element index to value.  This function is superseded by 
-        the ``vec.x[i] = expr`` notation but is retained for backward 
-        compatibility. 
-
-         
-         
+        Set vector element index to value.  Equivalent to ``vec.x[i] = expr`` notation.
 
 ----
 
-
-
 .. method:: Vector.fill
-
 
     Syntax:
         ``obj = vsrcdest.fil(value)``
 
         ``obj = vsrcdest.fill(value, start, end)``
 
-
     Description:
         The first form assigns *value* to every element in vsrcdest. 
          
-        If *start* and 
-        *end* arguments are present, they specify the index range for the assignment. 
+        If *start* and *end* arguments are present, they specify the index range for the assignment. 
 
     Example:
 
         .. code-block::
-            none
+            python
 
-            objref vec 
             vec = h.Vector(20,5) 
             vec.fill(9,2,7) 
 
@@ -367,32 +312,23 @@ Vector
     .. seealso::
         :meth:`Vector.indgen`, :meth:`Vector.append`
 
-         
-
 ----
-
-
 
 .. method:: Vector.label
 
-
     Syntax:
-        ``strdef s``
-
         ``s = vec.label()``
-
-        ``s = vec.label(s)``
-
+        ``s = vec.label(str_type)``
 
     Description:
         Label the vector with a string. 
-        The return value is the label, which is an empty string if there is no label. 
+        The return value is the label, which is an empty string if no label has been set. 
         Labels are printed on a Graph when the :meth:`Graph.plot` method is called. 
 
     Example:
 
         .. code-block::
-            none
+            python
 
             objref vec 
             vec = h.Vector() 
@@ -404,30 +340,29 @@ Vector
     .. seealso::
         :meth:`Graph.family`, :meth:`Graph.beginline`
 
-
 ----
-
-
 
 .. method:: Vector.record
 
-
     Syntax:
-        ``vdest.record(&var)``
+        ``vdest.record(var_reference)``
 
-        ``vdest.record(&var, Dt)``
+        ``vdest.record(var_reference, Dt)``
 
-        ``vdest.record(&var, tvec)``
+        ``vdest.record(var_reference, tvec)``
 
-        ``vdest.record(point_process_object, &varvar, ...)``
+        ``vdest.record(point_process_object, var_reference, ...)``
 
 
     Description:
         Save the stream of values of "*var*" during a simulation into the vdest vector. 
-        Previous record and play specifications of this Vector (if any) 
-        are destroyed. 
+        Previous record and play specifications of this Vector (if any) are destroyed. 
          
         Details: 
+        NEURON pointers in python are handled using the _ref_ syntax.  e.g., soma(0.5)._ref_v
+	To save a scalar from NEURON that scalar must exist in NEURON's scope.
+	
+
         Transfers take place on exit from ``finitialize()`` and on exit from ``fadvance()``. 
         At the end of ``finitialize()``, ``v.x[0] = var``. At the end of ``fadvance``, 
         *var* will be saved if ``t`` (after being incremented by ``fadvance``) 
@@ -468,20 +403,19 @@ Vector
         have not been tested. 
 
     Example:
-        See :file:`tests/nrniv/vrecord.hoc` for examples of usage. 
+        See :file:`tests/nrniv/vrecord.py` for examples of usage. 
          
         If one is using the graphical interface generated by "Standard Run Library" 
         to simulate a neuron containing a "terminal" section, Then one can store 
         the time course of the terminal voltage (between runs) with: 
 
         .. code-block::
-            none
+            python
 
-            objref dv 
             dv = h.Vector() 
-            dv.record(&terminal.v(.5)) 
-            init()	// or push the "Init and Run" button on the control panel 
-            run() 
+            dv.record(terminal(0.5)._ref_v) 
+            h.init()	// or push the "Init and Run" button on the control panel 
+            h.run() 
 
         Note that the next "run" will overwrite the previous time course stored 
         in the vector. Thus dv should be copied to another vector ( see :func:`copy` ). 
@@ -497,43 +431,26 @@ Vector
 
 ----
 
-
-
 .. method:: Vector.play
 
-
     Syntax:
-        ``vsrc.play(&var, Dt)``
+        ``vsrc.play(var_reference, Dt)``
 
-        ``vsrc.play(&var, tvec)``
-
-        ``vsrc.play("stmt involving $1", optional Dt or tvec arg)``
+        ``vsrc.play(var_reference, tvec)``
 
         ``vsrc.play(index)``
 
-        ``vsrc.play(&var or stmt, tvec, continuous)``
+        ``vsrc.play(var_reference or stmt, tvec, continuous)``
 
-        ``vsrc.play(&var or stmt, tvec, indices_of_discontinuities_vector)``
+        ``vsrc.play(var_reference or stmt, tvec, indices_of_discontinuities_vector)``
 
-        ``vsrc.play(point_process_object, &var, ...)``
+        ``vsrc.play(point_process_object, var_reference, ...)``
 
 
     Description:
-        The ``vsrc`` vector values are assigned to the "*var*" variable during 
-        a simulation. 
+        The ``vsrc`` vector values are assigned to the "*var*" variable during a simulation. 
          
         The same vector can be played into different variables. 
-         
-        If the "stmt involving $1" form is used, that statement is executed with 
-        the appropriate value of the $1 arg. This is not as efficient as the 
-        pointer form but is useful for playing a value into a set of variables 
-        as in 
-
-        .. code-block::
-            none
-
-            forall g_pas = $1 
-
          
         The index form immediately sets the var (or executes the stmt) with the 
         value of vsrc.x[index] 
@@ -544,16 +461,16 @@ Vector
         time at which values are copied from vsrc to var. Note that for variable 
         step methods, unless continuity is specifically requested, the function 
         is a step function. Also, for the local variable dt method, var MUST be 
-        associated with the cell that contains the currently accessed section 
+        associated with the cell that contains the section accessed via sec=sec in the arg list 
         (but see the paragraph below about the use of a point_process_object 
         inserted as the first arg). 
          
-        For the fixed step method 
+        For the fixed step method, 
         transfers take place on entry to :func:`finitialize` and  on entry to :func:`fadvance`. 
         At the beginning of :func:`finitialize`, ``var = v.x[0]``. On :func:`fadvance` a transfer will 
-        take place if t will be (after the ``fadvance`` increment) equal 
-        or greater than the associated time of the next index. For the variable step 
-        methods, transfers take place exactly at the times specified by the Dt 
+        take place if t will be equal 
+        or greater than the associated time of the next index after the ``fadvance`` increment.
+	For the variable step methods, transfers take place exactly at the times specified by the Dt 
         or tvec arguments. 
          
         The system maintains a set of play vectors and the vector will be removed 
@@ -565,7 +482,7 @@ Vector
         if ``fadvance`` exits with time equal to ``t`` (ie enters at time t-dt), 
         then on entry to ``fadvance``, *var* is set equal to the value of 
         the vector at the index 
-        appropriate to time t. Execute tests/nrniv/vrecord.hoc to see what this implies 
+        appropriate to time t. Execute tests/nrniv/vrecord.py to see what this implies 
         during a simulation. ie the value of var from ``t-dt`` to t played into by 
         a vector is equal to the value of the vector at ``index(t)``. If the vector 
         was meant to serve as a continuous stimulus function, this results in 
@@ -581,14 +498,12 @@ Vector
         methods can excessively reduce dt as one approaches a discontinuity in 
         the first derivative. Note that if there are discontinuities in the 
         function itself, then tvec should have adjacent elements with the same 
-        time value. As of version 6.2, when a value is greater than the range of 
+        time value. When a value is greater than the range of 
         the t vector, linear extrapolation of the last two points is used 
         instead of a constant last value. If a constant outside the range 
         is desired, make sure the last two points have the same y value and 
         have different t values (if the last two values are at the same time, 
         the constant average will be returned). 
-        (note: the 6.2 change allows greater variable time step efficiency 
-        as one approaches discontinuities.) 
          
         The indices_of_discontinuities_vector argument is used to 
         specifying the indices in tvec of the times at which discrete events should 
@@ -608,23 +523,17 @@ Vector
         variable time step method do not need or use this information for the 
         local step method but will use it for multiple threads. It is therefore 
         a good idea to supply it if possible. 
-         
 
     .. seealso::
         :meth:`Vector.record`, :meth:`Vector.play_remove`
 
-         
-
 ----
-
-
 
 .. method:: Vector.play_remove
 
 
     Syntax:
         ``v.play_remove()``
-
 
     Description:
         Removes the vector from BOTH record and play lists. 
@@ -634,17 +543,10 @@ Vector
         This function is used in those 
         cases where one wishes to keep the vector data even under subsequent runs. 
          
-        record and play have been implemented by Michael Hines. 
-         
-
     .. seealso::
         :meth:`Vector.record`, :meth:`Vector.play`
-
          
-
 ----
-
-
 
 .. method:: Vector.indgen
 
@@ -674,23 +576,22 @@ Vector
     Example:
 
         .. code-block::
-            none
+            python
 
-            objref vec 
             vec = h.Vector(100) 
             vec.indgen(5) 
 
         creates a vector with 100 elements going from 0 to 495 in increments of 5. 
 
         .. code-block::
-            none
+            python
 
             vec.indgen(50, 100, 10) 
 
         reduces the vector to 6 elements going from 50 to 100 in increments of 10. 
 
         .. code-block::
-            none
+            python
 
             vec.indgen(90, 1000, 30) 
 
@@ -698,19 +599,13 @@ Vector
 
     .. seealso::
         :meth:`Vector.fill`, :meth:`Vector.append`
-
          
-
 ----
-
-
 
 .. method:: Vector.append
 
-
     Syntax:
         ``obj = vsrcdest.append(vec1, vec2, ...)``
-
 
     Description:
         Concatenate values onto the end of a vector. 
@@ -720,24 +615,20 @@ Vector
     Example:
 
         .. code-block::
-            none
+            python
 
-            objref vec, vec1, vec2 
-            vec = h.Vector (10,4) 
-            vec1 = h.Vector (10,5) 
-            vec2 = h.Vector (10,6) 
+            vec = h.Vector(10,4) 
+            vec1 = h.Vector(10,5) 
+            vec2 = h.Vector(10,6) 
             vec.append(vec1, vec2, 7, 8, 9) 
+            vec.append(h.Vector([4,1,2,7]))
 
-        turns ``vec`` into a 33 element vector, whose first ten elements = 4, whose 
+        turns ``vec`` into a 37 element vector, whose first ten elements = 4, whose 
         second ten elements = 5, whose third ten elements = 6, and whose 31st, 32nd, 
-        and 33rd elements = 7, 8, and 9, respectively. 
-        Remember, index 32 refers to the 33rd element. 
-
+        and 33rd elements = 7, 8, and 9, and 34-37 are 4,1,2,7.  Note that the Vector created to pass the Python list
+	into append is immediately discarded. Remember, index 32 refers to the 33rd element. 
          
-
 ----
-
-
 
 .. method:: Vector.insrt
 
@@ -792,7 +683,7 @@ Vector
     Example:
 
         .. code-block::
-            none
+            python
 
             vec = h.Vector (10) 
             vec.indgen(5) 
@@ -801,7 +692,7 @@ Vector
         returns a 1, meaning the vector does contain an element whose value is 30. 
 
         .. code-block::
-            none
+            python
 
             vec.contains(50) 
 
@@ -864,10 +755,9 @@ Vector
         To copy the odd elements use:
  
         .. code-block::
-            none
+            python
         
  
-            objref v1, v2 
             v1 = h.Vector(30) 
             v1.indgen() 
             v1.printf() 
@@ -879,9 +769,8 @@ Vector
         To merge or shuffle two vectors into a third, use:
  
         .. code-block::
-            none
+            python
             
-            objref v1, v2, v3 
             v1 = h.Vector(15) 
             v1.indgen() 
             v1.printf() 
@@ -898,7 +787,7 @@ Vector
     Example:
 
         .. code-block::
-            none
+            python
 
             vec = h.Vector(100,10) 
             vec1 = h.Vector() 
@@ -913,7 +802,7 @@ Vector
         Vectors copied to themselves are not usually what is expected. eg. 
 
         .. code-block::
-            none
+            python
 
             vec = h.Vector(20) 
             vec.indgen() 
@@ -1000,7 +889,7 @@ Vector
         is equivalent to 
 
         .. code-block::
-            none
+            python
 
             vdest = h.Vector() 
             vdest.copy(vsrc, start, end) 
@@ -1009,9 +898,8 @@ Vector
     Example:
 
         .. code-block::
-            none
+            python
 
-            objref vec, vec1 
             vec = h.Vector() 
             vec.indgen(10,50,2) 
             vec1 = vec.at(2, 10) 
@@ -1071,7 +959,7 @@ Vector
     Example:
 
         .. code-block::
-            none
+            python
 
             vec = h.Vector(25) 
             vec1 = h.Vector() 
@@ -1082,9 +970,8 @@ Vector
         increments of 10. 
 
         .. code-block::
-            none
+            python
 
-            objref r 
             r = h.Random() 
             vec = h.Vector(25) 
             vec1 = h.Vector() 
@@ -1153,10 +1040,9 @@ Vector
          
 
     Example:
-        objref vs, vd 
 
         .. code-block::
-            none
+            python
 
             vs = h.Vector() 
              
@@ -1269,7 +1155,7 @@ Vector
         compression 
 
         .. code-block::
-            none
+            python
 
             *  1 : char            shortest    8  bits    
             *  2 : short                       16 bits 
@@ -1311,9 +1197,8 @@ Vector
     Example:
 
         .. code-block::
-            none
+            python
 
-            objref v1, v2, f 
             v1 = h.Vector() 
             v1.indgen(20,30,2) 
             v1.printf() 
@@ -1363,7 +1248,7 @@ Vector
     Example:
 
         .. code-block::
-            none
+            python
 
             vec = h.Vector() 
             vec.indgen(0, 1, 0.1) 
@@ -1512,9 +1397,8 @@ Vector
     Example:
 
         .. code-block::
-            none
+            python
 
-            objref vec, g 
             g = h.Graph() 
             g.size(0,10,-1,1) 
             vec = h.Vector() 
@@ -1567,9 +1451,8 @@ Vector
     Example:
 
         .. code-block::
-            none
+            python
 
-            objref vec, g 
             g = h.Graph() 
             g.size(0,10,-1,1) 
             vec = h.Vector() 
@@ -1612,10 +1495,8 @@ Vector
     Example:
 
         .. code-block::
-            none
+            python
 
-            objref vec, xvec, errvec 
-            objref g 
             g = h.Graph() 
             g.size(0,100, 0,250) 
             vec = h.Vector() 
@@ -1686,7 +1567,6 @@ Vector
         the range is not binned. 
          
         This function returns a vector that contains the counts in each bin, so while it is 
-        necessary to declare an object reference (``objref newvect``), it is not necessary 
         to execute ``newvect = h.Vector()``. 
          
         The first element of ``newvect`` is 0 (``newvect.x[0] = 0``). 
@@ -1704,9 +1584,8 @@ Vector
     Example:
 
         .. code-block::
-            none
+            python
 
-            objref interval, hist, rand 
              
             rand = h.Random() 
             rand.negexp(1) 
@@ -1717,7 +1596,6 @@ Vector
             hist = interval.histogram(0, 10, .1) 
              
             // and for a manhattan style plot ... 
-            objref g, v2, v3 
             g = h.Graph() 
             g.size(0,10,0,30) 
             // create an index vector with 0,0, 1,1, 2,2, 3,3, ... 
@@ -1784,7 +1662,6 @@ Vector
         for them all to have areas of 1 unit). 
          
         This function returns a vector, so while it is 
-        necessary to declare a vector object (``objref vectobj``), it is not necessary 
         to declare *vectobj* as a ``h.Vector()``. 
          
         To plot, use ``v.indgen(low,high,width)`` for the x-vector argument. 
@@ -1792,9 +1669,8 @@ Vector
     Example:
 
         .. code-block::
-            none
+            python
 
-            objref r, data, hist, x, g 
              
             r = h.Random() 
             r.normal(1, 2) 
@@ -1856,9 +1732,8 @@ Vector
     Example:
 
         .. code-block::
-            none
+            python
 
-            objref vec, vec1, vec2 
             vec = h.Vector(100) 
             vec2 = h.Vector() 
             vec.indgen(5) 
@@ -1891,9 +1766,8 @@ Vector
     Example:
 
         .. code-block::
-            none
+            python
 
-            objref vec, g, r 
             vec = h.Vector(50) 
             g = h.Graph() 
             g.size(0,50,0,100) 
@@ -1976,7 +1850,7 @@ Vector
     Example:
 
         .. code-block::
-            none
+            python
 
             vec.apply("sin", 0, 9) 
 
@@ -2008,9 +1882,8 @@ Vector
     Example:
 
         .. code-block::
-            none
+            python
 
-            objref vec 
             vec = h.Vector() 
             vec.indgen(0, 10, 2) 
             func sq(){ 
@@ -2163,7 +2036,7 @@ Vector
         provide the correct number of arguments (here denoted ``a,b,c``...). 
 
         .. code-block::
-            none
+            python
 
             "exp1": y = a * exp(-x/b)   
             "exp2": y = a * exp(-x/b) + c * exp (-x/d) 
@@ -2195,9 +2068,8 @@ Vector
          
 
         .. code-block::
-            none
+            python
 
-            objref g, dvec, fvec, ivec 
             g = h.Graph() 
             g.size(0,3,0,3) 
              
@@ -2252,14 +2124,12 @@ Vector
          
 
         .. code-block::
-            none
+            python
                 
-            objref g 
             g = h.Graph() 
             g.size(0,10,0,100) 
 
             //... 
-            objref xs, ys, xd, yd 
             xs = h.Vector(10) 
             xs.indgen() 
             ys = xs.c.mul(xs) 
@@ -2331,9 +2201,8 @@ Vector
     Example:
 
         .. code-block::
-            none
+            python
 
-            objref vec, vec1 
             vec = h.Vector() 
             vec1 = h.Vector() 
             vec.indgen(0, 5, 1) 
@@ -2346,7 +2215,7 @@ Vector
         creates ``vec1`` with elements: 
 
         .. code-block::
-            none
+            python
 
             10	20	 
             40	60	 
@@ -2358,7 +2227,7 @@ Vector
         ``vec1`` would consist of the following elements: 
 
         .. code-block::
-            none
+            python
 
             1	2	 
             4	6	 
@@ -2370,7 +2239,7 @@ Vector
         Beginning with the vector ``vec``: 
 
         .. code-block::
-            none
+            python
 
             0	1	 
             4	9	 
@@ -2380,7 +2249,7 @@ Vector
         producing ``vec1`` by the following method: 
 
         .. code-block::
-            none
+            python
 
             1-0   = 1	4-1  = 3		 
             9-4   = 5	16-9 = 7	 
@@ -2390,7 +2259,7 @@ Vector
         producing ``vec1`` as such: 
 
         .. code-block::
-            none
+            python
 
             1-0      = 1		(4-0)/2  = 2	 
             (9-1)/2  = 4		(16-4)/2 = 6	 
@@ -2426,9 +2295,8 @@ Vector
     Example:
 
         .. code-block::
-            none
+            python
 
-            objref vec, vec1 
             vec = h.Vector() 
             vec1 = h.Vector() 
             vec.indgen(0, 5, 1)	//vec will have 6 values from 0 to 5, with increment=1 
@@ -2441,7 +2309,7 @@ Vector
         will print the following elements in ``vec1`` to the screen: 
 
         .. code-block::
-            none
+            python
 
             0	1	5	 
             14	30	55 
@@ -2450,9 +2318,8 @@ Vector
         the size of the vector and to decrease the size of *dx*. 
 
         .. code-block::
-            none
+            python
 
-            objref vec2 
             vec2 = h.Vector(6) 
             vec.indgen(0, 5.1, 0.1)	//vec will have 51 values from 0 to 5, with increment=0.1 
             vec.apply("sq")		//sq() squares an element  
@@ -2466,7 +2333,7 @@ Vector
         ``vec1`` corresponding to the integers 0-5) to the screen: 
 
         .. code-block::
-            none
+            python
 
             0	0.385	2.87 
             9.455	22.14	42.925 
@@ -2478,7 +2345,7 @@ Vector
         on their right). 
 
         .. code-block::
-            none
+            python
 
             0.00000 -- 0.00000	0.33835 --  0.33333	2.6867  --  2.6666 
             9.04505 -- 9.00000	21.4134 -- 21.3333	41.7917 -- 41.6666 
@@ -2565,9 +2432,8 @@ Vector
     Example:
 
         .. code-block::
-            none
+            python
 
-            objref a, r, si 
             r = h.Random() 
             r.uniform(0,100) 
             a = h.Vector(10) 
@@ -2621,7 +2487,7 @@ Vector
     Example:
 
         .. code-block::
-            none
+            python
 
             vec.indgen(1, 10, 1) 
             vec.rotate(3) 
@@ -2629,14 +2495,14 @@ Vector
         orders the elements of ``vec`` as follows: 
 
         .. code-block::
-            none
+            python
 
             8  9  10  1  2  3  4  5  6  7 
 
         whereas, 
 
         .. code-block::
-            none
+            python
 
             vec.indgen(1, 10, 1) 
             vec.rotate(-3) 
@@ -2644,15 +2510,14 @@ Vector
         orders the elements of ``vec`` as follows: 
 
         .. code-block::
-            none
+            python
 
             4  5  6  7  8  9  10  1  2  3 
 
 
         .. code-block::
-            none
+            python
 
-            objref vec 
             vec = h.Vector() 
             vec.indgen(1,5,1) 
             vec.printf 
@@ -2685,7 +2550,7 @@ Vector
     Example:
 
         .. code-block::
-            none
+            python
 
             vec.indgen(1, 10, 1) 
             vec1.rebin(vec, 2) 
@@ -2693,7 +2558,7 @@ Vector
         produces ``vec1``: 
 
         .. code-block::
-            none
+            python
 
             3  7  11  15  19 
 
@@ -2702,7 +2567,7 @@ Vector
         But, 
 
         .. code-block::
-            none
+            python
 
             vec.indgen(1, 10, 1) 
             vec1.rebin(vec, 3) 
@@ -2711,7 +2576,7 @@ Vector
         ``vec1``: 
 
         .. code-block::
-            none
+            python
 
             6  15  24 
 
@@ -2828,9 +2693,8 @@ Vector
     Example:
 
         .. code-block::
-            none
+            python
 
-            objref v1 
             v1 = h.Vector() 
             v1.indgen(-.5, .5, .1) 
             v1.printf() 
@@ -2861,9 +2725,8 @@ Vector
     Example:
 
         .. code-block::
-            none
+            python
 
-            objref vec, vec1, vec2, vec3 
             vec = h.Vector() 
             vec1 = h.Vector() 
             vec2 = h.Vector() 
@@ -3279,9 +3142,8 @@ Refer to this source for further information.
     Example:
 
         .. code-block::
-            none
+            python
 
-            objref v1, v2, v3 
             v1 = h.Vector(16) 
             v2 = h.Vector(16) 
             v3 = h.Vector() 
@@ -3372,10 +3234,8 @@ Refer to this source for further information.
         cosine are N times the amplitudes and all others are N/2 times the amplitudes. 
          
         .. code-block::
-            none
+            python
          
-            objref box, g1, g2, g3 
-            objref v1, v2, v3 
              
             proc setup_gui() { 
             box = h.VBox() 
@@ -3442,7 +3302,7 @@ Refer to this source for further information.
         Consider the functions 
 
         .. code-block::
-            none
+            python
             
             FFT(1, vt_src, vfr_dest, vfi_dest)
             FFT(-1, vt_dest, vfr_src, vfi_src)
@@ -3469,7 +3329,7 @@ Refer to this source for further information.
         This function has the property that the sequence 
 
         .. code-block::
-            none
+            python
 
             FFT(1, vt, vfr, vfi) 
             FFT(-1, vt, vfr, vfi) 
@@ -3480,7 +3340,7 @@ Refer to this source for further information.
  
 
         .. code-block::
-            none
+            python
 
             proc FFT() {local n, x 
                     if ($1 == 1) { // forward 
@@ -3512,10 +3372,8 @@ Refer to this source for further information.
         example shows the cosine and sine spectra of a pulse. 
  
         .. code-block::
-            none
+            python
  
-            objref v1, v2, v3, v4 
-            objref box, g1, g2, g3, g4, b1 
              
             proc setup_gui() { 
             box = h.VBox() 
@@ -3627,7 +3485,7 @@ Refer to this source for further information.
         where 
 
         .. code-block::
-            none
+            python
 
               f_mean[i] is in spikes per _second_ (Hz). 
               N[i] = total number of events in the window 
@@ -3662,9 +3520,8 @@ Refer to this source for further information.
 
 
         .. code-block::
-            none
+            python
 
-            objref g1, g2, b 
             b = h.VBox() 
             b.intercept(1) 
             g1 = h.Graph() 
@@ -3679,10 +3536,8 @@ Refer to this source for further information.
             DT = 1000	// ms per bin of v1 (vsrchist) 
             TRIALS = 1 
              
-            objref v1, v2 
             v1 = h.Vector(VECSIZE) 
                
-            objref r 
             r = h.Random() 
                         
                
