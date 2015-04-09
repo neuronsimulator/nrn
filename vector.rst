@@ -414,7 +414,7 @@ Vector
 
             dv = h.Vector() 
             dv.record(terminal(0.5)._ref_v) 
-            h.init()	// or push the "Init and Run" button on the control panel 
+            h.init()	# or push the "Init and Run" button on the control panel 
             h.run() 
 
         Note that the next "run" will overwrite the previous time course stored 
@@ -751,7 +751,7 @@ Vector
             v1 = h.Vector(30) 
             v1.indgen() 
             v1.printf() 
-            @code... 
+            
             v2 = h.Vector() 
             v2.copy(v1, 0, 1, -1, 1, 2) 
             v2.printf() 
@@ -767,7 +767,7 @@ Vector
             v2 = h.Vector(15) 
             v2.indgen(10) 
             v2.printf() 
-            @code... 
+            
             v3 = h.Vector() 
             v3.copy(v1, 0, 0, -1, 2, 1) 
             v3.copy(v2, 1, 0, -1, 2, 1) 
@@ -1497,12 +1497,15 @@ Vector
         .. code-block::
             python
 
+            from neuron import h, gui
             g = h.Graph() 
             g.size(0,10,-1,1) 
             vec = h.Vector() 
             vec.indgen(0,10, .1) 
-            vec.apply("sin") 
-            for i=0,3 { vec.line(g, .1) vec.rotate(10) } 
+            vec.apply("sin")
+            for i in xrange(4):
+                vec.line(g, 0.1)
+                vec.rotate(10)
 
 
     .. seealso::
@@ -1635,21 +1638,21 @@ Vector
             rand.negexp(1) 
              
             interval = h.Vector(100) 
-            interval.setrand(rand) // random intervals 
+            interval.setrand(rand) # random intervals 
              
             hist = interval.histogram(0, 10, .1) 
              
-            // and for a manhattan style plot ... 
+            # and for a manhattan style plot ... 
             g = h.Graph() 
             g.size(0,10,0,30) 
-            // create an index vector with 0,0, 1,1, 2,2, 3,3, ... 
+            # create an index vector with 0,0, 1,1, 2,2, 3,3, ... 
             v2 = h.Vector(2*hist.size())      
             v2.indgen(.5)  
             v2.apply("int")  
-            //  
+            #  
             v3 = h.Vector(1)  
             v3.index(hist, v2)  
-            v3.rotate(-1)            // so different y's within each pair 
+            v3.rotate(-1)            # so different y's within each pair 
             v3.x[0] = 0  
             v3.plot(g, v2) 
 
@@ -1812,26 +1815,23 @@ Vector
         .. code-block::
             python
 
+            from neuron import h, gui
+
             vec = h.Vector(50) 
             g = h.Graph() 
             g.size(0,50,0,100) 
             r = h.Random() 
             r.poisson(.2) 
-            vec.plot(g) 
-             
-            proc race() {local i 
-                    vec.fill(0) 
-                    for i=1,300 { 
-                            vec.addrand(r) 
-                            g.flush() 
-                            doNotify() 
-                    } 
-            } 
-             
+            vec.plot(g)
+
+            def race():
+                vec.fill(0)
+                for i in xrange(300):
+                    vec.addrand(r)
+                    g.flush()
+                    h.doNotify()
+
             race()  
-
-
-         
 
 ----
 
@@ -1918,7 +1918,7 @@ Vector
 
 
     Description:
-        Pass all elements of a vector through a function and return the sum of 
+        Pass all elements of a vector through a HOC function and return the sum of 
         the results.  Use *base* to initialize the value x. 
         Note that the function name must be in quotes and that the parentheses 
         are omitted. 
@@ -1928,18 +1928,26 @@ Vector
         .. code-block::
             python
 
+            from neuron import h
             vec = h.Vector() 
             vec.indgen(0, 10, 2) 
-            func sq(){ 
-            	return $1*$1 
-            } 
-            vec.reduce("sq", 100) 
+            h("func sq(){return $1*$1}")
+            print vec.reduce("sq", 100) 
 
-        returns the value 320. 
+        displays the value 320. 
          
         100 + 0*0 + 2*2 + 4*4 + 6*6 + 8*8 + 10*10 = 320 
+        
+    Although reduce only works with HOC functions, it can be emulated in Python
+    using generators and the ``sum`` function. For example, the last
+    two lines of the above example are equivalent to:
+    
+        .. code-block::
+            python
          
-
+            def sq(x):
+                return x * x
+            print sum((sq(x) for x in vec), 100)
          
 
 ----
@@ -2114,35 +2122,35 @@ Vector
         .. code-block::
             python
 
+            from neuron import h, gui
+
             g = h.Graph() 
-            g.size(0,3,0,3) 
+            g.size(0, 3, 0, 3) 
              
-            func fun() {local f 
-                    if ($1 == 0) { 
-                            g.line($2, $3) 
-                            g.flush() 
-                            print $1, $2, $3 
-                    } 
-                    return ($2 - 1)^2 +($3-.5)^2 
-            } 
-             
-             
+            def fun(a, x, y):
+                if a == 0:
+                    g.line(x, y)
+                    g.flush()
+                    print a, x, y
+                return (x - 1) ** 2 + (y - 0.5) ** 2
+
             dvec = h.Vector(2) 
             fvec = h.Vector(2) 
             fvec.fill(1) 
             ivec = h.Vector(2) 
             ivec.indgen() 
              
-            a = 2 
-            b = 1 
+            a = h.ref(2)
+            b = h.ref(1) 
             g.beginline() 
-            error = dvec.fit(fvec, "fun", ivec, &a, &b) 
-            print a, b, error 
+            error = dvec.fit(fvec, fun, ivec, a, b) 
+            print a[0], b[0], error 
 
-         
 
-         
-
+    .. warning::
+    
+        Does not currently work with Python functions. It requires a string whose
+        value is the name of a HOC function instead.
 
 ----
 
@@ -2173,21 +2181,21 @@ Vector
             g = h.Graph() 
             g.size(0,10,0,100) 
 
-            //... 
+            #... 
             xs = h.Vector(10) 
             xs.indgen() 
             ys = xs.c.mul(xs) 
-            ys.line(g, xs, 1, 0) // black reference line 
+            ys.line(g, xs, 1, 0) # black reference line 
              
             xd = h.Vector() 
              
             xd.indgen(-.5, 10.5, .1) 
             yd = ys.c.interpolate(xd, xs) 
-            yd.line(g, xd, 3, 0) // blue more points than reference 
+            yd.line(g, xd, 3, 0) # blue more points than reference 
              
             xd.indgen(-.5, 13, 3) 
             yd = ys.c.interpolate(xd, xs) 
-            yd.line(g, xd, 2, 0) // red fewer points than reference 
+            yd.line(g, xd, 2, 0) # red fewer points than reference 
 
 
          
@@ -2247,13 +2255,11 @@ Vector
         .. code-block::
             python
 
-            vec = h.Vector() 
-            vec1 = h.Vector() 
-            vec.indgen(0, 5, 1) 
-            func sq(){ 
-            	return $1*$1 
-            } 
-            vec.apply("sq") 
+            from neuron import h
+            vec = h.Vector(range(6)) 
+            vec1 = h.Vector()
+            for i, val in enumerate(vec):
+                vec.x[i] = val ** 2
             vec1.deriv(vec, 0.1) 
 
         creates ``vec1`` with elements: 
@@ -2341,13 +2347,11 @@ Vector
         .. code-block::
             python
 
-            vec = h.Vector() 
+            from neuron import h
+            vec = h.Vector([0, 1, 4, 9, 16, 25]) 
             vec1 = h.Vector() 
-            vec.indgen(0, 5, 1)	//vec will have 6 values from 0 to 5, with increment=1 
-            vec.apply("sq")		//sq() squares an element  
-            			//and is defined in the example for .deriv 
-            vec1.integral(vec, 1)	//Euler integral of vec elements approximating 
-            			//an x-squared function, dx = 0.1 
+            vec1.integral(vec, 1)	# Euler integral of vec elements approximating 
+            			            # an x-squared function, dx = 0.1 
             vec1.printf() 
 
         will print the following elements in ``vec1`` to the screen: 
@@ -2364,17 +2368,26 @@ Vector
         .. code-block::
             python
 
-            vec2 = h.Vector(6) 
-            vec.indgen(0, 5.1, 0.1)	//vec will have 51 values from 0 to 5, with increment=0.1 
-            vec.apply("sq")		//sq() squares an element  
-            			//and is defined in the example for .deriv 
-            vec1.integral(vec, 0.1)	//Euler integral of vec elements approximating 
-            			//an x-squared function, dx = 0.1 
-            for i=0,5{vec2.x[i] = vec1.x[i*10]}  //put the value of every 10th index in vec2 
-            vec2.printf() 
+            from neuron import h
+            import numpy
 
-        will print the following elements in ``vec2`` (which are the elements of 
-        ``vec1`` corresponding to the integers 0-5) to the screen: 
+            # set vec to the squares of 51 values from 0 to 5
+            vec = h.Vector(numpy.linspace(0, 5, 51))
+            vec.pow(2)
+
+            vec1 = h.Vector()
+            vec1.integral(vec, 0.1) # Euler integral of vec elements approximating
+                                    # an x-squared function, dx = 0.1
+
+            # print every 10th index
+            for i in xrange(0, len(vec1), 10):
+                print vec1.x[i],
+
+            print
+
+
+        will print the following elements  of 
+        ``vec1`` corresponding to the integers 0-5 to the screen: 
 
         .. code-block::
             python
@@ -2478,15 +2491,17 @@ Vector
         .. code-block::
             python
 
+            from neuron import h
+            
             r = h.Random() 
-            r.uniform(0,100) 
+            r.uniform(0, 100) 
             a = h.Vector(10) 
             a.setrand(r) 
-            a.printf 
+            a.printf() 
              
-            si = a.sortindex 
-            si.printf 
-            a.index(si).printf 
+            si = a.sortindex()
+            si.printf() 
+            a.index(si).printf() 
 
          
 
@@ -2564,11 +2579,11 @@ Vector
 
             vec = h.Vector() 
             vec.indgen(1,5,1) 
-            vec.printf 
-            vec.c.rotate(2).printf 
-            vec.c.rotate(2, 0).printf 
-            vec.c.rotate(-2).printf 
-            vec.c.rotate(-2, 0).printf 
+            vec.printf()
+            vec.c.rotate(2).printf()
+            vec.c.rotate(2, 0).printf() 
+            vec.c.rotate(-2).printf() 
+            vec.c.rotate(-2, 0).printf() 
 
 
          
@@ -2742,7 +2757,7 @@ Vector
             v1 = h.Vector() 
             v1.indgen(-.5, .5, .1) 
             v1.printf() 
-            v1.abs.printf() 
+            v1.abs().printf() 
 
 
     .. seealso::
@@ -2771,15 +2786,18 @@ Vector
         .. code-block::
             python
 
+            from neuron import h
+
             vec = h.Vector() 
             vec1 = h.Vector() 
             vec2 = h.Vector() 
             vec3 = h.Vector(6) 
-            vec.indgen(0, 5.1, 0.1)	//vec will have 51 values from 0 to 5, with increment=0.1 
-            vec1.integral(vec, 0.1)	//Euler integral of vec elements approximating 
-            			//an x-squared function, dx = 0.1 
-            vec2.indgen(0, 50,10) 
-            vec3.index(vec1, vec2)  //put the value of every 10th index in vec2 
+            vec.indgen(0, 5.1, 0.1)	# vec will have 51 values from 0 to 5, with increment=0.1 
+            vec1.integral(vec, 0.1)	# Euler integral of vec elements approximating 
+                                    # an x-squared function, dx = 0.1 
+            vec2.indgen(0, 50, 10) 
+            vec3.index(vec1, vec2)  # put the value of every 10th index in vec2 
+
 
         makes ``vec3`` with six elements corresponding to the integrated integers from 
         ``vec``. 
@@ -3280,46 +3298,48 @@ Refer to this source for further information.
         .. code-block::
             python
          
+            from neuron import h, gui
+
+            N = 16    # should be a power of 2
+
+            class MyGUI:
+                def __init__(self):
+                    self.c = 1
+                    self.f = 1 # waves per domain, max is N/2
+                    self.box = h.VBox()
+                    self.box.intercept(1)
+                    h.xpanel('', 1)
+                    h.xradiobutton('sin   ', lambda: self.p(0))
+                    h.xradiobutton('cos   ', lambda: self.p(1), 1)
+                    h.xvalue('freq (waves/domain)', (self, 'f'), 1, lambda: self.p(self.c))
+                    h.xpanel()
+                    self.g1 = h.Graph()
+                    self.g2 = h.Graph()
+                    self.g3 = h.Graph()
+                    self.box.intercept(0)
+                    self.box.map()
+                    self.g1.size(0, N, -1, 1)
+                    self.g2.size(0, N, -N, N)
+                    self.g3.size(0, N, -N, N)
+                    self.p(self.c)
+                
+                def p(self, c):
+                    self.v1 = h.Vector(N)
+                    self.v1.sin(self.f, c * h.PI / 2, 1000. / N)
+                    self.v1.plot(self.g1)
+                    
+                    self.v2 = h.Vector()
+                    self.v2.fft(self.v1, 1)     # forward
+                    self.v2.plot(self.g2)
+                    
+                    self.v3 = h.Vector()
+                    self.v3.fft(self.v2, -1)    # inverse
+                    self.v3.plot(self.g3)       # amplitude N/2 times the original
+
+            gui = MyGUI()
              
-            proc setup_gui() { 
-            box = h.VBox() 
-            box.intercept(1) 
-            xpanel("", 1) 
-            xradiobutton("sin   ", "c=0  p()") 
-            xradiobutton("cos   ", "c=1  p()") 
-            xvalue("freq (waves/domain)", "f", 1, "p()") 
-            xpanel() 
-            g1 = h.Graph() 
-            g2 = h.Graph() 
-            g3 = h.Graph() 
-            box.intercept(0) 
-            box.map() 
-            g1.size(0,N, -1, 1) 
-            g2.size(0,N, -N, N) 
-            g3.size(0,N, -N, N) 
-            } 
-            @code...	//define a gui for this example 
              
-            N=16	// should be power of 2 
-            c=1	// 0 -> sin   1 -> cos 
-            f=1	// waves per domain, max is N/2 
-            setup_gui() // construct the gui for this example 
-             
-            proc p() { 
-            v1 = h.Vector(N) 
-            v1.sin(f, c*PI/2, 1000/N) 
-            v1.plot(g1) 
-             
-            v2 = h.Vector() 
-            v2.fft(v1, 1)		// forward 
-            v2.plot(g2) 
-             
-            v3 = h.Vector() 
-            v3.fft(v2, -1)		// inverse 
-            v3.plot(g3)		// amplitude N/2 times the original 
-            } 
-             
-            p() 
+
 
          
         The inverse fft is mathematically almost identical 
@@ -3387,21 +3407,21 @@ Refer to this source for further information.
             python
 
             proc FFT() {local n, x 
-                    if ($1 == 1) { // forward 
+                    if ($1 == 1) { # forward 
                             $o3.fft($o2, 1) 
                             n = $o3.size() 
                             $o3.div(n/2) 
-                            $o3.x[0] /= 2	// makes the spectrum appear discontinuous 
-                            $o3.x[1] /= 2	// but the amplitudes are intuitive 
+                            $o3.x[0] /= 2	# makes the spectrum appear discontinuous 
+                            $o3.x[1] /= 2	# but the amplitudes are intuitive 
              
-                            $o4.copy($o3, 0, 1, -1, 1, 2)   // odd elements 
-                            $o3.copy($o3, 0, 0, -1, 1, 2)   // even elements 
+                            $o4.copy($o3, 0, 1, -1, 1, 2)   # odd elements 
+                            $o3.copy($o3, 0, 0, -1, 1, 2)   # even elements 
                             $o3.resize(n/2+1) 
                             $o4.resize(n/2+1) 
-                            $o3.x[n/2] = $o4.x[0]           //highest cos started in o3.x[1 
-                            $o4.x[0] = $o4.x[n/2] = 0       // weights for sin(0*i)and sin(PI*i) 
-            	}else{ // inverse 
-                            // shuffle o3 and o4 into o2 
+                            $o3.x[n/2] = $o4.x[0]           #highest cos started in o3.x[1 
+                            $o4.x[0] = $o4.x[n/2] = 0       # weights for sin(0*i)and sin(PI*i) 
+            	}else{ # inverse 
+                            # shuffle o3 and o4 into o2 
                             n = $o3.size() 
                             $o2.copy($o3, 0, 0, n-2, 2, 1) 
                             $o2.x[1] = $o3.x[n-1] 
@@ -3441,7 +3461,7 @@ Refer to this source for further information.
             g3.size(0,N/2, -1, 1) 
             g4.size(0,N, -1, 1) 
             } 
-            @code... 
+
             N=128 
             delay = 0 
             duration = N/2 
@@ -3577,7 +3597,7 @@ Refer to this source for further information.
 
             VECSIZE = 200 
             MINSUM = 50 
-            DT = 1000	// ms per bin of v1 (vsrchist) 
+            DT = 1000	# ms per bin of v1 (vsrchist) 
             TRIALS = 1 
              
             v1 = h.Vector(VECSIZE) 
