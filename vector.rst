@@ -1079,15 +1079,15 @@ Vector
 
             vs = h.Vector() 
              
-            {vs.indgen(0, .9, .1) 
-            vs.printf()} 
+            vs.indgen(0, .9, .1) 
+            vs.printf()
              
             print vs.indwhere(">", .3) 
             print "note roundoff error, vs.x[3] - .3 =", vs.x[3] - .3 
             print vs.indwhere("==", .5) 
              
             vd = vs.c.indvwhere(vs, "[)", .3, .7) 
-            {vd.printf()} 
+            vd.printf()
 
 
          
