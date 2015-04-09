@@ -177,19 +177,37 @@ Vector
 
     Description:
         Return the number of elements in the vector. The last element has the index: 
-        ``vec.size() - 1`` which can be abbreviated using -1 as above. for loops can use Vector as an iterable
+        ``vec.size() - 1`` which can be abbreviated using -1 as above.
+        
+        .. code-block::
+            python
+            
+            for i in xrange(int(vec.size())):
+                print vec[i]
+        
+    .. note::
+            
+        ``for`` loops can also use Vector as an iterable
 
         .. code-block::
             python
 
-            for i in vec: print i
+            for item in vec: print item
 
-        Note: There is a distinction between the size of a vector and the 
+    .. note::
+    
+        There is a distinction between the size of a vector and the 
         amount of memory allocated to hold the vector. Generally, memory is only 
         freed and reallocated if the size needed is greater than the memory storage 
         previously allocated to the vector. Thus the memory used by vectors 
         tends to grow but not shrink. To reduce the memory used by a vector, one 
         can explicitly call :func:`buffer_size` . 
+    
+    .. note::
+    
+        Due to the way NEURON connects with Python, ``vec.size()`` returns a
+        float, and it may be necessary to explicitly convert it to an ``int``
+        as in the example.
          
 ----
 
@@ -253,13 +271,13 @@ Vector
             python
 
             y = h.Vector(10) 
-            y.size() 
-            y.buffer_size() 
+            print y.size() 
+            print y.buffer_size() 
             y.resize(5) 
-            y.size()
-            y.buffer_size() 
-            y.buffer_size(100) 
-            y.size() 
+            print y.size()
+            print y.buffer_size() 
+            print y.buffer_size(100) 
+            print y.size() 
 
 ----
 
@@ -1460,6 +1478,8 @@ Vector
             h.xpanel() 
 
 
+        .. image:: images/vector-plot.png
+            :align: center
 
     .. seealso::
         :meth:`Graph.Vector`
@@ -1514,6 +1534,9 @@ Vector
                 vec.line(g, 0.1)
                 vec.rotate(10)
 
+        .. image:: images/vector-line.png
+            :align: center
+
 
     .. seealso::
         :meth:`Graph.family`
@@ -1563,6 +1586,13 @@ Vector
             errvec.apply("sqrt") 
             vec.ploterr(g, xvec, errvec, 10) 
             vec.mark(g, xvec, "O", 5) 
+
+
+        .. image:: images/vector-ploterr.png
+            :align: center
+         
+
+
 
         creates a graph which has x values of 0 through 100 in increments of 10 and 
         y values of 0 through 200 in increments of 20.  At each point graphed, vertical 
@@ -1661,7 +1691,12 @@ Vector
             v3.index(hist, v2)  
             v3.rotate(-1)            # so different y's within each pair 
             v3.x[0] = 0  
-            v3.plot(g, v2) 
+            v3.plot(g, v2)
+
+        .. image:: images/vector-histogram.png
+            :align: center
+
+
 
         creates a histogram of the occurrences of random numbers 
         ranging from 0 to 10 in divisions of 0.1. 
@@ -3346,7 +3381,8 @@ Refer to this source for further information.
             gui = MyGUI()
              
              
-
+        .. image:: images/fft1.png
+            :align: center
 
          
         The inverse fft is mathematically almost identical 
@@ -3413,31 +3449,30 @@ Refer to this source for further information.
         .. code-block::
             python
 
-            proc FFT() {local n, x 
-                    if ($1 == 1) { # forward 
-                            $o3.fft($o2, 1) 
-                            n = $o3.size() 
-                            $o3.div(n/2) 
-                            $o3.x[0] /= 2	# makes the spectrum appear discontinuous 
-                            $o3.x[1] /= 2	# but the amplitudes are intuitive 
-             
-                            $o4.copy($o3, 0, 1, -1, 1, 2)   # odd elements 
-                            $o3.copy($o3, 0, 0, -1, 1, 2)   # even elements 
-                            $o3.resize(n/2+1) 
-                            $o4.resize(n/2+1) 
-                            $o3.x[n/2] = $o4.x[0]           #highest cos started in o3.x[1 
-                            $o4.x[0] = $o4.x[n/2] = 0       # weights for sin(0*i)and sin(PI*i) 
-            	}else{ # inverse 
-                            # shuffle o3 and o4 into o2 
-                            n = $o3.size() 
-                            $o2.copy($o3, 0, 0, n-2, 2, 1) 
-                            $o2.x[1] = $o3.x[n-1] 
-                            $o2.copy($o4, 3, 1, n-2, 2, 1) 
-                            $o2.x[0] *= 2 
-                            $o2.x[1] *= 2  
-                            $o2.fft($o2, -1) 
-                    } 
-            } 
+            def FFT(direction, vt, vfr, vfi):
+                if direction == 1:   # forward
+                    vfr.fft(vt, 1) 
+                    n = int(vfr.size())
+                    vfr.div(n/2) 
+                    vfr.x[0] /= 2	# makes the spectrum appear discontinuous 
+                    vfr.x[1] /= 2	# but the amplitudes are intuitive 
+                    vfi.copy(vfr, 0, 1, -1, 1, 2)   # odd elements 
+                    vfr.copy(vfr, 0, 0, -1, 1, 2)   # even elements 
+                    vfr.resize(n/2+1) 
+                    vfi.resize(n/2+1) 
+                    vfr.x[n/2] = vfi.x[0]           #highest cos started in vfr.x[1]
+                    vfi.x[0] = vfi.x[n/2] = 0       # weights for sin(0*i)and sin(PI*i) 
+                else:                # inverse
+                    # shuffle vfr and vfi into vt
+                    n = int(vfr.size())
+                    vt.copy(vfr, 0, 0, n-2, 2, 1) 
+                    vt.x[1] = vfr.x[n-1] 
+                    vt.copy(vfi, 3, 1, n-2, 2, 1) 
+                    vt.x[0] *= 2 
+                    vt.x[1] *= 2  
+                    vt.fft(vt, -1) 
+
+
 
         If you load the previous example so that FFT is defined, the following 
         example shows the cosine and sine spectra of a pulse. 
@@ -3445,51 +3480,54 @@ Refer to this source for further information.
         .. code-block::
             python
  
-             
-            proc setup_gui() { 
-            box = h.VBox() 
-            box.intercept(1) 
-            xpanel("") 
-            xvalue("delay (points)", "delay", 1, "p()") 
-            xvalue("duration (points)", "duration", 1, "p()") 
-            xpanel() 
-            g1 = h.Graph() 
-            b1 = h.HBox() 
-            b1.intercept(1) 
-            g2 = h.Graph() 
-            g3 = h.Graph() 
-            b1.intercept(0) 
-            b1.map() 
-            g4 = h.Graph() 
-            box.intercept(0) 
-            box.map() 
-            g1.size(0,N, -1, 1) 
-            g2.size(0,N/2, -1, 1) 
-            g3.size(0,N/2, -1, 1) 
-            g4.size(0,N, -1, 1) 
-            } 
+            from neuron import h, gui
 
-            N=128 
-            delay = 0 
-            duration = N/2 
-            setup_gui() 
-            proc p() { 
-            v1 = h.Vector(N) 
-            v1.fill(1, delay, delay+duration-1) 
-            v1.plot(g1) 
-             
-            v2 = h.Vector() 
-            v3 = h.Vector() 
-            FFT(1, v1, v2, v3) 
-            v2.plot(g2) 
-            v3.plot(g3) 
-             
-            v4 = h.Vector() 
-            FFT(-1, v4, v2, v3) 
-            v4.plot(g4) 
-            } 
-            p() 
-             
+            N = 128
+
+            class MyGUI:
+                def __init__(self):
+                    self.delay = 0
+                    self.duration = N / 2
+                    self.box = h.VBox()
+                    self.box.intercept(1)
+                    h.xpanel('')
+                    h.xvalue('delay (points)', (self, 'delay'), 1, self.p)
+                    h.xvalue('duration (points)', (self, 'duration'), 1, self.p)
+                    h.xpanel()
+                    self.g1 = h.Graph()
+                    self.b1 = h.HBox()
+                    self.b1.intercept(1)
+                    self.g2 = h.Graph()
+                    self.g3 = h.Graph()
+                    self.b1.intercept(0)
+                    self.b1.map()
+                    self.g4 = h.Graph()
+                    self.box.intercept(0)
+                    self.box.map()
+                    self.g1.size(0, N, -1, 1)
+                    self.g2.size(0, N / 2, -1, 1)
+                    self.g3.size(0, N / 2, -1, 1)
+                    self.g4.size(0, N, -1, 1)
+                    self.p()
+                    
+                def p(self):
+                    self.v1 = h.Vector(N)
+                    self.v1.fill(1, self.delay, self.delay + self.duration - 1)
+                    self.v1.plot(self.g1)
+                    
+                    self.v2 = h.Vector()
+                    self.v3 = h.Vector()
+                    FFT(1, self.v1, self.v2, self.v3)
+                    self.v2.plot(self.g2)
+                    self.v3.plot(self.g3)
+                    self.v4 = h.Vector()
+                    FFT(-1, self.v4, self.v2, self.v3)
+                    self.v4.plot(self.g4)
+
+            mygui = MyGUI()
+            
+        .. image:: images/fft2.png
+            :align: center
 
 
     .. seealso::
@@ -3623,7 +3661,8 @@ Refer to this source for further information.
             v2.plot(g2) 
 
 
-
+        .. image:: images/vector-psth.png
+            :align: center
          
 
 ----
