@@ -10,3 +10,4 @@ Quick Links
 
     vector.rst
     layout.rst
+    programmatic.rst
