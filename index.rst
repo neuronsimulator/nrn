@@ -9,3 +9,4 @@ Quick Links
     :maxdepth: 1
 
     vector.rst
+    layout.rst
