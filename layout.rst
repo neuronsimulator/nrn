@@ -8,7 +8,7 @@ Layout
 
 
     Syntax:
-        ``Deck()``
+        ``h.Deck()``
 
 
     Description:
@@ -242,15 +242,15 @@ Layout
 
 
     Syntax:
-        ``HBox()``
+        ``h.HBox()``
 
-        ``HBox(frame)``
+        ``h.HBox(frame)``
 
-        ``VBox()``
+        ``h.VBox()``
 
-        ``VBox(frame)``
+        ``h.VBox(frame)``
 
-        ``VBox(frame, 0or1)``
+        ``h.VBox(frame, 0or1)``
 
 
     Description:
