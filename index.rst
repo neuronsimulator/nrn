@@ -12,3 +12,4 @@ Quick Links
     layout.rst
     programmatic.rst
     shape.rst
+    impedance.rst
