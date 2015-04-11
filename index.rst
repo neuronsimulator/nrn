@@ -13,3 +13,5 @@ Quick Links
     programmatic.rst
     shape.rst
     impedance.rst
+    widgets.rst
+
