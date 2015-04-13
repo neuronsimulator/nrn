@@ -14,4 +14,6 @@ Quick Links
     shape.rst
     impedance.rst
     widgets.rst
+    mechstan.rst
+
 
