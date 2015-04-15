@@ -7,12 +7,5 @@ Contents:
     :maxdepth: 2
 
     firststeps.rst    
-
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+    ballandstick1.rst
 
