@@ -1,6 +1,8 @@
-Welcome to NEURON + Python Tutorials's documentation!
-=====================================================
+NEURON + Python Tutorial
+========================
 
+.. centered::    Thomas McTavish, Robert A. McDougal, Michael L. Hines
+    
 Contents:
 
 .. toctree::
@@ -8,4 +10,5 @@ Contents:
 
     firststeps.rst    
     ballandstick1.rst
+    ballandstick2.rst
 
