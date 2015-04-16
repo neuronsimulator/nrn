@@ -13,7 +13,9 @@ make latex
 make pdflatex # to get all the way to pdf
 make epub 
 etc.
-
+** setting up system to be able to compile rst
+apt-get install python-sphinx
+apt-get install python-numpydoc
 
 * 15apr16 division of labor
 several files have already been translated, now I split the work roughly evenly for the rest:
@@ -112,6 +114,7 @@ several files have already been translated, now I split the work roughly evenly 
 903   modelspec/programmatic/topology/geometry.rst  
 2972    modelspec/programmatic/network/parcon.rst       
 
-** 
+** setting up the repo from the old repo
+cp -nR /usr/site/nrniv/nrnhelprst/* /u/ramcd/nrnhelprstpy/
 (set noglob ; find . -type f -name *.rst -print -exec hg add {} \;)
 
