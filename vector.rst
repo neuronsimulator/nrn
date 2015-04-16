@@ -33,8 +33,18 @@ Vector
 	The reason for the continued use of Vector is both due to back-compatibility and due to the many faster C-level
 	extensions that have been written as NMOD programs that make use of this class.
 
+	A Vector is itself an iterable and can be used in any context that takes an iterable, e.g.,
+
+        .. code-block::
+	   python
+
+           for x in vec: print x
+	   [x for x in vec]
+	   numpy.array(vec)
+
         A Vector object created with this class can be thought of as 
-        containing a ``double x[]`` variable. Individual elements of this array can 
+	containing a  one dimensional x array with elements of type float.
+        Individual elements of this array can 
         be manipulated with a :samp:`{objref}.x[{index}]` notation. 
 	Alternatively, a :samp:`{objref}[{index}]` notation can be used to access Vector elements **but 
 	cannot be used to set elements.**  Vector slices are not directly supported but are replicated with the functionality
@@ -143,7 +153,7 @@ Vector
 
     Description:
         Elements of a vector can be accessed with ``vec.x[index]`` notation for either access or assignment. 
-        Vector indices range from 0 to Vector.size()-1. 
+        Vector indices range from 0 to len(Vector)-1 
         Vector contents can also be accessed with ``vec.get(index)`` or set with ``vec.set(index, value)``
 
     Example:
@@ -155,7 +165,7 @@ Vector
             python
 
             h.xpanel("show a field editor") 
-            h.xpvalue("last element", vec._ref_x[int(vec.size()) - 1]) 
+            h.xpvalue("last element", vec._ref_x[len(vec)-1]) 
             h.xpanel() 
 
         Note, however, that there is a potential difficulty with the :func:`xpvalue` field 
@@ -176,9 +186,13 @@ Vector
 
 
     Description:
+        Deprecated in favor of len(vec); note that ``len(vec) == int(vec.size())``
         Return the number of elements in the vector. The last element has the index: 
-        ``vec.size() - 1`` which can be abbreviated using -1 as above.
+        ``int(vec.size() - 1)`` which can be abbreviated using -1 as above.
         
+        Due to the way NEURON connects with Python, numerical routines all return a
+        float, and it may be necessary to explicitly convert it to an ``int``:
+
         .. code-block::
             python
             
@@ -202,13 +216,10 @@ Vector
         previously allocated to the vector. Thus the memory used by vectors 
         tends to grow but not shrink. To reduce the memory used by a vector, one 
         can explicitly call :func:`buffer_size` . 
-    
-    .. note::
-    
-        Due to the way NEURON connects with Python, ``vec.size()`` returns a
-        float, and it may be necessary to explicitly convert it to an ``int``
-        as in the example.
          
+    .. seealso::
+        :meth:`Vector.buffer_size`
+
 ----
 
 .. method:: Vector.resize
