@@ -4,5 +4,17 @@ http://neuron.yale.edu/hg/nrnhelprst/
 ** to compile to html
 make html
 ** will put results on your neurosimlab webspace
+** if compile on laptop then will go into 
+file:///$USER/public_html/pyhelp
+and can be loaded from there
+if compile on neurosim will go to your public_html so will be visible from outside
+can also compile using
+make latex 
+make pdflatex # to get all the way to pdf
+make epub 
+etc.
+
+
+
 
 
