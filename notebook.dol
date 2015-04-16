@@ -32,7 +32,7 @@ etc.
 468		visualization/plotshapeclass.rst		
 693		modelspec/programmatic/kschan.rst		
 964		programming/ockeywor.rst	
-*** Salvador
+*** Cliff
 37		programming/gui/vfe.rst		
 49		simctrl/sessionsave.rst		
 71		analysis/guitools/impedancetools.rst		
@@ -47,7 +47,7 @@ etc.
 491		programming/io/file.rst		
 716		programming/math/random.rst		
 1053	modelspec/programmatic/mechanisms/mech.rst		
-*** Cliff
+*** Salvador
 37		programming/errors.rst		
 50		analysis/programmatic/misc.rst		
 72		programming/predec.rst		
