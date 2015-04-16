@@ -282,13 +282,13 @@ Vector
             python
 
             y = h.Vector(10) 
-            print y.size() 
+            print len(y) 
             print y.buffer_size() 
             y.resize(5) 
-            print y.size()
+            print len(y)
             print y.buffer_size() 
             print y.buffer_size(100) 
-            print y.size() 
+            print len(y) 
 
 ----
 
@@ -760,8 +760,7 @@ Vector
         If the *dest* is larger than required AND there is more than one 
         argument the *dest* is NOT resized. 
         One may use -1 for the 
-        src_end argument to specify the entire size (instead of the 
-        tedious ``src.size()-1``) 
+        src_end argument to specify the entire size (instead of the tedious ``len(src)-1``) 
          
         If the second (and third) argument is a vector, 
         the elements of that vector are the 
@@ -1478,7 +1477,7 @@ Vector
             vec.apply("sin") 
             vec.plot(g, .1) 
             def do_run():
-                for i in xrange(int(vec.size())):
+                for i in xrange(len(vec)):
                     vec.rotate(1)
                     g.flush()
                     h.doNotify()
@@ -1694,7 +1693,7 @@ Vector
             g = h.Graph() 
             g.size(0,10,0,30) 
             # create an index vector with 0,0, 1,1, 2,2, 3,3, ... 
-            v2 = h.Vector(2*hist.size())      
+            v2 = h.Vector(2*len(hist))
             v2.indgen(.5)  
             v2.apply("int")  
             #  
@@ -1779,7 +1778,7 @@ Vector
             data.setrand(r) 
              
             hist = data.sumgauss(-4, 6, .5, 1) 
-            x = h.Vector(hist.size()) 
+            x = h.Vector(len(hist))
             x.indgen(-4, 6, .5) 
              
             g = h.Graph() 
@@ -3463,7 +3462,7 @@ Refer to this source for further information.
             def FFT(direction, vt, vfr, vfi):
                 if direction == 1:   # forward
                     vfr.fft(vt, 1) 
-                    n = int(vfr.size())
+                    n = len(vfr)
                     vfr.div(n/2) 
                     vfr.x[0] /= 2	# makes the spectrum appear discontinuous 
                     vfr.x[1] /= 2	# but the amplitudes are intuitive 
@@ -3475,7 +3474,7 @@ Refer to this source for further information.
                     vfi.x[0] = vfi.x[n/2] = 0       # weights for sin(0*i)and sin(PI*i) 
                 else:                # inverse
                     # shuffle vfr and vfi into vt
-                    n = int(vfr.size())
+                    n = len(vfr)
                     vt.copy(vfr, 0, 0, n-2, 2, 1) 
                     vt.x[1] = vfr.x[n-1] 
                     vt.copy(vfi, 3, 1, n-2, 2, 1) 
