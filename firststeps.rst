@@ -123,7 +123,7 @@ We see from the list of elements after calling ``dir(soma)`` that insert is avai
 Aside 4: Sections and segments.
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-A NEURON Section is considered a piece of cylindrical cable. Depending on the resolution desired, it may be necessary to divide the cable into a number of segments where each segment is isopotential across its spatial range. The number of segments within a section is given by the variable, nseg. To access a part of the cylinder, specify a value between 0 and 1, where 0 is typically the end closest to the soma and 1 is the distal end. Because nseg divides the cable into equal-length parts, it should be an odd number so that to address the middle of the cable, (0.5), gives the middle segment.
+A NEURON Section is considered a piece of cylindrical cable. Depending on the resolution desired, it may be necessary to divide the cable into a number of segments where voltage varies linearly between centers of adjacent segments. The number of segments within a section is given by the variable, :data:`nseg`. The total ionic current across the segment membrane is approximately the area of the segment multiplied by the ionic current density at the center of the segment. To access a part of the section, specify a value between 0 and 1, where 0 is typically the end closest to the soma and 1 is the distal end. Because nseg divides the cable into equal-length parts, it should be an odd number so that to address the middle of the cable, (0.5), gives the middle segment.
 
 .. Segments of a section are illustrated below.
 .. NOTE: THIS WAS MISSING IN THE SAGE VERSION
