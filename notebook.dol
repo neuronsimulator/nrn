@@ -112,4 +112,6 @@ several files have already been translated, now I split the work roughly evenly 
 903   modelspec/programmatic/topology/geometry.rst  
 2972    modelspec/programmatic/network/parcon.rst       
 
+** 
+(set noglob ; find . -type f -name *.rst -print -exec hg add {} \;)
 
