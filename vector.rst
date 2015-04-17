@@ -169,8 +169,8 @@ Vector
             h.xpanel() 
 
         Note, however, that there is a potential difficulty with the :func:`xpvalue` field 
-        editor since, if vec is ever resized, then the pointer will be invalid. In 
-        this case, the field editor will display the string, "Free'd". 
+        editor since, if vec is resized to be larger than vec.buffer_size() a reallocation of the
+        memory will cause the pointer to be invalid. In this case, the field editor will display the string, "Free'd". 
 
 	.. warning::
         ``vec.x[-1]`` or ``vec[-1]`` returns the value of the last element of the vector but ``vec._ref_x`` cannot be accessed in
@@ -229,8 +229,8 @@ Vector
 
     Description:
         Resize the vector.  If the vector is made smaller, then trailing elements 
-        will be zeroed.  If it is expanded, h.elements will be initialized to 0 
-        and original elements will remain unchanged. 
+        will be zeroed.  If it is expanded, the new elements will be initialized to 0.0;
+        original elements will remain unchanged. 
          
         Warning: Any function that 
         resizes the vector to a larger size than its available space will reallocate and thereby
