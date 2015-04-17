@@ -9,7 +9,7 @@ Quick Links
     :maxdepth: 1
 
     vector.rst
-    layout.rst
+    programming/gui/layout.rst
     programmatic.rst
     shape.rst
     impedance.rst

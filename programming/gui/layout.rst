@@ -8,7 +8,7 @@ Layout
 
 
     Syntax:
-        ``Deck()``
+        ``h.Deck()``
 
 
     Description:
@@ -20,46 +20,47 @@ Layout
     Example:
 
         .. code-block::
-            none
+            python
+        
+            from neuron import h, gui
+            from math import sin, cos
 
-            objref deck, g 
-            deck = new Deck() 
-            deck.intercept(1)       //all following windows will be placed in the deck 
-            strdef yexpr            //declare a variable to hold the string expressing a function 
-            ncard =10               //there will be 10 cards in the deck 
-            proc mkgraph(){         //this procedure makes a graph 
-             
-            	g = new Graph()	    //the new graph is declared 
-            	g.size(-4,4,-4,4)   //and given a size 
-            	t = 0 
-            	sprint(yexpr, "3*sin(%d*t)", $1)	//takes the argument to mkgraph() and  
-            						//uses it to change the sin function 
-            	g.addexpr(yexpr)    //declare the string represented by yexpr as the y function 
-            	g.xexpr("3*cos(t)") //3*cos(t) is the x function 
-            	g.begin() 
-            	for(t=0; t<=2*PI+0.01; t=t+0.01){ 
-            		g.plot(t)	    //plot the x,y expression for one cycle between 0 and 2PI 
-            	} 
-            	g.flush()		    //draw the plot 
-            } 
-            for i=1,1 mkgraph(i)    //make the first graph, so it will appear while the other 
-            deck.intercept(0)	    //9 graphs are being made 
-            deck.map()	    	    //put the deck on the screen 
-            deck.flip_to(0)         //show the first plot of the deck 
-            xpanel("flip to")       //create a panel titled "flip to" 
-            for i=1,ncard {         //create radio buttons which will bring each card to the front 
-                sprint(yexpr, "xradiobutton(\"card %d\", \"deck.flip_to(%d)\")", i,i-1) 
-                execute(yexpr) 
-            } 
-            xpanel()                //close off the set of panel commands 
-             
-            for i=2,ncard {         //now that the first card appears on the screen, take the time 
-                                    //to make the rest of the cards 
-            	deck.intercept(1)   //reopen the deck 
-            	mkgraph(i)          //make a plot for each other card 
-            	deck.intercept(0)   //close the deck 
-            }	 
+            deck = h.Deck()
+            deck.intercept(1)         # all following windows will be placed in the deck
+            ncard = 10                # there will be 10 cards in the deck
 
+            def mkgraph(n):
+                """make a new graph"""
+                g = h.Graph()          # the new graph is declared
+                g.size(-4, 4, -4, 4)   # and given a size
+                g.begin()
+                for i in xrange(629):
+                    t = 0.01 * i
+                    g.line(3 * cos(t), 3 * sin(n * t))
+                g.flush()              # draw the plot
+
+            def flip_function(i):
+                """return a function that flips to the ith card"""
+                return lambda: deck.flip_to(i)
+
+            mkgraph(1)                 # make the first graph, so it will appear while the other
+            deck.intercept(0)          # 9 graphs are being made
+            deck.map()                 # put the deck on the screen
+            deck.flip_to(0)            # show the first plot of the deck
+            h.xpanel('flip to')        # create a panel titled "flip to"
+            for i in xrange(ncard):    # create radio buttons which will bring each card to the front
+                h.xradiobutton('card %d' % (i + 1), flip_function(i), i == 0)
+
+            h.xpanel()                 # close off the set of panel commands
+
+            for i in xrange(1, ncard): # now that the first card appears on the screen, make the rest
+                deck.intercept(1)      # reopen the deck
+                mkgraph(i + 1)         # make a plot for each other card
+                deck.intercept(0)      # close the deck
+
+
+        .. image:: ../../images/deck-constructor.png
+            :align: center
          
         makes a deck of windows showing the plots :math:`\{(3\cos(t), 3\sin(i\,t)): 0 \le t \le 2\pi \}`, where :math:`i=1 \ldots 10`.
         You can see in this example how the 
@@ -82,38 +83,6 @@ Layout
     Description:
         When the argument is 1, all window creation is intercepted and the window 
         contents are placed in a deck rather than independently on the screen. 
-
-    Example:
-
-        .. code-block::
-            none
-
-            objref deck, g 
-            deck = new Deck() 
-            deck.intercept(1)	//all following windows will be placed in the deck 
-            strdef yexpr		//declare a variable to hold the string expressing a function 
-            ncard =10		//there will be 10 cards in the deck 
-            proc mkgraph(){		//this procedure makes a graph 
-             
-            	g = new Graph()		//the new graph is declared 
-            	g.size(-4,4,-4,4)	//and given a size 
-            	t = 0 
-            	sprint(yexpr, "3*sin(%d*t)", $1)	//takes the argument to mkgraph() and  
-            						//uses it to change the sin function 
-            	g.addexpr(yexpr)	//declare the string represented by yexpr as the y function 
-            	g.xexpr("3*cos(t)")	//3*cos(t) is the x function 
-            	g.begin() 
-            	for(t=0; t<=2*PI+0.01; t=t+0.01){ 
-            		g.plot(t)	//plot the x,y expression for one cycle between 0 and 2PI 
-            	} 
-            	g.flush()		//draw the plot 
-            } 
-            for i=1,ncard mkgraph(i)	//make the first graph, so it will appear while the other 
-            deck.intercept(0)	//9 graphs are being made 
-            deck.map()		//put the deck on the screen 
-            deck.flip_to(0)		//show the first plot of the deck 
-
-
          
 
 ----
@@ -138,11 +107,12 @@ Layout
     Example:
 
         .. code-block::
-            none
+            python
 
-            objref d 
-            d = new Deck() 
-            d.map()		//actually draws the deck window on the screen 
+            from neuron import h, gui
+            
+            d = h.Deck() 
+            d.map()		# actually draws the deck window on the screen 
 
         creates an empty deck window on the screen. 
 
@@ -272,15 +242,15 @@ Layout
 
 
     Syntax:
-        ``HBox()``
+        ``h.HBox()``
 
-        ``HBox(frame)``
+        ``h.HBox(frame)``
 
-        ``VBox()``
+        ``h.VBox()``
 
-        ``VBox(frame)``
+        ``h.VBox(frame)``
 
-        ``VBox(frame, 0or1)``
+        ``h.VBox(frame, 0or1)``
 
 
     Description:
@@ -318,11 +288,11 @@ Layout
     Example:
 
         .. code-block::
-            none
+            python
 
-            objref b 
-            b = new VBox(2) 
-            b.map 
+            from neuron import h, gui
+            b = h.VBox(2)
+            b.map()
 
         creates an empty box on the screen with a light gray inset frame. 
 
@@ -348,21 +318,28 @@ Layout
     Example:
 
         .. code-block::
-            none
+            python
+            
+            from neuron import h, gui
 
-            objref vbox, g 
-            vbox = new VBox() 
-            vbox.intercept(1)	//all following creations go into the "vbox" box 
-            g = new Graph() 
-            xpanel("") 
-            x=3 
-            xvalue("x") 
-            xbutton("press me", "print 1") 
-            xpanel() 
-            vbox.intercept(0)	//ends intercept mode 
-            vbox.map()		//draw the box and its contents 
+            vbox = h.VBox()
+            vbox.intercept(1)	# all following creations go into the "vbox" box 
+            g = h.Graph() 
+            h.xpanel("") 
+            x = h.ref(3)
+            h.xpvalue('x', x) 
 
+            def on_button_press():
+                print 'you pressed the button'
 
+            h.xbutton("press me", on_button_press) 
+
+            h.xpanel() 
+            vbox.intercept(0)   # ends intercept mode 
+            vbox.map()		    # draw the box and its contents 
+
+        .. image:: ../../images/vbox-intercept.png
+            :align: center
          
 
 ----
@@ -388,11 +365,11 @@ Layout
     Example:
 
         .. code-block::
-            none
+            python
 
-            objref b 
-            b = new VBox(2) 
-            b.map		//actually draws the box on the screen 
+            from neuron import h, gui
+            b = h.VBox(2) 
+            b.map()          # actually draws the box on the screen 
 
         creates an empty box on the screen with a light gray inset frame. 
 
@@ -446,7 +423,7 @@ Layout
 
 
     Syntax:
-        ``box.size(&x[0])``
+        ``box.size(neuron_array_ref)``
 
 
     Description:
@@ -457,19 +434,31 @@ Layout
     Example:
 
         .. code-block::
-            none
+            python
+            
+            from neuron import h, gui
+            import neuron
+            import numpy
 
-            double s[4] 
-            proc size() { 
-                if ($o1.ismapped) { 
-                    $o1.size(&s[0]) 
-                    print $o1, s[0], s[1], s[2], s[3] 
-                } 
-            } 
-             
-            objref vboxes 
-            vboxes = new List("VBox") 
-            for i=0, vboxes.count-1 size(vboxes.object(i)) 
+            def size(obj):
+                if obj.ismapped():
+                    s = numpy.array([0, 0, 0, 0], 'd')
+                    obj.size(neuron.numpy_element_ref(s, 0))
+                    print obj.hname(), s[0], s[1], s[2], s[3]
+
+            # create two vboxes, but only map 1
+            vb1, vb2 = h.VBox(), h.VBox()
+            vb1.map()
+
+            def show_all_sizes():
+                vboxes = h.List('VBox')
+                for i in xrange(int(vboxes.count())):
+                    size(vboxes.object(i))
+
+            show_all_sizes()
+
+            # can now manually resize the mapped VBox and call show_all_sizes again,
+            # if desired
 
 
 
@@ -689,6 +678,7 @@ Layout
             RunFitter 100 
             FunctionFitter 100 
             MulRunFitter 100 
+
 
 
 
