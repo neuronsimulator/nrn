@@ -15,5 +15,6 @@ Quick Links
     impedance.rst
     widgets.rst
     mechstan.rst
+    programming/gui/dialog.rst
 
 
