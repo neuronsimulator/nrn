@@ -16,5 +16,5 @@ Quick Links
     widgets.rst
     mechstan.rst
     programming/gui/dialog.rst
-
+    programming/pointers/misc.rst
 

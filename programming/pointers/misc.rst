@@ -6,30 +6,24 @@ Obsolete Pointer Functions
 
 
     Syntax:
-        ``this_node(x)``
+    
+        .. code-block::
+            python
+
+            h.this_node(x)            
+            h.this_node(x, sec=section)
 
 
     Description:
         Return a pointer (coded as a double) to the segment 
-        of the currently accessed section that 
-        contains location *x*. If you wish to compute a segment number 
-        index where 1 is the first nonzero area segment and nseg is the last 
+        of *section* that 
+        contains location *x*.
+        If no section is specified, it uses the currently accessed section; see
+        :func:`cas`. If you wish to compute a segment number 
+        index where 1 is the first nonzero area segment and :data:`nseg` is the last 
         nonzero area segment 
         of the currently accessed section corresponding to position x use the 
         hoc function 
-
-        .. code-block::
-            none
-
-            func segnum() { 
-                    if ($1 <= 0) { 
-                            return 0 
-                    }else if ($1 >= 1) { 
-                            return nseg+1 
-                    }else { 
-                            return int($1*nseg + .5) 
-                    } 
-            } 
 
 
     .. warning::
@@ -43,7 +37,12 @@ Obsolete Pointer Functions
 
 
     Syntax:
-        ``this_section(x)``
+    
+        .. code-block::
+            python
+            
+            h.this_section(x)
+
 
 
     Description:
