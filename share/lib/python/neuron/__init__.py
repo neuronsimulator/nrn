@@ -100,28 +100,6 @@ $Id: __init__.py,v 1.1 2008/05/26 11:39:44 hines Exp hines $
 #  pass
 
 try:
-  # mingw + launch python fails on 'import neuron' because it has a problem
-  # loading nrniv.dll even if PATH points into the <install>/bin64 folder.
-  # One solution was to copy all of them from <install>/bin64/*.dll
-  # to <install>/lib/python but another hack is to change folders to
-  # <install>/bin64, import hoc, and then to change back.
-  import sys, os
-  if sys.executable.find('python.exe') > 0 and sys.platform == 'win32':
-    curdir = os.getcwd()
-    n = os.getenv('NEURONHOME')
-    if n is None:
-      print 'NEURONHOME environment variable should be set to where NEURON was installed.'
-      n = '\\'.join(__file__.split('\\')[:-4])
-      if os.path.isfile(n+'\\bin\\nrniv.dll'):
-        os.putenv('NEURONHOME', '/'.join(n.split('\\')))
-    n += '\\bin'
-    try:
-      os.chdir(n)
-      import hoc
-      os.chdir(curdir)
-    except:
-      print 'could not import hoc after temporarily changing folder to '+ n
-  else:
     import hoc
 except:
   #Python3.1 extending needs to look into the module explicitly
