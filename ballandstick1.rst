@@ -296,6 +296,23 @@ Let's also visualize what is going on in the dendrite. Notice that we do not hav
 .. image:: images/ballstick5.png
     :align: center
 
+.. note::
+
+    In the line beginning with ``soma_plot,``, the comma indicates that the left-hand-side
+    is to be interpreted as a tuple. The right hand side is a list of length 1, and when
+    you assign a list to a tuple, the first element of the list becomes the first element
+    of the tuple, etc.
+    
+    For example, if
+    
+    .. code-block:: python
+    
+        a, = [17]
+        b = [17]
+        c, d = [123, 'foo']
+    
+    Then a = 17 (the integer), while b is a list of length one containing the integer 17.
+    Finally, c is the integer 123 and d is the string ``foo``.
 
 
 Let's push it a bit more. Let's see the effects of :data:`nseg`, the number of segments of the dendrite, on the signal through the dendrite.
@@ -360,8 +377,7 @@ Let's modify :data:`nseg` to other values. What values overlay the blue and gree
         stim.amp = i
         h.run()
         soma_hires, = pyplot.plot(t_vec, v_vec, color='blue')
-        soma_hires, = pyplot.plot(t_vec, dend_v_vec, color='green')
-        
+        soma_hires, = pyplot.plot(t_vec, dend_v_vec, color='green')        
         # Copy the values of these "reference" vectors for use below
         ref_v_vec = numpy.zeros_like(v_vec)
         v_vec.to_python(ref_v_vec)
@@ -379,8 +395,7 @@ Let's modify :data:`nseg` to other values. What values overlay the blue and gree
         stim.amp = i
         h.run()
         soma_lowres, = pyplot.plot(t_vec, v_vec, color='black')
-        dend_lowres, = pyplot.plot(t_vec, dend_v_vec, color='red')
-        
+        dend_lowres, = pyplot.plot(t_vec, dend_v_vec, color='red')        
         err += numpy.mean(numpy.abs(numpy.subtract(ref_v[idx], v_vec)))
         err += numpy.mean(numpy.abs(numpy.subtract(ref_dend_v[idx], dend_v_vec)))
         idx += 1

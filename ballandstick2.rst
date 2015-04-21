@@ -80,17 +80,17 @@ methods to clarify the purpose of each code block.
             self.build_subsets()
             self.define_geometry()
             self.define_biophysics()
-            
+        #            
         def create_sections(self):
             """Create the sections of the cell."""
             # NOTE: cell=self is required to tell NEURON of this object.
             self.soma = h.Section(name='soma', cell=self)
             self.dend = h.Section(name='dend', cell=self)
-            
+        #            
         def build_topology(self):
             """Connect the sections of the cell to build a tree."""
             self.dend.connect(self.soma(1))
-            
+        #            
         def define_geometry(self):
             """Set the 3D geometry of the cell."""
             self.soma.L = self.soma.diam = 12.6157 # microns
@@ -98,29 +98,34 @@ methods to clarify the purpose of each code block.
             self.dend.diam = 1                     # microns
             self.dend.nseg = 5
             h.define_shape() # Translate into 3D points.
-
+        #
         def define_biophysics(self):
             """Assign the membrane properties across the cell."""
             for sec in self.all: # 'all' defined in build_subsets
                 sec.Ra = 100    # Axial resistance in Ohm * cm
                 sec.cm = 1      # Membrane capacitance in micro Farads / cm^2
-            
             # Insert active Hodgkin-Huxley current in the soma
             self.soma.insert('hh')
             self.soma.gnabar_hh = 0.12  # Sodium conductance in S/cm2
             self.soma.gkbar_hh = 0.036  # Potassium conductance in S/cm2
             self.soma.gl_hh = 0.0003    # Leak conductance in S/cm2
             self.soma.el_hh = -54.3     # Reversal potential in mV
-            
             # Insert passive current in the dendrite
             self.dend.insert('pas')
             self.dend.g_pas = 0.001  # Passive conductance in S/cm2
             self.dend.e_pas = -65    # Leak reversal potential mV
-            
+        #            
         def build_subsets(self):
             """Build subset lists. For now we define 'all'."""
             self.all = h.SectionList()
             self.all.wholetree(sec=self.soma) 
+
+.. note::
+
+    The ``#`` signs separating each method in the class are unnecessary when
+    running the code as a script. They are included here to allow this code-block
+    to be copy-pasted into a Python console. (Without them, Python would interpret
+    a blank line as indicating the end of the class.)
 
 Let's make an instance of the cell.
 
@@ -153,8 +158,7 @@ So far so good. Let's now attach a stimulator, run the simulation and see how it
         stim = h.IClamp(cell.dend(loc))
         stim.delay = delay
         stim.dur = dur
-        stim.amp = amp
-        
+        stim.amp = amp        
         return stim
         
     def set_recording_vectors(cell):
@@ -168,8 +172,7 @@ So far so good. Let's now attach a stimulator, run the simulation and see how it
         t_vec = h.Vector()        # Time stamp vector
         soma_v_vec.record(cell.soma(0.5)._ref_v)
         dend_v_vec.record(cell.dend(0.5)._ref_v)
-        t_vec.record(h._ref_t)
-        
+        t_vec.record(h._ref_t)        
         return soma_v_vec, dend_v_vec, t_vec
         
     def simulate(tstop=25):
@@ -218,6 +221,7 @@ Now let's compare the effects of four different current strengths:
         simulate()
         # When i==step, we are at the first time through.
         show_output(soma_v_vec, dend_v_vec, t_vec, i==step) 
+        
     pyplot.show()
 
 .. image:: images/ballstick8.png
