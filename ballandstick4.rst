@@ -333,7 +333,7 @@ Let's run other instances of the net. The code below keeps the variable spikes f
 .. image:: images/ballstick16.png
     :align: center
 
-
+In both simulations, the first spike occurs at 12.625 ms. After that, the red spikes lag the black ones by steadily increasing amounts.
 
 This concludes this part of the tutorial. The next part translates this serial implementation into a parallel model.
 
