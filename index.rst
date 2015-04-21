@@ -13,4 +13,5 @@ Contents:
     ballandstick1.rst
     ballandstick2.rst
     ballandstick3.rst
+    ballandstick4.rst
 
