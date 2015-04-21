@@ -12,4 +12,5 @@ Contents:
     firststeps.rst    
     ballandstick1.rst
     ballandstick2.rst
+    ballandstick3.rst
 

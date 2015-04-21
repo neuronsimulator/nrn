@@ -73,8 +73,7 @@ methods to clarify the purpose of each code block.
     
     class BallAndStick(object):
         """Two-section cell: A soma with active channels and
-        a dendrite with passive properties."""
-        
+        a dendrite with passive properties."""        
         def __init__(self):
             self.create_sections()
             self.build_topology()
