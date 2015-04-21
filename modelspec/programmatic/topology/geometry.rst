@@ -827,6 +827,20 @@ Reading 3D Data from NEURON
         origin. Note that distance is measured from the centers of 
         segments. 
 
+    Example:
+        .. code-block::
+            none
+
+            create a, b
+            connect b(0), a(1)
+            a { L = 1000  nseg = 5 }
+            b { L = 200   nseg = 5 }
+            
+            { a distance(0, 0.5) } // origin is center of a
+            b print distance(0.0) // 500
+            b print distance(0.5) // 600
+            b print distance(1.0) // 700
+
     .. warning::
         When subtrees are connected by :meth:`ParallelContext.multisplit` , the 
         distance function returns 1e20 if the path spans the split location. 
