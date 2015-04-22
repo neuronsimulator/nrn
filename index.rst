@@ -15,4 +15,5 @@ Contents:
     ballandstick3.rst
     ballandstick4.rst
     ballandstick5.rst
+    spikeplot.rst
 
