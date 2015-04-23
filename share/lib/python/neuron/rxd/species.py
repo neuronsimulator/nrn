@@ -247,6 +247,12 @@ class Species(_SpeciesMathable):
 
         import neuron
         import ctypes
+        
+        from . import rxd
+        # if there is a species, then rxd is being used, so we should register
+        # this function may be safely called many times
+        rxd._do_nbs_register()
+
 
         # TODO: check if "name" already defined elsewhere (if non-None)
         #       if so, make sure other fields consistent, expand regions as appropriate

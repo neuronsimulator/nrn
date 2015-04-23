@@ -4,7 +4,6 @@ from . import species, node, section1d, region, morphology
 from .nodelist import NodeList
 import weakref
 import numpy
-from neuron import nonvint_block_supervisor as nbs
 import scipy.sparse
 import scipy.sparse.linalg
 import ctypes
@@ -566,8 +565,6 @@ def _w_fixed_step_solve(raw_dt): return _fixed_step_solve(raw_dt)
 _callbacks = [_w_setup, None, _w_currents, _w_conductance, _w_fixed_step_solve,
               _w_ode_count, _w_ode_reinit, _w_ode_fun, _w_ode_solve, _w_ode_jacobian, None]
 
-nbs.register(_callbacks)
-
 _curr_ptr_vector = None
 _curr_ptr_storage = None
 _curr_ptr_storage_nrn = None
@@ -877,14 +874,25 @@ def _init():
             s._finitialize()
     _setup_matrices()
 
-#
-# register the initialization handler and the ion register handler
-#
-_fih = h.FInitializeHandler(_init)
-_fih2 = h.FInitializeHandler(3, initializer._do_ion_register)
+_has_nbs_registered = False
+_nbs = None
+def _do_nbs_register():
+    global _has_nbs_registered, _nbs
+    
+    if not _has_nbs_registered:
+        from neuron import nonvint_block_supervisor as _nbs
 
-#
-# register scatter/gather mechanisms
-#
-_cvode_object.extra_scatter_gather(0, _after_advance)
+        _has_nbs_registered = True
+        _nbs.register(_callbacks)
+    
+        #
+        # register the initialization handler and the ion register handler
+        #
+        _fih = h.FInitializeHandler(_init)
+        _fih2 = h.FInitializeHandler(3, initializer._do_ion_register)
+
+        #
+        # register scatter/gather mechanisms
+        #
+        _cvode_object.extra_scatter_gather(0, _after_advance)
 

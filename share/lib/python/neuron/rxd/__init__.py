@@ -22,6 +22,8 @@ from geometry import membrane, inside, Shell, FractionalVolume, FixedCrossSectio
 from plugins import set_solver
 # deprecated:
 # from geometry import ConstantArea, ConstantVolume
+# TODO: if we ever separate Parameter and State from species, then we need to
+#       rembember to call rxd._do_nbs_register()
 Parameter = Species
 State = Species
 
