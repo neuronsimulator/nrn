@@ -8,13 +8,13 @@ Quick Links
 .. toctree::
     :maxdepth: 1
 
-    vector.rst
+    programming/math/vector.rst
     programming/gui/layout.rst
-    programmatic.rst
-    shape.rst
-    impedance.rst
-    widgets.rst
-    mechstan.rst
+    simctrl/programmatic.rst 
+    visualization/shape.rst
+    analysis/programmatic/impedance.rst
+    programming/gui/widgets.rst
+    programming/mechstan.rst
     programming/gui/dialog.rst
     programming/pointers/misc.rst
     simctrl/batch.rst

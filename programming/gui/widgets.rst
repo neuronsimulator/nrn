@@ -1,12 +1,49 @@
 .. _panel:
 
          
-Widgets
--------
+GUI Widgets
+-----------
 
-The following are implemented as hoc functions. They are used to create 
+The functions below are used to create 
 panels of buttons, menus, and field editors. 
- 
+
+It is often convenient to encapsulate GUI elements and their state variables in
+a class. This allows multiple independent instances to be created. For example:
+
+.. code-block::
+    python
+
+    from neuron import h, gui
+
+    class MyWindow:
+        def __init__(self):
+            self.mystate = 0
+            self.myval = 3.14
+            self.checkbox = 1
+            h.xpanel('demo')
+            h.xradiobutton('Click me', lambda: self.clicked(0), 1)
+            h.xradiobutton('or me', lambda: self.clicked(1), 0)
+            h.xstatebutton('press me', (self, 'mystate'), self.statepressed)
+            h.xcheckbox('I am a checkbox', (self, 'checkbox'), self.checkboxpressed)
+            h.xvalue('Type a number', (self, 'myval'), 1, self.numberset)
+            h.xpanel()
+        def clicked(self, choice):
+            print 'you switched the radio button! choice = %g' % choice
+        def statepressed(self):
+            print 'you pressed the state button. Value = %g' % self.mystate
+        def checkboxpressed(self):
+            print 'you clicked the checkbox. state = %g' % self.checkbox
+        def numberset(self):
+            print 'you set the number to: %g' % self.myval
+
+    window = MyWindow()
+
+.. image:: ../../images/guiwidgets-example.png
+    :align: center
+            
+.. note::
+    
+    Top-level variables can be accessed using the ``__main__`` module.
 
 ----
 
@@ -16,41 +53,37 @@ panels of buttons, menus, and field editors.
 
 
     Syntax:
-        ``xpanel("name")``
-
-        ``xpanel("name", [0-1])``
-
-        ``xpanel()``
-
-        ``xpanel(x, y)``
-
-        ``xpanel(scroll)``
-
-        ``xpanel(scroll, x, y)``
+        .. code-block::
+            python
+            
+            h.xpanel('name')
+            h.xpanel('name', [0-1])
+            h.xpanel()
+            h.xpanel(x, y)
+            h.xpanel(scroll)
+            h.xpanel(scroll, x, y)
 
 
     Description:
          
+        ``h.xpanel("name")`` 
 
-
-        ``xpanel("name")`` 
-
-        ``xpanel("name", [0-1])`` 
+        ``h.xpanel("name", [0-1])`` 
             Title of a new panel. Every 
             button, menu, and value between this and a closing ``xpanel()`` command 
             with no arguments (or placement args) belongs to this panel. 
             If the form is used with a second argument equal to 1, then 
             the panel is laid out horizontally. Otherwise the default is vertically. 
 
-        ``xpanel()`` 
+        ``h.xpanel()`` 
 
-        ``xpanel(x, y)`` 
+        ``h.xpanel(x, y)`` 
             done constructing the panel. so map it to the screen with position 
             optionally specified. 
 
-        ``xpanel(slider)`` 
+        ``h.xpanel(scroll)`` 
 
-        ``xpanel(slider, x, y)`` 
+        ``h.xpanel(scroll, x, y)`` 
             as above but if the first arg is a number, then the value determines 
             whether the panel will be inside a scrollbox. Scroll = 0 means a scrollbox 
             will NOT be used. Scroll = 1 means the panel will be inside a scrollbox. 
@@ -70,24 +103,35 @@ panels of buttons, menus, and field editors.
 
 
     Syntax:
-        ``xbutton("command")``
-
-        ``xbutton("prompt", "command")``
+        .. code-block::
+            python
+            
+            h.xbutton('prompt', py_callable)
 
 
     Description:
 
+        Adds a button to the currently open :func:`xpanel`. The label on the
+        button is *prompt*, and when the button is clicked, it calls the
+        *py_callable*.
+    
+    Example:
 
-        ``xbutton("command")`` 
-            new button with command to execute when pressed. The label 
-            on the button is "*command*". 
+        .. code-block::
+            python
 
-        ``xbutton("prompt", "command")`` 
-            the label ont the button is "*prompt*", the action 
-            to execute is "*command*". 
+            from neuron import h, gui
+
+            def on_press():
+                print 'You pressed the button.'
+
+            h.xpanel('Button demo')
+            h.xbutton('Press me', on_press)
+            h.xpanel()
 
 
-         
+        .. image:: ../../images/xbutton.png
+            :align: center         
 
 ----
 
@@ -97,15 +141,35 @@ panels of buttons, menus, and field editors.
 
 
     Syntax:
-        ``xstatebutton("prompt",&var [,"action"])``
+        .. code-block::
+            python
+            
+            h.xstatebutton('prompt', (obj_or_module, 'varname') [, action_fn])
 
 
     Description:
         like :func:`xbutton`, but when pressed var is set to 0 or 1 so that it matches the 
         telltale state of the button. If the var is set by another way the 
         telltale state is updated to reflect the correct value. 
+    
+    Example:
+        .. code-block::
+            python
 
+            from neuron import h, gui
+            import __main__
+
+            button_state = 0
+
+            def on_press():
+                print 'You pressed the button. The state is now:', button_state
+
+            h.xpanel('StateButton demo')
+            h.xstatebutton('Press me', (__main__, 'button_state'), on_press)
+            h.xpanel()
          
+        .. image:: ../../images/xstatebutton.png
+            :align: center       
 
 ----
 
@@ -115,7 +179,10 @@ panels of buttons, menus, and field editors.
 
 
     Syntax:
-        ``xcheckbox("prompt",&var [,"action"])``
+        .. code-block::
+            python
+            
+            h.xcheckbox('prompt', (obj_or_module, 'varname') [, action_fn])
 
 
     Description:
@@ -131,13 +198,14 @@ panels of buttons, menus, and field editors.
 
 
     Syntax:
-        ``xradiobutton("name", "action")``
-
-        ``xradiobutton("name", "action", 0or1)``
+        .. code-block::
+            python
+            
+            h.xradiobutton('name', action_fn [, 0 or 1])
 
 
     Description:
-        Like an ``xbutton`` but highlights the most recently selected 
+        Like an :func:`xbutton` but highlights the most recently selected 
         button of a contiguous group (like a car radio, mutually exclusive 
         selection). 
         If the third argument is 1, then the button will be selected when the 
@@ -149,26 +217,29 @@ panels of buttons, menus, and field editors.
     Example:
 
         .. code-block::
-            none
+            python
+            
+            from neuron import h, gui
 
-            proc a() { 
-                print $1 
-            } 
-             
-            strdef label, cmd 
-             
-            xpanel("panel") 
-                xmenu("menu") 
-                for i =1, 10 { 
-                    sprint(label, "item %d", i) 
-                    sprint(cmd, "a(%d)", i) 
-                    xradiobutton(label, cmd) 
-                } 
-                xmenu() 
-            xpanel() 
+            def a(n):
+                """function to be called when a radio button is toggled"""
+                print n
+
+            def call_a(n):
+                """returns a function that calls a with the specified parameter"""
+                return lambda: a(n)
+
+            h.xpanel('panel')
+            h.xmenu('menu')
+            for i in xrange(1, 11):
+                h.xradiobutton('item %d' % i, call_a(i))
+
+            h.xmenu()
+            h.xpanel()
 
          
-
+        .. image:: ../../images/xradiobutton.png
+            :align: center  
          
 
 ----
@@ -179,71 +250,91 @@ panels of buttons, menus, and field editors.
 
 
     Syntax:
-        ``xmenu("title")``
-
-        ``xmenu()``
-
-        ``xmenu("title", 1)``
-
-        ``xmenu("title", "stmt")``
-
-        ``xmenu("title", "stmt", 1)``
+        .. code-block::
+            python
+            
+            h.xmenu('title')
+            h.xmenu()
+            h.xmenu('title', 1)
+            h.xmenu(title, py_callable)
+            h.xmenu(title, py_callable, 1)
 
 
     Description:
 
 
-        ``xmenu("title")`` 
+        ``h.xmenu("title")`` 
             create a button in the panel with label "title" which, when 
             pressed, pops up a menu containing buttons and other menus. Every 
-            ``xbutton`` and ``xmenu`` command between this and the closing ``xmenu()`` 
+            :func:`xbutton` and :func:`xmenu` command between this and the closing ``xmenu()`` 
             command with no arguments becomes the menu. 
             Don't put values into menus. 
 
-        ``xmenu()`` 
+        ``h.xmenu()`` 
             done defining the menu. Menus can be nested as in 
 
             .. code-block::
-                none
+                python
+                
+                from neuron import h, gui
 
-                	xmenu("one") 
-                	  xmenu("two") 
-                	  xmenu() 
-                	xmenu() 
+                def selected1():
+                    print 'you selected option 1'
 
+                def selected2():
+                    print 'you selected option 2'
 
-        ``xmenu("title", 1)`` 
+                h.xpanel('xmenu demo')
+                h.xmenu('one')
+                h.xmenu('two')
+                h.xbutton('option 1', selected1)
+                h.xbutton('option 2', selected2)
+                h.xmenu()
+                h.xmenu()
+                h.xpanel()
+
+            .. image:: ../../images/xmenu1.png
+                :align: center 
+            
+        ``h.xmenu("title", 1)`` 
             adds the menu to the menubar. Note that a top level menu with no 
             second argument starts a new menubar. Normally these menubars have only 
             one top level item. 
 
             .. code-block::
-                none
+                python
 
-                xpanel("menubar") 
-                	xmenu("first") 
-                		xbutton("one","print 1") 
-                		xbutton("two","print 2") 
-                	xmenu() 
-                	xmenu("second", 1) 
-                		xbutton("three","print 3") 
-                		xbutton("four","print 4") 
-                		xmenu("submenu") 
-                			xbutton("PI", "print PI") 
-                		xmenu() 
-                	xmenu() 
-                	xmenu("third", 1) 
-                		xbutton("five","print 5") 
-                		xbutton("six","print 6") 
-                	xmenu() 
-                	xmenu("nextline") 
-                		xbutton("seven","print 7") 
-                		xbutton("eight","print 8") 
-                	xmenu() 
-                xpanel() 
+                from neuron import h, gui
 
+                def item_selected(n):
+                    print 'selected value %g' % n
 
-        ``xmenu("title", "stmt")`` and ``xmenu("title", "stmt", 1)`` 
+                h.xpanel("menubar") 
+                h.xmenu("first") 
+                h.xbutton("one", lambda: item_selected(1)) 
+                h.xbutton("two", lambda: item_selected(2))
+                h.xmenu() 
+                h.xmenu("second", 1) 
+                h.xbutton("three", lambda: item_selected(3))
+                h.xbutton("four", lambda: item_selected(4))
+                h.xmenu("submenu") 
+                h.xbutton("PI", lambda: item_selected(h.PI))
+                h.xmenu() 
+                h.xmenu() 
+                h.xmenu("third", 1) 
+                h.xbutton("five", lambda: item_selected(5)) 
+                h.xbutton("six", lambda: item_selected(6))
+                h.xmenu() 
+                h.xmenu("nextline") 
+                h.xbutton("seven", lambda: item_selected(7))
+                h.xbutton("eight", lambda: item_selected(8))
+                h.xmenu() 
+                h.xpanel() 
+
+            .. image:: ../../images/xmenu2.png
+                :align: center 
+
+        ``h.xmenu("title", py_callable)`` and ``h.xmenu("title", py_callable, 1)`` 
             Dynamic menu added as item in panel or menu or (when third argument 
             is 1) to a menubar. An example of the first type is the 
             NEURONMainMenu/File/RecentDir and an example of the last type is the 
@@ -253,35 +344,43 @@ panels of buttons, menus, and field editors.
             like: 
 
             .. code-block::
-                none
+                python
 
-                	xmenu("title") 
-                	stmt 
-                	xmenu() 
+            	h.xmenu("title") 
+            	py_callable()
+            	h.xmenu() 
 
             which should normally build a menu list and then this list is mapped to 
             the screen as a normal walking menu. 
              
 
             .. code-block::
-                none
+                python
+                
+                from neuron import h, gui
 
-                load_file("nrngui.hoc") 
-                xpanel("test") 
-                xmenu("dynamic", "make()") 
+                def select(i):
+                    print 'you selected', i
+
+                def call_select(i):
+                    """returns a function that always calls select(i)"""
+                    return lambda: select(i)
+
+                n = 0
+                def make():
+                    global n
+                    n += 1
+                    for i in xrange(1, n + 1):
+                        h.xbutton('label %d' % i, call_select(i))
+
+                h.xpanel("test") 
+                h.xmenu("dynamic", make) 
                 xpanel() 
-                 
-                strdef s1, s2 
-                n = 0 
-                 
-                proc make() {local i 
-                   n += 1 
-                   for i=1, n { 
-                      sprint(s1, "label %d", i) 
-                      sprint(s2, "print %d", i) 
-                      xbutton(s1, s2) 
-                   } 
-                } 
+            
+            .. warning::
+                
+                The dynamic menu syntax is currently unsupported in Python, but
+                the equivalent (passing a HOC command string) works in HOC.
                  
 
 
@@ -296,7 +395,10 @@ panels of buttons, menus, and field editors.
 
 
     Syntax:
-        ``xlabel("string")``
+        .. code-block::
+            python
+            
+            h.xlabel('string')
 
 
     Description:
@@ -312,12 +414,38 @@ panels of buttons, menus, and field editors.
 
 
     Syntax:
-        ``xvarlabel(strdef)``
+        .. code-block::
+            python
+            
+            h.xvarlabel(strref)
 
 
     Description:
         Show the string as its current value. 
+    
+    Example:
+    
+        .. code-block::
+            python
+            
+            from neuron import h, gui
 
+            mystr = h.ref('')
+            h.xpanel('strref demo')
+            h.xlabel('Dynamic text will appear below:')
+            h.xvarlabel(mystr)
+            h.xpanel()
+
+            # change the text displayed by changing mystr
+            mystr[0] = 'Hello world!'
+
+        .. image:: ../../images/xvarlabel.png
+            :align: center 
+            
+    .. warning::
+    
+        Python strings are immutable. Thus the text displayed will only automatically
+        change if a strref is used, as in the example.
          
 
 ----
@@ -328,44 +456,58 @@ panels of buttons, menus, and field editors.
 
 
     Syntax:
-        ``xvalue("variable")``
+    
+        .. code-block::
+            python
 
-        ``xvalue("prompt", "variable" [, boolean_deflt, "action" [, boolean_canrun, boolean_usepointer]])``
-
-        ``xvalue("prompt", "variable", 2)``
+            h.xvalue("prompt", (obj_or_module, "varname") [, boolean_deflt, "action" [, boolean_canrun]])
+            h.xvalue("prompt", "variable", 2)
 
 
     Description:
 
-
-        ``xvalue("variable")`` 
-            create field editor for variable 
-
-        ``xvalue("prompt", "variable" [, boolean_deflt, "action" [, boolean_canrun, boolean_usepointer]])`` 
+        ``h.xvalue("prompt", (obj_or_module, "varname") [, boolean_deflt, "action" [, boolean_canrun]])`` 
             create field editor for variable with the button labeled with "*prompt*". 
             If *boolean_deflt* == 1 then add a checkbox which is checked when the 
             value of the field editor is different that when the editor was 
             created. Execute "action" when user enters a new value. If 
             *boolean_canrun* == 1 then use a default_button widget kit appearance 
             instead	of a push_button widget kit appearance. 
-            If *boolean_usepointer* is true then (for efficiency sake) try to 
-            use the address of variable instead of interpreting it all the time. 
-            At this time you must use the address form if the button is created 
-            within an object, otherwise when the button is pressed, the symbol 
-            name won't be parsed within the context of the object but at the 
-            top-level context. 
 
-        ``xvalue("prompt", "variable", 2)`` 
-            a field editor that keeps getting updated every 10th ``doNotify()``. 
 
-        The domain of values that can be entered by the user into a field editor 
-        may be limited to the domain specified by the 
-        :func:`variable_domain` function , the domain specified for the variable in 
-        a model description file, or a default domain that exists 
-        for some special NEURON variables such as diam, Ra, L, etc. 
-        For a field editor to check the domain, domain limits must be in effect 
-        prior to creation of the field editor. 
+        ``h.xvalue("prompt", (obj_or_module, "varname"), 2)`` 
+            a field editor that keeps getting updated every 10th :func:`doNotify`. 
 
+        .. The domain of values that can be entered by the user into a field editor 
+        .. may be limited to the domain specified by the 
+        .. :func:`variable_domain` function , the domain specified for the variable in 
+        .. a model description file, or a default domain that exists 
+        .. for some special NEURON variables such as diam, Ra, L, etc. 
+        .. For a field editor to check the domain, domain limits must be in effect 
+        .. prior to creation of the field editor. 
+
+    Example:
+    
+        .. code-block::
+            python
+            
+            from neuron import h, gui
+            import __main__
+
+            val = 42
+
+            h.xpanel('demo')
+            h.xvalue('enter value', (__main__, 'val'))
+            h.xpanel()
+
+            # changing val in the dialog will change val as seen by the program
+        
+        .. image:: ../../images/xvalue.png
+            :align: center 
+
+    .. seealso::
+    
+        The example at the top of the file, which uses ``xvalue`` in an object.
          
 
 ----
@@ -376,14 +518,36 @@ panels of buttons, menus, and field editors.
 
 
     Syntax:
-        ``xpvalue("variable")``
-
-        ``xpvalue("prompt", &variable, ...)``
+        .. code-block::
+            python
+            
+            h.xpvalue('prompt', ref, ...)
+            
 
 
     Description:
-        like :func:`xvalue` but definitely uses address of the variable. 
+        like :func:`xvalue` but uses a reference to the variable.
+    
+    Example:
+    
+        .. code-block::
+            python
+            
+            from neuron import h, gui
 
+            val = h.ref(42)
+
+            def show_val():
+                print 'value is:', val[0]
+
+            h.xpanel('demo')
+            h.xpvalue('enter value', val, 1)
+            h.xbutton('show value', show_val)
+            h.xpanel()
+
+        .. image:: ../../images/xpvalue.png
+            :align: center 
+            
     .. seealso::
     
         :func:`units`
@@ -397,16 +561,21 @@ panels of buttons, menus, and field editors.
 
 
     Syntax:
-        ``xfixedvalue("variable")``
-
-        ``xfixedvalue("prompt", "variable", boolean_deflt, boolean_usepointer)``
+    
+        .. code-block::
+            python
+            
+            h.xfixedvalue("prompt", (obj_or_module, "varname"), boolean_deflt, boolean_usepointer)
 
 
     Description:
-        like xvalue but cannot be changed by the user except under 
+        like :func:`xvalue` but cannot be changed by the user except under 
         program control and there can be no action associated with it. 
-        Note: this is not implemented. For now, try to do the same thing 
-        with ``xvarlabel()``. 
+        
+    .. warning::
+        
+        This is not implemented. For now, try to do the same thing 
+        with :func:`xvarlabel`. 
 
          
 
@@ -418,21 +587,70 @@ panels of buttons, menus, and field editors.
 
 
     Syntax:
-        ``xslider(&var, [low, high], ["send_cmd"], [vert], [slow])``
+        .. code-block::
+            python
+            
+            h.xslider((obj_or_module, "varname"), [low, high], [on_slide], [vert], [slow])
+            h.xslider(ref_var, [low, high], [on_slide], [vert], [slow])
 
 
     Description:
         Slider which is attached to the variable var. Whenever the slider 
-        is moved, the optional *send_cmd* is executed. The default range is 
+        is moved, the optional *on_slide* is executed. The default range is 
         0 to 100. Steppers increase or decrease the value by 1/10 of the range. 
         Resolution is .01 of the range. vert=1 makes a vertical slider and 
-        if there is no *send_cmd* may be the 4th arg. slow=1 removes the "repeat 
+        if there is no *on_slide* may be the 4th arg. slow=1 removes the "repeat 
         key" functionality from the slider(and arrow steppers) and also 
-        prevents recursive calls to the *send_cmd*. This is necessary if 
+        prevents recursive calls to the *on_slide*. This is necessary if 
         a slider action is longer than the timeout delay. Otherwise the 
         slider can get in a state that appears to be an infinite loop. 
         The downside of slow=1 is that the var may not get the last value 
-        of the slider if one releases the button during an action. 
+        of the slider if one releases the button during an action.
+
+    Examples:
+    
+        .. code-block::
+            python
+            
+            from neuron import h, gui
+            import __main__
+
+            val = 42
+            val_str = h.ref('Slider value:         ')
+            def show_val():
+                global val_str
+                val_str[0] = 'Slider value: %g' % val
+
+            h.xpanel('demo')
+            h.xvarlabel(val_str)
+            h.xslider((__main__, 'val'), 0, 100, show_val)
+            h.xpanel()
+            show_val()
+
+        .. image:: ../../images/xslider.png
+            :align: center 
+    
+        It is slightly more efficient to use an ``h.ref`` instead of a tuple.
+        The above example is functionally equivalent to:
+    
+        .. code-block::
+            python
+            
+            from neuron import h, gui
+
+            val = h.ref(42)
+            val_str = h.ref('Slider value:         ')
+            def show_val():
+                global val_str
+                val_str[0] = 'Slider value: %g' % val[0]
+
+            h.xpanel('demo')
+            h.xvarlabel(val_str)
+            h.xslider(val, 0, 100, show_val)
+            h.xpanel()
+            show_val()
+
+
 
 ----
 
@@ -440,13 +658,12 @@ panels of buttons, menus, and field editors.
 .. function:: units
 
     Syntax:
-        ``current_units = units(&variable)``
-
-        ``current_units = units(&variable, "units string")``
-
-        ``"on or off" = units(1 or 0)``
-
-        ``current_units = units("varname", ["units string"])``
+        .. code-block::
+            python
+            
+            on or off = h.units(1 or 0)
+            current_units = h.units("varname" [, "units string"])
+        
 
     Description:
         When units are on (default on) value editor buttons display the units 
@@ -457,15 +674,9 @@ panels of buttons, menus, and field editors.
         variables must be given units before retrieving a session that shows them 
         in a panel. 
          
-        The units display may be turned off with \ ``units(0)`` or by setting the 
+        The units display may be turned off with \ ``h.units(0)`` or by setting the 
         \ ``*units_on_flag: off`` in the nrn/lib/nrn.defaults file. 
-         
-        \ ``units(&variable)`` returns the units string for any 
-        variable for which an address can be taken. 
-         
-        \ ``units(&variable, "units string")`` sets the units for the indicated 
-        variable. 
-         
+                 
         If the first arg is a string, it is treated as the name of the variable. 
         This is restricted to hoc variable names of the style, "name", or "classname.name". 
         Apart from the circumstance that the string arg style must be used when 
@@ -474,29 +685,20 @@ panels of buttons, menus, and field editors.
         If there are no units specified for the variable name, or the variable 
         name is not defined, the return value is the empty string. 
 
-    Example:
+    Examples:
 
         .. code-block::
-            none
-
-            units(&t) // built in as "ms" 
-            units("t") 
-            units("ExpSyn.g") // built in as "uS" 
-            x = 1 
-            {units(&x, "mA/cm2")}	// declare units for variable x 
-            units(&x)		// prints mA/cm2 
-            proc p () { 
-            	xpanel("Panel") 
-            	xvalue("t") 
-            	xvalue("prompt for x", "x", 1) 
-            	xpanel() 
-            } 
-            p()		//shows units in panel 
-            units(0) 	// turn off units 
-            p()		// does not show units in panel 
+            python
+            
+            print h.units('dt')        # ms
+            print h.units('gna_hh')    # S/cm2
+            print h.units('Ra')        # ohm-cm
+            print h.units('L')         # um
+            print h.units('ExpSyn.g')  # uS
 
     .. warning::
-        In the Python world, the first arg must be a string as the pointer style will 
-        raise an error. 
-
+    
+        When passing a string to ``h.units``, note that the string must be the
+        name of a HOC variable. Unfortunately, there is currently no way to declare
+        the units of a Python variable.
 

@@ -17,7 +17,7 @@ Functions
 
 
     Syntax:
-        ``initnrn()``
+        ``h.initnrn()``
 
 
     Description:
@@ -29,7 +29,7 @@ Functions
         like *L* and *rallbranch*. Thus ``Ra`` can be different for different 
         sections.  In order to set ``Ra`` to a constant value, use: 
          
-        ``forall Ra=...`` 
+        ``for sec in h.allsec(): sec.Ra=...`` 
 
     .. warning::
         Not very useful. No way to completely restart neuron exect to :func:`quit` and 
@@ -44,14 +44,14 @@ Functions
 
 
     Syntax:
-        ``fadvance()``
+        ``h.fadvance()``
 
 
     Description:
-        Integrate all section equations over the interval :data:`dt` . 
+        Integrate all section equations over the interval :data:`h.dt` . 
         The value of :data:`t` is incremented by dt. 
         The default method is first order implicit but may be changed to 
-        Crank-Nicholson by changing :data:`secondorder` = 2. 
+        Crank-Nicholson by changing :data:`h.secondorder` = 2. 
          
         fadvance integrates the equation over the dt step by 
         calling all the BREAKPOINT blocks of models at t+dt/2 twice with 
@@ -75,9 +75,9 @@ Functions
 
 
     Syntax:
-        ``finitialize()``
+        ``h.finitialize()``
 
-        ``finitialize(v)``
+        ``h.finitialize(v)``
 
 
     Description:
@@ -85,7 +85,7 @@ Functions
         inserted in the sections. 
         If the optional argument is present then all voltages of all sections 
         are initialized to *v*. 
-        :data:`t` is set to 0. 
+        :data:`h.t` is set to 0. 
          
         The order of principal actions during an finitialize call is:
         
@@ -126,7 +126,7 @@ Functions
 
 
     Syntax:
-        ``frecord_init()``
+        ``h.frecord_init()``
 
 
     Description:
@@ -148,7 +148,7 @@ Functions
 
 
     Syntax:
-        ``fcurrent()``
+        ``h.fcurrent()``
 
 
     Description:
@@ -159,22 +159,24 @@ Functions
     Example:
 
         .. code-block::
-            none
+            python        
 
-            create soma 
-            access soma 
-            insert hh 
-            print "default el_hh = ", el_hh 
-            // set el_hh so that the steady state is exactly -70 mV 
-            finitialize(-70) // sets v to -70 and m,h,n to corresponding steady state values 
+            from neuron import h
+
+            soma = h.Section()
+            soma.insert('hh')
+            print "default el_hh = ", soma.el_hh 
+
+            # set el_hh so that the steady state is exactly -70 mV 
+            h.finitialize(-70) # sets v to -70 and m,h,n to corresponding steady state values 
              
-            fcurrent()	// set all assigned variables consistent with states 
+            h.fcurrent()       # set all assigned variables consistent with states 
              
-            // use current balance: 0 = ina + ik + gl_hh*(v - el_hh)		 
-            el_hh = (ina + ik + gl_hh*v)/gl_hh 
+            # use current balance: 0 = ina + ik + gl_hh*(v - el_hh)		 
+            soma.el_hh = (soma.ina + soma.ik + soma.gl_hh * soma.v) / soma.gl_hh 
              
-            print "-70 mV steady state el_hh = ", el_hh 
-            fcurrent()	// recalculate currents (il_hh) 
+            print "-70 mV steady state el_hh = ", soma.el_hh 
+            h.fcurrent()       # recalculate currents (il_hh) 
 
 
          
@@ -187,9 +189,9 @@ Functions
 
 
     Syntax:
-        ``fmatrix()``
+        ``h.fmatrix()``
 
-        ``section {value = fmatrix(x, index)}``
+        ``value = h.fmatrix(x, index, sec=section)``
 
 
     Description:
@@ -216,7 +218,7 @@ Functions
 
 
     Syntax:
-        ``secondorder``
+        ``h.secondorder``
 
 
     Description:
@@ -251,7 +253,7 @@ Functions
 
 
     Syntax:
-        ``t``
+        ``h.t``
 
 
     Description:
@@ -267,7 +269,7 @@ Functions
 
 
     Syntax:
-        ``dt``
+        ``h.dt``
 
 
     Description:
@@ -294,7 +296,7 @@ Functions
 
 
     Syntax:
-        ``clamp_resist``
+        ``h.clamp_resist``
 
 
     Description:
@@ -310,7 +312,7 @@ Functions
 
 
     Syntax:
-        ``celsius = 6.3``
+        ``h.celsius = 6.3``
 
 
     Description:
@@ -330,7 +332,7 @@ Functions
 
 
     Syntax:
-        ``stoprun``
+        ``h.stoprun``
 
 
     Description:
@@ -348,7 +350,7 @@ Functions
 .. function:: checkpoint
 
     Syntax:
-        :samp:`checkpoint("{filename}")`
+        :samp:`h.checkpoint("{filename}")`
 
     Description:
         saves the current state of the system in a portable file to 
@@ -387,16 +389,14 @@ FInitializeHandler
 
 
     Syntax:
-        ``fih = new FInitializeHandler("stmt", [obj])``
+        ``fih = h.FInitializeHandler(py_callable)``
 
-        ``fih = new FInitializeHandler(type, "stmt", [obj])``
+        ``fih = h.FInitializeHandler(type, py_callable)``
 
 
     Description:
         Install an initialization handler statement to be called during a call to 
-        :func:`finitialize`. The default type is 1. The 
-        statement will be executed at the top level of the interpreter 
-        or else in the context of the optional obj arg. 
+        :func:`finitialize`. The default type is 1.
          
         Type 0 handlers are called before the mechanism INITIAL blocks. 
          
@@ -418,56 +418,50 @@ FInitializeHandler
     Example:
 
         .. code-block::
-            none
+            python
 
-            // specify an example model 
-            load_file("nrngui.hoc") 
-            create a, b 
-            access a 
-            forall insert hh 
-             
-            objref fih[3] 
-            fih[0] = new FInitializeHandler(0, "fi0()") 
-            fih[1] = new FInitializeHandler(1, "fi1()") 
-            fih[2] = new FInitializeHandler(2, "fi2()") 
-             
-            proc fi0() { 
-            	print "fi0() called after v set but before INITIAL blocks" 
-            	printf("  a.v=%g a.m_hh=%g\n", a.v, a.m_hh) 
-            	a.v = 10 
-            } 
-             
-            proc fi1() { 
-            	print "fi1() called after INITIAL blocks but before BREAKPOINT blocks" 
-            	print "     or variable step initialization." 
-            	print "     Good place to change any states." 
-            	printf("  a.v=%g a.m_hh=%g\n", a.v, a.m_hh) 
-            	printf("  b.v=%g b.m_hh=%g\n", b.v, b.m_hh) 
-            	b.v = 10 
-            } 
-             
-            proc fi2() { 
-            	print "fi2() called after everything initialized. Just before return" 
-            	print "     from finitialize." 
-            	print "     Good place to record or plot initial values" 
-            	printf("  a.v=%g a.m_hh=%g\n", a.v, a.m_hh) 
-            	printf("  b.v=%g b.m_hh=%g\n", b.v, b.m_hh) 
-            } 
-             
-            begintemplate Test 
-            objref fih, this 
-            proc init() { 
-            	fih = new FInitializeHandler("p()", this) 
-            } 
-            proc p() { 
-            	printf("inside %s.p()\n", this) 
-            } 
-            endtemplate Test 
-             
-            objref test 
-            test = new Test() 
-             
-            stdinit() 
+            # specify an example model 
+            from neuron import h, gui
+
+            a = h.Section()
+            b = h.Section()
+
+            for sec in h.allsec():
+                sec.insert('hh')
+
+            def fi0():
+                print 'fi0 called after v set but before INITIAL blocks'
+                print '  a.v=%g a.m_hh=%g' % (a.v, a.m_hh)
+                a.v = 10
+
+            def fi1():
+                print 'fi1() called after INITIAL blocks but before BREAKPOINT blocks'
+                print '     or variable step initialization.' 
+                print '     Good place to change any states.'
+                print '  a.v=%g a.m_hh=%g' % (a.v, a.m_hh)
+                print '  b.v=%g b.m_hh=%g' % (b.v, b.m_hh)
+                b.v = 10 
+
+            def fi2():
+                print 'fi2() called after everything initialized. Just before return'
+                print '     from finitialize.'
+                print '     Good place to record or plot initial values'
+                print '  a.v=%g a.m_hh=%g' % (a.v, a.m_hh)
+                print '  b.v=%g b.m_hh=%g' % (b.v, b.m_hh)
+
+            fih = [h.FInitializeHandler(0, fi0),
+                   h.FInitializeHandler(1, fi1),
+                   h.FInitializeHandler(2, fi2)]
+
+            class Test:
+                def __init__(self):
+                    self.fih = h.FInitializeHandler(self.p)
+                def p(self):
+                    print 'inside %r.p()' % self
+
+            test = Test() 
+
+            h.stdinit() 
             fih[0].allprint() 
 
 
@@ -487,5 +481,6 @@ FInitializeHandler
     Description:
         Prints all the FInitializeHandler statements along with their object context 
         in the order they will be executed during an :func:`finitialize` call. 
+
 
 

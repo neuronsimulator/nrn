@@ -31,7 +31,7 @@ Impedance
         other gating states. The calculation is currently limited to systems that can 
         be solved with the CVode method but can be extended to systems solvable by 
         the DASPK method. ie. currently one cannot deal with the extracellular mechanism 
-        or LinearMechanism. It would be easy to implement the LinearMechanism extension 
+        or :class:`LinearMechanism`. It would be easy to implement the LinearMechanism extension 
         and that would be the only way one could handle non-local interactions such 
         as gap junctions. The extension takes into account not only di/dv but also 
         di/ds, ds'/dv and ds'/ds contributions to the impedance where s are all the 
@@ -289,5 +289,6 @@ Impedance
         :meth:`CVode.atolscale`. The default delta factor is 0.001 which is consistent 
         with the factor used by the default impedance calculation. Note that the 
         factor for the default impedance calculation cannot be changed. 
+
 
 

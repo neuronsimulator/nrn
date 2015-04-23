@@ -11,10 +11,16 @@ Shape
         when a section is clicked on. (When the section mode is selected 
         from the mouse menu.) An argument of 0 will prevent default mapping 
         of the	window. 
-        If the first arg is a SectionList (then a second arg of 0 will 
+        If the first arg is a :class:`SectionList` (then a second arg of 0 will 
         prevent default mapping) then only the sections in the list are 
         drawn. Shape is redrawn automatically whenever length or diameter 
         of a section changes. 
+        
+        .. warning::
+        
+            The form of the constructor that takes a :class:`SectionList` does not
+            currently work in Python.
+            
 
 ----
 
@@ -119,18 +125,20 @@ Shape
         list. With no arguments, all sections are observed. 
 
     Example:
-        In the context of the pyramidal cell demo of neurondemo the following 
+        In the context of the pyramidal cell demo of neurondemo (launch via
+        ``neurondemo --python``) the following 
         will change the Shape shown in the point process manager 
         to show only the soma and the main part of the primary dendrite. 
 
         .. code-block::
-            none
+            python
+            
+            from neuron import h
+            sl = h.SectionList()
+            sl.append(sec=h.soma)
+            sl.append(sec=h.dendrite_1[8])
+            h.Shape[0].observe(sl)
 
-            objref sl 
-            sl = new SectionList() 
-            soma sl.append() 
-            dendrite_1[8] sl.append() 
-            Shape[0].observe(sl) 
 
 
          
@@ -202,7 +210,7 @@ Shape
     Description:
         colors the currently accessed section according to color index 
         (index same as specified in :class:`Graph` class). If there are several 
-        sections to color it is more efficient to make a SectionList and 
+        sections to color it is more efficient to make a :class:`SectionList` and 
         use \ ``.color_list`` 
 
          
@@ -456,24 +464,23 @@ Shape
         as well as the mouse distance the selection. 
 
         .. code-block::
-            none
+            python
 
-            objref ss 
-            ss = Shape[0] 
-            proc p() {local d, a 
-                    if ($1 == 2) { 
-                            ss.color_all(1) 
-                            d = ss.nearest($2,$3)  
-                            a = ss.push_selected() 
-                            if (a >= 0) { 
-                                    ss.select() 
-                                    printf("%g from %s(%g)\n", d, secname(), a) 
-                                    pop_section() 
-                            } 
-                    } 
-            } 
-            ss.menu_tool("test", "p") 
-            ss.exec_menu("test") 
+            from neuron import h
+
+            ss = h.Shape[0]
+            def p(type, x, y, keystate):
+                if type == 2:
+                    ss.color_all(1)
+                    d = ss.nearest(x, y)
+                    arc = ss.push_selected()
+                    if arc >= 0:
+                        ss.select()
+                        print '%g from %s(%g)' % (d, h.secname(), a)
+                        h.pop_section()
+
+            ss.menu_tool('test', p)
+            ss.exec_menu('test')
 
 
 
@@ -505,13 +512,14 @@ Shape
 
 
     Syntax:
-        ``arc = shape.push_selected()``
-
-        ``if (arc >= 0) {``
-
-        ``pop_section()``
-
-        ``}``
+    
+        .. code-block::
+            python
+            
+            arc = shape.push_selected()
+            if arc >= 0:
+                # do something, then end with:
+                h.pop_section()
 
 
     Description:
@@ -519,9 +527,15 @@ Shape
         the section stack (becomes the currently accessed section) and the 
         arc position (0 to 1) returned. If no section is selected the function 
         returns -1 and no section is pushed. 
-         
-        Note that it is important that a pop_section be executed if a section 
-        is pushed onto the stack. 
+
+    .. note::
+        
+        The pushed section can be read via ``h.cas()``.
+
+    .. note::
+             
+        It is important that a :func:`pop_section` be executed if a section 
+        is pushed onto the stack.
 
     .. warning::
         The arc position is relevant only if the section was selected using 
@@ -570,4 +584,5 @@ Shape
 
          
          
+
 

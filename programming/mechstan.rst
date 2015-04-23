@@ -10,9 +10,12 @@ MechanismStandard (Parameter Control)
 
 
     Syntax:
-        :samp:`ms = new MechanismStandard("{name}")`
-
-        :samp:`ms = new MechanismStandard("{name}", {vartype})`
+    
+        .. code-block::
+            python
+            
+            ms = h.MechanismStandard(name_str)
+            ms = h.MechanismStandard(name_str, vartype)
 
 
     Description:
@@ -21,7 +24,7 @@ MechanismStandard (Parameter Control)
         This class is useful in maintaining a default set of parameters and can 
         be used to specify values for a set of sections. 
          
-        *name* is a density mechanism such as ``hh`` or a point process 
+        *name_str* is a density mechanism such as ``hh`` or a point process 
         such as :class:`VClamp`. A ``MechanismStandard`` instance, when created, 
         contains default values for all parameters associated with the mechanism. 
          
@@ -40,7 +43,14 @@ MechanismStandard (Parameter Control)
     Example:
 
         .. code-block::
-            none
+            python
+            
+            from neuron import h, gui
+            ms1 = h.MechanismStandard('hh')
+            ms2 = h.MechanismStandard('AlphaSynapse')
+            ms2.set('gmax', 0.3)
+            ms1.panel()
+            ms2.panel()
 
             objref ms1, ms2 
             ms1 = new MechanismStandard("hh") 
@@ -49,41 +59,38 @@ MechanismStandard (Parameter Control)
             ms1.panel() 
             ms2.panel() 
 
-         
+        .. image:: ../images/mechanismstandard.png
+            :align: center
+                     
         The following example prints all the names associated with POINT_PROCESS 
         and SUFFIX mechanisms. 
 
         .. code-block::
-            none
+            python
 
-            create soma 
-            access soma 
-             
-            objref ms, mt 
-            strdef s, msname 
-            proc pname() {local i, j, k 
-            	for i=-1,3 { 
-            		ms = new MechanismStandard($s1, i) 
-            		print "\n", $s1, "  vartype=", i 
-            		for j=0, ms.count()-1 { 
-            			k = ms.name(s, j) 
-            			print j, s, " size=", k 
-            		} 
-            	} 
-            } 
-             
-            proc ptype() {local i, j 
-            	for i=0,1 { 
-            		mt = new MechanismType(i) 
-            		for j=0, mt.count-1 { 
-            			mt.select(j) 
-            			mt.selected(msname) 
-            print "\n\n", msname, " mechanismtype=", j 
-            			pname(msname) 
-            		} 
-            	} 
-            } 
-             
+            from neuron import h, gui
+
+            soma = h.Section()
+            def pname(msname):
+                s = h.ref('')
+                for i in xrange(-1, 4):
+                    ms = h.MechanismStandard(msname, i)
+                    print '\n', msname, '  vartype=%d' % i
+                    for j in xrange(int(ms.count())):
+                        k = ms.name(s, j)
+                        print '%-5d %-20s size=%d' % (j, s[0], k)
+
+            def ptype():
+                msname = h.ref('')
+                for i in xrange(2):
+                    mt = h.MechanismType(i)
+                    for j in xrange(int(mt.count())):
+                        mt.select(j)
+                        mt.selected(msname)
+                        print '\n\n', msname[0], ' mechanismtype=%d' % j
+                        pname(msname[0])
+
+
             ptype() 
              
 
@@ -101,9 +108,11 @@ MechanismStandard (Parameter Control)
 
 
     Syntax:
-        ``ms.panel()``
-
-        ``ms.panel("string")``
+        .. code-block::
+            python
+            
+            ms.panel()
+            ms.panel("string")
 
 
     Description:
@@ -126,37 +135,44 @@ MechanismStandard (Parameter Control)
 
 
     Syntax:
-        ``ms.action("statement")``
+        .. code-block::
+            python
+            
+            ms.action("hoc_command")
 
 
     Description:
         action to be executed when any variable is changed in the panel. 
         The hoc variable :data:`hoc_ac_` is set to the index of the variable (0 to count-1). 
 
-    Example:
-        forall delete_section() 
+    .. Warning::
+       
+        Currently only takes a HOC string and does not work with a Python callable.
 
-        .. code-block::
-            none
+..    Example:
+..        forall delete_section() 
 
-            create soma, axon, dend[3] 
-            forsec "a" insert hh 
-            forsec "d" insert pas 
-            xpanel("Updated when MechanismStandard is changed") 
-            xvalue("dend[0].g_pas") 
-            xvalue("dend[1].g_pas") 
-            xvalue("dend[2].g_pas") 
-            xpanel() 
-            objref ms 
-            ms = new MechanismStandard("pas") 
-            ms.action("change_pas()") 
-            ms.panel() 
+        .. code-block
+..            none
+
+..            create soma, axon, dend[3] 
+..            forsec "a" insert hh 
+..            forsec "d" insert pas 
+..            xpanel("Updated when MechanismStandard is changed") 
+..            xvalue("dend[0].g_pas") 
+..            xvalue("dend[1].g_pas") 
+..            xvalue("dend[2].g_pas") 
+..            xpanel() 
+..            objref ms 
+..            ms = new MechanismStandard("pas") 
+..            ms.action("change_pas()") 
+..            ms.panel() 
              
-            proc change_pas() { 
-            	forall if(ismembrane("pas")) { 
-            		ms.out() 
-            	} 
-            } 
+..            proc change_pas() { 
+..            	forall if(ismembrane("pas")) { 
+..           		ms.out() 
+..            	} 
+..            } 
 
 
          
@@ -169,14 +185,13 @@ MechanismStandard (Parameter Control)
 
 
     Syntax:
-        ``ms.in()``
-
-        :samp:`ms.in({x})`
-
-        :samp:`ms.in({pointprocess})`
-
-        :samp:`ms.in({mechanismstandard})`
-
+        .. code-block::
+            python
+            
+            ms.in()
+            ms.in(x)
+            ms.in(pointprocess)
+            ms.in(mechanismstandard)
 
     Description:
         copies parameter values into this mechanism standard from ... 
@@ -209,13 +224,13 @@ MechanismStandard (Parameter Control)
 
 
     Syntax:
-        ``ms.out()``
-
-        ``ms.out(x)``
-
-        ``ms.out(pointprocess)``
-
-        ``ms.out(mechanismstandard)``
+        .. code-block::
+            python
+            
+            ms.out()
+            ms.out(x)
+            ms.out(pointprocess)
+            ms.out(mechanismstandard)
 
 
     Description:
@@ -248,7 +263,10 @@ MechanismStandard (Parameter Control)
 
 
     Syntax:
-        :samp:`ms.set("{varname}", {val} [, {arrayindex}])`
+        .. code-block::
+            python
+            
+            ms.set('varname', val [, arrayindex])
 
 
     Description:
@@ -265,7 +283,10 @@ MechanismStandard (Parameter Control)
 
 
     Syntax:
-        ``val = ms.get("varname" [, arrayindex])``
+        .. code-block::
+            python
+            
+            val = ms.get('varname' [, arrayindex])
 
 
     Description:
@@ -282,7 +303,10 @@ MechanismStandard (Parameter Control)
 
 
     Syntax:
-        ``.save("name")``
+        .. code-block::
+            python
+            
+            ms.save('name')
 
 
     Description:
@@ -301,7 +325,10 @@ MechanismStandard (Parameter Control)
 
 
     Syntax:
-        ``cnt = ms.count()``
+        .. code-block::
+            python
+            
+            cnt = ms.count()
 
 
     Description:
@@ -318,18 +345,35 @@ MechanismStandard (Parameter Control)
 
 
     Syntax:
-        ``ms.name(strdef)``
-
-        ``size = ms.name(strdef, i)``
+        .. code-block::
+            python
+            
+            ms.name(strref)
+            size = ms.name(strref, i)
 
 
     Description:
-        The single arg form assigns the name of the mechanism to the strdef 
+        The single arg form assigns the name of the mechanism to the strref 
         variable. 
          
         When the i parameter is present (i ranges from 0 to ms.count()-1) the 
-        strdef parameter gets assigned the ith name of the mechanism represented 
+        strref parameter gets assigned the ith name of the mechanism represented 
         by the MechanismStandard. In addition the return value is the 
         array size of that parameter (1 for a scalar). 
 
+
+    Example:
+    
+        .. code-block::
+            python
+            
+            from neuron import h, gui
+
+            ms = h.MechanismStandard('hh')
+            name_strref = h.ref('')
+
+            # read the name of the mechanism
+            ms.name(name_strref)
+
+            print name_strref[0]    # displays: hh
 
