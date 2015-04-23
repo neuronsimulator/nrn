@@ -100,6 +100,12 @@ and PYINCDIR to find Python.h
 		[ac_nrn_cygwin=$enableval], [ac_nrn_cygwin=yes]
 	)
 
+	AC_ARG_ENABLE([rx3d],
+		AC_HELP_STRING([--disable-rx3d],
+			[Do not compile the cython translated 3-d rxd features]),
+		[ac_nrn_rx3d=$enableval], [ac_nrn_rx3d=yes]
+	)
+
 	if test "$ac_nrn_python" = "yes" ; then
 		ac_nrn_python="python"
 	fi

@@ -237,7 +237,8 @@ fi
 AC_CHECK_PROG(CYTHON, cython, cython, cython)
 AM_CONDITIONAL(HAVE_CYTHON, test x$have_cython = xyes)
 
-if test "x$BUILD_RX3D" = "x" ; then
+BUILD_RX3D=0
+if test "$ac_nrn_rx3d" = "yes" ; then
 	if test x$have_cython = xyes -o -f share/lib/python/neuron/rxd/geometry3d/ctng.cpp ; then
 		BUILD_RX3D=1
 	else
@@ -245,6 +246,7 @@ if test "x$BUILD_RX3D" = "x" ; then
 	fi
 fi
 AC_SUBST(BUILD_RX3D)
+AM_CONDITIONAL(BUILD_RX3D, test "x$BUILD_RX3D" = "x1")
 
 MINGW_CFLAG=""
 EXTRA_CYGWIN_FLAGS='$(EXTRA_CYGWIN)'

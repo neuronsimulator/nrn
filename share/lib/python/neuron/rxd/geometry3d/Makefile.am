@@ -1,6 +1,6 @@
 geosrc = $(top_srcdir)/share/lib/python/neuron/rxd/geometry3d
 
-if HAVE_CYTHON
+if BUILD_RX3D
 all: graphicsPrimitives.cpp surfaces.cpp ctng.cpp
 else
 all:
@@ -21,7 +21,7 @@ EXTRA_DIST = ctng.cpp ctng.pyx surfaces.cpp surfaces.pyx \
 	graphicsPrimitives.cpp graphicsPrimitives.pyx \
 	marching_cubes2.c llgramarea.c
 
-if HAVE_CYTHON
+if BUILD_RX3D
 install-exec-am: ctng.cpp surfaces.cpp graphicsPrimitives.cpp
 	if test ! -f graphicsPrimitives.cpp ; then \
 		cp $(geosrc)/graphicsPrimitives.cpp  . ; \
