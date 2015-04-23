@@ -421,7 +421,7 @@ def constructive_neuronal_geometry(source, int n_soma_step, double dx):
        
 
 
-    cdef dict cone_clip_db = {cone: [] for cone in all_cones}
+    cdef dict cone_clip_db = dict((cone, []) for cone in all_cones)
     cdef bint sharp_turn
 #    cdef dict join_counts = {'2m': 0, '2s': 0, '3m': 0, '3s': 0, '4m': 0, '4s': 0, '0m': 0, '0s': 0, '1m': 0, '1s': 0}
     join_items_needing_clipped = []
