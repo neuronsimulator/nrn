@@ -2,7 +2,11 @@ import warnings
 import numpy
 from neuron import h, nrn
 from .rxdException import RxDException
-from neuron.rxd import geometry3d
+try:
+    from neuron.rxd import geometry3d
+    has_geometry3d = True
+except ImportError:
+    has_geometry3d = False
 
 class RxDGeometry:
     def volumes1d(self, sec):
@@ -123,7 +127,8 @@ _always_false = constant_function(False)
 _always_0 = constant_function(0)
 
 inside = RxDGeometry()
-inside.volumes3d = geometry3d.voxelize2
+if has_geometry3d:
+    inside.volumes3d = geometry3d.voxelize2
 # neighbor_area_fraction can be a constant or a function
 inside.neighbor_area_fraction = 1
 inside.volumes1d = _volumes1d
