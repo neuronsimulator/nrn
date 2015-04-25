@@ -1496,6 +1496,7 @@ void remake_pmech_types() {
     rangevars_add(hoc_table_lookup("cm", hoc_built_in_symlist));
     rangevars_add(hoc_table_lookup("v", hoc_built_in_symlist));
     rangevars_add(hoc_table_lookup("i_cap", hoc_built_in_symlist));
+    rangevars_add(hoc_table_lookup("i_membrane_", hoc_built_in_symlist));
     for (i=4; i < n_memb_func; ++i) { // start at pas
 	nrnpy_reg_mech(i);
     }
