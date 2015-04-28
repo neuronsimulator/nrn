@@ -50,9 +50,9 @@ Let's begin by creating a file :file:`simrun.py` to contain the simulation contr
             """
             if new_fig:
                 pyplot.figure(figsize=(8,4)) # Default figsize is (8,6)
-            soma_plot, = pyplot.plot(t_vec, soma_v_vec, color='black')
-            dend_plot, = pyplot.plot(t_vec, dend_v_vec, color='red')
-            pyplot.legend([soma_plot, dend_plot], ['soma', 'dend(0.5)'])
+            soma_plot = pyplot.plot(t_vec, soma_v_vec, color='black')
+            dend_plot = pyplot.plot(t_vec, dend_v_vec, color='red')
+            pyplot.legend(soma_plot + dend_plot, ['soma', 'dend(0.5)'])
             pyplot.xlabel('time (ms)')
             pyplot.ylabel('mV')
            	
@@ -267,18 +267,18 @@ How might we view the synaptic conductance during the simulation?
     # Draw
     fig = pyplot.figure(figsize=(8,4))
     ax1 = fig.add_subplot(2,1,1)
-    soma_plot, = ax1.plot(t_vec, soma_v_vec, color='black')
-    dend_plot, = ax1.plot(t_vec, dend_v_vec, color='red')
-    rev_plot, = ax1.plot([t_vec[0], t_vec[-1]], [syn_.e, syn_.e], 
+    soma_plot = ax1.plot(t_vec, soma_v_vec, color='black')
+    dend_plot = ax1.plot(t_vec, dend_v_vec, color='red')
+    rev_plot = ax1.plot([t_vec[0], t_vec[-1]], [syn_.e, syn_.e], 
             color='blue', linestyle=':')
-    ax1.legend([soma_plot, dend_plot, rev_plot], 
+    ax1.legend(soma_plot + dend_plot + rev_plot, 
             ['soma', 'dend(0.5)', 'syn reversal'])
     ax1.set_ylabel('mV')
     ax1.set_xticks([]) # Use ax2's tick labels
 
     ax2 = fig.add_subplot(2,1,2)
-    syn_plot, = ax2.plot(t_vec, syn_i_vec, color='blue')
-    ax2.legend([syn_plot], ['synaptic current'])
+    syn_plot = ax2.plot(t_vec, syn_i_vec, color='blue')
+    ax2.legend(syn_plot, ['synaptic current'])
     ax2.set_ylabel(h.units('ExpSyn.i'))
     ax2.set_xlabel('time (ms)')
     pyplot.show()

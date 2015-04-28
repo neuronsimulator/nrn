@@ -180,7 +180,7 @@ To make a variable equal to a copy of a list, set it equal to ``list(the_old_lis
 
 Now replace the second line with ``list_b = list_a`` and rerun that code. In that case, ``list_b`` is the *same* list as ``list_a`` (as opposed to a copy), so when ``list_b`` was reversed so is ``list_a`` (since ``list_b`` *is* ``list_a``).
 
-Lists can contain arbitrary data types, but if you find yourself doing this, you should probably consider making class objects or Python dicts.
+Lists can contain arbitrary data types, but if you find yourself doing this, you should probably consider making `classes <classes>`_ or `dictionaries <dictionaries>`_.
 
 .. code-block::
     python
@@ -192,18 +192,20 @@ Lists can contain arbitrary data types, but if you find yourself doing this, you
 range()
 -------
 
-:func:`range` is a function in python that automatically generates a list of sequential integers. Note that the ending value is not included.
+:func:`range` is a function in Python that automatically generates a list of sequential integers. Note that the ending value is not included.
 
 .. code-block::
     python
     
-    print range(10)
-    print range(0,10)
-    print range(3,10)
-    print range(0,10,2)
-    print range(0,-10)
-    print range(0,-10, -1)
-    print range(0,-10, -2) 
+    print range(10)         # [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+    print range(0, 10)      # [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+    print range(3, 10)      # [3, 4, 5, 6, 7, 8, 9]
+    print range(0, 10, 2)   # [0, 2, 4, 6, 8]
+    print range(0, -10)     # []
+    print range(0, -10, -1) # [0, -1, -2, -3, -4, -5, -6, -7, -8, -9]
+    print range(0, -10, -2) # [0, -2, -4, -6, -8]
+    
+For non-integer ranges, use ``numpy.arange`` from the ``numpy`` module.
        	
 For loops and iterators
 -----------------------
@@ -219,6 +221,25 @@ We can iterate over elements in a list by following the format: "for element in 
        	
 Try substituting some of the previous lists that have been created instead of using some_range and re-evaluate the script block.
 
+The `while loop <https://wiki.python.org/moin/WhileLoop>`_ is another type of loop that repeats until a condition is satisfied.
+
+If you are ever stuck in a long loop (or any other Python code), try pressing :kbd:`Control-c` to break the loop by raising a :class:`KeyboardInterrupt` exception. Run the following code and stop it by pressing :kdb:`Control-c`:
+
+.. code-block::
+    python
+    
+    for i in xrange(100000000):
+        pass
+
+
+Here, ``pass`` means do nothing, and :func:`xrange` acts like :func:`range` in this example. The difference is that ``range`` constructs the list first (which requires memory and time) while ``xrange`` does not.
+
+.. note::
+
+    For Python 3+, replace :func:`xrange` with :func:`range`. (This is because ``range`` in Python 3 acts like ``xrange`` in Python 2).
+
+
+Here we use
 More advanced looping
 ~~~~~~~~~~~~~~~~~~~~~
 
@@ -241,7 +262,7 @@ This is a list of tuples. Given a list of tuples, then we iterate with each tupl
     for x_val, y_val in zip(x, y):
         print "idx", x_val, "=", y_val 
        	
-Tuples are similar to lists, except they are immutable. You can retrieve individual elements of a tuple, but once they are set upon creation, you cannot change them. Also, you cannot add or remove elements of a tuple.
+Tuples are similar to lists, except they are immutable (cannot be changed). You can retrieve individual elements of a tuple, but once they are set upon creation, you cannot change them. Also, you cannot add or remove elements of a tuple.
 
 .. code-block::
     python
@@ -260,6 +281,8 @@ Attempting to modify a tuple, e.g.
 will cause a :class:`TypeError`.
        	
 Because you cannot modify an element in a tuple, or add or remove individual elements of it, it can operate in python more efficiently than a list. A tuple can even serve as a key to a dictionary.
+
+.. _dictionaries:
 
 Dictionaries
 ------------
@@ -396,10 +419,12 @@ Docstrings are strings just under a function definition, and usually triple-quot
     
     help(fib) 
 
+.. _classes
+
 Classes
 -------
 
-Objects are instances of a "class". They are useful for encapsulating ideas, and mostly for having multiple instances of a structure. Usually you will have an __init__() method. Also note that every method of the class will have "self" as the first argument. While "self" has to be listed in the argument list of a class's method, you do not pass a "self" argument when calling any of the class's methods; instead, you refer to those methods as ``self.method_name``.
+Objects are instances of a "class". They are useful for encapsulating ideas, and mostly for having multiple instances of a structure. Usually you will have an ``__init__()`` method. Also note that every method of the class will have "self" as the first argument. While "self" has to be listed in the argument list of a class's method, you do not pass a "self" argument when calling any of the class's methods; instead, you refer to those methods as ``self.method_name``.
 
 .. code-block::
     python
@@ -426,6 +451,7 @@ Objects are instances of a "class". They are useful for encapsulating ideas, and
                 my_str += " " + self.phone     
             print my_str 
        	
+By convention, the first letter of a class name is capitalized.
 Notice in the class definition above that the object can contain fields, which are used within the class as "self.field". This field can be another method in the class, or another object of another class.
 
 Let's make a couple instances of Contact.

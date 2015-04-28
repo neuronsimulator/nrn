@@ -89,7 +89,6 @@ Let's set the spatial properties of the cell using a "stylized" geometry. Later 
     soma.L = soma.diam = 12.6157 # Makes a soma of 500 microns squared.
     dend.L = 200 # microns
     dend.diam = 1 # microns
-    h.define_shape() # Translate into 3D points.
     print "Surface area of soma =", h.area(0.5, sec=soma) 
 
 Now we can see what our cell looks like. From the GUI, we can select
@@ -171,7 +170,7 @@ Confirm with :func:`psection`.
     python
     
     for sec in h.allsec():
-        h.psection() 
+        h.psection(sec=sec) 
 
 .. note::
     
@@ -283,36 +282,18 @@ Let's also visualize what is going on in the dendrite. Notice that we do not hav
         h.tstop = simdur
         h.run()
         # yes, you need the commas on the left-hand side of the next two lines
-        soma_plot, = pyplot.plot(t_vec, v_vec, color='black')
-        dend_plot, = pyplot.plot(t_vec, dend_v_vec, color='red')
+        soma_plot = pyplot.plot(t_vec, v_vec, color='black')
+        dend_plot = pyplot.plot(t_vec, dend_v_vec, color='red')
 
     # After looping, actually draw the image with show.
     # For legend labels, use the last instances we plotted
-    pyplot.legend([soma_plot, dend_plot], ['soma', 'dend'])
+    pyplot.legend(soma_plot + dend_plot, ['soma', 'dend'])
     pyplot.xlabel('time (ms)')
     pyplot.ylabel('mV')
     pyplot.show()
 
 .. image:: images/ballstick5.png
     :align: center
-
-.. note::
-
-    In the line beginning with ``soma_plot,``, the comma indicates that the left-hand-side
-    is to be interpreted as a tuple. The right hand side is a list of length 1, and when
-    you assign a list to a tuple, the first element of the list becomes the first element
-    of the tuple, etc.
-    
-    For example, if
-    
-    .. code-block:: python
-    
-        a, = [17]
-        b = [17]
-        c, d = [123, 'foo']
-    
-    Then a = 17 (the integer), while b is a list of length one containing the integer 17.
-    Finally, c is the integer 123 and d is the string ``foo``.
 
 
 Let's push it a bit more. Let's see the effects of :data:`nseg`, the number of segments of the dendrite, on the signal through the dendrite.
@@ -326,9 +307,8 @@ To do the comparison, let's start by rerunning without displaying the plot:
     for i in numpy.linspace(step, step*num_steps, num_steps):
         stim.amp = i
         h.run()
-        # yes, you need the commas on the left-hand side of the next two lines
-        soma_plot, = pyplot.plot(t_vec, v_vec, color='black')
-        dend_plot, = pyplot.plot(t_vec, dend_v_vec, color='red')
+        soma_plot = pyplot.plot(t_vec, v_vec, color='black')
+        dend_plot = pyplot.plot(t_vec, dend_v_vec, color='red')
 
 We will now increase the number of segments in the dendrite from 1 (the default) to 101:
 
@@ -345,12 +325,12 @@ and then plot the same simulations, this time displaying everything when we're d
     for i in numpy.linspace(step, step*num_steps, num_steps):
         stim.amp = i
         h.run()
-        soma_hires, = pyplot.plot(t_vec, v_vec, color='blue')
-        dend_hires, = pyplot.plot(t_vec, dend_v_vec, color='green')
+        soma_hires = pyplot.plot(t_vec, v_vec, color='blue')
+        dend_hires = pyplot.plot(t_vec, dend_v_vec, color='green')
 
     # After looping, actually draw the image with show.
     # For legend labels, use the last instances we plotted
-    pyplot.legend([soma_plot, dend_plot, soma_hires, dend_hires], ['soma', 'dend', 'soma hi-res', 'dend hi-res'])
+    pyplot.legend(soma_plot + dend_plot + soma_hires + dend_hires, ['soma', 'dend', 'soma hi-res', 'dend hi-res'])
     pyplot.xlabel('time (ms)')
     pyplot.ylabel('mV')
     pyplot.show()
@@ -376,8 +356,8 @@ Let's modify :data:`nseg` to other values. What values overlay the blue and gree
     for i in numpy.linspace(step, step*num_steps, num_steps):
         stim.amp = i
         h.run()
-        soma_hires, = pyplot.plot(t_vec, v_vec, color='blue')
-        soma_hires, = pyplot.plot(t_vec, dend_v_vec, color='green')        
+        soma_hires = pyplot.plot(t_vec, v_vec, color='blue')
+        soma_hires = pyplot.plot(t_vec, dend_v_vec, color='green')        
         # Copy the values of these "reference" vectors for use below
         ref_v_vec = numpy.zeros_like(v_vec)
         v_vec.to_python(ref_v_vec)
@@ -394,8 +374,8 @@ Let's modify :data:`nseg` to other values. What values overlay the blue and gree
     for i in numpy.arange(step, step*(num_steps+.9), step):
         stim.amp = i
         h.run()
-        soma_lowres, = pyplot.plot(t_vec, v_vec, color='black')
-        dend_lowres, = pyplot.plot(t_vec, dend_v_vec, color='red')        
+        soma_lowres = pyplot.plot(t_vec, v_vec, color='black')
+        dend_lowres = pyplot.plot(t_vec, dend_v_vec, color='red')        
         err += numpy.mean(numpy.abs(numpy.subtract(ref_v[idx], v_vec)))
         err += numpy.mean(numpy.abs(numpy.subtract(ref_dend_v[idx], dend_v_vec)))
         idx += 1
@@ -405,7 +385,7 @@ Let's modify :data:`nseg` to other values. What values overlay the blue and gree
 
     print "Average error =", err
 
-    pyplot.legend([soma_lowres, dend_lowres, soma_hires, dend_hires], \
+    pyplot.legend(soma_lowres + dend_lowres + soma_hires + dend_hires,
             ['soma low-res', 'dend low-res', 'soma hi-res', 'dend hi-res'])
     pyplot.xlabel('time (ms)')
     pyplot.ylabel('mV')

@@ -194,9 +194,9 @@ So far so good. Let's now attach a stimulator, run the simulation and see how it
         """
         if new_fig:
             pyplot.figure(figsize=(8,4)) # Default figsize is (8,6)
-        soma_plot, = pyplot.plot(t_vec, soma_v_vec, color='black')
-        dend_plot, = pyplot.plot(t_vec, dend_v_vec, color='red')
-        pyplot.legend([soma_plot, dend_plot], ['soma', 'dend(0.5)'])
+        soma_plot = pyplot.plot(t_vec, soma_v_vec, color='black')
+        dend_plot = pyplot.plot(t_vec, dend_v_vec, color='red')
+        pyplot.legend(soma_plot + dend_plot, ['soma', 'dend(0.5)'])
         pyplot.xlabel('time (ms)')
         pyplot.ylabel('mV')
            	
