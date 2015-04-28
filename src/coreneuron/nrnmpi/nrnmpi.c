@@ -21,6 +21,7 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/nrnmpi/nrnmpi_def_cinc.h"
 #include "coreneuron/nrniv/nrn_assert.h"
 #include "coreneuron/nrnoc/nrnpthread.h"
+#include "coreneuron/nrnomp/nrnomp.h"
 
 #if NRNMPI
 #include <mpi.h>
@@ -51,6 +52,7 @@ void nrnmpi_init(int nrnmpi_under_nrncontrol, int* pargc, char*** pargv) {
 #if NRNMPI
 	int i, b, flag;
 	static int called = 0;
+
 	if (called) { return; }
 	called = 1;
 	nrnmpi_use = 1;
@@ -131,9 +133,8 @@ for (i=0; i < *pargc; ++i) {
 }
 #endif
 #if 1
-	if (nrnmpi_myid == 0) {
-		printf("numprocs=%d\n", nrnmpi_numprocs_world);
-	}
+	if (nrnmpi_myid == 0) 
+          printf(" num_mpi=%d\n num_omp_thread=%d\n\n", nrnmpi_numprocs_world,nrnomp_get_numthreads());
 #endif
 
 #endif /* NRNMPI */

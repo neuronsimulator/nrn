@@ -17,6 +17,7 @@ mech/cfile/scoplib.h
 )
 
 set(CORENEURON_HEADERS
+nrnomp/nrnomp.h
 nrnmpi/mpispike.h
 nrnmpi/nrnmpidec.h
 nrnmpi/nrnmpi_def_cinc.h
@@ -55,6 +56,7 @@ mech/cfile/cabvars.h
 
 set(CORENEURON_SOURCES
 ${COMMON_SOURCES}
+nrnomp/nrnomp.c
 nrnmpi/nrnmpi.c
 nrnmpi/mpispike.c
 nrnoc/capac.c
