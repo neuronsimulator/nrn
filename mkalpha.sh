@@ -62,7 +62,8 @@ if test ! -d $NOBJ ; then
 	mkdir $NOBJ
 fi
 cd $NOBJ
-$NSRC/configure --prefix=`pwd` --with-nrnpython --srcdir=$NSRC --with-paranrn
+$NSRC/configure --prefix=`pwd` --with-nrnpython --with-paranrn \
+  --with-readline=yes
 make
 if test $? != 0 ; then
 	echo "make failed"
