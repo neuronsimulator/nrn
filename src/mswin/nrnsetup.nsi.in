@@ -16,8 +16,6 @@ Name "NEURON ${Version}"
 ; The file to write
 OutFile "nrn${VerNoDot}setup.exe"
 
-; as user cannot get .hoc icon or association with neuron.exe
-; even though one can manually associate.
 RequestExecutionLevel user
 
 SetCompressor bzip2
@@ -37,25 +35,28 @@ var "uINSTDIR" ; posix version of $INSTDIR
 !define NRN "nrn"
 ; where to get the files
 !define MARSHAL "c:\marshalnrn"
-; where is cygwin
-!define CYGWIN "e:\cygwin"
+; where is cygwin on the host	
+!define CYGWIN "c:\cygwin"
 
 ; The default installation directory
 ;InstallDir $PROGRAMFILES\${NRN}
 ; Do not want spaces in the installation path
 InstallDir c:\${NRN}
 
+;HKCU file association requires a subkey of Software\Classes\...
+!define ASSOCPREFIX "Software\Classes\"
+
 ; Registry key to check for directory (so if you install again, it will 
 ; overwrite the old one automatically)
-InstallDirRegKey HKCU "Software\NEURON\${NRN}" "Install_Dir"
+InstallDirRegKey HKCU "Software\NEURON_Simulator\${NRN}" "Install_Dir"
 
 Function .onInit ; called when installer is nearly finished initializing.
-  ReadRegStr $R1 HKCU "Software\NEURON\${NRN}" "Install_Dir"
+  ReadRegStr $R1 HKCU "Software\NEURON_Simulator\${NRN}" "Install_Dir"
   StrCmp "$R1" "" ok +1
     MessageBox MB_OKCANCEL "${NEURON} already installed at $R1. Press OK to install again." IDOK ok
     Abort
 ok:
-  GetDLLVersionLocal "${CYGWIN}\bin\cygwin1.dll" $R0 $R1
+  GetDLLVersionLocal "${MARSHAL}\nrn\bin\cygwin1.dll" $R0 $R1
   IntOp $R2 $R0 / 0x00010000
   IntOp $myCygVer1 $R2 / 1000
   IntOp $myCygVer2 $R2 % 1000
@@ -126,7 +127,7 @@ Section "${NEURON} (required)"
   FileClose $r1
   Call cyginst
   ; Write the installation path into the registry
-  WriteRegStr HKCU "Software\NEURON\${NRN}" "Install_Dir" "$INSTDIR"
+  WriteRegStr HKCU "Software\NEURON_Simulator\${NRN}" "Install_Dir" "$INSTDIR"
   ; Write the uninstall keys for Windows
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${NEURON}" "DisplayName" "${NEURON} (remove only)"
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${NEURON}" "UninstallString" '"$INSTDIR\uninstall.exe"'
@@ -144,16 +145,16 @@ FunctionEnd
 Section "Associate .hoc and .nrnzip"
   ; I am trying to follow the makensis.nsi
   ; I do not know why we should back up old values
-  WriteRegStr HKCU "Software\Classes\.hoc" "" "NEURONFile"
-  WriteRegStr HKCU "Software\Classes\NEURONFile" "" "NEURON model file"
-  WriteRegStr HKCU "Software\Classes\NEURONFile\shell" "" "open"
-  WriteRegStr HKCU "Software\Classes\NEURONFile\DefaultIcon" "" "$INSTDIR\bin\nrniv10.ico"
-  WriteRegStr HKCU "Software\Classes\NEURONFile\shell\open\command" "" '"$INSTDIR\bin\neuron.exe" "%1"'
-  WriteRegStr HKCU "Software\Classes\.nrnzip" "" "NEURONArchive"
-  WriteRegStr HKCU "Software\Classes\NEURONArchive" "" "NEURON model archive"
-  WriteRegStr HKCU "Software\Classes\NEURONArchive\shell" "" "open"
-  WriteRegStr HKCU "Software\Classes\NEURONArchive\DefaultIcon" "" "$INSTDIR\bin\nrniv.ico"
-  WriteRegStr HKCU "Software\Classes\NEURONArchive\shell\open\command" "" '"$INSTDIR\bin\mos2nrn.exe" "%1"'
+  WriteRegStr HKCU "${ASSOCPREFIX}.hoc" "" "NEURONFile"
+  WriteRegStr HKCU "${ASSOCPREFIX}NEURONFile" "" "NEURON model file"
+  WriteRegStr HKCU "${ASSOCPREFIX}NEURONFile\shell" "" "open"
+  WriteRegStr HKCU "${ASSOCPREFIX}NEURONFile\DefaultIcon" "" "$INSTDIR\bin\nrniv10.ico"
+  WriteRegStr HKCU "${ASSOCPREFIX}NEURONFile\shell\open\command" "" '"$INSTDIR\bin\neuron.exe" "%1"'
+  WriteRegStr HKCU "${ASSOCPREFIX}.nrnzip" "" "NEURONArchive"
+  WriteRegStr HKCU "${ASSOCPREFIX}NEURONArchive" "" "NEURON model archive"
+  WriteRegStr HKCU "${ASSOCPREFIX}NEURONArchive\shell" "" "open"
+  WriteRegStr HKCU "${ASSOCPREFIX}NEURONArchive\DefaultIcon" "" "$INSTDIR\bin\nrniv.ico"
+  WriteRegStr HKCU "${ASSOCPREFIX}NEURONArchive\shell\open\command" "" '"$INSTDIR\bin\mos2nrn.exe" "%1"'
   FileOpen $r1 "$INSTDIR\lib\associate.dat" "w"
   FileWrite $r1 "If $INSTDIR\lib\associate.dat exists then, on uninstall, .hoc and .nrnzip associations will be removed."
   FileClose $r1
@@ -224,11 +225,13 @@ Section "Uninstall"
   skip_confirmation:
 
   DeleteRegKey HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${NEURON}"
-  DeleteRegKey HKCU "Software\NEURON\${NRN}"
+  DeleteRegKey HKCU "Software\NEURON_Simulator"
   ; remove registry keys if we own them
   IfFileExists "$INSTDIR\lib\associate.dat" +1 asoc
-    DeleteRegKey HKCU "Software\Classes\NEURONFile"
-    DeleteRegKey HKCU "Software\Classes\NEURONArchive"
+    DeleteRegKey HKCU "${ASSOCPREFIX}NEURONFile"
+    DeleteRegKey HKCU "${ASSOCPREFIX}NEURONArchive"
+    DeleteRegKey HKCU "${ASSOCPREFIX}.hoc"
+    DeleteRegKey HKCU "${ASSOCPREFIX}.nrnzip"
 asoc:
   ; remove directories used.
   IfFileExists "$INSTDIR\lib\smsinst.dat" +1 one

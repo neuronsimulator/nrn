@@ -33,6 +33,7 @@ set -x
 if true ; then # false means skip the entire marshaling of nrn
 
 rm -r -f $D
+echo "hello"
 mkdir $D
 mkdir $D/bin
 mkdir $D/lib
@@ -123,6 +124,31 @@ if grep '^mpicc=mpicc' $B/src/mswin/nrncygso.sh ; then
 	done
 fi
 
+if true ; then  #moved to here to allow figuring out what dlls are needed
+cd /usr/lib
+pz=python27.zip
+pd=python2.7
+if test ! -f $pz ; then
+	zip -r $pz $pd
+	zip -d $pz \*/\*.pyo
+	zip -d $pz \*/\*.pyc
+	for i in bsddb email encodings idlelib test ; do
+		zip -d $pz \*/${i}/\*
+	done
+	for i in __init__ aliases ascii ; do
+		zip $pz $pd/encodings/$i.py
+	done
+fi
+unzip -d $D/lib -o $pz
+#to avoid site problem
+mkdir -p $D/usr/include/python2.7
+cp /usr/include/python2.7/pyconfig.h $D/usr/include/python2.7
+# crazy but need it here as well and do not really know why.
+mkdir -p $D/include/python2.7
+cp /usr/include/python2.7/pyconfig.h $D/include/python2.7
+#if continue to have problems with this then perhaps explicitly set Py_NoSiteFlag
+fi
+
 # figure out which dll's need to be distributed
 (cd $D/bin
 rm -f temp.tmp
@@ -131,38 +157,29 @@ for i in *.exe ; do
 done
 )
 # do not forget the ones used by the python dlls
-if false ; then
+# only the python dlls in $D/lib/python2.7
+if true ; then
 # too many, putting duplicates in bin, setup is 13.69MB, only cygcrypto below
-for i in /lib/python2.7/lib-dynload/*.dll /lib/python2.7/site-packages/numpy/linalg/lapack_lite.dll ; do
+for i in `find $D/lib/python2.7 -name \*.dll` ; do
 	cygcheck $i | sed 's/^ *//' >> $D/bin/temp.tmp
 done
 fi
-for i in /lib/python2.7/site-packages/numpy/linalg/lapack_lite.dll ; do
-	cygcheck $i | sed 's/^ *//' >> $D/bin/temp.tmp
-done
 
-for i in ` sort $D/bin/temp.tmp | uniq | sed '
-	/WINDOWS/d
-	/Windows/d
-	/\.exe/d
-	/cygIVhines/d
-	/nrniv/d
-' ` ; do
+sort $D/bin/temp.tmp | uniq | grep 'cygwin[0-9]*\\bin\\' | sed 's,\\,/,g' > $D/temp2.tmp
+for i in `cat $D/temp2.tmp` ; do
 	echo $i
 	cp `cygpath -u $i` $D/bin
 done
 rm $D/bin/temp.tmp
+rm $D/bin/temp2.tmp
+chmod 755 $D/bin/*
+chmod 755 `find $D/lib -name \*.dll`
 
 # and there may be some others we need to do explicitly
 for i in \
  libW11.dll \
  ; do
  cp /usr/bin/$i $D/bin/$i
-done
-for i in \
- /usr/bin/cygcrypto-0.9.8.dll \
- ; do
- cp $i $D/bin
 done
 
 #mkdir $D/lib/x
@@ -267,33 +284,8 @@ rm $Z
 fi
 
 if true ; then
-#cp $D/bin/hocmodule.dll $D/lib/python/neuron/hoc.pyd
+cp $D/bin/hocmodule.dll $D/lib/python/neuron/hoc.dll
 cp $D/bin/mknrndll $D/bin/nrnivmodl
-fi
-
-if true ; then
-cd /usr/lib
-pz=python27.zip
-pd=python2.7
-if test ! -f $pz ; then
-	zip -r $pz $pd
-	zip -d $pz \*/\*.pyo
-	zip -d $pz \*/\*.pyc
-	for i in bsddb email encodings idlelib test ; do
-		zip -d $pz \*/${i}/\*
-	done
-	for i in __init__ aliases ascii ; do
-		zip $pz $pd/encodings/$i.py
-	done
-fi
-unzip -d $D/lib -o $pz
-#to avoid site problem
-mkdir -p $D/usr/include/python2.7
-cp /usr/include/python2.7/pyconfig.h $D/usr/include/python2.7
-# crazy but need it here as well and do not really know why.
-mkdir -p $D/include/python2.7
-cp /usr/include/python2.7/pyconfig.h $D/include/python2.7
-#if continue to have problems with this then perhaps explicitly set Py_NoSiteFlag
 fi
 
 if true ; then

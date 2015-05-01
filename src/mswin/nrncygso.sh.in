@@ -2,6 +2,20 @@
 
 set -x
 
+@BUILD_MINGW_TRUE@mingw='yes'
+@BUILD_MINGW_FALSE@mingw='no'
+@BUILD_NRNPYTHON_TRUE@nrnpy='yes'
+@BUILD_NRNPYTHON_DYNAMIC_TRUE@nrnpy='yes'
+@BUILD_NRNPYTHON_FALSE@@BUILD_NRNPYTHON_DYNAMIC_FALSE@nrnpy='no'
+@BUILD_NRNJAVA_TRUE@nrnjvm='yes'
+@BUILD_NRNJAVA_FALSE@nrnjvm='no'
+
+if test mingw = 'yes' ; then
+  ltlibs=.libs
+else
+  ltlibs=
+fi
+
 #all the .o files
 find .. -name \*.o -print | sed '
 /\/modlunit\//d
@@ -12,19 +26,19 @@ find .. -name \*.o -print | sed '
 /\/ivoc\/nrnmain\.o/d
 /\/ivoc\/ocjump\.o/d
 /\/ivoc\/symdir\.o/d
-/\/ivoc\/\.libs\/ivocman1\.o/d
-@BUILD_MINGW_TRUE@/\/nrnpython\/\.libs\/.*\.o/d
+/\/ivoc*\/ivocman1\.o/d
+@BUILD_MINGW_TRUE@/\/nrnpython\/\${ltlibs}\/.*\.o/d
 /\/nrnoc\/cprop\.o/d
-/\/oc\/\.libs\/code\.o/d
-/\/oc\/\.libs\/hoc_init\.o/d
-/\/oc\/\.libs\/hoc_oop\.o/d
-/\/oc\/\.libs\/hocusr\.o/d
-/\/oc\/\.libs\/plt\.o/d
-/\/oc\/\.libs\/settext\.o/d
-/\/oc\/\.libs\/spinit\.o/d
-/\/oc\/\.libs\/spinit1\.o/d
-/\/oc\/\.libs\/spinit2\.o/d
-/\/memacs\/\.libs\/termio\.o/d
+/\/oc*\/code\.o/d
+/\/oc*\/hoc_init\.o/d
+/\/oc*\/hoc_oop\.o/d
+/\/oc*\/hocusr\.o/d
+/\/oc*\/plt\.o/d
+/\/oc*\/settext\.o/d
+/\/oc*\/spinit\.o/d
+/\/oc*\/spinit1\.o/d
+/\/oc*\/spinit2\.o/d
+/\/memacs*\/termio\.o/d
 /\/memacs\/main\.o/d
 /\/nvkludge\.o/d
 /\/nocable\.o/d
@@ -65,14 +79,6 @@ if test "$mpicc" = "mpicc" ; then
   fi
 fi
 
-@BUILD_MINGW_TRUE@mingw='yes'
-@BUILD_MINGW_FALSE@mingw='no'
-@BUILD_NRNPYTHON_TRUE@nrnpy='yes'
-@BUILD_NRNPYTHON_DYNAMIC_TRUE@nrnpy='yes'
-@BUILD_NRNPYTHON_FALSE@@BUILD_NRNPYTHON_DYNAMIC_FALSE@nrnpy='no'
-@BUILD_NRNJAVA_TRUE@nrnjvm='yes'
-@BUILD_NRNJAVA_FALSE@nrnjvm='no'
-
 obj=`cat temp`
 
 CXX=@CXX@
@@ -105,7 +111,7 @@ if test "$CFLAGS" != "-mno-cygwin" ; then
     if test $nrnpy = 'yes' ; then
   
       echo 'make nrnpython27.dll'
-      $CXX -shared ../nrnpython/.libs/*.o -L. -lnrniv -o nrnpython27.dll \
+      $CXX -shared ../nrnpython/${ltlibs}/*.o -L. -lnrniv -o nrnpython27.dll \
         @NRNPYTHON_PYLIBLINK@ \
         -L${IVLIBDIR} -lIVhines \
         -lreadline \
@@ -115,7 +121,7 @@ if test "$CFLAGS" != "-mno-cygwin" ; then
 
       echo 'make hocmodule.dll'
       $CXX -shared \
-        ../nrnpython/.libs/inithoc.o \
+        ../nrnpython/${ltlibs}/inithoc.o \
         -L. -lnrniv \
         @NRNPYTHON_PYLIBLINK@ \
         -o hocmodule.dll \
@@ -158,7 +164,7 @@ if test "$CFLAGS" != "-mno-cygwin" ; then
     if test $nrnpy = 'yes' ; then
 
       echo 'make libnrnpython@npy_apiver@.dll'
-      $CXX -shared ../nrnpython/.libs/*.o -L. -lnrniv -o libnrnpython@npy_apiver@.dll \
+      $CXX -shared ../nrnpython/${ltlibs}/*.o -L. -lnrniv -o libnrnpython@npy_apiver@.dll \
         @NRNPYTHON_PYLIBLINK@ \
         -L${IVLIBDIR} -lIVhines \
         -lreadline \
@@ -168,7 +174,7 @@ if test "$CFLAGS" != "-mno-cygwin" ; then
 
       echo 'make hocmodule.dll'
       $CXX -shared \
-        ../nrnpython/.libs/inithoc.o \
+        ../nrnpython/${ltlibs}/inithoc.o \
         -L. -lnrniv -lnrnpython@npy_apiver@\
         @NRNPYTHON_PYLIBLINK@ \
         -o hocmodule.dll \
@@ -218,7 +224,7 @@ else # if test "$CFLAGS" != "-mno-cygwin"
     -Xlinker --out-implib -Xlinker libnrniv.dll.a
 
   $CXX -shared -mno-cygwin \
-    ../nrnpython/.libs/inithoc.o \
+    ../nrnpython/${ltlibs}/inithoc.o \
     @NRNPYTHON_PYLIBLINK@ \
     -L. -lnrniv -lstdc++ \
     -o hocmodule.dll \
