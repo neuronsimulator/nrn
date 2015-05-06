@@ -93,7 +93,7 @@ code-loading
         Loading only takes place if the name has not previously been defined. 
         The search path consists of the current working directory, followed by 
         the paths in the environment variable HOC_LIBRARY_PATH (space separated), 
-        followed by :file:`$NEURONHOME/lib/hoc`. 
+        followed by `$NEURONHOME/lib/hoc <http://neuron.yale.edu/hg/neuron/nrn/file/tip/share/lib/hoc>`_. 
         Remember that only entire files are loaded-- not just the definition of 
         the name. And nothing is loaded if the name is already defined. 
         Inadvertent recursion will use up all the file descriptors. 
@@ -131,7 +131,7 @@ code-loading
         :func:`load_proc`, :func:`load_template`, or :func:`load_func` functions. 
         The file is searched for in the current working 
         directory, $HOC_LIBRARY_PATH (a colon or space separated list of directories), 
-        and :file:`$NEURONHOME/lib/hoc` directories (in that order) for 
+        and `$NEURONHOME/lib/hoc <http://neuron.yale.edu/hg/neuron/nrn/file/tip/share/lib/hoc>`_ directories (in that order) for 
         the file if there is no directory prefix. 
         Before doing the xopen on the file the current working directory is 
         temporarily changed to the directory containing the file so 

@@ -230,7 +230,7 @@ mean the same thing.
  
 If the number of items in a vertically arranged single panel is greater 
 than the number in the ``*panel_scroll:`` resource in the 
-:file:`$(NEURONHOME)/lib/nrn.defaults` file (default 12) then the panel items 
+`$(NEURONHOME)/lib/nrn.defaults <http://neuron.yale.edu/hg/neuron/nrn/file/tip/share/lib/nrn.defaults.in>`_ file (default 12) then the panel items 
 are shown in a scroll box so that they do not take up so much screen 
 space. 
  
@@ -682,7 +682,7 @@ Note: Lines associated with labels always have the same color.
 Kept lines are not associated with labels. 
 The number of selectable colors and brushes may be set by 
 changing the values in your :file:`~/.nrn.defaults` file (see CBWidget in 
-:file:`$NEURONHOME/lib/nrn.defaults`) 
+`$(NEURONHOME)/lib/nrn.defaults <http://neuron.yale.edu/hg/neuron/nrn/file/tip/share/lib/nrn.defaults.in>`_) 
  
 
 AxisType

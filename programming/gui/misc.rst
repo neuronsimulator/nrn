@@ -8,7 +8,7 @@ Style Settings
 
     Description:
         Gives the style attribute to name. Any property listed in the file 
-        :file:`$(NEURONHOME)/lib/nrn.defaults` or :file:`$(NEURONHOME)/src/ivoc/ivocmain.c`
+        `$(NEURONHOME)/lib/nrn.defaults <http://neuron.yale.edu/hg/neuron/nrn/file/tip/share/lib/nrn.defaults.in>`_ or `$(NEURONHOME)/src/ivoc/ivocmain.c <http://neuron.yale.edu/hg/neuron/nrn/file/tip/src/ivoc/ivocmain.cpp>`_
         can be changed although it may be that a few of them have already been 
         used by the time the interpreter is invoked. 
 
