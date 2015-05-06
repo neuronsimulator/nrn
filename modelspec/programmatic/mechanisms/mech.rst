@@ -119,7 +119,7 @@ General
 
 
     Description:
-        See $NEURONHOME/src/nrnoc/stim.mod 
+        See `<nrn src dir>/src/nrnoc/stim.mod <http://neuron.yale.edu/hg/neuron/nrn/file/tip/src/nrnoc/stim.mod>`_
          
         Single pulse current clamp point process. This is an electrode current 
         so positive amp depolarizes the cell. i is set to amp when t is within 
@@ -150,7 +150,7 @@ General
 
 
     Description:
-        See :file:`$NEURONHOME/src/nrnoc/syn.mod`. The comment in this file reads: 
+        See `<nrn src dir>/src/nrnoc/syn.mod <http://neuron.yale.edu/hg/neuron/nrn/file/tip/src/nrnoc/syn.mod>`_. The comment in this file reads: 
 
         .. code-block::
             none
@@ -188,7 +188,7 @@ General
     Description:
         Two electrode voltage clamp. 
          
-        See :file:`$NEURONHOME/src/nrnoc/vclmp.mod`. The comment in this file reads: 
+        See `<nrn src dir>/src/nrnoc/vclmp.mod <http://neuron.yale.edu/hg/neuron/nrn/file/tip/src/nrnoc/vclmp.mod>`_. The comment in this file reads: 
          
         Voltage clamp with three levels. Clamp is on at time 0, and off at time 
         dur[0]+dur[1]+dur[2]. When clamp is off the injected current is 0. 
@@ -270,7 +270,7 @@ General
     Description:
         Single electrode voltage clamp with three levels. 
          
-        See :file:`$NEURONHOME/src/nrnoc/svclmp.mod`. The comment in this file reads: 
+        See `<nrn src dir>/src/nrnoc/svclmp.mod <http://neuron.yale.edu/hg/neuron/nrn/file/tip/src/nrnoc/svclmp.mod>`_. The comment in this file reads: 
          
         Single electrode Voltage clamp with three levels. 
         Clamp is on at time 0, and off at time 
@@ -283,11 +283,8 @@ General
         have incompatible internal state values. 
         The electrical circuit for the clamp is exceedingly simple: 
 
-        .. code-block::
-            none
-
-            vc ---'\/\/`--- cell 
-                    rs 
+        .. image:: ../../../images/svclmp.png
+            :align: center
 
         Note that since this is an electrode current model v refers to the 
         internal potential which is equivalent to the membrane potential v when 
@@ -369,7 +366,7 @@ General
         The apc is not notified if the vector is freed but this can be fixed if 
         it is convenient to add this feature. 
          
-        See :file:`$NEURONHOME/src/nrnoc/apcount.mod`
+        See `<nrn src dir>/src/nrnoc/apcount.mod <http://neuron.yale.edu/hg/neuron/nrn/file/tip/src/nrnoc/apcount.mod>`_
 
 
 ----
@@ -405,7 +402,7 @@ General
          
         This synapse summates. 
          
-        See :file:`$NEURONHOME/src/nrnoc/expsyn.mod`
+        See `<nrn src dir>/src/nrnoc/expsyn.mod <http://neuron.yale.edu/hg/neuron/nrn/file/tip/src/nrnoc/expsyn.mod>`_
 
 
 ----
@@ -465,7 +462,7 @@ General
          
         This synapse summates. 
          
-        See :file:`$NEURONHOME/src/nrnoc/exp2syn.mod`
+        See `<nrn src dir>/src/nrnoc/exp2syn.mod <http://neuron.yale.edu/hg/neuron/nrn/file/tip/src/nrnoc/exp2syn.mod>`_
          
 
 
@@ -519,7 +516,7 @@ General
 
         That is, do not use ``&nc.y`` as the source for the netcon. 
          
-        See :file:`$NEURONHOME/src/nrnoc/netstim.mod`
+        See `<nrn src dir>/src/nrnoc/netstim.mod <http://neuron.yale.edu/hg/neuron/nrn/file/tip/src/nrnoc/netstim.mod>`_
 
     .. warning::
         Prior to version 5.2.1 an attempt was made to 
@@ -571,7 +568,7 @@ General
         for the first 0.5 ms and -1 for the rest of the period. Otherwise it 
         returns exp((t-t0)/tau) 
          
-        See :file:`$NEURONHOME/src/nrnoc/intfire1.mod`
+        See `<nrn src dir>/src/nrnoc/intfire1.mod <http://neuron.yale.edu/hg/neuron/nrn/file/tip/src/nrnoc/intfire1.mod>`_
 
 
 ----
@@ -612,8 +609,8 @@ General
         When an input event with weight w arrives, the net synaptic current 
         changes abruptly by 
         the amount w. 
-         
-        See :file:`$NEURONHOME/src/nrnoc/intfire2.mod`
+        
+        See `<nrn src dir>/src/nrnoc/intfire2.mod <http://neuron.yale.edu/hg/neuron/nrn/file/tip/src/nrnoc/intfire2.mod>`_         
 
          
 
@@ -675,8 +672,7 @@ General
         an isolated inhibitory event of weight -1 will produce a minimum 
         membrane potential of -1. 
          
-        See :file:`$NEURONHOME/src/nrnoc/intfire4.mod`
-         
+        See `<nrn src dir>/src/nrnoc/intfire4.mod <http://neuron.yale.edu/hg/neuron/nrn/file/tip/src/nrnoc/intfire4.mod>`_         
 
 ----
 
@@ -763,7 +759,7 @@ Mechanisms
 
 
     Description:
-        See $NEURONHOME/src/nrnoc/hh.mod 
+        See `<nrn src dir>/src/nrnoc/hh.mod <http://neuron.yale.edu/hg/neuron/nrn/file/tip/src/nrnoc/hh.mod>`_
          
         Hodgkin-Huxley sodium, potassium, and leakage channels. Range variables 
         specific to this model are: 
@@ -807,7 +803,7 @@ Mechanisms
 
 
     Description:
-        See :file:`$NEURONHOME/src/nrnoc/passive.mod`
+        See `<nrn src dir>/src/nrnoc/passive.mod <http://neuron.yale.edu/hg/neuron/nrn/file/tip/src/nrnoc/passive.mod>`_
          
         Passive membrane channel. 
 
@@ -822,7 +818,7 @@ Mechanisms
 
 **fastpas**
 
-        See :file:`$NEURONHOME/src/nrnoc/passive0.c`
+        See `<nrn src dir>/src/nrnoc/passive0.c <http://neuron.yale.edu/hg/neuron/nrn/file/tip/src/nrnoc/passive0.c>`_
          
         Passive membrane channel. Same as the :ref:`pas <mech_pas>` mechanism but hand coded to 
         be a bit faster (avoids the wasteful numerical derivative computation of 
@@ -937,9 +933,9 @@ Mechanisms
         carefully consider the results of simulations that use them. 
         It is best to start out believing that there are bugs in the method 
         and attempt to prove their existence. 
-         
-        See :file:`$NEURONHOME/src/nrnoc/extcell.c`
-        and :file:`$NEURONHOME/examples/nrnoc/extcab*.hoc`.
+
+        See `<nrn src dir>/src/nrnoc/extcell.c <http://neuron.yale.edu/hg/neuron/nrn/file/tip/src/nrnoc/extcell.c>`_
+        and `<nrn src dir>/examples/nrnoc/extcab*.hoc <http://neuron.yale.edu/hg/neuron/nrn/file/tip/share/examples/nrniv/nrnoc>`_.
          
         NEURON can be compiled with any number of extracellular layers. 
         See below. 
