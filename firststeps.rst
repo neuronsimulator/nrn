@@ -40,7 +40,7 @@ The results of evaluating this code should look something like the following out
 Step 2: Create a cell
 ---------------------
 
-We create a single-compartment cell as a NEURON :ref:`Section <geometry>`. Evaluate the line below:
+We create a simple model cell as a NEURON :ref:`Section <geometry>`. Evaluate the line below:
 
 .. code-block::
     python
@@ -59,7 +59,7 @@ NEURON's :func:`psection` (short for "print section") function can provide a lot
     
     h.psection()
 
-The results tell us: the soma is a closed cylinder of membrane of length 100 microns, a diameter of 500 microns, an axial resistance of 35.4 ohm*cm, and with a membrance capacitance of 1 :math:`\mu F/cm^2`
+The results tell us the soma is a cylinder with length 100 microns, diameter 500 microns, axial resistivity 35.4 ohm*cm, and specific membrance capacitance 1 :math:`\mu F/cm^2`
 
 Aside 2: Python's dir() function.
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -71,19 +71,19 @@ We can also probe objects with Python's built-in :func:`dir` function. Let's see
     
     dir(soma)
 
-This tells us all of the Python methods and variables associated with the object. Any method with two leading and trailing underscores are reserved by Python and may or may not be implemented by the object. The other items in the list are additional members of soma that we can call. To see all of the functions available to the neuron variable h, try calling ``dir(h)``.
+This tells us all of the Python methods and variables associated with the object. Any methods with two leading and trailing underscores are reserved by Python and may or may not be implemented by the object. The other items in the list are additional members of soma that we can call. To see all of the functions available to the neuron variable h, try calling ``dir(h)``.
 
 Aside 3: Getting more help.
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-In addition to probing objects with :func:`dir`, help from docstrings are available using :func:`help`.
+In addition to probing objects with :func:`dir`, help from docstrings is available using :func:`help`.
 
 .. code-block::
     python
     
     help(object_or_variable)
 
-For example, from ``dir(soma)``, we know that connect is available. Let's look inquire about that.
+For example, from ``dir(soma)``, we know that connect is available. Let's inquire about that.
 
 .. code-block::
     python
@@ -93,19 +93,15 @@ For example, from ``dir(soma)``, we know that connect is available. Let's look i
 Biophysical Mechanisms
 ----------------------
 
-NEURON comes standard with a few biophysical mechanisms that can be inserted into the membrane and permit the cell to be dynamic:
+NEURON comes with a few built in biophysical mechanisms that can be added to a model.
 
 
 +--------------------+--------------------------------------------------------+
-| ``pas``            | Passive membrane "leak" channel.                       |
-|                    | For simulating the stimulation with extracellular      |
-|                    | electrodes, response in the presence of an             |
-|                    | extracellular potential boundary condition.            |
+| ``pas``            | Passive ("leak") channel.                              |
 +--------------------+--------------------------------------------------------+
-| ``extracellular``  | computed by some external program, leaky patch         |
-|                    | clamps, incomplete seals in the myelin sheath          |
-|                    | along with current flow in the space between the       |
-|                    | myelin and the axon.                                   |
+| ``extracellular``  | For simulating effects of nonzero extracellular        |
+|                    | potential, as may happen with leaky patch clamps,      |
+|                    | or detailed propertes of the myelin sheath.            |
 +--------------------+--------------------------------------------------------+
 | ``hh``             | Hodgkin-Huxley sodium, potassium, and leakage channels.|
 +--------------------+--------------------------------------------------------+
