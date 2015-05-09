@@ -1,7 +1,7 @@
 NEURON + Python Tutorial
 ========================
 
-.. centered::    Thomas McTavish, Robert A. McDougal, Michael L. Hines
+.. centered::    Thomas McTavish, Robert A. McDougal, N. Ted Carnevale, Michael L. Hines
     
 Contents:
 

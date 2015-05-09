@@ -48,7 +48,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'NEURON + Python Tutorials'
-copyright = u'2010-2015, Tom McTavish, Robert A McDougal, Michael L Hines'
+copyright = u'2010-2015, Tom McTavish, Robert A McDougal, N. Ted Carnevale, Michael L Hines'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -201,7 +201,7 @@ latex_elements = {
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
   ('index', 'NEURONPythonTutorials.tex', u'NEURON + Python Tutorials Documentation',
-   u'Tom McTavish, Robert A McDougal, Michael L Hines', 'manual'),
+   u'Tom McTavish, Robert A McDougal, N. Ted Carnevale, Michael L Hines', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -231,7 +231,7 @@ latex_domain_indices = False
 # (source start file, name, description, authors, manual section).
 man_pages = [
     ('index', 'neuronpythontutorials', u'NEURON + Python Tutorials Documentation',
-     [u'Tom McTavish, Robert A McDougal, Michael L Hines'], 1)
+     [u'Tom McTavish, Robert A McDougal, N. Ted Carnevale, Michael L Hines'], 1)
 ]
 
 # If true, show URL addresses after external links.
@@ -245,7 +245,7 @@ man_pages = [
 #  dir menu entry, description, category)
 texinfo_documents = [
   ('index', 'NEURONPythonTutorials', u'NEURON + Python Tutorials Documentation',
-   u'Tom McTavish, Robert A McDougal, Michael L Hines', 'NEURONPythonTutorials', 'One line description of project.',
+   u'Tom McTavish, Robert A McDougal, N. Ted Carnevale, Michael L Hines', 'NEURONPythonTutorials', 'One line description of project.',
    'Miscellaneous'),
 ]
 
