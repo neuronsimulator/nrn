@@ -7,7 +7,7 @@ if(Boost_FOUND)
     make_mpi_exeprefix(1 TEST_PREFIX)
     include_directories(${CMAKE_SOURCE_DIR}/coreneuron ${Boost_INCLUDE_DIRS})
 
-    include(CommonCPPCTest)
+    include(CommonCTest)
 endif()
 
 add_test_class(unit)

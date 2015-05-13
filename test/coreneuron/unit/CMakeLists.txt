@@ -1,5 +1,6 @@
 include(FindSLURM)
 include(TestScriptUtils)
+#include(CommonCTest)
 
 macro(remove_word var word)
 string(REPLACE " " ";" ${var} "${${var}}")

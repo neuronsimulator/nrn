@@ -12,7 +12,7 @@ if(Boost_FOUND)
     # clang may well complain.
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O4")
 
-    include(CommonCPPCTest)
+    include(CommonCTest)
 endif()
 
 add_test_class(unit)

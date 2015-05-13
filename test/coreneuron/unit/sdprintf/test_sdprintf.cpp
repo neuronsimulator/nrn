@@ -10,7 +10,7 @@
 
 #include <boost/test/unit_test.hpp>
 
-#include "utils/sdprintf.h"
+#include "coreneuron/utils/sdprintf.h"
 
 BOOST_AUTO_TEST_CASE(sdprintf_noalloc) {
     char buf[10]="";

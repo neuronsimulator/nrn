@@ -8,7 +8,7 @@
  */
 
 #define SWAP_ENDIAN_ASSERT
-#include "utils/swap_endian.h"
+#include "coreneuron/utils/swap_endian.h"
 
 #ifndef SWAP_ENDIAN_CONFIG
 #define SWAP_ENDIAN_CONFIG _
