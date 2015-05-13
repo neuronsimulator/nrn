@@ -271,11 +271,15 @@ class Species(_SpeciesMathable):
         # initialize self if the rest of rxd is already initialized
         if initializer.is_initialized():
             if _has_3d:
-                # TODO: remove this limitation
-                #       it's especially not a problem if the new stuff is 3D
-                #       one strategy would be to just redo the whole thing; what are the implications of that?
-                #       (pointers would be invalid; anything else?)
-                raise RxDException('temporarily cannot add new species after rxd is initialized because 1D and 3D blocks need to be kept together')
+                if isinstance(regions, region.Region) and not regions._secs1d:
+                    pass
+                elif hasattr(regions, '__len__') and all(not r._secs1d for r in regions):
+                    pass
+                else:
+                    # TODO: remove this limitation
+                    #       one strategy would be to just redo the whole thing; what are the implications of that?
+                    #       (pointers would be invalid; anything else?)
+                    raise RxDException('Currently cannot add species containing 1D after 3D species defined and initialized. To work-around: reorder species definition.')
             self._do_init()
     
     def _do_init(self):
