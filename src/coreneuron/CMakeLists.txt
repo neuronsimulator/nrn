@@ -27,7 +27,6 @@ nrnmpi/nrnmpiuse.h
 nrnoc/membdef.h
 nrnoc/nrnoc_decl.h
 nrnoc/nrnpthread.h
-nrniv/arraypool.h
 nrniv/htlist.h
 nrniv/ivlist.h
 nrniv/ivocvect.h

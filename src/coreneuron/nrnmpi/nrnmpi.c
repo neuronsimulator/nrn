@@ -58,14 +58,6 @@ void nrnmpi_init(int nrnmpi_under_nrncontrol, int* pargc, char*** pargv) {
 	nrnmpi_use = 1;
 	nrnmpi_under_nrncontrol_ = nrnmpi_under_nrncontrol;
 	if( nrnmpi_under_nrncontrol_ ) {
-#if 0
-{int i;
-printf("nrnmpi_init: argc=%d\n", *pargc);
-for (i=0; i < *pargc; ++i) {
-	printf("%d |%s|\n", i, (*pargv)[i]);
-}
-}
-#endif
 
 #if !ALWAYS_CALL_MPI_INIT
 	/* this is not good. depends on mpirun adding at least one
@@ -124,18 +116,9 @@ for (i=0; i < *pargc; ++i) {
 #if USE_HPM
 	hpmInit( nrnmpi_myid_world, "mpineuron" );
 #endif
-#if 0
-{int i;
-printf("nrnmpi_init: argc=%d\n", *pargc);
-for (i=0; i < *pargc; ++i) {
-	printf("%d |%s|\n", i, (*pargv)[i]);
-}
-}
-#endif
-#if 1
+
 	if (nrnmpi_myid == 0) 
           printf(" num_mpi=%d\n num_omp_thread=%d\n\n", nrnmpi_numprocs_world,nrnomp_get_numthreads());
-#endif
 
 #endif /* NRNMPI */
 
@@ -160,9 +143,6 @@ void nrnmpi_finalize(void)
 void nrnmpi_terminate() {
 #if NRNMPI
 	if (nrnmpi_use) {
-#if 0
-		printf("%d nrnmpi_terminate\n", nrnmpi_myid_world);
-#endif
 #if USE_HPM
 		hpmTerminate( nrnmpi_myid_world );
 #endif
