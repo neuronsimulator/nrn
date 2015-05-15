@@ -26,7 +26,6 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 struct NrnThread;
 class PreSyn;
 class HocDataPaths;
-class PreSynTable;
 class NetCon;
 class DiscreteEvent;
 class TQItemPool;
@@ -141,8 +140,6 @@ public:
 private:
 	int structure_change_cnt_;
 	int matrix_change_cnt_;
-	PreSynTable* pst_;
-	int pst_cnt_;
 	IvocVect* vec_event_store_;
 public:
 	bool use_partrans();

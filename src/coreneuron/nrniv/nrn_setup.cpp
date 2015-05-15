@@ -182,7 +182,10 @@ void nrn_read_filesdat(int &ngrp, int * &grp, const char *filesdat)
 
 void nrn_setup(const char *path, const char *filesdat, int byte_swap, int threading) {
 
+  /// Number of cell groups
   int ngroup = 0;
+
+  /// Array of cell group numbers
   int *gidgroups = NULL;
 
   double time = nrnmpi_wtime(); 
@@ -203,6 +206,7 @@ void nrn_setup(const char *path, const char *filesdat, int byte_swap, int thread
   }
 #endif
 
+  /// Allocate array of Gid2PreSyn class pointers of size ngroup
   netpar_tid_gid2ps_alloc(ngroup);
 
   // bug fix. gid2out is cumulative over all threads and so do not

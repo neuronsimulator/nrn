@@ -41,17 +41,11 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 /* define if IBM BlueGene L, P or Q (activates BGLCheckPoint functionality) */
 #undef BLUEGENE
 
-/* define if IBM BlueGene/P */
-#undef BLUEGENEP
-
 /* define if IBM BlueGene/Q */
 #undef BLUEGENEQ
 
 /* define BlueGene with checkpointing */
 #undef BLUEGENE_CHECKPOINT
-
-/* Define bits for BGPDMA & 1 (ISend) & 2 (DMA spike transfer) & 4 (DMA Record Replay */
-#undef BGPDMA
 
 /* Define to 1 for possibility of rank 0 xopen/ropen a file and broadcast everywhere */
 #undef USE_NRNFILEWRAP

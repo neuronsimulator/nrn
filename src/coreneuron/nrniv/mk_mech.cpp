@@ -15,13 +15,22 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include <string.h>
+#include <map>
+#include <string>
 #include "coreneuron/nrnconf.h"
 #include "coreneuron/nrnoc/multicore.h"
+#include "coreneuron/nrnoc/membdef.h"
 #include "coreneuron/nrnoc/nrnoc_decl.h"
 #include "coreneuron/nrniv/nrniv_decl.h"
 #include "coreneuron/nrniv/ivtable.h"
 #include "coreneuron/nrniv/nrn_assert.h"
 #include "coreneuron/utils/sdprintf.h"
+#include "coreneuron/mech/cfile/cabvars.h"
+
+static char banner[] =
+"Duke, Yale, and the BlueBrain Project -- Copyright 1984-2015";
+
+int nrn_nobanner_;
 
 int nrn_need_byteswap;
 // following copied (except for nrn_need_byteswap line) from NEURON ivocvect.cpp
@@ -35,23 +44,9 @@ int nrn_need_byteswap;
         (_X__) = *((_TYPE__ *) &_OUT__); \
     }
 
-class StringKey {
-public:
-  StringKey() { s_ = NULL; }
-  StringKey(const char* s) { s_ = s; }
-  virtual ~StringKey() { }
-  bool operator!=(const StringKey& s) { return strcmp(s.s_, s_) != 0; }
-  bool operator==(const StringKey& s) { return strcmp(s.s_, s_) == 0; }
-  const char* s_;
-};
-static unsigned long key_to_hash(const StringKey& s){return s.s_[0]+7*(s.s_[1] + 11*s.s_[2]); }
+std::map<std::string, int> mech2type;
 
-declareTable(Mech2Type, StringKey, int)
-implementTable(Mech2Type, StringKey, int)
-
-static void set_mechtype(const char* name, int type);
-static Mech2Type* mech2type;
-
+/// Read meta data about the mechanisms and allocate corresponding mechanism management data structures
 void mk_mech(const char* datpath) {
   char fnamebuf[1024];
   sd_ptr fname=sdprintf(fnamebuf, sizeof(fnamebuf), "%s/%s", datpath, "bbcore_mech.dat");
@@ -61,8 +56,11 @@ void mk_mech(const char* datpath) {
 //  printf("reading %s\n", fname);
   int n=0;
   nrn_assert(fscanf(f, "%d\n", &n) == 1);
-  mech2type = new Mech2Type(2*n);
+
+  /// Allocate space for mechanism related data structures
   alloc_mech(n);
+
+  /// Read all the mechanisms and their meta data
   for (int i=2; i < n; ++i) {
     char mname[100];
     int type=0, pnttype=0, is_art=0, is_ion=0, dsize=0, pdsize=0;
@@ -71,7 +69,8 @@ void mk_mech(const char* datpath) {
 #ifdef DEBUG
     printf("%s %d %d %d %d %d %d\n", mname, type, pnttype, is_art, is_ion, dsize, pdsize);
 #endif
-    set_mechtype(mname, type);
+    std::string str(mname);
+    mech2type[str] = type;
     pnt_map[type] = (char)pnttype;
     nrn_prop_param_size_[type] = dsize;
     nrn_prop_dparam_size_[type] = pdsize;
@@ -102,27 +101,28 @@ void mk_mech(const char* datpath) {
   }
 
   fclose(f);
-  hoc_last_init();
-}
 
-static void set_mechtype(const char* name, int type) {
-  char* s1 = new char[strlen(name) + 1];
-  strcpy(s1, name);
-  StringKey* s = new StringKey(s1);
-  assert(!mech2type->find(type, *s));
-  mech2type->insert(*s, type);
-}
-
-int nrn_get_mechtype(const char* name) {
-  int type;
-  StringKey s(name);
-  if (!mech2type->find(type, s))
-    return -1;
-/*
- {
-    printf("could not find %s\n", name);
-    abort();
+  if (nrnmpi_myid < 1 && nrn_nobanner_ == 0) {
+      fprintf(stderr, " \n");
+      fprintf(stderr, " %s\n", banner);
+      fprintf(stderr, " %s\n", nrn_version(1));
+      fprintf(stderr, " \n");
+      fflush(stderr);
   }
-*/
-  return type;
+/* will have to put this back if any mod file refers to diam */
+//	register_mech(morph_mech, morph_alloc, (Pfri)0, (Pfri)0, (Pfri)0, (Pfri)0, -1, 0);
+  for (int i=0; mechanism[i]; i++) {
+      (*mechanism[i])();
+  }
+  modl_reg();
+}
+
+/// Get mechanism type by the mechanism name
+int nrn_get_mechtype(const char* name) {
+  std::string str(name);
+  std::map<std::string, int>::const_iterator mapit;
+  mapit = mech2type.find(str);
+  if (mapit == mech2type.end())
+    return -1; // Could not find the mechanism
+  return mapit->second;
 }

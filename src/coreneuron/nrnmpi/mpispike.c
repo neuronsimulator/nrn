@@ -486,44 +486,4 @@ void nrnmpi_dbl_allgather(double* s, double* r, int n) {
 	MPI_Allgather(s, n,  MPI_DOUBLE, r, n, MPI_DOUBLE, nrnmpi_comm);
 }
 
-#if BGPDMA
-
-static MPI_Comm bgp_comm;
-
-void nrnmpi_bgp_comm() {
-	if (!bgp_comm) {
-		MPI_Comm_dup(MPI_COMM_WORLD, &bgp_comm);
-	}
-}
-
-void nrnmpi_bgp_multisend(NRNMPI_Spike* spk, int n, int* hosts) {
-	int i;
-	MPI_Request r;
-	MPI_Status status;
-	for (i=0; i < n; ++i) {
-		MPI_Isend(spk, 1, spike_type, hosts[i], 1, bgp_comm, &r);
-		MPI_Request_free(&r);
-	}
-}
-
-int nrnmpi_bgp_single_advance(NRNMPI_Spike* spk) {
-	int flag = 0;
-	MPI_Status status;
-	MPI_Iprobe(MPI_ANY_SOURCE, 1, bgp_comm, &flag, &status);
-	if (flag) {
-		MPI_Recv(spk, 1, spike_type, MPI_ANY_SOURCE, 1, bgp_comm, &status);
-	}
-	return flag;
-}
-
-static int iii;
-int nrnmpi_bgp_conserve(int nsend, int nrecv) {
-	int tcnts[2];
-	tcnts[0] = nsend - nrecv;
-	MPI_Allreduce(tcnts, tcnts+1, 1, MPI_INT, MPI_SUM, bgp_comm);
-	return tcnts[1];
-}
-
-#endif /*BGPDMA*/
-
 #endif /*NRNMPI*/

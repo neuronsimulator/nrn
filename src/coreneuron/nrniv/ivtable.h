@@ -29,18 +29,15 @@
 #ifndef os_table_h
 #define os_table_h
 
+/***************************************************************************
+  THIS WHOLE DATA STRUCTURE IS SIMILAR TO STD::MAP, NEEDS TO BE DELETED!!!
+  the only datastructure where it's used at the moment is PV2I
+***************************************************************************/
 
-#if 1 || defined(__STDC__) || defined(__ANSI_CPP__)
 #define __TableEntry(Table) Table##_Entry
 #define TableEntry(Table) __TableEntry(Table)
 #define __TableIterator(Table) Table##_Iterator
 #define TableIterator(Table) __TableIterator(Table)
-#else
-#define __TableEntry(Table) Table/**/_Entry
-#define TableEntry(Table) __TableEntry(Table)
-#define __TableIterator(Table) Table/**/_Iterator
-#define TableIterator(Table) __TableIterator(Table)
-#endif
 
 #define declareTable(Table,Key,Value) \
 struct TableEntry(Table); \
@@ -52,7 +49,6 @@ public: \
 \
     void insert(Key, Value); \
     bool find(Value&, Key); \
-    bool find_and_remove(Value&, Key); \
     void remove(Key); \
 private: \
     friend class TableIterator(Table); \
@@ -80,7 +76,6 @@ public: \
 \
     Key& cur_key(); \
     Value& cur_value(); \
-    bool more(); \
     bool next(); \
 private: \
     TableEntry(Table)* cur_; \
@@ -90,7 +85,6 @@ private: \
 \
 inline Key& TableIterator(Table)::cur_key() { return cur_->key_; } \
 inline Value& TableIterator(Table)::cur_value() { return cur_->value_; } \
-inline bool TableIterator(Table)::more() { return entry_ <= last_; }
 
 /*
  * Predefined hash functions
@@ -149,32 +143,6 @@ bool Table::find(Value& v, Key k) { \
 	if (e->key_ == k) { \
 	    v = e->value_; \
 	    return true; \
-	} \
-    } \
-    return false; \
-} \
-\
-bool Table::find_and_remove(Value& v, Key k) { \
-    TableEntry(Table)** a = &probe(k); \
-    register TableEntry(Table)* e = *a; \
-    if (e != nil) { \
-	if (e->key_ == k) { \
-	    v = e->value_; \
-	    *a = e->chain_; \
-	    delete e; \
-	    return true; \
-	} else { \
-	    register TableEntry(Table)* prev; \
-	    do { \
-		prev = e; \
-		e = e->chain_; \
-	    } while (e != nil && e->key_ != k); \
-	    if (e != nil) { \
-		v = e->value_; \
-		prev->chain_ = e->chain_; \
-		delete e; \
-		return true; \
-	    } \
 	} \
     } \
     return false; \

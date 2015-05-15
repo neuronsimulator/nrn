@@ -203,14 +203,6 @@ public:
 #if NRNMPI
 	unsigned char localgid_; // compressed gid for spike transfer
 #endif
-#if BGPDMA
-	union { // A PreSyn cannot be both a source spike generator
-		// and a receiver of off-host spikes.
-		BGP_DMASend* dma_send_;
-		BGP_DMASend_Phase2* dma_send_phase2_;
-		int srchost_;
-	} bgp;
-#endif
 
 	static unsigned long presyn_send_mindelay_;
 	static unsigned long presyn_send_direct_;
@@ -234,25 +226,10 @@ public:
 	//NetConPList dil_;
 	int nc_index_; //replaces dil_, index into global NetCon** netcon_in_presyn_order_
 	double delay_; // can be eliminated since only a few targets on a process
-#if BGPDMA
-	union { // A PreSyn cannot be both a source spike generator
-		// and a receiver of off-host spikes.
-		BGP_DMASend* dma_send_;
-		BGP_DMASend_Phase2* dma_send_phase2_;
-		int srchost_;
-	} bgp;
-#endif
 	int nc_cnt_; // how many netcon starting at nc_index_
 	int use_min_delay_;
 	int gid_;
 
-#if 0
-	static unsigned long presyn_send_mindelay_;
-	static unsigned long presyn_send_direct_;
-	static unsigned long presyn_deliver_netcon_;
-	static unsigned long presyn_deliver_direct_;
-	static unsigned long presyn_deliver_ncsend_;
-#endif
 };
 
 class TstopEvent : public DiscreteEvent {

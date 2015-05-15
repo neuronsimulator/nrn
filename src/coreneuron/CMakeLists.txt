@@ -38,7 +38,6 @@ nrniv/nrn_datareader.h
 nrniv/nrn_stats.h
 nrniv/nrnhash_alt.h
 nrniv/nrnoptarg.h
-nrniv/nrnhash.h
 nrniv/nrniv_decl.h
 nrniv/nrniv_mf.h
 nrniv/nrnmutdec.h

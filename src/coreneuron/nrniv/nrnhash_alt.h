@@ -34,17 +34,10 @@
 #include <stdint.h>
 #endif
 
-#if 1 || defined(__STDC__) || defined(__ANSI_CPP__)
 #define __NrnHashEntry(NrnHash) NrnHash##_Entry
 #define NrnHashEntry(NrnHash) __NrnHashEntry(NrnHash)
 #define __NrnHashIterator(NrnHash) NrnHash##_Iterator
 #define NrnHashIterator(NrnHash) __NrnHashIterator(NrnHash)
-#else
-#define __NrnHashEntry(NrnHash) NrnHash/**/_Entry
-#define NrnHashEntry(NrnHash) __NrnHashEntry(NrnHash)
-#define __NrnHashIterator(NrnHash) NrnHash/**/_Iterator
-#define NrnHashIterator(NrnHash) __NrnHashIterator(NrnHash)
-#endif
 
 /* a pool was added to reduce space used by individually allocated NrnHashEntry
    The assumption is that if the pool_size_ > 0 then table use is mostly find,
@@ -339,10 +332,6 @@ bool NrnHashIterator(NrnHash)::next() { \
 }
 
 
-// for iteration, if you have 
-// declareNrnHash(Table,int,Object)
-// Table* table;
-// then you can iterate with
 #define NrnHashIterate(Table,table,Value,value) \
 	if (table) for (NrnHashIterator(Table) i__(*table); i__.more(); i__.next()) {{ \
 		Value value = i__.cur_value(); \

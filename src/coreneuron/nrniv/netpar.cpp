@@ -61,17 +61,7 @@ int nrnmpi_spike_compress(int nspike, bool gid_compress, int xchng_meth);
 void nrn_spike_exchange_init();
 extern double nrn_bgp_receive_time(int);
 
-// BGPDMA can be 0,1,2,3,6,7
-// (BGPDMA & 1) > 0 means multisend ISend allowed
-// (BGPDMA & 2) > 0 means multisend Blue Gene/P DMA allowed
-// (BGPDMA & 4) > 0 means multisend Blue Gene/P DMA Record Replay allowed
-#if !defined(BGPDMA)
-#define BGPDMA 0
-#endif
-
-#if BGPDMA == 0
 double nrn_bgp_receive_time(int) { return 0.; }
-#endif
 
 }
 
@@ -96,98 +86,6 @@ void nrnmpi_gid_clear(void)
   gid2out_->remove_all();
 }
 
-
-#ifdef USENCS
-extern int ncs_bgp_sending_info( int ** );
-extern int ncs_bgp_target_hosts( int, int** );
-extern int ncs_bgp_target_info( int ** );
-extern int ncs_bgp_mindelays( int **, double ** );
-
-//get minimum delays for all presyn objects in gid2in_
-int ncs_netcon_mindelays( int**hosts, double **delays )
-{
-    return ncs_bgp_mindelays(hosts, delays);
-}
-
-double ncs_netcon_localmindelay( int srcgid )
-{
-    PreSyn *ps;
-    gid2out_->find( srcgid, ps );
-    assert(ps);
-    
-    return ps->mindelay();
-}
-
-
-//get the number of netcons for an object, if it sends here
-int ncs_netcon_count( int srcgid, bool localNetCons )
-{
-    PreSyn *ps = NULL;
-    InputPreSyn *psi = NULL;
-    int flag = false;
-    if( localNetCons ) {
-        gid2out_->find( srcgid, ps );
-        if (ps) { return ps->nc_cnt_; }
-    }else{
-        gid2in_->find( srcgid, psi );
-	if (psi) { return psi->nc_cnt_; }
-    }
-    fprintf( stderr, "should never happen!\n" );
-    return 0;
-}
-
-//inject a spike into the appropriate netcon
-void ncs_netcon_inject( int srcgid, int netconIndex, double spikeTime, bool localNetCons )
-{
-    PreSyn *ps = NULL;
-    InputPreSyn *psi = NULL;
-    NetCvode* ns = net_cvode_instance;
-    NetCon* d = NULL
-    if( localNetCons ) {
-        gid2out_->find( srcgid, ps );
-	if (ps) {
-	    d = ps->ncl_[netconIndex];
-	}
-    }else{
-        gid2in_->find( srcgid, psi );
-	if (psi) {
-	    d = psi->ncl_[netconIndex];
-	}
-    }
-    if( !d ) {  //no cells on this cpu receive from the given gid
-        return;
-    }
-    
-    //fprintf( stderr, "gid %d index %d!\n", srcgid, netconIndex );
-    NrnThread* nt = nrn_threads;
-    if (d->active_ && d->target_) {
-#if BBTQ == 5
-        ns->bin_event(spikeTime + d->delay_, d, nt);
-#else
-        ns->event(spikeTime + d->delay_, d, nt);
-#endif
-    }
-}
-
-int ncs_gid_receiving_info( int **presyngids ) {
-    return ncs_bgp_target_info( presyngids );
-}
-
-//given the gid of a cell, retrieve its target count
-int ncs_gid_sending_count( int **sendlist2build ) {
-    if( !gid2out_ ) {
-        fprintf( stderr, "gid2out_ not allocated\n" );
-        return -1;
-    }
-    return ncs_bgp_sending_info( sendlist2build );
-}
-
-int ncs_target_hosts( int gid, int** targetnodes ) {
-    return ncs_bgp_target_hosts( gid, targetnodes );
-}
-
-#endif
-
 // for compressed gid info during spike exchange
 bool nrn_use_localgid_;
 void nrn_outputevent(unsigned char localgid, double firetime);
@@ -209,21 +107,7 @@ static int idxout_;
 static void nrn_spike_exchange_compressed(NrnThread*);
 #endif // NRNMPI
 
-#if BGPDMA & 4
-#define HAVE_DCMF_RECORD_REPLAY 1
-#else
 #define HAVE_DCMF_RECORD_REPLAY 0
-#endif
-
-#if BGPDMA
-int use_dcmf_record_replay;
-int use_bgpdma_; // can be 0, 1, or 2 : allgather, multisend (ISend, bgpdma)
-static void bgp_dma_setup();
-static void bgp_dma_init();
-static void bgp_dma_receive();
-extern void bgp_dma_send(PreSyn*, double t);
-static void bgpdma_cleanup_presyn(PreSyn*);
-#endif
 
 static int active_;
 static double usable_mindelay_;
@@ -265,18 +149,8 @@ void NetParEvent::deliver(double tt, NetCvode* nc, NrnThread* nt){
 }
 
 void nrn_netparevent_finish_deliver() {
-	NrnThread* nt = nrn_threads;
-#if BGPDMA
-	if (use_bgpdma_) {
-		bgp_dma_receive();
-	}else{
-		nrn_spike_exchange(nt);
-	}
-#else    
+	NrnThread* nt = nrn_threads;  
 	nrn_spike_exchange(nt);
-#endif
-	//wx_ += wt_;
-	//ws_ += wt1_;
 }
 
 void NetParEvent::pr(const char* m, double tt, NetCvode*){
@@ -315,7 +189,6 @@ void nrn_outputevent(unsigned char localgid, double firetime) {
 	MUTUNLOCK
 }
 
-#ifndef USENCS
 void nrn2ncs_outputevent(int gid, double firetime) {
 	if (!active_) { return; }
 	MUTLOCK
@@ -362,7 +235,6 @@ void nrn2ncs_outputevent(int gid, double firetime) {
 	MUTUNLOCK
 //printf("%d cell %d in slot %d fired at %g\n", nrnmpi_myid, gid, i, firetime);
 }
-#endif //USENCS
 #endif // NRNMPI
 
 static int nrn_need_npe() {
@@ -386,36 +258,15 @@ static int nrn_need_npe() {
 	return b;
 }
 
-static void calc_actual_mindelay() {
-	//reasons why mindelay_ can be smaller than min_interprocessor_delay
-	// are use_bgpdma_ when BGP_INTERVAL == 2
-#if BGPDMA && (BGP_INTERVAL == 2)
-	if (use_bgpdma_ && n_bgp_interval == 2) {
-		mindelay_ = min_interprocessor_delay_ / 2.;
-	}else{
-		mindelay_ = min_interprocessor_delay_;
-	}
-#endif
-}
-
-#if BGPDMA
-#include "bgpdma.cpp"
-#else
 #define TBUFSIZE 0
 #define TBUF /**/
-#endif
 
 void nrn_spike_exchange_init() {
-#ifdef USENCS
-    bgp_dma_setup();
-    return;
-#endif
 //printf("nrn_spike_exchange_init\n");
 	if (!nrn_need_npe()) { return; }
 //	if (!active_ && !nrn_use_selfqueue_) { return; }
 	alloc_space();
 //printf("nrnmpi_use=%d active=%d\n", nrnmpi_use, active_);
-	calc_actual_mindelay();	
 	usable_mindelay_ = mindelay_;
 	if (nrn_nthread > 1) {
 		usable_mindelay_ -= dt;
@@ -430,12 +281,6 @@ void nrn_spike_exchange_init() {
 
 #if TBUFSIZE
 		itbuf_ = 0;
-#endif
-
-#if BGPDMA
-	if (use_bgpdma_) {
-		bgp_dma_init();
-	}
 #endif
 
 	if (n_npe_ != nrn_nthread) {
@@ -483,12 +328,6 @@ void nrn_spike_exchange_init() {
 #if NRNMPI
 void nrn_spike_exchange(NrnThread* nt) {
 	if (!active_) { return; }
-#if BGPDMA
-	if (use_bgpdma_) {
-		bgp_dma_receive();
-		return;
-	}
-#endif
 	if (use_compress_) { nrn_spike_exchange_compressed(nt); return; }
 	TBUF
 #if TBUFSIZE
@@ -1179,21 +1018,7 @@ void BBS_netpar_solve(double tstop) {
 //figure out where to store these
 //	impl_->integ_time_ += nrnmpi_wtime() - wt;
 //	impl_->integ_time_ -= (npe_ ? (npe_[0].wx_ + npe_[0].ws_) : 0.);
-#if BGPDMA
-	if (use_bgpdma_) {
-#if BGP_INTERVAL == 2
-		for (int i=0; i < n_bgp_interval; ++i) {
-			bgp_dma_receive();
-		}
-#else
-		bgp_dma_receive();
-#endif
-	}else{
-		nrn_spike_exchange(nrn_threads);
-	}
-#else
 	nrn_spike_exchange(nrn_threads);
-#endif
 	nrn_timeout(0);
 //	impl_->wait_time_ += wt_;
 //	impl_->send_time_ += wt1_;
@@ -1276,9 +1101,6 @@ printf("   use_self_queue option. The interprocessor minimum NetCon delay is %g\
 }
 
 double BBS_netpar_mindelay(double maxdelay) {
-#if BGPDMA
-	bgp_dma_setup();
-#endif
 	double tt = set_mindelay(maxdelay);
 	return tt;
 }
@@ -1340,24 +1162,7 @@ int nrnmpi_spike_compress(int nspike, bool gid_compress, int xchng_meth) {
 #if BGP_INTERVAL == 2
 	n_bgp_interval = (xchng_meth & 4) ? 2 : 1;
 #endif
-#if BGPDMA
-	use_bgpdma_ = (xchng_meth & 3);
-	if (use_bgpdma_ == 3) {	assert(HAVE_DCMF_RECORD_REPLAY); }
-#if TWOPHASE
-	use_phase2_ = (xchng_meth & 8) ? 1 : 0;
-	if (nrnmpi_myid == 0) {printf("use_phase2_ = %d\n", use_phase2_);}
-#endif
-#if HAVE_DCMF_RECORD_REPLAY
-	use_dcmf_record_replay = (use_bgpdma_ == 3 ? 1 : 0);
-	if (nrnmpi_myid == 0) {printf("use_dcmf_record_replay = %d\n", use_dcmf_record_replay);}
-#endif
-	if (use_bgpdma_ == 3) { use_bgpdma_ = 2; }
-	if (use_bgpdma_ == 2) { assert(BGPDMA & 2); }
-	if (use_bgpdma_ == 1) { assert(BGPDMA & 1); }
-	if (nrnmpi_myid == 0) {printf("use_bgpdma_ = %d\n", use_bgpdma_);}
-#else // BGPDMA == 0
 	assert(xchng_meth == 0);
-#endif
 	if (nspike >= 0) {
 		ag_send_nspike_ = 0;
 		if (spfixout_) { free(spfixout_); spfixout_ = 0; }

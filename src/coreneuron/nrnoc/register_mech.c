@@ -20,27 +20,11 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/nrnoc/membdef.h"
 #include "coreneuron/nrnoc/nrnoc_decl.h"
 #include "coreneuron/nrnmpi/nrnmpi.h"
-#include "coreneuron/mech/cfile/cabvars.h"
-
-
-#if 0
-/* change this to correspond to the ../nmodl/nocpout nmodl_version_ string*/
-static char nmodl_version_[] =
-"6.2.0";
-#endif
-
-static char banner[] =
-"Duke, Yale, and the BlueBrain Project -- Copyright 1984-2014";
 
 # define	CHECK(name) /**/
 
-#if 0
-static char	CHKmes[] = "The user defined name, %s, already exists\n";
-#endif
-
 int secondorder=0;
 int state_discon_allowed_;
-int nrn_nobanner_;
 double t, dt, clamp_resist, celsius, htablemin, htablemax;
 int nrn_global_ncell = 0; /* used to be rootnodecount */
 
@@ -146,26 +130,6 @@ void alloc_mech(int n) {
 	nrn_bbcore_read_ = (bbcore_read_t*)ecalloc(memb_func_size_, sizeof(bbcore_read_t));
         nrn_is_artificial_ = (short*)ecalloc(memb_func_size_, sizeof(short));
 	bamech_ = (BAMech**)ecalloc(BEFORE_AFTER_SIZE, sizeof(BAMech*));
-}
-
-void hoc_last_init() {
-
- 	if (nrnmpi_myid < 1) if (nrn_nobanner_ == 0) { 
-	    fprintf(stderr, " \n");
-	    fprintf(stderr, " %s\n", banner);
-	    fprintf(stderr, " %s\n", nrn_version(1));
-	    fprintf(stderr, " \n");
-	    fflush(stderr);
- 	} 
-#if 0
-/* will have to put this back if any mod file refers to diam */
-	register_mech(morph_mech, morph_alloc, (Pfri)0, (Pfri)0, (Pfri)0, (Pfri)0, -1, 0);
-#endif
-        int i;
-	for (i=0; mechanism[i]; i++) {
-		(*mechanism[i])();
-	}
-	modl_reg();
 }
 
 void initnrn() {

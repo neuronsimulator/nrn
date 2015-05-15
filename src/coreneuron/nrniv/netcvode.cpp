@@ -41,8 +41,6 @@ declarePtrList(HTListList, HTList)
 implementPtrList(HTListList, HTList)
 declarePtrList(WatchList, WatchCondition)
 implementPtrList(WatchList, WatchCondition)
-declareTable(PreSynTable, double*, PreSyn*)
-implementTable(PreSynTable, double*, PreSyn*)
 declarePool(SelfEventPool, SelfEvent)
 implementPool(SelfEventPool, SelfEvent)
 declarePtrList(TQList, TQItem)
@@ -336,8 +334,6 @@ NetCvode::NetCvode(bool single) {
 	p = nil;
 	p_construct(1);
 	// eventually these should not have to be thread safe
-	pst_ = nil;
-	pst_cnt_ = 0;
 	psl_ = nil;
 	// for parallel network simulations hardly any presyns have
 	// a threshold and it can be very inefficient to check the entire
@@ -367,9 +363,6 @@ NetCvode::~NetCvode() {
 			delete ps;
 		}
 		delete psl_;
-	}
-	if (pst_) {
-		delete pst_;
 	}
 	delete wl_list_;		
 }
@@ -747,11 +740,6 @@ void NetCvode::deliver_least_event(NrnThread* nt) {
 	de->deliver(tt, this, nt);
 }
 
-#if BGPDMA > 1
-#define RP_COUNT 50
-static int rp_count;
-#endif
-
 bool NetCvode::deliver_event(double til, NrnThread* nt) {
 	TQItem* q;
 	if ((q = p[nt->id].tqe_->atomic_dq(til)) != 0) {
@@ -763,12 +751,6 @@ bool NetCvode::deliver_event(double til, NrnThread* nt) {
 #endif
 		STATISTICS(deliver_cnt_);
 		de->deliver(tt, this, nt);
-#if BGPDMA > 1
-		if (use_dcmf_record_replay) if (--rp_count < 0) {
-			nrnbgp_messager_advance();
-			rp_count = RP_COUNT;
-		}
-#endif
 		return true;
 	}else{
 		return false;
@@ -949,36 +931,8 @@ void PreSyn::construct_init() {
 	nt_ = NULL;
 }
 PreSyn::PreSyn(double* src, Point_process* psrc, NrnThread* nt) {
-#if 1
 	(void)src; (void)psrc; (void)nt;
 	assert(0);
-#else
-	construct_init():
-	thvar_ = src;
-	pntsrc_ = psrc;
-	if (src) {
-		if (psrc) {
-			nt_ = PP2NT(psrc);
-		}else{
-			assert(nt);
-			nt_ = nt;
-		}
-	}
-	if (psrc && !src) {
-		nt_ = PP2NT(psrc);
-	}
-	output_index_ = -1;
-#if BGPDMA
-	bgp.dma_send_ = 0;
-#endif
-	if (nt_ && thvar_) {
-		NetCvodeThreadData& p = net_cvode_instance->p[nt_->id];
-		if (!p.psl_thr_) {
-			p.psl_thr_ = new HTList(NULL);
-		}
-		p.psl_thr_->Append(new HTList(this));
-	}
-#endif
 }
 
 InputPreSyn::InputPreSyn() {
@@ -986,9 +940,6 @@ InputPreSyn::InputPreSyn() {
 	nc_cnt_ = 0;
 	use_min_delay_ = 0;
 	gid_ = -1;
-#if BGPDMA
-	bgp.dma_send_ = 0;
-#endif
 }
 
 PreSyn::~PreSyn() {
@@ -1027,31 +978,12 @@ void PreSyn::record(IvocVect* vec, IvocVect* idvec, int rec_id) {
 }
 
 void PreSyn::record(double tt) {
-#if 0
-	if (tvec_) {
-		int i;
-		// need to lock the vector if shared by other PreSyn
-		// since we get here in the thread that manages the
-		// threshold detection (or net_event from NET_RECEIVE).
-		if (idvec_) {tvec_->lock();}
-		i = tvec_->capacity();
-		tvec_->resize_chunk(i+1);
-		tvec_->elem(i) = tt;
-		if (idvec_) {
-			i = idvec_->capacity();
-			idvec_->resize_chunk(i+1);
-			idvec_->elem(i) = rec_id_;
-			tvec_->unlock();
-		}
-	}
-#else
 	spikevec_lock();
 	assert(spikevec_size < spikevec_buffer_size);
 	spikevec_gid[spikevec_size] = gid_;
 	spikevec_time[spikevec_size] = tt;
 	++spikevec_size;
 	spikevec_unlock();
-#endif
 }
 
 void ConditionEvent::check(NrnThread* nt, double tt, double teps) {
@@ -1082,25 +1014,8 @@ WatchCondition::~WatchCondition() {
 }
 
 void WatchCondition::activate(double flag) {
-#if 1
 	(void)flag;
 	assert(0);
-#else
-	// need to figure this out
-	flag_ = (value() > 0.) ? true: false;
-	valthresh_ = 0.;
-	nrflag_ = flag;
-	Cvode* cv = (Cvode*)pnt_->nvi_;
-	assert(cv);
-	int id = (cv->nctd_ > 1) ? thread()->id : 0;
-	HTList*& wl = cv->ctd_[id].watch_list_;
-	if (!wl) {
-		wl = new HTList(nil);
-		net_cvode_instance->wl_list_->append(wl);
-	}
-	Remove();
-	wl->Append(this);
-#endif
 }
 
 void WatchCondition::asf_err() {
@@ -1116,10 +1031,6 @@ assert(0);
 void WatchCondition::send(double tt, NetCvode* nc, NrnThread* nt) {
 	(void)tt; (void)nc; (void)nt;
 	assert(0);
-#if 0
-	qthresh_ = nc->event(tt, this, nt);
-	STATISTICS(watch_send_);
-#endif
 }
 
 void WatchCondition::deliver(double tt, NetCvode* ns, NrnThread* nt) {
@@ -1216,23 +1127,12 @@ hoc_warning("errno set during NetCon deliver to NET_RECEIVE", (char*)0);
 NrnThread* NetCon::thread() { return PP2NT(target_); }
 
 void NetCon::pr(const char* s, double tt, NetCvode* ns) {
-#if 1
 	(void)s; (void)tt; (void)ns;
 	assert(0);
-#else
-	printf("%s %s", s, hoc_object_name(obj_));
-	if (src_) {
-		printf(" src=%s",  src_->osrc_ ? hoc_object_name(src_->osrc_):secname(src_->ssrc_));
-	}else{
-		printf(" src=nil");
-	}
-	printf(" target=%s %.15g\n", (target_?hoc_object_name(target_->ob):"nil"), tt);
-#endif
 }
 
 void PreSyn::send(double tt, NetCvode* ns, NrnThread* nt) {
 	record(tt);
-#ifndef USENCS
 	if (use_min_delay_) {
 		STATISTICS(presyn_send_mindelay_);
 #if BBTQ == 5
@@ -1264,14 +1164,8 @@ void PreSyn::send(double tt, NetCvode* ns, NrnThread* nt) {
 			}
 		}
 	}
-#endif //ndef USENCS
-#if USENCS || NRNMPI
+#if NRNMPI
 	if (output_index_ >= 0) {
-#if BGPDMA
-	    if (use_bgpdma_) {
-		bgp_dma_send(this, tt);
-	    }else{
-#endif //BGPDMA
 
 #if NRNMPI
 		if (nrn_use_localgid_) {
@@ -1279,15 +1173,11 @@ void PreSyn::send(double tt, NetCvode* ns, NrnThread* nt) {
 		}else
 #endif //NRNMPI
 		nrn2ncs_outputevent(output_index_, tt);
-#if BGPDMA
-	    }
-#endif //BGPDMA
 	}
-#endif //USENCS || NRNMPI
+#endif //NRNMPI
 }
 	
 void InputPreSyn::send(double tt, NetCvode* ns, NrnThread* nt) {
-#ifndef USENCS
 	if (use_min_delay_) {
 		//STATISTICS(presyn_send_mindelay_);
 #if BBTQ == 5
@@ -1319,7 +1209,6 @@ void InputPreSyn::send(double tt, NetCvode* ns, NrnThread* nt) {
 			}
 		}
 	}
-#endif //ndef USENCS
 }
 	
 void PreSyn::deliver(double tt, NetCvode* ns, NrnThread* nt) {
@@ -1369,25 +1258,13 @@ hoc_execerror("internal error: Source delay is > NetCon delay", 0);
 NrnThread* PreSyn::thread() { return nt_; }
 
 void PreSyn::pr(const char* s, double tt, NetCvode* ns) {
-#if 1
 	(void)s; (void)tt; (void)ns;
 	assert(0);
-#else
-	printf("%s", s);
-	printf(" PreSyn src=%s",  osrc_ ? hoc_object_name(osrc_):secname(ssrc_));
-	printf(" %.15g\n", tt);
-#endif
 }
 
 void InputPreSyn::pr(const char* s, double tt, NetCvode* ns) {
-#if 1
 	(void)s; (void)tt; (void)ns;
 	assert(0);
-#else
-	printf("%s", s);
-	printf(" PreSyn src=%s",  osrc_ ? hoc_object_name(osrc_):secname(ssrc_));
-	printf(" %.15g\n", tt);
-#endif
 }
 
 SelfEvent::SelfEvent() {}
@@ -1456,7 +1333,7 @@ void ncs2nrn_integrate(double tstop) {
 	    if (n > 3) {
 		nrn_fixed_step_group(n);
 	    }else{
-#if NRNMPI && !defined(USENCS)
+#if NRNMPI
 		ts = tstop - dt;
 		assert(nt_t <= tstop);
 		// It may very well be the case that we do not advance at all
@@ -1542,9 +1419,6 @@ void NetCvode::check_thresh(NrnThread* nt) { // for default method
 void NetCvode::deliver_net_events(NrnThread* nt) { // for default method
 	TQItem* q;
 	double tm, tsav;
-#if BGPDMA
-	if (use_bgpdma_) { nrnbgp_messager_advance(); }
-#endif
 	int tid = nt->id;
 	tsav = nt->_t;
 	tm = nt->_t + 0.5*nt->_dt;

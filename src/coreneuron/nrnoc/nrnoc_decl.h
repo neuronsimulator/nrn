@@ -53,7 +53,6 @@ extern void nrn_fixed_step_group(int n);
 extern void nrn_fixed_step(void);
 extern void* setup_tree_matrix(NrnThread*);
 extern void alloc_mech(int);
-extern void hoc_last_init(void);
 extern void ion_reg(const char*, double);
 extern void nrn_mk_table_check(void);
 extern void initnrn(void);

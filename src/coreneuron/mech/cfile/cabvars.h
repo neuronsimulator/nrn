@@ -14,6 +14,9 @@ OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
 IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 extern  void capac_reg_(void), _passive_reg(void),
 #if EXTRACELLULAR
@@ -38,17 +41,6 @@ static void (*mechanism[])(void) = { /* type will start at 3 */
 	0
 };
 
-#if 0
-static char *morph_mech[] = { /* this is type 2 */
-	"0", "morphology", "diam", 0,0,0,
-};
-
-extern void cab_alloc(void);
-extern void morph_alloc(void);
-#endif
-
-#if 0
- first two memb_func
-	NULL_CUR, NULL_ALLOC, NULL_STATE, NULL_INITIALIZE, (Pfri)0, 0,	/*Unused*/
-	NULL_CUR, cab_alloc, NULL_STATE, NULL_INITIALIZE, (Pfri)0, 0,	/*CABLESECTION*/
+#ifdef __cplusplus
+}
 #endif

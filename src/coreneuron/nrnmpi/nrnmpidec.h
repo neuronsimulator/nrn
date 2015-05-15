@@ -110,12 +110,6 @@ extern long nrnmpi_long_allreduce(long x, int type);
 extern void nrnmpi_dbl_allreduce_vec(double* src, double* dest, int cnt, int type);
 extern void nrnmpi_long_allreduce_vec(long* src, long* dest, int cnt, int type);
 extern void nrnmpi_dbl_allgather(double* s, double* r, int n);
-#if BGPDMA
-extern void nrnmpi_bgp_comm(void);
-extern void nrnmpi_bgp_multisend(NRNMPI_Spike* spk, int n, int* hosts);
-extern int nrnmpi_bgp_single_advance(NRNMPI_Spike* spk);
-extern int nrnmpi_bgp_conserve(int nsend, int nrecv);
-#endif
 
 #if defined(__cplusplus)
 }

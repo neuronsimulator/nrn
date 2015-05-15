@@ -39,20 +39,6 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define STRCMP(a, b) (a - b)
 #endif
 
-#if 0
-typedef struct _spblk
-{
-    struct _spblk	* leftlink;
-    struct _spblk	* rightlink;
-    struct _spblk	* uplink;
-    int		cnt;
-
-    char	* key;		/* formerly time/timetyp */
-    char	* data;		/* formerly aux/auxtype */
-    char	* datb;
-} SPBLK;
-#endif
-
 typedef struct SPTREE
 {
     SPBLK	* root;		/* root node */
