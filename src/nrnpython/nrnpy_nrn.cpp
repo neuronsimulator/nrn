@@ -100,7 +100,10 @@ static char* pysec_name(Section* sec) {
 		NPySecObj* ps = (NPySecObj*)sec->prop->dparam[PROP_PY_INDEX]._pvoid;
 		buf[0] = '\0';
 		if (ps->cell_) {
-			char* cp = PyString_AsString(PyObject_Str(ps->cell_));
+			char* cp = NULL;
+			PyGILState_STATE gilsav = PyGILState_Ensure();
+			  cp = PyString_AsString(PyObject_Str(ps->cell_));
+			PyGILState_Release(gilsav);
 			sprintf(buf, "%s.", cp);
 			nrnpy_pystring_asstring_free(cp);
 		}
