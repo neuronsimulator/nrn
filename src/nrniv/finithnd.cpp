@@ -85,6 +85,9 @@ static void* finithnd_cons(Object*) {
 	Object* pyact = NULL;
 	if (hoc_is_object_arg(ia)) {
 		pyact = *hoc_objgetarg(ia);
+		if (!pyact) {
+			hoc_execerror("arg is None", 0);
+		}
 	}else{
 		s =gargstr(ia);
 	}
