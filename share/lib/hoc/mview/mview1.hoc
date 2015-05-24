@@ -40,6 +40,9 @@ proc destroy1() {local i
 }
 
 proc init() {local i, n, icdis, ntop, has_rxd
+    if (nrnpython("import neuron")) {
+        pyobj = new PythonObject()
+    }
 	distinctvalues = new ModelViewDistinctValues()
 	ndrco = 0 // n distinct real cell objects
 	realcells_ = new List()
@@ -125,8 +128,7 @@ proc init() {local i, n, icdis, ntop, has_rxd
 	display.top.append(pdis)
 	
     has_rxd = 0
-    if (nrnpython("import neuron")) {
-        pyobj = new PythonObject()
+    if (object_id(pyobj) != 0) {
         has_rxd = pyobj.neuron._has_scipy()
     }
     if (has_rxd) {
@@ -323,7 +325,11 @@ func count_rco() {local i, cnt, x
 proc add_type() {local i
 	classname($o2.cellobj, tstr)
 	if (strcmp(tstr, "PythonObject") == 0) {
-		hoc_sf_.head($o2.cellobj.__str__(), " object at", tstr)
+		// __str__ not always defined
+		//hoc_sf_.head($o2.cellobj.__str__(), " object at", tstr)
+		if (hoc_sf_.head(pyobj.str($o2.cellobj), " ", tstr) < 0) {
+			tstr = pyobj.str($o2.cellobj)
+		}
 	}
 	for i=0, $o1.count-1 {
 		if (strcmp($o1.object(i).tname, tstr) == 0) {
