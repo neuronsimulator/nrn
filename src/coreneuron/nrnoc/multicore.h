@@ -79,9 +79,7 @@ typedef struct NrnThread {
 	char* _sp13mat; /* handle to general sparse matrix */
 	struct Memb_list* _ecell_memb_list; /* normally nil */
 
-#if 1
 	double _ctime; /* computation time in seconds (using nrnmpi_wtime) */
-#endif
 
 	NrnThreadBAList* tbl[BEFORE_AFTER_SIZE]; /* wasteful since almost all empty */
 

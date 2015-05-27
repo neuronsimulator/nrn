@@ -41,7 +41,6 @@ extern int v_structure_change;
 extern void ion_reg(const char*, double);
 extern Prop* need_memb(Symbol*);
 extern Prop* prop_alloc(Prop**, int, Node*);
-extern void nrn_promote(Prop*, int, int);
 extern double nrn_ion_charge(Symbol*);
 extern void* create_point_process(int, Object*);
 extern void destroy_point_process(void*);

@@ -26,11 +26,7 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define NetCon nrniv_Dinfo
 #endif
 
-#if 0
-#define STATISTICS(arg) ++arg
-#else
 #define STATISTICS(arg) /**/
-#endif
 
 class PreSyn;
 class InputPreSyn;
@@ -58,7 +54,7 @@ public:
 	virtual ~DiscreteEvent();
 	virtual void send(double deliverytime, NetCvode*, NrnThread*);
 	virtual void deliver(double t, NetCvode*, NrnThread*);
-	virtual void pr(const char*, double t, NetCvode*);
+    virtual void pr(const char*, double t, NetCvode*);
 	virtual NrnThread* thread();
 
 	virtual int type() { return DiscreteEventType; }
@@ -73,15 +69,12 @@ public:
 class NetCon : public DiscreteEvent {
 public:
 	NetCon();
-	void init(DiscreteEvent* src, Point_process* target);
 	virtual ~NetCon();
 	virtual void send(double sendtime, NetCvode*, NrnThread*);
-	virtual void deliver(double, NetCvode*, NrnThread*);
-	virtual void pr(const char*, double t, NetCvode*);
+    virtual void deliver(double, NrnThread*);
 	virtual NrnThread* thread();
 
 	virtual int type() { return NetConType; }
-	void rmsrc();
 
 	double delay_;
 	DiscreteEvent* src_; // either a PreSyn or an InputPreSyn or NULL
@@ -105,7 +98,7 @@ public:
 	SelfEvent();
 	virtual ~SelfEvent();
 	virtual void deliver(double, NetCvode*, NrnThread*);
-	virtual void pr(const char*, double t, NetCvode*);
+    virtual void pr(const char*, double t);
 	void clear(){} // called by sepool_->free_all
 
 	virtual int type() { return SelfEventType; }
@@ -134,7 +127,6 @@ public:
 	virtual ~ConditionEvent();
 	virtual void check(NrnThread*, double sendtime, double teps = 0.0);
 	virtual double value() { return -1.; }
-	virtual void asf_err() = 0;
 
 	double valold_, told_;
 	double valthresh_; // go below this to reset threshold detector.
@@ -149,11 +141,9 @@ public:
 	WatchCondition(Point_process*, double(*)(Point_process*));
 	virtual ~WatchCondition();
 	virtual double value() { return (*c_)(pnt_); }
-	virtual void send(double, NetCvode*, NrnThread*);
 	virtual void deliver(double, NetCvode*, NrnThread*);
-	virtual void pr(const char*, double t, NetCvode*);
-	void activate(double flag);
-	virtual void asf_err();
+    virtual void pr(const char*, double t);
+    void asf_err();
 	virtual NrnThread* thread();
 	
 	double nrflag_;
@@ -167,12 +157,9 @@ public:
 class PreSyn : public ConditionEvent {
 public:
 	PreSyn();
-	PreSyn(double* src, Point_process* psrc, NrnThread*);
 	virtual ~PreSyn();
 	virtual void send(double sendtime, NetCvode*, NrnThread*);
 	virtual void deliver(double, NetCvode*, NrnThread*);
-	virtual void pr(const char*, double t, NetCvode*);
-	virtual void asf_err();
 	virtual NrnThread* thread();
 
 	virtual int type() { return PreSynType; }
@@ -190,8 +177,8 @@ public:
 	double delay_;
 	double* thvar_;
 	Point_process* pntsrc_;
-	IvocVect* tvec_;
-	IvocVect* idvec_;
+    IvocVect* tvec_; // spike recording stuff. when event is generated, it is appended to the vector.
+    IvocVect* idvec_; // see if this can be removed
 	NrnThread* nt_;
 	HTList* hi_; // in the netcvode psl_
 	HTList* hi_th_; // in the netcvode psl_th_
@@ -217,7 +204,6 @@ public:
 	virtual ~InputPreSyn();
 	virtual void send(double sendtime, NetCvode*, NrnThread*);
 	virtual void deliver(double, NetCvode*, NrnThread*);
-	virtual void pr(const char*, double t, NetCvode*);
 
 	virtual int type() { return InputPreSynType; }
 
@@ -236,8 +222,8 @@ class TstopEvent : public DiscreteEvent {
 public:
 	TstopEvent();
 	virtual ~TstopEvent();
-	virtual void deliver(double t, NetCvode*, NrnThread*);
-	virtual void pr(const char*, double t, NetCvode*);
+    virtual void deliver();
+    virtual void pr(const char*, double t);
 };
 
 class NetParEvent : public DiscreteEvent {

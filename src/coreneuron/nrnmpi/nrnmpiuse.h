@@ -38,15 +38,6 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 /* Number of times to retry a failed open */
 #undef FILE_OPEN_RETRY
 
-/* define if IBM BlueGene L, P or Q (activates BGLCheckPoint functionality) */
-#undef BLUEGENE
-
-/* define if IBM BlueGene/Q */
-#undef BLUEGENEQ
-
-/* define BlueGene with checkpointing */
-#undef BLUEGENE_CHECKPOINT
-
 /* Define to 1 for possibility of rank 0 xopen/ropen a file and broadcast everywhere */
 #undef USE_NRNFILEWRAP
 

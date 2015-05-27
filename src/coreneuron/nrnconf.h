@@ -40,7 +40,6 @@ typedef char Symbol;
 #define VEC_V(i) (_nt->_actual_v[(i)])
 #define VEC_AREA(i) (_nt->_actual_area[(i)])
 #define VECTORIZE 1
-#define MULTICORE 1
 
 #if defined(__cplusplus)
 extern "C" {

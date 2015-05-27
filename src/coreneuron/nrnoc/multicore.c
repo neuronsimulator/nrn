@@ -112,7 +112,7 @@ int nrn_inthread_;
 #if USE_PTHREAD
 
 #include <pthread.h>
-#include <sched.h> /* for sched_setaffinity */
+//#include <sched.h> /* for sched_setaffinity */
 
 /* abort if using threads and a call to malloc is unprotected */
 #define use_malloc_hook 0
@@ -315,18 +315,6 @@ static void send_job_to_slave(int i, void* (*job)(NrnThread*)) {
 #endif
 }
 
-void setaffinity(int i) {
-#if 1
-	(void)i;
-	return;
-#else
-	cpu_set_t mask;
-	CPU_ZERO(&mask);
-	CPU_SET(i, &mask);
-	mask = (1 << i);
-	sched_setaffinity(0, 4, &mask);
-#endif
-}
 
 #if PERMANENT
 static void* slave_main(void* arg) {
@@ -342,7 +330,6 @@ static void* slave_main(void* arg) {
 	t_[a1] = t1_[a1];
 	t_[a2] = t1_[a2];
 #endif
-	setaffinity(my_wc->thread_id);
 
 	for(;;) {
 	    if (busywait_) {
@@ -384,7 +371,6 @@ static void* slave_main(void* arg) {
 #endif
 
 static void threads_create_pthread(){
-    setaffinity(nrnmpi_myid);
     if (nrn_nthread > 1) {
 #if PERMANENT
 	int i;
@@ -490,13 +476,11 @@ void nrn_thread_stat() {
 	char buf[50];
 	sprintf(buf, "bench.%d.dat", nrnmpi_myid);
 	f = fopen(buf, "w");
-#if 1
 	n = (t_[0] - t1_[0]);
 	for (i=1; i < nrn_nthread; ++i) {
 		t_[i] = t1_[i] + n;
 		t_[i+nrn_nthread] = t1_[i+nrn_nthread] + n;
 	}
-#endif
 	n = 0;
 	for (i=0; i < BS; ++i) {
 		n += t_[i] - t1_[i];	

@@ -182,10 +182,10 @@ void nrn_read_filesdat(int &ngrp, int * &grp, const char *filesdat)
 
 void nrn_setup(const char *path, const char *filesdat, int byte_swap, int threading) {
 
-  /// Number of cell groups
+  /// Number of local cell groups
   int ngroup = 0;
 
-  /// Array of cell group numbers
+  /// Array of cell group numbers (indices)
   int *gidgroups = NULL;
 
   double time = nrnmpi_wtime(); 
@@ -194,30 +194,27 @@ void nrn_setup(const char *path, const char *filesdat, int byte_swap, int thread
 
   assert(ngroup > 0);
   MUTCONSTRUCT(1)
-#if 0
-  nrn_threads_create(ngroup, 0); // serial threads
-#else
   // temporary bug work around. If any process has multiple threads, no
   // process can have a single thread. So, for now, if one thread, make two.
   // Fortunately, empty threads work fine.
-  { int ng = ngroup;
-    if (ng == 1) { ng += 1; }
-    nrn_threads_create(ng, threading); // serial/parallel threads
-  }
-#endif
+  /// Allocate NrnThread* nrn_threads of size ngroup (minimum 2)
+  nrn_threads_create(ngroup == 1?2:ngroup, threading); // serial/parallel threads
 
-  /// Allocate array of Gid2PreSyn class pointers of size ngroup
+  /// Reserve vector of maps size ngroup
+  /// std::vector< std::map<int, PreSyn*> > neg_gid2out;
   netpar_tid_gid2ps_alloc(ngroup);
 
   // bug fix. gid2out is cumulative over all threads and so do not
   // know how many there are til after phase1
-  nrn_alloc_gid2out(1000, 100);
   // A process's complete set of output gids and allocation of each thread's
   // nt.presyns and nt.netcons arrays.
   // Generates the gid2out hash table which is needed
   // to later count the required number of InputPreSyn
-  data_reader *file_reader=new data_reader[ngroup];
+  /// gid2out_ = new Gid2PreSyn(size = 1000, poolsize=100);
+  /// hash table of int <-> PreSyn*
+  nrn_alloc_gid2out(1000, 100);
 
+  data_reader *file_reader=new data_reader[ngroup];
 
   /* nrn_multithread_job supports serial, pthread, and openmp. */
   store_phase_args(ngroup, gidgroups, file_reader, path, byte_swap);
@@ -272,12 +269,14 @@ void setup_ThreadData(NrnThread& nt) {
 
 
 void read_phase1(data_reader &F, NrnThread& nt) {
-  nt.n_presyn = F.read_int();
-  nt.n_netcon = F.read_int();
+  nt.n_presyn = F.read_int(); /// Number of PreSyn-s in NrnThread nt
+  nt.n_netcon = F.read_int(); /// Number of NetCon-s in NrnThread nt
   nt.presyns = new PreSyn[nt.n_presyn];
   nt.netcons = new NetCon[nt.n_netcon];
 
   /// Checkpoint in bluron is defined for both phase 1 and phase 2 since they are written together
+  /// output_gid has all of output PreSyns, netcon_srcgid is created for NetCons, which might be
+  /// 10k times more than output_gid.
   int* output_gid = F.read_int_array(nt.n_presyn);
   int* netcon_srcgid = F.read_int_array(nt.n_netcon);
   F.close();
@@ -295,17 +294,6 @@ void read_phase1(data_reader &F, NrnThread& nt) {
       }
     }
   }
-
-  // allocate a proper size neg_gid2out_[tid] (see netpar.cpp);
-  int negcnt = 1; // don't trouble ourselves with size 0 tables.
-  for (int i=0; i < nt.n_presyn; ++i) {
-    if (output_gid[i] < 0) {
-      ++negcnt;
-    }
-  }
-  // I no longer remember how generous we should be with the initial size
-  // of a hash table.
-  netpar_tid_gid2ps_alloc_item(nt.id, negcnt, 100);
 
   for (int i=0; i < nt.n_presyn; ++i) {
     int gid = output_gid[i];

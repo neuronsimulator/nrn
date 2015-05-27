@@ -19,7 +19,6 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/nrnmpi/nrnmpi.h"
 
 #if NRNMPI
-#if 1 || (defined(HAVE_SETITIMER) && defined(HAVE_SIGACTION))
 
 #include <signal.h>
 #include <sys/time.h>
@@ -27,9 +26,7 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 void (*nrntimeout_call)();
 static double told;
 static struct itimerval value;
-#if !defined(BLUEGENE)
 static struct sigaction act, oact;
-#endif
 
 static void timed_out(int sig) {
 	(void)sig; /* unused */
@@ -51,14 +48,6 @@ void nrn_timeout(int seconds) {
 #if 0
 printf("nrn_timeout %d\n", seconds);
 #endif
-#if BLUEGENE
-	if (seconds) {
-		told = nrn_threads->_t;
-		signal(SIGALRM, timed_out);
-	}else{
-		signal(SIGALRM, SIG_DFL);
-	}
-#else
 	if (seconds) {
 		told = nrn_threads->_t;
 		act.sa_handler = timed_out;
@@ -70,7 +59,6 @@ printf("nrn_timeout %d\n", seconds);
 	}else{
 		sigaction(SIGALRM, &oact, (struct sigaction*)0);
 	}
-#endif
 	value.it_interval.tv_sec = seconds;
 	value.it_interval.tv_usec = 0;
 	value.it_value.tv_sec = seconds;
@@ -81,11 +69,5 @@ printf("nrn_timeout %d\n", seconds);
 	}
 	
 }
-
-#else
-
-void nrn_timeout(int seconds) { }
-
-#endif /* not HAVE_SETITIMER */
 
 #endif /*NRNMPI*/

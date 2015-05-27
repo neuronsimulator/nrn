@@ -112,9 +112,6 @@ void alloc_mech(int n) {
 	pointsym = (Symbol**)ecalloc(memb_func_size_, sizeof(Symbol*));
 	point_process = (Point_process**)ecalloc(memb_func_size_, sizeof(Point_process*));
 	pnt_map = (char*)ecalloc(memb_func_size_, sizeof(char));
-#if 0
-	memb_func[1].alloc = cab_alloc;
-#endif
 	pnt_receive = (pnt_receive_t*)ecalloc(memb_func_size_, sizeof(pnt_receive_t));
 	pnt_receive_init = (pnt_receive_t*)ecalloc(memb_func_size_, sizeof(pnt_receive_t));
 	pnt_receive_size = (short*)ecalloc(memb_func_size_, sizeof(short));
@@ -296,7 +293,6 @@ int point_register_mech(const char** m,
 int _ninits;
 void _modl_cleanup(){}
 
-#if 1
 void _modl_set_dt(double newdt) {
 	dt = newdt;
 	nrn_threads->_dt = newdt;
@@ -307,7 +303,6 @@ void _modl_set_dt_thread(double newdt, NrnThread* nt) {
 double _modl_get_dt_thread(NrnThread* nt) {
 	return nt->_dt;
 }
-#endif	
 
 int nrn_pointing(pd) double *pd; {
 	return pd ? 1 : 0;

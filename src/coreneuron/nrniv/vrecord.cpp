@@ -194,11 +194,6 @@ double VecPlayContinuous::interpolate(double tt) {
 //printf("IvocVectRecorder::continuous tt=%g t0=%g t1=%g theta=%g x0=%g x1=%g\n", tt, t0, t1, (tt - t0)/(t1 - t0), x0, x1);
 	if (t0 == t1) { return (x0 + x1)/2.; }
 	return interp((tt - t0)/(t1 - t0), x0, x1);
-#if 0
-	// dt
-	double theta = tt/dt_ - last_index_;
-	interp(theta, x0, x1);
-#endif
 }
 
 void VecPlayContinuous::search(double tt) {

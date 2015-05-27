@@ -16,13 +16,14 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <vector>
+#include <map>
 #include "coreneuron/nrnconf.h"
 #include "coreneuron/nrnoc/multicore.h"
 #include "coreneuron/nrnmpi/nrnmpi.h"
 #include "coreneuron/nrniv/nrnhash_alt.h"
 #include "coreneuron/nrniv/nrn_assert.h"
 
-#define ALTHASH 1
 #undef MD
 #define MD 2147483648.
 
@@ -630,11 +631,7 @@ static void mk_localgid_rep() {
 		ngid = *(sbuf++);
 		for (k=0; k < ngid; ++k) {
 			if (gid2in_ && gid2in_->find(int(sbuf[k]), psi)) {
-#if ALTHASH
 				localmaps_[i]->insert(k, psi);
-#else
-				(*localmaps_[i])[k] = psi;
-#endif
 			}
 		}
 	}
@@ -679,29 +676,15 @@ void nrn_fake_fire(int gid, double spiketime, int fake_out) {
 
 }
 
-static int neg_cnt_;
-static Gid2PreSyn** neg_gid2out_;
+std::vector< std::map<int, PreSyn*> > neg_gid2out;
 
 void netpar_tid_gid2ps_alloc(int nth) {
   // nth is same as ngroup in nrn_setup.cpp, not necessarily nrn_nthread.
-  neg_cnt_ = nth;
-  neg_gid2out_ = new Gid2PreSyn*[nth];
-  for (int i = 0; i < neg_cnt_; ++i) {
-    neg_gid2out_[i] = NULL;
-  }
-}
-
-void netpar_tid_gid2ps_alloc_item(int ith, int size, int poolsize) {
-  neg_gid2out_[ith] = new Gid2PreSyn(size, poolsize);
+  neg_gid2out.resize(nth);
 }
 
 void netpar_tid_gid2ps_free() {
-  for (int i = 0; i < neg_cnt_; ++i) {
-    if (neg_gid2out_[i]) {
-      delete neg_gid2out_[i];
-    }
-  }
-  delete [] neg_gid2out_;
+  neg_gid2out.clear();
 }
 
 void netpar_tid_gid2ps(int tid, int gid, PreSyn** ps, InputPreSyn** psi){
@@ -711,7 +694,7 @@ void netpar_tid_gid2ps(int tid, int gid, PreSyn** ps, InputPreSyn** psi){
     BBS_gid2ps(gid, ps, psi);
   }else{
     *psi = NULL;
-    if (!neg_gid2out_[tid]->find(gid, *ps)) {
+    if (neg_gid2out[tid].find(gid) == neg_gid2out[tid].end()) {
       *ps = NULL;
     }
   }
@@ -721,10 +704,9 @@ void netpar_tid_set_gid2node(int tid, int gid, int nid) {
   if (gid >= 0) {
     BBS_set_gid2node(gid, nid);
   }else{
-    PreSyn* ps;
     nrn_assert(nid == nrnmpi_myid);
-    nrn_assert(neg_gid2out_[tid]->find(gid, ps) == 0);
-    neg_gid2out_[tid]->insert(gid, NULL);
+    nrn_assert(neg_gid2out[tid].find(gid) == neg_gid2out[tid].end());
+    neg_gid2out[tid][gid] = NULL;
   }
 }
 
@@ -732,30 +714,20 @@ void netpar_tid_cell(int tid, int gid, PreSyn* ps) {
   if (gid >= 0) {
     BBS_cell(gid, ps);
   }else{
-    PreSyn* ps1;
-    nrn_assert(neg_gid2out_[tid]->find(gid, ps1));
-    neg_gid2out_[tid]->insert(gid, ps);
+    std::map<int, PreSyn*>::iterator it = neg_gid2out[tid].find(gid);
+    nrn_assert(it != neg_gid2out[tid].end());
+    it->second = ps;
   }
 }
 
 void nrn_alloc_gid2out(int size, int poolsize) {
-#if ALTHASH
 	if (gid2out_) { delete gid2out_; }
 	gid2out_ = new Gid2PreSyn(size, poolsize);
-#else
-	assert(0);
-	gid2out_ = new Gid2PreSyn(211);
-#endif
 }
 
 void nrn_alloc_gid2in(int size, int poolsize) {
-#if ALTHASH
 	if (gid2in_) { delete gid2in_; }
 	gid2in_ = new Gid2InputPreSyn(size, poolsize);
-#else
-	assert(0);
-	gid2in_ = new Gid2InputPreSyn(2311);
-#endif
 }
 
 static void alloc_space() {
@@ -793,12 +765,7 @@ void BBS_set_gid2node(int gid, int nid) {
 			sprintf(m, "gid=%d already exists on this process as an output port", gid);
 			hoc_execerror(m, 0);                            
 		}
-#if ALTHASH
 		gid2out_->insert(gid, nil);
-#else
-		(*gid2out_)[gid] = nil;
-#endif
-//		gid2out_->insert(pair<const int, PreSyn*>(gid, nil));
 	}
 }
 
@@ -834,11 +801,7 @@ void BBS_cell(int gid, PreSyn* ps) {
 		hoc_execerror(buf, 0);
 	}
 //printf("%d cell %d %s\n", nrnmpi_myid, gid, hoc_object_name(ps->ssrc_ ? nrn_sec2cell(ps->ssrc_) : ps->osrc_));
-#if ALTHASH
 	gid2out_->insert(gid, ps);
-#else
-	(*gid2out_)[gid] = ps;
-#endif
 	ps->gid_ = gid;
 	ps->output_index_ = gid;
 }
@@ -871,48 +834,6 @@ void BBS_spike_record(int gid, IvocVect* spikevec, IvocVect* gidvec) {
     }
 }
 
-#if 0
-void gid_connect_count(int gid) {
-	alloc_space();
-	PreSyn* ps;
-	InputPreSyn* psi;
-	if (gid2out_->find(gid, ps)) {
-		// the gid is owned by this machine so connect directly
-		++ps->nc_cnt_;
-	}else if (gid2in_->find(gid, psi)) {
-		// the gid stub already exists
-		++psi->nc_cnt_;
-	}else{
-		psi = new InputPreSyn();
-		//net_cvode_instance->psl_append(ps);
-#if ALTHASH
-		gid2in_->insert(gid, psi);
-#else
-		(*gid2in_)[gid] = psi;
-#endif
-		psi->gid_ = gid;
-		++psi->nc_cnt_;
-	}
-}
-
-void gid_connect_allocate() {
-	NrnHashIterate(Gid2PreSyn, gid2out_, PreSyn*, ps) {
-		if (ps->nc_cnt_ > 0) {
-			ps->ncl_ = new NetCon*[ps->nc_cnt_];
-		}
-		ps->nc_cnt_ = 0;
-	}
-    NrnHashIterateEnd
-	NrnHashIterate(Gid2InputPreSyn, gid2in_, InputPreSyn*, psi) {
-		if (psi->nc_cnt_ > 0) {
-			psi->ncl_ = new NetCon*[psi->nc_cnt_];
-		}
-		psi->nc_cnt_ = 0;
-	}
-    NrnHashIterateEnd
-}
-#endif
-
 int input_gid_register(int gid) {
 	alloc_space();
 	PreSyn* ps;
@@ -922,11 +843,7 @@ int input_gid_register(int gid) {
 	}else if (gid2in_->find(gid, psi)) {
 		return 0;
 	}
-#if ALTHASH
 	gid2in_->insert(gid, NULL);
-#else
-	(*gid2in_)[gid] = NULL;
-#endif
 	return 1;
 }
 
@@ -954,38 +871,6 @@ void BBS_gid2ps(int gid, PreSyn** ps, InputPreSyn** psi) {
 	}
 }
 
-NetCon* BBS_gid_connect(int gid, Point_process* target, NetCon& nc) {
-	alloc_space();
-	PreSyn* ps;
-	InputPreSyn* psi;
-	if (gid2out_->find(gid, ps)) {
-		// the gid is owned by this machine so connect directly
-		if (!ps) {
-			char buf[100];
-			sprintf(buf, "gid %d owned by %d but no associated cell", gid, nrnmpi_myid);
-			hoc_execerror(buf, 0);
-		}
-		nc.init(ps, target);
-	}else if (gid2in_->find(gid, psi)) {
-		// the gid stub already exists
-//printf("%d connect %s from already existing %d\n", nrnmpi_myid, hoc_object_name(target), gid);
-		nc.init(psi, target);
-	}else{
-		// they have all been made by gid_connect_count().
-		assert(0);
-//printf("%d connect %s from new PreSyn for %d\n", nrnmpi_myid, hoc_object_name(target), gid);
-		psi = new InputPreSyn();
-		//net_cvode_instance->psl_append(ps);
-#if ALTHASH
-		gid2in_->insert(gid, psi);
-#else
-		(*gid2in_)[gid] = psi;
-#endif
-		psi->gid_ = gid;
-		nc.init(psi, target);
-	}
-	return &nc;
-}
 
 static int timeout_ = 0;
 int nrn_set_timeout(int timeout) {

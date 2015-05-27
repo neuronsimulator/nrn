@@ -24,12 +24,8 @@ void nrn_finitialize(int setv, double v) {
 	extern int _ninits;
 	++_ninits;
 
-#if ELIMINATE_T_ROUNDOFF
-	nrn_ndt_ = 0.; nrn_dt_ = dt; nrn_tbase_ = 0.;
-#else
 	t = 0.;
 	dt2thread(-1.);
-#endif
 	nrn_thread_table_check();
 	clear_event_queue();
 	nrn_spike_exchange_init();
@@ -42,21 +38,10 @@ void nrn_finitialize(int setv, double v) {
 		nrn_deliver_events(nrn_threads + i); /* The play events at t=0 */
 	}
 	if (setv) {
-#if _CRAY
-#pragma _CRI ivdep
-#endif
 		FOR_THREADS(_nt) for (i=0; i < _nt->end; ++i) {
 			VEC_V(i) = v;
 		}
 	}
-#if 0 /* Alex:: gap junctions maybe someday */
-	if (nrnmpi_v_transfer_) {
-		(nrnmpi_v_transfer_)();
-	}
-	if (nrnthread_v_transfer_) FOR_THREADS(_nt){
-		(*nrnthread_v_transfer_)(_nt);
-	}
-#endif
 	for (i=0; i < nrn_nthread; ++i) {
 		nrn_ba(nrn_threads + i, BEFORE_INITIAL);
 	}
@@ -65,7 +50,6 @@ void nrn_finitialize(int setv, double v) {
 	   concentrations.
 	*/
 	/* the memblist list in NrnThread is already so ordered */
-#if MULTICORE
 	for (i=0; i < nrn_nthread; ++i) {
 		NrnThread* nt = nrn_threads + i;
 		NrnThreadMembList* tml;
@@ -77,7 +61,6 @@ void nrn_finitialize(int setv, double v) {
 		}
 	}
 #endif
-#endif
 
 	init_net_events();
 	for (i = 0; i < nrn_nthread; ++i) {
@@ -86,15 +69,13 @@ void nrn_finitialize(int setv, double v) {
 	for (i=0; i < nrn_nthread; ++i) {
 		nrn_deliver_events(nrn_threads + i); /* The INITIAL sent events at t=0 */
 	}
-	{
-		for (i=0; i < nrn_nthread; ++i) {
-			setup_tree_matrix(nrn_threads + i);
-		}
-		nrn_record_init();
-		for (i=0; i < nrn_nthread; ++i) {
-			fixed_record_continuous(nrn_threads + i);
-		}
-	}
+    for (i=0; i < nrn_nthread; ++i) {
+        setup_tree_matrix(nrn_threads + i);
+    }
+    nrn_record_init();
+    for (i=0; i < nrn_nthread; ++i) {
+        fixed_record_continuous(nrn_threads + i);
+    }
 	for (i=0; i < nrn_nthread; ++i) {
 		nrn_deliver_events(nrn_threads + i); /* The record events at t=0 */
 	}

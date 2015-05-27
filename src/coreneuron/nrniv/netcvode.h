@@ -93,14 +93,11 @@ public:
 	TQItem* bin_event(double tdeliver, DiscreteEvent*, NrnThread*);
 #endif
 	void send2thread(double, DiscreteEvent*, NrnThread*);
-	void null_event(double);
 	void tstop_event(double);
-	void handle_tstop_event(double, NrnThread* nt);
 	void presyn_disconnect(PreSyn*);
 	void check_thresh(NrnThread*);
 	void deliver_net_events(NrnThread*); // for default staggered time step method
 	void deliver_events(double til, NrnThread*); // for initialization events
-	void solver_prepare();
 	void clear_events();
 	void init_events();
 	void vec_event_store();
@@ -133,14 +130,8 @@ public:
 	void alloc_list();
 	void distribute_dinfo(int*, int);
 	void fill_global_ba(NrnThread*, int, BAMechList**);
-	void fornetcon_prepare();
-	int fornetcon_change_cnt_;
 	void p_construct(int);
 	void ps_thread_link(PreSyn*);
-private:
-	int structure_change_cnt_;
-	int matrix_change_cnt_;
-	IvocVect* vec_event_store_;
 public:
 	bool use_partrans();
 	HTList* psl_; //actually a hoc_List

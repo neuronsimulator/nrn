@@ -26,7 +26,6 @@ extern "C" {
 #define nt_dt nrn_threads->_dt
 
 extern NetCvode* net_cvode_instance;
-void nrn_solver_prepare(void);
 
 // for fixed step thread
 void deliver_net_events(NrnThread* nt) {
@@ -90,12 +89,6 @@ void fixed_record_continuous(NrnThread* nt) {
 void nrn_random_play(NrnThread* nt) {
 	(void)nt;
 	return;
-}
-
-void nrn_solver_prepare() {
-	if (net_cvode_instance) {
-		net_cvode_instance->solver_prepare();
-	}
 }
 
 int at_time(NrnThread* nt, double te) {

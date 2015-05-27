@@ -125,23 +125,6 @@ double nrnran123_normal(nrnran123_State* s) {
 	return x;
 }
 
-#if 0
-nrnran123_array4x32 nrnran123_iran(uint32_t seq, uint32_t id1, uint32_t id2) {
-	nrnran123_array4x32 a;
-	philox4x32 c;
-	c.v[0] = seq;
-	c.v[1] = 0;
-	c.v[2] = id1;
-	c.v[3] = id2;
-	philox4x32 r = philox4x32(c, k);
-	a.v[0] = r.v[0];
-	a.v[1] = r.v[1];
-	a.v[2] = r.v[2];
-	a.v[3] = r.v[3];
-	return a;
-}
-#endif
-
 double nrnran123_uint2dbl(uint32_t u) {
 	/* 0 to 2^32-1 transforms to double value in open (0,1) interval */
 	/* min 2.3283064e-10 to max (1 - 2.3283064e-10) */

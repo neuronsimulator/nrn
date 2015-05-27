@@ -105,12 +105,10 @@ static void update(NrnThread* _nt){
 			VEC_V(i) += VEC_RHS(i);
 		}
 	}
-#if 1 || I_MEMBRANE
 	if (_nt->tml) {
 		assert(_nt->tml->index == CAP);
 		nrn_capacity_current(_nt, _nt->tml->ml);
 	}
-#endif
 
 }
 
