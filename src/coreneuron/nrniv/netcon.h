@@ -17,7 +17,6 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef netcon_h
 #define netcon_h
 
-#include "coreneuron/nrniv/ivlist.h"
 #include "coreneuron/nrniv/htlist.h"
 #include "coreneuron/nrnmpi/nrnmpi.h"
 
@@ -118,7 +117,6 @@ private:
 	static SelfEventPPTable* sepp_;
 };
 
-declarePtrList(NetConPList, NetCon)
 
 class ConditionEvent : public DiscreteEvent {
 public:
@@ -171,7 +169,6 @@ public:
 	void vecinit();
 	double mindelay();
 
-	//NetConPList dil_;
 	int nc_index_; //replaces dil_, index into global NetCon** netcon_in_presyn_order_
 	double threshold_;
 	double delay_;
@@ -209,7 +206,6 @@ public:
 
 	double mindelay();
 
-	//NetConPList dil_;
 	int nc_index_; //replaces dil_, index into global NetCon** netcon_in_presyn_order_
 	double delay_; // can be eliminated since only a few targets on a process
 	int nc_cnt_; // how many netcon starting at nc_index_

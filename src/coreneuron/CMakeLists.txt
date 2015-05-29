@@ -28,9 +28,7 @@ nrnoc/membdef.h
 nrnoc/nrnoc_decl.h
 nrnoc/nrnpthread.h
 nrniv/htlist.h
-nrniv/ivlist.h
 nrniv/ivocvect.h
-nrniv/ivtable.h
 nrniv/netcon.h
 nrniv/netcvode.h
 nrniv/nrn_assert.h
@@ -46,7 +44,6 @@ nrniv/pool.h
 nrniv/prcellstate.cpp
 nrniv/sptbinq.h
 nrniv/sptree.h
-nrniv/structpool.h
 nrniv/tqueue.h
 nrniv/vrecitem.h
 mech/cfile/cabvars.h
@@ -75,7 +72,6 @@ nrniv/netpar.cpp
 nrniv/netcvode.cpp
 nrniv/tqueue.cpp
 nrniv/htlist.cpp
-nrniv/ivlistimpl.cpp
 nrniv/ivvect.cpp
 nrniv/mk_mech.cpp
 nrniv/nrn_datareader.cpp

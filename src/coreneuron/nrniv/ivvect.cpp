@@ -17,7 +17,6 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <string.h>
 #include "coreneuron/nrnconf.h"
 #include "coreneuron/nrniv/ivocvect.h"
-#include "coreneuron/nrniv/ivlist.h"
 
 void IvocVect::resize(int newl) { // all that for this
         long oldcap = capacity();
@@ -38,18 +37,6 @@ void IvocVect::resize(int newl) { // all that for this
         for (;oldcap < newl; ++oldcap) {
                 elem(oldcap) = 0.;
         }
-}
-
-void IvocVect::resize_chunk(int newlen, int extra) {
-        if (newlen > space) {
-                long x = newlen + extra;
-                if (extra == 0) {
-                        x = ListImpl_best_new_count(newlen, sizeof(double));
-                }
-//              printf("resize_chunk %d\n", x);
-                resize(x);
-        }
-        resize(newlen);
 }
 
 void IvocVect::buffer_size(int n) {

@@ -581,6 +581,8 @@ void nrn_mk_table_check() {
 		free((void*)table_check_);
 		table_check_ = (ThreadDatum*)0;
 	}
+
+    /// Allocate int array of size of mechanism types
 	ix = (int*)emalloc(n_memb_func*sizeof(int));
 	for (i=0; i < n_memb_func; ++i) {
 		ix[i] = -1;

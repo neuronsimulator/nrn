@@ -28,7 +28,6 @@ public:
 	~IvocVect();
 
 	void resize(int);
-	void resize_chunk(int len, int realloc_extra = 0);
 	int capacity();
 	double& elem(int);
 	double* vec();

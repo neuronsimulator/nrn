@@ -14,20 +14,16 @@ OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
 IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include <vector>
+#include <map>
 #include "coreneuron/nrnconf.h"
 #include "coreneuron/nrnoc/membfunc.h"
 #include "coreneuron/nrnoc/multicore.h"
 #include "coreneuron/nrniv/netcon.h"
-#include "coreneuron/nrniv/ivtable.h"
-#include "coreneuron/nrniv/ivlist.h"
 #include "coreneuron/nrnoc/nrnoc_decl.h"
 #include "coreneuron/utils/sdprintf.h"
 
-declarePtrList(NetConList, NetCon) // NetCons in same order as Point_process
-implementPtrList(NetConList, NetCon) // and there may be several per pp.
-declareTable(PV2I, void*, int)
-implementTable(PV2I, void*, int)
-static PV2I* pnt2index; // for deciding if NetCon is to be printed
+std::map<Point_process*, int> pnt2index; // for deciding if NetCon is to be printed
 static int pntindex; // running count of printed point processes.
 
 static void pr_memb(int type, Memb_list* ml, int* cellnodes, NrnThread& nt, FILE* f) {
@@ -52,7 +48,7 @@ static void pr_memb(int type, Memb_list* ml, int* cellnodes, NrnThread& nt, FILE
         fprintf(f, "%d nri %d\n", cellnodes[inode], pntindex);
         int k = nrn_i_layout(i, cnt, 1, psize, layout);
         Point_process* pp = (Point_process*)nt._vdata[ml->pdata[k]];
-        pnt2index->insert(pp, pntindex);
+        pnt2index[pp] = pntindex;
         ++pntindex;
       }
       for (int j=0; j < size; ++j) {
@@ -68,23 +64,23 @@ static void pr_netcon(NrnThread& nt, FILE* f) {
   // pnt2index table has been filled
 
   // List of NetCon for each of the NET_RECEIVE point process instances
-  NetConList** nclist = new NetConList*[pntindex];
-  for (int i=0; i < pntindex; ++i) { nclist[i] = new NetConList(1); }
+  std::vector< std::vector<NetCon*> > nclist;
+  nclist.resize(pntindex);
   int nc_cnt = 0;
   for (int i=0; i < nt.n_netcon; ++i) {
     NetCon* nc = nt.netcons + i;
     Point_process* pp = nc->target_;
-    int index;
-    if (pnt2index->find(index, pp)) {
-      nclist[index]->append(nc);
+    std::map<Point_process*, int>::iterator it = pnt2index.find(pp);
+    if (it != pnt2index.end()) {
+      nclist[it->second].push_back(nc);
       ++nc_cnt;
     }
   }
   fprintf(f, "netcons %d\n", nc_cnt);
   fprintf(f, " pntindex srcgid active delay weights\n");
   for (int i=0; i < pntindex; ++i) {
-    for (int j=0; j < nclist[i]->count(); ++j) {
-      NetCon* nc = nclist[i]->item(j);
+    for (int j=0; j < (int)(nclist[i].size()); ++j) {
+      NetCon* nc = nclist[i][j];
       int srcgid = -3;
       if (nc->src_) {
         if (nc->src_->type() == PreSynType) {
@@ -113,13 +109,11 @@ static void pr_netcon(NrnThread& nt, FILE* f) {
     }
   }
   // cleanup
-  for (int i=0; i < pntindex; ++i) { delete nclist[i]; }
-  delete [] nclist;
+  nclist.clear();
 }
 
 static void pr_realcell(PreSyn& ps, NrnThread& nt, FILE* f) {
   //for associating NetCons with Point_process identifiers
-  pnt2index = new PV2I(1000);
 
   pntindex = 0;
 
@@ -171,7 +165,7 @@ nt._actual_v + nt.end);
   pr_netcon(nt, f);
 
   delete [] cellnodes;
-  delete pnt2index;
+  pnt2index.clear();
 }
 
 int prcellstate(int gid, const char* suffix) {

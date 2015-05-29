@@ -116,11 +116,9 @@ void TQueue::deleteitem(TQItem* i) {
 
 void TQueue::print() {
     MUTLOCK
-#if FAST_LEAST
     if (least_) {
         prnt(least_, 0);
     }
-#endif
     spscan(prnt, NULL, sptree_);
     for (TQItem* q = binq_->first(); q; q = binq_->next(q)) {
         prnt(q, 0);
@@ -130,11 +128,9 @@ void TQueue::print() {
 
 void TQueue::forall_callback(void(*f)(const TQItem*, int)) {
     MUTLOCK
-#if FAST_LEAST
     if (least_) {
         f(least_, 0);
     }
-#endif
     spscan(f, NULL, sptree_);
     for (TQItem* q = binq_->first(); q; q = binq_->next(q)) {
         f(q, 0);

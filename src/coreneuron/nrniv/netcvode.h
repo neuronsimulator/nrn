@@ -35,7 +35,6 @@ class IvocVect;
 class BAMechList;
 class MaxStateTable;
 class HTList;
-class HTListList;
 class NetCvode;
 class MaxStateItem;
 class HocEvent;
@@ -135,7 +134,6 @@ public:
 public:
 	bool use_partrans();
 	HTList* psl_; //actually a hoc_List
-	HTListList* wl_list_; // for faster deliver_net_events when many cvode
 	int pcnt_;
 	NetCvodeThreadData* p;
 	int enqueueing_;

@@ -39,9 +39,7 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // netcon_srcgid (nnetcon) -(type+1000*index) refers to acell with no gid
 //                         -1 means the netcon has no source (not implemented)
 // Note that the negative gids are only thread unique and not process unique.
-// Therefore BBS_gid2ps(gid) cannot be used to determine the PreSyn for the
-// negative gids since the former hash table is for the whole process. Instead
-// we create a thread specific hash table for the negative gids for each thread
+// We create a thread specific hash table for the negative gids for each thread
 // when <firstgid>_1.dat is read and then destroy it after <firstgid>_2.dat
 // is finished using it.  An earlier implementation which attempted to
 // encode the thread number into the negative gid
@@ -200,7 +198,7 @@ void nrn_setup(const char *path, const char *filesdat, int byte_swap, int thread
   /// Allocate NrnThread* nrn_threads of size ngroup (minimum 2)
   nrn_threads_create(ngroup == 1?2:ngroup, threading); // serial/parallel threads
 
-  /// Reserve vector of maps size ngroup
+  /// Reserve vector of maps of size ngroup
   /// std::vector< std::map<int, PreSyn*> > neg_gid2out;
   netpar_tid_gid2ps_alloc(ngroup);
 
@@ -231,7 +229,14 @@ void nrn_setup(const char *path, const char *filesdat, int byte_swap, int thread
   /* nrn_multithread_job supports serial, pthread, and openmp. */
   phase2_wrapper();
 
+  /// Generally, tables depend on a few parameters. And if those parameters change,
+  /// then the table needs to be recomputed. This is obviously important in NEURON
+  /// since the user can change those parameters at any time. However, there is no
+  /// c example for CoreNEURON so can't see what it looks like in that context.
+  /// Boils down to setting up a function pointer of the function _check_table_thread(),
+  /// which is only executed by StochKV.c.
   nrn_mk_table_check(); // was done in nrn_thread_memblist_setup in multicore.c
+
   delete [] file_reader;
 
   netpar_tid_gid2ps_free();
@@ -304,8 +309,8 @@ void read_phase1(data_reader &F, NrnThread& nt) {
     // before the end of setup
 
     MUTLOCK
-    netpar_tid_set_gid2node(nt.id, gid, nrnmpi_myid);
-    netpar_tid_cell(nt.id, gid, nt.presyns + i);
+    /// Put gid into the gid2out_ hash table with correspondent output PreSyn
+    netpar_tid_set_gid2node(nt.id, gid, nrnmpi_myid, nt.presyns + i);
     MUTUNLOCK
 
     if (gid < 0) {

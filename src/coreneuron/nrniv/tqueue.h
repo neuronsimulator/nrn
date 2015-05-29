@@ -28,7 +28,6 @@ declarePool(TQItemPool, TQItem)
 
 // 0 use bbtqueue, 1 use rbtqueue, 2 use sptqueue, 3 use sptfifoq
 #define BBTQ 5
-#define FAST_LEAST 1
 #define SplayTBinQueue TQueue
 #define SplayTBinQItem TQItem
 

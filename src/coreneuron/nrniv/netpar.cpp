@@ -655,24 +655,24 @@ static void mk_localgid_rep() {
 // high so that they do not themselves generate spikes.
 // Can only be called by thread 0 because of the ps->send.
 void nrn_fake_fire(int gid, double spiketime, int fake_out) {
-	assert(gid2in_);
-	PreSyn* ps = NULL;
-	InputPreSyn* psi;
-	if (gid2in_->find(gid, psi)) {
-		assert(psi);
+    assert(gid2in_);
+    PreSyn* ps = NULL;
+    InputPreSyn* psi;
+    if (gid2in_->find(gid, psi)) {
+        assert(psi);
 //printf("nrn_fake_fire %d %g\n", gid, spiketime);
-		psi->send(spiketime, net_cvode_instance, nrn_threads);
+        psi->send(spiketime, net_cvode_instance, nrn_threads);
 #if NRNSTAT
-		++nrecv_useful_;
+        ++nrecv_useful_;
 #endif
-	}else if (fake_out && gid2out_->find(gid, ps)) {
-		assert(ps);
+    }else if (fake_out && gid2out_->find(gid, ps)) {
+        assert(ps);
 //printf("nrn_fake_fire fake_out %d %g\n", gid, spiketime);
-		ps->send(spiketime, net_cvode_instance, nrn_threads);
+        ps->send(spiketime, net_cvode_instance, nrn_threads);
 #if NRNSTAT
-		++nrecv_useful_;
+        ++nrecv_useful_;
 #endif
-	}
+    }
 
 }
 
@@ -688,10 +688,16 @@ void netpar_tid_gid2ps_free() {
 }
 
 void netpar_tid_gid2ps(int tid, int gid, PreSyn** ps, InputPreSyn** psi){
-  // for gid >= 0, just a wrapper for BBS_gid2ps(...) but for gid < 0
-  // returns the PreSyn* in the thread (tid) specific hash table.
+  /// for gid < 0 returns the PreSyn* in the thread (tid) specific hash table.
   if (gid >= 0) {
-    BBS_gid2ps(gid, ps, psi);
+      if (gid2out_->find(gid, *ps)) {
+          *psi = NULL;
+      }else if (gid2in_->find(gid, *psi)) {
+          *ps = NULL;
+      }else {
+          *psi = NULL;
+          *ps = NULL;
+      }
   }else{
     *psi = NULL;
     if (neg_gid2out[tid].find(gid) == neg_gid2out[tid].end()) {
@@ -700,25 +706,39 @@ void netpar_tid_gid2ps(int tid, int gid, PreSyn** ps, InputPreSyn** psi){
   }
 }
   
-void netpar_tid_set_gid2node(int tid, int gid, int nid) {
+void netpar_tid_set_gid2node(int tid, int gid, int nid, PreSyn* ps) {
   if (gid >= 0) {
-    BBS_set_gid2node(gid, nid);
+      /// Allocate space for spikes: 200 structs of {int gid; double time}
+      /// coming from nrnmpi.h and array of int of the global doamin size
+      alloc_space();
+#if NRNMPI
+      if (nid == nrnmpi_myid) {
+#else
+      {
+#endif
+  //printf("gid %d defined on %d\n", gid, nrnmpi_myid);
+          PreSyn* pso;
+          InputPreSyn* psi;
+          char m[200];
+          if (gid2in_ && gid2in_->find(gid, psi)) {
+              sprintf(m, "gid=%d already exists as an input port", gid);
+              hoc_execerror(m, "Setup all the output ports on this process before using them as input ports.");
+          }
+          if (gid2out_->find(gid, pso)) {
+              sprintf(m, "gid=%d already exists on this process as an output port", gid);
+              hoc_execerror(m, 0);
+          }
+          gid2out_->insert(gid, ps);
+          ps->gid_ = gid;
+          ps->output_index_ = gid;
+      }
   }else{
     nrn_assert(nid == nrnmpi_myid);
     nrn_assert(neg_gid2out[tid].find(gid) == neg_gid2out[tid].end());
-    neg_gid2out[tid][gid] = NULL;
+    neg_gid2out[tid][gid] = ps;
   }
 }
 
-void netpar_tid_cell(int tid, int gid, PreSyn* ps) {
-  if (gid >= 0) {
-    BBS_cell(gid, ps);
-  }else{
-    std::map<int, PreSyn*>::iterator it = neg_gid2out[tid].find(gid);
-    nrn_assert(it != neg_gid2out[tid].end());
-    it->second = ps;
-  }
-}
 
 void nrn_alloc_gid2out(int size, int poolsize) {
 	if (gid2out_) { delete gid2out_; }
@@ -746,93 +766,11 @@ spbufin_ = (NRNMPI_Spikebuf*)emalloc(nrnmpi_numprocs*sizeof(NRNMPI_Spikebuf));
 	}
 }
 
-void BBS_set_gid2node(int gid, int nid) {
-	alloc_space();
-#if NRNMPI
-	if (nid == nrnmpi_myid) {
-#else
-	{
-#endif
-//printf("gid %d defined on %d\n", gid, nrnmpi_myid);
-		PreSyn* ps;
-		InputPreSyn* psi;
-		char m[200];
-		if (gid2in_ && gid2in_->find(gid, psi)) {
-			sprintf(m, "gid=%d already exists as an input port", gid);
-			hoc_execerror(m, "Setup all the output ports on this process before using them as input ports.");
-		}
-		if (gid2out_->find(gid, ps)) {
-			sprintf(m, "gid=%d already exists on this process as an output port", gid);
-			hoc_execerror(m, 0);                            
-		}
-		gid2out_->insert(gid, nil);
-	}
-}
-
-int BBS_gid_exists(int gid) {
-	PreSyn* ps;
-	alloc_space();
-	if (gid2out_->find(gid, ps)) {
-//printf("%d gid %d exists\n", nrnmpi_myid, gid);
-		if (ps) {
-			return (ps->output_index_ >= 0 ? 3 : 2);
-		}else{
-			return 1;
-		}
-	}
-	return 0;
-}
 
 void nrn_cleanup_presyn(DiscreteEvent*) {
     // for multi-send, need to cleanup the list of hosts here
 }
 
-void BBS_cell(int gid, PreSyn* ps) {
-	PreSyn* ps1;
-	InputPreSyn* ps2;
-	if (gid2in_ && gid2in_->find(gid, ps2)) {
-		char buf[100];
-		sprintf(buf, "gid=%d is in the input list. Must register prior to connecting", gid);
-		hoc_execerror(buf, 0);
-	}
-	if (gid2out_->find(gid, ps1) == 0) {
-		char buf[100];
-		sprintf(buf, "gid=%d has not been set on rank %d", gid, nrnmpi_myid);
-		hoc_execerror(buf, 0);
-	}
-//printf("%d cell %d %s\n", nrnmpi_myid, gid, hoc_object_name(ps->ssrc_ ? nrn_sec2cell(ps->ssrc_) : ps->osrc_));
-	gid2out_->insert(gid, ps);
-	ps->gid_ = gid;
-	ps->output_index_ = gid;
-}
-
-void BBS_outputcell(int gid) {
-	PreSyn* ps;
-	nrn_assert(gid2out_->find(gid, ps));
-	nrn_assert(ps);
-	ps->output_index_ = gid;
-	ps->gid_ = gid;
-}
-
-void BBS_spike_record(int gid, IvocVect* spikevec, IvocVect* gidvec) {
-	PreSyn* ps;
-    if (gid >= 0) {
-	nrn_assert(gid2out_->find(gid, ps));
-	nrn_assert(ps);
-        MUTLOCK
-	ps->record(spikevec, gidvec, gid);
-        MUTUNLOCK
-    }else{ // record all output spikes
-	NrnHashIterate(Gid2PreSyn, gid2out_, PreSyn*, ps2) {
-		if (ps2->output_index_ >= 0) {
-     			MUTLOCK
-			ps2->record(spikevec, gidvec, ps2->output_index_);
-			MUTUNLOCK 
-		}
-	}
-    NrnHashIterateEnd
-    }
-}
 
 int input_gid_register(int gid) {
 	alloc_space();
@@ -858,17 +796,6 @@ int input_gid_associate(int gid, InputPreSyn* psi) {
 		return 1;
 	}
 	return 0;
-}
-
-void BBS_gid2ps(int gid, PreSyn** ps, InputPreSyn** psi) {
-	if (gid2out_->find(gid, *ps)) {
-		*psi = NULL;
-	}else if (gid2in_->find(gid, *psi)) {
-		*ps = NULL;
-	}else {
-		*psi = NULL;
-		*ps = NULL;
-	}
 }
 
 

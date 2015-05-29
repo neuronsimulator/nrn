@@ -20,8 +20,6 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/nrnoc/nrnoc_decl.h"
 #include "coreneuron/nrniv/netcon.h"
 #include "coreneuron/nrniv/netcvode.h"
-#include "coreneuron/nrniv/ivlist.h"
-#include "coreneuron/nrniv/ivtable.h"
 #include "coreneuron/nrniv/ivocvect.h"
 #include "coreneuron/nrniv/nrniv_decl.h"
 #include "coreneuron/nrniv/output_spikes.h"
@@ -35,19 +33,8 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 typedef void (*ReceiveFunc)(Point_process*, double*, double);
 
-declarePtrList(PreSynList, PreSyn)
-implementPtrList(PreSynList, PreSyn)
-declarePtrList(HTListList, HTList)
-implementPtrList(HTListList, HTList)
-declarePtrList(WatchList, WatchCondition)
-implementPtrList(WatchList, WatchCondition)
 declarePool(SelfEventPool, SelfEvent)
 implementPool(SelfEventPool, SelfEvent)
-declarePtrList(TQList, TQItem)
-implementPtrList(TQList, TQItem)
-
-implementPtrList(NetConPList, NetCon)
-//static NetConPList* ncs2nrn_input_;
 
 double NetCvode::eps_;
 NetCvode* net_cvode_instance;
@@ -274,7 +261,6 @@ NetCvode::NetCvode(bool single) {
 	tstop_event_ = new TstopEvent();
 	eps_ = 100.*UNIT_ROUNDOFF;
 	print_event_ = 0;
-	wl_list_ = new HTListList();
 	pcnt_ = 0;
 	p = nil;
 	p_construct(1);
@@ -304,7 +290,6 @@ NetCvode::~NetCvode() {
 		}
 		delete psl_;
 	}
-	delete wl_list_;		
 }
 
 
@@ -342,7 +327,6 @@ void NetCvode::psl_append(PreSyn* ps) {
 
 void NetCvode::delete_list() {
 	int i;
-	wl_list_->remove_all();
 	for (i = 0; i < pcnt_; ++i) {
 		NetCvodeThreadData& d = p[i];
 		if (d.tq_) {
@@ -1074,15 +1058,6 @@ void NetCvode::check_thresh(NrnThread* nt) { // for default method
 		PreSyn* ps = nt->presyns + i;
 		assert(ps->thvar_);
 		ps->check(nt, nt->_t, 1e-10);
-	}
-	for (i=0; i < wl_list_->count(); ++i) {
-		HTList* wl = wl_list_->item(i);
-		for (HTList* item = wl->First(); item != wl->End(); item = item->Next()) {
-		    WatchCondition* wc = (WatchCondition*)item;
-		    if (PP2NT(wc->pnt_) == nt) {
-			wc->check(nt, nt->_t);
-		    }
-		}
 	}
 }
 

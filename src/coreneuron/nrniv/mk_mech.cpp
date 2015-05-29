@@ -22,7 +22,6 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/nrnoc/membdef.h"
 #include "coreneuron/nrnoc/nrnoc_decl.h"
 #include "coreneuron/nrniv/nrniv_decl.h"
-#include "coreneuron/nrniv/ivtable.h"
 #include "coreneuron/nrniv/nrn_assert.h"
 #include "coreneuron/utils/sdprintf.h"
 #include "coreneuron/mech/cfile/cabvars.h"

@@ -78,18 +78,11 @@ public:
 	TQueue(TQItemPool*, int mkmut = 0);
 	virtual ~TQueue();
 
-#define FAST_LEAST 1 // Cc tmp fix by Alex due to new include
-#if FAST_LEAST
 	TQItem* least() {return least_;}
-    //TQItem* second_least(double t);
 #if (USE_PTHREAD || defined(_OPENMP))
 	double least_t(){double tt; MUTLOCK; if (least_) { tt = least_->t_;}else{tt = 1e15;} MUTUNLOCK; return tt;}
 #else
 	double least_t(){if (least_) { return least_->t_;}else{return 1e15;}}
-#endif
-#else
-	TQItem* least(); // does not remove from TQueue
-	double least_t();
 #endif
 	TQItem* atomic_dq(double til);
 	TQItem* insert(double t, void* data);
