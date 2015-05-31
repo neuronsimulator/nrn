@@ -84,6 +84,8 @@ if test -f $B/src/mswin/nrniv_enthought.exe ; then
 fi
 cp $B/src/mswin/nrniv.dll $DB/nrniv.dll
 strip $DB/nrniv.dll
+cp $B/src/mswin/libnrnmpi.dll $DB/libnrnmpi.dll
+strip $DB/libnrnmpi.dll
 #will move hocmodule to lib/python/neuron/hoc.pyd after lib/python is created
 cp $B/src/mswin/hocmodule.dll $DB/hocmodule.dll
 strip $DB/hocmodule.dll

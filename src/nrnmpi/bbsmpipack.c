@@ -261,11 +261,11 @@ void nrnmpi_pkpickle(const char* s, size_t size, bbsmpibuf* r) {
 
 void nrnmpi_bbssend(int dest, int tag, bbsmpibuf* r) {
 #if debug
-printf("%d nrnmpi_bbssend %p dest=%d tag=%d size=%d\n", nrnmpi_myid_bbs, r, dest, tag, (r)?r->upkpos:0);
+printf("%d nrnmpi_bbssend %p dest=%d tag=%d size=%d\n", nrnmpi_myid_bbs, r, dest, tag, (r)?r->size:0);
 #endif
 	if (r) {
 		assert( r->buf && r->keypos <= r->size);
-		MPI_Send(r->buf, r->pkposition, MPI_PACKED, dest, tag, nrn_bbs_comm);
+		MPI_Send(r->buf, r->size, MPI_PACKED, dest, tag, nrn_bbs_comm);
 	}else{
 		MPI_Send(NULL, 0, MPI_PACKED, dest, tag, nrn_bbs_comm);
 	}

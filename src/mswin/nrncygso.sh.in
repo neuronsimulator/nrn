@@ -9,9 +9,11 @@ set -x
 @BUILD_NRNPYTHON_FALSE@@BUILD_NRNPYTHON_DYNAMIC_FALSE@nrnpy='no'
 @BUILD_NRNJAVA_TRUE@nrnjvm='yes'
 @BUILD_NRNJAVA_FALSE@nrnjvm='no'
+@BUILD_NRNMPI_DYNAMIC_TRUE@nrnmpi='yes'
+
 
 if test mingw = 'yes' ; then
-  ltlibs=.libs
+  ltlibs=
 else
   ltlibs=
 fi
@@ -27,7 +29,8 @@ find .. -name \*.o -print | sed '
 /\/ivoc\/ocjump\.o/d
 /\/ivoc\/symdir\.o/d
 /\/ivoc*\/ivocman1\.o/d
-@BUILD_MINGW_TRUE@/\/nrnpython\/\${ltlibs}\/.*\.o/d
+@BUILD_MINGW_TRUE@/\/nrnpython\/.*\.o/d
+@BUILD_MINGW_TRUE@@BUILD_NRNMPI_DYNAMIC_TRUE@/\/nrnmpi\/.*\.o/d
 /\/nrnoc\/cprop\.o/d
 /\/oc*\/code\.o/d
 /\/oc*\/hoc_init\.o/d
@@ -160,6 +163,17 @@ if test "$CFLAGS" != "-mno-cygwin" ; then
       -Wl,--enable-auto-image-base \
       ${LDFLAGS} \
       -Xlinker --out-implib -Xlinker libnrniv.dll.a
+
+    if test $nrnmpi = 'yes' ; then
+
+      echo 'make libnrnmpi.dll'
+      $CXX -shared ../nrnmpi/${ltlibs}/*.o -L. -lnrniv -o libnrnmpi.dll \
+	${LIBS} \
+        -Wl,--enable-auto-image-base \
+        ${LDFLAGS} \
+        -Xlinker --out-implib -Xlinker libnrnmpi.dll.a
+
+    fi # if test $nrnmpi = 'yes'
 
     if test $nrnpy = 'yes' ; then
 

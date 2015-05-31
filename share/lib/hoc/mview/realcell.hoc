@@ -29,7 +29,9 @@ proc getcell() {localobj p, s
 			sprint(name, "%s", cellobj)
 			s = new String()
 			if (hoc_sf_.head(name, "PythonObject", s.s)==12) {
-				name = cellobj.__str__()
+				// __str__ not always defined
+				//name = cellobj.__str__()
+				name = p.str(cellobj)
 			}
 		}
 	}else{

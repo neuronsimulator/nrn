@@ -344,7 +344,7 @@ hoc_execerror(buf, "HOC cannot handle PythonObject assignment with more than one
 
 void nrnpy_decref_defer(PyObject* po) {
 	if (po) {
-#if 1
+#if 0
 		PyObject* ps = PyObject_Str(po);
 		printf("defer %s\n", PyString_AsString(ps));
 		Py_DECREF(ps);
