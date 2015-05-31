@@ -664,9 +664,10 @@ class Species(_SpeciesMathable):
                     #       the issue here is that the code below would need to keep track of which nodes are in which nrn_region
                     #       that's not that big of a deal, but when this was coded, there were other things preventing this from working                    
                 for seg, ptr in zip(self._seg_order, self._concentration_ptrs):
-                    all_nodes_in_seg = list(itertools.chain.from_iterable(r._nodes_by_seg[seg] for r in non_none_regions))
+                    all_nodes_in_seg = list(itertools.chain.from_iterable(r._surface_nodes_by_seg[seg] for r in non_none_regions))
                     if all_nodes_in_seg:
                         # TODO: if everything is 3D, then this should always have something, but for sections that aren't in 3D, won't have anything here
+                        # TODO: vectorize this, don't recompute denominator unless a structure change event happened
                         ptr[0] = sum(nodes[node].concentration * nodes[node].volume for node in all_nodes_in_seg) / sum(nodes[node].volume for node in all_nodes_in_seg)
     
     def _import_concentration(self, init=True):
