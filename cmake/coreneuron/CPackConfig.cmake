@@ -8,4 +8,3 @@ set(CPACK_PACKAGE_LICENSE "Proprietary")
 #set(CPACK_DEBIAN_PACKAGE_DEPENDS "libboost-tests-dev")
 
 include(CommonCPack)
-include(GNUModules)

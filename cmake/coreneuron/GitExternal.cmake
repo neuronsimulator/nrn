@@ -29,7 +29,9 @@
 #    repositories, pointing to github.com/<user>/<project>. Defaults to user
 #    name or GIT_EXTERNAL_USER environment variable.
 
-find_package(Git)
+if(NOT GIT_FOUND)
+  find_package(Git QUIET)
+endif()
 if(NOT GIT_EXECUTABLE)
   return()
 endif()
@@ -81,7 +83,7 @@ function(GIT_EXTERNAL DIR REPO TAG)
   if(NOT EXISTS "${DIR}")
     message(STATUS "git clone ${REPO} ${DIR}")
     execute_process(
-      COMMAND "${GIT_EXECUTABLE}" clone "${REPO}" "${DIR}"
+      COMMAND "${GIT_EXECUTABLE}" clone --recursive "${REPO}" "${DIR}"
       RESULT_VARIABLE nok ERROR_VARIABLE error
       WORKING_DIRECTORY "${GIT_EXTERNAL_DIR}")
     if(nok)

@@ -63,7 +63,7 @@ add_subdirectory(coreneuron)
 
 # Main
 
-option (CORENEURON_MAIN "Build the CORE NEURON main" ON)
+option(CORENEURON_MAIN "Build the CORE NEURON main" ON)
 if(CORENEURON_MAIN)
     add_subdirectory(apps)
 endif(CORENEURON_MAIN)
@@ -73,6 +73,7 @@ endif(CORENEURON_MAIN)
 
 option(CORENEURON_TESTS "Compilation of CoreNeuron unit test" ON)
 if(CORENEURON_TESTS)
+  option(CORENEURON_PRODUCTION_TESTS "Execution of production runs scripts on BG/Q" OFF)
   if(NOT Boost_FOUND)
     message("Disabling tests: Boost libraries not found")
     set(CORENEURON_TESTS OFF)
