@@ -775,8 +775,9 @@ void NetCon::send(double tt, NetCvode* ns, NrnThread* nt) {
 	}
 }
 	
-void NetCon::deliver(double tt, NrnThread* nt) {
-	assert(target_);
+void NetCon::deliver(double tt, NetCvode* ns, NrnThread* nt) {
+    (void)ns;
+    assert(target_);
     if (PP2NT(target_) != nt) {
         printf("NetCon::deliver nt=%d target=%d\n", nt->id, PP2NT(target_)->id);
     }
@@ -893,7 +894,7 @@ void PreSyn::deliver(double tt, NetCvode* ns, NrnThread* nt) {
 			if (dtt == 0.) {
 				STATISTICS(presyn_deliver_direct_);
 				STATISTICS(deliver_cnt_);
-				d->deliver(tt, nt);
+				d->deliver(tt, ns, nt);
 			}else if (dtt < 0.) {
 hoc_execerror("internal error: Source delay is > NetCon delay", 0);
 			}else{
@@ -912,7 +913,7 @@ void InputPreSyn::deliver(double tt, NetCvode* ns, NrnThread* nt) {
 		if (d->active_ && d->target_ && PP2NT(d->target_) == nt) {
 			double dtt = d->delay_ - delay_;
 			if (dtt == 0.) {
-				d->deliver(tt, nt);
+				d->deliver(tt, ns, nt);
 			}else if (dtt < 0.) {
 hoc_execerror("internal error: Source delay is > NetCon delay", 0);
 			}else{

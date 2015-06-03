@@ -70,7 +70,7 @@ public:
 	NetCon();
 	virtual ~NetCon();
 	virtual void send(double sendtime, NetCvode*, NrnThread*);
-    virtual void deliver(double, NrnThread*);
+        virtual void deliver(double,  NetCvode* ns, NrnThread*);
 	virtual NrnThread* thread();
 
 	virtual int type() { return NetConType; }
