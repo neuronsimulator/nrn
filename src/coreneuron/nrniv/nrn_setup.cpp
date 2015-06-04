@@ -206,11 +206,10 @@ void nrn_setup(const char *path, const char *filesdat, int byte_swap, int thread
   // know how many there are til after phase1
   // A process's complete set of output gids and allocation of each thread's
   // nt.presyns and nt.netcons arrays.
-  // Generates the gid2out hash table which is needed
+  // Generates the gid2out map which is needed
   // to later count the required number of InputPreSyn
-  /// gid2out_ = new Gid2PreSyn(size = 1000, poolsize=100);
-  /// hash table of int <-> PreSyn*
-  nrn_alloc_gid2out(1000, 100);
+  /// gid2out - vector of size ngroup of maps of int <-> PreSyn*
+  nrn_reset_gid2out();
 
   data_reader *file_reader=new data_reader[ngroup];
 
@@ -218,11 +217,11 @@ void nrn_setup(const char *path, const char *filesdat, int byte_swap, int thread
   store_phase_args(ngroup, gidgroups, file_reader, path, byte_swap);
   phase1_wrapper();
 
-  // from the netpar::gid2out_ hash table and the netcon_srcgid array,
-  // fill the netpar::gid2in_ hash table, and from the number of entries,
+  // from the netpar::gid2out map and the netcon_srcgid array,
+  // fill the netpar::gid2in, and from the number of entries,
   // allocate the process wide InputPreSyn array
   determine_inputpresyn();
-//  nrn_alloc_gid2out(1,1);
+
 
   // read the rest of the gidgroup's data and complete the setup for each
   // thread.
@@ -303,13 +302,13 @@ void read_phase1(data_reader &F, NrnThread& nt) {
   for (int i=0; i < nt.n_presyn; ++i) {
     int gid = output_gid[i];
     // Note that the negative (type, index)
-    // coded information goes into the neg_gid2out_[tid] hash table.
+    // coded information goes into the neg_gid2out[tid] hash table.
     // See netpar.cpp for the netpar_tid_... function implementations.
-    // Both that table and the process wide gid2out_ table can be deleted
+    // Both that table and the process wide gid2out table can be deleted
     // before the end of setup
 
     MUTLOCK
-    /// Put gid into the gid2out_ hash table with correspondent output PreSyn
+    /// Put gid into the gid2out hash table with correspondent output PreSyn
     netpar_tid_set_gid2node(nt.id, gid, nrnmpi_myid, nt.presyns + i);
     MUTUNLOCK
 
@@ -331,14 +330,14 @@ void read_phase1(data_reader &F, NrnThread& nt) {
 
 void determine_inputpresyn() {
   // all the output_gid have been registered and associated with PreSyn.
-  // now count the needed InputPreSyn by filling the netpar::gid2in_ hash table
+  // now count the needed InputPreSyn by filling the netpar::gid2in map
   // unfortunately, need space for a hash table in order to count
   // use total number of netcon for a temporary table
   int n_psi = 0;
   for (int ith = 0; ith < nrn_nthread; ++ith) {
     n_psi += nrn_threads[ith].n_netcon;
   }
-  nrn_alloc_gid2in(n_psi, n_psi);
+  nrn_reset_gid2in();
 
   // now do the actual count
   n_psi = 0;
@@ -353,7 +352,7 @@ void determine_inputpresyn() {
   }
 
   // free and alloc a more appropriate space
-  nrn_alloc_gid2in(3*n_psi, n_psi);
+  nrn_reset_gid2in();
   // now have to fill the new table
   n_psi = 0;
   for (int ith = 0; ith < nrn_nthread; ++ith) {
