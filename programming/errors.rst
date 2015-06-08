@@ -13,6 +13,20 @@ Error Handling
 
 ----
 
+.. function:: nrn_feenableexcept
+
+    Syntax:
+        ``nrn_feenableexcept(boolean)``
+
+    Description:
+        Sets or turns off a flag which, if on, causes a SIGFPE when a floating error occurs which consist of
+        divide by zero, overflow, or invalid result. Known to work on linux. Turning on the flag is very helpful
+        in finding the code location at which a variable is assigned a value of NaN or Inf. For a serial model, this
+        is most easily done when running under gdb. For a parallel model, one can combine with coredump_on_error
+        and, to force a coredump on abort(), use the bash command 'ulimit -c unlimited'.
+
+----
+
 .. function:: show_errmess_always
 
     Syntax:
