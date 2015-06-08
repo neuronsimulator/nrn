@@ -38,26 +38,13 @@ int (*p_nrnpy_pyrun)(const char* fname);
 #include <pthread.h>
 #endif
 
-#define NRN_FLOAT_EXCEPTION (defined(SUN4)||defined(linux)) && 0
-#if NRN_FLOAT_EXCEPTION
-#if defined(SUN4)
-#include <ieeefp.h>
-nrn_fpsetmask() {
-printf("fpsetmask\n");
-	fpsetmask(FP_X_INV | FP_X_OFL | FP_X_DZ);
-}
-int matherr(exc) struct exception *exc; {
-	fprintf(stderr, "type=%d name=%s arg1=%g arg2=%g retval=%g\n",
-	 exc->type, exc->name, exc->arg1, exc->arg2, exc->retval);
-	abort();
-}
+#if HAVE_FENV_H
+#define NRN_FLOAT_EXCEPTION (defined(linux))
 #endif
-#if defined(linux)
+
+#if NRN_FLOAT_EXCEPTION
 #include <fenv.h>
 #define FEEXCEPT (FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW )
-nrn_fpsetmask() {
-	feenableexcept(FEEXCEPT);
-}
 int matherr1(void) {
 	/* above gives the signal but for some reason fegetexcept returns 0 */
 	switch(fegetexcept()) {
@@ -73,7 +60,19 @@ int matherr1(void) {
 	}
 }
 #endif
+
+void nrn_feenableexcept() {
+  int result = -1;
+#if NRN_FLOAT_EXCEPTION
+  if (ifarg(1) && chkarg(1, 0., 1.) == 0.) {
+    result = feenableexcept(0);
+  }else{
+    result = feenableexcept(FEEXCEPT);
+  }
 #endif
+  hoc_ret();
+  hoc_pushx((double)result);
+}
 
 #if 0
 /* performance debugging when gprof is inadequate */
@@ -680,7 +679,7 @@ RETSIGTYPE fpecatch(int sig)	/* catch floating point exceptions */
 #if DOS
 _fpreset();
 #endif
-#if NRN_FLOAT_EXCEPTION && linux
+#if 1 && NRN_FLOAT_EXCEPTION
 	matherr1();
 #endif
 	if (coredump) {
@@ -769,9 +768,6 @@ void hoc_main1_init(const char* pname, const char** envp)
 	initplot();
 #if defined(__GO32__)
 	setcbrk(0);
-#endif
-#if NRN_FLOAT_EXCEPTION
-nrn_fpsetmask();
 #endif
 }
 

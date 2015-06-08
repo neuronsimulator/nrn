@@ -207,6 +207,7 @@ static struct { /* Builtin functions with multiple or variable args */
 	"use_mcell_ran4", hoc_usemcran4,
 	"mcell_ran4", hoc_mcran4,
 	"mcell_ran4_init", hoc_mcran4init,
+	"nrn_feenableexcept", nrn_feenableexcept,
 #if PVM
         "numprocs", numprocs,
         "myproc", myproc,
