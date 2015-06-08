@@ -76,7 +76,7 @@ void BBSDirectServer::handle1(int size, int tag, int cid) {
 	}
 	switch (tag) {
 	case POST_TODO:
-		index = nrnmpi_upkint(recv); // the parent index
+		index = nrnmpi_getid(recv); // the parent index
 #if debug
 printf("handle POST_TODO from %x when cross=%g\n", cid, hoc_cross_x_);
 #endif

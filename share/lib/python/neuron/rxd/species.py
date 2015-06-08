@@ -271,11 +271,15 @@ class Species(_SpeciesMathable):
         # initialize self if the rest of rxd is already initialized
         if initializer.is_initialized():
             if _has_3d:
-                # TODO: remove this limitation
-                #       it's especially not a problem if the new stuff is 3D
-                #       one strategy would be to just redo the whole thing; what are the implications of that?
-                #       (pointers would be invalid; anything else?)
-                raise RxDException('temporarily cannot add new species after rxd is initialized because 1D and 3D blocks need to be kept together')
+                if isinstance(regions, region.Region) and not regions._secs1d:
+                    pass
+                elif hasattr(regions, '__len__') and all(not r._secs1d for r in regions):
+                    pass
+                else:
+                    # TODO: remove this limitation
+                    #       one strategy would be to just redo the whole thing; what are the implications of that?
+                    #       (pointers would be invalid; anything else?)
+                    raise RxDException('Currently cannot add species containing 1D after 3D species defined and initialized. To work-around: reorder species definition.')
             self._do_init()
     
     def _do_init(self):
@@ -660,9 +664,10 @@ class Species(_SpeciesMathable):
                     #       the issue here is that the code below would need to keep track of which nodes are in which nrn_region
                     #       that's not that big of a deal, but when this was coded, there were other things preventing this from working                    
                 for seg, ptr in zip(self._seg_order, self._concentration_ptrs):
-                    all_nodes_in_seg = list(itertools.chain.from_iterable(r._nodes_by_seg[seg] for r in non_none_regions))
+                    all_nodes_in_seg = list(itertools.chain.from_iterable(r._surface_nodes_by_seg[seg] for r in non_none_regions))
                     if all_nodes_in_seg:
                         # TODO: if everything is 3D, then this should always have something, but for sections that aren't in 3D, won't have anything here
+                        # TODO: vectorize this, don't recompute denominator unless a structure change event happened
                         ptr[0] = sum(nodes[node].concentration * nodes[node].volume for node in all_nodes_in_seg) / sum(nodes[node].volume for node in all_nodes_in_seg)
     
     def _import_concentration(self, init=True):

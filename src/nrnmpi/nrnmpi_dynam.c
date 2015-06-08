@@ -77,7 +77,19 @@ char* nrnmpi_load(int is_python) {
 		ismes = 1;
 sprintf(pmes+strlen(pmes), "Is openmpi installed? If not in default location, need a LD_LIBRARY_PATH.\n");
 	}
-#else
+#else /*not DARWIN*/
+#if defined(MINGW)
+	sprintf(pmes, "Try loading msmpi\n");
+	void* handle = load_mpi("msmpi.dll", pmes+strlen(pmes));
+	if (handle) {
+		if (!load_nrnmpi("libnrnmpi.dll", pmes+strlen(pmes))){
+			return pmes;
+		}
+	}else{
+		ismes = 1;
+		return pmes;
+	}
+#else /*not MINGW*/
 	sprintf(pmes, "Try loading openmpi\n");
 	void* handle = load_mpi("libmpi.so", pmes+strlen(pmes));
 	if (handle) {
@@ -105,7 +117,8 @@ if (!dlopen("libnrniv.so", RTLD_NOW | RTLD_NOLOAD | RTLD_GLOBAL)) {
 			return pmes;
 		}
 	}
-#endif
+#endif /*not MINGW*/
+#endif /* not DARWIN */
 	if (!handle) {
 		sprintf(pmes+strlen(pmes), "could not dynamically load libmpi.so or libmpich2.so\n");
 		return pmes;
@@ -114,4 +127,3 @@ if (!dlopen("libnrniv.so", RTLD_NOW | RTLD_NOLOAD | RTLD_GLOBAL)) {
 	return 0;
 }
 #endif
-

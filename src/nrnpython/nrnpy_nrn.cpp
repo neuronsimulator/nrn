@@ -100,7 +100,10 @@ static char* pysec_name(Section* sec) {
 		NPySecObj* ps = (NPySecObj*)sec->prop->dparam[PROP_PY_INDEX]._pvoid;
 		buf[0] = '\0';
 		if (ps->cell_) {
-			char* cp = PyString_AsString(PyObject_Str(ps->cell_));
+			char* cp = NULL;
+			PyGILState_STATE gilsav = PyGILState_Ensure();
+			  cp = PyString_AsString(PyObject_Str(ps->cell_));
+			PyGILState_Release(gilsav);
 			sprintf(buf, "%s.", cp);
 			nrnpy_pystring_asstring_free(cp);
 		}
@@ -148,7 +151,7 @@ static void NPySecObj_dealloc(NPySecObj* self) {
 }
 
 static void NPyAllsegIter_dealloc(NPyAllsegIter* self) {
-//printf("NPyAllsegIter_dealloc %p %s\n", self, secname(self->sec_));
+//printf("NPyAllsegIter_dealloc %p %s\n", self, secname(self->pysec_->sec_));
 	Py_XDECREF(self->pysec_);
 	((PyObject*)self)->ob_type->tp_free((PyObject*)self);
 }
@@ -606,7 +609,7 @@ static PyObject* NPySecObj_push(NPySecObj* self, PyObject*  args) {
 }
 
 static PyObject* section_iter(NPySecObj* self) {
-	//printf("section_iter %d\n", self->allseg_iter_);
+	//printf("section_iter\n");
 	NPySegObj* seg;
 	seg = PyObject_New(NPySegObj, psegment_type);
 	if (seg == NULL) {
@@ -629,6 +632,7 @@ static PyObject* allseg(NPySecObj* self) {
 }
 
 static PyObject* allseg_iter(NPyAllsegIter* self) {
+	Py_INCREF(self);
 	self->allseg_iter_=-1;
 	return (PyObject*)self;
 }
@@ -1495,6 +1499,7 @@ void remake_pmech_types() {
     rangevars_add(hoc_table_lookup("cm", hoc_built_in_symlist));
     rangevars_add(hoc_table_lookup("v", hoc_built_in_symlist));
     rangevars_add(hoc_table_lookup("i_cap", hoc_built_in_symlist));
+    rangevars_add(hoc_table_lookup("i_membrane_", hoc_built_in_symlist));
     for (i=4; i < n_memb_func; ++i) { // start at pas
 	nrnpy_reg_mech(i);
     }

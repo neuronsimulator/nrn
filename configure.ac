@@ -191,8 +191,8 @@ dnl will combine .o files into a single nrniv.dll (-fPIC is not needed)
 	AM_ENABLE_SHARED(no)
 	AM_ENABLE_STATIC(yes)
 elif test x$MINGW = xyes ; then
-	AM_ENABLE_SHARED(yes)
-	AM_ENABLE_STATIC(no)
+	AM_ENABLE_SHARED(no)
+	AM_ENABLE_STATIC(yes)
 else
 	AM_ENABLE_SHARED(yes)
 	AM_ENABLE_STATIC(no)

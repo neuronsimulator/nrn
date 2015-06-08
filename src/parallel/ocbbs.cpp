@@ -1159,8 +1159,10 @@ hoc_execerror("ParallelContext execution error", 0);
 				size_t n;
 				char* s = upkpickle(&n);
 				int size = n;
-				nrnmpi_int_broadcast(&size, 1, 0);
-				nrnmpi_char_broadcast(s, size, 0);
+				if (subworld) {
+					nrnmpi_int_broadcast(&size, 1, 0);
+					nrnmpi_char_broadcast(s, size, 0);
+				}
 				assert(nrnpy_pickle2po);
 				Object* po = nrnpy_pickle2po(s, n);
 				delete [] s;

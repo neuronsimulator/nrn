@@ -344,7 +344,7 @@ hoc_execerror(buf, "HOC cannot handle PythonObject assignment with more than one
 
 void nrnpy_decref_defer(PyObject* po) {
 	if (po) {
-#if 1
+#if 0
 		PyObject* ps = PyObject_Str(po);
 		printf("defer %s\n", PyString_AsString(ps));
 		Py_DECREF(ps);
@@ -659,6 +659,13 @@ int* mk_displ(int* cnts) {
 
 Object* py_alltoall(Object* o, int size) {
 	int np = nrnmpi_numprocs;
+	PyObject* psrc = nrnpy_hoc2pyobject(o);
+	if (!PyList_Check(psrc)) {
+		hoc_execerror("Argument must be a Python list", 0);
+	}
+	if (PyList_Size(psrc) != np) {
+		hoc_execerror("py_alltoall list size must be nhost",0);
+	}
 	if (np == 1) {
 		return o;
 	}
@@ -668,10 +675,6 @@ Object* py_alltoall(Object* o, int size) {
 	for (int i=0; i < np; ++i) { scnt[i] = 0; }
 
 	PyObject* pdest;
-	PyObject* psrc = nrnpy_hoc2pyobject(o);
-	if (PySequence_Size(psrc) != np) {
-		hoc_execerror("py_alltall sequence size must be nhost",0);
-	}
 	PyObject* iterator = PyObject_GetIter(psrc);
 	PyObject* p;
 	

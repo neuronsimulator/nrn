@@ -330,7 +330,9 @@ void BBSImpl::execute(int id) { // assumes a "_todo" message in receive buffer
 		size_t n;
 		int i;
 		int save_id = working_id_;
+		int save_n = n_;
 		working_id_ = id;
+		n_ = 0;
 		st = time();
 		if (debug_) {
 printf("execute begin %g: working_id_=%d\n",st, working_id_);
@@ -353,8 +355,9 @@ et, working_id_, hoc_ac_);
 			pkpickle(rs, n);
 			delete [] rs;
 		}
-		post_result(working_id_);
 		working_id_ = save_id;
+		n_ = save_n;
+		post_result(id);
 }
 
 int BBS::submit(int userid) {
@@ -396,6 +399,7 @@ void BBS::master_works(int flag) {
 
 int BBSImpl::master_take_result(int pid) {
 	assert(0);
+	return 0;
 }
 
 bool BBSImpl::working(int& id, double& x, int& userid) {
