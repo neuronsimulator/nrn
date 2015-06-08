@@ -135,7 +135,6 @@ void Pool::free_all() { \
 	{for(pp = this; pp; pp = pp->chain_) { \
 		for (i=0; i < pp->pool_size_; ++i) { \
 			items_[put_++] = pp->pool_ + i; \
-			pp->pool_[i].clear(); \
 		} \
 	}} \
 	assert(put_ == count_); \

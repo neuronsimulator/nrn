@@ -58,7 +58,7 @@ typedef struct NrnThread {
         int ncell; /* analogous to old rootnodecount */
 	int end;    /* 1 + position of last in v_node array. Now v_node_count. */
 	int id; /* this is nrn_threads[id] */
-	int _stop_stepping; /* delivered an all thread HocEvent */
+    int _stop_stepping;
 	int n_vecplay; /* number of instances of VecPlayContinuous */
 
 	size_t _ndata, _nidata, _nvdata; /* sizes */

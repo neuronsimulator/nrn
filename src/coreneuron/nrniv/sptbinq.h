@@ -38,7 +38,6 @@ public:
 	TQItem();
 	virtual ~TQItem();
 	bool check();
-	void clear(){};
 public:
 	void* data_;
 	double t_;

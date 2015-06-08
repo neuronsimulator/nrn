@@ -39,38 +39,8 @@ void IvocVect::resize(int newl) { // all that for this
         }
 }
 
-void IvocVect::buffer_size(int n) {
-        double* y = new double[n];
-        if (len > n) {
-                len = n;
-        }
-        for (int i=0; i < len; ++i) {
-                y[i] = s[i];
-        }
-        space = n;   
-        delete [] s;
-        s = y;
-}
-
-void IvocVect::label(const char* lab) {
-        if (label_) {
-                delete [] label_;
-                label_ = nil;
-        }
-        if (lab) {
-                label_ = new char[strlen(lab) + 1];   
-                strcpy(label_, lab);
-        }   
-}
-
 IvocVect* vector_new(int n){return new IvocVect(n);}
-IvocVect* vector_new0(){return new IvocVect();}
 IvocVect* vector_new1(int n){return new IvocVect(n);}
-void vector_delete(IvocVect* v){delete v;}
-int vector_buffer_size(IvocVect* v){return v->buffer_size();}
 int vector_capacity(IvocVect* v){return v->capacity();}
-void vector_resize(IvocVect* v, int n){v->resize(n);}
 double* vector_vec(IvocVect* v){return v->vec();}
-char* vector_get_label(IvocVect* v) { return v->label_; }
-void vector_set_label(IvocVect* v, char* s) { v->label(s); }
 

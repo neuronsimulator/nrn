@@ -27,7 +27,6 @@ nrnmpi/nrnmpiuse.h
 nrnoc/membdef.h
 nrnoc/nrnoc_decl.h
 nrnoc/nrnpthread.h
-nrniv/htlist.h
 nrniv/ivocvect.h
 nrniv/netcon.h
 nrniv/netcvode.h
@@ -70,7 +69,6 @@ nrniv/main1.cpp
 nrniv/netpar.cpp
 nrniv/netcvode.cpp
 nrniv/tqueue.cpp
-nrniv/htlist.cpp
 nrniv/ivvect.cpp
 nrniv/mk_mech.cpp
 nrniv/nrn_datareader.cpp

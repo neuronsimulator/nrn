@@ -85,7 +85,6 @@ static void all_pending_selfqueue(double tt);
 static void* pending_selfqueue(NrnThread*);
 
 void net_send(void** v, double* weight, Point_process* pnt, double td, double flag) {
-	STATISTICS(SelfEvent::selfevent_send_);
 	NrnThread* nt = PP2NT(pnt);
 	NetCvodeThreadData& p = net_cvode_instance->p[nt->id];
 	SelfEvent* se = p.sepool_->alloc();
@@ -112,8 +111,7 @@ void net_send(void** v, double* weight, Point_process* pnt, double td, double fl
 
 void artcell_net_send(void** v, double* weight, Point_process* pnt, double td, double flag) {
     if (nrn_use_selfqueue_ && flag == 1.0) {
-	STATISTICS(SelfEvent::selfevent_send_);
-	NrnThread* nt = PP2NT(pnt);
+    NrnThread* nt = PP2NT(pnt);
 	NetCvodeThreadData& p = net_cvode_instance->p[nt->id];
 	SelfEvent* se = p.sepool_->alloc();
 	se->flag_ = flag;
@@ -145,7 +143,6 @@ void artcell_net_send(void** v, double* weight, Point_process* pnt, double td, d
 }
 
 void net_event(Point_process* pnt, double time) {
-	STATISTICS(net_event_cnt_);
 	PreSyn* ps = (PreSyn*)pnt->_presyn;
 	if (ps) {
 		if (time < PP2t(pnt)) {
@@ -170,21 +167,16 @@ NetCvodeThreadData::NetCvodeThreadData() {
 	tqe_ = new TQueue(tpool_, 0);
 	sepool_ = new SelfEventPool(1000,1);
 	selfqueue_ = nil;
-	psl_thr_ = nil;
-	tq_ = nil;
 	ite_size_ = ITE_SIZE;
 	ite_cnt_ = 0;
 	unreffed_event_cnt_ = 0;
 	immediate_deliver_ = -1e100;
 	inter_thread_events_ = new InterThreadEvent[ite_size_];
-	nlcv_ = 0;
 	MUTCONSTRUCT(1)
 }
 
 NetCvodeThreadData::~NetCvodeThreadData() {
 	delete [] inter_thread_events_;
-	if (psl_thr_) { delete psl_thr_; }
-	if (tq_) { delete tq_; }
 	delete tqe_;
 	delete tpool_;
 	if (selfqueue_) {
@@ -236,28 +228,7 @@ void NetCvodeThreadData::enqueue(NetCvode* nc, NrnThread* nt) {
 	MUTUNLOCK
 }
 
-static unsigned long deliver_cnt_, net_event_cnt_;
-unsigned long DiscreteEvent::discretevent_send_;
-unsigned long DiscreteEvent::discretevent_deliver_;
-unsigned long NetCon::netcon_send_active_;
-unsigned long NetCon::netcon_send_inactive_;
-unsigned long NetCon::netcon_deliver_;
-unsigned long SelfEvent::selfevent_send_;
-unsigned long SelfEvent::selfevent_move_;
-unsigned long SelfEvent::selfevent_deliver_;
-unsigned long WatchCondition::watch_send_;
-unsigned long WatchCondition::watch_deliver_;
-unsigned long ConditionEvent::init_above_;
-unsigned long PreSyn::presyn_send_mindelay_;
-unsigned long PreSyn::presyn_send_direct_;
-unsigned long PreSyn::presyn_deliver_netcon_;
-unsigned long PreSyn::presyn_deliver_direct_;
-unsigned long PreSyn::presyn_deliver_ncsend_;
-
-NetCvode::NetCvode(bool single) {
-	(void)single; // unused
-	use_long_double_ = 0;
-	empty_ = true; // no equations (only artificial cells).
+NetCvode::NetCvode(void) {
 	tstop_event_ = new TstopEvent();
 	eps_ = 100.*UNIT_ROUNDOFF;
 	print_event_ = 0;
@@ -265,7 +236,6 @@ NetCvode::NetCvode(bool single) {
 	p = nil;
 	p_construct(1);
 	// eventually these should not have to be thread safe
-	psl_ = nil;
 	// for parallel network simulations hardly any presyns have
 	// a threshold and it can be very inefficient to check the entire
 	// presyn list for thresholds during the fixed step method.
@@ -277,19 +247,6 @@ NetCvode::~NetCvode() {
 		net_cvode_instance = nil;
 	}	
 	p_construct(0);
-	if (psl_) {
-		HTList* q;
-		for (q = psl_->First(); q != psl_->End(); q = q->Next()) {
-			PreSyn* ps = (PreSyn*)q->vptr();
-			for (int i = ps->nc_cnt_ - 1; i >= 0; --i) {
-				NetCon* d = netcon_in_presyn_order_[ps->nc_index_ + i];
-				d->src_ = nil;
-				delete d;
-			}
-			delete ps;
-		}
-		delete psl_;
-	}
 }
 
 
@@ -317,49 +274,6 @@ void NetCvode::p_construct(int n) {
 	}
 }
 
-void NetCvode::psl_append(PreSyn* ps) {
-	if (!psl_) {
-		psl_ = new HTList(NULL);
-	}
-	ps->hi_ = new HTList(ps);
-	psl_->Append(ps->hi_);
-}
-
-void NetCvode::delete_list() {
-	int i;
-	for (i = 0; i < pcnt_; ++i) {
-		NetCvodeThreadData& d = p[i];
-		if (d.tq_) {
-			delete d.tq_;
-			d.tq_ = nil;
-		}
-	}
-	empty_ = true;
-}
-
-struct ForNetConsInfo {
-	double** argslist;
-	int size;
-};
-
-
-int _nrn_netcon_args(void* v, double*** argslist) {
-	ForNetConsInfo* fnc = (ForNetConsInfo*)v;
-	assert(fnc);
-	*argslist = fnc->argslist;
-	return fnc->size;
-}
-
-void _nrn_free_fornetcon(void** v) {
-	ForNetConsInfo* fnc = (ForNetConsInfo*)(*v);
-	if (fnc) {
-		if (fnc->argslist) {
-			delete [] fnc->argslist;
-		}
-		delete fnc;
-		*v = nil;
-	}
-}	
 
 #if BBTQ == 5
 TQItem* NetCvode::bin_event(double td, DiscreteEvent* db, NrnThread* nt) {
@@ -395,30 +309,11 @@ void NetCvode::tstop_event(double tt) {
 	}
 }
 void NetCvode::clear_events() {
-	int i;
-	deliver_cnt_ = net_event_cnt_ = 0;
-	NetCon::netcon_send_active_ = 0;
-	NetCon::netcon_send_inactive_ = 0;
-	NetCon::netcon_deliver_ = 0;
-	ConditionEvent::init_above_ = 0;
-	PreSyn::presyn_send_mindelay_ = 0;
-	PreSyn::presyn_send_direct_ = 0;
-	PreSyn::presyn_deliver_netcon_ = 0;
-	PreSyn::presyn_deliver_direct_ = 0;
-	PreSyn::presyn_deliver_ncsend_ = 0;
-	SelfEvent::selfevent_send_ = 0;
-	SelfEvent::selfevent_move_ = 0;
-	SelfEvent::selfevent_deliver_ = 0;
-	WatchCondition::watch_send_ = 0;
-	WatchCondition::watch_deliver_ = 0;
-	DiscreteEvent::discretevent_send_ = 0;
-	DiscreteEvent::discretevent_deliver_ = 0;
-
 	// SelfEvents need to be "freed". Other kinds of DiscreteEvents may
 	// already have gone out of existence so the tqe_ may contain many
 	// invalid item data pointers
 	enqueueing_ = 0;
-	for (i=0; i < nrn_nthread; ++i) {
+    for (int i=0; i < nrn_nthread; ++i) {
 		NetCvodeThreadData& d = p[i];
 		delete d.tqe_;
 		d.tqe_ = new TQueue(p[i].tpool_);
@@ -441,78 +336,13 @@ void NetCvode::clear_events() {
 }
 
 void NetCvode::init_events() {
-	HTList* q;
-	int i, j;
 #if BBTQ == 5
-	for (i=0; i < nrn_nthread; ++i) {
+    for (int i=0; i < nrn_nthread; ++i) {
 		p[i].tqe_->nshift_ = -1;
 		p[i].tqe_->shift_bin(nt_t);
 	}
 #endif
-	if (psl_) {
-		for (q = psl_->First(); q != psl_->End(); q = q->Next()) {
-			PreSyn* ps = (PreSyn*)q->vptr();
-			ps->vecinit();
-			ps->flag_ = false;
-			ps->use_min_delay_ = 0;
-#if USE_MIN_DELAY
-			// also decide what to do about use_min_delay_
-			// the rule for now is to use it if all delays are
-			// the same and there are more than 2
-			{
-				if (ps->nc_cnt_ > 2) {
-					ps->use_min_delay_ = 1;
-					ps->delay_ = netcon_in_presyn_order_[ps->nc_index_ + i]->delay;
-				}
-			}
-#endif // USE_MIN_DELAY
-
-			for (i=ps->nc_cnt_-1; i >= 0; --i) {
-				NetCon* d = netcon_in_presyn_order_[ps->nc_index_ + i];
-				if (d->target_) {
-					int type = d->target_->_type;
-					if (pnt_receive_init[type]) {
-(*pnt_receive_init[type])(d->target_, d->u.weight_, 0);
-					}else{
-						//not the first
-						int cnt = pnt_receive_size[type];
-						for (j = cnt; j > 0; --j) {
-							d->u.weight_[j] = 0.;
-						}
-					}
-				}
-				if (ps->use_min_delay_ && ps->delay_ != d->delay_) {
-					ps->use_min_delay_ = false;
-				}
-			}
-		}
-	}
 }
-
-double PreSyn::mindelay() {
-	double md = 1e9;
-	int i;
-	for (i=nc_cnt_-1; i >= 0; --i) {
-		NetCon* d = netcon_in_presyn_order_[nc_index_ + i];
-		if (md > d->delay_) {
-			md = d->delay_;
-		}
-	}
-	return md;
-}
-
-double InputPreSyn::mindelay() {
-	double md = 1e9;
-	int i;
-	for (i=nc_cnt_-1; i >= 0; --i) {
-		NetCon* d = netcon_in_presyn_order_[nc_index_ + i];
-		if (md > d->delay_) {
-			md = d->delay_;
-		}
-	}
-	return md;
-}
-
 
 void NetCvode::deliver_least_event(NrnThread* nt) {
 	TQItem* q = p[nt->id].tqe_->least();
@@ -522,7 +352,6 @@ void NetCvode::deliver_least_event(NrnThread* nt) {
 #if PRINT_EVENT
 	if (print_event_) { de->pr("deliver", tt, this); }
 #endif
-	STATISTICS(deliver_cnt_);
 	de->deliver(tt, this, nt);
 }
 
@@ -535,7 +364,6 @@ bool NetCvode::deliver_event(double til, NrnThread* nt) {
 #if PRINT_EVENT
 		if (print_event_) { de->pr("deliver", tt, this); }
 #endif
-		STATISTICS(deliver_cnt_);
 		de->deliver(tt, this, nt);
 		return true;
 	}else{
@@ -584,7 +412,6 @@ void artcell_net_move(void** v, Point_process* pnt, double tt) {
 
 void NetCvode::move_event(TQItem* q, double tnew, NrnThread* nt) {
 	int tid = nt->id;
-	STATISTICS(SelfEvent::selfevent_move_);
 #if PRINT_EVENT
 if (print_event_) {
 	SelfEvent* se = (SelfEvent*)q->data_;
@@ -620,20 +447,12 @@ NetCon::~NetCon() {
 
 
 PreSyn::PreSyn() {
-	construct_init();
-}
-void PreSyn::construct_init() {
-	nc_index_ = 0;
+    nc_index_ = 0;
 	nc_cnt_ = 0;
-	hi_th_ = nil;
 	flag_ = false;
-	valthresh_ = 0;
 	thvar_ = NULL;
 	pntsrc_ = NULL;
 	threshold_ = 10.;
-	use_min_delay_ = 0;
-	tvec_ = nil;
-	idvec_ = nil;
 	gid_ = -1;
 	nt_ = NULL;
 }
@@ -641,7 +460,6 @@ void PreSyn::construct_init() {
 InputPreSyn::InputPreSyn() {
 	nc_index_ = -1;
 	nc_cnt_ = 0;
-	use_min_delay_ = 0;
 	gid_ = -1;
 }
 
@@ -662,23 +480,6 @@ InputPreSyn::~InputPreSyn() {
 	nrn_cleanup_presyn(this);
 }
 
-void PreSyn::vecinit() {
-	if (tvec_) {
-		tvec_->resize(0);
-	}
-	if (idvec_) {
-		idvec_->resize(0);
-	}
-}
-
-void PreSyn::record(IvocVect* vec, IvocVect* idvec, int rec_id) {
-	tvec_ = vec;
-	idvec_ = idvec;
-	rec_id_ = rec_id;
-	if (idvec_) {
-		tvec_->mutconstruct(1);
-	}
-}
 
 void PreSyn::record(double tt) {
 	spikevec_lock();
@@ -693,7 +494,6 @@ void ConditionEvent::check(NrnThread* nt, double tt, double teps) {
 	if (value() > 0.0) {
 		if (flag_ == false) {
 			flag_ = true;
-			valthresh_ = 0.;
 			send(tt + teps, net_cvode_instance, nt);
 		}
 	}else{
@@ -705,27 +505,18 @@ ConditionEvent::ConditionEvent() {}
 ConditionEvent::~ConditionEvent() {}
 
 WatchCondition::WatchCondition(Point_process* pnt, double(*c)(Point_process*))
- : HTList(nil)
 {
 	pnt_ = pnt;
 	c_ = c;
 }
 
 WatchCondition::~WatchCondition() {
-//printf("~WatchCondition\n");
-	Remove();
-}
-
-void WatchCondition::asf_err() {
-fprintf(stderr, "WATCH condition with flag=%g for %s\n",
-	nrflag_, memb_func[pnt_->_type].sym);
 }
 
 void WatchCondition::deliver(double tt, NetCvode* ns, NrnThread* nt) {
 	(void)ns; (void)nt; // avoid unused arg warning
 	int typ = pnt_->_type;
 	PP2t(pnt_) = tt;
-	STATISTICS(watch_deliver_);
 	POINT_RECEIVE(typ, pnt_, nil, nrflag_);
 #ifdef DEBUG
 	if (errno) {
@@ -745,13 +536,11 @@ void WatchCondition::pr(const char* s, double tt) {
 
 
 void DiscreteEvent::send(double tt, NetCvode* ns, NrnThread* nt) {
-	STATISTICS(discretevent_send_);
 	ns->event(tt, this, nt);
 }
 
 void DiscreteEvent::deliver(double tt, NetCvode* ns, NrnThread* nt) {
 	(void)tt; (void)ns; (void)nt;
-	STATISTICS(discretevent_deliver_);
 }
 
 NrnThread* DiscreteEvent::thread() { return nrn_threads; }
@@ -763,16 +552,13 @@ void DiscreteEvent::pr(const char* s, double tt, NetCvode* ns) {
 
 void NetCon::send(double tt, NetCvode* ns, NrnThread* nt) {
 	if (active_ && target_) {
-		nrn_assert(PP2NT(target_) == nt)
-		STATISTICS(netcon_send_active_);
+        nrn_assert(PP2NT(target_) == nt);
 #if BBTQ == 5
 		ns->bin_event(tt, this, PP2NT(target_));
 #else
 		ns->event(tt, this, PP2NT(target_));
 #endif
-	}else{
-		STATISTICS(netcon_send_inactive_);
-	}
+    }
 }
 	
 void NetCon::deliver(double tt, NetCvode* ns, NrnThread* nt) {
@@ -790,7 +576,6 @@ void NetCon::deliver(double tt, NetCvode* ns, NrnThread* nt) {
 	nt->_t = tt;
 
 //printf("NetCon::deliver t=%g tt=%g %s\n", t, tt, pnt_name(target_));
-	STATISTICS(netcon_deliver_);
 	POINT_RECEIVE(typ, target_, u.weight_, 0);
 #ifdef DEBUG
 	if (errno) {
@@ -805,21 +590,7 @@ NrnThread* NetCon::thread() { return PP2NT(target_); }
 
 void PreSyn::send(double tt, NetCvode* ns, NrnThread* nt) {
 	record(tt);
-	if (use_min_delay_) {
-		STATISTICS(presyn_send_mindelay_);
-#if BBTQ == 5
-		for (int i=0; i < nrn_nthread; ++i) {
-			if (nt->id == i) {
-				ns->bin_event(tt+delay_, this, nt);
-			}else{
-				ns->p[i].interthread_send(tt+delay_, this, nrn_threads + i);
-			}
-		}
-#else
-		ns->event(tt+delay_, this);
-#endif
-	}else{
-		STATISTICS(presyn_send_direct_);
+    {
 		for (int i = nc_cnt_-1; i >= 0; --i) {
 			NetCon* d = netcon_in_presyn_order_[nc_index_ + i];
 			if (d->active_ && d->target_) {
@@ -850,21 +621,7 @@ void PreSyn::send(double tt, NetCvode* ns, NrnThread* nt) {
 }
 	
 void InputPreSyn::send(double tt, NetCvode* ns, NrnThread* nt) {
-	if (use_min_delay_) {
-		//STATISTICS(presyn_send_mindelay_);
-#if BBTQ == 5
-		for (int i=0; i < nrn_nthread; ++i) {
-			if (nt->id == i) {
-				ns->bin_event(tt+delay_, this, nt);
-			}else{
-				ns->p[i].interthread_send(tt+delay_, this, nrn_threads + i);
-			}
-		}
-#else
-		ns->event(tt+delay_, this);
-#endif
-	}else{
-		//STATISTICS(presyn_send_direct_);
+    {
 		for (int i = nc_cnt_-1; i >= 0; --i) {
 			NetCon* d = netcon_in_presyn_order_[nc_index_ + i];
 			if (d->active_ && d->target_) {
@@ -886,19 +643,15 @@ void InputPreSyn::send(double tt, NetCvode* ns, NrnThread* nt) {
 void PreSyn::deliver(double tt, NetCvode* ns, NrnThread* nt) {
 	// the thread is the one that owns the targets
 	int i, n = nc_cnt_;
-	STATISTICS(presyn_deliver_netcon_);
 	for (i=0; i < n; ++i) {
 		NetCon* d = netcon_in_presyn_order_[nc_index_ + i];
 		if (d->active_ && d->target_ && PP2NT(d->target_) == nt) {
 			double dtt = d->delay_ - delay_;
 			if (dtt == 0.) {
-				STATISTICS(presyn_deliver_direct_);
-				STATISTICS(deliver_cnt_);
 				d->deliver(tt, ns, nt);
 			}else if (dtt < 0.) {
 hoc_execerror("internal error: Source delay is > NetCon delay", 0);
 			}else{
-				STATISTICS(presyn_deliver_ncsend_);
 				ns->event(tt + dtt, d, nt);
 			}
 		}
@@ -950,7 +703,6 @@ void SelfEvent::deliver(double tt, NetCvode* ns, NrnThread* nt) {
 NrnThread* SelfEvent::thread() { return PP2NT(target_); }
 
 void SelfEvent::call_net_receive(NetCvode* ns) {
-	STATISTICS(selfevent_deliver_);
 	POINT_RECEIVE(target_->_type, target_, weight_, flag_);
 #ifdef DEBUG
 	if (errno) {
@@ -975,7 +727,6 @@ TstopEvent::TstopEvent() {}
 TstopEvent::~TstopEvent() {}
 
 void TstopEvent::deliver() {
-	STATISTICS(discretevent_deliver_);
 }
 
 void TstopEvent::pr(const char* s, double tt) {

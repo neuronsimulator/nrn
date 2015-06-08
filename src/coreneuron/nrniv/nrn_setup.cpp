@@ -329,32 +329,13 @@ void read_phase1(data_reader &F, NrnThread& nt) {
 }
 
 void determine_inputpresyn() {
+  /// THIS WHOLE FUNCTION NEEDS SERIOUS OPTIMIZATION!
   // all the output_gid have been registered and associated with PreSyn.
   // now count the needed InputPreSyn by filling the netpar::gid2in map
-  // unfortunately, need space for a hash table in order to count
-  // use total number of netcon for a temporary table
-  int n_psi = 0;
-  for (int ith = 0; ith < nrn_nthread; ++ith) {
-    n_psi += nrn_threads[ith].n_netcon;
-  }
   nrn_reset_gid2in();
 
-  // now do the actual count
-  n_psi = 0;
-  for (int ith = 0; ith < nrn_nthread; ++ith) {
-    NrnThread& nt = nrn_threads[ith];
-    for (int i = 0; i < nt.n_netcon; ++i) {
-      int gid = nt.netcons[i].u.srcgid_;
-      if (gid >= 0) {
-        n_psi += input_gid_register(gid);
-      }
-    }
-  }
-
-  // free and alloc a more appropriate space
-  nrn_reset_gid2in();
   // now have to fill the new table
-  n_psi = 0;
+  int n_psi = 0;
   for (int ith = 0; ith < nrn_nthread; ++ith) {
     NrnThread& nt = nrn_threads[ith];
     for (int i = 0; i < nt.n_netcon; ++i) {

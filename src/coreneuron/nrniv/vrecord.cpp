@@ -32,7 +32,6 @@ void PlayRecordEvent::frecord_init(TQItem* q) {
 }
 
 void PlayRecordEvent::deliver(double tt, NetCvode* ns, NrnThread*) {
-	STATISTICS(playrecord_deliver_);
 	plr_->deliver(tt, ns);
 }
 

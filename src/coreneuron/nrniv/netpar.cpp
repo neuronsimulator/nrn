@@ -46,9 +46,7 @@ static void alloc_space();
 std::vector< std::map<int, PreSyn*> > neg_gid2out;
 /// Maps for ouput and input presyns
 std::map<int, PreSyn*> gid2out;
-std::map<int, PreSyn*>::iterator gid2out_it;
 std::map<int, InputPreSyn*> gid2in;
-std::map<int, InputPreSyn*>::iterator gid2in_it;
 
 extern "C" {
 extern NetCvode* net_cvode_instance;
@@ -137,11 +135,6 @@ void NetParEvent::deliver(double tt, NetCvode* nc, NrnThread* nt){
 	if (nrn_use_selfqueue_) { //first handle pending flag=1 self events
 		nrn_pending_selfqueue(tt, nt);
 	}
-	// has to be the last event at this time in order to avoid a race
-	// condition with HocEvent that may call things such as pc.barrier
-	// actually allthread HocEvent (cvode.event(tev) and cvode.event(tev,stmt)
-	// will be executed last after a thread join when nrn_allthread_handle
-	// is called.
 	net_cvode_instance->deliver_events(tt, nt);
 	nt->_stop_stepping = 1;
 	nt->_t = tt;
@@ -267,6 +260,7 @@ void nrn_spike_exchange_init() {
 //	if (!active_ && !nrn_use_selfqueue_) { return; }
 	alloc_space();
 //printf("nrnmpi_use=%d active=%d\n", nrnmpi_use, active_);
+    std::map<int, InputPreSyn*>::iterator gid2in_it;
 	usable_mindelay_ = mindelay_;
 	if (nrn_nthread > 1) {
 		usable_mindelay_ -= dt;
@@ -336,6 +330,7 @@ void nrn_spike_exchange(NrnThread* nt) {
 	TBUF
 	double wt;
 	int i, n;
+    std::map<int, InputPreSyn*>::iterator gid2in_it;
 #if NRNSTAT
 	nsend_ += nout_;
 	if (nsendmax_ < nout_) { nsendmax_ = nout_; }
@@ -430,6 +425,7 @@ void nrn_spike_exchange_compressed(NrnThread* nt) {
 	TBUF
 	double wt;
 	int i, n, idx;
+    std::map<int, InputPreSyn*>::iterator gid2in_it;
 #if NRNSTAT
 	nsend_ += nout_;
 	if (nsendmax_ < nout_) { nsendmax_ = nout_; }
@@ -573,6 +569,8 @@ static void mk_localgid_rep() {
 	// how many gids are there on this machine
 	// and can they be compressed into one byte
 	int ngid = 0;
+    std::map<int, PreSyn*>::iterator gid2out_it;
+    std::map<int, InputPreSyn*>::iterator gid2in_it;
     for(gid2out_it = gid2out.begin(); gid2out_it != gid2out.end(); ++gid2out_it) {
         if (gid2out_it->second->output_index_ >= 0) {
 			++ngid;
@@ -646,6 +644,7 @@ static void mk_localgid_rep() {
 // high so that they do not themselves generate spikes.
 // Can only be called by thread 0 because of the ps->send.
 void nrn_fake_fire(int gid, double spiketime, int fake_out) {
+    std::map<int, InputPreSyn*>::iterator gid2in_it;
     gid2in_it = gid2in.find(gid);
     if (gid2in_it != gid2in.end())
     {
@@ -658,6 +657,7 @@ void nrn_fake_fire(int gid, double spiketime, int fake_out) {
 #endif
     }else if (fake_out)
     {
+        std::map<int, PreSyn*>::iterator gid2out_it;
         gid2out_it = gid2out.find(gid);
         if (gid2out_it != gid2out.end())
         {
@@ -687,11 +687,13 @@ void netpar_tid_gid2ps(int tid, int gid, PreSyn** ps, InputPreSyn** psi){
   /// for gid < 0 returns the PreSyn* in the thread (tid) specific map.
   *ps = NULL;
   *psi = NULL;
+  std::map<int, PreSyn*>::iterator gid2out_it;
   if (gid >= 0) {
       gid2out_it = gid2out.find(gid);
       if (gid2out_it != gid2out.end()) {
         *ps = gid2out_it->second;
       }else{
+        std::map<int, InputPreSyn*>::iterator gid2in_it;
         gid2in_it = gid2in.find(gid);
         if (gid2in_it != gid2in.end()) {
           *psi = gid2in_it->second;
@@ -708,7 +710,7 @@ void netpar_tid_gid2ps(int tid, int gid, PreSyn** ps, InputPreSyn** psi){
 void netpar_tid_set_gid2node(int tid, int gid, int nid, PreSyn* ps) {
   if (gid >= 0) {
       /// Allocate space for spikes: 200 structs of {int gid; double time}
-      /// coming from nrnmpi.h and array of int of the global doamin size
+      /// coming from nrnmpi.h and array of int of the global domain size
       alloc_space();
 #if NRNMPI
       if (nid == nrnmpi_myid) {
@@ -778,6 +780,7 @@ int input_gid_register(int gid) {
 }
 
 int input_gid_associate(int gid, InputPreSyn* psi) {
+    std::map<int, InputPreSyn*>::iterator gid2in_it;
     gid2in_it = gid2in.find(gid);
     if (gid2in_it != gid2in.end()) {
         if (gid2in_it->second) {

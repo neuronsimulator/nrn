@@ -21,21 +21,19 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 class IvocVect {
 public:
-	IvocVect();
-	IvocVect(int);
-	IvocVect(int, double);
-	IvocVect(IvocVect&);
+    int len;
+    int space;
+    MUTDEC
+    double* s;
+
+    IvocVect();
+    IvocVect(int);
 	~IvocVect();
 
 	void resize(int);
 	int capacity();
 	double& elem(int);
 	double* vec();
-	void label(const char*);
-
-	int buffer_size();
-	void buffer_size(int);
-
 #if (USE_PTHREAD || defined(_OPENMP))
 	void mutconstruct(int mkmut) {if (!mut_) MUTCONSTRUCT(mkmut)}
 #else
@@ -43,35 +41,22 @@ public:
 #endif
 	void lock() {MUTLOCK}
 	void unlock() {MUTUNLOCK}
-public:
-	//intended as friend static Object** temp_objvar(IvocVect*);
-	char* label_;
-	int len;
-	int space;
-	double* s;
-	MUTDEC
 };
 
 
 extern "C" {
 extern IvocVect* vector_new(int); // use this if possible
-extern IvocVect* vector_new0();
 extern IvocVect* vector_new1(int);
-extern void vector_delete(IvocVect*);
-extern int vector_buffer_size(IvocVect*);
 extern int vector_capacity(IvocVect*);
-extern void vector_resize(IvocVect*, int);
 extern double* vector_vec(IvocVect*);
-extern char* vector_get_label(IvocVect*);
-extern void vector_set_label(IvocVect*, char*);
 }
 
 inline IvocVect::IvocVect(){
-  len = 0; s = 0; space = 0; label_ = 0;
+  len = 0; s = 0; space = 0;
 }
                         
 inline IvocVect::IvocVect(int l){
-  s = new double [space = len = l]; label_ = 0;
+  s = new double [space = len = l];
 }
 
 inline double* IvocVect::vec() {
@@ -85,13 +70,9 @@ inline int IvocVect::capacity(){
   return len;
 }
 
-inline int IvocVect::buffer_size(){
-  return space;
-}
                        	
 inline IvocVect::~IvocVect(){
   delete [] s;
-  if (label_) { delete [] label_; }
 }
 
 #endif
