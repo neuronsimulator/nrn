@@ -31,7 +31,7 @@ bbss.ignore()
 
 Because a restore clears the event queue and because one cannot call
 finitialize from hoc without vitiating the restore, Vector.play will
-not be work unless one calls BBSaveState.vector_play_init() after a 
+not work unless one calls BBSaveState.vector_play_init() after a 
 restore (similarly frecord() must be called for Vector.record to work.
 Note that it is necessary that Vector.play use a tvec argument with
 a first element greater than or equal to the restore time.
@@ -40,25 +40,14 @@ Because of many unimplemented aspects to the general problem,
 this implementation is more or less limited to BlueBrain cortical models.
 There are also conceptual difficulties with the general problem since
 necessary information is embodied in the Hoc programs.
-For example,
-1) Artificial Cells are not currently used. Easy to fix if they are
-associated with gids. Not easy to deal with if directly connect to
-a POINT_PROCESS since then we have to associate the artificial cell
-with the Netcon (and assume the ACell is connected to only one synapse)
-Note: As of 2015-06-07, artifical cells with gids are saved and restored
-using the same code as saving/restoring a Point_process. Test with the
-neurondemo inhibitory synchronization model shows the ability of
-ARTIFICIAL_CELL to receive multiple inputs from distinct gids. It would
-be a good idea, though, to encode source gid in the NetCon info on save
-and verify the order is the same on restore.
-2) There is only one spike output port per cell and that is associated
-with a base gid.
-3) NetCon.event in Hoc is used only with NetCon's with no gid source.
-(otherwise a single NetCon.event would be consolidated back to a single
-PreSyn event that would then be sent to all the NetCons for which it
-is a source.)
-In fact, make this even more restrictive in that the NetCon source must
-be None
+
+Some model restrictions:
+1) "Real" cells must have gids.
+2) Artificial cells can have gids. If not they must be directly connected
+   to just one synapse (e.g. NetStim -> NetCon -> synapse).
+3) There is only one spike output port per cell and that is associated
+   with a base gid.
+4) NetCon.event in Hoc can be used only with NetCon's with a None source.
 
 Note: On reading, the only things that need to exist in the file are the gids
 and sections that are needed and the others are ignored. So subsets of a written
@@ -69,15 +58,19 @@ they are eplicitly marked IGNORE).
 We keep together, all the information associated with a section which includes
 Point_processes and the NetCons, and SelfEvents targeting each Point_process.
 Sometimes a NetStim stimulus is used to stimulate the PointProcess.
-For those cases, when the NetCon has no srcid, the source is also associated with
-the Point_process (not done yet).
-Presently, NetCon with no source or srcid are ignored and do not appear
-in the DEList of the point process. This allows one to have different
-numbers of NetStim with NetCon connected locally before a save and restore.
-Note that outstanding events from these NetCon on the queue are not saved.
-PreSyn with state are associated with the cell (gid).
-that contains them. Note that unless this implementation is extended,
-we restrict to PreSyn associated with gids.
+For those cases, when the NetCon has no srcid, the source is also associated
+with the Point_process.
+
+Originally, NetCon with an ARTIFICIAL_CELL source were ignored and did
+not appear in the DEList of the point process.  This allowed one to have
+different numbers of NetStim with NetCon connected locally before a save
+and restore.  Note that outstanding events from these NetCon on the
+queue were not saved.  PreSyn with state are associated with the cell
+(gid)that contains them. We required PreSyn to be associated with gids.
+Although that convention had some nice properties (albeit, it involved some
+extra programming complexity) it has been abandoned because in practice,
+stimuli such as InhPoissonStim are complex and it is desirable that they
+continue past a save/restore.
 
 We share more or less the same code for counting, writing, and reading by
 using subclasses of BBSS_IO.
@@ -924,7 +917,8 @@ static void ssi_def() {
 
 // if we know the Point_process, we can find the NetCon
 // BB project never has more than one NetCon connected to a Synapse.
-// If that does not hold, then need to extend to List of NetCon.
+// But that may not hold in general so extend to List of NetCon using DEList.
+// and assume the list is same order on save/restore.
 typedef struct DEList { DiscreteEvent* de; struct DEList* next; } DEList;
 declareNrnHash(PP2DE, Point_process*, DEList*)
 implementNrnHash(PP2DE, Point_process*, DEList*)
@@ -1127,11 +1121,19 @@ static void tqcallback(const TQItem* tq, int i) {
 				// with the target Point_process and we should
 				// now associate this event as well
 				if (ps->osrc_) { // NetStim possibly
-					printf("Need to implement\n");
-char tstr[100];
-sprintf(tstr, "tqcallback gid=%d", ps->gid_);
-ps->pr(tstr, ts, 0);
-					//assert(0);
+					// does not matter if NetCon.event
+					// or if the event was sent from
+					// the local stimulus. Can't be from
+					// a PreSyn event since we demand
+					// that there be only one NetCon
+					// from this stimulus.
+					assert(nc);
+					DblList* db = 0;
+					if (!nc2dblist->find(nc, db)) {
+						db = new DblList(10);
+						(*nc2dblist)[nc] = db;
+					}
+					db->append(tq->t_);
 				}else{ // assume from NetCon.event
 					// ps should be unused_presyn
 //printf("From NetCon.event\n");
@@ -1193,12 +1195,17 @@ void BBSaveState::mk_pp2de() {
 	pp2de = new PP2DE(n+1);
 	ITERATE(q, nct->olist) {
 		NetCon* nc = (NetCon*)OBJ(q)->u.this_pointer;
-		// ignore NetCon with no PreSyn or if the PreSyn has no
-		// gid. i.e we do not save or restore information about
-		// NetCon.event or NetCon with local NetStim source.
-		if (!nc->src_ || nc->src_->gid_ < 0) {
+		// ignore NetCon with no PreSyn.
+		// i.e we do not save or restore information about
+		// NetCon.event. We do save NetCons with local NetStim source.
+		// But that NetStim can only be the source for one NetCon.
+		// (because its state info will be attached to the
+		// target synapse)
+		if (!nc->src_) {
 			continue;
 		}
+		//has a gid or else only one connection
+		assert(nc->src_->gid_ >= 0 || nc->src_->dil_.count() == 1);
 		Point_process* pp = nc->target_;
 		DEList* dl = new DEList;
 		dl->de = nc;
@@ -1630,6 +1637,8 @@ void BBSaveState::mech(Prop* p) {
 		pp = (Point_process*)p->dparam[1]._pvoid;
 		if (pnt_receive[p->type]) {
 			// associated NetCon and queue SelfEvent
+			// if the NetCon has a unique non-gid source (art cell)
+			// that source is save/restored as well.
 			netrecv_pp(pp);
 		}
 	}
@@ -1693,11 +1702,6 @@ f->s(buf, 1);
 			if (nc2dblist && nc2dblist->find(nc, db)) {
 				j = db->count();
 				f->i(j);
-if (j > 0) {
-char buf[100];
-sprintf(buf, "NetCon.event");
-f->s(buf);
-}
 				for (int i = 0; i < j; ++i) {
 					double x = db->item(i);
 					f->d(1, x);
@@ -1705,18 +1709,30 @@ f->s(buf);
 			}else{
 				f->i(j);
 			}		
+			int has_stim = 0;
+			if (nc->src_ && nc->src_->osrc_ && nc->src_->gid_ < 0) {
+				// save the associated local stimulus
+				has_stim = 1;
+				f->i(has_stim, 1);
+				Point_process* pp = ob2pntproc(nc->src_->osrc_);
+				mech(pp->prop);
+			}else{
+				f->i(has_stim, 1);
+			}
 		}else{ // reading
 			int j = 0;
 			f->i(j);
-if (j > 0) {
-char buf[100];
-sprintf(buf, "NetCon.event");
-f->s(buf,1);
-}
 			for (int i = 0; i < j; ++i) {
 				double x;
 				f->d(1, x);
 				nrn_netcon_event(nc, x);
+			}
+			int has_stim = 0;
+			f->i(has_stim);
+			if (has_stim) {
+			  assert((nc->src_ && nc->src_->osrc_ && nc->src_->gid_ < 0) == has_stim);
+			  Point_process* pp = ob2pntproc(nc->src_->osrc_);
+			  mech(pp->prop);
 			}
 		}
 	}
