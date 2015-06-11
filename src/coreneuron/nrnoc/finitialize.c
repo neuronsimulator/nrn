@@ -72,7 +72,6 @@ void nrn_finitialize(int setv, double v) {
     for (i=0; i < nrn_nthread; ++i) {
         setup_tree_matrix(nrn_threads + i);
     }
-    nrn_record_init();
     for (i=0; i < nrn_nthread; ++i) {
         fixed_record_continuous(nrn_threads + i);
     }

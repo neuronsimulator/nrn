@@ -53,7 +53,10 @@ sd_ptr vsdprintf(char *buf,size_t sz,const char *fmt,va_list ap) {
         // buffer too small; allocate and try again
         sz=(size_t)rv+1;
         char *p=(char *)std::malloc(sz);
-        if (!p) return 0;
+        if (!p){
+            va_end(ap2);
+            return 0;
+        }
 
         rv=vsnprintf(p,sz,fmt,ap2);
         if (rv<0 || (size_t)rv>=sz) {

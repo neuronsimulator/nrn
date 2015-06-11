@@ -125,7 +125,6 @@ void alloc_mech(int n) {
 	nrn_dparam_ptr_end_ = (int*)ecalloc(memb_func_size_, sizeof(int));
 	memb_order_ = (short*)ecalloc(memb_func_size_, sizeof(short));
 	nrn_bbcore_read_ = (bbcore_read_t*)ecalloc(memb_func_size_, sizeof(bbcore_read_t));
-        nrn_is_artificial_ = (short*)ecalloc(memb_func_size_, sizeof(short));
 	bamech_ = (BAMech**)ecalloc(BEFORE_AFTER_SIZE, sizeof(BAMech*));
 }
 

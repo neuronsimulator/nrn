@@ -446,7 +446,7 @@ NetCon::~NetCon() {
 }
 
 
-PreSyn::PreSyn() {
+PreSyn::PreSyn():localgid_(), output_index_(), delay_() {
     nc_index_ = 0;
 	nc_cnt_ = 0;
 	flag_ = false;

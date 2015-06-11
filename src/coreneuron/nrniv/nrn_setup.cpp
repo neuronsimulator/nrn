@@ -151,10 +151,10 @@ void nrn_read_filesdat(int &ngrp, int * &grp, const char *filesdat)
     FILE *fp = fopen( filesdat, "r" );
   
     if ( !fp ) {
- 	nrnmpi_fatal_error( "No input file with nrnthreads, exiting..." );
+      nrnmpi_fatal_error( "No input file with nrnthreads, exiting..." );
     }
 
-    int iNumFiles = 0;
+    int iNumFiles;
     nrn_assert( fscanf( fp, "%d\n", &iNumFiles ) == 1 );
 
     if ( nrnmpi_numprocs > iNumFiles ) {
@@ -794,7 +794,7 @@ void read_phase2(data_reader &F, NrnThread& nt) {
   for (int i=0; i < nnetcon; ++i) {
     int type = pnttype[i];
     if (type > 0) {
-      int index = pnt_offset[type] + pntindex[i];
+      int index = pnt_offset[type] + pntindex[i]; /// Potentially uninitialized pnt_offset[], check for previous assignments
       Point_process* pnt = nt.pntprocs + index;
       NetCon& nc = nt.netcons[i];
       nc.target_ = pnt;

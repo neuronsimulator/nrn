@@ -104,7 +104,7 @@ TQueue::~TQueue() {
     delete sptree_;
     for (q = binq_->first(); q; q = q2) {
         q2 = binq_->next(q);
-        remove(q);
+        remove(q); /// Potentially dereferences freed pointer this->sptree_
     }
     delete binq_;
     MUTDESTRUCT

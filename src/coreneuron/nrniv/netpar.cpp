@@ -32,6 +32,7 @@ class InputPreSyn;
 #include "coreneuron/nrniv/netcon.h"
 #include "coreneuron/nrniv/netcvode.h"
 #include "coreneuron/nrniv/nrniv_decl.h"
+#include "coreneuron/nrniv/ivocvect.h"
 
 #define BGP_INTERVAL 2
 #if BGP_INTERVAL == 2
@@ -52,8 +53,6 @@ extern "C" {
 extern NetCvode* net_cvode_instance;
 extern double t, dt;
 extern int nrn_use_selfqueue_;
-extern int vector_capacity(IvocVect*); //ivocvect.h conflicts with STL
-extern double* vector_vec(IvocVect*);
 extern void nrn_fake_fire(int gid, double firetime, int fake_out);
 int nrnmpi_spike_compress(int nspike, bool gid_compress, int xchng_meth);
 void nrn_spike_exchange_init();

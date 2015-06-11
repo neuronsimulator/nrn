@@ -57,12 +57,6 @@ void init_net_events() {
 	}
 }
 
-void nrn_record_init() {
-	return;
-	if (net_cvode_instance) {
-//		net_cvode_instance->record_init();
-	}
-}
 
 void nrn_play_init() {
     for (int ith = 0; ith < nrn_nthread; ++ith) {

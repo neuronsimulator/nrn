@@ -14,6 +14,7 @@ OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
 IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include <iostream>
 #include "coreneuron/nrnconf.h"
 #include "coreneuron/nrniv/nrniv_decl.h"
 #include "coreneuron/nrniv/output_spikes.h"
@@ -43,6 +44,11 @@ void output_spikes(const char *outpath) {
   char fnamebuf[100];
   sd_ptr fname=sdprintf(fnamebuf, sizeof(fnamebuf), "%s/out%d.dat", outpath, nrnmpi_myid);
   FILE* f = fopen(fname, "w");
+  if (!f && nrnmpi_myid == 0){
+      std::cout << "WARNING: Could not open file for writing spikes." << std::endl;
+      return;
+  }
+
   for (int i=0; i < spikevec_size; ++i)
   {
     if (spikevec_gid[i] > -1)

@@ -79,8 +79,8 @@ void VecPlayStep::play_init() {
 	current_index_ = 0;
 	NrnThread* nt = nrn_threads + ith_;
 	if (t_) {
-		if (t_->capacity() > 0) {
-			e_->send(t_->elem(0), net_cvode_instance, nt);
+        if (t_->size() > 0) {
+            e_->send((*t_)[0], net_cvode_instance, nt);
 		}
 	}else{
 			e_->send(0., net_cvode_instance, nt);
@@ -89,11 +89,11 @@ void VecPlayStep::play_init() {
 
 void VecPlayStep::deliver(double tt, NetCvode* ns) {
 	NrnThread* nt = nrn_threads + ith_;
-	*pd_ = y_->elem(current_index_++);
-	if (current_index_ < y_->capacity()) {
+    *pd_ = (*y_)[current_index_++];
+    if (current_index_ < y_->size()) {
 		if (t_) {
-			if (current_index_ < t_->capacity()) {
-				e_->send(t_->elem(current_index_), ns, nt);
+            if (current_index_ < t_->size()) {
+                e_->send((*t_)[current_index_], ns, nt);
 			}
 		}else{
 			e_->send(tt + dt_, ns, nt);
@@ -133,16 +133,16 @@ void VecPlayContinuous::play_init() {
 	last_index_ = 0;
 	discon_index_ = 0;
 	if (discon_indices_) {
-		if (discon_indices_->capacity() > 0) {
-			ubound_index_ = (int)discon_indices_->elem(discon_index_++);
+        if (discon_indices_->size() > 0) {
+            ubound_index_ = (int)(*discon_indices_)[discon_index_++];
 //printf("play_init %d %g\n", ubound_index_, t_->elem(ubound_index_));
-			e_->send(t_->elem(ubound_index_), net_cvode_instance, nt);
+            e_->send((*t_)[ubound_index_], net_cvode_instance, nt);
 		}else{
-			ubound_index_ = t_->capacity()-1;
+            ubound_index_ = t_->size()-1;
 		}
 	}else{
 		ubound_index_ = 0;
-		e_->send(t_->elem(ubound_index_), net_cvode_instance, nt);
+        e_->send((*t_)[ubound_index_], net_cvode_instance, nt);
 	}
 }
 
@@ -151,17 +151,17 @@ void VecPlayContinuous::deliver(double tt, NetCvode* ns) {
 //printf("deliver %g\n", tt);
 	last_index_ = ubound_index_;
 	if (discon_indices_) {
-		if (discon_index_ < discon_indices_->capacity()) {
-			ubound_index_ = (int)discon_indices_->elem(discon_index_++);
+        if (discon_index_ < discon_indices_->size()) {
+            ubound_index_ = (int)(*discon_indices_)[discon_index_++];
 //printf("after deliver:send %d %g\n", ubound_index_, t_->elem(ubound_index_));
-			e_->send(t_->elem(ubound_index_), ns, nt);
+            e_->send((*t_)[ubound_index_], ns, nt);
 		}else{
-			ubound_index_ = t_->capacity() - 1;
+            ubound_index_ = t_->size() - 1;
 		}
 	}else{
-		if (ubound_index_ < t_->capacity() - 1) {
+        if (ubound_index_ < t_->size() - 1) {
 			ubound_index_++;
-			e_->send(t_->elem(ubound_index_), ns, nt);
+            e_->send((*t_)[ubound_index_], ns, nt);
 		}
 	}
 	continuous(tt);
@@ -173,34 +173,34 @@ void VecPlayContinuous::continuous(double tt) {
 }
 
 double VecPlayContinuous::interpolate(double tt) {
-	if (tt >= t_->elem(ubound_index_)) {
+    if (tt >= (*t_)[ubound_index_]) {
 		last_index_ = ubound_index_;
 		if (last_index_ == 0) {
 //printf("return last tt=%g ubound=%g y=%g\n", tt, t_->elem(ubound_index_), y_->elem(last_index_));
-			return y_->elem(last_index_);
+            return (*y_)[last_index_];
 		}
-	}else if (tt <= t_->elem(0)) {
+    }else if (tt <= (*t_)[0]) {
 		last_index_ = 0;
 //printf("return elem(0) tt=%g t0=%g y=%g\n", tt, t_->elem(0), y_->elem(0));
-		return y_->elem(0);
+        return (*y_)[0];
 	}else{
 		search(tt);
 	}
-	double x0 = y_->elem(last_index_-1);
-	double x1 = y_->elem(last_index_);
-	double t0 = t_->elem(last_index_ - 1);
-	double t1 = t_->elem(last_index_);
+    double x0 = (*y_)[last_index_-1];
+    double x1 = (*y_)[last_index_];
+    double t0 = (*t_)[last_index_ - 1];
+    double t1 = (*t_)[last_index_];
 //printf("IvocVectRecorder::continuous tt=%g t0=%g t1=%g theta=%g x0=%g x1=%g\n", tt, t0, t1, (tt - t0)/(t1 - t0), x0, x1);
 	if (t0 == t1) { return (x0 + x1)/2.; }
 	return interp((tt - t0)/(t1 - t0), x0, x1);
 }
 
 void VecPlayContinuous::search(double tt) {
-//	assert (tt > t_->elem(0) && tt < t_->elem(t_->capacity() - 1))
-	while ( tt < t_->elem(last_index_)) {
+//	assert (tt > t_->elem(0) && tt < t_->elem(t_->size() - 1))
+    while ( tt < (*t_)[last_index_]) {
 		--last_index_;
 	}
-	while ( tt >= t_->elem(last_index_)) {
+    while ( tt >= (*t_)[last_index_]) {
 		++last_index_;
 	}
 }

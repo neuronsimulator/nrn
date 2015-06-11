@@ -14,33 +14,11 @@ OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
 IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <string.h>
-#include "coreneuron/nrnconf.h"
 #include "coreneuron/nrniv/ivocvect.h"
 
-void IvocVect::resize(int newl) { // all that for this
-        long oldcap = capacity();
-
- if (newl > space) {
-  double* news = new double [newl];
-  double* p = news;
-  int minl = (len < newl)? len : newl;
-  double* top = &(s[minl]);
-  double* tt = s;
-  while (tt < top) *p++ = *tt++;
-  delete [] s;
-  s = news;
-  space = newl;
- }
-  len = newl;
-
-        for (;oldcap < newl; ++oldcap) {
-                elem(oldcap) = 0.;
-        }
+extern "C" {
+  IvocVect* vector_new(int n) { return new IvocVect(n); }
+  int vector_capacity(IvocVect* v) { return v->size(); }
+  double* vector_vec(IvocVect* v) { return v->data(); }
 }
-
-IvocVect* vector_new(int n){return new IvocVect(n);}
-IvocVect* vector_new1(int n){return new IvocVect(n);}
-int vector_capacity(IvocVect* v){return v->capacity();}
-double* vector_vec(IvocVect* v){return v->vec();}
 

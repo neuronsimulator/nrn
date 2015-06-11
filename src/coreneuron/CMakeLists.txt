@@ -65,11 +65,11 @@ nrnoc/multicore.c
 nrnoc/nrntimeout.c
 nrniv/coreneuron_main.cpp
 nrniv/cvodestb.cpp
+nrniv/ivocvect.cpp
 nrniv/main1.cpp
 nrniv/netpar.cpp
 nrniv/netcvode.cpp
 nrniv/tqueue.cpp
-nrniv/ivvect.cpp
 nrniv/mk_mech.cpp
 nrniv/nrn_datareader.cpp
 nrniv/nrn_setup.cpp

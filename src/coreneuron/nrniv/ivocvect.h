@@ -17,23 +17,27 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef ivoc_vector_h
 #define ivoc_vector_h
 
+#include <stdio.h>
 #include "coreneuron/nrniv/nrnmutdec.h"
 
-class IvocVect {
-public:
-    int len;
-    int space;
+template <typename T>
+class fixed_vector{
+    size_t n_;
+    T* data_;
     MUTDEC
-    double* s;
 
-    IvocVect();
-    IvocVect(int);
-	~IvocVect();
+  public:
+    fixed_vector(size_t n):n_(n) { data_ = new T[n_]; }
+    ~fixed_vector() { delete [] data_; }
 
-	void resize(int);
-	int capacity();
-	double& elem(int);
-	double* vec();
+    const T& operator[] (int i) const { return data_[i]; }
+    T& operator[] (int i) { return data_[i]; }
+
+    const T* data(void) const { return data_; }
+    T* data(void) { return data_; }
+
+    size_t size() const { return n_; }
+
 #if (USE_PTHREAD || defined(_OPENMP))
 	void mutconstruct(int mkmut) {if (!mut_) MUTCONSTRUCT(mkmut)}
 #else
@@ -43,36 +47,12 @@ public:
 	void unlock() {MUTUNLOCK}
 };
 
+typedef fixed_vector<double> IvocVect;
 
 extern "C" {
-extern IvocVect* vector_new(int); // use this if possible
-extern IvocVect* vector_new1(int);
-extern int vector_capacity(IvocVect*);
-extern double* vector_vec(IvocVect*);
-}
-
-inline IvocVect::IvocVect(){
-  len = 0; s = 0; space = 0;
-}
-                        
-inline IvocVect::IvocVect(int l){
-  s = new double [space = len = l];
-}
-
-inline double* IvocVect::vec() {
-  return s;
-}
-inline double& IvocVect::elem(int n) {
-  return s[n];
-}
-
-inline int IvocVect::capacity(){
-  return len;
-}
-
-                       	
-inline IvocVect::~IvocVect(){
-  delete [] s;
+  extern IvocVect* vector_new(int n);
+  extern int vector_capacity(IvocVect* v);
+  extern double* vector_vec(IvocVect* v);
 }
 
 #endif

@@ -73,7 +73,7 @@ public:
 	IvocVect* y_;
 	IvocVect* t_;
 	double dt_;
-	int current_index_;
+    size_t current_index_;
 
 	PlayRecordEvent* e_;
 };
@@ -98,9 +98,9 @@ public:
 	IvocVect* y_;
 	IvocVect* t_;
 	IvocVect* discon_indices_;
-	int last_index_;
-	int discon_index_;
-	int ubound_index_;
+    size_t last_index_;
+    size_t discon_index_;
+    size_t ubound_index_;
 
 	PlayRecordEvent* e_;
 };

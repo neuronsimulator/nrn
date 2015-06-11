@@ -30,7 +30,6 @@ class TQItem;
 struct NrnThread;
 struct Point_process;
 class NetCvode;
-class IvocVect;
 
 #define DiscreteEventType 0
 #define TstopEventType 1

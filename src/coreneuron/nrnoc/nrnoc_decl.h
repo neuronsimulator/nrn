@@ -32,7 +32,6 @@ extern void nrn_deliver_events(NrnThread*);
 extern void init_net_events(void);
 extern void nrn_random_play(NrnThread*);
 extern void nrn_play_init(void);
-extern void nrn_record_init(void);
 extern void fixed_play_continuous(NrnThread*);
 extern void nrn_solve_minimal(NrnThread*);
 extern void second_order_cur(NrnThread*);
