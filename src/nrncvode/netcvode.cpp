@@ -3156,6 +3156,20 @@ hoc_execerror("internal error: Source delay is > NetCon delay", 0);
 	}
 }
 
+// used by bbsavestate since during restore, some NetCon spikes may
+// have already been delivered while others need to be delivered in
+// the future. Not implemented fof qthresh_ case. No statistics.
+void PreSyn::fanout(double td, NetCvode* ns, NrnThread* nt) {
+	int i, n = dil_.count();
+	for (i=0; i < n; ++i) {
+		NetCon* d = dil_.item(i);
+		if (d->active_ && d->target_ && PP2NT(d->target_) == nt) {
+			double dtt = d->delay_ - delay_;
+			ns->bin_event(td + dtt, d, nt);
+		}
+	}
+}
+
 NrnThread* PreSyn::thread() { return nt_; }
 
 void PreSyn::pgvts_deliver(double tt, NetCvode* ns) {

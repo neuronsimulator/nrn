@@ -234,6 +234,7 @@ public:
 	void record(double t);
 	void init();
 	double mindelay();
+	void fanout(double, NetCvode*, NrnThread*); // used by bbsavestate
 
 	NetConPList dil_;
 	double threshold_;

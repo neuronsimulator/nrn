@@ -12,6 +12,7 @@
 	,KSChan_reg()
 	,Impedance_reg()
 	,SaveState_reg()
+	,BBSaveState_reg()
 	,FInitializeHandler_reg()
 	,StateTransitionEvent_reg()
 	,nrnpython_reg()
@@ -50,6 +51,7 @@
 	,KSChan_reg
 	,Impedance_reg
 	,SaveState_reg
+	,BBSaveState_reg
 	,FInitializeHandler_reg
 	,StateTransitionEvent_reg
 	,nrnpython_reg

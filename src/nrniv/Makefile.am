@@ -82,7 +82,7 @@ libnrniv_la_SOURCES = nrnmenu.cpp shape.cpp classreg.cpp rotate3d.cpp \
 	nrnrtime.cpp nvector_nrnthread.c nrnpy.cpp prcellstate.cpp \
 	nvector_nrnthread_ld.c nvector_nrnserial_ld.c \
 	$(PARSRC1) bgpmeminfo.c \
-	netpar.cpp partrans.cpp splitcell.cpp multisplit.cpp \
+	netpar.cpp partrans.cpp splitcell.cpp multisplit.cpp bbsavestate.cpp \
 	nrndae.cpp matrixmap.cpp geometry3d.cpp
 
 libnrniv_la_LIBADD = @MUSIC_LIBLA@
@@ -155,7 +155,7 @@ noinst_HEADERS = ndatclas.h nrnclass.h nrnmenu.h nrnoc2iv.h ppshape.h \
 	nvector_nrnthread_ld.h nvector_nrnserial_ld.h \
 	$(PARINC1) \
 	bgpdma.cpp bgpdmasetup.cpp bgpmeminfo.c \
-	multisplitcontrol.h nvector_nrnthread.h \
+	multisplitcontrol.h nvector_nrnthread.h bbsavestate.h \
 	nrnmusic.cpp nrndae.h matrixmap.h \
 	structpool.h nrnhash_alt.h
 
