@@ -45,12 +45,20 @@ For example,
 associated with gids. Not easy to deal with if directly connect to
 a POINT_PROCESS since then we have to associate the artificial cell
 with the Netcon (and assume the ACell is connected to only one synapse)
+Note: As of 2015-06-07, artifical cells with gids are saved and restored
+using the same code as saving/restoring a Point_process. Test with the
+neurondemo inhibitory synchronization model shows the ability of
+ARTIFICIAL_CELL to receive multiple inputs from distinct gids. It would
+be a good idea, though, to encode source gid in the NetCon info on save
+and verify the order is the same on restore.
 2) There is only one spike output port per cell and that is associated
 with a base gid.
 3) NetCon.event in Hoc is used only with NetCon's with no gid source.
 (otherwise a single NetCon.event would be consolidated back to a single
 PreSyn event that would then be sent to all the NetCons for which it
 is a source.)
+In fact, make this even more restrictive in that the NetCon source must
+be None
 
 Note: On reading, the only things that need to exist in the file are the gids
 and sections that are needed and the others are ignored. So subsets of a written
@@ -1487,6 +1495,9 @@ void BBSaveState::cell(Object* c) {
 			f->s(buf, 1);
 		}
 	    }
+	}else{ // ARTIFICIAL_CELL
+		Point_process* pnt = ob2pntproc(c);
+		mech(pnt->prop);
 	}
 	if (debug) { sprintf(dbuf, "Leave cell(%s)", hoc_object_name(c)); PDEBUG; }
 }
