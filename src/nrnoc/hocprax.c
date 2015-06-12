@@ -22,8 +22,8 @@ eg.
 
 double x[2]
 attr_praxis(1e-5, 1, -1)
-func f() {local t1, t2, t3
-	return $0^2 + 2*$1^4
+func f() {
+	return $&0[0]^2 + 2*$&0[1]^4
 }	
 fit_praxis(2, "f", &x)
 
@@ -59,6 +59,9 @@ static Symbol* hoc_efun_sym;
 
 static double tolerance, machep, maxstepsize;
 static long int printmode;
+/* for prax_pval to know the proper size, following has to be the value
+at return of previous prax call
+*/
 static long int nvar;
 
 double (*nrnpy_praxis_efun)(Object* pycallable, Object* hvec);
@@ -85,42 +88,60 @@ void fit_praxis(void) {
 	int i;
 	double err, fmin;
 	double* px;
+	/* allow nested calls to fit_praxis. I.e. store all the needed
+	   statics specific to this invocation with proper reference
+	   counting and then unref/destoy on exit from this invocation.
+	   Before the prax call save the statics from earlier invocation
+	   without increasing the
+	   ref count and on exit restore without decreasing the ref count.
+	*/
+	   
+	/* save before setting statics, restore after prax */
 	double minerrsav, *minargsav, maxstepsizesav, tolerancesav;
-	long int printmodesav;
-	Symbol* funsav;
+	long int printmodesav, nvarsav;
+	Symbol* efun_sym_sav;
 	Object* efun_py_save, *efun_py_arg_save;
 	void* vec_py_save_save;
 	
+	/* store statics specified by this invocation */
+	/* will be copied just before calling prax */
+	double minerr_, *minarg_;
+	long int printmode_, nvar_;
+	Symbol* efun_sym_;
+	Object* efun_py_, *efun_py_arg_;
+	void* vec_py_save_;
+
+	minerr_ = 0.0;
+	printmode_ = 0; nvar_ = 0;
+	minarg_ = NULL;
+	efun_sym_ = NULL;
+	efun_py_ = NULL;
+	efun_py_arg_ = NULL;
+	vec_py_save_ = NULL;
+	
 	fmin = 0.;
-	if (efun_py) {
-		hoc_obj_unref(efun_py);
-		efun_py = (Object*)0;
-		hoc_obj_unref(efun_py_arg);
-		efun_py_arg = (Object*)0;
-		vector_delete(vec_py_save);
-	}
+
     if (hoc_is_object_arg(1)) {
 	assert(nrnpy_praxis_efun);
-	efun_py = *hoc_objgetarg(1);
-	hoc_obj_ref(efun_py);
-	efun_py_arg = *vector_pobj(vector_arg(2));
-	hoc_obj_ref(efun_py_arg);
-	vec_py_save = vector_new2(efun_py_arg->u.this_pointer);
-	nvar = vector_capacity(vec_py_save);
-	px = vector_vec(vec_py_save);
+	efun_py_ = *hoc_objgetarg(1);
+	hoc_obj_ref(efun_py_);
+	efun_py_arg_ = *vector_pobj(vector_arg(2));
+	hoc_obj_ref(efun_py_arg_);
+	vec_py_save_ = vector_new2(efun_py_arg_->u.this_pointer);
+	nvar_ = vector_capacity(vec_py_save_);
+	px = vector_vec(vec_py_save_);
     }else{
-	nvar = (int)chkarg(1, 0., 1e6);
-	funsav = hoc_efun_sym;
-	hoc_efun_sym = hoc_lookup(gargstr(2));
-	if (!hoc_efun_sym
-	   || (hoc_efun_sym->type != FUNCTION
-	      && hoc_efun_sym->type != FUN_BLTIN)) {
+	nvar_ = (int)chkarg(1, 0., 1e6);
+	efun_sym_ = hoc_lookup(gargstr(2));
+	if (!efun_sym_
+	   || (efun_sym_->type != FUNCTION
+	      && efun_sym_->type != FUN_BLTIN)) {
 		hoc_execerror(gargstr(2), "not a function name");
 	}
 	
 	if (!hoc_is_pdouble_arg(3)) {
 		void* vec = vector_arg(3);
-		if (vector_capacity(vec) != nvar) {
+		if (vector_capacity(vec) != nvar_) {
 			hoc_execerror("first arg not equal to size of Vector",0);
 		}
 		px = vector_vec(vec);
@@ -128,6 +149,8 @@ void fit_praxis(void) {
 		px = hoc_pgetarg(3);
 	}
     }
+	minarg_ = (double*)ecalloc(nvar_, sizeof(double));
+
 	if (maxstepsize == 0.) {
 		hoc_execerror("call attr_praxis first to set attributes", 0);
 	}
@@ -138,15 +161,30 @@ void fit_praxis(void) {
 	}else{
 		after_quad = (char*)0;
 	}
+
+	/* save the values set by earlier invocation */
 	minerrsav = minerr;
 	minargsav = minarg;
-	minarg = (double*)ecalloc(nvar, sizeof(double));
 	tolerancesav = tolerance;
 	maxstepsizesav = maxstepsize;
 	printmodesav = printmode;
+	nvarsav = nvar;
+	efun_sym_sav = hoc_efun_sym;
 	efun_py_save = efun_py;
 	efun_py_arg_save = efun_py_arg;
 	vec_py_save_save = vec_py_save;
+
+
+	/* copy this invocation values to the statics */
+	minerr = minerr_;
+	minarg = minarg_;
+	printmode = printmode_;
+	nvar = nvar_;
+	hoc_efun_sym = efun_sym_;
+	efun_py = efun_py_;
+	efun_py_arg = efun_py_arg_;
+	vec_py_save = vec_py_save_;
+	
 
 	minerr=1e9;
 	err = praxis(&tolerance, &machep, &maxstepsize,	nvar, &printmode,
@@ -155,29 +193,30 @@ void fit_praxis(void) {
 	if (minerr < 1e9) {
 		for (i=0; i<nvar; ++i) { px[i] = minarg[i]; }
 	}
-	if (efun_py) {
-		double* px = vector_vec(efun_py_arg->u.this_pointer);
-		for (i=0; i < nvar; ++i) {
-			px[i] = minarg[i];
+
+	/* restore the values set by earlier invocation */
+	minerr = minerrsav;
+	minarg = minargsav;
+	tolerance = tolerancesav;
+	maxstepsize = maxstepsizesav;
+	printmode = printmodesav;
+	nvar = nvar_; /* in case one calls prax_pval */
+	hoc_efun_sym = efun_sym_sav;
+	efun_py = efun_py_save;
+	efun_py_arg = efun_py_arg_save;
+	vec_py_save = vec_py_save_save;
+
+	if (efun_py_) {
+		double* px = vector_vec(efun_py_arg_->u.this_pointer);
+		for (i=0; i < nvar_; ++i) {
+			px[i] = minarg_[i];
 		}
-		hoc_obj_unref(efun_py);
-		efun_py = (Object*)0;
-		hoc_obj_unref(efun_py_arg);
-		efun_py_arg = (Object*)0;
-		vector_delete(vec_py_save);
-		vec_py_save = (void*)0;
+		hoc_obj_unref(efun_py_);
+		hoc_obj_unref(efun_py_arg_);
+		vector_delete(vec_py_save_);
 	}
-	if (minargsav) {
-		free(minarg);
-		minarg = minargsav;
-		minerr = minerrsav;
-		hoc_efun_sym = funsav;
-		tolerance = tolerancesav;
-		maxstepsize = maxstepsizesav;
-		printmode = printmodesav;
-		efun_py = efun_py_save;
-		efun_py_arg = efun_py_arg_save;
-		vec_py_save = vec_py_save_save;
+	if (minarg_) {
+		free(minarg_);
 	}
 	hoc_retpushx(err);
 }
