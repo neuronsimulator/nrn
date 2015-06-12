@@ -307,7 +307,10 @@ void nrn_fixed_step() {
 	nrn_thread_table_check();
 	if (nrn_multisplit_setup_) {
 		nrn_multithread_job(nrn_ms_treeset_through_triang);
-		if (!nrn_allthread_handle) {
+		// remove to avoid possible deadlock where some ranks do a
+		// v transfer and others do a spike exchange.
+		// i.e. must complete the full multisplit time step.
+		//if (!nrn_allthread_handle) {
 			nrn_multithread_job(nrn_ms_reduce_solve);
 			nrn_multithread_job(nrn_ms_bksub);
 			/* see comment below */
@@ -317,7 +320,7 @@ void nrn_fixed_step() {
 				}
 				nrn_multithread_job(nrn_fixed_step_lastpart);
 			}
-		}
+		//}
 	}else{
 		nrn_multithread_job(nrn_fixed_step_thread);
 /* if there is no nrnthread_v_transfer then there cannot be
