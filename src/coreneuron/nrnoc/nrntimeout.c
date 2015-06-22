@@ -23,6 +23,17 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <signal.h>
 #include <sys/time.h>
 
+/* if you are using any sampling based profiling tool,
+setitimer will conflict with profiler. In that case, 
+user can disable setitimer which is just safety for 
+deadlock situations */
+
+#ifdef DISABLE_TIMEOUT
+
+void nrn_timeout(int seconds) { }
+
+#else
+
 void (*nrntimeout_call)();
 static double told;
 static struct itimerval value;
@@ -69,5 +80,7 @@ printf("nrn_timeout %d\n", seconds);
 	}
 	
 }
+
+#endif /* DISABLE_TIMEOUT */
 
 #endif /*NRNMPI*/
