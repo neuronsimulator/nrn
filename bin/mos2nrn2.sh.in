@@ -3,6 +3,7 @@
 # mos2nrn2 zipfile simdir running
 
 ARCH=@host_cpu@
+MODSUBDIR=@modsubdir@
 if test "x${NRNHOME}" = x ; then
 	prefix="@prefix@"
 	exec_prefix="@exec_prefix@"
@@ -139,7 +140,7 @@ if [ "$modfiles" ] ; then
 	"${NRNBIN}nrnivmodl" $moddirs
 	a=R
 	while test "$a" = "R" ; do
-		./${ARCH}/special $MOSINITARGS
+		./${MODSUBDIR}/special $MOSINITARGS
 		asklaunch
 	done
 else

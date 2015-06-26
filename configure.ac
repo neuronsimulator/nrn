@@ -498,6 +498,12 @@ case "$exec_prefix" in
 	;;
 esac
 
+dnl allow the nrnivmodl created subfolder to be explicitly specified
+if test "$modsubdir" = "" ; then
+	modsubdir=$host_cpu
+fi
+AC_SUBST(modsubdir)
+
 AC_DEFINE_UNQUOTED(NRNHOSTCPU,"$host_cpu",[cpu type consistent with nrnivmodl])
 NRN_LIBDIR=$exec_prefix/lib
 AC_SUBST(NRN_LIBDIR)
