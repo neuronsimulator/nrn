@@ -43,6 +43,11 @@ if(have_malloc_h)
   add_definitions(-DHAVE_MALLOC_H)
 endif()
 
+option (DISABLE_NRN_TIMEOUT "Disable nrn_timeout implementation" OFF)
+if(DISABLE_NRN_TIMEOUT)
+    add_definitions( -DDISABLE_TIMEOUT)
+endif(DISABLE_NRN_TIMEOUT)
+
 if(${CMAKE_SYSTEM_PROCESSOR} STREQUAL "ppc64")
   CHECK_INCLUDE_FILES("spi/include/kernel/memory.h" have_memory_h)
   if(have_memory_h)
