@@ -1,6 +1,6 @@
 [gerrit]
 host=bbpcode.epfl.ch
 port=22
-project=sim/corebluron
+project=sim/coreneuron
 defaultbranch=master
 defaultremote=origin

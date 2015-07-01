@@ -67,7 +67,7 @@ function(GIT_EXTERNAL DIR REPO TAG)
     if(NOT OLD_TAG STREQUAL TAG)
       string(REPLACE "${CMAKE_SOURCE_DIR}/" "" PWD
         "${CMAKE_CURRENT_SOURCE_DIR}")
-      message(STATUS "${DIR}: already configured with ${OLD_TAG}, ignoring requested ${TAG} in ${PWD}")
+      git_external_message("${DIR}: already configured with ${OLD_TAG}, ignoring requested ${TAG} in ${PWD}")
       return()
     endif()
   else()
@@ -146,12 +146,12 @@ function(GIT_EXTERNAL DIR REPO TAG)
   # update tag
   git_external_message("git rebase FETCH_HEAD")
   execute_process(COMMAND ${GIT_EXECUTABLE} rebase FETCH_HEAD
-    RESULT_VARIABLE RESULT OUTPUT_VARIABLE OUTPUT ERROR_VARIABLE OUTPUT
+    RESULT_VARIABLE RESULT ERROR_QUIET OUTPUT_QUIET
     WORKING_DIRECTORY "${DIR}")
   if(RESULT)
     message(STATUS "git rebase failed, aborting ${DIR} merge")
     execute_process(COMMAND ${GIT_EXECUTABLE} rebase --abort
-      WORKING_DIRECTORY "${DIR}")
+      WORKING_DIRECTORY "${DIR}" ERROR_QUIET OUTPUT_QUIET)
   endif()
 
   # checkout requested tag
