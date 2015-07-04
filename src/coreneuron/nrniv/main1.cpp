@@ -33,6 +33,10 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/utils/sdprintf.h"
 #include "coreneuron/nrniv/nrn_stats.h"
 
+#ifdef CRAYPAT
+#include <pat_api.h>
+#endif
+
 int main1( int argc, char **argv, char **env )
 {
     char prcellname[1024], filesdat_buf[1024];
@@ -41,6 +45,10 @@ int main1( int argc, char **argv, char **env )
 
     // mpi initialisation
     nrnmpi_init( 1, &argc, &argv );
+
+    #ifdef CRAYPAT
+        PAT_record(PAT_STATE_OFF);
+    #endif
 
     // initialise coreneuron parameters
     initnrn();
@@ -129,8 +137,16 @@ int main1( int argc, char **argv, char **env )
     // Report global cell statistics
     report_cell_stats();
 
+    #ifdef CRAYPAT
+        PAT_record(PAT_STATE_ON);
+    #endif
+
     /// Solver execution
     BBS_netpar_solve( input_params.tstop );
+
+    #ifdef CRAYPAT
+        PAT_record(PAT_STATE_OFF);
+    #endif
 
     // prcellstate after end of solver
     if ( input_params.prcellgid >= 0 ) {
