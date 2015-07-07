@@ -47,10 +47,6 @@ int main1( int argc, char **argv, char **env )
     // mpi initialisation
     nrnmpi_init( 1, &argc, &argv );
 
-    #ifdef CRAYPAT
-        PAT_record(PAT_STATE_OFF);
-    #endif
-
     // initialise coreneuron parameters
     initnrn();
 
@@ -97,7 +93,6 @@ int main1( int argc, char **argv, char **env )
     // reading *.dat files and setting up the data structures
     nrn_setup( input_params.datpath, filesdat, nrn_need_byteswap, input_params.threading );
 
-    setup_nrnthreads_on_device(nrn_threads, nrn_nthread);
     
     report_mem_usage( "After nrn_setup " );
 
@@ -140,11 +135,20 @@ int main1( int argc, char **argv, char **env )
     // Report global cell statistics
     report_cell_stats();
 
+    setup_nrnthreads_on_device(nrn_threads, nrn_nthread);
 
     fprintf(stderr, "\n------------Solver-----------");
 
+    #ifdef CRAYPAT
+        PAT_record(PAT_STATE_ON);
+    #endif
+
     /// Solver execution
     BBS_netpar_solve( input_params.tstop );
+
+    #ifdef CRAYPAT
+        PAT_record(PAT_STATE_OFF);
+    #endif
 
     //dump_nt_to_file("dump_init", nrn_threads, nrn_nthread);
 //    modify_data_on_device(nrn_threads, nrn_nthread);

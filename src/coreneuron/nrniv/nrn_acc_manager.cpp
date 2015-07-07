@@ -132,7 +132,9 @@ void setup_nrnthreads_on_device(NrnThread *threads, int nthreads)  {
             d_shadow_ptr = (double *) acc_copyin(nt->_shadow_d, nt->shadow_rhs_cnt*sizeof(double));
             acc_memcpy_to_device(&(d_nt->_shadow_d), &d_shadow_ptr, sizeof(double*));
         }
+        nt->compute_gpu = 1;
     }
+
 #endif
 }
 
@@ -193,6 +195,68 @@ void update_nrnthreads_on_host(NrnThread *threads, int nthreads) {
 #endif
 
 }
+
+void update_nrnthreads_on_device(NrnThread *threads, int nthreads) {
+
+#ifdef _OPENACC
+    printf("\n --- Copying to Device! --- \n");
+
+    int i;
+    
+    for( i = 0; i < nthreads; i++) {
+
+        NrnThread * nt = threads + i;
+        
+        if (!nt->compute_gpu)
+          continue;
+
+        /* -- copy data to device -- */
+
+        int ne = nt->end;
+
+        acc_update_device(nt->_actual_rhs, ne*sizeof(double));
+        acc_update_device(nt->_actual_d, ne*sizeof(double));
+        acc_update_device(nt->_actual_a, ne*sizeof(double));
+        acc_update_device(nt->_actual_b, ne*sizeof(double));
+        acc_update_device(nt->_actual_v, ne*sizeof(double));
+        acc_update_device(nt->_actual_area, ne*sizeof(double));
+
+        /* @todo: nt._ml_list[tml->index] = tml->ml; */
+
+        /* -- copy NrnThreadMembList list ml to host -- */
+        NrnThreadMembList* tml;
+        for (tml = nt->tml; tml; tml = tml->next) {
+
+          Memb_list *ml = tml->ml;
+          int type = tml->index;
+          int n = ml->nodecount;
+          int szp = nrn_prop_param_size_[type];
+          int szdp = nrn_prop_dparam_size_[type];
+          int is_art = nrn_is_artificial_[type];
+
+          acc_update_device(ml->data, n*szp*sizeof(double));
+
+          if (!is_art) {
+              acc_update_device(ml->nodeindices, n*sizeof(int));
+          }
+
+          if (szdp) {
+              acc_update_device(ml->pdata, n*szdp*sizeof(int));
+          }
+
+        }
+
+        if(nt->shadow_rhs_cnt) {
+            /* copy shadow_rhs to host */
+            acc_update_device(nt->_shadow_rhs, nt->shadow_rhs_cnt*sizeof(double));
+            /* copy shadow_d to host */
+            acc_update_device(nt->_shadow_d, nt->shadow_rhs_cnt*sizeof(double));
+        }
+    }
+#endif
+
+}
+
 
 
 void modify_data_on_device(NrnThread *threads, int nthreads) {

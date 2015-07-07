@@ -574,6 +574,7 @@ void read_phase2(data_reader &F, NrnThread& nt) {
   nt._ml_list = (Memb_list**)ecalloc(n_memb_func, sizeof(Memb_list*));
   int shadow_rhs_cnt = 0;
   nt.shadow_rhs_cnt = 0;
+  nt.compute_gpu = 0;
 
   for (int i=0; i < nmech; ++i) {
     tml = (NrnThreadMembList*)emalloc(sizeof(NrnThreadMembList));
