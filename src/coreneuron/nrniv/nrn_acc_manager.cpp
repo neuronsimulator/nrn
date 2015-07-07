@@ -3,6 +3,8 @@
 #include<openacc.h>
 #endif
 
+void mech_state(NrnThread *_nt, Memb_list *ml);
+
 /* note: threads here are corresponding to global nrn_threads array */
 void setup_nrnthreads_on_device(NrnThread *threads, int nthreads)  {
 
@@ -196,7 +198,7 @@ void modify_data_on_device(NrnThread *threads, int nthreads) {
 #endif
 
     int i, j;
-    
+#if 0    
     for( i = 0; i < nthreads; i++) {
 
         NrnThread * nt = threads + i;
@@ -260,6 +262,23 @@ void modify_data_on_device(NrnThread *threads, int nthreads) {
               nt->_shadow_d[j] += 0.1;
             }
         }
+    }
+#endif
+    for( i = 0; i < nthreads; i++) {
+
+        NrnThread * nt = threads + i;
+
+        NrnThreadMembList* tml;
+        for (tml = nt->tml; tml; tml = tml->next) {
+
+          if(tml->index == 125 && tml->ml->nodecount > 0)
+          {
+            printf("\n\n ------------- State for %d nodes ------------- \n\n", tml->ml->nodecount);
+            Memb_list *ml = tml->ml;
+ 
+            mech_state(nt, ml);
+          }
+       }
     }
 }
 
@@ -364,4 +383,50 @@ void finalize_data_on_device(NrnThread *, int nthreads) {
    #ifdef _OPENACC
         acc_shutdown ( acc_device_default);
     #endif
+}
+
+
+void mech_state(NrnThread *_nt, Memb_list *ml)
+{
+    double _v, v;
+    int i, j;
+
+    int *_ni = ml->nodeindices;
+    int _cntml = ml->nodecount;
+    double * restrict _p = ml->data;
+    int * restrict _ppvar = ml->pdata;
+    double * restrict _vec_v = _nt->_actual_v;
+    double * restrict _nt_data = _nt->_data;
+    int _num_compartment = _nt->end;
+
+
+
+    const double _lqt = 2.952882641412121 ;
+    const double dt=_nt->_dt;
+
+    printf("The number of mechanisms to be solved is: %d\n", _cntml);
+
+
+
+#pragma acc parallel loop present(_ni[0:_cntml], _nt_data[0:_nt->_ndata], _p[ml->nodecount*ml->szp], _ppvar[0:_cntml*ml->szdp], _vec_v[0:_num_compartment])
+
+    for (int _iml = 0; _iml < _cntml; ++_iml)
+    {
+        int _nd_idx = _ni[_iml];
+        _v = _vec_v[_nd_idx];
+        v=_v;
+
+        _p[3*_cntml + _iml] = _nt_data[_ppvar[0*_cntml + _iml]];
+        double _lmAlpha , _lmBeta , _lmInf , _lmTau , _lhAlpha , _lhBeta , _lhInf , _lhTau , _llv=0.0 , _lqt=0.0 ;
+        _lmAlpha = ( 0.182 * ( _llv - - 32.0 ) ) / ( 1.0 - ( exp ( - ( _llv - - 32.0 ) / 6.0 ) ) ) ;
+        _lmBeta = ( 0.124 * ( - _llv - 32.0 ) ) / ( 1.0 - ( exp ( - ( - _llv - 32.0 ) / 6.0 ) ) ) ;
+        _lmInf = _lmAlpha / ( _lmAlpha + _lmBeta ) ;
+        _lmTau = ( 1.0 / ( _lmAlpha + _lmBeta ) ) / _lqt ;
+        _p[1*_cntml + _iml] = _p[1*_cntml + _iml] + (1. - exp(dt*(( ( ( - 1.0 ) ) ) / _lmTau)))*(- ( ( ( _lmInf ) ) / _lmTau ) / ( ( ( ( - 1.0) ) ) / _lmTau ) - _p[1*_cntml + _iml]) ;
+        _lhAlpha = ( - 0.015 * ( _llv - - 60.0 ) ) / ( 1.0 - ( exp ( ( _llv - - 60.0 ) / 6.0 ) ) ) ;
+        _lhBeta = ( - 0.015 * ( - _llv - 60.0 ) ) / ( 1.0 - ( exp ( ( - _llv - 60.0 ) / 6.0 ) ) ) ;
+        _lhInf = _lhAlpha / ( _lhAlpha + _lhBeta ) ;
+        _lhTau = ( 1.0 / ( _lhAlpha + _lhBeta ) ) / _lqt ;
+        _p[2*_cntml + _iml] = _p[2*_cntml + _iml] + (1. - exp(dt*(( ( ( - 1.0 ) ) ) / _lhTau)))*(- ( ( ( _lhInf ) ) / _lhTau ) / ( ( ( ( - 1.0) ) ) / _lhTau ) - _p[2*_cntml + _iml]) ;
+   }
 }
