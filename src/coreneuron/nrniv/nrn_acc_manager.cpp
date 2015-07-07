@@ -134,7 +134,6 @@ void update_nrnthreads_on_host(NrnThread *threads, int nthreads) {
 
 #ifdef _OPENACC
         printf("\n --- Copying to Host! --- \n");
-#endif
 
     int i;
     
@@ -185,6 +184,8 @@ void update_nrnthreads_on_host(NrnThread *threads, int nthreads) {
             acc_update_self(nt->_shadow_d, nt->shadow_rhs_cnt*sizeof(double));
         }
     }
+#endif
+
 }
 
 
@@ -359,4 +360,8 @@ void dump_nt_to_file(char *filename, NrnThread *threads, int nthreads) {
     }
 }
 
-
+void finalize_data_on_device(NrnThread *, int nthreads) {
+   #ifdef _OPENACC
+        acc_shutdown ( acc_device_default);
+    #endif
+}

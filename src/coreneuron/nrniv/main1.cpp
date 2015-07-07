@@ -173,6 +173,8 @@ int main1( int argc, char **argv, char **env )
     // mpi finalize
     nrnmpi_finalize();
 
+    finalize_data_on_device(nrn_threads, nrn_nthread);
+
     return 0;
 }
 
