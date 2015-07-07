@@ -3,6 +3,10 @@
 #include<openacc.h>
 #endif
 
+#ifdef CRAYPAT
+#include <pat_api.h>
+#endif
+
 void mech_state(NrnThread *_nt, Memb_list *ml);
 
 /* note: threads here are corresponding to global nrn_threads array */
@@ -264,6 +268,11 @@ void modify_data_on_device(NrnThread *threads, int nthreads) {
         }
     }
 #endif
+
+    #ifdef CRAYPAT
+      PAT_record(PAT_STATE_ON);
+    #endif
+
     for( i = 0; i < nthreads; i++) {
 
         NrnThread * nt = threads + i;
@@ -280,6 +289,10 @@ void modify_data_on_device(NrnThread *threads, int nthreads) {
           }
        }
     }
+
+    #ifdef CRAYPAT
+      PAT_record(PAT_STATE_OFF);
+    #endif
 }
 
 

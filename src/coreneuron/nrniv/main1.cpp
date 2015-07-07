@@ -138,25 +138,16 @@ int main1( int argc, char **argv, char **env )
     // Report global cell statistics
     report_cell_stats();
 
+    /// Solver execution
+    BBS_netpar_solve( input_params.tstop );
+
     setup_nrnthreads_on_device(nrn_threads, nrn_nthread);
     //dump_nt_to_file("dump_init", nrn_threads, nrn_nthread);
     modify_data_on_device(nrn_threads, nrn_nthread);
 //    update_nrnthreads_on_host(nrn_threads, nrn_nthread);
     //dump_nt_to_file("dump_upd", nrn_threads, nrn_nthread);
 
-    
-    #ifdef CRAYPAT
-        PAT_record(PAT_STATE_ON);
-    #endif
-
-    /// Solver execution
-    BBS_netpar_solve( input_params.tstop );
-
     printf("Threads on the host are updated\n");
-
-    #ifdef CRAYPAT
-        PAT_record(PAT_STATE_OFF);
-    #endif
 
     // prcellstate after end of solver
     if ( input_params.prcellgid >= 0 ) {
