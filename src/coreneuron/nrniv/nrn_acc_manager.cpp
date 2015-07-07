@@ -130,10 +130,233 @@ void setup_nrnthreads_on_device(NrnThread *threads, int nthreads)  {
 #endif
 }
 
-void update_nrnthreads_on_host(NrnThread *nt) {
+void update_nrnthreads_on_host(NrnThread *threads, int nthreads) {
 
 #ifdef _OPENACC
-        printf("\n --- Copying to Host! --- ");
+        printf("\n --- Copying to Host! --- \n");
 #endif
 
+    int i;
+    
+    for( i = 0; i < nthreads; i++) {
+
+        NrnThread * nt = threads + i;
+        
+        /* -- copy data to host -- */
+
+        int ne = nt->end;
+
+        acc_update_self(nt->_actual_rhs, ne*sizeof(double));
+        acc_update_self(nt->_actual_d, ne*sizeof(double));
+        acc_update_self(nt->_actual_a, ne*sizeof(double));
+        acc_update_self(nt->_actual_b, ne*sizeof(double));
+        acc_update_self(nt->_actual_v, ne*sizeof(double));
+        acc_update_self(nt->_actual_area, ne*sizeof(double));
+
+        /* @todo: nt._ml_list[tml->index] = tml->ml; */
+
+        /* -- copy NrnThreadMembList list ml to host -- */
+        NrnThreadMembList* tml;
+        for (tml = nt->tml; tml; tml = tml->next) {
+
+          Memb_list *ml = tml->ml;
+          int type = tml->index;
+          int n = ml->nodecount;
+          int szp = nrn_prop_param_size_[type];
+          int szdp = nrn_prop_dparam_size_[type];
+          int is_art = nrn_is_artificial_[type];
+
+          acc_update_self(ml->data, n*szp*sizeof(double));
+
+          if (!is_art) {
+              acc_update_self(ml->nodeindices, n*sizeof(int));
+          }
+
+          if (szdp) {
+              acc_update_self(ml->pdata, n*szdp*sizeof(int));
+          }
+
+        }
+
+        if(nt->shadow_rhs_cnt) {
+            /* copy shadow_rhs to host */
+            acc_update_self(nt->_shadow_rhs, nt->shadow_rhs_cnt*sizeof(double));
+            /* copy shadow_d to host */
+            acc_update_self(nt->_shadow_d, nt->shadow_rhs_cnt*sizeof(double));
+        }
+    }
 }
+
+
+void modify_data_on_device(NrnThread *threads, int nthreads) {
+
+#ifdef _OPENACC
+        printf("\n --- Modifying data on device! --- \n");
+#endif
+
+    int i, j;
+    
+    for( i = 0; i < nthreads; i++) {
+
+        NrnThread * nt = threads + i;
+        
+        /* -- modify data on device -- */
+
+        int ne = nt->end;
+
+        #pragma acc parallel loop present(nt[0:1])
+        for (j = 0; j < ne; ++j)
+        {
+            nt->_actual_rhs[j] += 0.1;
+            nt->_actual_d[j] += 0.1;
+            nt->_actual_a[j] += 0.1;
+            nt->_actual_b[j] += 0.1;
+            nt->_actual_v[j] += 0.1;
+            nt->_actual_area[j] += 0.1;
+        }
+
+        /* @todo: nt._ml_list[tml->index] = tml->ml; */
+
+        NrnThreadMembList* tml;
+        for (tml = nt->tml; tml; tml = tml->next) {
+
+          Memb_list *ml = tml->ml;
+          int type = tml->index;
+          int n = ml->nodecount;
+          int szp = nrn_prop_param_size_[type];
+          int szdp = nrn_prop_dparam_size_[type];
+          int is_art = nrn_is_artificial_[type];
+
+          #pragma acc parallel loop present(ml[0:1])
+          for (j = 0; j < n*szp; ++j)
+          {
+            ml->data[j] += 0.1; 
+          }
+
+
+          if (!is_art) {
+            #pragma acc parallel loop present(ml[0:1])
+            for (j = 0; j < n; ++j)
+            {
+              ml->nodeindices[j] += 1;
+            }
+          }
+
+          if (szdp) {
+            #pragma acc parallel loop present(ml[0:1])
+            for (j = 0; j < n*szdp; ++j)
+            {
+              ml->pdata[j] += 1;
+            }
+          }
+        }    
+
+        if(nt->shadow_rhs_cnt) {
+            #pragma acc parallel loop present(nt[0:1])
+            for (j = 0; j < nt->shadow_rhs_cnt; ++j)
+            {
+              nt->_shadow_rhs[j] += 0.1;
+              nt->_shadow_d[j] += 0.1;
+            }
+        }
+    }
+}
+
+
+void write_iarray_to_file(FILE *hFile, int *data, int n) {
+    int i;
+
+    for(i=0; i<n; i++) {
+        fprintf(hFile, "%d\n", data[i]);
+    }
+    fprintf(hFile, "---\n");
+}
+
+void write_darray_to_file(FILE *hFile, double *data, int n) {
+    int i;
+
+    for(i=0; i<n; i++) {
+        fprintf(hFile, "%lf\n", data[i]);
+    }
+    fprintf(hFile, "---\n");
+}
+
+void write_nodeindex_to_file(int gid, int id, int *data, int n) {
+    int i;
+    FILE *hFile;
+    char filename[4096];
+
+    sprintf(filename, "%d.%d.index", gid, id);
+    hFile = fopen(filename, "w");
+
+    for(i=0; i<n; i++) {
+        fprintf(hFile, "%d\n", data[i]);
+    }
+
+    fclose(hFile);
+}
+
+
+void dump_nt_to_file(char *filename, NrnThread *threads, int nthreads) {
+ 
+    FILE *hFile;
+    int i, j;
+    
+    NrnThreadMembList* tml;
+
+
+    for( i = 0; i < nthreads; i++) {
+
+      char fname[1024]; 
+      sprintf(fname, "%s%d.dat", filename, i);
+      hFile = fopen(fname, "w");
+
+      NrnThread * nt = threads + i;
+        
+
+      long int offset;
+      int nmech = 0;
+
+
+      int ne = nt->end;
+      fprintf(hFile, "%d\n", nt->_ndata);
+      write_darray_to_file(hFile, nt->_data, nt->_ndata);
+
+      fprintf(hFile, "%d\n", nt->end);
+      for (tml = nt->tml; tml; tml = tml->next, nmech++);
+      fprintf(hFile, "%d\n", nmech);
+
+      offset = nt->end*6;
+
+      for (tml = nt->tml; tml; tml = tml->next) {
+        int type = tml->index;
+        int is_art = nrn_is_artificial_[type];
+        Memb_list* ml = tml->ml;
+        int n = ml->nodecount;
+        int szp = nrn_prop_param_size_[type];
+        int szdp = nrn_prop_dparam_size_[type];
+
+        fprintf(hFile, "%d %d %d %d %d %ld\n", type, is_art, n, szp, szdp, offset);
+        offset += n*szp;
+
+        if (!is_art) {
+            write_iarray_to_file(hFile, ml->nodeindices, ml->nodecount);
+//            write_nodeindex_to_file(gid, type, ml->nodeindices, ml->nodecount);
+        }
+
+        if (szdp) {
+            write_iarray_to_file(hFile, ml->pdata, n*szdp);
+        }
+      }
+
+      if(nt->shadow_rhs_cnt) {
+        write_darray_to_file(hFile, nt->_shadow_rhs, nt->shadow_rhs_cnt);
+        write_darray_to_file(hFile, nt->_shadow_d, nt->shadow_rhs_cnt);
+      }
+
+      fclose(hFile);
+
+    }
+}
+
+
