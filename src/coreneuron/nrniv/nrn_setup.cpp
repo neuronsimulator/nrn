@@ -573,6 +573,8 @@ void read_phase2(data_reader &F, NrnThread& nt) {
   NrnThreadMembList* tml_last = NULL;
   nt._ml_list = (Memb_list**)ecalloc(n_memb_func, sizeof(Memb_list*));
   int shadow_rhs_cnt = 0;
+  nt.shadow_rhs_cnt = 0;
+
   for (int i=0; i < nmech; ++i) {
     tml = (NrnThreadMembList*)emalloc(sizeof(NrnThreadMembList));
     tml->ml = (Memb_list*)emalloc(sizeof(Memb_list));
@@ -596,6 +598,7 @@ void read_phase2(data_reader &F, NrnThread& nt) {
   }
 
   if (shadow_rhs_cnt) {
+    nt.shadow_rhs_cnt = shadow_rhs_cnt;
     nt._shadow_rhs = (double*)ecalloc(shadow_rhs_cnt, sizeof(double));
     nt._shadow_d = (double*)ecalloc(shadow_rhs_cnt, sizeof(double));
   }

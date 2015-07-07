@@ -32,6 +32,7 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/utils/randoms/nrnran123.h"
 #include "coreneuron/utils/sdprintf.h"
 #include "coreneuron/nrniv/nrn_stats.h"
+#include "coreneuron/nrniv/nrn_acc_manager.h"
 
 #ifdef CRAYPAT
 #include <pat_api.h>
@@ -137,6 +138,8 @@ int main1( int argc, char **argv, char **env )
     // Report global cell statistics
     report_cell_stats();
 
+    setup_nrnthreads_on_device(nrn_threads, nrn_nthread);
+    
     #ifdef CRAYPAT
         PAT_record(PAT_STATE_ON);
     #endif

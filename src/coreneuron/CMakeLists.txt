@@ -44,6 +44,7 @@ nrniv/sptbinq.h
 nrniv/sptree.h
 nrniv/tqueue.h
 nrniv/vrecitem.h
+nrniv/nrn_acc_manager.h
 mech/cfile/cabvars.h
 )
 
@@ -78,6 +79,7 @@ nrniv/nrnoptarg.cpp
 nrniv/output_spikes.cpp
 nrniv/patternstim.cpp
 nrniv/vrecord.cpp
+nrniv/nrn_acc_manager.cpp
 utils/randoms/nrnran123.c
 utils/memory_utils.cpp
 utils/sdprintf.cpp

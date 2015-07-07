@@ -75,6 +75,7 @@ typedef struct NrnThread {
 	double* _actual_area;
 	double* _shadow_rhs; /* Not pointer into _data. Avoid race for multiple POINT_PROCESS in same compartment */
 	double* _shadow_d; /* Not pointer into _data. Avoid race for multiple POINT_PROCESS in same compartment */
+    int shadow_rhs_cnt; /* added to facilitate the NrnThread transfer to GPU */
 	int* _v_parent_index;
 	char* _sp13mat; /* handle to general sparse matrix */
 	struct Memb_list* _ecell_memb_list; /* normally nil */
