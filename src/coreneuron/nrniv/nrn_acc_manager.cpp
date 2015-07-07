@@ -7,7 +7,7 @@
 #include <pat_api.h>
 #endif
 
-void mech_state(NrnThread *_nt, Memb_list *ml);
+void mech_state(NrnThread *_nt, Memb_list *ml, int type);
 
 /* note: threads here are corresponding to global nrn_threads array */
 void setup_nrnthreads_on_device(NrnThread *threads, int nthreads)  {
@@ -285,7 +285,7 @@ void modify_data_on_device(NrnThread *threads, int nthreads) {
             printf("\n\n ------------- State for %d nodes ------------- \n\n", tml->ml->nodecount);
             Memb_list *ml = tml->ml;
  
-            mech_state(nt, ml);
+            mech_state(nt, ml, tml->index);
           }
        }
     }
@@ -399,7 +399,7 @@ void finalize_data_on_device(NrnThread *, int nthreads) {
 }
 
 
-void mech_state(NrnThread *_nt, Memb_list *ml)
+void mech_state(NrnThread *_nt, Memb_list *ml, int type)
 {
     double _v, v;
     int i, j;
@@ -419,9 +419,10 @@ void mech_state(NrnThread *_nt, Memb_list *ml)
 
     printf("The number of mechanisms to be solved is: %d\n", _cntml);
 
+    int szp = nrn_prop_param_size_[type];
+    int szdp = nrn_prop_dparam_size_[type];
 
-
-#pragma acc parallel loop present(_ni[0:_cntml], _nt_data[0:_nt->_ndata], _p[ml->nodecount*ml->szp], _ppvar[0:_cntml*ml->szdp], _vec_v[0:_num_compartment])
+#pragma acc parallel loop present(_ni[0:_cntml], _nt_data[0:_nt->_ndata], _p[ml->nodecount*szp], _ppvar[0:_cntml*szdp], _vec_v[0:_num_compartment])
 
     for (int _iml = 0; _iml < _cntml; ++_iml)
     {
@@ -431,6 +432,7 @@ void mech_state(NrnThread *_nt, Memb_list *ml)
 
         _p[3*_cntml + _iml] = _nt_data[_ppvar[0*_cntml + _iml]];
         double _lmAlpha , _lmBeta , _lmInf , _lmTau , _lhAlpha , _lhBeta , _lhInf , _lhTau , _llv=0.0 , _lqt=0.0 ;
+        _llv=_v;
         _lmAlpha = ( 0.182 * ( _llv - - 32.0 ) ) / ( 1.0 - ( exp ( - ( _llv - - 32.0 ) / 6.0 ) ) ) ;
         _lmBeta = ( 0.124 * ( - _llv - 32.0 ) ) / ( 1.0 - ( exp ( - ( - _llv - 32.0 ) / 6.0 ) ) ) ;
         _lmInf = _lmAlpha / ( _lmAlpha + _lmBeta ) ;
