@@ -17,6 +17,7 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/nrnconf.h"
 #include "coreneuron/nrnoc/multicore.h"
 #include "coreneuron/nrnoc/nrnoc_decl.h"
+#include "coreneuron/nrniv/nrn_acc_manager.h"
 
 /*
 Fixed step method with threads and cache efficiency. No extracellular,
@@ -47,6 +48,9 @@ hoc_warning("errno set during calculation of currents", (char*)0);
 		}
 #endif
 	}
+
+        update_matrix_from_gpu(_nt);
+
 	/* now the internal axial currents.
 	The extracellular mechanism contribution is already done.
 		rhs += ai_j*(vi_j - vi)

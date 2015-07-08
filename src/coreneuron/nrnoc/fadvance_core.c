@@ -18,6 +18,7 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/nrnoc/multicore.h"
 #include "coreneuron/nrnmpi/nrnmpi.h"
 #include "coreneuron/nrnoc/nrnoc_decl.h"
+#include "coreneuron/nrniv/nrn_acc_manager.h"
 
 static void* nrn_fixed_step_thread(NrnThread*);
 static void* nrn_fixed_step_group_thread(NrnThread*);
@@ -124,6 +125,8 @@ hoc_warning("errno set during calculation of states", (char*)0);
 		}
 #endif
 	}
+
+        update_matrix_to_gpu(_nt);
 }
 
 void nrn_ba(NrnThread* nt, int bat){
@@ -140,12 +143,20 @@ static void* nrn_fixed_step_thread(NrnThread* nth) {
 	deliver_net_events(nth);
 	nrn_random_play(nth);
 	nth->_t += .5 * nth->_dt;
+
+#ifdef _OPENACC
+acc_update_device(&nth->_t, sizeof(double));
+#endif
 	fixed_play_continuous(nth);
 	setup_tree_matrix_minimal(nth);
 	nrn_solve_minimal(nth);
 	second_order_cur(nth);
 	update(nth);
 	nth->_t += .5 * nth->_dt;
+
+#ifdef _OPENACC
+acc_update_device(&nth->_t, sizeof(double));
+#endif
 	fixed_play_continuous(nth);
 	nonvint(nth);
 	nrn_ba(nth, AFTER_SOLVE);

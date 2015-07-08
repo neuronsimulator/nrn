@@ -257,7 +257,34 @@ void update_nrnthreads_on_device(NrnThread *threads, int nthreads) {
 
 }
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
+void update_matrix_from_gpu(NrnThread *_nt){
+#ifdef _OPENACC
+  if (!_nt->compute_gpu)
+    return;
+
+//  printf("UPDATING MATRIX VALUES ON HOST\n");
+  acc_update_self(_nt->_actual_rhs, _nt->end*sizeof(double));
+  acc_update_self(_nt->_actual_d, _nt->end*sizeof(double));
+#endif
+}
+
+void update_matrix_to_gpu(NrnThread *_nt){
+#ifdef _OPENACC
+  if (!_nt->compute_gpu)
+    return;
+
+//  printf("UPDATING MATRIX VALUES ON GPU\n");
+  acc_update_device(_nt->_actual_v, _nt->end*sizeof(double));
+#endif
+}
+
+#ifdef __cplusplus
+}
+#endif
 
 void modify_data_on_device(NrnThread *threads, int nthreads) {
 
