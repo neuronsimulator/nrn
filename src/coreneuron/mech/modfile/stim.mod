@@ -26,9 +26,6 @@ INITIAL {
 }
 
 BREAKPOINT {
-	at_time(del)
-	at_time(del+dur)
-
 	if (t < del + dur && t >= del) {
 		i = amp
 	}else{

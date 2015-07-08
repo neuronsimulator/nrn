@@ -133,7 +133,6 @@ extern void net_send(void**, double*, Point_process*, double, double);
 extern void artcell_net_send(void**, double*, Point_process*, double, double);
 extern void hoc_malchk(void); /* just a stub */
 extern void* hoc_Emalloc(size_t);
-extern int at_time(struct NrnThread*, double);
 
 #if defined(__cplusplus)
 }
