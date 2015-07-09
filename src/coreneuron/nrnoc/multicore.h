@@ -85,6 +85,7 @@ typedef struct NrnThread {
 
         int shadow_rhs_cnt; /* added to facilitate the NrnThread transfer to GPU */
         int compute_gpu; /* define whether to compute with gpus */
+        int stream_id; /* define where the kernel will be launched on GPU stream */
 } NrnThread;
 
 extern void nrn_threads_create(int n, int parallel);

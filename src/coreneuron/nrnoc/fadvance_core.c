@@ -126,6 +126,7 @@ hoc_warning("errno set during calculation of states", (char*)0);
 #endif
 	}
 
+    #pragma acc wait(_nt->stream_id)
         update_matrix_to_gpu(_nt);
 }
 
@@ -144,9 +145,11 @@ static void* nrn_fixed_step_thread(NrnThread* nth) {
 	nrn_random_play(nth);
 	nth->_t += .5 * nth->_dt;
 
-#ifdef _OPENACC
-acc_update_device(&nth->_t, sizeof(double));
-#endif
+/*@todo: do we need to update nth->_t on GPU */
+//#ifdef _OPENACC
+//acc_update_device(&nth->_t, sizeof(double));
+//#endif
+
 	fixed_play_continuous(nth);
 	setup_tree_matrix_minimal(nth);
 	nrn_solve_minimal(nth);
@@ -154,9 +157,11 @@ acc_update_device(&nth->_t, sizeof(double));
 	update(nth);
 	nth->_t += .5 * nth->_dt;
 
-#ifdef _OPENACC
-acc_update_device(&nth->_t, sizeof(double));
-#endif
+/*@todo: do we need to update nth->_t on GPU */
+//#ifdef _OPENACC
+//acc_update_device(&nth->_t, sizeof(double));
+//#endif
+
 	fixed_play_continuous(nth);
 	nonvint(nth);
 	nrn_ba(nth, AFTER_SOLVE);

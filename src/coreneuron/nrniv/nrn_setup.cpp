@@ -576,6 +576,12 @@ void read_phase2(data_reader &F, NrnThread& nt) {
   nt.shadow_rhs_cnt = 0;
   nt.compute_gpu = 0;
 
+  nt.stream_id = 0;
+
+#if defined(_OPENMP)
+  nt.stream_id = omp_get_thread_num(); 
+#endif
+
   for (int i=0; i < nmech; ++i) {
     tml = (NrnThreadMembList*)emalloc(sizeof(NrnThreadMembList));
     tml->ml = (Memb_list*)emalloc(sizeof(Memb_list));
@@ -596,6 +602,14 @@ void read_phase2(data_reader &F, NrnThread& nt) {
       nt.tml = tml;
     }
     tml_last = tml;
+
+#define STREAM_PER_KERNEL 1
+
+#if defined(STREAM_PER_KERNEL)
+//  nt.stream_id = tml->index + 100*nt.stream_id; 
+//  printf("\n ------------->Stream Id: %d", 
+#endif
+
   }
 
   if (shadow_rhs_cnt) {

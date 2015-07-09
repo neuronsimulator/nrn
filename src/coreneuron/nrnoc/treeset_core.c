@@ -48,7 +48,7 @@ hoc_warning("errno set during calculation of currents", (char*)0);
 		}
 #endif
 	}
-
+        #pragma acc wait(_nt->stream_id)
         update_matrix_from_gpu(_nt);
 
 	/* now the internal axial currents.

@@ -266,9 +266,10 @@ void update_matrix_from_gpu(NrnThread *_nt){
   if (!_nt->compute_gpu)
     return;
 
-//  printf("UPDATING MATRIX VALUES ON HOST\n");
-  acc_update_self(_nt->_actual_rhs, _nt->end*sizeof(double));
-  acc_update_self(_nt->_actual_d, _nt->end*sizeof(double));
+  // RHS and D are contigious, copy them in one go!
+  //  printf("UPDATING MATRIX VALUES ON HOST\n");
+  acc_update_self(_nt->_actual_rhs, 2*_nt->end*sizeof(double));
+  //  acc_update_self(_nt->_actual_d, _nt->end*sizeof(double));
 #endif
 }
 
