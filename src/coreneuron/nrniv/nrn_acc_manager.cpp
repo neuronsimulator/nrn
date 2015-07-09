@@ -268,6 +268,9 @@ void update_matrix_from_gpu(NrnThread *_nt){
 
   // RHS and D are contigious, copy them in one go!
   //  printf("UPDATING MATRIX VALUES ON HOST\n");
+  // printf("\n -> Copying Data from stream %d", _nt->stream_id);
+  //#pragma acc update host(_nt->_actual_rhs[0:2*_nt->end]) async(_nt->stream_id)
+  //#pragma acc wait(_nt->stream_id)
   acc_update_self(_nt->_actual_rhs, 2*_nt->end*sizeof(double));
   //  acc_update_self(_nt->_actual_d, _nt->end*sizeof(double));
 #endif
@@ -278,8 +281,12 @@ void update_matrix_to_gpu(NrnThread *_nt){
   if (!_nt->compute_gpu)
     return;
 
+   //printf("\n -> Pushing Data to stream %d", _nt->stream_id);
 //  printf("UPDATING MATRIX VALUES ON GPU\n");
-  acc_update_device(_nt->_actual_v, _nt->end*sizeof(double));
+   acc_update_device(_nt->_actual_v, _nt->end*sizeof(double));
+  //#pragma acc update device(_nt->_actual_v[0:_nt->end]) async(_nt->stream_id+1)
+  //#pragma acc update device(_nt->_actual_v[0:_nt->end])
+  //#pragma acc wait
 #endif
 }
 
