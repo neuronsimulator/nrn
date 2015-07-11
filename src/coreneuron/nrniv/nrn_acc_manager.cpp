@@ -34,8 +34,16 @@ void setup_nrnthreads_on_device(NrnThread *threads, int nthreads)  {
 
         /* -- copy _data to device -- */
 
+
         /*copy all double data for thread */
         d__data = (double *) acc_copyin(nt->_data, nt->_ndata*sizeof(double));
+        
+        /* you could use the pragma as : */
+        /* Ben: not allowed to use nt->_data */
+        //double *dtmp = nt->_data;
+        //#pragma acc enter data copyin(dtmp[0:nt->_ndata]) async(nt->stream_id)
+        //#pragma acc wait(nt->stream_id)
+        //d__data = (double *)acc_deviceptr(nt->_data);
 
         /*update d_nt._data to point to device copy */
         acc_memcpy_to_device(&(d_nt->_data), &d__data, sizeof(double*));
@@ -62,7 +70,6 @@ void setup_nrnthreads_on_device(NrnThread *threads, int nthreads)  {
         acc_memcpy_to_device(&(d_nt->_actual_area), &(dptr), sizeof(double*));
 
         /* @todo: nt._ml_list[tml->index] = tml->ml; */
-
 
         /* -- copy NrnThreadMembList list ml to device -- */
 
@@ -96,7 +103,6 @@ void setup_nrnthreads_on_device(NrnThread *threads, int nthreads)  {
             d_ml = (Memb_list *) acc_copyin(tml->ml, sizeof(Memb_list));
             acc_memcpy_to_device(&(d_tml->ml), &d_ml, sizeof(Memb_list*));
 
-
             dptr = d__data+offset;
 
             acc_memcpy_to_device(&(d_ml->data), &(dptr), sizeof(double*));
@@ -118,7 +124,6 @@ void setup_nrnthreads_on_device(NrnThread *threads, int nthreads)  {
                 int * d_pdata = (int *) acc_copyin(tml->ml->pdata, sizeof(int)*n*szdp);
                 acc_memcpy_to_device(&(d_ml->pdata), &d_pdata, sizeof(int*));
             }
-
         }
 
         if(nt->shadow_rhs_cnt) {
@@ -267,12 +272,10 @@ void update_matrix_from_gpu(NrnThread *_nt){
     return;
 
   // RHS and D are contigious, copy them in one go!
-  //  printf("UPDATING MATRIX VALUES ON HOST\n");
-  // printf("\n -> Copying Data from stream %d", _nt->stream_id);
-  //#pragma acc update host(_nt->_actual_rhs[0:2*_nt->end]) async(_nt->stream_id)
-  //#pragma acc wait(_nt->stream_id)
-  acc_update_self(_nt->_actual_rhs, 2*_nt->end*sizeof(double));
-  //  acc_update_self(_nt->_actual_d, _nt->end*sizeof(double));
+  //acc_update_self(_nt->_actual_rhs, 2*_nt->end*sizeof(double));
+  double *rhs = _nt->_actual_rhs;
+  #pragma acc update host(rhs[0:2*_nt->end]) async(_nt->stream_id)
+  #pragma acc wait(_nt->stream_id)
 #endif
 }
 
@@ -281,12 +284,10 @@ void update_matrix_to_gpu(NrnThread *_nt){
   if (!_nt->compute_gpu)
     return;
 
-   //printf("\n -> Pushing Data to stream %d", _nt->stream_id);
-//  printf("UPDATING MATRIX VALUES ON GPU\n");
-   acc_update_device(_nt->_actual_v, _nt->end*sizeof(double));
-  //#pragma acc update device(_nt->_actual_v[0:_nt->end]) async(_nt->stream_id+1)
-  //#pragma acc update device(_nt->_actual_v[0:_nt->end])
-  //#pragma acc wait
+  //acc_update_device(_nt->_actual_v, _nt->end*sizeof(double));
+  double *v = _nt->_actual_v;
+  #pragma acc update device(v[0:_nt->end]) async(_nt->stream_id)
+  #pragma acc wait(_nt->stream_id)
 #endif
 }
 
