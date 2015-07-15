@@ -149,6 +149,7 @@ if test "$PARANEURON"="yes" ; then
 	mpiinstalled=/c/ms-mpi
 	# gforker
 	cp $mpiinstalled/bin/mpiexec.exe $DB
+	cp $mpiinstalled/bin/smpd.exe $DB
 	#cp /c/Windows/System32/mpich2mpi.dll $DB
 	#cp $S/../mpich2mpi.dll $DB
 	if test $host_cpu = x86_64 ; then
