@@ -274,6 +274,13 @@ extern int (*iv_bind_enqueue_)(void* w, int type);
 extern void iv_bind_call(void* w, int type);
 static VoidPQueue* bindq_;
 
+int nrn_is_gui_thread() {
+	if (bindq_ && GetCurrentThreadId() != bind_tid_) {
+		return 0;
+	}
+	return 1;
+}
+
 static int iv_bind_enqueue(void* w, int type) {
 	//printf("iv_bind_enqueue %p thread %d\n", w, GetCurrentThreadId());
 	if (GetCurrentThreadId() == bind_tid_) {
@@ -305,6 +312,6 @@ ENDGUI
 }
 } // end of extern "C"
 
-#endif
+#endif // MINGW
 
 #endif //HAVE_IV

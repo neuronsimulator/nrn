@@ -451,11 +451,15 @@ void single_event_run() {
 }
 
 #ifdef MINGW
-extern "C" {extern void nrniv_bind_call(void);}
+extern "C" {
+extern void nrniv_bind_call(void);
+extern int nrn_is_gui_thread(void);
+}
 #endif
 
 void hoc_notify_iv() { IFGUI
 #ifdef MINGW
+	if (!nrn_is_gui_thread()) { hoc_pushx(0.); hoc_ret(); return; }
 	nrniv_bind_call();
 #endif
 	Resource::flush();
