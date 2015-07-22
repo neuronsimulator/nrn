@@ -1,6 +1,6 @@
 
-NEURON 7.3 documentation
-========================
+NEURON documentation
+====================
 
 Quick Links
 -----------
