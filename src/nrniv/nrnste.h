@@ -10,6 +10,7 @@
 
 class HocCommand;
 class StateTransitionEvent;
+class STECondition;
 
 declarePtrList(STEList, StateTransitionEvent)
 
@@ -17,23 +18,24 @@ class STETransition {
 public:
 	STETransition();
 	virtual ~STETransition();
-	bool condition(double& tr);
+	void event(); // from STECondition::deliver
+	virtual double value() { return *var1_ - *var2_;}
+	void activate(); // add ste_ to watch list
+	void deactivate(); // remove ste_ from watch list
 
-	int dest_;
 	double* var1_;
 	double* var2_;
-	double oldval1_;
-	double oldval2_;
-	int order_;
-	HocCommand* stmt_;
+	HocCommand* hc_;
+	StateTransitionEvent* ste_;
+	STECondition* stec_;
+	int dest_;
+	bool var1_is_time_;
 };
 
 class STEState {
 public:
 	STEState();
 	virtual ~STEState();
-	int condition(double& tr);
-	void execute(int);
 	STETransition* add_transition();
 	int ntrans_;
 	STETransition* transitions_;
@@ -41,24 +43,17 @@ public:
 
 class StateTransitionEvent {
 public:
-	StateTransitionEvent(int nstate);
+	StateTransitionEvent(int nstate, Point_process*);
 	virtual ~StateTransitionEvent();
-	void transition(int src, int dest, double* var1, double* var2,
-		int order, const char* stmt, Object* obj);
-	void state(int i){istate_ = i;}
+	void transition(int src, int dest, double* var1, double* var2, HocCommand*);
+	void state(int i); // set current state  -- update watch list.
 	int state(){return istate_;}
 	int nstate() { return nstate_;}
-	// return transition index for istate_
-	//if tr < t then request retreat
-	int condition(double& tr) { return states_[istate_].condition(tr); }
-	// make the transition.
- 	void execute(int);
-	static STEList* stelist_;
-	static void stelist_change(); // implemented in netcvode.cpp
-private:
+
 	int nstate_;
 	int istate_;
 	STEState* states_;
+	Point_process* pnt_;
 };
 
 

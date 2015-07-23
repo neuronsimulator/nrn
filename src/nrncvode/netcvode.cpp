@@ -1385,11 +1385,6 @@ void NetCvode::del_cv_memb_list(Cvode* cvode) {
 			delete z.psl_th_;
 			z.psl_th_ = nil;
 		}
-		if (z.ste_list_ && z.ste_list_ != StateTransitionEvent::stelist_) {
-			z.ste_list_->remove_all();
-			delete z.ste_list_;
-			z.ste_list_ = nil;
-		}
 		if (cvode != gcv_) {
 			if (z.v_node_) {
 				delete [] z.v_node_;
@@ -1558,8 +1553,6 @@ bool NetCvode::init_global() {
 		del_cv_memb_list();
 		Cvode& cv = *gcv_;
 		distribute_dinfo(nil, 0);
-		// share the main stelist
-		cv.ctd_->ste_list_ = StateTransitionEvent::stelist_;
 	    FOR_THREADS(_nt) {
 		CvodeThreadData& z = cv.ctd_[_nt->id];
 		z.rootnodecount_ = _nt->ncell;
@@ -5101,7 +5094,7 @@ void ConditionEvent::check(NrnThread* nt, double tt, double teps) {
 	}
 }
 
-ConditionEvent::ConditionEvent() {}
+ConditionEvent::ConditionEvent() {qthresh_ = NULL;}
 ConditionEvent::~ConditionEvent() {}
 
 void ConditionEvent::condition(Cvode* cv) { //logic for high order threshold detection
@@ -5153,6 +5146,11 @@ void ConditionEvent::condition(Cvode* cv) { //logic for high order threshold det
 	told_ = nt->_t;
 }
 
+double STECondition::value() {
+  double val = stet_->value();
+  return val;
+}
+
 void ConditionEvent::abandon_statistics(Cvode* cv) {
 #if 1
 //printf("ConditionEvent::condition %s t=%20.15g abandon event at %20.15g\n", ssrc_?secname(ssrc_):"", t, qthresh_->t_);
@@ -5191,14 +5189,34 @@ WatchCondition::~WatchCondition() {
 	Remove();
 }
 
+// A WatchCondition but with different deliver
+STECondition::STECondition(Point_process* pnt, double(*c)(Point_process*))
+ : WatchCondition(pnt, c)
+{
+//printf("STECondition\n");
+}
+
+STECondition::~STECondition() {
+//printf("~STECondition\n");
+}
+
 void WatchCondition::activate(double flag) {
+	Cvode* cv = NULL;
+	int id = 0;
 	qthresh_ = nil;
 	flag_ = (value() > 0.) ? true: false;
 	valthresh_ = 0.;
 	nrflag_ = flag;
-	Cvode* cv = (Cvode*)pnt_->nvi_;
+	if (!pnt_) { // possible for StateTransitionEvent
+		// but only if 1 thread and no lvardt
+		assert(nrn_nthread == 1);
+		assert(net_cvode_instance->localstep() == false);
+		cv = net_cvode_instance->gcv_;
+	}else{
+		cv = (Cvode*)pnt_->nvi_;
+	}
 	assert(cv);
-	int id = (cv->nctd_ > 1) ? thread()->id : 0;
+	id = (cv->nctd_ > 1) ? thread()->id : 0;
 	HTList*& wl = cv->ctd_[id].watch_list_;
 	if (!wl) {
 		wl = new HTList(nil);
@@ -5244,7 +5262,76 @@ hoc_warning("errno set during WatchCondition deliver to NET_RECEIVE", (char*)0);
 	}
 }
 
+void StateTransitionEvent::transition(int src, int dest,
+  double* var1, double* var2,
+  HocCommand* hc
+){
+  STETransition* st = states_[src].add_transition();
+  st->dest_ = dest;
+  st->var1_ = var1;
+  st->var2_ = var2;
+  st->hc_ = hc;
+  st->ste_ = (StateTransitionEvent*)this;
+  st->stec_ = new STECondition(pnt_, NULL);
+  st->stec_->stet_ = st;
+  if (st->var1_ == &t) {
+    st->var1_is_time_ = true;
+  }
+}
+
+void STETransition::activate() {
+  if (var1_is_time_) {
+    var1_ = &stec_->thread()->_t;
+  }
+  stec_->activate(0);
+}
+
+void STETransition::deactivate() {
+  if (stec_->qthresh_) { // is it on the queue
+    net_cvode_instance->remove_event(stec_->qthresh_, PP2NT(ste_->pnt_)->id);
+    stec_->qthresh_ = NULL;
+  }
+  stec_->Remove();
+}
+
+void STECondition::deliver(double tt, NetCvode* ns, NrnThread* nt) {
+	if (qthresh_) {
+		qthresh_ = nil;
+		STATISTICS(deliver_qthresh_);
+	}
+    if (!pnt_) {
+	assert(nrn_nthread == 1 && ns->localstep() == false);
+	if (cvode_active_) {
+		Cvode* cv = ns->gcv_;
+		ns->local_retreat(tt, cv);
+		cv->set_init_flag();
+	}else{
+		nt->_t = tt;
+	}
+    }else{
+	Cvode* cv = (Cvode*)pnt_->nvi_;
+	if (cvode_active_ && cv) {
+		ns->local_retreat(tt, cv);
+		cv->set_init_flag();
+	}else{
+		PP2t(pnt_) = tt;
+	}
+    }
+	STATISTICS(watch_deliver_);
+	t == tt;
+	stet_->event();
+}
+
 NrnThread* WatchCondition::thread() { return PP2NT(pnt_); }
+
+NrnThread* STECondition::thread() {
+  if (pnt_) {
+    return PP2NT(pnt_);
+  }else{
+    assert(nrn_nthread == 1);
+    return nrn_threads;
+  }
+}
 
 void WatchCondition::pgvts_deliver(double tt, NetCvode* ns) {
 	NrnThread* nt;
@@ -5263,80 +5350,26 @@ hoc_warning("errno set during WatchCondition deliver to NET_RECEIVE", (char*)0);
 	}
 }
 
+void STECondition::pgvts_deliver(double tt, NetCvode* ns) {
+	NrnThread* nt;
+	assert(0);
+	if (qthresh_) {
+		qthresh_ = nil;
+		STATISTICS(deliver_qthresh_);
+	}
+	int type = pnt_->prop->type;
+	STATISTICS(watch_deliver_);
+	stet_->event();
+	if (errno) {
+		if (nrn_errno_check(type)) {
+hoc_warning("errno set during STECondition pgvts_deliver to NET_RECEIVE", (char*)0);
+		}
+	}
+}
+
 void WatchCondition::pr(const char* s, double tt, NetCvode* ns) {
 	printf("%s", s);
 	printf(" WatchCondition %s %.15g flag=%g\n", hoc_object_name(pnt_->ob), tt, nrflag_);
-}
-
-void Cvode::ste_check() {
-	int i;
-	STEList* stel = ctd_[0].ste_list_;
-	if (stel) {
-		bool b = true;
-		int cnt = stel->count();
-		double tstart = t_;
-		while (b) { // until no more ste transitions
-			StateTransitionEvent* ste;
-			int itrans, itsav, isav;
-			double tr = t_;
-			double trsav = tr+1.;
-			b = false;
-			// earliest ste transition gets done first
-			for (i=0; i < cnt; ++i) {
-				ste = stel->item(i);
-				itrans = ste->condition(tr);
-				if (itrans != -1 && tr < trsav) {
-					b = true;
-					isav = i;
-					itsav = itrans;
-					trsav = tr;
-				}			
-			}
-			if (b) {
-				ste = stel->item(isav);
-				if (trsav < tstart) {
-					// second order implemented only for recording.
-					interpolate(trsav);
-					ste->execute(itsav);
-					interpolate(tstart);
-				}else{
-					ste->execute(itsav);
-				}
-			}
-		}
-	}
-}
-
-void NetCvode::ste_check() { // for fixed step
-	int i;
-	STEList* stel = StateTransitionEvent::stelist_;
-	if (stel) {
-		bool b = true;
-		int cnt = stel->count();
-		double tstart = nt_t;
-		while (b) { // until no more ste transitions
-			StateTransitionEvent* ste;
-			int itrans, itsav, isav;
-			double tr = nt_t;
-			double trsav = tr+1.;
-			b = false;
-			// earliest ste transition gets done first
-			for (i=0; i < cnt; ++i) {
-				ste = stel->item(i);
-				itrans = ste->condition(tr);
-				if (itrans != -1 && tr < trsav) {
-					b = true;
-					isav = i;
-					itsav = itrans;
-					trsav = tr;
-				}			
-			}
-			if (b) {
-				ste = stel->item(isav);
-				ste->execute(itsav);
-			}
-		}
-	}
 }
 
 static Cvode* eval_cv;
@@ -5355,7 +5388,6 @@ void Cvode::evaluate_conditions(NrnThread* nt) {
 	}
 	CvodeThreadData& z = CTD(nt->id);
 	int i;
-	if (nt->id == 0) {net_cvode_instance->ste_check();}
 	if (z.psl_th_) {
 		for (i = z.psl_th_->count()-1; i >= 0; --i) {
 			z.psl_th_->item(i)->condition( this);
@@ -5383,7 +5415,6 @@ void Cvode::check_deliver(NrnThread* nt) {
 	}
 	CvodeThreadData& z = CTD(nt->id);
 	int i;
-	net_cvode_instance->ste_check();
 	if (z.psl_th_) {
 		for (i = z.psl_th_->count()-1; i >= 0; --i) {
 			z.psl_th_->item(i)->check(nt, nt->_t);
@@ -5424,7 +5455,6 @@ void NetCvode::fixed_play_continuous(NrnThread* nt) {
 void NetCvode::check_thresh(NrnThread* nt) { // for default method
 	int i;
 
-	ste_check();
 	hoc_Item* pth = p[nt->id].psl_thr_;
 
 	if (pth) { /* only look at ones with a threshold */
@@ -5443,7 +5473,8 @@ void NetCvode::check_thresh(NrnThread* nt) { // for default method
 		HTList* wl = wl_list_->item(i);
 		for (HTList* item = wl->First(); item != wl->End(); item = item->Next()) {
 		    WatchCondition* wc = (WatchCondition*)item;
-		    if (PP2NT(wc->pnt_) == nt) {
+		    NrnThread* nt1 = wc->pnt_ ? PP2NT(wc->pnt_) : nrn_threads;
+		    if (nt1 == nt) {
 			wc->check(nt, nt->_t);
 		    }
 		}
@@ -5871,18 +5902,6 @@ hoc_execerror("We were unable to associate a PlayRecord item with a thread", nil
 		pr->ith_ = i;
 	}
 	playrec_change_cnt_ = structure_change_cnt_;
-}
-
-void StateTransitionEvent::stelist_change() {
-	net_cvode_instance->stelist_change();
-}
-
-void NetCvode::stelist_change() {
-	if (localstep()) {
-		structure_change_cnt_ = 0;
-	} else if (gcv_ && gcv_->ctd_[0].ste_list_ == nil) {
-		structure_change_cnt_ = 0;
-	}
 }
 
 bool Cvode::is_owner(double* pd) { // is a pointer to range variable in this cell

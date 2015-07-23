@@ -120,8 +120,6 @@ public:
 	void play_init();
 	void fixed_record_continuous(NrnThread*);
 	void fixed_play_continuous(NrnThread*);
-	void stelist_change();
-	void ste_check(); // for fixed step;
 	static double eps(double x) { return eps_*Math::abs(x); }
 	int condition_order() { return condition_order_; }
 	void condition_order(int i) { condition_order_ = i; }
