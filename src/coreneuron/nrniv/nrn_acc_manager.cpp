@@ -138,6 +138,7 @@ void setup_nrnthreads_on_device(NrnThread *threads, int nthreads)  {
             acc_memcpy_to_device(&(d_nt->_shadow_d), &d_shadow_ptr, sizeof(double*));
         }
         nt->compute_gpu = 1;
+        //nt->compute_gpu = 0;
     }
 
 #endif
@@ -271,6 +272,7 @@ void update_matrix_from_gpu(NrnThread *_nt){
   if (!_nt->compute_gpu)
     return;
 
+  printf("\n Copying matrix to GPU ... ");
   // RHS and D are contigious, copy them in one go!
   //acc_update_self(_nt->_actual_rhs, 2*_nt->end*sizeof(double));
   double *rhs = _nt->_actual_rhs;
@@ -284,6 +286,7 @@ void update_matrix_to_gpu(NrnThread *_nt){
   if (!_nt->compute_gpu)
     return;
 
+  printf("\n Copying voltage to GPU ... ");
   //acc_update_device(_nt->_actual_v, _nt->end*sizeof(double));
   double *v = _nt->_actual_v;
   #pragma acc update device(v[0:_nt->end]) async(_nt->stream_id)
