@@ -26,8 +26,9 @@ INITIAL {
 }
 
 BREAKPOINT {
-	at_time(del)
-	at_time(del+dur)
+    : for fixed step methos, we can ignore at_time, was introduced for variable timestep, will be deprecated anyway. 
+	: at_time(del)
+	: at_time(del+dur)
 
 	if (t < del + dur && t >= del) {
 		i = amp
