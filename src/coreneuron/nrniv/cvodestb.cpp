@@ -85,4 +85,12 @@ void nrn_random_play(NrnThread* nt) {
 	return;
 }
 
+int at_time(NrnThread* nt, double te) {
+       double x = te - 1e-11;
+       if (x <= nt->_t && x > (nt->_t - nt->_dt)) {
+               return 1;
+       }
+       return 0;
+}
+
 }

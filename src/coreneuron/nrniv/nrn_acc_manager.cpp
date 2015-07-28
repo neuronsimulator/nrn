@@ -139,6 +139,7 @@ void setup_nrnthreads_on_device(NrnThread *threads, int nthreads)  {
         }
         nt->compute_gpu = 1;
         //nt->compute_gpu = 0;
+        printf("\n Compute thread on GPU? : %s, Stream : %d", (nt->compute_gpu)? "Yes" : "No", nt->stream_id);
     }
 
 #endif
