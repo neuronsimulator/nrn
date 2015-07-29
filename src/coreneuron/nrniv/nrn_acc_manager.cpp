@@ -137,8 +137,22 @@ void setup_nrnthreads_on_device(NrnThread *threads, int nthreads)  {
             d_shadow_ptr = (double *) acc_copyin(nt->_shadow_d, nt->shadow_rhs_cnt*sizeof(double));
             acc_memcpy_to_device(&(d_nt->_shadow_d), &d_shadow_ptr, sizeof(double*));
         }
+        
+        nt->compute_gpu = 0;
         nt->compute_gpu = 1;
-        //nt->compute_gpu = 0;
+
+        if(nt->n_pntproc) {
+            /* copy Point_processes array and fix the pointer to execute net_receive blocks on GPU */
+            Point_process *pntptr = (Point_process*) acc_copyin(nt->pntprocs, nt->n_pntproc*sizeof(Point_process));
+            acc_memcpy_to_device(&(d_nt->pntprocs), &pntptr, sizeof(Point_process*));
+        }
+
+        if(nt->n_weight) {
+            /* copy weight vector used in NET_RECEIVE which is pointed by netcon.weight */
+            double * d_weights = (double *) acc_copyin(nt->weights, sizeof(double)*nt->n_weight);
+            acc_memcpy_to_device(&(d_nt->weights), &d_weights, sizeof(double*));
+        }
+
         printf("\n Compute thread on GPU? : %s, Stream : %d", (nt->compute_gpu)? "Yes" : "No", nt->stream_id);
     }
 
