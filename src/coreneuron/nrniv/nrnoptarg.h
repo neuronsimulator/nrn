@@ -16,6 +16,7 @@ typedef struct cb_parameters {
     double tstart; 		/**< start time of simulation in msec*/
     double tstop;		/**< stop time of simulation in msec*/
     double dt;			/**< timestep to use in msec*/
+    double dt_io;               /**< i/o timestep to use in msec*/
 
     double celsius;
     double voltage;
