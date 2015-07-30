@@ -60,10 +60,10 @@ extern short* nrn_artcell_qindex_;
 extern bool nrn_use_localgid_;
 extern void nrn_outputevent(unsigned char, double);
 extern void nrn2ncs_outputevent(int netcon_output_index, double firetime);
-void net_send(void**, double*, Point_process*, double, double);
+void net_send(void**, int, Point_process*, double, double);
 void net_event(Point_process* pnt, double time);
 void net_move(void**, Point_process*, double);
-void artcell_net_send(void**, double*, Point_process*, double, double);
+void artcell_net_send(void**, int, Point_process*, double, double);
 void artcell_net_move(void**, Point_process*, double);
 extern void nrn_fixed_step();
 extern void nrn_fixed_step_group(int);
@@ -84,13 +84,13 @@ static int nrn_errno_check(int type)
 static void all_pending_selfqueue(double tt);
 static void* pending_selfqueue(NrnThread*);
 
-void net_send(void** v, double* weight, Point_process* pnt, double td, double flag) {
+void net_send(void** v, int weight_index_, Point_process* pnt, double td, double flag) {
 	NrnThread* nt = PP2NT(pnt);
 	NetCvodeThreadData& p = net_cvode_instance->p[nt->id];
 	SelfEvent* se = p.sepool_->alloc();
 	se->flag_ = flag;
 	se->target_ = pnt;
-	se->weight_ = weight;
+	se->weight_index_ = weight_index_;
 	se->movable_ = v; // needed for SaveState
 	assert(net_cvode_instance);
 	++p.unreffed_event_cnt_;
@@ -109,14 +109,14 @@ void net_send(void** v, double* weight, Point_process* pnt, double td, double fl
 //printf("net_send %g %s %g %p\n", td, pnt_name(pnt), flag, *v);
 }
 
-void artcell_net_send(void** v, double* weight, Point_process* pnt, double td, double flag) {
+void artcell_net_send(void** v, int weight_index_, Point_process* pnt, double td, double flag) {
     if (nrn_use_selfqueue_ && flag == 1.0) {
     NrnThread* nt = PP2NT(pnt);
 	NetCvodeThreadData& p = net_cvode_instance->p[nt->id];
 	SelfEvent* se = p.sepool_->alloc();
 	se->flag_ = flag;
 	se->target_ = pnt;
-	se->weight_ = weight;
+	se->weight_index_ = weight_index_;
 	se->movable_ = v; // needed for SaveState
 	assert(net_cvode_instance);
 	++p.unreffed_event_cnt_;
@@ -138,7 +138,7 @@ void artcell_net_send(void** v, double* weight, Point_process* pnt, double td, d
 		se2->deliver(td, net_cvode_instance, nt);
 	}
     }else{
-	net_send(v, weight, pnt, td, flag);
+	net_send(v, weight_index_, pnt, td, flag);
     }
 }
 
@@ -437,7 +437,7 @@ DiscreteEvent::DiscreteEvent() {}
 DiscreteEvent::~DiscreteEvent() {}
 
 NetCon::NetCon() {
-	active_ = false; u.weight_ = NULL;
+	active_ = false; u.weight_index_ = 0;
 	src_  = NULL; target_ = NULL;
 	delay_ = 1.0;
 }
@@ -517,7 +517,7 @@ void WatchCondition::deliver(double tt, NetCvode* ns, NrnThread* nt) {
 	(void)ns; (void)nt; // avoid unused arg warning
 	int typ = pnt_->_type;
 	PP2t(pnt_) = tt;
-	POINT_RECEIVE(typ, pnt_, nil, nrflag_);
+	POINT_RECEIVE(typ, pnt_, 0, nrflag_);
 #ifdef DEBUG
 	if (errno) {
 		if (nrn_errno_check(typ)) {
@@ -576,7 +576,7 @@ void NetCon::deliver(double tt, NetCvode* ns, NrnThread* nt) {
 	nt->_t = tt;
 
 //printf("NetCon::deliver t=%g tt=%g %s\n", t, tt, pnt_name(target_));
-	POINT_RECEIVE(typ, target_, u.weight_, 0);
+	POINT_RECEIVE(typ, target_, u.weight_index_, 0);
 #ifdef DEBUG
 	if (errno) {
 		if (nrn_errno_check(typ)) {
@@ -703,7 +703,7 @@ void SelfEvent::deliver(double tt, NetCvode* ns, NrnThread* nt) {
 NrnThread* SelfEvent::thread() { return PP2NT(target_); }
 
 void SelfEvent::call_net_receive(NetCvode* ns) {
-	POINT_RECEIVE(target_->_type, target_, weight_, flag_);
+	POINT_RECEIVE(target_->_type, target_, weight_index_, flag_);
 #ifdef DEBUG
 	if (errno) {
 		if (nrn_errno_check(target_->_type)) {

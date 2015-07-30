@@ -809,7 +809,7 @@ void read_phase2(data_reader &F, NrnThread& nt) {
   int iw = 0;
   for (int i=0; i < nnetcon; ++i) {
     NetCon& nc = nt.netcons[i];
-    nc.u.weight_ = nt.weights + iw;
+    nc.u.weight_index_ = iw;
     iw += pnt_receive_size[pnttype[i]];
   }
   assert(iw == nweight);

@@ -29,7 +29,7 @@ struct NrnThread;
 
 typedef void (*mod_alloc_t)(double*, Datum*, int);
 typedef void (*mod_f_t)(struct NrnThread*, Memb_list*, int);
-typedef void (*pnt_receive_t)(Point_process*, double*, double);
+typedef void (*pnt_receive_t)(Point_process*, int, double);
 
 #define NULL_ALLOC (mod_alloc_t)0
 #define NULL_CUR (mod_f_t)0
@@ -129,8 +129,8 @@ extern void add_nrn_fornetcons(int, int);
 extern void add_nrn_artcell(int, int);
 extern void add_nrn_has_net_event(int);
 extern void net_event(Point_process*, double);
-extern void net_send(void**, double*, Point_process*, double, double);
-extern void artcell_net_send(void**, double*, Point_process*, double, double);
+extern void net_send(void**, int, Point_process*, double, double);
+extern void artcell_net_send(void**, int, Point_process*, double, double);
 extern void hoc_malchk(void); /* just a stub */
 extern void* hoc_Emalloc(size_t);
 extern int at_time(struct NrnThread*, double);

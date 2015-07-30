@@ -37,6 +37,8 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #undef prop
 #undef nodecount
 #undef pval
+#undef weights
+#undef weight_index_
 
 #undef type
 #undef id
