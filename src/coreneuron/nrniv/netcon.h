@@ -131,7 +131,6 @@ public:
     int output_index_;
     int gid_;
     double threshold_;
-    double delay_;
     double* thvar_;
     Point_process* pntsrc_;
     NrnThread* nt_;
@@ -152,7 +151,6 @@ public:
     int nc_index_; //replaces dil_, index into global NetCon** netcon_in_presyn_order_
     int nc_cnt_; // how many netcon starting at nc_index_
     int gid_;
-    double delay_; // can be eliminated since only a few targets on a process
 
 	InputPreSyn();
 	virtual ~InputPreSyn();
