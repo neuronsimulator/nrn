@@ -355,10 +355,10 @@ void NetCvode::init_events() {
 			if (d->target_) {
 				int type = d->target_->_type;
 				if (pnt_receive_init[type]) {
-(*pnt_receive_init[type])(d->target_, d->u.weight_, 0);
+(*pnt_receive_init[type])(d->target_, d->u.weight_index_, 0);
 				}else{
 					int cnt = pnt_receive_size[type]; 
-					double* wt = d->u.weight_;
+					double* wt = nt->weights + d->u.weight_index_;
 					//not the first
 					for (int j = 1; j < cnt; ++j) {
 						wt[j] = 0.;
