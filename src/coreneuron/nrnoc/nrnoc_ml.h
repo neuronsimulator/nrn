@@ -26,6 +26,14 @@ typedef union ThreadDatum {
 	void* _pvoid;
 }ThreadDatum;
 
+typedef struct NetReceiveBuffer_t {
+	int* _pnt_index;
+	int* _weight_index;
+	int _cnt;
+	int _size; /* capacity */
+	int _pnt_offset;
+}NetReceiveBuffer_t;
+
 typedef struct Memb_list {
 #if CACHEVEC != 0
 	/* nodeindices contains all nodes this extension is responsible for,
@@ -38,6 +46,7 @@ typedef struct Memb_list {
 	double* data;
 	Datum* pdata;
 	ThreadDatum* _thread; /* thread specific data (when static is no good) */
+	NetReceiveBuffer_t* _net_receive_buffer;
 	int nodecount;
 } Memb_list;
 

@@ -852,5 +852,8 @@ if (print_event_) {db->pr("binq deliver", nt_t, this);}
 	}
 #endif
 	nt->_t = tsav;
+	for (int i=0; i < net_buf_receive_cnt_; ++i) {
+		(*net_buf_receive_[i])(nt);
+	}
 }
 

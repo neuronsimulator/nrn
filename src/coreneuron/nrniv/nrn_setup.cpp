@@ -497,6 +497,15 @@ void nrn_cleanup() {
       delete[] ml->nodeindices;
       ml->nodeindices = NULL;
 
+      NetReceiveBuffer_t* nrb = ml->_net_receive_buffer;
+      if (nrb) {
+	if (nrb->_size) {
+          free(nrb->_pnt_index);
+          free(nrb->_weight_index);
+        }
+        free(nrb);
+      }
+
       next_tml = tml->next;
       free(tml->ml);
       free(tml);
@@ -575,7 +584,7 @@ void read_phase2(data_reader &F, NrnThread& nt) {
   int shadow_rhs_cnt = 0;
   for (int i=0; i < nmech; ++i) {
     tml = (NrnThreadMembList*)emalloc(sizeof(NrnThreadMembList));
-    tml->ml = (Memb_list*)emalloc(sizeof(Memb_list));
+    tml->ml = (Memb_list*)ecalloc(1, sizeof(Memb_list));
     tml->next = NULL;
     tml->index = F.read_int();
     tml->ml->nodecount = F.read_int();;
@@ -802,7 +811,6 @@ void read_phase2(data_reader &F, NrnThread& nt) {
     }
   }
   delete [] pntindex;
-  delete [] pnt_offset;
 
   // weights in netcons order in groups defined by Point_process target type.
   nt.weights = F.read_dbl_array(nweight);
@@ -896,6 +904,33 @@ void read_phase2(data_reader &F, NrnThread& nt) {
     ix = nrn_param_layout(ix, mtype, &nt);
     nt._vecplay[i] = new VecPlayContinuous(ml->data + ix, yvec, tvec, NULL, nt.id);
   }
+
+  // NetReceiveBuffering
+  for (int i=0; i < net_buf_receive_cnt_; ++i) {
+    int type = net_buf_receive_type_[i];
+    // Does this thread have this type.
+    Memb_list* ml = nt._ml_list[type];
+    if (ml) { // needs a NetReceiveBuffer
+      NetReceiveBuffer_t* nrb = (NetReceiveBuffer_t*)ecalloc(1, sizeof(NetReceiveBuffer_t));
+      ml->_net_receive_buffer = nrb;
+      nrb->_pnt_offset = pnt_offset[type];
+
+      // begin with a size of 5% of the number of instances
+      nrb->_size = ml->nodecount/20;
+      // or at least 8
+      if (nrb->_size < 8) {
+        nrb->_size = 8;
+      }
+      // but not more than nodecount
+      if (nrb->_size > ml->nodecount) {
+        nrb->_size = ml->nodecount;
+      }
+
+      nrb->_pnt_index = (int*)ecalloc(nrb->_size, sizeof(int));
+      nrb->_weight_index = (int*)ecalloc(nrb->_size, sizeof(int));
+    }
+  }
+  delete [] pnt_offset;
 }
 
 static size_t memb_list_size(NrnThreadMembList* tml) {

@@ -108,6 +108,11 @@ extern int point_register_mech(const char**, mod_alloc_t alloc, mod_f_t cur,
   mod_f_t jacob, mod_f_t stat, mod_f_t initialize, int nrnpointerindex,
   void*(*constructor)(), void(*destructor)(), int vectorized
   );
+typedef void(*NetBufReceive_t)(struct NrnThread*);
+extern void hoc_register_net_receive_buffering(NetBufReceive_t, int);
+extern int net_buf_receive_cnt_;
+extern int* net_buf_receive_type_;
+extern NetBufReceive_t* net_buf_receive_;
 extern void nrn_cap_jacob(struct NrnThread*, Memb_list*);
 extern void nrn_writes_conc(int, int);
 extern void nrn_wrote_conc(int, double*, int);

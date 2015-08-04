@@ -28,6 +28,10 @@ int state_discon_allowed_;
 double t, dt, clamp_resist, celsius, htablemin, htablemax;
 int nrn_global_ncell = 0; /* used to be rootnodecount */
 
+int net_buf_receive_cnt_;
+int* net_buf_receive_type_;
+NetBufReceive_t* net_buf_receive_;
+
 static int memb_func_size_;
 static int pointtype = 1; /* starts at 1 since 0 means not point in pnt_map*/
 int n_memb_func;
@@ -201,6 +205,14 @@ void nrn_writes_conc(int type, int unused) {
 
 void _nrn_layout_reg(int type, int layout) {
 	nrn_mech_data_layout_[type] = layout;
+}
+
+void hoc_register_net_receive_buffering(NetBufReceive_t f, int type) {
+	int i = net_buf_receive_cnt_++;
+	net_buf_receive_type_ = (int*)erealloc(net_buf_receive_type_, net_buf_receive_cnt_*sizeof(int));
+	net_buf_receive_ = (NetBufReceive_t*)erealloc(net_buf_receive_, net_buf_receive_cnt_*sizeof(NetBufReceive_t));
+	net_buf_receive_type_[i] = type;
+	net_buf_receive_[i] = f;
 }
 
 void hoc_register_prop_size(int type, int psize, int dpsize) {
