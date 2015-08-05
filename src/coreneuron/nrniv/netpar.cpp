@@ -52,7 +52,6 @@ std::map<int, InputPreSyn*> gid2in;
 extern "C" {
 extern NetCvode* net_cvode_instance;
 extern double t, dt;
-extern int nrn_use_selfqueue_;
 extern void nrn_fake_fire(int gid, double firetime, int fake_out);
 int nrnmpi_spike_compress(int nspike, bool gid_compress, int xchng_meth);
 void nrn_spike_exchange_init();
@@ -122,31 +121,31 @@ static MUTDEC
 #endif
 
 NetParEvent::NetParEvent(){
-	wx_ = ws_ = 0.;
-	ithread_ = -1;
+  wx_ = ws_ = 0.;
+  ithread_ = -1;
 }
+
 NetParEvent::~NetParEvent(){
 }
+
 void NetParEvent::send(double tt, NetCvode* nc, NrnThread* nt){
-	nc->event(tt + usable_mindelay_, this, nt);
+  nc->event(tt + usable_mindelay_, this, nt);
 }
+
 void NetParEvent::deliver(double tt, NetCvode* nc, NrnThread* nt){
-	if (nrn_use_selfqueue_) { //first handle pending flag=1 self events
-		nrn_pending_selfqueue(tt, nt);
-	}
-	net_cvode_instance->deliver_events(tt, nt);
-	nt->_stop_stepping = 1;
-	nt->_t = tt;
-	send(tt, nc, nt);
+  net_cvode_instance->deliver_events(tt, nt);
+  nt->_stop_stepping = 1;
+  nt->_t = tt;
+  send(tt, nc, nt);
 }
 
 void nrn_netparevent_finish_deliver() {
-	NrnThread* nt = nrn_threads;  
-	nrn_spike_exchange(nt);
+  NrnThread* nt = nrn_threads;
+  nrn_spike_exchange(nt);
 }
 
 void NetParEvent::pr(const char* m, double tt, NetCvode*){
-	printf("%s NetParEvent %d t=%.15g tt-t=%g\n", m, ithread_, tt, tt - nrn_threads[ithread_]._t);
+  printf("%s NetParEvent %d t=%.15g tt-t=%g\n", m, ithread_, tt, tt - nrn_threads[ithread_]._t);
 }
 
 #if NRNMPI
@@ -230,10 +229,8 @@ void nrn2ncs_outputevent(int gid, double firetime) {
 #endif // NRNMPI
 
 static int nrn_need_npe() {
-	
 	int b = 0;
 	if (active_) { b = 1; }
-	if (nrn_use_selfqueue_) { b = 1; }
 	if (nrn_nthread > 1) { b = 1; }
 	if (b) {
 		if (last_maxstep_arg_ == 0) {
@@ -256,7 +253,6 @@ static int nrn_need_npe() {
 void nrn_spike_exchange_init() {
 //printf("nrn_spike_exchange_init\n");
 	if (!nrn_need_npe()) { return; }
-//	if (!active_ && !nrn_use_selfqueue_) { return; }
 	alloc_space();
 //printf("nrnmpi_use=%d active=%d\n", nrnmpi_use, active_);
     std::map<int, InputPreSyn*>::iterator gid2in_it;
@@ -848,10 +844,10 @@ void BBS_netpar_solve(double tstop) {
 static double set_mindelay(double maxdelay) {
 	double mindelay = maxdelay;
 	last_maxstep_arg_ = maxdelay;
-			
-    // if all==1 then minimum delay of all NetCon no matter the source.
+
+   // if all==1 then minimum delay of all NetCon no matter the source.
    // except if src in same thread as NetCon
-   int all = (nrn_use_selfqueue_ || nrn_nthread > 1);
+   int all = (nrn_nthread > 1);
    // minumum delay of all NetCon having an InputPreSyn source
    for (int ith = 0; ith < nrn_nthread; ++ith) {
        NrnThread* nt = nrn_threads + ith;
@@ -888,15 +884,6 @@ static double set_mindelay(double maxdelay) {
 	min_interprocessor_delay_ = mindelay_;
 //	add_wait_time(st);
 //printf("%d local min=%g  global min=%g\n", nrnmpi_myid, mindelay, mindelay_);
-	if (mindelay_ < 1e-9 && nrn_use_selfqueue_) {
-		nrn_use_selfqueue_ = 0;
-		double od = mindelay_;
-		mindelay = set_mindelay(maxdelay);
-		if (nrnmpi_myid == 0) {
-printf("Notice: The global minimum NetCon delay is %g, so turned off the cvode.queue_mode\n", od);
-printf("   use_self_queue option. The interprocessor minimum NetCon delay is %g\n", mindelay);
-		}
-	}
 	errno = 0;
 	return mindelay;
 #else

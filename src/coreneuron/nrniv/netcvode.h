@@ -17,7 +17,7 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef netcvode_h
 #define netcvode_h
 
-#include "coreneuron/nrniv/tqueue.h"
+#include "coreneuron/nrniv/sptbinq.h"
 
 #define PRINT_EVENT 1
 
@@ -28,16 +28,13 @@ struct InterThreadEvent;
 
 class NetCvodeThreadData {
 public:
-	int ite_cnt_;
-	int ite_size_;
-	int unreffed_event_cnt_;
+    int ite_cnt_;
+    int ite_size_;
+    int unreffed_event_cnt_;
     TQueue* tqe_;
-    SelfEventPool* sepool_;
-    TQItemPool* tpool_;
     InterThreadEvent* inter_thread_events_;
-    SelfQueue* selfqueue_;
     MUTDEC
-	double immediate_deliver_;
+    double immediate_deliver_;
 
     NetCvodeThreadData();
     virtual ~NetCvodeThreadData();
@@ -54,25 +51,23 @@ public:
     static double eps_;
 
     NetCvode(void);
-	virtual ~NetCvode();
+    virtual ~NetCvode();
     void p_construct(int);
     void check_thresh(NrnThread*);
     static double eps(double x) { return eps_*fabs(x); }
     TQItem* event(double tdeliver, DiscreteEvent*, NrnThread*);
-	void move_event(TQItem*, double, NrnThread*);
-	void remove_event(TQItem*, int threadid);
-#if BBTQ == 5
-	TQItem* bin_event(double tdeliver, DiscreteEvent*, NrnThread*);
-#endif
-	void tstop_event(double);
-	void deliver_net_events(NrnThread*); // for default staggered time step method
-	void deliver_events(double til, NrnThread*); // for initialization events
+    void move_event(TQItem*, double, NrnThread*);
+    void remove_event(TQItem*, int threadid);
+    TQItem* bin_event(double tdeliver, DiscreteEvent*, NrnThread*);
+    void tstop_event(double);
+    void deliver_net_events(NrnThread*); // for default staggered time step method
+    void deliver_events(double til, NrnThread*); // for initialization events
     bool deliver_event(double til, NrnThread*); //uses TQueue atomically
     void deliver_least_event(NrnThread*);
-	void clear_events();
-	void init_events();
+    void clear_events();
+    void init_events();
     TQueue* event_queue(NrnThread* nt);
     void point_receive(int, Point_process*, double*, double);
-};	
-	
+};
+
 #endif

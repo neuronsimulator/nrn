@@ -47,7 +47,7 @@ void hoc_warning(const char* s1, const char* s2) {
 }
 
 double* makevector(size_t size) {
-	return (double*)ecalloc(size, sizeof(char));
+    return (double*)ecalloc(size, sizeof(char));
 }
 
 void* emalloc(size_t size) {
