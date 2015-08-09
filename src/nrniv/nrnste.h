@@ -49,11 +49,14 @@ public:
 	void state(int i); // set current state  -- update watch list.
 	int state(){return istate_;}
 	int nstate() { return nstate_;}
+	void activate();
+	void deactivate();
 
 	int nstate_;
 	int istate_;
 	STEState* states_;
 	Point_process* pnt_;
+	int activated_;
 };
 
 

@@ -5204,7 +5204,7 @@ void WatchCondition::activate(double flag) {
 	Cvode* cv = NULL;
 	int id = 0;
 	qthresh_ = nil;
-	flag_ = (value() > 0.) ? true: false;
+	flag_ = (value() >= 0.) ? true: false;
 	valthresh_ = 0.;
 	nrflag_ = flag;
 	if (!pnt_) { // possible for StateTransitionEvent
@@ -5283,12 +5283,16 @@ void STETransition::activate() {
   if (var1_is_time_) {
     var1_ = &stec_->thread()->_t;
   }
+  if (stec_->qthresh_) { // is it on the queue
+    net_cvode_instance->remove_event(stec_->qthresh_, stec_->thread()->id);
+    stec_->qthresh_ = NULL;
+  }
   stec_->activate(0);
 }
 
 void STETransition::deactivate() {
   if (stec_->qthresh_) { // is it on the queue
-    net_cvode_instance->remove_event(stec_->qthresh_, PP2NT(ste_->pnt_)->id);
+    net_cvode_instance->remove_event(stec_->qthresh_, stec_->thread()->id);
     stec_->qthresh_ = NULL;
   }
   stec_->Remove();

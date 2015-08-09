@@ -75,26 +75,37 @@ StateTransitionEvent::StateTransitionEvent(int nstate, Point_process* pnt){
 	states_ = new STEState[nstate_];
 	istate_ = 0;
 	pnt_ = pnt;
+	activated_ = -1;
 }
 
 StateTransitionEvent::~StateTransitionEvent(){
+	deactivate();
 	delete [] states_;
 }
 
-void StateTransitionEvent::state(int ist) {
-	assert(ist >= 0 && ist < nstate_);
-	if (istate_ >= 0) { //inactivate the STETransitions
-		STEState& s = states_[istate_];
-		for (int i=0; i < s.ntrans_; ++i) {
-			s.transitions_[i].deactivate();
-		}
+void StateTransitionEvent::deactivate() {
+	if (activated_ < 0) { return; }
+	STEState& s = states_[activated_];
+	for (int i=0; i < s.ntrans_; ++i) {
+		s.transitions_[i].deactivate();
 	}
-	istate_ = ist;
-	// activate th STETransitions
+	activated_ = -1;
+}
+
+void StateTransitionEvent::activate() {
+	if (activated_ >= 0) { deactivate(); }
 	STEState& s = states_[istate_];
 	for (int i=0; i < s.ntrans_; ++i) {
 		s.transitions_[i].activate();
 	}
+	activated_ = istate_;
+}
+
+void StateTransitionEvent::state(int ist) {
+	assert(ist >= 0 && ist < nstate_);
+	deactivate();
+	istate_ = ist;
+	activate();
 }
 
 STEState::STEState(){
@@ -145,11 +156,12 @@ STETransition::~STETransition(){
 }
 
 void STETransition::event() {
-	ste_->state(dest_);
+	ste_->deactivate();
+	ste_->istate_ = dest_;
 	if (hc_) {
 		nrn_hoc_lock();
 		hc_->execute();
 		nrn_hoc_unlock();
 	}
+	ste_->activate();
 }
-
