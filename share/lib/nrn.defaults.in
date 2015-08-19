@@ -120,7 +120,7 @@
 // The default stack size is 1000 and the frame (recursion depth) size is 100 unless explicitly set nonzero below
 // One may also use the -NSTACK stacksize   -NFRAME framesize options at launch.
 *NSTACK: 0
-*NFRAME: 256
+*NFRAME: 0
 
 // To ensure that all statements in this file take effect, do not remove this line.
 // It prevents the absence of a trailing newline for the last substantive
