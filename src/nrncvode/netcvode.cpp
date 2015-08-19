@@ -5322,7 +5322,7 @@ void STECondition::deliver(double tt, NetCvode* ns, NrnThread* nt) {
 	}
     }
 	STATISTICS(watch_deliver_);
-	t == tt;
+	t = tt;
 	stet_->event();
 }
 
