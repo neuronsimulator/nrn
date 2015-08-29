@@ -51,6 +51,7 @@ short* pnt_receive_size;
  /* values are type numbers of mechanisms which do net_send call */
 int nrn_has_net_event_cnt_;
 int* nrn_has_net_event_;
+int* pnttype2presyn; /* inverse of nrn_has_net_event_ */
 int* nrn_prop_param_size_;
 int* nrn_prop_dparam_size_;
 int* nrn_mech_data_layout_; /* 1 AoS (default), >1 AoSoA, 0 SoA */

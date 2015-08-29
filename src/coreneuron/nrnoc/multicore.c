@@ -525,6 +525,7 @@ void nrn_threads_create(int n, int parallel) {
 				nt->_ml_list = (Memb_list**)0;
 				nt->pntprocs = (Point_process*)0;
 				nt->presyns = (PreSyn*)0;
+				nt->pnt2presyn_ix = (int**)0;
 				nt->netcons = (NetCon*)0;
 				nt->weights = (double*)0;
 				nt->n_pntproc = nt->n_presyn = nt->n_netcon = 0;

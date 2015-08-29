@@ -143,15 +143,16 @@ void artcell_net_send(void** v, int weight_index_, Point_process* pnt, double td
 }
 
 void net_event(Point_process* pnt, double time) {
-	PreSyn* ps = (PreSyn*)pnt->_presyn;
+	NrnThread* nt = PP2NT(pnt);
+	PreSyn* ps = nt->presyns + nt->pnt2presyn_ix[pnttype2presyn[pnt->_type]][pnt->_i_instance];
 	if (ps) {
-		if (time < PP2t(pnt)) {
+		if (time < nt->_t) {
 			char buf[100];
-			sprintf(buf, "net_event time-t = %g", time-PP2t(pnt));
+			sprintf(buf, "net_event time-t = %g", time - nt->_t);
 			ps->pr(buf, time, net_cvode_instance);
 			hoc_execerror("net_event time < t", 0);
 		}
-		ps->send(time, net_cvode_instance, ps->nt_);
+		ps->send(time, net_cvode_instance, nt);
 	}
 }
 

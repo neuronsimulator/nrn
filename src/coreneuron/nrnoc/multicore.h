@@ -29,6 +29,15 @@ typedef void NetCon;
 typedef void PreSyn;
 #endif
 
+/*
+   Point_process._presyn, used only if its NET_RECEIVE sends a net_event, is
+   eliminated. Needed only by net_event function. Replaced by
+   PreSyn* = nt->presyns + nt->pnt2presyn_ix[pnttype2presyn[pnt->_type]][pnt->_i_instance];
+*/
+extern int nrn_has_net_event_cnt_; /* how many net_event sender types are there? */
+extern int* nrn_has_net_event_; /* the types that send a net_event */
+extern int* pnttype2presyn; /* from the type, which array of pnt2presyn_ix are we talking about. */
+
 typedef struct NrnThreadMembList{ /* patterned after CvMembList in cvodeobj.h */
 	struct NrnThreadMembList* next;
 	struct Memb_list* ml;
@@ -50,6 +59,7 @@ typedef struct NrnThread {
 	Memb_list** _ml_list;
         Point_process* pntprocs; // synapses and artificial cells with and without gid
 	PreSyn* presyns; // all the output PreSyn with and without gid
+	int** pnt2presyn_ix; // eliminates Point_process._presyn used only by net_event sender.
         NetCon* netcons;
 	double* weights; // size n_weight. NetCon.weight_ points into this array.
 

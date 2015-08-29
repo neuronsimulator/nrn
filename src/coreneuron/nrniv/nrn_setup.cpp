@@ -539,6 +539,15 @@ void nrn_cleanup() {
         nt->presyns = NULL;
     }
 
+    if (nt->pnt2presyn_ix) {
+      for (int i=0; i < nrn_has_net_event_cnt_; ++i) {
+        if (nt->pnt2presyn_ix[i]) {
+          delete [] nt->pnt2presyn_ix[i];
+        }
+      }
+      delete [] nt->pnt2presyn_ix;
+    }
+
     if (nt->netcons) {
         delete [] nt->netcons;
         nt->netcons = NULL;
@@ -703,7 +712,6 @@ void read_phase2(data_reader &F, NrnThread& nt) {
         pp->_type = type;
 	pp->_i_instance = i;
         nt._vdata[ml->pdata[nrn_i_layout(i, cnt, 1, szdp, layout)]] = pp;
-        pp->_presyn = NULL;
         pp->_tid = nt.id;
       }
     }
@@ -760,6 +768,23 @@ void read_phase2(data_reader &F, NrnThread& nt) {
     }
   }
 
+  // from nrn_has_net_event create pnttype2presyn.
+  pnttype2presyn = (int*)ecalloc(n_memb_func, sizeof(int));
+  for (int i=0; i < n_memb_func; ++i) {
+    pnttype2presyn[i] = -1;
+  }
+  for (int i=0; i < nrn_has_net_event_cnt_; ++i) {
+    pnttype2presyn[nrn_has_net_event_[i]] = i;
+  }
+  // create the nt.pnt2presyn_ix array of arrays.
+  nt.pnt2presyn_ix = (int**)ecalloc(nrn_has_net_event_cnt_, sizeof(int*));
+  for (int i=0; i < nrn_has_net_event_cnt_; ++i) {
+    Memb_list* ml = nt._ml_list[nrn_has_net_event_[i]];
+    if (ml && ml->nodecount > 0) {
+      nt.pnt2presyn_ix[i] = (int*)ecalloc(ml->nodecount, sizeof(int));
+    }
+  }
+
   // Real cells are at the beginning of the nt.presyns followed by
   // acells (with and without gids mixed together)
   // Here we associate the real cells with voltage pointers and
@@ -776,7 +801,11 @@ void read_phase2(data_reader &F, NrnThread& nt) {
       int type = ix - index*1000;
       Point_process* pnt = nt.pntprocs + (pnt_offset[type] + index);
       ps->pntsrc_ = pnt;
-      pnt->_presyn = ps;
+      //pnt->_presyn = ps;
+      int ip2ps = pnttype2presyn[pnt->_type];
+      if (ip2ps >= 0) {
+        nt.pnt2presyn_ix[ip2ps][pnt->_i_instance] = i;
+      }
       if (ps->gid_ < 0) {
         ps->gid_ = -1;
       }
