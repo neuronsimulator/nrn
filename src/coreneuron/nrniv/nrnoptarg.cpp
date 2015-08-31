@@ -13,6 +13,8 @@ cb_parameters::cb_parameters()
     tstop = 100.0;
     dt = 0.025;
 
+    dt_io = 0.1;
+
     celsius = 34.0;
     voltage = -65.0;
     maxdelay = 10.0;
@@ -42,7 +44,7 @@ void cb_parameters::show_cb_opts()
     if ( nrnmpi_myid == 0 ) {
         printf( "\n Configuration Parameters" );
 
-        printf( "\n tstart: %g, tstop: %g, dt: %g", tstart, tstop, dt );
+        printf( "\n tstart: %g, tstop: %g, dt: %g, dt_io: %g", tstart, tstop, dt, dt_io );
         printf( " celsius: %g, voltage: %g, maxdelay: %g", celsius, voltage, maxdelay );
 
         printf( "\n forwardskip: %g, spikebuf: %d, prcellgid: %d, threading : %d, mindelay : %g", \
@@ -70,6 +72,8 @@ void cb_parameters::show_cb_opts_help()
               Set the stop time to TIME (double). The default value is '100.'\n\n\
        -t TIME, --dt=TIME\n\
               Set the dt time to TIME (double). The default value is '0.025'.\n\n\
+       -i TIME, --dt_io=TIME\n\
+              Set the dt of I/O to TIME (double). The default value is '0.1'.\n\n\
        -l NUMBER, --celsius=NUMBER\n\
               Set the celsius temperature to NUMBER (double). The default value is '34.'.\n\n\
        -p FILE, --pattern=FILE\n\
@@ -104,6 +108,7 @@ void cb_parameters::read_cb_opts( int argc, char **argv )
             {"tstart",    required_argument, 0, 's'},
             {"tstop",     required_argument, 0, 'e'},
             {"dt",        required_argument, 0, 't'},
+            {"dt_io",     required_argument, 0, 'i'},
             {"celsius",   required_argument, 0, 'l'},
             {"pattern",   required_argument, 0, 'p'},
             {"spikebuf",  required_argument, 0, 'b'},
@@ -120,7 +125,7 @@ void cb_parameters::read_cb_opts( int argc, char **argv )
         /* getopt_long stores the option index here. */
         int option_index = 0;
 
-        c = getopt_long( argc, argv, "s:e:t:l:p:b:g:c:d:f:o:k:m:h",
+        c = getopt_long( argc, argv, "s:e:t:i:l:p:b:g:c:d:f:o:k:m:h",
                          long_options, &option_index );
 
         /* Detect the end of the options. */
@@ -155,6 +160,10 @@ void cb_parameters::read_cb_opts( int argc, char **argv )
 
             case 't':
                 dt = atof( optarg );
+                break;
+
+            case 'i':
+                dt_io = atof(optarg );
                 break;
 
             case 'l':

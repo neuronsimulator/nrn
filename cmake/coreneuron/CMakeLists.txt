@@ -23,7 +23,6 @@ include(GitExternal)
 set(CORENEURON_DESCRIPTION "BBP CoreNeuron simulator")
 
 if(${CMAKE_SYSTEM_PROCESSOR} STREQUAL "ppc64")
-  set(CORENEURON_LIBRARY_TYPE STATIC)
   set(Boost_USE_STATIC_LIBS ON)
 endif()
 
@@ -35,6 +34,10 @@ endif(CORENEURON_OPENMP)
 
 include(Common)
 include(FindPackages)
+
+if(BLUEGENE)
+  set(COMMON_LIBRARY_TYPE STATIC)
+endif()
 
 INCLUDE (CheckIncludeFiles)
 CHECK_INCLUDE_FILES (malloc.h have_malloc_h)

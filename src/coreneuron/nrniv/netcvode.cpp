@@ -337,11 +337,36 @@ void NetCvode::clear_events() {
 
 void NetCvode::init_events() {
 #if BBTQ == 5
-    for (int i=0; i < nrn_nthread; ++i) {
+	for (int i=0; i < nrn_nthread; ++i) {
 		p[i].tqe_->nshift_ = -1;
 		p[i].tqe_->shift_bin(nt_t);
 	}
 #endif
+	for (int tid=0; tid < nrn_nthread; ++tid) {// can be done in parallel
+		NrnThread* nt = nrn_threads + tid;
+
+		for (int ipre = 0; ipre < nt->n_presyn; ++ ipre) {
+			PreSyn* ps = nt->presyns + ipre;
+			ps->flag_ = false;
+		}
+
+		for (int inetc = 0; inetc < nt->n_netcon; ++inetc) {
+			NetCon* d = nt->netcons + inetc;
+			if (d->target_) {
+				int type = d->target_->_type;
+				if (pnt_receive_init[type]) {
+(*pnt_receive_init[type])(d->target_, d->u.weight_, 0);
+				}else{
+					int cnt = pnt_receive_size[type]; 
+					double* wt = d->u.weight_;
+					//not the first
+					for (int j = 1; j < cnt; ++j) {
+						wt[j] = 0.;
+					}
+				}
+			}
+		}
+	}
 }
 
 void NetCvode::deliver_least_event(NrnThread* nt) {
@@ -446,7 +471,7 @@ NetCon::~NetCon() {
 }
 
 
-PreSyn::PreSyn():localgid_(), output_index_(), delay_() {
+PreSyn::PreSyn() {
     nc_index_ = 0;
 	nc_cnt_ = 0;
 	flag_ = false;
@@ -455,6 +480,8 @@ PreSyn::PreSyn():localgid_(), output_index_(), delay_() {
 	threshold_ = 10.;
 	gid_ = -1;
 	nt_ = NULL;
+	localgid_ = 0;
+	output_index_ = 0;
 }
 
 InputPreSyn::InputPreSyn() {
@@ -640,40 +667,12 @@ void InputPreSyn::send(double tt, NetCvode* ns, NrnThread* nt) {
 	}
 }
 	
-void PreSyn::deliver(double tt, NetCvode* ns, NrnThread* nt) {
-	// the thread is the one that owns the targets
-	int i, n = nc_cnt_;
-	for (i=0; i < n; ++i) {
-		NetCon* d = netcon_in_presyn_order_[nc_index_ + i];
-		if (d->active_ && d->target_ && PP2NT(d->target_) == nt) {
-			double dtt = d->delay_ - delay_;
-			if (dtt == 0.) {
-				d->deliver(tt, ns, nt);
-			}else if (dtt < 0.) {
-hoc_execerror("internal error: Source delay is > NetCon delay", 0);
-			}else{
-				ns->event(tt + dtt, d, nt);
-			}
-		}
-	}
+void PreSyn::deliver(double, NetCvode*, NrnThread*) {
+	assert(0); // no PreSyn delay.
 }
 
-void InputPreSyn::deliver(double tt, NetCvode* ns, NrnThread* nt) {
-	// the thread is the one that owns the targets
-	int i, n = nc_cnt_;
-	for (i=0; i < n; ++i) {
-		NetCon* d = netcon_in_presyn_order_[nc_index_ + i];
-		if (d->active_ && d->target_ && PP2NT(d->target_) == nt) {
-			double dtt = d->delay_ - delay_;
-			if (dtt == 0.) {
-				d->deliver(tt, ns, nt);
-			}else if (dtt < 0.) {
-hoc_execerror("internal error: Source delay is > NetCon delay", 0);
-			}else{
-				ns->event(tt + dtt, d, nt);
-			}
-		}
-	}
+void InputPreSyn::deliver(double, NetCvode*, NrnThread*) {
+	assert(0); // no InputPreSyn delay.
 }
 
 NrnThread* PreSyn::thread() { return nt_; }

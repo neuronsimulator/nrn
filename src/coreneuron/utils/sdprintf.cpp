@@ -16,12 +16,17 @@ sd_ptr sdprintf(char *buf,size_t sz,const char *fmt,...) {
     return s;
 }
 
-#ifndef va_copy
+#if !defined(va_copy)
+/* check for __va_copy: work around for icpc 2015 */
+#if defined(__va_copy)
+#define va_copy(dest,src) __va_copy(dest,src)
+#else 
 /* non-portable, so specialise for those cases where
- * value assignment does not work and va_copy is nonetheless
- * not defined */
-#warning "no va_copy() defined, using value assignment"
+ *  * value assignment does not work and va_copy is nonetheless
+ *   * not defined */
+#warning "no va_copy() or __va_copy defined, using value assignment"
 #define va_copy(dest,src) ((dest)=(src))
+#endif
 #endif
 
 sd_ptr vsdprintf(char *buf,size_t sz,const char *fmt,va_list ap) {
