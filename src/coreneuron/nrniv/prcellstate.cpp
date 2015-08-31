@@ -103,7 +103,7 @@ static void pr_netcon(NrnThread& nt, FILE* f) {
       }
       int wcnt = pnt_receive_size[nc->target_->_type];
       for (int k=0; k < wcnt; ++k) {
-        fprintf(f, " %.15g", nc->u.weight_[k]);
+        fprintf(f, " %.15g", nt.weights[nc->u.weight_index_+k]);
       }
       fprintf(f, "\n");
     }

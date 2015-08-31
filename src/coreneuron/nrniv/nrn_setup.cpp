@@ -497,6 +497,15 @@ void nrn_cleanup() {
       delete[] ml->nodeindices;
       ml->nodeindices = NULL;
 
+      NetReceiveBuffer_t* nrb = ml->_net_receive_buffer;
+      if (nrb) {
+	if (nrb->_size) {
+          free(nrb->_pnt_index);
+          free(nrb->_weight_index);
+        }
+        free(nrb);
+      }
+
       next_tml = tml->next;
       free(tml->ml);
       free(tml);
@@ -528,6 +537,15 @@ void nrn_cleanup() {
     if (nt->presyns) {
         delete [] nt->presyns;
         nt->presyns = NULL;
+    }
+
+    if (nt->pnt2presyn_ix) {
+      for (int i=0; i < nrn_has_net_event_cnt_; ++i) {
+        if (nt->pnt2presyn_ix[i]) {
+          delete [] nt->pnt2presyn_ix[i];
+        }
+      }
+      delete [] nt->pnt2presyn_ix;
     }
 
     if (nt->netcons) {
@@ -584,7 +602,7 @@ void read_phase2(data_reader &F, NrnThread& nt) {
 
   for (int i=0; i < nmech; ++i) {
     tml = (NrnThreadMembList*)emalloc(sizeof(NrnThreadMembList));
-    tml->ml = (Memb_list*)emalloc(sizeof(Memb_list));
+    tml->ml = (Memb_list*)ecalloc(1, sizeof(Memb_list));
     tml->next = NULL;
     tml->index = F.read_int();
     tml->ml->nodecount = F.read_int();;
@@ -712,7 +730,6 @@ void read_phase2(data_reader &F, NrnThread& nt) {
         pp->_type = type;
 	pp->_i_instance = i;
         nt._vdata[ml->pdata[nrn_i_layout(i, cnt, 1, szdp, layout)]] = pp;
-        pp->_presyn = NULL;
         pp->_tid = nt.id;
       }
     }
@@ -769,6 +786,23 @@ void read_phase2(data_reader &F, NrnThread& nt) {
     }
   }
 
+  // from nrn_has_net_event create pnttype2presyn.
+  pnttype2presyn = (int*)ecalloc(n_memb_func, sizeof(int));
+  for (int i=0; i < n_memb_func; ++i) {
+    pnttype2presyn[i] = -1;
+  }
+  for (int i=0; i < nrn_has_net_event_cnt_; ++i) {
+    pnttype2presyn[nrn_has_net_event_[i]] = i;
+  }
+  // create the nt.pnt2presyn_ix array of arrays.
+  nt.pnt2presyn_ix = (int**)ecalloc(nrn_has_net_event_cnt_, sizeof(int*));
+  for (int i=0; i < nrn_has_net_event_cnt_; ++i) {
+    Memb_list* ml = nt._ml_list[nrn_has_net_event_[i]];
+    if (ml && ml->nodecount > 0) {
+      nt.pnt2presyn_ix[i] = (int*)ecalloc(ml->nodecount, sizeof(int));
+    }
+  }
+
   // Real cells are at the beginning of the nt.presyns followed by
   // acells (with and without gids mixed together)
   // Here we associate the real cells with voltage pointers and
@@ -785,7 +819,11 @@ void read_phase2(data_reader &F, NrnThread& nt) {
       int type = ix - index*1000;
       Point_process* pnt = nt.pntprocs + (pnt_offset[type] + index);
       ps->pntsrc_ = pnt;
-      pnt->_presyn = ps;
+      //pnt->_presyn = ps;
+      int ip2ps = pnttype2presyn[pnt->_type];
+      if (ip2ps >= 0) {
+        nt.pnt2presyn_ix[ip2ps][pnt->_i_instance] = i;
+      }
       if (ps->gid_ < 0) {
         ps->gid_ = -1;
       }
@@ -820,14 +858,13 @@ void read_phase2(data_reader &F, NrnThread& nt) {
     }
   }
   delete [] pntindex;
-  delete [] pnt_offset;
 
   // weights in netcons order in groups defined by Point_process target type.
   nt.weights = F.read_dbl_array(nweight);
   int iw = 0;
   for (int i=0; i < nnetcon; ++i) {
     NetCon& nc = nt.netcons[i];
-    nc.u.weight_ = nt.weights + iw;
+    nc.u.weight_index_ = iw;
     iw += pnt_receive_size[pnttype[i]];
   }
   assert(iw == nweight);
@@ -914,6 +951,33 @@ void read_phase2(data_reader &F, NrnThread& nt) {
     ix = nrn_param_layout(ix, mtype, &nt);
     nt._vecplay[i] = new VecPlayContinuous(ml->data + ix, yvec, tvec, NULL, nt.id);
   }
+
+  // NetReceiveBuffering
+  for (int i=0; i < net_buf_receive_cnt_; ++i) {
+    int type = net_buf_receive_type_[i];
+    // Does this thread have this type.
+    Memb_list* ml = nt._ml_list[type];
+    if (ml) { // needs a NetReceiveBuffer
+      NetReceiveBuffer_t* nrb = (NetReceiveBuffer_t*)ecalloc(1, sizeof(NetReceiveBuffer_t));
+      ml->_net_receive_buffer = nrb;
+      nrb->_pnt_offset = pnt_offset[type];
+
+      // begin with a size of 5% of the number of instances
+      nrb->_size = ml->nodecount/20;
+      // or at least 8
+      if (nrb->_size < 8) {
+        nrb->_size = 8;
+      }
+      // but not more than nodecount
+      if (nrb->_size > ml->nodecount) {
+        nrb->_size = ml->nodecount;
+      }
+
+      nrb->_pnt_index = (int*)ecalloc(nrb->_size, sizeof(int));
+      nrb->_weight_index = (int*)ecalloc(nrb->_size, sizeof(int));
+    }
+  }
+  delete [] pnt_offset;
 }
 
 static size_t memb_list_size(NrnThreadMembList* tml) {

@@ -29,7 +29,7 @@ struct NrnThread;
 
 typedef void (*mod_alloc_t)(double*, Datum*, int);
 typedef void (*mod_f_t)(struct NrnThread*, Memb_list*, int);
-typedef void (*pnt_receive_t)(Point_process*, double*, double);
+typedef void (*pnt_receive_t)(Point_process*, int, double);
 
 #define NULL_ALLOC (mod_alloc_t)0
 #define NULL_CUR (mod_f_t)0
@@ -108,6 +108,11 @@ extern int point_register_mech(const char**, mod_alloc_t alloc, mod_f_t cur,
   mod_f_t jacob, mod_f_t stat, mod_f_t initialize, int nrnpointerindex,
   void*(*constructor)(), void(*destructor)(), int vectorized
   );
+typedef void(*NetBufReceive_t)(struct NrnThread*);
+extern void hoc_register_net_receive_buffering(NetBufReceive_t, int);
+extern int net_buf_receive_cnt_;
+extern int* net_buf_receive_type_;
+extern NetBufReceive_t* net_buf_receive_;
 extern void nrn_cap_jacob(struct NrnThread*, Memb_list*);
 extern void nrn_writes_conc(int, int);
 extern void nrn_wrote_conc(int, double*, int);
@@ -129,8 +134,8 @@ extern void add_nrn_fornetcons(int, int);
 extern void add_nrn_artcell(int, int);
 extern void add_nrn_has_net_event(int);
 extern void net_event(Point_process*, double);
-extern void net_send(void**, double*, Point_process*, double, double);
-extern void artcell_net_send(void**, double*, Point_process*, double, double);
+extern void net_send(void**, int, Point_process*, double, double);
+extern void artcell_net_send(void**, int, Point_process*, double, double);
 extern void hoc_malchk(void); /* just a stub */
 extern void* hoc_Emalloc(size_t);
 

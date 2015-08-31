@@ -60,7 +60,7 @@ public:
     DiscreteEvent* src_; // either a PreSyn or an InputPreSyn or NULL
     Point_process* target_;
     union {
-        double* weight_;
+        int weight_index_;
         int srcgid_; // only to help InputPreSyn during setup
         // before weights are read and stored. Saves on transient
         // memory requirements by avoiding storage of all group file
@@ -79,8 +79,8 @@ class SelfEvent : public DiscreteEvent {
 public:
     double flag_;
     Point_process* target_;
-    double* weight_;
     void** movable_; // actually a TQItem**
+    int weight_index_;
 
 	SelfEvent();
 	virtual ~SelfEvent();
