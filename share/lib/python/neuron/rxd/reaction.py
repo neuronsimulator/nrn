@@ -70,12 +70,12 @@ class Reaction(GeneralizedReaction):
         if not hasattr(regions, '__len__'):
             regions = [regions]
         self._regions = regions
-        #self._update_indices()
         rxd._register_reaction(self)
 
         # initialize self if the rest of rxd is already initialized
         if initializer.is_initialized():
             self._do_init()
+            self._update_indices()
 
 
     def _do_init(self):

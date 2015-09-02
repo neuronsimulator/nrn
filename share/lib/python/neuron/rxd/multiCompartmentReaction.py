@@ -85,12 +85,12 @@ class MultiCompartmentReaction(GeneralizedReaction):
         if not membrane._geometry.is_area():
             raise RxDException('must specify a membrane not a volume for the boundary')
         self._regions = [membrane]
-        #self._update_indices()
         rxd._register_reaction(self)
 
         # initialize self if the rest of rxd is already initialized
         if initializer.is_initialized():
             self._do_init()
+            self._update_indices()
 
         
     def _do_init(self):
