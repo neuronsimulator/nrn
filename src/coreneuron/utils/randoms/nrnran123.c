@@ -28,11 +28,15 @@ static philox4x32_key_t k={{0}};
 static size_t instance_count_ = 0;
 size_t nrnran123_instance_count() { return instance_count_; }
 
+/* now this is declated in nrnran123.h so that its available for prototype declaration
+
 struct nrnran123_State {
 	philox4x32_ctr_t c;
 	philox4x32_ctr_t r;
 	char which_;
 };
+*/
+
 size_t nrnran123_state_size() { return sizeof(nrnran123_State); }
 
 void nrnran123_set_globalindex(uint32_t gix) {
@@ -52,6 +56,7 @@ void nrnran123_mutconstruct() {
 }
 
 nrnran123_State* nrnran123_newstream(uint32_t id1, uint32_t id2) {
+
 	nrnran123_State* s = (nrnran123_State*)ecalloc(sizeof(nrnran123_State), 1);
 	s->c.v[2] = id1;
 	s->c.v[3] = id2;

@@ -20,6 +20,7 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * @brief File containing main driver routine for CoreNeuron
  */
 
+#include "coreneuron/utils/randoms/nrnran123.h"
 #include "coreneuron/nrnconf.h"
 #include "coreneuron/nrnoc/multicore.h"
 #include "coreneuron/nrnoc/nrnoc_decl.h"
@@ -29,7 +30,6 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/utils/endianness.h"
 #include "coreneuron/utils/memory_utils.h"
 #include "coreneuron/nrniv/nrnoptarg.h"
-#include "coreneuron/utils/randoms/nrnran123.h"
 #include "coreneuron/utils/sdprintf.h"
 #include "coreneuron/nrniv/nrn_stats.h"
 #include "coreneuron/nrniv/nrn_acc_manager.h"
@@ -115,6 +115,8 @@ int main1( int argc, char **argv, char **env )
     // alloctae buffer for mpi communication
     mk_spikevec_buffer( input_params.spikebuf );
 
+    setup_nrnthreads_on_device(nrn_threads, nrn_nthread);
+
     report_mem_usage( "After mk_spikevec_buffer" );
 
     nrn_finitialize( 1, input_params.voltage );
@@ -135,7 +137,6 @@ int main1( int argc, char **argv, char **env )
     // Report global cell statistics
     report_cell_stats();
 
-    setup_nrnthreads_on_device(nrn_threads, nrn_nthread);
 
     fprintf(stderr, "\n------------Solver-----------");
 

@@ -140,6 +140,7 @@ void setup_nrnthreads_on_device(NrnThread *threads, int nthreads)  {
         
         nt->compute_gpu = 0;
         nt->compute_gpu = 1;
+        nt->stream_id = 0;
 
         if(nt->n_pntproc) {
             /* copy Point_processes array and fix the pointer to execute net_receive blocks on GPU */
@@ -151,6 +152,12 @@ void setup_nrnthreads_on_device(NrnThread *threads, int nthreads)  {
             /* copy weight vector used in NET_RECEIVE which is pointed by netcon.weight */
             double * d_weights = (double *) acc_copyin(nt->weights, sizeof(double)*nt->n_weight);
             acc_memcpy_to_device(&(d_nt->weights), &d_weights, sizeof(double*));
+        }
+
+        if(nt->_nvdata) {
+            /* copy vdata which is setup in bbcore_read. This contains cuda allocated nrnran123_State * */
+            double * d_vdata = (double *) acc_copyin(nt->_vdata, sizeof(double)*nt->_nvdata);
+            acc_memcpy_to_device(&(d_nt->_vdata), &d_vdata, sizeof(double*));
         }
 
         printf("\n Compute thread on GPU? : %s, Stream : %d", (nt->compute_gpu)? "Yes" : "No", nt->stream_id);
@@ -511,6 +518,14 @@ void dump_nt_to_file(char *filename, NrnThread *threads, int nthreads) {
 }
 
 void finalize_data_on_device(NrnThread *, int nthreads) {
+
+    /*@todo: when we have used random123 on gpu and we do this finalize,
+    I am seeing cuCtxDestroy returned CUDA_ERROR_INVALID_CONTEXT error.
+    THis might be due to the fact that the cuda apis (e.g. free is not
+    called yet for Ramdom123 data / streams etc. So handle this better!
+    */
+    return;
+
    #ifdef _OPENACC
         acc_shutdown ( acc_device_default);
     #endif
