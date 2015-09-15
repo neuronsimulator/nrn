@@ -39,9 +39,6 @@ of the full distribution available from
 http://www.deshawresearch.com/resources_random123.html
 */
 
-/*@todo: is it ok to include philox.h here? or may be keep as previous with extern
- * declaration of nrnran123_State 
- */
 #include "Random123/philox.h"
 #include <inttypes.h>
 
@@ -120,6 +117,7 @@ extern DEVICE double nrnran123_dblpick(nrnran123_State*); /* uniform open interv
 #pragma acc routine seq
 extern DEVICE void nrnran123_setseq(nrnran123_State*, uint32_t seq, char which);
 
+#pragma acc routine seq
 extern DEVICE double nrnran123_negexp(nrnran123_State*);  /* mean 1.0 */
     /* nrnran123_negexp min value is 2.3283064e-10, max is 22.18071 */
 

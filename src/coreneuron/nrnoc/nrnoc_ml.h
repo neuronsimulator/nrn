@@ -32,6 +32,7 @@ typedef struct NetReceiveBuffer_t {
 	int _cnt;
 	int _size; /* capacity */
 	int _pnt_offset;
+	int reallocated; /* if buffere resized/reallocated, needs to be copy to gpu */
 }NetReceiveBuffer_t;
 
 typedef struct Memb_list {

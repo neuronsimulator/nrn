@@ -603,6 +603,7 @@ void read_phase2(data_reader &F, NrnThread& nt) {
   for (int i=0; i < nmech; ++i) {
     tml = (NrnThreadMembList*)emalloc(sizeof(NrnThreadMembList));
     tml->ml = (Memb_list*)ecalloc(1, sizeof(Memb_list));
+    tml->ml->_net_receive_buffer = NULL;
     tml->next = NULL;
     tml->index = F.read_int();
     tml->ml->nodecount = F.read_int();;
@@ -975,6 +976,9 @@ void read_phase2(data_reader &F, NrnThread& nt) {
 
       nrb->_pnt_index = (int*)ecalloc(nrb->_size, sizeof(int));
       nrb->_weight_index = (int*)ecalloc(nrb->_size, sizeof(int));
+
+      // when == 1, NetReceiveBuffer_t is newly allocated (i.e. we need to free previous copy and recopy new data 
+      nrb->reallocated = 1;
     }
   }
   delete [] pnt_offset;

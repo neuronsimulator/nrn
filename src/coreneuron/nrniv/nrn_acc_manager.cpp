@@ -1,4 +1,5 @@
 #include "coreneuron/nrnoc/multicore.h"
+#include "coreneuron/nrniv/nrn_acc_manager.h"
 #ifdef _OPENACC
 #include<openacc.h>
 #endif
@@ -7,7 +8,7 @@
 #include <pat_api.h>
 #endif
 
-void mech_state(NrnThread *_nt, Memb_list *ml, int type);
+void mech_state(NrnThread *nt, Memb_list *ml, int type);
 
 /* note: threads here are corresponding to global nrn_threads array */
 void setup_nrnthreads_on_device(NrnThread *threads, int nthreads)  {
@@ -15,6 +16,12 @@ void setup_nrnthreads_on_device(NrnThread *threads, int nthreads)  {
 #ifdef _OPENACC
 
     int i;
+    NrnThread *d_threads;
+
+    /* -- copy NrnThread to device. this needs to be contigious vector because offset is used to find
+     * corresponding NrnThread using Point_process in NET_RECEIVE block 
+     */
+    d_threads = (NrnThread *) acc_copyin(threads, sizeof(NrnThread)*nthreads);
     
     printf("\n --- Copying to Device! --- ");
 
@@ -22,18 +29,14 @@ void setup_nrnthreads_on_device(NrnThread *threads, int nthreads)  {
 
     for( i = 0; i < nthreads; i++) {
 
-        NrnThread * nt = threads + i;
-        NrnThread *d_nt;                //NrnThread on device
+        NrnThread * nt = threads + i;                  //NrnThread on host
+        NrnThread *d_nt = d_threads + i;               //NrnThread on device
         
         double *d__data;                // nrn_threads->_data on device
         
         printf("\n -----------COPYING %d'th NrnThread TO DEVICE --------------- \n", i);
 
-        /* -- copy NrnThread to device -- */
-        d_nt = (NrnThread *) acc_copyin(nt, sizeof(NrnThread));
-
         /* -- copy _data to device -- */
-
 
         /*copy all double data for thread */
         d__data = (double *) acc_copyin(nt->_data, nt->_ndata*sizeof(double));
@@ -69,7 +72,9 @@ void setup_nrnthreads_on_device(NrnThread *threads, int nthreads)  {
         dptr = d__data + 5*nt->end;
         acc_memcpy_to_device(&(d_nt->_actual_area), &(dptr), sizeof(double*));
 
-        /* @todo: nt._ml_list[tml->index] = tml->ml; */
+        /* nt._ml_list is used in NET_RECEIVE block and should have valid membrane list id*/
+        Memb_list ** d_ml_list = (Memb_list**) acc_copyin(nt->_ml_list, n_memb_func * sizeof(Memb_list*));
+        acc_memcpy_to_device(&(d_nt->_ml_list), &(d_ml_list), sizeof(Memb_list**));
 
         /* -- copy NrnThreadMembList list ml to device -- */
 
@@ -103,6 +108,9 @@ void setup_nrnthreads_on_device(NrnThread *threads, int nthreads)  {
             d_ml = (Memb_list *) acc_copyin(tml->ml, sizeof(Memb_list));
             acc_memcpy_to_device(&(d_tml->ml), &d_ml, sizeof(Memb_list*));
 
+            /* setup nt._ml_list */
+            acc_memcpy_to_device(&(d_ml_list[tml->index]), &d_ml, sizeof(Memb_list*));
+
             dptr = d__data+offset;
 
             acc_memcpy_to_device(&(d_ml->data), &(dptr), sizeof(double*));
@@ -124,6 +132,28 @@ void setup_nrnthreads_on_device(NrnThread *threads, int nthreads)  {
                 int * d_pdata = (int *) acc_copyin(tml->ml->pdata, sizeof(int)*n*szdp);
                 acc_memcpy_to_device(&(d_ml->pdata), &d_pdata, sizeof(int*));
             }
+
+            NetReceiveBuffer_t *nrb, *d_nrb;
+            int *d_weight_index, *d_pnt_index;
+
+            //net_receive buffer associated with mechanism
+            nrb = tml->ml->_net_receive_buffer;
+
+            // if net receive buffer exist for mechanism
+            if(nrb) {
+
+                d_nrb = (NetReceiveBuffer_t*) acc_copyin(nrb, sizeof(NetReceiveBuffer_t));
+                acc_memcpy_to_device(&(d_ml->_net_receive_buffer), &d_nrb, sizeof(NetReceiveBuffer_t*));
+
+                d_pnt_index = (int *) acc_copyin(nrb->_pnt_index, sizeof(int)*nrb->_size);
+                acc_memcpy_to_device(&(d_nrb->_pnt_index), &d_pnt_index, sizeof(int*));
+
+                d_weight_index = (int *) acc_copyin(nrb->_weight_index, sizeof(int)*nrb->_size);
+                acc_memcpy_to_device(&(d_nrb->_weight_index), &d_weight_index, sizeof(int*));
+
+                //0 means gpu copy updated with size of buffer on cpu
+                nrb->reallocated = 0;
+            }
         }
 
         if(nt->shadow_rhs_cnt) {
@@ -140,7 +170,6 @@ void setup_nrnthreads_on_device(NrnThread *threads, int nthreads)  {
         
         nt->compute_gpu = 0;
         nt->compute_gpu = 1;
-        nt->stream_id = 0;
 
         if(nt->n_pntproc) {
             /* copy Point_processes array and fix the pointer to execute net_receive blocks on GPU */
@@ -156,13 +185,82 @@ void setup_nrnthreads_on_device(NrnThread *threads, int nthreads)  {
 
         if(nt->_nvdata) {
             /* copy vdata which is setup in bbcore_read. This contains cuda allocated nrnran123_State * */
-            double * d_vdata = (double *) acc_copyin(nt->_vdata, sizeof(double)*nt->_nvdata);
-            acc_memcpy_to_device(&(d_nt->_vdata), &d_vdata, sizeof(double*));
+            void ** d_vdata = (void **) acc_copyin(nt->_vdata, sizeof(void *)*nt->_nvdata);
+            acc_memcpy_to_device(&(d_nt->_vdata), &d_vdata, sizeof(void**));
         }
 
         printf("\n Compute thread on GPU? : %s, Stream : %d", (nt->compute_gpu)? "Yes" : "No", nt->stream_id);
     }
 
+#endif
+}
+
+/* when we execute NET_RECEIVE block on GPU, we provide the index of synapse instances
+ * which we need to execute during the current timestep. In order to do this, we have
+ * update NetReceiveBuffer_t object to GPU. When size of cpu buffer changes, we set 
+ * reallocated to true and hence need to reallocate buffer on GPU and then need to copy
+ * entire buffer. If reallocated is 0, that means buffer size is not changed and hence
+ * only need to copy _size elements to GPU.
+ * Note: this is very preliminary implementation, optimisations will be done after first
+ * functional version.
+ */
+void update_net_receive_buffer(NrnThread *nt) {
+
+#ifdef _OPENACC
+
+    NrnThreadMembList* tml;
+    Memb_list *ml, *d_ml;
+    NetReceiveBuffer_t *nrb, *d_nrb;
+    int *d_weight_index, *d_pnt_index;
+
+    for (tml = nt->tml; tml; tml = tml->next) {
+
+        //net_receive buffer to copy
+        nrb = tml->ml->_net_receive_buffer;
+
+        // if net receive buffer exist for mechanism
+        if(nrb) {
+
+            d_nrb = (NetReceiveBuffer_t *) acc_deviceptr(nrb);
+            d_ml = (Memb_list *) acc_deviceptr(tml->ml);
+            
+            // reallocated is true when buffer on cpu is changed
+            if(nrb->reallocated) {
+
+                /* free existing vectors in buffers on gpu */
+                acc_free( acc_deviceptr(nrb->_pnt_index) );
+                acc_free( acc_deviceptr(nrb->_weight_index) );
+                
+                /* update device copy */
+                acc_update_device(nrb, sizeof(NetReceiveBuffer_t));
+
+                /* recopy the vectors in the buffer */        
+                d_pnt_index = (int *) acc_copyin(nrb->_pnt_index, sizeof(int)*nrb->_size);
+                acc_memcpy_to_device(&(d_nrb->_pnt_index), &d_pnt_index, sizeof(int*));
+
+                d_weight_index = (int *) acc_copyin(nrb->_weight_index, sizeof(int)*nrb->_size);
+                acc_memcpy_to_device(&(d_nrb->_weight_index), &d_weight_index, sizeof(int*));
+
+                /* gpu copy updated */
+                nrb->reallocated = 0;
+
+            } else {
+
+                //note that dont update nrb otherwise we loose pointers
+
+                /* update scalar elements */
+                acc_update_device(&nrb->_cnt, sizeof(int)); 
+                acc_update_device(&nrb->_size, sizeof(int)); 
+                acc_update_device(&nrb->_pnt_offset, sizeof(int)); 
+
+                /*@todo confirm with Michael that we don't need to _size but only 
+                 * _cnt elements to GPU
+                 */
+                acc_update_device(nrb->_pnt_index, sizeof(int)*nrb->_cnt);
+                acc_update_device(nrb->_weight_index, sizeof(int)*nrb->_cnt);
+            }
+        }
+    }
 #endif
 }
 
@@ -172,6 +270,7 @@ void update_nrnthreads_on_host(NrnThread *threads, int nthreads) {
         printf("\n --- Copying to Host! --- \n");
 
     int i;
+    NetReceiveBuffer_t *nrb;
     
     for( i = 0; i < nthreads; i++) {
 
@@ -195,6 +294,10 @@ void update_nrnthreads_on_host(NrnThread *threads, int nthreads) {
         for (tml = nt->tml; tml; tml = tml->next) {
 
           Memb_list *ml = tml->ml;
+
+          acc_update_self(&tml->index, sizeof(int));
+          acc_update_self(&ml->nodecount, sizeof(int));
+
           int type = tml->index;
           int n = ml->nodecount;
           int szp = nrn_prop_param_size_[type];
@@ -211,6 +314,18 @@ void update_nrnthreads_on_host(NrnThread *threads, int nthreads) {
               acc_update_self(ml->pdata, n*szdp*sizeof(int));
           }
 
+          nrb = tml->ml->_net_receive_buffer;
+
+          if(nrb) {
+
+              acc_update_self(&nrb->_cnt, sizeof(int));
+              acc_update_self(&nrb->_size, sizeof(int));
+              acc_update_self(&nrb->_pnt_offset, sizeof(int));
+
+              acc_update_self(nrb->_pnt_index, sizeof(int)*nrb->_size);
+              acc_update_self(nrb->_weight_index, sizeof(int)*nrb->_size);
+          }
+
         }
 
         if(nt->shadow_rhs_cnt) {
@@ -219,6 +334,20 @@ void update_nrnthreads_on_host(NrnThread *threads, int nthreads) {
             /* copy shadow_d to host */
             acc_update_self(nt->_shadow_d, nt->shadow_rhs_cnt*sizeof(double));
         }
+
+        if(nt->n_pntproc) {
+            acc_update_self(nt->pntprocs, nt->n_pntproc*sizeof(Point_process));
+        }
+
+        if(nt->n_weight) {
+            acc_update_self(nt->weights, sizeof(double)*nt->n_weight);
+        }
+
+        /* dont update vdata, its pointer array 
+        if(nt->_nvdata) {
+            acc_update_self(nt->_vdata, sizeof(double)*nt->_nvdata);
+        }
+        */
     }
 #endif
 
@@ -230,6 +359,7 @@ void update_nrnthreads_on_device(NrnThread *threads, int nthreads) {
     printf("\n --- Copying to Device! --- \n");
 
     int i;
+    NetReceiveBuffer_t *nrb;
     
     for( i = 0; i < nthreads; i++) {
 
@@ -272,6 +402,16 @@ void update_nrnthreads_on_device(NrnThread *threads, int nthreads) {
               acc_update_device(ml->pdata, n*szdp*sizeof(int));
           }
 
+          nrb = tml->ml->_net_receive_buffer;
+
+          if(nrb) {
+              acc_update_device(&nrb->_cnt, sizeof(int));
+              acc_update_device(&nrb->_size, sizeof(int));
+              acc_update_device(&nrb->_pnt_offset, sizeof(int));
+
+              acc_update_device(nrb->_pnt_index, sizeof(int)*nrb->_size);
+              acc_update_device(nrb->_weight_index, sizeof(int)*nrb->_size);
+          }
         }
 
         if(nt->shadow_rhs_cnt) {
@@ -280,6 +420,22 @@ void update_nrnthreads_on_device(NrnThread *threads, int nthreads) {
             /* copy shadow_d to host */
             acc_update_device(nt->_shadow_d, nt->shadow_rhs_cnt*sizeof(double));
         }
+
+        if(nt->n_pntproc) {
+            acc_update_device(nt->pntprocs, nt->n_pntproc*sizeof(Point_process));
+        }
+
+        if(nt->n_weight) {
+            acc_update_device(nt->weights, sizeof(double)*nt->n_weight);
+        }
+
+        /* dont update vdata, its pointer array 
+        if(nt->_nvdata) {
+        if(nt->_nvdata) {
+            acc_update_device(nt->_vdata, sizeof(double)*nt->_nvdata);
+        }
+        */
+
     }
 #endif
 
@@ -294,9 +450,11 @@ void update_matrix_from_gpu(NrnThread *_nt){
   if (!_nt->compute_gpu)
     return;
 
-  printf("\n Copying matrix to GPU ... ");
+  //printf("\n Copying matrix to GPU ... ");
   // RHS and D are contigious, copy them in one go!
   //acc_update_self(_nt->_actual_rhs, 2*_nt->end*sizeof(double));
+
+  /*NOTE: in pragma you have to give actual pointer like below and not nt->rhs...*/
   double *rhs = _nt->_actual_rhs;
   #pragma acc update host(rhs[0:2*_nt->end]) async(_nt->stream_id)
   #pragma acc wait(_nt->stream_id)
@@ -308,7 +466,7 @@ void update_matrix_to_gpu(NrnThread *_nt){
   if (!_nt->compute_gpu)
     return;
 
-  printf("\n Copying voltage to GPU ... ");
+  //printf("\n Copying voltage to GPU ... ");
   //acc_update_device(_nt->_actual_v, _nt->end*sizeof(double));
   double *v = _nt->_actual_v;
   #pragma acc update device(v[0:_nt->end]) async(_nt->stream_id)
@@ -327,7 +485,8 @@ void modify_data_on_device(NrnThread *threads, int nthreads) {
 #endif
 
     int i, j;
-#if 0    
+    NetReceiveBuffer_t *nrb;
+
     for( i = 0; i < nthreads; i++) {
 
         NrnThread * nt = threads + i;
@@ -381,6 +540,17 @@ void modify_data_on_device(NrnThread *threads, int nthreads) {
               ml->pdata[j] += 1;
             }
           }
+
+          nrb = ml->_net_receive_buffer;
+
+          if(nrb) {
+              #pragma acc parallel loop present(nrb[0:1])
+              for (j = 0; j < nrb->_size; ++j)
+              {
+                    nrb->_pnt_index[j] += 1;
+                    nrb->_weight_index[j] +=1;
+              }
+          }
         }    
 
         if(nt->shadow_rhs_cnt) {
@@ -391,9 +561,37 @@ void modify_data_on_device(NrnThread *threads, int nthreads) {
               nt->_shadow_d[j] += 0.1;
             }
         }
-    }
-#endif
 
+        if(nt->n_pntproc) {
+            #pragma acc parallel loop present(nt[0:1])
+            for (j = 0; j < nt->n_pntproc; ++j)
+            {
+                nt->pntprocs[j]._type +=1;
+                nt->pntprocs[j]._i_instance +=1;
+                nt->pntprocs[j]._tid +=1;
+            }
+        }
+
+        if(nt->n_weight) {
+            #pragma acc parallel loop present(nt[0:1])
+            for (j = 0; j < nt->n_weight; ++j)
+            {
+                nt->weights[j] += 0.1;
+            }
+        }
+
+        /* dont update vdata, its pointer array 
+        if(nt->_nvdata) {
+            #pragma acc parallel loop present(nt[0:1])
+            for (j = 0; j < nt->_nvdata; ++j)
+            {
+                nt->_vdata[j] += 0.1;
+            }
+        }
+        */
+    }
+
+#if 0
     #ifdef CRAYPAT
       PAT_record(PAT_STATE_ON);
     #endif
@@ -418,7 +616,10 @@ void modify_data_on_device(NrnThread *threads, int nthreads) {
     #ifdef CRAYPAT
       PAT_record(PAT_STATE_OFF);
     #endif
+#endif
+
 }
+
 
 
 void write_iarray_to_file(FILE *hFile, int *data, int n) {
@@ -455,12 +656,24 @@ void write_nodeindex_to_file(int gid, int id, int *data, int n) {
 }
 
 
+void write_pntprocs_to_file(FILE *hFile, Point_process *pnt, int n) {
+    int i;
+    
+    fprintf(hFile, "--pntprocs--\n");
+    for(i=0; i<n; i++) {
+        fprintf(hFile, "--%d %d %d--\n", pnt[i]._type, pnt[i]._i_instance, pnt[i]._tid);
+    }
+    fprintf(hFile, "---\n");
+}
+
+
 void dump_nt_to_file(char *filename, NrnThread *threads, int nthreads) {
  
     FILE *hFile;
     int i, j;
     
     NrnThreadMembList* tml;
+    NetReceiveBuffer_t* nrb;
 
 
     for( i = 0; i < nthreads; i++) {
@@ -505,11 +718,29 @@ void dump_nt_to_file(char *filename, NrnThread *threads, int nthreads) {
         if (szdp) {
             write_iarray_to_file(hFile, ml->pdata, n*szdp);
         }
+
+        nrb = ml->_net_receive_buffer;
+        if(nrb) {
+            write_iarray_to_file(hFile, nrb->_pnt_index, nrb->_size);
+            write_iarray_to_file(hFile, nrb->_weight_index, nrb->_size);
+        }
       }
 
       if(nt->shadow_rhs_cnt) {
         write_darray_to_file(hFile, nt->_shadow_rhs, nt->shadow_rhs_cnt);
         write_darray_to_file(hFile, nt->_shadow_d, nt->shadow_rhs_cnt);
+      }
+
+      if(nt->n_weight)
+          write_darray_to_file(hFile, nt->weights, nt->n_weight);
+
+      /* vdata is tricky as it involves pointer to the separately allocated arrays in bbcore_read 
+      if(nt->_nvdata)
+          write_darray_to_file(hFile, nt->_vdata, nt->_nvdata);
+      */
+
+      if(nt->n_pntproc) { 
+          write_pntprocs_to_file(hFile, nt->pntprocs, nt->n_pntproc);
       }
 
       fclose(hFile);
@@ -531,9 +762,17 @@ void finalize_data_on_device(NrnThread *, int nthreads) {
     #endif
 }
 
+void device_data_update_test(NrnThread *threads, int nthreads) {
 
-void mech_state(NrnThread *_nt, Memb_list *ml, int type)
-{
+    dump_nt_to_file("pre", threads, nthreads);
+
+    modify_data_on_device(threads, nthreads);
+    update_nrnthreads_on_host(threads, nthreads);
+
+    dump_nt_to_file("post", threads, nthreads);
+}
+
+void mech_state(NrnThread *_nt, Memb_list *ml, int type) {
     double _v, v;
     int i, j;
 

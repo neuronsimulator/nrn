@@ -16,6 +16,7 @@ extern "C" {
 
 void update_matrix_from_gpu(NrnThread *_nt);
 void update_matrix_to_gpu(NrnThread *_nt);
+void update_net_receive_buffer(NrnThread *_nt);
 
 #ifdef __cplusplus
 }

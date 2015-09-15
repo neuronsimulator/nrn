@@ -24,6 +24,7 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/nrniv/nrniv_decl.h"
 #include "coreneuron/nrniv/output_spikes.h"
 #include "coreneuron/nrniv/nrn_assert.h"
+#include "coreneuron/nrniv/nrn_acc_manager.h"
 
 #define UNIT_ROUNDOFF DBL_EPSILON
 #define PP2NT(pp) (nrn_threads + (pp)->_tid)
@@ -853,6 +854,10 @@ if (print_event_) {db->pr("binq deliver", nt_t, this);}
 	}
 #endif
 	nt->_t = tsav;
+
+    /*before executing on gpu, we have to update the NetReceiveBuffer_t on GPU */
+    update_net_receive_buffer(nt);
+
 	for (int i=0; i < net_buf_receive_cnt_; ++i) {
 		(*net_buf_receive_[i])(nt);
 	}
