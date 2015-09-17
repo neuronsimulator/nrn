@@ -204,12 +204,12 @@ proc nrnmainmenu() {
 	mapped_nrnmainmenu_ = 1
     xpanel("NEURON Main Menu")
 	nrnmainmenu_.filemenu()
-	editmenu()
 	buildmenu()
 	toolmenu()
 	graphmenu()
 	vectormenu()
 	windowmenu()
+	helpmenu()
     xpanel(0,25)
 	if (object_id(WindowMenu[0].pwm) == 0) {
 		// some sessions need a PWManager which used not to
@@ -223,10 +223,16 @@ proc nrnmainmenu() {
 	}
 }
 
-proc editmenu() {
-	xmenu("Edit", 1)
-	xmenu()
+proc helpmenu() {
+    if (nrnpython("import webbrowser")) {
+	    xmenu("Help", 1)
+	    xbutton("Programmer's Reference", "nrnpython(\"webbrowser.open('https://www.neuron.yale.edu/neuron/static/new_doc/index.html')\")")
+	    xbutton("Tutorials", "nrnpython(\"webbrowser.open('http://neuron.yale.edu/neuron/docs')\")")
+	    xbutton("NEURON Forum", "nrnpython(\"webbrowser.open('https://www.neuron.yale.edu/phpBB/')\")")
+	    xmenu()
+    }
 }
+
 proc buildmenu() {local has_rxd
     has_rxd = 0
     if (nrnpython("import neuron")) {
