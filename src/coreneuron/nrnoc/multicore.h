@@ -58,7 +58,7 @@ typedef struct NrnThread {
         int ncell; /* analogous to old rootnodecount */
 	int end;    /* 1 + position of last in v_node array. Now v_node_count. */
 	int id; /* this is nrn_threads[id] */
-    int _stop_stepping;
+        int _stop_stepping;
 	int n_vecplay; /* number of instances of VecPlayContinuous */
 
 	size_t _ndata, _nidata, _nvdata; /* sizes */
@@ -88,15 +88,10 @@ typedef struct NrnThread {
 extern void nrn_threads_create(int n, int parallel);
 extern int nrn_nthread;
 extern NrnThread* nrn_threads;
-extern void nrn_thread_error(const char*);
 extern void nrn_multithread_job(void*(*)(NrnThread*));
-extern void nrn_onethread_job(int, void*(*)(NrnThread*));
-extern void nrn_wait_for_threads(void);
 extern void nrn_thread_table_check(void);
 
 extern void nrn_threads_free(void);
-
-#define FOR_THREADS(nt) for (nt = nrn_threads; nt < nrn_threads + nrn_nthread; ++nt)
 
 #if defined(__cplusplus)
 }

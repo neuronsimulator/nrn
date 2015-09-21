@@ -26,11 +26,11 @@ sparse matrix, multisplit, or legacy features.
 static void nrn_rhs(NrnThread* _nt) {
 	int i, i1, i2, i3;
 	NrnThreadMembList* tml;
-	
+
 	i1 = 0;
 	i2 = i1 + _nt->ncell;
 	i3 = _nt->end;
-	
+
 	for (i = i1; i < i3; ++i) {
 		VEC_RHS(i) = 0.;
 		VEC_D(i) = 0.;

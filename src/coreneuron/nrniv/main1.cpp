@@ -42,7 +42,7 @@ int main1( int argc, char **argv, char **env )
     // mpi initialisation
     nrnmpi_init( 1, &argc, &argv );
 
-    // initialise coreneuron parameters
+    // initialise default coreneuron parameters
     initnrn();
 
     // create mutex for nrn123, protect instance_count_
@@ -161,7 +161,7 @@ void handle_forward_skip( double forwardskip, int prcellgid )
     t = -1e9;
 
     for ( int step = 0; step < 10; ++step ) {
-        nrn_fixed_step();
+        nrn_fixed_step_minimal();
     }
 
     if ( prcellgid >= 0 ) {

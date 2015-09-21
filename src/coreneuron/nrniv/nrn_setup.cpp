@@ -693,7 +693,7 @@ void read_phase2(data_reader &F, NrnThread& nt) {
       for (int i=0; i < cnt; ++i) {
         Point_process* pp = pnt + i;
         pp->_type = type;
-	pp->_i_instance = i;
+        pp->_i_instance = i;
         nt._vdata[ml->pdata[nrn_i_layout(i, cnt, 1, szdp, layout)]] = pp;
         pp->_presyn = NULL;
         pp->_tid = nt.id;
@@ -751,6 +751,33 @@ void read_phase2(data_reader &F, NrnThread& nt) {
       }
     }
   }
+
+  /// Fill the BA lists
+  BAMech** bamap = new BAMech*[n_memb_func]; 
+  for (int i=0; i < BEFORE_AFTER_SIZE; ++i) {
+    BAMech* bam;
+    NrnThreadBAList* tbl, **ptbl;
+    for (int ii=0; ii < n_memb_func; ++ii) {
+      bamap[ii] = (BAMech*)0;
+    }
+    for (bam = bamech_[i]; bam; bam = bam->next) {
+      bamap[bam->type] = bam;
+    }
+    /* unnecessary but keep in order anyway */
+    ptbl = nt.tbl + i;
+    for (tml = nt.tml; tml; tml = tml->next) {
+      if (bamap[tml->index]) {
+        Memb_list* ml = tml->ml;
+        tbl = (NrnThreadBAList*)emalloc(sizeof(NrnThreadBAList));
+        tbl->next = (NrnThreadBAList*)0;
+        tbl->bam = bamap[tml->index];
+        tbl->ml = ml;
+        *ptbl = tbl;
+        ptbl = &(tbl->next);
+      }
+    }
+  }
+  delete [] bamap;
 
   // Real cells are at the beginning of the nt.presyns followed by
   // acells (with and without gids mixed together)

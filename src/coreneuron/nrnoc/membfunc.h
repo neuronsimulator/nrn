@@ -31,11 +31,6 @@ typedef void (*mod_alloc_t)(double*, Datum*, int);
 typedef void (*mod_f_t)(struct NrnThread*, Memb_list*, int);
 typedef void (*pnt_receive_t)(Point_process*, double*, double);
 
-#define NULL_ALLOC (mod_alloc_t)0
-#define NULL_CUR (mod_f_t)0
-#define NULL_STATE (mod_f_t)0
-#define NULL_INITIALIZE (mod_f_t)0
-
 typedef struct Memb_func {
 	mod_alloc_t alloc;
 	mod_f_t	current;
@@ -80,12 +75,6 @@ extern BAMech** bamech_;
 
 extern Memb_func* memb_func;
 extern int n_memb_func;
-#if VECTORIZE
-extern Memb_list* memb_list;
-/* for finitialize, order is same up through extracellular, then ions,
-then mechanisms that write concentrations, then all others. */
-extern short* memb_order_; 
-#endif
 #define NRNPOINTER 4 /* added on to list of mechanism variables.These are
 pointers which connect variables  from other mechanisms via the _ppval array.
 */

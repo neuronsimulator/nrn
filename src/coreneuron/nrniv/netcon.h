@@ -45,7 +45,6 @@ public:
 	virtual ~DiscreteEvent();
 	virtual void send(double deliverytime, NetCvode*, NrnThread*);
 	virtual void deliver(double t, NetCvode*, NrnThread*);
-	virtual NrnThread* thread();
 	virtual int type() { return DiscreteEventType; }
 
     virtual void pr(const char*, double t, NetCvode*);
@@ -71,7 +70,6 @@ public:
 	virtual ~NetCon();
 	virtual void send(double sendtime, NetCvode*, NrnThread*);
     virtual void deliver(double,  NetCvode* ns, NrnThread*);
-	virtual NrnThread* thread();
 	virtual int type() { return NetConType; }
 };
 
@@ -85,7 +83,6 @@ public:
 	SelfEvent();
 	virtual ~SelfEvent();
 	virtual void deliver(double, NetCvode*, NrnThread*);
-    virtual NrnThread* thread();
     virtual int type() { return SelfEventType; }
 
     virtual void pr(const char*, double t);
@@ -106,20 +103,6 @@ public:
 	bool flag_; // true when below, false when above.
 };
 
-class WatchCondition : public ConditionEvent {
-public:
-    double nrflag_;
-    Point_process* pnt_;
-
-    WatchCondition(Point_process*, double(*)(Point_process*));
-	virtual ~WatchCondition();
-	virtual double value() { return (*c_)(pnt_); }
-	virtual void deliver(double, NetCvode*, NrnThread*);
-    virtual void pr(const char*, double t);
-	virtual NrnThread* thread();
-	
-	double(*c_)(Point_process*);
-};
 
 class PreSyn : public ConditionEvent {
 public:
@@ -139,7 +122,6 @@ public:
 	virtual ~PreSyn();
 	virtual void send(double sendtime, NetCvode*, NrnThread*);
 	virtual void deliver(double, NetCvode*, NrnThread*);
-	virtual NrnThread* thread();
 	virtual int type() { return PreSynType; }
 
     virtual double value() { return *thvar_ - threshold_; }
@@ -159,14 +141,6 @@ public:
 	virtual int type() { return InputPreSynType; }
 
 
-};
-
-class TstopEvent : public DiscreteEvent {
-public:
-	TstopEvent();
-	virtual ~TstopEvent();
-    virtual void deliver();
-    virtual void pr(const char*, double t);
 };
 
 class NetParEvent : public DiscreteEvent {

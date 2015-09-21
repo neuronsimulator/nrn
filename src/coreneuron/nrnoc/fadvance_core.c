@@ -30,13 +30,13 @@ void dt2thread(double adt) { /* copied from nrnoc/fadvance.c */
 	for (i=0; i < nrn_nthread; ++i) {
 		NrnThread* nt = nrn_threads + i;
 		nt->_t = t;
-		nt->_dt = dt;
+        nt->_dt = dt;
 		if (secondorder) {
 			nt->cj = 2.0/dt;
 		}else{
 			nt->cj = 1.0/dt;
 		}
-	}
+    }
     }
 }
 
@@ -138,7 +138,6 @@ void nrn_ba(NrnThread* nt, int bat){
 
 static void* nrn_fixed_step_thread(NrnThread* nth) {
 	deliver_net_events(nth);
-	nrn_random_play(nth);
 	nth->_t += .5 * nth->_dt;
 	fixed_play_continuous(nth);
 	setup_tree_matrix_minimal(nth);
@@ -149,7 +148,6 @@ static void* nrn_fixed_step_thread(NrnThread* nth) {
 	fixed_play_continuous(nth);
 	nonvint(nth);
 	nrn_ba(nth, AFTER_SOLVE);
-	fixed_record_continuous(nth);
 	nrn_deliver_events(nth) ; /* up to but not past texit */
 	return (void*)0;
 }
