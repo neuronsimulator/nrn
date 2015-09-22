@@ -53,7 +53,6 @@ extern void netpar_tid_set_gid2node(int tid, int gid, int nid, PreSyn* ps);
 extern void nrn_cleanup_presyn(DiscreteEvent*);
 extern void nrn_outputevent(unsigned char, double);
 extern void ncs2nrn_integrate(double tstop);
-extern void nrn_pending_selfqueue(double, NrnThread*);
 extern size_t output_presyn_size(void);
 extern size_t input_presyn_size(void);
 

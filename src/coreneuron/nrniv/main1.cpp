@@ -134,11 +134,10 @@ int main1( int argc, char **argv, char **env )
         handle_forward_skip( input_params.forwardskip, input_params.prcellgid );
     }
 
-    // Report global cell statistics
-    report_cell_stats();
-
-
-    fprintf(stderr, "\n------------Solver-----------");
+    //dump_nt_to_file("dump_init", nrn_threads, nrn_nthread);
+    //modify_data_on_device(nrn_threads, nrn_nthread);
+    //update_nrnthreads_on_host(nrn_threads, nrn_nthread);
+    //dump_nt_to_file("dump_upd", nrn_threads, nrn_nthread);
 
     #ifdef CRAYPAT
         PAT_record(PAT_STATE_ON);
@@ -151,12 +150,8 @@ int main1( int argc, char **argv, char **env )
         PAT_record(PAT_STATE_OFF);
     #endif
 
-    //dump_nt_to_file("dump_init", nrn_threads, nrn_nthread);
-//    modify_data_on_device(nrn_threads, nrn_nthread);
-//    update_nrnthreads_on_host(nrn_threads, nrn_nthread);
-    //dump_nt_to_file("dump_upd", nrn_threads, nrn_nthread);
-
-    printf("Threads on the host are updated\n");
+    // Report global cell statistics
+    report_cell_stats();
 
     // prcellstate after end of solver
     if ( input_params.prcellgid >= 0 ) {

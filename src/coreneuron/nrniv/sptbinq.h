@@ -17,27 +17,75 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //#ifndef tqueue_h
 //#define tqueue_h
 
+/*
+**  SPTREE:  The following type declarations provide the binary tree
+**  representation of event-sets or priority queues needed by splay trees
+**
+**  assumes that data and datb will be provided by the application
+**  to hold all application specific information
+**
+**  assumes that key will be provided by the application, comparable
+**  with the compare function applied to the addresses of two keys.
+*/
 // bin queue for the fixed step method for NetCons and PreSyns. Splay tree
 // for others.
 // fifo for the NetCons and PreSyns with same delay. Splay tree for
 // others (especially SelfEvents).
 // note that most methods below assume a TQItem is in the splay tree
 // For the bin part, only insert_fifo, and remove make sense,
-// and forall_callback does the splay tree first and then the bin (so
-// not in time order)
 // The bin part assumes a fixed step method.
 
+#include <stdio.h>
 #include <assert.h>
+#include "coreneuron/nrniv/nrnmutdec.h"
 
 #define COLLECT_TQueue_STATISTICS 1
-struct SPTREE;
-class TQItemPool;
+
+#define STRCMP_DEF 0
+#if STRCMP_DEF
+# define STRCMP( a, b ) ( (Sct = *(a) - *(b)) ? Sct : strcmp( (a), (b) ) )
+#else
+#define STRCMP(a, b) (a - b)
+#endif
+
+class TQItem;
+#define SPBLK TQItem
+#define leftlink left_
+#define rightlink right_
+#define uplink parent_
+#define cnt cnt_
+#define key t_
+
+typedef struct SPTREE
+{
+    SPBLK	* root;		/* root node */
+
+    /* Statistics, not strictly necessary, but handy for tuning  */
+    int		enqcmps;	/* compares in spenq */
+
+} SPTREE;
+
+#define spinit sptq_spinit
+#define spempty sptq_spempty
+#define spenq sptq_spenq
+#define spdeq sptq_spdeq
+#define splay sptq_splay
+#define sphead sptq_sphead
+#define spdelete sptq_spdelete
+
+extern void spinit(SPTREE*);		/* init tree */
+extern int spempty(SPTREE*);		/* is tree empty? */
+extern SPBLK * spenq(SPBLK*, SPTREE*);	/* insert item into the tree */
+extern SPBLK * spdeq(SPBLK**);		/* return and remove lowest item in subtree */
+extern void splay(SPBLK*, SPTREE*);	/* reorganize tree */
+extern SPBLK * sphead(SPTREE*);         /* return first node in tree */
+extern void spdelete(SPBLK*, SPTREE*);	/* delete node from tree */
+
 
 class TQItem {
 public:
 	TQItem();
 	virtual ~TQItem();
-	bool check();
 public:
 	void* data_;
 	double t_;
@@ -54,17 +102,14 @@ public:
 	virtual ~BinQ();
 	void enqueue(double tt, TQItem*);
 	void shift(double tt) { assert(!bins_[qpt_]); tt_ = tt; if (++qpt_ >= nbin_) { qpt_ = 0; }}
-	TQItem* top() { return bins_[qpt_]; }
-	TQItem* dequeue();
-	double tbin() { return tt_; }
 	// for iteration
 	TQItem* first();
 	TQItem* next(TQItem*);
 	void remove(TQItem*);
-	void resize(int);
+    void resize(int);
 #if COLLECT_TQueue_STATISTICS
 public:
-	int nfenq, nfdeq, nfrem;
+    int nfenq;
 #endif
 private:
 	double tt_; // time at beginning of qpt_ interval
@@ -74,46 +119,30 @@ private:
 
 class TQueue {
 public:
-	TQueue(TQItemPool*, int mkmut = 0);
-	virtual ~TQueue();
+  TQueue();
+  virtual ~TQueue();
 
-	TQItem* least() {return least_;}
-#if (USE_PTHREAD || defined(_OPENMP))
-	double least_t(){double tt; MUTLOCK; if (least_) { tt = least_->t_;}else{tt = 1e15;} MUTUNLOCK; return tt;}
-#else
-	double least_t(){if (least_) { return least_->t_;}else{return 1e15;}}
-#endif
-	TQItem* atomic_dq(double til);
-	TQItem* insert(double t, void* data);
-	TQItem* enqueue_bin(double t, void* data);
-	TQItem* dequeue_bin() { return binq_->dequeue(); }
-	void shift_bin(double _t_) { ++nshift_; binq_->shift(_t_); }
-	double tbin() { return binq_->tbin(); }
-	TQItem* top() { return binq_->top(); }
-	void release(TQItem*);
-	TQItem* find(double t);
-	void remove(TQItem*);
-	void move(TQItem*, double tnew);
-	void move_least(double tnew);
-	void print();
-	void check(const char* errmess);
-	void statistics();
-	void spike_stat(double*);
-	void forall_callback(void (*)(const TQItem*, int));
-	int nshift_;
-	void deleteitem(TQItem*);
+  TQItem* least() {return least_;}
+  TQItem* atomic_dq(double til);
+  TQItem* insert(double t, void* data);
+  void shift_bin(double _t_) { ++nshift_; binq_->shift(_t_); }
+  void remove(TQItem*);
+  void move(TQItem*, double tnew);
+  void statistics();
+  int nshift_;
+
 private:
-	double least_t_nolock(){if (least_) { return least_->t_;}else{return 1e15;}}
-	void move_least_nolock(double tnew);
-	SPTREE* sptree_;
-	BinQ* binq_;
-	TQItem* least_;
-	TQItemPool* tpool_;
-	MUTDEC
+  double least_t_nolock(){if (least_) { return least_->t_;}else{return 1e15;}}
+  void move_least_nolock(double tnew);
+  SPTREE* sptree_;
+  BinQ* binq_;
+  TQItem* least_;
+  MUTDEC
 #if COLLECT_TQueue_STATISTICS
-	unsigned long ninsert, nrem, nleast, nbal, ncmplxrem;
-	unsigned long ncompare, nleastsrch, nfind, nfindsrch, nmove, nfastmove;
+  unsigned long ninsert, nrem, nleast, nbal, ncmplxrem;
+  unsigned long ncompare, nleastsrch, nfind, nfindsrch, nmove, nfastmove;
 #endif
 };
+
 
 //#endif

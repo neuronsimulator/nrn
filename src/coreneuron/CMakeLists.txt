@@ -38,11 +38,8 @@ nrniv/nrniv_decl.h
 nrniv/nrniv_mf.h
 nrniv/nrnmutdec.h
 nrniv/output_spikes.h
-nrniv/pool.h
 nrniv/prcellstate.cpp
 nrniv/sptbinq.h
-nrniv/sptree.h
-nrniv/tqueue.h
 nrniv/vrecitem.h
 nrniv/nrn_acc_manager.h
 mech/cfile/cabvars.h
@@ -57,7 +54,6 @@ nrnoc/capac.c
 nrnoc/eion.c
 nrnoc/finitialize.c
 nrnoc/fadvance_core.c
-nrnoc/hocstub.c
 nrnoc/solve_core.c
 nrnoc/treeset_core.c
 nrnoc/nrnoc_aux.c

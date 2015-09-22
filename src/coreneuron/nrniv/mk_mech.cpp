@@ -110,9 +110,14 @@ void mk_mech(const char* datpath) {
   }
 /* will have to put this back if any mod file refers to diam */
 //	register_mech(morph_mech, morph_alloc, (Pfri)0, (Pfri)0, (Pfri)0, (Pfri)0, -1, 0);
+
+  /// Calling _reg functions for the default mechanisms from the file mech/cfile/cabvars.h
   for (int i=0; mechanism[i]; i++) {
       (*mechanism[i])();
   }
+
+  /// Calling the rest of additional Neurodamus or other _reg functions from the file mod_func.c
+  /// (built during the config time from mech/mod_func.c.pl)
   modl_reg();
 }
 

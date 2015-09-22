@@ -198,7 +198,7 @@ void nrn_setup(const char *path, const char *filesdat, int byte_swap, int thread
   /// Allocate NrnThread* nrn_threads of size ngroup (minimum 2)
   nrn_threads_create(ngroup == 1?2:ngroup, threading); // serial/parallel threads
 
-  /// Reserve vector of maps of size ngroup
+  /// Reserve vector of maps of size ngroup for negative gid-s
   /// std::vector< std::map<int, PreSyn*> > neg_gid2out;
   netpar_tid_gid2ps_alloc(ngroup);
 
@@ -208,7 +208,8 @@ void nrn_setup(const char *path, const char *filesdat, int byte_swap, int thread
   // nt.presyns and nt.netcons arrays.
   // Generates the gid2out map which is needed
   // to later count the required number of InputPreSyn
-  /// gid2out - vector of size ngroup of maps of int <-> PreSyn*
+  /// gid2out - map of output presyn-s
+  /// std::map<int, PreSyn*> gid2out;
   nrn_reset_gid2out();
 
   data_reader *file_reader=new data_reader[ngroup];

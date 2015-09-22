@@ -34,16 +34,9 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 typedef void (*ReceiveFunc)(Point_process*, double*, double);
 
-declarePool(SelfEventPool, SelfEvent)
-implementPool(SelfEventPool, SelfEvent)
-
 double NetCvode::eps_;
 NetCvode* net_cvode_instance;
 int cvode_active_;
-int nrn_use_selfqueue_;
-#if BBTQ == 5
-bool nrn_use_bin_queue_;
-#endif
 
 void mk_netcvode() {
 	if (!net_cvode_instance) {
@@ -82,13 +75,10 @@ static int nrn_errno_check(int type)
 
 }
 
-static void all_pending_selfqueue(double tt);
-static void* pending_selfqueue(NrnThread*);
-
 void net_send(void** v, int weight_index_, Point_process* pnt, double td, double flag) {
 	NrnThread* nt = PP2NT(pnt);
 	NetCvodeThreadData& p = net_cvode_instance->p[nt->id];
-	SelfEvent* se = p.sepool_->alloc();
+    SelfEvent* se = new SelfEvent;
 	se->flag_ = flag;
 	se->target_ = pnt;
 	se->weight_index_ = weight_index_;
@@ -111,36 +101,7 @@ void net_send(void** v, int weight_index_, Point_process* pnt, double td, double
 }
 
 void artcell_net_send(void** v, int weight_index_, Point_process* pnt, double td, double flag) {
-    if (nrn_use_selfqueue_ && flag == 1.0) {
-    NrnThread* nt = PP2NT(pnt);
-	NetCvodeThreadData& p = net_cvode_instance->p[nt->id];
-	SelfEvent* se = p.sepool_->alloc();
-	se->flag_ = flag;
-	se->target_ = pnt;
-	se->weight_index_ = weight_index_;
-	se->movable_ = v; // needed for SaveState
-	assert(net_cvode_instance);
-	++p.unreffed_event_cnt_;
-	if (td < nt->_t) {
-		char buf[100];
-		sprintf(buf, "net_send td-t = %g", td - nt->_t);
-		se->pr(buf, td);
-		hoc_execerror("net_send delay < 0", 0);
-	}
-	TQItem* q;
-	q = p.selfqueue_->insert(se);
-	q->t_ = td;
-	*v = (void*)q;
-//printf("artcell_net_send %g %s %g %p\n", td, pnt_name(pnt), flag, v);
-	if (q->t_ < p.immediate_deliver_) {
-//printf("artcell_net_send_  %s immediate %g %g %g\n", pnt_name(pnt), nt->_t, q->t_, p.immediate_deliver_);
-		SelfEvent* se2 = (SelfEvent*)q->data_;
-		p.selfqueue_->remove(q);
-		se2->deliver(td, net_cvode_instance, nt);
-	}
-    }else{
 	net_send(v, weight_index_, pnt, td, flag);
-    }
 }
 
 void net_event(Point_process* pnt, double time) {
@@ -164,11 +125,7 @@ struct InterThreadEvent {
 
 #define ITE_SIZE 10
 NetCvodeThreadData::NetCvodeThreadData() {
-	tpool_ = new TQItemPool(1000, 1);
-	// tqe_ accessed only by thread i so no locking
-	tqe_ = new TQueue(tpool_, 0);
-	sepool_ = new SelfEventPool(1000,1);
-	selfqueue_ = nil;
+	tqe_ = new TQueue();
 	ite_size_ = ITE_SIZE;
 	ite_cnt_ = 0;
 	unreffed_event_cnt_ = 0;
@@ -180,12 +137,6 @@ NetCvodeThreadData::NetCvodeThreadData() {
 NetCvodeThreadData::~NetCvodeThreadData() {
 	delete [] inter_thread_events_;
 	delete tqe_;
-	delete tpool_;
-	if (selfqueue_) {
-		selfqueue_->remove_all();
-		delete selfqueue_;
-	}
-	delete sepool_;
 	MUTDESTRUCT
 }
 
@@ -277,23 +228,12 @@ void NetCvode::p_construct(int n) {
 }
 
 
-#if BBTQ == 5
 TQItem* NetCvode::bin_event(double td, DiscreteEvent* db, NrnThread* nt) {
-    if (nrn_use_bin_queue_) {
-#if PRINT_EVENT
-	if (print_event_) {db->pr("binq send", td, this);}
-#endif
-	return p[nt->id].tqe_->enqueue_bin(td, db);
-    }else{
 #if PRINT_EVENT
 	if (print_event_) {db->pr("send", td, this);}
 #endif
 	return p[nt->id].tqe_->insert(td, db);
-    }
 }
-#else
-#define bin_event event
-#endif
 
 TQItem* NetCvode::event(double td, DiscreteEvent* db, NrnThread* nt) {
 #if PRINT_EVENT
@@ -318,32 +258,20 @@ void NetCvode::clear_events() {
     for (int i=0; i < nrn_nthread; ++i) {
 		NetCvodeThreadData& d = p[i];
 		delete d.tqe_;
-		d.tqe_ = new TQueue(p[i].tpool_);
+		d.tqe_ = new TQueue();
 		d.unreffed_event_cnt_ = 0;
-		d.sepool_->free_all();
 		d.immediate_deliver_ = -1e100;
 		d.ite_cnt_ = 0;
-		if (nrn_use_selfqueue_) {
-			if (!d.selfqueue_) {
-				d.selfqueue_ = new SelfQueue(d.tpool_, 0);
-			}else{
-				d.selfqueue_->remove_all();
-			}
-		}
-#if BBTQ == 5
 		d.tqe_->nshift_ = -1;
 		d.tqe_->shift_bin(nt_t);
-#endif
 	}
 }
 
 void NetCvode::init_events() {
-#if BBTQ == 5
 	for (int i=0; i < nrn_nthread; ++i) {
 		p[i].tqe_->nshift_ = -1;
 		p[i].tqe_->shift_bin(nt_t);
 	}
-#endif
 	for (int tid=0; tid < nrn_nthread; ++tid) {// can be done in parallel
 		NrnThread* nt = nrn_threads + tid;
 
@@ -387,7 +315,7 @@ bool NetCvode::deliver_event(double til, NrnThread* nt) {
 	if ((q = p[nt->id].tqe_->atomic_dq(til)) != 0) {
 		DiscreteEvent* de = (DiscreteEvent*)q->data_;
 		double tt = q->t_;
-		p[nt->id].tqe_->release(q);
+		delete q;
 #if PRINT_EVENT
 		if (print_event_) { de->pr("deliver", tt, this); }
 #endif
@@ -411,53 +339,30 @@ void net_move(void** v, Point_process* pnt, double tt) {
 }
 
 void artcell_net_move(void** v, Point_process* pnt, double tt) {
-    if (nrn_use_selfqueue_) {
-	if (!(*v)) {
-		hoc_execerror( "No event with flag=1 for net_move in ", pnt_name(pnt));
-	}
-	NrnThread* nt = PP2NT(pnt);
-	NetCvodeThreadData& p = net_cvode_instance->p[nt->id];
-	TQItem* q = (TQItem*)(*v);
-//printf("artcell_net_move t=%g qt_=%g tt=%g %s *v=%p\n", nt->_t, q->t_, tt, pnt_name(pnt), *v);
-	if (tt < nt->_t) {
-		SelfEvent* se = (SelfEvent*)q->data_;
-		char buf[100];
-		sprintf(buf, "artcell_net_move tt-nt_t = %g", tt - nt->_t);
-		se->pr(buf, tt);
-		hoc_execerror("net_move tt < t", 0);
-	}
-	q->t_ = tt;
-	if (tt < p.immediate_deliver_) {
-//printf("artcell_net_move_ %s immediate %g %g %g\n", pnt_name(pnt), PP2t(pnt), tt, p.immediate_deliver_);
-		SelfEvent* se = (SelfEvent*)q->data_;
-		se->deliver(tt, net_cvode_instance, nt);
-	}
-    }else{
-	net_move(v, pnt, tt);
-    }
+  net_move(v, pnt, tt);
 }
 
 void NetCvode::move_event(TQItem* q, double tnew, NrnThread* nt) {
-	int tid = nt->id;
+  int tid = nt->id;
 #if PRINT_EVENT
 if (print_event_) {
-	SelfEvent* se = (SelfEvent*)q->data_;
-printf("NetCvode::move_event self event target %s t=%g, old=%g new=%g\n", memb_func[se->target_->_type].sym, nt->_t, q->t_, tnew);
+  SelfEvent* se = (SelfEvent*)q->data_;
+  printf("NetCvode::move_event self event target %s t=%g, old=%g new=%g\n", memb_func[se->target_->_type].sym, nt->_t, q->t_, tnew);
 }
 #endif
-	p[tid].tqe_->move(q, tnew);
+  p[tid].tqe_->move(q, tnew);
 }
 
 void NetCvode::remove_event(TQItem* q, int tid) {
-	p[tid].tqe_->remove(q);
+  p[tid].tqe_->remove(q);
 }
 
 void NetCvode::deliver_events(double til, NrnThread* nt) {
 //printf("deliver_events til %20.15g\n", til);
-	p[nt->id].enqueue(this, nt);
-	while(deliver_event(til, nt)) {
-		;
-	}
+  p[nt->id].enqueue(this, nt);
+  while(deliver_event(til, nt)) {
+    ;
+  }
 }
 
 DiscreteEvent::DiscreteEvent() {}
@@ -582,11 +487,7 @@ void DiscreteEvent::pr(const char* s, double tt, NetCvode* ns) {
 void NetCon::send(double tt, NetCvode* ns, NrnThread* nt) {
 	if (active_ && target_) {
         nrn_assert(PP2NT(target_) == nt);
-#if BBTQ == 5
-		ns->bin_event(tt, this, PP2NT(target_));
-#else
-		ns->event(tt, this, PP2NT(target_));
-#endif
+	ns->bin_event(tt, this, PP2NT(target_));
     }
 }
 	
@@ -598,10 +499,6 @@ void NetCon::deliver(double tt, NetCvode* ns, NrnThread* nt) {
     }
 	assert(PP2NT(target_) == nt);
 	int typ = target_->_type;
-	if (nrn_use_selfqueue_ && nrn_is_artificial_[typ]) {
-		assert(0);
-		// need to figure out what to do
-	}
 	nt->_t = tt;
 
 //printf("NetCon::deliver t=%g tt=%g %s\n", t, tt, pnt_name(target_));
@@ -624,15 +521,11 @@ void PreSyn::send(double tt, NetCvode* ns, NrnThread* nt) {
 			NetCon* d = netcon_in_presyn_order_[nc_index_ + i];
 			if (d->active_ && d->target_) {
 				NrnThread* n = PP2NT(d->target_);
-#if BBTQ == 5
 				if (nt == n) {
 					ns->bin_event(tt + d->delay_, d, n);
 				}else{
 					ns->p[n->id].interthread_send(tt + d->delay_, d, n);
 				}
-#else
-				ns->event(tt + d->delay_, d, PP2NT(d->target_));
-#endif
 			}
 		}
 	}
@@ -655,15 +548,11 @@ void InputPreSyn::send(double tt, NetCvode* ns, NrnThread* nt) {
 			NetCon* d = netcon_in_presyn_order_[nc_index_ + i];
 			if (d->active_ && d->target_) {
 				NrnThread* n = PP2NT(d->target_);
-#if BBTQ == 5
 				if (nt == n) {
 					ns->bin_event(tt + d->delay_, d, n);
 				}else{
 					ns->p[n->id].interthread_send(tt + d->delay_, d, n);
 				}
-#else
-				ns->event(tt + d->delay_, d, PP2NT(d->target_));
-#endif
 			}
 		}
 	}
@@ -683,19 +572,7 @@ SelfEvent::SelfEvent() {}
 SelfEvent::~SelfEvent() {}
 
 void SelfEvent::deliver(double tt, NetCvode* ns, NrnThread* nt) {
-	int typ = target_->_type;
 	assert(nt == PP2NT(target_));
-	if (nrn_use_selfqueue_ && nrn_is_artificial_[typ]) { // handle possible earlier flag=1 self event
-		if (flag_ == 1.0) { *movable_ = 0; }
-		TQItem* q;
-		while ((q = (TQItem*)(*movable_)) != 0 && q->t_ <= tt) {
-//printf("handle earlier %g selfqueue event from within %g SelfEvent::deliver\n", q->t_, tt);
-			double t1 = q->t_;
-			SelfEvent* se = (SelfEvent*)ns->p[nt->id].selfqueue_->remove(q);
-			PP2t(target_) = t1;
-			se->call_net_receive(ns);
-		}
-	}
 	PP2t(target_) = tt;
 //printf("SelfEvent::deliver t=%g tt=%g %s\n", PP2t(target), tt, pnt_name(target_));
 	call_net_receive(ns);
@@ -714,7 +591,6 @@ hoc_warning("errno set during SelfEvent deliver to NET_RECEIVE", (char*)0);
 #endif
 	NetCvodeThreadData& nctd = ns->p[PP2NT(target_)->id];
 	--nctd.unreffed_event_cnt_;
-	nctd.sepool_->hpfree(this);
 }
 	
 void SelfEvent::pr(const char* s, double tt) {
@@ -755,51 +631,10 @@ void ncs2nrn_integrate(double tstop) {
 	    }
 	// handle all the pending flag=1 self events
 for (int i=0; i < nrn_nthread; ++i) { assert(nrn_threads[i]._t == nt_t);}
-	all_pending_selfqueue(nt_t);
 }
 
 TQueue* NetCvode::event_queue(NrnThread* nt) {
 	return p[nt->id].tqe_;
-}
-
-static double pending_selfqueue_deliver_;
-static void* pending_selfqueue(NrnThread* nt) {
-	nrn_pending_selfqueue(pending_selfqueue_deliver_, nt);
-	return 0;
-}
-
-void nrn_pending_selfqueue(double tt, NrnThread* nt) {
-	NetCvodeThreadData& nctd = net_cvode_instance->p[nt->id];
-	double ts = nt->_t;
-//	net_cvode_instance->deliver_events(nctd.immediate_deliver_, nt);
-	SelfQueue* sq = nctd.selfqueue_;
-	TQItem* q1, *q2;
-	nctd.immediate_deliver_ = tt;
-	for (q1 = sq->first(); q1; q1 = q2) {
-		if (q1->t_ <= tt) {
-			SelfEvent* se = (SelfEvent*)q1->data_;
-//printf("ncs2nrn_integrate %g SelfEvent for %s at %g\n", tstop, pnt_name(se->target_), q1->t_);
-			se->deliver(q1->t_, net_cvode_instance, nt);
-			// could it add another self-event?, check before removal
-			q2 = sq->next(q1);
-			sq->remove(q1);
-		}else{
-			q2 = sq->next(q1);
-		}
-	}
-	assert(nctd.tqe_->least_t() >= tt);
-	nt->_t = ts;
-	nctd.immediate_deliver_ = -1e100;
-}
-
-// only the main thread can calls this
-static void all_pending_selfqueue(double tt) {
-	if (nrn_use_selfqueue_) {
-		nrn_wait_for_threads();
-//for (int i=0; i < nrn_nthread; ++i) { assert(nrn_threads[i]._t == nt_t);}
-		pending_selfqueue_deliver_ = tt;
-		nrn_multithread_job(pending_selfqueue);
-	}
 }
 
 // factored this out from deliver_net_events so we can
@@ -815,44 +650,12 @@ void NetCvode::check_thresh(NrnThread* nt) { // for default method
 }
 
 void NetCvode::deliver_net_events(NrnThread* nt) { // for default method
-	TQItem* q;
-	double tm, tsav;
-	int tid = nt->id;
-	tsav = nt->_t;
-	tm = nt->_t + 0.5*nt->_dt;
-#if BBTQ == 5
-    tryagain:
-    // one of the events on the main queue may be a NetParEvent
-    // which due to dt round off error can result in an event
-    // placed on the bin queue to be delivered now, which
-    // can put 0 delay events on to the main queue. So loop til
-    // no events. The alternative would be to deliver an idt=0 event
-    // immediately but that would very much change the sequence
-    // with respect to what is being done here and it is unclear
-    // how to fix the value of t there. This can be a do while loop
-    // but I do not want to affect the case of not using a bin queue.
+    double tm, tsav;
+    tsav = nt->_t;
+    tm = nt->_t + 0.5*nt->_dt;
 
-	if (nrn_use_bin_queue_) {
-		while ((q = p[tid].tqe_->dequeue_bin()) != 0) {
-			DiscreteEvent* db = (DiscreteEvent*)q->data_;
-#if PRINT_EVENT
-if (print_event_) {db->pr("binq deliver", nt_t, this);}
-#endif
-			p[tid].tqe_->release(q);
-			db->deliver(nt->_t, this, nt);
-		}
-//		assert(int(tm/nt->_dt)%1000 == p[tid].tqe_->nshift_);
-	}
-#endif
+    deliver_events(tm, nt);
 
-	deliver_events(tm, nt);
-
-#if BBTQ == 5
-	if (nrn_use_bin_queue_) {
-		if (p[tid].tqe_->top()) { goto tryagain; }
-		p[tid].tqe_->shift_bin(tm);
-	}
-#endif
 	nt->_t = tsav;
 
     /*before executing on gpu, we have to update the NetReceiveBuffer_t on GPU */
