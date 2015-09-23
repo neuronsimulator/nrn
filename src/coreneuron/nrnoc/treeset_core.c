@@ -31,10 +31,14 @@ static void nrn_rhs(NrnThread* _nt) {
 	i1 = 0;
 	i2 = i1 + _nt->ncell;
 	i3 = _nt->end;
-	
+
+    double *vec_rhs = &(VEC_RHS(0));
+    double *vec_d = &(VEC_D(0));
+ 
+    #pragma acc parallel loop present(vec_rhs[0:_nt->end], vec_d[0:_nt->end]) if(_nt->compute_gpu)
 	for (i = i1; i < i3; ++i) {
-		VEC_RHS(i) = 0.;
-		VEC_D(i) = 0.;
+		vec_rhs[i] = 0.;
+		vec_d[i] = 0.;
 	}
 
 	nrn_ba(_nt, BEFORE_BREAKPOINT);

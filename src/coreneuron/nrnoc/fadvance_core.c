@@ -116,6 +116,10 @@ static void update(NrnThread* _nt){
 static void nonvint(NrnThread* _nt) {
 	NrnThreadMembList* tml;
 	errno = 0;
+
+    #pragma acc wait(_nt->stream_id)
+     update_matrix_to_gpu(_nt);
+
 	for (tml = _nt->tml; tml; tml = tml->next) if (memb_func[tml->index].state) {
 		mod_f_t s = memb_func[tml->index].state;
 		(*s)(_nt, tml->ml, tml->index);
@@ -126,8 +130,6 @@ hoc_warning("errno set during calculation of states", (char*)0);
 #endif
 	}
 
-    #pragma acc wait(_nt->stream_id)
-        update_matrix_to_gpu(_nt);
 }
 
 void nrn_ba(NrnThread* nt, int bat){

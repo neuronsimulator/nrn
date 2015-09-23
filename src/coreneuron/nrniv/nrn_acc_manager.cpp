@@ -18,6 +18,11 @@ void setup_nrnthreads_on_device(NrnThread *threads, int nthreads)  {
     int i;
     NrnThread *d_threads;
 
+    /* @todo: why dt is not setup at this moment? */
+    for( i = 0; i < nthreads; i++) {
+        (threads+i)->_dt = dt;
+    }
+
     /* -- copy NrnThread to device. this needs to be contigious vector because offset is used to find
      * corresponding NrnThread using Point_process in NET_RECEIVE block 
      */
@@ -33,8 +38,8 @@ void setup_nrnthreads_on_device(NrnThread *threads, int nthreads)  {
         NrnThread *d_nt = d_threads + i;               //NrnThread on device
         
         double *d__data;                // nrn_threads->_data on device
-        
-        printf("\n -----------COPYING %d'th NrnThread TO DEVICE --------------- \n", i);
+       
+        printf("\n -----------COPYING %d'th NrnThread TO DEVICE --------------- \n", i); 
 
         /* -- copy _data to device -- */
 
@@ -450,9 +455,9 @@ void update_matrix_from_gpu(NrnThread *_nt){
   if (!_nt->compute_gpu)
     return;
 
-  //printf("\n Copying matrix to GPU ... ");
+  // printf("\n Copying matrix to GPU ... ");
   // RHS and D are contigious, copy them in one go!
-  //acc_update_self(_nt->_actual_rhs, 2*_nt->end*sizeof(double));
+  // acc_update_self(_nt->_actual_rhs, 2*_nt->end*sizeof(double));
 
   /*NOTE: in pragma you have to give actual pointer like below and not nt->rhs...*/
   double *rhs = _nt->_actual_rhs;
@@ -675,6 +680,9 @@ void dump_nt_to_file(char *filename, NrnThread *threads, int nthreads) {
     NrnThreadMembList* tml;
     NetReceiveBuffer_t* nrb;
 
+    #pragma acc wait
+    //copy back all gpu data
+    update_nrnthreads_on_host(threads, nthreads);
 
     for( i = 0; i < nthreads; i++) {
 
