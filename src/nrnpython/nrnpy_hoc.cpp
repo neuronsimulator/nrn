@@ -180,6 +180,9 @@ static PyObject* hocobj_new(PyTypeObject* subtype, PyObject* args, PyObject* kwd
 				PyHocObject* hbase = (PyHocObject*)base;
 				if (hbase->type_ == 2 && hbase->sym_->type == TEMPLATE) {
 //printf("hocobj_new base %s\n", hbase->sym_->name);
+                    // remove the hocbase keyword since hocobj_call only allows
+                    // the "sec" keyword argument
+                    PyDict_DelItemString(kwds, "hocbase");
 					PyObject* r = hocobj_call(hbase, args, kwds);
 					if (!r) {
 						Py_DECREF(subself);
