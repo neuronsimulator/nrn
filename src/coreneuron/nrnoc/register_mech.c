@@ -54,6 +54,12 @@ int* nrn_dparam_ptr_start_;
 int* nrn_dparam_ptr_end_;
 short* nrn_is_artificial_;
 
+/* dependency helper filled by calls to hoc_register_dparam_semantics */
+/* used when nrn_mech_depend is called */
+static int ion_write_depend_size_;
+static int** ion_write_depend_;
+static void ion_write_depend(int type, int etype);
+
 bbcore_read_t* nrn_bbcore_read_;
 void hoc_reg_bbcore_read(int type, bbcore_read_t f) {
   if (type == -1)
@@ -249,11 +255,82 @@ void hoc_register_dparam_semantics(int type, int ix, const char* name) {
 		if (name[0] == '#') { i = 1; }
 		etype = nrn_get_mechtype(name+i);
 		memb_func[type].dparam_semantics[ix] = etype + i*1000;
+/* note that if style is needed (i==1), then we are writing a concentration */
+		if (i) {
+			ion_write_depend(type, etype);
+		}
 	}
 #if 0
 	printf("dparam semantics %s ix=%d %s %d\n", memb_func[type].sym,
 	  ix, name, memb_func[type].dparam_semantics[ix]);
 #endif
+}
+
+/* only ion type ion_write_depend_ are non-NULL */
+/* and those are array of integers with first integer being array size */
+/* and remaining size-1 integers containing the mechanism types that write concentrations to that ion */
+static void ion_write_depend(int type, int etype) {
+	int size, i;
+	if (ion_write_depend_size_ < n_memb_func) {
+		ion_write_depend_ = (int**)erealloc(ion_write_depend_, n_memb_func*sizeof(int));
+		for(i = ion_write_depend_size_; i < n_memb_func; ++i) {
+			ion_write_depend_[i] = NULL;
+		}
+		ion_write_depend_size_ = n_memb_func;
+	}
+	size = 2;
+	if (ion_write_depend_[etype]) {
+		size = ion_write_depend_[etype][0] + 1;
+	}
+	ion_write_depend_[etype] = (int*)erealloc(ion_write_depend_[etype], size*sizeof(int));
+	ion_write_depend_[etype][0] = size;
+	ion_write_depend_[etype][size-1] = type;
+}
+
+static int depend_append(int idep, int* dependencies, int deptype, int type) {
+	/* append only if not already in dependencies and != type*/
+	int add, i;
+	add = 1;
+	if (deptype == type) { return idep; }
+	for (i=0; i < idep; ++i) {
+		if (deptype == dependencies[i]) {
+			add = 0;
+			break;
+		}
+	}
+	if (add) {
+		dependencies[idep++] = deptype;
+	}
+	return idep;
+}
+
+/* return list of types that this type depends on (10 should be more than enough) */
+/* dependencies must be an array that is large enough to hold that array */
+/* number of dependencies is returned */
+int nrn_mech_depend(int type, int* dependencies) {
+	int i, dpsize, idep, deptype;
+	int* ds;
+	dpsize = nrn_prop_dparam_size_[type];
+	ds = memb_func[type].dparam_semantics;
+	idep = 0;
+	if (ds) for (i=0; i < dpsize; ++i) {
+		if (ds[i] > 0 && ds[i] < 1000) {
+			int idepnew;
+			int* iwd;
+			deptype = ds[i];
+			idepnew = depend_append(idep, dependencies, deptype, type);
+			iwd = ion_write_depend_[deptype];
+			if (idepnew > idep && iwd) {
+				int size, j;
+				size = iwd[0];
+				for (j=1; j < size; ++j) {
+					idepnew=depend_append(idepnew, dependencies, iwd[j], type);
+				}
+			}
+			idep = idepnew;
+		}
+	}
+	return idep;
 }
 
 void register_destructor(Pfri d) {

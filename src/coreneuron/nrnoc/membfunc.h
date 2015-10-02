@@ -122,6 +122,7 @@ extern void _nrn_thread_reg1(int i, void(*f)(ThreadDatum*));
 typedef void (*bbcore_read_t)(double*, int*, int*, int*, int, int, double*, Datum*, ThreadDatum*, struct NrnThread*, double);
 extern bbcore_read_t* nrn_bbcore_read_;
 
+extern int nrn_mech_depend(int type, int* dependencies);
 extern int nrn_fornetcon_cnt_;
 extern int* nrn_fornetcon_type_;
 extern int* nrn_fornetcon_index_;
