@@ -15,6 +15,7 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include <stdlib.h>
+#include <string.h>
 #include "coreneuron/nrnconf.h"
 #include "coreneuron/nrnoc/multicore.h"
 

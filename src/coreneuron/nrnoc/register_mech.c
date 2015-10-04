@@ -255,7 +255,7 @@ void hoc_register_dparam_semantics(int type, int ix, const char* name) {
 static void ion_write_depend(int type, int etype) {
 	int size, i;
 	if (ion_write_depend_size_ < n_memb_func) {
-		ion_write_depend_ = (int**)erealloc(ion_write_depend_, n_memb_func*sizeof(int));
+		ion_write_depend_ = (int**)erealloc(ion_write_depend_, n_memb_func*sizeof(int*));
 		for(i = ion_write_depend_size_; i < n_memb_func; ++i) {
 			ion_write_depend_[i] = NULL;
 		}

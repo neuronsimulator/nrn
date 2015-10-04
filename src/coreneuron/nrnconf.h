@@ -60,6 +60,8 @@ extern double* makevector(size_t size); /* size in bytes */
 extern void* emalloc(size_t size);
 extern void* ecalloc(size_t n, size_t size);
 extern void* erealloc(void* ptr, size_t size);
+extern void* emalloc_align(size_t size, size_t alignment);
+extern void* ecalloc_align(size_t n, size_t alignment, size_t size);
 extern double hoc_Exp(double x);
 
 /* will go away at some point */

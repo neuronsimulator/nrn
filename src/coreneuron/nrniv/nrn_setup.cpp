@@ -24,6 +24,7 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/nrniv/nrn_datareader.h"
 #include "coreneuron/nrniv/nrn_assert.h"
 #include "coreneuron/nrniv/nrnmutdec.h"
+#include "coreneuron/nrniv/memory.h"
 
 // file format defined in cooperation with nrncore/src/nrniv/nrnbbcore_write.cpp
 // single integers are ascii one per line. arrays are binary int or double
@@ -91,6 +92,17 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // For this reason cellgroup data are divided into two separate
 // files with the first containing output_gids and netcon_srcgid which are
 // stored in the nt.presyns array and nt.netcons array respectively
+
+
+#if !defined(NRN_SOA_PAD)
+// for layout 0, every range variable array must have a size which
+// is a multiple of NRN_SOA_PAD doubles
+#define NRN_SOA_PAD 1
+#endif
+#if !defined(NRN_SOA_BYTE_ALIGN)
+// for layout 0, every range variable array must be aligned by at least 16 bytes (the size of the simd memory bus)
+#define NRN_SOA_BYTE_ALIGN (2*sizeof(double))
+#endif
 
 static MUTDEC
 static void read_phase1(data_reader &F,NrnThread& nt);
@@ -437,24 +449,33 @@ void determine_inputpresyn() {
     }
   }
 }
+int nrn_soa_padded_size(int cnt, int layout) {
+  return coreneuron::soa_padded_size<NRN_SOA_PAD>(cnt, layout);
+}
 
-int nrn_param_layout(int i, int mtype, NrnThread* nt) {
+// file data is AoS. ie.
+// organized as cnt array instances of mtype each of size sz.
+// So input index i refers to i_instance*sz + i_item offset
+// Return the corresponding SoA index -- taking into account the
+// alignment requirements. Ie. i_instance + i_item*align_cnt.
+
+int nrn_param_layout(int i, int mtype, Memb_list* ml) {
   int layout = nrn_mech_data_layout_[mtype];
   if (layout == 1) { return i; }
   assert(layout == 0);
-  Memb_list* ml = nt->_ml_list[mtype];
   int sz = nrn_prop_param_size_[mtype];
   int cnt = ml->nodecount;
   int i_cnt = i / sz;
   int i_sz = i % sz;
-  return i_cnt + i_sz*cnt;
+  return nrn_i_layout(i_cnt, cnt, i_sz, sz, layout);
 }
 
 int nrn_i_layout(int icnt, int cnt, int isz, int sz, int layout) {
   if (layout == 1) {
     return icnt*sz + isz;
   }else if (layout == 0) {
-    return icnt + isz*cnt;
+    int padded_cnt = nrn_soa_padded_size(cnt, layout); // may want to factor out to save time
+    return icnt + isz*padded_cnt;
   }
   assert(0);
   return 0;
@@ -465,10 +486,11 @@ static void mech##TPE##layout(data_reader &F, TYPE* data, int cnt, int sz, int l
   if (layout == 1) { /* AoS */\
     F.read##TPE##array(data, cnt*sz);\
   }else if (layout == 0) { /* SoA */\
+    int align_cnt = nrn_soa_padded_size(cnt, layout);\
     TYPE* d = F.read##TPE##array(cnt*sz);\
     for (int i=0; i < cnt; ++i) {\
       for (int j=0; j < sz; ++j) {\
-        data[i + j*cnt] = d[i*sz + j];\
+        data[i + j*align_cnt] = d[i*sz + j];\
       }\
     }\
     delete [] d;\
@@ -597,8 +619,10 @@ void read_phase2(data_reader &F, NrnThread& nt) {
   }
 
   if (shadow_rhs_cnt) {
-    nt._shadow_rhs = (double*)ecalloc(shadow_rhs_cnt, sizeof(double));
-    nt._shadow_d = (double*)ecalloc(shadow_rhs_cnt, sizeof(double));
+    nt._shadow_rhs = (double*)coreneuron::ecalloc_align(nrn_soa_padded_size(shadow_rhs_cnt,0),
+      NRN_SOA_BYTE_ALIGN, sizeof(double));
+    nt._shadow_d = (double*)coreneuron::ecalloc_align(nrn_soa_padded_size(shadow_rhs_cnt,0),
+      NRN_SOA_BYTE_ALIGN, sizeof(double));
   }
 
   nt._ndata = F.read_int();
@@ -606,7 +630,8 @@ void read_phase2(data_reader &F, NrnThread& nt) {
   nt._nvdata = F.read_int();
   nt.n_weight = F.read_int();
 
-  nt._data = (double*)ecalloc(nt._ndata, sizeof(double));
+  nt._data = NULL; // allocated below after padding
+
   if (nt._nidata) nt._idata = (int*)ecalloc(nt._nidata, sizeof(int));
   else nt._idata = NULL;
   // see patternstim.cpp
@@ -617,14 +642,8 @@ void read_phase2(data_reader &F, NrnThread& nt) {
     nt._vdata = NULL;
   //printf("_ndata=%d _nidata=%d _nvdata=%d\n", nt._ndata, nt._nidata, nt._nvdata);
 
-  // The data format defines the order of matrix data
-  int ne = nt.end;
-  nt._actual_rhs = nt._data + 0*ne;
-  nt._actual_d = nt._data + 1*ne;
-  nt._actual_a = nt._data + 2*ne;
-  nt._actual_b = nt._data + 3*ne;
-  nt._actual_v = nt._data + 4*ne;
-  nt._actual_area = nt._data + 5*ne;
+  // The data format begins with the matrix data
+  int ne = nrn_soa_padded_size(nt.end, 0);
   size_t offset = 6*ne;
 
   // Memb_list.data points into the nt.data array.
@@ -633,10 +652,12 @@ void read_phase2(data_reader &F, NrnThread& nt) {
   for (tml = nt.tml; tml; tml = tml->next) {
     Memb_list* ml = tml->ml;
     int type = tml->index;
+    int layout = nrn_mech_data_layout_[type];
+    offset = nrn_soa_padded_size(offset, layout);
     int n = ml->nodecount;
     int sz = nrn_prop_param_size_[type];
-    ml->data = nt._data + offset;
-    offset += n*sz;
+    ml->data = (double*)0 + offset; // adjust below since nt._data not allocated
+    offset += nrn_soa_padded_size(n, layout)*sz;
     if (pnt_map[type] > 0) {
       npnt += n;
     }
@@ -644,7 +665,22 @@ void read_phase2(data_reader &F, NrnThread& nt) {
   nt.pntprocs = new Point_process[npnt]; // includes acell with and without gid
   nt.n_pntproc = npnt;
   //printf("offset=%ld ndata=%ld\n", offset, nt._ndata);
-  assert(offset == nt._ndata);
+  // assert(offset == nt._ndata); // not with alignment
+  nt._ndata = offset;
+
+  // now that we know the effect of padding, we can allocate data space,
+  // fill matrix, and adjust Memb_list data pointers
+  nt._data = (double*)coreneuron::ecalloc_align(nt._ndata, NRN_SOA_BYTE_ALIGN, sizeof(double));
+  nt._actual_rhs = nt._data + 0*ne;
+  nt._actual_d = nt._data + 1*ne;
+  nt._actual_a = nt._data + 2*ne;
+  nt._actual_b = nt._data + 3*ne;
+  nt._actual_v = nt._data + 4*ne;
+  nt._actual_area = nt._data + 5*ne;
+  for (tml= nt.tml; tml; tml = tml->next) {
+    Memb_list* ml = tml->ml;
+    ml->data = nt._data + (ml->data - (double*)0);
+  }
 
   // matrix info
   nt._v_parent_index = F.read_int_array(nt.end);
@@ -679,7 +715,7 @@ void read_phase2(data_reader &F, NrnThread& nt) {
     mech_dbl_layout(F, ml->data, n, szp, layout);
     
     if (szdp) {
-      ml->pdata = new int[n*szdp];
+      ml->pdata = new int[nrn_soa_padded_size(n, layout)*szdp];
       mech_int_layout(F, ml->pdata, n, szdp, layout);
     }else{
       ml->pdata = NULL;
@@ -735,18 +771,11 @@ void read_phase2(data_reader &F, NrnThread& nt) {
         int esz = nrn_prop_param_size_[etype];
         for (int iml=0; iml < cnt; ++iml) {
           int* pd = pdata;
-          if (layout == 0) {
-            pd += i*cnt + iml;
-          }else if (layout == 1) {
-            pd += i + iml*szdp;
-          }
+          pd += nrn_i_layout(iml, cnt, i, szdp, layout);
           int ix = *pd - edata0;
           nrn_assert((ix >= 0) && (ix < ecnt*esz));
           /* Original pd order assumed ecnt groups of esz */
-          int i_ecnt = ix / esz;
-          int i_esz = ix % esz;
-          /* But ion order is really esz groups of ecnt */
-          *pd = edata0 + i_ecnt + i_esz*ecnt;
+          *pd = edata0 + nrn_param_layout(ix, etype, eml);
         }
       }
     }
@@ -878,15 +907,10 @@ void read_phase2(data_reader &F, NrnThread& nt) {
     for (int j=0; j < cntml; ++j) {
       double* d = ml->data;
       Datum* pd = ml->pdata;
-      if (layout == 1) {
-        d += j*dsz;
-        pd += j*pdsz;
-      }else if (layout == 0) {
-        ;
-      }else{
-        assert(0);
-      }
-      (*nrn_bbcore_read_[type])(dArray, iArray, &dk, &ik, j, cntml, d, pd, ml->_thread, &nt, 0.0);
+      d += nrn_i_layout(j, cntml, 0, dsz, layout);
+      pd += nrn_i_layout(j, cntml, 0, pdsz, layout);
+      int aln_cntml = nrn_soa_padded_size(cntml, layout);
+      (*nrn_bbcore_read_[type])(dArray, iArray, &dk, &ik, 0, aln_cntml, d, pd, ml->_thread, &nt, 0.0);
     }
     assert(dk == dcnt);
     assert(ik == icnt);
@@ -921,7 +945,7 @@ void read_phase2(data_reader &F, NrnThread& nt) {
     F.read_dbl_array(vector_vec(yvec), sz);
     IvocVect* tvec = vector_new(sz);
     F.read_dbl_array(vector_vec(tvec), sz);
-    ix = nrn_param_layout(ix, mtype, &nt);
+    ix = nrn_param_layout(ix, mtype, ml);
     nt._vecplay[i] = new VecPlayContinuous(ml->data + ix, yvec, tvec, NULL, nt.id);
   }
 }

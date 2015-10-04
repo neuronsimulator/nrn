@@ -470,7 +470,7 @@ void nrn_thread_stat() {
 }
 
 void nrn_threads_create(int n, int parallel) {
-    int i;
+    int i, j;
 	NrnThread* nt;
 	if (nrn_nthread != n) {
 /*printf("sizeof(NrnThread)=%d   sizeof(Memb_list)=%d\n", sizeof(NrnThread), sizeof(Memb_list));*/
@@ -507,6 +507,9 @@ void nrn_threads_create(int n, int parallel) {
 				nt->_vdata = (void**)0;
 				nt->ncell = 0;
 				nt->end = 0;
+                                for (j=0; j < BEFORE_AFTER_SIZE; ++j) {
+                                        nt->tbl[j] = (NrnThreadBAList*)0;
+                                }
 				nt->_actual_rhs = 0;
 				nt->_actual_d = 0;
 				nt->_actual_a = 0;
@@ -514,8 +517,8 @@ void nrn_threads_create(int n, int parallel) {
 				nt->_actual_v = 0;
 				nt->_actual_area = 0;
 				nt->_v_parent_index = 0;
-                nt->_shadow_rhs = 0;
-                nt->_shadow_d = 0;
+                                nt->_shadow_rhs = 0;
+                                nt->_shadow_d = 0;
 				nt->_ecell_memb_list = 0;
 				nt->_sp13mat = 0;
 				nt->_ctime = 0.0;
