@@ -817,7 +817,7 @@ void read_phase2(data_reader &F, NrnThread& nt) {
       }
     }else{
       assert(ps->gid_ > -1);
-      ps->thvar_ = nt._actual_v + ix;
+      ps->thvar_index_ = ix; // index into _actual_v
       assert (ix < nt.end);
       ps->threshold_ = output_threshold[i];
     }

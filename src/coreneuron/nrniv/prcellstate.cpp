@@ -89,7 +89,7 @@ static void pr_netcon(NrnThread& nt, FILE* f) {
           if (srcgid < 0 && ps->pntsrc_) {
             int type = ps->pntsrc_->_type;
             fprintf(f, "%d %s %d %.15g", i, memb_func[type].sym, nc->active_?1:0, nc->delay_);
-          }else if (srcgid < 0 && ps->thvar_) {
+          }else if (srcgid < 0 && ps->thvar_index_ > 0) {
             fprintf(f, "%d %s %d %.15g", i, "v", nc->active_?1:0, nc->delay_);
           }else{
             fprintf(f, "%d %d %d %.15g", i, srcgid, nc->active_?1:0, nc->delay_);
@@ -118,12 +118,11 @@ static void pr_realcell(PreSyn& ps, NrnThread& nt, FILE* f) {
   pntindex = 0;
 
   // threshold variable is a voltage
-printf("thvar=%p actual_v=%p end=%p\n", ps.thvar_, nt._actual_v,
-nt._actual_v + nt.end);
-  if (ps.thvar_ < nt._actual_v || ps.thvar_ >= (nt._actual_v + nt.end)) {
+printf("thvar_index_=%d end=%d\n", ps.thvar_index_, nt.end);
+  if (ps.thvar_index_ < 0 || ps.thvar_index_ >= nt.end) {
     hoc_execerror("gid not associated with a voltage", 0);
   }
-  int inode = ps.thvar_ - nt._actual_v;
+  int inode = ps.thvar_index_;
 
   // and the root node is ...
   int rnode = inode;
@@ -183,7 +182,7 @@ int prcellstate(int gid, const char* suffix) {
         fprintf(f, "gid = %d\n", gid);
         fprintf(f, "t = %.15g\n", nt._t);
         fprintf(f, "celsius = %.15g\n", celsius);
-        if (ps.thvar_) {
+        if (ps.thvar_index_ >= 0) {
           pr_realcell(ps, nt, f);
         }
         fclose(f);

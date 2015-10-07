@@ -476,7 +476,7 @@ PreSyn::PreSyn() {
     nc_index_ = 0;
 	nc_cnt_ = 0;
 	flag_ = false;
-	thvar_ = NULL;
+	thvar_index_ = -1;
 	pntsrc_ = NULL;
 	threshold_ = 10.;
 	gid_ = -1;
@@ -494,12 +494,8 @@ InputPreSyn::InputPreSyn() {
 PreSyn::~PreSyn() {
 //	printf("~PreSyn %p\n", this);
 	nrn_cleanup_presyn(this);
-	if (thvar_ || pntsrc_) {
-		if (!thvar_) {
-			if (pntsrc_) {
-				pntsrc_ = nil;
-			}
-		}
+	if (pntsrc_) {
+		pntsrc_ = nil;
 	}
 }
 
@@ -807,6 +803,22 @@ static void all_pending_selfqueue(double tt) {
 // net_send_buffer added so checking can be done on gpu
 // while event queueing is on cpu.
 
+static bool pscheck(double var, double thresh, bool& flag) {
+	if (var > thresh) {
+		if (flag == false) {
+			flag = true;
+			return true;
+		}
+	}else{
+		flag = false;
+	}
+	return false;
+}
+
+double PreSyn::value() {
+	return nt_->_actual_v[thvar_index_] - threshold_;
+}
+
 void NetCvode::check_thresh(NrnThread* nt) { // for default method
 	int i;
 	double teps = 1e-10;
@@ -815,8 +827,7 @@ void NetCvode::check_thresh(NrnThread* nt) { // for default method
 	// on GPU...
 	for (i=0; i < nt->ncell; ++i) {
 		PreSyn* ps = nt->presyns + i;
-		assert(ps->thvar_);
-		if (ps->check()) {
+		if (pscheck(nt->_actual_v[ps->thvar_index_], ps->threshold_, ps->flag_)) {
 			if (nt->_net_send_buffer_cnt >= nt->_net_send_buffer_size) {
 				nt->_net_send_buffer_size *= 2;
 				nt->_net_send_buffer = (int*)erealloc(nt->_net_send_buffer, nt->_net_send_buffer_size * sizeof(int));
