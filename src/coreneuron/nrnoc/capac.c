@@ -18,6 +18,17 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/nrnoc/multicore.h"
 #include "coreneuron/nrnoc/membdef.h"
 
+
+#if defined(_OPENACC)
+#define _PRAGMA_FOR_INIT_ACC_LOOP_ _Pragma("acc parallel loop present(vdata[0:count*nparm+1]) if(_nt->compute_gpu)")
+#define _PRAGMA_FOR_CUR_ACC_LOOP_ _Pragma("acc parallel loop present(vdata[0:count*nparm], ni[0:count], _vec_rhs[0:_nt->end]) if(_nt->compute_gpu) async(stream_id)")
+#define _PRAGMA_FOR_JACOB_ACC_LOOP_ _Pragma("acc parallel loop present(vdata[0:count*nparm], ni[0:count], _vec_d[0:_nt->end]) if(_nt->compute_gpu) async(stream_id)")
+#else
+#define _PRAGMA_FOR_INIT_ACC_LOOP_ _Pragma("")
+#define _PRAGMA_FOR_CUR_ACC_LOOP_ _Pragma("")
+#define _PRAGMA_FOR_JACOB_ACC_LOOP_ _Pragma("")
+#endif
+
 static const char *mechanism[] = { "0", "capacitance", "cm",0, "i_cap", 0,0 };
 static void cap_alloc(double*, Datum*, int type);
 static void cap_init(NrnThread*, Memb_list*, int);
@@ -47,10 +58,15 @@ void nrn_cap_jacob(NrnThread* _nt, Memb_list* ml) {
 	int i;
 	double *vdata = ml->data;
 	double cfac = .001 * _nt->cj;
+    double* _vec_d = _nt->_actual_d;
+    int stream_id = _nt->stream_id;
+
 	{ /*if (use_cachevec) {*/
 		int* ni = ml->nodeindices;
+
+        _PRAGMA_FOR_JACOB_ACC_LOOP_
 		for (i=0; i < count; i++) {
-			VEC_D(ni[i]) += cfac*cm;
+			_vec_d[ni[i]] += cfac*cm;
 		}
 	}
 }
@@ -60,6 +76,8 @@ static void cap_init(NrnThread* _nt, Memb_list* ml, int type ) {
 	double *vdata = ml->data;
 	int i;
 	(void)_nt; (void)type; /* unused */
+
+    _PRAGMA_FOR_INIT_ACC_LOOP_
 	for (i=0; i < count; ++i) {
 		i_cap = 0;
 	}
@@ -70,12 +88,17 @@ void nrn_capacity_current(NrnThread* _nt, Memb_list* ml) {
 	double *vdata = ml->data;
 	int i;
 	double cfac = .001 * _nt->cj;
+    /*@todo: verify cfac is being copied !! */
 	/* since rhs is dvm for a full or half implicit step */
 	/* (nrn_update_2d() replaces dvi by dvi-dvx) */
 	/* no need to distinguish secondorder */
 		int* ni = ml->nodeindices;
+        double* _vec_rhs = _nt->_actual_rhs;
+        int stream_id = _nt->stream_id;
+
+        _PRAGMA_FOR_CUR_ACC_LOOP_
 		for (i=0; i < count; i++) {
-			i_cap = cfac*cm*VEC_RHS(ni[i]);
+			i_cap = cfac*cm*_vec_rhs[ni[i]];
 		}
 }
 

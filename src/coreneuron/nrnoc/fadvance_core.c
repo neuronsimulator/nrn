@@ -106,6 +106,10 @@ static void update(NrnThread* _nt){
 			VEC_V(i) += VEC_RHS(i);
 		}
 	}
+
+    #pragma acc wait(_nt->stream_id)
+     update_matrix_to_gpu(_nt);
+
 	if (_nt->tml) {
 		assert(_nt->tml->index == CAP);
 		nrn_capacity_current(_nt, _nt->tml->ml);
@@ -116,9 +120,6 @@ static void update(NrnThread* _nt){
 static void nonvint(NrnThread* _nt) {
 	NrnThreadMembList* tml;
 	errno = 0;
-
-    #pragma acc wait(_nt->stream_id)
-     update_matrix_to_gpu(_nt);
 
 	for (tml = _nt->tml; tml; tml = tml->next) if (memb_func[tml->index].state) {
 		mod_f_t s = memb_func[tml->index].state;
@@ -147,10 +148,10 @@ static void* nrn_fixed_step_thread(NrnThread* nth) {
 	nrn_random_play(nth);
 	nth->_t += .5 * nth->_dt;
 
-/*@todo: do we need to update nth->_t on GPU */
-//#ifdef _OPENACC
-//acc_update_device(&nth->_t, sizeof(double));
-//#endif
+    /*@todo: do we need to update nth->_t on GPU */
+    #ifdef _OPENACC
+        acc_update_device(&(nth->_t), sizeof(double));
+    #endif
 
 	fixed_play_continuous(nth);
 	setup_tree_matrix_minimal(nth);
@@ -159,10 +160,10 @@ static void* nrn_fixed_step_thread(NrnThread* nth) {
 	update(nth);
 	nth->_t += .5 * nth->_dt;
 
-/*@todo: do we need to update nth->_t on GPU */
-//#ifdef _OPENACC
-//acc_update_device(&nth->_t, sizeof(double));
-//#endif
+    /*@todo: do we need to update nth->_t on GPU */
+    #ifdef _OPENACC
+        acc_update_device(&(nth->_t), sizeof(double));
+    #endif
 
 	fixed_play_continuous(nth);
 	nonvint(nth);

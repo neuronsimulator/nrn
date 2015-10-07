@@ -34,6 +34,10 @@ static void nrn_rhs(NrnThread* _nt) {
 
     double *vec_rhs = &(VEC_RHS(0));
     double *vec_d = &(VEC_D(0));
+    double *vec_a = &(VEC_A(0));
+    double *vec_b = &(VEC_B(0));
+    double *vec_v = &(VEC_V(0));
+    int *parent_index = _nt->_v_parent_index;
  
     #pragma acc parallel loop present(vec_rhs[0:_nt->end], vec_d[0:_nt->end]) if(_nt->compute_gpu)
 	for (i = i1; i < i3; ++i) {
@@ -52,18 +56,18 @@ hoc_warning("errno set during calculation of currents", (char*)0);
 		}
 #endif
 	}
-        #pragma acc wait(_nt->stream_id)
-        update_matrix_from_gpu(_nt);
 
 	/* now the internal axial currents.
 	The extracellular mechanism contribution is already done.
 		rhs += ai_j*(vi_j - vi)
 	*/
+    #pragma acc parallel loop present(vec_rhs[0:i3], vec_d[0:i3], vec_a[0:i3], vec_b[0:i3], vec_v[0:i3], parent_index[0:i3]) if(_nt->compute_gpu)
 	for (i = i2; i < i3; ++i) {
-		double dv = VEC_V(_nt->_v_parent_index[i]) - VEC_V(i);
+		double dv = vec_v[parent_index[i]] - vec_v[i];
 		/* our connection coefficients are negative so */
-		VEC_RHS(i) -= VEC_B(i)*dv;
-		VEC_RHS(_nt->_v_parent_index[i]) += VEC_A(i)*dv;
+		vec_rhs[i] -= vec_b[i]*dv;
+        #pragma acc atomic update
+		vec_rhs[parent_index[i]] += vec_a[i]*dv;
 	}
 }
 
@@ -102,10 +106,17 @@ has taken effect
 		nrn_cap_jacob(_nt, _nt->tml->ml);
 	}
 
+    double *vec_d = &(VEC_D(0));
+    double *vec_a = &(VEC_A(0));
+    double *vec_b = &(VEC_B(0));
+    int *parent_index = _nt->_v_parent_index;
+
 	/* now add the axial currents */
+        #pragma acc parallel loop present(vec_d[0:i3], vec_a[0:i3], vec_b[0:i3], parent_index[0:i3]) if(_nt->compute_gpu)
         for (i=i2; i < i3; ++i) {
-		VEC_D(i) -= VEC_B(i);
-		VEC_D(_nt->_v_parent_index[i]) -= VEC_A(i);
+		    vec_d[i] -= vec_b[i];
+            #pragma acc atomic update
+		    vec_d[parent_index[i]] -= vec_a[i];
         }
 }
 
@@ -113,5 +124,9 @@ has taken effect
 void* setup_tree_matrix_minimal(NrnThread* _nt){
 	nrn_rhs(_nt);
 	nrn_lhs(_nt);
+
+    #pragma acc wait(_nt->stream_id)
+    update_matrix_from_gpu(_nt);
+
 	return (void*)0;
 }

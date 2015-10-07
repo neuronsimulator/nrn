@@ -36,7 +36,12 @@ void setup_nrnthreads_on_device(NrnThread *threads, int nthreads)  {
 
         NrnThread * nt = threads + i;                  //NrnThread on host
         NrnThread *d_nt = d_threads + i;               //NrnThread on device
-        
+       
+        if(nt->end <= 0) {
+            //this is an empty thread
+            continue;    
+        }
+
         double *d__data;                // nrn_threads->_data on device
        
         printf("\n -----------COPYING %d'th NrnThread TO DEVICE --------------- \n", i); 
@@ -76,6 +81,10 @@ void setup_nrnthreads_on_device(NrnThread *threads, int nthreads)  {
 
         dptr = d__data + 5*nt->end;
         acc_memcpy_to_device(&(d_nt->_actual_area), &(dptr), sizeof(double*));
+
+
+        int *d_v_parent_index = (int *) acc_copyin(nt->_v_parent_index, nt->end*sizeof(int));
+        acc_memcpy_to_device(&(d_nt->_v_parent_index), &(d_v_parent_index), sizeof(int*));
 
         /* nt._ml_list is used in NET_RECEIVE block and should have valid membrane list id*/
         Memb_list ** d_ml_list = (Memb_list**) acc_copyin(nt->_ml_list, n_memb_func * sizeof(Memb_list*));
@@ -197,6 +206,17 @@ void setup_nrnthreads_on_device(NrnThread *threads, int nthreads)  {
         printf("\n Compute thread on GPU? : %s, Stream : %d", (nt->compute_gpu)? "Yes" : "No", nt->stream_id);
     }
 
+    if(nrn_ion_global_map_size) {
+        double **d_data  = (double **) acc_copyin(nrn_ion_global_map, sizeof(double*) * nrn_ion_global_map_size);
+        for( int j = 0; j < nrn_ion_global_map_size; j++) {
+            if(nrn_ion_global_map[j]) {
+                /* @todo: fix this constant size 3 :( */
+                double *d_mechmap = (double *) acc_copyin(nrn_ion_global_map[j], 3*sizeof(double));
+                acc_memcpy_to_device(&(d_data[j]), &d_mechmap, sizeof(double*));
+            }
+        }
+    }
+
 #endif
 }
 
@@ -280,7 +300,11 @@ void update_nrnthreads_on_host(NrnThread *threads, int nthreads) {
     for( i = 0; i < nthreads; i++) {
 
         NrnThread * nt = threads + i;
-        
+       
+        if(nt->end <= 0) {
+            //this is an empty thread
+            continue;    
+        }
         /* -- copy data to host -- */
 
         int ne = nt->end;
@@ -369,6 +393,11 @@ void update_nrnthreads_on_device(NrnThread *threads, int nthreads) {
     for( i = 0; i < nthreads; i++) {
 
         NrnThread * nt = threads + i;
+
+        if(nt->end <= 0) {
+            //this is an empty thread
+            continue;    
+        }
         
         if (!nt->compute_gpu)
           continue;
@@ -434,7 +463,7 @@ void update_nrnthreads_on_device(NrnThread *threads, int nthreads) {
             acc_update_device(nt->weights, sizeof(double)*nt->n_weight);
         }
 
-        /* dont update vdata, its pointer array 
+        /* don't and don't update vdata, its pointer array 
         if(nt->_nvdata) {
         if(nt->_nvdata) {
             acc_update_device(nt->_vdata, sizeof(double)*nt->_nvdata);
@@ -471,10 +500,14 @@ void update_matrix_to_gpu(NrnThread *_nt){
   if (!_nt->compute_gpu)
     return;
 
+   /* while discussion with Michael we found that RHS is also needed on
+    * gpu because nrn_cap_jacob uses rhs which is being updated on GPU
+    */
   //printf("\n Copying voltage to GPU ... ");
-  //acc_update_device(_nt->_actual_v, _nt->end*sizeof(double));
   double *v = _nt->_actual_v;
+  double *rhs = _nt->_actual_rhs;
   #pragma acc update device(v[0:_nt->end]) async(_nt->stream_id)
+  #pragma acc update device(rhs[0:_nt->end]) async(_nt->stream_id)
   #pragma acc wait(_nt->stream_id)
 #endif
 }
@@ -496,6 +529,11 @@ void modify_data_on_device(NrnThread *threads, int nthreads) {
 
         NrnThread * nt = threads + i;
         
+        if(nt->end <= 0) {
+            //this is an empty thread
+            continue;    
+        }
+
         /* -- modify data on device -- */
 
         int ne = nt->end;
@@ -686,12 +724,16 @@ void dump_nt_to_file(char *filename, NrnThread *threads, int nthreads) {
 
     for( i = 0; i < nthreads; i++) {
 
+      NrnThread * nt = threads + i;
+
+      if(nt->end <= 0) {
+         //this is an empty thread
+         continue;    
+      }
+
       char fname[1024]; 
       sprintf(fname, "%s%d.dat", filename, i);
       hFile = fopen(fname, "w");
-
-      NrnThread * nt = threads + i;
-        
 
       long int offset;
       int nmech = 0;

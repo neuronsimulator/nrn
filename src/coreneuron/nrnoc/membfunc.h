@@ -78,6 +78,9 @@ typedef struct BAMech {
 } BAMech;
 extern BAMech** bamech_;
 
+extern int nrn_ion_global_map_size;
+extern double **nrn_ion_global_map;
+
 extern Memb_func* memb_func;
 extern int n_memb_func;
 #if VECTORIZE
@@ -115,7 +118,8 @@ extern int* net_buf_receive_type_;
 extern NetBufReceive_t* net_buf_receive_;
 extern void nrn_cap_jacob(struct NrnThread*, Memb_list*);
 extern void nrn_writes_conc(int, int);
-extern void nrn_wrote_conc(int, double*, int);
+#pragma acc routine seq
+extern void nrn_wrote_conc(int, double*, int, double**, double);
 extern void hoc_register_prop_size(int, int, int);
 extern void hoc_register_dparam_semantics(int type, int, const char* name);
 

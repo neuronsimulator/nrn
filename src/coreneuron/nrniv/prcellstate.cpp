@@ -53,7 +53,7 @@ static void pr_memb(int type, Memb_list* ml, int* cellnodes, NrnThread& nt, FILE
       }
       for (int j=0; j < size; ++j) {
         int k = nrn_i_layout(i, cnt, j, size, layout);
-        fprintf(f, " %d %d %.15g\n", cellnodes[inode], j, ml->data[k]);
+        fprintf(f, " %d %d %.18g\n", cellnodes[inode], j, ml->data[k]);
       }
     }
   }

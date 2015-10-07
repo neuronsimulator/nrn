@@ -31,6 +31,17 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define _STRIDE _cntml + _iml
 #endif
 
+#if defined(_OPENACC)
+#define _PRAGMA_FOR_INIT_ACC_LOOP_ _Pragma("acc parallel loop present(pd[0:_cntml*5], ppd[0:1], nrn_ion_global_map[0:nrn_ion_global_map_size]) if(nt->compute_gpu)")
+#define _PRAGMA_FOR_CUR_ACC_LOOP_ _Pragma("acc parallel loop present(pd[0:_cntml*5], nrn_ion_global_map[0:nrn_ion_global_map_size]) if(nt->compute_gpu) async(stream_id)")
+#define _PRAGMA_FOR_SEC_ORDER_CUR_ACC_LOOP_ _Pragma("acc parallel loop present(pd[0:_cntml*5], ni[0:_cntml], _vec_rhs[0:_nt->end]) if(_nt->compute_gpu) async(stream_id)")
+#else
+#define _PRAGMA_FOR_INIT_ACC_LOOP_ _Pragma("")
+#define _PRAGMA_FOR_CUR_ACC_LOOP_ _Pragma("")
+#define _PRAGMA_FOR_SEC_ORDER_CUR_ACC_LOOP_ _Pragma("")
+#endif
+
+
 extern void hoc_register_prop_size(int, int, int);
 
 #define	nparm 5
@@ -53,11 +64,11 @@ int nrn_is_ion(int type) {
 	return (memb_func[type].alloc == ion_alloc);
 }
 
-static int ion_global_map_size;
-static double** ion_global_map;
-#define global_conci(type) ion_global_map[type][0]
-#define global_conco(type) ion_global_map[type][1]
-#define global_charge(type) ion_global_map[type][2]
+int nrn_ion_global_map_size;
+double** nrn_ion_global_map;
+#define global_conci(type) nrn_ion_global_map[type][0]
+#define global_conco(type) nrn_ion_global_map[type][1]
+#define global_charge(type) nrn_ion_global_map[type][2]
 
 double nrn_ion_charge(int type) {
 	return global_charge(type);
@@ -86,12 +97,19 @@ void ion_reg(const char* name, double valence) {
 		_nrn_layout_reg(mechtype, LAYOUT);
 		hoc_register_prop_size(mechtype, nparm, 1 );
 		nrn_writes_conc(mechtype, 1);
-		if (ion_global_map_size <= mechtype) {
-			ion_global_map_size = mechtype + 1;
-			ion_global_map = (double**)erealloc(ion_global_map,
-				sizeof(double*)*ion_global_map_size);
+		if (nrn_ion_global_map_size <= mechtype) {
+			int size = mechtype + 1;
+			nrn_ion_global_map = (double**)erealloc(nrn_ion_global_map,
+				sizeof(double*)*size);
+
+            for(i=nrn_ion_global_map_size; i<mechtype; i++) {
+                nrn_ion_global_map[i] = NULL;
+            }
+			nrn_ion_global_map_size = mechtype + 1;
 		}
-		ion_global_map[mechtype] = (double*)emalloc(3*sizeof(double));
+		
+        nrn_ion_global_map[mechtype] = (double*)emalloc(3*sizeof(double));
+
 		Sprintf(buf[0], "%si0_%s", name, buf[0]);
 		Sprintf(buf[1], "%so0_%s", name, buf[0]);
 		if (strcmp("na", name) == 0) {
@@ -132,7 +150,9 @@ the USEION statement of any model using this ion\n", buf[0]);
 
 #define FARADAY 96485.309
 #define ktf (1000.*8.3134*(celsius + 273.15)/FARADAY)
-double nrn_nernst(ci, co, z) double z, ci, co; {
+
+#pragma acc routine seq
+double nrn_nernst(double ci, double co, double z, double celsius) {
 /*printf("nrn_nernst %g %g %g\n", ci, co, z);*/
 	if (z == 0) {
 		return 0.;
@@ -146,9 +166,10 @@ double nrn_nernst(ci, co, z) double z, ci, co; {
 	}
 }
 
-void nrn_wrote_conc(int type, double* pe, int it) {
+#pragma acc routine seq
+void nrn_wrote_conc(int type, double* pe, int it, double **gimap, double celsius) {
 	if (it & 04) {
-		pe[0] = nrn_nernst(pe[1], pe[2], nrn_ion_charge(type));
+		pe[0] = nrn_nernst(pe[1], pe[2], gimap[type][2], celsius);
 	}
 }
 
@@ -172,7 +193,7 @@ double nrn_ghk(double v, double ci, double co, double z) {
 #define erev	pd[0*_STRIDE]	/* From Eion */
 #define conci	pd[1*_STRIDE]
 #define conco	pd[2*_STRIDE]
-#define cur	pd[3*_STRIDE]
+#define cur	    pd[3*_STRIDE]
 #define dcurdv	pd[4*_STRIDE]
 
 /*
@@ -217,6 +238,8 @@ static void ion_cur(NrnThread* nt, Memb_list* ml, int type) {
 	int _iml;
 	double* pd; Datum* ppd;
 	(void)nt; /* unused */
+    int stream_id = nt->stream_id;
+
 /*printf("ion_cur %s\n", memb_func[type].sym->name);*/
 #if LAYOUT == 1 /*AoS*/
 	for (_iml = 0; _iml < _cntml; ++_iml) {
@@ -224,6 +247,7 @@ static void ion_cur(NrnThread* nt, Memb_list* ml, int type) {
 #endif
 #if LAYOUT == 0 /*SoA*/
 	pd = ml->data; ppd = ml->pdata;
+    _PRAGMA_FOR_CUR_ACC_LOOP_
 	for (_iml = 0; _iml < _cntml; ++_iml) {
 #endif
 #if LAYOUT > 1 /*AoSoA*/
@@ -232,7 +256,7 @@ static void ion_cur(NrnThread* nt, Memb_list* ml, int type) {
 		dcurdv = 0.;
 		cur = 0.;
 		if (iontype & 0100) {
-			erev = nrn_nernst(conci, conco, charge);
+			erev = nrn_nernst(conci, conco, charge, celsius);
 		}
 	};
 }
@@ -245,6 +269,9 @@ static void ion_init(NrnThread* nt, Memb_list* ml, int type) {
 	int _iml;
 	double* pd; Datum* ppd;
 	(void)nt; /* unused */
+
+    #pragma acc declare present_or_copyin (celsius)
+
 /*printf("ion_init %s\n", memb_func[type].sym->name);*/
 #if LAYOUT == 1 /*AoS*/
 	for (_iml = 0; _iml < _cntml; ++_iml) {
@@ -252,6 +279,7 @@ static void ion_init(NrnThread* nt, Memb_list* ml, int type) {
 #endif
 #if LAYOUT == 0 /*SoA*/
 	pd = ml->data; ppd = ml->pdata;
+    _PRAGMA_FOR_INIT_ACC_LOOP_
 	for (_iml = 0; _iml < _cntml; ++_iml) {
 #endif
 #if LAYOUT > 1 /*AoSoA*/
@@ -262,7 +290,7 @@ static void ion_init(NrnThread* nt, Memb_list* ml, int type) {
 			conco = conco0;
 		}
 		if (iontype & 040) {
-			erev = nrn_nernst(conci, conco, charge);
+			erev = nrn_nernst(conci, conco, charge, celsius);
 		}
 	}
 }
@@ -279,6 +307,9 @@ void second_order_cur(NrnThread* _nt) {
 	int* ni;
 	double* pd;
 	(void)_nt; /* unused */
+    int stream_id = _nt->stream_id;
+    double * _vec_rhs = _nt->_actual_rhs;
+
   if (secondorder == 2) {
 	for (tml = _nt->tml; tml; tml = tml->next) if (memb_func[tml->index].alloc == ion_alloc) {
 		ml = tml->ml;
@@ -290,12 +321,13 @@ void second_order_cur(NrnThread* _nt) {
 #endif
 #if LAYOUT == 0 /*SoA*/
 		pd = ml->data;
+        _PRAGMA_FOR_SEC_ORDER_CUR_ACC_LOOP_
 		for (_iml = 0; _iml < _cntml; ++_iml) {
 #endif
 #if LAYOUT > 1 /*AoSoA*/
 #error AoSoA not implemented.
 #endif
-			cur += dcurdv * ( VEC_RHS(ni[_iml]) );
+			cur += dcurdv * ( _vec_rhs[ni[_iml]] );
 		}
 	}
    }
