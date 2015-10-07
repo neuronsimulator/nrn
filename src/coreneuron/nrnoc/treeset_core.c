@@ -39,7 +39,7 @@ static void nrn_rhs(NrnThread* _nt) {
     double *vec_v = &(VEC_V(0));
     int *parent_index = _nt->_v_parent_index;
  
-    #pragma acc parallel loop present(vec_rhs[0:_nt->end], vec_d[0:_nt->end]) if(_nt->compute_gpu)
+    #pragma acc parallel loop present(vec_rhs[0:i3], vec_d[0:i3]) if(_nt->compute_gpu)
 	for (i = i1; i < i3; ++i) {
 		vec_rhs[i] = 0.;
 		vec_d[i] = 0.;
@@ -61,10 +61,12 @@ hoc_warning("errno set during calculation of currents", (char*)0);
 	The extracellular mechanism contribution is already done.
 		rhs += ai_j*(vi_j - vi)
 	*/
-    #pragma acc parallel loop present(vec_rhs[0:i3], vec_d[0:i3], vec_a[0:i3], vec_b[0:i3], vec_v[0:i3], parent_index[0:i3]) if(_nt->compute_gpu)
+    #pragma acc parallel loop present(vec_rhs[0:i3], vec_d[0:i3], vec_a[0:i3], vec_b[0:i3], \
+        vec_v[0:i3], parent_index[0:i3]) if(_nt->compute_gpu)
 	for (i = i2; i < i3; ++i) {
 		double dv = vec_v[parent_index[i]] - vec_v[i];
 		/* our connection coefficients are negative so */
+        #pragma acc atomic update
 		vec_rhs[i] -= vec_b[i]*dv;
         #pragma acc atomic update
 		vec_rhs[parent_index[i]] += vec_a[i]*dv;
@@ -114,6 +116,7 @@ has taken effect
 	/* now add the axial currents */
         #pragma acc parallel loop present(vec_d[0:i3], vec_a[0:i3], vec_b[0:i3], parent_index[0:i3]) if(_nt->compute_gpu)
         for (i=i2; i < i3; ++i) {
+            #pragma acc atomic update
 		    vec_d[i] -= vec_b[i];
             #pragma acc atomic update
 		    vec_d[parent_index[i]] -= vec_a[i];

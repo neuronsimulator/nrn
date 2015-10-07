@@ -1,4 +1,5 @@
 #include "coreneuron/nrnoc/multicore.h"
+#include "coreneuron/nrniv/netcon.h"
 #include "coreneuron/nrniv/nrn_acc_manager.h"
 #ifdef _OPENACC
 #include<openacc.h>
@@ -201,6 +202,12 @@ void setup_nrnthreads_on_device(NrnThread *threads, int nthreads)  {
             /* copy vdata which is setup in bbcore_read. This contains cuda allocated nrnran123_State * */
             void ** d_vdata = (void **) acc_copyin(nt->_vdata, sizeof(void *)*nt->_nvdata);
             acc_memcpy_to_device(&(d_nt->_vdata), &d_vdata, sizeof(void**));
+        }
+
+        if(nt->n_presyn) {
+            /* copy presyn vector used for spike exchange */
+            PreSyn *d_presyns = (PreSyn *) acc_copyin(nt->presyns, sizeof(PreSyn)*nt->n_presyn);
+            acc_memcpy_to_device(&(d_nt->presyns), &d_presyns, sizeof(PreSyn*));
         }
 
         printf("\n Compute thread on GPU? : %s, Stream : %d", (nt->compute_gpu)? "Yes" : "No", nt->stream_id);
