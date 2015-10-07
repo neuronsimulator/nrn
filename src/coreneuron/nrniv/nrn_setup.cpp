@@ -568,6 +568,12 @@ void nrn_cleanup() {
         nt->_shadow_d = NULL;
     }
 
+    if (nt->_net_send_buffer_size) {
+      free(nt->_net_send_buffer);
+      nt->_net_send_buffer = NULL;
+      nt->_net_send_buffer_size = 0;
+    }
+
     free(nt->_ml_list);
   }
 
@@ -818,6 +824,12 @@ void read_phase2(data_reader &F, NrnThread& nt) {
   }
   delete [] output_vindex;
   delete [] output_threshold;
+
+  // initial net_send_buffer size about 1% of number of presyns
+  // nt._net_send_buffer_size = nt.ncell/100 + 1;
+  // but, to avoid reallocation complexity on GPU ...
+  nt._net_send_buffer_size = nt.ncell;
+  nt._net_send_buffer = (int*)ecalloc(nt._net_send_buffer_size, sizeof(int));
 
   int nnetcon = nt.n_netcon;
   int nweight = nt.n_weight;

@@ -93,6 +93,9 @@ typedef struct NrnThread {
 
 	NrnThreadBAList* tbl[BEFORE_AFTER_SIZE]; /* wasteful since almost all empty */
 
+	int _net_send_buffer_size;
+	int _net_send_buffer_cnt;
+	int* _net_send_buffer;
 } NrnThread;
 
 extern void nrn_threads_create(int n, int parallel);

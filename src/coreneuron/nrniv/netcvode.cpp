@@ -518,15 +518,16 @@ void PreSyn::record(double tt) {
 	spikevec_unlock();
 }
 
-void ConditionEvent::check(NrnThread* nt, double tt, double teps) {
+bool ConditionEvent::check() {
 	if (value() > 0.0) {
 		if (flag_ == false) {
 			flag_ = true;
-			send(tt + teps, net_cvode_instance, nt);
+			return true;
 		}
 	}else{
 		flag_ = false;
 	}
+	return false;
 }
 
 ConditionEvent::ConditionEvent() {}
@@ -803,13 +804,31 @@ static void all_pending_selfqueue(double tt) {
 
 // factored this out from deliver_net_events so we can
 // stay in the cache
+// net_send_buffer added so checking can be done on gpu
+// while event queueing is on cpu.
+
 void NetCvode::check_thresh(NrnThread* nt) { // for default method
 	int i;
+	double teps = 1e-10;
 
+	nt->_net_send_buffer_cnt = 0;
+	// on GPU...
 	for (i=0; i < nt->ncell; ++i) {
 		PreSyn* ps = nt->presyns + i;
 		assert(ps->thvar_);
-		ps->check(nt, nt->_t, 1e-10);
+		if (ps->check()) {
+			if (nt->_net_send_buffer_cnt >= nt->_net_send_buffer_size) {
+				nt->_net_send_buffer_size *= 2;
+				nt->_net_send_buffer = (int*)erealloc(nt->_net_send_buffer, nt->_net_send_buffer_size * sizeof(int));
+			}
+			nt->_net_send_buffer[nt->_net_send_buffer_cnt++] = i;
+		}
+	}
+
+	// on CPU...
+	for (i=0; i < nt->_net_send_buffer_cnt; ++i) {
+		PreSyn* ps = nt->presyns + nt->_net_send_buffer[i];
+		ps->send(nt->_t + teps, net_cvode_instance, nt);
 	}
 }
 

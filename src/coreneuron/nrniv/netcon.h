@@ -100,7 +100,7 @@ public:
 	// condition detection factored out of PreSyn for re-use
 	ConditionEvent();
 	virtual ~ConditionEvent();
-	virtual void check(NrnThread*, double sendtime, double teps = 0.0);
+	virtual bool check();
 	virtual double value() { return -1.; }
 
 	bool flag_; // true when below, false when above.
