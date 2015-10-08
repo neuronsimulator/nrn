@@ -551,6 +551,10 @@ void nrn_threads_create(int n, int parallel) {
 				nt->_ecell_memb_list = 0;
 				nt->_sp13mat = 0;
 				nt->_ctime = 0.0;
+
+				nt->_net_send_buffer_size = 0;
+				nt->_net_send_buffer = (int*)0;
+				nt->_net_send_buffer_cnt = 0;
 			}
 		}
 		v_structure_change = 1;

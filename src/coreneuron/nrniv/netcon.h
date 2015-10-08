@@ -100,7 +100,7 @@ public:
 	// condition detection factored out of PreSyn for re-use
 	ConditionEvent();
 	virtual ~ConditionEvent();
-	virtual void check(NrnThread*, double sendtime, double teps = 0.0);
+	virtual bool check();
 	virtual double value() { return -1.; }
 
 	bool flag_; // true when below, false when above.
@@ -131,7 +131,7 @@ public:
     int output_index_;
     int gid_;
     double threshold_;
-    double* thvar_;
+    int thvar_index_; // >=0 points into NrnThread._actual_v
     Point_process* pntsrc_;
     NrnThread* nt_;
 
@@ -142,7 +142,7 @@ public:
 	virtual NrnThread* thread();
 	virtual int type() { return PreSynType; }
 
-    virtual double value() { return *thvar_ - threshold_; }
+	virtual double value();
 	void record(double t);
 };
 

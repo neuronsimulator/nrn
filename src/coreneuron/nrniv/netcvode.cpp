@@ -382,7 +382,7 @@ PreSyn::PreSyn() {
     nc_index_ = 0;
 	nc_cnt_ = 0;
 	flag_ = false;
-	thvar_ = NULL;
+	thvar_index_ = -1;
 	pntsrc_ = NULL;
 	threshold_ = 10.;
 	gid_ = -1;
@@ -400,12 +400,8 @@ InputPreSyn::InputPreSyn() {
 PreSyn::~PreSyn() {
 //	printf("~PreSyn %p\n", this);
 	nrn_cleanup_presyn(this);
-	if (thvar_ || pntsrc_) {
-		if (!thvar_) {
-			if (pntsrc_) {
-				pntsrc_ = nil;
-			}
-		}
+	if (pntsrc_) {
+		pntsrc_ = nil;
 	}
 }
 
@@ -424,15 +420,16 @@ void PreSyn::record(double tt) {
 	spikevec_unlock();
 }
 
-void ConditionEvent::check(NrnThread* nt, double tt, double teps) {
+bool ConditionEvent::check() {
 	if (value() > 0.0) {
 		if (flag_ == false) {
 			flag_ = true;
-			send(tt + teps, net_cvode_instance, nt);
+			return true;
 		}
 	}else{
 		flag_ = false;
 	}
+	return false;
 }
 
 ConditionEvent::ConditionEvent() {}
@@ -639,14 +636,79 @@ TQueue* NetCvode::event_queue(NrnThread* nt) {
 
 // factored this out from deliver_net_events so we can
 // stay in the cache
-void NetCvode::check_thresh(NrnThread* nt) { // for default method
-	int i;
+// net_send_buffer added so checking can be done on gpu
+// while event queueing is on cpu.
 
-	for (i=0; i < nt->ncell; ++i) {
-		PreSyn* ps = nt->presyns + i;
-		assert(ps->thvar_);
-		ps->check(nt, nt->_t, 1e-10);
+static bool pscheck(double var, double thresh, bool& flag) {
+	if (var > thresh) {
+		if (flag == false) {
+			flag = true;
+			return true;
+		}
+	}else{
+		flag = false;
 	}
+	return false;
+}
+
+double PreSyn::value() {
+	return nt_->_actual_v[thvar_index_] - threshold_;
+}
+
+
+void NetCvode::check_thresh(NrnThread* nt) { // for default method
+    int i;
+    double teps = 1e-10;
+
+    nt->_net_send_buffer_cnt = 0;
+
+    int net_send_buf_count = 0;
+    PreSyn *presyns = nt->presyns;
+    double *actual_v = nt->_actual_v;
+
+    #ifdef _OPENACC
+        acc_update_device(&(nt->_net_send_buffer_cnt), sizeof(int));
+    #endif
+
+    // on GPU...
+    #pragma acc parallel loop present(nt[0:1], presyns[0:nt->n_presyn], \
+    actual_v[0:nt->end]) copy(net_send_buf_count) if(nt->compute_gpu)
+    for (i=0; i < nt->ncell; ++i) {
+        PreSyn* ps = presyns + i;
+        int idx = 0;
+        int thidx = ps->thvar_index_;
+        double v = actual_v[thidx];
+        double threshold = ps->threshold_;
+
+        if (pscheck(v, threshold, ps->flag_)) {
+
+            #ifndef _OPENACC
+            nt->_net_send_buffer_cnt = net_send_buf_count;
+            if (nt->_net_send_buffer_cnt >= nt->_net_send_buffer_size) {
+                nt->_net_send_buffer_size *= 2;
+                nt->_net_send_buffer = (int*)erealloc(nt->_net_send_buffer, nt->_net_send_buffer_size * sizeof(int));
+            }
+            #endif
+
+            #pragma acc atomic capture
+            idx = net_send_buf_count++;
+
+            nt->_net_send_buffer[idx] = i;
+        }
+    }
+
+    nt->_net_send_buffer_cnt = net_send_buf_count;
+
+    if(nt->_net_send_buffer_cnt) {
+        int *nsbuffer = nt->_net_send_buffer;
+        #pragma acc update host(nsbuffer[0:nt->_net_send_buffer_cnt])
+    }
+
+    // on CPU...
+    for (i=0; i < nt->_net_send_buffer_cnt; ++i) {
+        PreSyn* ps = nt->presyns + nt->_net_send_buffer[i];
+        ps->send(nt->_t + teps, net_cvode_instance, nt);
+    }
 }
 
 void NetCvode::deliver_net_events(NrnThread* nt) { // for default method

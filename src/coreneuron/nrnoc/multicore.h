@@ -93,9 +93,12 @@ typedef struct NrnThread {
 
 	NrnThreadBAList* tbl[BEFORE_AFTER_SIZE]; /* wasteful since almost all empty */
 
-        int shadow_rhs_cnt; /* added to facilitate the NrnThread transfer to GPU */
-        int compute_gpu; /* define whether to compute with gpus */
-        int stream_id; /* define where the kernel will be launched on GPU stream */
+    int shadow_rhs_cnt; /* added to facilitate the NrnThread transfer to GPU */
+    int compute_gpu; /* define whether to compute with gpus */
+    int stream_id; /* define where the kernel will be launched on GPU stream */
+	int _net_send_buffer_size;
+	int _net_send_buffer_cnt;
+	int* _net_send_buffer;
 } NrnThread;
 
 extern void nrn_threads_create(int n, int parallel);
