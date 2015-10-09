@@ -28,6 +28,8 @@ extern "C" {
 extern NetCvode* net_cvode_instance;
 
 // for fixed step thread
+// check thresholds and deliver all (including binqueue) events
+// up to t+dt/2
 void deliver_net_events(NrnThread* nt) {
 	(void)nt;
 	if (net_cvode_instance) {
@@ -36,13 +38,16 @@ void deliver_net_events(NrnThread* nt) {
 	}
 }
 
-// handle events during finitialize()
+// deliver events (but not binqueue)  up to nt->_t
 void nrn_deliver_events(NrnThread* nt) {
 	double tsav = nt->_t;
 	if (net_cvode_instance) {
 		net_cvode_instance->deliver_events(tsav, nt);
 	}
 	nt->_t = tsav;
+	for (int i=0; i < net_buf_receive_cnt_; ++i) {
+		(*net_buf_receive_[i])(nt);
+	}
 }
 
 void clear_event_queue() {
