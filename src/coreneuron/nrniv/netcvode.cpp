@@ -472,12 +472,9 @@ void PreSyn::send(double tt, NetCvode* ns, NrnThread* nt) {
 	}
 #if NRNMPI
 	if (output_index_ >= 0) {
-
-#if NRNMPI
 		if (nrn_use_localgid_) {
 			nrn_outputevent(localgid_, tt);
 		}else
-#endif //NRNMPI
 		nrn2ncs_outputevent(output_index_, tt);
 	}
 #endif //NRNMPI

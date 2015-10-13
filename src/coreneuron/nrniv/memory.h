@@ -1,5 +1,5 @@
-#ifndef _H_NRN_SETUP_
-#define _H_NRN_SETUP_
+#ifndef _H_MEMORY_
+#define _H_MEMORY_
 
 #include <stdlib.h>
 #include <string.h>

@@ -99,7 +99,7 @@ extern int point_register_mech(const char**, mod_alloc_t alloc, mod_f_t cur,
   );
 extern void nrn_cap_jacob(struct NrnThread*, Memb_list*);
 extern void nrn_writes_conc(int, int);
-extern void nrn_wrote_conc(int, double*, int);
+extern void nrn_wrote_conc(int, double*, int, int, struct NrnThread*);
 extern void hoc_register_prop_size(int, int, int);
 extern void hoc_register_dparam_semantics(int type, int, const char* name);
 

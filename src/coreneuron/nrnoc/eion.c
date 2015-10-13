@@ -146,9 +146,16 @@ double nrn_nernst(ci, co, z) double z, ci, co; {
 	}
 }
 
-void nrn_wrote_conc(int type, double* pe, int it) {
-	if (it & 04) {
-		pe[0] = nrn_nernst(pe[1], pe[2], nrn_ion_charge(type));
+void nrn_wrote_conc(int type, double* p1, int p2, int it, NrnThread* nt) {
+ 	if (it & 04) {
+#if LAYOUT <= 0 /* SoA */
+		int _iml = 0;
+		int _cntml = nt->_ml_list[type]->nodecount;
+#else /* nt is unused */
+		assert(nt);
+#endif
+		double* pe = p1 - p2*_STRIDE;
+		pe[0] = nrn_nernst(pe[1*_STRIDE], pe[2*_STRIDE], nrn_ion_charge(type));
 	}
 }
 

@@ -3,6 +3,8 @@
 
 #include <fstream>
 #include "coreneuron/utils/endianness.h"
+#include "coreneuron/utils/swap_endian.h"
+#include "coreneuron/nrniv/nrn_assert.h"
 
 /** Encapsulate low-level reading of coreneuron input data files.
  *
@@ -79,22 +81,34 @@ public:
       * representation of the writing process.
       */
     template <typename T>
-    T *parse_array(T *p,size_t count,parse_action flag);
+    inline T* parse_array(T* p,size_t count,parse_action flag){
+        if (count>0 && flag!=seek) nrn_assert(p!=0);
+  
+        read_checkpoint_assert();
+        switch (flag) {
+        case seek:
+            F.seekg(count*sizeof(T),std::ios_base::cur);
+            break;
+        case read:
+            F.read((char *)p,count*sizeof(T));
+            if (reorder_on_read) endian::swap_endian_range(p,p+count);
+            break;
+        }
+  
+        nrn_assert(!F.fail());
+        return p;
+    }
 
     // convenience interfaces:
 
     /** Read and optionally allocate an integer array of fixed length. */
-    int *read_int_array(int *p,size_t count) { return parse_array(p,count,read); }
+    template <typename T>
+    inline T* read_array(T* p,size_t count) { return parse_array(p,count,read); }
 
     /** Allocate and read an integer array of fixed length. */
-    int *read_int_array(size_t count) { return parse_array(new int[count],count,read); }
+    template <typename T>
+    inline T* read_array(size_t count) { return parse_array(new T[count],count,read); }
       
-    /** Parse a double array of fixed length. */
-    double *read_dbl_array(double *p,size_t count) { return parse_array(p,count,read); }
-
-    /** Allocate (new []) and parse a double array of fixed length. */
-    double *read_dbl_array(size_t count) { return parse_array(new double[count],count,read); }
-
     /** Close currently open file. */
     void close();
 };

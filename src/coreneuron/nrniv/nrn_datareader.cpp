@@ -1,7 +1,4 @@
-#include "coreneuron/utils/endianness.h"
-#include "coreneuron/utils/swap_endian.h"
 #include "coreneuron/nrniv/nrn_datareader.h"
-#include "coreneuron/nrniv/nrn_assert.h"
 
 
 data_reader::data_reader(const char *filename, bool reorder) {
@@ -45,31 +42,6 @@ void data_reader::read_checkpoint_assert() {
     ++chkpnt;
 }
 
-
-template <typename T>
-T *data_reader::parse_array(T *p,size_t count,parse_action flag) {
-    if (count>0 && flag!=seek) nrn_assert(p!=0);
-
-    read_checkpoint_assert();
-    switch (flag) {
-    case seek:
-        F.seekg(count*sizeof(T),std::ios_base::cur);
-        break;
-    case read:
-        F.read((char *)p,count*sizeof(T));
-        if (reorder_on_read) endian::swap_endian_range(p,p+count);
-        break;
-    }
-
-    nrn_assert(!F.fail());
-    return p;
-}
-
-/** Explicit instantiation of parse_array<in> */
-template int *data_reader::parse_array<int>(int *,size_t,parse_action);
-
-/** Explicit instantiation of parse_array<double> */
-template double *data_reader::parse_array<double>(double *,size_t,parse_action);
 
 void data_reader::close() {
     F.close();

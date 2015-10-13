@@ -25,6 +25,7 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/nrniv/nrn_assert.h"
 #include "coreneuron/nrniv/nrnmutdec.h"
 #include "coreneuron/nrniv/memory.h"
+#include "coreneuron/nrniv/nrn_setup.h"
 
 // file format defined in cooperation with nrncore/src/nrniv/nrnbbcore_write.cpp
 // single integers are ascii one per line. arrays are binary int or double
@@ -105,10 +106,7 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #endif
 
 static MUTDEC
-static void read_phase1(data_reader &F,NrnThread& nt);
 static void determine_inputpresyn(void);
-static void read_phase2(data_reader &F, NrnThread& nt);
-static void setup_ThreadData(NrnThread& nt);
 static size_t model_size(void);
 
 static int n_inputpresyn_;
@@ -120,11 +118,6 @@ NetCon** netcon_in_presyn_order_;
 // Wrap read_phase1 and read_phase2 calls to allow using  nrn_multithread_job.
 // Args marshaled by store_phase_args are used by phase1_wrapper
 // and phase2_wrapper.
-static int ngroup_w;
-static int* gidgroups_w;
-static const char* path_w;
-static data_reader* file_reader_w;
-static bool byte_swap_w;
 static void store_phase_args(int ngroup, int* gidgroups, data_reader* file_reader,
   const char* path, int byte_swap) {
   ngroup_w = ngroup;
@@ -133,29 +126,6 @@ static void store_phase_args(int ngroup, int* gidgroups, data_reader* file_reade
   path_w = path;
   byte_swap_w = (bool) byte_swap;
 }
-
-#define implement_phase_wrapper(A) \
-static void* phase##A##_wrapper_w(NrnThread* nt) { \
-  int i = nt->id; \
-  char fnamebuf[1000]; \
-  if (i < ngroup_w) { \
-    sd_ptr fname = sdprintf(fnamebuf, sizeof(fnamebuf), "%s/%d_"#A".dat", path_w, gidgroups_w[i]); \
-    file_reader_w[i].open(fname,byte_swap_w); \
-    read_phase##A(file_reader_w[i], *nt); \
-    file_reader_w[i].close(); \
-    if (A == 2) { \
-      setup_ThreadData(*nt); \
-    } \
-  } \
-  return NULL; \
-} \
-static void phase##A##_wrapper() { \
-  nrn_multithread_job(phase##A##_wrapper_w); \
-} \
-// end of implement_phase_wrapper
-
-implement_phase_wrapper(1)
-implement_phase_wrapper(2)
 
 /* read files.dat file and distribute cellgroups to all mpi ranks */
 void nrn_read_filesdat(int &ngrp, int * &grp, const char *filesdat)
@@ -228,7 +198,7 @@ void nrn_setup(const char *path, const char *filesdat, int byte_swap, int thread
 
   /* nrn_multithread_job supports serial, pthread, and openmp. */
   store_phase_args(ngroup, gidgroups, file_reader, path, byte_swap);
-  phase1_wrapper();
+  coreneuron::phase_wrapper<(coreneuron::phase)1>(); /// If not the xlc compiler, it should be coreneuron::phase::one
 
   // from the netpar::gid2out map and the netcon_srcgid array,
   // fill the netpar::gid2in, and from the number of entries,
@@ -239,7 +209,7 @@ void nrn_setup(const char *path, const char *filesdat, int byte_swap, int thread
   // read the rest of the gidgroup's data and complete the setup for each
   // thread.
   /* nrn_multithread_job supports serial, pthread, and openmp. */
-  phase2_wrapper();
+  coreneuron::phase_wrapper<(coreneuron::phase)2>();
 
   /// Generally, tables depend on a few parameters. And if those parameters change,
   /// then the table needs to be recomputed. This is obviously important in NEURON
@@ -294,8 +264,8 @@ void read_phase1(data_reader &F, NrnThread& nt) {
   /// Checkpoint in bluron is defined for both phase 1 and phase 2 since they are written together
   /// output_gid has all of output PreSyns, netcon_srcgid is created for NetCons, which might be
   /// 10k times more than output_gid.
-  int* output_gid = F.read_int_array(nt.n_presyn);
-  int* netcon_srcgid = F.read_int_array(nt.n_netcon);
+  int* output_gid = F.read_array<int>(nt.n_presyn);
+  int* netcon_srcgid = F.read_array<int>(nt.n_netcon);
   F.close();
 
   // for checking whether negative gids fit into the gid space
@@ -481,24 +451,21 @@ int nrn_i_layout(int icnt, int cnt, int isz, int sz, int layout) {
   return 0;
 }
 
-#define MECHLAYOUT(TPE,TYPE) \
-static void mech##TPE##layout(data_reader &F, TYPE* data, int cnt, int sz, int layout){\
-  if (layout == 1) { /* AoS */\
-    F.read##TPE##array(data, cnt*sz);\
-  }else if (layout == 0) { /* SoA */\
-    int align_cnt = nrn_soa_padded_size(cnt, layout);\
-    TYPE* d = F.read##TPE##array(cnt*sz);\
-    for (int i=0; i < cnt; ++i) {\
-      for (int j=0; j < sz; ++j) {\
-        data[i + j*align_cnt] = d[i*sz + j];\
-      }\
-    }\
-    delete [] d;\
-  }\
+template<class T>
+inline void mech_layout(data_reader &F, T* data, int cnt, int sz, int layout){
+  if (layout == 1) { /* AoS */
+    F.read_array<T>(data, cnt*sz);
+  }else if (layout == 0) { /* SoA */
+    int align_cnt = nrn_soa_padded_size(cnt, layout);
+    T* d = F.read_array<T>(cnt*sz);
+    for (int i=0; i < cnt; ++i) {
+      for (int j=0; j < sz; ++j) {
+        data[i + j*align_cnt] = d[i*sz + j];
+      }
+    }
+    delete [] d;
+  }
 }
-
-MECHLAYOUT(_dbl_,double) // mech_dbl_layout
-MECHLAYOUT(_int_,int)   // mech_int_layout
 
 /* nrn_threads_free() presumes all NrnThread and NrnThreadMembList data is
  * allocated with malloc(). This is not the case here, so let's try and fix
@@ -683,11 +650,11 @@ void read_phase2(data_reader &F, NrnThread& nt) {
   }
 
   // matrix info
-  nt._v_parent_index = F.read_int_array(nt.end);
-  F.read_dbl_array(nt._actual_a, nt.end);
-  F.read_dbl_array(nt._actual_b, nt.end);
-  F.read_dbl_array(nt._actual_area, nt.end);
-  F.read_dbl_array(nt._actual_v, nt.end);
+  nt._v_parent_index = F.read_array<int>(nt.end);
+  F.read_array<double>(nt._actual_a, nt.end);
+  F.read_array<double>(nt._actual_b, nt.end);
+  F.read_array<double>(nt._actual_area, nt.end);
+  F.read_array<double>(nt._actual_v, nt.end);
 
   Memb_list** mlmap = new Memb_list*[n_memb_func];
   int synoffset = 0;
@@ -706,17 +673,17 @@ void read_phase2(data_reader &F, NrnThread& nt) {
     int szdp = nrn_prop_dparam_size_[type];
 
     if (!is_art) { 
-        ml->nodeindices = F.read_int_array(ml->nodecount);
+        ml->nodeindices = F.read_array<int>(ml->nodecount);
     } else { 
         ml->nodeindices = NULL;
     }
     
     int layout = nrn_mech_data_layout_[type];
-    mech_dbl_layout(F, ml->data, n, szp, layout);
+    mech_layout<double>(F, ml->data, n, szp, layout);
     
     if (szdp) {
       ml->pdata = new int[nrn_soa_padded_size(n, layout)*szdp];
-      mech_int_layout(F, ml->pdata, n, szdp, layout);
+      mech_layout(F, ml->pdata, n, szdp, layout);
     }else{
       ml->pdata = NULL;
     }
@@ -813,8 +780,8 @@ void read_phase2(data_reader &F, NrnThread& nt) {
   // Here we associate the real cells with voltage pointers and
   // acell PreSyn with the Point_process.
   //nt.presyns order same as output_vindex order
-  int* output_vindex = F.read_int_array(nt.n_presyn);
-  double* output_threshold = F.read_dbl_array(nt.ncell);
+  int* output_vindex = F.read_array<int>(nt.n_presyn);
+  double* output_threshold = F.read_array<double>(nt.ncell);
   for (int i=0; i < nt.n_presyn; ++i) { // real cells
     PreSyn* ps = nt.presyns + i;
     int ix = output_vindex[i];
@@ -846,8 +813,8 @@ void read_phase2(data_reader &F, NrnThread& nt) {
 
   // Make NetCon.target_ point to proper Point_process. Only the NetCon
   // with pnttype[i] > 0 have a target.
-  int* pnttype = F.read_int_array(nnetcon);
-  int* pntindex = F.read_int_array(nnetcon);
+  int* pnttype = F.read_array<int>(nnetcon);
+  int* pntindex = F.read_array<int>(nnetcon);
   for (int i=0; i < nnetcon; ++i) {
     int type = pnttype[i];
     if (type > 0) {
@@ -862,7 +829,7 @@ void read_phase2(data_reader &F, NrnThread& nt) {
   delete [] pnt_offset;
 
   // weights in netcons order in groups defined by Point_process target type.
-  nt.weights = F.read_dbl_array(nweight);
+  nt.weights = F.read_array<double>(nweight);
   int iw = 0;
   for (int i=0; i < nnetcon; ++i) {
     NetCon& nc = nt.netcons[i];
@@ -873,7 +840,7 @@ void read_phase2(data_reader &F, NrnThread& nt) {
   delete [] pnttype;
 
   // delays in netcons order
-  double* delay = F.read_dbl_array(nnetcon);
+  double* delay = F.read_array<double>(nnetcon);
   for (int i=0; i < nnetcon; ++i) {
     NetCon& nc = nt.netcons[i];
     nc.delay_ = delay[i];
@@ -891,11 +858,11 @@ void read_phase2(data_reader &F, NrnThread& nt) {
     double* dArray = NULL;
     if (icnt) 
     {
-      iArray = F.read_int_array(icnt);
+      iArray = F.read_array<int>(icnt);
     }
     if (dcnt) 
     {
-      dArray = F.read_dbl_array(dcnt);
+      dArray = F.read_array<double>(dcnt);
     }
     int ik = 0;
     int dk = 0;
@@ -942,9 +909,9 @@ void read_phase2(data_reader &F, NrnThread& nt) {
     int ix = F.read_int();
     int sz = F.read_int();
     IvocVect* yvec = vector_new(sz);
-    F.read_dbl_array(vector_vec(yvec), sz);
+    F.read_array<double>(vector_vec(yvec), sz);
     IvocVect* tvec = vector_new(sz);
-    F.read_dbl_array(vector_vec(tvec), sz);
+    F.read_array<double>(vector_vec(tvec), sz);
     ix = nrn_param_layout(ix, mtype, ml);
     nt._vecplay[i] = new VecPlayContinuous(ml->data + ix, yvec, tvec, NULL, nt.id);
   }
