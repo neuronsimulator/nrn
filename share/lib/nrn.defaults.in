@@ -113,9 +113,9 @@
 //*jvmdll: c:\jdk1.3.1\jre\bin\classic\jvm.dll
 // for gnu-linux it should be set as below and the LD_LIBRARY_PATH set
 // so that libjvm.so can itself find other libraries. For example
-// export LD_LIBRARY_PATH=/usr/java/j2sdk1.4.0_01/jre/lib/i386/client:/usr/java/j2sdk1.4.0_01/jre/lib/i386
-//@nrndef_unix@*jvmdll: libjvm.so
-//@nrndef_mac@*jvmdll: /System/Library/Frameworks/JavaVM.framework/Versions/1.3.1/Libraries/libjvm.dylib
+// export LD_LIBRARY_PATH=/usr/lib/jvm/java-7-openjdk-amd64/jre/lib/amd64/server
+@nrndef_unix@*jvmdll: libjvm.so
+@nrndef_mac@*jvmdll: libjvm.dylib
 
 // The default stack size is 1000 and the frame (recursion depth) size is 100 unless explicitly set nonzero below
 // One may also use the -NSTACK stacksize   -NFRAME framesize options at launch.

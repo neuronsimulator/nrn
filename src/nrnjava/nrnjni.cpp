@@ -50,7 +50,7 @@ extern Objectdata* hoc_top_level_data;
 double hoc_integer(double);
 Object* hoc_new_object(Symbol*, void*);
 Object* hoc_newobj1(Symbol*, int);
-void call_ob_proc(Object*, Symbol*, int);
+#define call_ob_proc hoc_call_ob_proc
 Object** hoc_objpop();
 char** hoc_strpop();
 void hoc_tobj_unref(Object**);
