@@ -13,7 +13,6 @@ WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
 OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
 IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-
 #include "coreneuron/nrnconf.h"
 #include "coreneuron/nrnoc/multicore.h"
 #include "coreneuron/nrniv/nrniv_decl.h"
@@ -26,6 +25,9 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/nrniv/nrnmutdec.h"
 #include "coreneuron/nrniv/memory.h"
 #include "coreneuron/nrniv/nrn_setup.h"
+#include <algorithm>
+#include <iostream>
+#include <vector>
 
 // file format defined in cooperation with nrncore/src/nrniv/nrnbbcore_write.cpp
 // single integers are ascii one per line. arrays are binary int or double
@@ -487,6 +489,9 @@ void nrn_cleanup() {
       delete[] ml->nodeindices;
       ml->nodeindices = NULL;
 
+      if(tml->dependencies)
+          free(tml->dependencies);
+
       next_tml = tml->next;
       free(tml->ml);
       free(tml);
@@ -568,7 +573,7 @@ void read_phase2(data_reader &F, NrnThread& nt) {
     tml->ml = (Memb_list*)emalloc(sizeof(Memb_list));
     tml->next = NULL;
     tml->index = F.read_int();
-    tml->ml->nodecount = F.read_int();;
+    tml->ml->nodecount = F.read_int();
     if (memb_func[tml->index].is_point && nrn_is_artificial_[tml->index] == 0){
       // Avoid race for multiple PointProcess instances in same compartment.
       if (tml->ml->nodecount > shadow_rhs_cnt) {
@@ -583,6 +588,7 @@ void read_phase2(data_reader &F, NrnThread& nt) {
       nt.tml = tml;
     }
     tml_last = tml;
+
   }
 
   if (shadow_rhs_cnt) {
@@ -747,6 +753,75 @@ void read_phase2(data_reader &F, NrnThread& nt) {
       }
     }
   }
+
+  /* here we setup the mechanism dependencies. if there is a mechanism dependency
+   * then we allocate an array for tml->dependencies otherwise set it to NULL.
+   * In order to find out the "real" dependencies i.e. dependent mechanism
+   * exist at the same compartment, we compare the nodeindices of mechanisms
+   * returned by nrn_mech_depend.
+   */
+
+  /* temporary array for dependencies */
+  int* mech_deps = (int*)ecalloc(n_memb_func, sizeof(int));
+
+  for (tml = nt.tml; tml; tml = tml->next) {
+
+    /* initialize to null */
+    tml->dependencies = NULL;
+    tml->ndependencies = 0;
+
+    /* get dependencies from the models */
+    int deps_cnt = nrn_mech_depend(tml->index, mech_deps);
+
+    /* if dependencies, setup dependency array */
+    if(deps_cnt) {
+
+        /* store "real" dependencies in the vector */
+        std::vector<int> actual_mech_deps;
+
+        Memb_list *ml = tml->ml;
+        int* nodeindices = ml->nodeindices;
+
+        /* iterate over dependencies */
+        for(int j=0; j<deps_cnt; j++) {
+
+            /* memb_list of dependency mechanism */
+            Memb_list *dml = nt._ml_list[mech_deps[j]];
+
+            /* dependency mechanism may not exist in the model */
+            if(!dml)
+                continue;
+
+            /* take nodeindices for comparison */
+            int* dnodeindices = dml->nodeindices;
+
+            /* set_intersection function needs temp vector to push the common values */
+            std::vector<int> node_intersection;
+
+            /* make sure they have non-zero nodes and find their intersection */
+            if( (ml->nodecount > 0) && (dml->nodecount > 0)) {
+                std::set_intersection(nodeindices,  nodeindices  + ml->nodecount,
+                                      dnodeindices, dnodeindices + dml->nodecount,
+                                      std::back_inserter(node_intersection));
+            }
+
+            /* if they intersect in the nodeindices, it's real dependency */
+            if(!node_intersection.empty()) {
+                actual_mech_deps.push_back(mech_deps[j]);
+            }
+        }
+
+        /* copy actual_mech_deps to dependencies */
+        if(!actual_mech_deps.empty()) {
+            tml->ndependencies = actual_mech_deps.size();
+            tml->dependencies = (int*)ecalloc(actual_mech_deps.size(), sizeof(int));
+            memcpy(tml->dependencies, &actual_mech_deps[0], sizeof(int)*actual_mech_deps.size());
+        }
+    }
+  }
+
+  /* free temp dependency array */
+  free(mech_deps);
 
   /// Fill the BA lists
   BAMech** bamap = new BAMech*[n_memb_func]; 

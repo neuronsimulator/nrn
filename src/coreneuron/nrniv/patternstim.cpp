@@ -133,6 +133,8 @@ Point_process* nrn_artcell_instantiate(const char* mechname) {
   assert(nt->_ml_list[type] == NULL); //FIXME
   NrnThreadMembList* tml = (NrnThreadMembList*)emalloc(sizeof(NrnThreadMembList));
   tml->ml = (Memb_list*)emalloc(sizeof(Memb_list));
+  tml->dependencies = NULL;
+  tml->ndependencies = 0;
   nt->_ml_list[type] = tml->ml;
   tml->index = type;
   tml->next = NULL;
