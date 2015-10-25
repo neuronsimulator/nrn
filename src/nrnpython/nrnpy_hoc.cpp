@@ -71,7 +71,7 @@ static PyObject* pfunc_get_docstring = NULL;
 static const char* hocobj_docstring = "class neuron.hoc.HocObject - Hoc Object wrapper";
 
 
-#if 0
+#if 1
 }
 #include <hoccontext.h>
 extern "C" {

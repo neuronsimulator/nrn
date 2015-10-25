@@ -5,6 +5,7 @@
 #include <nrnoc2iv.h>
 #include <classreg.h>
 #include <nrnpython.h>
+#include <hoccontext.h>
 
 extern "C" {
 #include "parse.h"
@@ -36,11 +37,6 @@ extern Object* (*nrnpy_pickle2po)(char*, size_t size);
 extern char* (*nrnpy_callpicklef)(char*, size_t size, int narg, size_t* retsize);
 extern int (*nrnpy_pysame)(Object*, Object*); // contain same Python object
 extern Object* (*nrnpympi_alltoall)(Object*, int);
-
-extern Object* hoc_thisobject;
-extern Symlist* hoc_symlist;
-extern Objectdata* hoc_top_level_data;
-extern Symlist* hoc_top_level_symlist;
 
 void nrnpython_reg_real();
 PyObject* nrnpy_ho2po(Object*);
@@ -170,18 +166,7 @@ PyObject* nrnpy_pyCallObject(PyObject* callable, PyObject* args) {
 	// When hoc calls a PythonObject method, then in case python
 	// calls something back in hoc, the hoc interpreter must be
 	// at the top level
-	Object* objsave = 0;
-	Objectdata* obdsave;
-	Symlist* slsave;
-	if (hoc_thisobject) {
-		objsave = hoc_thisobject;
-		obdsave = hoc_objectdata_save();
-		slsave = hoc_symlist;
-		hoc_thisobject = 0;
-		hoc_objectdata = hoc_top_level_data;
-		hoc_symlist = hoc_top_level_symlist;
-	}
-
+	HocTopContextSet
 	PyObject* p = PyObject_CallObject(callable, args);
 #if 0
 printf("PyObject_CallObject callable\n");
@@ -191,11 +176,7 @@ PyObject_Print(args, stdout, 0);
 printf("\nreturn %p\n", p);
 if (p) { PyObject_Print(p, stdout, 0); printf("\n");}
 #endif
-	if (objsave) {
-		hoc_thisobject = objsave;
-		hoc_objectdata = hoc_objectdata_restore(obdsave);
-		hoc_symlist = slsave;
-	}
+	HocContextRestore
 	return p;
 }
 
