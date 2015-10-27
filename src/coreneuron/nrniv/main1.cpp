@@ -33,6 +33,7 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/utils/sdprintf.h"
 #include "coreneuron/nrniv/nrn_stats.h"
 #include "coreneuron/nrniv/nrn_acc_manager.h"
+#include <string.h>
 
 #ifdef CRAYPAT
 #include <pat_api.h>
@@ -115,7 +116,19 @@ int main1( int argc, char **argv, char **env )
     // alloctae buffer for mpi communication
     mk_spikevec_buffer( input_params.spikebuf );
 
-    setup_nrnthreads_on_device(nrn_threads, nrn_nthread);
+    if( input_params.compute_gpu) {
+        setup_nrnthreads_on_device(nrn_threads, nrn_nthread);
+    }
+
+    // call prcellstae for prcellgid
+    if ( input_params.prcellgid >= 0 ) {
+        if(input_params.compute_gpu)
+            strcpy( prcellname, "gpu_init");
+        else
+            strcpy( prcellname, "cpu_init");
+        update_nrnthreads_on_host(nrn_threads, nrn_nthread);
+        prcellstate( input_params.prcellgid, prcellname );
+    }
 
     report_mem_usage( "After mk_spikevec_buffer" );
 
@@ -125,7 +138,11 @@ int main1( int argc, char **argv, char **env )
 
     // call prcellstae for prcellgid
     if ( input_params.prcellgid >= 0 ) {
-        sprintf( prcellname, "t%g", t );
+        if(input_params.compute_gpu)
+            sprintf( prcellname, "gpu_t%g", t );
+        else
+            sprintf( prcellname, "cpu_t%g", t );
+        update_nrnthreads_on_host(nrn_threads, nrn_nthread);
         prcellstate( input_params.prcellgid, prcellname );
     }
 
@@ -155,7 +172,11 @@ int main1( int argc, char **argv, char **env )
 
     // prcellstate after end of solver
     if ( input_params.prcellgid >= 0 ) {
-        sprintf( prcellname, "t%g", t );
+        if(input_params.compute_gpu)
+            sprintf( prcellname, "gpu_t%g", t );
+        else
+            sprintf( prcellname, "cpu_t%g", t );
+        update_nrnthreads_on_host(nrn_threads, nrn_nthread);
         prcellstate( input_params.prcellgid, prcellname );
     }
 

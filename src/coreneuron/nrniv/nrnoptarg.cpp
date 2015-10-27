@@ -25,6 +25,7 @@ cb_parameters::cb_parameters()
     prcellgid = -1;
 
     threading = 0;
+    compute_gpu = 0;
 
     patternstim = NULL;
 
@@ -84,6 +85,8 @@ void cb_parameters::show_cb_opts_help()
               Output prcellstate information for the gid NUMBER (int). The default value is '-1'.\n\n\
        -c, --threading\n\
               Optiong to enable threading. The default implies no threading.\n\n\
+       -a, --gpu\n\
+              Optiong to enable use of GPUs. The default implies cpu only run.\n\n\
        -d PATH, --datpath=PATH\n\
               Set the path with required CoreNeuron data to PATH (char*). The default value is '.'.\n\n\
        -f FILE, --filesdat=FILE\n\
@@ -114,6 +117,7 @@ void cb_parameters::read_cb_opts( int argc, char **argv )
             {"spikebuf",  required_argument, 0, 'b'},
             {"prcellgid", required_argument, 0, 'g'},
             {"threading", no_argument,       0, 'c'},
+            {"gpu",       no_argument,       0, 'a'},
             {"datpath",   required_argument, 0, 'd'},
             {"filesdat",  required_argument, 0, 'f'},
             {"outpath",   required_argument, 0, 'o'},
@@ -184,6 +188,10 @@ void cb_parameters::read_cb_opts( int argc, char **argv )
 
             case 'c':
                 threading = 1;
+                break;
+
+            case 'a':
+                compute_gpu = 1;
                 break;
 
             case 'd':

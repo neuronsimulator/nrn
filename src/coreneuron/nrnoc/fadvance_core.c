@@ -107,8 +107,7 @@ static void update(NrnThread* _nt){
 		}
 	}
 
-    #pragma acc wait(_nt->stream_id)
-     update_matrix_to_gpu(_nt);
+    update_matrix_to_gpu(_nt);
 
 	if (_nt->tml) {
 		assert(_nt->tml->index == CAP);

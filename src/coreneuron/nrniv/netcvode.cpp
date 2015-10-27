@@ -25,6 +25,9 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/nrniv/output_spikes.h"
 #include "coreneuron/nrniv/nrn_assert.h"
 #include "coreneuron/nrniv/nrn_acc_manager.h"
+#ifdef _OPENACC
+#include <openacc.h>
+#endif
 
 #define UNIT_ROUNDOFF DBL_EPSILON
 #define PP2NT(pp) (nrn_threads + (pp)->_tid)
@@ -667,7 +670,8 @@ void NetCvode::check_thresh(NrnThread* nt) { // for default method
     double *actual_v = nt->_actual_v;
 
     #ifdef _OPENACC
-        acc_update_device(&(nt->_net_send_buffer_cnt), sizeof(int));
+        if(nt->compute_gpu)
+            acc_update_device(&(nt->_net_send_buffer_cnt), sizeof(int));
     #endif
 
     // on GPU...
@@ -683,11 +687,11 @@ void NetCvode::check_thresh(NrnThread* nt) { // for default method
         if (pscheck(v, threshold, ps->flag_)) {
 
             #ifndef _OPENACC
-            nt->_net_send_buffer_cnt = net_send_buf_count;
-            if (nt->_net_send_buffer_cnt >= nt->_net_send_buffer_size) {
-                nt->_net_send_buffer_size *= 2;
-                nt->_net_send_buffer = (int*)erealloc(nt->_net_send_buffer, nt->_net_send_buffer_size * sizeof(int));
-            }
+                nt->_net_send_buffer_cnt = net_send_buf_count;
+                if (nt->_net_send_buffer_cnt >= nt->_net_send_buffer_size) {
+                    nt->_net_send_buffer_size *= 2;
+                    nt->_net_send_buffer = (int*)erealloc(nt->_net_send_buffer, nt->_net_send_buffer_size * sizeof(int));
+                }
             #endif
 
             #pragma acc atomic capture
@@ -701,7 +705,7 @@ void NetCvode::check_thresh(NrnThread* nt) { // for default method
 
     if(nt->_net_send_buffer_cnt) {
         int *nsbuffer = nt->_net_send_buffer;
-        #pragma acc update host(nsbuffer[0:nt->_net_send_buffer_cnt])
+        #pragma acc update host(nsbuffer[0:nt->_net_send_buffer_cnt]) if(nt->compute_gpu)
     }
 
     // on CPU...

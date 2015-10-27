@@ -599,10 +599,15 @@ void read_phase2(data_reader &F, NrnThread& nt) {
   nt._ml_list = (Memb_list**)ecalloc(n_memb_func, sizeof(Memb_list*));
   int shadow_rhs_cnt = 0;
   nt.shadow_rhs_cnt = 0;
-  nt.compute_gpu = 0;
 
   nt.stream_id = 0;
+  nt.compute_gpu = 0;
 
+  /* read_phase2 is being called from openmp region
+   * and hence we can set the stream equal to current thread id.
+   * In fact we could set gid as stream_id when we will have nrn threads
+   * greater than number of omp threads.
+   */
 #if defined(_OPENMP)
   nt.stream_id = omp_get_thread_num(); 
 #endif

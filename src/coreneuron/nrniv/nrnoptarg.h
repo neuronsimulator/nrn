@@ -28,6 +28,8 @@ typedef struct cb_parameters {
     int prcellgid; 		/**< gid of cell for prcellstate */
 
     int threading;		/**< enable pthread/openmp  */
+    
+    int compute_gpu;		    /**< run computations on gpu  */
 
     const char *patternstim;
     const char *datpath;		/**< directory path where .dat files */
