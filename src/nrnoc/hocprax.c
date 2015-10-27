@@ -106,13 +106,13 @@ void fit_praxis(void) {
 	/* store statics specified by this invocation */
 	/* will be copied just before calling prax */
 	double minerr_, *minarg_;
-	long int printmode_, nvar_;
+	long int nvar_;
 	Symbol* efun_sym_;
 	Object* efun_py_, *efun_py_arg_;
 	void* vec_py_save_;
 
 	minerr_ = 0.0;
-	printmode_ = 0; nvar_ = 0;
+	nvar_ = 0;
 	minarg_ = NULL;
 	efun_sym_ = NULL;
 	efun_py_ = NULL;
@@ -178,7 +178,6 @@ void fit_praxis(void) {
 	/* copy this invocation values to the statics */
 	minerr = minerr_;
 	minarg = minarg_;
-	printmode = printmode_;
 	nvar = nvar_;
 	hoc_efun_sym = efun_sym_;
 	efun_py = efun_py_;
