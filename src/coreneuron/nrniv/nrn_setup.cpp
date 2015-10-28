@@ -677,7 +677,9 @@ void read_phase2(data_reader &F, NrnThread& nt) {
   }
 
   // matrix info
-  nt._v_parent_index = F.read_array<int>(nt.end);
+  nt._v_parent_index = (int*)coreneuron::ecalloc_align(nt.end, NRN_SOA_BYTE_ALIGN, sizeof(int));;
+  F.read_array<int>(nt._v_parent_index, nt.end);
+
   F.read_array<double>(nt._actual_a, nt.end);
   F.read_array<double>(nt._actual_b, nt.end);
   F.read_array<double>(nt._actual_area, nt.end);
@@ -700,7 +702,8 @@ void read_phase2(data_reader &F, NrnThread& nt) {
     int szdp = nrn_prop_dparam_size_[type];
 
     if (!is_art) { 
-        ml->nodeindices = F.read_array<int>(ml->nodecount);
+        ml->nodeindices = (int*)coreneuron::ecalloc_align(ml->nodecount, NRN_SOA_BYTE_ALIGN, sizeof(int));
+        F.read_array<int>(ml->nodeindices, ml->nodecount);
     } else { 
         ml->nodeindices = NULL;
     }
@@ -709,7 +712,7 @@ void read_phase2(data_reader &F, NrnThread& nt) {
     mech_layout<double>(F, ml->data, n, szp, layout);
     
     if (szdp) {
-      ml->pdata = new int[nrn_soa_padded_size(n, layout)*szdp];
+      ml->pdata = (int*)coreneuron::ecalloc_align(nrn_soa_padded_size(n, layout)*szdp, NRN_SOA_BYTE_ALIGN, sizeof(int));
       mech_layout<int>(F, ml->pdata, n, szdp, layout);
     }else{
       ml->pdata = NULL;
