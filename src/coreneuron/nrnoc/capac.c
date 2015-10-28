@@ -18,6 +18,16 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/nrnoc/multicore.h"
 #include "coreneuron/nrnoc/membdef.h"
 
+#if !defined(LAYOUT)
+/* 1 means AoS, >1 means AoSoA, <= 0 means SOA */
+#define LAYOUT 1
+#endif
+#if LAYOUT >= 1
+#define _STRIDE LAYOUT
+#else
+#define _STRIDE _cntml_padded + _iml
+#endif
+
 static const char *mechanism[] = { "0", "capacitance", "cm",0, "i_cap", 0,0 };
 static void cap_alloc(double*, Datum*, int type);
 static void cap_init(NrnThread*, Memb_list*, int);
@@ -29,11 +39,12 @@ void capac_reg_(void) {
 	/* all methods deal with capacitance in special ways */
 	register_mech(mechanism, cap_alloc, (mod_f_t)0, (mod_f_t)0, (mod_f_t)0, (mod_f_t)cap_init, -1, 1);
 	mechtype = nrn_get_mechtype(mechanism[1]);
+	_nrn_layout_reg(mechtype, LAYOUT);
 	hoc_register_prop_size(mechtype, nparm, 0);
 }
 
-#define cm  vdata[i*nparm]
-#define i_cap  vdata[i*nparm+1]
+#define cm  vdata[0*_STRIDE]
+#define i_cap  vdata[1*_STRIDE]
 
 /*
 cj is analogous to 1/dt for cvode and daspk
@@ -43,39 +54,44 @@ It used to be static but is now a thread data variable
 */
 
 void nrn_cap_jacob(NrnThread* _nt, Memb_list* ml) {
-	int count = ml->nodecount;
-	int i;
+	int _cntml_actual = ml->nodecount;
+	int _cntml_padded = ml->_nodecount_padded;
+	int _iml;
 	double *vdata = ml->data;
 	double cfac = .001 * _nt->cj;
+  (void) _cntml_padded; /* unused when layout=1*/
 	{ /*if (use_cachevec) {*/
 		int* ni = ml->nodeindices;
-		for (i=0; i < count; i++) {
-			VEC_D(ni[i]) += cfac*cm;
+		for (_iml=0; _iml < _cntml_actual; _iml++) {
+			VEC_D(ni[_iml]) += cfac*cm;
 		}
 	}
 }
 
 static void cap_init(NrnThread* _nt, Memb_list* ml, int type ) {
-	int count = ml->nodecount;
+	int _cntml_actual = ml->nodecount;
+	int _cntml_padded = ml->_nodecount_padded;
+	int _iml;
 	double *vdata = ml->data;
-	int i;
-	(void)_nt; (void)type; /* unused */
-	for (i=0; i < count; ++i) {
+	(void)_nt; (void)type; (void) _cntml_padded; /* unused */
+	for (_iml=0; _iml < _cntml_actual; ++_iml) {
 		i_cap = 0;
 	}
 }
 
 void nrn_capacity_current(NrnThread* _nt, Memb_list* ml) {
-	int count = ml->nodecount;
+	int _cntml_actual = ml->nodecount;
+	int _cntml_padded = ml->_nodecount_padded;
+	int _iml;
 	double *vdata = ml->data;
-	int i;
 	double cfac = .001 * _nt->cj;
+  (void) _cntml_padded; /* unused when layout=1*/
 	/* since rhs is dvm for a full or half implicit step */
 	/* (nrn_update_2d() replaces dvi by dvi-dvx) */
 	/* no need to distinguish secondorder */
 		int* ni = ml->nodeindices;
-		for (i=0; i < count; i++) {
-			i_cap = cfac*cm*VEC_RHS(ni[i]);
+		for (_iml=0; _iml < _cntml_actual; _iml++) {
+			i_cap = cfac*cm*VEC_RHS(ni[_iml]);
 		}
 }
 
