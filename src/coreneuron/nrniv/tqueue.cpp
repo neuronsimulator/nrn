@@ -38,6 +38,8 @@ Douglas Jones.
 of struct _spblk, we are really using TQItem
 */
 
+extern bool nrn_use_bin_vec_;
+extern bool nrn_use_pq_queue_;
 
 TQItem::TQItem() {
     left_ = 0;
@@ -68,23 +70,46 @@ TQueue::~TQueue() {
         delete q;
     }
     delete sptree_;
-    for (q = binq_->first(); q; q = q2) {
-        q2 = binq_->next(q);
-        remove(q); /// Potentially dereferences freed pointer this->sptree_
+    if (!nrn_use_bin_vec_) {
+        for (q = binq_->first(); q; q = q2) {
+            q2 = binq_->next(q);
+            remove(q); /// Potentially dereferences freed pointer this->sptree_
+        }
     }
     delete binq_;
+
+    while(pq_que.size()) {
+        delete pq_que.top().second;
+        pq_que.pop();
+    }
+
     MUTDESTRUCT
 }
 
 void TQueue::move_least_nolock(double tnew) {
+    if (nrn_use_pq_queue_) {
+        printf("ERROR: move_least_nolock() is not implemented with map queuing\n");
+        abort();
+    }
     TQItem* b = least();
     if (b) {
         b->t_ = tnew;
-        TQItem* nl = sphead(sptree_);
+        TQItem* nl;
+        if (nrn_use_pq_queue_)
+            nl = pq_que.top().second;
+        else
+            nl = sphead(sptree_);
         if (nl) {
             if (tnew > nl->t_) {
-                least_ = spdeq(&sptree_->root);
-                spenq(b, sptree_);
+                if (nrn_use_pq_queue_) {
+                    least_ = nl;
+                    pq_que.pop();
+                    pq_que.push(make_TQPair(b));
+                }
+                else {
+                    least_ = spdeq(&sptree_->root);
+                    spenq(b, sptree_);
+                }
             }
         }
     }
@@ -96,14 +121,35 @@ void TQueue::move(TQItem* i, double tnew) {
     if (i == least_) {
         move_least_nolock(tnew);
     }else if (tnew < least_->t_) {
-        spdelete(i, sptree_);
-        i->t_ = tnew;
-        spenq(least_, sptree_);
-        least_ = i;
+        if (nrn_use_pq_queue_) {
+            TQItem* qmove = new TQItem;
+            qmove->data_ = i->data_;
+            qmove->t_ = tnew;
+            qmove->cnt_ = i->cnt_;
+            i->t_ = -1.;
+            pq_que.push(make_TQPair(least_));
+            least_ = qmove;
+        }
+        else {
+            spdelete(i, sptree_);
+            i->t_ = tnew;
+            spenq(least_, sptree_);
+            least_ = i;
+        }
     }else{
-        spdelete(i, sptree_);
-        i->t_ = tnew;
-        spenq(i, sptree_);
+        if (nrn_use_pq_queue_) {
+            TQItem* qmove = new TQItem;
+            qmove->data_ = i->data_;
+            qmove->t_ = tnew;
+            qmove->cnt_ = i->cnt_;
+            i->t_ = -1.;
+            pq_que.push(make_TQPair(qmove));
+        }
+        else {
+            spdelete(i, sptree_);
+            i->t_ = tnew;
+            spenq(i, sptree_);
+        }
     }
     MUTUNLOCK
 }
@@ -129,13 +175,33 @@ TQItem* TQueue::insert(double tt, void* d) {
     i->t_ = tt;
     i->cnt_ = -1;
     if (tt < least_t_nolock()) {
-        if (least()) {
-            spenq(least(), sptree_);
+        if (least_) {
+            /// Probably storing both time and event which has the time is redundant, but the event is then returned
+            /// to the upper level call stack function. If we were to eliminate i->t_ and i->cnt_ fields,
+            /// we need to make sure we are not braking anything.
+            if (nrn_use_pq_queue_)
+                pq_que.push(make_TQPair(least_));
+            else
+                spenq(least_, sptree_);
         }
         least_ = i;
     }else{
-        spenq(i, sptree_);
+        if (nrn_use_pq_queue_)
+            pq_que.push(make_TQPair(i));
+        else
+            spenq(i, sptree_);
     }
+    MUTUNLOCK
+    return i;
+}
+
+TQItem* TQueue::enqueue_bin(double td, void* d) {
+    MUTLOCK
+    STAT(ninsert);
+    TQItem* i = new TQItem;
+    i->data_ = d;
+    i->t_ = td;
+    binq_->enqueue(td, i);
     MUTUNLOCK
     return i;
 }
@@ -145,15 +211,28 @@ void TQueue::remove(TQItem* q) {
     STAT(nrem);
     if (q) {
         if (q == least_) {
-            if (sptree_->root) {
-                least_ = spdeq(&sptree_->root);
-            }else{
-                least_ = NULL;
+            if (nrn_use_pq_queue_) {
+                if (pq_que.size()) {
+                    least_ = pq_que.top().second;
+                    pq_que.pop();
+                }else{
+                    least_ = NULL;
+                }
+            }
+            else {
+                if (sptree_->root) {
+                    least_ = spdeq(&sptree_->root);
+                }else{
+                    least_ = NULL;
+                }
             }
         }else if (q->cnt_ >= 0) {
             binq_->remove(q);
         }else{
-            spdelete(q, sptree_);
+            if (nrn_use_pq_queue_)
+                q->t_ = -1.;
+            else
+                spdelete(q, sptree_);
         }
         delete q;
     }
@@ -166,10 +245,29 @@ TQItem* TQueue::atomic_dq(double tt) {
     if (least_ && least_->t_ <= tt) {
         q = least_;
         STAT(nrem);
-        if (sptree_->root) {
-            least_ = spdeq(&sptree_->root);
-        }else{
-            least_ = NULL;
+        if (nrn_use_pq_queue_) {
+//            int qsize = pq_que.size();
+//            printf("map size: %d\n", msize);
+            /// This while loop is to delete events whose times have been moved with the ::move function,
+            /// but in fact events were left in the queue since the only function available is pop
+            while(pq_que.size() && pq_que.top().second->t_ < 0.)
+            {
+                delete pq_que.top().second;
+                pq_que.pop();
+            }
+            if(pq_que.size()) {
+                least_ = pq_que.top().second;
+                pq_que.pop();
+            }else{
+                least_ = NULL;
+            }
+        }
+        else {
+            if (sptree_->root) {
+                least_ = spdeq(&sptree_->root);
+            }else{
+                least_ = NULL;
+            }
         }
     }
     MUTUNLOCK
@@ -178,58 +276,95 @@ TQItem* TQueue::atomic_dq(double tt) {
 
 BinQ::BinQ() {
     nbin_ = 1000;
-    bins_ = new TQItem*[nbin_];
-    for (int i=0; i < nbin_; ++i) { bins_[i] = 0; }
+    if (nrn_use_bin_vec_) {
+        vec_bins.resize(nbin_);
+    }
+    else {
+        bins_ = new TQItem*[nbin_];
+        for (int i=0; i < nbin_; ++i) { bins_[i] = 0; }
+    }
     qpt_ = 0;
     tt_ = 0.;
 #if COLLECT_TQueue_STATISTICS
-    nfenq = 0;
+    nfenq = nfdeq = 0;
 #endif
 }
 
 BinQ::~BinQ() {
-    for (int i=0; i < nbin_; ++i) {
-        assert(!bins_[i]);
+    if (!nrn_use_bin_vec_) {
+        for (int i=0; i < nbin_; ++i) {
+            assert(!bins_[i]);
+        }
+        delete [] bins_;
     }
-    delete [] bins_;
+    vec_bins.clear();
 }
 
 void BinQ::resize(int size) {
-    //printf("BinQ::resize from %d to %d\n", nbin_, size);
-    int i, j;
-    TQItem* q;
-    assert(size >= nbin_);
-    TQItem** bins = new TQItem*[size];
-    for (i=nbin_; i < size; ++i) { bins[i] = 0; }
-    for (i=0, j=qpt_; i < nbin_; ++i, ++j) {
-        if (j >= nbin_) { j = 0; }
-        bins[i] = bins_[j];
-        for (q = bins[i]; q; q = q->left_) {
-            q->cnt_ = i;
-        }
+    if (nrn_use_bin_vec_) {
+        vec_bins.resize(size);
     }
-    delete [] bins_;
-    bins_ = bins;
+    else {
+        //printf("BinQ::resize from %d to %d\n", nbin_, size);
+        int i, j;
+        TQItem* q;
+        assert(size >= nbin_);
+        TQItem** bins = new TQItem*[size];
+        for (i=nbin_; i < size; ++i) { bins[i] = 0; }
+        for (i=0, j=qpt_; i < nbin_; ++i, ++j) {
+            if (j >= nbin_) { j = 0; }
+            bins[i] = bins_[j];
+            for (q = bins[i]; q; q = q->left_) {
+                q->cnt_ = i;
+            }
+        }
+        delete [] bins_;
+        bins_ = bins;
+    }
     nbin_ = size;
     qpt_ = 0;
 }
 void BinQ::enqueue(double td, TQItem* q) {
-    int idt = (int)((td - tt_)/nrn_threads->_dt + 1.e-10);
+    int idt = (int)((td - tt_)*rev_dt + 1.e-10);
     assert(idt >= 0);
     if (idt >= nbin_) {
-        resize(idt + 100);
+        resize(idt + 1000);
     }
     //assert (idt < nbin_);
     idt += qpt_;
     if (idt >= nbin_) { idt -= nbin_; }
-//printf("enqueue idt=%d qpt=%d\n", idt, qpt_);
+//printf("enqueue: idt=%d qpt=%d nbin_=%d\n", idt, qpt_, nbin_);
     assert (idt < nbin_);
     q->cnt_ = idt; // only for iteration
-    q->left_ = bins_[idt];
-    bins_[idt] = q;
+    if (nrn_use_bin_vec_) {
+        vec_bins[idt].push_back(q);
+    }
+    else {
+        q->left_ = bins_[idt];
+        bins_[idt] = q;
+    }
 #if COLLECT_TQueue_STATISTICS
     ++nfenq;
 #endif
+}
+TQItem* BinQ::dequeue() {
+    TQItem* q = NULL;
+    if (nrn_use_bin_vec_) {
+        if (vec_bins[qpt_].size()) {
+            q = vec_bins[qpt_].back();
+            vec_bins[qpt_].pop_back();
+        }
+    }
+    else {
+        q = bins_[qpt_];
+        if (q) {
+            bins_[qpt_] = q->left_;
+#if COLLECT_TQueue_STATISTICS
+            ++nfdeq;
+#endif
+        }
+    }
+    return q;
 }
 
 TQItem* BinQ::first() {

@@ -34,6 +34,19 @@ typedef void (*ReceiveFunc)(Point_process*, double*, double);
 double NetCvode::eps_;
 NetCvode* net_cvode_instance;
 int cvode_active_;
+int nrn_use_selfqueue_;
+
+/// We can now use atl priority queue instead of the splay tree, which will make all splay tree related data structures obsolete.
+/// Also, we can use bin queue based on the vector implementation. For this, both nrn_use_bin_queue_ and nrn_use_bin_vec_
+/// should be set to 1.
+/// Options to use:
+/// Splay tree priority queue: nrn_use_pq_queue_ = 0, nrn_use_bin_queue_ = 0
+/// STL priority queue based priority queue: nrn_use_pq_queue_ = 1, nrn_use_bin_queue_ = 0
+/// Bin queue: nrn_use_pq_queue_ = 0, nrn_use_bin_queue_ = 1
+/// Bin quqeue based on vectors: nrn_use_pq_queue_ = 0, nrn_use_bin_queue_ = 1, nrn_use_bin_vec_ = 1
+bool nrn_use_bin_queue_ = 0;
+bool nrn_use_bin_vec_ = 0;
+bool nrn_use_pq_queue_ = 1;
 
 void mk_netcvode() {
 	if (!net_cvode_instance) {
@@ -223,17 +236,24 @@ void NetCvode::p_construct(int n) {
 
 
 TQItem* NetCvode::bin_event(double td, DiscreteEvent* db, NrnThread* nt) {
+    if (nrn_use_bin_queue_) {
 #if PRINT_EVENT
-	if (print_event_) {db->pr("send", td, this);}
+    if (print_event_) {db->pr("binq send", td, this);}
 #endif
-	return p[nt->id].tqe_->insert(td, db);
+        return p[nt->id].tqe_->enqueue_bin(td, db);
+    }else{
+#if PRINT_EVENT
+        if (print_event_) {db->pr("send", td, this);}
+#endif
+        return p[nt->id].tqe_->insert(td, db);
+    }
 }
 
 TQItem* NetCvode::event(double td, DiscreteEvent* db, NrnThread* nt) {
 #if PRINT_EVENT
 	if (print_event_) { db->pr("send", td, this); }
 #endif
-	return p[nt->id].tqe_->insert(td, db);
+    return p[nt->id].tqe_->insert(td, db);
 }
 
 
@@ -334,9 +354,11 @@ void NetCvode::deliver_events(double til, NrnThread* nt) {
 //printf("deliver_events til %20.15g\n", til);
   /// Enqueue any outstanding events in the interthread event buffer
   p[nt->id].enqueue(this, nt);
-  while(deliver_event(til, nt)) {
-    ;
-  }
+
+  /// Deliver events. When the map is used, the loop is explicit
+      while(deliver_event(til, nt)) {
+        ;
+      }
 }
 
 DiscreteEvent::DiscreteEvent() {}
@@ -571,12 +593,43 @@ void NetCvode::check_thresh(NrnThread* nt) { // for default method
 }
 
 void NetCvode::deliver_net_events(NrnThread* nt) { // for default method
+    TQItem* q;
     double tm, tsav;
+    int tid = nt->id;
     tsav = nt->_t;
     tm = nt->_t + 0.5*nt->_dt;
+    tryagain:
+    // one of the events on the main queue may be a NetParEvent
+    // which due to dt round off error can result in an event
+    // placed on the bin queue to be delivered now, which
+    // can put 0 delay events on to the main queue. So loop til
+    // no events. The alternative would be to deliver an idt=0 event
+    // immediately but that would very much change the sequence
+    // with respect to what is being done here and it is unclear
+    // how to fix the value of t there. This can be a do while loop
+    // but I do not want to affect the case of not using a bin queue.
+
+	if (nrn_use_bin_queue_) {
+		while ((q = p[tid].tqe_->dequeue_bin()) != 0) {
+			DiscreteEvent* db = (DiscreteEvent*)q->data_;
+#if PRINT_EVENT
+if (print_event_) {db->pr("binq deliver", nrn_threads->_t, this);}
+#endif
+			delete q;
+			db->deliver(nt->_t, this, nt);
+		}
+//		assert(int(tm/nt->_dt)%1000 == p[tid].tqe_->nshift_);
+	}
+
+
 
     deliver_events(tm, nt);
 
-    nt->_t = tsav;
+	if (nrn_use_bin_queue_) {
+		if (p[tid].tqe_->top()) { goto tryagain; }
+		p[tid].tqe_->shift_bin(tm);
+	}
+	nt->_t = tsav;
+
 }
 

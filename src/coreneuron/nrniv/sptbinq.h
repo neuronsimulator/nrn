@@ -37,6 +37,9 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <stdio.h>
 #include <assert.h>
+#include <queue>
+#include <vector>
+#include <utility>
 #include "coreneuron/nrniv/nrnmutdec.h"
 
 #define COLLECT_TQueue_STATISTICS 1
@@ -74,6 +77,7 @@ extern void splay(SPBLK*, SPTREE*);	/* reorganize tree */
 extern SPBLK * sphead(SPTREE*);         /* return first node in tree */
 extern void spdelete(SPBLK*, SPTREE*);	/* delete node from tree */
 
+extern bool nrn_use_bin_vec_;
 
 class TQItem {
 public:
@@ -88,13 +92,22 @@ public:
 	int cnt_; // reused: -1 means it is in the splay tree, >=0 gives bin
 };
 
+typedef std::pair<double,TQItem *> TQPair;
+
+struct less_time{
+    bool operator() (const TQPair &x, const TQPair &y) const {return x.first > y.first;}
+};
+
 // helper class for the TQueue (SplayTBinQueue).
 class BinQ {
 public:
 	BinQ();
 	virtual ~BinQ();
 	void enqueue(double tt, TQItem*);
-	void shift(double tt) { assert(!bins_[qpt_]); tt_ = tt; if (++qpt_ >= nbin_) { qpt_ = 0; }}
+    void shift(double tt) { if (!nrn_use_bin_vec_) assert(!bins_[qpt_]); tt_ = tt; if (++qpt_ >= nbin_) { qpt_ = 0; }}
+    TQItem* top() { if (nrn_use_bin_vec_) { if (vec_bins[qpt_].size()) return vec_bins[qpt_].back(); else return NULL; } else return bins_[qpt_]; }
+	TQItem* dequeue();
+	double tbin() { return tt_; }
 	// for iteration
 	TQItem* first();
 	TQItem* next(TQItem*);
@@ -102,12 +115,13 @@ public:
     void resize(int);
 #if COLLECT_TQueue_STATISTICS
 public:
-    int nfenq;
+    int nfenq, nfdeq;
 #endif
 private:
 	double tt_; // time at beginning of qpt_ interval
 	int nbin_, qpt_;
 	TQItem** bins_;
+    std::vector<std::vector<TQItem*> > vec_bins;
 };
 
 class TQueue {
@@ -118,11 +132,17 @@ public:
   TQItem* least() {return least_;}
   TQItem* atomic_dq(double til);
   TQItem* insert(double t, void* data);
+  TQItem* enqueue_bin(double t, void* data);
+  TQItem* dequeue_bin() { return binq_->dequeue(); }
   void shift_bin(double _t_) { ++nshift_; binq_->shift(_t_); }
+  TQItem* top() { return binq_->top(); }
   void remove(TQItem*);
   void move(TQItem*, double tnew);
   void statistics();
   int nshift_;
+
+  /// Priority queue of vectors for queuing the events. enqueuing for move() and move_least_nolock() is not implemented
+  std::priority_queue<TQPair, std::vector<TQPair>, less_time> pq_que;
 
 private:
   double least_t_nolock(){if (least_) { return least_->t_;}else{return 1e15;}}
@@ -130,6 +150,7 @@ private:
   SPTREE* sptree_;
   BinQ* binq_;
   TQItem* least_;
+  TQPair make_TQPair(TQItem *p) { return TQPair(p->t_,p); }
   MUTDEC
 #if COLLECT_TQueue_STATISTICS
   unsigned long ninsert, nrem, nleast, nbal, ncmplxrem;
