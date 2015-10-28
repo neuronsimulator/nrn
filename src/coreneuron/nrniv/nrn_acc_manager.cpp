@@ -1,6 +1,8 @@
 #include "coreneuron/nrnoc/multicore.h"
 #include "coreneuron/nrniv/netcon.h"
 #include "coreneuron/nrniv/nrn_acc_manager.h"
+#include "coreneuron/nrniv/nrniv_decl.h"
+
 #ifdef _OPENACC
 #include<openacc.h>
 #endif
@@ -71,22 +73,25 @@ void setup_nrnthreads_on_device(NrnThread *threads, int nthreads)  {
         /* -- setup rhs, d, a, b, v, node_aread to point to device copy -- */
         double *dptr;
 
-        dptr = d__data + 0*nt->end;
+        /* for padding, we have to recompute ne */
+        int ne = nrn_soa_padded_size(nt->end, 0);
+
+        dptr = d__data + 0*ne;
         acc_memcpy_to_device(&(d_nt->_actual_rhs), &(dptr), sizeof(double*));
 
-        dptr = d__data + 1*nt->end;
+        dptr = d__data + 1*ne;
         acc_memcpy_to_device(&(d_nt->_actual_d), &(dptr), sizeof(double*));
 
-        dptr = d__data + 2*nt->end;
+        dptr = d__data + 2*ne;
         acc_memcpy_to_device(&(d_nt->_actual_a), &(dptr), sizeof(double*));
 
-        dptr = d__data + 3*nt->end;
+        dptr = d__data + 3*ne;
         acc_memcpy_to_device(&(d_nt->_actual_b), &(dptr), sizeof(double*));
 
-        dptr = d__data + 4*nt->end;
+        dptr = d__data + 4*ne;
         acc_memcpy_to_device(&(d_nt->_actual_v), &(dptr), sizeof(double*));
 
-        dptr = d__data + 5*nt->end;
+        dptr = d__data + 5*ne;
         acc_memcpy_to_device(&(d_nt->_actual_area), &(dptr), sizeof(double*));
 
 
@@ -105,7 +110,7 @@ void setup_nrnthreads_on_device(NrnThread *threads, int nthreads)  {
 
         Memb_list * d_ml;
         int first_tml = 1;
-        size_t offset = 6 * nt->end;
+        size_t offset = 6 * ne;
 
         for (tml = nt->tml; tml; tml = tml->next) {
 
@@ -132,17 +137,20 @@ void setup_nrnthreads_on_device(NrnThread *threads, int nthreads)  {
             /* setup nt._ml_list */
             acc_memcpy_to_device(&(d_ml_list[tml->index]), &d_ml, sizeof(Memb_list*));
 
-            dptr = d__data+offset;
-
-            acc_memcpy_to_device(&(d_ml->data), &(dptr), sizeof(double*));
-            
             int type = tml->index;
             int n = tml->ml->nodecount;
             int szp = nrn_prop_param_size_[type];
             int szdp = nrn_prop_dparam_size_[type];
             int is_art = nrn_is_artificial_[type];
+            int layout = nrn_mech_data_layout_[type];
+            
+            offset = nrn_soa_padded_size(offset, layout);
 
-            offset += n*szp;
+            dptr = d__data + offset;
+
+            acc_memcpy_to_device(&(d_ml->data), &(dptr), sizeof(double*));
+            
+            offset += nrn_soa_padded_size(n, layout) * szp;
 
             if (!is_art) {
                 int * d_nodeindices = (int *) acc_copyin(tml->ml->nodeindices, sizeof(int)*n);
@@ -150,7 +158,8 @@ void setup_nrnthreads_on_device(NrnThread *threads, int nthreads)  {
             }
 
             if (szdp) {
-                int * d_pdata = (int *) acc_copyin(tml->ml->pdata, sizeof(int)*n*szdp);
+                int pcnt = nrn_soa_padded_size(n, layout)*szdp;
+                int * d_pdata = (int *) acc_copyin(tml->ml->pdata, sizeof(int)*pcnt);
                 acc_memcpy_to_device(&(d_ml->pdata), &d_pdata, sizeof(int*));
             }
 
@@ -180,12 +189,14 @@ void setup_nrnthreads_on_device(NrnThread *threads, int nthreads)  {
         if(nt->shadow_rhs_cnt) {
             double * d_shadow_ptr;
 
+            int pcnt = nrn_soa_padded_size(nt->shadow_rhs_cnt, 0);
+
             /* copy shadow_rhs to device and fix-up the pointer */
-            d_shadow_ptr = (double *) acc_copyin(nt->_shadow_rhs, nt->shadow_rhs_cnt*sizeof(double));
+            d_shadow_ptr = (double *) acc_copyin(nt->_shadow_rhs, pcnt*sizeof(double));
             acc_memcpy_to_device(&(d_nt->_shadow_rhs), &d_shadow_ptr, sizeof(double*));
 
             /* copy shadow_d to device and fix-up the pointer */
-            d_shadow_ptr = (double *) acc_copyin(nt->_shadow_d, nt->shadow_rhs_cnt*sizeof(double));
+            d_shadow_ptr = (double *) acc_copyin(nt->_shadow_d, pcnt*sizeof(double));
             acc_memcpy_to_device(&(d_nt->_shadow_d), &d_shadow_ptr, sizeof(double*));
         }
         
@@ -319,7 +330,7 @@ void update_nrnthreads_on_host(NrnThread *threads, int nthreads) {
 
             /* -- copy data to host -- */
 
-            int ne = nt->end;
+            int ne = nrn_soa_padded_size(nt->end, 0);
 
             acc_update_self(nt->_actual_rhs, ne*sizeof(double));
             acc_update_self(nt->_actual_d, ne*sizeof(double));
@@ -344,15 +355,19 @@ void update_nrnthreads_on_host(NrnThread *threads, int nthreads) {
                 int szp = nrn_prop_param_size_[type];
                 int szdp = nrn_prop_dparam_size_[type];
                 int is_art = nrn_is_artificial_[type];
+                int layout = nrn_mech_data_layout_[type];
 
-                acc_update_self(ml->data, n*szp*sizeof(double));
+                int pcnt = nrn_soa_padded_size(n, layout) * szp;
+
+                acc_update_self(ml->data, pcnt*sizeof(double));
 
                 if (!is_art) {
                     acc_update_self(ml->nodeindices, n*sizeof(int));
                 }
 
                 if (szdp) {
-                    acc_update_self(ml->pdata, n*szdp*sizeof(int));
+                    int pcnt = nrn_soa_padded_size(n, layout) * szdp;
+                    acc_update_self(ml->pdata, pcnt*sizeof(int));
                 }
 
                 nrb = tml->ml->_net_receive_buffer;
@@ -370,10 +385,11 @@ void update_nrnthreads_on_host(NrnThread *threads, int nthreads) {
             }
 
             if(nt->shadow_rhs_cnt) {
+                int pcnt = nrn_soa_padded_size(nt->shadow_rhs_cnt, 0);
                 /* copy shadow_rhs to host */
-                acc_update_self(nt->_shadow_rhs, nt->shadow_rhs_cnt*sizeof(double));
+                acc_update_self(nt->_shadow_rhs, pcnt*sizeof(double));
                 /* copy shadow_d to host */
-                acc_update_self(nt->_shadow_d, nt->shadow_rhs_cnt*sizeof(double));
+                acc_update_self(nt->_shadow_d, pcnt*sizeof(double));
             }
 
             if(nt->n_pntproc) {
@@ -412,7 +428,7 @@ void update_nrnthreads_on_device(NrnThread *threads, int nthreads) {
 
             /* -- copy data to device -- */
 
-            int ne = nt->end;
+            int ne = nrn_soa_padded_size(nt->end, 0);
 
             acc_update_device(nt->_actual_rhs, ne*sizeof(double));
             acc_update_device(nt->_actual_d, ne*sizeof(double));
@@ -433,15 +449,19 @@ void update_nrnthreads_on_device(NrnThread *threads, int nthreads) {
                 int szp = nrn_prop_param_size_[type];
                 int szdp = nrn_prop_dparam_size_[type];
                 int is_art = nrn_is_artificial_[type];
+                int layout = nrn_mech_data_layout_[type];
 
-                acc_update_device(ml->data, n*szp*sizeof(double));
+                int pcnt = nrn_soa_padded_size(n, layout) * szp;
+
+                acc_update_device(ml->data, pcnt*sizeof(double));
 
                 if (!is_art) {
                     acc_update_device(ml->nodeindices, n*sizeof(int));
                 }
 
                 if (szdp) {
-                    acc_update_device(ml->pdata, n*szdp*sizeof(int));
+                    int pcnt = nrn_soa_padded_size(n, layout) * szdp;
+                    acc_update_device(ml->pdata, pcnt*sizeof(int));
                 }
 
                 nrb = tml->ml->_net_receive_buffer;
@@ -457,10 +477,11 @@ void update_nrnthreads_on_device(NrnThread *threads, int nthreads) {
             }
 
             if(nt->shadow_rhs_cnt) {
+                int pcnt = nrn_soa_padded_size(nt->shadow_rhs_cnt, 0);
                 /* copy shadow_rhs to host */
-                acc_update_device(nt->_shadow_rhs, nt->shadow_rhs_cnt*sizeof(double));
+                acc_update_device(nt->_shadow_rhs, pcnt*sizeof(double));
                 /* copy shadow_d to host */
-                acc_update_device(nt->_shadow_d, nt->shadow_rhs_cnt*sizeof(double));
+                acc_update_device(nt->_shadow_d, pcnt*sizeof(double));
             }
 
             if(nt->n_pntproc) {
@@ -500,7 +521,9 @@ void update_matrix_from_gpu(NrnThread *_nt){
          * NOTE: in pragma you have to give actual pointer like below and not nt->rhs...
          */
         double *rhs = _nt->_actual_rhs;
-        #pragma acc update host(rhs[0:2*_nt->end]) async(_nt->stream_id)
+        int ne = nrn_soa_padded_size(_nt->end, 0);
+
+        #pragma acc update host(rhs[0:2*ne]) async(_nt->stream_id)
         #pragma acc wait(_nt->stream_id)
     }
 #endif
@@ -519,8 +542,10 @@ void update_matrix_to_gpu(NrnThread *_nt){
         //printf("\n Copying voltage to GPU ... ");
         double *v = _nt->_actual_v;
         double *rhs = _nt->_actual_rhs;
-        #pragma acc update device(v[0:_nt->end]) async(_nt->stream_id)
-        #pragma acc update device(rhs[0:_nt->end]) async(_nt->stream_id)
+        int ne = nrn_soa_padded_size(_nt->end, 0);
+
+        #pragma acc update device(v[0:ne]) async(_nt->stream_id)
+        #pragma acc update device(rhs[0:ne]) async(_nt->stream_id)
         #pragma acc wait(_nt->stream_id)
     }
 #endif

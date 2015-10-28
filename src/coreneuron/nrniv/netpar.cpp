@@ -23,9 +23,6 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/nrnmpi/nrnmpi.h"
 #include "coreneuron/nrniv/nrn_assert.h"
 
-#undef MD
-#define MD 2147483648.
-
 class PreSyn;
 class InputPreSyn;
 
@@ -33,11 +30,6 @@ class InputPreSyn;
 #include "coreneuron/nrniv/netcvode.h"
 #include "coreneuron/nrniv/nrniv_decl.h"
 #include "coreneuron/nrniv/ivocvect.h"
-
-#define BGP_INTERVAL 2
-#if BGP_INTERVAL == 2
-static int n_bgp_interval;
-#endif
 
 static double t_exchange_;
 static double dt1_; // 1/dt
@@ -55,10 +47,6 @@ extern double t, dt;
 extern void nrn_fake_fire(int gid, double firetime, int fake_out);
 int nrnmpi_spike_compress(int nspike, bool gid_compress, int xchng_meth);
 void nrn_spike_exchange_init();
-extern double nrn_bgp_receive_time(int);
-
-double nrn_bgp_receive_time(int) { return 0.; }
-
 }
 
 static double set_mindelay(double maxdelay);
@@ -90,6 +78,7 @@ std::vector< std::map<int, InputPreSyn*> > localmaps;
 #define NRNSTAT 1
 static int nsend_, nsendmax_, nrecv_, nrecv_useful_;
 #if NRNSTAT
+/// Needs further allocation if desired to collect the histogram statistics 
 static IvocVect* max_histogram_;
 #endif 
 
@@ -102,8 +91,6 @@ static int spfixout_capacity_;
 static int idxout_;
 static void nrn_spike_exchange_compressed(NrnThread*);
 #endif // NRNMPI
-
-#define HAVE_DCMF_RECORD_REPLAY 0
 
 static int active_;
 static double usable_mindelay_;
@@ -137,11 +124,6 @@ void NetParEvent::deliver(double tt, NetCvode* nc, NrnThread* nt){
   nt->_stop_stepping = 1;
   nt->_t = tt;
   send(tt, nc, nt);
-}
-
-void nrn_netparevent_finish_deliver() {
-  NrnThread* nt = nrn_threads;
-  nrn_spike_exchange(nt);
 }
 
 void NetParEvent::pr(const char* m, double tt, NetCvode*){
@@ -248,7 +230,6 @@ static int nrn_need_npe() {
 }
 
 #define TBUFSIZE 0
-#define TBUF /**/
 
 void nrn_spike_exchange_init() {
 //printf("nrn_spike_exchange_init\n");
@@ -318,11 +299,9 @@ void nrn_spike_exchange_init() {
 void nrn_spike_exchange(NrnThread* nt) {
 	if (!active_) { return; }
 	if (use_compress_) { nrn_spike_exchange_compressed(nt); return; }
-	TBUF
 #if TBUFSIZE
 	nrnmpi_barrier();
 #endif
-	TBUF
 	double wt;
 	int i, n;
     std::map<int, InputPreSyn*>::iterator gid2in_it;
@@ -339,7 +318,6 @@ void nrn_spike_exchange(NrnThread* nt) {
 
 	wt_ = nrnmpi_wtime() - wt;
 	wt = nrnmpi_wtime();
-	TBUF
 #if TBUFSIZE
 	tbuf_[itbuf_++] = (unsigned long)nout_;
 	tbuf_[itbuf_++] = (unsigned long)n;
@@ -354,7 +332,6 @@ void nrn_spike_exchange(NrnThread* nt) {
 #if NRNSTAT
 		if (max_histogram_) { vector_vec(max_histogram_)[0] += 1.; }
 #endif
-		TBUF
 		return;
 	}
 #if NRNSTAT
@@ -408,16 +385,13 @@ void nrn_spike_exchange(NrnThread* nt) {
 		}
 	}
 	wt1_ = nrnmpi_wtime() - wt;
-	TBUF
 }
-		
+
 void nrn_spike_exchange_compressed(NrnThread* nt) {
 	if (!active_) { return; }
-	TBUF
 #if TBUFSIZE
 	nrnmpi_barrier();
 #endif
-	TBUF
 	double wt;
 	int i, n, idx;
     std::map<int, InputPreSyn*>::iterator gid2in_it;
@@ -433,8 +407,7 @@ void nrn_spike_exchange_compressed(NrnThread* nt) {
 	n = nrnmpi_spike_exchange_compressed();
 	wt_ = nrnmpi_wtime() - wt;
 	wt = nrnmpi_wtime();
-	TBUF
-#if TBUFSIZE             
+#if TBUFSIZE
         tbuf_[itbuf_++] = (unsigned long)nout_;
         tbuf_[itbuf_++] = (unsigned long)n;
 #endif
@@ -449,7 +422,6 @@ void nrn_spike_exchange_compressed(NrnThread* nt) {
 		if (max_histogram_) { vector_vec(max_histogram_)[0] += 1.; }
 #endif
 		t_exchange_ = nrn_threads->_t;
-		TBUF
 		return;
 	}
 #if NRNSTAT
@@ -555,7 +527,6 @@ void nrn_spike_exchange_compressed(NrnThread* nt) {
     }
 	t_exchange_ = nrn_threads->_t;
 	wt1_ = nrnmpi_wtime() - wt;
-	TBUF
 }
 
 static void mk_localgid_rep() {
@@ -812,21 +783,12 @@ void BBS_netpar_solve(double tstop) {
 			return;
 		}
 	}
-//	double wt;
 
 	nrn_timeout(timeout_);
-//	wt = nrnmpi_wtime();
 	ncs2nrn_integrate(tstop*(1.+1e-11));
-//figure out where to store these
-//	impl_->integ_time_ += nrnmpi_wtime() - wt;
-//	impl_->integ_time_ -= (npe_ ? (npe_[0].wx_ + npe_[0].ws_) : 0.);
 	nrn_spike_exchange(nrn_threads);
 	nrn_timeout(0);
-//	impl_->wait_time_ += wt_;
-//	impl_->send_time_ += wt1_;
 	if (npe_) {
-//		impl_->wait_time_ += npe_[0].wx_;
-//		impl_->send_time_ += npe_[0].ws_;
 		npe_[0].wx_ = npe_[0].ws_ = 0.;
 	};
 //printf("%d netpar_solve exit t=%g tstop=%g mindelay_=%g\n",nrnmpi_myid, t, tstop, mindelay_);
@@ -835,10 +797,10 @@ void BBS_netpar_solve(double tstop) {
 #endif
 	tstopunset;
 
-        nrnmpi_barrier();
+    nrnmpi_barrier();
 	if ( nrnmpi_myid == 0 ) {
-        	printf( " Solver Time : %g\n", nrnmpi_wtime() - time );
-    	}
+      printf( " Solver Time : %g\n", nrnmpi_wtime() - time );
+    }
 }
 
 static double set_mindelay(double maxdelay) {
@@ -914,7 +876,7 @@ cell we have been exploring a class of exchange methods called multisend
 where the spikes only go to those machines that need them and there is
 overlap between communication and computation.  The numer of variants of
 multisend has grown so that some method selection function is needed
-that makes sense. 
+that makes sense.
 
 The situation that needs to be captured by xchng_meth is
 
@@ -923,20 +885,15 @@ multisend implemented as MPI_ISend
 multisend DCMF (only for Blue Gene/P)
 multisend record_replay (only for Blue Gene/P with recordreplay_v1r4m2.patch)
 
-n_bgp_interval 1 or 2 per minimum interprocessor NetCon delay
- that concept valid for all methods
-
 Note that Allgather allows spike compression and an allgather spike buffer
  with size chosen at setup time.  All methods allow bin queueing.
 
 All the multisend methods should allow two phase multisend.
 
-Note that, in principle, MPI_ISend allows the source to send the index   
+Note that, in principle, MPI_ISend allows the source to send the index
  of the target PreSyn to avoid a hash table lookup (even with a two phase
  variant)
 
-Not all variation are useful. e.g. it is pointless to combine Allgather and
-n_bgp_interval=2.
 RecordReplay should be best on the BG/P. The whole point is to make the
 spike transfer initiation as lowcost as possible since that is what causes
 most load imbalance. I.e. since 10K more spikes arrive than are sent, spikes
@@ -944,17 +901,12 @@ received per processor per interval are much more statistically
 balanced than spikes sent per processor per interval. And presently
 DCMF multisend injects 10000 messages per spike into the network which
 is quite expensive. record replay avoids this overhead and the idea of
-two phase multisend distributes the injection
-
-See case 8 of nrn_bgp_receive_time for the xchng_meth properties
+two phase multisend distributes the injection.
 */
 
 int nrnmpi_spike_compress(int nspike, bool gid_compress, int xchng_meth) {
 #if NRNMPI
 	if (nrnmpi_numprocs < 2) { return 0; }
-#if BGP_INTERVAL == 2
-	n_bgp_interval = (xchng_meth & 4) ? 2 : 1;
-#endif
 	assert(xchng_meth == 0);
 	if (nspike >= 0) {
 		ag_send_nspike_ = 0;

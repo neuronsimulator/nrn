@@ -57,16 +57,12 @@ public:
     static double eps(double x) { return eps_*fabs(x); }
     TQItem* event(double tdeliver, DiscreteEvent*, NrnThread*);
     void move_event(TQItem*, double, NrnThread*);
-    void remove_event(TQItem*, int threadid);
     TQItem* bin_event(double tdeliver, DiscreteEvent*, NrnThread*);
-    void tstop_event(double);
     void deliver_net_events(NrnThread*); // for default staggered time step method
     void deliver_events(double til, NrnThread*); // for initialization events
     bool deliver_event(double til, NrnThread*); //uses TQueue atomically
-    void deliver_least_event(NrnThread*);
     void clear_events();
     void init_events();
-    TQueue* event_queue(NrnThread* nt);
     void point_receive(int, Point_process*, double*, double);
 };
 

@@ -28,31 +28,6 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #define DEF_vrest	-65.	   /* mV */
 
-#if SEJNOWSKI
-/* fsyn/fcon */
-#define DEF_spikethresh	-10.	   /* mV (fcon) */
-#define DEF_tablesize   200	   /* size of lookup table for alpha fxns (both) */
-#define DEF_max_syn     10000	   /* max synapses per fsyn call */
-#define DEF_max_con     1000	   /* sqrt of max connectivity for fcon */
-#define MIN_DELAY       .5         /* min delay for randomly generated delays (fcon) */
-#define MIN_GMAX        0.         /* min gmax for randomly generated gmax (both) */
-#define MIN_ISI 	1.0        /* min interval between syn activation (msec) (both) */
-#define QLEN		10	   /* max number of spikes in epspq (fcon) */
-/* for use with flag() */
-#define SYN_TYPE_FLAG   (int)1     /* Stimulus type (fsyn) */
-#define TRAIN_FLAG      (int)2     /* Stimulus train (fsyn) */
-#define DENSE_FLAG      (int)1     /* Randomize pre, post or both (fcon) */
-#define SELF_CON_FLAG   (int)2     /* Allow for self connections (fcon) */
-#define CON_TYPE_FLAG   (int)3     /* Stimulus type (fcon) */
-
-/* used by parameter dump when dump_flag == 1. (see pdump.c) */
-#define LINE_LEN        78         /* line length */
-#define IFSEC_INDENT    4          /* how far to indent ifsec */
-#define MECH_INDENT     22         /* how far from begin of line to indent mechs */
-#define MAX_BLANK       MECH_INDENT + 10 /* max blanks stored for use in indenting */
-
-#endif
-
 /* old point process parameters */
 /* fclamp */
 #define DEF_clamp_resist 1e-3	   /* megohm */

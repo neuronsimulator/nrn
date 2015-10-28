@@ -22,7 +22,6 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 class PlayRecord;
 
-#define VecPlayStepType 3
 #define VecPlayContinuousType 4
 
 // used by PlayRecord subclasses that utilize discrete events
@@ -58,25 +57,6 @@ public:
 	int ith_; // The thread index
 };
 
-class VecPlayStep : public PlayRecord {
-public:
-	VecPlayStep(double*, IvocVect* yvec, IvocVect* tvec, double dtt, int ith);
-	void init(IvocVect* yvec, IvocVect* tvec, double dtt);
-	virtual ~VecPlayStep();
-	virtual void play_init();
-	virtual void deliver(double tt, NetCvode*);
-	virtual PlayRecordEvent* event() { return e_;}
-	virtual void pr();
-
-	virtual int type() { return VecPlayStepType; }
-
-	IvocVect* y_;
-	IvocVect* t_;
-	double dt_;
-    size_t current_index_;
-
-	PlayRecordEvent* e_;
-};
 
 class VecPlayContinuous : public PlayRecord {
 public:

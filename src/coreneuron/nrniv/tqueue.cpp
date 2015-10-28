@@ -38,10 +38,6 @@ Douglas Jones.
 of struct _spblk, we are really using TQItem
 */
 
-extern "C" {
-//extern double dt;
-#define nt_dt nrn_threads->_dt
-}
 
 TQItem::TQItem() {
     left_ = 0;
@@ -218,7 +214,7 @@ void BinQ::resize(int size) {
     qpt_ = 0;
 }
 void BinQ::enqueue(double td, TQItem* q) {
-    int idt = (int)((td - tt_)/nt_dt + 1.e-10);
+    int idt = (int)((td - tt_)/nrn_threads->_dt + 1.e-10);
     assert(idt >= 0);
     if (idt >= nbin_) {
         resize(idt + 100);
@@ -278,7 +274,6 @@ void BinQ::remove(TQItem* q) {
  *
 Hines changed to void spinit(SPTREE**) for use with TQueue.
  *  SPTREE *spinit( compare )	Make a new tree
- *  int spempty();		Is tree empty?
  *  SPBLK *spenq( n, q )	Insert n in q after all equal keys.
  *  SPBLK *spdeq( np )		Return first key under *np, removing it.
  *  void splay( n, q )		n (already in q) becomes the root.
@@ -329,16 +324,6 @@ spinit(SPTREE* q)
 {
     q->enqcmps = 0;
     q->root = NULL;
-}
-
-/*----------------
- *
- * spempty() -- is an event-set represented as a splay tree empty?
- */
-int
-spempty( SPTREE* q )
-{
-    return( q == NULL || q->root == NULL );
 }
 
 

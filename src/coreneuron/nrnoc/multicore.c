@@ -53,7 +53,6 @@ the handling of v_structure_change as long as possible.
 */
 
 #define CACHELINE_ALLOC(name,type,size) name = (type*)nrn_cacheline_alloc((void**)&name, size*sizeof(type))
-#define CACHELINE_CALLOC(name,type,size) name = (type*)nrn_cacheline_calloc((void**)&name, size, sizeof(type))
 
 int nrn_nthread;
 NrnThread* nrn_threads;
@@ -68,7 +67,6 @@ static int busywait_main_;
 #endif
 
 
-extern void nrn_thread_error(const char*);
 extern void nrn_threads_free();
 extern void nrn_old_thread_save();
 extern double nrn_timeus();
@@ -76,7 +74,6 @@ extern double nrn_timeus();
 static int nrn_thread_parallel_;
 static int table_check_cnt_;
 static ThreadDatum* table_check_;
-static int allow_busywait_;
 
 /* linux specfic for performance testing */
 /* eventually will be removed */
@@ -234,23 +231,6 @@ pthread_mutex_t* _nmodlmutex;
 static pthread_mutex_t nrn_malloc_mutex_;
 static pthread_mutex_t* _nrn_malloc_mutex;
 
-void nrn_malloc_lock() {
-	if (_nrn_malloc_mutex) {
-		pthread_mutex_lock(_nrn_malloc_mutex);
-#if use_malloc_hook
-		nrn_malloc_protected_ = 1;
-#endif
-	}
-}
-
-void nrn_malloc_unlock() {
-	if (_nrn_malloc_mutex) {
-#if use_malloc_hook
-		nrn_malloc_protected_ = 0;
-#endif
-		pthread_mutex_unlock(_nrn_malloc_mutex);
-	}
-}
 
 /* when PERMANENT is 0, we avoid false warnings with helgrind, but a bit slower */
 /* when 0, create/join instead of wait on condition. */
@@ -452,8 +432,6 @@ static void threads_free_pthread(){
 
 #else /* USE_PTHREAD */
 
-void nrn_malloc_lock() {}
-void nrn_malloc_unlock() {}
 
 static void threads_create_pthread(){
 	nrn_thread_parallel_ = 0;
@@ -462,12 +440,6 @@ static void threads_free_pthread(){
 	nrn_thread_parallel_ = 0;
 }
 #endif /* !USE_PTHREAD */
-
-void nrn_thread_error(const char* s) {
-	if (nrn_nthread != 1) {
-		hoc_execerror(s, (char*)0);
-	}
-}
 
 void nrn_thread_stat() {
 #if BENCHMARKING
@@ -498,7 +470,7 @@ void nrn_thread_stat() {
 }
 
 void nrn_threads_create(int n, int parallel) {
-	int i, j;
+    int i, j;
 	NrnThread* nt;
 	if (nrn_nthread != n) {
 /*printf("sizeof(NrnThread)=%d   sizeof(Memb_list)=%d\n", sizeof(NrnThread), sizeof(Memb_list));*/
@@ -536,9 +508,9 @@ void nrn_threads_create(int n, int parallel) {
 				nt->_vdata = (void**)0;
 				nt->ncell = 0;
 				nt->end = 0;
-				for (j=0; j < BEFORE_AFTER_SIZE; ++j) {
-					nt->tbl[j] = (NrnThreadBAList*)0;
-				}
+                                for (j=0; j < BEFORE_AFTER_SIZE; ++j) {
+                                        nt->tbl[j] = (NrnThreadBAList*)0;
+                                }
 				nt->_actual_rhs = 0;
 				nt->_actual_d = 0;
 				nt->_actual_a = 0;
@@ -546,8 +518,8 @@ void nrn_threads_create(int n, int parallel) {
 				nt->_actual_v = 0;
 				nt->_actual_area = 0;
 				nt->_v_parent_index = 0;
-                nt->_shadow_rhs = 0;
-                nt->_shadow_d = 0;
+                                nt->_shadow_rhs = 0;
+                                nt->_shadow_d = 0;
 				nt->_ecell_memb_list = 0;
 				nt->_sp13mat = 0;
 				nt->_ctime = 0.0;
@@ -634,25 +606,6 @@ void nrn_thread_table_check() {
 	}
 }
 
-/* if it is possible for more than one thread to get into the
-   interpreter, lock it. */
-void nrn_hoc_lock() {
-#if USE_PTHREAD
-	if (nrn_inthread_) {
-		pthread_mutex_lock(_interpreter_lock);
-		interpreter_locked = 1;
-	}
-#endif
-}
-void nrn_hoc_unlock() {
-#if USE_PTHREAD
-	if (interpreter_locked) {
-		interpreter_locked = 0;
-		pthread_mutex_unlock(_interpreter_lock);
-	}
-#endif
-}
-
 
 void nrn_multithread_job(void*(*job)(NrnThread*)) {
 	int i;
@@ -694,63 +647,4 @@ void nrn_multithread_job(void*(*job)(NrnThread*)) {
 	}
 #endif
 
-}
-
-void nrn_onethread_job(int i, void*(*job)(NrnThread*)) {
-	BENCHDECLARE
-	assert(i >= 0 && i < nrn_nthread);
-#if USE_PTHREAD
-	if (nrn_thread_parallel_) {
-		if (i > 0) {
-			send_job_to_slave(i, job);
-			WAIT();
-		}else{
-			BENCHBEGIN(0)
-			(*job)(nrn_threads);
-			BENCHADD(nrn_nthread)
-		}
-	}else{
-#else
-	{
-#endif
-		(*job)(nrn_threads + i);
-	}
-}
-
-void nrn_wait_for_threads() {
-#if USE_PTHREAD
-	if (nrn_thread_parallel_) {
-		wait_for_workers();
-	}
-#endif
-}
-
-void nrn_use_busywait(int b) {
-	(void) b;
-#if USE_PTHREAD
-	if (allow_busywait_ && nrn_thread_parallel_) {
-		if (b == 0 && busywait_main_ == 1) {
-			busywait_ = 0;
-			nrn_multithread_job(nulljob);
-			busywait_main_ = 0;
-		}else if (b == 1 && busywait_main_ == 0) {
-			busywait_main_ = 1;
-			wait_for_workers();
-			busywait_ = 1;
-			nrn_multithread_job(nulljob);
-		}
-	}else{
-		if (busywait_main_ == 1) {
-			busywait_ = 0;
-			nrn_multithread_job(nulljob);
-			busywait_main_ = 0;
-		}
-	}
-#endif
-}
-
-int nrn_allow_busywait(int b) {
-	int old = allow_busywait_;
-	allow_busywait_ = b;
-	return old;
 }

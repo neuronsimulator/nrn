@@ -56,56 +56,6 @@ void PlayRecord::pr() {
 	printf("PlayRecord\n");
 }
 
-VecPlayStep::VecPlayStep(double* pd, IvocVect* yvec, IvocVect* tvec, double dtt, int ith) : PlayRecord(pd, ith) {
-//printf("VecPlayStep\n");
-	init(yvec, tvec, dtt);
-}
-
-void VecPlayStep::init(IvocVect* yvec, IvocVect* tvec, double dtt) {
-	y_ = yvec;
-	t_ = tvec;
-	dt_ = dtt;
-	e_ = new PlayRecordEvent();
-	e_->plr_ = this;
-}
-
-
-VecPlayStep::~VecPlayStep() {
-//printf("~VecPlayStep\n");
-	delete e_;
-}
-
-void VecPlayStep::play_init() {
-	current_index_ = 0;
-	NrnThread* nt = nrn_threads + ith_;
-	if (t_) {
-        if (t_->size() > 0) {
-            e_->send((*t_)[0], net_cvode_instance, nt);
-		}
-	}else{
-			e_->send(0., net_cvode_instance, nt);
-	}
-}
-
-void VecPlayStep::deliver(double tt, NetCvode* ns) {
-	NrnThread* nt = nrn_threads + ith_;
-    *pd_ = (*y_)[current_index_++];
-    if (current_index_ < y_->size()) {
-		if (t_) {
-            if (current_index_ < t_->size()) {
-                e_->send((*t_)[current_index_], ns, nt);
-			}
-		}else{
-			e_->send(tt + dt_, ns, nt);
-		}
-	}
-}
-
-	
-void VecPlayStep::pr() {
-	printf("VecPlayStep ");
-//	printf("%s.x[%d]\n", hoc_object_name(y_->obj_), current_index_);
-}
 
 VecPlayContinuous::VecPlayContinuous(double* pd, IvocVect* yvec, IvocVect* tvec, IvocVect* discon, int ith) : PlayRecord(pd, ith) {
 //printf("VecPlayContinuous\n");

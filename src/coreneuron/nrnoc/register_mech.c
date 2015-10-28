@@ -21,12 +21,8 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/nrnoc/nrnoc_decl.h"
 #include "coreneuron/nrnmpi/nrnmpi.h"
 
-# define	CHECK(name) /**/
-
 int secondorder=0;
-int state_discon_allowed_;
-double t, dt, clamp_resist, celsius, htablemin, htablemax;
-int nrn_global_ncell = 0; /* used to be rootnodecount */
+double t, dt, celsius;
 
 int net_buf_receive_cnt_;
 int* net_buf_receive_type_;
@@ -38,8 +34,6 @@ int n_memb_func;
 
 Memb_func* memb_func;
 Memb_list* memb_list;
-short* memb_order_;
-Symbol** pointsym;
 Point_process** point_process;
 char* pnt_map;		/* so prop_free can know its a point mech*/
 typedef void (*Pfrv)();
@@ -59,6 +53,12 @@ int* nrn_dparam_ptr_start_;
 int* nrn_dparam_ptr_end_;
 short* nrn_is_artificial_;
 
+/* dependency helper filled by calls to hoc_register_dparam_semantics */
+/* used when nrn_mech_depend is called */
+static int ion_write_depend_size_;
+static int** ion_write_depend_;
+static void ion_write_depend(int type, int etype);
+
 bbcore_read_t* nrn_bbcore_read_;
 void hoc_reg_bbcore_read(int type, bbcore_read_t f) {
   if (type == -1)
@@ -67,7 +67,7 @@ void hoc_reg_bbcore_read(int type, bbcore_read_t f) {
   nrn_bbcore_read_[type] = f;
 }
 
-void  add_nrn_has_net_event(type) int type; {
+void  add_nrn_has_net_event(int type) {
   if (type == -1)
     return;
 
@@ -106,15 +106,12 @@ void  add_nrn_artcell(int type, int qi){
   nrn_artcell_qindex_[type] = qi;
 }
 
-int nrn_is_cable() {return 1;}
-
 
 void alloc_mech(int n) {
 	memb_func_size_ = n;
 	n_memb_func = n;
 	memb_func = (Memb_func*)ecalloc(memb_func_size_, sizeof(Memb_func));
 	memb_list = (Memb_list*)ecalloc(memb_func_size_, sizeof(Memb_list));
-	pointsym = (Symbol**)ecalloc(memb_func_size_, sizeof(Symbol*));
 	point_process = (Point_process**)ecalloc(memb_func_size_, sizeof(Point_process*));
 	pnt_map = (char*)ecalloc(memb_func_size_, sizeof(char));
 	pnt_receive = (pnt_receive_t*)ecalloc(memb_func_size_, sizeof(pnt_receive_t));
@@ -128,7 +125,6 @@ void alloc_mech(int n) {
 	{int i; for (i=0; i < memb_func_size_; ++i) { nrn_mech_data_layout_[i] = 1; }}
 	nrn_dparam_ptr_start_ = (int*)ecalloc(memb_func_size_, sizeof(int));
 	nrn_dparam_ptr_end_ = (int*)ecalloc(memb_func_size_, sizeof(int));
-	memb_order_ = (short*)ecalloc(memb_func_size_, sizeof(short));
 	nrn_bbcore_read_ = (bbcore_read_t*)ecalloc(memb_func_size_, sizeof(bbcore_read_t));
 	bamech_ = (BAMech**)ecalloc(BEFORE_AFTER_SIZE, sizeof(BAMech*));
 }
@@ -138,7 +134,6 @@ void initnrn() {
 				   adjusted to t+dt/2 */
 	t = 0;		/* msec */
 	dt = DEF_dt;	/* msec */
-	clamp_resist = DEF_clamp_resist;	/*megohm*/
 	celsius = DEF_celsius;	/* degrees celsius */
 }
 
@@ -180,22 +175,16 @@ int register_mech(const char** m, mod_alloc_t alloc, mod_f_t cur, mod_f_t jacob,
 	memb_func[type].dparam_semantics = (int*)0;
 	memb_list[type].nodecount = 0;
 	memb_list[type]._thread = (ThreadDatum*)0;
-	memb_order_[type] = type;
 #endif
 	return type;
 }
 
 void nrn_writes_conc(int type, int unused) {
   static int lastion = EXTRACELL+1;
-  int i;
   (void)unused; /* unused */
   if (type == -1)
     return;
 
-  for (i=n_memb_func - 2; i >= lastion; --i) {
-    memb_order_[i+1] = memb_order_[i];
-  }
-  memb_order_[lastion] = type;
 #if 0
 	printf("%s reordered from %d to %d\n", memb_func[type].sym->name, type, lastion);
 #endif
@@ -262,11 +251,82 @@ void hoc_register_dparam_semantics(int type, int ix, const char* name) {
 		if (name[0] == '#') { i = 1; }
 		etype = nrn_get_mechtype(name+i);
 		memb_func[type].dparam_semantics[ix] = etype + i*1000;
+/* note that if style is needed (i==1), then we are writing a concentration */
+		if (i) {
+			ion_write_depend(type, etype);
+		}
 	}
 #if 0
 	printf("dparam semantics %s ix=%d %s %d\n", memb_func[type].sym,
 	  ix, name, memb_func[type].dparam_semantics[ix]);
 #endif
+}
+
+/* only ion type ion_write_depend_ are non-NULL */
+/* and those are array of integers with first integer being array size */
+/* and remaining size-1 integers containing the mechanism types that write concentrations to that ion */
+static void ion_write_depend(int type, int etype) {
+	int size, i;
+	if (ion_write_depend_size_ < n_memb_func) {
+		ion_write_depend_ = (int**)erealloc(ion_write_depend_, n_memb_func*sizeof(int*));
+		for(i = ion_write_depend_size_; i < n_memb_func; ++i) {
+			ion_write_depend_[i] = NULL;
+		}
+		ion_write_depend_size_ = n_memb_func;
+	}
+	size = 2;
+	if (ion_write_depend_[etype]) {
+		size = ion_write_depend_[etype][0] + 1;
+	}
+	ion_write_depend_[etype] = (int*)erealloc(ion_write_depend_[etype], size*sizeof(int));
+	ion_write_depend_[etype][0] = size;
+	ion_write_depend_[etype][size-1] = type;
+}
+
+static int depend_append(int idep, int* dependencies, int deptype, int type) {
+	/* append only if not already in dependencies and != type*/
+	int add, i;
+	add = 1;
+	if (deptype == type) { return idep; }
+	for (i=0; i < idep; ++i) {
+		if (deptype == dependencies[i]) {
+			add = 0;
+			break;
+		}
+	}
+	if (add) {
+		dependencies[idep++] = deptype;
+	}
+	return idep;
+}
+
+/* return list of types that this type depends on (10 should be more than enough) */
+/* dependencies must be an array that is large enough to hold that array */
+/* number of dependencies is returned */
+int nrn_mech_depend(int type, int* dependencies) {
+	int i, dpsize, idep, deptype;
+	int* ds;
+	dpsize = nrn_prop_dparam_size_[type];
+	ds = memb_func[type].dparam_semantics;
+	idep = 0;
+	if (ds) for (i=0; i < dpsize; ++i) {
+		if (ds[i] > 0 && ds[i] < 1000) {
+			int idepnew;
+			int* iwd;
+			deptype = ds[i];
+			idepnew = depend_append(idep, dependencies, deptype, type);
+			iwd = ion_write_depend_ ? ion_write_depend_[deptype] : 0;
+			if (idepnew > idep && iwd) {
+				int size, j;
+				size = iwd[0];
+				for (j=1; j < size; ++j) {
+					idepnew=depend_append(idepnew, dependencies, iwd[j], type);
+				}
+			}
+			idep = idepnew;
+		}
+	}
+	return idep;
 }
 
 void register_destructor(Pfri d) {
@@ -281,7 +341,6 @@ int point_reg_helper(Symbol* s2) {
   if (type == -1)
     return type;
 
-  pointsym[pointtype] = s2;
   pnt_map[type] = pointtype;
   memb_func[type].is_point = 1;
 
@@ -296,30 +355,14 @@ int point_register_mech(const char** m,
 ){
 	Symbol* s;
 	(void)constructor; (void)destructor; /* unused */
-	CHECK(m[1]);
 	s = (char*)m[1];
 	register_mech(m, alloc, cur, jacob, stat, initialize, nrnpointerindex, vectorized);
 	return point_reg_helper(s);
 }
 
-int _ninits;
 void _modl_cleanup(){}
 
-void _modl_set_dt(double newdt) {
-	dt = newdt;
-	nrn_threads->_dt = newdt;
-}
-void _modl_set_dt_thread(double newdt, NrnThread* nt) {
-	nt->_dt = newdt;
-}
-double _modl_get_dt_thread(NrnThread* nt) {
-	return nt->_dt;
-}
-
-int nrn_pointing(pd) double *pd; {
-	return pd ? 1 : 0;
-}
-
+int state_discon_allowed_;
 int state_discon_flag_ = 0;
 void state_discontinuity(int i, double* pd, double d) {
 	(void)i; /* unused */

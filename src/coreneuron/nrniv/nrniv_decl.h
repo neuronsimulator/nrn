@@ -63,6 +63,8 @@ extern NetCon** netcon_in_presyn_order_;
 extern int nrn_set_timeout(int);
 extern void nrnmpi_gid_clear(void);
 
+extern int nrn_soa_padded_size(int cnt, int layout);
+
 #if defined(__cplusplus)
 }
 #endif

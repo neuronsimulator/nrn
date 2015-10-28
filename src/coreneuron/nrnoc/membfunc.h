@@ -31,11 +31,6 @@ typedef void (*mod_alloc_t)(double*, Datum*, int);
 typedef void (*mod_f_t)(struct NrnThread*, Memb_list*, int);
 typedef void (*pnt_receive_t)(Point_process*, int, double);
 
-#define NULL_ALLOC (mod_alloc_t)0
-#define NULL_CUR (mod_f_t)0
-#define NULL_STATE (mod_f_t)0
-#define NULL_INITIALIZE (mod_f_t)0
-
 typedef struct Memb_func {
 	mod_alloc_t alloc;
 	mod_f_t	current;
@@ -83,12 +78,6 @@ extern double **nrn_ion_global_map;
 
 extern Memb_func* memb_func;
 extern int n_memb_func;
-#if VECTORIZE
-extern Memb_list* memb_list;
-/* for finitialize, order is same up through extracellular, then ions,
-then mechanisms that write concentrations, then all others. */
-extern short* memb_order_; 
-#endif
 #define NRNPOINTER 4 /* added on to list of mechanism variables.These are
 pointers which connect variables  from other mechanisms via the _ppval array.
 */
@@ -119,7 +108,7 @@ extern NetBufReceive_t* net_buf_receive_;
 extern void nrn_cap_jacob(struct NrnThread*, Memb_list*);
 extern void nrn_writes_conc(int, int);
 #pragma acc routine seq
-extern void nrn_wrote_conc(int, double*, int, double**, double);
+extern void nrn_wrote_conc(int, double*, int, int, double**, double, int);
 extern void hoc_register_prop_size(int, int, int);
 extern void hoc_register_dparam_semantics(int type, int, const char* name);
 
@@ -131,6 +120,7 @@ extern void _nrn_thread_reg1(int i, void(*f)(ThreadDatum*));
 typedef void (*bbcore_read_t)(double*, int*, int*, int*, int, int, double*, Datum*, ThreadDatum*, struct NrnThread*, double);
 extern bbcore_read_t* nrn_bbcore_read_;
 
+extern int nrn_mech_depend(int type, int* dependencies);
 extern int nrn_fornetcon_cnt_;
 extern int* nrn_fornetcon_type_;
 extern int* nrn_fornetcon_index_;

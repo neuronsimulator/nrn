@@ -22,9 +22,6 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/nrniv/vrecitem.h"
 
 extern "C" {
-#define nt_t nrn_threads->_t
-#define nt_dt nrn_threads->_dt
-
 extern NetCvode* net_cvode_instance;
 
 // for fixed step thread
@@ -71,18 +68,6 @@ void fixed_play_continuous(NrnThread* nt) {
 	for (int i=0; i < nt->n_vecplay; ++i) {
 		((PlayRecord*)nt->_vecplay[i])->continuous(nt->_t);
 	}
-}
-
-void fixed_record_continuous(NrnThread* nt) {
-	(void)nt; return;
-	if (net_cvode_instance) {
-//		net_cvode_instance->fixed_record_continuous(nt);
-	}
-}
-
-void nrn_random_play(NrnThread* nt) {
-	(void)nt;
-	return;
 }
 
 int at_time(NrnThread* nt, double te) {

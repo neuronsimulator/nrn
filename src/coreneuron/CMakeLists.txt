@@ -28,10 +28,12 @@ nrnoc/membdef.h
 nrnoc/nrnoc_decl.h
 nrnoc/nrnpthread.h
 nrniv/ivocvect.h
+nrniv/memory.h
 nrniv/netcon.h
 nrniv/netcvode.h
 nrniv/nrn_assert.h
 nrniv/nrn_datareader.h
+nrniv/nrn_setup.h
 nrniv/nrn_stats.h
 nrniv/nrnoptarg.h
 nrniv/nrniv_decl.h

@@ -41,12 +41,7 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #define COLLECT_TQueue_STATISTICS 1
 
-#define STRCMP_DEF 0
-#if STRCMP_DEF
-# define STRCMP( a, b ) ( (Sct = *(a) - *(b)) ? Sct : strcmp( (a), (b) ) )
-#else
 #define STRCMP(a, b) (a - b)
-#endif
 
 class TQItem;
 #define SPBLK TQItem
@@ -66,7 +61,6 @@ typedef struct SPTREE
 } SPTREE;
 
 #define spinit sptq_spinit
-#define spempty sptq_spempty
 #define spenq sptq_spenq
 #define spdeq sptq_spdeq
 #define splay sptq_splay
@@ -74,7 +68,6 @@ typedef struct SPTREE
 #define spdelete sptq_spdelete
 
 extern void spinit(SPTREE*);		/* init tree */
-extern int spempty(SPTREE*);		/* is tree empty? */
 extern SPBLK * spenq(SPBLK*, SPTREE*);	/* insert item into the tree */
 extern SPBLK * spdeq(SPBLK**);		/* return and remove lowest item in subtree */
 extern void splay(SPBLK*, SPTREE*);	/* reorganize tree */

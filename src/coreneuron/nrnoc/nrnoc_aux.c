@@ -15,6 +15,7 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include <stdlib.h>
+#include <string.h>
 #include "coreneuron/nrnconf.h"
 #include "coreneuron/nrnoc/multicore.h"
 
@@ -89,23 +90,6 @@ void* nrn_cacheline_alloc(void** memptr, size_t size) {
     *memptr = emalloc(size);
 #endif
   return *memptr;
-}
-
-void* nrn_cacheline_calloc(void** memptr, size_t nmemb, size_t size) {
-#if HAVE_MEMALIGN
-  nrn_cacheline_alloc(memptr, nmemb*size);
-  memset(*memptr, 0, nmemb*size);
-#else
-  *memptr = ecalloc(nmemb, size);
-#endif
-  return *memptr;
-}
-
-/* 0 means no model, 1 means ODE, 2 means DAE */
-int nrn_modeltype() {
-	int type;
-	type = 1;
-	return type;
 }
 
 

@@ -167,10 +167,20 @@ double nrn_nernst(double ci, double co, double z, double celsius) {
 }
 
 #pragma acc routine seq
-void nrn_wrote_conc(int type, double* pe, int it, double **gimap, double celsius) {
+void nrn_wrote_conc(int type, double* p1, int p2, int it, double **gimap, double celsius, int _cntml) {
 	if (it & 04) {
-		pe[0] = nrn_nernst(pe[1], pe[2], gimap[type][2], celsius);
-	}
+
+#if LAYOUT <= 0 /* SoA */
+		int _iml = 0;
+        /* passing _nt to this function causes cray compiler to segfault during compilation
+         * hence passing _cntml 
+         */
+#else
+        (void) _cntml;
+#endif
+		double* pe = p1 - p2*_STRIDE;
+		pe[0] = nrn_nernst(pe[1*_STRIDE], pe[2*_STRIDE], gimap[type][2], celsius);
+    }
 }
 
 static double efun(double x) {
