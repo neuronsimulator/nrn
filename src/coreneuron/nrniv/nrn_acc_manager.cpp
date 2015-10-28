@@ -561,6 +561,11 @@ void modify_data_on_device(NrnThread *threads, int nthreads) {
         printf("\n --- Modifying data on device! --- \n");
 #endif
 
+    /* Note: even if we have added padding for memory alignment, starting pointer
+     * and their count remains same. Hence below code is still valid even if 
+     * we don't consider padding related information.
+     */
+
     int i, j;
     NetReceiveBuffer_t *nrb;
 

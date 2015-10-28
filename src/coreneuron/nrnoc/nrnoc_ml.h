@@ -48,7 +48,8 @@ typedef struct Memb_list {
 	Datum* pdata;
 	ThreadDatum* _thread; /* thread specific data (when static is no good) */
 	NetReceiveBuffer_t* _net_receive_buffer;
-	int nodecount;
+	int nodecount; /* actual node count */
+	int _nodecount_padded;
 } Memb_list;
 
 #endif

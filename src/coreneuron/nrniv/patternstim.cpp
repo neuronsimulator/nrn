@@ -156,6 +156,7 @@ Point_process* nrn_artcell_instantiate(const char* mechname) {
   // int layout = nrn_mech_data_layout_[type]; // not needed because singleton
   Memb_list* ml = tml->ml;
   ml->nodecount = 1;
+  ml->_nodecount_padded = ml->nodecount;
   ml->nodeindices = NULL;
   ml->data = (double*)ecalloc(ml->nodecount*psize, sizeof(double));
   ml->pdata = (Datum*)ecalloc(ml->nodecount*dsize, sizeof(Datum));

@@ -39,11 +39,25 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <pat_api.h>
 #endif
 
+#if 0
+#include <fenv.h>
+#define NRN_FEEXCEPT (FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW )
+int nrn_feenableexcept() {
+  int result = -1;
+  result = feenableexcept(NRN_FEEXCEPT);
+  return result;
+}
+#endif
+
 int main1( int argc, char **argv, char **env )
 {
     char prcellname[1024], filesdat_buf[1024];
 
     ( void )env; /* unused */
+
+#if defined(NRN_FEEXCEPT)
+    nrn_feenableexcept();
+#endif
 
     // mpi initialisation
     nrnmpi_init( 1, &argc, &argv );

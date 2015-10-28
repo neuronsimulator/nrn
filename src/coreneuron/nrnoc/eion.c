@@ -28,13 +28,13 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #if LAYOUT >= 1
 #define _STRIDE LAYOUT
 #else
-#define _STRIDE _cntml + _iml
+#define _STRIDE _cntml_padded + _iml
 #endif
 
 #if defined(_OPENACC)
-#define _PRAGMA_FOR_INIT_ACC_LOOP_ _Pragma("acc parallel loop present(pd[0:_cntml*5], ppd[0:1], nrn_ion_global_map[0:nrn_ion_global_map_size]) if(nt->compute_gpu)")
-#define _PRAGMA_FOR_CUR_ACC_LOOP_ _Pragma("acc parallel loop present(pd[0:_cntml*5], nrn_ion_global_map[0:nrn_ion_global_map_size]) if(nt->compute_gpu) async(stream_id)")
-#define _PRAGMA_FOR_SEC_ORDER_CUR_ACC_LOOP_ _Pragma("acc parallel loop present(pd[0:_cntml*5], ni[0:_cntml], _vec_rhs[0:_nt->end]) if(_nt->compute_gpu) async(stream_id)")
+#define _PRAGMA_FOR_INIT_ACC_LOOP_ _Pragma("acc parallel loop present(pd[0:_cntml_padded*5], ppd[0:1], nrn_ion_global_map[0:nrn_ion_global_map_size]) if(nt->compute_gpu)")
+#define _PRAGMA_FOR_CUR_ACC_LOOP_ _Pragma("acc parallel loop present(pd[0:_cntml_padded*5], nrn_ion_global_map[0:nrn_ion_global_map_size]) if(nt->compute_gpu) async(stream_id)")
+#define _PRAGMA_FOR_SEC_ORDER_CUR_ACC_LOOP_ _Pragma("acc parallel loop present(pd[0:_cntml_padded*5], ni[0:_cntml], _vec_rhs[0:_nt->end]) if(_nt->compute_gpu) async(stream_id)")
 #else
 #define _PRAGMA_FOR_INIT_ACC_LOOP_ _Pragma("")
 #define _PRAGMA_FOR_CUR_ACC_LOOP_ _Pragma("")
@@ -167,7 +167,7 @@ double nrn_nernst(double ci, double co, double z, double celsius) {
 }
 
 #pragma acc routine seq
-void nrn_wrote_conc(int type, double* p1, int p2, int it, double **gimap, double celsius, int _cntml) {
+void nrn_wrote_conc(int type, double* p1, int p2, int it, double **gimap, double celsius, int _cntml_padded) {
 	if (it & 04) {
 
 #if LAYOUT <= 0 /* SoA */
@@ -244,7 +244,7 @@ double nrn_nernst_coef(type) int type; {
 
 /* Must be called prior to any channels which update the currents */
 static void ion_cur(NrnThread* nt, Memb_list* ml, int type) {
-	int _cntml = ml->nodecount;
+	int _cntml_actual = ml->nodecount;
 	int _iml;
 	double* pd; Datum* ppd;
 	(void)nt; /* unused */
@@ -252,13 +252,14 @@ static void ion_cur(NrnThread* nt, Memb_list* ml, int type) {
 
 /*printf("ion_cur %s\n", memb_func[type].sym->name);*/
 #if LAYOUT == 1 /*AoS*/
-	for (_iml = 0; _iml < _cntml; ++_iml) {
+	for (_iml = 0; _iml < _cntml_actual; ++_iml) {
 	  pd = ml->data + _iml*nparm; ppd = ml->pdata + _iml*1;
 #endif
 #if LAYOUT == 0 /*SoA*/
+	int _cntml_padded = ml->_nodecount_padded;
 	pd = ml->data; ppd = ml->pdata;
     _PRAGMA_FOR_CUR_ACC_LOOP_
-	for (_iml = 0; _iml < _cntml; ++_iml) {
+	for (_iml = 0; _iml < _cntml_actual; ++_iml) {
 #endif
 #if LAYOUT > 1 /*AoSoA*/
 #error AoSoA not implemented.
@@ -275,7 +276,7 @@ static void ion_cur(NrnThread* nt, Memb_list* ml, int type) {
 	concentrations based on their own states
 */
 static void ion_init(NrnThread* nt, Memb_list* ml, int type) {
-	int _cntml = ml->nodecount;
+	int _cntml_actual = ml->nodecount;
 	int _iml;
 	double* pd; Datum* ppd;
 	(void)nt; /* unused */
@@ -284,13 +285,14 @@ static void ion_init(NrnThread* nt, Memb_list* ml, int type) {
 
 /*printf("ion_init %s\n", memb_func[type].sym->name);*/
 #if LAYOUT == 1 /*AoS*/
-	for (_iml = 0; _iml < _cntml; ++_iml) {
+	for (_iml = 0; _iml < _cntml_actual; ++_iml) {
 	  pd = ml->data + _iml*nparm; ppd = ml->pdata + _iml*1;
 #endif
 #if LAYOUT == 0 /*SoA*/
+	int _cntml_padded = ml->_nodecount_padded;
 	pd = ml->data; ppd = ml->pdata;
     _PRAGMA_FOR_INIT_ACC_LOOP_
-	for (_iml = 0; _iml < _cntml; ++_iml) {
+	for (_iml = 0; _iml < _cntml_actual; ++_iml) {
 #endif
 #if LAYOUT > 1 /*AoSoA*/
 #error AoSoA not implemented.
@@ -313,7 +315,10 @@ void second_order_cur(NrnThread* _nt) {
 	extern int secondorder;
 	NrnThreadMembList* tml;
 	Memb_list* ml;
-	int _iml, _cntml;
+	int _iml, _cntml_actual;
+#if LAYOUT == 0
+	int _cntml_padded;
+#endif
 	int* ni;
 	double* pd;
 	(void)_nt; /* unused */
@@ -323,16 +328,17 @@ void second_order_cur(NrnThread* _nt) {
   if (secondorder == 2) {
 	for (tml = _nt->tml; tml; tml = tml->next) if (memb_func[tml->index].alloc == ion_alloc) {
 		ml = tml->ml;
-		_cntml = ml->nodecount;
+		_cntml_actual = ml->nodecount;
 		ni = ml->nodeindices;
 #if LAYOUT == 1 /*AoS*/
-		for (_iml = 0; _iml < _cntml; ++_iml) {
+		for (_iml = 0; _iml < _cntml_actual; ++_iml) {
 		  pd = ml->data + _iml*nparm;
 #endif
 #if LAYOUT == 0 /*SoA*/
+		_cntml_padded = ml->_nodecount_padded;
 		pd = ml->data;
         _PRAGMA_FOR_SEC_ORDER_CUR_ACC_LOOP_
-		for (_iml = 0; _iml < _cntml; ++_iml) {
+		for (_iml = 0; _iml < _cntml_actual; ++_iml) {
 #endif
 #if LAYOUT > 1 /*AoSoA*/
 #error AoSoA not implemented.
