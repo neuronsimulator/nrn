@@ -102,6 +102,7 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // When MATRIX_LAYOUT is 0 then mechanism pdata index values into _actual_v
 // and _actual_area data need to be updated.
 #if !defined(LAYOUT)
+#define LAYOUT 1
 #define MATRIX_LAYOUT 1
 #else
 #define MATRIX_LAYOUT LAYOUT
@@ -437,6 +438,18 @@ int nrn_soa_padded_size(int cnt, int layout) {
   return coreneuron::soa_padded_size<NRN_SOA_PAD>(cnt, layout);
 }
 
+static size_t nrn_soa_byte_align(size_t i) {
+  if (LAYOUT == 0) {
+    size_t dbl_align = NRN_SOA_BYTE_ALIGN/sizeof(double);
+    size_t rem = i%dbl_align;
+    if (rem) {
+      i += dbl_align - rem;
+    }
+    assert((i*sizeof(double))%NRN_SOA_BYTE_ALIGN == 0);
+  }
+  return i;
+}
+
 // file data is AoS. ie.
 // organized as cnt array instances of mtype each of size sz.
 // So input index i refers to i_instance*sz + i_item offset
@@ -689,7 +702,7 @@ void read_phase2(data_reader &F, NrnThread& nt) {
     int layout = nrn_mech_data_layout_[type];
     int n = ml->nodecount;
     int sz = nrn_prop_param_size_[type];
-    // offset = nrn_soa_padded_size(offset, layout); // unnecessary
+    offset = nrn_soa_byte_align(offset);
     ml->data = (double*)0 + offset; // adjust below since nt._data not allocated
     unpadded_ml_list[type].data = (double*)0 + unpadded_offset;
     offset += nrn_soa_padded_size(n, layout)*sz;
@@ -719,7 +732,9 @@ void read_phase2(data_reader &F, NrnThread& nt) {
   }
 
   // matrix info
-  nt._v_parent_index = F.read_array<int>(nt.end);
+  nt._v_parent_index = (int*)coreneuron::ecalloc_align(nt.end, NRN_SOA_BYTE_ALIGN, sizeof(int));;
+  F.read_array<int>(nt._v_parent_index, nt.end);
+
   F.read_array<double>(nt._actual_a, nt.end);
   F.read_array<double>(nt._actual_b, nt.end);
   F.read_array<double>(nt._actual_area, nt.end);
@@ -742,7 +757,8 @@ void read_phase2(data_reader &F, NrnThread& nt) {
     int szdp = nrn_prop_dparam_size_[type];
 
     if (!is_art) { 
-        ml->nodeindices = F.read_array<int>(ml->nodecount);
+        ml->nodeindices = (int*)coreneuron::ecalloc_align(ml->nodecount, NRN_SOA_BYTE_ALIGN, sizeof(int));
+        F.read_array<int>(ml->nodeindices, ml->nodecount);
     } else { 
         ml->nodeindices = NULL;
     }
@@ -751,7 +767,7 @@ void read_phase2(data_reader &F, NrnThread& nt) {
     mech_layout<double>(F, ml->data, n, szp, layout);
     
     if (szdp) {
-      ml->pdata = new int[nrn_soa_padded_size(n, layout)*szdp];
+      ml->pdata = (int*)coreneuron::ecalloc_align(nrn_soa_padded_size(n, layout)*szdp, NRN_SOA_BYTE_ALIGN, sizeof(int));
       mech_layout<int>(F, ml->pdata, n, szdp, layout);
     }else{
       ml->pdata = NULL;
@@ -773,7 +789,7 @@ void read_phase2(data_reader &F, NrnThread& nt) {
   }
 
   // Some pdata may index into data which has been reordered from AoS to
-  // SoA. The two possibilities are if semantics is -1 (area), -5 (pointer),
+  // SoA. The three possibilities are if semantics is -1 (area), -5 (pointer),
   // or 0-999 (ion variables). Note that pdata has a layout and the
   // type block in nt.data into which it indexes, has a layout.
   for (tml = nt.tml; tml; tml = tml->next) {
