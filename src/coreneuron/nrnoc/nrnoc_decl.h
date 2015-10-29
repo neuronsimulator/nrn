@@ -52,6 +52,8 @@ extern void initnrn(void);
 extern void  nrn_capacity_current(NrnThread*, Memb_list*);
 extern int prcellstate(int gid, const char* suffix);
 extern int nrn_i_layout(int i, int cnt, int j, int size, int layout);
+extern void (*nrnthread_v_transfer_)(NrnThread*); /* for gap junctions */
+extern void (*nrnmpi_v_transfer_)(); /* for gap junctions */
 
 #if defined(__cplusplus)
 }

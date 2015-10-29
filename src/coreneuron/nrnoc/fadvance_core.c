@@ -19,7 +19,11 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/nrnmpi/nrnmpi.h"
 #include "coreneuron/nrnoc/nrnoc_decl.h"
 
+void (*nrnmpi_v_transfer_)(); /* called by thread 0 */
+void (*nrnthread_v_transfer_)(NrnThread* nt);
+
 static void* nrn_fixed_step_thread(NrnThread*);
+static void* nrn_fixed_step_lastpart(NrnThread*);
 static void* nrn_fixed_step_group_thread(NrnThread*);
 static void update(NrnThread*);
 static void nonvint(NrnThread*);
@@ -40,7 +44,7 @@ void dt2thread(double adt) { /* copied from nrnoc/fadvance.c */
     }
 }
 
-void nrn_fixed_step_minimal() {
+void nrn_fixed_step_minimal() { /* not so minimal anymore with gap junctions */
 	if (t != nrn_threads->_t) {
 		dt2thread(-1.);
 	}else{
@@ -49,7 +53,15 @@ void nrn_fixed_step_minimal() {
 /*printf("nrn_fixed_step_minimal t=%g\n", t);*/
 	nrn_thread_table_check();
 	nrn_multithread_job(nrn_fixed_step_thread);
-	nrn_spike_exchange(nrn_threads);
+	if (nrnthread_v_transfer_) {
+		if (nrnmpi_v_transfer_) {
+			(*nrnmpi_v_transfer_)();
+		}
+		nrn_multithread_job(nrn_fixed_step_lastpart);
+	}
+	if (nrn_threads[0]._stop_stepping) {
+		nrn_spike_exchange(nrn_threads);
+	}
 	t = nrn_threads[0]._t;
 }
 
@@ -144,6 +156,13 @@ static void* nrn_fixed_step_thread(NrnThread* nth) {
 	nrn_solve_minimal(nth);
 	second_order_cur(nth);
 	update(nth);
+	if (!nrnthread_v_transfer_) {
+		nrn_fixed_step_lastpart(nth);
+	}
+	return (void*)0;
+}
+
+static void* nrn_fixed_step_lastpart(NrnThread* nth) {
 	nth->_t += .5 * nth->_dt;
 	fixed_play_continuous(nth);
 	nonvint(nth);
