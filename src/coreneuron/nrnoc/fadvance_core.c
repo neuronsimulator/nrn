@@ -143,6 +143,8 @@ void nrn_ba(NrnThread* nt, int bat){
 }
 
 static void* nrn_fixed_step_thread(NrnThread* nth) {
+	/* check thresholds and deliver all (including binqueue)
+	   events up to t+dt/2 */
 	deliver_net_events(nth);
 	nth->_t += .5 * nth->_dt;
 

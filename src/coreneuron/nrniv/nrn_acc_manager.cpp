@@ -165,6 +165,7 @@ void setup_nrnthreads_on_device(NrnThread *threads, int nthreads)  {
 
             NetReceiveBuffer_t *nrb, *d_nrb;
             int *d_weight_index, *d_pnt_index;
+            double *d_nrb_t;
 
             //net_receive buffer associated with mechanism
             nrb = tml->ml->_net_receive_buffer;
@@ -180,6 +181,9 @@ void setup_nrnthreads_on_device(NrnThread *threads, int nthreads)  {
 
                 d_weight_index = (int *) acc_copyin(nrb->_weight_index, sizeof(int)*nrb->_size);
                 acc_memcpy_to_device(&(d_nrb->_weight_index), &d_weight_index, sizeof(int*));
+
+                d_nrb_t = (double *) acc_copyin(nrb->_nrb_t, sizeof(double)*nrb->_size);
+                acc_memcpy_to_device(&(d_nrb->_nrb_t), &d_nrb_t, sizeof(double*));
 
                 //0 means gpu copy updated with size of buffer on cpu
                 nrb->reallocated = 0;
@@ -261,6 +265,7 @@ void update_net_receive_buffer(NrnThread *nt) {
     Memb_list *ml, *d_ml;
     NetReceiveBuffer_t *nrb, *d_nrb;
     int *d_weight_index, *d_pnt_index;
+    double *d_nrb_t;
 
     for (tml = nt->tml; tml; tml = tml->next) {
 
@@ -279,6 +284,7 @@ void update_net_receive_buffer(NrnThread *nt) {
                 /* free existing vectors in buffers on gpu */
                 acc_free( acc_deviceptr(nrb->_pnt_index) );
                 acc_free( acc_deviceptr(nrb->_weight_index) );
+                acc_free( acc_deviceptr(nrb->_nrb_t) );
                 
                 /* update device copy */
                 acc_update_device(nrb, sizeof(NetReceiveBuffer_t));
@@ -289,6 +295,9 @@ void update_net_receive_buffer(NrnThread *nt) {
 
                 d_weight_index = (int *) acc_copyin(nrb->_weight_index, sizeof(int)*nrb->_size);
                 acc_memcpy_to_device(&(d_nrb->_weight_index), &d_weight_index, sizeof(int*));
+
+                d_nrb_t = (double *) acc_copyin(nrb->_nrb_t, sizeof(double)*nrb->_size);
+                acc_memcpy_to_device(&(d_nrb->_nrb_t), &d_nrb_t, sizeof(double*));
 
                 /* gpu copy updated */
                 nrb->reallocated = 0;
@@ -307,6 +316,7 @@ void update_net_receive_buffer(NrnThread *nt) {
                  */
                 acc_update_device(nrb->_pnt_index, sizeof(int)*nrb->_cnt);
                 acc_update_device(nrb->_weight_index, sizeof(int)*nrb->_cnt);
+                acc_update_device(nrb->_nrb_t, sizeof(double)*nrb->_cnt);
             }
         }
     }

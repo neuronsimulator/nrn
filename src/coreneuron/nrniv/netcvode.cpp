@@ -637,6 +637,7 @@ void NetCvode::check_thresh(NrnThread* nt) { // for default method
     }
 }
 
+// events including binqueue events up to t+dt/2
 void NetCvode::deliver_net_events(NrnThread* nt) { // for default method
     double tm, tsav;
     tsav = nt->_t;

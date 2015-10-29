@@ -506,6 +506,7 @@ void nrn_cleanup() {
 	    if (nrb->_size) {
           free(nrb->_pnt_index);
           free(nrb->_weight_index);
+          free(nrb->_nrb_t);
         }
         free(nrb);
       }
@@ -1119,9 +1120,9 @@ void read_phase2(data_reader &F, NrnThread& nt) {
 
       nrb->_pnt_index = (int*)ecalloc(nrb->_size, sizeof(int));
       nrb->_weight_index = (int*)ecalloc(nrb->_size, sizeof(int));
-
       // when == 1, NetReceiveBuffer_t is newly allocated (i.e. we need to free previous copy and recopy new data 
       nrb->reallocated = 1;
+      nrb->_nrb_t = (double*)ecalloc(nrb->_size, sizeof(double));
     }
   }
   delete [] pnt_offset;

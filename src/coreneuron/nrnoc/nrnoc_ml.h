@@ -29,6 +29,7 @@ typedef union ThreadDatum {
 typedef struct NetReceiveBuffer_t {
 	int* _pnt_index;
 	int* _weight_index;
+	double* _nrb_t;
 	int _cnt;
 	int _size; /* capacity */
 	int _pnt_offset;
