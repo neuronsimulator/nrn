@@ -19,9 +19,6 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/nrnmpi/nrnmpi.h"
 #include "coreneuron/nrnoc/nrnoc_decl.h"
 
-void (*nrnmpi_v_transfer_)(); /* called by thread 0 */
-void (*nrnthread_v_transfer_)(NrnThread* nt);
-
 static void* nrn_fixed_step_thread(NrnThread*);
 static void* nrn_fixed_step_lastpart(NrnThread*);
 static void* nrn_fixed_step_group_thread(NrnThread*);
@@ -53,10 +50,8 @@ void nrn_fixed_step_minimal() { /* not so minimal anymore with gap junctions */
 /*printf("nrn_fixed_step_minimal t=%g\n", t);*/
 	nrn_thread_table_check();
 	nrn_multithread_job(nrn_fixed_step_thread);
-	if (nrnthread_v_transfer_) {
-		if (nrnmpi_v_transfer_) {
-			(*nrnmpi_v_transfer_)();
-		}
+	if (nrn_have_gaps) {
+		nrnmpi_v_transfer();
 		nrn_multithread_job(nrn_fixed_step_lastpart);
 	}
 	if (nrn_threads[0]._stop_stepping) {
@@ -126,6 +121,9 @@ static void update(NrnThread* _nt){
 
 static void nonvint(NrnThread* _nt) {
 	NrnThreadMembList* tml;
+	if (nrn_have_gaps) {
+		nrnthread_v_transfer(_nt);
+	}
 	errno = 0;
 	for (tml = _nt->tml; tml; tml = tml->next) if (memb_func[tml->index].state) {
 		mod_f_t s = memb_func[tml->index].state;
@@ -156,7 +154,7 @@ static void* nrn_fixed_step_thread(NrnThread* nth) {
 	nrn_solve_minimal(nth);
 	second_order_cur(nth);
 	update(nth);
-	if (!nrnthread_v_transfer_) {
+	if (!nrn_have_gaps) {
 		nrn_fixed_step_lastpart(nth);
 	}
 	return (void*)0;

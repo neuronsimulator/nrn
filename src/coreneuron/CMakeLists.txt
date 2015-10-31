@@ -40,6 +40,8 @@ nrniv/nrniv_decl.h
 nrniv/nrniv_mf.h
 nrniv/nrnmutdec.h
 nrniv/output_spikes.h
+nrniv/partrans.h
+nrniv/partrans.cpp
 nrniv/prcellstate.cpp
 nrniv/sptbinq.h
 nrniv/vrecitem.h
