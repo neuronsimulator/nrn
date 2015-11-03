@@ -151,6 +151,16 @@ void nrn_read_filesdat(int &ngrp, int * &grp, const char *filesdat)
     int iNumFiles;
     nrn_assert( fscanf( fp, "%d\n", &iNumFiles ) == 1 );
 
+    // temporary strategem to figure out if model uses gap junctions while
+    // being backward compatible
+    if (iNumFiles == -1) {
+      nrn_assert( fscanf( fp, "%d\n", &iNumFiles ) == 1 );
+      nrn_have_gaps = 1;
+      if (nrnmpi_myid == 0) {
+        printf("Model uses gap junctions\n");
+      }
+    }
+
     if ( nrnmpi_numprocs > iNumFiles ) {
         nrnmpi_fatal_error( "The number of CPUs cannot exceed the number of input files" );
     }
