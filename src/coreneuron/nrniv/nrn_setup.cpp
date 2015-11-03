@@ -603,6 +603,9 @@ void read_phase2(data_reader &F, NrnThread& nt) {
     tml->ml = (Memb_list*)emalloc(sizeof(Memb_list));
     tml->next = NULL;
     tml->index = F.read_int();
+    if (memb_func[tml->index].alloc == NULL) {
+      hoc_execerror(memb_func[tml->index].sym, "mechanism does not exist");
+    }
     tml->ml->nodecount = F.read_int();
     tml->ml->_nodecount_padded = nrn_soa_padded_size(tml->ml->nodecount, nrn_mech_data_layout_[tml->index]);
     if (memb_func[tml->index].is_point && nrn_is_artificial_[tml->index] == 0){
