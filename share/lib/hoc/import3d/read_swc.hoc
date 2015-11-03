@@ -380,7 +380,7 @@ func id2pt() {local i
 	}
 	return id2index($1)
 }
-func id2line() { return  }
+func id2line() { return $1 }
 func pt2id() { return id.x[$1] }
 func pt2sec() { local i,j //from selpoint
 	i = point2sec.x[$1]
