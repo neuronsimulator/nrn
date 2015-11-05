@@ -25,6 +25,7 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/nrniv/nrnmutdec.h"
 #include "coreneuron/nrniv/memory.h"
 #include "coreneuron/nrniv/nrn_setup.h"
+#include "coreneuron/nrniv/partrans.h"
 #include <algorithm>
 #include <iostream>
 #include <vector>
@@ -217,16 +218,23 @@ void nrn_setup(const char *path, const char *filesdat, int byte_swap, int thread
   nrn_reset_gid2out();
 
   data_reader *file_reader=new data_reader[ngroup];
+  store_phase_args(ngroup, gidgroups, file_reader, path, byte_swap);
+
+  // gap junctions
+  if (nrn_have_gaps) {
+    nrn_partrans::transfer_thread_data_ = new nrn_partrans::TransferThreadData[ngroup];
+    nrn_partrans::setup_info_ = new nrn_partrans::SetupInfo[ngroup];
+    coreneuron::phase_wrapper<coreneuron::gap>();
+    nrn_partrans::gap_mpi_setup(ngroup);
+  }
 
   /* nrn_multithread_job supports serial, pthread, and openmp. */
-  store_phase_args(ngroup, gidgroups, file_reader, path, byte_swap);
   coreneuron::phase_wrapper<(coreneuron::phase)1>(); /// If not the xlc compiler, it should be coreneuron::phase::one
 
   // from the netpar::gid2out map and the netcon_srcgid array,
   // fill the netpar::gid2in, and from the number of entries,
   // allocate the process wide InputPreSyn array
   determine_inputpresyn();
-
 
   // read the rest of the gidgroup's data and complete the setup for each
   // thread.
@@ -278,6 +286,7 @@ void setup_ThreadData(NrnThread& nt) {
 
 
 void read_phase1(data_reader &F, NrnThread& nt) {
+  assert(!F.fail());
   nt.n_presyn = F.read_int(); /// Number of PreSyn-s in NrnThread nt
   nt.n_netcon = F.read_int(); /// Number of NetCon-s in NrnThread nt
   nt.presyns = new PreSyn[nt.n_presyn];
@@ -443,6 +452,37 @@ void determine_inputpresyn() {
     }
   }
 }
+
+void read_phasegap(data_reader &F, NrnThread& nt) {
+  nrn_partrans::SetupInfo& si = nrn_partrans::setup_info_[nt.id];
+  si.ntar = 0;
+  si.nsrc = 0;
+
+  if (F.fail()) { return; }
+
+  int chkpntsave = F.checkpoint();
+  F.checkpoint(0);
+
+  si.ntar = F.read_int();
+  si.nsrc = F.read_int();
+  si.type = F.read_int();
+  si.ix_vpre = F.read_int();
+  si.sid_target = F.read_array<int>(si.ntar);
+  si.sid_src = F.read_array<int>(si.nsrc);
+  si.v_indices = F.read_array<int>(si.nsrc);
+  printf("%d read_phasegap tid=%d type=%d %s ix_vpre=%d nsrc=%d ntar=%d\n",
+    nrnmpi_myid, nt.id, si.type, memb_func[si.type].sym, si.ix_vpre,
+    si.nsrc, si.ntar);
+  for (int i=0; i < si.nsrc; ++i) {
+    printf("sid_src %d %d\n", si.sid_src[i], si.v_indices[i]);
+  }
+  for (int i=0; i <si. ntar; ++i) {
+    printf("sid_tar %d %d\n", si.sid_target[i], i);
+  }
+
+  F.checkpoint(chkpntsave);
+}
+
 int nrn_soa_padded_size(int cnt, int layout) {
   return coreneuron::soa_padded_size<NRN_SOA_PAD>(cnt, layout);
 }
@@ -589,6 +629,7 @@ void nrn_cleanup() {
 }
 
 void read_phase2(data_reader &F, NrnThread& nt) {
+  assert(!F.fail());
   NrnThreadMembList* tml;
   int n_outputgid = F.read_int();
   nrn_assert(n_outputgid > 0); // avoid n_outputgid unused warning
