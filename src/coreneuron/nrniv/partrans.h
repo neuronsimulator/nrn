@@ -5,8 +5,19 @@ struct Memb_list;
 
 namespace nrn_partrans {
 
+#ifndef NRNLONGSGID
+#define NRNLONGSGID 0
+#endif
+
+#if NRNLONGSGID
+  typedef int64_t sgid_t;
+#else
+  typedef int sgid_t;
+#endif
+  
   struct HalfGap_Info {
     int layout;
+    int type;
     int ix_vpre; /* AoS index for vpre from beginning of a HalfGap instance */
     int sz; /* size of a HalfGap instance */
   };
@@ -14,8 +25,9 @@ namespace nrn_partrans {
 
   struct TransferThreadData {
     Memb_list* halfgap_ml;
-    int* insrc_indices; // halfgap_ml->nodecount indices into insrc_buf_
     int nsrc; // number of places in outsrc_buf_ voltages get copied to.
+    int ntar; // insrc_indices size (halfgap_ml->nodecount);
+    int* insrc_indices; // halfgap_ml->nodecount indices into insrc_buf_
     int* v_indices; // indices into NrnThread._actual_v (may have duplications).
   };
   extern TransferThreadData* transfer_thread_data_; /* array for threads */
@@ -25,9 +37,9 @@ namespace nrn_partrans {
     int ntar; // equal to memb_list nodecount
     int type;
     int ix_vpre;
-    int* sid_src;
+    sgid_t* sid_src;
     int* v_indices;  // increasing order
-    int* sid_target; // aleady in memb_list order
+    sgid_t* sid_target; // aleady in memb_list order
   };
   extern SetupInfo* setup_info_; /* array for threads exists only during setup*/
   

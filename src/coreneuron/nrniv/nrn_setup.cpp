@@ -470,6 +470,10 @@ void read_phasegap(data_reader &F, NrnThread& nt) {
   si.sid_target = F.read_array<int>(si.ntar);
   si.sid_src = F.read_array<int>(si.nsrc);
   si.v_indices = F.read_array<int>(si.nsrc);
+
+  F.checkpoint(chkpntsave);
+
+#if 0
   printf("%d read_phasegap tid=%d type=%d %s ix_vpre=%d nsrc=%d ntar=%d\n",
     nrnmpi_myid, nt.id, si.type, memb_func[si.type].sym, si.ix_vpre,
     si.nsrc, si.ntar);
@@ -479,8 +483,7 @@ void read_phasegap(data_reader &F, NrnThread& nt) {
   for (int i=0; i <si. ntar; ++i) {
     printf("sid_tar %d %d\n", si.sid_target[i], i);
   }
-
-  F.checkpoint(chkpntsave);
+#endif
 }
 
 int nrn_soa_padded_size(int cnt, int layout) {
@@ -799,6 +802,10 @@ void read_phase2(data_reader &F, NrnThread& nt) {
         pp->_tid = nt.id;
       }
     }
+  }
+
+  if (nrn_have_gaps == 1) {
+    nrn_partrans::gap_thread_setup(nt);
   }
 
   // Some pdata may index into data which has been reordered from AoS to
