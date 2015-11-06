@@ -31,7 +31,6 @@ public:
 	virtual ~PlayRecordEvent();
 	virtual void deliver(double, NetCvode*, NrnThread*);
 	virtual void pr(const char*, double t, NetCvode*);
-	virtual void frecord_init(TQItem* q);
 	virtual NrnThread* thread();
 	PlayRecord* plr_;
 	static unsigned long playrecord_send_;
@@ -49,9 +48,6 @@ public:
 	virtual PlayRecordEvent* event() { return nil;}
 	virtual void pr(); // print identifying info
 	virtual int type() { return 0; }
-
-	// administration
-	virtual void frecord_init(TQItem*) {}
 
 	double* pd_;
 	int ith_; // The thread index

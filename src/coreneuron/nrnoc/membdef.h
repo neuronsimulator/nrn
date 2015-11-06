@@ -19,6 +19,7 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 /* numerical parameters */
 #define DEF_nseg	1          /* default number of segments per section*/
 #define DEF_dt		.025	   /* ms */
+#define DEF_rev_dt	1./DEF_dt  /* 1/ms */
 #define DEF_secondorder 0	   /* >0 means crank-nicolson. 2 means current
                                    adjusted to t+dt/2 */
 

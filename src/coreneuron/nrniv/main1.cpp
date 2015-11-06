@@ -76,6 +76,7 @@ int main1( int argc, char **argv, char **env )
     // set global variables for start time, timestep and temperature
     t = input_params.tstart;
     dt = input_params.dt;
+    rev_dt = (int)(1./dt);
     celsius = input_params.celsius;
 
     // full path of files.dat file

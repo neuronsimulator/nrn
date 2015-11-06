@@ -48,8 +48,6 @@ public:
 	virtual int type() { return DiscreteEventType; }
 
     virtual void pr(const char*, double t, NetCvode*);
-	// actions performed over each item in the event queue.
-	virtual void frecord_init(TQItem*) {};
 };
 
 class NetCon : public DiscreteEvent {
@@ -109,8 +107,8 @@ public:
 #if NRNMPI
     unsigned char localgid_; // compressed gid for spike transfer
 #endif
-    int nc_index_; //replaces dil_, index into global NetCon** netcon_in_presyn_order_
-    int nc_cnt_; // how many netcon starting at nc_index_
+    int nc_index_; //replaces dil_, index into global NetCon** netcon_in_presyn_order_ for the current PreSyn
+    int nc_cnt_; // how many netcon PreSyn has starting at nc_index_
     int output_index_;
     int gid_;
     double threshold_;
