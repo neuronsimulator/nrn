@@ -29,6 +29,7 @@ namespace nrn_partrans {
     int ntar; // insrc_indices size (halfgap_ml->nodecount);
     int* insrc_indices; // halfgap_ml->nodecount indices into insrc_buf_
     int* v_indices; // indices into NrnThread._actual_v (may have duplications).
+    int* outbuf_indices; // indices into outsrc_buf_
   };
   extern TransferThreadData* transfer_thread_data_; /* array for threads */
 

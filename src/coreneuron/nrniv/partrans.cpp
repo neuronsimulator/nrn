@@ -30,23 +30,31 @@ void nrnmpi_v_transfer() {
   // copy HalfGap source voltages to outsrc_buf_
   // note that same voltage may get copied to several locations in outsrc_buf
   for (int tid = 0; tid < nrn_nthread; ++tid) {
-    double* vdata = nrn_threads[tid]._actual_v;
     int n = transfer_thread_data_[tid].nsrc;
+    if (n == 0) { continue; }
+    double* vdata = nrn_threads[tid]._actual_v;
     int* v_indices = transfer_thread_data_[tid].v_indices;
+    int* outbuf_indices = transfer_thread_data_[tid].outbuf_indices;
     for (int i=0; i < n; ++i) {
-      outsrc_buf_[i] = vdata[v_indices[i]];
+      outsrc_buf_[outbuf_indices[i]] = vdata[v_indices[i]];
     }
   }
   // transfer
   if (nrnmpi_numprocs > 1) { // otherwise insrc_buf_ == outsrc_buf_
+    nrnmpi_barrier();
     nrnmpi_dbl_alltoallv(outsrc_buf_, outsrccnt_, outsrcdspl_,
       insrc_buf_, insrccnt_, insrcdspl_);
+  } else { // actually use the multiprocess code even for one process to aid debugging
+    for (int i=0; i < outsrcdspl_[1]; ++i) {
+      insrc_buf_[i] = outsrc_buf_[i];
+    }
   }
   // insrc_buf_ will get copied to targets via nrnthread_v_transfer
 }
 
 void nrnthread_v_transfer(NrnThread* _nt) {
   TransferThreadData& ttd = transfer_thread_data_[_nt->id];
+  if (!ttd.halfgap_ml) { return; }
   int _cntml_actual = ttd.halfgap_ml->nodecount;
   double* vpre = ttd.halfgap_ml->data;
   int* insrc_indices = ttd.insrc_indices;

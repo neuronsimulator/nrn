@@ -222,7 +222,7 @@ void nrn_setup(const char *path, const char *filesdat, int byte_swap, int thread
 
   // gap junctions
   if (nrn_have_gaps) {
-    nrn_partrans::transfer_thread_data_ = new nrn_partrans::TransferThreadData[ngroup];
+    nrn_partrans::transfer_thread_data_ = new nrn_partrans::TransferThreadData[nrn_nthread];
     nrn_partrans::setup_info_ = new nrn_partrans::SetupInfo[ngroup];
     coreneuron::phase_wrapper<coreneuron::gap>();
     nrn_partrans::gap_mpi_setup(ngroup);

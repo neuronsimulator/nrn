@@ -29,7 +29,14 @@ class SidData {
 #include "coreneuron/nrniv/have2want.h"
 
 void nrn_partrans::gap_mpi_setup(int ngroup) {
-  printf("%d gap_mpi_setup ngroup=%d\n", nrnmpi_myid, ngroup);
+  //printf("%d gap_mpi_setup ngroup=%d\n", nrnmpi_myid, ngroup);
+
+  // This can happen until bug is fixed. ie. if one process has more than
+  // one thread then all processes must have more than one thread
+  if (ngroup < nrn_nthread) {
+    transfer_thread_data_[ngroup].nsrc = 0;
+    transfer_thread_data_[ngroup].halfgap_ml = NULL;
+  }
 
   //create and fill halfgap_info using first available...
   halfgap_info = new HalfGap_Info;
@@ -45,18 +52,11 @@ void nrn_partrans::gap_mpi_setup(int ngroup) {
   }
 
   // count total_nsrc, total_ntar and allocate (total_ntar too large but...)
-  // also allocate arrays in TransferThreadData.
   int total_nsrc=0, total_ntar=0;
   for (int tid = 0; tid < ngroup; ++tid) {
     nrn_partrans::SetupInfo& si = setup_info_[tid];
-    nrn_partrans::TransferThreadData& ttd = transfer_thread_data_[tid];
     total_nsrc += si.nsrc;
     total_ntar += si.ntar;
-
-    ttd.ntar = si.ntar; // for debugging
-    ttd.insrc_indices = new int[si.ntar]; //memb_list[type].nodecount
-    ttd.nsrc = si.nsrc;
-    ttd.v_indices = new int[ttd.nsrc];
   }
 
   // have and want arrays
@@ -117,6 +117,14 @@ void nrn_partrans::gap_mpi_setup(int ngroup) {
     assert(tar2data.find(sgid) != tar2data.end());
   }
 
+#if 0
+  printf("%d mpi outsrccnt_, outsrcdspl_, insrccnt, insrcdspl_\n", nrnmpi_myid);
+  for (int i = 0; i < nrnmpi_numprocs; ++i) {
+    printf("%d : %d %d %d %d\n", nrnmpi_myid, outsrccnt_[i], outsrcdspl_[i],
+      insrccnt_[i], insrcdspl_[i]);
+  }
+#endif
+
   // clean up a little
   delete [] have;
   delete [] want;
@@ -124,6 +132,28 @@ void nrn_partrans::gap_mpi_setup(int ngroup) {
   insrc_buf_ = new double[insrcdspl_[nhost]];
   outsrc_buf_ = new double[outsrcdspl_[nhost]];
 
+
+  // count and allocate transfer_thread_data arrays.
+  for (int tid; tid < ngroup; ++tid) {
+    transfer_thread_data_[tid].nsrc = 0;
+  }
+  for (int i=0; i < outsrcdspl_[nhost]; ++i) {
+    sgid_t sgid = send_to_want[i];
+    SidData& sd = src2data[sgid];
+    // only one item in the lists.
+    int tid = sd.tids_[0];
+    transfer_thread_data_[tid].nsrc += 1;
+  }
+  for (int tid = 0; tid < ngroup; ++tid) {
+    nrn_partrans::SetupInfo& si = setup_info_[tid];
+    nrn_partrans::TransferThreadData& ttd = transfer_thread_data_[tid];
+    ttd.v_indices = new int[ttd.nsrc];
+    ttd.outbuf_indices = new int[ttd.nsrc];
+    ttd.nsrc = 0; // recount below as filled
+    ttd.ntar = si.ntar;
+    ttd.insrc_indices = new int[si.ntar];
+  }
+    
   // fill thread actual_v to send arrays. (offsets and layout later).
   for (int i = 0; i < outsrcdspl_[nhost]; ++i) {
     sgid_t sgid = send_to_want[i];
@@ -131,7 +161,13 @@ void nrn_partrans::gap_mpi_setup(int ngroup) {
     // only one item in the lists.
     int tid = sd.tids_[0];
     int index = sd.indices_[0];
-    transfer_thread_data_[tid].v_indices[index] = i;
+
+    nrn_partrans::SetupInfo& si = setup_info_[tid];
+    nrn_partrans::TransferThreadData& ttd = transfer_thread_data_[tid];
+
+    ttd.v_indices[ttd.nsrc] = si.v_indices[index];
+    ttd.outbuf_indices[ttd.nsrc] = i;
+    ttd.nsrc += 1;
   }
 
   // fill thread receive to vpre arrays. (offsets and layout later).
@@ -142,6 +178,7 @@ void nrn_partrans::gap_mpi_setup(int ngroup) {
     for (unsigned j = 0; j < sd.tids_.size(); ++j) {
       int tid = sd.tids_[j];
       int index = sd.indices_[j];
+      
       transfer_thread_data_[tid].insrc_indices[index] = i;
     }
   }
