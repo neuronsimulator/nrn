@@ -237,7 +237,7 @@ def _ode_solve(dt, t, b, y):
         # NOTE: only working on the rxd part
         rxd_b = b[lo : hi]
         # TODO: make sure can handle both 1D and 3D
-        m = _scipy_sparse_eye(n, n) - dt * _euler_matrix
+        m = eye_minus_dt_J(n, dt)
         # removed diagonal preconditioner since tests showed no improvement in convergence
         result, info = _scipy_sparse_linalg_bicgstab(m, dt * rxd_b)
         assert(info == 0)
@@ -314,6 +314,25 @@ _fixed_step_count = 0
 from scipy.sparse.linalg import spilu as _spilu
 from scipy.sparse.linalg import LinearOperator as _LinearOperator
 from scipy.sparse import csc_matrix
+
+def eye_minus_dt_J(n, dt):
+    """correctly computes I - dt J as needed for the lhs of an advance.
+    
+    The difficulty here is that the _euler_matrix also contains conservation
+    equations. These are preserved unchanged (i.e. no +1).
+    
+    This reads two globals: _euler_matrix and _zero_volume_indices.
+    
+    n is the length of the state vector (including the conservation nodes).
+    """
+    m = _scipy_sparse_eye(n, n) - dt * _euler_matrix
+    # correct to account for algebraic conservation nodes which don't get the +1
+    for i in _zero_volume_indices:
+        m[i, i] -= 1
+    return m
+
+    
+
 def _fixed_step_solve(raw_dt):
     initializer._do_init()
     global pinverse, _fixed_step_count
@@ -353,13 +372,16 @@ def _fixed_step_solve(raw_dt):
         # the actual advance via implicit euler
         n = len(states)
         if _last_dt != dt or _last_preconditioner is None:
-            _last_m = _scipy_sparse_eye(n, n) - dt * _euler_matrix
+            _last_m = eye_minus_dt_J(n, dt)
             _last_preconditioner = _LinearOperator((n, n), _spilu(csc_matrix(_last_m)).solve)
             _last_dt = dt
         # removed diagonal preconditioner since tests showed no improvement in convergence
         result, info = _scipy_sparse_linalg_bicgstab(_last_m, dt * b, M=_last_preconditioner)
         assert(info == 0)
         states[:] += result
+
+        # clear the zero-volume "nodes"
+        states[_zero_volume_indices] = 0
 
         for sr in _species_get_all_species().values():
             s = sr()
