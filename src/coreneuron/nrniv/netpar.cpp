@@ -21,7 +21,6 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/nrnconf.h"
 #include "coreneuron/nrnoc/multicore.h"
 #include "coreneuron/nrnmpi/nrnmpi.h"
-#include "coreneuron/nrniv/nrn_assert.h"
 
 class PreSyn;
 class InputPreSyn;
@@ -33,13 +32,9 @@ class InputPreSyn;
 
 static double t_exchange_;
 static double dt1_; // 1/dt
-static void alloc_space();
 
-/// Vector of maps for negative presyns
-std::vector< std::map<int, PreSyn*> > neg_gid2out;
-/// Maps for ouput and input presyns
-std::map<int, PreSyn*> gid2out;
-std::map<int, InputPreSyn*> gid2in;
+extern std::map<int, PreSyn*> gid2out;
+extern std::map<int, InputPreSyn*> gid2in;
 
 extern "C" {
 extern NetCvode* net_cvode_instance;
@@ -61,13 +56,6 @@ void nrn_spike_exchange(NrnThread*);
 extern int nrnmpi_int_allmax(int);
 extern void nrnmpi_int_allgather(int*, int*, int);
 void nrn2ncs_outputevent(int netcon_output_index, double firetime);
-}
-
-
-void nrnmpi_gid_clear(void)
-{
-  gid2in.clear();
-  gid2out.clear();
 }
 
 // for compressed gid info during spike exchange
@@ -106,6 +94,24 @@ static int n_npe_; // just to compare with nrn_nthread
 static MUTDEC
 #endif
 #endif
+
+/// Allocate space for spikes: 200 structs of {int gid; double time}
+/// coming from nrnmpi.h and array of int of the global domain size
+static void alloc_mpi_space() {
+#if NRNMPI
+    if (!spikeout_) {
+        ocapacity_  = 100;
+        spikeout_ = (NRNMPI_Spike*)emalloc(ocapacity_*sizeof(NRNMPI_Spike));
+        icapacity_  = 100;
+        spikein_ = (NRNMPI_Spike*)malloc(icapacity_*sizeof(NRNMPI_Spike));
+        nin_ = (int*)emalloc(nrnmpi_numprocs*sizeof(int));
+#if nrn_spikebuf_size > 0
+spbufout_ = (NRNMPI_Spikebuf*)emalloc(sizeof(NRNMPI_Spikebuf));
+spbufin_ = (NRNMPI_Spikebuf*)emalloc(nrnmpi_numprocs*sizeof(NRNMPI_Spikebuf));
+#endif
+#endif
+    }
+}
 
 NetParEvent::NetParEvent(){
   wx_ = ws_ = 0.;
@@ -234,7 +240,7 @@ static int nrn_need_npe() {
 void nrn_spike_exchange_init() {
 //printf("nrn_spike_exchange_init\n");
 	if (!nrn_need_npe()) { return; }
-	alloc_space();
+    alloc_mpi_space();
 //printf("nrnmpi_use=%d active=%d\n", nrnmpi_use, active_);
     std::map<int, InputPreSyn*>::iterator gid2in_it;
 	usable_mindelay_ = mindelay_;
@@ -366,6 +372,10 @@ void nrn_spike_exchange(NrnThread* nt) {
             if (gid2in_it != gid2in.end()) {
                 InputPreSyn* ps = gid2in_it->second;
                 ps->send(spbufin_[i].spiketime[j], net_cvode_instance, nt);
+#if COLLECT_TQueue_STATISTICS
+                /// TQueue::qtype::spike = 1
+                net_cvode_instance->p[nt->id].tqe_->record_stat_event(1, spbufin_[i].spiketime[j]);
+#endif
 #if NRNSTAT
 				++nrecv_useful_;
 #endif
@@ -379,6 +389,10 @@ void nrn_spike_exchange(NrnThread* nt) {
         if (gid2in_it != gid2in.end()) {
             InputPreSyn* ps = gid2in_it->second;
 			ps->send(spikein_[i].spiketime, net_cvode_instance, nt);
+#if COLLECT_TQueue_STATISTICS
+            /// TQueue::qtype::spike = 1
+            net_cvode_instance->p[nt->id].tqe_->record_stat_event(1, spikein_[i].spiketime);
+#endif
 #if NRNSTAT
 			++nrecv_useful_;
 #endif
@@ -468,6 +482,10 @@ void nrn_spike_exchange_compressed(NrnThread* nt) {
             if (gid2in_it != gps.end()) {
                 InputPreSyn* ps = gid2in_it->second;
 				ps->send(firetime + 1e-10, net_cvode_instance, nt);
+ #if COLLECT_TQueue_STATISTICS
+                /// TQueue::qtype::spike = 1
+                net_cvode_instance->p[nt->id].tqe_->record_stat_event(1, firetime + 1e-10);
+#endif
 #if NRNSTAT
 				++nrecv_useful_;
 #endif
@@ -481,6 +499,10 @@ void nrn_spike_exchange_compressed(NrnThread* nt) {
             if (gid2in_it != gps.end()) {
                 InputPreSyn* ps = gid2in_it->second;
 				ps->send(firetime+1e-10, net_cvode_instance, nt);
+#if COLLECT_TQueue_STATISTICS
+                /// TQueue::qtype::spike = 1
+                net_cvode_instance->p[nt->id].tqe_->record_stat_event(1, firetime + 1e-10);
+#endif
 #if NRNSTAT
 				++nrecv_useful_;
 #endif
@@ -640,123 +662,8 @@ void nrn_fake_fire(int gid, double spiketime, int fake_out) {
 }
 
 
-void netpar_tid_gid2ps_alloc(int nth) {
-  // nth is same as ngroup in nrn_setup.cpp, not necessarily nrn_nthread.
-  neg_gid2out.resize(nth);
-}
-
-void netpar_tid_gid2ps_free() {
-  neg_gid2out.clear();
-}
-
-void netpar_tid_gid2ps(int tid, int gid, PreSyn** ps, InputPreSyn** psi){
-  /// for gid < 0 returns the PreSyn* in the thread (tid) specific map.
-  *ps = NULL;
-  *psi = NULL;
-  std::map<int, PreSyn*>::iterator gid2out_it;
-  if (gid >= 0) {
-      gid2out_it = gid2out.find(gid);
-      if (gid2out_it != gid2out.end()) {
-        *ps = gid2out_it->second;
-      }else{
-        std::map<int, InputPreSyn*>::iterator gid2in_it;
-        gid2in_it = gid2in.find(gid);
-        if (gid2in_it != gid2in.end()) {
-          *psi = gid2in_it->second;
-        }
-      }
-  }else{
-    gid2out_it = neg_gid2out[tid].find(gid);
-    if (gid2out_it != neg_gid2out[tid].end()) {
-      *ps = gid2out_it->second;
-    }
-  }
-}
-  
-void netpar_tid_set_gid2node(int tid, int gid, int nid, PreSyn* ps) {
-  if (gid >= 0) {
-      /// Allocate space for spikes: 200 structs of {int gid; double time}
-      /// coming from nrnmpi.h and array of int of the global domain size
-      alloc_space();
-#if NRNMPI
-      if (nid == nrnmpi_myid) {
-#else
-      {
-#endif
-          char m[200];
-          if (gid2in.find(gid) != gid2in.end()) {
-              sprintf(m, "gid=%d already exists as an input port", gid);
-              hoc_execerror(m, "Setup all the output ports on this process before using them as input ports.");
-          }
-          if (gid2out.find(gid) != gid2out.end()) {
-              sprintf(m, "gid=%d already exists on this process as an output port", gid);
-              hoc_execerror(m, 0);
-          }
-          gid2out[gid] = ps;
-          ps->gid_ = gid;
-          ps->output_index_ = gid;
-      }
-  }else{
-    nrn_assert(nid == nrnmpi_myid);
-    nrn_assert(neg_gid2out[tid].find(gid) == neg_gid2out[tid].end());
-    neg_gid2out[tid][gid] = ps;
-  }
-}
-
-
-void nrn_reset_gid2out(void) {
-  gid2out.clear();
-}
-
-void nrn_reset_gid2in(void) {
-  gid2in.clear();
-}
-
-static void alloc_space() {
-#if NRNMPI
-	if (!spikeout_) {
-		ocapacity_  = 100;
-		spikeout_ = (NRNMPI_Spike*)emalloc(ocapacity_*sizeof(NRNMPI_Spike));
-		icapacity_  = 100;
-		spikein_ = (NRNMPI_Spike*)malloc(icapacity_*sizeof(NRNMPI_Spike));
-		nin_ = (int*)emalloc(nrnmpi_numprocs*sizeof(int));
-#if nrn_spikebuf_size > 0
-spbufout_ = (NRNMPI_Spikebuf*)emalloc(sizeof(NRNMPI_Spikebuf));
-spbufin_ = (NRNMPI_Spikebuf*)emalloc(nrnmpi_numprocs*sizeof(NRNMPI_Spikebuf));
-#endif
-#endif
-	}
-}
-
-
 void nrn_cleanup_presyn(DiscreteEvent*) {
     // for multi-send, need to cleanup the list of hosts here
-}
-
-
-int input_gid_register(int gid) {
-	alloc_space();
-    if (gid2out.find(gid) != gid2out.end()) {
-		return 0;
-    }else if (gid2in.find(gid) != gid2in.end()) {
-		return 0;
-	}
-    gid2in[gid] = NULL;
-	return 1;
-}
-
-int input_gid_associate(int gid, InputPreSyn* psi) {
-    std::map<int, InputPreSyn*>::iterator gid2in_it;
-    gid2in_it = gid2in.find(gid);
-    if (gid2in_it != gid2in.end()) {
-        if (gid2in_it->second) {
-			return 0;
-		}
-        gid2in_it->second = psi;
-                psi->gid_ = gid;
-		return 1;
-	}
-	return 0;
 }
 
 
@@ -943,25 +850,5 @@ printf("Notice: gid compression did not succeed. Probably more than 255 cells on
 #else
 	return 0;
 #endif
-}
-
-
-/// Approximate count of number of bytes for the gid2out map
-size_t output_presyn_size(void) {
-  if (gid2out.empty()) { return 0; }
-  size_t nbyte = sizeof(gid2out) + sizeof(int)*gid2out.size() + sizeof(PreSyn*)*gid2out.size();
-#ifdef DEBUG
-  printf(" gid2out table bytes=~%ld size=%d\n", nbyte, gid2out.size());
-#endif
-  return nbyte;
-}
-
-size_t input_presyn_size(void) {
-  if (gid2in.empty()) { return 0; }
-  size_t nbyte = sizeof(gid2in) + sizeof(int)*gid2in.size() + sizeof(InputPreSyn*)*gid2in.size();
-#ifdef DEBUG
-  printf(" gid2in table bytes=~%ld size=%d\n", nbyte, gid2in->size());
-#endif
-  return nbyte;
 }
 

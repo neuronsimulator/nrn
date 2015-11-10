@@ -154,22 +154,30 @@ void TQueue::move(TQItem* i, double tnew) {
     MUTUNLOCK
 }
 
-void TQueue::statistics() {
 #if COLLECT_TQueue_STATISTICS
+void TQueue::statistics() {
     printf("insertions=%lu  moves=%lu removals=%lu calls to least=%lu\n",
         ninsert, nmove, nrem, nleast);
     printf("calls to find=%lu\n",
         nfind);
     printf("comparisons=%d\n",
         sptree_->enqcmps);
-#else
-    printf("Turn on COLLECT_TQueue_STATISTICS_ in tqueue.h\n");
-#endif
 }
+
+void TQueue::record_stat_event(int type, double time){
+    if (time_map_events[type].find(time) == time_map_events[type].end())
+        time_map_events[type][time] = 1;
+    else
+        ++time_map_events[type][time];
+}
+#endif
 
 TQItem* TQueue::insert(double tt, void* d) {
     MUTLOCK
+#if COLLECT_TQueue_STATISTICS
     STAT(ninsert);
+    record_stat_event(enq, tt);
+#endif
     TQItem* i = new TQItem;
     i->data_ = d;
     i->t_ = tt;
@@ -197,7 +205,10 @@ TQItem* TQueue::insert(double tt, void* d) {
 
 TQItem* TQueue::enqueue_bin(double td, void* d) {
     MUTLOCK
+#if COLLECT_TQueue_STATISTICS
     STAT(ninsert);
+    record_stat_event(enq, td);
+#endif
     TQItem* i = new TQItem;
     i->data_ = d;
     i->t_ = td;
@@ -208,7 +219,10 @@ TQItem* TQueue::enqueue_bin(double td, void* d) {
 
 void TQueue::remove(TQItem* q) {
     MUTLOCK
+#if COLLECT_TQueue_STATISTICS
     STAT(nrem);
+    record_stat_event(deq, q->t_);
+#endif
     if (q) {
         if (q == least_) {
             if (nrn_use_pq_queue_) {
@@ -244,7 +258,10 @@ TQItem* TQueue::atomic_dq(double tt) {
     MUTLOCK
     if (least_ && least_->t_ <= tt) {
         q = least_;
+#if COLLECT_TQueue_STATISTICS
         STAT(nrem);
+        record_stat_event(enq, tt);
+#endif
         if (nrn_use_pq_queue_) {
 //            int qsize = pq_que.size();
 //            printf("map size: %d\n", msize);

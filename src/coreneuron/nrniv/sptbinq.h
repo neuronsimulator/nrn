@@ -39,6 +39,7 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <assert.h>
 #include <queue>
 #include <vector>
+#include <map>
 #include <utility>
 #include "coreneuron/nrniv/nrnmutdec.h"
 
@@ -106,7 +107,7 @@ public:
 	void enqueue(double tt, TQItem*);
     void shift(double tt) { if (!nrn_use_bin_vec_) assert(!bins_[qpt_]); tt_ = tt; if (++qpt_ >= nbin_) { qpt_ = 0; }}
     TQItem* top() { if (nrn_use_bin_vec_) { if (vec_bins[qpt_].size()) return vec_bins[qpt_].back(); else return NULL; } else return bins_[qpt_]; }
-	TQItem* dequeue();
+    TQItem* dequeue();
 	double tbin() { return tt_; }
 	// for iteration
 	TQItem* first();
@@ -138,11 +139,20 @@ public:
   TQItem* top() { return binq_->top(); }
   void remove(TQItem*);
   void move(TQItem*, double tnew);
+#if COLLECT_TQueue_STATISTICS
   void statistics();
+  void record_stat_event(int type, double time);
+#endif
   int nshift_;
 
   /// Priority queue of vectors for queuing the events. enqueuing for move() and move_least_nolock() is not implemented
   std::priority_queue<TQPair, std::vector<TQPair>, less_time> pq_que;
+  /// Types of queuing statistics
+  enum qtype {enq=0, spike, deq};
+#if COLLECT_TQueue_STATISTICS
+  /// Map for queuing statistics
+  std::map<double, long> time_map_events[3];
+#endif
 
 private:
   double least_t_nolock(){if (least_) { return least_->t_;}else{return 1e15;}}
@@ -157,6 +167,5 @@ private:
   unsigned long ncompare, nleastsrch, nfind, nfindsrch, nmove, nfastmove;
 #endif
 };
-
 
 //#endif

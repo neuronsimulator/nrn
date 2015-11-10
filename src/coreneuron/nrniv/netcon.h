@@ -56,13 +56,7 @@ public:
     double delay_;
     DiscreteEvent* src_; // either a PreSyn or an InputPreSyn or NULL
     Point_process* target_;
-    union {
-        double* weight_;
-        int srcgid_; // only to help InputPreSyn during setup
-        // before weights are read and stored. Saves on transient
-        // memory requirements by avoiding storage of all group file
-        // netcon_srcgid lists. ie. that info is copied into here.
-    } u;
+    double* weight_;
 
 	NetCon();
 	virtual ~NetCon();

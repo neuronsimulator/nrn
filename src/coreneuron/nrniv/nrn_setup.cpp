@@ -28,6 +28,7 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <algorithm>
 #include <iostream>
 #include <vector>
+#include <map>
 
 // file format defined in cooperation with nrncore/src/nrniv/nrnbbcore_write.cpp
 // single integers are ascii one per line. arrays are binary int or double
@@ -121,8 +122,11 @@ static MUTDEC
 static void determine_inputpresyn(void);
 static size_t model_size(void);
 
-static int n_inputpresyn_;
-static InputPreSyn* inputpresyn_; // the global array of instances.
+/// Vector of maps for negative presyns
+std::vector< std::map<int, PreSyn*> > neg_gid2out;
+/// Maps for ouput and input presyns
+std::map<int, PreSyn*> gid2out;
+std::map<int, InputPreSyn*> gid2in;
 
 // InputPreSyn.nc_index_ to + InputPreSyn.nc_cnt_ give the NetCon*
 NetCon** netcon_in_presyn_order_;
@@ -172,6 +176,8 @@ void nrn_read_filesdat(int &ngrp, int * &grp, const char *filesdat)
     fclose( fp );
 }
 
+std::vector<int*> netcon_srcgid;
+
 void nrn_setup(const char *path, const char *filesdat, int byte_swap, int threading) {
 
   /// Number of local cell groups
@@ -194,7 +200,8 @@ void nrn_setup(const char *path, const char *filesdat, int byte_swap, int thread
 
   /// Reserve vector of maps of size ngroup for negative gid-s
   /// std::vector< std::map<int, PreSyn*> > neg_gid2out;
-  netpar_tid_gid2ps_alloc(ngroup);
+  neg_gid2out.resize(ngroup);
+
 
   // bug fix. gid2out is cumulative over all threads and so do not
   // know how many there are til after phase1
@@ -204,7 +211,11 @@ void nrn_setup(const char *path, const char *filesdat, int byte_swap, int thread
   // to later count the required number of InputPreSyn
   /// gid2out - map of output presyn-s
   /// std::map<int, PreSyn*> gid2out;
-  nrn_reset_gid2out();
+  gid2out.clear();
+
+  netcon_srcgid.resize(nrn_nthread);
+  for (int i = 0; i < nrn_nthread; ++i)
+      netcon_srcgid[i] = NULL;
 
   data_reader *file_reader=new data_reader[ngroup];
 
@@ -216,7 +227,6 @@ void nrn_setup(const char *path, const char *filesdat, int byte_swap, int thread
   // fill the netpar::gid2in, and from the number of entries,
   // allocate the process wide InputPreSyn array
   determine_inputpresyn();
-
 
   // read the rest of the gidgroup's data and complete the setup for each
   // thread.
@@ -232,8 +242,6 @@ void nrn_setup(const char *path, const char *filesdat, int byte_swap, int thread
   nrn_mk_table_check(); // was done in nrn_thread_memblist_setup in multicore.c
 
   delete [] file_reader;
-
-  netpar_tid_gid2ps_free();
 
   if (nrn_nthread > 1) {
     // NetCvode construction assumed one thread. Need nrn_nthread instances
@@ -277,7 +285,7 @@ void read_phase1(data_reader &F, NrnThread& nt) {
   /// output_gid has all of output PreSyns, netcon_srcgid is created for NetCons, which might be
   /// 10k times more than output_gid.
   int* output_gid = F.read_array<int>(nt.n_presyn);
-  int* netcon_srcgid = F.read_array<int>(nt.n_netcon);
+  netcon_srcgid[nt.id] = F.read_array<int>(nt.n_netcon);
   F.close();
 
 #if 0
@@ -298,6 +306,9 @@ void read_phase1(data_reader &F, NrnThread& nt) {
 
   for (int i=0; i < nt.n_presyn; ++i) {
     int gid = output_gid[i];
+    if (gid == -1)
+        continue;
+
     // Note that the negative (type, index)
     // coded information goes into the neg_gid2out[tid] hash table.
     // See netpar.cpp for the netpar_tid_... function implementations.
@@ -306,7 +317,25 @@ void read_phase1(data_reader &F, NrnThread& nt) {
 
     MUTLOCK
     /// Put gid into the gid2out hash table with correspondent output PreSyn
-    netpar_tid_set_gid2node(nt.id, gid, nrnmpi_myid, nt.presyns + i);
+    /// Or to the negative PreSyn map
+    PreSyn *ps = nt.presyns + i;
+    if (gid >= 0) {
+        char m[200];
+        if (gid2in.find(gid) != gid2in.end()) {
+            sprintf(m, "gid=%d already exists as an input port", gid);
+            hoc_execerror(m, "Setup all the output ports on this process before using them as input ports.");
+        }
+        if (gid2out.find(gid) != gid2out.end()) {
+            sprintf(m, "gid=%d already exists on this process as an output port", gid);
+            hoc_execerror(m, 0);
+        }
+        gid2out[gid] = ps;
+        ps->gid_ = gid;
+        ps->output_index_ = gid;
+    }else{
+        nrn_assert(neg_gid2out[nt.id].find(gid) == neg_gid2out[nt.id].end());
+        neg_gid2out[nt.id][gid] = ps;
+    }
     MUTUNLOCK
 
     if (gid < 0) {
@@ -315,55 +344,89 @@ void read_phase1(data_reader &F, NrnThread& nt) {
     nt.presyns[i].nt_ = &nt;
   }
   delete [] output_gid;
-  // encode netcon_srcgid_ values in nt.netcons
-  // which allows immediate freeing of that array.
-  for (int i=0; i < nt.n_netcon; ++i) {
-    nt.netcons[i].u.srcgid_ = netcon_srcgid[i];
-    // do not need to worry about negative gid overlap since only use
-    // it to search for PreSyn in this thread.
+}
+
+void netpar_tid_gid2ps(int tid, int gid, PreSyn** ps, InputPreSyn** psi){
+  /// for gid < 0 returns the PreSyn* in the thread (tid) specific map.
+  *ps = NULL;
+  *psi = NULL;
+  std::map<int, PreSyn*>::iterator gid2out_it;
+  if (gid >= 0) {
+      gid2out_it = gid2out.find(gid);
+      if (gid2out_it != gid2out.end()) {
+        *ps = gid2out_it->second;
+      }else{
+        std::map<int, InputPreSyn*>::iterator gid2in_it;
+        gid2in_it = gid2in.find(gid);
+        if (gid2in_it != gid2in.end()) {
+          *psi = gid2in_it->second;
+        }
+      }
+  }else{
+    gid2out_it = neg_gid2out[tid].find(gid);
+    if (gid2out_it != neg_gid2out[tid].end()) {
+      *ps = gid2out_it->second;
+    }
   }
-  delete [] netcon_srcgid;
 }
 
 void determine_inputpresyn() {
-  /// THIS WHOLE FUNCTION NEEDS SERIOUS OPTIMIZATION!
-  // all the output_gid have been registered and associated with PreSyn.
-  // now count the needed InputPreSyn by filling the netpar::gid2in map
-  nrn_reset_gid2in();
+    // allocate the process wide InputPreSyn array
+    // all the output_gid have been registered and associated with PreSyn.
+    // now count the needed InputPreSyn by filling the netpar::gid2in map
+    gid2in.clear();
 
-  // now have to fill the new table
-  int n_psi = 0;
-  for (int ith = 0; ith < nrn_nthread; ++ith) {
+    // now have to fill the new table
+    // do not need to worry about negative gid overlap since only use
+    // it to search for PreSyn in this thread.
+
+    std::vector<InputPreSyn*> inputpresyn_;
+    std::map<int, PreSyn*>::iterator gid2out_it;
+    std::map<int, InputPreSyn*>::iterator gid2in_it;
+
+    for (int ith = 0; ith < nrn_nthread; ++ith) {
     NrnThread& nt = nrn_threads[ith];
+    // associate gid with InputPreSyn and increase PreSyn and InputPreSyn count
+    nt.n_input_presyn = 0;
     for (int i = 0; i < nt.n_netcon; ++i) {
-      int gid = nt.netcons[i].u.srcgid_;
-      if (gid >= 0) {
-        n_psi += input_gid_register(gid);
-      }
-    }
-  }
+        int gid = netcon_srcgid[ith][i];
+        if (gid >= 0) {
+            /// If PreSyn or InputPreSyn is already in the map
+            gid2out_it = gid2out.find(gid);
+            if (gid2out_it != gid2out.end()) {
+                /// Increase PreSyn count
+                ++gid2out_it->second->nc_cnt_;
+                continue;
+            }
+            gid2in_it = gid2in.find(gid);
+            if (gid2in_it != gid2in.end()) {
+                /// Increase InputPreSyn count
+                ++gid2in_it->second->nc_cnt_;
+                continue;
+            }
 
-  n_inputpresyn_ = n_psi;
-  inputpresyn_ = new InputPreSyn[n_psi];
-
-  // associate gid with InputPreSyn
-  n_psi = 0;
-  for (int ith = 0; ith < nrn_nthread; ++ith) {
-    NrnThread& nt = nrn_threads[ith];
-    for (int i = 0; i < nt.n_netcon; ++i) {
-      int gid = nt.netcons[i].u.srcgid_;
-      if (gid >= 0) {
-        n_psi += input_gid_associate(gid, inputpresyn_ + n_psi);
-      }
+            /// Create InputPreSyn and increase its count
+            InputPreSyn* psi = new InputPreSyn;
+            psi->gid_ = gid;
+            ++psi->nc_cnt_;
+            gid2in[gid] = psi;
+            inputpresyn_.push_back(psi);
+            ++nt.n_input_presyn;
+        }
+        else {
+            gid2out_it = neg_gid2out[nt.id].find(gid);
+            if (gid2out_it != neg_gid2out[nt.id].end()) {
+                /// Increase negative PreSyn count
+                ++gid2out_it->second->nc_cnt_;
+            }
+        }
     }
   }
 
   // now, we can opportunistically create the NetCon* pointer array
   // to save some memory overhead for
   // "large number of small array allocation" by
-  // counting the number of NetCons each PreSyn and InputPreSyn point to,
-  // and instead of a NetCon** InputPreSyn.dil_, merely use a
-  // int InputPreSyn.nc_index_ into the pointer array.
+  // counting the number of NetCons each PreSyn and InputPreSyn point to.
   // Conceivably the nt.netcons could become a process global array
   // in which case the NetCon* pointer array could become an integer index
   // array. More speculatively, the index array could be eliminated itself
@@ -379,21 +442,10 @@ void determine_inputpresyn() {
   }
   netcon_in_presyn_order_ = new NetCon*[n_nc];
 
-  // count the NetCon each PreSyn and InputPresyn points to.
-  for (int ith = 0; ith < nrn_nthread; ++ith) {
-    NrnThread& nt = nrn_threads[ith];
-    for (int i = 0; i < nt.n_netcon; ++i) {
-      int gid = nt.netcons[i].u.srcgid_;
-      PreSyn* ps; InputPreSyn* psi;
-      netpar_tid_gid2ps(ith, gid, &ps, &psi);
-      if (ps) {
-        ++ps->nc_cnt_;
-      }else if (psi) {
-        ++psi->nc_cnt_;
-      }
-    }
-  }
   // fill the indices with the offset values and reset the nc_cnt_
+  // such that we use the nc_cnt_ in the following loop to assign the NetCon
+  // to the right place
+  // for PreSyn
   int offset = 0;
   for (int ith = 0; ith < nrn_nthread; ++ith) {
     NrnThread& nt = nrn_threads[ith];
@@ -404,21 +456,22 @@ void determine_inputpresyn() {
       ps.nc_cnt_ = 0;
     }
   }
-  for (int i=0; i < n_inputpresyn_; ++i) {
-    InputPreSyn& psi = inputpresyn_[i];
-    psi.nc_index_ = offset;
-    offset += psi.nc_cnt_;
-    psi.nc_cnt_ = 0;
+  // for InputPreSyn
+  for (size_t i=0; i < inputpresyn_.size(); ++i) {
+    InputPreSyn* psi = inputpresyn_[i];
+    psi->nc_index_ = offset;
+    offset += psi->nc_cnt_;
+    psi->nc_cnt_ = 0;
   }
   // fill the netcon_in_presyn_order and recompute nc_cnt_
   // note that not all netcon_in_presyn will be filled if there are netcon
-  // with no presyn (ie. nc->u.srcgid_ = -1) but that is ok since they are
+  // with no presyn (ie. netcon_srcgid[nt.id][i] = -1) but that is ok since they are
   // only used via ps.nc_index_ and ps.nc_cnt_;
   for (int ith = 0; ith < nrn_nthread; ++ith) {
     NrnThread& nt = nrn_threads[ith];
     for (int i = 0; i < nt.n_netcon; ++i) {
       NetCon* nc = nt.netcons + i;
-      int gid = nc->u.srcgid_;
+      int gid = netcon_srcgid[ith][i];
       PreSyn* ps; InputPreSyn* psi;
       netpar_tid_gid2ps(ith, gid, &ps, &psi);
       if (ps) {
@@ -432,7 +485,17 @@ void determine_inputpresyn() {
       }
     }
   }
+
+  /// Clean up
+  for (int ith = 0; ith < nrn_nthread; ++ith) {
+      if (netcon_srcgid[ith])
+          delete netcon_srcgid[ith];
+  }
+  netcon_srcgid.clear();
+  neg_gid2out.clear();
+  inputpresyn_.clear();
 }
+
 int nrn_soa_padded_size(int cnt, int layout) {
   return coreneuron::soa_padded_size<NRN_SOA_PAD>(cnt, layout);
 }
@@ -499,7 +562,8 @@ inline void mech_layout(data_reader &F, T* data, int cnt, int sz, int layout){
 
 void nrn_cleanup() {
 
-  nrnmpi_gid_clear();
+  gid2in.clear();
+  gid2out.clear();
 
   for (int it = 0; it < nrn_nthread; ++it) {
     NrnThread* nt = nrn_threads + it;
@@ -572,7 +636,6 @@ void nrn_cleanup() {
     free(nt->_ml_list);
   }
 
-  delete [] inputpresyn_;
   delete [] netcon_in_presyn_order_;
 
   nrn_threads_free();
@@ -963,7 +1026,7 @@ void read_phase2(data_reader &F, NrnThread& nt) {
   int iw = 0;
   for (int i=0; i < nnetcon; ++i) {
     NetCon& nc = nt.netcons[i];
-    nc.u.weight_ = nt.weights + iw;
+    nc.weight_ = nt.weights + iw;
     iw += pnt_receive_size[pnttype[i]];
   }
   assert(iw == nweight);
@@ -1061,6 +1124,25 @@ static size_t memb_list_size(NrnThreadMembList* tml) {
   return nbyte;
 }
 
+/// Approximate count of number of bytes for the gid2out map
+size_t output_presyn_size(void) {
+  if (gid2out.empty()) { return 0; }
+  size_t nbyte = sizeof(gid2out) + sizeof(int)*gid2out.size() + sizeof(PreSyn*)*gid2out.size();
+#ifdef DEBUG
+  printf(" gid2out table bytes=~%ld size=%d\n", nbyte, gid2out.size());
+#endif
+  return nbyte;
+}
+
+size_t input_presyn_size(void) {
+  if (gid2in.empty()) { return 0; }
+  size_t nbyte = sizeof(gid2in) + sizeof(int)*gid2in.size() + sizeof(InputPreSyn*)*gid2in.size();
+#ifdef DEBUG
+  printf(" gid2in table bytes=~%ld size=%d\n", nbyte, gid2in->size());
+#endif
+  return nbyte;
+}
+
 size_t model_size(void) {
   size_t nbyte = 0;
   size_t szd = sizeof(double);
@@ -1068,9 +1150,9 @@ size_t model_size(void) {
   size_t szv = sizeof(void*);
   size_t sz_th = sizeof(NrnThread);
   size_t sz_ps = sizeof(PreSyn);
-  size_t sz_pp = sizeof(Point_process);
-  size_t sz_nc = sizeof(NetCon);
   size_t sz_psi = sizeof(InputPreSyn);
+  size_t sz_nc = sizeof(NetCon);
+  size_t sz_pp = sizeof(Point_process);
   NrnThreadMembList* tml;
   size_t nccnt = 0;
 
@@ -1096,14 +1178,14 @@ size_t model_size(void) {
     printf("ndata=%ld nidata=%ld nvdata=%ld\n", nt._ndata, nt._nidata, nt._nvdata);
     printf("nbyte so far %ld\n", nb_nt);
     printf("n_presyn = %d sz=%ld nbyte=%ld\n", nt.n_presyn, sz_ps, nt.n_presyn*sz_ps);
+    printf("n_input_presyn = %d sz=%ld nbyte=%ld\n", nt.n_input_presyn, sz_psi, nt.n_input_presyn*sz_psi);
     printf("n_pntproc=%d sz=%ld nbyte=%ld\n", nt.n_pntproc, sz_pp, nt.n_pntproc*sz_pp);
     printf("n_netcon=%d sz=%ld nbyte=%ld\n", nt.n_netcon, sz_nc, nt.n_netcon*sz_nc);
     printf("n_weight = %d\n", nt.n_weight);
 #endif
 
     // spike handling
-    nb_nt += nt.n_pntproc*sz_pp + nt.n_netcon*sz_nc + nt.n_presyn*sz_ps
-             + nt.n_weight*szd;
+    nb_nt += nt.n_pntproc*sz_pp + nt.n_netcon*sz_nc + nt.n_presyn*sz_ps + nt.n_input_presyn*sz_psi + nt.n_weight*szd;
     nbyte += nb_nt;
 #ifdef DEBUG
     printf("%d thread %d total bytes %ld\n", nrnmpi_myid, i, nb_nt);
@@ -1111,10 +1193,9 @@ size_t model_size(void) {
   }
 
 #ifdef DEBUG
-  printf("%d n_inputpresyn=%d sz=%ld nbyte=%ld\n", nrnmpi_myid, n_inputpresyn_, sz_psi, n_inputpresyn_*sz_psi);
   printf("%d netcon pointers %ld  nbyte=%ld\n", nrnmpi_myid, nccnt, nccnt*sizeof(NetCon*));
 #endif
-  nbyte += n_inputpresyn_*sz_psi + nccnt*sizeof(NetCon*);
+  nbyte += nccnt*sizeof(NetCon*);
   nbyte += output_presyn_size();
   nbyte += input_presyn_size();
 

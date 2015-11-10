@@ -24,6 +24,8 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/nrniv/nrniv_decl.h"
 #include "coreneuron/nrniv/output_spikes.h"
 #include "coreneuron/nrniv/nrn_assert.h"
+#include <vector>
+#include <map>
 
 #define PP2NT(pp) (nrn_threads + (pp)->_tid)
 #define PP2t(pp) (PP2NT(pp)->_t)
@@ -34,7 +36,6 @@ typedef void (*ReceiveFunc)(Point_process*, double*, double);
 double NetCvode::eps_;
 NetCvode* net_cvode_instance;
 int cvode_active_;
-int nrn_use_selfqueue_;
 
 /// We can now use atl priority queue instead of the splay tree, which will make all splay tree related data structures obsolete.
 /// Also, we can use bin queue based on the vector implementation. For this, both nrn_use_bin_queue_ and nrn_use_bin_vec_
@@ -292,10 +293,10 @@ void NetCvode::init_events() {
 			if (d->target_) {
 				int type = d->target_->_type;
 				if (pnt_receive_init[type]) {
-(*pnt_receive_init[type])(d->target_, d->u.weight_, 0);
+(*pnt_receive_init[type])(d->target_, d->weight_, 0);
 				}else{
 					int cnt = pnt_receive_size[type]; 
-					double* wt = d->u.weight_;
+                    double* wt = d->weight_;
 					//not the first
 					for (int j = 1; j < cnt; ++j) {
 						wt[j] = 0.;
@@ -365,7 +366,7 @@ DiscreteEvent::DiscreteEvent() {}
 DiscreteEvent::~DiscreteEvent() {}
 
 NetCon::NetCon() {
-	active_ = false; u.weight_ = NULL;
+    active_ = false; weight_ = NULL;
 	src_  = NULL; target_ = NULL;
 	delay_ = 1.0;
 }
@@ -466,7 +467,7 @@ void NetCon::deliver(double tt, NetCvode* ns, NrnThread* nt) {
 	nt->_t = tt;
 
 //printf("NetCon::deliver t=%g tt=%g %s\n", t, tt, pnt_name(target_));
-	POINT_RECEIVE(typ, target_, u.weight_, 0);
+    POINT_RECEIVE(typ, target_, weight_, 0);
 #ifdef DEBUG
 	if (errno) {
 		if (nrn_errno_check(typ)) {
@@ -615,13 +616,15 @@ void NetCvode::deliver_net_events(NrnThread* nt) { // for default method
 #if PRINT_EVENT
 if (print_event_) {db->pr("binq deliver", nrn_threads->_t, this);}
 #endif
+#if COLLECT_TQueue_STATISTICS
+            /// TQueue::qtype::deq = 2
+            p[tid].tqe_->record_stat_event(2, q->t_);
+#endif
 			delete q;
 			db->deliver(nt->_t, this, nt);
 		}
 //		assert(int(tm/nt->_dt)%1000 == p[tid].tqe_->nshift_);
 	}
-
-
 
     deliver_events(tm, nt);
 
