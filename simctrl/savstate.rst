@@ -115,7 +115,7 @@ SaveState
         not change the state of the sections. (That is done with 
         \ ``.restore()``). This function opens the file defined 
         by the File object. On return the file is closed unless 
-        the second arg exists and is 1. 
+        the second arg exists and is 0. 
          
         Warning: file format depends on what 
         mechanisms are available in the executable and the order 
