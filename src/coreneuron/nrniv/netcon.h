@@ -52,11 +52,10 @@ public:
 
 class NetCon : public DiscreteEvent {
 public:
-    bool active_;
-    double delay_;
-    DiscreteEvent* src_; // either a PreSyn or an InputPreSyn or NULL
     Point_process* target_;
+    double delay_;
     double* weight_;
+    bool active_;
 
 	NetCon();
 	virtual ~NetCon();
@@ -86,29 +85,29 @@ private:
 
 class ConditionEvent : public DiscreteEvent {
 public:
-	// condition detection factored out of PreSyn for re-use
-	ConditionEvent();
-	virtual ~ConditionEvent();
-	virtual void check(NrnThread*, double sendtime, double teps = 0.0);
-	virtual double value() { return -1.; }
+    // condition detection factored out of PreSyn for re-use
+    ConditionEvent();
+    virtual ~ConditionEvent();
+    virtual void check(NrnThread*, double sendtime, double teps = 0.0);
+    virtual double value() { return -1.; }
 
-	bool flag_; // true when below, false when above.
+    bool flag_; // true when below, false when above.
 };
 
 
 class PreSyn : public ConditionEvent {
 public:
-#if NRNMPI
-    unsigned char localgid_; // compressed gid for spike transfer
-#endif
+    Point_process* pntsrc_; /// Needed for prcellstate currently
+    NrnThread* nt_;
+    double* thvar_;
+    double threshold_;
     int nc_index_; //replaces dil_, index into global NetCon** netcon_in_presyn_order_ for the current PreSyn
     int nc_cnt_; // how many netcon PreSyn has starting at nc_index_
     int output_index_;
     int gid_;
-    double threshold_;
-    double* thvar_;
-    Point_process* pntsrc_;
-    NrnThread* nt_;
+#if NRNMPI
+    unsigned char localgid_; // compressed gid for spike transfer
+#endif
 
 	PreSyn();
 	virtual ~PreSyn();
@@ -124,7 +123,6 @@ class InputPreSyn : public DiscreteEvent {
 public:
     int nc_index_; //replaces dil_, index into global NetCon** netcon_in_presyn_order_
     int nc_cnt_; // how many netcon starting at nc_index_
-    int gid_;
 
 	InputPreSyn();
 	virtual ~InputPreSyn();

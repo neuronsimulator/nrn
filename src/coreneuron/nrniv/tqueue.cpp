@@ -260,7 +260,7 @@ TQItem* TQueue::atomic_dq(double tt) {
         q = least_;
 #if COLLECT_TQueue_STATISTICS
         STAT(nrem);
-        record_stat_event(enq, tt);
+        record_stat_event(deq, tt);
 #endif
         if (nrn_use_pq_queue_) {
 //            int qsize = pq_que.size();

@@ -13,6 +13,10 @@ WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
 OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
 IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
+#include <algorithm>
+#include <iostream>
+#include <vector>
+#include <map>
 #include "coreneuron/nrnconf.h"
 #include "coreneuron/nrnoc/multicore.h"
 #include "coreneuron/nrniv/nrniv_decl.h"
@@ -25,10 +29,7 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/nrniv/nrnmutdec.h"
 #include "coreneuron/nrniv/memory.h"
 #include "coreneuron/nrniv/nrn_setup.h"
-#include <algorithm>
-#include <iostream>
-#include <vector>
-#include <map>
+#include "coreneuron/nrniv/nrnoptarg.h"
 
 // file format defined in cooperation with nrncore/src/nrniv/nrnbbcore_write.cpp
 // single integers are ascii one per line. arrays are binary int or double
@@ -119,7 +120,6 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #endif
 
 static MUTDEC
-static void determine_inputpresyn(void);
 static size_t model_size(void);
 
 /// Vector of maps for negative presyns
@@ -128,8 +128,11 @@ std::vector< std::map<int, PreSyn*> > neg_gid2out;
 std::map<int, PreSyn*> gid2out;
 std::map<int, InputPreSyn*> gid2in;
 
-// InputPreSyn.nc_index_ to + InputPreSyn.nc_cnt_ give the NetCon*
-NetCon** netcon_in_presyn_order_;
+/// InputPreSyn.nc_index_ to + InputPreSyn.nc_cnt_ give the NetCon*
+std::vector<NetCon*> netcon_in_presyn_order_;
+
+/// Only for setup vector of netcon source gids
+std::vector<int*> netcon_srcgid;
 
 // Wrap read_phase1 and read_phase2 calls to allow using  nrn_multithread_job.
 // Args marshaled by store_phase_args are used by phase1_wrapper
@@ -175,105 +178,6 @@ void nrn_read_filesdat(int &ngrp, int * &grp, const char *filesdat)
 
     fclose( fp );
 }
-
-std::vector<int*> netcon_srcgid;
-
-void nrn_setup(const char *path, const char *filesdat, int byte_swap, int threading) {
-
-  /// Number of local cell groups
-  int ngroup = 0;
-
-  /// Array of cell group numbers (indices)
-  int *gidgroups = NULL;
-
-  double time = nrnmpi_wtime(); 
-
-  nrn_read_filesdat(ngroup, gidgroups, filesdat);
-
-  assert(ngroup > 0);
-  MUTCONSTRUCT(1)
-  // temporary bug work around. If any process has multiple threads, no
-  // process can have a single thread. So, for now, if one thread, make two.
-  // Fortunately, empty threads work fine.
-  /// Allocate NrnThread* nrn_threads of size ngroup (minimum 2)
-  nrn_threads_create(ngroup == 1?2:ngroup, threading); // serial/parallel threads
-
-  /// Reserve vector of maps of size ngroup for negative gid-s
-  /// std::vector< std::map<int, PreSyn*> > neg_gid2out;
-  neg_gid2out.resize(ngroup);
-
-
-  // bug fix. gid2out is cumulative over all threads and so do not
-  // know how many there are til after phase1
-  // A process's complete set of output gids and allocation of each thread's
-  // nt.presyns and nt.netcons arrays.
-  // Generates the gid2out map which is needed
-  // to later count the required number of InputPreSyn
-  /// gid2out - map of output presyn-s
-  /// std::map<int, PreSyn*> gid2out;
-  gid2out.clear();
-
-  netcon_srcgid.resize(nrn_nthread);
-  for (int i = 0; i < nrn_nthread; ++i)
-      netcon_srcgid[i] = NULL;
-
-  data_reader *file_reader=new data_reader[ngroup];
-
-  /* nrn_multithread_job supports serial, pthread, and openmp. */
-  store_phase_args(ngroup, gidgroups, file_reader, path, byte_swap);
-  coreneuron::phase_wrapper<(coreneuron::phase)1>(); /// If not the xlc compiler, it should be coreneuron::phase::one
-
-  // from the netpar::gid2out map and the netcon_srcgid array,
-  // fill the netpar::gid2in, and from the number of entries,
-  // allocate the process wide InputPreSyn array
-  determine_inputpresyn();
-
-  // read the rest of the gidgroup's data and complete the setup for each
-  // thread.
-  /* nrn_multithread_job supports serial, pthread, and openmp. */
-  coreneuron::phase_wrapper<(coreneuron::phase)2>();
-
-  /// Generally, tables depend on a few parameters. And if those parameters change,
-  /// then the table needs to be recomputed. This is obviously important in NEURON
-  /// since the user can change those parameters at any time. However, there is no
-  /// c example for CoreNEURON so can't see what it looks like in that context.
-  /// Boils down to setting up a function pointer of the function _check_table_thread(),
-  /// which is only executed by StochKV.c.
-  nrn_mk_table_check(); // was done in nrn_thread_memblist_setup in multicore.c
-
-  delete [] file_reader;
-
-  if (nrn_nthread > 1) {
-    // NetCvode construction assumed one thread. Need nrn_nthread instances
-    // of NetCvodeThreadData
-    nrn_p_construct();
-  }
-
-  model_size();
-  delete []gidgroups;
-
-  if ( nrnmpi_myid == 0 ) {
-	  printf( " Nrn Setup Done (time: %g)\n", nrnmpi_wtime() - time );
-  }
-
-}
-
-void setup_ThreadData(NrnThread& nt) {
-  for (NrnThreadMembList* tml = nt.tml; tml; tml = tml->next) {
-    Memb_func& mf = memb_func[tml->index];
-    Memb_list* ml = tml->ml;
-    if (mf.thread_size_) {
-      ml->_thread = (ThreadDatum*)ecalloc(mf.thread_size_, sizeof(ThreadDatum));
-      if (mf.thread_mem_init_) {
-        MUTLOCK
-        (*mf.thread_mem_init_)(ml->_thread);
-        MUTUNLOCK
-      }
-    }
-    else ml->_thread = NULL;
-  }
-}
-
 
 void read_phase1(data_reader &F, NrnThread& nt) {
   nt.n_presyn = F.read_int(); /// Number of PreSyn-s in NrnThread nt
@@ -346,7 +250,7 @@ void read_phase1(data_reader &F, NrnThread& nt) {
   delete [] output_gid;
 }
 
-void netpar_tid_gid2ps(int tid, int gid, PreSyn** ps, InputPreSyn** psi){
+void netpar_tid_gid2ps(int tid, int gid, PreSyn** ps, InputPreSyn** psi) {
   /// for gid < 0 returns the PreSyn* in the thread (tid) specific map.
   *ps = NULL;
   *psi = NULL;
@@ -407,7 +311,6 @@ void determine_inputpresyn() {
 
             /// Create InputPreSyn and increase its count
             InputPreSyn* psi = new InputPreSyn;
-            psi->gid_ = gid;
             ++psi->nc_cnt_;
             gid2in[gid] = psi;
             inputpresyn_.push_back(psi);
@@ -440,7 +343,8 @@ void determine_inputpresyn() {
   for (int ith = 0; ith < nrn_nthread; ++ith) {
     n_nc += nrn_threads[ith].n_netcon;
   }
-  netcon_in_presyn_order_ = new NetCon*[n_nc];
+  netcon_in_presyn_order_.resize(n_nc);
+  n_nc = 0;
 
   // fill the indices with the offset values and reset the nc_cnt_
   // such that we use the nc_cnt_ in the following loop to assign the NetCon
@@ -463,6 +367,8 @@ void determine_inputpresyn() {
     offset += psi->nc_cnt_;
     psi->nc_cnt_ = 0;
   }
+  inputpresyn_.clear();
+
   // fill the netcon_in_presyn_order and recompute nc_cnt_
   // note that not all netcon_in_presyn will be filled if there are netcon
   // with no presyn (ie. netcon_srcgid[nt.id][i] = -1) but that is ok since they are
@@ -476,24 +382,128 @@ void determine_inputpresyn() {
       netpar_tid_gid2ps(ith, gid, &ps, &psi);
       if (ps) {
         netcon_in_presyn_order_[ps->nc_index_ + ps->nc_cnt_] = nc;
-        nc->src_ = ps; // maybe nc->src_ is not needed
         ++ps->nc_cnt_;
+        ++n_nc;
       }else if (psi) {
         netcon_in_presyn_order_[psi->nc_index_ + psi->nc_cnt_] = nc;
-        nc->src_ = psi; // maybe nc->src_ is not needed
         ++psi->nc_cnt_;
+        ++n_nc;
       }
     }
   }
 
-  /// Clean up
-  for (int ith = 0; ith < nrn_nthread; ++ith) {
-      if (netcon_srcgid[ith])
-          delete netcon_srcgid[ith];
+  /// Resize the vector to its actual size of the netcons put in it
+  netcon_in_presyn_order_.resize(n_nc);
+}
+
+/// Clean up
+void setup_cleanup() {
+    for (int ith = 0; ith < nrn_nthread; ++ith) {
+        if (netcon_srcgid[ith])
+            delete [] netcon_srcgid[ith];
+    }
+    netcon_srcgid.clear();
+    neg_gid2out.clear();
+}
+
+void nrn_setup(cn_input_params& input_params, const char *filesdat, int byte_swap) {
+
+  /// Number of local cell groups
+  int ngroup = 0;
+
+  /// Array of cell group numbers (indices)
+  int *gidgroups = NULL;
+
+  double time = nrnmpi_wtime();
+
+  nrn_read_filesdat(ngroup, gidgroups, filesdat);
+
+  assert(ngroup > 0);
+  MUTCONSTRUCT(1)
+  // temporary bug work around. If any process has multiple threads, no
+  // process can have a single thread. So, for now, if one thread, make two.
+  // Fortunately, empty threads work fine.
+  /// Allocate NrnThread* nrn_threads of size ngroup (minimum 2)
+  nrn_threads_create(ngroup == 1?2:ngroup, input_params.threading); // serial/parallel threads
+
+  /// Reserve vector of maps of size ngroup for negative gid-s
+  /// std::vector< std::map<int, PreSyn*> > neg_gid2out;
+  neg_gid2out.resize(ngroup);
+
+
+  // bug fix. gid2out is cumulative over all threads and so do not
+  // know how many there are til after phase1
+  // A process's complete set of output gids and allocation of each thread's
+  // nt.presyns and nt.netcons arrays.
+  // Generates the gid2out map which is needed
+  // to later count the required number of InputPreSyn
+  /// gid2out - map of output presyn-s
+  /// std::map<int, PreSyn*> gid2out;
+  gid2out.clear();
+
+  netcon_srcgid.resize(nrn_nthread);
+  for (int i = 0; i < nrn_nthread; ++i)
+      netcon_srcgid[i] = NULL;
+
+  data_reader *file_reader=new data_reader[ngroup];
+
+  /* nrn_multithread_job supports serial, pthread, and openmp. */
+  store_phase_args(ngroup, gidgroups, file_reader, input_params.datpath, byte_swap);
+  coreneuron::phase_wrapper<(coreneuron::phase)1>(); /// If not the xlc compiler, it should be coreneuron::phase::one
+
+  // from the gid2out map and the netcon_srcgid array,
+  // fill the gid2in, and from the number of entries,
+  // allocate the process wide InputPreSyn array
+  determine_inputpresyn();
+
+  // read the rest of the gidgroup's data and complete the setup for each
+  // thread.
+  /* nrn_multithread_job supports serial, pthread, and openmp. */
+  coreneuron::phase_wrapper<(coreneuron::phase)2>();
+
+  double mindelay = set_mindelay(input_params.maxdelay);
+  input_params.set_mindelay( mindelay );
+  setup_cleanup();
+
+  /// Generally, tables depend on a few parameters. And if those parameters change,
+  /// then the table needs to be recomputed. This is obviously important in NEURON
+  /// since the user can change those parameters at any time. However, there is no
+  /// c example for CoreNEURON so can't see what it looks like in that context.
+  /// Boils down to setting up a function pointer of the function _check_table_thread(),
+  /// which is only executed by StochKV.c.
+  nrn_mk_table_check(); // was done in nrn_thread_memblist_setup in multicore.c
+
+  delete [] file_reader;
+
+  if (nrn_nthread > 1) {
+    // NetCvode construction assumed one thread. Need nrn_nthread instances
+    // of NetCvodeThreadData
+    nrn_p_construct();
   }
-  netcon_srcgid.clear();
-  neg_gid2out.clear();
-  inputpresyn_.clear();
+
+  model_size();
+  delete []gidgroups;
+
+  if ( nrnmpi_myid == 0 ) {
+      printf( " Nrn Setup Done (time: %g)\n", nrnmpi_wtime() - time );
+  }
+
+}
+
+void setup_ThreadData(NrnThread& nt) {
+  for (NrnThreadMembList* tml = nt.tml; tml; tml = tml->next) {
+    Memb_func& mf = memb_func[tml->index];
+    Memb_list* ml = tml->ml;
+    if (mf.thread_size_) {
+      ml->_thread = (ThreadDatum*)ecalloc(mf.thread_size_, sizeof(ThreadDatum));
+      if (mf.thread_mem_init_) {
+        MUTLOCK
+        (*mf.thread_mem_init_)(ml->_thread);
+        MUTUNLOCK
+      }
+    }
+    else ml->_thread = NULL;
+  }
 }
 
 int nrn_soa_padded_size(int cnt, int layout) {
@@ -636,7 +646,7 @@ void nrn_cleanup() {
     free(nt->_ml_list);
   }
 
-  delete [] netcon_in_presyn_order_;
+  netcon_in_presyn_order_.clear();
 
   nrn_threads_free();
 }

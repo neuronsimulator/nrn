@@ -22,9 +22,11 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/nrniv/netcon.h"
 #include "coreneuron/nrnoc/nrnoc_decl.h"
 #include "coreneuron/utils/sdprintf.h"
+#include "coreneuron/nrniv/nrniv_decl.h"
 
 std::map<Point_process*, int> pnt2index; // for deciding if NetCon is to be printed
 static int pntindex; // running count of printed point processes.
+std::map<NetCon*, DiscreteEvent*> map_nc2src;
 
 static void pr_memb(int type, Memb_list* ml, int* cellnodes, NrnThread& nt, FILE* f) {
   int is_art = nrn_is_artificial_[type];
@@ -64,8 +66,10 @@ static void pr_netcon(NrnThread& nt, FILE* f) {
   // pnt2index table has been filled
 
   // List of NetCon for each of the NET_RECEIVE point process instances
+  // Also create the initial map of NetCon <-> DiscreteEvent (PreSyn)
   std::vector< std::vector<NetCon*> > nclist;
   nclist.resize(pntindex);
+  map_nc2src.clear();
   int nc_cnt = 0;
   for (int i=0; i < nt.n_netcon; ++i) {
     NetCon* nc = nt.netcons + i;
@@ -73,21 +77,58 @@ static void pr_netcon(NrnThread& nt, FILE* f) {
     std::map<Point_process*, int>::iterator it = pnt2index.find(pp);
     if (it != pnt2index.end()) {
       nclist[it->second].push_back(nc);
+      map_nc2src[nc] = NULL;
       ++nc_cnt;
     }
   }
   fprintf(f, "netcons %d\n", nc_cnt);
   fprintf(f, " pntindex srcgid active delay weights\n");
+
+    /// Fill the NetCon <-> DiscreteEvent map with PreSyn-s
+  DiscreteEvent* de;
+  std::map<NetCon*, DiscreteEvent*>::iterator it_nc2src;
+  for (int i = 0; i < nt.n_presyn; ++i) {
+      PreSyn* ps = nt.presyns + i;
+      for (int j = 0; j < ps->nc_cnt_; ++j) {
+          NetCon* nc = netcon_in_presyn_order_[ps->nc_index_ + j];
+          it_nc2src = map_nc2src.find(nc);
+          if (it_nc2src != map_nc2src.end()) {
+              it_nc2src->second = ps;
+          }
+      }
+  }
+
+  /// Fill the NetCon <-> DiscreteEvent map with InputPreSyn-s
+  /// Traverse gid <-> InputPreSyn map and loop over NetCon-s of the
+  /// correspondent InputPreSyn. If NetCon is in the nc2src map,
+  /// remember its ips and the gid
+  std::map<NetCon*, int> map_nc2gid;
+  std::map<int, InputPreSyn*>::iterator it_gid2in = gid2in.begin();
+  for (; it_gid2in != gid2in.end(); ++it_gid2in) {
+      InputPreSyn* ips = it_gid2in->second;                           /// input presyn
+      for (int i = 0; i < ips->nc_cnt_; ++i) {
+          NetCon* nc = netcon_in_presyn_order_[ips->nc_index_ + i];
+          it_nc2src = map_nc2src.find(nc);
+          if (it_nc2src != map_nc2src.end()) {
+              it_nc2src->second = ips;
+              map_nc2gid[nc] = it_gid2in->first;                     /// src gid of the input presyn
+          }
+      }
+  }
+
   for (int i=0; i < pntindex; ++i) {
     for (int j=0; j < (int)(nclist[i].size()); ++j) {
       NetCon* nc = nclist[i][j];
       int srcgid = -3;
-      if (nc->src_) {
-        if (nc->src_->type() == PreSynType) {
-          PreSyn* ps = (PreSyn*)nc->src_;
+      it_nc2src = map_nc2src.find(nc);
+      if (it_nc2src != map_nc2src.end()) { // seems like there should be no NetCon which is not in the map
+        de = it_nc2src->second;
+        if (de && de->type() == PreSynType) {
+          PreSyn* ps = (PreSyn*)de;
           srcgid = ps->gid_;
-          if (srcgid < 0 && ps->pntsrc_) {
-            int type = ps->pntsrc_->_type;
+          Point_process* pnt = ps->pntsrc_;
+          if (srcgid < 0 && pnt) {
+            int type = pnt->_type;
             fprintf(f, "%d %s %d %.15g", i, memb_func[type].sym, nc->active_?1:0, nc->delay_);
           }else if (srcgid < 0 && ps->thvar_) {
             fprintf(f, "%d %s %d %.15g", i, "v", nc->active_?1:0, nc->delay_);
@@ -95,8 +136,7 @@ static void pr_netcon(NrnThread& nt, FILE* f) {
             fprintf(f, "%d %d %d %.15g", i, srcgid, nc->active_?1:0, nc->delay_);
           }
         }else{
-          srcgid = ((InputPreSyn*)nc->src_)->gid_;
-          fprintf(f, "%d %d %d %.15g", i, srcgid, nc->active_?1:0, nc->delay_);
+          fprintf(f, "%d %d %d %.15g", i, map_nc2gid[nc], nc->active_?1:0, nc->delay_);
         }
       }else{
         fprintf(f, "%d %d %d %.15g", i, srcgid, nc->active_?1:0, nc->delay_);

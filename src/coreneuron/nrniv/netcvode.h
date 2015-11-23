@@ -28,13 +28,10 @@ struct InterThreadEvent;
 
 class NetCvodeThreadData {
 public:
-    int ite_cnt_;
-    int ite_size_;
     int unreffed_event_cnt_;
     TQueue* tqe_;
-    InterThreadEvent* inter_thread_events_;
+    std::vector<InterThreadEvent*> inter_thread_events_;
     MUTDEC
-    double immediate_deliver_;
 
     NetCvodeThreadData();
     virtual ~NetCvodeThreadData();

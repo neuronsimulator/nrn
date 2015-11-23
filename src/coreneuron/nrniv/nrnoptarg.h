@@ -11,7 +11,7 @@
 #include <getopt.h>
 #include "coreneuron/utils/sdprintf.h"
 
-typedef struct cb_parameters {
+typedef struct cn_parameters {
 
     double tstart; 		/**< start time of simulation in msec*/
     double tstop;		/**< stop time of simulation in msec*/
@@ -37,7 +37,7 @@ typedef struct cb_parameters {
     double mindelay;
 
     /** default constructor */ 
-    cb_parameters();
+    cn_parameters();
 
     /** show help message for command line args */ 
     void show_cb_opts_help();
@@ -56,7 +56,7 @@ typedef struct cb_parameters {
         mindelay = mdelay;
     }
 
-} cb_input_params;
+} cn_input_params;
 
 #endif
 

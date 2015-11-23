@@ -33,9 +33,6 @@ class InputPreSyn;
 static double t_exchange_;
 static double dt1_; // 1/dt
 
-extern std::map<int, PreSyn*> gid2out;
-extern std::map<int, InputPreSyn*> gid2in;
-
 extern "C" {
 extern NetCvode* net_cvode_instance;
 extern double t, dt;
@@ -43,8 +40,6 @@ extern void nrn_fake_fire(int gid, double firetime, int fake_out);
 int nrnmpi_spike_compress(int nspike, bool gid_compress, int xchng_meth);
 void nrn_spike_exchange_init();
 }
-
-static double set_mindelay(double maxdelay);
 
 #if NRNMPI
 
@@ -82,7 +77,6 @@ static void nrn_spike_exchange_compressed(NrnThread*);
 
 static int active_;
 static double usable_mindelay_;
-static double min_interprocessor_delay_;
 static double mindelay_; // the one actually used. Some of our optional algorithms
 static double last_maxstep_arg_;
 static NetParEvent* npe_; // nrn_nthread of them
@@ -661,12 +655,6 @@ void nrn_fake_fire(int gid, double spiketime, int fake_out) {
 
 }
 
-
-void nrn_cleanup_presyn(DiscreteEvent*) {
-    // for multi-send, need to cleanup the list of hosts here
-}
-
-
 static int timeout_ = 0;
 int nrn_set_timeout(int timeout) {
 	int tt;
@@ -677,7 +665,7 @@ int nrn_set_timeout(int timeout) {
 
 void BBS_netpar_solve(double tstop) {
 
-        double time = nrnmpi_wtime();
+    double time = nrnmpi_wtime();
 
 #if NRNMPI
 	double mt, md;
@@ -710,61 +698,57 @@ void BBS_netpar_solve(double tstop) {
     }
 }
 
-static double set_mindelay(double maxdelay) {
-	double mindelay = maxdelay;
-	last_maxstep_arg_ = maxdelay;
+double set_mindelay(double maxdelay) {
+    double mindelay = maxdelay;
+    last_maxstep_arg_ = maxdelay;
 
    // if all==1 then minimum delay of all NetCon no matter the source.
    // except if src in same thread as NetCon
    int all = (nrn_nthread > 1);
    // minumum delay of all NetCon having an InputPreSyn source
    for (int ith = 0; ith < nrn_nthread; ++ith) {
-       NrnThread* nt = nrn_threads + ith;
-       for (int i = 0; i < nt->n_netcon; ++i) {
-           NetCon& nc = nt->netcons[i];
+       NrnThread& nt = nrn_threads[ith];
+       for (int i = 0; i < nt.n_netcon; ++i) {
+           NetCon* nc = nt.netcons + i;
            int chk = 0; // ignore nc.delay_
-           if (nc.src_ && nc.src_->type() == InputPreSynType) {
-               chk = 1;
-           }else if (all) {
+           int gid = netcon_srcgid[ith][i];
+           PreSyn* ps; InputPreSyn* psi;
+           netpar_tid_gid2ps(ith, gid, &ps, &psi);
+           if (psi) {
+                chk = 1;
+           }
+           else if (all) {
                chk = 1;
                // but ignore if src in same thread as NetCon
-               if (nc.src_ && nc.src_->type() == PreSynType
-                   && ((PreSyn*)nc.src_)->nt_ == nt) {
+               if (ps && ps->nt_ == &nt) {
                    chk = 0;
                }
            }
-           if (chk && nc.delay_ < mindelay) {
-                mindelay = nc.delay_;
-           } 
-		}
-	}
+           if (chk && nc->delay_ < mindelay) {
+               mindelay = nc->delay_;
+           }
+       }
+   }
 
 #if NRNMPI
-	if (nrnmpi_use) {active_ = 1;}
-	if (use_compress_) {
-		if (mindelay/dt > 255) {
-			mindelay = 255*dt;
-		}
-	}
+    if (nrnmpi_use) {active_ = 1;}
+    if (use_compress_) {
+        if (mindelay/dt > 255) {
+            mindelay = 255*dt;
+        }
+    }
 
 //printf("%d netpar_mindelay local %g now calling nrnmpi_mindelay\n", nrnmpi_myid, mindelay);
 //	double st = time();
-	mindelay_ = nrnmpi_mindelay(mindelay);
-	min_interprocessor_delay_ = mindelay_;
+    mindelay_ = nrnmpi_mindelay(mindelay);
 //	add_wait_time(st);
 //printf("%d local min=%g  global min=%g\n", nrnmpi_myid, mindelay, mindelay_);
-	errno = 0;
-	return mindelay;
+    errno = 0;
+    return mindelay;
 #else
-	mindelay_ = mindelay;
-	min_interprocessor_delay_ = mindelay_;
-	return mindelay;
+    mindelay_ = mindelay;
+    return mindelay;
 #endif //NRNMPI
-}
-
-double BBS_netpar_mindelay(double maxdelay) {
-	double tt = set_mindelay(maxdelay);
-	return tt;
 }
 
 void BBS_netpar_spanning_statistics(int* nsend, int* nsendmax, int* nrecv, int* nrecv_useful) {

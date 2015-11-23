@@ -14,13 +14,13 @@
 extern int spikevec_size;
 extern NetCvode* net_cvode_instance;
 
-const int NUM_STATS = 7;
-const int NUM_EVENT_TYPES = 2;
-enum event_type {enq=0, spike};
+const int NUM_STATS = 9;
+const int NUM_EVENT_TYPES = 3;
+enum event_type {enq=0, spike, ite};
 
 void report_cell_stats( void )
 {
-    long stat_array[NUM_STATS] = {0,0,0,0,0,0,0}, gstat_array[NUM_STATS];
+    long stat_array[NUM_STATS] = {0,0,0,0,0,0,0,0,0}, gstat_array[NUM_STATS];
 
     for (int ith=0; ith < nrn_nthread; ++ith)
     {
@@ -28,8 +28,9 @@ void report_cell_stats( void )
         stat_array[1] += (long)nrn_threads[ith].n_presyn;        // number of presyns
         stat_array[2] += (long)nrn_threads[ith].n_input_presyn;  // number of input presyns
         stat_array[3] += (long)nrn_threads[ith].n_netcon;        // number of netcons, synapses
+        stat_array[4] += (long)nrn_threads[ith].n_pntproc;        // number of point processes
     }
-    stat_array[4] = (long)spikevec_size;                         // number of spikes
+    stat_array[5] = (long)spikevec_size;                         // number of spikes
 
     /// Event queuing statistics
 #if COLLECT_TQueue_STATISTICS
@@ -61,7 +62,7 @@ void report_cell_stats( void )
                     thread_vec_max_num_events[type][ith].first = mapit->first;
                 }
             }
-            stat_array[5+type] += thread_vec_events[type][ith];     // number of enqueued events and number of spike triggered events (enqueued after spike exchange)
+            stat_array[6+type] += thread_vec_events[type][ith];     // number of enqueued events and number of spike triggered events (enqueued after spike exchange)
         }
     }
 
@@ -103,10 +104,12 @@ void report_cell_stats( void )
         printf(" Number of presyns: %ld\n", gstat_array[1]);
         printf(" Number of input presyns: %ld\n", gstat_array[2]);
         printf(" Number of synapses: %ld\n", gstat_array[3]);
-        printf(" Number of spikes: %ld\n", gstat_array[4]);
+        printf(" Number of point processes: %ld\n", gstat_array[4]);
+        printf(" Number of spikes: %ld\n", gstat_array[5]);
 #if COLLECT_TQueue_STATISTICS
-        printf(" Number of enqueued events: %ld\n", gstat_array[5]);
-        printf(" Number of after-spike enqueued events: %ld\n", gstat_array[6]);
+        printf(" Number of enqueued events: %ld\n", gstat_array[6]);
+        printf(" Number of after-spike enqueued events: %ld\n", gstat_array[7]);
+        printf(" Number of inter-thread enqueued events: %ld\n", gstat_array[8]);
 //        printf(" Maximum difference of time interval enqueued events between threads on a single MPI: %ld\n", gqdiff_max[enq]);
 //        printf(" Maximum difference of time interval spike enqueued events between threads on a single MPI: %ld\n", gqdiff_max[spike]);
 //        printf(" Minimum difference of time interval enqueued events between threads on a single MPI: %ld\n", gqdiff_min[enq]);

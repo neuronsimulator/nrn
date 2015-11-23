@@ -15,6 +15,8 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include <float.h>
+#include <vector>
+#include <map>
 #include "coreneuron/nrnconf.h"
 #include "coreneuron/nrnoc/multicore.h"
 #include "coreneuron/nrnoc/nrnoc_decl.h"
@@ -24,8 +26,6 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/nrniv/nrniv_decl.h"
 #include "coreneuron/nrniv/output_spikes.h"
 #include "coreneuron/nrniv/nrn_assert.h"
-#include <vector>
-#include <map>
 
 #define PP2NT(pp) (nrn_threads + (pp)->_tid)
 #define PP2t(pp) (PP2NT(pp)->_t)
@@ -55,12 +55,12 @@ void mk_netcvode() {
 	}
 }
 
+extern void nrn_outputevent(unsigned char, double);
 extern "C" {
 extern pnt_receive_t* pnt_receive;
 extern pnt_receive_t* pnt_receive_init;
 extern short* nrn_artcell_qindex_;
 extern bool nrn_use_localgid_;
-extern void nrn_outputevent(unsigned char, double);
 extern void nrn2ncs_outputevent(int netcon_output_index, double firetime);
 void net_send(void**, double*, Point_process*, double, double);
 void net_event(Point_process* pnt, double time);
@@ -130,19 +130,15 @@ struct InterThreadEvent {
 	double t_;
 };
 
-#define ITE_SIZE 10
 NetCvodeThreadData::NetCvodeThreadData() {
 	tqe_ = new TQueue();
-	ite_size_ = ITE_SIZE;
-	ite_cnt_ = 0;
 	unreffed_event_cnt_ = 0;
-	immediate_deliver_ = -1e100;
-	inter_thread_events_ = new InterThreadEvent[ite_size_];
+    inter_thread_events_.reserve(1000);
 	MUTCONSTRUCT(1)
 }
 
 NetCvodeThreadData::~NetCvodeThreadData() {
-	delete [] inter_thread_events_;
+    inter_thread_events_.clear();
 	delete tqe_;
 	MUTDESTRUCT
 }
@@ -153,20 +149,12 @@ void NetCvodeThreadData::interthread_send(double td, DiscreteEvent* db, NrnThrea
 	//bin_event(td, db, nt);
 	(void)nt; // avoid unused warning
 	
-	MUTLOCK
-	if(ite_cnt_ >= ite_size_) {
-		ite_size_ *= 2;
-		InterThreadEvent* in = new InterThreadEvent[ite_size_];
-		for (int i=0; i < ite_cnt_; ++i) {
-			in[i].de_ = inter_thread_events_[i].de_;
-			in[i].t_ = inter_thread_events_[i].t_;
-		}
-		delete [] inter_thread_events_;
-		inter_thread_events_ = in;
-	}
-	InterThreadEvent& ite = inter_thread_events_[ite_cnt_++];
-	ite.de_ = db;
-	ite.t_ = td;
+    MUTLOCK
+
+    InterThreadEvent* ite = new InterThreadEvent;
+    ite->de_ = db;
+    ite->t_ = td;
+    inter_thread_events_.push_back(ite);
 
 	/* this is race condition for pthread implementation.
 	 * we are not using cvode in coreneuron and hence 
@@ -180,13 +168,16 @@ void NetCvodeThreadData::interthread_send(double td, DiscreteEvent* db, NrnThrea
 }
 
 void NetCvodeThreadData::enqueue(NetCvode* nc, NrnThread* nt) {
-	int i;
 	MUTLOCK
-	for (i = 0; i < ite_cnt_; ++i) {
-		InterThreadEvent& ite = inter_thread_events_[i];
-		nc->bin_event(ite.t_, ite.de_, nt);
+    for (size_t i = 0; i < inter_thread_events_.size(); ++i) {
+        InterThreadEvent* ite = inter_thread_events_[i];
+        nc->bin_event(ite->t_, ite->de_, nt);
+#if COLLECT_TQueue_STATISTICS
+        /// TQueue::qtype::ite = 2
+        tqe_->record_stat_event(2, ite->t_);
+#endif
 	}
-	ite_cnt_ = 0;
+    inter_thread_events_.clear();
 	MUTUNLOCK
 }
 
@@ -268,8 +259,7 @@ void NetCvode::clear_events() {
 		delete d.tqe_;
 		d.tqe_ = new TQueue();
 		d.unreffed_event_cnt_ = 0;
-		d.immediate_deliver_ = -1e100;
-		d.ite_cnt_ = 0;
+        d.inter_thread_events_.clear();
 		d.tqe_->nshift_ = -1;
         d.tqe_->shift_bin(nrn_threads->_t);
 	}
@@ -367,7 +357,7 @@ DiscreteEvent::~DiscreteEvent() {}
 
 NetCon::NetCon() {
     active_ = false; weight_ = NULL;
-	src_  = NULL; target_ = NULL;
+    target_ = NULL;
 	delay_ = 1.0;
 }
 
@@ -380,7 +370,6 @@ PreSyn::PreSyn() {
 	nc_cnt_ = 0;
 	flag_ = false;
 	thvar_ = NULL;
-	pntsrc_ = NULL;
 	threshold_ = 10.;
 	gid_ = -1;
 	nt_ = NULL;
@@ -391,24 +380,12 @@ PreSyn::PreSyn() {
 InputPreSyn::InputPreSyn() {
 	nc_index_ = -1;
 	nc_cnt_ = 0;
-	gid_ = -1;
 }
 
 PreSyn::~PreSyn() {
-//	printf("~PreSyn %p\n", this);
-	nrn_cleanup_presyn(this);
-	if (thvar_ || pntsrc_) {
-		if (!thvar_) {
-			if (pntsrc_) {
-				pntsrc_ = nil;
-			}
-		}
-	}
 }
 
 InputPreSyn::~InputPreSyn() {
-//	printf("~InputPreSyn %p\n", this);
-	nrn_cleanup_presyn(this);
 }
 
 
@@ -420,6 +397,7 @@ void PreSyn::record(double tt) {
 	++spikevec_size;
 	spikevec_unlock();
 }
+
 
 void ConditionEvent::check(NrnThread* nt, double tt, double teps) {
 	if (value() > 0.0) {
@@ -617,8 +595,8 @@ void NetCvode::deliver_net_events(NrnThread* nt) { // for default method
 if (print_event_) {db->pr("binq deliver", nrn_threads->_t, this);}
 #endif
 #if COLLECT_TQueue_STATISTICS
-            /// TQueue::qtype::deq = 2
-            p[tid].tqe_->record_stat_event(2, q->t_);
+            /// TQueue::qtype::deq = 3
+            p[tid].tqe_->record_stat_event(3, q->t_);
 #endif
 			delete q;
 			db->deliver(nt->_t, this, nt);

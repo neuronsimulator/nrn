@@ -43,8 +43,7 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <utility>
 #include "coreneuron/nrniv/nrnmutdec.h"
 
-#define COLLECT_TQueue_STATISTICS 1
-
+#define COLLECT_TQueue_STATISTICS 0
 #define STRCMP(a, b) (a - b)
 
 class TQItem;
@@ -148,10 +147,10 @@ public:
   /// Priority queue of vectors for queuing the events. enqueuing for move() and move_least_nolock() is not implemented
   std::priority_queue<TQPair, std::vector<TQPair>, less_time> pq_que;
   /// Types of queuing statistics
-  enum qtype {enq=0, spike, deq};
+  enum qtype {enq=0, spike, ite, deq};
 #if COLLECT_TQueue_STATISTICS
   /// Map for queuing statistics
-  std::map<double, long> time_map_events[3];
+  std::map<double, long> time_map_events[4];
 #endif
 
 private:
