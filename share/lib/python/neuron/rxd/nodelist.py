@@ -27,6 +27,7 @@ class NodeList(list):
         if hasattr(value, '__len__'):
             if len(value) == len(self):
                 for node, val in zip(self, value): node.concentration = val
+                return
             else:
                 raise RxDException('concentration must either be a scalar or an iterable of the same length as the NodeList')
         for node in self: node.concentration = value
@@ -41,6 +42,7 @@ class NodeList(list):
         if hasattr(value, '__len__'):
             if len(value) == len(self):
                 for node, val in zip(self, value): node.diff = val
+                return
             else:
                 raise RxDException('diff must either be a scalar or an iterable of the same length as the NodeList')
         for node in self: node.diff = value
