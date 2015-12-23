@@ -595,6 +595,7 @@ AC_CONFIG_FILES([
 	src/nrnjava/neuron/Makefile
 	src/nrnpython/Makefile src/ni_pci_6229/Makefile
 	src/mac/Makefile src/mswin/Makefile src/mswin/batch/Makefile
+	src/mac/macdist.pkgproj src/mac/postinstall.sh
 	src/mswin/nrnsetup.nsi src/mswin/nrncygso.sh src/mswin/lib/mknrndll.mak
 	src/mswin/nrnsetupmingw.nsi
 	src/mswin/EnvVarUpdate.nsh
