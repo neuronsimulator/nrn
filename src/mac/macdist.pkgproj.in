@@ -439,7 +439,7 @@
 			<key>POSTINSTALL_PATH</key>
 			<dict>
 				<key>PATH</key>
-				<string>/Users/hines/nrndist/postinstall.sh</string>
+				<string>@abs_top_builddir@/src/mac/postinstall.sh</string>
 				<key>PATH_TYPE</key>
 				<integer>0</integer>
 			</dict>

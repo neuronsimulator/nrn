@@ -94,6 +94,11 @@ else
   true
 fi
 
+#single click button action for x11 when entering a window
+#focus follows mouse
+sudo -u $USER defaults write org.macosforge.xquartz.X11 wm_ffm -bool true
+echo "defaults write" >> /tmp/temp.tmp
+
 # install XQuartz?
 if /usr/X11/bin/xauth version ; then
   true
