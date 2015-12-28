@@ -899,7 +899,7 @@ def _init():
 _has_nbs_registered = False
 _nbs = None
 def _do_nbs_register():
-    global _has_nbs_registered, _nbs
+    global _has_nbs_registered, _nbs, _fih, _fih2
     
     if not _has_nbs_registered:
         from neuron import nonvint_block_supervisor as _nbs
