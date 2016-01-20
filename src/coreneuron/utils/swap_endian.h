@@ -16,6 +16,9 @@
 #include <immintrin.h>
 #endif
 
+/* required for correct choice of PPC assembly */
+#include "coreneuron/utils/endianness.h"
+
 #if !defined(SWAP_ENDIAN_MAX_UNROLL)
 #define SWAP_ENDIAN_MAX_UNROLL 8
 #endif
@@ -172,7 +175,7 @@ namespace endian {
                 uint32_t v;
                 asm("lwz    %[v],%[ldata]         \n\t"
                     "stwbrx %[v],0,%[sdata]       \n\t"
-                  : [v]"+&r"(v), "+o"(u)
+                  : [v]"=&r"(v), "+o"(u)
                   : [ldata]"o"(u), [sdata]"r"(d)
                   : ); 
             }
@@ -184,16 +187,56 @@ namespace endian {
                 struct chunk_t { unsigned char x[8]; } &u=*(chunk_t *)(void *)d;
 
                 uint64_t v;
-                asm("ld     %[v],%[ldata]         \n\t"
-                    "stwbrx %[v],%[word],%[sdata] \n\t"
-                    "srd    %[v],%[v],%[shift]    \n\t"
-                    "stwbrx %[v],0,%[sdata]       \n\t"
-                  : [v]"+&r"(v), "+o"(u)
-                  : [ldata]"o"(u), [sdata]"r"(d), [word]"b"(4), [shift]"b"(32)
-                  : ); 
+                if (endian::is_big_endian()) {
+                    asm("ld     %[v],%[ldata]         \n\t"
+                        "stwbrx %[v],%[word],%[sdata] \n\t"
+                        "srd    %[v],%[v],%[shift]    \n\t"
+                        "stwbrx %[v],0,%[sdata]       \n\t"
+                      : [v]"=&r"(v), "+o"(u)
+                      : [ldata]"o"(u), [sdata]"r"(d), [word]"b"(4), [shift]"b"(32)
+                      : ); 
+                }
+                else {
+                    asm("ld     %[v],%[ldata]         \n\t"
+                        "stwbrx %[v],0,%[sdata]       \n\t"
+                        "srd    %[v],%[v],%[shift]    \n\t"
+                        "stwbrx %[v],%[word],%[sdata] \n\t"
+                      : [v]"=&r"(v), "+o"(u)
+                      : [ldata]"o"(u), [sdata]"r"(d), [word]"b"(4), [shift]"b"(32)
+                      : ); 
+                }
             }
         };
 
+#if !defined(__POWER8_VECTOR__)
+        // 2.06 ISA does not have stdbrx
+        template <>
+        struct swap_endian_fast<8,1,true> {
+            static void eval(unsigned char *d) {
+                struct chunk_t { unsigned char x[8]; } &u=*(chunk_t *)(void *)d;
+
+                uint64_t v;
+                if (endian::is_big_endian()) {
+                    asm("ld     %[v],%[ldata]         \n\t"
+                        "stwbrx %[v],0,%[sdata]       \n\t"
+                        "srd    %[v],%[v],%[shift]    \n\t"
+                        "stwbrx %[v],%[word],%[sdata] \n\t"
+                      : [v]"=&r"(v), "+o"(u)
+                      : [ldata]"o"(u), [sdata]"r"(d), [word]"b"(4), [shift]"b"(32)
+                      : ); 
+                }
+                else {
+                    asm("ld     %[v],%[ldata]         \n\t"
+                        "stwbrx %[v],%[word],%[sdata] \n\t"
+                        "srd    %[v],%[v],%[shift]    \n\t"
+                        "stwbrx %[v],0,%[sdata]       \n\t"
+                      : [v]"=&r"(v), "+o"(u)
+                      : [ldata]"o"(u), [sdata]"r"(d), [word]"b"(4), [shift]"b"(32)
+                      : ); 
+                }
+            }
+        };
+#else
         template <>
         struct swap_endian_fast<8,1,true> {
             static void eval(unsigned char *d) {
@@ -201,14 +244,14 @@ namespace endian {
 
                 uint64_t v;
                 asm("ld     %[v],%[ldata]         \n\t"
-                    "stwbrx %[v],0,%[sdata]       \n\t"
-                    "srd    %[v],%[v],%[shift]    \n\t"
-                    "stwbrx %[v],%[word],%[sdata] \n\t"
-                  : [v]"+&r"(v), "+o"(u)
-                  : [ldata]"o"(u), [sdata]"r"(d), [word]"b"(4), [shift]"b"(32)
+                    "stdbrx %[v],0,%[sdata]       \n\t"
+                  : [v]"=&r"(v), "+o"(u)
+                  : [ldata]"o"(u), [sdata]"r"(d)
                   : ); 
             }
         };
+
+#endif
 #endif
 
 #if !defined(SWAP_ENDIAN_DISABLE_ASM) && defined(__SSSE3__)

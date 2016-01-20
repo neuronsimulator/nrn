@@ -65,8 +65,8 @@ extern size_t nrnran123_state_size(void);
 /* minimal data stream */
 extern nrnran123_State* nrnran123_newstream(uint32_t id1, uint32_t id2);
 extern void nrnran123_deletestream(nrnran123_State*);
-extern void nrnran123_getseq(nrnran123_State*, uint32_t* seq, char* which);
-extern void nrnran123_setseq(nrnran123_State*, uint32_t seq, char which);
+extern void nrnran123_getseq(nrnran123_State*, uint32_t* seq, unsigned char* which);
+extern void nrnran123_setseq(nrnran123_State*, uint32_t seq, unsigned char which);
 extern void nrnran123_getids(nrnran123_State*, uint32_t* id1, uint32_t* id2);
 extern uint32_t nrnran123_ipick(nrnran123_State*); /* uniform 0 to 2^32-1 */
 extern double nrnran123_dblpick(nrnran123_State*); /* uniform open interval (0,1)*/
