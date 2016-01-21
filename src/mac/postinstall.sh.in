@@ -2,7 +2,13 @@
 
 echo "" > /tmp/temp.tmp
 
-bp=$HOME/.bash_profile
+#Use .bashrc if it exists, otherwise .bash_profile
+b=.bashrc
+if test ! -f "$HOME/$b" ; then
+  b=.bash_profile
+fi
+bp=$HOME/$b
+
 idir=/Applications/NEURON-@PACKAGE_VERSION@
 
 # if cannot find nrniv, then perhaps modify PATH
@@ -29,7 +35,7 @@ echo "addpath=$addpath" >> /tmp/temp.tmp
 if test "$addpath" = "yes" ; then
 a=`osascript -e 'tell app "Installer" to display dialog "
 Modify PATH to allow launching nrniv from Terminal?
-  ... will append a line to  $HOME/.bash_profile
+  ... will append a line to  $HOME/'$b'
 " buttons {"No", "Yes"} default button 1'`
 
   echo "a=$a" >> /tmp/temp.tmp
@@ -53,7 +59,7 @@ if true && test "$addpath" = "yes" ; then # Python environment
   addpyenv=no
 
   a=`osascript -e 'tell app "Installer" to display dialog "
-Modify $HOME/.bash_profile to allow NEURON + Python
+Modify $HOME/'$b' to allow NEURON + Python
   ... will set some Python related environment variables.
 " buttons {"No", "Yes"} default button 1'`
 
@@ -68,7 +74,7 @@ Modify $HOME/.bash_profile to allow NEURON + Python
     echo "export PYTHONPATH=$idir/nrn/lib/python #added by NEURON installer" >> "$bp"
     tmpfile=/tmp/$$.tmp
     (source $bp ; echo "srcpath $PATH" >> /tmp/temp.tmp ; $idir/nrn/x86_64/bin/nrnpyenv.sh |sed -n 's/\(^export.*\)/\1 #added by NEURON installer/p' > $tmpfile)
-    cat $tmpfile >> "$bp"
+    sed '/PYTHONPATH/d' $tmpfile >> "$bp"
     rm -f $tmpfile
   fi
   chown $USER "$bp"
