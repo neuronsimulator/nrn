@@ -121,7 +121,7 @@ if UniversalMacBinary
 	echo $$a && \
 	scp $(HOME)/NEURON-"`(export NSRC='$(srcdir)' ; sh $(srcdir)/nrnversion.sh)`".dmg "$$a"
 else
-	a=$(ALPHADIR)/nrn-"`(export NSRC='$(srcdir)' ; sh $(srcdir)/nrnversion.sh 2)`".osx.pkg &&\
+	a=$(ALPHADIR)/nrn-"`(export NSRC='$(srcdir)' ; sh $(srcdir)/nrnversion.sh 2)`".$(host_cpu)-osx.pkg &&\
 	b=$(top_builddir)/src/mac/build/NEURON-$(NVER).pkg &&\
 	echo "scp $$b $$a" && \
 	scp $$b $$a
