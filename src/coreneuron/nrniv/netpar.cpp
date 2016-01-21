@@ -29,6 +29,7 @@ class InputPreSyn;
 #include "coreneuron/nrniv/netcvode.h"
 #include "coreneuron/nrniv/nrniv_decl.h"
 #include "coreneuron/nrniv/ivocvect.h"
+#include "coreneuron/nrniv/nrn_assert.h"
 
 static double t_exchange_;
 static double dt1_; // 1/dt
@@ -798,7 +799,7 @@ two phase multisend distributes the injection.
 int nrnmpi_spike_compress(int nspike, bool gid_compress, int xchng_meth) {
 #if NRNMPI
 	if (nrnmpi_numprocs < 2) { return 0; }
-	assert(xchng_meth == 0);
+	nrn_assert(xchng_meth == 0);
 	if (nspike >= 0) {
 		ag_send_nspike_ = 0;
 		if (spfixout_) { free(spfixout_); spfixout_ = 0; }

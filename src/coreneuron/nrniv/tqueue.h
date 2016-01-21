@@ -14,8 +14,8 @@ OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
 IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-//#ifndef tqueue_h
-//#define tqueue_h
+#ifndef tqueue_h
+#define tqueue_h
 
 /*
 **  SPTREE:  The following type declarations provide the binary tree
@@ -77,12 +77,9 @@ extern void splay(SPBLK*, SPTREE*);	/* reorganize tree */
 extern SPBLK * sphead(SPTREE*);         /* return first node in tree */
 extern void spdelete(SPBLK*, SPTREE*);	/* delete node from tree */
 
-extern bool nrn_use_bin_vec_;
-
 class TQItem {
 public:
 	TQItem();
-	virtual ~TQItem();
 public:
 	void* data_;
 	double t_;
@@ -101,17 +98,17 @@ struct less_time{
 // helper class for the TQueue (SplayTBinQueue).
 class BinQ {
 public:
-	BinQ();
-	virtual ~BinQ();
-	void enqueue(double tt, TQItem*);
-    void shift(double tt) { if (!nrn_use_bin_vec_) assert(!bins_[qpt_]); tt_ = tt; if (++qpt_ >= nbin_) { qpt_ = 0; }}
-    TQItem* top() { if (nrn_use_bin_vec_) { if (vec_bins[qpt_].size()) return vec_bins[qpt_].back(); else return NULL; } else return bins_[qpt_]; }
+    BinQ();
+    ~BinQ();
+    void enqueue(double tt, TQItem*);
+    void shift(double tt) { assert(!bins_[qpt_]); tt_ = tt; if (++qpt_ >= nbin_) { qpt_ = 0; }}
+    TQItem* top() { return bins_[qpt_]; }
     TQItem* dequeue();
-	double tbin() { return tt_; }
-	// for iteration
-	TQItem* first();
-	TQItem* next(TQItem*);
-	void remove(TQItem*);
+    double tbin() { return tt_; }
+    // for iteration
+    TQItem* first();
+    TQItem* next(TQItem*);
+    void remove(TQItem*);
     void resize(int);
 #if COLLECT_TQueue_STATISTICS
 public:
@@ -124,28 +121,32 @@ private:
     std::vector<std::vector<TQItem*> > vec_bins;
 };
 
+enum container{spltree, pq_que};
+
+template<container C = spltree>
 class TQueue {
 public:
   TQueue();
-  virtual ~TQueue();
+  ~TQueue();
 
-  TQItem* least() {return least_;}
-  TQItem* atomic_dq(double til);
-  TQItem* insert(double t, void* data);
-  TQItem* enqueue_bin(double t, void* data);
-  TQItem* dequeue_bin() { return binq_->dequeue(); }
-  void shift_bin(double _t_) { ++nshift_; binq_->shift(_t_); }
-  TQItem* top() { return binq_->top(); }
-  void remove(TQItem*);
-  void move(TQItem*, double tnew);
+  inline TQItem* least() {return least_;}
+  inline TQItem* insert(double t, void* data);
+  inline TQItem* enqueue_bin(double t, void* data);
+  inline TQItem* dequeue_bin() { return binq_->dequeue(); }
+  inline void shift_bin(double _t_) { ++nshift_; binq_->shift(_t_); }
+  inline TQItem* top() { return binq_->top(); }
+
+  inline TQItem* atomic_dq(double til);
+  inline void remove(TQItem*);
+  inline void move(TQItem*, double tnew);
 #if COLLECT_TQueue_STATISTICS
-  void statistics();
-  void record_stat_event(int type, double time);
+  inline void statistics();
+  inline void record_stat_event(int type, double time);
 #endif
   int nshift_;
 
   /// Priority queue of vectors for queuing the events. enqueuing for move() and move_least_nolock() is not implemented
-  std::priority_queue<TQPair, std::vector<TQPair>, less_time> pq_que;
+  std::priority_queue<TQPair, std::vector<TQPair>, less_time> pq_que_;
   /// Types of queuing statistics
   enum qtype {enq=0, spike, ite, deq};
 #if COLLECT_TQueue_STATISTICS
@@ -167,4 +168,5 @@ private:
 #endif
 };
 
-//#endif
+#include "coreneuron/nrniv/tqueue.ipp"
+#endif

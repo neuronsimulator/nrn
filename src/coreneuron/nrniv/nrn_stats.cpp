@@ -6,6 +6,7 @@
  */
 
 #include <stdio.h>
+#include <climits>
 #include "nrn_stats.h"
 #include "coreneuron/nrnmpi/nrnmpi.h"
 #include "coreneuron/nrnoc/multicore.h"
@@ -68,7 +69,7 @@ void report_cell_stats( void )
 
 
     /// Maximum number of events and correspondent time
-    long max_num_events[NUM_EVENT_TYPES] = {0,0}, gmax_num_events[NUM_EVENT_TYPES];
+    long max_num_events[NUM_EVENT_TYPES] = {0,0,0}, gmax_num_events[NUM_EVENT_TYPES];
     /// Get the maximum number of events one between threads first
     for (int type = 0; type < NUM_EVENT_TYPES; ++type) {
         for (int ith = 0; ith < nrn_nthread; ++ith) {
@@ -79,11 +80,12 @@ void report_cell_stats( void )
     }
     nrnmpi_long_allreduce_vec( max_num_events, gmax_num_events, NUM_EVENT_TYPES, 2 );
 
-    long qmin[NUM_EVENT_TYPES] = {(long)1e+15,(long)1e+15}, qmax[NUM_EVENT_TYPES] = {0,0}, qdiff[NUM_EVENT_TYPES];
-    long gqdiff_max[NUM_EVENT_TYPES], gqdiff_min[NUM_EVENT_TYPES];
+    long qmin[NUM_EVENT_TYPES] = {LONG_MAX, LONG_MAX, LONG_MAX}, qmax[NUM_EVENT_TYPES] = {0,0,0}, qsum[NUM_EVENT_TYPES] = {0,0,0}, qdiff[NUM_EVENT_TYPES];
+    long gqmax[NUM_EVENT_TYPES], gqmin[NUM_EVENT_TYPES], gqsum[NUM_EVENT_TYPES], gqdiff_max[NUM_EVENT_TYPES], gqdiff_min[NUM_EVENT_TYPES];
     /// Max and min number of time intervals for the events and difference between threads
     for (int type = 0; type < NUM_EVENT_TYPES; ++type) {
         for (int ith = 0; ith < nrn_nthread; ++ith) {
+            qsum[type] += thread_vec_event_times[type][ith];
             if (thread_vec_event_times[type][ith] > qmax[type])
                 qmax[type] = thread_vec_event_times[type][ith];
             if (thread_vec_event_times[type][ith] < qmin[type])
@@ -91,6 +93,9 @@ void report_cell_stats( void )
         }
         qdiff[type] = qmax[type] - qmin[type];
     }
+    nrnmpi_long_allreduce_vec( qsum, gqsum, NUM_EVENT_TYPES, 1 );
+    nrnmpi_long_allreduce_vec( qmax, gqmax, NUM_EVENT_TYPES, 2 );
+    nrnmpi_long_allreduce_vec( qmin, gqmin, NUM_EVENT_TYPES, 0 );
     nrnmpi_long_allreduce_vec( qdiff, gqdiff_max, NUM_EVENT_TYPES, 2 );
     nrnmpi_long_allreduce_vec( qdiff, gqdiff_min, NUM_EVENT_TYPES, 0 );
 #endif
@@ -108,6 +113,7 @@ void report_cell_stats( void )
         printf(" Number of spikes: %ld\n", gstat_array[5]);
 #if COLLECT_TQueue_STATISTICS
         printf(" Number of enqueued events: %ld\n", gstat_array[6]);
+        printf(" Maximum number of time intervals for the events: %ld\n", gqmax[enq]);
         printf(" Number of after-spike enqueued events: %ld\n", gstat_array[7]);
         printf(" Number of inter-thread enqueued events: %ld\n", gstat_array[8]);
 //        printf(" Maximum difference of time interval enqueued events between threads on a single MPI: %ld\n", gqdiff_max[enq]);
