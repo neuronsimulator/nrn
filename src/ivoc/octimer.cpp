@@ -9,8 +9,13 @@
 #include "objcmd.h"
 #endif  /* HAVE_IV */
 #include "classreg.h"
+
+#ifdef MINGW
+#include <windows.h>
+#endif
+
 #if HAVE_IV
-#if carbon
+#if carbon || defined(MINGW)
 class OcTimer {
 #else
 class OcTimer : public IOHandler {
@@ -30,13 +35,24 @@ private:
 #if carbon
 	EventLoopTimerRef timer_;
 #else
+#ifdef MINGW
+	HANDLE wtimer_;
 	bool stopped_;
-#endif
+#else
+	bool stopped_;
+#endif /* not MINGW */
+#endif /*not carbon*/
 };
 
 #if carbon
 static void timer_proc(EventLoopTimerRef, void* v) {
 	((OcTimer*)v)->timerExpired(0,0);
+}
+#endif
+
+#ifdef MINGW
+static void CALLBACK callback(PVOID lpParameter, BOOLEAN TimerOrWaitFired) {
+	((OcTimer*)lpParameter)->timerExpired(0,0);
 }
 #endif
 
@@ -103,7 +119,12 @@ OcTimer::OcTimer(const char* cmd) {
 #if carbon
 	timer_ = 0;
 #else
+#ifdef MINGW
+	wtimer_ = NULL;
 	stopped_ = true;
+#else
+	stopped_ = true;
+#endif
 #endif
 }
 OcTimer::~OcTimer() {
@@ -117,6 +138,17 @@ void OcTimer::start() {
 		(void*)this, &timer_);
 #else
 #ifdef MINGW
+	stopped_ = false;
+	LARGE_INTEGER nsec100;
+	nsec100.QuadPart = (long long)(-seconds_*10000000.);
+	wtimer_ = CreateWaitableTimer(NULL, TRUE, NULL);
+	while (stopped_ == false) {
+		SetWaitableTimer(wtimer_, &nsec100, 0, NULL, NULL, 0);
+		hc_->execute();
+		WaitForSingleObject(wtimer_, INFINITE);
+	}
+	CloseHandle(wtimer_);
+	wtimer_ = NULL;
 #else
 	long s = long(seconds_);
 	long us = long((seconds_ - double(s))*1000000.);
@@ -133,6 +165,7 @@ void OcTimer::stop() {
 	}
 #else
 #ifdef MINGW
+	stopped_ = true;
 #else
 	stopped_ = true;
 	Dispatcher::instance().stopTimer(this);
