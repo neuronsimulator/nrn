@@ -85,12 +85,14 @@ static void p_destruct(void* v) {
 	delete (Py2Nrn*)v;
 }
 
-Member_func p_members[] = {0,0};
-
 void nrnpython_reg_real() {
 	//printf("nrnpython_reg_real()\n");
-	class2oc("PythonObject", p_cons, p_destruct, p_members, NULL, NULL, NULL);
 	Symbol* s = hoc_lookup("PythonObject");
+	assert(s);
+	cTemplate* t = s->u.ctemplate;
+	t->constructor = p_cons;
+	t->destructor = p_destruct;
+
 	nrnpy_pyobj_sym_ = s;
 	nrnpy_py2n_component = py2n_component;
 	nrnpy_hpoasgn = hpoasgn;

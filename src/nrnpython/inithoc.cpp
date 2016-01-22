@@ -27,6 +27,7 @@ extern void nrnpy_hoc();
 #endif
 #if NRNPYTHON_DYNAMICLOAD
 	extern int nrnpy_site_problem;
+	extern void nrnpython_deferred_reg();
 #endif
 
 extern int nrn_is_python_extension;
@@ -143,6 +144,9 @@ printf("NEURON_INIT_MPI exists in env but NEURON cannot initialize MPI because:\
 #endif		
 	nrn_main_launch = 2;
 	ivocmain(argc, argv, env);
+#if NRNPYTHON_DYNAMICLOAD
+	nrnpython_deferred_reg(); 
+#endif
 //	nrnpy_augment_path();
 #if NRNPYTHON_DYNAMICLOAD
 	nrnpy_site_problem = 0;
