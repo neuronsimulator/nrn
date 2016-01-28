@@ -151,7 +151,7 @@ void NetCvodeThreadData::enqueue(NetCvode* nc, NrnThread* nt) {
         nc->bin_event(ite.t_, ite.de_, nt);
 #if COLLECT_TQueue_STATISTICS
         /// TQueue::qtype::ite = 2
-        tqe_->record_stat_event(2, ite->t_);
+        tqe_->record_stat_event(2, ite.t_);
 #endif
     }
     inter_thread_events_.clear();

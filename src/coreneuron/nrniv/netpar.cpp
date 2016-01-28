@@ -212,22 +212,21 @@ void nrn2ncs_outputevent(int gid, double firetime) {
 #endif // NRNMPI
 
 static int nrn_need_npe() {
-	int b = 0;
-	if (active_) { b = 1; }
-	if (nrn_nthread > 1) { b = 1; }
-	if (b) {
-		if (last_maxstep_arg_ == 0) {
-			last_maxstep_arg_ =   100.;
-		}
-		set_mindelay(last_maxstep_arg_);
-	}else{
-		if (npe_) {
-			delete [] npe_;
-			npe_ = nil;
-			n_npe_ = 0;
-		}
-	}
-	return b;
+    int b = 0;
+    if (active_) { b = 1; }
+    if (nrn_nthread > 1) { b = 1; }
+    if (b) {
+        if (last_maxstep_arg_ == 0) {
+            last_maxstep_arg_ =   100.;
+        }
+    }else{
+        if (npe_) {
+            delete [] npe_;
+            npe_ = nil;
+            n_npe_ = 0;
+        }
+    }
+    return b;
 }
 
 #define TBUFSIZE 0
