@@ -312,6 +312,7 @@ void Cvode::new_no_cap_memb(CvodeThreadData& z, NrnThread* _nt) {
 			ncm->ml->data = new double*[n];
 			ncm->ml->pdata = new Datum*[n];
 		}
+		ncm->ml->_thread = ml->_thread; // can share this
 		// fill
 		n = 0;
 		for (i=0; i < ml->nodecount; ++i) {
