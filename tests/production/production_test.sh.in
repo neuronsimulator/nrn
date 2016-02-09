@@ -29,11 +29,11 @@ then
   exit 1
 fi
 
-cat out[0-9]*.dat > out_cb.dat
-sort -k 1n,1n -k 2n,2n out_cb.dat > sort_out.dat
-diff sort_out.dat /gpfs/bbp.cscs.ch/project/proj20/10x10/3m/reference_output/@SIM_NAME@/out.dat.ref > diff.dat
+cat out[0-9]*.dat > out_cn.dat
+sort -k 1n,1n -k 2n,2n out_cn.dat > sort_out.dat
+diff sort_out.dat /gpfs/bbp.cscs.ch/project/proj16/coreneuron/data/93k_3columns_O1_3m/reference_output/@SIM_NAME@/out.dat.ref > diff.dat
 
-if [ -s diff.out ] 
+if [ -s diff.dat ] 
 then
   echo "Results are different, check the file diff.dat. Test failed!"
   exit 1
