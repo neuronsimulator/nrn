@@ -117,6 +117,31 @@ declares FUNCTION bbsavestate, that function is called when the
 POINT_PROCESS instance is saved and restored.
 Also now allow Random state to be saved for a SUFFIX (density mechanism)
 if it declares FUNCTION bbsavestate. Same interface.
+The API of FUNCTION bbsavestate has been modified to allow saving/restoring
+several values. FUNCTION bbsavestate takes two pointers to double arrays,
+xdir and xval.
+The first double array, xdir, has length 1 and xdir[0] is -1.0, 0.0, or 1.0 
+If xdir[0] == -1.0, then replace the xdir[0] with the proper number of elements
+of xval and return 0.0.  If xdir[0] == 0.0, then save double values into
+the xval array (which will be sized correctly from a previous call with
+xdir[0] == -1.0). If xdir[0] == 1.0, then the saved double values are in
+xval and should be restored to their original values.
+The number of elements saved/restored has to be apriori known by the instance
+since the size of the xval that was saved is not sent to the instance on
+restore.
+
+For example
+  FUNCTION bbsavestate() {
+    bbsavestate = 0
+  VERBATIM
+    double *xdir, *xval, *hoc_pgetarg();
+    xdir = hoc_pgetarg(1);
+    if (*xdir == -1.) { *xdir = 2; return 0.0; }
+    xval = hoc_pgetarg(2);
+    if (*xdir == 0.) { xval[0] = 20.; xval[1] = 21.;}
+    if (*xdir == 1) { printf("%d %d\n", xval[0]==20.0, xval[1] == 21.0); }
+  ENDVERBATIM
+  }
 
 When spike compression is used, there are only 256 time slots available
 for spike exchange time within an integration interval. However, during
@@ -1647,13 +1672,25 @@ void BBSaveState::mech(Prop* p) {
 		sprintf(buf, "callback");
 		f->s(buf, 1);
 		int narg = 2;
-		double xdir = 0.; // 0 save, 1 restore
-		double xval = 0.; // sent or returned
+		double xdir = -1.0; // -1 size, 0 save, 1 restore
+		double* xval = NULL; // returned for save, sent for restore.
+
 		hoc_pushpx(&xdir);
-		hoc_pushpx(&xval);
+		hoc_pushpx(xval);
+		if (memb_func[p->type].is_point) {
+			hoc_call_ob_proc(pp->ob, ssi[p->type].callback, narg);
+			double d = hoc_xpop();
+		}else{
+			double d = nrn_call_mech_func(ssi[p->type].callback, narg, p, p->type);
+		}
+		int sz = int(xdir);
+		xval = new double[sz];
+
+		hoc_pushpx(&xdir);
+		hoc_pushpx(xval);
 		if (f->type() == BBSS_IO::IN) { // restore
 			xdir = 1.;
-			f->d(1, xval);
+			f->d(sz, xval);
 			if (memb_func[p->type].is_point) {
 				hoc_call_ob_proc(pp->ob, ssi[p->type].callback, narg);
 				double d = hoc_xpop();
@@ -1668,8 +1705,9 @@ void BBSaveState::mech(Prop* p) {
 			}else{
 				double d = nrn_call_mech_func(ssi[p->type].callback, narg, p, p->type);
 			}
-			f->d(1, xval);
+			f->d(sz, xval);
 		}
+		delete [] xval;
 	}
 	if (debug) { sprintf(dbuf, "Leave mech(prop type %d)", p->type); PDEBUG; }
 }
