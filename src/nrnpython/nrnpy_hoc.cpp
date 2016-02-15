@@ -71,7 +71,7 @@ static PyObject* pfunc_get_docstring = NULL;
 static const char* hocobj_docstring = "class neuron.hoc.HocObject - Hoc Object wrapper";
 
 
-#if 0
+#if 1
 }
 #include <hoccontext.h>
 extern "C" {
@@ -180,6 +180,9 @@ static PyObject* hocobj_new(PyTypeObject* subtype, PyObject* args, PyObject* kwd
 				PyHocObject* hbase = (PyHocObject*)base;
 				if (hbase->type_ == 2 && hbase->sym_->type == TEMPLATE) {
 //printf("hocobj_new base %s\n", hbase->sym_->name);
+                    // remove the hocbase keyword since hocobj_call only allows
+                    // the "sec" keyword argument
+                    PyDict_DelItemString(kwds, "hocbase");
 					PyObject* r = hocobj_call(hbase, args, kwds);
 					if (!r) {
 						Py_DECREF(subself);
@@ -600,6 +603,7 @@ static PyObject* hocobj_call(PyHocObject* self, PyObject* args, PyObject* kwrds)
 			result = (PyObject*)fcall((void*)self, (void*)args);
 		}
 	}else{
+		PyErr_SetString(PyExc_TypeError, "object is not callable");
 		return NULL;
 	}
 	if (section) {

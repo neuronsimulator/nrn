@@ -3,25 +3,34 @@
 #include <InterViews/resource.h>
 #include <string.h>
 #include <nrnoc2iv.h>
+#include <nrniv_mf.h>
 #include <classreg.h>
 #include <objcmd.h>
 #include <nrnste.h>
+#include <netcon.h>
 
 static double ste_transition(void* v) {
 	StateTransitionEvent* ste = (StateTransitionEvent*)v;
 	int src = (int)chkarg(1, 0, ste->nstate()-1);
 	int dest = (int)chkarg(2, 0, ste->nstate()-1);
-	if (src == dest) {
-		hoc_execerror("source and destination are the same", 0);
-	}
 	double* var1 = hoc_pgetarg(3);
 	double* var2 = hoc_pgetarg(4);
-	char* stmt = gargstr(5);
-	Object* obj = NULL;
-	if (ifarg(6)) {
-		obj = hoc_obj_get(6);
+	HocCommand* hc = NULL;
+	if (ifarg(5)) {
+		Object* obj = NULL;
+		if (hoc_is_str_arg(5)) {
+			char* stmt = NULL;
+			stmt = gargstr(5);
+			if (ifarg(6)) {
+				obj = *hoc_objgetarg(6);
+			}
+			hc = new HocCommand(stmt, obj);
+		}else{
+			obj = *hoc_objgetarg(5);
+			hc = new HocCommand(obj);
+		}
 	}
-	ste->transition(src, dest, var1, var2, 1, stmt, obj);
+	ste->transition(src, dest, var1, var2, hc);
 	return 1.;
 }
 
@@ -41,8 +50,13 @@ static Member_func members[] = {
 };
 
 static void* ste_cons(Object*) {
-	int nstate = (int)chkarg(1, 2, 1e6);
-	StateTransitionEvent* ste = new StateTransitionEvent(nstate);
+	int nstate = (int)chkarg(1, 1, 1e6);
+	Point_process* pnt = NULL;
+	if (ifarg(2)) {
+		Object* obj = *hoc_objgetarg(2);
+		pnt = ob2pntproc(obj);
+	}
+	StateTransitionEvent* ste = new StateTransitionEvent(nstate, pnt);
 	return ste;
 }
 
@@ -56,59 +70,42 @@ void StateTransitionEvent_reg() {
 		members, NULL, NULL, NULL);
 }
 
-implementPtrList(STEList, StateTransitionEvent)
-
-STEList* StateTransitionEvent::stelist_;
-
-StateTransitionEvent::StateTransitionEvent(int nstate){
-	if (!stelist_) {
-		stelist_ = new STEList(10);
-	}
-	stelist_->append(this);
+StateTransitionEvent::StateTransitionEvent(int nstate, Point_process* pnt){
 	nstate_ = nstate;
 	states_ = new STEState[nstate_];
 	istate_ = 0;
-	stelist_change();
+	pnt_ = pnt;
+	activated_ = -1;
 }
 
 StateTransitionEvent::~StateTransitionEvent(){
-	long i, cnt = stelist_->count();
-	for (i=0; i < cnt; ++i) {
-		if (stelist_->item(i) == this) {
-			stelist_->remove(i);
-		}
-	}
-	// since global cvode ste_list_ shares this list the global step
-	// remains valid. Only the local step method needs to be re-calculated.
-
-	assert (i < cnt);
+	deactivate();
 	delete [] states_;
-	stelist_change();
 }
 
-void StateTransitionEvent::transition(int src, int dest, double* var1, double* var2,
-	int order, const char* stmt, Object* obj
-){
-	STETransition* st = states_[src].add_transition();
-	st->dest_ = dest;
-	st->var1_ = var1;
-	st->var2_ = var2;
-	st->order_ = order;
-	if (stmt && strlen(stmt) > 0) {
-		st->stmt_ = new HocCommand(stmt, obj);
-	}else{
-		st->stmt_ = NULL;
+void StateTransitionEvent::deactivate() {
+	if (activated_ < 0) { return; }
+	STEState& s = states_[activated_];
+	for (int i=0; i < s.ntrans_; ++i) {
+		s.transitions_[i].deactivate();
 	}
+	activated_ = -1;
 }
 
-void StateTransitionEvent::execute(int itrans){
-	STETransition* st = states_[istate_].transitions_+itrans;
-	istate_ = st->dest_;
-	if (st->stmt_) {
-		st->stmt_->execute();
-		st->oldval1_ = -1e9;
-		st->oldval2_ = -1e8;
+void StateTransitionEvent::activate() {
+	if (activated_ >= 0) { deactivate(); }
+	STEState& s = states_[istate_];
+	for (int i=0; i < s.ntrans_; ++i) {
+		s.transitions_[i].activate();
 	}
+	activated_ = istate_;
+}
+
+void StateTransitionEvent::state(int ist) {
+	assert(ist >= 0 && ist < nstate_);
+	deactivate();
+	istate_ = ist;
+	activate();
 }
 
 STEState::STEState(){
@@ -129,43 +126,42 @@ STETransition* STEState::add_transition() {
 	if (st) {
 		int i;
 		for (i=0; i < ntrans_-1; ++i) {
-			transitions_[i].stmt_ = st[i].stmt_;
-			st[i].stmt_ = NULL;
+			transitions_[i].hc_ = st[i].hc_;  st[i].hc_ = NULL;
+			transitions_[i].ste_ = st[i].ste_;  st[i].ste_ = NULL;
+			transitions_[i].stec_ = st[i].stec_;  st[i].stec_ = NULL;
 			transitions_[i].var1_ = st[i].var1_;
 			transitions_[i].var2_ = st[i].var2_;
-			transitions_[i].oldval1_ = st[i].oldval1_;
-			transitions_[i].oldval2_ = st[i].oldval2_;
 			transitions_[i].dest_ = st[i].dest_;
-			transitions_[i].order_ = st[i].order_;
+			transitions_[i].var1_is_time_ = st[i].var1_is_time_;
 		}
 		delete [] st;
 	}
 	return transitions_ + ntrans_ - 1;
 }
 
-int STEState::condition(double& tr){
-	int i;
-	for (i=0; i < ntrans_; ++i) {
-		if (transitions_[i].condition(tr)) {
-			return i;
-		}
-	}
-	return -1;
-}
-
 STETransition::STETransition(){
-	stmt_ = NULL;
+	hc_ = NULL;
+	ste_ = NULL;
+	stec_ = NULL;
+	var1_is_time_ = false;
 }
 
 STETransition::~STETransition(){
-	if (stmt_) {
-		delete stmt_;
+	if (hc_) {
+		delete hc_;
+	}
+	if (stec_) {
+		delete stec_;
 	}
 }
 
-bool STETransition::condition(double& tr){
-	if (*var1_ > *var2_) {
-		return true;
+void STETransition::event() {
+	ste_->deactivate();
+	ste_->istate_ = dest_;
+	if (hc_) {
+		nrn_hoc_lock();
+		hc_->execute();
+		nrn_hoc_unlock();
 	}
-	return false;
+	ste_->activate();
 }

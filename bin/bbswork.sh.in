@@ -4,12 +4,13 @@ prefix=@prefix@
 exec_prefix=@exec_prefix@
 NRNBIN=@bindir@
 ARCH=@host_cpu@
+MODSUBDIR=@modsubdir@
 NEURONHOME=@prefix@/share/nrn
 
 cd $1
 
-if [ -x ${ARCH}/special ] ; then
-	program="./${ARCH}/special"
+if [ -x ${MODSUBDIR}/special ] ; then
+	program="./${MODSUBDIR}/special"
 else
 	program="${NRNBIN}/nrniv"
 fi

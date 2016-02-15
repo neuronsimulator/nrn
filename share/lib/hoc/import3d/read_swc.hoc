@@ -10,8 +10,16 @@ public quiet
 external hoc_sf_
 objref id, type, x, y, z, d, pid, iline, header, lines
 objref file, vectors, sec2point, point2sec, sections
+objref connect2prox
 strdef tstr, line, filetype
 double a[7]
+objref id2index_
+
+// id and pid contain the raw id values (1st and 7th values on each line)
+// from the file. After the file is read id2index(id.x[i]) == i
+// Note that the only requireement for a valid swc file is the tree
+// topology condition pid.x[i] < id.x[i]
+
 
 proc init() {
 	quiet = 0
@@ -21,11 +29,19 @@ proc init() {
 	lines = new List()
 }
 
+func id2index() {
+  return id2index_.x[$1]
+}
+func pix2ix() {local pid_
+  pid_ = pid.x[$1]
+  if (pid_ < 0) { return -1 }
+  return id2index_.x[pid_]
+}
+
 proc input() {
 	err = 0
 	rdfile($s1)
-	shift_id()
-	check_pid()
+	check_pid() // and also creates id2index_
 	sectionify() // create point2sec index map
 	mksections() // Import3dSection list
 //	instantiate()
@@ -115,17 +131,29 @@ printf("error %s line %d: id's shifted by %d are not sequential: id.x[%d] != %g\
 	}
 }
 
-proc check_pid() {local i, ierr   localobj tobj
-	// if all pid.x[i] < i then we must be 1 or more trees with no loops
+proc check_pid() {local i, ierr, needsort   localobj tobj
+	// if all pid.x[i] < id.x[i] then we must be 1 or more trees with no loops
 	// Note: swcdata/*.swc conforms.
+	needsort = 0
 	ierr = 0
 	for i=0, id.size-1 {
-		if (pid.x[i] >= i) {
+		if (i > 0) if (id.x[i] <= id.x[i-1]) { needsort = 1 }
+		if (pid.x[i] >= id.x[i]) {
 			err = 1
-printf("error %s line %d: pid.x[%d]=%d (shifted by %d) is not less its index\n",\
-			file.getname, iline.x[i], i, idoffset, pid.x[i])
+printf("error %s line %d: index %d pid=%d is not less than id=%d\n",\
+			file.getname, iline.x[i], i, pid.x[i], id.x[i])
 		}
 	}	
+	if (needsort) { // sort in id order
+		tobj = id.sortindex()
+		id.sortindex(id, tobj)
+		pid.sortindex(pid, tobj)
+		x.sortindex(x, tobj)
+		y.sortindex(y, tobj)
+		z.sortindex(z, tobj)
+		d.sortindex(diam, tobj)
+		iline.sortindex(iline, tobj)
+	}
 	// the number of trees is just the number of pid's < 0
 	// Note: swcdata/*.swc have only one tree
 	tobj = new Vector()
@@ -136,6 +164,19 @@ printf("warning %s: more than one tree:\n", file.getname)
 		for i=0, tobj.size-1 {
 			printf("  root at line %d\n", iline.x[tobj.x[i]])
 		}
+	}
+	// check for duplicate id
+	for i=1, id.size-1 if (id.x[i] == id.x[i-1]) {
+		err = 1
+printf("error %s: duplicate id:\n", file.getname)
+printf("  %d: %s\n", iline.x[i-1], lines.o(iline.x[i-1]).s)
+printf("  %d: %s\n", iline.x[i], lines.o(iline.x[i]).s)
+	}
+	// create the id2index_ map
+	id2index_ = new Vector(id.max()+1)
+	id2index_.fill(-1)
+	for i=0, id.size-1 {
+		id2index_.x[id.x[i]] = i
 	}
 }
 
@@ -156,7 +197,7 @@ proc sectionify() {local i, si  localobj tobj
 	point2sec.x[0] = 0
 	si = 0
 	for i=1, id.size-1 {
-		if (tobj.x[pid.x[i]] > 1) {
+		if (tobj.x[pix2ix(i)] > 1 || connect2prox.x[i]) {
 			si += 1
 		}
 		point2sec.x[i] = si
@@ -186,19 +227,43 @@ proc mark_branch() { local i, p
 	// if single point soma set the spherical_soma flag
 	if ( type.x[0] != type.x[1]) {
 		err = 1
-		if (!quiet) {
+		if (0 && !quiet) {
 printf("\nNotice: %s:\nThe first two points have different types (%d and %d) but\n    a single point NEURON section is not allowed.\n    Interpreting the point as the center of a sphere of\n    radius %g at location (%g, %g, %g)\n    Will represent as 3-point cylinder with L=diam and with all\n    children kept at their 1st point positions and connected\n    with wire to middle point.\n    If this is an incorrect guess, then change the file.\n"\
 , file.getname, type.x[0], type.x[1], d.x[0]/2, x.x[0], y.x[0], z.x[0])
 		}
 	}
 
+	// another wrinkle is that when a dendrite connects to the soma
+	// by a wire,
+	// another branch may connect to the first point of that dendrite
+	// In this case (to avoid single point sections)
+	// that branch should be connected to position 0
+	// of the dendrite (and the first point of that branch should be
+	// the same position as the first point of the dendrite.
+	// use connect2prox to indicate the parent point is not
+	// the distal end  but the proximal end of the parent section
+	connect2prox = new Vector(id.size)
+
 	$o1 = new Vector(id.size)
 	for i=0, id.size-1 {
-		p = pid.x[i]
+		p = pix2ix(i)
 		if (p >= 0) {
 			$o1.x[p] += 1
-			if ( pid.x[i] != i-1) {
+			if ( p != i-1) {
 				$o1.x[p] += .01
+//i noncontiguous with parent and
+// if parent is not soma and parent of parent is soma
+// then i appended to connect2prox
+if (p > 1) if (type.x[p] != 1 && type.x[pix2ix(p)] == 1) {
+	connect2prox.x[i] = 1
+	$o1.x[p] = 1 // p not treated as a 1pt section
+	err = 1
+	if (0 && !quiet) {
+printf("\nNotice: %s:\n %d parent is %d which is the proximal point of a section\n  connected by a wire to the soma.\n  The dendrite is being connected to\n  the proximal end of the parent dendrite.\n  If this is an incorrect guess, then change the file.\n"\
+, file.getname, id.x[i], id.x[p])
+	}
+}
+				
 			}
 			if (type.x[p] != type.x[i]) {
 				// increment enough to get past 1
@@ -210,7 +275,7 @@ printf("\nNotice: %s:\nThe first two points have different types (%d and %d) but
 	}
 }
 
-proc mksections() {local i, isec, first
+proc mksections() {local i, j, isec, first  localobj sec, psec, pts
 	sections = new List()
 	isec = 0
 	first = 0
@@ -228,16 +293,16 @@ proc mksection() { local i, isec, first   localobj sec
 	isec = $1  first=$2  i=$3
 	if (isec > 0) {// branches have pid as first point
 		sec = new Import3d_Section(first, i-first+1)
-		pt2sec(pid.x[first], sec.parentsec)
+		pt2sec(pix2ix(first), sec.parentsec)
 		// but if the parent is the root and the branch has more than
 		// one point, then connect to center of root with wire
-		if (point2sec.x[pid.x[first]] == 0 && i > 1) {
+		if (point2sec.x[pix2ix(first)] == 0 && i > 1) {
 			sec.parentx = 0.5
 			sec.first = 1
 		}else{
-			if (pid.x[first] == 0) { sec.parentx = 0 }
+			if (pix2ix(first) == 0) { sec.parentx = 0 }
 		}
-		sec.append(0, pid.x[first], 1, x, y, z, d)
+		sec.append(0, pix2ix(first), 1, x, y, z, d)
 		sec.append(1, first, i-first, x, y, z, d)
 	}else{// pid not first point in root section
 		sec = new Import3d_Section(first, i-first)
@@ -249,6 +314,10 @@ proc mksection() { local i, isec, first   localobj sec
 		if (sec.parentsec.type == 1 && sec.type != 1) {
 			sec.d.x[0] = sec.d.x[1]
 		}
+	}
+	if (connect2prox.x[first]) {
+		sec.pid = sec.parentsec.id
+		sec.parentx = 0
 	}
 }
 
@@ -272,10 +341,10 @@ proc instantiate() {local i, isec, psec, pp, si, px
 
 	// connect
 	for i = 2, id.size-1 {
-		if (point2sec.x[pid.x[i]] == point2sec.x[i]) { continue }
-		if (pid.x[i] == 0) { px = 0 } else { px = 1 }
+		if (point2sec.x[pix2ix(i)] == point2sec.x[i]) { continue }
+		if (pix2ix(i) == 0) { px = 0 } else { px = 1 }
 		sprint(tstr, "K[%d] connect K[%d](0), (%g)", \
-			point2sec.x[pid.x[i]], point2sec.x[i], px)
+			point2sec.x[pix2ix(i)], point2sec.x[i], px)
 		execute(tstr)
 	}
 
@@ -287,7 +356,7 @@ proc instantiate() {local i, isec, psec, pp, si, px
 	isec = 0
 	for i=0, id.size-1 {
 		if (point2sec.x[i] > isec ) { // in next section
-			ptadd(pid.x[i], point2sec.x[i])
+			ptadd(pix2ix(i), point2sec.x[i])
 		}
 		isec = point2sec.x[i]
 		ptadd(i, isec)
@@ -304,16 +373,15 @@ proc label() {
 	sprint($s2, "Line %d: %s", iline.x[$1], lines.object($1).s)
 }
 func id2pt() {local i
-	i = int($1) - idoffset
-	if (i < 0) {
-		i = -1
-	}else if (i >= id.size) {
-		i = id.size-1
+	if ($1 < 0) {
+		$1 = 0
+	}else if ( $1 > id2index_.size-1) {
+		$1 = id2index_.size-1
 	}
-	return i
+	return id2index($1)
 }
 func id2line() { return $1 }
-func pt2id() { return int($1) + idoffset }
+func pt2id() { return id.x[$1] }
 func pt2sec() { local i,j //from selpoint
 	i = point2sec.x[$1]
 	$o2 = sections.object(i)
@@ -330,7 +398,7 @@ func sec2pt() {local i
 }
 proc mark() {local i
 	print $o1, $2, iline, lines
-	i = $2 - idoffset
+	i = id2index($2)
 	printf("%d %d %g %g: %s\n", i, iline.x[i], x.x[i], y.x[i], lines.object(i).s)
 	$o1.mark(x.x[i], y.x[i], "S", 12, 4, 1)
 }

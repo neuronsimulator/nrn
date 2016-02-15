@@ -31,6 +31,7 @@ class SelfEventPPTable;
 class NetConSaveWeightTable;
 class NetConSaveIndexTable;
 class PreSynSaveIndexTable;
+class STETransition;
 class IvocVect;
 class BGP_DMASend;
 class BGP_DMASend_Phase2;
@@ -205,6 +206,18 @@ public:
 
 	static unsigned long watch_send_;
 	static unsigned long watch_deliver_;
+};
+
+class STECondition : public WatchCondition {
+public:
+	STECondition(Point_process*, double(*)(Point_process*) = NULL);
+	virtual ~STECondition();
+	virtual void deliver(double, NetCvode*, NrnThread*);
+	virtual void pgvts_deliver(double t, NetCvode*);
+	virtual double value();
+	virtual NrnThread* thread();
+
+	STETransition* stet_;
 };
 
 class PreSyn : public ConditionEvent {

@@ -9,7 +9,7 @@ libnrnjava_la_SOURCES = njvm.cpp nrnjava.cpp nrnjni.cpp
 pkginclude_HEADERS = njvm.h
 
 nrnjavaclassdir = $(prefix)/share/@PACKAGE@/classes
-nrnjavaclass_DATA = nrnclsld.jar neuron.jar nrnccmb.jar
+nrnjavaclass_DATA = nrnclsld.jar neuron.jar # nrnccmb.jar
 
 JAVAC=@JAVAC@
 JAVA=@JAVA@

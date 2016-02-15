@@ -498,6 +498,12 @@ case "$exec_prefix" in
 	;;
 esac
 
+dnl allow the nrnivmodl created subfolder to be explicitly specified
+if test "$modsubdir" = "" ; then
+	modsubdir=$host_cpu
+fi
+AC_SUBST(modsubdir)
+
 AC_DEFINE_UNQUOTED(NRNHOSTCPU,"$host_cpu",[cpu type consistent with nrnivmodl])
 NRN_LIBDIR=$exec_prefix/lib
 AC_SUBST(NRN_LIBDIR)
@@ -589,6 +595,7 @@ AC_CONFIG_FILES([
 	src/nrnjava/neuron/Makefile
 	src/nrnpython/Makefile src/ni_pci_6229/Makefile
 	src/mac/Makefile src/mswin/Makefile src/mswin/batch/Makefile
+	src/mac/macdist.pkgproj src/mac/postinstall.sh
 	src/mswin/nrnsetup.nsi src/mswin/nrncygso.sh src/mswin/lib/mknrndll.mak
 	src/mswin/nrnsetupmingw.nsi
 	src/mswin/EnvVarUpdate.nsh

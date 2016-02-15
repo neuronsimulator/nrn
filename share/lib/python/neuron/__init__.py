@@ -166,8 +166,10 @@ def hclass(c):
     class hc(hoc.HocObject):
         __metaclass__ = MetaHocObject
         def __new__(cls, *args, **kwds):
-            kwds.update({'hocbase':cls.htype})
-            return hoc.HocObject.__new__(cls, *args, **kwds)
+            kwds2 = {'hocbase': cls.htype}
+            if 'sec' in kwds:
+                kwds2['sec'] = kwds['sec']
+            return hoc.HocObject.__new__(cls, *args, **kwds2)
     setattr(hc, 'htype', c)
     return hc
 

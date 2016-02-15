@@ -1,6 +1,8 @@
 #!/bin/sh
 
 ARCH=@host_cpu@
+MODSUBDIR=@modsubdir@
+
 if test "x${NRNHOME}" = x ; then
 	prefix=@prefix@
 	exec_prefix=@exec_prefix@
@@ -25,8 +27,8 @@ fi
 NEURONHOME="${prefix}/share/nrn"
 export NEURONHOME
 
-if [ -x ${ARCH}/special ] ; then
-	program="./${ARCH}/special"
+if [ -x ${MODSUBDIR}/special ] ; then
+	program="./${MODSUBDIR}/special"
 else
 	program="${NRNIV}"
 fi

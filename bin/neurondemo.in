@@ -1,6 +1,8 @@
 #!/bin/sh
 
 ARCH=@host_cpu@
+MODSUBDIR=@modsubdir@
+
 if test "x${NRNHOME}" = x ; then
         prefix="@prefix@"
 	exec_prefix=@exec_prefix@
@@ -21,7 +23,7 @@ fi
 export NRNDEMO
 
 if [ ! -f "${NRNDEMO}neuron" ] ; then
-	(cd "${NRNDEMO}release" ; "${NRNBIN}nrnivmodl" ; cd .. ; ln -s release/${ARCH}/special neuron)
+	(cd "${NRNDEMO}release" ; "${NRNBIN}nrnivmodl" ; cd .. ; ln -s release/${MODSUBDIR}/special neuron)
 fi
 
 "${NRNDEMO}neuron" "${NRNDEMO}demo.hoc" "$@" -

@@ -6,12 +6,13 @@ libdir=@libdir@
 LIBOBJDIR=${libdir}
 MAKEFILEDIR=${bindir}
 ARCH=@host_cpu@
+MODSUBDIR=@modsubdir@
 
-if [ ! -d $ARCH ]
+if [ ! -d $MODSUBDIR ]
 then
-	echo "Creating $ARCH directory for .o files."
+	echo "Creating $MODSUBDIR directory for .o files."
 	echo
-	mkdir $ARCH
+	mkdir $MODSUBDIR
 fi
 
 if test $# -gt 0 ; then
@@ -26,7 +27,7 @@ if test "$files" = '*' ; then
 	files=""
 fi
 
-cd $ARCH
+cd $MODSUBDIR
 for i in $files; do
     rm -f $i.mod
     ln -s ../$i.mod .
@@ -60,4 +61,4 @@ done
 echo "}" >> mod_func.c
 
 make -f $MAKEFILEDIR/nrnoc_makefile "MODOBJFILES=$MODOBJS" special &&
-  echo "Successfully created $ARCH/special"
+  echo "Successfully created $MODSUBDIR/special"

@@ -469,7 +469,7 @@ proc absolute_proj() {local i, x, y, c, s, n
 			y = tobj.p3d.y.x[n]
 			dist.x[i] = x*c + y*s
 		} else {
-			1/0
+execerror("3D projection onto line only works with 3-d reconstructions")
 		}
 	}
 	dist.sub(origin_)
@@ -492,7 +492,7 @@ proc spherical_loc() {local i, x, y, z
 			z = tobj.p3d.z.x[n]
 			dist.x[i] = x*x + y*y + z*z
 		} else {
-			1/0
+execerror("3D radial position only works with 3-d reconstructions")
 		}
 	}
 	dist.sqrt()

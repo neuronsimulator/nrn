@@ -1,6 +1,8 @@
 #!/bin/sh
 
 ARCH=@host_cpu@
+MODSUBDIR=@modsubdir@
+
 if test "x${NRNHOME}" = x ; then
 	prefix=@prefix@
 	exec_prefix=@exec_prefix@
@@ -54,10 +56,10 @@ if [ "$1" = "-loadflags" ] ; then
        shift
 fi
 
-if [ ! -d $ARCH ] ; then
-	echo "Creating $ARCH directory for .o files."
+if [ ! -d $MODSUBDIR ] ; then
+	echo "Creating $MODSUBDIR directory for .o files."
 	echo
-	mkdir $ARCH
+	mkdir $MODSUBDIR
 fi
 
 pwd
@@ -89,7 +91,7 @@ if test "$files" = '*' ; then
 	files=""
 fi
 
-cd $ARCH
+cd $MODSUBDIR
 mdir=`pwd`
 for i in $files; do
     rm -f "`basename $i`".mod
@@ -157,12 +159,12 @@ if test -n "$cfiles" ; then
 fi
 
 @NRNMECH_DLL_STYLE_FALSE@make -f "${MAKEFILEDIR}/nrniv_makefile" "$PURIFY" "$TRACE" "MODOBJFILES=$MODOBJS" "COBJFILES=$COBJS" "UserLDFLAGS=$UserLDFLAGS" "UserINCFLAGS=$UserINCFLAGS" special &&
-@NRNMECH_DLL_STYLE_FALSE@  echo "Successfully created $ARCH/special"
+@NRNMECH_DLL_STYLE_FALSE@  echo "Successfully created $MODSUBDIR/special"
 
 @NRNMECH_DLL_STYLE_TRUE@MODLO=`echo "$MODOBJS" | sed 's/\.o/.lo/g'`
 @NRNMECH_DLL_STYLE_TRUE@CLO=`echo "$COBJS" | sed 's/\.o/.lo/g'`
 @NRNMECH_DLL_STYLE_TRUE@if test "${mdir}" = "${prefix}/share/nrn/demo/release/powerpc" ; then
-@NRNMECH_DLL_STYLE_TRUE@  mdir='${NRNHOME}'/share/nrn/demo/release/${ARCH}
+@NRNMECH_DLL_STYLE_TRUE@  mdir='${NRNHOME}'/share/nrn/demo/release/${MODSUBDIR}
 @NRNMECH_DLL_STYLE_TRUE@fi
 @NRNMECH_DLL_STYLE_TRUE@make -f "$MAKEFILEDIR/nrnmech_makefile" "MODOBJFILES=$MODLO" "COBJFILES=$CLO" "UserLDFLAGS=$UserLDFLAGS" "UserINCFLAGS=$UserINCFLAGS" libnrnmech.la &&
 @NRNMECH_DLL_STYLE_TRUE@  echo '#!/bin/sh
@@ -179,7 +181,7 @@ fi
 @NRNMECH_DLL_STYLE_TRUE@fi' >> special &&
 @NRNMECH_DLL_STYLE_TRUE@  echo '"${NRNIV}"'" -dll \"${mdir}/.libs/libnrnmech.so\" \"\$@\"" >> special &&
 @NRNMECH_DLL_STYLE_TRUE@  chmod 755 special &&
-@NRNMECH_DLL_STYLE_TRUE@  echo "Successfully created $ARCH/special"
+@NRNMECH_DLL_STYLE_TRUE@  echo "Successfully created $MODSUBDIR/special"
 
 @NRNMECH_DLL_STYLE_TRUE@@MAC_DARWIN_TRUE@if false ; then
 @NRNMECH_DLL_STYLE_TRUE@@MAC_DARWIN_FALSE@if false ; then

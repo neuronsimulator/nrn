@@ -5,6 +5,8 @@ ACLOCAL_AMFLAGS = -I m4
 
 host_cpu = @host_cpu@
 
+NVER = $(PACKAGE_VERSION)
+
 if NMODL_ONLY
 SUBDIRS = src
 else
@@ -108,15 +110,21 @@ after_install:
 dmg:
 	carbon="@enable_carbon@" sh $(srcdir)/src/mac/mkdmg.sh NEURON-"`(export NSRC='$(srcdir)' ; sh $(srcdir)/nrnversion.sh)`"
 
+pkg:
+	$(srcdir)/src/mac/nrn_x11_opt2usr.sh $(prefix) $(host_cpu)
+	/usr/local/bin/packagesbuild $(top_builddir)/src/mac/macdist.pkgproj
+	$(srcdir)/src/mac/nrnproductsign.sh $(top_builddir)/src/mac/build/NEURON-$(NVER).pkg
+
 alphadist:
 if UniversalMacBinary
 	a=$(ALPHADIR)/nrn-"``(export NSRC='$(srcdir)' ; sh $(srcdir)/nrnversion.sh 2)`"-MacOSX"`sw_vers -productVersion`".dmg && \
 	echo $$a && \
 	scp $(HOME)/NEURON-"`(export NSRC='$(srcdir)' ; sh $(srcdir)/nrnversion.sh)`".dmg "$$a"
 else
-	a=$(ALPHADIR)/nrn-"`(export NSRC='$(srcdir)' ; sh $(srcdir)/nrnversion.sh 2)`"."$(host_cpu)"-apple-osx"`sw_vers -productVersion`".dmg && \
-	echo $$a && \
-	scp $(HOME)/NEURON-"`(export NSRC='$(srcdir)' ; sh $(srcdir)/nrnversion.sh)`".dmg $$a
+	a=$(ALPHADIR)/nrn-"`(export NSRC='$(srcdir)' ; sh $(srcdir)/nrnversion.sh 2)`".$(host_cpu)-osx.pkg &&\
+	b=$(top_builddir)/src/mac/build/NEURON-$(NVER).pkg &&\
+	echo "scp $$b $$a" && \
+	scp $$b $$a
 endif
 
 else

@@ -1229,16 +1229,9 @@ void ShapeSection::transform3d(Rotation3d* rot) {
 	rot->rotate(r,r);
 	xp = x0 = r[0];
 	yp = y0 = r[1];
-	Coord xinc = 0;
-	Coord yinc = 0;
-	if (sec_->logical_connection) {
-		r[0] = sec_->logical_connection->x;
-		r[1] = sec_->logical_connection->y;
-		r[2] = sec_->logical_connection->z;
-		rot->rotate(r,r);
-		xinc = x0 - r[0];
-		yinc = y0 - r[1];
-	}
+
+	// needed for len_scale since each section has to be translated to
+	// its connection point
 	Section* ps = nrn_trueparent(sec_);
 	if (ps && ps->volatile_ptr) {
 		ShapeSection* pss = (ShapeSection*)ps->volatile_ptr;
@@ -1249,8 +1242,29 @@ void ShapeSection::transform3d(Rotation3d* rot) {
 		}
 		pss->loc(nrn_connection_position(sec), xp, yp);
 	}
+	// but need to deal with the logical_connection which may exist
+	// on any section between sec and trueparent. Just hope there is
+	// no more than one.
+	Coord xinc = 0;
+	Coord yinc = 0;
+	Pt3d* logic_con = NULL;
+	if (ps) {
+		for (Section* sec = sec_; sec != ps; sec = sec->parentsec) {
+			logic_con = sec->logical_connection;
+			if (logic_con) { break; }
+		}
+	}
+	if (logic_con) {
+		r[0] = logic_con->x;
+		r[1] = logic_con->y;
+		r[2] = logic_con->z;
+		rot->rotate(r,r);
+		xinc = x0 - r[0];
+		yinc = y0 - r[1];
+	}
 	xp += xinc;
 	yp += yinc;
+
 	for (i=0; i < n_; ++i) {
 		r[0] = sec_->pt3d[i].x;
 		r[1] = sec_->pt3d[i].y;

@@ -112,10 +112,10 @@ static double joequals(void* v) {
 	return 0.;
 }
 
-static char** joname(void* v) {
+static const char** joname(void* v) {
 	jstring js = (jstring)nrnjava_env->CallStaticObjectMethod(
 		neuronCls, jclassnameID, (jobject)v);
-	return js2charpool(js);	
+	return (const char**)js2charpool(js);	
 }
 
 static Member_func jo_members[] = {
@@ -499,7 +499,7 @@ static void pwm_setwin(void* win, int type, int left, int top) {
 //	printf("pwm_setwin %p %ld %d %d %d\n", win, type, left, top);
 	if (nrnjava_root_env == nrnjava_env) {
 		nrnjava_env->CallStaticIntMethod(neuronCls,
-			setwinID, (jlong)wincast, type, left, top);
+			setwinID, (jlong)win, type, left, top);
 	}else{
 		printf("nrnjava_env = %ld  nrnjava_root_env = %ld\n", (long)nrnjava_env, (long)nrnjava_root_env);
 	}

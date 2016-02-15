@@ -144,6 +144,6 @@ newver=`${IDIR}/nrn/${host_cpu}/bin/nrniv --version | sed 's/[^(]*.*:\(.*\)).*/\
 if test "$newver" != "$base" ; then
 	exit 1
 fi
-make dmg
+make pkg
 make alphadist
 fi
