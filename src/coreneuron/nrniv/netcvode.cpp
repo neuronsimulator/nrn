@@ -463,6 +463,11 @@ void InputPreSyn::send(double tt, NetCvode* ns, NrnThread* nt) {
         if (d->active_ && d->target_) {
             NrnThread* n = PP2NT(d->target_);
 
+#if COLLECT_TQueue_STATISTICS
+            /// TQueue::qtype::spike = 1
+            ns->p[nt->id].tqe_->record_stat_event(1, tt);
+#endif
+
             if (nt == n) 
                 ns->bin_event(tt + d->delay_, d, n);
             else

@@ -366,10 +366,6 @@ void nrn_spike_exchange(NrnThread* nt) {
             if (gid2in_it != gid2in.end()) {
                 InputPreSyn* ps = gid2in_it->second;
                 ps->send(spbufin_[i].spiketime[j], net_cvode_instance, nt);
-#if COLLECT_TQueue_STATISTICS
-                /// TQueue::qtype::spike = 1
-                net_cvode_instance->p[nt->id].tqe_->record_stat_event(1, spbufin_[i].spiketime[j]);
-#endif
 #if NRNSTAT
 				++nrecv_useful_;
 #endif
@@ -383,10 +379,6 @@ void nrn_spike_exchange(NrnThread* nt) {
         if (gid2in_it != gid2in.end()) {
             InputPreSyn* ps = gid2in_it->second;
 			ps->send(spikein_[i].spiketime, net_cvode_instance, nt);
-#if COLLECT_TQueue_STATISTICS
-            /// TQueue::qtype::spike = 1
-            net_cvode_instance->p[nt->id].tqe_->record_stat_event(1, spikein_[i].spiketime);
-#endif
 #if NRNSTAT
 			++nrecv_useful_;
 #endif
@@ -476,10 +468,6 @@ void nrn_spike_exchange_compressed(NrnThread* nt) {
             if (gid2in_it != gps.end()) {
                 InputPreSyn* ps = gid2in_it->second;
 				ps->send(firetime + 1e-10, net_cvode_instance, nt);
- #if COLLECT_TQueue_STATISTICS
-                /// TQueue::qtype::spike = 1
-                net_cvode_instance->p[nt->id].tqe_->record_stat_event(1, firetime + 1e-10);
-#endif
 #if NRNSTAT
 				++nrecv_useful_;
 #endif
@@ -493,10 +481,6 @@ void nrn_spike_exchange_compressed(NrnThread* nt) {
             if (gid2in_it != gps.end()) {
                 InputPreSyn* ps = gid2in_it->second;
 				ps->send(firetime+1e-10, net_cvode_instance, nt);
-#if COLLECT_TQueue_STATISTICS
-                /// TQueue::qtype::spike = 1
-                net_cvode_instance->p[nt->id].tqe_->record_stat_event(1, firetime + 1e-10);
-#endif
 #if NRNSTAT
 				++nrecv_useful_;
 #endif
