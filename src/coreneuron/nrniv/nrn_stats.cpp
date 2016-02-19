@@ -13,15 +13,16 @@
 #include "coreneuron/nrniv/netcvode.h"
 
 extern int spikevec_size;
+extern int* spikevec_gid;
 extern NetCvode* net_cvode_instance;
 
-const int NUM_STATS = 9;
+const int NUM_STATS = 10;
 const int NUM_EVENT_TYPES = 3;
 enum event_type {enq=0, spike, ite};
 
 void report_cell_stats( void )
 {
-    long stat_array[NUM_STATS] = {0,0,0,0,0,0,0,0,0}, gstat_array[NUM_STATS];
+    long stat_array[NUM_STATS] = {0,0,0,0,0,0,0,0,0,0}, gstat_array[NUM_STATS];
 
     for (int ith=0; ith < nrn_nthread; ++ith)
     {
@@ -29,9 +30,16 @@ void report_cell_stats( void )
         stat_array[1] += (long)nrn_threads[ith].n_presyn;        // number of presyns
         stat_array[2] += (long)nrn_threads[ith].n_input_presyn;  // number of input presyns
         stat_array[3] += (long)nrn_threads[ith].n_netcon;        // number of netcons, synapses
-        stat_array[4] += (long)nrn_threads[ith].n_pntproc;        // number of point processes
+        stat_array[4] += (long)nrn_threads[ith].n_pntproc;       // number of point processes
     }
     stat_array[5] = (long)spikevec_size;                         // number of spikes
+
+    int spikevec_positive_gid_size = 0;
+    for (int i=0; i < spikevec_size; ++i)
+        if (spikevec_gid[i] > -1)
+            spikevec_positive_gid_size++;
+
+    stat_array[6] = (long)spikevec_positive_gid_size;            // number of non-negative gid spikes
 
     /// Event queuing statistics
 #if COLLECT_TQueue_STATISTICS
@@ -63,7 +71,7 @@ void report_cell_stats( void )
                     thread_vec_max_num_events[type][ith].first = mapit->first;
                 }
             }
-            stat_array[6+type] += thread_vec_events[type][ith];     // number of enqueued events and number of spike triggered events (enqueued after spike exchange)
+            stat_array[7+type] += thread_vec_events[type][ith];     // number of enqueued events and number of spike triggered events (enqueued after spike exchange)
         }
     }
 
@@ -111,11 +119,12 @@ void report_cell_stats( void )
         printf(" Number of synapses: %ld\n", gstat_array[3]);
         printf(" Number of point processes: %ld\n", gstat_array[4]);
         printf(" Number of spikes: %ld\n", gstat_array[5]);
+        printf(" Number of spikes with non negative gid-s: %ld\n", gstat_array[6]);
 #if COLLECT_TQueue_STATISTICS
-        printf(" Number of enqueued events: %ld\n", gstat_array[6]);
+        printf(" Number of enqueued events: %ld\n", gstat_array[7]);
         printf(" Maximum number of time intervals for the events: %ld\n", gqmax[enq]);
-        printf(" Number of after-spike enqueued events: %ld\n", gstat_array[7]);
-        printf(" Number of inter-thread enqueued events: %ld\n", gstat_array[8]);
+        printf(" Number of after-spike enqueued events: %ld\n", gstat_array[8]);
+        printf(" Number of inter-thread enqueued events: %ld\n", gstat_array[9]);
 //        printf(" Maximum difference of time interval enqueued events between threads on a single MPI: %ld\n", gqdiff_max[enq]);
 //        printf(" Maximum difference of time interval spike enqueued events between threads on a single MPI: %ld\n", gqdiff_max[spike]);
 //        printf(" Minimum difference of time interval enqueued events between threads on a single MPI: %ld\n", gqdiff_min[enq]);
