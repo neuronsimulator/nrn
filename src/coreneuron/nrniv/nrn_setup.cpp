@@ -756,6 +756,8 @@ void read_phase2(data_reader &F, NrnThread& nt) {
   nt._v_parent_index = (int*)coreneuron::ecalloc_align(nt.end, NRN_SOA_BYTE_ALIGN, sizeof(int));;
   F.read_array<int>(nt._v_parent_index, nt.end);
 
+  node_permute(nt._v_parent_index, nt.end);
+
   F.read_array<double>(nt._actual_a, nt.end);
   F.read_array<double>(nt._actual_b, nt.end);
   F.read_array<double>(nt._actual_area, nt.end);

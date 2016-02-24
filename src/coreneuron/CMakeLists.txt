@@ -31,6 +31,7 @@ nrniv/ivocvect.h
 nrniv/memory.h
 nrniv/netcon.h
 nrniv/netcvode.h
+nrniv/node_permute.h
 nrniv/nrn_assert.h
 nrniv/nrn_datareader.h
 nrniv/nrn_setup.h
@@ -67,6 +68,7 @@ nrniv/ivocvect.cpp
 nrniv/main1.cpp
 nrniv/netpar.cpp
 nrniv/netcvode.cpp
+nrniv/node_permute.cpp
 nrniv/tqueue.cpp
 nrniv/mk_mech.cpp
 nrniv/nrn_datareader.cpp
