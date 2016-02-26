@@ -591,7 +591,7 @@ AC_CONFIG_FILES([
 	src/mac/Makefile src/mswin/Makefile src/mswin/batch/Makefile
 	src/mswin/nrnsetup.nsi src/mswin/nrncygso.sh src/mswin/lib/mknrndll.mak
 	src/mswin/nrnsetupmingw.nsi
-	src/mswin/EnvVarUpdate.nsh
+	src/mswin/EnvVarUpdate.nsh src/mswin/AddToPath.nsh
 	src/mswin/extra/Makefile src/mswin/rdln/Makefile
 	src/mswin/windll/Makefile
 	src/mswin/wnrnbbs/Makefile src/mswin/lib/Makefile
