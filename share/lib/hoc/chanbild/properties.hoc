@@ -2,7 +2,7 @@ begintemplate ChannelBuildSelectProperties
 public b, namestr, useionstr1, useionstr2, g_or_p, menu, single_
 public save_data, set_data, clone, save_ion, set_defstr, defstr, set_single
 external hoc_sf_, valid_name_syntax
-objref cb, b, this, mt, ks
+objref cb, b, this, mt, ks, panelbox_
 strdef tstr, tstr1, tstr2, ionstr, namestr, useionstr1, useionstr2, defstr
 strdef g_or_p, ionmech_
 charge=0
@@ -72,8 +72,9 @@ proc menu() {
 }
 
 proc defpanel() {
-	sprint(tstr, "Default gmax for %s", cb)
-	xpanel(tstr)
+	panelbox_ = new VBox()
+	panelbox_.intercept(1)
+	xpanel("")
 	if (ohmictype_ == 1) {
 		if (ks.is_point) {
 			xpvalue("Default gmax (uS)", &gmax_, 1, "set_defstr(gmax_,erev_)")
@@ -91,6 +92,10 @@ proc defpanel() {
 		xpvalue("Default e (mV)", &erev_, 1, "set_defstr(gmax_,erev_)")
 	}
 	xpanel()
+	panelbox_.intercept(0)
+	panelbox_.save("")
+	sprint(tstr, "Default gmax for %s", cb)
+	panelbox_.map(tstr)
 }
 
 proc set_defstr() {
@@ -160,6 +165,7 @@ proc hhtype() {
 }
 
 proc ohmictype() {
+	objref panelbox_
 	if ($1 == 0) { // ohmictype changed
 		ghktype_ = (ohmictype_ == 0)
 	}else{
@@ -191,6 +197,7 @@ proc mkionmenu() {
 }
 
 proc selion() {
+	objref panelbox_
 	iontype_ = $1
 	if ($1 == -1) {
 		ks.ion("NonSpecific")

@@ -1,6 +1,6 @@
 begintemplate ChannelBuildGateGUI
 public name, displaystr, gatestr, power, set_data, dispsel
-public gid, cb, pl
+public gid, cb, pl, g_dismiss
 public remove, g_map_
 external graph_menu_remove_most, valid_name_syntax
 objref gates, tobj, tobj1, this, cb, stglyph, ksg, selgate, selstate, srcstate
