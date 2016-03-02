@@ -30,10 +30,10 @@ void setup_nrnthreads_on_device(NrnThread *threads, int nthreads)  {
     }
 
     /* -- copy NrnThread to device. this needs to be contigious vector because offset is used to find
-     * corresponding NrnThread using Point_process in NET_RECEIVE block 
+     * corresponding NrnThread using Point_process in NET_RECEIVE block
      */
     d_threads = (NrnThread *) acc_copyin(threads, sizeof(NrnThread)*nthreads);
-    
+
     printf("\n --- Copying to Device! --- ");
 
     /* pointers for data struct on device, starting with d_ */
@@ -42,24 +42,24 @@ void setup_nrnthreads_on_device(NrnThread *threads, int nthreads)  {
 
         NrnThread * nt = threads + i;                  //NrnThread on host
         NrnThread *d_nt = d_threads + i;               //NrnThread on device
-       
+
         if(nt->end <= 0) {
             //this is an empty thread
-            continue;    
+            continue;
         }
 
         /* this thread will be computed on GPU */
         nt->compute_gpu = 1;
 
         double *d__data;                // nrn_threads->_data on device
-       
-        printf("\n -----------COPYING %d'th NrnThread TO DEVICE --------------- \n", i); 
+
+        printf("\n -----------COPYING %d'th NrnThread TO DEVICE --------------- \n", i);
 
         /* -- copy _data to device -- */
 
         /*copy all double data for thread */
         d__data = (double *) acc_copyin(nt->_data, nt->_ndata*sizeof(double));
-        
+
         /* Here is the example of using OpenACC data enter/exit
          * Remember that we are not allowed to use nt->_data but we have to use:
          *      double *dtmp = nt->_data;  // now use dtmp!
@@ -117,7 +117,7 @@ void setup_nrnthreads_on_device(NrnThread *threads, int nthreads)  {
             /*copy tml to device*/
             /*QUESTIONS: does tml will point to NULL as in host ? : I assume so!*/
             d_tml = (NrnThreadMembList *) acc_copyin(tml, sizeof(NrnThreadMembList));
-            
+
             /*first tml is pointed by nt */
             if(first_tml) {
                 acc_memcpy_to_device(&(d_nt->tml), &d_tml, sizeof(NrnThreadMembList*));
@@ -126,8 +126,8 @@ void setup_nrnthreads_on_device(NrnThread *threads, int nthreads)  {
             /*rest of tml forms linked list */
                 acc_memcpy_to_device(&(d_last_tml->next), &d_tml, sizeof(NrnThreadMembList*));
             }
-            
-            //book keeping for linked-list 
+
+            //book keeping for linked-list
             d_last_tml = d_tml;
 
             /* now for every tml, there is a ml. copy that and setup pointer */
@@ -143,13 +143,13 @@ void setup_nrnthreads_on_device(NrnThread *threads, int nthreads)  {
             int szdp = nrn_prop_dparam_size_[type];
             int is_art = nrn_is_artificial_[type];
             int layout = nrn_mech_data_layout_[type];
-            
+
             offset = nrn_soa_padded_size(offset, layout);
 
             dptr = d__data + offset;
 
             acc_memcpy_to_device(&(d_ml->data), &(dptr), sizeof(double*));
-            
+
             offset += nrn_soa_padded_size(n, layout) * szp;
 
             if (!is_art) {
@@ -203,7 +203,7 @@ void setup_nrnthreads_on_device(NrnThread *threads, int nthreads)  {
             d_shadow_ptr = (double *) acc_copyin(nt->_shadow_d, pcnt*sizeof(double));
             acc_memcpy_to_device(&(d_nt->_shadow_d), &d_shadow_ptr, sizeof(double*));
         }
-        
+
         if(nt->n_pntproc) {
             /* copy Point_processes array and fix the pointer to execute net_receive blocks on GPU */
             Point_process *pntptr = (Point_process*) acc_copyin(nt->pntprocs, nt->n_pntproc*sizeof(Point_process));
@@ -247,7 +247,7 @@ void setup_nrnthreads_on_device(NrnThread *threads, int nthreads)  {
 
 /* when we execute NET_RECEIVE block on GPU, we provide the index of synapse instances
  * which we need to execute during the current timestep. In order to do this, we have
- * update NetReceiveBuffer_t object to GPU. When size of cpu buffer changes, we set 
+ * update NetReceiveBuffer_t object to GPU. When size of cpu buffer changes, we set
  * reallocated to true and hence need to reallocate buffer on GPU and then need to copy
  * entire buffer. If reallocated is 0, that means buffer size is not changed and hence
  * only need to copy _size elements to GPU.
@@ -277,7 +277,7 @@ void update_net_receive_buffer(NrnThread *nt) {
 
             d_nrb = (NetReceiveBuffer_t *) acc_deviceptr(nrb);
             d_ml = (Memb_list *) acc_deviceptr(tml->ml);
-            
+
             // reallocated is true when buffer on cpu is changed
             if(nrb->reallocated) {
 
@@ -285,11 +285,11 @@ void update_net_receive_buffer(NrnThread *nt) {
                 acc_free( acc_deviceptr(nrb->_pnt_index) );
                 acc_free( acc_deviceptr(nrb->_weight_index) );
                 acc_free( acc_deviceptr(nrb->_nrb_t) );
-                
+
                 /* update device copy */
                 acc_update_device(nrb, sizeof(NetReceiveBuffer_t));
 
-                /* recopy the vectors in the buffer */        
+                /* recopy the vectors in the buffer */
                 d_pnt_index = (int *) acc_copyin(nrb->_pnt_index, sizeof(int)*nrb->_size);
                 acc_memcpy_to_device(&(d_nrb->_pnt_index), &d_pnt_index, sizeof(int*));
 
@@ -307,11 +307,11 @@ void update_net_receive_buffer(NrnThread *nt) {
                 //note that dont update nrb otherwise we loose pointers
 
                 /* update scalar elements */
-                acc_update_device(&nrb->_cnt, sizeof(int)); 
-                acc_update_device(&nrb->_size, sizeof(int)); 
-                acc_update_device(&nrb->_pnt_offset, sizeof(int)); 
+                acc_update_device(&nrb->_cnt, sizeof(int));
+                acc_update_device(&nrb->_size, sizeof(int));
+                acc_update_device(&nrb->_pnt_offset, sizeof(int));
 
-                /*@todo confirm with Michael that we don't need to _size but only 
+                /*@todo confirm with Michael that we don't need to _size but only
                  * _cnt elements to GPU
                  */
                 acc_update_device(nrb->_pnt_index, sizeof(int)*nrb->_cnt);
@@ -326,12 +326,12 @@ void update_net_receive_buffer(NrnThread *nt) {
 void update_nrnthreads_on_host(NrnThread *threads, int nthreads) {
 
 #ifdef _OPENACC
-    
+
     printf("\n --- Copying to Host! --- \n");
 
     int i;
     NetReceiveBuffer_t *nrb;
-    
+
     for( i = 0; i < nthreads; i++) {
 
         NrnThread * nt = threads + i;
@@ -410,7 +410,7 @@ void update_nrnthreads_on_host(NrnThread *threads, int nthreads) {
                 acc_update_self(nt->weights, sizeof(double)*nt->n_weight);
             }
 
-            /* dont update vdata, its pointer array 
+            /* dont update vdata, its pointer array
                if(nt->_nvdata) {
                acc_update_self(nt->_vdata, sizeof(double)*nt->_nvdata);
                }
@@ -429,7 +429,7 @@ void update_nrnthreads_on_device(NrnThread *threads, int nthreads) {
 
     int i;
     NetReceiveBuffer_t *nrb;
-    
+
     for( i = 0; i < nthreads; i++) {
 
         NrnThread * nt = threads + i;
@@ -502,7 +502,7 @@ void update_nrnthreads_on_device(NrnThread *threads, int nthreads) {
                 acc_update_device(nt->weights, sizeof(double)*nt->n_weight);
             }
 
-            /* don't and don't update vdata, its pointer array 
+            /* don't and don't update vdata, its pointer array
                if(nt->_nvdata) {
                acc_update_device(nt->_vdata, sizeof(double)*nt->_nvdata);
                }
@@ -520,7 +520,7 @@ extern "C" {
 void update_matrix_from_gpu(NrnThread *_nt){
 #ifdef _OPENACC
     if ( _nt->compute_gpu && (_nt->end > 0) ) {
-        
+
         /* before copying, make sure all computations in the stream are completed */
         #pragma acc wait(_nt->stream_id)
 
@@ -572,7 +572,7 @@ void modify_data_on_device(NrnThread *threads, int nthreads) {
 #endif
 
     /* Note: even if we have added padding for memory alignment, starting pointer
-     * and their count remains same. Hence below code is still valid even if 
+     * and their count remains same. Hence below code is still valid even if
      * we don't consider padding related information.
      */
 
@@ -582,7 +582,7 @@ void modify_data_on_device(NrnThread *threads, int nthreads) {
     for( i = 0; i < nthreads; i++) {
 
         NrnThread * nt = threads + i;
-        
+
         if ( nt->compute_gpu && (nt->end > 0) ) {
 
             /* -- modify data on device -- */
@@ -615,7 +615,7 @@ void modify_data_on_device(NrnThread *threads, int nthreads) {
                 #pragma acc parallel loop present(ml[0:1])
                 for (j = 0; j < n*szp; ++j)
                 {
-                    ml->data[j] += 0.1; 
+                    ml->data[j] += 0.1;
                 }
 
 
@@ -645,7 +645,7 @@ void modify_data_on_device(NrnThread *threads, int nthreads) {
                         nrb->_weight_index[j] +=1;
                     }
                 }
-            }    
+            }
 
             if(nt->shadow_rhs_cnt) {
                 #pragma acc parallel loop present(nt[0:1])
@@ -674,7 +674,7 @@ void modify_data_on_device(NrnThread *threads, int nthreads) {
                 }
             }
 
-            /* dont update vdata, its pointer array 
+            /* dont update vdata, its pointer array
                if(nt->_nvdata) {
                #pragma acc parallel loop present(nt[0:1])
                for (j = 0; j < nt->_nvdata; ++j)
@@ -724,7 +724,7 @@ void write_nodeindex_to_file(int gid, int id, int *data, int n) {
 
 void write_pntprocs_to_file(FILE *hFile, Point_process *pnt, int n) {
     int i;
-    
+
     fprintf(hFile, "--pntprocs--\n");
     for(i=0; i<n; i++) {
         fprintf(hFile, "--%d %d %d--\n", pnt[i]._type, pnt[i]._i_instance, pnt[i]._tid);
@@ -734,10 +734,10 @@ void write_pntprocs_to_file(FILE *hFile, Point_process *pnt, int n) {
 
 
 void dump_nt_to_file(char *filename, NrnThread *threads, int nthreads) {
- 
+
     FILE *hFile;
     int i, j;
-    
+
     NrnThreadMembList* tml;
     NetReceiveBuffer_t* nrb;
 
@@ -751,10 +751,10 @@ void dump_nt_to_file(char *filename, NrnThread *threads, int nthreads) {
 
       if(nt->end <= 0) {
          //this is an empty thread
-         continue;    
+         continue;
       }
 
-      char fname[1024]; 
+      char fname[1024];
       sprintf(fname, "%s%d.dat", filename, i);
       hFile = fopen(fname, "w");
 
@@ -807,12 +807,12 @@ void dump_nt_to_file(char *filename, NrnThread *threads, int nthreads) {
       if(nt->n_weight)
           write_darray_to_file(hFile, nt->weights, nt->n_weight);
 
-      /* vdata is tricky as it involves pointer to the separately allocated arrays in bbcore_read 
+      /* vdata is tricky as it involves pointer to the separately allocated arrays in bbcore_read
       if(nt->_nvdata)
           write_darray_to_file(hFile, nt->_vdata, nt->_nvdata);
       */
 
-      if(nt->n_pntproc) { 
+      if(nt->n_pntproc) {
           write_pntprocs_to_file(hFile, nt->pntprocs, nt->n_pntproc);
       }
 

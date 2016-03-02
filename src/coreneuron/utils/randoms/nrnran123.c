@@ -33,7 +33,7 @@ size_t nrnran123_instance_count() { return instance_count_; }
 struct nrnran123_State {
 	philox4x32_ctr_t c;
 	philox4x32_ctr_t r;
-	char which_;
+	unsigned char which_;
 };
 */
 
@@ -74,13 +74,13 @@ void nrnran123_deletestream(nrnran123_State* s) {
 	free(s);
 }
 
-void nrnran123_getseq(nrnran123_State* s, uint32_t* seq, char* which) {
+void nrnran123_getseq(nrnran123_State* s, uint32_t* seq, unsigned char* which) {
 	*seq = s->c.v[0];
 	*which = s->which_;
 }
 
-void nrnran123_setseq(nrnran123_State* s, uint32_t seq, char which) {
-	if (which > 3 || which < 0) {
+void nrnran123_setseq(nrnran123_State* s, uint32_t seq, unsigned char which) {
+	if (which > 3) {
 		s->which_ = 0;
 	}else{
 		s->which_ = which;

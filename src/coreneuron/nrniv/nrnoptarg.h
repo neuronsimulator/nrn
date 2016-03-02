@@ -11,7 +11,7 @@
 #include <getopt.h>
 #include "coreneuron/utils/sdprintf.h"
 
-typedef struct cb_parameters {
+typedef struct cn_parameters {
 
     double tstart; 		/**< start time of simulation in msec*/
     double tstop;		/**< stop time of simulation in msec*/
@@ -28,37 +28,37 @@ typedef struct cb_parameters {
     int prcellgid; 		/**< gid of cell for prcellstate */
 
     int threading;		/**< enable pthread/openmp  */
-    
+
     int compute_gpu;		    /**< run computations on gpu  */
 
     const char *patternstim;
     const char *datpath;		/**< directory path where .dat files */
     const char *outpath; 		/**< directory where spikes will be written */
     const char *filesdat; 		/**< name of file containing list of gids dat files read in */
-   
+
     double mindelay;
 
-    /** default constructor */ 
-    cb_parameters();
+    /** default constructor */
+    cn_parameters();
 
-    /** show help message for command line args */ 
+    /** show help message for command line args */
     void show_cb_opts_help();
 
-    /** show all parameter values */ 
+    /** show all parameter values */
     void show_cb_opts();
 
-    /** read options from command line */ 
+    /** read options from command line */
     void read_cb_opts( int argc, char **argv );
 
-    /** return full path of files.dat file */ 
+    /** return full path of files.dat file */
     sd_ptr get_filesdat_path( char *path_buf, size_t bufsz );
 
-    /** store/set computed mindelay argument */ 
+    /** store/set computed mindelay argument */
     void set_mindelay(double mdelay) {
         mindelay = mdelay;
     }
 
-} cb_input_params;
+} cn_input_params;
 
 #endif
 

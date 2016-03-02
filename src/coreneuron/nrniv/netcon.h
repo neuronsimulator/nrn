@@ -48,15 +48,12 @@ public:
 	virtual int type() { return DiscreteEventType; }
 
     virtual void pr(const char*, double t, NetCvode*);
-	// actions performed over each item in the event queue.
-	virtual void frecord_init(TQItem*) {};
 };
 
 class NetCon : public DiscreteEvent {
 public:
     bool active_;
     double delay_;
-    DiscreteEvent* src_; // either a PreSyn or an InputPreSyn or NULL
     Point_process* target_;
     union {
         int weight_index_;
@@ -100,7 +97,7 @@ public:
 	virtual bool check();
 	virtual double value() { return -1.; }
 
-	bool flag_; // true when below, false when above.
+    bool flag_; // true when below, false when above.
 };
 
 
@@ -132,7 +129,6 @@ class InputPreSyn : public DiscreteEvent {
 public:
     int nc_index_; //replaces dil_, index into global NetCon** netcon_in_presyn_order_
     int nc_cnt_; // how many netcon starting at nc_index_
-    int gid_;
 
 	InputPreSyn();
 	virtual ~InputPreSyn();

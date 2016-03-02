@@ -41,7 +41,8 @@ nrniv/nrniv_mf.h
 nrniv/nrnmutdec.h
 nrniv/output_spikes.h
 nrniv/prcellstate.cpp
-nrniv/sptbinq.h
+nrniv/tqueue.h
+nrniv/tqueue.ipp
 nrniv/vrecitem.h
 nrniv/nrn_acc_manager.h
 mech/cfile/cabvars.h
@@ -68,7 +69,6 @@ nrniv/ivocvect.cpp
 nrniv/main1.cpp
 nrniv/netpar.cpp
 nrniv/netcvode.cpp
-nrniv/tqueue.cpp
 nrniv/mk_mech.cpp
 nrniv/nrn_datareader.cpp
 nrniv/nrn_setup.cpp
@@ -76,6 +76,7 @@ nrniv/nrn_stats.cpp
 nrniv/nrnoptarg.cpp
 nrniv/output_spikes.cpp
 nrniv/patternstim.cpp
+nrniv/tqueue.cpp
 nrniv/vrecord.cpp
 nrniv/nrn_acc_manager.cpp
 utils/randoms/nrnran123.c

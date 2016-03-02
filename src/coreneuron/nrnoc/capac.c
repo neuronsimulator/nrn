@@ -77,8 +77,13 @@ void nrn_cap_jacob(NrnThread* _nt, Memb_list* ml) {
 	{ /*if (use_cachevec) {*/
 		int* ni = ml->nodeindices;
 
+#if LAYOUT == 1 /*AoS*/
+		for (_iml=0; _iml < _cntml_actual; _iml++) {
+	        vdata = ml->data + _iml*nparm;
+#else
         _PRAGMA_FOR_JACOB_ACC_LOOP_
 		for (_iml=0; _iml < _cntml_actual; _iml++) {
+#endif
 			_vec_d[ni[_iml]] += cfac*cm;
 		}
 	}
@@ -89,11 +94,15 @@ static void cap_init(NrnThread* _nt, Memb_list* ml, int type ) {
 	int _cntml_padded = ml->_nodecount_padded;
 	int _iml;
 	double *vdata = ml->data;
-	
     (void)_nt; (void)type; (void) _cntml_padded; /* unused */
 
+#if LAYOUT == 1 /*AoS*/
+	for (_iml=0; _iml < _cntml_actual; _iml++) {
+	    vdata = ml->data + _iml*nparm;
+#else
     _PRAGMA_FOR_INIT_ACC_LOOP_
-	for (_iml=0; _iml < _cntml_actual; ++_iml) {
+	for (_iml=0; _iml < _cntml_actual; _iml++) {
+#endif
 		i_cap = 0;
 	}
 }
@@ -104,7 +113,7 @@ void nrn_capacity_current(NrnThread* _nt, Memb_list* ml) {
 	int _iml;
 	double *vdata = ml->data;
 	double cfac = .001 * _nt->cj;
-    
+
     /*@todo: verify cfac is being copied !! */
 
     (void) _cntml_padded; /* unused when layout=1*/
@@ -116,10 +125,15 @@ void nrn_capacity_current(NrnThread* _nt, Memb_list* ml) {
     double* _vec_rhs = _nt->_actual_rhs;
     int stream_id = _nt->stream_id;
 
+#if LAYOUT == 1 /*AoS*/
+	for (_iml=0; _iml < _cntml_actual; _iml++) {
+	    vdata = ml->data + _iml*nparm;
+#else
     _PRAGMA_FOR_CUR_ACC_LOOP_
-    for (_iml=0; _iml < _cntml_actual; _iml++) {
+	for (_iml=0; _iml < _cntml_actual; _iml++) {
+#endif
         i_cap = cfac*cm*_vec_rhs[ni[_iml]];
-    }
+	}
 }
 
 /* the rest can be constructed automatically from the above info*/

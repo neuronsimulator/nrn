@@ -69,7 +69,7 @@ int main1( int argc, char **argv, char **env )
     nrnran123_mutconstruct();
 
     // handles coreneuron configuration parameters
-    cb_input_params input_params;
+    cn_input_params input_params;
 
     // read command line parameters
     input_params.read_cb_opts( argc, argv );
@@ -82,6 +82,7 @@ int main1( int argc, char **argv, char **env )
     // set global variables for start time, timestep and temperature
     t = input_params.tstart;
     dt = input_params.dt;
+    rev_dt = (int)(1./dt);
     celsius = input_params.celsius;
 
     // full path of files.dat file
@@ -105,10 +106,9 @@ int main1( int argc, char **argv, char **env )
 
     report_mem_usage( "Before nrn_setup" );
 
-    // reading *.dat files and setting up the data structures
-    nrn_setup( input_params.datpath, filesdat, nrn_need_byteswap, input_params.threading );
+    // reading *.dat files and setting up the data structures, setting mindelay
+    nrn_setup( input_params, filesdat, nrn_need_byteswap );
 
-    
     report_mem_usage( "After nrn_setup " );
 
     // Invoke PatternStim
@@ -118,11 +118,6 @@ int main1( int argc, char **argv, char **env )
 
     /// Setting the timeout
     nrn_set_timeout(200.);
-
-    // find mindelay and set configuration parameter
-    double mindelay = BBS_netpar_mindelay( input_params.maxdelay );
-
-    input_params.set_mindelay( mindelay );
 
     // show all configuration parameters for current run
     input_params.show_cb_opts();

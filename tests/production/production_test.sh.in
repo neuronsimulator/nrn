@@ -1,5 +1,12 @@
 #! /bin/sh 
 
+reference=/gpfs/bbp.cscs.ch/project/proj16/coreneuron/data/@SIM_NAME@/reference_output/out.dat.ref
+if [ ! -f $reference ]
+then
+  echo "No reference output file. Test failed!"
+  exit 1
+fi
+
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:@CMAKE_BINARY_DIR@/lib
 export OMP_NUM_THREADS=64
 
@@ -29,11 +36,11 @@ then
   exit 1
 fi
 
-cat out[0-9]*.dat > out_cb.dat
-sort -k 1n,1n -k 2n,2n out_cb.dat > sort_out.dat
-diff sort_out.dat /gpfs/bbp.cscs.ch/project/proj20/10x10/3m/reference_output/@SIM_NAME@/out.dat.ref > diff.dat
+cat out[0-9]*.dat > out_cn.dat
+sort -k 1n,1n -k 2n,2n out_cn.dat > sort_out.dat
+diff sort_out.dat $reference > diff.dat
 
-if [ -s diff.out ] 
+if [ -s diff.dat ] 
 then
   echo "Results are different, check the file diff.dat. Test failed!"
   exit 1

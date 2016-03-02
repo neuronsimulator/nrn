@@ -1,3 +1,3 @@
 # -*- mode: cmake -*-
-# CMake/common https://github.com/Eyescale/CMake.git 0bd6baa
-# coreneuron/mech/neurodamus ssh://bbpcode.epfl.ch/sim/neurodamus/bbp sandbox/kumbhar/hpcopt_stochkv_tmp
+# CMake/common https://github.com/Eyescale/CMake.git 5397ec8
+# coreneuron/mech/neurodamus ssh://bbpcode.epfl.ch/sim/neurodamus/bbp corebluron

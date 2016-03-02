@@ -38,7 +38,7 @@ static void nrn_rhs(NrnThread* _nt) {
     double *vec_b = &(VEC_B(0));
     double *vec_v = &(VEC_V(0));
     int *parent_index = _nt->_v_parent_index;
- 
+
     #pragma acc parallel loop present(vec_rhs[0:i3], vec_d[0:i3]) if(_nt->compute_gpu)
 	for (i = i1; i < i3; ++i) {
 		vec_rhs[i] = 0.;

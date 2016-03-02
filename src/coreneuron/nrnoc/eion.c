@@ -34,7 +34,7 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #if defined(_OPENACC)
 #define _PRAGMA_FOR_INIT_ACC_LOOP_ _Pragma("acc parallel loop present(pd[0:_cntml_padded*5], ppd[0:1], nrn_ion_global_map[0:nrn_ion_global_map_size]) if(nt->compute_gpu)")
 #define _PRAGMA_FOR_CUR_ACC_LOOP_ _Pragma("acc parallel loop present(pd[0:_cntml_padded*5], nrn_ion_global_map[0:nrn_ion_global_map_size]) if(nt->compute_gpu) async(stream_id)")
-#define _PRAGMA_FOR_SEC_ORDER_CUR_ACC_LOOP_ _Pragma("acc parallel loop present(pd[0:_cntml_padded*5], ni[0:_cntml], _vec_rhs[0:_nt->end]) if(_nt->compute_gpu) async(stream_id)")
+#define _PRAGMA_FOR_SEC_ORDER_CUR_ACC_LOOP_ _Pragma("acc parallel loop present(pd[0:_cntml_padded*5], ni[0:_cntml_actual], _vec_rhs[0:_nt->end]) if(_nt->compute_gpu) async(stream_id)")
 #else
 #define _PRAGMA_FOR_INIT_ACC_LOOP_ _Pragma("")
 #define _PRAGMA_FOR_CUR_ACC_LOOP_ _Pragma("")
@@ -107,7 +107,7 @@ void ion_reg(const char* name, double valence) {
             }
 			nrn_ion_global_map_size = mechtype + 1;
 		}
-		
+
         nrn_ion_global_map[mechtype] = (double*)emalloc(3*sizeof(double));
 
 		Sprintf(buf[0], "%si0_%s", name, buf[0]);
@@ -131,7 +131,7 @@ void ion_reg(const char* name, double valence) {
 			global_conci(mechtype) = DEF_ioni;
 			global_conco(mechtype) = DEF_iono;
 			global_charge(mechtype) = VAL_SENTINAL;
-		}			
+		}
 	}
 	val = global_charge(mechtype);
 	if (valence != VAL_SENTINAL && val != VAL_SENTINAL && valence != val) {
@@ -169,14 +169,13 @@ double nrn_nernst(double ci, double co, double z, double celsius) {
 #pragma acc routine seq
 void nrn_wrote_conc(int type, double* p1, int p2, int it, double **gimap, double celsius, int _cntml_padded) {
 	if (it & 04) {
-
 #if LAYOUT <= 0 /* SoA */
 		int _iml = 0;
         /* passing _nt to this function causes cray compiler to segfault during compilation
-         * hence passing _cntml 
+         * hence passing _cntml_padded
          */
 #else
-        (void) _cntml;
+        (void) _cntml_padded;
 #endif
 		double* pe = p1 - p2*_STRIDE;
 		pe[0] = nrn_nernst(pe[1*_STRIDE], pe[2*_STRIDE], gimap[type][2], celsius);

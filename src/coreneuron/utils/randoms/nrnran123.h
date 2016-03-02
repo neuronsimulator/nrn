@@ -104,7 +104,7 @@ extern GLOBAL void nrnran123_setup_deletestream(nrnran123_State* s);
 extern GLOBAL void nrnran123_setup_newstream(nrnran123_State *s, uint32_t id1, uint32_t id2);
 
 /* minimal data stream */
-extern DEVICE void nrnran123_getseq(nrnran123_State*, uint32_t* seq, char* which);
+extern DEVICE void nrnran123_getseq(nrnran123_State*, uint32_t* seq, unsigned char* which);
 extern DEVICE void nrnran123_getids(nrnran123_State*, uint32_t* id1, uint32_t* id2);
 extern DEVICE uint32_t nrnran123_ipick(nrnran123_State*); /* uniform 0 to 2^32-1 */
 
@@ -115,7 +115,7 @@ extern DEVICE double nrnran123_dblpick(nrnran123_State*); /* uniform open interv
 
 /* this could be called from openacc parallel construct (in INITIAL block) */
 #pragma acc routine seq
-extern DEVICE void nrnran123_setseq(nrnran123_State*, uint32_t seq, char which);
+extern DEVICE void nrnran123_setseq(nrnran123_State*, uint32_t seq, unsigned char which);
 
 #pragma acc routine seq
 extern DEVICE double nrnran123_negexp(nrnran123_State*);  /* mean 1.0 */

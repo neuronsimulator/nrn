@@ -47,6 +47,7 @@ extern "C" {
 
 extern double celsius;
 extern double t, dt;
+extern int rev_dt;
 extern int secondorder;
 extern int stoprun;
 #define tstopbit (1 << 15)

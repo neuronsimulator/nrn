@@ -23,6 +23,7 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 int secondorder=0;
 double t, dt, celsius;
+int rev_dt;
 
 int net_buf_receive_cnt_;
 int* net_buf_receive_type_;
@@ -132,9 +133,10 @@ void alloc_mech(int n) {
 void initnrn() {
 	secondorder = DEF_secondorder;	/* >0 means crank-nicolson. 2 means currents
 				   adjusted to t+dt/2 */
-	t = 0;		/* msec */
-	dt = DEF_dt;	/* msec */
-	celsius = DEF_celsius;	/* degrees celsius */
+    t = 0.;		                   /* msec */
+    dt = DEF_dt;	               /* msec */
+    rev_dt = (int)(DEF_rev_dt);    /* 1/msec */
+    celsius = DEF_celsius;	       /* degrees celsius */
 }
 
 /* if vectorized then thread_data_size added to it */

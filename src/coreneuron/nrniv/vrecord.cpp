@@ -27,10 +27,6 @@ extern NetCvode* net_cvode_instance;
 PlayRecordEvent::PlayRecordEvent() {}
 PlayRecordEvent::~PlayRecordEvent() {}
 
-void PlayRecordEvent::frecord_init(TQItem* q) {
-	plr_->frecord_init(q);
-}
-
 void PlayRecordEvent::deliver(double tt, NetCvode* ns, NrnThread*) {
 	plr_->deliver(tt, ns);
 }

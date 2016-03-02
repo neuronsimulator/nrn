@@ -39,17 +39,17 @@ extern int* nrn_has_net_event_; /* the types that send a net_event */
 extern int* pnttype2presyn; /* from the type, which array of pnt2presyn_ix are we talking about. */
 
 typedef struct NrnThreadMembList{ /* patterned after CvMembList in cvodeobj.h */
-	struct NrnThreadMembList* next;
-	struct Memb_list* ml;
-	int index;
+    struct NrnThreadMembList* next;
+    struct Memb_list* ml;
+    int index;
     int *dependencies; /* list of mechanism types that this mechanism depends on*/
     int ndependencies; /* for scheduling we need to know the dependency count */
 } NrnThreadMembList;
 
 typedef struct NrnThreadBAList {
-	struct Memb_list* ml; /* an item in the NrnThreadMembList */
-	struct BAMech* bam;
-	struct NrnThreadBAList* next;
+    struct Memb_list* ml; /* an item in the NrnThreadMembList */
+    struct BAMech* bam;
+    struct NrnThreadBAList* next;
 } NrnThreadBAList;
 
 typedef struct NrnThread {
@@ -65,7 +65,7 @@ typedef struct NrnThread {
         NetCon* netcons;
 	double* weights; // size n_weight. NetCon.weight_ points into this array.
 
-	int n_pntproc, n_presyn, n_netcon, n_weight; // only for model_size
+        int n_pntproc, n_presyn, n_input_presyn, n_netcon, n_weight; // only for model_size
 
         int ncell; /* analogous to old rootnodecount */
 	int end;    /* 1 + position of last in v_node array. Now v_node_count. */

@@ -17,24 +17,29 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef netcvode_h
 #define netcvode_h
 
-#include "coreneuron/nrniv/sptbinq.h"
+#include "coreneuron/nrniv/tqueue.h"
 
-#define PRINT_EVENT 1
+#define PRINT_EVENT 0
+
+/// QTYPE options include: spltree, pq_que
+/// STL priority queue is used instead of the splay tree by default.
+/// TO DO: check if stl queue works with move_event functions.
+#define QTYPE pq_que
 
 class DiscreteEvent;
-class SelfEventPool;
 class NetCvode;
-struct InterThreadEvent;
+
+struct InterThreadEvent {
+	DiscreteEvent* de_;	
+	double t_;
+};
 
 class NetCvodeThreadData {
 public:
-    int ite_cnt_;
-    int ite_size_;
     int unreffed_event_cnt_;
-    TQueue* tqe_;
-    InterThreadEvent* inter_thread_events_;
+    TQueue<QTYPE>* tqe_;
+    std::vector<InterThreadEvent> inter_thread_events_;
     MUTDEC
-    double immediate_deliver_;
 
     NetCvodeThreadData();
     virtual ~NetCvodeThreadData();

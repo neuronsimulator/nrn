@@ -21,7 +21,6 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/nrnconf.h"
 #include "coreneuron/nrnoc/multicore.h"
 #include "coreneuron/nrnmpi/nrnmpi.h"
-#include "coreneuron/nrniv/nrn_assert.h"
 
 class PreSyn;
 class InputPreSyn;
@@ -30,16 +29,10 @@ class InputPreSyn;
 #include "coreneuron/nrniv/netcvode.h"
 #include "coreneuron/nrniv/nrniv_decl.h"
 #include "coreneuron/nrniv/ivocvect.h"
+#include "coreneuron/nrniv/nrn_assert.h"
 
 static double t_exchange_;
 static double dt1_; // 1/dt
-static void alloc_space();
-
-/// Vector of maps for negative presyns
-std::vector< std::map<int, PreSyn*> > neg_gid2out;
-/// Maps for ouput and input presyns
-std::map<int, PreSyn*> gid2out;
-std::map<int, InputPreSyn*> gid2in;
 
 extern "C" {
 extern NetCvode* net_cvode_instance;
@@ -48,8 +41,6 @@ extern void nrn_fake_fire(int gid, double firetime, int fake_out);
 int nrnmpi_spike_compress(int nspike, bool gid_compress, int xchng_meth);
 void nrn_spike_exchange_init();
 }
-
-static double set_mindelay(double maxdelay);
 
 #if NRNMPI
 
@@ -61,13 +52,6 @@ void nrn_spike_exchange(NrnThread*);
 extern int nrnmpi_int_allmax(int);
 extern void nrnmpi_int_allgather(int*, int*, int);
 void nrn2ncs_outputevent(int netcon_output_index, double firetime);
-}
-
-
-void nrnmpi_gid_clear(void)
-{
-  gid2in.clear();
-  gid2out.clear();
 }
 
 // for compressed gid info during spike exchange
@@ -94,7 +78,6 @@ static void nrn_spike_exchange_compressed(NrnThread*);
 
 static int active_;
 static double usable_mindelay_;
-static double min_interprocessor_delay_;
 static double mindelay_; // the one actually used. Some of our optional algorithms
 static double last_maxstep_arg_;
 static NetParEvent* npe_; // nrn_nthread of them
@@ -106,6 +89,24 @@ static int n_npe_; // just to compare with nrn_nthread
 static MUTDEC
 #endif
 #endif
+
+/// Allocate space for spikes: 200 structs of {int gid; double time}
+/// coming from nrnmpi.h and array of int of the global domain size
+static void alloc_mpi_space() {
+#if NRNMPI
+    if (!spikeout_) {
+        ocapacity_  = 100;
+        spikeout_ = (NRNMPI_Spike*)emalloc(ocapacity_*sizeof(NRNMPI_Spike));
+        icapacity_  = 100;
+        spikein_ = (NRNMPI_Spike*)malloc(icapacity_*sizeof(NRNMPI_Spike));
+        nin_ = (int*)emalloc(nrnmpi_numprocs*sizeof(int));
+#if nrn_spikebuf_size > 0
+spbufout_ = (NRNMPI_Spikebuf*)emalloc(sizeof(NRNMPI_Spikebuf));
+spbufin_ = (NRNMPI_Spikebuf*)emalloc(nrnmpi_numprocs*sizeof(NRNMPI_Spikebuf));
+#endif
+#endif
+    }
+}
 
 NetParEvent::NetParEvent(){
   wx_ = ws_ = 0.;
@@ -211,22 +212,21 @@ void nrn2ncs_outputevent(int gid, double firetime) {
 #endif // NRNMPI
 
 static int nrn_need_npe() {
-	int b = 0;
-	if (active_) { b = 1; }
-	if (nrn_nthread > 1) { b = 1; }
-	if (b) {
-		if (last_maxstep_arg_ == 0) {
-			last_maxstep_arg_ =   100.;
-		}
-		set_mindelay(last_maxstep_arg_);
-	}else{
-		if (npe_) {
-			delete [] npe_;
-			npe_ = nil;
-			n_npe_ = 0;
-		}
-	}
-	return b;
+    int b = 0;
+    if (active_) { b = 1; }
+    if (nrn_nthread > 1) { b = 1; }
+    if (b) {
+        if (last_maxstep_arg_ == 0) {
+            last_maxstep_arg_ =   100.;
+        }
+    }else{
+        if (npe_) {
+            delete [] npe_;
+            npe_ = nil;
+            n_npe_ = 0;
+        }
+    }
+    return b;
 }
 
 #define TBUFSIZE 0
@@ -234,7 +234,7 @@ static int nrn_need_npe() {
 void nrn_spike_exchange_init() {
 //printf("nrn_spike_exchange_init\n");
 	if (!nrn_need_npe()) { return; }
-	alloc_space();
+    alloc_mpi_space();
 //printf("nrnmpi_use=%d active=%d\n", nrnmpi_use, active_);
     std::map<int, InputPreSyn*>::iterator gid2in_it;
 	usable_mindelay_ = mindelay_;
@@ -268,7 +268,7 @@ void nrn_spike_exchange_init() {
     if (use_compress_) {
 	idxout_ = 2;
 	t_exchange_ = t;
-	dt1_ = 1./dt;
+    dt1_ = rev_dt;
 	usable_mindelay_ = floor(mindelay_ * dt1_ + 1e-9) * dt;
 	assert (usable_mindelay_ >= dt && (usable_mindelay_ * dt1_) < 255);
     }else{
@@ -639,127 +639,6 @@ void nrn_fake_fire(int gid, double spiketime, int fake_out) {
 
 }
 
-
-void netpar_tid_gid2ps_alloc(int nth) {
-  // nth is same as ngroup in nrn_setup.cpp, not necessarily nrn_nthread.
-  neg_gid2out.resize(nth);
-}
-
-void netpar_tid_gid2ps_free() {
-  neg_gid2out.clear();
-}
-
-void netpar_tid_gid2ps(int tid, int gid, PreSyn** ps, InputPreSyn** psi){
-  /// for gid < 0 returns the PreSyn* in the thread (tid) specific map.
-  *ps = NULL;
-  *psi = NULL;
-  std::map<int, PreSyn*>::iterator gid2out_it;
-  if (gid >= 0) {
-      gid2out_it = gid2out.find(gid);
-      if (gid2out_it != gid2out.end()) {
-        *ps = gid2out_it->second;
-      }else{
-        std::map<int, InputPreSyn*>::iterator gid2in_it;
-        gid2in_it = gid2in.find(gid);
-        if (gid2in_it != gid2in.end()) {
-          *psi = gid2in_it->second;
-        }
-      }
-  }else{
-    gid2out_it = neg_gid2out[tid].find(gid);
-    if (gid2out_it != neg_gid2out[tid].end()) {
-      *ps = gid2out_it->second;
-    }
-  }
-}
-  
-void netpar_tid_set_gid2node(int tid, int gid, int nid, PreSyn* ps) {
-  if (gid >= 0) {
-      /// Allocate space for spikes: 200 structs of {int gid; double time}
-      /// coming from nrnmpi.h and array of int of the global domain size
-      alloc_space();
-#if NRNMPI
-      if (nid == nrnmpi_myid) {
-#else
-      {
-#endif
-          char m[200];
-          if (gid2in.find(gid) != gid2in.end()) {
-              sprintf(m, "gid=%d already exists as an input port", gid);
-              hoc_execerror(m, "Setup all the output ports on this process before using them as input ports.");
-          }
-          if (gid2out.find(gid) != gid2out.end()) {
-              sprintf(m, "gid=%d already exists on this process as an output port", gid);
-              hoc_execerror(m, 0);
-          }
-          gid2out[gid] = ps;
-          ps->gid_ = gid;
-          ps->output_index_ = gid;
-      }
-  }else{
-    nrn_assert(nid == nrnmpi_myid);
-    nrn_assert(neg_gid2out[tid].find(gid) == neg_gid2out[tid].end());
-    neg_gid2out[tid][gid] = ps;
-  }
-}
-
-
-void nrn_reset_gid2out(void) {
-  gid2out.clear();
-}
-
-void nrn_reset_gid2in(void) {
-  gid2in.clear();
-}
-
-static void alloc_space() {
-#if NRNMPI
-	if (!spikeout_) {
-		ocapacity_  = 100;
-		spikeout_ = (NRNMPI_Spike*)emalloc(ocapacity_*sizeof(NRNMPI_Spike));
-		icapacity_  = 100;
-		spikein_ = (NRNMPI_Spike*)malloc(icapacity_*sizeof(NRNMPI_Spike));
-		nin_ = (int*)emalloc(nrnmpi_numprocs*sizeof(int));
-#if nrn_spikebuf_size > 0
-spbufout_ = (NRNMPI_Spikebuf*)emalloc(sizeof(NRNMPI_Spikebuf));
-spbufin_ = (NRNMPI_Spikebuf*)emalloc(nrnmpi_numprocs*sizeof(NRNMPI_Spikebuf));
-#endif
-#endif
-	}
-}
-
-
-void nrn_cleanup_presyn(DiscreteEvent*) {
-    // for multi-send, need to cleanup the list of hosts here
-}
-
-
-int input_gid_register(int gid) {
-	alloc_space();
-    if (gid2out.find(gid) != gid2out.end()) {
-		return 0;
-    }else if (gid2in.find(gid) != gid2in.end()) {
-		return 0;
-	}
-    gid2in[gid] = NULL;
-	return 1;
-}
-
-int input_gid_associate(int gid, InputPreSyn* psi) {
-    std::map<int, InputPreSyn*>::iterator gid2in_it;
-    gid2in_it = gid2in.find(gid);
-    if (gid2in_it != gid2in.end()) {
-        if (gid2in_it->second) {
-			return 0;
-		}
-        gid2in_it->second = psi;
-                psi->gid_ = gid;
-		return 1;
-	}
-	return 0;
-}
-
-
 static int timeout_ = 0;
 int nrn_set_timeout(int timeout) {
 	int tt;
@@ -770,7 +649,7 @@ int nrn_set_timeout(int timeout) {
 
 void BBS_netpar_solve(double tstop) {
 
-        double time = nrnmpi_wtime();
+    double time = nrnmpi_wtime();
 
 #if NRNMPI
 	double mt, md;
@@ -803,61 +682,57 @@ void BBS_netpar_solve(double tstop) {
     }
 }
 
-static double set_mindelay(double maxdelay) {
-	double mindelay = maxdelay;
-	last_maxstep_arg_ = maxdelay;
+double set_mindelay(double maxdelay) {
+    double mindelay = maxdelay;
+    last_maxstep_arg_ = maxdelay;
 
    // if all==1 then minimum delay of all NetCon no matter the source.
    // except if src in same thread as NetCon
    int all = (nrn_nthread > 1);
    // minumum delay of all NetCon having an InputPreSyn source
    for (int ith = 0; ith < nrn_nthread; ++ith) {
-       NrnThread* nt = nrn_threads + ith;
-       for (int i = 0; i < nt->n_netcon; ++i) {
-           NetCon& nc = nt->netcons[i];
+       NrnThread& nt = nrn_threads[ith];
+       for (int i = 0; i < nt.n_netcon; ++i) {
+           NetCon* nc = nt.netcons + i;
            int chk = 0; // ignore nc.delay_
-           if (nc.src_ && nc.src_->type() == InputPreSynType) {
-               chk = 1;
-           }else if (all) {
+           int gid = netcon_srcgid[ith][i];
+           PreSyn* ps; InputPreSyn* psi;
+           netpar_tid_gid2ps(ith, gid, &ps, &psi);
+           if (psi) {
+                chk = 1;
+           }
+           else if (all) {
                chk = 1;
                // but ignore if src in same thread as NetCon
-               if (nc.src_ && nc.src_->type() == PreSynType
-                   && ((PreSyn*)nc.src_)->nt_ == nt) {
+               if (ps && ps->nt_ == &nt) {
                    chk = 0;
                }
            }
-           if (chk && nc.delay_ < mindelay) {
-                mindelay = nc.delay_;
-           } 
-		}
-	}
+           if (chk && nc->delay_ < mindelay) {
+               mindelay = nc->delay_;
+           }
+       }
+   }
 
 #if NRNMPI
-	if (nrnmpi_use) {active_ = 1;}
-	if (use_compress_) {
-		if (mindelay/dt > 255) {
-			mindelay = 255*dt;
-		}
-	}
+    if (nrnmpi_use) {active_ = 1;}
+    if (use_compress_) {
+        if (mindelay/dt > 255) {
+            mindelay = 255*dt;
+        }
+    }
 
 //printf("%d netpar_mindelay local %g now calling nrnmpi_mindelay\n", nrnmpi_myid, mindelay);
 //	double st = time();
-	mindelay_ = nrnmpi_mindelay(mindelay);
-	min_interprocessor_delay_ = mindelay_;
+    mindelay_ = nrnmpi_mindelay(mindelay);
 //	add_wait_time(st);
 //printf("%d local min=%g  global min=%g\n", nrnmpi_myid, mindelay, mindelay_);
-	errno = 0;
-	return mindelay;
+    errno = 0;
+    return mindelay;
 #else
-	mindelay_ = mindelay;
-	min_interprocessor_delay_ = mindelay_;
-	return mindelay;
+    mindelay_ = mindelay;
+    return mindelay;
 #endif //NRNMPI
-}
-
-double BBS_netpar_mindelay(double maxdelay) {
-	double tt = set_mindelay(maxdelay);
-	return tt;
 }
 
 void BBS_netpar_spanning_statistics(int* nsend, int* nsendmax, int* nrecv, int* nrecv_useful) {
@@ -907,7 +782,7 @@ two phase multisend distributes the injection.
 int nrnmpi_spike_compress(int nspike, bool gid_compress, int xchng_meth) {
 #if NRNMPI
 	if (nrnmpi_numprocs < 2) { return 0; }
-	assert(xchng_meth == 0);
+	nrn_assert(xchng_meth == 0);
 	if (nspike >= 0) {
 		ag_send_nspike_ = 0;
 		if (spfixout_) { free(spfixout_); spfixout_ = 0; }
@@ -943,25 +818,5 @@ printf("Notice: gid compression did not succeed. Probably more than 255 cells on
 #else
 	return 0;
 #endif
-}
-
-
-/// Approximate count of number of bytes for the gid2out map
-size_t output_presyn_size(void) {
-  if (gid2out.empty()) { return 0; }
-  size_t nbyte = sizeof(gid2out) + sizeof(int)*gid2out.size() + sizeof(PreSyn*)*gid2out.size();
-#ifdef DEBUG
-  printf(" gid2out table bytes=~%ld size=%d\n", nbyte, gid2out.size());
-#endif
-  return nbyte;
-}
-
-size_t input_presyn_size(void) {
-  if (gid2in.empty()) { return 0; }
-  size_t nbyte = sizeof(gid2in) + sizeof(int)*gid2in.size() + sizeof(InputPreSyn*)*gid2in.size();
-#ifdef DEBUG
-  printf(" gid2in table bytes=~%ld size=%d\n", nbyte, gid2in->size());
-#endif
-  return nbyte;
 }
 
