@@ -8,6 +8,7 @@ See also:
     cvode.rst
     batch.rst
     savstate.rst
+    bbsavestate.rst
     sessionsave.rst
 
 Functions
@@ -32,7 +33,7 @@ Functions
         ``forall Ra=...`` 
 
     .. warning::
-        Not very useful. No way to completely restart neuron exect to :func:`quit` and 
+        Not very useful. No way to completely restart neuron except to :func:`quit` and 
         re-load. 
 
 

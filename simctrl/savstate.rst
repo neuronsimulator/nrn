@@ -50,7 +50,7 @@ SaveState
         fadvance() calls different cells will be at different t values in 
         general and SaveState will be useless. 
 
-         
+    :class:`BBSaveState` is a more flexible cell centered version of SaveState
 
 ----
 
