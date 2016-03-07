@@ -10,7 +10,8 @@ PACKAGE_VERSION_MAJOR=`echo "$PACKAGE_VERSION" | sed 's/\..*//'`
 PACKAGE_VERSION_MINOR=`echo "$PACKAGE_VERSION" | sed 's/^.*\.//'`
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_SRCDIR(src/memacs/main.c)
-AM_INIT_AUTOMAKE
+AM_INIT_AUTOMAKE([foreign])
+AM_MAINTAINER_MODE([enable])
 
 dnl The following line causes us to make a config.h instead of putting all
 dnl the defines into the makefile.
@@ -598,7 +599,7 @@ AC_CONFIG_FILES([
 	src/mac/macdist.pkgproj src/mac/postinstall.sh
 	src/mswin/nrnsetup.nsi src/mswin/nrncygso.sh src/mswin/lib/mknrndll.mak
 	src/mswin/nrnsetupmingw.nsi
-	src/mswin/EnvVarUpdate.nsh
+	src/mswin/EnvVarUpdate.nsh src/mswin/AddToPath.nsh
 	src/mswin/extra/Makefile src/mswin/rdln/Makefile
 	src/mswin/windll/Makefile
 	src/mswin/wnrnbbs/Makefile src/mswin/lib/Makefile

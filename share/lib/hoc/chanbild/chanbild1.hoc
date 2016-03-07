@@ -98,9 +98,11 @@ proc import() {local i, j, k, srcindex, tarindex, ut
 
 proc destroy() {local i
 	objref genprop, displist, tobj, tobj1, clone_, rgui, ks
+	if (object_id(ggui)) { ggui.g_dismiss() }
 	objref ksth, ggui, gvec, ksvec, gate, aliases
 	for i=0, gatelist.count-1 { gatelist.object(i).destroy() }
 	objref gatelist
+	doNotify()
 	box.unmap()
 }
 
