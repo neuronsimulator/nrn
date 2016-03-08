@@ -17,6 +17,37 @@ BBSaveState
     The class was originally developed with the needs of the BlueBrain
     neocortical model in mind.
 
+    The following code fragment illustrates a basic test. When 'restore'
+    is False, the simulation run stops half way and saves the state and then
+    continues. When 'restore' is True, the simulation begins at the previous
+    save time and continues to tstop.
+
+    .. code-block::
+       none
+
+        def prun(tstop, restore=False):
+          pc.set_maxstep(10)
+          h.stdinit()
+          bbss = h.BBSaveState()
+          if restore:
+            bbss.restore_test()
+            print 'after restore t=%g'%h.t
+          else:
+            pc.psolve(tstop/2)
+            bbss.save_test()
+          pc.psolve(tstop)
+
+    Note that files are saved in a subdirectory called "out" and restored
+    from a subdirectory called "in". A script filter
+    (see :meth:`BBSaveState.save_test`) is needed to copy and sometimes
+    concatenate files from the out to the in subfolders. These files have
+    an ascii format.
+
+    BBSaveState has a c++ API that allows one to replace the file reader and
+    writer. See nrn/src/nrniv/bbsavestate.cpp for a description of this API.
+    The undocumented methods, save_test_bin and restore_test_bin demonstrate
+    the use of this API.
+
     The user can mark a point process IGNORE by calling the method
     bbss.ignore(point_process_object)
     on all the point processes to be ignored.
