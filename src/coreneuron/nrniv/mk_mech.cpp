@@ -51,7 +51,7 @@ void mk_mech(const char* datpath) {
   sd_ptr fname=sdprintf(fnamebuf, sizeof(fnamebuf), "%s/%s", datpath, "bbcore_mech.dat");
   FILE* f;
   f = fopen(fname, "r");
-  assert(f);
+  nrn_assert(f);
 //  printf("reading %s\n", fname);
   int n=0;
   nrn_assert(fscanf(f, "%d\n", &n) == 1);
@@ -96,7 +96,7 @@ void mk_mech(const char* datpath) {
     BYTEHEADER;
     nrn_need_byteswap = 1;
     BYTESWAP(x, int32_t);
-    assert(x == 1);
+    nrn_assert(x == 1);
   }
 
   fclose(f);

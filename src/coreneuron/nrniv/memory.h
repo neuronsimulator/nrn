@@ -3,6 +3,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include "coreneuron/nrniv/nrn_assert.h"
 
 namespace coreneuron {
     /** Independent function to compute the needed chunkding,
@@ -30,8 +31,8 @@ namespace coreneuron {
     */
     inline void* emalloc_align(size_t size, size_t alignment) {
         void* memptr;
-        assert(posix_memalign(&memptr, alignment, size) == 0);
-        assert(is_aligned(memptr, alignment));
+        nrn_assert(posix_memalign(&memptr, alignment, size) == 0);
+        nrn_assert(is_aligned(memptr, alignment));
         return memptr;
     }
     
@@ -40,8 +41,8 @@ namespace coreneuron {
     inline void* ecalloc_align(size_t n, size_t alignment, size_t size) {
         void* p;
         if (n == 0) { return (void*)0; }
-        assert(posix_memalign(&p, alignment, n*size) == 0);
-        assert(is_aligned(p, alignment));
+        nrn_assert(posix_memalign(&p, alignment, n*size) == 0);
+        nrn_assert(is_aligned(p, alignment));
         memset(p, 1, n*size); // Avoid native division by zero (cyme...)
         return p;
     }

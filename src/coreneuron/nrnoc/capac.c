@@ -57,12 +57,18 @@ void nrn_cap_jacob(NrnThread* _nt, Memb_list* ml) {
 	int _cntml_actual = ml->nodecount;
 	int _cntml_padded = ml->_nodecount_padded;
 	int _iml;
-	double *vdata = ml->data;
+	double *vdata;
 	double cfac = .001 * _nt->cj;
   (void) _cntml_padded; /* unused when layout=1*/
 	{ /*if (use_cachevec) {*/
 		int* ni = ml->nodeindices;
+#if LAYOUT == 1 /*AoS*/
 		for (_iml=0; _iml < _cntml_actual; _iml++) {
+	    vdata = ml->data + _iml*nparm;
+#else
+	    vdata = ml->data;
+		for (_iml=0; _iml < _cntml_actual; _iml++) {
+#endif
 			VEC_D(ni[_iml]) += cfac*cm;
 		}
 	}
@@ -72,9 +78,15 @@ static void cap_init(NrnThread* _nt, Memb_list* ml, int type ) {
 	int _cntml_actual = ml->nodecount;
 	int _cntml_padded = ml->_nodecount_padded;
 	int _iml;
-	double *vdata = ml->data;
+	double *vdata;
 	(void)_nt; (void)type; (void) _cntml_padded; /* unused */
-	for (_iml=0; _iml < _cntml_actual; ++_iml) {
+#if LAYOUT == 1 /*AoS*/
+	for (_iml=0; _iml < _cntml_actual; _iml++) {
+	    vdata = ml->data + _iml*nparm;
+#else
+	vdata = ml->data;
+	for (_iml=0; _iml < _cntml_actual; _iml++) {
+#endif
 		i_cap = 0;
 	}
 }
@@ -83,16 +95,22 @@ void nrn_capacity_current(NrnThread* _nt, Memb_list* ml) {
 	int _cntml_actual = ml->nodecount;
 	int _cntml_padded = ml->_nodecount_padded;
 	int _iml;
-	double *vdata = ml->data;
+	double *vdata;
 	double cfac = .001 * _nt->cj;
   (void) _cntml_padded; /* unused when layout=1*/
 	/* since rhs is dvm for a full or half implicit step */
 	/* (nrn_update_2d() replaces dvi by dvi-dvx) */
 	/* no need to distinguish secondorder */
 		int* ni = ml->nodeindices;
-		for (_iml=0; _iml < _cntml_actual; _iml++) {
-			i_cap = cfac*cm*VEC_RHS(ni[_iml]);
-		}
+#if LAYOUT == 1 /*AoS*/
+	for (_iml=0; _iml < _cntml_actual; _iml++) {
+	    vdata = ml->data + _iml*nparm;
+#else
+	vdata = ml->data;
+	for (_iml=0; _iml < _cntml_actual; _iml++) {
+#endif
+		i_cap = cfac*cm*VEC_RHS(ni[_iml]);
+	}
 }
 
 /* the rest can be constructed automatically from the above info*/

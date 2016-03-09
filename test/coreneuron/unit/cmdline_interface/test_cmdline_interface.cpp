@@ -7,7 +7,7 @@
 
 BOOST_AUTO_TEST_CASE(cmdline_interface) 
 {
-  cb_input_params input_params;
+  cn_input_params input_params;
   int argc = 14; 
   char ** argv = new char*[argc];
   argv[0] = (char*)"executable";
