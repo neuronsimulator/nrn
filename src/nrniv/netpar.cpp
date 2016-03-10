@@ -58,6 +58,11 @@ void nrnmpi_gid_clear(int);
 extern void nrn_partrans_clear();
 void nrn_spike_exchange_init();
 extern double nrn_bgp_receive_time(int);
+typedef void (*PFIO)(int, Object*);
+extern void nrn_gidout_iter(PFIO);
+extern Object* nrn_gid2obj(int);
+extern PreSyn* nrn_gid2presyn(int);
+extern int nrn_gid_exists(int);
 
 // BGPDMA can be 0,1,2,3,6,7
 // (BGPDMA & 1) > 0 means multisend ISend allowed
@@ -89,6 +94,8 @@ void nrn_spike_exchange(NrnThread*);
 extern int nrnmpi_int_allmax(int);
 extern void nrnmpi_int_allgather(int*, int*, int);
 void nrn2ncs_outputevent(int netcon_output_index, double firetime);
+bool nrn_use_compress_; // global due to bbsavestate
+#define use_compress_ nrn_use_compress_
 }
 
 #ifdef USENCS
@@ -188,7 +195,6 @@ static int ocapacity_; // for spikeout_
 // require it to be smaller than  min_interprocessor_delay.
 static double wt_; // wait time for nrnmpi_spike_exchange
 static double wt1_; // time to find the PreSyns and send the spikes.
-static bool use_compress_;
 static int spfixout_capacity_;
 static int idxout_;
 static void nrn_spike_exchange_compressed(NrnThread*);
@@ -317,7 +323,7 @@ void NetParEvent::savestate_restore(double tt, NetCvode* nc){
 #endif
 	if (ithread_ == 0) {
 		//npe_->pr("savestate_restore", tt, nc);
-		for (int i=0; i < nrn_nthread; ++i) {
+		for (int i=0; i < nrn_nthread; ++i) if (npe_+i) {
 			nc->event(tt, npe_+i, nrn_threads + i);
 		}
 	}
@@ -860,11 +866,15 @@ static void mk_localgid_rep() {
 // effects of output spikes from the simulated cells. In this case
 // set the third arg to 1 and set the output cell thresholds very
 // high so that they do not themselves generate spikes.
-// Can only be called by thread 0 because of the ps->send.
+// The remaining possibility is fake_out=2 which only does a send for
+// the gids owned by this cpu. This, followed by a nrn_spike_exchange(),
+// ensures that all the target cells, regardless of what rank they are on
+// will get the spike delivered and nobody gets it twice.
+
 void nrn_fake_fire(int gid, double spiketime, int fake_out) {
 	assert(gid2in_);
 	PreSyn* ps;
-	if (gid2in_->find(gid, ps)) {
+	if (fake_out < 2 && gid2in_->find(gid, ps)) {
 		assert(ps);
 //printf("nrn_fake_fire %d %g\n", gid, spiketime);
 		ps->send(spiketime, net_cvode_instance, nrn_threads);
@@ -1002,7 +1012,7 @@ void nrnmpi_gid_clear(int arg) {
 #endif
 }
 
-int BBS::gid_exists(int gid) {
+int nrn_gid_exists(int gid) {
 	PreSyn* ps;
 	alloc_space();
 	if (gid2out_->find(gid, ps)) {
@@ -1015,6 +1025,7 @@ int BBS::gid_exists(int gid) {
 	}
 	return 0;
 }
+int BBS::gid_exists(int gid) {return nrn_gid_exists(gid);}
 
 double BBS::threshold() {
 	int gid = int(chkarg(1, 0., MD));
@@ -1083,7 +1094,7 @@ void BBS::spike_record(int gid, IvocVect* spikevec, IvocVect* gidvec) {
     }
 }
 
-Object** BBS::gid2obj(int gid) {
+static Object* gid2obj_(int gid) {
 	Object* cell = 0;
 //printf("%d gid2obj gid=%d\n", nrnmpi_myid, gid);
 	PreSyn* ps;
@@ -1092,7 +1103,11 @@ Object** BBS::gid2obj(int gid) {
 	assert(ps);
 	cell = ps->ssrc_ ? nrn_sec2cell(ps->ssrc_) : ps->osrc_;
 //printf(" return %s\n", hoc_object_name(cell));
-	return hoc_temp_objptr(cell);
+	return cell;
+}
+
+Object** BBS::gid2obj(int gid) {
+	return hoc_temp_objptr(gid2obj_(gid));
 }
 
 Object** BBS::gid2cell(int gid) {
@@ -1443,3 +1458,25 @@ PreSyn* nrn_gid2outputpresyn(int gid) { // output PreSyn
 	}
 	return NULL;
 }
+
+Object* nrn_gid2obj(int gid) {
+	return gid2obj_(gid);
+}
+
+PreSyn* nrn_gid2presyn(int gid) { // output PreSyn
+	PreSyn* ps;
+	assert(gid2out_->find(gid, ps));
+	return ps;
+}
+
+void nrn_gidout_iter(PFIO callback) {
+	PreSyn* ps;
+	NrnHashIterate(Gid2PreSyn, gid2out_, PreSyn*, ps) {
+		if (ps) {
+			int gid = ps->gid_;
+			Object* c = gid2obj_(gid);
+			(*callback)(gid, c);
+		}
+	}}}
+}
+

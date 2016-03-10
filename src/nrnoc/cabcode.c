@@ -2351,13 +2351,44 @@ void assign_hoc_str(char* str, char* val, int global)
 }
 #endif
 
-void section_exists(void) {
-	int iarg, indx;
-	Symbol* sym;
-	Section* sec;
-	Object* obj;
+Section* nrn_section_exists(char* name, int indx, Object* cell) {
+	Section* sec = (Section*)0;
+	Symbol* sym = (Symbol*)0;
+	Object* obj = cell;
 	Objectdata* obd;
 	Item* itm;
+	if (obj) {
+		sym = hoc_table_lookup(name, obj->template->symtable);
+		/* if external then back to top level */
+		if (sym && sym->public == 2) {
+			sym = sym->u.sym;
+			obj = (Object*)0;
+		}
+	}else{
+		sym = hoc_table_lookup(name, hoc_top_level_symlist);
+	}
+	if (sym) {
+		if (sym->type == SECTION) {
+			if (obj) {
+				obd = obj->u.dataspace;
+			}else{
+				obd = hoc_top_level_data;
+			}
+			if (indx < hoc_total_array_data(sym, obd)) {
+				itm = *(obd[sym->u.oboff].psecitm + indx);
+				if (itm) {
+					sec = itm->element.sec;
+				}
+			}
+		}
+	}
+	return sec;
+}
+
+void section_exists(void) {
+	int iarg, indx;
+	Section* sec;
+	Object* obj;
 	char *str, *cp, buf[100];
 
 	obj = (Object*)0;
@@ -2375,29 +2406,7 @@ void section_exists(void) {
 	}
 	if (ifarg(iarg)) {
 		obj = *hoc_objgetarg(iarg);
-		sym = hoc_table_lookup(str, obj->template->symtable);
-		/* if external then back to top level */
-		if (sym && sym->public == 2) {
-			sym = sym->u.sym;
-			obj = (Object*)0;
-		}
-	}else{
-		sym = hoc_table_lookup(str, hoc_top_level_symlist);
 	}
-	if (sym) {
-		if (sym->type == SECTION) {
-			if (obj) {
-				obd = obj->u.dataspace;
-			}else{
-				obd = hoc_top_level_data;
-			}
-			if (indx < hoc_total_array_data(sym, obd)) {
-				itm = *(obd[sym->u.oboff].psecitm + indx);
-				if (itm) {
-					sec = itm->element.sec;
-				}
-			}
-		}
-	}
+	sec = nrn_section_exists(str, indx, obj);
 	hoc_retpushx((double)(sec && sec->prop));
 }

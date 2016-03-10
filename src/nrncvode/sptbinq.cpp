@@ -28,6 +28,8 @@ extern "C" {
 #define nt_dt nrn_threads->_dt
 }
 
+void (*nrn_binq_enqueue_error_handler)(double, TQItem*);
+
 TQItem::TQItem() {
 	left_ = 0;
 	right_ = 0;
@@ -318,7 +320,14 @@ void BinQ::resize(int size) {
 }
 void BinQ::enqueue(double td, TQItem* q) {
 	int idt = (int)((td - tt_)/nt_dt + 1.e-10);
-	assert(idt >= 0);
+	if (idt < 0) {
+		if (nrn_binq_enqueue_error_handler) {
+			(*nrn_binq_enqueue_error_handler)(td, q);
+			return;
+		}else{
+			assert(idt >= 0);
+		}
+	}
 	if (idt >= nbin_) {
 		resize(idt + 100);
 	}
