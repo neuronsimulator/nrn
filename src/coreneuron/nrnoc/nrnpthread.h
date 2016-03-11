@@ -26,7 +26,9 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #else
 
-#define USE_PTHREAD 1
+/* for the open source release, only enable OpenMP threading
+ * as Pthread is not tested thoroughly */
+#define USE_PTHREAD 0
 
 #endif
 

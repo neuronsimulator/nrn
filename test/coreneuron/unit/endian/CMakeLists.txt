@@ -9,8 +9,8 @@ if(Boost_FOUND)
 
     # Need to test the endian code against aggressive compiler optimization:
     # -O4 is xlc highest level without link-level optimization.
-    # clang may well complain.
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O4")
+    # clang may well complain and hence changing it to -O3
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
 
     include(CommonCTest)
 endif()

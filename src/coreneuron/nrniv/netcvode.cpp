@@ -87,7 +87,7 @@ void net_send(void** v, double* weight, Point_process* pnt, double td, double fl
     if (td < nt->_t) {
         char buf[100];
         sprintf(buf, "net_send td-t = %g", td - nt->_t);
-        se->pr(buf, td);
+        se->pr(buf, td, net_cvode_instance);
         abort();
         hoc_execerror("net_send delay < 0", 0);
     }
@@ -508,7 +508,7 @@ void SelfEvent::call_net_receive(NetCvode* ns) {
     --nctd.unreffed_event_cnt_;
 }
 
-void SelfEvent::pr(const char* s, double tt) {
+void SelfEvent::pr(const char* s, double tt, NetCvode *) {
     printf("%s", s);
     printf(" SelfEvent target=%s %.15g flag=%g\n", pnt_name(target_), tt, flag_);
 }
