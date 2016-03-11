@@ -2942,7 +2942,7 @@ Parallel Transfer
         Creates the file <gid>_suffix.nrndat with all the range variable
         values and synapse/NetCon information associated with the gid.
         More complete than the HOC version of prcellstate.hoc in the standard
-        library but a more terse in regard to names of variables. The purpose
+        library but more terse in regard to names of variables. The purpose
         is for diagnosing the reason why a spike raster for a simulation is
         not the same for different nhost or gid distribution. One examines
         the diff between corresponding files from different runs.
@@ -2954,6 +2954,7 @@ Parallel Transfer
 
             gid
             t
+            celsius
             # nodes, spike generator node
             List of node indices, parent node index, area, connection coefficients
               between node and parent
@@ -2970,3 +2971,56 @@ Parallel Transfer
               netreceive index, srcgid or type name of source object, active, delay, weight vector
 
 
+----
+
+..  method:: ParallelContext.nrnbbcore_write
+
+    Syntax:
+        ``pc.nrnbbcore_write([path[, gidgroup_vec]])``
+
+    Description:
+        Writes files describing the existing model in such a way that those
+        files can be read by CoreNEURON to simulate the model and produce
+        exactly the same results as if the model were simulated in NEURON.
+
+        The files are written in the directory specified by the path argument
+        (default '.').
+
+        Rank 0 writes a file called bbcore_mech.dat (into path) which lists
+        all the membrane mechanisms in ascii format of:
+
+        name type pointtype artificial is_ion param_size dparam_size charge_if_ion
+
+        At the end of the bbcore_mech.dat file is a binary value that is
+        used by the CoreNEURON reader to determine if byteswapping is needed
+        in case of machine endianness difference between writing and reading.
+
+        Each rank also writes pc.nthread() pairs of model data files containing
+        mixed ascii and binary data that completely defines the model
+        specification within a thread, The pair of files in each thread are
+        named <gidgroup>_1.dat and <gidgroup>_2.dat  where gidgroup is one
+        of the gids in the thread (the files contain data for all the gids
+        in a thread). <gidgroup>_1.dat contains network topology data and
+        <gidgroup>_2.dat contains all the data needed to actually construct
+        the cells and synapses and specify connection weights and delays.
+
+        If the second argument does not exist, 
+        rank 0 writes a "files.dat" file with a first value that
+	specifies the total number of gidgroups and one gidgroup value per
+        line for all threads of all ranks.
+
+        If the model is too large to exist in NEURON (models typcially use
+        an order of magnitude less memory in CoreNEURON) the model can
+	be constructed in NEURON as a series of submodels.
+        When one piece is constructed
+        on each rank, this function can be called with a second argument which
+        must be a Vector. In this case, rank 0 will NOT write a files.dat
+        and instead the pc.nthread() gidgroup values for the rank will be
+        returned in the Vector. 
+
+        This function requires cvode.cache_efficient(1) . Multisplit is not
+        supported. The model cannot be more complicated than a spike or gap
+        junction coupled parallel network model of real and artificial cells.
+        Real cells must have gids, Artificial cells without gids connect
+        only to cells in the same thread. No POINTER to data outside of the
+        thread that holds the pointer. 
