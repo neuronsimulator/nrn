@@ -35,6 +35,8 @@ endif(CORENEURON_OPENMP)
 include(Common)
 include(FindPackages)
 
+find_package(mod2c 1.1  REQUIRED)
+
 if(BLUEGENE)
   set(COMMON_LIBRARY_TYPE STATIC)
 endif()
