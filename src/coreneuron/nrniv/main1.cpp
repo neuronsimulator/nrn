@@ -49,7 +49,7 @@ int main1( int argc, char **argv, char **env )
     nrnran123_mutconstruct();
 
     // handles coreneuron configuration parameters
-    cb_input_params input_params;
+    cn_input_params input_params;
 
     // read command line parameters
     input_params.read_cb_opts( argc, argv );

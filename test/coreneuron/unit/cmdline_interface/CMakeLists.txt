@@ -1,13 +1,9 @@
-find_package(Boost COMPONENTS unit_test_framework)
 
-if(Boost_FOUND)
-    set(TEST_LIBRARIES ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY} coreneuron)
-    set(TEST_LABEL unit)
-    make_mpi_exeprefix(1 TEST_PREFIX)
-    include_directories(${CMAKE_SOURCE_DIR}/coreneuron ${Boost_INCLUDE_DIRS})
 
-    include(CommonCTest)
-endif()
+FILE(GLOB cmd_interface_test_src "*.cpp")
 
-add_test_class(unit)
+add_executable(cmd_interface_test_bin ${cmd_interface_test_src})
+target_link_libraries(cmd_interface_test_bin coreneuron ${MPI_C_LIBRARIES} ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY})
+
+add_test(NAME cmd_interface_test COMMAND ${TEST_EXEC_PREFIX} ${CMAKE_CURRENT_BINARY_DIR}/cmd_interface_test_bin)
 

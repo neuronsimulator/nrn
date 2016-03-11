@@ -19,7 +19,7 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <string.h>
 #include <stdarg.h>
 #include "coreneuron/nrnoc/multicore.h"
-#include "coreneuron/nrniv/sptbinq.h"
+#include "coreneuron/nrniv/tqueue.h"
 
 #if COLLECT_TQueue_STATISTICS
 #define STAT(arg) ++arg;

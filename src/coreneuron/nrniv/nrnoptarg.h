@@ -56,7 +56,7 @@ typedef struct cb_parameters {
         mindelay = mdelay;
     }
 
-} cb_input_params;
+} cn_input_params;
 
 #endif
 

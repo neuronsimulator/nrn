@@ -17,7 +17,7 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef netcvode_h
 #define netcvode_h
 
-#include "coreneuron/nrniv/sptbinq.h"
+#include "coreneuron/nrniv/tqueue.h"
 
 #define PRINT_EVENT 1
 
