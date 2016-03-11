@@ -56,7 +56,7 @@ NMODL = ../nmodl/nocmodl
 FORCE:
 
 $(srcdir)/nrnversion.h: FORCE
-	if test -d $(top_srcdir)/.git; then \
+	if test -d $(top_srcdir)/.git ; then \
 		sh $(top_srcdir)/git2nrnversion_h.sh $(top_srcdir) > $(srcdir)/nrnversion.h.tmp ; \
                 if cmp $(srcdir)/nrnversion.h.tmp $(srcdir)/nrnversion.h ; then \
                         echo "nrnversion.h not changed" ; \
@@ -65,29 +65,28 @@ $(srcdir)/nrnversion.h: FORCE
                         mv $(srcdir)/nrnversion.h.tmp $(srcdir)/nrnversion.h ; \
                         echo "updated nrnversion.h" ; \
                 fi \
-	else \
-		if test -d $(top_srcdir)/.hg ; then \
-			sh $(top_srcdir)/hg2nrnversion_h.sh $(top_srcdir) > $(srcdir)/nrnversion.h.tmp ; \
-			if cmp $(srcdir)/nrnversion.h.tmp $(srcdir)/nrnversion.h ; then \
-				echo "nrnversion.h not changed" ; \
-				rm $(srcdir)/nrnversion.h.tmp ; \
-			else \
-				mv $(srcdir)/nrnversion.h.tmp $(srcdir)/nrnversion.h ; \
-				echo "updated nrnversion.h" ; \
-			fi \
+	elif test -d $(top_srcdir)/.hg ; then \
+		sh $(top_srcdir)/hg2nrnversion_h.sh $(top_srcdir) > $(srcdir)/nrnversion.h.tmp ; \
+		if cmp $(srcdir)/nrnversion.h.tmp $(srcdir)/nrnversion.h ; then \
+			echo "nrnversion.h not changed" ; \
+			rm $(srcdir)/nrnversion.h.tmp ; \
 		else \
-			if test -d $(top_srcdir)/.svn && svnversion $(top_srcdir) ; then \
-				if test "`svnversion $(top_srcdir)`" != "`sed -n 's/.*SVN_CHANGESET.*(\([^)]*\).*/\1/p' $(srcdir)/nrnversion.h`" ; then \
-	    			sh $(top_srcdir)/svn2nrn_h.sh $(top_srcdir) > $(srcdir)/nrnversion.h.tmp; \
-	    			if test -s $(srcdir)/nrnversion.h.tmp ; then \
-					mv $(srcdir)/nrnversion.h.tmp $(srcdir)/nrnversion.h ; \
-	    			fi ; \
-	    			echo "updated nrnversion.h" ; \
+			mv $(srcdir)/nrnversion.h.tmp $(srcdir)/nrnversion.h ; \
+			echo "updated nrnversion.h" ; \
+		fi \
+	else \
+		if test -d $(top_srcdir)/.svn && svnversion $(top_srcdir) ; then \
+			if test "`svnversion $(top_srcdir)`" != "`sed -n 's/.*SVN_CHANGESET.*(\([^)]*\).*/\1/p' $(srcdir)/nrnversion.h`" ; then \
+	   			sh $(top_srcdir)/svn2nrn_h.sh $(top_srcdir) > $(srcdir)/nrnversion.h.tmp; \
+	   			if test -s $(srcdir)/nrnversion.h.tmp ; then \
+				mv $(srcdir)/nrnversion.h.tmp $(srcdir)/nrnversion.h ; \
+	   			fi ; \
+	   			echo "updated nrnversion.h" ; \
 			else \
 				echo "nrnversion.h not changed" ; \
 			fi \
 		fi \
-	fi 
+	fi
 
 #$(srcdir)/nrnversion.h: FORCE
 #	if test -d $(top_srcdir)/.hg ; then \
