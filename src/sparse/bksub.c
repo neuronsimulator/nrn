@@ -5,7 +5,7 @@
 void bksub(void)
 {
 	int i;
-	struct elm *el, *pivot;
+	struct elm *el, *pivot=0;
 
 	for (i = neqn ; i >= 1 ; i--)
 	{

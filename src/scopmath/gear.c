@@ -561,7 +561,7 @@ int incr, n;
 double maxerror, *work;
 {
     int i, j, old_order;
-    double temp, norm = 0.0, alpha, r = 1.0;
+    double temp, norm = 0.0, alpha=0.0, r = 1.0;
 
     switch (incr)
     {

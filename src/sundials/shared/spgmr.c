@@ -156,7 +156,7 @@ int SpgmrSolve(SpgmrMem mem, void *A_data, N_Vector x, N_Vector b,
 {
   N_Vector *V, xcor, vtemp;
   realtype **Hes, *givens, *yg;
-  realtype beta, rotation_product, r_norm, s_product, rho;
+  realtype beta, rotation_product, r_norm, s_product, rho=0.0;
   booleantype preOnLeft, preOnRight, scale2, scale1, converged;
   int i, j, k, l, l_plus_1, l_max, krydim, ier, ntries;
 

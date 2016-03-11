@@ -266,7 +266,7 @@ N_Vector N_VCloneEmpty_NrnThread(N_Vector w)
 
 N_Vector N_VMake_NrnThread(long int length, realtype *v_data)
 {
-  N_Vector v;
+  N_Vector v=NULL;
 
   assert(0);
 #if 0
@@ -278,8 +278,9 @@ N_Vector N_VMake_NrnThread(long int length, realtype *v_data)
     NV_OWN_DATA_NT(v) = FALSE;
     NV_DATA_NT(v) = v_data;
   }
+
 #endif
-  return(v);
+  return (v);
 }
 
 /* ----------------------------------------------------------------------------

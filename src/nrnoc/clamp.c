@@ -45,9 +45,13 @@ void print_clamp() {
 	int i;
 	
 	if (maxlevel == 0) return;
+#ifndef _OMPSS_
 	Printf("%s fclamp(%d, %g) /* Second arg is location */\n\
 /* fclamp( #, duration(ms), magnitude(mV)) ; clamp_resist = %g */\n", secname(sec),
 	maxlevel, loc, clamp_resist);
+#else
+Printf("%s fclamp(%d, %g) /* Second arg is location */\nfclamp( #, duration(ms), magnitude(mV)) ; clamp_resist = %g */\n", secname(sec),maxlevel, loc, clamp_resist);
+#endif
 	for (i=0; i<maxlevel; i++) {
 		Printf("   fclamp(%2d,%13g,%14g)\n", i, duration[i], vc[i]);
 	}

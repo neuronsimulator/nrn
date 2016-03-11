@@ -17,6 +17,11 @@ implementTable(PV2I, void*, int)
 static PV2I* pnt2index; // for deciding if NetCon is to be printed
 static int pntindex; // running count of printed point processes.
 
+extern "C"
+{
+#include "neuron.h"
+}
+
 static void pr_memb(int type, Memb_list* ml, int* cellnodes, NrnThread& nt, FILE* f) {
   int header_printed = 0;
   int size = nrn_prop_param_size_[type];
@@ -180,6 +185,7 @@ void nrn_prcellstate(int gid, const char* suffix) {
   NrnThread& nt = *ps->nt_;
   fprintf(f, "gid = %d\n", gid);
   fprintf(f, "t = %.15g\n", nt._t);
+  fprintf(f, "celsius = %.15g\n", celsius);
   if (ps->thvar_) {
     pr_realcell(*ps, nt, f);
   }

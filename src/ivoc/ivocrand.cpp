@@ -60,6 +60,8 @@ static RandomPlayList* random_play_list_;
 extern "C" {
 double nrn_random_pick(Rand* r);
 Rand* nrn_random_arg(int);
+long nrn_get_random_sequence(Rand* r);
+void nrn_set_random_sequence(Rand* r, long seq);
 
 #include <mcran4.h>
 
@@ -288,6 +290,18 @@ static double r_MCellRan4(void* r) {
   x->gen = x->rand->generator();
   x->type_ = 2;
   return (double)mcr->orig_;
+}
+
+long nrn_get_random_sequence(Rand* r) {
+	assert(r->type_ == 2);
+	MCellRan4* mcr = (MCellRan4*)r->gen;
+	return mcr->ihigh_;
+}
+
+void nrn_set_random_sequence(Rand* r, long seq) {
+	assert(r->type_ == 2);
+	MCellRan4* mcr = (MCellRan4*)r->gen;
+	mcr->ihigh_ = seq;
 }
 
 static double r_nrnran123(void* r) {

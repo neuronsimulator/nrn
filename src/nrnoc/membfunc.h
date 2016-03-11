@@ -46,6 +46,7 @@ typedef struct Memb_func {
 	int is_point;
 	void* hoc_mech;
 	void (*setdata_)(struct Prop*);
+	int* dparam_semantics; // for nrncore writing.
 } Memb_func;
 
 

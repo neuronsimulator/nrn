@@ -1480,3 +1480,88 @@ void nrn_gidout_iter(PFIO callback) {
 	}}}
 }
 
+#include "nrnbbcore_write.h"
+extern "C" {
+extern int* nrn_prop_param_size_;
+extern int* pnt_receive_size;
+extern short* nrn_is_artificial_;
+static int weightcnt(NetCon* nc) {
+  return nc->cnt_;
+//  return nc->target_ ? pnt_receive_size[nc->target_->prop->type]: 1;
+}
+
+size_t nrncore_netpar_bytes() {
+  PreSyn* ps;
+  size_t ntot, nin, nout, nnet, nweight;
+  ntot = nin = nout = nnet = nweight = 0;
+size_t npnt = 0;
+  if (0 && nrnmpi_myid == 0) {
+    printf("size Presyn=%ld NetCon=%ld Point_process=%ld Prop=%ld\n",
+      sizeof(PreSyn), sizeof(NetCon), sizeof(Point_process), sizeof(Prop));
+  }
+  NrnHashIterate(Gid2PreSyn, gid2out_, PreSyn*, ps) {
+    if (ps) {
+      nout += 1;
+      int n = ps->dil_.count();
+      nnet += n;
+      for (int i=0; i < n; ++i) {
+        nweight += weightcnt(ps->dil_.item(i));
+NetCon* nc = ps->dil_.item(i);
+if (nc->target_) { npnt += 1; }
+      }
+    }
+  }}}
+//printf("output Presyn npnt = %ld nweight = %ld\n", npnt, nweight);
+  NrnHashIterate(Gid2PreSyn, gid2in_, PreSyn*, ps) {
+    if (ps) {
+      nin += 1;
+      int n = ps->dil_.count();
+      nnet += n;
+      for (int i=0; i < n; ++i) {
+        nweight += weightcnt(ps->dil_.item(i));
+NetCon* nc = ps->dil_.item(i);
+if (nc->target_) { npnt += 1; }
+      }
+    }
+  }}}
+//printf("after input Presyn total npnt = %ld  nweight = %ld\n", npnt, nweight);
+  ntot = (nin + nout)*sizeof(PreSyn) + nnet*sizeof(NetCon) + nweight*sizeof(double);
+//  printf("%d rank output Presyn %ld  input Presyn %ld  NetCon %ld  bytes %ld\n",
+//    nrnmpi_myid, nout, nin, nnet, ntot);
+  return ntot;
+}
+
+void nrncore_netpar_cellgroups_helper(CellGroup* cgs) {
+  //printf("nrncore_netpar_cellgroups_helper\n");
+
+  // for the real cells in each thread (all have output gid and voltage spike
+  // detector) fill the cgs output_ps, output_gid, and output_vindex
+  // All the other (acell) gids have already been processed.
+  int* gidcnt = new int[nrn_nthread]; // real only
+  for (int i=0; i < nrn_nthread; ++ i) {
+    gidcnt[i] = 0;
+  }
+
+  PreSyn* ps;
+  NrnHashIterate(Gid2PreSyn, gid2out_, PreSyn*, ps) {
+    if (ps && ps->thvar_) {
+      int ith = ps->nt_->id;
+      assert(ith >= 0 && ith < nrn_nthread);
+      int i = gidcnt[ith];
+      cgs[ith].output_ps[i] = ps;
+      cgs[ith].output_gid[i] = ps->output_index_;
+      assert(ps->thvar_ >= ps->nt_->_actual_v);
+      int inode = ps->thvar_ - ps->nt_->_actual_v;
+      assert(inode <= ps->nt_->end);
+      cgs[ith].output_vindex[i] = inode;
+      ++gidcnt[ith];
+    }
+  }}}
+  for (int i=0; i < nrn_nthread; ++ i) {
+    assert(nrn_threads[i].ncell == gidcnt[i]);
+  }
+  delete [] gidcnt;
+}
+
+} // extern "C" of nrnbbcore_write
+

@@ -50,7 +50,7 @@ int simeq(n, coef, soln, index)
 int n, *index;
 double *coef[], soln[];
 {
-	int ipivot, isave, jrow, kcol, i, j;
+	int ipivot, isave=0, jrow, kcol, i, j;
 	static int np; static int* perm;
 
 	/* Create and initialize permutation vector */

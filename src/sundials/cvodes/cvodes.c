@@ -3918,7 +3918,7 @@ static int CVNls(CVodeMem cv_mem, int nflag)
 static int CVNlsFunctional(CVodeMem cv_mem)
 {
   int m;
-  realtype del, delS, Del, Delp, dcon;
+  realtype del, delS=0.0, Del, Delp=0.0, dcon;
   int is;
   booleantype do_sensi_sim;
   N_Vector wrk1, wrk2;
@@ -4164,7 +4164,7 @@ static int CVNlsNewton(CVodeMem cv_mem, int nflag)
 static int CVNewtonIteration(CVodeMem cv_mem)
 {
   int m, ret;
-  realtype del, delS, Del, Delp, dcon;
+  realtype del, delS=0.0, Del, Delp=0.0, dcon;
   N_Vector b, *bS=NULL, wrk1, wrk2;
   booleantype do_sensi_sim;
   int is;
@@ -4604,7 +4604,7 @@ static int CVStgrNlsFunctional(CVodeMem cv_mem)
 {
   int m;
   int is;
-  realtype Del, Delp, dcon;
+  realtype Del, Delp=0.0, dcon;
   N_Vector wrk1, wrk2;
 
   /* Initialize estimated conv. rate and counter */
@@ -4763,7 +4763,7 @@ static int CVStgrNlsNewton(CVodeMem cv_mem)
 static int CVStgrNewtonIteration(CVodeMem cv_mem)
 {
   int m, ret;
-  realtype Del, Delp, dcon;
+  realtype Del, Delp=0.0, dcon;
   N_Vector *bS, wrk1, wrk2;
   int is;
 
@@ -4884,7 +4884,7 @@ static int CVStgr1Nls(CVodeMem cv_mem, int is)
 static int CVStgr1NlsFunctional(CVodeMem cv_mem, int is)
 {
   int m;
-  realtype Del, Delp, dcon;
+  realtype Del, Delp=0.0, dcon;
   N_Vector wrk1, wrk2;
 
   /* Initialize estimated conv. rate and counter */
@@ -5035,7 +5035,7 @@ static int CVStgr1NlsNewton(CVodeMem cv_mem, int is)
 static int CVStgr1NewtonIteration(CVodeMem cv_mem, int is)
 {
   int m, ret;
-  realtype Del, Delp, dcon;
+  realtype Del, Delp=0.0, dcon;
   N_Vector *bS, wrk1, wrk2;
 
   m = 0;

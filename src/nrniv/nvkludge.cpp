@@ -12,6 +12,7 @@
 #endif
 
 #include "oc2iv.h"
+#include "scoplib_ansi.h"
 extern "C" {
 extern double (*nrnpy_guigetval)(Object*);
 extern void (*nrnpy_guisetval)(Object*, double);
@@ -26,6 +27,7 @@ extern int ncyg_fprintf();
 #if NRNMPI
 extern "C" {
 	extern void nrn_timeout(int);
+        extern double scop_random();
 }
 #endif
 
@@ -54,5 +56,7 @@ void nrn_nvkludge_dummy() {
 	nrnpy_guigetval = 0;
 	nrnpy_guisetval = 0;
 	nrnpy_guigetstr = 0;
+
+        scop_random();
 }
 

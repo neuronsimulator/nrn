@@ -66,6 +66,7 @@ extern "C" {
 	extern void nrn_thread_stat();
 	extern int nrn_allow_busywait(int);
 	extern int nrn_how_many_processors();
+	extern size_t nrnbbcore_write();
 }
 
 class OcBBS : public BBS , public Resource {
@@ -907,6 +908,10 @@ static double thread_dt(void*) {
 	return nrn_threads[i]._dt;
 }
 
+static double nrnbbcorewrite(void*) {
+	return double(nrnbbcore_write());
+}
+
 static Object** gid2obj(void* v) {
 	OcBBS* bbs = (OcBBS*)v;
 	return bbs->gid2obj(int(chkarg(1, 0, MD)));
@@ -992,6 +997,8 @@ static Member_func members[] = {
 	"thread_ctime", thread_ctime,
 	"dt", thread_dt,
 	"t", nrn_thread_t,
+
+	"nrnbbcore_write", nrnbbcorewrite,
 
 	0,0
 };

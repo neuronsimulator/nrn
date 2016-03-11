@@ -67,7 +67,7 @@ directly by hoc.
 #include "parse1.h"
 #include <stdlib.h>
 #include <unistd.h>
-#define GETWD(buf) getcwd(buf, 256)
+#define GETWD(buf) getcwd(buf, NRN_BUFSIZE)
 
 #if VECTORIZE
 int vectorize = 1;
@@ -99,6 +99,7 @@ not thread safe and _p and _ppvar are static.
 #define NRNSECTION	02000
 #define NRNPOINTER	04000
 #define IONCONC		010000
+#define NRNBBCOREPOINTER	020000
 
 #define IONEREV 0	/* Parameter */
 #define IONIN	1
@@ -150,6 +151,7 @@ int point_process; /* 1 if a point process model */
 int artificial_cell; /* 1 if also explicitly declared an ARTIFICIAL_CELL */
 static int diamdec = 0;	/*1 if diam is declared*/
 static int areadec = 0;
+static int use_bbcorepointer = 0;
 
 static void defs_h();
 static int iontype();
@@ -159,6 +161,8 @@ static void declare_p();
 static int iondef();
 static void ion_promote();
 static int ppvar_cnt;
+static List* ppvar_semantics_;
+static void ppvar_semantics(int, const char*);
 static int for_netcons_; /* number of FOR_NETCONS statements */
 static Item* net_init_q1_;
 static Item* net_init_q2_;
@@ -271,12 +275,44 @@ fprintf(stderr, "Notice: ARTIFICIAL_CELL models that would require thread specif
 	if (protect_include_) {
 		Lappendstr(defs_list, "\n#include \"nmodlmutex.h\"");
 	}
+
+#if 1
+	/* for easier profiling, give distinct names to otherwise reused static names */
+	sprintf(buf, "\n\
+#define nrn_init _nrn_init_%s\n\
+#define _nrn_initial _nrn_initial_%s\n\
+#define nrn_cur _nrn_cur_%s\n\
+#define _nrn_current _nrn_current_%s\n\
+#define nrn_jacob _nrn_jacob_%s\n\
+#define nrn_state _nrn_state_%s\n\
+#define _net_receive _net_receive_%s\
+", suffix, suffix, suffix, suffix, suffix, suffix, suffix);
+	Lappendstr(defs_list, buf);
+	SYMLISTITER {
+		Symbol* s = SYM(q);
+		/* note that with GLOBFUNCT, FUNCT will be redefined anyway */
+		if (s->type == NAME && s->subtype & (PROCED | DERF | KINF)) {
+			sprintf(buf, "\n#define %s %s_%s", s->name, s->name, suffix);
+			Lappendstr(defs_list, buf);
+		}
+	}
+	Lappendstr(defs_list, "\n");
+#endif /* distinct names for easier profiling */
+
 	if (vectorize) {
-		Lappendstr(defs_list, "\n#define _threadargscomma_ _p, _ppvar, _thread, _nt,\n#define _threadargs_ _p, _ppvar, _thread, _nt\n");
-		Lappendstr(defs_list, "\n#define _threadargsprotocomma_ double* _p, Datum* _ppvar, Datum* _thread, _NrnThread* _nt,\n#define _threadargsproto_ double* _p, Datum* _ppvar, Datum* _thread, _NrnThread* _nt\n");
+		Lappendstr(defs_list, "\n\
+#define _threadargscomma_ _p, _ppvar, _thread, _nt,\n\
+#define _threadargsprotocomma_ double* _p, Datum* _ppvar, Datum* _thread, _NrnThread* _nt,\n\
+#define _threadargs_ _p, _ppvar, _thread, _nt\n\
+#define _threadargsproto_ double* _p, Datum* _ppvar, Datum* _thread, _NrnThread* _nt\n\
+");
 	}else{
-		Lappendstr(defs_list, "\n#define _threadargscomma_ /**/\n#define _threadargs_ /**/\n");
-		Lappendstr(defs_list, "\n#define _threadargsprotocomma_ /**/\n#define _threadargsproto_ /**/\n");
+		Lappendstr(defs_list, "\n\
+#define _threadargscomma_ /**/\n\
+#define _threadargsprotocomma_ /**/\n\
+#define _threadargs_ /**/\n\
+#define _threadargsproto_ /**/\n\
+");
 	}
 	Lappendstr(defs_list, "\
 	/*SUPPRESS 761*/\n\
@@ -649,10 +685,14 @@ diag("No statics allowed for thread safe models:", s->name);
 #if CVODE
 	if (net_send_seen_) {
 		tqitem_index = ppvar_cnt;
+		ppvar_semantics(ppvar_cnt, "netsend");
 		ppvar_cnt++;
 	}
 	if (watch_seen_) {
 		watch_index = ppvar_cnt;
+		for (i=0; i < watch_seen_ ; ++i) {
+			ppvar_semantics(i+ppvar_cnt, "watch");
+		}
 		ppvar_cnt += watch_seen_;
 		sprintf(buf, "\n#define _watch_array _ppvar + %d", watch_index);
 		Lappendstr(defs_list, buf);
@@ -661,6 +701,7 @@ diag("No statics allowed for thread safe models:", s->name);
 	if (for_netcons_) {
 		sprintf(buf, "\n#define _fnc_index %d\n", ppvar_cnt);
 		Lappendstr(defs_list, buf);
+		ppvar_semantics(ppvar_cnt, "fornetcon");
 		ppvar_cnt += 1;
 	}
 	if (point_process) {
@@ -680,6 +721,7 @@ sprintf(buf, "  if (_prop) { _nrn_free_fornetcon(&(_prop->dparam[_fnc_index]._pv
 	}
 	if (cvode_emit) {
 		cvode_ieq_index = ppvar_cnt;
+		ppvar_semantics(ppvar_cnt, "cvodeieq");
 		ppvar_cnt++;
 	}
 	cvode_emit_interface();
@@ -814,12 +856,14 @@ Sprintf(buf, "	_ppvar = nrn_prop_datum_alloc(_mechtype, %d, _prop);\n", ppvar_cn
 	  	 "\t_ppvar[%d]._pval = &prop_ion->param[0]; /* diam */\n",
 	  	 ioncount + pointercount),
 	  	Lappendstr(defs_list, buf);
+		ppvar_semantics(ioncount + pointercount, "diam");
 	}
 	if (areadec) {
 	  	Sprintf(buf,
 	  	 "\t_ppvar[%d]._pval = &nrn_alloc_node_->_area; /* diam */\n",
 	  	 ioncount + pointercount + diamdec),
 	  	Lappendstr(defs_list, buf);
+		ppvar_semantics(ioncount + pointercount + diamdec, "area");
 	}
 
 	if (point_process) {
@@ -962,6 +1006,10 @@ Sprintf(buf, "\"%s\", %g,\n", s->name, d1);
 	if (uip) {
 		lappendstr(defs_list, "static void _update_ion_pointer(Datum*);\n");
 	}
+	if (use_bbcorepointer) {
+		lappendstr(defs_list, "static void bbcore_write(double*, int*, int*, int*, _threadargsproto_);\n");
+		lappendstr(defs_list, "extern void hoc_reg_bbcore_write(int, void(*)(double*, int*, int*, int*, _threadargsproto_));\n");
+	}
 	Lappendstr(defs_list, "\
 extern Symbol* hoc_lookup(const char*);\n\
 extern void _nrn_thread_reg(int, int, void(*f)(Datum*));\n\
@@ -1036,8 +1084,16 @@ extern void _cvode_abstol( Symbol**, double*, int);\n\n\
 	if (emit_check_table_thread) {
 		lappendstr(defs_list, "    _nrn_thread_table_reg(_mechtype, _check_table_thread);\n");
 	}
+	if (use_bbcorepointer) {
+		lappendstr(defs_list, "  hoc_reg_bbcore_write(_mechtype, bbcore_write);\n");
+	}
 	sprintf(buf, " hoc_register_prop_size(_mechtype, %d, %d);\n", parraycount, ppvar_cnt);
 	Lappendstr(defs_list, buf);
+	if (ppvar_semantics_) ITERATE(q, ppvar_semantics_) {
+		sprintf(buf, " hoc_register_dparam_semantics(_mechtype, %d, \"%s\");\n",
+		  (int)q->itemtype, q->element.str);
+		Lappendstr(defs_list, buf);
+	}
 	/* Models that write concentration need their INITIAL blocks called
 	   before those that read the concentration or reversal potential. */
 	i = 0;
@@ -1482,7 +1538,7 @@ static void defs_h(s)
 void nrn_list(q1, q2)
 	Item *q1, *q2;
 {
-	List **plist;
+	List **plist = (List **)0;
 	Item *q;
 		
 	switch (SYM(q1)->type) {
@@ -1534,6 +1590,14 @@ threadsafe("Use of POINTER is not thread safe.");
 		for (q = q1->next; q != q2->next; q = q->next) {
 			SYM(q)->nrntype |= NRNNOTP | NRNPOINTER;
 		}
+		break;
+	case BBCOREPOINTER:
+threadsafe("Use of BBCOREPOINTER is not thread safe.");
+		plist = &nrnpointers;
+		for (q = q1->next; q != q2->next; q = q->next) {
+			SYM(q)->nrntype |= NRNNOTP | NRNBBCOREPOINTER;
+		}
+		use_bbcorepointer = 1;
 		break;
 	}
 	if (plist) {
@@ -1915,12 +1979,15 @@ static int iondef(p_pointercount) int *p_pointercount; {
 	int ioncount, it, need_style;
 	Item *q, *q1, *q2;
 	Symbol *sion;
+	char ionname[100];
 
 	ioncount = 0;
 	if (point_process) {
 		ioncount = 2;
 		q = lappendstr(defs_list, "#define _nd_area  *_ppvar[0]._pval\n");
 		q->itemtype = VERBATIM;
+		ppvar_semantics(0, "area");
+		ppvar_semantics(1, "pntproc");
 	}
 	ITERATE(q, useion) {
 		int dcurdef = 0;
@@ -1931,6 +1998,7 @@ static int iondef(p_pointercount) int *p_pointercount; {
 		}
 		need_style = 0;
 		sion = SYM(q);
+		sprintf(ionname, "%s_ion", sion->name);
 		q=q->next;
 		ITERATE(q1, LST(q)) {
 			SYM(q1)->nrntype |= NRNIONFLAG;
@@ -1942,6 +2010,7 @@ static int iondef(p_pointercount) int *p_pointercount; {
 				sion->name, ioncount, iontype(SYM(q1)->name, sion->name));
 			lappendstr(uip, buf);
 			SYM(q1)->ioncount_ = ioncount;
+			ppvar_semantics(ioncount, ionname);
 			ioncount++;
 		}
 		q=q->next;
@@ -1957,6 +2026,7 @@ static int iondef(p_pointercount) int *p_pointercount; {
 					sion->name, ioncount, iontype(SYM(q1)->name, sion->name));
 				lappendstr(uip, buf);
 				SYM(q1)->ioncount_ = ioncount;
+				ppvar_semantics(ioncount, ionname);
 				ioncount++;
 			}
 			it = iontype(SYM(q1)->name, sion->name);
@@ -1968,6 +2038,7 @@ Sprintf(buf, "#define _ion_di%sdv\t*_ppvar[%d]._pval\n", sion->name, ioncount);
 				sprintf(buf, "  nrn_update_ion_pointer(_%s_sym, _ppvar, %d, 4);\n",
 					sion->name, ioncount);
 				lappendstr(uip, buf);
+				ppvar_semantics(ioncount, ionname);
 				ioncount++;
 			}
 			if (it == IONIN || it == IONOUT) { /* would have wrote_ion_conc */
@@ -1978,6 +2049,8 @@ Sprintf(buf, "#define _ion_di%sdv\t*_ppvar[%d]._pval\n", sion->name, ioncount);
 Sprintf(buf, "#define _style_%s\t*((int*)_ppvar[%d]._pvoid)\n", sion->name, ioncount);
 			q2 = lappendstr(defs_list, buf);
 			q2->itemtype = VERBATIM;
+			sprintf(buf, "#%s", ionname);
+			ppvar_semantics(ioncount, buf);
 			ioncount++;
 		}
 		q=q->next;
@@ -1988,6 +2061,7 @@ Sprintf(buf, "#define _ion_di%sdv\t*_ppvar[%d]._pval\n", sion->name, ioncount);
 				sprintf(buf, "  nrn_update_ion_pointer(_%s_sym, _ppvar, %d, 4);\n",
 					sion->name, ioncount);
 				lappendstr(uip, buf);
+				ppvar_semantics(ioncount, ionname);
 				ioncount++;
 		}
 	}
@@ -2004,6 +2078,11 @@ Sprintf(buf, "#define _ion_di%sdv\t*_ppvar[%d]._pval\n", sion->name, ioncount);
 		sion->used = ioncount + *p_pointercount;
 		q2 = lappendstr(defs_list, buf);
 		q2->itemtype = VERBATIM;
+	    if (sion->nrntype & NRNPOINTER) {
+		ppvar_semantics(ioncount + *p_pointercount, "pointer");
+	    }else{
+		ppvar_semantics(ioncount + *p_pointercount, "bbcorepointer");
+	    }
 		(*p_pointercount)++;
 	}
 
@@ -2020,6 +2099,13 @@ Sprintf(buf, "#define _ion_di%sdv\t*_ppvar[%d]._pval\n", sion->name, ioncount);
 	} /* notice that ioncount is not incremented */
 	if (uip) { lappendstr(uip, "}\n"); }
 	return ioncount;
+}
+
+void ppvar_semantics(int i, const char* name) {
+	Item* q;
+	if (!ppvar_semantics_) { ppvar_semantics_ = newlist(); }
+	q = Lappendstr(ppvar_semantics_, name);
+	q->itemtype = (short)i;
 }
 
 List *begin_dion_stmt()

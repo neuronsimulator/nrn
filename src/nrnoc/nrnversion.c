@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <nrnversion.h>
 #include <nrnconfigargs.h>
+#include <assert.h>
 
 extern int nrn_global_argc;
 extern char** nrn_global_argv;
@@ -14,7 +15,71 @@ static char buf[256];
 static char* sarg = 0;
 static char configargs[] = NRN_CONFIG_ARGS;
 
-#if defined(HG_BRANCH)
+#if defined(GIT_BRANCH)
+char* nrn_version(int i)
+{
+  char head[1024];
+  char *cp;
+  int b;
+  buf[0] = '\0';
+  if (strncmp(GIT_TAG, "Release", 7) == 0) 
+  {
+    sprintf(head, "%s (%s)", GIT_LOCAL, GIT_CHANGESET);        
+  }else if (strncmp(GIT_BRANCH, "Release", 7) == 0) 
+  {
+    sprintf(head, "%s (%s)", GIT_BRANCH, GIT_CHANGESET);
+  }else{
+    sprintf(head, "VERSION %s.%s %s%s(%s)",
+    NRN_MAJOR_VERSION, NRN_MINOR_VERSION,
+    strcmp("trunk", GIT_BRANCH) ? GIT_BRANCH : "",
+    strcmp("trunk", GIT_BRANCH) ? " " : "",
+    GIT_CHANGESET);
+  }
+  if (i == 0) 
+  {
+    sprintf(buf, "%s.%s", NRN_MAJOR_VERSION, NRN_MINOR_VERSION);
+  }else if (i == 2)  {
+    sprintf(buf, "%s", head);
+  }else if (i == 3) {
+    sprintf(buf, "%s", GIT_CHANGESET);
+  }else if (i == 4) {
+    sprintf(buf, "%s", GIT_DATE);
+  }else if (i == 5) {
+     printf("Error, GIT_LOCAL does not exist. Stopping execution");
+     assert(0);
+    //sprintf(buf, "%s", GIT_LOCAL);
+  }else if (i == 6) {
+    return configargs;
+  }else if (i == 7) {
+    int j, size;
+    if (!sarg) 
+    {
+      char* c;
+      int size = 0;
+      for (j=0; j < nrn_global_argc; ++j) 
+      {
+        size += strlen(nrn_global_argv[j]) + 1;
+      }
+      sarg = (char*)calloc(size+1, sizeof(char));
+      c = sarg;
+      for (j=0; j < nrn_global_argc; ++j) 
+      {
+        sprintf(c, "%s%s", j?" ":"", nrn_global_argv[j]);
+        c = c + strlen(c);
+      }
+    }
+    return sarg;
+    }else if (i == 8) {
+      sprintf(buf, "%s", NRNHOST);
+    }else if (i == 9) {
+      sprintf(buf, "%d", nrn_main_launch);
+    }else{
+      sprintf(buf, "NEURON -- %s %s", head, GIT_DATE);
+    }
+
+  return buf;
+}
+#elif defined(HG_BRANCH)
 char* nrn_version(int i) {
 	char head[50];
 	char *cp;

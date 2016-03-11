@@ -98,7 +98,7 @@ void hoc_regexp_compile(const char* pat) {
 	char *cp = (char*)pat;
 	register int c;
 	register char *ep;
-	char *lastep;
+	char *lastep=0;
 #if (!CABLESECTION)
 	char bracket[NBRA], *bracketp;
 	int nbra;

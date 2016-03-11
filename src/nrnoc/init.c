@@ -133,6 +133,11 @@ int* nrn_prop_param_size_;
 int* nrn_prop_dparam_size_;
 int* nrn_dparam_ptr_start_;
 int* nrn_dparam_ptr_end_;
+typedef int (*bbcore_write_t)(void*, int, int*, double*, Datum*, Datum*, NrnThread*);
+bbcore_write_t* nrn_bbcore_write_;
+void hoc_reg_bbcore_write(int type, bbcore_write_t f) {
+	nrn_bbcore_write_[type] = f;
+}
 
 void  add_nrn_has_net_event(type) int type; {
 	++nrn_has_net_event_cnt_;
@@ -279,6 +284,7 @@ void hoc_last_init(void)
 	memb_order_ = (short*)ecalloc(memb_func_size_, sizeof(short));
 	bamech_ = (BAMech**)ecalloc(BEFORE_AFTER_SIZE, sizeof(BAMech*));
 	nrn_mk_prop_pools(memb_func_size_);
+	nrn_bbcore_write_ = (bbcore_write_t*)ecalloc(memb_func_size_, sizeof(bbcore_write_t));
 	
 #if KEEP_NSEG_PARM
 	{extern int keep_nseg_parm_; keep_nseg_parm_ = 1; }
@@ -397,6 +403,7 @@ void nrn_register_mech_common(
 		nrn_dparam_ptr_start_ = (int*)erealloc(nrn_dparam_ptr_start_, memb_func_size_*sizeof(int));
 		nrn_dparam_ptr_end_ = (int*)erealloc(nrn_dparam_ptr_end_, memb_func_size_*sizeof(int));
 		memb_order_ = (short*)erealloc(memb_order_, memb_func_size_*sizeof(short));
+		nrn_bbcore_write_ = (bbcore_write_t*)erealloc(nrn_bbcore_write_, memb_func_size_*sizeof(bbcore_write_t));
 		for (j=memb_func_size_ - 20; j < memb_func_size_; ++j) {
 			pnt_map[j] = 0;
 			point_process[j] = (Point_process*)0;
@@ -408,6 +415,7 @@ void nrn_register_mech_common(
 			nrn_is_artificial_[j] = 0;
 			nrn_artcell_qindex_[j] = 0;
 			memb_order_[j] = 0;
+			nrn_bbcore_write_[j] = (bbcore_write_t)0;
 		}
 		nrn_mk_prop_pools(memb_func_size_);
 	}
@@ -431,6 +439,8 @@ void nrn_register_mech_common(
 	memb_func[type]._update_ion_pointers = (void*)0;
 	memb_func[type].is_point = 0;
 	memb_func[type].hoc_mech = (void*)0;
+	memb_func[type].setdata_ = (void*)0;
+	memb_func[type].dparam_semantics = (int*)0;
 	memb_list[type].nodecount = 0;
 	memb_list[type]._thread = (Datum*)0;
 	memb_order_[type] = type;
@@ -592,6 +602,48 @@ void nrn_writes_conc(int type, int unused) {
 void hoc_register_prop_size(int type, int psize, int dpsize) {
 	nrn_prop_param_size_[type] = psize;
 	nrn_prop_dparam_size_[type] = dpsize;
+	if (memb_func[type].dparam_semantics) {
+		free(memb_func[type].dparam_semantics);
+		memb_func[type].dparam_semantics = (int*)0;
+	}
+	if (dpsize) {
+	  memb_func[type].dparam_semantics = (int*)ecalloc(dpsize, sizeof(int));
+	}
+}
+void hoc_register_dparam_semantics(int type, int ix, const char* name) {
+	/* only interested in area, iontype, cvode_ieq,
+	   netsend, pointer, pntproc, bbcorepointer
+	   xx_ion and #xx_ion which will get
+	   a semantics value of -1, -2, -3,
+	   -4, -5, -6, -7,
+	   type, and type+1000 respectively
+	*/
+	if (strcmp(name, "area") == 0) {
+		memb_func[type].dparam_semantics[ix] = -1;
+	}else if (strcmp(name, "iontype") == 0) {
+		memb_func[type].dparam_semantics[ix] = -2;
+	}else if (strcmp(name, "cvodeieq") == 0) {
+		memb_func[type].dparam_semantics[ix] = -3;
+	}else if (strcmp(name, "netsend") == 0) {
+		memb_func[type].dparam_semantics[ix] = -4;
+	}else if (strcmp(name, "pointer") == 0) {
+		memb_func[type].dparam_semantics[ix] = -5;
+	}else if (strcmp(name, "pntproc") == 0) {
+		memb_func[type].dparam_semantics[ix] = -6;
+	}else if (strcmp(name, "bbcorepointer") == 0) {
+		memb_func[type].dparam_semantics[ix] = -7;
+	}else{
+		int i = 0;
+		if (name[0] == '#') { i = 1; }
+		Symbol* s = hoc_lookup(name+i);
+		if (s && s->type == MECHANISM) {
+			memb_func[type].dparam_semantics[ix] = s->subtype + i*1000;
+		}
+	}
+#if 0   
+	printf("dparam semantics %s ix=%d %s %d\n", memb_func[type].sym->name,
+	  ix, name, memb_func[type].dparam_semantics[ix]);
+#endif
 }
 
 #if CVODE
@@ -800,7 +852,7 @@ void hoc_register_tolerance(int type, HocStateTolerance* tol, Symbol*** stol)
 		Node** pnode;
 		Prop* p;
 		extern Node** node_construct();
-		int i, j, k, n, na, index;
+		int i, j, k, n, na, index=0;
 		
 		n = (*memb_func[type].ode_count)(type);
 		if (n > 0) {

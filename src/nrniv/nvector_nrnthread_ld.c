@@ -266,7 +266,7 @@ N_Vector N_VCloneEmpty_NrnThreadLD(N_Vector w)
 
 N_Vector N_VMake_NrnThreadLD(long int length, realtype *v_data)
 {
-  N_Vector v;
+  N_Vector v = NULL;
 
   assert(0);
 #if 0

@@ -114,7 +114,7 @@ static int nr_argcnt_, argcnt_; /* for matching number of args in NET_RECEIVE
 %type	<i>	locoptarray
 /* interface to NEURON */
 %token	<qp>	NEURON SUFFIX NONSPECIFIC READ WRITE USEION VALENCE THREADSAFE
-%token	<qp>	GLOBAL SECTION RANGE POINTER EXTERNAL BEFORE AFTER WATCH
+%token	<qp>	GLOBAL SECTION RANGE POINTER BBCOREPOINTER EXTERNAL BEFORE AFTER WATCH
 %token	<qp>	ELECTRODE_CURRENT CONSTRUCTOR DESTRUCTOR NETRECEIVE FOR_NETCONS
 %type	<qp>	neuronblk nrnuse nrnlist optnrnlist valence initstmt bablk
 %token	<qp>	CONDUCTANCE
@@ -1199,6 +1199,8 @@ nrnstmt: /*nothing*/
 	| nrnstmt GLOBAL nrnlist
 		{ nrn_list($2, $3);}
 	| nrnstmt POINTER nrnlist
+		{ nrn_list($2, $3);}
+	| nrnstmt BBCOREPOINTER nrnlist
 		{ nrn_list($2, $3);}
 	| nrnstmt EXTERNAL nrnlist
 		{ nrn_list($2, $3);}

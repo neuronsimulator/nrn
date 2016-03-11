@@ -58,7 +58,7 @@ double *a[];
 {
     extern int freevector();
     extern double *makevector();
-    int i, j, k, r, pivot, irow, save_i, krow;
+    int i, j, k, r, pivot, irow, save_i=0, krow;
     double sum, *rowmax, equil_1, equil_2;
 
     /* Initialize permutation and rowmax vectors */

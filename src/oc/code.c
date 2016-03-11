@@ -853,7 +853,7 @@ void forcode(void)
 void shortfor(void)
 {
 	Inst *savepc = pc;
-	double begin, end, *pval;
+	double begin, end, *pval=0;
 	Symbol *sym;
 	int isec;
 	
@@ -1029,7 +1029,7 @@ static void for_segment2(Symbol* sym, int mode) {
 #if CABLE
 	int i, imax;
 	Inst *savepc = pc;
-	double *pval, dx;
+	double *pval=0, dx;
 	int isec;
 #if METHOD3
 	extern int _method3;
@@ -1426,7 +1426,7 @@ void hoc_Numarg(void)
 
 void hoc_Argtype(void)
 {
-	int narg, iarg, type, itype;
+	int narg, iarg, type, itype=0;
 	Frame* f = fp - 1;
 	if (f == frame) {
 		execerror("argtype can only be called in a func or proc", 0);
@@ -1467,7 +1467,7 @@ Object** hoc_objgetarg(int narg) {/* return pointer to nth argument */
 }
 
 char** hoc_pgargstr(int narg) {	/* return pointer to nth argument */
-	char ** cpp;
+	char ** cpp = NULL;
 	Symbol *sym;
 	int type;
 	if (narg > fp->nargs)
@@ -1690,7 +1690,7 @@ void eval(void)			/* evaluate variable on stack */
 	Objectdata* odsav;
 	Object* obsav = 0;
 	Symlist* slsav;
-	double d, cable_prop_eval();
+	double d=0.0, cable_prop_eval();
 	Symbol *sym;
 	sym = spopm();
     if (sym->public == 2) {
@@ -1778,7 +1778,7 @@ void hoc_evalpointer(void)			/* leave pointer to variable on stack */
 	Objectdata* odsav;
 	Object* obsav = 0;
 	Symlist* slsav;
-	double *d, *cable_prop_eval_pointer();
+	double *d=0, *cable_prop_eval_pointer();
 	Symbol *sym;
 	sym = spopm();
     if (sym->public == 2) {
@@ -2008,7 +2008,7 @@ void le(void)
 void eq(void)
 {
 	int t1, t2;
-	double d1, d2;
+	double d1=0.0, d2;
 	t1 = (stackp-1)->i;
 	t2 = (stackp-3)->i;
 	switch (t2) {
@@ -2040,7 +2040,7 @@ void eq(void)
 void ne(void)
 {
 	int t1, t2;
-	double d1, d2;
+	double d1=0.0, d2;
 	t1 = (stackp-1)->i;
 	t2 = (stackp-3)->i;
 	switch (t1) {
@@ -2449,7 +2449,8 @@ void hoc_newline(void)		/* print newline */
 
 void varread(void)	/* read into variable */
 {
-	double d;
+	double d=0.0;
+	extern NrnFILEWrap *fin;
 	Symbol *var = (pc++)->sym;
 
 	assert(var->public != 2);

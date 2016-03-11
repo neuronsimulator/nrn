@@ -840,7 +840,7 @@ realtype N_VMinQuotient_Parallel(N_Vector num, N_Vector denom)
 {
   booleantype notEvenOnce;
   long int i, N;
-  realtype *nd, *dd, min;
+  realtype *nd, *dd, min=0.0;
   MPI_Comm comm;
 
   N  = NV_LOCLENGTH_P(num);

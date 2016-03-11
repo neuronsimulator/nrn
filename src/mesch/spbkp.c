@@ -564,10 +564,10 @@ SPMAT	*A;
 PERM	*pivot, *blocks;
 double	tol;
 {
-    int		i, j, k, l, n, onebyone, r;
+    int		i, j, k, l, n, onebyone=0, r;
     int		idx, idx1, idx_piv;
     int		row_num;
-    int		best_deg, best_j, best_l, best_cost, mark_cost, deg, deg_j,
+    int		best_deg=0, best_j, best_l, best_cost, mark_cost, deg, deg_j,
 			deg_l, ignore_deg;
     int		list_idx, list_idx2, old_list_idx;
     SPROW	*row, *r_piv, *r1_piv;

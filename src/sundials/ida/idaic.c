@@ -397,7 +397,7 @@ static int IDAnlsIC (IDAMem IDA_mem)
 static int IDANewtonIC (IDAMem IDA_mem)
 {
   int retval, mnewt;
-  realtype delnorm, fnorm, fnorm0, oldfnrm, rate;
+  realtype delnorm, fnorm, fnorm0, oldfnrm, rate=0.0;
 
   /* Set pointer for vector delnew */
   delnew = phi[2];

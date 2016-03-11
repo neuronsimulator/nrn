@@ -88,7 +88,7 @@ void fsyni(void) {
 
 void fsyng(void) {
 	int i;
-	double g;
+	double g=0.0;
 	
 	i = chkarg(1, 0., (double)(maxstim-1));
 	IGNORE(stimulus(i));

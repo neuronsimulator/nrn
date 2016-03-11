@@ -15,6 +15,7 @@ void nrnpointmenu(){hoc_retpushx(0);}
 void make_mechanism(){hoc_retpushx(0);}
 void make_pointprocess(){hoc_retpushx(0);}
 void nrnpython() {hoc_retpushx(0);}
+void nrn_prcellstate(int gid, const char* suffix){}
 /*ARGSUSED*/
 void hoc_construct_point(Object* ob, int i){}
 void nrn_random_play(){}

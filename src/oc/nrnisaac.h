@@ -1,7 +1,7 @@
 #ifndef nrnisaac_h
 #define nrnisaac_h
 
-#include <nrnconf.h>
+#include "nrnconf.h"
 #if defined(HAVE_STDINT_H)
 #include <stdint.h>
 #endif

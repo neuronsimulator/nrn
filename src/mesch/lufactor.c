@@ -219,7 +219,7 @@ MAT	*LU;
 PERM	*pivot;
 {
     static	VEC	*y = VNULL, *z = VNULL;
-    Real	cond_est, L_norm, U_norm, sum, tiny;
+    Real	cond_est=0.0, L_norm, U_norm, sum, tiny;
     int		i, j, n;
 
     if ( ! LU || ! pivot )

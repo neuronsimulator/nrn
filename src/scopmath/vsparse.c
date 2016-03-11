@@ -280,10 +280,10 @@ int _vector_sparse(base, bound, count, jacobp, spacep, sparseobj, neqns, state,
      int linflag;		/* if != 0 then linear */
 {
   int i, j, k, ierr;
-  double * err;
+  double * err=0;
   SparseObj* so;
   int nconverged = 0;
-  int * converged;
+  int * converged=0;
   int zero = 0;
   static SparseObj* old_sparseobj = NULL;
    

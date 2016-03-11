@@ -767,7 +767,7 @@ realtype N_VMinQuotient_Serial(N_Vector num, N_Vector denom)
 {
   booleantype notEvenOnce;
   long int i, N;
-  realtype *nd, *dd, min;
+  realtype *nd, *dd, min=0.0;
 
   N  = NV_LENGTH_S(num);
   nd = NV_DATA_S(num);

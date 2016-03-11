@@ -12,6 +12,7 @@
 
 extern double chkarg();
 extern Section* nrn_noerr_access();
+extern void hoc_register_prop_size(int, int, int);
 
 #define	nparm 5
 static const char *mechanism[] = { /*just a template*/
@@ -128,7 +129,8 @@ void ion_reg(const char* name, double valence)
 		s = hoc_lookup(buf[0]);
 		mechtype = nrn_get_mechtype(mechanism[1]);
 		hoc_register_prop_size(mechtype, nparm, 1 );
-		nrn_writes_conc(nrn_get_mechtype(mechanism[1]), 1);
+		hoc_register_dparam_semantics(mechtype, 0, "iontype");
+		nrn_writes_conc(mechtype, 1);
 		if (ion_global_map_size <= s->subtype) {
 			ion_global_map_size = s->subtype + 1;
 			ion_global_map = (double**)erealloc(ion_global_map,
@@ -206,7 +208,7 @@ void nrn_wrote_conc(sym, pe, it) Symbol* sym; double* pe; int it; {
 }
 
 void nernst(void) {
-	double val;
+	double val=0.0;
 	
 	if (hoc_is_str_arg(1)) {
 		Symbol* s = hoc_lookup(gargstr(1));

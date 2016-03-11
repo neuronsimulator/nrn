@@ -275,7 +275,7 @@ static Member_func members[] = {
 
 Section* nrn_sectionref_steer(Section* sec, Symbol* sym, int* pnindex)
 {
-	Section* s;
+	Section* s=0;
 	if (sym == nrn_parent_sym) {
 		s = sec->parentsec;
 		if (!s) {

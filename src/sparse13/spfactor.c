@@ -1713,9 +1713,9 @@ register  int  J;
 register long  MinMarkowitzProduct, *pMarkowitzProduct;
 register  int  I;
 register  ElementPtr  pDiag;
-int  NumberOfTies, Size = Matrix->Size;
+int  NumberOfTies=0, Size = Matrix->Size;
 ElementPtr  ChosenPivot;
-RealNumber  Magnitude, Ratio, RatioOfAccepted, LargestInCol;
+RealNumber  Magnitude, Ratio, RatioOfAccepted=0.0, LargestInCol;
 RealNumber  FindBiggestInColExclude();
 
 /* Begin `SearchDiagonal'. */
@@ -1840,10 +1840,10 @@ int Step;
 {
 register  int  I, Size = Matrix->Size;
 register  ElementPtr  pElement;
-int  NumberOfTies;
+int  NumberOfTies=0;
 long  Product, MinMarkowitzProduct;
-ElementPtr  ChosenPivot, pLargestElement;
-RealNumber  Magnitude, LargestElementMag, Ratio, RatioOfAccepted, LargestInCol;
+ElementPtr  ChosenPivot, pLargestElement=0;
+RealNumber  Magnitude, LargestElementMag, Ratio, RatioOfAccepted=0.0, LargestInCol;
 RealNumber  FindLargestInCol();
 
 /* Begin `SearchEntireMatrix'. */
@@ -3079,8 +3079,7 @@ int  Step;
  *  Write a summary of important variables to standard output.
  */
 
-static
-WriteStatus( Matrix, Step )
+static void WriteStatus( Matrix, Step )
 
 MatrixPtr Matrix;
 int Step;

@@ -137,7 +137,7 @@ oldsimeq(n, coef, soln)
 int n;
 double *coef[], soln[];
 {
-    int ipivot, isave, jrow, kcol, i, j, *perm;
+    int ipivot, isave=0, jrow, kcol, i, j, *perm;
 
     /* Create and initialize permutation vector */
 

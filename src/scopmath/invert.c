@@ -53,7 +53,7 @@ double *matrix[];
 {
     extern int freematrix();
     extern double **makematrix();
-    int ipivot, isave, jrow, krow, kcol, i, j, *perm;
+    int ipivot, isave=0, jrow, krow, kcol, i, j, *perm;
     double **soln;
 
     /* Create and initialize solution matrix and permutation vector */

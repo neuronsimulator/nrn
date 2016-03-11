@@ -246,7 +246,7 @@ static int hoc_vsscanf(const char* buf) {
 	/* assumes arg2 format string from hoc as well as remaining args */
 	char *pf, *format, errbuf[100], **hoc_pgargstr();
 	void* arglist[20];
-	int n, iarg, i, islong, convert, sawnum;
+	int n=0, iarg, i, islong, convert, sawnum;
    double* hoc_pgetarg();
 	struct {
 		union {

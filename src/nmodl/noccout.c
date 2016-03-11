@@ -99,13 +99,14 @@ static void ext_vdef() {
 		}
 }
 
+
 /* when vectorize = 0 */
-void c_out()
+void c_out(const char* prefix)
 {
 #if NMODL
 	Item *q;
 #endif
-	
+
 	Fprintf(fcout, "/* Created by Language version: %s */\n", nmodl_version_);
 	Fflush(fcout);
 
@@ -113,7 +114,7 @@ void c_out()
 	if (vectorize) {
 		vectorize_do_substitute();
 		kin_vect2();	/* heh, heh.. bet you can't guess what this is */
-		c_out_vectorize();
+		c_out_vectorize(prefix);
 		return;
 	}
 #endif
@@ -382,9 +383,8 @@ P("#include \"md2redef.h\"\n");
 	P("\nstatic nrn_state(_prop, _v) Prop *_prop; double _v; {\n");
 #endif
 	if (nrnstate || currents->next == currents) {
-	  P(" double _break, _save;\n");
 #if VECTORIZE
-	  P("Node *_nd; double _v; int* _ni; int _iml, _cntml;\n");
+	  P("Node *_nd; double _v = 0.0; int* _ni; int _iml, _cntml;\n");
 	  P("#if CACHEVEC\n");
 	  P("    _ni = _ml->_nodeindices;\n");
 	  P("#endif\n");
@@ -396,7 +396,6 @@ P("#include \"md2redef.h\"\n");
 #else
 	  P(" _p = _prop->param;  _ppvar = _prop->dparam;\n");
 #endif
-	  P(" _break = t + .5*dt; _save = t;\n");
 	  P(" v=_v;\n{\n");
 	  printlist(get_ion_variables(1));
 	  if (nrnstate) {
@@ -615,7 +614,7 @@ if (vectorize) {
 
 #if VECTORIZE
 /* when vectorize = 1 */
-void c_out_vectorize()
+void c_out_vectorize(const char* prefix)
 {
 	Item *q;
 	
@@ -687,7 +686,8 @@ P("#include \"md2redef.h\"\n");
 	printlist(get_ion_variables(1));
 	P(" initmodel(_p, _ppvar, _thread, _nt);\n");
 	printlist(set_ion_variables(2));
-	P("}}\n");
+	P("}\n");
+	P("}\n");
 
 	/* standard modl EQUATION without solve computes current */
      if (!conductance_) {
@@ -793,7 +793,8 @@ diag("current can only be LOCAL in a BREAKPOINT if CONDUCTANCE statements are us
 #endif
 	}
    }
-	P(" \n}}\n");
+	P(" \n}\n");
+	P(" \n}\n");
 	/* for the classic breakpoint block, nrn_cur computed the conductance, _g,
 	   and now the jacobian calculation merely returns that */
 	P("\nstatic void nrn_jacob(_NrnThread* _nt, _Memb_list* _ml, int _type) {\n");
@@ -841,16 +842,16 @@ diag("current can only be LOCAL in a BREAKPOINT if CONDUCTANCE statements are us
 		P("  }\n");
 #endif
 	}
-	P(" \n}}\n");
+	P(" \n}\n");
+	P(" \n}\n");
     }
 
 	/* nrnstate list contains the EQUATION solve statement so this
 	   advances states by dt */
 	P("\nstatic void nrn_state(_NrnThread* _nt, _Memb_list* _ml, int _type) {\n");
 	if (nrnstate || currents->next == currents) {
-	  P(" double _break, _save;\n");
 	  P("double* _p; Datum* _ppvar; Datum* _thread;\n");
-	  P("Node *_nd; double _v; int* _ni; int _iml, _cntml;\n");
+	  P("Node *_nd; double _v = 0.0; int* _ni; int _iml, _cntml;\n");
 	  P("#if CACHEVEC\n");
 	  P("    _ni = _ml->_nodeindices;\n");
 	  P("#endif\n");
@@ -860,7 +861,6 @@ diag("current can only be LOCAL in a BREAKPOINT if CONDUCTANCE statements are us
 	  P(" _p = _ml->_data[_iml]; _ppvar = _ml->_pdata[_iml];\n");
 	  P(" _nd = _ml->_nodelist[_iml];\n");
 	  ext_vdef();
-	  P(" _break = t + .5*dt; _save = t;\n");
 	  P(" v=_v;\n{\n");
 	  printlist(get_ion_variables(1));
 	  if (nrnstate) {

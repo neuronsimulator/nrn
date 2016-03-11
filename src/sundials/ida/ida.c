@@ -1495,8 +1495,8 @@ static int IDAHandleFailure(IDAMem IDA_mem, int sflag)
 
 static int IDAStep(IDAMem IDA_mem)
 {
-  realtype saved_t, ck, est;
-  realtype terk, terkm1, erkm1;
+  realtype saved_t, ck, est=0.0;
+  realtype terk=0.0, terkm1=0.0, erkm1=0.0;
   int ncf, nef, nflag, kflag;
   
   saved_t = tn;

@@ -1358,7 +1358,7 @@ void nrn_define_shape(void) {
 	int i, j;
 	Section* sec, *psec, *ch, *nrn_trueparent();
 	float x, y, z, dz, x1, y1;
-	float nch, ich, angle;
+	float nch, ich=0.0, angle;
 	double arc, len;
 	double nrn_connection_position();
 	if (changed_ == nrn_shape_changed_ && !diam_changed && !tree_changed) {
@@ -1461,7 +1461,7 @@ static double diam_from_list(Section* sec, int inode, Prop* p, double rparent)
 	static double x1, y1, ds;
 	int ihalf;
 	double si, sip;
-	double diam, delta, temp, ri, area, ra, rleft;
+	double diam, delta, temp, ri, area, ra, rleft=0.0;
 	int npt, nspine;
 
 	if (inode == 0) {

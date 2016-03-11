@@ -675,7 +675,7 @@ void fmatrix(void) {
 void nonvint(NrnThread* _nt)
 {
 #if VECTORIZE
-	int i;
+	int i=0;
 	double w;
 	int measure = 0;
 	NrnThreadMembList* tml;
@@ -695,7 +695,7 @@ void nonvint(NrnThread* _nt)
 hoc_warning("errno set during calculation of states", (char*)0);
 			}
 		}
-	}
+  	  }
 	long_difus_solve(0, _nt); /* if any longitudinal diffusion */
 	nrn_nonvint_block_fixed_step_solve(_nt->id);
 #endif

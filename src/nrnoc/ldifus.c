@@ -95,7 +95,7 @@ void nrn_tree_solve(double* a, double* d, double* b, double* rhs, int* pindex, i
 
 
 void long_difus_solve(int method, NrnThread* nt) {
-	ldifusfunc2_t* f;
+	ldifusfunc2_t* f = NULL;
 	int i;
 	if (ldifusfunc) {
 		switch (method) {
@@ -393,9 +393,6 @@ for (i=0; i < n; ++i) { double a,b;
 		pld->state[i][ai] = pld->rhs[i];
 	}
 }
-
-
-
 
 static void ode(int m, ldifusfunc3_t diffunc, void** v, int ai, int sindex, int dindex, NrnThread* _nt)
 {

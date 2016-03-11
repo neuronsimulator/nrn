@@ -75,6 +75,10 @@ typedef struct hoc_Item {
  * An item type, STRING is also used as an item type 
  */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 extern char* hoc_l_stralloc(const char*, char* release);
 extern hoc_List* hoc_l_newlist();
 extern hoc_Item* hoc_l_insertstr(hoc_Item*, const char*);
@@ -113,5 +117,9 @@ extern void hoc_l_replacstr(hoc_Item*, const char*);
 #define Lappenditem	lappenditem
 #define Lappendlst	lappendlst
 #define Lappendsec	lappendsec
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

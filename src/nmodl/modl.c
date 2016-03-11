@@ -106,7 +106,7 @@ int main(argc, argv)
 	mac_cmdline(&argc, &argv);
 	{
 	char cs[NRN_BUFSIZE], *cp;
-	strncpy(cs, argv[1], 256);
+	strncpy(cs, argv[1], NRN_BUFSIZE);
 	cp  = strrchr(cs, ':');
 	if (cp) {
 		*cp = '\0';
@@ -161,7 +161,7 @@ no longer adequate for saying we can not */
 				 * Also #defines which used to be in defs.h
 				 * are printed into .c file at beginning.
 				 */
-	c_out();			/* print .c file */
+	c_out(modprefix);			/* print .c file */
 #if HMODL || NMODL
 #else
 	IGNORE(fclose(fparout));
@@ -205,7 +205,7 @@ static void openfiles(argc, argv)
 	int             argc;
 	char           *argv[];
 {
-	char            s[100];
+	char            s[NRN_BUFSIZE];
 	char *cp;
 
 	if (argc > 1) {

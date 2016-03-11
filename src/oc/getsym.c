@@ -73,7 +73,7 @@ Psym *hoc_getsym(const char* cp) {
 	Inst *last, *pcsav;
 	int i, n;
 	char s[256];
-	Psym *p;
+	Psym *p=0;
 
 	Sprintf(s, "{%s}\n", cp);
 	sp = hoc_install("", PROCEDURE, 0., &symlist);

@@ -20,7 +20,7 @@ void dep_make(void)/* tag the variable as dependent with a variable number */
 {
 #if !OCSMALL
 	Symbol *sym;
-	unsigned	*numpt;
+	unsigned	*numpt=0;
 #if	defined(__TURBOC__)
 	Inst *pcsav=pc;
 #endif

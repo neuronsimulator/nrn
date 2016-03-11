@@ -384,7 +384,7 @@ the while loop still uses the original independent variable. In this case
 /* executing more that one for loop in a single call to model() is an error
 which is trapped in scop */
 	static int called = 0, firstderf = 1;
-	char *cp;
+	char *cp=0;
 
 	switch (type) {
 	case DERF:
@@ -449,7 +449,6 @@ BREAKPOINT block.\nThe simulation will be incorrect if more than one is used \
 at a time.\n");
 	}
 #if NMODL
-	Insertstr(qsol, "{\n");
 #else
 	Sprintf(buf, "if (%s < _break) {\n",indepsym->name);
 	Insertstr(qsol, buf);
@@ -471,6 +470,9 @@ if (type == DERF) {
 		Insertstr(qsol, buf);
 	}
 #endif
+#if NMODL
+	/* no longer a for loop */
+#else
 	Sprintf(buf, "for (; %s < _break; %s += %s) {\n",
 		indepsym->name,
 		indepsym->name, cp);
@@ -482,6 +484,7 @@ if (type == DERF) {
 		Sprintf(buf, "\n}}\n");
 	}		
 	Insertstr(qsol->next,buf);
+#endif
 	if (!called) {
 		/* fix up initmodel as per 3) above.
 		In cout.c _save is declared */

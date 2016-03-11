@@ -147,7 +147,6 @@ void LinearMechanism::create()
 #if HAVE_IV
 	Oc oc;
 #endif
-
 	if (hoc_is_double_arg(i)) {
 		nnode_ = 1;
 		nodes_ = new Node*[1];

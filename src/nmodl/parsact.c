@@ -602,7 +602,7 @@ void table_massage(tablist, qtype, qname, arglist)
 	List *tablist, *arglist;
 	Item *qtype, *qname;
 {
-	Symbol *fsym, *s, *arg;
+	Symbol *fsym, *s, *arg=0;
 	char* fname;
 	List *table, *from, *to, *depend;
 	int type, ntab;
@@ -957,7 +957,7 @@ void hocfunchack(Symbol* n, Item* qpar1, Item* qpar2, int hack)
 	Item *q;
 	int i;
 #if VECTORIZE
-	Item* qp;
+	Item* qp=0;
 #endif
 	
    if (point_process) {

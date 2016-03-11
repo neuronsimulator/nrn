@@ -342,7 +342,7 @@ void hoc_exec_cmd(void) { /* execute string from top level or within an object c
 	char buf[256];
 	char* pbuf;
 	Object* ob = 0;
-	HocStr* hs;
+	HocStr* hs=0;
 	cmd = gargstr(1);
 	pbuf = buf;
 	if (strlen(cmd) > 256 - 10) {
@@ -937,7 +937,7 @@ void hoc_object_component(void) { /* number of indices at pc+2, number of args a
 	/* if component turns out to be an object then make sure pointer
 	to correct object, symbol, etc is left on stack for evaluation,
 	assignment, etc. */
-	Symbol *sym0, *sym;
+	Symbol *sym0, *sym=0;
 	int nindex, narg, cplus, isfunc;
 	Object *obp, *obsav;
 	Objectdata *psav;
@@ -1117,7 +1117,7 @@ hoc_execerror(obp->template->sym->name, sym0->name);
 			sec = nrn_sectionref_steer(sec, sym, &nindex);
 		}
 	   if (	connect_obsec_) {
-		double x;
+		double x=0.0;
 		connect_obsec_ = 0;
 		if (nindex != 1) {
 			hoc_execerror(sym->name, ": bad connect syntax");
@@ -1138,7 +1138,7 @@ hoc_execerror(obp->template->sym->name, sym0->name);
 		break;
 		}
 	case SECTION: {
-		double x;
+		double x=0.0;
 		section_object_seen = 1;
 	    if (connect_obsec_) {
 		x = hoc_xpop();
@@ -1543,7 +1543,7 @@ Symbol* java2nrn_class(
 	/* meth is a "type name signature ..."  space separated string
 		constructed by Neuron.java and the order gives mid */
 	for (cp = meth; *cp; ++cp) {
-		int type;
+		int type=0;
 		switch (*cp) {
 		case 'd':
 			type = FUNCTION;
@@ -1599,7 +1599,7 @@ Symbol* java2nrn_class(
 	/* pass again and take care of overloading. */
 	mid = 0;
 	for (cp = meth; *cp; ++cp) {
-		int type;
+		int type=0;
 		switch (*cp) {
 		case 'd':
 			type = FUNCTION;

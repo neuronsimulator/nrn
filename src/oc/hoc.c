@@ -1254,7 +1254,9 @@ static void hoc_run1(void)	/* execute until EOF */
 	}
 #endif
 	for (initcode(); hoc_yyparse(); initcode())
+        {
 		execute(progbase);
+        }
 #if defined(WIN32) && !defined(CYGWIN)
 		hoc_win_normal_cursor();
 #endif

@@ -137,7 +137,7 @@ int	col, *row_num, *idx, max_row;
 {
     int		old_idx, old_row, tmp_idx, tmp_row;
     SPROW	*r;
-    row_elt	*e;
+    row_elt	*e=0;
     
     if ( col < 0 || col >= A->n )
 	error(E_BOUNDS,"chase_col");

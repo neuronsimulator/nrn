@@ -416,7 +416,7 @@ int Reordered, Data, Header;
 MatrixPtr  Matrix = (MatrixPtr)eMatrix;
 register  int  I, Size;
 register  ElementPtr  pElement;
-int  Row, Col, Err;
+int  Row, Col, Err=0;
 FILE  *pMatrixFile, *fopen();
 
 /* Begin `spFileMatrix'. */
