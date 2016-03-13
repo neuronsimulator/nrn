@@ -626,6 +626,7 @@ void datumindex_fill(int ith, CellGroup& cg, DatumIndices& di, Memb_list* ml) {
               break;
             }
           }
+          fprintf(stderr, "POINTER is not pointing to voltage or mechanism data. Perhaps it should be a BBCOREPOINTER\n");
           assert(etype != 0);
         }
         // pointer into one of the tml types?

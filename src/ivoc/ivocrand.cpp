@@ -62,7 +62,7 @@ double nrn_random_pick(Rand* r);
 Rand* nrn_random_arg(int);
 long nrn_get_random_sequence(Rand* r);
 void nrn_set_random_sequence(Rand* r, long seq);
-
+int nrn_random_isran123(Rand* r, uint32_t* id1, uint32_t* id2, uint32_t* id3);
 #include <mcran4.h>
 
 }
@@ -302,6 +302,15 @@ void nrn_set_random_sequence(Rand* r, long seq) {
 	assert(r->type_ == 2);
 	MCellRan4* mcr = (MCellRan4*)r->gen;
 	mcr->ihigh_ = seq;
+}
+
+int nrn_random_isran123(Rand* r, uint32_t* id1, uint32_t* id2, uint32_t* id3) {
+	if (r->type_ == 4) {
+		NrnRandom123* nr = (NrnRandom123*)r->gen;
+		nrnran123_getids3(nr->s_, id1, id2, id3);
+		return 1;
+	}
+	return 0;
 }
 
 static double r_nrnran123(void* r) {

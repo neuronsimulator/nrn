@@ -1,4 +1,5 @@
 #include <../../nrnconf.h>
+#include <inttypes.h>
 #include "nrnredef.h"
 #include "section.h"
 #include "nrnmpiuse.h"
@@ -20,7 +21,8 @@ void nrn_prcellstate(int gid, const char* suffix){}
 void hoc_construct_point(Object* ob, int i){}
 void nrn_random_play(){}
 void* nrn_random_arg(i) int i; { return (void*)0; }
-double nrn_random_pick(r) void* r; { return 0.; }
+double nrn_random_pick(void* r) { return 0.; }
+int nrn_random_isran123(void* r, uint32_t* id1, uint32_t* id2, uint32_t* id3){ return 0.; }
 void hoc_new_opoint(){}
 int special_pnt_call(Object* ob, Symbol* sym, int narg){return 0;}
 void bbs_handle(){}

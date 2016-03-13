@@ -744,14 +744,8 @@ void* hoc_sec_internal_name2ptr(const char* s, int eflag) {
 	if (n < 12 || strncmp(s, "__nrnsec_0x", 11) != 0) {
 		err = 1;
 	}else{
-		if (sizeof(void*) == sizeof(long)) {
-			if (sscanf(s+9, "%lx", (long*)&vp) != 1) {
-				err = 1;
-			}
-		}else{
-			if (sscanf(s+9, "%Lx", (long long*)&vp) != 1) {
-				err = 1;
-			}
+		if (sscanf(s+9, "%p", &vp) != 1) {
+			err = 1;
 		}
 	}
 	if (err) {

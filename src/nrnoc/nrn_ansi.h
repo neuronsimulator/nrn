@@ -46,6 +46,7 @@ extern void second_order_cur(NrnThread*);
 extern void hoc_register_dparam_size(int, int);
 extern void hoc_register_limits(int, HocParmLimits*);
 extern void hoc_register_units(int, HocParmUnits*);
+extern void hoc_register_dparam_semantics(int, int, const char*);
 extern void setup_topology(void);
 extern int nrn_errno_check(int);
 extern void long_difus_solve(int method, NrnThread* nt);
