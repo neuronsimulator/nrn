@@ -243,7 +243,13 @@ double* point_process_pointer(Point_process* pnt, Symbol* sym, int index)
 	static double dummy;
 	double* pd;
 	if (pnt->prop == (Prop *)0) {
-		hoc_execerror("point process not located in a section", (char*)0);
+		if (nrn_inpython_ == 1) { /* python will handle the error */
+			hoc_warning("point process not located in a section", (char*)0);
+			nrn_inpython_ = 2;
+			return NULL;
+		}else{
+			hoc_execerror("point process not located in a section", (char*)0);
+		}
 	}
 	if (sym->subtype == NRNPOINTER) {
 		pd = (pnt->prop->dparam)[sym->u.rng.index + index].pval;

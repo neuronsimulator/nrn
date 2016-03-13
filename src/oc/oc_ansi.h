@@ -29,6 +29,7 @@ extern double hoc_call_func(Symbol*, int narg); /* push first arg first. Warning
 extern double hoc_call_objfunc(Symbol*, int narg, Object*); /* call a fuction within the context of an object.*/
 extern double hoc_ac_;
 extern double hoc_epsilon;
+extern int nrn_inpython_;
 extern int stoprun;
 extern int hoc_color;
 extern int hoc_set_color(int);

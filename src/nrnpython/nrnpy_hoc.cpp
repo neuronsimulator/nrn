@@ -25,6 +25,7 @@ extern int ivoc_list_count(Object*);
 extern Object** hoc_objpop();
 extern Object* hoc_obj_look_inside_stack(int);
 extern void hoc_object_component();
+extern int nrn_inpython_;
 extern int hoc_stack_type();
 extern void hoc_call();
 extern Objectdata* hoc_top_level_data;
@@ -886,7 +887,14 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* name) {
 		if (t == VAR || t == STRING || t == OBJECTVAR || t == RANGEVAR || t == SECTION || t == SECTIONREF || t == VARALIAS || t == OBJECTALIAS) {
 			if (sym != nrn_child_sym && !ISARRAY(sym)) {
 				hoc_push_object(po->ho_);
+				nrn_inpython_ = 1;
 				component(po);
+				if (nrn_inpython_ == 2) { // error in component
+					nrn_inpython_ = 0;
+					PyErr_SetString(PyExc_TypeError, "No value");
+					return NULL;
+				}
+				nrn_inpython_ = 0;
 				Py_DECREF(po);
 				if (t == SECTION || t == SECTIONREF) {
 					section_object_seen = 0;
@@ -1085,7 +1093,13 @@ static int hocobj_setattro(PyObject* subself, PyObject* name, PyObject* value) {
 		if (t == VAR || t == STRING || t == OBJECTVAR || t == RANGEVAR || t == VARALIAS || t == OBJECTALIAS) {
 			if (!ISARRAY(sym)) {
 				hoc_push_object(po->ho_);
+				nrn_inpython_ = 1;
 				component(po);
+				if (nrn_inpython_ == 2) { // error in component
+					nrn_inpython_ = 0;
+					PyErr_SetString(PyExc_TypeError, "No value");
+					return -1;
+				}
 				Py_DECREF(po);
 				return set_final_from_stk(value);
 			}else{
