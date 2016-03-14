@@ -21,6 +21,8 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/nrniv/netcvode.h"
 #include "coreneuron/nrniv/vrecitem.h"
 
+#include "coreneuron/nrniv/nrn_acc_manager.h"
+
 extern "C" {
 extern NetCvode* net_cvode_instance;
 
@@ -42,6 +44,10 @@ void nrn_deliver_events(NrnThread* nt) {
 		net_cvode_instance->deliver_events(tsav, nt);
 	}
 	nt->_t = tsav;
+
+    /*before executing on gpu, we have to update the NetReceiveBuffer_t on GPU */
+    update_net_receive_buffer(nt);
+
 	for (int i=0; i < net_buf_receive_cnt_; ++i) {
 		(*net_buf_receive_[i])(nt);
 	}

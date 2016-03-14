@@ -555,7 +555,7 @@ void ncs2nrn_integrate(double tstop) {
 // net_send_buffer added so checking can be done on gpu
 // while event queueing is on cpu.
 
-static bool pscheck(double var, double thresh, bool& flag) {
+static bool pscheck(double var, double thresh, int& flag) {
 	if (var > thresh) {
 		if (flag == false) {
 			flag = true;

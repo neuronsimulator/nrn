@@ -51,6 +51,16 @@ if(DISABLE_NRN_TIMEOUT)
     add_definitions( -DDISABLE_TIMEOUT)
 endif(DISABLE_NRN_TIMEOUT)
 
+find_package(CUDA)
+
+option (ENABLE_SELECTIVE_GPU_PROFILING "Enable GPU profiling only for Solver" OFF)
+if(ENABLE_SELECTIVE_GPU_PROFILING)
+    if(CUDA_FOUND)
+        add_definitions( -DCUDA_PROFILING)
+    endif(CUDA_FOUND)
+    add_definitions( -DENABLE_SELECTIVE_PROFILING)
+endif(ENABLE_SELECTIVE_GPU_PROFILING)
+
 if(${CMAKE_SYSTEM_PROCESSOR} STREQUAL "ppc64")
   CHECK_INCLUDE_FILES("spi/include/kernel/memory.h" have_memory_h)
   if(have_memory_h)

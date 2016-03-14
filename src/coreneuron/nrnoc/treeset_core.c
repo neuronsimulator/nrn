@@ -129,7 +129,7 @@ void* setup_tree_matrix_minimal(NrnThread* _nt){
 	nrn_rhs(_nt);
 	nrn_lhs(_nt);
 
-    update_matrix_from_gpu(_nt);
+    //update_matrix_from_gpu(_nt);
 
 	return (void*)0;
 }

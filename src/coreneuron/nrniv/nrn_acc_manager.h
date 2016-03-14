@@ -1,6 +1,10 @@
 #ifndef _nrn_device_manager_
 #define _nrn_device_manager_
 
+#if defined(_OPENACC)
+#include <openacc.h>
+#endif
+
 #include "coreneuron/nrnoc/multicore.h"
 
 void setup_nrnthreads_on_device(NrnThread *threads, int nthreads);

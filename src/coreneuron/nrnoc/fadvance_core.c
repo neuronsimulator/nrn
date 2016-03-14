@@ -92,28 +92,34 @@ static void* nrn_fixed_step_group_thread(NrnThread* nth) {
 	return (void*)0;
 }
 
+
 static void update(NrnThread* _nt){
 	int i, i1, i2;
 	i1 = 0;
 	i2 = _nt->end;
+
+    double *vec_v = &(VEC_V(0));
+    double *vec_rhs = &(VEC_RHS(0));
+
 	/* do not need to worry about linmod or extracellular*/
 	if (secondorder) {
+        #pragma acc parallel loop present(vec_v[0:i2], vec_rhs[0:i2]) if(_nt->compute_gpu)
 		for (i=i1; i < i2; ++i) {
-			VEC_V(i) += 2.*VEC_RHS(i);
+			vec_v[i] += 2.*vec_rhs[i];
 		}
 	}else{
+        #pragma acc parallel loop present(vec_v[0:i2], vec_rhs[0:i2]) if(_nt->compute_gpu)
 		for (i=i1; i < i2; ++i) {
-			VEC_V(i) += VEC_RHS(i);
+			vec_v[i] += vec_rhs[i];
 		}
 	}
 
-    update_matrix_to_gpu(_nt);
+    //update_matrix_to_gpu(_nt);
 
 	if (_nt->tml) {
 		assert(_nt->tml->index == CAP);
 		nrn_capacity_current(_nt, _nt->tml->ml);
 	}
-
 }
 
 static void nonvint(NrnThread* _nt) {
@@ -148,7 +154,7 @@ static void* nrn_fixed_step_thread(NrnThread* nth) {
 	deliver_net_events(nth);
 	nth->_t += .5 * nth->_dt;
 
-    /*@todo: do we need to update nth->_t on GPU */
+    /*@todo: do we need to update nth->_t on GPU: Yes (Michael, but can launch kernel) */
     #ifdef _OPENACC
         acc_update_device(&(nth->_t), sizeof(double));
     #endif
@@ -171,4 +177,3 @@ static void* nrn_fixed_step_thread(NrnThread* nth) {
 	nrn_deliver_events(nth) ; /* up to but not past texit */
 	return (void*)0;
 }
-

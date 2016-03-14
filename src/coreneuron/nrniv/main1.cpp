@@ -33,11 +33,8 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/utils/sdprintf.h"
 #include "coreneuron/nrniv/nrn_stats.h"
 #include "coreneuron/nrniv/nrn_acc_manager.h"
+#include "coreneuron/nrniv/profiler_interface.h"
 #include <string.h>
-
-#ifdef CRAYPAT
-#include <pat_api.h>
-#endif
 
 #if 0
 #include <fenv.h>
@@ -55,8 +52,12 @@ int main1( int argc, char **argv, char **env )
 
     ( void )env; /* unused */
 
-#if defined(NRN_FEEXCEPT)
-    nrn_feenableexcept();
+    #if defined(NRN_FEEXCEPT)
+        nrn_feenableexcept();
+    #endif
+
+#ifdef ENABLE_SELECTIVE_PROFILING
+    stop_profile();
 #endif
 
     // mpi initialisation
@@ -165,19 +166,20 @@ int main1( int argc, char **argv, char **env )
     //update_nrnthreads_on_host(nrn_threads, nrn_nthread);
     //dump_nt_to_file("dump_upd", nrn_threads, nrn_nthread);
 
-    #ifdef CRAYPAT
-        PAT_record(PAT_STATE_ON);
-    #endif
+#ifdef ENABLE_SELECTIVE_PROFILING
+    start_profile();
+#endif
 
     /// Solver execution
     BBS_netpar_solve( input_params.tstop );
 
-    #ifdef CRAYPAT
-        PAT_record(PAT_STATE_OFF);
-    #endif
-
     // Report global cell statistics
     report_cell_stats();
+
+
+#ifdef ENABLE_SELECTIVE_PROFILING
+    stop_profile();
+#endif
 
     // prcellstate after end of solver
     if ( input_params.prcellgid >= 0 ) {

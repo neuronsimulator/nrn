@@ -97,7 +97,7 @@ public:
 	virtual bool check();
 	virtual double value() { return -1.; }
 
-    bool flag_; // true when below, false when above.
+    int flag_; // true when below, false when above. (changed from bool to int to avoid cray acc bug(?))
 };
 
 

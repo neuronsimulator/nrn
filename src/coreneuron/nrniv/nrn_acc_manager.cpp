@@ -228,6 +228,12 @@ void setup_nrnthreads_on_device(NrnThread *threads, int nthreads)  {
             acc_memcpy_to_device(&(d_nt->presyns), &d_presyns, sizeof(PreSyn*));
         }
 
+        if(nt->_net_send_buffer_size) {
+            /* copy send_receive buffer */
+            int *d_net_send_buffer = (int *) acc_copyin(nt->_net_send_buffer, sizeof(int)*nt->_net_send_buffer_size);
+            acc_memcpy_to_device(&(d_nt->_net_send_buffer), &d_net_send_buffer, sizeof(int*));
+        }
+
         printf("\n Compute thread on GPU? : %s, Stream : %d", (nt->compute_gpu)? "Yes" : "No", nt->stream_id);
     }
 

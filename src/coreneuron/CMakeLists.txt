@@ -45,6 +45,8 @@ nrniv/tqueue.h
 nrniv/tqueue.ipp
 nrniv/vrecitem.h
 nrniv/nrn_acc_manager.h
+nrniv/cuda_profile.h
+nrniv/profiler_interface.h
 mech/cfile/cabvars.h
 )
 
@@ -79,6 +81,7 @@ nrniv/patternstim.cpp
 nrniv/tqueue.cpp
 nrniv/vrecord.cpp
 nrniv/nrn_acc_manager.cpp
+nrniv/profiler_interface.cpp
 utils/randoms/nrnran123.c
 utils/memory_utils.cpp
 utils/sdprintf.cpp
@@ -236,7 +239,6 @@ set_source_files_properties(${GENERATED_MECH_C_FILES} PROPERTIES COMPILE_FLAGS "
 set_source_files_properties(${NOACC_MECH_C_FILES} PROPERTIES COMPILE_FLAGS "-hnoacc")
 
 set(CORENEURON_SOURCES ${CORENEURON_SOURCES} ${GENERATED_MECH_C_FILES})
-
 
 common_library(coreneuron)
 
