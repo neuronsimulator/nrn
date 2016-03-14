@@ -59,7 +59,8 @@ cmake .. -DCMAKE_CXX_FLAGS="-O3 -qtune=qp -qarch=qp -q64 -qhot=simd -qsmp -qthre
 ```
 
 * By default OpenMP threading is enabled. You can disable it with -DCORENEURON_OPENMP=OFF
-* By default CoreNEURON (And NEURON) uses the AoS (Array of Structs) memory layout for all data structures. For the efficient memory access and vectorization you can use the SoA (Struct of Array) layout by adding "-DLAYOUT=0" to the C/C++ compiler flags (0 = SoA and 1 = AoS) .
+* By default CoreNEURON (And NEURON) uses the AoS (Array of Structs) memory layout for all data structures. For the efficient memory access and vectorization you can use the SoA (Struct of Array) layout by adding "-DLAYOUT=0" to the C/C++ compiler flags (0 = SoA and 1 = AoS).
+* If default compielr flags are not supported, try -DCMAKE_BUILD_TARGET=SOME_TARGET
 
 
 # RUNNING SIMULATION:

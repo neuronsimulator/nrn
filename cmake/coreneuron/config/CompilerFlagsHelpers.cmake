@@ -78,12 +78,10 @@ foreach(COMPILER_LANGUAGE ${SUPPORTED_COMPILER_LANGUAGE_LIST})
 		# enable by default on MSVC
 		set(CMAKE_${COMPILER_LANGUAGE}_POSITION_INDEPENDANT "")
 
-
-	## GCC, CLANG, rest of the world
-	else() 
+    ## GCC
+	elseif(CMAKE_${COMPILER_LANGUAGE}_COMPILER_IS_GCC)
 
 		set(CMAKE_${COMPILER_LANGUAGE}_WARNING_ALL "-Wall -Wextra")
-
 		set(CMAKE_${COMPILER_LANGUAGE}_DEBUGINFO_FLAGS "-g")
 
 		set(CMAKE_${COMPILER_LANGUAGE}_OPT_NONE "-O0")
@@ -102,14 +100,29 @@ foreach(COMPILER_LANGUAGE ${SUPPORTED_COMPILER_LANGUAGE_LIST})
 		endif()
 
 		if( (CMAKE_HOST_SYSTEM_PROCESSOR MATCHES "^ppc" ) OR ( CMAKE_HOST_SYSTEM_PROCESSOR MATCHES "^power" ) )
-			## ppc arch do not support -march= syntax 
+			## ppc arch do not support -march= syntax
 			set(CMAKE_${COMPILER_LANGUAGE}_GEN_NATIVE "-mcpu=native")
 		else()
 			set(CMAKE_${COMPILER_LANGUAGE}_GEN_NATIVE "-march=native")
 		endif()
+
+	## rest of the world
+	else()
+
+		set(CMAKE_${COMPILER_LANGUAGE}_WARNING_ALL "")
+
+		set(CMAKE_${COMPILER_LANGUAGE}_DEBUGINFO_FLAGS "-g")
+
+		set(CMAKE_${COMPILER_LANGUAGE}_OPT_NONE "-O0")
+		set(CMAKE_${COMPILER_LANGUAGE}_OPT_NORMAL "-O2")
+		set(CMAKE_${COMPILER_LANGUAGE}_OPT_AGGRESSIVE "-O3")
+		set(CMAKE_${COMPILER_LANGUAGE}_OPT_FASTEST "-O3")
+
+		set(CMAKE_${COMPILER_LANGUAGE}_STACK_PROTECTION "")
+		set(CMAKE_${COMPILER_LANGUAGE}_POSITION_INDEPENDANT "")
+		set(CMAKE_${COMPILER_LANGUAGE}_VECTORIZE "")
+
 	endif()
-
-
 
 endforeach()
 
