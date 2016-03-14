@@ -30,6 +30,8 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/nrniv/memory.h"
 #include "coreneuron/nrniv/nrn_setup.h"
 #include "coreneuron/nrniv/nrnoptarg.h"
+#include "coreneuron/nrniv/node_permute.h"
+#include "coreneuron/nrniv/cellorder.h"
 
 // file format defined in cooperation with nrncore/src/nrniv/nrnbbcore_write.cpp
 // single integers are ascii one per line. arrays are binary int or double
@@ -586,6 +588,10 @@ void nrn_cleanup() {
       ml->pdata = NULL;
       delete[] ml->nodeindices;
       ml->nodeindices = NULL;
+      if (ml->_permute) {
+        delete [] ml->_permute;
+        ml->_permute = NULL;
+      }
 
       if(tml->dependencies)
           free(tml->dependencies);
@@ -674,6 +680,7 @@ void read_phase2(data_reader &F, NrnThread& nt) {
   for (int i=0; i < nmech; ++i) {
     tml = (NrnThreadMembList*)emalloc(sizeof(NrnThreadMembList));
     tml->ml = (Memb_list*)emalloc(sizeof(Memb_list));
+    tml->ml->_permute = NULL;
     tml->next = NULL;
     tml->index = F.read_int();
     tml->ml->nodecount = F.read_int();
@@ -765,8 +772,6 @@ void read_phase2(data_reader &F, NrnThread& nt) {
   // matrix info
   nt._v_parent_index = (int*)coreneuron::ecalloc_align(nt.end, NRN_SOA_BYTE_ALIGN, sizeof(int));;
   F.read_array<int>(nt._v_parent_index, nt.end);
-
-  node_permute(nt._v_parent_index, nt.end);
 
   F.read_array<double>(nt._actual_a, nt.end);
   F.read_array<double>(nt._actual_b, nt.end);
@@ -884,6 +889,38 @@ void read_phase2(data_reader &F, NrnThread& nt) {
   // unpadded_ml_list no longer needed
   free(unpadded_ml_list);
 
+  /* if desired, apply the node permutation. This involves permuting
+     at least the node parameter arrays for a, b, and area and all
+     integer vector values that index into nodes. This could have been done
+     when originally filling the arrays with AoS ordered data, but can also
+     be done now, after the SoA transformation. The latter has the advantage
+     that the present order is consistent with all the layout values. Note
+     that after this portion of the permutation, a number of other node index
+     vectors will be read and will need to be permuted as well in subsequent
+     sections of this function.
+  */
+  nt._permute = interleave_order(nt.ncell, nt.end, nt._v_parent_index);
+  if (nt._permute) {
+    int* p = nt._permute;
+    permute_data(nt._actual_a, nt.end, p);
+    permute_data(nt._actual_b, nt.end, p);
+    permute_data(nt._actual_area, nt.end, p);
+    
+    // index values change as well as ordering
+    permute_ptr(nt._v_parent_index, nt.end, p);
+    node_permute(nt._v_parent_index, nt.end, p);
+
+    // specify the ml->_permute and sort the nodeindices
+    for (tml = nt.tml; tml; tml = tml->next) {
+      permute_nodeindices(tml->ml, p);
+    }
+
+    // permute mechanism data, pdata (and values)
+    for (tml = nt.tml; tml; tml = tml->next) {
+      permute_ml(tml->ml, tml->index, nt);
+    }
+  }
+
   /* here we setup the mechanism dependencies. if there is a mechanism dependency
    * then we allocate an array for tml->dependencies otherwise set it to NULL.
    * In order to find out the "real" dependencies i.e. dependent mechanism
@@ -986,6 +1023,10 @@ void read_phase2(data_reader &F, NrnThread& nt) {
   // acell PreSyn with the Point_process.
   //nt.presyns order same as output_vindex order
   int* output_vindex = F.read_array<int>(nt.n_presyn);
+  if (nt._permute) {
+    // only indices >= 0 (i.e. _actual_v indices) will be changed.
+    node_permute(output_vindex, nt.n_presyn, nt._permute);
+  }
   double* output_threshold = F.read_array<double>(nt.ncell);
   for (int i=0; i < nt.n_presyn; ++i) { // real cells
     PreSyn* ps = nt.presyns + i;
@@ -1077,10 +1118,14 @@ void read_phase2(data_reader &F, NrnThread& nt) {
     int cntml = ml->nodecount;
     int layout = nrn_mech_data_layout_[type];
     for (int j=0; j < cntml; ++j) {
+      int jp = j;
+      if (ml->_permute) {
+        jp = ml->_permute[j];
+      }
       double* d = ml->data;
       Datum* pd = ml->pdata;
-      d += nrn_i_layout(j, cntml, 0, dsz, layout);
-      pd += nrn_i_layout(j, cntml, 0, pdsz, layout);
+      d += nrn_i_layout(jp, cntml, 0, dsz, layout);
+      pd += nrn_i_layout(jp, cntml, 0, pdsz, layout);
       int aln_cntml = nrn_soa_padded_size(cntml, layout);
       (*nrn_bbcore_read_[type])(dArray, iArray, &dk, &ik, 0, aln_cntml, d, pd, ml->_thread, &nt, 0.0);
     }
@@ -1118,6 +1163,9 @@ void read_phase2(data_reader &F, NrnThread& nt) {
     IvocVect* tvec = vector_new(sz);
     F.read_array<double>(vector_vec(tvec), sz);
     ix = nrn_param_layout(ix, mtype, ml);
+    if (ml->_permute) {
+      ix = nrn_index_permute(ix, mtype, ml);
+    }
     nt._vecplay[i] = new VecPlayContinuous(ml->data + ix, yvec, tvec, NULL, nt.id);
   }
 }

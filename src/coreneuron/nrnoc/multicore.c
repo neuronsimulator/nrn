@@ -517,6 +517,7 @@ void nrn_threads_create(int n, int parallel) {
 				nt->_actual_v = 0;
 				nt->_actual_area = 0;
 				nt->_v_parent_index = 0;
+				nt->_permute = 0;
                                 nt->_shadow_rhs = 0;
                                 nt->_shadow_d = 0;
 				nt->_ecell_memb_list = 0;

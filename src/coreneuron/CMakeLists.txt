@@ -32,6 +32,7 @@ nrniv/memory.h
 nrniv/netcon.h
 nrniv/netcvode.h
 nrniv/node_permute.h
+nrniv/cellorder.h
 nrniv/nrn_assert.h
 nrniv/nrn_datareader.h
 nrniv/nrn_setup.h
@@ -70,6 +71,7 @@ nrniv/main1.cpp
 nrniv/netpar.cpp
 nrniv/netcvode.cpp
 nrniv/node_permute.cpp
+nrniv/cellorder.cpp
 nrniv/mk_mech.cpp
 nrniv/nrn_datareader.cpp
 nrniv/nrn_setup.cpp

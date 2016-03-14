@@ -64,18 +64,20 @@ so pdata_m(k, isz) = inew + data_t
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "node_permute.h"
+#include "coreneuron/nrnoc/multicore.h"
+#include "coreneuron/nrniv/node_permute.h"
+#include "coreneuron/nrnoc/nrnoc_decl.h"
+#include "coreneuron/nrniv/nrniv_decl.h"
+#include "coreneuron/nrniv/nrn_assert.h"
 #include <vector>
 
-static int* permute_;
-    
-
 template <typename T>
-void permute(T* data, size_t cnt, size_t sz, int layout, size_t* p) {
+void permute(T* data, int cnt, int sz, int layout, int* p) {
   // data(p[icnt], isz) <- data(icnt, isz)
   // this does not change data, merely permutes it.
   // assert len(p) == cnt
-  size_t n = cnt*sz;
+  if (!p) { return; }
+  int n = cnt*sz;
   if (n < 1) { return; }
 
   if (layout == 0) { // for SoA, n might be larger due to cnt padding
@@ -83,12 +85,12 @@ void permute(T* data, size_t cnt, size_t sz, int layout, size_t* p) {
   }
 
   T* data_orig = new T[n];
-  for (size_t i = 0; i < n: ++i) {
+  for (int i = 0; i < n; ++i) {
     data_orig[i] = data[i];
   }
 
-  for (size_t icnt = 0; icnt < cnt; ++icnt) {
-    for (size_t isz = 0; isz < sz; ++isz) {
+  for (int icnt = 0; icnt < cnt; ++icnt) {
+    for (int isz = 0; isz < sz; ++isz) {
       // note that when layout==0, nrn_i_layout takes into account SoA padding.
       int i = nrn_i_layout(icnt, cnt, isz, sz, layout);
       int ip = nrn_i_layout(p[icnt], cnt, isz, sz, layout);
@@ -99,7 +101,7 @@ void permute(T* data, size_t cnt, size_t sz, int layout, size_t* p) {
   delete [] data_orig;
 }
 
-void update_pdata_values(Memb_list* ml, int type, NrnThread* nt) {
+void update_pdata_values(Memb_list* ml, int type, NrnThread& nt) {
   // assumes AoS to SoA transformation already made since we are using
   // nrn_i_layout to determine indices into both ml->pdata and into target data
   int psz = nrn_prop_dparam_size_[type];
@@ -117,7 +119,7 @@ void update_pdata_values(Memb_list* ml, int type, NrnThread* nt) {
     int s = semantics[i];
     if (s == -1) { // area
       int area0 = nt._actual_area - nt._data; // includes padding if relevant
-      int* p_target = nt.permute_;
+      int* p_target = nt._permute;
       for (int iml = 0; iml < cnt; ++iml) {
         int* pd = pdata + nrn_i_layout(iml, cnt, i, psz, layout);
         // *pd is the original integer into nt._data . Needs to be replaced
@@ -133,17 +135,23 @@ void update_pdata_values(Memb_list* ml, int type, NrnThread* nt) {
       }
     }else if (s == -5) { // assume pointer to membrane voltage
       int v0 = nt._actual_v - nt._data;
+      // same as for area semantics
+      int* p_target = nt._permute;
       for (int iml = 0; iml < cnt; ++iml) {
-        // same as for area semantics
+        int* pd = pdata + nrn_i_layout(iml, cnt, i, psz, layout);
+        int ix = *pd - v0; //original integer into area array.
+        nrn_assert((ix >= 0) && (ix < nt.end));
+        int ixnew = p_target[ix];
+        *pd = ixnew + v0;
       }
     }else if (s >= 0 && s < 1000) { // ion
       int etype = s;
       int elayout = nrn_mech_data_layout_[etype];
-      Memb_list* eml = nt->_ml_list[etype];
+      Memb_list* eml = nt._ml_list[etype];
       int edata0 = eml->data - nt._data;
       int ecnt = eml->nodecount;
       int esz = nrn_prop_param_size_[etype];
-      int* p_target = eml->permute_;
+      int* p_target = eml->_permute;
       for (int iml = 0; iml < cnt; ++iml) {
         int* pd = pdata + nrn_i_layout(iml, cnt, i, psz, layout);
         int ix = *pd - edata0;
@@ -159,8 +167,8 @@ void update_pdata_values(Memb_list* ml, int type, NrnThread* nt) {
           i_ecnt = ix % padded_ecnt;
           i_esz = ix / padded_ecnt;
         }
-        int i_ecnt_new = p_target(i_ecnt);
-        int ix_new = nrn_i_layout(i_ecnt_new, e_cnt, i_esz, esz, elayout)
+        int i_ecnt_new = p_target[i_ecnt];
+        int ix_new = nrn_i_layout(i_ecnt_new, ecnt, i_esz, esz, elayout);
         *pd = ix_new + edata0;
       }
     }
@@ -168,6 +176,52 @@ void update_pdata_values(Memb_list* ml, int type, NrnThread* nt) {
 }
 
 
+void node_permute(int* vec, int n, int* permute) {
+  for (int i = 0; i < n; ++i) {
+    if (vec[i] >= 0) {
+      vec[i] = permute[vec[i]];
+    }
+  }
+}
+
+void permute_ptr(int* vec, int n, int* p) {
+  permute(vec, n, 1, 1, p);
+}
+
+void permute_data(double* vec, int n, int* p) {
+  permute(vec, n, 1, 1, p);
+}
+
+void permute_ml(Memb_list* ml, int type, NrnThread& nt) {
+  int sz = nrn_prop_param_size_[type];
+  int psz = nrn_prop_dparam_size_[type];
+  int layout = nrn_mech_data_layout_[type];
+  permute(ml->data, ml->nodecount, sz, layout, ml->_permute);
+  permute(ml->pdata, ml->nodecount, psz, layout, ml->_permute);
+  
+  update_pdata_values(ml, type, nt);
+}
+
+
+int nrn_index_permute(int ix, int type, Memb_list* ml) {
+  int* p = ml->_permute;
+  if (!p) { return ix; }
+  int layout = nrn_mech_data_layout_[type];
+  if (layout == 1) {
+    int sz = nrn_prop_param_size_[type];
+    int i_cnt = ix / sz;
+    int i_sz = ix % sz;
+    return p[i_cnt] * sz + i_sz;
+  }else{
+    assert(layout == 0);
+    int padded_cnt = nrn_soa_padded_size(ml->nodecount, layout);
+    int i_cnt = ix % padded_cnt;
+    int i_sz = ix / padded_cnt;
+    return i_sz * padded_cnt + p[i_cnt];
+  }
+}
+
+#if 0
 static void pr(const char* s, int* x, int n) {
   printf("%s:", s);
   for (int i=0; i < n; ++i) {
@@ -183,79 +237,7 @@ static void pr(const char* s, double* x, int n) {
   }
   printf("\n");
 }
-
-void permute_cleanup() {
-  if (permute_) {
-    delete [] permute_;
-    permute_ = NULL;
-  }
-}
-
-void node_permute(int* parents, int n) {
-  // index is the original, permute_[index] is the new index (location)
-  // if the value does not refer to an index, 
-  // old value[i] is copied to new value[permute_[i]]
-  // new value[permute_[i]] = old value[i]
-  // new value[i] = old value[inverse_permute_[i]]
-
-  // Apply the permutation to the data as read and before it is transformed
-  // AoS to SoA or padded.
-  permute_ = new int[n];
-    
-  // rotation permutation for testing
-  for (int i=0; i < n; ++i) {
-    permute_[i] = (i+1)%n; 
-  }
-   
-  // now permute the parents
-  int* tmp_parents = new int[n];
-  for (int i=0; i < n; ++i) {
-    tmp_parents[i] = parents[i];
-  }
-  for (int i=0; i < n; ++i) {
-    int p = permute_[i];
-    int parent = tmp_parents[i];
-    if (parent >= 0) {
-      parent = permute_[parent];
-    }
-    parents[p] = parent;
-  }
-  delete [] tmp_parents;
- 
-#if 0
-  // verify tree constraint    
-  for (int i=0; i < n; ++i) {  
-    assert(parents[i] < i);  
-  }
 #endif
-}  
-
-using namespace std;
-template<class T>
-void permute(vector<T>& vec, vector<size_t>& prmut, int dir) {
-  assert(vec.size() == prmut.size());
-  vector<T> tmpvec = vec;
-  if (dir > 0) {
-    for (size_t i = 0; i < prmut.size(); ++i) {
-      vec[prmut[i]] = tmpvec[i];
-    }
-  }else{
-    for (size_t i = 0; i < prmut.size(); ++i) {
-      vec[i] = tmpvec[prmut[i]];
-    }
-  }    
-}
-
-void permute_data(double* vec, int n) {
-  double* tmp_vec = new double[n];
-  for (int i=0; i < n; ++i) {
-    tmp_vec[i] = vec[i];
-  }
-  for (int i=0; i < n; ++i) {
-    vec[permute_[i]] = tmp_vec[i];
-  }
-  delete [] tmp_vec;
-}
 
 static int compar(const void* p1, const void* p2, void* arg) {
   int ix1 = *((int*)p1);
@@ -278,128 +260,16 @@ static int* sortindices(int* indices, int n) {
   return sort_indices;
 }
 
-int* node_indices_permute(int* nodeindices, int n) {
+void permute_nodeindices(Memb_list* ml, int* p) {
+
+  // nodeindices values are permuted according to p (that per se does
+  //  not affect vec).
+
+  node_permute(ml->nodeindices, ml->nodecount, p);
+
+  // Then the new node indices are sorted by
+  // increasing index. That becomes ml->_permute
+
+  ml->_permute = sortindices(ml->nodeindices, ml->nodecount);
+  permute_ptr(ml->nodeindices, ml->nodecount, ml->_permute);
 }
-
-template <typename T>
-void node_data_permute(T* vec, size_t sz, int* psort, int n) {
-}
-
-int* permute_node_subset_data(
-  double* vec, size_t sz,
-  int* dvec, size_t dsz,
-  int* indices, int n
-){
-  // node indices are permuted (that per se does not affect vec)
-  // Then the new node indices are sorted by increasing index. That does
-  // require sorting vec according to the sort_indices return value.
-  int* psort = node_indices_permute(indices, n);
-  node_data_permute(vec, sz, psort, n);
-  node_data_permute(dvec, dsz, psort, n); // index values will need to be
-    //changed based on semantics of the values containing indices.
-    // eg. permute for area; ion type specific psort for ion index values.
-
-  size_t nsz = n*sz;
-  double* tmp_vec = new double[nsz];
-  for (size_t i=0; i < nsz; ++i) {
-    tmp_vec[i] = vec[i];  
-  }
-
-  int* tmp_dvec = NULL;
-  if (dsz) {
-    size_t ndsz = n*dsz;
-    tmp_dvec = new int[ndsz];
-    for (size_t i=0; i < ndsz; ++i) {
-      tmp_dvec[i] = dvec[i];  
-    }
-  }
-
-  int* tmp_indices = new int[n];
-  for (int i=0; i < n; ++i) {
-    tmp_indices[i] = permute_[indices[i]];
-  }
-  for (int i=0; i < n; ++i) {
-    indices[i] = tmp_indices[i];
-  }
-
-  // the data is not permuted just because the node indices were permuted.
-  // However after sorting, that sort becomes the data permutation.
-  pr("indices", tmp_indices, n);
-  int* sort_indices = sortindices(tmp_indices, n);
-  pr("sort_indices", sort_indices, n);
-
-  for (int i=0; i < n; ++i) {
-    indices[i] = tmp_indices[sort_indices[i]];
-    for (int j=0; j < sz; ++j) {
-      vec[i*sz + j] = tmp_vec[sort_indices[i]*sz + j];
-    }
-    for (int j=0; j < dsz; ++j) {
-      dvec[i*dsz + j] = tmp_dvec[sort_indices[i]*dsz + j];
-    }
-  }
-
-  delete [] tmp_indices;
-  delete [] tmp_vec;
-  if (dsz) {
-    delete [] tmp_dvec;
-  }
-
-  return sort_indices;
-}
-
-#if 1
-
-int main() {
-  int n = 5;
-  int* parents = new int[n];
-  parents[0] = -1;
-  for (int i=1; i < n; ++i) {
-    parents[i] = i - 1;
-  }
-  pr("parents", parents, n);
-  node_permute(parents, n);
-  pr("permute_", permute_, n);
-  pr("parents", parents, n);
-  delete [] parents;
-
-  double* d = new double[n];
-  for (int i=0; i < n; ++i) {
-    d[i] = 10. + i;
-  }
-  pr("d", d, n);
-  permute_data(d, n);
-  pr("d", d, n);
-  delete [] d;
-  
-  n = 3;
-  int* ix = new int[n];
-  ix[0] = 1;
-  ix[1] = 3;
-  ix[2] = 4;
-  d = new double[n];
-  for (int i=0; i < n; ++i) {
-    d[i] = 10. + ix[i];
-  }
-  pr("ix", ix, n);
-  pr("d", d, n);
-  permute_node_subset_data(d, 1, NULL, 0, ix, n);
-  pr("ix", ix, n);
-  pr("d", d, n);
-  delete [] ix;
-  delete [] d;
-  
-  printf("test sort\n");
-  n=5;
-  ix = new int[n];
-  for (int i=0; i < n; i++) {
-    ix[i] = (i+1)%n;
-  }
-  pr("ix", ix, n);
-  int* si = sortindices(ix, n);
-  pr("si", si, n);
-  delete [] ix;
-  delete [] si;
-
-  return 0;
-}
-#endif
