@@ -28,7 +28,7 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #if LAYOUT >= 1
 #define _STRIDE LAYOUT
 #else
-#define _STRIDE _cntml + _iml
+#define _STRIDE _cntml_padded + _iml
 #endif
 
 extern void hoc_register_prop_size(int, int, int);
@@ -150,7 +150,7 @@ void nrn_wrote_conc(int type, double* p1, int p2, int it, NrnThread* nt) {
  	if (it & 04) {
 #if LAYOUT <= 0 /* SoA */
 		int _iml = 0;
-		int _cntml = nt->_ml_list[type]->nodecount;
+		int _cntml_padded = nt->_ml_list[type]->_nodecount_padded;
 #else /* nt is unused */
 		assert(nt);
 #endif
@@ -220,18 +220,19 @@ double nrn_nernst_coef(type) int type; {
 
 /* Must be called prior to any channels which update the currents */
 static void ion_cur(NrnThread* nt, Memb_list* ml, int type) {
-	int _cntml = ml->nodecount;
+	int _cntml_actual = ml->nodecount;
 	int _iml;
 	double* pd; Datum* ppd;
 	(void)nt; /* unused */
 /*printf("ion_cur %s\n", memb_func[type].sym->name);*/
 #if LAYOUT == 1 /*AoS*/
-	for (_iml = 0; _iml < _cntml; ++_iml) {
+	for (_iml = 0; _iml < _cntml_actual; ++_iml) {
 	  pd = ml->data + _iml*nparm; ppd = ml->pdata + _iml*1;
 #endif
 #if LAYOUT == 0 /*SoA*/
+	int _cntml_padded = ml->_nodecount_padded;
 	pd = ml->data; ppd = ml->pdata;
-	for (_iml = 0; _iml < _cntml; ++_iml) {
+	for (_iml = 0; _iml < _cntml_actual; ++_iml) {
 #endif
 #if LAYOUT > 1 /*AoSoA*/
 #error AoSoA not implemented.
@@ -248,18 +249,19 @@ static void ion_cur(NrnThread* nt, Memb_list* ml, int type) {
 	concentrations based on their own states
 */
 static void ion_init(NrnThread* nt, Memb_list* ml, int type) {
-	int _cntml = ml->nodecount;
+	int _cntml_actual = ml->nodecount;
 	int _iml;
 	double* pd; Datum* ppd;
 	(void)nt; /* unused */
 /*printf("ion_init %s\n", memb_func[type].sym->name);*/
 #if LAYOUT == 1 /*AoS*/
-	for (_iml = 0; _iml < _cntml; ++_iml) {
+	for (_iml = 0; _iml < _cntml_actual; ++_iml) {
 	  pd = ml->data + _iml*nparm; ppd = ml->pdata + _iml*1;
 #endif
 #if LAYOUT == 0 /*SoA*/
+	int _cntml_padded = ml->_nodecount_padded;
 	pd = ml->data; ppd = ml->pdata;
-	for (_iml = 0; _iml < _cntml; ++_iml) {
+	for (_iml = 0; _iml < _cntml_actual; ++_iml) {
 #endif
 #if LAYOUT > 1 /*AoSoA*/
 #error AoSoA not implemented.
@@ -282,22 +284,26 @@ void second_order_cur(NrnThread* _nt) {
 	extern int secondorder;
 	NrnThreadMembList* tml;
 	Memb_list* ml;
-	int _iml, _cntml;
+	int _iml, _cntml_actual;
+#if LAYOUT == 0
+	int _cntml_padded;
+#endif
 	int* ni;
 	double* pd;
 	(void)_nt; /* unused */
   if (secondorder == 2) {
 	for (tml = _nt->tml; tml; tml = tml->next) if (memb_func[tml->index].alloc == ion_alloc) {
 		ml = tml->ml;
-		_cntml = ml->nodecount;
+		_cntml_actual = ml->nodecount;
 		ni = ml->nodeindices;
 #if LAYOUT == 1 /*AoS*/
-		for (_iml = 0; _iml < _cntml; ++_iml) {
+		for (_iml = 0; _iml < _cntml_actual; ++_iml) {
 		  pd = ml->data + _iml*nparm;
 #endif
 #if LAYOUT == 0 /*SoA*/
+		_cntml_padded = ml->_nodecount_padded;
 		pd = ml->data;
-		for (_iml = 0; _iml < _cntml; ++_iml) {
+		for (_iml = 0; _iml < _cntml_actual; ++_iml) {
 #endif
 #if LAYOUT > 1 /*AoSoA*/
 #error AoSoA not implemented.

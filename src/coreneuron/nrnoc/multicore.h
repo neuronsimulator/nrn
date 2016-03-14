@@ -33,6 +33,8 @@ typedef struct NrnThreadMembList{ /* patterned after CvMembList in cvodeobj.h */
 	struct NrnThreadMembList* next;
 	struct Memb_list* ml;
 	int index;
+    int *dependencies; /* list of mechanism types that this mechanism depends on*/
+    int ndependencies; /* for scheduling we need to know the dependency count */
 } NrnThreadMembList;
 
 typedef struct NrnThreadBAList {

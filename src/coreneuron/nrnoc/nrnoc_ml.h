@@ -38,7 +38,8 @@ typedef struct Memb_list {
 	double* data;
 	Datum* pdata;
 	ThreadDatum* _thread; /* thread specific data (when static is no good) */
-	int nodecount;
+	int nodecount; /* actual node count */
+	int _nodecount_padded;
 } Memb_list;
 
 #endif

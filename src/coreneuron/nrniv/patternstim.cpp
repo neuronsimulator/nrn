@@ -133,6 +133,8 @@ Point_process* nrn_artcell_instantiate(const char* mechname) {
   assert(nt->_ml_list[type] == NULL); //FIXME
   NrnThreadMembList* tml = (NrnThreadMembList*)emalloc(sizeof(NrnThreadMembList));
   tml->ml = (Memb_list*)emalloc(sizeof(Memb_list));
+  tml->dependencies = NULL;
+  tml->ndependencies = 0;
   nt->_ml_list[type] = tml->ml;
   tml->index = type;
   tml->next = NULL;
@@ -154,6 +156,7 @@ Point_process* nrn_artcell_instantiate(const char* mechname) {
   // int layout = nrn_mech_data_layout_[type]; // not needed because singleton
   Memb_list* ml = tml->ml;
   ml->nodecount = 1;
+  ml->_nodecount_padded = ml->nodecount;
   ml->nodeindices = NULL;
   ml->data = (double*)ecalloc(ml->nodecount*psize, sizeof(double));
   ml->pdata = (Datum*)ecalloc(ml->nodecount*dsize, sizeof(Datum));

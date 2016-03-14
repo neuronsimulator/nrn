@@ -302,7 +302,7 @@ int nrn_mech_depend(int type, int* dependencies) {
 			int* iwd;
 			deptype = ds[i];
 			idepnew = depend_append(idep, dependencies, deptype, type);
-			iwd = ion_write_depend_[deptype];
+			iwd = ion_write_depend_ ? ion_write_depend_[deptype] : 0;
 			if (idepnew > idep && iwd) {
 				int size, j;
 				size = iwd[0];
