@@ -100,6 +100,56 @@ int* interleave_permutations(int ncell, int* endnode,
   return permute;
 }
 
+static int* contiguous_cell_block_order(int ncell, int nnode, int* parent) {
+  int* p = new int[nnode];
+  int* cell = new int[nnode]; // each node knows the cell index
+  int* cellsize = new int[ncell];
+
+  for (int i=0; i < ncell; ++i) {
+    cell[i] = i;
+    cellsize[i] = 0; // does not inlcude root
+    assert(parent[i] < 0); // all root nodes at beginning
+  }
+
+  for (int i=ncell; i < nnode; ++i) {
+    cell[i] = cell[parent[i]];
+    cellsize[cell[i]] += 1;
+  }
+  
+  int* celldispl = new int[ncell+1];
+  celldispl[0] = ncell;
+  for (int i=0; i < ncell; ++i) {
+    celldispl[i+1] = celldispl[i] + cellsize[i];
+  }
+
+  // identify permutation for the roots ... and reinit cellsize
+  for (int i=0; i < ncell; ++i) {
+    p[i] = i;
+    cellsize[i] = 0;
+  }
+
+  // remaining nodes in cell block order
+  for (int i=ncell; i < nnode; ++i) {
+    int icell = cell[i];
+    p[i] = celldispl[icell] + cellsize[icell]++;
+  }
+
+  delete [] cellsize;
+  delete [] celldispl;
+  delete [] cell;
+
+if (1) { // test
+  for (int i=0; i < nnode; ++i) {
+    int par = parent[p[i]];
+    if (par >= 0) {
+      par = p[par];
+    }
+    printf("parent[%d] = %d\n", i, par);
+  }
+}
+
+  return p;
+}
 
 int* interleave_order(int ncell, int nnode, int* parent) {
   // not used yet
@@ -108,6 +158,15 @@ int* interleave_order(int ncell, int nnode, int* parent) {
   int* firstnode = NULL;
   int* lastnode = NULL;
   int* cellsize = NULL;
+
+  // ensure parent of root = -1
+  for (int i=0; i < ncell; ++i) {
+    if (parent[i] == 0) { parent[i] = -1; }
+  }
+
+  // permute into contiguous cell block order
+  int* p1 = contiguous_cell_block_order(ncell, nnode, parent);
+  assert(p1);
 
   int* endnodes = calculate_endnodes(ncell, nnode, parent);
 
