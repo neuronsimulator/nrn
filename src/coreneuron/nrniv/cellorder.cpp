@@ -138,16 +138,6 @@ static int* contiguous_cell_block_order(int ncell, int nnode, int* parent) {
   delete [] celldispl;
   delete [] cell;
 
-if (1) { // test
-  for (int i=0; i < nnode; ++i) {
-    int par = parent[p[i]];
-    if (par >= 0) {
-      par = p[par];
-    }
-    printf("parent[%d] = %d\n", i, par);
-  }
-}
-
   return p;
 }
 
@@ -168,12 +158,47 @@ int* interleave_order(int ncell, int nnode, int* parent) {
   int* p1 = contiguous_cell_block_order(ncell, nnode, parent);
   assert(p1);
 
-  int* endnodes = calculate_endnodes(ncell, nnode, parent);
+  // end_index = p1[start_index]
+  int* newparent = new int[nnode];
+  for (int i=0; i < nnode; ++i) {
+    int par = parent[i];
+    if (par >= 0) {
+      par = p[par];
+    }
+    newparent[p[i]] = par
+  }
+  for (int i=0; i < nnode; ++i) {
+    printf("parent[%d] = %d\n", i, newparent[i]);
+  }
+
+  int* endnodes = calculate_endnodes(ncell, nnode, newparent);
 
   int* order = interleave_permutations(ncell, endnodes,
     nstride, stride, firstnode, lastnode, cellsize);
 
-  return order;
+  int* combined = new int[nnode];
+  for (int i=0; i < nnode; ++i) {
+    combined[i] = order[p1[i]];
+  }
+
+#if 1
+  // test the combination. should be interleaved
+  for (int i=0; i < nnode; ++i) {
+    int par = parent[i];
+    if (par >= 0) {
+      par = combined[par];
+    }
+    newparent[combined[i]] = par;
+  }
+  for (int i=0; i < nnode; ++i) {
+    printf("parent[%d] = %d\n", i, newparent[i]);
+  }
+#endif
+
+  delete [] newparent;
+  delete [] order;
+
+  return combined;
 }
 
 #if 0
