@@ -173,14 +173,14 @@ int* interleave_order(int ncell, int nnode, int* parent) {
     }
     newparent[p1[i]] = par;
   }
-#if 1  // newparent in contiguous cell block orderr
+#if 0  // newparent in contiguous cell block orderr
   for (int i=0; i < nnode; ++i) {
     printf("parent[%d] = %d\n", i, newparent[i]);
   }
 #endif
 
   int* endnodes = calculate_endnodes(ncell, nnode, newparent);
-#if 1
+#if 0
   for (int i=0; i <= ncell; ++i) {
     printf("endnodes[%d] = %d\n", i, endnodes[i]);
   }
@@ -194,7 +194,7 @@ int* interleave_order(int ncell, int nnode, int* parent) {
     combined[i] = order[p1[i]];
   }
 
-#if 1
+#if 0
   // test the combination. should be interleaved
   for (int i=0; i < nnode; ++i) {
     int par = parent[i];

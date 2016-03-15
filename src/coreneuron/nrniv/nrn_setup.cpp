@@ -912,12 +912,16 @@ void read_phase2(data_reader &F, NrnThread& nt) {
 
     // specify the ml->_permute and sort the nodeindices
     for (tml = nt.tml; tml; tml = tml->next) {
-      permute_nodeindices(tml->ml, p);
+      if (tml->ml->nodeindices) { // not artificial
+        permute_nodeindices(tml->ml, p);
+      }
     }
 
     // permute mechanism data, pdata (and values)
     for (tml = nt.tml; tml; tml = tml->next) {
-      permute_ml(tml->ml, tml->index, nt);
+      if (tml->ml->nodeindices) { // not artificial
+        permute_ml(tml->ml, tml->index, nt);
+      }
     }
   }
 
