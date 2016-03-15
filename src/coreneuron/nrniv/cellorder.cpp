@@ -8,24 +8,30 @@
 
 int* calculate_endnodes(int ncell, int nnode, int* parent) {
   int* cell = new int[nnode]; // each node knows the cell index
-  int* endnode = new int[ncell + 1];
-  endnode[0] = ncell; // index of first non-root node of cell 0.
+  int* cellsize = new int[ncell+1];
   for (int i=0; i < ncell; ++i) {
     cell[i] = i;
-    endnode[cell[i]+1] = i;
+    cellsize[cell[i]] = 0;
     assert(parent[i] < 0); // all root nodes must be at beginning
   }
   for (int i=ncell; i < nnode; ++i) {
     cell[i] = cell[parent[i]];
-    endnode[cell[i]+1] = i;
-    if (cell[i] < cell[i-1]) { // cell not contiguous!
+    cellsize[cell[i]] += 1;
+    if (cell[i] < cell[i-1] && parent[i-1] >= ncell) { // cell not contiguous! (except at root)
       printf("node %d is in cell %d but node %d is in cell %d\n",i, cell[i], i-1, cell[i-1]);
     }
-    nrn_assert(cell[i] >= cell[i-1]);
+    nrn_assert(cell[i] >= cell[i-1] || parent[i-1] < ncell);
   }
 
+  // integrate to get displacments
+  int dspl = ncell;
+  for (int i=0; i <= ncell; ++i) {
+    int sz = cellsize[i];
+    cellsize[i] = dspl;
+    dspl += sz;
+  }
   delete [] cell;
-  return endnode;
+  return cellsize;
 }
 
 
@@ -85,7 +91,7 @@ int* interleave_permutations(int ncell, int* endnode,
         ++n;
         if (firstnode[j] < 0) { firstnode[j] = k; }
         lastnode[j] = k;
-        permute[k++] = endnode[j] + i;
+        permute[endnode[j] + i] = k++;
       }
       --sz[j]; // original size is sz[j] + nstride
     }
@@ -163,15 +169,22 @@ int* interleave_order(int ncell, int nnode, int* parent) {
   for (int i=0; i < nnode; ++i) {
     int par = parent[i];
     if (par >= 0) {
-      par = p[par];
+      par = p1[par];
     }
-    newparent[p[i]] = par
+    newparent[p1[i]] = par;
   }
+#if 1  // newparent in contiguous cell block orderr
   for (int i=0; i < nnode; ++i) {
     printf("parent[%d] = %d\n", i, newparent[i]);
   }
+#endif
 
   int* endnodes = calculate_endnodes(ncell, nnode, newparent);
+#if 1
+  for (int i=0; i <= ncell; ++i) {
+    printf("endnodes[%d] = %d\n", i, endnodes[i]);
+  }
+#endif
 
   int* order = interleave_permutations(ncell, endnodes,
     nstride, stride, firstnode, lastnode, cellsize);
