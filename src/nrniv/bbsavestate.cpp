@@ -211,6 +211,8 @@ extern void nrn_fake_fire(int gid, double firetime, int fake_out);
 extern Object* nrn_gid2obj(int gid);
 extern PreSyn* nrn_gid2presyn(int gid);
 extern int nrn_gid_exists(int gid);
+
+#if NRNMPI
 extern void nrn_spike_exchange();
 extern void nrnmpi_barrier();
 extern void nrnmpi_int_alltoallv(int*, int*, int*, int*, int*, int*);
@@ -219,14 +221,47 @@ extern int nrnmpi_int_allmax(int);
 extern void nrnmpi_int_allgather(int* s, int* r, int n);
 extern void nrnmpi_int_allgatherv(int* s, int* r, int* n, int* dspl);
 extern void nrnmpi_dbl_allgatherv(double* s, double* r, int* n, int* dspl);
+#else
+static void nrn_spike_exchange() {}
+static void nrnmpi_barrier() {}
+static void nrnmpi_int_alltoallv(int* s, int* scnt, int* sdispl, int* r, int* rcnt, int* rdispl) {
+  for (int i=0; i < scnt[0]; ++i) {
+    r[i] = s[i];
+  }
+}
+static void nrnmpi_dbl_alltoallv(double* s, int* scnt, int* sdispl, double* r, int* rcnt, int* rdispl) {
+  for (int i=0; i < scnt[0]; ++i) {
+    r[i] = s[i];
+  }
+}
+static int nrnmpi_int_allmax(int x) { return x; }
+static void nrnmpi_int_allgather(int* s, int* r, int n) {
+  for (int i=0; i < n; ++i) {
+    r[i] = s[i];
+  }
+}
+static void nrnmpi_int_allgatherv(int* s, int* r, int* n, int* dspl) {
+  for (int i=0; i < n[0]; ++i) {
+    r[i] = s[i];
+  }
+}
+static void nrnmpi_dbl_allgatherv(double* s, double* r, int* n, int* dspl) {
+  for (int i=0; i < n[0]; ++i) {
+    r[i] = s[i];
+  }
+}
+#endif // NRNMPI
+
 extern Point_process* ob2pntproc(Object*);
 extern void nrn_play_init();
 extern Symlist* hoc_built_in_symlist;
 
 // turn off compression to avoid problems with presyn deliver earlier than
 // restore time.
+#if NRNMPI
 extern bool nrn_use_compress_;
 extern bool nrn_use_localgid_;
+#endif
 static bool use_spikecompress_;
 static bool use_gidcompress_;
 
@@ -658,10 +693,12 @@ void bbss_restore_global(void* bbss, char* buffer, int sz) { // call on all host
 	t = nrn_threads->_t;
 	delete io;
 	clear_event_queue();
+#if NRNMPI
 	use_spikecompress_ = nrn_use_compress_;
 	use_gidcompress_ = nrn_use_localgid_;
 	nrn_use_compress_ = false;
 	nrn_use_localgid_ = false;
+#endif
 }
 void bbss_save(void* bbss, int gid, char* buffer, int sz) {
 	usebin_ = 1;
@@ -742,9 +779,11 @@ void bbss_restore_done(void* bbss) {
 	// variations in NetCon.delay .
 	bbss_remove_delivered();
 
+#if NRNMPI
 	// turn spike compression back on 
 	nrn_use_localgid_ = use_gidcompress_;
 	nrn_use_compress_ = use_spikecompress_;
+#endif
 
 	// compare the restored queue count for each presyn spike with the
 	// expected undelivered NetCon count what was read from the file
@@ -768,10 +807,12 @@ static double restore_test(void* v) {
 	
  	clear_event_queue();
 	// turn off compression. Will turn back on in bbs_restore_done.
+#if NRNMPI
 	use_spikecompress_ = nrn_use_compress_;
 	use_gidcompress_ = nrn_use_localgid_;
 	nrn_use_compress_ = false;
 	nrn_use_localgid_ = false;
+#endif
 
 	if (nrn_use_bin_queue_) {
 		nrn_binq_enqueue_error_handler = bbss_early;

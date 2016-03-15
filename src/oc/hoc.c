@@ -31,8 +31,8 @@ char** nrn_global_argv;
 int use_python_interpreter = 0;
 void (*p_nrnpython_start)();
 void (*p_nrnpython_finalize)();
-int nrn_inpython_;
 #endif
+int nrn_inpython_;
 int (*p_nrnpy_pyrun)(const char* fname);
 
 #if carbon || defined(MINGW)
