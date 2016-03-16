@@ -1,10 +1,6 @@
+# Need to test the endian code against aggressive compiler optimization
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_${COMPILER_LANGUAGE}_OPT_AGGRESSIVE}")
 
-
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O4")
-
-# Need to test the endian code against aggressive compiler optimization:
-# -O4 is xlc highest level without link-level optimization.
-# clang may well complain.
 FILE(GLOB endian_test_src "*.cpp")
 
 foreach(test_src_file ${endian_test_src})
