@@ -1,5 +1,4 @@
 include_directories(${PROJECT_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/coreneuron ${CMAKE_CURRENT_SOURCE_DIR} ${PROJECT_BINARY_DIR}/coreneuron)
-include_directories(${Boost_INCLUDE_DIRS} ${MPI_INCLUDE_PATH})
 
 # The mechanism registration function will be defined depending on whether we
 # are using neurodamus list of mechanisms

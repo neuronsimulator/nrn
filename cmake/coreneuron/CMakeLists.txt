@@ -50,7 +50,7 @@ include(CTest)
 #Find all dependencies
 find_package(MPI REQUIRED)
 find_package(mod2c 1.1  REQUIRED)
-find_package(Boost 1.41.0 REQUIRED filesystem system atomic unit_test_framework)
+find_package(Boost 1.41.0 QUIET COMPONENTS filesystem system atomic unit_test_framework)
 
 include(BlueGenePortability)
 
@@ -60,7 +60,7 @@ if(CORENEURON_OPENMP)
     if(OpenMP_FOUND)
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-    endif()
+    endif(OpenMP_FOUND)
 endif(CORENEURON_OPENMP)
 
 include(CheckIncludeFiles)
@@ -87,5 +87,8 @@ if(CORENEURON_MAIN)
 endif(CORENEURON_MAIN)
 
 # Tests
-add_subdirectory(tests)
+if(Boost_FOUND)
+    add_subdirectory(tests)
+endif(Boost_FOUND)
+
 
