@@ -923,6 +923,15 @@ void read_phase2(data_reader &F, NrnThread& nt) {
         permute_ml(tml->ml, tml->index, nt);
       }
     }
+
+    // permute the Point_process._i_instance
+    for (int i=0; i < nt.n_pntproc; ++i) {
+      Point_process& pp = nt.pntprocs[i];
+      Memb_list* ml = nt._ml_list[pp._type];
+      if (ml->_permute) {
+        pp._i_instance = ml->_permute[pp._i_instance];
+      }
+    }
   }
 
   /* here we setup the mechanism dependencies. if there is a mechanism dependency

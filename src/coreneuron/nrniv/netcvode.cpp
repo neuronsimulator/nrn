@@ -433,6 +433,12 @@ void NetCon::deliver(double tt, NetCvode* ns, NrnThread* nt) {
 }
 
 
+void NetCon::pr(const char* s, double tt, NetCvode* ns) {
+  (void)ns;
+  Point_process* pp = target_;
+  printf("%s NetCon target=%s[%d] %.15g\n", s, memb_func[pp->_type].sym, pp->_i_instance, tt);
+}
+
 void PreSyn::send(double tt, NetCvode* ns, NrnThread* nt) {
     record(tt);
     for (int i = nc_cnt_-1; i >= 0; --i) {
