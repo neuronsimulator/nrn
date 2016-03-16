@@ -239,7 +239,7 @@ static void pr(const char* s, double* x, int n) {
 }
 #endif
 
-#if defined(__GNU__)
+#if defined(__USE_GNU)
 #define myqsortr(arg1,arg2,arg3,arg4,arg5) qsort_r(arg1,arg2,arg3,arg4,arg5)
 #define mycompar(arg1,arg2,arg3) compar(arg1,arg2,arg3)
 #else
