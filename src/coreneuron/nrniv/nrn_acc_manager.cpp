@@ -2,6 +2,8 @@
 #include "coreneuron/nrniv/netcon.h"
 #include "coreneuron/nrniv/nrn_acc_manager.h"
 #include "coreneuron/nrniv/nrniv_decl.h"
+#include "coreneuron/nrniv/vrecitem.h"
+#include "coreneuron/nrniv/profiler_interface.h"
 
 #ifdef _OPENACC
 #include<openacc.h>
@@ -10,6 +12,8 @@
 #ifdef CRAYPAT
 #include <pat_api.h>
 #endif
+
+void copy_ivoc_vect_to_device(IvocVect *& iv, IvocVect *& div);
 
 /* note: threads here are corresponding to global nrn_threads array */
 void setup_nrnthreads_on_device(NrnThread *threads, int nthreads)  {
@@ -234,6 +238,42 @@ void setup_nrnthreads_on_device(NrnThread *threads, int nthreads)  {
             acc_memcpy_to_device(&(d_nt->_net_send_buffer), &d_net_send_buffer, sizeof(int*));
         }
 
+        if(nt->n_vecplay) {
+
+            /* copy VecPlayContinuous instances */
+
+            printf("\n Warning: VectorPlay used but NOT implemented on GPU! ");
+
+            /** just empty containers */
+            void **d_vecplay = (void**) acc_copyin(nt->_vecplay, sizeof(void*)*nt->n_vecplay);
+            acc_memcpy_to_device(&(d_nt->_vecplay), &d_vecplay, sizeof(void**));
+
+            for(int i = 0; i < nt->n_vecplay; i++) {
+
+                VecPlayContinuous*  vecplay_instance = (VecPlayContinuous*) nt->_vecplay[i];
+
+                /** just VecPlayContinuous object */
+                void *d_p = (void*) acc_copyin(vecplay_instance, sizeof(VecPlayContinuous));
+                acc_memcpy_to_device(&(d_vecplay[i]), &d_p, sizeof(void*));
+
+                VecPlayContinuous* d_vecplay_instance = (VecPlayContinuous*)d_p;
+
+                /** copy y_, t_ and discon_indices_ */
+                copy_ivoc_vect_to_device(vecplay_instance->y_, d_vecplay_instance->y_);
+                copy_ivoc_vect_to_device(vecplay_instance->t_, d_vecplay_instance->t_);
+                copy_ivoc_vect_to_device(vecplay_instance->discon_indices_, d_vecplay_instance->discon_indices_);
+
+                /** copy PlayRecordEvent : todo: verify this */
+                PlayRecordEvent* d_e_ = (PlayRecordEvent*) acc_copyin(vecplay_instance->e_, sizeof(PlayRecordEvent));
+                acc_memcpy_to_device(&(d_e_->plr_), &d_vecplay_instance, sizeof(VecPlayContinuous*));
+                acc_memcpy_to_device(&(d_vecplay_instance->e_), &d_e_, sizeof(PlayRecordEvent*));
+
+                /** copy pd_ : note that it's pointer inside ml->data and hence data itself is already on GPU */
+                double *d_pd_ = (double *) acc_deviceptr(vecplay_instance->pd_);
+                acc_memcpy_to_device(&(d_vecplay_instance->pd_), &d_pd_, sizeof(double*));
+            }
+        }
+
         printf("\n Compute thread on GPU? : %s, Stream : %d", (nt->compute_gpu)? "Yes" : "No", nt->stream_id);
     }
 
@@ -247,8 +287,20 @@ void setup_nrnthreads_on_device(NrnThread *threads, int nthreads)  {
             }
         }
     }
-
 #endif
+}
+
+void copy_ivoc_vect_to_device(IvocVect *& iv, IvocVect *& div) {
+    if(iv) {
+        IvocVect *d_iv = (IvocVect *) acc_copyin(iv, sizeof(IvocVect));
+        acc_memcpy_to_device(&div, &d_iv, sizeof(IvocVect*));
+
+        size_t n = iv->size();
+        if(n) {
+            double *d_data = (double *)acc_copyin(iv->data(), sizeof(double)*n);
+            acc_memcpy_to_device(&(d_iv->data_), &d_data, sizeof(double*));
+        }
+    }
 }
 
 /* when we execute NET_RECEIVE block on GPU, we provide the index of synapse instances
