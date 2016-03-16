@@ -4,6 +4,8 @@
 #include "coreneuron/nrniv/nrn_assert.h"
 #include "coreneuron/nrniv/cellorder.h"
 
+int use_interleave_permute;
+
 //calculate the endnode vector and verify that nodes are in cell order.
 // the root of the ith cell is node[i]
 // the rest of the ith cell is node[endnode[i]] : node[endnode[i+1]]

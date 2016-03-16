@@ -428,7 +428,8 @@ void nrn_setup(cn_input_params& input_params, const char *filesdat, int byte_swa
   /// Allocate NrnThread* nrn_threads of size ngroup (minimum 2)
   nrn_threads_create(ngroup == 1?2:ngroup, input_params.threading); // serial/parallel threads
 
-  use_solve_interleave = 0;
+  use_interleave_permute = 0;
+  use_solve_interleave = 0 * use_interleave_permute;
   if (use_solve_interleave) {
     create_interleave_info();
   }
@@ -904,7 +905,9 @@ void read_phase2(data_reader &F, NrnThread& nt) {
      vectors will be read and will need to be permuted as well in subsequent
      sections of this function.
   */
-  nt._permute = interleave_order(nt.id, nt.ncell, nt.end, nt._v_parent_index);
+  if (use_interleave_permute) {
+    nt._permute = interleave_order(nt.id, nt.ncell, nt.end, nt._v_parent_index);
+  }
   if (nt._permute) {
     int* p = nt._permute;
     permute_data(nt._actual_a, nt.end, p);

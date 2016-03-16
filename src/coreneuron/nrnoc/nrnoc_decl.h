@@ -32,6 +32,7 @@ extern void nrn_deliver_events(NrnThread*);
 extern void init_net_events(void);
 extern void nrn_play_init(void);
 extern void fixed_play_continuous(NrnThread*);
+extern int use_interleave_permute;
 extern int use_solve_interleave;
 extern void solve_interleaved(int ith);
 extern void nrn_solve_minimal(NrnThread*);
