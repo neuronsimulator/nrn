@@ -115,7 +115,7 @@ void update_pdata_values(Memb_list* ml, int type, NrnThread& nt) {
   // ml padding does not matter (but target padding does matter)
 
   // interesting semantics are -1 (area), -5 (pointer), or 0-999 (ion variables)
-  for (int i; i < psz; ++i) {
+  for (int i=0; i < psz; ++i) {
     int s = semantics[i];
     if (s == -1) { // area
       int area0 = nt._actual_area - nt._data; // includes padding if relevant
@@ -239,7 +239,15 @@ static void pr(const char* s, double* x, int n) {
 }
 #endif
 
-static int compar(const void* p1, const void* p2, void* arg) {
+#if defined(__GNU__)
+#define myqsortr(arg1,arg2,arg3,arg4,arg5) qsort_r(arg1,arg2,arg3,arg4,arg5)
+#define mycompar(arg1,arg2,arg3) compar(arg1,arg2,arg3)
+#else
+#define myqsortr(arg1,arg2,arg3,arg4,arg5) qsort_r(arg1,arg2,arg3,arg5,arg4)
+#define mycompar(arg1,arg2,arg3) compar(arg3,arg1,arg2)
+#endif
+
+static int mycompar(const void* p1, const void* p2, void* arg) {
   int ix1 = *((int*)p1);
   int ix2 = *((int*)p2);
   int* indices = (int*)arg;
@@ -256,7 +264,7 @@ static int* sortindices(int* indices, int n) {
   for (int i=0; i < n; ++i) {
     sort_indices[i] = i;
   }
-  qsort_r(sort_indices, n, sizeof(int), compar, indices);
+  myqsortr(sort_indices, n, sizeof(int), compar, indices);
   return sort_indices;
 }
 

@@ -61,7 +61,7 @@ void (*nrn_mk_transfer_thread_data_)();
 extern int v_structure_change;
 extern int diam_changed;
 
-#if (PERMANENT || USE_PTHREAD)
+#if PERMANENT /*|| USE_PTHREAD*/
 static int busywait_;
 static int busywait_main_;
 #endif
@@ -98,7 +98,7 @@ static unsigned long t1_[BS][BSIZE], *t_[BS];
 #define BS 0
 #endif
 
-#if USE_PTHREAD
+#if 0 && USE_PTHREAD
 static void* nulljob(NrnThread* nt) {
 	(void)nt; /* unused */
 	return (void*)0;
