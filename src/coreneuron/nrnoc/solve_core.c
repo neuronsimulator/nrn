@@ -16,13 +16,20 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "coreneuron/nrnconf.h"
 #include "coreneuron/nrnoc/multicore.h"
+#include "coreneuron/nrnoc/nrnoc_decl.h"
+
+int use_solve_interleave;
 
 static void triang(NrnThread*), bksub(NrnThread*);
 
 /* solve the matrix equation */
 void nrn_solve_minimal(NrnThread* _nt) {
+    if (use_solve_interleave) {
+   	solve_interleaved(_nt->id);
+    }else{
 	triang(_nt);
 	bksub(_nt);
+    }
 }
 
 /* triangularization of the matrix equations */

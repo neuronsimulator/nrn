@@ -1,4 +1,6 @@
 #include "coreneuron/nrnconf.h"
+#include "coreneuron/nrnoc/multicore.h"
+#include "coreneuron/nrnoc/nrnoc_decl.h"
 #include "coreneuron/nrniv/nrn_assert.h"
 #include "coreneuron/nrniv/cellorder.h"
 
@@ -147,14 +149,49 @@ static int* contiguous_cell_block_order(int ncell, int nnode, int* parent) {
   return p;
 }
 
-int* interleave_order(int ncell, int nnode, int* parent) {
-  // not used yet
-  int nstride = 0;
-  int* stride = NULL;
-  int* firstnode = NULL;
-  int* lastnode = NULL;
-  int* cellsize = NULL;
+class InterleaveInfo {
+  public:
+  InterleaveInfo();
+  virtual ~InterleaveInfo();
+  int nstride;
+  int* stride;
+  int* firstnode;
+  int* lastnode;
+  int* cellsize;
+};
 
+InterleaveInfo::InterleaveInfo() {
+  nstride = 0;
+  stride = NULL;
+  firstnode = NULL;
+  lastnode = NULL;
+  cellsize = NULL;
+}
+
+InterleaveInfo::~InterleaveInfo() {
+  if (stride) {
+    delete [] stride;
+    delete [] firstnode;
+    delete [] lastnode;
+    delete [] cellsize;
+  }
+}
+
+static InterleaveInfo* interleave_info; // nrn_nthread array
+
+void create_interleave_info() {
+  destroy_interleave_info();
+  interleave_info = new InterleaveInfo[nrn_nthread];
+}
+
+void destroy_interleave_info() {
+  if (interleave_info) {
+    delete [] interleave_info;
+    interleave_info = NULL;
+  }
+}
+
+int* interleave_order(int ith, int ncell, int nnode, int* parent) {
   // ensure parent of root = -1
   for (int i=0; i < ncell; ++i) {
     if (parent[i] == 0) { parent[i] = -1; }
@@ -186,8 +223,19 @@ int* interleave_order(int ncell, int nnode, int* parent) {
   }
 #endif
 
+  int nstride, *stride, *firstnode, *lastnode, *cellsize;
+
   int* order = interleave_permutations(ncell, endnodes,
     nstride, stride, firstnode, lastnode, cellsize);
+
+  if (interleave_info) {
+    InterleaveInfo& ii = interleave_info[ith];
+    ii.nstride = nstride;
+    ii.stride = stride;
+    ii.firstnode = firstnode;
+    ii.lastnode = lastnode;
+    ii.cellsize = cellsize;
+  }
 
   int* combined = new int[nnode];
   for (int i=0; i < nnode; ++i) {
@@ -214,25 +262,22 @@ int* interleave_order(int ncell, int nnode, int* parent) {
   return combined;
 }
 
-#if 0
-#define GPU_V(i) v[i]
-#define GPU_A(i) a[i]
-#define GPU_B(i) b[i]
-#define GPU_D(i) d[i]
-#define GPU_RHS(i) rhs[i]
-#define GPU_PARENT(i) _v_parent_index[i]
-
-static double *v, *a, *b, *d, *rhs;
-static int* _v_parent_index;
+#if 1
+#define GPU_V(i) nt._actual_v[i]
+#define GPU_A(i) nt._actual_a[i]
+#define GPU_B(i) nt._actual_b[i]
+#define GPU_D(i) nt._actual_d[i]
+#define GPU_RHS(i) nt._actual_rhs[i]
+#define GPU_PARENT(i) nt._v_parent_index[i]
 
 // How does the interleaved permutation with stride get used in
 // triagularization?
 
 // each cell in parallel regardless of inhomogeneous topology
-void triang(int icell, int sz, int nstride, int* stride, int* lastnode) {
+static void triang_interleaved(NrnThread& nt, int icell, int icellsize, int nstride, int* stride, int* lastnode) {
   int i = lastnode[icell];
   for (int istride = nstride-1; istride >= 0; --istride) {
-    if (istride >= sz) { continue; }  // only first sz strides matter
+    if (istride >= icellsize) { continue; }  // only first icellsize strides matter
     // what is the index
     int ip = GPU_PARENT(i);
     //assert (ip >= 0); // if (ip < 0) return;
@@ -244,18 +289,33 @@ void triang(int icell, int sz, int nstride, int* stride, int* lastnode) {
 }
     
 // back substitution?
-void bksub(int icell, int sz, int nstride, int* stride, int* firstnode) {
+static void bksub_interleaved(NrnThread& nt, int icell, int icellsize, int nstride, int* stride, int* firstnode) {
   int i=firstnode[icell];
   int ip = GPU_PARENT(i);
   //assert(ip >= 0);
   GPU_RHS(ip) /= GPU_D(ip); // the root
   for (int istride=0; istride < nstride; ++istride) {
-    if (istride >= sz) { continue; }
-    int ip = GPU_PARENT(i);
+    if (istride >= icellsize) { continue; }
+    ip = GPU_PARENT(i);
     //assert(ip >= 0);
     GPU_RHS(i) -= GPU_B(i) * GPU_RHS(ip);
     GPU_RHS(i) /= GPU_D(i);
     i += stride[istride];
+  }
+}
+
+void solve_interleaved(int ith) {
+  NrnThread& nt = nrn_threads[ith];
+  InterleaveInfo& ii = interleave_info[ith];
+  int nstride = ii.nstride;
+  int* stride = ii.stride;
+  int* lastnode = ii.lastnode;
+  int* firstnode = ii.firstnode;
+
+  for (int icell = 0; icell < nt.ncell; ++icell) {
+    int icellsize = ii.cellsize[icell];
+    triang_interleaved(nt, icell, icellsize, nstride, stride, lastnode);
+    bksub_interleaved(nt, icell, icellsize, nstride, stride, firstnode);
   }
 }
 

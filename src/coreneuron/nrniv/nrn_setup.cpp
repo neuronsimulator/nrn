@@ -428,6 +428,11 @@ void nrn_setup(cn_input_params& input_params, const char *filesdat, int byte_swa
   /// Allocate NrnThread* nrn_threads of size ngroup (minimum 2)
   nrn_threads_create(ngroup == 1?2:ngroup, input_params.threading); // serial/parallel threads
 
+  use_solve_interleave = 0;
+  if (use_solve_interleave) {
+    create_interleave_info();
+  }
+
   /// Reserve vector of maps of size ngroup for negative gid-s
   /// std::vector< std::map<int, PreSyn*> > neg_gid2out;
   neg_gid2out.resize(ngroup);
@@ -899,7 +904,7 @@ void read_phase2(data_reader &F, NrnThread& nt) {
      vectors will be read and will need to be permuted as well in subsequent
      sections of this function.
   */
-  nt._permute = interleave_order(nt.ncell, nt.end, nt._v_parent_index);
+  nt._permute = interleave_order(nt.id, nt.ncell, nt.end, nt._v_parent_index);
   if (nt._permute) {
     int* p = nt._permute;
     permute_data(nt._actual_a, nt.end, p);
