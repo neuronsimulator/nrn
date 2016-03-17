@@ -1,0 +1,52 @@
+This file lists the most important contributors to the CoreNeuron project.
+It is sorted by name and formatted to allow easy grepping and beautification
+by scripts. The fields are: name (N), email (E), description (D).
+
+N: Francesco Casalegno
+E: Francesco.Casalegno@epfl.ch
+D: All parts of the software
+
+N: Francesco Cremonesi
+E: Francesco.Cremonesi@epfl.ch
+D: All parts of the software
+
+N: Fabien Delalondre
+E: Fabien.Delalondre@epfl.ch
+D: All parts of the software
+ 
+N: Adrien Devresse
+E: Adrien.Devresse@epfl.ch
+D: All parts of the software
+
+N: Timothee Ewart
+E: Timothee.Ewart@epfl.ch
+D: All parts of the software
+
+N: Michael Hines
+E: Michael.Hines@yale.edu
+D: All parts of the software
+
+N: James King
+E: JamesGonzalo.King@epfl.ch
+D: All parts of the software
+
+N: Pramod Kumbhar 
+E: Pramod.Kumbhar@epfl.ch 
+D: All parts of the software
+
+N: Bruno Magalhaes
+E: Bruno.Magalhaes@epfl.ch
+D: All parts of the software
+
+N: Aleksandr Ovcharenko
+E: Aleksandr.Ovcharenko@epfl.ch 
+D: All parts of the software
+
+N: Judit Planas
+E: Judit.Planas@epfl.ch
+D: All parts of the software
+
+N: Stuart Yates
+E: Sam.Yates@epfl.ch
+D: All parts of the software
+

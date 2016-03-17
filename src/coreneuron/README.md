@@ -111,3 +111,6 @@ Currently CoreNEURON only outputs spike data. When running the simulation, each 
 ## License
 * See LICENSE.txt
 * See [NEURON](https://www.neuron.yale.edu/neuron/)
+
+## Contributors
+To facilitate the future distributions of the software the Blue Brain Project wishes to remain the sole owner of the copyright. Therefore we will ask contributors to not modify the existing copyright. Contributors will however be gratefully acknowledged in the corresponding CREDIT.txt file.
