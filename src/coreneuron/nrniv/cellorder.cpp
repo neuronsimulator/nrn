@@ -237,6 +237,15 @@ int* interleave_order(int ith, int ncell, int nnode, int* parent) {
     ii.firstnode = firstnode;
     ii.lastnode = lastnode;
     ii.cellsize = cellsize;
+if (0 && ith == 0) {
+  printf("ith=%d nstride=%d ncell=%d nnode=%d\n", ith, nstride, ncell, nnode);
+  for (int i=0; i < ncell; ++i) {
+    printf("icell=%d cellsize=%d first=%d last=%d\n", i, cellsize[i], firstnode[i], lastnode[i]);
+  }
+  for (int i=0; i < nstride; ++i) {
+    printf("istride=%d stride=%d\n", i, stride[i]);
+  }
+}
   }
 
   int* combined = new int[nnode];
@@ -279,14 +288,17 @@ int* interleave_order(int ith, int ncell, int nnode, int* parent) {
 static void triang_interleaved(NrnThread& nt, int icell, int icellsize, int nstride, int* stride, int* lastnode) {
   int i = lastnode[icell];
   for (int istride = nstride-1; istride >= 0; --istride) {
-    if (istride >= icellsize) { continue; }  // only first icellsize strides matter
-    // what is the index
-    int ip = GPU_PARENT(i);
-    //assert (ip >= 0); // if (ip < 0) return;
-    double p = GPU_A(i) / GPU_D(i);
-    GPU_D(ip) -= p * GPU_B(i);
-    GPU_RHS(ip) -= p * GPU_RHS(i);
-    i -= stride[istride];
+    if (istride < icellsize) { // only first icellsize strides matter
+      // what is the index
+      int ip = GPU_PARENT(i);
+      //assert (ip >= 0); // if (ip < 0) return;
+      double p = GPU_A(i) / GPU_D(i);
+      GPU_D(ip) -= p * GPU_B(i);
+      GPU_RHS(ip) -= p * GPU_RHS(i);
+      if (istride > 0) {
+        i -= stride[istride-1];
+      }
+    }
   }
 }
     
@@ -297,12 +309,13 @@ static void bksub_interleaved(NrnThread& nt, int icell, int icellsize, int nstri
   //assert(ip >= 0);
   GPU_RHS(ip) /= GPU_D(ip); // the root
   for (int istride=0; istride < nstride; ++istride) {
-    if (istride >= icellsize) { continue; }
-    ip = GPU_PARENT(i);
-    //assert(ip >= 0);
-    GPU_RHS(i) -= GPU_B(i) * GPU_RHS(ip);
-    GPU_RHS(i) /= GPU_D(i);
-    i += stride[istride];
+    if (istride < icellsize) {
+      ip = GPU_PARENT(i);
+      //assert(ip >= 0);
+      GPU_RHS(i) -= GPU_B(i) * GPU_RHS(ip);
+      GPU_RHS(i) /= GPU_D(i);
+      i += stride[istride];
+    }
   }
 }
 

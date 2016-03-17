@@ -428,8 +428,8 @@ void nrn_setup(cn_input_params& input_params, const char *filesdat, int byte_swa
   /// Allocate NrnThread* nrn_threads of size ngroup (minimum 2)
   nrn_threads_create(ngroup == 1?2:ngroup, input_params.threading); // serial/parallel threads
 
-  use_interleave_permute = 0;
-  use_solve_interleave = 0 * use_interleave_permute;
+  use_interleave_permute = 1;
+  use_solve_interleave = 1 * use_interleave_permute;
   if (use_solve_interleave) {
     create_interleave_info();
   }
@@ -917,6 +917,12 @@ void read_phase2(data_reader &F, NrnThread& nt) {
     // index values change as well as ordering
     permute_ptr(nt._v_parent_index, nt.end, p);
     node_permute(nt._v_parent_index, nt.end, p);
+
+#if 0
+for (int i=0; i < nt.end; ++i) {
+  printf("parent[%d] = %d\n", i, nt._v_parent_index[i]);
+}
+#endif
 
     // specify the ml->_permute and sort the nodeindices
     for (tml = nt.tml; tml; tml = tml->next) {
