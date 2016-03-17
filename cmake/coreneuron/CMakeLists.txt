@@ -23,13 +23,6 @@
 # CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 # THE POSSIBILITY OF SUCH DAMAGE.
-# Ecole Polytechnique Federale de Lausanne
-# Brain Mind Institute,
-# Blue Brain Project
-# (c) 2006-2016. All rights reserved.
-#
-# Author: Aleksandr Ovcharenko
-# Core Neuron
 
 
 # Initial Setup
