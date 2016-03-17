@@ -295,9 +295,13 @@ static void triang_interleaved(NrnThread& nt, int icell, int icellsize, int nstr
       double p = GPU_A(i) / GPU_D(i);
       GPU_D(ip) -= p * GPU_B(i);
       GPU_RHS(ip) -= p * GPU_RHS(i);
+#if 0 //  cells ordered large to small
       if (istride > 0) {
         i -= stride[istride-1];
       }
+#else
+        i -= stride[istride];
+#endif
     }
   }
 }
@@ -305,17 +309,19 @@ static void triang_interleaved(NrnThread& nt, int icell, int icellsize, int nstr
 // back substitution?
 static void bksub_interleaved(NrnThread& nt, int icell, int icellsize, int nstride, int* stride, int* firstnode) {
   int i=firstnode[icell];
-  int ip = GPU_PARENT(i);
-  //assert(ip >= 0);
-  GPU_RHS(ip) /= GPU_D(ip); // the root
-  for (int istride=0; istride < nstride; ++istride) {
-    if (istride < icellsize) {
-      ip = GPU_PARENT(i);
-      //assert(ip >= 0);
-      GPU_RHS(i) -= GPU_B(i) * GPU_RHS(ip);
-      GPU_RHS(i) /= GPU_D(i);
-      i += stride[istride];
+  GPU_RHS(icell) /= GPU_D(icell); // the root
+  for (int istride=0; istride < icellsize; ++istride) {
+    int ip = GPU_PARENT(i);
+    //assert(ip >= 0);
+    GPU_RHS(i) -= GPU_B(i) * GPU_RHS(ip);
+    GPU_RHS(i) /= GPU_D(i);
+#if 0 // cells ordered large to small
+    i += stride[istride];
+#else
+    if(istride+1 < nstride) {
+      i += stride[istride+1];
     }
+#endif
   }
 }
 
