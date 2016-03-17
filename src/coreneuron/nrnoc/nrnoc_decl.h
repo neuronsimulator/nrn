@@ -34,6 +34,7 @@ extern void nrn_play_init(void);
 extern void fixed_play_continuous(NrnThread*);
 extern int use_interleave_permute;
 extern int use_solve_interleave;
+extern int* nrn_index_sort(int* values, int n);
 extern void solve_interleaved(int ith);
 extern void nrn_solve_minimal(NrnThread*);
 extern void second_order_cur(NrnThread*);

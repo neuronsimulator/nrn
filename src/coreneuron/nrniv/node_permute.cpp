@@ -259,12 +259,12 @@ static int mycompar(const void* p1, const void* p2, void* arg) {
 // note that sort_indices has the sense of an inverse permutation in that
 // the value of sort_indices[0] is the index with the smallest value in the
 // indices array
-static int* sortindices(int* indices, int n) {
+int* nrn_index_sort(int* values, int n) {
   int* sort_indices = new int[n];
   for (int i=0; i < n; ++i) {
     sort_indices[i] = i;
   }
-  myqsortr(sort_indices, n, sizeof(int), compar, indices);
+  myqsortr(sort_indices, n, sizeof(int), compar, values);
   return sort_indices;
 }
 
@@ -278,6 +278,6 @@ void permute_nodeindices(Memb_list* ml, int* p) {
   // Then the new node indices are sorted by
   // increasing index. That becomes ml->_permute
 
-  ml->_permute = sortindices(ml->nodeindices, ml->nodecount);
+  ml->_permute = nrn_index_sort(ml->nodeindices, ml->nodecount);
   permute_ptr(ml->nodeindices, ml->nodecount, ml->_permute);
 }
