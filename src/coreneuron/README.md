@@ -106,11 +106,14 @@ In order to see the command line options, you can use:
 
 # Results
 
-Currently CoreNEURON only outputs spike data. When running the simulation, each MPI rank writes spike information into a file `out.#mpi_rank`. These files should be combined and sorted to compare with NEURON spike output.
+Currently CoreNEURON only outputs spike data. When running the simulation, each MPI rank writes spike information
+into a file `out.#mpi_rank`. These files should be combined and sorted to compare with NEURON spike output.
 
 ## License
 * See LICENSE.txt
 * See [NEURON](https://www.neuron.yale.edu/neuron/)
 
 ## Contributors
-To facilitate the future distributions of the software the Blue Brain Project wishes to remain the sole owner of the copyright. Therefore we will ask contributors to not modify the existing copyright. Contributors will however be gratefully acknowledged in the corresponding CREDIT.txt file.
+To facilitate the future distributions of the software the Blue Brain Project wishes to remain the sole
+owner of the copyright. Therefore we will ask contributors to not modify the existing copyright.
+Contributors will however be gratefully acknowledged in the corresponding CREDIT.txt file.
