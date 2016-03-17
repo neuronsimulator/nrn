@@ -222,14 +222,14 @@ spinit(SPTREE* q)
 SPBLK *
 spenq( SPBLK* n, SPTREE* q )
 {
-    register SPBLK * left;	/* the rightmost node in the left tree */
-    register SPBLK * right;	/* the leftmost node in the right tree */
-    register SPBLK * next;	/* the root of the unsplit part */
-    register SPBLK * temp;
+    SPBLK * left;	/* the rightmost node in the left tree */
+    SPBLK * right;	/* the leftmost node in the right tree */
+    SPBLK * next;	/* the root of the unsplit part */
+    SPBLK * temp;
 
     double key;
 #if STRCMP_DEF
-    register int Sct;		/* Strcmp value */
+    int Sct;		/* Strcmp value */
 #endif
 
     n->uplink = NULL;
@@ -364,11 +364,11 @@ SPBLK *
 spdeq( SPBLK** np ) /* pointer to a node pointer */
 
 {
-    register SPBLK * deq;		/* one to return */
-    register SPBLK * next;       	/* the next thing to deal with */
-    register SPBLK * left;      	/* the left child of next */
-    register SPBLK * farleft;		/* the left child of left */
-    register SPBLK * farfarleft;	/* the left child of farleft */
+    SPBLK * deq;		/* one to return */
+    SPBLK * next;       	/* the next thing to deal with */
+    SPBLK * left;      	/* the left child of next */
+    SPBLK * farleft;		/* the left child of left */
+    SPBLK * farfarleft;	/* the left child of farleft */
 
     if( np == NULL || *np == NULL )
     {
@@ -448,12 +448,12 @@ spdeq( SPBLK** np ) /* pointer to a node pointer */
 void
 splay( SPBLK* n, SPTREE* q )
 {
-    register SPBLK * up;	/* points to the node being dealt with */
-    register SPBLK * prev;	/* a descendent of up, already dealt with */
-    register SPBLK * upup;	/* the parent of up */
-    register SPBLK * upupup;	/* the grandparent of up */
-    register SPBLK * left;	/* the top of left subtree being built */
-    register SPBLK * right;	/* the top of right subtree being built */
+    SPBLK * up;	/* points to the node being dealt with */
+    SPBLK * prev;	/* a descendent of up, already dealt with */
+    SPBLK * upup;	/* the parent of up */
+    SPBLK * upupup;	/* the grandparent of up */
+    SPBLK * left;	/* the top of left subtree being built */
+    SPBLK * right;	/* the top of right subtree being built */
 
     left = n->leftlink;
     right = n->rightlink;
@@ -555,7 +555,7 @@ splay( SPBLK* n, SPTREE* q )
 SPBLK *
 sphead( SPTREE* q )
 {
-    register SPBLK * x;
+    SPBLK * x;
 
     /* splay version, good amortized bound */
     x = spdeq( &q->root );
@@ -588,7 +588,7 @@ sphead( SPTREE* q )
 void
 spdelete( SPBLK* n, SPTREE* q )
 {
-    register SPBLK * x;
+    SPBLK * x;
 
     splay( n, q );
     x = spdeq( &q->root->rightlink );

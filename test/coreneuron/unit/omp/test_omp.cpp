@@ -2,7 +2,9 @@
 #define BOOST_TEST_MAIN
 
 #include <boost/test/unit_test.hpp>
+#if defined(_OPENMP)
 #include <omp.h>
+#endif
 #include "nrnomp/nrnomp.h"
 
 #define NUMTHREAD 4

@@ -1,12 +1,6 @@
-find_package(Boost COMPONENTS unit_test_framework system)
+FILE(GLOB queuing_test_src "*.cpp")
 
-if(Boost_FOUND)
-		set(TEST_LIBRARIES ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY} ${Boost_SYSTEM_LIBRARY} coreneuron)
-    set(TEST_LABEL unit)
-    make_mpi_exeprefix(1 TEST_PREFIX)
-    include_directories(${CMAKE_SOURCE_DIR}/coreneuron ${Boost_INCLUDE_DIRS})
+add_executable(queuing_test_bin ${queuing_test_src})
+target_link_libraries(queuing_test_bin ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY} ${Boost_SYSTEM_LIBRARY} coreneuron)
 
-    include(CommonCTest)
-endif()
-
-add_test_class(unit)
+add_test(NAME queuing_test COMMAND ${TEST_EXEC_PREFIX} ${CMAKE_CURRENT_BINARY_DIR}/queuing_test_bin)

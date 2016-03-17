@@ -200,7 +200,7 @@ int main1( int argc, char **argv, char **env )
     // mpi finalize
     nrnmpi_finalize();
 
-    finalize_data_on_device(nrn_threads, nrn_nthread);
+    finalize_data_on_device();
 
     return 0;
 }

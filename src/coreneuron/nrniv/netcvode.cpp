@@ -91,7 +91,7 @@ void net_send(void** v, int weight_index_, Point_process* pnt, double td, double
 	if (td < nt->_t) {
 		char buf[100];
 		sprintf(buf, "net_send td-t = %g", td - nt->_t);
-		se->pr(buf, td);
+        se->pr(buf, td, net_cvode_instance);
 		abort();
 		hoc_execerror("net_send delay < 0", 0);
 	}
@@ -516,7 +516,7 @@ void SelfEvent::call_net_receive(NetCvode* ns) {
     --nctd.unreffed_event_cnt_;
 }
 
-void SelfEvent::pr(const char* s, double tt) {
+void SelfEvent::pr(const char* s, double tt, NetCvode *) {
     printf("%s", s);
     printf(" SelfEvent target=%s %.15g flag=%g\n", pnt_name(target_), tt, flag_);
 }
@@ -617,7 +617,9 @@ void NetCvode::check_thresh(NrnThread* nt) { // for default method
     nt->_net_send_buffer_cnt = net_send_buf_count;
 
     if(nt->_net_send_buffer_cnt) {
+        #ifdef _OPENACC
         int *nsbuffer = nt->_net_send_buffer;
+        #endif
         #pragma acc update host(nsbuffer[0:nt->_net_send_buffer_cnt]) if(nt->compute_gpu)
     }
 

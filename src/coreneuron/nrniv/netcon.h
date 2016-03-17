@@ -82,7 +82,7 @@ public:
 	virtual void deliver(double, NetCvode*, NrnThread*);
     virtual int type() { return SelfEventType; }
 
-    virtual void pr(const char*, double t);
+    virtual void pr(const char*, double t, NetCvode*);
 
 private:
 	void call_net_receive(NetCvode*);

@@ -17,7 +17,9 @@ extern int* spikevec_gid;
 extern NetCvode* net_cvode_instance;
 
 const int NUM_STATS = 10;
+#if COLLECT_TQueue_STATISTICS
 const int NUM_EVENT_TYPES = 3;
+#endif
 enum event_type {enq=0, spike, ite};
 
 void report_cell_stats( void )

@@ -67,7 +67,7 @@ void nrn_cap_jacob(NrnThread* _nt, Memb_list* ml) {
 	int _cntml_actual = ml->nodecount;
 	int _cntml_padded = ml->_nodecount_padded;
 	int _iml;
-	double *vdata = ml->data;
+	double *vdata;
 	double cfac = .001 * _nt->cj;
     (void) _cntml_padded; /* unused when layout=1*/
 
@@ -81,6 +81,7 @@ void nrn_cap_jacob(NrnThread* _nt, Memb_list* ml) {
 		for (_iml=0; _iml < _cntml_actual; _iml++) {
 	        vdata = ml->data + _iml*nparm;
 #else
+        vdata = ml->data;
         _PRAGMA_FOR_JACOB_ACC_LOOP_
 		for (_iml=0; _iml < _cntml_actual; _iml++) {
 #endif
@@ -93,13 +94,14 @@ static void cap_init(NrnThread* _nt, Memb_list* ml, int type ) {
 	int _cntml_actual = ml->nodecount;
 	int _cntml_padded = ml->_nodecount_padded;
 	int _iml;
-	double *vdata = ml->data;
-    (void)_nt; (void)type; (void) _cntml_padded; /* unused */
+	double *vdata;
+	(void)_nt; (void)type; (void) _cntml_padded; /* unused */
 
 #if LAYOUT == 1 /*AoS*/
 	for (_iml=0; _iml < _cntml_actual; _iml++) {
 	    vdata = ml->data + _iml*nparm;
 #else
+	vdata = ml->data;
     _PRAGMA_FOR_INIT_ACC_LOOP_
 	for (_iml=0; _iml < _cntml_actual; _iml++) {
 #endif
@@ -111,7 +113,7 @@ void nrn_capacity_current(NrnThread* _nt, Memb_list* ml) {
 	int _cntml_actual = ml->nodecount;
 	int _cntml_padded = ml->_nodecount_padded;
 	int _iml;
-	double *vdata = ml->data;
+	double *vdata;
 	double cfac = .001 * _nt->cj;
 
     /*@todo: verify cfac is being copied !! */
@@ -129,6 +131,7 @@ void nrn_capacity_current(NrnThread* _nt, Memb_list* ml) {
 	for (_iml=0; _iml < _cntml_actual; _iml++) {
 	    vdata = ml->data + _iml*nparm;
 #else
+	vdata = ml->data;
     _PRAGMA_FOR_CUR_ACC_LOOP_
 	for (_iml=0; _iml < _cntml_actual; _iml++) {
 #endif

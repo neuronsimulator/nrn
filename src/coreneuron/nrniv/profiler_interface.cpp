@@ -10,11 +10,11 @@
 
 #if defined(_OPENACC)
 #include <openacc.h>
-#endif
-
 
 static int cray_acc_debug_orig = 0;
 static int cray_acc_debug_zero = 0;
+#endif
+
 extern int nrnmpi_myid;
 
 void start_profile() {

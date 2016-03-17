@@ -291,6 +291,7 @@ void setup_nrnthreads_on_device(NrnThread *threads, int nthreads)  {
 }
 
 void copy_ivoc_vect_to_device(IvocVect *& iv, IvocVect *& div) {
+#ifdef _OPENACC
     if(iv) {
         IvocVect *d_iv = (IvocVect *) acc_copyin(iv, sizeof(IvocVect));
         acc_memcpy_to_device(&div, &d_iv, sizeof(IvocVect*));
@@ -301,6 +302,7 @@ void copy_ivoc_vect_to_device(IvocVect *& iv, IvocVect *& div) {
             acc_memcpy_to_device(&(d_iv->data_), &d_data, sizeof(double*));
         }
     }
+#endif
 }
 
 /* when we execute NET_RECEIVE block on GPU, we provide the index of synapse instances
@@ -791,10 +793,10 @@ void write_pntprocs_to_file(FILE *hFile, Point_process *pnt, int n) {
 }
 
 
-void dump_nt_to_file(char *filename, NrnThread *threads, int nthreads) {
+void dump_nt_to_file(const char *filename, NrnThread *threads, int nthreads) {
 
     FILE *hFile;
-    int i, j;
+    int i;
 
     NrnThreadMembList* tml;
     NetReceiveBuffer_t* nrb;
@@ -819,9 +821,7 @@ void dump_nt_to_file(char *filename, NrnThread *threads, int nthreads) {
       long int offset;
       int nmech = 0;
 
-
-      int ne = nt->end;
-      fprintf(hFile, "%d\n", nt->_ndata);
+      fprintf(hFile, "%lu\n", nt->_ndata);
       write_darray_to_file(hFile, nt->_data, nt->_ndata);
 
       fprintf(hFile, "%d\n", nt->end);
@@ -879,7 +879,7 @@ void dump_nt_to_file(char *filename, NrnThread *threads, int nthreads) {
     }
 }
 
-void finalize_data_on_device(NrnThread *, int nthreads) {
+void finalize_data_on_device() {
 
     /*@todo: when we have used random123 on gpu and we do this finalize,
     I am seeing cuCtxDestroy returned CUDA_ERROR_INVALID_CONTEXT error.
