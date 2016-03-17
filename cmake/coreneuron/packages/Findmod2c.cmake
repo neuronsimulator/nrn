@@ -47,13 +47,6 @@
 #   mod2c_INCLUDE_DIRS - list of required include directories
 #   mod2c_LIBRARIES - list of libraries to be linked
 
-#=============================================================================
-# Copyright 2015 Adrien Devresse <adrien.devresse@epfl.ch>
-#
-#=============================================================================
-# (To distribute this file outside of CMake, substitute the full
-#  License text for the above reference.)
-
 
 # UNIX paths are standard, no need to write.
 find_program(mod2c_BINARY
