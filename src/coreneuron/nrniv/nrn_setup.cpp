@@ -429,7 +429,7 @@ void nrn_setup(cn_input_params& input_params, const char *filesdat, int byte_swa
   nrn_threads_create(ngroup == 1?2:ngroup, input_params.threading); // serial/parallel threads
 
   use_interleave_permute = 1;
-  use_solve_interleave = 0 * use_interleave_permute;
+  use_solve_interleave = 1 * use_interleave_permute;
   if (use_solve_interleave) {
     create_interleave_info();
   }
@@ -472,6 +472,8 @@ void nrn_setup(cn_input_params& input_params, const char *filesdat, int byte_swa
   double mindelay = set_mindelay(input_params.maxdelay);
   input_params.set_mindelay( mindelay );
   setup_cleanup();
+
+  mk_cell_indices();
 
   /// Generally, tables depend on a few parameters. And if those parameters change,
   /// then the table needs to be recomputed. This is obviously important in NEURON
