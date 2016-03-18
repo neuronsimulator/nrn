@@ -4,23 +4,23 @@ by scripts. The fields are: name (N), email (E), description (D).
 
 N: Francesco Casalegno
 E: Francesco.Casalegno@epfl.ch
-D: All parts of the software
+D: Linear algebra and error estimation
 
 N: Francesco Cremonesi
 E: Francesco.Cremonesi@epfl.ch
-D: All parts of the software
+D: Linear algebra and error estimation
 
 N: Fabien Delalondre
 E: Fabien.Delalondre@epfl.ch
-D: All parts of the software
+D: User interface extension and unit testing
  
 N: Adrien Devresse
 E: Adrien.Devresse@epfl.ch
-D: All parts of the software
+D: Build system support
 
 N: Timothee Ewart
 E: Timothee.Ewart@epfl.ch
-D: All parts of the software
+D: Performance analysis and optimization
 
 N: Michael Hines
 E: Michael.Hines@yale.edu
@@ -28,7 +28,7 @@ D: All parts of the software
 
 N: James King
 E: JamesGonzalo.King@epfl.ch
-D: All parts of the software
+D: Simulation engine and validation
 
 N: Pramod Kumbhar 
 E: Pramod.Kumbhar@epfl.ch 
@@ -36,7 +36,7 @@ D: All parts of the software
 
 N: Bruno Magalhaes
 E: Bruno.Magalhaes@epfl.ch
-D: All parts of the software
+D: Simulation toolchain
 
 N: Aleksandr Ovcharenko
 E: Aleksandr.Ovcharenko@epfl.ch 
@@ -44,9 +44,9 @@ D: All parts of the software
 
 N: Judit Planas
 E: Judit.Planas@epfl.ch
-D: All parts of the software
+D: Performance analysis and I/O
 
 N: Stuart Yates
 E: Sam.Yates@epfl.ch
-D: All parts of the software
+D: Linear algebra and error estimation
 
