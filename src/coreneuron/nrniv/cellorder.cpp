@@ -134,9 +134,10 @@ int* cell_size_order(int ncell, int nnode, int* parent) {
   }
   
   for (int i = 0; i < nnode; ++i) {
-    p[i] = i;
     if (i < ncell) {
-      p[i] = cellpermute[i];
+      p[cellpermute[i]] = i;
+    }else{
+      p[i] = i;
     }
   }
 
@@ -247,7 +248,7 @@ int* interleave_order(int ith, int ncell, int nnode, int* parent) {
     if (par >= 0) {
       par = p_cellsize[par];
     }
-    parent1[p_cellsize[i]] = par;
+    parent1[i] = par;
   }
   for (int i=0; i < nnode; ++i) {
     printf("p_cellsize[%d]=%d parent[%d] = %d    parent1[%d] = %d\n", i, p_cellsize[i], i, parent[i], i, parent1[i]);
