@@ -60,6 +60,12 @@ int main1( int argc, char **argv, char **env )
     stop_profile();
 #endif
 
+#ifdef ENABLE_CUDA
+    const char *prprefix = "cu";
+#else
+    const char *prprefix = "acc";
+#endif
+
     // mpi initialisation
     nrnmpi_init( 1, &argc, &argv );
 
@@ -133,7 +139,7 @@ int main1( int argc, char **argv, char **env )
     // call prcellstae for prcellgid
     if ( input_params.prcellgid >= 0 ) {
         if(input_params.compute_gpu)
-            strcpy( prcellname, "gpu_init");
+            sprintf( prcellname, "%s_gpu_init", prprefix);
         else
             strcpy( prcellname, "cpu_init");
         update_nrnthreads_on_host(nrn_threads, nrn_nthread);
@@ -149,7 +155,7 @@ int main1( int argc, char **argv, char **env )
     // call prcellstae for prcellgid
     if ( input_params.prcellgid >= 0 ) {
         if(input_params.compute_gpu)
-            sprintf( prcellname, "gpu_t%g", t );
+            sprintf( prcellname, "%s_gpu_t%g", prprefix, t);
         else
             sprintf( prcellname, "cpu_t%g", t );
         update_nrnthreads_on_host(nrn_threads, nrn_nthread);
@@ -184,7 +190,7 @@ int main1( int argc, char **argv, char **env )
     // prcellstate after end of solver
     if ( input_params.prcellgid >= 0 ) {
         if(input_params.compute_gpu)
-            sprintf( prcellname, "gpu_t%g", t );
+            sprintf( prcellname, "%s_gpu_t%g", prprefix, t);
         else
             sprintf( prcellname, "cpu_t%g", t );
         update_nrnthreads_on_host(nrn_threads, nrn_nthread);
