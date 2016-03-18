@@ -1,12 +1,10 @@
-find_package(Boost COMPONENTS unit_test_framework)
+
+include_directories(${CMAKE_SOURCE_DIR}/coreneuron ${Boost_INCLUDE_DIRS})
+FILE(GLOB alignment_test_src "*.cpp")
+
+add_executable(alignment_test_bin ${alignment_test_src})
+target_link_libraries(alignment_test_bin ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY})
+
+add_test(NAME alignment_test COMMAND ${TEST_EXEC_PREFIX} ${CMAKE_CURRENT_BINARY_DIR}/alignment_test_bin)
 
 
-if(Boost_FOUND)
-    set(TEST_LIBRARIES ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY})
-    set(TEST_LABEL unit)
-    make_mpi_exeprefix(1 TEST_PREFIX)
-    include_directories(${CMAKE_SOURCE_DIR}/coreneuron ${Boost_INCLUDE_DIRS})
-    include(CommonCTest)
-endif()
-
-add_test_class(alignement)

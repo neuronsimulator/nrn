@@ -1,32 +1,14 @@
 include(FindSLURM)
-include(TestScriptUtils)
-#include(CommonCTest)
+include(TestHelpers)
 
-macro(remove_word var word)
-string(REPLACE " " ";" ${var} "${${var}}")
-list(REMOVE_ITEM ${var} "${word}")
-string(REPLACE ";" " " ${var} "${${var}}")
-endmacro()
+include_directories(${CMAKE_SOURCE_DIR}/coreneuron ${CMAKE_SOURCE_DIR} ${Boost_INCLUDE_DIRS})
 
-function(make_mpi_exeprefix nproc exeprefix)
-if(SLURM_FOUND AND SLURM_SACCTMGR_COMMAND)
-    if("$ENV{SLURM_ACCOUNT}" STREQUAL "")
-	execute_process(COMMAND ${SLURM_SACCTMGR_COMMAND} -n list user format=DefaultAccount user=$ENV{USER}
-			COMMAND tr -d [:space:]
-			OUTPUT_VARIABLE DFLTACCT
-			ERROR_QUIET)
-        if (DFLTACCT)
-	    set(SLURM_ACCOUNT_PARAM "--account=${DFLTACCT}")
-        endif()
-    endif()
-    set(${exeprefix} ${SLURM_SRUN_COMMAND} -N ${nproc} -n ${nproc} ${SLURM_OPTIONS} ${SLURM_ACCOUNT_PARAM} PARENT_SCOPE) 
-elseif(MPIEXEC)
-    set(${exeprefix} ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${nproc} ${MPIEXEC_PREFLAGS} PARENT_SCOPE) 
+if(NOT Boost_USE_STATIC_LIBS)
+    add_definitions(-DBOOST_TEST_DYN_LINK=TRUE)
 endif()
-endfunction()
 
-# Boost test does not like -Wshadow
-remove_word(CMAKE_CXX_FLAGS "-Wshadow")
+
+if(UNIT_TESTS)
 
 add_subdirectory(unit/endian)
 add_subdirectory(unit/sdprintf)
@@ -35,10 +17,20 @@ add_subdirectory(unit/omp)
 add_subdirectory(unit/cmdline_interface)
 add_subdirectory(unit/alignment)
 add_subdirectory(unit/queueing)
+
+endif()
+
+if(FUNCTIONAL_TESTS)
+
 add_subdirectory(integration)
 add_subdirectory(regression)
 add_subdirectory(validation)
 
-if(CORENEURON_PRODUCTION_TESTS)
+endif()
+
+option(PRODUCTION_TESTS "Execution of production runs scripts on BG/Q" OFF)
+if(PRODUCTION_TESTS)
     add_subdirectory(production)
 endif()
+
+

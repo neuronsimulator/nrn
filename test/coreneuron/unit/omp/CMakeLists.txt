@@ -1,13 +1,7 @@
-find_package(Boost COMPONENTS unit_test_framework)
+FILE(GLOB omp_test_src "*.cpp")
 
-if(Boost_FOUND)
-    set(TEST_LIBRARIES ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY} coreneuron)
-    set(TEST_LABEL unit)
-    make_mpi_exeprefix(1 TEST_PREFIX)
-    include_directories(${CMAKE_SOURCE_DIR}/coreneuron ${Boost_INCLUDE_DIRS})
+add_executable(omp_test_bin ${omp_test_src})
+target_link_libraries(omp_test_bin ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY} coreneuron)
 
-    include(CommonCTest)
-endif()
-
-add_test_class(unit)
+add_test(NAME omp_test COMMAND ${TEST_EXEC_PREFIX} ${CMAKE_CURRENT_BINARY_DIR}/omp_test_bin)
 

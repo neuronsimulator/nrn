@@ -1,90 +1,10 @@
 include_directories(utils/randoms)
+include_directories(${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
+include_directories(${MPI_INCLUDE_PATH})
 
-set(CORENEURON_PUBLIC_HEADERS
-${COMMON_INCLUDES}
-nrnconf.h
-nrnoc/md1redef.h
-nrnoc/md2redef.h
-nrnoc/membfunc.h
-nrnoc/multicore.h
-nrnoc/nrnoc_ml.h
-utils/randoms/nrnran123.h
-utils/endianness.h
-utils/swap_endian.h
-utils/memory_utils.h
-utils/sdprintf.h
-mech/cfile/scoplib.h
-)
-
-set(CORENEURON_HEADERS
-nrnomp/nrnomp.h
-nrnmpi/mpispike.h
-nrnmpi/nrnmpidec.h
-nrnmpi/nrnmpi_def_cinc.h
-nrnmpi/nrnmpi.h
-nrnmpi/nrnmpi_impl.h
-nrnmpi/nrnmpiuse.h
-nrnoc/membdef.h
-nrnoc/nrnoc_decl.h
-nrnoc/nrnpthread.h
-nrniv/ivocvect.h
-nrniv/memory.h
-nrniv/netcon.h
-nrniv/netcvode.h
-nrniv/node_permute.h
-nrniv/cellorder.h
-nrniv/nrn_assert.h
-nrniv/nrn_datareader.h
-nrniv/nrn_setup.h
-nrniv/nrn_stats.h
-nrniv/nrnoptarg.h
-nrniv/nrniv_decl.h
-nrniv/nrniv_mf.h
-nrniv/nrnmutdec.h
-nrniv/output_spikes.h
-nrniv/prcellstate.cpp
-nrniv/tqueue.h
-nrniv/tqueue.ipp
-nrniv/vrecitem.h
-mech/cfile/cabvars.h
-)
-
-set(CORENEURON_SOURCES
-${COMMON_SOURCES}
-nrnomp/nrnomp.c
-nrnmpi/nrnmpi.c
-nrnmpi/mpispike.c
-nrnoc/capac.c
-nrnoc/eion.c
-nrnoc/finitialize.c
-nrnoc/fadvance_core.c
-nrnoc/solve_core.c
-nrnoc/treeset_core.c
-nrnoc/nrnoc_aux.c
-nrnoc/register_mech.c
-nrnoc/multicore.c
-nrnoc/nrntimeout.c
-nrniv/coreneuron_main.cpp
-nrniv/cvodestb.cpp
-nrniv/ivocvect.cpp
-nrniv/main1.cpp
-nrniv/netpar.cpp
-nrniv/netcvode.cpp
-nrniv/node_permute.cpp
-nrniv/cellorder.cpp
-nrniv/mk_mech.cpp
-nrniv/nrn_datareader.cpp
-nrniv/nrn_setup.cpp
-nrniv/nrn_stats.cpp
-nrniv/nrnoptarg.cpp
-nrniv/output_spikes.cpp
-nrniv/patternstim.cpp
-nrniv/tqueue.cpp
-nrniv/vrecord.cpp
-utils/randoms/nrnran123.c
-utils/memory_utils.cpp
-utils/sdprintf.cpp
-)
+FILE(GLOB_RECURSE coreneuron_all_headers "*.h")
+FILE(GLOB_RECURSE coreneuron_all_templates "*.ipp")
+FILE(GLOB_RECURSE coreneuron_all_c_files "*.c*")
 
 # Compile and include MOD files
 
@@ -139,36 +59,40 @@ endmacro()
 # variables. Go CMake! You rock!
 
 macro(mod2c_from_file name modlist searchpath)
-    if((NOT EXISTS "${modlist}") OR (IS_DIRECTORY "${modlist}"))
-        message(WARNING "Unable to read MOD list file: ${modlist}")
+    unset(tmp_path_ CACHE)
+    if(NOT EXISTS "${modlist}")
+	string(REGEX REPLACE ":" ";" spath "${searchpath}")
+	foreach(path_ ${spath})
+            file(GLOB_RECURSE mod_files "${path_}/*.mod")
+            list(APPEND mods_ "${mod_files};")
+        endforeach()
     else()
-	unset(tmp_path_ CACHE)
 	file(READ "${modlist}" mods_)
-	string(REGEX REPLACE "[ \t\n]+" ";" mods_ "${mods_}")
-	list(REMOVE_ITEM mods_ "")
-
-	foreach(mod_ ${mods_})
-	    unset(modpath_)
-	    if(NOT IS_ABSOLUTE "${mod_}")
-		find_path(tmp_path_ "${mod_}" PATH ${searchpath} NO_DEFAULT_PATH)
-		if(tmp_path_)
-		    set(modpath_ "${tmp_path_}/${mod_}")
-		endif()
-		unset(tmp_path_ CACHE)
-	    else()
-		set(modpath_ "${mod_}")
-	    endif()
-	    if((NOT EXISTS "${modpath_}") OR (IS_DIRECTORY "${modpath_}"))
-		unset(modpath_)
-	    endif()
-
-	    if(modpath_)
-		mod2c_target(${name} "${modpath_}")
-	    else()
-		message(WARNING "Unable to locate MOD file: ${mod_}")
-	    endif()
-	endforeach()
     endif()
+    string(REGEX REPLACE "[ \t\n]+" ";" mods_ "${mods_}")
+    list(REMOVE_ITEM mods_ "")
+
+    foreach(mod_ ${mods_})
+        unset(modpath_)
+        if(NOT IS_ABSOLUTE "${mod_}")
+            find_path(tmp_path_ "${mod_}" PATH ${searchpath} NO_DEFAULT_PATH)
+	    if(tmp_path_)
+	        set(modpath_ "${tmp_path_}/${mod_}")
+	    endif()
+	    unset(tmp_path_ CACHE)
+        else()
+            set(modpath_ "${mod_}")
+	endif()
+	if((NOT EXISTS "${modpath_}") OR (IS_DIRECTORY "${modpath_}"))
+	    unset(modpath_)
+        endif()
+
+        if(modpath_)
+            mod2c_target(${name} "${modpath_}")
+        else()
+	    message(WARNING "Unable to locate MOD file: ${mod_}")
+        endif()
+    endforeach()
 endmacro()
 
 # Standard MOD files are always built
@@ -180,38 +104,22 @@ foreach(MOD ${MECH_STDMODS})
   mod2c_target(STDMECH "${STDMODLIBPATH}/${MOD}")
 endforeach()
 
-# Additional MOD files: these can come from Neurodamus and/or from a configure-time
-# variable (see CORENEURON_ADDITIONAL_MECHS below)
-
 set(MECH_FILE_LISTS)
 
-# Neurodamus mechanisms are built by default
-
-option(CORENEURON_NEURODAMUS_MECHS "Compile CoreNeuron with all available mechanisms from Neurodamus" ON)
-
-if(CORENEURON_NEURODAMUS_MECHS)
-  set(MODLIBPATH "${CMAKE_CURRENT_SOURCE_DIR}/mech/neurodamus/lib/modlib")
-  set(MODLISTFILE "${CMAKE_CURRENT_SOURCE_DIR}/mech/coreneuron_modlist.txt")
-
-  if(EXISTS "${MODLISTFILE}")
-    list(APPEND MECH_FILE_LISTS "${MODLISTFILE}")
-    mod2c_from_file(OPTMECH "${MODLISTFILE}" "${MODLIBPATH}")
-  else()
-    message(FATAL_ERROR "Cannot find coreneuron_modlist.txt listing .mod files to include. Consider setting CORENEURON_NEURODAMUS_MECHS to OFF")
-  endif()
-endif()
-
-# Additional optional mechanisms specified in CORENEURON_ADDITIONAL_MECHS
-# and CORENEURON_ADDITIONAL_MECHPATH (set as a PATH cache variable, but
+# Additional optional mechanisms specified in ADDITIONAL_MECHS
+# and ADDITIONAL_MECHPATH (set as a PATH cache variable, but
 # can in fact be a list of paths.)
+# If ADDITIONAL_MECHS is not provided, the entire ADDITIONAL_MECHPATH
+# will be checked for the mod files.
 
-set(CORENEURON_ADDITIONAL_MECHPATH "" CACHE PATH "Search path for optional additional mechanism MOD files")
-set(CORENEURON_ADDITIONAL_MECHS "" CACHE FILEPATH "File containing list of additional mechanism MOD files")
-
-if(EXISTS ${CORENEURON_ADDITIONAL_MECHS})
-    list(APPEND MECH_FILE_LISTS "${CORENEURON_ADDITIONAL_MECHS}")
-    mod2c_from_file(OPTMECH "${CORENEURON_ADDITIONAL_MECHS}" "${CORENEURON_ADDITIONAL_MECHPATH}")
+if(EXISTS ${ADDITIONAL_MECHS})
+    if(IS_DIRECTORY "${modlist}")
+        message(WARNING "Unable to read MOD list file: ${modlist}")
+    else()
+        list(APPEND MECH_FILE_LISTS "${ADDITIONAL_MECHS}")
+    endif()
 endif()
+mod2c_from_file(OPTMECH "${ADDITIONAL_MECHS}" "${ADDITIONAL_MECHPATH}")
 
 # For 'non-standard' mod files, need to generate registering function in mod_func.c
 
@@ -232,11 +140,19 @@ endforeach()
 # Add generated sources from MOD files
 
 set(GENERATED_MECH_C_FILES ${MOD_FUNC_C} ${MOD2C_STDMECH_OUTPUTS} ${MOD2C_OPTMECH_OUTPUTS})
-set_source_files_properties(${GENERATED_MECH_C_FILES} PROPERTIES COMPILE_FLAGS "-Wno-error")
 
-set(CORENEURON_SOURCES ${CORENEURON_SOURCES} ${GENERATED_MECH_C_FILES})
+set(coreneuron_all_c_files ${coreneuron_all_c_files} ${GENERATED_MECH_C_FILES})
 
 
-common_library(coreneuron)
+add_library(coreneuron ${COMPILE_LIBRARY_TYPE} ${coreneuron_all_headers} ${coreneuron_all_templates} ${coreneuron_all_c_files})
 
-install(FILES ${CMAKE_BINARY_DIR}/coreneuron/CMakeFiles/coreneuron.dir/nrniv/coreneuron_main.cpp.o DESTINATION lib)
+target_link_libraries(coreneuron ${MPI_C_LIBRARIES})
+
+set_target_properties(coreneuron PROPERTIES
+                            VERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}
+                            SOVERSION ${VERSION_MAJOR}
+                            CLEAN_DIRECT_OUTPUT 1)
+
+install(TARGETS coreneuron
+             LIBRARY DESTINATION ${LIB_INSTALL_DIR} 
+             ARCHIVE DESTINATION ${LIB_INSTALL_DIR} )
