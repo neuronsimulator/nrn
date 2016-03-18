@@ -473,7 +473,9 @@ void nrn_setup(cn_input_params& input_params, const char *filesdat, int byte_swa
   input_params.set_mindelay( mindelay );
   setup_cleanup();
 
+#if INTERLEAVE_DEBUG
   mk_cell_indices();
+#endif
 
   /// Generally, tables depend on a few parameters. And if those parameters change,
   /// then the table needs to be recomputed. This is obviously important in NEURON

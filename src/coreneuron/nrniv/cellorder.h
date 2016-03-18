@@ -10,7 +10,10 @@ int* interleave_order(int ith, int ncell, int nnode, int* parent);
 void create_interleave_info();
 void destroy_interleave_info();
 
+#define INTERLEAVE_DEBUG 0
+#if INTERLEAVE_DEBUG
 void mk_cell_indices();
+#endif
 
 #endif
 

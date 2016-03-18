@@ -73,8 +73,8 @@ int* interleave_permutations(int ncell, int* endnode,
   // do not know if it matters to start from beginning or end
   // start from beginning
   // initialize
-  stride = new int[nstride];
-  for (int i=0; i < nstride; ++i) {
+  stride = new int[nstride+1]; // back substitution will access stride[nstride]
+  for (int i=0; i <= nstride; ++i) {
     stride[i] = 0;
   }
   
@@ -129,9 +129,6 @@ int* cell_size_order(int ncell, int nnode, int* parent) {
   // sort by increasing cell size
   // required by interleaved gaussian elimination
   int* cellpermute = nrn_index_sort(cellsize, ncell);
-  for (int i=0; i < ncell; ++i) {
-    printf("cellpermute[%d] = %d  cellsize=%d\n", i, cellpermute[i], cellsize[cellpermute[i]]);
-  }
   
   for (int i = 0; i < nnode; ++i) {
     if (i < ncell) {
@@ -188,8 +185,6 @@ static int* contiguous_cell_block_order(int ncell, int nnode, int* parent) {
 
   return p;
 }
-
-#define INTERLEAVE_DEBUG 1
 
 class InterleaveInfo {
   public:
@@ -250,9 +245,6 @@ int* interleave_order(int ith, int ncell, int nnode, int* parent) {
     }
     parent1[i] = par;
   }
-  for (int i=0; i < nnode; ++i) {
-    printf("p_cellsize[%d]=%d parent[%d] = %d    parent1[%d] = %d\n", i, p_cellsize[i], i, parent[i], i, parent1[i]);
-  }
 
   // permute into contiguous cell
   int* p1 = contiguous_cell_block_order(ncell, nnode, parent1);
@@ -307,7 +299,7 @@ if (0 && ith == 0) {
     combined[i] = order[p1[p_cellsize[i]]];
   }
 
-#if 1
+#if 0
   // test the combination. should be interleaved
   for (int i=0; i < nnode; ++i) {
     int par = parent[i];
@@ -340,52 +332,33 @@ if (0 && ith == 0) {
 // triagularization?
 
 // each cell in parallel regardless of inhomogeneous topology
-static void triang_interleaved(NrnThread& nt, int icell, int icellsize, int nstride, int* stride, int* lastnode, int* cellindices) {
-  int ix = icellsize-1;
+static void triang_interleaved(NrnThread& nt, int icell, int icellsize, int nstride, int* stride, int* lastnode) {
   int i = lastnode[icell];
   for (int istride = nstride-1; istride >= 0; --istride) {
     if (istride < icellsize) { // only first icellsize strides matter
-assert(cellindices[ix] == i);
---ix;
       // what is the index
       int ip = GPU_PARENT(i);
       //assert (ip >= 0); // if (ip < 0) return;
       double p = GPU_A(i) / GPU_D(i);
       GPU_D(ip) -= p * GPU_B(i);
       GPU_RHS(ip) -= p * GPU_RHS(i);
-#if 0 //  cells ordered large to small
-      if (istride > 0) {
-        i -= stride[istride-1];
-      }
-#else
-        i -= stride[istride];
-#endif
+      i -= stride[istride];
     }
   }
-  assert(ix == -1);
 }
     
 // back substitution?
-static void bksub_interleaved(NrnThread& nt, int icell, int icellsize, int nstride, int* stride, int* firstnode, int* cellindices) {
+static void bksub_interleaved(NrnThread& nt, int icell, int icellsize, int nstride, int* stride, int* firstnode) {
+  if (nstride){} // otherwise unused
   int i=firstnode[icell];
-  int ix = 0;
   GPU_RHS(icell) /= GPU_D(icell); // the root
   for (int istride=0; istride < icellsize; ++istride) {
-    assert(cellindices[ix] == i);
-    ++ix;
     int ip = GPU_PARENT(i);
     //assert(ip >= 0);
     GPU_RHS(i) -= GPU_B(i) * GPU_RHS(ip);
     GPU_RHS(i) /= GPU_D(i);
-#if 0 // cells ordered large to small
-    i += stride[istride];
-#else
-    if(istride+1 < nstride) {
-      i += stride[istride+1];
-    }
-#endif
+    i += stride[istride+1];
   }
-  assert(ix == icellsize);
 }
 
 #if INTERLEAVE_DEBUG
@@ -393,8 +366,6 @@ static int** cell_indices_debug(NrnThread& nt, InterleaveInfo& ii) {
   int ncell = nt.ncell;
   int nnode = nt.end;
   int* parents = nt._v_parent_index;
-
-printf("ncell=%d nnode=%d\n", ncell, nnode);
 
   // we expect the nodes to be interleave ordered with smallest cell first
   // establish consistency with ii.
@@ -415,15 +386,8 @@ printf("ncell=%d nnode=%d\n", ncell, nnode);
     sz[cell[i]] += 1;
   }
 
-  for (int i=0; i < ncell; ++i) {
-    printf("i=%d sz=%d cellsize=%d\n", i, sz[i], ii.cellsize[i]);
-  }
-
   // cells are in inceasing sz order;
   for (int i=1; i < ncell; ++i) {
-    if (sz[i] < sz[i-1]) {
-      printf("sz[%d]=%d < sz[%d]=%d\n", i, sz[i], i-1, sz[i-1]);
-    }
     nrn_assert(sz[i-1] <= sz[i]);
   }
   // same as ii.cellsize
@@ -434,7 +398,6 @@ printf("ncell=%d nnode=%d\n", ncell, nnode);
   int** cellindices = new int*[ncell];
   for (int i=0; i < ncell; ++i) {
     cellindices[i] = new int[sz[i]];
-    printf("allocated %d %d\n", i, sz[i]);
     sz[i] = 0; // restart sz counts
   }
   for (int i=ncell; i < nnode; ++i) {
@@ -465,7 +428,7 @@ void mk_cell_indices() {
     }
   }
 }
-#endif
+#endif //INTERLEAVE_DEBUG
 
 void solve_interleaved(int ith) {
   NrnThread& nt = nrn_threads[ith];
@@ -475,16 +438,10 @@ void solve_interleaved(int ith) {
   int* lastnode = ii.lastnode;
   int* firstnode = ii.firstnode;
 
-#if INTERLEAVE_DEBUG
-  int** cell_indices_ = cell_indices_threads[ith];
-#endif
-
   for (int icell = 0; icell < nt.ncell; ++icell) {
     int icellsize = ii.cellsize[icell];
-    int* cellindices = cell_indices_[icell];
-    nrn_assert(cellindices);
-    triang_interleaved(nt, icell, icellsize, nstride, stride, lastnode, cellindices);
-    bksub_interleaved(nt, icell, icellsize, nstride, stride, firstnode, cellindices);
+    triang_interleaved(nt, icell, icellsize, nstride, stride, lastnode);
+    bksub_interleaved(nt, icell, icellsize, nstride, stride, firstnode);
   }
 }
 
