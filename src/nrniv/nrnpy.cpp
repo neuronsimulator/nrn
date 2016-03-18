@@ -146,7 +146,8 @@ static void set_pythonhome(void* handle){
 				}
 			}
 		}
-		assert(setenv("PYTHONHOME", p, 1) == 0);
+		int res = setenv("PYTHONHOME", p, 1);
+		assert(res == 0);
 	}
 #endif
 }
