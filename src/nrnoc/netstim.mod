@@ -126,7 +126,7 @@ VERBATIM
 		: each instance. However, the corresponding hoc Random
 		: distribution MUST be set to Random.negexp(1)
 		*/
-#if NRNBBCORE
+#if !NRNBBCORE
 		if (_ran_compat == 2) {
 			_lerand = nrnran123_negexp((nrnran123_State*)_p_donotuse);
 		}else{
