@@ -61,7 +61,7 @@ void (*nrn_mk_transfer_thread_data_)();
 extern int v_structure_change;
 extern int diam_changed;
 
-#if (PERMANENT || USE_PTHREAD)
+#if PERMANENT /*|| USE_PTHREAD*/
 static int busywait_;
 static int busywait_main_;
 #endif
@@ -98,7 +98,7 @@ static unsigned long t1_[BS][BSIZE], *t_[BS];
 #define BS 0
 #endif
 
-#if USE_PTHREAD
+#if 0 && USE_PTHREAD
 static void* nulljob(NrnThread* nt) {
 	(void)nt; /* unused */
 	return (void*)0;
@@ -518,6 +518,7 @@ void nrn_threads_create(int n, int parallel) {
 				nt->_actual_v = 0;
 				nt->_actual_area = 0;
 				nt->_v_parent_index = 0;
+				nt->_permute = 0;
                                 nt->_shadow_rhs = 0;
                                 nt->_shadow_d = 0;
 				nt->_ecell_memb_list = 0;

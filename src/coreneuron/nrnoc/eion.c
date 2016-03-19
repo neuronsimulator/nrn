@@ -96,6 +96,7 @@ void ion_reg(const char* name, double valence) {
 		mechtype = nrn_get_mechtype(mechanism[1]);
 		_nrn_layout_reg(mechtype, LAYOUT);
 		hoc_register_prop_size(mechtype, nparm, 1 );
+		hoc_register_dparam_semantics(mechtype, 0, "iontype");
 		nrn_writes_conc(mechtype, 1);
 		if (nrn_ion_global_map_size <= mechtype) {
 			int size = mechtype + 1;

@@ -68,6 +68,7 @@ public:
 	virtual void send(double sendtime, NetCvode*, NrnThread*);
     virtual void deliver(double,  NetCvode* ns, NrnThread*);
 	virtual int type() { return NetConType; }
+    virtual void pr(const char*, double t, NetCvode*);
 };
 
 class SelfEvent : public DiscreteEvent {

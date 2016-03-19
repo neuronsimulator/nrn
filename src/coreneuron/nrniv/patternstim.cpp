@@ -162,6 +162,7 @@ Point_process* nrn_artcell_instantiate(const char* mechname) {
   ml->pdata = (Datum*)ecalloc(ml->nodecount*dsize, sizeof(Datum));
   ml->_thread = NULL;
   ml->_net_receive_buffer = NULL;
+  ml->_permute = NULL;
 
   // Here we have a problem with no easy general solution. ml->pdata are
   // integer indexes into the nt->_data nt->_idata and nt->_vdata array
