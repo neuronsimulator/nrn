@@ -32,6 +32,8 @@ void nrn_solve_minimal(NrnThread* _nt) {
     }
 }
 
+/** TODO loops are executed seq in OpenACC just for debugging, remove it! */
+
 /* triangularization of the matrix equations */
 static void triang(NrnThread* _nt) {
 	double p;
@@ -46,7 +48,7 @@ static void triang(NrnThread* _nt) {
     int *parent_index = _nt->_v_parent_index;
 
     /** @todo: just for benchmarking, otherwise produces wrong results */
-	#pragma acc parallel loop present(vec_a[0:i3], vec_b[0:i3], vec_d[0:i3], vec_rhs[0:i3], parent_index[0:i3]) if(_nt->compute_gpu)
+	#pragma acc parallel loop seq present(vec_a[0:i3], vec_b[0:i3], vec_d[0:i3], vec_rhs[0:i3], parent_index[0:i3]) if(_nt->compute_gpu)
 	for (i = i3 - 1; i >= i2; --i) {
 		p = vec_a[i] / vec_d[i];
 		vec_d[parent_index[i]] -= p * vec_b[i];
@@ -67,13 +69,13 @@ static void bksub(NrnThread* _nt) {
     int *parent_index = _nt->_v_parent_index;
 
     /** @todo: just for benchmarking, otherwise produces wrong results */
-	#pragma acc parallel loop present(vec_d[0:i2], vec_rhs[0:i2]) if(_nt->compute_gpu)
+	#pragma acc parallel loop seq present(vec_d[0:i2], vec_rhs[0:i2]) if(_nt->compute_gpu)
 	for (i = i1; i < i2; ++i) {
 		vec_rhs[i] /= vec_d[i];
 	}
 
     /** @todo: just for benchmarking, otherwise produces wrong results */
-	#pragma acc parallel loop present(vec_b[0:i3], vec_d[0:i3], vec_rhs[0:i3], parent_index[0:i3]) if(_nt->compute_gpu)
+	#pragma acc parallel loop seq present(vec_b[0:i3], vec_d[0:i3], vec_rhs[0:i3], parent_index[0:i3]) if(_nt->compute_gpu)
 	for (i = i2; i < i3; ++i) {
 		vec_rhs[i] -= vec_b[i] * vec_rhs[parent_index[i]];
 		vec_rhs[i] /= vec_d[i];

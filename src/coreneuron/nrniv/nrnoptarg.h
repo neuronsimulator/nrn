@@ -31,6 +31,8 @@ typedef struct cn_parameters {
 
     int compute_gpu;		    /**< run computations on gpu  */
 
+    int cell_interleave_permute; /**< cell interleaving permutation  */
+
     const char *patternstim;
     const char *datpath;		/**< directory path where .dat files */
     const char *outpath; 		/**< directory where spikes will be written */

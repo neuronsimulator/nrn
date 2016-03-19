@@ -428,8 +428,6 @@ void nrn_setup(cn_input_params& input_params, const char *filesdat, int byte_swa
   /// Allocate NrnThread* nrn_threads of size ngroup (minimum 2)
   nrn_threads_create(ngroup == 1?2:ngroup, input_params.threading); // serial/parallel threads
 
-  use_interleave_permute = 1;
-  use_solve_interleave = 1 * use_interleave_permute;
   if (use_solve_interleave) {
     create_interleave_info();
   }

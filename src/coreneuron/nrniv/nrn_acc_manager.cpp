@@ -4,6 +4,7 @@
 #include "coreneuron/nrniv/nrniv_decl.h"
 #include "coreneuron/nrniv/vrecitem.h"
 #include "coreneuron/nrniv/profiler_interface.h"
+#include "coreneuron/nrniv/cellorder.h"
 
 #ifdef _OPENACC
 #include<openacc.h>
@@ -13,6 +14,7 @@
 #include <pat_api.h>
 #endif
 
+extern InterleaveInfo* interleave_info;
 void copy_ivoc_vect_to_device(IvocVect *& iv, IvocVect *& div);
 
 /* note: threads here are corresponding to global nrn_threads array */
@@ -39,6 +41,10 @@ void setup_nrnthreads_on_device(NrnThread *threads, int nthreads)  {
     d_threads = (NrnThread *) acc_copyin(threads, sizeof(NrnThread)*nthreads);
 
     printf("\n --- Copying to Device! --- ");
+
+    if(interleave_info == NULL) {
+        printf("\n Warning: No permutation data? Required for linear algebra!");
+    }
 
     /* pointers for data struct on device, starting with d_ */
 
@@ -272,6 +278,18 @@ void setup_nrnthreads_on_device(NrnThread *threads, int nthreads)  {
                 double *d_pd_ = (double *) acc_deviceptr(vecplay_instance->pd_);
                 acc_memcpy_to_device(&(d_vecplay_instance->pd_), &d_pd_, sizeof(double*));
             }
+        }
+
+        if(nt->_permute) {
+            /* todo: not necessary to setup pointers, just copy it */
+            InterleaveInfo& info = interleave_info[i];
+            acc_copyin(info.stride, sizeof(int) * info.nstride+1);
+            acc_copyin(info.firstnode, sizeof(int) * nt->ncell);
+            acc_copyin(info.lastnode, sizeof(int) * nt->ncell);
+            acc_copyin(info.cellsize, sizeof(int) * nt->ncell);
+
+        } else {
+            printf("\n WARNING: NrnThread %d not permuted, error for linear algebra?", i);
         }
 
         printf("\n Compute thread on GPU? : %s, Stream : %d", (nt->compute_gpu)? "Yes" : "No", nt->stream_id);

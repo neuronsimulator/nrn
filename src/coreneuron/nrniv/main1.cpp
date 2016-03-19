@@ -113,6 +113,10 @@ int main1( int argc, char **argv, char **env )
 
     report_mem_usage( "Before nrn_setup" );
 
+    //set if need to interleave cells
+    use_interleave_permute = input_params.cell_interleave_permute;
+    use_solve_interleave = input_params.cell_interleave_permute;
+
     // reading *.dat files and setting up the data structures, setting mindelay
     nrn_setup( input_params, filesdat, nrn_need_byteswap );
 

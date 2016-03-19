@@ -5,6 +5,7 @@
 #include "coreneuron/nrniv/cellorder.h"
 
 int use_interleave_permute;
+InterleaveInfo* interleave_info; // nrn_nthread array
 
 //calculate the endnode vector and verify that nodes are in cell order.
 // the root of the ith cell is node[i]
@@ -186,17 +187,6 @@ static int* contiguous_cell_block_order(int ncell, int nnode, int* parent) {
   return p;
 }
 
-class InterleaveInfo {
-  public:
-  InterleaveInfo();
-  virtual ~InterleaveInfo();
-  int nstride;
-  int* stride;
-  int* firstnode;
-  int* lastnode;
-  int* cellsize;
-};
-
 InterleaveInfo::InterleaveInfo() {
   nstride = 0;
   stride = NULL;
@@ -213,8 +203,6 @@ InterleaveInfo::~InterleaveInfo() {
     delete [] cellsize;
   }
 }
-
-static InterleaveInfo* interleave_info; // nrn_nthread array
 
 void create_interleave_info() {
   destroy_interleave_info();
@@ -321,18 +309,18 @@ if (0 && ith == 0) {
 }
 
 #if 1
-#define GPU_V(i) nt._actual_v[i]
-#define GPU_A(i) nt._actual_a[i]
-#define GPU_B(i) nt._actual_b[i]
-#define GPU_D(i) nt._actual_d[i]
-#define GPU_RHS(i) nt._actual_rhs[i]
-#define GPU_PARENT(i) nt._v_parent_index[i]
+#define GPU_V(i) nt->_actual_v[i]
+#define GPU_A(i) nt->_actual_a[i]
+#define GPU_B(i) nt->_actual_b[i]
+#define GPU_D(i) nt->_actual_d[i]
+#define GPU_RHS(i) nt->_actual_rhs[i]
+#define GPU_PARENT(i) nt->_v_parent_index[i]
 
 // How does the interleaved permutation with stride get used in
 // triagularization?
 
 // each cell in parallel regardless of inhomogeneous topology
-static void triang_interleaved(NrnThread& nt, int icell, int icellsize, int nstride, int* stride, int* lastnode) {
+static void triang_interleaved(NrnThread* nt, int icell, int icellsize, int nstride, int* stride, int* lastnode) {
   int i = lastnode[icell];
   for (int istride = nstride-1; istride >= 0; --istride) {
     if (istride < icellsize) { // only first icellsize strides matter
@@ -348,7 +336,7 @@ static void triang_interleaved(NrnThread& nt, int icell, int icellsize, int nstr
 }
     
 // back substitution?
-static void bksub_interleaved(NrnThread& nt, int icell, int icellsize, int nstride, int* stride, int* firstnode) {
+static void bksub_interleaved(NrnThread* nt, int icell, int icellsize, int nstride, int* stride, int* firstnode) {
   if (nstride){} // otherwise unused
   int i=firstnode[icell];
   GPU_RHS(icell) /= GPU_D(icell); // the root
@@ -431,15 +419,19 @@ void mk_cell_indices() {
 #endif //INTERLEAVE_DEBUG
 
 void solve_interleaved(int ith) {
-  NrnThread& nt = nrn_threads[ith];
+  NrnThread* nt = nrn_threads + ith;
   InterleaveInfo& ii = interleave_info[ith];
   int nstride = ii.nstride;
   int* stride = ii.stride;
-  int* lastnode = ii.lastnode;
   int* firstnode = ii.firstnode;
+  int* lastnode = ii.lastnode;
+  int* cellsize = ii.cellsize;
+  int ncell = nt->ncell;
 
-  for (int icell = 0; icell < nt.ncell; ++icell) {
-    int icellsize = ii.cellsize[icell];
+  #pragma acc parallel loop present(nt[0:1], stride[0:nstride], firstnode[0:ncell],\
+    lastnode[0:ncell], cellsize[0:ncell]) if(nt->compute_gpu)
+  for (int icell = 0; icell < ncell; ++icell) {
+    int icellsize = cellsize[icell];
     triang_interleaved(nt, icell, icellsize, nstride, stride, lastnode);
     bksub_interleaved(nt, icell, icellsize, nstride, stride, firstnode);
   }

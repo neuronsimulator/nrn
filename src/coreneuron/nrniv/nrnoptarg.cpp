@@ -26,6 +26,7 @@ cn_parameters::cn_parameters()
 
     threading = 0;
     compute_gpu = 0;
+    cell_interleave_permute = 0;
 
     patternstim = NULL;
 
@@ -48,8 +49,8 @@ void cn_parameters::show_cb_opts()
         printf( "\n tstart: %g, tstop: %g, dt: %g, dt_io: %g", tstart, tstop, dt, dt_io );
         printf( " celsius: %g, voltage: %g, maxdelay: %g", celsius, voltage, maxdelay );
 
-        printf( "\n forwardskip: %g, spikebuf: %d, prcellgid: %d, threading : %d, mindelay : %g", \
-                forwardskip, spikebuf, prcellgid, threading, mindelay);
+        printf( "\n forwardskip: %g, spikebuf: %d, prcellgid: %d", forwardskip, spikebuf, prcellgid);
+        printf( "\n threading : %d, mindelay : %g, cell_permute: %d", threading, mindelay, cell_interleave_permute);
 
         printf( "\n patternstim: %s, datpath: %s, filesdat: %s, outpath: %s", \
                 patternstim, datpath, filesdat, outpath );
@@ -87,6 +88,8 @@ void cn_parameters::show_cb_opts_help()
               Optiong to enable threading. The default implies no threading.\n\n\
        -a, --gpu\n\
               Optiong to enable use of GPUs. The default implies cpu only run.\n\n\
+       -r, --cell_permute\n\
+              Cell permutation and interleaving for efficiency\n\n\
        -d PATH, --datpath=PATH\n\
               Set the path with required CoreNeuron data to PATH (char*). The default value is '.'.\n\n\
        -f FILE, --filesdat=FILE\n\
@@ -118,6 +121,7 @@ void cn_parameters::read_cb_opts( int argc, char **argv )
             {"prcellgid", required_argument, 0, 'g'},
             {"threading", no_argument,       0, 'c'},
             {"gpu",       no_argument,       0, 'a'},
+            {"cell_permute",no_argument,     0, 'r'},
             {"datpath",   required_argument, 0, 'd'},
             {"filesdat",  required_argument, 0, 'f'},
             {"outpath",   required_argument, 0, 'o'},
@@ -129,7 +133,7 @@ void cn_parameters::read_cb_opts( int argc, char **argv )
         /* getopt_long stores the option index here. */
         int option_index = 0;
 
-        c = getopt_long( argc, argv, "s:e:t:i:l:p:b:g:c:d:f:o:k:m:h",
+        c = getopt_long( argc, argv, "s:e:t:i:l:p:b:g:c:d:f:o:k:m:h:r",
                          long_options, &option_index );
 
         /* Detect the end of the options. */
@@ -192,6 +196,10 @@ void cn_parameters::read_cb_opts( int argc, char **argv )
 
             case 'a':
                 compute_gpu = 1;
+                break;
+
+            case 'r':
+                cell_interleave_permute = 1;
                 break;
 
             case 'd':
