@@ -186,6 +186,7 @@ void read_phase1(data_reader &F, NrnThread& nt) {
   nt.n_netcon = F.read_int(); /// Number of NetCon-s in NrnThread nt
   nt.presyns = new PreSyn[nt.n_presyn];
   nt.netcons = new NetCon[nt.n_netcon];
+  nt.presyns_helper = (PreSynHelper*) ecalloc(nt.n_presyn, sizeof(PreSynHelper));
 
   /// Checkpoint in bluron is defined for both phase 1 and phase 2 since they are written together
   /// output_gid has all of output PreSyns, netcon_srcgid is created for NetCons, which might be
@@ -1116,6 +1117,7 @@ for (int i=0; i < nt.end; ++i) {
   double* output_threshold = F.read_array<double>(nt.ncell);
   for (int i=0; i < nt.n_presyn; ++i) { // real cells
     PreSyn* ps = nt.presyns + i;
+
     int ix = output_vindex[i];
     if (ix < 0) {
       ix = -ix;

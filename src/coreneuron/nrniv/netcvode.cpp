@@ -560,15 +560,17 @@ void ncs2nrn_integrate(double tstop) {
 // stay in the cache
 // net_send_buffer added so checking can be done on gpu
 // while event queueing is on cpu.
+// Remember: passsing reference variable causes cray
+// compiler bug
 
-static bool pscheck(double var, double thresh, int& flag) {
+static bool pscheck(double var, double thresh, int* flag) {
 	if (var > thresh) {
-		if (flag == false) {
-			flag = true;
-			return true;
+		if (*flag == false) {
+			*flag = true;
+            return true;
 		}
 	}else{
-		flag = false;
+		*flag = false;
 	}
 	return false;
 }
@@ -576,7 +578,6 @@ static bool pscheck(double var, double thresh, int& flag) {
 double PreSyn::value() {
 	return nt_->_actual_v[thvar_index_] - threshold_;
 }
-
 
 void NetCvode::check_thresh(NrnThread* nt) { // for default method
     int i;
@@ -586,7 +587,11 @@ void NetCvode::check_thresh(NrnThread* nt) { // for default method
 
     int net_send_buf_count = 0;
     PreSyn *presyns = nt->presyns;
+    PreSynHelper *presyns_helper = nt->presyns_helper;
     double *actual_v = nt->_actual_v;
+
+    if(nt->ncell == 0)
+        return;
 
     #ifdef _OPENACC
         if(nt->compute_gpu)
@@ -594,16 +599,18 @@ void NetCvode::check_thresh(NrnThread* nt) { // for default method
     #endif
 
     // on GPU...
-    #pragma acc parallel loop present(nt[0:1], presyns[0:nt->n_presyn], \
-    actual_v[0:nt->end]) copy(net_send_buf_count) if(nt->compute_gpu)
+    #pragma acc parallel loop present(nt[0:1], presyns_helper[0:nt->n_presyn], \
+    presyns[0:nt->n_presyn], actual_v[0:nt->end]) copy(net_send_buf_count) if(nt->compute_gpu)
     for (i=0; i < nt->ncell; ++i) {
         PreSyn* ps = presyns + i;
+        PreSynHelper* psh = presyns_helper + i;
         int idx = 0;
         int thidx = ps->thvar_index_;
         double v = actual_v[thidx];
         double threshold = ps->threshold_;
+        int *flag = &(psh->flag_);
 
-        if (pscheck(v, threshold, ps->flag_)) {
+        if (pscheck(v, threshold, flag)) {
 
             #ifndef _OPENACC
                 nt->_net_send_buffer_cnt = net_send_buf_count;

@@ -33,6 +33,8 @@ void setup_nrnthreads_on_device(NrnThread *threads, int nthreads)  {
     /* @todo: why dt is not setup at this moment? */
     for( i = 0; i < nthreads; i++) {
         (threads+i)->_dt = dt;
+        /* this thread will be computed on GPU */
+        (threads+i)->compute_gpu = 1;
     }
 
     /* -- copy NrnThread to device. this needs to be contigious vector because offset is used to find
@@ -57,9 +59,6 @@ void setup_nrnthreads_on_device(NrnThread *threads, int nthreads)  {
             //this is an empty thread
             continue;
         }
-
-        /* this thread will be computed on GPU */
-        nt->compute_gpu = 1;
 
         double *d__data;                // nrn_threads->_data on device
 
@@ -233,7 +232,11 @@ void setup_nrnthreads_on_device(NrnThread *threads, int nthreads)  {
         }
 
         if(nt->n_presyn) {
-            /* copy presyn vector used for spike exchange */
+            /* copy presyn vector used for spike exchange, note we have added new PreSynHelper due to issue
+             * while updating PreSyn objects which has virtual base class. May be this is issue due to 
+             * VTable and alignment */
+            PreSynHelper *d_presyns_helper = (PreSynHelper *) acc_copyin(nt->presyns_helper, sizeof(PreSynHelper)*nt->n_presyn);
+            acc_memcpy_to_device(&(d_nt->presyns_helper), &d_presyns_helper, sizeof(PreSynHelper*));
             PreSyn *d_presyns = (PreSyn *) acc_copyin(nt->presyns, sizeof(PreSyn)*nt->n_presyn);
             acc_memcpy_to_device(&(d_nt->presyns), &d_presyns, sizeof(PreSyn*));
         }

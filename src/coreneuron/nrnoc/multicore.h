@@ -52,6 +52,13 @@ typedef struct NrnThreadBAList {
     struct NrnThreadBAList* next;
 } NrnThreadBAList;
 
+/* for OpenACC, in order to avoid an error while update PreSyn, with virtual base
+ * class, we are adding helper with flag variable which could be updated on GPU
+ */
+typedef struct PreSynHelper {
+    int flag_;
+} PreSynHelper;
+
 typedef struct NrnThread {
 	double _t;
 	double _dt;
@@ -61,6 +68,7 @@ typedef struct NrnThread {
 	Memb_list** _ml_list;
         Point_process* pntprocs; // synapses and artificial cells with and without gid
 	PreSyn* presyns; // all the output PreSyn with and without gid
+    PreSynHelper* presyns_helper;
 	int** pnt2presyn_ix; // eliminates Point_process._presyn used only by net_event sender.
         NetCon* netcons;
 	double* weights; // size n_weight. NetCon.weight_ points into this array.
