@@ -181,6 +181,14 @@ double nrn_nernst(double ci, double co, double z, double celsius) {
 
 #pragma acc routine seq
 void nrn_wrote_conc(int type, double* p1, int p2, int it, double **gimap, double celsius, int _cntml_padded) {
+#ifndef _OPENACC
+    static int flag = 1;
+    if(flag) {
+        printf("\n ERROR: nrn_nrn_wrote_conc not supported on GPU!\n");
+        flag = 0;
+    }
+#endif
+    return;
 	if (it & 04) {
 #if LAYOUT <= 0 /* SoA */
 		int _iml = 0;

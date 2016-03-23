@@ -285,11 +285,21 @@ void setup_nrnthreads_on_device(NrnThread *threads, int nthreads)  {
 
         if(nt->_permute) {
             /* todo: not necessary to setup pointers, just copy it */
-            InterleaveInfo& info = interleave_info[i];
-            acc_copyin(info.stride, sizeof(int) * info.nstride+1);
-            acc_copyin(info.firstnode, sizeof(int) * nt->ncell);
-            acc_copyin(info.lastnode, sizeof(int) * nt->ncell);
-            acc_copyin(info.cellsize, sizeof(int) * nt->ncell);
+            InterleaveInfo* info = interleave_info + i;
+            InterleaveInfo* d_info = (InterleaveInfo*) acc_copyin(info, sizeof(InterleaveInfo));
+            int *d_ptr = NULL;
+
+            d_ptr = (int *) acc_copyin(info->stride, sizeof(int) * info->nstride+1);
+            acc_memcpy_to_device(&(d_info->stride), &d_ptr, sizeof(int*));
+
+            d_ptr = (int *) acc_copyin(info->firstnode, sizeof(int) * nt->ncell);
+            acc_memcpy_to_device(&(d_info->firstnode), &d_ptr, sizeof(int*));
+
+            d_ptr = (int *) acc_copyin(info->lastnode, sizeof(int) * nt->ncell);
+            acc_memcpy_to_device(&(d_info->lastnode), &d_ptr, sizeof(int*));
+
+            d_ptr = (int *) acc_copyin(info->cellsize, sizeof(int) * nt->ncell);
+            acc_memcpy_to_device(&(d_info->cellsize), &d_ptr, sizeof(int*));
 
         } else {
             printf("\n WARNING: NrnThread %d not permuted, error for linear algebra?", i);

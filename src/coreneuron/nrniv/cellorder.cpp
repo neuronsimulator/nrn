@@ -4,6 +4,10 @@
 #include "coreneuron/nrniv/nrn_assert.h"
 #include "coreneuron/nrniv/cellorder.h"
 
+#ifdef _OPENACC
+#include <openacc.h>
+#endif
+
 int use_interleave_permute;
 InterleaveInfo* interleave_info; // nrn_nthread array
 
@@ -418,6 +422,10 @@ void mk_cell_indices() {
 }
 #endif //INTERLEAVE_DEBUG
 
+#ifdef ENABLE_CUDA_INTERFACE
+void solve_interleaved_launcher(NrnThread *nt, InterleaveInfo *info, int ncell);
+#endif
+
 void solve_interleaved(int ith) {
   NrnThread* nt = nrn_threads + ith;
   InterleaveInfo& ii = interleave_info[ith];
@@ -428,13 +436,19 @@ void solve_interleaved(int ith) {
   int* cellsize = ii.cellsize;
   int ncell = nt->ncell;
 
-  #pragma acc parallel loop present(nt[0:1], stride[0:nstride], firstnode[0:ncell],\
+  #ifdef ENABLE_CUDA_INTERFACE
+    NrnThread* d_nt = (NrnThread*) acc_deviceptr(nt);
+    InterleaveInfo* d_info = (InterleaveInfo*) acc_deviceptr(interleave_info+ith);
+    solve_interleaved_launcher(d_nt, d_info, ncell);
+  #else
+    #pragma acc parallel loop present(nt[0:1], stride[0:nstride], firstnode[0:ncell],\
     lastnode[0:ncell], cellsize[0:ncell]) if(nt->compute_gpu)
-  for (int icell = 0; icell < ncell; ++icell) {
-    int icellsize = cellsize[icell];
-    triang_interleaved(nt, icell, icellsize, nstride, stride, lastnode);
-    bksub_interleaved(nt, icell, icellsize, nstride, stride, firstnode);
-  }
+    for (int icell = 0; icell < ncell; ++icell) {
+      int icellsize = cellsize[icell];
+      triang_interleaved(nt, icell, icellsize, nstride, stride, lastnode);
+      bksub_interleaved(nt, icell, icellsize, nstride, stride, firstnode);
+    }
+  #endif
 }
 
 #endif
