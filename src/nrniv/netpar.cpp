@@ -193,6 +193,7 @@ static IvocVect* max_histogram_;
 
 static int ocapacity_; // for spikeout_
 // require it to be smaller than  min_interprocessor_delay.
+extern double nrnmpi_step_wait_; // barrier at beginning of spike exchange.
 static double wt_; // wait time for nrnmpi_spike_exchange
 static double wt1_; // time to find the PreSyns and send the spikes.
 static int spfixout_capacity_;
@@ -452,6 +453,9 @@ static void calc_actual_mindelay() {
 #endif
 
 void nrn_spike_exchange_init() {
+    if (nrnmpi_step_wait_ >= 0.0) {
+        nrnmpi_step_wait_ = 0.0;
+    }
 #ifdef USENCS
     bgp_dma_setup();
     return;
@@ -557,6 +561,10 @@ void nrn_spike_exchange(NrnThread* nt) {
 	spbufout_->nspike = nout_;
 #endif
 	wt = nrnmpi_wtime();
+	if (nrnmpi_step_wait_ >= 0.) {
+		nrnmpi_barrier();
+		nrnmpi_step_wait_ += nrnmpi_wtime() - wt;
+	}
 	n = nrnmpi_spike_exchange();
 	wt_ = nrnmpi_wtime() - wt;
 	wt = nrnmpi_wtime();
@@ -649,6 +657,10 @@ void nrn_spike_exchange_compressed(NrnThread* nt) {
 	spfixout_[0] = (unsigned char)(nout_>>8);
 
 	wt = nrnmpi_wtime();
+	if (nrnmpi_step_wait_ >= 0.) {
+		nrnmpi_barrier();
+		nrnmpi_step_wait_ += nrnmpi_wtime() - wt;
+	}
 	n = nrnmpi_spike_exchange_compressed();
 	wt_ = nrnmpi_wtime() - wt;
 	wt = nrnmpi_wtime();

@@ -38,6 +38,7 @@ extern "C" {
 	char* (*nrnpy_callpicklef)(char*, size_t, int, size_t*);
 	Object* (*nrnpympi_alltoall)(Object*, int);
 	extern void nrn_prcellstate(int gid, const char* suffix);
+	double nrnmpi_step_wait_;
 #if PARANEURON
 	double nrnmpi_transfer_wait_;
 	double nrnmpi_splitcell_wait_;
@@ -491,6 +492,18 @@ static double step_time(void* v) {
 #if PARANEURON
 	w -= nrnmpi_transfer_wait_ + nrnmpi_splitcell_wait_;
 #endif
+	return w;
+}
+
+static double step_wait(void* v) {
+	if (ifarg(1)) {
+		nrnmpi_step_wait_ = chkarg(1, -1.0, 0.0);
+	}
+	double w =  nrnmpi_step_wait_;
+#if PARANEURON
+	//sadly, no calculation of transfer and multisplit barrier times.
+#endif
+	if (w < 0.) { w = 0.0; }
 	return w;
 }
 
@@ -954,6 +967,7 @@ static Member_func members[] = {
 	"time", pctime,
 	"wait_time", wait_time,
 	"step_time", step_time,
+	"step_wait", step_wait,
 	"send_time", send_time,
 	"event_time", event_time,
 	"integ_time", integ_time,
