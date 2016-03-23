@@ -1046,7 +1046,7 @@ ParallelContext
 
             wait = pc.wait_time() 
             pc.solve(tstop) 
-            wait = pc.wait_time() - wait 
+            wait = pc.wait_time() - wait - pc.step_wait()
 
 
          
@@ -1066,8 +1066,48 @@ ParallelContext
         The amount of time (seconds) 
         on a cpu spent integrating equations, checking thresholds, and delivering 
         events. It is essentially pc.integ_time + pc.event_time. 
-
+        It does not include gap junction voltage transfer time or multisplit
+        communication time.
          
+
+----
+
+
+.. method:: ParallelContext.step_wait
+
+
+    Syntax:
+        ``total = pc.step_wait()``
+
+        ``0 = pc.step_wait(-1)``
+
+
+    Description:
+        The barrier time (seconds) between the end of a step and the
+        beginning of spike exchange. Note that pc.wait_time() includes
+        this barrier time. step_wait is useful in calculating a more
+        accurate load balance (properly reduced by dynamic load imbalance)
+        and a better statistic for spike exchange communication time.
+         
+        The barrier overhead during a simulation can be turned off with
+        pc.step_wait(-1) in which case the time spent in
+        allgather spike exchange will include that barrier time. In this case
+        pc.step_wait() will return 0.0 . 
+
+        Prior to the existence of this function, load balance was generally
+        computed as (average step_time / maximum step_time). That is accurate
+        to the extent that each individual step on a given process takes
+        constant time but fails to the extent that there is significant
+        dynamic variation in a dt step on a given process during a run (e.g
+        a lot of variation in the number of spikes delivered per time step).
+
+        A better evaluation of load balance (accounting for dynamic load
+        imbalance as well as static load imbalance) is
+	(average step_time / maximum (step_time + step_wait))
+
+        Note that if static load imbalance dominates the load imbalance,
+        then one expects the minimum step_wait to be close to 0.
+
 
 ----
 
