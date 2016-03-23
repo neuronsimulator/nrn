@@ -101,6 +101,17 @@ void permute(T* data, int cnt, int sz, int layout, int* p) {
   delete [] data_orig;
 }
 
+static void invert_permute(int* p, int n) {
+  int* newp = new int[n];
+  for (int i=0; i < n; ++i) {
+    newp[p[i]] = i;
+  }
+  for (int i=0; i < n; ++i) {
+    p[i] = newp[i];
+  }
+  delete [] newp;
+}
+
 void update_pdata_values(Memb_list* ml, int type, NrnThread& nt) {
   // assumes AoS to SoA transformation already made since we are using
   // nrn_i_layout to determine indices into both ml->pdata and into target data
@@ -279,5 +290,6 @@ void permute_nodeindices(Memb_list* ml, int* p) {
   // increasing index. That becomes ml->_permute
 
   ml->_permute = nrn_index_sort(ml->nodeindices, ml->nodecount);
+  invert_permute(ml->_permute, ml->nodecount);
   permute_ptr(ml->nodeindices, ml->nodecount, ml->_permute);
 }
