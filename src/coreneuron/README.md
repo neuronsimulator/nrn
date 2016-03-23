@@ -1,11 +1,11 @@
 # CoreNEURON
-> Optimised simulator engine of [NEURON](https://www.neuron.yale.edu/neuron/) simulator
+> Optimised simulator engine for [NEURON](https://www.neuron.yale.edu/neuron/)
 
-The CoreNEURON is the reduced engine of the [NEURON](https://www.neuron.yale.edu/neuron/) simulator optimised for both memory usage and computational speed. Its goal is to simulate massive cell networks with minimal memory footprint and optimal performance.
+CoreNEURON is a simplified engine for the [NEURON](https://www.neuron.yale.edu/neuron/) simulator optimised for both memory usage and computational speed. Its goal is to simulate massive cell networks with minimal memory footprint and optimal performance.
 
 # Features
 
-The CoreNEURON supports the subset of features provided by the [NEURON](https://www.neuron.yale.edu/neuron/) simulator:
+CoreNEURON supports the following subset of features provided by [NEURON](https://www.neuron.yale.edu/neuron/):
 * FixedStep method
 * Todo
 
@@ -17,16 +17,16 @@ The CoreNEURON supports the subset of features provided by the [NEURON](https://
 
 # Installation
 
-First, install mod2c using instructions provided [here](http://github.com/BlueBrain/mod2c). Make sure to install mod2c and CoreNEURON in the same installation directory (using CMAKE\_INSTALL\_PREFIX).
+First, install mod2c using the instructions provided [here](http://github.com/BlueBrain/mod2c). Make sure to install mod2c and CoreNEURON in the same installation directory (using CMAKE\_INSTALL\_PREFIX).
 
-Set appropriate C and CXX compiler:
+Set the appropriate MPI wrappers for the C and C++ compilers, e.g.:
 
 ```bash
 export CC=mpicc
 export CXX=mpicxx
 ```
 
-The workflow of building the CoreNEURON is slightly different from the NEURON one, especially considering the use of **nrnivmodl**. Currently we do not provide **nrnivmodl** for CoreNEURON and hence the user needs to provide paths of mod file directories (semicolon separated) at the time of the build process using *ADDITIONAL_MECHPATH* variable:
+The workflow for building CoreNEURON is slightly different from that of NEURON, especially considering the use of **nrnivmodl**. Currently we do not provide **nrnivmodl** for CoreNEURON and hence the user needs to provide paths of mod file directories (semicolon separated) at the time of the build process using the *ADDITIONAL_MECHPATH* variable:
 
 ```bash
 cd CoreNeuron
@@ -36,7 +36,7 @@ make
 make install
 ```
 
-On Cray system the user has to provide MPI library path as:
+On a Cray system the user has to provide the path to the MPI library as follows:
 ```bash
 export CC=`which cc`
 export CXX=`which CC`
@@ -46,8 +46,8 @@ cmake -DMPI_C_INCLUDE_PATH=$MPICH_DIR/include -DMPI_C_LIBRARIES=$MPICH_DIR/lib
 We have tested the build process on the following platforms:
 
 * Blue Gene/Q: XLC/GCC
-* x86 : Intel, PGI, GCC, Cray
-* OSX : Clang
+* x86: Intel, PGI, GCC, Cray
+* OSX: Clang
 
 
 # Optimization Flags
@@ -59,18 +59,19 @@ cmake .. -DCMAKE_CXX_FLAGS="-O3 -qtune=qp -qarch=qp -q64 -qhot=simd -qsmp -qthre
 ```
 
 * By default OpenMP threading is enabled. You can disable it with -DCORENEURON_OPENMP=OFF
-* By default CoreNEURON (And NEURON) uses the AoS (Array of Structs) memory layout for all data structures. For the efficient memory access and vectorization you can use the SoA (Struct of Array) layout by adding "-DLAYOUT=0" to the C/C++ compiler flags (0 = SoA and 1 = AoS) .
+* By default CoreNEURON (And NEURON) uses the AoS (Array of Structs) memory layout for all data structures. For efficient memory access and vectorization you can use the SoA (Struct of Array) layout by adding "-DLAYOUT=0" to the C/C++ compiler flags (0 = SoA and 1 = AoS).
+* If the default compiler flags are not supported, try -DCMAKE_BUILD_TARGET=SOME_TARGET
 
 
 # RUNNING SIMULATION:
 
-Note that the CoreNEURON simulator dependends on the NEURON one to build the network model, see [NEURON](https://www.neuron.yale.edu/neuron/) documentation for more information. Once you build the model using NEURON, you can launch CoreNEURON on the same or different machine as:
+Note that the CoreNEURON simulator dependends on NEURON to build the network model: see [NEURON](https://www.neuron.yale.edu/neuron/) documentation for more information. Once you build the model using NEURON, you can launch CoreNEURON on the same or different machine by:
 ```bash
 export OMP_NUM_THREADS=8     #set appropriate value
 
 mpiexec -np 2 /path/to/isntall/directory/coreneuron_exec -e 10 -d /path/to/model/built/by/neuron -mpi
 ```
-See information below to understand the need of different input flags.
+See below for information on the different input flags.
 
 In order to see the command line options, you can use:
 
@@ -105,8 +106,14 @@ In order to see the command line options, you can use:
 
 # Results
 
-Currently CoreNEURON only outputs information about spikes. When running the simulation, each MPI rank writes spike information into out.#mpi_rank file. These files should be combined and sorted in order to compare with NEURON spike output.
+Currently CoreNEURON only outputs spike data. When running the simulation, each MPI rank writes spike information
+into a file `out.#mpi_rank`. These files should be combined and sorted to compare with NEURON spike output.
 
 ## License
 * See LICENSE.txt
 * See [NEURON](https://www.neuron.yale.edu/neuron/)
+
+## Contributors
+To facilitate the future distributions of the software the Blue Brain Project wishes to remain the sole
+owner of the copyright. Therefore we will ask contributors to not modify the existing copyright.
+Contributors will however be gratefully acknowledged in the corresponding CREDIT.txt file.
