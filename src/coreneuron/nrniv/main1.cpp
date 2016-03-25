@@ -148,69 +148,71 @@ int main1( int argc, char **argv, char **env )
     // alloctae buffer for mpi communication
     mk_spikevec_buffer( input_params.spikebuf );
 
-    if( input_params.compute_gpu) {
-        setup_nrnthreads_on_device(nrn_threads, nrn_nthread);
-    }
+    #pragma acc data copyin (celsius)
+    {
+        if( input_params.compute_gpu) {
+            setup_nrnthreads_on_device(nrn_threads, nrn_nthread);
+        }
 
-    // call prcellstae for prcellgid
-    if ( input_params.prcellgid >= 0 ) {
-        if(input_params.compute_gpu)
-            sprintf( prcellname, "%s_gpu_init", prprefix);
-        else
-            strcpy( prcellname, "cpu_init");
-        update_nrnthreads_on_host(nrn_threads, nrn_nthread);
-        prcellstate( input_params.prcellgid, prcellname );
-    }
+        // call prcellstae for prcellgid
+        if ( input_params.prcellgid >= 0 ) {
+            if(input_params.compute_gpu)
+                sprintf( prcellname, "%s_gpu_init", prprefix);
+            else
+                strcpy( prcellname, "cpu_init");
+            update_nrnthreads_on_host(nrn_threads, nrn_nthread);
+            prcellstate( input_params.prcellgid, prcellname );
+        }
 
-    report_mem_usage( "After mk_spikevec_buffer" );
+        report_mem_usage( "After mk_spikevec_buffer" );
 
-    nrn_finitialize( 1, input_params.voltage );
+        nrn_finitialize( 1, input_params.voltage );
 
-    report_mem_usage( "After nrn_finitialize" );
+        report_mem_usage( "After nrn_finitialize" );
 
-    // call prcellstae for prcellgid
-    if ( input_params.prcellgid >= 0 ) {
-        if(input_params.compute_gpu)
-            sprintf( prcellname, "%s_gpu_t%g", prprefix, t);
-        else
-            sprintf( prcellname, "cpu_t%g", t );
-        update_nrnthreads_on_host(nrn_threads, nrn_nthread);
-        prcellstate( input_params.prcellgid, prcellname );
-    }
+        // call prcellstae for prcellgid
+        if ( input_params.prcellgid >= 0 ) {
+            if(input_params.compute_gpu)
+                sprintf( prcellname, "%s_gpu_t%g", prprefix, t);
+            else
+                sprintf( prcellname, "cpu_t%g", t );
+            update_nrnthreads_on_host(nrn_threads, nrn_nthread);
+            prcellstate( input_params.prcellgid, prcellname );
+        }
 
-    // handle forwardskip
-    if ( input_params.forwardskip > 0.0 ) {
-        handle_forward_skip( input_params.forwardskip, input_params.prcellgid );
-    }
+        // handle forwardskip
+        if ( input_params.forwardskip > 0.0 ) {
+            handle_forward_skip( input_params.forwardskip, input_params.prcellgid );
+        }
 
-    //dump_nt_to_file("dump_init", nrn_threads, nrn_nthread);
-    //modify_data_on_device(nrn_threads, nrn_nthread);
-    //update_nrnthreads_on_host(nrn_threads, nrn_nthread);
-    //dump_nt_to_file("dump_upd", nrn_threads, nrn_nthread);
+        //dump_nt_to_file("dump_init", nrn_threads, nrn_nthread);
+        //modify_data_on_device(nrn_threads, nrn_nthread);
+        //update_nrnthreads_on_host(nrn_threads, nrn_nthread);
+        //dump_nt_to_file("dump_upd", nrn_threads, nrn_nthread);
 
-#ifdef ENABLE_SELECTIVE_PROFILING
-    start_profile();
-#endif
+        #ifdef ENABLE_SELECTIVE_PROFILING
+            start_profile();
+        #endif
 
-    /// Solver execution
-    BBS_netpar_solve( input_params.tstop );
+        /// Solver execution
+        BBS_netpar_solve( input_params.tstop );
 
-    // Report global cell statistics
-    report_cell_stats();
+        // Report global cell statistics
+        report_cell_stats();
 
+        #ifdef ENABLE_SELECTIVE_PROFILING
+            stop_profile();
+        #endif
 
-#ifdef ENABLE_SELECTIVE_PROFILING
-    stop_profile();
-#endif
-
-    // prcellstate after end of solver
-    if ( input_params.prcellgid >= 0 ) {
-        if(input_params.compute_gpu)
-            sprintf( prcellname, "%s_gpu_t%g", prprefix, t);
-        else
-            sprintf( prcellname, "cpu_t%g", t );
-        update_nrnthreads_on_host(nrn_threads, nrn_nthread);
-        prcellstate( input_params.prcellgid, prcellname );
+        // prcellstate after end of solver
+        if ( input_params.prcellgid >= 0 ) {
+            if(input_params.compute_gpu)
+                sprintf( prcellname, "%s_gpu_t%g", prprefix, t);
+            else
+                sprintf( prcellname, "cpu_t%g", t );
+            update_nrnthreads_on_host(nrn_threads, nrn_nthread);
+            prcellstate( input_params.prcellgid, prcellname );
+        }
     }
 
     // write spike information to input_params.outpath

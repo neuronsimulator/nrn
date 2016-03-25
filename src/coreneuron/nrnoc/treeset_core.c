@@ -39,6 +39,7 @@ sparse matrix, multisplit, or legacy features.
 static void nrn_rhs(NrnThread* _nt) {
 	int i, i1, i2, i3;
 	NrnThreadMembList* tml;
+    int stream_id = _nt->stream_id;
 
 	i1 = 0;
 	i2 = i1 + _nt->ncell;
@@ -51,7 +52,7 @@ static void nrn_rhs(NrnThread* _nt) {
     double *vec_v = &(VEC_V(0));
     int *parent_index = _nt->_v_parent_index;
 
-    #pragma acc parallel loop present(vec_rhs[0:i3], vec_d[0:i3]) if(_nt->compute_gpu)
+    #pragma acc parallel loop present(vec_rhs[0:i3], vec_d[0:i3]) if(_nt->compute_gpu) async(stream_id)
 	for (i = i1; i < i3; ++i) {
 		vec_rhs[i] = 0.;
 		vec_d[i] = 0.;
@@ -74,7 +75,7 @@ hoc_warning("errno set during calculation of currents", (char*)0);
 		rhs += ai_j*(vi_j - vi)
 	*/
     #pragma acc parallel loop present(vec_rhs[0:i3], vec_d[0:i3], vec_a[0:i3], \
-        vec_b[0:i3], vec_v[0:i3], parent_index[0:i3]) if(_nt->compute_gpu)
+        vec_b[0:i3], vec_v[0:i3], parent_index[0:i3]) if(_nt->compute_gpu) async(stream_id)
 	for (i = i2; i < i3; ++i) {
 		double dv = vec_v[parent_index[i]] - vec_v[i];
 		/* our connection coefficients are negative so */
@@ -96,6 +97,7 @@ This is a common operation for fixed step, cvode, and daspk methods
 static void nrn_lhs(NrnThread* _nt) {
 	int i, i1, i2, i3;
 	NrnThreadMembList* tml;
+    int stream_id = _nt->stream_id;
 
 	i1 = 0;
 	i2 = i1 + _nt->ncell;
@@ -127,7 +129,7 @@ has taken effect
 
 	/* now add the axial currents */
         #pragma acc parallel loop present(vec_d[0:i3], vec_a[0:i3], vec_b[0:i3], \
-            parent_index[0:i3]) if(_nt->compute_gpu)
+            parent_index[0:i3]) if(_nt->compute_gpu) async(stream_id)
         for (i=i2; i < i3; ++i) {
             #pragma acc atomic update
 		    vec_d[i] -= vec_b[i];

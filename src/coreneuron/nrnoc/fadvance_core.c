@@ -109,18 +109,19 @@ static void update(NrnThread* _nt){
 	int i, i1, i2;
 	i1 = 0;
 	i2 = _nt->end;
+    int stream_id = _nt->stream_id;
 
     double *vec_v = &(VEC_V(0));
     double *vec_rhs = &(VEC_RHS(0));
 
 	/* do not need to worry about linmod or extracellular*/
 	if (secondorder) {
-        #pragma acc parallel loop present(vec_v[0:i2], vec_rhs[0:i2]) if(_nt->compute_gpu)
+        #pragma acc parallel loop present(vec_v[0:i2], vec_rhs[0:i2]) if(_nt->compute_gpu) async(stream_id)
 		for (i=i1; i < i2; ++i) {
 			vec_v[i] += 2.*vec_rhs[i];
 		}
 	}else{
-        #pragma acc parallel loop present(vec_v[0:i2], vec_rhs[0:i2]) if(_nt->compute_gpu)
+        #pragma acc parallel loop present(vec_v[0:i2], vec_rhs[0:i2]) if(_nt->compute_gpu) async(stream_id)
 		for (i=i1; i < i2; ++i) {
 			vec_v[i] += vec_rhs[i];
 		}
@@ -166,10 +167,12 @@ static void* nrn_fixed_step_thread(NrnThread* nth) {
 	deliver_net_events(nth);
 	nth->_t += .5 * nth->_dt;
 
+    double *t_ptr = &(nth->_t);
+    int stream_id = nth->stream_id;
+
     /*@todo: do we need to update nth->_t on GPU: Yes (Michael, but can launch kernel) */
-    #ifdef _OPENACC
-        acc_update_device(&(nth->_t), sizeof(double));
-    #endif
+    #pragma acc update device(t_ptr[0:1]) if(nth->compute_gpu) async(stream_id)
+    #pragma acc wait(stream_id)
 
 	fixed_play_continuous(nth);
 	setup_tree_matrix_minimal(nth);
@@ -179,9 +182,8 @@ static void* nrn_fixed_step_thread(NrnThread* nth) {
 	nth->_t += .5 * nth->_dt;
 
     /*@todo: do we need to update nth->_t on GPU */
-    #ifdef _OPENACC
-        acc_update_device(&(nth->_t), sizeof(double));
-    #endif
+    #pragma acc update device(t_ptr[0:1]) if(nth->compute_gpu) async(stream_id)
+    #pragma acc wait(stream_id)
 
 	fixed_play_continuous(nth);
 	nonvint(nth);

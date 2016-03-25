@@ -184,11 +184,11 @@ void nrn_wrote_conc(int type, double* p1, int p2, int it, double **gimap, double
 #ifndef _OPENACC
     static int flag = 1;
     if(flag) {
-        printf("\n ERROR: nrn_nrn_wrote_conc not supported on GPU!\n");
+        /** need to check this as this kernel was failing */
+        printf("\n WARNING/ERROR: nrn_nrn_wrote_conc not supported on GPU? Verigy!\n");
         flag = 0;
     }
 #endif
-    return;
 	if (it & 04) {
 #if LAYOUT <= 0 /* SoA */
 		int _iml = 0;
@@ -300,8 +300,6 @@ static void ion_init(NrnThread* nt, Memb_list* ml, int type) {
 	int _iml;
 	double* pd; Datum* ppd;
 	(void)nt; /* unused */
-
-    #pragma acc declare present_or_copyin (celsius)
 
 /*printf("ion_init %s\n", memb_func[type].sym->name);*/
 #if LAYOUT == 1 /*AoS*/

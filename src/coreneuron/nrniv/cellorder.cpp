@@ -435,6 +435,7 @@ void solve_interleaved(int ith) {
   int* lastnode = ii.lastnode;
   int* cellsize = ii.cellsize;
   int ncell = nt->ncell;
+  int stream_id = nt->stream_id;
 
   #ifdef ENABLE_CUDA_INTERFACE
     NrnThread* d_nt = (NrnThread*) acc_deviceptr(nt);
@@ -442,12 +443,13 @@ void solve_interleaved(int ith) {
     solve_interleaved_launcher(d_nt, d_info, ncell);
   #else
     #pragma acc parallel loop present(nt[0:1], stride[0:nstride], firstnode[0:ncell],\
-    lastnode[0:ncell], cellsize[0:ncell]) if(nt->compute_gpu)
+    lastnode[0:ncell], cellsize[0:ncell]) if(nt->compute_gpu) async(stream_id)
     for (int icell = 0; icell < ncell; ++icell) {
       int icellsize = cellsize[icell];
       triang_interleaved(nt, icell, icellsize, nstride, stride, lastnode);
       bksub_interleaved(nt, icell, icellsize, nstride, stride, firstnode);
     }
+    #pragma acc wait(nt->stream_id)
   #endif
 }
 

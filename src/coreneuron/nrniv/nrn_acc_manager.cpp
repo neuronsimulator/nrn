@@ -422,6 +422,7 @@ void update_nrnthreads_on_host(NrnThread *threads, int nthreads) {
 
     int i;
     NetReceiveBuffer_t *nrb;
+    double *celsius_ptr = &celsius;
 
     for( i = 0; i < nthreads; i++) {
 
@@ -439,6 +440,7 @@ void update_nrnthreads_on_host(NrnThread *threads, int nthreads) {
             acc_update_self(nt->_actual_b, ne*sizeof(double));
             acc_update_self(nt->_actual_v, ne*sizeof(double));
             acc_update_self(nt->_actual_area, ne*sizeof(double));
+            #pragma acc update self(celsius_ptr[0:1])
 
             /* @todo: nt._ml_list[tml->index] = tml->ml; */
 
