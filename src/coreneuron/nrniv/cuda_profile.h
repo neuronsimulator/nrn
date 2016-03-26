@@ -3,5 +3,6 @@
 
 void start_cuda_profile();
 void stop_cuda_profile();
+void print_gpu_memory_usage();
 
 #endif

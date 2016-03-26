@@ -5,6 +5,7 @@
 #include "coreneuron/nrniv/vrecitem.h"
 #include "coreneuron/nrniv/profiler_interface.h"
 #include "coreneuron/nrniv/cellorder.h"
+#include "coreneuron/nrniv/cuda_profile.h"
 
 #ifdef _OPENACC
 #include<openacc.h>
@@ -63,6 +64,7 @@ void setup_nrnthreads_on_device(NrnThread *threads, int nthreads)  {
         double *d__data;                // nrn_threads->_data on device
 
         printf("\n -----------COPYING %d'th NrnThread TO DEVICE --------------- \n", i);
+        print_gpu_memory_usage();
 
         /* -- copy _data to device -- */
 
