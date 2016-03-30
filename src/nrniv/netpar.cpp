@@ -63,6 +63,7 @@ extern void nrn_gidout_iter(PFIO);
 extern Object* nrn_gid2obj(int);
 extern PreSyn* nrn_gid2presyn(int);
 extern int nrn_gid_exists(int);
+extern double nrnmpi_step_wait_; // barrier at beginning of spike exchange.
 
 // BGPDMA can be 0,1,2,3,6,7
 // (BGPDMA & 1) > 0 means multisend ISend allowed
@@ -193,7 +194,6 @@ static IvocVect* max_histogram_;
 
 static int ocapacity_; // for spikeout_
 // require it to be smaller than  min_interprocessor_delay.
-extern double nrnmpi_step_wait_; // barrier at beginning of spike exchange.
 static double wt_; // wait time for nrnmpi_spike_exchange
 static double wt1_; // time to find the PreSyns and send the spikes.
 static int spfixout_capacity_;
