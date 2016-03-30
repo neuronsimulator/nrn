@@ -1,5 +1,6 @@
 #include <../../nrnconf.h>
 #undef check
+#include "nrnmpi.h"
 #include "nonlinz.h"
 #include <InterViews/resource.h>
 #if defined(__GO32__)
@@ -298,7 +299,7 @@ Imp::Imp(){
 	
 	sloc_ = NULL;
 	xloc_ = 0.;
-	istim = 0;
+	istim = -1;
 	deltafac_ = .001;
 }
 
@@ -361,7 +362,7 @@ int Imp::loc(Section* sec, double x){
 double Imp::transfer_amp(Section* sec, double x){
 	check();
 	int vloc = loc(sec, x);
-	return nli_ ? nli_->transfer_amp(istim, vloc) : abs(transfer[vloc]);
+	return nli_ ? nli_->transfer_amp(vloc) : abs(transfer[vloc]);
 }
 
 double Imp::input_amp(Section* sec, double x){
@@ -371,7 +372,7 @@ double Imp::input_amp(Section* sec, double x){
 
 double Imp::transfer_phase(Section* sec, double x){
 	check();
-	return nli_ ? nli_->transfer_phase(istim, loc(sec, x)) : arg(transfer[loc(sec, x)]);
+	return nli_ ? nli_->transfer_phase(loc(sec, x)) : arg(transfer[loc(sec, x)]);
 }
 
 double Imp::input_phase(Section* sec, double x){
@@ -401,19 +402,26 @@ void Imp::compute(double freq, bool nonlin){
 	if (sloc_) {
 		istim = loc(sloc_, xloc_);
 	}else{
+		istim = -1;
+		if (nrnmpi_numprocs == 0) {
 		hoc_execerror("Impedance stimulus location is not specified.", 0);
+		}
 	}
-	if (n == 0) return;
+	if (n == 0 && nrnmpi_numprocs == 1) return;
 	double omega = 1e-6*2*3.14159265358979323846*freq; // wC has units of mho/cm2
 	if (nonlin) {
 		if (!nli_) {
 			nli_ = new NonLinImp();
 		}
 		nli_->compute(omega, deltafac_);
+		nli_->solve(istim);
 	}else{
 		if (nli_) {
 			delete nli_;
 			nli_ = NULL;
+		}
+		if (istim == -1) {
+		hoc_execerror("Impedance stimulus location is not specified.", 0);
 		}
 		setmat(omega);
 		LUDecomp();

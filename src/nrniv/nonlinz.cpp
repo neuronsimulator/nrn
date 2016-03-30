@@ -4,6 +4,7 @@
 #include <InterViews/resource.h>
 #include "nonlinz.h"
 #include "nrnoc2iv.h"
+#include "nrnmpi.h"
 extern "C" {
 #include "cspmatrix.h"
 #include "membfunc.h"
@@ -17,8 +18,11 @@ extern void v_setup_vectors();
 extern void nrn_rhs(NrnThread*);
 extern int nrndae_extra_eqn_count();
 extern Symlist *hoc_built_in_symlist;
+extern void (*nrnthread_v_transfer_)(NrnThread*);
 }
 
+extern void pargap_jacobi_rhs(double*, double*);
+extern void pargap_jacobi_setup(int mode);
 
 class NonLinImpRep {
 public:
@@ -29,6 +33,7 @@ public:
 	void dids();
 	void dsdv();
 	void dsds();
+	void gapsolve();
 
 	char* m_;
 	int scnt_; // structure_change
@@ -45,7 +50,7 @@ public:
 	void ode(int, Memb_list*);
 
 	double omega_;
-	int iloc_; // current injection site of last ztransfer calculation
+	int iloc_; // current injection site of last solve
 	float* vsymtol_;
 };
 
@@ -57,32 +62,33 @@ NonLinImp::~NonLinImp() {
 		delete rep_;
 	}
 }
-double NonLinImp::transfer_amp(int curloc, int vloc) {
-	solve(curloc);
+double NonLinImp::transfer_amp(int vloc) {
 	double x = rep_->rv_[vloc];
 	double y = rep_->jv_[vloc];
 	return sqrt(x*x+y*y);
 }
 double NonLinImp::input_amp(int curloc) {
 	solve(curloc);
+	if (curloc < 0) { return 0.0; }
 	double x = rep_->rv_[curloc];
 	double y = rep_->jv_[curloc];
 	return sqrt(x*x+y*y);
 }
-double NonLinImp::transfer_phase(int curloc, int vloc) {
-	solve(curloc);
+double NonLinImp::transfer_phase(int vloc) {
 	double x = rep_->rv_[vloc];
 	double y = rep_->jv_[vloc];
 	return atan2(y, x);
 }
 double NonLinImp::input_phase(int curloc) {
 	solve(curloc);
+	if (curloc < 0) { return 0.0; }
 	double x = rep_->rv_[curloc];
 	double y = rep_->jv_[curloc];
 	return atan2(y,x);
 }
 double NonLinImp::ratio_amp(int clmploc, int vloc) {
 	solve(clmploc);
+	if (clmploc < 0) { return 0.0; }
 	double ax,bx,cx, ay,by,cy,bb;
 	ax = rep_->rv_[vloc];
 	ay = rep_->jv_[vloc];
@@ -103,12 +109,14 @@ void NonLinImp::compute(double omega, double deltafac) {
 	if (!rep_) {
 		rep_ = new NonLinImpRep();
 	}
+	if (rep_->neq_ == 0) { return; }
 	if (nrndae_extra_eqn_count() > 0) {
 		hoc_execerror("Impedance calculation with LinearMechanism not implemented", 0);
 	}
 	if (nrn_threads->_ecell_memb_list) {
 		hoc_execerror("Impedance calculation with extracellular not implemented", 0);
 	}
+
 	rep_->omega_ = 1000.* omega;
 	rep_->delta(deltafac);
 	// fill matrix
@@ -134,7 +142,7 @@ void NonLinImp::compute(double omega, double deltafac) {
 		hoc_execerror("cmplx_spFactor error:", "Singular");
 	}  
 
-	rep_->iloc_ = -1;
+	rep_->iloc_ = -2;
 }
 
 void NonLinImp::solve(int curloc) {
@@ -144,13 +152,18 @@ void NonLinImp::solve(int curloc) {
 	}
 	if (rep_->iloc_ != curloc) {
 		int i;
+		rep_->iloc_ = curloc;
 		for (i=0; i < rep_->neq_; ++i) {
 			rep_->rv_[i] = 0;
 			rep_->jv_[i] = 0;
 		}
-		rep_->rv_[curloc] = 1.e2/NODEAREA(_nt->_v_node[curloc]);
-		cmplx_spSolve(rep_->m_, rep_->rv_-1, rep_->rv_-1, rep_->jv_-1, rep_->jv_-1);
-		rep_->iloc_ = curloc;
+		if (curloc >= 0) {rep_->rv_[curloc] = 1.e2/NODEAREA(_nt->_v_node[curloc]);}
+		if (nrnthread_v_transfer_) {
+		  rep_->gapsolve();
+		}else{
+		  assert(rep_->m_);
+		  cmplx_spSolve(rep_->m_, rep_->rv_-1, rep_->rv_-1, rep_->jv_-1, rep_->jv_-1);
+		}
 	}
 }
 
@@ -161,6 +174,7 @@ NonLinImpRep::NonLinImpRep() {
 	int err;
 	int i, j, ieq, cnt;
 	NrnThread* _nt = nrn_threads;
+	m_ = NULL;
 
 	vsymtol_ = NULL;
 	Symbol* vsym = hoc_table_lookup("v", hoc_built_in_symlist);
@@ -191,6 +205,7 @@ NonLinImpRep::NonLinImpRep() {
 	}
 	neq_v_ = n_v_ + n_ext_ + n_lin_;
 	neq_ = neq_v_ + n_ode_;
+	if (neq_ == 0) { return; }
 	m_ = cmplx_spCreate(neq_, 1, &err);
 	assert(err == spOKAY);
 	pv_ = new double*[neq_];
@@ -220,6 +235,7 @@ NonLinImpRep::NonLinImpRep() {
 }
 
 NonLinImpRep::~NonLinImpRep() {
+	if (!m_) { return; }
 	cmplx_spDestroy(m_);
 	delete [] pv_;
 	delete [] pvdot_;
@@ -521,3 +537,102 @@ void NonLinImpRep::ode(int im, Memb_list* ml) { // assume there is in fact an od
 	}
 }
 
+void NonLinImpRep::gapsolve() {
+  // On entry, rv_ and jv_ contain the complex b for A*x = b.
+  // On return rv_ and jv_ contain complex solution, x.
+  // m_ is the factored matrix for the trees without gap junctions
+  // Jacobi method (easy for parallel)
+  // A = D + R
+  // D*x_(k+1) = (b - R*x_(k))
+  // D is m_ (and includes the gap junction contribution to the diagonal)
+  // R is the off diagonal matrix of the gaps.
+
+  // one and only one stimulus
+#if NRNMPI
+  if (nrnmpi_numprocs > 1 && nrnmpi_int_sum_reduce(iloc_ >= 0 ? 1 : 0) != 1) {
+    if (nrnmpi_myid == 0) {
+      hoc_execerror("there can be one and only one impedance stimulus", 0);
+    }
+  }
+#endif
+
+  double *rx, *jx, *rx1, *jx1, *rb, *jb;
+  if (neq_) {
+    rx = new double[neq_];
+    jx = new double[neq_];
+    rx1 = new double[neq_];
+    jx1 = new double[neq_];
+    rb = new double[neq_];
+    jb = new double[neq_];
+  }
+
+  // initialize for first iteration
+  for (int i=0; i < neq_; ++i) {
+    rx[i] = jx[i] = 0.0;
+    rb[i] = rv_[i];
+    jb[i] = jv_[i];
+  }
+
+  pargap_jacobi_setup(0);
+
+  // iterate till change in x is small
+  double tol = 1e-9;
+  int maxiter = 500;
+  
+  int success = 0;
+  int iter;
+
+  for (iter = 1; iter <= maxiter; ++iter) {
+    if (neq_) {
+      cmplx_spSolve(m_, rb-1, rx1-1, jb-1, jx1-1);
+    }
+    
+    // if any change in x > tol, then do another iteration.
+    success = 1;
+    for (int i=0; i < neq_; ++i) {
+      double err = fabs(rx1[i] - rx[i]) + fabs(jx1[i] - jx[i]);
+      if (err > tol) {
+        success = 0;
+        break;
+      }
+    }
+#if NRNMPI
+    if (nrnmpi_numprocs > 1) {
+      success = nrnmpi_int_sum_reduce(success) / nrnmpi_numprocs;
+    }
+#endif
+    if (success) {
+      for (int i=0; i < neq_; ++i) {
+        rv_[i] = rx1[i];
+        jv_[i] = jx1[i];
+      }
+      break;
+    }
+
+    // setup for next iteration
+    for (int i=0; i < neq_; ++i) {
+      rx[i] = rx1[i];
+      jx[i] = jx1[i];
+      rb[i] = rv_[i];
+      jb[i] = jv_[i];
+    }
+    pargap_jacobi_rhs(rb, rx);
+    pargap_jacobi_rhs(jb, jx);
+  }
+
+  pargap_jacobi_setup(1); // tear down
+
+  if (neq_) {
+    delete [] rx;
+    delete [] jx;
+    delete [] rx1;
+    delete [] jx1;
+    delete [] rb;
+    delete [] jb;
+  }
+
+  if (!success) {
+    execerror("Impedance calculation did not converge", 0);
+  }
+  if (nrnmpi_myid == 0) printf("success in %d iterations\n", iter);
+}

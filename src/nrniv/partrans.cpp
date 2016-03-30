@@ -158,6 +158,12 @@ static int target_ptr_need_update_cnt_ = 0;
 static bool is_setup_;
 static void alloclists();
 
+// deleted when setup_transfer called
+// defined persistently when pargap_jacobi_setup(0) called.
+static int imped_current_type_count_;
+static int* imped_current_type_;
+static Memb_list** imped_current_ml_;
+
 // Find the Node associated with the voltage.
 // Easy if v in the currently accessed section.
 static Node* pv2node(double* pv) {
@@ -559,6 +565,11 @@ void nrnmpi_setup_transfer() {
 	alloclists();
 	is_setup_ = true;
 //	printf("nrnmpi_setup_transfer\n");
+	if (imped_current_type_count_) {
+		imped_current_type_count_ = 0;
+		delete [] imped_current_type_;
+		delete [] imped_current_ml_;
+	}
 	if (insrc_buf_) { delete [] insrc_buf_; insrc_buf_ = 0; }
 	if (outsrc_buf_) { delete [] outsrc_buf_; outsrc_buf_ = 0; }
 	if (sid2insrc_) { delete sid2insrc_; sid2insrc_ = 0; }
@@ -763,4 +774,117 @@ void nrn_partrans_clear() {
 	if (poutsrc_) { delete [] poutsrc_ ; poutsrc_ = 0; }
 	if (poutsrc_indices_) { delete [] poutsrc_indices_ ; poutsrc_indices_ = 0; }
 	nrn_mk_transfer_thread_data_ = 0;
+}
+
+// assume one thread and no extracellular
+
+static double *vgap1, *vgap2;
+
+void pargap_jacobi_setup(int mode) {
+  if (!nrnthread_v_transfer_) { return; }
+
+  // list of gap junction types and memb_list for each
+  if (imped_current_type_count_ == 0 && targets_ && targets_->count() > 0) {
+    for (int i=0; i < targets_->count(); ++i) {
+      Point_process* pp = target_pntlist_->item(i);
+      if (!pp) {
+        hoc_execerror("For impedance, pc.target_var requires that its first arg be a reference to the POINT_PROCESS", 0);
+      }
+      int type = pp->prop->type;
+      if (imped_current_type_count_ == 0) {
+        imped_current_type_count_ = 1;
+        imped_current_type_ = new int[5];
+        imped_current_ml_ = new Memb_list*[5];
+        imped_current_type_[0] = type;
+      }
+      int add = 1;
+      for (int k=0; k < imped_current_type_count_; ++k) {
+        if (type == imped_current_type_[k]) {
+          add = 0;
+          break;
+        }
+      }
+      if (add) {
+        assert(imped_current_type_count_ < 5);
+        imped_current_type_[imped_current_type_count_] = type;
+        imped_current_type_count_ += 1;
+      }
+    }
+    NrnThread* nt = nrn_threads;
+    for (int k=0; k < imped_current_type_count_; ++k) {
+      for (NrnThreadMembList* tml = nt->tml; tml; tml = tml->next) {
+        if (imped_current_type_[k] == tml->index) {
+          imped_current_ml_[k] = tml->ml;
+        }
+      }
+    }
+    // are all the instances in use
+    int ninst = 0;
+    for (int k=0; k < imped_current_type_count_; ++k) {
+      ninst += imped_current_ml_[k]->nodecount;
+    }
+    if (ninst != targets_->count()) {
+      char buf[100];
+      sprintf(buf, "that is %d != %ld", ninst, targets_->count());
+      hoc_execerror("number of gap junctions not equal to number of pc.transfer_var", buf);
+    }
+  }
+  TransferThreadData* ttd = transfer_thread_data_;
+  if (mode == 0) { // setup
+    if (visources_->count()) {vgap1 = new double[visources_->count()];}
+    if (ttd && ttd->cnt) {vgap2 = new double[ttd->cnt];}
+    for (int i=0; i < visources_->count(); ++i) {
+      vgap1[i] = NODEV(visources_->item(i));
+    }
+    if (ttd) for (int i=0; i < ttd->cnt; ++i) {
+      vgap2[i] = *(ttd->tv[i]);
+    }
+  }else{ // tear down
+    for (int i=0; i < outsrc_buf_size_; ++i) {
+      *poutsrc_[i] = vgap1[i];
+    }
+    if (ttd) for (int i=0; i < ttd->cnt; ++i) {
+      *(ttd->tv[i]) = vgap2[i];
+    }
+    if (vgap1) { delete [] vgap1;  vgap1 = NULL; }
+    if (vgap2) { delete [] vgap2;  vgap2 = NULL; }
+  }
+}
+
+void pargap_jacobi_rhs(double* b, double* x) {
+  // helper for complex impedance with parallel gap junctions
+  // b = b - R*x  R are the off diagonal gap elements of the jacobian.
+  // we presume 1 thread. First nrn_thread[0].end equations are in node order.
+  if (!nrnthread_v_transfer_) { return; }
+
+  NrnThread* _nt = nrn_threads;
+
+  // transfer gap node voltages to gap vpre
+  for (int i=0; i < visources_->count(); ++i) {
+    Node* nd = visources_->item(i);
+    NODEV(nd) = x[nd->v_node_index];
+  }  
+  mpi_transfer();
+  thread_transfer(_nt);
+
+  // set gap node voltages to 0 so we can use nrn_cur to set rhs
+  for (int i=0; i < visources_->count(); ++i) {
+    Node* nd = visources_->item(i);
+    NODEV(nd) = 0.0;
+    NODERHS(nd) = 0.0;
+  }
+
+  for (int k=0; k < imped_current_type_count_; ++k) {
+    int type = imped_current_type_[k];
+    Memb_list* ml = imped_current_ml_[k];
+    (*memb_func[type].current)(_nt, ml, type);
+  }
+
+  // possibly many gap junctions in same node (and possible even different
+  // types) but rhs is the accumulation of all those instances at each node
+  // so ...  The only thing that can go wrong is if there are intances of
+  // gap junctions that are not being used  (not in the target list).
+  for (int i=0; i < _nt->end; ++i) {
+    b[i] += VEC_RHS(i);
+  }
 }
