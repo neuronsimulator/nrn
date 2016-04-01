@@ -240,7 +240,10 @@ static double compute(void* v) {
 
 static double location(void* v) {
 	Imp* imp = (Imp*)v;
-	imp->location(chk_access(), chkarg(1, 0., 1.));
+	double x = chkarg(1, -1., 1.);
+	Section* sec = NULL;
+	if (x >= 0.0) { sec = chk_access(); }
+	imp->location(sec, x);
 	return 0.;
 }
 
@@ -352,6 +355,7 @@ void Imp::alloc(){
 	pivot = new Complex[n];
 }
 int Imp::loc(Section* sec, double x){
+	if (x < 0.0 || sec == NULL) { return -1; }
 	Node* nd;
 	int i;
 	nd = node_exact(sec, x);

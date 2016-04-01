@@ -68,6 +68,9 @@ double NonLinImp::transfer_amp(int vloc) {
 	return sqrt(x*x+y*y);
 }
 double NonLinImp::input_amp(int curloc) {
+	if (nrnmpi_numprocs > 1 && nrnthread_v_transfer_) {
+	  hoc_execerror("not allowed with both gap junctions and nhost>0", 0);
+	}
 	solve(curloc);
 	if (curloc < 0) { return 0.0; }
 	double x = rep_->rv_[curloc];
@@ -80,6 +83,9 @@ double NonLinImp::transfer_phase(int vloc) {
 	return atan2(y, x);
 }
 double NonLinImp::input_phase(int curloc) {
+	if (nrnmpi_numprocs > 1 && nrnthread_v_transfer_) {
+	  hoc_execerror("not allowed with both gap junctions and nhost>0", 0);
+	}
 	solve(curloc);
 	if (curloc < 0) { return 0.0; }
 	double x = rep_->rv_[curloc];
@@ -87,6 +93,9 @@ double NonLinImp::input_phase(int curloc) {
 	return atan2(y,x);
 }
 double NonLinImp::ratio_amp(int clmploc, int vloc) {
+	if (nrnmpi_numprocs > 1 && nrnthread_v_transfer_) {
+	  hoc_execerror("not allowed with both gap junctions and nhost>0", 0);
+	}
 	solve(clmploc);
 	if (clmploc < 0) { return 0.0; }
 	double ax,bx,cx, ay,by,cy,bb;
@@ -577,6 +586,7 @@ void NonLinImpRep::gapsolve() {
 
   // iterate till change in x is small
   double tol = 1e-9;
+  double delta;
   int maxiter = 500;
   
   int success = 0;
@@ -589,11 +599,14 @@ void NonLinImpRep::gapsolve() {
     
     // if any change in x > tol, then do another iteration.
     success = 1;
+    delta = 0.0;
     for (int i=0; i < neq_; ++i) {
       double err = fabs(rx1[i] - rx[i]) + fabs(jx1[i] - jx[i]);
       if (err > tol) {
         success = 0;
-        break;
+      }
+      if (delta < err) {
+        delta = err;
       }
     }
 #if NRNMPI
@@ -632,7 +645,9 @@ void NonLinImpRep::gapsolve() {
   }
 
   if (!success) {
-    execerror("Impedance calculation did not converge", 0);
+    char buf[256];
+    sprintf(buf, "Impedance calculation did not converge in %d iterations. Max state change on last iteration was %g (Iterations stop at %g)\n",
+      maxiter, delta, tol);
+    execerror("Impedance calculation did not converge in", 0);
   }
-  if (nrnmpi_myid == 0) printf("success in %d iterations\n", iter);
 }

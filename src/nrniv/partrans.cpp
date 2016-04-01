@@ -36,6 +36,7 @@ static void thread_vi_compute(NrnThread*);
 static void mk_ttd();
 extern double t;
 extern int v_structure_change;
+extern int structure_change_cnt;
 extern double* nrn_recalc_ptr(double*);
 // see lengthy comment in ../nrnoc/fadvance.c
 // nrnmpi_v_transfer requires existence of nrnthread_v_transfer even if there
@@ -163,6 +164,14 @@ static void alloclists();
 static int imped_current_type_count_;
 static int* imped_current_type_;
 static Memb_list** imped_current_ml_;
+
+static void delete_imped_info() {
+  if (imped_current_type_count_) {
+    imped_current_type_count_ = 0;
+    delete [] imped_current_type_;
+    delete [] imped_current_ml_;
+  }
+}
 
 // Find the Node associated with the voltage.
 // Easy if v in the currently accessed section.
@@ -565,11 +574,7 @@ void nrnmpi_setup_transfer() {
 	alloclists();
 	is_setup_ = true;
 //	printf("nrnmpi_setup_transfer\n");
-	if (imped_current_type_count_) {
-		imped_current_type_count_ = 0;
-		delete [] imped_current_type_;
-		delete [] imped_current_ml_;
-	}
+	delete_imped_info();
 	if (insrc_buf_) { delete [] insrc_buf_; insrc_buf_ = 0; }
 	if (outsrc_buf_) { delete [] outsrc_buf_; outsrc_buf_ = 0; }
 	if (sid2insrc_) { delete sid2insrc_; sid2insrc_ = 0; }
@@ -779,11 +784,17 @@ void nrn_partrans_clear() {
 // assume one thread and no extracellular
 
 static double *vgap1, *vgap2;
+static int imped_change_cnt;
 
 void pargap_jacobi_setup(int mode) {
   if (!nrnthread_v_transfer_) { return; }
 
   // list of gap junction types and memb_list for each
+ if (mode == 0) {
+  if (imped_change_cnt != structure_change_cnt) {
+    delete_imped_info();
+    imped_change_cnt = structure_change_cnt;
+  }
   if (imped_current_type_count_ == 0 && targets_ && targets_->count() > 0) {
     for (int i=0; i < targets_->count(); ++i) {
       Point_process* pp = target_pntlist_->item(i);
@@ -829,6 +840,7 @@ void pargap_jacobi_setup(int mode) {
       hoc_execerror("number of gap junctions not equal to number of pc.transfer_var", buf);
     }
   }
+ }
   TransferThreadData* ttd = transfer_thread_data_;
   if (mode == 0) { // setup
     if (visources_->count()) {vgap1 = new double[visources_->count()];}
@@ -840,8 +852,8 @@ void pargap_jacobi_setup(int mode) {
       vgap2[i] = *(ttd->tv[i]);
     }
   }else{ // tear down
-    for (int i=0; i < outsrc_buf_size_; ++i) {
-      *poutsrc_[i] = vgap1[i];
+    for (int i=0; i < visources_->count(); ++i) {
+      NODEV(visources_->item(i)) = vgap1[i];
     }
     if (ttd) for (int i=0; i < ttd->cnt; ++i) {
       *(ttd->tv[i]) = vgap2[i];
