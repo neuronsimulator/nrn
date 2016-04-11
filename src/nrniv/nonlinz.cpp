@@ -33,7 +33,7 @@ public:
 	void dids();
 	void dsdv();
 	void dsds();
-	void gapsolve();
+	int gapsolve();
 
 	char* m_;
 	int scnt_; // structure_change
@@ -154,7 +154,8 @@ void NonLinImp::compute(double omega, double deltafac) {
 	rep_->iloc_ = -2;
 }
 
-void NonLinImp::solve(int curloc) {
+int NonLinImp::solve(int curloc) {
+	int rval = 0;
 	NrnThread* _nt = nrn_threads;
 	if (!rep_) {
 		hoc_execerror("Must call Impedance.compute first", 0);
@@ -168,12 +169,13 @@ void NonLinImp::solve(int curloc) {
 		}
 		if (curloc >= 0) {rep_->rv_[curloc] = 1.e2/NODEAREA(_nt->_v_node[curloc]);}
 		if (nrnthread_v_transfer_) {
-		  rep_->gapsolve();
+		  rval = rep_->gapsolve();
 		}else{
 		  assert(rep_->m_);
 		  cmplx_spSolve(rep_->m_, rep_->rv_-1, rep_->rv_-1, rep_->jv_-1, rep_->jv_-1);
 		}
 	}
+	return rval;
 }
 
 // too bad it is not easy to reuse the cvode/daspk structures. Most of
@@ -546,7 +548,7 @@ void NonLinImpRep::ode(int im, Memb_list* ml) { // assume there is in fact an od
 	}
 }
 
-void NonLinImpRep::gapsolve() {
+int NonLinImpRep::gapsolve() {
   // On entry, rv_ and jv_ contain the complex b for A*x = b.
   // On return rv_ and jv_ contain complex solution, x.
   // m_ is the factored matrix for the trees without gap junctions
@@ -650,4 +652,5 @@ void NonLinImpRep::gapsolve() {
       maxiter, delta, tol);
     execerror("Impedance calculation did not converge in", 0);
   }
+  return iter;
 }

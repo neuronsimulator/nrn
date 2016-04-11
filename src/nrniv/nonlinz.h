@@ -13,7 +13,7 @@ public:
 	double input_amp(int curloc);
 	double input_phase(int curloc);
 	double ratio_amp(int clmploc, int vloc);
-	void solve(int curloc);
+	int solve(int curloc);
 	
 private:
 	NonLinImpRep* rep_;	

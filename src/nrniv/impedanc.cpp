@@ -187,7 +187,7 @@ public:
 	Imp();
 	virtual ~Imp();
 	// v(x)/i(x) and  v(loc)/i(x) == v(x)/i(loc)
-	void compute(double freq, bool nonlin = false);
+	int compute(double freq, bool nonlin = false);
 	void location(Section*, double);
 	double transfer_amp(Section*, double);
 	double input_amp(Section*, double);
@@ -230,12 +230,13 @@ static void destruct(void* v) {
 
 static double compute(void* v) {
 	Imp* imp = (Imp*)v;
+	int rval = 0;
 	bool nonlin = false;
 	if (ifarg(2)) {
 		nonlin = *getarg(2) ? true : false;
 	}
-	imp->compute(*getarg(1), nonlin);
-	return 1.;
+	rval = imp->compute(*getarg(1), nonlin);
+	return double(rval);
 }
 
 static double location(void* v) {
@@ -401,7 +402,8 @@ void Imp::location(Section* sec, double x){
 	}
 }
 
-void Imp::compute(double freq, bool nonlin){
+int Imp::compute(double freq, bool nonlin){
+	int rval = 0;
 	check();
 	if (sloc_) {
 		istim = loc(sloc_, xloc_);
@@ -411,14 +413,14 @@ void Imp::compute(double freq, bool nonlin){
 		hoc_execerror("Impedance stimulus location is not specified.", 0);
 		}
 	}
-	if (n == 0 && nrnmpi_numprocs == 1) return;
+	if (n == 0 && nrnmpi_numprocs == 1) return rval;
 	double omega = 1e-6*2*3.14159265358979323846*freq; // wC has units of mho/cm2
 	if (nonlin) {
 		if (!nli_) {
 			nli_ = new NonLinImp();
 		}
 		nli_->compute(omega, deltafac_);
-		nli_->solve(istim);
+		rval = nli_->solve(istim);
 	}else{
 		if (nli_) {
 			delete nli_;
@@ -431,6 +433,7 @@ void Imp::compute(double freq, bool nonlin){
 		LUDecomp();
 		solve();
 	}
+	return rval;
 }
 
 void Imp::setmat(double omega) {
