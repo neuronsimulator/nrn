@@ -10,7 +10,7 @@ strdef tstr, rwdname
 
 proc init() {
 	sf_ = new StringFunctions()
-	if (unix_mac_pc() == 1) {
+	if (unix_mac_pc() == 1 || unix_mac_pc() == 4) {
 		rwdname = "$(HOME)/.NRNWorkingDirs"
 	}else{
 		rwdname = "$(NEURONHOME)/RecentWorkingDirs"
