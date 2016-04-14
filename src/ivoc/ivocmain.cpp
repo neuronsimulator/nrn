@@ -120,6 +120,7 @@ static PropertyData properties[] = {
 {"*Py_NoSiteFlag", "0"}, 
 {"*python", "off"},
 {"*nopython", "off"},
+{"*err_dialog", "off"},
 {"*banner", "on"},
 	 { NULL }
 };
@@ -584,6 +585,11 @@ ENDGUI
 	if (session) {
 		session->style()->find_attribute("NSTACK", hoc_nstack);
 		session->style()->find_attribute("NFRAME", hoc_nframe);
+IFGUI
+		if (session->style()->value_is_on("err_dialog")) {
+			nrn_err_dialog_active_ = 1;
+		}
+ENDGUI
 	}else
 #endif //HAVE_IV
 	{

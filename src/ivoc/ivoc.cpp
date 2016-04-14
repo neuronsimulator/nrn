@@ -6,6 +6,8 @@
 #include <stdlib.h>
 #include <nrnmutdec.h>
 #include "oc2iv.h"
+#include "utility.h"
+#include "ocfunc.h"
 
 #if USE_PTHREAD
 static MUTDEC
@@ -27,6 +29,8 @@ declareList(PList, PObserver);
 implementList(PList, PObserver);
 static PList* p_list;
 static PList* pd_list;
+
+int nrn_err_dialog_active_;
 
 extern "C" {
 void nrn_notify_freed(PF pf) {
@@ -448,6 +452,16 @@ void single_event_run() {
 	Session::instance()->screen_update();
 #endif
 	WinDismiss::dismiss_defer();	// in case window was dismissed
+}
+
+void nrn_err_dialog(const char* mes) {
+IFGUI
+  if (nrn_err_dialog_active_ && !Session::instance()->done()) {
+    char m[1024];
+    sprintf(m, "%s (See terminal window)", mes);
+    continue_dialog(m);
+  }
+ENDGUI
 }
 
 #ifdef MINGW

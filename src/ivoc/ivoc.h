@@ -7,6 +7,9 @@
 #include <OS/string.h>
 #include <stdio.h>
 #include <ivstream.h>
+
+extern int nrn_err_dialog_active_;
+
 class Observer;
 class Observable;
 class Cursor;

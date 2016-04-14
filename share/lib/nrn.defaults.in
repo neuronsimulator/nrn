@@ -11,6 +11,8 @@
 *default_brush: 0
 *view_margin: .25
 
+*err_dialog: off
+
 *dismiss_button: Close
 *use_transient_windows: yes
 

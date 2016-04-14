@@ -610,6 +610,7 @@ void hoc_execerror_mes(const char* s, const char* t, int prnt){	/* recover from 
 	if (debug_message_ || prnt) {
 		warning(s, t);
 		frame_debug();
+		nrn_err_dialog(s);
 #if defined(__GO32__)
 		{extern int egagrph;
 		if (egagrph) {
