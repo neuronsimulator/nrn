@@ -531,7 +531,7 @@ void ncs2nrn_integrate(double tstop) {
 
     if (n > 3 && !nrn_have_gaps) {
         nrn_fixed_step_group_minimal(n);
-    else{
+    }else{
 #if NRNMPI
         ts = tstop - dt;
         nrn_assert(nrn_threads->_t <= tstop);
