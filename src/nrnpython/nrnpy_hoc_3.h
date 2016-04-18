@@ -51,7 +51,7 @@ static PyTypeObject nrnpy_HocObjectType = {
 	(getattrfunc)0,         /*tp_getattr*/
 	(setattrfunc)0,		/*tp_setattr*/
 	0,			/*tp_reserved*/
-	0,			/*tp_repr*/
+	(reprfunc)hocobj_repr,			/*tp_repr*/
 	&hocobj_as_number,	/*tp_as_number*/
 	&hocobj_seqmeth,	/*tp_as_sequence*/
 	0,			/*tp_as_mapping*/

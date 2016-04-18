@@ -360,6 +360,27 @@ static PyObject* NPySecObj_name(NPySecObj* self) {
 	return result;
 }
 
+static PyObject* pysec_repr(PyObject* p) {
+  NPySecObj* psec = (NPySecObj*)p;
+  if (psec->sec_ && psec->sec_->prop) {
+    return NPySecObj_name(psec);
+  }
+  return PyString_FromString("<deleted section>");
+}
+
+static PyObject* pyseg_repr(PyObject* p) {
+  NPySegObj* pyseg = (NPySegObj*)p;
+  if (pyseg->pysec_->sec_ && pyseg->pysec_->sec_->prop) {
+    const char* sname = secname(pyseg->pysec_->sec_);
+    char* name = new char[strlen(sname) + 100];
+    sprintf(name, "%s(%g)", sname, pyseg->x_);
+    PyObject* result = PyString_FromString(name);
+    delete [] name;
+    return result;
+  }
+  return PyString_FromString("<segment of deleted section>");
+}
+
 static PyObject* hoc_internal_name(NPySecObj* self) {
 	PyObject* result;
 	char buf[256];
@@ -518,6 +539,15 @@ static PyObject* NPyMechObj_name(NPyMechObj* self) {
 		result = PyString_FromString(memb_func[self->prop_->type].sym->name);
 	}
 	return result;
+}
+
+static PyObject* pymech_repr(PyObject* p) {
+  NPyMechObj* pymech = (NPyMechObj*)p;
+  Section* sec = pymech->pyseg_->pysec_->sec_;
+  if (sec && sec->prop) {
+    return NPyMechObj_name(pymech);
+  }
+  return PyString_FromString("<mechanism of deleted section>");
 }
 
 static PyObject* NPyRangeVar_name(NPyRangeVar* self) {
