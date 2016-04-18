@@ -62,7 +62,7 @@ class fixed_vector{
 typedef fixed_vector<double> IvocVect;
 
 extern "C" {
-  extern IvocVect* vector_new(int n);
+  extern IvocVect* vector_new1(int n);
   extern int vector_capacity(IvocVect* v);
   extern double* vector_vec(IvocVect* v);
 }
