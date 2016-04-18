@@ -1,17 +1,29 @@
 /*
-Copyright (c) 2014 EPFL-BBP, All rights reserved.
+Copyright (c) 2016, Blue Brain Project
+All rights reserved.
 
-THIS SOFTWARE IS PROVIDED BY THE BLUE BRAIN PROJECT "AS IS"
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
-THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE BLUE BRAIN PROJECT
-BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+Redistribution and use in source and binary forms, with or without modification,
+are permitted provided that the following conditions are met:
+1. Redistributions of source code must retain the above copyright notice,
+   this list of conditions and the following disclaimer.
+2. Redistributions in binary form must reproduce the above copyright notice,
+   this list of conditions and the following disclaimer in the documentation
+   and/or other materials provided with the distribution.
+3. Neither the name of the copyright holder nor the names of its contributors
+   may be used to endorse or promote products derived from this software
+   without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
 CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
-BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
-WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
-OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
-IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
+THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include <stdio.h>
@@ -19,7 +31,7 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <string.h>
 #include <stdarg.h>
 #include "coreneuron/nrnoc/multicore.h"
-#include "coreneuron/nrniv/sptbinq.h"
+#include "coreneuron/nrniv/tqueue.h"
 
 #if COLLECT_TQueue_STATISTICS
 #define STAT(arg) ++arg;
@@ -38,142 +50,10 @@ Douglas Jones.
 of struct _spblk, we are really using TQItem
 */
 
-
 TQItem::TQItem() {
     left_ = 0;
     right_ = 0;
     parent_ = 0;
-}
-
-TQItem::~TQItem() {
-}
-
-TQueue::TQueue() {
-    MUTCONSTRUCT(0)
-    nshift_ = 0;
-    sptree_ = new SPTREE;
-    spinit(sptree_);
-    binq_ = new BinQ;
-    least_ = 0;
-
-#if COLLECT_TQueue_STATISTICS
-    nmove = ninsert = nrem = nleast = nbal = ncmplxrem = 0;
-    nfastmove = ncompare = nleastsrch = nfind = nfindsrch = 0;
-#endif
-}
-
-TQueue::~TQueue() {
-    SPBLK* q, *q2;
-    while((q = spdeq(&sptree_->root)) != NULL) {
-        delete q;
-    }
-    delete sptree_;
-    for (q = binq_->first(); q; q = q2) {
-        q2 = binq_->next(q);
-        remove(q); /// Potentially dereferences freed pointer this->sptree_
-    }
-    delete binq_;
-    MUTDESTRUCT
-}
-
-void TQueue::move_least_nolock(double tnew) {
-    TQItem* b = least();
-    if (b) {
-        b->t_ = tnew;
-        TQItem* nl = sphead(sptree_);
-        if (nl) {
-            if (tnew > nl->t_) {
-                least_ = spdeq(&sptree_->root);
-                spenq(b, sptree_);
-            }
-        }
-    }
-}
-
-void TQueue::move(TQItem* i, double tnew) {
-    MUTLOCK
-    STAT(nmove)
-    if (i == least_) {
-        move_least_nolock(tnew);
-    }else if (tnew < least_->t_) {
-        spdelete(i, sptree_);
-        i->t_ = tnew;
-        spenq(least_, sptree_);
-        least_ = i;
-    }else{
-        spdelete(i, sptree_);
-        i->t_ = tnew;
-        spenq(i, sptree_);
-    }
-    MUTUNLOCK
-}
-
-void TQueue::statistics() {
-#if COLLECT_TQueue_STATISTICS
-    printf("insertions=%lu  moves=%lu removals=%lu calls to least=%lu\n",
-        ninsert, nmove, nrem, nleast);
-    printf("calls to find=%lu\n",
-        nfind);
-    printf("comparisons=%d\n",
-        sptree_->enqcmps);
-#else
-    printf("Turn on COLLECT_TQueue_STATISTICS_ in tqueue.h\n");
-#endif
-}
-
-TQItem* TQueue::insert(double tt, void* d) {
-    MUTLOCK
-    STAT(ninsert);
-    TQItem* i = new TQItem;
-    i->data_ = d;
-    i->t_ = tt;
-    i->cnt_ = -1;
-    if (tt < least_t_nolock()) {
-        if (least()) {
-            spenq(least(), sptree_);
-        }
-        least_ = i;
-    }else{
-        spenq(i, sptree_);
-    }
-    MUTUNLOCK
-    return i;
-}
-
-void TQueue::remove(TQItem* q) {
-    MUTLOCK
-    STAT(nrem);
-    if (q) {
-        if (q == least_) {
-            if (sptree_->root) {
-                least_ = spdeq(&sptree_->root);
-            }else{
-                least_ = NULL;
-            }
-        }else if (q->cnt_ >= 0) {
-            binq_->remove(q);
-        }else{
-            spdelete(q, sptree_);
-        }
-        delete q;
-    }
-    MUTUNLOCK
-}
-
-TQItem* TQueue::atomic_dq(double tt) {
-    TQItem* q = 0;
-    MUTLOCK
-    if (least_ && least_->t_ <= tt) {
-        q = least_;
-        STAT(nrem);
-        if (sptree_->root) {
-            least_ = spdeq(&sptree_->root);
-        }else{
-            least_ = NULL;
-        }
-    }
-    MUTUNLOCK
-    return q;
 }
 
 BinQ::BinQ() {
@@ -183,7 +63,7 @@ BinQ::BinQ() {
     qpt_ = 0;
     tt_ = 0.;
 #if COLLECT_TQueue_STATISTICS
-    nfenq = 0;
+    nfenq = nfdeq = 0;
 #endif
 }
 
@@ -192,6 +72,7 @@ BinQ::~BinQ() {
         assert(!bins_[i]);
     }
     delete [] bins_;
+    vec_bins.clear();
 }
 
 void BinQ::resize(int size) {
@@ -214,15 +95,15 @@ void BinQ::resize(int size) {
     qpt_ = 0;
 }
 void BinQ::enqueue(double td, TQItem* q) {
-    int idt = (int)((td - tt_)/nrn_threads->_dt + 1.e-10);
+    int idt = (int)((td - tt_)*rev_dt + 1.e-10);
     assert(idt >= 0);
     if (idt >= nbin_) {
-        resize(idt + 100);
+        resize(idt + 1000);
     }
     //assert (idt < nbin_);
     idt += qpt_;
     if (idt >= nbin_) { idt -= nbin_; }
-//printf("enqueue idt=%d qpt=%d\n", idt, qpt_);
+//printf("enqueue: idt=%d qpt=%d nbin_=%d\n", idt, qpt_, nbin_);
     assert (idt < nbin_);
     q->cnt_ = idt; // only for iteration
     q->left_ = bins_[idt];
@@ -230,6 +111,17 @@ void BinQ::enqueue(double td, TQItem* q) {
 #if COLLECT_TQueue_STATISTICS
     ++nfenq;
 #endif
+}
+TQItem* BinQ::dequeue() {
+    TQItem* q = NULL;
+    q = bins_[qpt_];
+    if (q) {
+        bins_[qpt_] = q->left_;
+#if COLLECT_TQueue_STATISTICS
+        ++nfdeq;
+#endif
+    }
+    return q;
 }
 
 TQItem* BinQ::first() {
@@ -342,14 +234,14 @@ spinit(SPTREE* q)
 SPBLK *
 spenq( SPBLK* n, SPTREE* q )
 {
-    register SPBLK * left;	/* the rightmost node in the left tree */
-    register SPBLK * right;	/* the leftmost node in the right tree */
-    register SPBLK * next;	/* the root of the unsplit part */
-    register SPBLK * temp;
+    SPBLK * left;	/* the rightmost node in the left tree */
+    SPBLK * right;	/* the leftmost node in the right tree */
+    SPBLK * next;	/* the root of the unsplit part */
+    SPBLK * temp;
 
     double key;
 #if STRCMP_DEF
-    register int Sct;		/* Strcmp value */
+    int Sct;		/* Strcmp value */
 #endif
 
     n->uplink = NULL;
@@ -484,11 +376,11 @@ SPBLK *
 spdeq( SPBLK** np ) /* pointer to a node pointer */
 
 {
-    register SPBLK * deq;		/* one to return */
-    register SPBLK * next;       	/* the next thing to deal with */
-    register SPBLK * left;      	/* the left child of next */
-    register SPBLK * farleft;		/* the left child of left */
-    register SPBLK * farfarleft;	/* the left child of farleft */
+    SPBLK * deq;		/* one to return */
+    SPBLK * next;       	/* the next thing to deal with */
+    SPBLK * left;      	/* the left child of next */
+    SPBLK * farleft;		/* the left child of left */
+    SPBLK * farfarleft;	/* the left child of farleft */
 
     if( np == NULL || *np == NULL )
     {
@@ -568,12 +460,12 @@ spdeq( SPBLK** np ) /* pointer to a node pointer */
 void
 splay( SPBLK* n, SPTREE* q )
 {
-    register SPBLK * up;	/* points to the node being dealt with */
-    register SPBLK * prev;	/* a descendent of up, already dealt with */
-    register SPBLK * upup;	/* the parent of up */
-    register SPBLK * upupup;	/* the grandparent of up */
-    register SPBLK * left;	/* the top of left subtree being built */
-    register SPBLK * right;	/* the top of right subtree being built */
+    SPBLK * up;	/* points to the node being dealt with */
+    SPBLK * prev;	/* a descendent of up, already dealt with */
+    SPBLK * upup;	/* the parent of up */
+    SPBLK * upupup;	/* the grandparent of up */
+    SPBLK * left;	/* the top of left subtree being built */
+    SPBLK * right;	/* the top of right subtree being built */
 
     left = n->leftlink;
     right = n->rightlink;
@@ -675,7 +567,7 @@ splay( SPBLK* n, SPTREE* q )
 SPBLK *
 sphead( SPTREE* q )
 {
-    register SPBLK * x;
+    SPBLK * x;
 
     /* splay version, good amortized bound */
     x = spdeq( &q->root );
@@ -708,7 +600,7 @@ sphead( SPTREE* q )
 void
 spdelete( SPBLK* n, SPTREE* q )
 {
-    register SPBLK * x;
+    SPBLK * x;
 
     splay( n, q );
     x = spdeq( &q->root->rightlink );

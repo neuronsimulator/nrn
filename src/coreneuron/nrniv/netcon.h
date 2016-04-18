@@ -1,17 +1,29 @@
 /*
-Copyright (c) 2014 EPFL-BBP, All rights reserved.
+Copyright (c) 2016, Blue Brain Project
+All rights reserved.
 
-THIS SOFTWARE IS PROVIDED BY THE BLUE BRAIN PROJECT "AS IS"
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
-THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE BLUE BRAIN PROJECT
-BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+Redistribution and use in source and binary forms, with or without modification,
+are permitted provided that the following conditions are met:
+1. Redistributions of source code must retain the above copyright notice,
+   this list of conditions and the following disclaimer.
+2. Redistributions in binary form must reproduce the above copyright notice,
+   this list of conditions and the following disclaimer in the documentation
+   and/or other materials provided with the distribution.
+3. Neither the name of the copyright holder nor the names of its contributors
+   may be used to endorse or promote products derived from this software
+   without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
 CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
-BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
-WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
-OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
-IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
+THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #ifndef netcon_h
@@ -48,23 +60,14 @@ public:
 	virtual int type() { return DiscreteEventType; }
 
     virtual void pr(const char*, double t, NetCvode*);
-	// actions performed over each item in the event queue.
-	virtual void frecord_init(TQItem*) {};
 };
 
 class NetCon : public DiscreteEvent {
 public:
-    bool active_;
-    double delay_;
-    DiscreteEvent* src_; // either a PreSyn or an InputPreSyn or NULL
     Point_process* target_;
-    union {
-        double* weight_;
-        int srcgid_; // only to help InputPreSyn during setup
-        // before weights are read and stored. Saves on transient
-        // memory requirements by avoiding storage of all group file
-        // netcon_srcgid lists. ie. that info is copied into here.
-    } u;
+    double delay_;
+    double* weight_;
+    bool active_;
 
 	NetCon();
 	virtual ~NetCon();
@@ -84,8 +87,7 @@ public:
 	virtual ~SelfEvent();
 	virtual void deliver(double, NetCvode*, NrnThread*);
     virtual int type() { return SelfEventType; }
-
-    virtual void pr(const char*, double t);
+    virtual void pr(const char*, double t, NetCvode*);
 
 private:
 	void call_net_receive(NetCvode*);
@@ -94,29 +96,29 @@ private:
 
 class ConditionEvent : public DiscreteEvent {
 public:
-	// condition detection factored out of PreSyn for re-use
-	ConditionEvent();
-	virtual ~ConditionEvent();
-	virtual void check(NrnThread*, double sendtime, double teps = 0.0);
-	virtual double value() { return -1.; }
+    // condition detection factored out of PreSyn for re-use
+    ConditionEvent();
+    virtual ~ConditionEvent();
+    virtual void check(NrnThread*, double sendtime, double teps = 0.0);
+    virtual double value() { return -1.; }
 
-	bool flag_; // true when below, false when above.
+    bool flag_; // true when below, false when above.
 };
 
 
 class PreSyn : public ConditionEvent {
 public:
+    Point_process* pntsrc_; /// Needed for prcellstate currently
+    NrnThread* nt_;
+    double* thvar_;
+    double threshold_;
+    int nc_index_; //replaces dil_, index into global NetCon** netcon_in_presyn_order_ for the current PreSyn
+    int nc_cnt_; // how many netcon PreSyn has starting at nc_index_
+    int output_index_;
+    int gid_;
 #if NRNMPI
     unsigned char localgid_; // compressed gid for spike transfer
 #endif
-    int nc_index_; //replaces dil_, index into global NetCon** netcon_in_presyn_order_
-    int nc_cnt_; // how many netcon starting at nc_index_
-    int output_index_;
-    int gid_;
-    double threshold_;
-    double* thvar_;
-    Point_process* pntsrc_;
-    NrnThread* nt_;
 
 	PreSyn();
 	virtual ~PreSyn();
@@ -132,7 +134,6 @@ class InputPreSyn : public DiscreteEvent {
 public:
     int nc_index_; //replaces dil_, index into global NetCon** netcon_in_presyn_order_
     int nc_cnt_; // how many netcon starting at nc_index_
-    int gid_;
 
 	InputPreSyn();
 	virtual ~InputPreSyn();

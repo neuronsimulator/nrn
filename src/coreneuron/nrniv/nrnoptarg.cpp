@@ -1,3 +1,31 @@
+/*
+Copyright (c) 2016, Blue Brain Project
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without modification,
+are permitted provided that the following conditions are met:
+1. Redistributions of source code must retain the above copyright notice,
+   this list of conditions and the following disclaimer.
+2. Redistributions in binary form must reproduce the above copyright notice,
+   this list of conditions and the following disclaimer in the documentation
+   and/or other materials provided with the distribution.
+3. Neither the name of the copyright holder nor the names of its contributors
+   may be used to endorse or promote products derived from this software
+   without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
+THE POSSIBILITY OF SUCH DAMAGE.
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -7,7 +35,7 @@
 extern "C" void nrn_exit( int );
 extern int nrnmpi_myid;
 
-cb_parameters::cb_parameters()
+cn_parameters::cn_parameters()
 {
     tstart = 0.0;
     tstop = 100.0;
@@ -33,13 +61,13 @@ cb_parameters::cb_parameters()
     filesdat = "files.dat";
 }
 
-sd_ptr cb_parameters::get_filesdat_path( char *path_buf, size_t bufsz )
+sd_ptr cn_parameters::get_filesdat_path( char *path_buf, size_t bufsz )
 {
     // shouldn't we check if filesdat is absolute or relative? -- sgy 20150119
     return sdprintf( path_buf, bufsz, "%s/%s", datpath, filesdat );
 }
 
-void cb_parameters::show_cb_opts()
+void cn_parameters::show_cb_opts()
 {
     if ( nrnmpi_myid == 0 ) {
         printf( "\n Configuration Parameters" );
@@ -61,7 +89,7 @@ void cb_parameters::show_cb_opts()
 }
 
 
-void cb_parameters::show_cb_opts_help()
+void cn_parameters::show_cb_opts_help()
 {
     printf( "\nWelcome to CoreNeuron!\n\nOPTIONS\n\
        -h, -?, --help Print a usage message briefly summarizing these command-line options \
@@ -96,7 +124,7 @@ void cb_parameters::show_cb_opts_help()
               Enable MPI. In order to initialize MPI environment this argument must be specified.\n" );
 }
 
-void cb_parameters::read_cb_opts( int argc, char **argv )
+void cn_parameters::read_cb_opts( int argc, char **argv )
 {
     optind = 1;
     int c;

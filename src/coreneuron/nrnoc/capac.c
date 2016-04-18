@@ -1,17 +1,29 @@
 /*
-Copyright (c) 2014 EPFL-BBP, All rights reserved.
+Copyright (c) 2016, Blue Brain Project
+All rights reserved.
 
-THIS SOFTWARE IS PROVIDED BY THE BLUE BRAIN PROJECT "AS IS"
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
-THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE BLUE BRAIN PROJECT
-BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+Redistribution and use in source and binary forms, with or without modification,
+are permitted provided that the following conditions are met:
+1. Redistributions of source code must retain the above copyright notice,
+   this list of conditions and the following disclaimer.
+2. Redistributions in binary form must reproduce the above copyright notice,
+   this list of conditions and the following disclaimer in the documentation
+   and/or other materials provided with the distribution.
+3. Neither the name of the copyright holder nor the names of its contributors
+   may be used to endorse or promote products derived from this software
+   without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
 CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
-BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
-WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
-OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
-IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
+THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include "coreneuron/nrnconf.h"
@@ -57,12 +69,18 @@ void nrn_cap_jacob(NrnThread* _nt, Memb_list* ml) {
 	int _cntml_actual = ml->nodecount;
 	int _cntml_padded = ml->_nodecount_padded;
 	int _iml;
-	double *vdata = ml->data;
+	double *vdata;
 	double cfac = .001 * _nt->cj;
   (void) _cntml_padded; /* unused when layout=1*/
 	{ /*if (use_cachevec) {*/
 		int* ni = ml->nodeindices;
+#if LAYOUT == 1 /*AoS*/
 		for (_iml=0; _iml < _cntml_actual; _iml++) {
+	    vdata = ml->data + _iml*nparm;
+#else
+	    vdata = ml->data;
+		for (_iml=0; _iml < _cntml_actual; _iml++) {
+#endif
 			VEC_D(ni[_iml]) += cfac*cm;
 		}
 	}
@@ -72,9 +90,15 @@ static void cap_init(NrnThread* _nt, Memb_list* ml, int type ) {
 	int _cntml_actual = ml->nodecount;
 	int _cntml_padded = ml->_nodecount_padded;
 	int _iml;
-	double *vdata = ml->data;
+	double *vdata;
 	(void)_nt; (void)type; (void) _cntml_padded; /* unused */
-	for (_iml=0; _iml < _cntml_actual; ++_iml) {
+#if LAYOUT == 1 /*AoS*/
+	for (_iml=0; _iml < _cntml_actual; _iml++) {
+	    vdata = ml->data + _iml*nparm;
+#else
+	vdata = ml->data;
+	for (_iml=0; _iml < _cntml_actual; _iml++) {
+#endif
 		i_cap = 0;
 	}
 }
@@ -83,16 +107,22 @@ void nrn_capacity_current(NrnThread* _nt, Memb_list* ml) {
 	int _cntml_actual = ml->nodecount;
 	int _cntml_padded = ml->_nodecount_padded;
 	int _iml;
-	double *vdata = ml->data;
+	double *vdata;
 	double cfac = .001 * _nt->cj;
   (void) _cntml_padded; /* unused when layout=1*/
 	/* since rhs is dvm for a full or half implicit step */
 	/* (nrn_update_2d() replaces dvi by dvi-dvx) */
 	/* no need to distinguish secondorder */
 		int* ni = ml->nodeindices;
-		for (_iml=0; _iml < _cntml_actual; _iml++) {
-			i_cap = cfac*cm*VEC_RHS(ni[_iml]);
-		}
+#if LAYOUT == 1 /*AoS*/
+	for (_iml=0; _iml < _cntml_actual; _iml++) {
+	    vdata = ml->data + _iml*nparm;
+#else
+	vdata = ml->data;
+	for (_iml=0; _iml < _cntml_actual; _iml++) {
+#endif
+		i_cap = cfac*cm*VEC_RHS(ni[_iml]);
+	}
 }
 
 /* the rest can be constructed automatically from the above info*/

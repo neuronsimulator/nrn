@@ -1,3 +1,32 @@
+/*
+Copyright (c) 2016, Blue Brain Project
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without modification,
+are permitted provided that the following conditions are met:
+1. Redistributions of source code must retain the above copyright notice,
+   this list of conditions and the following disclaimer.
+2. Redistributions in binary form must reproduce the above copyright notice,
+   this list of conditions and the following disclaimer in the documentation
+   and/or other materials provided with the distribution.
+3. Neither the name of the copyright holder nor the names of its contributors
+   may be used to endorse or promote products derived from this software
+   without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
+THE POSSIBILITY OF SUCH DAMAGE.
+*/
+
+
 #ifndef swap_endian_h
 #define swap_endian_h
 
@@ -15,6 +44,9 @@
 #if !defined(SWAP_ENDIAN_DISABLE_ASM) && (defined(__AVX2__) || defined(__SSSE3__))
 #include <immintrin.h>
 #endif
+
+/* required for correct choice of PPC assembly */
+#include "coreneuron/utils/endianness.h"
 
 #if !defined(SWAP_ENDIAN_MAX_UNROLL)
 #define SWAP_ENDIAN_MAX_UNROLL 8
@@ -172,7 +204,7 @@ namespace endian {
                 uint32_t v;
                 asm("lwz    %[v],%[ldata]         \n\t"
                     "stwbrx %[v],0,%[sdata]       \n\t"
-                  : [v]"+&r"(v), "+o"(u)
+                  : [v]"=&r"(v), "+o"(u)
                   : [ldata]"o"(u), [sdata]"r"(d)
                   : ); 
             }
@@ -184,16 +216,56 @@ namespace endian {
                 struct chunk_t { unsigned char x[8]; } &u=*(chunk_t *)(void *)d;
 
                 uint64_t v;
-                asm("ld     %[v],%[ldata]         \n\t"
-                    "stwbrx %[v],%[word],%[sdata] \n\t"
-                    "srd    %[v],%[v],%[shift]    \n\t"
-                    "stwbrx %[v],0,%[sdata]       \n\t"
-                  : [v]"+&r"(v), "+o"(u)
-                  : [ldata]"o"(u), [sdata]"r"(d), [word]"b"(4), [shift]"b"(32)
-                  : ); 
+                if (endian::is_big_endian()) {
+                    asm("ld     %[v],%[ldata]         \n\t"
+                        "stwbrx %[v],%[word],%[sdata] \n\t"
+                        "srd    %[v],%[v],%[shift]    \n\t"
+                        "stwbrx %[v],0,%[sdata]       \n\t"
+                      : [v]"=&r"(v), "+o"(u)
+                      : [ldata]"o"(u), [sdata]"r"(d), [word]"b"(4), [shift]"b"(32)
+                      : ); 
+                }
+                else {
+                    asm("ld     %[v],%[ldata]         \n\t"
+                        "stwbrx %[v],0,%[sdata]       \n\t"
+                        "srd    %[v],%[v],%[shift]    \n\t"
+                        "stwbrx %[v],%[word],%[sdata] \n\t"
+                      : [v]"=&r"(v), "+o"(u)
+                      : [ldata]"o"(u), [sdata]"r"(d), [word]"b"(4), [shift]"b"(32)
+                      : ); 
+                }
             }
         };
 
+#if !defined(__POWER8_VECTOR__)
+        // 2.06 ISA does not have stdbrx
+        template <>
+        struct swap_endian_fast<8,1,true> {
+            static void eval(unsigned char *d) {
+                struct chunk_t { unsigned char x[8]; } &u=*(chunk_t *)(void *)d;
+
+                uint64_t v;
+                if (endian::is_big_endian()) {
+                    asm("ld     %[v],%[ldata]         \n\t"
+                        "stwbrx %[v],0,%[sdata]       \n\t"
+                        "srd    %[v],%[v],%[shift]    \n\t"
+                        "stwbrx %[v],%[word],%[sdata] \n\t"
+                      : [v]"=&r"(v), "+o"(u)
+                      : [ldata]"o"(u), [sdata]"r"(d), [word]"b"(4), [shift]"b"(32)
+                      : ); 
+                }
+                else {
+                    asm("ld     %[v],%[ldata]         \n\t"
+                        "stwbrx %[v],%[word],%[sdata] \n\t"
+                        "srd    %[v],%[v],%[shift]    \n\t"
+                        "stwbrx %[v],0,%[sdata]       \n\t"
+                      : [v]"=&r"(v), "+o"(u)
+                      : [ldata]"o"(u), [sdata]"r"(d), [word]"b"(4), [shift]"b"(32)
+                      : ); 
+                }
+            }
+        };
+#else
         template <>
         struct swap_endian_fast<8,1,true> {
             static void eval(unsigned char *d) {
@@ -201,14 +273,14 @@ namespace endian {
 
                 uint64_t v;
                 asm("ld     %[v],%[ldata]         \n\t"
-                    "stwbrx %[v],0,%[sdata]       \n\t"
-                    "srd    %[v],%[v],%[shift]    \n\t"
-                    "stwbrx %[v],%[word],%[sdata] \n\t"
-                  : [v]"+&r"(v), "+o"(u)
-                  : [ldata]"o"(u), [sdata]"r"(d), [word]"b"(4), [shift]"b"(32)
+                    "stdbrx %[v],0,%[sdata]       \n\t"
+                  : [v]"=&r"(v), "+o"(u)
+                  : [ldata]"o"(u), [sdata]"r"(d)
                   : ); 
             }
         };
+
+#endif
 #endif
 
 #if !defined(SWAP_ENDIAN_DISABLE_ASM) && defined(__SSSE3__)

@@ -1,17 +1,29 @@
 /*
-Copyright (c) 2014 EPFL-BBP, All rights reserved.
+Copyright (c) 2016, Blue Brain Project
+All rights reserved.
 
-THIS SOFTWARE IS PROVIDED BY THE BLUE BRAIN PROJECT "AS IS"
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
-THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE BLUE BRAIN PROJECT
-BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+Redistribution and use in source and binary forms, with or without modification,
+are permitted provided that the following conditions are met:
+1. Redistributions of source code must retain the above copyright notice,
+   this list of conditions and the following disclaimer.
+2. Redistributions in binary form must reproduce the above copyright notice,
+   this list of conditions and the following disclaimer in the documentation
+   and/or other materials provided with the distribution.
+3. Neither the name of the copyright holder nor the names of its contributors
+   may be used to endorse or promote products derived from this software
+   without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
 CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
-BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
-WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
-OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
-IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
+THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 /**
@@ -63,7 +75,7 @@ int main1( int argc, char **argv, char **env )
     nrnran123_mutconstruct();
 
     // handles coreneuron configuration parameters
-    cb_input_params input_params;
+    cn_input_params input_params;
 
     // read command line parameters
     input_params.read_cb_opts( argc, argv );
@@ -76,6 +88,7 @@ int main1( int argc, char **argv, char **env )
     // set global variables for start time, timestep and temperature
     t = input_params.tstart;
     dt = input_params.dt;
+    rev_dt = (int)(1./dt);
     celsius = input_params.celsius;
 
     // full path of files.dat file
@@ -99,8 +112,8 @@ int main1( int argc, char **argv, char **env )
 
     report_mem_usage( "Before nrn_setup" );
 
-    // reading *.dat files and setting up the data structures
-    nrn_setup( input_params.datpath, filesdat, nrn_need_byteswap, input_params.threading );
+    // reading *.dat files and setting up the data structures, setting mindelay
+    nrn_setup( input_params, filesdat, nrn_need_byteswap );
 
     report_mem_usage( "After nrn_setup " );
 
@@ -111,11 +124,6 @@ int main1( int argc, char **argv, char **env )
 
     /// Setting the timeout
     nrn_set_timeout(200.);
-
-    // find mindelay and set configuration parameter
-    double mindelay = BBS_netpar_mindelay( input_params.maxdelay );
-
-    input_params.set_mindelay( mindelay );
 
     // show all configuration parameters for current run
     input_params.show_cb_opts();
