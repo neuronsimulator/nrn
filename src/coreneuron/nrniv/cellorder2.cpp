@@ -96,10 +96,12 @@ int* node_order(int ncell, int nnode, int* parent,
   node_interleave_order(ncell, nodevec);
   check(ncell, nodevec);
 
+#if 0
   for (int i=0; i < ncell; ++i) {
     TNode& nd = *nodevec[i];
     printf("%d size=%ld hash=%ld ix=%d\n", i, nd.treesize, nd.hash, nd.nodeindex);
   }
+#endif
 
   // the permutation
   int* nodeorder = new int[nnode];
@@ -174,16 +176,6 @@ void tree_analysis(int* parent, int nnode, int ncell, vector<TNode*>& nodevec) {
   }
 
   std::sort(nodevec.begin(), nodevec.begin() + ncell, tnode_earlier);
-
-#if 0
-  // group the cells by hash
-  map<size_t, vector<TNode*> > groups;
-  for (int i = 0; parent[i] == -1; ++i) {
-    groups[nodevec[i]->hash].push_back(nodevec[i]);
-  }
-  printf("number of groups is %ld\n", groups.size());
-#endif
-
 }
 
 #if 0
@@ -237,7 +229,6 @@ void node_interleave_order(int ncell, vector<TNode*>& nodevec) {
 
 //  std::sort(nodevec.begin() + ncell, nodevec.end(), contig_comp);
   std::sort(nodevec.begin() + ncell, nodevec.end(), interleave_comp);
-  prtree(nodevec);
 
 #if 0
   for (size_t i=0; i < nodevec.size(); ++i) {
