@@ -6,186 +6,6 @@
 
 int use_interleave_permute;
 
-//calculate the endnode vector and verify that nodes are in cell order.
-// the root of the ith cell is node[i]
-// the rest of the ith cell is node[endnode[i]] : node[endnode[i+1]]
-
-int* calculate_endnodes(int ncell, int nnode, int* parent) {
-  int* cell = new int[nnode]; // each node knows the cell index
-  int* cellsize = new int[ncell+1];
-  for (int i=0; i < ncell; ++i) {
-    cell[i] = i;
-    cellsize[cell[i]] = 0;
-    assert(parent[i] < 0); // all root nodes must be at beginning
-  }
-  for (int i=ncell; i < nnode; ++i) {
-    cell[i] = cell[parent[i]];
-    cellsize[cell[i]] += 1;
-    if (cell[i] < cell[i-1] && parent[i-1] >= ncell) { // cell not contiguous! (except at root)
-      printf("node %d is in cell %d but node %d is in cell %d\n",i, cell[i], i-1, cell[i-1]);
-    }
-    nrn_assert(cell[i] >= cell[i-1] || parent[i-1] < ncell);
-  }
-
-  // integrate to get displacments
-  int dspl = ncell;
-  for (int i=0; i <= ncell; ++i) {
-    int sz = cellsize[i];
-    cellsize[i] = dspl;
-    dspl += sz;
-  }
-  delete [] cell;
-  return cellsize;
-}
-
-
-// permutation that transforms cell group ordering to interleaved ordering
-// Optimal for large number of homogenous (same topology) cells
-// but a bit naive for
-// inhomogeneous cells as it does not optimize the parent order.
-// Also naive for homogeneous cells if more compute resources than cells
-// as we imagine each core is devoted to an entire cell.
-// Also naive for inhomogenoues cells as the largest cell takes the most effort.
-// Returns new permutation vector of length endnode[ncell] as well as
-// a new stride vector of length equal to the size of the largest cell.
-// Also return index vectors for firstnode (non-root) of cell i and lastnode
-// of cell i and number of non-root nodes for each cell
-
-int* interleave_permutations(int ncell, int* endnode,
-  int& nstride, int*& stride,
-  int*& firstnode, int*& lastnode, int*& sz
-){
-  int* permute = new int[endnode[ncell]];
-
-  // nstride is size of largest cell (absent root)
-  // also construct vectors of cell sizes (without root) and firstnode,lastnode
-  nstride = 0;
-  firstnode = new int[ncell];
-  lastnode = new int[ncell];
-  sz = new int[ncell];
-  for (int i=0; i < ncell; ++i) {
-    sz[i] = endnode[i+1] - endnode[i];
-    if (sz[i] > nstride) {
-      nstride = sz[i];
-    }
-  }
-
-  // do not know if it matters to start from beginning or end
-  // start from beginning
-  // initialize
-  stride = new int[nstride+1]; // back substitution will access stride[nstride]
-  for (int i=0; i <= nstride; ++i) {
-    stride[i] = 0;
-  }
-  
-  // decrease sz array values by 1 for each stride and count number of
-  // positives. That is the stride.
-  // Meanwhile the permutation follows that interleaving
-  int k = 0; // permute index
-  // keep original cell order
-  for (int j = 0; j < ncell; ++j) {
-    firstnode[j] = -1;
-    lastnode[j] = -1;
-    permute[k++] = j;
-  }
-  for (int i=0; i < nstride; ++i) {
-    int n = 0;
-    for (int j = 0; j < ncell; ++j) {
-      if (sz[j] > 0) {
-        ++n;
-        if (firstnode[j] < 0) { firstnode[j] = k; }
-        lastnode[j] = k;
-        permute[endnode[j] + i] = k++;
-      }
-      --sz[j]; // original size is sz[j] + nstride
-    }
-    stride[i] = n;
-  }
-
-  // rebuild sz
-  for (int i=0; i < ncell; ++i) {
-    sz[i] = endnode[i+1] - endnode[i];
-  }
-
-  return permute;
-}
-
-int* cell_size_order(int ncell, int nnode, int* parent) {
-  int* p = new int[nnode];
-  int* cell = new int[nnode]; // each node knows the cell index
-  int* cellsize = new int[ncell];
-
-  for (int i=0; i < ncell; ++i) {
-    cell[i] = i;
-    cellsize[i] = 0; // does not include root
-    assert(parent[i] < 0); // all root nodes at beginning
-  }
-
-  for (int i=ncell; i < nnode; ++i) {
-    cell[i] = cell[parent[i]];
-    cellsize[cell[i]] += 1;
-  }
-  
-  // sort by increasing cell size
-  // required by interleaved gaussian elimination
-  int* cellpermute = nrn_index_sort(cellsize, ncell);
-  
-  for (int i = 0; i < nnode; ++i) {
-    if (i < ncell) {
-      p[cellpermute[i]] = i;
-    }else{
-      p[i] = i;
-    }
-  }
-
-  delete [] cell;
-  delete [] cellsize;
-  delete [] cellpermute;
-
-  return p;
-}
-
-static int* contiguous_cell_block_order(int ncell, int nnode, int* parent) {
-  int* p = new int[nnode];
-  int* cell = new int[nnode]; // each node knows the cell index
-  int* cellsize = new int[ncell];
-
-  for (int i=0; i < ncell; ++i) {
-    cell[i] = i;
-    cellsize[i] = 0; // does not include root
-    assert(parent[i] < 0); // all root nodes at beginning
-  }
-
-  for (int i=ncell; i < nnode; ++i) {
-    cell[i] = cell[parent[i]];
-    cellsize[cell[i]] += 1;
-  }
-  
-  int* celldispl = new int[ncell+1];
-  celldispl[0] = ncell;
-  for (int i=0; i < ncell; ++i) {
-    celldispl[i+1] = celldispl[i] + cellsize[i];
-  }
-
-  // cellpermute order for the roots ... and reinit cellsize
-  for (int i=0; i < ncell; ++i) {
-    p[i] = i;
-    cellsize[i] = 0;
-  }
-
-  // remaining nodes in cell block order
-  for (int i=ncell; i < nnode; ++i) {
-    int icell = cell[i];
-    p[i] = celldispl[icell] + cellsize[icell]++;
-  }
-
-  delete [] cellsize;
-  delete [] celldispl;
-  delete [] cell;
-
-  return p;
-}
-
 class InterleaveInfo {
   public:
   InterleaveInfo();
@@ -234,46 +54,9 @@ int* interleave_order(int ith, int ncell, int nnode, int* parent) {
     if (parent[i] == 0) { parent[i] = -1; }
   }
 
-  // permute so cell roots are in order of increasing cell size
-  int* p_cellsize = cell_size_order(ncell, nnode, parent);
-  // update parent so roots are cellsize order
-  int* parent1 = new int[nnode];
-  for (int i=0; i < nnode; ++i) {
-    int par = parent[i];
-    if (par >= 0) {
-      par = p_cellsize[par];
-    }
-    parent1[i] = par;
-  }
-
-  // permute into contiguous cell
-  int* p1 = contiguous_cell_block_order(ncell, nnode, parent1);
-
-  // end_index = p1[start_index]
-  int* newparent = new int[nnode];
-  for (int i=0; i < nnode; ++i) {
-    int par = parent1[i];
-    if (par >= 0) {
-      par = p1[par];
-    }
-    newparent[p1[i]] = par;
-  }
-#if 0  // newparent in contiguous cell block orderr
-  for (int i=0; i < nnode; ++i) {
-    printf("parent[%d] = %d\n", i, newparent[i]);
-  }
-#endif
-
-  int* endnodes = calculate_endnodes(ncell, nnode, newparent);
-#if 0
-  for (int i=0; i <= ncell; ++i) {
-    printf("endnodes[%d] = %d\n", i, endnodes[i]);
-  }
-#endif
-
   int nstride, *stride, *firstnode, *lastnode, *cellsize;
 
-  int* order = interleave_permutations(ncell, endnodes,
+  int* order = node_order(ncell, nnode, parent,
     nstride, stride, firstnode, lastnode, cellsize);
 
   if (interleave_info) {
@@ -294,30 +77,7 @@ if (0 && ith == 0) {
 }
   }
 
-  int* combined = new int[nnode];
-  for (int i=0; i < nnode; ++i) {
-    combined[i] = order[p1[p_cellsize[i]]];
-  }
-
-#if 0
-  // test the combination. should be interleaved
-  for (int i=0; i < nnode; ++i) {
-    int par = parent[i];
-    if (par >= 0) {
-      par = combined[par];
-    }
-    newparent[combined[i]] = par;
-  }
-  for (int i=0; i < nnode; ++i) {
-    printf("parent[%d] = %d\n", i, newparent[i]);
-  }
-#endif
-
-  delete [] newparent;
-  delete [] order;
-  delete [] p_cellsize;
-
-  return combined;
+  return order;
 }
 
 #if 1
@@ -338,7 +98,7 @@ static void triang_interleaved(NrnThread& nt, int icell, int icellsize, int nstr
     if (istride < icellsize) { // only first icellsize strides matter
       // what is the index
       int ip = GPU_PARENT(i);
-      //assert (ip >= 0); // if (ip < 0) return;
+      nrn_assert (ip >= 0); // if (ip < 0) return;
       double p = GPU_A(i) / GPU_D(i);
       GPU_D(ip) -= p * GPU_B(i);
       GPU_RHS(ip) -= p * GPU_RHS(i);
@@ -354,7 +114,7 @@ static void bksub_interleaved(NrnThread& nt, int icell, int icellsize, int nstri
   GPU_RHS(icell) /= GPU_D(icell); // the root
   for (int istride=0; istride < icellsize; ++istride) {
     int ip = GPU_PARENT(i);
-    //assert(ip >= 0);
+    nrn_assert(ip >= 0);
     GPU_RHS(i) -= GPU_B(i) * GPU_RHS(ip);
     GPU_RHS(i) /= GPU_D(i);
     i += stride[istride+1];
