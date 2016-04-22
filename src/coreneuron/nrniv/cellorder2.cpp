@@ -113,6 +113,16 @@ int* node_order(int ncell, int nnode, int* parent,
   // administrative statistics for gauss elimination
   admin(ncell, nodevec, nstride, stride, firstnode, lastnode, cellsize);
 
+#if 1
+  int ntopol = 1;
+  for (int i = 1; i < ncell; ++i) {
+    if (nodevec[i-1]->hash != nodevec[i]->hash) {
+      ntopol += 1;
+    }
+  }
+  printf("%d distinct tree topologies\n", ntopol);
+#endif
+
   for (size_t i =0; i < nodevec.size(); ++i) {
     delete nodevec[i];
   }
@@ -121,7 +131,7 @@ int* node_order(int ncell, int nnode, int* parent,
 }
 
 void check(int ncell, vector<TNode*>& nodevec) {
-  printf("check\n");
+  //printf("check\n");
   size_t nnode = nodevec.size();
   for (size_t i=0; i < nnode; ++i) {
     nodevec[i]->nodevec_index = i;
