@@ -1267,9 +1267,9 @@ for (int i=0; i < nt.end; ++i) {
     Memb_list* ml = nt._ml_list[mtype];
     int ix = F.read_int();
     int sz = F.read_int();
-    IvocVect* yvec = vector_new(sz);
+    IvocVect* yvec = vector_new1(sz);
     F.read_array<double>(vector_vec(yvec), sz);
-    IvocVect* tvec = vector_new(sz);
+    IvocVect* tvec = vector_new1(sz);
     F.read_array<double>(vector_vec(tvec), sz);
     ix = nrn_param_layout(ix, mtype, ml);
     if (ml->_permute) {
