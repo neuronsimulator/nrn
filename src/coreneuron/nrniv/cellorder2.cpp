@@ -5,6 +5,7 @@
 #include <vector>
 #include <map>
 #include <algorithm>
+#include <string.h>
 
 using namespace std;
 
@@ -73,6 +74,61 @@ static void admin(int ncell, vector<TNode*>& nodevec,
 static void check(int ncell, vector<TNode*>&);
 static void prtree(vector<TNode*>&);
 
+typedef std::pair<TNode*, int> TNI;
+typedef std::map<size_t, pair<TNode*, int> > HashCnt;
+typedef vector<TNI> TNIVec;
+
+static bool tnivec_cmp(const TNI& a, const TNI& b) {
+  bool result = false;
+  if (a.second < b.second) {
+    result = true;
+  }else if (a.second == b.second) {
+    result = b.first->treesize < a.first->treesize;
+  }
+  return result;
+}
+
+static char* stree(TNode* nd) {
+  char s[1000];
+
+  if (nd->treesize > 50) { return strdup(""); }
+  s[0] = '(';
+  s[1] = '\0';
+  for (size_t i=0; i < nd->children.size(); ++i) { // need sorted by child hash
+    char* sr = stree(nd->children[i]);
+    strcat(s, sr);
+    free(sr);
+  }
+  strcat(s, ")");
+  return strdup(s);
+}
+
+static void exper1(vector<TNode*>& nodevec) {
+  printf("nodevec.size = %ld\n", nodevec.size());
+  HashCnt hashcnt;
+  for (size_t i=0; i < nodevec.size(); ++i) {
+    TNode* nd = nodevec[i];
+    size_t h = nd->hash;
+    HashCnt::iterator search = hashcnt.find(h);
+    if (search != hashcnt.end()) {
+      search->second.second += 1;
+    }else{
+      hashcnt[h] = pair<TNode*, int>(nd, 1);
+    }
+  }
+  TNIVec tnivec;
+  for (HashCnt::iterator i = hashcnt.begin(); i != hashcnt.end(); ++i) {
+    tnivec.push_back(i->second);
+  }
+  std::sort(tnivec.begin(), tnivec.end(), tnivec_cmp);
+
+  for (TNIVec::iterator i = tnivec.begin(); i != tnivec.end(); ++i) {
+    char* sr = stree(i->first);
+    printf("%20ld %5d %3ld %s\n", i->first->hash, i->second, i->first->treesize, sr);
+    free(sr);
+  }
+}
+
 // for cells with same size, keep identical trees together
 
 // parent is (unpermuted)  nnode length vector of parent node indices.
@@ -112,6 +168,8 @@ int* node_order(int ncell, int nnode, int* parent,
 
   // administrative statistics for gauss elimination
   admin(ncell, nodevec, nstride, stride, firstnode, lastnode, cellsize);
+
+  exper1(nodevec);
 
 #if 1
   int ntopol = 1;
