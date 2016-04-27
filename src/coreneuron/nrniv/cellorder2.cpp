@@ -153,10 +153,10 @@ static void quality(vector<TNode*>& nodevec) {
 
   // first ncell nodes are by definition in contiguous order
   for (size_t i = 0; i < nodevec.size(); ++i) {
-    qcnt += 1;
     if (nodevec[i]->parent != NULL) {
       break;
     }
+    qcnt += 1;
   }
   size_t ncell = qcnt;
 
@@ -368,6 +368,7 @@ void node_interleave_order(int ncell, vector<TNode*>& nodevec) {
 }
 
 static bool par_order_cmp(TNode* a, TNode* b) {
+#if 1
   bool result = false;
   if (a->treenode_order < b->treenode_order) {
     result = true;
@@ -378,7 +379,8 @@ static bool par_order_cmp(TNode* a, TNode* b) {
   }
   return result;
 
-/*
+#else
+
   bool result = false;
   if (a->level < b->level) {
     result = true;
@@ -400,7 +402,7 @@ static bool par_order_cmp(TNode* a, TNode* b) {
       }
   }
   return result;
-*/
+#endif
 }
 
 static void par_ordering(vector<TNode*>& nodevec) {
