@@ -21,6 +21,7 @@ class TNode {
   size_t treesize;
   size_t nodevec_index;
   size_t treenode_order;
+  size_t level;
   int nodeindex;
   int cellindex;
 };
@@ -46,6 +47,7 @@ static bool ptr_tnode_earlier(TNode* a, TNode* b) {
 TNode::TNode(int ix) {
   nodeindex = ix;
   cellindex = -1;
+  level = -1;
   hash = 0;
   treesize = 1;
   nodevec_index = -1;
@@ -70,6 +72,7 @@ size_t TNode::mkhash() { // call on all nodes in leaf to root order
 
 static void tree_analysis(int* parent, int nnode, int ncell, vector<TNode*>&);
 static void node_interleave_order(int ncell, vector<TNode*>&);
+static void par_ordering(vector<TNode*>&);
 static void admin(int ncell, vector<TNode*>& nodevec,
   int& nstride, int*& stride, int*& firstnode, int*& lastnode, int*& cellsize);
 static void check(int ncell, vector<TNode*>&);
@@ -205,6 +208,8 @@ int* node_order(int ncell, int nnode, int* parent,
 
   // nodevec[ncell:nnode] cells are interleaved in nodevec[0:ncell] cell order
   node_interleave_order(ncell, nodevec);
+  check(ncell, nodevec);
+  par_ordering(nodevec);
   check(ncell, nodevec);
 
 #if 0
@@ -362,7 +367,57 @@ void node_interleave_order(int ncell, vector<TNode*>& nodevec) {
 #endif
 }
 
-void admin(int ncell, vector<TNode*>& nodevec,
+static bool par_order_cmp(TNode* a, TNode* b) {
+  bool result = false;
+  if (a->treenode_order < b->treenode_order) {
+    result = true;
+  }else if (a->treenode_order == b->treenode_order) {
+    if (a->cellindex < b->cellindex) {
+      result = true;
+    }
+  }
+  return result;
+
+/*
+  bool result = false;
+  if (a->level < b->level) {
+    result = true;
+  }else if (a->level == b->level) {
+      if (a->cellindex < b->cellindex) {
+        result = true;
+      }else if (a->cellindex == b->cellindex) {
+        if (a->parent->hash < b->parent->hash) {
+          result = true;
+        }else if (a->parent->hash == b->parent->hash) {
+          if (a->hash < b->hash) {
+            result = true;
+          }else if (a->hash == b->hash) {
+            if (a->treenode_order < b->treenode_order) {
+              result = true;
+            }
+          }
+        }
+      }
+  }
+  return result;
+*/
+}
+
+static void par_ordering(vector<TNode*>& nodevec) {
+  // determine level
+  for (size_t i = 0; i < nodevec.size(); ++i) {
+    TNode* nd = nodevec[i];
+    if (nd->parent == NULL) {
+      nd->level = 0;
+    }else{
+      nd->level = nd->parent->level + 1;
+    }
+  }
+
+  sort(nodevec.begin(), nodevec.end(), par_order_cmp);
+}
+
+static void admin(int ncell, vector<TNode*>& nodevec,
   int& nstride, int*& stride, int*& firstnode, int*& lastnode, int*& cellsize
 ){
   // firstnode[i] is the index of the first nonroot node of the cell
