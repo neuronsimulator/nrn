@@ -138,6 +138,52 @@ static void exper1(vector<TNode*>& nodevec) {
   }
 }
 
+/*
+assess the quality of the ordering. The measure is the size of a contiguous
+list of nodes whose parents have the same order. How many contiguous lists
+have that same size. How many nodes participate in that size list.
+Modify the quality measure from experience with performance. Start with
+list of (nnode, size_participation)
+*/
+static void quality(vector<TNode*>& nodevec) {
+  size_t qcnt=0; // how many contiguous nodes have contiguous parents
+
+  // first ncell nodes are by definition in contiguous order
+  for (size_t i = 0; i < nodevec.size(); ++i) {
+    qcnt += 1;
+    if (nodevec[i]->parent != NULL) {
+      break;
+    }
+  }
+  size_t ncell = qcnt;
+
+  // key is how many parents in contiguous order
+  // value is number of nodes that participate in that
+  map<size_t, size_t> qual;
+  size_t ip_last = 10000000000;
+  for (size_t i = ncell; i < nodevec.size(); ++i) {
+    size_t ip = nodevec[i]->parent->nodevec_index;
+    if (ip == ip_last + 1) { // contiguous
+      qcnt += 1;
+    }else{
+      qual[qcnt] += qcnt;
+      qcnt = 1;
+    }
+    ip_last = ip;
+  }
+  qual[qcnt] += qcnt;
+
+  // print result
+  qcnt = 0;
+  for (map<size_t, size_t>::iterator it = qual.begin(); it != qual.end(); ++it) {
+    qcnt += it->second;
+    printf("%6ld %6ld\n", it->first, it->second);
+  }
+  printf("qual.size=%ld  qual total nodes=%ld  nodevec.size=%ld\n",
+    qual.size(), qcnt, nodevec.size());
+  
+}
+
 // for cells with same size, keep identical trees together
 
 // parent is (unpermuted)  nnode length vector of parent node indices.
@@ -178,7 +224,8 @@ int* node_order(int ncell, int nnode, int* parent,
   // administrative statistics for gauss elimination
   admin(ncell, nodevec, nstride, stride, firstnode, lastnode, cellsize);
 
-  exper1(nodevec);
+  //exper1(nodevec);
+  quality(nodevec);
 
 #if 1
   int ntopol = 1;
