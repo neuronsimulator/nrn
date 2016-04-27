@@ -4,6 +4,7 @@
 
 #include <vector>
 #include <map>
+#include <set>
 #include <algorithm>
 #include <string.h>
 
@@ -91,7 +92,7 @@ static bool tnivec_cmp(const TNI& a, const TNI& b) {
 static char* stree(TNode* nd) {
   char s[1000];
 
-  if (nd->treesize > 50) { return strdup(""); }
+  if (nd->treesize > 100) { return strdup(""); }
   s[0] = '(';
   s[1] = '\0';
   for (size_t i=0; i < nd->children.size(); ++i) { // need sorted by child hash
@@ -122,9 +123,17 @@ static void exper1(vector<TNode*>& nodevec) {
   }
   std::sort(tnivec.begin(), tnivec.end(), tnivec_cmp);
 
+  // I am a child of <n> parent patterns (parallel to tnivec)
+  map<size_t, set<size_t> > parpat;
+  for (size_t i = 0; i < nodevec.size(); ++i) {
+    TNode* nd = nodevec[i];
+    parpat[nd->hash].insert(nd->parent ? nd->parent->hash : 0);
+  }
+
   for (TNIVec::iterator i = tnivec.begin(); i != tnivec.end(); ++i) {
     char* sr = stree(i->first);
-    printf("%20ld %5d %3ld %s\n", i->first->hash, i->second, i->first->treesize, sr);
+    printf("%20ld %5d %3ld %4ld %s\n", i->first->hash, i->second, i->first->treesize,
+      parpat[i->first->hash].size(), sr);
     free(sr);
   }
 }
