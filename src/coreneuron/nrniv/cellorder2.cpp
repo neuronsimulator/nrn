@@ -148,7 +148,7 @@ have that same size. How many nodes participate in that size list.
 Modify the quality measure from experience with performance. Start with
 list of (nnode, size_participation)
 */
-static void quality(vector<TNode*>& nodevec) {
+static void quality(vector<TNode*>& nodevec, size_t max = 32) {
   size_t qcnt=0; // how many contiguous nodes have contiguous parents
 
   // first ncell nodes are by definition in contiguous order
@@ -172,7 +172,9 @@ static void quality(vector<TNode*>& nodevec) {
       if (qcnt == 1) {
         printf("unique %ld p=%ld ix=%d\n", i, ip, nodevec[i]->nodeindex);
       }
-      qual[qcnt] += qcnt;
+      qual[max] += (qcnt/max) * max;
+      size_t x = qcnt%max;
+      if (x) { qual[x] += x; }
       qcnt = 1;
     }
     ip_last = ip;
