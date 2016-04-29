@@ -6,6 +6,11 @@
 #include <stdlib.h>
 #include <nrnmutdec.h>
 #include "oc2iv.h"
+#include "ocfunc.h"
+#if HAVE_IV
+#include "utility.h"
+#include "ivoc.h"
+#endif
 
 #if USE_PTHREAD
 static MUTDEC
@@ -27,6 +32,8 @@ declareList(PList, PObserver);
 implementList(PList, PObserver);
 static PList* p_list;
 static PList* pd_list;
+
+int nrn_err_dialog_active_;
 
 extern "C" {
 void nrn_notify_freed(PF pf) {
@@ -145,6 +152,18 @@ void nrniv_bind_thread() {
 }
 #endif
 
+void nrn_err_dialog(const char* mes) {
+#if HAVE_IV
+IFGUI
+  if (nrn_err_dialog_active_ && !Session::instance()->done()) {
+    char m[1024];
+    sprintf(m, "%s (See terminal window)", mes);
+    continue_dialog(m);
+  }
+ENDGUI
+#endif
+}
+
 #if HAVE_IV // to end of file
 
 #if defined(MINGW)
@@ -156,7 +175,6 @@ void nrniv_bind_thread() {
 #include <InterViews/style.h>
 #include <IV-look/kit.h>
 
-#include "ivoc.h"
 #include "xmenu.h"
 
 /*

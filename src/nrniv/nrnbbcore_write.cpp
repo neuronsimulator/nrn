@@ -101,6 +101,10 @@ extern int nrn_is_ion(int type);
 extern double nrn_ion_charge(Symbol* sym);
 extern Symbol* hoc_lookup(const char*);
 
+/* not NULL, need to write gap information */
+extern void (*nrnthread_v_transfer_)(NrnThread*);
+extern size_t nrnbbcore_gap_write(const char* path, int* group_ids);
+
 typedef void (*bbcore_write_t)(double*, int*, int*, int*, double*, Datum*, Datum*, NrnThread*);
 extern bbcore_write_t* nrn_bbcore_write_;
 
@@ -204,6 +208,15 @@ size_t nrnbbcore_write() {
   for (int i=0; i < nrn_nthread; ++i) {
     chkpnt = 0;
     write_nrnthread(path, nrn_threads[i], cgs[i]);
+  }
+  if (nrnthread_v_transfer_) {
+    // see partrans.cpp. nrn_nthread files of path/icg_gap.dat
+    int* group_ids = new int[nrn_nthread];
+    for (int i=0; i < nrn_nthread; ++i) {
+      group_ids[i] = (cgs[i].n_output > 0) ? cgs[i].output_gid[0] : -1;
+    }
+    nrnbbcore_gap_write(path, group_ids);
+    delete [] group_ids;
   }
   if (artdata2index_) {
     delete artdata2index_;
@@ -1019,6 +1032,11 @@ void write_nrnthread_task(const char* path, CellGroup* cgs)
     FILE *fp = fopen(fname, "w");
     if (!fp) {
       hoc_execerror("nrnbbcore_write write_nrnthread_task could not open for writing:", fname);
+    }
+    // temporary? expedient to notify coreneuron that this model involves
+    // gap junctions
+    if (nrnthread_v_transfer_) {
+      fprintf(fp, "-1\n");
     }
     fprintf(fp, "%d\n", iSumThread);
     for (int iInt = 0; iInt < nrnmpi_numprocs; ++iInt)

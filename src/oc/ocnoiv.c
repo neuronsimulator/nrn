@@ -18,6 +18,9 @@ void notify_pointer_freed(void* p) {
 void ivoc_help(const char* p) {
 }
 
+/*ARGSUSED*/
+void nrn_err_dialog(const char* mes) {}
+
 void ivoc_cleanup(void) {}
 
 void hoc_notify_iv(void) {hoc_ret(); hoc_pushx(0.);}

@@ -900,3 +900,196 @@ void pargap_jacobi_rhs(double* b, double* x) {
     b[i] += VEC_RHS(i);
   }
 }
+
+extern "C" {
+extern size_t nrnbbcore_gap_write(const char* path, int* group_ids);
+}
+
+/*
+  file format for <path>/<group_id>_gap.dat
+  All gap info for thread. No file if ntar == 0
+  ntar  // number of targets in this thread (vpre)
+  nsrc  // number of sources in this thread (v)
+  type // gap mechanism
+  ix_vpre // range variable index relative to beginning of instance
+  sid_target  // ntar = memb_list[type].nodecount of these lines 
+    //there are no indices for target vpre since sorted in memb_list order.
+  sid_src // nsrc of these (sorted in increasing order of index)
+  <index into _actual_v> // nsrc of these
+
+  Assert all gaps have the same type.
+  Assert ntar = memb_list[type].nodecount.
+  Assert no extracellular.
+*/
+
+struct BBCoreGapInfo {
+  int nsrc, ntar;
+  int* sid_src;
+  int* v_index;
+  int* sid_target;
+  int* vpre_index;
+};
+
+static void sidsort(int* sids, int cnt, int* indices);
+
+size_t nrnbbcore_gap_write(const char* path, int* group_ids) {
+  // if there are no targets, then there are not sources
+  if (!targets_ || !targets_->count()) {
+    assert(sgids_->count() == 0);
+    return 0;
+  }
+
+  // type
+  assert(target_pntlist_ && target_pntlist_->count() == targets_->count());
+  int type = target_pntlist_->item(0)->prop->type;
+  // all the same type
+  for (int i=0; i < targets_->count(); ++i) {
+    assert(type == target_pntlist_->item(i)->prop->type);
+  }
+
+  int ix_vpre = target_parray_index_->item(0);
+
+  // memb_lists of the threads.
+  Memb_list** gap_ml = new Memb_list*[nrn_nthread];
+  for (int tid=0; tid < nrn_nthread; ++tid) {
+    NrnThread& nt = nrn_threads[tid];
+    for (NrnThreadMembList* tml = nt.tml; tml; tml = tml->next) {
+      if (tml->index == type) {
+        gap_ml[tid] = tml->ml;
+      }
+    }
+  }
+
+  // space for the info
+  BBCoreGapInfo* gi = new BBCoreGapInfo[nrn_nthread];
+  for (int tid = 0; tid < nrn_nthread; ++tid) {
+    BBCoreGapInfo& g = gi[tid];
+    int n = transfer_thread_data_[tid].cnt;
+    g.sid_src = new int[n]; // but perhaps fewer sources than targets
+    g.v_index = new int[n]; // fewer sources than targets
+    g.sid_target = new int[n];
+    g.vpre_index = new int[n];
+    g.ntar = 0; // will end up as gap_ml[tid].nodecount
+    g.nsrc = 0; // will end up as number of distinct gap_ml[tid].nodeindices
+  }
+
+  // gap info for targets, segregate into threads
+  for (int i=0; i < targets_->count(); ++i) {
+    int sid = sgid2targets_->item(i);
+    NrnThread* nt = (NrnThread*)target_pntlist_->item(i)->_vnt;
+    int tid = nt ? nt->id : 0;
+    Memb_list* ml = gap_ml[tid];
+    int ix = targets_->item(i) - ml->data[0];
+
+    BBCoreGapInfo& g = gi[tid];
+    g.sid_target[g.ntar] = sid;
+    g.vpre_index[g.ntar] = ix;
+    g.ntar += 1;
+  }
+
+  // gap info for sources, segregate into threads.
+  for (int i=0; i < sgids_->count(); ++i) {
+    int sid = sgids_->item(i);
+    Node* nd = visources_->item(i);
+    assert(nd->extnode == NULL);
+    int tid = nd->_nt ? nd->_nt->id : 0;
+    int ix = nd->_v - nrn_threads[tid]._actual_v;
+    assert(ix >= 0 && ix < nrn_threads[tid].end);
+    BBCoreGapInfo& g = gi[tid];
+    g.sid_src[g.nsrc] = sid;
+    g.v_index[g.nsrc] = ix;
+    g.nsrc += 1;
+  }
+
+  // Sort each threads sources and targets so that the indices are
+  // monotonically increasing. (In fact the target indices will then be
+  // in memb_list order and that array will not have to be transferred.)
+  for (int tid=0; tid < nrn_nthread; ++tid) {
+    BBCoreGapInfo& g = gi[tid];
+    sidsort(g.sid_src, g.nsrc, g.v_index);
+    sidsort(g.sid_target, g.ntar, g.vpre_index);
+  }
+
+  // print the files
+  for (int tid = 0; tid < nrn_nthread; ++tid) {
+    BBCoreGapInfo& g = gi[tid];
+    if (g.ntar == 0) { continue; }
+
+    assert(g.nsrc > 0);
+    char fname[1000];
+    sprintf(fname, "%s/%d_gap.dat", path, group_ids[tid]);
+    FILE* f = fopen(fname, "wb");
+    assert(f);
+    fprintf(f, "%d ntar\n", g.ntar);
+    fprintf(f, "%d nsrc\n", g.nsrc);
+    fprintf(f, "%d %s\n", type, memb_func[type].sym->name);
+    fprintf(f, "%d ix_vpre\n", ix_vpre); // range variable offset from instance
+
+    int chkpnt = 0;
+#define CHKPNT fprintf(f, "chkpnt %d\n", chkpnt++);
+    CHKPNT fwrite(g.sid_target, g.ntar, sizeof(int), f);
+    CHKPNT fwrite(g.sid_src, g.nsrc, sizeof(int), f);
+    CHKPNT fwrite(g.v_index, g.nsrc, sizeof(int), f);
+
+    fclose(f);
+  }
+
+  // cleanup
+  for (int tid=0; tid < nrn_nthread; ++tid) {
+    BBCoreGapInfo& g = gi[tid];
+    delete [] g.sid_src;
+    delete [] g.sid_target;
+    delete [] g.v_index;
+    delete [] g.vpre_index;
+  }
+  delete [] gi;
+  delete [] gap_ml;
+}
+
+#if defined(__USE_GNU)
+#define myqsortr(arg1,arg2,arg3,arg4,arg5) qsort_r(arg1,arg2,arg3,arg4,arg5)
+#define mycompar(arg1,arg2,arg3) compar(arg1,arg2,arg3)
+#else
+#define myqsortr(arg1,arg2,arg3,arg4,arg5) qsort_r(arg1,arg2,arg3,arg5,arg4)
+#define mycompar(arg1,arg2,arg3) compar(arg3,arg1,arg2)
+#endif
+
+static int mycompar(const void* a, const void* b, void* array) {
+  int i = ((const int*)a)[0];
+  int j = ((const int*)b)[0];
+  int* indices = (int*)array;
+  if (indices[i] < indices[j]) { return -1; }
+  if (indices[i] > indices[j]) { return 1; }
+  return 0;
+}
+
+static void sidsort(int* sids, int cnt, int* indices) {
+  int* order = new int[cnt];
+  for (int i=0; i < cnt; ++i) {
+    order[i] = i;
+  }
+
+  myqsortr(order, cnt, sizeof(int), compar, indices);
+
+  // permute according to order
+  int* sids_orig = new int[cnt];
+  int* indices_orig = new int [cnt];
+  for (int i=0; i < cnt; ++i) {
+    sids_orig[i] = sids[i];
+    indices_orig[i] = indices[i];
+  }
+  for (int i=0; i < cnt; ++i) {
+    int j = order[i];
+    sids[i] = sids_orig[j];
+    indices[i] = indices_orig[j];
+  }
+  delete [] indices_orig;
+  delete [] sids_orig;
+  delete [] order;
+
+  // check that the sort is correct
+  for (int i=1; i < cnt; ++i) {
+    assert(indices[i-1] <= indices[i]);
+  }
+}
+

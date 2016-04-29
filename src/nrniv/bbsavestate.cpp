@@ -182,6 +182,11 @@ callback to bbss_early when needed.
 #include "netcon.h"
 #include "vrecitem.h"
 
+// on mingw, OUT became defined
+#undef IN
+#undef OUT
+#undef CNT
+
 extern bool nrn_use_bin_queue_;
 extern void (*nrn_binq_enqueue_error_handler)(double, TQItem*);
 static void bbss_early(double td, TQItem* tq);
@@ -379,7 +384,7 @@ void BBSS_Cnt::i(int& j, int chk) { ++ni; ++nl;}
 void BBSS_Cnt::d(int n, double& p) { nd += n; ++nl;}
 void BBSS_Cnt::d(int n, double* p) { nd += n; ++nl;}
 void BBSS_Cnt::s(char* cp, int chk) { ns += strlen(cp) + 1; }
-BBSS_IO::Type BBSS_Cnt::type() {return CNT;}
+BBSS_IO::Type BBSS_Cnt::type() {return BBSS_IO::CNT;}
 int BBSS_Cnt::bytecnt() { return usebin_ ? bytecntbin() : bytecntasc(); }
 int BBSS_Cnt::bytecntbin() { return ni*sizeof(int) + nd*sizeof(double) + ns; }
 int BBSS_Cnt::bytecntasc() { return ni*12 + nd*23 + ns + nl; }
@@ -409,7 +414,7 @@ void BBSS_TxtFileOut::d(int n, double* p){
 	fprintf(f, "\n");
 }
 void BBSS_TxtFileOut::s(char* cp, int chk){fprintf(f, "%s\n", cp); }
-BBSS_IO::Type BBSS_TxtFileOut::type() {return OUT;}
+BBSS_IO::Type BBSS_TxtFileOut::type() {return BBSS_IO::OUT;}
 
 class BBSS_TxtFileIn : public BBSS_IO {
 public:
@@ -419,7 +424,7 @@ public:
 	virtual void d(int n, double& p) { d(n, &p); }
 	virtual void d(int n, double* p);
 	virtual void s(char* cp, int chk=0);
-	virtual Type type() {return IN;}
+	virtual Type type() {return BBSS_IO::IN;}
 	virtual void skip(int);
 	FILE* f;
 };
@@ -478,7 +483,7 @@ void BBSS_BufferOut::d(int n, double& d) {cpy(sizeof(double), (char*)(&d));}
 void BBSS_BufferOut::d(int n, double* d) {cpy(n*sizeof(double), (char*)d);}
 void BBSS_BufferOut::s(char* cp, int chk) {cpy(strlen(cp)+1, cp);}
 void BBSS_BufferOut::a(int i) {	assert((p - b) + i <= sz);}
-BBSS_IO::Type BBSS_BufferOut::type() {return OUT;}
+BBSS_IO::Type BBSS_BufferOut::type() {return BBSS_IO::OUT;}
 void BBSS_BufferOut::cpy(int ns, char* cp){
 	a(ns);
 	for (int ii = 0; ii < ns; ++ii) {
@@ -513,7 +518,7 @@ void BBSS_BufferIn::s(char* cp, int chk) {
 	}
 	cpy(strlen(p)+1, cp);
 }
-BBSS_IO::Type BBSS_BufferIn::type() {return IN;}
+BBSS_IO::Type BBSS_BufferIn::type() {return BBSS_IO::IN;}
 void BBSS_BufferIn::cpy(int ns, char* cp){
 	a(ns);
 	for (int ii = 0; ii < ns; ++ii) {

@@ -254,22 +254,26 @@ static PyObject* hocobj_name(PyObject* pself, PyObject* args) {
 			sprintf(cp += strlen(cp), "()");
 		}
 	}else if (self->type_ == 4) {
-		sprintf(cp, "hoc ref value %g", self->u.x_);
+		sprintf(cp, "<hoc ref value %g>", self->u.x_);
 	}else if (self->type_ == 5) {
-		sprintf(cp, "hoc ref value \"%s\"", self->u.s_);
+		sprintf(cp, "<hoc ref value \"%s\">", self->u.s_);
 	}else if (self->type_ == 6) {
-		sprintf(cp, "hoc ref value \"%s\"", hoc_object_name(self->u.ho_));
+		sprintf(cp, "<hoc ref value \"%s\">", hoc_object_name(self->u.ho_));
 	}else if (self->type_ == 7) {
-		sprintf(cp, "all section iterator");
+		sprintf(cp, "<all section iterator>");
 	}else if (self->type_ == 8) {
-		sprintf(cp, "pointer to hoc scalar %g", self->u.px_?*self->u.px_:-1e100);
+		sprintf(cp, "<pointer to hoc scalar %g>", self->u.px_?*self->u.px_:-1e100);
 	}else if (self->type_ == 9) {
-		sprintf(cp, "incomplete pointer to hoc array %s", self->sym_->name);
+		sprintf(cp, "<incomplete pointer to hoc array %s>", self->sym_->name);
 	}else{
-		sprintf(cp, "TopLevelHocInterpreter");
+		sprintf(cp, "<TopLevelHocInterpreter>");
 	}
 	po = Py_BuildValue("s", buf);
 	return po;
+}
+
+static PyObject* hocobj_repr(PyObject* p) {
+  return hocobj_name(p, NULL);
 }
 
 static Inst* save_pc(Inst* newpc) {

@@ -11,7 +11,7 @@ static PyTypeObject nrnpy_SectionType = {
 	(getattrfunc)0,		/*tp_getattr*/
 	(setattrfunc)0,		/*tp_setattr*/
 	0,			/*tp_reserved*/
-	0,			/*tp_repr*/
+	(reprfunc)pysec_repr,			/*tp_repr*/
 	0,			/*tp_as_number*/
 	0,			/*tp_as_sequence*/
 	0,			/*tp_as_mapping*/
@@ -103,7 +103,7 @@ static PyTypeObject nrnpy_SegmentType = {
 	(getattrfunc)0,		/*tp_getattr*/
 	(setattrfunc)0,		/*tp_setattr*/
 	0,			/*tp_reserved*/
-	0,			/*tp_repr*/
+	(reprfunc)pyseg_repr,			/*tp_repr*/
 	0,			/*tp_as_number*/
 	0,			/*tp_as_sequence*/
 	0,			/*tp_as_mapping*/
@@ -195,7 +195,7 @@ static PyTypeObject nrnpy_MechanismType = {
 	(getattrfunc)0,		/*tp_getattr*/
 	(setattrfunc)0,		/*tp_setattr*/
 	0,			/*tp_reserved*/
-	0,			/*tp_repr*/
+	(reprfunc)pymech_repr,			/*tp_repr*/
 	0,			/*tp_as_number*/
 	0,			/*tp_as_sequence*/
 	0,			/*tp_as_mapping*/
