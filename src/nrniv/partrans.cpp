@@ -1,6 +1,7 @@
 #include <../../nrnconf.h>
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <errno.h>
 #include <InterViews/resource.h>
 #include <OS/list.h>
@@ -1044,6 +1045,7 @@ size_t nrnbbcore_gap_write(const char* path, int* group_ids) {
   }
   delete [] gi;
   delete [] gap_ml;
+  return 0;
 }
 
 #if defined(__USE_GNU)
