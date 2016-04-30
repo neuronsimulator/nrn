@@ -179,7 +179,9 @@ static void quality(vector<TNode*>& nodevec, size_t max = 32) {
     }
     ip_last = ip;
   }
-  qual[qcnt] += qcnt;
+  qual[max] += (qcnt/max) * max;
+  size_t x = qcnt%max;
+  if (x) { qual[x] += x; }
 
   // print result
   qcnt = 0;
