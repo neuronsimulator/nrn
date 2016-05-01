@@ -199,6 +199,31 @@ static void quality(vector<TNode*>& nodevec, size_t max = 32) {
   printf("qual.size=%ld  qual total nodes=%ld  nodevec.size=%ld\n",
     qual.size(), qcnt, nodevec.size());
   
+  // how many race conditions. ie refer to same parent on different core
+  // of warp (max cores) or parent in same group of max.
+  size_t maxip = ncell;
+  size_t nrace1 = 0;
+  size_t nrace2 = 0;
+  set<size_t> ipused;
+  for (size_t i = ncell; i < nodevec.size(); ++i) {
+    TNode* nd = nodevec[i];
+    size_t ip = nd->parent->nodevec_index;
+    if (i%max == 0) {
+      maxip = i;
+      ipused.clear();
+    }
+    if (ip >= maxip) {
+      nrace1 += 1;
+    }else{
+      if (ipused.find(ip) != ipused.end()) {
+        nrace2 += 1;
+      }else{
+        ipused.insert(ip);
+      }
+    }
+  }
+  printf("nrace = %ld (parent in same group of %ld nodes)\n", nrace1, max);
+  printf("nrace = %ld (parent used more than once by same group of %ld nodes)\n", nrace2, max);
 }
 
 // for cells with same size, keep identical trees together
