@@ -177,7 +177,7 @@ static void quality(vector<TNode*>& nodevec, size_t max = 32) {
       qcnt += 1;
     }else{
       if (qcnt == 1) {
-//        printf("unique %ld p=%ld ix=%d\n", i, ip, nodevec[i]->nodeindex);
+        //printf("unique %ld p=%ld ix=%d\n", i, ip, nodevec[i]->nodeindex);
       }
       qual[max] += (qcnt/max) * max;
       size_t x = qcnt%max;
@@ -550,7 +550,7 @@ nd->parent->nodevec_index, nd->parent->treenode_order);
           break;
         }
         for (size_t k = 0; k < pnd->children.size(); ++k) {
-           pnd->children[k]->treenode_order = order + k*1000;
+           pnd->children[k]->treenode_order = order + k*10000;
         }
         ++order;
       }
@@ -581,17 +581,6 @@ nd->parent->nodevec_index, nd->parent->treenode_order);
     }
   }
 chkorder1(ncell, nodevec);
-  // recalculate contig treenode_order
-  size_t order = groupsize;
-  groupindex = 0;
-  for (size_t i=ncell; i < nodevec.size(); ++i) {
-    TNode* nd = nodevec[i];
-    if (nd->groupindex != groupindex) {
-      groupindex = nd->groupindex;
-      order = groupsize;
-    }
-    nd->treenode_order = order++;
-  }
 
   for (size_t i=ncell; i < nodevec.size(); ++i) {
     TNode* nd = nodevec[i];
@@ -604,6 +593,19 @@ chkorder1(ncell, nodevec);
     nd->groupindex, nd->cellindex, nd->level, nd->treenode_order);
   }
 #endif
+
+  // recalculate contig treenode_order
+  size_t order = groupsize;
+  groupindex = 0;
+  for (size_t i=ncell; i < nodevec.size(); ++i) {
+    TNode* nd = nodevec[i];
+    if (nd->groupindex != groupindex) {
+      groupindex = nd->groupindex;
+      order = groupsize;
+    }
+    nd->treenode_order = order++;
+  }
+
 //prtree(nodevec);
 
 #if 0
