@@ -166,7 +166,10 @@ static void quality(vector<TNode*>& nodevec, size_t max = 32) {
   size_t ip_last = 10000000000;
   for (size_t i = ncell; i < nodevec.size(); ++i) {
     size_t ip = nodevec[i]->parent->nodevec_index;
-    if (ip == ip_last + 1) { // contiguous
+    // i%max == 0 means that if we start a warp with 8 and then have 32
+    // the 32 is broken into 24 and 8. (modify if the arrangement during
+    // gaussian elimination becomes more sophisticated.(
+    if (ip == ip_last + 1 && i%max != 0) { // contiguous
       qcnt += 1;
     }else{
       if (qcnt == 1) {
