@@ -10,6 +10,8 @@
 
 using namespace std;
 
+static size_t groupsize = 32;
+
 class TNode {
   public:
   TNode(int ix);
@@ -23,6 +25,7 @@ class TNode {
   size_t treenode_order;
   size_t level;
   size_t cellindex;
+  size_t groupindex;
   int nodeindex;
 };
 
@@ -47,6 +50,7 @@ static bool ptr_tnode_earlier(TNode* a, TNode* b) {
 TNode::TNode(int ix) {
   nodeindex = ix;
   cellindex = 0;
+  groupindex = 0;
   level = -1;
   hash = 0;
   treesize = 1;
@@ -173,7 +177,7 @@ static void quality(vector<TNode*>& nodevec, size_t max = 32) {
       qcnt += 1;
     }else{
       if (qcnt == 1) {
-        printf("unique %ld p=%ld ix=%d\n", i, ip, nodevec[i]->nodeindex);
+//        printf("unique %ld p=%ld ix=%d\n", i, ip, nodevec[i]->nodeindex);
       }
       qual[max] += (qcnt/max) * max;
       size_t x = qcnt%max;
@@ -381,9 +385,9 @@ void node_interleave_order(int ncell, vector<TNode*>& nodevec) {
 
 static bool contiglevel_comp(TNode* a, TNode* b) {
   bool result = false;
-  if (a->cellindex < b->cellindex) {
+  if (a->groupindex < b->groupindex) {
     result = true;
-  }else if (a->cellindex == b->cellindex) {
+  }else if (a->groupindex == b->groupindex) {
     if (a->level < b->level) {
       result = true;
     }else if (a->level == b->level) {
@@ -396,16 +400,16 @@ static bool contiglevel_comp(TNode* a, TNode* b) {
 }
 
 static void chkorder1(size_t ncell, vector<TNode*>& nodevec) {
-  size_t cellindex = 0;
+  size_t groupindex = 0;
   size_t level = 0;
   for (size_t i = ncell; i < nodevec.size(); ++i) {
     TNode* nd = nodevec[i];
     nrn_assert(nd->nodevec_index == i);
-    nrn_assert(nd->cellindex >= cellindex);
-    if (nd->cellindex == cellindex) {
+    nrn_assert(nd->groupindex >= groupindex);
+    if (nd->groupindex == groupindex) {
       nrn_assert(nd->level >= level);
     }
-    cellindex = nd->cellindex;
+    groupindex = nd->groupindex;
     level = nd->level;
   }
   //printf("chkorder1 true\n");
@@ -440,11 +444,19 @@ static void par_ordering(vector<TNode*>& nodevec) {
     nd->level = 0;
     nd->nodevec_index = i;
     ncell++;
+    nd->groupindex = i/groupsize;
   }
 
-  int* order0 = new int[ncell];
+  int* order0 = new int[ncell/groupsize];
   for (size_t i=0; i < ncell; ++i) {
-    order0[i] = 0;
+    TNode* nd = nodevec[i];
+    size_t g = i/groupsize;
+    if (i%groupsize == 0) {
+      order0[g] = 0;
+      nd->treenode_order = order0[g];
+    }else{
+      nd->treenode_order = ++order0[g];
+    }
   }
 
   // levels and cell indices
@@ -452,7 +464,8 @@ static void par_ordering(vector<TNode*>& nodevec) {
     TNode* nd = nodevec[i];
     nd->level = nd->parent->level + 1;
     nd->cellindex = nd->parent->cellindex;
-    nd->treenode_order = ++order0[nd->parent->cellindex];
+    nd->groupindex = nd->parent->groupindex;
+    nd->treenode_order = ++order0[nd->parent->groupindex];
     nd->nodevec_index = i; // an order but...
   }
     
@@ -472,26 +485,33 @@ chkorder1(ncell, nodevec);
   // calculate an ordering within a cell level
   // for each level presume previous level is sorted
   size_t begin = ncell;
-  size_t cellindex = ncell < nodevec.size() ? nodevec[ncell]->cellindex : 0;
+  size_t groupindex = ncell < nodevec.size() ? nodevec[ncell]->groupindex : 0;
   size_t level = ncell < nodevec.size() ? nodevec[ncell]->level : 0;
 
   for (size_t i = ncell; i <= nodevec.size(); ++i) { // i==nodevec.size() is special
     TNode* nd = i < nodevec.size() ? nodevec[i] : NULL;
-    if (i == nodevec.size() || nd->cellindex != cellindex || nd->level != level) {
+    if (i == nodevec.size() || nd->groupindex != groupindex || nd->level != level) {
       // process the level [begin:i)
-//printf("process level c=%ld l=%ld  %ld to %ld --- %ld\n", cellindex, level, begin, i, nodevec.size());
+//printf("process level g=%ld c=%ld l=%ld  %ld to %ld --- %ld\n", groupindex, cellindex, level, begin, i, nodevec.size());
       // previous level is already sorted. find its "begin".      
 if (nd == NULL) {
       nd = nodevec[i-1];
 }
       size_t p_begin = nodevec[begin]->parent->nodevec_index - nodevec[begin]->parent->treenode_order;
 #if 0
-printf("nd i=%ld c=%ld l=%ld p=%ld cp=%ld pl=%ld po=%ld\n",
-nd->nodevec_index, nd->cellindex, nd->level,
-nd->parent->nodevec_index, nd->parent->cellindex, nd->parent->level,
+printf("nd i=%ld g=%ld c=%ld l=%ld p=%ld gp=%ld cp=%ld pl=%ld po=%ld\n",
+nd->nodevec_index, nd->groupindex, nd->cellindex, nd->level,
+nd->parent->nodevec_index, nd->parent->groupindex, nd->parent->cellindex, nd->parent->level,
 nd->parent->treenode_order);
-printf("assert p_begin=%ld c=%ld l=%ld ix=%ld to=%ld\n",
-p_begin, nodevec[p_begin]->cellindex, nodevec[p_begin]->level,
+
+TNode* ndb = nodevec[begin];
+printf("begin i=%ld g=%ld c=%ld l=%ld p=%ld gp=%ld cp=%ld pl=%ld po=%ld\n",
+ndb->nodevec_index, ndb->groupindex, ndb->cellindex, ndb->level,
+ndb->parent->nodevec_index, ndb->parent->groupindex, ndb->parent->cellindex, ndb->parent->level,
+ndb->parent->treenode_order);
+
+printf("assert p_begin=%ld g=%ld c=%ld l=%ld ix=%ld to=%ld\n",
+p_begin, nodevec[p_begin]->groupindex, nodevec[p_begin]->cellindex, nodevec[p_begin]->level,
 nd->parent->nodevec_index, nd->parent->treenode_order);
 #endif
       nrn_assert(nodevec[p_begin]->treenode_order == 0);
@@ -501,7 +521,7 @@ nd->parent->nodevec_index, nd->parent->treenode_order);
       size_t plevel = nodevec[p_begin]->level;
       for (size_t j = p_begin; j < i; ++j) {
         TNode* pnd = nodevec[j];
-        if (pnd->cellindex != cellindex || pnd->level != plevel) {
+        if (pnd->groupindex != groupindex || pnd->level != plevel) {
           break;
         }
         for (size_t k = 0; k < pnd->children.size(); ++k) {
@@ -521,10 +541,10 @@ nd->parent->nodevec_index, nd->parent->treenode_order);
       }
 
       // check this level
-      nrn_assert(nodevec[begin-1]->cellindex < cellindex || nodevec[begin-1]->level < level);
+      nrn_assert(nodevec[begin-1]->groupindex < groupindex || nodevec[begin-1]->level < level);
       for (size_t j = begin; j < i; ++j) {
         TNode* nd = nodevec[j];
-        nrn_assert(nd->cellindex == cellindex && nd->level == level);
+        nrn_assert(nd->groupindex == groupindex && nd->level == level);
         nrn_assert(nd->treenode_order == j - begin);
         nrn_assert(nd->nodevec_index == j);
       }
@@ -532,28 +552,39 @@ nd->parent->nodevec_index, nd->parent->treenode_order);
       // next level
       begin = i;
       level = nd->level;
-      cellindex = nd->cellindex;
+      groupindex = nd->groupindex;
     }
   }
 chkorder1(ncell, nodevec);
   // recalculate contig treenode_order
-  size_t order = 1;
-  cellindex = 0;
+  size_t order = groupsize;
+  groupindex = 0;
   for (size_t i=ncell; i < nodevec.size(); ++i) {
     TNode* nd = nodevec[i];
-    if (nd->cellindex != cellindex) {
-      cellindex = nd->cellindex;
-      order = 1;
+    if (nd->groupindex != groupindex) {
+      groupindex = nd->groupindex;
+      order = groupsize;
     }
     nd->treenode_order = order++;
   }
-  std::sort(nodevec.begin() + ncell, nodevec.end(), interleave_comp);
+
+  for (size_t i=ncell; i < nodevec.size(); ++i) {
+    TNode* nd = nodevec[i];
+    nd->nodevec_index = i;
+  }
+#if 0
+  for (size_t i=ncell; i < nodevec.size(); ++i) {
+    TNode* nd = nodevec[i];
+    printf("  i=%ld p=%ld g=%ld c=%ld l=%ld o=%ld\n", nd->nodevec_index, nd->parent->nodevec_index,
+    nd->groupindex, nd->cellindex, nd->level, nd->treenode_order);
+  }
+#endif
 //prtree(nodevec);
 
 #if 0
   for (size_t i=0; i < nodevec.size(); ++i) {
     TNode& nd = *nodevec[i];
-    printf("%ld cell=%ld ix=%d\n",  i, nd.cellindex, nd.nodeindex);
+    printf("%ld group=%ld cell=%ld ix=%d\n",  i, nd->groupindex, nd.cellindex, nd.nodeindex);
   }
 #endif
 }
