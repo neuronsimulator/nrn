@@ -43,3 +43,12 @@ extern "C" {
 int Math::abs(int x) { return ::abs(x); }
 long Math::abs(long x) { return x >= 0 ? x : -x; }
 double Math::abs(double x) { return myfabs(x); }
+
+
+#include <InterViews/geometry.h>
+
+Extension::Extension() {}
+
+void Extension::set_xy(Canvas*, Coord left, Coord bottom, Coord right, Coord top) {
+        x_begin_ = left; y_begin_ = bottom; x_end_ = right; y_end_ = top;
+}
