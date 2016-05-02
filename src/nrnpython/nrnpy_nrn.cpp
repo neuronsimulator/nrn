@@ -360,6 +360,82 @@ static PyObject* NPySecObj_name(NPySecObj* self) {
 	return result;
 }
 
+static PyObject* NPySecObj_n3d(NPySecObj* self) {
+    return PyInt_FromLong(self->sec_->npt3d);
+}
+
+static PyObject* NPySecObj_x3d(NPySecObj* self, PyObject*  args) { // returns x value at index of 3d list
+	Section* sec = self->sec_;
+	int n, i;
+	if (!PyArg_ParseTuple(args, "i", &i)) {
+		return NULL;
+	}
+    n = sec->npt3d - 1;
+    if (i < 0 || i > n) {
+        PyErr_SetString(PyExc_Exception, "Arg out of range\n");
+        return NULL;
+    }
+    return PyFloat_FromDouble((double)sec->pt3d[i].x);
+}
+
+static PyObject* NPySecObj_y3d(NPySecObj* self, PyObject*  args) { // returns y value at index of 3d list
+	Section* sec = self->sec_;
+	int n, i;
+	if (!PyArg_ParseTuple(args, "i", &i)) {
+		return NULL;
+	}
+    n = sec->npt3d - 1;
+    if (i < 0 || i > n) {
+        PyErr_SetString(PyExc_Exception, "Arg out of range\n");
+        return NULL;
+    }
+    return PyFloat_FromDouble((double)sec->pt3d[i].y);
+}
+
+static PyObject* NPySecObj_z3d(NPySecObj* self, PyObject*  args) { // returns z value at index of 3d list
+	Section* sec = self->sec_;
+	int n, i;
+	if (!PyArg_ParseTuple(args, "i", &i)) {
+		return NULL;
+	}
+    n = sec->npt3d - 1;
+    if (i < 0 || i > n) {
+        PyErr_SetString(PyExc_Exception, "Arg out of range\n");
+        return NULL;
+    }
+    return PyFloat_FromDouble((double)sec->pt3d[i].z);
+}
+
+static PyObject* NPySecObj_arc3d(NPySecObj* self, PyObject*  args) { // returns arc position value at index of 3d list
+	Section* sec = self->sec_;
+	int n, i;
+	if (!PyArg_ParseTuple(args, "i", &i)) {
+		return NULL;
+	}
+    n = sec->npt3d - 1;
+    if (i < 0 || i > n) {
+        PyErr_SetString(PyExc_Exception, "Arg out of range\n");
+        return NULL;
+    }
+    return PyFloat_FromDouble((double)sec->pt3d[i].arc);
+}
+
+
+static PyObject* NPySecObj_diam3d(NPySecObj* self, PyObject*  args) { // returns diam value at index of 3d list
+	Section* sec = self->sec_;
+	int n, i;
+	if (!PyArg_ParseTuple(args, "i", &i)) {
+		return NULL;
+	}
+    n = sec->npt3d - 1;
+    if (i < 0 || i > n) {
+        PyErr_SetString(PyExc_Exception, "Arg out of range\n");
+        return NULL;
+    }
+    return PyFloat_FromDouble((double)fabs(sec->pt3d[i].d));
+}
+
+
 static PyObject* pysec_repr(PyObject* p) {
   NPySecObj* psec = (NPySecObj*)p;
   if (psec->sec_ && psec->sec_->prop) {
@@ -1348,6 +1424,24 @@ static PyMethodDef NPySecObj_methods[] = {
 	},
 	{"children", (PyCFunction)pysec_children, METH_NOARGS,
 	 "Return list of child sections. Possibly an empty list"
+	},
+	{"n3d", (PyCFunction)NPySecObj_n3d, METH_NOARGS,
+	 "Returns the number of 3D points."
+	},	
+	{"x3d", (PyCFunction)NPySecObj_x3d, METH_VARARGS,
+	 "Returns the x coordinate of the ith 3D point."
+	},
+	{"y3d", (PyCFunction)NPySecObj_y3d, METH_VARARGS,
+	 "Returns the y coordinate of the ith 3D point."
+	},
+	{"z3d", (PyCFunction)NPySecObj_z3d, METH_VARARGS,
+	 "Returns the z coordinate of the ith 3D point."
+	},
+	{"arc3d", (PyCFunction)NPySecObj_arc3d, METH_VARARGS,
+	 "Returns the arc position of the ith 3D point."
+	},
+	{"diam3d", (PyCFunction)NPySecObj_diam3d, METH_VARARGS,
+	 "Returns the diam of the ith 3D point."
 	},
 	{NULL}
 };
