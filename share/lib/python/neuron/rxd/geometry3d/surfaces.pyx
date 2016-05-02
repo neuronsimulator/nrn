@@ -88,18 +88,18 @@ def contains_surface(i, j, k, objdist, xs, ys, zs, dx, r_inner, r_outer, reject_
 def process_cell(int i, int j, int k, list objects, numpy.ndarray[numpy.float_t, ndim=1] xs, numpy.ndarray[numpy.float_t, ndim=1] ys, numpy.ndarray[numpy.float_t, ndim=1] zs, numpy.ndarray[numpy.float_t, ndim=1] tridata, int start, bint store_areas=False, numpy.ndarray[numpy.float_t, ndim=3] areas=None, bint print_values=False):
     cdef int new_index
     cdef double x, y, z, x1, y1, z1
-    cdef tuple position
+    cdef list position
     x, y, z = xs[i], ys[j], zs[k]
     x1, y1, z1 = xs[i + 1], ys[j + 1], zs[k + 1]
     
-    position = ((x, y, z),
+    position = [(x, y, z),
                 (x1, y, z),
                 (x1, y1, z),
                 (x, y1, z),
                 (x, y, z1),
                 (x1, y, z1),
                 (x1, y1, z1),
-                (x, y1, z1))
+                (x, y1, z1)]
     cdef double value0, value1, value2, value3, value4, value5, value6, value7
     value0, value1, value2, value3, value4, value5, value6, value7 = [min([objdist(*p) for objdist in objects]) for p in position]
     if print_values:
