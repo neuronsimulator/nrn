@@ -215,9 +215,12 @@ static void quality(vector<TNode*>& nodevec, size_t max = 32) {
     }
     if (ip >= maxip) {
       nrace1 += 1;
-    }else{
+    }/*else*/{
       if (ipused.find(ip) != ipused.end()) {
         nrace2 += 1;
+        if (ip >= maxip) {
+printf("race for parent %ld (parent in same group as multiple users))\n", ip);
+        }
       }else{
         ipused.insert(ip);
       }
@@ -729,7 +732,7 @@ nd->parent->nodevec_index, nd->parent->treenode_order);
           break;
         }
         for (size_t k = 0; k < pnd->children.size(); ++k) {
-           pnd->children[k]->treenode_order = order + k*10000;
+           pnd->children[k]->treenode_order = order + k*100000;
         }
         ++order;
       }
