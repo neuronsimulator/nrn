@@ -260,7 +260,6 @@ void read_phase1(data_reader &F, NrnThread& nt) {
     if (gid < 0) {
       nt.presyns[i].output_index_ = -1;
     }
-    nt.presyns[i].nt_ = &nt;
   }
   delete [] output_gid;
 }

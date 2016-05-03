@@ -107,7 +107,7 @@ public:
 	// condition detection factored out of PreSyn for re-use
 	ConditionEvent();
 	virtual ~ConditionEvent();
-	virtual bool check();
+	virtual bool check(NrnThread*);
 	virtual double value() { return -1.; }
 
     int flag_; // true when below, false when above. (changed from bool to int to avoid cray acc bug(?))
@@ -126,7 +126,6 @@ public:
     double threshold_;
     int thvar_index_; // >=0 points into NrnThread._actual_v
     Point_process* pntsrc_;
-    NrnThread* nt_;
 
 	PreSyn();
 	virtual ~PreSyn();
@@ -134,7 +133,7 @@ public:
 	virtual void deliver(double, NetCvode*, NrnThread*);
 	virtual int type() { return PreSynType; }
 
-	virtual double value();
+	virtual double value(NrnThread*);
 	void record(double t);
 };
 
