@@ -267,6 +267,24 @@ static void ident_statistic(vector<TNode*>& nodevec) {
     if (i == 0) { break; }
   }
 
+  // # in each level
+  vector<size_t>z;
+  z.assign(16, 0);
+  vector<vector<size_t> > n_in_level;
+  n_in_level.assign(maxlevel+1, z);
+  for (size_t i = 0; i < nodevec.size(); ++i) {
+    n_in_level[nodevec[i]->level][nodevec[i]->groupindex]++;
+  }
+  printf("n_in_level.size = %ld\n", n_in_level.size());
+  for (size_t i=0; i < n_in_level.size(); ++i) {
+    printf("%5ld\n", i);
+    for (size_t j=0; j < n_in_level[i].size(); ++j) {
+      printf(" %5ld", n_in_level[i][j]);
+    }
+    printf("\n");
+  }
+  return;
+
   typedef map<size_t, MSS> MSMSS;
   typedef vector<pair<size_t, MSS*> > VSMSS;
   MSMSS info;
