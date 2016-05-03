@@ -230,6 +230,71 @@ printf("race for parent %ld (parent in same group as multiple users))\n", ip);
   printf("nrace = %ld (parent used more than once by same group of %ld nodes)\n", nrace2, max);
 }
 
+#define MSS MSS_ident_stat
+typedef map<size_t, size_t> MSS;
+static bool vsmss_comp(const pair<size_t, MSS*>& a, const pair<size_t, MSS*>& b) {
+  bool result = false;
+  const MSS::iterator& aa = a.second->begin();
+  const MSS::iterator& bb = b.second->begin();
+  if (aa->first < bb->first) {
+    result = true;
+  }else if (aa->first == bb->first) {
+    if (aa->second < bb->second) {
+      result = true;
+    }
+  }
+
+  return result;
+}
+
+// how many identical trees and their levels
+// print when more than one instance of a type
+// reverse the sense of levels (all leaves are level 0) to get a good
+// idea of the depth of identical subtrees.
+static void ident_statistic(vector<TNode*>& nodevec) {
+  // reverse sense of levels
+  size_t maxlevel = 0;
+  for (size_t i=nodevec.size()-1; true; --i) {
+    TNode* nd = nodevec[i];
+    size_t lmax = 0;
+    for (size_t ichild = 0; ichild < nd->children.size(); ++ichild) {
+      if (lmax <= nd->children[ichild]->level) {
+        lmax = nd->children[ichild]->level + 1;
+      }
+    }
+    nd->level = lmax;
+    if (maxlevel < lmax) { maxlevel = lmax; }
+    if (i == 0) { break; }
+  }
+
+  typedef map<size_t, MSS> MSMSS;
+  typedef vector<pair<size_t, MSS*> > VSMSS;
+  MSMSS info;
+  for (size_t i=0; i < nodevec.size(); ++i) {
+    TNode* nd = nodevec[i];
+    info[nd->hash][nd->level]++;
+  }
+
+  VSMSS vinfo;
+  for (MSMSS::iterator i = info.begin(); i != info.end(); ++i) {
+    vinfo.push_back(pair<size_t, MSS*>(i->first, &(i->second)));
+  }
+  std::sort(vinfo.begin(), vinfo.end(), vsmss_comp);
+
+  for (VSMSS::iterator i = vinfo.begin(); i < vinfo.end(); ++i) {
+    MSS* ival = i->second;
+    if (ival->size() > 1 || ival->begin()->second > 8) {
+      printf("hash %ld", i->first);
+      for (MSS::iterator j = ival->begin(); j != ival->end(); ++j) {
+        printf(" (%ld, %ld)", j->first, j->second);
+      }
+      printf("\n");
+    }
+  }
+  printf("max level = %ld\n", maxlevel);
+}
+#undef MSS
+
 // for cells with same size, keep identical trees together
 
 // parent is (unpermuted)  nnode length vector of parent node indices.
@@ -268,6 +333,7 @@ int* node_order(int ncell, int nnode, int* parent,
   }
 #endif
 
+  if(0) ident_statistic(nodevec);
   quality(nodevec);
 
   // the permutation
