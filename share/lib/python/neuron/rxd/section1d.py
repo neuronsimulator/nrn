@@ -1,6 +1,5 @@
 import weakref
 from neuron import h
-import rxd
 from . import node, rxdsection, nodelist, morphology
 import numpy
 from .rxdException import RxDException
@@ -75,6 +74,7 @@ class Section1D(rxdsection.RxDSection):
 
         
     def _setup_currents(self, indices, scales, ptrs, cur_map):
+        import rxd
         if self.nrn_region is not None and self.species.name is not None and self.species.charge != 0:
             ion_curr = '_ref_i%s' % self.species.name
             indices.extend(self.indices)

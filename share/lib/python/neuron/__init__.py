@@ -437,15 +437,17 @@ def nrn_dll(printpath=False):
     import ctypes
     import os
     import platform
-    
+    import glob
+
     neuron_home = os.path.split(os.path.split(h.neuronhome())[0])[0]
 
     success = False
     base_path = os.path.join(neuron_home, 'lib' , 'python', 'neuron', 'hoc')
     for extension in ['', '.dll', '.so', '.dylib']:
+        dlls = glob.glob(base_path + '*' + extension)
         try:
-            the_dll = ctypes.cdll[base_path + extension]
-            if printpath : print base_path + extension
+            the_dll = ctypes.cdll[dlls[0]]
+            if printpath : print dlls[0]
             success = True
         except:
             pass
@@ -464,6 +466,21 @@ def _declare_contour(secobj, secname):
     # (is_stack, x, y, z, xcenter, ycenter, zcenter)
     _sec_db[secname] = (True if secobj.contour_list else False, secobj.raw.getrow(0).c(j), secobj.raw.getrow(1).c(j), secobj.raw.getrow(2).c(j), x0, y0, z0)
 
+
+def numpy_from_pointer(cpointer, size):
+    if sys.version_info.major < 3:
+        return numpy.frombuffer(numpy.core.multiarray.int_asbuffer(
+            ctypes.addressof(cpointer.contents),
+            size * numpy.dtype(float).itemsize))
+    else:
+        buf_from_mem = ctypes.pythonapi.PyMemoryView_FromMemory
+        buf_from_mem.restype = ctypes.py_object
+        buf_from_mem.argtypes = (ctypes.c_void_p, ctypes.c_int, ctypes.c_int)
+        cbuffer = buf_from_mem(
+            cpointer, size * numpy.dtype(float).itemsize, 0x200)
+        return numpy.ndarray((size,), numpy.float, cbuffer, order='C')
+
+
 try:
   import ctypes
   import numpy
@@ -471,7 +488,7 @@ try:
   vec_to_numpy_prototype = ctypes.CFUNCTYPE(ctypes.py_object, ctypes.c_int, ctypes.POINTER(ctypes.c_double))
   def vec2numpy(size, data):
     try:
-      return numpy.frombuffer(numpy.core.multiarray.int_asbuffer(ctypes.addressof(data.contents), size*numpy.dtype(float).itemsize))
+      return numpy_from_pointer(data, size)
     except:
       traceback.print_exc()
       return None

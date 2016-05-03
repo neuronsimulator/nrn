@@ -1,9 +1,8 @@
 import math
 import numpy
-import species
-import rxdmath
 import weakref
 import functools
+import sys
 from .rxdException import RxDException
 from . import initializer
 
@@ -64,10 +63,11 @@ def _compile(arith):
         s = str(arith)
     all_names = ['numpy', 'rxdmath'] + species_dict.keys()
     command = 'lambda %s: %s ' % (', '.join(all_names), s)
-    return (functools.partial(eval(command), numpy, rxdmath), species_dict.values())
+    return (functools.partial(eval(command), numpy, sys.modules[__name__]), species_dict.values())
     
 
 def _ensure_arithmeticed(other):
+    import species
     if isinstance(other, species._SpeciesMathable):
         other = _Arithmeticed(other)
     elif isinstance(other, _Reaction):
@@ -270,6 +270,7 @@ class _Arithmeticed:
         return value[0]
     
     def _short_repr(self):
+        import species
         items = []
         counts = []
         for item, count in zip(self._items.keys(), self._items.values()):
@@ -299,6 +300,7 @@ class _Arithmeticed:
         return result
                     
     def __repr__(self):
+        import species
         items = []
         counts = []
         for item, count in zip(self._items.keys(), self._items.values()):
@@ -391,7 +393,15 @@ class _Arithmeticed:
     def __rdiv__(self, other):
         other = _ensure_arithmeticed(other)
         return other / self
-    
+
+    def __truediv__(self, other):
+        other = _ensure_arithmeticed(other)
+        return _Arithmeticed(_Quotient(self, other), False)
+
+    def __rtruediv__(self, other):
+        other = _ensure_arithmeticed(other)
+        return other / self
+
     def __pow__(self, other):
         return pow(self, other)
         

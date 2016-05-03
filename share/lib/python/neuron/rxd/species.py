@@ -2,7 +2,6 @@ from .rxdmath import _Arithmeticed
 import weakref
 from .section1d import Section1D
 from neuron import h, nrn
-import rxd
 from . import node, nodelist, rxdmath, region
 import numpy
 import warnings
@@ -93,6 +92,7 @@ class _SpeciesMathable(object):
     
     @d.setter
     def d(self, value):
+        import rxd
         if hasattr(self, '_allow_setting'):
             self._d = value
         else:
@@ -290,6 +290,7 @@ class Species(_SpeciesMathable):
         self._do_init5()
         
     def _do_init1(self):
+        import rxd
         # TODO: if a list of sections is passed in, make that one region
         # _species_count is used to create a unique _real_name for the species
         global _species_count
@@ -565,6 +566,7 @@ class Species(_SpeciesMathable):
                 c[i, i] = 1.
     
     def _setup_currents(self, indices, scales, ptrs, cur_map):
+        import rxd
         if self.name:
             cur_map[self.name + 'i'] = {}
             cur_map[self.name + 'o'] = {}

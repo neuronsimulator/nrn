@@ -1,6 +1,5 @@
 import neuron
 from neuron import h, nrn, hoc
-import rxd
 import region
 import rxdsection
 import numpy
@@ -106,6 +105,7 @@ class Node(object):
     @d.setter
     def d(self, value):
         """Sets the diffusion rate within the compartment."""
+        import rxd
         # TODO: make invalidation work so don't need to redo the setup each time
         #rxd._invalidate_matrices()
         _diffs[self._index] = value
@@ -373,6 +373,7 @@ class Node1D(Node):
         """The volume of the compartment in cubic microns.
         
         Read only."""
+        import rxd
         rxd._update_node_data()
         return _volumes[self._index]
     
@@ -390,7 +391,7 @@ class Node1D(Node):
         
         Read only.
         """
-        
+        import rxd
         rxd._update_node_data()
         return _surface_area[self._index]
     
@@ -539,6 +540,7 @@ class Node3D(Node):
     @property
     def value(self):
         """Gets the value associated with this Node."""
+        import rxd
         if rxd._external_solver is not None:
             _states[self._index] = rxd._external_solver.value(self)
         return _states[self._index]
@@ -550,6 +552,7 @@ class Node3D(Node):
         For Species nodes belonging to a deterministic simulation, this is a concentration.
         For Species nodes belonging to a stochastic simulation, this is the molecule count.
         """
+        import rxd
         _states[self._index] = v
         if rxd._external_solver is not None:
             rxd._external_solver.update_value(self)
