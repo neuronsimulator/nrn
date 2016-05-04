@@ -36,6 +36,12 @@ make
 make install
 ```
 
+If you are building CoreNeuron with Neurodamus, you have to set *ADDITIONAL_MECHPATH* and *ADDITIONAL_MECHS* as:
+```bash
+cmake .. -DADDITIONAL_MECHPATH="/path/of/neurodamus/lib/modlib" -DADDITIONAL_MECHS="/path/of/neurodamus/lib/modlib/coreneuron_modlist.txt"
+```
+Make sure to switch to appropriate branch of Neurodamus (based on your dataset).
+
 On a Cray system the user has to provide the path to the MPI library as follows:
 ```bash
 export CC=`which cc`
