@@ -64,7 +64,9 @@ void setup_nrnthreads_on_device(NrnThread *threads, int nthreads)  {
         double *d__data;                // nrn_threads->_data on device
 
         printf("\n -----------COPYING %d'th NrnThread TO DEVICE --------------- \n", i);
+        #if defined(CUDA_PROFILING)
         print_gpu_memory_usage();
+        #endif
 
         /* -- copy _data to device -- */
 
