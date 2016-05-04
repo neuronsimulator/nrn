@@ -368,7 +368,6 @@ PreSyn::PreSyn() {
 	pntsrc_ = NULL;
 	threshold_ = 10.;
 	gid_ = -1;
-	nt_ = NULL;
 	localgid_ = 0;
 	output_index_ = 0;
 }
@@ -398,7 +397,7 @@ void PreSyn::record(double tt) {
     spikevec_unlock();
 }
 
-bool ConditionEvent::check() {
+bool ConditionEvent::check(NrnThread *nt) {
 	if (value() > 0.0) {
 		if (flag_ == false) {
 			flag_ = true;
@@ -587,8 +586,8 @@ static bool pscheck(double var, double thresh, int* flag) {
 	return false;
 }
 
-double PreSyn::value() {
-	return nt_->_actual_v[thvar_index_] - threshold_;
+double PreSyn::value(NrnThread *nt) {
+	return nt->_actual_v[thvar_index_] - threshold_;
 }
 
 void NetCvode::check_thresh(NrnThread* nt) { // for default method

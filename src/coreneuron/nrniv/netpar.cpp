@@ -702,6 +702,18 @@ double set_mindelay(double maxdelay) {
    // except if src in same thread as NetCon
    int all = (nrn_nthread > 1);
    // minumum delay of all NetCon having an InputPreSyn source
+
+    /** we have removed nt_ from PreSyn. Build local map of PreSyn
+     *  and NrnThread which will be used to find out if src in same thread as NetCon */
+   std::map<PreSyn*, NrnThread*> presynmap;
+
+   for (int ith = 0; ith < nrn_nthread; ++ith) {
+       NrnThread& nt = nrn_threads[ith];
+       for (int i = 0; i < nt.n_presyn; ++i) {
+            presynmap[nt.presyns+i] = nrn_threads+ith;
+       }
+   }
+
    for (int ith = 0; ith < nrn_nthread; ++ith) {
        NrnThread& nt = nrn_threads[ith];
        for (int i = 0; i < nt.n_netcon; ++i) {
@@ -716,7 +728,7 @@ double set_mindelay(double maxdelay) {
            else if (all) {
                chk = 1;
                // but ignore if src in same thread as NetCon
-               if (ps && ps->nt_ == &nt) {
+               if(ps && presynmap[ps] == &nt) {
                    chk = 0;
                }
            }
