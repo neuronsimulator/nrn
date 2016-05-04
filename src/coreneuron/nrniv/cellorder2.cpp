@@ -247,12 +247,7 @@ static bool vsmss_comp(const pair<size_t, MSS*>& a, const pair<size_t, MSS*>& b)
   return result;
 }
 
-// how many identical trees and their levels
-// print when more than one instance of a type
-// reverse the sense of levels (all leaves are level 0) to get a good
-// idea of the depth of identical subtrees.
-static void ident_statistic(vector<TNode*>& nodevec) {
-  // reverse sense of levels
+static size_t level_from_leaf(vector<TNode*>& nodevec) {
   size_t maxlevel = 0;
   for (size_t i=nodevec.size()-1; true; --i) {
     TNode* nd = nodevec[i];
@@ -266,6 +261,34 @@ static void ident_statistic(vector<TNode*>& nodevec) {
     if (maxlevel < lmax) { maxlevel = lmax; }
     if (i == 0) { break; }
   }
+  return maxlevel;
+}
+
+static void level_manip(vector<TNode*>& nodevec, size_t ncell, size_t max=32) {
+  printf("enter level_manip\n");
+  size_t maxlevel = level_from_leaf(nodevec);
+  printf("maxlevel=%ld\n", maxlevel);
+  typedef vector<TNode*> VTN; // level of nodes
+  typedef vector<VTN> VVTN;  // group of levels
+  typedef vector<VVTN> VVVTN; // groups
+  VVVTN groups(ncell/groupsize);
+  for (size_t i = 0; i < groups.size(); ++i) {
+    groups[i].resize(maxlevel+1);
+  }  
+  for (size_t i=0; i < nodevec.size(); ++i) {
+    TNode* nd = nodevec[i];
+    groups[nd->groupindex][maxlevel - nd->level].push_back(nd);
+  }
+  printf("leave level_manip\n");
+}
+
+// how many identical trees and their levels
+// print when more than one instance of a type
+// reverse the sense of levels (all leaves are level 0) to get a good
+// idea of the depth of identical subtrees.
+static void ident_statistic(vector<TNode*>& nodevec) {
+  // reverse sense of levels
+  size_t maxlevel = level_from_leaf(nodevec);
 
   // # in each level
   vector<size_t>z;
@@ -351,6 +374,7 @@ int* node_order(int ncell, int nnode, int* parent,
   }
 #endif
 
+  if(0) level_manip(nodevec, ncell);
   if(0) ident_statistic(nodevec);
   quality(nodevec);
 
