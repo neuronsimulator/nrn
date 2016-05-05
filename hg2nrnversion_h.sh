@@ -1,14 +1,9 @@
 #!/bin/sh
-major=7
-minor=5
+
 a=$1
 if test "$a" = "" ; then
 	a=.
 fi
-
-echo "#define NRN_MAJOR_VERSION \"$major\""
-echo "#define NRN_MINOR_VERSION \"$minor\""
-
 cd $a
 
 if hg identify > /dev/null && test -d .hg ; then
@@ -17,7 +12,7 @@ if hg identify > /dev/null && test -d .hg ; then
 	branch="`hg identify -b`"
 	tags="`hg identify -t`"
 	sha=`echo $gcs | sed 's/\+//'`
-	d=`hg log -r $sha --style compact| sed -n '1s/^[^ \t]*[ \t]*[^ \t]*[ \t]*\([^ \t]*\).*/\1/p'`
+	d=`hg log -r $sha --template '{date|shortdate}'`
 	echo "#define HG_DATE \"$d\""
 	echo "#define HG_BRANCH \"$branch\""
 	echo "#define HG_CHANGESET \"$gcs\""

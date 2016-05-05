@@ -8,13 +8,12 @@
 ;Configuration
 
 !define Version "@PACKAGE_VERSION@"
-!define VerNoDot "@PACKAGE_VERSION_MAJOR@@PACKAGE_VERSION_MINOR@"
 
 ; The name of the installer
 Name "NEURON ${Version}"
 
 ; The file to write
-OutFile "nrn${VerNoDot}setup.exe"
+OutFile "nrn${Version}setup.exe"
 
 RequestExecutionLevel user
 
@@ -31,7 +30,6 @@ var "uINSTDIR" ; posix version of $INSTDIR
 ; The basic program group name
 !define NEURON  "NEURON ${Version}"
 ; The default directory
-;!define NRN "nrn${VerNoDot}"
 !define NRN "nrn"
 ; where to get the files
 !define MARSHAL "c:\marshalnrn"

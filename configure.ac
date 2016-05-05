@@ -4,10 +4,8 @@ dnl disable caching. When configure fails, it is best to start from scratch.
 define([AC_CACHE_LOAD], )dnl
 define([AC_CACHE_SAVE], )dnl
 
-dnl when you change following also update svn2nrn_h.sh and hg2nrnversion_h.sh
+dnl PACKAGE_VERSION makes its way into hg2nrnversion_h.sh, etc.
 AC_INIT([nrn],[7.5])
-PACKAGE_VERSION_MAJOR=`echo "$PACKAGE_VERSION" | sed 's/\..*//'`
-PACKAGE_VERSION_MINOR=`echo "$PACKAGE_VERSION" | sed 's/^.*\.//'`
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_SRCDIR(src/memacs/main.c)
 AM_INIT_AUTOMAKE([foreign])
@@ -170,8 +168,6 @@ AC_SUBST(NRN_SRCDIR)
 dnl use the --enable-rpm-rules=yes
 RPM_RELEASE="`export NSRC=$srcdir ; sh $srcdir/nrnversion.sh commit`"
 AC_SUBST(RPM_RELEASE)
-AC_SUBST(PACKAGE_VERSION_MAJOR)
-AC_SUBST(PACKAGE_VERSION_MINOR)
 if test "$rpm_extra_args" = "" ; then
 	rpm_extra_args="-ba nrnrpm.spec"
 fi

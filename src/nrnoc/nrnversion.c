@@ -29,15 +29,15 @@ char* nrn_version(int i)
   {
     sprintf(head, "%s (%s)", GIT_BRANCH, GIT_CHANGESET);
   }else{
-    sprintf(head, "VERSION %s.%s %s%s(%s)",
-    NRN_MAJOR_VERSION, NRN_MINOR_VERSION,
+    sprintf(head, "VERSION %s %s%s(%s)",
+    PACKAGE_VERSION,
     strcmp("trunk", GIT_BRANCH) ? GIT_BRANCH : "",
     strcmp("trunk", GIT_BRANCH) ? " " : "",
     GIT_CHANGESET);
   }
   if (i == 0) 
   {
-    sprintf(buf, "%s.%s", NRN_MAJOR_VERSION, NRN_MINOR_VERSION);
+    sprintf(buf, "%s", PACKAGE_VERSION);
   }else if (i == 2)  {
     sprintf(buf, "%s", head);
   }else if (i == 3) {
@@ -90,14 +90,14 @@ char* nrn_version(int i) {
 	}else if (strncmp(HG_BRANCH, "Release", 7) == 0) {
 		sprintf(head, "%s (%s:%s)", HG_BRANCH, HG_LOCAL, HG_CHANGESET);
 	}else{
-		sprintf(head, "VERSION %s.%s %s%s(%s:%s)",
-			NRN_MAJOR_VERSION, NRN_MINOR_VERSION,
+		sprintf(head, "VERSION %s %s%s(%s:%s)",
+			PACKAGE_VERSION,
 			strcmp("trunk", HG_BRANCH) ? HG_BRANCH : "",
 			strcmp("trunk", HG_BRANCH) ? " " : "",
 			HG_LOCAL, HG_CHANGESET);
 	}
 	if (i == 0) {
-		sprintf(buf, "%s.%s", NRN_MAJOR_VERSION, NRN_MINOR_VERSION);
+		sprintf(buf, "%s", PACKAGE_VERSION);
 	}else if (i == 2) {
 		sprintf(buf, "%s", head);
 	}else if (i == 3) {
@@ -143,8 +143,8 @@ char* nrn_version(int i) {
 	if (strncmp(SVN_BRANCH, "Release", 7) == 0) {
 		sprintf(head, "%s", SVN_BRANCH);
 	}else{
-		sprintf(head, "VERSION %s.%s%s%s",
-			NRN_MAJOR_VERSION, NRN_MINOR_VERSION,
+		sprintf(head, "VERSION %s%s%s",
+			PACKAGE_VERSION,
 			((strcmp(SVN_BRANCH, "") == 0) ? "" : "."), SVN_BRANCH);
 	}
 	sprintf(tail, " %s", SVN_CHANGESET);
@@ -162,7 +162,7 @@ char* nrn_version(int i) {
 		tail[0] = '\0';
 	}
 	if (i == 0) {
-		sprintf(buf, "%s.%s", NRN_MAJOR_VERSION, NRN_MINOR_VERSION);
+		sprintf(buf, "%s", PACKAGE_VERSION);
 	}else if (i == 2) {
 		sprintf(buf, "%s.%s", head,SVN_TREE_CHANGE);
 	}else if (i == 3) {

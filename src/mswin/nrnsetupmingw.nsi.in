@@ -8,7 +8,6 @@
 ;Configuration
 
 !define Version "@PACKAGE_VERSION@"
-!define VerNoDot "@PACKAGE_VERSION_MAJOR@@PACKAGE_VERSION_MINOR@"
 !define binsuffix "@binsuffix@"
 !define marshaldir "@dos_marshal_dir@"
 !define cpu "@host_cpu@"
@@ -17,7 +16,7 @@
 Name "NEURON ${Version} ${cpu}"
 
 ; The file to write
-OutFile "nrn${VerNoDot}setup-${cpu}.exe"
+OutFile "nrn${Version}setup-${cpu}.exe"
 
 RequestExecutionLevel user
 
@@ -35,7 +34,6 @@ var "launch3"
 ; The basic program group name
 !define NEURON  "NEURON ${Version} ${cpu}"
 ; The default directory
-;!define NRN "nrn${VerNoDot}w${binsuffix}"
 !define NRN "nrn"
 ; where to get the files
 !define MARSHAL "${marshaldir}"

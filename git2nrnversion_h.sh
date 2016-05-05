@@ -1,14 +1,9 @@
 #!/bin/sh
-major=7
-minor=5
+
 a=$1
 if test "$a" = "" ; then
 	a=.
 fi
-
-echo "#define NRN_MAJOR_VERSION \"$major\""
-echo "#define NRN_MINOR_VERSION \"$minor\""
-
 cd $a
 
 if git log > /dev/null && test -d .git ; then

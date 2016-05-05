@@ -1,5 +1,7 @@
 #!/bin/sh
-# extract major minor and commit version number from src/nrnoc/nrnversion.h
+# extract commit version info from src/nrnoc/nrnversion.h
+# and PACKAGE_VERSION from configure.ac
+
 if test "$NSRC" = "" ; then
 	NSRC=$HOME/neuron/nrn
 fi
@@ -10,8 +12,8 @@ else
 	VERHFILE=`sh $NSRC/hg2nrnversion_h.sh`
 fi
 
-major=`echo "$VERHFILE" | sed -n '/NRN_MAJOR_VERSION/s/.*"\([0-9]*\)".*/\1/p'`
-minor=`echo "$VERHFILE" | sed -n '/NRN_MINOR_VERSION/s/.*"\([0-9]*\)".*/\1/p'`
+ver=`sed -n '/^AC_INIT/s/^.*nrn\],\[\(.*\)\].*/\1/p' < configure.ac`
+
 type=`echo "$VERHFILE" | sed -n '/HG_BRANCH/s/.*\(".*"\).*/\1/p' | sed '
 s/"trunk"/alpha/
 s/"Release.*"/rel/
@@ -23,15 +25,13 @@ base=`echo $global | sed 's/\+//'`
 commit=`echo "$VERHFILE" | sed -n '/HG_LOCAL/s/.*"\(.*\)".*/\1/p'`
 
 case $1 in
-	2) echo $major.$minor.$type-$commit ;;
-	3) echo ${major}${minor} ;;
-	"major") echo $major ;;
-	"minor") echo $minor ;;
+	2) echo $ver.$type-$commit ;;
+	3) echo ${ver} ;;
 	"type") echo $type ;;
 	"commit") echo ${type}${commit} ;;
 	"local") echo $local ;;
 	"base") echo $base ;;
 	"global") echo $global ;;
-	*) echo $major.$minor ;;
+	*) echo $ver ;;
 esac
 

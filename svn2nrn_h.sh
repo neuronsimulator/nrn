@@ -1,6 +1,5 @@
 #!/bin/sh
-major=7
-minor=5
+
 a=$1
 if test "$a" = "" ; then
 	a=.
@@ -9,9 +8,6 @@ b=0
 c=unknown
 d=""
 last=0
-
-echo "#define NRN_MAJOR_VERSION \"$major\""
-echo "#define NRN_MINOR_VERSION \"$minor\""
 
 if svnversion $a > /dev/null && test -d $a/.svn ; then
 	b=`svnversion $a`
