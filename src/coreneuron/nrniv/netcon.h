@@ -67,7 +67,7 @@ public:
     bool active_;
     double delay_;
     Point_process* target_;
-    struct ss {
+    union {
         int weight_index_;
         int srcgid_; // only to help InputPreSyn during setup
         // before weights are read and stored. Saves on transient
