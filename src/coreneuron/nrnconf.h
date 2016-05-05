@@ -35,10 +35,6 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include <errno.h>
 #include <stdint.h>
 
-#if !defined PG_ACC_BUGS
-#define PG_ACC_BUGS 1
-#endif
-
 #define NRNBBCORE 1
 
 #define nil NULL

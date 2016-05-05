@@ -107,6 +107,11 @@ if(ENABLE_SELECTIVE_GPU_PROFILING)
 endif(ENABLE_SELECTIVE_GPU_PROFILING)
 
 option (ENABLE_OPENACC "Enable use of OpenACC" ON)
+if(ENABLE_OPENACC)
+    if(${CMAKE_C_COMPILER_ID} STREQUAL "PGI")
+        add_definitions( -DPG_ACC_BUGS)
+    endif()
+endif(ENABLE_OPENACC)
 
 CHECK_INCLUDE_FILES("spi/include/kernel/memory.h" have_memory_h)
 if(have_memory_h)
