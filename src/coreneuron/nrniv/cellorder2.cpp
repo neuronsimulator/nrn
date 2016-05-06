@@ -247,6 +247,22 @@ static bool vsmss_comp(const pair<size_t, MSS*>& a, const pair<size_t, MSS*>& b)
   return result;
 }
 
+static size_t level_from_root(vector<TNode*>& nodevec) {
+  size_t maxlevel = 0;
+  for (size_t i = 0; i < nodevec.size(); ++i) {
+    TNode* nd = nodevec[i];
+    if (nd->parent) {
+      nd->level = nd->parent->level + 1;
+      if (maxlevel < nd->level) {
+        maxlevel = nd->level;
+      }
+    }else{
+      nd->level = 0;
+    }
+  }
+  return maxlevel;
+}
+
 static size_t level_from_leaf(vector<TNode*>& nodevec) {
   size_t maxlevel = 0;
   for (size_t i=nodevec.size()-1; true; --i) {
@@ -262,6 +278,17 @@ static size_t level_from_leaf(vector<TNode*>& nodevec) {
     if (i == 0) { break; }
   }
   return maxlevel;
+}
+
+static void set_group(vector<TNode*>& nodevec) {
+  for (size_t i=0; i < nodevec.size(); ++i) {
+    TNode* nd = nodevec[i];
+    if (nd->parent) {
+      nd->groupindex = nd->parent->groupindex;
+    }else{
+      nd->groupindex = i / groupsize;
+    }
+  }
 }
 
 static void level_manip(vector<TNode*>& nodevec, size_t ncell, size_t max=32) {
@@ -286,15 +313,16 @@ static void level_manip(vector<TNode*>& nodevec, size_t ncell, size_t max=32) {
 // print when more than one instance of a type
 // reverse the sense of levels (all leaves are level 0) to get a good
 // idea of the depth of identical subtrees.
-static void ident_statistic(vector<TNode*>& nodevec) {
+static void ident_statistic(vector<TNode*>& nodevec, size_t ncell) {
   // reverse sense of levels
-  size_t maxlevel = level_from_leaf(nodevec);
+//  size_t maxlevel = level_from_leaf(nodevec);
+  size_t maxlevel = level_from_root(nodevec);
 
   // # in each level
-  vector<size_t>z;
-  z.assign(16, 0);
-  vector<vector<size_t> > n_in_level;
-  n_in_level.assign(maxlevel+1, z);
+  vector<vector<size_t> > n_in_level(maxlevel+1);
+  for (size_t i=0; i <= maxlevel; ++i) {
+    n_in_level[i].resize(ncell/groupsize);
+  }
   for (size_t i = 0; i < nodevec.size(); ++i) {
     n_in_level[nodevec[i]->level][nodevec[i]->groupindex]++;
   }
@@ -355,6 +383,9 @@ int* node_order(int ncell, int nnode, int* parent,
   tree_analysis(parent, nnode, ncell, nodevec);
   check(nodevec);
 
+  set_group(nodevec);
+  level_from_root(nodevec);
+
   // nodevec[ncell:nnode] cells are interleaved in nodevec[0:ncell] cell order
   node_interleave_order(ncell, nodevec);
   check(nodevec);
@@ -375,7 +406,7 @@ int* node_order(int ncell, int nnode, int* parent,
 #endif
 
   if(0) level_manip(nodevec, ncell);
-  if(0) ident_statistic(nodevec);
+  if(0) ident_statistic(nodevec, ncell);
   quality(nodevec);
 
   // the permutation
