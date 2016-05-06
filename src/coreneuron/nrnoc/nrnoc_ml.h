@@ -31,12 +31,20 @@ THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "coreneuron/nrnconf.h"
 
+#if PG_ACC_BUGS
+typedef struct ThreadDatum {
+	int i;
+	double* pval;
+	void* _pvoid;
+}ThreadDatum;
+#else
 typedef union ThreadDatum {
 	double val;
 	int i;
 	double* pval;
 	void* _pvoid;
 }ThreadDatum;
+#endif
 
 typedef struct NetReceiveBuffer_t {
 	int* _pnt_index;

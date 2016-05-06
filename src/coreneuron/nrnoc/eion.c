@@ -44,8 +44,13 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #endif
 
 #if defined(_OPENACC)
+#if defined(PG_ACC_BUGS)
+#define _PRAGMA_FOR_INIT_ACC_LOOP_ _Pragma("acc parallel loop present(pd[0:_cntml_padded*5], ppd[0:1], nrn_ion_global_map[0:nrn_ion_global_map_size][0:3]) if(nt->compute_gpu)")
+#define _PRAGMA_FOR_CUR_ACC_LOOP_ _Pragma("acc parallel loop present(pd[0:_cntml_padded*5], nrn_ion_global_map[0:nrn_ion_global_map_size][0:3]) if(nt->compute_gpu) async(stream_id)")
+#else
 #define _PRAGMA_FOR_INIT_ACC_LOOP_ _Pragma("acc parallel loop present(pd[0:_cntml_padded*5], ppd[0:1], nrn_ion_global_map[0:nrn_ion_global_map_size]) if(nt->compute_gpu)")
 #define _PRAGMA_FOR_CUR_ACC_LOOP_ _Pragma("acc parallel loop present(pd[0:_cntml_padded*5], nrn_ion_global_map[0:nrn_ion_global_map_size]) if(nt->compute_gpu) async(stream_id)")
+#endif
 #define _PRAGMA_FOR_SEC_ORDER_CUR_ACC_LOOP_ _Pragma("acc parallel loop present(pd[0:_cntml_padded*5], ni[0:_cntml_actual], _vec_rhs[0:_nt->end]) if(_nt->compute_gpu) async(stream_id)")
 #else
 #define _PRAGMA_FOR_INIT_ACC_LOOP_ _Pragma("")
@@ -269,7 +274,6 @@ static void ion_cur(NrnThread* nt, Memb_list* ml, int type) {
 	double* pd; Datum* ppd;
 	(void)nt; /* unused */
     int stream_id = nt->stream_id;
-
 /*printf("ion_cur %s\n", memb_func[type].sym->name);*/
 #if LAYOUT == 1 /*AoS*/
 	for (_iml = 0; _iml < _cntml_actual; ++_iml) {
@@ -300,7 +304,6 @@ static void ion_init(NrnThread* nt, Memb_list* ml, int type) {
 	int _iml;
 	double* pd; Datum* ppd;
 	(void)nt; /* unused */
-
 /*printf("ion_init %s\n", memb_func[type].sym->name);*/
 #if LAYOUT == 1 /*AoS*/
 	for (_iml = 0; _iml < _cntml_actual; ++_iml) {
