@@ -21,3 +21,4 @@ Quick Links
     simctrl/family.rst
     programming/math/guimath.rst
     programming/pointers/ptrvector.rst 
+    programming/io/printf.rst

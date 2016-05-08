@@ -6,25 +6,28 @@ Printf (Formatted Output)
 
 .. function:: printf
 
-         
+    .. warning::
+
+        For code written in Python, it is generally more practical to use Python string
+        formatting and file IO.
 
     Name:
         printf, fprint, sprint --- formatted output 
          
 
     Syntax:
-        ``printf(format, ...)``
+        ``h.printf(format, ...)``
 
-        ``fprint(format, ...)``
+        ``h.fprint(format, ...)``
 
-        ``sprint(string, format, ...)``
+        ``h.sprint(string, format, ...)``
 
 
 
     Description:
-        ``Printf`` places output on the standard output.  ``fprint`` places output 
-        on the file opened with the ``wopen(filename)`` command (standard 
-        output if no file is opened).  ``Sprint`` places output in its *string* 
+        ``h.printf`` places output on the standard output.  ``h.fprint`` places output 
+        on the file opened with the ``h.wopen(filename)`` command (standard 
+        output if no file is opened).  ``h.sprint`` places output in its *string* 
         argument.  These functions are subsets of their counterparts in 
         the C standard library. 
          
@@ -88,19 +91,35 @@ Printf (Formatted Output)
             carriage return without the line feed 
 
          
-        ``printf`` and ``fprint`` return the number of characters printed. 
+        ``h.printf`` and ``h.fprint`` return the number of characters printed. 
          
 
     Example:
 
-        .. code-block::
-            none
+        .. code::
 
-            printf("\tpi=%-20.10g sin(pi)=%f\n", PI, sin(PI)) 
+            h.printf("\tpi=%-20.10g sin(pi)=%f\n", h.PI, h.sin(h.PI)) 
+
                     pi=3.141592654          sin(pi)=0.000000 
                     42 
 
          
+    Pure Python equivalent example:
+
+        .. code::
+
+            import math
+            print('\tpi=%-20.10g sin(pi)=%f' % (math.pi, math.sin(math.pi)))
+
+        .. note::
+
+            The parentheses around the ``print`` argument are supplied in this way to allow
+            it to work with both Python 2 and Python 3.
+
+            This is not an identical replacement because it does not return the number of characters.
+            In Python 2, this is a statement not a function and attempting to assign it to a variable is
+            a syntax error. In Python 3, ``print`` is a function and the return is ``None``.
+
 
     .. seealso::
         :meth:`File.ropen`
@@ -116,13 +135,13 @@ Printf (Formatted Output)
 Redirect Standard Out
 ---------------------
 
-.. function:: hoc_stdio
+.. function:: hoc_stdout
 
 
     Syntax:
-        :samp:`hoc_stdout("{filename}")`
+        :samp:`h.hoc_stdout("{filename}")`
 
-        ``hoc_stdout()``
+        ``h.hoc_stdout()``
 
 
     Description:
@@ -135,17 +154,21 @@ Redirect Standard Out
 
     Example:
 
-        .. code-block::
-            none
+        .. code::
 
-            proc p() { 
-            	print "one" // to original standard out 
-                    hoc_stdout("temp.tmp") 
-                    print "two" // to temp.tmp 
-            	forall psection() // to temp.tmp 
-                    hoc_stdout() 
-                    print "three" // to original standard out 
-            } 
+            from neuron import h
+
+            def p():
+                print('one') # to original standard out
+                h.hoc_stdout('temp.tmp')
+                print('two') # to temp.tmp
+                for sec in h.allsec():
+                    h.psection(sec=sec) # to temp.tmp
+                h.hoc_stdout()
+                print('three') # to the original standard out
+
             p() 
 
+    .. note::
 
+        Despite the misleading name, this redirects standard out from both Python and HOC.
