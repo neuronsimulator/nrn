@@ -20,7 +20,7 @@ PtrVector
     with the :meth:`PtrVector.ptr_update_callback` method in order to prevent
     memory segfaults when internal memory is reallocated.
 
-  Python Example:
+  Example:
   
     .. code-block::
       python
@@ -68,11 +68,13 @@ PtrVector
 .. method:: PtrVector.pset
 
   Syntax:
-     ``var_val = pv.pset(i, &var)``
+     ``var_val = pv.pset(i, _ref_var)``
      
     
   Description:
     The ith pointer in the PtrVector points to var. 0 <= i < pv.size()
+
+----
  
 .. method:: PtrVector.scatter
 
@@ -119,13 +121,14 @@ PtrVector
 .. method:: PtrVector.ptr_update_callback
 
   Syntax:
-    :samp:`0. = pv.ptr_update_callback("hoc_statement", [object])`
+    :samp:`pv.ptr_update_callback(pythoncallback)`
 
-    :samp:`0. = pv.ptr_update_callback(pythoncallback)`
+    :samp:`pv.ptr_update_callback("hoc_statement", [object])`
+
 
   Description:
     The statement or pythoncallback is executed whenever range variables
     are re-allocated in order to establish cache efficiency.
     (see :meth:`CVode.cache_efficient`)  Within the callback, the
     :meth:`PtrVector.resize` method may be called but the PtrVector should
-    not be destroyed.
+    not be destroyed. The return value is 0.

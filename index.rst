@@ -20,3 +20,4 @@ Quick Links
     simctrl/batch.rst
     simctrl/family.rst
     programming/math/guimath.rst
+    programming/pointers/ptrvector.rst 
