@@ -10,8 +10,11 @@ Family
 For several values of a variable, execute an action. 
 Basically just a form for specifying a for loop. 
 
-usage: ``makeFamily()`` constructs a Family and maps it to the screen. The Family 
+Usage: ``h.makeFamily()`` constructs a Family and maps it to the screen. The Family 
 instance is destroyed when its window is dismissed. 
+
+.. image:: ../images/makeFamily.png
+    :align: center
  
 The slider value ranges from start to end. Due to the length of time it 
 generally takes to complete an action it is best to use the middle button 
@@ -40,8 +43,8 @@ Run:
     Starts the loop 
  
 Stop -- Now: 
-    Stops the loop even in the middle of the action. (The stdrun.hoc run() 
-    action regularly checks the stop_run variable.) 
+    Stops the loop even in the middle of the action. (The ``stdrun.hoc`` ``run()``
+    action regularly checks the ``stop_run`` variable.) 
  
 Stop -- Atendofaction: 
     Waits for the current action to finish before stopping. 
@@ -50,23 +53,57 @@ Cont:
     Starts the action with the next value of the variable. 
     (If the previous action was stopped in the middle, 
     that action is not restarted where it left off.) 
-     
+
+.. note::
+
+    This is function is defined as part of ``stdrun.hoc`` which is loaded automatically as part of
+    ``from neuron import gui``, which is required to ensure the GUI is interactive across different
+    ways of running NEURON.
+
+.. note::
+
+    This dialog may also be opened from the GUI via
+    :menuselection:`Tools --> Miscellaneous --> Family --> Family`
+
 .. _execcommand:
 
 ExecCommand
 -----------
 
+.. image:: ../images/ExecCommand.png
+    :align: center
+
+Usage: ``h.ExecCommand()`` or :menuselection:`Tools --> Miscellaneous --> Family --> Command`
+
 Specify a command and execute it. 
-     
+
+.. note::
+
+    This is function is defined as part of ``stdrun.hoc`` which is loaded automatically as part of
+    ``from neuron import gui``, which is required to ensure the GUI is interactive across different
+    ways of running NEURON.
+
+
 .. _gathervec:
 
 GatherVec
 ---------
 
+Open with :menuselection:`Vector --> Gather Values` or to open programmatically import GUI support, load the library, and then call the function:
+
+.. code::
+
+    from neuron import h, gui
+    h.load_file('gatherv.hoc')
+    h.makeGatherVec()
+
+.. image:: ../images/GatherVec.png
+    :align: center
+
 Press "Record" button and plot a new point consisting 
-of the values for specified x and y variables. (x or y crosshair values 
-are good candidates for the y variable and a run parameter is a good 
-candidate for the x variable. Then one does a run, selects a point with 
+of the values for specified `x` and `y` variables. (`x` or `y` crosshair values 
+are good candidates for the `y` variable and a run parameter is a good 
+candidate for the `x` variable. Then one does a run, selects a point with 
 crosshairs, and presses the record button on the GatherValues tool) 
      
 
@@ -74,6 +111,17 @@ crosshairs, and presses the record button on the GatherValues tool)
 
 VectorPlay
 ----------
+
+Open with :menuselection:`Vector --> Play` or to open programmatically import GUI support, load the library, and then call the function:
+
+.. code::
+
+    from neuron import h, gui
+    h.load_file('vplay.hoc')
+    h.makeVectorPlay()
+
+.. image:: ../images/VectorPlay.png
+    :align: center
 
 Copy a vector from the clipboard and play it into some 
 chosen (from a Symchooser) variable name. There is button to connect 
@@ -83,6 +131,17 @@ and disconnect (return the default value to the variable) the vector.
 
 VecWrap
 -------
+
+Open with :menuselection:`Vector --> Display` or to open programmatically import GUI support, load the library, and then call the function:
+
+.. code::
+
+    from neuron import h, gui
+    h.load_file('vecwrap.hoc')
+    h.makeVecWrap()
+
+.. image:: ../images/VecWrap.png
+    :align: center
 
 Copy vector(s) from the clipboard and do various 
 manipulations: Discard left of crosshair, discard right of crosshair, 

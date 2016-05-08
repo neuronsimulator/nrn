@@ -18,3 +18,4 @@ Quick Links
     programming/gui/dialog.rst
     programming/pointers/misc.rst
     simctrl/batch.rst
+    simctrl/family.rst
