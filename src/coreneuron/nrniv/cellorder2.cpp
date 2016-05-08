@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include "coreneuron/nrniv/nrn_assert.h"
 #include "coreneuron/nrniv/cellorder.h"
+#include "coreneuron/nrniv/tnode.h"
 
-#include <vector>
 #include <map>
 #include <set>
 #include <algorithm>
@@ -11,23 +11,6 @@
 using namespace std;
 
 static size_t groupsize = 32;
-
-class TNode {
-  public:
-  TNode(int ix);
-  virtual ~TNode();
-  TNode* parent;
-  vector<TNode*> children;
-  size_t mkhash();
-  size_t hash;
-  size_t treesize;
-  size_t nodevec_index;
-  size_t treenode_order;
-  size_t level;
-  size_t cellindex;
-  size_t groupindex;
-  int nodeindex;
-};
 
 static bool tnode_earlier(TNode* a, TNode* b) {
   bool result = false;
@@ -74,14 +57,14 @@ size_t TNode::mkhash() { // call on all nodes in leaf to root order
   return hash;  // hash of leaf nodes is 0
 }
 
-static void tree_analysis(int* parent, int nnode, int ncell, vector<TNode*>&);
-static void node_interleave_order(int ncell, vector<TNode*>&);
-static void cell_parent_level_ordering(vector<TNode*>&);
-static void group_parent_level_ordering(vector<TNode*>&);
-static void admin(int ncell, vector<TNode*>& nodevec,
+static void tree_analysis(int* parent, int nnode, int ncell, VecTNode&);
+static void node_interleave_order(int ncell, VecTNode&);
+static void cell_parent_level_ordering(VecTNode&);
+static void group_parent_level_ordering(VecTNode&);
+static void admin(int ncell, VecTNode& nodevec,
   int& nstride, int*& stride, int*& firstnode, int*& lastnode, int*& cellsize);
-static void check(vector<TNode*>&);
-static void prtree(vector<TNode*>&);
+static void check(VecTNode&);
+static void prtree(VecTNode&);
 
 typedef std::pair<TNode*, int> TNI;
 typedef std::map<size_t, pair<TNode*, int> > HashCnt;
@@ -112,7 +95,7 @@ static char* stree(TNode* nd) {
   return strdup(s);
 }
 
-static void exper1(vector<TNode*>& nodevec) {
+static void exper1(VecTNode& nodevec) {
   printf("nodevec.size = %ld\n", nodevec.size());
   HashCnt hashcnt;
   for (size_t i=0; i < nodevec.size(); ++i) {
@@ -153,7 +136,7 @@ have that same size. How many nodes participate in that size list.
 Modify the quality measure from experience with performance. Start with
 list of (nnode, size_participation)
 */
-static void quality(vector<TNode*>& nodevec, size_t max = 32) {
+static void quality(VecTNode& nodevec, size_t max = 32) {
   size_t qcnt=0; // how many contiguous nodes have contiguous parents
 
   // first ncell nodes are by definition in contiguous order
@@ -247,7 +230,7 @@ static bool vsmss_comp(const pair<size_t, MSS*>& a, const pair<size_t, MSS*>& b)
   return result;
 }
 
-static size_t level_from_root(vector<TNode*>& nodevec) {
+static size_t level_from_root(VecTNode& nodevec) {
   size_t maxlevel = 0;
   for (size_t i = 0; i < nodevec.size(); ++i) {
     TNode* nd = nodevec[i];
@@ -263,7 +246,7 @@ static size_t level_from_root(vector<TNode*>& nodevec) {
   return maxlevel;
 }
 
-static size_t level_from_leaf(vector<TNode*>& nodevec) {
+size_t level_from_leaf(VecTNode& nodevec) {
   size_t maxlevel = 0;
   for (size_t i=nodevec.size()-1; true; --i) {
     TNode* nd = nodevec[i];
@@ -280,7 +263,7 @@ static size_t level_from_leaf(vector<TNode*>& nodevec) {
   return maxlevel;
 }
 
-static void set_group(vector<TNode*>& nodevec) {
+static void set_group(VecTNode& nodevec) {
   for (size_t i=0; i < nodevec.size(); ++i) {
     TNode* nd = nodevec[i];
     if (nd->parent) {
@@ -291,11 +274,11 @@ static void set_group(vector<TNode*>& nodevec) {
   }
 }
 
-static void level_manip(vector<TNode*>& nodevec, size_t ncell, size_t max=32) {
+static void level_manip(VecTNode& nodevec, size_t ncell, size_t max=32) {
   printf("enter level_manip\n");
   size_t maxlevel = level_from_leaf(nodevec);
   printf("maxlevel=%ld\n", maxlevel);
-  typedef vector<TNode*> VTN; // level of nodes
+  typedef VecTNode VTN; // level of nodes
   typedef vector<VTN> VVTN;  // group of levels
   typedef vector<VVTN> VVVTN; // groups
   VVVTN groups(ncell/groupsize);
@@ -313,10 +296,10 @@ static void level_manip(vector<TNode*>& nodevec, size_t ncell, size_t max=32) {
 // print when more than one instance of a type
 // reverse the sense of levels (all leaves are level 0) to get a good
 // idea of the depth of identical subtrees.
-static void ident_statistic(vector<TNode*>& nodevec, size_t ncell) {
+static void ident_statistic(VecTNode& nodevec, size_t ncell) {
   // reverse sense of levels
-//  size_t maxlevel = level_from_leaf(nodevec);
-  size_t maxlevel = level_from_root(nodevec);
+  size_t maxlevel = level_from_leaf(nodevec);
+//  size_t maxlevel = level_from_root(nodevec);
 
   // # in each level
   vector<vector<size_t> > n_in_level(maxlevel+1);
@@ -375,7 +358,7 @@ int* node_order(int ncell, int nnode, int* parent,
   int& nstride, int*& stride, int*& firstnode, int*& lastnode, int*& cellsize
 ) {
 
-  vector<TNode*> nodevec;
+  VecTNode nodevec;
   if (0) prtree(nodevec); // avoid unused warning
 
   // nodevec[0:ncell] in increasing size, with identical trees together,
@@ -389,8 +372,8 @@ int* node_order(int ncell, int nnode, int* parent,
   // nodevec[ncell:nnode] cells are interleaved in nodevec[0:ncell] cell order
   node_interleave_order(ncell, nodevec);
   check(nodevec);
-#if 1
-  if (1) {
+#if 0
+  if (0) {
     cell_parent_level_ordering(nodevec);
   }else{
     group_parent_level_ordering(nodevec);
@@ -406,7 +389,7 @@ int* node_order(int ncell, int nnode, int* parent,
 #endif
 
   if(0) level_manip(nodevec, ncell);
-  if(0) ident_statistic(nodevec, ncell);
+  if(1) ident_statistic(nodevec, ncell);
   quality(nodevec);
 
   // the permutation
@@ -438,7 +421,7 @@ int* node_order(int ncell, int nnode, int* parent,
   return nodeorder;
 }
 
-void check(vector<TNode*>& nodevec) {
+void check(VecTNode& nodevec) {
   //printf("check\n");
   size_t nnode = nodevec.size();
   size_t ncell = 0;
@@ -459,7 +442,7 @@ void check(vector<TNode*>& nodevec) {
   
 }
 
-void prtree(vector<TNode*>& nodevec) {
+void prtree(VecTNode& nodevec) {
   size_t nnode = nodevec.size();
   for (size_t i=0; i < nnode; ++i) {
     nodevec[i]->nodevec_index = i;
@@ -473,9 +456,9 @@ void prtree(vector<TNode*>& nodevec) {
   }
 }
 
-void tree_analysis(int* parent, int nnode, int ncell, vector<TNode*>& nodevec) {
+void tree_analysis(int* parent, int nnode, int ncell, VecTNode& nodevec) {
 
-//  vector<TNode*> nodevec;
+//  VecTNode nodevec;
 
   // create empty TNodes (knowing only their index)
   nodevec.reserve(nnode);
@@ -530,7 +513,7 @@ static bool interleave_comp(TNode* a, TNode* b) {
 // sort so nodevec[ncell:nnode] cell instances are interleaved. Keep the
 // secondary ordering with respect to treenode_order so each cell is still a tree.
 
-void node_interleave_order(int ncell, vector<TNode*>& nodevec) {
+void node_interleave_order(int ncell, VecTNode& nodevec) {
   int* order = new int[ncell];
   for (int i=0; i < ncell; ++i) {
     nodevec[i]->cellindex = i;
@@ -574,7 +557,7 @@ static bool contiglevel_comp(TNode* a, TNode* b) {
   return result;
 }
 
-static void chkorder1(size_t ncell, vector<TNode*>& nodevec) {
+static void chkorder1(size_t ncell, VecTNode& nodevec) {
   size_t cellindex = 0;
   size_t level = 0;
   for (size_t i = ncell; i < nodevec.size(); ++i) {
@@ -609,7 +592,7 @@ static bool level_node_comp(TNode* a, TNode* b) {
 // all the second children, etc. The groups of first, second,... children
 // have the same order as their parents.
 
-static void cell_parent_level_ordering(vector<TNode*>& nodevec) {
+static void cell_parent_level_ordering(VecTNode& nodevec) {
   size_t ncell = 0;
   for (size_t i=0; i < nodevec.size(); ++i) {
     TNode* nd = nodevec[i];
@@ -753,7 +736,7 @@ static bool contiglevel_comp2(TNode* a, TNode* b) {
   return result;
 }
 
-static void chkorder2(size_t ncell, vector<TNode*>& nodevec) {
+static void chkorder2(size_t ncell, VecTNode& nodevec) {
   size_t groupindex = 0;
   size_t level = 0;
   for (size_t i = ncell; i < nodevec.size(); ++i) {
@@ -780,7 +763,7 @@ static void chkorder2(size_t ncell, vector<TNode*>& nodevec) {
 // all the second children, etc. The groups of first, second,... children
 // have the same order as their parents.
 
-static void group_parent_level_ordering(vector<TNode*>& nodevec) {
+static void group_parent_level_ordering(VecTNode& nodevec) {
   size_t ncell = 0;
   for (size_t i=0; i < nodevec.size(); ++i) {
     TNode* nd = nodevec[i];
@@ -937,7 +920,7 @@ chkorder2(ncell, nodevec);
 #endif
 }
 
-static void admin(int ncell, vector<TNode*>& nodevec,
+static void admin(int ncell, VecTNode& nodevec,
   int& nstride, int*& stride, int*& firstnode, int*& lastnode, int*& cellsize
 ){
   // firstnode[i] is the index of the first nonroot node of the cell
