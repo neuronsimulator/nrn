@@ -26,3 +26,5 @@ Quick Links
     modelspec/programmatic/topology/secref.rst
     programming/oop.rst
     programming/hocsyntax.rst
+    programmatic/network/parnet.rst
+    modelspec/programmatic/network/parnet.rst

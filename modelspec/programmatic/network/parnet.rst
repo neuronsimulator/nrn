@@ -9,18 +9,18 @@ ParallelNetManager
 
 
     Syntax:
-        ``pnm = new ParallelNetManager(ncell)``
+        ``pnm = h.ParallelNetManager(ncell)``
 
 
     Description:
         Manages the setup and running of a network simulation on a cluster 
         of workstations or any parallel computer that has mpi installed. 
         A version for PVM is also available. This class, implemented 
-        in nrn/share/lib/hoc/netparmpi.hoc, presents an interface 
+        in :file:`nrn/share/lib/hoc/netparmpi.hoc`, presents an interface 
         compatible with the NetGUI style of network specification, and is implemented 
         using the :ref:`ParallelNetwork` methods. Those methods are 
         available only if NEURON has been built with the configuration option, 
-        --with-mpi. The :file:`netparmpi.hoc` file at last count was only 285 lines long 
+        --with-mpi. The :file:`netparmpi.hoc` file at last count was only 430 lines long 
         so if you have questions about how it works that are not answered here, 
         take a look. 
          
@@ -59,11 +59,11 @@ ParallelNetManager
             end up being a valid network simulation for a ring of 128 artificial 
             cells where cell i sends a spike to cell i+1, let's start out with 
 
-            .. code-block::
-                none
+            .. code::
 
-                load_file("nrngui.hoc") // not that I want a gui but I do want the stdrun system 
-                tstop = 1000 
+                from neuron import h
+                h.load_file('stdrun.hoc')
+                tstop = 1000
 
             Yes, I know that this example is foolish since there is no computation 
             going on except when a cell receives a spike. I don't expect any benefit 
@@ -72,13 +72,11 @@ ParallelNetManager
          
         1)  load the :file:`netparmpi.hoc` file and create a ParallelNetManager 
 
-            .. code-block::
-                none
+            .. code::
 
-                load_file("netparmpi.hoc") 
-                objref pnm 
+                h.load_file("netparmpi.hoc") 
                 ncell = 128 
-                pnm = new ParallelNetManager(ncell) 
+                pnm = h.ParallelNetManager(ncell) 
 
             If you know the global number of cells put it in. For the non-MPI 
             implementation of ParallelNetManager, ncell is absolutely necessary 
@@ -92,8 +90,7 @@ ParallelNetManager
         2)  Tell the system which gid's are on which machines. 
             The simplest distribution mechanism is :func:`round_robin` 
 
-            .. code-block::
-                none
+            .. code::
 
                 pnm.round_robin() 
 
@@ -104,7 +101,7 @@ ParallelNetManager
             HAVE to call \ ``pnm.set_gid2node(gid, myid)`` for the subset of gid's that 
             are supposed to be associated with this machines 
             particular \ ``myid = pnm.pc.id`` but it is usually simpler just to call 
-            it for all gid's since the set_gid2node call is a no-op when the second 
+            it for all gid's since the ``set_gid2node`` call is a no-op when the second 
             argument does not match the pc.id. Also, the PVM version REQUIRES that 
             you call the function for all the gid values. 
              
@@ -136,12 +133,11 @@ ParallelNetManager
         3)  Now create only the cells that are supposed to be on this machine 
             using :meth:`ParallelNetManager.register_cell`. 
 
-            .. code-block::
-                none
+            .. code::
 
-                for i=0, ncell-1 if (pnm.gid_exists(i)) { 
-                	pnm.register_cell(i, new IntFire1()) 
-                } 
+                for i in xrange(ncell):
+                    if pnm.gid_exists(i):
+                        pnm.register_cell(i, h.IntFire1())
 
             Notice how we don't construct a cell if the gid does not exist. 
             You only HAVE to call 
@@ -177,14 +173,12 @@ ParallelNetManager
          
         4)  Connect the cells using :meth:`ParallelNetManager.nc_append` 
 
-            .. code-block::
-                none
+            .. code::
 
-                for i=0, ncell-1 { 
-                	pnm.nc_append(i, (i+1)%ncell, -1, 1.1, 2) 
-                } 
+                for i in xrange(ncell):
+                    pnm.nc_append(i, (i + 1) % ncell, -1, 1.1, 2) 
 
-            Again, it only has to be called if i, or i+1, or both, are on this machine. 
+            Again, it only has to be called if i, or i + 1, or both, are on this machine. 
             It is a no-op if neither are on this machine and usually a no-op if only 
             the source is on this machine since it will only mark the source cell 
             as output cell, once. 
@@ -199,19 +193,16 @@ ParallelNetManager
             Let's get the ring going by forcing the gid==4 
             cell to fire. 
 
-            .. code-block::
-                none
+            .. code::
 
-                // stimulate 
-                objref stim, ncstim 
-                if (pnm.gid_exists(4)) { 
-                        stim = new NetStim(.5) 
-                        ncstim = new NetCon(stim, pnm.pc.gid2obj(4)) 
-                        ncstim.weight = 1.1 
-                        ncstim.delay = 0 
-                        stim.number=1 
-                        stim.start=1 
-                } 
+                # stimulate
+                if pnm.gid_exists(4):
+                    stim = h.NetStim(0.5)
+                    ncstim = h.NetCon(stim, pnm.pc.gid2obj(4)) 
+                    ncstim.weight[0] = 1.1 
+                    ncstim.delay = 0 
+                    stim.number=1 
+                    stim.start=1 
 
             Note the stimulator does not require a gid even though it is an artificial 
             cell because its connections do not span machines. But it does have to be 
@@ -220,16 +211,14 @@ ParallelNetManager
         5)  Have the system figure out the minimum spanning NetCon delay so it knows 
             the maximum step size. 
 
-            .. code-block::
-                none
+            .. code::
 
-                pnm.set_maxstep(100) // will end up being 2 
+                pnm.set_maxstep(100) # will end up being 2 
 
          
         6)  Decide what output to collect 
 
-            .. code-block::
-                none
+            .. code::
 
                 pnm.want_all_spikes() 
 
@@ -240,23 +229,21 @@ ParallelNetManager
              
         7)  Initialize and run. 
 
-            .. code-block::
-                none
+            .. code::
 
-                stdinit() 
-                runtime = startsw() 
+                import time
+                h.stdinit() 
+                runtime = time.time() 
                 pnm.psolve(tstop) 
-                runtime = startsw() - runtime 
+                runtime = time.time() - runtime 
 
          
         8)  Print the results. 
 
-            .. code-block::
-                none
+            .. code::
 
-                for i=0, pnm.spikevec.size-1 { 
-                	print pnm.spikevec.x[i], pnm.idvec.x[i] 
-                } 
+                for spike, i in zip(pnm.spikevec, pnm.idvec):
+                    print('%g %g' % (spike, i))
 
             If you save the stdout to a file you can sort the results. A nice idiom 
             is 
@@ -272,10 +259,9 @@ ParallelNetManager
             tell all the workers to quit. 
 
             .. code-block::
-                none
 
-                pnm.pc.runworker 
-                pnm.pc.done 
+                pnm.pc.runworker()
+                pnm.pc.done()
 
 
          
@@ -350,7 +336,7 @@ ParallelNetManager
     Description:
         This is deprecated. Use :meth:`ParallelNetManager.register_cell` . 
          
-        If the gid exists on this machine the obexpr is executed in a statement 
+        If the gid exists on this machine the obexpr is executed in HOC in a statement 
         equivalent to ``pnm.cells.append(obexpr)``. Obexpr should be something like 
         \ ``"new Pyramid()"`` or any function that returns a cell object. Valid 
         "real" cell objects should have a connect2target method and a synlist 
@@ -607,19 +593,17 @@ ParallelNetManager
 
 
     Syntax:
-        ``cas pnm.splitcell(hostcas, hostparent)``
+        ``pnm.splitcell(hostcas, hostparent, sec=split_at)``
 
 
     Description:
-        The cell is split at the currently accessed section and that 
-        section's 
-        parent into two subtrees rooted at the old connection end of the cas 
-        and the old cas connecting point of the parent (latter must be 
-        0 or 1). The cas subtree will be preserved on the host specified 
-        by hostcas and the parent subtree will be destroyed. The parent 
-        subtree 
-        will be preserved on the host specified by hostparent and the cas 
-        subtree destroyed. Hostparent must be either ``hostcas+1`` or ``hostcas-1``. 
+        The cell is split at the section ``split_at`` and that section's 
+        parent into two subtrees rooted at the old connection end of ``split_at``
+        and the old ``split_at`` connecting point of the parent (latter must be 
+        0 or 1). The ``split_at`` subtree will be preserved on the host specified 
+        by hostcas and the parent subtree will be destroyed. The parent subtree 
+        will be preserved on the host specified by hostparent and the ``split_at`` 
+        subtree destroyed. Hostparent must be either ``host_split_at+1`` or ``host_split_at-1``. 
          
         Splitcell works only if NEURON has been configured with the 
         --with-paranrn option. A split cell has exactly the same stability 
