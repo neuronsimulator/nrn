@@ -23,3 +23,4 @@ Quick Links
     programming/pointers/ptrvector.rst 
     programming/io/printf.rst
     simctrl/savstate.rst
+    modelspec/programmatic/topology/secref.rst

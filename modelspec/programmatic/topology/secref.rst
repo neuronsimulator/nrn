@@ -3,29 +3,31 @@
 SectionRef
 ----------
 
+.. note::
+
+    Much of this functionality is available in Python through :class:`Section` methods in
+    recent versions of NEURON. It is, however, sometimes necessary to use this class to
+    interoperate with legacy code.
 
 
 .. class:: SectionRef
 
 
     Syntax:
-        ``section sref = new SectionRef()``
+        ``sref = h.SectionRef(sec=section)``
 
 
     Description:
-        SectionRef keeps a pointer/reference to a section 
-        The reference is to the currently accessed section at the 
-        time the object was created. 
+        SectionRef keeps a pointer/reference to section. If the ``sec=`` argument is
+        omitted, the reference is to the currently accessed section.
          
-        This class allows sections to be referenced as normal object variables 
-        for assignment and passing as arguments. 
-
+        This class overcomes a HOC limitation where sections were not treated as objects.
 
 ----
 
 
 
-.. method:: SectionRef.sec
+.. data:: SectionRef.sec
 
 
     Syntax:
@@ -33,39 +35,26 @@ SectionRef
 
 
     Description:
-        special syntax that makes the reference the currently 
-        accessed section. 
-        This class allows sections to be referenced as normal object variables 
-        for assignment and passing as arguments. The usage is 
+        Returns the :class:`Section` the ``SectionRef`` references.
 
-        .. code-block::
-            none
+        .. code::
 
-            create soma, axon 
-            axon.diam=2 
-            soma.diam=10 
-            access axon 
-            objref s1, s2 
-            soma s1 = new SectionRef()	// s1 holds a reference to the soma 
-            print s1.sec.diam		// print the diameter of the soma 
-            s2 = s1				// s2 also holds a reference to the soma 
-            s2.sec { psection() }		// print all info about soma 
-            axon s2 = new SectionRef() 
-            proc c() { 
-            	$o1.sec connect $o2.sec(0), 1 
-            } 
-            c(s1, s2) 
-            topology() 
+            from neuron import h
 
-        This last is a procedure that takes two SectionRef args and 
-        connects them end to end. 
+            s = h.Section()
+            s2 = h.Section()
+            sref = h.SectionRef(sec=s2)
+
+            print (sref.sec==s)  # False
+            print (sref.sec==s2) # True
+
 
 
 ----
 
 
 
-.. method:: SectionRef.parent
+.. data:: SectionRef.parent
 
 
     Syntax:
@@ -73,9 +62,11 @@ SectionRef
 
 
     Description:
-        parent of sref.sec becomes the currently accessed section. Generally it 
-        is used in a context like \ ``sref.parent { statement }`` just like a 
-        normal section name and does NOT need a section_pop 
+
+        Returns the parent of ``sref.sec``.
+
+    .. warning::
+
         If there is a chance that a section does not have a parent then 
         :meth:`SectionRef.has_parent` should be called first to avoid an execution error. 
         Note that the parent is the current parent of sref.sec, not necessarily 
@@ -86,7 +77,7 @@ SectionRef
 
 
 
-.. method:: SectionRef.trueparent
+.. data:: SectionRef.trueparent
 
 
     Syntax:
@@ -94,10 +85,12 @@ SectionRef
 
 
     Description:
-        trueparent of sref.sec becomes the currently accessed section. 
+        Returns the trueparent of ``sref.sec``.
+
         This is normally identical to :meth:`SectionRef.parent` except when the 
         parent's :func:`parent_connection` is equal to the parent's 
         :func:`section_orientation`. 
+
         If there is a chance that a section does not have a trueparent then 
         :meth:`SectionRef.has_trueparent` should be called first to avoid an execution error. 
 
@@ -106,7 +99,7 @@ SectionRef
 
 
 
-.. method:: SectionRef.child
+.. data:: SectionRef.child
 
 
     Syntax:
@@ -114,14 +107,13 @@ SectionRef
 
 
     Description:
-        the ith child of sref.sec becomes the currently accessed section. 
-        Generally it 
-        is used in a context like 
+        Returns the ith child of ``sref.sec``.
+        Generally it is used in a context like 
 
-        .. code-block::
-            none
-
-            for i=0, sref.nchild-1 sref.child[i] { statement } 
+        .. code::
+            
+            for child in sref.child:
+                print(child.hname())
 
         Note that the children are the current children of sref.sec, not necessarily 
         the same as when the SectionRef was created since sections may be 
@@ -132,7 +124,7 @@ SectionRef
 
 
 
-.. method:: SectionRef.root
+.. data:: SectionRef.root
 
 
     Syntax:
@@ -140,7 +132,8 @@ SectionRef
 
 
     Description:
-        root of sref.sec becomes the currently accessed section. 
+
+        Returns the root of ``sref.sec``.
 
 
 ----
@@ -151,11 +144,11 @@ SectionRef
 
 
     Syntax:
-        ``boolean = sref.has_parent``
+        ``boolean = sref.has_parent()``
 
 
     Description:
-        returns 1 if sref.sec has a parent and 0 if sref.sec is a root section. 
+        Returns 1.0 if sref.sec has a parent and 0.0 if sref.sec is a root section. 
         Invoking sref.parent when sref.sec is a root section will print an 
         error message and halt execution. 
 
@@ -168,11 +161,11 @@ SectionRef
 
 
     Syntax:
-        ``boolean = sref.has_trueparent``
+        ``boolean = sref.has_trueparent()``
 
 
     Description:
-        returns 1 if the sref.sec parent node is not the root node and 0 otherwise. 
+        returns 1.0 if the sref.sec parent node is not the root node and 0.0 otherwise. 
         Invoking sref.trueparent when it is the root node will print an 
         error message and halt execution. 
 
@@ -185,11 +178,15 @@ SectionRef
 
 
     Syntax:
-        ``integer = sref.nchild``
+        ``num = sref.nchild()``
 
 
     Description:
-        Return the number of child sections connected to sref.sec 
+        Return the number of child sections connected to sref.sec as a float.
+
+    .. note::
+
+        To get the number of child sections as an int, use: ``num = len(sref.child)``
 
          
 
@@ -205,7 +202,11 @@ SectionRef
 
 
     Description:
-        Returns 1 if this section reference is the currently accessed section, 0 otherwise. 
+        Returns 1.0 if this section reference is the currently accessed (default) section, 0.0 otherwise. 
+
+    .. note::
+
+        An equivalent expression that evaluates to True or False is ``(sref.sec == h.cas())``.
 
          
 
@@ -221,7 +222,7 @@ SectionRef
 
 
     Description:
-        Returns 1 if the section has not been deleted, 0 otherwise. 
+        Returns 1.0 if the referenced section has not been deleted, 0.0 otherwise. 
 
     .. seealso::
         :func:`delete_section`, :func:`section_exists`
