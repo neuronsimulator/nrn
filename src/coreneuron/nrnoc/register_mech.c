@@ -56,7 +56,7 @@ typedef void (*Pfrv)();
 BAMech** bamech_;
 
 pnt_receive_t* pnt_receive;	/* for synaptic events. */
-pnt_receive_t* pnt_receive_init;
+pnt_receive_init_t* pnt_receive_init;
 short* pnt_receive_size;
  /* values are type numbers of mechanisms which do net_send call */
 int nrn_has_net_event_cnt_;
@@ -131,7 +131,7 @@ void alloc_mech(int n) {
 	point_process = (Point_process**)ecalloc(memb_func_size_, sizeof(Point_process*));
 	pnt_map = (char*)ecalloc(memb_func_size_, sizeof(char));
 	pnt_receive = (pnt_receive_t*)ecalloc(memb_func_size_, sizeof(pnt_receive_t));
-	pnt_receive_init = (pnt_receive_t*)ecalloc(memb_func_size_, sizeof(pnt_receive_t));
+	pnt_receive_init = (pnt_receive_init_t*)ecalloc(memb_func_size_, sizeof(pnt_receive_init_t));
 	pnt_receive_size = (short*)ecalloc(memb_func_size_, sizeof(short));
 	nrn_is_artificial_ = (short*)ecalloc(memb_func_size_, sizeof(short));
 	nrn_artcell_qindex_ = (short*)ecalloc(memb_func_size_, sizeof(short));
