@@ -230,7 +230,7 @@ static bool vsmss_comp(const pair<size_t, MSS*>& a, const pair<size_t, MSS*>& b)
   return result;
 }
 
-static size_t level_from_root(VecTNode& nodevec) {
+size_t level_from_root(VecTNode& nodevec) {
   size_t maxlevel = 0;
   for (size_t i = 0; i < nodevec.size(); ++i) {
     TNode* nd = nodevec[i];
@@ -298,8 +298,8 @@ static void level_manip(VecTNode& nodevec, size_t ncell, size_t max=32) {
 // idea of the depth of identical subtrees.
 static void ident_statistic(VecTNode& nodevec, size_t ncell) {
   // reverse sense of levels
-  size_t maxlevel = level_from_leaf(nodevec);
-//  size_t maxlevel = level_from_root(nodevec);
+//  size_t maxlevel = level_from_leaf(nodevec);
+  size_t maxlevel = level_from_root(nodevec);
 
   // # in each level
   vector<vector<size_t> > n_in_level(maxlevel+1);
@@ -372,11 +372,13 @@ int* node_order(int ncell, int nnode, int* parent,
   // nodevec[ncell:nnode] cells are interleaved in nodevec[0:ncell] cell order
   node_interleave_order(ncell, nodevec);
   check(nodevec);
-#if 0
+#if 1
   if (0) {
     cell_parent_level_ordering(nodevec);
-  }else{
+  }else if (0) {
     group_parent_level_ordering(nodevec);
+  }else{
+    group_order2(nodevec, groupsize, ncell);
   }
   check(nodevec);
 #endif
@@ -389,7 +391,7 @@ int* node_order(int ncell, int nnode, int* parent,
 #endif
 
   if(0) level_manip(nodevec, ncell);
-  if(1) ident_statistic(nodevec, ncell);
+  if(0) ident_statistic(nodevec, ncell);
   quality(nodevec);
 
   // the permutation
