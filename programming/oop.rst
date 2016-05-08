@@ -1,9 +1,13 @@
 .. _oop:
 
-Object Oriented Programming
----------------------------
+Object Oriented Programming in HOC
+----------------------------------
 See `Object Oriented Programming <http://www.neuron.yale.edu/neuron/static/docs/refman/obj.html>`_ 
 in the reference manual.
+
+.. note::
+
+    Classes defined in HOC may be accessed in Python via ``h.ClassName``.
 
 .. index:: begintemplate (keyword)
 

@@ -24,3 +24,4 @@ Quick Links
     programming/io/printf.rst
     simctrl/savstate.rst
     modelspec/programmatic/topology/secref.rst
+    programming/oop.rst
