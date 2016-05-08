@@ -25,3 +25,4 @@ Quick Links
     simctrl/savstate.rst
     modelspec/programmatic/topology/secref.rst
     programming/oop.rst
+    programming/hocsyntax.rst
