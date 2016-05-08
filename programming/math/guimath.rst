@@ -9,7 +9,7 @@ GUIMath
 
 
     Syntax:
-        ``obj = new GUIMath()``
+        ``obj = h.GUIMath()``
 
 
     Description:
@@ -26,7 +26,7 @@ GUIMath
 
 
     Syntax:
-        ``d = math.d2line(xpoint, ypoint, xline0, yline0, xline1, yline1)``
+        ``d = guimath.d2line(xpoint, ypoint, xline0, yline0, xline1, yline1)``
 
 
     Description:
@@ -43,11 +43,11 @@ GUIMath
 
 
     Syntax:
-        ``d = math.d2line_seg(xpoint, ypoint, xline0, yline0, xline1, yline1)``
+        ``d = guimath.d2line_seg(xpoint, ypoint, xline0, yline0, xline1, yline1)``
 
 
     Description:
-        Return distance between the point (xpoint,ypoint) and the line segment 
+        Return distance between the point (xpoint, ypoint) and the line segment 
         line defined by the 0 and 1 points. 
 
          
@@ -60,7 +60,7 @@ GUIMath
 
 
     Syntax:
-        ``boolean = math.inside(xpoint, ypoint, left, bottom, right, top)``
+        ``boolean = guimath.inside(xpoint, ypoint, left, bottom, right, top)``
 
 
     Description:
@@ -76,9 +76,9 @@ GUIMath
 
 
     Syntax:
-        ``mode = math.feround()``
+        ``mode = guimath.feround()``
 
-        ``lastmode = math.feround(mode)``
+        ``lastmode = guimath.feround(mode)``
 
 
     Description:
@@ -89,27 +89,39 @@ GUIMath
         support for this function the return value is 0. 
          
         This function is useful to determine if a simulation depends unduly 
-        on double precision round-off error. 
+        on double precision round-off error.
+
+        This affects calculations performed in both Python and HOC. 
 
     Example:
 
-        .. code-block::
-            none
+        .. code::
 
-            objref gm 
-            gm = new GUIMath() 
-            {printf("default rounding mode %d\n", gm.feround())} 
-             
-            proc test_round() {local i, old, x  localobj gm 
-                    gm = new GUIMath() 
-                    old = gm.feround($1) 
-                    x = 0 
-                    for i=1, 1000000 x += 0.1 
-                    printf("rounding mode %d x=%25.17lf\n", $1, x) 
-                    gm.feround(old) 
-            } 
-             
-            for i=1, 4 test_round(i) 
+            from neuron import h
 
+            gm = h.GUIMath()
+            print 'default rounding mode %d' % gm.feround()
 
+            def test_round(mode):
+                gm = h.GUIMath()
+                old = gm.feround(mode)
+                x = 0
+                for i in xrange(1, 1000001):
+                    x += 0.1
+                print 'round mode %d x=%25.17lf' % (mode, x)
+                gm.feround(old)
+
+            for i in xrange(1, 5):
+                test_round(i)
+
+        Output:
+
+            .. code-block::
+                none
+
+                default rounding mode 2
+                round mode 1 x=  99999.99999613071850035
+                round mode 2 x= 100000.00000133288267534
+                round mode 3 x=  99999.99999613071850035
+                round mode 4 x= 100000.00000432481465396
 
