@@ -90,6 +90,64 @@ static void set_treenode_order(VVTN& levels) {
   }
 }
 
+// every level starts out with no race conditions involving both
+// parent and child in the same level. Can we arrange things so that
+// every level has at least 32 nodes?
+static void question2(VVTN& levels, size_t max = 32) {
+  size_t nnode = 0;
+  for (size_t i = 0; i < levels.size(); ++i) {
+    nnode += levels[i].size();
+  }
+  VTN nodes(nnode);
+  nnode = 0;
+  for (size_t i = 0; i < levels.size(); ++i) {
+    for (size_t j=0;j < levels[i].size(); ++j) {
+      nodes[nnode++] = levels[i][j];      
+    }
+  }
+  for (size_t i=0; i < nodes.size(); ++i) {
+    nodes[i]->nodevec_index = i;
+  }
+
+  for (size_t i=levels[0].size(); i < nodes.size(); ++i) {
+    TNode* nd = nodes[i];
+    size_t i32 = nd->nodevec_index/max;
+    size_t p32 = nd->parent->nodevec_index/max;
+    if (p32 == i32) { // parent in same 32group
+      printf("level=%ld i=%ld ip=%ld\n", nd->level, nd->nodevec_index, nd->parent->nodevec_index);
+    }else if (i%8 == 0 && p32 < i32-1) {
+      printf("movable between %ld and %ld\n", p32, i32);
+    }
+  }
+
+  // move along in groups of 32 and see if there are any races.
+  
+}
+
+// size of groups with contiguous parents for each level
+static void question(VVTN& levels) {
+  for (size_t i = 0; i < levels.size(); ++i) {
+    printf("%3ld %5ld", i, levels[i].size());
+    size_t iplast = 100000000;
+    size_t nsame = 0;
+    for (size_t j=0; j < levels[i].size(); ++j) {
+      TNode* nd = levels[i][j];
+      if (nd->parent == NULL) {
+        nsame += 1;
+      }else if (nd->parent->treenode_order == iplast + 1) {
+        nsame += 1;
+        iplast = nd->parent->treenode_order;
+      }else{
+        if (nsame) { printf(" %3ld", nsame); }
+        nsame = 1;
+        iplast = nd->parent->treenode_order;
+      }
+    }
+    if (nsame) { printf(" %3ld", nsame); }
+    printf("\n");
+  }
+}
+
 static void analyze(VVTN& levels) {
   // sort each level with respect to parent level order
   // earliest parent level first.
@@ -145,7 +203,7 @@ static void set_nodeindex(VecTNode& nodevec) {
 }
 
 void group_order2(VecTNode& nodevec, size_t groupsize, size_t ncell) {
-  return;
+  //return;
   printf("enter group_order2\n");
 #if 1
   size_t maxlevel = level_from_root(nodevec);
@@ -180,6 +238,9 @@ void group_order2(VecTNode& nodevec, size_t groupsize, size_t ncell) {
   for (size_t i=0; i < groups.size(); ++i) {
     analyze(groups[i]);
   }
+
+  question(groups[0]);
+  question2(groups[0]);
 
   //final nodevec order according to group_index and treenode_order
   std::sort(nodevec.begin() + ncell, nodevec.end(), final_nodevec_cmp);
