@@ -279,19 +279,37 @@ Section* nrn_sectionref_steer(Section* sec, Symbol* sym, int* pnindex)
 	if (sym == nrn_parent_sym) {
 		s = sec->parentsec;
 		if (!s) {
+if (nrn_inpython_ == 1) {
+			hoc_warning("SectionRef has no parent for ", secname(sec));
+	nrn_inpython_ = 2;
+	return NULL;
+}else{			
 			hoc_execerror("SectionRef has no parent for ", secname(sec));
+}
 		}
 	}else if (sym == nrn_trueparent_sym) {
 		s = nrn_trueparent(sec);
 		if (!s) {
+if (nrn_inpython_) {
+			hoc_warning("SectionRef has no parent for ", secname(sec));
+	nrn_inpython_ = 2;
+	return NULL;
+}else{			
 			hoc_execerror("SectionRef has no parent for ", secname(sec));
+}
 		}
 	}else if (sym == nrn_root_sym) {
 		for (s = sec; s->parentsec; s = s->parentsec) {}
 	}else if (sym == nrn_child_sym) {
 		int index, i;
 		if (*pnindex == 0) {
+if (nrn_inpython_) {
+			hoc_warning("SectionRef.child[index]", (char*)0);
+	nrn_inpython_ = 2;
+	return NULL;
+}else{			
 			hoc_execerror("SectionRef.child[index]", (char*)0);
+}
 		}
 		index = (int)hoc_xpop();
 		--*pnindex;
@@ -299,7 +317,13 @@ Section* nrn_sectionref_steer(Section* sec, Symbol* sym, int* pnindex)
 			++i;
 		}
 		if (i != index || !s) {
+if (nrn_inpython_) {
+			hoc_warning("SectionRef.child index too large for", secname(sec));
+	nrn_inpython_ = 2;
+	return NULL;
+}else{			
 			hoc_execerror("SectionRef.child index too large for", secname(sec));
+}
 		}
 	}
 	return s;

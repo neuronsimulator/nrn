@@ -1116,6 +1116,13 @@ hoc_execerror(obp->template->sym->name, sym0->name);
 		if (sym != nrn_sec_sym) {
 			sec = nrn_sectionref_steer(sec, sym, &nindex);
 		}
+if (nrn_inpython_ == 2) {
+  section_object_seen = 0;
+  hoc_pop_defer();
+  hoc_objectdata = hoc_objectdata_restore(psav);
+  hoc_thisobject = obsav;
+  return;
+}
 	   if (	connect_obsec_) {
 		double x=0.0;
 		connect_obsec_ = 0;
