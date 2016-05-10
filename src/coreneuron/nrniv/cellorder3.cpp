@@ -10,6 +10,7 @@
 
 using namespace std;
 
+static size_t warpsize = 32;
 
 // experiment starting with identical cell ordering
 // groupindex aleady defined that keeps identical cells together
@@ -93,7 +94,170 @@ static void set_treenode_order(VVTN& levels) {
 // every level starts out with no race conditions involving both
 // parent and child in the same level. Can we arrange things so that
 // every level has at least 32 nodes?
-static void question2(VVTN& levels, size_t max = 32) {
+static size_t g32(TNode* nd) {
+  return nd->nodevec_index/warpsize;
+}
+
+static bool is_parent_race(TNode* nd) { // vitiating
+  size_t pg = g32(nd);
+  for (size_t i = 0; i < nd->children.size(); ++i) {
+    if (pg == g32(nd->children[i])) { return true; }
+  }
+  return false;
+}
+
+// less than 32 apart
+static bool is_parent_race2(TNode* nd) { // vitiating
+  size_t pi = nd->nodevec_index;
+  for (size_t i = 0; i < nd->children.size(); ++i) {
+    if (nd->children[i]->nodevec_index - pi < warpsize) { return true; }
+  }
+  return false;
+}
+
+static bool is_child_race(TNode* nd) { // potentially handleable by atomic
+  if (nd->children.size() < 2) { return false; }
+  if (nd->children.size() == 2) { return g32(nd->children[0]) == g32(nd->children[1]); }
+  std::set<size_t> s;
+  for (size_t i=0; i < nd->children.size(); ++i) {
+    size_t gc = g32(nd->children[i]);
+    if (s.find(gc) != s.end()) { return true; }
+    s.insert(gc);
+  }
+  return false;
+}
+
+static size_t dist2child(TNode* nd) {
+  size_t d = 1000;
+  size_t pi = nd->nodevec_index;
+  for (size_t i = 0; i < nd->children.size(); ++i) {
+    size_t d1 = nd->children[i]->nodevec_index - pi;
+    if (d1 < d) {
+      d = d1;
+    }
+  }
+  return d;
+}
+
+// from stackoverflow.com
+template <typename T>
+static void move_range(size_t start, size_t length, size_t dst, std::vector<T> & v)
+{
+    typename std::vector<T>::iterator first, middle, last;
+    if (start < dst)
+    {
+        first  = v.begin() + start;
+        middle = first + length;
+        last   = v.begin() + dst;
+    }
+    else
+    {
+        first  = v.begin() + dst;
+        middle = v.begin() + start;
+        last   = middle + length;
+    }
+    std::rotate(first, middle, last);
+}
+
+static void move_nodes(size_t start, size_t length, size_t dst, VTN& nodes) {
+  nrn_assert(dst <= nodes.size());
+  nrn_assert(start + length <= dst);
+  move_range(start, length, dst, nodes);
+
+  // check correctness of move
+  for (size_t i = start; i < dst-length; ++i) {
+    nrn_assert(nodes[i]->nodevec_index == i + length);
+  }
+  for (size_t i = dst-length; i < dst; ++i) {
+    nrn_assert(nodes[i]->nodevec_index == start + (i - (dst - length)));
+  }
+
+  // update nodevec_index
+  for (size_t i = start; i < dst; ++i) {
+    nodes[i]->nodevec_index = i;
+  }
+}
+
+// least number of nodes to move after nd to eliminate prace
+static size_t need2move(TNode* nd) {
+  size_t d = dist2child(nd);
+  return warpsize - ((nd->nodevec_index % warpsize) + d);
+}
+
+static void how_many_warpsize_groups_have_only_leaves(VTN& nodes) {
+  size_t n = 0;
+  for (size_t i = 0; i < nodes.size(); i += warpsize) {
+    bool r = true;
+    for (size_t j=0; j < warpsize; ++j) {
+      if (nodes[i+j]->children.size() != 0) {
+        r = false;
+        break;
+      }
+    }
+    if (r) {
+      printf("warpsize group %ld starting at level %ld\n", i/warpsize, nodes[i]->level);
+      ++n;
+    }
+  }
+  printf("number of warpsize groups with only leaves = %ld\n", n);
+}
+
+static void pr_race_situation(VTN& nodes) {
+  size_t prace2 = 0;
+  size_t prace = 0;
+  size_t crace = 0;
+  for (size_t i = nodes.size() - 1; nodes[i]->level != 0; --i) {
+    TNode* nd = nodes[i];
+    if (is_parent_race2(nd)) {
+      ++prace2;
+    }
+    if (is_parent_race(nd)) {
+      printf("level=%ld i=%ld d=%ld n=%ld", nd->level, nd->nodevec_index, dist2child(nd), need2move(nd));
+      for (size_t j = 0; j < nd->children.size(); ++j) {
+        TNode* cnd = nd->children[j];
+        printf("   %ld %ld", cnd->level, cnd->nodevec_index);
+      }
+      printf("\n");
+      ++prace;
+    }
+    if (is_child_race(nd)) {
+      ++crace;
+    }
+  }
+  printf("prace=%ld  crace=%ld prace2=%ld\n", prace, crace, prace2);
+}
+
+static size_t next_leaf(TNode* nd, VTN& nodes) {
+  size_t i = nd->nodevec_index;
+  for (size_t i= nd->nodevec_index - 1; i > 0; --i) {
+    if(nodes[i]->children.size() == 0) {
+      return i;
+    }
+  }
+  nrn_assert(i > 0);
+  return 0;
+}
+
+static void eliminate_race(TNode* nd, VTN& nodes) {
+  size_t d = warpsize - dist2child(nd);
+printf("eliminate_race %ld %ld\n", nd->nodevec_index, d);
+  // opportunistically move that number of leaves
+  // error if no leaves left to move.
+  size_t i = nd->nodevec_index;
+  while (d > 0) {
+    i = next_leaf(nodes[i], nodes);
+    size_t n = 1;
+    while (nodes[i-1]->children.size() == 0 && n < d) {
+      --i;
+      ++n;
+    }
+printf("  move_nodes src=%ld len=%ld dest=%ld\n", i, n, nd->nodevec_index);
+    move_nodes(i, n, nd->nodevec_index, nodes);
+    d -= n;
+  }
+}
+
+static void question2(VVTN& levels) {
   size_t nnode = 0;
   for (size_t i = 0; i < levels.size(); ++i) {
     nnode += levels[i].size();
@@ -109,6 +273,10 @@ static void question2(VVTN& levels, size_t max = 32) {
     nodes[i]->nodevec_index = i;
   }
 
+  how_many_warpsize_groups_have_only_leaves(nodes);
+//  move_nodes(46*32+24, 8, 2648, nodes);
+//  move_nodes(46*32, 24, 2656, nodes);
+
   // work backward and check the distance from parent to children.
   // if parent in different group then there is no vitiating race.
   // if children in different group then ther is no race (satisfied by
@@ -121,22 +289,33 @@ static void question2(VVTN& levels, size_t max = 32) {
   //   At least, moved nodes should have proper tree order and not themselves
   //   introduce a race at their new location.  Leaves are nice in that there
   //   are no restrictions in movement toward higher indices.
+  //   Note that unless groups of 32 are inserted, it may be the case that
+  //   races are generated at greater indices since otherwise a portion of
+  //   each group is placed into the next group. This would not be an issue
+  //   if, in fact, the stronger requirement of every parent having
+  //   pi + 32 <= ci is demanded instead of merely being in different warpsize.
+  //   One nice thing about adding warpsize nodes is that it does not disturb
+  //   any existing contiguous groups except the moved group which gets divided
+  //   between parent warpsize and child, where the nodes past the parent
+  //   get same relative indices in the next warpsize
 
-  nrn_assert(nodes.size()%max == 0); // for now
+  //  let's see how well we can do by opportunistically moving leaves to
+  //  separate parents from children by warpsize (ie is_parent_prace2 is false)
+  //  Hopefully, we won't run out of leaves before elimination all
+  //  is_parent_prace2
+
+  nrn_assert(nodes.size()%warpsize == 0); // for now
+  pr_race_situation(nodes);
+  
+  // eliminate parent races using leaves
   for (size_t i = nodes.size() - 1; i >= levels[0].size(); --i) {
     TNode* nd = nodes[i];
-    size_t i32 = nd->nodevec_index/max;
-    size_t p32 = nd->parent->nodevec_index/max;
-    if (p32 == i32) { // parent in same 32group
-      size_t diff = nd->nodevec_index - nd->parent->nodevec_index;
-      printf("level=%ld i=%ld ip=%ld diff=%ld\n", nd->level, nd->nodevec_index, nd->parent->nodevec_index, diff);
-//    }else if (i%8 == 0 && p32 < i32-1) {
-//      printf("movable between %ld and %ld\n", p32, i32);
+    if (is_parent_race2(nd)) {
+      eliminate_race(nd, nodes);
+      i = nd->nodevec_index;
     }
   }
-
-  // move along in groups of 32 and see if there are any races.
-  
+  pr_race_situation(nodes);
 }
 
 // size of groups with contiguous parents for each level
