@@ -22,6 +22,7 @@ typedef vector<VVTN> VVVTN; // groups
 
 // verify level in groups of nident identical nodes
 void chklevel(VTN& level, size_t nident = 8) {
+return;
   nrn_assert(level.size() % nident == 0);
   for (size_t i = 0; i <  level.size(); ++i) {
     size_t j = nident*int(i/nident);
@@ -127,6 +128,25 @@ static bool is_child_race(TNode* nd) { // potentially handleable by atomic
   return false;
 }
 
+static bool is_child_race2(TNode* nd) { // potentially handleable by atomic
+  if (nd->children.size() < 2) { return false; }
+  if (nd->children.size() == 2) {
+    size_t c0 = nd->children[0]->nodevec_index;
+    size_t c1 = nd->children[1]->nodevec_index;
+    c0 = (c0 < c1) ? (c1 - c0) : (c0 - c1);
+    return c0 < warpsize;
+  }
+  size_t ic0 = nd->children[0]->nodevec_index;
+  for (size_t i=1; i < nd->children.size(); ++i) {
+    size_t ic = nd->children[i]->nodevec_index;
+    if (ic - ic0 < warpsize) {
+      return true;
+    }
+    ic0 = ic;
+  }
+  return false;
+}
+
 static size_t dist2child(TNode* nd) {
   size_t d = 1000;
   size_t pi = nd->nodevec_index;
@@ -228,8 +248,8 @@ static void pr_race_situation(VTN& nodes) {
 }
 
 static size_t next_leaf(TNode* nd, VTN& nodes) {
-  size_t i = nd->nodevec_index;
-  for (size_t i= nd->nodevec_index - 1; i > 0; --i) {
+  size_t i = 0;
+  for (i = nd->nodevec_index - 1; i > 0; --i) {
     if(nodes[i]->children.size() == 0) {
       return i;
     }
@@ -238,12 +258,22 @@ static size_t next_leaf(TNode* nd, VTN& nodes) {
   return 0;
 }
 
-static void eliminate_race(TNode* nd, VTN& nodes) {
-  size_t d = warpsize - dist2child(nd);
-printf("eliminate_race %ld %ld\n", nd->nodevec_index, d);
+static void checkrace(TNode* nd, VTN& nodes) {
+  bool res = true;
+  for (size_t i = nd->nodevec_index; i < nodes.size(); ++i) {
+    if (is_parent_race2(nodes[i])) {
+      printf("checkrace %ld\n", i);
+      res = false;
+    }
+  }
+//  if (res) { printf("checkrace no race from nd onward\n"); }
+}
+
+static void eliminate_race(TNode* nd, size_t d, VTN& nodes, TNode* look) {
+//printf("eliminate_race %ld %ld\n", nd->nodevec_index, d);
   // opportunistically move that number of leaves
   // error if no leaves left to move.
-  size_t i = nd->nodevec_index;
+  size_t i = look->nodevec_index;
   while (d > 0) {
     i = next_leaf(nodes[i], nodes);
     size_t n = 1;
@@ -251,10 +281,24 @@ printf("eliminate_race %ld %ld\n", nd->nodevec_index, d);
       --i;
       ++n;
     }
-printf("  move_nodes src=%ld len=%ld dest=%ld\n", i, n, nd->nodevec_index);
-    move_nodes(i, n, nd->nodevec_index, nodes);
+//printf("  move_nodes src=%ld len=%ld dest=%ld\n", i, n, nd->nodevec_index);
+    move_nodes(i, n, nd->nodevec_index + 1, nodes);
     d -= n;
   }
+checkrace(nd, nodes);
+}
+
+static void eliminate_prace(TNode* nd, VTN& nodes) {
+  size_t d = warpsize - dist2child(nd);
+  eliminate_race(nd, d, nodes, nd);
+}
+
+static void eliminate_crace(TNode* nd, VTN& nodes) {
+  size_t c0 = nd->children[0]->nodevec_index;
+  size_t c1 = nd->children[1]->nodevec_index;
+  size_t d = warpsize - ((c0 > c1) ? (c0 - c1) : (c1 - c0));
+  TNode* cnd = nd->children[0];
+  eliminate_race(cnd, d, nodes, nd);
 }
 
 static void question2(VVTN& levels) {
@@ -273,9 +317,7 @@ static void question2(VVTN& levels) {
     nodes[i]->nodevec_index = i;
   }
 
-  how_many_warpsize_groups_have_only_leaves(nodes);
-//  move_nodes(46*32+24, 8, 2648, nodes);
-//  move_nodes(46*32, 24, 2656, nodes);
+//  how_many_warpsize_groups_have_only_leaves(nodes);
 
   // work backward and check the distance from parent to children.
   // if parent in different group then there is no vitiating race.
@@ -305,21 +347,30 @@ static void question2(VVTN& levels) {
   //  is_parent_prace2
 
   nrn_assert(nodes.size()%warpsize == 0); // for now
-  pr_race_situation(nodes);
+//  pr_race_situation(nodes);
   
-  // eliminate parent races using leaves
+  // eliminate parent and children races using leaves
   for (size_t i = nodes.size() - 1; i >= levels[0].size(); --i) {
     TNode* nd = nodes[i];
+    if (is_child_race2(nd)) {
+      eliminate_crace(nd, nodes);
+      i = nd->nodevec_index;
+    }
     if (is_parent_race2(nd)) {
-      eliminate_race(nd, nodes);
+      eliminate_prace(nd, nodes);
       i = nd->nodevec_index;
     }
   }
   pr_race_situation(nodes);
+  // copy nodes indices to treenode_order
+  for (size_t i = 0; i < nodes.size(); ++i) {
+    nodes[i]->treenode_order = i;
+  }
 }
 
 // size of groups with contiguous parents for each level
 static void question(VVTN& levels) {
+  return;
   for (size_t i = 0; i < levels.size(); ++i) {
     printf("%3ld %5ld", i, levels[i].size());
     size_t iplast = 100000000;
@@ -368,6 +419,7 @@ static void analyze(VVTN& levels) {
 }
 
 void prgroupsize(VVVTN& groups) {
+  return;
   for (size_t i=0; i < groups[0].size(); ++i) {
     printf("%5ld\n", i);
     for (size_t j=0; j < groups.size(); ++j) {
@@ -431,10 +483,11 @@ void group_order2(VecTNode& nodevec, size_t groupsize, size_t ncell) {
   // deal with each group
   for (size_t i=0; i < groups.size(); ++i) {
     analyze(groups[i]);
+    question2(groups[i]);
   }
 
   question(groups[0]);
-  question2(groups[0]);
+//  question2(groups[0]);
 
   //final nodevec order according to group_index and treenode_order
   std::sort(nodevec.begin() + ncell, nodevec.end(), final_nodevec_cmp);
