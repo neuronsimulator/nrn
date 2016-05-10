@@ -109,14 +109,29 @@ static void question2(VVTN& levels, size_t max = 32) {
     nodes[i]->nodevec_index = i;
   }
 
-  for (size_t i=levels[0].size(); i < nodes.size(); ++i) {
+  // work backward and check the distance from parent to children.
+  // if parent in different group then there is no vitiating race.
+  // if children in different group then ther is no race (satisfied by
+  // atomic).
+  // If there is a vitiating race, then figure out how many nodes
+  // need to be inserted just before the parent to avoid the race.
+  //   It is not clear if we should prioritize safe nodes (when moved they
+  //   do not introduce a race) and/or contiguous nodes (probably, to keep
+  //   the low hanging fruit together).
+  //   At least, moved nodes should have proper tree order and not themselves
+  //   introduce a race at their new location.  Leaves are nice in that there
+  //   are no restrictions in movement toward higher indices.
+
+  nrn_assert(nodes.size()%max == 0); // for now
+  for (size_t i = nodes.size() - 1; i >= levels[0].size(); --i) {
     TNode* nd = nodes[i];
     size_t i32 = nd->nodevec_index/max;
     size_t p32 = nd->parent->nodevec_index/max;
     if (p32 == i32) { // parent in same 32group
-      printf("level=%ld i=%ld ip=%ld\n", nd->level, nd->nodevec_index, nd->parent->nodevec_index);
-    }else if (i%8 == 0 && p32 < i32-1) {
-      printf("movable between %ld and %ld\n", p32, i32);
+      size_t diff = nd->nodevec_index - nd->parent->nodevec_index;
+      printf("level=%ld i=%ld ip=%ld diff=%ld\n", nd->level, nd->nodevec_index, nd->parent->nodevec_index, diff);
+//    }else if (i%8 == 0 && p32 < i32-1) {
+//      printf("movable between %ld and %ld\n", p32, i32);
     }
   }
 
