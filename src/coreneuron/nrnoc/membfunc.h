@@ -120,7 +120,9 @@ extern int* net_buf_receive_type_;
 extern NetBufReceive_t* net_buf_receive_;
 extern void nrn_cap_jacob(struct NrnThread*, Memb_list*);
 extern void nrn_writes_conc(int, int);
+#if defined(_OPENACC)
 #pragma acc routine seq
+#endif
 extern void nrn_wrote_conc(int, double*, int, int, double**, double, int);
 extern void hoc_register_prop_size(int, int, int);
 extern void hoc_register_dparam_semantics(int type, int, const char* name);

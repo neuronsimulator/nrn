@@ -116,7 +116,7 @@ void cn_parameters::show_cb_opts_help()
               Optiong to enable threading. The default implies no threading.\n\n\
        -a, --gpu\n\
               Optiong to enable use of GPUs. The default implies cpu only run.\n\n\
-       -r, --cell_permute\n\
+       -r NUMBER, --cell_permute=NUMBER\n\
               Cell permutation and interleaving for efficiency\n\n\
        -d PATH, --datpath=PATH\n\
               Set the path with required CoreNeuron data to PATH (char*). The default value is '.'.\n\n\
@@ -149,7 +149,7 @@ void cn_parameters::read_cb_opts( int argc, char **argv )
             {"prcellgid", required_argument, 0, 'g'},
             {"threading", no_argument,       0, 'c'},
             {"gpu",       no_argument,       0, 'a'},
-            {"cell_permute",no_argument,     0, 'r'},
+            {"cell_permute",optional_argument,     0, 'r'},
             {"datpath",   required_argument, 0, 'd'},
             {"filesdat",  required_argument, 0, 'f'},
             {"outpath",   required_argument, 0, 'o'},
@@ -227,7 +227,11 @@ void cn_parameters::read_cb_opts( int argc, char **argv )
                 break;
 
             case 'r':
-                cell_interleave_permute = 1;
+		if (optarg == NULL) {
+			cell_interleave_permute = 1;
+		}else{
+	                cell_interleave_permute = atoi( optarg );
+		}
                 break;
 
             case 'd':

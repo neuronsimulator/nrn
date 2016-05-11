@@ -70,4 +70,6 @@ extern double set_mindelay(double maxdelay);
 
 extern int nrn_soa_padded_size(int cnt, int layout);
 
+extern int use_interleave_permute;
+
 #endif
