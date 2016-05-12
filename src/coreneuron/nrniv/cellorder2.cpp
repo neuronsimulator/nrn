@@ -64,6 +64,9 @@ static void tree_analysis(int* parent, int nnode, int ncell, VecTNode&);
 static void node_interleave_order(int ncell, VecTNode&);
 static void admin1(int ncell, VecTNode& nodevec,
   int& nstride, int*& stride, int*& firstnode, int*& lastnode, int*& cellsize);
+static void admin2(int ncell, VecTNode& nodevec,
+  int& ncore, int*& strides, int*& firstnode, int*& lastnode, int*& ncycles,
+  int*& lastroots);
 static void check(VecTNode&);
 static void prtree(VecTNode&);
 
@@ -338,7 +341,8 @@ static void ident_statistic(VecTNode& nodevec, size_t ncell) {
 // Note: cellorder[ncell:nnode] are the identify permutation.
 
 int* node_order(int ncell, int nnode, int* parent,
-  int& nstride, int*& stride, int*& firstnode, int*& lastnode, int*& cellsize
+  int& nstride, int*& stride, int*& firstnode, int*& lastnode, int*& cellsize,
+  int*& lastroots
 ) {
 
   VecTNode nodevec;
@@ -380,6 +384,8 @@ int* node_order(int ncell, int nnode, int* parent,
   // administrative statistics for gauss elimination
   if (use_interleave_permute == 1) {
     admin1(ncell, nodevec, nstride, stride, firstnode, lastnode, cellsize);
+  }else{
+    admin2(ncell, nodevec, nstride, stride, firstnode, lastnode, cellsize, lastroots);
   }
 
   if (0) {exper1(nodevec);}
@@ -562,4 +568,11 @@ static void admin1(int ncell, VecTNode& nodevec,
     stride[nd.treenode_order - 1] += 1; // -1 because treenode order includes root
   }
 }
+
+static void admin2(int ncell, VecTNode& nodevec,
+  int& ncore, int*& strides, int*& firstnode, int*& lastnode, int*& ncycles,
+  int*& lastroots
+){
+  printf("%d %p   %d %p %p %p %p  %p", ncell, &nodevec, ncore, strides, firstnode, lastnode, ncycles, lastroots);
+} 
 
