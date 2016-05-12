@@ -10,18 +10,17 @@ class InterleaveInfo {
   public:
   InterleaveInfo();
   virtual ~InterleaveInfo();
+  int nwarp; // used only by interleave2
   int nstride;
   int* stride;
   int* firstnode;
   int* lastnode;
   int* cellsize;
-  int* lastroots; // only for interleave2 and above change meaning
 };
 
 // interleaved from cellorder2.cpp
-int* node_order(int ncell, int nnode, int* parents,
-  int& nstride, int*& stride, int*& firstnode, int*& lastnode, int*& cellsize,
-  int*& lastroots
+int* node_order(int ncell, int nnode, int* parents, int& nwarp,
+  int& nstride, int*& stride, int*& firstnode, int*& lastnode, int*& cellsize
 );
 
 #define INTERLEAVE_DEBUG 0

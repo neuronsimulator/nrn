@@ -10,8 +10,6 @@
 
 using namespace std;
 
-static size_t warpsize = 32;
-
 // experiment starting with identical cell ordering
 // groupindex aleady defined that keeps identical cells together
 // begin with leaf to root ordering
@@ -147,7 +145,7 @@ static bool is_child_race2(TNode* nd) { // potentially handleable by atomic
   return false;
 }
 
-static size_t dist2child(TNode* nd) {
+size_t dist2child(TNode* nd) {
   size_t d = 1000;
   size_t pi = nd->nodevec_index;
   for (size_t i = 0; i < nd->children.size(); ++i) {
@@ -204,6 +202,7 @@ static size_t need2move(TNode* nd) {
   return warpsize - ((nd->nodevec_index % warpsize) + d);
 }
 
+#if 0
 static void how_many_warpsize_groups_have_only_leaves(VTN& nodes) {
   size_t n = 0;
   for (size_t i = 0; i < nodes.size(); i += warpsize) {
@@ -221,6 +220,7 @@ static void how_many_warpsize_groups_have_only_leaves(VTN& nodes) {
   }
   printf("number of warpsize groups with only leaves = %ld\n", n);
 }
+#endif
 
 static void pr_race_situation(VTN& nodes) {
   size_t prace2 = 0;
@@ -266,7 +266,7 @@ static void checkrace(TNode* nd, VTN& nodes) {
       res = false;
     }
   }
-//  if (res) { printf("checkrace no race from nd onward\n"); }
+  if (0 && res) { printf("checkrace no race from nd onward\n"); }
 }
 
 static void eliminate_race(TNode* nd, size_t d, VTN& nodes, TNode* look) {

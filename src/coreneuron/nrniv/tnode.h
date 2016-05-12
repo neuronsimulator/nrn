@@ -30,5 +30,8 @@ size_t level_from_leaf(VecTNode&);
 size_t level_from_root(VecTNode&);
 
 void group_order2(VecTNode&, size_t groupsize, size_t ncell);
+size_t dist2child(TNode* nd);
+
+#define warpsize 32
 
 #endif

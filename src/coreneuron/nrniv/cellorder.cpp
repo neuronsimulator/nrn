@@ -3,6 +3,7 @@
 #include "coreneuron/nrnoc/nrnoc_decl.h"
 #include "coreneuron/nrniv/nrn_assert.h"
 #include "coreneuron/nrniv/cellorder.h"
+#include "coreneuron/nrniv/tnode.h"
 
 #ifdef _OPENACC
 #include <openacc.h>
@@ -12,12 +13,12 @@ int use_interleave_permute;
 InterleaveInfo* interleave_info; // nrn_nthread array
 
 InterleaveInfo::InterleaveInfo() {
+  nwarp = 0;
   nstride = 0;
   stride = NULL;
   firstnode = NULL;
   lastnode = NULL;
   cellsize = NULL;
-  lastroots = NULL; // interleave2
 }
 
 InterleaveInfo::~InterleaveInfo() {
@@ -26,9 +27,6 @@ InterleaveInfo::~InterleaveInfo() {
     delete [] firstnode;
     delete [] lastnode;
     delete [] cellsize;
-  }
-  if (lastroots) {
-    delete [] lastroots;
   }
 }
 
@@ -50,19 +48,19 @@ int* interleave_order(int ith, int ncell, int nnode, int* parent) {
     if (parent[i] == 0) { parent[i] = -1; }
   }
 
-  int nstride, *stride, *firstnode, *lastnode, *cellsize, *lastroots;
+  int nwarp, nstride, *stride, *firstnode, *lastnode, *cellsize;
 
-  int* order = node_order(ncell, nnode, parent,
-    nstride, stride, firstnode, lastnode, cellsize, lastroots);
+  int* order = node_order(ncell, nnode, parent, nwarp,
+    nstride, stride, firstnode, lastnode, cellsize);
 
   if (interleave_info) {
     InterleaveInfo& ii = interleave_info[ith];
+    ii.nwarp = nwarp;
     ii.nstride = nstride;
     ii.stride = stride;
     ii.firstnode = firstnode;
     ii.lastnode = lastnode;
     ii.cellsize = cellsize;
-    ii.lastroots = lastroots;
 if (0 && ith == 0 && use_interleave_permute == 1) {
   printf("ith=%d nstride=%d ncell=%d nnode=%d\n", ith, nstride, ncell, nnode);
   for (int i=0; i < ncell; ++i) {
@@ -191,10 +189,12 @@ static void bksub_interleaved(NrnThread* nt, int icell, int icellsize, int nstri
   }
 }
 
-static void triang_interleaved2(NrnThread* nt, int icore, int ncycle, int* stride, int* lastnode) {
-  int i = lastnode[icore];
-  for (int icycle = ncycle-1; icycle >=0; --icycle) {
-    int istride = stride[icycle];
+// icore ranges [0:warpsize) ; stride[ncycle]
+static void triang_interleaved2(NrnThread* nt, int icore, int ncycle, int* stride, int lastnode) {
+  int i = lastnode + icore;
+  int icycle = ncycle - 1;
+  int istride = stride[icycle];
+  for (;;) {
     if (icore < istride) { // most efficient if istride equal  warpsize
       // what is the index
       int ip = GPU_PARENT(i);
@@ -202,32 +202,30 @@ static void triang_interleaved2(NrnThread* nt, int icore, int ncycle, int* strid
       GPU_D(ip) -= p * GPU_B(i);
       GPU_RHS(ip) -= p * GPU_RHS(i);
     }
+    if (icycle == 0) { break; }
+    --icycle;
+    istride = stride[icycle];
     i -= istride;
   }
 }
     
-#define warpsize 32
-
+// icore ranges [0:warpsize) ; stride[ncycle]
 static void bksub_interleaved2(NrnThread* nt, int root, int lastroot,
-  int icore, int ncycle, int* stride, int* firstnode
+  int icore, int ncycle, int* stride, int firstnode
 ) {
 
   for (int i = root; i < lastroot; i += warpsize) {
     GPU_RHS(i) /= GPU_D(i); // the root
   }
 
-  int i = firstnode[icore];
-  int istride = stride[0];
-  int icycle = 0;
-  for (;;) {
+  int i = firstnode + icore;
+  for (int icycle = 0; icycle < ncycle; ++icycle) {
+    int istride = stride[icycle];
     if (icore < istride) {
       int ip = GPU_PARENT(i);
       GPU_RHS(i) -= GPU_B(i) * GPU_RHS(ip);
       GPU_RHS(i) /= GPU_D(i);
     }      
-    ++icycle;
-    if (icycle >= ncycle) { break; }
-    istride = stride[icycle];
     i += istride;
   }
 }
@@ -239,15 +237,17 @@ void solve_interleaved_launcher(NrnThread *nt, InterleaveInfo *info, int ncell);
 void solve_interleaved2(int ith) {
   NrnThread* nt = nrn_threads + ith;
   InterleaveInfo& ii = interleave_info[ith];
-  int ncore = ii.nstride;
-  int* strides = ii.stride; // max ncycles of these (bad since ncompart/warpsize)
-  int* firstnode = ii.firstnode; // ncore of these
-  int* lastnode = ii.lastnode; // ncore of these
+  int nwarp = ii.nwarp;
+  int* strides = ii.stride; // sum ncycles of these (bad since ncompart/warpsize)
+  int* lastroots = ii.firstnode; // nwarp of these
+  int* lastnodes = ii.lastnode; // nwarp of these
   int* ncycles = ii.cellsize; // nwarp of these
-  int* lastroots = ii.lastroots; // nwarp of these
 #ifdef _OPENACC
+  int nstride = ii.nstride;
   int stream_id = nt->stream_id;
 #endif
+
+  int ncore = nwarp*warpsize;
 
   #if 0 && defined(ENABLE_CUDA_INTERFACE) // not implemented
     NrnThread* d_nt = (NrnThread*) acc_deviceptr(nt);
@@ -255,20 +255,21 @@ void solve_interleaved2(int ith) {
     solve_interleaved_launcher(d_nt, d_info, ncell);
   #else
 #ifdef _OPENACC
-    #pragma acc parallel loop present(nt[0:1], stride[0:nstride], firstnode[0:ncore],\
-    lastnode[0:ncore], cellsize[0:ncore) if(nt->compute_gpu) async(stream_id)
+    #pragma acc parallel loop present(nt[0:1], strides[0:nstride], ncycles[0:nwarp],\
+    lastroots[0:nwarp], lastnodes[0:nwarp]) if(nt->compute_gpu) async(stream_id)
 #endif
-    for (int icore = 0, sdispl = 0, firstroot = 0; icore < ncore; ++icore) {
+    for (int icore = 0, sdispl = 0, root = 0, firstnode=0; icore < ncore; ++icore) {
       int iwarp = icore / warpsize; // figure out the >> value
-      int ic = icore % warpsize; // figure out the & mask
+      int ic = icore & (warpsize-1); // figure out the & mask
       int ncycle = ncycles[iwarp];
       int* stride = strides + sdispl;
       int lastroot = lastroots[iwarp];
-      int root = firstroot + ic;
-      triang_interleaved2(nt, icore, ncycle, stride, lastnode);
-      bksub_interleaved2(nt, root, lastroot, icore, ncycle, stride, firstnode);
+      int lastnode = lastnodes[iwarp];
+      triang_interleaved2(nt, ic, ncycle, stride, lastnode);
+      bksub_interleaved2(nt, root + ic, lastroot, ic, ncycle, stride, firstnode);
       sdispl += ncycle;
-      firstroot = lastroot;
+      root = lastroot;
+      firstnode = lastnode;
     }
 #ifdef _OPENACC
     #pragma acc wait(nt->stream_id)

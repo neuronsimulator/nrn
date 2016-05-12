@@ -64,9 +64,8 @@ static void tree_analysis(int* parent, int nnode, int ncell, VecTNode&);
 static void node_interleave_order(int ncell, VecTNode&);
 static void admin1(int ncell, VecTNode& nodevec,
   int& nstride, int*& stride, int*& firstnode, int*& lastnode, int*& cellsize);
-static void admin2(int ncell, VecTNode& nodevec,
-  int& ncore, int*& strides, int*& firstnode, int*& lastnode, int*& ncycles,
-  int*& lastroots);
+static void admin2(int ncell, VecTNode& nodevec, int& nwarp,
+  int& nstride, int*& strides, int*& lastroots, int*& lastnodes, int*& ncycles);
 static void check(VecTNode&);
 static void prtree(VecTNode&);
 
@@ -340,9 +339,8 @@ static void ident_statistic(VecTNode& nodevec, size_t ncell) {
 // size so that identical trees are grouped together.
 // Note: cellorder[ncell:nnode] are the identify permutation.
 
-int* node_order(int ncell, int nnode, int* parent,
-  int& nstride, int*& stride, int*& firstnode, int*& lastnode, int*& cellsize,
-  int*& lastroots
+int* node_order(int ncell, int nnode, int* parent, int& nwarp,
+  int& nstride, int*& stride, int*& firstnode, int*& lastnode, int*& cellsize
 ) {
 
   VecTNode nodevec;
@@ -385,7 +383,8 @@ int* node_order(int ncell, int nnode, int* parent,
   if (use_interleave_permute == 1) {
     admin1(ncell, nodevec, nstride, stride, firstnode, lastnode, cellsize);
   }else{
-    admin2(ncell, nodevec, nstride, stride, firstnode, lastnode, cellsize, lastroots);
+//  admin2(ncell, nodevec, nwarp, nstride,  stride, lastroot, lastnode, ncycles);
+    admin2(ncell, nodevec, nwarp, nstride, stride, firstnode, lastnode, cellsize);
   }
 
   if (0) {exper1(nodevec);}
@@ -569,10 +568,96 @@ static void admin1(int ncell, VecTNode& nodevec,
   }
 }
 
-static void admin2(int ncell, VecTNode& nodevec,
-  int& ncore, int*& strides, int*& firstnode, int*& lastnode, int*& ncycles,
-  int*& lastroots
+// for admin2 we allow the node organisation in warps of (say 4 cores per warp)
+// ...............  ideal warp but unbalanced relative to warp with max cycles
+// ...............  ncycle = 15, icore [0:4), all strides are 4.
+// ...............
+// ...............
+//
+// ..........       unbalanced relative to warp with max cycles
+// ..........       ncycle = 10, not all strides the same because
+// ..........       of need to avoid occasional race conditions.
+//  .  . ..         icore [4:8) only 4 strides of 4
+//
+// ....................  ncycle = 20, uses only one core in the warp (cable)
+//                       icore 8, all ncycle strides are 1
+
+// One thing to be unhappy about is the large stride vector of size about
+// number of compartments/warpsize. There are a lot of models where the
+// stride for a warp is constant except for one cycle in the warp and that
+// is easy to obtain when there are more than warpsize cells per warp.
+
+static size_t stride_length(size_t begin, size_t end, VecTNode& nodevec) {
+  // return stride length starting at i. Do not go past j.
+  // max stride is warpsize.
+  // At this time, only assume vicious parent race conditions matter.
+  if (end - begin > warpsize) {
+    end = begin + warpsize;
+  }
+  for ( size_t i = begin; i < end; ++i) {
+    TNode* nd = nodevec[i];
+    nrn_assert(nd->nodevec_index == i);
+    size_t diff = dist2child(nd);
+    if (i + diff < end) {
+      end = i + diff;
+    }
+  }
+  return end - begin;
+}
+
+static void admin2(int ncell, VecTNode& nodevec, int& nwarp,
+  int& nstride, int*& strides,
+  int*& lastroots, int*& lastnodes, int*& ncycles
 ){
-  printf("%d %p   %d %p %p %p %p  %p", ncell, &nodevec, ncore, strides, firstnode, lastnode, ncycles, lastroots);
+  // the number of groups is the number of warps needed
+  // ncore is the number of warps * warpsize
+  nwarp = nodevec[ncell-1]->groupindex + 1;
+
+  ncycles = new int[nwarp];
+  lastroots = new int[nwarp]; // index (+1) of last root in warp.
+  lastnodes = new int[nwarp]; // index (+1) of last node in warp.
+
+  // lastroots and lastnodes are the root index values + 1 of the last of
+  // the sequence of constant groupindex
+  for (size_t i = 0; i < size_t(ncell); ++i) {
+    lastroots[nodevec[i]->groupindex] = i + 1;
+  }
+  for (size_t i = size_t(ncell); i < nodevec.size(); ++i) {
+    lastnodes[nodevec[i]->groupindex] = i + 1;
+  }
+
+  // ncycles and nstride
+  nstride = 0;
+  for (size_t iwarp = 0; iwarp < (size_t)nwarp; ++iwarp) {
+    size_t j = size_t(lastnodes[iwarp]);
+    int nc = 0;
+    size_t i = (iwarp>0)?lastnodes[iwarp-1]:size_t(ncell);
+    while (i < j) {
+      i += stride_length(i, j, nodevec);
+      ++nc;
+    }
+    ncycles[iwarp] = nc;
+    nstride += nc;
+  }
+  
+  // strides
+  strides = new int[nstride];
+  nstride = 0;
+  for (size_t iwarp = 0; iwarp < (size_t)nwarp; ++iwarp) {
+    size_t j = size_t(lastnodes[iwarp]);
+    size_t i = (iwarp>0)?lastnodes[iwarp-1]:size_t(ncell);
+    while (i < j) {
+      int k = stride_length(i, j, nodevec);
+      i += k;
+      strides[nstride++] = k;
+    }
+  }
+
+#if 1
+  printf("%d %p   %d %d %p   %p %p %p\n",
+   ncell, &nodevec,
+   nwarp, nstride, strides,
+   lastnodes, ncycles, lastroots);
+#endif
 } 
 
