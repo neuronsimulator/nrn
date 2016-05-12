@@ -117,7 +117,43 @@ static void bksub_interleaved(NrnThread* nt, int icell, int icellsize, int nstri
   }
 }
 
-#if INTERLEAVE_DEBUG
+static void triang_interleaved2(NrnThread* nt, int icore, int ncycle, int* stride, int* lastnode) {
+  int i = lastnode[icore];
+  for (int icycle = ncycle-1; icycle >=0; --icycle) {
+    int istride = stride[icycle];
+    if (icore < istride) { // most efficient if istride equal  warpsize
+      // what is the index
+      int ip = GPU_PARENT(i);
+      double p = GPU_A(i) / GPU_D(i);
+      GPU_D(ip) -= p * GPU_B(i);
+      GPU_RHS(ip) -= p * GPU_RHS(i);
+    }
+    i -= istride;
+  }
+}
+    
+static void bksub_interleaved2(NrnThread* nt, int icell, int jcell; int icore, int ncycle, int* stride, int* firstnode) {
+  for (int i = icell; i < jcell; ++i) {
+    GPU_RHS(i) /= GPU_D(i); // the root
+  }
+
+  int i = firstnode[icore];
+  int istride = stride[0];
+  int icycle = 0;
+  for (;;) {
+    if (icore < istride) {
+      int ip = GPU_PARENT(i);
+      GPU_RHS(i) -= GPU_B(i) * GPU_RHS(ip);
+      GPU_RHS(i) /= GPU_D(i);
+    }      
+    ++icycle;
+    if (icycle >= ncycle) { break; }
+    istride = stride[icycle];
+    i += istride;
+  }
+}
+
+#if INTERLEAVE_DEBUG  // only the cell per core style
 static int** cell_indices_debug(NrnThread& nt, InterleaveInfo& ii) {
   int ncell = nt.ncell;
   int nnode = nt.end;
@@ -190,7 +226,38 @@ void mk_cell_indices() {
 void solve_interleaved_launcher(NrnThread *nt, InterleaveInfo *info, int ncell);
 #endif
 
+void solve_interleaved2(int ith) {
+  NrnThread* nt = nrn_threads + ith;
+  InterleaveInfo& ii = interleave_info[ith];
+  int nstride = ii.nstride;
+  int* stride = ii.stride;
+  int* firstnode = ii.firstnode;
+  int* lastnode = ii.lastnode;
+  int* cellsize = ii.cellsize;
+  int ncell = nt->ncell;
+  int stream_id = nt->stream_id;
+
+  #if 0 && defined(ENABLE_CUDA_INTERFACE)
+    NrnThread* d_nt = (NrnThread*) acc_deviceptr(nt);
+    InterleaveInfo* d_info = (InterleaveInfo*) acc_deviceptr(interleave_info+ith);
+    solve_interleaved_launcher(d_nt, d_info, ncell);
+  #else
+    #pragma acc parallel loop present(nt[0:1], stride[0:nstride], firstnode[0:ncell],\
+    lastnode[0:ncell], cellsize[0:ncell]) if(nt->compute_gpu) async(stream_id)
+    for (int icell = 0; icell < ncell; ++icell) {
+      int icellsize = cellsize[icell];
+      triang_interleaved2(nt, icell, icellsize, nstride, stride, lastnode);
+      bksub_interleaved2(nt, icell, icellsize, nstride, stride, firstnode);
+    }
+    #pragma acc wait(nt->stream_id)
+  #endif
+}
+
 void solve_interleaved(int ith) {
+  if (use_interleave_permute != 1) {
+    solve_interleaved2(ith);
+    return;
+  }
   NrnThread* nt = nrn_threads + ith;
   InterleaveInfo& ii = interleave_info[ith];
   int nstride = ii.nstride;
