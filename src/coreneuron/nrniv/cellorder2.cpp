@@ -654,6 +654,14 @@ static void admin2(int ncell, VecTNode& nodevec, int& nwarp,
   }
 
 #if 1
+printf("warp lastroots lastnodes cycles\n");
+for (int i = 0; i < nwarp; ++i){
+  printf("%4d %4d %4d %4d\n", i, lastroots[i], lastnodes[i], ncycles[i]);
+}
+for (int i=0; i < nstride; ++i) {
+  if (strides[i] != warpsize) { printf("stride[%d] = %d\n", i, strides[i]);}
+}
+printf("total strides = %d nodevec size-ncell = %ld\n", 32*nstride, nodevec.size() - ncell);
   printf("%d %p   %d %d %p   %p %p %p\n",
    ncell, &nodevec,
    nwarp, nstride, strides,

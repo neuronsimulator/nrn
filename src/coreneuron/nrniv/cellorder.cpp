@@ -191,9 +191,9 @@ static void bksub_interleaved(NrnThread* nt, int icell, int icellsize, int nstri
 
 // icore ranges [0:warpsize) ; stride[ncycle]
 static void triang_interleaved2(NrnThread* nt, int icore, int ncycle, int* stride, int lastnode) {
-  int i = lastnode + icore;
   int icycle = ncycle - 1;
   int istride = stride[icycle];
+  int i = lastnode - istride + icore;
   for (;;) {
     if (icore < istride) { // most efficient if istride equal  warpsize
       // what is the index
@@ -242,6 +242,7 @@ void solve_interleaved2(int ith) {
   int* lastroots = ii.firstnode; // nwarp of these
   int* lastnodes = ii.lastnode; // nwarp of these
   int* ncycles = ii.cellsize; // nwarp of these
+  int ncell = nt->ncell;
 #ifdef _OPENACC
   int nstride = ii.nstride;
   int stream_id = nt->stream_id;
@@ -258,7 +259,7 @@ void solve_interleaved2(int ith) {
     #pragma acc parallel loop present(nt[0:1], strides[0:nstride], ncycles[0:nwarp],\
     lastroots[0:nwarp], lastnodes[0:nwarp]) if(nt->compute_gpu) async(stream_id)
 #endif
-    for (int icore = 0, sdispl = 0, root = 0, firstnode=0; icore < ncore; ++icore) {
+    for (int icore = 0, sdispl = 0, root = 0, firstnode=ncell; icore < ncore; ++icore) {
       int iwarp = icore / warpsize; // figure out the >> value
       int ic = icore & (warpsize-1); // figure out the & mask
       int ncycle = ncycles[iwarp];
