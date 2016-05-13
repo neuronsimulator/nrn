@@ -268,9 +268,11 @@ void solve_interleaved2(int ith) {
       int lastnode = lastnodes[iwarp];
       triang_interleaved2(nt, ic, ncycle, stride, lastnode);
       bksub_interleaved2(nt, root + ic, lastroot, ic, ncycle, stride, firstnode);
-      sdispl += ncycle;
+if (ic == 31) {
       root = lastroot;
+      sdispl += ncycle;
       firstnode = lastnode;
+}
     }
 #ifdef _OPENACC
     #pragma acc wait(nt->stream_id)
