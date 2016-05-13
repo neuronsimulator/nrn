@@ -194,7 +194,15 @@ static void triang_interleaved2(NrnThread* nt, int icore, int ncycle, int* strid
   int icycle = ncycle - 1;
   int istride = stride[icycle];
   int i = lastnode - istride + icore;
-  for (;;) {
+#if !defined(_OPENACC)
+int ii = i;
+#endif
+  for (;;) { // ncycle loop
+#if !defined(_OPENACC)
+// serial test, gpu does this in parallel
+for (int icore = 0; icore < warpsize; ++icore) {
+int i = ii + icore;
+#endif
     if (icore < istride) { // most efficient if istride equal  warpsize
       // what is the index
       int ip = GPU_PARENT(i);
@@ -202,10 +210,16 @@ static void triang_interleaved2(NrnThread* nt, int icore, int ncycle, int* strid
       GPU_D(ip) -= p * GPU_B(i);
       GPU_RHS(ip) -= p * GPU_RHS(i);
     }
+#if !defined(_OPENACC)
+}
+#endif
     if (icycle == 0) { break; }
     --icycle;
     istride = stride[icycle];
     i -= istride;
+#if !defined(_OPENACC)
+ii -= istride;
+#endif
   }
 }
     
@@ -214,19 +228,35 @@ static void bksub_interleaved2(NrnThread* nt, int root, int lastroot,
   int icore, int ncycle, int* stride, int firstnode
 ) {
 
+#if !defined(_OPENACC)
+  for (int i = root; i < lastroot; i += 1) {
+#else
   for (int i = root; i < lastroot; i += warpsize) {
+#endif
     GPU_RHS(i) /= GPU_D(i); // the root
   }
 
   int i = firstnode + icore;
+#if !defined(_OPENACC)
+int ii = i;
+#endif
   for (int icycle = 0; icycle < ncycle; ++icycle) {
-    int istride = stride[icycle];
-    if (icore < istride) {
+   int istride = stride[icycle];
+#if !defined(_OPENACC)
+// serial test, gpu does this in parallel
+for (int icore = 0; icore < warpsize; ++icore) {
+int i = ii + icore;
+#endif
+     if (icore < istride) {
       int ip = GPU_PARENT(i);
       GPU_RHS(i) -= GPU_B(i) * GPU_RHS(ip);
       GPU_RHS(i) /= GPU_D(i);
     }      
     i += istride;
+#if !defined(_OPENACC)
+}
+ii += istride;
+#endif
   }
 }
 
@@ -266,8 +296,14 @@ void solve_interleaved2(int ith) {
       int* stride = strides + sdispl;
       int lastroot = lastroots[iwarp];
       int lastnode = lastnodes[iwarp];
+#if !defined(_OPENACC)
+if (ic == 0) { // serial test mode. triang and bksub do all cores in warp
+#endif
       triang_interleaved2(nt, ic, ncycle, stride, lastnode);
       bksub_interleaved2(nt, root + ic, lastroot, ic, ncycle, stride, firstnode);
+#if !defined(_OPENACC)
+} // serial test mode
+#endif
 if (ic == 31) {
       root = lastroot;
       sdispl += ncycle;
