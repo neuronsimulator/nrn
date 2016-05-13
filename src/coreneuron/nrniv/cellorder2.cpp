@@ -647,7 +647,7 @@ static void admin2(int ncell, VecTNode& nodevec, int& nwarp,
   nstride = 0;
   stridedispl[0] = 0;
   for (size_t iwarp = 0; iwarp < (size_t)nwarp; ++iwarp) {
-    size_t j = size_t(nodebegin[iwarp]+1);
+    size_t j = size_t(nodebegin[iwarp+1]);
     int nc = 0;
     size_t i = nodebegin[iwarp];
     while (i < j) {
