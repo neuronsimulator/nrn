@@ -266,7 +266,20 @@ size_t level_from_leaf(VecTNode& nodevec) {
   return maxlevel;
 }
 
-static void set_group(VecTNode& nodevec) {
+static void set_cellindex(int ncell, VecTNode& nodevec) {
+  for (int i=0; i < ncell; ++i) {
+    nodevec[i]->cellindex = i;
+  }
+  for (size_t i=0; i < nodevec.size(); ++i) {
+    TNode& nd = *nodevec[i];
+    for (size_t j=0; j < nd.children.size(); ++j) {
+      TNode* cnode = nd.children[j];
+      cnode->cellindex = nd.cellindex;
+    }
+  }
+}
+
+static void set_groupindex(VecTNode& nodevec) {
   for (size_t i=0; i < nodevec.size(); ++i) {
     TNode* nd = nodevec[i];
     if (nd->parent) {
@@ -351,7 +364,8 @@ int* node_order(int ncell, int nnode, int* parent, int& nwarp,
   tree_analysis(parent, nnode, ncell, nodevec);
   check(nodevec);
 
-  set_group(nodevec);
+  set_cellindex(ncell, nodevec);
+  set_groupindex(nodevec);
   level_from_root(nodevec);
 
   // nodevec[ncell:nnode] cells are interleaved in nodevec[0:ncell] cell order
@@ -501,7 +515,6 @@ static bool interleave_comp(TNode* a, TNode* b) {
 void node_interleave_order(int ncell, VecTNode& nodevec) {
   int* order = new int[ncell];
   for (int i=0; i < ncell; ++i) {
-    nodevec[i]->cellindex = i;
     order[i] = 0;
     nodevec[i]->treenode_order = order[i]++;
   }
@@ -509,7 +522,6 @@ void node_interleave_order(int ncell, VecTNode& nodevec) {
     TNode& nd = *nodevec[i];
     for (size_t j=0; j < nd.children.size(); ++j) {
       TNode* cnode = nd.children[j];
-      cnode->cellindex = nd.cellindex;
       cnode->treenode_order = order[nd.cellindex]++;
     }
   }

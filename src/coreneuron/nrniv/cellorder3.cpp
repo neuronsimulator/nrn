@@ -254,7 +254,7 @@ static size_t next_leaf(TNode* nd, VTN& nodes) {
       return i;
     }
   }
-  nrn_assert(i > 0);
+//  nrn_assert(i > 0);
   return 0;
 }
 
@@ -269,13 +269,14 @@ static void checkrace(TNode* nd, VTN& nodes) {
   if (0 && res) { printf("checkrace no race from nd onward\n"); }
 }
 
-static void eliminate_race(TNode* nd, size_t d, VTN& nodes, TNode* look) {
+static bool eliminate_race(TNode* nd, size_t d, VTN& nodes, TNode* look) {
 //printf("eliminate_race %ld %ld\n", nd->nodevec_index, d);
   // opportunistically move that number of leaves
   // error if no leaves left to move.
   size_t i = look->nodevec_index;
   while (d > 0) {
     i = next_leaf(nodes[i], nodes);
+    if (i == 0) { return false; }
     size_t n = 1;
     while (nodes[i-1]->children.size() == 0 && n < d) {
       --i;
@@ -286,11 +287,16 @@ static void eliminate_race(TNode* nd, size_t d, VTN& nodes, TNode* look) {
     d -= n;
   }
 checkrace(nd, nodes);
+  return true;
 }
 
 static void eliminate_prace(TNode* nd, VTN& nodes) {
   size_t d = warpsize - dist2child(nd);
-  eliminate_race(nd, d, nodes, nd);
+  bool b = eliminate_race(nd, d, nodes, nd);
+  if (!b) {
+    printf("could not eliminate prace for g=%ld  c=%ld l=%ld o=%ld   %ld\n",
+      nd->groupindex, nd->cellindex, nd->level, nd->treenode_order, nd->hash);
+  }
 }
 
 static void eliminate_crace(TNode* nd, VTN& nodes) {
@@ -298,7 +304,11 @@ static void eliminate_crace(TNode* nd, VTN& nodes) {
   size_t c1 = nd->children[1]->nodevec_index;
   size_t d = warpsize - ((c0 > c1) ? (c0 - c1) : (c1 - c0));
   TNode* cnd = nd->children[0];
-  eliminate_race(cnd, d, nodes, nd);
+  bool b = eliminate_race(cnd, d, nodes, nd);
+  if (!b) {
+    printf("could not eliminate crace for g=%ld  c=%ld l=%ld o=%ld   %ld\n",
+      nd->groupindex, nd->cellindex, nd->level, nd->treenode_order, nd->hash);
+  }
 }
 
 static void question2(VVTN& levels) {
