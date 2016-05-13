@@ -288,14 +288,13 @@ void setup_nrnthreads_on_device(NrnThread *threads, int nthreads)  {
         }
 
         if(nt->_permute) {
-printf("use_interleave_permute %d\n", use_interleave_permute);
           if (use_interleave_permute == 1) {
             /* todo: not necessary to setup pointers, just copy it */
             InterleaveInfo* info = interleave_info + i;
             InterleaveInfo* d_info = (InterleaveInfo*) acc_copyin(info, sizeof(InterleaveInfo));
             int *d_ptr = NULL;
 
-            d_ptr = (int *) acc_copyin(info->stride, sizeof(int) * info->nstride+1);
+            d_ptr = (int *) acc_copyin(info->stride, sizeof(int) * (info->nstride+1));
             acc_memcpy_to_device(&(d_info->stride), &d_ptr, sizeof(int*));
 
             d_ptr = (int *) acc_copyin(info->firstnode, sizeof(int) * nt->ncell);
@@ -316,11 +315,14 @@ printf("use_interleave_permute %d\n", use_interleave_permute);
             d_ptr = (int *) acc_copyin(info->stride, sizeof(int) * info->nstride);
             acc_memcpy_to_device(&(d_info->stride), &d_ptr, sizeof(int*));
 
-            d_ptr = (int *) acc_copyin(info->firstnode, sizeof(int) * info->nwarp);
+            d_ptr = (int *) acc_copyin(info->firstnode, sizeof(int) * (info->nwarp + 1));
             acc_memcpy_to_device(&(d_info->firstnode), &d_ptr, sizeof(int*));
 
-            d_ptr = (int *) acc_copyin(info->lastnode, sizeof(int) * info->nwarp);
+            d_ptr = (int *) acc_copyin(info->lastnode, sizeof(int) * (info->nwarp + 1));
             acc_memcpy_to_device(&(d_info->lastnode), &d_ptr, sizeof(int*));
+
+            d_ptr = (int *) acc_copyin(info->stridedispl, sizeof(int) * (info->nwarp + 1));
+            acc_memcpy_to_device(&(d_info->stridedispl), &d_ptr, sizeof(int*));
 
             d_ptr = (int *) acc_copyin(info->cellsize, sizeof(int) * info->nwarp);
             acc_memcpy_to_device(&(d_info->cellsize), &d_ptr, sizeof(int*));

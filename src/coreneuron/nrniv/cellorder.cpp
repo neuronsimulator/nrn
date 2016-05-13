@@ -15,6 +15,7 @@ InterleaveInfo* interleave_info; // nrn_nthread array
 InterleaveInfo::InterleaveInfo() {
   nwarp = 0;
   nstride = 0;
+  stridedispl = NULL;
   stride = NULL;
   firstnode = NULL;
   lastnode = NULL;
@@ -27,6 +28,9 @@ InterleaveInfo::~InterleaveInfo() {
     delete [] firstnode;
     delete [] lastnode;
     delete [] cellsize;
+  }
+  if (stridedispl) {
+    delete [] stridedispl;
   }
 }
 
@@ -48,15 +52,16 @@ int* interleave_order(int ith, int ncell, int nnode, int* parent) {
     if (parent[i] == 0) { parent[i] = -1; }
   }
 
-  int nwarp, nstride, *stride, *firstnode, *lastnode, *cellsize;
+  int nwarp, nstride, *stride, *firstnode, *lastnode, *cellsize, *stridedispl;
 
   int* order = node_order(ncell, nnode, parent, nwarp,
-    nstride, stride, firstnode, lastnode, cellsize);
+    nstride, stride, firstnode, lastnode, cellsize, stridedispl);
 
   if (interleave_info) {
     InterleaveInfo& ii = interleave_info[ith];
     ii.nwarp = nwarp;
     ii.nstride = nstride;
+    ii.stridedispl = stridedispl;
     ii.stride = stride;
     ii.firstnode = firstnode;
     ii.lastnode = lastnode;
@@ -268,13 +273,14 @@ void solve_interleaved2(int ith) {
   NrnThread* nt = nrn_threads + ith;
   InterleaveInfo& ii = interleave_info[ith];
   int nwarp = ii.nwarp;
-  int* strides = ii.stride; // sum ncycles of these (bad since ncompart/warpsize)
-  int* lastroots = ii.firstnode; // nwarp of these
-  int* lastnodes = ii.lastnode; // nwarp of these
   int* ncycles = ii.cellsize; // nwarp of these
+  int* stridedispl = ii.stridedispl; // nwarp+1 of these
+  int* strides = ii.stride; // sum ncycles of these (bad since ncompart/warpsize)
+  int* rootbegin = ii.firstnode; // nwarp+1 of these
+  int* nodebegin = ii.lastnode; // nwarp+1 of these
   int ncell = nt->ncell;
 #ifdef _OPENACC
-  int nstride = ii.nstride;
+  int nstride = stridedispl[nwarp];
   int stream_id = nt->stream_id;
 #endif
 
@@ -286,16 +292,19 @@ void solve_interleaved2(int ith) {
     solve_interleaved_launcher(d_nt, d_info, ncell);
   #else
 #ifdef _OPENACC
-    #pragma acc parallel loop present(nt[0:1], strides[0:nstride], ncycles[0:nwarp],\
-    lastroots[0:nwarp], lastnodes[0:nwarp]) if(nt->compute_gpu) async(stream_id)
+    #pragma acc parallel loop present(nt[0:1], strides[0:nstride],\
+     ncycles[0:nwarp], stridedispl[0:nwarp+1],\
+    rootbegin[0:nwarp+1], nodebegin[0:nwarp+1], ) if(nt->compute_gpu) async(stream_id)
 #endif
-    for (int icore = 0, sdispl = 0, root = 0, firstnode=ncell; icore < ncore; ++icore) {
+    for (int icore = 0; icore < ncore; ++icore) {
       int iwarp = icore / warpsize; // figure out the >> value
       int ic = icore & (warpsize-1); // figure out the & mask
       int ncycle = ncycles[iwarp];
-      int* stride = strides + sdispl;
-      int lastroot = lastroots[iwarp];
-      int lastnode = lastnodes[iwarp];
+      int* stride = strides + stridedispl[iwarp];
+      int root = rootbegin[iwarp];
+      int lastroot = rootbegin[iwarp+1];
+      int firstnode = nodebegin[iwarp];
+      int lastnode = nodebegin[iwarp+1];
 #if !defined(_OPENACC)
 if (ic == 0) { // serial test mode. triang and bksub do all cores in warp
 #endif
@@ -304,11 +313,6 @@ if (ic == 0) { // serial test mode. triang and bksub do all cores in warp
 #if !defined(_OPENACC)
 } // serial test mode
 #endif
-if (ic == 31) {
-      root = lastroot;
-      sdispl += ncycle;
-      firstnode = lastnode;
-}
     }
 #ifdef _OPENACC
     #pragma acc wait(nt->stream_id)
