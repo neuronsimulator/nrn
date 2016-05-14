@@ -269,32 +269,36 @@ ii += istride;
 void solve_interleaved_launcher(NrnThread *nt, InterleaveInfo *info, int ncell);
 #endif
 
+int temp1[1024] = {0};
+int temp2[1024] = {0};
+int temp3[1024] = {0};
+
 void solve_interleaved2(int ith) {
+static int foo = 1;
   NrnThread* nt = nrn_threads + ith;
   InterleaveInfo& ii = interleave_info[ith];
   int nwarp = ii.nwarp;
+  if (nwarp == 0) { return; }
   int* ncycles = ii.cellsize; // nwarp of these
   int* stridedispl = ii.stridedispl; // nwarp+1 of these
   int* strides = ii.stride; // sum ncycles of these (bad since ncompart/warpsize)
   int* rootbegin = ii.firstnode; // nwarp+1 of these
   int* nodebegin = ii.lastnode; // nwarp+1 of these
-  int ncell = nt->ncell;
 #ifdef _OPENACC
   int nstride = stridedispl[nwarp];
   int stream_id = nt->stream_id;
 #endif
 
   int ncore = nwarp*warpsize;
-
   #if 0 && defined(ENABLE_CUDA_INTERFACE) // not implemented
     NrnThread* d_nt = (NrnThread*) acc_deviceptr(nt);
     InterleaveInfo* d_info = (InterleaveInfo*) acc_deviceptr(interleave_info+ith);
-    solve_interleaved_launcher(d_nt, d_info, ncell);
+    solve_interleaved2_launcher(d_nt, d_info);
   #else
 #ifdef _OPENACC
-    #pragma acc parallel loop present(nt[0:1], strides[0:nstride],\
-     ncycles[0:nwarp], stridedispl[0:nwarp+1],\
-    rootbegin[0:nwarp+1], nodebegin[0:nwarp+1], ) if(nt->compute_gpu) async(stream_id)
+//    #pragma acc kernels loop gang(1), vector(32) present(nt[0:1], strides[0:nstride],\
+
+    #pragma acc parallel loop present(nt[0:1], strides[0:nstride], ncycles[0:nwarp], stridedispl[0:nwarp+1], rootbegin[0:nwarp+1], nodebegin[0:nwarp+1]) if(nt->compute_gpu) async(stream_id)
 #endif
     for (int icore = 0; icore < ncore; ++icore) {
       int iwarp = icore / warpsize; // figure out the >> value
@@ -305,6 +309,9 @@ void solve_interleaved2(int ith) {
       int lastroot = rootbegin[iwarp+1];
       int firstnode = nodebegin[iwarp];
       int lastnode = nodebegin[iwarp+1];
+//temp1[icore] = ic;
+//temp2[icore] = ncycle;
+//temp3[icore] = stride - strides;
 #if !defined(_OPENACC)
 if (ic == 0) { // serial test mode. triang and bksub do all cores in warp
 #endif
@@ -318,6 +325,11 @@ if (ic == 0) { // serial test mode. triang and bksub do all cores in warp
     #pragma acc wait(nt->stream_id)
 #endif
   #endif
+if (foo == 1) { return; }
+foo = 0;
+  for (int i=0; i < ncore; ++i) {
+    printf("%d => %d %d %d\n", i, temp1[i], temp2[i], temp3[i]);
+  }
 }
 
 void solve_interleaved(int ith) {
