@@ -5,6 +5,9 @@
 #include "coreneuron/nrniv/cellorder.h"
 #include "coreneuron/nrniv/tnode.h"
 
+#include "coreneuron/nrniv/node_permute.h" // for print_quality
+#include <set>
+
 #ifdef _OPENACC
 #include <openacc.h>
 #endif
@@ -46,6 +49,63 @@ void destroy_interleave_info() {
   }
 }
 
+// more precise visualization of the warp quality
+// can be called after admin2
+static void print_quality(int iwarp, InterleaveInfo& ii, int* parent, int* order) {
+  int nodebegin = ii.lastnode[iwarp];
+  int nodeend = ii.lastnode[iwarp+1];
+  int* stride = ii.stride + ii.stridedispl[iwarp];
+  int ncycle = ii.cellsize[iwarp];
+
+  int nnode = ii.lastnode[ii.nwarp];
+  int* p = new int[nnode];
+  for (int i=0; i < nnode; ++i) { p[i] = parent[i]; }
+  permute_ptr(p, nnode, order);
+  node_permute(p, nnode, order);  
+
+  int inode = nodebegin;
+
+  size_t nx = 0; // number of idle cores on all cycles. X
+  size_t ncacheline = 0;; // number of parent memory cacheline accesses.
+                 //   assmue warpsize is max number in a cachline so all o
+  size_t ncr = 0; // number of child race. nchild-1 of same parent in same cycle
+
+  for (int icycle=0; icycle < ncycle; ++icycle) {
+    int s = stride[icycle];
+    int lastp = -2;
+    printf("  ");
+    std::set<int> crace; // how many children have same parent in a cycle
+    for (int icore=0; icore < warpsize; ++icore) {
+      char ch = '.';
+      if (icore < s) {
+        int par = p[inode];
+        if (crace.find(par) != crace.end()) {
+          ch = 'r';
+          ++ncr;
+        }else{
+          crace.insert(par);
+        }
+
+        if (par != lastp+1) {
+          ch = (ch == 'r') ? 'R' : 'o';
+          ++ncacheline;
+        }
+        lastp = p[inode++];
+      }else{
+        ch = 'X';
+        ++nx;
+      }
+      printf("%c", ch);
+    }
+    printf("\n");
+  }
+
+  printf("warp %d:  %d nodes, %d cycles, %ld idle, %ld cache access, %ld child races\n",
+    iwarp, nnode, ncycle, nx, ncacheline, ncr);
+
+  delete [] p;
+}
+
 int* interleave_order(int ith, int ncell, int nnode, int* parent) {
   // ensure parent of root = -1
   for (int i=0; i < ncell; ++i) {
@@ -75,6 +135,9 @@ if (0 && ith == 0 && use_interleave_permute == 1) {
     printf("istride=%d stride=%d\n", i, stride[i]);
   }
 }
+    if (ith == 0 && use_interleave_permute == 2) {
+      print_quality(0, interleave_info[ith], parent, order);
+    }
   }
 
   return order;

@@ -353,10 +353,15 @@ static void question2(VVTN& levels) {
 
   //  let's see how well we can do by opportunistically moving leaves to
   //  separate parents from children by warpsize (ie is_parent_prace2 is false)
-  //  Hopefully, we won't run out of leaves before elimination all
+  //  Hopefully, we won't run out of leaves before eliminating all
   //  is_parent_prace2
 
-  nrn_assert(nodes.size()%warpsize == 0); // for now
+  if (nodes.size()%warpsize != 0) {
+    size_t nnode = nodes.size() - levels[0].size();
+    printf("warp of %ld cells has %ld nodes in last cycle %ld\n",
+      levels[0].size(), nnode%warpsize, nnode/warpsize + 1);
+  }
+
 //  pr_race_situation(nodes);
   
   // eliminate parent and children races using leaves
@@ -479,7 +484,7 @@ void group_order2(VecTNode& nodevec, size_t groupsize, size_t ncell) {
   // work on a cellgroup as a vector of levels. ie only possible race is
   // two children in same warpsize
   
-  VVVTN groups(ncell/groupsize);
+  VVVTN groups(ncell/groupsize + ((ncell%groupsize) ? 1 : 0));
   for (size_t i = 0; i < groups.size(); ++i) {
     groups[i].resize(maxlevel+1);
   }
