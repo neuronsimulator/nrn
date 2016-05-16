@@ -51,7 +51,7 @@ void destroy_interleave_info() {
 
 // more precise visualization of the warp quality
 // can be called after admin2
-static void print_quality(int iwarp, InterleaveInfo& ii, int* parent, int* order) {
+static void print_quality2(int iwarp, InterleaveInfo& ii, int* parent, int* order) {
   int nodebegin = ii.lastnode[iwarp];
   int nodeend = ii.lastnode[iwarp+1];
   int* stride = ii.stride + ii.stridedispl[iwarp];
@@ -101,7 +101,59 @@ static void print_quality(int iwarp, InterleaveInfo& ii, int* parent, int* order
   }
 
   printf("warp %d:  %d nodes, %d cycles, %ld idle, %ld cache access, %ld child races\n",
-    iwarp, nnode, ncycle, nx, ncacheline, ncr);
+    iwarp, nodeend - nodebegin, ncycle, nx, ncacheline, ncr);
+
+  delete [] p;
+}
+
+static void print_quality1(int iwarp, InterleaveInfo& ii, int ncell, int* parent, int* order) {
+  int* stride = ii.stride;
+  int cellbegin = iwarp*warpsize;
+  int cellend = cellbegin + warpsize;
+  cellend = (cellend < stride[0]) ? cellend : stride[0];
+
+  int ncycle = ii.cellsize[cellend - 1]; // since largest last
+  int nnode = ii.lastnode[ncell-1];
+  int* p = new int[nnode];
+  for (int i=0; i < nnode; ++i) { p[i] = parent[i]; }
+  permute_ptr(p, nnode, order);
+  node_permute(p, nnode, order);  
+
+  ncell = cellend - cellbegin;
+
+  size_t n = 0; // number of nodes in warp (not including roots)
+  size_t nx = 0; // number of idle cores on all cycles. X
+  size_t ncacheline = 0;; // number of parent memory cacheline accesses.
+                 //   assmue warpsize is max number in a cachline so all o
+
+  int inode = ii.firstnode[cellbegin];
+  for (int icycle=0; icycle < ncycle; ++icycle) {
+    int s = stride[icycle] - cellbegin;
+    int sbegin = ncell - s;
+    int lastp = -2;
+    printf("  ");
+    for (int icore=0; icore < warpsize; ++icore) {
+      char ch = '.';
+      if (icore < ncell && icore >= sbegin) {
+        int par = p[inode + icore - sbegin];
+        if (par != lastp+1) {
+          ch = 'o';
+          ++ncacheline;
+        }
+        lastp = par;
+        ++n;
+      }else{
+        ch = 'X';
+        ++nx;
+      }
+      printf("%c", ch);
+    }
+    printf("\n");
+    inode += ii.stride[icycle+1];
+  }
+
+  printf("warp %d:  %ld nodes, %d cycles, %ld idle, %ld cache access\n",
+    iwarp, n, ncycle, nx, ncacheline);
 
   delete [] p;
 }
@@ -135,8 +187,11 @@ if (0 && ith == 0 && use_interleave_permute == 1) {
     printf("istride=%d stride=%d\n", i, stride[i]);
   }
 }
+    if (ith == 0 && use_interleave_permute == 1) {
+      print_quality1(0, interleave_info[ith], ncell, parent, order);
+    }
     if (ith == 0 && use_interleave_permute == 2) {
-      print_quality(0, interleave_info[ith], parent, order);
+      print_quality2(0, interleave_info[ith], parent, order);
     }
   }
 
