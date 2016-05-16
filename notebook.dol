@@ -118,3 +118,6 @@ several files have already been translated, now I split the work roughly evenly 
 cp -nR /usr/site/nrniv/nrnhelprst/* /u/ramcd/nrnhelprstpy/
 (set noglob ; find . -type f -name *.rst -print -exec hg add {} \;)
 
+* 16may05 ramcd deviating from the list
+** I (ramcd) still have two to do: programming/python.rst and visualization/graph.rst BUT python.rst doesn't make much sense in the context of a Python-based help
+** started (unfinished) on modelspec/programmatic/topology.rst

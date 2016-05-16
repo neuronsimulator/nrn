@@ -18,37 +18,32 @@ This document describes the construction and manipulation of a stylized topology
 
 ----
 
-
-
-.. index::  create (keyword)
-
-.. _keyword_create:
-
-**create**
+.. class:: Section
 
     Syntax:
-        ``create``
+        .. code::
 
-
+            dend = h.Section()
+            dend = h.Section(name='dend')
+            dend = h.Section(cell=mycell)
+            dend = h.Section(name='dend', cell=mycell)
 
     Description:
-        This is an nrniv command which creates a list of section names.  Existing sections with 
-        the same names are destroyed and recreated.  The create statement may 
-        occur within procedures, but the names must have been previously declared with 
-        a create statement at the command level. 
-         
+        Creates a new section. If no cell argument is specified, the name argument (optional) will be returned via ``str(s)`` or ``s.hname()``; if no name is provided, one will be automatically generated.
+        If a cell argument is passed, its repr will be combined with the name to form ``str(s)``.
 
-    Example:
+    Example 1:
 
-        .. code-block::
-            none
+        .. code::
 
-            create soma, axon, dend[3] 
-            forall { 
-            	print secname() 
-            } 
+            soma = h.Section(name='soma')
+            axon = h.Section(name='axon')
+            dend = [h.Section(name='dend[%d]' % i) for i in xrange(3)]
+            for sec in h.allsec():
+                print sec
 
-        prints the names of all the sections which have been created. 
+
+        prints the names of all the sections which have been created:
 
         .. code-block::
             none
@@ -59,10 +54,38 @@ This document describes the construction and manipulation of a stylized topology
             dend[1] 
             dend[2] 
 
-         
+    Example 2:
+
+        .. code::
+
+            import itertools
+
+            class MyCell:
+                _ids = itertools.count(0)
+                def __repr__(self):
+                    return 'MyCell%d' % self.id
+                def __init__(self):
+                    self.id = self._ids.next()
+                    # create the morphology and connect it
+                    self.soma = h.Section(name='soma', cell=self)
+                    self.dend = h.Section(name='dend', cell=self)
+                    self.dend.connect(self.soma(0.5))
+
+            # create two cells
+            my_cells = [MyCell(), MyCell()]
+
+            # print the topology
+            h.topology()
+            
+        Displays:
+
+            |-|       MyCell0.soma(0-1)
+              `|       MyCell0.dend(0-1)
+            |-|       MyCell1.soma(0-1)
+              `|       MyCell1.dend(0-1)
 
     .. seealso::
-        :ref:`connect <keyword_connect>`, :ref:`insert <keyword_insert>`, :ref:`forall <keyword_forall>`
+        :meth:`Section.connect`, :meth:`Section.insert`, :func:`allsec`
         
 
          
@@ -122,7 +145,7 @@ This document describes the construction and manipulation of a stylized topology
 
 
     Syntax:
-        ``topology()``
+        ``h.topology()``
 
 
     Description:
@@ -139,13 +162,18 @@ This document describes the construction and manipulation of a stylized topology
 
 
     Syntax:
-        ``delete_section()``
+        ``h.delete_section(sec=sec)``
 
 
     Description:
-        Delete the currently accessed section from the main section 
-        list which is used in computation. 
-        \ ``forall delete_section`` 
+        Delete the specified section ``sec`` from the main section
+        list which is used in computation.
+
+        .. code::
+
+            for sec in h.allsec():
+                h.delete_section(sec=sec)
+ 
         will remove all sections. 
          
         Note: deleted sections still exist (even though 
@@ -156,6 +184,10 @@ This document describes the construction and manipulation of a stylized topology
         hold pointers to these sections will still work. When the last 
         pointer to a section is destroyed, the section memory will be 
         freed. 
+
+    .. warning::
+
+        If the ``sec`` argument is omitted, the currently accessed section is deleted instead.
 
          
 
