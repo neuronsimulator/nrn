@@ -10,9 +10,9 @@ Graph
 
 
     Syntax:
-        ``g = new Graph()``
+        ``g = h.Graph()``
 
-        ``g = new Graph(0)``
+        ``g = h.Graph(0)``
 
 
     Description:
@@ -30,23 +30,30 @@ Graph
         .. code-block::
             none
 
-            objref g	//Creates an object reference "g" which can be made to 
-            		//point to any object. 
-            g = new Graph()		//Assigns "g" the role of pointing to a Graph instance 
-            			//created from the Graph class, and produces 
-            			//a graph window with x and y axes on the  
-            			//screen. 
-            g.size(0, 10, -1, 1)	// specify coordinate system for the canvas drawing area 
-            			// numbers refer to xmin, xmax, ymin, ymax respectively 
-            g.beginline()		//The next g.line command will move the drawing pen 
-            			// to the indicated point without drawing anything 
-            for(x=0; x<=10; x=x+0.1){	//States that x values to be plotted 
-            				//will go from 0 to 10 in increments 
-            				//of 0.1. 
-            	g.line(x, sin(x))	//States that the y values on the plot 
-            				//will be the sin of the x values. 
-            } 
-            g.flush()	//Actually draws the plot on the graph in the window. 
+            from neuron import h, gui
+            import math
+
+            # Create the graph
+            g = h.Graph()
+
+            # specify coordinate system for the canvas drawing area
+            # numbers are: xmin, xmax, ymin, ymax respectively
+            g.size(0, 10, -1, 1)
+
+            # the next g.line command will move the drawing pen to the
+            # indicated point without drawing anything
+            g.beginline()
+
+            # define a sine wave, 0 <= x <= 10
+            for i in xrange(101):
+                x = i * 0.1
+                g.line(x, math.sin(x))
+
+            # actually draw the plot on the graph in the window
+            g.flush()
+
+        .. image:: ../images/graph-constructor.png
+            :align: center
 
          
         The function ``.line()``, however, only allows the user to plot one function 
