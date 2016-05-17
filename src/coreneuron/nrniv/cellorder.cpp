@@ -163,11 +163,19 @@ static void warp_balance(int ith, InterleaveInfo& ii) {
   if (use_interleave_permute != 2) { return; }
   size_t nwarp = size_t(ii.nwarp);
   std::vector<size_t> v(nwarp);
+  double emax = 0.0, emin=1.0;
   for (size_t i = 0; i < nwarp; ++i) {
     v[i] = size_t(ii.stridedispl[i+1] - ii.stridedispl[i]);
+    size_t n = 0;
+    for (int j=ii.stridedispl[i]; j < ii.stridedispl[i+1]; ++j) {
+      n += size_t(ii.stride[j]);
+    }
+    double e = double(n)/v[i]/warpsize;
+    if (emax < e) { emax = e; }
+    if (emin > e) { emin = e; }
   }
   double bal = load_balance(v);
-  printf("thread %d nwarp=%ld  balance=%g\n", ith, nwarp, bal);
+  printf("thread %d nwarp=%ld  balance=%g  warp_efficiency %g to %g\n", ith, nwarp, bal, emax, emin);
 }
 
 int* interleave_order(int ith, int ncell, int nnode, int* parent) {
