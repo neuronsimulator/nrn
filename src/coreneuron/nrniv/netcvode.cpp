@@ -604,10 +604,11 @@ void NetCvode::check_thresh(NrnThread* nt) { // for default method
     if(nt->ncell == 0)
         return;
 
-    #ifdef _OPENACC
-        if(nt->compute_gpu)
-            acc_update_device(&(nt->_net_send_buffer_cnt), sizeof(int));
-    #endif
+    //_net_send_buffer_cnt is no longer used in openacc kernel, remove this?
+    //#ifdef _OPENACC
+    //    if(nt->compute_gpu)
+    //        acc_update_device(&(nt->_net_send_buffer_cnt), sizeof(int));
+    //#endif
 
     // on GPU...
     #pragma acc parallel loop present(nt[0:1], presyns_helper[0:nt->n_presyn], \
