@@ -28,3 +28,4 @@ Quick Links
     programming/hocsyntax.rst
     programmatic/network/parnet.rst
     modelspec/programmatic/network/parnet.rst
+    modelspec/programmatic/linmod.rst

@@ -10,13 +10,13 @@ LinearMechanism
 
 
     Syntax:
-        ``lm = new LinearMechanism(c, g, y, [y0], b)``
+        ``lm = h.LinearMechanism(c, g, y, [y0], b)``
 
-        ``section lm = new LinearMechanism(c, g, y, [y0], b, x)``
+        ``lm = h.LinearMechanism(c, g, y, [y0], b, x, sec=section)``
 
-        ``lm = new LinearMechanism(c, g, y, [y0], b, sl, xvec, [layervec])``
+        ``lm = h.LinearMechanism(c, g, y, [y0], b, sl, xvec, [layervec])``
 
-        ``lm = new LinearMechanism(pycallable, c, g, y, ...)``
+        ``lm = h.LinearMechanism(pycallable, c, g, y, ...)``
 
 
     Description:
@@ -82,42 +82,42 @@ LinearMechanism
 
     Example:
 
-        .. code-block::
-            none
+        .. code::
 
-            load_file("nrngui.hoc") 
+            from neuron import h, gui
 
-            create soma 
-            soma { insert hh } 
+            soma = h.Section()
+            soma.insert('hh')
+
+            # ideal voltage clamp. 
+            c = h.Matrix(2, 2, 2) # sparse - no elements used 
+            g = h.Matrix(2, 2) 
+            y = h.Vector(2)       # y.x[1] is injected current 
+            b = h.Vector(2) 
+            g.setval(0, 1, -1)
+            g.setval(1, 0, 1)
+            b.x[1] = 10           # voltage clamp level 
              
-            //ideal voltage clamp. 
-            objref c, g, y, b, model 
-            c = new Matrix(2,2,2) //sparse - no elements used 
-            g = new Matrix(2,2) 
-            y = new Vector(2) // y.x[1] is injected current 
-            b = new Vector(2) 
-            g.x[0][1] = -1 
-            g.x[1][0] = 1 
-            b.x[1] = 10 // voltage clamp level 
-             
-            soma model = new LinearMechanism(c, g, y, b, .5) 
-             
-            proc advance() { 
-            	printf("t=%g v=%g y.x[1]=%g\n", t, soma.v(.5), y.x[1]) 
-            	fadvance() 
-            } 
-            run() 
+            model = h.LinearMechanism(c, g, y, b, 0.5, sec=soma) 
+
+            h.finitialize(-65)
+            while h.t < h.tstop:
+                print('t=%g v=%g y[1]=%g' % (h.t, soma(0.5).v, y[1]))
+                h.fadvance()
 
 
     .. warning::
     
-          Does not work with the CVODE integrator but does work with the
-          differential-algebraic solver IDA. Note that if the standard
-          run system is loaded, ``cvode_active(1)`` will automatically
-          choose the correct variable step integrator.
-	  Does not allow changes to coupling locations. 
-          Is not notified when matrices, vectors, or segments it depends on 
-          disappear. 
+        Does not work with the CVODE integrator but does work with the
+        differential-algebraic solver IDA. Note that if the standard
+        run system is loaded, ``cvode_active(1)`` will automatically
+        choose the correct variable step integrator.
+
+    .. warning::
+
+	    Does not allow changes to coupling locations. 
+        Is not notified when matrices, vectors, or segments it depends on 
+        disappear. 
 
     Description (continued):
         If the pycallable argument (A Python Callable object) is present
@@ -133,51 +133,50 @@ LinearMechanism
 
                 \frac{d\theta}{dt} = \omega
 
-	.. math::
+    	.. math::
 
-		\frac{d\omega}{dt} = -\frac{g}{L} \sin(\theta) \text{ with } \frac{g}{L}=1 
+    		\frac{d\omega}{dt} = -\frac{g}{L} \sin(\theta) \text{ with } \frac{g}{L}=1 
 
-        .. code-block::
-            python
+        .. code::
 
-            from neuron import h
+            from neuron import h, gui
             from math import sin
-            
-            h.load_file('nrngui.hoc')
-            
-            cmat = h.Matrix(2,2,2).ident()
-            
-            gmat = h.Matrix(2,2,2)
-            gmat.setval(0,1, -1)
-            
+
+            cmat = h.Matrix(2, 2, 2).ident()
+
+            gmat = h.Matrix(2, 2, 2)
+            gmat.setval(0, 1, -1)
+
             y = h.Vector(2)
             y0 = h.Vector(2)
             b = h.Vector(2)
-            
+
             def callback():
-              b.x[1] = -sin(y.x[0])
-            
+              b.x[1] = -sin(y[0])
+
             nlm = h.LinearMechanism(callback, cmat, gmat, y, y0, b)
-            
-            
+
             dummy = h.Section()
             trajec = h.Vector()
             tvec = h.Vector()
             trajec.record(y._ref_x[0])
             tvec.record(h._ref_t)
-            
+
             graph = h.Graph()
             h.tstop=50
-            
+
             def prun(theta0, omega0):
               graph.erase()
               y0.x[0] = theta0
               y0.x[1] = omega0
               h.run()
               trajec.line(graph, tvec)
-            
+
             h.dt /= 10
             h.cvode.atol(1e-5)
             h.cvode_active(1)
             prun(0, 1.9999) # 2.0001 will keep it rotating
             graph.exec_menu("View = plot")
+
+        .. image:: ../../images/linmod.png
+            :align: center

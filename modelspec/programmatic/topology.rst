@@ -63,7 +63,7 @@ This document describes the construction and manipulation of a stylized topology
             class MyCell:
                 _ids = itertools.count(0)
                 def __repr__(self):
-                    return 'MyCell%d' % self.id
+                    return 'MyCell[%d]' % self.id
                 def __init__(self):
                     self.id = self._ids.next()
                     # create the morphology and connect it
@@ -79,10 +79,10 @@ This document describes the construction and manipulation of a stylized topology
             
         Displays:
 
-            |-|       MyCell0.soma(0-1)
-              `|       MyCell0.dend(0-1)
-            |-|       MyCell1.soma(0-1)
-              `|       MyCell1.dend(0-1)
+            |-|       MyCell[0].soma(0-1)
+              `|       MyCell[0].dend(0-1)
+            |-|       MyCell[1].soma(0-1)
+              `|       MyCell[1].dend(0-1)
 
     .. seealso::
         :meth:`Section.connect`, :meth:`Section.insert`, :func:`allsec`
