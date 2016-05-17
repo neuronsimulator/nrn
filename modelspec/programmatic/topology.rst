@@ -85,6 +85,7 @@ This document describes the construction and manipulation of a stylized topology
               `|       MyCell[1].dend(0-1)
 
     .. seealso::
+    
         :meth:`Section.connect`, :meth:`Section.insert`, :func:`allsec`
         
 
@@ -94,23 +95,21 @@ This document describes the construction and manipulation of a stylized topology
 
 
 
-.. index::  connect (keyword)
+.. method:: Section.connect
 
-.. _keyword_connect:
-
-**connect**
 
     Syntax:
-        ``connect section(0or1), x``
+        ``child.connect(parent, [0 or 1])``
 
-        ``connect section(0or1), parent(x)``
+        ``child.connect(parent(x), [0 or 1])``
 
 
 
     Description:
-        The first form connects the section at end 0 or 1 to the currently 
-        accessed section at position x.  An alternative syntax is the second 
-        form in which the parent section is explicitly indicated.  If a section 
+        The first form connects the child at end 0 or 1 to the parent
+        section at position x. By default the child end 0 connects to the parent end 1.
+        An alternative syntax is the second 
+        form in which the location on the parent section is indicated.  If a section 
         is connected twice a Notice is printed on the standard error device 
         saying that the section has been reconnected (the last connection takes 
         precedence).  To avoid the notice, disconnect the section first with the 
@@ -122,24 +121,140 @@ This document describes the construction and manipulation of a stylized topology
 
     Example:
 
-        .. code-block::
-            none
+        .. code::
 
-             create soma, axon, dendrite[3] 
-             connect axon(0), soma(0) 
-             soma for i=0,2 { 
-               connect dendrite[i](0), 1 
-             } 
-             topology() 
-             objref s 
-             s = new Shape() 
+            from neuron import h, gui
+            soma = h.Section(name='soma')
+            axon = h.Section(name='axon')
+            dend = [h.Section(name='dend[%d]' % i) for i in xrange(3)]
+            for sec in dend:
+                sec.connect(soma(1), 0)
 
+            h.topology()
+            s = h.Shape()
 
-         
+        .. image:: ../../images/section-connection.png
+            :align: center
 
 ----
 
 
+
+.. data:: Section.nseg
+
+    Syntax:
+        ``section.nseg``
+
+    Description:
+        Number of segments (compartments) in ``section``. 
+        When a section is created, nseg is 1. 
+        In versions prior to 3.2, changing nseg throws away all 
+        "inserted" mechanisms including diam 
+        (if 3-d points do not exist). PointProcess, connectivity, L, and 3-d 
+        point information remain unchanged. 
+         
+        Starting in version 3.2, a change to nseg re-uses information contained 
+        in the old segments. 
+         
+        If nseg is increased, all old segments are 
+        relocated to their nearest new locations (no instance variables are modified 
+        and no pointers to data in those segments become invalid). 
+        and new segments are allocated and given mechanisms and values that are 
+        identical to the old segment in which the center of the new segment is 
+        located.  This means that increasing nseg by an odd factor preserves 
+        the locations of all previous data (including all Point Processes) 
+        and, if PARAMETER range variables are 
+        constant, that all the new segments have the proper PARAMETER values. 
+        (It generally doesn't matter that ASSIGNED and STATE values do not get 
+        interpolated since those values are computed with :func:`fadvance`). 
+        If range variables are not constant then the hoc expressions used to 
+        set them should be re-executed. 
+         
+        If nseg is decreased then all the new segments are in fact those old segments 
+        that were nearest the centers of the new segments. Unused old segments 
+        are freed (and thus any existing pointers to variables in those freed 
+        segments are invalid). This means that decreasing nseg by an odd factor 
+        preserves the locations of all previous data. However POINT PROCESSES 
+        not located at the centers of the new segments will be discarded. 
+         
+        The intention is to guarantee that the following sequence 
+
+        .. code::
+
+            run() # sim1 
+            for sec in h.allsec():
+                sec.nseg *= oddfactor
+            run() # sim2 
+            for sec in h.allsec():
+                sec.nseg /= oddfactor
+            run() # sim3 
+
+        will produce identical simulations for sim1 and sim3. And sim2 will be 
+        oddfactor^2 more accurate with regard to spatial discretization error. 
+
+----
+
+.. method:: Section.orientation
+
+    Syntax:
+        ``y = section.orientation()``
+
+    Description:
+        Return the end (0 or 1) which connects to the parent. This is the 
+        value, y, used in 
+         
+        .. code::
+
+            child.connect(parent(x), y)
+
+----
+
+.. method:: Section.parentseg
+
+    Syntax:
+        ``seg = child.parentseg()``
+
+    Description:
+        Return the parent segment of the ``child`` section. This is ``parent(x)`` in:
+
+        .. code::
+
+            child.connect(parent(x), y)
+
+        To get the x value, use ``seg.x``.
+
+----
+
+.. method:: Section.cell
+
+    Syntax:
+        ``section.cell()``
+
+    Description:
+        Returns the value of the cell keyword argument provided when the Section was created.
+
+----
+
+.. method:: Section.hname
+
+    Syntax:
+        ``section.hname()``
+
+    Description:
+        Returns the value of the name keyword argument provided when the Section was created.
+        If no name was provided, the internally provided name is returned instead.
+
+----
+
+.. method:: Section.name
+
+    Syntax:
+        ``section.name()``
+
+    Description:
+        Same as :meth:`Section.hname`
+
+----
 
 .. function:: topology
 
@@ -199,18 +314,21 @@ This document describes the construction and manipulation of a stylized topology
 
 
     Syntax:
-        ``boolean = section_exists("name", [index], [object])``
+        ``boolean = h.section_exists("name", [index], [object])``
 
 
     Description:
-        Returns 1 if the section defined by the args exists and can be used 
-        as a currently accessed section. Otherwise, returns 0. 
+        Returns 1.0 if the section defined by the args exists and can be used 
+        as a currently accessed section. Otherwise, returns 0.0.
         The index is optional and if nonzero, can be incorporated into the name as 
         a literal value such as dend[25]. If the optional object arg is present, that 
         is the context, otherwise the context is the top level. "name" should 
         not contain the object prefix. Even if a section is multiply dimensioned, use 
         a single index value. 
 
+    .. warning::
+
+        This function does not work with Sections created in Python.
          
 
 ----
@@ -221,17 +339,15 @@ This document describes the construction and manipulation of a stylized topology
 
 
     Syntax:
-        ``section_owner()``
+        ``h.section_owner(sec=section)``
 
 
     Description:
-        Return the object that created the currently accessed section. If the 
-        section was created from the top level, The NULLobject is returned. 
-        If the section was created as a Python section and the first constructor 
-        arg is a Python object or the keyword argument, cell = ..., is used, a 
-        PythonObject wrapper is returned. I.e. in the Python world, it is the Python 
-        cell object. 
-
+        
+        If ``section`` was created in Python, returns the ``cell`` keyword argument or
+        None. This is accessible directly from the Section object via :meth:`Section.cell`.
+        If the section was created in HOC, returns the object that created the section, or
+        None if created at the top level.
          
 
 ----
@@ -242,66 +358,16 @@ This document describes the construction and manipulation of a stylized topology
 
 
     Syntax:
-        ``disconnect()``
+        ``h.disconnect(sec=section)``
 
 
     Description:
-        Disconnect the currently accessed section from its parent. Such 
-        a parent can be reconnected with the connect statement. 
+        Disconnect ``section`` from its parent. Such 
+        a parent can be reconnected with the connect method. 
 
+    .. warning::
 
-----
-
-
-
-.. data:: nseg
-
-
-    Description:
-        Number of segments (compartments) in the currently accessed section. 
-        When a section is created, nseg is 1. 
-        In versions prior to 3.2, changing nseg throws away all 
-        "inserted" mechanisms including diam 
-        (if 3-d points do not exist). PointProcesss, connectivity, L, and 3-d 
-        point information remain unchanged. 
-         
-        Starting in version 3.2, a change to nseg re-uses information contained 
-        in the old segments. 
-         
-        If nseg is increased, all old segments are 
-        relocated to their nearest new locations (no instance variables are modified 
-        and no pointers to data in those segments become invalid). 
-        and new segments are allocated and given mechanisms and values that are 
-        identical to the old segment in which the center of the new segment is 
-        located.  This means that increasing nseg by an odd factor preserves 
-        the locations of all previous data (including all Point Processes) 
-        and, if PARAMETER range variables are 
-        constant, that all the new segments have the proper PARAMETER values. 
-        (It generally doesn't matter that ASSIGNED and STATE values do not get 
-        interpolated since those values are computed with :func:`fadvance`). 
-        If range variables are not constant then the hoc expressions used to 
-        set them should be re-executed. 
-         
-        If nseg is decreased then all the new segments are in fact those old segments 
-        that were nearest the centers of the new segments. Unused old segments 
-        are freed (and thus any existing pointers to variables in those freed 
-        segments are invalid). This means that decreasing nseg by an odd factor 
-        preserves the locations of all previous data. However POINT PROCESSES 
-        not located at the centers of the new segments will be discarded. 
-         
-        The intention is to guarantee that the following sequence 
-
-        .. code-block::
-            none
-
-                    run() //sim1 
-                    forall nseg *= oddfactor 
-                    run() //sim2 
-                    forall nseg /= oddfactor 
-                    run() //sim3 
-
-        will produce identical simulations for sim1 and sim3. And sim2 will be 
-        oddfactor^2 more accurate with regard to spatial discretization error. 
+        If no section is specified, will disconnect the currently accessed section.
 
 ----
 
@@ -311,12 +377,12 @@ This document describes the construction and manipulation of a stylized topology
 
 
     Syntax:
-        ``issection("regular expression")``
+        ``h.issection("regular expression", sec=section)``
 
 
     Description:
-        Return 1 if the currently accessed section matches the regular expression. 
-        Return 0 if otherwise. 
+        Return 1.0 if the name of ``section`` matches the regular expression. 
+        Return 0.0 otherwise. 
          
         Regular expressions are like those of grep except {n1-n2} denotes
 	an integer range and [] is literal instead of denoting a character
@@ -334,31 +400,32 @@ This document describes the construction and manipulation of a stylized topology
 
     Example:
 
-        .. code-block::
-            none
+        .. code::
 
-            create soma, axon, dendrite[3] 
-            forall if (issection("s.*")) { 
-            	print secname() 
-            } 
+            from neuron import h, gui
+            soma = h.Section(name='soma')
+            axon = h.Section(name='axon')
+            dend = [h.Section(name='dend[%d]' % i) for i in xrange(3)]
+            for section in h.allsec():
+                if h.issection('s.*', sec=section):
+                    print section
 
         will print ``soma`` 
 
+        .. code::
+
+            for section in h.allsec():
+                if h.issection('d.*2]', sec=section):
+                    print section
+
+        will print ``dend[2]`` 
+
         .. code-block::
             none
 
-            forall if (issection("d.*2]")) { 
-            	print secname() 
-            } 
-
-        will print ``dendrite[2]`` 
-
-        .. code-block::
-            none
-
-            forall if (issection(".*a.*")) { 
-            	print secname() 
-            } 
+            for section in h.allsec():
+                if h.issection(".*a.*", sec=section):
+                    print section
 
         will print all names which contain the letter "a" 
 
@@ -369,9 +436,13 @@ This document describes the construction and manipulation of a stylized topology
             axon 
 
 
-    .. seealso::
-        :ref:`ifsec <keyword_ifsec>`, :ref:`forsec <keyword_forsec>`
+    .. note::
 
+        This can also be done using Python's ``re`` module and testing the :meth:`Section.hname`.
+
+    .. warning::
+
+        If the ``sec`` keyword argument is omitted, this will operate on the currently accessed section.
          
 
 ----
@@ -382,27 +453,31 @@ This document describes the construction and manipulation of a stylized topology
 
 
     Syntax:
-        ``ismembrane("mechanism")``
+        ``h.ismembrane("mechanism", sec=section)``
 
 
     Description:
-        This function returns a 1 if the current membrane contains this 
+        This function returns a 1.0 if the membrane of ``section`` contains this 
         (density) mechanism.  This is not for point 
         processes. 
          
 
     Example:
 
-        .. code-block::
-            none
+        .. code::
 
-            forall if (ismembrane("hh") && ismembrane("ca_ion")) { 
-            	print secname() 
-            } 
+
+            for sec in h.allsec():
+                if h.ismembrane('hh', sec=sec) and h.ismembrane('ca_ion', sec=sec):
+                    print sec
 
         will print the names of all the sections which contain both Hodgkin-Huxley and Calcium ions. 
 
          
+     .. warning::
+
+        If the ``sec`` keyword argument is omitted, returns a result based on the currently accessed
+        section.
 
 ----
 
@@ -412,15 +487,15 @@ This document describes the construction and manipulation of a stylized topology
 
 
     Syntax:
-        ``sectionname(strvar)``
+        ``h.sectionname(strvar, sec=section)``
 
 
     Description:
-        The name of the currently accessed section is placed in *strvar*. 
+        The name of ``section`` is placed in *strvar*, a HOC string reference.
+        Such a string reference may be created by: ``strvar = h.ref('')``; it's value is ``strvar[0]``.
          
-        This function is superseded by the easier to use, :func:`secname`. 
-
-         
+        This function is superseded by the easier to use, ``str(section)``.
+        
 
 ----
 
@@ -430,32 +505,33 @@ This document describes the construction and manipulation of a stylized topology
 
 
     Syntax:
-        ``secname()``
+        ``h.secname(sec=section)``
 
 
     Description:
-        Returns the currently accessed section name. Usage is 
+        This function is superseded by the easier to use, ``str(section)``. The below examples
+        can be more cleanly written as: ``s = str(soma)``, ``print soma``, and ``for sec in h.allsec(): for seg in sec: print seg``.
 
-        .. code-block::
-            none
+        Returns the name of ``section``. Usage is 
 
-            		strdef s 
-            		s = secname() 
+        .. code::
 
-        or 
-
-        .. code-block::
-            none
-
-            		print secname() 
+            s = h.secname(sec=soma)
 
         or 
 
-        .. code-block::
-            none
+        .. code::
 
-            		forall for(x) printf("%s(%g)\n", secname(), x) 
+            print h.secname(sec=soma)
 
+        or 
+
+        .. code::
+
+
+            for sec in h.allsec():
+                for seg in sec:
+                    print('%s(%g)' % (h.secname(sec=sec), seg.x))
 
          
 
@@ -467,19 +543,14 @@ This document describes the construction and manipulation of a stylized topology
 
 
     Syntax:
-        ``psection()``
+        ``h.psection(sec=section)``
 
 
     Description:
-        Print info about currently accessed section in a format which is executable. 
+        Print info about ``section`` in a format which is executable in HOC. 
         (length, parent, diameter, membrane information) 
          
 
-         
-         
-
-
-         
 
 
 ----
@@ -489,14 +560,17 @@ This document describes the construction and manipulation of a stylized topology
 
 
     Syntax:
-        ``parent_section(x)``
+        ``h.parent_section(x, sec=section)``
 
 
     Description:
-        Return the pointer to the section parent of the segment containing *x*. 
+        Return the pointer to the section parent of the segment ``section(x)``. 
         Because a 64 bit pointer cannot safely be represented as a 
         double this function is deprecated in favor of :meth:`SectionRef.parent`. 
 
+    .. seealso::
+
+        :meth:`Section.parentseg`
          
 
 ----
@@ -507,11 +581,11 @@ This document describes the construction and manipulation of a stylized topology
 
 
     Syntax:
-        ``parent_node(x)``
+        ``h.parent_node(x, sec=section)``
 
 
     Description:
-        Return the pointer of the parent of the segment containing *x*. 
+        Return the pointer of the parent of the segment ``section(x)``. 
 
     .. warning::
         This function is useless and currently returns an error. 
@@ -526,17 +600,22 @@ This document describes the construction and manipulation of a stylized topology
 
 
     Syntax:
-        ``y = parent_connection()``
+        ``y = h.parent_connection(sec=child)``
 
 
     Description:
-        Return location on parent that currently accessed section is 
+        Return location on parent that ``child`` is 
         connected to. (0 <= x <= 1). This is the value, y, used in 
 
-        .. code-block::
-            none
+        .. code::
 
-                    connect child(x), parent(y) 
+            child.connect(parent(x), y)
+
+        This information is also available via: ``child.parentseg().x``
+
+    .. seealso::
+
+        :meth:`Section.parentseg`
 
 
          
@@ -549,19 +628,16 @@ This document describes the construction and manipulation of a stylized topology
 
 
     Syntax:
-        ``y = section_orientation()``
-
+        ``y = h.section_orientation(sec=child)``
 
     Description:
         Return the end (0 or 1) which connects to the parent. This is the 
-        value, x, used in 
+        value, y, used in 
          
+        .. code::
 
-        .. code-block::
-            none
+            child.connect(parent(x), y)
 
-                    connect child(x), parent(y) 
+    .. note::
 
-
-         
-      
+        It is cleaner to use the equivalent section method: :meth:`Section.orientation`.

@@ -29,3 +29,4 @@ Quick Links
     programmatic/network/parnet.rst
     modelspec/programmatic/network/parnet.rst
     modelspec/programmatic/linmod.rst
+    modelspec/programmatic/topology.rst
