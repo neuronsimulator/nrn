@@ -4,6 +4,7 @@
 #include "coreneuron/nrniv/nrn_assert.h"
 #include "coreneuron/nrniv/cellorder.h"
 #include "coreneuron/nrniv/tnode.h"
+#include "coreneuron/nrniv/lpt.h"
 
 #include "coreneuron/nrniv/node_permute.h" // for print_quality
 #include <set>
@@ -158,6 +159,17 @@ static void print_quality1(int iwarp, InterleaveInfo& ii, int ncell, int* parent
   delete [] p;
 }
 
+static void warp_balance(int ith, InterleaveInfo& ii) {
+  if (use_interleave_permute != 2) { return; }
+  size_t nwarp = size_t(ii.nwarp);
+  std::vector<size_t> v(nwarp);
+  for (size_t i = 0; i < nwarp; ++i) {
+    v[i] = size_t(ii.stridedispl[i+1] - ii.stridedispl[i]);
+  }
+  double bal = load_balance(v);
+  printf("thread %d nwarp=%ld  balance=%g\n", ith, nwarp, bal);
+}
+
 int* interleave_order(int ith, int ncell, int nnode, int* parent) {
   // ensure parent of root = -1
   for (int i=0; i < ncell; ++i) {
@@ -193,6 +205,7 @@ if (0 && ith == 0 && use_interleave_permute == 1) {
     if (ith == 0 && use_interleave_permute == 2) {
       print_quality2(0, interleave_info[ith], parent, order);
     }
+    warp_balance(ith, interleave_info[ith]);
   }
 
   return order;
@@ -414,8 +427,7 @@ static int foo = 1;
     solve_interleaved2_launcher(d_nt, d_info);
   #else
 #ifdef _OPENACC
-//    #pragma acc kernels loop gang(1), vector(32) present(nt[0:1], strides[0:nstride],\
-
+//    #pragma acc kernels loop gang(1), vector(32) present(nt[0:1], strides[0:nstride],...
     #pragma acc parallel loop present(nt[0:1], strides[0:nstride], ncycles[0:nwarp], stridedispl[0:nwarp+1], rootbegin[0:nwarp+1], nodebegin[0:nwarp+1]) if(nt->compute_gpu) async(stream_id)
 #endif
     for (int icore = 0; icore < ncore; ++icore) {
