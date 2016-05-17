@@ -65,7 +65,7 @@ void mk_netcvode() {
 extern void nrn_outputevent(unsigned char, double);
 extern "C" {
 extern pnt_receive_t* pnt_receive;
-extern pnt_receive_init_t* pnt_receive_init;
+extern pnt_receive_t* pnt_receive_init;
 extern short* nrn_artcell_qindex_;
 extern bool nrn_use_localgid_;
 extern void nrn2ncs_outputevent(int netcon_output_index, double firetime);
@@ -279,7 +279,7 @@ void NetCvode::init_events() {
 			if (d->target_) {
 				int type = d->target_->_type;
 				if (pnt_receive_init[type]) {
-                    (*pnt_receive_init[type])(nt, d->target_, d->u.weight_index_, 0);
+                    (*pnt_receive_init[type])(d->target_, d->u.weight_index_, 0);
 				}else{
 					int cnt = pnt_receive_size[type];
 					double* wt = nt->weights + d->u.weight_index_;
