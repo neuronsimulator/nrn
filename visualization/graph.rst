@@ -254,31 +254,30 @@ Graph
 
     Example:
 
-        .. code-block::
-            none
+        .. code::
 
-            objref g	//Creates an object reference "g" which will 
-            		//point to the graph object. 
-            g = new Graph()		//Assigns "g" the role of pointing to a Graph 
-            g.size(0,10,-1,1)	//created from the Graph class, and produces 
-            			//a graph window with x and y axes on the  
-            			//screen. 
-            g.addexpr("sin(x)")	//stores sin(x) as a function to be plotted in g graphs 
-            g.addexpr("cos(x)")	//stores cos(x) for use with g 
-            g.addexpr("exp(-x)")	//stores exp(x) for use with g 
-            x=0			// has to be defined prior to execution of expressions 
-            g.begin()		//Tells the interpreter that commands to plot  
-            			//specific functions will follow. 
-            for(x=0; x<=10; x=x+0.1){	//States that x values to be plotted 
-            				//will go from 0 to 10 in increments 
-            				//of 0.1. 
-            	g.plot(x)	//States that the y values on the plot 
-            			//will be the sin of the x values. 
-            } 
-            g.flush()	//Actually draws the plot on the graph in the window. 
+            from neuron import h, gui
+
+            g = h.Graph()
+            g.size(0, 10, -1, 1)
+            g.addexpr("sin(x)")
+            g.addexpr("cos(x)")
+            g.addexpr("exp(-x)")
+
+            # have to initialize the variable in HOC
+            h("x = 0")
+
+            g.begin()
+
+            for i in xrange(101):
+                h.x = i * 0.1
+                g.plot(h.x)
+
+            g.flush()
 
 
-         
+         .. image:: ../images/graph-addexpr.png
+            :align: center        
 
 ----
 
@@ -305,6 +304,10 @@ Graph
 
 .. method:: Graph.begin
 
+    .. note::
+
+        Not that useful in Python since only works with :meth:`Graph.addexpr` which uses
+        HOC expressions.
 
     Syntax:
         ``g.begin()``
@@ -314,30 +317,7 @@ Graph
         Initialize the list of graph variables so the next ``g.plot(x)`` 
         is the first point of each graph line. 
 
-    Example:
-
-        .. code-block::
-            none
-
-            objref g	//Creates an object reference "g" which will 
-            		//point to the graph object. 
-            g = new Graph()		//Assigns "g" the role of pointing to a Graph 
-            			//created from the Graph class, and produces 
-            			//a graph window with x and y axes on the  
-            			//screen. 
-            g.addexpr("sin(x)")	//stores sin(x) as a function to be plotted in g graphs 
-            g.addexpr("cos(x)")	//stores cos(x) for use with g 
-            g.addexpr("-exp(x)")	//stores exp(x) for use with g 
-            x=0 
-            g.begin()		//Tells the interpreter that commands to plot  
-            			//specific functions will follow. 
-            for(x=0; x<=10; x=x+0.1){	//States that x values to be plotted 
-            				//will go from 0 to 10 in increments 
-            				//of 0.1. 
-            	g.plot(x)	//States that the y values on the plot 
-            			//will be the sin of the x values. 
-            } 
-            g.flush()	//Actually draws the plot on the graph in the window. 
+        See :meth:`Graph.plot` for an example.
 
 
          
@@ -348,6 +328,10 @@ Graph
 
 .. method:: Graph.plot
 
+    .. note::
+
+        Not that useful in Python since only works with :meth:`Graph.addexpr` which uses
+        HOC expressions.
 
     Syntax:
         ``g.plot(x)``
@@ -357,30 +341,7 @@ Graph
         The abscissa value for each item in the list of graph lines. Usually 
         used in a ``for`` loop. 
 
-    Example:
-
-        .. code-block::
-            none
-
-            objref g	//Creates an object reference "g" which will 
-            		//point to the graph object. 
-            g = new Graph()		//Assigns "g" the role of pointing to a Graph 
-            			//created from the Graph class, and produces 
-            			//a graph window with x and y axes on the  
-            			//screen. 
-            g.addexpr("sin(x)")	//stores sin(x) as a function to be plotted in g graphs 
-            g.addexpr("cos(x)")	//stores cos(x) for use with g 
-            g.addexpr("cos(2*x)")	//stores cos(2*x) for use with g 
-            x=0 
-            g.begin()		//Tells the interpreter that commands to plot  
-            			//specific functions will follow. 
-            for(x=0; x<=10; x=x+0.1){	//States that x values to be plotted 
-            				//will go from 0 to 10 in increments 
-            				//of 0.1. 
-            	g.plot(x)	//States that the y values on the plot 
-            			//will be the sin of the x values. 
-            } 
-            g.flush()	//Actually draws the plot on the graph in the window. 
+        See :meth:`Graph.plot` for an example.
 
 
          
@@ -393,9 +354,9 @@ Graph
 
 
     Syntax:
-        ``g.xexpr("expression")``
+        ``g.xexpr("HOC expression")``
 
-        ``g.xexpr("expression", usepointer)``
+        ``g.xexpr("HOC expression", usepointer)``
 
 
     Description:
@@ -448,7 +409,7 @@ Graph
 
 
     Syntax:
-        ``.flush()``
+        ``g.flush()``
 
 
     Description:
@@ -459,7 +420,7 @@ Graph
         plotting of lines with thousands of points. 
 
     .. warning::
-        Because Microsoft Windows is a second-class operating system, too many points, too close 
+        On Microsoft Windows, too many points, too close 
         together will not appear at all on a graph window.  You can, in such a case, zoom in to view 
         selected parts of the function. 
 
