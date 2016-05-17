@@ -55,50 +55,6 @@ Graph
         .. image:: ../images/graph-constructor.png
             :align: center
 
-         
-        The function ``.line()``, however, only allows the user to plot one function 
-        per ``for`` loop, whereas the function ``.plot()`` can produce several 
-        plots per ``for`` loop and is therefore more effective in comparing plots. 
-        You must use ``.begin()`` and ``.addvar()`` or ``.addexpr()`` in 
-        conjunction with the ``.plot`` function. 
-         
-
-        .. code-block::
-            none
-
-            objref g 
-            g = new Graph() 
-            g.size(0, 10, -1, 1) 
-            g.addexpr("sin(x)")	//stores sin(x) as a function to be plotted in g 
-            g.addexpr("cos(x)")	//stores cos(x) for use with g 
-            g.addexpr("exp(-x)")	//stores exp(x) for use with g 
-            x=0 
-            g.begin()		//The next g.plot command will move the drawing pens 
-            			// for the three curves to indicated x position 
-            for(x=0; x<=10; x=x+0.1){ 
-            	g.plot(x)	// The x value used for each expression in the 
-            			// addexpr list 
-            } 
-            g.flush() 
-
-         
-        The size in the above example is appropriate to show the sine waves nicely 
-        but the view of the exponential only shows the first few points before it 
-        goes out of view. Hold the right mouse button while the mouse in in the 
-        graph window and select the "View = plot" menu item to see the entire exponential. 
-        Selecting the "Whole Scene" menu item will return to the size specified 
-        in the size command. 
-
-         
-
-----
-
-
-
-.. method:: Graph.axis
-
-        see :func:`yaxis` 
-
 
 ----
 
@@ -119,7 +75,7 @@ Graph
 
     Description:
         The single mode argument draws both x and y axes (no arg == mode 0). 
-        See :func:`yaxis` for a complete description of the arguments. 
+        See :meth:`Graph.yaxis` for a complete description of the arguments. 
 
          
 
@@ -235,35 +191,30 @@ Graph
 
 
     Syntax:
-        ``g.addvar("variable")``
+        ``g.addvar("label", _ref_variable)``
 
-        ``g.addvar("variable", color_index, brush_index)``
-
-        ``g.addvar("label", "variable")``
-
-        ``g.addvar("label", "variable", color_index, brush_index)``
-
-        ``g.addvar("label", &variable, ...)``
+        ``g.addvar("label", _ref_variable, color_index, brush_index)``
 
 
     Description:
         Add the variable to the list of items graphed when ``g.plot(x)`` is called. 
-        The address of the variable is computed so this is fast. The current 
-        color and brush is used if the optional arguments are not present. The name 
-        of the variable is 
-        also added to the graph as a label associated with the line. If the 
-        first two args are strings, then the first "label" arg is associated 
-        with the line on the 
-        graph whereas the second arg defines the variable. 
-         
-        The second arg may be an explicit pointer arg which allows g.addvar to be 
-        used in Python using section(x)._ref_rangevar . 
+        The address of the variable is used so this is fast. The current 
+        color and brush is used if the optional arguments are not present.
+
+        Additional syntaxes are available for plotting HOC variables.
     
     .. note::
     
         To automatically plot a variable added to a graph ``g`` with addvar against
-        ``t`` during a ``run()``, ``stdrun.hoc`` must be loaded and the graph must be
+        ``t`` during a ``run()``, ``stdrun.hoc`` must be loaded (this is done automatically
+        with a ``from neuron import gui``) and the graph must be
         added to a graphList, such as by executing ``graphList[0].append(g)``.
+
+    Example:
+
+        .. code::
+
+            g.addvar('Calcium', soma(0.5)._ref_cai)
 
          
 
@@ -273,17 +224,22 @@ Graph
 
 .. method:: Graph.addexpr
 
+    .. note::
+
+        Not that useful in Python; only works with HOC expressions.
+
+
 
     Syntax:
-        ``g.addexpr("expression")``
+        ``g.addexpr("HOC expression")``
 
-        ``g.addexpr("expression", color_index, brush_index)``
+        ``g.addexpr("HOC expression", color_index, brush_index)``
 
-        ``g.addexpr("label", "expr", object, ....)``
+        ``g.addexpr("label", "HOC expr", object, ....)``
 
 
     Description:
-        Add an expression (eg. sin(x), cos(x), exp(x)) to the list of items graphed when 
+        Add a HOC expression (eg. sin(x), cos(x), exp(x)) to the list of items graphed when 
         ``g.plot(x)`` is called. 
          
         The current 
