@@ -32,6 +32,9 @@ size_t level_from_root(VecTNode&);
 void group_order2(VecTNode&, size_t groupsize, size_t ncell);
 size_t dist2child(TNode* nd);
 
+// see balance.cpp
+size_t warp_balance(size_t ncell, VecTNode& nodevec);
+
 #define warpsize 32
 
 #endif

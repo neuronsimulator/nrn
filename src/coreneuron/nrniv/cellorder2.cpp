@@ -180,10 +180,12 @@ static void quality(VecTNode& nodevec, size_t max = 32) {
 
   // print result
   qcnt = 0;
+#if 0
   for (map<size_t, size_t>::iterator it = qual.begin(); it != qual.end(); ++it) {
     qcnt += it->second;
     printf("%6ld %6ld\n", it->first, it->second);
   }
+#endif
   printf("qual.size=%ld  qual total nodes=%ld  nodevec.size=%ld\n",
     qual.size(), qcnt, nodevec.size());
   
@@ -206,7 +208,7 @@ static void quality(VecTNode& nodevec, size_t max = 32) {
       if (ipused.find(ip) != ipused.end()) {
         nrace2 += 1;
         if (ip >= maxip) {
-printf("race for parent %ld (parent in same group as multiple users))\n", ip);
+//printf("race for parent %ld (parent in same group as multiple users))\n", ip);
         }
       }else{
         ipused.insert(ip);
@@ -672,7 +674,7 @@ static void admin2(int ncell, VecTNode& nodevec, int& nwarp,
     }
   }
 
-#if 1
+#if 0
 printf("warp rootbegin nodebegin stridedispl\n");
 for (int i = 0; i <= nwarp; ++i){
   printf("%4d %4d %4d %4d\n", i, rootbegin[i], nodebegin[i], stridedispl[i]);

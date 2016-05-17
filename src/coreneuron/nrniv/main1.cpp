@@ -127,6 +127,7 @@ int main1( int argc, char **argv, char **env )
 
     //set if need to interleave cells
     use_interleave_permute = input_params.cell_interleave_permute;
+    cellorder_nwarp = input_params.nwarp;
     use_solve_interleave = input_params.cell_interleave_permute;
 
     // reading *.dat files and setting up the data structures, setting mindelay

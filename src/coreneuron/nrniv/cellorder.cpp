@@ -175,7 +175,7 @@ static void warp_balance(int ith, InterleaveInfo& ii) {
     if (emin > e) { emin = e; }
   }
   double bal = load_balance(v);
-  printf("thread %d nwarp=%ld  balance=%g  warp_efficiency %g to %g\n", ith, nwarp, bal, emax, emin);
+  printf("thread %d nwarp=%ld  balance=%g  warp_efficiency %g to %g\n", ith, nwarp, bal, emin, emax);
 }
 
 int* interleave_order(int ith, int ncell, int nnode, int* parent) {

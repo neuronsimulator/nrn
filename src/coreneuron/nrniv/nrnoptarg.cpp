@@ -55,6 +55,7 @@ cn_parameters::cn_parameters()
     threading = 0;
     compute_gpu = 0;
     cell_interleave_permute = 0;
+    nwarp = 0; /* 0 means not specified */
 
     patternstim = NULL;
 
@@ -78,7 +79,7 @@ void cn_parameters::show_cb_opts()
         printf( " celsius: %g, voltage: %g, maxdelay: %g", celsius, voltage, maxdelay );
 
         printf( "\n forwardskip: %g, spikebuf: %d, prcellgid: %d", forwardskip, spikebuf, prcellgid);
-        printf( "\n threading : %d, mindelay : %g, cell_permute: %d", threading, mindelay, cell_interleave_permute);
+        printf( "\n threading : %d, mindelay : %g, cell_permute: %d, nwarp: %d", threading, mindelay, cell_interleave_permute, nwarp);
 
         printf( "\n patternstim: %s, datpath: %s, filesdat: %s, outpath: %s", \
                 patternstim, datpath, filesdat, outpath );
@@ -113,11 +114,13 @@ void cn_parameters::show_cb_opts_help()
        -g NUMBER, --prcellgid=NUMBER\n\
               Output prcellstate information for the gid NUMBER (int). The default value is '-1'.\n\n\
        -c, --threading\n\
-              Optiong to enable threading. The default implies no threading.\n\n\
+              Option to enable threading. The default implies no threading.\n\n\
        -a, --gpu\n\
-              Optiong to enable use of GPUs. The default implies cpu only run.\n\n\
+              Option to enable use of GPUs. The default implies cpu only run.\n\n\
        -r NUMBER, --cell_permute=NUMBER\n\
               Cell permutation and interleaving for efficiency\n\n\
+       -w NUMBER, --nwarp=NUMBER\n\
+              number of warps to balance\n\n\
        -d PATH, --datpath=PATH\n\
               Set the path with required CoreNeuron data to PATH (char*). The default value is '.'.\n\n\
        -f FILE, --filesdat=FILE\n\
@@ -150,6 +153,7 @@ void cn_parameters::read_cb_opts( int argc, char **argv )
             {"threading", no_argument,       0, 'c'},
             {"gpu",       no_argument,       0, 'a'},
             {"cell_permute",optional_argument,     0, 'r'},
+            {"nwarp",     required_argument,     0, 'w'},
             {"datpath",   required_argument, 0, 'd'},
             {"filesdat",  required_argument, 0, 'f'},
             {"outpath",   required_argument, 0, 'o'},
@@ -232,6 +236,10 @@ void cn_parameters::read_cb_opts( int argc, char **argv )
 		}else{
 	                cell_interleave_permute = atoi( optarg );
 		}
+                break;
+
+            case 'w':
+                nwarp = atoi( optarg );
                 break;
 
             case 'd':

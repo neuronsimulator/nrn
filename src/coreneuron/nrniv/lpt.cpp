@@ -10,13 +10,15 @@ typedef std::pair<size_t, size_t> P;
 
 // always want the largest remaining piece
 bool piece_comp(const P& a, const P& b) {
-  return a.second < b.second;
+  return a.second > b.second;
 }
 
 // always want the smallest bag
-bool operator>(const P& a, const P& b) {
+struct bag_comp {
+bool operator()(const P& a, const P& b) {
   return a.second > b.second;
 }
+};
 
 // lpt Least Processing Time algorithm.
 // Largest piece goes into least size bag.
@@ -36,7 +38,7 @@ std::vector<size_t>* lpt(size_t nbag, std::vector<size_t>& pieces, double* bal) 
 
   std::vector<size_t>* bagindices = new std::vector<size_t>(pieces.size());
 
-  std::priority_queue<P, std::vector<P> > bagq;
+  std::priority_queue<P, std::vector<P>, bag_comp > bagq;
   for (size_t i=0; i < nbag; ++i) {
     bagq.push(P(i, 0));
   }

@@ -2,6 +2,7 @@
 #include "coreneuron/nrniv/nrn_assert.h"
 #include "coreneuron/nrniv/cellorder.h"
 #include "coreneuron/nrniv/tnode.h"
+#include "coreneuron/nrniv/nrniv_decl.h"
 
 #include <map>
 #include <set>
@@ -293,7 +294,7 @@ checkrace(nd, nodes);
 static void eliminate_prace(TNode* nd, VTN& nodes) {
   size_t d = warpsize - dist2child(nd);
   bool b = eliminate_race(nd, d, nodes, nd);
-  if (!b) {
+  if (0 && !b) {
     printf("could not eliminate prace for g=%ld  c=%ld l=%ld o=%ld   %ld\n",
       nd->groupindex, nd->cellindex, nd->level, nd->treenode_order, nd->hash);
   }
@@ -305,7 +306,7 @@ static void eliminate_crace(TNode* nd, VTN& nodes) {
   size_t d = warpsize - ((c0 > c1) ? (c0 - c1) : (c1 - c0));
   TNode* cnd = nd->children[0];
   bool b = eliminate_race(cnd, d, nodes, nd);
-  if (!b) {
+  if (0 && !b) {
     printf("could not eliminate crace for g=%ld  c=%ld l=%ld o=%ld   %ld\n",
       nd->groupindex, nd->cellindex, nd->level, nd->treenode_order, nd->hash);
   }
@@ -356,7 +357,7 @@ static void question2(VVTN& levels) {
   //  Hopefully, we won't run out of leaves before eliminating all
   //  is_parent_prace2
 
-  if (nodes.size()%warpsize != 0) {
+  if (0 && nodes.size()%warpsize != 0) {
     size_t nnode = nodes.size() - levels[0].size();
     printf("warp of %ld cells has %ld nodes in last cycle %ld\n",
       levels[0].size(), nnode%warpsize, nnode/warpsize + 1);
@@ -376,7 +377,7 @@ static void question2(VVTN& levels) {
       i = nd->nodevec_index;
     }
   }
-  pr_race_situation(nodes);
+  if (0) {pr_race_situation(nodes);}
   // copy nodes indices to treenode_order
   for (size_t i = 0; i < nodes.size(); ++i) {
     nodes[i]->treenode_order = i;
@@ -481,13 +482,18 @@ void group_order2(VecTNode& nodevec, size_t groupsize, size_t ncell) {
   }
 #endif
   
+  // if not NULL use this to define groups (and reset TNode.groupindex)
+  size_t nwarp = warp_balance(ncell, nodevec);
+
   // work on a cellgroup as a vector of levels. ie only possible race is
   // two children in same warpsize
   
-  VVVTN groups(ncell/groupsize + ((ncell%groupsize) ? 1 : 0));
+  VVVTN groups(nwarp ? nwarp : (ncell/groupsize + ((ncell%groupsize) ? 1 : 0)));
+
   for (size_t i = 0; i < groups.size(); ++i) {
     groups[i].resize(maxlevel+1);
   }
+
   for (size_t i=0; i < nodevec.size(); ++i) {
     TNode* nd = nodevec[i];
     groups[nd->groupindex][nd->level].push_back(nd);

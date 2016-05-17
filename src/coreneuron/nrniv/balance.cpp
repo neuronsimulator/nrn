@@ -12,8 +12,22 @@
 #include "coreneuron/nrnconf.h"
 #include "coreneuron/nrniv/tnode.h"
 #include "coreneuron/nrniv/lpt.h"
+#include <algorithm>
 
-static size_t ncore = 1024; // cores on gpu
+int cellorder_nwarp = 0; // 0 means do not balance
+
+// ordering by warp, then old order
+bool warpcmp(const TNode* a, const TNode* b) {
+  bool res = false;
+  if (a->groupindex < b->groupindex) {
+    res = true;
+  }else if (a->groupindex == b->groupindex) {
+    if (a->nodevec_index < b->nodevec_index) {
+      res = true;
+    }
+  }
+  return res;
+}
 
 // order the ncell nodevec roots for balance and return a displacement
 // vector specifying the contiguous roots for a warp.
@@ -22,8 +36,12 @@ static size_t ncore = 1024; // cores on gpu
 // largest cells first. On exit, nodevec is ordered so that warp i
 // should contain roots nodevec[displ[i]:displ[i+1]]
 
-std::vector<size_t>* warp_balance(size_t ncell, VecTNode& nodevec) {
+size_t warp_balance(size_t ncell, VecTNode& nodevec) {
   if (ncell == 0) { return 0; }
+
+  if (cellorder_nwarp == 0) { return 0; }
+  size_t nwarp = size_t(cellorder_nwarp);
+  size_t ncore = nwarp * warpsize;
 
   // cellsize vector and location of types.
   std::vector<size_t>cellsize(ncell);
@@ -43,8 +61,8 @@ std::vector<size_t>* warp_balance(size_t ncell, VecTNode& nodevec) {
   size_t cells_per_type = ncell/(typedispl.size() - 1);
 
   size_t ideal_ncycle = total_compart/ncore;
-  size_t ideal_compart_per_warp = total_compart/(ncore/warpsize);
-  size_t avg_cells_per_warp = total_compart/(ncell*ncore/warpsize);
+  size_t ideal_compart_per_warp = total_compart/nwarp;
+  size_t avg_cells_per_warp = total_compart/(ncell*nwarp);
 
   size_t min_cells_per_warp = 0;
   for (size_t i = 0, sz = 0; sz < ideal_compart_per_warp; ++i) {
@@ -55,15 +73,26 @@ std::vector<size_t>* warp_balance(size_t ncell, VecTNode& nodevec) {
   // balance when order is unrestricted (identical cells not together)
   // i.e. pieces are cellsize
   double best_balance = 0.0;
-  std::vector<size_t>* inwarp = lpt(ncore/warpsize, cellsize, &best_balance);
+  std::vector<size_t>* inwarp = lpt(nwarp, cellsize, &best_balance);
   printf("best_balance=%g ncell=%ld ntype=%ld nwarp=%ld\n",
-    best_balance, ncell, typedispl.size() - 1, ncore/warpsize);
+    best_balance, ncell, typedispl.size() - 1, nwarp);
 
   // order the roots for balance
-
+  for (size_t i = 0; i < ncell; ++i) {
+    TNode* nd = nodevec[i];
+    nd->groupindex = (*inwarp)[i];
+  }
+  std::sort(nodevec.begin(), nodevec.begin() + ncell, warpcmp);
+  for (size_t i = 0; i < nodevec.size(); ++i) {
+    TNode* nd = nodevec[i];
+    for (size_t j = 0; j < nd->children.size(); ++j) {
+      nd->children[j]->groupindex = nd->groupindex;
+    }
+    nd->nodevec_index = i;
+  }
 
   delete inwarp;
 
-  return NULL;
+  return nwarp;
 }
 
