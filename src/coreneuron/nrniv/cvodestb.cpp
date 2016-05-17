@@ -75,6 +75,16 @@ void init_net_events() {
 	if (net_cvode_instance) {
 		net_cvode_instance->init_events();
 	}
+
+    /* weight vectors could be updated (from INITIAL block of NET_RECEIVE, update those on GPU's */
+    for (int ith = 0; ith < nrn_nthread; ++ith) {
+        NrnThread* nt = nrn_threads + ith;
+        double *weights = nt->weights;
+        int n_weight = nt->n_weight;
+        if(n_weight && nt->compute_gpu) {
+            #pragma acc update device(weights[0:n_weight])
+        }
+    }
 }
 
 
