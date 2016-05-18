@@ -650,7 +650,7 @@ int NonLinImpRep::gapsolve() {
     char buf[256];
     sprintf(buf, "Impedance calculation did not converge in %d iterations. Max state change on last iteration was %g (Iterations stop at %g)\n",
       maxiter, delta, tol);
-    execerror("Impedance calculation did not converge in", 0);
+    execerror(buf, 0);
   }
   return iter;
 }
