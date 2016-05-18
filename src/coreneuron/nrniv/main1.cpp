@@ -149,7 +149,7 @@ int main1( int argc, char **argv, char **env )
     // alloctae buffer for mpi communication
     mk_spikevec_buffer( input_params.spikebuf );
 
-    #pragma acc data copyin (celsius)
+    #pragma acc data copyin (celsius) if(input_params.compute_gpu)
     {
         if( input_params.compute_gpu) {
             setup_nrnthreads_on_device(nrn_threads, nrn_nthread);

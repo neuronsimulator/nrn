@@ -81,8 +81,8 @@ void init_net_events() {
         NrnThread* nt = nrn_threads + ith;
         double *weights = nt->weights;
         int n_weight = nt->n_weight;
-        if(n_weight && nt->compute_gpu) {
-            #pragma acc update device(weights[0:n_weight])
+        if(n_weight) {
+            #pragma acc update device(weights[0:n_weight]) if(nt->compute_gpu)
         }
     }
 }

@@ -167,11 +167,10 @@ static void* nrn_fixed_step_thread(NrnThread* nth) {
 	deliver_net_events(nth);
 	nth->_t += .5 * nth->_dt;
 
-    double *t_ptr = &(nth->_t);
     int stream_id = nth->stream_id;
 
     /*@todo: do we need to update nth->_t on GPU: Yes (Michael, but can launch kernel) */
-    #pragma acc update device(t_ptr[0:1]) if(nth->compute_gpu) async(stream_id)
+    #pragma acc update device(nth->_t) if(nth->compute_gpu) async(stream_id)
     #pragma acc wait(stream_id)
 
 	fixed_play_continuous(nth);
@@ -182,7 +181,7 @@ static void* nrn_fixed_step_thread(NrnThread* nth) {
 	nth->_t += .5 * nth->_dt;
 
     /*@todo: do we need to update nth->_t on GPU */
-    #pragma acc update device(t_ptr[0:1]) if(nth->compute_gpu) async(stream_id)
+    #pragma acc update device(nth->_t) if(nth->compute_gpu) async(stream_id)
     #pragma acc wait(stream_id)
 
 	fixed_play_continuous(nth);

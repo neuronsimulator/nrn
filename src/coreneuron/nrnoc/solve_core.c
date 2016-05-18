@@ -58,14 +58,16 @@ static void triang(NrnThread* _nt) {
     double *vec_d = &(VEC_D(0));
     double *vec_rhs = &(VEC_RHS(0));
     int *parent_index = _nt->_v_parent_index;
+    int stream_id = _nt->stream_id;
 
     /** @todo: just for benchmarking, otherwise produces wrong results */
-	#pragma acc parallel loop seq present(vec_a[0:i3], vec_b[0:i3], vec_d[0:i3], vec_rhs[0:i3], parent_index[0:i3]) if(_nt->compute_gpu)
+	#pragma acc parallel loop seq present(vec_a[0:i3], vec_b[0:i3], vec_d[0:i3], vec_rhs[0:i3], parent_index[0:i3]) async(stream_id) if(_nt->compute_gpu)
 	for (i = i3 - 1; i >= i2; --i) {
 		p = vec_a[i] / vec_d[i];
 		vec_d[parent_index[i]] -= p * vec_b[i];
 		vec_rhs[parent_index[i]] -= p * vec_rhs[i];
 	}
+
 }
 
 /* back substitution to finish solving the matrix equations */
@@ -79,18 +81,20 @@ static void bksub(NrnThread* _nt) {
     double *vec_d = &(VEC_D(0));
     double *vec_rhs = &(VEC_RHS(0));
     int *parent_index = _nt->_v_parent_index;
+    int stream_id = _nt->stream_id;
 
     /** @todo: just for benchmarking, otherwise produces wrong results */
-	#pragma acc parallel loop seq present(vec_d[0:i2], vec_rhs[0:i2]) if(_nt->compute_gpu)
+	#pragma acc parallel loop seq present(vec_d[0:i2], vec_rhs[0:i2]) async(stream_id) if(_nt->compute_gpu)
 	for (i = i1; i < i2; ++i) {
 		vec_rhs[i] /= vec_d[i];
 	}
 
     /** @todo: just for benchmarking, otherwise produces wrong results */
-	#pragma acc parallel loop seq present(vec_b[0:i3], vec_d[0:i3], vec_rhs[0:i3], parent_index[0:i3]) if(_nt->compute_gpu)
+	#pragma acc parallel loop seq present(vec_b[0:i3], vec_d[0:i3], vec_rhs[0:i3], parent_index[0:i3]) async(stream_id) if(_nt->compute_gpu)
 	for (i = i2; i < i3; ++i) {
 		vec_rhs[i] -= vec_b[i] * vec_rhs[parent_index[i]];
 		vec_rhs[i] /= vec_d[i];
     }
-}
 
+    #pragma acc wait(stream_id)
+}
