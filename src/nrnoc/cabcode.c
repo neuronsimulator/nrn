@@ -2193,21 +2193,26 @@ void issection(void) { /* returns true if string is the access section */
 	}
 }
 
+int has_membrane(char* mechanism_name, Section* sec) {
+    /* return true if string is an inserted membrane in the
+		section sec */
+    Prop* p;
+	for (p = sec->pnode[0]->prop; p; p = p->next) {
+		if (strcmp(memb_func[p->type].sym->name, mechanism_name) == 0) {
+			return(1);
+		}
+	}
+	return(0);
+}
+
 void ismembrane(void) { /* return true if string is an inserted membrane in the
 		access section */
 	char *str;
 	Prop *p;
 
 	str = gargstr(1);
-	for (p = chk_access()->pnode[0]->prop; p; p = p->next) {
-		if (strcmp(memb_func[p->type].sym->name, str) == 0) {
-			hoc_retpushx(1.);
-			return;
-		}
-	}
-	hoc_retpushx(0.);
+	hoc_retpushx((double) has_membrane(str, chk_access()));
 }
-
 
 const char* secaccessname(void) {
 	return secname(chk_access());

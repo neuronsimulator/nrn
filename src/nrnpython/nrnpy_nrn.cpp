@@ -11,6 +11,7 @@ extern void sec_free(hoc_Item*);
 extern Symlist* hoc_built_in_symlist;
 double* nrnpy_rangepointer(Section*, Symbol*, double, int*);
 extern PyObject* nrn_ptr_richcmp(void* self_ptr, void* other_ptr, int op);
+extern int has_membrane(char*, Section*);
 
 typedef struct {
 	PyObject_HEAD
@@ -698,6 +699,17 @@ static PyObject* NPySecObj_insert(NPySecObj* self, PyObject*  args) {
 	mech_insert1(self->sec_, type);
 	Py_INCREF(self);
 	return (PyObject*)self;
+}
+
+static PyObject* NPySecObj_has_membrane(NPySecObj* self, PyObject*  args) {
+	char* mechanism_name;
+	PyObject* result;
+	if (!PyArg_ParseTuple(args, "s", &mechanism_name)) {
+		return NULL;
+	}
+	result = has_membrane(mechanism_name, self->sec_) ? Py_True : Py_False;
+	Py_XINCREF(result);
+	return result;
 }
 
 PyObject* nrnpy_pushsec(PyObject* sec) {
@@ -1391,6 +1403,9 @@ static PyMethodDef NPySecObj_methods[] = {
 	},
 	{"hname", (PyCFunction)NPySecObj_name, METH_NOARGS,
 	 "Section name (same as hoc secname())"
+	},
+	{"has_membrane", (PyCFunction)NPySecObj_has_membrane, METH_VARARGS,
+	"Returns True if the section's membrane has this density mechanism.\nThis is not for point processes."
 	},
 	{"connect", (PyCFunction)NPySecObj_connect, METH_VARARGS,
 	 "childSection.connect(parentSection, [parentX], [childEnd]) or\nchildSection.connect(parentSegment, [childEnd])"
