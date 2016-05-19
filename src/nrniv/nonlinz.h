@@ -7,7 +7,7 @@ class NonLinImp {
 public:
 	NonLinImp();
 	virtual ~NonLinImp();
-	void compute(double omega, double deltafac);
+	void compute(double omega, double deltafac, int maxiter);
 	double transfer_amp(int vloc); // v_node[arg] is the node
 	double transfer_phase(int vloc);
 	double input_amp(int curloc);

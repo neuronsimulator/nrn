@@ -52,6 +52,7 @@ public:
 	double omega_;
 	int iloc_; // current injection site of last solve
 	float* vsymtol_;
+	int maxiter_;
 };
 
 NonLinImp::NonLinImp() {
@@ -108,7 +109,7 @@ double NonLinImp::ratio_amp(int clmploc, int vloc) {
 	cy = (ay*bx - ax*by)/bb;
 	return sqrt(cx*cx + cy*cy);
 }
-void NonLinImp::compute(double omega, double deltafac) {
+void NonLinImp::compute(double omega, double deltafac, int maxiter) {
 	v_setup_vectors();
 	nrn_rhs(nrn_threads);
 	if (rep_ && rep_->scnt_ != structure_change_cnt) {
@@ -118,6 +119,7 @@ void NonLinImp::compute(double omega, double deltafac) {
 	if (!rep_) {
 		rep_ = new NonLinImpRep();
 	}
+	rep_->maxiter_ = maxiter;
 	if (rep_->neq_ == 0) { return; }
 	if (nrndae_extra_eqn_count() > 0) {
 		hoc_execerror("Impedance calculation with LinearMechanism not implemented", 0);
@@ -185,6 +187,7 @@ NonLinImpRep::NonLinImpRep() {
 	int err;
 	int i, j, ieq, cnt;
 	NrnThread* _nt = nrn_threads;
+	maxiter_ = 500;
 	m_ = NULL;
 
 	vsymtol_ = NULL;
@@ -589,12 +592,11 @@ int NonLinImpRep::gapsolve() {
   // iterate till change in x is small
   double tol = 1e-9;
   double delta;
-  int maxiter = 500;
   
   int success = 0;
   int iter;
 
-  for (iter = 1; iter <= maxiter; ++iter) {
+  for (iter = 1; iter <= maxiter_; ++iter) {
     if (neq_) {
       cmplx_spSolve(m_, rb-1, rx1-1, jb-1, jx1-1);
     }
@@ -649,7 +651,7 @@ int NonLinImpRep::gapsolve() {
   if (!success) {
     char buf[256];
     sprintf(buf, "Impedance calculation did not converge in %d iterations. Max state change on last iteration was %g (Iterations stop at %g)\n",
-      maxiter, delta, tol);
+      maxiter_, delta, tol);
     execerror(buf, 0);
   }
   return iter;
