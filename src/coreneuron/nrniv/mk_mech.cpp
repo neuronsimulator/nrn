@@ -142,3 +142,13 @@ int nrn_get_mechtype(const char* name) {
     return -1; // Could not find the mechanism
   return mapit->second;
 }
+
+const char* nrn_get_mechname(int type) {
+  for (std::map<std::string, int>::iterator i = mech2type.begin(); i != mech2type.end(); ++i) {
+    if (type == i->second) {
+      return i->first.c_str();
+    }
+  }
+  return NULL;
+} 
+

@@ -744,6 +744,10 @@ void read_phase2(data_reader &F, NrnThread& nt) {
     tml->next = NULL;
     tml->index = F.read_int();
     tml->ml->nodecount = F.read_int();
+    if (!memb_func[tml->index].sym) {
+      printf("%s (type %d) is not available\n", nrn_get_mechname(tml->index), tml->index);
+      exit(1);
+    }
     tml->ml->_nodecount_padded = nrn_soa_padded_size(tml->ml->nodecount, nrn_mech_data_layout_[tml->index]);
     if (memb_func[tml->index].is_point && nrn_is_artificial_[tml->index] == 0){
       // Avoid race for multiple PointProcess instances in same compartment.
@@ -1190,6 +1194,7 @@ for (int i=0; i < nt.end; ++i) {
     nc.u.weight_index_ = iw;
     iw += pnt_receive_size[pnttype[i]];
   }
+printf("iw=%d nweight=%d nnetcon=%d\n", iw, nweight, nnetcon);
   assert(iw == nweight);
   delete [] pnttype;
 
