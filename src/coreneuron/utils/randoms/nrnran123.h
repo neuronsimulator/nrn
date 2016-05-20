@@ -106,14 +106,17 @@ extern DEVICE size_t nrnran123_state_size(void);
 
 /* routines for creating and deleteing streams are called from cpu */
 extern nrnran123_State* nrnran123_newstream(uint32_t id1, uint32_t id2);
+extern nrnran123_State* nrnran123_newstream3(uint32_t id1, uint32_t id2, uint32_t id3);
 extern void nrnran123_deletestream(nrnran123_State*);
 
 /* routines for creating and deleteing streams are called from cpu but initializing/deleting gpu context */
 extern nrnran123_State* cu_nrnran123_newstream(uint32_t id1, uint32_t id2);
+extern nrnran123_State* cu_nrnran123_newstream3(uint32_t id1, uint32_t id2, uint32_t id3);
 extern void cu_nrnran123_deletestream(nrnran123_State*);
 
 extern GLOBAL void nrnran123_setup_deletestream(nrnran123_State* s);
 extern GLOBAL void nrnran123_setup_newstream(nrnran123_State *s, uint32_t id1, uint32_t id2);
+extern GLOBAL void nrnran123_setup_newstream3(nrnran123_State *s, uint32_t id1, uint32_t id2, uint32_t id3);
 
 /* minimal data stream */
 extern DEVICE void nrnran123_getseq(nrnran123_State*, uint32_t* seq, unsigned char* which);

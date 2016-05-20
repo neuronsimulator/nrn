@@ -68,8 +68,13 @@ void nrnran123_mutconstruct() {
 }
 
 nrnran123_State* nrnran123_newstream(uint32_t id1, uint32_t id2) {
+	return nrnran123_newstream3(id1, id2, 0);
+}
+
+nrnran123_State* nrnran123_newstream3(uint32_t id1, uint32_t id2, uint32_t id3) {
 
 	nrnran123_State* s = (nrnran123_State*)ecalloc(sizeof(nrnran123_State), 1);
+	s->c.v[1] = id3;
 	s->c.v[2] = id1;
 	s->c.v[3] = id2;
 	nrnran123_setseq(s, 0, 0);
