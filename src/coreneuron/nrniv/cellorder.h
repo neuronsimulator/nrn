@@ -17,6 +17,11 @@ class InterleaveInfo {
   int* firstnode; // interleave2: rootbegin nwarp+1 displacements
   int* lastnode;  // interleave2: nodebegin nwarp+1 displacements
   int* cellsize;  // interleave2: ncycles nwarp
+
+  //statistics (nwarp of each)
+  size_t* idle;
+  size_t* cache_access;
+  size_t* child_race;
 };
 
 // interleaved from cellorder2.cpp
