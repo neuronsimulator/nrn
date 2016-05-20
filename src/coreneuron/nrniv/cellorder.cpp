@@ -373,6 +373,7 @@ static void triang_interleaved2(NrnThread* nt, int icore, int ncycle, int* strid
 #if !defined(_OPENACC)
 int ii = i;
 #endif
+#pragma acc loop seq
   for (;;) { // ncycle loop
 #if !defined(_OPENACC)
 // serial test, gpu does this in parallel
@@ -383,7 +384,9 @@ int i = ii + icore;
       // what is the index
       int ip = GPU_PARENT(i);
       double p = GPU_A(i) / GPU_D(i);
+#pragma acc atomic update
       GPU_D(ip) -= p * GPU_B(i);
+#pragma acc atomic update
       GPU_RHS(ip) -= p * GPU_RHS(i);
     }
 #if !defined(_OPENACC)
@@ -407,6 +410,7 @@ static void bksub_interleaved2(NrnThread* nt, int root, int lastroot,
 #if !defined(_OPENACC)
   for (int i = root; i < lastroot; i += 1) {
 #else
+#pragma acc loop seq
   for (int i = root; i < lastroot; i += warpsize) {
 #endif
     GPU_RHS(i) /= GPU_D(i); // the root

@@ -1194,7 +1194,6 @@ for (int i=0; i < nt.end; ++i) {
     nc.u.weight_index_ = iw;
     iw += pnt_receive_size[pnttype[i]];
   }
-printf("iw=%d nweight=%d nnetcon=%d\n", iw, nweight, nnetcon);
   assert(iw == nweight);
   delete [] pnttype;
 
