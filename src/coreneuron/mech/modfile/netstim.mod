@@ -56,7 +56,13 @@ ENDVERBATIM
 
 :backward compatibility
 PROCEDURE seed(x) {
+VERBATIM
+#if !NRNBBCORE
+ENDVERBATIM
 	set_seed(x)
+VERBATIM
+#endif
+ENDVERBATIM
 }
 
 INITIAL {

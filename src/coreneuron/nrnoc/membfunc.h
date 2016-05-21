@@ -144,6 +144,7 @@ extern void add_nrn_artcell(int, int);
 extern void add_nrn_has_net_event(int);
 extern void net_event(Point_process*, double);
 extern void net_send(void**, int, Point_process*, double, double);
+extern void net_move(void**, Point_process*, double);
 extern void artcell_net_send(void**, int, Point_process*, double, double);
 extern void hoc_malchk(void); /* just a stub */
 extern void* hoc_Emalloc(size_t);
