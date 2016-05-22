@@ -62,7 +62,7 @@ size_t TNode::mkhash() { // call on all nodes in leaf to root order
 
 static void tree_analysis(int* parent, int nnode, int ncell, VecTNode&);
 static void node_interleave_order(int ncell, VecTNode&);
-static void admin1(int ncell, VecTNode& nodevec,
+static void admin1(int ncell, VecTNode& nodevec, int& nwarp,
   int& nstride, int*& stride, int*& firstnode, int*& lastnode, int*& cellsize);
 static void admin2(int ncell, VecTNode& nodevec, int& nwarp,
   int& nstride, int*& stridedispl, int*& strides,
@@ -399,7 +399,7 @@ int* node_order(int ncell, int nnode, int* parent, int& nwarp,
 
   // administrative statistics for gauss elimination
   if (use_interleave_permute == 1) {
-    admin1(ncell, nodevec, nstride, stride, firstnode, lastnode, cellsize);
+    admin1(ncell, nodevec, nwarp, nstride, stride, firstnode, lastnode, cellsize);
   }else{
 //  admin2(ncell, nodevec, nwarp, nstride, stridedispl, stride, rootbegin, nodebegin, ncycles);
     admin2(ncell, nodevec, nwarp, nstride, stridedispl, stride, firstnode, lastnode, cellsize);
@@ -542,7 +542,7 @@ void node_interleave_order(int ncell, VecTNode& nodevec) {
 #endif
 }
 
-static void admin1(int ncell, VecTNode& nodevec,
+static void admin1(int ncell, VecTNode& nodevec, int& nwarp,
   int& nstride, int*& stride, int*& firstnode, int*& lastnode, int*& cellsize
 ){
   // firstnode[i] is the index of the first nonroot node of the cell
@@ -553,6 +553,8 @@ static void admin1(int ncell, VecTNode& nodevec,
   firstnode = new int[ncell];
   lastnode = new int[ncell];
   cellsize = new int[ncell];
+
+  nwarp = (ncell%warpsize) ? (ncell/warpsize) : (ncell/warpsize + 1);
 
   for (int i = 0; i < ncell; ++i) {
     firstnode[i] = -1;

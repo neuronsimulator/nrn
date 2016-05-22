@@ -26,6 +26,8 @@ InterleaveInfo::InterleaveInfo() {
   cellsize = NULL;
 
   // for print statistics
+  nnode = NULL;
+  ncycle = NULL;
   idle = NULL;
   cache_access = NULL;
   child_race = NULL;
@@ -42,6 +44,8 @@ InterleaveInfo::~InterleaveInfo() {
     delete [] stridedispl;
   }
   if (idle) {
+    delete [] nnode;
+    delete [] ncycle;
     delete [] idle;
     delete [] cache_access;
     delete [] child_race;
@@ -76,7 +80,8 @@ static void print_quality2(int iwarp, InterleaveInfo& ii, int* parent, int* orde
 
   int inode = nodebegin;
 
-  size_t nx = 0; // number of idle cores on all cycles. X
+  size_t nn = 0; // number of nodes in warp. '.'
+  size_t nx = 0; // number of idle cores on all cycles. 'X'
   size_t ncacheline = 0;; // number of parent memory cacheline accesses.
                  //   assmue warpsize is max number in a cachline so all o
   size_t ncr = 0; // number of child race. nchild-1 of same parent in same cycle
@@ -102,6 +107,7 @@ static void print_quality2(int iwarp, InterleaveInfo& ii, int* parent, int* orde
           ++ncacheline;
         }
         lastp = p[inode++];
+        ++nn;
       }else{
         ch = 'X';
         ++nx;
@@ -111,29 +117,40 @@ static void print_quality2(int iwarp, InterleaveInfo& ii, int* parent, int* orde
     if (iwarp == 0) printf("\n");
   }
 
+  ii.nnode[iwarp] = nn;
+  ii.ncycle[iwarp] = size_t(ncycle);
   ii.idle[iwarp] = nx;
   ii.cache_access[iwarp] = ncacheline;
   ii.child_race[iwarp] = ncr;
-  if (iwarp == 0) printf("warp %d:  %d nodes, %d cycles, %ld idle, %ld cache access, %ld child races\n",
-    iwarp, nodeend - nodebegin, ncycle, nx, ncacheline, ncr);
+  if (iwarp == 0) printf("warp %d:  %ld nodes, %d cycles, %ld idle, %ld cache access, %ld child races\n",
+    iwarp, nn, ncycle, nx, ncacheline, ncr);
 
   delete [] p;
 }
 
 static void print_quality1(int iwarp, InterleaveInfo& ii, int ncell, int* parent, int* order) {
+  int pc = ((iwarp == 0) || iwarp == (ii.nwarp-1)); // warp not to skip printing
   int* stride = ii.stride;
   int cellbegin = iwarp*warpsize;
   int cellend = cellbegin + warpsize;
   cellend = (cellend < stride[0]) ? cellend : stride[0];
 
-  int ncycle = ii.cellsize[cellend - 1]; // since largest last
+  int ncycle = 0;
+  for (int i=cellbegin; i < cellend; ++i) {
+    if (ncycle < ii.cellsize[i]) {
+      ncycle = ii.cellsize[i];
+    }
+  }
+  nrn_assert(ncycle == ii.cellsize[cellend-1]);
+  nrn_assert(ncycle <= ii.nstride);
+
   int nnode = ii.lastnode[ncell-1];
   int* p = new int[nnode];
   for (int i=0; i < nnode; ++i) { p[i] = parent[i]; }
   permute_ptr(p, nnode, order);
   node_permute(p, nnode, order);  
 
-  ncell = cellend - cellbegin;
+  int ncell_in_warp = cellend - cellbegin;
 
   size_t n = 0; // number of nodes in warp (not including roots)
   size_t nx = 0; // number of idle cores on all cycles. X
@@ -142,13 +159,12 @@ static void print_quality1(int iwarp, InterleaveInfo& ii, int ncell, int* parent
 
   int inode = ii.firstnode[cellbegin];
   for (int icycle=0; icycle < ncycle; ++icycle) {
-    int s = stride[icycle] - cellbegin;
-    int sbegin = ncell - s;
+    int sbegin = ncell - stride[icycle] - cellbegin;
     int lastp = -2;
-    printf("  ");
+    if (pc) printf("  ");
     for (int icore=0; icore < warpsize; ++icore) {
       char ch = '.';
-      if (icore < ncell && icore >= sbegin) {
+      if (icore < ncell_in_warp && icore >= sbegin) {
         int par = p[inode + icore - sbegin];
         if (par != lastp+1) {
           ch = 'o';
@@ -160,31 +176,30 @@ static void print_quality1(int iwarp, InterleaveInfo& ii, int ncell, int* parent
         ch = 'X';
         ++nx;
       }
-      printf("%c", ch);
+      if (pc) printf("%c", ch);
     }
-    printf("\n");
+    if (pc) printf("\n");
     inode += ii.stride[icycle+1];
   }
 
-  printf("warp %d:  %ld nodes, %d cycles, %ld idle, %ld cache access\n",
+  ii.nnode[iwarp] = n;
+  ii.ncycle[iwarp] = (size_t)ncycle;
+  ii.idle[iwarp] = nx;
+  ii.cache_access[iwarp] = ncacheline;
+  ii.child_race[iwarp] = 0;
+  if (pc) printf("warp %d:  %ld nodes, %d cycles, %ld idle, %ld cache access\n",
     iwarp, n, ncycle, nx, ncacheline);
 
   delete [] p;
 }
 
 static void warp_balance(int ith, InterleaveInfo& ii) {
-  if (use_interleave_permute != 2) { return; }
   size_t nwarp = size_t(ii.nwarp);
   size_t smm[4][3] = {{0,1000000000,0}}; // sum_min_max see cp below
-  std::vector<size_t> v(nwarp);
   double emax = 0.0, emin=1.0;
   for (size_t i = 0; i < nwarp; ++i) {
-    v[i] = size_t(ii.stridedispl[i+1] - ii.stridedispl[i]);
-    size_t n = 0;
-    for (int j=ii.stridedispl[i]; j < ii.stridedispl[i+1]; ++j) {
-      n += size_t(ii.stride[j]);
-    }
-    double e = double(n)/v[i]/warpsize;
+    size_t n = ii.nnode[i];
+    double e = double(n)/(n + ii.idle[i]);
     if (emax < e) { emax = e; }
     if (emin > e) { emin = e; }
     size_t s[4] = {n, ii.idle[i], ii.cache_access[i], ii.child_race[i]};
@@ -194,6 +209,8 @@ static void warp_balance(int ith, InterleaveInfo& ii) {
       if (smm[j][2] < s[j]) { smm[j][2] = s[j];}
     }
   }
+  std::vector<size_t> v(nwarp);
+  for (size_t i=0; i < nwarp; ++i) {v[i] = ii.ncycle[i];}
   double bal = load_balance(v);
   printf("thread %d nwarp=%ld  balance=%g  warp_efficiency %g to %g\n", ith, nwarp, bal, emin, emax);
   const char* cp[4] = {"nodes", "idle", "ca", "cr"};
@@ -233,6 +250,8 @@ if (0 && ith == 0 && use_interleave_permute == 1) {
   }
 }
     if (ith == 0) {
+      ii.nnode = new size_t[nwarp];
+      ii.ncycle = new size_t[nwarp];
       ii.idle = new size_t[nwarp];
       ii.cache_access = new size_t[nwarp];
       ii.child_race = new size_t[nwarp];

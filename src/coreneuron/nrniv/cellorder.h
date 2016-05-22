@@ -19,6 +19,8 @@ class InterleaveInfo {
   int* cellsize;  // interleave2: ncycles nwarp
 
   //statistics (nwarp of each)
+  size_t* nnode;
+  size_t* ncycle;
   size_t* idle;
   size_t* cache_access;
   size_t* child_race;
