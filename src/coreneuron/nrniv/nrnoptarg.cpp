@@ -105,6 +105,8 @@ void cn_parameters::show_cb_opts_help()
               Set the dt time to TIME (double). The default value is '0.025'.\n\n\
        -i TIME, --dt_io=TIME\n\
               Set the dt of I/O to TIME (double). The default value is '0.1'.\n\n\
+       -v FLOAT, --voltage=v_init\n\
+              Value used for nrn_finitialize(1, v_init). If 1000, then nrn_finitialize(0,...)\n\
        -l NUMBER, --celsius=NUMBER\n\
               Set the celsius temperature to NUMBER (double). The default value is '34.'.\n\n\
        -p FILE, --pattern=FILE\n\
@@ -147,6 +149,7 @@ void cn_parameters::read_cb_opts( int argc, char **argv )
             {"dt",        required_argument, 0, 't'},
             {"dt_io",     required_argument, 0, 'i'},
             {"celsius",   required_argument, 0, 'l'},
+            {"voltage",   required_argument, 0, 'v'},
             {"pattern",   required_argument, 0, 'p'},
             {"spikebuf",  required_argument, 0, 'b'},
             {"prcellgid", required_argument, 0, 'g'},
@@ -208,6 +211,10 @@ void cn_parameters::read_cb_opts( int argc, char **argv )
 
             case 'l':
                 celsius = atof(optarg);
+                break;
+
+            case 'v':
+                voltage = atof(optarg);
                 break;
 
             case 'p':

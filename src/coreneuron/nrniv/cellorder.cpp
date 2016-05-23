@@ -525,11 +525,7 @@ foo = 0;
   }
 }
 
-void solve_interleaved(int ith) {
-  if (use_interleave_permute != 1) {
-    solve_interleaved2(ith);
-    return;
-  }
+void solve_interleaved1(int ith) {
   NrnThread* nt = nrn_threads + ith;
   InterleaveInfo& ii = interleave_info[ith];
   int nstride = ii.nstride;
@@ -560,6 +556,14 @@ void solve_interleaved(int ith) {
     #pragma acc wait(nt->stream_id)
 #endif
   #endif
+}
+
+void solve_interleaved(int ith) {
+  if (use_interleave_permute != 1) {
+    solve_interleaved2(ith);
+  }else{
+    solve_interleaved1(ith);
+  }
 }
 
 #endif

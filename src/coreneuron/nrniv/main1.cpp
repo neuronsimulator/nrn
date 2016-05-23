@@ -93,6 +93,13 @@ int main1( int argc, char **argv, char **env )
     // read command line parameters
     input_params.read_cb_opts( argc, argv );
 
+#if _OPENACC
+    if (!input_params.compute_gpu && input_params.cell_interleave_permute == 2) {
+      fprintf(stderr, "compiled with _OPENACC does not allow the combination of --cell_permute=2 and missing --gpu\n");
+      exit(1);
+    }
+#endif
+
     // if multi-threading enabled, make sure mpi library supports it
     if ( input_params.threading ) {
         nrnmpi_check_threading_support();
@@ -167,7 +174,7 @@ int main1( int argc, char **argv, char **env )
 
         report_mem_usage( "After mk_spikevec_buffer" );
 
-        nrn_finitialize( 1, input_params.voltage );
+        nrn_finitialize( input_params.voltage != 1000., input_params.voltage );
 
         report_mem_usage( "After nrn_finitialize" );
 
