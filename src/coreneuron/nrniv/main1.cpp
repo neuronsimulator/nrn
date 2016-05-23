@@ -167,7 +167,7 @@ int main1( int argc, char **argv, char **env )
 
         report_mem_usage( "After mk_spikevec_buffer" );
 
-        nrn_finitialize( 0, input_params.voltage );
+        nrn_finitialize( 1, input_params.voltage );
 
         report_mem_usage( "After nrn_finitialize" );
 
