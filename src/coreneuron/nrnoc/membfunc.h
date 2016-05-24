@@ -118,6 +118,11 @@ extern void hoc_register_net_receive_buffering(NetBufReceive_t, int);
 extern int net_buf_receive_cnt_;
 extern int* net_buf_receive_type_;
 extern NetBufReceive_t* net_buf_receive_;
+
+extern void hoc_register_net_send_buffering(int);
+extern int net_buf_send_cnt_;
+extern int* net_buf_send_type_;
+
 extern void nrn_cap_jacob(struct NrnThread*, Memb_list*);
 extern void nrn_writes_conc(int, int);
 #if defined(_OPENACC)
@@ -146,6 +151,9 @@ extern void net_event(Point_process*, double);
 extern void net_send(void**, int, Point_process*, double, double);
 extern void net_move(void**, Point_process*, double);
 extern void artcell_net_send(void**, int, Point_process*, double, double);
+#if _OPENACC
+extern void net_sem_from_gpu(int, int, int, int, int, double, double);
+#endif
 extern void hoc_malchk(void); /* just a stub */
 extern void* hoc_Emalloc(size_t);
 

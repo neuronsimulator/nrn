@@ -44,6 +44,9 @@ int net_buf_receive_cnt_;
 int* net_buf_receive_type_;
 NetBufReceive_t* net_buf_receive_;
 
+int net_buf_send_cnt_;
+int* net_buf_send_type_;
+
 static int memb_func_size_;
 static int pointtype = 1; /* starts at 1 since 0 means not point in pnt_map*/
 int n_memb_func;
@@ -220,6 +223,12 @@ void hoc_register_net_receive_buffering(NetBufReceive_t f, int type) {
 	net_buf_receive_ = (NetBufReceive_t*)erealloc(net_buf_receive_, net_buf_receive_cnt_*sizeof(NetBufReceive_t));
 	net_buf_receive_type_[i] = type;
 	net_buf_receive_[i] = f;
+}
+
+void hoc_register_net_send_buffering(int type) {
+	int i = net_buf_send_cnt_++;
+	net_buf_send_type_ = (int*)erealloc(net_buf_send_type_, net_buf_send_cnt_*sizeof(int));
+	net_buf_send_type_[i] = type;
 }
 
 void hoc_register_prop_size(int type, int psize, int dpsize) {
