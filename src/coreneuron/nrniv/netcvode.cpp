@@ -72,6 +72,9 @@ extern void nrn2ncs_outputevent(int netcon_output_index, double firetime);
 void net_send(void**, int, Point_process*, double, double);
 void net_event(Point_process* pnt, double time);
 void net_move(void**, Point_process*, double);
+#if _OPENACC
+void net_sem_from_gpu(int sendtype, int i_vdata, int, int ith, int ipnt, double, double);
+#endif
 void artcell_net_send(void**, int, Point_process*, double, double);
 void artcell_net_move(void**, Point_process*, double);
 extern void nrn_fixed_step_minimal();
@@ -89,6 +92,21 @@ static int nrn_errno_check(int type)
 #endif
 
 }
+
+#if _OPENACC
+//sem 0:3 send event move
+void net_sem_from_gpu(int sendtype, int i_vdata, int weight_index_, int ith, int ipnt, double td, double flag) {
+  NrnThread& nt = nrn_threads[ith];
+  Point_process* pnt = (Point_process*)nt._vdata[ipnt];
+  if (sendtype == 0) {
+    net_send(nt._vdata + i_vdata, weight_index_, pnt, td, flag);
+  }else if (sendtype == 2) {
+    net_move(nt._vdata + i_vdata, pnt, td);
+  }else{
+    net_event(pnt, td);
+  }
+}
+#endif
 
 void net_send(void** v, int weight_index_, Point_process* pnt, double td, double flag) {
 	NrnThread* nt = PP2NT(pnt);

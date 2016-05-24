@@ -615,12 +615,26 @@ void nrn_cleanup() {
 
       NetReceiveBuffer_t* nrb = ml->_net_receive_buffer;
       if (nrb) {
-	    if (nrb->_size) {
+        if (nrb->_size) {
           free(nrb->_pnt_index);
           free(nrb->_weight_index);
           free(nrb->_nrb_t);
+          free(nrb->_nrb_flag);
         }
         free(nrb);
+      }
+
+      NetSendBuffer_t* nsb = ml->_net_send_buffer;
+      if (nsb) {
+        if (nsb->_size) {
+          free(nsb->_sendtype);
+          free(nsb->_vdata_index);
+          free(nsb->_pnt_index);
+          free(nsb->_weight_index);
+          free(nsb->_nsb_t);
+          free(nsb->_nsb_flag);
+        }
+        free(nsb);
       }
 
       if(tml->dependencies)
@@ -740,6 +754,7 @@ void read_phase2(data_reader &F, NrnThread& nt) {
     tml = (NrnThreadMembList*)emalloc(sizeof(NrnThreadMembList));
     tml->ml = (Memb_list*)ecalloc(1, sizeof(Memb_list));
     tml->ml->_net_receive_buffer = NULL;
+    tml->ml->_net_send_buffer = NULL;
     tml->ml->_permute = NULL;
     tml->next = NULL;
     tml->index = F.read_int();
@@ -1307,8 +1322,34 @@ for (int i=0; i < nt.end; ++i) {
       // when == 1, NetReceiveBuffer_t is newly allocated (i.e. we need to free previous copy and recopy new data 
       nrb->reallocated = 1;
       nrb->_nrb_t = (double*)ecalloc(nrb->_size, sizeof(double));
+      nrb->_nrb_flag = (double*)ecalloc(nrb->_size, sizeof(double));
     }
   }
+
+  // NetSendBuffering
+  for (int i=0; i < net_buf_send_cnt_; ++i) {
+    int type = net_buf_send_type_[i];
+    // Does this thread have this type.
+    Memb_list* ml = nt._ml_list[type];
+    if (ml) { // needs a NetSendBuffer
+      NetSendBuffer_t* nsb = (NetSendBuffer_t*)ecalloc(1, sizeof(NetSendBuffer_t));
+      ml->_net_send_buffer = nsb;
+
+      // begin with a size equal to the number of instances
+      nsb->_size = ml->nodecount;
+      nsb->_cnt = 0;
+
+      nsb->_sendtype = (int*)ecalloc(nsb->_size, sizeof(int));
+      nsb->_vdata_index = (int*)ecalloc(nsb->_size, sizeof(int));
+      nsb->_pnt_index = (int*)ecalloc(nsb->_size, sizeof(int));
+      nsb->_weight_index = (int*)ecalloc(nsb->_size, sizeof(int));
+      // when == 1, NetReceiveBuffer_t is newly allocated (i.e. we need to free previous copy and recopy new data 
+      nsb->reallocated = 1;
+      nsb->_nsb_t = (double*)ecalloc(nsb->_size, sizeof(double));
+      nsb->_nsb_flag = (double*)ecalloc(nsb->_size, sizeof(double));
+    }
+  }
+
   delete [] pnt_offset;
 }
 
