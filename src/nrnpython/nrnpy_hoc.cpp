@@ -95,6 +95,23 @@ efficiency of reuse that avoids symbol lookup. Sadly, the scalar case does
 not give this since the value is set/get instead of  returning the
 intermediate.
 */
+
+namespace PyHoc {
+  enum ObjectType
+  {
+		HocTopLevelInterpreter = 0,
+		HocObject = 1,
+		HocFunction = 2, // function or TEMPLATE
+		HocArray = 3,
+		HocRefNum = 4,
+		HocRefStr = 5,
+		HocRefObj = 6,
+		HocForallSectionIterator = 7,
+		HocScalarPtr = 8,
+		HocArrayIncomplete = 9, //incomplete pointer to a hoc array (similar to HocArray)
+  };
+} //namespace PyHoc
+
 typedef struct {
 	PyObject_HEAD
 	Object* ho_;
@@ -108,15 +125,7 @@ typedef struct {
 	void* iteritem_; // enough info to carry out Iterator protocol
 	int nindex_; // number indices seen so far (or narg)
 	int* indices_; // one fewer than nindex_
-	int type_; // 0 HocTopLevelInterpreter, 1 HocObject
-		// 2 function (or TEMPLATE)
-		// 3 array
-		// 4 reference to number
-		// 5 reference to string
-		// 6 reference to hoc object
-		// 7 forall section iterator
-		// 8 pointer to a hoc scalar
-		// 9 incomplete pointer to a hoc array (similar to 3)
+	PyHoc::ObjectType type_;
 } PyHocObject;
 
 static PyTypeObject* hocobject_type;
@@ -149,11 +158,11 @@ static void hocobj_dealloc(PyHocObject* self) {
 	if (self->ho_) {
 		hoc_obj_unref(self->ho_);
 	}
-	if (self->type_ == 5 && self->u.s_) {
+	if (self->type_ == PyHoc::HocRefStr && self->u.s_) {
 		//delete [] self->u.s_;
 		free(self->u.s_);
 	}
-	if (self->type_ == 6 && self->u.ho_) {
+	if (self->type_ == PyHoc::HocRefObj && self->u.ho_) {
 		hoc_obj_unref(self->u.ho_);
 	}
 	if (self->indices_) { delete [] self->indices_; }
@@ -171,7 +180,7 @@ static PyObject* hocobj_new(PyTypeObject* subtype, PyObject* args, PyObject* kwd
 	self->sym_ = NULL;
 	self->indices_ = NULL;
 	self->nindex_ = 0;
-	self->type_ = 0;
+	self->type_ = PyHoc::HocTopLevelInterpreter;
 	self->iteritem_ = 0;
 	if (kwds && PyDict_Check(kwds)) {
 		PyObject* base = PyDict_GetItemString(kwds, "hocbase");
@@ -179,7 +188,7 @@ static PyObject* hocobj_new(PyTypeObject* subtype, PyObject* args, PyObject* kwd
 			int ok = 0;
 			if (PyObject_TypeCheck(base, hocobject_type)) {
 				PyHocObject* hbase = (PyHocObject*)base;
-				if (hbase->type_ == 2 && hbase->sym_->type == TEMPLATE) {
+				if (hbase->type_ == PyHoc::HocFunction && hbase->sym_->type == TEMPLATE) {
 //printf("hocobj_new base %s\n", hbase->sym_->name);
                     // remove the hocbase keyword since hocobj_call only allows
                     // the "sec" keyword argument
@@ -238,14 +247,15 @@ static PyObject* hocobj_name(PyObject* pself, PyObject* args) {
 	buf[0] = '\0';
 	cp = buf;
 	PyObject* po;
-	if (self->type_ == 1) {
+	if (self->type_ == PyHoc::HocObject) {
 		sprintf(cp, "%s", hoc_object_name(self->ho_));
-	}else if (self->type_ == 2 || self->type_ == 3) {
+	}else if (self->type_ == PyHoc::HocFunction ||
+			  self->type_ == PyHoc::HocArray) {
 		sprintf(cp, "%s%s%s",
 			self->ho_ ? hoc_object_name(self->ho_) : "",
 			self->ho_ ? "." : "",
 			self->sym_->name);
-		if (self->type_ == 3) {
+		if (self->type_ == PyHoc::HocArray) {
 			for (int i = 0; i < self->nindex_; ++i) {
 				sprintf(cp += strlen(cp), "[%d]", self->indices_[i]);
 			}
@@ -253,17 +263,17 @@ static PyObject* hocobj_name(PyObject* pself, PyObject* args) {
 		}else{
 			sprintf(cp += strlen(cp), "()");
 		}
-	}else if (self->type_ == 4) {
+	}else if (self->type_ == PyHoc::HocRefNum) {
 		sprintf(cp, "<hoc ref value %g>", self->u.x_);
-	}else if (self->type_ == 5) {
+	}else if (self->type_ == PyHoc::HocRefStr) {
 		sprintf(cp, "<hoc ref value \"%s\">", self->u.s_);
-	}else if (self->type_ == 6) {
+	}else if (self->type_ == PyHoc::HocRefObj) {
 		sprintf(cp, "<hoc ref value \"%s\">", hoc_object_name(self->u.ho_));
-	}else if (self->type_ == 7) {
+	}else if (self->type_ == PyHoc::HocForallSectionIterator) {
 		sprintf(cp, "<all section iterator>");
-	}else if (self->type_ == 8) {
+	}else if (self->type_ == PyHoc::HocScalarPtr) {
 		sprintf(cp, "<pointer to hoc scalar %g>", self->u.px_?*self->u.px_:-1e100);
-	}else if (self->type_ == 9) {
+	}else if (self->type_ == PyHoc::HocArrayIncomplete) {
 		sprintf(cp, "<incomplete pointer to hoc array %s>", self->sym_->name);
 	}else{
 		sprintf(cp, "<TopLevelHocInterpreter>");
@@ -298,17 +308,17 @@ static int hocobj_pushargs(PyObject* args) {
 			hoc_pushstr(ts);
 		}else if (PyObject_IsInstance(po, (PyObject*)hocobject_type)) {
 			PyHocObject* pho = (PyHocObject*)po;
-			int tp = pho->type_;
-			if (tp == 1) {
+			PyHoc::ObjectType tp = pho->type_;
+			if (tp == PyHoc::HocObject) {
 				hoc_push_object(pho->ho_);
-			}else if (tp == 8) {
-				hoc_pushpx(pho->u.px_);
-			}else if (tp == 4) {
+			}else if (tp == PyHoc::HocRefNum) {
 				hoc_pushpx(&pho->u.x_);
-			}else if (tp == 5) {
+			}else if (tp == PyHoc::HocRefStr) {
 				hoc_pushstr(&pho->u.s_);
-			}else if (tp == 6) {
+			}else if (tp == PyHoc::HocRefObj) {
 				hoc_pushobj(&pho->u.ho_);
+			}else if (tp == PyHoc::HocScalarPtr) {
+				hoc_pushpx(pho->u.px_);
 			}else{
 				// make a hoc python object and push that
 				Object* ob;
@@ -362,10 +372,11 @@ static void component(PyHocObject* po) {
 	fc[1].i = 0;
 	fc[2].i = 0;
 	fc[5].i = 0;
-	if (po->type_ == 2) {
+	if (po->type_ == PyHoc::HocFunction) {
 		fc[2].i = po->nindex_;
 		fc[5].i = 1;
-	}else if (po->type_ == 3 || po->type_ == 9) {
+	}else if (po->type_ == PyHoc::HocArray ||
+						po->type_ == PyHoc::HocArrayIncomplete) {
 		fc[1].i = po->nindex_;
 	}
 	assert(hoc_obj_look_inside_stack(po->nindex_) == po->ho_);
@@ -416,7 +427,7 @@ PyObject* nrnpy_ho2po(Object* o) {
 	}else{
 		po = hocobj_new(hocobject_type, 0, 0);
 		((PyHocObject*)po)->ho_ = o;
-		((PyHocObject*)po)->type_ = 1;
+		((PyHocObject*)po)->type_ = PyHoc::HocObject;
 		hoc_obj_ref(o);
 	}
 	return po;
@@ -433,15 +444,14 @@ Object* nrnpy_po2ho(PyObject* po) {
 		o = 0;
 	}else if (PyObject_TypeCheck(po, hocobject_type)) {
 		PyHocObject* pho = (PyHocObject*)po;
-		// cases: 1 just a regular hoc object, 6 reference to hoc
-		// object, all the rest encapsulate
-		if (pho->type_ == 1) {
+		if (pho->type_ == PyHoc::HocObject) {
 			o = pho->ho_;
 			hoc_obj_ref(o);
-		}else if (pho->type_ == 6) {
+		}else if (pho->type_ == PyHoc::HocRefObj) {
 			o = pho->u.ho_;
 			hoc_obj_ref(o);
 		}else{
+      // all the rest encapsulate
 			o = nrnpy_pyobject_in_obj(po);
 		}
 	}else{ // even if Python string or number
@@ -540,9 +550,9 @@ static void* fcall(void* vself, void* vargs) {
 		hoc_pushx(d);
 	}else if (self->sym_->type == TEMPLATE) {
 		Object* ho = hoc_newobj1(self->sym_, narg);
-		PyObject* result = hocobj_new(hocobject_type, 0, 0);
-		((PyHocObject*)result)->ho_ = ho;
-		((PyHocObject*)result)->type_ = 1;
+		PyHocObject* result = (PyHocObject*)hocobj_new(hocobject_type, 0, 0);
+		result->ho_ = ho;
+		result->type_ = PyHoc::HocObject;
 		return result;
 	}else{
 		HocTopContextSet
@@ -593,9 +603,9 @@ static PyObject* hocobj_call(PyHocObject* self, PyObject* args, PyObject* kwrds)
 	        }
 		}
 	}
-	if (self->type_ == 0) {
+	if (self->type_ == PyHoc::HocTopLevelInterpreter) {
 		result = nrnexec((PyObject*)self, args);
-	}else if (self->type_ == 2) {
+	}else if (self->type_ == PyHoc::HocFunction) {
 		OcJump* oj;
 		oj = new OcJump();
 		if (oj) {
@@ -645,7 +655,8 @@ static PyHocObject* intermediate(PyHocObject* po, Symbol* sym , int ix) {
 	if (ix > -1) { // array, increase dimension by one
 		int j;
 		assert(po->sym_ == sym);
-		assert(po->type_ == 3 || po->type_ == 9);
+		assert(po->type_ == PyHoc::HocArray ||
+           po->type_ == PyHoc::HocArrayIncomplete);
 		ponew->sym_ = sym;
 		ponew->nindex_ = po->nindex_ + 1;
 		ponew->type_ = po->type_;
@@ -656,7 +667,7 @@ static PyHocObject* intermediate(PyHocObject* po, Symbol* sym , int ix) {
 		ponew->indices_[po->nindex_] = ix;
 	}else{ // make it an array (no indices yet)
 		ponew->sym_ = sym;
-		ponew->type_ = 3;
+		ponew->type_ = PyHoc::HocArray;
 	}
 	return ponew;
 }
@@ -708,7 +719,7 @@ static void eval_component(PyHocObject* po, int ix) {
 PyObject* nrn_hocobj_ptr(double* pd) {
 	PyObject* result = hocobj_new(hocobject_type, 0, 0);
 	PyHocObject* po = (PyHocObject*)result;
-	po->type_ = 8;
+	po->type_ = PyHoc::HocScalarPtr;
 	po->u.px_ = pd;
 	return result;
 }
@@ -756,10 +767,7 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* name) {
 	char* n = PyString_AsString(name);
 //printf("hocobj_getattr %s\n", n);
 
-	// use below for casting
-	PyHocObject* po;
-
-	if (self->type_ == 1 && !self->ho_) {
+	if (self->type_ == PyHoc::HocObject && !self->ho_) {
 		Py_DECREF(name);
 		PyErr_SetString(PyExc_TypeError, "not a compound type");
 		return NULL;
@@ -767,7 +775,7 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* name) {
 	Symbol* sym = getsym(n, self->ho_, 0);
 	Py_DECREF(name);
 	if (!sym) {
-		if (self->type_ == 1 && self->ho_->ctemplate->sym == nrnpy_pyobj_sym_) {
+		if (self->type_ == PyHoc::HocObject && self->ho_->ctemplate->sym == nrnpy_pyobj_sym_) {
 			PyObject* p = nrnpy_hoc2pyobject(self->ho_);
 			nrnpy_pystring_asstring_free(n);
 			return PyObject_GenericGetAttr(p, name);
@@ -796,7 +804,7 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* name) {
 		nrnpy_pystring_asstring_free(n);
 		return dict;
 	    }else if (strncmp(n, "_ref_", 5) == 0) {
-		if (self->type_ > 1) {
+		if (self->type_ > PyHoc::HocObject) {
 			PyErr_SetString(PyExc_TypeError, "not a HocTopLevelInterpreter or HocObject");
 			nrnpy_pystring_asstring_free(n);
 			return NULL;
@@ -846,7 +854,7 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* name) {
 		nrnpy_pystring_asstring_free(n);
 		return NULL;
 	      }
-	    }else if (self->type_ == 0 && strncmp(n, "__nrnsec_0x", 11) == 0) {
+	    }else if (self->type_ == PyHoc::HocTopLevelInterpreter && strncmp(n, "__nrnsec_0x", 11) == 0) {
 		Section* sec = (Section*)hoc_sec_internal_name2ptr(n, 0);
 		if (sec == NULL) {
 			PyErr_SetString(PyExc_NameError, n);
@@ -871,11 +879,11 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* name) {
 //printf("%s type=%d nindex=%d %s\n", self->sym_?self->sym_->name:"noname", self->type_, self->nindex_, sym->name);
 	// no hoc component for a hoc function
 	// ie the sym has to be a component for the object returned by the function
-	if (self->type_ == 2) {
+	if (self->type_ == PyHoc::HocFunction) {
 		PyErr_SetString(PyExc_TypeError, "No hoc method for a callable. Missing parentheses before the '.'?");
 		return NULL;
 	}
-	if (self->type_ == 3) {
+	if (self->type_ == PyHoc::HocArray) {
 		PyErr_SetString(PyExc_TypeError, "Missing array index");
 		return NULL;
 	}
@@ -914,14 +922,14 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* name) {
 				}
 			}else{
 				if (isptr) {
-					po->type_ = 9;
+					po->type_ = PyHoc::HocArrayIncomplete;
 				}else{
-					po->type_ = 3;
+					po->type_ = PyHoc::HocArray;
 				}
 				return result;
 			}
 		}else{
-			po->type_ = 2;
+			po->type_ = PyHoc::HocFunction;
 			return result;
 		}
 	}
@@ -950,7 +958,7 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* name) {
 		}else{
 			result = (PyObject*)intermediate(self, sym, -1);
 			if (isptr) {
-				((PyHocObject*)result)->type_ = 9;
+				((PyHocObject*)result)->type_ = PyHoc::HocArrayIncomplete;
 			}else{
 			}
 		}
@@ -991,12 +999,12 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* name) {
 	case OBJECTFUNC:
 	    {
 		result = hocobj_new(hocobject_type, 0, 0);
-		po = (PyHocObject*)result;
+		PyHocObject* po = (PyHocObject*)result;
 		if (self->ho_) {
 			po->ho_ = self->ho_;
 			hoc_obj_ref(po->ho_);
 		}
-		po->type_ = 2;
+		po->type_ = PyHoc::HocFunction;
 		po->sym_ = sym;
 //printf("function %s\n", po->sym_->name);
 		break;
@@ -1063,7 +1071,7 @@ static int hocobj_setattro(PyObject* subself, PyObject* name, PyObject* value) {
 	PyHocObject* self = (PyHocObject*)subself;
 	PyHocObject* po;
 
-	if (self->type_ == 1 && !self->ho_) {
+	if (self->type_ == PyHoc::HocObject && !self->ho_) {
 		return 1;
 	}
 	Py_INCREF(name);
@@ -1073,7 +1081,7 @@ static int hocobj_setattro(PyObject* subself, PyObject* name, PyObject* value) {
 	if (!sym) {
 		if (issub) {
 			return PyObject_GenericSetAttr(subself, name, value);
-		} else if (!sym && self->type_ == 1 && self->ho_->ctemplate->sym == nrnpy_pyobj_sym_) {
+		} else if (!sym && self->type_ == PyHoc::HocObject && self->ho_->ctemplate->sym == nrnpy_pyobj_sym_) {
 			PyObject* p = nrnpy_hoc2pyobject(self->ho_);
 			return PyObject_GenericSetAttr(p, name, value);
 		}else{
@@ -1224,7 +1232,7 @@ static int araychk(Arrayinfo* a, PyHocObject* po, int ix) {
 
 static Py_ssize_t hocobj_len(PyObject* self) {
 	PyHocObject* po = (PyHocObject*)self;
-	if (po->type_ == 1) {
+	if (po->type_ == PyHoc::HocObject) {
 		if (po->ho_->ctemplate == hoc_vec_template_) {
 			return vector_capacity((Vect*)po->ho_->u.this_pointer);
 		}else if (po->ho_->ctemplate == hoc_list_template_) {
@@ -1233,12 +1241,12 @@ static Py_ssize_t hocobj_len(PyObject* self) {
 			PyErr_SetString(PyExc_TypeError, "hoc.SectionList has no len()");
 			return -1;
 		}
-	}else if (po->type_ == 3) {
+	}else if (po->type_ == PyHoc::HocArray) {
 		Arrayinfo* a = hocobj_aray(po->sym_, po->ho_);
 		return araylen(a, po);
 	}else if (po->sym_ && po->sym_->type == TEMPLATE) {
 		return po->sym_->u.ctemplate->count;
-	}else if (po->type_ == 7) {
+	}else if (po->type_ == PyHoc::HocForallSectionIterator) {
 		PyErr_SetString(PyExc_TypeError, "hoc.allsec() has no len()");
 		return -1;
 	}
@@ -1250,13 +1258,13 @@ static int hocobj_nonzero(PyObject* self) {
 //printf("hocobj_nonzero\n");
 	PyHocObject* po = (PyHocObject*)self;
 	int b = 1;
-	if (po->type_ == 1) {
+	if (po->type_ == PyHoc::HocObject) {
 		if (po->ho_->ctemplate == hoc_vec_template_) {
 			b = vector_capacity((Vect*)po->ho_->u.this_pointer) > 0;
 		}else if (po->ho_->ctemplate == hoc_list_template_) {
 			b =  ivoc_list_count(po->ho_) > 0;
 		}	
-	}else if (po->type_ == 3) {
+	}else if (po->type_ == PyHoc::HocArray) {
 		Arrayinfo* a = hocobj_aray(po->sym_, po->ho_);
 		b =  araylen(a, po) > 0;
 	}else if (po->sym_ && po->sym_->type == TEMPLATE) {
@@ -1268,7 +1276,7 @@ static int hocobj_nonzero(PyObject* self) {
 PyObject* nrnpy_forall(PyObject* self, PyObject* args) {
 	PyObject* po = hocobj_new(hocobject_type, 0, 0);
 	PyHocObject* pho = (PyHocObject*)po;
-	pho->type_ = 7;
+	pho->type_ = PyHoc::HocForallSectionIterator;
 	pho->iteritem_ = section_list;
 	return po;
 }
@@ -1276,7 +1284,7 @@ PyObject* nrnpy_forall(PyObject* self, PyObject* args) {
 static PyObject* hocobj_iter(PyObject* self) {
 //	printf("hocobj_iter %p\n", self);
 	PyHocObject* po = (PyHocObject*)self;
-	if (po->type_ == 1) {
+	if (po->type_ == PyHoc::HocObject) {
 		if (po->ho_->ctemplate == hoc_vec_template_) {
 			return PySeqIter_New(self);
 		}else if (po->ho_->ctemplate == hoc_list_template_) {
@@ -1286,11 +1294,11 @@ static PyObject* hocobj_iter(PyObject* self) {
 			Py_INCREF(self);
 			return self;
 		}
-	}else if (po->type_ == 7) {
+	}else if (po->type_ == PyHoc::HocForallSectionIterator) {
 		po->iteritem_ = section_list->next;
 		Py_INCREF(self);
 		return self;
-	}else if (po->type_ == 3) {
+	}else if (po->type_ == PyHoc::HocArray) {
 		return PySeqIter_New(self);
 	}else if (po->sym_ && po->sym_->type == TEMPLATE) {
 		po->iteritem_ = po->sym_->u.ctemplate->olist->next;
@@ -1337,10 +1345,10 @@ static PyObject* iternext_sl(PyHocObject* po, hoc_Item* ql) {
 static PyObject* hocobj_iternext(PyObject* self) {
 	//printf("hocobj_iternext %p\n", self);
 	PyHocObject* po = (PyHocObject*)self;
-	if (po->type_ == 1) {
+	if (po->type_ == PyHoc::HocObject) {
 		hoc_Item* ql = (hoc_Item*)po->ho_->u.this_pointer;
 		return iternext_sl(po, ql);
-	}else if (po->type_ == 7) {
+	}else if (po->type_ == PyHoc::HocForallSectionIterator) {
 		hoc_Item* ql = section_list;
 		return iternext_sl(po, ql);
 	}else if (po->sym_->type == TEMPLATE) {
@@ -1363,23 +1371,23 @@ at the top level.
 static PyObject* hocobj_getitem(PyObject* self, Py_ssize_t ix) {
 	PyObject* result = NULL;
 	PyHocObject* po = (PyHocObject*)self;
-	if (po->type_ > 3 && po->type_ != 9) {
-		if (ix != 0 && po->type_ != 8) {
+	if (po->type_ > PyHoc::HocArray && po->type_ != PyHoc::HocArrayIncomplete) {
+		if (ix != 0 && po->type_ != PyHoc::HocScalarPtr) {
 			PyErr_SetString(PyExc_IndexError, "index for hoc ref must be 0" );
 			return NULL;
 		}
-		if (po->type_ == 8) {
+		if (po->type_ == PyHoc::HocScalarPtr) {
 			result = Py_BuildValue("d", po->u.px_[ix]);
-		}else if (po->type_ == 4) {
+		}else if (po->type_ == PyHoc::HocRefNum) {
 			result = Py_BuildValue("d", po->u.x_);
-		}else if (po->type_ == 5) {
+		}else if (po->type_ == PyHoc::HocRefStr) {
 			result = Py_BuildValue("s", po->u.s_);
 		}else{
 			result = nrnpy_ho2po(po->u.ho_);
 		}
 		return result;
 	}
-	if (po->type_ == 1) { // might be in an iterator context
+	if (po->type_ == PyHoc::HocObject) { // might be in an iterator context
 		if (po->ho_->ctemplate == hoc_vec_template_) {
 			Vect* hv = (Vect*)po->ho_->u.this_pointer;
 			if (ix < 0 || ix >= vector_capacity(hv)) {
@@ -1423,7 +1431,7 @@ static PyObject* hocobj_getitem(PyObject* self, Py_ssize_t ix) {
 		PyErr_SetString(PyExc_IndexError, e);
 		return NULL;
 	}
-	if (po->type_ != 3 && po->type_ != 9) {
+	if (po->type_ != PyHoc::HocArray && po->type_ != PyHoc::HocArrayIncomplete) {
 		char e[200];
 		sprintf(e, "unsubscriptable object, type %d\n", po->type_);
 		PyErr_SetString(PyExc_TypeError, e);
@@ -1445,7 +1453,7 @@ static PyObject* hocobj_getitem(PyObject* self, Py_ssize_t ix) {
 				nrn_popsec();
 				return result;
 			}else{
-				if (po->type_ == 9) {
+				if (po->type_ == PyHoc::HocArrayIncomplete) {
 					result = nrn_hocobj_ptr(hoc_pxpop());
 				}else{
 					result = nrnpy_hoc_pop();
@@ -1458,7 +1466,7 @@ static PyObject* hocobj_getitem(PyObject* self, Py_ssize_t ix) {
 				hocobj_pushtop(po, po->sym_, ix);
 				hoc_evalpointer();
 				--po->nindex_;
-				if (po->type_ == 9) {
+				if (po->type_ == PyHoc::HocArrayIncomplete) {
 					assert(!po->u.px_);
 					result = nrn_hocobj_ptr(hoc_pxpop());
 				}else{
@@ -1487,20 +1495,20 @@ static int hocobj_setitem(PyObject* self, Py_ssize_t i, PyObject* arg) {
 //printf("hocobj_setitem %d\n", i);
 	int err = -1;
 	PyHocObject* po = (PyHocObject*)self;
-	if (po->type_ > 3) {
-		if (po->type_ == 9) {
+	if (po->type_ > PyHoc::HocArray) {
+		if (po->type_ == PyHoc::HocArrayIncomplete) {
 			PyErr_SetString(PyExc_TypeError, "incomplete hoc pointer");
 			return -1;
 		}
-		if (i != 0 && po->type_ != 8) {
+		if (i != 0 && po->type_ != PyHoc::HocScalarPtr) {
 			PyErr_SetString(PyExc_IndexError, "index for hoc ref must be 0" );
 			return -1;
 		}
-		if (po->type_ == 8) {
+		if (po->type_ == PyHoc::HocScalarPtr) {
 			PyArg_Parse(arg, "d", po->u.px_ + i);
-		}else if (po->type_ == 4) {
+		}else if (po->type_ == PyHoc::HocRefNum) {
 			PyArg_Parse(arg, "d", &po->u.x_);
-		}else if (po->type_ == 5) {
+		}else if (po->type_ == PyHoc::HocRefStr) {
 			char* ts;
 			PyArg_Parse(arg, "s", &ts);
 			hoc_assign_str(&po->u.s_, ts);
@@ -1515,7 +1523,7 @@ static int hocobj_setitem(PyObject* self, Py_ssize_t i, PyObject* arg) {
 		PyErr_SetString(PyExc_TypeError, "unsubscriptable object");
 		return -1;
 	}
-	assert(po->type_ == 3);
+	assert(po->type_ == PyHoc::HocArray);
 	Arrayinfo* a = hocobj_aray(po->sym_, po->ho_);
 	if (a->nsub - 1 !=  po->nindex_) {
 		PyErr_SetString(PyExc_TypeError, "wrong number of subscripts");
@@ -1573,18 +1581,18 @@ static PyObject* mkref(PyObject* self, PyObject* args) {
 	if (PyArg_ParseTuple(args, "O", &pa) == 1) {
 		result = (PyHocObject*)hocobj_new(hocobject_type, 0, 0);
 		if (nrnpy_numbercheck(pa)) {
-			result->type_ = 4;
+			result->type_ = PyHoc::HocRefNum;
 			PyObject* pn = PyNumber_Float(pa);
 			result->u.x_ = PyFloat_AsDouble(pn);
 			Py_XDECREF(pn);
 		}else if (PyString_Check(pa)) {
-			result->type_ = 5;
+			result->type_ = PyHoc::HocRefStr;
 			result->u.s_ = 0;
 			char* cpa = PyString_AsString(pa);
 			hoc_assign_str(&result->u.s_, cpa);
 			nrnpy_pystring_asstring_free(cpa);
 		}else{
-			result->type_ = 6;
+			result->type_ = PyHoc::HocRefObj;
 			result->u.ho_ = nrnpy_po2ho(pa);
 		}
 		return (PyObject*)result;	
@@ -1598,10 +1606,10 @@ static PyObject* setpointer(PyObject* self, PyObject* args) {
 	if (PyArg_ParseTuple(args, "O!OO", hocobject_type, &ref, &name, &pp) == 1) {
 		PyHocObject* href = (PyHocObject*)ref;
 		double** ppd = 0;
-		if (href->type_ != 8) {	goto done; }
+		if (href->type_ != PyHoc::HocScalarPtr) {	goto done; }
 		if (PyObject_TypeCheck(pp, hocobject_type)) {
 			PyHocObject* hpp = (PyHocObject*)pp;
-			if (hpp->type_ != 1) { goto done; }
+			if (hpp->type_ != PyHoc::HocObject) { goto done; }
 			char* n = PyString_AsString(name);
 			Symbol* sym = getsym(n, hpp->ho_, 0);
 			nrnpy_pystring_asstring_free(n);
