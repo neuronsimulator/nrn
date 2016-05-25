@@ -204,6 +204,40 @@ void setup_nrnthreads_on_device(NrnThread *threads, int nthreads)  {
                 //0 means gpu copy updated with size of buffer on cpu
                 nrb->reallocated = 0;
             }
+
+            /* copy NetSendBuffer_t on to GPU */
+            NetSendBuffer_t *nsb;
+            nsb = tml->ml->_net_send_buffer;
+
+            if(nsb) {
+
+                printf("\n Transfering net send buffer of size %d", nsb->_size);
+
+                NetSendBuffer_t *d_nsb;
+                int *d_iptr;
+                double *d_dptr;
+
+                d_nsb = (NetSendBuffer_t*) acc_copyin(nsb, sizeof(NetSendBuffer_t));
+                acc_memcpy_to_device(&(d_ml->_net_send_buffer), &d_nsb, sizeof(NetSendBuffer_t*));
+
+                d_iptr = (int *) acc_copyin(nsb->_sendtype, sizeof(int)*nsb->_size);
+                acc_memcpy_to_device(&(d_nsb->_sendtype), &d_iptr, sizeof(int*));
+
+                d_iptr = (int *) acc_copyin(nsb->_vdata_index, sizeof(int)*nsb->_size);
+                acc_memcpy_to_device(&(d_nsb->_vdata_index), &d_iptr, sizeof(int*));
+
+                d_iptr = (int *) acc_copyin(nsb->_pnt_index, sizeof(int)*nsb->_size);
+                acc_memcpy_to_device(&(d_nsb->_pnt_index), &d_iptr, sizeof(int*));
+
+                d_iptr = (int *) acc_copyin(nsb->_weight_index, sizeof(int)*nsb->_size);
+                acc_memcpy_to_device(&(d_nsb->_weight_index), &d_iptr, sizeof(int*));
+
+                d_dptr = (double *) acc_copyin(nsb->_nsb_t, sizeof(double)*nsb->_size);
+                acc_memcpy_to_device(&(d_nsb->_nsb_t), &d_dptr, sizeof(double*));
+
+                d_dptr = (double *) acc_copyin(nsb->_nsb_flag, sizeof(double)*nsb->_size);
+                acc_memcpy_to_device(&(d_nsb->_nsb_flag), &d_dptr, sizeof(double*));
+            }
         }
 
         if(nt->shadow_rhs_cnt) {
@@ -449,6 +483,24 @@ void update_net_receive_buffer(NrnThread *nt) {
         }
     }
 #endif
+}
+
+void update_net_send_buffer_on_host(NrnThread *nt, NetSendBuffer_t* nsb) {
+
+#ifdef _OPENACC
+    if (!nt->compute_gpu)
+        return;
+
+    if(nsb->_cnt) {
+        acc_update_self(nsb->_sendtype, sizeof(int)*nsb->_cnt);
+        acc_update_self(nsb->_vdata_index, sizeof(int)*nsb->_cnt);
+        acc_update_self(nsb->_pnt_index, sizeof(int)*nsb->_cnt);
+        acc_update_self(nsb->_weight_index, sizeof(int)*nsb->_cnt);
+        acc_update_self(nsb->_nsb_t, sizeof(double)*nsb->_cnt);
+        acc_update_self(nsb->_nsb_flag, sizeof(double)*nsb->_cnt);
+    }
+#endif
+
 }
 
 void update_nrnthreads_on_host(NrnThread *threads, int nthreads) {

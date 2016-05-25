@@ -1303,7 +1303,7 @@ for (int i=0; i < nt.end; ++i) {
       nrb->_pnt_offset = pnt_offset[type];
 
       // begin with a size of 5% of the number of instances
-      nrb->_size = ml->nodecount/20;
+      nrb->_size = ml->nodecount;
       // or at least 8
       if (nrb->_size < 8) {
         nrb->_size = 8;
