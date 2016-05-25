@@ -211,8 +211,6 @@ void setup_nrnthreads_on_device(NrnThread *threads, int nthreads)  {
 
             if(nsb) {
 
-                printf("\n Transfering net send buffer of size %d", nsb->_size);
-
                 NetSendBuffer_t *d_nsb;
                 int *d_iptr;
                 double *d_dptr;
