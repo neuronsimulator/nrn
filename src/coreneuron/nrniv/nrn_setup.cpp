@@ -172,10 +172,6 @@ void nrn_read_filesdat(int &ngrp, int * &grp, const char *filesdat)
     int iNumFiles;
     nrn_assert( fscanf( fp, "%d\n", &iNumFiles ) == 1 );
 
-    if ( nrnmpi_numprocs > iNumFiles ) {
-        nrnmpi_fatal_error( "The number of CPUs cannot exceed the number of input files" );
-    }
-
     ngrp = 0;
     grp = new int[iNumFiles / nrnmpi_numprocs + 1];
 
@@ -432,13 +428,13 @@ void nrn_setup(cn_input_params& input_params, const char *filesdat, int byte_swa
 
   nrn_read_filesdat(ngroup, gidgroups, filesdat);
 
-  assert(ngroup > 0);
   MUTCONSTRUCT(1)
   // temporary bug work around. If any process has multiple threads, no
   // process can have a single thread. So, for now, if one thread, make two.
   // Fortunately, empty threads work fine.
-  /// Allocate NrnThread* nrn_threads of size ngroup (minimum 2)
-  nrn_threads_create(ngroup == 1?2:ngroup, input_params.threading); // serial/parallel threads
+  // Allocate NrnThread* nrn_threads of size ngroup (minimum 2)
+  // Note that rank with 0 dataset/cellgroup works fine
+  nrn_threads_create(ngroup <= 1?2:ngroup, input_params.threading); // serial/parallel threads
 
   if (use_solve_interleave) {
     create_interleave_info();
