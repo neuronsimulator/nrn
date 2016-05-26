@@ -105,12 +105,6 @@ int main1( int argc, char **argv, char **env )
         nrnmpi_check_threading_support();
     }
 
-    // set global variables for start time, timestep and temperature
-    t = input_params.tstart;
-    dt = input_params.dt;
-    rev_dt = (int)(1./dt);
-    celsius = input_params.celsius;
-
     // full path of files.dat file
     sd_ptr filesdat=input_params.get_filesdat_path(filesdat_buf,sizeof(filesdat_buf));
 
@@ -120,7 +114,16 @@ int main1( int argc, char **argv, char **env )
     // reads mechanism information from bbcore_mech.dat
     mk_mech( input_params.datpath );
 
+    // read the global variable names and set their values from globals.dat
+    set_globals( input_params.datpath );
+
     report_mem_usage( "After mk_mech" );
+
+    // set global variables for start time, timestep and temperature
+    t = input_params.tstart;
+    dt = input_params.dt;
+    rev_dt = (int)(1./dt);
+    celsius = input_params.celsius;
 
     // create net_cvode instance
     mk_netcvode();

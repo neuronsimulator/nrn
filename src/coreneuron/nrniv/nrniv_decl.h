@@ -46,7 +46,8 @@ extern std::vector<NetCon*> netcon_in_presyn_order_;
 /// Only for setup vector of netcon source gids
 extern std::vector<int*> netcon_srcgid;
 
-extern void mk_mech(const char* fname);
+extern void mk_mech(const char* path);
+extern void set_globals(const char* path);
 extern void mk_netcvode(void);
 extern void nrn_p_construct(void);
 extern void nrn_setup(cn_input_params& input_params, const char *filesdat, int byte_swap);
