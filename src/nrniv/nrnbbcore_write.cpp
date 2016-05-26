@@ -81,6 +81,7 @@ nt->tml->pdata is not cache_efficient
 #include <stdio.h>
 #include <stdlib.h>
 #include <section.h>
+#include <parse.h>
 #include <nrnmpi.h>
 #include <netcon.h>
 #include <nrnhash_alt.h>
@@ -112,6 +113,7 @@ static CellGroup* mk_cellgroups(); // gid, PreSyn, NetCon, Point_process relatio
 static void datumtransform(CellGroup*); // Datum.pval to int
 static void datumindex_fill(int, CellGroup&, DatumIndices&, Memb_list*); //helper
 static void write_memb_mech_types(const char* fname);
+static void write_globals(const char* fname);
 static void write_nrnthread(const char* fname, NrnThread& nt, CellGroup& cg);
 static void write_nrnthread_task(const char*, CellGroup* cgs);
 static int* datum2int(int type, Memb_list* ml, NrnThread& nt, CellGroup& cg, DatumIndices& di, int* ml_data_offset, int* ml_vdata_offset);
@@ -161,6 +163,10 @@ size_t nrnbbcore_write() {
   mk_tml_with_art();
   sprintf(fname, "%s/%s", path, "bbcore_mech.dat");
   write_memb_mech_types(fname);
+
+  sprintf(fname, "%s/%s", path, "globals.dat");
+  write_globals(fname);
+
   size_t rankbytes = 0;
   size_t nbytes;
   FOR_THREADS(nt) {
@@ -702,6 +708,41 @@ static void write_memb_mech_types(const char* fname) {
   // tack on an endian sentinal value so reader can determine if byteswap needed.
   int32_t x = 1.0;
   fwrite(&x, sizeof(int32_t), 1, f);
+
+  fclose(f);
+}
+
+// format is name value
+// with last line of 0 0
+//In case of an array, the line is name[num] with num lines following with
+// one value per line.  Values are %.20g format.
+static void write_globals(const char* fname) {
+
+  if (nrnmpi_myid > 0) { return; } // only rank 0 writes this file
+
+  FILE* f = fopen(fname, "w");
+  if (!f) {
+    hoc_execerror("nrnbbcore_write write_globals could not open for writing: %s\n", fname);
+  }
+
+  for (Symbol* sp = hoc_built_in_symlist->first; sp; sp = sp->next) {
+    if (sp->type == VAR && sp->subtype == USERDOUBLE) {
+      if (ISARRAY(sp)) {
+        Arrayinfo* a = sp->arayinfo;
+        if (a->nsub == 1) {
+          fprintf(f, "%s[%d]\n", sp->name, a->sub[0]);
+          for (int i=0; i < a->sub[0]; ++i) {
+            char n[256];
+            sprintf(n, "%s[%d]", sp->name, i);
+            fprintf(f, "%.20g\n", *hoc_val_pointer(n));
+          }
+        }
+      }else{
+        fprintf(f, "%s %.20g\n", sp->name, *sp->u.pval);
+      }
+    }
+  }
+  fprintf(f, "0 0\n"); 
 
   fclose(f);
 }
