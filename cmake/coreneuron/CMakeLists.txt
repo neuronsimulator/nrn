@@ -96,13 +96,16 @@ if(have_malloc_h)
   add_definitions("-DHAVE_MALLOC_H")
 endif()
 
-find_package(CUDA)
 
-option (ENABLE_SELECTIVE_GPU_PROFILING "Enable GPU profiling only for Solver" OFF)
+option (ENABLE_SELECTIVE_GPU_PROFILING "Enable GPU profiling only for Solver" ON)
 if(ENABLE_SELECTIVE_GPU_PROFILING)
+    find_package(CUDA 5.0)
     if(CUDA_FOUND)
         add_definitions( -DCUDA_PROFILING)
+    else(CUDA_FOUND)
+        message( FATAL_ERROR "Error : Load CUDA module or disable selective profiling using -DENABLE_SELECTIVE_GPU_PROFILING=OFF !" )
     endif(CUDA_FOUND)
+
     add_definitions( -DENABLE_SELECTIVE_PROFILING)
 endif(ENABLE_SELECTIVE_GPU_PROFILING)
 

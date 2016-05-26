@@ -32,6 +32,7 @@ include_directories(${MPI_INCLUDE_PATH})
 FILE(GLOB_RECURSE coreneuron_all_headers "*.h")
 FILE(GLOB_RECURSE coreneuron_all_templates "*.ipp")
 FILE(GLOB_RECURSE coreneuron_all_c_files "*.c*")
+file(GLOB_RECURSE coreneuron_cuda_files "*.cu")
 
 # Compile and include MOD files
 
@@ -178,10 +179,14 @@ endif()
 
 set(coreneuron_all_c_files ${coreneuron_all_c_files} ${GENERATED_MECH_C_FILES})
 
-
 add_library(coreneuron ${COMPILE_LIBRARY_TYPE} ${coreneuron_all_headers} ${coreneuron_all_templates} ${coreneuron_all_c_files})
 
-target_link_libraries(coreneuron ${MPI_C_LIBRARIES})
+if(ENABLE_SELECTIVE_GPU_PROFILING)
+    cuda_add_library("cudacoreneuron" ${coreneuron_cuda_files})
+    target_link_libraries(coreneuron ${MPI_C_LIBRARIES} cudacoreneuron ${CUDA_LIBRARIES})
+else()
+    target_link_libraries(coreneuron ${MPI_C_LIBRARIES} ${CUDA_LIBRARIES})
+endif()
 
 set_target_properties(coreneuron PROPERTIES
                             VERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}
