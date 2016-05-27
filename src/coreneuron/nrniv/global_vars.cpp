@@ -44,11 +44,12 @@ void set_globals(const char* path) {
     return;
   }
 
+  char line[256];
+  char name[256];
+  double val;
+  int n;
+
   for (;;) {
-    char line[256];
-    char name[256];
-    double val;
-    int n;
     nrn_assert(fgets(line, 256, f) != NULL);
     N2V::iterator it;
     if (sscanf(line, "%s %lf", name, &val) == 2) {
@@ -74,6 +75,15 @@ void set_globals(const char* path) {
       nrn_assert(0);
     }
   }
+
+  if (fgets(line, 256, f) != NULL) {
+    if (sscanf(line, "%s %d", name, &n) == 2) {
+      if (strcmp(name, "secondorder") == 0) {
+        secondorder = n;
+      }
+    }
+  }
+
   fclose(f);
 
 #if 0
