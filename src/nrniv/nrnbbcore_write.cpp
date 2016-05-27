@@ -101,6 +101,7 @@ extern short* nrn_is_artificial_;
 extern int nrn_is_ion(int type);
 extern double nrn_ion_charge(Symbol* sym);
 extern Symbol* hoc_lookup(const char*);
+extern int secondorder;
 
 /* not NULL, need to write gap information */
 extern void (*nrnthread_v_transfer_)(NrnThread*);
@@ -743,6 +744,7 @@ static void write_globals(const char* fname) {
     }
   }
   fprintf(f, "0 0\n"); 
+  fprintf(f, "secondorder %d\n", secondorder);
 
   fclose(f);
 }
