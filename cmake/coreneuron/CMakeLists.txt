@@ -98,22 +98,25 @@ endif()
 
 
 option (ENABLE_SELECTIVE_GPU_PROFILING "Enable GPU profiling only for Solver" ON)
-if(ENABLE_SELECTIVE_GPU_PROFILING)
-    find_package(CUDA 5.0)
-    if(CUDA_FOUND)
-        add_definitions( -DCUDA_PROFILING)
-    else(CUDA_FOUND)
-        message( FATAL_ERROR "Error : Load CUDA module or disable selective profiling using -DENABLE_SELECTIVE_GPU_PROFILING=OFF !" )
-    endif(CUDA_FOUND)
-
-    add_definitions( -DENABLE_SELECTIVE_PROFILING)
-endif(ENABLE_SELECTIVE_GPU_PROFILING)
 
 option (ENABLE_OPENACC "Enable use of OpenACC" ON)
 if(ENABLE_OPENACC)
     if(${CMAKE_C_COMPILER_ID} STREQUAL "PGI")
         add_definitions( -DPG_ACC_BUGS)
     endif()
+
+    if(ENABLE_SELECTIVE_GPU_PROFILING)
+        find_package(CUDA 5.0)
+        if(CUDA_FOUND)
+            add_definitions( -DCUDA_PROFILING)
+        else(CUDA_FOUND)
+            message( FATAL_ERROR "Error : Load CUDA module or disable selective profiling using -DENABLE_SELECTIVE_GPU_PROFILING=OFF !" )
+        endif(CUDA_FOUND)
+
+        add_definitions( -DENABLE_SELECTIVE_PROFILING)
+    endif(ENABLE_SELECTIVE_GPU_PROFILING)
+ELSE(ENABLE_OPENACC)
+    SET (ENABLE_SELECTIVE_GPU_PROFILING OFF)
 endif(ENABLE_OPENACC)
 
 CHECK_INCLUDE_FILES("spi/include/kernel/memory.h" have_memory_h)
