@@ -58,7 +58,7 @@ void set_globals(const char* path) {
         nrn_assert(it->second.first == 0);
         *(it->second.second) = val;
       }
-    }else if (sscanf(line, "%s[%d]\n", name, &n) == 2) {
+    }else if (sscanf(line, "%[^[][%d]\n", name, &n) == 2) {
       if (strcmp(name, "0") == 0) { break; }
       it = n2v->find(name);
       if (it != n2v->end()) {
@@ -74,10 +74,13 @@ void set_globals(const char* path) {
       nrn_assert(0);
     }
   }
+  fclose(f);
 
+#if 0
   for (N2V::iterator i = n2v->begin(); i != n2v->end(); ++i) {
     printf("%s %ld %p\n", i->first.c_str(), i->second.first, i->second.second);
   }
+#endif
 
   delete n2v;
 }
