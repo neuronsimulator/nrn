@@ -263,7 +263,7 @@ static void checkrace(TNode* nd, VTN& nodes) {
   bool res = true;
   for (size_t i = nd->nodevec_index; i < nodes.size(); ++i) {
     if (is_parent_race2(nodes[i])) {
-      printf("checkrace %ld\n", i);
+//      printf("checkrace %ld\n", i);
       res = false;
     }
   }

@@ -41,6 +41,8 @@ size_t warp_balance(size_t ncell, VecTNode& nodevec) {
 
   if (cellorder_nwarp == 0) { return 0; }
   size_t nwarp = size_t(cellorder_nwarp);
+  // cannot be more warps than cells
+  nwarp = (ncell < nwarp) ? ncell : nwarp;
   size_t ncore = nwarp * warpsize;
 
   // cellsize vector and location of types.

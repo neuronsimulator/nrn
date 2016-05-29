@@ -690,7 +690,7 @@ void BBS_netpar_solve(double tstop) {
 
     nrnmpi_barrier();
 	if ( nrnmpi_myid == 0 ) {
-      printf( " Solver Time : %g\n", nrnmpi_wtime() - time );
+      printf( "\nSolver Time : %g\n", nrnmpi_wtime() - time );
     }
 }
 
