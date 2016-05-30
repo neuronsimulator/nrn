@@ -66,3 +66,5 @@ with a particular line segment in the results panel one can:
     clicking on a section will color both the section and the corresponding 
     line in the results panel. 
 
+.. image:: ../../images/impedanx-logavsx.png
+    :align: center  

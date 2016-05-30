@@ -32,4 +32,6 @@ Quick Links
     modelspec/programmatic/topology.rst
     programming/math/misc.rst
     visualization/notify.rst
+    analysis/guitools/impedanx.rst
+    
     
