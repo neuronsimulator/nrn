@@ -1,4 +1,3 @@
-37    programming/math/misc.rst     
 39    visualization/notify.rst      
 68    analysis/guitools/impedanx.rst
 84    programming/gui/symchooser.rst
