@@ -144,11 +144,7 @@ static void print_quality1(int iwarp, InterleaveInfo& ii, int ncell, int* parent
   nrn_assert(ncycle == ii.cellsize[cellend-1]);
   nrn_assert(ncycle <= ii.nstride);
 
-  int nnode = ii.lastnode[ncell-1];
-  int* p = new int[nnode];
-  for (int i=0; i < nnode; ++i) { p[i] = parent[i]; }
-  permute_ptr(p, nnode, order);
-  node_permute(p, nnode, order);  
+  int* p = parent;
 
   int ncell_in_warp = cellend - cellbegin;
 
@@ -189,8 +185,6 @@ static void print_quality1(int iwarp, InterleaveInfo& ii, int ncell, int* parent
   ii.child_race[iwarp] = 0;
   if (pc) printf("warp %d:  %ld nodes, %d cycles, %ld idle, %ld cache access\n",
     iwarp, n, ncycle, nx, ncacheline);
-
-  delete [] p;
 }
 
 static void warp_balance(int ith, InterleaveInfo& ii) {
@@ -250,6 +244,12 @@ if (0 && ith == 0 && use_interleave_permute == 1) {
   }
 }
     if (ith == 0) {
+      // needed for print_quality1 and done once here to save time
+      int* p = new int[nnode];
+      for (int i=0; i < nnode; ++i) { p[i] = parent[i]; }
+      permute_ptr(p, nnode, order);
+      node_permute(p, nnode, order);  
+
       ii.nnode = new size_t[nwarp];
       ii.ncycle = new size_t[nwarp];
       ii.idle = new size_t[nwarp];
@@ -260,9 +260,10 @@ if (0 && ith == 0 && use_interleave_permute == 1) {
           print_quality1(i, interleave_info[ith], ncell, parent, order);
         }
         if (use_interleave_permute == 2) {
-          print_quality2(i, interleave_info[ith], parent, order);
+          print_quality2(i, interleave_info[ith], p, order);
         }
       }
+      delete [] p;
       warp_balance(ith, interleave_info[ith]);
     }
   }

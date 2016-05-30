@@ -554,7 +554,7 @@ static void admin1(int ncell, VecTNode& nodevec, int& nwarp,
   lastnode = new int[ncell];
   cellsize = new int[ncell];
 
-  nwarp = (ncell%warpsize) ? (ncell/warpsize) : (ncell/warpsize + 1);
+  nwarp = (ncell%warpsize == 0) ? (ncell/warpsize) : (ncell/warpsize + 1);
 
   for (int i = 0; i < ncell; ++i) {
     firstnode[i] = -1;
