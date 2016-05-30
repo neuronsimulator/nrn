@@ -31,4 +31,5 @@ Quick Links
     modelspec/programmatic/linmod.rst
     modelspec/programmatic/topology.rst
     programming/math/misc.rst
+    visualization/notify.rst
     

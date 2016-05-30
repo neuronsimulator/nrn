@@ -9,7 +9,7 @@ Notification
 
 
     Syntax:
-        ``doEvents()``
+        ``h.doEvents()``
 
 
     Description:
@@ -29,7 +29,7 @@ Notification
 
 
     Syntax:
-        ``doNotify()``
+        ``h.doNotify()``
 
 
     Description:

@@ -1,4 +1,3 @@
-39    visualization/notify.rst      
 68    analysis/guitools/impedanx.rst
 84    programming/gui/symchooser.rst
 93    programming/pointers/pointer.rst      
