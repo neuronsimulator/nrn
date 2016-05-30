@@ -330,8 +330,8 @@ Graph
 
     .. note::
 
-        Not that useful in Python since only works with :meth:`Graph.addexpr` which uses
-        HOC expressions.
+        Not that useful in Python since only works with :meth:`Graph.addexpr` and
+        :meth:`Graph.xexpr` which use HOC expressions.
 
     Syntax:
         ``g.plot(x)``
@@ -352,6 +352,9 @@ Graph
 
 .. method:: Graph.xexpr
 
+    .. note::
+
+        Not that useful in Python since only works with HOC expressions.
 
     Syntax:
         ``g.xexpr("HOC expression")``
@@ -370,36 +373,48 @@ Graph
 
     Example:
 
-        .. code-block::
-            none
+        .. code::
 
-            objref g	//Creates an object reference "g" which will 
-            		//point to the graph object. 
-            g = new Graph()		//Assigns "g" the role of pointing to a Graph 
-            			//created from the Graph class, and produces 
-            			//a graph window with x and y axes on the  
-            			//screen. 
-            g.size(-4,4,-4,4)	//sizes the window to fit the graph 
-            t = 0		//Declares t as a possible variable 
-            g.addexpr("3*sin(t)")	//stores 3*sin(t) as a function to be plotted in g graphs 
-            g.color(3)		//the next graph will be drawn in blue 
-            g.addexpr("3*sin(2*t)") //stores 3*sin(2*t) as a function to be plotted 
-            g.xexpr("3*cos(t)")	//stores 3*cos(t) as the x function to be plotted in g graphs 
-            			//sin(x) becomes the y function 
-            g.begin()		//Tells the interpreter that commands to plot  
-            			//specific functions will follow. 
-            for(t=0; t<=2*PI+0.1; t=t+0.1){	//States that x values to be plotted 
-            				//will go from 0 to 10 in increments 
-            				//of 0.1. 
-            	g.plot(t)	//States that the y values on the plot 
-            			//will be the sin of the x values. 
-            } 
-            g.flush()	//Actually draws the plot on the graph in the window. 
+            from neuron import h, gui
+
+            # Assign "g" the role of pointing to a Graph 
+            # created from the Graph class, and produces 
+            # a graph window with x and y axes on the  
+            # screen. 
+            g = h.Graph()
+
+            # size the window to fit the graph 
+            g.size(-4, 4, -4, 4)
+
+            # store 3*sin(t) as a function to be plotted in g graphs 
+            g.addexpr('3*sin(t)')
+
+            # the next graph will be blue
+            g.color(3)
+
+            # store 3 * sin(2 * t) as a function to be plotted
+            g.addexpr("3*sin(2*t)")
+
+            # store 3*cos(t) as the x function to be plotted in g graphs 
+            # The two previous expressions become the y values
+            g.xexpr('3*cos(t)') 
+
+            g.begin()
+            for i in xrange(64):
+                # h.t ranges from 0 to 6.3 \approx 2 * pi
+                h.t = i * 0.1
+                g.plot(h.t)
+
+            # actually draws the graph
+            g.flush()
+ 
 
         plots a black circle of radius=3 and a blue infinity-like figure, spanning from x=-3 
         to x=3. 
 
-         
+        .. image:: ../images/graph-xexpr.png
+            :align: center        
+
 
 ----
 
@@ -449,37 +464,36 @@ Graph
         (Note, this is most useful for time plots). 
          
 
-        .. code-block::
-            none
+        .. code::
 
-            objectvar g 
-            g = new Graph() 
-            g.size(0,4000, -1,1) 
+            from neuron import h, gui
+
+            g = h.Graph() 
+            g.size(0, 4000, -1, 1) 
              
-            g.addexpr("cos(x/100)") 
-            g.addexpr("cos(x/150)") 
-            g.addexpr("cos(x/200)") 
-            g.addexpr("cos(x/250)") 
-            g.addexpr("cos(x/300)") 
-            g.addexpr("cos(x/450)") 
+            g.addexpr("cos(t/100)") 
+            g.addexpr("cos(t/150)") 
+            g.addexpr("cos(t/200)") 
+            g.addexpr("cos(t/250)") 
+            g.addexpr("cos(t/300)") 
+            g.addexpr("cos(t/450)") 
              
-            proc pl() { 
-            	g.erase() 
-            	g.begin() 
-            	for (x=0; x < 4000; x=x+1) { 
-            		g.plot(x) 
-            		if (x%10 == 0) { 
-            			g.fastflush() 
-            			doNotify() 
-            		} 
-            	} 
-            	g.flush() 
-            	doNotify() 
-            } 
-             
+            def pl():
+                g.erase()
+                g.begin()
+                for h.t in range(4000):
+                    g.plot(h.t) 
+                    if (h.t % 10 == 0) :
+                        g.fastflush() 
+                        h.doNotify() 
+                g.flush() 
+                h.doNotify() 
+
             pl() 
              
 
+        .. image:: ../images/graph-fastflush.png
+            :align: center        
 
          
 
@@ -529,38 +543,55 @@ Graph
 
 
     Syntax:
-        ``.vector(n, &x[0], &y[0])``
-
-        ``.vector("namey")``
+        ``.vector(n, _ref_x, _ref_y)``
 
 
     Description:
 
-
-        ``.vector(n, &x[0], &y[0])`` 
-            Rudimentary graphing of a y-vector vs. a fixed x-vector. The y-vector 
-            is reread on each ``.flush()`` (x-vector is not reread). Cannot save 
-            and cannot keep lines. 
-             
-            Notes: 
-             
-            These vectors are assumed to be doubles and not vectors from 
-            the Vector class.  The Vector class has its own functions 
-            :meth:`Vector.plot`, :meth:`Vector.line`, :meth:`Vector.mark` 
-            for graphing vectors constructed in that class. 
-             
-            A segmentation violation will result if 
-            n is greater than the vector size. 
-             
-
-        ``.vector("namey")`` 
-            equivalent to ``.vector(n, ..., &namey[0])`` above with the advantage 
-            that it is saved in a session (because the symbol name is known). 
-            It is simpler in that the size n is obtained from the symbol but 
-            the plot is vs. the index of the vector. Not implemented. 
+        Rudimentary graphing of a y-vector vs. a fixed x-vector. The y-vector 
+        is reread on each ``.flush()`` (x-vector is not reread). Cannot save 
+        and cannot keep lines. 
 
 
-         
+    .. note::
+
+        For plotting :class:`Vector` objects, it is typically easier to use         
+        :meth:`Vector.plot`, :meth:`Vector.line`, and :meth:`Vector.mark`.
+
+    .. note::
+
+        A segmentation violation will result if 
+        n is greater than the vector size. 
+
+
+    Example:
+
+        .. code::
+
+            from neuron import h, gui
+            import numpy
+
+            num_elements = 629
+
+            x = h.Vector(num_elements)
+            y = h.Vector(num_elements)
+
+            # fill x with 0, 0.01, 0.02, etc
+            x.indgen(0.01)
+
+            # set y to the sin of x via numpy
+            y.as_numpy()[:] = numpy.sin(x)
+
+            # create the graph
+            g = h.Graph()
+            g.size(0, 6.28, -1, 1)
+            g.vector(num_elements, x._ref_x[0], y._ref_x[0])
+            g.flush()
+
+        .. image:: ../images/graph-vector.png
+            :align: center        
+
+
 
 ----
 
@@ -635,7 +666,7 @@ Graph
 
 
     Syntax:
-        ``.erase()``
+        ``g.erase()``
 
 
     Description:
@@ -651,7 +682,7 @@ Graph
 
 
     Syntax:
-        ``e.erase_all()``
+        ``g.erase_all()``
 
 
     Description:
