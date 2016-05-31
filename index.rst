@@ -36,4 +36,5 @@ Quick Links
     programming/gui/symchooser.rst
     programming/gui/vfe.rst 
     simctrl/sessionsave.rst
+    programming/strings.rst
     

@@ -8,18 +8,31 @@ Strings
         
         strfun.rst
         sscanf.rst
-        
-    - :ref:`strdef <keyword_strdef>`
 
 ----
 
 .. function:: sprint
 
     Syntax:
-        ``sprint(strdef, "format", args)``
+        ``h.sprint(strdef, "format", args)``
 
     Description:
-        Prints to a string. See :func:`printf` for the description of the format.
+        Prints to a NEURON (i.e. not Python) string. See :func:`printf` for the description of the format.
+
+    Example:
+
+        from neuron import h
+
+        strdef = h.ref('')
+        h.sprint(strdef, 'There are %d %s.', 3, 'cows')
+        print(strdef[0])
+
+    .. note::
+
+        Similar functionality is available for Python strings using the ``%`` operator or (for Python 2.6+) a
+        string object's ``format`` method. As Python strings are immutable, these approaches each create a new
+        string.
+
 
 
 ----
@@ -27,7 +40,7 @@ Strings
 .. function:: strcmp
 
     Syntax:
-        ``x = strcmp("string1", "string2")``
+        ``x = h.strcmp("string1", "string2")``
 
     Description:
         return negative, 0, or positive value 

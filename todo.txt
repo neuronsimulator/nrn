@@ -34,7 +34,6 @@
 535   modelspec/programmatic/topology.rst   
 741   modelspec/programmatic/network/netcon.rst     
 1313    programming/math/matrix.rst   
-37    programming/strings.rst         
 55    compilationoptions.rst
 73    modelspec/programmatic/network/lyttonmpi.rst  
 90    modelspec/programmatic/rxd.rst
