@@ -1,4 +1,3 @@
-84    programming/gui/symchooser.rst
 93    programming/pointers/pointer.rst      
 116   programming/gui/secbrows.rst  
 139   programming/math/mcran4.rst   

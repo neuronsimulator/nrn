@@ -9,11 +9,11 @@ SymChooser
 
 
     Syntax:
-        ``SymChooser()``
+        ``h.SymChooser()``
 
-        ``SymChooser(caption)``
+        ``h.SymChooser(caption)``
 
-        ``SymChooser("caption", "varname")``
+        ``h.SymChooser("caption", "varname")``
 
 
     Description:
@@ -34,11 +34,9 @@ SymChooser
 
     Example:
 
-        .. code-block::
-            none
+        .. code::
 
-            objref scobj 
-            scobj = new SymChooser() 
+            scobj = h.SymChooser() 
             scobj.run() 
 
         puts the symbol chooser on the screen, giving you access to all existing variables, 
@@ -58,7 +56,7 @@ SymChooser
 
 
     Syntax:
-        ``.run()``
+        ``scobj.run()``
 
 
     Description:
@@ -75,10 +73,29 @@ SymChooser
 
 
     Syntax:
-        ``.text(strdef)``
+        ``scobj.text(strdef)``
 
 
     Description:
-        Places the text of last choice in *strdef*. 
+        Places the text of last choice in *strdef*. This must be a reference to a HOC-style
+        string not a Python string; see the example.
 
+    Example:
 
+        .. code::
+
+            from neuron import h, gui
+
+            h('create soma')
+            h.soma.insert('hh')
+
+            scobj = h.SymChooser()
+            scobj.run()
+
+            # read the result
+            resultPtr = h.ref('')
+            scobj.text(resultPtr)
+            print('You selected: ' + resultPtr[0])
+
+        .. image:: ../../images/symchooser.png
+            :align: center  

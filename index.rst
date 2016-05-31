@@ -33,5 +33,5 @@ Quick Links
     programming/math/misc.rst
     visualization/notify.rst
     analysis/guitools/impedanx.rst
-    
+    programming/gui/symchooser.rst
     
