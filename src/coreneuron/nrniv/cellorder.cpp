@@ -243,7 +243,7 @@ if (0 && ith == 0 && use_interleave_permute == 1) {
     printf("istride=%d stride=%d\n", i, stride[i]);
   }
 }
-    if (ith == 0) {
+    if (ith == 0 && nwarp < 1000) {
       // needed for print_quality1 and done once here to save time
       int* p = new int[nnode];
       for (int i=0; i < nnode; ++i) { p[i] = parent[i]; }
@@ -257,10 +257,10 @@ if (0 && ith == 0 && use_interleave_permute == 1) {
       ii.child_race = new size_t[nwarp];
       for (int i=0; i < nwarp; ++i) {
         if (use_interleave_permute == 1) {
-          print_quality1(i, interleave_info[ith], ncell, parent, order);
+          print_quality1(i, interleave_info[ith], ncell, p, order);
         }
         if (use_interleave_permute == 2) {
-          print_quality2(i, interleave_info[ith], p, order);
+          print_quality2(i, interleave_info[ith], parent, order);
         }
       }
       delete [] p;
@@ -528,13 +528,14 @@ foo = 0;
 
 void solve_interleaved1(int ith) {
   NrnThread* nt = nrn_threads + ith;
+  int ncell = nt->ncell;
+  if (ncell == 0) { return; }
   InterleaveInfo& ii = interleave_info[ith];
   int nstride = ii.nstride;
   int* stride = ii.stride;
   int* firstnode = ii.firstnode;
   int* lastnode = ii.lastnode;
   int* cellsize = ii.cellsize;
-  int ncell = nt->ncell;
 #if _OPENACC
   int stream_id = nt->stream_id;
 #endif
