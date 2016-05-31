@@ -35,4 +35,5 @@ Quick Links
     analysis/guitools/impedanx.rst
     programming/gui/symchooser.rst
     programming/gui/vfe.rst 
+    simctrl/sessionsave.rst
     

@@ -4,11 +4,11 @@ Session Printing and Saving
 .. function:: print_session
 
     Syntax:
-        ``0 = print_session(useprinter, "name")``
+        ``h.print_session(useprinter, "name")``
 
-        ``0 = print_session(useprinter, "name", useselected)``
+        ``h.print_session(useprinter, "name", useselected)``
 
-        ``0 = print_session()``
+        ``h.print_session()``
 
     Description:
         Print a postscript file consisting of certain windows on the screen. 
@@ -32,9 +32,9 @@ Session Printing and Saving
 .. function:: save_session
 
     Syntax:
-        ``0 = save_session("filename")``
+        ``h.save_session("filename")``
 
-        ``0 = save_session("filename", "header")``
+        ``h.save_session("filename", "header")``
 
     Description:
         Save all the (saveable) windows on the screen to filename. 
