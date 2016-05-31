@@ -9,7 +9,7 @@ ValueFieldEditor
 
 
     Syntax:
-        ``vfe = new ValueFieldEditor(...)``
+        ``vfe = h.ValueFieldEditor(...)``
 
 
     Description:
@@ -26,7 +26,7 @@ ValueFieldEditor
 
 
     Syntax:
-        ``vfe.default``
+        ``vfe.default()``
 
 
     Description:

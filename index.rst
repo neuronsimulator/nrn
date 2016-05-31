@@ -34,4 +34,5 @@ Quick Links
     visualization/notify.rst
     analysis/guitools/impedanx.rst
     programming/gui/symchooser.rst
+    programming/gui/vfe.rst 
     
