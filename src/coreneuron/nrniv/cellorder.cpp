@@ -181,7 +181,12 @@ static void print_quality1(int iwarp, InterleaveInfo& ii, int ncell, int* p) {
 
 static void warp_balance(int ith, InterleaveInfo& ii) {
   size_t nwarp = size_t(ii.nwarp);
-  size_t smm[4][3] = {{0,1000000000,0}}; // sum_min_max see cp below
+  size_t smm[4][3]; // sum_min_max see cp below
+  for (size_t j = 0; j < 4; ++j) {
+    smm[j][0] = 0;
+    smm[j][1] = 1000000000;
+    smm[j][2] = 0;
+  }
   double emax = 0.0, emin=1.0;
   for (size_t i = 0; i < nwarp; ++i) {
     size_t n = ii.nnode[i];
