@@ -88,7 +88,7 @@ In addition, you will need to install the interviews library.  You
 cannot use the vanilla interviews library that may come packaged with
 X11, or may be available as a separate package with your operating
 system.  You must use the custom-modified interviews library which is
-available from the neuron web site www.neuron.yale.edu or wherever you
+available from the neuron web site neuron.yale.edu or wherever you
 got the this neuron distribution from.  Read the INSTALL file in that
 distribution for details.  Again, you can install the interviews library 
 in the same directory that you're going to install neuron in.

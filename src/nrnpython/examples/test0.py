@@ -19,7 +19,7 @@ pc.done()
 ## numprocs=4
 ## NEURON -- VERSION 7.0.unoffical-nrn-hg.unknown (2216) 2008-09-15
 ## Duke, Yale, and the BlueBrain Project -- Copyright 1984-2008
-## See http://www.neuron.yale.edu/credits.html
+## See http://neuron.yale.edu/credits.html
 
 ## MPI_Initialized==true, enabling MPI funtionality.
 ## MPI_Initialized==true, enabling MPI funtionality.
@@ -46,7 +46,7 @@ pc.done()
 ## numprocs=4
 ## NEURON -- VERSION 7.0.unoffical-nrn-hg.unknown (2216) 2008-09-15
 ## Duke, Yale, and the BlueBrain Project -- Copyright 1984-2008
-## See http://www.neuron.yale.edu/credits.html
+## See http://neuron.yale.edu/credits.html
 
 ## mpi4py thinks I am 3 of 4, NEURON thinks I am 3 of 4
 
@@ -61,7 +61,7 @@ pc.done()
 ## numprocs=1
 ## NEURON -- VERSION 7.0.unoffical-nrn-hg.unknown (2216) 2008-09-15
 ## Duke, Yale, and the BlueBrain Project -- Copyright 1984-2008
-## See http://www.neuron.yale.edu/credits.html
+## See http://neuron.yale.edu/credits.html
 
 ## mpi4py thinks I am 0 of 1, NEURON thinks I am 0 of 1
 
@@ -74,7 +74,7 @@ pc.done()
 ## MPI_Initialized==false, disabling MPI funtionality.
 ## NEURON -- VERSION 7.0.unoffical-nrn-hg.unknown (2216) 2008-09-15
 ## Duke, Yale, and the BlueBrain Project -- Copyright 1984-2008
-## See http://www.neuron.yale.edu/credits.html
+## See http://neuron.yale.edu/credits.html
 
 ## >>>
 

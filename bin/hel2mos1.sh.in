@@ -2,7 +2,7 @@
 
 #NETSCAPE='/u3/local/hines/netscape/netscape'
 NETSCAPE=`which netscape`
-help='http://www.neuron.yale.edu/neuron/help'
+help='http://neuron.yale.edu/neuron/help'
 
 #help="file:$NEURONHOME/html/help"
 

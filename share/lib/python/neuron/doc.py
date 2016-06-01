@@ -167,7 +167,7 @@ This synapse summates.
 
 See:
 
-http://www.neuron.yale.edu/neuron/static/docs/help/neuron/neuron/mech.html#ExpSyn
+http://neuron.yale.edu/neuron/static/docs/help/neuron/neuron/mech.html#ExpSyn
 
 """,
     Exp2Syn = """
@@ -208,7 +208,7 @@ This synapse summates.
 
 See:
 
-http://www.neuron.yale.edu/neuron/static/docs/help/neuron/neuron/mech.html#Exp2Syn
+http://neuron.yale.edu/neuron/static/docs/help/neuron/neuron/mech.html#Exp2Syn
 
 
 """,
@@ -237,7 +237,7 @@ Example:
 
 See:
 
-http://www.neuron.yale.edu/neuron/static/docs/help/neuron/neuron/mech.html#SEClamp
+http://neuron.yale.edu/neuron/static/docs/help/neuron/neuron/mech.html#SEClamp
 
 """,
     VClamp = """
@@ -263,7 +263,7 @@ Example:
 
 See:
 
-http://www.neuron.yale.edu/neuron/static/docs/help/neuron/neuron/mech.html#VClamp
+http://neuron.yale.edu/neuron/static/docs/help/neuron/neuron/mech.html#VClamp
 
 """,
     APCount = """
@@ -298,7 +298,7 @@ Example:
 
 See:
 
-http://www.neuron.yale.edu/neuron/static/docs/help/neuron/neuron/mech.html#APcount
+http://neuron.yale.edu/neuron/static/docs/help/neuron/neuron/mech.html#APcount
 
 """,
     ParallelContext = """
@@ -309,7 +309,7 @@ class ParallelContext
 
 See:
 
-http://www.neuron.yale.edu/neuron/static/docs/help/neuron/neuron/classes/parcon.html
+http://neuron.yale.edu/neuron/static/docs/help/neuron/neuron/classes/parcon.html
 
 """,
     NetStim = """
@@ -324,7 +324,7 @@ serve as the target of a NetCon.
 
 See:
 
-http://www.neuron.yale.edu/neuron/static/docs/help/neuron/neuron/mech.html#NetStim
+http://neuron.yale.edu/neuron/static/docs/help/neuron/neuron/mech.html#NetStim
 
 """,
     Random = """
@@ -342,7 +342,7 @@ normal with mean = 0 and standard deviation = 1.
 
 See:
     
-http://www.neuron.yale.edu/neuron/static/docs/help/neuron/general/classes/random.html#Random
+http://neuron.yale.edu/neuron/static/docs/help/neuron/general/classes/random.html#Random
 
 Note:
 
@@ -358,7 +358,7 @@ used in place of the default staggered fixed time step method.
 
 See:
 
-http://www.neuron.yale.edu/neuron/static/docs/help/neuron/neuron/classes/cvode.html
+http://neuron.yale.edu/neuron/static/docs/help/neuron/neuron/classes/cvode.html
 
 """,
     List = """
@@ -396,7 +396,7 @@ List("templatename")
 
 See:
 
-http://www.neuron.yale.edu/neuron/static/docs/help/neuron/general/classes/list.html
+http://neuron.yale.edu/neuron/static/docs/help/neuron/general/classes/list.html
 
 
 """,
@@ -483,7 +483,7 @@ needed.
 
 See:
 
-    http://www.neuron.yale.edu/neuron/static/docs/help/neuron/general/classes/vector/vect.html#Vector
+    http://neuron.yale.edu/neuron/static/docs/help/neuron/general/classes/vector/vect.html#Vector
 
 """,
     IClamp = """
@@ -509,9 +509,9 @@ Example:
 
 See:
 
-    http://www.neuron.yale.edu/neuron/static/docs/help/neuron/neuron/mech.html#IClamp
+    http://neuron.yale.edu/neuron/static/docs/help/neuron/neuron/mech.html#IClamp
 
-    http://www.neuron.yale.edu/neuron/static/docs/help/neuron/neuron/mech.html#pointprocesses
+    http://neuron.yale.edu/neuron/static/docs/help/neuron/neuron/mech.html#pointprocesses
 
 Note:
 
@@ -587,7 +587,7 @@ practical one.
 
 See:
 
-http://www.neuron.yale.edu/neuron/static/docs/help/neuron/neuron/classes/netcon.html
+http://neuron.yale.edu/neuron/static/docs/help/neuron/neuron/classes/netcon.html
 
 """,
     File = """
@@ -637,7 +637,7 @@ vector. This issue does not arise with the unix version.
 
 See:
 
-    http://www.neuron.yale.edu/neuron/static/docs/help/neuron/general/classes/file.html
+    http://neuron.yale.edu/neuron/static/docs/help/neuron/general/classes/file.html
 
 """)
     
@@ -648,7 +648,7 @@ default_class_doc_template = """
 No docstring available for class '%s'
 A more extensive help for Hoc is available here:
 
-http://www.neuron.yale.edu/neuron/static/docs/help/contents.html
+http://neuron.yale.edu/neuron/static/docs/help/contents.html
 
 most of which still applies for python.
 """
@@ -658,7 +658,7 @@ default_object_doc_template = """
 No docstring available for object type '%s'
 A more extensive help for Hoc is available here:
 
-http://www.neuron.yale.edu/neuron/static/docs/help/contents.html
+http://neuron.yale.edu/neuron/static/docs/help/contents.html
 
 most of which still applies for python.
 """
@@ -668,7 +668,7 @@ default_member_doc_template = """
 No docstring available for the class member '%s.%s'
 A more extensive help for Hoc is available here:
 
-http://www.neuron.yale.edu/neuron/static/docs/help/contents.html
+http://neuron.yale.edu/neuron/static/docs/help/contents.html
 
 most of which still applies for python.
 

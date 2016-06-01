@@ -77,7 +77,7 @@ install-exec-hook:
 	echo "leave install-exec-hook in nrn/Makefile.am"
 endif
 
-ALPHADIR = hines@www.neuron.yale.edu:/home/htdocs/ftp/neuron/versions/alpha
+ALPHADIR = hines@neuron.yale.edu:/home/htdocs/ftp/neuron/versions/alpha
 
 if MAKE_RPMS
 rpm: @RPM_TARGET@

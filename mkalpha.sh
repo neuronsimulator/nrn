@@ -29,7 +29,7 @@ ostype="`sh config.guess | sed 's/^\([^-]*\)-\([^-]*\)-\([A-Za-z]*\).*/\3/'`"
 ver="`sh nrnversion.sh 2`"
 
 a=1
-old="`ssh hines@www.neuron.yale.edu 'cd /home/htdocs/ftp/neuron/versions/alpha; ls *'$ver'*'`"
+old="`ssh hines@neuron.yale.edu 'cd /home/htdocs/ftp/neuron/versions/alpha; ls *'$ver'*'`"
 
 case "$ostype" in
 	cygwin) echo "$old" |grep 'setup' ; a=$? ;;

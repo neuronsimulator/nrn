@@ -1,13 +1,13 @@
 NEURON is a simulator for models of neurons and networks of neuron.
-See http://www.neuron.yale.edu for installers, source code,
+See http://neuron.yale.edu for installers, source code,
 documentation, tutorials, announcements of courses and conferences,
 and a discusson forum.
 
 Basic installation on Linux from the nrn...tar.gz file is:
 
   Build InterViews first from the mercurial repository at
-  http://www.neuron.yale.edu/hg/neuron/iv or the iv...tar.gz file at
-  http://www.neuron.yale.edu/ftp/neuron/versions/alpha/
+  http://neuron.yale.edu/hg/neuron/iv or the iv...tar.gz file at
+  http://neuron.yale.edu/ftp/neuron/versions/alpha/
 
   ./configure
   make
@@ -28,10 +28,10 @@ Particularly useful configure options:
     extension.
 
 If sources are obtained from the mercurial repository,
-http://www.neuron.yale.edu/hg/neuron/nrn ,
+http://neuron.yale.edu/hg/neuron/nrn ,
 create the automake, autoconf, libtool generated files by:
   sh build.sh
 
 For more installation information see:
-http://www.neuron.yale.edu/neuron/download/getdevel
+http://neuron.yale.edu/neuron/download/getdevel
 

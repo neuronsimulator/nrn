@@ -264,7 +264,7 @@ if true ; then # false means skip marshaling of html
 hparent=$S/..
 if false ; then
 cd $hparent
-scp hines@www.neuron.yale.edu:/home/htdocs/neuron/static/docs/nrnhelp.zip .
+scp hines@neuron.yale.edu:/home/htdocs/neuron/static/docs/nrnhelp.zip .
 mkdir html
 cd html
 unzip ../nrnhelp.zip

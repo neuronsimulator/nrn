@@ -24,8 +24,8 @@ cd $HOME/neuron
 # or whatever the NEURON installed version was called
 
 # assume the original checkout used ivx and nrn as source directories
-#cvs -d :ext:hines@www.neuron.yale.edu:/home/cvsroot checkout -d ivx iv
-#cvs -d :ext:hines@www.neuron.yale.edu:/home/cvsroot checkout nrn
+#cvs -d :ext:hines@neuron.yale.edu:/home/cvsroot checkout -d ivx iv
+#cvs -d :ext:hines@neuron.yale.edu:/home/cvsroot checkout nrn
 
 cd $IVSRC
 cvs update
@@ -103,4 +103,4 @@ make dmg
 ftpname="`sh $NSRC/nrnversion.sh 2`"
 ftpname=nrn-${ftpname}-OSX10.3.dmg
 scp $HOME/NEURON-$NVER.dmg \
- hines@www.neuron.yale.edu:/home/ftp/neuron/versions/alpha/$ftpname
+ hines@neuron.yale.edu:/home/ftp/neuron/versions/alpha/$ftpname

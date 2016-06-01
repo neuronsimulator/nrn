@@ -6,7 +6,7 @@ neuron
 For empirically-based simulations of neurons and networks of neurons in Python.
 
 This is the top-level module of the official python interface to
-the NEURON simulation environment (http://www.neuron.yale.edu/neuron/).
+the NEURON simulation environment (http://neuron.yale.edu/neuron/).
 
 Documentation is available in the docstrings.
 
@@ -18,7 +18,7 @@ $ ipython
 In [1]: import neuron
 NEURON -- VERSION 6.2 2008-08-22
 Duke, Yale, and the BlueBrain Project -- Copyright 1984-2007
-See http://www.neuron.yale.edu/credits.html
+See http://neuron.yale.edu/credits.html
 
 
 In [2]: neuron.h ?
@@ -311,7 +311,7 @@ def psection(section):
 
     See:
 
-    http://www.neuron.yale.edu/neuron/docs/help/neuron/neuron/nrnoc.html#psection
+    http://neuron.yale.edu/neuron/docs/help/neuron/neuron/nrnoc.html#psection
 
     """
     section.push()
@@ -326,7 +326,7 @@ def init():
 
     Equivalent to hoc finitialize():
 
-    http://www.neuron.yale.edu/neuron/docs/help/neuron/neuron/nrnoc.html#finitialize
+    http://neuron.yale.edu/neuron/docs/help/neuron/neuron/nrnoc.html#finitialize
     
     """
     h.finitialize()

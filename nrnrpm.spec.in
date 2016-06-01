@@ -42,7 +42,7 @@ Release: %{rel}
 License: GPL
 Group: Sciences/Other
 Source: ftp://ftp.neuron.yale.edu/neuron/unix/nrn-@VERSION@.tar.gz
-URL: http://www.neuron.yale.edu/neuron/install/installunix.html
+URL: http://neuron.yale.edu/neuron/install/installunix.html
 Distribution: Linux Neuron
 Vendor: Yale University
 Packager: Michael Hines <Michael.Hines@Yale.edu>

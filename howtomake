@@ -20,16 +20,16 @@ Checkout and build the InterViews release branch (this is only done once)
    If you have a current version 15 of InterViews you can use it and skip
 this step (until and  unless interviews starts getting revised again).
 
-cvs -d :ext:anonymous@www.neuron.yale.edu:/home/cvsroot checkout \
+cvs -d :ext:anonymous@neuron.yale.edu:/home/cvsroot checkout \
  -r iv-rel15 -d iv iv
 when the password is requested type "neuron" without the double quotes.
 	If the cvs command hangs for a minute and then fails with the
 	message:
 		miris.med.yale.edu: Connection refused
 	then your CVS_RSH environment variable is not ssh.
-	The first time cvs connects to www.neuron.yale.edu your machine
+	The first time cvs connects to neuron.yale.edu your machine
 	may respond with the message:
-The authenticity of host 'www.neuron.yale.edu (130.132.220.62)' can't be established.
+The authenticity of host 'neuron.yale.edu (130.132.220.62)' can't be established.
 RSA key fingerprint is 5d:85:7c:b0:e2:4e:4f:13:d8:f0:b8:15:70:7d:db:2a.
 Are you sure you want to continue connecting (yes/no)?
 	type "yes" without the quotes and it will continue to the point
@@ -51,7 +51,7 @@ autoconf (GNU Autoconf) 2.53
 Any newer versions will also work. See more info below.
 
 4) Check out the neuron development branch
-cvs -d :ext:anonymous@www.neuron.yale.edu:/home/cvsroot checkout -r nrn-dev5_4 -d nrn nrn
+cvs -d :ext:anonymous@neuron.yale.edu:/home/cvsroot checkout -r nrn-dev5_4 -d nrn nrn
 when the password is requested type "neuron" without the double quotes. 
   
 
