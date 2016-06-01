@@ -66,17 +66,13 @@ void destroy_interleave_info() {
 
 // more precise visualization of the warp quality
 // can be called after admin2
-static void print_quality2(int iwarp, InterleaveInfo& ii, int* parent, int* order) {
+static void print_quality2(int iwarp, InterleaveInfo& ii, int* p) {
   int nodebegin = ii.lastnode[iwarp];
   int nodeend = ii.lastnode[iwarp+1];
   int* stride = ii.stride + ii.stridedispl[iwarp];
   int ncycle = ii.cellsize[iwarp];
 
   int nnode = ii.lastnode[ii.nwarp];
-  int* p = new int[nnode];
-  for (int i=0; i < nnode; ++i) { p[i] = parent[i]; }
-  permute_ptr(p, nnode, order);
-  node_permute(p, nnode, order);  
 
   int inode = nodebegin;
 
@@ -124,11 +120,9 @@ static void print_quality2(int iwarp, InterleaveInfo& ii, int* parent, int* orde
   ii.child_race[iwarp] = ncr;
   if (iwarp == 0) printf("warp %d:  %ld nodes, %d cycles, %ld idle, %ld cache access, %ld child races\n",
     iwarp, nn, ncycle, nx, ncacheline, ncr);
-
-  delete [] p;
 }
 
-static void print_quality1(int iwarp, InterleaveInfo& ii, int ncell, int* parent, int* order) {
+static void print_quality1(int iwarp, InterleaveInfo& ii, int ncell, int* p) {
   int pc = ((iwarp == 0) || iwarp == (ii.nwarp-1)); // warp not to skip printing
   int* stride = ii.stride;
   int cellbegin = iwarp*warpsize;
@@ -143,8 +137,6 @@ static void print_quality1(int iwarp, InterleaveInfo& ii, int ncell, int* parent
   }
   nrn_assert(ncycle == ii.cellsize[cellend-1]);
   nrn_assert(ncycle <= ii.nstride);
-
-  int* p = parent;
 
   int ncell_in_warp = cellend - cellbegin;
 
@@ -243,7 +235,7 @@ if (0 && ith == 0 && use_interleave_permute == 1) {
     printf("istride=%d stride=%d\n", i, stride[i]);
   }
 }
-    if (ith == 0 && nwarp < 1000) {
+    if (ith == 0) {
       // needed for print_quality1 and done once here to save time
       int* p = new int[nnode];
       for (int i=0; i < nnode; ++i) { p[i] = parent[i]; }
@@ -257,10 +249,10 @@ if (0 && ith == 0 && use_interleave_permute == 1) {
       ii.child_race = new size_t[nwarp];
       for (int i=0; i < nwarp; ++i) {
         if (use_interleave_permute == 1) {
-          print_quality1(i, interleave_info[ith], ncell, p, order);
+          print_quality1(i, interleave_info[ith], ncell, p);
         }
         if (use_interleave_permute == 2) {
-          print_quality2(i, interleave_info[ith], parent, order);
+          print_quality2(i, interleave_info[ith], p);
         }
       }
       delete [] p;
