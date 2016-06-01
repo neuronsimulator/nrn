@@ -12,7 +12,7 @@ else
 	VERHFILE=`sh $NSRC/hg2nrnversion_h.sh`
 fi
 
-ver=`sed -n '/^AC_INIT/s/^.*nrn\],\[\(.*\)\].*/\1/p' < configure.ac`
+ver=`sed -n '/^AC_INIT/s/^.*nrn\],\[\(.*\)\].*/\1/p' < $NSRC/configure.ac`
 
 type=`echo "$VERHFILE" | sed -n '/HG_BRANCH/s/.*\(".*"\).*/\1/p' | sed '
 s/"trunk"/alpha/
