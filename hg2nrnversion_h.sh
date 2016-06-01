@@ -19,7 +19,7 @@ if hg identify > /dev/null && test -d .hg ; then
 	echo "#define HG_LOCAL \"$lcs\""
 	echo "#define HG_TAG \"$tags\""
 elif test -f src/nrnoc/nrnversion.h ; then
-	sed -n '3,$p' src/nrnoc/nrnversion.h
+	sed -n '1,$p' src/nrnoc/nrnversion.h
 else
 	echo "#define HG_DATE \"1999-12-31\""
 	echo "#define HG_BRANCH \"\""
