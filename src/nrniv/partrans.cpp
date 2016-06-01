@@ -14,6 +14,11 @@
 #include <stdint.h>
 #endif
 
+// replaces use of qsort_r in sidsort for bbcorewrite
+#include <vector>
+#include <utility>
+#include <algorithm>
+
 #ifndef NRNLONGSGID
 #define NRNLONGSGID 0
 #endif
@@ -1048,46 +1053,24 @@ size_t nrnbbcore_gap_write(const char* path, int* group_ids) {
   return 0;
 }
 
-#if defined(__USE_GNU)
-#define myqsortr(arg1,arg2,arg3,arg4,arg5) qsort_r(arg1,arg2,arg3,arg4,arg5)
-#define mycompar(arg1,arg2,arg3) compar(arg1,arg2,arg3)
-#else
-#define myqsortr(arg1,arg2,arg3,arg4,arg5) qsort_r(arg1,arg2,arg3,arg5,arg4)
-#define mycompar(arg1,arg2,arg3) compar(arg3,arg1,arg2)
-#endif
-
-static int mycompar(const void* a, const void* b, void* array) {
-  int i = ((const int*)a)[0];
-  int j = ((const int*)b)[0];
-  int* indices = (int*)array;
-  if (indices[i] < indices[j]) { return -1; }
-  if (indices[i] > indices[j]) { return 1; }
-  return 0;
+static bool mycompar(const std::pair<int, int>& a, const std::pair<int, int>& b) {
+  return a.second < b.second;
 }
 
 static void sidsort(int* sids, int cnt, int* indices) {
-  int* order = new int[cnt];
+  std:vector< pair< int, int> > si(cnt); // sids,indices
   for (int i=0; i < cnt; ++i) {
-    order[i] = i;
+    si[i].first = sids[i];
+    si[i].second = indices[i];
   }
 
-  myqsortr(order, cnt, sizeof(int), compar, indices);
+  std::sort(si.begin(), si.end(), mycompar);
 
-  // permute according to order
-  int* sids_orig = new int[cnt];
-  int* indices_orig = new int [cnt];
+  // copy back
   for (int i=0; i < cnt; ++i) {
-    sids_orig[i] = sids[i];
-    indices_orig[i] = indices[i];
+    sids[i] = si[i].first;
+    indices[i] = si[i].second;
   }
-  for (int i=0; i < cnt; ++i) {
-    int j = order[i];
-    sids[i] = sids_orig[j];
-    indices[i] = indices_orig[j];
-  }
-  delete [] indices_orig;
-  delete [] sids_orig;
-  delete [] order;
 
   // check that the sort is correct
   for (int i=1; i < cnt; ++i) {
