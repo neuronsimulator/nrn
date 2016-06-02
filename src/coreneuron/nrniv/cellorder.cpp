@@ -143,7 +143,8 @@ static void print_quality1(int iwarp, InterleaveInfo& ii, int ncell, int* p) {
   size_t n = 0; // number of nodes in warp (not including roots)
   size_t nx = 0; // number of idle cores on all cycles. X
   size_t ncacheline = 0;; // number of parent memory cacheline accesses.
-                 //   assmue warpsize is max number in a cachline so all o
+                 // assume warpsize is max number in a cachline so
+                 // first core has all o
 
   int inode = ii.firstnode[cellbegin];
   for (int icycle=0; icycle < ncycle; ++icycle) {
@@ -153,7 +154,7 @@ static void print_quality1(int iwarp, InterleaveInfo& ii, int ncell, int* p) {
     for (int icore=0; icore < warpsize; ++icore) {
       char ch = '.';
       if (icore < ncell_in_warp && icore >= sbegin) {
-        int par = p[inode + icore - sbegin];
+        int par = p[inode + icore];
         if (par != lastp+1) {
           ch = 'o';
           ++ncacheline;
@@ -241,7 +242,7 @@ if (0 && ith == 0 && use_interleave_permute == 1) {
   }
 }
     if (ith == 0) {
-      // needed for print_quality1 and done once here to save time
+      // needed for print_quality[12] and done once here to save time
       int* p = new int[nnode];
       for (int i=0; i < nnode; ++i) { p[i] = parent[i]; }
       permute_ptr(p, nnode, order);
