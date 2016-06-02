@@ -656,7 +656,7 @@ static PyHocObject* intermediate(PyHocObject* po, Symbol* sym , int ix) {
 		int j;
 		assert(po->sym_ == sym);
 		assert(po->type_ == PyHoc::HocArray ||
-           po->type_ == PyHoc::HocArrayIncomplete);
+		  po->type_ == PyHoc::HocArrayIncomplete);
 		ponew->sym_ = sym;
 		ponew->nindex_ = po->nindex_ + 1;
 		ponew->type_ = po->type_;
@@ -2111,6 +2111,7 @@ myPyMODINIT_FUNC nrnpy_hoc() {
 		"HOC interaction with Python");
 #endif
 	assert(m);
+	Symbol* s = NULL;
 	hocobject_type = &nrnpy_HocObjectType;
 	if (PyType_Ready(hocobject_type) < 0)
 		goto fail;
@@ -2118,18 +2119,24 @@ myPyMODINIT_FUNC nrnpy_hoc() {
 //printf("AddObject HocObject\n");
 	PyModule_AddObject(m, "HocObject", (PyObject*)hocobject_type);
 
-	Symbol* s;
-	s = hoc_lookup("Vector"); assert(s);
+	s = hoc_lookup("Vector");
+	assert(s);
 	hoc_vec_template_ = s->u.ctemplate;
 	sym_vec_x = hoc_table_lookup("x", s->u.ctemplate->symtable); assert(sym_vec_x);
-	s = hoc_lookup("List"); assert(s);
+	s = hoc_lookup("List");
+	assert(s);
 	hoc_list_template_ = s->u.ctemplate;
-	s = hoc_lookup("SectionList"); assert(s);
+	s = hoc_lookup("SectionList");
+	assert(s);
 	hoc_sectionlist_template_ = s->u.ctemplate;
-	s = hoc_lookup("Matrix"); assert(s);
-	sym_mat_x = hoc_table_lookup("x", s->u.ctemplate->symtable); assert(sym_mat_x);
-	s = hoc_lookup("NetCon"); assert(s);
-	sym_netcon_weight = hoc_table_lookup("weight", s->u.ctemplate->symtable); assert(sym_netcon_weight);
+	s = hoc_lookup("Matrix");
+	assert(s);
+	sym_mat_x = hoc_table_lookup("x", s->u.ctemplate->symtable);
+	assert(sym_mat_x);
+	s = hoc_lookup("NetCon");
+	assert(s);
+	sym_netcon_weight = hoc_table_lookup("weight", s->u.ctemplate->symtable);
+	assert(sym_netcon_weight);
 
 	nrnpy_nrn();
 
@@ -2163,7 +2170,8 @@ myPyMODINIT_FUNC nrnpy_hoc() {
 	// Setup bytesize in typestr
 	snprintf(array_interface_typestr+2,3,"%ld",sizeof(double));
 #if PY_MAJOR_VERSION >= 3
-	assert(PyDict_SetItemString(modules, "hoc", m) == 0);
+	int err = PyDict_SetItemString(modules, "hoc", m);
+	assert(err == 0);
 	Py_DECREF(m);
 	PyGILState_Release(pgs);
 	return m;

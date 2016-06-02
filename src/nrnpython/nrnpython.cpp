@@ -47,10 +47,13 @@ void nrnpy_augment_path() {
 		//printf("augment_path\n");
 		augmented = 1;
 		sprintf(buf, "sys.path.append('%s/lib/python')", neuronhome_forward());
-		assert(PyRun_SimpleString("import sys") == 0);
-		assert(PyRun_SimpleString(buf) == 0);	
+		int err = PyRun_SimpleString("import sys");
+		assert(err == 0);
+		err = PyRun_SimpleString(buf);
+		assert(err == 0);
 		sprintf(buf, "sys.path.prepend('')");
-		assert(PyRun_SimpleString("sys.path.insert(0, '')") == 0);	
+		err = PyRun_SimpleString("sys.path.insert(0, '')");
+		assert(err == 0);
 	}
 }
 

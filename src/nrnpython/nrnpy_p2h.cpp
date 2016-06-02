@@ -302,7 +302,8 @@ static void hpoasgn(Object* o, int type) {
 	}else{
 		hoc_execerror("Cannot assign that type to PythonObject", (char*)0);
 	}
-	assert(o == hoc_pop_object());
+	Object* stack_value = hoc_pop_object();
+	assert(o == stack_value);
 	poleft = nrnpy_hoc2pyobject(o);
 	sym = hoc_spop();
 	nindex = hoc_ipop();
@@ -678,20 +679,20 @@ Object* py_alltoall(Object* o, int size) {
 		}
 		size_t sz;
 		char* b = pickle(p, &sz);
-	    if (size >= 0) {
-		if (curpos + sz >= bufsz) {
-			bufsz = bufsz * 2 + sz;
-			char* s2 = new char[bufsz];
-			for (int i = 0; i < curpos; ++i) {
-				s2[i] = s[i];
+		if (size >= 0) {
+			if (curpos + sz >= bufsz) {
+				bufsz = bufsz * 2 + sz;
+				char* s2 = new char[bufsz];
+				for (int i = 0; i < curpos; ++i) {
+					s2[i] = s[i];
+				}
+				delete [] s;
+				s = s2;
 			}
-			delete [] s;
-			s = s2;
+			for (int j=0; j < sz; ++j) {
+				s[curpos+j] = b[j];
+			}
 		}
-		for (int j=0; j < sz; ++j) {
-			s[curpos+j] = b[j];
-		}
-	    }
 		curpos += sz;
 		scnt[i] = sz;
 		delete [] b;
@@ -727,7 +728,8 @@ Object* py_alltoall(Object* o, int size) {
 	delete [] scnt;
 	delete [] sdispl;
 
-	assert((pdest = PyList_New(np)) != NULL);
+	pdest = PyList_New(np);
+	assert(pdest != NULL);
 	for (int i=0; i < np; ++i) {
 		if (rcnt[i] == 0) {
 			PyList_SetItem(pdest, i, Py_None);

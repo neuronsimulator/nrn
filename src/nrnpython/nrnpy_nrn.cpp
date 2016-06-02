@@ -787,7 +787,8 @@ static PyObject* seg_point_processes(NPySegObj* self) {
 		if (memb_func[p->type].is_point) {
 			Point_process* pp = (Point_process*)p->dparam[1]._pvoid;
 			PyObject* item = nrnpy_ho2po(pp->ob);
-			assert(PyList_Append(result, item)==0);
+			int err = PyList_Append(result, item);
+			assert(err == 0);
 			Py_XDECREF(item);
 		}
 	}
@@ -933,10 +934,14 @@ static PyObject* section_getattro(NPySecObj* self, PyObject* name) {
 		result = Py_BuildValue("d", self->sec_->prop->dparam[4].val);
 	}else if (strcmp(n, "__dict__") == 0) {
 		result = PyDict_New();
-		assert(PyDict_SetItemString(result, "L", Py_None) == 0);
-		assert(PyDict_SetItemString(result, "Ra", Py_None) == 0);
-		assert(PyDict_SetItemString(result, "nseg", Py_None) == 0);
-		assert(PyDict_SetItemString(result, "rallbranch", Py_None) == 0);
+		int err = PyDict_SetItemString(result, "L", Py_None);
+		assert(err == 0);
+		err = PyDict_SetItemString(result, "Ra", Py_None);
+		assert(err == 0);
+		err = PyDict_SetItemString(result, "nseg", Py_None);
+		assert(err == 0);
+		err = PyDict_SetItemString(result, "rallbranch", Py_None);
+		assert(err == 0);
 	}else{
 		result = PyObject_GenericGetAttr((PyObject*)self, name);
 	}
@@ -1173,13 +1178,17 @@ static PyObject* segment_getattro(NPySegObj* self, PyObject* name) {
 	}else if (strcmp(n, "__dict__") == 0) {
 		Node* nd = node_exact(sec, self->x_);
 		result = PyDict_New();
-		assert(PyDict_SetItemString(result, "v", Py_None) == 0);
-		assert(PyDict_SetItemString(result, "diam", Py_None) == 0);
-		assert(PyDict_SetItemString(result, "cm", Py_None) == 0);
+		int err = PyDict_SetItemString(result, "v", Py_None);
+		assert(err == 0);
+		PyDict_SetItemString(result, "diam", Py_None);
+		assert(err == 0);
+		PyDict_SetItemString(result, "cm", Py_None);
+		assert(err == 0);
 		for (Prop* p = nd->prop; p ; p = p->next) {
 			if (p->type > CAP && !memb_func[p->type].is_point){
 				char* pn = memb_func[p->type].sym->name;
-				assert(PyDict_SetItemString(result, pn, Py_None) == 0);
+				err = PyDict_SetItemString(result, pn, Py_None);
+				assert(err == 0);
 			}
 		}
 	}else{
@@ -1283,7 +1292,8 @@ static PyObject* mech_getattro(NPyMechObj* self, PyObject* name) {
 	}else if (strcmp(n, "__dict__") == 0) {
 		result = PyDict_New();
 		for (Symbol* s = np.first_var(); np.more_var(); s = np.next_var()) {
-			assert(PyDict_SetItemString(result, s->name, Py_None) == 0);
+			int err = PyDict_SetItemString(result, s->name, Py_None);
+			assert(err == 0);
 		}
 	}else{
 		result = PyObject_GenericGetAttr((PyObject*)self, name);
@@ -1591,7 +1601,8 @@ myPyMODINIT_FUNC nrnpy_nrn(void)
     PyModule_AddObject(m, "Segment", (PyObject *)psegment_type);
 
 #if PY_MAJOR_VERSION >= 3
-    assert(PyDict_SetItemString(modules, "_neuron_section", m) == 0);
+    int err = PyDict_SetItemString(modules, "_neuron_section", m);
+    assert(err == 0);
     Py_DECREF(m);
     m = PyModule_Create(&nrnmodule); // 
 #else
@@ -1617,7 +1628,8 @@ myPyMODINIT_FUNC nrnpy_nrn(void)
     nrnpy_pysec_cell_equals_p_ = pysec_cell_equals;
 #endif
 #if PY_MAJOR_VERSION >= 3
-    assert(PyDict_SetItemString(modules, "nrn", m) == 0);
+    int err = PyDict_SetItemString(modules, "nrn", m);
+    assert(err == 0);
     Py_DECREF(m);
     return m;
     fail:
