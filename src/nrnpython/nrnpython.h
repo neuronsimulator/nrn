@@ -15,11 +15,11 @@
 #include <Python.h>
 
 #if (PY_MAJOR_VERSION >= 3)
-#define myPyMODINIT_FUNC PyObject*
+#define myPyMODINIT_FUNC PyObject *
 #else
 #define myPyMODINIT_FUNC void
 
-#ifndef PyMODINIT_FUNC	/* declarations for DLL import/export */
+#ifndef PyMODINIT_FUNC /* declarations for DLL import/export */
 #define PyMODINIT_FUNC void
 #endif /*PyMODINIT_FUNC*/
 #ifndef PY_FORMAT_SIZE_T
