@@ -6,6 +6,7 @@
 #include <classreg.h>
 #include <nrnpython.h>
 #include <hoccontext.h>
+#include "nrnpy_utils.h"
 
 extern "C" {
 #include "parse.h"
@@ -42,7 +43,6 @@ extern Object* (*nrnpympi_alltoall)(Object*, int);
 void nrnpython_reg_real();
 PyObject* nrnpy_ho2po(Object*);
 void nrnpy_decref_defer(PyObject*);
-void nrnpy_decref_clear();
 PyObject* nrnpy_pyCallObject(PyObject*, PyObject*);
 
 Object* nrnpy_po2ho(PyObject*);
@@ -264,9 +264,10 @@ void py2n_component(Object* ob, Symbol* sym, int nindex, int isfunc) {
     hoc_pushx(PyFloat_AsDouble(pn));
     Py_XDECREF(pn);
     Py_XDECREF(result);
-  } else if (PyString_Check(result)) {
+  } else if (is_python_string(result)) {
     char** ts = hoc_temp_charptr();
-    *ts = PyString_AsString(result);
+    Py2NRNString str(result, true);
+    *ts = str.c_str();
     hoc_pop_defer();
     hoc_pushstr(ts);
     // how can we defer the result unref til the string is popped
@@ -336,18 +337,6 @@ void nrnpy_decref_defer(PyObject* po) {
 		Py_DECREF(ps);
 #endif
     hoc_l_lappendvoid(dlist, (void*)po);
-  }
-}
-void nrnpy_decref_clear() {
-  while (dlist->next != dlist) {
-    PyObject* po = (PyObject*)VOIDITM(dlist->next);
-#if 1
-    PyObject* ps = PyObject_Str(po);
-    printf("decref %s\n", PyString_AsString(ps));
-    Py_DECREF(ps);
-#endif
-    Py_DECREF(po);
-    hoc_l_delete(dlist->next);
   }
 }
 
@@ -438,11 +427,10 @@ static int hoccommand_exec_strret(Object* ho, char* buf, int size) {
   PyObject* r = hoccommand_exec_help(ho);
   if (r) {
     PyObject* pn = PyObject_Str(r);
-    const char* cp = PyString_AsString(pn);
-    strncpy(buf, cp, size);
-    nrnpy_pystring_asstring_free(cp);
-    buf[size - 1] = '\0';
+    Py2NRNString str(pn);
     Py_XDECREF(pn);
+    strncpy(buf, str.c_str(), size);
+    buf[size - 1] = '\0';
     Py_XDECREF(r);
     PyGILState_Release(s);
   } else {
@@ -493,10 +481,10 @@ static int guigetstr(Object* ho, char** cpp) {
   PyObject* r =
       PyObject_GetAttr(PyTuple_GetItem(po, 0), PyTuple_GetItem(po, 1));
   PyObject* pn = PyObject_Str(r);
-  const char* cp = PyString_AsString(pn);
+  Py2NRNString name(pn);
+  Py_DECREF(pn);
+  char* cp = name.c_str();
   if (*cpp && strcmp(*cpp, cp) == 0) {
-    Py_XDECREF(pn);
-    nrnpy_pystring_asstring_free(cp);
     PyGILState_Release(s);
     return 0;
   }
@@ -505,8 +493,6 @@ static int guigetstr(Object* ho, char** cpp) {
   }
   *cpp = new char[strlen(cp) + 1];
   strcpy(*cpp, cp);
-  Py_XDECREF(pn);
-  nrnpy_pystring_asstring_free(cp);
   PyGILState_Release(s);
   return 1;
 }

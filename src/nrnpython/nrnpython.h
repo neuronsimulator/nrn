@@ -9,6 +9,7 @@
 
 #include <../../nrnconf.h>
 #include <nrnpython_config.h>
+
 #if defined(USE_PYTHON)
 #undef _POSIX_C_SOURCE
 #undef _XOPEN_SOURCE
@@ -30,8 +31,6 @@
 #endif /*USE_PYTHON*/
 
 #if (PY_MAJOR_VERSION >= 3)
-#define PyString_Check PyUnicode_Check
-#define PyString_AsString(o) nrnpy_PyString_AsString(o)
 #define PyString_FromString PyUnicode_FromString
 #define PyInt_Check PyLong_Check
 #define PyInt_CheckExact PyLong_CheckExact
@@ -44,12 +43,6 @@
 extern "C" {
 #endif
 
-#if (PY_MAJOR_VERSION >= 3)
-char* nrnpy_PyString_AsString(PyObject*);
-void nrnpy_pystring_asstring_free(const char*);
-#else
-#define nrnpy_pystring_asstring_free(a) /**/
-#endif
 extern PyObject* nrnpy_hoc_pop();
 extern int nrnpy_numbercheck(PyObject*);
 

@@ -6,6 +6,7 @@
 #include "ivocvect.h"
 #include "oclist.h"
 #include "nrniv_mf.h"
+#include "nrnpy_utils.h"
 
 extern "C" {
 
@@ -308,9 +309,10 @@ static int hocobj_pushargs(PyObject* args) {
       PyObject* pn = PyNumber_Float(po);
       hoc_pushx(PyFloat_AsDouble(pn));
       Py_XDECREF(pn);
-    } else if (PyString_Check(po)) {
+    } else if (is_python_string(po)) {
       char** ts = hoc_temp_charptr();
-      *ts = PyString_AsString(po);
+      Py2NRNString str(po, /* disable_release */ true);
+      *ts = str.c_str();
       hoc_pushstr(ts);
     } else if (PyObject_IsInstance(po, (PyObject*)hocobject_type)) {
       PyHocObject* pho = (PyHocObject*)po;
@@ -327,15 +329,13 @@ static int hocobj_pushargs(PyObject* args) {
         hoc_pushpx(pho->u.px_);
       } else {
         // make a hoc python object and push that
-        Object* ob;
-        ob = 0;
+        Object* ob = NULL;
         pyobject_in_objptr(&ob, po);
         hoc_push_object(ob);
         hoc_obj_unref(ob);
       }
     } else {  // make a hoc PythonObject and push that?
-      Object* ob;
-      ob = 0;
+      Object* ob = NULL;
       if (po != Py_None) {
         pyobject_in_objptr(&ob, po);
       }
@@ -387,7 +387,8 @@ static void component(PyHocObject* po) {
              po->type_ == PyHoc::HocArrayIncomplete) {
     fc[1].i = po->nindex_;
   }
-  assert(hoc_obj_look_inside_stack(po->nindex_) == po->ho_);
+  Object* stack_value = hoc_obj_look_inside_stack(po->nindex_);
+  assert(stack_value == po->ho_);
   fc[3].i = po->ho_->ctemplate->id;
   fc[4].sym = po->sym_;
   Inst* pcsav = save_pc(fc);
@@ -773,29 +774,26 @@ static int setup_doc_system() {
   return 1;
 }
 
-static PyObject* hocobj_getattr(PyObject* subself, PyObject* name) {
-  PyObject* result = 0;
-  PyObject* docobj = 0;
-  Inst fc, *pcsav;
-  int isptr = 0;
+// TODO: This function needs refactoring; there are too many exit points
+static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
   PyHocObject* self = (PyHocObject*)subself;
-  Py_INCREF(name);
-  char* n = PyString_AsString(name);
-  // printf("hocobj_getattr %s\n", n);
-
   if (self->type_ == PyHoc::HocObject && !self->ho_) {
-    Py_DECREF(name);
     PyErr_SetString(PyExc_TypeError, "not a compound type");
     return NULL;
   }
+
+  PyObject* result = NULL;
+  int isptr = 0;
+  Py2NRNString name(pyname);
+  char* n = name.c_str();
+  // printf("hocobj_getattr %s\n", n);
+
   Symbol* sym = getsym(n, self->ho_, 0);
-  Py_DECREF(name);
   if (!sym) {
     if (self->type_ == PyHoc::HocObject &&
         self->ho_->ctemplate->sym == nrnpy_pyobj_sym_) {
       PyObject* p = nrnpy_hoc2pyobject(self->ho_);
-      nrnpy_pystring_asstring_free(n);
-      return PyObject_GenericGetAttr(p, name);
+      return PyObject_GenericGetAttr(p, pyname);
     }
     if (strcmp(n, "__dict__") == 0) {
       // all the public names
@@ -818,19 +816,16 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* name) {
       if (is_obj_type(self->ho_, "Vector")) {
         PyDict_SetItemString(dict, "__array_interface__", Py_None);
       }
-      nrnpy_pystring_asstring_free(n);
       return dict;
     } else if (strncmp(n, "_ref_", 5) == 0) {
       if (self->type_ > PyHoc::HocObject) {
         PyErr_SetString(PyExc_TypeError,
                         "not a HocTopLevelInterpreter or HocObject");
-        nrnpy_pystring_asstring_free(n);
         return NULL;
       }
       sym = getsym(n + 5, self->ho_, 0);
       if (!sym) {
-        nrnpy_pystring_asstring_free(n);
-        return PyObject_GenericGetAttr((PyObject*)subself, name);
+        return PyObject_GenericGetAttr((PyObject*)subself, pyname);
       }
       if (sym->type != VAR && sym->type != RANGEVAR && sym->type != VARALIAS) {
         char buf[200];
@@ -838,7 +833,6 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* name) {
                 "Hoc pointer error, %s is not a hoc variable or range variable",
                 sym->name);
         PyErr_SetString(PyExc_TypeError, buf);
-        nrnpy_pystring_asstring_free(n);
         return NULL;
       }
       isptr = 1;
@@ -850,13 +844,13 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* name) {
       int size = v->capacity();
       double* x = vector_vec(v);
 
-      nrnpy_pystring_asstring_free(n);
       return Py_BuildValue("{s:(i),s:s,s:i,s:(N,O)}", "shape", size, "typestr",
                            array_interface_typestr, "version", 3, "data",
                            PyLong_FromVoidPtr(x), Py_True);
 
     } else if (strcmp(n, "__doc__") == 0) {
       if (setup_doc_system()) {
+        PyObject* docobj = NULL;
         if (self->ho_) {
           docobj = Py_BuildValue("s s", self->ho_->ctemplate->sym->name,
                                  self->sym_ ? self->sym_->name : "");
@@ -871,10 +865,8 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* name) {
 
         result = PyObject_CallObject(pfunc_get_docstring, docobj);
         Py_DECREF(docobj);
-        nrnpy_pystring_asstring_free(n);
         return result;
       } else {
-        nrnpy_pystring_asstring_free(n);
         return NULL;
       }
     } else if (self->type_ == PyHoc::HocTopLevelInterpreter &&
@@ -890,16 +882,13 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* name) {
         result = nrnpy_cas(NULL, NULL);
         nrn_popsec();
       }
-      nrnpy_pystring_asstring_free(n);
       return result;
     } else {
       // ipython wants to know if there is a __getitem__
       // even though it does not use it.
-      nrnpy_pystring_asstring_free(n);
-      return PyObject_GenericGetAttr((PyObject*)subself, name);
+      return PyObject_GenericGetAttr((PyObject*)subself, pyname);
     }
   }
-  nrnpy_pystring_asstring_free(n);
   // printf("%s type=%d nindex=%d %s\n", self->sym_?self->sym_->name:"noname",
   // self->type_, self->nindex_, sym->name);
   // no hoc component for a hoc function
@@ -991,14 +980,17 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* name) {
       }
       break;
     case STRING:  // char*
+    {
+      Inst fc, *pcsav;
       fc.sym = sym;
       pcsav = save_pc(&fc);
       hoc_push_string();
       hoc_pc = pcsav;
       result = Py_BuildValue("s", *hoc_strpop());
-      break;
+    } break;
     case OBJECTVAR:  // Object*
       if (!ISARRAY(sym)) {
+        Inst fc, *pcsav;
         fc.sym = sym;
         pcsav = save_pc(&fc);
         hoc_objectvar();
@@ -1036,7 +1028,7 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* name) {
       break;
     }
     case SETPOINTERKEYWORD:
-      result = PyObject_GenericGetAttr((PyObject*)subself, name);
+      result = PyObject_GenericGetAttr((PyObject*)subself, pyname);
       break;
     default:  // otherwise
     {
@@ -1076,7 +1068,8 @@ static PyObject* hocobj_getattro(PyObject* subself, PyObject* name) {
   return result;
 }
 
-static int hocobj_setattro(PyObject* subself, PyObject* name, PyObject* value) {
+static int hocobj_setattro(PyObject* subself, PyObject* pyname,
+                           PyObject* value) {
   int err = 0;
   Inst* pcsav;
   Inst fc;
@@ -1085,10 +1078,10 @@ static int hocobj_setattro(PyObject* subself, PyObject* name, PyObject* value) {
   if (issub) {
     // printf("try hasattr %s\n", PyString_AsString(name));
     refuse_to_look = 1;
-    if (PyObject_HasAttr(subself, name)) {
+    if (PyObject_HasAttr(subself, pyname)) {
       refuse_to_look = 0;
       // printf("found hasattr for %s\n", PyString_AsString(name));
-      return PyObject_GenericSetAttr(subself, name, value);
+      return PyObject_GenericSetAttr(subself, pyname, value);
     }
     refuse_to_look = 0;
   }
@@ -1099,23 +1092,21 @@ static int hocobj_setattro(PyObject* subself, PyObject* name, PyObject* value) {
   if (self->type_ == PyHoc::HocObject && !self->ho_) {
     return 1;
   }
-  Py_INCREF(name);
-  char* n = PyString_AsString(name);
+  Py2NRNString name(pyname);
+  char* n = name.c_str();
   // printf("hocobj_setattro %s\n", n);
   Symbol* sym = getsym(n, self->ho_, 0);
   if (!sym) {
     if (issub) {
-      return PyObject_GenericSetAttr(subself, name, value);
+      return PyObject_GenericSetAttr(subself, pyname, value);
     } else if (!sym && self->type_ == PyHoc::HocObject &&
                self->ho_->ctemplate->sym == nrnpy_pyobj_sym_) {
       PyObject* p = nrnpy_hoc2pyobject(self->ho_);
-      return PyObject_GenericSetAttr(p, name, value);
+      return PyObject_GenericSetAttr(p, pyname, value);
     } else {
       sym = getsym(n, self->ho_, 1);
     }
   }
-  Py_DECREF(name);
-  nrnpy_pystring_asstring_free(n);
   if (!sym) {
     return -1;
   }
@@ -1609,12 +1600,12 @@ static PyObject* mkref(PyObject* self, PyObject* args) {
       PyObject* pn = PyNumber_Float(pa);
       result->u.x_ = PyFloat_AsDouble(pn);
       Py_XDECREF(pn);
-    } else if (PyString_Check(pa)) {
+    } else if (is_python_string(pa)) {
       result->type_ = PyHoc::HocRefStr;
       result->u.s_ = 0;
-      char* cpa = PyString_AsString(pa);
+      Py2NRNString str(pa);
+      char* cpa = str.c_str();
       hoc_assign_str(&result->u.s_, cpa);
-      nrnpy_pystring_asstring_free(cpa);
     } else {
       result->type_ = PyHoc::HocRefObj;
       result->u.ho_ = nrnpy_po2ho(pa);
@@ -1639,9 +1630,9 @@ static PyObject* setpointer(PyObject* self, PyObject* args) {
       if (hpp->type_ != PyHoc::HocObject) {
         goto done;
       }
-      char* n = PyString_AsString(name);
+      Py2NRNString str(name);
+      char* n = str.c_str();
       Symbol* sym = getsym(n, hpp->ho_, 0);
-      nrnpy_pystring_asstring_free(n);
       if (!sym || sym->type != RANGEVAR || sym->subtype != NRNPOINTER) {
         goto done;
       }
@@ -1740,8 +1731,8 @@ static char* double_array_interface(PyObject* po, long& stride) {
   PyObject* psize;
   if (PyObject_HasAttrString(po, "__array_interface__")) {
     PyObject* ai = PyObject_GetAttrString(po, "__array_interface__");
-    if (strcmp(PyString_AsString(PyDict_GetItemString(ai, "typestr")),
-               array_interface_typestr) == 0) {
+    Py2NRNString typestr(PyDict_GetItemString(ai, "typestr"));
+    if (strcmp(typestr.c_str(), array_interface_typestr) == 0) {
       data = PyLong_AsVoidPtr(
           PyTuple_GetItem(PyDict_GetItemString(ai, "data"), 0));
       // printf("double_array_interface idata = %ld\n", idata);
@@ -2088,58 +2079,54 @@ static PyMemberDef hocobj_members[] = {{NULL, 0, 0, 0, NULL}};
 
 #if (PY_MAJOR_VERSION >= 3)
 #include "nrnpy_hoc_3.h"
-char* nrnpy_PyString_AsString(PyObject* po) {
-#if 0
-printf("nrnpy_PyString_AsString\n");
-PyObject_Print(po, stdout, 0);
-printf("\n");
-#endif
-  char* str = 0;
-  if (PyUnicode_Check(po)) {
-    PyObject* p = po;
-    po = PyUnicode_AsASCIIString(p);
-    if (po == NULL) {
-      printf("PyUnicode_AsASCIIString failed\n");
-      return NULL;
-    }
-    size_t n = PyBytes_Size(po);
-    char* s = PyBytes_AsString(po);
-    str = (char*)PyMem_Malloc(n + 1);
-    for (int i = 0; i < n; ++i) {
-      str[i] = s[i];
-    }
-    str[n] = '\0';
-    Py_DECREF(po);
-    return str;
-  }
-  if (PyBytes_Check(po)) {
-    size_t n = PyBytes_Size(po);
-    char* s = PyBytes_AsString(po);
-    str = (char*)PyMem_Malloc(n + 1);
-    for (int i = 0; i < n; ++i) {
-      str[i] = s[i];
-    }
-    str[n] = '\0';
-  }
-  // printf("nrnpy_PyString_AsString %s\n", str);
-  return str;
-}
-void nrnpy_pystring_asstring_free(const char* n) { PyMem_Free((void*)n); }
-
 #else
 #include "nrnpy_hoc_2.h"
 #endif
 
+// Figure out the endian-ness of the system, and return
+// 0 (error), '<' (little endian) or '>' (big endian)
+char get_endian_character() {
+  char endian_character = 0;
+
+  PyObject* psys = PyImport_ImportModule("sys");
+  if (psys == NULL) {
+    PyErr_SetString(PyExc_ImportError,
+                    "Failed to import sys to determine system byteorder.");
+    return 0;
+  }
+
+  PyObject* pbo = PyObject_GetAttrString(psys, "byteorder");
+  if (pbo == NULL) {
+    PyErr_SetString(PyExc_AttributeError,
+                    "sys module does not have attribute 'byteorder'!");
+    return 0;
+  }
+
+  Py2NRNString byteorder(pbo);
+  if (byteorder.c_str() == NULL) {
+    return 0;
+  }
+
+  if (strcmp(byteorder.c_str(), "little") == 0) {
+    endian_character = '<';
+  } else if (strcmp(byteorder.c_str(), "big") == 0) {
+    endian_character = '>';
+  } else {
+    PyErr_SetString(PyExc_RuntimeError, "Unknown system native byteorder.");
+    return 0;
+  }
+  return endian_character;
+}
+
 myPyMODINIT_FUNC nrnpy_hoc() {
   PyObject* m;
-  PyObject* psys;
-  PyObject* pbo;
-  char* byteorder;
   nrnpy_vec_from_python_p_ = nrnpy_vec_from_python;
   nrnpy_vec_to_python_p_ = nrnpy_vec_to_python;
   nrnpy_vec_as_numpy_helper_ = vec_as_numpy_helper;
   PyGILState_STATE pgs = PyGILState_Ensure();
+  char endian_character = 0;
 #if PY_MAJOR_VERSION >= 3
+  int err = 0;
   PyObject* modules = PyImport_GetModuleDict();
   if ((m = PyDict_GetItemString(modules, "hoc")) != NULL && PyModule_Check(m)) {
     return m;
@@ -2177,41 +2164,14 @@ myPyMODINIT_FUNC nrnpy_hoc() {
   assert(sym_netcon_weight);
 
   nrnpy_nrn();
+  endian_character = get_endian_character();
+  if (endian_character == 0) goto fail;
+  array_interface_typestr[0] = endian_character;
 
-  // Get python sys.byteorder and configure array_interface_byteorder string
-  // appropriately
-
-  psys = PyImport_ImportModule("sys");
-  if (psys == NULL) {
-    PyErr_SetString(PyExc_ImportError,
-                    "Failed to import sys to determine system byteorder.");
-    goto fail;
-  }
-
-  pbo = PyObject_GetAttrString(psys, "byteorder");
-
-  if (pbo == NULL) {
-    PyErr_SetString(PyExc_AttributeError,
-                    "sys module does not have attribute 'byteorder'!");
-    goto fail;
-  }
-  byteorder = PyString_AsString(pbo);
-  if (byteorder == NULL) {
-    // type error already raised
-    goto fail;
-  }
-  if (strcmp(byteorder, "little") == 0) {
-    array_interface_typestr[0] = '<';
-  } else if (strcmp(byteorder, "big") == 0) {
-    array_interface_typestr[0] = '>';
-  } else {
-    PyErr_SetString(PyExc_RuntimeError, "Unknown system native byteorder.");
-    goto fail;
-  }
   // Setup bytesize in typestr
   snprintf(array_interface_typestr + 2, 3, "%ld", sizeof(double));
 #if PY_MAJOR_VERSION >= 3
-  int err = PyDict_SetItemString(modules, "hoc", m);
+  err = PyDict_SetItemString(modules, "hoc", m);
   assert(err == 0);
   Py_DECREF(m);
   PyGILState_Release(pgs);
@@ -2225,5 +2185,4 @@ fail:
   return;
 #endif
 }
-
 }  // end of extern c

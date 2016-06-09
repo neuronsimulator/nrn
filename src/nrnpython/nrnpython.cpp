@@ -130,9 +130,8 @@ void nrnpython_start(int b) {
     PySys_SetArgv(nrn_global_argc, nrn_global_argv);
 #endif
     started = 1;
-    int i;
     // see nrnpy_reg.h
-    for (i = 0; nrnpy_reg_[i]; ++i) {
+    for (int i = 0; nrnpy_reg_[i]; ++i) {
       (*nrnpy_reg_[i])();
     }
     nrnpy_augment_path();
