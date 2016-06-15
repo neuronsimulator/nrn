@@ -62,7 +62,7 @@ or if your 3-d visualization is paramount. This method makes the 3-d info
 authoritative and automatically 
 determines the abstract cable's length and diameter. 
 With this method, you may change a section's length/diameter only by 
-changing it's 3-d info. (but see :func:`pt3dconst`) 
+changing its 3-d info. (but see :func:`pt3dconst`) 
  
 Stylized specification of geometry
 ==================================
@@ -135,7 +135,7 @@ effective area as that of a sphere of the same diameter.
 
 Example:
     The following example demonstrates the automatic 3-d shape construction. 
-    The root section "a" is drawn with it's 0 end (left) at the origin and is colored 
+    The root section "a" is drawn with its 0 end (left) at the origin and is colored 
     red. 
      
     Sections connected to its 1 end (sections b, c, d) 
