@@ -1,34 +1,63 @@
+# Copyright (c) 2016, Blue Brain Project
+# All rights reserved.
+
+# Redistribution and use in source and binary forms, with or without modification,
+# are permitted provided that the following conditions are met:
+# 1. Redistributions of source code must retain the above copyright notice,
+#    this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright notice,
+#    this list of conditions and the following disclaimer in the documentation
+#    and/or other materials provided with the distribution.
+# 3. Neither the name of the copyright holder nor the names of its contributors
+#    may be used to endorse or promote products derived from this software
+#    without specific prior written permission.
+
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
+# THE POSSIBILITY OF SUCH DAMAGE.
+
+
 include(FindSLURM)
-include(TestScriptUtils)
+include(TestHelpers)
 
-macro(remove_word var word)
-string(REPLACE " " ";" ${var} "${${var}}")
-list(REMOVE_ITEM ${var} "${word}")
-string(REPLACE ";" " " ${var} "${${var}}")
-endmacro()
+include_directories(${CMAKE_SOURCE_DIR}/coreneuron ${CMAKE_SOURCE_DIR} ${Boost_INCLUDE_DIRS})
 
-function(make_mpi_exeprefix nproc exeprefix)
-if(SLURM_FOUND AND SLURM_SACCTMGR_COMMAND)
-    if("$ENV{SLURM_ACCOUNT}" STREQUAL "")
-	execute_process(COMMAND ${SLURM_SACCTMGR_COMMAND} -n list user format=DefaultAccount user=$ENV{USER}
-			COMMAND tr -d [:space:]
-			OUTPUT_VARIABLE DFLTACCT
-			ERROR_QUIET)
-        if (DFLTACCT)
-	    set(SLURM_ACCOUNT_PARAM "--account=${DFLTACCT}")
-        endif()
-    endif()
-    set(${exeprefix} ${SLURM_SRUN_COMMAND} -n ${nproc} ${SLURM_ACCOUNT_PARAM} PARENT_SCOPE) 
-elseif(MPIEXEC)
-    set(${exeprefix} ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${nproc} ${MPIEXEC_PREFLAGS} PARENT_SCOPE) 
+if(NOT Boost_USE_STATIC_LIBS)
+    add_definitions(-DBOOST_TEST_DYN_LINK=TRUE)
 endif()
-endfunction()
 
-# Boost test does not like -Wshadow
-remove_word(CMAKE_CXX_FLAGS "-Wshadow")
 
-add_subdirectory (unit/endian)
-add_subdirectory (unit/sdprintf)
-add_subdirectory (integration)
-add_subdirectory (regression)
-add_subdirectory (validation)
+if(UNIT_TESTS)
+
+add_subdirectory(unit/endian)
+add_subdirectory(unit/sdprintf)
+add_subdirectory(unit/mechbuild)
+add_subdirectory(unit/omp)
+add_subdirectory(unit/cmdline_interface)
+add_subdirectory(unit/alignment)
+add_subdirectory(unit/queueing)
+
+endif()
+
+if(FUNCTIONAL_TESTS)
+
+add_subdirectory(integration)
+add_subdirectory(regression)
+add_subdirectory(validation)
+
+endif()
+
+option(PRODUCTION_TESTS "Execution of production runs scripts on BG/Q" OFF)
+if(PRODUCTION_TESTS)
+    add_subdirectory(production)
+endif()
+
+

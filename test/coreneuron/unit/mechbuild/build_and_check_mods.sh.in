@@ -1,0 +1,97 @@
+#!/bin/bash
+
+# Check that coreneuron cmake honours module finding
+# variables.
+
+# To be filled in by CMake:
+cmakecache="@CMAKE_BINARY_DIR@/CMakeCache.txt"
+cmakeopts=(@BACM_CMAKEOPTS@)
+shoudhave=(@BACM_MUST_HAVE@)
+shoudnthave=(@BACM_MUST_NOT_HAVE@)
+
+
+# Perform a dummy build of coreneuron with various
+# configuration options. Print out the mechanisms
+# found by scanning the generated mod_func.c file.
+#
+# It takes as the first argument a CMakeCache.txt
+# file that it will use to prime the build, and
+# from which it extracts the top directory.
+#
+# Remaining arguments are passed to CMake.
+#
+# It does not clean up after itself.
+
+function check_modl_reg_mechs() {
+    cmcache="$1"
+    shift
+    if [ ! -r "$cmcache" ]; then
+	echo "Unable to read cache file: $cmcache"
+	exit 1
+    fi
+
+    topdir=$(sed -e '/^CMAKE_HOME_DIRECTORY:/!d' -e 's/^[^=]*=//' -e q "$cmcache")
+    if [ -z "$topdir" -o ! -d "$topdir" ]; then
+	echo "Cannot locate top directory from cache file" >&2
+    fi
+
+    tmpdir=$(mktemp -d --tmpdir='.' 'test-build.XXXXXXX')
+
+    # grab all non-internal/static cache entries from original cache
+    if ! sed -e '/=/!d' -e '/:\(STATIC\|INTERNAL\|UNINITIALIZED\)=/d' "$cmcache" > "$tmpdir/CMakeCache.txt"; then
+	echo "Failed to extract CMakeCache.txt data"
+	exit 1
+    fi
+
+    cd "$tmpdir" || exit 1
+
+    if ! cmake "$topdir" "$@" >& cmake.out; then
+	echo "CMake failed" >&2
+	exit 1;
+    fi
+
+    make coreneuron >& make.out
+
+    if [ -e coreneuron/mod_func.c ]; then
+	sed -e '/printf.*\.mod/!d' -e 's/.*" *\(.*\)\.mod.*/\1.mod/' coreneuron/mod_func.c
+    else
+	echo "Missing mod_func.c" >&2
+	exit 1
+    fi
+}
+
+# Check list has none or all given members
+#
+# Arguments:
+#     $1:    "none" or "all"
+#     $2:    List of items, newline separated
+#     $3...: Items to check
+
+function confirm_has() {
+    case "$1" in
+	none) check=1; hdr='contains';;
+	all)  check=0; hdr='missing';;
+        *) echo "invalid test" >&2; return -1
+    esac
+    list="$2"
+    shift 2
+
+    rv=0
+    for word in "$@"; do
+        echo "$list" | grep -q -F "$word"
+	if (( !$? == $check )); then
+            if ! (( rv++ )); then echo "$hdr:"; fi
+	    echo "$word"
+        fi
+    done
+    return $rv
+}
+
+mods=$(check_modl_reg_mechs "$cmakecache" "${cmakeopts[@]}")
+echo "mod_func registred mods:"
+echo "$mods"
+echo
+
+confirm_has all "$mods" "${shoudhave[@]}" || exit 2
+confirm_has none "$mods" "${shoudnthave[@]}" || exit 3
+
