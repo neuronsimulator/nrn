@@ -15,11 +15,12 @@ namespace nrn{
 
 template<class T, class O>
 struct bimap {
-    typedef std::multimap<T,O> pd2ob_map; // or map ?
+    typedef std::multimap<T,O> pd2ob_map;
     typedef std::multimap<O,T> ob2pd_map;
 
     void insert(T const&, O const&);
-    bool find(T const& p, size_t n, T&, O&); // pointer * ? 
+    bool find(T const& p, size_t n, T&, O&);
+    bool find(T const& p, T&, O&);
     void obremove(O const&);
     void remove(T const&, O const& );
 
@@ -73,6 +74,18 @@ bool bimap<T,O>::find(T const& p, size_t n, T& pret, O& obret) {
             pret = it->first;
             obret = it->second;
         }
+    }
+    return result;
+}
+
+template<class T, class O>
+bool bimap<T,O>::find(T const& p, T& pret, O& obret) {
+    bool result = false;
+    typename pd2ob_map::iterator it = pd2ob.find(p);
+    if (it != pd2ob.end()) {
+        result = true;
+        pret = it->first;
+        obret = it->second;
     }
     return result;
 }

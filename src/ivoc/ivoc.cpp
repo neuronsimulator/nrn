@@ -25,16 +25,7 @@ implementList(FList, PF);
 
 static FList* f_list;
 
-/*static*/ class PObserver {
-public:
-	void* p;
-	Observer* observer;
-};
-
-declareList(PList, PObserver);
-implementList(PList, PObserver);
-static PList* p_list;
-
+static nrn::tool::bimap<void*,Observer*>* pvob;
 static nrn::tool::bimap<double*,Observer*>* pdob;
 
 // fast insert, find, and remove of (double*, Observer*) using either as
@@ -56,13 +47,10 @@ void nrn_notify_freed(PF pf) {
 
 void nrn_notify_when_void_freed(void* p, Observer* ob) {
 	MUTLOCK
-	if (!p_list) {
-		p_list = new PList(30);
+	if (!pvob) {
+		pvob = new nrn::tool::bimap<void*,Observer*>();
 	}
-	PObserver pob;
-	pob.p = p;
-	pob.observer = ob;
-	p_list->append(pob);
+	pvob->insert(p, ob);
 	MUTUNLOCK
 }
 
@@ -77,13 +65,8 @@ void nrn_notify_when_double_freed(double* p, Observer* ob) {
 
 void nrn_notify_pointer_disconnect(Observer* ob) {
 	MUTLOCK
-	if (p_list) {
-		long i, n = p_list->count() - 1;
-		for (i = n; i >= 0; --i) {
-			if (p_list->item(i).observer == ob) {
-				p_list->remove(i);
-			}
-		}
+	if (pvob) {
+		pvob->obremove(ob);
 	}
 	if (pdob) {
 		pdob->obremove(ob);
@@ -92,23 +75,15 @@ void nrn_notify_pointer_disconnect(Observer* ob) {
 }
 
 void notify_pointer_freed(void* pt) {
-	if (p_list) {
-		bool removed = false;
+	if (pvob) {
 		MUTLOCK
-		long i, n = p_list->count();
-		for (i = 0; i < n ; ++i) {
-			if (p_list->item(i).p == pt) {
-				Observer* obs = p_list->item(i).observer;
-				p_list->remove(i);
-				obs->update(NULL);	// might change list
-				removed = true;
-				break;		
-			}
+		void* pv;
+		Observer* ob;
+		while(pvob->find(pt, pv, ob)) {
+			ob->update(NULL);
+			pvob->remove(pv, ob);
 		}
 		MUTUNLOCK
-		if (removed) { // maybe there is another one
-			notify_pointer_freed(pt);
-		}
 	}
 }
 void notify_freed(void* p) {
