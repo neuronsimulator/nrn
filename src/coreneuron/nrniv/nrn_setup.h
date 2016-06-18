@@ -35,12 +35,13 @@ THE POSSIBILITY OF SUCH DAMAGE.
 
 static int ngroup_w;
 static int* gidgroups_w;
+static int* imult_w;
 static const char* path_w;
 static data_reader* file_reader_w;
 static bool byte_swap_w;
 
-static void read_phase1(data_reader &F,NrnThread& nt);
-static void read_phase2(data_reader &F, NrnThread& nt);
+static void read_phase1(data_reader &F, int imult, NrnThread& nt);
+static void read_phase2(data_reader &F, int imult, NrnThread& nt);
 static void setup_ThreadData(NrnThread& nt);
 
 namespace coreneuron {
@@ -65,16 +66,16 @@ namespace coreneuron {
 
     /// Reading phase selector.
     template<phase P>
-    inline void read_phase_aux(data_reader &F, NrnThread& nt);
+    inline void read_phase_aux(data_reader &F, int imult, NrnThread& nt);
 
     template<>
-    inline void read_phase_aux<one>(data_reader &F, NrnThread& nt){
-        read_phase1(F, nt);
+    inline void read_phase_aux<one>(data_reader &F, int imult, NrnThread& nt){
+        read_phase1(F, imult, nt);
     }
 
     template<>
-    inline void read_phase_aux<two>(data_reader &F, NrnThread& nt){
-        read_phase2(F, nt);
+    inline void read_phase_aux<two>(data_reader &F, int imult, NrnThread& nt){
+        read_phase2(F, imult, nt);
     }
 
 
@@ -86,7 +87,7 @@ namespace coreneuron {
         if (i < ngroup_w) {
           sd_ptr fname = sdprintf(fnamebuf, sizeof(fnamebuf), std::string("%s/%d_"+getPhaseName<P>()+".dat").c_str(), path_w, gidgroups_w[i]);
           file_reader_w[i].open(fname, byte_swap_w);
-          read_phase_aux<P>(file_reader_w[i], *nt);
+          read_phase_aux<P>(file_reader_w[i], imult_w[i], *nt);
           file_reader_w[i].close();
           if (P == 2) {
             setup_ThreadData(*nt);

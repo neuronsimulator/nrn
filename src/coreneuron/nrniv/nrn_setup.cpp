@@ -162,12 +162,6 @@ static int maxgid;
 #endif
 
 static MUTDEC
-zzz
-static void read_phase1(data_reader &F, int imult, NrnThread& nt);
-static void determine_inputpresyn(void);
-static void read_phase2(data_reader &F, int imult, NrnThread& nt);
-static void setup_ThreadData(NrnThread& nt);
-zzz
 static size_t model_size(void);
 
 /// Vector of maps for negative presyns
@@ -185,16 +179,7 @@ std::vector<int*> netcon_srcgid;
 // Wrap read_phase1 and read_phase2 calls to allow using  nrn_multithread_job.
 // Args marshaled by store_phase_args are used by phase1_wrapper
 // and phase2_wrapper.
-zzz
-static int ngroup_w;
-static int* gidgroups_w;
-static int* imult_w;
-static const char* path_w;
-static data_reader* file_reader_w;
-static bool byte_swap_w;
 static void store_phase_args(int ngroup, int* gidgroups, int* imult, data_reader* file_reader,
-zzz
-static void store_phase_args(int ngroup, int* gidgroups, data_reader* file_reader,
   const char* path, int byte_swap) {
   ngroup_w = ngroup;
   gidgroups_w = gidgroups;
@@ -203,31 +188,6 @@ static void store_phase_args(int ngroup, int* gidgroups, data_reader* file_reade
   path_w = path;
   byte_swap_w = (bool) byte_swap;
 }
-
-zzz
-#define implement_phase_wrapper(A) \
-static void* phase##A##_wrapper_w(NrnThread* nt) { \
-  int i = nt->id; \
-  char fnamebuf[1000]; \
-  if (i < ngroup_w) { \
-    sd_ptr fname = sdprintf(fnamebuf, sizeof(fnamebuf), "%s/%d_"#A".dat", path_w, gidgroups_w[i]); \
-    file_reader_w[i].open(fname,byte_swap_w); \
-    read_phase##A(file_reader_w[i], imult_w[i], *nt); \
-    file_reader_w[i].close(); \
-    if (A == 2) { \
-      setup_ThreadData(*nt); \
-    } \
-  } \
-  return NULL; \
-} \
-static void phase##A##_wrapper() { \
-  nrn_multithread_job(phase##A##_wrapper_w); \
-} \
-// end of implement_phase_wrapper
-
-implement_phase_wrapper(1)
-implement_phase_wrapper(2)
-zzz
 
 /* read files.dat file and distribute cellgroups to all mpi ranks */
 void nrn_read_filesdat(int &ngrp, int * &grp, int multiple, int * &imult, const char *filesdat)
@@ -264,126 +224,21 @@ void nrn_read_filesdat(int &ngrp, int * &grp, int multiple, int * &imult, const 
     fclose( fp );
 }
 
-zzz
-void nrn_setup(const char *path, const char *filesdat, int byte_swap, int threading) {
-
-  int ngroup = 0;
-  int *gidgroups = NULL;
-  int *imult = NULL;
-
-  double time = nrnmpi_wtime(); 
-
-  maxgid = 0x7fffffff / nrn_setup_multiple;
-  nrn_read_filesdat(ngroup, gidgroups, nrn_setup_multiple, imult, filesdat);
-
-  assert(ngroup > 0);
-  MUTCONSTRUCT(1)
-#if 0
-  nrn_threads_create(ngroup, 0); // serial threads
-#else
-  // temporary bug work around. If any process has multiple threads, no
-  // process can have a single thread. So, for now, if one thread, make two.
-  // Fortunately, empty threads work fine.
-  { int ng = ngroup;
-    if (ng == 1) { ng += 1; }
-    nrn_threads_create(ng, threading); // serial/parallel threads
-  }
-#endif
-
-  netpar_tid_gid2ps_alloc(ngroup);
-
-  // bug fix. gid2out is cumulative over all threads and so do not
-  // know how many there are til after phase1
-  nrn_alloc_gid2out(1000, 100);
-  // A process's complete set of output gids and allocation of each thread's
-  // nt.presyns and nt.netcons arrays.
-  // Generates the gid2out hash table which is needed
-  // to later count the required number of InputPreSyn
-  data_reader *file_reader=new data_reader[ngroup];
-
-
-  /* nrn_multithread_job supports serial, pthread, and openmp. */
-  store_phase_args(ngroup, gidgroups, imult, file_reader, path, byte_swap);
-  phase1_wrapper();
-
-  // from the netpar::gid2out_ hash table and the netcon_srcgid array,
-  // fill the netpar::gid2in_ hash table, and from the number of entries,
-  // allocate the process wide InputPreSyn array
-  determine_inputpresyn();
-//  nrn_alloc_gid2out(1,1);
-
-  // read the rest of the gidgroup's data and complete the setup for each
-  // thread.
-  /* nrn_multithread_job supports serial, pthread, and openmp. */
-  phase2_wrapper();
-
-  nrn_mk_table_check(); // was done in nrn_thread_memblist_setup in multicore.c
-  delete [] file_reader;
-
-  netpar_tid_gid2ps_free();
-
-  if (nrn_nthread > 1) {
-    // NetCvode construction assumed one thread. Need nrn_nthread instances
-    // of NetCvodeThreadData
-    nrn_p_construct();
-  }
-
-  model_size();
-  delete []gidgroups;
-
-  if ( nrnmpi_myid == 0 ) {
-	  printf( " Nrn Setup Done (time: %g)\n", nrnmpi_wtime() - time );
-  }
-
-}
-
-void setup_ThreadData(NrnThread& nt) {
-  for (NrnThreadMembList* tml = nt.tml; tml; tml = tml->next) {
-    Memb_func& mf = memb_func[tml->index];
-    Memb_list* ml = tml->ml;
-    if (mf.thread_size_) {
-      ml->_thread = (ThreadDatum*)ecalloc(mf.thread_size_, sizeof(ThreadDatum));
-      if (mf.thread_mem_init_) {
-        MUTLOCK
-        (*mf.thread_mem_init_)(ml->_thread);
-        MUTUNLOCK
-      }
-    }
-    else ml->_thread = NULL;
-  }
-}
-
-
 void read_phase1(data_reader &F, int imult, NrnThread& nt) {
   int zz = imult*maxgid; // offset for each gid
-  nt.n_presyn = F.read_int();
-  nt.n_netcon = F.read_int();
-zzz
-void read_phase1(data_reader &F, NrnThread& nt) {
   nt.n_presyn = F.read_int(); /// Number of PreSyn-s in NrnThread nt
   nt.n_netcon = F.read_int(); /// Number of NetCon-s in NrnThread nt
   nt.presyns = new PreSyn[nt.n_presyn];
   nt.netcons = new NetCon[nt.n_netcon + nrn_setup_extracon];
 
   /// Checkpoint in bluron is defined for both phase 1 and phase 2 since they are written together
-  int* output_gid = F.read_int_array(nt.n_presyn);
-  int* netcon_srcgid = F.read_int_array(nt.n_netcon);
+  /// output_gid has all of output PreSyns, netcon_srcgid is created for NetCons which might be
+  /// 10k times more than output_gid.
+  int* output_gid = F.read_array<int>(nt.n_presyn);
+  // the extra netcon_srcgid will be filled in later
+  netcon_srcgid[nt.id] = new int[nt.n_netcon + nrn_setup_extracon];
+  F.read_array<int>(netcon_srcgid[nt.id], nt.n_netcon);
   F.close();
-
-  // offset the (non-negative) gids according to multiple
-  // make sure everything fits into gid space.
-  for (int i=0; i < nt.n_presyn; ++i) {
-    if (output_gid[i] >= 0) {
-      nrn_assert(output_gid[i] < maxgid);
-      output_gid[i] += zz;
-    }
-  }
-  for (int i=0; i < nt.n_netcon; ++i) {
-    if (netcon_srcgid[i] >= 0) {
-      nrn_assert(netcon_srcgid[i] < maxgid);
-      netcon_srcgid[i] += zz;
-    }
-  }
 
 #if 0
   // for checking whether negative gids fit into the gid space
@@ -401,18 +256,21 @@ void read_phase1(data_reader &F, NrnThread& nt) {
   }
 #endif
 
-zzz
-  // allocate a proper size neg_gid2out_[tid] (see netpar.cpp);
-  int negcnt = 1; // don't trouble ourselves with size 0 tables.
+  // offset the (non-negative) gids according to multiple
+  // make sure everything fits into gid space.
   for (int i=0; i < nt.n_presyn; ++i) {
-    if (output_gid[i] < 0) {
-      ++negcnt;
+    if (output_gid[i] >= 0) {
+      nrn_assert(output_gid[i] < maxgid);
+      output_gid[i] += zz;
     }
   }
-  // I no longer remember how generous we should be with the initial size
-  // of a hash table.
-  netpar_tid_gid2ps_alloc_item(nt.id, negcnt, 100);
-zzz
+  int* nc_srcgid = netcon_srcgid[nt.id];
+  for (int i=0; i < nt.n_netcon; ++i) {
+    if (nc_srcgid[i] >= 0) {
+      nrn_assert(nc_srcgid[i] < maxgid);
+      nc_srcgid[i] += zz;
+    }
+  }
 
   for (int i=0; i < nt.n_presyn; ++i) {
     int gid = output_gid[i];
@@ -454,24 +312,7 @@ zzz
     nt.presyns[i].nt_ = &nt;
   }
   delete [] output_gid;
-}
 
-void netpar_tid_gid2ps(int tid, int gid, PreSyn** ps, InputPreSyn** psi) {
-  /// for gid < 0 returns the PreSyn* in the thread (tid) specific map.
-  *ps = NULL;
-  *psi = NULL;
-  std::map<int, PreSyn*>::iterator gid2out_it;
-  if (gid >= 0) {
-      gid2out_it = gid2out.find(gid);
-      if (gid2out_it != gid2out.end()) {
-        *ps = gid2out_it->second;
-      }else{
-        std::map<int, InputPreSyn*>::iterator gid2in_it;
-        gid2in_it = gid2in.find(gid);
-        if (gid2in_it != gid2in.end()) {
-          *psi = gid2in_it->second;
-        }
-zzz
  if (nrn_setup_extracon > 0) {
   // very simplistic
   // Use this threads positive source gids - zz in nt.netcon order as the
@@ -494,35 +335,52 @@ zzz
     sidoffset = 0;
   }
   // set up the extracon srcgid_
-  int j = 0; //rotate through the n_netcon u.srcgid_
+  int* nc_srcgid = netcon_srcgid[nt.id];
+  int j = 0; //rotate through the n_netcon netcon_srcgid
   for (int i=0; i < nrn_setup_extracon; ++i) {
     int sid = -1;
     for (int k=0; k < nt.n_netcon; ++k) {
       // potentially rotate j through the entire n_netcon but no further
-      sid = nt.netcons[j].u.srcgid_;
+      sid = nc_srcgid[j];
       j = (j + 1)%nt.n_netcon;
       if (sid >= 0) {
         break;
       }
-zzz
-  }else{
-    gid2out_it = neg_gid2out[tid].find(gid);
-    if (gid2out_it != neg_gid2out[tid].end()) {
-      *ps = gid2out_it->second;
     }
-zzz
     if (sid < 0) {// only connect to real cells.
       sid = -1;
     }else{
       sid += sidoffset;
     }
-    nt.netcons[i + nt.n_netcon].u.srcgid_ = sid;
+    nc_srcgid[i + nt.n_netcon] = sid;
   }
- }
-
   // finally increment the n_netcon
   nt.n_netcon += nrn_setup_extracon;
-zzz
+ }
+}
+
+void netpar_tid_gid2ps(int tid, int gid, PreSyn** ps, InputPreSyn** psi) {
+  /// for gid < 0 returns the PreSyn* in the thread (tid) specific map.
+  *ps = NULL;
+  *psi = NULL;
+  std::map<int, PreSyn*>::iterator gid2out_it;
+  if (gid >= 0) {
+      gid2out_it = gid2out.find(gid);
+      if (gid2out_it != gid2out.end()) {
+        *ps = gid2out_it->second;
+      }else{
+        std::map<int, InputPreSyn*>::iterator gid2in_it;
+        gid2in_it = gid2in.find(gid);
+        if (gid2in_it != gid2in.end()) {
+          *psi = gid2in_it->second;
+        }
+      }
+  }else{
+    gid2out_it = neg_gid2out[tid].find(gid);
+    if (gid2out_it != neg_gid2out[tid].end()) {
+      *ps = gid2out_it->second;
+    }
+  }
 }
 
 void determine_inputpresyn() {
@@ -665,9 +523,14 @@ void nrn_setup(cn_input_params& input_params, const char *filesdat, int byte_swa
   /// Array of cell group numbers (indices)
   int *gidgroups = NULL;
 
+  /// Array of duplicate indices. Normally, with nrn_setup_multiple=1,
+  //   they are ngroup values of 0.
+  int* imult = NULL;
+
   double time = nrnmpi_wtime();
 
-  nrn_read_filesdat(ngroup, gidgroups, filesdat);
+  maxgid = 0x7fffffff / nrn_setup_multiple;
+  nrn_read_filesdat(ngroup, gidgroups, nrn_setup_multiple, imult, filesdat);
 
   MUTCONSTRUCT(1)
   // temporary bug work around. If any process has multiple threads, no
@@ -699,7 +562,7 @@ void nrn_setup(cn_input_params& input_params, const char *filesdat, int byte_swa
   data_reader *file_reader=new data_reader[ngroup];
 
   /* nrn_multithread_job supports serial, pthread, and openmp. */
-  store_phase_args(ngroup, gidgroups, file_reader, input_params.datpath, byte_swap);
+  store_phase_args(ngroup, gidgroups, imult, file_reader, input_params.datpath, byte_swap);
   coreneuron::phase_wrapper<(coreneuron::phase)1>(); /// If not the xlc compiler, it should be coreneuron::phase::one
 
   // from the gid2out map and the netcon_srcgid array,
@@ -962,9 +825,9 @@ void read_phase2(data_reader &F, int imult, NrnThread& nt) {
   if (nt._nidata) nt._idata = (int*)ecalloc(nt._nidata, sizeof(int));
   else nt._idata = NULL;
   // see patternstim.cpp
-  int zzz = (&nt == nrn_threads) ? nrn_extra_thread0_vdata : 0;
-  if (nt._nvdata+zzz) 
-    nt._vdata = (void**)ecalloc(nt._nvdata + zzz, sizeof(void*));
+  int extra_nv = (&nt == nrn_threads) ? nrn_extra_thread0_vdata : 0;
+  if (nt._nvdata+extra_nv) 
+    nt._vdata = (void**)ecalloc(nt._nvdata + extra_nv, sizeof(void*));
   else
     nt._vdata = NULL;
   //printf("_ndata=%d _nidata=%d _nvdata=%d\n", nt._ndata, nt._nidata, nt._nvdata);
@@ -1290,7 +1153,7 @@ void read_phase2(data_reader &F, int imult, NrnThread& nt) {
   // (which happens to have a weight vector length of 5.)
   // Edge case: if there is no such synapse, let the target_ be NULL
   //   and the netcon be inactive.
-  // Same pattern as algorithm for extracon u.srcgid above in phase1.
+  // Same pattern as algorithm for extracon netcon_srcgid above in phase1.
   extracon_target_type = nrn_get_mechtype("ProbAMPANMDA_EMS");
   assert(extracon_target_type > 0);
   extracon_target_nweight = pnt_receive_size[extracon_target_type];
@@ -1318,12 +1181,10 @@ void read_phase2(data_reader &F, int imult, NrnThread& nt) {
   delete [] pnt_offset;
 
   // weights in netcons order in groups defined by Point_process target type.
-zzz
   nt.n_weight += nrn_setup_extracon*extracon_target_nweight;
   nt.weights = new double[nt.n_weight];
-  F.read_dbl_array(nt.weights, nweight);
-zzz
-  nt.weights = F.read_array<double>(nweight);
+  F.read_array<double>(nt.weights, nweight);
+
   int iw = 0;
   for (int i=0; i < nnetcon; ++i) {
     NetCon& nc = nt.netcons[i];
@@ -1346,8 +1207,8 @@ zzz
   for (int i=0; i < nrn_setup_extracon; ++i) {
     NetCon& nc = nt.netcons[nnetcon + i];
     nc.delay_ = 1.0;
-    nc.u.weight_ = nt.weights + (nweight + i*extracon_target_nweight);
-    nc.u.weight_[0] = 2.0;  // this value 2.0 is extracted from .dat files
+    nc.weight_ = nt.weights + (nweight + i*extracon_target_nweight);
+    nc.weight_[0] = 2.0;  // this value 2.0 is extracted from .dat files
   }
  }
 

@@ -117,7 +117,7 @@ int main1( int argc, char **argv, char **env )
     nrn_setup_extracon = input_params.extracon;
 
     // reading *.dat files and setting up the data structures, setting mindelay
-    nrn_setup( input_params.datpath, filesdat, nrn_need_byteswap, input_params.threading );
+    nrn_setup( input_params, filesdat, nrn_need_byteswap );
 
     report_mem_usage( "After nrn_setup " );
 
