@@ -140,6 +140,10 @@ int main1( int argc, char **argv, char **env )
     cellorder_nwarp = input_params.nwarp;
     use_solve_interleave = input_params.cell_interleave_permute;
 
+    //pass by flag so existing tests do not need a changed nrn_setup prototype.
+    nrn_setup_multiple = input_params.multiple;
+    nrn_setup_extracon = input_params.extracon;
+
     // reading *.dat files and setting up the data structures, setting mindelay
     nrn_setup( input_params, filesdat, nrn_need_byteswap );
 

@@ -51,6 +51,8 @@ extern void set_globals(const char* path);
 extern void mk_netcvode(void);
 extern void nrn_p_construct(void);
 extern void nrn_setup(cn_input_params& input_params, const char *filesdat, int byte_swap);
+extern int nrn_setup_multiple;
+extern int nrn_setup_extracon;
 extern void nrn_cleanup();
 extern void BBS_netpar_solve(double);
 extern void nrn_mkPatternStim(const char* filename);

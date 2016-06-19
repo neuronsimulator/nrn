@@ -70,7 +70,10 @@ typedef struct cn_parameters {
 
     double mindelay;
 
-    /** default constructor */
+    int multiple;
+    int extracon;
+
+    /** default constructor */ 
     cn_parameters();
 
     /** show help message for command line args */
