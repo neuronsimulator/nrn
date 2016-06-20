@@ -42,12 +42,13 @@ static bool byte_swap_w;
 
 static void read_phase1(data_reader &F, int imult, NrnThread& nt);
 static void read_phase2(data_reader &F, int imult, NrnThread& nt);
+static void read_phasegap(data_reader &F, int imult, NrnThread& nt);
 static void setup_ThreadData(NrnThread& nt);
 
 namespace coreneuron {
 
     /// Reading phase number.
-    enum phase {one=1, two};
+    enum phase {one=1, two, gap};
 
     /// Get the phase number in form of the string.
     template<phase P>
@@ -63,6 +64,10 @@ namespace coreneuron {
         return "2";
     }
 
+    template<>
+    inline std::string getPhaseName<gap>(){
+        return "gap";
+    }
 
     /// Reading phase selector.
     template<phase P>
@@ -78,6 +83,10 @@ namespace coreneuron {
         read_phase2(F, imult, nt);
     }
 
+    template<>
+    inline void read_phase_aux<gap>(data_reader &F, int imult, NrnThread& nt){
+        read_phasegap(F, imult, nt);
+    }
 
     /// Reading phase wrapper for each neuron group.
     template<phase P>

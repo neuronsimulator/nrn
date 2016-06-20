@@ -75,6 +75,9 @@ public:
     /** Preserving chkpnt state, move to a new file. */
     void open(const char *filename, bool reorder);
 
+    /** Is the file not open */
+    bool fail() const {return F.fail();}
+
     /** Query chkpnt state. */
     int checkpoint() const { return chkpnt; }
 

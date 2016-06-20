@@ -73,12 +73,6 @@ void (*nrn_mk_transfer_thread_data_)();
 extern int v_structure_change;
 extern int diam_changed;
 
-#if PERMANENT /*|| USE_PTHREAD*/
-static int busywait_;
-static int busywait_main_;
-#endif
-
-
 extern void nrn_threads_free();
 extern void nrn_old_thread_save();
 extern double nrn_timeus();
@@ -253,6 +247,11 @@ static pthread_mutex_t* _nrn_malloc_mutex;
 #define PERMANENT 1
 #endif
 
+#if PERMANENT
+static int busywait_;
+static int busywait_main_;
+#endif
+
 typedef volatile struct {
         int flag;
 	int thread_id;
@@ -282,6 +281,10 @@ static void wait_for_workers() {
 	    }
 #else
 		pthread_join(slave_threads[i], (void*)0);
+		/* if CORENEURON_OPENMP is off */
+		(void) busywait_;
+		(void) busywait_main_;
+		(void) nulljob;
 #endif
 	}
 }

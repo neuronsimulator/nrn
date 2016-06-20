@@ -146,9 +146,14 @@ double nrnmpi_wtime() {
 }
 
 
-void nrnmpi_finalize(void) {
+void nrnmpi_finalize(void) 
+{
   if (nrnmpi_under_nrncontrol_) {
-    MPI_Finalize();
+    int flag = 0;
+    MPI_Initialized(&flag);
+    if (flag) {
+      MPI_Finalize();
+    }
   }
 }
 

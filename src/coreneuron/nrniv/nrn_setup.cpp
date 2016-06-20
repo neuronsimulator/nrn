@@ -41,6 +41,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/nrniv/nrnmutdec.h"
 #include "coreneuron/nrniv/memory.h"
 #include "coreneuron/nrniv/nrn_setup.h"
+#include "coreneuron/nrniv/partrans.h"
 #include "coreneuron/nrniv/nrnoptarg.h"
 #include "coreneuron/nrniv/node_permute.h"
 #include "coreneuron/nrniv/cellorder.h"
@@ -203,6 +204,20 @@ void nrn_read_filesdat(int &ngrp, int * &grp, int multiple, int * &imult, const 
     int iNumFiles = 0;
     nrn_assert( fscanf( fp, "%d\n", &iNumFiles ) == 1 );
 
+    // temporary strategem to figure out if model uses gap junctions while
+    // being backward compatible
+    if (iNumFiles == -1) {
+      nrn_assert( fscanf( fp, "%d\n", &iNumFiles ) == 1 );
+      nrn_have_gaps = 1;
+      if (nrnmpi_myid == 0) {
+        printf("Model uses gap junctions\n");
+      }
+    }
+
+    if ( nrnmpi_numprocs > iNumFiles ) {
+        nrnmpi_fatal_error( "The number of CPUs cannot exceed the number of input files" );
+    }
+
     ngrp = 0;
     grp = new int[iNumFiles * multiple / nrnmpi_numprocs + 1];
     imult = new int[iNumFiles * multiple / nrnmpi_numprocs + 1];
@@ -227,6 +242,7 @@ void nrn_read_filesdat(int &ngrp, int * &grp, int multiple, int * &imult, const 
 }
 
 void read_phase1(data_reader &F, int imult, NrnThread& nt) {
+  assert(!F.fail());
   int zz = imult*maxgid; // offset for each gid
   nt.n_presyn = F.read_int(); /// Number of PreSyn-s in NrnThread nt
   nt.n_netcon = F.read_int(); /// Number of NetCon-s in NrnThread nt
@@ -569,6 +585,16 @@ void nrn_setup(cn_input_params& input_params, const char *filesdat, int byte_swa
 
   /* nrn_multithread_job supports serial, pthread, and openmp. */
   store_phase_args(ngroup, gidgroups, imult, file_reader, input_params.datpath, byte_swap);
+
+  // gap junctions
+  if (nrn_have_gaps) {
+    assert(nrn_setup_multiple == 1);
+    nrn_partrans::transfer_thread_data_ = new nrn_partrans::TransferThreadData[nrn_nthread];
+    nrn_partrans::setup_info_ = new nrn_partrans::SetupInfo[ngroup];
+    coreneuron::phase_wrapper<coreneuron::gap>();
+    nrn_partrans::gap_mpi_setup(ngroup);
+  }
+
   coreneuron::phase_wrapper<(coreneuron::phase)1>(); /// If not the xlc compiler, it should be coreneuron::phase::one
 
   // from the gid2out map and the netcon_srcgid array,
@@ -628,6 +654,40 @@ void setup_ThreadData(NrnThread& nt) {
     }
     else ml->_thread = NULL;
   }
+}
+
+void read_phasegap(data_reader &F, int imult, NrnThread& nt) {
+  nrn_assert(imult == 0);
+  nrn_partrans::SetupInfo& si = nrn_partrans::setup_info_[nt.id];
+  si.ntar = 0;
+  si.nsrc = 0;
+
+  if (F.fail()) { return; }
+
+  int chkpntsave = F.checkpoint();
+  F.checkpoint(0);
+
+  si.ntar = F.read_int();
+  si.nsrc = F.read_int();
+  si.type = F.read_int();
+  si.ix_vpre = F.read_int();
+  si.sid_target = F.read_array<int>(si.ntar);
+  si.sid_src = F.read_array<int>(si.nsrc);
+  si.v_indices = F.read_array<int>(si.nsrc);
+
+  F.checkpoint(chkpntsave);
+
+#if 0
+  printf("%d read_phasegap tid=%d type=%d %s ix_vpre=%d nsrc=%d ntar=%d\n",
+    nrnmpi_myid, nt.id, si.type, memb_func[si.type].sym, si.ix_vpre,
+    si.nsrc, si.ntar);
+  for (int i=0; i < si.nsrc; ++i) {
+    printf("sid_src %d %d\n", si.sid_src[i], si.v_indices[i]);
+  }
+  for (int i=0; i <si. ntar; ++i) {
+    printf("sid_tar %d %d\n", si.sid_target[i], i);
+  }
+#endif
 }
 
 int nrn_soa_padded_size(int cnt, int layout) {
@@ -818,6 +878,7 @@ void nrn_cleanup() {
 }
 
 void read_phase2(data_reader &F, int imult, NrnThread& nt) {
+  assert(!F.fail());
   nrn_assert(imult >= 0); // avoid imult unused warning
   NrnThreadMembList* tml;
   int n_outputgid = F.read_int();
@@ -860,6 +921,9 @@ void read_phase2(data_reader &F, int imult, NrnThread& nt) {
     tml->ml->_permute = NULL;
     tml->next = NULL;
     tml->index = F.read_int();
+    if (memb_func[tml->index].alloc == NULL) {
+      hoc_execerror(memb_func[tml->index].sym, "mechanism does not exist");
+    }
     tml->ml->nodecount = F.read_int();
     if (!memb_func[tml->index].sym) {
       printf("%s (type %d) is not available\n", nrn_get_mechname(tml->index), tml->index);
@@ -1005,6 +1069,10 @@ void read_phase2(data_reader &F, int imult, NrnThread& nt) {
         pp->_tid = nt.id;
       }
     }
+  }
+
+  if (nrn_have_gaps == 1) {
+    nrn_partrans::gap_thread_setup(nt);
   }
 
   // Some pdata may index into data which has been reordered from AoS to

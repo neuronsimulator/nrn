@@ -101,6 +101,7 @@ extern void nrnmpi_int_gather(int* s, int* r, int cnt, int root);
 extern void nrnmpi_int_gatherv(int* s, int scnt, int* r, int* rcnt, int* rdispl, int root);
 extern void nrnmpi_int_allgather(int* s, int* r, int n);
 extern void nrnmpi_int_allgatherv(int* s, int* r, int* n, int* dspl);
+extern void nrnmpi_int_alltoall(int* s, int* r, int n);
 extern void nrnmpi_int_alltoallv(int* s, int* scnt, int* sdispl, int* r, int* rcnt, int* rdispl);
 extern void nrnmpi_dbl_allgatherv(double* s, double* r, int* n, int* dspl);
 extern void nrnmpi_dbl_alltoallv(double* s, int* scnt, int* sdispl, double* r, int* rcnt, int* rdispl);

@@ -33,6 +33,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/nrniv/nrn_acc_manager.h"
 
 static void* nrn_fixed_step_thread(NrnThread*);
+static void* nrn_fixed_step_lastpart(NrnThread*);
 static void* nrn_fixed_step_group_thread(NrnThread*);
 static void update(NrnThread*);
 static void nonvint(NrnThread*);
@@ -53,7 +54,7 @@ void dt2thread(double adt) { /* copied from nrnoc/fadvance.c */
     }
 }
 
-void nrn_fixed_step_minimal() {
+void nrn_fixed_step_minimal() { /* not so minimal anymore with gap junctions */
 	if (t != nrn_threads->_t) {
 		dt2thread(-1.);
 	}else{
@@ -62,7 +63,13 @@ void nrn_fixed_step_minimal() {
 /*printf("nrn_fixed_step_minimal t=%g\n", t);*/
 	nrn_thread_table_check();
 	nrn_multithread_job(nrn_fixed_step_thread);
-	nrn_spike_exchange(nrn_threads);
+	if (nrn_have_gaps) {
+		nrnmpi_v_transfer();
+		nrn_multithread_job(nrn_fixed_step_lastpart);
+	}
+	if (nrn_threads[0]._stop_stepping) {
+		nrn_spike_exchange(nrn_threads);
+	}
 	t = nrn_threads[0]._t;
 }
 
@@ -137,6 +144,9 @@ static void update(NrnThread* _nt){
 
 static void nonvint(NrnThread* _nt) {
 	NrnThreadMembList* tml;
+	if (nrn_have_gaps) {
+		nrnthread_v_transfer(_nt);
+	}
 	errno = 0;
 
 	for (tml = _nt->tml; tml; tml = tml->next) if (memb_func[tml->index].state) {
@@ -179,7 +189,14 @@ static void* nrn_fixed_step_thread(NrnThread* nth) {
 	nrn_solve_minimal(nth);
 	second_order_cur(nth);
 	update(nth);
+	if (!nrn_have_gaps) {
+		nrn_fixed_step_lastpart(nth);
+	}
   }
+	return (void*)0;
+}
+
+static void* nrn_fixed_step_lastpart(NrnThread* nth) {
 	nth->_t += .5 * nth->_dt;
 
   if (nth->ncell) {
@@ -190,8 +207,8 @@ static void* nrn_fixed_step_thread(NrnThread* nth) {
 	fixed_play_continuous(nth);
 	nonvint(nth);
 	nrn_ba(nth, AFTER_SOLVE);
-  }
 
 	nrn_deliver_events(nth) ; /* up to but not past texit */
+  }
 	return (void*)0;
 }
