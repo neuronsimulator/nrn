@@ -244,7 +244,7 @@ To run the simulation, we execute the following lines.
     .. code-block::
         python
         
-        h.load_file('srdrun.hoc')
+        h.load_file('stdrun.hoc')
     
     which defines the :func:`run` function (the alternative would be to specify
     initialization and advance in more detail).
