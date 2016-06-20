@@ -442,13 +442,13 @@ void nrn_setup(cn_input_params& input_params, const char *filesdat, int byte_swa
 
   nrn_read_filesdat(ngroup, gidgroups, filesdat);
 
-  assert(ngroup > 0);
   MUTCONSTRUCT(1)
   // temporary bug work around. If any process has multiple threads, no
   // process can have a single thread. So, for now, if one thread, make two.
   // Fortunately, empty threads work fine.
-  /// Allocate NrnThread* nrn_threads of size ngroup (minimum 2)
-  nrn_threads_create(ngroup == 1?2:ngroup, input_params.threading); // serial/parallel threads
+  // Allocate NrnThread* nrn_threads of size ngroup (minimum 2)
+  // Note that rank with 0 dataset/cellgroup works fine
+  nrn_threads_create(ngroup <= 1?2:ngroup, input_params.threading); // serial/parallel threads
 
   /// Reserve vector of maps of size ngroup for negative gid-s
   /// std::vector< std::map<int, PreSyn*> > neg_gid2out;
