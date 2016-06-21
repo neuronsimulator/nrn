@@ -188,10 +188,10 @@ static void* nrn_fixed_step_thread(NrnThread* nth) {
 	nrn_solve_minimal(nth);
 	second_order_cur(nth);
 	update(nth);
+  }
 	if (!nrn_have_gaps) {
 		nrn_fixed_step_lastpart(nth);
 	}
-  }
 	return (void*)0;
 }
 
@@ -207,8 +207,8 @@ static void* nrn_fixed_step_lastpart(NrnThread* nth) {
 	fixed_play_continuous(nth);
 	nonvint(nth);
 	nrn_ba(nth, AFTER_SOLVE);
+  }
 
 	nrn_deliver_events(nth) ; /* up to but not past texit */
-  }
 	return (void*)0;
 }
