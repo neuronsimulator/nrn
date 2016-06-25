@@ -501,24 +501,27 @@ static PyObject* loads;
 static PyObject* dumps;
 
 static void setpickle() {
-  if (!dumps) {
-    PyObject* pickle = PyImport_ImportModule("cPickle");
-    if (pickle == NULL) {
-      pickle = PyImport_ImportModule("pickle");
+    PyObject* pickle;
+    if (!dumps) {
+        #if PY_MAJOR_VERSION >= 3
+            pickle = PyImport_ImportModule("pickle");
+        #else
+            pickle = PyImport_ImportModule("cPickle");
+        #endif
+
+        if (pickle) {
+            Py_INCREF(pickle);
+            dumps = PyObject_GetAttrString(pickle, "dumps");
+            loads = PyObject_GetAttrString(pickle, "loads");
+            if (dumps) {
+                Py_INCREF(dumps);
+                Py_INCREF(loads);
+            }
+        }
+        if (!dumps || !loads) {
+            hoc_execerror("Neither Python cPickle nor pickle are available", 0);
+        }
     }
-    if (pickle) {
-      Py_INCREF(pickle);
-      dumps = PyObject_GetAttrString(pickle, "dumps");
-      loads = PyObject_GetAttrString(pickle, "loads");
-      if (dumps) {
-        Py_INCREF(dumps);
-        Py_INCREF(loads);
-      }
-    }
-  }
-  if (!dumps || !loads) {
-    hoc_execerror("Neither Python cPickle nor pickle are available", 0);
-  }
 }
 
 // note that *size includes the null terminating character if it exists
