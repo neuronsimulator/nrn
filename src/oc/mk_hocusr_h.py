@@ -33,27 +33,27 @@ for line in sys.stdin:
   names = line.replace(',',' ').replace(';',' ').split()
   if len(names) > 2:
     process(names[1], names[2:])
-    
 
-print '''
+
+print('''
 /* Functions */
 static VoidFunc function[] = {
-''',
+''')
 
 for i in voidfun:
-  print '"%s", %s,'%(i,i)
-print '''0, 0
+  print('"%s", %s,'%(i,i))
+print('''0, 0
 };
 
 static struct {  /* Integer Scalars */
   const char *name;
   int  *pint;
 } scint[] = {
-''',
+''')
 
 for i in intvar[0]:
-  print '"%s", &%s,'%(i[0],i[0])
-print '''0, 0
+  print('"%s", &%s,'%(i[0],i[0]))
+print('''0, 0
 };
 
 static struct {  /* Vector integers */
@@ -61,22 +61,22 @@ static struct {  /* Vector integers */
   int  *pint;
   int  index1;
 } vint[] = {
-''',
+''')
 
 for i in intvar[1]:
-  print '"%s", %s, %s,'%(i[0],i[0],i[1])
-print '''0,0
+  print('"%s", %s, %s,'%(i[0],i[0],i[1]))
+print('''0,0
 };
 
 static struct {  /* Float Scalars */
   const char *name;
   float  *pfloat;
 } scfloat[] = {
-''',
+''')
 
 for i in fltvar[0]:
-  print '"%s", &%s,'%(i[0],i[0])
-print '''0, 0
+  print('"%s", &%s,'%(i[0],i[0]))
+print('''0, 0
 };
 
 static struct {  /* Vector float */
@@ -84,29 +84,29 @@ static struct {  /* Vector float */
   float *pfloat;
   int index1;
 } vfloat[] = {
-''',
+''')
 
 for i in fltvar[1]:
-  print '"%s", %s, %s,'%(i[0],i[0],i[1])
-print '''0,0,0
+  print('"%s", %s, %s,'%(i[0],i[0],i[1]))
+print('''0,0,0
 };
 
 /* Double Scalars */
 DoubScal scdoub[] = {
-''',
+''')
 
 for i in dblvar[0]:
-  print '"%s", &%s,'%(i[0],i[0])
-print '''0,0
+  print('"%s", &%s,'%(i[0],i[0]))
+print('''0,0
 };
 
 /* Vectors */
 DoubVec vdoub[] = {
-''',
+''')
 
 for i in dblvar[1]:
-  print '"%s", %s, %s,'%(i[0],i[0],i[1])
-print '''0, 0, 0
+  print('"%s", %s, %s,'%(i[0],i[0],i[1]))
+print('''0, 0, 0
 };
 
 static struct {  /* Arrays */
@@ -115,11 +115,11 @@ static struct {  /* Arrays */
   int index1;
   int index2;
 } ardoub[] = {
-''',
+''')
 
 for i in dblvar[2]:
-  print '"%s", %s, %s, %s,'%(i[0], i[0], i[1], i[2])
-print '''0, 0, 0, 0
+  print('"%s", %s, %s, %s,'%(i[0], i[0], i[1], i[2]))
+print('''0, 0, 0, 0
 };
 
 static struct {  /* triple dimensioned arrays */
@@ -129,10 +129,10 @@ static struct {  /* triple dimensioned arrays */
   int index2;
   int index3;
 } thredim[] = {
-''',
+''')
 
 for i in dblvar[3]:
-  print '"%s", %s, %s, %s, %s,'%(i[0], i[0], i[1], i[2], i[3])
-print '''0, 0, 0, 0, 0
+  print('"%s", %s, %s, %s, %s,'%(i[0], i[0], i[1], i[2], i[3]))
+print('''0, 0, 0, 0, 0
 };
-'''
+''')
