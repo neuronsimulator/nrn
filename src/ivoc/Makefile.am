@@ -69,7 +69,7 @@ noinst_HEADERS = apwindow.h axis.h bndedval.h cbwidget.h checkpnt.h \
 	ocpicker.h ocpointer.h random1.h rect.h rubband.h scenepic.h \
 	scenevie.h symchoos.h symdir.h utility.h ivocvect.h xmenu.h \
 	nrngsl.h nrngsl_hc_radix2.c nrngsl_real_radix2.c \
-	grglyph.h nrnmutdec.h ocnotify.h ocptrvector.h
+	grglyph.h nrnmutdec.h ocnotify.h ocptrvector.h bimap.hpp
 
 ivoc_SOURCES = nrnmain.cpp ivocmain.cpp $(nrniv_iv_sources)
 

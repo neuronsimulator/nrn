@@ -7,10 +7,13 @@
 #include <nrnmutdec.h>
 #include "oc2iv.h"
 #include "ocfunc.h"
+
 #if HAVE_IV
 #include "utility.h"
 #include "ivoc.h"
 #endif
+
+#include "bimap.hpp"
 
 #if USE_PTHREAD
 static MUTDEC
@@ -22,16 +25,14 @@ implementList(FList, PF);
 
 static FList* f_list;
 
-/*static*/ class PObserver {
-public:
-	void* p;
-	Observer* observer;
-};
+static nrn::tool::bimap<void*,Observer*>* pvob;
+static nrn::tool::bimap<double*,Observer*>* pdob;
 
-declareList(PList, PObserver);
-implementList(PList, PObserver);
-static PList* p_list;
-static PList* pd_list;
+// fast insert, find, and remove of (double*, Observer*) using either as
+// a key. Use pair of multimap since there can be many observers of the
+// same double. And perhaps one Observer is watching several double*. Also
+// the double* being watched is removed when the array (pd*, size) it is
+// a part of is freed. So the upper_bound property is needed
 
 int nrn_err_dialog_active_;
 
@@ -46,65 +47,43 @@ void nrn_notify_freed(PF pf) {
 
 void nrn_notify_when_void_freed(void* p, Observer* ob) {
 	MUTLOCK
-	if (!p_list) {
-		p_list = new PList(30);
+	if (!pvob) {
+		pvob = new nrn::tool::bimap<void*,Observer*>();
 	}
-	PObserver pob;
-	pob.p = p;
-	pob.observer = ob;
-	p_list->append(pob);
+	pvob->insert(p, ob);
 	MUTUNLOCK
 }
 
 void nrn_notify_when_double_freed(double* p, Observer* ob) {
 	MUTLOCK
-	if (!pd_list) {
-		pd_list = new PList(10);
+	if (!pdob) {
+		pdob = new nrn::tool::bimap<double*,Observer*>();
 	}
-	PObserver pob;
-	pob.p = (void*)p;
-	pob.observer = ob;
-	pd_list->append(pob);
+	pdob->insert(p, ob);
 	MUTUNLOCK
 }
 
 void nrn_notify_pointer_disconnect(Observer* ob) {
-	PList* pl = p_list;
 	MUTLOCK
-   for(pl = p_list;;pl = pd_list) {
-	if (pl) {
-		long i, n = pl->count() - 1;
-		for (i = n; i >= 0; --i) {
-			if (pl->item(i).observer == ob) {
-				pl->remove(i);
-			}
-		}
+	if (pvob) {
+		pvob->obremove(ob);
 	}
-	if (pl == pd_list) {
-		break;
-	}
-   }
+	if (pdob) {
+		pdob->obremove(ob);
+	}	
 	MUTUNLOCK
 }
 
 void notify_pointer_freed(void* pt) {
-	if (p_list) {
-		bool removed = false;
+	if (pvob) {
 		MUTLOCK
-		long i, n = p_list->count();
-		for (i = 0; i < n ; ++i) {
-			if (p_list->item(i).p == pt) {
-				Observer* obs = p_list->item(i).observer;
-				p_list->remove(i);
-				obs->update(NULL);	// might change list
-				removed = true;
-				break;		
-			}
+		void* pv;
+		Observer* ob;
+		while(pvob->find(pt, pv, ob)) {
+			ob->update(NULL);
+			pvob->remove(pv, ob);
 		}
 		MUTUNLOCK
-		if (removed) { // maybe there is another one
-			notify_pointer_freed(pt);
-		}
 	}
 }
 void notify_freed(void* p) {
@@ -123,23 +102,14 @@ void notify_freed_val_array(double* p, size_t size) {
 			(*f_list->item(i))((void*)p, size);
 		}
 	}
-	if (pd_list) {
-	    bool removed = true;
-	    while (removed) {
-		removed = false;
-		long i, n = pd_list->count() - 1;
-		for (i = n; i >= 0; --i) {
-			long j = (double*)pd_list->item(i).p - p;
+	if (pdob) {
+		double* pp;
+		Observer* ob;
+		while(pdob->find(p, size, pp, ob)) {
 //printf("notify_freed_val_array %d %ld\n", size, j);
-			if (j >= 0 && j < size) {
-				Observer* obs = pd_list->item(i).observer;
-				pd_list->remove(i);
-				obs->update(NULL);
-				removed = true;
-				break;
-			}
+			ob->update(NULL);
+			pdob->remove(pp, ob);
 		}
-	    }
 	}
 }
 } // end extern "C"
