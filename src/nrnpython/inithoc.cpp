@@ -26,7 +26,6 @@ extern char* nrnmpi_load(int is_python);
 #endif
 #if NRNPYTHON_DYNAMICLOAD
 extern int nrnpy_site_problem;
-extern void nrnpython_deferred_reg();
 #endif
 
 extern int nrn_is_python_extension;
@@ -53,9 +52,9 @@ static void nrnpython_finalize() {
 static char* env[] = {0};
 #if PY_MAJOR_VERSION >= 3
 PyObject* PyInit_hoc() {
-#else
+#else //!PY_MAJOR_VERSION >= 3
 void inithoc() {
-#endif
+#endif //!PY_MAJOR_VERSION >= 3
   char buf[200];
 
   int argc = argc_nompi;
@@ -64,10 +63,10 @@ void inithoc() {
   if (nrn_global_argv) {  // ivocmain was already called so already loaded
 #if PY_MAJOR_VERSION >= 3
     return nrnpy_hoc();
-#else
+#else //!PY_MAJOR_VERSION >= 3
     nrnpy_hoc();
     return;
-#endif
+#endif //!PY_MAJOR_VERSION >= 3
   }
 #ifdef NRNMPI
 
@@ -79,7 +78,7 @@ void inithoc() {
   nrnmpi_stubs();
   // if nrnmpi_load succeeds (MPI available), pmes is nil.
   pmes = nrnmpi_load(1);
-#endif
+#endif //NRNMPI_DYNAMICLOAD
 
   // avoid having to include the c++ version of mpi.h
   if (!pmes) {
@@ -110,7 +109,7 @@ void inithoc() {
   }
   assert(mpi_mes != -1);  // avoid unused variable warning
 
-#endif
+#endif //NRNMPI
 
 #if !defined(__CYGWIN__)
   sprintf(buf, "%s/.libs/libnrnmech.so", NRNHOSTCPU);
@@ -122,7 +121,7 @@ void inithoc() {
     argv[argc - 1] = new char[strlen(buf) + 1];
     strcpy(argv[argc - 1], buf);
   }
-#endif
+#endif // !defined(__CYGWIN__)
   nrn_is_python_extension = 1;
   p_nrnpython_finalize = nrnpython_finalize;
 #if NRNMPI
@@ -143,28 +142,25 @@ void inithoc() {
 				break;
 		}
 	}
-#endif
+#endif // 0 && !defined(NRNMPI_DYNAMICLOAD)
   if (pmes) {
     free(pmes);
   }
-#endif
+#endif // NRNMPI
   nrn_main_launch = 2;
   ivocmain(argc, argv, env);
-#if NRNPYTHON_DYNAMICLOAD
-  nrnpython_deferred_reg();
-#endif
 //	nrnpy_augment_path();
 #if NRNPYTHON_DYNAMICLOAD
   nrnpy_site_problem = 0;
-#endif
+#endif // NRNPYTHON_DYNAMICLOAD
 #if PY_MAJOR_VERSION >= 3
   return nrnpy_hoc();
-#else
+#else // ! PY_MAJOR_VERSION >= 3
   nrnpy_hoc();
-#endif
+#endif // ! PY_MAJOR_VERSION >= 3
 }
 
 #if !defined(CYGWIN)
 void modl_reg() {}
-#endif
+#endif // !defined(CYGWIN)
 }

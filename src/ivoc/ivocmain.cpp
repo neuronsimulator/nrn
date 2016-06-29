@@ -669,17 +669,6 @@ ENDGUI
 		}
 	}
 
-#if defined(USE_PYTHON)
-#if HAVE_IV
-	if (session && session->style()->value_is_on("python")) {
-		use_python_interpreter = 1;
-	}
-#endif
-	if (nrn_optarg_on("-python", &our_argc, our_argv)) {
-		use_python_interpreter = 1;
-	}
-#endif
-
 #if HAVE_IV
 	if (session && session->style()->value_is_on("units_on_flag")) {
 		units_on_flag_ = 1;
@@ -707,6 +696,15 @@ ENDGUI
 	}else
 #endif
 #if defined(USE_PYTHON)
+#if HAVE_IV
+	if (session && session->style()->value_is_on("python")) {
+		use_python_interpreter = 1;
+	}
+#endif
+	if (nrn_optarg_on("-python", &our_argc, our_argv)) {
+		use_python_interpreter = 1;
+	}
+
 	if (nrn_is_python_extension) { return 0; }
 #if defined(CYGWIN) && defined(HAVE_SETENV)
 	if (!isdir("/usr/lib/python2.5")) {

@@ -14,8 +14,6 @@
 #include "nrnmpi.h"
 
 extern "C" {
-extern int nrn_is_python_extension;
-extern int use_python_interpreter;
 extern int nrn_nopython;
 extern int nrnpy_nositeflag;
 int* nrnpy_site_problem_p;
@@ -23,7 +21,6 @@ extern void (*p_nrnpython_start)(int);
 void nrnpython();
 static void (*p_nrnpython_real)();
 static void (*p_nrnpython_reg_real)();
-extern void nrnpython_deferred_reg();
 }
 
 // following is undefined or else has the value of sys.api_version
@@ -74,14 +71,7 @@ extern void nrnpython_real();
 }
 #endif
 
-static int nrnpython__reg_called_;
-
 void nrnpython() {
-#if NRNPYTHON_DYNAMICLOAD
-	if (!nrnpython__reg_called_) {
-		nrnpython_deferred_reg();
-	}
-#endif
 #if USE_PYTHON
 	if (p_nrnpython_real) {
 		(*p_nrnpython_real)();
@@ -92,15 +82,7 @@ void nrnpython() {
 }
 
 // Stub class for when Python does not exist
-static void* p_cons(Object* o) {
-#if NRNPYTHON_DYNAMICLOAD
-	if (!nrnpython__reg_called_) {
-		nrnpython_deferred_reg();
-	}
-	if (p_nrnpython_real) {
-		return (*o->ctemplate->constructor)(o);
-	}
-#endif
+static void* p_cons(Object*) {
 	return 0;
 }
 static void p_destruct(void* v) {
@@ -153,9 +135,8 @@ static void set_pythonhome(void* handle){
 }
 #endif
 
-void nrnpython__reg() {
-	//printf("nrnpython__reg in nrnpy.cpp\n");
-	nrnpython__reg_called_ = 1;
+void nrnpython_reg() {
+	//printf("nrnpython_reg in nrnpy.cpp\n");
 #if USE_PYTHON
     if (nrn_nopython) {
 	p_nrnpython_start = 0;
@@ -188,32 +169,7 @@ void nrnpython__reg() {
 		return;
 	}
 #endif
-}
-
-// When launching nrniv with NRNPYTHON_DYNAMICLOAD,
-// because NEURON + Python is more brittle than NEURON alone in unknown
-// user environments (PYTHONHOME, LD_LIBRARY_PATH), we defer loading until
-// python is actually needed.
-void nrnpython_reg() {
 	class2oc("PythonObject", p_cons, p_destruct, p_members, NULL, NULL, NULL);
-#if NRNPYTHON_DYNAMICLOAD // deferred if hoc is the interpreter
-	if (use_python_interpreter) {
-		nrnpython__reg();
-	}
-#else
-	nrnpython__reg();
-#endif
-}
-
-void nrnpython_deferred_reg() {
-#if NRNPYTHON_DYNAMICLOAD
-	if (!nrnpython__reg_called_) {
-		nrnpython__reg();
-		if (p_nrnpython_start && !nrn_is_python_extension) {
-			(*p_nrnpython_start)(1);
-		}
-	}
-#endif
 }
 
 #if NRNPYTHON_DYNAMICLOAD // to end of file
@@ -272,7 +228,7 @@ static void load_nrnpython() {
 #if DARWIN
 	sprintf(name, "%s/../../%s/lib/%s.dylib", neuron_home, NRNHOSTCPU, npylib);
 #else
-	sprintf(name, "%s/../../%s/lib/%s.so", neuron_home, NRNHOSTCPU, npylib);
+	sprintf(name, "%s.so", npylib);
 #endif
 #endif
 	void* handle = dlopen(name, RTLD_NOW);
