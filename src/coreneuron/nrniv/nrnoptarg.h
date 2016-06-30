@@ -65,6 +65,9 @@ typedef struct cn_parameters {
    
     double mindelay;
 
+    int multiple;
+    int extracon;
+
     /** default constructor */ 
     cn_parameters();
 

@@ -112,6 +112,10 @@ int main1( int argc, char **argv, char **env )
 
     report_mem_usage( "Before nrn_setup" );
 
+    //pass by flag so existing tests do not need a changed nrn_setup prototype.
+    nrn_setup_multiple = input_params.multiple;
+    nrn_setup_extracon = input_params.extracon;
+
     // reading *.dat files and setting up the data structures, setting mindelay
     nrn_setup( input_params, filesdat, nrn_need_byteswap );
 
@@ -147,6 +151,9 @@ int main1( int argc, char **argv, char **env )
     if ( input_params.forwardskip > 0.0 ) {
         handle_forward_skip( input_params.forwardskip, input_params.prcellgid );
     }
+
+    // Report global cell statistics
+    report_cell_stats();
 
     /// Solver execution
     BBS_netpar_solve( input_params.tstop );
