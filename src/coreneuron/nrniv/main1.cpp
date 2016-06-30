@@ -152,9 +152,6 @@ int main1( int argc, char **argv, char **env )
         handle_forward_skip( input_params.forwardskip, input_params.prcellgid );
     }
 
-    // Report global cell statistics
-    report_cell_stats();
-
     /// Solver execution
     BBS_netpar_solve( input_params.tstop );
 
