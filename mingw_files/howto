@@ -1,0 +1,58 @@
+#!/bin/bash
+#see nrn/howtomingw
+
+set -x
+# in cygwin terminal in neuron/nrn
+if test "x$OSTYPE" = "xcygwin" ; then
+
+cd /cygdrive/c/msys64/msys/home/hines/neuron/nrn
+sh hg2nrnversion_h.sh > src/nrnoc/nrnversion.h
+
+cat src/nrnoc/neuron.h > tmp.c
+cpp -Isrc/nrnoc -Isrc/oc tmp.c | sed '/^#/d' > neuron.tmp
+python src/oc/mk_hocusr_h.py < neuron.tmp > temp2hoc
+cat neuron.tmp temp2hoc |sed 's/"nrnhoc_topology"/"topology"/' > src/nrnoc/hocusr.h
+rm -f temp1hoc temp2hoc neuron.tmp tmp.c
+
+fi
+
+# in msys terminal in nrnwinobj
+if test "x$OSTYPE" = "xmsys" ; then
+cd ~/neuron/nrnwinobj
+
+#PYDIR=/c/users/hines/AppData/Local/Enthought/Canopy/App/appdata/canopy-1.3.0.1715.win-x86_64
+PYDIR=/c/python27
+
+if true ; then
+../nrn/configure --prefix=`pwd` -with-nrnpython=dynamic \
+ --host=x86_64-w64-mingw32 PYINCDIR="$PYDIR/include" \
+ --with-paranrn=dynamic MPICC=x86_64-w64-mingw32-gcc \
+ MPICXX=x86_64-w64-mingw32-g++ \
+ CFLAGS='-DMSMPI_NO_SAL -I/c/ms-mpi/include' LIBS='-L/c/ms-mpi/lib/x64 -lmsmpi' \
+  PYINCDIR=$PYDIR/include \
+  PYLIBDIR=$PYDIR/libs \
+  PYLIB="-L$PYDIR/libs -lpython27" \
+  PYLIBLINK="-L$PYDIR/libs -lpython27" \
+  MPILIBS='-L/c/ms-mpi/lib/x64 -lmsmpi' --disable-maintainer-mode
+
+fi
+
+make
+
+ver="`sh ../nrn/nrnversion.sh 3`"
+n1=nrn"${ver}"setup-x86_64.exe
+n2=nrn-"`sh ../nrn/nrnversion.sh 2`".x86_64-w64-mingw32-setup.exe
+rm src/mswin/$n1
+make mswin
+
+if true ; then
+sh ../cpmxe.sh
+fi
+
+echo "scp src/mswin/$n1  hines@neuron.yale.edu:/home/htdocs/ftp/neuron/versions/alpha/$n2"
+
+h=hines@10.10.0.2
+scp src/mswin/$n1 $h:vmshared/$n2
+ssh $h scp vmshared/$n2 hines@neuron.yale.edu:/home/htdocs/ftp/neuron/versions/alpha/$n2
+fi
+

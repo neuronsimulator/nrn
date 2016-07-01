@@ -1,0 +1,27 @@
+http://www.symscape.com/configure-msmpi-for-mingw-w64
+
+Installed msmpisdk.msi and MsMpiSetup.exe in c:\ms-mpi  (version 7.1)
+Change Bin, Lib, Include to bin, lib, include
+cp c:/Windows/System32/msmpi.dll c:/ms-mpi/lib/x64
+cp c:/Windows/SysWoW64/msmpi.dll c:/ms-mpi/lib/x86 #optional
+add #include <stdint.h> in /c/ms-mpi/include/mpi.h
+
+#important. Wasted a day because I did not do this. the symptom is a
+# crash in libnrnmpi.dll
+gendef msmpi.dll
+x86_64-w64-mingw32-dlltool -d msmpi.def -l libmsmpi.a -D msmpi.dll
+
+
+in cygwin terminal
+ cp /usr/include/w32api/sal.h c:/ms-mpi/include
+No, instead use a -DMSMPI_NO_SAL in CFLAGS
+
+in neuron/nrnwinobj
+PYDIR=/c/python27
+ ../nrn/configure --prefix=`pwd` -with-nrnpython=dynamic \
+ --host=x86_64-w64-mingw32 PYINCDIR="$PYDIR/include" \
+ --with-paranrn=dynamic MPICC=x86_64-w64-mingw32-gcc \
+ MPICXX=x86_64-w64-mingw32-g++ \
+ CFLAGS='-DMSMPI_NO_SAL -I/c/ms-mpi/include' LIBS='-L/c/ms-mpi/lib/x64 -lmsmpi' \
+ PYLIBDIR=$PYDIR/libs   PYLIB="-L$PYDIR/libs -lpython27" \
+ PYLIBLINK="-L$PYDIR/libs -lpython27"

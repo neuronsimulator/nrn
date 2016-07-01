@@ -1,0 +1,39 @@
+http://mxe.cc/
+cp ./usr/bin/x86_64-w64-mingw32.shared-windres ./usr/bin/windres
+
+for IV
+make update-checksum-nrniv
+make nrniv
+
+
+for latest version, put in
+http://www.neuron.yale.edu/ftp/neuron/versions/alpha/
+and update src/neuron.mk $(PKG)_FILE
+make update-checksum-neuron
+make neuron
+
+above stops at the install
+check the date of
+l tmp-neuron-x86_64-w64-mingw32.shared/nrn-7.5/src/mswin/nrniv.dll
+
+if problems can manually make with cd to tmp-neuron/nrn-7.5 and
+export PATH=$HOME/mxe/usr/bin:$PATH
+
+
+can save cellbuild session after
+scp hines@10.10.0.2:mxe/usr/x86_64-w64-mingw32.shared/x86_64/bin/libIVhines-3.dll .
+scp hines@10.10.0.2:mxe/usr/lib/gcc/x86_64-w64-mingw32.shared/4.8.2/libgcc_s_seh-1.dll .
+scp hines@10.10.0.2:mxe/usr/lib/gcc/x86_64-w64-mingw32.shared/4.8.2/libstdc++-6.dll .
+scp hines@10.10.0.2:mxe/usr/x86_64-w64-mingw32.shared/bin/libwinpthread-1.dll .
+scp hines@10.10.0.2:mxe/tmp-neuron/nrn-7.3/src/mswin/nrniv.dll .
+scp hines@10.10.0.2:mxe/tmp-neuron/nrn-7.3/src/mswin/libnrnpython1013.dll .
+scp hines@10.10.0.2:mxe/tmp-neuron/nrn-7.3/src/mswin/hocmodule.dll .
+ mv hocmodule.dll ../lib/python/neuron/hoc.pyd
+nrniv.exe and nrniv_enthought.exe work as is
+
+scp -r /cygdrive/c/Python27/include hines@10.10.0.2:mxe/Python27
+scp  /cygdrive/c/Python27/libs/python27.lib hines@10.10.0.2:mxe/Python27
+~/mxe$
+chmod a+x Python27 Python27/include Python27/libs
+chmod -R a+r,u+w Python27
+
