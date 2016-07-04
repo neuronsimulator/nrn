@@ -41,7 +41,7 @@ set_target_properties(coreneuron_exec PROPERTIES
                             OUTPUT_NAME "coreneuron_exec"
                             RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 
-target_link_libraries(coreneuron_exec coreneuron ${MPI_C_LIBRARIES} ${MPI_CXX_LIBRARIES})
+target_link_libraries(coreneuron_exec coreneuron ${MPI_C_LIBRARIES} ${MPI_CXX_LIBRARIES} ${reportinglib_LIBRARY})
 
 install(TARGETS coreneuron_exec
          DESTINATION ${BIN_INSTALL_DIR}/)
