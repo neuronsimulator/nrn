@@ -25,12 +25,47 @@
 # THE POSSIBILITY OF SUCH DAMAGE.
 
 
+# Findreportinglib
+# -------------
+#
+# Find reportinglib
+#
+# Find the reportinglib Blue Brain HPC utils library
+#
+# Using reportinglib:
+#
+# ::
+#
+#   find_package(reportinglib REQUIRED)
+#   include_directories(${reportinglib_INCLUDE_DIRS})
+#   target_link_libraries(foo ${reportinglib_LIBRARIES})
+#
+# This module sets the following variables:
+#
+# ::
+#
+#   reportinglib_FOUND - set to true if the library is found
+#   reportinglib_INCLUDE_DIRS - list of required include directories
+#   reportinglib_LIBRARIES - list of libraries to be linked
+
+#=============================================================================
+# Copyright 2015 Adrien Devresse <adrien.devresse@epfl.ch>
+#
+#=============================================================================
+# (To distribute this file outside of CMake, substitute the full
+#  License text for the above reference.)
 
 
-FILE(GLOB cmd_interface_test_src "*.cpp")
+# UNIX paths are standard, no need to write.
+find_path(reportinglib_INCLUDE_DIR reportinglib/Report.h)
 
-add_executable(cmd_interface_test_bin ${cmd_interface_test_src})
-target_link_libraries(cmd_interface_test_bin ${MPI_C_LIBRARIES} ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY} coreneuron ${reportinglib_LIBRARY})
+find_library(reportinglib_LIBRARY reportinglib)
+get_filename_component(reportinglib_LIB_DIR ${reportinglib_LIBRARY} DIRECTORY)
 
-add_test(NAME cmd_interface_test COMMAND ${TEST_EXEC_PREFIX} ${CMAKE_CURRENT_BINARY_DIR}/cmd_interface_test_bin)
+# Checks 'REQUIRED', 'QUIET' and versions.
+include(FindPackageHandleStandardArgs)
 
+find_package_handle_standard_args(reportinglib
+  FOUND_VAR reportinglib_FOUND
+  REQUIRED_VARS reportinglib_INCLUDE_DIR reportinglib_LIBRARY reportinglib_LIB_DIR)
+  

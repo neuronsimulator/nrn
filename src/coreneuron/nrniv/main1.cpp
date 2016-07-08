@@ -44,6 +44,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/utils/randoms/nrnran123.h"
 #include "coreneuron/utils/sdprintf.h"
 #include "coreneuron/nrniv/nrn_stats.h"
+#include "coreneuron/utils/reports/nrnreport.h"
 
 #if 0
 #include <fenv.h>
@@ -141,6 +142,19 @@ int main1( int argc, char **argv, char **env )
 
     report_mem_usage( "After nrn_finitialize" );
 
+    ReportGenerator * r = NULL;
+
+    // if reports are enabled using ReportingLib
+    if ( input_params.report ) {
+
+        #ifdef ENABLE_REPORTING
+            r = new ReportGenerator(input_params.tstart, input_params.tstop, input_params.dt, input_params.dt_report, input_params.outpath);
+            r->register_report();
+        #else
+            printf("\n WARNING! : Can't enable reports, recompile with ReportingLib! \n");
+        #endif
+    }
+
     // call prcellstae for prcellgid
     if ( input_params.prcellgid >= 0 ) {
         sprintf( prcellname, "t%g", t );
@@ -151,9 +165,6 @@ int main1( int argc, char **argv, char **env )
     if ( input_params.forwardskip > 0.0 ) {
         handle_forward_skip( input_params.forwardskip, input_params.prcellgid );
     }
-
-    // Report global cell statistics
-    report_cell_stats();
 
     /// Solver execution
     BBS_netpar_solve( input_params.tstop );
@@ -172,6 +183,9 @@ int main1( int argc, char **argv, char **env )
 
     // Cleaning the memory
     nrn_cleanup();
+
+    if(input_params.report && r)
+        delete r;
 
     // mpi finalize
     nrnmpi_finalize();

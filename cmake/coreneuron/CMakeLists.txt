@@ -50,6 +50,7 @@ set(VERSION_STRING "${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}")
 option(CORENEURON_MAIN "Build the CORE NEURON main" ON)
 option(CORENEURON_OPENMP "Build the CORE NEURON with OpenMP implementation" ON)
 option(DISABLE_NRN_TIMEOUT "Disable nrn_timeout implementation" OFF)
+option(ENABLE_REPORTINGLIB "Enable use of ReportingLib for soma reports" OFF)
 
 ## mech / mod options
 set(ADDITIONAL_MECHPATH "" CACHE PATH "Search path for optional additional mechanism MOD files")
@@ -90,11 +91,26 @@ if(CORENEURON_OPENMP)
     endif(OPENMP_FOUND)
 endif(CORENEURON_OPENMP)
 
+# ReportingLib
+if(ENABLE_REPORTINGLIB)
+    find_package(reportinglib REQUIRED)
+    if(reportinglib_FOUND)
+        include_directories(${reportinglib_INCLUDE_DIR})
+        add_definitions("-DENABLE_REPORTING")
+    else(reportinglib_FOUND)
+        message(FATAL_ERROR "Enabled use of ReportingLib but ReportingLib installion not found!")
+    endif(reportinglib_FOUND)
+endif(ENABLE_REPORTINGLIB)
+
 include(CheckIncludeFiles)
 CHECK_INCLUDE_FILES (malloc.h have_malloc_h)
 if(have_malloc_h)
   add_definitions("-DHAVE_MALLOC_H")
 endif()
+
+# Some mechanisms use NEURON specific code which is skipped
+# using this macro for CoreNeuron build
+add_definitions(-DCORENEURON_BUILD)
 
 CHECK_INCLUDE_FILES("spi/include/kernel/memory.h" have_memory_h)
 if(have_memory_h)

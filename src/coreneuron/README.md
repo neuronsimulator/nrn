@@ -36,11 +36,16 @@ make
 make install
 ```
 
+# Using ReportingLib
+If you want enable use of ReportingLib for the soma reports, install ReportingLib first and enable it using -DENABLE_REPORTINGLIB (use same install path for ReportingLib as CoreNeuron).
+
+# Using Neurodamus
 If you are building CoreNeuron with Neurodamus, you have to set *ADDITIONAL_MECHPATH* and *ADDITIONAL_MECHS* as:
 ```bash
 cmake .. -DADDITIONAL_MECHPATH="/path/of/neurodamus/lib/modlib" -DADDITIONAL_MECHS="/path/of/neurodamus/lib/modlib/coreneuron_modlist.txt"
 ```
-Make sure to switch to appropriate branch of Neurodamus (based on your dataset).
+Make sure to switch to appropriate branch of Neurodamus (based on your dataset/experiment, e.g. coreneuronsetup).
+
 
 On a Cray system the user has to provide the path to the MPI library as follows:
 ```bash
@@ -106,6 +111,14 @@ In order to see the command line options, you can use:
               Set the path for the output data to PATH (char*). The default value is '.'.
        -k TIME, --forwardskip=TIME
               Set forwardskip to TIME (double). The default value is '0.'.
+       -r, --report
+              Enable soma report.
+       -w TIME, --dt_report=TIME
+              Set the dt for soma reports (using ReportingLib) to TIME (double). The default value is '0.1'.
+       -z MULTIPLE, --multiple=MULTIPLE
+              Model duplication factor. Model size is normal size * MULTIPLE (int). The default value is '1'.
+       -x EXTRACON, --extracon=EXTRACON
+              Number of extra random connections in each thread to other duplicate models (int). The default value is '0'.
        -mpi
               Enable MPI. In order to initialize MPI environment this argument must be specified.
 ```
