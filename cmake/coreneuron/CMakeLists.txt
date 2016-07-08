@@ -108,6 +108,10 @@ if(have_malloc_h)
   add_definitions("-DHAVE_MALLOC_H")
 endif()
 
+# Some mechanisms use NEURON specific code which is skipped
+# using this macro for CoreNeuron build
+add_definitions(-DCORENEURON_BUILD)
+
 CHECK_INCLUDE_FILES("spi/include/kernel/memory.h" have_memory_h)
 if(have_memory_h)
   add_definitions("-DHAVE_MEMORY_H")
