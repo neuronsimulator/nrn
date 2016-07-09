@@ -37,6 +37,7 @@ static void* nrn_fixed_step_lastpart(NrnThread*);
 static void* nrn_fixed_step_group_thread(NrnThread*);
 static void update(NrnThread*);
 static void nonvint(NrnThread*);
+extern void nrn_flush_reports(double);
 
 void dt2thread(double adt) { /* copied from nrnoc/fadvance.c */
     if (adt != nrn_threads[0]._dt) {
@@ -81,17 +82,30 @@ static int step_group_begin;
 static int step_group_end;
 
 void nrn_fixed_step_group_minimal(int n) {
+    static int step = 0;
 	dt2thread(dt);
 	nrn_thread_table_check();
 	step_group_n = n;
 	step_group_begin = 0;
 	step_group_end = 0;
 	while(step_group_end < step_group_n) {
-/*printf("step_group_end=%d step_group_n=%d\n", step_group_end, step_group_n);*/
+
 		nrn_multithread_job(nrn_fixed_step_group_thread);
 		nrn_spike_exchange(nrn_threads);
+
+#ifdef ENABLE_REPORTING
+        nrn_flush_reports(nrn_threads[0]._t);
+#endif
 		if (stoprun) { break; }
 		step_group_begin = step_group_end;
+                step++;
+
+        //@TODO: flush/optimize/better way
+        if(nrnmpi_myid == 0) {
+            float completed = ( ( (float) step_group_end / step_group_n) * 100.0);
+            printf(" Completed %.2f%, t = %lf\r", completed, nrn_threads[0]._t);
+            fflush(stdout);
+        }
 	}
 	t = nrn_threads[0]._t;
 }

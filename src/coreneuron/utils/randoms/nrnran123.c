@@ -136,15 +136,19 @@ double nrnran123_negexp(nrnran123_State* s) {
 
 /* at cost of a cached  value we could compute two at a time. */
 double nrnran123_normal(nrnran123_State* s) {
-	double w, x, y;
-	double u1 = nrnran123_dblpick(s);
-	double u2 = nrnran123_dblpick(s);
-	u1 = 2.*u1 - 1.;
-	u2 = 2.*u2 - 1.;
-	w = (u1*u1) + (u2*u2);
-	y = sqrt( (-2.*log(w))/w);
-	x = u1*y;
-	return x;
+    double w, x, y;
+    double u1, u2;
+    do {
+        u1 = nrnran123_dblpick(s);
+        u2 = nrnran123_dblpick(s);
+        u1 = 2.*u1 - 1.;
+        u2 = 2.*u2 - 1.;
+        w = (u1*u1) + (u2*u2);
+    } while( w > 1 );
+
+    y = sqrt( (-2.*log(w))/w);
+    x = u1*y;
+    return x;
 }
 
 double nrnran123_uint2dbl(uint32_t u) {

@@ -45,7 +45,8 @@ typedef struct cn_parameters {
     double tstart; 		/**< start time of simulation in msec*/
     double tstop;		/**< stop time of simulation in msec*/
     double dt;			/**< timestep to use in msec*/
-    double dt_io;               /**< i/o timestep to use in msec*/
+    double dt_io;       /**< i/o timestep to use in msec*/
+    double dt_report;   /**< i/o timestep to use in msec for reports*/
 
     double celsius;
     double voltage;
@@ -57,6 +58,7 @@ typedef struct cn_parameters {
     int prcellgid; 		/**< gid of cell for prcellstate */
 
     int threading;		/**< enable pthread/openmp  */
+    int report;		    /**< enable soma reports  */
 
     int compute_gpu;		    /**< run computations on gpu  */
 
@@ -73,7 +75,7 @@ typedef struct cn_parameters {
     int multiple;
     int extracon;
 
-    /** default constructor */ 
+    /** default constructor */
     cn_parameters();
 
     /** show help message for command line args */

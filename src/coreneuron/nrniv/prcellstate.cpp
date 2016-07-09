@@ -99,15 +99,19 @@ static void pr_netcon(NrnThread& nt, FILE* f) {
     /// Fill the NetCon <-> DiscreteEvent map with PreSyn-s
   DiscreteEvent* de;
   std::map<NetCon*, DiscreteEvent*>::iterator it_nc2src;
-  for (int i = 0; i < nt.n_presyn; ++i) {
-      PreSyn* ps = nt.presyns + i;
+  // presyns can come from any thread
+  for ( int ith = 0; ith < nrn_nthread; ++ith) {
+    NrnThread& ntps = nrn_threads[ith];
+    for (int i = 0; i < ntps.n_presyn; ++i) {
+      PreSyn* ps = ntps.presyns + i;
       for (int j = 0; j < ps->nc_cnt_; ++j) {
-          NetCon* nc = netcon_in_presyn_order_[ps->nc_index_ + j];
-          it_nc2src = map_nc2src.find(nc);
-          if (it_nc2src != map_nc2src.end()) {
-              it_nc2src->second = ps;
-          }
+        NetCon* nc = netcon_in_presyn_order_[ps->nc_index_ + j];
+        it_nc2src = map_nc2src.find(nc);
+        if (it_nc2src != map_nc2src.end()) {
+          it_nc2src->second = ps;
+        }
       }
+    }
   }
 
   /// Fill the NetCon <-> DiscreteEvent map with InputPreSyn-s
