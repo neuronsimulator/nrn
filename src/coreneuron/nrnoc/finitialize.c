@@ -54,6 +54,14 @@ void nrn_finitialize(int setv, double v) {
            }
 		}
 	}
+
+	if (nrn_have_gaps) {
+		nrnmpi_v_transfer();
+		for (i=0; i < nrn_nthread; ++i) {
+			nrnthread_v_transfer(nrn_threads + i);
+		}
+	}
+
 	for (i=0; i < nrn_nthread; ++i) {
 		nrn_ba(nrn_threads + i, BEFORE_INITIAL);
 	}
