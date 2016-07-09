@@ -165,82 +165,84 @@ int main1( int argc, char **argv, char **env )
     mk_spikevec_buffer( input_params.spikebuf );
 
     #pragma acc data copyin (celsius) if(input_params.compute_gpu)
-    if( input_params.compute_gpu) {
-        setup_nrnthreads_on_device(nrn_threads, nrn_nthread);
-    }
+    {
+        if( input_params.compute_gpu) {
+            setup_nrnthreads_on_device(nrn_threads, nrn_nthread);
+        }
 
-    // call prcellstate for prcellgid
-    if ( input_params.prcellgid >= 0 ) {
-        if(input_params.compute_gpu)
-            sprintf( prcellname, "%s_gpu_init", prprefix);
-        else
-            strcpy( prcellname, "cpu_init");
-        update_nrnthreads_on_host(nrn_threads, nrn_nthread);
-        prcellstate( input_params.prcellgid, prcellname );
-    }
+        // call prcellstate for prcellgid
+        if ( input_params.prcellgid >= 0 ) {
+            if(input_params.compute_gpu)
+                sprintf( prcellname, "%s_gpu_init", prprefix);
+            else
+                strcpy( prcellname, "cpu_init");
+            update_nrnthreads_on_host(nrn_threads, nrn_nthread);
+            prcellstate( input_params.prcellgid, prcellname );
+        }
 
-    report_mem_usage( "After mk_spikevec_buffer" );
+        report_mem_usage( "After mk_spikevec_buffer" );
 
-    nrn_finitialize( input_params.voltage != 1000., input_params.voltage );
+        nrn_finitialize( input_params.voltage != 1000., input_params.voltage );
 
-    report_mem_usage( "After nrn_finitialize" );
+        report_mem_usage( "After nrn_finitialize" );
 
-    #ifdef ENABLE_REPORTING
-        ReportGenerator * r = NULL;
-    #endif
-
-    // if reports are enabled using ReportingLib
-    if ( input_params.report ) {
         #ifdef ENABLE_REPORTING
-            r = new ReportGenerator(input_params.tstart, input_params.tstop, input_params.dt, input_params.dt_report, input_params.outpath);
-            r->register_report();
-        #else
-            printf("\n WARNING! : Can't enable reports, recompile with ReportingLib! \n");
+            ReportGenerator * r = NULL;
         #endif
-    }
 
-    // call prcellstate for prcellgid
-    if ( input_params.prcellgid >= 0 ) {
-        if(input_params.compute_gpu)
-            sprintf( prcellname, "%s_gpu_t%g", prprefix, t);
-        else
-            sprintf( prcellname, "cpu_t%g", t );
-        update_nrnthreads_on_host(nrn_threads, nrn_nthread);
-        prcellstate( input_params.prcellgid, prcellname );
-    }
+        // if reports are enabled using ReportingLib
+        if ( input_params.report ) {
+            #ifdef ENABLE_REPORTING
+                r = new ReportGenerator(input_params.tstart, input_params.tstop, input_params.dt, input_params.dt_report, input_params.outpath);
+                r->register_report();
+            #else
+                printf("\n WARNING! : Can't enable reports, recompile with ReportingLib! \n");
+            #endif
+        }
 
-    // handle forwardskip
-    if ( input_params.forwardskip > 0.0 ) {
-        handle_forward_skip( input_params.forwardskip, input_params.prcellgid );
-    }
+        // call prcellstate for prcellgid
+        if ( input_params.prcellgid >= 0 ) {
+            if(input_params.compute_gpu)
+                sprintf( prcellname, "%s_gpu_t%g", prprefix, t);
+            else
+                sprintf( prcellname, "cpu_t%g", t );
+            update_nrnthreads_on_host(nrn_threads, nrn_nthread);
+            prcellstate( input_params.prcellgid, prcellname );
+        }
 
-    //dump_nt_to_file("dump_init", nrn_threads, nrn_nthread);
-    //modify_data_on_device(nrn_threads, nrn_nthread);
-    //update_nrnthreads_on_host(nrn_threads, nrn_nthread);
-    //dump_nt_to_file("dump_upd", nrn_threads, nrn_nthread);
+        // handle forwardskip
+        if ( input_params.forwardskip > 0.0 ) {
+            handle_forward_skip( input_params.forwardskip, input_params.prcellgid );
+        }
 
-    #ifdef ENABLE_SELECTIVE_PROFILING
-        start_profile();
-    #endif
+        //dump_nt_to_file("dump_init", nrn_threads, nrn_nthread);
+        //modify_data_on_device(nrn_threads, nrn_nthread);
+        //update_nrnthreads_on_host(nrn_threads, nrn_nthread);
+        //dump_nt_to_file("dump_upd", nrn_threads, nrn_nthread);
 
-    /// Solver execution
-    BBS_netpar_solve( input_params.tstop );
+        #ifdef ENABLE_SELECTIVE_PROFILING
+            start_profile();
+        #endif
 
-    // Report global cell statistics
-    report_cell_stats();
+        /// Solver execution
+        BBS_netpar_solve( input_params.tstop );
 
-    #ifdef ENABLE_SELECTIVE_PROFILING
-        stop_profile();
-    #endif
+        // Report global cell statistics
+        report_cell_stats();
 
-    // prcellstate after end of solver
-    if ( input_params.prcellgid >= 0 ) {
-        if(input_params.compute_gpu)
-            sprintf( prcellname, "%s_gpu_t%g", prprefix, t);
-        else
-            sprintf( prcellname, "cpu_t%g", t );
-        update_nrnthreads_on_host(nrn_threads, nrn_nthread);
-        prcellstate( input_params.prcellgid, prcellname );
+        #ifdef ENABLE_SELECTIVE_PROFILING
+            stop_profile();
+        #endif
+
+        // prcellstate after end of solver
+        if ( input_params.prcellgid >= 0 ) {
+            if(input_params.compute_gpu)
+                sprintf( prcellname, "%s_gpu_t%g", prprefix, t);
+            else
+                sprintf( prcellname, "cpu_t%g", t );
+            update_nrnthreads_on_host(nrn_threads, nrn_nthread);
+            prcellstate( input_params.prcellgid, prcellname );
+        }
     }
 
     // write spike information to input_params.outpath
