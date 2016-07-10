@@ -134,7 +134,7 @@ void nrn_partrans::gap_mpi_setup(int ngroup) {
 
 
   // count and allocate transfer_thread_data arrays.
-  for (int tid; tid < ngroup; ++tid) {
+  for (int tid=0; tid < ngroup; ++tid) {
     transfer_thread_data_[tid].nsrc = 0;
   }
   for (int i=0; i < outsrcdspl_[nhost]; ++i) {
@@ -230,6 +230,38 @@ void nrn_partrans::gap_thread_setup(NrnThread& nt) {
 #endif
 }
 
-
+void nrn_partrans::gap_indices_permute(NrnThread& nt) {
+  printf("nrn_partrans::gap_indices_permute\n");
+  nrn_partrans::TransferThreadData& ttd = transfer_thread_data_[nt.id];
+  // sources
+  if (ttd.nsrc > 0 && nt._permute) {
+    int n = ttd.nsrc;
+    int* iv = ttd.v_indices;
+    int* ip =nt._permute;
+    // iv starts out as indices into unpermuted node array. That node
+    // was permuted to index ip
+    for (int i=0; i < n; ++i) {
+      iv[i] = ip[iv[i]];
+    }
+  }
+  // now the outsrc_buf_ is invariant under any node permutation,
+  // and, consequently, so is the insrc_buf_.
+  // targets
+  if (ttd.halfgap_ml && ttd.halfgap_ml->_permute) {
+    int n = ttd.halfgap_ml->nodecount;
+    int* ip = ttd.halfgap_ml->_permute;
+    int* isi = ttd.insrc_indices;
+    // halfgap has been permuted according to ip.
+    // so old index value needs to be put into the new location.
+    int* oldisi = new int[n];
+    for (int i=0; i < n; ++i) {
+      oldisi[i] = isi[i];
+    }
+    for (int i=0; i < n; ++i) {
+      isi[ip[i]] = oldisi[i];
+    }
+    delete [] oldisi;
+  }
+}
 
 

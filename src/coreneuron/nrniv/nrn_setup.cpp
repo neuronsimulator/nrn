@@ -1190,6 +1190,10 @@ for (int i=0; i < nt.end; ++i) {
     }
   }
 
+  if (nrn_have_gaps == 1 && use_interleave_permute) {
+    nrn_partrans::gap_indices_permute(nt);
+  }
+
   /* here we setup the mechanism dependencies. if there is a mechanism dependency
    * then we allocate an array for tml->dependencies otherwise set it to NULL.
    * In order to find out the "real" dependencies i.e. dependent mechanism

@@ -46,6 +46,7 @@ namespace nrn_partrans {
   
   extern void gap_mpi_setup(int ngroup);
   extern void gap_thread_setup(NrnThread& nt);
+  extern void gap_indices_permute(NrnThread& nt);
   
   extern double* insrc_buf_; // Receive buffer for gap voltages
   extern double* outsrc_buf_; // Send buffer for gap voltages
