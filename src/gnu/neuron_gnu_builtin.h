@@ -74,10 +74,12 @@ extern two_arg_error_handler_t
 
 // sunpro CC v4 complains about the following being both extern and inline
 #if !defined(__SUNPRO_CC)
+#if 0
 double abs(double arg);
 float abs(float arg);
-short abs(short arg);
 long abs(long arg);
+#endif
+short abs(short arg);
 int sign(long arg);
 int sign(double arg);
 long sqr(long arg);
@@ -107,7 +109,7 @@ inline double abs(double arg)
 #endif
 #endif
 
-#if INLINE_FLOAT_ABS
+#if 0 && INLINE_FLOAT_ABS
 inline float abs(float arg) 
 {
   return (arg < 0.0)? -arg : arg;
@@ -119,7 +121,7 @@ inline short abs(short arg)
   return (arg < 0)? -arg : arg;
 }
 
-#if INLINE_LONG_ABS
+#if 0 && INLINE_LONG_ABS
 inline long abs(long arg) 
 {
   return (arg < 0)? -arg : arg;
