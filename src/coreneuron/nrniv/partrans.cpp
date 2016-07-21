@@ -38,6 +38,23 @@ void nrnmpi_v_transfer() {
     if (n == 0) { continue; }
     double* vdata = nt._actual_v;
     int* v_indices = ttd.v_indices;
+
+#undef METHOD
+#define METHOD 2
+
+#if METHOD == 1
+
+    // copy voltages to cpu and cpu gathers/scatters to outsrc_buf
+    #pragma acc update host (vdata[0:nt.end]) if (nt.compute_gpu)
+    int* outbuf_indices = ttd.outbuf_indices;
+    for (int i=0; i < n; ++i) {
+      outsrc_buf_[outbuf_indices[i]] = vdata[v_indices[i]];
+    }
+  }  
+
+#elif METHOD == 2
+
+    // gather voltages on gpu and copy to cpu, cpu scatters to outsrc_buf
     double* vg = ttd.v_gather;
     #pragma acc parallel loop present(v_indices[0:n], vdata[0:nt.end], vg[0:n]) \
        /*copyout(vg[0:n])*/ if (nt.compute_gpu) async(nt.stream_id)
@@ -47,7 +64,6 @@ void nrnmpi_v_transfer() {
     // do not know why the copyout above did not work and the following update is needed
     #pragma acc update host (vg[0:n]) if (nrn_threads[0].compute_gpu) async(nt.stream_id)
   }
-
   
   // copy source values to outsrc_buf_
   for (int tid = 0; tid < nrn_nthread; ++tid) {
@@ -61,6 +77,8 @@ void nrnmpi_v_transfer() {
       outsrc_buf_[outbuf_indices[i]] = vg[i];
     }
   }
+
+#endif /* METHOD == 2 */
 
   // transfer
   if (nrnmpi_numprocs > 1) { // otherwise insrc_buf_ == outsrc_buf_
@@ -105,21 +123,23 @@ void nrnthread_v_transfer(NrnThread* _nt) {
 }
 
 void nrn_partrans::gap_update_indices() {
-#if 1
   printf("gap_update_indices\n");
   if (insrcdspl_) {
     #pragma acc enter data create(insrc_buf_[0:insrcdspl_[nrnmpi_numprocs]])
   }
   for (int tid = 0; tid < nrn_nthread; ++tid) {
     TransferThreadData& ttd = transfer_thread_data_[tid];
+
+#if METHOD == 2
     int n = ttd.nsrc;
     if (n) {
       #pragma acc enter data copyin(ttd.v_indices[0:n])
       #pragma acc enter data create(ttd.v_gather[0:n])
     }
+#endif /* METHOD == 2 */
+
     if (ttd.halfgap_ml) {
       #pragma acc enter data copyin(ttd.insrc_indices[0:ttd.ntar])
     }
   }
-#endif
 }
