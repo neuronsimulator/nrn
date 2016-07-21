@@ -47,6 +47,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/utils/reports/nrnreport.h"
 #include "coreneuron/nrniv/nrn_acc_manager.h"
 #include "coreneuron/nrniv/profiler_interface.h"
+#include "coreneuron/nrniv/partrans.h"
 #include <string.h>
 
 #if 0
@@ -168,6 +169,10 @@ int main1( int argc, char **argv, char **env )
     {
         if( input_params.compute_gpu) {
             setup_nrnthreads_on_device(nrn_threads, nrn_nthread);
+        }
+
+        if (nrn_have_gaps) {
+            nrn_partrans::gap_update_indices();
         }
 
         // call prcellstate for prcellgid

@@ -29,16 +29,39 @@ int* nrn_partrans::outsrcdspl_;
 void nrnmpi_v_transfer() {
   // copy HalfGap source voltages to outsrc_buf_
   // note that same voltage may get copied to several locations in outsrc_buf
+
+  // gather the source values. can be done in parallel
   for (int tid = 0; tid < nrn_nthread; ++tid) {
-    int n = transfer_thread_data_[tid].nsrc;
+    TransferThreadData& ttd = transfer_thread_data_[tid];
+    NrnThread& nt = nrn_threads[tid];
+    int n = ttd.nsrc;
     if (n == 0) { continue; }
-    double* vdata = nrn_threads[tid]._actual_v;
-    int* v_indices = transfer_thread_data_[tid].v_indices;
-    int* outbuf_indices = transfer_thread_data_[tid].outbuf_indices;
+    double* vdata = nt._actual_v;
+    int* v_indices = ttd.v_indices;
+    double* vg = ttd.v_gather;
+    #pragma acc parallel loop present(v_indices[0:n], vdata[0:nt.end], vg[0:n]) \
+       /*copyout(vg[0:n])*/ if (nt.compute_gpu) async(nt.stream_id)
     for (int i=0; i < n; ++i) {
-      outsrc_buf_[outbuf_indices[i]] = vdata[v_indices[i]];
+      vg[i] = vdata[v_indices[i]];
+    }
+    // do not know why the copyout above did not work and the following update is needed
+    #pragma acc update host (vg[0:n]) if (nrn_threads[0].compute_gpu) async(nt.stream_id)
+  }
+
+  
+  // copy source values to outsrc_buf_
+  for (int tid = 0; tid < nrn_nthread; ++tid) {
+    #pragma acc wait (nrn_threads[tid].stream_id)
+    TransferThreadData& ttd = transfer_thread_data_[tid];
+    int n = ttd.nsrc;
+    if (n == 0) { continue; }
+    int* outbuf_indices = ttd.outbuf_indices;
+    double* vg = ttd.v_gather;
+    for (int i=0; i < n; ++i) {
+      outsrc_buf_[outbuf_indices[i]] = vg[i];
     }
   }
+
   // transfer
   if (nrnmpi_numprocs > 1) { // otherwise insrc_buf_ == outsrc_buf_
     nrnmpi_barrier();
@@ -49,7 +72,9 @@ void nrnmpi_v_transfer() {
       insrc_buf_[i] = outsrc_buf_[i];
     }
   }
+
   // insrc_buf_ will get copied to targets via nrnthread_v_transfer
+  #pragma acc update device (insrc_buf_[0:insrcdspl_[nrnmpi_numprocs]]) if (nrn_threads[0].compute_gpu)
 }
 
 void nrnthread_v_transfer(NrnThread* _nt) {
@@ -70,8 +95,31 @@ void nrnthread_v_transfer(NrnThread* _nt) {
     int _cntml_padded = ttd.halfgap_ml->_nodecount_padded;
     int ix_vpre = halfgap_info->ix_vpre * _cntml_padded;
     vpre += ix_vpre;
+    #pragma acc parallel loop present(insrc_indices[0:_cntml_actual], \
+      vpre[0:_cntml_actual], insrc_buf_[0:insrcdspl_[nrnmpi_numprocs]]) \
+      if (_nt->compute_gpu) async(_nt->stream_id)
     for (int _iml = 0; _iml < _cntml_actual; ++_iml) {
       vpre[_iml] = insrc_buf_[insrc_indices[_iml]];
     }
   }
+}
+
+void nrn_partrans::gap_update_indices() {
+#if 1
+  printf("gap_update_indices\n");
+  if (insrcdspl_) {
+    #pragma acc enter data create(insrc_buf_[0:insrcdspl_[nrnmpi_numprocs]])
+  }
+  for (int tid = 0; tid < nrn_nthread; ++tid) {
+    TransferThreadData& ttd = transfer_thread_data_[tid];
+    int n = ttd.nsrc;
+    if (n) {
+      #pragma acc enter data copyin(ttd.v_indices[0:n])
+      #pragma acc enter data create(ttd.v_gather[0:n])
+    }
+    if (ttd.halfgap_ml) {
+      #pragma acc enter data copyin(ttd.insrc_indices[0:ttd.ntar])
+    }
+  }
+#endif
 }

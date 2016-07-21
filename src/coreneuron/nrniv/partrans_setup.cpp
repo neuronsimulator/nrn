@@ -148,6 +148,7 @@ void nrn_partrans::gap_mpi_setup(int ngroup) {
     nrn_partrans::SetupInfo& si = setup_info_[tid];
     nrn_partrans::TransferThreadData& ttd = transfer_thread_data_[tid];
     ttd.v_indices = new int[ttd.nsrc];
+    ttd.v_gather = new double[ttd.nsrc];
     ttd.outbuf_indices = new int[ttd.nsrc];
     ttd.nsrc = 0; // recount below as filled
     ttd.ntar = si.ntar;
@@ -246,6 +247,7 @@ void nrn_partrans::gap_indices_permute(NrnThread& nt) {
   }
   // now the outsrc_buf_ is invariant under any node permutation,
   // and, consequently, so is the insrc_buf_.
+
   // targets
   if (ttd.halfgap_ml && ttd.halfgap_ml->_permute) {
     int n = ttd.halfgap_ml->nodecount;
@@ -262,6 +264,7 @@ void nrn_partrans::gap_indices_permute(NrnThread& nt) {
     }
     delete [] oldisi;
   }
+
 }
 
 
