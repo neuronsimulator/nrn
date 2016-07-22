@@ -39,12 +39,13 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/nrnmpi/nrnmpi.h"
 #include "coreneuron/nrnoc/multicore.h"
 #include "coreneuron/nrniv/netcvode.h"
+#include "coreneuron/nrniv/partrans.h"
 
 extern int spikevec_size;
 extern int* spikevec_gid;
 extern NetCvode* net_cvode_instance;
 
-const int NUM_STATS = 10;
+const int NUM_STATS = 12;
 #if COLLECT_TQueue_STATISTICS
 const int NUM_EVENT_TYPES = 3;
 #endif
@@ -52,15 +53,20 @@ enum event_type {enq=0, spike, ite};
 
 void report_cell_stats( void )
 {
-    long stat_array[NUM_STATS] = {0,0,0,0,0,0,0,0,0,0}, gstat_array[NUM_STATS];
+    long stat_array[NUM_STATS] = {0,0,0,0,0,0,0,0,0,0,0,0}, gstat_array[NUM_STATS];
 
     for (int ith=0; ith < nrn_nthread; ++ith)
     {
         stat_array[0] += (long)nrn_threads[ith].ncell;           // number of cells
+        stat_array[10] += (long)nrn_threads[ith].end;            // number of compartments
         stat_array[1] += (long)nrn_threads[ith].n_presyn;        // number of presyns
         stat_array[2] += (long)nrn_threads[ith].n_input_presyn;  // number of input presyns
         stat_array[3] += (long)nrn_threads[ith].n_netcon;        // number of netcons, synapses
         stat_array[4] += (long)nrn_threads[ith].n_pntproc;       // number of point processes
+        if (nrn_partrans::transfer_thread_data_) {
+          int ntar = nrn_partrans::transfer_thread_data_[ith].ntar;
+          stat_array[11] += (long)ntar;  // number of transfer (gap) targets
+        }
     }
     stat_array[5] = (long)spikevec_size;                         // number of spikes
 
@@ -144,10 +150,12 @@ void report_cell_stats( void )
     {
         printf("\n\n Simulation Statistics\n");
         printf(" Number of cells: %ld\n", gstat_array[0]);
+        printf(" Number of compartments: %ld\n", gstat_array[10]);
         printf(" Number of presyns: %ld\n", gstat_array[1]);
         printf(" Number of input presyns: %ld\n", gstat_array[2]);
         printf(" Number of synapses: %ld\n", gstat_array[3]);
         printf(" Number of point processes: %ld\n", gstat_array[4]);
+        printf(" Number of transfer (gap) targets: %ld\n", gstat_array[11]);
         printf(" Number of spikes: %ld\n", gstat_array[5]);
         printf(" Number of spikes with non negative gid-s: %ld\n", gstat_array[6]);
 #if COLLECT_TQueue_STATISTICS
