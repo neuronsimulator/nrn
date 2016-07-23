@@ -125,7 +125,7 @@ void nrnthread_v_transfer(NrnThread* _nt) {
 void nrn_partrans::gap_update_indices() {
   printf("gap_update_indices\n");
   if (insrcdspl_) {
-    #pragma acc enter data create(insrc_buf_[0:insrcdspl_[nrnmpi_numprocs]])
+    #pragma acc enter data create(insrc_buf_[0:insrcdspl_[nrnmpi_numprocs]]) if (nrn_threads[0].compute_gpu)
   }
   for (int tid = 0; tid < nrn_nthread; ++tid) {
     TransferThreadData& ttd = transfer_thread_data_[tid];
@@ -133,13 +133,13 @@ void nrn_partrans::gap_update_indices() {
 #if METHOD == 2
     int n = ttd.nsrc;
     if (n) {
-      #pragma acc enter data copyin(ttd.v_indices[0:n])
-      #pragma acc enter data create(ttd.v_gather[0:n])
+      #pragma acc enter data copyin(ttd.v_indices[0:n]) if (nrn_threads[0].compute_gpu)
+      #pragma acc enter data create(ttd.v_gather[0:n]) if (nrn_threads[0].compute_gpu)
     }
 #endif /* METHOD == 2 */
 
     if (ttd.halfgap_ml) {
-      #pragma acc enter data copyin(ttd.insrc_indices[0:ttd.ntar])
+      #pragma acc enter data copyin(ttd.insrc_indices[0:ttd.ntar]) if (nrn_threads[0].compute_gpu)
     }
   }
 }
