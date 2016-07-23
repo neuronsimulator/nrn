@@ -36,6 +36,8 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/utils/sdprintf.h"
 #include "coreneuron/nrniv/nrniv_decl.h"
 
+#define precision 15
+
 std::map<Point_process*, int> pnt2index; // for deciding if NetCon is to be printed
 static int pntindex; // running count of printed point processes.
 std::map<NetCon*, DiscreteEvent*> map_nc2src;
@@ -67,7 +69,7 @@ static void pr_memb(int type, Memb_list* ml, int* cellnodes, NrnThread& nt, FILE
       }
       for (int j=0; j < size; ++j) {
         int k = nrn_i_layout(i, cnt, j, size, layout);
-        fprintf(f, " %d %d %.15g\n", cellnodes[inode], j, ml->data[k]);
+        fprintf(f, " %d %d %.*g\n", cellnodes[inode], j, precision, ml->data[k]);
       }
     }
   }
@@ -145,21 +147,21 @@ static void pr_netcon(NrnThread& nt, FILE* f) {
           Point_process* pnt = ps->pntsrc_;
           if (srcgid < 0 && pnt) {
             int type = pnt->_type;
-            fprintf(f, "%d %s %d %.15g", i, memb_func[type].sym, nc->active_?1:0, nc->delay_);
+            fprintf(f, "%d %s %d %.*g", i, memb_func[type].sym, nc->active_?1:0, precision, nc->delay_);
           }else if (srcgid < 0 && ps->thvar_index_ > 0) {
-            fprintf(f, "%d %s %d %.15g", i, "v", nc->active_?1:0, nc->delay_);
+            fprintf(f, "%d %s %d %.*g", i, "v", nc->active_?1:0, precision, nc->delay_);
           }else{
-            fprintf(f, "%d %d %d %.15g", i, srcgid, nc->active_?1:0, nc->delay_);
+            fprintf(f, "%d %d %d %.*g", i, srcgid, nc->active_?1:0, precision, nc->delay_);
           }
         }else{
-          fprintf(f, "%d %d %d %.15g", i, map_nc2gid[nc], nc->active_?1:0, nc->delay_);
+          fprintf(f, "%d %d %d %.*g", i, map_nc2gid[nc], nc->active_?1:0, precision, nc->delay_);
         }
       }else{
-        fprintf(f, "%d %d %d %.15g", i, srcgid, nc->active_?1:0, nc->delay_);
+        fprintf(f, "%d %d %d %.*g", i, srcgid, nc->active_?1:0, precision, nc->delay_);
       }
       int wcnt = pnt_receive_size[nc->target_->_type];
       for (int k=0; k < wcnt; ++k) {
-        fprintf(f, " %.15g", nt.weights[nc->u.weight_index_+k]);
+        fprintf(f, " %.*g", precision, nt.weights[nc->u.weight_index_+k]);
       }
       fprintf(f, "\n");
     }
@@ -198,17 +200,17 @@ printf("thvar_index_=%d end=%d\n", ps.thvar_index_, nt.end);
     }
   }
   fprintf(f, "%d nodes  %d is the threshold node\n", cnt, cellnodes[inode]-1);
-  fprintf(f, " threshold %.15g\n", ps.threshold_);
+  fprintf(f, " threshold %.*g\n", precision, ps.threshold_);
   fprintf(f, "inode parent area a b\n");
   for (int i=0; i < nt.end; ++i) if (cellnodes[i] >= 0) {
-    fprintf(f, "%d %d %.15g %.15g %.15g\n",
+    fprintf(f, "%d %d %.*g %.*g %.*g\n",
       cellnodes[i], cellnodes[nt._v_parent_index[i]],
-      nt._actual_area[i], nt._actual_a[i], nt._actual_b[i]);
+      precision, nt._actual_area[i], precision, nt._actual_a[i], precision, nt._actual_b[i]);
   }
   fprintf(f, "inode v\n");
   for (int i=0; i < nt.end; ++i) if (cellnodes[i] >= 0) {
-    fprintf(f, "%d %.15g\n",
-     cellnodes[i], nt._actual_v[i]);
+    fprintf(f, "%d %.*g\n",
+     cellnodes[i], precision, nt._actual_v[i]);
   }
   
   // each mechanism
@@ -236,8 +238,8 @@ int prcellstate(int gid, const char* suffix) {
         FILE* f = fopen(filename, "w");
         assert(f);
         fprintf(f, "gid = %d\n", gid);
-        fprintf(f, "t = %.15g\n", nt._t);
-        fprintf(f, "celsius = %.15g\n", celsius);
+        fprintf(f, "t = %.*g\n", precision, nt._t);
+        fprintf(f, "celsius = %.*g\n", precision, celsius);
         if (ps.thvar_index_ >= 0) {
           pr_realcell(ps, nt, f);
         }
