@@ -35,12 +35,36 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/nrnoc/nrnoc_decl.h"
 #include "coreneuron/utils/sdprintf.h"
 #include "coreneuron/nrniv/nrniv_decl.h"
+#include "coreneuron/nrniv/nrn_assert.h"
 
 #define precision 15
 
-std::map<Point_process*, int> pnt2index; // for deciding if NetCon is to be printed
+static std::map<Point_process*, int> pnt2index; // for deciding if NetCon is to be printed
 static int pntindex; // running count of printed point processes.
-std::map<NetCon*, DiscreteEvent*> map_nc2src;
+static std::map<NetCon*, DiscreteEvent*> map_nc2src;
+static std::vector<int>* inv_permute_;
+
+static int permute(int i, NrnThread& nt) {
+  return nt._permute ? nt._permute[i] : i;
+}    
+
+static int inv_permute(int i, NrnThread& nt) {
+  nrn_assert(i >= 0 && i < nt.end);
+  if (!nt._permute) { return i; }
+  if (!inv_permute_) {
+    inv_permute_ = new std::vector<int>(nt.end);
+    for (int i = 0; i < nt.end; ++i) {
+      (*inv_permute_)[nt._permute[i]] = i;
+    }
+  }
+  return (*inv_permute_)[i];
+}
+
+static int ml_permute(int i, Memb_list* ml) {
+  return ml->_permute ? ml->_permute[i] : i;
+}
+
+// Note: cellnodes array is in unpermuted order.
 
 static void pr_memb(int type, Memb_list* ml, int* cellnodes, NrnThread& nt, FILE* f) {
   int is_art = nrn_is_artificial_[type];
@@ -53,15 +77,17 @@ static void pr_memb(int type, Memb_list* ml, int* cellnodes, NrnThread& nt, FILE
   int receives_events = pnt_receive[type] ? 1 : 0;
   int layout = nrn_mech_data_layout_[type];
   int cnt = ml->nodecount;
-  for (int i = 0; i < ml->nodecount; ++i) {
-    int inode = ml->nodeindices[i];
-    if (cellnodes[inode] >= 0) {
+  for (int iorig = 0; iorig < ml->nodecount; ++iorig) { // original index
+    int i = ml_permute(iorig, ml); // present index
+    int inode = ml->nodeindices[i]; // inode is the permuted node
+    int cix = cellnodes[inv_permute(inode, nt)]; // original index relative to this cell
+    if (cix >= 0) {
       if (!header_printed) {
         header_printed = 1;
         fprintf(f, "type=%d %s size=%d\n", type, memb_func[type].sym, size);
       }
       if (receives_events) {
-        fprintf(f, "%d nri %d\n", cellnodes[inode], pntindex);
+        fprintf(f, "%d nri %d\n", cix, pntindex);
         int k = nrn_i_layout(i, cnt, 1, psize, layout);
         Point_process* pp = (Point_process*)nt._vdata[ml->pdata[k]];
         pnt2index[pp] = pntindex;
@@ -69,7 +95,7 @@ static void pr_memb(int type, Memb_list* ml, int* cellnodes, NrnThread& nt, FILE
       }
       for (int j=0; j < size; ++j) {
         int k = nrn_i_layout(i, cnt, j, size, layout);
-        fprintf(f, " %d %d %.*g\n", cellnodes[inode], j, precision, ml->data[k]);
+        fprintf(f, " %d %d %.*g\n", cix, j, precision, ml->data[k]);
       }
     }
   }
@@ -176,7 +202,7 @@ static void pr_realcell(PreSyn& ps, NrnThread& nt, FILE* f) {
   pntindex = 0;
 
   // threshold variable is a voltage
-printf("thvar_index_=%d end=%d\n", ps.thvar_index_, nt.end);
+printf("thvar_index_=%d end=%d\n", inv_permute(ps.thvar_index_, nt), nt.end);
   if (ps.thvar_index_ < 0 || ps.thvar_index_ >= nt.end) {
     hoc_execerror("gid not associated with a voltage", 0);
   }
@@ -190,27 +216,30 @@ printf("thvar_index_=%d end=%d\n", ps.thvar_index_, nt.end);
 
   // count the number of nodes in the cell
   // do not assume all cell nodes except the root are contiguous
+  // cellnodes is an unpermuted vector
   int* cellnodes = new int[nt.end];
   for (int i=0; i < nt.end; ++i) { cellnodes[i] = -1; }
   int cnt = 0;
-  cellnodes[rnode] = cnt++;
-  for (int i=nt.ncell; i < nt.end; ++i) {
-    if (cellnodes[nt._v_parent_index[i]] >= 0) {
+  cellnodes[inv_permute(rnode, nt)] = cnt++;
+  for (int i=nt.ncell; i < nt.end; ++i) { // think of it as unpermuted order
+    if (cellnodes[inv_permute(nt._v_parent_index[permute(i, nt)], nt)] >= 0) {
       cellnodes[i] = cnt++;
     }
   }
-  fprintf(f, "%d nodes  %d is the threshold node\n", cnt, cellnodes[inode]-1);
+  fprintf(f, "%d nodes  %d is the threshold node\n", cnt, cellnodes[inv_permute(inode, nt)]-1);
   fprintf(f, " threshold %.*g\n", precision, ps.threshold_);
   fprintf(f, "inode parent area a b\n");
-  for (int i=0; i < nt.end; ++i) if (cellnodes[i] >= 0) {
+  for (int iorig=0; iorig < nt.end; ++iorig) if (cellnodes[iorig] >= 0) {
+    int i = permute(iorig, nt);
+    int ip = nt._v_parent_index[i];
     fprintf(f, "%d %d %.*g %.*g %.*g\n",
-      cellnodes[i], cellnodes[nt._v_parent_index[i]],
+      cellnodes[iorig], ip >= 0 ? cellnodes[inv_permute(ip, nt)] : -1,
       precision, nt._actual_area[i], precision, nt._actual_a[i], precision, nt._actual_b[i]);
   }
   fprintf(f, "inode v\n");
   for (int i=0; i < nt.end; ++i) if (cellnodes[i] >= 0) {
     fprintf(f, "%d %.*g\n",
-     cellnodes[i], precision, nt._actual_v[i]);
+     cellnodes[i], precision, nt._actual_v[permute(i, nt)]);
   }
   
   // each mechanism
@@ -223,6 +252,10 @@ printf("thvar_index_=%d end=%d\n", ps.thvar_index_, nt.end);
 
   delete [] cellnodes;
   pnt2index.clear();
+  if (inv_permute_) {
+    delete inv_permute_;
+    inv_permute_ = NULL;
+  }
 }
 
 int prcellstate(int gid, const char* suffix) {
