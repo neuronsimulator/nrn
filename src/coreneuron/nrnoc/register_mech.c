@@ -36,6 +36,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 int secondorder=0;
 double t, dt, celsius;
 #if defined(PG_ACC_BUGS)
+#pragma acc declare copyin(secondorder)
 #pragma acc declare copyin(celsius)
 #endif
 int rev_dt;
