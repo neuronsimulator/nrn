@@ -39,12 +39,12 @@ cn_parameters::cn_parameters()
 {
     tstart = 0.0;
     tstop = 100.0;
-    dt = 0.025;
+    dt = -1000.;
 
     dt_io = 0.1;
     dt_report = 0.1;
 
-    celsius = 34.0;
+    celsius = -1000.0; // precedence: set by user, globals.dat, 34.0
     voltage = -65.0;
     maxdelay = 10.0;
 
@@ -112,13 +112,13 @@ void cn_parameters::show_cb_opts_help()
        -e TIME, --tstop=TIME\n\
               Set the stop time to TIME (double). The default value is '100.'\n\n\
        -t TIME, --dt=TIME\n\
-              Set the dt time to TIME (double). The default value is '0.025'.\n\n\
+              Set the dt time to TIME (double). The default value is set by defaults.dat, otherwise '0.025'.\n\n\
        -i TIME, --dt_io=TIME\n\
               Set the dt of I/O to TIME (double). The default value is '0.1'.\n\n\
        -v FLOAT, --voltage=v_init\n\
               Value used for nrn_finitialize(1, v_init). If 1000, then nrn_finitialize(0,...)\n\
        -l NUMBER, --celsius=NUMBER\n\
-              Set the celsius temperature to NUMBER (double). The default value is '34.'.\n\n\
+              Set the celsius temperature to NUMBER (double). The default value set by defaults.dat, othewise '34.0'.\n\n\
        -p FILE, --pattern=FILE\n\
               Apply patternstim with the spike file FILE (char*). The default value is 'NULL'.\n\n\
        -b SIZE, --spikebuf=SIZE\n\

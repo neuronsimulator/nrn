@@ -94,6 +94,8 @@ int main1( int argc, char **argv, char **env )
 
     // read command line parameters
     input_params.read_cb_opts( argc, argv );
+    celsius = input_params.celsius;
+    t = input_params.celsius;
 
 #if _OPENACC
     if (!input_params.compute_gpu && input_params.cell_interleave_permute == 2) {
@@ -123,9 +125,22 @@ int main1( int argc, char **argv, char **env )
 
     // set global variables for start time, timestep and temperature
     t = input_params.tstart;
-    dt = input_params.dt;
+
+    if (input_params.dt != -1000.) {// command line arg highest precedence
+      dt = input_params.dt;
+    }else if (dt == -1000.) { // not on command line and no celsius in globals.dat
+      dt = 0.025; // lowest precedence
+    }
+    input_params.dt = dt; // for printing
+
     rev_dt = (int)(1./dt);
-    celsius = input_params.celsius;
+
+    if (input_params.celsius != -1000.) {// command line arg highest precedence
+      celsius = input_params.celsius;
+    }else if (celsius == -1000.) { // not on command line and no celsius in globals.dat
+      celsius = 34.0; // lowest precedence
+    }
+    input_params.celsius = celsius; // for printing
 
     // create net_cvode instance
     mk_netcvode();
@@ -162,7 +177,7 @@ int main1( int argc, char **argv, char **env )
     // show all configuration parameters for current run
     input_params.show_cb_opts();
 
-    // alloctae buffer for mpi communication
+    // allocate buffer for mpi communication
     mk_spikevec_buffer( input_params.spikebuf );
 
     #pragma acc data copyin (celsius) if(input_params.compute_gpu)
