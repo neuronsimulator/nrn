@@ -146,12 +146,18 @@ int main1( int argc, char **argv, char **env )
 
     // if reports are enabled using ReportingLib
     if ( input_params.report ) {
-
         #ifdef ENABLE_REPORTING
-            r = new ReportGenerator(input_params.tstart, input_params.tstop, input_params.dt, input_params.dt_report, input_params.outpath);
-            r->register_report();
+            if(input_params.multiple > 1) {
+                if(nrnmpi_myid == 0)
+                    printf("\n WARNING! : Can't enable reports with model duplications feature! \n");
+            } else {
+                r = new ReportGenerator(input_params.report, input_params.tstart, input_params.tstop,
+                        input_params.dt, input_params.mindelay, input_params.dt_report, input_params.outpath);
+                r->register_report();
+            }
         #else
-            printf("\n WARNING! : Can't enable reports, recompile with ReportingLib! \n");
+            if(nrnmpi_myid == 0)
+                printf("\n WARNING! : Can't enable reports, recompile with ReportingLib! \n");
         #endif
     }
 

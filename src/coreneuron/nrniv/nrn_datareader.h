@@ -71,7 +71,7 @@ public:
     data_reader(): reorder_on_read(false),chkpnt(0) {}
 
     explicit data_reader(const char *filename,bool reorder=false);
-    
+
     /** Preserving chkpnt state, move to a new file. */
     void open(const char *filename, bool reorder);
 
@@ -90,9 +90,35 @@ public:
      */
     int read_int();
 
+    /** Parse a neuron mapping count entries
+     *
+     * Reads neuron mapping info which is represented by
+     * gid, #segments, #somas, #axons, #dendrites, #apicals, #total compartments
+     */
+    void read_mapping_count(int *gid, int *seg, int *soma, int *axon, int *dend, int *apical, int *compartment);
+
+    /** Parse a neuron section segment mapping
+     *
+     * Read count no of mappings for section to segment
+     */
+    template<typename T>
+    void read_mapping_info(T *mapinfo, int count) {
+        const int max_line_length = 1000;
+        char line_buf[max_line_length];
+
+        for(int i=0; i<count; i++) {
+            F.getline(line_buf,sizeof(line_buf));
+            nrn_assert(!F.fail());
+            int sec, seg, n_scan;
+            n_scan=sscanf(line_buf,"%d %d",&sec, &seg);
+            nrn_assert(n_scan==2);
+            mapinfo->add_segment(sec, seg);
+        }
+    }
+
     /** Defined flag values for parse_array() */
     typedef enum parse_action { read,seek } parse_action;
-    
+
     /** Generic parse function for an array of fixed length.
       *
       * \tparam T the array element type: may be \c int or \c double.
@@ -112,7 +138,7 @@ public:
     template <typename T>
     inline T* parse_array(T* p,size_t count,parse_action flag){
         if (count>0 && flag!=seek) nrn_assert(p!=0);
-  
+
         read_checkpoint_assert();
         switch (flag) {
         case seek:
@@ -123,7 +149,7 @@ public:
             if (reorder_on_read) endian::swap_endian_range(p,p+count);
             break;
         }
-  
+
         nrn_assert(!F.fail());
         return p;
     }
@@ -137,7 +163,7 @@ public:
     /** Allocate and read an integer array of fixed length. */
     template <typename T>
     inline T* read_array(size_t count) { return parse_array(new T[count],count,read); }
-      
+
     /** Close currently open file. */
     void close();
 };

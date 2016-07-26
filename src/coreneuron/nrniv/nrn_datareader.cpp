@@ -26,6 +26,7 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include <iostream>
 #include "coreneuron/nrniv/nrn_datareader.h"
 
 
@@ -53,8 +54,23 @@ int data_reader::read_int() {
     int i;
     int n_scan=sscanf(line_buf,"%d",&i);
     nrn_assert(n_scan==1);
-    
+
     return i;
+}
+
+void data_reader::read_mapping_count(int *gid, int *seg, int *soma, int *axon,
+        int *dend, int *apical, int *compartment) {
+
+    char line_buf[max_line_length];
+
+    F.getline(line_buf,sizeof(line_buf));
+    nrn_assert(!F.fail());
+
+    /** mapping file has extra strings, ignore those */
+    int n_scan=sscanf(line_buf,"%d %d %*s %d %*s %d %*s %d %*s %d %*s %d",
+                        gid, seg, soma, axon, dend, apical, compartment);
+
+    nrn_assert(n_scan==7);
 }
 
 void data_reader::read_checkpoint_assert() {

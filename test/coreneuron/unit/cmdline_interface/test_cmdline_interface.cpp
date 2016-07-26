@@ -27,17 +27,17 @@ THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 
-#define BOOST_TEST_MODULE cmdline_interface 
+#define BOOST_TEST_MODULE cmdline_interface
 #define BOOST_TEST_MAIN
 
 #include <boost/test/unit_test.hpp>
 #include "nrniv/nrnoptarg.h"
 #include <float.h>
 
-BOOST_AUTO_TEST_CASE(cmdline_interface) 
+BOOST_AUTO_TEST_CASE(cmdline_interface)
 {
   cn_input_params input_params;
-  int argc = 14; 
+  int argc = 18;
   char ** argv = new char*[argc];
   argv[0] = (char*)"executable";
   argv[1] = (char*)"--tstart=0.001";
@@ -53,6 +53,10 @@ BOOST_AUTO_TEST_CASE(cmdline_interface)
   argv[11] = (char*)"--filesdat=/this/is/the/path";
   argv[12] = (char*)"--outpath=/this/is/the/path";
   argv[13] = (char*)"--forwardskip=0.02";
+  argv[14] = (char*)"--multiple=3";
+  argv[15] = (char*)"--extracon=10";
+  argv[16] = (char*)"--dt_report=0.25";
+  argv[17] = (char*)"--report=2";
 
   input_params.read_cb_opts(argc,argv);
 
@@ -69,7 +73,13 @@ BOOST_AUTO_TEST_CASE(cmdline_interface)
   BOOST_CHECK(!strcmp(input_params.patternstim,(char*)"filespike.dat"));
   BOOST_CHECK(!strcmp(input_params.filesdat,(char*)"/this/is/the/path"));
   BOOST_CHECK(input_params.spikebuf==100);
+  BOOST_CHECK(!strcmp(input_params.outpath,(char*)"/this/is/the/path"));
+  BOOST_CHECK_CLOSE(input_params.forwardskip,0.02,DBL_EPSILON);
+  BOOST_CHECK(input_params.multiple==3);
+  BOOST_CHECK(input_params.extracon==10);
+  BOOST_CHECK_CLOSE(input_params.dt_report,0.25,DBL_EPSILON);
+  BOOST_CHECK(input_params.report==2);
 
   delete [] argv;
 }
-    
+

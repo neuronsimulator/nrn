@@ -97,6 +97,8 @@ typedef struct NrnThread {
 
 	NrnThreadBAList* tbl[BEFORE_AFTER_SIZE]; /* wasteful since almost all empty */
 
+    void* mapping;  /* section to segment mapping information */
+
 } NrnThread;
 
 extern void nrn_threads_create(int n, int parallel);
