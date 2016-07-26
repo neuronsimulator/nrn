@@ -76,6 +76,7 @@ extern size_t nrnran123_state_size(void);
 
 /* minimal data stream */
 extern nrnran123_State* nrnran123_newstream(uint32_t id1, uint32_t id2);
+extern nrnran123_State* nrnran123_newstream3(uint32_t id1, uint32_t id2, uint32_t id3);
 extern void nrnran123_deletestream(nrnran123_State*);
 extern void nrnran123_getseq(nrnran123_State*, uint32_t* seq, unsigned char* which);
 extern void nrnran123_setseq(nrnran123_State*, uint32_t seq, unsigned char which);
