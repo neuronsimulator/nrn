@@ -6,6 +6,8 @@
 #include "OS/table.h"
 #include "OS/list.h"
 
+#define precision 15
+
 extern "C" {
 void nrn_prcellstate(int gid, const char* filesuffix);
 }
@@ -41,7 +43,7 @@ static void pr_memb(int type, Memb_list* ml, int* cellnodes, NrnThread& nt, FILE
         ++pntindex;
       }
       for (int j=0; j < size; ++j) {
-        fprintf(f, " %d %d %.15g\n", cellnodes[inode], j, ml->data[i][j]);
+        fprintf(f, " %d %d %.*g\n", cellnodes[inode], j, precision, ml->data[i][j]);
       }
     }
   }
@@ -77,15 +79,15 @@ static void pr_netcon(NrnThread& nt, FILE* f) {
       srcgid = (nc->src_) ? nc->src_->gid_ : -3;
       if (srcgid < 0 && nc->src_ && nc->src_->osrc_) {
         const char* name = nc->src_->osrc_->ctemplate->sym->name;
-        fprintf(f, "%d %s %d %.15g", i, name, nc->active_?1:0, nc->delay_);
+        fprintf(f, "%d %s %d %.*g", i, name, nc->active_?1:0, precision, nc->delay_);
       }else if (srcgid < 0 && nc->src_ && nc->src_->ssrc_) {
-        fprintf(f, "%d %s %d %.15g", i, "v", nc->active_?1:0, nc->delay_);
+        fprintf(f, "%d %s %d %.*g", i, "v", nc->active_?1:0, precision, nc->delay_);
       }else{
-        fprintf(f, "%d %d %d %.15g", i, srcgid, nc->active_?1:0, nc->delay_);
+        fprintf(f, "%d %d %d %.*g", i, srcgid, nc->active_?1:0, precision, nc->delay_);
       }
       int wcnt = pnt_receive_size[nc->target_->prop->type];
       for (int k=0; k < wcnt; ++k) {
-        fprintf(f, " %.15g", nc->weight_[k]);
+        fprintf(f, " %.*g", precision, nc->weight_[k]);
       }
       fprintf(f, "\n");
     }
@@ -147,19 +149,19 @@ printf("%s\n", ps.ssrc_?secname(ps.ssrc_):"unknown");
     }
   }
   fprintf(f, "%d nodes  %d is the threshold node\n", cnt, cellnodes[inode]-1);
-  fprintf(f, " threshold %.15g\n", ps.threshold_);
+  fprintf(f, " threshold %.*g\n", precision, ps.threshold_);
   fprintf(f, "inode parent area a b\n");
   for (int i=0; i < nt.end; ++i) if (cellnodes[i] >= 0) {
     Node* nd = nt._v_node[i]; //if not cach_efficient then _actual_area=NULL
-    fprintf(f, "%d %d %.15g %.15g %.15g\n",
+    fprintf(f, "%d %d %.*g %.*g %.*g\n",
       cellnodes[i], cellnodes[nt._v_parent_index[i]],
-      NODEAREA(nd), nt._actual_a[i], nt._actual_b[i]);
+      precision, NODEAREA(nd), precision, nt._actual_a[i], precision, nt._actual_b[i]);
   }
   fprintf(f, "inode v\n");
   for (int i=0; i < nt.end; ++i) if (cellnodes[i] >= 0) {
     Node* nd = nt._v_node[i]; //if not cach_efficient then _actual_v=NULL
-    fprintf(f, "%d %.15g\n",
-     cellnodes[i], NODEV(nd));
+    fprintf(f, "%d %.*g\n",
+     cellnodes[i], precision, NODEV(nd));
   }
   
   // each mechanism
@@ -184,8 +186,8 @@ void nrn_prcellstate(int gid, const char* suffix) {
   assert(f);
   NrnThread& nt = *ps->nt_;
   fprintf(f, "gid = %d\n", gid);
-  fprintf(f, "t = %.15g\n", nt._t);
-  fprintf(f, "celsius = %.15g\n", celsius);
+  fprintf(f, "t = %.*g\n", precision, nt._t);
+  fprintf(f, "celsius = %.*g\n", precision, celsius);
   if (ps->thvar_) {
     pr_realcell(*ps, nt, f);
   }
