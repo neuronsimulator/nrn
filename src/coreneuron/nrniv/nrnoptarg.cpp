@@ -128,8 +128,8 @@ void cn_parameters::show_cb_opts_help()
               Set the path for the output data to PATH (char*). The default value is '.'.\n\
        -k TIME, --forwardskip=TIME\n\
               Set forwardskip to TIME (double). The default value is '0.'.\n\
-       -r, --report\n\
-              Enable soma report.\n\
+       -r TYPE --report=TYPE\n\
+              Enable voltage report with specificied type (0 for disable, 1 for soma, 2 for full compartment).\n\
        -w, --dt_report=TIME\n\
               Set the dt for soma reports (using ReportingLib) to TIME (double). The default value is '0.1'.\n\n\
        -z MULTIPLE, --multiple=MULTIPLE\n\
@@ -165,7 +165,7 @@ void cn_parameters::read_cb_opts( int argc, char **argv )
             {"multiple", required_argument, 0, 'z'},
             {"extracon", required_argument, 0, 'x'},
             {"mpi",       optional_argument, 0, 'm'},
-            {"report",    no_argument, 0, 'r'},
+            {"report",    required_argument, 0, 'r'},
             {"dt_report", required_argument, 0, 'w'},
             {"help",      no_argument,       0, 'h'},
             {0, 0, 0, 0}
@@ -173,7 +173,7 @@ void cn_parameters::read_cb_opts( int argc, char **argv )
         /* getopt_long stores the option index here. */
         int option_index = 0;
 
-        c = getopt_long( argc, argv, "s:e:t:i:l:p:b:g:c:d:f:o:k:m:z:x:rw:h",
+        c = getopt_long( argc, argv, "s:e:t:i:l:p:b:g:c:d:f:o:k:m:z:x:r:w:h",
                          long_options, &option_index );
 
         /* Detect the end of the options. */
@@ -263,7 +263,7 @@ void cn_parameters::read_cb_opts( int argc, char **argv )
                 break;
 
             case 'r':
-                report = 1;
+                report = atoi( optarg );
                 break;
 
             case 'w':
