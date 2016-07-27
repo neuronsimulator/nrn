@@ -206,9 +206,22 @@ int main1( int argc, char **argv, char **env )
 
         report_mem_usage( "After nrn_finitialize" );
 
-        #ifdef ENABLE_REPORTING
-            ReportGenerator * r = NULL;
-        #endif
+        // if reports are enabled using ReportingLib
+        if ( input_params.report ) {
+          #ifdef ENABLE_REPORTING
+            if(input_params.multiple > 1) {
+              if(nrnmpi_myid == 0)
+                printf("\n WARNING! : Can't enable reports with model duplications feature! \n");
+            } else {
+              r = new ReportGenerator(input_params.report, input_params.tstart, input_params.tstop,
+                input_params.dt, input_params.mindelay, input_params.dt_report, input_params.outpath);
+              r->register_report();
+            }
+          #else
+            if(nrnmpi_myid == 0)
+              printf("\n WARNING! : Can't enable reports, recompile with ReportingLib! \n");
+          #endif
+        }
 
         // if reports are enabled using ReportingLib
         if ( input_params.report ) {

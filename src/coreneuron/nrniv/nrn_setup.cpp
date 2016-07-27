@@ -45,6 +45,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/nrniv/nrnoptarg.h"
 #include "coreneuron/nrniv/node_permute.h"
 #include "coreneuron/nrniv/cellorder.h"
+#include "coreneuron/utils/reports/nrnreport.h"
 
 // file format defined in cooperation with nrncore/src/nrniv/nrnbbcore_write.cpp
 // single integers are ascii one per line. arrays are binary int or double
@@ -607,6 +608,9 @@ void nrn_setup(cn_input_params& input_params, const char *filesdat, int byte_swa
   /* nrn_multithread_job supports serial, pthread, and openmp. */
   coreneuron::phase_wrapper<(coreneuron::phase)2>();
 
+  if(input_params.report)
+    coreneuron::phase_wrapper<(coreneuron::phase)3>();
+
   double mindelay = set_mindelay(input_params.maxdelay);
   input_params.set_mindelay( mindelay );
   setup_cleanup();
@@ -869,6 +873,10 @@ void nrn_cleanup() {
       nt->_net_send_buffer_size = 0;
     }
 
+    if (nt->mapping) {
+        delete ( (NeuronGroupMappingInfo*) nt->mapping);
+    }
+
     free(nt->_ml_list);
   }
 
@@ -960,6 +968,7 @@ void read_phase2(data_reader &F, int imult, NrnThread& nt) {
   nt.n_weight = F.read_int();
 
   nt._data = NULL; // allocated below after padding
+  nt.mapping = NULL; //section segment mapping
 
   if (nt._nidata) nt._idata = (int*)ecalloc(nt._nidata, sizeof(int));
   else nt._idata = NULL;
@@ -1574,6 +1583,43 @@ for (int i=0; i < nt.end; ++i) {
   }
 
   delete [] pnt_offset;
+}
+
+/** read mapping information for neurons */
+void read_phase3(data_reader &F, int imult, NrnThread& nt) {
+
+    /** mapping information for all neurons in single NrnThread */
+    NeuronGroupMappingInfo *nrngroup_map = new NeuronGroupMappingInfo();
+
+    /** total compartments in this NrnThread */
+    int total_compartment = 0;
+
+    /** for every neuron */
+    for(int i = 0; i < nt.ncell; i++) {
+        int gid, seg, soma, axon, dend, apical, compartment;
+
+        //read counts
+        F.read_mapping_count(&gid, &seg, &soma, &axon, &dend, &apical, &compartment);
+
+        NeuronMappingInfo nmap(gid, seg, soma, axon, dend, apical, compartment);
+
+        //read all section-segment mapping
+        F.read_mapping_info(&nmap, seg);
+
+        //add mapping info for current gid
+        nrngroup_map->add_neuron_mapping_info(nmap);
+        total_compartment += compartment;
+    }
+
+    //sum of compartments for all neurons in mapping file should be
+    //equal to no of compartments from dataset
+    nrn_assert(total_compartment == nt.end);
+
+    //no of cells should match
+    nrn_assert(nrngroup_map->count() == nt.ncell);
+
+    //set point in NrnThread
+    nt.mapping = (void *) nrngroup_map;
 }
 
 static size_t memb_list_size(NrnThreadMembList* tml) {

@@ -70,72 +70,40 @@ void ReportEvent::deliver(double t, NetCvode *nc, NrnThread *nt) {
 #endif //ENABLE_REPORTING
 }
 
-/** for given PreSyn, return the pointer to the soma voltage */
-double * ReportGenerator::get_soma_voltage_ptr(PreSyn &presyn, NrnThread& nt) {
-
-    double *actual_v = nt._actual_v;
-    int *parent_index = nt._v_parent_index;
-    int node_count = nt.end;
-    int ncells = nt.ncell;
-    int presyn_voltage_index = presyn.thvar_index_;
-    bool found = false;
-
-    /** make sure index is in the range */
-    if(! ( presyn_voltage_index > 0 && presyn_voltage_index < node_count) ) {
-        std::cout << "\n Error! : presyn index not in the range!";
-        abort();
-    }
-
-    /** these will be the maximum number of searches */
-    int search_count = presyn_voltage_index;
-
-    /** we could break if presyn_voltage_index < ncells but just to avoid deadlock in case of bugs */
-    for(int i = 0; i <= search_count; i++) {
-        if(presyn_voltage_index < ncells) {
-            /** sanity check */
-            if(parent_index[presyn_voltage_index] == 0) {
-                found = true;
-            }
-            break;
-        } else {
-            presyn_voltage_index = parent_index[presyn_voltage_index];
-        }
-    }
-
-    /** just sanity check for now */
-    if(!found) {
-        std::cout << "\n Error: Soma location cant found!, Report this error!";
-        fflush(stdout);
-        abort();
-    }
-
-    /** return pointer to soma voltage */
-    return actual_v + presyn_voltage_index;
-}
-
 /** based on command line arguments, setup reportinglib interface */
-ReportGenerator::ReportGenerator(double start_, double stop_, double dt_, double dt_report_, std::string path) {
+ReportGenerator::ReportGenerator(int rtype, double start_, double stop_, double dt_,
+    double delay, double dt_report_, std::string path) {
+
     start = start_;
     stop = stop_;
     dt = dt_;
     dt_report = dt_report_;
-    report_filepath = path + std::string("/soma");
+    mindelay = delay;
+
+    switch(rtype) {
+
+        case 1:
+            type = SomaReport;
+            report_filepath = path + std::string("/soma");
+            break;
+
+        case 2:
+            type = CompartmentReport;
+            report_filepath = path + std::string("/voltage");
+            break;
+
+        default:
+            if(nrnmpi_myid == 0) {
+                std::cout << " WARNING: Invalid report type, enabling Soma reports!\n";
+            }
+            type = SomaReport;
+            report_filepath = path + std::string("/soma");
+    }
 }
 
 #ifdef ENABLE_REPORTING
 
 void ReportGenerator::register_report() {
-
-    /** @todo: hard coded parameters for ReportingLib from Jim*/
-    int sizemapping = 1;
-    int extramapping = 5;
-    int mapping[] = {0};
-    int extra[] = {1, 0, 0, 0, 1};
-
-    /** @todo: change reportingLib to accept const char * */
-    char *report_name = new char[report_filepath.size() + 1];
-    std::copy(report_filepath.begin(), report_filepath.end(), report_name);
-    report_name[report_filepath.size()] = '\0';
 
     /* simulation dt */
     records_set_atomic_step(dt);
@@ -143,6 +111,7 @@ void ReportGenerator::register_report() {
     for (int ith = 0; ith < nrn_nthread; ++ith) {
 
         NrnThread& nt = nrn_threads[ith];
+        NeuronGroupMappingInfo *mapinfo = (NeuronGroupMappingInfo*) nt.mapping;
 
         /** avoid empty NrnThread */
         if(nt.ncell) {
@@ -151,31 +120,113 @@ void ReportGenerator::register_report() {
             events.push_back(new ReportEvent(dt));
             events[ith]->send(dt, net_cvode_instance, &nt);
 
-            /** register every gid to reportinglib. note that we
-             *  have to just use first ncell presyns, rest are
-             *  artificial cells */
+            /** @todo: hard coded parameters for ReportingLib from Jim*/
+            int sizemapping = 1;
+            int extramapping = 5;
+            int mapping[] = {0};            //first column i.e. section numbers
+            int extra[] = {1, 0, 0, 0, 1};  //first row, from 2nd value (skip gid)
+            const char *unit = "mV";
+            const char *kind = "compartment";
+            const char *reportname = report_filepath.c_str();
+
+            /** iterate over all neurons */
             for (int i = 0; i < nt.ncell; ++i) {
-                PreSyn& presyn = nt.presyns[i];
-                int gid = presyn.gid_;
-// put gid into array later
-                double *v = get_soma_voltage_ptr(presyn, nt);
-                records_add_report(report_name, gid, gid, gid, start, stop, dt_report, sizemapping, "compartment", extramapping, "mV");
-                records_add_var_with_mapping(report_name, gid, v, sizemapping, mapping);
-                records_extra_mapping(report_name, gid, 5, extra);
+
+                /** for this gid, get mapping information */
+                int gid = nt.presyns[i].gid_;
+                NeuronMappingInfo *m = mapinfo->get_neuron_mapping(gid);
+
+                /** for full compartment reports, set extra mapping */
+                if(type == CompartmentReport) {
+                    extra[0] = m->nsegment;
+                    extra[1] = m->nsoma;
+                    extra[2] = m->naxon;
+                    extra[3] = m->ndendrite;
+                    extra[4] = m->napical;
+                }
+
+                /** add report variable : @todo api changes in reportinglib*/
+                records_add_report((char*)reportname, gid, gid, gid, start, stop, dt_report,
+                    sizemapping, (char*)kind, extramapping, (char*)unit);
+
+                /** add extra mapping : @todo api changes in reportinglib*/
+                records_extra_mapping((char*)reportname, gid, 5, extra);
+
+                /** if there more segments that we need to register ? */
+                bool pending_segments = true;
+
+                section_segment_map_type::iterator iter;
+
+                /** iterate over all sections of a cell */
+                for(iter=m->sec_seg_map.begin(); iter != m->sec_seg_map.end() && pending_segments; iter++) {
+
+                    /** set section id */
+                    mapping[0] = iter->first;
+
+                    /** these are all segments for a given section */
+                    segment_vector_type &segments = iter->second;
+
+                    /** iterate over all segments and register them */
+                    for(int j = 0; j < segments.size() && pending_segments; j++) {
+
+                        /** segment id here is just offset into voltage array */
+                        int idx = segments[j];
+
+                        /** corresponding voltage in coreneuron voltage array */
+                        double *v = nt._actual_v + idx;
+
+                        /** add segment for reporting */
+                        records_add_var_with_mapping((char*)reportname, gid, v, sizemapping, mapping);
+
+                        /** for soma report, we have to break! only register first segment in section */
+                        if(type == SomaReport) {
+
+                            /** soma must be always in 0th section */
+                            if(mapping[0] != 0) {
+                                std::cout << " WARNING: first section for soma report is non-zero ?\n";
+                            }
+
+                            /** done with current cell */
+                            pending_segments = 0;
+                        }
+                    }
+                }
             }
         }
     }
 
+
+    /** in the current implementation, we call flush during every spike exchange
+     *  interval. Hence there should be sufficient buffer to hold all reports
+     *  for the duration of mindelay interval. In the below call we specify the
+     *  number of timesteps that we have to buffer.
+     *  TODO: revisit this because spike exchnage can happen few steps before/after
+     *  mindelay interval and hence adding two extra timesteps to buffer.
+     */
+    int timesteps_to_buffer = mindelay/dt_report + 2;
+    records_set_steps_to_buffer(timesteps_to_buffer);
+
     /** reportinglib setup */
-    //records_set_steps_to_buffer(100); //specify how many reporting steps to buffer
     records_setup_communicator();
     records_finish_and_share();
 
     if(nrnmpi_myid == 0) {
-        std::cout << " Report registration finished!\n";
+        if(type == SomaReport)
+            std::cout << " Soma report registration finished!\n";
+        else
+            std::cout << " Full compartment report registration finished!\n";
+    }
+}
+
+/** returns mapping information for given gid */
+NeuronMappingInfo* NeuronGroupMappingInfo::get_neuron_mapping(int gid) {
+
+    for(int i=0; i<neuronsmapinfo.size(); i++) {
+        if(neuronsmapinfo[i].gid == gid)
+            return &(neuronsmapinfo[i]);
     }
 
-    delete [] report_name;
+    return NULL;
 }
 
 extern "C" void nrn_flush_reports(double t) {
