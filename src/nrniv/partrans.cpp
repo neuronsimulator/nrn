@@ -19,6 +19,8 @@
 #include <utility>
 #include <algorithm>
 
+#include <map> // Introduced for NonVSrcUpdateInfo
+
 #ifndef NRNLONGSGID
 #define NRNLONGSGID 0
 #endif
@@ -58,7 +60,7 @@ extern double* nrn_recalc_ptr(double*);
 
 /*
 
-5/16/2014
+16-5-2014
 Gap junctions with extracellular require that the voltage source be v + vext.
 
 A solution to the v+vext problem is to create a thread specific source
@@ -85,6 +87,34 @@ Therefore we need yet another callback.
  void* nrnthread_vi_compute(NrnThread*)
  called, if needed, at the end of update(nt) and before mpi transfer in
 nrn_finitialize. 
+
+*/
+
+/*
+
+29-9-2016
+
+Want to allow a source to be any range variable at a node or in a
+Point_process.  e.g an ion concentration.  The v+vext change restricted
+sources to voltage partly in order to simplify pointer recalculation for
+cache efficiency.  If the source is not voltage, the calling context of
+pc.source_var must be sufficient to easily store enough info to update
+the pointer for cache efficiency or changed number of threads.  ie.  in
+general, (Node*, mechtype, parray_index).  If the variable is a member
+of a Point_process, it would be simple to pass it as the third arg and
+store the reference.  However, we reject that due to not handling the
+typical case of concentration.  So we impose the limitation that
+structural changes that destroy the Node or move the pointer to another
+Node generally require clearing and re-declaring the source, sid, target
+relations, (nseg change, point process relocation).  Which is, in fact,
+the current limitation on voltage sources.  The substantive
+implementation change is to provide a safe pointer update for when we
+know the Node*.  An extra map<sgid_t ssid, pair<int mechtype, int
+parray_index> > should do nicely.  with voltages NOT being in the map. 
+Also a decent error message can be generated.  Finally, it is fairly
+clear how to make this work with coreneuron by perhaps adding a triple
+of sid, mechtype, parray_index integer vectors to the <gidgroup>_gap.dat
+file. 
 
 */
 
@@ -149,13 +179,21 @@ static MapSgid2Int* sid2insrc_; // received interprocessor sid data is
 // associated with which insrc_buf index. Created by nrnmpi_setup_transfer
 // and used by mk_ttd
 		
-static DblPList* targets_;
-static SgidList* sgid2targets_;
-static PPList* target_pntlist_;
+// ordered by calls to nrnmpi_target_var()
+static DblPList* targets_; // list of target double*
+static SgidList* sgid2targets_; // list of target sgid
+static PPList* target_pntlist_;  // list of target Point_process
 static IntList* target_parray_index_; // to recompute targets_ for cache_efficint
-static NodePList* visources_;
-static SgidList* sgids_;
-static MapSgid2Int* sgid2srcindex_;
+
+// ordered by calls to nrnmpi_source_var()
+typedef std::vector<double*> DblPVec;
+static NodePList* visources_; // list of source Node*, (multiples possible)
+static SgidList* sgids_; // source gids
+static MapSgid2Int* sgid2srcindex_; // sgid2srcindex[sgids[i]] == i
+
+typedef std::map<sgid_t, std::pair<int, int> > NonVSrcUpdateInfo;
+static NonVSrcUpdateInfo* non_vsrc_update_info_; // source ssid -> (type,parray_index)
+
 
 static int max_targets_;
 
@@ -179,22 +217,55 @@ static void delete_imped_info() {
   }
 }
 
+// pv2node extended to any range variable in the section
+// This helper searches over all the mechanisms in the node.
+// If *pv exists, store mechtype and parray_index.
+static bool non_vsrc_setinfo(sgid_t ssid, Node* nd, double* pv) {
+  for (Prop* p = nd->prop; p; p = p->next) {
+    if (pv >= p->param && pv < (p->param + p->param_size)) {
+      if (!non_vsrc_update_info_) {
+        non_vsrc_update_info_ = new NonVSrcUpdateInfo();
+      }
+      (*non_vsrc_update_info_)[ssid] = std::pair<int,int>(p->type, pv - p->param);
+      //printf("non_vsrc_setinfo %p %d %ld %s\n", pv, p->type, pv-p->param, memb_func[p->type].sym->name);
+      return true;
+    }
+  }
+  return false;
+}
+
+static double* non_vsrc_update(Node* nd, int type, int ix) {
+  for (Prop* p = nd->prop; p; p = p->next) {
+    if (type == p->type) {
+      return p->param + ix;
+    }
+  }
+  char buf[100];
+  sprintf(buf, "%d of %s", ix, memb_func[type].sym->name);
+  hoc_execerror("partrans update: could not find parameter index", buf);
+  return NULL;
+}
+
 // Find the Node associated with the voltage.
 // Easy if v in the currently accessed section.
-static Node* pv2node(double* pv) {
+// Extended to any pointer to range variable in the section.
+// If not a voltage save pv associated with mechtype, p_array_index
+// in non_vsrc_update_info_
+static Node* pv2node(sgid_t ssid, double* pv) {
 	Section* sec = chk_access();
 	Node* nd = sec->parentnode;
 	if (nd) {
-		if (&NODEV(nd) == pv) {
+		if (&NODEV(nd) == pv || non_vsrc_setinfo(ssid, nd, pv)) {
 			return nd;
 		}
 	}
 	for (int i = 0; i < sec->nnode; ++i) {
 		nd = sec->pnode[i];
-		if (&NODEV(nd) == pv) {
+		if (&NODEV(nd) == pv || non_vsrc_setinfo(ssid, nd, pv)) {
 			return nd;
 		}
 	}
+	
 	hoc_execerror("Pointer to v is not in the currently accessed section", 0);
 	return NULL;
 }
@@ -202,7 +273,7 @@ static Node* pv2node(double* pv) {
 void nrnmpi_source_var() {
 	alloclists();
 	is_setup_ = false;
-	double* psv = hoc_pgetarg(1);
+	double* psv = hoc_pgetarg(1); // but might not be a voltage
 	sgid_t sgid = (sgid_t)(*getarg(2));
 	int i;
 	if (sgid2srcindex_->find(sgid, i)) {
@@ -211,9 +282,9 @@ void nrnmpi_source_var() {
 		hoc_execerror("source var gid already in use:", tmp);
 	}
 	(*sgid2srcindex_)[sgid] = visources_->count();
-	visources_->append(pv2node(psv));
+	visources_->append(pv2node(sgid, psv));
 	sgids_->append(sgid);
-//	printf("nrnmpi_source_var source_val=%g sgid=%ld\n", *psv, (long)sgid);
+	//printf("nrnmpi_source_var %p source_val=%g sgid=%ld\n", psv, *psv, (long)sgid);
 }
 
 static int compute_parray_index(Point_process* pp, double* ptv) {
@@ -231,7 +302,7 @@ static double* tar_ptr(Point_process* pp, int index) {
 }
 
 static void check_pointers() {
-printf("check_pointers\n");
+//printf("check_pointers\n");
 	for (int i = 0; i < targets_->count(); ++i) {
 		double* pd = tar_ptr(target_pntlist_->item(i), target_parray_index_->item(i));
 		assert(targets_->item(i) == pd);
@@ -239,6 +310,7 @@ printf("check_pointers\n");
 }
 
 static void target_ptr_update() {
+//printf("target_ptr_update\n");
 	if (targets_) {
 		int n = targets_->count();
 		DblPList* newtar = new DblPList(n);
@@ -267,23 +339,29 @@ void nrnmpi_target_var() {
 	target_pntlist_->append(pp);
 	target_parray_index_->append(compute_parray_index(pp, ptv));
 	sgid2targets_->append(sgid);
-	//printf("nrnmpi_target_var target_val=%g sgid=%ld\n", *ptv, (long)sgid);
+	//printf("nrnmpi_target_var %p target_val=%g sgid=%ld\n", ptv, *ptv, (long)sgid);
 }
 
 void nrn_partrans_update_ptrs() {
 	// These pointer changes require that the targets be range variables
-	// of a point process and the sources be voltage.
+	// of a point process and the sources be range variables
 	int i, n;
 	if (visources_) {
 		n = visources_->count();
 		// update the poutsrc that have no extracellular
 		for (i=0; i < outsrc_buf_size_; ++i) {
-		    Node* nd = visources_->item(long(poutsrc_indices_[i]));
-		    if (!nd->extnode) {
+		    int isrc = poutsrc_indices_[i];
+		    Node* nd = visources_->item(long(isrc));
+		    NonVSrcUpdateInfo::iterator it;
+		    it = non_vsrc_update_info_->find(sgids_->item(isrc));
+		    if (it != non_vsrc_update_info_->end()) {
+			poutsrc_[i] = non_vsrc_update(nd, it->second.first, it->second.second);
+		    }else if (!nd->extnode) {
 			poutsrc_[i] = &(NODEV(nd));
+		    }else{
+			// pointers into SourceViBuf updated when
+			// latter is (re-)created
 		    }
-		    // pointers into SourceViBuf updated when
-		    // latter is (re-)created
 		}
 	}
 	// the target vgap pointers also need updating but they will not
@@ -338,13 +416,16 @@ static MapNode2PDbl* mk_svibuf() {
 
 	source_vi_buf_ = new SourceViBuf[nrn_nthread];
 	n_source_vi_buf_ = nrn_nthread;
+	NonVSrcUpdateInfo::iterator it;
+
 	for (int tid = 0; tid < nrn_nthread; ++tid) {
 		source_vi_buf_[tid].cnt = 0;
 	}
 	// count
 	for (int i=0; i < visources_->count(); ++i) {
 		Node* nd = visources_->item(i);
-		if (nd->extnode) {
+		it = non_vsrc_update_info_->find(sgids_->item(i));
+		if (nd->extnode	&& it == non_vsrc_update_info_->end()) {
 			assert(nd->_nt >= nrn_threads && nd->_nt < (nrn_threads + nrn_nthread));
 			++source_vi_buf_[nd->_nt->id].cnt;
 		}
@@ -361,7 +442,8 @@ static MapNode2PDbl* mk_svibuf() {
 	// fill
 	for (int i=0; i < visources_->count(); ++i) {
 		Node* nd = visources_->item(i);
-		if (nd->extnode) {
+		it = non_vsrc_update_info_->find(sgids_->item(i));
+		if (nd->extnode	&& it == non_vsrc_update_info_->end()) {
 			int tid = nd->_nt->id;			
 			SourceViBuf& svib = source_vi_buf_[tid];
 			svib.nd[svib.cnt] = nd;
@@ -384,9 +466,11 @@ static MapNode2PDbl* mk_svibuf() {
 		}
 	}
 	for (int i=0; i < outsrc_buf_size_; ++i) {
-		Node* nd = visources_->item(poutsrc_indices_[i]);
+		int isrc = poutsrc_indices_[i];
+		Node* nd = visources_->item(isrc);
 		double* pd = NULL;
-		if (nd->extnode) {
+		it = non_vsrc_update_info_->find(sgids_->item(i));
+		if (nd->extnode	&& it == non_vsrc_update_info_->end()) {
 			assert(ndvi2pd->find(nd, pd));
 			poutsrc_[i] = pd;
 		}
@@ -462,7 +546,11 @@ hoc_execerror("For multiple threads, the target pointer must reference a range v
 		sgid_t sid = sgid2targets_->item(i);
 		if (sgid2srcindex_->find(sid, k)) {
 			Node* nd = visources_->item(k);
-			if (nd->extnode) {
+			NonVSrcUpdateInfo::iterator it;
+			it = non_vsrc_update_info_->find(sid);
+			if (it != non_vsrc_update_info_->end()) {
+				ttd.sv[j] = non_vsrc_update(nd, it->second.first, it->second.second);
+			}else if (nd->extnode) {
 				double* pd;
 				assert(ndvi2pd->find(nd, pd));
 				ttd.sv[j] = pd;
@@ -719,10 +807,14 @@ void nrnmpi_setup_transfer() {
 		int srcindex;
 		assert(sgid2srcindex_->find(sid, srcindex));
 		Node* nd = visources_->item(long(srcindex));
-		if (nd->extnode) {
-			// can only do this after mk_svib()
-		}else{
+		NonVSrcUpdateInfo::iterator it;
+		it = non_vsrc_update_info_->find(sid);
+		if (it != non_vsrc_update_info_->end()) {
+			poutsrc_[i] = non_vsrc_update(nd, it->second.first, it->second.second);
+		}else if (!nd->extnode) {
 			poutsrc_[i] = &(NODEV(nd));
+		}else{
+			// the v+vext case can only be done after mk_svib()
 		}
 		poutsrc_indices_[i] = srcindex;
 		outsrc_buf_[i] = double(sid); // see step 5
@@ -784,6 +876,7 @@ void nrn_partrans_clear() {
 	if (sid2insrc_) { delete sid2insrc_; sid2insrc_ = 0; }
 	if (poutsrc_) { delete [] poutsrc_ ; poutsrc_ = 0; }
 	if (poutsrc_indices_) { delete [] poutsrc_indices_ ; poutsrc_indices_ = 0; }
+	if (non_vsrc_update_info_) { delete non_vsrc_update_info_; non_vsrc_update_info_ = NULL; }
 	nrn_mk_transfer_thread_data_ = 0;
 }
 
@@ -939,7 +1032,10 @@ struct BBCoreGapInfo {
 static void sidsort(int* sids, int cnt, int* indices);
 
 size_t nrnbbcore_gap_write(const char* path, int* group_ids) {
-  // if there are no targets, then there are not sources
+  if (non_vsrc_update_info_) {
+    hoc_execerror("Non Voltage transfer sources not supported in CoreNEURON", NULL);
+  }
+  // if there are no targets, then there are no sources
   if (!targets_ || !targets_->count()) {
     assert(sgids_->count() == 0);
     return 0;
