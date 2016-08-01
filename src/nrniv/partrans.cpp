@@ -192,7 +192,7 @@ static SgidList* sgids_; // source gids
 static MapSgid2Int* sgid2srcindex_; // sgid2srcindex[sgids[i]] == i
 
 typedef std::map<sgid_t, std::pair<int, int> > NonVSrcUpdateInfo;
-static NonVSrcUpdateInfo* non_vsrc_update_info_; // source ssid -> (type,parray_index)
+static NonVSrcUpdateInfo non_vsrc_update_info_; // source ssid -> (type,parray_index)
 
 
 static int max_targets_;
@@ -223,10 +223,7 @@ static void delete_imped_info() {
 static bool non_vsrc_setinfo(sgid_t ssid, Node* nd, double* pv) {
   for (Prop* p = nd->prop; p; p = p->next) {
     if (pv >= p->param && pv < (p->param + p->param_size)) {
-      if (!non_vsrc_update_info_) {
-        non_vsrc_update_info_ = new NonVSrcUpdateInfo();
-      }
-      (*non_vsrc_update_info_)[ssid] = std::pair<int,int>(p->type, pv - p->param);
+      non_vsrc_update_info_[ssid] = std::pair<int,int>(p->type, pv - p->param);
       //printf("non_vsrc_setinfo %p %d %ld %s\n", pv, p->type, pv-p->param, memb_func[p->type].sym->name);
       return true;
     }
@@ -353,8 +350,8 @@ void nrn_partrans_update_ptrs() {
 		    int isrc = poutsrc_indices_[i];
 		    Node* nd = visources_->item(long(isrc));
 		    NonVSrcUpdateInfo::iterator it;
-		    it = non_vsrc_update_info_->find(sgids_->item(isrc));
-		    if (it != non_vsrc_update_info_->end()) {
+		    it = non_vsrc_update_info_.find(sgids_->item(isrc));
+		    if (it != non_vsrc_update_info_.end()) {
 			poutsrc_[i] = non_vsrc_update(nd, it->second.first, it->second.second);
 		    }else if (!nd->extnode) {
 			poutsrc_[i] = &(NODEV(nd));
@@ -424,8 +421,8 @@ static MapNode2PDbl* mk_svibuf() {
 	// count
 	for (int i=0; i < visources_->count(); ++i) {
 		Node* nd = visources_->item(i);
-		it = non_vsrc_update_info_->find(sgids_->item(i));
-		if (nd->extnode	&& it == non_vsrc_update_info_->end()) {
+		it = non_vsrc_update_info_.find(sgids_->item(i));
+		if (nd->extnode	&& it == non_vsrc_update_info_.end()) {
 			assert(nd->_nt >= nrn_threads && nd->_nt < (nrn_threads + nrn_nthread));
 			++source_vi_buf_[nd->_nt->id].cnt;
 		}
@@ -442,8 +439,8 @@ static MapNode2PDbl* mk_svibuf() {
 	// fill
 	for (int i=0; i < visources_->count(); ++i) {
 		Node* nd = visources_->item(i);
-		it = non_vsrc_update_info_->find(sgids_->item(i));
-		if (nd->extnode	&& it == non_vsrc_update_info_->end()) {
+		it = non_vsrc_update_info_.find(sgids_->item(i));
+		if (nd->extnode	&& it == non_vsrc_update_info_.end()) {
 			int tid = nd->_nt->id;			
 			SourceViBuf& svib = source_vi_buf_[tid];
 			svib.nd[svib.cnt] = nd;
@@ -469,8 +466,8 @@ static MapNode2PDbl* mk_svibuf() {
 		int isrc = poutsrc_indices_[i];
 		Node* nd = visources_->item(isrc);
 		double* pd = NULL;
-		it = non_vsrc_update_info_->find(sgids_->item(i));
-		if (nd->extnode	&& it == non_vsrc_update_info_->end()) {
+		it = non_vsrc_update_info_.find(sgids_->item(i));
+		if (nd->extnode	&& it == non_vsrc_update_info_.end()) {
 			assert(ndvi2pd->find(nd, pd));
 			poutsrc_[i] = pd;
 		}
@@ -547,8 +544,8 @@ hoc_execerror("For multiple threads, the target pointer must reference a range v
 		if (sgid2srcindex_->find(sid, k)) {
 			Node* nd = visources_->item(k);
 			NonVSrcUpdateInfo::iterator it;
-			it = non_vsrc_update_info_->find(sid);
-			if (it != non_vsrc_update_info_->end()) {
+			it = non_vsrc_update_info_.find(sid);
+			if (it != non_vsrc_update_info_.end()) {
 				ttd.sv[j] = non_vsrc_update(nd, it->second.first, it->second.second);
 			}else if (nd->extnode) {
 				double* pd;
@@ -808,8 +805,8 @@ void nrnmpi_setup_transfer() {
 		assert(sgid2srcindex_->find(sid, srcindex));
 		Node* nd = visources_->item(long(srcindex));
 		NonVSrcUpdateInfo::iterator it;
-		it = non_vsrc_update_info_->find(sid);
-		if (it != non_vsrc_update_info_->end()) {
+		it = non_vsrc_update_info_.find(sid);
+		if (it != non_vsrc_update_info_.end()) {
 			poutsrc_[i] = non_vsrc_update(nd, it->second.first, it->second.second);
 		}else if (!nd->extnode) {
 			poutsrc_[i] = &(NODEV(nd));
@@ -876,7 +873,7 @@ void nrn_partrans_clear() {
 	if (sid2insrc_) { delete sid2insrc_; sid2insrc_ = 0; }
 	if (poutsrc_) { delete [] poutsrc_ ; poutsrc_ = 0; }
 	if (poutsrc_indices_) { delete [] poutsrc_indices_ ; poutsrc_indices_ = 0; }
-	if (non_vsrc_update_info_) { delete non_vsrc_update_info_; non_vsrc_update_info_ = NULL; }
+	non_vsrc_update_info_.clear();
 	nrn_mk_transfer_thread_data_ = 0;
 }
 
@@ -1032,7 +1029,7 @@ struct BBCoreGapInfo {
 static void sidsort(int* sids, int cnt, int* indices);
 
 size_t nrnbbcore_gap_write(const char* path, int* group_ids) {
-  if (non_vsrc_update_info_) {
+  if (non_vsrc_update_info_.size() > 0) {
     hoc_execerror("Non Voltage transfer sources not supported in CoreNEURON", NULL);
   }
   // if there are no targets, then there are no sources
