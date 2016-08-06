@@ -14,12 +14,8 @@ typedef struct NewtonSpace {
 typedef int (*FUN)(double*, void*, void*, void*);
 
 
-extern void* hoc_Emalloc(unsigned long);
-extern void hoc_malchk();
-#define emalloc(arg) hoc_Emalloc(arg); hoc_malchk()
 extern int freevector();
 extern int freematrix();
-extern double* makevector(int n);
 extern double** makematrix(int n, int m);
 extern int nrn_crout_thread(NewtonSpace* ns, int n, double** a, int* perm);
 extern void nrn_scopmath_solve_thread(int n, double** a,

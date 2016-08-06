@@ -1,5 +1,5 @@
-#include <../../nrnconf.h>
-#include <newton_struct.h>
+#include "coreneuron/mech/cfile/scoplib.h"
+#include "coreneuron/scopmath_core/newton_struct.h"
 /******************************************************************************
  *
  * File: crout.c
@@ -51,7 +51,7 @@ static char RCSid[] =
 /*--------------------------------------------------------------*/
 
 #include <math.h>
-#include "errcodes.h"
+#include "coreneuron/scopmath_core/errcodes.h"
 
 int nrn_crout_thread(NewtonSpace* ns, int n, double** a, int* perm) {
     int i, j, k, r, pivot, irow, save_i=0, krow;

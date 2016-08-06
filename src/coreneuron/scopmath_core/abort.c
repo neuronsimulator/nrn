@@ -1,4 +1,4 @@
-#include <../../nrnconf.h>
+#include "coreneuron/nrnconf.h"
 /******************************************************************************
  *
  * File: abort.c
@@ -35,26 +35,9 @@ static char RCSid[] =
 #include <setjmp.h>
 #include "errcodes.h"
 
-extern void hoc_execerror(const char*, const char*);
-
-int abort_run(code)
-int code;
+int abort_run(int code)
 {
-#ifndef MAC
-    extern int abs();
-#endif
-	extern int _modl_cleanup();
-#if HOC == 0
-    extern jmp_buf ibuf;
-#endif
-    char tmpstr[4];
-
-#if !HOC
-    cls();
-    cursrpos(10, 0, 0);
-#endif
-
-    switch (abs(code))
+    switch ((code >= 0) ? code : -code)
     {
 	case EXCEED_ITERS:
 	    puts("Convergence not achieved in maximum number of iterations");
@@ -103,30 +86,6 @@ int code;
 	default:
 	    puts("Origin of error is unknown");
     }
-#if HOC
-    _modl_cleanup();
     hoc_execerror("scopmath library error", (char*)0);
-#else
-    puts("\nPress <Enter> to abort the run");
-    gets(tmpstr);
-    longjmp(ibuf, 0);
-#endif
     return 0;
 }
-
-/* define some routines needed for shared libraries to work */
-#if HOC
-
-int prterr(const char* s) {
-	hoc_execerror(s, "from prterr");
-	return 0;
-}
-
-
-#if 0
-_modl_set_dt(newdt) double newdt; { printf("ssimplic.c :: _modl_set_dt can't be called\n");
-	exit(1);
-}
-#endif
-
-#endif

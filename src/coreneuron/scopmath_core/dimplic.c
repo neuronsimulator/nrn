@@ -1,4 +1,4 @@
-#include <../../nrnconf.h>
+#include "coreneuron/mech/cfile/scoplib.h"
 /******************************************************************************
  *
  * File: dimplic.c

@@ -1,4 +1,4 @@
-#include <../../nrnconf.h>
+#include "coreneuron/mech/cfile/scoplib.h"
 
 /******************************************************************************
  *
@@ -14,7 +14,7 @@ static char RCSid[] = "sparse.c,v 1.7 1998/03/12 13:17:17 hines Exp";
 #endif
 
 #include <stdlib.h>
-#include "errcodes.h"
+#include "coreneuron/scopmath_core/errcodes.h"
 
 /* Jan 2008 thread safe */
 /* 4/23/93 converted to object so many models can use it */
@@ -64,12 +64,13 @@ static char RCSid[] = "sparse.c,v 1.7 1998/03/12 13:17:17 hines Exp";
 #else
 #define Free(arg)	myfree((char *)arg)
 #endif
+#if 0
 extern void nrn_malloc_lock();
 extern void nrn_malloc_unlock();
-extern void* nrn_pool_create(long count, int itemsize);
-extern void nrn_pool_delete(void* pool);
-extern void nrn_pool_freeall(void* pool);
-extern void* nrn_pool_alloc(void* pool);
+#else
+#define nrn_malloc_lock() /**/
+#define nrn_malloc_unlock() /**/
+#endif
 
 #include <stdio.h>
 #include <math.h>
@@ -88,6 +89,18 @@ typedef struct Elm {
 	struct Elm *c_right;	/*	in solution order (see getelm) */
 } Elm;
 #define ELM0	(Elm *)0
+
+#if 0
+extern void* nrn_pool_create(long count, int itemsize);
+extern void nrn_pool_delete(void* pool);
+extern void nrn_pool_freeall(void* pool);
+extern void* nrn_pool_alloc(void* pool);
+#else
+void* nrn_pool_create(long a, int b) { return NULL; }
+void nrn_pool_delete(void* p) {}
+void nrn_pool_freeall(void* p) {}
+void* nrn_pool_alloc(void* p) { return emalloc(sizeof(Elm)); }
+#endif
 
 typedef struct Item {
 	Elm 		*elm;
@@ -148,7 +161,7 @@ static void freelist(List* list);
 static void linkitem(Item* item, Item* i);
 static void insert(SparseObj* so, Item* item);
 static void delete(Item* item);
-static void *emalloc(unsigned n);
+static void *myemalloc(unsigned n);
 static void myfree(void*);
 static void check_assert();
 static void re_link(SparseObj* so, unsigned i);
@@ -344,10 +357,10 @@ static void initeqn(SparseObj* so, unsigned maxeqn)	/* reallocate space for matr
 		Free(so->rhs);
 	so->rowst = so->diag = (Elm **)0;
 	so->varord = (unsigned *)0;
-	so->rowst = (Elm **)emalloc((maxeqn + 1)*sizeof(Elm *));
-	so->diag = (Elm **)emalloc((maxeqn + 1)*sizeof(Elm *));
-	so->varord = (unsigned *)emalloc((maxeqn + 1)*sizeof(unsigned));
-	so->rhs = (double *)emalloc((maxeqn + 1)*sizeof(double));
+	so->rowst = (Elm **)myemalloc((maxeqn + 1)*sizeof(Elm *));
+	so->diag = (Elm **)myemalloc((maxeqn + 1)*sizeof(Elm *));
+	so->varord = (unsigned *)myemalloc((maxeqn + 1)*sizeof(unsigned));
+	so->rhs = (double *)myemalloc((maxeqn + 1)*sizeof(double));
 	for (i=1 ; i<= maxeqn ; i++)
 	{
 		so->varord[i] = i;
@@ -507,7 +520,7 @@ static void create_coef_list(SparseObj* so, int n, FUN fun, double* p, void* ppv
 	if (so->coef_list) {
 		free(so->coef_list);
 	}
-	so->coef_list = (double **)emalloc(so->ngetcall * sizeof(double *));
+	so->coef_list = (double **)myemalloc(so->ngetcall * sizeof(double *));
 	spar_minorder(so);
 	so->phase = 2;
 	so->ngetcall = 0;
@@ -542,7 +555,7 @@ static void init_minorder(SparseObj* so) {
 		}
 		Free(so->roworder);
 	}
-	so->roworder = (Item **)emalloc((so->neqn+1)*sizeof(Item *));
+	so->roworder = (Item **)myemalloc((so->neqn+1)*sizeof(Item *));
 	so->nroworder = so->neqn;
 	if (so->orderlist) freelist(so->orderlist);
 	so->orderlist = newlist();
@@ -662,7 +675,7 @@ following function calls.
 
 static Item* newitem() {
 	Item *i;
-	i = (Item *)emalloc(sizeof(Item));
+	i = (Item *)myemalloc(sizeof(Item));
 	i->prev = ITEM0;
 	i->next = ITEM0;
 	i->norder = 0;
@@ -715,7 +728,7 @@ static void delete(Item* item) {
 	item->next = ITEM0;
 }
 
-static void *emalloc(unsigned n) { /* check return from malloc */
+static void *myemalloc(unsigned n) { /* check return from malloc */
 	void *p;
 	nrn_malloc_lock();
 	p = malloc(n);
@@ -821,7 +834,7 @@ static SparseObj* create_sparseobj() {
 
 	SparseObj* so;
 
-	so = emalloc(sizeof(SparseObj));
+	so = myemalloc(sizeof(SparseObj));
 	nrn_malloc_lock();
 	so->elmpool = nrn_pool_create(100, sizeof(Elm));
 	nrn_malloc_unlock();

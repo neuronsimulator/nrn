@@ -1,5 +1,5 @@
-#include <../../nrnconf.h>
-#include <newton_struct.h>
+#include "coreneuron/mech/cfile/scoplib.h"
+#include "coreneuron/scopmath_core/newton_struct.h"
 /******************************************************************************
  *
  * File: newton.c
@@ -56,7 +56,11 @@ static char RCSid[] =
 
 #include <stdlib.h>
 #include <math.h>
-#include "errcodes.h"
+#include "coreneuron/scopmath_core/errcodes.h"
+
+static void nrn_buildjacobian_thread(NewtonSpace* ns,
+  int n, int* index, double* x, FUN pfunc,
+  double* value, double** jacobian, void* ppvar, void* thread, void* nt);
 
 int nrn_newton_thread(NewtonSpace* ns, int n, int* index, double* x,
  FUN pfunc, double* value, void* ppvar, void* thread, void* nt) {

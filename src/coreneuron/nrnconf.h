@@ -70,6 +70,9 @@ extern void hoc_execerror(const char*, const char*); /* print and abort */
 extern void hoc_warning(const char*, const char*);
 extern void* nrn_cacheline_alloc(void** memptr, size_t size);
 extern double* makevector(size_t size); /* size in bytes */
+extern double** makematrix(size_t nrow, size_t ncol);
+void freevector(double*);
+void freematrix(double**);
 extern void* emalloc(size_t size);
 extern void* ecalloc(size_t n, size_t size);
 extern void* erealloc(void* ptr, size_t size);

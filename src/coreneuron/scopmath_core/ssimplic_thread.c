@@ -1,9 +1,10 @@
-#include <../../nrnconf.h>
-#include "errcodes.h"
+#include "coreneuron/mech/cfile/scoplib.h"
+#include "coreneuron/scopmath_core/errcodes.h"
+#include "coreneuron/nrnoc/multicore.h"
 #define s_(arg)	p[s[arg]]
 
-extern double _modl_get_dt_thread(void*);
-extern void _modl_set_dt_thread(double, void*);
+extern double _modl_get_dt_thread(NrnThread*);
+extern void _modl_set_dt_thread(double, NrnThread*);
 extern int sparse_thread();
 extern int derivimplicit_thread();
 
@@ -77,4 +78,11 @@ check_state(n, s, p)
 		}
 	}
 	return flag;
+}
+
+void _modl_set_dt_thread(double dt, NrnThread* nt) {
+	nt->_dt = dt;
+}
+double _modl_get_dt_thread(NrnThread* nt) {
+	return nt->_dt;
 }
