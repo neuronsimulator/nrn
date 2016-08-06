@@ -177,15 +177,15 @@ int nrn_crout_thread(NewtonSpace* ns, int n, double** a, int* perm) {
 /*                                                              */
 /*--------------------------------------------------------------*/
 void nrn_scopmath_solve_thread(int n, double** a, double* b,
-  int* perm, double* p, int* y)
-#define y_(arg)  p[y[arg]]
+  int* perm, double* p, int* y, _threadargsproto_)
+#define y_(arg)  _p[y[arg]]
 #define b_(arg)  b[arg]
 {
     int i, j, pivot;
     double sum;
 
     /* Perform forward substitution with pivoting */
- if (y) {
+  if (y) {
     for (i = 0; i < n; i++)
     {
 	pivot = perm[i];
@@ -213,27 +213,27 @@ void nrn_scopmath_solve_thread(int n, double** a, double* b,
   }else{
     for (i = 0; i < n; i++)
     {
-	pivot = perm[i];
-	sum = 0.0;
-	for (j = 0; j < i; j++)
-	    sum += a[pivot][j] * (p[j]);
-	p[i] = (b_(pivot) - sum) / a[pivot][i];
-    }
-
+        pivot = perm[i];
+        sum = 0.0;
+        for (j = 0; j < i; j++)
+            sum += a[pivot][j] * (p[j]);
+        p[i] = (b_(pivot) - sum) / a[pivot][i];
+    } 
+     
     /*
      * Note that the y vector is already in the correct order for back
      * substitution.  Perform back substitution, pivoting the matrix but not
      * the y vector.  There is no need to divide by the diagonal element as
      * this is assumed to be unity.
      */
-
+     
     for (i = n - 1; i >= 0; i--)
     {
-	pivot = perm[i];
-	sum = 0.0;
-	for (j = i + 1; j < n; j++)
-	    sum += a[pivot][j] * (p[j]);
-	p[i] -= sum;
+        pivot = perm[i];
+        sum = 0.0;
+        for (j = i + 1; j < n; j++)
+            sum += a[pivot][j] * (p[j]);
+        p[i] -= sum;
     }
   }
 }

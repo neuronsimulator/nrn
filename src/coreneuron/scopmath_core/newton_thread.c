@@ -57,13 +57,12 @@ static char RCSid[] =
 #include <stdlib.h>
 #include <math.h>
 #include "coreneuron/scopmath_core/errcodes.h"
+#include "coreneuron/mech/mod2c_core_thread.h"
 
-static void nrn_buildjacobian_thread(NewtonSpace* ns,
-  int n, int* index, double* x, FUN pfunc,
-  double* value, double** jacobian, void* ppvar, void* thread, void* nt);
+#define s_(arg) _p[s[arg]*_STRIDE]
 
-int nrn_newton_thread(NewtonSpace* ns, int n, int* index, double* x,
- FUN pfunc, double* value, void* ppvar, void* thread, void* nt) {
+int nrn_newton_thread(NewtonSpace* ns, int n, int* s,
+ FUN pfunc, double* value, _threadargsproto_) {
     int i, count = 0, error, *perm;
     double **jacobian, *delta_x, change = 1.0, max_dev, temp;
 
@@ -85,7 +84,7 @@ int nrn_newton_thread(NewtonSpace* ns, int n, int* index, double* x,
 	     * than MAXCHANGE
 	     */
 
-	    nrn_buildjacobian_thread(ns, n, index, x, pfunc, value, jacobian, ppvar, thread, nt);
+	    nrn_buildjacobian_thread(ns, n, s, pfunc, value, jacobian, _threadargs_);
 	    for (i = 0; i < n; i++)
 		value[i] = - value[i];	/* Required correction to
 				 		 * function values */
@@ -93,27 +92,27 @@ int nrn_newton_thread(NewtonSpace* ns, int n, int* index, double* x,
 	    if ((error = nrn_crout_thread(ns, n, jacobian, perm)) != SUCCESS)
 		break;
 	}
-	nrn_scopmath_solve_thread(n, jacobian, value, perm, delta_x, (int *)0);
+	nrn_scopmath_solve_thread(n, jacobian, value, perm, delta_x, (int *)0, _threadargs_);
 
 	/* Update solution vector and compute norms of delta_x and value */
 
 	change = 0.0;
- if (index) {
+ if (s) {
 	for (i = 0; i < n; i++)
 	{
-	    if (fabs(x[index[i]]) > ZERO && (temp = fabs(delta_x[i] / (x[index[i]]))) > change)
+	    if (fabs(s_(i)) > ZERO && (temp = fabs(delta_x[i] / (s_(i)))) > change)
 		change = temp;
-	    x[index[i]] += delta_x[i];
+	    s_(i) += delta_x[i];
 	}
  }else{
 	for (i = 0; i < n; i++)
 	{
-	    if (fabs(x[i]) > ZERO && (temp = fabs(delta_x[i] / (x[i]))) > change)
+	    if (fabs(s_(i)) > ZERO && (temp = fabs(delta_x[i] / (s_(i)))) > change)
 		change = temp;
-	    x[i] += delta_x[i];
+	    s_(i) += delta_x[i];
 	}
  }
-	(*pfunc) (x, ppvar, thread, nt); /* Evaluate function values with new solution */
+	(*pfunc) (_threadargs_); /* Evaluate function values with new solution */
 	max_dev = 0.0;
 	for (i = 0; i < n; i++)
 	{
@@ -180,8 +179,9 @@ int nrn_newton_thread(NewtonSpace* ns, int n, int* index, double* x,
 #define max(x, y) (fabs(x) > y ? x : y)
 
 static void nrn_buildjacobian_thread(NewtonSpace* ns,
-  int n, int* index, double* x, FUN pfunc,
-  double* value, double** jacobian, void* ppvar, void* thread, void* nt) {
+  int n, int* x, FUN pfunc, double* value,
+  double** jacobian, _threadargsproto_) {
+#define x_(arg) _p[(arg)*_STRIDE]
     int i, j;
     double increment, *high_value, *low_value;
 
@@ -190,16 +190,15 @@ static void nrn_buildjacobian_thread(NewtonSpace* ns,
 
     /* Compute partial derivatives by central finite differences */
 
- if (index) {
     for (j = 0; j < n; j++)
     {
-	increment = max(fabs(0.02 * (x[index[j]])), STEP);
-	x[index[j]] += increment;
-	(*pfunc) (x, ppvar, thread, nt);
+	increment = max(fabs(0.02 * (x_(j))), STEP);
+	x_(j) += increment;
+	(*pfunc) (_threadargs_);
 	for (i = 0; i < n; i++)
 	    high_value[i] = value[i];
-	x[index[j]] -= 2.0 * increment;
-	(*pfunc) (x, ppvar, thread, nt);
+	x_(j) -= 2.0 * increment;
+	(*pfunc) (_threadargs_);
 	for (i = 0; i < n; i++)
 	{
 	    low_value[i] = value[i];
@@ -211,34 +210,9 @@ static void nrn_buildjacobian_thread(NewtonSpace* ns,
 
 	/* Restore original variable and function values. */
 
-	x[index[j]] += increment;
-	(*pfunc) (x, ppvar, thread, nt);
+	x_(j) += increment;
+	(*pfunc) (_threadargs_);
     }
- }else{
-    for (j = 0; j < n; j++)
-    {
-	increment = max(fabs(0.02 * (x[j])), STEP);
-	x[j] += increment;
-	(*pfunc) (x, ppvar, thread, nt);
-	for (i = 0; i < n; i++)
-	    high_value[i] = value[i];
-	x[j] -= 2.0 * increment;
-	(*pfunc) (x, ppvar, thread, nt);
-	for (i = 0; i < n; i++)
-	{
-	    low_value[i] = value[i];
-
-	    /* Insert partials into jth column of Jacobian matrix */
-
-	    jacobian[i][j] = (high_value[i] - low_value[i]) / (2.0 * increment);
-	}
-
-	/* Restore original variable and function values. */
-
-	x[j] += increment;
-	(*pfunc) (x, ppvar, thread, nt);
-    }
- }
 }
 
 NewtonSpace* nrn_cons_newtonspace(int n) {

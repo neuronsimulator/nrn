@@ -8,27 +8,11 @@
  *
  ******************************************************************************/
 
-#ifndef LINT
-static char RCSid[] =
-    "dimplic.c,v 1.1.1.1 1994/10/12 17:22:20 hines Exp" ;
-#endif
+#include "coreneuron/mech/mod2c_core_thread.h"
 
-int derivimplicit(_ninits, n, slist, dlist, p, pt, dt, fun, ptemp)
-int n, _ninits;
-double *p, *pt, dt, **ptemp;
-int *slist, *dlist;
-int (*fun)();
-{
-    int i;
-
-    (*fun)();
-    return 0;
-}
-
-int derivimplicit_thread(int n, int* slist, int* dlist, double* p,
-  int(*fun)(double*, void*, void*, void*),
-  void* ppvar, void* thread, void* nt) {
-    (*fun)(p, ppvar, thread, nt);
+int derivimplicit_thread(int n, int* slist, int* dlist,
+  int(*fun)(_threadargsproto_), _threadargsproto_) {
+    (*fun)(_threadargs_);
     return 0;
 }
 
