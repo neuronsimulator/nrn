@@ -72,9 +72,8 @@ void freevector(double* p) {
 double** makematrix(size_t nrows, size_t ncols) {
     size_t i;
     double **matrix;
-    
-    matrix = (double **) emalloc((unsigned) (nrows * sizeof(double *)));
-    *matrix = (double *) emalloc((unsigned) (nrows * ncols * sizeof(double)));
+    matrix = (double **) emalloc(nrows * sizeof(double *));
+    *matrix = (double *) emalloc(nrows * ncols * sizeof(double));
     for (i = 1; i < nrows; i++)
         matrix[i] = matrix[i - 1] + ncols;
     return (matrix);

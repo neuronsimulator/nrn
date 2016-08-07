@@ -218,12 +218,12 @@ static void nrn_buildjacobian_thread(NewtonSpace* ns,
 NewtonSpace* nrn_cons_newtonspace(int n) {
     NewtonSpace* ns = (NewtonSpace*)emalloc(sizeof(NewtonSpace));
     ns->n = n;
-    ns->delta_x = makevector(n);
+    ns->delta_x = makevector(n*sizeof(double));
     ns->jacobian = makematrix(n, n);
     ns->perm = (int *) emalloc((unsigned) (n * sizeof(int)));
-    ns->high_value = makevector(n);
-    ns->low_value = makevector(n);
-    ns->rowmax = makevector(n);
+    ns->high_value = makevector(n*sizeof(double));
+    ns->low_value = makevector(n*sizeof(double));
+    ns->rowmax = makevector(n*sizeof(double));
     return ns;
 }
 
