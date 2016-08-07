@@ -74,7 +74,6 @@ int nrn_newton_thread(NewtonSpace* ns, int n, int* s,
 	jacobian = ns->jacobian;
 	perm = ns->perm;
     /* Iteration loop */
-
     while (count++ < MAXITERS)
     {
 	if (change > MAXCHANGE)
@@ -92,6 +91,7 @@ int nrn_newton_thread(NewtonSpace* ns, int n, int* s,
 	    if ((error = nrn_crout_thread(ns, n, jacobian, perm)) != SUCCESS)
 		break;
 	}
+
 	nrn_scopmath_solve_thread(n, jacobian, value, perm, delta_x, (int *)0, _threadargs_);
 
 	/* Update solution vector and compute norms of delta_x and value */
@@ -179,7 +179,7 @@ int nrn_newton_thread(NewtonSpace* ns, int n, int* s,
 #define max(x, y) (fabs(x) > y ? x : y)
 
 static void nrn_buildjacobian_thread(NewtonSpace* ns,
-  int n, int* x, FUN pfunc, double* value,
+  int n, int* index, FUN pfunc, double* value,
   double** jacobian, _threadargsproto_) {
 #define x_(arg) _p[(arg)*_STRIDE]
     int i, j;
@@ -192,12 +192,12 @@ static void nrn_buildjacobian_thread(NewtonSpace* ns,
 
     for (j = 0; j < n; j++)
     {
-	increment = max(fabs(0.02 * (x_(j))), STEP);
-	x_(j) += increment;
+	increment = max(fabs(0.02 * (x_(index[j]))), STEP);
+	x_(index[j]) += increment;
 	(*pfunc) (_threadargs_);
 	for (i = 0; i < n; i++)
 	    high_value[i] = value[i];
-	x_(j) -= 2.0 * increment;
+	x_(index[j]) -= 2.0 * increment;
 	(*pfunc) (_threadargs_);
 	for (i = 0; i < n; i++)
 	{
@@ -210,7 +210,7 @@ static void nrn_buildjacobian_thread(NewtonSpace* ns,
 
 	/* Restore original variable and function values. */
 
-	x_(j) += increment;
+	x_(index[j]) += increment;
 	(*pfunc) (_threadargs_);
     }
 }
