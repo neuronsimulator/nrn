@@ -770,9 +770,9 @@ void nrn_cleanup() {
       Memb_list* ml = tml->ml;
 
       ml->data = NULL; // this was pointing into memory owned by nt
-      delete[] ml->pdata;
+      free(ml->pdata);
       ml->pdata = NULL;
-      delete[] ml->nodeindices;
+      free(ml->nodeindices);
       ml->nodeindices = NULL;
       if (ml->_permute) {
         delete [] ml->_permute;
@@ -816,7 +816,7 @@ void nrn_cleanup() {
     nt->_actual_a = NULL;
     nt->_actual_b = NULL;
 
-    delete[] nt->_v_parent_index;
+    free(nt->_v_parent_index);
     nt->_v_parent_index = NULL;
 
     free(nt->_data);
