@@ -41,6 +41,7 @@ extern const char* nrn_version(int);
 extern void nrn_exit(int);
 extern void deliver_net_events(NrnThread*);
 extern void nrn_deliver_events(NrnThread*);
+extern void nrn_initial_net_send_buffering(NrnThread*);
 extern void init_net_events(void);
 extern void nrn_play_init(void);
 extern void fixed_play_continuous(NrnThread*);

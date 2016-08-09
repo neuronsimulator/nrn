@@ -105,6 +105,27 @@ void net_sem_from_gpu(int sendtype, int i_vdata, int weight_index_, int ith, int
   }
 }
 
+void nrn_initial_net_send_buffering(NrnThread* nt) {
+  for (NrnThreadMembList* tml = nt->tml; tml ; tml = tml->next) {
+    Memb_list* ml = tml->ml;
+    NetSendBuffer_t* nsb = ml ? ml->_net_send_buffer : NULL;
+    if (nsb) {
+      for (int i=0; i < nsb->_cnt; ++i) {
+        nrn_assert(nsb->_sendtype[i] == 0); // net_send should be only ones
+        void** v = &(nt->_vdata[nsb->_vdata_index[i]]);
+        int weight_index_ = nsb->_weight_index[i];
+        Point_process* pnt = (Point_process*)(nt->_vdata[nsb->_pnt_index[i]]);
+        double td = nsb->_nsb_t[i];
+        double flag = nsb->_nsb_flag[i];
+        net_send(v, weight_index_, pnt, td, flag);
+        // should we assert it cannot happen or take care of the situtation where
+        // nsb has been reallocated or nsb->_cnt is increased.
+      }
+      nsb->_cnt = 0;
+    }
+  }
+}
+
 void net_send(void** v, int weight_index_, Point_process* pnt, double td, double flag) {
 	NrnThread* nt = PP2NT(pnt);
 	NetCvodeThreadData& p = net_cvode_instance->p[nt->id];
