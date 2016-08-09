@@ -11,9 +11,7 @@
 #include "coreneuron/mech/mod2c_core_thread.h"
 
 int derivimplicit_thread(int n, int* slist, int* dlist,
-  int(*fun)(_threadargsproto_), _threadargsproto_) {
-    (*fun)(_threadargs_);
-    return 0;
+                         int (*fun)(_threadargsproto_), _threadargsproto_) {
+  (*fun)(_threadargs_);
+  return 0;
 }
-
-
