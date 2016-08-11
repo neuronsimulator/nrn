@@ -218,7 +218,7 @@ extern PreSyn* nrn_gid2presyn(int gid);
 extern int nrn_gid_exists(int gid);
 
 #if NRNMPI
-extern void nrn_spike_exchange();
+extern void nrn_spike_exchange(NrnThread*);
 extern void nrnmpi_barrier();
 extern void nrnmpi_int_alltoallv(int*, int*, int*, int*, int*, int*);
 extern void nrnmpi_dbl_alltoallv(double*, int*, int*, double*, int*, int*);
@@ -227,7 +227,7 @@ extern void nrnmpi_int_allgather(int* s, int* r, int n);
 extern void nrnmpi_int_allgatherv(int* s, int* r, int* n, int* dspl);
 extern void nrnmpi_dbl_allgatherv(double* s, double* r, int* n, int* dspl);
 #else
-static void nrn_spike_exchange() {}
+static void nrn_spike_exchange(NrnThread*) {}
 static void nrnmpi_barrier() {}
 static void nrnmpi_int_alltoallv(int* s, int* scnt, int* sdispl, int* r, int* rcnt, int* rdispl) {
   for (int i=0; i < scnt[0]; ++i) {
@@ -776,7 +776,7 @@ void bbss_restore_done(void* bbss) {
 	npe->ithread_ = 0;
 	npe->savestate_restore(t, net_cvode_instance);
 	delete npe;
-	nrn_spike_exchange();
+	nrn_spike_exchange(nrn_threads);
 	// The queue may now contain spikes which have already been
 	// delivered and so those must be removed if delivery time < t.
 	// Actually, the Presyn spikes may end up as NetCon spikes some
@@ -1367,7 +1367,7 @@ void BBSaveState::finish() {
 		base2spgid = 0;
 	}
 	if (f->type() == BBSS_IO::IN) {
-		nrn_spike_exchange();
+		nrn_spike_exchange(nrn_threads);
 	}
 }
 
