@@ -16,7 +16,8 @@ typedef struct NewtonSpace {
 
 typedef int (*FUN)(_threadargsproto_);
 
-extern int nrn_crout_thread(NewtonSpace* ns, int n, double** a, int* perm);
+extern int nrn_crout_thread(NewtonSpace* ns, int n, double** a, int* perm,
+                            _threadargsproto_);
 
 extern void nrn_scopmath_solve_thread(int n, double** a, double* value,
                                       int* perm, double* delta_x, int* s,
@@ -29,7 +30,7 @@ static void nrn_buildjacobian_thread(NewtonSpace* ns, int n, int* s, FUN pfunc,
                                      double* value, double** jacobian,
                                      _threadargsproto_);
 
-extern NewtonSpace* nrn_cons_newtonspace(int n);
+extern NewtonSpace* nrn_cons_newtonspace(int n, int n_instance);
 extern void nrn_destroy_newtonspace(NewtonSpace* ns);
 
 #endif

@@ -52,7 +52,11 @@ static char RCSid[] = "crout.c,v 1.2 1999/01/04 12:46:43 hines Exp";
 #include <math.h>
 #include "coreneuron/scopmath_core/errcodes.h"
 
-int nrn_crout_thread(NewtonSpace* ns, int n, double** a, int* perm) {
+#define ix(arg) ((arg)*_STRIDE)
+
+/* having a differnt permutation per instance may not be a good idea */
+int nrn_crout_thread(NewtonSpace* ns, int n, double** a, int* perm,
+                     _threadargsproto_) {
   int i, j, k, r, pivot, irow, save_i = 0, krow;
   double sum, *rowmax, equil_1, equil_2;
 
@@ -60,11 +64,11 @@ int nrn_crout_thread(NewtonSpace* ns, int n, double** a, int* perm) {
 
   rowmax = ns->rowmax;
   for (i = 0; i < n; i++) {
-    perm[i] = i;
+    perm[ix(i)] = i;
     k = 0;
     for (j = 1; j < n; j++)
-      if (fabs(a[i][j]) > fabs(a[i][k])) k = j;
-    rowmax[i] = a[i][k];
+      if (fabs(a[ix(i)][j]) > fabs(a[ix(i)][k])) k = j;
+    rowmax[ix(i)] = a[ix(i)][k];
   }
 
   /* Loop over rows and columns r */
@@ -77,21 +81,21 @@ int nrn_crout_thread(NewtonSpace* ns, int n, double** a, int* perm) {
 
     for (i = r; i < n; i++) {
       sum = 0.0;
-      irow = perm[i];
+      irow = perm[ix(i)];
       for (k = 0; k < r; k++) {
-        krow = perm[k];
-        sum += a[irow][k] * a[krow][r];
+        krow = perm[ix(k)];
+        sum += a[ix(irow)][k] * a[ix(krow)][r];
       }
-      a[irow][r] -= sum;
+      a[ix(irow)][r] -= sum;
     }
 
     /* Find row containing the pivot in the rth column */
 
-    pivot = perm[r];
-    equil_1 = fabs(a[pivot][r] / rowmax[pivot]);
+    pivot = perm[ix(r)];
+    equil_1 = fabs(a[ix(pivot)][r] / rowmax[ix(pivot)]);
     for (i = r + 1; i < n; i++) {
-      irow = perm[i];
-      equil_2 = fabs(a[irow][r] / rowmax[irow]);
+      irow = perm[ix(i)];
+      equil_2 = fabs(a[ix(irow)][r] / rowmax[ix(irow)]);
       if (equil_2 > equil_1) {
         /* make irow the new pivot row */
 
@@ -103,14 +107,14 @@ int nrn_crout_thread(NewtonSpace* ns, int n, double** a, int* perm) {
 
     /* Interchange entries in permutation vector if necessary */
 
-    if (pivot != perm[r]) {
-      perm[save_i] = perm[r];
-      perm[r] = pivot;
+    if (pivot != perm[ix(r)]) {
+      perm[ix(save_i)] = perm[ix(r)];
+      perm[ix(r)] = pivot;
     }
 
     /* Check that pivot element is not too small */
 
-    if (fabs(a[pivot][r]) < ROUNDOFF) return (SINGULAR);
+    if (fabs(a[ix(pivot)][r]) < ROUNDOFF) return (SINGULAR);
 
     /*
      * Operate on row in rth position.  This produces the upper
@@ -121,10 +125,10 @@ int nrn_crout_thread(NewtonSpace* ns, int n, double** a, int* perm) {
     for (j = r + 1; j < n; j++) {
       sum = 0.0;
       for (k = 0; k < r; k++) {
-        krow = perm[k];
-        sum += a[pivot][k] * a[krow][j];
+        krow = perm[ix(k)];
+        sum += a[ix(pivot)][k] * a[ix(krow)][j];
       }
-      a[pivot][j] = (a[pivot][j] - sum) / a[pivot][r];
+      a[ix(pivot)][j] = (a[ix(pivot)][j] - sum) / a[ix(pivot)][r];
     }
   }
   return (SUCCESS);
@@ -164,7 +168,7 @@ int nrn_crout_thread(NewtonSpace* ns, int n, double** a, int* perm) {
 /*--------------------------------------------------------------*/
 void nrn_scopmath_solve_thread(int n, double** a, double* b, int* perm,
                                double* p, int* y, _threadargsproto_)
-#define y_(arg) _p[y[arg]]
+#define y_(arg) _p[y[arg] * _STRIDE]
 #define b_(arg) b[arg]
 {
   int i, j, pivot;
@@ -173,7 +177,7 @@ void nrn_scopmath_solve_thread(int n, double** a, double* b, int* perm,
   /* Perform forward substitution with pivoting */
   if (y) {
     for (i = 0; i < n; i++) {
-      pivot = perm[i];
+      pivot = ix(perm[ix(i)]);
       sum = 0.0;
       for (j = 0; j < i; j++) sum += a[pivot][j] * (y_(j));
       y_(i) = (b_(pivot) - sum) / a[pivot][i];
@@ -187,17 +191,17 @@ void nrn_scopmath_solve_thread(int n, double** a, double* b, int* perm,
      */
 
     for (i = n - 1; i >= 0; i--) {
-      pivot = perm[i];
+      pivot = ix(perm[ix(i)]);
       sum = 0.0;
       for (j = i + 1; j < n; j++) sum += a[pivot][j] * (y_(j));
       y_(i) -= sum;
     }
   } else {
     for (i = 0; i < n; i++) {
-      pivot = perm[i];
+      pivot = ix(perm[ix(i)]);
       sum = 0.0;
-      for (j = 0; j < i; j++) sum += a[pivot][j] * (p[j]);
-      p[i] = (b_(pivot) - sum) / a[pivot][i];
+      for (j = 0; j < i; j++) sum += a[pivot][j] * (p[ix(j)]);
+      p[ix(i)] = (b_(pivot) - sum) / a[pivot][i];
     }
 
     /*
@@ -208,10 +212,10 @@ void nrn_scopmath_solve_thread(int n, double** a, double* b, int* perm,
      */
 
     for (i = n - 1; i >= 0; i--) {
-      pivot = perm[i];
+      pivot = ix(perm[ix(i)]);
       sum = 0.0;
-      for (j = i + 1; j < n; j++) sum += a[pivot][j] * (p[j]);
-      p[i] -= sum;
+      for (j = i + 1; j < n; j++) sum += a[pivot][j] * (p[ix(j)]);
+      p[ix(i)] -= sum;
     }
   }
 }

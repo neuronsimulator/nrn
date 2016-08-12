@@ -58,6 +58,7 @@ static char RCSid[] = "newton.c,v 1.3 1999/01/04 12:46:48 hines Exp";
 #include "coreneuron/mech/mod2c_core_thread.h"
 #include "coreneuron/scopmath_core/errcodes.h"
 
+#define ix(arg) ((arg)*_STRIDE)
 #define s_(arg) _p[s[arg] * _STRIDE]
 
 int nrn_newton_thread(NewtonSpace* ns, int n, int* s, FUN pfunc, double* value,
@@ -82,10 +83,12 @@ int nrn_newton_thread(NewtonSpace* ns, int n, int* s, FUN pfunc, double* value,
 
       nrn_buildjacobian_thread(ns, n, s, pfunc, value, jacobian, _threadargs_);
       for (i = 0; i < n; i++)
-        value[i] = -value[i]; /* Required correction to
+        value[ix(i)] = -value[ix(i)]; /* Required correction to
                                        * function values */
 
-      if ((error = nrn_crout_thread(ns, n, jacobian, perm)) != SUCCESS) break;
+      if ((error = nrn_crout_thread(ns, n, jacobian, perm, _threadargs_)) !=
+          SUCCESS)
+        break;
     }
 
     nrn_scopmath_solve_thread(n, jacobian, value, perm, delta_x, (int*)0,
@@ -96,23 +99,25 @@ int nrn_newton_thread(NewtonSpace* ns, int n, int* s, FUN pfunc, double* value,
     change = 0.0;
     if (s) {
       for (i = 0; i < n; i++) {
-        if (fabs(s_(i)) > ZERO && (temp = fabs(delta_x[i] / (s_(i)))) > change)
+        if (fabs(s_(i)) > ZERO &&
+            (temp = fabs(delta_x[ix(i)] / (s_(i)))) > change)
           change = temp;
-        s_(i) += delta_x[i];
+        s_(i) += delta_x[ix(i)];
       }
     } else {
       for (i = 0; i < n; i++) {
-        if (fabs(s_(i)) > ZERO && (temp = fabs(delta_x[i] / (s_(i)))) > change)
+        if (fabs(s_(i)) > ZERO &&
+            (temp = fabs(delta_x[ix(i)] / (s_(i)))) > change)
           change = temp;
-        s_(i) += delta_x[i];
+        s_(i) += delta_x[ix(i)];
       }
     }
     (*pfunc)(_threadargs_); /* Evaluate function values with new solution */
     max_dev = 0.0;
     for (i = 0; i < n; i++) {
-      value[i] = -value[i]; /* Required correction to function
+      value[ix(i)] = -value[ix(i)]; /* Required correction to function
                              * values */
-      if ((temp = fabs(value[i])) > max_dev) max_dev = temp;
+      if ((temp = fabs(value[ix(i)])) > max_dev) max_dev = temp;
     }
 
     /* Check for convergence or maximum iterations */
@@ -185,15 +190,16 @@ static void nrn_buildjacobian_thread(NewtonSpace* ns, int n, int* index,
     increment = max(fabs(0.02 * (x_(index[j]))), STEP);
     x_(index[j]) += increment;
     (*pfunc)(_threadargs_);
-    for (i = 0; i < n; i++) high_value[i] = value[i];
+    for (i = 0; i < n; i++) high_value[ix(i)] = value[ix(i)];
     x_(index[j]) -= 2.0 * increment;
     (*pfunc)(_threadargs_);
     for (i = 0; i < n; i++) {
-      low_value[i] = value[i];
+      low_value[ix(i)] = value[ix(i)];
 
       /* Insert partials into jth column of Jacobian matrix */
 
-      jacobian[i][j] = (high_value[i] - low_value[i]) / (2.0 * increment);
+      jacobian[ix(i)][j] =
+          (high_value[ix(i)] - low_value[ix(i)]) / (2.0 * increment);
     }
 
     /* Restore original variable and function values. */
@@ -203,15 +209,15 @@ static void nrn_buildjacobian_thread(NewtonSpace* ns, int n, int* index,
   }
 }
 
-NewtonSpace* nrn_cons_newtonspace(int n) {
+NewtonSpace* nrn_cons_newtonspace(int n, int n_instance) {
   NewtonSpace* ns = (NewtonSpace*)emalloc(sizeof(NewtonSpace));
   ns->n = n;
-  ns->delta_x = makevector(n * sizeof(double));
-  ns->jacobian = makematrix(n, n);
-  ns->perm = (int*)emalloc((unsigned)(n * sizeof(int)));
-  ns->high_value = makevector(n * sizeof(double));
-  ns->low_value = makevector(n * sizeof(double));
-  ns->rowmax = makevector(n * sizeof(double));
+  ns->delta_x = makevector(n * n_instance * sizeof(double));
+  ns->jacobian = makematrix(n * n_instance, n);
+  ns->perm = (int*)emalloc((unsigned)(n * n_instance * sizeof(int)));
+  ns->high_value = makevector(n * n_instance * sizeof(double));
+  ns->low_value = makevector(n * n_instance * sizeof(double));
+  ns->rowmax = makevector(n * n_instance * sizeof(double));
   return ns;
 }
 
