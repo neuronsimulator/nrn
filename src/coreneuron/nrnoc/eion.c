@@ -188,9 +188,10 @@ double nrn_nernst(double ci, double co, double z, double celsius) {
 void nrn_wrote_conc(int type, double* p1, int p2, int it, double **gimap, double celsius, int _cntml_padded) {
 #ifndef _OPENACC
     static int flag = 1;
-    if(flag) {
+    extern int nrnmpi_myid;
+    if(flag && nrnmpi_myid==0) {
         /** need to check this as this kernel was failing */
-        printf("\n WARNING/ERROR: nrn_nrn_wrote_conc not supported on GPU? Verigy!\n");
+        printf("\n WARNING: nrn_nrn_wrote_conc support on GPU need to validate!\n");
         flag = 0;
     }
 #endif

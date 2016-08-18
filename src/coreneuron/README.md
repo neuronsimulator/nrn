@@ -127,6 +127,20 @@ In order to see the command line options, you can use:
 Currently CoreNEURON only outputs spike data. When running the simulation, each MPI rank writes spike information
 into a file `out.#mpi_rank`. These files should be combined and sorted to compare with NEURON spike output.
 
+# Running tests
+
+Once you compile CoreNEURON, unit tests and ring test will be compile by if Boost is available.
+If you pass the path for Neurodamus channels, 10 cell tests will also be compile. You can run tests using
+
+```bash
+make test
+```
+
+If you have different mpi launcher, you can specify it during cmake configuration as:
+```bash
+cmake .. -DTEST_MPI_EXEC_BIN="mpirun" -DTEST_EXEC_PREFIX="mpirun;-n;2" -DTEST_EXEC_PREFIX="mpirun;-n;2" -DAUTO_TEST_WITH_SLURM=OFF -DAUTO_TEST_WITH_MPIEXEC=OFF
+```
+
 ## License
 * See LICENSE.txt
 * See [NEURON](https://www.neuron.yale.edu/neuron/)

@@ -115,7 +115,8 @@ endif()
 
 option (ENABLE_SELECTIVE_GPU_PROFILING "Enable GPU profiling only for Solver" ON)
 
-option (ENABLE_OPENACC "Enable use of OpenACC" ON)
+option (ENABLE_OPENACC "Enable use of OpenACC" OFF)
+
 if(ENABLE_OPENACC)
     if(${CMAKE_C_COMPILER_ID} STREQUAL "PGI")
         add_definitions( -DPG_ACC_BUGS)
