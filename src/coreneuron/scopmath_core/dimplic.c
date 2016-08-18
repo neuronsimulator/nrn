@@ -11,7 +11,15 @@
 #include "coreneuron/mech/mod2c_core_thread.h"
 
 int derivimplicit_thread(int n, int* slist, int* dlist,
-                         int (*fun)(_threadargsproto_), _threadargsproto_) {
-  (*fun)(_threadargs_);
+                         DIFUN fun, _threadargsproto_) {
+  difun(fun);
+  return 0;
+}
+
+int nrn_derivimplic_steer(int fun, _threadargsproto_) {
+  return 0;
+}
+
+int nrn_kinetic_steer(int fun, SparseObj* so, double* rhs, _threadargsproto_) {
   return 0;
 }

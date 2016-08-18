@@ -3,17 +3,11 @@
 #include "coreneuron/scopmath_core/errcodes.h"
 #define s_(arg) _p[s[arg] * _STRIDE]
 
-extern double _modl_get_dt_thread(NrnThread*);
-extern void _modl_set_dt_thread(double, NrnThread*);
-typedef int (*FUN)(double*, void*, _threadargsproto_);
-extern int sparse_thread(void**, int, int*, int*, double*, double, FUN, int,
-                         _threadargsproto_);
-extern int derivimplicit_thread(int, int*, int*, FUN, _threadargsproto_);
-
+#pragma acc routine seq
 static int check_state(int, int*, _threadargsproto_);
 
-int _ss_sparse_thread(void** v, int n, int* s, int* d, double* t, double dt,
-                      FUN fun, int linflag, _threadargsproto_) {
+int _ss_sparse_thread(SparseObj* v, int n, int* s, int* d, double* t, double dt,
+                     SPFUN fun, int linflag, _threadargsproto_) {
   int err, i;
   double ss_dt;
 
@@ -24,18 +18,19 @@ int _ss_sparse_thread(void** v, int n, int* s, int* d, double* t, double dt,
     err = sparse_thread(v, n, s, d, t, ss_dt, fun, 0, _threadargs_);
   } else {
 #define NIT 7
-    for (i = 0; i < NIT; i++) {
+    i = NIT;
+    err = 0;
+    while (i) {
       err = sparse_thread(v, n, s, d, t, ss_dt, fun, 1, _threadargs_);
-      if (err) {
-        break; /* perhaps we should re-start */
+      if (!err) {
+        if (check_state(n, s, _threadargs_)) {
+          err = sparse_thread(v, n, s, d, t, ss_dt, fun, 0, _threadargs_);
+        }
       }
-      if (check_state(n, s, _threadargs_)) {
-        err = sparse_thread(v, n, s, d, t, ss_dt, fun, 0, _threadargs_);
-        break;
+      --i;
+      if (!err) {
+        i = 0;
       }
-    }
-    if (i >= NIT) {
-      err = 1;
     }
   }
 
@@ -43,7 +38,7 @@ int _ss_sparse_thread(void** v, int n, int* s, int* d, double* t, double dt,
   return err;
 }
 
-int _ss_derivimplicit_thread(int n, int* slist, int* dlist, FUN fun,
+int _ss_derivimplicit_thread(int n, int* slist, int* dlist, DIFUN fun,
                              _threadargsproto_) {
   int err, i;
   double dtsav;

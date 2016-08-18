@@ -84,63 +84,6 @@ extern void nrn_malloc_unlock();
 #include <stdio.h>
 #include <stdlib.h>
 
-typedef int (*FUN)(void*, double*, _threadargsproto_);
-
-typedef struct Elm {
-  unsigned row;        /* Row location */
-  unsigned col;        /* Column location */
-  double* value;       /* The value SOA  _cntml_padded of them*/
-  struct Elm* r_up;    /* Link to element in same column */
-  struct Elm* r_down;  /* 	in solution order */
-  struct Elm* c_left;  /* Link to left element in same row */
-  struct Elm* c_right; /*	in solution order (see getelm) */
-} Elm;
-#define ELM0 (Elm*)0
-
-#if 0
-extern void* nrn_pool_create(long count, int itemsize);
-extern void nrn_pool_delete(void* pool);
-extern void nrn_pool_freeall(void* pool);
-extern void* nrn_pool_alloc(void* pool);
-#else
-void* nrn_pool_create(long a, int b) { return NULL; }
-void nrn_pool_delete(void* p) {}
-void nrn_pool_freeall(void* p) {}
-void* nrn_pool_alloc(void* p) { return emalloc(sizeof(Elm)); }
-#endif
-
-typedef struct Item {
-  Elm* elm;
-  unsigned norder; /* order of a row */
-  struct Item* next;
-  struct Item* prev;
-} Item;
-#define ITEM0 (Item*)0
-
-typedef Item List; /* list of mixed items */
-
-typedef struct SparseObj { /* all the state information */
-  Elm** rowst;             /* link to first element in row (solution order)*/
-  Elm** diag;              /* link to pivot element in row (solution order)*/
-  void* elmpool;           /* no interthread cache line sharing for elements */
-  unsigned neqn;           /* number of equations */
-  unsigned _cntml_padded;  /* number of instances */
-  unsigned* varord;        /* row and column order for pivots */
-  double* rhs;             /* initially- right hand side	finally - answer */
-  FUN oldfun;
-  unsigned* ngetcall; /* per instance counter for number of calls to _getelm */
-  int phase;          /* 0-solution phase; 1-count phase; 2-build list phase */
-  int numop;
-  double** coef_list; /* pointer to (first instance) value in _getelm order */
-  /* don't really need the rest */
-  int nroworder;   /* just for freeing */
-  Item** roworder; /* roworder[i] is pointer to order item for row i.
-                           Does not have to be in orderlist */
-  List* orderlist; /* list of rows sorted by norder
-                           that haven't been used */
-  int do_flag;
-} SparseObj;
-
 /* note: solution order refers to the following
         diag[varord[row]]->row = row = diag[varord[row]]->col
         rowst[varord[row]]->row = row
@@ -156,8 +99,8 @@ static void initeqn(SparseObj* so, unsigned maxeqn);
 static void free_elm(SparseObj* so);
 static Elm* getelm(SparseObj* so, unsigned row, unsigned col, Elm* new);
 double* _nrn_thread_getelm(SparseObj* so, int row, int col, int _iml);
-void* nrn_cons_sparseobj(FUN, int, Memb_list*, _threadargsproto_);
-static void create_coef_list(SparseObj* so, int n, FUN fun, _threadargsproto_);
+void* nrn_cons_sparseobj(SPFUN, int, Memb_list*, _threadargsproto_);
+static void create_coef_list(SparseObj* so, int n, SPFUN fun, _threadargsproto_);
 static void init_coef_list(SparseObj* so);
 static void init_minorder(SparseObj* so);
 static void increase_order(SparseObj* so, unsigned row);
@@ -177,12 +120,14 @@ static void re_link(SparseObj* so, unsigned i);
 static SparseObj* create_sparseobj();
 void _nrn_destroy_sparseobj_thread(SparseObj* so);
 
+static Elm* nrn_pool_alloc(arg) {return emalloc(sizeof(Elm));}
+
 /* sparse matrix dynamic allocation:
 create_coef_list makes a list for fast setup, does minimum ordering and
 ensures all elements needed are present */
 /* this could easily be made recursive but it isn't right now */
 
-void* nrn_cons_sparseobj(FUN fun, int n, Memb_list* ml, _threadargsproto_) {
+void* nrn_cons_sparseobj(SPFUN fun, int n, Memb_list* ml, _threadargsproto_) {
   SparseObj* so;
   // fill in the unset _threadargsproto_ assuming _iml = 0;
   _iml = 0; /* from _threadargsproto_ */
@@ -196,24 +141,21 @@ void* nrn_cons_sparseobj(FUN fun, int n, Memb_list* ml, _threadargsproto_) {
   return so;
 }
 
-int sparse_thread(void** v, int n, int* s, int* d, double* t, double dt,
-                  FUN fun, int linflag, _threadargsproto_) {
+int sparse_thread(SparseObj* so, int n, int* s, int* d, double* t, double dt,
+                  SPFUN fun, int linflag, _threadargsproto_) {
 #define ix(arg) ((arg)*_STRIDE)
 #define s_(arg) _p[ix(s[arg])]
 #define d_(arg) _p[ix(d[arg])]
 
   int i, j, ierr;
   double err;
-  SparseObj* so;
-
-  so = (SparseObj*)(*v);
 
   for (i = 0; i < n; i++) { /*save old state*/
     d_(i) = s_(i);
   }
   for (err = 1, j = 0; err > CONVERGE; j++) {
     init_coef_list(so);
-    (*fun)(so, so->rhs, _threadargs_);
+    spfun(fun, so, so->rhs);
     if ((ierr = matsol(so, _iml))) {
       return ierr;
     }
@@ -232,7 +174,7 @@ int sparse_thread(void** v, int n, int* s, int* d, double* t, double dt,
     if (linflag) break;
   }
   init_coef_list(so);
-  (*fun)(so, so->rhs, _threadargs_);
+  spfun(fun, so, so->rhs);
   for (i = 0; i < n; i++) { /*restore Dstate at t+dt*/
     d_(i) = (s_(i) - d_(i)) / dt;
   }
@@ -240,7 +182,7 @@ int sparse_thread(void** v, int n, int* s, int* d, double* t, double dt,
 }
 
 /* for solving ax=b */
-int _cvode_sparse_thread(void** v, int n, int* x, FUN fun, _threadargsproto_)
+int _cvode_sparse_thread(void** v, int n, int* x, SPFUN fun, _threadargsproto_)
 #define x_(arg) _p[x[arg] * _STRIDE]
 {
   int i, j, ierr;
@@ -256,7 +198,7 @@ int _cvode_sparse_thread(void** v, int n, int* x, FUN fun, _threadargsproto_)
     create_coef_list(so, n, fun, _threadargs_); /* calls fun twice */
   }
   init_coef_list(so);
-  (*fun)(so, so->rhs, _threadargs_);
+  spfun(fun, so, so->rhs);
   if ((ierr = matsol(so, _iml))) {
     return ierr;
   }
@@ -511,11 +453,11 @@ double* _nrn_thread_getelm(SparseObj* so, int row, int col, int _iml) {
   return el->value;
 }
 
-static void create_coef_list(SparseObj* so, int n, FUN fun, _threadargsproto_) {
+static void create_coef_list(SparseObj* so, int n, SPFUN fun, _threadargsproto_) {
   initeqn(so, (unsigned)n);
   so->phase = 1;
   so->ngetcall[0] = 0;
-  (*fun)(so, so->rhs, _threadargs_);
+  spfun(fun, so, so->rhs);
   if (so->coef_list) {
     free(so->coef_list);
   }
@@ -523,7 +465,7 @@ static void create_coef_list(SparseObj* so, int n, FUN fun, _threadargsproto_) {
   spar_minorder(so);
   so->phase = 2;
   so->ngetcall[0] = 0;
-  (*fun)(so, so->rhs, _threadargs_);
+  spfun(fun, so, so->rhs);
   so->phase = 0;
 }
 
