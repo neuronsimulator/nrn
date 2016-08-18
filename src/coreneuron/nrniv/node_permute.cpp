@@ -70,6 +70,8 @@ so pdata_m(k, isz) = inew + data_t
 #include "coreneuron/nrniv/nrniv_decl.h"
 #include "coreneuron/nrniv/nrn_assert.h"
 #include <vector>
+#include <utility>
+#include <algorithm>
 
 template <typename T>
 void permute(T* data, int cnt, int sz, int layout, int* p) {
@@ -250,32 +252,33 @@ static void pr(const char* s, double* x, int n) {
 }
 #endif
 
-#if defined(__USE_GNU)
-#define myqsortr(arg1,arg2,arg3,arg4,arg5) qsort_r(arg1,arg2,arg3,arg4,arg5)
-#define mycompar(arg1,arg2,arg3) compar(arg1,arg2,arg3)
-#else
-#define myqsortr(arg1,arg2,arg3,arg4,arg5) qsort_r(arg1,arg2,arg3,arg5,arg4)
-#define mycompar(arg1,arg2,arg3) compar(arg3,arg1,arg2)
-#endif
-
-static int mycompar(const void* p1, const void* p2, void* arg) {
-  int ix1 = *((int*)p1);
-  int ix2 = *((int*)p2);
-  int* indices = (int*)arg;
-  if (indices[ix1] < indices[ix2]) { return -1; }
-  if (indices[ix1] > indices[ix2]) { return 1; }
-  return 0;
-}
-
 // note that sort_indices has the sense of an inverse permutation in that
 // the value of sort_indices[0] is the index with the smallest value in the
 // indices array
-int* nrn_index_sort(int* values, int n) {
-  int* sort_indices = new int[n];
-  for (int i=0; i < n; ++i) {
-    sort_indices[i] = i;
+
+static bool nrn_index_sort_cmp(const std::pair<int, int>& a, const std::pair<int, int>& b) {
+  bool result = false;
+  if (a.first < b.first) {
+    result = true;
+  }else if (a.first == b.first) {
+    if (a.second < b.second) {
+      result = true;
+    }
   }
-  myqsortr(sort_indices, n, sizeof(int), compar, values);
+  return result;
+}
+
+int* nrn_index_sort(int* values, int n) {
+  std::vector<std::pair<int, int> > vi(n);
+  for (int i = 0; i < n; ++i) {
+    vi[i].first = values[i];
+    vi[i].second = i;
+  }
+  std::sort(vi.begin(), vi.end(), nrn_index_sort_cmp);
+  int* sort_indices = new int[n];
+  for (int i = 0; i < n; ++i) {
+    sort_indices[i] = vi[i].second;
+  }
   return sort_indices;
 }
 
@@ -287,7 +290,10 @@ void permute_nodeindices(Memb_list* ml, int* p) {
   node_permute(ml->nodeindices, ml->nodecount, p);
 
   // Then the new node indices are sorted by
-  // increasing index. That becomes ml->_permute
+  // increasing index. Instances using the same node stay in same
+  // original relative order so that their contributions to rhs, d (if any)
+  // remain in same order (except for gpu parallelism).
+  // That becomes ml->_permute
 
   ml->_permute = nrn_index_sort(ml->nodeindices, ml->nodecount);
   invert_permute(ml->_permute, ml->nodecount);
