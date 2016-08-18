@@ -206,6 +206,8 @@ int main1( int argc, char **argv, char **env )
 
         report_mem_usage( "After nrn_finitialize" );
 
+        ReportGenerator * r = NULL;
+
         // if reports are enabled using ReportingLib
         if ( input_params.report ) {
           #ifdef ENABLE_REPORTING
@@ -223,16 +225,6 @@ int main1( int argc, char **argv, char **env )
           #endif
         }
 
-        // if reports are enabled using ReportingLib
-        if ( input_params.report ) {
-            #ifdef ENABLE_REPORTING
-                r = new ReportGenerator(input_params.tstart, input_params.tstop, input_params.dt, input_params.dt_report, input_params.outpath);
-                r->register_report();
-            #else
-                printf("\n WARNING! : Can't enable reports, recompile with ReportingLib! \n");
-            #endif
-        }
-
         // call prcellstate for prcellgid
         if ( input_params.prcellgid >= 0 ) {
             if(input_params.compute_gpu)
@@ -247,11 +239,6 @@ int main1( int argc, char **argv, char **env )
         if ( input_params.forwardskip > 0.0 ) {
             handle_forward_skip( input_params.forwardskip, input_params.prcellgid );
         }
-
-        //dump_nt_to_file("dump_init", nrn_threads, nrn_nthread);
-        //modify_data_on_device(nrn_threads, nrn_nthread);
-        //update_nrnthreads_on_host(nrn_threads, nrn_nthread);
-        //dump_nt_to_file("dump_upd", nrn_threads, nrn_nthread);
 
         #ifdef ENABLE_SELECTIVE_PROFILING
             start_profile();
@@ -276,6 +263,12 @@ int main1( int argc, char **argv, char **env )
             update_nrnthreads_on_host(nrn_threads, nrn_nthread);
             prcellstate( input_params.prcellgid, prcellname );
         }
+
+        #ifdef ENABLE_REPORTING
+            if(input_params.report && r)
+                delete r;
+        #endif
+
     }
 
     // write spike information to input_params.outpath
@@ -283,11 +276,6 @@ int main1( int argc, char **argv, char **env )
 
     // Cleaning the memory
     nrn_cleanup();
-
-    #ifdef ENABLE_REPORTING
-        if(input_params.report && r)
-            delete r;
-    #endif
 
     // mpi finalize
     nrnmpi_finalize();
