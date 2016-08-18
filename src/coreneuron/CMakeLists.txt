@@ -181,20 +181,6 @@ set(coreneuron_all_c_files ${coreneuron_all_c_files} ${GENERATED_MECH_C_FILES})
 
 add_library(coreneuron ${COMPILE_LIBRARY_TYPE} ${coreneuron_all_headers} ${coreneuron_all_templates} ${coreneuron_all_c_files})
 
-#< < < < < < < HEAD
-#if(ENABLE_SELECTIVE_GPU_PROFILING)
-#    cuda_add_library("cudacoreneuron" ${coreneuron_cuda_files})
-#    target_link_libraries(coreneuron ${MPI_C_LIBRARIES} cudacoreneuron ${CUDA_LIBRARIES})
-#else()
-#    target_link_libraries(coreneuron ${MPI_C_LIBRARIES} ${CUDA_LIBRARIES})
-#endif()
-#= = = = = = =
-#if(ENABLE_REPORTINGLIB)
-#    target_link_libraries(coreneuron ${MPI_C_LIBRARIES} ${REPORTINGLIB_LIBRARIES})
-#else(ENABLE_REPORTINGLIB)
-#    target_link_libraries(coreneuron ${MPI_C_LIBRARIES})
-#endif(ENABLE_REPORTINGLIB)
-#> > > > > > > master
 set(link_cudacoreneuron)
 set(link_reportinglib)
 if(ENABLE_SELECTIVE_GPU_PROFILING)

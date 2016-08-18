@@ -240,11 +240,6 @@ int main1( int argc, char **argv, char **env )
             handle_forward_skip( input_params.forwardskip, input_params.prcellgid );
         }
 
-        //dump_nt_to_file("dump_init", nrn_threads, nrn_nthread);
-        //modify_data_on_device(nrn_threads, nrn_nthread);
-        //update_nrnthreads_on_host(nrn_threads, nrn_nthread);
-        //dump_nt_to_file("dump_upd", nrn_threads, nrn_nthread);
-
         #ifdef ENABLE_SELECTIVE_PROFILING
             start_profile();
         #endif

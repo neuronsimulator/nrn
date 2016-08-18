@@ -36,6 +36,31 @@ make
 make install
 ```
 
+# Building with GPU support
+
+CoreNEURON has support for GPUs using OpenACC programming model when enabled with -DENABLE_OPENACC=ON.
+
+Here are the steps to compile:
+
+```bash
+module purge
+module load pgi/pgi64/16.5 pgi/mpich/16.5
+module load cuda/6.0
+
+export CC=mpicc
+export CXX=mpicxx
+
+cmake .. -DCMAKE_C_FLAGS:STRING="-acc -Minfo=acc -Minline=size:200,levels:10 -O3 -DSWAP_ENDIAN_DISABLE_ASM -DLAYOUT=0 -DDISABLE_HOC_EXP" -DCMAKE_CXX_FLAGS:STRING="-acc -Minfo=acc -Minline=size:200,levels:10 -O3 -DSWAP_ENDIAN_DISABLE_ASM -DLAYOUT=0 -DDISABLE_HOC_EXP" -DCOMPILE_LIBRARY_TYPE=STATIC -DCMAKE_INSTALL_PREFIX=$EXPER_DIR/install/ -DCUDA_HOST_COMPILER=`which gcc` -DCUDA_PROPAGATE_HOST_FLAGS=OFF -DENABLE_SELECTIVE_GPU_PROFILING=ON -DENABLE_OPENACC=ON
+```
+
+And now you can run with --gpu option as:
+
+```bash
+export CUDA_VISIBLE_DEVICES=0   #if needed
+mpirun -n 1 ./bin/coreneuron_exec -d ../tests/integration/ring -mpi -e 100 --gpu --celsius=6.3
+```
+
+
 # Using ReportingLib
 If you want enable use of ReportingLib for the soma reports, install ReportingLib first and enable it using -DENABLE_REPORTINGLIB (use same install path for ReportingLib as CoreNeuron).
 
