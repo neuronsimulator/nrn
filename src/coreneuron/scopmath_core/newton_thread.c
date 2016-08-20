@@ -61,7 +61,7 @@ static char RCSid[] = "newton.c,v 1.3 1999/01/04 12:46:48 hines Exp";
 #define ix(arg) ((arg)*_STRIDE)
 #define s_(arg) _p[s[arg] * _STRIDE]
 
-int nrn_newton_thread(NewtonSpace* ns, int n, int* s, FUN pfunc, double* value,
+int nrn_newton_thread(NewtonSpace* ns, int n, int* s, NEWTFUN pfunc, double* value,
                       _threadargsproto_) {
   int i, count = 0, error, *perm;
   double **jacobian, *delta_x, change = 1.0, max_dev, temp;
@@ -112,7 +112,7 @@ int nrn_newton_thread(NewtonSpace* ns, int n, int* s, FUN pfunc, double* value,
         s_(i) += delta_x[ix(i)];
       }
     }
-    (*pfunc)(_threadargs_); /* Evaluate function values with new solution */
+    newtfun(pfunc); /* Evaluate function values with new solution */
     max_dev = 0.0;
     for (i = 0; i < n; i++) {
       value[ix(i)] = -value[ix(i)]; /* Required correction to function
@@ -175,7 +175,7 @@ int nrn_newton_thread(NewtonSpace* ns, int n, int* s, FUN pfunc, double* value,
 #define max(x, y) (fabs(x) > y ? x : y)
 
 static void nrn_buildjacobian_thread(NewtonSpace* ns, int n, int* index,
-                                     FUN pfunc, double* value,
+                                     NEWTFUN pfunc, double* value,
                                      double** jacobian, _threadargsproto_) {
 #define x_(arg) _p[(arg)*_STRIDE]
   int i, j;
@@ -189,10 +189,10 @@ static void nrn_buildjacobian_thread(NewtonSpace* ns, int n, int* index,
   for (j = 0; j < n; j++) {
     increment = max(fabs(0.02 * (x_(index[j]))), STEP);
     x_(index[j]) += increment;
-    (*pfunc)(_threadargs_);
+    newtfun(pfunc);
     for (i = 0; i < n; i++) high_value[ix(i)] = value[ix(i)];
     x_(index[j]) -= 2.0 * increment;
-    (*pfunc)(_threadargs_);
+    newtfun(pfunc);
     for (i = 0; i < n; i++) {
       low_value[ix(i)] = value[ix(i)];
 
@@ -205,7 +205,7 @@ static void nrn_buildjacobian_thread(NewtonSpace* ns, int n, int* index,
     /* Restore original variable and function values. */
 
     x_(index[j]) += increment;
-    (*pfunc)(_threadargs_);
+    newtfun(pfunc);
   }
 }
 
