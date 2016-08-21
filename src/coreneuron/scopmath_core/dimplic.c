@@ -1,5 +1,5 @@
 /*
-  hopefully a tempoarary expedient to work around the inability to
+  hopefully a temporary expedient to work around the inability to
   pass function pointers as arguments
 */
 

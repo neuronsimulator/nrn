@@ -101,7 +101,7 @@ static Elm* getelm(SparseObj* so, unsigned row, unsigned col, Elm* new);
 double* _nrn_thread_getelm(SparseObj* so, int row, int col, int _iml);
 void* nrn_cons_sparseobj(SPFUN, int, Memb_list*, _threadargsproto_);
 static void create_coef_list(SparseObj* so, int n, SPFUN fun, _threadargsproto_);
-static void init_coef_list(SparseObj* so);
+static void init_coef_list(SparseObj* so, int _iml);
 static void init_minorder(SparseObj* so);
 static void increase_order(SparseObj* so, unsigned row);
 static void reduce_order(SparseObj* so, unsigned row);
@@ -120,7 +120,7 @@ static void re_link(SparseObj* so, unsigned i);
 static SparseObj* create_sparseobj();
 void _nrn_destroy_sparseobj_thread(SparseObj* so);
 
-static Elm* nrn_pool_alloc(arg) {return emalloc(sizeof(Elm));}
+static Elm* nrn_pool_alloc(void* arg) {return emalloc(sizeof(Elm));}
 
 /* sparse matrix dynamic allocation:
 create_coef_list makes a list for fast setup, does minimum ordering and
@@ -154,7 +154,7 @@ int sparse_thread(SparseObj* so, int n, int* s, int* d, double* t, double dt,
     d_(i) = s_(i);
   }
   for (err = 1, j = 0; err > CONVERGE; j++) {
-    init_coef_list(so);
+    init_coef_list(so, _iml);
     spfun(fun, so, so->rhs);
     if ((ierr = matsol(so, _iml))) {
       return ierr;
@@ -173,7 +173,7 @@ int sparse_thread(SparseObj* so, int n, int* s, int* d, double* t, double dt,
     }
     if (linflag) break;
   }
-  init_coef_list(so);
+  init_coef_list(so, _iml);
   spfun(fun, so, so->rhs);
   for (i = 0; i < n; i++) { /*restore Dstate at t+dt*/
     d_(i) = (s_(i) - d_(i)) / dt;
@@ -197,7 +197,7 @@ int _cvode_sparse_thread(void** v, int n, int* x, SPFUN fun, _threadargsproto_)
     so->oldfun = fun;
     create_coef_list(so, n, fun, _threadargs_); /* calls fun twice */
   }
-  init_coef_list(so);
+  init_coef_list(so, _iml);
   spfun(fun, so, so->rhs);
   if ((ierr = matsol(so, _iml))) {
     return ierr;
@@ -289,6 +289,7 @@ static void initeqn(SparseObj* so,
 
   if (maxeqn == so->neqn) return;
   free_elm(so);
+  so->neqn = maxeqn;
   if (so->rowst) Free(so->rowst);
   if (so->diag) Free(so->diag);
   if (so->varord) Free(so->varord);
@@ -317,14 +318,12 @@ static void initeqn(SparseObj* so,
   for (i = 0; i < nn; ++i) {
     so->rhs[i] = 0.;
   }
-  so->neqn = maxeqn;
 }
 
 static void free_elm(SparseObj* so) {
   unsigned i;
   Elm *el, *elnext;
 
-  nrn_assert(so->neqn == 0);
   /* free all elements */
   for (i = 1; i <= so->neqn; i++) {
     so->rowst[i] = ELM0;
@@ -469,18 +468,14 @@ static void create_coef_list(SparseObj* so, int n, SPFUN fun, _threadargsproto_)
   so->phase = 0;
 }
 
-static void init_coef_list(SparseObj* so) {
+static void init_coef_list(SparseObj* so, int _iml) {
   unsigned i, icnt;
   Elm* el;
 
-  for (icnt = 0; icnt < so->_cntml_padded; ++icnt) {
-    so->ngetcall[icnt] = 0;
-  }
+  so->ngetcall[_iml] = 0;
   for (i = 1; i <= so->neqn; i++) {
     for (el = so->rowst[i]; el; el = el->c_right) {
-      for (icnt = 0; icnt < so->_cntml_padded; ++icnt) {
-        el->value[icnt] = 0.;
-      }
+      el->value[_iml] = 0.;
     }
   }
 }
