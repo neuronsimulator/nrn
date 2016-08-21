@@ -294,6 +294,7 @@ static void initeqn(SparseObj* so,
   if (so->varord) Free(so->varord);
   if (so->rhs) Free(so->rhs);
   if (so->ngetcall) free(so->ngetcall);
+  so->elmpool = NULL;
   so->rowst = so->diag = (Elm**)0;
   so->varord = (unsigned*)0;
   so->rowst = (Elm**)myemalloc((maxeqn + 1) * sizeof(Elm*));
@@ -325,7 +326,6 @@ static void free_elm(SparseObj* so) {
 
   nrn_assert(so->neqn == 0);
   /* free all elements */
-  nrn_pool_freeall(so->elmpool);
   for (i = 1; i <= so->neqn; i++) {
     so->rowst[i] = ELM0;
     so->diag[i] = ELM0;
@@ -781,7 +781,6 @@ static SparseObj* create_sparseobj() {
 
   so = myemalloc(sizeof(SparseObj));
   nrn_malloc_lock();
-  so->elmpool = nrn_pool_create(100, sizeof(Elm));
   nrn_malloc_unlock();
   so->rowst = 0;
   so->diag = 0;
@@ -806,7 +805,6 @@ void _nrn_destroy_sparseobj_thread(SparseObj* so) {
   if (!so) {
     return;
   }
-  nrn_pool_delete(so->elmpool);
   if (so->rowst) Free(so->rowst);
   if (so->diag) Free(so->diag);
   if (so->varord) Free(so->varord);
