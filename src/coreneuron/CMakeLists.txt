@@ -165,6 +165,18 @@ foreach(depfile ${MECH_FILE_LISTS})
     configure_file("${depfile}" "${CMAKE_CURRENT_BINARY_DIR}/dummy_reconfigure_dep")
 endforeach()
 
+# to work around no acc ability to pass function pointers as arguments,
+# some translated c files depend on a _kinderiv.h file that is constructed
+# by kinderiv.py
+
+set(KINDERIV_PY "${CMAKE_CURRENT_SOURCE_DIR}/kinderiv.py")
+set(KINDERIV_H "${CMAKE_CURRENT_BINARY_DIR}/_kinderiv.h")
+
+add_custom_command(OUTPUT "${KINDERIV_H}"
+    DEPENDS ${MOD2C_OPTMECH_OUTPUTS} "${KINDERIV_PY}"
+    COMMAND python "${KINDERIV_PY}"
+    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
+
 # Add generated sources from MOD files
 
 set(GENERATED_MECH_C_FILES ${MOD_FUNC_C} ${MOD2C_STDMECH_OUTPUTS} ${MOD2C_OPTMECH_OUTPUTS})
@@ -179,7 +191,7 @@ endif()
 
 set(coreneuron_all_c_files ${coreneuron_all_c_files} ${GENERATED_MECH_C_FILES})
 
-add_library(coreneuron ${COMPILE_LIBRARY_TYPE} ${coreneuron_all_headers} ${coreneuron_all_templates} ${coreneuron_all_c_files})
+add_library(coreneuron ${COMPILE_LIBRARY_TYPE} ${coreneuron_all_headers} ${coreneuron_all_templates} ${coreneuron_all_c_files} ${KINDERIV_H})
 
 set(link_cudacoreneuron)
 set(link_reportinglib)
