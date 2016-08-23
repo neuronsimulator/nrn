@@ -62,8 +62,9 @@ http://www.deshawresearch.com/resources_random123.html
 #define GLOBAL
 #endif
 
-#if defined(__CUDACC__) || defined(_OPENACC)
+#if ( defined(__CUDACC__) || defined(_OPENACC) ) && !defined(DISABLE_OPENACC)
 #define nrnran123_newstream cu_nrnran123_newstream
+#define nrnran123_newstream3 cu_nrnran123_newstream3
 #define nrnran123_deletestream cu_nrnran123_deletestream
 #define nrnran123_uint2dbl cu_nrnran123_uint2dbl
 #define nrnran123_negexp cu_nrnran123_negexp
