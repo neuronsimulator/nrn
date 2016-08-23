@@ -14,19 +14,23 @@ typedef struct NewtonSpace {
   double* rowmax;
 } NewtonSpace;
 
+#pragma acc routine seq
 extern int nrn_crout_thread(NewtonSpace* ns, int n, double** a, int* perm,
                             _threadargsproto_);
 
+#pragma acc routine seq
 extern void nrn_scopmath_solve_thread(int n, double** a, double* value,
                                       int* perm, double* delta_x, int* s,
                                       _threadargsproto_);
 
+#pragma acc routine seq
 extern int nrn_newton_thread(NewtonSpace* ns, int n, int* s, NEWTFUN pfunc,
                              double* value, _threadargsproto_);
 
-static void nrn_buildjacobian_thread(NewtonSpace* ns, int n, int* s, NEWTFUN pfunc,
-                                     double* value, double** jacobian,
-                                     _threadargsproto_);
+#pragma acc routine seq
+static void nrn_buildjacobian_thread(NewtonSpace* ns, int n, int* s,
+                                     NEWTFUN pfunc, double* value,
+                                     double** jacobian, _threadargsproto_);
 
 extern NewtonSpace* nrn_cons_newtonspace(int n, int n_instance);
 extern void nrn_destroy_newtonspace(NewtonSpace* ns);

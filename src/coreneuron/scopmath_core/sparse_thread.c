@@ -98,9 +98,11 @@ static void prmat(SparseObj* so);
 static void initeqn(SparseObj* so, unsigned maxeqn);
 static void free_elm(SparseObj* so);
 static Elm* getelm(SparseObj* so, unsigned row, unsigned col, Elm* new);
+#pragma acc routine seq
 double* _nrn_thread_getelm(SparseObj* so, int row, int col, int _iml);
 void* nrn_cons_sparseobj(SPFUN, int, Memb_list*, _threadargsproto_);
-static void create_coef_list(SparseObj* so, int n, SPFUN fun, _threadargsproto_);
+static void create_coef_list(SparseObj* so, int n, SPFUN fun,
+                             _threadargsproto_);
 static void init_coef_list(SparseObj* so, int _iml);
 static void init_minorder(SparseObj* so);
 static void increase_order(SparseObj* so, unsigned row);
@@ -120,7 +122,14 @@ static void re_link(SparseObj* so, unsigned i);
 static SparseObj* create_sparseobj();
 void _nrn_destroy_sparseobj_thread(SparseObj* so);
 
-static Elm* nrn_pool_alloc(void* arg) {return emalloc(sizeof(Elm));}
+#if defined(_OPENACC)
+#undef emalloc
+#undef ecalloc
+#define emalloc(arg) malloc(arg)
+#define ecalloc(arg1, arg2) malloc((arg1) * (arg2))
+#endif
+
+static Elm* nrn_pool_alloc(void* arg) { return emalloc(sizeof(Elm)); }
 
 /* sparse matrix dynamic allocation:
 create_coef_list makes a list for fast setup, does minimum ordering and
@@ -452,7 +461,8 @@ double* _nrn_thread_getelm(SparseObj* so, int row, int col, int _iml) {
   return el->value;
 }
 
-static void create_coef_list(SparseObj* so, int n, SPFUN fun, _threadargsproto_) {
+static void create_coef_list(SparseObj* so, int n, SPFUN fun,
+                             _threadargsproto_) {
   initeqn(so, (unsigned)n);
   so->phase = 1;
   so->ngetcall[0] = 0;

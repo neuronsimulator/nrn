@@ -61,11 +61,12 @@ static char RCSid[] = "newton.c,v 1.3 1999/01/04 12:46:48 hines Exp";
 #define ix(arg) ((arg)*_STRIDE)
 #define s_(arg) _p[s[arg] * _STRIDE]
 
-int nrn_newton_thread(NewtonSpace* ns, int n, int* s, NEWTFUN pfunc, double* value,
-                      _threadargsproto_) {
-  int i, count = 0, error, *perm;
+#pragma acc routine seq
+int nrn_newton_thread(NewtonSpace* ns, int n, int* s, NEWTFUN pfunc,
+                      double* value, _threadargsproto_) {
+  int i, count = 0, error = 0, *perm;
   double **jacobian, *delta_x, change = 1.0, max_dev, temp;
-
+  int done = 0;
   /*
    * Create arrays for Jacobian, variable increments, function values, and
    * permutation vector
@@ -74,8 +75,12 @@ int nrn_newton_thread(NewtonSpace* ns, int n, int* s, NEWTFUN pfunc, double* val
   jacobian = ns->jacobian;
   perm = ns->perm;
   /* Iteration loop */
-  while (count++ < MAXITERS) {
-    if (change > MAXCHANGE) {
+  while (!done) {
+    if (count++ >= MAXITERS) {
+      error = EXCEED_ITERS;
+      done = 2;
+    }
+    if (!done && change > MAXCHANGE) {
       /*
        * Recalculate Jacobian matrix if solution has changed by more
        * than MAXCHANGE
@@ -86,46 +91,48 @@ int nrn_newton_thread(NewtonSpace* ns, int n, int* s, NEWTFUN pfunc, double* val
         value[ix(i)] = -value[ix(i)]; /* Required correction to
                                        * function values */
 
-      if ((error = nrn_crout_thread(ns, n, jacobian, perm, _threadargs_)) !=
-          SUCCESS)
-        break;
-    }
-
-    nrn_scopmath_solve_thread(n, jacobian, value, perm, delta_x, (int*)0,
-                              _threadargs_);
-
-    /* Update solution vector and compute norms of delta_x and value */
-
-    change = 0.0;
-    if (s) {
-      for (i = 0; i < n; i++) {
-        if (fabs(s_(i)) > ZERO &&
-            (temp = fabs(delta_x[ix(i)] / (s_(i)))) > change)
-          change = temp;
-        s_(i) += delta_x[ix(i)];
-      }
-    } else {
-      for (i = 0; i < n; i++) {
-        if (fabs(s_(i)) > ZERO &&
-            (temp = fabs(delta_x[ix(i)] / (s_(i)))) > change)
-          change = temp;
-        s_(i) += delta_x[ix(i)];
+      error = nrn_crout_thread(ns, n, jacobian, perm, _threadargs_);
+      if (error != SUCCESS) {
+        done = 2;
       }
     }
-    newtfun(pfunc); /* Evaluate function values with new solution */
-    max_dev = 0.0;
-    for (i = 0; i < n; i++) {
-      value[ix(i)] = -value[ix(i)]; /* Required correction to function
-                             * values */
-      if ((temp = fabs(value[ix(i)])) > max_dev) max_dev = temp;
-    }
 
-    /* Check for convergence or maximum iterations */
+    if (!done) {
+      nrn_scopmath_solve_thread(n, jacobian, value, perm, delta_x, (int*)0,
+                                _threadargs_);
 
-    if (change <= CONVERGE && max_dev <= ZERO) break;
-    if (count == MAXITERS) {
-      error = EXCEED_ITERS;
-      break;
+      /* Update solution vector and compute norms of delta_x and value */
+
+      change = 0.0;
+      if (s) {
+        for (i = 0; i < n; i++) {
+          if (fabs(s_(i)) > ZERO &&
+              (temp = fabs(delta_x[ix(i)] / (s_(i)))) > change)
+            change = temp;
+          s_(i) += delta_x[ix(i)];
+        }
+      } else {
+        for (i = 0; i < n; i++) {
+          if (fabs(s_(i)) > ZERO &&
+              (temp = fabs(delta_x[ix(i)] / (s_(i)))) > change)
+            change = temp;
+          s_(i) += delta_x[ix(i)];
+        }
+      }
+      newtfun(pfunc); /* Evaluate function values with new solution */
+      max_dev = 0.0;
+      for (i = 0; i < n; i++) {
+        value[ix(i)] = -value[ix(i)]; /* Required correction to function
+                               * values */
+        if ((temp = fabs(value[ix(i)])) > max_dev) max_dev = temp;
+      }
+
+      /* Check for convergence or maximum iterations */
+
+      if (change <= CONVERGE && max_dev <= ZERO) {
+        // break;
+        done = 1;
+      }
     }
   } /* end of while loop */
 
