@@ -11,6 +11,9 @@ AC_CONFIG_SRCDIR(src/memacs/main.c)
 AM_INIT_AUTOMAKE([foreign])
 AM_MAINTAINER_MODE([enable])
 
+
+PKG_PROG_PKG_CONFIG([0.22])
+
 dnl The following line causes us to make a config.h instead of putting all
 dnl the defines into the makefile.
 AC_CONFIG_HEADERS(config.h)

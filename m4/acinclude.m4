@@ -1,3 +1,5 @@
+
+
 dnl I cant figure out how to hide AC_DEFINE so that autoheader does not
 dnl put it in nrnconf.h.in (it will exist in some other header precursor.)
 dnl 
@@ -36,6 +38,7 @@ dnl This obviates prefer_curses. Also the gnutermcap makes no sense in
 dnl our context and I replaced that last resort with an error
 dnl
 
+
 AC_DEFUN([NRN_CHECK_LIB_TERMCAP],
 [
 if test "X$nrn_cv_termcap_lib" = "X"; then
@@ -48,7 +51,8 @@ AC_CACHE_VAL(nrn_cv_termcap_lib,
 [AC_CHECK_LIB(ncurses, tgetent, nrn_cv_termcap_lib=libncurses,
     [AC_CHECK_LIB(curses, tgetent, nrn_cv_termcap_lib=libcurses,
 	[AC_CHECK_LIB(termcap, tgetent, nrn_cv_termcap_lib=libtermcap,
-	    [AC_MSG_ERROR([cannot find one of ncurses, curses, or termcap])])])])])
+		[PKG_CHECK_MODULES([NCURSES], [ncurses], nrn_cv_termcap_lib=pkgconfig_ncurses,
+	    [AC_MSG_ERROR([cannot find one of ncurses, curses, or termcap])])])])])])
 if test "X$_nrn_needmsg" = "Xyes"; then
 AC_MSG_CHECKING(which library has the termcap functions)
 fi
@@ -56,12 +60,19 @@ AC_MSG_RESULT(using $nrn_cv_termcap_lib)
 if test $nrn_cv_termcap_lib = libtermcap ; then
 TERMCAP_LIB=-ltermcap
 TERMCAP_DEP=
+TERMCAP_CFLAGS= 
 elif test $nrn_cv_termcap_lib = libncurses ; then
 TERMCAP_LIB=-lncurses
 TERMCAP_DEP=
+TERMCAP_CFLAGS=
+elif test $nrn_cv_termcap_lib = pkgconfig_ncurses ; then
+TERMCAP_LIB="$NCURSES_LIBS"
+TERMCAP_DEP=
+TERMCAP_CFLAGS="$NCURSES_CFLAGS"
 else
 TERMCAP_LIB=-lcurses
 TERMCAP_DEP=
+TERMCAP_CFLAGS= 
 fi
 ])
 

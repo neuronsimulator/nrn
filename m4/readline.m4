@@ -19,6 +19,7 @@ if test "$with_memacs" = "yes" ; then
 dnl begining of with_memacs
 NRN_CHECK_LIB_TERMCAP
 AC_SUBST(TERMCAP_LIB)
+AC_SUBST(TERMCAP_CFLAGS)
 
 dnl Check for the readline library.
 if test "$with_readline" = ""; then

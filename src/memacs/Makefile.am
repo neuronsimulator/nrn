@@ -9,6 +9,8 @@ memacs_LDADD = libmemacs.la
 lib_LTLIBRARIES = libmemacs.la
 libmemacs_la_LIBADD = @TERMCAP_LIB@
 
+libmemacs_la_CFLAGS = @TERMCAP_CFLAGS@
+
 libmemacs_la_SOURCES = ansi.c basic.c bind.c buffer.c display.c file.c \
 	fileio.c line.c lock.c main1.c random.c region.c \
 	search.c spawn.c tcap.c termio.c window.c word.c
