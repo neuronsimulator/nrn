@@ -195,10 +195,13 @@ add_library(coreneuron ${COMPILE_LIBRARY_TYPE} ${coreneuron_all_headers} ${coren
 
 set(link_cudacoreneuron)
 set(link_reportinglib)
-if(ENABLE_SELECTIVE_GPU_PROFILING)
-    cuda_add_library("cudacoreneuron" ${coreneuron_cuda_files})
+
+#@TODO: CMake should have option for arch
+if(ENABLE_OPENACC)
+    cuda_add_library("cudacoreneuron" ${coreneuron_cuda_files} OPTIONS -arch=sm_20)
     set(link_cudacoreneuron cudacoreneuron)
 endif()
+
 if(ENABLE_REPORTINGLIB)
   set(link_reportinglib ${REPORTINGLIB_LIBRARIES})
 endif()
