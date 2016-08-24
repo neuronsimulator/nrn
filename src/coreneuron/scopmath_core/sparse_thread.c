@@ -147,6 +147,7 @@ void* nrn_cons_sparseobj(SPFUN fun, int n, Memb_list* ml, _threadargsproto_) {
   so = create_sparseobj();
   so->_cntml_padded = _cntml_padded;
   create_coef_list(so, n, fun, _threadargs_);
+  nrn_sparseobj_copyto_device(so);
   return so;
 }
 
@@ -470,6 +471,7 @@ static void create_coef_list(SparseObj* so, int n, SPFUN fun,
   if (so->coef_list) {
     free(so->coef_list);
   }
+  so->coef_list_size = so->ngetcall[0];
   so->coef_list = (double**)myemalloc(so->ngetcall[0] * sizeof(double*));
   spar_minorder(so);
   so->phase = 2;

@@ -3,9 +3,14 @@
 
 #include "coreneuron/mech/mod2c_core_thread.h"
 
+#if defined(__cplusplus)
+extern "C" {
+#endif
+
 /* avoid incessant alloc/free memory */
 typedef struct NewtonSpace {
   int n;
+  int n_instance;
   double* delta_x;
   double** jacobian;
   int* perm;
@@ -34,5 +39,11 @@ static void nrn_buildjacobian_thread(NewtonSpace* ns, int n, int* s,
 
 extern NewtonSpace* nrn_cons_newtonspace(int n, int n_instance);
 extern void nrn_destroy_newtonspace(NewtonSpace* ns);
+
+void nrn_newtonspace_copyto_device(NewtonSpace* ns);
+
+#if defined(__cplusplus)
+}
+#endif
 
 #endif

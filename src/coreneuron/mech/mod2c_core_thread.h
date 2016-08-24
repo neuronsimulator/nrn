@@ -4,6 +4,10 @@
 #include "coreneuron/nrnoc/multicore.h"
 #include "coreneuron/nrnoc/nrnoc_ml.h"
 
+#if defined(__cplusplus)
+extern "C" {
+#endif
+
 #if !defined(LAYOUT)
 /* 1 means AoS, >1 means AoSoA, <= 0 means SOA */
 #define LAYOUT 1
@@ -76,6 +80,7 @@ typedef struct SparseObj { /* all the state information */
   unsigned* ngetcall; /* per instance counter for number of calls to _getelm */
   int phase;          /* 0-solution phase; 1-count phase; 2-build list phase */
   int numop;
+  unsigned coef_list_size;
   double** coef_list; /* pointer to (first instance) value in _getelm order */
   /* don't really need the rest */
   int nroworder;   /* just for freeing */
@@ -105,5 +110,11 @@ int _ss_sparse_thread(SparseObj*, int n, int* s, int* d, double* t, double dt,
 extern double _modl_get_dt_thread(NrnThread*);
 #pragma acc routine seq
 extern void _modl_set_dt_thread(double, NrnThread*);
+
+void nrn_sparseobj_copyto_device(SparseObj* so);
+
+#if defined(__cplusplus)
+}
+#endif
 
 #endif

@@ -1,3 +1,4 @@
+#include <map>
 #include "coreneuron/nrnoc/multicore.h"
 #include "coreneuron/nrniv/netcon.h"
 #include "coreneuron/nrniv/nrn_acc_manager.h"
@@ -6,6 +7,7 @@
 #include "coreneuron/nrniv/profiler_interface.h"
 #include "coreneuron/nrniv/cellorder.h"
 #include "coreneuron/nrniv/cuda_profile.h"
+#include "coreneuron/scopmath_core/newton_struct.h"
 
 #ifdef _OPENACC
 #include<openacc.h>
@@ -755,4 +757,78 @@ void finalize_data_on_device() {
    #ifdef _OPENACC
         acc_shutdown ( acc_device_default);
     #endif
+}
+
+void nrn_newtonspace_copyto_device(NewtonSpace* ns) {
+#ifdef _OPENACC
+  int n = ns->n * ns->n_instance;
+  // actually, the values of double do not matter, only the  pointers.
+  NewtonSpace* d_ns = (NewtonSpace*)acc_copyin(ns, sizeof(NewtonSpace*));
+  d_ns->delta_x = (double*)acc_copyin(ns->delta_x, n*sizeof(double));
+  d_ns->high_value = (double*)acc_copyin(ns->high_value, n*sizeof(double));
+  d_ns->low_value = (double*)acc_copyin(ns->low_value, n*sizeof(double));
+  d_ns->rowmax = (double*)acc_copyin(ns->rowmax, n*sizeof(double));
+  d_ns->perm = (int*)acc_copyin(ns->perm, n*sizeof(int));
+  d_ns->jacobian = (double**)acc_copyin(ns->jacobian, ns->n*sizeof(double*));
+  for (int i=0; i < ns->n; ++i) {
+    d_ns->jacobian[i] = (double*)acc_copyin(ns->jacobian[i], n*sizeof(double));
+  }
+#endif
+}
+
+void nrn_sparseobj_copyto_device(SparseObj* so) {
+#ifdef _OPENACC
+  unsigned n1 = so->neqn + 1;
+  SparseObj* d_so = (SparseObj*)acc_copyin(so, sizeof(SparseObj*));
+  // only pointer fields in SparseObj that need setting up are
+  //   rowst, diag, rhs, ngetcall, coef_list
+  // only pointer fields in Elm that need setting up are
+  //   r_down, c_right, value
+  // do not care about the Elm* ptr value, just the space.
+  d_so->rowst = (Elm**)acc_copyin(so->rowst, n1*sizeof(Elm*));
+  d_so->diag = (Elm**)acc_copyin(so->diag, n1*sizeof(Elm*));
+  d_so->ngetcall = (unsigned*)acc_copyin(so->ngetcall, so->_cntml_padded*sizeof(unsigned));
+  d_so->rhs = (double*)acc_copyin(so->rhs, n1 * so->_cntml_padded * sizeof(double));
+  d_so->coef_list = (double**)acc_copyin(so->coef_list, so->coef_list_size * sizeof(double*));
+
+  // Fill in relevant Elm pointer values
+  // Also, what is d_so->coef_list? It is a problem given the double* to
+  // know the elm. Solution is to use a map<double*, Elm*>
+  std::map<double*, Elm*> m;
+  for (unsigned irow = 1; irow < n1; ++irow) {
+    Elm* d_elm_prev = NULL;
+    for (Elm* elm = so->rowst[irow]; elm; elm = elm->c_right) {
+      Elm* d_elm = (Elm*)acc_copyin(elm, sizeof(elm));
+      d_elm->value = (double*)acc_copyin(elm->value, so->_cntml_padded*sizeof(double));
+      if (elm == so->rowst[irow]) {
+        d_so->rowst[irow] = d_elm;
+      }else{
+        d_elm_prev->c_right = d_elm;
+      }
+      if (elm->col == elm->row) {
+        d_so->diag[elm->col] = d_elm;
+      }
+      // Figuring out r_down is a problem.
+      // Store the device elm in the host elm. Now elm->c_left is unused and
+      // therefore available.
+      elm->c_left = d_elm;
+
+      m[elm->value] = d_elm;
+      d_elm_prev = d_elm;
+    }
+  }
+  // visit all the Elm again and fill in d_elm->r_down
+  for (unsigned irow = 1; irow < n1; ++irow) {
+    for (Elm* elm = so->rowst[irow]; elm; elm = elm->c_right) {
+      Elm* d_elm = elm->c_left;
+      if (elm->r_down) {
+        d_elm->r_down = elm->r_down->c_left;
+      }
+    }
+  }
+  // Fill in the d_so->coef_list
+  for (unsigned i = 0; i < so->coef_list_size; ++i) {
+    d_so->coef_list[i] = m[so->coef_list[i]]->value;
+  }
+#endif
 }
