@@ -29,7 +29,7 @@ include_directories(${PROJECT_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/coreneuron ${CMA
 
 # The mechanism registration function will be defined depending on whether we
 # are using neurodamus list of mechanisms
-if(ADDITIONAL_MECHS)
+if(ADDITIONAL_MECHS OR ADDITIONAL_MECHPATH)
     add_definitions(-DADDITIONAL_MECHS)
 endif()
 

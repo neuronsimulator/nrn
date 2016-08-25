@@ -28,6 +28,12 @@ void setup_nrnthreads_on_device(NrnThread *threads, int nthreads)  {
         return;
     }
 
+    /** @todo: currently only checking nvidia gpu */
+    int num_gpus = acc_get_num_devices( acc_device_nvidia );
+    if( num_gpus == 0) {
+        printf("\n WARNING: Enabled GPU execution but couldn't find NVIDIA GPU! \n");
+    }
+
     int i;
     NrnThread *d_threads;
 
