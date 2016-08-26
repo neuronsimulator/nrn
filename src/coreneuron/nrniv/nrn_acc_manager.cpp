@@ -183,6 +183,13 @@ void setup_nrnthreads_on_device(NrnThread *threads, int nthreads)  {
                 acc_memcpy_to_device(&(d_ml->pdata), &d_pdata, sizeof(int*));
             }
 
+
+            int ts = memb_func[type].thread_size_;
+            if (ts) {
+              ThreadDatum* td = (ThreadDatum*)acc_copyin(tml->ml->_thread, ts*sizeof(ThreadDatum));
+              acc_memcpy_to_device(&(d_ml->_thread), &td, sizeof(ThreadDatum*));
+            }
+
             NetReceiveBuffer_t *nrb, *d_nrb;
             int *d_weight_index, *d_pnt_index;
             double *d_nrb_t, *d_nrb_flag;
@@ -766,6 +773,8 @@ void finalize_data_on_device() {
 
 void nrn_newtonspace_copyto_device(NewtonSpace* ns) {
 #ifdef _OPENACC
+  if (nrn_threads[0].compute_gpu == 0) { return; }
+
   int n = ns->n * ns->n_instance;
   // actually, the values of double do not matter, only the  pointers.
   NewtonSpace* d_ns = (NewtonSpace*)acc_copyin(ns, sizeof(NewtonSpace));
@@ -804,6 +813,8 @@ void nrn_newtonspace_copyto_device(NewtonSpace* ns) {
 
 void nrn_sparseobj_copyto_device(SparseObj* so) {
 #ifdef _OPENACC
+  if (nrn_threads[0].compute_gpu == 0) { return; }
+
   unsigned n1 = so->neqn + 1;
   SparseObj* d_so = (SparseObj*)acc_copyin(so, sizeof(SparseObj));
   // only pointer fields in SparseObj that need setting up are
