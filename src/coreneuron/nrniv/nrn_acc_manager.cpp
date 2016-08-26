@@ -792,9 +792,12 @@ void nrn_newtonspace_copyto_device(NewtonSpace* ns) {
   ppd = (double**)acc_copyin(ns->jacobian, ns->n*sizeof(double*));
   acc_memcpy_to_device(&(d_ns->jacobian), &ppd, sizeof(double**));
 
+  // the actual jacobian doubles were allocated as a single array
+  double* d_jacdat = (double*)acc_copyin(ns->jacobian[0], ns->n * n * sizeof(double));
+
   for (int i=0; i < ns->n; ++i) {
-    pd = (double*)acc_copyin(ns->jacobian[i], n*sizeof(double));
-    acc_memcpy_to_device(&(d_ns->jacobian[i]), &pd, sizeof(double*));
+    pd = d_jacdat + i*n;
+    acc_memcpy_to_device(&(ppd[i]), &pd, sizeof(double*));
   }
 #endif
 }
