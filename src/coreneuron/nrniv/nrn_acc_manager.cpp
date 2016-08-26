@@ -821,7 +821,7 @@ void nrn_sparseobj_copyto_device(SparseObj* so) {
   ppelm = (Elm**)acc_copyin(so->diag, n1*sizeof(Elm*));
   acc_memcpy_to_device(&(d_so->diag), &ppelm, sizeof(Elm**));
 
-  d_so->ngetcall = (unsigned*)acc_copyin(so->ngetcall, so->_cntml_padded*sizeof(unsigned));
+  pu = (unsigned*)acc_copyin(so->ngetcall, so->_cntml_padded*sizeof(unsigned));
   acc_memcpy_to_device(&(d_so->ngetcall), &pu, sizeof(Elm**));
 
   pd = (double*)acc_copyin(so->rhs, n1 * so->_cntml_padded * sizeof(double));
@@ -834,7 +834,7 @@ void nrn_sparseobj_copyto_device(SparseObj* so) {
 
   for (unsigned irow = 1; irow < n1; ++irow) {
     for (Elm* elm = so->rowst[irow]; elm; elm = elm->c_right) {
-      Elm* pelm = (Elm*)acc_copyin(elm, sizeof(elm));
+      Elm* pelm = (Elm*)acc_copyin(elm, sizeof(Elm));
 
       if (elm == so->rowst[irow]) {
         acc_memcpy_to_device(&(d_so->rowst[irow]), &pelm, sizeof(Elm*));
@@ -848,8 +848,10 @@ void nrn_sparseobj_copyto_device(SparseObj* so) {
       }
 
       if (irow > 1) {
-        Elm* d_e = (Elm*)acc_deviceptr(elm->r_up);
-        acc_memcpy_to_device(&(pelm->r_up), &d_e, sizeof(Elm*));
+        if (elm->r_up) {
+          Elm* d_e = (Elm*)acc_deviceptr(elm->r_up);
+          acc_memcpy_to_device(&(pelm->r_up), &d_e, sizeof(Elm*));
+        }
       }
 
       pd = (double*)acc_copyin(elm->value, so->_cntml_padded*sizeof(double));
