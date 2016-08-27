@@ -829,11 +829,11 @@ void nrn_sparseobj_copyto_device(SparseObj* so) {
   double* pd;
   double** ppd;
 
-  ppelm = (Elm**)acc_copyin(so->rowst, n1*sizeof(Elm*));
-  acc_memcpy_to_device(&(d_so->rowst), &ppelm, sizeof(Elm**));
+  Elm** d_rowst = (Elm**)acc_copyin(so->rowst, n1*sizeof(Elm*));
+  acc_memcpy_to_device(&(d_so->rowst), &d_rowst, sizeof(Elm**));
 
-  ppelm = (Elm**)acc_copyin(so->diag, n1*sizeof(Elm*));
-  acc_memcpy_to_device(&(d_so->diag), &ppelm, sizeof(Elm**));
+  Elm** d_diag = (Elm**)acc_copyin(so->diag, n1*sizeof(Elm*));
+  acc_memcpy_to_device(&(d_so->diag), &d_diag, sizeof(Elm**));
 
   pu = (unsigned*)acc_copyin(so->ngetcall, so->_cntml_padded*sizeof(unsigned));
   acc_memcpy_to_device(&(d_so->ngetcall), &pu, sizeof(Elm**));
@@ -841,8 +841,8 @@ void nrn_sparseobj_copyto_device(SparseObj* so) {
   pd = (double*)acc_copyin(so->rhs, n1 * so->_cntml_padded * sizeof(double));
   acc_memcpy_to_device(&(d_so->rhs), &pd, sizeof(double*));
 
-  ppd = (double**)acc_copyin(so->coef_list, so->coef_list_size * sizeof(double*));
-  acc_memcpy_to_device(&(d_so->coef_list), &ppd, sizeof(double**));
+  double** d_coef_list = (double**)acc_copyin(so->coef_list, so->coef_list_size * sizeof(double*));
+  acc_memcpy_to_device(&(d_so->coef_list), &d_coef_list, sizeof(double**));
 
   // Fill in relevant Elm pointer values
 
@@ -851,14 +851,14 @@ void nrn_sparseobj_copyto_device(SparseObj* so) {
       Elm* pelm = (Elm*)acc_copyin(elm, sizeof(Elm));
 
       if (elm == so->rowst[irow]) {
-        acc_memcpy_to_device(&(d_so->rowst[irow]), &pelm, sizeof(Elm*));
+        acc_memcpy_to_device(&(d_rowst[irow]), &pelm, sizeof(Elm*));
       }else{
         Elm* d_e = (Elm*)acc_deviceptr(elm->c_left);
         acc_memcpy_to_device(&(pelm->c_left), &d_e, sizeof(Elm*));
       }
 
       if (elm->col == elm->row) {
-        acc_memcpy_to_device(&(d_so->diag[elm->col]), &pelm, sizeof(Elm*));
+        acc_memcpy_to_device(&(d_diag[elm->col]), &pelm, sizeof(Elm*));
       }
 
       if (irow > 1) {
@@ -891,7 +891,7 @@ void nrn_sparseobj_copyto_device(SparseObj* so) {
   // Fill in the d_so->coef_list
   for (unsigned i = 0; i < so->coef_list_size; ++i) {
     pd = (double*)acc_deviceptr(so->coef_list[i]);
-    acc_memcpy_to_device(&(d_so->coef_list[i]), &pd, sizeof(double*));
+    acc_memcpy_to_device(&(d_coef_list[i]), &pd, sizeof(double*));
   }
 #endif
 }
