@@ -2,6 +2,13 @@
 
 # read the translated mod files and construct _kinderiv.h
 
+# if _kinderiv.h already exists and is the same as what this script generates
+# then do not update it (to avoid re-compiling all the mech c files if
+# only one of them changes)
+
+kftmp = '_tmp_kinderiv.h'
+kf = '_kinderiv.h'
+
 import os
 
 fnames = [f.replace('.mod', '.c') for f in os.listdir('.') if f.endswith('.mod')]
@@ -18,7 +25,7 @@ for fname in fnames:
         kin.append([word[2], word[3], fname, word[1]])
   f.close()
 
-fout = open("_kinderiv.h", "w")
+fout = open(kftmp, "w")
 fout.write('''
 #ifndef _kinderiv_h
 #define _kinderiv_h
@@ -69,3 +76,16 @@ fout.write("\n")
 
 fout.write('\n#endif\n')
 fout.close()
+
+# if kf exists and is same as kftmp, just remove kftmp. Otherwise
+# rename kftmp to kf
+import filecmp
+b = False
+try:
+  b = filecmp.cmp(kftmp, kf)
+except:
+  pass
+if b:
+  os.remove(kftmp)
+else:
+  os.rename(kftmp, kf)
