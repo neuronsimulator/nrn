@@ -1567,8 +1567,9 @@ for (int i=0; i < nt.end; ++i) {
       NetSendBuffer_t* nsb = (NetSendBuffer_t*)ecalloc(1, sizeof(NetSendBuffer_t));
       ml->_net_send_buffer = nsb;
 
-      // begin with a size equal to the number of instances
-      nsb->_size = ml->nodecount;
+      // begin with a size equal to twice number of instances
+      // at present there is no provision for dynamically increasing this.
+      nsb->_size = ml->nodecount*2;
       nsb->_cnt = 0;
 
       nsb->_sendtype = (int*)ecalloc(nsb->_size, sizeof(int));
