@@ -35,10 +35,10 @@ THE POSSIBILITY OF SUCH DAMAGE.
 template <typename T>
 class fixed_vector{
     size_t n_;
-    T* data_;
     MUTDEC
 
   public:
+    T* data_; /*making public for openacc copying */
     fixed_vector(size_t n):n_(n) { data_ = new T[n_]; }
     ~fixed_vector() { delete [] data_; }
 

@@ -39,12 +39,12 @@ cn_parameters::cn_parameters()
 {
     tstart = 0.0;
     tstop = 100.0;
-    dt = 0.025;
+    dt = -1000.;
 
     dt_io = 0.1;
     dt_report = 0.1;
 
-    celsius = 34.0;
+    celsius = -1000.0; // precedence: set by user, globals.dat, 34.0
     voltage = -65.0;
     maxdelay = 10.0;
 
@@ -54,6 +54,9 @@ cn_parameters::cn_parameters()
     prcellgid = -1;
 
     threading = 0;
+    compute_gpu = 0;
+    cell_interleave_permute = 0;
+    nwarp = 0; /* 0 means not specified */
     report = 0;
 
     patternstim = NULL;
@@ -80,8 +83,10 @@ void cn_parameters::show_cb_opts()
         printf( "\n tstart: %g, tstop: %g, dt: %g, dt_io: %g", tstart, tstop, dt, dt_io );
         printf( " celsius: %g, voltage: %g, maxdelay: %g", celsius, voltage, maxdelay );
 
-        printf( "\n forwardskip: %g, spikebuf: %d, prcellgid: %d, multiple: %d, extracon: %d, threading : %d, mindelay : %g", \
-                forwardskip, spikebuf, prcellgid, multiple, extracon, threading, mindelay);
+        printf( "\n forwardskip: %g, spikebuf: %d, prcellgid: %d, multiple: %d, extracon: %d", \
+                forwardskip, spikebuf, prcellgid, multiple, extracon);
+        printf( "\n threading : %d, mindelay : %g, cell_permute: %d, nwarp: %d", \
+		threading, mindelay, cell_interleave_permute, nwarp);
 
         printf( "\n patternstim: %s, datpath: %s, filesdat: %s, outpath: %s", \
                 patternstim, datpath, filesdat, outpath );
@@ -107,11 +112,13 @@ void cn_parameters::show_cb_opts_help()
        -e TIME, --tstop=TIME\n\
               Set the stop time to TIME (double). The default value is '100.'\n\n\
        -t TIME, --dt=TIME\n\
-              Set the dt time to TIME (double). The default value is '0.025'.\n\n\
+              Set the dt time to TIME (double). The default value is set by defaults.dat, otherwise '0.025'.\n\n\
        -i TIME, --dt_io=TIME\n\
               Set the dt of I/O to TIME (double). The default value is '0.1'.\n\n\
+       -v FLOAT, --voltage=v_init\n\
+              Value used for nrn_finitialize(1, v_init). If 1000, then nrn_finitialize(0,...)\n\
        -l NUMBER, --celsius=NUMBER\n\
-              Set the celsius temperature to NUMBER (double). The default value is '34.'.\n\n\
+              Set the celsius temperature to NUMBER (double). The default value set by defaults.dat, othewise '34.0'.\n\n\
        -p FILE, --pattern=FILE\n\
               Apply patternstim with the spike file FILE (char*). The default value is 'NULL'.\n\n\
        -b SIZE, --spikebuf=SIZE\n\
@@ -119,7 +126,13 @@ void cn_parameters::show_cb_opts_help()
        -g NUMBER, --prcellgid=NUMBER\n\
               Output prcellstate information for the gid NUMBER (int). The default value is '-1'.\n\n\
        -c, --threading\n\
-              Optiong to enable threading. The default implies no threading.\n\n\
+              Option to enable threading. The default implies no threading.\n\n\
+       -a, --gpu\n\
+              Option to enable use of GPUs. The default implies cpu only run.\n\n\
+       -R NUMBER, --cell_permute=NUMBER\n\
+              Cell permutation and interleaving for efficiency\n\n\
+       -W NUMBER, --nwarp=NUMBER\n\
+              number of warps to balance\n\n\
        -d PATH, --datpath=PATH\n\
               Set the path with required CoreNeuron data to PATH (char*). The default value is '.'.\n\n\
        -f FILE, --filesdat=FILE\n\
@@ -154,10 +167,14 @@ void cn_parameters::read_cb_opts( int argc, char **argv )
             {"dt",        required_argument, 0, 't'},
             {"dt_io",     required_argument, 0, 'i'},
             {"celsius",   required_argument, 0, 'l'},
+            {"voltage",   required_argument, 0, 'v'},
             {"pattern",   required_argument, 0, 'p'},
             {"spikebuf",  required_argument, 0, 'b'},
             {"prcellgid", required_argument, 0, 'g'},
             {"threading", no_argument,       0, 'c'},
+            {"gpu",       no_argument,       0, 'a'},
+            {"cell_permute",optional_argument,     0, 'R'},
+            {"nwarp",     required_argument,     0, 'W'},
             {"datpath",   required_argument, 0, 'd'},
             {"filesdat",  required_argument, 0, 'f'},
             {"outpath",   required_argument, 0, 'o'},
@@ -173,7 +190,7 @@ void cn_parameters::read_cb_opts( int argc, char **argv )
         /* getopt_long stores the option index here. */
         int option_index = 0;
 
-        c = getopt_long( argc, argv, "s:e:t:i:l:p:b:g:c:d:f:o:k:m:z:x:r:w:h",
+        c = getopt_long( argc, argv, "s:e:t:i:l:p:b:g:c:d:f:o:k:z:x:m:h:r:w:a:v:R:W",
                          long_options, &option_index );
 
         /* Detect the end of the options. */
@@ -218,6 +235,10 @@ void cn_parameters::read_cb_opts( int argc, char **argv )
                 celsius = atof(optarg);
                 break;
 
+            case 'v':
+                voltage = atof(optarg);
+                break;
+
             case 'p':
                 patternstim = optarg;
                 break;
@@ -232,6 +253,22 @@ void cn_parameters::read_cb_opts( int argc, char **argv )
 
             case 'c':
                 threading = 1;
+                break;
+
+            case 'a':
+                compute_gpu = 1;
+                break;
+
+            case 'R':
+		if (optarg == NULL) {
+			cell_interleave_permute = 1;
+		}else{
+	                cell_interleave_permute = atoi( optarg );
+		}
+                break;
+
+            case 'W':
+                nwarp = atoi( optarg );
                 break;
 
             case 'd':

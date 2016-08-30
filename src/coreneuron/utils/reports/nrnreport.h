@@ -80,8 +80,6 @@ class ReportGenerator {
 
         ReportGenerator(int type, double start, double stop, double dt, double delay, double dt_report, std::string path);
 
-        double * get_soma_voltage_ptr(PreSyn &presyn);
-
         #ifdef ENABLE_REPORTING
             void register_report();
         #endif

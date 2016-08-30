@@ -46,12 +46,22 @@ void nrn_finitialize(int setv, double v) {
 		nrn_deliver_events(nrn_threads + i); /* The play events at t=0 */
 	}
 	if (setv) {
-          for (_nt = nrn_threads; _nt < nrn_threads + nrn_nthread; ++_nt) {
-            for (i=0; i < _nt->end; ++i) {
-			VEC_V(i) = v;
-            }
-          }
-        }
+        for (_nt = nrn_threads; _nt < nrn_threads + nrn_nthread; ++_nt) {
+           double *vec_v = &(VEC_V(0));
+           #pragma acc parallel loop present(_nt[0:1], vec_v[0:_nt->end]) if(_nt->compute_gpu)
+           for (i=0; i < _nt->end; ++i) {
+		        vec_v[i] = v;
+           }
+		}
+	}
+
+	if (nrn_have_gaps) {
+		nrnmpi_v_transfer();
+		for (i=0; i < nrn_nthread; ++i) {
+			nrnthread_v_transfer(nrn_threads + i);
+		}
+	}
+
 	for (i=0; i < nrn_nthread; ++i) {
 		nrn_ba(nrn_threads + i, BEFORE_INITIAL);
 	}

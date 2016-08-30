@@ -64,29 +64,37 @@ public:
 
 class NetCon : public DiscreteEvent {
 public:
-    Point_process* target_;
-    double delay_;
-    double* weight_;
     bool active_;
+    double delay_;
+    Point_process* target_;
+    union {
+        int weight_index_;
+        int srcgid_; // only to help InputPreSyn during setup
+        // before weights are read and stored. Saves on transient
+        // memory requirements by avoiding storage of all group file
+        // netcon_srcgid lists. ie. that info is copied into here.
+    } u;
 
 	NetCon();
 	virtual ~NetCon();
 	virtual void send(double sendtime, NetCvode*, NrnThread*);
     virtual void deliver(double,  NetCvode* ns, NrnThread*);
 	virtual int type() { return NetConType; }
+    virtual void pr(const char*, double t, NetCvode*);
 };
 
 class SelfEvent : public DiscreteEvent {
 public:
     double flag_;
     Point_process* target_;
-    double* weight_;
     void** movable_; // actually a TQItem**
+    int weight_index_;
 
 	SelfEvent();
 	virtual ~SelfEvent();
 	virtual void deliver(double, NetCvode*, NrnThread*);
     virtual int type() { return SelfEventType; }
+
     virtual void pr(const char*, double t, NetCvode*);
 
 private:
@@ -96,29 +104,28 @@ private:
 
 class ConditionEvent : public DiscreteEvent {
 public:
-    // condition detection factored out of PreSyn for re-use
-    ConditionEvent();
-    virtual ~ConditionEvent();
-    virtual void check(NrnThread*, double sendtime, double teps = 0.0);
-    virtual double value() { return -1.; }
+	// condition detection factored out of PreSyn for re-use
+	ConditionEvent();
+	virtual ~ConditionEvent();
+	virtual bool check(NrnThread*);
+	virtual double value() { return -1.; }
 
-    bool flag_; // true when below, false when above.
+    int flag_; // true when below, false when above. (changed from bool to int to avoid cray acc bug(?))
 };
 
 
 class PreSyn : public ConditionEvent {
 public:
-    Point_process* pntsrc_; /// Needed for prcellstate currently
-    NrnThread* nt_;
-    double* thvar_;
-    double threshold_;
-    int nc_index_; //replaces dil_, index into global NetCon** netcon_in_presyn_order_ for the current PreSyn
-    int nc_cnt_; // how many netcon PreSyn has starting at nc_index_
-    int output_index_;
-    int gid_;
 #if NRNMPI
     unsigned char localgid_; // compressed gid for spike transfer
 #endif
+    int nc_index_; //replaces dil_, index into global NetCon** netcon_in_presyn_order_
+    int nc_cnt_; // how many netcon starting at nc_index_
+    int output_index_;
+    int gid_;
+    double threshold_;
+    int thvar_index_; // >=0 points into NrnThread._actual_v
+    Point_process* pntsrc_;
 
 	PreSyn();
 	virtual ~PreSyn();
@@ -126,7 +133,7 @@ public:
 	virtual void deliver(double, NetCvode*, NrnThread*);
 	virtual int type() { return PreSynType; }
 
-    virtual double value() { return *thvar_ - threshold_; }
+	virtual double value(NrnThread*);
 	void record(double t);
 };
 

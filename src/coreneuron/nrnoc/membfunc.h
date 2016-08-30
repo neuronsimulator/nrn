@@ -41,7 +41,7 @@ struct NrnThread;
 
 typedef void (*mod_alloc_t)(double*, Datum*, int);
 typedef void (*mod_f_t)(struct NrnThread*, Memb_list*, int);
-typedef void (*pnt_receive_t)(Point_process*, double*, double);
+typedef void (*pnt_receive_t)(Point_process*, int, double);
 
 typedef struct Memb_func {
 	mod_alloc_t alloc;
@@ -85,6 +85,9 @@ typedef struct BAMech {
 } BAMech;
 extern BAMech** bamech_;
 
+extern int nrn_ion_global_map_size;
+extern double **nrn_ion_global_map;
+
 extern Memb_func* memb_func;
 extern int n_memb_func;
 #define NRNPOINTER 4 /* added on to list of mechanism variables.These are
@@ -102,6 +105,7 @@ extern pnt_receive_t* pnt_receive;
 extern pnt_receive_t* pnt_receive_init;
 
 extern int nrn_get_mechtype(const char*);
+extern const char* nrn_get_mechname(int); // slow. use memb_func[i].sym if posible
 extern int register_mech(const char** m, mod_alloc_t alloc, mod_f_t cur, mod_f_t jacob,
   mod_f_t stat, mod_f_t initialize, int nrnpointerindex, int vectorized
   ); 
@@ -109,11 +113,29 @@ extern int point_register_mech(const char**, mod_alloc_t alloc, mod_f_t cur,
   mod_f_t jacob, mod_f_t stat, mod_f_t initialize, int nrnpointerindex,
   void*(*constructor)(), void(*destructor)(), int vectorized
   );
+typedef void(*NetBufReceive_t)(struct NrnThread*);
+extern void hoc_register_net_receive_buffering(NetBufReceive_t, int);
+extern int net_buf_receive_cnt_;
+extern int* net_buf_receive_type_;
+extern NetBufReceive_t* net_buf_receive_;
+
+extern void hoc_register_net_send_buffering(int);
+extern int net_buf_send_cnt_;
+extern int* net_buf_send_type_;
+
 extern void nrn_cap_jacob(struct NrnThread*, Memb_list*);
 extern void nrn_writes_conc(int, int);
-extern void nrn_wrote_conc(int, double*, int, int, struct NrnThread*);
+#if defined(_OPENACC)
+#pragma acc routine seq
+#endif
+extern void nrn_wrote_conc(int, double*, int, int, double**, double, int);
 extern void hoc_register_prop_size(int, int, int);
 extern void hoc_register_dparam_semantics(int type, int, const char* name);
+
+typedef struct { const char* name; double* pdoub; } DoubScal;
+typedef struct { const char* name; double* pdoub; int index1; } DoubVec;
+typedef struct { const char* name; void (*func)(void); } VoidFunc;
+extern void hoc_register_var(DoubScal*, DoubVec*, VoidFunc*);
 
 extern void _nrn_layout_reg(int, int);
 extern int* nrn_mech_data_layout_;
@@ -131,11 +153,14 @@ extern void add_nrn_fornetcons(int, int);
 extern void add_nrn_artcell(int, int);
 extern void add_nrn_has_net_event(int);
 extern void net_event(Point_process*, double);
-extern void net_send(void**, double*, Point_process*, double, double);
-extern void artcell_net_send(void**, double*, Point_process*, double, double);
+extern void net_send(void**, int, Point_process*, double, double);
+extern void net_move(void**, Point_process*, double);
+extern void artcell_net_send(void**, int, Point_process*, double, double);
+// _OPENACC and/or NET_RECEIVE_BUFFERING
+extern void net_sem_from_gpu(int, int, int, int, int, double, double);
+
 extern void hoc_malchk(void); /* just a stub */
 extern void* hoc_Emalloc(size_t);
-extern int at_time(struct NrnThread*, double);
 
 #if defined(__cplusplus)
 }

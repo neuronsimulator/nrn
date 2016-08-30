@@ -30,6 +30,16 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/nrnoc/multicore.h"
 #include "coreneuron/nrnoc/membdef.h"
 
+#if defined(_OPENACC)
+#define _PRAGMA_FOR_INIT_ACC_LOOP_ _Pragma("acc parallel loop present(vdata[0:_cntml_padded*nparm]) if(_nt->compute_gpu)")
+#define _PRAGMA_FOR_CUR_ACC_LOOP_ _Pragma("acc parallel loop present(vdata[0:_cntml_padded*nparm], ni[0:_cntml_actual], _vec_rhs[0:_nt->end]) if(_nt->compute_gpu) async(stream_id)")
+#define _PRAGMA_FOR_JACOB_ACC_LOOP_ _Pragma("acc parallel loop present(vdata[0:_cntml_padded*nparm], ni[0:_cntml_actual], _vec_d[0:_nt->end]) if(_nt->compute_gpu) async(stream_id)")
+#else
+#define _PRAGMA_FOR_INIT_ACC_LOOP_ _Pragma("")
+#define _PRAGMA_FOR_CUR_ACC_LOOP_ _Pragma("")
+#define _PRAGMA_FOR_JACOB_ACC_LOOP_ _Pragma("")
+#endif
+
 #if !defined(LAYOUT)
 /* 1 means AoS, >1 means AoSoA, <= 0 means SOA */
 #define LAYOUT 1
@@ -71,17 +81,23 @@ void nrn_cap_jacob(NrnThread* _nt, Memb_list* ml) {
 	int _iml;
 	double *vdata;
 	double cfac = .001 * _nt->cj;
-  (void) _cntml_padded; /* unused when layout=1*/
+    (void) _cntml_padded; /* unused when layout=1*/
+
+    double* _vec_d = _nt->_actual_d;
+    int stream_id = _nt->stream_id;
+
 	{ /*if (use_cachevec) {*/
 		int* ni = ml->nodeindices;
+
 #if LAYOUT == 1 /*AoS*/
 		for (_iml=0; _iml < _cntml_actual; _iml++) {
-	    vdata = ml->data + _iml*nparm;
+	        vdata = ml->data + _iml*nparm;
 #else
-	    vdata = ml->data;
+        vdata = ml->data;
+        _PRAGMA_FOR_JACOB_ACC_LOOP_
 		for (_iml=0; _iml < _cntml_actual; _iml++) {
 #endif
-			VEC_D(ni[_iml]) += cfac*cm;
+			_vec_d[ni[_iml]] += cfac*cm;
 		}
 	}
 }
@@ -92,11 +108,13 @@ static void cap_init(NrnThread* _nt, Memb_list* ml, int type ) {
 	int _iml;
 	double *vdata;
 	(void)_nt; (void)type; (void) _cntml_padded; /* unused */
+
 #if LAYOUT == 1 /*AoS*/
 	for (_iml=0; _iml < _cntml_actual; _iml++) {
 	    vdata = ml->data + _iml*nparm;
 #else
 	vdata = ml->data;
+    _PRAGMA_FOR_INIT_ACC_LOOP_
 	for (_iml=0; _iml < _cntml_actual; _iml++) {
 #endif
 		i_cap = 0;
@@ -109,19 +127,27 @@ void nrn_capacity_current(NrnThread* _nt, Memb_list* ml) {
 	int _iml;
 	double *vdata;
 	double cfac = .001 * _nt->cj;
-  (void) _cntml_padded; /* unused when layout=1*/
+
+    /*@todo: verify cfac is being copied !! */
+
+    (void) _cntml_padded; /* unused when layout=1*/
+
 	/* since rhs is dvm for a full or half implicit step */
-	/* (nrn_update_2d() replaces dvi by dvi-dvx) */
-	/* no need to distinguish secondorder */
-		int* ni = ml->nodeindices;
+    /* (nrn_update_2d() replaces dvi by dvi-dvx) */
+    /* no need to distinguish secondorder */
+    int* ni = ml->nodeindices;
+    double* _vec_rhs = _nt->_actual_rhs;
+    int stream_id = _nt->stream_id;
+
 #if LAYOUT == 1 /*AoS*/
 	for (_iml=0; _iml < _cntml_actual; _iml++) {
 	    vdata = ml->data + _iml*nparm;
 #else
 	vdata = ml->data;
+    _PRAGMA_FOR_CUR_ACC_LOOP_
 	for (_iml=0; _iml < _cntml_actual; _iml++) {
 #endif
-		i_cap = cfac*cm*VEC_RHS(ni[_iml]);
+        i_cap = cfac*cm*_vec_rhs[ni[_iml]];
 	}
 }
 

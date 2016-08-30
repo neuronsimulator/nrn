@@ -48,6 +48,10 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #undef prop
 #undef nodecount
 #undef type
+#undef pval
+#undef id
+#undef weights
+#undef weight_index_
 
 #define NrnThread _NrnThread
 #define Memb_list _Memb_list
@@ -60,5 +64,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #define type _type
 #define pval _pval
 #define id _id
+#define weights _weights
+#define weight_index_ _weight_index
 
 #endif

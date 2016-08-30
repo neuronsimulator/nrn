@@ -35,7 +35,18 @@ THE POSSIBILITY OF SUCH DAMAGE.
 
 int secondorder=0;
 double t, dt, celsius;
+#if defined(PG_ACC_BUGS)
+#pragma acc declare copyin(secondorder)
+#pragma acc declare copyin(celsius)
+#endif
 int rev_dt;
+
+int net_buf_receive_cnt_;
+int* net_buf_receive_type_;
+NetBufReceive_t* net_buf_receive_;
+
+int net_buf_send_cnt_;
+int* net_buf_send_type_;
 
 static int memb_func_size_;
 static int pointtype = 1; /* starts at 1 since 0 means not point in pnt_map*/
@@ -54,6 +65,7 @@ short* pnt_receive_size;
  /* values are type numbers of mechanisms which do net_send call */
 int nrn_has_net_event_cnt_;
 int* nrn_has_net_event_;
+int* pnttype2presyn; /* inverse of nrn_has_net_event_ */
 int* nrn_prop_param_size_;
 int* nrn_prop_dparam_size_;
 int* nrn_mech_data_layout_; /* 1 AoS (default), >1 AoSoA, 0 SoA */
@@ -204,6 +216,20 @@ void nrn_writes_conc(int type, int unused) {
 
 void _nrn_layout_reg(int type, int layout) {
 	nrn_mech_data_layout_[type] = layout;
+}
+
+void hoc_register_net_receive_buffering(NetBufReceive_t f, int type) {
+	int i = net_buf_receive_cnt_++;
+	net_buf_receive_type_ = (int*)erealloc(net_buf_receive_type_, net_buf_receive_cnt_*sizeof(int));
+	net_buf_receive_ = (NetBufReceive_t*)erealloc(net_buf_receive_, net_buf_receive_cnt_*sizeof(NetBufReceive_t));
+	net_buf_receive_type_[i] = type;
+	net_buf_receive_[i] = f;
+}
+
+void hoc_register_net_send_buffering(int type) {
+	int i = net_buf_send_cnt_++;
+	net_buf_send_type_ = (int*)erealloc(net_buf_send_type_, net_buf_send_cnt_*sizeof(int));
+	net_buf_send_type_[i] = type;
 }
 
 void hoc_register_prop_size(int type, int psize, int dpsize) {

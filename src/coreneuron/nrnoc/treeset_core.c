@@ -29,6 +29,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/nrnconf.h"
 #include "coreneuron/nrnoc/multicore.h"
 #include "coreneuron/nrnoc/nrnoc_decl.h"
+#include "coreneuron/nrniv/nrn_acc_manager.h"
 
 /*
 Fixed step method with threads and cache efficiency. No extracellular,
@@ -38,14 +39,23 @@ sparse matrix, multisplit, or legacy features.
 static void nrn_rhs(NrnThread* _nt) {
 	int i, i1, i2, i3;
 	NrnThreadMembList* tml;
+    int stream_id = _nt->stream_id;
 
 	i1 = 0;
 	i2 = i1 + _nt->ncell;
 	i3 = _nt->end;
 
+    double *vec_rhs = &(VEC_RHS(0));
+    double *vec_d = &(VEC_D(0));
+    double *vec_a = &(VEC_A(0));
+    double *vec_b = &(VEC_B(0));
+    double *vec_v = &(VEC_V(0));
+    int *parent_index = _nt->_v_parent_index;
+
+    #pragma acc parallel loop present(vec_rhs[0:i3], vec_d[0:i3]) if(_nt->compute_gpu) async(stream_id)
 	for (i = i1; i < i3; ++i) {
-		VEC_RHS(i) = 0.;
-		VEC_D(i) = 0.;
+		vec_rhs[i] = 0.;
+		vec_d[i] = 0.;
 	}
 
 	nrn_ba(_nt, BEFORE_BREAKPOINT);
@@ -59,15 +69,20 @@ hoc_warning("errno set during calculation of currents", (char*)0);
 		}
 #endif
 	}
+
 	/* now the internal axial currents.
 	The extracellular mechanism contribution is already done.
 		rhs += ai_j*(vi_j - vi)
 	*/
+    #pragma acc parallel loop present(vec_rhs[0:i3], vec_d[0:i3], vec_a[0:i3], \
+        vec_b[0:i3], vec_v[0:i3], parent_index[0:i3]) if(_nt->compute_gpu) async(stream_id)
 	for (i = i2; i < i3; ++i) {
-		double dv = VEC_V(_nt->_v_parent_index[i]) - VEC_V(i);
+		double dv = vec_v[parent_index[i]] - vec_v[i];
 		/* our connection coefficients are negative so */
-		VEC_RHS(i) -= VEC_B(i)*dv;
-		VEC_RHS(_nt->_v_parent_index[i]) += VEC_A(i)*dv;
+        #pragma acc atomic update
+		vec_rhs[i] -= vec_b[i]*dv;
+        #pragma acc atomic update
+		vec_rhs[parent_index[i]] += vec_a[i]*dv;
 	}
 }
 
@@ -82,6 +97,7 @@ This is a common operation for fixed step, cvode, and daspk methods
 static void nrn_lhs(NrnThread* _nt) {
 	int i, i1, i2, i3;
 	NrnThreadMembList* tml;
+    int stream_id = _nt->stream_id;
 
 	i1 = 0;
 	i2 = i1 + _nt->ncell;
@@ -106,10 +122,19 @@ has taken effect
 		nrn_cap_jacob(_nt, _nt->tml->ml);
 	}
 
+    double *vec_d = &(VEC_D(0));
+    double *vec_a = &(VEC_A(0));
+    double *vec_b = &(VEC_B(0));
+    int *parent_index = _nt->_v_parent_index;
+
 	/* now add the axial currents */
+        #pragma acc parallel loop present(vec_d[0:i3], vec_a[0:i3], vec_b[0:i3], \
+            parent_index[0:i3]) if(_nt->compute_gpu) async(stream_id)
         for (i=i2; i < i3; ++i) {
-		VEC_D(i) -= VEC_B(i);
-		VEC_D(_nt->_v_parent_index[i]) -= VEC_A(i);
+            #pragma acc atomic update
+		    vec_d[i] -= vec_b[i];
+            #pragma acc atomic update
+		    vec_d[parent_index[i]] -= vec_a[i];
         }
 }
 
@@ -117,5 +142,8 @@ has taken effect
 void* setup_tree_matrix_minimal(NrnThread* _nt){
 	nrn_rhs(_nt);
 	nrn_lhs(_nt);
+
+    //update_matrix_from_gpu(_nt);
+
 	return (void*)0;
 }

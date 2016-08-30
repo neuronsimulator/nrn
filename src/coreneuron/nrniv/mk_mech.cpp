@@ -81,6 +81,7 @@ void mk_mech(const char* datpath) {
     printf("%s %d %d %d %d %d %d\n", mname, type, pnttype, is_art, is_ion, dsize, pdsize);
 #endif
     std::string str(mname);
+    memb_func[type].sym = (Symbol*)strdup(mname);
     mech2type[str] = type;
     pnt_map[type] = (char)pnttype;
     nrn_prop_param_size_[type] = dsize;
@@ -142,3 +143,13 @@ int nrn_get_mechtype(const char* name) {
     return -1; // Could not find the mechanism
   return mapit->second;
 }
+
+const char* nrn_get_mechname(int type) {
+  for (std::map<std::string, int>::iterator i = mech2type.begin(); i != mech2type.end(); ++i) {
+    if (type == i->second) {
+      return i->first.c_str();
+    }
+  }
+  return NULL;
+} 
+

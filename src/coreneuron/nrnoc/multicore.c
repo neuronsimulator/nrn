@@ -73,12 +73,6 @@ void (*nrn_mk_transfer_thread_data_)();
 extern int v_structure_change;
 extern int diam_changed;
 
-#if (PERMANENT || USE_PTHREAD)
-static int busywait_;
-static int busywait_main_;
-#endif
-
-
 extern void nrn_threads_free();
 extern void nrn_old_thread_save();
 extern double nrn_timeus();
@@ -110,7 +104,7 @@ static unsigned long t1_[BS][BSIZE], *t_[BS];
 #define BS 0
 #endif
 
-#if USE_PTHREAD
+#if 0 && USE_PTHREAD
 static void* nulljob(NrnThread* nt) {
 	(void)nt; /* unused */
 	return (void*)0;
@@ -253,6 +247,11 @@ static pthread_mutex_t* _nrn_malloc_mutex;
 #define PERMANENT 1
 #endif
 
+#if PERMANENT
+static int busywait_;
+static int busywait_main_;
+#endif
+
 typedef volatile struct {
         int flag;
 	int thread_id;
@@ -282,6 +281,10 @@ static void wait_for_workers() {
 	    }
 #else
 		pthread_join(slave_threads[i], (void*)0);
+		/* if CORENEURON_OPENMP is off */
+		(void) busywait_;
+		(void) busywait_main_;
+		(void) nulljob;
 #endif
 	}
 }
@@ -509,6 +512,7 @@ void nrn_threads_create(int n, int parallel) {
 				nt->_ml_list = (Memb_list**)0;
 				nt->pntprocs = (Point_process*)0;
 				nt->presyns = (PreSyn*)0;
+				nt->pnt2presyn_ix = (int**)0;
 				nt->netcons = (NetCon*)0;
 				nt->weights = (double*)0;
 				nt->n_pntproc = nt->n_presyn = nt->n_netcon = 0;
@@ -529,11 +533,16 @@ void nrn_threads_create(int n, int parallel) {
 				nt->_actual_v = 0;
 				nt->_actual_area = 0;
 				nt->_v_parent_index = 0;
+				nt->_permute = 0;
                                 nt->_shadow_rhs = 0;
                                 nt->_shadow_d = 0;
 				nt->_ecell_memb_list = 0;
 				nt->_sp13mat = 0;
 				nt->_ctime = 0.0;
+
+				nt->_net_send_buffer_size = 0;
+				nt->_net_send_buffer = (int*)0;
+				nt->_net_send_buffer_cnt = 0;
 			}
 		}
 		v_structure_change = 1;

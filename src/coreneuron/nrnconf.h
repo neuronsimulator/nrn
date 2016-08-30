@@ -79,10 +79,9 @@ extern double hoc_Exp(double x);
 
 /* will go away at some point */
 typedef struct Point_process {
-	void* _presyn; /* for artificial cell net_event */
-    unsigned int _i_instance;
-    unsigned short _type;
-    unsigned short _tid; /* NrnThread id */
+	int _i_instance;
+	short _type;
+	short _tid; /* NrnThread id */
 } Point_process;
 
 extern char* pnt_name(Point_process* pnt);

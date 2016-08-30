@@ -47,6 +47,8 @@ ReportEvent::ReportEvent(double t) {
 /** on deliver, call ReportingLib and setup next event */
 
 void ReportEvent::deliver(double t, NetCvode *nc, NrnThread *nt) {
+//avoid pgc++-Fatal-/opt/pgi/linux86-64/16.5/bin/pggpp2ex TERMINATED by signal 11
+#ifdef ENABLE_REPORTING
 
     /** @todo: reportinglib is not thread safe, fix this */
     #pragma omp critical
@@ -65,6 +67,7 @@ void ReportEvent::deliver(double t, NetCvode *nc, NrnThread *nt) {
         send(t+dt, nc, nt);
         step++;
     }
+#endif //ENABLE_REPORTING
 }
 
 /** based on command line arguments, setup reportinglib interface */

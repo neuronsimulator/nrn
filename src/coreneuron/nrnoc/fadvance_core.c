@@ -30,8 +30,10 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/nrnoc/multicore.h"
 #include "coreneuron/nrnmpi/nrnmpi.h"
 #include "coreneuron/nrnoc/nrnoc_decl.h"
+#include "coreneuron/nrniv/nrn_acc_manager.h"
 
 static void* nrn_fixed_step_thread(NrnThread*);
+static void* nrn_fixed_step_lastpart(NrnThread*);
 static void* nrn_fixed_step_group_thread(NrnThread*);
 static void update(NrnThread*);
 static void nonvint(NrnThread*);
@@ -53,7 +55,7 @@ void dt2thread(double adt) { /* copied from nrnoc/fadvance.c */
     }
 }
 
-void nrn_fixed_step_minimal() {
+void nrn_fixed_step_minimal() { /* not so minimal anymore with gap junctions */
 	if (t != nrn_threads->_t) {
 		dt2thread(-1.);
 	}else{
@@ -62,7 +64,13 @@ void nrn_fixed_step_minimal() {
 /*printf("nrn_fixed_step_minimal t=%g\n", t);*/
 	nrn_thread_table_check();
 	nrn_multithread_job(nrn_fixed_step_thread);
-	nrn_spike_exchange(nrn_threads);
+	if (nrn_have_gaps) {
+		nrnmpi_v_transfer();
+		nrn_multithread_job(nrn_fixed_step_lastpart);
+	}
+	if (nrn_threads[0]._stop_stepping) {
+		nrn_spike_exchange(nrn_threads);
+	}
 	t = nrn_threads[0]._t;
 }
 
@@ -117,30 +125,44 @@ static void* nrn_fixed_step_group_thread(NrnThread* nth) {
 	return (void*)0;
 }
 
+
 static void update(NrnThread* _nt){
 	int i, i1, i2;
 	i1 = 0;
 	i2 = _nt->end;
+    int stream_id = _nt->stream_id;
+
+    double *vec_v = &(VEC_V(0));
+    double *vec_rhs = &(VEC_RHS(0));
+
 	/* do not need to worry about linmod or extracellular*/
 	if (secondorder) {
+        #pragma acc parallel loop present(vec_v[0:i2], vec_rhs[0:i2]) if(_nt->compute_gpu) async(stream_id)
 		for (i=i1; i < i2; ++i) {
-			VEC_V(i) += 2.*VEC_RHS(i);
+			vec_v[i] += 2.*vec_rhs[i];
 		}
 	}else{
+        #pragma acc parallel loop present(vec_v[0:i2], vec_rhs[0:i2]) if(_nt->compute_gpu) async(stream_id)
 		for (i=i1; i < i2; ++i) {
-			VEC_V(i) += VEC_RHS(i);
+			vec_v[i] += vec_rhs[i];
 		}
 	}
+
+    //update_matrix_to_gpu(_nt);
+
 	if (_nt->tml) {
 		assert(_nt->tml->index == CAP);
 		nrn_capacity_current(_nt, _nt->tml->ml);
 	}
-
 }
 
 static void nonvint(NrnThread* _nt) {
 	NrnThreadMembList* tml;
+	if (nrn_have_gaps) {
+		nrnthread_v_transfer(_nt);
+	}
 	errno = 0;
+
 	for (tml = _nt->tml; tml; tml = tml->next) if (memb_func[tml->index].state) {
 		mod_f_t s = memb_func[tml->index].state;
 		(*s)(_nt, tml->ml, tml->index);
@@ -150,6 +172,7 @@ hoc_warning("errno set during calculation of states", (char*)0);
 		}
 #endif
 	}
+
 }
 
 void nrn_ba(NrnThread* nt, int bat){
@@ -163,18 +186,43 @@ void nrn_ba(NrnThread* nt, int bat){
 }
 
 static void* nrn_fixed_step_thread(NrnThread* nth) {
+	/* check thresholds and deliver all (including binqueue)
+	   events up to t+dt/2 */
 	deliver_net_events(nth);
 	nth->_t += .5 * nth->_dt;
+
+  if (nth->ncell) {
+    int stream_id = nth->stream_id;
+    /*@todo: do we need to update nth->_t on GPU: Yes (Michael, but can launch kernel) */
+    #pragma acc update device(nth->_t) if(nth->compute_gpu) async(stream_id)
+    #pragma acc wait(stream_id)
+
 	fixed_play_continuous(nth);
 	setup_tree_matrix_minimal(nth);
 	nrn_solve_minimal(nth);
 	second_order_cur(nth);
 	update(nth);
-	nth->_t += .5 * nth->_dt;
-	fixed_play_continuous(nth);
-	nonvint(nth);
-	nrn_ba(nth, AFTER_SOLVE);
-	nrn_deliver_events(nth) ; /* up to but not past texit */
+  }
+	if (!nrn_have_gaps) {
+		nrn_fixed_step_lastpart(nth);
+	}
 	return (void*)0;
 }
 
+static void* nrn_fixed_step_lastpart(NrnThread* nth) {
+    nth->_t += .5 * nth->_dt;
+
+  if (nth->ncell) {
+    int stream_id = nth->stream_id;
+    /*@todo: do we need to update nth->_t on GPU */
+    #pragma acc update device(nth->_t) if(nth->compute_gpu) async(stream_id)
+    #pragma acc wait(stream_id)
+
+	fixed_play_continuous(nth);
+	nonvint(nth);
+	nrn_ba(nth, AFTER_SOLVE);
+  }
+
+	nrn_deliver_events(nth) ; /* up to but not past texit */
+	return (void*)0;
+}

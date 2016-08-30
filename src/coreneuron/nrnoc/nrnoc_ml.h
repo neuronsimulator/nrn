@@ -31,12 +31,43 @@ THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "coreneuron/nrnconf.h"
 
+#if PG_ACC_BUGS
+typedef struct ThreadDatum {
+	int i;
+	double* pval;
+	void* _pvoid;
+}ThreadDatum;
+#else
 typedef union ThreadDatum {
 	double val;
 	int i;
 	double* pval;
 	void* _pvoid;
 }ThreadDatum;
+#endif
+
+typedef struct NetReceiveBuffer_t {
+	int* _pnt_index;
+	int* _weight_index;
+	double* _nrb_t;
+	double* _nrb_flag;
+	int _cnt;
+	int _size; /* capacity */
+	int _pnt_offset;
+	int reallocated; /* if buffere resized/reallocated, needs to be copy to gpu */
+}NetReceiveBuffer_t;
+
+typedef struct NetSendBuffer_t {
+	int* _sendtype; // net_send, net_event, net_move
+	int* _vdata_index;
+	int* _pnt_index;
+	int* _weight_index;
+	double* _nsb_t;
+	double* _nsb_flag;
+	int _cnt;
+	int _size; /* capacity */
+	int reallocated; /* if buffer resized/reallocated, needs to be copy to cpu */
+}NetSendBuffer_t;
 
 typedef struct Memb_list {
 #if CACHEVEC != 0
@@ -47,9 +78,12 @@ typedef struct Memb_list {
 	 * cache-efficient */
 	int *nodeindices;
 #endif /* CACHEVEC */
+	int* _permute;
 	double* data;
 	Datum* pdata;
 	ThreadDatum* _thread; /* thread specific data (when static is no good) */
+	NetReceiveBuffer_t* _net_receive_buffer;
+	NetSendBuffer_t* _net_send_buffer;
 	int nodecount; /* actual node count */
 	int _nodecount_padded;
 } Memb_list;

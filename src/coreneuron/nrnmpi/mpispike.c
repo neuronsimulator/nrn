@@ -260,6 +260,10 @@ extern void nrnmpi_int_gatherv(int* s, int scnt,
 		r, rcnt, rdispl, MPI_INT, root, nrnmpi_comm);
 }
 
+extern void nrnmpi_int_alltoall(int* s, int* r, int n) {
+	MPI_Alltoall(s, n, MPI_INT, r, n, MPI_INT, nrnmpi_comm);
+}
+
 extern void nrnmpi_int_alltoallv(int* s, int* scnt, int* sdispl,
     int* r, int* rcnt, int* rdispl) {
 	MPI_Alltoallv(s, scnt, sdispl, MPI_INT,

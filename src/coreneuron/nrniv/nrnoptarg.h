@@ -60,6 +60,11 @@ typedef struct cn_parameters {
     int threading;		/**< enable pthread/openmp  */
     int report;		    /**< enable soma reports  */
 
+    int compute_gpu;		    /**< run computations on gpu  */
+
+    int cell_interleave_permute; /**< cell interleaving permutation  */
+    int nwarp;  /* number of warps to balance for cell_interleave_permute == 2 */
+
     const char *patternstim;
     const char *datpath;		/**< directory path where .dat files */
     const char *outpath; 		/**< directory where spikes will be written */

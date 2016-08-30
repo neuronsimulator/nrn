@@ -38,6 +38,10 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/nrniv/nrniv_decl.h"
 #include "coreneuron/nrniv/output_spikes.h"
 #include "coreneuron/nrniv/nrn_assert.h"
+#include "coreneuron/nrniv/nrn_acc_manager.h"
+#ifdef _OPENACC
+#include <openacc.h>
+#endif
 
 #define PP2NT(pp) (nrn_threads + (pp)->_tid)
 #define PP2t(pp) (PP2NT(pp)->_t)
@@ -65,10 +69,11 @@ extern pnt_receive_t* pnt_receive_init;
 extern short* nrn_artcell_qindex_;
 extern bool nrn_use_localgid_;
 extern void nrn2ncs_outputevent(int netcon_output_index, double firetime);
-void net_send(void**, double*, Point_process*, double, double);
+void net_send(void**, int, Point_process*, double, double);
 void net_event(Point_process* pnt, double time);
 void net_move(void**, Point_process*, double);
-void artcell_net_send(void**, double*, Point_process*, double, double);
+void net_sem_from_gpu(int sendtype, int i_vdata, int, int ith, int ipnt, double, double);
+void artcell_net_send(void**, int, Point_process*, double, double);
 void artcell_net_move(void**, Point_process*, double);
 extern void nrn_fixed_step_minimal();
 extern void nrn_fixed_step_group_minimal(int);
@@ -86,47 +91,61 @@ static int nrn_errno_check(int type)
 
 }
 
-void net_send(void** v, double* weight, Point_process* pnt, double td, double flag) {
-    NrnThread* nt = PP2NT(pnt);
-    NetCvodeThreadData& p = net_cvode_instance->p[nt->id];
+// for _OPENACC and/or NET_RECEIVE_BUFFERING
+//sem 0:3 send event move
+void net_sem_from_gpu(int sendtype, int i_vdata, int weight_index_, int ith, int ipnt, double td, double flag) {
+  NrnThread& nt = nrn_threads[ith];
+  Point_process* pnt = (Point_process*)nt._vdata[ipnt];
+  if (sendtype == 0) {
+    net_send(nt._vdata + i_vdata, weight_index_, pnt, td, flag);
+  }else if (sendtype == 2) {
+    net_move(nt._vdata + i_vdata, pnt, td);
+  }else{
+    net_event(pnt, td);
+  }
+}
+
+void net_send(void** v, int weight_index_, Point_process* pnt, double td, double flag) {
+	NrnThread* nt = PP2NT(pnt);
+	NetCvodeThreadData& p = net_cvode_instance->p[nt->id];
     SelfEvent* se = new SelfEvent;
-    se->flag_ = flag;
-    se->target_ = pnt;
-    se->weight_ = weight;
-    se->movable_ = v; // needed for SaveState
-    nrn_assert(net_cvode_instance);
-    ++p.unreffed_event_cnt_;
-    if (td < nt->_t) {
-        char buf[100];
-        sprintf(buf, "net_send td-t = %g", td - nt->_t);
+	se->flag_ = flag;
+	se->target_ = pnt;
+	se->weight_index_ = weight_index_;
+	se->movable_ = v; // needed for SaveState
+	assert(net_cvode_instance);
+	++p.unreffed_event_cnt_;
+	if (td < nt->_t) {
+		char buf[100];
+		sprintf(buf, "net_send td-t = %g", td - nt->_t);
         se->pr(buf, td, net_cvode_instance);
-        abort();
-        hoc_execerror("net_send delay < 0", 0);
-    }
-    TQItem* q;
-    q = net_cvode_instance->event(td, se, nt);
-
-    if (flag == 1.0)
-        *v = (void*)q;
-
+		abort();
+		hoc_execerror("net_send delay < 0", 0);
+	}
+	TQItem* q;
+	q = net_cvode_instance->event(td, se, nt);
+	if (flag == 1.0) {
+		*v = (void*)q;
+	}
 //printf("net_send %g %s %g %p\n", td, pnt_name(pnt), flag, *v);
 }
 
-void artcell_net_send(void** v, double* weight, Point_process* pnt, double td, double flag) {
-    net_send(v, weight, pnt, td, flag);
+void artcell_net_send(void** v, int weight_index_, Point_process* pnt, double td, double flag) {
+	net_send(v, weight_index_, pnt, td, flag);
 }
 
 void net_event(Point_process* pnt, double time) {
-    PreSyn* ps = (PreSyn*)pnt->_presyn;
-    if (ps) {
-        if (time < PP2t(pnt)) {
-            char buf[100];
-            sprintf(buf, "net_event time-t = %g", time-PP2t(pnt));
-            ps->pr(buf, time, net_cvode_instance);
-            hoc_execerror("net_event time < t", 0);
-        }
-        ps->send(time, net_cvode_instance, ps->nt_);
-    }
+	NrnThread* nt = PP2NT(pnt);
+	PreSyn* ps = nt->presyns + nt->pnt2presyn_ix[pnttype2presyn[pnt->_type]][pnt->_i_instance];
+	if (ps) {
+		if (time < nt->_t) {
+			char buf[100];
+			sprintf(buf, "net_event time-t = %g", time - nt->_t);
+			ps->pr(buf, time, net_cvode_instance);
+			hoc_execerror("net_event time < t", 0);
+		}
+		ps->send(time, net_cvode_instance, nt);
+	}
 }
 
 NetCvodeThreadData::NetCvodeThreadData() {
@@ -260,34 +279,33 @@ void NetCvode::init_events() {
     for (int i=0; i < nrn_nthread; ++i) {
         p[i].tqe_->nshift_ = -1;
         p[i].tqe_->shift_bin(nrn_threads->_t);
-    }
+	}
 
-    for (int tid=0; tid < nrn_nthread; ++tid) {// can be done in parallel
-        NrnThread* nt = nrn_threads + tid;
+	for (int tid=0; tid < nrn_nthread; ++tid) {// can be done in parallel
+		NrnThread* nt = nrn_threads + tid;
 
-        for (int ipre = 0; ipre < nt->n_presyn; ++ ipre) {
-            PreSyn* ps = nt->presyns + ipre;
-            ps->flag_ = false;
-        }
+		for (int ipre = 0; ipre < nt->n_presyn; ++ ipre) {
+			PreSyn* ps = nt->presyns + ipre;
+			ps->flag_ = false;
+		}
 
-        for (int inetc = 0; inetc < nt->n_netcon; ++inetc) {
-            NetCon* d = nt->netcons + inetc;
-            if (d->target_) {
-                int type = d->target_->_type;
-
-                if (pnt_receive_init[type])
-                    (*pnt_receive_init[type])(d->target_, d->weight_, 0);
-                else {
-                    int cnt = pnt_receive_size[type]; 
-                    double* wt = d->weight_;
-
-                    //not the first
-                    for (int j = 1; j < cnt; ++j)
-                        wt[j] = 0.;
-                }
-            }
-        }
-    }
+		for (int inetc = 0; inetc < nt->n_netcon; ++inetc) {
+			NetCon* d = nt->netcons + inetc;
+			if (d->target_) {
+				int type = d->target_->_type;
+				if (pnt_receive_init[type]) {
+                    (*pnt_receive_init[type])(d->target_, d->u.weight_index_, 0);
+				}else{
+					int cnt = pnt_receive_size[type];
+					double* wt = nt->weights + d->u.weight_index_;
+					//not the first
+					for (int j = 1; j < cnt; ++j) {
+						wt[j] = 0.;
+					}
+				}
+			}
+		}
+	}
 }
 
 
@@ -348,9 +366,9 @@ DiscreteEvent::DiscreteEvent() {}
 DiscreteEvent::~DiscreteEvent() {}
 
 NetCon::NetCon() {
-    active_ = false; weight_ = NULL;
-    target_ = NULL;
-    delay_ = 1.0;
+	active_ = false; u.weight_index_ = 0;
+	target_ = NULL;
+	delay_ = 1.0;
 }
 
 NetCon::~NetCon() {
@@ -359,14 +377,14 @@ NetCon::~NetCon() {
 
 PreSyn::PreSyn() {
     nc_index_ = 0;
-    nc_cnt_ = 0;
-    flag_ = false;
-    thvar_ = NULL;
-    threshold_ = 10.;
-    gid_ = -1;
-    nt_ = NULL;
-    localgid_ = 0;
-    output_index_ = 0;
+	nc_cnt_ = 0;
+	flag_ = false;
+	thvar_index_ = -1;
+	pntsrc_ = NULL;
+	threshold_ = 10.;
+	gid_ = -1;
+	localgid_ = 0;
+	output_index_ = 0;
 }
 
 InputPreSyn::InputPreSyn() {
@@ -375,6 +393,10 @@ InputPreSyn::InputPreSyn() {
 }
 
 PreSyn::~PreSyn() {
+//	printf("~PreSyn %p\n", this);
+	if (pntsrc_) {
+		pntsrc_ = nil;
+	}
 }
 
 InputPreSyn::~InputPreSyn() {
@@ -390,20 +412,20 @@ void PreSyn::record(double tt) {
     spikevec_unlock();
 }
 
-
-void ConditionEvent::check(NrnThread* nt, double tt, double teps) {
-    if (value() > 0.0) {
-        if (flag_ == false) {
-            flag_ = true;
-            send(tt + teps, net_cvode_instance, nt);
-        }
-    }else
-        flag_ = false;
+bool ConditionEvent::check(NrnThread *nt) {
+	if (value() > 0.0) {
+		if (flag_ == false) {
+			flag_ = true;
+			return true;
+		}
+	}else{
+		flag_ = false;
+	}
+	return false;
 }
 
 ConditionEvent::ConditionEvent() {}
 ConditionEvent::~ConditionEvent() {}
-
 
 void DiscreteEvent::send(double tt, NetCvode* ns, NrnThread* nt) {
     ns->event(tt, this, nt);
@@ -424,7 +446,7 @@ void NetCon::send(double tt, NetCvode* ns, NrnThread* nt) {
         ns->bin_event(tt, this, PP2NT(target_));
     }
 }
-	
+
 void NetCon::deliver(double tt, NetCvode* ns, NrnThread* nt) {
     (void)ns;
     nrn_assert(target_);
@@ -437,13 +459,19 @@ void NetCon::deliver(double tt, NetCvode* ns, NrnThread* nt) {
     nt->_t = tt;
 
 //printf("NetCon::deliver t=%g tt=%g %s\n", t, tt, pnt_name(target_));
-    POINT_RECEIVE(typ, target_, weight_, 0);
+	POINT_RECEIVE(typ, target_, u.weight_index_, 0);
 #ifdef DEBUG
     if (errno && nrn_errno_check(typ)) 
         hoc_warning("errno set during NetCon deliver to NET_RECEIVE", (char*)0);
 #endif
 }
 
+
+void NetCon::pr(const char* s, double tt, NetCvode* ns) {
+  (void)ns;
+  Point_process* pp = target_;
+  printf("%s NetCon target=%s[%d] %.15g\n", s, memb_func[pp->_type].sym, pp->_i_instance, tt);
+}
 
 void PreSyn::send(double tt, NetCvode* ns, NrnThread* nt) {
     record(tt);
@@ -509,7 +537,7 @@ void SelfEvent::deliver(double tt, NetCvode* ns, NrnThread* nt) {
 
 
 void SelfEvent::call_net_receive(NetCvode* ns) {
-    POINT_RECEIVE(target_->_type, target_, weight_, flag_);
+	POINT_RECEIVE(target_->_type, target_, weight_index_, flag_);
 
 #ifdef DEBUG
     if (errno && nrn_errno_check(target_->_type))
@@ -520,7 +548,7 @@ void SelfEvent::call_net_receive(NetCvode* ns) {
     --nctd.unreffed_event_cnt_;
 }
 
-void SelfEvent::pr(const char* s, double tt, NetCvode *) {
+void SelfEvent::pr(const char* s, double tt, NetCvode*) {
     printf("%s", s);
     printf(" SelfEvent target=%s %.15g flag=%g\n", pnt_name(target_), tt, flag_);
 }
@@ -529,9 +557,9 @@ void ncs2nrn_integrate(double tstop) {
     double ts;
     int n = (int)((tstop - nrn_threads->_t)/dt + 1e-9);
 
-    if (n > 3)
+    if (n > 3 && !nrn_have_gaps) {
         nrn_fixed_step_group_minimal(n);
-    else{
+    }else{
 #if NRNMPI
         ts = tstop - dt;
         nrn_assert(nrn_threads->_t <= tstop);
@@ -556,15 +584,95 @@ void ncs2nrn_integrate(double tstop) {
 
 // factored this out from deliver_net_events so we can
 // stay in the cache
+// net_send_buffer added so checking can be done on gpu
+// while event queueing is on cpu.
+// Remember: passsing reference variable causes cray
+// compiler bug
+
+static bool pscheck(double var, double thresh, int* flag) {
+	if (var > thresh) {
+		if (*flag == false) {
+			*flag = true;
+            return true;
+		}
+	}else{
+		*flag = false;
+	}
+	return false;
+}
+
+double PreSyn::value(NrnThread *nt) {
+	return nt->_actual_v[thvar_index_] - threshold_;
+}
+
 void NetCvode::check_thresh(NrnThread* nt) { // for default method
     int i;
+    double teps = 1e-10;
+
+    nt->_net_send_buffer_cnt = 0;
+    int stream_id = nt->stream_id;
+    int net_send_buf_count = 0;
+    PreSyn *presyns = nt->presyns;
+    PreSynHelper *presyns_helper = nt->presyns_helper;
+    double *actual_v = nt->_actual_v;
+
+    if(nt->ncell == 0)
+        return;
+
+    //_net_send_buffer_cnt is no longer used in openacc kernel, remove this?
+    //#ifdef _OPENACC
+    //    if(nt->compute_gpu)
+    //        acc_update_device(&(nt->_net_send_buffer_cnt), sizeof(int));
+    //#endif
+
+    // on GPU...
+    #pragma acc parallel loop present(nt[0:1], presyns_helper[0:nt->n_presyn], \
+    presyns[0:nt->n_presyn], actual_v[0:nt->end]) copy(net_send_buf_count) if(nt->compute_gpu) async(stream_id)
     for (i=0; i < nt->ncell; ++i) {
-        PreSyn* ps = nt->presyns + i;
-        nrn_assert(ps->thvar_);
-        ps->check(nt, nt->_t, 1e-10);
+        PreSyn* ps = presyns + i;
+        PreSynHelper* psh = presyns_helper + i;
+        int idx = 0;
+        int thidx = ps->thvar_index_;
+        double v = actual_v[thidx];
+        double threshold = ps->threshold_;
+        int *flag = &(psh->flag_);
+
+        if (pscheck(v, threshold, flag)) {
+
+            #ifndef _OPENACC
+                nt->_net_send_buffer_cnt = net_send_buf_count;
+                if (nt->_net_send_buffer_cnt >= nt->_net_send_buffer_size) {
+                    nt->_net_send_buffer_size *= 2;
+                    nt->_net_send_buffer = (int*)erealloc(nt->_net_send_buffer, nt->_net_send_buffer_size * sizeof(int));
+                }
+            #endif
+
+            #pragma acc atomic capture
+            idx = net_send_buf_count++;
+
+            nt->_net_send_buffer[idx] = i;
+        }
+    }
+
+    #pragma acc wait(stream_id)
+    nt->_net_send_buffer_cnt = net_send_buf_count;
+
+    if(nt->_net_send_buffer_cnt) {
+        #ifdef _OPENACC
+        int *nsbuffer = nt->_net_send_buffer;
+        #endif
+        #pragma acc update host(nsbuffer[0:nt->_net_send_buffer_cnt]) if(nt->compute_gpu) async(stream_id)
+        #pragma acc wait(stream_id)
+    }
+
+    // on CPU...
+    for (i=0; i < nt->_net_send_buffer_cnt; ++i) {
+        PreSyn* ps = nt->presyns + nt->_net_send_buffer[i];
+        ps->send(nt->_t + teps, net_cvode_instance, nt);
     }
 }
 
+// events including binqueue events up to t+dt/2
 void NetCvode::deliver_net_events(NrnThread* nt) { // for default method
     TQItem* q;
     double tm, tsav;
@@ -608,5 +716,12 @@ void NetCvode::deliver_net_events(NrnThread* nt) { // for default method
         p[tid].tqe_->shift_bin(tm);
     }
 
-    nt->_t = tsav;
+	nt->_t = tsav;
+
+    /*before executing on gpu, we have to update the NetReceiveBuffer_t on GPU */
+    update_net_receive_buffer(nt);
+
+	for (int i=0; i < net_buf_receive_cnt_; ++i) {
+		(*net_buf_receive_[i])(nt);
+	}
 }

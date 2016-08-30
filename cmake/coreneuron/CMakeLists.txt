@@ -41,8 +41,8 @@ PROJECT(coreneuron)
 
 set(CORENEURON_DESCRIPTION "BBP CoreNeuron simulator")
 
-set(VERSION_MAJOR "0")
-set(VERSION_MINOR "9")
+set(VERSION_MAJOR "1")
+set(VERSION_MINOR "0")
 set(VERSION_PATCH "0")
 set(VERSION_STRING "${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}")
 
@@ -77,7 +77,7 @@ include(CTest)
 
 #Find all dependencies
 find_package(MPI REQUIRED)
-find_package(mod2c 1.1  REQUIRED)
+find_package(mod2c 2.0.0  REQUIRED)
 find_package(Boost 1.41.0 QUIET COMPONENTS filesystem system atomic unit_test_framework)
 
 include(BlueGenePortability)
@@ -117,6 +117,33 @@ if(have_memory_h)
   add_definitions("-DHAVE_MEMORY_H")
 endif()
 
+option (ENABLE_SELECTIVE_GPU_PROFILING "Enable GPU profiling only for Solver" ON)
+option (ENABLE_OPENACC "Enable use of OpenACC" OFF)
+
+if(ENABLE_OPENACC)
+    if(${CMAKE_C_COMPILER_ID} STREQUAL "PGI")
+        add_definitions( -DPG_ACC_BUGS)
+    endif()
+
+    find_package(CUDA 5.0)
+    SET(CUDA_SEPARABLE_COMPILATION ON)
+
+    if(CUDA_FOUND)
+        if(ENABLE_SELECTIVE_GPU_PROFILING)
+            add_definitions( -DCUDA_PROFILING)
+            add_definitions( -DENABLE_SELECTIVE_PROFILING)
+        endif(ENABLE_SELECTIVE_GPU_PROFILING)
+    else(CUDA_FOUND)
+        message( FATAL_ERROR "Error : Can't file CUDA, load module or set path!" )
+    endif(CUDA_FOUND)
+
+ELSE(ENABLE_OPENACC)
+    SET (ENABLE_SELECTIVE_GPU_PROFILING OFF)
+endif(ENABLE_OPENACC)
+
+# Some mechanisms use NEURON specific code which is skipped
+# using this macro for CoreNeuron build
+add_definitions(-DCORENEURON_BUILD)
 
 if(DISABLE_NRN_TIMEOUT)
     add_definitions("-DDISABLE_TIMEOUT")
@@ -129,7 +156,6 @@ add_subdirectory(coreneuron)
 if(CORENEURON_MAIN)
     add_subdirectory(apps)
 endif(CORENEURON_MAIN)
-
 
 # Tests
 if(Boost_FOUND)

@@ -36,6 +36,31 @@ make
 make install
 ```
 
+# Building with GPU support
+
+CoreNEURON has support for GPUs using OpenACC programming model when enabled with -DENABLE_OPENACC=ON.
+
+Here are the steps to compile:
+
+```bash
+module purge
+module load pgi/pgi64/16.5 pgi/mpich/16.5
+module load cuda/6.0
+
+export CC=mpicc
+export CXX=mpicxx
+
+cmake .. -DCMAKE_C_FLAGS:STRING="-acc -Minfo=acc -Minline=size:200,levels:10 -O3 -DSWAP_ENDIAN_DISABLE_ASM -DLAYOUT=0 -DDISABLE_HOC_EXP" -DCMAKE_CXX_FLAGS:STRING="-acc -Minfo=acc -Minline=size:200,levels:10 -O3 -DSWAP_ENDIAN_DISABLE_ASM -DLAYOUT=0 -DDISABLE_HOC_EXP" -DCOMPILE_LIBRARY_TYPE=STATIC -DCMAKE_INSTALL_PREFIX=$EXPER_DIR/install/ -DCUDA_HOST_COMPILER=`which gcc` -DCUDA_PROPAGATE_HOST_FLAGS=OFF -DENABLE_SELECTIVE_GPU_PROFILING=ON -DENABLE_OPENACC=ON
+```
+
+And now you can run with --gpu option as:
+
+```bash
+export CUDA_VISIBLE_DEVICES=0   #if needed
+mpirun -n 1 ./bin/coreneuron_exec -d ../tests/integration/ring -mpi -e 100 --gpu --celsius=6.3
+```
+
+
 # Using ReportingLib
 If you want enable use of ReportingLib for the soma reports, install ReportingLib first and enable it using -DENABLE_REPORTINGLIB (use same install path for ReportingLib as CoreNeuron).
 
@@ -45,7 +70,6 @@ If you are building CoreNeuron with Neurodamus, you have to set *ADDITIONAL_MECH
 cmake .. -DADDITIONAL_MECHPATH="/path/of/neurodamus/lib/modlib" -DADDITIONAL_MECHS="/path/of/neurodamus/lib/modlib/coreneuron_modlist.txt"
 ```
 Make sure to switch to appropriate branch of Neurodamus (based on your dataset/experiment, e.g. coreneuronsetup).
-
 
 On a Cray system the user has to provide the path to the MPI library as follows:
 ```bash
@@ -127,6 +151,20 @@ In order to see the command line options, you can use:
 
 Currently CoreNEURON only outputs spike data. When running the simulation, each MPI rank writes spike information
 into a file `out.#mpi_rank`. These files should be combined and sorted to compare with NEURON spike output.
+
+# Running tests
+
+Once you compile CoreNEURON, unit tests and ring test will be compile by if Boost is available.
+If you pass the path for Neurodamus channels, 10 cell tests will also be compile. You can run tests using
+
+```bash
+make test
+```
+
+If you have different mpi launcher, you can specify it during cmake configuration as:
+```bash
+cmake .. -DTEST_MPI_EXEC_BIN="mpirun" -DTEST_EXEC_PREFIX="mpirun;-n;2" -DTEST_EXEC_PREFIX="mpirun;-n;2" -DAUTO_TEST_WITH_SLURM=OFF -DAUTO_TEST_WITH_MPIEXEC=OFF
+```
 
 ## License
 * See LICENSE.txt

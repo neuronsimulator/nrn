@@ -40,7 +40,6 @@ void data_reader::open(const char *filename, bool reorder) {
 
     close();
     F.open(filename);
-    nrn_assert(!F.fail());
 }
 
 static const int max_line_length=100;
@@ -81,7 +80,13 @@ void data_reader::read_checkpoint_assert() {
 
     int i;
     int n_scan=sscanf(line_buf,"chkpnt %d\n",&i);
+    if (n_scan != 1) {
+      fprintf(stderr, "no chkpnt line for %d\n", chkpnt);
+    }
     nrn_assert(n_scan==1);
+    if (i != chkpnt) {
+      fprintf(stderr, "file chkpnt %d != expected %d\n", i, chkpnt);
+    }
     nrn_assert(i==chkpnt);
     ++chkpnt;
 }
