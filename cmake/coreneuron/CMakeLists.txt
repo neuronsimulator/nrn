@@ -41,9 +41,9 @@ PROJECT(coreneuron)
 
 set(CORENEURON_DESCRIPTION "BBP CoreNeuron simulator")
 
-set(VERSION_MAJOR "0")
-set(VERSION_MINOR "8")
-set(VERSION_PATCH "1")
+set(VERSION_MAJOR "1")
+set(VERSION_MINOR "0")
+set(VERSION_PATCH "0")
 set(VERSION_STRING "${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}")
 
 ## global options
@@ -77,7 +77,7 @@ include(CTest)
 
 #Find all dependencies
 find_package(MPI REQUIRED)
-find_package(mod2c 1.1  REQUIRED)
+find_package(mod2c 2.0.0  REQUIRED)
 find_package(Boost 1.41.0 QUIET COMPONENTS filesystem system atomic unit_test_framework)
 
 include(BlueGenePortability)
