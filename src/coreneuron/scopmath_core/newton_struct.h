@@ -33,7 +33,7 @@ extern int nrn_newton_thread(NewtonSpace* ns, int n, int* s, NEWTFUN pfunc,
                              double* value, _threadargsproto_);
 
 #pragma acc routine seq
-static void nrn_buildjacobian_thread(NewtonSpace* ns, int n, int* s,
+extern void nrn_buildjacobian_thread(NewtonSpace* ns, int n, int* s,
                                      NEWTFUN pfunc, double* value,
                                      double** jacobian, _threadargsproto_);
 

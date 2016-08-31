@@ -90,7 +90,6 @@ int nrn_newton_thread(NewtonSpace* ns, int n, int* s, NEWTFUN pfunc,
       for (i = 0; i < n; i++)
         value[ix(i)] = -value[ix(i)]; /* Required correction to
                                        * function values */
-
       error = nrn_crout_thread(ns, n, jacobian, perm, _threadargs_);
       if (error != SUCCESS) {
         done = 2;
@@ -181,7 +180,7 @@ int nrn_newton_thread(NewtonSpace* ns, int n, int* s, NEWTFUN pfunc,
 
 #define max(x, y) (fabs(x) > y ? x : y)
 
-static void nrn_buildjacobian_thread(NewtonSpace* ns, int n, int* index,
+void nrn_buildjacobian_thread(NewtonSpace* ns, int n, int* index,
                                      NEWTFUN pfunc, double* value,
                                      double** jacobian, _threadargsproto_) {
 #define x_(arg) _p[(arg)*_STRIDE]
@@ -205,7 +204,7 @@ static void nrn_buildjacobian_thread(NewtonSpace* ns, int n, int* index,
 
       /* Insert partials into jth column of Jacobian matrix */
 
-      jacobian[ix(i)][j] =
+      jacobian[i][ix(j)] =
           (high_value[ix(i)] - low_value[ix(i)]) / (2.0 * increment);
     }
 
@@ -221,7 +220,7 @@ NewtonSpace* nrn_cons_newtonspace(int n, int n_instance) {
   ns->n = n;
   ns->n_instance = n_instance;
   ns->delta_x = makevector(n * n_instance * sizeof(double));
-  ns->jacobian = makematrix(n * n_instance, n);
+  ns->jacobian = makematrix(n, n * n_instance);
   ns->perm = (int*)emalloc((unsigned)(n * n_instance * sizeof(int)));
   ns->high_value = makevector(n * n_instance * sizeof(double));
   ns->low_value = makevector(n * n_instance * sizeof(double));
