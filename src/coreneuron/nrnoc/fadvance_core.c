@@ -103,7 +103,7 @@ void nrn_fixed_step_group_minimal(int n) {
         //@TODO: flush/optimize/better way
         if(nrnmpi_myid == 0) {
             float completed = ( ( (float) step_group_end / step_group_n) * 100.0);
-            printf(" Completed %.2f%, t = %lf\r", completed, nrn_threads[0]._t);
+            printf(" Completed %.2f, t = %lf\r", completed, nrn_threads[0]._t);
             fflush(stdout);
         }
 	}
@@ -130,8 +130,9 @@ static void update(NrnThread* _nt){
 	int i, i1, i2;
 	i1 = 0;
 	i2 = _nt->end;
+#if defined(_OPENACC)
     int stream_id = _nt->stream_id;
-
+#endif
     double *vec_v = &(VEC_V(0));
     double *vec_rhs = &(VEC_RHS(0));
 
@@ -192,10 +193,12 @@ static void* nrn_fixed_step_thread(NrnThread* nth) {
 	nth->_t += .5 * nth->_dt;
 
   if (nth->ncell) {
+#if defined(_OPENACC)
     int stream_id = nth->stream_id;
     /*@todo: do we need to update nth->_t on GPU: Yes (Michael, but can launch kernel) */
     #pragma acc update device(nth->_t) if(nth->compute_gpu) async(stream_id)
     #pragma acc wait(stream_id)
+#endif
 
 	fixed_play_continuous(nth);
 	setup_tree_matrix_minimal(nth);
@@ -213,10 +216,13 @@ static void* nrn_fixed_step_lastpart(NrnThread* nth) {
     nth->_t += .5 * nth->_dt;
 
   if (nth->ncell) {
+
+#if defined(_OPENACC)
     int stream_id = nth->stream_id;
     /*@todo: do we need to update nth->_t on GPU */
     #pragma acc update device(nth->_t) if(nth->compute_gpu) async(stream_id)
     #pragma acc wait(stream_id)
+#endif
 
 	fixed_play_continuous(nth);
 	nonvint(nth);

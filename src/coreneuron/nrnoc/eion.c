@@ -274,7 +274,9 @@ static void ion_cur(NrnThread* nt, Memb_list* ml, int type) {
 	int _iml;
 	double* pd; Datum* ppd;
 	(void)nt; /* unused */
+#if defined(_OPENACC)
     int stream_id = nt->stream_id;
+#endif
 /*printf("ion_cur %s\n", memb_func[type].sym->name);*/
 #if LAYOUT == 1 /*AoS*/
 	for (_iml = 0; _iml < _cntml_actual; ++_iml) {
@@ -344,7 +346,9 @@ void second_order_cur(NrnThread* _nt) {
 	int* ni;
 	double* pd;
 	(void)_nt; /* unused */
+#if defined(_OPENACC)
     int stream_id = _nt->stream_id;
+#endif
     double * _vec_rhs = _nt->_actual_rhs;
 
   if (secondorder == 2) {

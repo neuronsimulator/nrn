@@ -139,6 +139,9 @@ if(ENABLE_OPENACC)
 
 ELSE(ENABLE_OPENACC)
     SET (ENABLE_SELECTIVE_GPU_PROFILING OFF)
+    #OpenACC pragmas are not guarded, disable all unknown pragm warnings
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${IGNORE_UNKNOWN_PRAGMA_FLAGS}")
+    set(CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} ${IGNORE_UNKNOWN_PRAGMA_FLAGS}")
 endif(ENABLE_OPENACC)
 
 # Some mechanisms use NEURON specific code which is skipped

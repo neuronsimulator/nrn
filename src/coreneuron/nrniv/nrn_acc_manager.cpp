@@ -388,6 +388,9 @@ void setup_nrnthreads_on_device(NrnThread *threads, int nthreads)  {
             }
         }
     }
+#else
+    (void) threads;
+    (void) nthreads;
 #endif
 }
 
@@ -403,6 +406,9 @@ void copy_ivoc_vect_to_device(IvocVect *& iv, IvocVect *& div) {
             acc_memcpy_to_device(&(d_iv->data_), &d_data, sizeof(double*));
         }
     }
+#else
+    (void) iv;
+    (void) div;
 #endif
 }
 
@@ -486,6 +492,8 @@ void update_net_receive_buffer(NrnThread *nt) {
             }
         }
     }
+#else
+    (void) nt;
 #endif
 }
 
@@ -503,6 +511,9 @@ void update_net_send_buffer_on_host(NrnThread *nt, NetSendBuffer_t* nsb) {
         acc_update_self(nsb->_nsb_t, sizeof(double)*nsb->_cnt);
         acc_update_self(nsb->_nsb_flag, sizeof(double)*nsb->_cnt);
     }
+#else
+    (void) nt;
+    (void) nsb;
 #endif
 
 }
@@ -601,6 +612,9 @@ void update_nrnthreads_on_host(NrnThread *threads, int nthreads) {
              */
         }
     }
+#else
+    (void) threads;
+    (void) nthreads;
 #endif
 
 }
@@ -693,6 +707,9 @@ void update_nrnthreads_on_device(NrnThread *threads, int nthreads) {
              */
         }
     }
+#else
+    (void) threads;
+    (void) nthreads;
 #endif
 
 }
@@ -720,6 +737,8 @@ void update_matrix_from_gpu(NrnThread *_nt){
         #pragma acc update host(rhs[0:2*ne]) async(_nt->stream_id)
         #pragma acc wait(_nt->stream_id)
     }
+#else
+    (void) _nt;
 #endif
 }
 
@@ -742,6 +761,8 @@ void update_matrix_to_gpu(NrnThread *_nt){
         #pragma acc update device(rhs[0:ne]) async(_nt->stream_id)
         #pragma acc wait(_nt->stream_id)
     }
+#else
+    (void) _nt;
 #endif
 }
 

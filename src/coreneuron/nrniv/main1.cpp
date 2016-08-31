@@ -206,7 +206,9 @@ int main1( int argc, char **argv, char **env )
 
         report_mem_usage( "After nrn_finitialize" );
 
+        #ifdef ENABLE_REPORTING
         ReportGenerator * r = NULL;
+        #endif
 
         // if reports are enabled using ReportingLib
         if ( input_params.report ) {
