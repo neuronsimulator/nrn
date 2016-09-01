@@ -319,6 +319,11 @@ bool NetCvode::deliver_event(double til, NrnThread* nt) {
         if (print_event_) { de->pr("deliver", tt, this); }
 #endif
         de->deliver(tt, this, nt);
+
+        /// In case of a self event we need to delete the self event
+        if (de->type() == SelfEventType)
+            delete (SelfEvent*)de;
+
         return true;
     }else
         return false;
