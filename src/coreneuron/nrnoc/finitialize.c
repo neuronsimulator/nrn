@@ -87,7 +87,6 @@ void nrn_finitialize(int setv, double v) {
 		nrn_ba(nrn_threads + i, AFTER_INITIAL);
 	}
 	for (i=0; i < nrn_nthread; ++i) {
-		nrn_initial_net_send_buffering(nrn_threads + i);
 		nrn_deliver_events(nrn_threads + i); /* The INITIAL sent events at t=0 */
 	}
         for (i=0; i < nrn_nthread; ++i) {
