@@ -68,11 +68,13 @@ void destroy_interleave_info() {
 // can be called after admin2
 static void print_quality2(int iwarp, InterleaveInfo& ii, int* p) {
   int nodebegin = ii.lastnode[iwarp];
-  int nodeend = ii.lastnode[iwarp+1];
   int* stride = ii.stride + ii.stridedispl[iwarp];
   int ncycle = ii.cellsize[iwarp];
 
+#if 0
+  int nodeend = ii.lastnode[iwarp+1];
   int nnode = ii.lastnode[ii.nwarp];
+#endif
 
   int inode = nodebegin;
 

@@ -39,8 +39,9 @@ sparse matrix, multisplit, or legacy features.
 static void nrn_rhs(NrnThread* _nt) {
 	int i, i1, i2, i3;
 	NrnThreadMembList* tml;
+#if defined(_OPENACC)
     int stream_id = _nt->stream_id;
-
+#endif
 	i1 = 0;
 	i2 = i1 + _nt->ncell;
 	i3 = _nt->end;
@@ -97,7 +98,9 @@ This is a common operation for fixed step, cvode, and daspk methods
 static void nrn_lhs(NrnThread* _nt) {
 	int i, i1, i2, i3;
 	NrnThreadMembList* tml;
+#if defined(_OPENACC)
     int stream_id = _nt->stream_id;
+#endif
 
 	i1 = 0;
 	i2 = i1 + _nt->ncell;

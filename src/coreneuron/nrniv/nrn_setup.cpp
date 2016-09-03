@@ -1589,6 +1589,8 @@ for (int i=0; i < nt.end; ++i) {
 /** read mapping information for neurons */
 void read_phase3(data_reader &F, int imult, NrnThread& nt) {
 
+    (void) imult;
+
     /** mapping information for all neurons in single NrnThread */
     NeuronGroupMappingInfo *nrngroup_map = new NeuronGroupMappingInfo();
 

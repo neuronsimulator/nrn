@@ -67,6 +67,10 @@ void ReportEvent::deliver(double t, NetCvode *nc, NrnThread *nt) {
         send(t+dt, nc, nt);
         step++;
     }
+#else
+    (void) t;
+    (void) nc;
+    (void) nt;
 #endif //ENABLE_REPORTING
 }
 

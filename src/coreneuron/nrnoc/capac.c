@@ -84,7 +84,9 @@ void nrn_cap_jacob(NrnThread* _nt, Memb_list* ml) {
     (void) _cntml_padded; /* unused when layout=1*/
 
     double* _vec_d = _nt->_actual_d;
+#if defined(_OPENACC)
     int stream_id = _nt->stream_id;
+#endif
 
 	{ /*if (use_cachevec) {*/
 		int* ni = ml->nodeindices;
@@ -137,7 +139,9 @@ void nrn_capacity_current(NrnThread* _nt, Memb_list* ml) {
     /* no need to distinguish secondorder */
     int* ni = ml->nodeindices;
     double* _vec_rhs = _nt->_actual_rhs;
+#if defined(_OPENACC)
     int stream_id = _nt->stream_id;
+#endif
 
 #if LAYOUT == 1 /*AoS*/
 	for (_iml=0; _iml < _cntml_actual; _iml++) {

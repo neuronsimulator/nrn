@@ -58,7 +58,9 @@ static void triang(NrnThread* _nt) {
     double *vec_d = &(VEC_D(0));
     double *vec_rhs = &(VEC_RHS(0));
     int *parent_index = _nt->_v_parent_index;
+#if defined(_OPENACC)
     int stream_id = _nt->stream_id;
+#endif
 
     /** @todo: just for benchmarking, otherwise produces wrong results */
 	#pragma acc parallel loop seq present(vec_a[0:i3], vec_b[0:i3], vec_d[0:i3], vec_rhs[0:i3], parent_index[0:i3]) async(stream_id) if(_nt->compute_gpu)
@@ -81,7 +83,9 @@ static void bksub(NrnThread* _nt) {
     double *vec_d = &(VEC_D(0));
     double *vec_rhs = &(VEC_RHS(0));
     int *parent_index = _nt->_v_parent_index;
+#if defined(_OPENACC)
     int stream_id = _nt->stream_id;
+#endif
 
     /** @todo: just for benchmarking, otherwise produces wrong results */
 	#pragma acc parallel loop seq present(vec_d[0:i2], vec_rhs[0:i2]) async(stream_id) if(_nt->compute_gpu)

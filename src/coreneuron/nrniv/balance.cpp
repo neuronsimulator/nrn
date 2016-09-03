@@ -43,7 +43,6 @@ size_t warp_balance(size_t ncell, VecTNode& nodevec) {
   size_t nwarp = size_t(cellorder_nwarp);
   // cannot be more warps than cells
   nwarp = (ncell < nwarp) ? ncell : nwarp;
-  size_t ncore = nwarp * warpsize;
 
   // cellsize vector and location of types.
   std::vector<size_t>cellsize(ncell);
@@ -60,11 +59,14 @@ size_t warp_balance(size_t ncell, VecTNode& nodevec) {
     }
   }
 
+#if 0
+  size_t ncore = nwarp * warpsize;
   size_t cells_per_type = ncell/(typedispl.size() - 1);
-
   size_t ideal_ncycle = total_compart/ncore;
-  size_t ideal_compart_per_warp = total_compart/nwarp;
   size_t avg_cells_per_warp = total_compart/(ncell*nwarp);
+#endif
+
+  size_t ideal_compart_per_warp = total_compart/nwarp;
 
   size_t min_cells_per_warp = 0;
   for (size_t i = 0, sz = 0; sz < ideal_compart_per_warp; ++i) {

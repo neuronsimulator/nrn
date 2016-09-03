@@ -319,6 +319,11 @@ bool NetCvode::deliver_event(double til, NrnThread* nt) {
         if (print_event_) { de->pr("deliver", tt, this); }
 #endif
         de->deliver(tt, this, nt);
+
+        /// In case of a self event we need to delete the self event
+        if (de->type() == SelfEventType)
+            delete (SelfEvent*)de;
+
         return true;
     }else
         return false;
@@ -413,6 +418,7 @@ void PreSyn::record(double tt) {
 }
 
 bool ConditionEvent::check(NrnThread *nt) {
+    (void) nt;
 	if (value() > 0.0) {
 		if (flag_ == false) {
 			flag_ = true;
@@ -610,11 +616,14 @@ void NetCvode::check_thresh(NrnThread* nt) { // for default method
     double teps = 1e-10;
 
     nt->_net_send_buffer_cnt = 0;
-    int stream_id = nt->stream_id;
     int net_send_buf_count = 0;
     PreSyn *presyns = nt->presyns;
     PreSynHelper *presyns_helper = nt->presyns_helper;
     double *actual_v = nt->_actual_v;
+
+#if defined(_OPENACC)
+    int stream_id = nt->stream_id;
+#endif
 
     if(nt->ncell == 0)
         return;

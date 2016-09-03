@@ -73,6 +73,7 @@ foreach(COMPILER_LANGUAGE ${SUPPORTED_COMPILER_LANGUAGE_LIST})
 
 		set(CMAKE_${COMPILER_LANGUAGE}_VECTORIZE "-qhot")
 		set(ADDITIONAL_THREADSAFE_FLAGS "-qthreaded")
+        set(IGNORE_UNKNOWN_PRAGMA_FLAGS "-qsuppress=1506-224")
 
 	# Microsoft compiler
 	elseif(CMAKE_${COMPILER_LANGUAGE}_COMPILER_IS_MSVC) 
@@ -105,6 +106,7 @@ foreach(COMPILER_LANGUAGE ${SUPPORTED_COMPILER_LANGUAGE_LIST})
 		set(CMAKE_${COMPILER_LANGUAGE}_POSITION_INDEPENDANT "-fPIC")
 
 		set(CMAKE_${COMPILER_LANGUAGE}_VECTORIZE "-ftree-vectorize")
+        set(IGNORE_UNKNOWN_PRAGMA_FLAGS "-Wno-unknown-pragmas")
 
 		if(CMAKE_${COMPILER_LANGUAGE}_COMPILER_IS_GCC AND ( CMAKE_${COMPILER_LANGUAGE}_COMPILER_VERSION VERSION_GREATER "4.7.0") )
 			set(CMAKE_${COMPILER_LANGUAGE}_LINK_TIME_OPT "-flto")
@@ -119,6 +121,11 @@ foreach(COMPILER_LANGUAGE ${SUPPORTED_COMPILER_LANGUAGE_LIST})
 
 	## rest of the world
 	else()
+
+        ## unknown compiler flags produce error on Cray and hence just set this for intel now
+        if(CMAKE_${COMPILER_LANGUAGE}_COMPILER_IS_ICC)
+            set(IGNORE_UNKNOWN_PRAGMA_FLAGS "-Wno-unknown-pragmas")
+        endif()
 
 		set(CMAKE_${COMPILER_LANGUAGE}_WARNING_ALL "")
 
