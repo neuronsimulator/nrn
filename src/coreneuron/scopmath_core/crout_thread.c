@@ -175,7 +175,8 @@ void nrn_scopmath_solve_thread(int n, double** a, double* b, int* perm,
   double sum;
 
   /* Perform forward substitution with pivoting */
-  if (y) {
+  //if (y) { // pgacc bug. NULL on cpu but not on GPU
+  if (0) {
     for (i = 0; i < n; i++) {
       pivot = perm[ix(i)];
       sum = 0.0;
@@ -200,7 +201,11 @@ void nrn_scopmath_solve_thread(int n, double** a, double* b, int* perm,
     for (i = 0; i < n; i++) {
       pivot = perm[ix(i)];
       sum = 0.0;
-      for (j = 0; j < i; j++) sum += a[pivot][ix(j)] * (p[ix(j)]);
+      if (i > 0) { // pgacc bug. with i==0 the following loop executes once
+        for (j = 0; j < i; j++) {
+      	  sum += a[pivot][ix(j)] * (p[ix(j)]);
+        }
+      }
       p[ix(i)] = (b_(pivot) - sum) / a[pivot][ix(i)];
     }
 
