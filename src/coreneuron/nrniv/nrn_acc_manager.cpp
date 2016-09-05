@@ -879,7 +879,7 @@ void nrn_sparseobj_copyto_device(SparseObj* so) {
       }
 
       if (elm->col == elm->row) {
-        acc_memcpy_to_device(&(d_diag[elm->col]), &pelm, sizeof(Elm*));
+        acc_memcpy_to_device(&(d_diag[irow]), &pelm, sizeof(Elm*));
       }
 
       if (irow > 1) {
