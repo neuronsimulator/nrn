@@ -48,6 +48,7 @@ ENDCOMMENT
 
 
 NEURON {
+	THREADSAFE
 	POINT_PROCESS AMPA_S
 	RANGE R, g
 	NONSPECIFIC_CURRENT i
@@ -112,8 +113,8 @@ NET_RECEIVE(weight, on, nspike, r0, t0 (ms)) {
 			t0 = t
 			on = 1
 			synon = synon + weight
-			state_discontinuity(Ron, Ron + r0)
-			state_discontinuity(Roff, Roff - r0)
+			Ron = Ron + r0
+			Roff = Roff - r0
 		}
 		: come again in Cdur with flag = current value of nspike
 		net_send(Cdur, nspike)
@@ -122,8 +123,8 @@ NET_RECEIVE(weight, on, nspike, r0, t0 (ms)) {
 		r0 = weight*Rinf + (r0 - weight*Rinf)*exp(-(t - t0)/Rtau)
 		t0 = t
 		synon = synon - weight
-		state_discontinuity(Ron, Ron - r0)
-		state_discontinuity(Roff, Roff + r0)
+		Ron = Ron - r0
+		Roff = Roff + r0
 		on = 0
 	}
 }

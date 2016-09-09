@@ -93,6 +93,6 @@ NET_RECEIVE(weight (umho), w, G1, G2, t0 (ms)) {
 	G2 = G2 + Ginc*Gfactor
 	t0 = t
 	w = weight*(1 + G2 - G1)
-	state_discontinuity(A, A + w*factor)
-	state_discontinuity(B, B + w*factor)
+	A = A + w*factor
+	B = B + w*factor
 }

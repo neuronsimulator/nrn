@@ -311,7 +311,9 @@ esac
 case "$host_os" in
   darwin*)
 	AC_DEFINE(DARWIN, 1, [if mac os x])
-	macdarwin=yes
+	if test x${macdarwin} = x ; then
+		macdarwin=yes
+	fi
 	if test x${linux_nrnmech} = x ; then
 		linux_nrnmech="yes"
 	fi
