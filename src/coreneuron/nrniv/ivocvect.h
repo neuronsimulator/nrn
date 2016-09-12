@@ -29,6 +29,8 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef ivoc_vector_h
 #define ivoc_vector_h
 
+#if defined(__cplusplus)
+
 #include <stdio.h>
 #include "coreneuron/nrniv/nrnmutdec.h"
 
@@ -62,10 +64,20 @@ class fixed_vector{
 typedef fixed_vector<double> IvocVect;
 
 extern "C" {
+
+#else
+
+typedef void IvocVect;
+
+#endif /* !defined(__cplusplus) */
+
   extern IvocVect* vector_new1(int n);
   extern int vector_capacity(IvocVect* v);
   extern double* vector_vec(IvocVect* v);
+
+#if defined(__cplusplus)
 }
+#endif
 
 #endif
 
