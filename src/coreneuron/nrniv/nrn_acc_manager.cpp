@@ -434,12 +434,12 @@ void realloc_net_receive_buffer(NrnThread* nt, Memb_list* ml) {
 #ifdef _OPENACC
   if (nt->compute_gpu) {
     // free existing vectors in buffers on gpu
-    acc_free( acc_deviceptr(nrb->_pnt_index) );
-    acc_free( acc_deviceptr(nrb->_weight_index) );
-    acc_free( acc_deviceptr(nrb->_nrb_t) );
-    acc_free( acc_deviceptr(nrb->_nrb_flag) );
-    acc_free( acc_deviceptr(nrb->_displ) );
-    acc_free( acc_deviceptr(nrb->_nrb_index) );
+    acc_delete(nrb->_pnt_index, nrb->_size*sizeof(int));
+    acc_delete(nrb->_weight_index, nrb->_size*sizeof(int));
+    acc_delete(nrb->_nrb_t, nrb->_size*sizeof(double));
+    acc_delete(nrb->_nrb_flag, nrb->_size*sizeof(double));
+    acc_delete(nrb->_displ, (nrb->_size+1)*sizeof(int));
+    acc_delete(nrb->_nrb_index, nrb->_size*sizeof(int));
   }
 #endif
 
