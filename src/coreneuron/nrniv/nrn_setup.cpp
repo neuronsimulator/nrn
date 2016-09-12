@@ -786,6 +786,8 @@ void nrn_cleanup() {
           free(nrb->_weight_index);
           free(nrb->_nrb_t);
           free(nrb->_nrb_flag);
+          free(nrb->_displ);
+          free(nrb->_nrb_index);
         }
         free(nrb);
       }
@@ -1550,9 +1552,9 @@ for (int i=0; i < nt.end; ++i) {
       }
 
       nrb->_pnt_index = (int*)ecalloc(nrb->_size, sizeof(int));
+      nrb->_displ = (int*)ecalloc(nrb->_size + 1, sizeof(int));
+      nrb->_nrb_index = (int*)ecalloc(nrb->_size, sizeof(int));
       nrb->_weight_index = (int*)ecalloc(nrb->_size, sizeof(int));
-      // when == 1, NetReceiveBuffer_t is newly allocated (i.e. we need to free previous copy and recopy new data 
-      nrb->reallocated = 1;
       nrb->_nrb_t = (double*)ecalloc(nrb->_size, sizeof(double));
       nrb->_nrb_flag = (double*)ecalloc(nrb->_size, sizeof(double));
     }

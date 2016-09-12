@@ -47,14 +47,17 @@ typedef union ThreadDatum {
 #endif
 
 typedef struct NetReceiveBuffer_t {
+	int* _displ; /* _displ_cnt + 1 of these */
+	int* _nrb_index; /* _cnt of these (order of increasing _pnt_index) */
+
 	int* _pnt_index;
 	int* _weight_index;
 	double* _nrb_t;
 	double* _nrb_flag;
 	int _cnt;
+	int _displ_cnt; /* number of unique _pnt_index */
 	int _size; /* capacity */
 	int _pnt_offset;
-	int reallocated; /* if buffere resized/reallocated, needs to be copy to gpu */
 }NetReceiveBuffer_t;
 
 typedef struct NetSendBuffer_t {

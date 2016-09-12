@@ -1,3 +1,6 @@
+#include <queue>
+#include <utility>
+
 #include "coreneuron/nrnoc/multicore.h"
 #include "coreneuron/nrniv/netcon.h"
 #include "coreneuron/nrniv/nrn_acc_manager.h"
@@ -191,7 +194,7 @@ void setup_nrnthreads_on_device(NrnThread *threads, int nthreads)  {
             }
 
             NetReceiveBuffer_t *nrb, *d_nrb;
-            int *d_weight_index, *d_pnt_index;
+            int *d_weight_index, *d_pnt_index, *d_displ, *d_nrb_index;
             double *d_nrb_t, *d_nrb_flag;
 
             //net_receive buffer associated with mechanism
@@ -215,8 +218,12 @@ void setup_nrnthreads_on_device(NrnThread *threads, int nthreads)  {
                 d_nrb_flag = (double *) acc_copyin(nrb->_nrb_flag, sizeof(double)*nrb->_size);
                 acc_memcpy_to_device(&(d_nrb->_nrb_flag), &d_nrb_flag, sizeof(double*));
 
-                //0 means gpu copy updated with size of buffer on cpu
-                nrb->reallocated = 0;
+                d_displ = (int *) acc_copyin(nrb->_displ, sizeof(int)*(nrb->_size+ 1));
+                acc_memcpy_to_device(&(d_nrb->_displ), &d_displ, sizeof(int*));
+
+                d_nrb_index = (int *) acc_copyin(nrb->_nrb_index, sizeof(int)*(nrb->_size + 1));
+                acc_memcpy_to_device(&(d_nrb->_nrb_index), &d_nrb_index, sizeof(int*));
+
             }
 
             /* copy NetSendBuffer_t on to GPU */
@@ -420,6 +427,104 @@ void copy_ivoc_vect_to_device(IvocVect *& iv, IvocVect *& div) {
 #endif
 }
 
+void realloc_net_receive_buffer(NrnThread* nt, Memb_list* ml) {
+  NetReceiveBuffer_t* nrb = ml->_net_receive_buffer;
+  if (!nrb) { return; }
+
+#ifdef _OPENACC
+  if (nt->compute_gpu) {
+    // free existing vectors in buffers on gpu
+    acc_free( acc_deviceptr(nrb->_pnt_index) );
+    acc_free( acc_deviceptr(nrb->_weight_index) );
+    acc_free( acc_deviceptr(nrb->_nrb_t) );
+    acc_free( acc_deviceptr(nrb->_nrb_flag) );
+    acc_free( acc_deviceptr(nrb->_displ) );
+    acc_free( acc_deviceptr(nrb->_nrb_index) );
+  }
+#endif
+
+  // Reallocate host
+  nrb->_size *= 2; 
+  nrb->_pnt_index = (int*)erealloc(nrb->_pnt_index, nrb->_size*sizeof(int));
+  nrb->_weight_index = (int*)erealloc(nrb->_weight_index, nrb->_size*sizeof(int));
+  nrb->_nrb_t = (double*)erealloc(nrb->_nrb_t, nrb->_size*sizeof(double));
+  nrb->_nrb_flag = (double*)erealloc(nrb->_nrb_flag, nrb->_size*sizeof(double));
+  nrb->_displ = (int*)erealloc(nrb->_displ, (nrb->_size+1)*sizeof(int));
+  nrb->_nrb_index = (int*)erealloc(nrb->_nrb_index, nrb->_size*sizeof(int));
+
+#ifdef _OPENACC
+  if (nt->compute_gpu) {
+    int *d_weight_index, *d_pnt_index, *d_displ, *d_nrb_index;
+    double *d_nrb_t, *d_nrb_flag;
+
+    // update device copy
+    acc_update_device(nrb, sizeof(NetReceiveBuffer_t));
+
+    NetReceiveBuffer_t* d_nrb = (NetReceiveBuffer_t*) acc_deviceptr(nrb); 
+
+    // recopy the vectors in the buffer
+    d_pnt_index = (int *) acc_copyin(nrb->_pnt_index, sizeof(int)*nrb->_size);
+    acc_memcpy_to_device(&(d_nrb->_pnt_index), &d_pnt_index, sizeof(int*));
+
+    d_weight_index = (int *) acc_copyin(nrb->_weight_index, sizeof(int)*nrb->_size);
+    acc_memcpy_to_device(&(d_nrb->_weight_index), &d_weight_index, sizeof(int*));
+
+    d_nrb_t = (double *) acc_copyin(nrb->_nrb_t, sizeof(double)*nrb->_size);
+    acc_memcpy_to_device(&(d_nrb->_nrb_t), &d_nrb_t, sizeof(double*));
+
+    d_nrb_flag = (double *) acc_copyin(nrb->_nrb_flag, sizeof(double)*nrb->_size);
+    acc_memcpy_to_device(&(d_nrb->_nrb_flag), &d_nrb_flag, sizeof(double*));
+
+    d_displ = (int *) acc_copyin(nrb->_displ, sizeof(int)*(nrb->_size + 1));
+    acc_memcpy_to_device(&(d_nrb->_displ), &d_displ, sizeof(int*));
+
+    d_nrb_index = (int *) acc_copyin(nrb->_nrb_index, sizeof(int)*nrb->_size);
+    acc_memcpy_to_device(&(d_nrb->_nrb_index), &d_nrb_index, sizeof(int*));
+  }
+#endif
+}
+
+typedef std::pair<int, int> NRB_P;
+
+struct comp {
+  bool operator()(const NRB_P& a, const NRB_P& b) {
+    if (a.first == b.first) {
+      return a.second > b.second; // same instances in original net_receive order
+    }
+    return a.first > b.first;
+  }
+};
+
+static void net_receive_buffer_order(NetReceiveBuffer_t* nrb) {
+  if (nrb->_cnt == 0) {
+    nrb->_displ_cnt = 0;
+    return;
+  }
+
+  std::priority_queue<NRB_P, std::vector<NRB_P>, comp > nrbq;
+
+  for (int i=0; i < nrb->_cnt; ++i) {
+    nrbq.push(NRB_P(nrb->_pnt_index[i], i));
+  }
+
+  int displ_cnt = 0;
+  int index_cnt = 0;
+  int last_instance_index = -1;
+  nrb->_displ[0] = 0;
+
+  while (!nrbq.empty()) {
+    const NRB_P& p = nrbq.top();
+    nrb->_nrb_index[index_cnt++] = p.second;
+    if (p.first != last_instance_index) {
+      ++displ_cnt;
+    }
+    nrb->_displ[displ_cnt] = index_cnt;
+    last_instance_index = p.first;
+    nrbq.pop();
+  }
+  nrb->_displ_cnt = displ_cnt;
+}
+
 /* when we execute NET_RECEIVE block on GPU, we provide the index of synapse instances
  * which we need to execute during the current timestep. In order to do this, we have
  * update NetReceiveBuffer_t object to GPU. When size of cpu buffer changes, we set
@@ -431,78 +536,38 @@ void copy_ivoc_vect_to_device(IvocVect *& iv, IvocVect *& div) {
  */
 void update_net_receive_buffer(NrnThread *nt) {
 
-#ifdef _OPENACC
-
-    if (!nt->compute_gpu)
-        return;
 
     NrnThreadMembList* tml;
-    Memb_list *ml, *d_ml;
-    NetReceiveBuffer_t *nrb, *d_nrb;
-    int *d_weight_index, *d_pnt_index;
-    double *d_nrb_t, *d_nrb_flag;
 
     for (tml = nt->tml; tml; tml = tml->next) {
 
         //net_receive buffer to copy
-        nrb = tml->ml->_net_receive_buffer;
+        NetReceiveBuffer_t *nrb = tml->ml->_net_receive_buffer;
 
         // if net receive buffer exist for mechanism
-        if(nrb) {
+        if(nrb && nrb->_cnt) {
 
-            d_nrb = (NetReceiveBuffer_t *) acc_deviceptr(nrb);
-            d_ml = (Memb_list *) acc_deviceptr(tml->ml);
+          // instance order to avoid race. setup _displ and _nrb_index
+          net_receive_buffer_order(nrb);
 
-            // reallocated is true when buffer on cpu is changed
-            if(nrb->reallocated) {
+          #ifdef _OPENACC
+          if (nt->compute_gpu) {
+            //note that dont update nrb otherwise we loose pointers
 
-                /* free existing vectors in buffers on gpu */
-                acc_free( acc_deviceptr(nrb->_pnt_index) );
-                acc_free( acc_deviceptr(nrb->_weight_index) );
-                acc_free( acc_deviceptr(nrb->_nrb_t) );
-                acc_free( acc_deviceptr(nrb->_nrb_flag) );
+            /* update scalar elements */
+            acc_update_device(&nrb->_cnt, sizeof(int));
+            acc_update_device(&nrb->_displ_cnt, sizeof(int));
 
-                /* update device copy */
-                acc_update_device(nrb, sizeof(NetReceiveBuffer_t));
-
-                /* recopy the vectors in the buffer */
-                d_pnt_index = (int *) acc_copyin(nrb->_pnt_index, sizeof(int)*nrb->_size);
-                acc_memcpy_to_device(&(d_nrb->_pnt_index), &d_pnt_index, sizeof(int*));
-
-                d_weight_index = (int *) acc_copyin(nrb->_weight_index, sizeof(int)*nrb->_size);
-                acc_memcpy_to_device(&(d_nrb->_weight_index), &d_weight_index, sizeof(int*));
-
-                d_nrb_t = (double *) acc_copyin(nrb->_nrb_t, sizeof(double)*nrb->_size);
-                acc_memcpy_to_device(&(d_nrb->_nrb_t), &d_nrb_t, sizeof(double*));
-
-                d_nrb_flag = (double *) acc_copyin(nrb->_nrb_flag, sizeof(double)*nrb->_size);
-                acc_memcpy_to_device(&(d_nrb->_nrb_flag), &d_nrb_flag, sizeof(double*));
-
-                /* gpu copy updated */
-                nrb->reallocated = 0;
-
-            } else {
-
-                //note that dont update nrb otherwise we loose pointers
-
-                /* update scalar elements */
-                acc_update_device(&nrb->_cnt, sizeof(int));
-                acc_update_device(&nrb->_size, sizeof(int));
-                acc_update_device(&nrb->_pnt_offset, sizeof(int));
-
-                /*@todo confirm with Michael that we don't need to _size but only
-                 * _cnt elements to GPU
-                 */
-                acc_update_device(nrb->_pnt_index, sizeof(int)*nrb->_cnt);
-                acc_update_device(nrb->_weight_index, sizeof(int)*nrb->_cnt);
-                acc_update_device(nrb->_nrb_t, sizeof(double)*nrb->_cnt);
-                acc_update_device(nrb->_nrb_flag, sizeof(double)*nrb->_cnt);
-            }
+            acc_update_device(nrb->_pnt_index, sizeof(int)*nrb->_cnt);
+            acc_update_device(nrb->_weight_index, sizeof(int)*nrb->_cnt);
+            acc_update_device(nrb->_nrb_t, sizeof(double)*nrb->_cnt);
+            acc_update_device(nrb->_nrb_flag, sizeof(double)*nrb->_cnt);
+            acc_update_device(nrb->_displ, sizeof(int)*(nrb->_displ_cnt + 1));
+            acc_update_device(nrb->_nrb_index, sizeof(int)*nrb->_cnt);
+          }
+          #endif
         }
     }
-#else
-    (void) nt;
-#endif
 }
 
 void update_net_send_buffer_on_host(NrnThread *nt, NetSendBuffer_t* nsb) {
@@ -590,9 +655,12 @@ void update_nrnthreads_on_host(NrnThread *threads, int nthreads) {
                     acc_update_self(&nrb->_cnt, sizeof(int));
                     acc_update_self(&nrb->_size, sizeof(int));
                     acc_update_self(&nrb->_pnt_offset, sizeof(int));
+                    acc_update_self(&nrb->_displ_cnt, sizeof(int));
 
                     acc_update_self(nrb->_pnt_index, sizeof(int)*nrb->_size);
                     acc_update_self(nrb->_weight_index, sizeof(int)*nrb->_size);
+                    acc_update_self(nrb->_displ, sizeof(int)*(nrb->_size + 1));
+                    acc_update_self(nrb->_nrb_index, sizeof(int)*nrb->_size);
                 }
 
             }
@@ -686,9 +754,12 @@ void update_nrnthreads_on_device(NrnThread *threads, int nthreads) {
                     acc_update_device(&nrb->_cnt, sizeof(int));
                     acc_update_device(&nrb->_size, sizeof(int));
                     acc_update_device(&nrb->_pnt_offset, sizeof(int));
+                    acc_update_device(&nrb->_displ_cnt, sizeof(int));
 
                     acc_update_device(nrb->_pnt_index, sizeof(int)*nrb->_size);
                     acc_update_device(nrb->_weight_index, sizeof(int)*nrb->_size);
+                    acc_update_device(nrb->_displ, sizeof(int)*(nrb->_size + 1));
+                    acc_update_device(nrb->_nrb_index, sizeof(int)*nrb->_size);
                 }
             }
 
