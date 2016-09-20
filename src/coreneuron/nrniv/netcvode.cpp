@@ -388,7 +388,9 @@ PreSyn::PreSyn() {
 	pntsrc_ = NULL;
 	threshold_ = 10.;
 	gid_ = -1;
-	localgid_ = 0;
+#if NRNMPI
+    localgid_ = 0;
+#endif
 	output_index_ = 0;
 }
 

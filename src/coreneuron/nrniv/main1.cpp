@@ -60,28 +60,27 @@ int nrn_feenableexcept() {
 }
 #endif
 
-int main1( int argc, char **argv, char **env )
-{
-    char prcellname[1024], filesdat_buf[1024];
+int main1( int argc, char **argv, char **env );
+void nrn_init_and_load_data(int argc, char **argv, cn_input_params & input_params);
+void call_prcellstate_for_prcellgid(int prcellgid, int compute_gpu, int is_init);
 
-    ( void )env; /* unused */
+void nrn_init_and_load_data(int argc, char **argv, cn_input_params & input_params) {
 
-    #if defined(NRN_FEEXCEPT)
-        nrn_feenableexcept();
-    #endif
+#if defined(NRN_FEEXCEPT)
+    nrn_feenableexcept();
+#endif
 
 #ifdef ENABLE_SELECTIVE_PROFILING
     stop_profile();
 #endif
 
-#ifdef ENABLE_CUDA
-    const char *prprefix = "cu";
-#else
-    const char *prprefix = "acc";
+    // mpi initialisation
+#if NRNMPI
+    nrnmpi_init( 1, &argc, &argv );
 #endif
 
-    // mpi initialisation
-    nrnmpi_init( 1, &argc, &argv );
+    // memory footprint after mpi initialisation
+    report_mem_usage( "After MPI_Init" );
 
     // initialise default coreneuron parameters
     initnrn();
@@ -89,31 +88,31 @@ int main1( int argc, char **argv, char **env )
     // create mutex for nrn123, protect instance_count_
     nrnran123_mutconstruct();
 
-    // handles coreneuron configuration parameters
-    cn_input_params input_params;
 
     // read command line parameters
     input_params.read_cb_opts( argc, argv );
+
+    // set global variables
     celsius = input_params.celsius;
     t = input_params.celsius;
 
 #if _OPENACC
     if (!input_params.compute_gpu && input_params.cell_interleave_permute == 2) {
-      fprintf(stderr, "compiled with _OPENACC does not allow the combination of --cell_permute=2 and missing --gpu\n");
-      exit(1);
+        fprintf(stderr, "compiled with _OPENACC does not allow the combination of --cell_permute=2 and missing --gpu\n");
+        exit(1);
     }
 #endif
 
     // if multi-threading enabled, make sure mpi library supports it
+#if NRNMPI
     if ( input_params.threading ) {
         nrnmpi_check_threading_support();
     }
+#endif
 
     // full path of files.dat file
+    char filesdat_buf[1024];
     sd_ptr filesdat=input_params.get_filesdat_path(filesdat_buf,sizeof(filesdat_buf));
-
-    // memory footprint after mpi initialisation
-    report_mem_usage( "After MPI_Init" );
 
     // reads mechanism information from bbcore_mech.dat
     mk_mech( input_params.datpath );
@@ -127,19 +126,21 @@ int main1( int argc, char **argv, char **env )
     t = input_params.tstart;
 
     if (input_params.dt != -1000.) {// command line arg highest precedence
-      dt = input_params.dt;
+        dt = input_params.dt;
     }else if (dt == -1000.) { // not on command line and no celsius in globals.dat
-      dt = 0.025; // lowest precedence
+        dt = 0.025; // lowest precedence
     }
+
     input_params.dt = dt; // for printing
 
     rev_dt = (int)(1./dt);
 
     if (input_params.celsius != -1000.) {// command line arg highest precedence
-      celsius = input_params.celsius;
+        celsius = input_params.celsius;
     }else if (celsius == -1000.) { // not on command line and no celsius in globals.dat
-      celsius = 34.0; // lowest precedence
+        celsius = 34.0; // lowest precedence
     }
+
     input_params.celsius = celsius; // for printing
 
     // create net_cvode instance
@@ -180,28 +181,58 @@ int main1( int argc, char **argv, char **env )
     // allocate buffer for mpi communication
     mk_spikevec_buffer( input_params.spikebuf );
 
-    #pragma acc data copyin (celsius, secondorder) if(input_params.compute_gpu)
-    {
-        if( input_params.compute_gpu) {
-            setup_nrnthreads_on_device(nrn_threads, nrn_nthread);
-        }
+    report_mem_usage( "After mk_spikevec_buffer" );
 
-        if (nrn_have_gaps) {
-            nrn_partrans::gap_update_indices();
-        }
+    if( input_params.compute_gpu) {
+        setup_nrnthreads_on_device(nrn_threads, nrn_nthread);
+    }
 
-        // call prcellstate for prcellgid
-        if ( input_params.prcellgid >= 0 ) {
-            if(input_params.compute_gpu)
+    if (nrn_have_gaps) {
+        nrn_partrans::gap_update_indices();
+    }
+
+    // call prcellstate for prcellgid
+    call_prcellstate_for_prcellgid(input_params.prcellgid, input_params.compute_gpu, 1);
+}
+
+void call_prcellstate_for_prcellgid(int prcellgid, int compute_gpu, int is_init) {
+    char prcellname[1024];
+#ifdef ENABLE_CUDA
+    const char *prprefix = "cu";
+#else
+    const char *prprefix = "acc";
+#endif
+
+    if ( prcellgid >= 0 ) {
+        if(compute_gpu){
+            if (is_init)
                 sprintf( prcellname, "%s_gpu_init", prprefix);
             else
-                strcpy( prcellname, "cpu_init");
-            update_nrnthreads_on_host(nrn_threads, nrn_nthread);
-            prcellstate( input_params.prcellgid, prcellname );
+                sprintf( prcellname, "%s_gpu_t%g", prprefix, t);
         }
+        else {
+            if (is_init)
+                strcpy( prcellname, "cpu_init");
+            else
+                sprintf( prcellname, "cpu_t%g", t );
+        }
+        update_nrnthreads_on_host(nrn_threads, nrn_nthread);
+        prcellstate( prcellgid, prcellname );
+    }
+}
 
-        report_mem_usage( "After mk_spikevec_buffer" );
+int main1( int argc, char **argv, char **env )
+{
+    ( void )env; /* unused */
 
+    //Initial data loading
+    cn_input_params input_params;
+
+    //initializationa and loading functions moved to separate
+    nrn_init_and_load_data(argc, argv, input_params);
+
+    #pragma acc data copyin (celsius, secondorder) if(input_params.compute_gpu)
+    {
         nrn_finitialize( input_params.voltage != 1000., input_params.voltage );
 
         report_mem_usage( "After nrn_finitialize" );
@@ -228,14 +259,8 @@ int main1( int argc, char **argv, char **env )
         }
 
         // call prcellstate for prcellgid
-        if ( input_params.prcellgid >= 0 ) {
-            if(input_params.compute_gpu)
-                sprintf( prcellname, "%s_gpu_t%g", prprefix, t);
-            else
-                sprintf( prcellname, "cpu_t%g", t );
-            update_nrnthreads_on_host(nrn_threads, nrn_nthread);
-            prcellstate( input_params.prcellgid, prcellname );
-        }
+        call_prcellstate_for_prcellgid(input_params.prcellgid,
+                                       input_params.compute_gpu, 0);
 
         // handle forwardskip
         if ( input_params.forwardskip > 0.0 ) {
@@ -257,14 +282,8 @@ int main1( int argc, char **argv, char **env )
         #endif
 
         // prcellstate after end of solver
-        if ( input_params.prcellgid >= 0 ) {
-            if(input_params.compute_gpu)
-                sprintf( prcellname, "%s_gpu_t%g", prprefix, t);
-            else
-                sprintf( prcellname, "cpu_t%g", t );
-            update_nrnthreads_on_host(nrn_threads, nrn_nthread);
-            prcellstate( input_params.prcellgid, prcellname );
-        }
+        call_prcellstate_for_prcellgid(input_params.prcellgid,
+                                       input_params.compute_gpu, 0);
 
         #ifdef ENABLE_REPORTING
             if(input_params.report && r)
@@ -279,8 +298,10 @@ int main1( int argc, char **argv, char **env )
     // Cleaning the memory
     nrn_cleanup();
 
+#if NRNMPI
     // mpi finalize
     nrnmpi_finalize();
+#endif
 
     finalize_data_on_device();
 
