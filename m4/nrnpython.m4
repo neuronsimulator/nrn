@@ -183,10 +183,11 @@ explicitly specify PYINCDIR])
 			AC_NRN_PYCONF(gcfLIBRARY, get_config_var('LIBRARY'),"",$ac_nrn_python)
 			AC_NRN_PYCONF(gcfLIBDIR, get_config_var('LIBDIR'),"",$ac_nrn_python)
 			AC_NRN_PYCONF(gcfLIBS, get_config_var('LIBS'),"",$ac_nrn_python)
+			AC_NRN_PYCONF(gcfMODLIBS, get_config_var('MODLIBS'),"",$ac_nrn_python)
 			PYLIB=`echo $gcfLIBRARY|sed 's/lib\(.*\)\.a/\1/'`
 			if test "$PYLIB" != "" ; then
 				PYLIBDIR="$gcfLIBDIR"
-				PYLIBLINK="-L$PYLIBDIR -l$PYLIB $gcfLIBS"
+				PYLIBLINK="-L$PYLIBDIR -l$PYLIB $gcfLIBS $gcfMODLIBS"
 				PYLIB="$PYLIBLINK -R$PYLIBDIR"
 			fi
 		fi
