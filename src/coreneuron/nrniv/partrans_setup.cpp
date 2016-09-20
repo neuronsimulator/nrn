@@ -211,6 +211,8 @@ void nrn_partrans::gap_mpi_setup(int ngroup) {
     delete [] si.v_indices;
     delete [] si.sid_target;
   }
+  delete [] send_to_want;
+  delete [] recv_from_have;
   delete [] setup_info_;
 
 }

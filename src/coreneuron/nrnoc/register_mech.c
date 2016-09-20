@@ -177,8 +177,12 @@ int register_mech(const char** m, mod_alloc_t alloc, mod_f_t cur, mod_f_t jacob,
 #endif
 	nrn_dparam_ptr_start_[type] = 0; /* fill in later */
 	nrn_dparam_ptr_end_[type] = 0; /* fill in later */
-	memb_func[type].sym = (char*)emalloc(strlen(m[1])+1);
-	strcpy(memb_func[type].sym, m[1]);
+	if (memb_func[type].sym) {
+		assert(strcmp(memb_func[type].sym, m[1]) == 0);
+	}else{
+		memb_func[type].sym = (char*)emalloc(strlen(m[1])+1);
+		strcpy(memb_func[type].sym, m[1]);
+	}
 	memb_func[type].current = cur;
 	memb_func[type].jacob = jacob;
 	memb_func[type].alloc = alloc;

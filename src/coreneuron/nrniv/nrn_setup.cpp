@@ -830,6 +830,16 @@ void nrn_cleanup() {
     free(nt->_vdata);
     nt->_vdata = NULL;
 
+    if (nt->_permute) {
+      delete [] nt->_permute;
+      nt->_permute = NULL;
+    }
+
+    if (nt->presyns_helper) {
+      free(nt->presyns_helper);
+      nt->_permute = NULL;
+    }
+
     if (nt->pntprocs) {
         delete[] nt->pntprocs;
         nt->pntprocs = NULL;

@@ -136,6 +136,9 @@ sprintf(buf, "key %lld owned by multiple ranks\n", (long long)key);
       havekey2rank[key] = r;
     }
   }
+  delete [] have_s_data;
+  delete [] have_s_cnt;
+  delete [] have_s_displ;
   delete [] have_r_data;
   delete [] have_r_cnt;
   delete [] have_r_displ;
@@ -211,6 +214,7 @@ sprintf(buf, "key = %lld is wanted but does not exist\n", (long long)key);
     want_s_data[want_s_displ[r] + want_s_cnt[r]] = key;
     ++want_s_cnt[r];
   }
+  delete [] want_s_ownerranks;
   delete [] old_want_s_data;
   want_r_cnt = srccnt2destcnt(want_s_cnt);
   want_r_displ = cnt2displ(want_r_cnt);
