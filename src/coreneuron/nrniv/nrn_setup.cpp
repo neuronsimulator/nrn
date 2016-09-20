@@ -843,10 +843,10 @@ void nrn_cleanup() {
     if (nt->pnt2presyn_ix) {
       for (int i=0; i < nrn_has_net_event_cnt_; ++i) {
         if (nt->pnt2presyn_ix[i]) {
-          delete [] nt->pnt2presyn_ix[i];
+          free(nt->pnt2presyn_ix[i]);
         }
       }
-      delete [] nt->pnt2presyn_ix;
+      free(nt->pnt2presyn_ix);
     }
 
     if (nt->netcons) {
