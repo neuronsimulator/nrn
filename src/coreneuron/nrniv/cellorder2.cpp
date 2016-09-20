@@ -2,8 +2,6 @@
 #include "coreneuron/nrniv/nrn_assert.h"
 #include "coreneuron/nrniv/cellorder.h"
 #include "coreneuron/nrniv/tnode.h"
-
-// just for use_interleave_permute
 #include "coreneuron/nrniv/nrniv_decl.h"
 
 #include <map>
@@ -13,674 +11,507 @@
 
 using namespace std;
 
-static size_t groupsize = 32;
+// experiment starting with identical cell ordering
+// groupindex aleady defined that keeps identical cells together
+// begin with leaf to root ordering
 
-static bool tnode_earlier(TNode* a, TNode* b) {
+typedef VecTNode VTN; // level of nodes
+typedef vector<VTN> VVTN;  // group of levels
+typedef vector<VVTN> VVVTN; // groups
+
+// verify level in groups of nident identical nodes
+void chklevel(VTN& level, size_t nident = 8) {
+return;
+  nrn_assert(level.size() % nident == 0);
+  for (size_t i = 0; i <  level.size(); ++i) {
+    size_t j = nident*int(i/nident);
+    nrn_assert(level[i]->hash == level[j]->hash);
+  }
+}
+
+// first child before second child, etc
+// if same parent level, then parent order
+// if not same parent, then earlier parent (no parent earlier than parent)
+// if same parents, then children order
+// if no parents then nodevec_index order.
+static bool sortlevel_cmp(TNode* a, TNode* b) {
+  // when starting with leaf to root order
+  // note that leaves are at max level and all roots at level 0
   bool result = false;
-  if (a->treesize < b->treesize) {// treesize dominates
-    result = true;
-  }else if (a->treesize == b->treesize) {
-    if (a->hash < b->hash) { // if treesize same, keep identical trees together
-      result = true;
-    }else if (a->hash == b->hash) {
-      result = a->nodeindex < b->nodeindex; // identical trees ordered by nodeindex
-    }
-  }
-  return result;
-}
-
-static bool ptr_tnode_earlier(TNode* a, TNode* b) {
-  return tnode_earlier(a, b);
-}
-
-TNode::TNode(int ix) {
-  nodeindex = ix;
-  cellindex = 0;
-  groupindex = 0;
-  level = -1;
-  hash = 0;
-  treesize = 1;
-  nodevec_index = -1;
-  treenode_order = -1;
-  parent = NULL;
-  children.reserve(2);
-}
-
-TNode::~TNode() {} 
-
-size_t TNode::mkhash() { // call on all nodes in leaf to root order
-  // concept from http://stackoverflow.com/questions/20511347/a-good-hash-function-for-a-vector
-  std::sort(children.begin(), children.end(), ptr_tnode_earlier);
-  hash = children.size();
-  treesize = 1;
-  for (size_t i=0; i < children.size(); ++i) { // need sorted by child hash
-    hash ^= children[i]->hash + 0x9e3779b9 + (hash << 6) + (hash >> 2);
-    treesize += children[i]->treesize;
-  }
-  return hash;  // hash of leaf nodes is 0
-}
-
-static void tree_analysis(int* parent, int nnode, int ncell, VecTNode&);
-static void node_interleave_order(int ncell, VecTNode&);
-static void admin1(int ncell, VecTNode& nodevec, int& nwarp,
-  int& nstride, int*& stride, int*& firstnode, int*& lastnode, int*& cellsize);
-static void admin2(int ncell, VecTNode& nodevec, int& nwarp,
-  int& nstride, int*& stridedispl, int*& strides,
-  int*& rootbegin, int*& nodebegin, int*& ncycles);
-static void check(VecTNode&);
-static void prtree(VecTNode&);
-
-typedef std::pair<TNode*, int> TNI;
-typedef std::map<size_t, pair<TNode*, int> > HashCnt;
-typedef vector<TNI> TNIVec;
-
-static bool tnivec_cmp(const TNI& a, const TNI& b) {
-  bool result = false;
-  if (a.second < b.second) {
-    result = true;
-  }else if (a.second == b.second) {
-    result = b.first->treesize < a.first->treesize;
-  }
-  return result;
-}
-
-static char* stree(TNode* nd) {
-  char s[1000];
-
-  if (nd->treesize > 100) { return strdup(""); }
-  s[0] = '(';
-  s[1] = '\0';
-  for (size_t i=0; i < nd->children.size(); ++i) { // need sorted by child hash
-    char* sr = stree(nd->children[i]);
-    strcat(s, sr);
-    free(sr);
-  }
-  strcat(s, ")");
-  return strdup(s);
-}
-
-static void exper1(VecTNode& nodevec) {
-  printf("nodevec.size = %ld\n", nodevec.size());
-  HashCnt hashcnt;
-  for (size_t i=0; i < nodevec.size(); ++i) {
-    TNode* nd = nodevec[i];
-    size_t h = nd->hash;
-    HashCnt::iterator search = hashcnt.find(h);
-    if (search != hashcnt.end()) {
-      search->second.second += 1;
-    }else{
-      hashcnt[h] = pair<TNode*, int>(nd, 1);
-    }
-  }
-  TNIVec tnivec;
-  for (HashCnt::iterator i = hashcnt.begin(); i != hashcnt.end(); ++i) {
-    tnivec.push_back(i->second);
-  }
-  std::sort(tnivec.begin(), tnivec.end(), tnivec_cmp);
-
-  // I am a child of <n> parent patterns (parallel to tnivec)
-  map<size_t, set<size_t> > parpat;
-  for (size_t i = 0; i < nodevec.size(); ++i) {
-    TNode* nd = nodevec[i];
-    parpat[nd->hash].insert(nd->parent ? nd->parent->hash : 0);
-  }
-
-  for (TNIVec::iterator i = tnivec.begin(); i != tnivec.end(); ++i) {
-    char* sr = stree(i->first);
-    printf("%20ld %5d %3ld %4ld %s\n", i->first->hash, i->second, i->first->treesize,
-      parpat[i->first->hash].size(), sr);
-    free(sr);
-  }
-}
-
-/*
-assess the quality of the ordering. The measure is the size of a contiguous
-list of nodes whose parents have the same order. How many contiguous lists
-have that same size. How many nodes participate in that size list.
-Modify the quality measure from experience with performance. Start with
-list of (nnode, size_participation)
-*/
-static void quality(VecTNode& nodevec, size_t max = 32) {
-  size_t qcnt=0; // how many contiguous nodes have contiguous parents
-
-  // first ncell nodes are by definition in contiguous order
-  for (size_t i = 0; i < nodevec.size(); ++i) {
-    if (nodevec[i]->parent != NULL) {
-      break;
-    }
-    qcnt += 1;
-  }
-  size_t ncell = qcnt;
-
-  // key is how many parents in contiguous order
-  // value is number of nodes that participate in that
-  map<size_t, size_t> qual;
-  size_t ip_last = 10000000000;
-  for (size_t i = ncell; i < nodevec.size(); ++i) {
-    size_t ip = nodevec[i]->parent->nodevec_index;
-    // i%max == 0 means that if we start a warp with 8 and then have 32
-    // the 32 is broken into 24 and 8. (modify if the arrangement during
-    // gaussian elimination becomes more sophisticated.(
-    if (ip == ip_last + 1 && i%max != 0) { // contiguous
-      qcnt += 1;
-    }else{
-      if (qcnt == 1) {
-        //printf("unique %ld p=%ld ix=%d\n", i, ip, nodevec[i]->nodeindex);
+  // since cannot have an index < 0, just add 1 to level
+  size_t palevel = a->parent ?  1 + a->parent->level : 0;
+  size_t pblevel = b->parent ?  1 + b->parent->level : 0;
+  if (palevel < pblevel) { // only used when starting leaf to root order
+    result = true; // earlier level first
+  }else if (palevel == pblevel) { // alwayse true when starting root to leaf
+    if (palevel == 0) { // a and b are roots
+      if (a->nodevec_index < b->nodevec_index) {
+        result = true;
       }
-      qual[max] += (qcnt/max) * max;
-      size_t x = qcnt%max;
-      if (x) { qual[x] += x; }
-      qcnt = 1;
-    }
-    ip_last = ip;
-  }
-  qual[max] += (qcnt/max) * max;
-  size_t x = qcnt%max;
-  if (x) { qual[x] += x; }
-
-  // print result
-  qcnt = 0;
-#if 0
-  for (map<size_t, size_t>::iterator it = qual.begin(); it != qual.end(); ++it) {
-    qcnt += it->second;
-    printf("%6ld %6ld\n", it->first, it->second);
-  }
-#endif
-  printf("qual.size=%ld  qual total nodes=%ld  nodevec.size=%ld\n",
-    qual.size(), qcnt, nodevec.size());
-  
-  // how many race conditions. ie refer to same parent on different core
-  // of warp (max cores) or parent in same group of max.
-  size_t maxip = ncell;
-  size_t nrace1 = 0;
-  size_t nrace2 = 0;
-  set<size_t> ipused;
-  for (size_t i = ncell; i < nodevec.size(); ++i) {
-    TNode* nd = nodevec[i];
-    size_t ip = nd->parent->nodevec_index;
-    if (i%max == 0) {
-      maxip = i;
-      ipused.clear();
-    }
-    if (ip >= maxip) {
-      nrace1 += 1;
-    }/*else*/{
-      if (ipused.find(ip) != ipused.end()) {
-        nrace2 += 1;
-        if (ip >= maxip) {
-//printf("race for parent %ld (parent in same group as multiple users))\n", ip);
+    }else{ // parent order (already sorted with proper treenode_order
+      if (a->treenode_order < b->treenode_order) { // children order
+        result = true;
+      }else if (a->treenode_order == b->treenode_order) {
+        if (a->parent->treenode_order < b->parent->treenode_order) {
+          result = true;
         }
-      }else{
-        ipused.insert(ip);
       }
     }
   }
-  printf("nrace = %ld (parent in same group of %ld nodes)\n", nrace1, max);
-  printf("nrace = %ld (parent used more than once by same group of %ld nodes)\n", nrace2, max);
-}
-
-#define MSS MSS_ident_stat
-typedef map<size_t, size_t> MSS;
-static bool vsmss_comp(const pair<size_t, MSS*>& a, const pair<size_t, MSS*>& b) {
-  bool result = false;
-  const MSS::iterator& aa = a.second->begin();
-  const MSS::iterator& bb = b.second->begin();
-  if (aa->first < bb->first) {
-    result = true;
-  }else if (aa->first == bb->first) {
-    if (aa->second < bb->second) {
-      result = true;
-    }
-  }
-
   return result;
 }
 
-size_t level_from_root(VecTNode& nodevec) {
-  size_t maxlevel = 0;
-  for (size_t i = 0; i < nodevec.size(); ++i) {
-    TNode* nd = nodevec[i];
-    if (nd->parent) {
-      nd->level = nd->parent->level + 1;
-      if (maxlevel < nd->level) {
-        maxlevel = nd->level;
+static void sortlevel(VTN& level) {
+  std::sort(level.begin(), level.end(), sortlevel_cmp);
+
+#if 0
+printf("after sortlevel\n");
+for (size_t i = 0; i < level.size(); ++i) {
+TNode* nd = level[i];
+printf("ilev=%ld i=%ld plev=%ld pi=%ld phash=%ld ord=%ld hash=%ld\n",
+nd->level, i, nd->parent?nd->parent->level:0,
+nd->parent?nd->parent->treenode_order:0, nd->parent?nd->parent->hash:0,
+nd->treenode_order, nd->hash);
+}
+chklevel(level);
+#endif
+
+  for (size_t i=0; i < level.size(); ++i) {
+    level[i]->treenode_order = i;
+  }
+}
+
+static void set_treenode_order(VVTN& levels) {
+  size_t order = 0;
+  for (size_t i = 0; i < levels.size(); ++i) {
+    for (size_t j = 0; j < levels[i].size(); ++j) {
+      TNode* nd = levels[i][j];
+      nd->treenode_order = order++;
+    }
+  }
+}
+
+// every level starts out with no race conditions involving both
+// parent and child in the same level. Can we arrange things so that
+// every level has at least 32 nodes?
+static size_t g32(TNode* nd) {
+  return nd->nodevec_index/warpsize;
+}
+
+static bool is_parent_race(TNode* nd) { // vitiating
+  size_t pg = g32(nd);
+  for (size_t i = 0; i < nd->children.size(); ++i) {
+    if (pg == g32(nd->children[i])) { return true; }
+  }
+  return false;
+}
+
+// less than 32 apart
+static bool is_parent_race2(TNode* nd) { // vitiating
+  size_t pi = nd->nodevec_index;
+  for (size_t i = 0; i < nd->children.size(); ++i) {
+    if (nd->children[i]->nodevec_index - pi < warpsize) { return true; }
+  }
+  return false;
+}
+
+static bool is_child_race(TNode* nd) { // potentially handleable by atomic
+  if (nd->children.size() < 2) { return false; }
+  if (nd->children.size() == 2) { return g32(nd->children[0]) == g32(nd->children[1]); }
+  std::set<size_t> s;
+  for (size_t i=0; i < nd->children.size(); ++i) {
+    size_t gc = g32(nd->children[i]);
+    if (s.find(gc) != s.end()) { return true; }
+    s.insert(gc);
+  }
+  return false;
+}
+
+static bool is_child_race2(TNode* nd) { // potentially handleable by atomic
+  if (nd->children.size() < 2) { return false; }
+  if (nd->children.size() == 2) {
+    size_t c0 = nd->children[0]->nodevec_index;
+    size_t c1 = nd->children[1]->nodevec_index;
+    c0 = (c0 < c1) ? (c1 - c0) : (c0 - c1);
+    return c0 < warpsize;
+  }
+  size_t ic0 = nd->children[0]->nodevec_index;
+  for (size_t i=1; i < nd->children.size(); ++i) {
+    size_t ic = nd->children[i]->nodevec_index;
+    if (ic - ic0 < warpsize) {
+      return true;
+    }
+    ic0 = ic;
+  }
+  return false;
+}
+
+size_t dist2child(TNode* nd) {
+  size_t d = 1000;
+  size_t pi = nd->nodevec_index;
+  for (size_t i = 0; i < nd->children.size(); ++i) {
+    size_t d1 = nd->children[i]->nodevec_index - pi;
+    if (d1 < d) {
+      d = d1;
+    }
+  }
+  return d;
+}
+
+// from stackoverflow.com
+template <typename T>
+static void move_range(size_t start, size_t length, size_t dst, std::vector<T> & v)
+{
+    typename std::vector<T>::iterator first, middle, last;
+    if (start < dst)
+    {
+        first  = v.begin() + start;
+        middle = first + length;
+        last   = v.begin() + dst;
+    }
+    else
+    {
+        first  = v.begin() + dst;
+        middle = v.begin() + start;
+        last   = middle + length;
+    }
+    std::rotate(first, middle, last);
+}
+
+static void move_nodes(size_t start, size_t length, size_t dst, VTN& nodes) {
+  nrn_assert(dst <= nodes.size());
+  nrn_assert(start + length <= dst);
+  move_range(start, length, dst, nodes);
+
+  // check correctness of move
+  for (size_t i = start; i < dst-length; ++i) {
+    nrn_assert(nodes[i]->nodevec_index == i + length);
+  }
+  for (size_t i = dst-length; i < dst; ++i) {
+    nrn_assert(nodes[i]->nodevec_index == start + (i - (dst - length)));
+  }
+
+  // update nodevec_index
+  for (size_t i = start; i < dst; ++i) {
+    nodes[i]->nodevec_index = i;
+  }
+}
+
+// least number of nodes to move after nd to eliminate prace
+static size_t need2move(TNode* nd) {
+  size_t d = dist2child(nd);
+  return warpsize - ((nd->nodevec_index % warpsize) + d);
+}
+
+#if 0
+static void how_many_warpsize_groups_have_only_leaves(VTN& nodes) {
+  size_t n = 0;
+  for (size_t i = 0; i < nodes.size(); i += warpsize) {
+    bool r = true;
+    for (size_t j=0; j < warpsize; ++j) {
+      if (nodes[i+j]->children.size() != 0) {
+        r = false;
+        break;
       }
-    }else{
-      nd->level = 0;
+    }
+    if (r) {
+      printf("warpsize group %ld starting at level %ld\n", i/warpsize, nodes[i]->level);
+      ++n;
     }
   }
-  return maxlevel;
+  printf("number of warpsize groups with only leaves = %ld\n", n);
+}
+#endif
+
+static void pr_race_situation(VTN& nodes) {
+  size_t prace2 = 0;
+  size_t prace = 0;
+  size_t crace = 0;
+  for (size_t i = nodes.size() - 1; nodes[i]->level != 0; --i) {
+    TNode* nd = nodes[i];
+    if (is_parent_race2(nd)) {
+      ++prace2;
+    }
+    if (is_parent_race(nd)) {
+      printf("level=%ld i=%ld d=%ld n=%ld", nd->level, nd->nodevec_index, dist2child(nd), need2move(nd));
+      for (size_t j = 0; j < nd->children.size(); ++j) {
+        TNode* cnd = nd->children[j];
+        printf("   %ld %ld", cnd->level, cnd->nodevec_index);
+      }
+      printf("\n");
+      ++prace;
+    }
+    if (is_child_race(nd)) {
+      ++crace;
+    }
+  }
+  printf("prace=%ld  crace=%ld prace2=%ld\n", prace, crace, prace2);
 }
 
-size_t level_from_leaf(VecTNode& nodevec) {
-  size_t maxlevel = 0;
-  for (size_t i=nodevec.size()-1; true; --i) {
-    TNode* nd = nodevec[i];
-    size_t lmax = 0;
-    for (size_t ichild = 0; ichild < nd->children.size(); ++ichild) {
-      if (lmax <= nd->children[ichild]->level) {
-        lmax = nd->children[ichild]->level + 1;
+static size_t next_leaf(TNode* nd, VTN& nodes) {
+  size_t i = 0;
+  for (i = nd->nodevec_index - 1; i > 0; --i) {
+    if(nodes[i]->children.size() == 0) {
+      return i;
+    }
+  }
+//  nrn_assert(i > 0);
+  return 0;
+}
+
+static void checkrace(TNode* nd, VTN& nodes) {
+  bool res = true;
+  for (size_t i = nd->nodevec_index; i < nodes.size(); ++i) {
+    if (is_parent_race2(nodes[i])) {
+//      printf("checkrace %ld\n", i);
+      res = false;
+    }
+  }
+  if (0 && res) { printf("checkrace no race from nd onward\n"); }
+}
+
+static bool eliminate_race(TNode* nd, size_t d, VTN& nodes, TNode* look) {
+//printf("eliminate_race %ld %ld\n", nd->nodevec_index, d);
+  // opportunistically move that number of leaves
+  // error if no leaves left to move.
+  size_t i = look->nodevec_index;
+  while (d > 0) {
+    i = next_leaf(nodes[i], nodes);
+    if (i == 0) { return false; }
+    size_t n = 1;
+    while (nodes[i-1]->children.size() == 0 && n < d) {
+      --i;
+      ++n;
+    }
+//printf("  move_nodes src=%ld len=%ld dest=%ld\n", i, n, nd->nodevec_index);
+    move_nodes(i, n, nd->nodevec_index + 1, nodes);
+    d -= n;
+  }
+checkrace(nd, nodes);
+  return true;
+}
+
+static void eliminate_prace(TNode* nd, VTN& nodes) {
+  size_t d = warpsize - dist2child(nd);
+  bool b = eliminate_race(nd, d, nodes, nd);
+  if (0 && !b) {
+    printf("could not eliminate prace for g=%ld  c=%ld l=%ld o=%ld   %ld\n",
+      nd->groupindex, nd->cellindex, nd->level, nd->treenode_order, nd->hash);
+  }
+}
+
+static void eliminate_crace(TNode* nd, VTN& nodes) {
+  size_t c0 = nd->children[0]->nodevec_index;
+  size_t c1 = nd->children[1]->nodevec_index;
+  size_t d = warpsize - ((c0 > c1) ? (c0 - c1) : (c1 - c0));
+  TNode* cnd = nd->children[0];
+  bool b = eliminate_race(cnd, d, nodes, nd);
+  if (0 && !b) {
+    printf("could not eliminate crace for g=%ld  c=%ld l=%ld o=%ld   %ld\n",
+      nd->groupindex, nd->cellindex, nd->level, nd->treenode_order, nd->hash);
+  }
+}
+
+static void question2(VVTN& levels) {
+  size_t nnode = 0;
+  for (size_t i = 0; i < levels.size(); ++i) {
+    nnode += levels[i].size();
+  }
+  VTN nodes(nnode);
+  nnode = 0;
+  for (size_t i = 0; i < levels.size(); ++i) {
+    for (size_t j=0;j < levels[i].size(); ++j) {
+      nodes[nnode++] = levels[i][j];      
+    }
+  }
+  for (size_t i=0; i < nodes.size(); ++i) {
+    nodes[i]->nodevec_index = i;
+  }
+
+//  how_many_warpsize_groups_have_only_leaves(nodes);
+
+  // work backward and check the distance from parent to children.
+  // if parent in different group then there is no vitiating race.
+  // if children in different group then ther is no race (satisfied by
+  // atomic).
+  // If there is a vitiating race, then figure out how many nodes
+  // need to be inserted just before the parent to avoid the race.
+  //   It is not clear if we should prioritize safe nodes (when moved they
+  //   do not introduce a race) and/or contiguous nodes (probably, to keep
+  //   the low hanging fruit together).
+  //   At least, moved nodes should have proper tree order and not themselves
+  //   introduce a race at their new location.  Leaves are nice in that there
+  //   are no restrictions in movement toward higher indices.
+  //   Note that unless groups of 32 are inserted, it may be the case that
+  //   races are generated at greater indices since otherwise a portion of
+  //   each group is placed into the next group. This would not be an issue
+  //   if, in fact, the stronger requirement of every parent having
+  //   pi + 32 <= ci is demanded instead of merely being in different warpsize.
+  //   One nice thing about adding warpsize nodes is that it does not disturb
+  //   any existing contiguous groups except the moved group which gets divided
+  //   between parent warpsize and child, where the nodes past the parent
+  //   get same relative indices in the next warpsize
+
+  //  let's see how well we can do by opportunistically moving leaves to
+  //  separate parents from children by warpsize (ie is_parent_prace2 is false)
+  //  Hopefully, we won't run out of leaves before eliminating all
+  //  is_parent_prace2
+
+  if (0 && nodes.size()%warpsize != 0) {
+    size_t nnode = nodes.size() - levels[0].size();
+    printf("warp of %ld cells has %ld nodes in last cycle %ld\n",
+      levels[0].size(), nnode%warpsize, nnode/warpsize + 1);
+  }
+
+//  pr_race_situation(nodes);
+  
+  // eliminate parent and children races using leaves
+  for (size_t i = nodes.size() - 1; i >= levels[0].size(); --i) {
+    TNode* nd = nodes[i];
+    if (is_child_race2(nd)) {
+      eliminate_crace(nd, nodes);
+      i = nd->nodevec_index;
+    }
+    if (is_parent_race2(nd)) {
+      eliminate_prace(nd, nodes);
+      i = nd->nodevec_index;
+    }
+  }
+  if (0) {pr_race_situation(nodes);}
+  // copy nodes indices to treenode_order
+  for (size_t i = 0; i < nodes.size(); ++i) {
+    nodes[i]->treenode_order = i;
+  }
+}
+
+// size of groups with contiguous parents for each level
+static void question(VVTN& levels) {
+  return;
+  for (size_t i = 0; i < levels.size(); ++i) {
+    printf("%3ld %5ld", i, levels[i].size());
+    size_t iplast = 100000000;
+    size_t nsame = 0;
+    for (size_t j=0; j < levels[i].size(); ++j) {
+      TNode* nd = levels[i][j];
+      if (nd->parent == NULL) {
+        nsame += 1;
+      }else if (nd->parent->treenode_order == iplast + 1) {
+        nsame += 1;
+        iplast = nd->parent->treenode_order;
+      }else{
+        if (nsame) { printf(" %3ld", nsame); }
+        nsame = 1;
+        iplast = nd->parent->treenode_order;
       }
     }
-    nd->level = lmax;
-    if (maxlevel < lmax) { maxlevel = lmax; }
-    if (i == 0) { break; }
+    if (nsame) { printf(" %3ld", nsame); }
+    printf("\n");
   }
-  return maxlevel;
 }
 
-static void set_cellindex(int ncell, VecTNode& nodevec) {
-  for (int i=0; i < ncell; ++i) {
-    nodevec[i]->cellindex = i;
-  }
-  for (size_t i=0; i < nodevec.size(); ++i) {
-    TNode& nd = *nodevec[i];
-    for (size_t j=0; j < nd.children.size(); ++j) {
-      TNode* cnode = nd.children[j];
-      cnode->cellindex = nd.cellindex;
+static void analyze(VVTN& levels) {
+  // sort each level with respect to parent level order
+  // earliest parent level first.
+
+  //treenode order can be anything as long as first children < second
+  // children etc.. After sorting a level, the order will be correct for
+  // that level, ranging from [0:level.size]
+  for (size_t i = 0; i < levels.size(); ++i) {
+    chklevel(levels[i]);
+    for (size_t j = 0; j < levels[i].size(); ++j) {
+      TNode* nd = levels[i][j];
+      for (size_t k = 0; k < nd->children.size(); ++k) {
+        nd->children[k]->treenode_order = k;
+      }
     }
   }
+
+  for (size_t i = 0 ; i < levels.size(); ++i) {
+    sortlevel(levels[i]);
+    chklevel(levels[i]);
+  }
+
+  set_treenode_order(levels);
 }
 
-static void set_groupindex(VecTNode& nodevec) {
-  for (size_t i=0; i < nodevec.size(); ++i) {
-    TNode* nd = nodevec[i];
-    if (nd->parent) {
-      nd->groupindex = nd->parent->groupindex;
-    }else{
-      nd->groupindex = i / groupsize;
-    }
-  }
-}
-
-// how many identical trees and their levels
-// print when more than one instance of a type
-// reverse the sense of levels (all leaves are level 0) to get a good
-// idea of the depth of identical subtrees.
-static void ident_statistic(VecTNode& nodevec, size_t ncell) {
-  // reverse sense of levels
-//  size_t maxlevel = level_from_leaf(nodevec);
-  size_t maxlevel = level_from_root(nodevec);
-
-  // # in each level
-  vector<vector<size_t> > n_in_level(maxlevel+1);
-  for (size_t i=0; i <= maxlevel; ++i) {
-    n_in_level[i].resize(ncell/groupsize);
-  }
-  for (size_t i = 0; i < nodevec.size(); ++i) {
-    n_in_level[nodevec[i]->level][nodevec[i]->groupindex]++;
-  }
-  printf("n_in_level.size = %ld\n", n_in_level.size());
-  for (size_t i=0; i < n_in_level.size(); ++i) {
+void prgroupsize(VVVTN& groups) {
+  return;
+  for (size_t i=0; i < groups[0].size(); ++i) {
     printf("%5ld\n", i);
-    for (size_t j=0; j < n_in_level[i].size(); ++j) {
-      printf(" %5ld", n_in_level[i][j]);
+    for (size_t j=0; j < groups.size(); ++j) {
+      printf(" %5ld", groups[j][i].size());   
     }
     printf("\n");
   }
-  return;
-
-  typedef map<size_t, MSS> MSMSS;
-  typedef vector<pair<size_t, MSS*> > VSMSS;
-  MSMSS info;
-  for (size_t i=0; i < nodevec.size(); ++i) {
-    TNode* nd = nodevec[i];
-    info[nd->hash][nd->level]++;
-  }
-
-  VSMSS vinfo;
-  for (MSMSS::iterator i = info.begin(); i != info.end(); ++i) {
-    vinfo.push_back(pair<size_t, MSS*>(i->first, &(i->second)));
-  }
-  std::sort(vinfo.begin(), vinfo.end(), vsmss_comp);
-
-  for (VSMSS::iterator i = vinfo.begin(); i < vinfo.end(); ++i) {
-    MSS* ival = i->second;
-    if (ival->size() > 1 || ival->begin()->second > 8) {
-      printf("hash %ld", i->first);
-      for (MSS::iterator j = ival->begin(); j != ival->end(); ++j) {
-        printf(" (%ld, %ld)", j->first, j->second);
-      }
-      printf("\n");
-    }
-  }
-  printf("max level = %ld\n", maxlevel);
-}
-#undef MSS
-
-// for cells with same size, keep identical trees together
-
-// parent is (unpermuted)  nnode length vector of parent node indices.
-// return a permutation (of length nnode) which orders cells of same
-// size so that identical trees are grouped together.
-// Note: cellorder[ncell:nnode] are the identify permutation.
-
-int* node_order(int ncell, int nnode, int* parent, int& nwarp,
-  int& nstride, int*& stride, int*& firstnode, int*& lastnode, int*& cellsize,
-  int*& stridedispl
-) {
-
-  VecTNode nodevec;
-  if (0) prtree(nodevec); // avoid unused warning
-
-  // nodevec[0:ncell] in increasing size, with identical trees together,
-  // and otherwise nodeindex order
-  tree_analysis(parent, nnode, ncell, nodevec);
-  check(nodevec);
-
-  set_cellindex(ncell, nodevec);
-  set_groupindex(nodevec);
-  level_from_root(nodevec);
-
-  // nodevec[ncell:nnode] cells are interleaved in nodevec[0:ncell] cell order
-  if (use_interleave_permute == 1) {
-    node_interleave_order(ncell, nodevec);
-  }else{
-    group_order2(nodevec, groupsize, ncell);
-  }
-  check(nodevec);
-
-#if 0
-  for (int i=0; i < ncell; ++i) {
-    TNode& nd = *nodevec[i];
-    printf("%d size=%ld hash=%ld ix=%d\n", i, nd.treesize, nd.hash, nd.nodeindex);
-  }
-#endif
-
-  if(0) ident_statistic(nodevec, ncell);
-  quality(nodevec);
-
-  // the permutation
-  int* nodeorder = new int[nnode];
-  for (int i=0; i < nnode; ++i) {
-    TNode& nd = *nodevec[i];
-    nodeorder[nd.nodeindex] = i;
-  }
-
-  // administrative statistics for gauss elimination
-  if (use_interleave_permute == 1) {
-    admin1(ncell, nodevec, nwarp, nstride, stride, firstnode, lastnode, cellsize);
-  }else{
-//  admin2(ncell, nodevec, nwarp, nstride, stridedispl, stride, rootbegin, nodebegin, ncycles);
-    admin2(ncell, nodevec, nwarp, nstride, stridedispl, stride, firstnode, lastnode, cellsize);
-  }
-
-  if (0) {exper1(nodevec);}
-
-#if 1
-  int ntopol = 1;
-  for (int i = 1; i < ncell; ++i) {
-    if (nodevec[i-1]->hash != nodevec[i]->hash) {
-      ntopol += 1;
-    }
-  }
-  printf("%d distinct tree topologies\n", ntopol);
-#endif
-
-  for (size_t i =0; i < nodevec.size(); ++i) {
-    delete nodevec[i];
-  }
-
-  return nodeorder;
 }
 
-void check(VecTNode& nodevec) {
-  //printf("check\n");
-  size_t nnode = nodevec.size();
-  size_t ncell = 0;
-  for (size_t i=0; i < nnode; ++i) {
-    nodevec[i]->nodevec_index = i;
-    if (nodevec[i]->parent == NULL) { ncell++; }
-  }
-  for (size_t i=0; i < ncell; ++i) {
-    nrn_assert(nodevec[i]->parent == NULL);
-  }
-  for (size_t i=ncell; i < nnode; ++i) {
-    TNode& nd = *nodevec[i];
-    if (nd.parent->nodevec_index >= nd.nodevec_index) {
-      printf("error i=%ld nodevec_index=%ld parent=%ld\n", i, nd.nodevec_index, nd.parent->nodevec_index);
-    }
-    nrn_assert(nd.nodevec_index > nd.parent->nodevec_index);
-  }
-  
-}
-
-void prtree(VecTNode& nodevec) {
-  size_t nnode = nodevec.size();
-  for (size_t i=0; i < nnode; ++i) {
-    nodevec[i]->nodevec_index = i;
-  }
-  for (size_t i=0; i < nnode; ++i) {
-    TNode& nd = *nodevec[i];
-    printf("%ld p=%ld   c=%ld l=%ld o=%ld   ix=%d pix=%d\n",
-      i, nd.parent ? nd.parent->nodevec_index : -1,
-      nd.cellindex, nd.level, nd.treenode_order,
-       nd.nodeindex, nd.parent ? nd.parent->nodeindex : -1);
-  }
-}
-
-void tree_analysis(int* parent, int nnode, int ncell, VecTNode& nodevec) {
-
-//  VecTNode nodevec;
-
-  // create empty TNodes (knowing only their index)
-  nodevec.reserve(nnode);
-  for (int i=0; i < nnode; ++i) {
-    nodevec.push_back(new TNode(i));
-  }
-
-  // determine the (sorted by hash) children of each node
-  for (int i = nnode -1; i >= ncell; --i) {
-    nodevec[i]->parent = nodevec[parent[i]];
-    nodevec[i]->mkhash();
-    nodevec[parent[i]]->children.push_back(nodevec[i]);
-  }
-
-  // determine hash of the cells
-  for (int i = 0; i < ncell; ++i) {
-    nodevec[i]->mkhash();
-  }
-
-  std::sort(nodevec.begin(), nodevec.begin() + ncell, tnode_earlier);
-}
-
-#if 0
-static bool contig_comp(TNode* a, TNode* b) {
+// group index primary, treenode_order secondary
+static bool final_nodevec_cmp(TNode* a, TNode* b) {
   bool result = false;
-  if (a->cellindex < b->cellindex) {
+  if (a->groupindex < b->groupindex) {
     result = true;
-  }else if (a->cellindex == b->cellindex) {
+  }else if (a->groupindex == b->groupindex) {
     if (a->treenode_order < b->treenode_order) {
       result = true;
     }
   }
   return result;
 }
-#endif
 
-static bool interleave_comp(TNode* a, TNode* b) {
-  bool result = false;
-  if (a->treenode_order < b->treenode_order) {
-    result = true;
-  }else if (a->treenode_order == b->treenode_order) {
-    if (a->cellindex < b->cellindex) {
-      result = true;
-    }
-  }
-  return result;
-}
-
-// sort so nodevec[ncell:nnode] cell instances are contiguous. Keep the
-// secondary ordering with respect to treenode_order so each cell is still a tree.
-
-// sort so nodevec[ncell:nnode] cell instances are interleaved. Keep the
-// secondary ordering with respect to treenode_order so each cell is still a tree.
-
-void node_interleave_order(int ncell, VecTNode& nodevec) {
-  int* order = new int[ncell];
-  for (int i=0; i < ncell; ++i) {
-    order[i] = 0;
-    nodevec[i]->treenode_order = order[i]++;
-  }
-  for (size_t i=0; i < nodevec.size(); ++i) {
-    TNode& nd = *nodevec[i];
-    for (size_t j=0; j < nd.children.size(); ++j) {
-      TNode* cnode = nd.children[j];
-      cnode->treenode_order = order[nd.cellindex]++;
-    }
-  }
-  delete [] order;
-
-//  std::sort(nodevec.begin() + ncell, nodevec.end(), contig_comp);
-  std::sort(nodevec.begin() + ncell, nodevec.end(), interleave_comp);
-
-#if 0
-  for (size_t i=0; i < nodevec.size(); ++i) {
-    TNode& nd = *nodevec[i];
-    printf("%ld cell=%ld ix=%d\n",  i, nd.cellindex, nd.nodeindex);
-  }
-#endif
-}
-
-static void admin1(int ncell, VecTNode& nodevec, int& nwarp,
-  int& nstride, int*& stride, int*& firstnode, int*& lastnode, int*& cellsize
-){
-  // firstnode[i] is the index of the first nonroot node of the cell
-  // lastnode[i] is the index of the last node of the cell
-  // cellsize is the number of nodes in the cell not counting root.
-  // nstride is the maximum cell size (not counting root)
-  // stride[i] is the number of cells with an ith node.
-  firstnode = new int[ncell];
-  lastnode = new int[ncell];
-  cellsize = new int[ncell];
-
-  nwarp = (ncell%warpsize == 0) ? (ncell/warpsize) : (ncell/warpsize + 1);
-
-  for (int i = 0; i < ncell; ++i) {
-    firstnode[i] = -1;
-    lastnode[i] = -1;
-    cellsize[i] = 0;
-  }
-
-  nstride = 0;
-  for (size_t i = ncell; i < nodevec.size(); ++i) {
-    TNode& nd = *nodevec[i];
-    size_t ci = nd.cellindex;
-    if (firstnode[ci] == -1) {
-      firstnode[ci] = i;
-    }
-    lastnode[ci] = i;
-    cellsize[ci] += 1;
-    if (nstride < cellsize[ci]) {
-      nstride = cellsize[ci];
-    }
-  }
-
-  stride = new int[nstride + 1]; // in case back substitution accesses this
-  for (int i=0; i <= nstride; ++i) {
-    stride[i] = 0;
-  }
-  for (size_t i = ncell; i < nodevec.size(); ++i) {
-    TNode& nd = *nodevec[i];
-    stride[nd.treenode_order - 1] += 1; // -1 because treenode order includes root
+static void set_nodeindex(VecTNode& nodevec) {
+  for (size_t i = 0; i < nodevec.size(); ++i) {
+    nodevec[i]->nodevec_index = i;
   }
 }
 
-// for admin2 we allow the node organisation in warps of (say 4 cores per warp)
-// ...............  ideal warp but unbalanced relative to warp with max cycles
-// ...............  ncycle = 15, icore [0:4), all strides are 4.
-// ...............
-// ...............
-//
-// ..........       unbalanced relative to warp with max cycles
-// ..........       ncycle = 10, not all strides the same because
-// ..........       of need to avoid occasional race conditions.
-//  .  . ..         icore [4:8) only 4 strides of 4
-//
-// ....................  ncycle = 20, uses only one core in the warp (cable)
-//                       icore 8, all ncycle strides are 1
-
-// One thing to be unhappy about is the large stride vector of size about
-// number of compartments/warpsize. There are a lot of models where the
-// stride for a warp is constant except for one cycle in the warp and that
-// is easy to obtain when there are more than warpsize cells per warp.
-
-static size_t stride_length(size_t begin, size_t end, VecTNode& nodevec) {
-  // return stride length starting at i. Do not go past j.
-  // max stride is warpsize.
-  // At this time, only assume vicious parent race conditions matter.
-  if (end - begin > warpsize) {
-    end = begin + warpsize;
-  }
-  for ( size_t i = begin; i < end; ++i) {
+void group_order2(VecTNode& nodevec, size_t groupsize, size_t ncell) {
+  //return;
+  printf("enter group_order2\n");
+#if 1
+  size_t maxlevel = level_from_root(nodevec);
+#else
+  size_t maxlevel = level_from_leaf(nodevec);
+  // reverse the level numbering so leaves are at maxlevel.
+  // also make all roots have level 0
+  for (size_t i = 0; i < nodevec.size(); ++i) {
     TNode* nd = nodevec[i];
-    nrn_assert(nd->nodevec_index == i);
-    size_t diff = dist2child(nd);
-    if (i + diff < end) {
-      end = i + diff;
+    nd->level = maxlevel - nd->level;
+    if (nd->parent == NULL) {
+      nd->level = 0;
     }
   }
-  return end - begin;
-}
-
-static void admin2(int ncell, VecTNode& nodevec, int& nwarp,
-  int& nstride, int*& stridedispl, int*& strides,
-  int*& rootbegin, int*& nodebegin, int*& ncycles
-){
-  // the number of groups is the number of warps needed
-  // ncore is the number of warps * warpsize
-  nwarp = nodevec[ncell-1]->groupindex + 1;
-
-  ncycles = new int[nwarp];
-  stridedispl = new int[nwarp+1]; // running sum of ncycles (start at 0)
-  rootbegin = new int[nwarp+1]; // index (+1) of first root in warp.
-  nodebegin = new int[nwarp+1]; // index (+1) of first node in warp.
-
-  // rootbegin and nodebegin are the root index values + 1 of the last of
-  // the sequence of constant groupindex
-  rootbegin[0] = 0;
-  for (size_t i = 0; i < size_t(ncell); ++i) {
-    rootbegin[nodevec[i]->groupindex + 1] = i + 1;
-  }
-  nodebegin[0] = ncell;
-  for (size_t i = size_t(ncell); i < nodevec.size(); ++i) {
-    nodebegin[nodevec[i]->groupindex+1] = i + 1;
-  }
-
-  // ncycles, stridedispl, and nstride
-  nstride = 0;
-  stridedispl[0] = 0;
-  for (size_t iwarp = 0; iwarp < (size_t)nwarp; ++iwarp) {
-    size_t j = size_t(nodebegin[iwarp+1]);
-    int nc = 0;
-    size_t i = nodebegin[iwarp];
-    while (i < j) {
-      i += stride_length(i, j, nodevec);
-      ++nc;
-    }
-    ncycles[iwarp] = nc;
-    stridedispl[iwarp+1] = stridedispl[iwarp] + nc;
-    nstride += nc;
-  }
-  
-  // strides
-  strides = new int[nstride];
-  nstride = 0;
-  for (size_t iwarp = 0; iwarp < (size_t)nwarp; ++iwarp) {
-    size_t j = size_t(nodebegin[iwarp+1]);
-    size_t i = nodebegin[iwarp];
-    while (i < j) {
-      int k = stride_length(i, j, nodevec);
-      i += k;
-      strides[nstride++] = k;
-    }
-  }
-
-#if 0
-printf("warp rootbegin nodebegin stridedispl\n");
-for (int i = 0; i <= nwarp; ++i){
-  printf("%4d %4d %4d %4d\n", i, rootbegin[i], nodebegin[i], stridedispl[i]);
-}
 #endif
-} 
+  
+  // if not NULL use this to define groups (and reset TNode.groupindex)
+  size_t nwarp = warp_balance(ncell, nodevec);
+
+  // work on a cellgroup as a vector of levels. ie only possible race is
+  // two children in same warpsize
+  
+  VVVTN groups(nwarp ? nwarp : (ncell/groupsize + ((ncell%groupsize) ? 1 : 0)));
+
+  for (size_t i = 0; i < groups.size(); ++i) {
+    groups[i].resize(maxlevel+1);
+  }
+
+  for (size_t i=0; i < nodevec.size(); ++i) {
+    TNode* nd = nodevec[i];
+    groups[nd->groupindex][nd->level].push_back(nd);
+  }
+
+  prgroupsize(groups);
+
+  // deal with each group
+  for (size_t i=0; i < groups.size(); ++i) {
+    analyze(groups[i]);
+    question2(groups[i]);
+  }
+
+  question(groups[0]);
+//  question2(groups[0]);
+
+  //final nodevec order according to group_index and treenode_order
+  std::sort(nodevec.begin() + ncell, nodevec.end(), final_nodevec_cmp);
+  set_nodeindex(nodevec);
+}
 
