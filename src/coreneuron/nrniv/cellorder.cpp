@@ -67,6 +67,8 @@ void destroy_interleave_info() {
 // more precise visualization of the warp quality
 // can be called after admin2
 static void print_quality2(int iwarp, InterleaveInfo& ii, int* p) {
+  int pc = (iwarp == 0); // print warp 0
+  pc = 0; // turn off printing
   int nodebegin = ii.lastnode[iwarp];
   int* stride = ii.stride + ii.stridedispl[iwarp];
   int ncycle = ii.cellsize[iwarp];
@@ -87,7 +89,7 @@ static void print_quality2(int iwarp, InterleaveInfo& ii, int* p) {
   for (int icycle=0; icycle < ncycle; ++icycle) {
     int s = stride[icycle];
     int lastp = -2;
-    if (iwarp == 0) printf("  ");
+    if (pc) printf("  ");
     std::set<int> crace; // how many children have same parent in a cycle
     for (int icore=0; icore < warpsize; ++icore) {
       char ch = '.';
@@ -110,9 +112,9 @@ static void print_quality2(int iwarp, InterleaveInfo& ii, int* p) {
         ch = 'X';
         ++nx;
       }
-      if (iwarp == 0) printf("%c", ch);
+      if (pc) printf("%c", ch);
     }
-    if (iwarp == 0) printf("\n");
+    if (pc) printf("\n");
   }
 
   ii.nnode[iwarp] = nn;
@@ -120,12 +122,13 @@ static void print_quality2(int iwarp, InterleaveInfo& ii, int* p) {
   ii.idle[iwarp] = nx;
   ii.cache_access[iwarp] = ncacheline;
   ii.child_race[iwarp] = ncr;
-  if (iwarp == 0) printf("warp %d:  %ld nodes, %d cycles, %ld idle, %ld cache access, %ld child races\n",
+  if (pc) printf("warp %d:  %ld nodes, %d cycles, %ld idle, %ld cache access, %ld child races\n",
     iwarp, nn, ncycle, nx, ncacheline, ncr);
 }
 
 static void print_quality1(int iwarp, InterleaveInfo& ii, int ncell, int* p) {
   int pc = ((iwarp == 0) || iwarp == (ii.nwarp-1)); // warp not to skip printing
+  pc = 0; // turn off printing.
   int* stride = ii.stride;
   int cellbegin = iwarp*warpsize;
   int cellend = cellbegin + warpsize;

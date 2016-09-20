@@ -21,12 +21,13 @@ typedef vector<VVTN> VVVTN; // groups
 
 // verify level in groups of nident identical nodes
 void chklevel(VTN& level, size_t nident = 8) {
-return;
+#if 0
   nrn_assert(level.size() % nident == 0);
   for (size_t i = 0; i <  level.size(); ++i) {
     size_t j = nident*int(i/nident);
     nrn_assert(level[i]->hash == level[j]->hash);
   }
+#endif
 }
 
 // first child before second child, etc
@@ -386,7 +387,7 @@ static void question2(VVTN& levels) {
 
 // size of groups with contiguous parents for each level
 static void question(VVTN& levels) {
-  return;
+#if 0
   for (size_t i = 0; i < levels.size(); ++i) {
     printf("%3ld %5ld", i, levels[i].size());
     size_t iplast = 100000000;
@@ -407,6 +408,7 @@ static void question(VVTN& levels) {
     if (nsame) { printf(" %3ld", nsame); }
     printf("\n");
   }
+#endif
 }
 
 static void analyze(VVTN& levels) {
@@ -435,7 +437,7 @@ static void analyze(VVTN& levels) {
 }
 
 void prgroupsize(VVVTN& groups) {
-  return;
+#if 0
   for (size_t i=0; i < groups[0].size(); ++i) {
     printf("%5ld\n", i);
     for (size_t j=0; j < groups.size(); ++j) {
@@ -443,6 +445,7 @@ void prgroupsize(VVVTN& groups) {
     }
     printf("\n");
   }
+#endif
 }
 
 // group index primary, treenode_order secondary
@@ -465,8 +468,6 @@ static void set_nodeindex(VecTNode& nodevec) {
 }
 
 void group_order2(VecTNode& nodevec, size_t groupsize, size_t ncell) {
-  //return;
-  printf("enter group_order2\n");
 #if 1
   size_t maxlevel = level_from_root(nodevec);
 #else

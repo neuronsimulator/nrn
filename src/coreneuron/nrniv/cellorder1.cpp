@@ -37,11 +37,11 @@ TNode::TNode(int ix) {
   nodeindex = ix;
   cellindex = 0;
   groupindex = 0;
-  level = -1;
+  level = 0;
   hash = 0;
   treesize = 1;
-  nodevec_index = -1;
-  treenode_order = -1;
+  nodevec_index = 0;
+  treenode_order = 0;
   parent = NULL;
   children.reserve(2);
 }
@@ -74,16 +74,6 @@ typedef std::pair<TNode*, int> TNI;
 typedef std::map<size_t, pair<TNode*, int> > HashCnt;
 typedef vector<TNI> TNIVec;
 
-static bool tnivec_cmp(const TNI& a, const TNI& b) {
-  bool result = false;
-  if (a.second < b.second) {
-    result = true;
-  }else if (a.second == b.second) {
-    result = b.first->treesize < a.first->treesize;
-  }
-  return result;
-}
-
 static char* stree(TNode* nd) {
   char s[1000];
 
@@ -97,40 +87,6 @@ static char* stree(TNode* nd) {
   }
   strcat(s, ")");
   return strdup(s);
-}
-
-static void exper1(VecTNode& nodevec) {
-  printf("nodevec.size = %ld\n", nodevec.size());
-  HashCnt hashcnt;
-  for (size_t i=0; i < nodevec.size(); ++i) {
-    TNode* nd = nodevec[i];
-    size_t h = nd->hash;
-    HashCnt::iterator search = hashcnt.find(h);
-    if (search != hashcnt.end()) {
-      search->second.second += 1;
-    }else{
-      hashcnt[h] = pair<TNode*, int>(nd, 1);
-    }
-  }
-  TNIVec tnivec;
-  for (HashCnt::iterator i = hashcnt.begin(); i != hashcnt.end(); ++i) {
-    tnivec.push_back(i->second);
-  }
-  std::sort(tnivec.begin(), tnivec.end(), tnivec_cmp);
-
-  // I am a child of <n> parent patterns (parallel to tnivec)
-  map<size_t, set<size_t> > parpat;
-  for (size_t i = 0; i < nodevec.size(); ++i) {
-    TNode* nd = nodevec[i];
-    parpat[nd->hash].insert(nd->parent ? nd->parent->hash : 0);
-  }
-
-  for (TNIVec::iterator i = tnivec.begin(); i != tnivec.end(); ++i) {
-    char* sr = stree(i->first);
-    printf("%20ld %5d %3ld %4ld %s\n", i->first->hash, i->second, i->first->treesize,
-      parpat[i->first->hash].size(), sr);
-    free(sr);
-  }
 }
 
 /*
@@ -186,8 +142,10 @@ static void quality(VecTNode& nodevec, size_t max = 32) {
     printf("%6ld %6ld\n", it->first, it->second);
   }
 #endif
+#if 0
   printf("qual.size=%ld  qual total nodes=%ld  nodevec.size=%ld\n",
     qual.size(), qcnt, nodevec.size());
+#endif
   
   // how many race conditions. ie refer to same parent on different core
   // of warp (max cores) or parent in same group of max.
@@ -215,25 +173,10 @@ static void quality(VecTNode& nodevec, size_t max = 32) {
       }
     }
   }
+#if 0
   printf("nrace = %ld (parent in same group of %ld nodes)\n", nrace1, max);
   printf("nrace = %ld (parent used more than once by same group of %ld nodes)\n", nrace2, max);
-}
-
-#define MSS MSS_ident_stat
-typedef map<size_t, size_t> MSS;
-static bool vsmss_comp(const pair<size_t, MSS*>& a, const pair<size_t, MSS*>& b) {
-  bool result = false;
-  const MSS::iterator& aa = a.second->begin();
-  const MSS::iterator& bb = b.second->begin();
-  if (aa->first < bb->first) {
-    result = true;
-  }else if (aa->first == bb->first) {
-    if (aa->second < bb->second) {
-      result = true;
-    }
-  }
-
-  return result;
+#endif
 }
 
 size_t level_from_root(VecTNode& nodevec) {
@@ -293,6 +236,24 @@ static void set_groupindex(VecTNode& nodevec) {
   }
 }
 
+#if 0
+#define MSS MSS_ident_stat
+typedef map<size_t, size_t> MSS;
+static bool vsmss_comp(const pair<size_t, MSS*>& a, const pair<size_t, MSS*>& b) {
+  bool result = false;
+  const MSS::iterator& aa = a.second->begin();
+  const MSS::iterator& bb = b.second->begin();
+  if (aa->first < bb->first) {
+    result = true;
+  }else if (aa->first == bb->first) {
+    if (aa->second < bb->second) {
+      result = true;
+    }
+  }
+  return result;
+}
+#endif
+
 // how many identical trees and their levels
 // print when more than one instance of a type
 // reverse the sense of levels (all leaves are level 0) to get a good
@@ -318,8 +279,8 @@ static void ident_statistic(VecTNode& nodevec, size_t ncell) {
     }
     printf("\n");
   }
-  return;
 
+#if 0
   typedef map<size_t, MSS> MSMSS;
   typedef vector<pair<size_t, MSS*> > VSMSS;
   MSMSS info;
@@ -345,6 +306,7 @@ static void ident_statistic(VecTNode& nodevec, size_t ncell) {
     }
   }
   printf("max level = %ld\n", maxlevel);
+#endif
 }
 #undef MSS
 
@@ -405,8 +367,6 @@ int* node_order(int ncell, int nnode, int* parent, int& nwarp,
     admin2(ncell, nodevec, nwarp, nstride, stridedispl, stride, firstnode, lastnode, cellsize);
   }
 
-  if (0) {exper1(nodevec);}
-
 #if 1
   int ntopol = 1;
   for (int i = 1; i < ncell; ++i) {
@@ -452,10 +412,10 @@ void prtree(VecTNode& nodevec) {
   }
   for (size_t i=0; i < nnode; ++i) {
     TNode& nd = *nodevec[i];
-    printf("%ld p=%ld   c=%ld l=%ld o=%ld   ix=%d pix=%d\n",
-      i, nd.parent ? nd.parent->nodevec_index : -1,
+    printf("%ld p=%d   c=%ld l=%ld o=%ld   ix=%d pix=%d\n",
+      i, nd.parent ? int(nd.parent->nodevec_index) : -1,
       nd.cellindex, nd.level, nd.treenode_order,
-       nd.nodeindex, nd.parent ? nd.parent->nodeindex : -1);
+       nd.nodeindex, nd.parent ? int(nd.parent->nodeindex) : -1);
   }
 }
 
@@ -484,20 +444,6 @@ void tree_analysis(int* parent, int nnode, int ncell, VecTNode& nodevec) {
   std::sort(nodevec.begin(), nodevec.begin() + ncell, tnode_earlier);
 }
 
-#if 0
-static bool contig_comp(TNode* a, TNode* b) {
-  bool result = false;
-  if (a->cellindex < b->cellindex) {
-    result = true;
-  }else if (a->cellindex == b->cellindex) {
-    if (a->treenode_order < b->treenode_order) {
-      result = true;
-    }
-  }
-  return result;
-}
-#endif
-
 static bool interleave_comp(TNode* a, TNode* b) {
   bool result = false;
   if (a->treenode_order < b->treenode_order) {
@@ -509,9 +455,6 @@ static bool interleave_comp(TNode* a, TNode* b) {
   }
   return result;
 }
-
-// sort so nodevec[ncell:nnode] cell instances are contiguous. Keep the
-// secondary ordering with respect to treenode_order so each cell is still a tree.
 
 // sort so nodevec[ncell:nnode] cell instances are interleaved. Keep the
 // secondary ordering with respect to treenode_order so each cell is still a tree.
