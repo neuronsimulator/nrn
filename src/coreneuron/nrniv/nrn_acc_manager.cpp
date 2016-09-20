@@ -390,7 +390,7 @@ void setup_nrnthreads_on_device(NrnThread *threads, int nthreads)  {
             printf("\n WARNING: NrnThread %d not permuted, error for linear algebra?", i);
         }
 
-        printf("\n Compute thread on GPU? : %s, Stream : %d", (nt->compute_gpu)? "Yes" : "No", nt->stream_id);
+        printf("\n Compute thread on GPU? : %s, Stream : %d\n", (nt->compute_gpu)? "Yes" : "No", nt->stream_id);
     }
 
     if(nrn_ion_global_map_size) {
