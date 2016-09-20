@@ -108,7 +108,7 @@ public:
 	ConditionEvent();
 	virtual ~ConditionEvent();
 	virtual bool check(NrnThread*);
-	virtual double value() { return -1.; }
+	virtual double value(NrnThread*) { return -1.; }
 
     int flag_; // true when below, false when above. (changed from bool to int to avoid cray acc bug(?))
 };
