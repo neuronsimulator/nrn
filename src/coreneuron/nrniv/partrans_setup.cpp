@@ -28,6 +28,31 @@ class SidData {
 #define HAVEWANT2Int std::map<sgid_t, int>
 #include "coreneuron/nrniv/have2want.h"
 
+nrn_partrans::TransferThreadData::TransferThreadData() {
+  halfgap_ml = NULL;
+  nsrc = 0;
+  ntar = 0;
+  insrc_indices = NULL;
+  v_indices = NULL;
+  outbuf_indices = NULL;
+  v_gather = NULL;
+}
+
+nrn_partrans::TransferThreadData::~TransferThreadData() {
+  if (insrc_indices) {
+    delete [] insrc_indices;
+  }
+  if (v_indices) {
+    delete [] v_indices;
+  }
+  if (outbuf_indices) {
+    delete [] outbuf_indices;
+  }
+  if (v_gather) {
+    delete [] v_gather;
+  }
+}
+
 void nrn_partrans::gap_mpi_setup(int ngroup) {
   //printf("%d gap_mpi_setup ngroup=%d\n", nrnmpi_myid, ngroup);
 

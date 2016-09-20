@@ -23,7 +23,10 @@ namespace nrn_partrans {
   };
   extern HalfGap_Info* halfgap_info;
 
-  struct TransferThreadData {
+  class TransferThreadData {
+  public:
+    TransferThreadData();
+    ~TransferThreadData();
     Memb_list* halfgap_ml;
     int nsrc; // number of places in outsrc_buf_ voltages get copied to.
     int ntar; // insrc_indices size (halfgap_ml->nodecount);
