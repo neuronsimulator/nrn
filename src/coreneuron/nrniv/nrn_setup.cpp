@@ -873,7 +873,8 @@ void nrn_cleanup() {
       nt->_net_send_buffer_size = 0;
     }
 
-    if (nt->mapping) {
+    //mapping information is available only for non-empty NrnThread
+    if (nt->mapping && nt->ncell) {
         delete ( (NeuronGroupMappingInfo*) nt->mapping);
     }
 
