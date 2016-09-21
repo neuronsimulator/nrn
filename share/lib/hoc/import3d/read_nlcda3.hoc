@@ -1013,10 +1013,14 @@ proc treepoints() {
 }
 proc treepoint() {
 	enter("treepoint")
-	point()
-	if (current.token == leftsp) {
-		spines()
-	}
+    if (look_ahead.token == label_) {
+        marker_or_property()
+    } else {
+        point()
+        if (current.token == leftsp) {
+            spines()
+        }
+    }
 	leave("treepoint")
 }
 proc spines() {
