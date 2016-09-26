@@ -13,7 +13,7 @@ CoreNEURON supports the following subset of features provided by [NEURON](https:
 * [CMake 2.8.12+](https://cmake.org)
 * [MOD2C](http://github.com/BlueBrain/mod2c)
 * [MPI 2.0+](http://mpich.org)
-
+* [PGI OpenACC Compiler >=16.3](https://www.pgroup.com/resources/accel.htm) [Optional, for GPU systems]
 
 # Installation
 
@@ -40,7 +40,7 @@ make install
 
 CoreNEURON has support for GPUs using OpenACC programming model when enabled with -DENABLE_OPENACC=ON.
 
-Here are the steps to compile:
+Here are the steps to compile with PGI compiler:
 
 ```bash
 module purge
@@ -60,11 +60,18 @@ export CUDA_VISIBLE_DEVICES=0   #if needed
 mpirun -n 1 ./bin/coreneuron_exec -d ../tests/integration/ring -mpi -e 100 --gpu --celsius=6.3
 ```
 
+Additionally you can enable cell reordering mechanism to improve GPU performance using cell_permute option:
+```bash
+mpirun -n 1 ./bin/coreneuron_exec -d ../tests/integration/ring -mpi -e 100 --gpu --celsius=6.3 --cell_permute=1
+```
+
+Note that if your model is using Random123 random number generator, you can't use same executable for CPU and GPU runs.
+This will be fixed in next version.
 
 # Using ReportingLib
 If you want enable use of ReportingLib for the soma reports, install ReportingLib first and enable it using -DENABLE_REPORTINGLIB (use same install path for ReportingLib as CoreNeuron).
 
-# Using Neurodamus
+# Using Neurodamus / Additional MOD files
 If you are building CoreNeuron with Neurodamus, you have to set *ADDITIONAL_MECHPATH* and *ADDITIONAL_MECHS* as:
 ```bash
 cmake .. -DADDITIONAL_MECHPATH="/path/of/neurodamus/lib/modlib" -DADDITIONAL_MECHS="/path/of/neurodamus/lib/modlib/coreneuron_modlist.txt"
@@ -143,6 +150,8 @@ In order to see the command line options, you can use:
               Model duplication factor. Model size is normal size * MULTIPLE (int). The default value is '1'.
        -x EXTRACON, --extracon=EXTRACON
               Number of extra random connections in each thread to other duplicate models (int). The default value is '0'.
+       -R TYPE, --cell_permute=TYPE
+              Permutation of cells for efficient execution of solver on GPU (TYPE could be 1 or 2).
        -mpi
               Enable MPI. In order to initialize MPI environment this argument must be specified.
 ```
