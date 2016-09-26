@@ -120,6 +120,21 @@ endif()
 option (ENABLE_SELECTIVE_GPU_PROFILING "Enable GPU profiling only for Solver" ON)
 option (ENABLE_OPENACC "Enable use of OpenACC" OFF)
 
+find_package(ClangFormat)
+
+if(CLANG_FORMAT_FOUND)
+    message("clang-format : ${CLANG_FORMAT_EXECUTABLE} : ${CLANG_FORMAT_VERSION}")
+else()
+    message("clang-format executable not found")
+endif()
+
+if(CLANG_FORMAT_FOUND)
+    #indent files using clang-format
+    file(GLOB_RECURSE SRC_FILES_FOR_CLANG_FORMAT ${PROJECT_SOURCE_DIR}/coreneuron/*.c*
+        ${PROJECT_SOURCE_DIR}/coreneuron/*.h* ${PROJECT_SOURCE_DIR}/coreneuron/*.ipp*)
+    add_custom_target(formatsource COMMAND clang-format -i ${SRC_FILES_FOR_CLANG_FORMAT} )
+endif()
+
 if(ENABLE_OPENACC)
     if(${CMAKE_C_COMPILER_ID} STREQUAL "PGI")
         add_definitions( -DPG_ACC_BUGS)

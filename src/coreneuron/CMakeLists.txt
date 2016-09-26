@@ -194,6 +194,12 @@ endif()
 
 set(coreneuron_all_c_files ${coreneuron_all_c_files} ${GENERATED_MECH_C_FILES})
 
+#to indent generated c/cpp files
+if(CLANG_FORMAT_FOUND)
+    add_custom_target(formatbuild COMMAND clang-format -i ${GENERATED_MECH_C_FILES})
+endif()
+
+
 add_library(coreneuron ${COMPILE_LIBRARY_TYPE} ${coreneuron_all_headers} ${coreneuron_all_templates} ${coreneuron_all_c_files} ${KINDERIV_H})
 
 set(link_cudacoreneuron)
