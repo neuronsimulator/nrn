@@ -29,8 +29,13 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/nrniv/ivocvect.h"
 
 extern "C" {
-  IvocVect* vector_new1(int n) { return new IvocVect(n); }
-  int vector_capacity(IvocVect* v) { return v->size(); }
-  double* vector_vec(IvocVect* v) { return v->data(); }
+IvocVect* vector_new1(int n) {
+    return new IvocVect(n);
 }
-
+int vector_capacity(IvocVect* v) {
+    return v->size();
+}
+double* vector_vec(IvocVect* v) {
+    return v->data();
+}
+}

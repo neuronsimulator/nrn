@@ -62,7 +62,7 @@ http://www.deshawresearch.com/resources_random123.html
 #define GLOBAL
 #endif
 
-#if ( defined(__CUDACC__) || defined(_OPENACC) ) && !defined(DISABLE_OPENACC)
+#if (defined(__CUDACC__) || defined(_OPENACC)) && !defined(DISABLE_OPENACC)
 #define nrnran123_newstream cu_nrnran123_newstream
 #define nrnran123_newstream3 cu_nrnran123_newstream3
 #define nrnran123_deletestream cu_nrnran123_deletestream
@@ -90,9 +90,7 @@ typedef struct nrnran123_State {
     char which_;
 } nrnran123_State;
 
-typedef struct nrnran123_array4x32 {
-        uint32_t v[4];
-} nrnran123_array4x32;
+typedef struct nrnran123_array4x32 { uint32_t v[4]; } nrnran123_array4x32;
 
 /* do this on launch to make nrnran123_newstream threadsafe */
 extern DEVICE void nrnran123_mutconstruct(void);
@@ -110,14 +108,18 @@ extern nrnran123_State* nrnran123_newstream(uint32_t id1, uint32_t id2);
 extern nrnran123_State* nrnran123_newstream3(uint32_t id1, uint32_t id2, uint32_t id3);
 extern void nrnran123_deletestream(nrnran123_State*);
 
-/* routines for creating and deleteing streams are called from cpu but initializing/deleting gpu context */
+/* routines for creating and deleteing streams are called from cpu but initializing/deleting gpu
+ * context */
 extern nrnran123_State* cu_nrnran123_newstream(uint32_t id1, uint32_t id2);
 extern nrnran123_State* cu_nrnran123_newstream3(uint32_t id1, uint32_t id2, uint32_t id3);
 extern void cu_nrnran123_deletestream(nrnran123_State*);
 
 extern GLOBAL void nrnran123_setup_deletestream(nrnran123_State* s);
-extern GLOBAL void nrnran123_setup_newstream(nrnran123_State *s, uint32_t id1, uint32_t id2);
-extern GLOBAL void nrnran123_setup_newstream3(nrnran123_State *s, uint32_t id1, uint32_t id2, uint32_t id3);
+extern GLOBAL void nrnran123_setup_newstream(nrnran123_State* s, uint32_t id1, uint32_t id2);
+extern GLOBAL void nrnran123_setup_newstream3(nrnran123_State* s,
+                                              uint32_t id1,
+                                              uint32_t id2,
+                                              uint32_t id3);
 
 /* minimal data stream */
 extern DEVICE void nrnran123_getseq(nrnran123_State*, uint32_t* seq, unsigned char* which);
@@ -129,7 +131,7 @@ extern DEVICE uint32_t nrnran123_ipick(nrnran123_State*); /* uniform 0 to 2^32-1
 #pragma acc routine seq
 #endif
 extern DEVICE double nrnran123_dblpick(nrnran123_State*); /* uniform open interval (0,1)*/
-    /* nrnran123_dblpick minimum value is 2.3283064e-10 and max value is 1-min */
+/* nrnran123_dblpick minimum value is 2.3283064e-10 and max value is 1-min */
 
 /* this could be called from openacc parallel construct (in INITIAL block) */
 #if !defined(DISABLE_OPENACC)
@@ -140,8 +142,8 @@ extern DEVICE void nrnran123_setseq(nrnran123_State*, uint32_t seq, unsigned cha
 #if !defined(DISABLE_OPENACC)
 #pragma acc routine seq
 #endif
-extern DEVICE double nrnran123_negexp(nrnran123_State*);  /* mean 1.0 */
-    /* nrnran123_negexp min value is 2.3283064e-10, max is 22.18071 */
+extern DEVICE double nrnran123_negexp(nrnran123_State*); /* mean 1.0 */
+/* nrnran123_negexp min value is 2.3283064e-10, max is 22.18071 */
 
 /* missing declaration in coreneuron */
 extern DEVICE double nrnran123_normal(nrnran123_State*);

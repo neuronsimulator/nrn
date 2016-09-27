@@ -52,117 +52,128 @@ class NetCvode;
 #define InputPreSynType 20
 
 class DiscreteEvent {
-public:
-	DiscreteEvent();
-	virtual ~DiscreteEvent();
-	virtual void send(double deliverytime, NetCvode*, NrnThread*);
-	virtual void deliver(double t, NetCvode*, NrnThread*);
-	virtual int type() { return DiscreteEventType; }
+  public:
+    DiscreteEvent();
+    virtual ~DiscreteEvent();
+    virtual void send(double deliverytime, NetCvode*, NrnThread*);
+    virtual void deliver(double t, NetCvode*, NrnThread*);
+    virtual int type() {
+        return DiscreteEventType;
+    }
 
     virtual void pr(const char*, double t, NetCvode*);
 };
 
 class NetCon : public DiscreteEvent {
-public:
+  public:
     bool active_;
     double delay_;
     Point_process* target_;
     union {
         int weight_index_;
-        int srcgid_; // only to help InputPreSyn during setup
+        int srcgid_;  // only to help InputPreSyn during setup
         // before weights are read and stored. Saves on transient
         // memory requirements by avoiding storage of all group file
         // netcon_srcgid lists. ie. that info is copied into here.
     } u;
 
-	NetCon();
-	virtual ~NetCon();
-	virtual void send(double sendtime, NetCvode*, NrnThread*);
-    virtual void deliver(double,  NetCvode* ns, NrnThread*);
-	virtual int type() { return NetConType; }
+    NetCon();
+    virtual ~NetCon();
+    virtual void send(double sendtime, NetCvode*, NrnThread*);
+    virtual void deliver(double, NetCvode* ns, NrnThread*);
+    virtual int type() {
+        return NetConType;
+    }
     virtual void pr(const char*, double t, NetCvode*);
 };
 
 class SelfEvent : public DiscreteEvent {
-public:
+  public:
     double flag_;
     Point_process* target_;
-    void** movable_; // actually a TQItem**
+    void** movable_;  // actually a TQItem**
     int weight_index_;
 
-	SelfEvent();
-	virtual ~SelfEvent();
-	virtual void deliver(double, NetCvode*, NrnThread*);
-    virtual int type() { return SelfEventType; }
+    SelfEvent();
+    virtual ~SelfEvent();
+    virtual void deliver(double, NetCvode*, NrnThread*);
+    virtual int type() {
+        return SelfEventType;
+    }
 
     virtual void pr(const char*, double t, NetCvode*);
 
-private:
-	void call_net_receive(NetCvode*);
+  private:
+    void call_net_receive(NetCvode*);
 };
-
 
 class ConditionEvent : public DiscreteEvent {
-public:
-	// condition detection factored out of PreSyn for re-use
-	ConditionEvent();
-	virtual ~ConditionEvent();
-	virtual bool check(NrnThread*);
-	virtual double value(NrnThread*) { return -1.; }
+  public:
+    // condition detection factored out of PreSyn for re-use
+    ConditionEvent();
+    virtual ~ConditionEvent();
+    virtual bool check(NrnThread*);
+    virtual double value(NrnThread*) {
+        return -1.;
+    }
 
-    int flag_; // true when below, false when above. (changed from bool to int to avoid cray acc bug(?))
+    int flag_;  // true when below, false when above. (changed from bool to int to avoid cray acc
+                // bug(?))
 };
 
-
 class PreSyn : public ConditionEvent {
-public:
+  public:
 #if NRNMPI
-    unsigned char localgid_; // compressed gid for spike transfer
+    unsigned char localgid_;  // compressed gid for spike transfer
 #endif
-    int nc_index_; //replaces dil_, index into global NetCon** netcon_in_presyn_order_
-    int nc_cnt_; // how many netcon starting at nc_index_
+    int nc_index_;  // replaces dil_, index into global NetCon** netcon_in_presyn_order_
+    int nc_cnt_;    // how many netcon starting at nc_index_
     int output_index_;
     int gid_;
     double threshold_;
-    int thvar_index_; // >=0 points into NrnThread._actual_v
+    int thvar_index_;  // >=0 points into NrnThread._actual_v
     Point_process* pntsrc_;
 
-	PreSyn();
-	virtual ~PreSyn();
-	virtual void send(double sendtime, NetCvode*, NrnThread*);
-	virtual void deliver(double, NetCvode*, NrnThread*);
-	virtual int type() { return PreSynType; }
+    PreSyn();
+    virtual ~PreSyn();
+    virtual void send(double sendtime, NetCvode*, NrnThread*);
+    virtual void deliver(double, NetCvode*, NrnThread*);
+    virtual int type() {
+        return PreSynType;
+    }
 
-	virtual double value(NrnThread*);
-	void record(double t);
+    virtual double value(NrnThread*);
+    void record(double t);
 };
 
 class InputPreSyn : public DiscreteEvent {
-public:
-    int nc_index_; //replaces dil_, index into global NetCon** netcon_in_presyn_order_
-    int nc_cnt_; // how many netcon starting at nc_index_
+  public:
+    int nc_index_;  // replaces dil_, index into global NetCon** netcon_in_presyn_order_
+    int nc_cnt_;    // how many netcon starting at nc_index_
 
-	InputPreSyn();
-	virtual ~InputPreSyn();
-	virtual void send(double sendtime, NetCvode*, NrnThread*);
-	virtual void deliver(double, NetCvode*, NrnThread*);
-	virtual int type() { return InputPreSynType; }
-
-
+    InputPreSyn();
+    virtual ~InputPreSyn();
+    virtual void send(double sendtime, NetCvode*, NrnThread*);
+    virtual void deliver(double, NetCvode*, NrnThread*);
+    virtual int type() {
+        return InputPreSynType;
+    }
 };
 
 class NetParEvent : public DiscreteEvent {
-public:
-    int ithread_; // for pr()
-    double wx_, ws_; // exchange time and "spikes to Presyn" time
+  public:
+    int ithread_;     // for pr()
+    double wx_, ws_;  // exchange time and "spikes to Presyn" time
 
-	NetParEvent();
-	virtual ~NetParEvent();
-	virtual void send(double, NetCvode*, NrnThread*);
-	virtual void deliver(double, NetCvode*, NrnThread*);
-    virtual int type() { return NetParEventType; }
+    NetParEvent();
+    virtual ~NetParEvent();
+    virtual void send(double, NetCvode*, NrnThread*);
+    virtual void deliver(double, NetCvode*, NrnThread*);
+    virtual int type() {
+        return NetParEventType;
+    }
 
-	virtual void pr(const char*, double t, NetCvode*);
+    virtual void pr(const char*, double t, NetCvode*);
 };
 
 #endif

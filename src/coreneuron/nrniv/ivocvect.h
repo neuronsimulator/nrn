@@ -35,30 +35,52 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/nrniv/nrnmutdec.h"
 
 template <typename T>
-class fixed_vector{
+class fixed_vector {
     size_t n_;
     MUTDEC
 
   public:
     T* data_; /*making public for openacc copying */
-    fixed_vector(size_t n):n_(n) { data_ = new T[n_]; }
-    ~fixed_vector() { delete [] data_; }
+    fixed_vector(size_t n) : n_(n) {
+        data_ = new T[n_];
+    }
+    ~fixed_vector() {
+        delete[] data_;
+    }
 
-    const T& operator[] (int i) const { return data_[i]; }
-    T& operator[] (int i) { return data_[i]; }
+    const T& operator[](int i) const {
+        return data_[i];
+    }
+    T& operator[](int i) {
+        return data_[i];
+    }
 
-    const T* data(void) const { return data_; }
-    T* data(void) { return data_; }
+    const T* data(void) const {
+        return data_;
+    }
+    T* data(void) {
+        return data_;
+    }
 
-    size_t size() const { return n_; }
+    size_t size() const {
+        return n_;
+    }
 
 #if (USE_PTHREAD || defined(_OPENMP))
-	void mutconstruct(int mkmut) {if (!mut_) MUTCONSTRUCT(mkmut)}
+    void mutconstruct(int mkmut) {
+        if (!mut_)
+            MUTCONSTRUCT(mkmut)
+    }
 #else
-	void mutconstruct(int) {}
+    void mutconstruct(int) {
+    }
 #endif
-	void lock() {MUTLOCK}
-	void unlock() {MUTUNLOCK}
+    void lock() {
+        MUTLOCK
+    }
+    void unlock() {
+        MUTUNLOCK
+    }
 };
 
 typedef fixed_vector<double> IvocVect;
@@ -71,13 +93,12 @@ typedef void IvocVect;
 
 #endif /* !defined(__cplusplus) */
 
-  extern IvocVect* vector_new1(int n);
-  extern int vector_capacity(IvocVect* v);
-  extern double* vector_vec(IvocVect* v);
+extern IvocVect* vector_new1(int n);
+extern int vector_capacity(IvocVect* v);
+extern double* vector_vec(IvocVect* v);
 
 #if defined(__cplusplus)
 }
 #endif
 
 #endif
-

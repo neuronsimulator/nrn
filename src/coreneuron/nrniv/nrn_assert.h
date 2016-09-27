@@ -26,7 +26,6 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-
 #ifndef _H_NRN_ASSERT
 #define _H_NRN_ASSERT
 
@@ -43,15 +42,16 @@ THE POSSIBILITY OF SUCH DAMAGE.
  */
 
 /** Emit formatted message to stderr, then abort(). */
-static void abortf(const char *fmt,...) {
+static void abortf(const char* fmt, ...) {
     va_list va;
-    va_start(va,fmt);
-    vfprintf(stderr,fmt,va);
+    va_start(va, fmt);
+    vfprintf(stderr, fmt, va);
     va_end(va);
     abort();
 }
 
 /** assert()-like macro, independent of NDEBUG status */
-#define nrn_assert(x) ((x) || (abortf("%s:%d: Assertion '%s' failed.\n",__FILE__,__LINE__,#x),0))
+#define nrn_assert(x) \
+    ((x) || (abortf("%s:%d: Assertion '%s' failed.\n", __FILE__, __LINE__, #x), 0))
 
 #endif

@@ -44,101 +44,106 @@ THE POSSIBILITY OF SUCH DAMAGE.
 extern NetCvode* net_cvode_instance;
 
 /** To manage report events, subclass of DiscreteEvent */
-class ReportEvent: public DiscreteEvent {
+class ReportEvent : public DiscreteEvent {
+  private:
+    /** every thread or event can have different dt */
+    double dt;
+    unsigned long step;
 
-    private:
-        /** every thread or event can have different dt */
-        double dt;
-        unsigned long step;
+  public:
+    ReportEvent(double t);
 
-    public:
-        ReportEvent(double t);
-
-        /** on deliver, call ReportingLib and setup next event */
-        virtual void deliver(double t, NetCvode *nc, NrnThread *nt);
+    /** on deliver, call ReportingLib and setup next event */
+    virtual void deliver(double t, NetCvode* nc, NrnThread* nt);
 };
 
 /** possible voltage report types */
-enum ReportType {SomaReport, CompartmentReport};
+enum ReportType { SomaReport, CompartmentReport };
 
 /** class for managing report generation with ReportingLib */
 class ReportGenerator {
+  private:
+    /** every thread should have an event */
+    std::vector<ReportEvent*> events;
+    double start;
+    double stop;
+    double dt;
+    double dt_report;
+    double mindelay;
+    ReportType type;
+    std::string report_filepath;
 
-    private:
+  public:
+    ReportGenerator(int type,
+                    double start,
+                    double stop,
+                    double dt,
+                    double delay,
+                    double dt_report,
+                    std::string path);
 
-        /** every thread should have an event */
-        std::vector<ReportEvent *> events;
-        double start;
-        double stop;
-        double dt;
-        double dt_report;
-        double mindelay;
-        ReportType type;
-        std::string report_filepath;
+#ifdef ENABLE_REPORTING
+    void register_report();
+#endif
 
-    public:
-
-        ReportGenerator(int type, double start, double stop, double dt, double delay, double dt_report, std::string path);
-
-        #ifdef ENABLE_REPORTING
-            void register_report();
-        #endif
-
-        ~ReportGenerator() {
-            events.clear();
-        }
+    ~ReportGenerator() {
+        events.clear();
+    }
 };
 
 /** type to store every section and associated segments */
 typedef std::vector<int> segment_vector_type;
-typedef std::map<int,segment_vector_type> section_segment_map_type;
+typedef std::map<int, segment_vector_type> section_segment_map_type;
 
 /** Mapping information for single neuron */
 class NeuronMappingInfo {
+  public:
+    int gid;           // gid of cellgroup
+    int nsegment;      // no of segments
+    int nsoma;         // no of somas
+    int naxon;         // no of axons
+    int ndendrite;     // no of dendrites
+    int napical;       // no of apical
+    int ncompartment;  // no of compartment
 
-    public:
-        int gid;                            //gid of cellgroup
-        int nsegment;                       //no of segments
-        int nsoma;                          //no of somas
-        int naxon;                          //no of axons
-        int ndendrite;                      //no of dendrites
-        int napical;                        //no of apical
-        int ncompartment;                   //no of compartment
+    section_segment_map_type sec_seg_map;  // mapping of section to segments
 
-        section_segment_map_type sec_seg_map;    //mapping of section to segments
+    NeuronMappingInfo(int id, int seg, int soma, int axon, int dend, int apical, int compartment)
+        : gid(id),
+          nsegment(seg),
+          nsoma(soma),
+          naxon(axon),
+          ndendrite(dend),
+          napical(apical),
+          ncompartment(compartment) {
+    }
 
-        NeuronMappingInfo(int id, int seg, int soma, int axon, int dend, int apical, int compartment) :
-            gid(id), nsegment(seg), nsoma(soma), naxon(axon), ndendrite(dend), napical(apical), ncompartment(compartment) { }
+    void add_segment(int sec, int seg) {
+        sec_seg_map[sec].push_back(seg);
+    }
 
-        void add_segment(int sec, int seg) {
-            sec_seg_map[sec].push_back(seg);
-        }
-
-        /** section 0 is always soma. there could be multiple compartments
-         *  in the soma and hence return the first compartment
-         */
-        int get_soma_compartment_index() {
-            return (sec_seg_map.begin()->second)[0];
-        }
+    /** section 0 is always soma. there could be multiple compartments
+     *  in the soma and hence return the first compartment
+     */
+    int get_soma_compartment_index() {
+        return (sec_seg_map.begin()->second)[0];
+    }
 };
 
 /** Mapping information for all neurons in NrnThread */
 class NeuronGroupMappingInfo {
+  public:
+    std::vector<NeuronMappingInfo> neuronsmapinfo;  // mapping info for each gid in NrnThread
 
-    public:
+    void add_neuron_mapping_info(NeuronMappingInfo& mapping) {
+        neuronsmapinfo.push_back(mapping);
+    }
 
-        std::vector<NeuronMappingInfo> neuronsmapinfo;     //mapping info for each gid in NrnThread
+    size_t count() const {
+        return neuronsmapinfo.size();
+    }
 
-        void add_neuron_mapping_info(NeuronMappingInfo &mapping) {
-            neuronsmapinfo.push_back(mapping);
-        }
-
-        size_t count() const {
-            return neuronsmapinfo.size();
-        }
-
-        NeuronMappingInfo* get_neuron_mapping(int gid);
+    NeuronMappingInfo* get_neuron_mapping(int gid);
 };
 
-#endif //_H_NRN_REPORT_
-
+#endif  //_H_NRN_REPORT_

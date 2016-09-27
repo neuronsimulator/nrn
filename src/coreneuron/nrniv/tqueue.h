@@ -66,12 +66,11 @@ class TQItem;
 #define cnt cnt_
 #define key t_
 
-typedef struct SPTREE
-{
-    SPBLK	* root;		/* root node */
+typedef struct SPTREE {
+    SPBLK* root; /* root node */
 
     /* Statistics, not strictly necessary, but handy for tuning  */
-    int		enqcmps;	/* compares in spenq */
+    int enqcmps; /* compares in spenq */
 
 } SPTREE;
 
@@ -82,101 +81,132 @@ typedef struct SPTREE
 #define sphead sptq_sphead
 #define spdelete sptq_spdelete
 
-extern void spinit(SPTREE*);		/* init tree */
-extern SPBLK * spenq(SPBLK*, SPTREE*);	/* insert item into the tree */
-extern SPBLK * spdeq(SPBLK**);		/* return and remove lowest item in subtree */
-extern void splay(SPBLK*, SPTREE*);	/* reorganize tree */
-extern SPBLK * sphead(SPTREE*);         /* return first node in tree */
-extern void spdelete(SPBLK*, SPTREE*);	/* delete node from tree */
+extern void spinit(SPTREE*);           /* init tree */
+extern SPBLK* spenq(SPBLK*, SPTREE*);  /* insert item into the tree */
+extern SPBLK* spdeq(SPBLK**);          /* return and remove lowest item in subtree */
+extern void splay(SPBLK*, SPTREE*);    /* reorganize tree */
+extern SPBLK* sphead(SPTREE*);         /* return first node in tree */
+extern void spdelete(SPBLK*, SPTREE*); /* delete node from tree */
 
 class TQItem {
-public:
-	TQItem();
-public:
-	void* data_;
-	double t_;
-	TQItem* left_;
-	TQItem* right_;
-	TQItem* parent_;
-	int cnt_; // reused: -1 means it is in the splay tree, >=0 gives bin
+  public:
+    TQItem();
+
+  public:
+    void* data_;
+    double t_;
+    TQItem* left_;
+    TQItem* right_;
+    TQItem* parent_;
+    int cnt_;  // reused: -1 means it is in the splay tree, >=0 gives bin
 };
 
-typedef std::pair<double,TQItem *> TQPair;
+typedef std::pair<double, TQItem*> TQPair;
 
-struct less_time{
-    bool operator() (const TQPair &x, const TQPair &y) const {return x.first > y.first;}
+struct less_time {
+    bool operator()(const TQPair& x, const TQPair& y) const {
+        return x.first > y.first;
+    }
 };
 
 // helper class for the TQueue (SplayTBinQueue).
 class BinQ {
-public:
+  public:
     BinQ();
     ~BinQ();
     void enqueue(double tt, TQItem*);
-    void shift(double tt) { assert(!bins_[qpt_]); tt_ = tt; if (++qpt_ >= nbin_) { qpt_ = 0; }}
-    TQItem* top() { return bins_[qpt_]; }
+    void shift(double tt) {
+        assert(!bins_[qpt_]);
+        tt_ = tt;
+        if (++qpt_ >= nbin_) {
+            qpt_ = 0;
+        }
+    }
+    TQItem* top() {
+        return bins_[qpt_];
+    }
     TQItem* dequeue();
-    double tbin() { return tt_; }
+    double tbin() {
+        return tt_;
+    }
     // for iteration
     TQItem* first();
     TQItem* next(TQItem*);
     void remove(TQItem*);
     void resize(int);
 #if COLLECT_TQueue_STATISTICS
-public:
+  public:
     int nfenq, nfdeq;
 #endif
-private:
-	double tt_; // time at beginning of qpt_ interval
-	int nbin_, qpt_;
-	TQItem** bins_;
+  private:
+    double tt_;  // time at beginning of qpt_ interval
+    int nbin_, qpt_;
+    TQItem** bins_;
     std::vector<std::vector<TQItem*> > vec_bins;
 };
 
-enum container{spltree, pq_que};
+enum container { spltree, pq_que };
 
-template<container C = spltree>
+template <container C = spltree>
 class TQueue {
-public:
-  TQueue();
-  ~TQueue();
+  public:
+    TQueue();
+    ~TQueue();
 
-  inline TQItem* least() {return least_;}
-  inline TQItem* insert(double t, void* data);
-  inline TQItem* enqueue_bin(double t, void* data);
-  inline TQItem* dequeue_bin() { return binq_->dequeue(); }
-  inline void shift_bin(double _t_) { ++nshift_; binq_->shift(_t_); }
-  inline TQItem* top() { return binq_->top(); }
+    inline TQItem* least() {
+        return least_;
+    }
+    inline TQItem* insert(double t, void* data);
+    inline TQItem* enqueue_bin(double t, void* data);
+    inline TQItem* dequeue_bin() {
+        return binq_->dequeue();
+    }
+    inline void shift_bin(double _t_) {
+        ++nshift_;
+        binq_->shift(_t_);
+    }
+    inline TQItem* top() {
+        return binq_->top();
+    }
 
-  inline TQItem* atomic_dq(double til);
-  inline void remove(TQItem*);
-  inline void move(TQItem*, double tnew);
+    inline TQItem* atomic_dq(double til);
+    inline void remove(TQItem*);
+    inline void move(TQItem*, double tnew);
 #if COLLECT_TQueue_STATISTICS
-  inline void statistics();
-  inline void record_stat_event(int type, double time);
+    inline void statistics();
+    inline void record_stat_event(int type, double time);
 #endif
-  int nshift_;
+    int nshift_;
 
-  /// Priority queue of vectors for queuing the events. enqueuing for move() and move_least_nolock() is not implemented
-  std::priority_queue<TQPair, std::vector<TQPair>, less_time> pq_que_;
-  /// Types of queuing statistics
-  enum qtype {enq=0, spike, ite, deq};
+    /// Priority queue of vectors for queuing the events. enqueuing for move() and
+    /// move_least_nolock() is not implemented
+    std::priority_queue<TQPair, std::vector<TQPair>, less_time> pq_que_;
+    /// Types of queuing statistics
+    enum qtype { enq = 0, spike, ite, deq };
 #if COLLECT_TQueue_STATISTICS
-  /// Map for queuing statistics
-  std::map<double, long> time_map_events[4];
+    /// Map for queuing statistics
+    std::map<double, long> time_map_events[4];
 #endif
 
-private:
-  double least_t_nolock(){if (least_) { return least_->t_;}else{return 1e15;}}
-  void move_least_nolock(double tnew);
-  SPTREE* sptree_;
-  BinQ* binq_;
-  TQItem* least_;
-  TQPair make_TQPair(TQItem *p) { return TQPair(p->t_,p); }
-  MUTDEC
+  private:
+    double least_t_nolock() {
+        if (least_) {
+            return least_->t_;
+        } else {
+            return 1e15;
+        }
+    }
+    void move_least_nolock(double tnew);
+    SPTREE* sptree_;
+    BinQ* binq_;
+    TQItem* least_;
+    TQPair make_TQPair(TQItem* p) {
+        return TQPair(p->t_, p);
+    }
+    MUTDEC
 #if COLLECT_TQueue_STATISTICS
-  unsigned long ninsert, nrem, nleast, nbal, ncmplxrem;
-  unsigned long ncompare, nleastsrch, nfind, nfindsrch, nmove, nfastmove;
+    unsigned long ninsert, nrem, nleast, nbal, ncmplxrem;
+    unsigned long ncompare, nleastsrch, nfind, nfindsrch, nmove, nfastmove;
 #endif
 };
 

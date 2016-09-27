@@ -26,7 +26,6 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-
 #ifndef nrn_datareader_h
 #define nrn_datareader_h
 
@@ -49,11 +48,10 @@ THE POSSIBILITY OF SUCH DAMAGE.
  * and read_dbl_array() methods use new [].
  */
 
-
 class data_reader {
     std::ifstream F;       //!< File stream associated with reader.
     bool reorder_on_read;  //!< True if we need to reorder for native endiannes.
-    int chkpnt;             //!< Current checkpoint number state.
+    int chkpnt;            //!< Current checkpoint number state.
 
     /** Read a checkpoint line, bump our chkpnt counter, and assert equality.
      *
@@ -64,25 +62,32 @@ class data_reader {
     void read_checkpoint_assert();
 
     // private copy constructor, assignment: data_reader is not copyable.
-    data_reader(const data_reader &);
-    data_reader &operator=(const data_reader &);
+    data_reader(const data_reader&);
+    data_reader& operator=(const data_reader&);
 
-public:
-    data_reader(): reorder_on_read(false),chkpnt(0) {}
+  public:
+    data_reader() : reorder_on_read(false), chkpnt(0) {
+    }
 
-    explicit data_reader(const char *filename,bool reorder=false);
+    explicit data_reader(const char* filename, bool reorder = false);
 
     /** Preserving chkpnt state, move to a new file. */
-    void open(const char *filename, bool reorder);
+    void open(const char* filename, bool reorder);
 
     /** Is the file not open */
-    bool fail() const {return F.fail();}
+    bool fail() const {
+        return F.fail();
+    }
 
     /** Query chkpnt state. */
-    int checkpoint() const { return chkpnt; }
+    int checkpoint() const {
+        return chkpnt;
+    }
 
     /** Explicitly override chkpnt state. */
-    void checkpoint(int c) { chkpnt=c; }
+    void checkpoint(int c) {
+        chkpnt = c;
+    }
 
     /** Parse a single integer entry.
      *
@@ -98,29 +103,35 @@ public:
      * Reads neuron mapping info which is represented by
      * gid, #segments, #somas, #axons, #dendrites, #apicals, #total compartments
      */
-    void read_mapping_count(int *gid, int *seg, int *soma, int *axon, int *dend, int *apical, int *compartment);
+    void read_mapping_count(int* gid,
+                            int* seg,
+                            int* soma,
+                            int* axon,
+                            int* dend,
+                            int* apical,
+                            int* compartment);
 
     /** Parse a neuron section segment mapping
      *
      * Read count no of mappings for section to segment
      */
-    template<typename T>
-    void read_mapping_info(T *mapinfo, int count) {
+    template <typename T>
+    void read_mapping_info(T* mapinfo, int count) {
         const int max_line_length = 1000;
         char line_buf[max_line_length];
 
-        for(int i=0; i<count; i++) {
-            F.getline(line_buf,sizeof(line_buf));
+        for (int i = 0; i < count; i++) {
+            F.getline(line_buf, sizeof(line_buf));
             nrn_assert(!F.fail());
             int sec, seg, n_scan;
-            n_scan=sscanf(line_buf,"%d %d",&sec, &seg);
-            nrn_assert(n_scan==2);
+            n_scan = sscanf(line_buf, "%d %d", &sec, &seg);
+            nrn_assert(n_scan == 2);
             mapinfo->add_segment(sec, seg);
         }
     }
 
     /** Defined flag values for parse_array() */
-    typedef enum parse_action { read,seek } parse_action;
+    typedef enum parse_action { read, seek } parse_action;
 
     /** Generic parse function for an array of fixed length.
       *
@@ -139,18 +150,20 @@ public:
       * representation of the writing process.
       */
     template <typename T>
-    inline T* parse_array(T* p,size_t count,parse_action flag){
-        if (count>0 && flag!=seek) nrn_assert(p!=0);
+    inline T* parse_array(T* p, size_t count, parse_action flag) {
+        if (count > 0 && flag != seek)
+            nrn_assert(p != 0);
 
         read_checkpoint_assert();
         switch (flag) {
-        case seek:
-            F.seekg(count*sizeof(T),std::ios_base::cur);
-            break;
-        case read:
-            F.read((char *)p,count*sizeof(T));
-            if (reorder_on_read) endian::swap_endian_range(p,p+count);
-            break;
+            case seek:
+                F.seekg(count * sizeof(T), std::ios_base::cur);
+                break;
+            case read:
+                F.read((char*)p, count * sizeof(T));
+                if (reorder_on_read)
+                    endian::swap_endian_range(p, p + count);
+                break;
         }
 
         nrn_assert(!F.fail());
@@ -161,15 +174,18 @@ public:
 
     /** Read and optionally allocate an integer array of fixed length. */
     template <typename T>
-    inline T* read_array(T* p,size_t count) { return parse_array(p,count,read); }
+    inline T* read_array(T* p, size_t count) {
+        return parse_array(p, count, read);
+    }
 
     /** Allocate and read an integer array of fixed length. */
     template <typename T>
-    inline T* read_array(size_t count) { return parse_array(new T[count],count,read); }
+    inline T* read_array(size_t count) {
+        return parse_array(new T[count], count, read);
+    }
 
     /** Close currently open file. */
     void close();
 };
 
-
-#endif // ifndef nrn_datareader_h
+#endif  // ifndef nrn_datareader_h

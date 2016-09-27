@@ -42,12 +42,12 @@ class DiscreteEvent;
 class NetCvode;
 
 struct InterThreadEvent {
-	DiscreteEvent* de_;	
-	double t_;
+    DiscreteEvent* de_;
+    double t_;
 };
 
 class NetCvodeThreadData {
-public:
+  public:
     int unreffed_event_cnt_;
     TQueue<QTYPE>* tqe_;
     std::vector<InterThreadEvent> inter_thread_events_;
@@ -60,7 +60,7 @@ public:
 };
 
 class NetCvode {
-public:
+  public:
     int print_event_;
     int pcnt_;
     int enqueueing_;
@@ -71,13 +71,15 @@ public:
     virtual ~NetCvode();
     void p_construct(int);
     void check_thresh(NrnThread*);
-    static double eps(double x) { return eps_*fabs(x); }
+    static double eps(double x) {
+        return eps_ * fabs(x);
+    }
     TQItem* event(double tdeliver, DiscreteEvent*, NrnThread*);
     void move_event(TQItem*, double, NrnThread*);
     TQItem* bin_event(double tdeliver, DiscreteEvent*, NrnThread*);
-    void deliver_net_events(NrnThread*); // for default staggered time step method
-    void deliver_events(double til, NrnThread*); // for initialization events
-    bool deliver_event(double til, NrnThread*); //uses TQueue atomically
+    void deliver_net_events(NrnThread*);          // for default staggered time step method
+    void deliver_events(double til, NrnThread*);  // for initialization events
+    bool deliver_event(double til, NrnThread*);   // uses TQueue atomically
     void clear_events();
     void init_events();
     void point_receive(int, Point_process*, double*, double);

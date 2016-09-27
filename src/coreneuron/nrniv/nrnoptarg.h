@@ -26,7 +26,6 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-
 /**
  * @file nrnoptarg.h
  * @date 26 Oct 2014
@@ -41,12 +40,11 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/utils/sdprintf.h"
 
 typedef struct cn_parameters {
-
-    double tstart; 		/**< start time of simulation in msec*/
-    double tstop;		/**< stop time of simulation in msec*/
-    double dt;			/**< timestep to use in msec*/
-    double dt_io;       /**< i/o timestep to use in msec*/
-    double dt_report;   /**< i/o timestep to use in msec for reports*/
+    double tstart;    /**< start time of simulation in msec*/
+    double tstop;     /**< stop time of simulation in msec*/
+    double dt;        /**< timestep to use in msec*/
+    double dt_io;     /**< i/o timestep to use in msec*/
+    double dt_report; /**< i/o timestep to use in msec for reports*/
 
     double celsius;
     double voltage;
@@ -54,21 +52,21 @@ typedef struct cn_parameters {
 
     double forwardskip;
 
-    int spikebuf;		/**< internal buffer used on evry rank for spikes */
-    int prcellgid; 		/**< gid of cell for prcellstate */
+    int spikebuf;  /**< internal buffer used on evry rank for spikes */
+    int prcellgid; /**< gid of cell for prcellstate */
 
-    int threading;		/**< enable pthread/openmp  */
-    int report;		    /**< enable soma reports  */
+    int threading; /**< enable pthread/openmp  */
+    int report;    /**< enable soma reports  */
 
-    int compute_gpu;		    /**< run computations on gpu  */
+    int compute_gpu; /**< run computations on gpu  */
 
     int cell_interleave_permute; /**< cell interleaving permutation  */
-    int nwarp;  /* number of warps to balance for cell_interleave_permute == 2 */
+    int nwarp;                   /* number of warps to balance for cell_interleave_permute == 2 */
 
-    const char *patternstim;
-    const char *datpath;		/**< directory path where .dat files */
-    const char *outpath; 		/**< directory where spikes will be written */
-    const char *filesdat; 		/**< name of file containing list of gids dat files read in */
+    const char* patternstim;
+    const char* datpath;  /**< directory path where .dat files */
+    const char* outpath;  /**< directory where spikes will be written */
+    const char* filesdat; /**< name of file containing list of gids dat files read in */
 
     double mindelay;
 
@@ -85,10 +83,10 @@ typedef struct cn_parameters {
     void show_cb_opts();
 
     /** read options from command line */
-    void read_cb_opts( int argc, char **argv );
+    void read_cb_opts(int argc, char** argv);
 
     /** return full path of files.dat file */
-    sd_ptr get_filesdat_path( char *path_buf, size_t bufsz );
+    sd_ptr get_filesdat_path(char* path_buf, size_t bufsz);
 
     /** store/set computed mindelay argument */
     void set_mindelay(double mdelay) {
@@ -98,4 +96,3 @@ typedef struct cn_parameters {
 } cn_input_params;
 
 #endif
-

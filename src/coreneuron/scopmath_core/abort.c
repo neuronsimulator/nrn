@@ -35,60 +35,60 @@ static char RCSid[] = "abort.c,v 1.2 1997/08/30 14:32:00 hines Exp";
 #include "errcodes.h"
 
 int abort_run(int code) {
-  switch ((code >= 0) ? code : -code) {
-    case EXCEED_ITERS:
-      puts("Convergence not achieved in maximum number of iterations");
-      break;
-    case SINGULAR:
-      puts("The matrix in the solution method is singular or ill-conditioned");
-      break;
-    case PRECISION:
-      puts(
-          "The increment in the independent variable is less than machine "
-          "roundoff error");
-      break;
-    case CORR_FAIL:
-      puts("The corrector failed to satisfy the error check");
-      break;
-    case DIVERGED:
-      puts("The corrector iteration diverged");
-      break;
-    case INCONSISTENT:
-      puts("Inconsistent boundary conditions");
-      puts("Convergence not acheived in maximum number of iterations");
-      break;
-    case BAD_START:
-      puts("Poor starting estimate for initial conditions");
-      puts("The matrix in the solution method is singular or ill-conditioned");
-      break;
-    case NODATA:
-      puts("No data found in data file");
-      break;
-    case NO_SOLN:
-      puts("No solution was obtained for the coefficients");
-      break;
-    case LOWMEM:
-      puts("Insufficient memory to run the model");
-      break;
-    case DIVCHECK:
-      puts("Attempt to divide by zero");
-      break;
-    case NOFORCE:
-      puts(
-          "Could not open forcing function file\nThe model cannot be run "
-          "without the forcing function");
-      break;
-    case NEG_ARG:
-      puts("Cannot compute factorial of negative argument");
-      break;
-    case RANGE:
-      puts(
-          "Value of variable is outside the range of the forcing function data "
-          "table");
-      break;
-    default:
-      puts("Origin of error is unknown");
-  }
-  hoc_execerror("scopmath library error", (char*)0);
-  return 0;
+    switch ((code >= 0) ? code : -code) {
+        case EXCEED_ITERS:
+            puts("Convergence not achieved in maximum number of iterations");
+            break;
+        case SINGULAR:
+            puts("The matrix in the solution method is singular or ill-conditioned");
+            break;
+        case PRECISION:
+            puts(
+                "The increment in the independent variable is less than machine "
+                "roundoff error");
+            break;
+        case CORR_FAIL:
+            puts("The corrector failed to satisfy the error check");
+            break;
+        case DIVERGED:
+            puts("The corrector iteration diverged");
+            break;
+        case INCONSISTENT:
+            puts("Inconsistent boundary conditions");
+            puts("Convergence not acheived in maximum number of iterations");
+            break;
+        case BAD_START:
+            puts("Poor starting estimate for initial conditions");
+            puts("The matrix in the solution method is singular or ill-conditioned");
+            break;
+        case NODATA:
+            puts("No data found in data file");
+            break;
+        case NO_SOLN:
+            puts("No solution was obtained for the coefficients");
+            break;
+        case LOWMEM:
+            puts("Insufficient memory to run the model");
+            break;
+        case DIVCHECK:
+            puts("Attempt to divide by zero");
+            break;
+        case NOFORCE:
+            puts(
+                "Could not open forcing function file\nThe model cannot be run "
+                "without the forcing function");
+            break;
+        case NEG_ARG:
+            puts("Cannot compute factorial of negative argument");
+            break;
+        case RANGE:
+            puts(
+                "Value of variable is outside the range of the forcing function data "
+                "table");
+            break;
+        default:
+            puts("Origin of error is unknown");
+    }
+    hoc_execerror("scopmath library error", (char*)0);
+    return 0;
 }

@@ -26,7 +26,6 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-
 /**
  * @file nrn_stats.h
  * @date 25th Dec 2014
@@ -43,7 +42,6 @@ THE POSSIBILITY OF SUCH DAMAGE.
  *  @param void
  *  @return void
  */
-void report_cell_stats( void );
-
+void report_cell_stats(void);
 
 #endif /* ifndef _H_NRN_STATS_ */

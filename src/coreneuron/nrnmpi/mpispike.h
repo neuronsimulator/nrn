@@ -35,9 +35,9 @@ THE POSSIBILITY OF SUCH DAMAGE.
 
 #if nrn_spikebuf_size > 0
 typedef struct {
-	int nspike;
-	int gid[nrn_spikebuf_size];
-	double spiketime[nrn_spikebuf_size];
+    int nspike;
+    int gid[nrn_spikebuf_size];
+    double spiketime[nrn_spikebuf_size];
 } NRNMPI_Spikebuf;
 #endif
 
@@ -64,11 +64,11 @@ extern NRNMPI_Spike* spikein_;
 #define ag_send_nspike_ nrnmpi_send_nspike_
 #define ovfl_capacity_ nrnmpi_ovfl_capacity_
 #define ovfl_ nrnmpi_ovfl_
-extern int localgid_size_; /* bytes */
-extern int ag_send_size_; /* bytes */
+extern int localgid_size_;  /* bytes */
+extern int ag_send_size_;   /* bytes */
 extern int ag_send_nspike_; /* spikes */
-extern int ovfl_capacity_; /* spikes */
-extern int ovfl_; /* spikes */
+extern int ovfl_capacity_;  /* spikes */
+extern int ovfl_;           /* spikes */
 extern unsigned char* spfixout_;
 extern unsigned char* spfixin_;
 extern unsigned char* spfixin_ovfl_;

@@ -35,7 +35,7 @@ extern "C" {
 
 #include "coreneuron/nrnoc/nrnoc_ml.h"
 
-typedef Datum *(*Pfrpdat)(void);
+typedef Datum* (*Pfrpdat)(void);
 
 struct NrnThread;
 
@@ -44,33 +44,32 @@ typedef void (*mod_f_t)(struct NrnThread*, Memb_list*, int);
 typedef void (*pnt_receive_t)(Point_process*, int, double);
 
 typedef struct Memb_func {
-	mod_alloc_t alloc;
-	mod_f_t	current;
-	mod_f_t	jacob;
-	mod_f_t	state;
-	mod_f_t	initialize;
-	Pfri	destructor;	/* only for point processes */
-	Symbol	*sym;
-	int vectorized;
-	int thread_size_; /* how many Datum needed in Memb_list if vectorized */
-	void (*thread_mem_init_)(ThreadDatum*); /* after Memb_list._thread is allocated */
-	void (*thread_cleanup_)(ThreadDatum*); /* before Memb_list._thread is freed */
+    mod_alloc_t alloc;
+    mod_f_t current;
+    mod_f_t jacob;
+    mod_f_t state;
+    mod_f_t initialize;
+    Pfri destructor; /* only for point processes */
+    Symbol* sym;
+    int vectorized;
+    int thread_size_;                       /* how many Datum needed in Memb_list if vectorized */
+    void (*thread_mem_init_)(ThreadDatum*); /* after Memb_list._thread is allocated */
+    void (*thread_cleanup_)(ThreadDatum*);  /* before Memb_list._thread is freed */
     void (*thread_table_check_)(int, int, double*, Datum*, ThreadDatum*, void*, int);
-	int is_point;
-	void (*setdata_)(double*, Datum*);
-	int* dparam_semantics; /* for nrncore writing. */
+    int is_point;
+    void (*setdata_)(double*, Datum*);
+    int* dparam_semantics; /* for nrncore writing. */
 } Memb_func;
 
-
-#define VINDEX	-1
-#define CABLESECTION	1
-#define MORPHOLOGY	2
-#define CAP	3
-#define EXTRACELL	5
+#define VINDEX -1
+#define CABLESECTION 1
+#define MORPHOLOGY 2
+#define CAP 3
+#define EXTRACELL 5
 
 #define nrnocCONST 1
 #define DEP 2
-#define STATE 3	/*See init.c and cabvars.h for order of nrnocCONST, DEP, and STATE */
+#define STATE 3 /*See init.c and cabvars.h for order of nrnocCONST, DEP, and STATE */
 
 #define BEFORE_INITIAL 0
 #define AFTER_INITIAL 1
@@ -79,19 +78,20 @@ typedef struct Memb_func {
 #define BEFORE_STEP 4
 #define BEFORE_AFTER_SIZE 5 /* 1 more than the previous */
 typedef struct BAMech {
-	mod_f_t f;
-	int type;
-	struct BAMech* next;
+    mod_f_t f;
+    int type;
+    struct BAMech* next;
 } BAMech;
 extern BAMech** bamech_;
 
 extern int nrn_ion_global_map_size;
-extern double **nrn_ion_global_map;
+extern double** nrn_ion_global_map;
 
 extern Memb_func* memb_func;
 extern int n_memb_func;
-#define NRNPOINTER 4 /* added on to list of mechanism variables.These are
-pointers which connect variables  from other mechanisms via the _ppval array.
+#define NRNPOINTER                                                            \
+    4 /* added on to list of mechanism variables.These are                    \
+pointers which connect variables  from other mechanisms via the _ppval array. \
 */
 
 #define _AMBIGUOUS 5
@@ -105,15 +105,26 @@ extern pnt_receive_t* pnt_receive;
 extern pnt_receive_t* pnt_receive_init;
 
 extern int nrn_get_mechtype(const char*);
-extern const char* nrn_get_mechname(int); // slow. use memb_func[i].sym if posible
-extern int register_mech(const char** m, mod_alloc_t alloc, mod_f_t cur, mod_f_t jacob,
-  mod_f_t stat, mod_f_t initialize, int nrnpointerindex, int vectorized
-  ); 
-extern int point_register_mech(const char**, mod_alloc_t alloc, mod_f_t cur,
-  mod_f_t jacob, mod_f_t stat, mod_f_t initialize, int nrnpointerindex,
-  void*(*constructor)(), void(*destructor)(), int vectorized
-  );
-typedef void(*NetBufReceive_t)(struct NrnThread*);
+extern const char* nrn_get_mechname(int);  // slow. use memb_func[i].sym if posible
+extern int register_mech(const char** m,
+                         mod_alloc_t alloc,
+                         mod_f_t cur,
+                         mod_f_t jacob,
+                         mod_f_t stat,
+                         mod_f_t initialize,
+                         int nrnpointerindex,
+                         int vectorized);
+extern int point_register_mech(const char**,
+                               mod_alloc_t alloc,
+                               mod_f_t cur,
+                               mod_f_t jacob,
+                               mod_f_t stat,
+                               mod_f_t initialize,
+                               int nrnpointerindex,
+                               void* (*constructor)(),
+                               void (*destructor)(),
+                               int vectorized);
+typedef void (*NetBufReceive_t)(struct NrnThread*);
 extern void hoc_register_net_receive_buffering(NetBufReceive_t, int);
 extern int net_buf_receive_cnt_;
 extern int* net_buf_receive_type_;
@@ -132,17 +143,37 @@ extern void nrn_wrote_conc(int, double*, int, int, double**, double, int);
 extern void hoc_register_prop_size(int, int, int);
 extern void hoc_register_dparam_semantics(int type, int, const char* name);
 
-typedef struct { const char* name; double* pdoub; } DoubScal;
-typedef struct { const char* name; double* pdoub; int index1; } DoubVec;
-typedef struct { const char* name; void (*func)(void); } VoidFunc;
+typedef struct {
+    const char* name;
+    double* pdoub;
+} DoubScal;
+typedef struct {
+    const char* name;
+    double* pdoub;
+    int index1;
+} DoubVec;
+typedef struct {
+    const char* name;
+    void (*func)(void);
+} VoidFunc;
 extern void hoc_register_var(DoubScal*, DoubVec*, VoidFunc*);
 
 extern void _nrn_layout_reg(int, int);
 extern int* nrn_mech_data_layout_;
-extern void _nrn_thread_reg0(int i, void(*f)(ThreadDatum*));
-extern void _nrn_thread_reg1(int i, void(*f)(ThreadDatum*));
+extern void _nrn_thread_reg0(int i, void (*f)(ThreadDatum*));
+extern void _nrn_thread_reg1(int i, void (*f)(ThreadDatum*));
 
-typedef void (*bbcore_read_t)(double*, int*, int*, int*, int, int, double*, Datum*, ThreadDatum*, struct NrnThread*, double);
+typedef void (*bbcore_read_t)(double*,
+                              int*,
+                              int*,
+                              int*,
+                              int,
+                              int,
+                              double*,
+                              Datum*,
+                              ThreadDatum*,
+                              struct NrnThread*,
+                              double);
 extern bbcore_read_t* nrn_bbcore_read_;
 
 extern int nrn_mech_depend(int type, int* dependencies);

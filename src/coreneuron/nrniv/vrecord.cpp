@@ -36,134 +36,144 @@ THE POSSIBILITY OF SUCH DAMAGE.
 
 extern NetCvode* net_cvode_instance;
 
-PlayRecordEvent::PlayRecordEvent() {}
-PlayRecordEvent::~PlayRecordEvent() {}
-
-void PlayRecordEvent::deliver(double tt, NetCvode* ns, NrnThread*) {
-	plr_->deliver(tt, ns);
+PlayRecordEvent::PlayRecordEvent() {
+}
+PlayRecordEvent::~PlayRecordEvent() {
 }
 
-NrnThread* PlayRecordEvent::thread() { return nrn_threads + plr_->ith_; }
+void PlayRecordEvent::deliver(double tt, NetCvode* ns, NrnThread*) {
+    plr_->deliver(tt, ns);
+}
+
+NrnThread* PlayRecordEvent::thread() {
+    return nrn_threads + plr_->ith_;
+}
 
 void PlayRecordEvent::pr(const char* s, double tt, NetCvode*) {
-	printf("%s PlayRecordEvent %.15g ", s, tt);
-	plr_->pr();
+    printf("%s PlayRecordEvent %.15g ", s, tt);
+    plr_->pr();
 }
 
 PlayRecord::PlayRecord(double* pd, int ith) {
-//printf("PlayRecord::PlayRecord %p\n", this);
-	pd_ = pd;
-	ith_ = ith;
+    // printf("PlayRecord::PlayRecord %p\n", this);
+    pd_ = pd;
+    ith_ = ith;
 }
 
 PlayRecord::~PlayRecord() {
-//printf("PlayRecord::~PlayRecord %p\n", this);
+    // printf("PlayRecord::~PlayRecord %p\n", this);
 }
 
 void PlayRecord::pr() {
-	printf("PlayRecord\n");
+    printf("PlayRecord\n");
 }
 
-
-VecPlayContinuous::VecPlayContinuous(double* pd, IvocVect* yvec, IvocVect* tvec, IvocVect* discon, int ith) : PlayRecord(pd, ith) {
-//printf("VecPlayContinuous\n");
-	init(yvec, tvec, discon);
+VecPlayContinuous::VecPlayContinuous(double* pd,
+                                     IvocVect* yvec,
+                                     IvocVect* tvec,
+                                     IvocVect* discon,
+                                     int ith)
+    : PlayRecord(pd, ith) {
+    // printf("VecPlayContinuous\n");
+    init(yvec, tvec, discon);
 }
 
 void VecPlayContinuous::init(IvocVect* yvec, IvocVect* tvec, IvocVect* discon) {
-	y_ = yvec;
-	t_ = tvec;
-	discon_indices_ = discon;
-	ubound_index_ = 0;
-	last_index_ = 0;
-	e_ = new PlayRecordEvent();
-	e_->plr_ = this;
+    y_ = yvec;
+    t_ = tvec;
+    discon_indices_ = discon;
+    ubound_index_ = 0;
+    last_index_ = 0;
+    e_ = new PlayRecordEvent();
+    e_->plr_ = this;
 }
 
-
 VecPlayContinuous::~VecPlayContinuous() {
-//printf("~VecPlayContinuous\n");
-	delete e_;
+    // printf("~VecPlayContinuous\n");
+    delete e_;
 }
 
 void VecPlayContinuous::play_init() {
-	NrnThread* nt = nrn_threads + ith_;
-	last_index_ = 0;
-	discon_index_ = 0;
-	if (discon_indices_) {
+    NrnThread* nt = nrn_threads + ith_;
+    last_index_ = 0;
+    discon_index_ = 0;
+    if (discon_indices_) {
         if (discon_indices_->size() > 0) {
             ubound_index_ = (int)(*discon_indices_)[discon_index_++];
-//printf("play_init %d %g\n", ubound_index_, t_->elem(ubound_index_));
+            // printf("play_init %d %g\n", ubound_index_, t_->elem(ubound_index_));
             e_->send((*t_)[ubound_index_], net_cvode_instance, nt);
-		}else{
-            ubound_index_ = t_->size()-1;
-		}
-	}else{
-		ubound_index_ = 0;
+        } else {
+            ubound_index_ = t_->size() - 1;
+        }
+    } else {
+        ubound_index_ = 0;
         e_->send((*t_)[ubound_index_], net_cvode_instance, nt);
-	}
+    }
 }
 
 void VecPlayContinuous::deliver(double tt, NetCvode* ns) {
-	NrnThread* nt = nrn_threads + ith_;
-//printf("deliver %g\n", tt);
-	last_index_ = ubound_index_;
-	if (discon_indices_) {
+    NrnThread* nt = nrn_threads + ith_;
+    // printf("deliver %g\n", tt);
+    last_index_ = ubound_index_;
+    if (discon_indices_) {
         if (discon_index_ < discon_indices_->size()) {
             ubound_index_ = (int)(*discon_indices_)[discon_index_++];
-//printf("after deliver:send %d %g\n", ubound_index_, t_->elem(ubound_index_));
+            // printf("after deliver:send %d %g\n", ubound_index_, t_->elem(ubound_index_));
             e_->send((*t_)[ubound_index_], ns, nt);
-		}else{
+        } else {
             ubound_index_ = t_->size() - 1;
-		}
-	}else{
+        }
+    } else {
         if (ubound_index_ < t_->size() - 1) {
-			ubound_index_++;
+            ubound_index_++;
             e_->send((*t_)[ubound_index_], ns, nt);
-		}
-	}
-	continuous(tt);
+        }
+    }
+    continuous(tt);
 }
 
-	
 void VecPlayContinuous::continuous(double tt) {
-	*pd_ = interpolate(tt);
+    *pd_ = interpolate(tt);
 }
 
 double VecPlayContinuous::interpolate(double tt) {
     if (tt >= (*t_)[ubound_index_]) {
-		last_index_ = ubound_index_;
-		if (last_index_ == 0) {
-//printf("return last tt=%g ubound=%g y=%g\n", tt, t_->elem(ubound_index_), y_->elem(last_index_));
+        last_index_ = ubound_index_;
+        if (last_index_ == 0) {
+            // printf("return last tt=%g ubound=%g y=%g\n", tt, t_->elem(ubound_index_),
+            // y_->elem(last_index_));
             return (*y_)[last_index_];
-		}
-    }else if (tt <= (*t_)[0]) {
-		last_index_ = 0;
-//printf("return elem(0) tt=%g t0=%g y=%g\n", tt, t_->elem(0), y_->elem(0));
+        }
+    } else if (tt <= (*t_)[0]) {
+        last_index_ = 0;
+        // printf("return elem(0) tt=%g t0=%g y=%g\n", tt, t_->elem(0), y_->elem(0));
         return (*y_)[0];
-	}else{
-		search(tt);
-	}
-    double x0 = (*y_)[last_index_-1];
+    } else {
+        search(tt);
+    }
+    double x0 = (*y_)[last_index_ - 1];
     double x1 = (*y_)[last_index_];
     double t0 = (*t_)[last_index_ - 1];
     double t1 = (*t_)[last_index_];
-//printf("IvocVectRecorder::continuous tt=%g t0=%g t1=%g theta=%g x0=%g x1=%g\n", tt, t0, t1, (tt - t0)/(t1 - t0), x0, x1);
-	if (t0 == t1) { return (x0 + x1)/2.; }
-	return interp((tt - t0)/(t1 - t0), x0, x1);
+    // printf("IvocVectRecorder::continuous tt=%g t0=%g t1=%g theta=%g x0=%g x1=%g\n", tt, t0, t1,
+    // (tt - t0)/(t1 - t0), x0, x1);
+    if (t0 == t1) {
+        return (x0 + x1) / 2.;
+    }
+    return interp((tt - t0) / (t1 - t0), x0, x1);
 }
 
 void VecPlayContinuous::search(double tt) {
-//	assert (tt > t_->elem(0) && tt < t_->elem(t_->size() - 1))
-    while ( tt < (*t_)[last_index_]) {
-		--last_index_;
-	}
-    while ( tt >= (*t_)[last_index_]) {
-		++last_index_;
-	}
+    //	assert (tt > t_->elem(0) && tt < t_->elem(t_->size() - 1))
+    while (tt < (*t_)[last_index_]) {
+        --last_index_;
+    }
+    while (tt >= (*t_)[last_index_]) {
+        ++last_index_;
+    }
 }
 
 void VecPlayContinuous::pr() {
-	printf("VecPlayContinuous ");
-//	printf("%s.x[%d]\n", hoc_object_name(y_->obj_), last_index_);
+    printf("VecPlayContinuous ");
+    //	printf("%s.x[%d]\n", hoc_object_name(y_->obj_), last_index_);
 }

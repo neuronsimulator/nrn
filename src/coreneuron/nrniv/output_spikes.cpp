@@ -41,37 +41,40 @@ int* spikevec_gid;
 
 static MUTDEC
 
-void mk_spikevec_buffer(int sz) {
-  spikevec_buffer_size = sz;
-  spikevec_size = 0;
-  spikevec_time = new double[sz];
-  spikevec_gid = new int[sz];
-  MUTCONSTRUCT(1);
+    void
+    mk_spikevec_buffer(int sz) {
+    spikevec_buffer_size = sz;
+    spikevec_size = 0;
+    spikevec_time = new double[sz];
+    spikevec_gid = new int[sz];
+    MUTCONSTRUCT(1);
 }
 
-void spikevec_lock() { MUTLOCK }
-void spikevec_unlock() { MUTUNLOCK }
-
-void output_spikes(const char *outpath) {
-  char fnamebuf[100];
-  sd_ptr fname=sdprintf(fnamebuf, sizeof(fnamebuf), "%s/out%d.dat", outpath, nrnmpi_myid);
-  FILE* f = fopen(fname, "w");
-  if (!f && nrnmpi_myid == 0){
-      std::cout << "WARNING: Could not open file for writing spikes." << std::endl;
-      return;
-  }
-
-  for (int i=0; i < spikevec_size; ++i)
-      if (spikevec_gid[i] > -1)
-          fprintf(f, "%.8g\t%d\n", spikevec_time[i], spikevec_gid[i]);
-
-  fclose(f);
+void spikevec_lock() {
+    MUTLOCK
+}
+void spikevec_unlock() {
+    MUTUNLOCK
 }
 
+void output_spikes(const char* outpath) {
+    char fnamebuf[100];
+    sd_ptr fname = sdprintf(fnamebuf, sizeof(fnamebuf), "%s/out%d.dat", outpath, nrnmpi_myid);
+    FILE* f = fopen(fname, "w");
+    if (!f && nrnmpi_myid == 0) {
+        std::cout << "WARNING: Could not open file for writing spikes." << std::endl;
+        return;
+    }
 
-void validation(std::vector<std::pair<double,int> >& res)
-{
-    for (int i=0; i < spikevec_size; ++i)
+    for (int i = 0; i < spikevec_size; ++i)
+        if (spikevec_gid[i] > -1)
+            fprintf(f, "%.8g\t%d\n", spikevec_time[i], spikevec_gid[i]);
+
+    fclose(f);
+}
+
+void validation(std::vector<std::pair<double, int> >& res) {
+    for (int i = 0; i < spikevec_size; ++i)
         if (spikevec_gid[i] > -1)
             res.push_back(std::make_pair(spikevec_time[i], spikevec_gid[i]));
 }

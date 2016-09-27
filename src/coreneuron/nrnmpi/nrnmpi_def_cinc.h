@@ -28,7 +28,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 
 int nrnmpi_use;
 int nrnmpi_numprocs = 1; /* size */
-int nrnmpi_myid = 0; /* rank */
+int nrnmpi_myid = 0;     /* rank */
 int nrnmpi_numprocs_world = 1;
 int nrnmpi_myid_world = 0;
 int nrnmpi_numprocs_bbs = 1;
@@ -48,4 +48,3 @@ int nrnmpi_ovfl_;
 unsigned char* nrnmpi_spikeout_fixed_;
 unsigned char* nrnmpi_spikein_fixed_;
 unsigned char* nrnmpi_spikein_fixed_ovfl_;
-

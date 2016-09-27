@@ -59,7 +59,9 @@ TQItem::TQItem() {
 BinQ::BinQ() {
     nbin_ = 1000;
     bins_ = new TQItem*[nbin_];
-    for (int i=0; i < nbin_; ++i) { bins_[i] = 0; }
+    for (int i = 0; i < nbin_; ++i) {
+        bins_[i] = 0;
+    }
     qpt_ = 0;
     tt_ = 0.;
 #if COLLECT_TQueue_STATISTICS
@@ -68,44 +70,50 @@ BinQ::BinQ() {
 }
 
 BinQ::~BinQ() {
-    for (int i=0; i < nbin_; ++i) {
+    for (int i = 0; i < nbin_; ++i) {
         assert(!bins_[i]);
     }
-    delete [] bins_;
+    delete[] bins_;
     vec_bins.clear();
 }
 
 void BinQ::resize(int size) {
-    //printf("BinQ::resize from %d to %d\n", nbin_, size);
+    // printf("BinQ::resize from %d to %d\n", nbin_, size);
     int i, j;
     TQItem* q;
     assert(size >= nbin_);
     TQItem** bins = new TQItem*[size];
-    for (i=nbin_; i < size; ++i) { bins[i] = 0; }
-    for (i=0, j=qpt_; i < nbin_; ++i, ++j) {
-        if (j >= nbin_) { j = 0; }
+    for (i = nbin_; i < size; ++i) {
+        bins[i] = 0;
+    }
+    for (i = 0, j = qpt_; i < nbin_; ++i, ++j) {
+        if (j >= nbin_) {
+            j = 0;
+        }
         bins[i] = bins_[j];
         for (q = bins[i]; q; q = q->left_) {
             q->cnt_ = i;
         }
     }
-    delete [] bins_;
+    delete[] bins_;
     bins_ = bins;
     nbin_ = size;
     qpt_ = 0;
 }
 void BinQ::enqueue(double td, TQItem* q) {
-    int idt = (int)((td - tt_)*rev_dt + 1.e-10);
+    int idt = (int)((td - tt_) * rev_dt + 1.e-10);
     assert(idt >= 0);
     if (idt >= nbin_) {
         resize(idt + 1000);
     }
-    //assert (idt < nbin_);
+    // assert (idt < nbin_);
     idt += qpt_;
-    if (idt >= nbin_) { idt -= nbin_; }
-//printf("enqueue: idt=%d qpt=%d nbin_=%d\n", idt, qpt_, nbin_);
-    assert (idt < nbin_);
-    q->cnt_ = idt; // only for iteration
+    if (idt >= nbin_) {
+        idt -= nbin_;
+    }
+    // printf("enqueue: idt=%d qpt=%d nbin_=%d\n", idt, qpt_, nbin_);
+    assert(idt < nbin_);
+    q->cnt_ = idt;  // only for iteration
     q->left_ = bins_[idt];
     bins_[idt] = q;
 #if COLLECT_TQueue_STATISTICS
@@ -133,7 +141,9 @@ TQItem* BinQ::first() {
     return 0;
 }
 TQItem* BinQ::next(TQItem* q) {
-    if (q->left_) { return q->left_; }
+    if (q->left_) {
+        return q->left_;
+    }
     for (int i = q->cnt_ + 1; i < nbin_; ++i) {
         if (bins_[i]) {
             return bins_[i];
@@ -143,7 +153,7 @@ TQItem* BinQ::next(TQItem* q) {
 }
 
 void BinQ::remove(TQItem* q) {
-    TQItem* q1, *q2;
+    TQItem *q1, *q2;
     q1 = bins_[q->cnt_];
     if (q1 == q) {
         bins_[q->cnt_] = q->left_;
@@ -156,7 +166,6 @@ void BinQ::remove(TQItem* q) {
         }
     }
 }
-
 
 //#include "coreneuron/nrniv/sptree.h"
 
@@ -211,13 +220,10 @@ Hines changed to void spinit(SPTREE**) for use with TQueue.
  * spinit() -- initialize an empty splay tree
  *
  */
-void
-spinit(SPTREE* q)
-{
+void spinit(SPTREE* q) {
     q->enqcmps = 0;
     q->root = NULL;
 }
-
 
 /*----------------
  *
@@ -231,28 +237,25 @@ spinit(SPTREE* q)
  *  performed along the way to shorten the left branch of the right subtree
  *  and the right branch of the left subtree
  */
-SPBLK *
-spenq( SPBLK* n, SPTREE* q )
-{
-    SPBLK * left;	/* the rightmost node in the left tree */
-    SPBLK * right;	/* the leftmost node in the right tree */
-    SPBLK * next;	/* the root of the unsplit part */
-    SPBLK * temp;
+SPBLK* spenq(SPBLK* n, SPTREE* q) {
+    SPBLK* left;  /* the rightmost node in the left tree */
+    SPBLK* right; /* the leftmost node in the right tree */
+    SPBLK* next;  /* the root of the unsplit part */
+    SPBLK* temp;
 
     double key;
 #if STRCMP_DEF
-    int Sct;		/* Strcmp value */
+    int Sct; /* Strcmp value */
 #endif
 
     n->uplink = NULL;
     next = q->root;
     q->root = n;
-    if( next == NULL )	/* trivial enq */
+    if (next == NULL) /* trivial enq */
     {
         n->leftlink = NULL;
         n->rightlink = NULL;
-    }
-    else		/* difficult enq */
+    } else /* difficult enq */
     {
         key = n->key;
         left = n;
@@ -262,106 +265,99 @@ spenq( SPBLK* n, SPTREE* q )
        splayed trees resulting from splitting on n->key;
        note that the children will be reversed! */
 
-    q->enqcmps++;
-        if ( STRCMP( next->key, key ) > 0 )
-        goto two;
+        q->enqcmps++;
+        if (STRCMP(next->key, key) > 0)
+            goto two;
 
-    one:	/* assert next->key <= key */
+    one: /* assert next->key <= key */
 
-    do	/* walk to the right in the left tree */
-    {
-            temp = next->rightlink;
-            if( temp == NULL )
+        do /* walk to the right in the left tree */
         {
+            temp = next->rightlink;
+            if (temp == NULL) {
                 left->rightlink = next;
                 next->uplink = left;
                 right->leftlink = NULL;
-                goto done;	/* job done, entire tree split */
+                goto done; /* job done, entire tree split */
             }
 
-        q->enqcmps++;
-            if( STRCMP( temp->key, key ) > 0 )
-        {
+            q->enqcmps++;
+            if (STRCMP(temp->key, key) > 0) {
                 left->rightlink = next;
                 next->uplink = left;
                 left = next;
                 next = temp;
-                goto two;	/* change sides */
+                goto two; /* change sides */
             }
 
             next->rightlink = temp->leftlink;
-            if( temp->leftlink != NULL )
-            temp->leftlink->uplink = next;
+            if (temp->leftlink != NULL)
+                temp->leftlink->uplink = next;
             left->rightlink = temp;
             temp->uplink = left;
             temp->leftlink = next;
             next->uplink = temp;
             left = temp;
             next = temp->rightlink;
-            if( next == NULL )
-        {
+            if (next == NULL) {
                 right->leftlink = NULL;
-                goto done;	/* job done, entire tree split */
+                goto done; /* job done, entire tree split */
             }
 
-        q->enqcmps++;
+            q->enqcmps++;
 
-    } while( STRCMP( next->key, key ) <= 0 );	/* change sides */
+        } while (STRCMP(next->key, key) <= 0); /* change sides */
 
-    two:	/* assert next->key > key */
+    two: /* assert next->key > key */
 
-    do	/* walk to the left in the right tree */
-    {
-            temp = next->leftlink;
-            if( temp == NULL )
+        do /* walk to the left in the right tree */
         {
+            temp = next->leftlink;
+            if (temp == NULL) {
                 right->leftlink = next;
                 next->uplink = right;
                 left->rightlink = NULL;
-                goto done;	/* job done, entire tree split */
+                goto done; /* job done, entire tree split */
             }
 
-        q->enqcmps++;
-            if( STRCMP( temp->key, key ) <= 0 )
-        {
+            q->enqcmps++;
+            if (STRCMP(temp->key, key) <= 0) {
                 right->leftlink = next;
                 next->uplink = right;
                 right = next;
                 next = temp;
-                goto one;	/* change sides */
+                goto one; /* change sides */
             }
             next->leftlink = temp->rightlink;
-            if( temp->rightlink != NULL )
-            temp->rightlink->uplink = next;
+            if (temp->rightlink != NULL)
+                temp->rightlink->uplink = next;
             right->leftlink = temp;
             temp->uplink = right;
             temp->rightlink = next;
             next->uplink = temp;
             right = temp;
             next = temp->leftlink;
-            if( next == NULL )
-        {
+            if (next == NULL) {
                 left->rightlink = NULL;
-                goto done;	/* job done, entire tree split */
+                goto done; /* job done, entire tree split */
             }
 
-        q->enqcmps++;
+            q->enqcmps++;
 
-    } while( STRCMP( next->key, key ) > 0 );	/* change sides */
+        } while (STRCMP(next->key, key) > 0); /* change sides */
 
         goto one;
 
-    done:	/* split is done, branches of n need reversal */
+    done: /* split is done, branches of n need reversal */
 
         temp = n->leftlink;
         n->leftlink = n->rightlink;
         n->rightlink = temp;
     }
 
-    return( n );
+    return (n);
 
 } /* spenq */
-
 
 /*----------------
  *
@@ -372,74 +368,66 @@ spenq( SPBLK* n, SPTREE* q )
  *  subtree (if there is one); on the way to the leftmost node, rotations
  *  are performed to shorten the left branch of the tree
  */
-SPBLK *
-spdeq( SPBLK** np ) /* pointer to a node pointer */
+SPBLK* spdeq(SPBLK** np) /* pointer to a node pointer */
 
 {
-    SPBLK * deq;		/* one to return */
-    SPBLK * next;       	/* the next thing to deal with */
-    SPBLK * left;      	/* the left child of next */
-    SPBLK * farleft;		/* the left child of left */
-    SPBLK * farfarleft;	/* the left child of farleft */
+    SPBLK* deq;        /* one to return */
+    SPBLK* next;       /* the next thing to deal with */
+    SPBLK* left;       /* the left child of next */
+    SPBLK* farleft;    /* the left child of left */
+    SPBLK* farfarleft; /* the left child of farleft */
 
-    if( np == NULL || *np == NULL )
-    {
+    if (np == NULL || *np == NULL) {
         deq = NULL;
-    }
-    else
-    {
+    } else {
         next = *np;
         left = next->leftlink;
-        if( left == NULL )
-    {
+        if (left == NULL) {
             deq = next;
             *np = next->rightlink;
 
-            if( *np != NULL )
-        (*np)->uplink = NULL;
+            if (*np != NULL)
+                (*np)->uplink = NULL;
 
-        }
-    else for(;;)	/* left is not null */
-    {
-            /* next is not it, left is not NULL, might be it */
-            farleft = left->leftlink;
-            if( farleft == NULL )
-        {
-                deq = left;
-                next->leftlink = left->rightlink;
-                if( left->rightlink != NULL )
-            left->rightlink->uplink = next;
-        break;
-            }
+        } else
+            for (;;) /* left is not null */
+            {
+                /* next is not it, left is not NULL, might be it */
+                farleft = left->leftlink;
+                if (farleft == NULL) {
+                    deq = left;
+                    next->leftlink = left->rightlink;
+                    if (left->rightlink != NULL)
+                        left->rightlink->uplink = next;
+                    break;
+                }
 
-            /* next, left are not it, farleft is not NULL, might be it */
-            farfarleft = farleft->leftlink;
-            if( farfarleft == NULL )
-        {
-                deq = farleft;
+                /* next, left are not it, farleft is not NULL, might be it */
+                farfarleft = farleft->leftlink;
+                if (farfarleft == NULL) {
+                    deq = farleft;
+                    left->leftlink = farleft->rightlink;
+                    if (farleft->rightlink != NULL)
+                        farleft->rightlink->uplink = left;
+                    break;
+                }
+
+                /* next, left, farleft are not it, rotate */
+                next->leftlink = farleft;
+                farleft->uplink = next;
                 left->leftlink = farleft->rightlink;
-                if( farleft->rightlink != NULL )
-            farleft->rightlink->uplink = left;
-        break;
+                if (farleft->rightlink != NULL)
+                    farleft->rightlink->uplink = left;
+                farleft->rightlink = left;
+                left->uplink = farleft;
+                next = farleft;
+                left = farfarleft;
             }
-
-            /* next, left, farleft are not it, rotate */
-            next->leftlink = farleft;
-            farleft->uplink = next;
-            left->leftlink = farleft->rightlink;
-            if( farleft->rightlink != NULL )
-        farleft->rightlink->uplink = left;
-            farleft->rightlink = left;
-            left->uplink = farleft;
-            next = farleft;
-            left = farfarleft;
-    }
     }
 
-    return( deq );
+    return (deq);
 
 } /* spdeq */
-
 
 /*----------------
  *
@@ -457,99 +445,93 @@ spdeq( SPBLK** np ) /* pointer to a node pointer */
  *  detect n not in q and complain
  */
 
-void
-splay( SPBLK* n, SPTREE* q )
-{
-    SPBLK * up;	/* points to the node being dealt with */
-    SPBLK * prev;	/* a descendent of up, already dealt with */
-    SPBLK * upup;	/* the parent of up */
-    SPBLK * upupup;	/* the grandparent of up */
-    SPBLK * left;	/* the top of left subtree being built */
-    SPBLK * right;	/* the top of right subtree being built */
+void splay(SPBLK* n, SPTREE* q) {
+    SPBLK* up;     /* points to the node being dealt with */
+    SPBLK* prev;   /* a descendent of up, already dealt with */
+    SPBLK* upup;   /* the parent of up */
+    SPBLK* upupup; /* the grandparent of up */
+    SPBLK* left;   /* the top of left subtree being built */
+    SPBLK* right;  /* the top of right subtree being built */
 
     left = n->leftlink;
     right = n->rightlink;
     prev = n;
     up = prev->uplink;
 
-    while( up != NULL )
-    {
+    while (up != NULL) {
         /* walk up the tree towards the root, splaying all to the left of
        n into the left subtree, all to right into the right subtree */
 
         upup = up->uplink;
-        if( up->leftlink == prev )	/* up is to the right of n */
-    {
-            if( upup != NULL && upup->leftlink == up )  /* rotate */
+        if (up->leftlink == prev) /* up is to the right of n */
         {
+            if (upup != NULL && upup->leftlink == up) /* rotate */
+            {
                 upupup = upup->uplink;
                 upup->leftlink = up->rightlink;
-                if( upup->leftlink != NULL )
-            upup->leftlink->uplink = upup;
+                if (upup->leftlink != NULL)
+                    upup->leftlink->uplink = upup;
                 up->rightlink = upup;
                 upup->uplink = up;
-                if( upupup == NULL )
-            q->root = up;
-        else if( upupup->leftlink == upup )
-            upupup->leftlink = up;
-        else
-            upupup->rightlink = up;
+                if (upupup == NULL)
+                    q->root = up;
+                else if (upupup->leftlink == upup)
+                    upupup->leftlink = up;
+                else
+                    upupup->rightlink = up;
                 up->uplink = upupup;
                 upup = upupup;
             }
             up->leftlink = right;
-            if( right != NULL )
-        right->uplink = up;
+            if (right != NULL)
+                right->uplink = up;
             right = up;
 
-        }
-    else				/* up is to the left of n */
-    {
-            if( upup != NULL && upup->rightlink == up )	/* rotate */
+        } else /* up is to the left of n */
         {
+            if (upup != NULL && upup->rightlink == up) /* rotate */
+            {
                 upupup = upup->uplink;
                 upup->rightlink = up->leftlink;
-                if( upup->rightlink != NULL )
-            upup->rightlink->uplink = upup;
+                if (upup->rightlink != NULL)
+                    upup->rightlink->uplink = upup;
                 up->leftlink = upup;
                 upup->uplink = up;
-                if( upupup == NULL )
-            q->root = up;
-        else if( upupup->rightlink == upup )
-            upupup->rightlink = up;
-        else
-            upupup->leftlink = up;
+                if (upupup == NULL)
+                    q->root = up;
+                else if (upupup->rightlink == upup)
+                    upupup->rightlink = up;
+                else
+                    upupup->leftlink = up;
                 up->uplink = upupup;
                 upup = upupup;
             }
             up->rightlink = left;
-            if( left != NULL )
-        left->uplink = up;
+            if (left != NULL)
+                left->uplink = up;
             left = up;
         }
         prev = up;
         up = upup;
     }
 
-# ifdef DEBUG
-    if( q->root != prev )
-    {
-/*	fprintf(stderr, " *** bug in splay: n not in q *** " ); */
-    abort();
+#ifdef DEBUG
+    if (q->root != prev) {
+        /*	fprintf(stderr, " *** bug in splay: n not in q *** " ); */
+        abort();
     }
-# endif
+#endif
 
     n->leftlink = left;
     n->rightlink = right;
-    if( left != NULL )
-    left->uplink = n;
-    if( right != NULL )
-    right->uplink = n;
+    if (left != NULL)
+        left->uplink = n;
+    if (right != NULL)
+        right->uplink = n;
     q->root = n;
     n->uplink = NULL;
 
 } /* splay */
-
 
 /*----------------
  *
@@ -564,30 +546,26 @@ splay( SPBLK* n, SPTREE* q )
  *      avoids splaying but just searches for and returns a pointer to
  *      the bottom of the left branch
  */
-SPBLK *
-sphead( SPTREE* q )
-{
-    SPBLK * x;
+SPBLK* sphead(SPTREE* q) {
+    SPBLK* x;
 
     /* splay version, good amortized bound */
-    x = spdeq( &q->root );
-    if( x != NULL )
-    {
+    x = spdeq(&q->root);
+    if (x != NULL) {
         x->rightlink = q->root;
         x->leftlink = NULL;
         x->uplink = NULL;
-        if( q->root != NULL )
-        q->root->uplink = x;
+        if (q->root != NULL)
+            q->root->uplink = x;
     }
     q->root = x;
 
     /* alternative version, bad amortized bound,
        but faster on the average */
 
-    return( x );
+    return (x);
 
 } /* sphead */
-
 
 /*----------------
  *
@@ -597,27 +575,25 @@ sphead( SPTREE* q )
  *	around its new root, which is the successor of n
  *
  */
-void
-spdelete( SPBLK* n, SPTREE* q )
-{
-    SPBLK * x;
+void spdelete(SPBLK* n, SPTREE* q) {
+    SPBLK* x;
 
-    splay( n, q );
-    x = spdeq( &q->root->rightlink );
-    if( x == NULL )		/* empty right subtree */
+    splay(n, q);
+    x = spdeq(&q->root->rightlink);
+    if (x == NULL) /* empty right subtree */
     {
         q->root = q->root->leftlink;
-        if (q->root) q->root->uplink = NULL;
-    }
-    else			/* non-empty right subtree */
+        if (q->root)
+            q->root->uplink = NULL;
+    } else /* non-empty right subtree */
     {
         x->uplink = NULL;
         x->leftlink = q->root->leftlink;
         x->rightlink = q->root->rightlink;
-        if( x->leftlink != NULL )
-        x->leftlink->uplink = x;
-        if( x->rightlink != NULL )
-        x->rightlink->uplink = x;
+        if (x->leftlink != NULL)
+            x->leftlink->uplink = x;
+        if (x->rightlink != NULL)
+            x->rightlink->uplink = x;
         q->root = x;
     }
 

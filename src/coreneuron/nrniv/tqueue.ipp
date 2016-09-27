@@ -26,7 +26,6 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-
 #ifndef tqueue_ipp_
 #define tqueue_ipp_
 
@@ -54,7 +53,7 @@ Douglas Jones.
 of struct _spblk, we are really using TQItem
 */
 
-template<container C>
+template <container C>
 TQueue<C>::TQueue() {
     MUTCONSTRUCT(0)
     nshift_ = 0;
@@ -69,24 +68,24 @@ TQueue<C>::TQueue() {
 #endif
 }
 
-template<container C>
+template <container C>
 TQueue<C>::~TQueue() {
-    SPBLK* q, *q2;
+    SPBLK *q, *q2;
     /// Clear the binq
     for (q = binq_->first(); q; q = q2) {
         q2 = binq_->next(q);
-        remove(q); /// Potentially dereferences freed pointer this->sptree_
+        remove(q);  /// Potentially dereferences freed pointer this->sptree_
     }
     delete binq_;
 
     /// Clear the splay tree
-    while((q = spdeq(&sptree_->root)) != NULL) {
+    while ((q = spdeq(&sptree_->root)) != NULL) {
         delete q;
     }
     delete sptree_;
 
     /// Clear the priority queue
-    while(pq_que_.size()) {
+    while (pq_que_.size()) {
         delete pq_que_.top().second;
         pq_que_.pop();
     }
@@ -94,7 +93,7 @@ TQueue<C>::~TQueue() {
     MUTDESTRUCT
 }
 
-template<container C>
+template <container C>
 TQItem* TQueue<C>::enqueue_bin(double td, void* d) {
     MUTLOCK
 #if COLLECT_TQueue_STATISTICS
@@ -109,29 +108,26 @@ TQItem* TQueue<C>::enqueue_bin(double td, void* d) {
     return i;
 }
 
-
 #if COLLECT_TQueue_STATISTICS
-template<container C>
-void TQueue<C>::record_stat_event(int type, double time){
+template <container C>
+void TQueue<C>::record_stat_event(int type, double time) {
     if (time_map_events[type].find(time) == time_map_events[type].end())
         time_map_events[type][time] = 1;
     else
         ++time_map_events[type][time];
 }
 
-template<container C>
+template <container C>
 void TQueue<C>::statistics() {
-    printf("insertions=%lu  moves=%lu removals=%lu calls to least=%lu\n",
-        ninsert, nmove, nrem, nleast);
-    printf("calls to find=%lu\n",
-        nfind);
-    printf("comparisons=%d\n",
-        sptree_->enqcmps);
+    printf("insertions=%lu  moves=%lu removals=%lu calls to least=%lu\n", ninsert, nmove, nrem,
+           nleast);
+    printf("calls to find=%lu\n", nfind);
+    printf("comparisons=%d\n", sptree_->enqcmps);
 }
 #endif
 
 /// Splay tree priority queue implementation
-template<>
+template <>
 inline void TQueue<spltree>::move_least_nolock(double tnew) {
     TQItem* b = least();
     if (b) {
@@ -146,7 +142,7 @@ inline void TQueue<spltree>::move_least_nolock(double tnew) {
 }
 
 /// STL priority queue implementation
-template<>
+template <>
 inline void TQueue<pq_que>::move_least_nolock(double tnew) {
     TQItem* b = least();
     if (b) {
@@ -162,18 +158,18 @@ inline void TQueue<pq_que>::move_least_nolock(double tnew) {
 }
 
 /// Splay tree priority queue implementation
-template<>
+template <>
 inline void TQueue<spltree>::move(TQItem* i, double tnew) {
     MUTLOCK
     STAT(nmove)
     if (i == least_) {
         move_least_nolock(tnew);
-    }else if (tnew < least_->t_) {
+    } else if (tnew < least_->t_) {
         spdelete(i, sptree_);
         i->t_ = tnew;
         spenq(least_, sptree_);
         least_ = i;
-    }else{
+    } else {
         spdelete(i, sptree_);
         i->t_ = tnew;
         spenq(i, sptree_);
@@ -182,13 +178,13 @@ inline void TQueue<spltree>::move(TQItem* i, double tnew) {
 }
 
 /// STL priority queue implementation
-template<>
+template <>
 inline void TQueue<pq_que>::move(TQItem* i, double tnew) {
     MUTLOCK
     STAT(nmove)
     if (i == least_) {
         move_least_nolock(tnew);
-    }else if (tnew < least_->t_) {
+    } else if (tnew < least_->t_) {
         TQItem* qmove = new TQItem;
         qmove->data_ = i->data_;
         qmove->t_ = tnew;
@@ -196,7 +192,7 @@ inline void TQueue<pq_que>::move(TQItem* i, double tnew) {
         i->t_ = -1.;
         pq_que_.push(make_TQPair(least_));
         least_ = qmove;
-    }else{
+    } else {
         TQItem* qmove = new TQItem;
         qmove->data_ = i->data_;
         qmove->t_ = tnew;
@@ -208,26 +204,28 @@ inline void TQueue<pq_que>::move(TQItem* i, double tnew) {
 }
 
 /// Splay tree priority queue implementation
-template<>
+template <>
 inline TQItem* TQueue<spltree>::insert(double tt, void* d) {
     MUTLOCK
 #if COLLECT_TQueue_STATISTICS
     STAT(ninsert);
     record_stat_event(enq, tt);
 #endif
-    TQItem *i = new TQItem;
+    TQItem* i = new TQItem;
     i->data_ = d;
     i->t_ = tt;
     i->cnt_ = -1;
     if (tt < least_t_nolock()) {
         if (least_) {
-            /// Probably storing both time and event which has the time is redundant, but the event is then returned
-            /// to the upper level call stack function. If we were to eliminate i->t_ and i->cnt_ fields,
+            /// Probably storing both time and event which has the time is redundant, but the event
+            /// is then returned
+            /// to the upper level call stack function. If we were to eliminate i->t_ and i->cnt_
+            /// fields,
             /// we need to make sure we are not braking anything.
             spenq(least_, sptree_);
         }
         least_ = i;
-    }else{
+    } else {
         spenq(i, sptree_);
     }
     MUTUNLOCK
@@ -235,26 +233,28 @@ inline TQItem* TQueue<spltree>::insert(double tt, void* d) {
 }
 
 /// STL priority queue implementation
-template<>
+template <>
 inline TQItem* TQueue<pq_que>::insert(double tt, void* d) {
     MUTLOCK
 #if COLLECT_TQueue_STATISTICS
     STAT(ninsert);
     record_stat_event(enq, tt);
 #endif
-    TQItem *i = new TQItem;
+    TQItem* i = new TQItem;
     i->data_ = d;
     i->t_ = tt;
     i->cnt_ = -1;
     if (tt < least_t_nolock()) {
         if (least_) {
-            /// Probably storing both time and event which has the time is redundant, but the event is then returned
-            /// to the upper level call stack function. If we were to eliminate i->t_ and i->cnt_ fields,
+            /// Probably storing both time and event which has the time is redundant, but the event
+            /// is then returned
+            /// to the upper level call stack function. If we were to eliminate i->t_ and i->cnt_
+            /// fields,
             /// we need to make sure we are not braking anything.
             pq_que_.push(make_TQPair(least_));
         }
         least_ = i;
-    }else{
+    } else {
         pq_que_.push(make_TQPair(i));
     }
     MUTUNLOCK
@@ -262,7 +262,7 @@ inline TQItem* TQueue<pq_que>::insert(double tt, void* d) {
 }
 
 /// Splay tree priority queue implementation
-template<>
+template <>
 inline void TQueue<spltree>::remove(TQItem* q) {
     MUTLOCK
 #if COLLECT_TQueue_STATISTICS
@@ -273,10 +273,10 @@ inline void TQueue<spltree>::remove(TQItem* q) {
         if (q == least_) {
             if (sptree_->root) {
                 least_ = spdeq(&sptree_->root);
-            }else{
+            } else {
                 least_ = NULL;
             }
-        }else{
+        } else {
             spdelete(q, sptree_);
         }
         delete q;
@@ -285,7 +285,7 @@ inline void TQueue<spltree>::remove(TQItem* q) {
 }
 
 /// STL priority queue implementation
-template<>
+template <>
 inline void TQueue<pq_que>::remove(TQItem* q) {
     MUTLOCK
 #if COLLECT_TQueue_STATISTICS
@@ -297,10 +297,10 @@ inline void TQueue<pq_que>::remove(TQItem* q) {
             if (pq_que_.size()) {
                 least_ = pq_que_.top().second;
                 pq_que_.pop();
-            }else{
+            } else {
                 least_ = NULL;
             }
-        }else{
+        } else {
             q->t_ = -1.;
         }
     }
@@ -308,7 +308,7 @@ inline void TQueue<pq_que>::remove(TQItem* q) {
 }
 
 /// Splay tree priority queue implementation
-template<>
+template <>
 inline TQItem* TQueue<spltree>::atomic_dq(double tt) {
     TQItem* q = 0;
     MUTLOCK
@@ -320,7 +320,7 @@ inline TQItem* TQueue<spltree>::atomic_dq(double tt) {
 #endif
         if (sptree_->root) {
             least_ = spdeq(&sptree_->root);
-        }else{
+        } else {
             least_ = NULL;
         }
     }
@@ -328,9 +328,8 @@ inline TQItem* TQueue<spltree>::atomic_dq(double tt) {
     return q;
 }
 
-
 /// STL priority queue implementation
-template<>
+template <>
 inline TQItem* TQueue<pq_que>::atomic_dq(double tt) {
     TQItem* q = 0;
     MUTLOCK
@@ -340,19 +339,19 @@ inline TQItem* TQueue<pq_que>::atomic_dq(double tt) {
         STAT(nrem);
         record_stat_event(deq, tt);
 #endif
-//        int qsize = pq_que_.size();
-//        printf("map size: %d\n", msize);
-        /// This while loop is to delete events whose times have been moved with the ::move function,
+        //        int qsize = pq_que_.size();
+        //        printf("map size: %d\n", msize);
+        /// This while loop is to delete events whose times have been moved with the ::move
+        /// function,
         /// but in fact events were left in the queue since the only function available is pop
-        while(pq_que_.size() && pq_que_.top().second->t_ < 0.)
-        {
+        while (pq_que_.size() && pq_que_.top().second->t_ < 0.) {
             delete pq_que_.top().second;
             pq_que_.pop();
         }
-        if(pq_que_.size()) {
+        if (pq_que_.size()) {
             least_ = pq_que_.top().second;
             pq_que_.pop();
-        }else{
+        } else {
             least_ = NULL;
         }
     }

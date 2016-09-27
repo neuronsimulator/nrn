@@ -62,153 +62,151 @@ static int nrnmpi_under_nrncontrol_;
 
 void nrnmpi_init(int nrnmpi_under_nrncontrol, int* pargc, char*** pargv) {
 #if NRNMPI
-	int i, b, flag;
-	static int called = 0;
+    int i, b, flag;
+    static int called = 0;
 
-	if (called) { return; }
-	called = 1;
-	nrnmpi_use = 1;
-	nrnmpi_under_nrncontrol_ = nrnmpi_under_nrncontrol;
-	if( nrnmpi_under_nrncontrol_ ) {
-
+    if (called) {
+        return;
+    }
+    called = 1;
+    nrnmpi_use = 1;
+    nrnmpi_under_nrncontrol_ = nrnmpi_under_nrncontrol;
+    if (nrnmpi_under_nrncontrol_) {
 #if !ALWAYS_CALL_MPI_INIT
-	/* this is not good. depends on mpirun adding at least one
-	   arg that starts with -p4 but that probably is dependent
-	   on mpich and the use of the ch_p4 device. We are trying to
-	   work around the problem that MPI_Init may change the working
-	   directory and so when not invoked under mpirun we would like to
-	   NOT call MPI_Init.
-	*/
-		b = 0;
-		for (i=0; i < *pargc; ++i) {
-			if (strncmp("-p4", (*pargv)[i], 3) == 0) {
-				b = 1;
-				break;
-			}
-			if (strcmp("-mpi", (*pargv)[i]) == 0) {
-				b = 1;
-				break;
-			}
-		}
-		if (nrnmusic) { b = 1; }
-		if (!b) {
-			nrnmpi_use = 0;
-			nrnmpi_under_nrncontrol_ = 0;
-			return;
-		}
+        /* this is not good. depends on mpirun adding at least one
+           arg that starts with -p4 but that probably is dependent
+           on mpich and the use of the ch_p4 device. We are trying to
+           work around the problem that MPI_Init may change the working
+           directory and so when not invoked under mpirun we would like to
+           NOT call MPI_Init.
+        */
+        b = 0;
+        for (i = 0; i < *pargc; ++i) {
+            if (strncmp("-p4", (*pargv)[i], 3) == 0) {
+                b = 1;
+                break;
+            }
+            if (strcmp("-mpi", (*pargv)[i]) == 0) {
+                b = 1;
+                break;
+            }
+        }
+        if (nrnmusic) {
+            b = 1;
+        }
+        if (!b) {
+            nrnmpi_use = 0;
+            nrnmpi_under_nrncontrol_ = 0;
+            return;
+        }
 #endif
-		MPI_Initialized(&flag);
+        MPI_Initialized(&flag);
 
-		if (!flag) {
+        if (!flag) {
 #if (USE_PTHREAD || defined(_OPENMP))
-			int required = MPI_THREAD_FUNNELED;
-			int provided;
-                        nrn_assert(MPI_Init_thread(pargc, pargv, required, &provided) == MPI_SUCCESS);
-                        
-			nrn_assert(required <= provided);
+            int required = MPI_THREAD_FUNNELED;
+            int provided;
+            nrn_assert(MPI_Init_thread(pargc, pargv, required, &provided) == MPI_SUCCESS);
+
+            nrn_assert(required <= provided);
 #else
-			nrn_assert(MPI_Init(pargc, pargv) == MPI_SUCCESS);
+            nrn_assert(MPI_Init(pargc, pargv) == MPI_SUCCESS);
 #endif
-		}
+        }
 
-		{
-			nrn_assert(MPI_Comm_dup(MPI_COMM_WORLD, &nrnmpi_world_comm) == MPI_SUCCESS);
-		}
-	}
-	grp_bbs = MPI_GROUP_NULL;
-	grp_net = MPI_GROUP_NULL;
-	nrn_assert(MPI_Comm_dup(nrnmpi_world_comm, &nrnmpi_comm) == MPI_SUCCESS);
-	nrn_assert(MPI_Comm_dup(nrnmpi_world_comm, &nrn_bbs_comm) == MPI_SUCCESS);
-	nrn_assert(MPI_Comm_rank(nrnmpi_world_comm, &nrnmpi_myid_world) == MPI_SUCCESS);
-	nrn_assert(MPI_Comm_size(nrnmpi_world_comm, &nrnmpi_numprocs_world) == MPI_SUCCESS);
-	nrnmpi_numprocs = nrnmpi_numprocs_bbs = nrnmpi_numprocs_world;
-	nrnmpi_myid = nrnmpi_myid_bbs = nrnmpi_myid_world;
-	nrnmpi_spike_initialize();
-	/*begin instrumentation*/
+        { nrn_assert(MPI_Comm_dup(MPI_COMM_WORLD, &nrnmpi_world_comm) == MPI_SUCCESS); }
+    }
+    grp_bbs = MPI_GROUP_NULL;
+    grp_net = MPI_GROUP_NULL;
+    nrn_assert(MPI_Comm_dup(nrnmpi_world_comm, &nrnmpi_comm) == MPI_SUCCESS);
+    nrn_assert(MPI_Comm_dup(nrnmpi_world_comm, &nrn_bbs_comm) == MPI_SUCCESS);
+    nrn_assert(MPI_Comm_rank(nrnmpi_world_comm, &nrnmpi_myid_world) == MPI_SUCCESS);
+    nrn_assert(MPI_Comm_size(nrnmpi_world_comm, &nrnmpi_numprocs_world) == MPI_SUCCESS);
+    nrnmpi_numprocs = nrnmpi_numprocs_bbs = nrnmpi_numprocs_world;
+    nrnmpi_myid = nrnmpi_myid_bbs = nrnmpi_myid_world;
+    nrnmpi_spike_initialize();
+/*begin instrumentation*/
 #if USE_HPM
-	hpmInit( nrnmpi_myid_world, "mpineuron" );
+    hpmInit(nrnmpi_myid_world, "mpineuron");
 #endif
 
-	if (nrnmpi_myid == 0) 
-          printf(" num_mpi=%d\n num_omp_thread=%d\n\n", nrnmpi_numprocs_world,nrnomp_get_numthreads());
+    if (nrnmpi_myid == 0)
+        printf(" num_mpi=%d\n num_omp_thread=%d\n\n", nrnmpi_numprocs_world,
+               nrnomp_get_numthreads());
 
 #endif /* NRNMPI */
-
 }
 
 double nrnmpi_wtime() {
 #if NRNMPI
-	if (nrnmpi_use) {
-		return MPI_Wtime();
-	}
-#endif
-	return 0.0;
-}
-
-
-void nrnmpi_finalize(void) 
-{
-  if (nrnmpi_under_nrncontrol_) {
-    int flag = 0;
-    MPI_Initialized(&flag);
-    if (flag) {
-      MPI_Finalize();
+    if (nrnmpi_use) {
+        return MPI_Wtime();
     }
-  }
+#endif
+    return 0.0;
 }
 
+void nrnmpi_finalize(void) {
+    if (nrnmpi_under_nrncontrol_) {
+        int flag = 0;
+        MPI_Initialized(&flag);
+        if (flag) {
+            MPI_Finalize();
+        }
+    }
+}
 
 void nrnmpi_terminate() {
 #if NRNMPI
-	if (nrnmpi_use) {
+    if (nrnmpi_use) {
 #if USE_HPM
-		hpmTerminate( nrnmpi_myid_world );
+        hpmTerminate(nrnmpi_myid_world);
 #endif
-		if( nrnmpi_under_nrncontrol_ ) {
-			MPI_Finalize();
-		}
-		nrnmpi_use = 0;
+        if (nrnmpi_under_nrncontrol_) {
+            MPI_Finalize();
+        }
+        nrnmpi_use = 0;
 #if nrnmpidebugleak
-		nrnmpi_checkbufleak();
+        nrnmpi_checkbufleak();
 #endif
-	}
+    }
 #endif /*NRNMPI*/
 }
 
 void nrnmpi_abort(int errcode) {
 #if NRNMPI
-	int flag;
-	MPI_Initialized(&flag);
-	if (flag) {
-		MPI_Abort(MPI_COMM_WORLD, errcode);
-	}else{
-		abort();
-	}
+    int flag;
+    MPI_Initialized(&flag);
+    if (flag) {
+        MPI_Abort(MPI_COMM_WORLD, errcode);
+    } else {
+        abort();
+    }
 #else
-	abort();
+    abort();
 #endif
 }
 
-void nrnmpi_fatal_error(const char *msg) {
+void nrnmpi_fatal_error(const char* msg) {
+    if (nrnmpi_myid == 0) {
+        printf("%s\n", msg);
+    }
 
-  if(nrnmpi_myid == 0) {
-    printf("%s\n", msg);
-  }
-  
-  nrnmpi_abort(-1);
+    nrnmpi_abort(-1);
 }
 
 // check if appropriate threading level supported (i.e. MPI_THREAD_FUNNELED)
 void nrnmpi_check_threading_support() {
 #if NRNMPI
     int th = 0;
-	if (nrnmpi_use) {
-            MPI_Query_thread( &th );
-            if( th < MPI_THREAD_FUNNELED) {
-                nrnmpi_fatal_error("\n Current MPI library doesn't support MPI_THREAD_FUNNELED,\
+    if (nrnmpi_use) {
+        MPI_Query_thread(&th);
+        if (th < MPI_THREAD_FUNNELED) {
+            nrnmpi_fatal_error(
+                "\n Current MPI library doesn't support MPI_THREAD_FUNNELED,\
                         \n Run without enabling multi-threading!");
-            }
-	}
+        }
+    }
 #endif
 }
 
@@ -216,7 +214,7 @@ void nrnmpi_check_threading_support() {
 
 /* so src/nrnpython/inithoc.cpp does not have to include a c++ mpi.h */
 int nrnmpi_wrap_mpi_init(int* flag) {
-	return MPI_Initialized(flag);
+    return MPI_Initialized(flag);
 }
-	
+
 #endif

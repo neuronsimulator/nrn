@@ -1,7 +1,6 @@
 #ifndef node_permute_h
 #define node_permute_h
 
-
 // determine ml->_permute and permute the ml->nodeindices accordingly
 void permute_nodeindices(Memb_list* ml, int* permute);
 

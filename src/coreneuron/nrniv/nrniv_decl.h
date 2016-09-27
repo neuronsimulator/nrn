@@ -36,7 +36,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/nrniv/nrnoptarg.h"
 
 /// Vector of maps for negative presyns
-extern std::vector< std::map<int, PreSyn*> > neg_gid2out;
+extern std::vector<std::map<int, PreSyn*> > neg_gid2out;
 /// Maps for ouput and input presyns
 extern std::map<int, PreSyn*> gid2out;
 extern std::map<int, InputPreSyn*> gid2in;
@@ -50,7 +50,7 @@ extern void mk_mech(const char* path);
 extern void set_globals(const char* path);
 extern void mk_netcvode(void);
 extern void nrn_p_construct(void);
-extern void nrn_setup(cn_input_params& input_params, const char *filesdat, int byte_swap);
+extern void nrn_setup(cn_input_params& input_params, const char* filesdat, int byte_swap);
 extern int nrn_setup_multiple;
 extern int nrn_setup_extracon;
 extern void nrn_cleanup();

@@ -18,8 +18,7 @@ static int cray_acc_debug_zero = 0;
 extern int nrnmpi_myid;
 
 void start_profile() {
-
-    if(nrnmpi_myid == 0)
+    if (nrnmpi_myid == 0)
         printf("\n ----- GPU PROFILING STARTED -----\n");
 
 #ifdef CRAYPAT
@@ -33,12 +32,10 @@ void start_profile() {
 #ifdef CUDA_PROFILING
     start_cuda_profile();
 #endif
-
 }
 
 void stop_profile() {
-
-    if(nrnmpi_myid == 0)
+    if (nrnmpi_myid == 0)
         printf("\n ----- GPU PROFILING STOPPED -----\n");
 
 #ifdef CRAYPAT
@@ -53,5 +50,4 @@ void stop_profile() {
 #ifdef CUDA_PROFILING
     stop_cuda_profile();
 #endif
-
 }

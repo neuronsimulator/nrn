@@ -45,7 +45,7 @@ typedef int (*Pfri)();
 typedef char Symbol;
 
 #define CACHEVEC 2
-#define VEC_A(i) (_nt->_actual_a[(i)]) 
+#define VEC_A(i) (_nt->_actual_a[(i)])
 #define VEC_B(i) (_nt->_actual_b[(i)])
 #define VEC_D(i) (_nt->_actual_d[(i)])
 #define VEC_RHS(i) (_nt->_actual_rhs[(i)])
@@ -82,9 +82,9 @@ extern double hoc_Exp(double x);
 
 /* will go away at some point */
 typedef struct Point_process {
-	int _i_instance;
-	short _type;
-	short _tid; /* NrnThread id */
+    int _i_instance;
+    short _type;
+    short _tid; /* NrnThread id */
 } Point_process;
 
 extern char* pnt_name(Point_process* pnt);
