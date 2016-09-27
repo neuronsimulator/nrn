@@ -175,6 +175,13 @@ If you have different mpi launcher, you can specify it during cmake configuratio
 cmake .. -DTEST_MPI_EXEC_BIN="mpirun" -DTEST_EXEC_PREFIX="mpirun;-n;2" -DTEST_EXEC_PREFIX="mpirun;-n;2" -DAUTO_TEST_WITH_SLURM=OFF -DAUTO_TEST_WITH_MPIEXEC=OFF
 ```
 
+# Developer Notes
+If you have installed `clang-format`, you can reformat/reindent generated .c files from mod2c using:
+```
+make formatbuild
+```
+The `.clang-format` file in the source reposity is compatible with version 3.9.
+
 ## License
 * See LICENSE.txt
 * See [NEURON](https://www.neuron.yale.edu/neuron/)
