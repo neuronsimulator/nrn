@@ -50,8 +50,8 @@ void ReportEvent::deliver(double t, NetCvode* nc, NrnThread* nt) {
 // avoid pgc++-Fatal-/opt/pgi/linux86-64/16.5/bin/pggpp2ex TERMINATED by signal 11
 #ifdef ENABLE_REPORTING
 
-/** @todo: reportinglib is not thread safe, fix this */
-#pragma omp critical
+    /** @todo: reportinglib is not thread safe, fix this */
+    #pragma omp critical
     {
 // each thread needs to know its own step
 #ifdef ENABLE_REPORTING

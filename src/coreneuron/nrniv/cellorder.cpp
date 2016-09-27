@@ -433,7 +433,8 @@ static void triang_interleaved2(NrnThread* nt, int icore, int ncycle, int* strid
 #if !defined(_OPENACC)
     int ii = i;
 #endif
-#pragma acc loop seq
+
+    #pragma acc loop seq
     for (;;) {  // ncycle loop
 #if !defined(_OPENACC)
         // serial test, gpu does this in parallel
@@ -444,9 +445,9 @@ static void triang_interleaved2(NrnThread* nt, int icore, int ncycle, int* strid
                 // what is the index
                 int ip = GPU_PARENT(i);
                 double p = GPU_A(i) / GPU_D(i);
-#pragma acc atomic update
+                #pragma acc atomic update
                 GPU_D(ip) -= p * GPU_B(i);
-#pragma acc atomic update
+                #pragma acc atomic update
                 GPU_RHS(ip) -= p * GPU_RHS(i);
             }
 #if !defined(_OPENACC)
@@ -475,7 +476,7 @@ static void bksub_interleaved2(NrnThread* nt,
 #if !defined(_OPENACC)
     for (int i = root; i < lastroot; i += 1) {
 #else
-#pragma acc loop seq
+    #pragma acc loop seq
     for (int i = root; i < lastroot; i += warpsize) {
 #endif
         GPU_RHS(i) /= GPU_D(i);  // the root
@@ -539,13 +540,13 @@ void solve_interleaved2(int ith) {
 #else
 #ifdef _OPENACC
 //    #pragma acc kernels loop gang(1), vector(32) present(nt[0:1], strides[0:nstride],...
-#pragma acc parallel loop present(                                                          \
-    nt[0 : 1],                                                                              \
-       strides[0 : nstride],                                                                \
-               ncycles[0 : nwarp],                                                          \
-                       stridedispl[0 : nwarp + 1],                                          \
-                                   rootbegin[0 : nwarp + 1],                                \
-                                             nodebegin[0 : nwarp + 1]) if (nt->compute_gpu) \
+    #pragma acc parallel loop present(                                                          \
+        nt[0 : 1],                                                                              \
+            strides[0 : nstride],                                                               \
+               ncycles[0 : nwarp],                                                              \
+                       stridedispl[0 : nwarp + 1],                                              \
+                                   rootbegin[0 : nwarp + 1],                                    \
+                                             nodebegin[0 : nwarp + 1]) if (nt->compute_gpu)     \
                                                                                async(stream_id)
 #endif
     for (int icore = 0; icore < ncore; ++icore) {
@@ -604,8 +605,8 @@ void solve_interleaved1(int ith) {
     solve_interleaved_launcher(d_nt, d_info, ncell);
 #else
 #ifdef _OPENACC
-#pragma acc parallel loop present(                                                             \
-    nt[0 : 1], stride[0 : nstride],                                                            \
+    #pragma acc parallel loop present(                                                         \
+        nt[0 : 1], stride[0 : nstride],                                                        \
                       firstnode[0 : ncell], lastnode[0 : ncell],                               \
                                                      cellsize[0 : ncell]) if (nt->compute_gpu) \
                                                                                   async(stream_id)

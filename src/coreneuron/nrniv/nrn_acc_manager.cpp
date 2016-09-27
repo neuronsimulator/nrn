@@ -791,8 +791,8 @@ extern "C" {
 void update_matrix_from_gpu(NrnThread* _nt) {
 #ifdef _OPENACC
     if (_nt->compute_gpu && (_nt->end > 0)) {
-/* before copying, make sure all computations in the stream are completed */
-#pragma acc wait(_nt->stream_id)
+        /* before copying, make sure all computations in the stream are completed */
+        #pragma acc wait(_nt->stream_id)
 
         /* openacc routine doesn't allow asyn, use pragma */
         // acc_update_self(_nt->_actual_rhs, 2*_nt->end*sizeof(double));
@@ -803,8 +803,8 @@ void update_matrix_from_gpu(NrnThread* _nt) {
         double* rhs = _nt->_actual_rhs;
         int ne = nrn_soa_padded_size(_nt->end, 0);
 
-#pragma acc update host(rhs[0 : 2 * ne]) async(_nt->stream_id)
-#pragma acc wait(_nt->stream_id)
+        #pragma acc update host(rhs[0 : 2 * ne]) async(_nt->stream_id)
+        #pragma acc wait(_nt->stream_id)
     }
 #else
     (void)_nt;
@@ -814,8 +814,8 @@ void update_matrix_from_gpu(NrnThread* _nt) {
 void update_matrix_to_gpu(NrnThread* _nt) {
 #ifdef _OPENACC
     if (_nt->compute_gpu && (_nt->end > 0)) {
-/* before copying, make sure all computations in the stream are completed */
-#pragma acc wait(_nt->stream_id)
+        /* before copying, make sure all computations in the stream are completed */
+        #pragma acc wait(_nt->stream_id)
 
         /* while discussion with Michael we found that RHS is also needed on
          * gpu because nrn_cap_jacob uses rhs which is being updated on GPU
@@ -825,9 +825,9 @@ void update_matrix_to_gpu(NrnThread* _nt) {
         double* rhs = _nt->_actual_rhs;
         int ne = nrn_soa_padded_size(_nt->end, 0);
 
-#pragma acc update device(v[0 : ne]) async(_nt->stream_id)
-#pragma acc update device(rhs[0 : ne]) async(_nt->stream_id)
-#pragma acc wait(_nt->stream_id)
+        #pragma acc update device(v[0 : ne]) async(_nt->stream_id)
+        #pragma acc update device(rhs[0 : ne]) async(_nt->stream_id)
+        #pragma acc wait(_nt->stream_id)
     }
 #else
     (void)_nt;
