@@ -129,10 +129,17 @@ else()
 endif()
 
 if(CLANG_FORMAT_FOUND)
-    #indent files using clang-format
+    file(COPY ${PROJECT_SOURCE_DIR}/.clang-format DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+
+    #to indent files using clang-format
     file(GLOB_RECURSE SRC_FILES_FOR_CLANG_FORMAT ${PROJECT_SOURCE_DIR}/coreneuron/*.c*
         ${PROJECT_SOURCE_DIR}/coreneuron/*.h* ${PROJECT_SOURCE_DIR}/coreneuron/*.ipp*)
-    add_custom_target(formatsource COMMAND ${CLANG_FORMAT_EXECUTABLE} -i ${SRC_FILES_FOR_CLANG_FORMAT} )
+
+    add_custom_target(formatsource COMMAND ${CMAKE_COMMAND}
+        -DSOURCE_FILES:STRING="${SRC_FILES_FOR_CLANG_FORMAT}"
+        -DCLANG_FORMAT_EXECUTABLE=${CLANG_FORMAT_EXECUTABLE}
+        -P "${PROJECT_SOURCE_DIR}/CMake/ClangFormatUtils.cmake"
+        )
 endif()
 
 if(ENABLE_OPENACC)
