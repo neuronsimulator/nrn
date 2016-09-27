@@ -132,7 +132,7 @@ if(CLANG_FORMAT_FOUND)
     #indent files using clang-format
     file(GLOB_RECURSE SRC_FILES_FOR_CLANG_FORMAT ${PROJECT_SOURCE_DIR}/coreneuron/*.c*
         ${PROJECT_SOURCE_DIR}/coreneuron/*.h* ${PROJECT_SOURCE_DIR}/coreneuron/*.ipp*)
-    add_custom_target(formatsource COMMAND clang-format -i ${SRC_FILES_FOR_CLANG_FORMAT} )
+    add_custom_target(formatsource COMMAND ${CLANG_FORMAT_EXECUTABLE} -i ${SRC_FILES_FOR_CLANG_FORMAT} )
 endif()
 
 if(ENABLE_OPENACC)

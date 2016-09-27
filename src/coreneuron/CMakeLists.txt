@@ -196,7 +196,7 @@ set(coreneuron_all_c_files ${coreneuron_all_c_files} ${GENERATED_MECH_C_FILES})
 
 #to indent generated c/cpp files
 if(CLANG_FORMAT_FOUND)
-    add_custom_target(formatbuild COMMAND clang-format -i ${GENERATED_MECH_C_FILES})
+    add_custom_target(formatbuild COMMAND ${CLANG_FORMAT_EXECUTABLE} -i ${GENERATED_MECH_C_FILES})
 endif()
 
 
