@@ -33,14 +33,12 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #if defined(_OPENACC)
 #define _PRAGMA_FOR_INIT_ACC_LOOP_ \
     _Pragma("acc parallel loop present(vdata[0:_cntml_padded*nparm]) if(_nt->compute_gpu)")
-#define _PRAGMA_FOR_CUR_ACC_LOOP_                                                       \
-    _Pragma(                                                                            \
-        "acc parallel loop present(vdata[0:_cntml_padded*nparm], ni[0:_cntml_actual], " \
-        "_vec_rhs[0:_nt->end]) if(_nt->compute_gpu) async(stream_id)")
-#define _PRAGMA_FOR_JACOB_ACC_LOOP_                                                     \
-    _Pragma(                                                                            \
-        "acc parallel loop present(vdata[0:_cntml_padded*nparm], ni[0:_cntml_actual], " \
-        "_vec_d[0:_nt->end]) if(_nt->compute_gpu) async(stream_id)")
+#define _PRAGMA_FOR_CUR_ACC_LOOP_ \
+    _Pragma(                      \
+        "acc parallel loop present(vdata[0:_cntml_padded*nparm], ni[0:_cntml_actual], _vec_rhs[0:_nt->end]) if(_nt->compute_gpu) async(stream_id)")
+#define _PRAGMA_FOR_JACOB_ACC_LOOP_ \
+    _Pragma(                        \
+        "acc parallel loop present(vdata[0:_cntml_padded*nparm], ni[0:_cntml_actual], _vec_d[0:_nt->end]) if(_nt->compute_gpu) async(stream_id)")
 #else
 #define _PRAGMA_FOR_INIT_ACC_LOOP_ _Pragma("")
 #define _PRAGMA_FOR_CUR_ACC_LOOP_ _Pragma("")

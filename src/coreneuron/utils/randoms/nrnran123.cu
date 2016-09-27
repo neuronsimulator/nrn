@@ -145,7 +145,7 @@ nrnran123_State* nrnran123_newstream3(uint32_t id1, uint32_t id2, uint32_t id3) 
     cudaMalloc((void**)&s, sizeof(nrnran123_State));
     cudaMemset((void**)&s, 0, sizeof(nrnran123_State));
 
-    nrnran123_setup_cuda_newstream<<<1, 1> > >(s, id1, id2, id3);
+    nrnran123_setup_cuda_newstream<<<1, 1>>>(s, id1, id2, id3);
     cudaDeviceSynchronize();
 
     return s;
@@ -153,7 +153,7 @@ nrnran123_State* nrnran123_newstream3(uint32_t id1, uint32_t id2, uint32_t id3) 
 
 /* nrn123 streams are destroyed from cpu launcher routine */
 void nrnran123_deletestream(nrnran123_State* s) {
-    nrnran123_cuda_deletestream<<<1, 1> > >(s);
+    nrnran123_cuda_deletestream<<<1, 1>>>(s);
     cudaDeviceSynchronize();
 
     cudaFree(s);
