@@ -28,10 +28,8 @@ THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <math.h>
 #include <string.h>
-#include "coreneuron/nrnconf.h"
-#include "coreneuron/nrnoc/multicore.h"
-#include "coreneuron/nrnoc/membdef.h"
-#include "coreneuron/nrnoc/nrnoc_decl.h"
+
+#include "coreneuron/coreneuron.h"
 
 #if !defined(LAYOUT)
 /* 1 means AoS, >1 means AoSoA, <= 0 means SOA */
@@ -74,15 +72,18 @@ extern void hoc_register_prop_size(int, int, int);
 static char* mechanism[] = {/*just a template*/
                             "0", "na_ion", "ena", "nao", "nai", 0, "ina", "dina_dv_", 0, 0};
 
-static void ion_alloc();
-static void ion_cur(NrnThread*, Memb_list*, int);
-static void ion_init(NrnThread*, Memb_list*, int);
+void nrn_cur_ion(NrnThread*, Memb_list*, int);
+void nrn_init_ion(NrnThread*, Memb_list*, int);
+void nrn_alloc_ion(double*, Datum*, int);
 
 double nrn_nernst(), nrn_ghk();
 static int na_ion, k_ion, ca_ion; /* will get type for these special ions */
 
 int nrn_is_ion(int type) {
-    return (memb_func[type].alloc == ion_alloc);
+    //Old: commented to remove dependency on memb_func and alloc function
+    //return (memb_func[type].alloc == ion_alloc);
+    return (type < nrn_ion_global_map_size     //type smaller than largest ion's
+         && nrn_ion_global_map[type] != NULL); //allocated ion charge variables
 }
 
 int nrn_ion_global_map_size;
@@ -101,39 +102,41 @@ void ion_reg(const char* name, double valence) {
     double val;
 #define VAL_SENTINAL -10000.
 
-    Sprintf(buf[0], "%s_ion", name);
-    Sprintf(buf[1], "e%s", name);
-    Sprintf(buf[2], "%si", name);
-    Sprintf(buf[3], "%so", name);
-    Sprintf(buf[5], "i%s", name);
-    Sprintf(buf[6], "di%s_dv_", name);
-    for (i = 0; i < 7; i++) {
-        mechanism[i + 1] = buf[i];
-    }
-    mechanism[5] = (char*)0; /* buf[4] not used above */
+    sprintf(buf[0], "%s_ion", name);
+    sprintf(buf[1], "e%s", name);
+    sprintf(buf[2], "%si", name);
+    sprintf(buf[3], "%so", name);
+    sprintf(buf[5], "i%s", name);
+    sprintf(buf[6], "di%s_dv_", name);
+        for (i=0; i<7; i++) {
+                mechanism[i+1] = buf[i];
+        }
+        mechanism[5] = (char *)0; /* buf[4] not used above */
     mechtype = nrn_get_mechtype(buf[0]);
-    if (memb_func[mechtype].alloc != ion_alloc) {
-        register_mech((const char**)mechanism, ion_alloc, ion_cur, (mod_f_t)0, (mod_f_t)0,
-                      (mod_f_t)ion_init, -1, 1);
-        mechtype = nrn_get_mechtype(mechanism[1]);
-        _nrn_layout_reg(mechtype, LAYOUT);
-        hoc_register_prop_size(mechtype, nparm, 1);
-        hoc_register_dparam_semantics(mechtype, 0, "iontype");
-        nrn_writes_conc(mechtype, 1);
+    if (mechtype >= nrn_ion_global_map_size ||
+        nrn_ion_global_map[mechtype] == NULL) { //if hasn't yet been allocated
+
+        //allocates mem for ion in ion_map and sets null all non-ion types
         if (nrn_ion_global_map_size <= mechtype) {
             int size = mechtype + 1;
-            nrn_ion_global_map = (double**)erealloc(nrn_ion_global_map, sizeof(double*) * size);
+            nrn_ion_global_map = (double**)erealloc(nrn_ion_global_map, sizeof(double*)*size);
 
-            for (i = nrn_ion_global_map_size; i < mechtype; i++) {
+            for(i=nrn_ion_global_map_size; i<mechtype; i++) {
                 nrn_ion_global_map[i] = NULL;
             }
             nrn_ion_global_map_size = mechtype + 1;
         }
+        nrn_ion_global_map[mechtype] = (double*)emalloc(3*sizeof(double));
 
-        nrn_ion_global_map[mechtype] = (double*)emalloc(3 * sizeof(double));
+        register_mech((const char**)mechanism, nrn_alloc_ion, nrn_cur_ion, (mod_f_t)0, (mod_f_t)0, (mod_f_t)nrn_init_ion, -1, 1);
+        mechtype = nrn_get_mechtype(mechanism[1]);
+        _nrn_layout_reg(mechtype, LAYOUT);
+        hoc_register_prop_size(mechtype, nparm, 1 );
+        hoc_register_dparam_semantics(mechtype, 0, "iontype");
+        nrn_writes_conc(mechtype, 1);
 
-        Sprintf(buf[0], "%si0_%s", name, buf[0]);
-        Sprintf(buf[1], "%so0_%s", name, buf[0]);
+        sprintf(buf[0], "%si0_%s", name, buf[0]);
+        sprintf(buf[1], "%so0_%s", name, buf[0]);
         if (strcmp("na", name) == 0) {
             na_ion = mechtype;
             global_conci(mechtype) = DEF_nai;
@@ -275,14 +278,14 @@ ion_style("name_ion", [c_style, e_style, einit, eadvance, cinit])
 #define conci0 global_conci(type)
 #define conco0 global_conco(type)
 
-double nrn_nernst_coef(type) int type;
+double nrn_nernst_coef(int type)
 {
     /* for computing jacobian element dconc'/dconc */
     return ktf / charge;
 }
 
 /* Must be called prior to any channels which update the currents */
-static void ion_cur(NrnThread* nt, Memb_list* ml, int type) {
+void nrn_cur_ion(NrnThread* nt, Memb_list* ml, int type) {
     int _cntml_actual = ml->nodecount;
     int _iml;
     double* pd;
@@ -318,7 +321,7 @@ static void ion_cur(NrnThread* nt, Memb_list* ml, int type) {
     /* Must be called prior to other models which possibly also initialize
             concentrations based on their own states
     */
-    static void ion_init(NrnThread * nt, Memb_list * ml, int type) {
+    void nrn_init_ion(NrnThread * nt, Memb_list * ml, int type) {
         int _cntml_actual = ml->nodecount;
         int _iml;
         double* pd;
@@ -350,7 +353,7 @@ static void ion_cur(NrnThread* nt, Memb_list* ml, int type) {
             }
         }
 
-        static void ion_alloc() {
+void nrn_alloc_ion(double* p, Datum* ppvar, int _type)  {
             assert(0);
         }
 
@@ -372,7 +375,7 @@ static void ion_cur(NrnThread* nt, Memb_list* ml, int type) {
 
             if (secondorder == 2) {
                 for (tml = _nt->tml; tml; tml = tml->next)
-                    if (memb_func[tml->index].alloc == ion_alloc) {
+                    if (nrn_is_ion(tml->index)) {
                         ml = tml->ml;
                         _cntml_actual = ml->nodecount;
                         ni = ml->nodeindices;

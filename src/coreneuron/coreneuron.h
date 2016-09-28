@@ -26,24 +26,52 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifdef __cplusplus
+/***
+ * Includes all headers required to communicate and run all methods
+ * described in CoreNeuron, neurox, and mod2c C-generated mechanisms
+ * functions.
+**/
+
+#ifndef CORENEURON_H
+#define CORENEURON_H
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+
+#include "coreneuron/scopmath_core/newton_struct.h" //Newton Struct
+#include "coreneuron/nrnoc/membdef.h"  //static definitions
+#include "coreneuron/nrnoc/nrnoc_ml.h" //Memb_list and mechs info
+
+#if defined(__cplusplus)
 extern "C" {
 #endif
 
-extern  void capacitance_reg(void), _passive_reg(void),
-#if EXTRACELLULAR
-    extracell_reg_(void),
-#endif
-    _stim_reg(void), _hh_reg(void), _netstim_reg(void), _expsyn_reg(void);
+//TODO add external variables required by mechanisms
+//extern double celsius;
+//extern int nrn_ion_global_map_size;
+//extern double** nrn_ion_global_map;
 
-static void (*mechanism[])(void) = {/* type will start at 3 */
-                                    capacitance_reg , _passive_reg,
-#if EXTRACELLULAR
-                                    /* extracellular requires special handling and must be type 5 */
-                                    extracell_reg_,
+#ifdef EXPORT_MECHS_FUNCTIONS
+//from (auto-generated) mod_func_ptrs.c
+extern mod_f_t get_init_function(const char * sym);
+extern mod_f_t get_cur_function(const char * sym);
+extern mod_f_t get_state_function(const char * sym);
+extern mod_f_t get_BA_function(const char * sym, int BA_func_id);
 #endif
-                                    _stim_reg, _hh_reg, _expsyn_reg, _netstim_reg, 0};
 
-#ifdef __cplusplus
+//from nrnoc/capac.c
+extern void nrn_init_capacitance(struct NrnThread*, struct Memb_list*, int);;
+extern void nrn_cur_capacitance(struct NrnThread* _nt, struct Memb_list* ml, int type);
+extern void nrn_alloc_capacitance(double* data, Datum* pdata, int type);
+
+//from nrnoc/eion.c
+extern void nrn_init_ion(struct NrnThread*, struct Memb_list*, int);
+extern void nrn_cur_ion(struct NrnThread* _nt, struct Memb_list* ml, int type);
+extern void nrn_alloc_ion(double* data, Datum* pdata, int type);
+
+#if defined(__cplusplus)
 }
+#endif
+
 #endif
