@@ -1,0 +1,33 @@
+#!/bin/bash
+
+# keep neuron.yale.edu and github up to date with respect to bitbucket
+
+#crontab -e
+#0 */3 * * * /home/hines/neuron/repository_mirror/repository_mirror
+
+hgmastersite=https://bitbucket.org/nrnhines
+hgcopysite=ssh://hines@neuron.yale.edu//home/hg/neuron
+gitcopysite=https://github.com/nrnhines
+
+for repname in nrn iv ; do
+
+  hgmasterid=`hg identify $hgmastersite/$repname`
+  hgcopyid=`hg identify $hgcopysite/$repname`
+
+  if test "$hgmasterid" = "$hgcopyid" ; then
+    continue
+  fi
+
+  echo $repname $hgmasterid $hgcopyid
+
+  cd $HOME/neuron/nrn
+  hg pull
+  hg push $hgcopysite/$repname
+
+  cd $HOME/neuron/${repname}-git
+  $HOME/soft/fast-export/hg-fast-export.sh -r ../$repname
+  git reset HEAD
+  git checkout -- .
+  git push
+
+done
