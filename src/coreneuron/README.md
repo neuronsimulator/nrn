@@ -72,7 +72,14 @@ This will be fixed in next version.
 If you want enable use of ReportingLib for the soma reports, install ReportingLib first and enable it using -DENABLE_REPORTINGLIB (use same install path for ReportingLib as CoreNeuron).
 
 # Using Neurodamus / Additional MOD files
-If you are building CoreNeuron with Neurodamus, you have to set *ADDITIONAL_MECHPATH* and *ADDITIONAL_MECHS* as:
+
+If you have MOD files from the NEURON model, then you have to explicitly build those MOD files with CoreNEURON using *ADDITIONAL_MECHPATH* option:
+```bash
+cmake .. -DADDITIONAL_MECHPATH="/path/of/mod/files/directory/"
+```
+This directory should have only mod files compatible with CoreNEURON.
+
+For BPP Users: If you are building CoreNeuron with Neurodamus, you have to set *ADDITIONAL_MECHPATH* and *ADDITIONAL_MECHS* as:
 ```bash
 cmake .. -DADDITIONAL_MECHPATH="/path/of/neurodamus/lib/modlib" -DADDITIONAL_MECHS="/path/of/neurodamus/lib/modlib/coreneuron_modlist.txt"
 ```
@@ -89,7 +96,7 @@ We have tested the build process on the following platforms:
 
 * Blue Gene/Q: XLC/GCC
 * x86: Intel, PGI, GCC, Cray
-* OSX: Clang
+* OSX: Clang, GCC
 
 
 # Optimization Flags
