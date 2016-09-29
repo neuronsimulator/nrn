@@ -5,9 +5,7 @@ CoreNEURON is a simplified engine for the [NEURON](https://www.neuron.yale.edu/n
 
 # Features
 
-CoreNEURON supports the following subset of features provided by [NEURON](https://www.neuron.yale.edu/neuron/):
-* FixedStep method
-* Todo
+CoreNEURON supports limited features provided by [NEURON](https://www.neuron.yale.edu/neuron/). Contact Michael Hines for detailed information.
 
 # Requirements
 * [CMake 2.8.12+](https://cmake.org)
@@ -110,6 +108,8 @@ cmake .. -DCMAKE_CXX_FLAGS="-O3 -qtune=qp -qarch=qp -q64 -qhot=simd -qsmp -qthre
 * By default OpenMP threading is enabled. You can disable it with -DCORENEURON_OPENMP=OFF
 * By default CoreNEURON (And NEURON) uses the AoS (Array of Structs) memory layout for all data structures. For efficient memory access and vectorization you can use the SoA (Struct of Array) layout by adding "-DLAYOUT=0" to the C/C++ compiler flags (0 = SoA and 1 = AoS).
 * If the default compiler flags are not supported, try -DCMAKE_BUILD_TARGET=SOME_TARGET
+* Make sure to add "-DLAYOUT=0" to enabled SoA memory layout
+* NEURON wraps `exp` function with hoc_Exp; disable this using "-DDISABLE_HOC_EXP"
 
 
 # RUNNING SIMULATION:
@@ -187,7 +187,7 @@ If you have installed `clang-format`, you can reformat/reindent generated .c fil
 ```
 make formatbuild
 ```
-The `.clang-format` file in the source reposity is compatible with version 3.9.
+The `.clang-format` file in the source repository is compatible with version 3.9.
 
 ## License
 * See LICENSE.txt
