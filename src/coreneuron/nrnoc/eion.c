@@ -80,10 +80,10 @@ double nrn_nernst(), nrn_ghk();
 static int na_ion, k_ion, ca_ion; /* will get type for these special ions */
 
 int nrn_is_ion(int type) {
-    //Old: commented to remove dependency on memb_func and alloc function
-    //return (memb_func[type].alloc == ion_alloc);
-    return (type < nrn_ion_global_map_size     //type smaller than largest ion's
-         && nrn_ion_global_map[type] != NULL); //allocated ion charge variables
+    // Old: commented to remove dependency on memb_func and alloc function
+    // return (memb_func[type].alloc == ion_alloc);
+    return (type < nrn_ion_global_map_size         // type smaller than largest ion's
+            && nrn_ion_global_map[type] != NULL);  // allocated ion charge variables
 }
 
 int nrn_ion_global_map_size;
@@ -108,30 +108,31 @@ void ion_reg(const char* name, double valence) {
     sprintf(buf[3], "%so", name);
     sprintf(buf[5], "i%s", name);
     sprintf(buf[6], "di%s_dv_", name);
-        for (i=0; i<7; i++) {
-                mechanism[i+1] = buf[i];
-        }
-        mechanism[5] = (char *)0; /* buf[4] not used above */
+    for (i = 0; i < 7; i++) {
+        mechanism[i + 1] = buf[i];
+    }
+    mechanism[5] = (char*)0; /* buf[4] not used above */
     mechtype = nrn_get_mechtype(buf[0]);
     if (mechtype >= nrn_ion_global_map_size ||
-        nrn_ion_global_map[mechtype] == NULL) { //if hasn't yet been allocated
+        nrn_ion_global_map[mechtype] == NULL) {  // if hasn't yet been allocated
 
-        //allocates mem for ion in ion_map and sets null all non-ion types
+        // allocates mem for ion in ion_map and sets null all non-ion types
         if (nrn_ion_global_map_size <= mechtype) {
             int size = mechtype + 1;
-            nrn_ion_global_map = (double**)erealloc(nrn_ion_global_map, sizeof(double*)*size);
+            nrn_ion_global_map = (double**)erealloc(nrn_ion_global_map, sizeof(double*) * size);
 
-            for(i=nrn_ion_global_map_size; i<mechtype; i++) {
+            for (i = nrn_ion_global_map_size; i < mechtype; i++) {
                 nrn_ion_global_map[i] = NULL;
             }
             nrn_ion_global_map_size = mechtype + 1;
         }
-        nrn_ion_global_map[mechtype] = (double*)emalloc(3*sizeof(double));
+        nrn_ion_global_map[mechtype] = (double*)emalloc(3 * sizeof(double));
 
-        register_mech((const char**)mechanism, nrn_alloc_ion, nrn_cur_ion, (mod_f_t)0, (mod_f_t)0, (mod_f_t)nrn_init_ion, -1, 1);
+        register_mech((const char**)mechanism, nrn_alloc_ion, nrn_cur_ion, (mod_f_t)0, (mod_f_t)0,
+                      (mod_f_t)nrn_init_ion, -1, 1);
         mechtype = nrn_get_mechtype(mechanism[1]);
         _nrn_layout_reg(mechtype, LAYOUT);
-        hoc_register_prop_size(mechtype, nparm, 1 );
+        hoc_register_prop_size(mechtype, nparm, 1);
         hoc_register_dparam_semantics(mechtype, 0, "iontype");
         nrn_writes_conc(mechtype, 1);
 
@@ -278,8 +279,7 @@ ion_style("name_ion", [c_style, e_style, einit, eadvance, cinit])
 #define conci0 global_conci(type)
 #define conco0 global_conco(type)
 
-double nrn_nernst_coef(int type)
-{
+double nrn_nernst_coef(int type) {
     /* for computing jacobian element dconc'/dconc */
     return ktf / charge;
 }
@@ -299,103 +299,97 @@ void nrn_cur_ion(NrnThread* nt, Memb_list* ml, int type) {
     for (_iml = 0; _iml < _cntml_actual; ++_iml) {
         pd = ml->data + _iml * nparm;
         ppd = ml->pdata + _iml * 1;
-#endif
-#if LAYOUT == 0 /*SoA*/
-        int _cntml_padded = ml->_nodecount_padded;
-        pd = ml->data;
-        ppd = ml->pdata;
-        _PRAGMA_FOR_CUR_ACC_LOOP_
-        for (_iml = 0; _iml < _cntml_actual; ++_iml) {
-#endif
-#if LAYOUT > 1 /*AoSoA*/
+#elif LAYOUT == 0         /*SoA*/
+    int _cntml_padded = ml->_nodecount_padded;
+    pd = ml->data;
+    ppd = ml->pdata;
+    _PRAGMA_FOR_CUR_ACC_LOOP_
+    for (_iml = 0; _iml < _cntml_actual; ++_iml) {
+#else /* if LAYOUT > 1 */ /*AoSoA*/
 #error AoSoA not implemented.
 #endif
-            dcurdv = 0.;
-            cur = 0.;
-            if (iontype & 0100) {
-                erev = nrn_nernst(conci, conco, charge, celsius);
-            }
-        };
-    }
+        dcurdv = 0.;
+        cur = 0.;
+        if (iontype & 0100) {
+            erev = nrn_nernst(conci, conco, charge, celsius);
+        }
+    };
+}
 
-    /* Must be called prior to other models which possibly also initialize
-            concentrations based on their own states
-    */
-    void nrn_init_ion(NrnThread * nt, Memb_list * ml, int type) {
-        int _cntml_actual = ml->nodecount;
-        int _iml;
-        double* pd;
-        Datum* ppd;
-        (void)nt; /* unused */
+/* Must be called prior to other models which possibly also initialize
+        concentrations based on their own states
+*/
+void nrn_init_ion(NrnThread* nt, Memb_list* ml, int type) {
+    int _cntml_actual = ml->nodecount;
+    int _iml;
+    double* pd;
+    Datum* ppd;
+    (void)nt; /* unused */
 /*printf("ion_init %s\n", memb_func[type].sym->name);*/
 #if LAYOUT == 1 /*AoS*/
-        for (_iml = 0; _iml < _cntml_actual; ++_iml) {
-            pd = ml->data + _iml * nparm;
-            ppd = ml->pdata + _iml * 1;
-#endif
-#if LAYOUT == 0 /*SoA*/
-            int _cntml_padded = ml->_nodecount_padded;
-            pd = ml->data;
-            ppd = ml->pdata;
-            _PRAGMA_FOR_INIT_ACC_LOOP_
-            for (_iml = 0; _iml < _cntml_actual; ++_iml) {
-#endif
-#if LAYOUT > 1 /*AoSoA*/
+    for (_iml = 0; _iml < _cntml_actual; ++_iml) {
+        pd = ml->data + _iml * nparm;
+        ppd = ml->pdata + _iml * 1;
+#elif LAYOUT == 0         /*SoA*/
+    int _cntml_padded = ml->_nodecount_padded;
+    pd = ml->data;
+    ppd = ml->pdata;
+    _PRAGMA_FOR_INIT_ACC_LOOP_
+    for (_iml = 0; _iml < _cntml_actual; ++_iml) {
+#else /* if LAYOUT > 1 */ /*AoSoA*/
 #error AoSoA not implemented.
 #endif
-                if (iontype & 04) {
-                    conci = conci0;
-                    conco = conco0;
-                }
-                if (iontype & 040) {
-                    erev = nrn_nernst(conci, conco, charge, celsius);
-                }
-            }
+        if (iontype & 04) {
+            conci = conci0;
+            conco = conco0;
         }
-
-void nrn_alloc_ion(double* p, Datum* ppvar, int _type)  {
-            assert(0);
+        if (iontype & 040) {
+            erev = nrn_nernst(conci, conco, charge, celsius);
         }
+    }
+}
 
-        void second_order_cur(NrnThread * _nt) {
-            extern int secondorder;
-            NrnThreadMembList* tml;
-            Memb_list* ml;
-            int _iml, _cntml_actual;
+void nrn_alloc_ion(double* p, Datum* ppvar, int _type) {
+    assert(0);
+}
+
+void second_order_cur(NrnThread* _nt) {
+    extern int secondorder;
+    NrnThreadMembList* tml;
+    Memb_list* ml;
+    int _iml, _cntml_actual;
 #if LAYOUT == 0
-            int _cntml_padded;
+    int _cntml_padded;
 #endif
-            int* ni;
-            double* pd;
-            (void)_nt; /* unused */
+    int* ni;
+    double* pd;
+    (void)_nt; /* unused */
 #if defined(_OPENACC)
-            int stream_id = _nt->stream_id;
+    int stream_id = _nt->stream_id;
 #endif
-            double* _vec_rhs = _nt->_actual_rhs;
+    double* _vec_rhs = _nt->_actual_rhs;
 
-            if (secondorder == 2) {
-                for (tml = _nt->tml; tml; tml = tml->next)
-                    if (nrn_is_ion(tml->index)) {
-                        ml = tml->ml;
-                        _cntml_actual = ml->nodecount;
-                        ni = ml->nodeindices;
+    if (secondorder == 2) {
+        for (tml = _nt->tml; tml; tml = tml->next)
+            if (nrn_is_ion(tml->index)) {
+                ml = tml->ml;
+                _cntml_actual = ml->nodecount;
+                ni = ml->nodeindices;
 #if LAYOUT == 1 /*AoS*/
-                        for (_iml = 0; _iml < _cntml_actual; ++_iml) {
-                            pd = ml->data + _iml * nparm;
-#endif
-#if LAYOUT == 0 /*SoA*/
-                            _cntml_padded = ml->_nodecount_padded;
-                            pd = ml->data;
-                            _PRAGMA_FOR_SEC_ORDER_CUR_ACC_LOOP_
-                            for (_iml = 0; _iml < _cntml_actual; ++_iml) {
-#endif
-#if LAYOUT > 1 /*AoSoA*/
+                for (_iml = 0; _iml < _cntml_actual; ++_iml) {
+                    pd = ml->data + _iml * nparm;
+#elif LAYOUT == 0         /*SoA*/
+                _cntml_padded = ml->_nodecount_padded;
+                pd = ml->data;
+                _PRAGMA_FOR_SEC_ORDER_CUR_ACC_LOOP_
+                for (_iml = 0; _iml < _cntml_actual; ++_iml) {
+#else /* if LAYOUT > 1 */ /*AoSoA*/
 #error AoSoA not implemented.
 #endif
-                                cur += dcurdv * (_vec_rhs[ni[_iml]]);
-                            }
-                        }
-                    }
+                    cur += dcurdv * (_vec_rhs[ni[_iml]]);
+                }
             }
+    }
+}
 
 #endif

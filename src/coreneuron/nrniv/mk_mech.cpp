@@ -68,6 +68,14 @@ void mk_mech(const char* datpath) {
     sd_ptr fname = sdprintf(fnamebuf, sizeof(fnamebuf), "%s/%s", datpath, "bbcore_mech.dat");
     FILE* f;
     f = fopen(fname, "r");
+
+    if (f == NULL) {
+        fprintf(stderr, "Error: couldn't find bbcore_mech.dat file in the dataset directory \n");
+        fprintf(
+            stderr,
+            "       Make sure to pass full directory path of dataset using -d DIR or --datpath=DIR \n");
+    }
+
     nrn_assert(f);
     //  printf("reading %s\n", fname);
     int n = 0;
