@@ -202,7 +202,7 @@ void nrn_read_filesdat(int& ngrp, int*& grp, int multiple, int*& imult, const ch
     FILE* fp = fopen(filesdat, "r");
 
     if (!fp) {
-        nrnmpi_fatal_error("No input file with nrnthreads, exiting...");
+        nrn_fatal_error("No input file with nrnthreads, exiting...");
     }
 
     int iNumFiles = 0;
@@ -219,7 +219,7 @@ void nrn_read_filesdat(int& ngrp, int*& grp, int multiple, int*& imult, const ch
     }
 
     if (nrnmpi_numprocs > iNumFiles) {
-        nrnmpi_fatal_error("The number of CPUs cannot exceed the number of input files");
+        nrn_fatal_error("The number of CPUs cannot exceed the number of input files");
     }
 
     ngrp = 0;
@@ -550,7 +550,7 @@ void nrn_setup(cn_input_params& input_params, const char* filesdat, int byte_swa
     //   they are ngroup values of 0.
     int* imult = NULL;
 
-    double time = nrnmpi_wtime();
+    double time = nrn_wtime();
 
     maxgid = 0x7fffffff / nrn_setup_multiple;
     nrn_read_filesdat(ngroup, gidgroups, nrn_setup_multiple, imult, filesdat);
@@ -644,7 +644,7 @@ void nrn_setup(cn_input_params& input_params, const char* filesdat, int byte_swa
     delete[] gidgroups;
 
     if (nrnmpi_myid == 0) {
-        printf(" Nrn Setup Done (time: %g)\n", nrnmpi_wtime() - time);
+        printf(" Nrn Setup Done (time: %g)\n", nrn_wtime() - time);
     }
 }
 

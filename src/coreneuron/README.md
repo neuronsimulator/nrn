@@ -7,10 +7,10 @@ CoreNEURON is a simplified engine for the [NEURON](https://www.neuron.yale.edu/n
 
 CoreNEURON supports limited features provided by [NEURON](https://www.neuron.yale.edu/neuron/). Contact Michael Hines for detailed information.
 
-# Requirements
+# Dependencies
 * [CMake 2.8.12+](https://cmake.org)
 * [MOD2C](http://github.com/BlueBrain/mod2c)
-* [MPI 2.0+](http://mpich.org)
+* [MPI 2.0+](http://mpich.org) [Optional]
 * [PGI OpenACC Compiler >=16.3](https://www.pgroup.com/resources/accel.htm) [Optional, for GPU systems]
 
 # Installation
@@ -22,6 +22,13 @@ Set the appropriate MPI wrappers for the C and C++ compilers, e.g.:
 ```bash
 export CC=mpicc
 export CXX=mpicxx
+```
+
+If you don't have MPI, you can disable MPI dependency using CMake option *-DENABLE_MPI=OFF*:
+```bash
+export CC=gcc
+export CXX=g++
+cmake .. -DENABLE_MPI=OFF
 ```
 
 The workflow for building CoreNEURON is slightly different from that of NEURON, especially considering the use of **nrnivmodl**. Currently we do not provide **nrnivmodl** for CoreNEURON and hence the user needs to provide paths of mod file directories (semicolon separated) at the time of the build process using the *ADDITIONAL_MECHPATH* variable:
@@ -36,7 +43,7 @@ make install
 
 # Building with GPU support
 
-CoreNEURON has support for GPUs using OpenACC programming model when enabled with -DENABLE_OPENACC=ON.
+CoreNEURON has support for GPUs using OpenACC programming model when enabled with *-DENABLE_OPENACC=ON*.
 
 Here are the steps to compile with PGI compiler:
 
@@ -94,7 +101,7 @@ We have tested the build process on the following platforms:
 
 * Blue Gene/Q: XLC/GCC
 * x86: Intel, PGI, GCC, Cray
-* OSX: Clang, GCC
+* OS X: Clang, GCC
 
 
 # Optimization Flags

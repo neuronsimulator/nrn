@@ -76,10 +76,14 @@ void report_mem_usage(const char* message, bool all_ranks) {
     // current memory usage on this rank
     cur_mem = nrn_mallinfo();
 
-    /* @todo: avoid three all reduce class */
+/* @todo: avoid three all reduce class */
+#if NRNMPI
     mem_avg = nrnmpi_dbl_allreduce(cur_mem, 1) / nrnmpi_numprocs;
     mem_max = nrnmpi_dbl_allreduce(cur_mem, 2);
     mem_min = nrnmpi_dbl_allreduce(cur_mem, 3);
+#else
+    mem_avg = mem_max = mem_min = cur_mem;
+#endif
 
     // all ranks prints information if all_ranks is true
     if (all_ranks) {

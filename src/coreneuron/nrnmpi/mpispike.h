@@ -29,6 +29,8 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef nrnmpispike_h
 #define nrnmpispike_h
 
+#if NRNMPI
+
 #ifndef nrn_spikebuf_size
 #define nrn_spikebuf_size 0
 #endif
@@ -79,6 +81,9 @@ extern unsigned char* spfixin_ovfl_;
 extern NRNMPI_Spikebuf* spbufout_;
 extern NRNMPI_Spikebuf* spbufin_;
 #endif
+
+
+#endif // NRNMPI
 
 #if defined(__cplusplus)
 }

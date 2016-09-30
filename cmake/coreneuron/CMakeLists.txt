@@ -52,6 +52,7 @@ option(CORENEURON_OPENMP "Build the CORE NEURON with OpenMP implementation" ON)
 option(DISABLE_NRN_TIMEOUT "Disable nrn_timeout implementation" OFF)
 option(ENABLE_REPORTINGLIB "Enable use of ReportingLib for soma reports" OFF)
 option(EXPORT_MECHS_FUNCTIONS "Enable exporting of mod init, jacob, state, cur and BeforeAfter functions of mod-based mechanisms" OFF)
+option(ENABLE_MPI "Enable MPI-based execution" ON)
 
 ## mech / mod options
 set(ADDITIONAL_MECHPATH "" CACHE PATH "Search path for optional additional mechanism MOD files")
@@ -76,7 +77,14 @@ include(FindPkgConfig)
 include(CTest)
 
 #Find all dependencies
-find_package(MPI REQUIRED)
+if (ENABLE_MPI)
+    find_package(MPI REQUIRED)
+    add_definitions("-DNRNMPI=1")
+else()
+    message(STATUS "Use of MPI disabled by user-provided option")
+    add_definitions("-DNRNMPI=0")
+endif()
+
 find_package(mod2c 2.0.0  REQUIRED)
 find_package(Boost 1.41.0 QUIET COMPONENTS filesystem system atomic unit_test_framework)
 

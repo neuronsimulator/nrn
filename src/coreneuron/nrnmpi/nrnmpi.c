@@ -37,6 +37,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 
 #if NRNMPI
 #include <mpi.h>
+
 #define USE_HPM 0
 #if USE_HPM
 #include <libhpm.h>
@@ -58,10 +59,8 @@ extern void nrnmpi_checkbufleak();
 #endif
 
 static int nrnmpi_under_nrncontrol_;
-#endif
 
 void nrnmpi_init(int nrnmpi_under_nrncontrol, int* pargc, char*** pargv) {
-#if NRNMPI
     int i, b, flag;
     static int called = 0;
 
@@ -133,17 +132,6 @@ void nrnmpi_init(int nrnmpi_under_nrncontrol, int* pargc, char*** pargv) {
     if (nrnmpi_myid == 0)
         printf(" num_mpi=%d\n num_omp_thread=%d\n\n", nrnmpi_numprocs_world,
                nrnomp_get_numthreads());
-
-#endif /* NRNMPI */
-}
-
-double nrnmpi_wtime() {
-#if NRNMPI
-    if (nrnmpi_use) {
-        return MPI_Wtime();
-    }
-#endif
-    return 0.0;
 }
 
 void nrnmpi_finalize(void) {
@@ -157,7 +145,6 @@ void nrnmpi_finalize(void) {
 }
 
 void nrnmpi_terminate() {
-#if NRNMPI
     if (nrnmpi_use) {
 #if USE_HPM
         hpmTerminate(nrnmpi_myid_world);
@@ -170,47 +157,20 @@ void nrnmpi_terminate() {
         nrnmpi_checkbufleak();
 #endif
     }
-#endif /*NRNMPI*/
-}
-
-void nrnmpi_abort(int errcode) {
-#if NRNMPI
-    int flag;
-    MPI_Initialized(&flag);
-    if (flag) {
-        MPI_Abort(MPI_COMM_WORLD, errcode);
-    } else {
-        abort();
-    }
-#else
-    abort();
-#endif
-}
-
-void nrnmpi_fatal_error(const char* msg) {
-    if (nrnmpi_myid == 0) {
-        printf("%s\n", msg);
-    }
-
-    nrnmpi_abort(-1);
 }
 
 // check if appropriate threading level supported (i.e. MPI_THREAD_FUNNELED)
 void nrnmpi_check_threading_support() {
-#if NRNMPI
     int th = 0;
     if (nrnmpi_use) {
         MPI_Query_thread(&th);
         if (th < MPI_THREAD_FUNNELED) {
-            nrnmpi_fatal_error(
+            nrn_fatal_error(
                 "\n Current MPI library doesn't support MPI_THREAD_FUNNELED,\
                         \n Run without enabling multi-threading!");
         }
     }
-#endif
 }
-
-#if NRNMPI
 
 /* so src/nrnpython/inithoc.cpp does not have to include a c++ mpi.h */
 int nrnmpi_wrap_mpi_init(int* flag) {
@@ -218,3 +178,38 @@ int nrnmpi_wrap_mpi_init(int* flag) {
 }
 
 #endif
+
+// TODO nrn_wtime(), nrn_abort(int) and nrn_fatal_error() to be moved to tools
+
+double nrn_wtime() {
+#if NRNMPI
+    if (nrnmpi_use) {
+        return MPI_Wtime();
+    } else
+#endif
+    {
+        struct timeval time1;
+        gettimeofday(&time1, NULL);
+        return (time1.tv_sec + time1.tv_usec/1.e6);
+    }
+}
+
+void nrn_abort(int errcode) {
+#if NRNMPI
+    int flag;
+    MPI_Initialized(&flag);
+    if (flag) {
+        MPI_Abort(MPI_COMM_WORLD, errcode);
+    } else
+#endif
+    {
+        abort();
+    }
+}
+
+void nrn_fatal_error(const char* msg) {
+    if (nrnmpi_myid == 0) {
+        printf("%s\n", msg);
+    }
+    nrn_abort(-1);
+}

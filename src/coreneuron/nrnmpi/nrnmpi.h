@@ -42,12 +42,24 @@ extern int nrnmpi_myid;           /* rank in subworld */
 extern int nrnmpi_numprocs_bbs;   /* number of subworlds */
 extern int nrnmpi_myid_bbs;       /* rank in nrn_bbs_comm of rank 0 of a subworld */
 
+#if defined(__cplusplus)
+extern "C" {
+#endif
+
+void nrn_abort(int errcode);
+void nrn_fatal_error(const char* msg);
+double nrn_wtime();
+
+#if defined(__cplusplus)
+}
+#endif /*c++*/
+
+#if NRNMPI
+
 typedef struct {
     int gid;
     double spiketime;
 } NRNMPI_Spike;
-
-#if NRNMPI
 
 #if defined(__cplusplus)
 extern "C" {

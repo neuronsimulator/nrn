@@ -62,7 +62,7 @@ printf("timed_out told=%g t=%g\n", told, t);
         if (nrntimeout_call) {
             (*nrntimeout_call)();
         }
-        nrnmpi_abort(0);
+        nrn_abort(0);
     }
     told = nrn_threads->_t;
 }
@@ -80,7 +80,7 @@ printf("nrn_timeout %d\n", seconds);
         act.sa_flags = SA_RESTART;
         if (sigaction(SIGALRM, &act, &oact)) {
             printf("sigaction failed\n");
-            nrnmpi_abort(0);
+            nrn_abort(0);
         }
     } else {
         sigaction(SIGALRM, &oact, (struct sigaction*)0);
@@ -91,7 +91,7 @@ printf("nrn_timeout %d\n", seconds);
     value.it_value.tv_usec = 0;
     if (setitimer(ITIMER_REAL, &value, (struct itimerval*)0)) {
         printf("setitimer failed\n");
-        nrnmpi_abort(0);
+        nrn_abort(0);
     }
 }
 

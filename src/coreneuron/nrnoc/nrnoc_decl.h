@@ -71,6 +71,10 @@ extern int nrn_have_gaps;
 extern void nrnthread_v_transfer(NrnThread*);
 extern void nrnmpi_v_transfer();
 
+extern void nrn_fatal_error(const char* msg);
+extern void nrn_abort(int errcode);
+extern double nrn_wtime(void);
+
 #if defined(__cplusplus)
 }
 #endif

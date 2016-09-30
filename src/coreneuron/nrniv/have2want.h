@@ -55,9 +55,12 @@ static int* cnt2displ(int* cnt) {
 
 static int* srccnt2destcnt(int* srccnt) {
     int* destcnt = new int[nrnmpi_numprocs];
+#if NRNMPI
     if (nrnmpi_numprocs > 1) {
         nrnmpi_int_alltoall(srccnt, destcnt, 1);
-    } else {
+    } else
+#endif
+    {
         for (int i = 0; i < nrnmpi_numprocs; ++i) {
             destcnt[i] = srccnt[i];
         }
@@ -100,9 +103,12 @@ static void rendezvous_rank_get(HAVEWANT_t* data,
         sdata[sdispl[r] + scnt[r]] = data[i];
         ++scnt[r];
     }
+#if NRNMPI
     if (nhost > 1) {
         HAVEWANT_alltoallv(sdata, scnt, sdispl, rdata, rcnt, rdispl);
-    } else {
+    } else
+#endif
+    {
         for (int i = 0; i < sdispl[nhost]; ++i) {
             rdata[i] = sdata[i];
         }
@@ -184,10 +190,13 @@ static void have_to_want(HAVEWANT_t* have,
     // That is, each item defines the rank from which information associated
     // with that key is coming from
     int* want_s_ownerranks = new int[want_s_displ[nhost]];
+#if NRNMPI
     if (nhost > 1) {
         nrnmpi_int_alltoallv(want_r_ownerranks, want_r_cnt, want_r_displ, want_s_ownerranks,
                              want_s_cnt, want_s_displ);
-    } else {
+    } else
+#endif
+    {
         for (int i = 0; i < want_r_displ[nhost]; ++i) {
             want_s_ownerranks[i] = want_r_ownerranks[i];
         }
@@ -230,10 +239,13 @@ static void have_to_want(HAVEWANT_t* have,
     want_r_cnt = srccnt2destcnt(want_s_cnt);
     want_r_displ = cnt2displ(want_r_cnt);
     want_r_data = new HAVEWANT_t[want_r_displ[nhost]];
+#if NRNMPI
     if (nhost > 1) {
         HAVEWANT_alltoallv(want_s_data, want_s_cnt, want_s_displ, want_r_data, want_r_cnt,
                            want_r_displ);
-    } else {
+    } else
+#endif
+    {
         for (int i = 0; i < want_s_displ[nhost]; ++i) {
             want_r_data[i] = want_s_data[i];
         }

@@ -82,13 +82,10 @@ extern int nrnmpi_bbssendrecv(int dest, int tag, bbsmpibuf* s, bbsmpibuf* r);
 /* from nrnmpi.c */
 extern void nrnmpi_init(int nrnmpi_under_nrncontrol, int* pargc, char*** pargv);
 extern int nrnmpi_wrap_mpi_init(int* flag);
-extern double nrnmpi_wtime(void);
 extern void nrnmpi_finalize(void);
 extern void nrnmpi_terminate();
-extern void nrnmpi_abort(int errcode);
 extern void nrnmpi_subworld_size(int n);
 extern int nrn_wrap_mpi_init(int* flag);
-extern void nrnmpi_fatal_error(const char* msg);
 extern void nrnmpi_check_threading_support();
 
 /* from mpispike.c */

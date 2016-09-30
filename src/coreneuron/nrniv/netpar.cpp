@@ -33,6 +33,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/nrnconf.h"
 #include "coreneuron/nrnoc/multicore.h"
 #include "coreneuron/nrnmpi/nrnmpi.h"
+#include "coreneuron/nrnoc/nrnoc_decl.h"
 
 class PreSyn;
 class InputPreSyn;
@@ -117,8 +118,8 @@ static MUTDEC
         spbufout_ = (NRNMPI_Spikebuf*)emalloc(sizeof(NRNMPI_Spikebuf));
         spbufin_ = (NRNMPI_Spikebuf*)emalloc(nrnmpi_numprocs * sizeof(NRNMPI_Spikebuf));
 #endif
-#endif
     }
+#endif
 }
 
 NetParEvent::NetParEvent() {
@@ -350,12 +351,12 @@ void nrn_spike_exchange(NrnThread* nt) {
 #if nrn_spikebuf_size > 0
     spbufout_->nspike = nout_;
 #endif
-    wt = nrnmpi_wtime();
+    wt = nrn_wtime();
 
     n = nrnmpi_spike_exchange();
 
-    wt_ = nrnmpi_wtime() - wt;
-    wt = nrnmpi_wtime();
+    wt_ = nrn_wtime() - wt;
+    wt = nrn_wtime();
 #if TBUFSIZE
     tbuf_[itbuf_++] = (unsigned long)nout_;
     tbuf_[itbuf_++] = (unsigned long)n;
@@ -426,7 +427,7 @@ void nrn_spike_exchange(NrnThread* nt) {
 #endif
         }
     }
-    wt1_ = nrnmpi_wtime() - wt;
+    wt1_ = nrn_wtime() - wt;
 }
 
 void nrn_spike_exchange_compressed(NrnThread* nt) {
@@ -449,10 +450,10 @@ void nrn_spike_exchange_compressed(NrnThread* nt) {
     spfixout_[1] = (unsigned char)(nout_ & 0xff);
     spfixout_[0] = (unsigned char)(nout_ >> 8);
 
-    wt = nrnmpi_wtime();
+    wt = nrn_wtime();
     n = nrnmpi_spike_exchange_compressed();
-    wt_ = nrnmpi_wtime() - wt;
-    wt = nrnmpi_wtime();
+    wt_ = nrn_wtime() - wt;
+    wt = nrn_wtime();
 #if TBUFSIZE
     tbuf_[itbuf_++] = (unsigned long)nout_;
     tbuf_[itbuf_++] = (unsigned long)n;
@@ -576,7 +577,7 @@ void nrn_spike_exchange_compressed(NrnThread* nt) {
         }
     }
     t_exchange_ = nrn_threads->_t;
-    wt1_ = nrnmpi_wtime() - wt;
+    wt1_ = nrn_wtime() - wt;
 }
 
 static void mk_localgid_rep() {
@@ -695,7 +696,7 @@ int nrn_set_timeout(int timeout) {
 }
 
 void BBS_netpar_solve(double tstop) {
-    double time = nrnmpi_wtime();
+    double time = nrn_wtime();
 
 #if NRNMPI
     double mt, md;
@@ -717,15 +718,15 @@ void BBS_netpar_solve(double tstop) {
     if (npe_) {
         npe_[0].wx_ = npe_[0].ws_ = 0.;
     };
-// printf("%d netpar_solve exit t=%g tstop=%g mindelay_=%g\n",nrnmpi_myid, t, tstop, mindelay_);
+    // printf("%d netpar_solve exit t=%g tstop=%g mindelay_=%g\n",nrnmpi_myid, t, tstop, mindelay_);
+    nrnmpi_barrier();
 #else  // not NRNMPI
     ncs2nrn_integrate(tstop);
 #endif
     tstopunset;
 
-    nrnmpi_barrier();
     if (nrnmpi_myid == 0) {
-        printf("\nSolver Time : %g\n", nrnmpi_wtime() - time);
+        printf("\nSolver Time : %g\n", nrn_wtime() - time);
     }
 }
 

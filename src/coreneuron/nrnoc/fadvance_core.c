@@ -68,9 +68,11 @@ void nrn_fixed_step_minimal() { /* not so minimal anymore with gap junctions */
         nrnmpi_v_transfer();
         nrn_multithread_job(nrn_fixed_step_lastpart);
     }
+#if NRNMPI
     if (nrn_threads[0]._stop_stepping) {
         nrn_spike_exchange(nrn_threads);
     }
+#endif
     t = nrn_threads[0]._t;
 }
 
@@ -90,7 +92,9 @@ void nrn_fixed_step_group_minimal(int n) {
     step_group_end = 0;
     while (step_group_end < step_group_n) {
         nrn_multithread_job(nrn_fixed_step_group_thread);
+#if NRNMPI
         nrn_spike_exchange(nrn_threads);
+#endif
 
 #ifdef ENABLE_REPORTING
         nrn_flush_reports(nrn_threads[0]._t);

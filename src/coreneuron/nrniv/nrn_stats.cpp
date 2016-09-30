@@ -148,7 +148,12 @@ void report_cell_stats(void) {
     nrnmpi_long_allreduce_vec(qdiff, gqdiff_min, NUM_EVENT_TYPES, 0);
 #endif
 
+#if NRNMPI
     nrnmpi_long_allreduce_vec(stat_array, gstat_array, NUM_STATS, 1);
+#else
+    assert(sizeof(stat_array) == sizeof(gstat_array));
+    memcpy(gstat_array, stat_array, sizeof(stat_array));
+#endif
 
     if (nrnmpi_myid == 0) {
         printf("\n\n Simulation Statistics\n");

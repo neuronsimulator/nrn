@@ -74,7 +74,9 @@ void nrn_init_and_load_data(int argc, char** argv, cn_input_params& input_params
 #endif
 
     // mpi initialisation
+#if NRNMPI
     nrnmpi_init(1, &argc, &argv);
+#endif
 
     // memory footprint after mpi initialisation
     report_mem_usage("After MPI_Init");
@@ -102,9 +104,11 @@ void nrn_init_and_load_data(int argc, char** argv, cn_input_params& input_params
 #endif
 
     // if multi-threading enabled, make sure mpi library supports it
+#if NRNMPI
     if (input_params.threading) {
         nrnmpi_check_threading_support();
     }
+#endif
 
     // full path of files.dat file
     char filesdat_buf[1024];
@@ -292,7 +296,9 @@ int main1(int argc, char** argv, char** env) {
     nrn_cleanup();
 
     // mpi finalize
+#if NRNMPI
     nrnmpi_finalize();
+#endif
 
     finalize_data_on_device();
 

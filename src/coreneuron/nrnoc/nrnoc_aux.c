@@ -46,7 +46,9 @@ char* pnt_name(Point_process* pnt) {
 }
 
 void nrn_exit(int err) {
+#if NRNMPI
     nrnmpi_finalize();
+#endif
     exit(err);
 }
 

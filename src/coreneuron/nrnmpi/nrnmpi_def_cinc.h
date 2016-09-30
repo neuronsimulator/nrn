@@ -37,8 +37,11 @@ int nrnmpi_myid_bbs = 0;
 int nrnmpi_nout_;
 int* nrnmpi_nin_;
 int nrnmpi_i_capacity_;
+
+#if NRNMPI
 NRNMPI_Spike* nrnmpi_spikeout_;
 NRNMPI_Spike* nrnmpi_spikein_;
+#endif
 
 int nrnmpi_localgid_size_;
 int nrnmpi_ag_send_size_;
