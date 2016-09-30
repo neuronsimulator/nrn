@@ -51,6 +51,7 @@ option(CORENEURON_MAIN "Build the CORE NEURON main" ON)
 option(CORENEURON_OPENMP "Build the CORE NEURON with OpenMP implementation" ON)
 option(DISABLE_NRN_TIMEOUT "Disable nrn_timeout implementation" OFF)
 option(ENABLE_REPORTINGLIB "Enable use of ReportingLib for soma reports" OFF)
+option(EXPORT_MECHS_FUNCTIONS "Enable exporting of mod init, jacob, state, cur and BeforeAfter functions of mod-based mechanisms" OFF)
 
 ## mech / mod options
 set(ADDITIONAL_MECHPATH "" CACHE PATH "Search path for optional additional mechanism MOD files")
@@ -59,7 +60,6 @@ set(ADDITIONAL_MECHS "" CACHE FILEPATH "File containing list of additional mecha
 # test compilations
 option(UNIT_TESTS "Enable unit tests compilation and execution" ON)
 option(FUNCTIONAL_TESTS "Enable functional tests compilation and execution" ON)
-
 
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/CMake
       ${PROJECT_SOURCE_DIR}/CMake/portability
@@ -172,7 +172,11 @@ add_definitions(-DCORENEURON_BUILD)
 
 if(DISABLE_NRN_TIMEOUT)
     add_definitions("-DDISABLE_TIMEOUT")
-endif(DISABLE_NRN_TIMEOUT)
+endif()
+
+if(EXPORT_MECHS_FUNCTIONS)
+    add_definitions("-DEXPORT_MECHS_FUNCTIONS")
+endif()
 
 # Core library
 add_subdirectory(coreneuron)

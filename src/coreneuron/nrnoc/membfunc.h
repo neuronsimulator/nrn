@@ -134,7 +134,7 @@ extern void hoc_register_net_send_buffering(int);
 extern int net_buf_send_cnt_;
 extern int* net_buf_send_type_;
 
-extern void nrn_cap_jacob(struct NrnThread*, Memb_list*);
+extern void nrn_jacob_capacitance(struct NrnThread*, Memb_list*, int);
 extern void nrn_writes_conc(int, int);
 #if defined(_OPENACC)
 #pragma acc routine seq
