@@ -26,6 +26,7 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include <stdlib.h>
 #include "coreneuron/nrnconf.h"
 #include "coreneuron/nrnoc/nrnpthread.h"
 #include "coreneuron/nrnoc/multicore.h"
@@ -82,33 +83,6 @@ static int nrn_thread_parallel_;
 static int table_check_cnt_;
 static ThreadDatum* table_check_;
 
-/* linux specfic for performance testing */
-/* eventually will be removed */
-#define BENCHMARKING 0
-#if BENCHMARKING
-/* for rdtscll() */
-#include <asm/msr.h>
-#define BENCHDECLARE unsigned long t1;
-#define BENCHBEGIN(arg)               \
-    if (t_[arg] < t1_[arg] + BSIZE) { \
-        rdtscl(t1);                   \
-        *(t_[arg]++) = t1;            \
-    }
-#define BENCHADD(arg) BENCHBEGIN(arg)
-#define WAIT wait_for_workers_timeit
-#define CPU_MHZ 3192
-#define BSIZE 200000
-#define BS 10
-static unsigned long bcnt_, bcnt1_;
-static unsigned long t1_[BS][BSIZE], *t_[BS];
-#else
-#define BENCHDECLARE    /**/
-#define BENCHBEGIN(arg) /**/
-#define BENCHADD(arg)   /**/
-#define WAIT wait_for_workers
-#define BS 0
-#endif
-
 #if 0 && USE_PTHREAD
 static void* nulljob(NrnThread* nt) {
 	(void)nt; /* unused */
@@ -121,118 +95,6 @@ int nrn_inthread_;
 
 #include <pthread.h>
 //#include <sched.h> /* for sched_setaffinity */
-
-/* abort if using threads and a call to malloc is unprotected */
-#define use_malloc_hook 0
-#if use_malloc_hook
-#include <malloc.h>
-
-static int nrn_malloc_protected_;
-static void my_init_hook();
-static void* (*old_malloc_hook)(size_t, const void*);
-static void* (*old_memalign_hook)(size_t, size_t, const void*);
-static void* (*old_realloc_hook)(void*, size_t, const void*);
-static void (*old_free_hook)(void*, const void*);
-static void* my_malloc_hook(size_t, const void*);
-static void* my_memalign_hook(size_t, size_t, const void*);
-static void* my_realloc_hook(void*, size_t, const void*);
-static void my_free_hook(void*, const void*);
-void (*__malloc_initialize_hook)(void) = my_init_hook;
-
-static void* my_malloc_hook(size_t size, const void* caller) {
-    void* result;
-    if (nrn_inthread_ && !nrn_malloc_protected_) {
-        abort();
-    }
-    __malloc_hook = old_malloc_hook;
-    __memalign_hook = old_memalign_hook;
-    __realloc_hook = old_realloc_hook;
-    __free_hook = old_free_hook;
-    result = malloc(size);
-    old_malloc_hook = __malloc_hook;
-    old_memalign_hook = __memalign_hook;
-    old_realloc_hook = __realloc_hook;
-    old_free_hook = __free_hook;
-    __malloc_hook = my_malloc_hook;
-    __memalign_hook = my_memalign_hook;
-    __realloc_hook = my_realloc_hook;
-    __free_hook = my_free_hook;
-    return result;
-}
-static void* my_memalign_hook(size_t alignment, size_t size, const void* caller) {
-    void* result;
-    if (nrn_inthread_ && !nrn_malloc_protected_) {
-        abort();
-    }
-    __malloc_hook = old_malloc_hook;
-    __memalign_hook = old_memalign_hook;
-    __realloc_hook = old_realloc_hook;
-    __free_hook = old_free_hook;
-    result = memalign(alignment, size);
-    old_malloc_hook = __malloc_hook;
-    old_memalign_hook = __memalign_hook;
-    old_realloc_hook = __realloc_hook;
-    old_free_hook = __free_hook;
-    __malloc_hook = my_malloc_hook;
-    __memalign_hook = my_memalign_hook;
-    __realloc_hook = my_realloc_hook;
-    __free_hook = my_free_hook;
-    return result;
-}
-static void* my_realloc_hook(void* ptr, size_t size, const void* caller) {
-    void* result;
-    if (nrn_inthread_ && !nrn_malloc_protected_) {
-        abort();
-    }
-    __malloc_hook = old_malloc_hook;
-    __memalign_hook = old_memalign_hook;
-    __realloc_hook = old_realloc_hook;
-    __free_hook = old_free_hook;
-    result = realloc(ptr, size);
-    old_malloc_hook = __malloc_hook;
-    old_memalign_hook = __memalign_hook;
-    old_realloc_hook = __realloc_hook;
-    old_free_hook = __free_hook;
-    __malloc_hook = my_malloc_hook;
-    __memalign_hook = my_memalign_hook;
-    __realloc_hook = my_realloc_hook;
-    __free_hook = my_free_hook;
-    return result;
-}
-static void my_free_hook(void* ptr, const void* caller) {
-    if (nrn_inthread_ && !nrn_malloc_protected_) {
-        abort();
-    }
-    __malloc_hook = old_malloc_hook;
-    __memalign_hook = old_memalign_hook;
-    __realloc_hook = old_realloc_hook;
-    __free_hook = old_free_hook;
-    free(ptr);
-    old_malloc_hook = __malloc_hook;
-    old_memalign_hook = __memalign_hook;
-    old_realloc_hook = __realloc_hook;
-    old_free_hook = __free_hook;
-    __malloc_hook = my_malloc_hook;
-    __memalign_hook = my_memalign_hook;
-    __realloc_hook = my_realloc_hook;
-    __free_hook = my_free_hook;
-}
-static void my_init_hook() {
-    static int installed = 0;
-    if (installed) {
-        return;
-    }
-    installed = 1;
-    old_malloc_hook = __malloc_hook;
-    __malloc_hook = my_malloc_hook;
-    old_memalign_hook = __memalign_hook;
-    __memalign_hook = my_memalign_hook;
-    old_realloc_hook = __realloc_hook;
-    __realloc_hook = my_realloc_hook;
-    old_free_hook = __free_hook;
-    __free_hook = my_free_hook;
-}
-#endif
 
 static int interpreter_locked;
 static pthread_mutex_t interpreter_lock_;
@@ -266,6 +128,7 @@ typedef volatile struct {
 } slave_conf_t;
 
 static pthread_t* slave_threads;
+
 #if PERMANENT
 static pthread_cond_t* cond;
 static pthread_mutex_t* mut;
@@ -297,15 +160,6 @@ static void wait_for_workers() {
     }
 }
 
-#if BENCHMARKING
-static void wait_for_workers_timeit() {
-    BENCHDECLARE
-    BENCHBEGIN(BS - 2)
-    wait_for_workers();
-    BENCHADD(BS - 1)
-}
-#endif
-
 static void send_job_to_slave(int i, void* (*job)(NrnThread*)) {
 #if PERMANENT
     pthread_mutex_lock(mut + i);
@@ -323,15 +177,6 @@ static void* slave_main(void* arg) {
     slave_conf_t* my_wc = (slave_conf_t*)arg;
     pthread_mutex_t* my_mut = mut + my_wc->thread_id;
     pthread_cond_t* my_cond = cond + my_wc->thread_id;
-    BENCHDECLARE
-#if BENCHMARKING
-    unsigned long* t_[BS];
-    int a1, a2;
-    a1 = my_wc->thread_id;
-    a2 = my_wc->thread_id + nrn_nthread;
-    t_[a1] = t1_[a1];
-    t_[a2] = t1_[a2];
-#endif
 
     for (;;) {
         if (busywait_) {
@@ -339,9 +184,7 @@ static void* slave_main(void* arg) {
                 ;
             }
             if (my_wc->flag == 1) {
-                BENCHBEGIN(a1)
                 (*my_wc->job)(nrn_threads + my_wc->thread_id);
-                BENCHADD(a2)
             } else {
                 return (void*)0;
             }
@@ -356,9 +199,7 @@ static void* slave_main(void* arg) {
             pthread_mutex_lock(my_mut);
             if (my_wc->flag == 1) {
                 pthread_mutex_unlock(my_mut);
-                BENCHBEGIN(a1)
                 (*my_wc->job)(nrn_threads + my_wc->thread_id);
-                BENCHADD(a2)
             } else {
                 pthread_mutex_unlock(my_mut);
                 return (void*)0;
@@ -464,50 +305,17 @@ static void threads_free_pthread() {
 }
 #endif /* !USE_PTHREAD */
 
-void nrn_thread_stat() {
-#if BENCHMARKING
-    FILE* f;
-    long i, j, n;
-    char buf[50];
-    sprintf(buf, "bench.%d.dat", nrnmpi_myid);
-    f = fopen(buf, "w");
-    n = (t_[0] - t1_[0]);
-    for (i = 1; i < nrn_nthread; ++i) {
-        t_[i] = t1_[i] + n;
-        t_[i + nrn_nthread] = t1_[i + nrn_nthread] + n;
-    }
-    n = 0;
-    for (i = 0; i < BS; ++i) {
-        n += t_[i] - t1_[i];
-    }
-    fprintf(f, "%ld\n", n);
-    n = 0;
-    for (j = 0; j < BS; ++j) {
-        n = t_[j] - t1_[j];
-        for (i = 0; i < n; ++i) {
-            fprintf(f, "%ld %d\n", t1_[j][i], j * nrnmpi_numprocs + nrnmpi_myid);
-        }
-    }
-    fclose(f);
-#endif /*BENCHMARKING*/
-}
-
 void nrn_threads_create(int n, int parallel) {
     int i, j;
     NrnThread* nt;
     if (nrn_nthread != n) {
-/*printf("sizeof(NrnThread)=%d   sizeof(Memb_list)=%d\n", sizeof(NrnThread), sizeof(Memb_list));*/
-#if BENCHMARKING
-#endif
+      /*printf("sizeof(NrnThread)=%d   sizeof(Memb_list)=%d\n", sizeof(NrnThread), sizeof(Memb_list));*/
+
         nrn_threads = (NrnThread*)0;
         nrn_nthread = n;
         if (n > 0) {
             CACHELINE_ALLOC(nrn_threads, NrnThread, n);
-#if BENCHMARKING
-            for (i = 0; i < BS; ++i) {
-                t_[i] = t1_[i];
-            }
-#endif
+
             for (i = 0; i < n; ++i) {
                 nt = nrn_threads + i;
                 nt->_t = 0.;
@@ -570,7 +378,7 @@ void nrn_threads_create(int n, int parallel) {
 void nrn_threads_free() {
     if (nrn_nthread) {
         threads_free_pthread();
-        free((char*)nrn_threads);
+        free((void*)nrn_threads);
         nrn_threads = 0;
         nrn_nthread = 0;
     }
@@ -644,15 +452,12 @@ void nrn_multithread_job(void* (*job)(NrnThread*)) {
 
 /* old implementation */
 #if USE_PTHREAD
-    BENCHDECLARE
     if (nrn_thread_parallel_) {
         nrn_inthread_ = 1;
         for (i = 1; i < nrn_nthread; ++i) {
             send_job_to_slave(i, job);
         }
-        BENCHBEGIN(0)
         (*job)(nrn_threads);
-        BENCHADD(nrn_nthread)
         WAIT();
         nrn_inthread_ = 0;
     } else { /* sequential */
@@ -660,13 +465,9 @@ void nrn_multithread_job(void* (*job)(NrnThread*)) {
     {
 #endif
         for (i = 1; i < nrn_nthread; ++i) {
-            BENCHBEGIN(i)
             (*job)(nrn_threads + i);
-            BENCHADD(i + nrn_nthread)
         }
-        BENCHBEGIN(0)
         (*job)(nrn_threads);
-        BENCHADD(nrn_nthread)
     }
 #endif
 }
