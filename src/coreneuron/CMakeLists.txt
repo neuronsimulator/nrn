@@ -210,10 +210,12 @@ set(coreneuron_all_c_files ${coreneuron_all_c_files} ${GENERATED_MECH_C_FILES})
 
 #to indent generated c/cpp files
 if(CLANG_FORMAT_FOUND)
-    add_custom_target(formatbuild COMMAND ${CMAKE_COMMAND}
-        -DSOURCE_FILES:STRING="${GENERATED_MECH_C_FILES}"
-        -DCLANG_FORMAT_EXECUTABLE=${CLANG_FORMAT_EXECUTABLE}
-        -P "${PROJECT_SOURCE_DIR}/CMake/ClangFormatUtils.cmake"
+    add_custom_target(formatbuild
+        COMMAND ${CMAKE_COMMAND}
+            -DSOURCE_FILES:STRING="${GENERATED_MECH_C_FILES}"
+            -DCLANG_FORMAT_EXECUTABLE=${CLANG_FORMAT_EXECUTABLE}
+            -P "${PROJECT_SOURCE_DIR}/CMake/ClangFormatUtils.cmake"
+        DEPENDS ${GENERATED_MECH_C_FILES}
         )
 endif()
 
