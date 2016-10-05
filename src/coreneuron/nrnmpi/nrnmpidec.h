@@ -44,12 +44,12 @@ extern "C" {
 
 /* from bbsmpipack.c */
 typedef struct bbsmpibuf {
-	char* buf;
-	int size;
-	int pkposition;
-	int upkpos;
-	int keypos;
-	int refcount;
+    char* buf;
+    int size;
+    int pkposition;
+    int upkpos;
+    int keypos;
+    int refcount;
 } bbsmpibuf;
 
 extern bbsmpibuf* nrnmpi_newbuf(int size);
@@ -82,13 +82,10 @@ extern int nrnmpi_bbssendrecv(int dest, int tag, bbsmpibuf* s, bbsmpibuf* r);
 /* from nrnmpi.c */
 extern void nrnmpi_init(int nrnmpi_under_nrncontrol, int* pargc, char*** pargv);
 extern int nrnmpi_wrap_mpi_init(int* flag);
-extern double nrnmpi_wtime(void);
 extern void nrnmpi_finalize(void);
 extern void nrnmpi_terminate();
-extern void nrnmpi_abort(int errcode);
 extern void nrnmpi_subworld_size(int n);
 extern int nrn_wrap_mpi_init(int* flag);
-extern void nrnmpi_fatal_error(const char *msg);
 extern void nrnmpi_check_threading_support();
 
 /* from mpispike.c */
@@ -101,9 +98,15 @@ extern void nrnmpi_int_gather(int* s, int* r, int cnt, int root);
 extern void nrnmpi_int_gatherv(int* s, int scnt, int* r, int* rcnt, int* rdispl, int root);
 extern void nrnmpi_int_allgather(int* s, int* r, int n);
 extern void nrnmpi_int_allgatherv(int* s, int* r, int* n, int* dspl);
+extern void nrnmpi_int_alltoall(int* s, int* r, int n);
 extern void nrnmpi_int_alltoallv(int* s, int* scnt, int* sdispl, int* r, int* rcnt, int* rdispl);
 extern void nrnmpi_dbl_allgatherv(double* s, double* r, int* n, int* dspl);
-extern void nrnmpi_dbl_alltoallv(double* s, int* scnt, int* sdispl, double* r, int* rcnt, int* rdispl);
+extern void nrnmpi_dbl_alltoallv(double* s,
+                                 int* scnt,
+                                 int* sdispl,
+                                 double* r,
+                                 int* rcnt,
+                                 int* rdispl);
 extern void nrnmpi_char_alltoallv(char* s, int* scnt, int* sdispl, char* r, int* rcnt, int* rdispl);
 extern void nrnmpi_dbl_broadcast(double* buf, int cnt, int root);
 extern void nrnmpi_int_broadcast(int* buf, int cnt, int root);

@@ -27,7 +27,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 /**
- * @file memory_utils.c
+ * @file memory_utils.cpp
  * @date 25th Oct 2014
  *
  * @brief Provides functionality to report current memory usage
@@ -51,51 +51,47 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include <malloc.h>
 #endif
 
-
-double nrn_mallinfo( void )
-{
-  double mbs = -1.0; // -ve mem usage if mallinfo is not supported
-
+double nrn_mallinfo(void) {
+    double mbs = -1.0;  // -ve mem usage if mallinfo is not supported
 
 // On BG-Q, Use kernel/memory.h to get heap statistics
 #ifdef HAVE_MEMORY_H
-  uint64_t heap = 0;
-  Kernel_GetMemorySize(KERNEL_MEMSIZE_HEAP, &heap);
-  mbs = heap / (1024.0 * 1024.0);
-// if malloc.h available, collect information from mallinfo  
+    uint64_t heap = 0;
+    Kernel_GetMemorySize(KERNEL_MEMSIZE_HEAP, &heap);
+    mbs = heap / (1024.0 * 1024.0);
+// if malloc.h available, collect information from mallinfo
 #elif defined HAVE_MALLOC_H
-  struct mallinfo m;
-  
-  m =  mallinfo();
-  mbs = ( m.hblkhd + m.uordblks ) /  (1024.0 * 1024.0);
+    struct mallinfo m;
+
+    m = mallinfo();
+    mbs = (m.hblkhd + m.uordblks) / (1024.0 * 1024.0);
 #endif
-  
-  return mbs;
+
+    return mbs;
 }
 
+void report_mem_usage(const char* message, bool all_ranks) {
+    double cur_mem, mem_max, mem_min, mem_avg;  // min, max, avg memory
 
-void report_mem_usage( const char *message, bool all_ranks )
-{
-  double cur_mem, mem_max, mem_min, mem_avg; //min, max, avg memory 
-  
-  // current memory usage on this rank
-  cur_mem = nrn_mallinfo();
-  
-  /* @todo: avoid three all reduce class */
-  mem_avg = nrnmpi_dbl_allreduce( cur_mem, 1 ) / nrnmpi_numprocs;
-  mem_max = nrnmpi_dbl_allreduce( cur_mem, 2 );
-  mem_min = nrnmpi_dbl_allreduce( cur_mem, 3 );
-  
-  // all ranks prints information if all_ranks is true
-  if ( all_ranks ) {
-    printf( " Memory (MBs) (Rank : %2d) : %30s : Cur %.4lf, Max %.4lf, Min %.4lf, Avg %.4lf \n", \
-            nrnmpi_myid, message, cur_mem, mem_max, mem_min, mem_avg );
-  }
-  else if ( nrnmpi_myid == 0 ) {
-  
-    printf( " Memory (MBs) : %25s : Max %.4lf, Min %.4lf, Avg %.4lf \n", \
-            message, mem_max, mem_min, mem_avg );
-  }
+    // current memory usage on this rank
+    cur_mem = nrn_mallinfo();
+
+/* @todo: avoid three all reduce class */
+#if NRNMPI
+    mem_avg = nrnmpi_dbl_allreduce(cur_mem, 1) / nrnmpi_numprocs;
+    mem_max = nrnmpi_dbl_allreduce(cur_mem, 2);
+    mem_min = nrnmpi_dbl_allreduce(cur_mem, 3);
+#else
+    mem_avg = mem_max = mem_min = cur_mem;
+#endif
+
+    // all ranks prints information if all_ranks is true
+    if (all_ranks) {
+        printf(" Memory (MBs) (Rank : %2d) : %30s : Cur %.4lf, Max %.4lf, Min %.4lf, Avg %.4lf \n",
+               nrnmpi_myid, message, cur_mem, mem_max, mem_min, mem_avg);
+    } else if (nrnmpi_myid == 0) {
+        printf(" Memory (MBs) : %25s : Max %.4lf, Min %.4lf, Avg %.4lf \n", message, mem_max,
+               mem_min, mem_avg);
+    }
+    fflush(stdout);
 }
-
-

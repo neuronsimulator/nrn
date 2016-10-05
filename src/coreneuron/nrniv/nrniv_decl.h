@@ -29,20 +29,31 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef nrniv_dec_h
 #define nrniv_dec_h
 
+#include <vector>
+#include <map>
 #include "coreneuron/nrniv/netcon.h"
 #include "coreneuron/utils/endianness.h"
+#include "coreneuron/nrniv/nrnoptarg.h"
 
+/// Vector of maps for negative presyns
+extern std::vector<std::map<int, PreSyn*> > neg_gid2out;
+/// Maps for ouput and input presyns
+extern std::map<int, PreSyn*> gid2out;
+extern std::map<int, InputPreSyn*> gid2in;
 
-#if defined(__cplusplus)
-extern "C" {
-#endif
+/// InputPreSyn.nc_index_ to + InputPreSyn.nc_cnt_ give the NetCon*
+extern std::vector<NetCon*> netcon_in_presyn_order_;
+/// Only for setup vector of netcon source gids
+extern std::vector<int*> netcon_srcgid;
 
-extern void mk_mech(const char* fname);
+extern void mk_mech(const char* path);
+extern void set_globals(const char* path);
 extern void mk_netcvode(void);
 extern void nrn_p_construct(void);
-extern void nrn_setup(const char *path, const char *filesdat, int byte_swap, int threading);
+extern void nrn_setup(cn_input_params& input_params, const char* filesdat, int byte_swap);
+extern int nrn_setup_multiple;
+extern int nrn_setup_extracon;
 extern void nrn_cleanup();
-extern double BBS_netpar_mindelay(double maxdelay);
 extern void BBS_netpar_solve(double);
 extern void nrn_mkPatternStim(const char* filename);
 extern int nrn_extra_thread0_vdata;
@@ -50,35 +61,19 @@ extern void nrn_set_extra_thread0_vdata(void);
 extern Point_process* nrn_artcell_instantiate(const char* mechname);
 extern int nrn_need_byteswap;
 
-extern void nrn_reset_gid2out(void);
-extern void nrn_reset_gid2in(void);
-extern int input_gid_register(int gid);
-extern int input_gid_associate(int gid, InputPreSyn* psi);
-
-// only used in nrn_setup.cpp but implemented in netpar.cpp since that
-// is where int<->PreSyn* and int<->InputPreSyn* maps are defined.
-extern void netpar_tid_gid2ps_alloc(int nth);
-extern void netpar_tid_gid2ps_free();
-extern void netpar_tid_gid2ps(int tid, int gid, PreSyn** ps, InputPreSyn** psi);
-extern void netpar_tid_set_gid2node(int tid, int gid, int nid, PreSyn* ps);
-
-extern void nrn_cleanup_presyn(DiscreteEvent*);
 extern void nrn_outputevent(unsigned char, double);
 extern void ncs2nrn_integrate(double tstop);
-extern size_t output_presyn_size(void);
-extern size_t input_presyn_size(void);
 
 extern void handle_forward_skip(double forwardskip, int prcellgid);
 
-extern NetCon** netcon_in_presyn_order_;
-
 extern int nrn_set_timeout(int);
-extern void nrnmpi_gid_clear(void);
+
+extern void netpar_tid_gid2ps(int tid, int gid, PreSyn** ps, InputPreSyn** psi);
+extern double set_mindelay(double maxdelay);
 
 extern int nrn_soa_padded_size(int cnt, int layout);
 
-#if defined(__cplusplus)
-}
-#endif
+extern int use_interleave_permute;
+extern int cellorder_nwarp;
 
 #endif

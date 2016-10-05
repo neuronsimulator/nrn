@@ -1,12 +1,19 @@
 : $Id: netstim.mod 2212 2008-09-08 14:32:26Z hines $
 : comments at end
 
-: the Random idiom has been changed to be compatible with CORENEURON
-: ie. no longer allow the low quality scop_exprand generator or connection
-: with the hoc Random object. Instead make direct use of nrnran123.h
-: and, through the BBCOREPOINTER idioms, provide bbcore_read and bbcore_write
-: methods for coreneuron and bluron2coreneuron so that a NetStim instance
-: will give the same random streams for simulation in either version.
+: the Random idiom has been extended to support CoreNEURON.
+
+: For backward compatibility, noiseFromRandom(hocRandom) can still be used
+: as well as the default low-quality scop_exprand generator.
+: However, CoreNEURON will not accept usage of the low-quality generator,
+: and, if noiseFromRandom is used to specify the random stream, that stream
+: must be using the Random123 generator.
+
+: The recommended idiom for specfication of the random stream is to use
+: noiseFromRandom123(id1, id2[, id3])
+
+: If any instance uses noiseFromRandom123, then no instance can use noiseFromRandom
+: and vice versa.
 
 NEURON	{ 
   ARTIFICIAL_CELL NetStim
@@ -30,14 +37,42 @@ ASSIGNED {
 	donotuse
 }
 
+VERBATIM
+#if NRNBBCORE /* running in CoreNEURON */
+
+#define IFNEWSTYLE(arg) arg
+
+#else /* running in NEURON */
+
+/*
+   1 means noiseFromRandom was called when _ran_compat was previously 0 .
+   2 means noiseFromRandom123 was called when _ran_compart was previously 0.
+*/
+static int _ran_compat; /* specifies the noise style for all instances */
+#define IFNEWSTYLE(arg) if(_ran_compat == 2) { arg }
+
+#endif /* running in NEURON */
+ENDVERBATIM
+
+:backward compatibility
+PROCEDURE seed(x) {
+VERBATIM
+#if !NRNBBCORE
+ENDVERBATIM
+	set_seed(x)
+VERBATIM
+#endif
+ENDVERBATIM
+}
+
 INITIAL {
 
-        VERBATIM
-          if (_p_donotuse)
-          {
-            nrnran123_setseq((nrnran123_State*)_p_donotuse, 0, 0);
-          }
-        ENDVERBATIM
+	VERBATIM
+	  if (_p_donotuse) {
+	    /* only this style initializes the stream on finitialize */
+	    IFNEWSTYLE(nrnran123_setseq((nrnran123_State*)_p_donotuse, 0, 0);)
+	  }
+	ENDVERBATIM
 
 	on = 0 : off
 	ispike = 0
@@ -80,6 +115,13 @@ FUNCTION invl(mean (ms)) (ms) {
 }
 VERBATIM
 #include "nrnran123.h"
+
+#if !NRNBBCORE
+/* backward compatibility */
+double nrn_random_pick(void* r);
+void* nrn_random_arg(int argpos);
+int nrn_random_isran123(void* r, uint32_t* id1, uint32_t* id2, uint32_t* id3);
+#endif
 ENDVERBATIM
 
 FUNCTION erand() {
@@ -90,24 +132,74 @@ VERBATIM
 		: each instance. However, the corresponding hoc Random
 		: distribution MUST be set to Random.negexp(1)
 		*/
+#if !NRNBBCORE
+		if (_ran_compat == 2) {
+			_lerand = nrnran123_negexp((nrnran123_State*)_p_donotuse);
+		}else{
+			_lerand = nrn_random_pick(_p_donotuse);
+		}
+#else
 		_lerand = nrnran123_negexp((nrnran123_State*)_p_donotuse);
+#endif
+		return _lerand;
 	}else{
-                _lerand = 0.0;
-//		assert(0);
+#if NRNBBCORE
+		assert(0);
+#else
+		/*
+		: the old standby. Cannot use if reproducible parallel sim
+		: independent of nhost or which host this instance is on
+		: is desired, since each instance on this cpu draws from
+		: the same stream
+		*/
+#endif
 	}
+#if !NRNBBCORE
+ENDVERBATIM
+	erand = exprand(1)
+VERBATIM
+#endif
 ENDVERBATIM
 }
+
+PROCEDURE noiseFromRandom() {
+VERBATIM
+#if !NRNBBCORE
+ {
+	void** pv = (void**)(&_p_donotuse);
+	if (_ran_compat == 2) {
+		fprintf(stderr, "NetStim.noiseFromRandom123 was previously called\n");
+		assert(0);
+	}
+	_ran_compat = 1;
+	if (ifarg(1)) {
+		*pv = nrn_random_arg(1);
+	}else{
+		*pv = (void*)0;
+	}
+ }
+#endif
+ENDVERBATIM
+}
+
 
 PROCEDURE noiseFromRandom123() {
 VERBATIM
 #if !NRNBBCORE
  {
 	nrnran123_State** pv = (nrnran123_State**)(&_p_donotuse);
+	if (_ran_compat == 1) {
+		fprintf(stderr, "NetStim.noiseFromRandom was previously called\n");
+		assert(0);
+	}
+	_ran_compat = 2;
 	if (*pv) {
 		nrnran123_deletestream(*pv);
 		*pv = (nrnran123_State*)0;
 	}
-	if (ifarg(2)) {
+	if (ifarg(3)) {
+		*pv = nrnran123_newstream3((uint32_t)*getarg(1), (uint32_t)*getarg(2), (uint32_t)*getarg(3));
+	}else if (ifarg(2)) {
 		*pv = nrnran123_newstream((uint32_t)*getarg(1), (uint32_t)*getarg(2));
 	}
  }
@@ -116,26 +208,43 @@ ENDVERBATIM
 }
 
 VERBATIM
+#if !NRNBBCORE
 static void bbcore_write(double* x, int* d, int* xx, int *offset, _threadargsproto_) {
 	if (!noise) { return; }
+	/* error if using the legacy scop_exprand */
+	if (!_p_donotuse) {
+		fprintf(stderr, "NetStim: cannot use the legacy scop_negexp generator for the random stream.\n");
+		assert(0);
+	}
 	if (d) {
 		uint32_t* di = ((uint32_t*)d) + *offset;
-		nrnran123_State** pv = (nrnran123_State**)(&_p_donotuse);
-		nrnran123_getids(*pv, di, di+1);
-printf("Netstim bbcore_write %d %d\n", di[0], di[1]);
+		if (_ran_compat == 1) {
+			void** pv = (void**)(&_p_donotuse);
+			/* error if not using Random123 generator */
+			if (!nrn_random_isran123(*pv, di, di+1, di+2)) {
+				fprintf(stderr, "NetStim: Random123 generator is required\n");
+				assert(0);
+			}
+		}else{
+			nrnran123_State** pv = (nrnran123_State**)(&_p_donotuse);
+			nrnran123_getids3(*pv, di, di+1, di+2);
+		}
+		/*printf("Netstim bbcore_write %d %d %d\n", di[0], di[1], di[3]);*/
 	}
-	*offset += 2;
+	*offset += 3;
 }
+#endif
+
 static void bbcore_read(double* x, int* d, int* xx, int* offset, _threadargsproto_) {
 	assert(!_p_donotuse);
 	if (noise) {
 		uint32_t* di = ((uint32_t*)d) + *offset;
 		nrnran123_State** pv = (nrnran123_State**)(&_p_donotuse);
-		*pv = nrnran123_newstream(di[0], di[1]);
+		*pv = nrnran123_newstream3(di[0], di[1], di[2]);
 	}else{
 		return;
 	}
-	*offset += 2;
+	*offset += 3;
 }
 ENDVERBATIM
 

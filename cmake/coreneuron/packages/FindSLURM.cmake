@@ -24,6 +24,7 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 # THE POSSIBILITY OF SUCH DAMAGE.
 
+
 find_program(SLURM_SBATCH_COMMAND sbatch DOC "Path to the SLURM sbatch executable")
 find_program(SLURM_SRUN_COMMAND srun DOC "Path to the SLURM srun executable")
 find_program(SLURM_SACCTMGR_COMMAND sacctmgr DOC "Path to the SLURM sacctmgr executable")

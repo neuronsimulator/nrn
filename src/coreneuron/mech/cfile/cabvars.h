@@ -30,28 +30,19 @@ THE POSSIBILITY OF SUCH DAMAGE.
 extern "C" {
 #endif
 
-extern  void capac_reg_(void), _passive_reg(void),
+extern void capacitance_reg(void), _passive_reg(void),
 #if EXTRACELLULAR
-	extracell_reg_(void),
+    extracell_reg_(void),
 #endif
-	_stim_reg(void),
-	_hh_reg(void),
-        _netstim_reg(void),
-	_expsyn_reg(void);
+    _stim_reg(void), _hh_reg(void), _netstim_reg(void), _expsyn_reg(void);
 
-static void (*mechanism[])(void) = { /* type will start at 3 */
-	capac_reg_,
-	_passive_reg,
+static void (*mechanism[])(void) = {/* type will start at 3 */
+                                    capacitance_reg, _passive_reg,
 #if EXTRACELLULAR
-	/* extracellular requires special handling and must be type 5 */
-	extracell_reg_,
+                                    /* extracellular requires special handling and must be type 5 */
+                                    extracell_reg_,
 #endif
-	_stim_reg,
-	_hh_reg,
-	_expsyn_reg,
-        _netstim_reg,
-	0
-};
+                                    _stim_reg, _hh_reg, _expsyn_reg, _netstim_reg, 0};
 
 #ifdef __cplusplus
 }

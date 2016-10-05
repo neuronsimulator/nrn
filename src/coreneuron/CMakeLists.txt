@@ -24,6 +24,7 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 # THE POSSIBILITY OF SUCH DAMAGE.
 
+
 include_directories(utils/randoms)
 include_directories(${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(${MPI_INCLUDE_PATH})
@@ -31,6 +32,7 @@ include_directories(${MPI_INCLUDE_PATH})
 FILE(GLOB_RECURSE coreneuron_all_headers "*.h")
 FILE(GLOB_RECURSE coreneuron_all_templates "*.ipp")
 FILE(GLOB_RECURSE coreneuron_all_c_files "*.c*")
+file(GLOB_RECURSE coreneuron_cuda_files "*.cu")
 
 # Compile and include MOD files
 
@@ -69,7 +71,7 @@ macro(mod2c_target name input)
     list(APPEND MOD2C_${name}_MODS "${mod2c_modname_}")
 
     add_custom_command(OUTPUT "${mod2c_output_}"
-      DEPENDS ${input}
+      DEPENDS ${input} "${mod2c_install_prefix}/mod2c_core"
       COMMAND ${CMAKE_COMMAND} -E copy "${mod2c_source_}" "${CMAKE_CURRENT_BINARY_DIR}"
       COMMAND ${MOD2C} "${mod2c_modname_}"
       WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
@@ -115,6 +117,7 @@ macro(mod2c_from_file name modlist searchpath)
 
         if(modpath_)
             mod2c_target(${name} "${modpath_}")
+            list(APPEND MOD_PATHS ${modpath_})
         else()
 	    message(WARNING "Unable to locate MOD file: ${mod_}")
         endif()
@@ -149,9 +152,10 @@ mod2c_from_file(OPTMECH "${ADDITIONAL_MECHS}" "${ADDITIONAL_MECHPATH}")
 
 # For 'non-standard' mod files, need to generate registering function in mod_func.c
 
-set(MOD_FUNC_C "${CMAKE_CURRENT_BINARY_DIR}/mod_func.c")
+set(MOD_FUNC_C    "${CMAKE_CURRENT_BINARY_DIR}/mod_func.c")
 set(MOD_FUNC_C_PL "${CMAKE_CURRENT_SOURCE_DIR}/mech/mod_func.c.pl")
 
+# ... pass as argument to the perl script the list of mod file names;
 add_custom_command(OUTPUT "${MOD_FUNC_C}"
     DEPENDS ${MECH_FILE_LISTS} "${MOD_FUNC_C_PL}"
     COMMAND perl "${MOD_FUNC_C_PL}" ${MOD2C_OPTMECH_MODS} > "${MOD_FUNC_C}"
@@ -163,16 +167,76 @@ foreach(depfile ${MECH_FILE_LISTS})
     configure_file("${depfile}" "${CMAKE_CURRENT_BINARY_DIR}/dummy_reconfigure_dep")
 endforeach()
 
+# to work around no acc ability to pass function pointers as arguments,
+# some translated c files depend on a _kinderiv.h file that is constructed
+# by kinderiv.py
+
+set(KINDERIV_PY "${CMAKE_CURRENT_SOURCE_DIR}/kinderiv.py")
+set(KINDERIV_H "${CMAKE_CURRENT_BINARY_DIR}/_kinderiv.h")
+
+add_custom_command(OUTPUT "${KINDERIV_H}"
+    DEPENDS ${MOD2C_OPTMECH_OUTPUTS} ${MOD2C_STDMECH_OUTPUTS} "${KINDERIV_PY}"
+    COMMAND python "${KINDERIV_PY}"
+    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
+
+if (EXPORT_MECHS_FUNCTIONS)
+  # Create C file with all "get function pointers" methods
+  set(MOD_FUNC_PTRS_C    "${CMAKE_CURRENT_BINARY_DIR}/mod_func_ptrs.c")
+  set(MOD_FUNC_PTRS_C_PL "${CMAKE_CURRENT_SOURCE_DIR}/mech/mod_func_ptrs.c.pl")
+
+  # ... pass as argument to the perl script the list of mods full paths;
+  add_custom_command(OUTPUT "${MOD_FUNC_PTRS_C}"
+      DEPENDS ${MECH_FILE_LISTS} "${MOD_FUNC_PTRS_C_PL}"
+      COMMAND perl "${MOD_FUNC_PTRS_C_PL}" ${MOD_PATHS} > "${MOD_FUNC_PTRS_C}"
+      WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
+endif()
+
 # Add generated sources from MOD files
 
-set(GENERATED_MECH_C_FILES ${MOD_FUNC_C} ${MOD2C_STDMECH_OUTPUTS} ${MOD2C_OPTMECH_OUTPUTS})
+set(GENERATED_MECH_C_FILES ${MOD_FUNC_C} ${MOD_FUNC_PTRS_C} ${MOD2C_STDMECH_OUTPUTS} ${MOD2C_OPTMECH_OUTPUTS})
+
+# artificial cells must be on cpu, defaul nrnran123.c is for cpu, nrn_setup.cpp uses nrnran123 for only memory calculation purpose which should use cpu version of nrnran123
+set(NOACC_MECH_C_FILES ${CMAKE_CURRENT_BINARY_DIR}/netstim.c ${CMAKE_CURRENT_BINARY_DIR}/netstim_inhpoisson.c ${CMAKE_CURRENT_BINARY_DIR}/pattern.c ${CMAKE_CURRENT_SOURCE_DIR}/utils/randoms/nrnran123.c ${CMAKE_CURRENT_SOURCE_DIR}/nrniv/nrn_setup.cpp)
+
+if(ENABLE_OPENACC)
+    set_source_files_properties(${GENERATED_MECH_C_FILES} PROPERTIES COMPILE_FLAGS "")
+    set_source_files_properties(${NOACC_MECH_C_FILES} PROPERTIES COMPILE_FLAGS "-DDISABLE_OPENACC")
+    if(${CMAKE_C_COMPILER_ID} STREQUAL "PGI")
+        set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/scopmath_core/sparse_thread.c PROPERTIES COMPILE_FLAGS "-ta=tesla:nollvm")
+    endif()
+endif()
 
 set(coreneuron_all_c_files ${coreneuron_all_c_files} ${GENERATED_MECH_C_FILES})
 
+#to indent generated c/cpp files
+if(CLANG_FORMAT_FOUND)
+    add_custom_target(formatbuild
+        COMMAND ${CMAKE_COMMAND}
+            -DSOURCE_FILES:STRING="${GENERATED_MECH_C_FILES}"
+            -DCLANG_FORMAT_EXECUTABLE=${CLANG_FORMAT_EXECUTABLE}
+            -P "${PROJECT_SOURCE_DIR}/CMake/ClangFormatUtils.cmake"
+        DEPENDS ${GENERATED_MECH_C_FILES}
+        )
+endif()
 
-add_library(coreneuron ${COMPILE_LIBRARY_TYPE} ${coreneuron_all_headers} ${coreneuron_all_templates} ${coreneuron_all_c_files})
 
-target_link_libraries(coreneuron ${MPI_C_LIBRARIES})
+add_library(coreneuron ${COMPILE_LIBRARY_TYPE} ${coreneuron_all_headers} ${coreneuron_all_templates} ${coreneuron_all_c_files} ${KINDERIV_H})
+
+set(link_cudacoreneuron)
+set(link_reportinglib)
+
+#@TODO: CMake should have option for arch
+if(ENABLE_OPENACC)
+    cuda_add_library("cudacoreneuron" ${coreneuron_cuda_files} OPTIONS -arch=sm_20)
+    set(link_cudacoreneuron cudacoreneuron)
+endif()
+
+if(ENABLE_REPORTINGLIB)
+  set(link_reportinglib ${REPORTINGLIB_LIBRARIES})
+endif()
+target_link_libraries(coreneuron ${MPI_C_LIBRARIES}
+    ${link_reportinglib} ${link_cudacoreneuron} ${CUDA_LIBRARIES} )
+
 
 set_target_properties(coreneuron PROPERTIES
                             VERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}
@@ -180,5 +244,5 @@ set_target_properties(coreneuron PROPERTIES
                             CLEAN_DIRECT_OUTPUT 1)
 
 install(TARGETS coreneuron
-             LIBRARY DESTINATION ${LIB_INSTALL_DIR} 
+             LIBRARY DESTINATION ${LIB_INSTALL_DIR}
              ARCHIVE DESTINATION ${LIB_INSTALL_DIR} )

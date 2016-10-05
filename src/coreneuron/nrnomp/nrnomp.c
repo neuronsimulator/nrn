@@ -31,14 +31,12 @@ THE POSSIBILITY OF SUCH DAMAGE.
 
 #if defined(_OPENMP)
 #include <omp.h>
-#endif // _OPENMP
+#endif  // _OPENMP
 
-int nrnomp_get_numthreads()
-{
+int nrnomp_get_numthreads() {
 #if defined(_OPENMP)
-  return (omp_get_max_threads());
+    return (omp_get_max_threads());
 #else
-  return 1;
+    return 1;
 #endif
 }
-
