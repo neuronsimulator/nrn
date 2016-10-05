@@ -55,7 +55,7 @@ module load cuda/6.0
 export CC=mpicc
 export CXX=mpicxx
 
-cmake .. -DCMAKE_C_FLAGS:STRING="-acc -Minfo=acc -Minline=size:200,levels:10 -O3 -DSWAP_ENDIAN_DISABLE_ASM -DLAYOUT=0 -DDISABLE_HOC_EXP" -DCMAKE_CXX_FLAGS:STRING="-acc -Minfo=acc -Minline=size:200,levels:10 -O3 -DSWAP_ENDIAN_DISABLE_ASM -DLAYOUT=0 -DDISABLE_HOC_EXP" -DCOMPILE_LIBRARY_TYPE=STATIC -DCMAKE_INSTALL_PREFIX=$EXPER_DIR/install/ -DCUDA_HOST_COMPILER=`which gcc` -DCUDA_PROPAGATE_HOST_FLAGS=OFF -DENABLE_SELECTIVE_GPU_PROFILING=ON -DENABLE_OPENACC=ON
+cmake .. -DCMAKE_C_FLAGS:STRING="-acc -Minfo=acc -Minline=size:200,levels:10 -O3 -DSWAP_ENDIAN_DISABLE_ASM -DDISABLE_HOC_EXP" -DCMAKE_CXX_FLAGS:STRING="-acc -Minfo=acc -Minline=size:200,levels:10 -O3 -DSWAP_ENDIAN_DISABLE_ASM -DDISABLE_HOC_EXP" -DCOMPILE_LIBRARY_TYPE=STATIC -DCMAKE_INSTALL_PREFIX=$EXPER_DIR/install/ -DCUDA_HOST_COMPILER=`which gcc` -DCUDA_PROPAGATE_HOST_FLAGS=OFF -DENABLE_SELECTIVE_GPU_PROFILING=ON -DENABLE_OPENACC=ON
 ```
 
 And now you can run with --gpu option as:
@@ -113,9 +113,8 @@ cmake .. -DCMAKE_CXX_FLAGS="-O3 -qtune=qp -qarch=qp -q64 -qhot=simd -qsmp -qthre
 ```
 
 * By default OpenMP threading is enabled. You can disable it with -DCORENEURON_OPENMP=OFF
-* By default CoreNEURON (And NEURON) uses the AoS (Array of Structs) memory layout for all data structures. For efficient memory access and vectorization you can use the SoA (Struct of Array) layout by adding "-DLAYOUT=0" to the C/C++ compiler flags (0 = SoA and 1 = AoS).
+* By default CoreNEURON uses the SoA (Structure of Array) memory layout for all data structures. You can switch to AoS using -DENABLE_SOA=OFF.
 * If the default compiler flags are not supported, try -DCMAKE_BUILD_TARGET=SOME_TARGET
-* Make sure to add "-DLAYOUT=0" to enabled SoA memory layout
 * NEURON wraps `exp` function with hoc_Exp; disable this using "-DDISABLE_HOC_EXP"
 
 

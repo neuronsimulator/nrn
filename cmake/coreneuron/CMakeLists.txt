@@ -53,6 +53,7 @@ option(DISABLE_NRN_TIMEOUT "Disable nrn_timeout implementation" OFF)
 option(ENABLE_REPORTINGLIB "Enable use of ReportingLib for soma reports" OFF)
 option(EXPORT_MECHS_FUNCTIONS "Enable exporting of mod init, jacob, state, cur and BeforeAfter functions of mod-based mechanisms" OFF)
 option(ENABLE_MPI "Enable MPI-based execution" ON)
+option(ENABLE_SOA "Enable SoA Memory Layout" ON)
 
 ## mech / mod options
 set(ADDITIONAL_MECHPATH "" CACHE PATH "Search path for optional additional mechanism MOD files")
@@ -83,6 +84,13 @@ if (ENABLE_MPI)
 else()
     message(STATUS "Use of MPI disabled by user-provided option")
     add_definitions("-DNRNMPI=0")
+endif()
+
+#Memory layout transformation: 0 for SoA and 1 for AoS
+if (ENABLE_SOA)
+    add_definitions("-DLAYOUT=0")
+else()
+    add_definitions("-DLAYOUT=1")
 endif()
 
 find_package(mod2c 2.0.0  REQUIRED)
