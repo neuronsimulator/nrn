@@ -30,17 +30,17 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #define output_spikes_h
 
 #include <vector>
-#include <utility> 
+#include <utility>
 
-void output_spikes(const char *outpath);
+void output_spikes(const char* outpath);
 void mk_spikevec_buffer(int);
 
 extern int spikevec_buffer_size;
 extern int spikevec_size;
-extern double* spikevec_time;	
+extern double* spikevec_time;
 extern int* spikevec_gid;
 
-void validation(std::vector<std::pair<double,int> >& res);
+void validation(std::vector<std::pair<double, int> >& res);
 
 void spikevec_lock();
 void spikevec_unlock();

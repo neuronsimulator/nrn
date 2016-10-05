@@ -25,6 +25,8 @@ CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 THE POSSIBILITY OF SUCH DAMAGE.
 */
+
+
 /* confirm that reported native endianness is big- or little-endian, and that
  * this corresponds with our expectations across 16-, 32- and 64-bit integers,
  * and floats and doubles (assumes IEEE 4- and 8- byte representation) */

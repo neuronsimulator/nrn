@@ -39,12 +39,12 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include <getopt.h>
 #include "coreneuron/utils/sdprintf.h"
 
-typedef struct cb_parameters {
-
-    double tstart; 		/**< start time of simulation in msec*/
-    double tstop;		/**< stop time of simulation in msec*/
-    double dt;			/**< timestep to use in msec*/
-    double dt_io;               /**< i/o timestep to use in msec*/
+typedef struct cn_parameters {
+    double tstart;    /**< start time of simulation in msec*/
+    double tstop;     /**< stop time of simulation in msec*/
+    double dt;        /**< timestep to use in msec*/
+    double dt_io;     /**< i/o timestep to use in msec*/
+    double dt_report; /**< i/o timestep to use in msec for reports*/
 
     double celsius;
     double voltage;
@@ -52,34 +52,43 @@ typedef struct cb_parameters {
 
     double forwardskip;
 
-    int spikebuf;		/**< internal buffer used on evry rank for spikes */
-    int prcellgid; 		/**< gid of cell for prcellstate */
+    int spikebuf;  /**< internal buffer used on evry rank for spikes */
+    int prcellgid; /**< gid of cell for prcellstate */
 
-    int threading;		/**< enable pthread/openmp  */
+    int threading; /**< enable pthread/openmp  */
+    int report;    /**< enable soma reports  */
 
-    const char *patternstim;
-    const char *datpath;		/**< directory path where .dat files */
-    const char *outpath; 		/**< directory where spikes will be written */
-    const char *filesdat; 		/**< name of file containing list of gids dat files read in */
-   
+    int compute_gpu; /**< run computations on gpu  */
+
+    int cell_interleave_permute; /**< cell interleaving permutation  */
+    int nwarp;                   /* number of warps to balance for cell_interleave_permute == 2 */
+
+    const char* patternstim;
+    const char* datpath;  /**< directory path where .dat files */
+    const char* outpath;  /**< directory where spikes will be written */
+    const char* filesdat; /**< name of file containing list of gids dat files read in */
+
     double mindelay;
 
-    /** default constructor */ 
-    cb_parameters();
+    int multiple;
+    int extracon;
 
-    /** show help message for command line args */ 
+    /** default constructor */
+    cn_parameters();
+
+    /** show help message for command line args */
     void show_cb_opts_help();
 
-    /** show all parameter values */ 
+    /** show all parameter values */
     void show_cb_opts();
 
-    /** read options from command line */ 
-    void read_cb_opts( int argc, char **argv );
+    /** read options from command line */
+    void read_cb_opts(int argc, char** argv);
 
-    /** return full path of files.dat file */ 
-    sd_ptr get_filesdat_path( char *path_buf, size_t bufsz );
+    /** return full path of files.dat file */
+    sd_ptr get_filesdat_path(char* path_buf, size_t bufsz);
 
-    /** store/set computed mindelay argument */ 
+    /** store/set computed mindelay argument */
     void set_mindelay(double mdelay) {
         mindelay = mdelay;
     }
@@ -87,4 +96,3 @@ typedef struct cb_parameters {
 } cn_input_params;
 
 #endif
-

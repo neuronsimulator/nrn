@@ -44,6 +44,9 @@ extern void nrn_deliver_events(NrnThread*);
 extern void init_net_events(void);
 extern void nrn_play_init(void);
 extern void fixed_play_continuous(NrnThread*);
+extern int use_solve_interleave;
+extern int* nrn_index_sort(int* values, int n);
+extern void solve_interleaved(int ith);
 extern void nrn_solve_minimal(NrnThread*);
 extern void second_order_cur(NrnThread*);
 extern void nrn_ba(NrnThread*, int);
@@ -61,9 +64,16 @@ extern void alloc_mech(int);
 extern void ion_reg(const char*, double);
 extern void nrn_mk_table_check(void);
 extern void initnrn(void);
-extern void  nrn_capacity_current(NrnThread*, Memb_list*);
 extern int prcellstate(int gid, const char* suffix);
 extern int nrn_i_layout(int i, int cnt, int j, int size, int layout);
+
+extern int nrn_have_gaps;
+extern void nrnthread_v_transfer(NrnThread*);
+extern void nrnmpi_v_transfer();
+
+extern void nrn_fatal_error(const char* msg);
+extern void nrn_abort(int errcode);
+extern double nrn_wtime(void);
 
 #if defined(__cplusplus)
 }

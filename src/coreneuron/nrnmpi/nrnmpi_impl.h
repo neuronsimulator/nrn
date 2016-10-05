@@ -29,9 +29,13 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef nrnmpi_impl_h
 #define nrnmpi_impl_h
 
+#if NRNMPI
+
 #include <mpi.h>
 
 extern MPI_Comm nrnmpi_world_comm;
 extern MPI_Comm nrnmpi_comm;
+
+#endif // NRNMPI
 
 #endif

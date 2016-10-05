@@ -24,10 +24,10 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 # THE POSSIBILITY OF SUCH DAMAGE.
 
+
 # TestHelpers.cmake
 # 
 # set of Convenience functions for unit testing with cmake
-
 
 ##
 # enable or disable detection of SLURM and MPIEXEC
