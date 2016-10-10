@@ -81,7 +81,7 @@ char* nrn_version(int i)
 }
 #elif defined(HG_BRANCH)
 char* nrn_version(int i) {
-	char head[50];
+	char head[1024];
 	char *cp;
 	int b;
 	buf[0] = '\0';
@@ -135,7 +135,7 @@ char* nrn_version(int i) {
 }
 #else
 char* nrn_version(int i) {
-	char head[50];
+	char head[1024];
 	char tail[50];
 	char *cp;
 	int b;
