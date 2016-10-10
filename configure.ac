@@ -11,6 +11,7 @@ AC_CONFIG_SRCDIR(src/memacs/main.c)
 AM_INIT_AUTOMAKE([foreign])
 AM_MAINTAINER_MODE([enable])
 
+m4_pattern_allow([^AC_MSG_ERROR$])
 
 PKG_PROG_PKG_CONFIG([0.22])
 
