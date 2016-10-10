@@ -11,6 +11,7 @@
 #include <errno.h>
 #include "parse.h"
 #include "hocparse.h"
+#include "ocfunc.h"
 #include "ocmisc.h"
 #include "nrnmpi.h"
 #include "nrnrt.h"
