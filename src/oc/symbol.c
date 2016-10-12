@@ -28,6 +28,12 @@
 #include <alloc.h>	/* at least for turbo C 2.0 */
 #endif
 
+#include "nrnmpiuse.h"
+
+#if BLUEGENEQ
+#include <spi/include/kernel/memory.h>
+#endif
+
 #if OOP
 Symlist	*hoc_built_in_symlist = (Symlist *)0; /* keywords, built-in functions,
 	all name linked into hoc. Look in this list last */
@@ -396,31 +402,39 @@ void hoc_free_pstring(char** p) {
 	}
 }
 
-int nrn_mallinfo(int item) {
-#if HAVE_MALLINFO
+unsigned long long nrn_mallinfo(int item) {
+#if BLUEGENEQ
+    uint64_t heap = 0;
+    Kernel_GetMemorySize(KERNEL_MEMSIZE_HEAP, &heap);
+    return heap;
+#elif HAVE_MALLINFO
+	int r;
 	struct mallinfo m;
 	m = mallinfo();
 	if (item == 1) {
-		return m.uordblks;
+		r = m.uordblks;
 	}else if (item == 2) {
-		return m.hblkhd;
+		r = m.hblkhd;
 	}else if (item == 3) {
-		return m.arena;
+		r = m.arena;
 	}else if (item == 4) {
-		return m.fordblks;
+		r = m.fordblks;
 	}else if (item == 5) {
-		return m.hblks;
+		r = m.hblks;
 	}else if (item == 6) {
-		return m.hblkhd + m.arena;
+		r = m.hblkhd + m.arena;
+	}else{
+		r = m.hblkhd + m.uordblks;
 	}
-	return m.hblkhd + m.uordblks;
+	return (unsigned long long)r;
 #else
-	return -1;
+	return 0;
 #endif
 }
 
 int hoc_mallinfo(void) {
-	int i, x;
+	int i;
+	unsigned long long x;
 	extern double chkarg(int, double, double);
 	i = (int)chkarg(1, 0., 10.);
 	x = nrn_mallinfo(i);

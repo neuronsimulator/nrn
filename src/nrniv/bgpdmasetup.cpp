@@ -133,7 +133,7 @@ static void all2allv_helper(int* scnt, int* sdispl, int*& rcnt, int*& rdispl) {
 }
 
 #define all2allv_perf 1
-extern "C" {extern int nrn_mallinfo(int);}
+extern "C" {extern unsigned long long nrn_mallinfo(int);}
 //input s, scnt, sdispl ; output, newly allocated r, rcnt, rdispl
 static void all2allv_int(int* s, int* scnt, int* sdispl, int*& r, int*& rcnt, int*& rdispl, const char* dmes) {
 #if all2allv_perf
@@ -151,7 +151,7 @@ static void all2allv_int(int* s, int* scnt, int* sdispl, int*& r, int*& rcnt, in
 	if (nrnmpi_myid == 0) {
 		int nb = 4*nrnmpi_numprocs + sdispl[nrnmpi_numprocs] + rdispl[nrnmpi_numprocs];
 		tm = nrnmpi_wtime() - tm;
-		printf("all2allv_int %s space=%d total=%d time=%g\n", dmes, nb, nrn_mallinfo(0), tm);
+		printf("all2allv_int %s space=%d total=%ld time=%g\n", dmes, nb, nrn_mallinfo(0), tm);
 	}
 #endif
 }
