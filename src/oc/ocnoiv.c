@@ -110,3 +110,5 @@ void stdin_event_ready(void) {}
 
 void nrnbbs_context_wait(void) {}
 void ivoc_final_exit(void) {}
+
+char* cxx_char_alloc(size_t len) { return (char*)hoc_Emalloc(len); }

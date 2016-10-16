@@ -144,7 +144,7 @@ char* nrnmpi_upkstr(bbsmpibuf* r) {
 	int len;
 	char* s;
 	unpack(&len, 1, my_MPI_INT, r, "upkstr length");
-	s = (char*) hoc_Emalloc(len+1 * sizeof(char)); hoc_malchk();
+	s = cxx_char_alloc(len+1); /* will be delete not free */
 	unpack(s, len, my_MPI_CHAR, r, "upkstr string");
 	s[len] = '\0';
 	return s;
@@ -155,7 +155,7 @@ char* nrnmpi_upkpickle(size_t* size, bbsmpibuf* r) {
 	char* s;
 	unpack(&len, 1, my_MPI_INT, r, "upkpickle length");
 	*size = len;
-	s = (char*) hoc_Emalloc(len * sizeof(char)); hoc_malchk();
+	s = cxx_char_alloc(len + 1); /* will be delete, not free */
 	unpack(s, len, my_MPI_PICKLE, r, "upkpickle data");
 	return s;
 }

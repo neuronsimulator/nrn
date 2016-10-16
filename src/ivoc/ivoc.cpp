@@ -112,6 +112,12 @@ void notify_freed_val_array(double* p, size_t size) {
 		}
 	}
 }
+
+char* cxx_char_alloc(size_t sz) {
+  char* cp = new char[sz];
+  return cp;
+}
+
 } // end extern "C"
 
 #ifndef MINGW // actual implementation in ivocwin.cpp

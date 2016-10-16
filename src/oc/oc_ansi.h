@@ -87,6 +87,7 @@ extern void* hoc_Erealloc(void* ptr, size_t size);
 extern void hoc_malchk(void);
 extern void* nrn_cacheline_alloc(void** memptr, size_t size);
 extern void* nrn_cacheline_calloc(void** memptr, size_t nmemb, size_t size);
+extern char* cxx_char_alloc(size_t size);
 extern void nrn_exit(int);
 extern void hoc_free_list(Symlist**);
 extern int hoc_errno_check(void);
