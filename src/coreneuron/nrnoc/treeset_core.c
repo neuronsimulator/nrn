@@ -127,8 +127,8 @@ static void nrn_lhs(NrnThread* _nt) {
     /* now the cap current can be computed because any change to cm by another model
     has taken effect
     */
-    /* note, the first is CAP */
-    if (_nt->tml) {
+    /* note, the first is CAP if there are any nodes*/
+    if (_nt->end && _nt->tml) {
         assert(_nt->tml->index == CAP);
         nrn_jacob_capacitance(_nt, _nt->tml->ml, _nt->tml->index);
     }
