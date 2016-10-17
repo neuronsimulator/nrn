@@ -5,7 +5,7 @@ CoreNEURON is a simplified engine for the [NEURON](https://www.neuron.yale.edu/n
 
 # Features
 
-CoreNEURON supports limited features provided by [NEURON](https://www.neuron.yale.edu/neuron/).
+CoreNEURON supports limited features provided by [NEURON](https://www.neuron.yale.edu/neuron/). Contact Michael Hines for detailed information.
 
 # Dependencies
 * [CMake 2.8.12+](https://cmake.org)
