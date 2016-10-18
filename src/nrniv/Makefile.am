@@ -157,7 +157,7 @@ noinst_HEADERS = ndatclas.h nrnclass.h nrnmenu.h nrnoc2iv.h ppshape.h \
 	$(PARINC1) \
 	bgpdma.cpp bgpdmasetup.cpp bgpmeminfo.c \
 	multisplitcontrol.h nvector_nrnthread.h \
-	bbsavestate.h nrnbbcore_write.h \
+	bbsavestate.h nrnbbcore_write.h nrnsection_mapping.h\
 	nrnmusic.cpp nrndae.h matrixmap.h \
 	structpool.h nrnhash_alt.h
 
