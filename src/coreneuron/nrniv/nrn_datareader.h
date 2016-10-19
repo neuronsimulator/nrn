@@ -101,33 +101,51 @@ class data_reader {
     /** Parse a neuron mapping count entries
      *
      * Reads neuron mapping info which is represented by
-     * gid, #segments, #somas, #axons, #dendrites, #apicals, #total compartments
+     * gid, #sections, #segments, #section lists
      */
     void read_mapping_count(int* gid,
-                            int* seg,
-                            int* soma,
-                            int* axon,
-                            int* dend,
-                            int* apical,
-                            int* compartment);
+                            int* nsec,
+                            int* nseg,
+                            int* nseclist);
+
+
+    /** Reads number of cells in parsing file */
+    void read_mapping_cell_count(int* count);
 
     /** Parse a neuron section segment mapping
      *
      * Read count no of mappings for section to segment
      */
     template <typename T>
-    void read_mapping_info(T* mapinfo, int count) {
-        const int max_line_length = 1000;
-        char line_buf[max_line_length];
+    int read_mapping_info(T* mapinfo) {
 
-        for (int i = 0; i < count; i++) {
+        const int max_line_length = 1000;
+        int nsec, nseg, n_scan;
+
+        char line_buf[max_line_length], name[max_line_length];
+
+        F.getline(line_buf, sizeof(line_buf));
+
+        n_scan = sscanf(line_buf, "%s %d %d", name, &nsec, &nseg);
+
+        printf("\n ---- :: %s %d %d  %d---:: \n", name, nsec, nseg, n_scan);
+
+        nrn_assert(n_scan == 3);
+
+
+        mapinfo->name = std::string(name);
+
+        for (int i = 0; i < nseg; i++) {
             F.getline(line_buf, sizeof(line_buf));
             nrn_assert(!F.fail());
-            int sec, seg, n_scan;
+            int sec, seg;
             n_scan = sscanf(line_buf, "%d %d", &sec, &seg);
             nrn_assert(n_scan == 2);
             mapinfo->add_segment(sec, seg);
+            printf("       %d  %d \n", sec, seg);
         }
+
+        return nseg;
     }
 
     /** Defined flag values for parse_array() */
