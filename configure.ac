@@ -13,6 +13,11 @@ AM_MAINTAINER_MODE([enable])
 
 m4_pattern_allow([^AC_MSG_ERROR$])
 
+AC_PROG_CC_STDC
+if test "x$ac_cv_prog_cc_stdc" = xno ; then
+  AC_MSG_ERROR([C compiler not ISO Standard C])
+fi
+
 PKG_PROG_PKG_CONFIG([0.22])
 
 dnl The following line causes us to make a config.h instead of putting all
