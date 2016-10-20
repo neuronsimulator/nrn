@@ -41,8 +41,6 @@ void data_reader::open(const char* filename, bool reorder) {
     F.open(filename);
 }
 
-static const int max_line_length = 100;
-
 int data_reader::read_int() {
     char line_buf[max_line_length];
 
@@ -67,13 +65,11 @@ void data_reader::read_mapping_count(int* gid,
 
     /** mapping file has extra strings, ignore those */
     int n_scan = sscanf(line_buf, "%d %d %d %d", gid, nsec, nseg, nseclist);
-    printf("\n %s \n ->  %d %d %d %d  \n", line_buf, *gid, *nsec, *nseg, *nseclist);
     nrn_assert(n_scan == 4);
 }
 
 void data_reader::read_mapping_cell_count(int* count) {
     *count = read_int();
-    printf("\-> Num of cells : %d \n", *count);
 }
 
 void data_reader::read_checkpoint_assert() {

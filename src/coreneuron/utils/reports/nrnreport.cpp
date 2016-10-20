@@ -135,13 +135,17 @@ void ReportGenerator::register_report() {
             const char* kind = "compartment";
             const char* reportname = report_filepath.c_str();
 
+            int segment_count = 0;
+            int section_count = 0;
+            int extra_node = 0;
+
             /** iterate over all neurons */
             for (int i = 0; i < nt.ncell; ++i) {
                 /** for this gid, get mapping information */
                 int gid = nt.presyns[i].gid_;
                 CellMapping* m = mapinfo->get_cell_mapping(gid);
 
-                if( m == NULL) {
+                if (m == NULL) {
                     std::cout << "Error : Compartment mapping information is missing! \n";
                     continue;
                 }
@@ -149,9 +153,9 @@ void ReportGenerator::register_report() {
                 int nsections = m->num_segments();
                 int nsegments = m->num_sections();
 
-                // sum of sections and segments plus one should be equal to
-                // number of nodes in coreneuron.
-                  nrn_assert( (nsections+nsegments+1) == nt.end);
+                section_count += nsections;
+                segment_count += nsegments;
+                extra_node++;
 
                 /** for full compartment reports, set extra mapping */
                 if (type == CompartmentReport) {
@@ -169,7 +173,7 @@ void ReportGenerator::register_report() {
                 /** add extra mapping : @todo api changes in reportinglib*/
                 records_extra_mapping((char*)reportname, gid, 5, extra);
 
-                if( type == SomaReport ) {
+                if (type == SomaReport) {
                     /** get  section list mapping for soma */
                     SecMapping* s = m->get_seclist_mapping("soma");
 
@@ -183,28 +187,32 @@ void ReportGenerator::register_report() {
                     /** add segment for reporting */
                     records_add_var_with_mapping((char*)reportname, gid, v, sizemapping, mapping);
                 } else {
-
-                    for(size_t j = 0; j < m->size(); j++) {
+                    for (size_t j = 0; j < m->size(); j++) {
                         SecMapping* s = m->secmapvec[j];
 
-                        for(secseg_it_type iterator = s->secmap.begin(); iterator != s->secmap.end(); iterator++) {
+                        for (secseg_it_type iterator = s->secmap.begin();
+                             iterator != s->secmap.end(); iterator++) {
                             mapping[0] = iterator->first;
-                            segvec_type &vec = iterator->second;
+                            segvec_type& vec = iterator->second;
 
-                            for(size_t k = 0; k < vec.size(); k++) {
+                            for (size_t k = 0; k < vec.size(); k++) {
                                 int idx = vec[k];
 
                                 /** corresponding voltage in coreneuron voltage array */
                                 double* v = nt._actual_v + idx;
 
                                 /** add segment for reporting */
-                                records_add_var_with_mapping((char*)reportname, gid, v, sizemapping, mapping);
-
+                                records_add_var_with_mapping((char*)reportname, gid, v, sizemapping,
+                                                             mapping);
                             }
                         }
                     }
                 }
             }
+
+            // sum of sections and segments plus one initial extra node
+            // should be equal to number of nodes in coreneuron.
+            nrn_assert((section_count + segment_count + extra_node) == nt.end);
         }
     }
 

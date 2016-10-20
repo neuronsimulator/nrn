@@ -1623,9 +1623,6 @@ void read_phase3(data_reader& F, int imult, NrnThread& nt) {
     /** mapping information for all neurons in single NrnThread */
     NrnThreadMappingInfo* ntmapping = new NrnThreadMappingInfo();
 
-    /** total compartments in this NrnThread */
-    int total_compartment = 0;
-
     int count = 0;
 
     F.read_mapping_cell_count(&count);
@@ -1646,20 +1643,17 @@ void read_phase3(data_reader& F, int imult, NrnThread& nt) {
         // read section-segment mapping for every section list
         for(int j = 0; j < nseclist; j++) {
             SecMapping *smap = new SecMapping();
-
-            int count = F.read_mapping_info(smap);
-            total_compartment += count;
-
+            F.read_mapping_info(smap);
             cmap->add_sec_map(smap);
         }
 
         ntmapping->add_cell_mapping(cmap);
     }
 
-    // no of cells should match
+    // make number #cells match with mapping size
     nrn_assert( (int)ntmapping->size() ==  nt.ncell);
 
-    // set point in NrnThread
+    // set pointer in NrnThread
     nt.mapping = (void*)ntmapping;
 }
 

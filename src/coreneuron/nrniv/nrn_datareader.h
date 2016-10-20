@@ -30,6 +30,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #define nrn_datareader_h
 
 #include <fstream>
+#include <vector>
 #include "coreneuron/utils/endianness.h"
 #include "coreneuron/utils/swap_endian.h"
 #include "coreneuron/nrniv/nrn_assert.h"
@@ -47,6 +48,9 @@ THE POSSIBILITY OF SUCH DAMAGE.
  * All automatic allocations performed by read_int_array()
  * and read_dbl_array() methods use new [].
  */
+
+// @todo: remove this static buffer
+const int max_line_length = 1024;
 
 class data_reader {
     std::ifstream F;       //!< File stream associated with reader.
@@ -119,33 +123,29 @@ class data_reader {
     template <typename T>
     int read_mapping_info(T* mapinfo) {
 
-        const int max_line_length = 1000;
-        int nsec, nseg, n_scan;
+      int nsec, nseg, n_scan;
+      char line_buf[max_line_length], name[max_line_length];
 
-        char line_buf[max_line_length], name[max_line_length];
+      F.getline(line_buf, sizeof(line_buf));
+      n_scan = sscanf(line_buf, "%s %d %d", name, &nsec, &nseg);
 
-        F.getline(line_buf, sizeof(line_buf));
+      nrn_assert(n_scan == 3);
 
-        n_scan = sscanf(line_buf, "%s %d %d", name, &nsec, &nseg);
+      mapinfo->name = std::string(name);
 
-        printf("\n ---- :: %s %d %d  %d---:: \n", name, nsec, nseg, n_scan);
+      if(nseg) {
+          std::vector<int> sec, seg;
+          sec.reserve(nseg);
+          seg.reserve(nseg);
 
-        nrn_assert(n_scan == 3);
+          read_array<int>(&sec[0], nseg);
+          read_array<int>(&seg[0], nseg);
 
-
-        mapinfo->name = std::string(name);
-
-        for (int i = 0; i < nseg; i++) {
-            F.getline(line_buf, sizeof(line_buf));
-            nrn_assert(!F.fail());
-            int sec, seg;
-            n_scan = sscanf(line_buf, "%d %d", &sec, &seg);
-            nrn_assert(n_scan == 2);
-            mapinfo->add_segment(sec, seg);
-            printf("       %d  %d \n", sec, seg);
+          for (int i = 0; i < nseg; i++) {
+              mapinfo->add_segment(sec[i], seg[i]);
+            }
         }
-
-        return nseg;
+      return nseg;
     }
 
     /** Defined flag values for parse_array() */

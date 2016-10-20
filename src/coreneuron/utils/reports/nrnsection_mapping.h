@@ -16,15 +16,16 @@ typedef secseg_map_type::iterator secseg_it_type;
  *  of section to segments.
  */
 struct SecMapping {
-
     /** name of section list */
     std::string name;
 
     /** map of section and associated segments */
     secseg_map_type secmap;
 
-    SecMapping() {}
-    SecMapping(std::string s) : name(s) {}
+    SecMapping() {
+    }
+    SecMapping(std::string s) : name(s) {
+    }
 
     /** @brief return total number of sections in section list */
     size_t num_sections() {
@@ -34,7 +35,7 @@ struct SecMapping {
     /** @brief return number of segments in section list */
     size_t num_segments() {
         size_t count = 0;
-        for(secseg_it_type iterator = secmap.begin(); iterator != secmap.end(); iterator++) {
+        for (secseg_it_type iterator = secmap.begin(); iterator != secmap.end(); iterator++) {
             count += iterator->second.size();
         }
         return count;
@@ -53,19 +54,19 @@ struct SecMapping {
  * section lists using HOC interface.
  */
 struct CellMapping {
-
     /** gid of a cell */
     int gid;
 
     /** list of section lists (like soma, axon, apic) */
     std::vector<SecMapping*> secmapvec;
 
-    CellMapping(int g) : gid(g) { }
+    CellMapping(int g) : gid(g) {
+    }
 
     /** @brief total number of sections in a cell */
     int num_sections() {
         int nsec = 0;
-        for(size_t i = 0; i < secmapvec.size(); i++) {
+        for (size_t i = 0; i < secmapvec.size(); i++) {
             nsec += secmapvec[i]->num_sections();
         }
         return nsec;
@@ -74,7 +75,7 @@ struct CellMapping {
     /** @brief return number of segments in a cell */
     int num_segments() {
         int nseg = 0;
-        for(size_t i = 0; i < secmapvec.size(); i++) {
+        for (size_t i = 0; i < secmapvec.size(); i++) {
             nseg += secmapvec[i]->num_segments();
         }
         return nseg;
@@ -86,33 +87,33 @@ struct CellMapping {
     }
 
     /** @brief add new SecMapping */
-    void add_sec_map(SecMapping *s) {
+    void add_sec_map(SecMapping* s) {
         secmapvec.push_back(s);
     }
 
     /** @brief return section list mapping with given name */
     SecMapping* get_seclist_mapping(std::string name) {
-        for(size_t i = 0; i < secmapvec.size(); i++) {
-            if(name == secmapvec[i]->name)
+        for (size_t i = 0; i < secmapvec.size(); i++) {
+            if (name == secmapvec[i]->name)
                 return secmapvec[i];
         }
 
-        std::cout << "Warning: Section mapping list " << name  << " doesn't exist! \n";
+        std::cout << "Warning: Section mapping list " << name << " doesn't exist! \n";
         return NULL;
     }
 
     /** @brief return segment count for specific section list with given name */
     size_t get_seclist_segment_count(std::string name) {
-        SecMapping *s = get_seclist_mapping(name);
+        SecMapping* s = get_seclist_mapping(name);
         size_t count = 0;
-        if(s) {
+        if (s) {
             count = s->num_segments();
         }
         return count;
     }
 
     ~CellMapping() {
-        for(size_t i = 0; i < secmapvec.size(); i++) {
+        for (size_t i = 0; i < secmapvec.size(); i++) {
             delete secmapvec[i];
         }
     }
@@ -124,7 +125,6 @@ struct CellMapping {
  * and we store this in vector.
  */
 struct NrnThreadMappingInfo {
-
     /** list of cells mapping */
     std::vector<CellMapping*> mappingvec;
 
@@ -135,7 +135,7 @@ struct NrnThreadMappingInfo {
 
     /** @brief memory cleanup */
     ~NrnThreadMappingInfo() {
-        for(size_t i = 0; i < mappingvec.size(); i++) {
+        for (size_t i = 0; i < mappingvec.size(); i++) {
             delete mappingvec[i];
         }
     }
@@ -144,9 +144,8 @@ struct NrnThreadMappingInfo {
      *	if exist otherwise return NULL.
      */
     CellMapping* get_cell_mapping(int gid) {
-        for(size_t i = 0; i < mappingvec.size(); i++) {
-            if ( mappingvec[i]->gid == gid) {
-                std::cout << "\n\n ------ >  " << mappingvec[i]->gid  << " :: " << gid << "\n";
+        for (size_t i = 0; i < mappingvec.size(); i++) {
+            if (mappingvec[i]->gid == gid) {
                 return mappingvec[i];
             }
         }
@@ -159,4 +158,4 @@ struct NrnThreadMappingInfo {
     }
 };
 
-#endif // NRN_SECTION_MAPPING
+#endif  // NRN_SECTION_MAPPING
