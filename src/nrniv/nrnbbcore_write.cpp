@@ -1187,7 +1187,7 @@ int count_distinct(double *data, int len) {
  *      sections : list of sections
  *      segments : list of segments
  */
-void nrn_register_mapping() {
+void nrnbbcore_register_mapping() {
 
     // gid of a cell
     int gid = *hoc_getarg(1);

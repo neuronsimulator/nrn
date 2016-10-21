@@ -68,7 +68,7 @@ extern "C" {
 	extern int nrn_allow_busywait(int);
 	extern int nrn_how_many_processors();
 	extern size_t nrnbbcore_write();
-	extern size_t nrn_register_mapping();
+	extern size_t nrnbbcore_register_mapping();
 
 }
 
@@ -927,8 +927,8 @@ static double nrnbbcorewrite(void*) {
 	return double(nrnbbcore_write());
 }
 
-static double nrn_register_mapping(void*) {
-	return double(nrn_register_mapping());
+static double nrnbbcore_register_mapping(void*) {
+	return double(nrnbbcore_register_mapping());
 }
 
 static Object** gid2obj(void* v) {
@@ -1019,7 +1019,7 @@ static Member_func members[] = {
 	"t", nrn_thread_t,
 
     "nrnbbcore_write", nrnbbcorewrite,
-    "nrn_register_mapping", nrn_register_mapping,
+    "nrnbbcore_register_mapping", nrnbbcore_register_mapping,
 
 	0,0
 };
