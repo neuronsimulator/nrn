@@ -84,6 +84,7 @@ nt->tml->pdata is not cache_efficient
 #include <parse.h>
 #include <nrnmpi.h>
 #include <netcon.h>
+#include <algorithm>
 #include <nrnhash_alt.h>
 #include <nrnbbcore_write.h>
 #include <netcvode.h> // for nrnbbcore_vecplay_write
@@ -1162,6 +1163,20 @@ int* datum2int(int type, Memb_list* ml, NrnThread& nt, CellGroup& cg, DatumIndic
   return pdata;
 }
 
+
+/** @brief Count number of unique elements in the array.
+ *  there is a copy of the vector but we are primarily
+ *  using it for small section list vectors.
+ */
+int count_distinct(double *data, int len) {
+    if( len == 0)
+        return 0;
+    std::vector<double> v;
+    v.assign(data, data + len);
+    std::sort(v.begin(), v.end());
+    return std::unique(v.begin(), v.end()) - v.begin();
+}
+
 /** @brief For BBP use case, we want to write section-segment
  *  mapping to gid_3.dat file. This information will be
  *  provided through neurodamus HOC interface with following
@@ -1180,24 +1195,29 @@ void nrn_register_mapping() {
     // name of section list
     std::string name = std::string(hoc_gargstr(2));
 
-    // number of unique sections
-    int nsec = *hoc_getarg(3);
-
-    // number of segments in these sections
-    int nseg = *hoc_getarg(4);
-
-    //hoc vectors: sections and segments
-    Vect* sec = vector_arg(5);
-    Vect* seg = vector_arg(6);
+    // hoc vectors: sections and segments
+    Vect* sec = vector_arg(3);
+    Vect* seg = vector_arg(4);
 
     double* sections  = vector_vec(sec);
     double* segments  = vector_vec(seg);
+
+    int nsec = vector_capacity(sec);
+    int nseg = vector_capacity(seg);
+
+    if( nsec != nseg ) {
+        std::cout << "Error: Section and Segment mapping vectors should have same size!\n";
+        abort();
+    }
+
+    // number of unique sections
+    nsec = count_distinct(sections, nsec);
 
     SecMapping *smap = new SecMapping(nsec, name);
     smap->sections.assign(sections, sections+nseg);
     smap->segments.assign(segments, segments+nseg);
 
-    //store mapping information
+    // store mapping information
     mapinfo.add_sec_mapping(gid, smap);
 }
 
