@@ -22,10 +22,7 @@ char* nrn_version(int i)
   char *cp;
   int b;
   buf[0] = '\0';
-  if (strncmp(GIT_TAG, "Release", 7) == 0) 
-  {
-    sprintf(head, "%s (%s)", GIT_LOCAL, GIT_CHANGESET);        
-  }else if (strncmp(GIT_BRANCH, "Release", 7) == 0) 
+  if (strncmp(GIT_BRANCH, "Release", 7) == 0) 
   {
     sprintf(head, "%s (%s)", GIT_BRANCH, GIT_CHANGESET);
   }else{
@@ -45,9 +42,7 @@ char* nrn_version(int i)
   }else if (i == 4) {
     sprintf(buf, "%s", GIT_DATE);
   }else if (i == 5) {
-     printf("Error, GIT_LOCAL does not exist. Stopping execution");
-     assert(0);
-    //sprintf(buf, "%s", GIT_LOCAL);
+    sprintf(buf, "%s", GIT_LOCAL);
   }else if (i == 6) {
     return configargs;
   }else if (i == 7) {
