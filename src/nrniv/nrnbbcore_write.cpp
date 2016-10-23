@@ -84,10 +84,13 @@ nt->tml->pdata is not cache_efficient
 #include <parse.h>
 #include <nrnmpi.h>
 #include <netcon.h>
+#include <algorithm>
 #include <nrnhash_alt.h>
 #include <nrnbbcore_write.h>
 #include <netcvode.h> // for nrnbbcore_vecplay_write
 #include <vrecitem.h> // for nrnbbcore_vecplay_write
+#include <nrnsection_mapping.h>
+
 extern NetCvode* net_cvode_instance;
 
 extern "C" { // to end of file
@@ -136,6 +139,9 @@ static void mk_tml_with_art(void);
 declareNrnHash(PVoid2Int, void*, int)
 implementNrnHash(PVoid2Int, void*, int)
 PVoid2Int* artdata2index_;
+
+/** mapping information */
+static NrnMappingInfo mapinfo;
 
 // accessible from ParallelContext.total_bytes()
 size_t nrnbbcore_write() {
@@ -216,6 +222,14 @@ size_t nrnbbcore_write() {
     chkpnt = 0;
     write_nrnthread(path, nrn_threads[i], cgs[i]);
   }
+
+  /** write mapping information */
+  if(mapinfo.size()) {
+    int gid = cgs[0].output_gid[0];
+    nrn_write_mapping_info(path, gid, mapinfo);
+    mapinfo.clear();
+  }
+
   if (nrnthread_v_transfer_) {
     // see partrans.cpp. nrn_nthread files of path/icg_gap.dat
     int* group_ids = new int[nrn_nthread];
@@ -1147,6 +1161,103 @@ int* datum2int(int type, Memb_list* ml, NrnThread& nt, CellGroup& cg, DatumIndic
     }
   }
   return pdata;
+}
+
+
+/** @brief Count number of unique elements in the array.
+ *  there is a copy of the vector but we are primarily
+ *  using it for small section list vectors.
+ */
+int count_distinct(double *data, int len) {
+    if( len == 0)
+        return 0;
+    std::vector<double> v;
+    v.assign(data, data + len);
+    std::sort(v.begin(), v.end());
+    return std::unique(v.begin(), v.end()) - v.begin();
+}
+
+/** @brief For BBP use case, we want to write section-segment
+ *  mapping to gid_3.dat file. This information will be
+ *  provided through neurodamus HOC interface with following
+ *  format:
+ *      gid : number of non-empty neurons in the cellgroup
+ *      name : name of section list (like soma, axon, apic)
+ *      nsec : number of sections
+ *      sections : list of sections
+ *      segments : list of segments
+ */
+void nrnbbcore_register_mapping() {
+
+    // gid of a cell
+    int gid = *hoc_getarg(1);
+
+    // name of section list
+    std::string name = std::string(hoc_gargstr(2));
+
+    // hoc vectors: sections and segments
+    Vect* sec = vector_arg(3);
+    Vect* seg = vector_arg(4);
+
+    double* sections  = vector_vec(sec);
+    double* segments  = vector_vec(seg);
+
+    int nsec = vector_capacity(sec);
+    int nseg = vector_capacity(seg);
+
+    if( nsec != nseg ) {
+        std::cout << "Error: Section and Segment mapping vectors should have same size!\n";
+        abort();
+    }
+
+    // number of unique sections
+    nsec = count_distinct(sections, nsec);
+
+    SecMapping *smap = new SecMapping(nsec, name);
+    smap->sections.assign(sections, sections+nseg);
+    smap->segments.assign(segments, segments+nseg);
+
+    // store mapping information
+    mapinfo.add_sec_mapping(gid, smap);
+}
+
+/** @brief dump mapping information to gid_3.dat file */
+void nrn_write_mapping_info(const char *path, int gid, NrnMappingInfo &minfo) {
+
+    /** full path of mapping file */
+    std::stringstream ss;
+    ss << path << "/" << gid << "_3.dat";
+
+    const char *fname = ss.str().c_str();
+    FILE *f = fopen(fname, "w");
+
+    if (!f) {
+        hoc_execerror("nrnbbcore_write could not open for writing:", fname);
+    }
+
+    /** number of gids in NrnThread */
+    fprintf(f, "%d\n", minfo.size());
+
+    /** all cells mapping information in NrnThread */
+    for(size_t i = 0; i < minfo.size(); i++) {
+        CellMapping *c = minfo.mapping[i];
+
+        /** gid, #section, #compartments,  #sectionlists */
+        fprintf(f, "%d %d %d %d\n", c->gid, c->num_sections(), c->num_segments(), c->size());
+
+        for(size_t j = 0; j < c->size(); j++) {
+            SecMapping* s = c->secmapping[j];
+            /** section list name, number of sections, number of segments */
+            fprintf(f, "%s %d %d\n", s->name.c_str(), s->nsec, s->size());
+
+            /** section - segment mapping */
+            if(s->size()) {
+                writeint(&(s->sections.front()), s->size());
+                writeint(&(s->segments.front()), s->size());
+            }
+        }
+    }
+    fclose(f);
 }
 
 } // end of extern "C"

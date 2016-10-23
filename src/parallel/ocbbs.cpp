@@ -68,6 +68,8 @@ extern "C" {
 	extern int nrn_allow_busywait(int);
 	extern int nrn_how_many_processors();
 	extern size_t nrnbbcore_write();
+	extern size_t nrnbbcore_register_mapping();
+
 }
 
 class OcBBS : public BBS , public Resource {
@@ -925,6 +927,10 @@ static double nrnbbcorewrite(void*) {
 	return double(nrnbbcore_write());
 }
 
+static double nrnbbcore_register_mapping(void*) {
+	return double(nrnbbcore_register_mapping());
+}
+
 static Object** gid2obj(void* v) {
 	OcBBS* bbs = (OcBBS*)v;
 	return bbs->gid2obj(int(chkarg(1, 0, MD)));
@@ -1012,7 +1018,8 @@ static Member_func members[] = {
 	"dt", thread_dt,
 	"t", nrn_thread_t,
 
-	"nrnbbcore_write", nrnbbcorewrite,
+    "nrnbbcore_write", nrnbbcorewrite,
+    "nrnbbcore_register_mapping", nrnbbcore_register_mapping,
 
 	0,0
 };
