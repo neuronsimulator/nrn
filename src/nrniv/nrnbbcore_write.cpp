@@ -1228,27 +1228,27 @@ void nrn_write_mapping_info(const char *path, int gid, NrnMappingInfo &minfo) {
     std::stringstream ss;
     ss << path << "/" << gid << "_3.dat";
 
-    const char *fname = ss.str().c_str();
-    FILE *f = fopen(fname, "w");
+    std::string fname(ss.str());
+    FILE *f = fopen(fname.c_str(), "w");
 
     if (!f) {
-        hoc_execerror("nrnbbcore_write could not open for writing:", fname);
+        hoc_execerror("nrnbbcore_write could not open for writing:", fname.c_str());
     }
 
     /** number of gids in NrnThread */
-    fprintf(f, "%d\n", minfo.size());
+    fprintf(f, "%zd\n", minfo.size());
 
     /** all cells mapping information in NrnThread */
     for(size_t i = 0; i < minfo.size(); i++) {
         CellMapping *c = minfo.mapping[i];
 
         /** gid, #section, #compartments,  #sectionlists */
-        fprintf(f, "%d %d %d %d\n", c->gid, c->num_sections(), c->num_segments(), c->size());
+        fprintf(f, "%d %d %d %zd\n", c->gid, c->num_sections(), c->num_segments(), c->size());
 
         for(size_t j = 0; j < c->size(); j++) {
             SecMapping* s = c->secmapping[j];
             /** section list name, number of sections, number of segments */
-            fprintf(f, "%s %d %d\n", s->name.c_str(), s->nsec, s->size());
+            fprintf(f, "%s %d %zd\n", s->name.c_str(), s->nsec, s->size());
 
             /** section - segment mapping */
             if(s->size()) {
