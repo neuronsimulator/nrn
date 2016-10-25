@@ -27,6 +27,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include <string.h>
+#include <sys/time.h>
 #include "coreneuron/nrnconf.h"
 #include "coreneuron/nrnmpi/nrnmpi.h"
 #include "coreneuron/nrnmpi/mpispike.h"
