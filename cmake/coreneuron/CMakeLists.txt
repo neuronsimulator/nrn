@@ -54,6 +54,8 @@ option(ENABLE_REPORTINGLIB "Enable use of ReportingLib for soma reports" OFF)
 option(EXPORT_MECHS_FUNCTIONS "Enable exporting of mod init, jacob, state, cur and BeforeAfter functions of mod-based mechanisms" OFF)
 option(ENABLE_MPI "Enable MPI-based execution" ON)
 option(ENABLE_SOA "Enable SoA Memory Layout" ON)
+option(DISABLE_HOC_EXP "Disable wrapping exp with hoc_exp()" ON)
+option(ENABLE_OPENACC_INFO "Enable OpenACC compiler information messages" OFF)
 
 ## mech / mod options
 set(ADDITIONAL_MECHPATH "" CACHE PATH "Search path for optional additional mechanism MOD files")
@@ -91,6 +93,11 @@ if (ENABLE_SOA)
     add_definitions("-DLAYOUT=0")
 else()
     add_definitions("-DLAYOUT=1")
+endif()
+
+#Disable hoc_exp wrapper for exp
+if (DISABLE_HOC_EXP)
+    add_definitions("-DDISABLE_HOC_EXP")
 endif()
 
 find_package(mod2c 2.0.0  REQUIRED)
@@ -158,9 +165,23 @@ if(CLANG_FORMAT_FOUND)
         )
 endif()
 
+#Turn off inline assembly for PGI
+if(${CMAKE_C_COMPILER_ID} STREQUAL "PGI")
+    add_definitions(-DSWAP_ENDIAN_DISABLE_ASM)
+endif()
+
 if(ENABLE_OPENACC)
     if(${CMAKE_C_COMPILER_ID} STREQUAL "PGI")
         add_definitions( -DPG_ACC_BUGS)
+        set(ACC_FLAGS "-acc -Minline=size:200,levels:10")
+        if (ENABLE_OPENACC_INFO)
+            set(ACC_FLAGS "${ACC_FLAGS} -Minfo=acc")
+        endif()
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${ACC_FLAGS}")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${ACC_FLAGS}")
+    else()
+        message(WARNING "OpenACC implementation is only supported and tested using only PGI")
+        message(WARNING "Add required compiler flags to enabled OpenACC")
     endif()
 
     find_package(CUDA 5.0)
@@ -179,7 +200,7 @@ ELSE(ENABLE_OPENACC)
     SET (ENABLE_SELECTIVE_GPU_PROFILING OFF)
     #OpenACC pragmas are not guarded, disable all unknown pragm warnings
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${IGNORE_UNKNOWN_PRAGMA_FLAGS}")
-    set(CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} ${IGNORE_UNKNOWN_PRAGMA_FLAGS}")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${IGNORE_UNKNOWN_PRAGMA_FLAGS}")
 endif(ENABLE_OPENACC)
 
 # Some mechanisms use NEURON specific code which is skipped

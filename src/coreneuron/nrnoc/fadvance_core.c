@@ -31,6 +31,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/nrnmpi/nrnmpi.h"
 #include "coreneuron/nrnoc/nrnoc_decl.h"
 #include "coreneuron/nrniv/nrn_acc_manager.h"
+#include "coreneuron/coreneuron.h"
 
 static void* nrn_fixed_step_thread(NrnThread*);
 static void* nrn_fixed_step_lastpart(NrnThread*);
