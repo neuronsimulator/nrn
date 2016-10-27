@@ -75,6 +75,7 @@ set(Boost_NO_BOOST_CMAKE TRUE)
 include(BlueGenePortability)
 include(DefineInstallationPaths)
 include(ReleaseDebugAutoFlags)
+include(SetRpath)
 
 include(FindPkgConfig)
 include(CTest)
