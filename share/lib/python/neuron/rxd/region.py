@@ -22,11 +22,11 @@ def _sort_secs(secs):
     all_sorted = h.SectionList()
     for root in root_secs:
         all_sorted.wholetree(sec=root)
-    secs_names = dict([(sec.name(),sec) for sec in secs])
+    secs_names = dict([(sec.hoc_internal_name(),sec) for sec in secs])
     for sec in secs:
         if h.section_orientation(sec=sec):
             raise RxDException('still need to deal with backwards sections')
-    return [secs_names[sec.name()] for sec in all_sorted if sec.name() in secs_names]
+    return [secs_names[sec.hoc_internal_name()] for sec in all_sorted if sec.hoc_internal_name() in secs_names]
 
 class Region(object):
     """Declare a conceptual region of the neuron.
