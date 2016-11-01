@@ -34,6 +34,10 @@
 #include <spi/include/kernel/memory.h>
 #endif
 
+#if defined(__APPLE__) && defined(__MACH__)
+#include <mach/mach.h>
+#endif
+
 #if OOP
 Symlist	*hoc_built_in_symlist = (Symlist *)0; /* keywords, built-in functions,
 	all name linked into hoc. Look in this list last */
@@ -404,10 +408,23 @@ void hoc_free_pstring(char** p) {
 
 unsigned long long nrn_mallinfo(int item) {
 #if BLUEGENEQ
+	/* BLUEGENE-Q ------------------------------------------------ */
     uint64_t heap = 0;
     Kernel_GetMemorySize(KERNEL_MEMSIZE_HEAP, &heap);
     return heap;
+#elif defined(__APPLE__) && defined(__MACH__)
+    /* OSX ------------------------------------------------------
+     * Returns the current resident set size (physical memory use) measured
+     * in bytes, or zero if the value cannot be determined on this OS.
+     */
+    struct mach_task_basic_info info;
+    mach_msg_type_number_t infoCount = MACH_TASK_BASIC_INFO_COUNT;
+    if ( task_info( mach_task_self( ), MACH_TASK_BASIC_INFO,
+        (task_info_t)&info, &infoCount ) != KERN_SUCCESS )
+        return (size_t)0L;      /* Can't access? */
+    return (size_t)info.resident_size;
 #elif HAVE_MALLINFO
+    /* *NIX PLATFORMS WITH MALLINFO ------------------------------ */
 	int r;
 	struct mallinfo m;
 	m = mallinfo();
@@ -428,6 +445,7 @@ unsigned long long nrn_mallinfo(int item) {
 	}
 	return (unsigned long long)r;
 #else
+    /* UNSUPPORTED PLATFORM ------------------------------------ */
 	return 0;
 #endif
 }
