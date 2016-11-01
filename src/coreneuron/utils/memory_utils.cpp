@@ -47,22 +47,31 @@ THE POSSIBILITY OF SUCH DAMAGE.
 
 #ifdef HAVE_MEMORY_H
 #include <spi/include/kernel/memory.h>
+#elif defined(__APPLE__) && defined(__MACH__)
+#include <mach/mach.h>
 #elif defined HAVE_MALLOC_H
 #include <malloc.h>
 #endif
 
 double nrn_mallinfo(void) {
-    double mbs = -1.0;  // -ve mem usage if mallinfo is not supported
+    // -ve mem usage for non-supported platforms
+    double mbs = -1.0;
 
-// On BG-Q, Use kernel/memory.h to get heap statistics
+// on bg-q use kernel/memory.h to get heap statistics
 #ifdef HAVE_MEMORY_H
     uint64_t heap = 0;
     Kernel_GetMemorySize(KERNEL_MEMSIZE_HEAP, &heap);
     mbs = heap / (1024.0 * 1024.0);
-// if malloc.h available, collect information from mallinfo
+// on os x returns the current resident set size (physical memory in use)
+#elif defined(__APPLE__) && defined(__MACH__)
+    struct mach_task_basic_info info;
+    mach_msg_type_number_t infoCount = MACH_TASK_BASIC_INFO_COUNT;
+    if ( task_info( mach_task_self( ), MACH_TASK_BASIC_INFO,
+        (task_info_t)&info, &infoCount ) != KERN_SUCCESS )
+        return (size_t)0L;      /* Can't access? */
+    return info.resident_size / (1024.0 * 1024.0);
 #elif defined HAVE_MALLOC_H
     struct mallinfo m;
-
     m = mallinfo();
     mbs = (m.hblkhd + m.uordblks) / (1024.0 * 1024.0);
 #endif
