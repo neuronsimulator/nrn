@@ -1,5 +1,5 @@
 import sys
-
+import re
 
 voidfun = []
 intvar = [[],[]] #scalarint vectorint
@@ -20,6 +20,11 @@ def processvar(a, names):
       b.append(j.strip(']'))
     a[len(b)-1].append(b)
 
+def remove_multiline_comments(string):
+    # remove all occurance comments (/*COMMENT */) from string
+    string = re.sub(re.compile("/\*.*?\*/",re.DOTALL ) ,"" ,string)
+    return string
+
 types = {}
 types['void'] = (voidfun, processfun)
 types['int'] = (intvar, processvar)
@@ -29,7 +34,16 @@ types['double'] = (dblvar, processvar)
 def process(type, names):
   types[type][1](types[type][0], names)
 
-for line in sys.stdin:
+
+# read preprocessor output file into buffer
+text = sys.stdin.read()
+
+# the PGI preprocessor output i.e. 'pgcc -Mcpp -E'
+# has multi-line comments (unless we specify -Mcpp=nocomment).
+# we need to remove these multi-line comments
+text = remove_multiline_comments(text)
+
+for line in text.splitlines():
   names = line.replace(',',' ').replace(';',' ').split()
   if len(names) > 2:
     process(names[1], names[2:])
@@ -41,7 +55,8 @@ static VoidFunc function[] = {
 ''')
 
 for i in voidfun:
-  print('"%s", %s,'%(i,i))
+  if i:
+    print('"%s", %s,'%(i,i))
 print('''0, 0
 };
 
