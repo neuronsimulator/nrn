@@ -55,7 +55,8 @@ static VoidFunc function[] = {
 ''')
 
 for i in voidfun:
-  print('"%s", %s,'%(i,i))
+  if i:
+    print('"%s", %s,'%(i,i))
 print('''0, 0
 };
 
