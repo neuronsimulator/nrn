@@ -36,9 +36,7 @@ def process(type, names):
 
 
 # read preprocessor output file into buffer
-text = ''
-for line in sys.stdin:
-  text += line
+text = sys.stdin.read()
 
 # the PGI preprocessor output i.e. 'pgcc -Mcpp -E'
 # has multi-line comments (unless we specify -Mcpp=nocomment).
