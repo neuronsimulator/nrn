@@ -476,7 +476,6 @@ def _create_sections_in_obj(obj, name, numsecs):
 
 def _connect_sections_in_obj(obj, childsecname, childx, parentsecname, parentx):
     # used by import3d
-    import re
     childarray, childi = _parse_import3d_name(childsecname)
     parentarray, parenti = _parse_import3d_name(parentsecname)
     getattr(obj, childarray)[childi].connect(getattr(obj, parentarray)[parenti](parentx), childx)
