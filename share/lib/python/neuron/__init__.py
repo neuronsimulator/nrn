@@ -466,6 +466,40 @@ def _declare_contour(secobj, secname):
     # (is_stack, x, y, z, xcenter, ycenter, zcenter)
     _sec_db[secname] = (True if secobj.contour_list else False, secobj.raw.getrow(0).c(j), secobj.raw.getrow(1).c(j), secobj.raw.getrow(2).c(j), x0, y0, z0)
 
+def _create_all_list(obj):
+    # used by import3d
+    obj.all = []
+
+def _create_sections_in_obj(obj, name, numsecs):
+    # used by import3d to instantiate inside of a Python object
+    setattr(obj, name, [h.Section(name="%s[%d]" % (name, i), cell=obj) for i in xrange(int(numsecs))])
+
+def _connect_sections_in_obj(obj, childsecname, childx, parentsecname, parentx):
+    # used by import3d
+    import re
+    childarray, childi = _parse_import3d_name(childsecname)
+    parentarray, parenti = _parse_import3d_name(parentsecname)
+    getattr(obj, childarray)[childi].connect(getattr(obj, parentarray)[parenti](parentx), childx)
+
+def _parse_import3d_name(name):
+    if '[' in name:
+        import re
+        array, i = re.search(r'(.*)\[(\d*)\]', name).groups()
+        i = int(i)
+    else:
+        array = name
+        i = 0
+    return array, i
+
+def _pt3dstyle_in_obj(obj, name, x, y, z):
+    # used by import3d
+    array, i = _parse_import3d_name(name)
+    h.pt3dstyle(1, x, y, z, sec=getattr(obj, array)[i])
+
+def _pt3dadd_in_obj(obj, name, x, y, z, d):
+    array, i = _parse_import3d_name(name)
+    h.pt3dadd(x, y, z, d, sec=getattr(obj, array)[i])
+
 
 def numpy_from_pointer(cpointer, size):
     if sys.version_info.major < 3:

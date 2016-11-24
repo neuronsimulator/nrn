@@ -911,32 +911,40 @@ func set_nameindex() {local i, min  localobj sec
 	return min
 }
 
-proc instantiate() {local i, j, min, haspy  localobj sec, xx, yy, zz, dd, pyobj
+proc instantiate() {local i, j, min, haspy, ispycontext  localobj sec, xx, yy, zz, dd, pyobj, allpyobjs
 	chk_valid()
 	haspy = nrnpython("import neuron")
+	ispycontext = 0
 	if (haspy) {
         pyobj = new PythonObject()
+        allpyobjs = new List("PythonObject")
+        if (allpyobjs.index($o1) >= 0) {
+            ispycontext = 1
+            pyobj.neuron._create_all_list($o1)
+        }
 	}
 	min = set_nameindex(swc.sections)
 	// create
 	for i = 0, types.size-1 {
 		type2name(i+min, tstr)
-		if (types.x[i] == 1) {
-			sprint(tstr1, "~create %s[1]\n", tstr)
-			execute(tstr1, $o1)
-		}else if (types.x[i] > 1) {
-			sprint(tstr1, "~create %s[%d]\n", tstr, types.x[i])
-			execute(tstr1, $o1)
+		if (types.x[i] > 0) {
+		    if (!ispycontext) {
+			    sprint(tstr1, "~create %s[%d]\n", tstr, types.x[i])
+			    execute(tstr1, $o1)
+		    } else {
+		        pyobj.neuron._create_sections_in_obj($o1, tstr, types.x[i])
+		        $o1.all.extend(pyobj.getattr($o1, tstr))
+		    }
 		}
-		if ($o1 != nil) { mksubset($o1, i+min, tstr) }
+		if ($o1 != nil && !ispycontext) { mksubset($o1, i+min, tstr) }
 	}
-	if ($o1 != nil) {execute("forall all.append", $o1) }
+	if ($o1 != nil && !ispycontext) {execute("forall all.append", $o1) }
 	// connect
 	for i = 0, swc.sections.count-1 {
 		sec = swc.sections.object(i)
 		if (sec.is_subsidiary) { continue }
 		name(sec, tstr)
-		if (i == 0) {
+		if (i == 0 && !ispycontext) {
 			sprint(tstr1, "access %s", tstr)
 			if ($o1 == nil) {
 				execute(tstr1, $o1)
@@ -944,13 +952,21 @@ proc instantiate() {local i, j, min, haspy  localobj sec, xx, yy, zz, dd, pyobj
 		}
 		if (sec.parentsec != nil) {
 			name(sec.parentsec, tstr1)
-			sprint(tstr1, "%s connect %s(0), %g", tstr1, tstr, sec.parentx)
-			execute(tstr1, $o1)
+			if (!ispycontext) {
+			    sprint(tstr1, "%s connect %s(0), %g", tstr1, tstr, sec.parentx)
+			    execute(tstr1, $o1)
+		    } else {
+		        pyobj.neuron._connect_sections_in_obj($o1, tstr, 0, tstr1, sec.parentx)
+		    }
 		}
 		// 3-d point info
 		if (sec.first == 1) {
-			sprint(tstr1, "%s { pt3dstyle(1, %g, %g, %g) }", tstr, sec.raw.x[0][0], sec.raw.x[1][0], sec.raw.x[2][0])
-			execute(tstr1, $o1)
+		    if (ispycontext) {
+		        pyobj.neuron._pt3dstyle_in_obj($o1, tstr, sec.raw.x[0][0], sec.raw.x[1][0], sec.raw.x[2][0])
+		    } else {
+			    sprint(tstr1, "%s { pt3dstyle(1, %g, %g, %g) }", tstr, sec.raw.x[0][0], sec.raw.x[1][0], sec.raw.x[2][0])
+			    execute(tstr1, $o1)
+            }
 		}
 		j = sec.first
 		xx = sec.raw.getrow(0).c(j)
@@ -965,9 +981,13 @@ proc instantiate() {local i, j, min, haspy  localobj sec, xx, yy, zz, dd, pyobj
 		}
 		if (dd.size == 1) { sphere_rep(xx, yy, zz, dd) }
 		for j = 0, dd.size-1 {
-			sprint(tstr1, "%s { pt3dadd(%g, %g, %g, %g) }",\
-			  tstr,xx.x[j], yy.x[j], zz.x[j], dd.x[j])
-			execute(tstr1, $o1)
+		    if (ispycontext) {
+		        pyobj.neuron._pt3dadd_in_obj($o1, tstr, xx.x[j], yy.x[j], zz.x[j], dd.x[j])
+		    } else {
+			    sprint(tstr1, "%s { pt3dadd(%g, %g, %g, %g) }",\
+			      tstr,xx.x[j], yy.x[j], zz.x[j], dd.x[j])
+			    execute(tstr1, $o1)
+            }
 		}
 	}
 }
