@@ -977,6 +977,8 @@ proc instantiate() {local i, j, min, haspy, ispycontext  localobj sec, xx, yy, z
             if (haspy) {
                 pyobj.neuron._declare_contour(sec, tstr)
             }
+            // ensure stk_triang_vec available if needed (necessary for soma stack case)
+            sec.pl_diam_mk_stk_triang_vec()
 			contour2centroid(xx, yy, zz, dd, sec)
 		}
 		if (dd.size == 1) { sphere_rep(xx, yy, zz, dd) }
