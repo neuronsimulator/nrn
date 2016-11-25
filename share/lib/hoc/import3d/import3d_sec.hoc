@@ -10,7 +10,7 @@ begintemplate Import3d_Section
 // define a 3-d object
 public raw, xyz, d, id, append, g, mkglyph, rotate, type, centroid_color
 public iscontour_, pid, parentsec, parentx, volatile, nameindex, first, fid
-public contour_list, pl_centroid, pl_diam
+public contour_list, pl_centroid, pl_diam, pl_diam_mk_stk_triang_vec
 public stk_triang_vec, stk_triang_area, is_subsidiary
 public volatile2, contourcenter, ztrans, approximate_contour_by_circle
 public pl_point, insrt, set_pt, stk_center, accurate_triangle_area
@@ -77,18 +77,24 @@ proc pl_centroid() {local i, n
     }
 }
 
+proc pl_diam_mk_stk_triang_vec() {
+	if (object_id(contour_list)) {
+		if (!object_id(contour_list.object(0).stk_triang_vec)) {
+			mk_stk_triang_vec(this, contour_list.object(0))
+			for i=1, contour_list.count-1 {
+				mk_stk_triang_vec(contour_list.object(i-1), contour_list.object(i))
+			}
+		}
+	}	
+}
+
 proc pl_diam() {local i
 	if (!iscontour_) {
 		mkglyph()
 		$o1.glyph(g, 0, 0)
 	}else{
 		if (object_id(contour_list)) {
-			if (!object_id(contour_list.object(0).stk_triang_vec)) {
-				mk_stk_triang_vec(this, contour_list.object(0))
-				for i=1, contour_list.count-1 {
-					mk_stk_triang_vec(contour_list.object(i-1), contour_list.object(i))
-				}
-			}
+			pl_diam_mk_stk_triang_vec()
 			pl_stk_triang($o1, this, contour_list.object(0))
 			for i=1, contour_list.count-1 {
 				pl_stk_triang($o1, contour_list.object(i-1), contour_list.object(i))
