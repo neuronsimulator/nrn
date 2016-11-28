@@ -179,7 +179,8 @@ static jmp_buf hoc_oc_begin;
 int	intset;		/* safer interrupt handling */
 int	indef;
 const char	*infile;	/* input file name */
-extern char hoc_xopen_file_[];
+extern int hoc_xopen_file_size_;
+extern char* hoc_xopen_file_;
 const char	**gargv;	/* global argument list */
 int	gargc;
 static int c = '\n';	/* global for use by warning() */
@@ -725,7 +726,10 @@ void hoc_main1_init(const char* pname, const char** envp)
 	extern NrnFILEWrap *frin;
 	extern FILE	*fout;
 	static int inited = 0;
-	
+
+	hoc_xopen_file_size_ = 200;
+	hoc_xopen_file_ = emalloc(hoc_xopen_file_size_);
+
 	hoc_promptstr = "oc>";
 	yystart = 1;
 	lineno = 0;
@@ -976,7 +980,7 @@ inputReadyVal_ = i;
 #endif
 
 void hoc_final_exit(void) {
-	char buf[256];
+	char* buf;
 #if defined(USE_PYTHON)
 	if (p_nrnpython_start) { (*p_nrnpython_start)(0);}
 #endif
@@ -1002,12 +1006,12 @@ void hoc_final_exit(void) {
 #ifdef WIN32
 	hoc_win32_cleanup();
 #else
-#if defined(__GO32__)
-	sprintf(buf, "sh %s/lib/cleanup %d", neuron_home, hoc_pid());
-#else
-	sprintf(buf, "%s/lib/cleanup %d", neuron_home, hoc_pid());
-#endif
-	if (system(buf)) {;} /* ignore return value */
+	buf = malloc(strlen(neuron_home) + 30);
+	if (buf) {
+		sprintf(buf, "%s/lib/cleanup %d", neuron_home, hoc_pid());
+		if (system(buf)) {;} /* ignore return value */
+		free(buf);
+	} /* else did not call cleanup */
 #endif
 }
 	
@@ -1189,6 +1193,10 @@ hoc_menu_cleanup();
 		return moreinput();
 	}
 	if (infile) {
+		if (strlen(infile) >= hoc_xopen_file_size_) {
+			hoc_xopen_file_size_ = strlen(infile) + 100;
+			hoc_xopen_file_ = erealloc(hoc_xopen_file_, hoc_xopen_file_size_);
+		}
 		strcpy(hoc_xopen_file_, infile);
 	}
 	return 1;

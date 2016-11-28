@@ -2241,8 +2241,8 @@ void assstr(void) {	/* assign string on top to stack - 1 */
 char* hoc_araystr(Symbol* sym, int index, Objectdata* obd) { /* returns array string for multiple dimensions */
 	static char name[100];
 	char *cp = name+100;
-	char buf[10];
-	int i, n, j;
+	char buf[20];
+	int i, n, j, n1;
 
 	*--cp = '\0';
 	if (ISARRAY(sym)) {
@@ -2256,9 +2256,11 @@ char* hoc_araystr(Symbol* sym, int index, Objectdata* obd) { /* returns array st
 			n = a->sub[i];
 			j = index%n;
 			index /= n;
-			*--cp = ']';
 			Sprintf(buf, "%d", j);
-			for (j = strlen(buf)-1; j >=0; --j) {
+			n1 = strlen(buf);
+			assert(n1 + 2 < cp - name);
+			*--cp = ']';
+			for (j = n1-1; j >=0; --j) {
 				*--cp = buf[j];
 			}
 			*--cp = '[';
