@@ -1859,7 +1859,7 @@ int objectpath(Object* ob, Object* oblook, char* path, int depth) {
 }
 
 char* hoc_object_pathname(Object* ob) {
-	static char path[200];
+	static char path[512];
 	path[0] = '\0';
 	if (objectpath(ob, (Object*)0, path, 0)) {
 		return path;
