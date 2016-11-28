@@ -544,7 +544,8 @@ IFGUI
 ENDGUI
 #endif
 #endif
-	char nrn_props[256];
+	char* nrn_props;
+	nrn_props = new char[strlen(neuron_home) + 20];
 	if (session) {
 		sprintf(nrn_props, "%s/%s", neuron_home, "lib/nrn.defaults");
 #ifdef WIN32
@@ -579,6 +580,7 @@ ENDGUI
 		}
 #endif
 	}
+	free(nrn_props);
 
 #endif /*OCSMALL*/
 
