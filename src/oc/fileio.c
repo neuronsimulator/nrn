@@ -151,10 +151,11 @@ const char* expand_env_var(const char* s) {
 	for (cp1=s, cp2 = hs->buf + begin; *cp1; ++cp1) {
 		if (*cp1 == '$' && cp1[1] == '(') {
 			char* cp3;
-			char buf[100];
+			char buf[200];
 			cp1 += 2;
 			for (cp3 = buf; *cp1 && *cp1 != ')'; ++cp1) {
 				*cp3++ = *cp1;
+				assert(cp3 - buf < 200);
 			}
 			if (*cp1) {
 				*cp3 = '\0';
@@ -215,31 +216,38 @@ const char* expand_env_var(const char* s) {
 	return hs->buf + begin;
 }
 
-char hoc_xopen_file_[200];
+int hoc_xopen_file_size_;
+char* hoc_xopen_file_;
 
 char* hoc_current_xopen(void) {
 	return hoc_xopen_file_;
 }
 
-int hoc_xopen1(const char* fname, const char* rcs) /* read and execute a hoc program */
+int hoc_xopen1(const char* name, const char* rcs) /* read and execute a hoc program */
 {
+/*printf("hoc_xopen1 %d %s\n", strlen(name), name);*/
 	NrnFILEWrap *savfin;
 	int savpipflag, save_lineno;
-	char st[200];
-
+	char* savname;
+	char* fname = strdup(name);
+	assert(fname);
 #if 1
 	if (rcs) {
 	   if (rcs[0] != '\0') {
-		Sprintf(st, "co -p%s %s > %s-%s", rcs, fname,
-			fname, rcs);
- 		ERRCHK(if (system(st) != 0) { 
-		    hoc_execerror("st", "\nreturned error in hoc_co system call");
+		int sz = 2*(strlen(rcs) + strlen(name)) + 20;
+		free(fname);
+		fname = emalloc(sz);
+		Sprintf(fname, "co -p%s %s > %s-%s", rcs, name,
+			name, rcs);
+ 		ERRCHK(if (system(fname) != 0) { 
+		    free(fname);
+		    hoc_execerror(name, "\nreturned error in hoc_co system call");
 		})
-		Sprintf(st, "%s-%s", fname, rcs);
-		fname = st;
+		Sprintf(fname, "%s-%s", name, rcs);
 	   }
 	}else if (hoc_retrieving_audit()) {
 		hoc_xopen_from_audit(fname);
+		free(fname);
 		return 0;
 	}
 #endif
@@ -247,10 +255,8 @@ int hoc_xopen1(const char* fname, const char* rcs) /* read and execute a hoc pro
 	savfin = fin;
 	pipeflag = 0;
 
-#if !defined(__MWERKS__)
  	errno = EINTR; 
  	while (errno == EINTR) {
-#endif 
 	   errno = 0; 
 #if MAC
 	   if ((fin = nrn_fw_fopen(fname, "rb")) == NULL) {
@@ -258,7 +264,9 @@ int hoc_xopen1(const char* fname, const char* rcs) /* read and execute a hoc pro
 	   if ((fin = nrn_fw_fopen(fname, "r")) == NULL) {
 #endif
 		const char* retry;
-		fname = retry = expand_env_var(fname);
+		retry = expand_env_var(fname);
+		free(fname);
+		assert((fname = strdup(retry)));
 #if MAC
 		if ((fin = nrn_fw_fopen(retry, "rb")) == NULL) {
 #else
@@ -266,16 +274,19 @@ int hoc_xopen1(const char* fname, const char* rcs) /* read and execute a hoc pro
 #endif
 			fin = savfin;
 			pipeflag = savpipflag;
+			free(fname);
 			execerror("Can't open ", retry);
 		}
 	   }
-#if !defined(__MWERKS__)
 	}
-#endif
 
 	save_lineno = hoc_lineno;
 	hoc_lineno = 0;
-	strcpy(st, hoc_xopen_file_);
+	assert((savname = strdup(hoc_xopen_file_)));
+	if (strlen(fname) >= hoc_xopen_file_size_) {
+		hoc_xopen_file_size_ = strlen(fname) + 100;
+		hoc_xopen_file_ = erealloc(hoc_xopen_file_, hoc_xopen_file_size_);
+	}
 	strcpy(hoc_xopen_file_, fname);
 	if (fin) {
 		hoc_audit_from_xopen1(fname, rcs);
@@ -286,12 +297,13 @@ int hoc_xopen1(const char* fname, const char* rcs) /* read and execute a hoc pro
 	}
 	fin = savfin;
 	pipeflag = savpipflag;
-	if (fname == st) {
-		unlink(st);
+	if (rcs && rcs[0]) {
+		unlink(fname);
 	}
+	free(fname);
 	hoc_xopen_file_[0] = '\0';
 	hoc_lineno = save_lineno;
-	strcpy(hoc_xopen_file_, st);
+	strcpy(hoc_xopen_file_, savname);
 	return 0;
 }
 
@@ -544,7 +556,8 @@ void hoc_sprint1(char** ppbuf, int argn) {	/* convert args to right type for con
 #if defined(__TURBOC__) || defined(__GO32__) || defined(WIN32) || defined(MAC)
 static FILE* oc_popen(char* cmd, char* type) {
 	FILE* fp;
-	char buf[256];
+	char buf[1024];
+	assert(strlen(cmd) + 20 < 1024);
 	sprintf(buf, "sh %s > hocload.tmp", cmd);
 	if (system(buf) != 0) {
 		return (FILE*)0;
@@ -570,19 +583,20 @@ static void hoc_load(const char* stype)
 	int i=1;
 	char* s;
 	Symbol* sym;
-	char cmd[256];
+	char cmd[1024];
 	FILE* p;
-	char file[256], *f;
+	char file[1024], *f;
 
 	while(ifarg(i)) {
 		s = gargstr(i);
 		++i;
 		sym = hoc_lookup(s);
 		if (!sym || sym->type == UNDEF) {
+			assert(strlen(stype) + strlen(s) + 50 < 1024);
 			sprintf(cmd, "$NEURONHOME/lib/hocload.sh %s %s %d", stype, s, hoc_pid());
 			p = oc_popen(cmd, "r");
 			if (p) {
-				f = fgets(file, 256, p);
+				f = fgets(file, 1024, p);
 				if (f) {
 					f[strlen(f)-1] = '\0';
 				}
@@ -651,13 +665,15 @@ static int hoc_Load_file(int always, const char* name) {
 		Temporarily change to the directory containing the file so
 		that it can xopen files relative to its location.
 	*/
+#define hoc_load_file_size_ 1024
 	static hoc_List* loaded;
 	hoc_Item* q;
 	int b, is_loaded;
 	int goback;
-	char expname[512];
+	char expname[hoc_load_file_size_];
 	const char *base;
-	char path[1000], old[1000], fname[1000], cmd[200];
+	char path[hoc_load_file_size_], old[hoc_load_file_size_];
+	char fname[hoc_load_file_size_], cmd[hoc_load_file_size_];
 #if USE_NRNFILEWRAP
 	int f;	
 #else
@@ -682,7 +698,9 @@ static int hoc_Load_file(int always, const char* name) {
 	}
 	
 	/* maybe the name already has an explicit path */
-	strncpy(expname, expand_env_var(name), 512);
+	expname[hoc_load_file_size_ - 1] = '\0';
+	strncpy(expname, expand_env_var(name), hoc_load_file_size_);
+	assert(expname[hoc_load_file_size_ - 1] == '\0');
 	name = expname;
 	if ((base = strrchr(name, '/')) != NULL) {
 		strncpy(path, name, base-name);
@@ -715,6 +733,7 @@ static int hoc_Load_file(int always, const char* name) {
 				if (!cp) {
 					cp = hlp + strlen(hlp);
 				}
+				assert(cp-hlp < hoc_load_file_size_);
 				strncpy(path, hlp, cp-hlp);
 				path[cp-hlp] = '\0';
 				if (*cp) {
@@ -740,6 +759,7 @@ static int hoc_Load_file(int always, const char* name) {
 #endif
 		if (!f) { /* try NEURONHOME/lib/hoc */
 			sprintf(path, "$(NEURONHOME)/lib/hoc");
+			assert(strlen(path) + strlen(base) + 1 < hoc_load_file_size_);
 			sprintf(fname, "%s/%s", path, base);
 #if USE_NRNFILEWRAP
 			f = nrn_fw_readaccess(expand_env_var(fname));
@@ -776,6 +796,7 @@ static int hoc_Load_file(int always, const char* name) {
 	/* xopen the file */
 	if (b) {
 /*printf("load_file xopen %s\n", base);*/
+		assert(strlen(base) + 50 < hoc_load_file_size_);
 		sprintf(cmd, "hoc_ac_ = execute1(\"{xopen(\\\"%s\\\")}\")\n", base);
 		b = hoc_oc(cmd);
 		b = (int)hoc_ac_;
@@ -796,10 +817,10 @@ void hoc_getcwd(void) {
 	int len;
 	static char* buf;
 	if (!buf) {
-		buf = emalloc(1000);
+		buf = emalloc(hoc_load_file_size_);
 	}
-	if (!getcwd(buf, 1000)) {
-		hoc_execerror("getcwd failed. Perhaps the path length is > 1000", (char*)0);
+	if (!getcwd(buf, hoc_load_file_size_)) {
+		hoc_execerror("getcwd failed. Perhaps the path length is > hoc_load_file_size_", (char*)0);
 	}
 #if defined(WIN32)
 {extern char* hoc_back2forward();
