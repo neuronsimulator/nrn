@@ -6,9 +6,8 @@ mcell_ran4
 
 .. function:: mcell_ran4
 
-
     Syntax:
-        ``x = mcell_ran4(&highindex)``
+        ``x = h.mcell_ran4(highindex)``
 
 
     Description:
@@ -43,38 +42,40 @@ mcell_ran4
 
     Example:
 
-        .. code-block::
-            none
+        .. code-block::  
+            python
 
-            objref vec, g1, g2, hist 
-            vec = new Vector(1000) 
-            g1 = new Graph() 
-            g2 = new Graph() 
+            from neuron import h, gui
+            vec = h.Vector(1000)
+            g1 = h.Graph()
+            g2 = h.Graph()
             g1.size(0, 1000, 0, 1) 
             g2.size(0, 1, 0, 150) 
-             
-            highindex = 1 
-            lowindex = mcell_ran4_init() 
-             
-            proc doit() {local i 
-                    g1.erase() g2.erase() 
-            	for i=0, vec.size-1 { 
-            		vec.x[i] = mcell_ran4(&highindex) 
-            	} 
-                    hist = vec.histogram(0, 1, 0.1) 
-                    vec.line(g1) 
-                    hist.line(g2, .1) 
-                    g1.flush g2.flush 
-            } 
-             
-            variable_domain(&highindex, 0, 2^32-1) 
-            xpanel("mcell_ran4 test") 
-            xbutton("Sample", "doit()") 
-            xpvalue("highindex", &highindex, 1, "doit()") 
-            xpvalue("lowindex", &lowindex, 1, "mcell_ran4_init(lowindex) doit()") 
-            xpanel() 
-             
-            doit() 
+
+            # creates pointers so hoc functions can access 
+            highindex = h.ref(1)
+            lowindex = h.mcell_ran4_init() 
+            lowindex = h.ref(lowindex)
+
+            def mcell_func():
+                g1.erase() 
+                g2.erase()
+                # int used because vec.size returned float
+                for i in range(int(vec.size())):
+                    vec.x[i] = h.mcell_ran4(highindex) 
+                hist = vec.histogram(0, 1, 0.1) 
+                vec.line(g1) 
+                hist.line(g2, .1) 
+                g1.flush 
+                g2.flush 
+
+            h.xpanel("mcell_ran4 test") 
+            h.xbutton("Sample", "mcell_func()") 
+            h.xpvalue("highindex", highindex, 1, "mcell_func()") 
+            h.xpvalue("lowindex", lowindex, 1, "mcell_ran4_init(lowindex) mcell_func()") 
+            h.xpanel() 
+ 
+            mcell_func() 
 
 
     .. seealso::
@@ -91,13 +92,13 @@ mcell_ran4
 
 
     Syntax:
-        ``previous = use_mcell_ran4(next) // next must be 0 or 1``
+        ``previous = h.use_mcell_ran4(next) # next must be 0 or 1``
 
-        ``boolean = use_mcell_ran4()``
+        ``boolean = h.use_mcell_ran4()``
 
 
     Description:
-        use_mcell_ran4(1) causes scop_random in model descriptions to use 
+        h.use_mcell_ran4(1) causes scop_random in model descriptions to use 
         the :func:`mcell_ran4` cryptographic quality random generator. Otherwise, the 
         low quality (but faster) linear congruential generator is used. 
          
@@ -119,9 +120,9 @@ mcell_ran4
 
 
     Syntax:
-        ``previous_lowindex = mcell_ran4_init(lowindex)``
+        ``previous_lowindex = h.mcell_ran4_init(lowindex)``
 
-        ``lowindex= mcell_ran4_init()``
+        ``lowindex= h.mcell_ran4_init()``
 
 
     Description:
