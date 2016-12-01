@@ -10,11 +10,11 @@ TextEditor
 
 
     Syntax:
-        ``e = new TextEditor()``
+        ``e = h.TextEditor()``
 
-        ``e = new TextEditor(string)``
+        ``e = h.TextEditor(string)``
 
-        ``e = new TextEditor(string, rows, columns)``
+        ``e = h.TextEditor(string, rows, columns)``
 
 
     Description:
@@ -82,6 +82,12 @@ TextEditor
 
     Description:
         Map the text editor onto the screen at indicated coordinates with 
-        indicated title bar 
+        indicated title bar. 
+
+        Note: title is a string. 
+
+    .. image:: ../../images/texteditor-map.png
+       :align: center
+        
 
 
