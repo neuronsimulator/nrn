@@ -86,18 +86,18 @@ mcell_ran4
     .. |logo1| image:: ../../images/mcran4-xvalue.png
         :width: 200px
         :height: 150px
-        :align: middle
+        :align: top
     .. |logo2| image:: ../../images/mcran4-graph1.png
         :align: middle
         :width: 200px
         :height: 150px
     .. |logo3| image:: ../../images/mcran4-graph2.png
-        :align: middle
+        :align: bottom
         :width: 200px
         :height: 150px
-    +---------+---------+---------+
-    | |logo1| | |logo2| | |logo3| |
-    +---------+---------+---------+
+    +-----+---------+---------+---------+
+    |     | |logo1| | |logo2| | |logo3| |
+    +-----+---------+---------+---------+
 
 
     .. seealso::
