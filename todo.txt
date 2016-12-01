@@ -1,6 +1,5 @@
 93    programming/pointers/pointer.rst      
-116   programming/gui/secbrows.rst  
-139   programming/math/mcran4.rst   
+116   programming/gui/secbrows.rst   
 157   modelspec/programmatic/electrod.rst   
 184   programming/internals.rst     
 267   programming/strfun.rst

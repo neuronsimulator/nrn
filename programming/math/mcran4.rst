@@ -46,36 +46,58 @@ mcell_ran4
             python
 
             from neuron import h, gui
-            vec = h.Vector(1000)
-            g1 = h.Graph()
-            g2 = h.Graph()
-            g1.size(0, 1000, 0, 1) 
-            g2.size(0, 1, 0, 150) 
 
-            # creates pointers so hoc functions can access 
-            highindex = h.ref(1)
-            lowindex = h.mcell_ran4_init() 
-            lowindex = h.ref(lowindex)
+            class McellRan4Test:
+                def __init__(self):
+                    self.vec = h.Vector(1000)
+                    self.g1 = h.Graph()
+                    self.g2 = h.Graph()
+                    self.g1.size(0, 1000, 0, 1) 
+                    self.g2.size(0, 1, 0, 150) 
+                    self.highindex = 1
+                    self.lowindex = h.mcell_ran4_init() 
+                    self.mcell_func()
 
-            def mcell_func():
-                g1.erase() 
-                g2.erase()
-                # int used because vec.size returned float
-                for i in range(int(vec.size())):
-                    vec.x[i] = h.mcell_ran4(highindex) 
-                hist = vec.histogram(0, 1, 0.1) 
-                vec.line(g1) 
-                hist.line(g2, .1) 
-                g1.flush 
-                g2.flush 
+                def mcell_func(self):
+                    self.g1.erase() 
+                    self.g2.erase()
+                    highindex_ptr = h.ref(self.highindex)
+                    for i in range(len(self.vec)):            
+                        self.vec.x[i] = h.mcell_ran4(highindex_ptr) 
+                    # resync the highindex (needed for the GUI)
+                    self.highindex = highindex_ptr[0]
+                    self.hist = self.vec.histogram(0, 1, 0.1) 
+                    self.vec.line(self.g1) 
+                    self.hist.line(self.g2, .1) 
+                    self.g1.flush()
+                    self.g2.flush() 
 
-            h.xpanel("mcell_ran4 test") 
-            h.xbutton("Sample", "mcell_func()") 
-            h.xpvalue("highindex", highindex, 1, "mcell_func()") 
-            h.xpvalue("lowindex", lowindex, 1, "mcell_ran4_init(lowindex) mcell_func()") 
-            h.xpanel() 
+                def mcell_func2(self):
+                    h.mcell_ran4_init(self.lowindex) 
+                    self.mcell_func()
  
-            mcell_func() 
+                window = McellRan4Test()
+                h.xpanel('mcell_ran4 test') 
+                h.xbutton('Sample', window.mcell_func) 
+                h.xvalue('highindex', (window, 'highindex'), 1, window.mcell_func) 
+                h.xvalue('lowindex', (window, 'lowindex'), 1, window.mcell_func2) 
+                h.xpanel() 
+
+    .. |logo1| image:: ../../images/mcran4-xvalue.png
+        :width: 200px
+        :height: 150px
+        :align: middle
+    .. |logo2| image:: ../../images/mcran4-graph1.png
+        :align: middle
+        :width: 200px
+        :height: 150px
+    .. |logo3| image:: ../../images/mcran4-graph2.png
+        :align: middle
+        :width: 200px
+        :height: 150px
+    +---------+---------+---------+
+    | |logo1| | |logo2| | |logo3| |
+    +---------+---------+---------+
 
 
     .. seealso::
