@@ -8,7 +8,6 @@
 693   modelspec/programmatic/kschan.rst     
 964   programming/ockeywor.rst        
 71    analysis/guitools/impedancetools.rst  
-87    programming/gui/texteditor.rst
 93    programming/io/plotters.rst   
 119   programming/io/ropen.rst      
 143   programming/io/read.rst         
