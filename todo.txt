@@ -7,8 +7,7 @@
 468   visualization/plotshapeclass.rst      
 693   modelspec/programmatic/kschan.rst     
 964   programming/ockeywor.rst        
-71    analysis/guitools/impedancetools.rst  
-93    programming/io/plotters.rst   
+71    analysis/guitools/impedancetools.rst   
 119   programming/io/ropen.rst      
 143   programming/io/read.rst         
 159   programming/math/functions.rst

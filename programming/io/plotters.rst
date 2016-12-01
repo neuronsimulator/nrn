@@ -13,17 +13,17 @@ Plotter Control (obsolete)
          
 
     Syntax:
-        ``lw(file)``
+        ``h.lw(file)``
 
-        ``lw(file, device)``
+        ``h.lw(file, device)``
 
-        ``lw()``
+        ``h.lw()``
 
 
 
 
     Description:
-        ``Lw(file, device)`` opens a file to keep a copy of subsequent 
+        ``h.lw(file, device)`` opens a file to keep a copy of subsequent 
         plots (*file* is a string variable or a name enclosed in double 
         quotes).  All graphs which are generated on the screen are saved in 
         this file in a format given by the integer value of the *device* argument. 
@@ -44,7 +44,7 @@ Plotter Control (obsolete)
 
          
         Lw keeps copying every plot to the screen until the file is closed with 
-        the command, ``lw()``. Note that erasing the screen with ``plt(-3)`` or 
+        the command, ``h.lw()``. Note that erasing the screen with ``h.plt(-3)`` or 
         a :kbd:`Control-e` will throw away whatever is in the file and restart the file at the 
         beginning.  Therefore, ``lw`` keeps an accurate representation of the 
         current graphic status of the screen. 
@@ -63,10 +63,18 @@ Plotter Control (obsolete)
         .. code-block::
             none
 
-            lw("temp", 1) 
-            proc hp() { 
-               plt(-1)  lw()  system("copy temp com1:")  lw("temp") 
-            } 
+            from neuron import h, gui
+            import os 
+
+            # function for hp style plotter
+            def hp():
+                h.plt(-1)  
+                h.lw() 
+                os.system("cp temp com1:")  
+                h.lw("temp")
+
+            h.lw("temp", 1)
+
 
          
         Notice that the above procedure closes a file, prints it, and then 
@@ -76,7 +84,7 @@ Plotter Control (obsolete)
          
 
     .. warning::
-        It is often necessary to end all the plotting with a ``plt(-1)`` 
+        It is often necessary to end all the plotting with a ``h.plt(-1)`` 
         command before closing the file to ensure that the last line drawing 
         is properly terminated. 
          

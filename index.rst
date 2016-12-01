@@ -39,4 +39,5 @@ Quick Links
     programming/strings.rst
     programming/math/mcran4.rst
     programming/gui/texteditor.rst
+    programming/io/plotters.rst  
     
