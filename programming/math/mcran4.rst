@@ -7,7 +7,7 @@ mcell_ran4
 .. function:: mcell_ran4
 
     Syntax:
-        ``x = h.mcell_ran4(highindex)``
+        ``x = h.mcell_ran4(highindex_ptr)``
 
 
     Description:
