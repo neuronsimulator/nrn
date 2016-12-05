@@ -66,7 +66,9 @@ void setup_nrnthreads_on_device(NrnThread* threads, int nthreads) {
         NrnThread* d_nt = d_threads + i;  // NrnThread on device
 
         if (nt->end <= 0) {
-            // this is an empty thread
+            // this is an empty thread and could be only artificial
+            // cells. In this case nothing is executed on gpu.
+            nt->compute_gpu = 0;
             continue;
         }
 

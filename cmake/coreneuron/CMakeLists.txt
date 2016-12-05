@@ -56,6 +56,7 @@ option(ENABLE_MPI "Enable MPI-based execution" ON)
 option(ENABLE_SOA "Enable SoA Memory Layout" ON)
 option(DISABLE_HOC_EXP "Disable wrapping exp with hoc_exp()" ON)
 option(ENABLE_OPENACC_INFO "Enable OpenACC compiler information messages" OFF)
+option(ENABLE_SPLAYTREE_QUEUING "Enable use of Splay tree for spike queuing" OFF)
 
 ## mech / mod options
 set(ADDITIONAL_MECHPATH "" CACHE PATH "Search path for optional additional mechanism MOD files")
@@ -75,6 +76,7 @@ set(Boost_NO_BOOST_CMAKE TRUE)
 include(BlueGenePortability)
 include(DefineInstallationPaths)
 include(ReleaseDebugAutoFlags)
+include(SetRpath)
 
 include(FindPkgConfig)
 include(CTest)
@@ -98,6 +100,11 @@ endif()
 #Disable hoc_exp wrapper for exp
 if (DISABLE_HOC_EXP)
     add_definitions("-DDISABLE_HOC_EXP")
+endif()
+
+#Enable use of splay tree for queuing (for models using net_move)
+if (ENABLE_SPLAYTREE_QUEUING)
+    add_definitions("-DENABLE_SPLAYTREE_QUEUING")
 endif()
 
 find_package(mod2c 2.0.0  REQUIRED)
