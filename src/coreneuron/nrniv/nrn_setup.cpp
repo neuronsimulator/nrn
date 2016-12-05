@@ -217,8 +217,8 @@ void nrn_read_filesdat(int& ngrp, int*& grp, int multiple, int*& imult, const ch
         }
     }
 
-    if (nrnmpi_numprocs > iNumFiles) {
-        nrn_fatal_error("The number of CPUs cannot exceed the number of input files");
+    if (nrnmpi_numprocs > iNumFiles && nrnmpi_myid == 0) {
+        printf("Info : The number of input datasets are less than ranks, some ranks will be idle!\n");
     }
 
     ngrp = 0;

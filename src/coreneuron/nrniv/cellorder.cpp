@@ -239,6 +239,11 @@ static void warp_balance(int ith, InterleaveInfo& ii) {
 }
 
 int* interleave_order(int ith, int ncell, int nnode, int* parent) {
+
+    // return if there are no nodes to permute
+    if (nnode <= 0)
+        return NULL;
+
     // ensure parent of root = -1
     for (int i = 0; i < ncell; ++i) {
         if (parent[i] == 0) {

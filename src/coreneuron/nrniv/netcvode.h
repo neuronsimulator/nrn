@@ -33,10 +33,16 @@ THE POSSIBILITY OF SUCH DAMAGE.
 
 #define PRINT_EVENT 0
 
-/// QTYPE options include: spltree, pq_que
-/// STL priority queue is used instead of the splay tree by default.
-/// TO DO: check if stl queue works with move_event functions.
+/** QTYPE options include: spltree, pq_que
+ *  STL priority queue is used instead of the splay tree by default.
+ *  @todo: check if stl queue works with move_event functions.
+ */
+
+#ifdef ENABLE_SPLAYTREE_QUEUING
+#define QTYPE spltree
+#else
 #define QTYPE pq_que
+#endif
 
 class DiscreteEvent;
 class NetCvode;
