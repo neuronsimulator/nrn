@@ -3,7 +3,8 @@
 Read from Terminal and Files
 ----------------------------
 
-
+.. warning::
+    These functions are provided for legacy code support. When writing new code, consider using Python input-output equivalents.
 
 .. function:: xred
 
@@ -13,7 +14,7 @@ Read from Terminal and Files
 
 
     Description:
-        ``Xred()`` reads a value from the standard input after printing *promptstring* 
+        ``xred()`` reads a value from the standard input after printing *promptstring* 
         on the console.  The value read must be in the range *min* <= *val* <= *max* and 
         the user will be prompted to enter another number if the value is not in 
         that range.  If the user types the :kbd:`Return` key, the *default* value is used 
@@ -34,7 +35,7 @@ Read from Terminal and Files
 
 
     Description:
-        ``Getstr()`` reads a string up to and including the next newline from the file 
+        ``getstr()`` reads a string up to and including the next newline from the file 
         opened with the :meth:`~File.ropen` command (or the currently executing file or 
         the standard input) and places it 
         in its string variable argument. With a second arg equal to 1, getstr reads 
@@ -70,8 +71,8 @@ Read from Terminal and Files
         .. code-block::
             none
 
-            i = sred("Shall we?", "y", "ny") 
-            if (i == 0) print "No" else print "yes" 
+            i = sred("Shall we?", "y", "ny")
+            if (i == 0) print "No" else print "yes"
 
 
 

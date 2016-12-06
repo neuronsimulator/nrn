@@ -40,5 +40,6 @@ Quick Links
     programming/math/mcran4.rst
     programming/gui/texteditor.rst
     programming/io/plotters.rst  
-    programming/io/ropen.rst   
+    programming/io/ropen.rst
+    programming/io/read.rst  
     
