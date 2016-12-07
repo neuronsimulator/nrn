@@ -18,7 +18,7 @@ Quick Links
     programming/gui/dialog.rst
     programming/pointers/misc.rst
     simctrl/batch.rst
-    simctrl/family.rst
+    simctrl/family.rsts
     programming/math/guimath.rst
     programming/pointers/ptrvector.rst 
     programming/io/printf.rst
