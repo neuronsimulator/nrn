@@ -21,6 +21,10 @@ extern void hoc_ivvalue_keep_updated(CChar* name, CChar* variable, Object* pyvar
 extern void hoc_ivpvalue(CChar* name, double*, bool deflt=false, HocSymExtension* extra=NULL);
 extern void hoc_ivvaluerun(CChar* name, CChar* variable, CChar* action,
 	bool deflt=false, bool canrun=false, bool usepointer=false, Object* pyvar = 0, Object* pyact = 0);
+extern void hoc_ivvaluerun_ex(CChar* name,
+	CChar* var, double* pvar, Object* pyvar,
+	CChar* action, Object* pyact,
+	bool deflt=false, bool canrun=false, bool usepointer=false);
 extern void hoc_ivpvaluerun(CChar* name, double*, CChar* action,
 	bool deflt=false, bool canrun=false, HocSymExtension* extra=NULL);
 
