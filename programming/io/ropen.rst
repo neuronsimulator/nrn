@@ -97,8 +97,8 @@ Open and Write to Files (Obsolete)
 
             # ndat is number of data points
             ndat = 3
-            x = [42.0, 14.0, 12.0]
-            y = [13.7, 64.1, 9.0]
+            x = [42.0 , 14.0 , 12.0]
+            y = [13.7 , 64.1 , 9.0]
             w_open(ndat,x,y)
 
             
