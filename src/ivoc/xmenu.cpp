@@ -311,12 +311,16 @@ ENDGUI
 
 static void hoc_xvalue_helper() { IFGUI //prompt, variable, deflt,action,canrun,usepointer
         char *s1, *s2, *s3;
+	double* ptr2 = NULL; /*allow variable arg2 to be double* */
 	Object* pyvar = NULL;
+	Object* pyact = NULL;
 	s2 = s3 = NULL;
         s1 = gargstr(1);
         if (ifarg(2)) {
 		if (hoc_is_object_arg(2)) {
 			pyvar = *hoc_objgetarg(2);
+		}else if (hoc_is_pdouble_arg(2)) {
+			ptr2 = hoc_pgetarg(2);
 		}else{
 	                s2 = gargstr(2);
 		}
@@ -335,25 +339,22 @@ static void hoc_xvalue_helper() { IFGUI //prompt, variable, deflt,action,canrun,
 		}
 		deflt=true;
 	}
+        bool canRun=false, usepointer=false; 
         if (ifarg(4)) {
-		Object* pyact = NULL;
-		if (pyvar) {
+		if (hoc_is_object_arg(4)) {
 			pyact = *hoc_objgetarg(4);
 		}else{
 	                s3 = gargstr(4);
 		}
-                bool canRun=false, usepointer=false; 
                 if (ifarg(5) && *getarg(5)) {
                         canRun=true;
                 }
                 if (ifarg(6) && *getarg(6)) {
                         usepointer=true;
                 }
-                hoc_ivvaluerun(s1,s2,s3,deflt,canRun, usepointer, pyvar, pyact);
-        }else{
-		hoc_ivvalue(s1, s2, deflt, pyvar);
         }
-                 
+	hoc_ivvaluerun_ex(s1, s2,ptr2,pyvar, s3,pyact, deflt, canRun, usepointer);
+
 ENDGUI
 }
 
@@ -759,11 +760,11 @@ void hoc_ivvalue_keep_updated(const char* name, const char* variable, Object* py
 }
 
 void hoc_ivvalue(const char* name, const char* variable, bool deflt, Object* pyvar) {
-        hoc_ivvaluerun( name, variable, 0, deflt, false, false, pyvar);
+        hoc_ivvaluerun( name, variable, NULL, deflt, false, false);
 }
                 
 void hoc_ivfixedvalue(const char* name, const char* variable, bool deflt, bool usepointer) {
-	hoc_ivvaluerun(name, variable, 0, deflt, false, usepointer);
+	hoc_ivvaluerun(name, variable, NULL, deflt, false, usepointer);
 }
                 
 void hoc_ivpvalue(const char* name, double* pd, bool deflt, HocSymExtension* extra) {
@@ -771,16 +772,30 @@ void hoc_ivpvalue(const char* name, double* pd, bool deflt, HocSymExtension* ext
 }
                 
 void hoc_ivvaluerun(const char* name, const char* variable, const char* action,
-	bool deflt, bool canRun, bool usepointer, Object* pyvar, Object* pyact){
+	bool deflt, bool canRun, bool usepointer, Object* pyvar, Object* pyact)
+{
+	hoc_ivvaluerun_ex(name, variable, NULL, pyvar, action, pyact,
+		deflt, canRun, usepointer);
+}
+
+void hoc_ivvaluerun_ex(CChar* name,
+        CChar* variable, double* pvar, Object* pyvar,
+        CChar* action, Object* pyact,
+        bool deflt, bool canrun, bool usepointer)
+{
 	checkOpenPanel();
 	hoc_radio->stop();
 	Symbol* s = NULL;
-	if (variable) {s = hoc_get_symbol(variable);}
-	if (usepointer) {
-		curHocPanel->valueEd(name, variable, action, canRun,
-			hoc_val_pointer(variable), deflt, false, (s?s->extra:NULL), pyvar, pyact);
+	if (!pvar && !pyvar) {
+		s = hoc_get_symbol(variable);
+		if (usepointer) {
+			pvar = hoc_val_pointer(variable);
+		}else{
+			curHocPanel->valueEd(name, variable, action, canrun, 0, deflt, false, (s?s->extra:0), pyvar, pyact);
+		}
 	}else{
-		curHocPanel->valueEd(name, variable, action, canRun, 0, deflt, false, (s?s->extra:0), pyvar, pyact);
+		curHocPanel->valueEd(name, variable, action, canrun,
+			pvar, deflt, false, (s?s->extra:NULL), pyvar, pyact);
 	}
 }
 
