@@ -53,15 +53,16 @@ Read from Terminal and Files
             ###########################################
             
             from neuron import h, gui
-            def r_open(ndat):
+            def r_open(string):
                 h.ropen("file.dat")
-                x = []
-                for i in range(ndat):
-                    x.append(h.getstr("hello", 1))
+                s = h.ref(string) 
+                h.getstr(s, 1)
                 h.ropen()
-                return x
+                return s[0]
 
-            x = r_open(2)
+            # string to get
+            string = "hello"
+            x = r_open(string)
             print x
 
     .. seealso::
