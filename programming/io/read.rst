@@ -10,7 +10,7 @@ Read from Terminal and Files
 
 
     Syntax:
-        ``var = xred(promptstring, default, min, max)``
+        ``var = h.xred(promptstring, default, min, max)``
 
 
     Description:
@@ -29,9 +29,9 @@ Read from Terminal and Files
 
 
     Syntax:
-        ``getstr(strvar)``
+        ``h.getstr(strvar)``
 
-        ``getstr(strvar, 1)``
+        ``h.getstr(strvar, 1)``
 
 
     Description:
@@ -40,7 +40,29 @@ Read from Terminal and Files
         the standard input) and places it 
         in its string variable argument. With a second arg equal to 1, getstr reads 
         a single word starting at the next non-whitespace character up to 
-        but not including the following whitespace (similar to fscan). 
+        but not including the following whitespace (similar to fscan).
+    Example:
+        .. code-block::
+            python
+
+
+            ###########################################
+            ### create a file titled "file.dat" with: #
+            ### "hello"                               #
+            ### "world"                               #
+            ###########################################
+            
+            from neuron import h, gui
+            def r_open(ndat):
+                h.ropen("file.dat")
+                x = []
+                for i in range(ndat):
+                    x.append(h.getstr("hello", 1))
+                h.ropen()
+                return x
+
+            x = r_open(2)
+            print x
 
     .. seealso::
         :class:`StringFunctions`, :func:`sscanf`, :class:`File`
@@ -54,7 +76,7 @@ Read from Terminal and Files
 
 
     Syntax:
-        ``index = sred(prompt, defaultchar, charlist)``
+        ``index = h.sred(prompt, defaultchar, charlist)``
 
 
     Description:
@@ -69,10 +91,21 @@ Read from Terminal and Files
     Example:
 
         .. code-block::
-            none
+            python
+            
+            from neuron import h, gui
 
-            i = sred("Shall we?", "y", "ny")
-            if (i == 0) print "No" else print "yes"
+            def response(answer):
+                if (answer == 0):
+                    print "No"
+                else:
+                    print "Yes"
+
+            i = 0 
+            while i == 0:
+                i = h.sred("Shall we?", "y", "ny")
+                response(i)
+    
 
 
 
@@ -84,7 +117,7 @@ Read from Terminal and Files
 
 
     Syntax:
-        ``var = fscan()``
+        ``var = h.scan()``
 
 
     Description:
@@ -104,32 +137,30 @@ Read from Terminal and Files
          
 
         .. code-block::
-            none
+            python
 
-            while(1) print fscan() 
-             
-            notice that when no file is open, fscan scans the remainder of the hoc file 
-            following only scans the numbers from 10 to 170 
-            10 
-            n 
-            20 
-            n 30 na 40 nan 50 nano 60 nanotube 70 ni 80 nai 90 Nan NaN 
-             
-            i 100 in 110 inf 120 infi 130 ib 140 inc 150 infinity 160 170 Inf INF 
-             
-            following scans the numbers 
-            1 2 3 4 5 6 7 8 9 10 
-            - + does not scan 
-             
-            1.1 -1.2 1.3e-4 1.4e+4 -1.5e5 -1.6e-1 
-             
-            1+2+3 scans just the "1" 
-            4xxx5 scans just the "4" 
-             
-            1,2,3 scans just the "1" 
-            3, 4, 5 scans the three numbers 
-             
-            now there will be an EOF error 
+            ###########################################
+            ### create a file titled "file.dat" with: #
+            ### 42 13.7                               #
+            ### 14 64.1                               #
+            ### 12 9                                  #
+            ###########################################
+
+            from neuron import h, gui
+
+            def r_open(ndat):
+                h.ropen("file.dat")
+                x = []
+                y = []
+                for i in range(ndat):
+                    x.append(h.fscan())
+                    y.append(h.fscan())
+                    h.ropen()
+                return x, y
+
+            # ndat is number of data points
+            ndat = 3
+            x, y = r_open(ndat)
              
 
 
@@ -137,6 +168,11 @@ Read from Terminal and Files
         ``Fscan()`` and ``getstr()`` returns to the HOC 
         interpreter with a run-time error on EOF. 
          
+    .. note::
+    These functions are provided for legacy code support. 
+    In Python, it only supports file input not terminal input. 
+
+    When writing new code, consider using Python input-output equivalents.
 
     .. seealso::
         :meth:`File.scanvar`, :ref:`read <keyword_read>`, :meth:`File.ropen`, :func:`File`, :func:`sscanf`, :class:`StringFunctions`, :func:`getstr`
