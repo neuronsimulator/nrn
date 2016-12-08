@@ -48,22 +48,28 @@ Read from Terminal and Files
 
             ###########################################
             ### create a file titled "file.dat" with: #
-            ### "hello"                               #
-            ### "world"                               #
+            ### hello                                 #
+            ### world                                 #
             ###########################################
             
             from neuron import h, gui
-            def r_open(string):
+            
+            def r_open(ndat):
                 h.ropen("file.dat")
-                s = h.ref(string) 
-                h.getstr(s, 1)
+                string = ""
+                s = h.ref(string)
+                x = []
+                for i in range(ndat):
+                    h.getstr(s, 1)
+                    x.append(s[0])
                 h.ropen()
-                return s[0]
+                return x
 
-            # string to get
-            string = "hello"
-            x = r_open(string)
+            # ndat is number of data points
+            ndat = 2
+            x = r_open(ndat)
             print x
+
 
     .. seealso::
         :class:`StringFunctions`, :func:`sscanf`, :class:`File`
