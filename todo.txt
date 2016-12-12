@@ -1,7 +1,7 @@
 93    programming/pointers/pointer.rst      
 116   programming/gui/secbrows.rst   // Being worked on, broken
 157   modelspec/programmatic/electrod.rst   
-184   programming/internals.rst     
+184   programming/internals.rst  // issues     
 267   programming/strfun.rst
 378   programming/gui/pwman.rst     
 468   visualization/plotshapeclass.rst      
@@ -17,7 +17,6 @@
 1053    modelspec/programmatic/mechanisms/mech.rst    
 37    programming/errors.rst
 50    analysis/programmatic/misc.rst
-72    programming/predec.rst
 88    programming/gui/nfunc.rst     
 96    modelspec/programmatic/obsoletestimuli.rst    
 122   modelspec/programmatic/ions.rst         

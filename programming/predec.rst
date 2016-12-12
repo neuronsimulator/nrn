@@ -11,6 +11,9 @@ Predeclared Variables
 
 .. data:: hoc_ac_
 
+    Syntax:
+        ``h.hoc_ac_``
+
         A variable used by the graphical interface to communicate with the 
         interpreter. It is very volatile. It sometimes holds a value on a 
         function call. If this value is needed by the user it should be 
@@ -24,9 +27,9 @@ Predeclared Variables
 
 
     Syntax:
-        ``hoc_obj_[0]``
+        ``h.hoc_obj_[0]``
 
-        ``hoc_obj_[1]``
+        ``h.hoc_obj_[1]``
 
 
     Description:
@@ -44,7 +47,7 @@ Predeclared Variables
 
 
     Syntax:
-        ``hoc_cross_x_``
+        ``h.hoc_cross_x_``
 
 
     Description:
@@ -60,6 +63,8 @@ Predeclared Variables
 
 .. data:: hoc_cross_y_
 
+    Syntax:
+        ``h.hoc_cross_y_``
 
     Description:
         Y coordinate value of the last :ref:`graph_crosshair` manipulation. 
