@@ -1,13 +1,15 @@
 System Calls
 ------------
 
+.. seealso:: `For most of these system calls, check Python's os.system module <https://docs.python.org/2/library/os.html>`_
+
 Path Manipulation
 ~~~~~~~~~~~~~~~~~
 
 .. function:: chdir
 
     Syntax:
-        ``chdir("path")``
+        ``h.chdir("path")``
 
     Description:
         Change working directory to the indicated path. Returns 0 if successful 
@@ -19,7 +21,7 @@ Path Manipulation
 .. function:: getcwd
 
     Syntax:
-        ``string = getcwd()``
+        ``h.getcwd()``
 
     Description:
         Returns absolute path of current working directory in unix format. 
@@ -35,7 +37,7 @@ Path Manipulation
         neuronhome -- installation path 
 
     Syntax:
-        ``string = neuronhome()``
+        ``h.neuronhome()``
 
     Description:
         Returns the full installation path in unix format or, if it exists, the 
@@ -57,12 +59,14 @@ Path Manipulation
 Machine Identification
 ~~~~~~~~~~~~~~~~~~~~~~
 
+.. seealso:: `Python's "platform" module provides access to this information and more <https://docs.python.org/2/library/platform.html>`_
+
 .. function:: machine_name
 
     Syntax:
-        ``strdef name``
+        ``h("strdef name")``
 
-        ``machine_name(name)``
+        ``h.machine_name(h.name)``
 
     Description:
         returns the hostname of the machine. 
@@ -73,13 +77,29 @@ Machine Identification
 .. function:: unix_mac_pc
 
     Syntax:
-        ``type = unix_mac_pc()``
+        ``h.unix_mac_pc()``
 
     Description:
         Return 1 if unix, 2 if mac, 3 if mswin, or 4 if mac osx darwin 
         is the operating system. This 
         is useful when deciding if a machine specific function can be called or 
-        a dll can be loaded. 
+        a dll can be loaded.
+
+    Example:
+        .. code-block::
+            python
+
+            from neuron import h, gui
+            type = h.unix_mac_pc()
+
+            if type == 1:
+                print "This os is unix based"
+            elif type == 2:
+                print "This os is mac based"
+            elif type == 3:
+                print "This os is mswin based"
+            elif type == 4:
+                print "This os is mac osx darwin based"
          
 
 
@@ -90,9 +110,9 @@ Machine Identification
 .. function:: nrnversion
 
     Syntax:
-        ``versionstring = nrnversion()``
+        ``h.nrnversion()``
 
-        ``string = nrnversion(i)``
+        ``h.nrnversion(i)``
 
     Description:
         Returns a string consisting of version information. 
@@ -100,24 +120,9 @@ Machine Identification
         and the branch string was "2004/01/22 Main (36)". 
         Now the arg can range from 0 to 6. The value of 6 returns 
         the args passed to configure. When this function was last changed 
-        the return values were 
+        the return values were.
 
-        .. code-block::
-            none
 
-            oc>nrnversion() 
-            NEURON -- VERSION 7.1 (296:ff4976021aae) 2009-02-27 
-            oc>for i=0,6 print i,": ", nrnversion(i) 
-            0 : 7.1 
-            1 : NEURON -- VERSION 7.1 (296:ff4976021aae) 2009-02-27 
-            2 : VERSION 7.1 (296:ff4976021aae) 
-            3 : ff4976021aae 
-            4 : 2009-02-27 
-            5 : 296 
-            6 : '--prefix=/home/hines/neuron/nrnmpi' '--srcdir=../nrn' '--with-paranrn' '--with-nrnpython' 
-            oc> 
-
-    .. warning::
         An arg of 7 now returns a space separated string of the arguments used 
         during launch. 
         e.g. 
@@ -156,6 +161,27 @@ Machine Identification
           >>> h.nrnversion(9)
           '2'
 
+    Example:
+        .. code-block::
+            python
+
+            from neuron import h, gui
+            h.nrnversion() 
+            NEURON -- VERSION 7.1 (296:ff4976021aae) 2009-02-27 
+
+            for i in range(6): 
+                print i,": ", h.nrnversion(i)
+            
+            0 :  7.5
+            1 :  NEURON -- VERSION 7.5 (1482:5fb6a5cbbdb7) 2016-11-25
+            2 :  VERSION 7.5 (1482:5fb6a5cbbdb7)
+            3 :  5fb6a5cbbdb7
+            4 :  2016-11-25
+            5 :  1482
+            6 :   '--with-iv=/usr/site/nrniv/iv' '--prefix=/usr/site/../arch/nrn' '--with-nrnpython' '--with-paranrn'
+
+        
+
 
 ----
 
@@ -166,7 +192,7 @@ Execute a Command
 .. function:: WinExec
 
     Syntax:
-        ``WinExec("mswin command")``
+        ``h.WinExec("mswin command")``
 
     Description:
         MSWin version only. 
@@ -179,9 +205,9 @@ Execute a Command
         system --- issue a shell command 
 
     Syntax:
-        ``exitcode = system(cmdstr)``
+        ``exitcode = h.system(cmdstr)``
 
-        ``exitcode = system(cmdstr, stdout_str)``
+        ``exitcode = h.system(cmdstr, stdout_str)``
 
     Description:
         Executes *cmdstr* as though it had been typed as 
@@ -192,7 +218,7 @@ Execute a Command
 
     Example:
 
-        \ ``system("ls")`` 
+        \ ``h.system("ls")`` 
             Prints a directory listing in the console terminal window. 
             will take up where it left off when the user types the \ ``exit`` 
             command 
@@ -220,6 +246,10 @@ Timing
 
 .. function:: startsw
 
+    Syntax:
+        ``h.startsw()``
+
+
         Initializes a stopwatch with a resolution of 1 second or 0.01 second if 
         gettimeofday system call is available. See :func:`stopsw` . 
 
@@ -228,26 +258,36 @@ Timing
 
 .. function:: stopsw
 
+    Syntax:
+        ``h.stopsw()``
+
         Returns the time in seconds since the stopwatch was last initialized with a :func:`startsw` . 
 
-        .. code-block::
-            none
-
-            startsw() 
-            for i=1,1000000 { x = sin(.2) ] 
-            stopsw() 
-
-    .. warning::
+    Description:
         Really the idiom 
 
         .. code-block::
-            none
+            python
 
-            x = startsw() 
-            //... 
-            startsw() - x 
+            x = h.startsw() 
+            h.startsw() - x 
 
         should be used since it allows nested timing intervals. 
+
+
+    Example:
+        .. code-block::
+            python
+
+            from neuron import h, gui
+            from math import *
+            h.startsw()
+            for i in range(100000):
+                x = sin(0.2)
+            print h.stopsw()
+
+
+
 
 .. seealso::
 
@@ -262,18 +302,17 @@ Miscellaneous
 .. function:: nrn_load_dll
 
     Syntax:
-        ``nrn_load_dll(dll_file_name)``
+        ``h.nrn_load_dll(dll_file_name)``
 
     Description:
         Loads a dll containing membrane mechanisms. This works for mswin, mac, 
         and linux. 
 
 
-
 .. function:: show_winio
 
     Syntax:
-        ``show_winio(0or1)``
+        ``h.show_winio(0or1)``
 
     Description:
         MSWin and Mac version only. Hides or shows the console window. 

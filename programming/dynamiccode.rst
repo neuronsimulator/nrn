@@ -11,9 +11,9 @@ code-executing
 .. function:: execute
 
     Syntax:
-        ``execute("statement")``
+        ``h.execute("statement")``
 
-        ``execute("statement", objref)``
+        ``h.execute("statement", objref)``
 
     Description:
         parse and execute the command in the context 
@@ -32,13 +32,13 @@ code-executing
 .. function:: execute1
 
     Syntax:
-        ``err = execute1("statement")``
+        ``err = h.execute1("statement")``
 
-        ``err = execute1("statement", objref)``
+        ``err = h.execute1("statement", objref)``
 
-        ``err = execute1("statement", show_err_mes)``
+        ``err = h.execute1("statement", show_err_mes)``
 
-        ``err = execute1("statement", objref, show_err_mes``
+        ``err = h.execute1("statement", objref, show_err_mes)``
 
     Description:
         Same as :func:`execute` but returns 0 if there was an interpreter error 
@@ -78,11 +78,11 @@ code-loading
 .. function:: load_proc
 
     Syntax:
-        ``load_proc("name1", ...)``
+        ``h.load_proc("name1", ...)``
 
-        ``load_func("name1", ...)``
+        ``h.load_func("name1", ...)``
 
-        ``load_template("name1", ..._``
+        ``h.load_template("name1", ..._``
 
     Description:
         Load the file containing a definition. 
@@ -115,11 +115,11 @@ code-loading
 .. function:: load_file
 
     Syntax:
-        ``load_file("filename")``
+        ``h.load_file("filename")``
 
-        ``load_file("filename", "name")``
+        ``h.load_file("filename", "name")``
 
-        ``load_file(0or1, "filename")``
+        ``h.load_file(0or1, "filename")``
 
     Description:
         Similar to :func:`load_proc` but loads files and so does not have the 
@@ -146,18 +146,29 @@ code-loading
         if it has already been loaded. 
 
 
-    Description:
+    Example:
+
+    .. code-block::
+            python
+
+            
 
 
 ----
 
 .. function:: load_func
 
+    Syntax:
+        ``h.load_func()``
+
         see :func:`load_proc` 
 
 ----
 
 .. function:: load_template
+
+    Syntax:
+        ``h.load_template()``
 
         see :func:`load_proc` 
 
