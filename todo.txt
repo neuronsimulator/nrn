@@ -1,8 +1,8 @@
 93    programming/pointers/pointer.rst      
 116   programming/gui/secbrows.rst   // Being worked on, broken
 157   modelspec/programmatic/electrod.rst   
-184   programming/internals.rst  // issues     
-267   programming/strfun.rst
+184   programming/internals.rst     // issues     
+267   programming/strfun.rst        // python/hoc incon    
 378   programming/gui/pwman.rst     
 468   visualization/plotshapeclass.rst      
 693   modelspec/programmatic/kschan.rst     
@@ -23,7 +23,6 @@
 147   visualization/grapher.rst     
 163   programming/dynamiccode.rst   
 213   analysis/guitools/mulfit.rst  
-281   programming/system.rst
 385   programming/gui/list.rst      
 535   modelspec/programmatic/topology.rst   
 741   modelspec/programmatic/network/netcon.rst     

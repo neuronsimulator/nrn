@@ -9,7 +9,7 @@ StringFunctions (String Manipulation Class)
 
 
     Syntax:
-        ``obj = new StringFunctions()``
+        ``obj = h.StringFunctions()``
 
 
     Description:
@@ -19,10 +19,10 @@ StringFunctions (String Manipulation Class)
     Example:
 
         .. code-block::
-            none
+            python
 
-            objref strobj 
-            strobj = new StringFunctions() 
+            from neuron import h
+            sf = h.StringFunctions() 
 
 
          
@@ -41,6 +41,15 @@ StringFunctions (String Manipulation Class)
     Description:
         Return the length of a string. 
 
+    Example: 
+        .. code-block::
+            python
+    
+            from neuron import h
+            s = h.ref("hello")
+            sf = h.StringFunctions()
+            length = sf.len(s)
+            print length
          
 
 ----
@@ -58,6 +67,15 @@ StringFunctions (String Manipulation Class)
         Return the index into *s1* of the first occurrence of *s2*. 
         If *s2* isn't a substring then the return value is -1. 
 
+    Example:
+        .. code-block::
+            python
+
+            from neuron import h
+            s1 = h.ref("allowed")
+            s2 = h.ref("low")
+            sf = h.StringFunctions()
+            index = sf.substr(s1, s2)
          
 
 ----
@@ -75,6 +93,17 @@ StringFunctions (String Manipulation Class)
         The result contains the head of the string 
         up to but not including the *regexp*. returns index of 
         last char. 
+
+    Example:
+        .. code-block::
+            python
+        
+            from neuron import h
+            s1 = h.ref("hello world")
+            s2 = h.ref("")
+            sf = h.StringFunctions()
+            index = sf.head(s1, "[e]",s2)
+            print s2[0]
 
          
 
@@ -99,7 +128,17 @@ StringFunctions (String Manipulation Class)
         without polluting the global name space. In recent versions 
         functions can return strings. 
 
-         
+    Example:
+        .. code-block::
+            python
+        
+            from neuron import h
+            s1 = h.ref("hello world")
+            s2 = h.ref("")
+            sf = h.StringFunctions()
+            index = sf.tail(s1, "[e]",s2)
+            print s2[0]         
+
 
 ----
 
@@ -114,7 +153,18 @@ StringFunctions (String Manipulation Class)
 
     Description:
         Removes first n characters from *str* and puts the result in 
-        *str*. 
+        *str*.
+
+    Example:
+        .. code-block::
+            python
+        
+            from neuron import h
+            s = h.ref("hello")
+            sf = h.StringFunctions()
+            sf.right(s, 3)
+            print s[0]
+
 
          
 
@@ -133,7 +183,16 @@ StringFunctions (String Manipulation Class)
         Removes all but first n characters from *str* and puts the 
         result in *str* 
 
-         
+    Example:
+        .. code-block::
+            python
+        
+            from neuron import h
+            s = h.ref("hello")
+            sf = h.StringFunctions()
+            sf.left(s, 3)
+            print s[0]
+             
 
 ----
 
@@ -151,8 +210,15 @@ StringFunctions (String Manipulation Class)
         This is so useful that the same thing is available with the top level 
         :func:`name_declared` function. 
 
-         
-
+    Example:
+        .. code-block::
+            python
+    
+            from neuron import h
+            s1 = h.ref("hello world")
+            sf = h.StringFunctions()
+            name = sf.is_name(s1)
+            print name
 ----
 
 
@@ -175,6 +241,18 @@ StringFunctions (String Manipulation Class)
         scalar var2 or object obj2. obj.name may be used anywhere the var2 or obj2 may 
         be used. With no third arg, the "name" is removed from the objects 
         alias list. With no second arg, the objects alias list is cleared. 
+
+    Example:
+        .. code-block::
+            python
+
+            from neuron import h
+            sf = h.StringFunctions()
+            v = h.Vector()
+            sf.alias(v, 't', h._ref_t)
+            print('v.t = %g' % v.t)
+            h.t = 42
+            print('v.t = %g' % v.t)
 
          
 
@@ -199,15 +277,17 @@ StringFunctions (String Manipulation Class)
         Note that the String class must exist and its 
         constructor must allow a single strdef argument. Minimally: 
 
+    
+    Example:
         .. code-block::
-            none
-
-            begintemplate String 
-            public s 
-            strdef s 
-            proc init() { s = $s1 } 
-            endtemplate String 
-
+            python
+    
+            from neuron import h
+            h.load_file('stdrun.hoc')
+            sf = h.StringFunctions()
+            v = h.Vector()
+            al = sf.alias_list(v)
+            print al
 
          
 
@@ -227,7 +307,15 @@ StringFunctions (String Manipulation Class)
         that reference that object (including references via 
         :class:`HBox`, :class:`VBox`, and :class:`List`). It also prints the number of references found. 
 
-         
+    Example: 
+        .. code-block::
+            python
+
+            from neuron import h
+            s1 = h.Section(name='soma')
+            strobj = h.StringFunctions()
+            strobj.references(s1)
+
 
 ----
 
@@ -245,7 +333,15 @@ StringFunctions (String Manipulation Class)
         returns the point type (which is always 1 greater than the index into the 
         :func:`MechanismType(1) <MechanismType>` list). 
 
-         
+    Example:
+        .. code-block::
+            python
+
+            from neuron import h
+            s1 = h.Section(name='soma')
+            sf = h.StringFunctions()
+            i = sf.is_point_process(s1)
+            print i         
 
 ----
 
@@ -265,3 +361,12 @@ StringFunctions (String Manipulation Class)
 
          
 
+    Example:
+        .. code-block::
+            python
+
+            from neuron import h
+            s1 = h.Section(name='soma')
+            sf = h.StringFunctions()
+            i = sf.is_point_process(s1)
+            print i         
