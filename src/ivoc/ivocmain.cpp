@@ -580,7 +580,7 @@ ENDGUI
 		}
 #endif
 	}
-	free(nrn_props);
+	delete [] nrn_props;
 
 #endif /*OCSMALL*/
 
