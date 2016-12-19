@@ -56,7 +56,13 @@ ENDVERBATIM
 
 :backward compatibility
 PROCEDURE seed(x) {
+VERBATIM
+#if !NRNBBCORE
+ENDVERBATIM
 	set_seed(x)
+VERBATIM
+#endif
+ENDVERBATIM
 }
 
 INITIAL {
@@ -148,8 +154,12 @@ VERBATIM
 		*/
 #endif
 	}
+#if !NRNBBCORE
 ENDVERBATIM
 	erand = exprand(1)
+VERBATIM
+#endif
+ENDVERBATIM
 }
 
 PROCEDURE noiseFromRandom() {
@@ -198,6 +208,7 @@ ENDVERBATIM
 }
 
 VERBATIM
+#if !NRNBBCORE
 static void bbcore_write(double* x, int* d, int* xx, int *offset, _threadargsproto_) {
 	if (!noise) { return; }
 	/* error if using the legacy scop_exprand */
@@ -222,6 +233,8 @@ static void bbcore_write(double* x, int* d, int* xx, int *offset, _threadargspro
 	}
 	*offset += 3;
 }
+#endif
+
 static void bbcore_read(double* x, int* d, int* xx, int* offset, _threadargsproto_) {
 	assert(!_p_donotuse);
 	if (noise) {
