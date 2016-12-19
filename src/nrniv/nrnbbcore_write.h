@@ -25,6 +25,7 @@ public:
   CellGroup();
   virtual ~CellGroup();
   Memb_list** type2ml;
+  int group_id;
   // PreSyn, NetCon, target info
   int n_presyn;// real first
   int n_output; // real + art with gid
