@@ -22,6 +22,7 @@ class OcTimer : public IOHandler {
 #endif
 public:
 	OcTimer(const char*);
+	OcTimer(Object*);
 	virtual ~OcTimer();
 
 	virtual void timerExpired(long, long);
@@ -90,7 +91,11 @@ static double t_stop(void* v) {
 }
 static void* t_cons(Object*) {
 #if HAVE_IV
-	return new OcTimer(gargstr(1));
+    if (hoc_is_object_arg(1)) {
+    	return new OcTimer(*hoc_objgetarg(1));
+    } else {
+        return new OcTimer(gargstr(1));
+    }
 #else 
 	return (void*)0;
 #endif /* HAVE_IV */
@@ -114,6 +119,20 @@ void OcTimer_reg() {
 }
 #if HAVE_IV
 OcTimer::OcTimer(const char* cmd) {
+	hc_ = new HocCommand(cmd);
+	seconds_ = .5;
+#if carbon
+	timer_ = 0;
+#else
+#ifdef MINGW
+	wtimer_ = NULL;
+	stopped_ = true;
+#else
+	stopped_ = true;
+#endif
+#endif
+}
+OcTimer::OcTimer(Object* cmd) {
 	hc_ = new HocCommand(cmd);
 	seconds_ = .5;
 #if carbon
