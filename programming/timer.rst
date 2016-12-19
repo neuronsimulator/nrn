@@ -9,11 +9,11 @@ Timer
 
 
     Syntax:
-        ``timer = h.Timer("stmt")``
+        ``timer = h.Timer(python_func)``
 
 
     Description:
-        Execute "stmt" at the end of each interval specified by timer.seconds(interval). 
+        Execute a python function at the end of each interval specified by timer.seconds(interval). 
         The timer must be started and can be stopped. 
         A Timer is used to implement the :menuselection:`NEURON Main Menu --> Tools --> MovieRun` in 
         :file:`nrn/lib/hoc/movierun.hoc`
@@ -58,7 +58,7 @@ Timer
     Description:
         Specify the timer interval. Timer resolution is system dependent but is probably 
         around 10 ms. 
-        The time it takes to execute the "stmt" is a part of the interval. 
+        The time it takes to execute the python function is part of the interval. 
 
          
 
@@ -74,7 +74,7 @@ Timer
 
 
     Description:
-        Start the timer. "stmt" will be called at the end of each interval defined 
+        Start the timer. The python function will be called at the end of each interval defined 
         by the argument to timer.seconds(interval). 
 
          
@@ -91,8 +91,8 @@ Timer
 
 
     Description:
-        Stop calling the "stmt". At least on linux, this will prevent the calling 
-        of "stmt" at the end of the current interval. 
+        Stop calling the python function. At least on linux, this will prevent the calling 
+        of the function at the end of the current interval. 
 
          
 
