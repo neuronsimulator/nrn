@@ -172,7 +172,7 @@ Read from Terminal and Files
 
 
     Diagnostics:
-        ``Fscan()`` and ``getstr()`` returns to the HOC 
+        ``fscan()`` and ``getstr()`` returns to the HOC 
         interpreter with a run-time error on EOF. 
          
     .. note::

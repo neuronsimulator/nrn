@@ -9,7 +9,7 @@ Timer
 
 
     Syntax:
-        ``timer = new Timer("stmt")``
+        ``timer = h.Timer("stmt")``
 
 
     Description:
@@ -18,42 +18,26 @@ Timer
         A Timer is used to implement the :menuselection:`NEURON Main Menu --> Tools --> MovieRun` in 
         :file:`nrn/lib/hoc/movierun.hoc`
 
+    .. warning::
+        This code must be run with `nrniv -python` and not directly via `python`.
+        The better solution is to `use Python's threading module <https://docs.python.org/2/library/threading.html>`_
+            
+
+
     Example:
 
         .. code-block::
-            none
+            python
 
-            load_file("nrngui.hoc") 
-            objref timer 
-            timer = new Timer("p()") 
-            invl = .2 
-            nstep = 10 
-            proc p() {local x 
-            	istep += 1 
-            	tt = startsw() - t0 
-            	print istep, tt 
-            	if (istep >= nstep) { 
-            		timer.end() 
-            	} 
-            	doNotify() 
-            } 
-            proc begin() { 
-            	istep = 0 
-            	timer.seconds(invl) 
-            	t0 = startsw() 
-            	tt = 0 
-            	timer.start() 
-            } 
-             
-            xpanel("Timer Demo") 
-            	xbutton("Start", "begin()") 
-            	xbutton("Stop", "timer.end()") 
-            	xpvalue("Interval", &invl, 1) 
-            	xpvalue("#steps", &nstep, 1) 
-            	xpvalue("istep", &istep) 
-            	xpvalue("t", &tt) 
-            xpanel() 
-            begin() 
+            from neuron import h
+
+            def foo():
+                print 'Hello'
+
+            timer = h.Timer(foo)
+            timer.seconds(1)
+            timer.start()
+            # type timer.end() to end timer
 
 
          

@@ -1,8 +1,7 @@
 93    programming/pointers/pointer.rst      
 116   programming/gui/secbrows.rst   // Being worked on, broken
 157   modelspec/programmatic/electrod.rst   
-184   programming/internals.rst     // issues     
-267   programming/strfun.rst        // python/hoc incon    
+184   programming/internals.rst     // issues        
 378   programming/gui/pwman.rst     
 468   visualization/plotshapeclass.rst      
 693   modelspec/programmatic/kschan.rst     
@@ -29,8 +28,8 @@
 1313    programming/math/matrix.rst   
 55    compilationoptions.rst
 73    modelspec/programmatic/network/lyttonmpi.rst  
-90    modelspec/programmatic/rxd.rst
-114   programming/timer.rst 
+90    modelspec/programmatic/rxd.
+114   programming/timer.rst   // nrniv -python limitation should be removed
 131   analysis/guitools/funfit.rst  
 151   modelspec/guitools/pointman.rst         
 166   modelspec/programmatic/topology/seclist.rst   

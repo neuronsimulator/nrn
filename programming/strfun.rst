@@ -102,7 +102,7 @@ StringFunctions (String Manipulation Class)
             s1 = h.ref("hello world")
             s2 = h.ref("")
             sf = h.StringFunctions()
-            index = sf.head(s1, "[e]",s2)
+            index = sf.head(s1, "[e]", s2)
             print s2[0]
 
          
@@ -136,7 +136,7 @@ StringFunctions (String Manipulation Class)
             s1 = h.ref("hello world")
             s2 = h.ref("")
             sf = h.StringFunctions()
-            index = sf.tail(s1, "[e]",s2)
+            index = sf.tail(s1, "[e]", s2)
             print s2[0]         
 
 
@@ -219,6 +219,19 @@ StringFunctions (String Manipulation Class)
             sf = h.StringFunctions()
             name = sf.is_name(s1)
             print name
+
+
+    Here is an example with one string that works, 
+    and another that does not:
+        .. code-block::
+            python
+        
+            from neuron import h
+            sf = h.StringFunctions()
+            # valid name
+            sf.is_name("xvalue")
+            # invalid name
+            sf.is_name("xsquiggle")
 ----
 
 
@@ -338,10 +351,17 @@ StringFunctions (String Manipulation Class)
             python
 
             from neuron import h
+            h.load_file('stdrun.hoc')
             s1 = h.Section(name='soma')
+            syn = h.ExpSyn(s1(0.5))
             sf = h.StringFunctions()
-            i = sf.is_point_process(s1)
-            print i         
+            # not point process
+            sf.is_point_process(s1)
+            # point process
+            sf.is_point_process(syn)
+            c = h.IntFire1()
+            # point process
+            sf.is_point_process(c)   
 
 ----
 
@@ -366,7 +386,13 @@ StringFunctions (String Manipulation Class)
             python
 
             from neuron import h
+            h.load_file('stdrun.hoc')
             s1 = h.Section(name='soma')
+            syn = h.ExpSyn(s1(0.5))
+            # initiate string function
             sf = h.StringFunctions()
-            i = sf.is_point_process(s1)
-            print i         
+            c = h.IntFire1()
+            # artificial 
+            sf.is_artificial(c)
+            # not artificial
+            sf.is_artificial(syn)       
