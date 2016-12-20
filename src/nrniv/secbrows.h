@@ -48,14 +48,18 @@ public:
 	virtual ~OcSectionBrowser();
 	virtual void accept();
 	virtual void select_section(Section*);
-	virtual void set_select_action(const char*);
-	virtual void set_accept_action(const char*);
+	virtual void set_select_action(const char*, Object*);
+	virtual void set_accept_action(const char*, Object*);
 	virtual void select(GlyphIndex);
 private:
 	Section** psec_;
 	int scnt_;
 	HocCommand* select_;
 	HocCommand* accept_;
+	bool select_is_pycallback_ = false;
+	Object* select_pycallback_;
+	bool accept_is_pycallback_ = false;
+	Object* accept_pycallback_;
 };
 class SectionBrowser : public OcBrowser {
 public:

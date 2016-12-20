@@ -13,12 +13,12 @@ extern Symlist* hoc_built_in_symlist;
 double* nrnpy_rangepointer(Section*, Symbol*, double, int*);
 extern PyObject* nrn_ptr_richcmp(void* self_ptr, void* other_ptr, int op);
 extern int has_membrane(char*, Section*);
-
 typedef struct {
   PyObject_HEAD Section* sec_;
   char* name_;
   PyObject* cell_;
 } NPySecObj;
+NPySecObj* newpysechelp(Section* sec);
 
 typedef struct {
   PyObject_HEAD NPySecObj* pysec_;
@@ -480,7 +480,7 @@ static PyObject* hoc_internal_name(NPySecObj* self) {
   return result;
 }
 
-static NPySecObj* newpysechelp(Section* sec) {
+NPySecObj* newpysechelp(Section* sec) {
   if (!sec || !sec->prop) {
     return NULL;
   }

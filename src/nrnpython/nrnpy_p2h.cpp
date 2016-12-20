@@ -39,7 +39,13 @@ extern char* (*nrnpy_callpicklef)(char*, size_t size, int narg,
                                   size_t* retsize);
 extern int (*nrnpy_pysame)(Object*, Object*);  // contain same Python object
 extern Object* (*nrnpympi_alltoall)(Object*, int);
-
+typedef struct {
+  PyObject_HEAD Section* sec_;
+  char* name_;
+  PyObject* cell_;
+} NPySecObj;
+extern NPySecObj* newpysechelp(Section* sec);
+extern void (*nrnpy_call_python_with_section)(Object*, Section*);
 void nrnpython_reg_real();
 PyObject* nrnpy_ho2po(Object*);
 void nrnpy_decref_defer(PyObject*);
@@ -86,6 +92,18 @@ static void p_destruct(void* v) { delete (Py2Nrn*)v; }
 
 Member_func p_members[] = {0,0};
 
+static void call_python_with_section(Object* pyact, Section* sec) {
+  PyObject* po = ((Py2Nrn*)pyact->u.this_pointer)->po_;
+  PyObject* r;
+  PyGILState_STATE s = PyGILState_Ensure();
+  PyObject* args = PyTuple_Pack(1, (PyObject*) newpysechelp(sec));
+  r = nrnpy_pyCallObject(po, args);
+  Py_XDECREF(args);
+  Py_XDECREF(r);
+  PyGILState_Release(s);
+}
+
+
 void nrnpython_reg_real() {
   //printf("nrnpython_reg_real()\n");
   class2oc("PythonObject", p_cons, p_destruct, p_members, NULL, NULL, NULL);
@@ -93,6 +111,7 @@ void nrnpython_reg_real() {
   assert(s);
   nrnpy_pyobj_sym_ = s;
   nrnpy_py2n_component = py2n_component;
+  nrnpy_call_python_with_section = call_python_with_section;
   nrnpy_hpoasgn = hpoasgn;
   nrnpy_praxis_efun = praxis_efun;
   nrnpy_hoccommand_exec = hoccommand_exec;
@@ -111,6 +130,7 @@ void nrnpython_reg_real() {
   nrnpy_site_problem_p = &nrnpy_site_problem;
 #endif
 }
+
 
 Py2Nrn::Py2Nrn() {
   po_ = NULL;
