@@ -225,7 +225,7 @@ size_t nrnbbcore_write() {
 
   /** write mapping information */
   if(mapinfo.size()) {
-    int gid = cgs[0].output_gid[0];
+    int gid = cgs[0].group_id;
     nrn_write_mapping_info(path, gid, mapinfo);
     mapinfo.clear();
   }
@@ -234,7 +234,7 @@ size_t nrnbbcore_write() {
     // see partrans.cpp. nrn_nthread files of path/icg_gap.dat
     int* group_ids = new int[nrn_nthread];
     for (int i=0; i < nrn_nthread; ++i) {
-      group_ids[i] = (cgs[i].n_output > 0) ? cgs[i].output_gid[0] : -1;
+      group_ids[i] = (cgs[i].n_output > 0) ? cgs[i].group_id : -1;
     }
     nrnbbcore_gap_write(path, group_ids);
     delete [] group_ids;
@@ -252,7 +252,7 @@ size_t nrnbbcore_write() {
     vector_resize(cgidvec, nrn_nthread);
     double* px = vector_vec(cgidvec);
     for (int i=0; i < nrn_nthread; ++i) {
-      px[i] = (cgs[i].n_output > 0) ? double(cgs[i].output_gid[0]) : -1;
+      px[i] = (cgs[i].n_output > 0) ? double(cgs[i].group_id) : -1;
     }
   }else{
     write_nrnthread_task(path, cgs);
@@ -362,6 +362,7 @@ void mk_tml_with_art() {
 
 CellGroup::CellGroup() {
   n_output = n_real_output = n_presyn = n_netcon = n_mech = ntype = 0;
+  group_id = -1;
   output_gid = output_vindex = 0;
   netcons = 0; output_ps = 0;
   netcon_srcgid = netcon_pnttype = netcon_pntindex = 0;
@@ -512,6 +513,9 @@ CellGroup* mk_cellgroups() {
           if (ps) {
             if (ps->output_index_ >= 0) { // has gid
               cgs[i].output_gid[npre] = ps->output_index_;
+              if (cgs[i].group_id < 0) {
+                cgs[i].group_id = ps->output_index_;
+              }
               ++cgs[i].n_output;
             }else{
               cgs[i].output_gid[npre] = agid;
@@ -852,8 +856,8 @@ static void nrnbbcore_vecplay_write(FILE* f, NrnThread& nt, int* ml_data_offset)
 void write_nrnthread(const char* path, NrnThread& nt, CellGroup& cg) {
   char fname[1000];
   if (cg.n_output <= 0) { return; }
-  assert(cg.output_gid[0] >= 0);
-  sprintf(fname, "%s/%d_1.dat", path, cg.output_gid[0]);
+  assert(cg.group_id >= 0);
+  sprintf(fname, "%s/%d_1.dat", path, cg.group_id);
   FILE* f = fopen(fname, "wb");
   if (!f) {
     hoc_execerror("nrnbbcore_write write_nrnthread could not open for writing:", fname);
@@ -864,7 +868,7 @@ void write_nrnthread(const char* path, NrnThread& nt, CellGroup& cg) {
   writeint(cg.netcon_srcgid, cg.n_netcon);
   fclose(f);
 
-  sprintf(fname, "%s/%d_2.dat", path, cg.output_gid[0]);
+  sprintf(fname, "%s/%d_2.dat", path, cg.group_id);
   f = fopen(fname, "w");
   if (!f) {
     hoc_execerror("nrnbbcore_write write_nrnthread could not open for writing:", fname);
@@ -1061,7 +1065,7 @@ void write_nrnthread_task(const char* path, CellGroup* cgs)
 
   for (int iInt = 0; iInt < nrn_nthread; ++iInt) 
   {  
-    iSend[iInt] = cgs[iInt].output_gid[0];
+    iSend[iInt] = cgs[iInt].group_id;
   }
 
 #ifdef NRNMPI
