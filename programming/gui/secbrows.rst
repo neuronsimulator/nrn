@@ -53,8 +53,20 @@ SectionBrowser
     Description:
         currently accessed section is highlighted. 
 
-         
+    Example:
 
+        .. code-block::
+            python
+
+            from neuron import h, gui
+            soma = h.Section(name='soma')
+            axon = h.Section(name='axon')
+
+            sb = h.SectionBrowser()
+            sb.select()        
+
+    .. image:: ../../images/secbrows-select.png
+        :align: center
 ----
 
 
@@ -63,14 +75,14 @@ SectionBrowser
 
 
     Syntax:
-        ``sb.select_action("command")``
+        ``sb.select_action(python_func)``
 
 
     Description:
-        Command is executed when an item is selected (single click or 
+        A python function is executed when an item is selected (single click or 
         dragging) by the mouse. Before execution, the selected section 
-        is pushed. (and	popped after the command completes.) 
-        Command is executed in the object context in which \ ``select_action`` 
+        is pushed. (and	popped after the function completes.)
+        A python function is executed in the object context in which \ ``select_action`` 
         registered it. 
 
 
@@ -80,20 +92,18 @@ SectionBrowser
             python
 
             from neuron import h, gui
+            soma = h.Section(name='soma')
+            axon = h.Section(name='axon')
 
-            class Cell:
-                count = 0
-                def __init__(self):
-                    self.soma = h.Section(name='soma', cell=self)
-                    self.dend = [h.Section(name='dend%d' % i, cell=self) for i in range(3)]
-                    self.axon = h.Section(name='axon', cell=self)
-                    self._id = Cell.count
-                    Cell.count += 1
-                def __repr__(self):
-                    return 'Cell%d' % self._id
+            def select(sec):
+                print 'select:', sec, type(sec)
 
-            cell = Cell()
+            def accept(sec):
+                print 'accept:', sec
+
             sb = h.SectionBrowser()
+            sb.select_action(select)
+            sb.select_action(select)
 
 
          
@@ -106,15 +116,32 @@ SectionBrowser
 
 
     Syntax:
-        ``sb.accept_action("command")``
+        ``sb.accept_action(python_func)``
 
 
     Description:
-        Command is executed when an item is accepted (double click) by 
+        A python function is executed when an item is accepted (double click) by 
         the mouse. Before execution, the selected section 
-        is pushed. (and	popped after the command completes.) 
-        Command is executed in the objet context in which the  \ ``accept_action`` 
+        is pushed. (and	popped after the function completes.) 
+        A python function is executed in the objet context in which the  \ ``accept_action`` 
         registered it. 
 
              
-    #add example
+    Example:
+
+        .. code-block::
+            python
+
+            from neuron import h, gui
+            soma = h.Section(name='soma')
+            axon = h.Section(name='axon')
+
+            def select(sec):
+                print 'select:', sec, type(sec)
+
+            def accept(sec):
+                print 'accept:', sec
+
+            sb = h.SectionBrowser()
+            sb.select_action(select)
+            sb.accept_action(accept)

@@ -10,7 +10,7 @@ PWManager
 
 
     Syntax:
-        ``p = new PWManager()``
+        ``p = h.PWManager()``
 
 
     Description:
@@ -36,6 +36,14 @@ PWManager
     Description:
         Returns number of "Printable" windows on the screen. 
 
+    Example:
+    .. code-block::
+        python
+
+        from neuron import h, gui
+        p = h.PWManager()
+        print p.count()
+
 
 ----
 
@@ -50,6 +58,19 @@ PWManager
 
     Description:
         Return 1 if the index'th window is visible. 
+
+    Example:
+    .. code-block::
+        python
+
+        from neuron import h, gui
+        p = h.PWManager()
+        # not mapped
+        print p.is_mapped(1)
+        p.map(1)
+        # mapped
+        print p.is_mapped(1)
+
 
 
 ----
@@ -66,6 +87,15 @@ PWManager
     Description:
         Makes the index'th window visible. 
 
+    Example:
+    .. code-block::
+        python
+        
+        from neuron import h, gui
+        p = h.PWManager()
+        # mapped
+        p.map(1)
+
 
 ----
 
@@ -79,7 +109,20 @@ PWManager
 
 
     Description:
-        Unmaps the index'th window. The window is NOT closed. 
+        Unmaps the index'th window. The window is NOT closed.
+
+    Example:
+    .. code-block::
+        python
+        
+        from neuron import h, gui
+        p = h.PWManager()
+        # mapped
+        p.map(1)
+        print p.is_mapped(1)
+        # not mapped 
+        p.hide(1)
+        print p.is_mapped(1)
 
 
 ----
@@ -97,6 +140,15 @@ PWManager
         Closes the index'th window. This will destroy the window and decrement the 
         reference count of the associated hoc object (if any). 
 
+    Example:
+    .. code-block::
+        python
+        
+        from neuron import h, gui
+        p = h.PWManager()
+        p.map(1)
+        p.close()
+
 
 ----
 
@@ -111,6 +163,15 @@ PWManager
 
     Description:
         Hides all windows and iconifies the leader. 
+
+    Example:
+    .. code-block::
+        python
+        
+        from neuron import h, gui
+        p = h.PWManager()
+        p.map(1)
+        p.iconify()
 
 
 ----
@@ -158,6 +219,16 @@ PWManager
     Description:
         Window index of the :ref:`PWM` window. 
 
+    
+    Example:
+    .. code-block::
+        python
+
+        from neuron import h, gui
+        p = h.PWManager()
+        print p.manager()
+
+
 
 ----
 
@@ -185,6 +256,16 @@ PWManager
     .. seealso::
         :func:`save_session`
 
+    Example:
+    .. code-block::
+        python
+
+        from neuron import h, gui
+        p = h.PWManager()
+        p.map(1)
+        selected = 1
+        n = p.save("file", selected, "Header")
+
 
 ----
 
@@ -203,6 +284,14 @@ PWManager
         Associate the index'th window with the group object and returns the 
         group object associated with that window. 
 
+    Example:
+    .. code-block::
+        python
+
+        from neuron import h, gui
+        p = h.PWManager()
+        g1 = p.group(0)
+        g2 = p.group(1, g1)
 
 ----
 
@@ -225,6 +314,13 @@ PWManager
         drawings of the window decorations, menus, rubberband, and mouse arrow cursor is 
         printed to a postscript file with the "filename" or filebrowser selection. 
 
+    Example:
+    .. code-block::
+        python
+
+        from neuron import h, gui
+        p = h.PWManager()
+        p.snape("filename")
 
 ----
 
@@ -262,7 +358,13 @@ PWManager
         scale factor x. 
         i.e, a scale value of 1 gives normal size windows. 
 
+    Example:
+    .. code-block::
+        python
 
+        from neuron import h, gui
+        p = h.PWManager()
+        p.scale(2)
 ----
 
 
@@ -276,6 +378,14 @@ PWManager
 
     Description:
         Returns the window title bar string of the index'th window. 
+
+    Example:
+    .. code-block::
+        python
+
+        from neuron import h, gui
+        p = h.PWManager()
+        print p.name(0)
 
          
 
@@ -293,6 +403,14 @@ PWManager
     Description:
         moves the index window to the left,top pixel 
         coordinates of the screen. 
+
+    Example:
+    .. code-block::
+        python
+
+        from neuron import h, gui
+        p = h.PWManager()
+        p.window_place(0, 1000, 1000)
 
          
 

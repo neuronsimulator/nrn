@@ -229,9 +229,9 @@ StringFunctions (String Manipulation Class)
             from neuron import h
             sf = h.StringFunctions()
             # valid name
-            sf.is_name("xvalue")
+            print sf.is_name("xvalue")
             # invalid name
-            sf.is_name("xsquiggle")
+            print sf.is_name("xsquiggle")
 ----
 
 
@@ -356,12 +356,12 @@ StringFunctions (String Manipulation Class)
             syn = h.ExpSyn(s1(0.5))
             sf = h.StringFunctions()
             # not point process
-            sf.is_point_process(s1)
+            print sf.is_point_process(s1)
             # point process
-            sf.is_point_process(syn)
+            print sf.is_point_process(syn)
             c = h.IntFire1()
             # point process
-            sf.is_point_process(c)   
+            print ssf.is_point_process(c)   
 
 ----
 
@@ -393,6 +393,6 @@ StringFunctions (String Manipulation Class)
             sf = h.StringFunctions()
             c = h.IntFire1()
             # artificial 
-            sf.is_artificial(c)
+            print sf.is_artificial(c)
             # not artificial
-            sf.is_artificial(syn)       
+            print sf.is_artificial(syn)       
