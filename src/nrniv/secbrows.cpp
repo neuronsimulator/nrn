@@ -15,6 +15,7 @@
 #include "objcmd.h"
 extern "C" {
 #include "membfunc.h"
+void (*nrnpy_call_python_with_section)(Object*, Section*) = NULL;
 }
 #endif
 
@@ -31,7 +32,15 @@ ENDGUI
 static double sb_select_action(void* v) {
 #if HAVE_IV
 IFGUI
-	((OcSectionBrowser*)v)->set_select_action(gargstr(1));
+	char* str_action = NULL;
+	Object* obj_action = NULL;
+	if (hoc_is_object_arg(1)) {
+	    obj_action = *hoc_objgetarg(1);
+	} else {
+	    str_action = gargstr(1);
+	}
+
+	((OcSectionBrowser*)v)->set_select_action(str_action, obj_action);
 ENDGUI
 #endif
 	return 1.;
@@ -39,7 +48,15 @@ ENDGUI
 static double sb_accept_action(void* v) {
 #if HAVE_IV
 IFGUI
-	((OcSectionBrowser*)v)->set_accept_action(gargstr(1));
+	char* str_action = NULL;
+	Object* obj_action = NULL;
+	if (hoc_is_object_arg(1)) {
+	    obj_action = *hoc_objgetarg(1);
+	} else {
+	    str_action = gargstr(1);
+	}
+
+	((OcSectionBrowser*)v)->set_accept_action(str_action, obj_action);
 ENDGUI
 #endif
 	return 1.;
@@ -138,7 +155,15 @@ void OcSectionBrowser::accept(){
 			return;
 		}
 		nrn_pushsec(psec_[i]);
-		accept_->execute();
+		if (accept_is_pycallback_) {
+			if (nrnpy_call_python_with_section) {
+			    (*nrnpy_call_python_with_section)(accept_pycallback_, psec_[i]);
+		    } else {
+		    	// should not be able to get here
+		    }
+		} else {
+    		accept_->execute();
+    	}
 		nrn_popsec();
 	}
 }
@@ -152,17 +177,33 @@ void OcSectionBrowser::select_section(Section* sec){
 	}
 	OcBrowser::select(-1);
 }
-void OcSectionBrowser::set_select_action(const char* s){
+void OcSectionBrowser::set_select_action(const char* s, Object* pyact){
 	if (select_) {
 		delete select_;
 	}
-	select_ = new HocCommand(s);
+	if (pyact) {
+	    select_is_pycallback_ = true;
+	    select_pycallback_ = pyact;
+	    // note: we won't actually invoke this but necessary to avoid segfault
+    	select_ = new HocCommand(pyact);
+    } else {
+	    select_is_pycallback_ = false;
+    	select_ = new HocCommand(s);
+    }
 }
-void OcSectionBrowser::set_accept_action(const char* s){
+void OcSectionBrowser::set_accept_action(const char* s, Object* pyact){
 	if (accept_) {
 		delete accept_;
 	}
-	accept_ = new HocCommand(s);
+	if (pyact) {
+	    accept_is_pycallback_ = true;
+	    accept_pycallback_ = pyact;
+	    // note: we won't actually invoke this but necessary to avoid segfault
+    	accept_ = new HocCommand(pyact);
+    } else {
+	    accept_is_pycallback_ = false;
+    	accept_ = new HocCommand(s);
+    }
 }
 void OcSectionBrowser::select(GlyphIndex i){
 	GlyphIndex old = selected();
@@ -170,7 +211,15 @@ void OcSectionBrowser::select(GlyphIndex i){
 	if (i >= 0 && old != i && select_) {
 	    if (psec_[i]->prop) {
 		nrn_pushsec(psec_[i]);
-		select_->execute();
+		if (select_is_pycallback_) {
+			if (nrnpy_call_python_with_section) {
+			    (*nrnpy_call_python_with_section)(select_pycallback_, psec_[i]);
+		    } else {
+		    	// should not be able to get here
+		    }
+		} else {
+    		select_->execute();
+    	}
 		nrn_popsec();
 	    }else{
 		state(i)->set(TelltaleState::is_enabled, false);
