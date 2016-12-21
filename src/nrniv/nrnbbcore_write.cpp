@@ -234,7 +234,7 @@ size_t nrnbbcore_write() {
     // see partrans.cpp. nrn_nthread files of path/icg_gap.dat
     int* group_ids = new int[nrn_nthread];
     for (int i=0; i < nrn_nthread; ++i) {
-      group_ids[i] = (cgs[i].n_output > 0) ? cgs[i].group_id : -1;
+      group_ids[i] = cgs[i].group_id;
     }
     nrnbbcore_gap_write(path, group_ids);
     delete [] group_ids;
@@ -252,7 +252,7 @@ size_t nrnbbcore_write() {
     vector_resize(cgidvec, nrn_nthread);
     double* px = vector_vec(cgidvec);
     for (int i=0; i < nrn_nthread; ++i) {
-      px[i] = (cgs[i].n_output > 0) ? double(cgs[i].group_id) : -1;
+      px[i] = double(cgs[i].group_id);
     }
   }else{
     write_nrnthread_task(path, cgs);
@@ -533,6 +533,13 @@ CellGroup* mk_cellgroups() {
   // work at netpar.cpp because we don't have the output gid hash tables here.
   // fill in the output_ps, output_gid, and output_vindex for the real cells.
   nrncore_netpar_cellgroups_helper(cgs);
+
+  // use first real cell gid, if it exists, as the group_id
+  for (int i=0; i < nrn_nthread; ++i) {
+    if (cgs[i].n_real_output && cgs[i].output_gid[0] >= 0) {
+      cgs[i].group_id = cgs[i].output_gid[0];
+    }
+  }
 
   // use the Hoc NetCon object list to segregate according to threads
   // and fill the CellGroup netcons, netcon_srcgid, netcon_pnttype, and
