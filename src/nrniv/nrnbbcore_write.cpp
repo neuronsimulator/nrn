@@ -121,6 +121,7 @@ static void write_globals(const char* fname);
 static void write_nrnthread(const char* fname, NrnThread& nt, CellGroup& cg);
 static void write_nrnthread_task(const char*, CellGroup* cgs);
 static int* datum2int(int type, Memb_list* ml, NrnThread& nt, CellGroup& cg, DatumIndices& di, int* ml_data_offset, int* ml_vdata_offset);
+static void setup_nrn_has_net_event();
 static int chkpnt;
 
 // Up to now all the artificial cells have been left out of the processing.
@@ -167,6 +168,7 @@ size_t nrnbbcore_write() {
         bbcore_dparam_size[i] = sz - 1;
     }
   }
+  setup_nrn_has_net_event();
   mk_tml_with_art();
   sprintf(fname, "%s/%s", path, "bbcore_mech.dat");
   write_memb_mech_types(fname);
@@ -276,6 +278,27 @@ int nrncore_art2index(double* d) {
   int i;
   assert(artdata2index_->find(d, i));
   return i;
+}
+
+extern "C" {
+extern int nrn_has_net_event_cnt_;
+extern int* nrn_has_net_event_;
+}
+
+static int* has_net_event_;
+static void setup_nrn_has_net_event() {
+  if (has_net_event_) { return; }
+  has_net_event_ = new int[n_memb_func];
+  for (int i=0; i < n_memb_func; ++i) {
+    has_net_event_[i] = 0;
+  }
+  for(int i=0; i < nrn_has_net_event_cnt_; ++i) {
+    has_net_event_[nrn_has_net_event_[i]] = 1;
+  }
+}
+
+static int nrn_has_net_event(int type) {
+  return has_net_event_[type];
 }
 
 void mk_tml_with_art() {
@@ -469,9 +492,19 @@ static void mk_cgs_netcon_info(CellGroup* cgs) {
           assert(ps->thvar_ == NULL);
           Point_process* pnt = (Point_process*)ps->osrc_->u.this_pointer;
           int type = pnt->prop->type;
-          assert(nrn_is_artificial_[type]);
-          int ix = nrncore_art2index(pnt->prop->param);
-          cgs[ith].netcon_srcgid[i] = -(type + 1000*ix);
+          if (nrn_is_artificial_[type]) {
+            int ix = nrncore_art2index(pnt->prop->param);
+            cgs[ith].netcon_srcgid[i] = -(type + 1000*ix);
+          }else{
+            assert(nrn_has_net_event(type));
+            Memb_list* ml = cgs[ith].type2ml[type];
+            int sz = nrn_prop_param_size_[type];
+            double* d1 = ml->data[0];
+            double* d2 = pnt->prop->param;
+            assert(d2 >= d1 && d2 < (d1 + (sz*ml->nodecount)));
+            int ix = (d2 - d1)/sz;
+            cgs[ith].netcon_srcgid[i] = -(type + 1000*ix);
+          }
         }else{
           cgs[ith].netcon_srcgid[i] = -1;
         }
@@ -491,7 +524,7 @@ CellGroup* mk_cellgroups() {
     int npre = ncell;
     for (NrnThreadMembList* tml = tml_with_art[i]; tml; tml = tml->next) {
       cgs[i].type2ml[tml->index] = tml->ml;
-      if (nrn_is_artificial_[tml->index]) {
+      if (nrn_has_net_event(tml->index)) {
         npre += tml->ml->nodecount;
       }
     }
@@ -500,16 +533,36 @@ CellGroup* mk_cellgroups() {
     cgs[i].output_ps = new PreSyn*[npre];
     cgs[i].output_gid = new int[npre];
     cgs[i].output_vindex = new int[npre];
+    // in case some cells do not have voltage presyns (eg threshold detection
+    // computed from a POINT_PROCESS NET_RECEIVE with WATCH and net_event)
+    // initialize as unused.
+    for (int j=0; j < npre; ++j) {
+      cgs[i].output_ps[j] = NULL;
+      cgs[i].output_gid[j] = -1;
+      cgs[i].output_vindex[j] = -1;
+    }
+
     // fill in the artcell info
     npre = ncell;
-    cgs[i].n_output = ncell; // add artcell with gid in following loop
+    cgs[i].n_output = ncell; // add artcell (and PP with net_event) with gid in following loop
     for (NrnThreadMembList* tml = tml_with_art[i]; tml; tml = tml->next) {
-      if (nrn_is_artificial_[tml->index]) {
+      if (nrn_has_net_event(tml->index)) {
         for (int j=0; j < tml->ml->nodecount; ++j) {
           Point_process* pnt = (Point_process*)tml->ml->pdata[j][1]._pvoid;
           PreSyn* ps = (PreSyn*)pnt->presyn_;
           cgs[i].output_ps[npre] = ps;
-          int agid = -(tml->index + 1000*nrncore_art2index(pnt->prop->param));
+          int agid = -1;
+          if (nrn_is_artificial_[tml->index]) {
+            agid = -(tml->index + 1000*nrncore_art2index(pnt->prop->param));
+          }else{ // POINT_PROCESS with net_event
+            Memb_list* ml = tml->ml;
+            int sz = nrn_prop_param_size_[tml->index];
+            double* d1 = ml->data[0];
+            double* d2 = pnt->prop->param;
+            assert(d2 >= d1 && d2 < (d1 + (sz*ml->nodecount)));
+            int ix = (d2 - d1)/sz;
+            agid = -(tml->index + 1000*ix);
+          }
           if (ps) {
             if (ps->output_index_ >= 0) { // has gid
               cgs[i].output_gid[npre] = ps->output_index_;
@@ -950,7 +1003,7 @@ void write_nrnthread(const char* path, NrnThread& nt, CellGroup& cg) {
   writeint(cg.output_vindex, cg.n_presyn);
   double* output_threshold = new double[cg.n_real_output];
   for (int i=0; i < cg.n_real_output; ++i) {
-    output_threshold[i] = cg.output_ps[i]->threshold_;
+    output_threshold[i] = cg.output_ps[i] ? cg.output_ps[i]->threshold_ : 0.0;
   }
   writedbl(output_threshold, cg.n_real_output);
   delete [] output_threshold;
