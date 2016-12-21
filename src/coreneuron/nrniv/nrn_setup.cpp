@@ -1362,6 +1362,9 @@ for (int i=0; i < nt.end; ++i) {
         PreSyn* ps = nt.presyns + i;
 
         int ix = output_vindex[i];
+        if (ix == -1 && i < nt.ncell) { // real cell without a presyn
+            continue;
+        }
         if (ix < 0) {
             ix = -ix;
             int index = ix / 1000;
