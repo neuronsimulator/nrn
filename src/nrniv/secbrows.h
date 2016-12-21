@@ -56,9 +56,9 @@ private:
 	int scnt_;
 	HocCommand* select_;
 	HocCommand* accept_;
-	bool select_is_pycallback_ = false;
+	bool select_is_pycallback_;
 	Object* select_pycallback_;
-	bool accept_is_pycallback_ = false;
+	bool accept_is_pycallback_;
 	Object* accept_pycallback_;
 };
 class SectionBrowser : public OcBrowser {
