@@ -159,13 +159,17 @@ We want to make a ring network, so let's layout our cells on the XY plane arrang
             self.x, self.y, self.z = x, y, z
         #
         def rotateZ(self, theta):
-            """Rotate the cell about the Z axis."""
+            """Rotate the cell about the Z axis."""   
             for sec in self.all:
-                for i in range(2):
-                    x = h.x3d(i) * sin(theta) + h.y3d(i) * cos(theta)
-                    y = h.x3d(i) * cos(theta) + h.y3d(i) * -sin(theta)
-                    h.pt3dchange(i, x, y, h.z3d(i), h.diam3d(i)) 
-
+                for i in range(int(h.n3d(sec=sec))):
+                    x = h.x3d(i, sec=sec)
+                    y = h.y3d(i, sec=sec)
+                    c = cos(theta)
+                    s = sin(theta)
+                    xprime = x * c - y * s
+                    yprime = x * s + y * c
+                    h.pt3dchange(i, xprime, yprime, h.z3d(i, sec=sec), h.diam3d(i, sec=sec), sec=sec)
+        
 
 Construct and layout our cells
 ------------------------------
@@ -184,8 +188,8 @@ We want to construct an arbitrary number of cells and lay them out in a circle. 
         # First, at the origin, rotate about Z.
         cell.rotateZ(i*2*pi/N)         
         # Then reposition
-        x_loc = sin(i * 2 * pi / N) * r
-        y_loc = cos(i * 2 * pi / N) * r
+        x_loc = cos(i * 2 * pi / N) * r
+        y_loc = sin(i * 2 * pi / N) * r
         cell.set_position(x_loc, y_loc, 0)
         cells.append(cell)
 

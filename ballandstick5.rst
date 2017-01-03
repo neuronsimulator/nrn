@@ -159,8 +159,8 @@ The following code demarcates new functionality with '####'. Most parallel funct
                 cell.rotateZ(i*2*numpy.pi/N)
                 
                 # Then reposition
-                x_loc = float(numpy.sin(i*2*numpy.pi/N))*r
-                y_loc = float(numpy.cos(i*2*numpy.pi/N))*r
+                x_loc = float(numpy.cos(i*2*numpy.pi/N))*r
+                y_loc = float(numpy.sin(i*2*numpy.pi/N))*r
                 cell.set_position(x_loc, y_loc, 0)
                 
                 self.cells.append(cell)

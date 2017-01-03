@@ -91,12 +91,16 @@ We have evolved our BallAndStick class into a fairly nice class, but it can stil
             self.x, self.y, self.z = x, y, z
         #
         def rotateZ(self, theta):
-            """Rotate the cell about the Z axis."""
-            rot_m = numpy.array([[sin(theta), cos(theta)], [cos(theta), -sin(theta)]])
+            """Rotate the cell about the Z axis."""   
             for sec in self.all:
-                for i in range(int(h.n3d())):
-                    xy = numpy.dot([h.x3d(i), h.y3d(i)], rot_m)
-                    h.pt3dchange(i, xy[0], xy[1], h.z3d(i), h.diam3d(i)) 
+                for i in range(int(h.n3d(sec=sec))):
+                    x = h.x3d(i, sec=sec)
+                    y = h.y3d(i, sec=sec)
+                    c = cos(theta)
+                    s = sin(theta)
+                    xprime = x * c - y * s
+                    yprime = x * s + y * c
+                    h.pt3dchange(i, xprime, yprime, h.z3d(i, sec=sec), h.diam3d(i, sec=sec), sec=sec)
 
 Test this:
 
@@ -243,8 +247,8 @@ Encapsulating code into discrete objects is not only conceptually useful for cod
                 # First, at the origin, rotate about Z.
                 cell.rotateZ(i * 2 * pi / N)                
                 # Then reposition
-                x_loc = sin(i * 2 * pi / N) * r
-                y_loc = cos(i * 2 * pi / N) * r
+                x_loc = cos(i * 2 * pi / N) * r
+                y_loc = sin(i * 2 * pi / N) * r
                 cell.set_position(x_loc, y_loc, 0)                
                 self.cells.append(cell)
         #
