@@ -8,7 +8,7 @@ fi
 cd $a
 
 if git log > /dev/null && test -d .git ; then
-        lcs=`git log --format="%h" | wc -l` # count of changesets
+        lcs=`git log --format="%h" | wc -l | sed 's/ *//g'` # count of changesets
         branch="`git rev-parse --abbrev-ref HEAD`" # branch name
         modified="`git status -s -uno --porcelain | sed -n '1s/.*/+/p'`" # + if modified
         gcs=`git log --format="%h" -n 1` #short commit hash
