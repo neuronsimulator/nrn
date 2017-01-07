@@ -16,6 +16,7 @@
 extern "C" {
 extern int nrn_nopython;
 extern int nrnpy_nositeflag;
+extern int nrn_is_python_extension;
 int* nrnpy_site_problem_p;
 extern void (*p_nrnpython_start)(int);
 void nrnpython();
@@ -153,6 +154,14 @@ void nrnpython_reg() {
 		// can fix with a proper PYTHONHOME but need to know
 		// what path was used to load the python library.
 		set_pythonhome(handle);
+	}
+	// for some mysterious reason on max osx 10.12
+	// (perhaps due to System Integrity Protection?) when python is
+	// launched, python_already_loaded() returns a NULL handle unless
+	// the full path to the dylib is used. Since we know it is loaded
+	// in these circumstances, it is sufficient to go ahead and dlopen
+	// the nrnpython interface library
+	if (handle || nrn_is_python_extension) {
 		load_nrnpython();
 	}
 #else
