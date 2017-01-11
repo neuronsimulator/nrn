@@ -892,6 +892,11 @@ void nrn_cleanup() {
             nt->_net_send_buffer_size = 0;
         }
 
+        if (nt->_watch_types) {
+            free(nt->_watch_types);
+            nt->_watch_types = NULL;
+        }
+
         // mapping information is available only for non-empty NrnThread
         if (nt->mapping && nt->ncell) {
             delete ((NrnThreadMappingInfo*)nt->mapping);
@@ -1329,6 +1334,26 @@ for (int i=0; i < nt.end; ++i) {
         }
     }
     delete[] bamap;
+
+    // for fast watch statement checking
+    // setup a list of types that have WATCH statement
+    {
+        int sz = 0; // count the types with WATCH
+        for (NrnThreadMembList* tml = nt.tml; tml; tml = tml->next) {
+            if (nrn_watch_check[tml->index]) {
+                ++sz;
+            }
+        }
+        if (sz) {
+            nt._watch_types = (int*)ecalloc(sz + 1, sizeof(int)); // NULL terminated
+            sz = 0;
+            for (NrnThreadMembList* tml = nt.tml; tml; tml = tml->next) {
+                if (nrn_watch_check[tml->index]) {
+                    nt._watch_types[sz++] = tml->index;
+                }
+            }
+        }
+    }
 
     // from nrn_has_net_event create pnttype2presyn.
     pnttype2presyn = (int*)ecalloc(n_memb_func, sizeof(int));

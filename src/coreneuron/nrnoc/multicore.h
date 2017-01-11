@@ -122,6 +122,8 @@ typedef struct NrnThread {
     int _net_send_buffer_size;
     int _net_send_buffer_cnt;
     int* _net_send_buffer;
+
+    int* _watch_types; /* NULL or 0 terminated array of integers */
     void* mapping; /* section to segment mapping information */
 
 } NrnThread;

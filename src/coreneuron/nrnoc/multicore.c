@@ -360,6 +360,7 @@ void nrn_threads_create(int n, int parallel) {
                 nt->_net_send_buffer_size = 0;
                 nt->_net_send_buffer = (int*)0;
                 nt->_net_send_buffer_cnt = 0;
+                nt->_watch_types = NULL;
                 nt->mapping = NULL;
             }
         }
