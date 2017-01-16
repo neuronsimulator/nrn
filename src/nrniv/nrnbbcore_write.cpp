@@ -705,6 +705,9 @@ void datumindex_fill(int ith, CellGroup& cg, DatumIndices& di, Memb_list* ml) {
         // eventually index into nt->_vdata
         etype = -6;
         eindex = vdata_offset++;
+      }else if (dmap[j] == -8) { // watch
+        etype = -8;
+        eindex = 0;
       }else if (dmap[j] == -5) { // POINTER
         // must be a pointer into nt->_data. Handling is similar to eion so
         // give proper index into the type.
