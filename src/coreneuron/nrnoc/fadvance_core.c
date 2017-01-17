@@ -238,6 +238,7 @@ static void* nrn_fixed_step_lastpart(NrnThread* nth) {
         fixed_play_continuous(nth);
         nonvint(nth);
         nrn_ba(nth, AFTER_SOLVE);
+	nrn_ba(nth, BEFORE_STEP);
     }
 
     nrn_deliver_events(nth); /* up to but not past texit */
