@@ -1569,9 +1569,11 @@ void nrncore_netpar_cellgroups_helper(CellGroup* cgs) {
       ++gidcnt[ith];
     }
   }}}
+#if 0 // allow real cells to NOT have a direct voltage threshold.
   for (int i=0; i < nrn_nthread; ++ i) {
     assert(nrn_threads[i].ncell == gidcnt[i]);
   }
+#endif
   delete [] gidcnt;
 }
 

@@ -790,13 +790,10 @@ void hoc_ivvaluerun_ex(CChar* name,
 		s = hoc_get_symbol(variable);
 		if (usepointer) {
 			pvar = hoc_val_pointer(variable);
-		}else{
-			curHocPanel->valueEd(name, variable, action, canrun, 0, deflt, false, (s?s->extra:0), pyvar, pyact);
 		}
-	}else{
-		curHocPanel->valueEd(name, variable, action, canrun,
-			pvar, deflt, false, (s?s->extra:NULL), pyvar, pyact);
 	}
+	curHocPanel->valueEd(name, variable, action, canrun,
+		pvar, deflt, false, (s?s->extra:NULL), pyvar, pyact);
 }
 
 void hoc_ivpvaluerun(const char* name, double* pd, const char* action,

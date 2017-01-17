@@ -9,15 +9,16 @@
 #include <stdio.h>
 #include "apwindow.h"
 #include "secbrows.h"
-#include "nrnoc2iv.h"
 #include "oclist.h"
 #include "ivoc.h"
 #include "objcmd.h"
+#endif
+
+#include "nrnoc2iv.h"
 extern "C" {
 #include "membfunc.h"
 void (*nrnpy_call_python_with_section)(Object*, Section*) = NULL;
 }
-#endif
 
 //-----------------------------------------
 static double sb_select(void* v) {
@@ -100,6 +101,8 @@ void SectionBrowser_reg() {
 
 OcSectionBrowser::OcSectionBrowser(Object* ob) : OcBrowser() {
 	long i;
+	select_is_pycallback_ = false;
+	accept_is_pycallback_ = false;
 	if (ob) {
 		SectionList sl(ob);
 		Section* sec;
