@@ -41,7 +41,7 @@ find .. -name \*.o -print | sed '
 /\/oc*\/spinit\.o/d
 /\/oc*\/spinit1\.o/d
 /\/oc*\/spinit2\.o/d
-/\/memacs*\/termio\.o/d
+/\/memacs*\/.*termio\.o/d
 /\/memacs\/main\.o/d
 /\/nvkludge\.o/d
 /\/nocable\.o/d
