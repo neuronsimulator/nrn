@@ -18,7 +18,7 @@ if git log > /dev/null && test -d .git ; then
         echo "#define GIT_CHANGESET \"${gcs}${modified}\""
         echo "#define GIT_LOCAL \"${lcs}${modified}\""
 elif test -f src/nrnoc/nrnversion.h ; then
-        sed -n '3,$p' src/nrnoc/nrnversion.h
+        sed -n '1,$p' src/nrnoc/nrnversion.h
 else
         echo "#define GIT_DATE \"1999-12-31\""
         echo "#define GIT_BRANCH \"?\""
