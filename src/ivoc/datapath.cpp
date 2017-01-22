@@ -90,6 +90,7 @@ private:
 	void search(Objectdata*, Symlist*);
 	void search_vectors();
 #if CABLE
+	void search_pysec();
 	void search(Section*);
 	void search(Node*, double x);
 	void search(Point_process*, Symbol*);
@@ -229,6 +230,9 @@ void HocDataPathImpl::search() {
 	}else{
 		search(hoc_top_level_data, hoc_top_level_symlist);
 		search(hoc_top_level_data, hoc_built_in_symlist);
+	}
+	if (found_so_far_ < count_) {
+		search_pysec();
 	}
 	if (found_so_far_ < count_) {
 		search_vectors();
@@ -436,6 +440,19 @@ void HocDataPathImpl::search_vectors() {
 }
 
 #if CABLE
+
+void HocDataPathImpl::search_pysec() {
+  CopyString cs("");
+  hoc_Item* qsec;
+  ForAllSections(sec)
+    if (sec->prop && sec->prop->dparam[PROP_PY_INDEX]._pvoid) {
+      cs = secname(sec);
+      strlist_.append((char*)cs.string());
+      search(sec);
+      strlist_.remove(strlist_.count()-1);
+    }
+  }
+}
 
 void HocDataPathImpl::search(Section* sec) {
 	if (sec->prop->dparam[2].val == sentinal) {
