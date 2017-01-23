@@ -231,9 +231,11 @@ void HocDataPathImpl::search() {
 		search(hoc_top_level_data, hoc_top_level_symlist);
 		search(hoc_top_level_data, hoc_built_in_symlist);
 	}
+#if CABLE
 	if (found_so_far_ < count_) {
 		search_pysec();
 	}
+#endif
 	if (found_so_far_ < count_) {
 		search_vectors();
 	}
