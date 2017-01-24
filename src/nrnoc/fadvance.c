@@ -1013,8 +1013,51 @@ void nrn_ba(NrnThread* nt, int bat){
 	}
 }
 
+typedef struct List_nonvint_block
+{
+	int (*func)(int method, int size, double* pd1, double* pd2, int tid);
+	struct List_nonvint_block *next;
+} List_nonvint_block;
+
+/* a global list to store the nrn_nonvint_block functions */
+List_nonvint_block* nonvint_block_list = NULL;
+
+int nrn_nonvint_block_exe(int method, int size, double* pd1, double* pd2, int tid) {
+	/* execute all functions in nonvint_block_list and return the sum of the
+	 * return values 
+	 */
+	int rval, sum = 0;
+	List_nonvint_block* node;
+
+	for(node = nonvint_block_list; node != NULL; node = node-> next) {
+		rval = (*(node->func))(method, size, pd1, pd2, tid);
+		if(rval == -1) {
+			hoc_execerror("nrn_nonvint_block error", 0);
+		}
+		else {
+			sum += rval;
+		}
+	}
+	
+	return sum;
+}
+
 int set_nonvint_block(int (*new_nrn_nonvint_block)(int method, int size, double* pd1, double* pd2, int tid)) {
-	nrn_nonvint_block = new_nrn_nonvint_block;
+
+	/* store new_nrn_nonvint_block functions in a list */
+	List_nonvint_block* node = (List_nonvint_block*)malloc(sizeof(List_nonvint_block));
+	node->func = new_nrn_nonvint_block;
+	node->next = NULL;
+
+	if(nonvint_block_list == NULL) {
+		nonvint_block_list = node;
+	}
+	else {
+		nonvint_block_list->next = node;
+	}
+	/* could this be set directly in nrn_nonvint_block_helper? */
+	nrn_nonvint_block = &nrn_nonvint_block_exe;
+
 	return 0;
 }
 
