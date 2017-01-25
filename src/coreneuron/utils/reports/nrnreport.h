@@ -91,6 +91,8 @@ class ReportGenerator {
     }
 };
 
+#if 0
+
 /** type to store every section and associated segments */
 typedef std::vector<int> segment_vector_type;
 typedef std::map<int, segment_vector_type> section_segment_map_type;
@@ -145,5 +147,7 @@ class NeuronGroupMappingInfo {
 
     NeuronMappingInfo* get_neuron_mapping(int gid);
 };
+
+#endif
 
 #endif  //_H_NRN_REPORT_
