@@ -53,8 +53,9 @@ static PyTypeObject* pallsegiter_type;
 static PyTypeObject* psegment_type;
 static PyTypeObject* pmech_generic_type;
 static PyTypeObject* range_type;
-static PyObject* pmech_types;  // Python map for name to Mechanism
-static PyObject* rangevars_;   // Python map for name to Symbol
+
+PyObject* pmech_types;  // Python map for name to Mechanism
+PyObject* rangevars_;   // Python map for name to Symbol
 
 extern Section* nrnpy_newsection(NPySecObj*);
 extern void simpleconnectsection();
