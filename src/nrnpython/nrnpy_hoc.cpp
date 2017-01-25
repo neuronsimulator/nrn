@@ -54,6 +54,9 @@ extern double** nrnpy_setpointer_helper(PyObject*, PyObject*);
 extern Symbol* ivoc_alias_lookup(const char* name, Object* ob);
 extern int nrn_netcon_weight(void*, double**);
 
+extern PyObject* pmech_types;  // Python map for name to Mechanism
+extern PyObject* rangevars_;   // Python map for name to Symbol
+
 static cTemplate* hoc_vec_template_;
 static cTemplate* hoc_list_template_;
 static cTemplate* hoc_sectionlist_template_;
@@ -1032,10 +1035,14 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
       break;
     default:  // otherwise
     {
-      char e[200];
-      sprintf(e, "no HocObject interface for %s (hoc type %d)", n, sym->type);
-      PyErr_SetString(PyExc_TypeError, e);
-      break;
+      if (PyDict_GetItemString(pmech_types, n)) {
+        PyErr_Format(PyExc_TypeError, "Cannot access %s directly; it is a mechanism that may be inserted into a section.", n);
+      } else if (PyDict_GetItemString(rangevars_, n)) {
+        PyErr_Format(PyExc_TypeError, "Cannot access %s directly; it is a range variable and may be accessed via a section or segment.", n);
+      } else {
+        PyErr_Format(PyExc_TypeError, "Cannot access %s (NEURON type %d) directly.", n, sym->type);
+        break;
+      }
     }
   }
   HocContextRestore return result;
