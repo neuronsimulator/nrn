@@ -30,6 +30,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #define nrn_datareader_h
 
 #include <fstream>
+#include <vector>
 #include "coreneuron/utils/endianness.h"
 #include "coreneuron/utils/swap_endian.h"
 #include "coreneuron/nrniv/nrn_assert.h"
@@ -47,6 +48,9 @@ THE POSSIBILITY OF SUCH DAMAGE.
  * All automatic allocations performed by read_int_array()
  * and read_dbl_array() methods use new [].
  */
+
+// @todo: remove this static buffer
+const int max_line_length = 1024;
 
 class data_reader {
     std::ifstream F;       //!< File stream associated with reader.
@@ -101,33 +105,47 @@ class data_reader {
     /** Parse a neuron mapping count entries
      *
      * Reads neuron mapping info which is represented by
-     * gid, #segments, #somas, #axons, #dendrites, #apicals, #total compartments
+     * gid, #sections, #segments, #section lists
      */
     void read_mapping_count(int* gid,
-                            int* seg,
-                            int* soma,
-                            int* axon,
-                            int* dend,
-                            int* apical,
-                            int* compartment);
+                            int* nsec,
+                            int* nseg,
+                            int* nseclist);
+
+
+    /** Reads number of cells in parsing file */
+    void read_mapping_cell_count(int* count);
 
     /** Parse a neuron section segment mapping
      *
      * Read count no of mappings for section to segment
      */
     template <typename T>
-    void read_mapping_info(T* mapinfo, int count) {
-        const int max_line_length = 1000;
-        char line_buf[max_line_length];
+    int read_mapping_info(T* mapinfo) {
 
-        for (int i = 0; i < count; i++) {
-            F.getline(line_buf, sizeof(line_buf));
-            nrn_assert(!F.fail());
-            int sec, seg, n_scan;
-            n_scan = sscanf(line_buf, "%d %d", &sec, &seg);
-            nrn_assert(n_scan == 2);
-            mapinfo->add_segment(sec, seg);
+      int nsec, nseg, n_scan;
+      char line_buf[max_line_length], name[max_line_length];
+
+      F.getline(line_buf, sizeof(line_buf));
+      n_scan = sscanf(line_buf, "%s %d %d", name, &nsec, &nseg);
+
+      nrn_assert(n_scan == 3);
+
+      mapinfo->name = std::string(name);
+
+      if(nseg) {
+          std::vector<int> sec, seg;
+          sec.reserve(nseg);
+          seg.reserve(nseg);
+
+          read_array<int>(&sec[0], nseg);
+          read_array<int>(&seg[0], nseg);
+
+          for (int i = 0; i < nseg; i++) {
+              mapinfo->add_segment(sec[i], seg[i]);
+            }
         }
+      return nseg;
     }
 
     /** Defined flag values for parse_array() */
