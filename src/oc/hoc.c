@@ -729,6 +729,7 @@ void hoc_main1_init(const char* pname, const char** envp)
 
 	hoc_xopen_file_size_ = 200;
 	hoc_xopen_file_ = emalloc(hoc_xopen_file_size_);
+	hoc_xopen_file_[0] = '\0';
 
 	hoc_promptstr = "oc>";
 	yystart = 1;
