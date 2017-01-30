@@ -88,6 +88,8 @@ extern void nrn_daq_ao();
 #endif
 
 #define NRNCTIME 1
+#define NONVINT_ODE_COUNT 5
+
 #if NRNCTIME
 #define CTBEGIN double wt = nrnmpi_wtime();
 #define CTADD nth->_ctime += nrnmpi_wtime() - wt;
@@ -1036,6 +1038,9 @@ int nrn_nonvint_block_exe(int method, int size, double* pd1, double* pd2, int ti
 		}
 		else {
 			sum += rval;
+		}
+		if (method == NONVINT_ODE_COUNT) {
+			size += rval;
 		}
 	}
 	
