@@ -696,7 +696,50 @@ void NetCvode::check_thresh(NrnThread* nt) {  // for default method
         PreSyn* ps = nt->presyns + nt->_net_send_buffer[i];
         ps->send(nt->_t + teps, net_cvode_instance, nt);
     }
+
+    // Types that have WATCH statements. If exist, then last element is 0.
+    if (nt->_watch_types) {
+        for (int i=0; nt->_watch_types[i] != 0; ++i) {
+            int type = nt->_watch_types[i];
+            (*nrn_watch_check[type])(nt, nt->_ml_list[type]);
+            // may generate net_send events (with 0 (teps) delay)
+        }
+    }
 }
+
+// WATCH statements are rare. Conceptually they are very similar to
+// PreSyn thresholds as above but an optimal peformance implementation for GPU is
+// not obvious. Each WATCH statement threshold test could make use of
+// pscheck.  Note that it is possible that there are several active WATCH
+// statements for a given POINT_PROCESS instance as well as none active.
+// Also WATCH statements switch between active and inactive state.
+//
+// In NEURON,
+// both PreSyn and WatchCondition were subclasses of ConditionEvent. When
+// a WatchCondition fired in the fixed step method, it was placed on the queue
+// with a delivery time of t+teps. WatchCondition::deliver called the NET_RECEIVE
+// block with proper flag ( but NULL weight vector). WatchConditions
+// were created,added/removed,destroyed from a list as necessary.
+// Perhaps the most commonly used WATCH statement is in the context of a
+// ThresholdDetect Point_process which watches voltage and compares to
+// an instance specific threshold parameter. A firing ThresholdDetect instance
+// would call net_event(tdeliver) which then feeds into the standard
+// artcell PreSyn sequence (using pntsrc_ instead of thvar_index_).
+//
+// So... the PreSyns have the same order as they are checked (although PreSyn
+// data is AoS instead of SoA and nested 'if' means a failure of SIMD.)
+// But if multiple WATCH, there is (from one kind of implementation viewpoint),
+// yet another 'if' with regard to whether a WATCH is active. And if there
+// are multiple WATCH, the size of the list is dynamic.
+//
+// An experimental implementation is to check all WATCH of all instances
+// of a type with the proviso that there is an active flag for each WATCH.
+// ie. active, below, var1, var2 are all SoA (except one of the var may
+// be voltage). Can use 'if (active && pscheck(var1, var2, &below)'
+// The mod file net_send_buffering fragments can be used which
+// ultimately call net_send using a transient SelfEvent. ie. all
+// checking computation takes place in the context of the mod file without
+// using explicit WatchCondition instances.
 
 // events including binqueue events up to t+dt/2
 void NetCvode::deliver_net_events(NrnThread* nt) {  // for default method

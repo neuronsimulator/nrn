@@ -48,7 +48,6 @@ extern int use_solve_interleave;
 extern int* nrn_index_sort(int* values, int n);
 extern void solve_interleaved(int ith);
 extern void nrn_solve_minimal(NrnThread*);
-extern void second_order_cur(NrnThread*);
 extern void nrn_ba(NrnThread*, int);
 extern void dt2thread(double);
 extern void clear_event_queue(void);
