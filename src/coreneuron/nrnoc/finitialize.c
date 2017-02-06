@@ -93,6 +93,9 @@ void nrn_finitialize(int setv, double v) {
         setup_tree_matrix_minimal(nrn_threads + i);
     }
     for (i = 0; i < nrn_nthread; ++i) {
+        nrn_ba(nrn_threads + i, BEFORE_STEP);
+    }
+    for (i = 0; i < nrn_nthread; ++i) {
         nrn_deliver_events(nrn_threads + i); /* The record events at t=0 */
     }
 #if NRNMPI

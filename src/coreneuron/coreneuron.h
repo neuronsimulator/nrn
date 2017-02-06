@@ -70,6 +70,7 @@ extern void nrn_alloc_capacitance(double* data, Datum* pdata, int type);
 extern void nrn_init_ion(struct NrnThread*, struct Memb_list*, int);
 extern void nrn_cur_ion(struct NrnThread* _nt, struct Memb_list* ml, int type);
 extern void nrn_alloc_ion(double* data, Datum* pdata, int type);
+extern void second_order_cur(NrnThread* _nt,int secondorder);
 
 #if defined(__cplusplus)
 }

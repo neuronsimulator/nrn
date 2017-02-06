@@ -200,6 +200,7 @@ void nrn_ba(NrnThread* nt, int bat) {
 static void* nrn_fixed_step_thread(NrnThread* nth) {
     /* check thresholds and deliver all (including binqueue)
        events up to t+dt/2 */
+    extern int secondorder;
     deliver_net_events(nth);
     nth->_t += .5 * nth->_dt;
 
@@ -214,7 +215,7 @@ static void* nrn_fixed_step_thread(NrnThread* nth) {
         fixed_play_continuous(nth);
         setup_tree_matrix_minimal(nth);
         nrn_solve_minimal(nth);
-        second_order_cur(nth);
+        second_order_cur(nth, secondorder);
         update(nth);
     }
     if (!nrn_have_gaps) {
@@ -237,6 +238,7 @@ static void* nrn_fixed_step_lastpart(NrnThread* nth) {
         fixed_play_continuous(nth);
         nonvint(nth);
         nrn_ba(nth, AFTER_SOLVE);
+	nrn_ba(nth, BEFORE_STEP);
     }
 
     nrn_deliver_events(nth); /* up to but not past texit */

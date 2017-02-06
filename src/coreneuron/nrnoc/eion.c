@@ -30,7 +30,6 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include <string.h>
 
 #include "coreneuron/coreneuron.h"
-#include "coreneuron/nrnoc/nrnoc_decl.h"
 
 #if !defined(LAYOUT)
 /* 1 means AoS, >1 means AoSoA, <= 0 means SOA */
@@ -354,8 +353,7 @@ void nrn_alloc_ion(double* p, Datum* ppvar, int _type) {
     assert(0);
 }
 
-void second_order_cur(NrnThread* _nt) {
-    extern int secondorder;
+void second_order_cur(NrnThread* _nt, int secondorder) {
     NrnThreadMembList* tml;
     Memb_list* ml;
     int _iml, _cntml_actual;

@@ -134,6 +134,10 @@ extern void hoc_register_net_send_buffering(int);
 extern int net_buf_send_cnt_;
 extern int* net_buf_send_type_;
 
+typedef void (*nrn_watch_check_t)(struct NrnThread*, Memb_list*);
+extern void hoc_register_watch_check(nrn_watch_check_t, int);
+extern nrn_watch_check_t* nrn_watch_check;
+
 extern void nrn_jacob_capacitance(struct NrnThread*, Memb_list*, int);
 extern void nrn_writes_conc(int, int);
 #if defined(_OPENACC)
