@@ -27,9 +27,8 @@ static int oldsimeq();
  *  and its identity is meant to be concealed from the user.
  *
  */
-int
-_advance(_ninits, n, s, d, p, t, dt, fun, pcoef, linflag)
-int n, _ninits;
+int _advance(_ninits, n, s, d, p, t, dt, fun, pcoef, linflag)
+int n, _ninits, linflag;
 int (*fun) ();
 double *t, dt, *p, ***pcoef; int s[]; int d[];
 #define d_(arg)  p[d[arg]]

@@ -38,6 +38,7 @@ file.c,v
  * Bound to "C-X C-R".
  */
 int fileread(f, n)
+  int f, n;
 {
         register int    s;
         char fname[NFILEN];
@@ -67,6 +68,7 @@ int fileread(f, n)
  * Bound to "C-X C-I".
  */
 int insfile(f, n)
+  int f, n;
 {
         register int    s;
         char fname[NFILEN];
@@ -89,6 +91,7 @@ int insfile(f, n)
  * Bound to C-X C-F.
  */
 int filefind(f, n)
+  int f, n;
 {
         char fname[NFILEN];	/* file user wishes to find */
         register int s;		/* status return */
@@ -100,6 +103,7 @@ int filefind(f, n)
 }
 
 int viewfile(f, n)	/* visit a file in VIEW mode */
+  int f, n;
 {
         char fname[NFILEN];	/* file user wishes to find */
         register int s;		/* status return */
@@ -323,6 +327,7 @@ char    fname[];
  * with ITS EMACS. Bound to "C-X C-W".
  */
 int filewrite(f, n)
+  int f, n;
 {
         register WINDOW *wp;
         register int    s;
@@ -364,6 +369,7 @@ int filewrite(f, n)
  * get called by "C-Z".
  */
 int filesave(f, n)
+  int f, n;
 {
         register WINDOW *wp;
         register int    s;
@@ -443,6 +449,7 @@ char    *fn;
  * prompt if you wish.
  */
 int filename(f, n)
+  int f, n;
 {
         register WINDOW *wp;
         register int    s;

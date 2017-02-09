@@ -160,6 +160,7 @@ int f, n;	/* default flag and numeric argument */
  * well, and FALSE on errors.
  */
 int linsert(n, c)
+  int n, c;
 {
         register char   *cp1;
         register char   *cp2;
@@ -301,6 +302,7 @@ int lnewline()
  * buffer. The "kflag" is TRUE if the text should be put in the kill buffer.
  */
 int ldelete(n, kflag)
+  int n, kflag;
 {
         register char   *cp1;
         register char   *cp2;
@@ -472,6 +474,7 @@ int kdelete()
  */
 
 int kinsert(c)
+  int c;
 {
         register char   *nbufp;
 
@@ -495,6 +498,7 @@ int kinsert(c)
  * until it gets a "-1" back.
  */
 int kremove(n)
+  int n;
 {
         if (n >= kused)
                 return (-1);

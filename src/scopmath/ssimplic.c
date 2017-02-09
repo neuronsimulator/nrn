@@ -9,9 +9,8 @@ extern int derivimplicit();
 
 static int check_state();
 
-int
-_ss__advance(_ninits, n, s, d, p, t, dt, fun, pcoef, linflag)
-	int n, _ninits;
+int _ss__advance(_ninits, n, s, d, p, t, dt, fun, pcoef, linflag)
+	int n, _ninits, linflag;
 	int (*fun) ();
 	double *t, dt, *p, ***pcoef; int s[]; int d[];
 {

@@ -36,6 +36,7 @@ window.c,v
  * Because of the default, it works like in Gosling.
  */
 int reposition(f, n)
+  int f, n;
     {
     if (f == FALSE)	/* default to 0 to center screen */
 	n = 0;
@@ -49,6 +50,7 @@ int reposition(f, n)
  * argument it recenters "." in the current window. Bound to "C-L".
  */
 int refresh(f, n)
+  int f, n;
     {
 	LINTUSE(n)
     if (f == FALSE)
@@ -68,6 +70,7 @@ int refresh(f, n)
  * there is only 1 window on the screen. Bound to "C-X C-N".
  */
 int nextwind(f, n)
+  int f, n;
     {
     register WINDOW *wp;
 
@@ -87,6 +90,7 @@ int nextwind(f, n)
  * lot if there is 1 window.
  */
 int prevwind(f, n)
+  int f, n;
     {
     register WINDOW *wp1;
     register WINDOW *wp2;
@@ -115,7 +119,7 @@ int prevwind(f, n)
  * "move up". Magic. Bound to "C-X C-N".
  */
 int mvdnwind(f, n)
-    int n;
+    int f, n;
     {
     return (mvupwind(f, -n));
     }
@@ -128,7 +132,7 @@ int mvdnwind(f, n)
  * "C-X C-P".
  */
 int mvupwind(f, n)
-    int n;
+    int f, n;
     {
     register LINE *lp;
     register int i;
@@ -178,6 +182,7 @@ int mvupwind(f, n)
  * become undisplayed.
  */
 int onlywind(f, n)
+  int f, n;
 {
         register WINDOW *wp;
         register LINE   *lp;
@@ -225,6 +230,7 @@ int onlywind(f, n)
  * structure for the new window. Bound to "C-X 2".
  */
 int splitwind(f, n)
+  int f, n;
 {
         register WINDOW *wp;
         register LINE   *lp;
@@ -302,6 +308,7 @@ int splitwind(f, n)
  * move. Bound to "C-X Z".
  */
 int enlargewind(f, n)
+  int f, n;
 {
         register WINDOW *adjwp;
         register LINE   *lp;
@@ -348,6 +355,7 @@ int enlargewind(f, n)
  * "C-X C-Z".
  */
 int shrinkwind(f, n)
+  int f, n;
 {
         register WINDOW *adjwp;
         register LINE   *lp;
@@ -407,7 +415,7 @@ WINDOW  *wpopup()
 }
 
 int scrnextup(f, n)		/* scroll the next window up (back) a page */
-
+  int f, n;
 {
 	IGNORE(nextwind(FALSE, 1));
 	IGNORE(backpage(f, n));
@@ -416,7 +424,7 @@ int scrnextup(f, n)		/* scroll the next window up (back) a page */
 }
 
 int scrnextdw(f, n)		/* scroll the next window down (forward) a page */
-
+  int f, n;
 {
 	IGNORE(nextwind(FALSE, 1));
 	IGNORE(forwpage(f, n));

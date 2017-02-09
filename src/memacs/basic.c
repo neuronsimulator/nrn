@@ -30,6 +30,7 @@ basic.c,v
  * Trivial.
  */
 int gotobol(f, n)
+  int f, n;
 {
 	LINTUSE(f) LINTUSE(n)
         curwp->w_doto  = 0;
@@ -43,7 +44,7 @@ int gotobol(f, n)
  * line pointer for dot changes.
  */
 int backchar(f, n)
-register int    n;
+register int    n; int f;
 {
         register LINE   *lp;
 
@@ -67,6 +68,7 @@ register int    n;
  * Move the cursor to the end of the current line. Trivial. No errors.
  */
 int gotoeol(f, n)
+  int f, n;
 {
 	LINTUSE(f) LINTUSE(n)
         curwp->w_doto  = llength(curwp->w_dotp);
@@ -80,7 +82,7 @@ int gotoeol(f, n)
  * buffer. Set the flag if the line pointer for dot changes.
  */
 int forwchar(f, n)
-register int    n;
+register int    n; int f;
 {
         if (n < 0)
                 return (backchar(f, -n));
@@ -101,6 +103,7 @@ int gotoline(f, n)		/* move to a particular line.
 			   argument (n) must be a positive integer for
 			   this to actually do anything		*/
 
+  int f, n;
 {
 	if (n < 1)		/* if a bogus argument...then leave */
 		return(FALSE);
@@ -117,6 +120,7 @@ int gotoline(f, n)		/* move to a particular line.
  * is the same as the new value of dot. Normally bound to "M-<".
  */
 int gotobob(f, n)
+  int f, n;
 {
 	LINTUSE(f) LINTUSE(n)
         curwp->w_dotp  = lforw(curbp->b_linep);
@@ -131,6 +135,7 @@ int gotobob(f, n)
  * Bound to "M->".
  */
 int gotoeob(f, n)
+  int f, n;
 {
 	LINTUSE(f) LINTUSE(n)
         curwp->w_dotp  = curbp->b_linep;
@@ -146,6 +151,7 @@ int gotoeob(f, n)
  * possible.
  */
 int forwline(f, n)
+  int f, n;
 {
         register LINE   *dlp;
 
@@ -170,6 +176,7 @@ int forwline(f, n)
  * motion. No errors are possible. Bound to "C-P".
  */
 int backline(f, n)
+  int f, n;
 {
         register LINE   *dlp;
 
@@ -312,7 +319,7 @@ register LINE   *dlp;
  * this zaps the top line in the display window, we have to do a hard update.
  */
 int forwpage(f, n)
-register int    n;
+register int    n; int f;
 {
         register LINE   *lp;
 
@@ -343,7 +350,7 @@ register int    n;
  * reason.
  */
 int backpage(f, n)
-register int    n;
+register int    n; int f;
 {
         register LINE   *lp;
 
@@ -372,6 +379,7 @@ register int    n;
  * errors are possible. Bound to "M-.".
  */
 int setmark(f, n)
+  int f, n;
 {
 	LINTUSE(f) LINTUSE(n)
         curwp->w_markp = curwp->w_dotp;
@@ -387,6 +395,7 @@ int setmark(f, n)
  * "C-X C-X".
  */
 int swapmark(f, n)
+  int f, n;
 {
         register LINE   *odotp;
         register int    odoto;

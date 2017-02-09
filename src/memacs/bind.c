@@ -28,6 +28,7 @@ bind.c,v
 #include	"epath.h"
 
 int deskey(f, n)	/* describe the command for a certain key */
+  int f, n;
 {
 	register int c;		/* command character to describe */
 	register char *ptr;	/* string pointer to scan output strings */
@@ -130,6 +131,7 @@ char *seq;	/* destination string for sequence */
 int help(f, n)	/* give me some help!!!!
 		   bring up a fake buffer and read the help file
 		   into it with view mode			*/
+  int f, n;
 {
 	register int status;	/* status of I/O operations */
 	register WINDOW *wp;	/* scnaning pointer to windows */
@@ -349,6 +351,7 @@ int f, n;	/* command arguments [passed through to command executed] */
 int desbind(f, n)	/* describe bindings
 		   bring up a fake buffer and list the key bindings
 		   into it with view mode			*/
+  int f, n;
 {
 	register WINDOW *wp;	/* scnaning pointer to windows */
 	register KEYTAB *ktp;	/* pointer into the command table */

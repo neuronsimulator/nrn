@@ -249,6 +249,7 @@ main1.c,v
 static int vquick = 0;	/*mlh 3/2/88 flag for very quick exit (expect
 						to return)*/
 int emacs_main(argc, argv)	/*mlh 2/29/88 can be embedded in larger program*/
+int argc;
 char    *argv[];
 {
         register int    c;
@@ -491,6 +492,7 @@ char    bname[];
  * look at it. Return the status of command.
  */
 int execute(c, f, n)
+  int c, f, n;
 {
         register KEYTAB *ktp;
         register int    status;
@@ -649,6 +651,7 @@ int getctl()
  */
 
 int quickexit(f, n)
+  int f, n;
 {
 #if (MLH == 0)
 	register BUFFER *bp;	/* scanning pointer to buffers */
@@ -702,6 +705,7 @@ int quickexit(f, n)
  * has been changed and not written out. Normally bound to "C-X C-C".
  */
 int quit(f, n)
+  int f, n;
 {
         register int    s;
 
@@ -731,6 +735,7 @@ int quit(f, n)
  * return.
  */
 int ctlxlp(f, n)
+  int f, n;
 {
 	LINTUSE(f) LINTUSE(n)
         if (kbdmip!=NULL || kbdmop!=NULL) {
@@ -747,6 +752,7 @@ int ctlxlp(f, n)
  * routine. Set up the variables and return to the caller.
  */
 int ctlxrp(f, n)
+  int f, n;
 {
 	LINTUSE(f) LINTUSE(n)
         if (kbdmip == NULL) {
@@ -764,6 +770,7 @@ int ctlxrp(f, n)
  * command gets an error. Return TRUE if all ok, else FALSE.
  */
 int ctlxe(f, n)
+  int f, n;
 {
         register int    c;
         register int    af;
@@ -800,6 +807,7 @@ int ctlxe(f, n)
  * Sometimes called as a routine, to do general aborting of stuff.
  */
 int ctrlg(f, n)
+  int f, n;
 {
 	LINTUSE(f) LINTUSE(n)
         (*term.t_beep)();

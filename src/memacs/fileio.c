@@ -84,6 +84,7 @@ int ffclose()
  */
 int ffputline(buf, nbuf)
 char    buf[];
+int nbuf;
 {
         register int    i;
 
@@ -108,6 +109,7 @@ char    buf[];
  */
 int ffgetline(buf, nbuf)
 register char   buf[];
+int nbuf;
 {
         register int    c;
         register int    i;
