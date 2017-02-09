@@ -45,9 +45,11 @@ int (*p_nrnpy_pyrun)(const char* fname);
 #endif
 
 #if NRN_FLOAT_EXCEPTION
+#define __USE_GNU
 #include <fenv.h>
 #define FEEXCEPT (FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW )
 int matherr1(void) {
+#if defined(FE_NOMASK_ENV) /* should be updated to be more generic */
 	/* above gives the signal but for some reason fegetexcept returns 0 */
 	switch(fegetexcept()) {
 	case FE_DIVBYZERO:
@@ -60,12 +62,13 @@ int matherr1(void) {
 		fprintf(stderr, "Floating exception: Overflow\n");
 		break;
 	}
+#endif /*FE_NOMASK_ENV*/
 }
 #endif
 
 void nrn_feenableexcept() {
   int result = -1;
-#if NRN_FLOAT_EXCEPTION
+#if NRN_FLOAT_EXCEPTION && defined(FE_NOMASK_ENV)
   if (ifarg(1) && chkarg(1, 0., 1.) == 0.) {
     result = feenableexcept(0);
   }else{
