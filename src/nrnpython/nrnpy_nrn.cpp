@@ -69,6 +69,7 @@ extern void nrn_diam_change(Section*);
 extern void nrn_length_change(Section*, double);
 extern int diam_changed;
 extern void mech_insert1(Section*, int);
+extern void mech_uninsert1(Section*, Symbol*);
 extern PyObject* nrn_hocobj_ptr(double*);
 extern PyObject* nrnpy_forall(PyObject* self, PyObject* args);
 extern Object* nrnpy_po2ho(PyObject*);
@@ -722,6 +723,30 @@ static PyObject* NPySecObj_insert(NPySecObj* self, PyObject* args) {
   int type = PyInt_AsLong(otype);
   // printf("NPySecObj_insert %s %d\n", tname, type);
   mech_insert1(self->sec_, type);
+  Py_INCREF(self);
+  return (PyObject*)self;
+}
+
+static PyObject* NPySecObj_uninsert(NPySecObj* self, PyObject* args) {
+  char* tname;
+  if (!PyArg_ParseTuple(args, "s", &tname)) {
+    return NULL;
+  }
+  PyObject* otype = PyDict_GetItemString(pmech_types, tname);
+  if (!otype) {
+    // check first to see if the pmech_types needs to be
+    // augmented by any new KSChan
+    remake_pmech_types();
+    otype = PyDict_GetItemString(pmech_types, tname);
+    if (!otype) {
+      PyErr_SetString(PyExc_ValueError,
+                      "argument not a density mechanism name.");
+      return NULL;
+    }
+  }
+  int type = PyInt_AsLong(otype);
+  // printf("NPySecObj_uninsert %s %d\n", tname, memb_func[type].sym);
+  mech_uninsert1(self->sec_, memb_func[type].sym);
   Py_INCREF(self);
   return (PyObject*)self;
 }
@@ -1449,7 +1474,9 @@ static PyMethodDef NPySecObj_methods[] = {
      "childSection.connect(parentSection, [parentX], [childEnd]) "
      "or\nchildSection.connect(parentSegment, [childEnd])"},
     {"insert", (PyCFunction)NPySecObj_insert, METH_VARARGS,
-     "section.insert(densityMechanismType) e.g. soma.insert(hh)"},
+     "section.insert(densityMechanismName) e.g. soma.insert('hh')"},
+    {"uninsert", (PyCFunction)NPySecObj_uninsert, METH_VARARGS,
+     "section.uninsert(densityMechanismName) e.g. soma.insert('hh')"},
     {"push", (PyCFunction)NPySecObj_push, METH_VARARGS,
      "section.push() makes it the currently accessed section. Should end with "
      "a corresponding hoc.pop_section()"},
