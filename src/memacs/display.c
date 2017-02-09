@@ -150,6 +150,7 @@ int vttidy()
  * idea during the early stages.
  */
 int vtmove(row, col)
+  int row, col;
 {
     vtrow = row;
     vtcol = col;
@@ -561,6 +562,7 @@ int updext()
  * RAINBOW version of this routine uses fast video.
  */
 int updateline(row, vline, pline, flags)
+    int row;
     char vline[];	/* what we want it to end up as */
     char pline[];	/* what it looks like now       */
     short *flags;	/* and how we want it that way  */
@@ -830,6 +832,7 @@ int upmode()	/* update all the mode lines */
  * random calls. Update "ttrow" and "ttcol".
  */
 int movecursor(row, col)
+  int row, col;
     {
     if (row!=ttrow || col!=ttcol)
         {
@@ -908,6 +911,7 @@ char *prompt;
 int mlreply(prompt, buf, nbuf)
     char *prompt;
     char *buf;
+    int nbuf;
 {
 	return(mlreplyt(prompt,buf,nbuf,'\n'));
 }
@@ -921,7 +925,7 @@ int mlreplyt(prompt, buf, nbuf, eolchar)
 char *prompt;
 char *buf;
 char eolchar;
-
+int nbuf;
 {
 	register int cpos;
 	register int i;
@@ -1104,6 +1108,7 @@ char eolchar;
 /*VARARGS1*/
 int mlwrite(fmt, arg)
     char *fmt;
+    int arg;
     {
     register int c;
     register char *ap;
@@ -1185,6 +1190,7 @@ int mlputs(s)
  * position. This will not handle any negative numbers; maybe it should.
  */
 int mlputi(i, r)
+  int i, r;
     {
     register int q;
     static char hexdigits[] = "0123456789ABCDEF";
@@ -1210,6 +1216,7 @@ int mlputi(i, r)
  */
 int mlputli(l, r)
     long l;
+    int r;
     {
     register long q;
 

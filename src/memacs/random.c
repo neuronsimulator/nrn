@@ -32,6 +32,7 @@ random.c,v
  * Set fill column to n.
  */
 int setfillcol(f, n)
+  int f, n;
 {
 	LINTUSE(f)
         fillcol = n;
@@ -47,6 +48,7 @@ int setfillcol(f, n)
  * Normally this is bound to "C-X =".
  */
 int showcpos(f, n)
+  int f, n;
 {
         register LINE   *clp;
         register long   nch;
@@ -126,6 +128,7 @@ int bflg;
  * to "C-T". This always works within a line, so "WFEDIT" is good enough.
  */
 int twiddle(f, n)
+  int f, n;
 {
         register LINE   *dotp;
         register int    doto;
@@ -156,6 +159,7 @@ int twiddle(f, n)
  * inserted 0 times, for regularity. Bound to "C-Q"
  */
 int quote(f, n)
+  int f, n;
 {
         register int    s;
         register int    c;
@@ -183,6 +187,7 @@ int quote(f, n)
  * tab into file.
  */
 int tab(f, n)
+  int f, n;
 {
 	LINTUSE(f)
         if (n < 0)
@@ -202,6 +207,7 @@ int tab(f, n)
  * into "C-I" (in 10 bit code) already. Bound to "C-I".
  */
 int tab(f, n)
+  int f, n;
 {
         if (n < 0)
                 return (FALSE);
@@ -221,6 +227,7 @@ int tab(f, n)
  * procerssors. They even handle the looping. Normally this is bound to "C-O".
  */
 int openline(f, n)
+  int f, n;
 {
         register int    i;
         register int    s;
@@ -245,6 +252,7 @@ int openline(f, n)
  * indentation as specified.
  */
 int newline(f, n)
+  int f, n;
 {
 	register int    s;
 
@@ -377,6 +385,7 @@ int inspound()	/* insert a # into the text here...we are in CMODE */
  * ignored.
  */
 int deblank(f, n)
+  int f, n;
 {
         register LINE   *lp1;
         register LINE   *lp2;
@@ -408,6 +417,7 @@ int deblank(f, n)
  * subcomands failed. Normally bound to "C-J".
  */
 int indent(f, n)
+  int f, n;
 {
         register int    nicol;
         register int    c;
@@ -447,6 +457,7 @@ int indent(f, n)
  * of text if typed with a big argument. Normally bound to "C-D".
  */
 int forwdel(f, n)
+  int f, n;
 {
 	if (curbp->b_mode&MDVIEW)	/* don't allow this command if	*/
 		return(rdonly());	/* we are in read only mode	*/
@@ -467,6 +478,7 @@ int forwdel(f, n)
  * both "RUBOUT" and "C-H".
  */
 int backdel(f, n)
+  int f, n;
 {
         register int    s;
 
@@ -493,6 +505,7 @@ int backdel(f, n)
  * that number of newlines. Normally bound to "C-K".
  */
 int killtext(f, n)
+  int f, n;
 {
         register int    chunk;
         register LINE   *nextp;
@@ -531,6 +544,7 @@ int killtext(f, n)
  * check for errors. Bound to "C-Y".
  */
 int yank(f, n)
+  int f, n;
 {
         register int    c;
         register int    i;

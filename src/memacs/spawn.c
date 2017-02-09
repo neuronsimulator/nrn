@@ -86,6 +86,7 @@ extern int vttidy();
  * Under some (unknown) condition, you don't get one free when DCL starts up.
  */
 int spawncli(f, n)
+  int f, n;
 {
 #if     AMIGA
         long newcli;
@@ -187,6 +188,7 @@ int rtfrmshell()
  * done. Bound to "C-X !".
  */
 int spawn(f, n)
+  int f, n;
 {
         register int    s;
         char            line[NLINE];

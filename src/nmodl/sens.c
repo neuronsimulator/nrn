@@ -121,7 +121,7 @@ void add_sens_statelist(s)
 }
 
 void sensmassage(type, qfun, fn)
-	int type;
+	int type, fn;
 	Item *qfun;
 {
 /*qfun is the list symbol for the name of the derivative block. It has

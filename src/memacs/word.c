@@ -74,6 +74,7 @@ int n;
  * move beyond the buffers.
  */
 int backword(f, n)
+  int f, n;
 {
         if (n < 0)
                 return (forwword(f, -n));
@@ -97,6 +98,7 @@ int backword(f, n)
  * is done by "forwchar". Error if you try and move beyond the buffer's end.
  */
 int forwword(f, n)
+  int f, n;
 {
         if (n < 0)
                 return (backword(f, -n));
@@ -127,6 +129,7 @@ int forwword(f, n)
  * end of the buffer. Bound to "M-U".
  */
 int upperword(f, n)
+  int f, n;
 {
         register int    c;
 
@@ -160,6 +163,7 @@ int upperword(f, n)
  * the buffer. Bound to "M-L".
  */
 int lowerword(f, n)
+  int f, n;
 {
         register int    c;
 
@@ -194,6 +198,7 @@ int lowerword(f, n)
  * buffer. Bound to "M-C".
  */
 int capword(f, n)
+  int f, n;
 {
         register int    c;
 
@@ -237,6 +242,7 @@ int capword(f, n)
  * command for the right number of characters. Bound to "M-D".
  */
 int delfword(f, n)
+  int f, n;
 {
         register int    size;
         register LINE   *dotp;
@@ -282,6 +288,7 @@ int delfword(f, n)
  * fire off the kill command. Bound to "M-Rubout" and to "M-Backspace".
  */
 int delbword(f, n)
+  int f, n;
 {
         register int    size;
 

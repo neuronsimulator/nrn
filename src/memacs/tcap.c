@@ -184,6 +184,7 @@ char    *str;
 
 static int putnpad(str, n)
 char    *str;
+int n;
 {
         tputs(str, n, ttputc);
 	return 0;

@@ -31,6 +31,7 @@ region.c,v
  * Bound to "C-W".
  */
 int killregion(f, n)
+  int f, n;
 {
         register int    s;
         REGION          region;
@@ -55,6 +56,7 @@ int killregion(f, n)
  * by a yank. Bound to "M-W".
  */
 int copyregion(f, n)
+  int f, n;
 {
         register LINE   *linep;
         register int    loffs;
@@ -93,6 +95,7 @@ int copyregion(f, n)
  * "C-X C-L".
  */
 int lowerregion(f, n)
+  int f, n;
 {
         register LINE   *linep;
         register int    loffs;
@@ -131,6 +134,7 @@ int lowerregion(f, n)
  * "C-X C-L".
  */
 int upperregion(f, n)
+  int f, n;
 {
         register LINE   *linep;
         register int    loffs;

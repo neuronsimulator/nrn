@@ -46,7 +46,7 @@ search.c,v
 #define	PTEND	2	/* leave the point at the end on search */
 
 int forwsearch(f, n)
-
+  int f, n;
 {
 	register int status;
 
@@ -73,7 +73,7 @@ int forwsearch(f, n)
 }
 
 int forwhunt(f, n)
-
+  int f, n;
 {
 	register int status;
 
@@ -108,7 +108,7 @@ int forwhunt(f, n)
  * matched]. Bound to "C-R".
  */
 int backsearch(f, n)
-
+  int f, n;
 {
 	register int s;
 
@@ -127,7 +127,7 @@ int backsearch(f, n)
 }
 
 int backhunt(f, n)	/* hunt backward for the last search string entered */
-
+  int f, n;
 {
 	/* resolve null and negative arguments */
 	if (n == 0)
@@ -146,7 +146,7 @@ int backhunt(f, n)	/* hunt backward for the last search string entered */
 }
 
 int emacs_bsearch(f, n)
-
+  int f, n;
 {
 	register LINE *clp;
 	register int cbo;

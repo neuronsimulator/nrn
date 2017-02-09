@@ -1071,9 +1071,8 @@ static void local2sparseobj(so)
 }
 
 /* copied from scopmath/ssimplic.c */
-static int
-check_state(base, bound, n, s, data)
-	int n, *s;
+static int check_state(base, bound, n, s, data)
+	int n, *s, base, bound;
 	double **data;
 {
 	int i, flag, k;

@@ -40,6 +40,7 @@ buffer.c,v
  * from some other window.
  */
 int usebuffer(f, n)
+  int f, n;
 {
         register BUFFER *bp;
         register int    s;
@@ -54,7 +55,7 @@ int usebuffer(f, n)
 }
 
 int nextbuffer(f, n)	/* switch to the next buffer in the buffer list */
-
+  int f, n;
 {
         register BUFFER *bp;
 
@@ -71,9 +72,7 @@ int nextbuffer(f, n)	/* switch to the next buffer in the buffer list */
 }
 
 int swbuffer(bp)	/* make buffer BP current */
-
 BUFFER *bp;
-
 {
         register WINDOW *wp;
 
@@ -124,7 +123,7 @@ BUFFER *bp;
  * line and the buffer header. Bound to "C-X K".
  */
 int killbuffer(f, n)
-
+  int f, n;
 {
 	register BUFFER *bp;
         register int    s;
@@ -210,6 +209,7 @@ ask:	if (mlreply("Change buffer name to: ", bufn, NBUFN) != TRUE)
  * list. Bound to "C-X C-B".
  */
 int listbuffers(f, n)
+  int f, n;
 {
         register WINDOW *wp;
         register BUFFER *bp;
@@ -457,6 +457,7 @@ static int bufname_match(pattern, string)
  */
 BUFFER  *bfind(bname, cflag, bflag)
 register char   *bname;
+int cflag, bflag;
 {
         register BUFFER *bp;
 	register BUFFER *sb;	/* buffer to insert after */

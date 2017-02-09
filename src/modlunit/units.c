@@ -624,6 +624,7 @@ struct unit *up;
 }
 
 static int pu(u, i, f)
+  int u, i, f;
 {
 
 	if(u > 0) {
@@ -700,6 +701,7 @@ loop:
 static int lookup(name, up, den, c)
 char *name;
 struct unit *up;
+int den, c;
 {
 	register struct unit *p;
 	register struct table *q;

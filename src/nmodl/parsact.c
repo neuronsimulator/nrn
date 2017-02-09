@@ -111,6 +111,7 @@ caught as errors in the function above. */
 
 static int type_change(sym, level) /*return 1 if type change, 0 otherwise*/
 	Symbol *sym;
+	int level;
 {
 	long s, d, c;
 	
@@ -148,6 +149,7 @@ Fprintf(stderr, "Notice: %s is promoted from a PARAMETER to an ASSIGNED\n", sym-
 void parm_array_install(n, num, units, limits, index)
 	Symbol         *n;
 	char           *num, *units, *limits;
+	int index;
 {
 	char buf[NRN_BUFSIZE];
 
