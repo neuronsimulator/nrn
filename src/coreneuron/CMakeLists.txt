@@ -165,7 +165,7 @@ set(MOD_FUNC_C_PL "${CMAKE_CURRENT_SOURCE_DIR}/mech/mod_func.c.pl")
 # ... pass as argument to the perl script the list of mod file names;
 add_custom_command(OUTPUT "${MOD_FUNC_C}"
     DEPENDS ${MECH_FILE_LISTS} "${MOD_FUNC_C_PL}"
-    COMMAND perl "${MOD_FUNC_C_PL}" ${MOD2C_OPTMECH_MODS} > "${MOD_FUNC_C}"
+    COMMAND perl "${MOD_FUNC_C_PL}" ${MOD2C_OPTMECH_MODS} ${MECH_STDMODS} > "${MOD_FUNC_C}"
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
 
 # ... and add a reconfigure dependency on the files that listed them
