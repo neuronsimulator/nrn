@@ -64,7 +64,7 @@ void nrn_set_extra_thread0_vdata() {
     // limited to PatternStim for now.
     // if called, must be called before nrn_setup and after mk_mech.
     int type = nrn_get_mechtype("PatternStim");
-    if (!memb_func[type].sym) {
+    if (!memb_func[type].initialize) {
         // the NEURON mod file version is not vectorized so the param size
         // differs by 1 from the coreneuron version.
         nrn_prop_param_size_[type] += 1;
