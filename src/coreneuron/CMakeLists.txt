@@ -233,7 +233,7 @@ set(link_cudacoreneuron)
 set(link_reportinglib)
 
 #@TODO: CMake should have option for arch
-if(ENABLE_OPENACC)
+if(ENABLE_OPENACC AND ENABLE_CUDA_MODULES)
     cuda_add_library("cudacoreneuron" ${coreneuron_cuda_files} OPTIONS -arch=sm_20)
     set(link_cudacoreneuron cudacoreneuron)
 endif()
