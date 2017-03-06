@@ -129,6 +129,13 @@ endmacro()
 set(STDMODLIBPATH "${CMAKE_CURRENT_SOURCE_DIR}/mech/modfile")
 set(MECH_STDMODS expsyn.mod  hh.mod  netstim.mod  passive.mod  pattern.mod stim.mod)
 
+if (EXPORT_MECHS_FUNCTIONS)
+  # Add 6 standard mechanisms to MOD_PATHS
+  foreach(MOD ${MECH_STDMODS})
+      list(APPEND MOD_PATHS "${STDMODLIBPATH}/${MOD}")
+  endforeach()
+endif()
+
 foreach(MOD ${MECH_STDMODS})
   mod2c_target(STDMECH "${STDMODLIBPATH}/${MOD}")
 endforeach()
@@ -226,7 +233,7 @@ set(link_cudacoreneuron)
 set(link_reportinglib)
 
 #@TODO: CMake should have option for arch
-if(ENABLE_OPENACC)
+if(ENABLE_OPENACC AND ENABLE_CUDA_MODULES)
     cuda_add_library("cudacoreneuron" ${coreneuron_cuda_files} OPTIONS -arch=sm_20)
     set(link_cudacoreneuron cudacoreneuron)
 endif()
