@@ -120,8 +120,8 @@ func multisplit() {local i  localobj srout, cell
 	return spgid
 }
 
-proc msdiv() {local i, sid, msgid \
-  localobj cell, srout, pc, sl, allsr, srlist, sidvec, sr, vsav, hosts, nil
+proc msdiv() {local i, sid, msgid, px \
+  localobj cell, srout, pc, sl, allsr, srlist, sidvec, sr, hosts, nil
 	cell = $o1
 	srout = $o2
 	msgid = $3
@@ -146,13 +146,11 @@ proc msdiv() {local i, sid, msgid \
 	}
 	forsec sl { allsr.append(new SectionRef()) }
 	root = allsr.object(0)
-	vsav = new Vector(allsr.count)
 	for i=0, subtrees.count-1 {
 		subtrees.object(i).merge(allsr)
 	}
 	for i=0, allsr.count-1 allsr.object(i).sec {
-		vsav.x[i] = v(.0001)
-		v(.0001) = -1
+		v = -1
 	}
 	srlist = new List()
 	sidvec = new Vector()
@@ -160,12 +158,14 @@ proc msdiv() {local i, sid, msgid \
 	sid = 0
 	for i=1, subtrees.count-1 {
 		sr = allsr.object(subtrees.object(i).idvec.x[0])
-		sr.parent if (v(.0001) == -1) {v(.0001) = sid  sid += 1 }
+		sr.sec px = parent_connection()
+		sr.parent if (v(px) == -1) {v(px) = sid  sid += 1 }
 	}
 	for (i = subtrees.count-1; i > 0; i -= 1) {
 		sr = allsr.object(subtrees.object(i).idvec.x[0])
 		srlist.append(sr)
-		sr.parent { sidvec.append(gid*100 + v(.0001)) }
+		sr.sec px = parent_connection()
+		sr.parent { sidvec.append(gid*100 + v(px)) }
 		hosts.append(subtrees.object(i).host)
 	}
 	sidvec.append(-1)
@@ -176,12 +176,6 @@ proc msdiv() {local i, sid, msgid \
 		printf("%d %ld %d %s\n", i, sidvec.x[i], hosts.x[i], secname())
 	}
 	multisplit_divide(sidvec, srlist, hosts, $5, pc)
-	for i=0, allsr.count -1 {
-		sr = allsr.object(i)
-		if (sr.exists) sr.sec {
-			v(.0001) = vsav.x[i]
-		}
-	}
 	spgid = -1
 	for i=0, srlist.count-1 {
 		sr = srlist.object(i)
