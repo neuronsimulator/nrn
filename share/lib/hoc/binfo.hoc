@@ -120,8 +120,8 @@ func multisplit() {local i  localobj srout, cell
 	return spgid
 }
 
-proc msdiv() {local i, sid, msgid, px \
-  localobj cell, srout, pc, sl, allsr, srlist, sidvec, sr, hosts, nil
+proc msdiv() {local i, sid, msgid, px, cnt, x \
+  localobj cell, srout, pc, sl, allsr, srlist, sidvec, sr, vsav, vdispl, hosts, nil
 	cell = $o1
 	srout = $o2
 	msgid = $3
@@ -149,6 +149,23 @@ proc msdiv() {local i, sid, msgid, px \
 	for i=0, subtrees.count-1 {
 		subtrees.object(i).merge(allsr)
 	}
+
+	// in case the voltages are encoding information, save them
+	vdispl = new Vector(allsr.count)
+	cnt = 0
+	for i=0, allsr.count-1 allsr.o(i).sec {
+		vdispl.x[i] = cnt
+		cnt += nseg + 2
+	}
+	vsav = new Vector(cnt)
+	cnt = 0
+	for i=0, allsr.count-1 allsr.object(i).sec {
+		for (x) {
+			vsav.x[cnt] = v(x)
+			cnt += 1
+		}
+	}
+
 	for i=0, allsr.count-1 allsr.object(i).sec {
 		v = -1
 	}
@@ -176,6 +193,19 @@ proc msdiv() {local i, sid, msgid, px \
 		printf("%d %ld %d %s\n", i, sidvec.x[i], hosts.x[i], secname())
 	}
 	multisplit_divide(sidvec, srlist, hosts, $5, pc)
+
+	// restore saved voltages for still existing sections
+	for i=0, allsr.count-1 {
+		sr = allsr.object(i)
+		if (sr.exists) sr.sec {
+			cnt = vdispl.x[i]
+			for (x) {
+				v(x) = vsav.x[cnt]
+				cnt += 1
+			}
+		}
+	}
+
 	spgid = -1
 	for i=0, srlist.count-1 {
 		sr = srlist.object(i)
