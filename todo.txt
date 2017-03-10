@@ -20,7 +20,7 @@
 96    modelspec/programmatic/obsoletestimuli.rst    
 122   modelspec/programmatic/ions.rst         
 147   visualization/grapher.rst     
-163   programming/dynamiccode.rst   
+163   programming/dynamiccode.rst    
 213   analysis/guitools/mulfit.rst  
 385   programming/gui/list.rst      
 535   modelspec/programmatic/topology.rst   
