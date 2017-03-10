@@ -10,9 +10,9 @@ Matrix
 
 
     Syntax:
-        ``mobj = new Matrix(nrow, ncol)``
+        ``mobj = h.Matrix(nrow, ncol)``
 
-        ``mobj = new Matrix(nrow, ncol, type)``
+        ``mobj = h.Matrix(nrow, ncol, type)``
 
 
     Description:
@@ -155,7 +155,7 @@ Matrix
 
 
     Syntax:
-        ``n = m.nrow``
+        ``n = m.nrow()``
 
 
     Description:
@@ -168,11 +168,11 @@ Matrix
 
 .. method:: Matrix.ncol
 
-        n = m.ncol 
+        n = m.ncol()
 
     Description:
         returns the column dimension of the matrix. Column indices range 
-        from 0 to m.ncol-1 
+        from 0 to m.ncol()-1 
 
          
 
@@ -184,7 +184,7 @@ Matrix
 
 
     Syntax:
-        ``mobj = msrcdest(nrow, ncol)``
+        ``mobj = m.resize(nrow, ncol)``
 
 
     Description:
@@ -195,14 +195,15 @@ Matrix
     Example:
 
         .. code-block::
-            none
+            python
 
-            objref m 
-            m = new Matrix(3,5) 
-            m 
-            for i=0,4 m.setcol(i,i) 
+            m = h.Matrix(3, 5) 
+            m.printf() 
+
+            for i in xrange(5):
+                m.setcol(i,i) 
              
-            m.printf 
+            m.printf() 
             m.resize(7,7) 
             m.printf() 
             m.resize(4,2) 
