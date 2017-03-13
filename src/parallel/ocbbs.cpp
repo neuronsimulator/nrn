@@ -15,7 +15,7 @@
 #include <errno.h>
 
 #undef MD
-#define MD 2147483648.
+#define MD 2147483647.
 
 extern "C" {
 	extern int vector_arg_px(int, double**);
