@@ -120,8 +120,9 @@ func multisplit() {local i  localobj srout, cell
 	return spgid
 }
 
-proc msdiv() {local i, sid, msgid \
-  localobj cell, srout, pc, sl, allsr, srlist, sidvec, sr, vsav, hosts, nil
+proc msdiv() {local i, sid, msgid, px, cnt, x, max_sid \
+  localobj cell, srout, pc, sl, allsr, srlist, sidvec, sr, vsav, vdispl, hosts, nil
+	max_sid = 100
 	cell = $o1
 	srout = $o2
 	msgid = $3
@@ -146,13 +147,28 @@ proc msdiv() {local i, sid, msgid \
 	}
 	forsec sl { allsr.append(new SectionRef()) }
 	root = allsr.object(0)
-	vsav = new Vector(allsr.count)
 	for i=0, subtrees.count-1 {
 		subtrees.object(i).merge(allsr)
 	}
+
+	// in case the voltages are encoding information, save them
+	vdispl = new Vector(allsr.count)
+	cnt = 0
+	for i=0, allsr.count-1 allsr.o(i).sec {
+		vdispl.x[i] = cnt
+		cnt += nseg + 2
+	}
+	vsav = new Vector(cnt)
+	cnt = 0
 	for i=0, allsr.count-1 allsr.object(i).sec {
-		vsav.x[i] = v(.0001)
-		v(.0001) = -1
+		for (x) {
+			vsav.x[cnt] = v(x)
+			cnt += 1
+		}
+	}
+
+	for i=0, allsr.count-1 allsr.object(i).sec {
+		v = -1
 	}
 	srlist = new List()
 	sidvec = new Vector()
@@ -160,12 +176,18 @@ proc msdiv() {local i, sid, msgid \
 	sid = 0
 	for i=1, subtrees.count-1 {
 		sr = allsr.object(subtrees.object(i).idvec.x[0])
-		sr.parent if (v(.0001) == -1) {v(.0001) = sid  sid += 1 }
+		sr.sec px = parent_connection()
+		sr.parent if (v(px) == -1) {v(px) = sid  sid += 1 }
+	}
+	if (sid >= max_sid) {
+		printf("%d gid %d with %d pieces has %d >= max %d sids\n", pc.id, gid, subtrees.count, sid, max_sid)
+		execerror("Cell has too many sids. Increase max_sid in binfo.hoc")
 	}
 	for (i = subtrees.count-1; i > 0; i -= 1) {
 		sr = allsr.object(subtrees.object(i).idvec.x[0])
 		srlist.append(sr)
-		sr.parent { sidvec.append(gid*100 + v(.0001)) }
+		sr.sec px = parent_connection()
+		sr.parent { sidvec.append(gid*max_sid + v(px)) }
 		hosts.append(subtrees.object(i).host)
 	}
 	sidvec.append(-1)
@@ -176,12 +198,19 @@ proc msdiv() {local i, sid, msgid \
 		printf("%d %ld %d %s\n", i, sidvec.x[i], hosts.x[i], secname())
 	}
 	multisplit_divide(sidvec, srlist, hosts, $5, pc)
-	for i=0, allsr.count -1 {
+
+	// restore saved voltages for still existing sections
+	for i=0, allsr.count-1 {
 		sr = allsr.object(i)
 		if (sr.exists) sr.sec {
-			v(.0001) = vsav.x[i]
+			cnt = vdispl.x[i]
+			for (x) {
+				v(x) = vsav.x[cnt]
+				cnt += 1
+			}
 		}
 	}
+
 	spgid = -1
 	for i=0, srlist.count-1 {
 		sr = srlist.object(i)
@@ -348,8 +377,10 @@ proc read_all() {local i1, i2, n1, n2  localobj f, s
 	f.close()
 }
 
-proc read_host() {local i, j, n, k, i1, i2, n1, n2, rank, np, nthread \
-  localobj f, s, cb
+proc read_host() {local i, j, n, k, i1, i2, n1, n2, rank, np, nthread, md, spgid \
+  localobj f, s, cb, pc
+	pc = new ParallelContext()
+	md = 2^31 - 1 // maximum possible gid
 	rank = $1
 	np = $2
 	nthread = $3
@@ -398,6 +429,12 @@ print "sindices" sindices.printf
 				bilist.append(cb)
 //printf("k=%d items.x[%d]=%d gid=%d %d\n", k, i, items.x[i], gids.x[i], \
 //bilist.object(i).gid)
+				spgid = cb.gid + msgid*(cb.subtrees.count + 1)
+				if (spgid > md) {
+printf("%d Cell %d with %d pieces has spgid=%ld > 2^31 - 1. Decrease msgid %d in %s.%d.dat file\n", pc.id, cb.gid, cb.subtrees.count, spgid, msgid, basename, np*nthread)
+					execerror("msgid too large relative to number of pieces of cell")
+				}
+
 				while(1) {
 					if (gids.x[i] != cb.gid) {
 						execerror("gid inconsistency in read_host ", "")
