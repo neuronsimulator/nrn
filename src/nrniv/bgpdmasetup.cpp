@@ -151,7 +151,7 @@ static void all2allv_int(int* s, int* scnt, int* sdispl, int*& r, int*& rcnt, in
 	if (nrnmpi_myid == 0) {
 		int nb = 4*nrnmpi_numprocs + sdispl[nrnmpi_numprocs] + rdispl[nrnmpi_numprocs];
 		tm = nrnmpi_wtime() - tm;
-		printf("all2allv_int %s space=%d total=%ld time=%g\n", dmes, nb, nrn_mallinfo(0), tm);
+		printf("all2allv_int %s space=%d total=%llu time=%g\n", dmes, nb, nrn_mallinfo(0), tm);
 	}
 #endif
 }
@@ -274,6 +274,9 @@ static void fill_dma_send_lists(int, int*);
 static void setup_presyn_dma_lists() {
 	// Create and attach BGP_DMASend instances to output Presyn
 	NrnHashIterate(Gid2PreSyn, gid2out_, PreSyn*, ps) {
+		// only ones that generate spikes. eg. multisplit
+		// registers a gid and even associates with a cell piece, but
+		// that piece may not send spikes.
 		if (ps->output_index_ >= 0) {
 			bgpdma_cleanup_presyn(ps);
 			ps->bgp.dma_send_ = new BGP_DMASend();
@@ -345,12 +348,14 @@ static void fill_dma_send_lists(int sz, int* r) {
 	max_ntarget_host = 0;
 	max_multisend_targets = 0;
 	NrnHashIterate(Gid2PreSyn, gid2out_, PreSyn*, ps) {
-		BGP_DMASend* bs = ps->bgp.dma_send_;
-		if (max_ntarget_host < bs->ntarget_hosts_) {
-			max_ntarget_host = bs->ntarget_hosts_;
-		}
-		if (max_multisend_targets < bs->NTARGET_HOSTS_PHASE1) {
-			max_multisend_targets = bs->NTARGET_HOSTS_PHASE1;
+		if (ps->output_index_ >= 0) { // only ones that generate spikes
+			BGP_DMASend* bs = ps->bgp.dma_send_;
+			if (max_ntarget_host < bs->ntarget_hosts_) {
+				max_ntarget_host = bs->ntarget_hosts_;
+			}
+			if (max_multisend_targets < bs->NTARGET_HOSTS_PHASE1) {
+				max_multisend_targets = bs->NTARGET_HOSTS_PHASE1;
+			}
 		}
 	}}}
 	if (use_phase2_) NrnHashIterate(Gid2PreSyn, gid2in_, PreSyn*, ps) {
@@ -462,14 +467,18 @@ static int setup_target_lists(int** r_return) {
 	// How many on the source rank?
 	scnt = newintval(0, nhost);
 	NrnHashIterateKeyValue(Gid2PreSyn, gid2out_, int, gid, PreSyn*, ps) {
-		++scnt[gid%nhost];
+		if (ps->output_index_ >= 0) { // only ones that generate spikes
+			++scnt[gid%nhost];
+		}
 	}}}
 	sdispl = newoffset(scnt, nhost);
 
 	// what are the gids of those target lists
 	s = newintval(0, sdispl[nhost]);
 	NrnHashIterateKeyValue(Gid2PreSyn, gid2out_, int, gid, PreSyn*, ps) {
-		s[sdispl[gid%nhost]++] = gid;
+		if (ps->output_index_ >= 0) { // only ones that generate spikes
+			s[sdispl[gid%nhost]++] = gid;
+		}
 	}}}
 	// Restore sdispl for the message.
 	del(sdispl);
@@ -478,11 +487,18 @@ static int setup_target_lists(int** r_return) {
 	
 #if TWOPHASE
 	// fill in the tl->rank for phase 1 target lists
+	// r is an array of source spiking gids
+	// tl is list associating input gids with list of target ranks.
 	for (int rank=0; rank < nhost; ++rank) {
 		int b = rdispl[rank];
 		int e = rdispl[rank+1];
 		for (int i=b; i < e; ++i) {
 			TarList* tl;
+			// note that there may be input gids with no corresponding
+			// output gid so that the find may not return true and in
+			// that case the tl->rank remains -1.
+			// For example multisplit gids or simulation of a subset of
+			// cells.
 			if (gid2tarlist->find(r[i], tl)) {
 				tl->rank = rank;
 			}
@@ -493,7 +509,9 @@ static int setup_target_lists(int** r_return) {
 	if (use_phase2_) {
 		random_init(nrnmpi_myid + 1);
 		NrnHashIterate(Int2TarList, gid2tarlist, TarList*, tl) {
-			phase2organize(tl);
+			if (tl->rank >= 0) { // only if output gid is spike generating
+				phase2organize(tl);
+			}
 		}}}
 	}
 
@@ -514,6 +532,13 @@ static int setup_target_lists(int** r_return) {
 	// how much to send to each rank
 	scnt = newintval(0, nhost);
 	NrnHashIterateKeyValue(Int2TarList, gid2tarlist, int, gid, TarList*, tl) {
+		if (tl->rank < 0) {
+			// When the output gid does not generate spikes, that rank
+			// is not interested if there is a target list for it.
+			// If the output gid dies not exist, there is no rank.
+			// In either case ignore this target list.
+			continue;
+		}
 		if (tl->indices) {
 			// indices[size] is the size of list but size of those
 			// are the sublist phase 2 destination ranks which
@@ -541,6 +566,9 @@ static int setup_target_lists(int** r_return) {
 	s = newintval(0, sdispl[nhost]);
 	// what to send to each rank
 	NrnHashIterateKeyValue(Int2TarList, gid2tarlist, int, gid, TarList*, tl) {
+		if (tl->rank < 0) {
+			continue;
+		}
 		if (tl->indices) {
 			s[sdispl[tl->rank]++] = gid;
 			s[sdispl[tl->rank]++] = tl->size;

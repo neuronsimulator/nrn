@@ -1002,7 +1002,7 @@ void bgp_dma_send(PreSyn* ps, double t) {
 		nrn2ncs_outputevent(ps->output_index_, t);
 	}
 #endif
-	ps->bgp.dma_send_->send(ps->output_index_, t);
+	if (ps->bgp.dma_send_) ps->bgp.dma_send_->send(ps->output_index_, t);
 }
 
 void bgpdma_send_init(PreSyn* ps) {
