@@ -121,21 +121,22 @@ Matrix
     Example:
 
         .. code-block::
-            none
+            python
 
-            objref m 
-            m = new Matrix(3,4) 
-            for i=0,m.nrow-1 { 
-            	for j=0, m.ncol-1 { 
-            		m.x[i][j] = 10*i + j 
-            		print i, j, m.x[i][j] 
-            	} 
-            } 
-            m.printf 
-            xpanel("m") 
-            xvalue("m(1,3) interpret", "m.x[1][3]", 1, "m.printf") 
-            xpvalue("m(1,3) address", &m.x[1][3], 1, "m.printf") 
-            xpanel() 
+			from neuron import h, gui
+
+			m = h.Matrix(3,4) 
+			for i in range (int(m.nrow())):
+				for j in range(int(m.ncol())):
+					m.setval(i, j, 10*i + j) 
+					print i, j, m.getval(i, j) 
+	
+
+			m.printf() 
+			h.xpanel("m") 
+			h.xvalue("m(1,3) interpret", "m.x[1][3]", 1, "m.printf") 
+			#xpvalue("m(1,3) address", &m.x[1][3], 1, "m.printf") 
+			h.xpanel() 
 
 
     .. warning::
@@ -159,7 +160,7 @@ Matrix
 
 
     Description:
-        returns the row dimension of the matrix. Row indices range from 0 to m.nrow-1 
+        returns the row dimension of the matrix. Row indices range from 0 to m.nrow()-1 
 
 
 ----
@@ -196,18 +197,23 @@ Matrix
 
         .. code-block::
             python
+            
+			from neuron import h
 
-            m = h.Matrix(3, 5) 
-            m.printf() 
+			m = h.Matrix(3, 5) 
+			m.printf() 
+			print
 
-            for i in xrange(5):
-                m.setcol(i,i) 
-             
-            m.printf() 
-            m.resize(7,7) 
-            m.printf() 
-            m.resize(4,2) 
-            m.printf() 
+			for i in xrange(5):
+				m.setcol(i,i) 
+ 
+			m.printf()
+			print 
+			m.resize(7,7) 
+			m.printf()
+			print 
+			m.resize(4,2) 
+			m.printf() 
 
 
     .. warning::
@@ -257,14 +263,23 @@ Matrix
 
         .. code-block::
             none
+            
+            python
 
-            objref m 
-            m = new Matrix(4,6) 
-            for i=0,m.nrow-1 for j=0,m.ncol-1 m.x[i][j] = 1 + 10*i + j 
-            m.printf 
-            m.bcopy(1,2,2,3).printf 
-            m.bcopy(1,2,2,3,2,3).printf 
-            m.bcopy(1,2,2,3,2,3, new Matrix(8,8)).printf 
+			from neuron import h
+
+			m = h.Matrix(4,6) 
+			for i in range(0, int(m.nrow())):
+				for j in range(0, int(m.ncol())):
+					m.setval(i, j, 1 + 10*i+j) 
+	
+			m.printf()
+			print
+			m.bcopy(1,2,2,3).printf()
+			print
+			m.bcopy(1,2,2,3,2,3).printf() 
+			print
+			m.bcopy(1,2,2,3,2,3, h.Matrix(8,8)).printf()
 
 
     .. warning::
@@ -348,27 +363,30 @@ Matrix
         To print the elements of a sparse matrix. 
 
         .. code-block::
-            none
+            python
 
-            proc sparse_print() { local i, j, jx, x 
-            	print $o1 
-            	for i=0, $o1.nrow-1 { 
-            		printf("%d  ", i) 
-            		for jx = 0, $o1.sprowlen(i)-1 { 
-            			x = $o1.spgetrowval(i, jx, &j) 
-            			printf("  %d:%g", j, x) 
-            		} 
-            		printf ("\n") 
-            	} 
-            } 
-             
-            objref m 
-            m = new Matrix(4, 5, 2) 
-            m.x[0][2] = 1.2 
-            m.x[0][4] = 2.4 
-            m.x[1][1] = 3.1 
-            for i=0, 4 { m.x[3][i] = i/10 } 
-            sparse_print(m) 
+			from __future__ import print_function
+			from neuron import h
+
+			def sparse_print(m): 
+				m.printf()
+				print('m.nrow()', m.nrow())
+				for i in range(int(m.nrow())):	
+					print("%d  " % i, end='')
+					for jx in range(int(m.sprowlen(i))):
+						j = h.ref(0)
+						x=m.spgetrowval(i, jx, j) 
+						print("  %d:%f" % (j[0], x), end='')
+					print()
+
+ 
+			m = h.Matrix(4, 5, 2) 
+			m.setval(0, 2, 1.2) 
+			m.setval(0, 4, 2.4) 
+			m.setval(1, 1, 3.1) 
+			for i in range(4):
+				m.setval(3, i, i/10.) 
+			sparse_print(m) 
 
 
 
@@ -380,7 +398,7 @@ Matrix
 
 
     Syntax:
-        ``0 = m.printf``
+        ``0 = m.printf()``
 
         ``0 = m.printf("element_format")``
 
@@ -452,15 +470,15 @@ Matrix
          
 
         .. code-block::
-            none
+            python
 
-            objref m, f 
-            f = new File("filename") 
-            f.ropen() 
-            m = new Matrix() 
-            m.scanf(f) 
-            print m.nrow, m.ncol 
+			from neuron import h
 
+			f = h.File("filename") 
+			f.ropen() 
+			m = h.Matrix() 
+			m.scanf(f) 
+			print m.nrow(), m.ncol()
 
     .. warning::
         Works only for full matrix types 
@@ -490,36 +508,42 @@ Matrix
         if the matrix is square. 
 
     Example:
-        objref m, v1 
-        v1 = new Vector(4) 
-        v1.indgen(1,1) 
-        m = new Matrix(3, 4) 
-        for i=0,2 for j=0,2 m.x[i][j]=i*10 + j 
-
         .. code-block::
-            none
+		from neuron import h
 
-            print "v1", v1 
-            v1.printf 
-            print "m", m 
-            m.printf 
-            print "m*v1" 
-            m.mulv(v1).printf 
+		v1 = h.Vector(4) 
+		v1.indgen(1,1) 
+		m = h.Matrix(3, 4) 
+		for i in range(3):
+			for j in range(3):
+				m.setval(i, j, i*10 + j) 
+				
+        .. code-block::
+            python
+
+			print "v1", v1 
+			v1.printf() 
+			print "m", m 
+			m.printf()
+			print "m*v1" 
+			m.mulv(v1).printf()
 
         A sparse example 
 
         .. code-block::
-            none
+            python
 
-            objref m, v1 
-            v1 = new Vector(100) 
-            v1.indgen(1,1) 
-            m = new Matrix(100, 100, 2) // sparse matrix 
-            // reverse permutation 
-            for i=0, 99 { 
-            	m.x[i][99 - i] = 1 
-            } 
-            m.mulv(v1).printf 
+			from neuron import h
+
+			v1 = h.Vector(100) 
+			v1.indgen(1,1) 
+			m = h.Matrix(100, 100, 2) ##sparse matrix 
+			##reverse permutation 
+			for i in range(100): 
+				m.setval(i, 99 - i, 1) 
+
+			m.mulv(v1).printf()
+
 
 
     .. warning::
@@ -594,16 +618,20 @@ Matrix
     Example:
 
         .. code-block::
-            none
+            python
 
-            objref m 
-            m = new Matrix(4,5) 
-            for i=0, m.nrow-1 for j=0, m.ncol-1 m.x[i][j] = 1 + 10*j + 100*i 
-            m.printf 
-            for i=-m.nrow+1, m.ncol-1 { 
-            	printf("diagonal %d: ", i) 
-            	m.getdiag(i).printf 
-            } 
+			from __future__ import print_function
+			from neuron import h
+
+			m = h.Matrix(4,4) 
+			for i in range(int(m.nrow())):
+				for j in range (int(m.ncol())):
+					m.setval(i, j, 1 + 10*j + 100*i)
+			m.printf()
+
+			for i in range(int(1-m.nrow()), int(m.ncol())):
+				print("diagonal %d: " % i, end='')
+				print(list(m.getdiag(i))[max(0, -i) : int(m.nrow() - i)])
 
 
     .. warning::
@@ -640,39 +668,43 @@ Matrix
     Example:
 
         .. code-block::
-            none
+            python
 
-            objref m, b 
-            b = new Vector(3) 
-            b.indgen(1,1) 
-            m = new Matrix(3, 3) 
-            for i=0, m.nrow-1 for j=0, m.ncol-1 m.x[i][j] = i*j + 1 
-            print "b" 
-            b.printf 
-            print "m" 
-            m.printf 
-            print "solution of m*x = b" 
-            m.solv(b).printf 
+			from neuron import h
+
+			b = h.Vector(3) 
+			b.indgen(1,1) 
+			m = h.Matrix(3, 3) 
+			for i in range(int(m.nrow())):
+				for j in range(int(m.ncol())):
+					m.setval(i, j, i*j + 1)
+			print "b"
+			b.printf()
+			print "m"
+			m.printf() 
+			print
+			print "solution of m*x = b"
+			print
+			m.solv(b).printf() 
 
 
-        .. code-block::
-            none
+			.. code-block::
+			python
 
-            objref m, b, x 
-             
-            m = new Matrix(1000, 1000, 2) // sparse type 
-            m.setdiag(0, 3) 
-            m.setdiag(-1, -1) 
-            m.setdiag(1, -1) 
-            b = new Vector(1000) 
-            b.x[500] = 1 
-            x = m.solv(b) 
-            x.printf("%8.3f", 475, 525) 
-             
-            b.x[500] = 0 
-            b.x[499] = 1 
-            m.solv(b,1).printf("%8.3f", 475, 535) 
+			m = h.Matrix(1000, 1000, 2) ## sparse type 
+			m.setdiag(0, 3) 
+			m.setdiag(-1, -1) 
+			m.setdiag(1, -1) 
+			b = h.Vector(1000) 
+			b.x[500] = 1 
+			x = m.solv(b) 
+			print
+			x.printf("%8.3f", 475, 525) 
 
+			b.x[500] = 0
+			b.x[499] = 1 
+			print
+			m.solv(b,1).printf("%8.3f", 475, 535) 
 
     .. warning::
         Implemented only for full and sparse matrices. 
@@ -696,16 +728,17 @@ Matrix
     Example:
 
         .. code-block::
-            none
+            python
 
-            objref m 
-            m = new Matrix(2,2) 
-            m.x[0][1] = 20 
-            m.x[1][0] = 30 
-            m.printf() 
-            ex = 0 
-            mant = m.det(&ex) 
-            print mant*10^ex 
+			from neuron import h
+
+			m = h.Matrix(2,2) 
+			m.setval(0, 1, 20) 
+			m.setval(1, 0, 30) 
+			m.printf() 
+			ex = h.ref(0)
+			mant = m.det(ex) 
+			print mant*10**ex[0]
 
 
 
@@ -729,26 +762,26 @@ Matrix
         used for the result. 
 
     Example:
+    
+    .. code-block::
+			python
 
-        .. code-block::
-            none
+			from neuron import h
 
-            objref m1, m2, v1 
-            m1 = new Matrix(6, 6) 
-            for i=-1,1 { 
-            	if (i == 0) { 
-            		m1.setdiag(i, 2) 
-            	}else{ 
-            		m1.setdiag(i, -1) 
-            	} 
-            } 
-            m2 = m1.inverse() 
-            print "m1" 
-            m1.printf 
-            print "m2" 
-            m2.printf(" %8.5f") 
-            print "m1*m2" 
-            m1.mulm(m2).printf(" %8.5f") 
+			m1 = h.Matrix(6, 6) 
+			for i in range(-1, 2):
+				if i == 0:
+					m1.setdiag(i, 2) 
+				else:
+					m1.setdiag(i, -1) 
+			m2 = m1.inverse() 
+			print "m1" 
+			m1.printf()
+			print "m2" 
+			m2.printf(" %8.5f") 
+			print "m1*m2" 
+			m1.mulm(m2).printf(" %8.5f") 
+
 
 
     .. warning::
@@ -795,13 +828,12 @@ Matrix
     Example:
 
         .. code-block::
-            none
+            python
 
-            objref m 
-            m = new Matrix(4,4) 
-            m.ident() 
-            m.muls(-10) 
-            m.printf 
+			m = h.Matrix(4,4) 
+			m.ident() 
+			m.muls(-10) 
+			m.printf()
 
 
     .. warning::
@@ -880,20 +912,21 @@ Matrix
     Example:
 
         .. code-block::
-            none
+            python
+            
+			from neuron import h
 
-            objref v1, m 
-            m = new Matrix(5,7) 
-            v1 = new Vector(5) 
-            for i=-4,6 { 
-            	m.setdiag(i, i) 
-            } 
-            m.printf 
-            for i=-4,6 { 
-            	v1.indgen(1,1) 
-            	m.setdiag(i, v1) 
-            } 
-            m.printf 
+			m = h.Matrix(5,7) 
+			v1 = h.Vector(5) 
+			for i in range(-4,7): 
+				m.setdiag(i, i) 
+			m.printf()
+			print
+			for i in range (-4,7): 
+				v1.indgen(1,1) 
+				m.setdiag(i, v1) 
+
+			m.printf()
 
 
     .. warning::
@@ -935,10 +968,9 @@ Matrix
     Example:
 
         .. code-block::
-            none
+            python
 
-            objref m 
-            m = new Matrix(4,6) 
+            m = h.Matrix(4,6) 
             m.ident() 
             m.printf() 
 
@@ -966,14 +998,17 @@ Matrix
     Example:
 
         .. code-block::
-            none
+            python
 
-            objref m, v1 
-            m = new Matrix(8,8) 
-            v1 = new Vector(8) 
-            for i=-1,1 { v1.fill(2 - 3*abs(i))  m.setdiag(i, v1) } 
-             
-            m.exp().printf 
+			from neuron import h
+
+			m = h.Matrix(8,8) 
+			v1 = h.Vector(8) 
+			for i in range(-1,2):
+				v1.fill(2 - 3*abs(i)) 
+				m.setdiag(i, v1) 
+
+			m.exp().printf()
 
 
     .. warning::
@@ -1001,16 +1036,17 @@ Matrix
     Example:
 
         .. code-block::
-            none
+            python
 
-            objref m 
-            m = new Matrix(6, 6) 
-            m.ident 
-            m.x[0][5] = m.x[5][0] = 1 
-            for i=0, 5 { 
-            	print i 
-            	m.pow(i).printf 
-            } 
+			from neuron import h
+
+			m = h.Matrix(6, 6) 
+			m.ident()
+			m.setval(0, 5, 1)
+			m.setval(5, 0, 1) 
+			for i in range(6): 
+				print i 
+				m.pow(i).printf() 
 
 
     .. warning::
@@ -1037,16 +1073,22 @@ Matrix
     Example:
 
         .. code-block::
-            none
+            python
 
-            objref m, v1, minv 
-            m = new Matrix(7,7) 
-            v1 = new Vector(7) 
-            for i=-1,1 { v1.fill(2 - 3*abs(i))  m.setdiag(i, v1) } 
-            minv = m.inverse() 
-            m.printf 
-            minv.printf 
-            m.mulm(minv).printf 
+			from neuron import h
+
+			m = h.Matrix(7,7) 
+			v1 = h.Vector(7) 
+			for i in range(-1, 2):
+				v1.fill(2 - 3*abs(i))
+				m.setdiag(i, v1)
+			minv = m.inverse() 
+			print
+			m.printf() 
+			print
+			minv.printf() 
+			print
+			m.mulm(minv).printf()
 
 
     .. warning::
@@ -1080,44 +1122,45 @@ Matrix
     Example:
 
         .. code-block::
-            none
+            python
 
-            objref a, umat, vmat, dvec, dmat 
-             
-            proc svdtest() { 
-            	umat = new Matrix() 
-            	vmat = new Matrix() 
-            	dvec = $o1.svd(umat, vmat) 
-            	dmat = new Matrix($o1.nrow, $o1.ncol) 
-            	dmat.setdiag(0, dvec) 
-            	print "dvec"  dvec.printf 
-            	print "dmat"  dmat.printf 
-            	print "umat"  umat.printf 
-            	print "vmat"  vmat.printf 
-            	print "input ", $o1 $o1.printf() 
-            	print "ut*d*v" 
-            	umat.transpose.mulm(dmat).mulm(vmat).printf 
-            } 
-             
-            a = new Matrix(5, 3) 
-            a.setdiag(0, a.getdiag(0).indgen.add(1)) 
-            svdtest(a) 
-             
-            a = new Matrix(6, 6) 
-            objref r 
-            r = new Random() 
-            r.discunif(1,10) 
-            for i=0, a.nrow-1 { 
-            	a.setrow(i, a.getrow(i).setrand(r)) 
-            } 
-            svdtest(a) 
-             
-            a = new Matrix(2,2) 
-            a.setrow(0, 1) 
-            a.setrow(1, 2) 
-            svdtest(a) 
-             
+			from neuron import h
+ 
+			def svdtest(a): 
+				umat = h.Matrix() 
+				vmat = h.Matrix() 
+				dvec = a.svd(umat, vmat) 
+				dmat = h.Matrix(a.nrow(), a.ncol()) 
+				dmat.setdiag(0, dvec) 
+				print "dvec"
+				dvec.printf()
+				print "dmat"
+				dmat.printf() 
+				print "umat"
+				umat.printf() 
+				print "vmat"
+				vmat.printf() 
+				print "input "
+				a.printf() 
+				print "ut*d*v" 
+				umat.transpose().mulm(dmat).mulm(vmat).printf() 
+ 
 
+			a = h.Matrix(5, 3) 
+			a.setdiag(0, a.getdiag(0).indgen().add(1)) 
+			svdtest(a) 
+ 
+			a = h.Matrix(6, 6) 
+			r = h.Random() 
+			r.discunif(1,10) 
+			for i in range(int(a.nrow())):
+				a.setrow(i, a.getrow(i).setrand(r)) 
+			svdtest(a) 
+ 
+			a = h.Matrix(2,2) 
+			a.setrow(0, 1) 
+			a.setrow(1, 2) 
+			svdtest(a) 
 
     .. warning::
         Implemented only for full matrices. umat and vmat are also full. 
@@ -1141,15 +1184,20 @@ Matrix
     Example:
 
         .. code-block::
-            none
+            python
 
-            objref m 
-            m = new Matrix(1,5) 
-            for i=0, 4 m.x[0][i] = i 
-            m.printf 
-            m.transpose.printf 
-            m.transpose.mulm(m).printf 
-            m.mulm(m.transpose).printf 
+			from neuron import h
+
+			m = h.Matrix(1,5) 
+			for i in range(5):
+				m.setval(0, i, i) 
+			m.printf()
+			print
+			m.transpose().printf()
+			print
+			m.transpose().mulm(m).printf()
+			print
+			m.mulm(m.transpose()).printf()
 
 
     .. warning::
@@ -1178,29 +1226,29 @@ Matrix
     Example:
 
         .. code-block::
-            none
+            python
 
-            objref m, q, e 
-            m = new Matrix(5,5) 
-            m.setdiag(0, 2) 
-            m.setdiag(-1, -1) 
-            m.setdiag(1, -1) 
-            m.printf 
-             
-            q = new Matrix(1,1) 
-            e = m.symmeig(q) 
-            print "eigenvectors" 
-            q.printf 
-             
-            print "eigenvalues" 
-            e.printf 
-             
-            print "qt*m*q" 
-            q.transpose.mulm(m).mulm(q).printf 
-             
-            print "qt*q" 
-            q.transpose.mulm(q).printf 
-             
+			from neuron import h    
+
+			m = h.Matrix(5,5) 
+			m.setdiag(0, 2) 
+			m.setdiag(-1, -1) 
+			m.setdiag(1, -1) 
+			m.printf()
+ 
+			q = h.Matrix(1,1) 
+			e = m.symmeig(q) 
+			print "eigenvectors" 
+			q.printf()
+			print
+			print "eigenvalues" 
+			e.printf()
+			print
+			print "qt*m*q" 
+			q.transpose().mulm(m).mulm(q).printf() 
+			print
+			print "qt*q" 
+			q.transpose().mulm(q).printf()
 
          
 
@@ -1233,11 +1281,12 @@ Matrix
     Example:
 
         .. code-block::
-            none
+            python
 
-            objref m 
-            m = new Matrix(4,5) 
-            m.from_vector(m.to_vector().indgen).printf 
+			from neuron import h
+
+			m = h.Matrix(4,5) 
+			m.from_vector(m.to_vector().indgen()).printf()
 
 
     .. warning::
@@ -1266,11 +1315,12 @@ Matrix
     Example:
 
         .. code-block::
-            none
+            python
 
-            objref m 
-            m = new Matrix(4,5) 
-            m.from_vector(m.to_vector().indgen).printf 
+			from neuron import h
+
+			m = h.Matrix(4,5) 
+			m.from_vector(m.to_vector().indgen()).printf() 
 
 
     .. warning::
@@ -1297,18 +1347,23 @@ Matrix
     Example:
 
         .. code-block::
-            none
+            python
 
-            objref m, cf  
-            m = new Matrix(3,3) 
-            for i=0,2 for j=0,2 m.x[i][j] = (i+j)*(i+j) 
-            m.printf 
-            cf = m.c.cholesky_factor() 
-            cf.mulm(cf.transpose()).printf 
+			from neuron import h
+
+			m = h.Matrix(3,3) 
+			for i in range(3):
+				for j in range(2):
+					m.setval(i, j, (i+j)*(i+j))
+			m.printf()
+			cf = m.c().cholesky_factor() 
+			cf.mulm(cf.transpose()).printf()
+
 
     .. seealso::
         
         cholesky_solve 
+
 
          
 
