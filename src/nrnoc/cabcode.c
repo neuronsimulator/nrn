@@ -2316,7 +2316,9 @@ void push_section(void) {
 	}else{
 		sec = (Section*)(size_t)(*getarg(1));
 	}
-	if (!sec || !sec->prop || !sec->prop->dparam[0].sym || sec->prop->dparam[0].sym->type != SECTION) {
+	if (!sec || !sec->prop || !sec->prop->dparam
+	  || !sec->prop->dparam[8].itm
+	  || sec->prop->dparam[8].itm->itemtype != SECTION) {
 		hoc_execerror("Not a Section pointer", (char*)0);
 	}
 	hoc_level_pushsec(sec);
