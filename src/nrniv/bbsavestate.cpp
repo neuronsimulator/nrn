@@ -704,6 +704,9 @@ void bbss_restore_global(void* bbss, char* buffer, int sz) { // call on all host
 	nrn_use_compress_ = false;
 	nrn_use_localgid_ = false;
 #endif
+	if (nrn_use_bin_queue_) {
+		nrn_binq_enqueue_error_handler = bbss_early;
+	}
 }
 void bbss_save(void* bbss, int gid, char* buffer, int sz) {
 	usebin_ = 1;
