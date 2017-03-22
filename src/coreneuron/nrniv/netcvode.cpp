@@ -39,6 +39,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/nrniv/output_spikes.h"
 #include "coreneuron/nrniv/nrn_assert.h"
 #include "coreneuron/nrniv/nrn_acc_manager.h"
+#include "coreneuron/nrniv/multisend.h"
 #ifdef _OPENACC
 #include <openacc.h>
 #endif
@@ -401,12 +402,18 @@ PreSyn::PreSyn() {
 #if NRNMPI
     localgid_ = 0;
 #endif
+#if NRN_MULTISEND
+    multisend_index_ = -1;
+#endif
     output_index_ = 0;
 }
 
 InputPreSyn::InputPreSyn() {
     nc_index_ = -1;
     nc_cnt_ = 0;
+#if NRN_MULTISEND
+    multisend_phase2_index_ = -1;
+#endif
 }
 
 PreSyn::~PreSyn() {
@@ -508,10 +515,19 @@ void PreSyn::send(double tt, NetCvode* ns, NrnThread* nt) {
 
 #if NRNMPI
     if (output_index_ >= 0) {
-        if (nrn_use_localgid_)
-            nrn_outputevent(localgid_, tt);
-        else
-            nrn2ncs_outputevent(output_index_, tt);
+#if NRN_MULTISEND
+        if (use_multisend_) {
+            nrn_multisend_send(this, tt, nt);
+        } else {
+#else
+        {
+#endif
+            if (nrn_use_localgid_) {
+                nrn_outputevent(localgid_, tt);
+            } else {
+                nrn2ncs_outputevent(output_index_, tt);
+            }
+        }
     }
 #endif  // NRNMPI
 }
@@ -699,7 +715,7 @@ void NetCvode::check_thresh(NrnThread* nt) {  // for default method
 
     // Types that have WATCH statements. If exist, then last element is 0.
     if (nt->_watch_types) {
-        for (int i=0; nt->_watch_types[i] != 0; ++i) {
+        for (int i = 0; nt->_watch_types[i] != 0; ++i) {
             int type = nt->_watch_types[i];
             (*nrn_watch_check[type])(nt, nt->_ml_list[type]);
             // may generate net_send events (with 0 (teps) delay)
@@ -745,6 +761,11 @@ void NetCvode::check_thresh(NrnThread* nt) {  // for default method
 void NetCvode::deliver_net_events(NrnThread* nt) {  // for default method
     TQItem* q;
     double tm, tsav;
+#if NRN_MULTISEND
+    if (use_multisend_ && nt->id == 0) {
+        nrn_multisend_advance();
+    }
+#endif
     int tid = nt->id;
     tsav = nt->_t;
     tm = nt->_t + 0.5 * nt->_dt;

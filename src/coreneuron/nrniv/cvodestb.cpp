@@ -36,7 +36,6 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/nrniv/nrn_acc_manager.h"
 
 extern "C" {
-extern NetCvode* net_cvode_instance;
 
 // for fixed step thread
 // check thresholds and deliver all (including binqueue) events

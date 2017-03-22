@@ -35,6 +35,11 @@ THE POSSIBILITY OF SUCH DAMAGE.
   #define NRNMPI 1
 #endif
 
+/* define to 1 if want multisend spike exchange available */
+#ifndef NRN_MULTISEND
+ #define NRN_MULTISEND 1
+#endif
+
 /* define to 1 if you want parallel distributed cells (and gap junctions) */
 #define PARANEURON 1
 

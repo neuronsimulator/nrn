@@ -47,6 +47,8 @@ THE POSSIBILITY OF SUCH DAMAGE.
 class DiscreteEvent;
 class NetCvode;
 
+extern NetCvode* net_cvode_instance;
+
 struct InterThreadEvent {
     DiscreteEvent* de_;
     double t_;
