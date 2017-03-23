@@ -2236,13 +2236,19 @@ f->s(buf, 1);
 		PreSyn* ps = nrn_gid2presyn(gid);
 		i = (ps->ssrc_ != 0 ? 1 : -1); // does it have state
 		f->i(i, 1);
-		if (i == 1) {
+		int output_index = ps->output_index_;
+		f->i(output_index);
+		if (output_index >= 0 && i == 1) {
 sprintf(buf, "PreSyn");
 f->s(buf, 1);
 			int j = (ps->flag_ ? 1 : 0);
+			double th = ps->valthresh_;
 			f->i(j);
-			ps->flag_ = j;
-			f->d(1, ps->valthresh_);
+			f->d(1, th );
+			if( ps->output_index_ >= 0 ) {
+				ps->flag_ = j;
+				ps->valthresh_ = th;
+			}
 #if 0
 			f->d(1, ps->valold_);
 			f->d(1, ps->told_);
