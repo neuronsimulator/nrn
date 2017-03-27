@@ -22,18 +22,18 @@ To pop up the widget say:
  
 
 .. code-block::
-    none
+    python
 
-    	load_file("grapher.hoc")	// reads this file 
-    	makegrapher(1)			// pop up a new grapher 
+    	h.load_file("grapher.hoc")	#reads this file 
+    	h.makegrapher(1)			# pop up a new grapher 
 
  
 Creating a grapher using 
 
 .. code-block::
-    none
+    python
 
-    	makegrapher() 
+    	h.makegrapher() 
 
 pops up a short form of the Grapher without "Indep Begin", "Indep 
 End", or "X-expr" buttons. The limits are defined by the x-axis length 

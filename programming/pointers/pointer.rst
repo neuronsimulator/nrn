@@ -9,13 +9,13 @@ Pointer Class
 
 
     Syntax:
-        ``Pointer(&x)``
+        ``h.Pointer(_ref_x)``
 
-        ``Pointer("variable")``
+        ``h.Pointer("variable")``
 
-        ``Pointer(&x, "stmt that may contain $1")``
+        ``h.Pointer(_ref_x, "stmt that may contain $1")``
 
-        ``Pointer("variable", "stmt that may contain $1 or variable name")``
+        ``h.Pointer("variable", "stmt that may contain $1 or variable name")``
 
 
     Description:

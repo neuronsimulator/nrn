@@ -1331,38 +1331,26 @@ Matrix
 ----
 
 
-
-.. method:: Matrix.cholesky_factor
-
-
-    Syntax:
-        ``mc = msrcdest.cholesky_factor()``
-
-
-    Description:
-        Cholesky factorization in place. msrcdest must be a symmetric positive 
-        definite matrix. On return, it is a lower triangular matrix, L, such that 
-        L*Ltranspose = msrc 
-
-    Example:
-
-        .. code-block::
-            python
-
-			from neuron import h
-
-			m = h.Matrix(3,3) 
-			for i in range(3):
-				for j in range(2):
-					m.setval(i, j, (i+j)*(i+j))
-			m.printf()
-			cf = m.c().cholesky_factor() 
-			cf.mulm(cf.transpose()).printf()
-
-
-    .. seealso::
-        
-        cholesky_solve 
+..	.. method:: Matrix.cholesky_factor
+		Syntax:
+			``mc = msrcdest.cholesky_factor()``
+		Description:
+			Cholesky factorization in place. msrcdest must be a symmetric positive 
+			definite matrix. On return, it is a lower triangular matrix, L, such that 
+			L*Ltranspose = msrc 
+		Example:
+			.. code-block::
+				python
+				from neuron import h
+				m = h.Matrix(3,3) 
+				for i in range(3):
+					for j in range(2):
+						m.setval(i, j, (i+j)*(i+j))
+				m.printf()
+				cf = m.c().cholesky_factor() 
+				cf.mulm(cf.transpose()).printf()
+		.. seealso::		
+			cholesky_solve 
 
 
          

@@ -42,11 +42,12 @@ The run call chain is
 The default advance is merely 
 
 .. code-block::
-    none
+    python
+    
+    from neuron import h
 
-    		proc advance() { 
-    			fadvance() 
-    		} 
+    		def advance():
+    			h.fadvance() 
 
 and is a good candidate for substitution by a problem specific 
 user routine.
@@ -79,7 +80,7 @@ new procedure for the default init procedure:
 .. code-block::
     none
 
-    	proc init() { 
+    	def init(): { 
     		finitialize(v_init) 
     		// insert new initialization code here to change states 
     		// If states have been changed then complete 

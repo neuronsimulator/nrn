@@ -62,10 +62,9 @@ code-executing
         the idiom 
 
         .. code-block::
-            none
-
-            sprint(cmd, "%s.var = outside_var", this) 
-            execute1(cmd) 
+            python
+            
+            h.execute1("%s.var = outside_var" % obj_name)
 
         Here, outside_var is unavailable from within the object and so 
         a command is constructed which can be executed at the top level where that 
@@ -105,9 +104,9 @@ code-loading
         useful to explicitly load the standard run library with the statement: 
 
         .. code-block::
-            none
+            python
 
-            xopen("$(NEURONHOME)/lib/hoc/noload.hoc") 
+            h.xopen("$(NEURONHOME)/lib/hoc/noload.hoc") 
 
 
 ----
@@ -145,11 +144,6 @@ code-loading
         If the first arg is a number and is 1, then the file is loaded again even 
         if it has already been loaded. 
 
-
-    Example:
-
-    .. code-block::
-            python
 
             
 

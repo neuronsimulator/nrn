@@ -147,7 +147,7 @@ PWManager
         from neuron import h, gui
         p = h.PWManager()
         p.map(1)
-        p.close()
+        p.close(1)
 
 
 ----

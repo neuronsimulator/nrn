@@ -54,12 +54,15 @@ Random Class
     Example:
 
         .. code-block::
-            none
+            python
 
-            objref r 
-            r = new Random() 
-            for i=1,10 print r.uniform(30, 50) // not as efficient as 
-            for i=1,10 print r.repick()	   // this 
+			from neuron import h
+
+			r = h.Random() 
+			for i in range(1,11): 
+				print r.uniform(30, 50) # not as efficient as 
+			for i in range(1,11):
+				print r.repick()	   # this 
 
         prints 20 random numbers ranging in value between 30 and 50. 
          
@@ -156,33 +159,39 @@ Random Class
     Example:
 
         .. code-block::
-            none
+            python
 
-            objref r, vec, g1, g2, hist 
-            r = new Random() 
-            index = r.MCellRan4() 
-            r.uniform(0, 2) 
-            vec = new Vector(1000) 
-            g1 = new Graph() 
-            g2 = new Graph() 
-            g1.size(0, 1000, 0, 2) 
-            g2.size(0, 2, 0, 150) 
-             
-            proc doit() { 
-            	g1.erase() g2.erase() 
-            	vec.setrand(r) 
-            	hist = vec.histogram(0, 2, 0.2) 
-            	vec.line(g1) 
-            	hist.line(g2, .2) 
-            	g1.flush g2.flush 
-            } 
-            doit() 
-             
-            variable_domain(&index, 0, 2^32-1) 
-            xpanel("MCellRan4 test") 
-            xbutton("Sample", "doit()") 
-            xpvalue("Original index", &index, 1, "r.MCellRan4(index) doit()") 
-            xpanel() 
+			from neuron import h, gui
+
+			r = h.Random() 
+			index = h.ref(r.MCellRan4())
+			r.uniform(0, 2) 
+			vec = h.Vector(1000) 
+			g1 = h.Graph() 
+			g2 = h.Graph() 
+			g1.size(0, 1000, 0, 2) 
+			g2.size(0, 2, 0, 150) 
+ 
+			def doit(): 
+				g1.erase() 
+				g2.erase() 
+				vec.setrand(r) 
+				hist = vec.histogram(0, 2, 0.2) 
+				vec.line(g1) 
+				hist.line(g2, .2) 
+				g1.flush() 
+				g2.flush()
+	
+			def set_index_then_doit():
+				r.MCellRan4(index[0])
+				doit()
+
+			doit()
+
+			h.xpanel("MCellRan4 test") 
+			h.xbutton("Sample", doit) 
+			h.xvalue("Original index", index, 1, set_index_then_doit) 
+			h.xpanel()
 
 
          
@@ -259,31 +268,37 @@ Random Class
     Example:
 
         .. code-block::
-            none
+            python
 
-            objref r 
-            r = new Random() 
-            //r.uniform(0,1) 
-            r.negexp(1) 
-            //r.normal(0,1) 
-            mcell_ran4_init(1) 
-            r.MCellRan4(1) 
-             
-            for i=0, 10 print i, r.repick 
-             
-            r.MCellRan4(1) 
-            for i=0, 5 print i, r.repick 
-            idum = r.seq 
-            print "idum = ", idum 
-            for i=6, 10 print i, r.repick 
-             
-            print "restarting" 
-            r.seq(idum) 
-            for i=6, 10 print i, r.repick 
-             
-            print "restarting" 
-            r.seq(idum) 
-            for i=6, 10 print i, r.repick 
+			from neuron import h
+
+			r = h.Random() 
+
+			r.negexp(1) 
+ 
+			h.mcell_ran4_init(1) 
+			r.MCellRan4(1) 
+ 
+			for i in range(11):
+				print i, r.repick() 
+ 
+			r.MCellRan4(1) 
+			for i in range(6):
+				print i, r.repick() 
+			idum = r.seq() 
+			print "idum = ", idum 
+			for i in range(6, 11):
+				print i, r.repick() 
+ 
+			print "restarting" 
+			r.seq(idum) 
+			for i in range(6, 11):
+				print i, r.repick()
+ 
+			print "restarting" 
+			r.seq(idum) 
+			for i in range(6, 11):
+				print i, r.repick()
 
 
          
@@ -333,18 +348,17 @@ Random Class
     Example:
 
         .. code-block::
-            none
+            None - still to be corrected
 
-            // run the single script 
-            // use the PointProcessManager to select IClamp 
-            // set dur of IClamp[0] to 100 
-            // open a new Voltage Graph 
-            objref r 
-            r = new Random() 
+            # run the single script 
+            # use the PointProcessManager to select IClamp 
+            # set dur of IClamp[0] to 100 
+            # open a new Voltage Graph 
+            r = h.Random() 
             r.poisson(.01) 
             r.play(&IClamp[0].amp) 
-            //open a RunControl 
-            // press Init&Run several times 
+            #open a RunControl 
+            # press Init&Run several times 
 
 
 ----
@@ -367,14 +381,14 @@ Random Class
             none
 
             objref r, vec, g1, g2, hist 
-            r = new Random() 
+            r = h.Random() 
             r.uniform(0, 2) 
-            vec = new Vector(1000) 
+            vec = h.Vector(1000) 
             vec.setrand(r) 
             hist = vec.histogram(0, 2, 0.2) 
              
-            g1 = new Graph() 
-            g2 = new Graph() 
+            g1 = h.Graph() 
+            g2 = h.Graph() 
             g1.size(0, 1000, 0, 2) 
             g2.size(0, 2, 0, 150) 
             vec.plot(g1) 
@@ -420,13 +434,13 @@ Random Class
             none
 
             objref r, g, hist, vec 
-            r = new Random() 
+            r = h.Random() 
             r.normal(-1, .5) 
              
-            vec = new Vector() 
+            vec = h.Vector() 
             vec.indgen(-3, 2, .1)	// x-axis for plot 
-            hist = new Vector(vec.size()) 
-            g = new Graph() 
+            hist = h.Vector(vec.size()) 
+            g = h.Graph() 
             g.size(-3, 2, 0, 50) 
             hist.plot(g, vec) 
             for(i=0; i<500; i=i+1){ 

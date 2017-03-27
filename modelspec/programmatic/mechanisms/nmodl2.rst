@@ -375,15 +375,15 @@ Pointer-Communication
 
 
 Description:
-    Basically what is needed is a way to implement the hoc statement 
+    Basically what is needed is a way to implement the Python statement 
 
     .. code-block::
         none
 
-        section1.var1_mech1(x1) =  section2.var2_mech2(x2) 
+        section1(x).mech1.var1 =  section2(x2).mech2.var2 
 
     efficiently from within a mechanism without having to explicitly connect them 
-    through assignment at the HOC level everytime the :samp:`{var2}` might change. 
+    through assignment at the Python level everytime the :samp:`{var2}` might change. 
      
     First of all, the variables which point to the values in some other mechanism 
     are declared within the NEURON block via 
@@ -397,18 +397,27 @@ Description:
 
     These variables are used exactly like normal variables in the sense that 
     they can be used on the left or right hand side of assignment statements 
-    and used as arguments in function calls. They can also be accessed from HOC 
+    and used as arguments in function calls. They can also be accessed from Python 
     just like normal variables. 
     It is essential that the user set up the pointers to point to the correct 
     variables. This is done by first making sure that the proper mechanisms 
     are inserted into the sections and the proper point processes are actually 
     "located" in a section. Then, at the hoc level each POINTER variable 
     that exists should be set up via the command: 
+    
+    The Python h.setpointer function is called with a syntax for POINT_PROCESS and SUFFIX (density) mechanisms respectively of
 
     .. code-block::
-        none
+        python
+        
+        from neuron import h
 
-        	setpointer pointer, variable 
+		h.setpointer(_ref_hocvar, 'POINTER_name', point_proces_object)
+		h.setpointer(_ref_hocvar, 'POINTER_name', nrn.Mechanism_object)
+ 
+		Note: For a density mechanism, the 'POINTER_name' cannot have the SUFFIX appended. For example if a mechanism with suffix foo has a POINTER bar and you want it to point to h.t use
+
+		h.setpointer(h._ref_t, 'bar', sec(x).foo)
 
     where pointer and variable have enough implicit/explicit information to 
     determine their exact segment and mechanism location. For a continuous 
@@ -428,11 +437,10 @@ Description:
     Then 
 
     .. code-block::
-        none
-
-        objref syn 
+        python
+ 
         somedendrite {syn = new Syn(.8)} 
-        setpointer syn.vpre, axon.v(1) 
+        setpointer syn.vpre, axon.v(1) # has to be fixed
 
     will allow the syn object to know the voltage at the distal end of the axon 
     section. As a variation on that example, if one supposed that the synapse 

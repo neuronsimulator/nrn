@@ -1,57 +1,57 @@
-93    programming/pointers/pointer.rst      
+93    programming/pointers/pointer.rst // finished     
 116   programming/gui/secbrows.rst   // Being worked on, broken
-157   modelspec/programmatic/electrod.rst   
+157   modelspec/programmatic/electrod.rst // issues
 184   programming/internals.rst     // issues        
-378   programming/gui/pwman.rst     
-468   visualization/plotshapeclass.rst      
-693   modelspec/programmatic/kschan.rst     
-964   programming/ockeywor.rst        
-71    analysis/guitools/impedancetools.rst            
-159   programming/math/functions.rst
-190   analysis/programmatic/optimization.rst
-272   visualization/glyph.rst         
-380   modelspec/programmatic/topology/secspec.rst   
-491   programming/io/file.rst         
-716   programming/math/random.rst   
-1053    modelspec/programmatic/mechanisms/mech.rst    
-37    programming/errors.rst
-50    analysis/programmatic/misc.rst
-88    programming/gui/nfunc.rst     
-96    modelspec/programmatic/obsoletestimuli.rst    
-122   modelspec/programmatic/ions.rst         
-147   visualization/grapher.rst     
-163   programming/dynamiccode.rst    
-213   analysis/guitools/mulfit.rst  
-385   programming/gui/list.rst      
-535   modelspec/programmatic/topology.rst   
-741   modelspec/programmatic/network/netcon.rst     
-1313    programming/math/matrix.rst   #first example of Matrix.x needs finish #cholesky_factor() the hoc version also doesn’t work
-55    compilationoptions.rst
-73    modelspec/programmatic/network/lyttonmpi.rst  
-90    modelspec/programmatic/rxd.
+378   programming/gui/pwman.rst     // mostly done, add spaces between line 1 and other thing
+468   visualization/plotshapeclass.rst // finished     
+693   modelspec/programmatic/kschan.rst // finished 
+964   programming/ockeywor.rst //sequenced       
+71    analysis/guitools/impedancetools.rst // finished       
+159   programming/math/functions.rst // finished
+190   analysis/programmatic/optimization.rst // sequenced
+272   visualization/glyph.rst //mostly done
+380   modelspec/programmatic/topology/secspec.rst // sequenced
+491   programming/io/file.rst         // sequenced
+716   programming/math/random.rst // sequenced 
+1053    modelspec/programmatic/mechanisms/mech.rst //sequenced  
+37    programming/errors.rst // finished
+50    analysis/programmatic/misc.rst //finished
+88    programming/gui/nfunc.rst     // finished
+96    modelspec/programmatic/obsoletestimuli.rst  //finished  
+122   modelspec/programmatic/ions.rst   //finished     
+147   visualization/grapher.rst     //finished
+163   programming/dynamiccode.rst   //finished //no arguments for load_func and load_template
+213   analysis/guitools/mulfit.rst  //finished
+385   programming/gui/list.rst      //sequenced
+535   modelspec/programmatic/topology.rst   //sequenced
+741   modelspec/programmatic/network/netcon.rst //sequenced    
+1313    programming/math/matrix.rst   //first example of Matrix.x needs finish //cholesky_factor() the hoc version also doesn’t work
+55    compilationoptions.rst // finished
+73    modelspec/programmatic/network/lyttonmpi.rst   //finished
+90    modelspec/programmatic/rxd. //finished
 114   programming/timer.rst   // nrniv -python limitation should be removed
-131   analysis/guitools/funfit.rst  
-151   modelspec/guitools/pointman.rst         
-166   modelspec/programmatic/topology/seclist.rst   
-222   visualization/rvarplt.rst     
-300   programming/projectmanagement.rst     
-391   visualization/oldgrph.rst     
-612   simctrl/stdrun.rst    
-778   visualization/gui.rst 
-1503    simctrl/cvode.rst       
-874   programming/python.rst
-1563    visualization/graph.rst         
-39    programming/gui/textmenus.rst 
-61    visualization/shapebox.rst    
-83    programming/gui/misc.rst      
-93    modelspec/programmatic/hocmech.rst    
-115   programming/sscanf.rst
-137   visualization/plotshape.rst   
-155   simctrl/runctrl.rst   
-183   modelspec/programmatic/linmod.rst     
-241   analysis/guitools/runfit.rst  
-337   modelspec/programmatic/mechtype.rst   
-455   modelspec/programmatic/mechanisms/nmodl2.rst  
-677   modelspec/programmatic/mechanisms/nmodl.rst   
-903   modelspec/programmatic/topology/geometry.rst  
-2972    modelspec/programmatic/network/parcon.rst  
+131   analysis/guitools/funfit.rst  //finished
+151   modelspec/guitools/pointman.rst //finished    
+166   modelspec/programmatic/topology/seclist.rst  //finished 
+222   visualization/rvarplt.rst     //Range Var Plot - #how to do this in python?
+300   programming/projectmanagement.rst    //almost done 
+391   visualization/oldgrph.rst     //sequenced
+612   simctrl/stdrun.rst  //done  
+778   visualization/gui.rst //sequenced
+1503    simctrl/cvode.rst     //finished 
+874   programming/python.rst //finished
+1563    visualization/graph.rst //sequenced        
+39    programming/gui/textmenus.rst //finished
+61    visualization/shapebox.rst    //finished
+83    programming/gui/misc.rst   //comments   
+93    modelspec/programmatic/hocmech.rst //problems, Robert supposed to fix   
+115   programming/sscanf.rst //q
+137   visualization/plotshape.rst   //finished
+155   simctrl/runctrl.rst   //emailed Robert the last question
+183   modelspec/programmatic/linmod.rst    //sequenced 
+241   analysis/guitools/runfit.rst  //finished
+337   modelspec/programmatic/mechtype.rst   //sequenced
+455   modelspec/programmatic/mechanisms/nmodl2.rst  //Robert complained and feel like fixing it
+677   modelspec/programmatic/mechanisms/nmodl.rst   //all done except for one line, line similar to the ones in nmodl2 that Robert said he would fix
+903   modelspec/programmatic/topology/geometry.rst  //sequenced
+2972    modelspec/programmatic/network/parcon.rst  //sequenced

@@ -10,7 +10,7 @@ KSChan
 
 
     Syntax:
-        ``kschan = new KSChan()``
+        ``kschan = h.KSChan()``
 
 
     Description:
@@ -46,7 +46,6 @@ KSChan
         ``kschan.setstructure(vec)``
 
 
-    Description:
 
          
 
@@ -63,7 +62,6 @@ KSChan
         ``kschan.remove_state(ksstate)``
 
 
-    Description:
 
 
 ----
@@ -79,7 +77,6 @@ KSChan
         ``kschan.remove_transition(kstrans)``
 
 
-    Description:
 
          
 
@@ -94,7 +91,6 @@ KSChan
         ``n = kschan.ngate()``
 
 
-    Description:
 
 
 ----
@@ -108,8 +104,6 @@ KSChan
         ``n = kschan.nstate()``
 
 
-    Description:
-
 
 ----
 
@@ -122,7 +116,6 @@ KSChan
         ``n = kschan.ntrans()``
 
 
-    Description:
 
 
 ----
@@ -136,7 +129,6 @@ KSChan
         ``n = kschan.nligand()``
 
 
-    Description:
 
 
 ----
@@ -150,7 +142,6 @@ KSChan
         ``kschan.pr()``
 
 
-    Description:
 
          
 
@@ -167,8 +158,6 @@ KSChan
         ``type = kschan.iv_type(type)``
 
 
-    Description:
-
 
 ----
 
@@ -183,7 +172,6 @@ KSChan
         ``val = kschan.gmax(val)``
 
 
-    Description:
 
 
 ----
@@ -199,8 +187,6 @@ KSChan
         ``val = kschan.erev(val)``
 
 
-    Description:
-
          
 
 ----
@@ -214,7 +200,6 @@ KSChan
         ``ksstate = kschan.add_hhstate(name)``
 
 
-    Description:
 
 
 ----
@@ -227,8 +212,6 @@ KSChan
     Syntax:
         ``ksstate = kschan.add_ksstate(name)``
 
-
-    Description:
 
 
 ----
@@ -244,7 +227,6 @@ KSChan
         ``kstrans = kschan.add_transition(src_ksstate, target_ksstate)``
 
 
-    Description:
 
 
 ----
@@ -260,7 +242,6 @@ KSChan
         ``kstrans = kschan.trans(src_ksstate, target_ksstate)``
 
 
-    Description:
 
 
 ----
@@ -274,8 +255,6 @@ KSChan
         ``ksstate = kschan.state(index)``
 
 
-    Description:
-
 
 ----
 
@@ -288,7 +267,6 @@ KSChan
         ``ksgate = kschan.gate(index)``
 
 
-    Description:
 
          
 
@@ -305,7 +283,6 @@ KSChan
         ``string = kschan.name(string)``
 
 
-    Description:
 
 
 ----
@@ -321,7 +298,6 @@ KSChan
         ``string = kschan.ion(string)``
 
 
-    Description:
 
 
 ----
@@ -335,7 +311,6 @@ KSChan
         ``string = kschan.ligand(index)``
 
 
-    Description:
 
          
 
@@ -375,7 +350,6 @@ KSChan
         ``val = ksstate.frac(val)``
 
 
-    Description:
 
 
 ----
@@ -389,7 +363,6 @@ KSChan
         ``index = ksstate.index()``
 
 
-    Description:
 
          
 
@@ -404,7 +377,6 @@ KSChan
         ``ksgate = ksstate.gate()``
 
 
-    Description:
 
          
 
@@ -421,7 +393,6 @@ KSChan
         ``string = ksstate.name(string)``
 
 
-    Description:
 
          
 
@@ -439,8 +410,8 @@ KSChan
     Description:
         A helper class for :class:`KSChan`. KSChan creates and destroys 
         these objects internally. It cannot be created directly 
-        with the "new" keyword. An error message will be printed 
-        if a hoc reference is used after KSChan has destroyed 
+        with h.KSGate. An error message will be printed 
+        if a reference is used after KSChan has destroyed 
         the referenced KSGate. 
 
     .. seealso::
@@ -459,7 +430,6 @@ KSChan
         ``n = ksgate.nstate()``
 
 
-    Description:
 
 
 ----
@@ -475,8 +445,6 @@ KSChan
         ``i = ksgate.power(i)``
 
 
-    Description:
-
 
 ----
 
@@ -489,7 +457,6 @@ KSChan
         ``i = ksgate.sindex()``
 
 
-    Description:
 
 
 ----
@@ -502,8 +469,6 @@ KSChan
     Syntax:
         ``i = ksgate.index()``
 
-
-    Description:
 
          
 
@@ -521,8 +486,8 @@ KSChan
     Description:
         A helper class for :class:`KSChan`. KSChan creates and destroys 
         these objects internally. It cannot be created directly 
-        with the "new" keyword. An error message will be printed 
-        if a hoc reference is used after KSChan has destroyed 
+        by KSTrans. An error message will be printed 
+        if a reference is used after KSChan has destroyed 
         the referenced KSTrans. 
 
     .. seealso::
@@ -541,7 +506,6 @@ KSChan
         ``kstrans.set_f(direction, ftype, parmvec)``
 
 
-    Description:
 
 
 ----
@@ -555,7 +519,6 @@ KSChan
         ``i = kstrans.index()``
 
 
-    Description:
 
 
 ----
@@ -571,7 +534,6 @@ KSChan
         ``i = kstrans.type(i)``
 
 
-    Description:
 
 
 ----
@@ -585,7 +547,6 @@ KSChan
         ``i = kstrans.ftype(direction)``
 
 
-    Description:
 
 
 ----
@@ -599,7 +560,6 @@ KSChan
         ``kstrans.ab(vvec, avec, bvec)``
 
 
-    Description:
 
 
 ----
@@ -613,7 +573,6 @@ KSChan
         ``kstrans.inftau(vvec, infvec, tauvec)``
 
 
-    Description:
 
 
 ----
@@ -626,8 +585,6 @@ KSChan
     Syntax:
         ``val = kstrans.f(direction, v)``
 
-
-    Description:
 
          
 
@@ -642,7 +599,6 @@ KSChan
         ``ksstate = kstrans.src()``
 
 
-    Description:
 
 
 ----
@@ -656,7 +612,6 @@ KSChan
         ``ksstate = kstrans.target()``
 
 
-    Description:
 
 
 ----
@@ -670,7 +625,6 @@ KSChan
         ``parmvec = kstrans.parm(direction)``
 
 
-    Description:
 
          
 
@@ -687,7 +641,6 @@ KSChan
         ``string = kstrans.ligand(string)``
 
 
-    Description:
 
          
 

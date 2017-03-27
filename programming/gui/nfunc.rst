@@ -11,7 +11,7 @@ Miscellaneous Menus
     Syntax:
         ``nrnglobalmechmenu("mechname")``
 
-        ``n = nrnglobalmechmenu("mechname", 0)``
+        ``n = h.nrnglobalmechmenu("mechname", 0)``
 
 
     Description:
@@ -66,11 +66,11 @@ Miscellaneous Menus
 
 
     Syntax:
-        ``nrnsecmenu(x, vartype)``
+        ``nrnsecmenu(x, vartype, sec=section)``
 
 
     Description:
-        Pop up a panel containing variables in the currently accessed section. 
+        Pop up a panel containing variables in the ``section``. 
          
         0 < x < 1 shows variables at segment containing x 
         changing these variables changes only the values in that segment 

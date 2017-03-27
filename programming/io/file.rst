@@ -9,9 +9,9 @@ File Access (Recommended Way)
 
 
     Syntax:
-        ``fobj = new File()``
+        ``fobj = h.File()``
 
-        ``fobj = new File("filename")``
+        ``fobj = h.File("filename")``
 
 
     Description:
@@ -34,12 +34,11 @@ File Access (Recommended Way)
     Example:
 
         .. code-block::
-            none
-
-            objref f1, f2, f3	//declare object references 
-            f1 = new File()		//state that f1, f2, and f3 are pointers to the File class 
-            f2 = new File() 
-            f3 = new File() 
+            python
+ 
+            f1 = h.File()		//state that f1, f2, and f3 are pointers to the File class 
+            f2 = h.File() 
+            f3 = h.File() 
             f1.ropen("file1")	//open file1 for reading 
             f2.wopen("file2")	//open file2 for writing 
             f3.aopen("file3")	//open file3 for appending to the end of the file 

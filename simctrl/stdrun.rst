@@ -10,9 +10,9 @@ All standard tools are available from the NEURONMainMenu. The fastest
 way to load these tools is to execute 
 
 .. code-block::
-    none
+    python
 
-    load_file("nrngui.hoc") 
+    h.load_file("nrngui.hoc") 
 
 which avoids inefficiencies of the :func:`load_proc` command on 
 mswindows machines. 
@@ -38,9 +38,9 @@ Main menu for standard control, graphing, menu generation.
 To pop up the panel execute: 
 
 .. code-block::
-    none
+    python
 
-    	load_file("nrngui.hoc") 
+    	h.load_file("nrngui.hoc") 
 
  
 Serious users should peruse the init and run procedures. 

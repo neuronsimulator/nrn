@@ -373,9 +373,8 @@ Then
 .. code-block::
     none
 
-    objref syn 
-    somedendrite {syn = new Syn(.8)} 
-    setpointer syn.vpre, axon.v(1) 
+    syn = h.Syn(.8, sec=section) 
+    setpointer syn.vpre, axon.v(1) # 
 
 will allow the syn object to know the voltage at the distal end of the axon 
 section. As a variation on that example, if one supposed that the synapse 

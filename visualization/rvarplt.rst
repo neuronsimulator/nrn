@@ -48,12 +48,11 @@ RangeVarPlot
         .. code-block::
             none
 
-            objectvar imp, rvp, g 
-            imp = new Impedance() 
-            rvp = new RangeVarPlot("imp.amp($1)/imp0()") 
-            rvp... //specify range begin and end 
-            imp... //specify impedance computation 
-            g = new Graph() 
+            imp = h.Impedance() 
+            rvp = h.RangeVarPlot("imp.amp($1)/imp0()") #how to do this in python?
+            rvp... #specify range begin and end 
+            imp... #specify impedance computation 
+            g = h.Graph() 
             g.addobject(rvp) 
 
 
@@ -101,11 +100,11 @@ RangeVarPlot
 
 
     Syntax:
-        ``.origin(x)``
+        ``.origin(x, sec=section)``
 
 
     Description:
-        x position of the currently accessed section that is treated 
+        x position of the ``section`` that is treated 
         as the origin (location 0) of the space plot. The default is usually 
         suitable unless you want to have several rangvarplots in one graph 
         in which case this function is used to arrange all the plots relative 

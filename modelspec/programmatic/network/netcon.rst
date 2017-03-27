@@ -9,13 +9,13 @@ NetCon
 
 
     Syntax:
-        ``section netcon = new NetCon(&v(x), target)``
+        ``section netcon = h.NetCon(&v(x), target)``
 
-        ``netcon = new NetCon(source, target)``
+        ``netcon = h.NetCon(source, target)``
 
-        ``section netcon = new NetCon(&v(x), target, threshold, delay, weight)``
+        ``section netcon = h.NetCon(&v(x), target, threshold, delay, weight)``
 
-        ``netcon = new NetCon(source, target, threshold, delay, weight)``
+        ``netcon = h.NetCon(source, target, threshold, delay, weight)``
 
 
     Description:
@@ -562,13 +562,13 @@ NetCon
         works: 
 
         .. code-block::
-            none
+            python
 
-            objref vec, netcon, nil 
-            vec = new Vector() 
-            netcon = new NetCon(source, nil) 
+
+            vec = h.Vector() 
+            netcon = h.NetCon(source, nil) 
             netcon.record(vec) 
-            objref netcon 
+
 
         The source will continue to record events until record is called 
         with another netcon connecting to the source or until the vec is 

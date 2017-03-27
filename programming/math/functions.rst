@@ -26,6 +26,7 @@ Diagnostics:
 .. function:: int
 
         returns the integer part of its argument (truncates toward 0). 
+        
 
 
 ----
@@ -36,6 +37,9 @@ Diagnostics:
 
         see :meth:`Vector.sqrt` for the :class:`Vector` class. 
 
+		.. note::
+		
+			Consider using Python's built in `math.sqrt` instead.
 
 ----
 
@@ -53,10 +57,16 @@ Diagnostics:
         at the interpreter level or when cvode is not active. 
 
         .. code-block::
-            none
+            python
 
-            for i=690, 710 print i, exp(i) 
+			from neuron import h
 
+			for i in range(6,12):
+				print i, h.exp(i)
+		
+		.. note::
+		
+			Consider using Python's built in `math.exp` instead.
 
 ----
 
@@ -65,6 +75,9 @@ Diagnostics:
         logarithm to the base e 
         see :meth:`Vector.log` for the :class:`Vector` class. 
 
+		.. note::
+		
+			Consider using Python's built in `math.log` instead.
 
 ----
 
@@ -73,6 +86,11 @@ Diagnostics:
         logarithm to the base 10 
 
         see :meth:`Vector.log10` for the :class:`Vector` class. 
+        
+		.. note::
+
+		Consider using Python's built in `math.log10` instead.
+
 
 
 ----
@@ -83,6 +101,11 @@ Diagnostics:
 
     see :meth:`Vector.sin` 
 
+	.. note::
+
+	Consider using Python's built in `math.cos` instead.
+
+
 
 ----
 
@@ -92,6 +115,11 @@ Diagnostics:
 
     see :meth:`Vector.sin` for the :class:`Vector` class. 
 
+	.. note::
+
+	Consider using Python's built in `math.sin` instead.
+
+
 
 ----
 
@@ -99,6 +127,11 @@ Diagnostics:
 
         hyperbolic tangent. 
         see :meth:`Vector.tanh` for the :class:`Vector` class. 
+        
+		.. note::
+
+		Consider using Python's built in `math.tanh` instead.
+
 
 
 ----
@@ -106,6 +139,11 @@ Diagnostics:
 .. function:: atan
 
         returns the arc-tangent of y/x in the range -PI/2 to PI/2. (x > 0) 
+        
+		.. note::
+	
+		Consider using Python's built in `math.atan` instead.
+
 
 
 ----
@@ -125,17 +163,28 @@ Diagnostics:
     Example:
 
         .. code-block::
-            none
+            python
 
-            atan2(0,0) 
-            for i=-1,1 { print atan2(i*1e-6, 10) } 
-            for i=-1,1 { print atan2(i*1e-6, -10) } 
-            for i=-1,1 { print atan2(10, i*1e-6) } 
-            for i=-1,1 { print atan2(-10, i*1e-6) } 
-            atan2(10,10) 
-            atan2(10,-10) 
-            atan2(-10,10) 
-            atan2(-10,-10) 
+			from neuron import h
+
+			h.atan2(0,0) 
+			for i in range(-1,2):
+				print h.atan2(i*1e-6, 10) 
+			for i in range(-1,2):
+				print h.atan2(i*1e-6, -10) 
+			for i in range(-1,2):
+				print h.atan2(10, i*1e-6) 
+			for i in range(-1,2):
+				print h.atan2(-10, i*1e-6)
+			h.atan2(10,10) 
+			h.atan2(10,-10) 
+			h.atan2(-10,10) 
+			h.atan2(-10,-10) 
+            
+			.. note::
+		
+			Consider using Python's built in `math.atan2` instead.
+
 
 
 ----

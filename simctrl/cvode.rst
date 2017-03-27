@@ -782,9 +782,9 @@ CVode
     Syntax:
         ``cvode.event(t)``
 
-        ``cvode.event(t, "statement")``
+        ``cvode.event(t, function)``
 
-        ``cvode.event(t, "statement", pointprocess, re_init)``
+        ``cvode.event(t, function, pointprocess, re_init)``
 
 
     Description:
@@ -821,7 +821,18 @@ CVode
         then the fourth arg should be set to 1 to cause a re-initialization of only 
         the integrator managing the cell (CVode.re_init is nonsense in this context). 
 
+        Example:
          
+		from neuron import h, gui
+ 
+		def hi():
+			print 'hello from hi, h.t =', h.t
+
+		h.finitialize(-65)
+
+		h.CVode().event(1.3, hi)
+
+		h.continuerun(2)
 
 ----
 

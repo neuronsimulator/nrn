@@ -278,7 +278,7 @@ Description:
             python
 
             stim = IClamp(1.0, sec = ax) 
-            // or 
+             #or 
             stim = IClamp(ax(1.0)) 
 
         The latter is a somewhat simpler idiom that uses the Segment object which knows both the 

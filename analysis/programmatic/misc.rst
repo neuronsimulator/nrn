@@ -28,9 +28,9 @@ Miscellaneous
 
 
     Syntax:
-        ``nernst(ci, co, charge)``
+        ``nernst(ci, co, charge, sec=section)``
 
-        ``nernst("ena" or "nai" or "nao", [x])``
+        ``nernst("ena" or "nai" or "nao", [x], sec=section)``
 
 
     Description:
@@ -44,7 +44,7 @@ Miscellaneous
             named in the string. 
 
         Celsius, valence, and the other two ionic variables are taken from their 
-        values at the currently accessed section at position x (.5 default). 
-        A hoc error is printed if the ionic species does not exist at this location. 
+        values at the ``section`` at position x (.5 default). 
+        An error is printed if the ionic species does not exist at this location. 
 
          

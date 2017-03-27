@@ -465,7 +465,7 @@ HOC Keywords
     Example:
 
         .. code-block::
-            none
+            python
 
             x=2 
             y=3 
@@ -474,7 +474,7 @@ HOC Keywords
         prints 
 
         .. code-block::
-            none
+            python
 
             x hello good-bye 3 7 
 
@@ -602,17 +602,16 @@ HOC Keywords
     Example:
 
         .. code-block::
-            none
+            python
 
             double vec[40] 
 
         declares an array with 40 elements, whereas 
 
         .. code-block::
-            none
+            python
 
-            objref vec 
-            vec = new Vector(40) 
+            vec = h.Vector(40) 
 
         creates a vector (which is an array by a different name) with 40 elements which you can 
         manipulate using the commands of the Vector class. 
@@ -861,9 +860,8 @@ HOC Keywords
     Example:
 
         .. code-block::
-            none
+            python
 
-            strdef a, b, c 
             a = "Hello, " 
             b = "how are you?" 
             c = "What is your name?" 
@@ -873,7 +871,7 @@ HOC Keywords
         will print to the screen: 
 
         .. code-block::
-            none
+            python
 
             Hello, how are you? 
             What is your name? 

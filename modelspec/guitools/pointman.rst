@@ -81,9 +81,9 @@ saved as well.
 hoc usage:
 
 .. code-block::
-    none
+    python
     
-    section p = new PointProcessManager([xplacement, yplacement]) 
+    p = h.PointProcessManager([xplacement, yplacement], sec=section) 
     
 p.pp is the point process currently installed in the cell. 
      

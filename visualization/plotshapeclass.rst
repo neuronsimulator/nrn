@@ -22,9 +22,9 @@ PlotShape
     Syntax:
         ``.scale(low, high)``
 
-        ``sets blue and red values for the color scale and default axes for``
-
-        ``time and space plots``
+	Description:
+		Sets blue and red values for the color scale and default axes for
+        time and space plots.
 
 
 ----
@@ -107,9 +107,9 @@ PlotShape
     Syntax:
         ``.variable("rangevar")``
 
-        ``Range variable (v, m_hh, etc.) to be used for time, space, and``
-
-        ``shape plots.``
+    Description:
+    Range variable (v, m_hh, etc.) to be used for time, space, and
+    shape plots.
 
 
 ----
@@ -371,9 +371,9 @@ PlotShape
 
 
     Syntax:
-        ``s.hinton(&varname, x, y, size)``
+        ``s.hinton(_ref_varname, x, y, size)``
 
-        ``s.hinton(&varname, x, y, xsize, ysize)``
+        ``s.hinton(_ref_varname, x, y, xsize, ysize)``
 
 
     Description:
@@ -388,49 +388,50 @@ PlotShape
     Example:
 
         .. code-block::
-            none
+            python
 
-            create soma 
-            access soma 
-            objref sl 
-            sl = new SectionList() 
-            objref s 
-            s = new PlotShape(sl) 
-            s.colormap(3) 
-            s.colormap(0, 255, 0, 0) 
-            s.colormap(1, 255, 255, 0) 
-            s.colormap(2, 200, 200, 200) 
-            s.scale(0, 2) 
-            objref vec 
-            nx = 30 
-            ny = 30 
-            vec = new Vector(nx*ny) 
-            vec.fill(0) 
-            for i=0,nx-1 for j=0,ny-1 { 
-            	s.hinton(&vec.x[i*ny + j], i/nx, j/ny, 1/nx) 
-            } 
-            s.size(-.5, 1, 0, 1) 
-            s.exec_menu("Shape Plot") 
-             
-            objref r 
-            r = new Random() 
-            r.poisson(.01) 
-             
-            doNotify() 
-             
-            proc p() {local i 
-            	for i=1,1000 { 
-            		vec.setrand(r) 
-            		s.fastflush() // faster by up to a factor of 4 
-            //		s.flush() 
-            		doNotify() 
-            	} 
-            } 
-            {startsw() p() print stopsw() } 
+			from neuron import h, gui
+
+			soma = h.Section()  
+
+			sl = h.SectionList() 
+ 
+			s = h.PlotShape(sl) 
+			s.colormap(3) 
+			s.colormap(0, 255, 0, 0) 
+			s.colormap(1, 255, 255, 0) 
+			s.colormap(2, 200, 200, 200) 
+			s.scale(0, 2) 
+
+			nx = 30 
+			ny = 30 
+			vec = h.Vector(nx*ny) 
+			vec.fill(0) 
+
+			for i in range(nx):
+				for j in range(ny): 
+					s.hinton(vec._ref_x[i*ny + j], float(i)/nx, float(j)/ny, 1./nx) 
+
+			s.size(-.5, 1, 0, 1) 
+			s.exec_menu("Shape Plot") 
+ 
+			r = h.Random() 
+			r.poisson(.01) 
+ 
+			h.doNotify() 
+ 
+			def p():
+				for i in range(1,1001): 
+					vec.setrand(r) 
+					s.fastflush() # faster by up to a factor of 4 
+					h.doNotify() 
+
+			h.startsw()
+			p()
+			print h.stopsw() 
 
 
          
-
 ----
 
 

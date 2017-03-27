@@ -8,13 +8,13 @@ Ions
 
 
     Syntax:
-        ``oldstyle = ion_style("name_ion", c_style, e_style, einit, eadvance, cinit)``
+        ``oldstyle = h.ion_style("name_ion", c_style, e_style, einit, eadvance, cinit, sec=section)``
 
-        ``oldstyle = ion_style("name_ion")``
+        ``oldstyle = h.ion_style("name_ion", sec=section)``
 
 
     Description:
-        In the currently accessed section, 
+        In the ``section``, 
         force the named ion (eg. na_ion, k_ion, ca_ion, etc) to handle 
         reversal potential and concentrations according to the indicated 
         styles. 
@@ -43,11 +43,11 @@ Ions
 
         einit: 0 or 1. 
             If 1 then reversal potential computed by Nernst equation 
-            on call to ``finitialize()`` using values of concentrations. 
+            on call to :func:`finitialize` using values of concentrations. 
 
         eadvance: 0 or 1. 
             If 1 then reversal potential computed every call to 
-            ``fadvance()`` using the values of the concentrations. 
+            :func:`fadvance` using the values of the concentrations. 
 
         cinit: 0 or 1. 
             If 1 then a call to finitialize() sets the concentrations 
@@ -92,7 +92,7 @@ Ions
 
 
     Syntax:
-        ``type = ion_register("name", charge)``
+        ``type = h.ion_register("name", charge)``
 
 
     Description:
@@ -112,7 +112,7 @@ Ions
 
 
     Syntax:
-        ``charge = ion_charge("name_ion")``
+        ``charge = h.ion_charge("name_ion")``
 
 
     Description:

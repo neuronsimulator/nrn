@@ -9,7 +9,7 @@ SectionList
 
 
     Syntax:
-        ``sl = new SectionList()``
+        ``sl = h.SectionList()``
 
 
     Description:
@@ -65,11 +65,11 @@ SectionList
 
 
     Syntax:
-        ``sl.children()``
+        ``sl.children(sec=section)``
 
 
     Description:
-        Appends the sections connected to the currently accessed section. 
+        Appends the sections connected to ``section``. 
         Note that this includes children connected at position 0 of 
         parent. 
 
@@ -83,11 +83,11 @@ SectionList
 
 
     Syntax:
-        ``sl.subtree()``
+        ``sl.subtree(sec=section)``
 
 
     Description:
-        Appends the subtree of the currently accessed section (including that one). 
+        Appends the subtree of the ``section``. (including that one). 
 
          
 
@@ -99,11 +99,11 @@ SectionList
 
 
     Syntax:
-        ``sl.wholetree()``
+        ``sl.wholetree(sec=section)``
 
 
     Description:
-        Appends all sections which have a path to the currently accessed section 
+        Appends all sections which have a path to the ``section``. 
         (including the currently accessed section). The section list has the 
         important property that the sections are in root to leaf order. 
 
@@ -117,7 +117,7 @@ SectionList
 
 
     Syntax:
-        ``sl.allroots()``
+        ``sl.allroots(sec=section)``
 
 
     Description:

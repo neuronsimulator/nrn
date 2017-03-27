@@ -10,7 +10,7 @@ Glyph
 
 
     Syntax:
-        ``g = new Glyph()``
+        ``g = h.Glyph()``
 
 
     Description:
@@ -129,12 +129,13 @@ Glyph
         Rotated ellipse
 
         .. code-block::
-            none
+            python
+        
+            from neuron import h, gui
             
-            objref gr, gl
-            gr = new Graph()
+            gr = h.Graph()
             
-            gl = new Glyph()
+            gl = h.Glyph()
             gl.circle(0,0,1)
             gl.fill(3)
             gl.s(2, 3)
