@@ -48,6 +48,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/nrniv/nrn_acc_manager.h"
 #include "coreneuron/nrniv/profiler_interface.h"
 #include "coreneuron/nrniv/partrans.h"
+#include "coreneuron/nrniv/multisend.h"
 #include <string.h>
 
 #if 0
@@ -60,11 +61,10 @@ int nrn_feenableexcept() {
 }
 #endif
 
-int main1(int argc, char** argv, char** env);
-void nrn_init_and_load_data(int argc, char** argv, cn_input_params& input_params, bool run_setup_cleanup=true);
+int main1(int argc, const char* argv[], char** env);
+void nrn_init_and_load_data(int argc, const char* argv[], bool run_setup_cleanup=true);
 void call_prcellstate_for_prcellgid(int prcellgid, int compute_gpu, int is_init);
-
-void nrn_init_and_load_data(int argc, char** argv, cn_input_params& input_params, bool run_setup_cleanup) {
+void nrn_init_and_load_data(int argc, char** argv, bool run_setup_cleanup) {
 #if defined(NRN_FEEXCEPT)
     nrn_feenableexcept();
 #endif
@@ -87,103 +87,111 @@ void nrn_init_and_load_data(int argc, char** argv, cn_input_params& input_params
     // create mutex for nrn123, protect instance_count_
     nrnran123_mutconstruct();
 
-    // read command line parameters
-    input_params.read_cb_opts(argc, argv);
+    // read command line parameters and parameter config files
+    nrnopt_parse(argc, (const char**)argv);
 
     // set global variables
-    celsius = input_params.celsius;
-    t = input_params.celsius;
+    // precedence is: set by user, globals.dat, 34.0
+    celsius = nrnopt_get_dbl("--celsius");
+    t = celsius; // later will read globals.dat and compare with this.
 
 #if _OPENACC
-    if (!input_params.compute_gpu && input_params.cell_interleave_permute == 2) {
+    if (!nrnopt_get_flag("--gpu") && nrnopt_get_int("--cell-permute") == 2) {
         fprintf(
             stderr,
-            "compiled with _OPENACC does not allow the combination of --cell_permute=2 and missing --gpu\n");
+            "compiled with _OPENACC does not allow the combination of --cell-permute=2 and missing --gpu\n");
         exit(1);
     }
 #endif
 
     // if multi-threading enabled, make sure mpi library supports it
 #if NRNMPI
-    if (input_params.threading) {
+    if (nrnopt_get_flag("--threading")) {
         nrnmpi_check_threading_support();
     }
 #endif
 
     // full path of files.dat file
-    char filesdat_buf[1024];
-    sd_ptr filesdat = input_params.get_filesdat_path(filesdat_buf, sizeof(filesdat_buf));
+    std::string filesdat(nrnopt_get_str("--datpath") + "/" + nrnopt_get_str("--filesdat"));
 
     // reads mechanism information from bbcore_mech.dat
-    mk_mech(input_params.datpath);
+    mk_mech(nrnopt_get_str("--datpath").c_str());
 
     // read the global variable names and set their values from globals.dat
-    set_globals(input_params.datpath);
+    set_globals(nrnopt_get_str("--datpath").c_str());
 
     report_mem_usage("After mk_mech");
 
     // set global variables for start time, timestep and temperature
-    t = input_params.tstart;
+    t = nrnopt_get_dbl("--tstart");
 
-    if (input_params.dt != -1000.) {  // command line arg highest precedence
-        dt = input_params.dt;
-    } else if (dt == -1000.) {  // not on command line and no celsius in globals.dat
+    if (nrnopt_get_dbl("--dt") != -1000.) {  // command line arg highest precedence
+        dt = nrnopt_get_dbl("--dt");
+    } else if (dt == -1000.) {  // not on command line and no dt in globals.dat
         dt = 0.025;             // lowest precedence
     }
-
-    input_params.dt = dt;  // for printing
+    nrnopt_modify_dbl("--dt", dt);
 
     rev_dt = (int)(1. / dt);
 
-    if (input_params.celsius != -1000.) {  // command line arg highest precedence
-        celsius = input_params.celsius;
+    if (nrnopt_get_dbl("--celsius") != -1000.) {  // command line arg highest precedence
+        celsius = nrnopt_get_dbl("--celsius");
     } else if (celsius == -1000.) {  // not on command line and no celsius in globals.dat
         celsius = 34.0;              // lowest precedence
     }
-
-    input_params.celsius = celsius;  // for printing
+    nrnopt_modify_dbl("--celsius", celsius);
 
     // create net_cvode instance
     mk_netcvode();
 
     // One part done before call to nrn_setup. Other part after.
-    if (input_params.patternstim) {
+    if (nrnopt_get_flag("--pattern")) {
         nrn_set_extra_thread0_vdata();
     }
 
     report_mem_usage("Before nrn_setup");
 
     // set if need to interleave cells
-    use_interleave_permute = input_params.cell_interleave_permute;
-    cellorder_nwarp = input_params.nwarp;
-    use_solve_interleave = input_params.cell_interleave_permute;
+    use_interleave_permute = nrnopt_get_int("--cell-permute");
+    cellorder_nwarp = nrnopt_get_int("--nwarp");
+    use_solve_interleave = nrnopt_get_int("--cell-permute");
 
     // pass by flag so existing tests do not need a changed nrn_setup prototype.
-    nrn_setup_multiple = input_params.multiple;
-    nrn_setup_extracon = input_params.extracon;
+    nrn_setup_multiple = nrnopt_get_int("--multiple");
+    nrn_setup_extracon = nrnopt_get_int("--extracon");
+
+    // multisend options
+    use_multisend_ = nrnopt_get_flag("--multisend") ? 1 : 0;
+    n_multisend_interval = nrnopt_get_int("--ms-subintervals");
+    use_phase2_ = (nrnopt_get_int("--ms-phases") == 2) ? 1 : 0;
 
     // reading *.dat files and setting up the data structures, setting mindelay
-    nrn_setup(input_params, filesdat, nrn_need_byteswap, run_setup_cleanup);
+    nrn_setup(filesdat.c_str(), nrn_need_byteswap, run_setup_cleanup);
+
+    // Allgather spike compression and  bin queuing.
+    nrn_use_bin_queue_ = nrnopt_get_flag("--binqueue");
+    int spkcompress = nrnopt_get_int("--spkcompress");
+    nrnmpi_spike_compress(spkcompress, (spkcompress ? true : false), use_multisend_);
 
     report_mem_usage("After nrn_setup ");
 
     // Invoke PatternStim
-    if (input_params.patternstim) {
-        nrn_mkPatternStim(input_params.patternstim);
+    if (nrnopt_get_flag("--pattern")) {
+        nrn_mkPatternStim(nrnopt_get_str("--pattern").c_str());
     }
 
     /// Setting the timeout
     nrn_set_timeout(200.);
 
     // show all configuration parameters for current run
-    input_params.show_cb_opts();
+    nrnopt_show();
 
     // allocate buffer for mpi communication
-    mk_spikevec_buffer(input_params.spikebuf);
+    mk_spikevec_buffer(nrnopt_get_int("--spikebuf"));
 
     report_mem_usage("After mk_spikevec_buffer");
 
-    if (input_params.compute_gpu) {
+    if (nrnopt_get_flag("-gpu")) {
         setup_nrnthreads_on_device(nrn_threads, nrn_nthread);
     }
 
@@ -192,7 +200,7 @@ void nrn_init_and_load_data(int argc, char** argv, cn_input_params& input_params
     }
 
     // call prcellstate for prcellgid
-    call_prcellstate_for_prcellgid(input_params.prcellgid, input_params.compute_gpu, 1);
+    call_prcellstate_for_prcellgid(nrnopt_get_int("--prcellgid"), nrnopt_get_flag("-gpu"), 1);
 }
 
 void call_prcellstate_for_prcellgid(int prcellgid, int compute_gpu, int is_init) {
@@ -223,15 +231,15 @@ void call_prcellstate_for_prcellgid(int prcellgid, int compute_gpu, int is_init)
 int main1(int argc, char** argv, char** env) {
     (void)env; /* unused */
 
-    // Initial data loading
-    cn_input_params input_params;
-
     // initializationa and loading functions moved to separate
-    nrn_init_and_load_data(argc, argv, input_params);
+    nrn_init_and_load_data(argc, argv);
+    // nrnopt_get... still available until call nrnopt_delete()
 
-    #pragma acc data copyin(celsius, secondorder) if (input_params.compute_gpu)
+    bool compute_gpu = nrnopt_get_flag("-gpu");
+    #pragma acc data copyin(celsius, secondorder) if (compute_gpu)
     {
-        nrn_finitialize(input_params.voltage != 1000., input_params.voltage);
+        double v = nrnopt_get_dbl("--voltage");
+        nrn_finitialize(v != 1000., v);
 
         report_mem_usage("After nrn_finitialize");
 
@@ -240,16 +248,16 @@ int main1(int argc, char** argv, char** env) {
 #endif
 
         // if reports are enabled using ReportingLib
-        if (input_params.report) {
+        if (nrnopt_get_flag("--report")) {
 #ifdef ENABLE_REPORTING
-            if (input_params.multiple > 1) {
+            if (nrnopt_get_int("--multiple") > 1) {
                 if (nrnmpi_myid == 0)
                     printf(
                         "\n WARNING! : Can't enable reports with model duplications feature! \n");
             } else {
-                r = new ReportGenerator(input_params.report, input_params.tstart,
-                                        input_params.tstop, input_params.dt, input_params.mindelay,
-                                        input_params.dt_report, input_params.outpath);
+                r = new ReportGenerator(nrnopt_get_int("--report"), nrnopt_get_int("--tstart"),
+                                        nrnopt_get_dbl("--tstop"), nrnopt_get_int("--dt"), nrnopt_get_dbl("--mindelay"),
+                                        nrnopt_get_dbl("--dt_report"), nrnopt_get_str("--outpath");
                 r->register_report();
             }
 #else
@@ -259,11 +267,11 @@ int main1(int argc, char** argv, char** env) {
         }
 
         // call prcellstate for prcellgid
-        call_prcellstate_for_prcellgid(input_params.prcellgid, input_params.compute_gpu, 0);
+        call_prcellstate_for_prcellgid(nrnopt_get_int("--prcellgid"), compute_gpu, 0);
 
         // handle forwardskip
-        if (input_params.forwardskip > 0.0) {
-            handle_forward_skip(input_params.forwardskip, input_params.prcellgid);
+        if (nrnopt_get_dbl("--forwardskip") > 0.0) {
+            handle_forward_skip(nrnopt_get_dbl("--forwardskip"), nrnopt_get_int("--prcellgid"));
         }
 
 #ifdef ENABLE_SELECTIVE_PROFILING
@@ -271,7 +279,7 @@ int main1(int argc, char** argv, char** env) {
 #endif
 
         /// Solver execution
-        BBS_netpar_solve(input_params.tstop);
+        BBS_netpar_solve(nrnopt_get_dbl("--tstop"));
 
         // Report global cell statistics
         report_cell_stats();
@@ -281,16 +289,16 @@ int main1(int argc, char** argv, char** env) {
 #endif
 
         // prcellstate after end of solver
-        call_prcellstate_for_prcellgid(input_params.prcellgid, input_params.compute_gpu, 0);
+        call_prcellstate_for_prcellgid(nrnopt_get_int("--prcellgid"), compute_gpu, 0);
 
 #ifdef ENABLE_REPORTING
-        if (input_params.report && r)
+        if (nrnopt_get_int("--report") && r)
             delete r;
 #endif
     }
 
-    // write spike information to input_params.outpath
-    output_spikes(input_params.outpath);
+    // write spike information to outpath
+    output_spikes(nrnopt_get_str("--outpath").c_str());
 
     // Cleaning the memory
     nrn_cleanup();

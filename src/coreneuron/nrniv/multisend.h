@@ -5,6 +5,7 @@
 
 extern int use_multisend_;
 extern int n_multisend_interval;
+extern int use_phase2_;
 
 class PreSyn;
 class NrnThread;

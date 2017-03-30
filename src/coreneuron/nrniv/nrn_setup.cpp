@@ -554,7 +554,7 @@ void nrn_setup_cleanup() {
     neg_gid2out.clear();
 }
 
-void nrn_setup(cn_input_params& input_params, const char* filesdat, int byte_swap, bool run_setup_cleanup) {
+void nrn_setup(const char* filesdat, int byte_swap, bool run_setup_cleanup) {
     /// Number of local cell groups
     int ngroup = 0;
 
@@ -577,7 +577,7 @@ void nrn_setup(cn_input_params& input_params, const char* filesdat, int byte_swa
     // Allocate NrnThread* nrn_threads of size ngroup (minimum 2)
     // Note that rank with 0 dataset/cellgroup works fine
     nrn_threads_create(ngroup <= 1 ? 2 : ngroup,
-                       input_params.threading);  // serial/parallel threads
+                       nrnopt_get_flag("--threading") ? 1 : 0);  // serial/parallel threads
 
     if (use_solve_interleave) {
         create_interleave_info();
@@ -604,7 +604,7 @@ void nrn_setup(cn_input_params& input_params, const char* filesdat, int byte_swa
     data_reader* file_reader = new data_reader[ngroup];
 
     /* nrn_multithread_job supports serial, pthread, and openmp. */
-    store_phase_args(ngroup, gidgroups, imult, file_reader, input_params.datpath, byte_swap);
+    store_phase_args(ngroup, gidgroups, imult, file_reader, nrnopt_get_str("--datpath").c_str(), byte_swap);
 
     // gap junctions
     if (nrn_have_gaps) {
@@ -628,11 +628,11 @@ void nrn_setup(cn_input_params& input_params, const char* filesdat, int byte_swa
     /* nrn_multithread_job supports serial, pthread, and openmp. */
     coreneuron::phase_wrapper<(coreneuron::phase)2>();
 
-    if (input_params.report)
+    if (nrnopt_get_flag("--report"))
         coreneuron::phase_wrapper<(coreneuron::phase)3>();
 
-    double mindelay = set_mindelay(input_params.maxdelay);
-    input_params.set_mindelay(mindelay);
+    double mindelay = set_mindelay(nrnopt_get_dbl("--mindelay"));
+    nrnopt_modify_dbl("--mindelay", mindelay);
 
     if (run_setup_cleanup) //if run_setup_cleanup==false, user must call nrn_setup_cleanup() later
        nrn_setup_cleanup();

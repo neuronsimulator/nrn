@@ -29,306 +29,355 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "coreneuron/nrnmpi/nrnmpi.h"
 #include "coreneuron/nrniv/nrnoptarg.h"
-#include "coreneuron/utils/sdprintf.h"
+#include "coreneuron/utils/ezOptionParser.hpp"
 
-extern "C" void nrn_exit(int);
-extern int nrnmpi_myid;
+static struct param_int {
+    const char* names; /* space separated (includes - or --) */
+    int dflt, low, high;
+    const char* usage;
+} param_int_args[] = {
+    {"--spikebuf -b", 100000, 1, 2000000000, "Spike buffer size. (100000)"},
+    {"--spkcompress", 0, 0, 100000, "Spike compression. Up to ARG are exchanged during MPI_Allgather. (0)"},
+    {"--prcellgid -g", -1, -1, 2000000000, "Output prcellstate information for the gid NUMBER."},
+    {"--cell-permute -R", 1, 0, 3,
+     "Cell permutation, 0 No; 1 optimise node adjacency; 2 optimize parent adjacency. (1)"},
+    {"--nwarp -W", 0, 0, 1000000, "Number of warps to balance. (0)"},
+    {"--ms-subintervals", 2, 1, 2, "Number of multisend subintervals, 1 or 2. (2)"},
+    {"--ms-phases", 2, 1, 2, "Number of multisend phases, 1 or 2. (2)"},
+    {"--report -r", 0, 0, 2,
+     "Enable voltage report (0 for disable, 1 for soma, 2 for full compartment)."},
+    {"--multiple -z", 1, 1, 10000000,
+     "Model duplication factor. Model size is normal size * (int)."},
+    {"--extracon -x", 0, 0, 10000000,
+     "Number of extra random connections in each thread to other duplicate models (int)."},
+    {NULL, 0, 0, 0, NULL}};
 
-cn_parameters::cn_parameters() {
-    tstart = 0.0;
-    tstop = 100.0;
-    dt = -1000.;
+static struct param_dbl {
+    const char* names; /* space separated (includes - or --) */
+    double dflt, low, high;
+    const char* usage;
+} param_dbl_args[] = {
+    {"--tstart -s", 0., -1e9, 1e9, "Start time (ms). (0)"},
+    {"--tstop -e", 100.0, 0.0, 1e9, "Stop time (ms). (100)"},
+    {"--dt -dt", -1000., -1000., 1e9, "Fixed time step. The default value is set by defaults.dat or is 0.025."},
+    {"--dt_io -i", 0.1, 1e-9, 1e9, "Dt of I/O. (0.1)"},
+    {"--voltage -v", -65.0, 1e-9, 1e9,
+     "Initial voltage used for nrn_finitialize(1, v_init). If 1000, then nrn_finitialize(0,...). (-65.)"},
+    {"--celsius -l", -1000., -1000., 1000.,
+     "Temperature in degC. The default value is set in defaults.dat or else is 34.0."},
+    {"--forwardskip -k", 0., 0., 1e9, "Forwardskip to TIME"},
+    {"--dt_report -w", 0.1, 0.0, 1e9, "Dt for soma reports (using ReportingLib). (0.1)"},
+    {"--mindelay", 10., 0., 1e9,
+     "Maximum integration interval (likely reduced by minimum NetCon delay). (10)"},
+    {NULL, 0., 0., 0., NULL}};
 
-    dt_io = 0.1;
-    dt_report = 0.1;
+static struct param_flag {
+    const char* names; /* space separated (includes - or --) */
+    const char* usage;
+} param_flag_args[] = {
+    {"--help -h", "Print a usage message briefly summarizing these command-line options, then exit."},
+    {"--threading -c", "Parallel threads. The default is serial threads."},
+    {"--gpu -gpu", "Enable use of GPUs. The default implies cpu only run."},
+    {"-mpi", "Enable MPI. In order to initialize MPI environment this argument must be specified."},
+    {"--show", "Print args."},
+    {"--multisend", "Use Multisend spike exchange instead of Allgather."},
+    {"--binqueue", "Use bin queue."},
+    {NULL, NULL}};
 
-    celsius = -1000.0;  // precedence: set by user, globals.dat, 34.0
-    voltage = -65.0;
-    maxdelay = 10.0;
+static struct param_str {
+    const char* names; /* space separated (includes - or --) */
+    const char* dflt;
+    const char* usage;
+} param_str_args[] = {
+    {"--pattern -p", "", "Apply patternstim using the specified spike file."},
+    {"--datpath -d", ".", "Path containing CoreNeuron data files. (.)"},
+    {"--filesdat -f", "files.dat", "Name for the distribution file. (files.dat)"},
+    {"--outpath -o", ".", "Path to place output data files. (.)"},
+    {"--write-config", "", "Write configuration file filename."},
+    {"--read-config", "", "Read configuration file filename."},
+    {NULL, NULL, NULL}};
 
-    forwardskip = 0;
+static void graceful_exit(int);
 
-    spikebuf = 100000;
-    prcellgid = -1;
+static ez::ezOptionParser* opt;
 
-    threading = 0;
-    compute_gpu = 0;
-    cell_interleave_permute = 0;
-    nwarp = 0; /* 0 means not specified */
-    report = 0;
+int nrnopt_parse(int argc, const char* argv[]) {
+    opt = new ez::ezOptionParser;
 
-    patternstim = NULL;
-
-    datpath = ".";
-    outpath = ".";
-    filesdat = "files.dat";
-
-    multiple = 1;
-    extracon = 0;
-}
-
-sd_ptr cn_parameters::get_filesdat_path(char* path_buf, size_t bufsz) {
-    // shouldn't we check if filesdat is absolute or relative? -- sgy 20150119
-    return sdprintf(path_buf, bufsz, "%s/%s", datpath, filesdat);
-}
-
-void cn_parameters::show_cb_opts() {
-    if (nrnmpi_myid == 0) {
-        printf("\n Configuration Parameters");
-
-        printf("\n tstart: %g, tstop: %g, dt: %g, dt_io: %g", tstart, tstop, dt, dt_io);
-        printf(" celsius: %g, voltage: %g, maxdelay: %g", celsius, voltage, maxdelay);
-
-        printf("\n forwardskip: %g, spikebuf: %d, prcellgid: %d, multiple: %d, extracon: %d",
-               forwardskip, spikebuf, prcellgid, multiple, extracon);
-        printf("\n threading : %d, mindelay : %g, cell_permute: %d, nwarp: %d", threading, mindelay,
-               cell_interleave_permute, nwarp);
-
-        printf("\n patternstim: %s, datpath: %s, filesdat: %s, outpath: %s", patternstim, datpath,
-               filesdat, outpath);
-
-        printf("\n report: %d, report dt: %lf ", report, dt_report);
-
-        if (prcellgid >= 0) {
-            printf("\n prcellstate will be called for gid %d", prcellgid);
-        }
-
-        printf("\n\n");
+    for (int i = 0; param_int_args[i].names; ++i) {
+        struct param_int& p = param_int_args[i];
+        nrnopt_add_int(p.names, p.usage, p.dflt, p.low, p.high);
     }
-}
 
-void cn_parameters::show_cb_opts_help() {
-    printf(
-        "\nWelcome to CoreNeuron!\n\nOPTIONS\n\
-       -h, -?, --help Print a usage message briefly summarizing these command-line options \
-		and the bug-reporting address, then exit.\n\n\
-       -s TIME, --tstart=TIME\n\
-              Set the start time to TIME (double). The default value is '0.'\n\n\
-       -e TIME, --tstop=TIME\n\
-              Set the stop time to TIME (double). The default value is '100.'\n\n\
-       -t TIME, --dt=TIME\n\
-              Set the dt time to TIME (double). The default value is set by defaults.dat, otherwise '0.025'.\n\n\
-       -i TIME, --dt_io=TIME\n\
-              Set the dt of I/O to TIME (double). The default value is '0.1'.\n\n\
-       -v FLOAT, --voltage=v_init\n\
-              Value used for nrn_finitialize(1, v_init). If 1000, then nrn_finitialize(0,...)\n\
-       -l NUMBER, --celsius=NUMBER\n\
-              Set the celsius temperature to NUMBER (double). The default value set by defaults.dat, othewise '34.0'.\n\n\
-       -p FILE, --pattern=FILE\n\
-              Apply patternstim with the spike file FILE (char*). The default value is 'NULL'.\n\n\
-       -b SIZE, --spikebuf=SIZE\n\
-              Set the spike buffer to be of the size SIZE (int). The default value is '100000'.\n\n\
-       -g NUMBER, --prcellgid=NUMBER\n\
-              Output prcellstate information for the gid NUMBER (int). The default value is '-1'.\n\n\
-       -c, --threading\n\
-              Option to enable threading. The default implies no threading.\n\n\
-       -a, --gpu\n\
-              Option to enable use of GPUs. The default implies cpu only run.\n\n\
-       -R NUMBER, --cell_permute=NUMBER\n\
-              Cell permutation and interleaving for efficiency\n\n\
-       -W NUMBER, --nwarp=NUMBER\n\
-              number of warps to balance\n\n\
-       -d PATH, --datpath=PATH\n\
-              Set the path with required CoreNeuron data to PATH (char*). The default value is '.'.\n\n\
-       -f FILE, --filesdat=FILE\n\
-              Absolute path with the name for the required file FILE (char*). The default value is 'files.dat'.\n\
-       -o PATH, --outpath=PATH\n\
-              Set the path for the output data to PATH (char*). The default value is '.'.\n\
-       -k TIME, --forwardskip=TIME\n\
-              Set forwardskip to TIME (double). The default value is '0.'.\n\
-       -r TYPE --report=TYPE\n\
-              Enable voltage report with specificied type (0 for disable, 1 for soma, 2 for full compartment).\n\
-       -w, --dt_report=TIME\n\
-              Set the dt for soma reports (using ReportingLib) to TIME (double). The default value is '0.1'.\n\n\
-       -z MULTIPLE, --multiple=MULTIPLE\n\
-              Model duplication factor. Model size is normal size * MULTIPLE (int). The default value is '1'.\n\
-       -x EXTRACON, --extracon=EXTRACON\n\
-              Number of extra random connections in each thread to other duplicate models (int). The default value is '0'.\n\
-       -mpi\n\
-              Enable MPI. In order to initialize MPI environment this argument must be specified.\n");
-}
+    for (int i = 0; param_str_args[i].names; ++i) {
+        struct param_str& p = param_str_args[i];
+        nrnopt_add_str(p.names, p.usage, p.dflt);
+    }
 
-void cn_parameters::read_cb_opts(int argc, char** argv) {
-    optind = 1;
-    int c;
+    for (int i = 0; param_dbl_args[i].names; ++i) {
+        struct param_dbl& p = param_dbl_args[i];
+        nrnopt_add_dbl(p.names, p.usage, p.dflt, p.low, p.high);
+    }
 
-    while (1) {
-        static struct option long_options[] = {
-            /* These options don't set a flag.
-             *  we distinguish them by their indices. */
-            {"tstart", required_argument, 0, 's'},
-            {"tstop", required_argument, 0, 'e'},
-            {"dt", required_argument, 0, 't'},
-            {"dt_io", required_argument, 0, 'i'},
-            {"celsius", required_argument, 0, 'l'},
-            {"voltage", required_argument, 0, 'v'},
-            {"pattern", required_argument, 0, 'p'},
-            {"spikebuf", required_argument, 0, 'b'},
-            {"prcellgid", required_argument, 0, 'g'},
-            {"threading", no_argument, 0, 'c'},
-            {"gpu", no_argument, 0, 'a'},
-            {"cell_permute", optional_argument, 0, 'R'},
-            {"nwarp", required_argument, 0, 'W'},
-            {"datpath", required_argument, 0, 'd'},
-            {"filesdat", required_argument, 0, 'f'},
-            {"outpath", required_argument, 0, 'o'},
-            {"forwardskip", required_argument, 0, 'k'},
-            {"multiple", required_argument, 0, 'z'},
-            {"extracon", required_argument, 0, 'x'},
-            {"mpi", optional_argument, 0, 'm'},
-            {"report", required_argument, 0, 'r'},
-            {"dt_report", required_argument, 0, 'w'},
-            {"help", no_argument, 0, 'h'},
-            {0, 0, 0, 0}};
-        /* getopt_long stores the option index here. */
-        int option_index = 0;
+    for (int i = 0; param_flag_args[i].names; ++i) {
+        struct param_flag& p = param_flag_args[i];
+        nrnopt_add_flag(p.names, p.usage);
+    }
 
-        c = getopt_long(argc, argv, "s:e:t:i:l:p:b:g:c:d:f:o:k:z:x:m:h:r:w:a:v:R:W", long_options,
-                        &option_index);
+    // note earliest takes precedence.
 
-        /* Detect the end of the options. */
-        if (c == -1) {
-            break;
-        }
+    // first the command line arguments
+    opt->parse(argc, argv);
 
-        switch (c) {
-            case 0:
+    // then any specific configuration files mentioned in the command line
+    if (opt->isSet("--read-config")) {
+        // Import one or more files that use # as comment char.
+        std::vector<std::vector<std::string> > files;
+        opt->get("--read-config")->getMultiStrings(files);
 
-                /* If this option set a flag, do nothing else now. */
-                if (long_options[option_index].flag != 0) {
-                    break;
-                }
-
-                printf("option %s", long_options[option_index].name);
-
-                if (optarg) {
-                    printf(" with arg %s", optarg);
-                }
-
-                printf("\n");
-                break;
-
-            case 's':
-                tstart = atof(optarg);
-                break;
-
-            case 'e':
-                tstop = atof(optarg);
-                break;
-
-            case 't':
-                dt = atof(optarg);
-                break;
-
-            case 'i':
-                dt_io = atof(optarg);
-                break;
-
-            case 'l':
-                celsius = atof(optarg);
-                break;
-
-            case 'v':
-                voltage = atof(optarg);
-                break;
-
-            case 'p':
-                patternstim = optarg;
-                break;
-
-            case 'b':
-                spikebuf = atoi(optarg);
-                break;
-
-            case 'g':
-                prcellgid = atoi(optarg);
-                break;
-
-            case 'c':
-                threading = 1;
-                break;
-
-            case 'a':
-                compute_gpu = 1;
-                break;
-
-            case 'R':
-                if (optarg == NULL) {
-                    cell_interleave_permute = 1;
-                } else {
-                    cell_interleave_permute = atoi(optarg);
-                }
-                break;
-
-            case 'W':
-                nwarp = atoi(optarg);
-                break;
-
-            case 'd':
-                datpath = optarg;
-                break;
-
-            case 'f':
-                filesdat = optarg;
-                break;
-
-            case 'o':
-                outpath = optarg;
-                break;
-
-            case 'k':
-                forwardskip = atof(optarg);
-                break;
-
-            case 'z':
-                multiple = atoi(optarg);
-                break;
-
-            case 'x':
-                extracon = atoi(optarg);
-                break;
-
-            case 'm':
-                /// Reserved for "--mpi", which by this time should be taken care of
-                break;
-
-            case 'r':
-                report = atoi(optarg);
-                break;
-
-            case 'w':
-                dt_report = atof(optarg);
-                break;
-
-            case 'h':
-            case '?':
-                if (nrnmpi_myid == 0) {
-                    show_cb_opts_help();
-                }
-
-                nrn_exit(0);
-
-            default:
-                printf("Option %s", long_options[option_index].name);
-
-                if (optarg) {
-                    printf(" with arg %s", optarg);
-                }
-
-                printf("is not recognized. Ignoring...\n");
-                break;
+        for (size_t j = 0; j < files.size(); ++j) {
+            if (!opt->importFile(files[j][0].c_str(), '#')) {
+                if (nrnmpi_myid == 0)
+                    std::cerr << "ERROR: Failed to read configuration file " << files[j][0]
+                              << std::endl;
+                graceful_exit(1);
+            }
         }
     }
 
-    /* Print any remaining command line arguments (not options). */
-    if (optind < argc) {
-        printf("non-option ARGV-elements: ");
+    // last the default config file
+    std::string cfg("config");
+    if (!opt->importFile(cfg.c_str(), '#')) {
+        if (nrnmpi_myid == 0)
+            std::cerr << "Notice: Failed to open default configuration file: " << cfg << std::endl;
+    } else {
+        if (nrnmpi_myid == 0)
+            std::cout << "Read default configuration file: " << cfg << std::endl;
+    }
 
-        while (optind < argc) {
-            printf("%s ", argv[optind++]);
+    std::string usage;
+    std::vector<std::string> badOptions;
+
+    if (!opt->gotExpected(badOptions)) {
+        for (size_t i = 0; i < badOptions.size(); ++i) {
+            if (nrnmpi_myid)
+                std::cerr << "ERROR: Got unexpected number of arguments for option "
+                          << badOptions[i] << ".\n\n";
         }
 
-        putchar('\n');
+        opt->getUsage(usage);
+        if (nrnmpi_myid == 0)
+            std::cout << usage;
+        graceful_exit(1);
+    }
+
+    if (opt->isSet("-h")) {
+        opt->getUsage(usage);
+        if (nrnmpi_myid == 0)
+            std::cout << usage;
+        graceful_exit(0);
+    }
+
+    if (opt->firstArgs.size() > 1 || opt->lastArgs.size() > 0 || opt->unknownArgs.size() > 0) {
+        std::cerr << "ERROR: Unknown arguments"
+                  << "\n";
+        for (size_t i = 1; i < opt->firstArgs.size(); ++i) {
+            if (nrnmpi_myid == 0)
+                std::cerr << "   " << opt->firstArgs[i]->c_str() << "\n";
+        }
+        for (size_t i = 0; i < opt->unknownArgs.size(); ++i) {
+            if (nrnmpi_myid == 0)
+                std::cerr << "   " << opt->unknownArgs[i]->c_str() << "\n";
+        }
+        for (size_t i = 0; i < opt->lastArgs.size(); ++i) {
+            if (nrnmpi_myid == 0)
+                std::cerr << "   " << opt->lastArgs[i]->c_str() << "\n";
+        }
+        graceful_exit(1);
+    }
+
+    std::vector<std::string> badArgs;
+    if (!opt->gotValid(badOptions, badArgs)) {
+        for (size_t i = 0; i < badOptions.size(); ++i) {
+            if (nrnmpi_myid == 0)
+                std::cerr << "ERROR: Got invalid argument \"" << badArgs[i] << "\" for option "
+                          << badOptions[i] << ".\n";
+        }
+        graceful_exit(1);
+    }
+
+    if (opt->isSet("--write-config")) {
+        std::string file;
+        opt->get("--write-config")->getString(file);
+        // Exports all options if second param is true; unset options will just use their default
+        // values.
+        if (!opt->exportFile(file.c_str(), true)) {
+            if (nrnmpi_myid == 0)
+                std::cerr << "ERROR: Failed to write to configuration file " << file.c_str()
+                          << std::endl;
+            graceful_exit(1);
+        }
+    }
+
+    if (opt->isSet("--show")) {
+        nrnopt_show();
+    }
+
+    return 0;
+}
+
+static void nrnopt_add(const char* names,
+                       const char* usage,
+                       const char* dflt,
+                       ez::ezOptionValidator* validator) {
+    std::vector<std::string> vnames;
+    ez::SplitDelim(std::string(names), ' ', vnames);
+    int expect = dflt ? 1 : 0;
+    dflt = dflt ? dflt : "";
+    if (vnames.size() == 1) {
+        opt->add(dflt,
+                 0,                  // Required?
+                 expect,             // Number of args expected
+                 0,                  // Delimiter if expecting multiple args
+                 usage,              // Help description
+                 vnames[0].c_str(),  // flag name
+                 validator);
+    } else if (vnames.size() == 2) {
+        opt->add(dflt, 0, expect, 0, usage, vnames[0].c_str(), vnames[1].c_str(), validator);
     }
 }
+
+void nrnopt_add_flag(const char* names, const char* usage) {
+    nrnopt_add(names, usage, NULL, NULL);
+}
+
+void nrnopt_add_str(const char* names, const char* usage, const char* dflt) {
+    nrnopt_add(names, usage, dflt, NULL);
+}
+
+void nrnopt_add_int(const char* names, const char* usage, int dflt, int low, int high) {
+    char s1[50], s2[100];
+    sprintf(s1, "%d", dflt);
+    sprintf(s2, "%d,%d", low, high);
+    ez::ezOptionValidator* v = new ez::ezOptionValidator("s4", "gele", s2);
+    nrnopt_add(names, usage, s1, v);
+}
+
+void nrnopt_add_dbl(const char* names, const char* usage, double dflt, double low, double high) {
+    char s1[50], s2[100];
+    sprintf(s1, "%.16g", dflt);
+    sprintf(s2, "%.17g,%.17g", low, high);
+    ez::ezOptionValidator* v = new ez::ezOptionValidator("f", "gele", s2);
+    nrnopt_add(names, usage, s1, v);
+}
+
+bool nrnopt_get_flag(const char* name) {
+    bool flag = opt->isSet(name) ? true : false;
+    return flag;
+}
+
+std::string nrnopt_get_str(const char* name) {
+    std::string val;
+    opt->get(name)->getString(val);
+    return val;
+}
+
+int nrnopt_get_int(const char* name) {
+    int val;
+    opt->get(name)->getInt(val);
+    return val;
+}
+
+double nrnopt_get_dbl(const char* name) {
+    double val;
+    opt->get(name)->getDouble(val);
+    return val;
+}
+
+void nrnopt_modify_dbl(const char* name, double val) {
+    ez::OptionGroup* og = opt->get(name);
+    og->isSet = true;
+    std::vector<std::vector<std::string*>*>& args = og->args;
+    std::vector<std::string*>* v = new std::vector<std::string*>;
+    char c[50];
+    sprintf(c, "%.16g", val);
+    std::string* s = new std::string(c);
+    v->push_back(s);
+    args.insert(args.begin(), v);
+}
+
+// more compact display of parameters.
+// ie only first name and first value (or default or isSet).
+void nrnopt_show() {
+    if (nrnmpi_myid) {
+        return;
+    }
+    std::string out;
+
+    int n = opt->groups.size();
+    for (int i = 0; i < n; ++i) {
+        if (i % 3 == 0) {
+            std::cout << out << std::endl;
+            out.clear();
+        } else {
+            int n = (i % 3) * 25;
+            for (int i = out.size(); i < n; ++i) {
+                out += " ";
+            }
+        }
+        ez::OptionGroup* g = opt->groups[i];
+        out += g->flags[0]->c_str();
+        out += " = ";
+        if (g->args.size()) {
+            std::string s;
+            g->getString(s);
+            out += s.c_str();
+        } else if (g->defaults.size() > 0) {
+            out += g->defaults.c_str();
+        } else {
+            out += (g->isSet ? "set" : "not set");
+        }
+    }
+    if (out.size() > 0) {
+        std::cout << out << std::endl;
+    }
+    std::cout << std::endl;
+}
+
+void nrnopt_delete() {
+    delete opt;
+    opt = NULL;
+}
+
+static void graceful_exit(int err) {
+#if !defined(nrnoptargtest) && NRNMPI
+    // actually, only avoid mpi message when all ranks exit(0)
+    nrnmpi_finalize();
+#endif
+    exit(nrnmpi_myid == 0 ? err : 0);
+}
+
+#if defined(nrnoptargtest)
+// for testing, compile with: g++ -g -I../.. nrnoptarg.cpp
+
+int nrnmpi_myid;
+
+int main(int argc, const char* argv[]) {
+    nrnopt_parse(argc, argv);
+
+    printf("prcellgid = %d\n", nrnopt_get_int("--prcellgid"));
+    printf("outpath = %s\n", nrnopt_get_str("--outpath").c_str());
+
+    printf("before modify dt = %g\n", nrnopt_get_dbl("--dt"));
+    nrnopt_modify_dbl("--dt", 18.1);
+    printf("after modify to 18.1, dt = %g\n", nrnopt_get_dbl("--dt"));
+
+    nrnopt_show();
+
+    nrnopt_delete();
+    return 0;
+}
+
+#endif  // test

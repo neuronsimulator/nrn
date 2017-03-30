@@ -47,7 +47,7 @@ static void read_phasegap(data_reader& F, int imult, NrnThread& nt);
 static void setup_ThreadData(NrnThread& nt);
 
 // Functions to load and clean data;
-extern void nrn_init_and_load_data(int argc, char** argv, cn_input_params& input_params, bool run_setup_cleanup = true);
+extern void nrn_init_and_load_data(int argc, char** argv, bool run_setup_cleanup = true);
 extern void nrn_cleanup();
 extern void nrn_setup_cleanup();
 

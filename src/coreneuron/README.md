@@ -3,7 +3,7 @@
 
 CoreNEURON is a simplified engine for the [NEURON](https://www.neuron.yale.edu/neuron/) simulator optimised for both memory usage and computational speed. Its goal is to simulate massive cell networks with minimal memory footprint and optimal performance.
 
-If you are new user and would like to use CoreNEURON, [this tutorial](https://github.com/nrnhines/ringtest) will be a good starting point to understand complete workflow of using CoreNEURON with NEURON.
+If you are a new user and would like to use CoreNEURON, [this tutorial](https://github.com/nrnhines/ringtest) will be a good starting point to understand complete workflow of using CoreNEURON with NEURON.
 
 # Features
 
@@ -27,7 +27,7 @@ export CC=mpicc
 export CXX=mpicxx
 ```
 
-If you don't have MPI, you can disable MPI dependency using CMake option `-DENABLE_MPI=OFF`:
+If you don't have MPI, you can disable MPI dependency using the CMake option `-DENABLE_MPI=OFF`:
 
 ```bash
 export CC=gcc
@@ -37,12 +37,12 @@ cmake .. -DENABLE_MPI=OFF
 
 ##### About MOD files
 
-The workflow for building CoreNEURON is different from that of NEURON, especially considering the use of **nrnivmodl**. Currently we do not provide **nrnivmodl** for CoreNEURON. If you have MOD files from NEURON model, you have to explicitly specify those MOD file directory path during CoreNEURON build using `-DADDITIONAL_MECHPATH` option:
+The workflow for building CoreNEURON is different from that of NEURON, especially considering the use of **nrnivmodl**. Currently we do not provide **nrnivmodl** for CoreNEURON. If you have MOD files from a NEURON model, you have to explicitly specify those MOD file directory paths during CoreNEURON build using the `-DADDITIONAL_MECHPATH` option:
 
 ```bash
 cmake .. -DADDITIONAL_MECHPATH="/path/of/mod/files/directory/"
 ```
-This directory should have only mod files that are compatible with CoreNEURON. You can also provide multiple directories separated by semicolon :
+This directory should have only mod files that are compatible with CoreNEURON. You can also provide multiple directories separated by a semicolon :
 
 ```bash
 -DADDITIONAL_MECHPATH="/path/of/folder/with/mod_files;/path/of/another_folder/with/mod_files" 
@@ -51,7 +51,7 @@ This directory should have only mod files that are compatible with CoreNEURON. Y
 
 # Building with GPU support
 
-CoreNEURON has support for GPUs using OpenACC programming model when enabled with `-DENABLE_OPENACC=ON`. Below are the steps to compile with PGI compiler:
+CoreNEURON has support for GPUs using the OpenACC programming model when enabled with `-DENABLE_OPENACC=ON`. Below are the steps to compile with PGI compiler:
 
 ```bash
 module purge
@@ -70,22 +70,22 @@ Note that the CUDA Toolkit version should be compatible with PGI compiler instal
 -DCMAKE_C_FLAGS:STRING="-O2 -ta=tesla:cuda7.5" -DCMAKE_CXX_FLAGS:STRING="-O2 -ta=tesla:cuda7.5"
 ```
 
-CoreNEURON uses Random123 library written in CUDA. If you are **not using `NrnRandom123`** in your model and have issues with CUDA compilation/linking (or CUDA Toolkit is not installed), you can disable CUDA dependency using CMake option `-DENABLE_CUDA_MODULES=OFF` :
+CoreNEURON uses the Random123 library written in CUDA. If you are **not using `NrnRandom123`** in your model and have issues with CUDA compilation/linking (or CUDA Toolkit is not installed), you can disable the CUDA dependency using the CMake option `-DENABLE_CUDA_MODULES=OFF` :
 
 ```bash
 cmake ..  -DADDITIONAL_MECHPATH="/path/of/folder/with/mod_files" -DCMAKE_C_FLAGS:STRING="-O2" -DCMAKE_CXX_FLAGS:STRING="-O2" -DCOMPILE_LIBRARY_TYPE=STATIC -DCMAKE_INSTALL_PREFIX=$EXPER_DIR/install/ -DENABLE_CUDA_MODULES=OFF -DENABLE_OPENACC=ON
 ```
 
-You have to run GPU executable with `--gpu` option as:
+You have to run GPU executable with the `--gpu` or `-gpu` option as:
 
 ```bash
-mpirun -n 1 ./bin/coreneuron_exec -d ../tests/integration/ring -mpi -e 100 --gpu --celsius=6.3
+mpirun -n 1 ./bin/coreneuron_exec -d ../tests/integration/ring -mpi -e 100 --gpu
 ```
 
 Make sure to enable cell re-ordering mechanism to improve GPU performance using `--cell_permute` option (permutation types : 1 or 2):
 
 ```bash
-mpirun -n 1 ./bin/coreneuron_exec -d ../tests/integration/ring -mpi -e 100 --gpu --celsius=6.3 --cell_permute=2
+mpirun -n 1 ./bin/coreneuron_exec -d ../tests/integration/ring -mpi -e 100 --gpu --cell_permute 2
 ```
 
 Note that if your model is using Random123 random number generator, you can't use same executable for CPU and GPU runs. We suggest to build separate executable for CPU and GPU simulations. This will be fixed in future releases.
@@ -109,7 +109,7 @@ We have tested the build process on the following platforms:
 
 # Optimization Flags
 
-* One can specify C/C++ optimization flags spcecific to the compiler and architecture with `-DCMAKE_CXX_FLAGS` and `-DCMAKE_C_FLAGS` options to the CMake command. For example, on a BG-Q:
+* One can specify C/C++ optimization flags specific to the compiler and architecture with `-DCMAKE_CXX_FLAGS` and `-DCMAKE_C_FLAGS` options to the CMake command. For example, on a BG-Q:
 
 ```bash
 cmake .. -DCMAKE_CXX_FLAGS="-O3 -qtune=qp -qarch=qp -q64 -qhot=simd -qsmp -qthreaded" -DCMAKE_C_FLAGS="-O3 -qtune=qp -qarch=qp -q64 -qhot=simd -qsmp -qthreaded"
@@ -135,42 +135,72 @@ In order to see the command line options, you can use:
 
 ```bash
 /path/to/isntall/directory/coreneuron_exec --help
+-b, --spikebuf ARG       Spike buffer size. (100000)
+-c, --threading          Parallel threads. The default is serial threads.
+-d, --datpath ARG        Path containing CoreNeuron data files. (.)
+-dt, --dt ARG            Fixed time step. The default value is set by
+                         defaults.dat or is 0.025.
+-e, --tstop ARG          Stop time (ms). (100)
+-f, --filesdat ARG       Name for the distribution file. (files.dat)
+-g, --prcellgid ARG      Output prcellstate information for the gid NUMBER.
+-gpu, --gpu              Enable use of GPUs. The default implies cpu only run.
+-h, --help               Print a usage message briefly summarizing these
+                         command-line options, then exit.
+-i, --dt_io ARG          Dt of I/O. (0.1)
+-k, --forwardskip ARG    Forwardskip to TIME
+-l, --celsius ARG        Temperature in degC. The default value is set in
+                         defaults.dat or else is 34.0.
+-mpi                     Enable MPI. In order to initialize MPI environment this
+                         argument must be specified.
+-o, --outpath ARG        Path to place output data files. (.)
+-p, --pattern ARG        Apply patternstim using the specified spike file.
+-R, --cell-permute ARG   Cell permutation, 0 No; 1 optimise node adjacency; 2
+                         optimize parent adjacency. (1)
+-r, --report ARG         Enable voltage report (0 for disable, 1 for soma, 2 for
+                         full compartment).
+-s, --tstart ARG         Start time (ms). (0)
+-v, --voltage ARG        Initial voltage used for nrn_finitialize(1, v_init). If
+                         1000, then nrn_finitialize(0,...). (-65.)
+-W, --nwarp ARG          Number of warps to balance. (0)
+-w, --dt_report ARG      Dt for soma reports (using ReportingLib). (0.1)
+-x, --extracon ARG       Number of extra random connections in each thread to
+                         other duplicate models (int).
+-z, --multiple ARG       Model duplication factor. Model size is normal size *
+                         (int).
+--binqueue               Use bin queue.
+--mindelay ARG           Maximum integration interval (likely reduced by minimum
+                         NetCon delay). (10)
+--ms-phases ARG          Number of multisend phases, 1 or 2. (2)
+--ms-subintervals ARG    Number of multisend subintervals, 1 or 2. (2)
+--multisend              Use Multisend spike exchange instead of Allgather.
+--read-config ARG        Read configuration file filename.
+--show                   Print args.
+--spkcompress ARG        Spike compression. Up to ARG are exchanged during
+                         MPI_Allgather. (0)
+--write-config ARG       Write configuration file filename.
 
-       -s TIME, \--tstart=TIME
-              Set the start time to TIME (double). The default value is '0.'
-       -e TIME, \--tstop=TIME
-              Set the stop time to TIME (double). The default value is '100.'
-       -t TIME, \--dt=TIME
-              Set the dt time to TIME (double). The default value is '0.025'.
-       -l NUMBER, --celsius=NUMBER
-              Set the celsius temperature to NUMBER (double). The default value is '34.'.
-       -p FILE, \--pattern=FILE
-              Apply patternstim with the spike file FILE (char*). The default value is 'NULL'.
-       -b SIZE, \--spikebuf=SIZE
-              Set the spike buffer to be of the size SIZE (int). The default value is '100000'.
-       -g NUMBER, \--prcellgid=NUMBER
-              Output prcellstate information for the gid NUMBER (int). The default value is '-1'.
-       -d PATH, \--datpath=PATH
-              Set the path to PATH (char*) containing data generated by NEURON. The default value is '.'.
-       -f FILE, \--filesdat=FILE
-              Absolute path with the name for the required file FILE (char*). The default value is 'files.dat'.
-       -o PATH, --outpath=PATH
-              Set the path for the output data to PATH (char*). The default value is '.'.
-       -k TIME, --forwardskip=TIME
-              Set forwardskip to TIME (double). The default value is '0.'.
-       -r, --report
-              Enable soma report.
-       -w TIME, --dt_report=TIME
-              Set the dt for soma reports (using ReportingLib) to TIME (double). The default value is '0.1'.
-       -z MULTIPLE, --multiple=MULTIPLE
-              Model duplication factor. Model size is normal size * MULTIPLE (int). The default value is '1'.
-       -x EXTRACON, --extracon=EXTRACON
-              Number of extra random connections in each thread to other duplicate models (int). The default value is '0'.
-       -R TYPE, --cell_permute=TYPE
-              Permutation of cells for efficient execution of solver on GPU (TYPE could be 1 or 2).
-       -mpi
-              Enable MPI. In order to initialize MPI environment this argument must be specified.
 ```
+
+Default values for all parameters are printed by rank 0 on launch. E.g.
+```bash
+$ cpu/bin/coreneuron_exec --show
+...
+
+--spikebuf = 100000      --spkcompress = 0        --prcellgid = -1
+--cell-permute = 1       --nwarp = 0              --ms-subintervals = 2
+--ms-phases = 2          --report = 0             --multiple = 1
+--extracon = 0           --pattern = not set      --datpath = .
+--filesdat = files.dat   --outpath = .            --write-config = not set
+--read-config = not set  --tstart = 0             --tstop = 100
+--dt = -1000             --dt_io = 0.1            --voltage = -65
+--celsius = -1000        --forwardskip = 0        --dt_report = 0.1
+--mindelay = 10          --help = not set         --threading = not set
+--gpu = not set          -mpi = not set           --show = set
+--multisend = not set    --binqueue = not set
+
+...
+```
+Note that celsius and dt, if not specified, will get their values from the models <datpath>/defaults.dat file.
 
 # Results
 
@@ -183,7 +213,7 @@ cat out[0-9]*.dat | sort -k 1n,1n -k 2n,2n > out.spk
 
 # Running tests
 
-Once you compile CoreNEURON, unit tests and ring test will be compile by if Boost is available.
+Once you compile CoreNEURON, unit tests and a ring test will be compiled if Boost is available.
 If you pass the path for Neurodamus channels, 10 cell tests will also be compile. You can run tests using
 
 ```bash

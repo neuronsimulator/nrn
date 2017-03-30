@@ -99,7 +99,7 @@ class Multisend_ReceiveBuffer {
     Phase2Buffer* phase2_buffer_;
 };
 
-static int use_phase2_;
+int use_phase2_;
 
 #define MULTISEND_INTERVAL 2
 static Multisend_ReceiveBuffer* multisend_receive_buffer[MULTISEND_INTERVAL];

@@ -31,68 +31,31 @@ THE POSSIBILITY OF SUCH DAMAGE.
  * @date 26 Oct 2014
  *
  * @brief structure storing all command line arguments for coreneuron
+ *
+ * Abandon getopt and wrap ezOptionParser to allow options from a config file
+ * as well on command line (command line takes precedence)
  */
 
 #ifndef nrnoptarg_h
 #define nrnoptarg_h
 
-#include <getopt.h>
-#include "coreneuron/utils/sdprintf.h"
+#include <string>
 
-typedef struct cn_parameters {
-    double tstart;    /**< start time of simulation in msec*/
-    double tstop;     /**< stop time of simulation in msec*/
-    double dt;        /**< timestep to use in msec*/
-    double dt_io;     /**< i/o timestep to use in msec*/
-    double dt_report; /**< i/o timestep to use in msec for reports*/
+// before nrnopt_parse()
+void nrnopt_add_flag(const char* names, const char* usage);
+void nrnopt_add_int(const char* names, const char* usage, int dflt, int low, int high);
+void nrnopt_add_dbl(const char* names, const char* usage, double dflt, double low, double high);
+void nrnopt_add_str(const char* names, const char* usage, const char* dflt);
 
-    double celsius;
-    double voltage;
-    double maxdelay;
+int nrnopt_parse(int argc, const char* argv[]);
+void nrnopt_delete();  // when finished getting options, free memory
+void nrnopt_show();
 
-    double forwardskip;
-
-    int spikebuf;  /**< internal buffer used on evry rank for spikes */
-    int prcellgid; /**< gid of cell for prcellstate */
-
-    int threading; /**< enable pthread/openmp  */
-    int report;    /**< enable soma reports  */
-
-    int compute_gpu; /**< run computations on gpu  */
-
-    int cell_interleave_permute; /**< cell interleaving permutation  */
-    int nwarp;                   /* number of warps to balance for cell_interleave_permute == 2 */
-
-    const char* patternstim;
-    const char* datpath;  /**< directory path where .dat files */
-    const char* outpath;  /**< directory where spikes will be written */
-    const char* filesdat; /**< name of file containing list of gids dat files read in */
-
-    double mindelay;
-
-    int multiple;
-    int extracon;
-
-    /** default constructor */
-    cn_parameters();
-
-    /** show help message for command line args */
-    void show_cb_opts_help();
-
-    /** show all parameter values */
-    void show_cb_opts();
-
-    /** read options from command line */
-    void read_cb_opts(int argc, char** argv);
-
-    /** return full path of files.dat file */
-    sd_ptr get_filesdat_path(char* path_buf, size_t bufsz);
-
-    /** store/set computed mindelay argument */
-    void set_mindelay(double mdelay) {
-        mindelay = mdelay;
-    }
-
-} cn_input_params;
+// after nrnopt_parse()
+bool nrnopt_get_flag(const char* name);
+int nrnopt_get_int(const char* name);
+double nrnopt_get_dbl(const char* name);
+std::string nrnopt_get_str(const char* name);
+void nrnopt_modify_dbl(const char* name, double value);
 
 #endif

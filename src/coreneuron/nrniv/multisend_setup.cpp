@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <math.h>
 #include "coreneuron/nrniv/nrniv_decl.h"
 #include "coreneuron/nrniv/multisend.h"
