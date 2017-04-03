@@ -145,7 +145,20 @@ void nrnpython_reg() {
 	p_nrnpython_reg_real = 0;
     }else{
 #if NRNPYTHON_DYNAMICLOAD
-	void* handle = python_already_loaded();
+	void* handle = NULL;
+
+      if (!nrn_is_python_extension) {
+	// As last resort (or for python3) load $NRN_PYLIB
+	char* nrn_pylib = NULL;
+	nrn_pylib = getenv("NRN_PYLIB");
+	if (nrn_pylib) {
+		handle = dlopen(nrn_pylib, RTLD_NOW|RTLD_GLOBAL);
+		if (!handle) {
+			fprintf(stderr, "Could not dlopen NRN_PYLIB: %s\n", nrn_pylib);
+			exit(1);
+		}
+	}
+	if (!handle) { python_already_loaded();}
 	if (!handle) { // embed python
 		handle = load_python();
 	}
@@ -155,6 +168,7 @@ void nrnpython_reg() {
 		// what path was used to load the python library.
 		set_pythonhome(handle);
 	}
+      }
 	// for some mysterious reason on max osx 10.12
 	// (perhaps due to System Integrity Protection?) when python is
 	// launched, python_already_loaded() returns a NULL handle unless

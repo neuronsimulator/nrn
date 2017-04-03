@@ -67,19 +67,19 @@ def upath(path):
 #to help answer, ask how many sys.path items begin with sys.prefix and
 #how many begin with site.__file__ - 3
 p = [upath(i) for i in sys.path]
-print "# items in sys.path = ",len(p)
+print ("# items in sys.path = " + str(len(p)))
 sp = upath(sys.prefix)
-print "# beginning with sys.prefix = ", [i for i in p if sp in i].__len__()
+print ("# beginning with sys.prefix = " + str(len([i for i in p if sp in i])))
 s = usep.join(upath(site.__file__).split(usep)[:-3])
 if s == sp:
-  print "# site-3 same as sys.prefix"
+  print ("# site-3 same as sys.prefix")
 else:
-  print "# beginning with site-3 = ", [i for i in p if s in i].__len__()
+  print ("# beginning with site-3 = ", [i for i in p if s in i].__len__())
 foo = [i for i in p if sp not in i]
 foo = [i for i in foo if s not in i]
-print "# in neither location ", foo
-print "# sys.prefix = " + sp
-print "# site-3 = " + s
+print ("# in neither location " + str(foo))
+print ("# sys.prefix = " + sp)
+print ("# site-3 = " + s)
 	
 if "darwin" in sys.platform or "linux" in sys.platform or "win" in sys.platform:
   # What, if anything, did python prepend to PATH
@@ -123,13 +123,13 @@ if "darwin" in sys.platform or "linux" in sys.platform or "win" in sys.platform:
 
   dq = "\""
   if pythonhome:
-    print "export PYTHONHOME=" + dq + pythonhome + dq
+    print ("export PYTHONHOME=" + dq + pythonhome + dq)
   if pythonpath:
-    print "export PYTHONPATH=" + dq + pythonpath + dq
+    print ("export PYTHONPATH=" + dq + pythonpath + dq)
   if ldpath:
-    print "export LD_LIBRARY_PATH=" + dq + ldpath + upathsep + "$LD_LIBRARY_PATH" + dq
+    print ("export LD_LIBRARY_PATH=" + dq + ldpath + upathsep + "$LD_LIBRARY_PATH" + dq)
   if path:
-    print "export PATH=" + dq + path + "$PATH" + dq
+    print ("export PATH=" + dq + path + "$PATH" + dq)
 
 quit()
 

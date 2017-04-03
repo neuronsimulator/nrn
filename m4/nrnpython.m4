@@ -115,7 +115,7 @@ and PYINCDIR to find Python.h
 		build_nrnpython_dynamic="yes"
 		NRN_DEFINE(USE_PYTHON,1,[Define if Python available])
 		dnl 1013 good for 2.5-2.7, 1012 good for 2.3-2.4
-		npy_apiver=`$ac_nrn_python -c "import sys;print sys.api_version,"`
+		npy_apiver=`$ac_nrn_python -c "import sys;print (sys.api_version)"`
 		echo "dynamic npy_apiver=$npy_apiver"
 		NRN_DEFINE_UNQUOTED(NRNPYTHON_DYNAMICLOAD,$npy_apiver,[Define to value of sys.api_version if dynamic loading desired])
 	fi
