@@ -168,6 +168,14 @@ def _invalidate_matrices():
 
 _rxd_offset = None
 
+def _atolscale(y):
+    real_index_lookup = {item: index for index, item in enumerate(_nonzero_volume_indices)}
+    for sr in _species_get_all_species().values():
+        s = sr()
+        if s is not None:
+            shifted_i = [real_index_lookup[i] + _rxd_offset for i in s.indices() if i in real_index_lookup]
+            y[shifted_i] *= s._atolscale
+
 def _ode_count(offset):
     global last_structure_change_cnt
     global _rxd_offset
@@ -584,8 +592,9 @@ def _w_ode_reinit(y): return _ode_reinit(y)
 def _w_ode_fun(t, y, ydot): return _ode_fun(t, y, ydot)
 def _w_ode_solve(dt, t, b, y): return _ode_solve(dt, t, b, y)
 def _w_fixed_step_solve(raw_dt): return _fixed_step_solve(raw_dt)
+def _w_atolscale(y): return _atolscale(y)
 _callbacks = [_w_setup, None, _w_currents, _w_conductance, _w_fixed_step_solve,
-              _w_ode_count, _w_ode_reinit, _w_ode_fun, _w_ode_solve, _w_ode_jacobian, None]
+              _w_ode_count, _w_ode_reinit, _w_ode_fun, _w_ode_solve, _w_ode_jacobian, _w_atolscale]
 
 _curr_ptr_vector = None
 _curr_ptr_storage = None

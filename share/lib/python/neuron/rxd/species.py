@@ -223,8 +223,8 @@ def _setup_matrices_process_neighbors(pt1, pt2, indices, euler_matrix, index, di
 #       that two regions (e.g. apical and other_dendrites) are connected?
 
 class Species(_SpeciesMathable):
-    def __init__(self, regions=None, d=0, name=None, charge=0, initial=None):
-        """s = rxd.Species(regions, d = 0, name = None, charge = 0, initial = None)
+    def __init__(self, regions=None, d=0, name=None, charge=0, initial=None, atolscale=1):
+        """s = rxd.Species(regions, d = 0, name = None, charge = 0, initial = None, atolscale=1)
     
         Declare a species.
 
@@ -240,10 +240,15 @@ class Species(_SpeciesMathable):
 
         initial -- the initial concentration or None (if None, then imports from HOC if the species is defined at finitialize, else 0)
 
+        atolscale -- scale factor for absolute tolerance in variable step integrations
+
 
         Note:
 
-        charge must match the charges specified in NMODL files for the same ion, if any."""
+        charge must match the charges specified in NMODL files for the same ion, if any.
+
+        You probably want to adjust atolscale for species present at low concentrations (e.g. calcium).
+        """
 
         import neuron
         import ctypes
@@ -263,6 +268,7 @@ class Species(_SpeciesMathable):
         self.name = name
         self.charge = charge
         self.initial = initial
+        self._atolscale = atolscale
         _all_species.append(weakref.ref(self))
 
         # declare an update to the structure of the model (the number of differential equations has changed)
