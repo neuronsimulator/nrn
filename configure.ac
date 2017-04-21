@@ -597,7 +597,7 @@ AC_CONFIG_FILES([
 	src/oc/Makefile	src/scopmath/Makefile src/nrnoc/Makefile
 	src/gnu/Makefile src/uxnrnbbs/Makefile src/mesch/Makefile
 	src/uxnrnbbs/mos2nrn.h src/nrnmpi/Makefile
-	src/ivoc/Makefile src/nrncvode/Makefile src/parallel/Makefile src/nrniv/Makefile
+	src/ivoc/Makefile src/nrncvode/Makefile src/parallel/Makefile src/rxd/Makefile src/nrniv/Makefile
 	src/ivos/Makefile src/ivos/InterViews/Makefile src/ivos/OS/Makefile
 	src/nrnjava/Makefile src/nrnjava/nrnccmb/Makefile
 	src/nrnjava/neuron/Makefile
