@@ -33,7 +33,7 @@ extern int NUM_THREADS;
  * l_diag, diag and u_diag are not changed.
  * c	-	scratch pad, preallocated memory for (N-1) doubles
  */
-int solve_dd_tridiag(int N, const double* l_diag, const double* diag, 
+static int solve_dd_tridiag(int N, const double* l_diag, const double* diag, 
 	const double* u_diag, double* b, double *c)
 {
 	int i;
@@ -68,7 +68,7 @@ int solve_dd_tridiag(int N, const double* l_diag, const double* diag,
  * like dg_adi_x except the grid has a variable volume fraction
  * g.alpha and my have variable tortuosity g.lambda
  */
-AdiLineData dg_adi_vol_x(Grid_node g, const double dt, const int y, const int z, double const * const state, double* const scratch)
+static AdiLineData dg_adi_vol_x(Grid_node g, const double dt, const int y, const int z, double const * const state, double* const scratch)
 {
 	int yp,ypd,ym,ymd,zp,zpd,zm,zmd,div_y,div_z;
 	int i,x,N=2*g.size_x-1;
@@ -226,7 +226,7 @@ AdiLineData dg_adi_vol_x(Grid_node g, const double dt, const int y, const int z,
  * like dg_adi_y except the grid has a variable volume fraction
  * g.alpha and my have variable tortuosity g.lambda
  */
-AdiLineData dg_adi_vol_y(Grid_node g, double const dt, int const x, int const z, double const * const state, double* const scratch)
+static AdiLineData dg_adi_vol_y(Grid_node g, double const dt, int const x, int const z, double const * const state, double* const scratch)
 {
 	int i,y,N=2*g.size_y-1;
 	double frac;
@@ -358,7 +358,7 @@ AdiLineData dg_adi_vol_y(Grid_node g, double const dt, int const x, int const z,
  * like dg_adi_z except the grid has a variable volume fraction
  * g.alpha and my have variable tortuosity g.lambda
  */
-AdiLineData dg_adi_vol_z(Grid_node g, double const dt, int const x, int const y, double const * const state, double* const scratch)
+static AdiLineData dg_adi_vol_z(Grid_node g, double const dt, int const x, int const y, double const * const state, double* const scratch)
 {
 	int i,z,N=2*g.size_z-1;
 	double frac;
@@ -537,7 +537,7 @@ int dg_adi_vol(Grid_node g)
  * like dg_adi_x except the grid has a variable tortuosity
  * g.lambda (but it still has fixed volume fraction)
  */
-AdiLineData dg_adi_tort_x(Grid_node g, const double dt, const int y, const int z, double const * const state, double* const scratch)
+static AdiLineData dg_adi_tort_x(Grid_node g, const double dt, const int y, const int z, double const * const state, double* const scratch)
 {
 	int yp,ypd,ym,ymd,zp,zpd,zm,zmd,div_y,div_z;
 	int x;
@@ -614,7 +614,7 @@ AdiLineData dg_adi_tort_x(Grid_node g, const double dt, const int y, const int z
  * like dg_adi_y except the grid has a variable tortuosity
  * g.lambda (but it still has fixed volume fraction)
  */
-AdiLineData dg_adi_tort_y(Grid_node g, double const dt, int const x, int const z, double const * const state, double* const scratch)
+static AdiLineData dg_adi_tort_y(Grid_node g, double const dt, int const x, int const z, double const * const state, double* const scratch)
 {
 	int y;
 	double *RHS = malloc(g.size_y*sizeof(double));
@@ -672,7 +672,7 @@ AdiLineData dg_adi_tort_y(Grid_node g, double const dt, int const x, int const z
  * like dg_adi_z except the grid has a variable tortuosity
  * g.lambda (but it still has fixed volume fraction)
  */
-AdiLineData dg_adi_tort_z(Grid_node g, double const dt, int const x, int const y, double const * const state, double* const scratch)
+static AdiLineData dg_adi_tort_z(Grid_node g, double const dt, int const x, int const y, double const * const state, double* const scratch)
 {
 	int z;
 	double *RHS = malloc(g.size_z*sizeof(double));

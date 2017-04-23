@@ -22,12 +22,12 @@ endif
 endif
 
 libnrnpython@npy_apiver@_la_SOURCES = nrnpython.cpp nrnpy_hoc.cpp nrnpy_nrn.cpp \
-	nrnpy_p2h.cpp $(EXTEND)
+	nrnpy_p2h.cpp grids.c rxd.c rxd_vol.c $(EXTEND)
 
 noinst_HEADERS = nrnpython.h nrnpy_reg.h \
 	nrnpy_hoc_2.h nrnpy_hoc_3.h \
 	nrnpy_nrn_2.h nrnpy_nrn_3.h hoccontext.h \
-	nrnpy_utils.h
+	nrnpy_utils.h rxd.h grids.h
 
 if BUILD_MINGW
 nrnpython.dll: $(npylib).la

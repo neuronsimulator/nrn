@@ -147,7 +147,7 @@ int insert(int grid_list_index, PyHocObject* my_states, int my_num_states_x,
     return i;
 }
 
-/* TODO: make this work with Gride_node ptrs instead of pairs of list indices */
+/* TODO: make this work with Grid_node ptrs instead of pairs of list indices */
 void set_grid_concentrations(int grid_list_index, int index_in_list, PyObject* grid_indices, PyObject* neuron_pointers) {
     /*
     Preconditions:
@@ -182,7 +182,7 @@ void set_grid_concentrations(int grid_list_index, int index_in_list, PyObject* g
     }
 }
 
-/* TODO: make this work with Gride_node ptrs instead of pairs of list indices */
+/* TODO: make this work with Grid_node ptrs instead of pairs of list indices */
 void set_grid_currents(int grid_list_index, int index_in_list, PyObject* grid_indices, PyObject* neuron_pointers, PyObject* scale_factors) {
     /*
     Preconditions:
@@ -281,21 +281,21 @@ void empty_list(int list_index) {
     }
 }
 
-double get_alpha_scalar(double* alpha, int idx)
+static double get_alpha_scalar(double* alpha, int idx)
 {
 	return alpha[0];
 }
-double get_alpha_array(double* alpha, int idx)
+static double get_alpha_array(double* alpha, int idx)
 {
 	return alpha[idx];
 }
 
 
-double get_lambda_scalar(double* lambda, int idx)
+static double get_lambda_scalar(double* lambda, int idx)
 {
 	return 1.; /*already rescale the diffusion coefficients*/
 }
-double get_lambda_array(double* lambda, int idx)
+static double get_lambda_array(double* lambda, int idx)
 {
 	return lambda[idx];
 }

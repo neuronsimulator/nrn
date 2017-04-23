@@ -17,7 +17,7 @@ NRNOC_SUBDIRS = sparse sparse13 scopmath Random123 nrnmpi oc nrnoc
 NRNIV_SUBDIRS = sundials mesch gnu ivoc nrncvode parallel nrniv
 IVOS_SUBDIRS = ivos
 NRNJAVA_SUBDIRS = nrnjava
-NRNPYTHON_SUBDIRS = rxd nrnpython
+NRNPYTHON_SUBDIRS = nrnpython
 
 if NMODL_BUILD
 nmodlbuild = $(NMODL_SUBDIRS)

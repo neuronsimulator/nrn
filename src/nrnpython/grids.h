@@ -112,10 +112,10 @@ typedef struct Grid_node {
 	Reaction* reactions;
 } Grid_node;
 
-extern double get_alpha_scalar(double*, int);
-extern double get_alpha_array(double*, int);
-extern double get_lambda_scalar(double*, int);
-extern double get_lambda_array(double*, int);
+static double get_alpha_scalar(double*, int);
+static double get_alpha_array(double*, int);
+static double get_lambda_scalar(double*, int);
+static double get_lambda_array(double*, int);
 
 
 /***** GLOBALS *******************************************************************/

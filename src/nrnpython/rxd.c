@@ -153,21 +153,21 @@ void register_subregion_reaction(int list_idx, int grid_id, unsigned char* my_su
 static int states_cvode_offset;
 void scatter_concentrations(void);
 
-void update_boundaries_x(int i, int j, int k, int dj, int dk, double rate_x,
+static void update_boundaries_x(int i, int j, int k, int dj, int dk, double rate_x,
  double rate_y, double rate_z, int num_states_x, int num_states_y, int num_states_z,
  const double const* states, double* ydot);
 
 
-void update_boundaries_y(int i, int j, int k, int di, int dk, double rate_x,
+static void update_boundaries_y(int i, int j, int k, int di, int dk, double rate_x,
  double rate_y, double rate_z, int num_states_x, int num_states_y, int num_states_z,
  const double const* states, double* ydot);
 
-void update_boundaries_z(int i, int j, int k, int di, int dj, double rate_x,
+static void update_boundaries_z(int i, int j, int k, int di, int dj, double rate_x,
  double rate_y, double rate_z, int num_states_x, int num_states_y, int num_states_z,
  const double const* states, double* ydot);
 
-int dg_adi(Grid_node g);
-void _rhs_variable_step_helper(Grid_node* grid, const double const* states, double* ydot);
+static int dg_adi(Grid_node g);
+static void _rhs_variable_step_helper(Grid_node* grid, const double const* states, double* ydot);
 
 fptr _setup, _initialize;
 
@@ -297,7 +297,7 @@ void* do_reactions(void* dataptr)
  * Array ReactGridData tasks length NUM_THREADS and calls do_reactions and
  * executes each task with a separate thread
  */
-void run_threaded_reactions(ReactGridData* tasks)
+static void run_threaded_reactions(ReactGridData* tasks)
 {
 	int k;
 	pthread_t* thread = malloc(sizeof(pthread_t) * NUM_THREADS);
@@ -316,7 +316,7 @@ void run_threaded_reactions(ReactGridData* tasks)
 	free(thread);
 }
 
-void _fadvance_fixed_step(void) {
+static void _fadvance_fixed_step(void) {
     Grid_node* grid;
     Py_ssize_t n, i;
     double* states;
@@ -388,7 +388,7 @@ void scatter_concentrations(void) {
 
 
 /* count the total number of state variables AND store their offset (passed in) in the cvode vector */
-int ode_count(const int offset) {
+static int ode_count(const int offset) {
     int count = 0;
     states_cvode_offset = offset;
     Grid_node* grid;
@@ -398,13 +398,13 @@ int ode_count(const int offset) {
     return count;
 }
 
-int find(const int x, const int y, const int z, const int size_y, const int size_z) {
+static int find(const int x, const int y, const int z, const int size_y, const int size_z) {
     int index = z + y * size_z + x * size_z * size_y;
     return index;
 
 }
 
-void _ode_reinit(double* y) {
+static void _ode_reinit(double* y) {
     Grid_node* grid;
     Py_ssize_t i;
     int grid_size;
@@ -422,7 +422,7 @@ void _ode_reinit(double* y) {
 }
 
 
-void _rhs_variable_step(const double t, const double* states, double* ydot) {
+static void _rhs_variable_step(const double t, const double* states, double* ydot) {
     Grid_node *grid;
     Py_ssize_t n, i;
     int grid_size;
@@ -490,7 +490,7 @@ void _rhs_variable_step(const double t, const double* states, double* ydot) {
     }
 }
 
-void _rhs_variable_step_helper(Grid_node* grid, const double const* states, double* ydot) {
+static void _rhs_variable_step_helper(Grid_node* grid, const double const* states, double* ydot) {
     int num_states_x = grid->size_x, num_states_y = grid->size_y, num_states_z = grid->size_z;
     double dc_x = grid->dc_x, dc_y = grid->dc_y, dc_z = grid->dc_z;
     double dx = grid->dx, dy = grid->dy, dz = grid->dz;
@@ -675,7 +675,7 @@ void _rhs_variable_step_helper(Grid_node* grid, const double const* states, doub
 /* update x-dimension edge points */
 /* function takes in combinations of j and k to represent the edges as well as
 1 or -1 for dj and dk to indicate which adjacent location is still in bounds */
-void update_boundaries_x(int i, int j, int k, int dj, int dk, double rate_x,
+static void update_boundaries_x(int i, int j, int k, int dj, int dk, double rate_x,
  double rate_y, double rate_z, int num_states_x, int num_states_y, int num_states_z,
  const double const* states, double* ydot) {
 
@@ -692,7 +692,7 @@ void update_boundaries_x(int i, int j, int k, int dj, int dk, double rate_x,
 }
 
 /* update y-dimension edge points */
-void update_boundaries_y(int i, int j, int k, int di, int dk, double rate_x,
+static void update_boundaries_y(int i, int j, int k, int di, int dk, double rate_x,
  double rate_y, double rate_z, int num_states_x, int num_states_y, int num_states_z,
  const double const* states, double* ydot) {
 
@@ -709,7 +709,7 @@ void update_boundaries_y(int i, int j, int k, int di, int dk, double rate_x,
 }
 
 /* update z-dimension edge points */
-void update_boundaries_z(int i, int j, int k, int di, int dj, double rate_x,
+static void update_boundaries_z(int i, int j, int k, int di, int dj, double rate_x,
  double rate_y, double rate_z, int num_states_x, int num_states_y, int num_states_z,
  const double const* states, double* ydot) {
 
@@ -768,7 +768,7 @@ void update_boundaries_z(int i, int j, int k, int di, int dj, double rate_x,
  * The solution (x) is stored in b.
  * c          - scratchpad array, N - 1 doubles long
  */
-int solve_dd_clhs_tridiag(const int N, const double l_diag, const double diag, 
+static int solve_dd_clhs_tridiag(const int N, const double l_diag, const double diag, 
     const double u_diag, const double lbc_diag, const double lbc_u_diag,
     const double ubc_l_diag, const double ubc_diag, double* const b, double* const c) 
 {
@@ -803,7 +803,7 @@ int solve_dd_clhs_tridiag(const int N, const double l_diag, const double diag,
  * state    -   where the output of this step is stored
  * scratch  - scratchpad array of doubles, length g.size_x - 1
  */
-AdiLineData dg_adi_x(Grid_node g, const double dt, const int y, const int z, double const * const state, double* const scratch)
+static AdiLineData dg_adi_x(Grid_node g, const double dt, const int y, const int z, double const * const state, double* const scratch)
 {
     int yp,ym,zp,zm;
     int x;
@@ -855,7 +855,7 @@ AdiLineData dg_adi_x(Grid_node g, const double dt, const int y, const int z, dou
  *              overwritten by the output of this step
  * scratch  -   scratchpad array of doubles, length g.size_y - 1
  */
-AdiLineData dg_adi_y(Grid_node g, double const dt, int const x, int const z, double const * const state, double* const scratch)
+static AdiLineData dg_adi_y(Grid_node g, double const dt, int const x, int const z, double const * const state, double* const scratch)
 {
     int y;
 	double r = (g.dc_y*dt/SQ(g.dy)); 
@@ -894,7 +894,7 @@ AdiLineData dg_adi_y(Grid_node g, double const dt, int const x, int const z, dou
  *              overwritten by the output of this step
  * scratch  -   scratchpad array of doubles, length g.size_z - 1
  */
-AdiLineData dg_adi_z(Grid_node g, double const dt, int const x, int const y, double const * const state, double* const scratch)
+static AdiLineData dg_adi_z(Grid_node g, double const dt, int const x, int const y, double const * const state, double* const scratch)
 {
     int z;
     double *RHS = malloc(sizeof(double)*g.size_z);
@@ -934,7 +934,7 @@ void dg_transfer_data(AdiLineData * const vals, double* const state, int const n
     }
 }
 
-void* do_dg_adi(void* dataptr) {
+static void* do_dg_adi(void* dataptr) {
     AdiGridData* data = (AdiGridData*) dataptr;
     int start = data -> start;
     int stop = data -> stop;
@@ -989,7 +989,7 @@ void run_threaded_dg_adi(AdiGridData* tasks, pthread_t* thread, const int i, con
 /*DG-ADI implementation the 3 step process to diffusion species in grid g by time step *dt_ptr
  * g    -   the state and parameters
  */
-int dg_adi(Grid_node g)
+static int dg_adi(Grid_node g)
 {
     double* state = malloc(sizeof(double) * g.size_x * g.size_y * g.size_z);
     AdiLineData* vals = malloc(sizeof(AdiLineData) * g.size_y * g.size_z);
@@ -1099,7 +1099,7 @@ void set_initialize(const fptr initialize_fn) {
 /* verbatim from nrnoc/ldifus.c; included as a copy for convenience
    TODO: if we don't ever need this, remove it
  */
-void nrn_tree_solve(double* a, double* d, double* b, double* rhs, int* pindex, int n) {
+static void nrn_tree_solve(double* a, double* d, double* b, double* rhs, int* pindex, int n) {
     /*
         treesolver
         
