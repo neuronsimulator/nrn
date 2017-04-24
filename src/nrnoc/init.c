@@ -176,7 +176,7 @@ int nrn_is_cable(void) {return 1;}
 #if 0 && defined(WIN32)
 int mswin_load_dll(char* cp1) {
 	if (nrnmpi_myid < 1) if (!nrn_nobanner_ && nrn_istty_) {
-		printf("loading membrane mechanisms from %s\n", cp1);
+		fprintf(stderr, "loading membrane mechanisms from %s\n", cp1);
 	}
 	dll = dll_load(cp1);
 	if (dll) {
@@ -194,7 +194,7 @@ int mswin_load_dll(char* cp1) {
 int mswin_load_dll(const char* cp1) { /* actually linux dlopen */
 	void* handle;
 	if (nrnmpi_myid < 1) if (!nrn_nobanner_ && nrn_istty_) {
-		printf("loading membrane mechanisms from %s\n", cp1);
+		fprintf(stderr, "loading membrane mechanisms from %s\n", cp1);
 	}
 	handle = dlopen(cp1, RTLD_NOW);
 	if (handle) {
@@ -202,13 +202,13 @@ int mswin_load_dll(const char* cp1) { /* actually linux dlopen */
 		if (mreg) {
 			(*mreg)();
 		}else{
-			printf("dlsym _modl_reg failed\n%s\n", dlerror());
+			fprintf(stderr, "dlsym _modl_reg failed\n%s\n", dlerror());
 			dlclose(handle);
 			return 0;
 		}
 		return 1;
 	}else{
-		printf("dlopen failed - \n%s\n", dlerror());
+		fprintf(stderr, "dlopen failed - \n%s\n", dlerror());
 	}
 	return 0;
 }
