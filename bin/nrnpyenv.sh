@@ -74,7 +74,7 @@ s = usep.join(upath(site.__file__).split(usep)[:-3])
 if s == sp:
   print ("# site-3 same as sys.prefix")
 else:
-  print ("# beginning with site-3 = ", [i for i in p if s in i].__len__())
+  print ("# beginning with site-3 = " + str(len([i for i in p if s in i])))
 foo = [i for i in p if sp not in i]
 foo = [i for i in foo if s not in i]
 print ("# in neither location " + str(foo))

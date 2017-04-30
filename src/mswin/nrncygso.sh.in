@@ -181,7 +181,7 @@ if test "$CFLAGS" != "-mno-cygwin" ; then
       $CXX -shared ../nrnpython/${ltlibs}/*.o -L. -lnrniv -o libnrnpython@npy_apiver@.dll \
         @NRNPYTHON_PYLIBLINK@ \
         -L${IVLIBDIR} -lIVhines \
-        -lreadline \
+        -lreadline -lpthread \
         -Wl,--enable-auto-image-base \
         ${LDFLAGS} \
         -Xlinker --out-implib -Xlinker libnrnpython@npy_apiver@.dll.a

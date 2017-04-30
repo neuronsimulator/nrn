@@ -13,6 +13,7 @@ See http://neuron.yale.edu/neuron/credits\n";
 
 # include	<stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include "section.h"
 #include "parse.h"
 #include "nrniv_mf.h"
@@ -340,6 +341,20 @@ void hoc_last_init(void)
 	if (nrn_mech_dll) {
 		char *cp1, *cp2;
 		hoc_default_dll_loaded_ = 1.;
+#if defined(WIN32)
+/* Sometimes (windows 10 and launch recent enthought canopy) it seems that
+mswin_load_dll fails if the filename is not a full path to nrnmech.dll
+*/
+if (strcmp(nrn_mech_dll, "nrnmech.dll") == 0) {
+  char buf[5100];
+  char* retval = getcwd(buf, 4096);
+  if (retval) {
+    strncat(buf, "\\", 100);
+    strncat(buf, nrn_mech_dll, 100);
+    mswin_load_dll(buf);
+  }
+}else{
+#endif /*WIN32*/
 		for (cp1 = nrn_mech_dll; *cp1; cp1 = cp2) {
 			for (cp2 = cp1; *cp2; ++cp2) {
 				if (*cp2 == ';') {
@@ -350,8 +365,11 @@ void hoc_last_init(void)
 			}
 			mswin_load_dll(cp1);
 		}
+#if defined(WIN32)
+}
+#endif /*WIN32*/
 	}
-#endif
+#endif /* WIN32 || NRNMECH_DLL_STYLE */
 	s = hoc_lookup("section_owner");
 	s->type = OBJECTFUNC;
 }
