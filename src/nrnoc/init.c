@@ -322,6 +322,7 @@ void hoc_last_init(void)
 	SectionList_reg();
 	SectionRef_reg();
 	register_mech(morph_mech, morph_alloc, (Pvmi)0, (Pvmi)0, (Pvmi)0, (Pvmi)0, -1, 0);
+	hoc_register_prop_size(MORPHOLOGY, 1, 0);
 	for (m = mechanism; *m; m++) {
 		(*m)();
 	}
@@ -630,10 +631,10 @@ void hoc_register_prop_size(int type, int psize, int dpsize) {
 }
 void hoc_register_dparam_semantics(int type, int ix, const char* name) {
 	/* only interested in area, iontype, cvode_ieq,
-	   netsend, pointer, pntproc, bbcorepointer, watch,
+	   netsend, pointer, pntproc, bbcorepointer, watch, diam,
 	   xx_ion and #xx_ion which will get
 	   a semantics value of -1, -2, -3,
-	   -4, -5, -6, -7, -8,
+	   -4, -5, -6, -7, -8, -9,
 	   type, and type+1000 respectively
 	*/
 	if (strcmp(name, "area") == 0) {
@@ -652,12 +653,17 @@ void hoc_register_dparam_semantics(int type, int ix, const char* name) {
 		memb_func[type].dparam_semantics[ix] = -7;
 	}else if (strcmp(name, "watch") == 0) {
 		memb_func[type].dparam_semantics[ix] = -8;
+	}else if (strcmp(name, "diam") == 0) {
+		memb_func[type].dparam_semantics[ix] = -9;
 	}else{
 		int i = 0;
 		if (name[0] == '#') { i = 1; }
 		Symbol* s = hoc_lookup(name+i);
 		if (s && s->type == MECHANISM) {
 			memb_func[type].dparam_semantics[ix] = s->subtype + i*1000;
+		}else{
+fprintf(stderr, "mechanism %s : unknown semantics for %s\n", memb_func[type].sym->name, name);
+assert(0);
 		}
 	}
 #if 0   

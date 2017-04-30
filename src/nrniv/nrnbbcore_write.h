@@ -30,6 +30,7 @@ public:
   int n_presyn;// real first
   int n_output; // real + art with gid
   int n_real_output;
+  int ndiam; // > 0 only if diam semantics in use.
   int n_mech;
   // following three are parallel arrays
   PreSyn** output_ps; //n_presyn of these, real are first, tml order for acell.

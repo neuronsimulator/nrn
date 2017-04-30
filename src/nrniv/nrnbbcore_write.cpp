@@ -165,6 +165,7 @@ size_t nrnbbcore_write() {
     bbcore_dparam_size[i] = sz;
     Memb_func* mf = memb_func + i;
     if (mf && mf->dparam_semantics && sz && mf->dparam_semantics[sz-1] == -3) {
+        // cvode_ieq in NEURON but not CoreNEURON
         bbcore_dparam_size[i] = sz - 1;
     }
   }
@@ -388,6 +389,7 @@ CellGroup::CellGroup() {
   group_id = -1;
   output_gid = output_vindex = 0;
   netcons = 0; output_ps = 0;
+  ndiam = 0;
   netcon_srcgid = netcon_pnttype = netcon_pntindex = 0;
   datumindices = 0;
   type2ml = new Memb_list*[n_memb_func];
@@ -708,6 +710,24 @@ void datumindex_fill(int ith, CellGroup& cg, DatumIndices& di, Memb_list* ml) {
       }else if (dmap[j] == -8) { // watch
         etype = -8;
         eindex = 0;
+      }else if (dmap[j] == -9) { // diam
+        cg.ndiam = nt.end;
+        etype = -9;
+        // Rare for a mechanism to use dparam pointing to diam.
+        // MORPHOLOGY was never made cache efficient. And
+        // is not in the tml_with_art. 
+        // Need to determine this node and then simple to search its
+        // mechanism list for MORPHOLOGY and then know the diam.
+        Node* nd = ml->nodelist[i];
+        double* pdiam = NULL;
+        for (Prop* p = nd->prop; p; p = p->next) {
+          if (p->type == MORPHOLOGY) {
+            pdiam = p->param;
+            break;
+          }
+        }
+        assert(dparam[j].pval == pdiam);
+        eindex = ml->nodeindices[i];
       }else if (dmap[j] == -5) { // POINTER
         // must be a pointer into nt->_data. Handling is similar to eion so
         // give proper index into the type.
@@ -942,6 +962,9 @@ void write_nrnthread(const char* path, NrnThread& nt, CellGroup& cg) {
   int* ml_data_offset = new int[n_memb_func];
   int* ml_vdata_offset = new int[n_memb_func];
   int data_offset = 6*nt.end;
+  if (cg.ndiam) {
+    data_offset += nt.end;
+  }
   int vdata_offset = 0;
   for (int i=0; i < n_memb_func; ++i) {
     ml_data_offset[i] = -1; // for nt._data
@@ -950,7 +973,24 @@ void write_nrnthread(const char* path, NrnThread& nt, CellGroup& cg) {
   fprintf(f, "%d ngid\n", cg.n_output);
   fprintf(f, "%d n_real_gid\n", cg.n_real_output);
   fprintf(f, "%d nnode\n", nt.end);
+  fprintf(f, "%d ndiam\n", cg.ndiam);
   fprintf(f, "%d nmech\n", cg.n_mech);
+
+  double* diamvec = NULL;
+  if (cg.ndiam) {
+    diamvec = new double[nt.end];
+    for (int i=0; i < nt.end; ++i) {
+      Node* nd = nt._v_node[i];
+      double diam = 0.0;
+      for (Prop* p = nd->prop; p; p = p->next) {
+        if (p->type == MORPHOLOGY) {
+          diam = p->param[0];
+          break;
+        }
+      }
+      diamvec[i] = diam;
+    }
+  }
 
   for (tml=tml_with_art[nt.id]; tml; tml = tml->next) {
     fprintf(f, "%d\n", tml->index);
@@ -982,6 +1022,10 @@ void write_nrnthread(const char* path, NrnThread& nt, CellGroup& cg) {
   writedbl(nt._actual_b, nt.end);
   writedbl(nt._actual_area, nt.end);
   writedbl(nt._actual_v, nt.end);
+  if (diamvec) {
+    writedbl(diamvec, nt.end);
+    delete [] diamvec;
+  }
   int id = 0;
   for (tml=tml_with_art[nt.id]; tml; tml=tml->next) {
     Memb_list* ml = tml->ml;
@@ -1188,6 +1232,7 @@ int* datum2int(int type, Memb_list* ml, NrnThread& nt, CellGroup& cg, DatumIndic
   int isart = nrn_is_artificial_[di.type];
   int sz = bbcore_dparam_size[type];
   int* pdata = new int[ml->nodecount * sz];
+  int diam_offset = 6*nt.end;
   int area_offset = 5*nt.end;
   int volt_offset = 4*nt.end;
   for (int i=0; i < ml->nodecount; ++i) {
@@ -1203,6 +1248,8 @@ int* datum2int(int type, Memb_list* ml, NrnThread& nt, CellGroup& cg, DatumIndic
         }else{
           pdata[jj] = area_offset + eindex;
         }
+      }else if (etype == -9) {
+        pdata[jj] = diam_offset + eindex;
       }else if (etype > 0 && etype < 1000){//ion pointer and also POINTER
         pdata[jj] = ml_data_offset[etype] + eindex;
       }else if (etype > 1000 && etype < 2000) { //ionstyle can be explicit instead of pointer to int*
