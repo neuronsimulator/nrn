@@ -118,6 +118,11 @@ void setup_nrnthreads_on_device(NrnThread* threads, int nthreads) {
         dptr = d__data + 5 * ne;
         acc_memcpy_to_device(&(d_nt->_actual_area), &(dptr), sizeof(double*));
 
+        if (d_nt->_actual_diam) {
+            dptr = d__data + 6 * ne;
+            acc_memcpy_to_device(&(d_nt->_actual_diam), &(dptr), sizeof(double*));
+        }
+
         int* d_v_parent_index = (int*)acc_copyin(nt->_v_parent_index, nt->end * sizeof(int));
         acc_memcpy_to_device(&(d_nt->_v_parent_index), &(d_v_parent_index), sizeof(int*));
 
@@ -618,6 +623,9 @@ void update_nrnthreads_on_host(NrnThread* threads, int nthreads) {
             acc_update_self(nt->_actual_b, ne * sizeof(double));
             acc_update_self(nt->_actual_v, ne * sizeof(double));
             acc_update_self(nt->_actual_area, ne * sizeof(double));
+            if (nt->_actual_diam) {
+                acc_update_self(nt->_actual_diam, ne * sizeof(double));
+            }
 
             /* @todo: nt._ml_list[tml->index] = tml->ml; */
 
@@ -715,6 +723,9 @@ void update_nrnthreads_on_device(NrnThread* threads, int nthreads) {
             acc_update_device(nt->_actual_b, ne * sizeof(double));
             acc_update_device(nt->_actual_v, ne * sizeof(double));
             acc_update_device(nt->_actual_area, ne * sizeof(double));
+            if (nt->_actual_diam) {
+                acc_update_device(nt->_actual_diam, ne * sizeof(double));
+            }
 
             /* @todo: nt._ml_list[tml->index] = tml->ml; */
 

@@ -103,6 +103,7 @@ typedef struct NrnThread {
     double* _actual_b;
     double* _actual_v;
     double* _actual_area;
+    double* _actual_diam; /* NULL if no mechanism has dparam with diam semantics */
     double* _shadow_rhs; /* Not pointer into _data. Avoid race for multiple POINT_PROCESS in same
                             compartment */
     double* _shadow_d;   /* Not pointer into _data. Avoid race for multiple POINT_PROCESS in same

@@ -137,7 +137,7 @@ void update_pdata_values(Memb_list* ml, int type, NrnThread& nt) {
     int cnt = ml->nodecount;
     // ml padding does not matter (but target padding does matter)
 
-    // interesting semantics are -1 (area), -5 (pointer), or 0-999 (ion variables)
+    // interesting semantics are -1 (area), -5 (pointer), -9 (diam), or 0-999 (ion variables)
     for (int i = 0; i < psz; ++i) {
         int s = semantics[i];
         if (s == -1) {                               // area
@@ -155,6 +155,22 @@ void update_pdata_values(Memb_list* ml, int type, NrnThread& nt) {
                 nrn_assert((ix >= 0) && (ix < nt.end));
                 int ixnew = p_target[ix];
                 *pd = ixnew + area0;
+            }
+        }else if (s == -9) {                               // diam
+            int diam0 = nt._actual_diam - nt._data;  // includes padding if relevant
+            int* p_target = nt._permute;
+            for (int iml = 0; iml < cnt; ++iml) {
+                int* pd = pdata + nrn_i_layout(iml, cnt, i, psz, layout);
+                // *pd is the original integer into nt._data . Needs to be replaced
+                // by the permuted value
+
+                // This is ok whether or not diam changed by padding?
+                // since old *pd updated appropriately by earlier AoS to SoA
+                // transformation
+                int ix = *pd - diam0;  // original integer into actual_diam array.
+                nrn_assert((ix >= 0) && (ix < nt.end));
+                int ixnew = p_target[ix];
+                *pd = ixnew + diam0;
             }
         } else if (s == -5) {  // assume pointer to membrane voltage
             int v0 = nt._actual_v - nt._data;

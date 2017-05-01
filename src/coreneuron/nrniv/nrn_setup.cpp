@@ -71,12 +71,14 @@ THE POSSIBILITY OF SUCH DAMAGE.
 //
 // <firstgid>_2.dat
 // n_output n_real_output, nnode
+// ndiam - 0 if no mechanism has dparam with diam semantics, or nnode
 // nmech - includes artcell mechanisms
 // for the nmech tml mechanisms
 //   type, nodecount
 // ndata, nidata, nvdata, nweight
 // v_parent_index (nnode)
 // actual_a, b, area, v (nnode)
+// diam - if ndiam > 0. Note that only valid diam is for those nodes with diam semantics mechanisms
 // for the nmech tml mechanisms
 //   nodeindices (nodecount) but only if not an artificial cell
 //   data (nodecount*param_size)
@@ -918,6 +920,7 @@ void read_phase2(data_reader& F, int imult, NrnThread& nt) {
     nrn_assert(n_outputgid > 0);  // avoid n_outputgid unused warning
     nt.ncell = F.read_int();
     nt.end = F.read_int();
+    int ndiam = F.read_int(); // 0 if not needed, else nt.end
     int nmech = F.read_int();
 
     /// Checkpoint in bluron is defined for both phase 1 and phase 2 since they are written together
@@ -1014,6 +1017,15 @@ void read_phase2(data_reader& F, int imult, NrnThread& nt) {
     size_t offset = 6 * ne;
     size_t unpadded_offset = 6 * nt.end;
 
+    if (ndiam) {
+        // in the rare case that a mechanism has dparam with diam semantics
+        // then actual_diam array added after matrix in nt._data
+        // Generally wasteful since only a few diam are pointed to.
+        // Probably better to move the diam semantics to the p array of the mechanism
+        offset += ne;
+        unpadded_offset += nt.end;
+    }
+
     // Memb_list.data points into the nt.data array.
     // Also count the number of Point_process
     int npnt = 0;
@@ -1047,6 +1059,7 @@ void read_phase2(data_reader& F, int imult, NrnThread& nt) {
     nt._actual_b = nt._data + 3 * ne;
     nt._actual_v = nt._data + 4 * ne;
     nt._actual_area = nt._data + 5 * ne;
+    nt._actual_diam = ndiam ? nt._data + 6 * ne : NULL;
     for (tml = nt.tml; tml; tml = tml->next) {
         Memb_list* ml = tml->ml;
         ml->data = nt._data + (ml->data - (double*)0);
@@ -1061,6 +1074,10 @@ void read_phase2(data_reader& F, int imult, NrnThread& nt) {
     F.read_array<double>(nt._actual_b, nt.end);
     F.read_array<double>(nt._actual_area, nt.end);
     F.read_array<double>(nt._actual_v, nt.end);
+
+    if (ndiam) {
+        F.read_array<double>(nt._actual_diam, nt.end);
+    }
 
     Memb_list** mlmap = new Memb_list*[n_memb_func];
     int synoffset = 0;
@@ -1117,7 +1134,8 @@ void read_phase2(data_reader& F, int imult, NrnThread& nt) {
     }
 
     // Some pdata may index into data which has been reordered from AoS to
-    // SoA. The three possibilities are if semantics is -1 (area), -5 (pointer),
+    // SoA. The four possibilities are if semantics is -1 (area), -5 (pointer),
+    // -9 (diam),
     // or 0-999 (ion variables). Note that pdata has a layout and the
     // type block in nt.data into which it indexes, has a layout.
     for (tml = nt.tml; tml; tml = tml->next) {
@@ -1149,6 +1167,14 @@ void read_phase2(data_reader& F, int imult, NrnThread& nt) {
                     int ix = *pd - (5 * nt.end);  // unpadded area is 6th vector from beginning
                     nrn_assert((ix >= 0) && (ix < nt.end));
                     *pd = area0 + ix;
+                }
+            }else if (s == -9) {  // diam
+                int diam0 = nt._actual_diam - nt._data;
+                for (int iml = 0; iml < cnt; ++iml) {
+                    int* pd = pdata + nrn_i_layout(iml, cnt, i, szdp, layout);
+                    int ix = *pd - (6 * nt.end);  // unpadded diam is 7th vector from beginning
+                    nrn_assert((ix >= 0) && (ix < nt.end));
+                    *pd = diam0 + ix;
                 }
             } else if (s == -5) {  // pointer assumes a pointer to membrane voltage
                 int v0 = nt._actual_v - nt._data;
@@ -1185,7 +1211,7 @@ void read_phase2(data_reader& F, int imult, NrnThread& nt) {
     free(unpadded_ml_list);
 
     /* if desired, apply the node permutation. This involves permuting
-       at least the node parameter arrays for a, b, and area and all
+       at least the node parameter arrays for a, b, and area (and diam) and all
        integer vector values that index into nodes. This could have been done
        when originally filling the arrays with AoS ordered data, but can also
        be done now, after the SoA transformation. The latter has the advantage
@@ -1202,7 +1228,9 @@ void read_phase2(data_reader& F, int imult, NrnThread& nt) {
         permute_data(nt._actual_a, nt.end, p);
         permute_data(nt._actual_b, nt.end, p);
         permute_data(nt._actual_area, nt.end, p);
-
+        if (nt._actual_diam) {
+            permute_data(nt._actual_diam, nt.end, p);
+        }
         // index values change as well as ordering
         permute_ptr(nt._v_parent_index, nt.end, p);
         node_permute(nt._v_parent_index, nt.end, p);

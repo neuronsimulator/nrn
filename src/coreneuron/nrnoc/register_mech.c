@@ -277,10 +277,10 @@ void hoc_register_prop_size(int type, int psize, int dpsize) {
 void hoc_register_dparam_semantics(int type, int ix, const char* name) {
     /* needed for SoA to possibly reorder name_ion and some "pointer" pointers. */
     /* only interested in area, iontype, cvode_ieq,
-       netsend, pointer, pntproc, bbcorepointer, watch,
+       netsend, pointer, pntproc, bbcorepointer, watch, diam
        xx_ion and #xx_ion which will get
        a semantics value of -1, -2, -3,
-       -4, -5, -6, -7, -8,
+       -4, -5, -6, -7, -8, -9,
        type, and type+1000 respectively
     */
     if (strcmp(name, "area") == 0) {
@@ -299,6 +299,8 @@ void hoc_register_dparam_semantics(int type, int ix, const char* name) {
         memb_func[type].dparam_semantics[ix] = -7;
     } else if (strcmp(name, "watch") == 0) {
         memb_func[type].dparam_semantics[ix] = -8;
+    } else if (strcmp(name, "diam") == 0) {
+        memb_func[type].dparam_semantics[ix] = -9;
     } else {
         int etype;
         int i = 0;
