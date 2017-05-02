@@ -68,8 +68,8 @@ the handling of v_structure_change as long as possible.
 #define CACHELINE_ALLOC(name, type, size) \
     name = (type*)nrn_cacheline_alloc((void**)&name, size * sizeof(type))
 
-int nrn_nthread;
-NrnThread* nrn_threads;
+int nrn_nthread = 0;
+NrnThread* nrn_threads = NULL;
 void (*nrn_mk_transfer_thread_data_)();
 
 extern int v_structure_change;
@@ -444,9 +444,17 @@ void nrn_multithread_job(void* (*job)(NrnThread*)) {
     int i;
 #if defined(_OPENMP)
 
-// default(none) removed to avoid issue with opari2
+    /* Todo : Remove schedule clause usage by using OpenMP 3 API.
+     *        Need better CMake handling for checking OpenMP 3 support.
+     */
+  #if defined(ENABLE_OMP_RUNTIME_SCHEDULE)
+    #pragma omp parallel for private(i) shared(nrn_threads, job, nrn_nthread, \
+                                           nrnmpi_myid) schedule(runtime)
+  #else
+    // default(none) removed to avoid issue with opari2
     #pragma omp parallel for private(i) shared(nrn_threads, job, nrn_nthread, \
                                            nrnmpi_myid) schedule(static, 1)
+  #endif
     for (i = 0; i < nrn_nthread; ++i) {
         (*job)(nrn_threads + i);
     }

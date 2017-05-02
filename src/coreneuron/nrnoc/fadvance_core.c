@@ -34,10 +34,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/coreneuron.h"
 
 static void* nrn_fixed_step_thread(NrnThread*);
-static void* nrn_fixed_step_lastpart(NrnThread*);
 static void* nrn_fixed_step_group_thread(NrnThread*);
-static void update(NrnThread*);
-static void nonvint(NrnThread*);
 extern void nrn_flush_reports(double);
 
 void dt2thread(double adt) { /* copied from nrnoc/fadvance.c */
@@ -135,7 +132,7 @@ static void* nrn_fixed_step_group_thread(NrnThread* nth) {
     return (void*)0;
 }
 
-static void update(NrnThread* _nt) {
+void update(NrnThread* _nt) {
     int i, i1, i2;
     i1 = 0;
     i2 = _nt->end;
@@ -168,7 +165,7 @@ static void update(NrnThread* _nt) {
     }
 }
 
-static void nonvint(NrnThread* _nt) {
+void nonvint(NrnThread* _nt) {
     NrnThreadMembList* tml;
     if (nrn_have_gaps) {
         nrnthread_v_transfer(_nt);
@@ -224,7 +221,7 @@ static void* nrn_fixed_step_thread(NrnThread* nth) {
     return (void*)0;
 }
 
-static void* nrn_fixed_step_lastpart(NrnThread* nth) {
+void* nrn_fixed_step_lastpart(NrnThread* nth) {
     nth->_t += .5 * nth->_dt;
 
     if (nth->ncell) {

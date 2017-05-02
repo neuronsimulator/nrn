@@ -58,6 +58,8 @@ option(DISABLE_HOC_EXP "Disable wrapping exp with hoc_exp()" ON)
 option(ENABLE_OPENACC_INFO "Enable OpenACC compiler information messages" OFF)
 option(ENABLE_SPLAYTREE_QUEUING "Enable use of Splay tree for spike queuing" OFF)
 option(ENABLE_CUDA_MODULES "Enable modules like Random123 written in CUDA" ON)
+option(ENABLE_NET_RECEIVE_BUFFERING "Enable event buffering in net_receive function" ON)
+option(ENABLE_OMP_RUNTIME_SCHEDULE "Use runtime schedule for OpenMP" OFF)
 
 ## mech / mod options
 set(ADDITIONAL_MECHPATH "" CACHE PATH "Search path for optional additional mechanism MOD files")
@@ -66,6 +68,10 @@ set(ADDITIONAL_MECHS "" CACHE FILEPATH "File containing list of additional mecha
 # test compilations
 option(UNIT_TESTS "Enable unit tests compilation and execution" ON)
 option(FUNCTIONAL_TESTS "Enable functional tests compilation and execution" ON)
+
+# For external development, allow one to install all headers and mod files
+# todo: need to refactor to install specific set of headers only
+option(ENABLE_DEV_FILES_INSTALLATION "Allow to install hedaers/mod files for development" OFF)
 
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/CMake
       ${PROJECT_SOURCE_DIR}/CMake/portability
@@ -98,6 +104,11 @@ else()
     add_definitions("-DLAYOUT=1")
 endif()
 
+#OpenMP runtime schedule
+if (ENABLE_OMP_RUNTIME_SCHEDULE)
+    add_definitions("-DENABLE_OMP_RUNTIME_SCHEDULE")
+endif()
+
 #Disable hoc_exp wrapper for exp
 if (DISABLE_HOC_EXP)
     add_definitions("-DDISABLE_HOC_EXP")
@@ -108,10 +119,13 @@ if (ENABLE_SPLAYTREE_QUEUING)
     add_definitions("-DENABLE_SPLAYTREE_QUEUING")
 endif()
 
+#Turn off event buffering if asked
+if (NOT ENABLE_NET_RECEIVE_BUFFERING)
+    add_definitions("-DNET_RECEIVE_BUFFERING=0")
+endif()
+
 find_package(mod2c 2.0.0  REQUIRED)
 find_package(Boost 1.41.0 QUIET COMPONENTS filesystem system atomic unit_test_framework)
-
-include(BlueGenePortability)
 
 # Threading
 if(CORENEURON_OPENMP)
@@ -215,10 +229,6 @@ ELSE(ENABLE_OPENACC)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${IGNORE_UNKNOWN_PRAGMA_FLAGS}")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${IGNORE_UNKNOWN_PRAGMA_FLAGS}")
 endif(ENABLE_OPENACC)
-
-# Some mechanisms use NEURON specific code which is skipped
-# using this macro for CoreNeuron build
-add_definitions(-DCORENEURON_BUILD)
 
 if(DISABLE_NRN_TIMEOUT)
     add_definitions("-DDISABLE_TIMEOUT")

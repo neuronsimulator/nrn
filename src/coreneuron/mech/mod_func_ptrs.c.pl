@@ -26,7 +26,7 @@ s/\.mod$// foreach @mods;
 @mods=sort @mods;
 
 @funcs=('init','cur','state');
-#@funcs=('init','cur','jacob','state');
+#@funcs=('init','cur','jacob', 'state');
 
 print <<"__eof";
 #include <stdio.h>
@@ -38,6 +38,7 @@ __eof
 #Get the correct SUFFIX from each mod file for each mechanism
 @suffixes_all=();
 @suffixes_with_cur=(); #with cur function (BREAKPOINT block in mod)
+@suffixes_with_net_receive=(); #with NET_RECEIVE function in mod
 
 for $m(@mods) {
   $filename = "${m}.mod";
@@ -61,14 +62,20 @@ for $m(@mods) {
   my $suffix = @words[1]; #get SUFFIX name as second word"
   push(@suffixes_all, $suffix);
 
-  #now add only those with nrn_cur function definition
+  #add only those with nrn_cur function definition
   my @breakpointlines = grep /BREAKPOINT/, @content;
   if (scalar @breakpointlines == 1) {
     push(@suffixes_with_cur, $suffix);
   }
+
+  #add only those with net_receive function definition
+  my @breakpointlines = grep /NET_RECEIVE/, @content;
+  if (scalar @breakpointlines == 1) {
+    push(@suffixes_with_net_receive, $suffix);
+  }
 }
 
-#Output the get of function pointers for init, jacob, current and state functions
+#Output the get of function pointers for init, jacob, current and  state functions
 
 for $f(@funcs) {
 
@@ -89,12 +96,27 @@ mod_f_t get_${f}_function(const char * sym)
 @{[join "\n",map {"  if (strcmp(sym, \"${_}\") == 0)  return _nrn_${f}__${_};"} @suffixes_with_this_func]}
   return NULL;
 }
-__eof
 
+__eof
 }
+
+#Output the get of function pointers for init, jacob, current, state and net_receive functions
 
 print <<"__eof";
 
+extern void \n  @{[join ",\n  ", map {"_net_receive__${_}(Point_process*, int, double)"} @suffixes_with_net_receive]};
+
+pnt_receive_t get_net_receive_function(const char * sym)
+{
+@{[join "\n",map {"  if (strcmp(sym, \"${_}\") == 0)  return _net_receive__${_};"} @suffixes_with_net_receive]}
+  return NULL;
+}
+
+__eof
+
+
+#output BA functions (not available yet)
+print <<"__eof";
 mod_f_t get_BA_function(const char * sym, int BA_func_id)
 {
   return NULL;

@@ -84,6 +84,7 @@ void VecPlayContinuous::init(IvocVect* yvec, IvocVect* tvec, IvocVect* discon) {
     discon_indices_ = discon;
     ubound_index_ = 0;
     last_index_ = 0;
+    discon_index_ = 0;
     e_ = new PlayRecordEvent();
     e_->plr_ = this;
 }

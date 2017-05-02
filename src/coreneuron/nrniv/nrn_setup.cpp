@@ -533,7 +533,7 @@ void determine_inputpresyn() {
 }
 
 /// Clean up
-void setup_cleanup() {
+void nrn_setup_cleanup() {
     for (int ith = 0; ith < nrn_nthread; ++ith) {
         if (netcon_srcgid[ith])
             delete[] netcon_srcgid[ith];
@@ -542,7 +542,7 @@ void setup_cleanup() {
     neg_gid2out.clear();
 }
 
-void nrn_setup(cn_input_params& input_params, const char* filesdat, int byte_swap) {
+void nrn_setup(cn_input_params& input_params, const char* filesdat, int byte_swap, bool run_setup_cleanup) {
     /// Number of local cell groups
     int ngroup = 0;
 
@@ -621,7 +621,9 @@ void nrn_setup(cn_input_params& input_params, const char* filesdat, int byte_swa
 
     double mindelay = set_mindelay(input_params.maxdelay);
     input_params.set_mindelay(mindelay);
-    setup_cleanup();
+
+    if (run_setup_cleanup) //if run_setup_cleanup==false, user must call nrn_setup_cleanup() later
+       nrn_setup_cleanup();
 
 #if INTERLEAVE_DEBUG
     mk_cell_indices();
@@ -973,6 +975,7 @@ void read_phase2(data_reader& F, int imult, NrnThread& nt) {
                 shadow_rhs_cnt = tml->ml->nodecount;
             }
         }
+
         nt._ml_list[tml->index] = tml->ml;
         // printf("index=%d nodecount=%d membfunc=%s\n", tml->index, tml->ml->nodecount,
         // memb_func[tml->index].sym?memb_func[tml->index].sym:"None");

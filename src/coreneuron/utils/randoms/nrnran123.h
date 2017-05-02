@@ -78,6 +78,7 @@ http://www.deshawresearch.com/resources_random123.html
 #define nrnran123_state_size cu_nrnran123_state_size
 #define nrnran123_instance_count cu_nrnran123_instance_count
 #define nrnran123_normal cu_nrnran123_normal
+#define nrnran123_getids3 cu_nrnran123_getids3
 #endif
 
 #if defined(__cplusplus)
@@ -124,6 +125,7 @@ extern GLOBAL void nrnran123_setup_newstream3(nrnran123_State* s,
 /* minimal data stream */
 extern DEVICE void nrnran123_getseq(nrnran123_State*, uint32_t* seq, unsigned char* which);
 extern DEVICE void nrnran123_getids(nrnran123_State*, uint32_t* id1, uint32_t* id2);
+extern DEVICE void nrnran123_getids3(nrnran123_State*, uint32_t* id1, uint32_t* id2, uint32_t* id3);
 extern DEVICE uint32_t nrnran123_ipick(nrnran123_State*); /* uniform 0 to 2^32-1 */
 
 /* this could be called from openacc parallel construct */

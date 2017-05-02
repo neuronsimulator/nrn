@@ -61,10 +61,10 @@ int nrn_feenableexcept() {
 #endif
 
 int main1(int argc, char** argv, char** env);
-void nrn_init_and_load_data(int argc, char** argv, cn_input_params& input_params);
+void nrn_init_and_load_data(int argc, char** argv, cn_input_params& input_params, bool run_setup_cleanup=true);
 void call_prcellstate_for_prcellgid(int prcellgid, int compute_gpu, int is_init);
 
-void nrn_init_and_load_data(int argc, char** argv, cn_input_params& input_params) {
+void nrn_init_and_load_data(int argc, char** argv, cn_input_params& input_params, bool run_setup_cleanup) {
 #if defined(NRN_FEEXCEPT)
     nrn_feenableexcept();
 #endif
@@ -163,7 +163,7 @@ void nrn_init_and_load_data(int argc, char** argv, cn_input_params& input_params
     nrn_setup_extracon = input_params.extracon;
 
     // reading *.dat files and setting up the data structures, setting mindelay
-    nrn_setup(input_params, filesdat, nrn_need_byteswap);
+    nrn_setup(input_params, filesdat, nrn_need_byteswap, run_setup_cleanup);
 
     report_mem_usage("After nrn_setup ");
 

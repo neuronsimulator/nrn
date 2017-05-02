@@ -88,6 +88,12 @@ __device__ void nrnran123_getids(nrnran123_State* s, uint32_t* id1, uint32_t* id
     *id2 = s->c.v[3];
 }
 
+__device__ void nrnran123_getids3(nrnran123_State* s, uint32_t* id1, uint32_t* id2, uint32_t* id3) {
+    *id3 = s->c.v[1];
+    *id1 = s->c.v[2];
+    *id2 = s->c.v[3];
+}
+
 __device__ uint32_t nrnran123_ipick(nrnran123_State* s) {
     uint32_t rval;
     unsigned char which = s->which_;

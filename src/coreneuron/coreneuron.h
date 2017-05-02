@@ -47,10 +47,11 @@ THE POSSIBILITY OF SUCH DAMAGE.
 extern "C" {
 #endif
 
-// TODO add external variables required by mechanisms
-// extern double celsius;
-// extern int nrn_ion_global_map_size;
-// extern double** nrn_ion_global_map;
+// global variables required by mechanisms
+// TODO requires #include coreneuron/coreneuron.h in all mechs
+// extern double celsius; //from coreneuron/coreneuron/nrnconf.h
+// extern int nrn_ion_global_map_size; //from coreneuron/nrnoc/membfunc.h
+// extern double** nrn_ion_global_map; //from coreneuron/nrnoc/membfunc.h
 
 #ifdef EXPORT_MECHS_FUNCTIONS
 // from (auto-generated) mod_func_ptrs.c
@@ -62,7 +63,6 @@ extern mod_f_t get_BA_function(const char* sym, int BA_func_id);
 
 // from nrnoc/capac.c
 extern void nrn_init_capacitance(struct NrnThread*, struct Memb_list*, int);
-;
 extern void nrn_cur_capacitance(struct NrnThread* _nt, struct Memb_list* ml, int type);
 extern void nrn_alloc_capacitance(double* data, Datum* pdata, int type);
 
@@ -70,7 +70,7 @@ extern void nrn_alloc_capacitance(double* data, Datum* pdata, int type);
 extern void nrn_init_ion(struct NrnThread*, struct Memb_list*, int);
 extern void nrn_cur_ion(struct NrnThread* _nt, struct Memb_list* ml, int type);
 extern void nrn_alloc_ion(double* data, Datum* pdata, int type);
-extern void second_order_cur(NrnThread* _nt,int secondorder);
+extern void second_order_cur(NrnThread* _nt, int secondorder);
 
 #if defined(__cplusplus)
 }

@@ -30,6 +30,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include <string.h>
 
 #include "coreneuron/coreneuron.h"
+#include "coreneuron/nrnoc/nrnoc_decl.h"
 
 #if !defined(LAYOUT)
 /* 1 means AoS, >1 means AoSoA, <= 0 means SOA */
@@ -72,7 +73,6 @@ extern void hoc_register_prop_size(int, int, int);
 static char* mechanism[] = {/*just a template*/
                             "0", "na_ion", "ena", "nao", "nai", 0, "ina", "dina_dv_", 0, 0};
 
-void nrn_cur_ion(NrnThread*, Memb_list*, int);
 void nrn_init_ion(NrnThread*, Memb_list*, int);
 void nrn_alloc_ion(double*, Datum*, int);
 

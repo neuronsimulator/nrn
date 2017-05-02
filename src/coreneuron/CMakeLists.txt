@@ -199,7 +199,6 @@ if (EXPORT_MECHS_FUNCTIONS)
 endif()
 
 # Add generated sources from MOD files
-
 set(GENERATED_MECH_C_FILES ${MOD_FUNC_C} ${MOD_FUNC_PTRS_C} ${MOD2C_STDMECH_OUTPUTS} ${MOD2C_OPTMECH_OUTPUTS})
 
 # artificial cells must be on cpu, defaul nrnran123.c is for cpu, nrn_setup.cpp uses nrnran123 for only memory calculation purpose which should use cpu version of nrnran123
@@ -253,3 +252,13 @@ set_target_properties(coreneuron PROPERTIES
 install(TARGETS coreneuron
              LIBRARY DESTINATION ${LIB_INSTALL_DIR}
              ARCHIVE DESTINATION ${LIB_INSTALL_DIR} )
+
+if(ENABLE_DEV_FILES_INSTALLATION)
+    install(DIRECTORY .
+                DESTINATION include/coreneuron
+                FILES_MATCHING PATTERN "*.h*" PATTERN "*.ipp")
+
+    install(DIRECTORY ./mech/modfile/.
+                DESTINATION share/mod
+                FILES_MATCHING PATTERN "*.mod")
+endif()
