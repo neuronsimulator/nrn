@@ -470,6 +470,11 @@ proc b2soption_split() {local i, n, id, ip  localobj p, newsec, tobj
 	sections.insrt(sections.index(p), newsec)
 }
 
+proc remove_trailspace() { // yuck
+  hoc_sf_.head(line, " *$", line)
+  sprint(line, "%s\n", line)
+}
+
 func lex() {local n
 	$o1.x = 0
 	$o1.s = ""
@@ -482,6 +487,7 @@ func lex() {local n
 			return eof
 		}
 		line = fline
+		remove_trailspace()
 		hoc_sf_.left(fline, hoc_sf_.len(fline)-1)
 	}
 	if (sscanf(line, " %lf%[^@]", &$o1.x, line) == 2) {
@@ -923,6 +929,7 @@ proc contour() {local begin, end, keep, il
 	demand(string)
 	if (strcmp(current.s, "CellBody") == 0) { keep = 1 }
 	if (strcmp(current.s, "Cell Body") == 0) { keep = 1 }
+	if (strcmp(current.s, "Soma") == 0) { keep = 1 }
 	il = current.iline
 	read_next_token()
 	contourinfo()

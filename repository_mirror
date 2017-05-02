@@ -30,6 +30,34 @@ repositories="iv nrn"
 # created from an earlier version of the hg repository). If the git
 # repository is empty, this script will create a master branch and push
 
+# an example of how to re-establish consistency when both hg and git
+# repositories are different is
+if false ; then
+git clone http://github.com/nrnhines/nrn nrngit
+hg clone http://bitbucket.org/nrnhines/nrn nrnhg
+git clone hg::nrnhg temp
+
+cd temp  
+
+git fetch
+git checkout -b branches/trunk origin/branches/trunk
+git config core.notesRef refs/notes/hg
+
+git remote add nrngit /home/hines/neuron/hggit/nrngit
+git fetch nrngit
+
+git checkout branches/trunk
+git merge nrngit/master #and fix conflicts
+git commit
+
+git push origin
+git checkout master
+git merge branches/trunk
+cd ../nrngit
+git pull ../temp
+
+fi
+
 local=$HOME/neuron/hggit
 hgmastersite=ssh://hg@bitbucket.org/nrnhines
 gitmastersite=ssh://git@github.com/nrnhines
