@@ -70,15 +70,13 @@ HOC Keywords
     Example:
 
         .. code-block::
-            none
+            python
 
-            func max(){ 
-            	if ($1 > $2){ 
+            def max():
+            	if $1 > $2:
             		return $1 
-            	} else { 
+            	else:
             		return $2 
-            	} 
-            } 
 
         returns the maximum of two arguments which are read into the function.  Eg. ``max(3,6)``, where $1 is the 
         first argument (3) and $2 is the second argument (6).  This use of ``max`` would return the value 6. 
@@ -137,15 +135,14 @@ HOC Keywords
     Example:
 
         .. code-block::
-            none
+            python
 
-            while(1) { 
+            while 1:
             	x = fscan() 
-            	if (x < 0) { 
-            		break; 
-            	} 
+            	if x < 0:
+            		break
+            	
             	print sqrt(x) 
-            } 
 
 
          
@@ -175,14 +172,13 @@ HOC Keywords
     Example:
 
         .. code-block::
-            none
+            python
 
-            for i=1,10{ 
-            	if(i==6){ 
+            for i in range(1,11): 
+            	if i==6: 
             		continue 
-            	} 
+            	
             	print i 
-            } 
 
         prints the numbers: 1,2,3,4,5,7,8,9,10.  6 is left out because when i==6, the control is passed 
         beyond the print statement to the next iteration of the loop. 
@@ -190,13 +186,12 @@ HOC Keywords
         You can accomplish the same thing with the following syntax: 
 
         .. code-block::
-            none
+            python
 
-            for i=1,10{ 
-            	if(i<6 || i>6){ 
+            for i in range(1,11): 
+            	if i<6 or i>6:
             		print i 
-            	} 
-            } 
+
 
          
 
@@ -260,20 +255,20 @@ HOC Keywords
         .. code-block::
             none
 
-            i = 0	//initialize i 
-            j = 0	//initialize j 
-            if(vec.x[i] <= 10 && i < vec.size()){	//if the value of the ith element in vec 
-            					//is less than or equal to 10, and 
-            					//if i is an index within vec 
-            	vec1.x[j] = vec.x[i]		//set the jth element of vec1 equal to that 
-            					//ith element of vec 
-            	i = i+1				//increment i by 1 
-            	j = j+1				//increment j by 1 
-            } else{					//otherwise (This must be on the same line as the closing brace of 
-            					//the previous statement in order to indicate that the compound  
-            					//statement has not ended.) 
-            	i = i+1				//simply go to the next element of vec 
-            } 
+            i = 0	#initialize i 
+            j = 0	#initialize j 
+            if vec.x[i] <= 10 and i < vec.size():	#if the value of the ith element in vec 
+            					#is less than or equal to 10, and 
+            					#if i is an index within vec 
+            	vec1.x[j] = vec.x[i]		#set the jth element of vec1 equal to that 
+            					#ith element of vec 
+            	i = i+1				#increment i by 1 
+            	j = j+1				#increment j by 1 
+            else:					#otherwise (This must be on the same line as the closing brace of 
+            					#the previous statement in order to indicate that the compound  
+            					#statement has not ended.) 
+            	i = i+1				#simply go to the next element of vec 
+            
 
          
 
@@ -321,15 +316,15 @@ HOC Keywords
     Example:
 
         .. code-block::
-            none
+            python
 
             numelements = 20 
             i = 0 
-            while (i < numelements){ 
+            while i < numelements:
             	print(cos(vec.x[i])) 
             	print(sin(vec.x[i])) 
             	i += 1 
-            } 
+            
 
         prints the cosines and the sines of the ``vec`` elements up to ``numelements``, which in this case = 20. 
          
@@ -409,19 +404,20 @@ HOC Keywords
 
         .. code-block::
             none
-
-            for(i=0; i<=9; i=i+1){ 
+			
+			i=0
+            while (i<=9):
             	print i*2 
-            } 
+            	i += 1
+            
 
         is equivalent to 
 
         .. code-block::
             none
 
-            for i=0, 9 { 
-            	print i*2 
-            } 
+            for i in range(0, 10) 
+            	print i*2  
 
 
         .. code-block::
@@ -430,8 +426,11 @@ HOC Keywords
             create axon 
             access axon 
             {nseg = 5  L=1000  diam=50  insert hh } 
-            for (x) print x, L*x 
-            for (x) if (x > 0 && x < 1) { print x, gnabar_hh(x) } 
+            for (x):
+                print x, L*x 
+            for (x):
+                if x > 0 and x < 1):
+                print x, gnabar_hh(x)
 
 
     .. seealso::
@@ -536,10 +535,9 @@ HOC Keywords
         .. code-block::
             none
 
-            for i=1, 5 { 
+            for i in range(1, 6): 
             	read(x) 
             	print x*x 
-            } 
 
         will await input from the user or from a file, and will print the square of each value typed in 
         by the user, or read from the file, for the first five values. 
@@ -689,14 +687,13 @@ HOC Keywords
     Example:
 
         .. code-block::
-            none
+            python
 
-            depvar x, y, z 
-             proc equations() { 
+             def equations():
                eqn x:: x + 2*y + z =  6 
                eqn y:: x - y + z   =  2 
                eqn z:: 2*x + y -z  = -3 
-             } 
+
             equations() 
             solve() 
             print x,y,z 
@@ -738,16 +735,15 @@ HOC Keywords
     Example:
 
         .. code-block::
-            none
+            python
 
             eqinit() 
-            depvar x, y, z 
-             proc equations() { 
+            def equations():
                eqn x:: x + 2*y + z =  6 
                eqn y:: x - y + z   =  2 
                eqn z:: 2*x + y -z  = -3 
                eqn z: = 5 + 4y 
-             } 
+             
             equations() 
             solve() 
             print x,y,z 
@@ -783,15 +779,13 @@ HOC Keywords
         .. code-block::
             none
 
-            func count() {local i, x 
+            def count(): 
             	x = 0 
-            	for i=0,40 { 
-            		if (vec.x[i] == 7) { 
+            	for i in range(41):
+            		if vec.x[i] == 7):
             			 x = x+1 
-            		} 
-            	} 
+
             	return x 
-            } 
 
         returns the number of elements which have the value of 7 in the first 40 elements of ``vec``. ``i`` 
         and ``x`` are local variables, and their usage here will not affect variables of the same name in 
@@ -821,14 +815,15 @@ HOC Keywords
     Example:
 
         .. code-block::
-            none
+            python
 
-            func sum() { local i, j  localobj tobj // sum from $1 to $2 
-            	i = $1  j = $2 
-            	tobj = new Vector() 
+            def sum(): # sum from $1 to $2 
+            	i = $1  
+            	j = $2 
+            	tobj = h.Vector() 
             	tobj.indgen(i, j ,1) 
             	return tobj.sum 
-            } 
+            
             sum(5, 10) == 45 
 
 
@@ -901,10 +896,10 @@ HOC Keywords
         eg. If :file:`$NEURONHOME/examples/nmodl/synpre.mod` is linked into NEURON, then: 
 
         .. code-block::
-            none
+            python
 
-            soma1 syn1=new synp(.5) 
-            setpointer syn1.vpre, axon2.v(1) 
+            soma1 syn1=h.synp(.5) 
+            #setpointer syn1.vpre, axon2.v(1) 
 
         would enable the synapse in soma1 to observe the axon2 membrane potential. 
 

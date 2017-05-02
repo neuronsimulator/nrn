@@ -55,30 +55,33 @@ HOC-based Mechanisms
         the membrane potential and keeps track of its maximum value. 
 
         .. code-block::
-            none
-
-            load_file("noload.hoc") 
+            python
+            
+            from neuron import h
+            import math
+            h.load_file("noload.hoc") 
              
-            create soma 
-            access soma 
-            { L = diam = sqrt(100/PI) insert hh} 
+            soma = h.Section()
+            soma.L = soma.diam = math.sqrt(100. / math.pi)
+            soma.insert('hh')
              
-            objref stim 
-            stim = new IClamp(.5) 
-            {stim.dur = .1  stim.amp = .3 } 
+            stim = h.IClamp(.5) 
+            stim.dur = .1
+            stim.amp = .3
+            
+            
 
             begintemplate Max 
             public V 
              
-            proc initial() { 
-            	V = v($1) 
-            } 
+            def initial(): 
+            	V = h.cas()(x).v 
+            
              
-            proc after_step() { 
-            	if (V < v($1)) { 
-            		V = v($1) 
-            	} 
-            } 
+            def after_step(x):
+            	if V < h.cas()(x).v):
+            		V = h.cas()(x).v 
+
             endtemplate Max 
              
              

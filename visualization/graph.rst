@@ -28,7 +28,7 @@ Graph
          
 
         .. code-block::
-            none
+            python
 
             from neuron import h, gui
             import math
@@ -621,19 +621,18 @@ Graph
         To iterate over all the lines in a Graph use: 
 
         .. code-block::
-            none
+            python
 
-            objref xvec, yvec 
-            xvec = new Vector() 
-            yvec = new Vector() 
-            for (j=0 i=-1; (i = Graph[0].getline(i, xvec, yvec) != -1 ; j+=1 ) { 
-            	// xvec and yvec contain the line with Graph internal index i. 
-            	// and can be associated with the sequential index j. 
+            xvec = h.Vector() 
+            yvec = h.Vector() 
+            j = 0
+            i = -1
+            while (i = Graph[0].getline(i, xvec, yvec) != -1) and (j+=1): 
+            	# xvec and yvec contain the line with Graph internal index i. 
+            	# and can be associated with the sequential index j. 
             	print j, i, yvec.label 
             	xline[j] = xvec.c 
-            	yline[j] = yvec.cl // clone label as well 
-            } 
-
+            	yline[j] = yvec.cl # clone label as well 
 
          
 
@@ -835,10 +834,9 @@ Graph
     Example:
 
         .. code-block::
-            none
+            python
 
-            objref g 
-            g = new Graph() 
+            g = h.Graph() 
             g.align(0, 0) 
             g.label(.5,.5, "left bottom at (.5,.5)") 
             g.align(0, 1) 
@@ -1008,23 +1006,24 @@ Graph
         is capable of simultaneously plotting multiple lines. 
 
         .. code-block::
-            none
+            python
 
-            objref g	//Creates an object reference "g" which will 
-            		//point to the graph object. 
-            g = new Graph()		//Assigns "g" the role of pointing to a Graph 
-            			//created from the Graph class, and produces 
-            			//a graph window with x and y axes on the  
-            			//screen. 
-            g.beginline()		//Tells the interpreter that commands to create a line for 
-            			//specific functions will follow. 
-            for(x=0; x<=10; x=x+0.1){	//States that x values to be plotted 
-            				//will go from 0 to 10 in increments 
-            				//of 0.1. 
+        	#Creates an object reference "g" which will 
+            		#point to the graph object. 
+            g = h.Graph()		#Assigns "g" the role of pointing to a Graph 
+            			#created from the Graph class, and produces 
+            			#a graph window with x and y axes on the  
+            			#screen. 
+            g.beginline()		#Tells the interpreter that commands to create a line for 
+            			#specific functions will follow. 
+            x = 0
+            while (x<=10): #//States that x values to be plotted 
+            				#//will go from 0 to 10 in increments 
+            				#//of 0.1. 
             	g.line(x, sin(x))	//States that the y values on the line 
-            				//will be the sin of the x values. 
-            } 
-            g.flush()	//Actually draws the plot on the graph in the window. 
+            				#will be the sin of the x values. 
+                x=x+0.1
+            g.flush()	#Actually draws the plot on the graph in the window. 
 
          
 
@@ -1055,15 +1054,16 @@ Graph
     Example:
 
         .. code-block::
-            none
+            python
 
-             
-            objref g	 
-            g = new Graph()		 
-            g.beginline()		 
-            for(t=0; t<=2*PI+0.1; t=t+0.1){	 
+              
+            g = h.Graph()		 
+            g.beginline()	
+            t = 0	 
+            while (t<=2*PI+0.1): 
             	g.line(sin(t), cos(t))	 
-            } 
+            	t = t+0.1
+            
             g.flush() 
             	 
 
@@ -1072,18 +1072,19 @@ Graph
          
 
         .. code-block::
-            none
+            python
 
-             
-            objref g	 
-            g = new Graph()		 
+             	 
+            g = h.Graph()		 
             t = 0		 
             g.addexpr("sin(t)")	 
             g.xexpr("cos(t)")	 
-            g.begin()		 
-            for(t=0; t<=2*PI+0.1; t=t+0.1){	 
-            	g.plot(t)	 
-            } 
+            g.begin()
+            t = 0		 
+            while (t<=2*PI+0.1):  
+            	g.plot(t)
+            	t = t + 0.1
+            
             g.flush()	 
              
 
@@ -1264,10 +1265,9 @@ Graph
     Example:
 
         .. code-block::
-            none
+            python
 
-            objref g 
-            g = new Graph() 
+            g = h.Graph() 
             g.exec_menu("Keep Lines") 
 
 
@@ -1291,10 +1291,11 @@ Graph
     Example:
 
         .. code-block::
-            none
+            python
+            
+            from neuron import h, gui
 
-            objref g 
-            g = new Graph() 
+            g = h.Graph() 
             g.menu_action("Print File", "g.printfile(\"temp.eps\")  system(\"lp temp.eps\")") 
 
 
@@ -1339,14 +1340,13 @@ Graph
     Example:
 
         .. code-block::
-            none
+            python
 
-            objref g 
-            g = new Graph() 
+            g = h.Graph() 
             g.menu_tool("mouse events", "p") 
-            proc p() { 
+            def p():
             	print $1, $2, $3, $4 
-            } 
+            
 
 
          

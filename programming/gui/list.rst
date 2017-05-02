@@ -283,27 +283,29 @@ List
         registered. 
 
         .. code-block::
-            none
+            python
+            
+            from python import h
 
             begintemplate A 
-            objref this, list, obj 
-            proc init() { 
-            	list = new List() 
+            def init():
+            	list = h.List() 
             	list.append(this) 
-            	for i=0,4 { 
-            		obj = new Random() 
+            	for i in range(5): 
+            		obj = h.Random() 
             		list.append(obj) 
-            	} 
+            	
             	list.browser() 
             	list.select_action("act(hoc_ac_)") 
-            } 
-            proc act() { 
-            	printf("item %d selected in list of object %s\n", $1, this) 
-            } 
+            
+            def act():
+            	print("item %d selected in list of object %s\n", $1, this) 
+            
             endtemplate A 
              
             objref a[2] 
-            for i=0,1 a[i] = new A() 
+            for i in range(2): 
+                a[i] = h.A() 
 
 
          
@@ -329,21 +331,20 @@ List
     Example:
 
         .. code-block::
-            none
+            python
 
-            objref list, obj 
-            list = new List() 
-            for i=0,4 { 
-                    obj = new Random() 
+            list = h.List() 
+            for i in range (5): 
+                    obj = h.Random() 
                     list.append(obj)  
-            	obj = new List() 
+            	obj = h.List() 
             	list.append(obj) 
-            } 
+            
             list.browser() 
             list.accept_action("act()") 
-            proc act() { 
-                    printf("item %d accepted\n", hoc_ac_) 
-            } 
+            def act():
+                    print("item %d accepted\n", hoc_ac_) 
+            
 
 
          

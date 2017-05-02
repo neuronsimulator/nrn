@@ -199,7 +199,7 @@ File Access (Recommended Way)
 
 
     Syntax:
-        ``.printf("format", args, ...)``
+        ``.print("format", args, ...)``
 
 
     Description:

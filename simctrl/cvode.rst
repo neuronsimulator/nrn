@@ -699,12 +699,12 @@ CVode
             none
 
             iterator ltr() {local i, cnt  localobj nil 
-            	for i = 0, $o2.count - 1 { 
+            	for i in range(0, $o2.count - 1):
             		$o1 = $o2.object(i) 
             		iterator_statement 
-            	} 
+            	
             	$o1 = nil 
-            } 
+            
 
         and then take advantage of the automatic creation and destruction 
         of lists with, for example, to print all the postcells that the 
@@ -1449,11 +1449,11 @@ if something needs changing. Examples of the two styles of usage are:
 
         	at_time(del) 
         	at_time(del + dur) 
-        	if (t >= del && t <= del + dur) { 
+        	if t >= del and t <= del + dur:
         		istim = on_value 
-        	}else{ 
+        	else:
         		istim = 0 
-        	} 
+        	
 
  
 2) Use the at_time return value to do the logic. 
@@ -1465,12 +1465,12 @@ if something needs changing. Examples of the two styles of usage are:
         	istim = 0 
         } 
         ... 
-        	if (at_time(del)) { 
+        	if (at_time(del)):
         		istim = on_value 
         	} 
-        	if (at_time(del + dur)) { 
+        	if (at_time(del + dur)):
         		istim = 0 
-        	} 
+        	
 
 Notice the requirement of initialization or else if the previous 
 run was stopped before del + dur the value of istim would be on_value 

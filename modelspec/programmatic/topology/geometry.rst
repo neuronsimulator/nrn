@@ -105,7 +105,7 @@ truncated cones as long as the diameter does not change too much.
 
 
 .. code-block::
-    none
+    python
 
     forall delete_section() 
     create a 
@@ -149,7 +149,9 @@ Example:
 
 
     .. code-block::
-        none
+        python
+        
+        from neuron import h
 
         forall delete_section() 
         create a, b, c, d, e 
@@ -160,17 +162,17 @@ Example:
         forall nseg=20 
         forall L=100 
         forall diam(0:1) = 10:40 
-         
-        objref s 
-        s = new Shape() 
+        
+        s = h.Shape() 
         s.show(0) 
         a s.color(2) 
         topology() 
         finitialize() 
-        forall { 
+        forall:
         	print secname() 
-        	for i=0,n3d()-1 print i, x3d(i), y3d(i), z3d(i), diam3d(i) 
-        } 
+        	for i in range(n3d()): 
+        	    print i, x3d(i), y3d(i), z3d(i), diam3d(i) 
+        
 
      
     If you change the diameter or length, the Shape instances are 
@@ -197,24 +199,26 @@ Example:
 
 
     .. code-block::
-        none
+        python
+        
+        from neuron import h
 
         forall delete_section() 
-        objref s 
-        proc pr() { 
-        pt3dclear() 
-        nseg = $1 
-        diam = 10 
-        diam(.34:.66) = 20:20 
-        define_shape() 
-        for(x) print x*L, diam(x), area(x), ri(x) 
-        } 
+        def pr():
+            pt3dclear() 
+            nseg = $1 
+            diam = 10 
+            diam(.34:.66) = 20:20 
+            define_shape() 
+            for(x):
+                print x*L, diam(x), area(x), ri(x) 
+          
          
-        xpanel("change nseg") 
-        xradiobutton("nseg = 3", "pr(3)") 
-        xradiobutton("nseg = 11", "pr(11)") 
-        xradiobutton("nseg = 101", "pr(101)") 
-        xpanel() 
+        h.xpanel("change nseg") 
+        h.xradiobutton("nseg = 3", "pr(3)") 
+        h.xradiobutton("nseg = 11", "pr(11)") 
+        h.xradiobutton("nseg = 101", "pr(101)") 
+        h.xpanel() 
 
 
         create a 
@@ -226,14 +230,17 @@ Example:
         diam=10 
         diam(.34:.66) = 20:20 
          
-        for(x) print x*L, diam(x), area(x), ri(x) 
+        for(x):
+            print x*L, diam(x), area(x), ri(x) 
          
-        s = new Shape() 
+        s = h.Shape() 
         s.show(0) 
          
-        for i=0, n3d()-1 print i, arc3d(i), diam3d(i) 
+        for i in range(n3d()):
+            print i, arc3d(i), diam3d(i) 
         print "L=", L 
-        for(x) print x*L, diam(x), area(x), ri(x) 
+        for(x):
+            print x*L, diam(x), area(x), ri(x) 
          
 
 The difference is that the 3-d points define a series of truncated cones 
@@ -290,7 +297,7 @@ Example:
 
 
     .. code-block::
-        none
+        python
 
         forall delete_section() 
 
@@ -299,15 +306,15 @@ Example:
         Ra=100 
         nseg = 10 
         pt3dclear() 
-        for i=0,30 { 
+        for i in range(31): 
         	x = PI*i/30 
         	pt3dadd(200*sin(x), 200*cos(x), 0, 100*sin(4*x)) 
-        } 
-        objref s 
-        s = new Shape() 
+         
+        s = h.Shape() 
         s.show(0) 
         print L 
-        for (x) print x, diam(x), area(x), PI*diam(x)*L/nseg, ri(x), .01*Ra*(L/2/nseg)/(PI*(diam(x)/2)^2) 
+        for (x):
+        print x, diam(x), area(x), PI*diam(x)*L/nseg, ri(x), .01*Ra*(L/2/nseg)/(PI*(diam(x)/2)^2) 
 
     Note that at one point the diameter is numerically 0 and 
     the axial resistance becomes 
@@ -323,23 +330,24 @@ Example:
 
 
     .. code-block::
-        none
+        python
+        
+        from neuron import h
 
         forall delete_section() 
 
-        xopen("$(NEURONHOME)/demo/pyramid.nrn") 
+        h.xopen("$(NEURONHOME)/demo/pyramid.nrn") 
         mode = 1 
         pt3dconst(mode) 
-        objref s 
-        s = new Shape() 
+        s = h.Shape() 
         s.action("dendrite_1[8] s.select()") 
          
         dendrite_1[8] s.color(2) 
          
-        xpanel("Change Length") 
-        xvalue("dendrite_1[8].L", "dendrite_1[8].L", 1) 
-        xcheckbox("Can't change length", &mode, "pt3dconst(mode)") 
-        xpanel() 
+        h.xpanel("Change Length") 
+        h.xvalue("dendrite_1[8].L", "dendrite_1[8].L", 1) 
+        h.xcheckbox("Can't change length", &mode, "pt3dconst(mode)") 
+        h.xpanel() 
 
 
 .. seealso::
@@ -783,9 +791,10 @@ Reading 3D Data from NEURON
     Example:
 
         .. code-block::
-            none
+            python
 
-            for (x) print x, area(x), ri(x) 
+            for (x):
+                print x, area(x), ri(x) 
 
         will print the arc length, the segment area at that arc length, and the resistance along that length 
         for the currently accessed section. 

@@ -9,9 +9,9 @@ MechanismType
 
 
     Syntax:
-        ``mt = new MechanismType(0)``
+        ``mt = h.MechanismType(0)``
 
-        ``mt = new MechanismType(1)``
+        ``mt = h.MechanismType(1)``
 
 
     Description:
@@ -35,17 +35,15 @@ MechanismType
     Example:
 
         .. code-block::
-            none
+            python
 
-            objref mt 
-            //Print the names of all density mechanisms 
-            mt = new MechanismType(0) 
+            #Print the names of all density mechanisms 
+            mt = h.MechanismType(0) 
             strdef mname 
-            for i=0, mt.count()-1 { 
+            for i in range(mt.count()):
             	mt.select(i) 
             	mt.selected(mname) 
             	print mname 
-            } 
 
 
     .. seealso::
@@ -282,22 +280,23 @@ MechanismType
     Example:
 
         .. code-block::
-            none
+            python
+            
+            from neuron import h
 
             create cable 
             access cable 
-            nseg = 5 
-            objref stim[3] 
-            for i=0,2 stim[i] = new IClamp(i/2) 
+            nseg = 5  
+            for i in range(3):
+                stim[i] = new IClamp(i/2) 
              
-            objref mt, pp 
-            mt = new MechanismType(1) 
+            mt = h.MechanismType(1) 
             mt.select("IClamp") 
-            for (pp = mt.pp_begin(); object_id(pp) != 0; pp = mt.pp_next()) { 
+            for pp = mt.pp_begin() and object_id(pp) != 0 and pp = mt.pp_next():
             	x = pp.get_loc() 
-            	printf("%s located at %s(%g)\n", pp, secname(), x) 
-            	pop_section() 
-            } 
+            	print("%s located at %s(%g)\n", pp, secname(), x) 
+            	h.pop_section() 
+            
 
 
          

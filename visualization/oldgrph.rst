@@ -79,28 +79,32 @@ Obsolete Plotting
     Example:
 
         .. code-block::
-            none
+            python
+            
+            from neuron import h, gui
 
-            proc p() { /* plot ramp */ 
+            def p(): #/* plot ramp */ 
                axis(100,300,450,200) 
                axis(0,15,3,-1,1,2) 
                axis() 
                plot(1) 
-               for (x=0; x<15; x=x+.1) { 
-                  plot(x, x/15)	/* ramp */ 
-                  graph(x) /* plots graph list if any */ 
-               } 
-               graph(-1) /* flush remaining part of graphs, if any */ 
+               x = 0
+               while (x<15):
+                  plot(x, x/15)	#* ramp */ 
+                  graph(x) #* plots graph list if any */ 
+                  x=x+.1
+               
+               graph(-1) #* flush remaining part of graphs, if any */ 
                plt(-1) 
-            }	 
+            
              
-            p()    /*plots the ramp alone*/ 
+            p()    #*plots the ramp alone*/ 
              
             graph() 
             graph("sin(x)","axis(100,300,100,300) axis()") 
-            graph("cos(x)","")  /* same axes as previous call to graph */ 
+            graph("cos(x)","")  #* same axes as previous call to graph */ 
              
-            p()    /* plots the sin and cos along with the ramp */ 
+            p()    #* plots the sin and cos along with the ramp */ 
 
          
 
@@ -224,16 +228,18 @@ Obsolete Plotting
     Example:
 
         .. code-block::
-            none
+            python
 
-            proc plotsin() { /* plot the sin function from 0 to 10 radians */ 
-               axis(0, 10, 5, -1, 1, 2) /* setup scale */ 
+            def plotsin(): #/* plot the sin function from 0 to 10 radians */ 
+               axis(0, 10, 5, -1, 1, 2) #/* setup scale */ 
                plot(1) 
-               for (x=0; x<=10; x=x+.1) { 
-                  plot(x, sin(x)) /* plot the function */ 
-               } 
-               axis() /* draw the axes */ 
-            } 
+               x = 0
+               while (x<=10):
+                  plot(x, sin(x)) #/* plot the function */ 
+                  x = x+.1
+               
+               axis() #/* draw the axes */ 
+            
 
          
 
@@ -359,19 +365,23 @@ Obsolete Plotting
     Example:
 
         .. code-block::
-            none
+            python
 
-            proc plotsin() { /* This procedure plots the sin function in red.*/ 
+            def plotsin(): #/* This procedure plots the sin function in red.*/ 
                setcolor(4) 
-               plt(1, 100, 500)  plt(2, 100, 100) /* y-axis*/ 
-               plt(1, 100, 300)  plt(2, 600, 300) /* x-axis*/ 
+               plt(1, 100, 500)  
+               plt(2, 100, 100) #/* y-axis*/ 
+               plt(1, 100, 300)  
+               plt(2, 600, 300) #/* x-axis*/ 
                plt(1, 200, 550) 
-               plt(-2)  print "SIN(x) from 0 to 2*PI" /* label*/ 
-               for(i=0; i<=100;i=i+1){ 
+               plt(-2)  
+               print "SIN(x) from 0 to 2*PI" #/* label*/ 
+               i = 0
+               while (i<=100): 
                   plt(i+1, i*500/100, 300 + 200*sin(2*PI*i/100)) 
-               } 
+                  i = i+1               
                plt(-1) /* close plot */ 
-            } 
+            
 
          
 

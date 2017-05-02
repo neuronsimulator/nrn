@@ -4,7 +4,7 @@ Style Settings
 .. function:: ivoc_style
 
     Syntax:
-        ``ivoc_style("name", "attribute")``
+        ``h.ivoc_style("name", "attribute")``
 
     Description:
         Gives the style attribute to name. Any property listed in the file 
@@ -15,14 +15,14 @@ Style Settings
     Example:
 
         .. code-block::
-            none
+            python
 
-            // 7 decimal places in value field editors. Must be done prior to any panel. 
-            ivoc_style("*xvalue_format", "%.7g") 
-            // large fonts in unix. Takes effect on next panel. 
-            ivoc_style("*font", "*helvetica-medium-r-normal*--24*") 
-            ivoc_style("*MenuBar*font", "*helvetica-medium-r-normal*--24*") 
-            ivoc_style("*MenuItem*font", "*helvetica-medium-r-normal*--24*") 
+            # 7 decimal places in value field editors. Must be done prior to any panel. 
+            h.ivoc_style("*xvalue_format", "%.7g") 
+            # large fonts in unix. Takes effect on next panel. 
+            h.ivoc_style("*font", "*helvetica-medium-r-normal*--24*") 
+            h.ivoc_style("*MenuBar*font", "*helvetica-medium-r-normal*--24*") 
+            h.ivoc_style("*MenuItem*font", "*helvetica-medium-r-normal*--24*") 
 
 
 ----
@@ -61,9 +61,9 @@ PrintWindowManager Placement
 .. function:: pwman_place
 
     Syntax:
-        ``pwman_place(left, top)``
+        ``h.pwman_place(left, top)``
 
-        ``pwman_place(left, top, 0)``
+        ``h.pwman_place(left, top, 0)``
 
     Description:
         moves the PrintWindowManager to the indicated location in pixel 

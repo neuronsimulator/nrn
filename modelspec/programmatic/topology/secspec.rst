@@ -23,7 +23,7 @@ is described by the syntax :samp:`{sectionname}.varname`. Examples
 are 
 
 .. code-block::
-    none
+    python
 
     dendrite[2].L = dendrite[1].L + dendrite[0].L 
     axon.v = soma.v 
@@ -142,19 +142,20 @@ use the section stack.
     Example:
 
         .. code-block::
-            none
+            python
 
             create a, b, c, d 
             access a  
             print secname()  
-            b {  
-                    print secname()  
-                    access c        // not recommended. The "go_to" of sections. 
-                    print secname()  
-                    d {print secname()} 
-                    print secname() 
-            } // because the stack has more than one section, c is popped off 
-            print secname()	// and the second "access" was not permanent! 
+            b  
+            print secname()  
+            access c        # not recommended. The "go_to" of sections. 
+            print secname()  
+            d 
+            print secname() 
+            print secname() 
+             # because the stack has more than one section, c is popped off 
+            print secname()	# and the second "access" was not permanent! 
 
 
          
@@ -196,12 +197,12 @@ use the section stack.
     Example:
 
         .. code-block::
-            none
+            python
 
             create soma, axon, dend[3] 
-            forall { 
+            forall: 
             	print secname() 
-            } 
+            
 
         prints the names of all the sections which have been created. 
 
@@ -293,13 +294,15 @@ use the section stack.
 
 
         .. code-block::
-            none
+            python
 
-            create soma, dend[3], axon 
-            objref sl 
-            sl = new SectionList() 
-            for (i = 2; i >= 0; i = i - 1) dend[i] sl.append() 
-            forsec sl print secname() 
+            sl = h.SectionList() 
+            i = 2
+            while (i>= 0):
+                i = i - 1
+                dend[i] sl.append() 
+                forsec sl 
+                print secname() 
 
 
          
@@ -323,16 +326,17 @@ use the section stack.
     Example:
 
         .. code-block::
-            none
+            python
 
-            create soma[5] 
-            objref stim[5] 
-            for i=0,4 soma[i] stim[i] = new IClamp(i/4) 
-            for i=0,4 { 
+			from neuron import h
+			
+            for i in range(5):
+                soma[i] stim[i] = new IClamp(i/4) 
+            for i in range(5): 
             	x = stim[i].get_loc() 
-            	printf("location of %s is %s(%g)\n", stim[i], secname(), x) 
-            	pop_section() 
-            } 
+            	print("location of %s is %s(%g)\n", stim[i], secname(), x) 
+            	h.pop_section() 
+            
 
 
          

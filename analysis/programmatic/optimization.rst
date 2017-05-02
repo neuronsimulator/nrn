@@ -62,30 +62,27 @@ Optimization
         Hoc example: minimize ``(x+y - 5)^2 + 5*((x-y) - 15)^2``
 
         .. code-block::
-            none
+            python
 
-            objref vec 
-            vec = new Vector(2) // vec.x[0] is x, vec.x[1] is y 
-            func efun() {local x, y 
-              x = $&2[0]  y = $&2[1] 
+            vec = h.Vector(2) #vec.x[0] is x, vec.x[1] is y 
+            def efun(): 
+              x = $&2[0]
+              y = $&2[1] 
               return (x+y - 5)^2 + 5*(x-y - 15)^2 
-            } 
+            
             attr_praxis(1e-5, .5, 0) 
             e = fit_praxis(vec.size(), "efun", vec) 
-            printf("e=%g x=%g y=%g\n", e, vec.x[0], vec.x[1]) 
+            print("e=%g x=%g y=%g\n", e, vec.x[0], vec.x[1]) 
              
-            objref paxis 
-            paxis = new Vector() 
-            for i=0, 1 { 
+            paxis = h.Vector() 
+            for i in range(2): 
               pval = pval_praxis(i, paxis) 
-              printf("%d  %10g      %10g %10g\n", i, pval, paxis.x[0], paxis.x[1]) 
-            } 
-
+              print("%d  %10g      %10g %10g\n", i, pval, paxis.x[0], paxis.x[1]) 
          
         Python example: 
 
         .. code-block::
-            none
+            python
 
             from neuron import h 
             v = h.Vector(2) 

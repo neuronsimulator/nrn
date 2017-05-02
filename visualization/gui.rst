@@ -29,17 +29,18 @@ Scene
 Graphs and Shape windows are instances of views into a scene.
 
 .. code-block::
-    none
+    python
     
-    objref g 
-    g = new Graph() 
+    from neuron import h
+    
+    g = h.Graph() 
     g.label("here is some text") 
     g.beginline() 
     g.line(100, 50) 
     g.line(200, 100) 
     g.flush() 
 
-    // pop up an example of a scene 
+    #pop up an example of a scene 
 
 A scene is defined as the space represented by the model 
 coordinate system. A view is defined as that portion of the scene 
@@ -167,17 +168,16 @@ Browser
 Browsers are visible lists.
 
 .. code-block::
-    none
+    python
     
-    // pop up example of a browser 
-    objref f 
+    # pop up example of a browser 
     strdef tempstr 
-    f = new File() 
+    f = h.File() 
     f.chooser("", "Example file browser", "*", "Type file name", "Exit") 
-    while (f.chooser()) { 
+    while (f.chooser()): 
     f.getname(tempstr) 
     print tempstr 
-    } 
+    
     quit() 
 
 
@@ -237,37 +237,39 @@ space.
 See :func:`xpanel` for hoc functions to generate panels 
 
 .. code-block::
-    none
+    python
     
-    // pop up example panel 
+    from neuron import h
+    
+    # pop up example panel 
     strdef tempstr 
     tempstr = "slider................." 
     x=.1 
     xx = 0 
     y=0 
     z=0 
-    xpanel("Example Panel") 
-    xbutton("PushButton", "print \"released button\"") 
-    xlabel("Following two are for variable x") 
-    xvalue("Value Editor", "x", 0, "print x") 
-    xvalue("Default Value Editor for variable x", "x", 1, "print x") 
-    xcheckbox("Checkbox", &y, "print \"state y is \", y") 
-    xstatebutton("StateButton", &z, "print \"state z is \", z") 
-    xmenu("Example Menu") 
-    xbutton("Item 1", "print \"selected item 1\"") 
-    xbutton("Item 2", "print \"selected item 2\"") 
-    xcheckbox("Checkbox", &y, "print \"state y is \", y") 
-    xradiobutton("Radio 1", "print 1") 
-    xradiobutton("Radio 2", "print 2") 
-    xradiobutton("Radio 3", "print 3") 
-    xmenu() 
-    xlabel("Following 3 are mutually exclusive") 
-    xradiobutton("Radio 1", "print 1") 
-    xradiobutton("Radio 2", "print 2") 
-    xradiobutton("Radio 3", "print 3") 
-    xvarlabel(tempstr) 
-    xslider(&xx, 0, 100, "sprint(tempstr, \"slider for xx = %g\", xx)") 
-    xpanel() 
+    h.xpanel("Example Panel") 
+    h.xbutton("PushButton", "print \"released button\"") 
+    h.xlabel("Following two are for variable x") 
+    h.xvalue("Value Editor", "x", 0, "print x") 
+    h.xvalue("Default Value Editor for variable x", "x", 1, "print x") 
+    h.xcheckbox("Checkbox", &y, "print \"state y is \", y") 
+    h.xstatebutton("StateButton", &z, "print \"state z is \", z") 
+    h.xmenu("Example Menu") 
+    h.xbutton("Item 1", "print \"selected item 1\"") 
+    h.xbutton("Item 2", "print \"selected item 2\"") 
+    h.xcheckbox("Checkbox", &y, "print \"state y is \", y") 
+    h.xradiobutton("Radio 1", "print 1") 
+    h.xradiobutton("Radio 2", "print 2") 
+    h.xradiobutton("Radio 3", "print 3") 
+    h.xmenu() 
+    h.xlabel("Following 3 are mutually exclusive") 
+    h.xradiobutton("Radio 1", "print 1") 
+    h.xradiobutton("Radio 2", "print 2") 
+    h.xradiobutton("Radio 3", "print 3") 
+    h.xvarlabel(tempstr) 
+    h.xslider(&xx, 0, 100, "sprint(tempstr, \"slider for xx = %g\", xx)") 
+    h.xpanel() 
 
 
      

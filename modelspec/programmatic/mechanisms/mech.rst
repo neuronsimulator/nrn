@@ -304,35 +304,42 @@ General
  
 
         .. code-block::
-            none
-
-            // setup for three simulations 
+            python
+            
+            #setup for three simulations 
             create s1, s2, s3 // will be stimulated by IClamp, SEClamp, and VClamp 
-            forall {insert hh diam=3 L=3 } 
-            objref c1, c2, c3, ap, apc 
-            s1 c1 = new IClamp(0.5) 
-            s2 c2 = new SEClamp(0.5) 
-            s3 c3 = new VClamp(0.5) 
-            {c1.dur=.1 c1.amp=0.3} 
-            {c2.dur1 = 1 c2.rs=0.01 } 
-            {c3.dur[0] = 1} 
+            forall:
+                insert hh diam=3 L=3
+
+            s1 
+            c1 = h.IClamp(0.5) 
+            s2 
+            c2 = h.SEClamp(0.5) 
+            s3 
+            c3 = h.VClamp(0.5) 
+            c1.dur=.1 
+            c1.amp=0.3
+            c2.dur1 = 1 
+            c2.rs=0.01 
+            c3.dur[0] = 1
              
-            // record an action potential 
-            ap = new Vector() 
+            # record an action potential 
+            ap = h.Vector() 
             ap.record(&s1.v(0.5)) 
             finitialize(-65)    
-            while(t<1) { fadvance() } 
+            while (t<1):
+                fadvance()
              
-            // do the three cases while playing the recorded ap 
-            apc = ap.c	// unfortunately can't play into two variables so clone it. 
+            # do the three cases while playing the recorded ap 
+            apc = ap.c	# unfortunately can't play into two variables so clone it. 
             ap.play_remove()   
             ap.play(&c2.amp1, dt) 
             apc.play(&c3.amp[0], dt) 
             finitialize(-65) 
-            while(t<0.4) { 
+            while (t<0.4):
                     fadvance() 
                     print s1.v, s2.v, s3.v, c1.i, c2.i, c3.i 
-            } 
+            
 
 
 
@@ -508,11 +515,12 @@ General
         for a NetCon is 
 
         .. code-block::
-            none
+            python
+            
+            from neuron import h
 
-            objref ns, nc 
-            nc = new NetStim(0.5) 
-            ns = new NetCon(nc, target...) 
+            nc = h.NetStim(0.5) 
+            ns = h.NetCon(nc, target...) 
 
         That is, do not use ``&nc.y`` as the source for the netcon. 
          

@@ -80,11 +80,11 @@ new procedure for the default init procedure:
 .. code-block::
     none
 
-    	def init(): { 
+    	def init():  
     		finitialize(v_init) 
-    		// insert new initialization code here to change states 
-    		// If states have been changed then complete 
-    		// initialization with 
+    		# insert new initialization code here to change states 
+    		# If states have been changed then complete 
+    		# initialization with 
     	    /*	 
     		if (cvode.active()) { 
     			cvode.re_init() 

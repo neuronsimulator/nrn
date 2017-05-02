@@ -439,7 +439,7 @@ Description:
     .. code-block::
         python
  
-        somedendrite {syn = new Syn(.8)} 
+        somedendrite {syn = h.Syn(.8)} 
         setpointer syn.vpre, axon.v(1) # has to be fixed
 
     will allow the syn object to know the voltage at the distal end of the axon 

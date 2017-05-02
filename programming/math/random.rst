@@ -431,28 +431,31 @@ Random Class
     Example:
 
         .. code-block::
-            none
+            python
+            
+            from neuron import h, gui
 
-            objref r, g, hist, vec 
             r = h.Random() 
             r.normal(-1, .5) 
              
             vec = h.Vector() 
-            vec.indgen(-3, 2, .1)	// x-axis for plot 
+            vec.indgen(-3, 2, .1)	# x-axis for plot 
             hist = h.Vector(vec.size()) 
             g = h.Graph() 
             g.size(-3, 2, 0, 50) 
             hist.plot(g, vec) 
-            for(i=0; i<500; i=i+1){ 
+            i = 0
+            while (i<500):
             	x = r.repick() 
             	print i, x 
-            	j = int((x+3)*10) // -3 to 2 -> 0 to 50 
-            	if (j >= 0) { 
+            	j = int((x+3)*10) # -3 to 2 -> 0 to 50 
+            	i+=1
+            	if j >= 0:
             		hist.x[j] = hist.x[j]+1 
-            	} 
+            	
             	g.flush() 
             	doNotify() 
-            } 
+
 
 
          
@@ -474,34 +477,35 @@ Random Class
     Example:
 
         .. code-block::
-            none
+            python
 
-            objref r, g, hist, xvec 
-            r = new Random() 
+            r = h.Random() 
             r.lognormal(5,2) 
             n=20 
-            xvec = new Vector(n*3)	// bins look like discrete spikes 
-            for i=0,n-1 { 
+            xvec = h.Vector(n*3)	# bins look like discrete spikes 
+            for i in range(n): 
             	xvec.x[3*i] = i-.1 
             	xvec.x[3*i+1] = i 
             	xvec.x[3*i+2] = i+.1 
-            } 
-            hist = new Vector(xvec.size()) 
-            g = new Graph() 
+            
+            hist = h.Vector(xvec.size()) 
+            g = h.Graph() 
             g.size(0, 15, 0, 120) 
             hist.plot(g, xvec) 
-            for(i=0; i<500; i=i+1){ 
+            i = 0
+            while (i<500):
             	x = r.repick() 
             	print i, x 
             	j = int(x) 
             	j = 3*j+1 
-            	if (j >= hist.size()) { // don't let any off the edge 
+            	i=i+1
+            	if j >= hist.size():  # don't let any off the edge 
             		j = hist.size() -1 
-            	} 
+            	
             	hist.x[j] = hist.x[j]+1 
             	g.flush() 
             	doNotify() 
-            } 
+            
 
 
          
@@ -523,36 +527,36 @@ Random Class
     Example:
 
         .. code-block::
-            none
+            python
 
-            objref r, g, hist, xvec 
-             
-            r = new Random() 
+            r = h.Random() 
             r.poisson(3) 
              
             n=20 
-            xvec = new Vector(n*3) 
-            for i=0,n-1 { 
+            xvec = h.Vector(n*3) 
+            for i in range(n): 
             	xvec.x[3*i] = i-.1 
             	xvec.x[3*i+1] = i 
             	xvec.x[3*i+2] = i+.1 
-            } 
-            hist = new Vector(xvec.size()) 
-            g = new Graph() 
+            
+            hist = h.Vector(xvec.size()) 
+            g = h.Graph() 
             g.size(0, 15, 0, 120) 
             hist.plot(g, xvec) 
-            for(i=0; i<500; i=i+1){ 
+            i = 0
+            while (i<500):
             	x = r.repick() 
             	print i, x 
+            	i += 1
             	j = int(x) 
             	j = 3*j+1 
-            	if (j >= hist.size()) { 
+            	if j >= hist.size():
             		j = hist.size() -1 
-            	} 
+            	
             	hist.x[j] = hist.x[j]+1 
             	g.flush() 
             	doNotify() 
-            } 
+            
 
 
          
@@ -578,22 +582,22 @@ Random Class
     Example:
 
         .. code-block::
-            none
+            python
 
-            objref r, hist, g 
-            r = new Random() 
+            r = h.Random() 
             r.binomial(20, .5) 
              
-            g = new Graph() 
+            g = h.Graph() 
             g.size(0, 20, 0, 100) 
-            hist = new Vector(20) 
+            hist = h.Vector(20) 
             hist.plot(g) 
-            for(i=0; i<500; i=i+1){ 
+            i = 0
+            while (i<500):
             	j = r.repick() 
             	hist.x[j] = hist.x[j]+1 
+            	i += 1
             	g.flush() 
             	doNotify() 
-            } 
 
 
          
@@ -618,24 +622,26 @@ Random Class
     Example:
 
         .. code-block::
-            none
+            python
+            
+            from neuron import h, gui
 
             objref r, hist, g 
-            r = new Random() 
+            r = h.Random() 
             r.geometric(.8) 
             hist = new Vector(1000) 
-            proc sample() { 
-            	hist = new Vector(1000) 
+            def sample(): 
+            	hist = h.Vector(1000) 
             	hist.setrand(r) 
             	hist = hist.histogram(0,100,1) 
             	hist.plot(g) 
-            } 
-            g = new Graph() 
+            
+            g = h.Graph() 
             g.size(0,40,0,200) 
             sample() 
-            xpanel("Resample") 
-            xbutton("Resample", "sample()") 
-            xpanel() 
+            h.xpanel("Resample") 
+            h.xbutton("Resample", "sample()") 
+            h.xpanel() 
 
 
          
@@ -674,24 +680,25 @@ Random Class
     Example:
 
         .. code-block::
-            none
+            python
+            
+            from neuron import h, gui
 
-            objref r, hist, g 
-            r = new Random()  
+            r = h.Random()  
             r.negexp(2.5)  
-            hist = new Vector(1000) 
-            proc sample() { 
-                    hist = new Vector(1000) 
+            hist = h.Vector(1000) 
+            def sample():
+                    hist = h.Vector(1000) 
                     hist.setrand(r) 
                     hist = hist.histogram(0,20,.1) 
                     hist.plot(g, .1) 
-            } 
-            g = new Graph() 
+            
+            g = h.Graph() 
             g.size(0,20,0,50) 
             sample() 
-            xpanel("Resample") 
-            xbutton("Resample", "sample()") 
-            xpanel() 
+            h.xpanel("Resample") 
+            h.xbutton("Resample", "sample()") 
+            h.xpanel() 
 
 
          

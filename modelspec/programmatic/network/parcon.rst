@@ -15,9 +15,9 @@ ParallelContext
     Syntax:
         ``objref pc``
 
-        ``pc = new ParallelContext()``
+        ``pc = h.ParallelContext()``
 
-        ``pc = new ParallelContext(nhost)``
+        ``pc = h.ParallelContext(nhost)``
 
 
     Description:
@@ -62,31 +62,29 @@ ParallelContext
         from the users point of view is 
 
         .. code-block::
-            none
+            python
 
-            func f() {              // a function with no context that *CHANGES* 
-               return $1*$1         //except its argument 
-            } 
+            def f():               #a function with no context that *CHANGES* 
+               return $1*$1         #except its argument 
+            
              
-            objref pc 
-            pc = new ParallelContext() 
-            pc.runworker()          // master returns immediately, workers in 
-                                    // infinite loop running and jobs from bulletin board 
+            pc = h.ParallelContext() 
+            pc.runworker()          # master returns immediately, workers in 
+                                    # infinite loop running and jobs from bulletin board 
             s = 0 
-            if (pc.nhost == 1) {    // use the serial form 
-               for i=1, 20 { 
+            if pc.nhost == 1:    # use the serial form 
+               for i in range(1, 21): 
                   s += f(i) 
-               } 
-            }else{                  // use the bulletin board form 
-               for i=1, 20 {        // scatter processes 
-                  pc.submit("f", i) // any context needed by f had better be 
-               }                    // the same on all hosts 
-               while (pc.working) { // gather results 
-                  s += pc.retval    // the return value for the executed function 
-               } 
-            } 
+                
+            else:                  # use the bulletin board form 
+               for i in range(1, 21):      # scatter processes 
+                  pc.submit("f", i) # any context needed by f had better be 
+               		              # the same on all hosts 
+               while pc.working:  # gather results 
+                  s += pc.retval    # the return value for the executed function 
+               
             print s 
-            pc.done                 // tell workers to quit 
+            pc.done                 # tell workers to quit 
 
          
         Several things need to be highlighted: 
@@ -101,8 +99,9 @@ ParallelContext
         .. code-block::
             none
 
-            for i = 1,n {pc.submit(...)} // scatter a set of tasks 
-            while(pc.working)) { ... }   // gather them all 
+            for i in range (1,n+1):
+                pc.submit(...) #scatter a set of tasks 
+            while pc.working:   #gather them all 
 
          
         Earlier submitted tasks tend to complete before later submitted tasks, even 
@@ -168,31 +167,30 @@ ParallelContext
         computation. eg. 
 
         .. code-block::
-            none
+            python
 
-            // pretend g is a Vector assigned earlier to conductances to test 
-            for i = 1, 20 
+            # pretend g is a Vector assigned earlier to conductances to test 
+            for i in range(1, 21): 
                forall gnabar_hh = g.x[i] 
-               for j = 1, 5 
+               for j in range(1, 6): 
                   stim.amp = s[j] 
                   run() 
-               } 
-            } 
+
 
         ie we only need to set gnabar_hh 20 times. But the first pass at 
         parallelization would look like: 
 
         .. code-block::
-            none
+            python
 
-            for i = 1, 20 { 
-               for j= 1, 5 { 
+            for i in range(1, 21):
+               for j in range(1, 6):
                   sprint(cmd, "{forall gnabar_hh = g[%d]} stim.amp = s[%d] run()\n", i, j) 
                   pc.submit(cmd) 
-               } 
-            } 
-            while (pc.working) { 
-            } 
+               
+            
+            while pc.working:
+            
 
         and not only do we take the hit of repeated evaluation of gnabar_hh 
         but the statement must be interpreted each time. A run must be quite 
@@ -288,21 +286,21 @@ ParallelContext
         methods still work properly. 
 
         .. code-block::
-            none
+            python
 
-            if (pc.nhost == 1) { 
-               for i=1, 20 { 
+            if pc.nhost == 1:
+               for i in range(1, 21):
                   print i, sin(i) 
-               } 
-            }else{ 
-               for i=1,20 { 
+               
+            else: 
+               for i in range(1,21):
                   pc.submit(i, "sin", i) 
-               } 
+               
              
-               while (pc.working) { 
+               while pc.working:
                   print pc.userid, pc.retval 
-               } 
-            } 
+               
+            
 
 
          
@@ -388,19 +386,19 @@ ParallelContext
         For example: 
 
         .. code-block::
-            none
+            python
 
-            func function_name() {local id 
+            def function_name(): 
                id = hoc_ac_ 
                $o1.reverse() 
                pc.post(id, $o1) 
                return 0 
-            } 
+            
             ... 
-            while( (id = pc.working) != 0) { 
+            while (id = pc.working) != 0:
                pc.take(id) 
                pc.upkvec.printf 
-            } 
+            
 
         The object form executes the function_name(copyofarg1, ...) in the 
         context of the object. IT MUST BE THE CASE that the string result 
@@ -441,12 +439,16 @@ ParallelContext
         results. 
 
         .. code-block::
-            none
+            python
 
-            for i=1,10 pc1.submit(...) 
-            for i=1,10 pc2.submit(...) 
-            for i=1,10 { pc1.working() ...) 
-            for i=1,10 { pc2.working() ...) 
+            for i in range(1,11):
+                pc1.submit(...) 
+            for i in range(1,11):
+                pc2.submit(...) 
+            for i in range(1,11):
+                pc1.working() ...
+            for i in range(1,11):
+                pc2.working() ...
 
         since pc1.working may get a result from a pc2 submission 
         If this behavior is at all inconvenient, I will change the semantics 
@@ -484,12 +486,11 @@ ParallelContext
         order that they were made by pc.submit. 
 
         .. code-block::
-            none
-
-            while ((id = pc.working) > 0) { 
-               // gather results of previous pc.submit calls 
+            python
+            			
+            while (id = pc.working) > 0:
+               # gather results of previous pc.submit calls 
                print id, pc.retval 
-            } 
 
         Note that if the submitted task was specified as a Python callable, then 
         :func:`pyret` would have to be used in place of :func:`retval` . 
@@ -506,36 +507,35 @@ ParallelContext
         and indeterminately. For example consider the following: 
 
         .. code-block::
-            none
+            python
 
-            function f() { 
+            def f():
                ... write some values to some global variables ... 
                pc.submit("g", ...) 
-               // when g is executed on another host it will not in general 
-               // see the same global variable values you set above. 
-               pc.working() // get back result of execution of g(...) 
-               // now the global variables may be different than what you 
-               // set above. And not because g changes them but perhaps 
-               // because the host executing this task started executing 
-               // another task that called f which then wrote DIFFERENT values 
-               // to these global variables. 
+               # when g is executed on another host it will not in general 
+               # see the same global variable values you set above. 
+               pc.working() # get back result of execution of g(...) 
+               # now the global variables may be different than what you 
+               # set above. And not because g changes them but perhaps 
+               # because the host executing this task started executing 
+               # another task that called f which then wrote DIFFERENT values 
+               # to these global variables. 
 
         I only know one way around this problem. Perhaps there are other and 
         better ways. 
 
         .. code-block::
-            none
+            python
 
-            function f() { local id 
-               id = hoc_ac_; 
-               ... write some values to some global variables ... 
+            def f(): 
+               id = hoc_ac_
+               # write some values to some global variables ... 
                pc.post(id, the, global, variables) 
                pc.submit("g", ...) 
                pc.working() 
                pc.take(id) 
-               // unpack the info back into the global variables 
-               ... 
-            } 
+               # unpack the info back into the global variables 
+
 
 
     .. seealso::
@@ -711,21 +711,19 @@ ParallelContext
         This method was introduced with the following protocol in mind 
 
         .. code-block::
-            none
+            python
 
-            proc save_context() { // executed on master 
+            def save_context(): # executed on master 
                sprint(tstr, "%s", this) 
-               pc.look_take(tstr) // remove previous context if it exists 
-               // master packs a possibly complicated context from within 
-               // an object whose counterpart exists on all workers 
+               pc.look_take(tstr) # remove previous context if it exists 
+               # master packs a possibly complicated context from within 
+               # an object whose counterpart exists on all workers 
                pc.post(tstr) 
-               pc.context(this, "restore_context", tstr) // all workers do this 
-            } 
+               pc.context(this, "restore_context", tstr) # all workers do this 
              
-            proc restore_context() { 
-               pc.look($s1) // don't remove! Others need it as well. 
-               // worker unpacks possibly complicated context 
-            } 
+            def restore_context():
+               pc.look($s1) # don't remove! Others need it as well. 
+               # worker unpacks possibly complicated context 
 
 
     .. warning::
@@ -1513,28 +1511,27 @@ Description:
         \ ``pc.alltoall(vcnts, one, vdest)`` where one is a vector filled with 1. 
 
         .. code-block::
-            none
+            python
 
-            // assume vsrc is a sorted Vector with elements ranging from 0 to tstop 
-            // then the following is a parallel sort such that vdest is sorted on 
-            // host i and for i < j, all the elements of vdest on host i are < 
-            // than all the elements on host j. 
+            # assume vsrc is a sorted Vector with elements ranging from 0 to tstop 
+            # then the following is a parallel sort such that vdest is sorted on 
+            # host i and for i < j, all the elements of vdest on host i are < 
+            # than all the elements on host j. 
             vsrc.sort 
-            cnts = new Vector(pc.nhost) 
+            cnts = h.Vector(pc.nhost) 
             j = 0 
-            for i=0, pc.nhost-1 { 
+            for i in range(0, pc.nhost-1):
               x = (i+1)*tvl 
               k = 0 
-              while (j < s.size) { 
-                if (s.x[j] < x) { 
+              while j < s.size: 
+                if s.x[j] < x:
                   j += 1 
                   k += 1 
-                }else{ 
+                else:
                   break 
-                } 
-              } 
+
               cnts.x[i] = k 
-            } 
+
             pc.alltoall(vsrc, cnts, vdest)  
 
 
@@ -1591,12 +1588,12 @@ Description:
           data = [(rank, i) for i in range(nhost)]
           
           if rank == 0: print 'source data'
-          for r in serialize(): print rank, data
+              for r in serialize(): print rank, data
           
-          data = pc.py_alltoall(data)
+              data = pc.py_alltoall(data)
           
           if rank == 0: print 'destination data'
-          for r in serialize(): print rank, data
+              for r in serialize(): print rank, data
           
           pc.runworker()
           pc.done()
@@ -1772,12 +1769,13 @@ Description:
          
 
         .. code-block::
-            none
-
-            objref pc 
-            pc = new ParallelContext() 
-            {pc.subworlds(3)} 
-            func f() {local ret 
+            python
+ 
+ 			from neuron import h
+ 			
+            pc = h.ParallelContext() 
+            #{pc.subworlds(3)} 
+            def f():
               ret = pc.id_world*100 + pc.id_bbs*10 + pc.id  
               printf( \ 
                "userid=%d arg=%d ret=%03d  world %d of %d  bbs %d of %d  net %d of %d\n", \  
@@ -1785,36 +1783,40 @@ Description:
                pc.id_world, pc.nhost_world, pc.id_bbs, pc.nhost_bbs, pc.id, pc.nhost) 
               system("sleep 1") 
               return ret 
-            } 
+            
             hoc_ac_ = -1 
-            if (pc.id_world == 0) { printf("before runworker\n") } 
-            {f(1)} 
-            {pc.runworker()} 
-            {printf("\nafter runworker\n") f(2) } 
+            if (pc.id_world == 0):
+            print("before runworker\n")
+            f(1)
+            pc.runworker()
+            print("\nafter runworker\n") 
+            f(2)
              
-            {printf("\nbefore submit\n")} 
-            for i=3, 6 { pc.submit("f", i) } 
-            {printf("after submit\n")} 
+            print("\nbefore submit\n")
+            for i in range(3, 7):
+                pc.submit("f", i)
+                print("after submit\n")
              
-            while((userid = pc.working()) != 0) { 
+            while (userid = pc.working()) != 0):
               arg = pc.upkscalar() 
-              printf("result userid=%d arg=%d return=%03d\n", \ 
+              print("result userid=%d arg=%d return=%03d\n", \ 
                 userid, arg, pc.retval) 
-            } 
+            
              
-            {printf("\nafter working\n") f(7) } 
-            {pc.done()} 
+            printf("\nafter working\n") 
+            f(7)
+            pc.done() 
             quit() 
 
          
-        If the above code is saved in :file:`temp.hoc` and executed with 6 processes using 
-        \ ``mpiexec -n 6 nrniv -mpi temp.hoc`` then the output will look like 
+        If the above code is saved in :file:`temp.py` and executed with 6 processes using 
+        \ ``mpiexec -n 6 nrniv -mpi temp.py`` then the output will look like 
         (some lines may be out of order) 
 
         .. code-block::
             none
 
-            $ mpiexec -n 6 nrniv -mpi temp.hoc 
+            $ mpiexec -n 6 nrniv -mpi temp.py 
             numprocs=6 
             NEURON -- VERSION 7.2 (454:bb5c4f755f59) 2010-07-30 
             Duke, Yale, and the BlueBrain Project -- Copyright 1984-2008 

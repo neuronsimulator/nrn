@@ -588,104 +588,111 @@ NetCon
         To stop the simulation when a particular compartment reaches a threshold. 
         
         .. code-block::
-            none  
+            python  
+            
+            from neuron import h, gui
         
             load_file("nrngui.hoc") 
             objectvar save_window_, rvp_ 
             objectvar scene_vector_[4] 
             objectvar ocbox_, ocbox_list_, scene_, scene_list_ 
-            {ocbox_list_ = new List()  scene_list_ = new List()} 
-            {pwman_place(0,0,0)} 
+            ocbox_list_ = h.List()  
+            scene_list_ = h.List()
+            pwman_place(0,0,0)
              
-            //Begin SingleCompartment 
-            { 
+            #Begin SingleCompartment 
+            
             load_file("single.hoc") 
-            } 
-            ocbox_ = new SingleCompartment(0) 
-            ocbox_.inserter = new Inserter(0) 
-            {object_push(ocbox_.inserter)} 
-            { 
+             
+            ocbox_ = h.SingleCompartment(0) 
+            ocbox_.inserter = h.Inserter(0) 
+            object_push(ocbox_.inserter)
+            
             mt.select("hh") i = mt.selected() 
-            ms[i] = new MechanismStandard("hh") 
+            ms[i] = h.MechanismStandard("hh") 
             ms[i].set("gnabar_hh", 0.12, 0) 
             ms[i].set("gkbar_hh", 0.036, 0) 
             ms[i].set("gl_hh", 0.0003, 0) 
             ms[i].set("el_hh", -54.3, 0) 
             mstate[i]= 1 
             maction(i) 
-            } 
-            {object_pop() doNotify()} 
-            {object_push(ocbox_)} 
-            {inserter.v1.map()} 
-            {endbox()} 
-            {object_pop() doNotify()} 
-            { 
+            
+            object_pop() 
+            doNotify()
+            object_push(ocbox_) 
+            inserter.v1.map()
+            endbox()
+            object_pop() 
+            doNotify()
+            
             ocbox_ = ocbox_.vbox 
             ocbox_.map("SingleCompartment", 382, 22, 91.2, 96) 
-            } 
-            objref ocbox_ 
-            //End SingleCompartment 
+            
+            #End SingleCompartment 
              
              
-            //Begin PointProcessManager 
-            { 
+            #Begin PointProcessManager 
+            
             load_file("pointman.hoc") 
-            } 
-            { 
+            
+            
             soma ocbox_ = new PointProcessManager(0) 
-            } 
-            {object_push(ocbox_)} 
-            { 
-            mt.select("IClamp") i = mt.selected() 
+            
+            object_push(ocbox_)
+             
+            mt.select("IClamp") 
+            i = mt.selected() 
             ms[i] = new MechanismStandard("IClamp") 
             ms[i].set("del", 0, 0) 
             ms[i].set("dur", 0.1, 0) 
             ms[i].set("amp", 0.3, 0) 
-            mt.select("IClamp") i = mt.selected() maction(i) 
+            mt.select("IClamp") 
+            i = mt.selected() 
+            maction(i) 
             hoc_ac_ = 0.5 
-            sec.sec move() d1.flip_to(0) 
-            } 
-            {object_pop() doNotify()} 
-            { 
+            sec.sec move() 
+            d1.flip_to(0) 
+            
+            object_pop() 
+            doNotify()
+            
             ocbox_ = ocbox_.v1 
             ocbox_.map("PointProcessManager", 152, 109, 208.32, 326.4) 
-            } 
-            objref ocbox_ 
-            //End PointProcessManager 
              
-            { 
-            save_window_ = new Graph(0) 
+            #End PointProcessManager 
+             
+            
+            save_window_ = h.Graph(0) 
             save_window_.size(0,5,-80,40) 
             scene_vector_[2] = save_window_ 
-            {save_window_.view(0, -80, 5, 120, 493, 23, 300.48, 200.32)} 
+            save_window_.view(0, -80, 5, 120, 493, 23, 300.48, 200.32)
             graphList[0].append(save_window_) 
             save_window_.save_name("graphList[0].") 
             save_window_.addexpr("v(.5)", 1, 1, 0.8, 0.9, 2) 
-            } 
+            
             objectvar scene_vector_[1] 
-            {doNotify()} 
+            doNotify() 
              
 
 
-            none
+            python
 
-            // ... soma with hh, IClamp, and voltage plot ... 
+            # ... soma with hh, IClamp, and voltage plot ... 
              
-            objref nc, nil 
-            soma nc = new NetCon(&v(.5), nil) 
-            nc.threshold = 0 // watch out! only one threshold per presyn location 
+            soma nc = h.NetCon(&v(.5), nil) 
+            nc.threshold = 0 # watch out! only one threshold per presyn location 
             nc.record("handle()") 
              
-            proc handle() { 
-            	print "called handle() at time ", t, " when soma.v(.5) = ", soma.v(.5) 
-            	stoprun = 1 // Will stop but may go one extra step. Also with 
-            		// local step the cells will be at different times. 
-            		// So may wish to do a further... 
+            def handle():
+            	print "called handle() at time ", t, " when soma.v(.5) = ", soma.v(.5)"
+            	stoprun = 1 # Will stop but may go one extra step. Also with 
+            		# local step the cells will be at different times. 
+            		# So may wish to do a further... 
             	cvode.event(t+1e-6)  
-            } 
+            
              
-            cvode_active(1) // optional. but fixed step will probably do one extra time step 
-            cvode.condition_order(2) // optional. but much more accurate event time evaluation. 
+            cvode_active(1) # optional. but fixed step will probably do one extra time step 
+            cvode.condition_order(2) # optional. but much more accurate event time evaluation. 
              
             run() 
             print "after run(), t = ", t, " and soma.v(.5) = ", soma.v(.5) 
