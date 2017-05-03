@@ -95,6 +95,8 @@ Section "${NEURON} (required)"
   SetOutPath $INSTDIR
   ; Put file there
   File /r "${MARSHAL}\nrn${binsuffix}\*.*"
+  ; Bizarre but needed for launch of enthought canopy to import neuron
+  COPYFILES $INSTDIR\bin\libstdc++-6.dll $INSTDIR\lib\python\neuron
   ; Write the installation path into the registry
   WriteRegStr HKCU "Software\NEURON_Simulator\${NRN}" "Install_Dir" "$INSTDIR"
   ; Write the uninstall keys for Windows

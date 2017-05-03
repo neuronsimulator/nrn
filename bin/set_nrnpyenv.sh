@@ -11,7 +11,7 @@ else
   eval "`nrnpyenv.sh`"
   if nrniv -c 'quit()' >& /dev/null ; then
     true
- else
+  else
     echo Attempt to fix nrniv failure using: 'eval "`mk_nrnpyenv.sh`"' failed.
     if test "$orig_pythonhome" = "" ; then
       unset PYTHONHOME

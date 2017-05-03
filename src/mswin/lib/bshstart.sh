@@ -35,7 +35,20 @@ fi
 cd c:/
 
 if test "$cyg" = "no" ; then 
+
+if test "$PYTHONPATH" != "" ; then #convert dos (';' separated) to posix pathspec
+# Only needed when nrniv -c "quit()" succeeds which means
+# set_nrnpyenv.sh below does nothing but the PYTHONPATH still has dos syntax.
+# Not clear why there must be extra \escapes in second -e expression
+export PYTHONPATH=`echo "$PYTHONPATH" | sed -e 's,\([A-Za-z]\):,/\1,g' -e 's,\\\\,/,g' -e 's/;/:/g'`
+fi #PYTHONPATH
+
 source set_nrnpyenv.sh
 export NEURONHOME=$N
-export PYTHONPATH=$PYTHONPATH:$N/lib/python
+if test "$PYTHONPATH" = "" ; then
+  export PYTHONPATH=$N/lib/python
+else
+  export PYTHONPATH=$PYTHONPATH:$N/lib/python
+fi #PYTHONPATH
+
 fi #cyg = no
