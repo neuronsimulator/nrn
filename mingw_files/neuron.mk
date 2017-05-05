@@ -4,9 +4,9 @@
 PKG             := neuron
 $(PKG)_IGNORE   := 
 $(PKG)_VERSION  := 7.5
-$(PKG)_CHECKSUM := f45c9af9ed8210df9dc4cbf8bfebc7039a406041d5439d8137fb6f6b1451001f
+$(PKG)_CHECKSUM := 2b215252dc595b626b54462dd6e6aeecbebf747fec7b2d6188c42895ee347e69
 $(PKG)_SUBDIR   := nrn-7.5
-$(PKG)_FILE     := nrn-$($(PKG)_VERSION).alpha-1439+.tar.gz
+$(PKG)_FILE     := nrn-$($(PKG)_VERSION).master-1571.tar.gz
 #$(PKG)_FILE     := nrn-$($(PKG)_VERSION).rel-1390.tar.gz
 $(PKG)_URL      := http://www.neuron.yale.edu/ftp/neuron/versions/alpha/$($(PKG)_FILE)
 $(PKG)_DEPS     := gcc readline nrniv pthreads termcap
@@ -40,7 +40,7 @@ define $(PKG)_BUILD
 		--with-nrnpython=dynamic \
 		MPICC=x86_64-w64-mingw32.shared-gcc \
 		MPICXX=x86_64-w64-mingw32.shared-g++ \
-		CFLAGS='-I/home/hines/mxe/ms-mpi/include' \
+		CFLAGS='-DMSMPI_NO_SAL -I/home/hines/mxe/ms-mpi/include' \
 		MPILIBS='-L/home/hines/mxe/ms-mpi/lib/x64 -lmsmpi' \
 		LIBS='-L/home/hines/mxe/ms-mpi/lib/x64 -lmsmpi' \
 		PYINCDIR=/home/hines/mxe/Python27/include \

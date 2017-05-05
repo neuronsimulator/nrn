@@ -18,6 +18,7 @@ scp $mxt/nrn-7.5/src/nrniv/neuron.exe $m
 scp $mxt/nrn-7.5/src/mswin/nrniv.dll $m
 scp $mxt/nrn-7.5/src/mswin/nrniv.exe $m
 scp $mxt/nrn-7.5/src/mswin/libnrnpython1013.dll $m
+scp $mxt/nrn-7.5/src/mswin/libnrnmpi.dll $m
 scp $mxt/nrn-7.5/src/mswin/hocmodule.dll $m
 
 scp $mx/bin/libgcc_s_seh-1.dll $m
@@ -31,6 +32,9 @@ scp $mx/bin/libwinpthread-1.dll $m
 for i in $m/*.exe $m/*.dll ; do
   strip $i
 done
+
+# but stripping msmpi.dll causes failure of dynamic load of libnrnmpi.dll
+cp c:/ms-mpi/lib/x64/msmpi.dll $m
 
 mv $m/hocmodule.dll $m/../lib/python/neuron/hoc.pyd
 (cd src/mswin ; /c/Program\ Files\ \(x86\)/NSIS/makensis nrnsetupmingw.nsi)
