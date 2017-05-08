@@ -79,10 +79,13 @@ This document describes the construction and manipulation of a stylized topology
             
         Displays:
 
-            |-|       MyCell[0].soma(0-1)
-              `|       MyCell[0].dend(0-1)
-            |-|       MyCell[1].soma(0-1)
-              `|       MyCell[1].dend(0-1)
+            .. code-block::
+                none
+
+                |-|       MyCell[0].soma(0-1)
+                  `|       MyCell[0].dend(0-1)
+                |-|       MyCell[1].soma(0-1)
+                  `|       MyCell[1].dend(0-1)
 
     .. seealso::
     

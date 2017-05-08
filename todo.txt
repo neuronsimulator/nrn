@@ -1,4 +1,3 @@
-93    programming/pointers/pointer.rst // finished     
 116   programming/gui/secbrows.rst   // Being worked on, broken
 157   modelspec/programmatic/electrod.rst // issues
 184   programming/internals.rst     // issues        
@@ -20,7 +19,6 @@
 147   visualization/grapher.rst     //finished
 163   programming/dynamiccode.rst   //finished //no arguments for load_func and load_template
 385   programming/gui/list.rst      //mostly done
-535   modelspec/programmatic/topology.rst   //done
 741   modelspec/programmatic/network/netcon.rst //mostly done    
 1313    programming/math/matrix.rst   //first example of Matrix.x needs finish //cholesky_factor() the hoc version also doesn’t work
 55    compilationoptions.rst // finished
@@ -55,6 +53,14 @@
 
 
 
+Needs edits:
+------------
+
+535   modelspec/programmatic/topology.rst   //done
+
+    missing a picture
+    somewhere we need Section.insert defined, but not necessarily in this file
+
 
 Reviewed
 --------
@@ -62,3 +68,4 @@ Reviewed
 213   analysis/guitools/mulfit.rst  //finished
 71    analysis/guitools/impedancetools.rst // finished       
 159   programming/math/functions.rst // finished
+93    programming/pointers/pointer.rst // finished     
