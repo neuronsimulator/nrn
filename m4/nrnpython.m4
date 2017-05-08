@@ -106,12 +106,17 @@ and PYINCDIR to find Python.h
 		[ac_nrn_rx3d=$enableval], [ac_nrn_rx3d=yes]
 	)
 
+	AC_ARG_WITH([pyexe],
+		AC_HELP_STRING([--with-pyexe=[desired python binary (when --with-nrnpython=dynamic]]),
+		[ac_nrn_pyexe="$withval"], [ac_nrn_pyexe="python"]
+	)
+
 	if test "$ac_nrn_python" = "yes" ; then
 		ac_nrn_python="python"
 	fi
 
 	if test "$ac_nrn_python" = "dynamic" ; then
-		ac_nrn_python="python"
+		ac_nrn_python="$ac_nrn_pyexe"
 		build_nrnpython_dynamic="yes"
 		NRN_DEFINE(USE_PYTHON,1,[Define if Python available])
 		dnl 1013 good for 2.5-2.7, 1012 good for 2.3-2.4
