@@ -37,24 +37,23 @@ The run call chain is
 .. code-block::
     none
 
-    		run continuerun step advance fadvance 
+        h.run --> h.continuerun --> h.step --> h.advance --> h.fadvance 
 
-The default advance is merely 
+The default advance is merely a HOC function that calls :func:`fadvance`. It may be overriden via, e.g.
 
 .. code-block::
     python
+
+    h('proc advance() {nrnpython("myadvance()")}')
     
-    from neuron import h
+    def myadvance():
+        print('h.t = {}'.format(h.t))
+        h.fadvance()
 
-    		def advance():
-    			h.fadvance() 
-
-and is a good candidate for substitution by a problem specific 
-user routine.
 
 .. warning:: 
 
-    multiple presses of the this button without waiting 
+    Multiple presses of the this button without waiting 
     for the previous simulation to finish (or pressing Stop) will 
     execute the run() procedure recursively (probably not what is 
     desired) Press the Stop button to unwrap these recursions. 
@@ -71,29 +70,27 @@ The init call chain is
 .. code-block::
     none
 
-    		stdinit init (finitialize fcurrent) 
+        h.stdinit --> h.init --> (h.finitialize, h.fcurrent) 
 
 When more complicated initialization is required, use 
-:class:`FInitializeHandler` statements or  substitute a 
-new procedure for the default init procedure: 
+:class:`FInitializeHandler` objects or substitute a 
+new procedure for the default init procedure; e.g.
+
 
 .. code-block::
-    none
+    python
 
-    	def init():  
-    		finitialize(v_init) 
-    		# insert new initialization code here to change states 
-    		# If states have been changed then complete 
-    		# initialization with 
-    	    /*	 
-    		if (cvode.active()) { 
-    			cvode.re_init() 
-    		}else{ 
-    			fcurrent() 
-    		} 
-    		frecord_init() 
-    	    */ 
-    	} 
+    h('proc init() {finitialize(v_init) nrnpython("myinit()")}')
+
+    def myinit():
+        # new code to happen after initialization here
+        print('initializing...')
+        # only need the following if states have been changed
+        if h.cvode.active():
+            h.cvode.re_init()
+        else:
+            h.fcurrent()
+        h.frecord_init()
 
 
 .. seealso::
@@ -123,7 +120,7 @@ SingleStep
 
 Integrates one step and plots. 
 A step is 1/(Plots/ms) milliseconds and consists of 1/dt/(Plots/ms) 
-calls to fadvance() 
+calls to :func:`fadvance`.
 
 Tstop
 ~~~~~

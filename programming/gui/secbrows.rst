@@ -79,10 +79,10 @@ SectionBrowser
 
 
     Description:
-        A python function is executed when an item is selected (single click or 
+        A Python function is executed when an item is selected (single click or 
         dragging) by the mouse. Before execution, the selected section 
         is pushed. (and	popped after the function completes.)
-        A python function is executed in the object context in which \ ``select_action`` 
+        A Python function is executed in the object context in which \ ``select_action`` 
         registered it. 
 
 
@@ -103,9 +103,11 @@ SectionBrowser
 
             sb = h.SectionBrowser()
             sb.select_action(select)
-            sb.select_action(select)
+            sb.accept_action(select)
 
+    .. note::
 
+        Python support for :meth:`select_action` was added in NEURON 7.5.
          
 
 ----
@@ -120,10 +122,10 @@ SectionBrowser
 
 
     Description:
-        A python function is executed when an item is accepted (double click) by 
+        A Python function is executed when an item is accepted (double click) by 
         the mouse. Before execution, the selected section 
         is pushed. (and	popped after the function completes.) 
-        A python function is executed in the objet context in which the  \ ``accept_action`` 
+        A Python function is executed in the object context in which the  ``accept_action`` 
         registered it. 
 
              
@@ -145,3 +147,7 @@ SectionBrowser
             sb = h.SectionBrowser()
             sb.select_action(select)
             sb.accept_action(accept)
+
+    .. note::
+
+        Python support for :meth:`accept_action` was added in NEURON 7.5.

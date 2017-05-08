@@ -107,6 +107,10 @@ case one can enter an arbitrary statement involving the parameter "$1", eg
     forall g_pas = $1 
 
  
+.. note::
+
+    This field requires HOC not Python expressions.
+
 Each parameter has a checkbox to the left of its name. When checked, 
 the value will be adjusted during a fit to optimize the model to the 
 data. If not checked the parameter will be held constant during the 

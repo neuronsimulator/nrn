@@ -1,4 +1,3 @@
-116   programming/gui/secbrows.rst   // Being worked on, broken
 157   modelspec/programmatic/electrod.rst // issues
 184   programming/internals.rst     // issues        
 378   programming/gui/pwman.rst     // mostly done, add spaces between line 1 and other thing
@@ -21,8 +20,6 @@
 385   programming/gui/list.rst      //mostly done
 741   modelspec/programmatic/network/netcon.rst //mostly done    
 1313    programming/math/matrix.rst   //first example of Matrix.x needs finish //cholesky_factor() the hoc version also doesn’t work
-55    compilationoptions.rst // finished
-73    modelspec/programmatic/network/lyttonmpi.rst   //finished
 90    modelspec/programmatic/rxd. //finished
 114   programming/timer.rst   // nrniv -python limitation should be removed
 131   analysis/guitools/funfit.rst  //mostly done
@@ -31,20 +28,16 @@
 222   visualization/rvarplt.rst     //Range Var Plot - #how to do this in python?
 300   programming/projectmanagement.rst    //almost done 
 391   visualization/oldgrph.rst     //mostly done
-612   simctrl/stdrun.rst  //done  
 778   visualization/gui.rst //mostly done
 1503    simctrl/cvode.rst     //finished 
-874   programming/python.rst //finished
+874   programming/python.rst //finished <-- this should probably be replaced entirely?
 1563    visualization/graph.rst //mostly done        
-39    programming/gui/textmenus.rst //finished
 61    visualization/shapebox.rst    //finished
 83    programming/gui/misc.rst   //comments   
 93    modelspec/programmatic/hocmech.rst //problems, Robert supposed to fix   
 115   programming/sscanf.rst //q
 137   visualization/plotshape.rst   //finished
-155   simctrl/runctrl.rst   //emailed Robert the last question
 183   modelspec/programmatic/linmod.rst    //mostly done 
-241   analysis/guitools/runfit.rst  //finished
 337   modelspec/programmatic/mechtype.rst   //mostly done
 455   modelspec/programmatic/mechanisms/nmodl2.rst  //Robert complained and feel like fixing it
 677   modelspec/programmatic/mechanisms/nmodl.rst   //all done except for one line, line similar to the ones in nmodl2 that Robert said he would fix
@@ -69,3 +62,10 @@ Reviewed
 71    analysis/guitools/impedancetools.rst // finished       
 159   programming/math/functions.rst // finished
 93    programming/pointers/pointer.rst // finished     
+116   programming/gui/secbrows.rst   // Being worked on, broken <-- fixed in NEURON 7.5
+55    compilationoptions.rst // finished
+155   simctrl/runctrl.rst   //emailed Robert the last question <-- done
+612   simctrl/stdrun.rst  //done  
+73    modelspec/programmatic/network/lyttonmpi.rst   //finished
+241   analysis/guitools/runfit.rst  //finished
+39    programming/gui/textmenus.rst //finished

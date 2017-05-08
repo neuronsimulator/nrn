@@ -1,8 +1,13 @@
 .. _file:
 
-File Access (Recommended Way)
------------------------------
+.. note::
 
+    Python provides native support for manipulating files. Use that whenever possible
+    to ensure your code is understandable by the greatest number of people.
+
+
+File Access (objected-oriented via NEURON)
+------------------------------------------
 
 
 .. class:: File
@@ -22,11 +27,9 @@ File Access (Recommended Way)
         The functionality of :func:`xopen` is not implemented in this class so use 
 
         .. code-block::
-            none
+            python
 
-            	strdef tstr 
-            	fobj.getname(tstr) 
-            	xopen(tstr) 
+            h.xopen(fobj.getname())
 
         to execute a sequence of interpreter commands in a file. 
          
@@ -132,10 +135,10 @@ File Access (Recommended Way)
 
 
     Description:
-        Open the file and execute it. (not implemented) 
+        Open the file and execute it. (**not implemented**) 
          
         Note: if instead of a "*name*", the number 0,1,or 2 is specified then 
-        the stdin, stdout, or stderr is opened. (not implemented) 
+        the stdin, stdout, or stderr is opened. (**not implemented**) 
 
          
 
@@ -164,13 +167,28 @@ File Access (Recommended Way)
 
 
     Syntax:
-        ``boolean = f.mktemp()``
+        ``success = f.mktemp()``
 
 
     Description:
         Sets the name to a temporary filename in the /tmp directory (or other 
         writable path for mswin and mac). Success returns 1. 
 
+    Example of creating a temporary file:
+
+        .. code-block::
+            python
+
+            f = h.File()
+            if f.mktemp() != 1:
+                raise Exception('Unable to create temporary file')
+            # create a tempoary file, get its name
+            temp_file_name = f.getname()
+
+            # do stuff, possibly using regular Python File IO instead
+
+            # dispose of the temporary file
+            f.unlink()
          
 
 ----
@@ -181,7 +199,7 @@ File Access (Recommended Way)
 
 
     Syntax:
-        ``boolean = f.unlink()``
+        ``success = f.unlink()``
 
 
     Description:
@@ -199,12 +217,12 @@ File Access (Recommended Way)
 
 
     Syntax:
-        ``.print("format", args, ...)``
+        ``.printf("format", args, ...)``
 
 
     Description:
         As in standard C \ ``printf`` and the normal 
-        hoc :func:`printf` . 
+        NEURON :func:`printf` . 
 
          
 
@@ -220,7 +238,7 @@ File Access (Recommended Way)
 
 
     Description:
-        Reads the next number as in the hoc function \ ``fscan()`` and 
+        Reads the next number as in the function ``fscan()`` and 
         returns its value. 
          
         Note: in order that .eof will return 
@@ -238,13 +256,14 @@ File Access (Recommended Way)
 
 
     Syntax:
-        ``.scanstr(strdef)``
+        ``.scanstr(strptr)``
 
 
     Description:
         Read the next string (delimited by whitespace) into 
-        \ ``strdef``. Returns the length of a string (if failure then returns 
-        -1 and \ ``strdef`` is unchanged). 
+        \ ``strptr`` (must be a pointer to a NEURON string *not* a Python string).
+        Returns the length of a string (if failure then returns 
+        -1 and the string pointed to by ``strptr`` is unchanged). 
 
          
 
@@ -256,7 +275,7 @@ File Access (Recommended Way)
 
 
     Syntax:
-        ``.gets(strdef)``
+        ``.gets(strptr)``
 
 
     Description:
@@ -273,14 +292,14 @@ File Access (Recommended Way)
 
 
     Syntax:
-        ``strdef = file.getname()``
+        ``name = fobj.getname()``
 
-        ``strdef = file.getname(strdef)``
+        ``name = fobj.getname(strptr)``
 
 
     Description:
-        Return the name of the last specified file as a strdef. 
-        For backward compatibility, if the arg is present also copy it to that. 
+        Return the name of the last specified file as a string. 
+        For backward compatibility, if the arg is present (must a pointer to a NEURON string) also copy it to that. 
 
          
 
@@ -292,7 +311,7 @@ File Access (Recommended Way)
 
 
     Syntax:
-        ``strdef = file.dir()``
+        ``dirname = file.dir()``
 
 
     Description:
@@ -309,7 +328,7 @@ File Access (Recommended Way)
 
 
     Syntax:
-        ``.eof()``
+        ``fobj.eof()``
 
 
     Description:
@@ -325,7 +344,7 @@ File Access (Recommended Way)
 
 
     Syntax:
-        ``.flush()``
+        ``fobj.flush()``
 
 
     Description:
@@ -341,7 +360,7 @@ File Access (Recommended Way)
 
 
     Syntax:
-        ``.isopen()``
+        ``fobj.isopen()``
 
 
     Description:
