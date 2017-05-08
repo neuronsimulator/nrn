@@ -6,8 +6,6 @@
 468   visualization/plotshapeclass.rst // finished     
 693   modelspec/programmatic/kschan.rst // finished 
 964   programming/ockeywor.rst //mostly done       
-71    analysis/guitools/impedancetools.rst // finished       
-159   programming/math/functions.rst // finished
 190   analysis/programmatic/optimization.rst // mostly done
 272   visualization/glyph.rst //mostly done
 380   modelspec/programmatic/topology/secspec.rst // mostly done
@@ -21,7 +19,6 @@
 122   modelspec/programmatic/ions.rst   //finished     
 147   visualization/grapher.rst     //finished
 163   programming/dynamiccode.rst   //finished //no arguments for load_func and load_template
-213   analysis/guitools/mulfit.rst  //finished
 385   programming/gui/list.rst      //mostly done
 535   modelspec/programmatic/topology.rst   //done
 741   modelspec/programmatic/network/netcon.rst //mostly done    
@@ -55,3 +52,13 @@
 677   modelspec/programmatic/mechanisms/nmodl.rst   //all done except for one line, line similar to the ones in nmodl2 that Robert said he would fix
 903   modelspec/programmatic/topology/geometry.rst  //mostly done
 2972    modelspec/programmatic/network/parcon.rst  //done
+
+
+
+
+Reviewed
+--------
+
+213   analysis/guitools/mulfit.rst  //finished
+71    analysis/guitools/impedancetools.rst // finished       
+159   programming/math/functions.rst // finished
