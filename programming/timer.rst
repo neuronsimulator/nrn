@@ -13,7 +13,7 @@ Timer
 
 
     Description:
-        Execute a python function at the end of each interval specified by timer.seconds(interval). 
+        Execute a Python function at the end of each interval specified by timer.seconds(interval). 
         The timer must be started and can be stopped. 
         A Timer is used to implement the :menuselection:`NEURON Main Menu --> Tools --> MovieRun` in 
         :file:`nrn/lib/hoc/movierun.hoc`
@@ -21,6 +21,7 @@ Timer
     .. warning::
         This code must be run with `nrniv -python` and not directly via `python`.
         The better solution is to `use Python's threading module <https://docs.python.org/2/library/threading.html>`_
+        which works regardless of how NEURON is launched.
             
 
 
@@ -58,7 +59,7 @@ Timer
     Description:
         Specify the timer interval. Timer resolution is system dependent but is probably 
         around 10 ms. 
-        The time it takes to execute the python function is part of the interval. 
+        The time it takes to execute the Python function is part of the interval. 
 
          
 
@@ -74,7 +75,7 @@ Timer
 
 
     Description:
-        Start the timer. The python function will be called at the end of each interval defined 
+        Start the timer. The Python function will be called at the end of each interval defined 
         by the argument to timer.seconds(interval). 
 
          
@@ -91,7 +92,7 @@ Timer
 
 
     Description:
-        Stop calling the python function. At least on linux, this will prevent the calling 
+        Stop calling the Python function. At least on Linux, this will prevent the calling 
         of the function at the end of the current interval. 
 
          

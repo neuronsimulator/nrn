@@ -1,18 +1,15 @@
 157   modelspec/programmatic/electrod.rst // issues
-184   programming/internals.rst     // issues        
 378   programming/gui/pwman.rst     // mostly done, add spaces between line 1 and other thing
 468   visualization/plotshapeclass.rst // finished     
 693   modelspec/programmatic/kschan.rst // finished 
 964   programming/ockeywor.rst //mostly done       
 190   analysis/programmatic/optimization.rst // mostly done
-272   visualization/glyph.rst //mostly done
 380   modelspec/programmatic/topology/secspec.rst // mostly done
 491   programming/io/file.rst         // mostly done
 716   programming/math/random.rst // mostly done
 1053    modelspec/programmatic/mechanisms/mech.rst //mostly done  
 37    programming/errors.rst // finished
 50    analysis/programmatic/misc.rst //finished
-88    programming/gui/nfunc.rst     // finished
 96    modelspec/programmatic/obsoletestimuli.rst  //finished  
 122   modelspec/programmatic/ions.rst   //finished     
 147   visualization/grapher.rst     //finished
@@ -21,7 +18,6 @@
 741   modelspec/programmatic/network/netcon.rst //mostly done    
 1313    programming/math/matrix.rst   //first example of Matrix.x needs finish //cholesky_factor() the hoc version also doesn’t work
 90    modelspec/programmatic/rxd. //finished
-114   programming/timer.rst   // nrniv -python limitation should be removed
 131   analysis/guitools/funfit.rst  //mostly done
 151   modelspec/guitools/pointman.rst //finished    
 166   modelspec/programmatic/topology/seclist.rst  //finished 
@@ -32,7 +28,6 @@
 1503    simctrl/cvode.rst     //finished 
 874   programming/python.rst //finished <-- this should probably be replaced entirely?
 1563    visualization/graph.rst //mostly done        
-61    visualization/shapebox.rst    //finished
 83    programming/gui/misc.rst   //comments   
 93    modelspec/programmatic/hocmech.rst //problems, Robert supposed to fix   
 115   programming/sscanf.rst //q
@@ -69,3 +64,8 @@ Reviewed
 73    modelspec/programmatic/network/lyttonmpi.rst   //finished
 241   analysis/guitools/runfit.rst  //finished
 39    programming/gui/textmenus.rst //finished
+114   programming/timer.rst   // nrniv -python limitation should be removed
+184   programming/internals.rst     // issues <-- fixed now
+61    visualization/shapebox.rst    //finished <-- finished-ish, but should be rewritten because I don't understand how to use it
+88    programming/gui/nfunc.rst     // finished
+272   visualization/glyph.rst //mostly done <-- finished now

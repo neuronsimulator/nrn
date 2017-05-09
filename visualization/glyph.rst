@@ -24,6 +24,27 @@ Glyph
 
         The drawing style uses commands reminiscent of postscript. 
 
+    Example:
+        Rotated ellipse
+
+        .. code-block::
+            python
+        
+            from neuron import h, gui
+            
+            gr = h.Graph()
+            
+            gl = h.Glyph()
+            gl.circle(0,0,1)
+            gl.fill(3)
+            gl.s(2, 3)
+            
+            gr.glyph(gl, 150, 100, 30, 60, h.PI/4*h.DEG)
+
+        .. image:: ../images/glyphcircle.png
+                    :align: center
+
+
     .. seealso::
         :class:`Graph`, :meth:`Graph.glyph`
 
@@ -33,7 +54,7 @@ Glyph
 
 
 
-.. method:: Glyph.new_path
+.. method:: Glyph.path
 
 
     Syntax:
@@ -49,7 +70,7 @@ Glyph
 
 
 
-.. method:: Glyph.move_to
+.. method:: Glyph.m
 
 
     Syntax:
@@ -65,7 +86,7 @@ Glyph
 
 
 
-.. method:: Glyph.line_to
+.. method:: Glyph.l
 
 
     Syntax:
@@ -81,7 +102,7 @@ Glyph
 
 
 
-.. method:: Glyph.curve_to
+.. method:: Glyph.curve
 
 
     Syntax:
@@ -97,7 +118,7 @@ Glyph
 
 
 
-.. method:: Glyph.close_path
+.. method:: Glyph.close
 
 
     Syntax:
@@ -125,30 +146,11 @@ Glyph
         the glyph methods new_path, move_to, curve_to, and close_path.
         Can stroke and/or fill.
 
-    Example:
-        Rotated ellipse
-
-        .. code-block::
-            python
-        
-            from neuron import h, gui
-            
-            gr = h.Graph()
-            
-            gl = h.Glyph()
-            gl.circle(0,0,1)
-            gl.fill(3)
-            gl.s(2, 3)
-            
-            gr.glyph(gl, 150, 100, 30, 60, PI/4*DEG)
-
-
-
 ----
 
 
 
-.. method:: Glyph.stroke
+.. method:: Glyph.s
 
 
     Syntax:
@@ -186,7 +188,7 @@ Glyph
 
 
 
-.. method:: Glyph.control_point
+.. method:: Glyph.cpt
 
 
     Syntax:

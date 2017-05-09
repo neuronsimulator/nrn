@@ -9,7 +9,7 @@ Miscellaneous Menus
 
 
     Syntax:
-        ``nrnglobalmechmenu("mechname")``
+        ``h.nrnglobalmechmenu("mechname")``
 
         ``n = h.nrnglobalmechmenu("mechname", 0)``
 
@@ -18,7 +18,7 @@ Miscellaneous Menus
         pops up panel containing all global variables defined by the 
         mechanism. 
          
-        :samp:`nrnglobalmechmenu("{mechname}", 0)` returns the number of global variables 
+        :samp:`h.nrnglobalmechmenu("{mechname}", 0)` returns the number of global variables 
         for this mechanism. Does not pop up a panel. 
          
 
@@ -40,9 +40,9 @@ Miscellaneous Menus
          
 
     Syntax:
-        ``nrnpointmenu(PointProcessObject)``
+        ``h.nrnpointmenu(PointProcessObject)``
 
-        ``nrnpointmenu(PointProcessObject, labelstyle)``
+        ``h.nrnpointmenu(PointProcessObject, labelstyle)``
 
 
     Description:
@@ -66,7 +66,7 @@ Miscellaneous Menus
 
 
     Syntax:
-        ``nrnsecmenu(x, vartype, sec=section)``
+        ``h.nrnsecmenu(x, vartype, sec=section)``
 
 
     Description:
