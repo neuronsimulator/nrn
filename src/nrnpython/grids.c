@@ -84,7 +84,7 @@ Grid_node *make_Grid(PyHocObject* my_states, int my_num_states_x,
 	else
 	{
 		new_Grid->lambda = my_lambda->u.px_;
-		new_Grid->VARIABLE_ECS_VOLUME = TRUE;
+		new_Grid->VARIABLE_ECS_VOLUME = TORTUOSITY;
 		new_Grid->get_lambda = &get_lambda_array;
 	}
 	
@@ -117,7 +117,6 @@ int insert(int grid_list_index, PyHocObject* my_states, int my_num_states_x,
 	PyHocObject* my_alpha, PyHocObject* my_lambda) {
     int i = 0;
 
-    printf("INSERTING\n");
 
     Grid_node *new_Grid = make_Grid(my_states, my_num_states_x, my_num_states_y, 
             my_num_states_z, my_dc_x, my_dc_y, my_dc_z, my_dx, my_dy, my_dz, 
@@ -139,11 +138,12 @@ int insert(int grid_list_index, PyHocObject* my_states, int my_num_states_x,
         }
         end->next = new_Grid;
     }
-
+    /*
     while(save != NULL) {
         printf("SIZE X: %d SIZE Y: %d SIZE Z: %d\n", save->size_x, save->size_y, save->size_z);
         save = save->next;
     }
+    */
 
     return i;
 }

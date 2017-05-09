@@ -328,6 +328,7 @@ static void _fadvance_fixed_step(void) {
         n = grid->num_currents;
         c = grid->current_list;
 		/*divided the concentration by the volume fraction of the relevant voxel*/ 
+        
 		if(grid->VARIABLE_ECS_VOLUME == VOLUME_FRACTION) {
         	for (i = 0; i < n; i++) {
             	states[c[i].destination] += dt * c[i].scale_factor * (*c[i].source)/grid->alpha[c[i].destination];
@@ -338,7 +339,7 @@ static void _fadvance_fixed_step(void) {
             	states[c[i].destination] += dt * c[i].scale_factor * (*c[i].source)/grid->alpha[0];
         	}
 		}
-		memcpy(grid->old_states, states, sizeof(double) * grid->size_x * grid->size_y * grid->size_z);
+		memcpy(grid->old_states, states, sizeof(double) * grid->size_x * grid->size_y * grid->size_z); 
     }
 
     /* TODO: implicit reactions*/
@@ -1093,7 +1094,6 @@ void set_initialize(const fptr initialize_fn) {
 
 	/*Setup threaded reactions*/
     refresh_reactions(NUM_THREADS);
-	printf("SET INITIALIZE\n");
 }
 
 /* verbatim from nrnoc/ldifus.c; included as a copy for convenience

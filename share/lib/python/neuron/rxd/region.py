@@ -11,6 +11,7 @@ from . import geometry as geo
 import weakref
 import initializer
 import warnings
+import math
 
 _all_regions = []
 _region_count = 0
@@ -28,10 +29,64 @@ def _sort_secs(secs):
             raise RxDException('still need to deal with backwards sections')
     return [secs_names[sec.hoc_internal_name()] for sec in all_sorted if sec.hoc_internal_name() in secs_names]
 
+class Extracellular:
+    """Declare an extracellular region
+
+    tortuosity = increase in path length due to obstacles, effective diffusion coefficient d/tortuosity^2. - either a single value for the whole region or a Vector giving a value for each voxel.
+
+    Assumes reflective boundary conditions, so you'll probably want to make sure the mesh extends far beyond the neuron
+
+    Assumes volume_fraction=1, i.e. that the extracellular space is empty. You'll probably want to lower this to
+    account for other cells. Note: the section volumes are assumed to be negligible and are ignored by the simulation.
+
+    Assumes tortuosity=1.
+    """
+    def __init__(self, xlo, ylo, zlo, xhi, yhi, zhi, dx, volume_fraction=1, tortuosity=1):
+        from . import options
+        if not options.enable.extracellular:
+            raise RxDException('Extracellular diffusion support is disabled. Override with rxd.options.enable.extracellular = True.')
+        self._xlo, self._ylo, self._zlo = xlo, ylo, zlo
+        self._dx = dx
+        self._nx = int(math.ceil((xhi - xlo) / dx))
+        self._ny = int(math.ceil((yhi - ylo) / dx))
+        self._nz = int(math.ceil((zhi - zlo) / dx))
+        self._xhi, self._yhi, self._zhi = xlo + dx * self._nx, ylo + dx * self._ny, zlo + dx * self._nz
+
+        alpha = volume_fraction
+        if(numpy.isscalar(alpha)):
+            alpha = float(alpha)
+            self._alpha = alpha
+            self.alpha = alpha
+        else:
+            alpha = numpy.array(alpha)
+            if(alpha.size != self.states.size):
+                 raise RxDException('volume fraction alpha must be a scalar or an array the same size as the grid: {0}x{1}x{2}'.format(self._nx, self._ny, self._nz ))
+ 
+            else:
+                self._alpha = h.Vector(self._nx * self._ny * self._nz);
+                self.alpha = self._alpha.as_numpy().reshape(self._nx, self._ny, self._nz)
+                self.alpha[:] = alpha
+                alpha = self._alpha._ref_x[0]
+
+        if(numpy.isscalar(tortuosity)):
+            tortuosity = float(tortuosity)
+            self._tortuosity = tortuosity
+            self.tortuosity = tortuosity
+        else:
+            tortuosity = numpy.array(tortuosity)
+            if(tortuosity.size != self.states.size):
+                 raise RxDException('tortuosity must be a scalar or an array the same size as the grid: {0}x{1}x{2}'.format(self._nx, self._ny, self._nz ))
+    
+            else:
+                self._tortuosity = h.Vector(self._nx * self._ny * self._nz);
+                self.tortuosity = self._tortuosity.as_numpy().reshape(self._nx, self._ny, self._nz)
+                self.tortuosity[:] = tortuosity
+                tortuosity = self._tortuosity._ref_x[0]
+
 class Region(object):
     """Declare a conceptual region of the neuron.
     
-    Examples: Cytosol, ER, extracellular space
+    Examples: Cytosol, ER
     """
     def __repr__(self):
         # Note: this used to print out dimension, but that's now on a per-segment basis
