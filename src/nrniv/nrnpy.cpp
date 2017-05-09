@@ -47,30 +47,40 @@ extern char* dlerror();
 extern "C" {
 extern char* neuron_home;
 }
-#if NRNPYTHON_DYNAMICLOAD == 1013
+
+#if NRNPYTHON_DYNAMICLOAD >= 20 && NRNPYTHON_DYNAMICLOAD < 30
+
 #ifdef MINGW
 static const char* ver[] = {"2.7", 0};
 #else
 static const char* ver[] = {"2.7", "2.6", "2.5", 0};
-#endif
-#define npylib "libnrnpython1013"
-#endif
-#if NRNPYTHON_DYNAMICLOAD == 1012
-static const char* ver[] = {"2.4", "2.3", 0};
-#define npylib "libnrnpython1012"
-#endif
+#endif // !MINGW
+
+#elif NRNPYTHON_DYNAMICLOAD >= 30
+
+#ifdef MINGW
+static const char* ver[] = {"3.5", 0};
+#else
+static const char* ver[] = {"3.6", "3.5", "3.4", 0};
+#endif // !MINGW
+
+#else //NRNPYTHON_DYNAMICLOAD < 20
+
+static const char* ver[] = {0};
+
+#endif //NRNPYTHON_DYNAMICLOAD < 20
 
 static int iver; // which python is loaded?
 static void* python_already_loaded();
 static void* load_python();
-static void load_nrnpython();
-#else
+static void load_nrnpython(int, const char*);
+#else //!defined(NRNPYTHON_DYNAMICLOAD)
 extern "C" {
 extern void nrnpython_start(int);
 extern void nrnpython_reg_real();
 extern void nrnpython_real();
 }
-#endif
+#endif //defined(NRNPYTHON_DYNAMICLOAD)
 
 void nrnpython() {
 #if USE_PYTHON
@@ -146,10 +156,10 @@ void nrnpython_reg() {
     }else{
 #if NRNPYTHON_DYNAMICLOAD
 	void* handle = NULL;
+	char* nrn_pylib = NULL;
 
       if (!nrn_is_python_extension) {
 	// As last resort (or for python3) load $NRN_PYLIB
-	char* nrn_pylib = NULL;
 	nrn_pylib = getenv("NRN_PYLIB");
 	if (nrn_pylib) {
 		handle = dlopen(nrn_pylib, RTLD_NOW|RTLD_GLOBAL);
@@ -168,6 +178,8 @@ void nrnpython_reg() {
 		// what path was used to load the python library.
 		set_pythonhome(handle);
 	}
+      }else{
+        //printf("nrn_is_python_extension = %d\n", nrn_is_python_extension);
       }
 	// for some mysterious reason on max osx 10.12
 	// (perhaps due to System Integrity Protection?) when python is
@@ -176,7 +188,7 @@ void nrnpython_reg() {
 	// in these circumstances, it is sufficient to go ahead and dlopen
 	// the nrnpython interface library
 	if (handle || nrn_is_python_extension) {
-		load_nrnpython();
+		load_nrnpython(nrn_is_python_extension, nrn_pylib);
 	}
 #else
 	p_nrnpython_start = nrnpython_start;
@@ -243,8 +255,21 @@ static void* load_sym(void* handle, const char* name) {
 	return p;
 }
 
-static void load_nrnpython() {
+static void load_nrnpython(int pyver10, const char* pylib) {
+	char npylib[100];
 	char name[100];
+
+	if (pyver10 >= 30) {
+		sprintf(npylib, "libnrnpython35");
+	}else if (pyver10 >= 25) {
+		sprintf(npylib, "libnrnpython27");
+	}else if (pylib) {
+		sprintf(npylib, "libnrnpython27");
+	}else{
+		sprintf(npylib, "libnrnpython");
+	}
+	//printf("npylib = %s\n", npylib);
+
 #ifdef MINGW
 	sprintf(name, "%s.dll", npylib);
 #else

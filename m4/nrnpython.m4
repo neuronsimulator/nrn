@@ -69,6 +69,7 @@ AC_DEFUN([AC_NRN_PYTHON],[
 	build_nrnpython=no
 	build_nrnpython_dynamic=no
 	npy_apiver=""
+	npy_pyver10=""
 
 	AC_ARG_ENABLE([pysetup],
 		AC_HELP_STRING([--enable-pysetup=[installoption]],
@@ -112,8 +113,9 @@ and PYINCDIR to find Python.h
 	)
 
 	if test "$ac_nrn_python" = "yes" ; then
-		ac_nrn_python="python"
+		ac_nrn_python="$ac_nrn_pyexe"
 	fi
+
 
 	if test "$ac_nrn_python" = "dynamic" ; then
 		ac_nrn_python="$ac_nrn_pyexe"
@@ -122,8 +124,12 @@ and PYINCDIR to find Python.h
 		dnl 1013 good for 2.5-2.7, 1012 good for 2.3-2.4
 		npy_apiver=`$ac_nrn_python -c "import sys;print (sys.api_version)"`
 		echo "dynamic npy_apiver=$npy_apiver"
-		NRN_DEFINE_UNQUOTED(NRNPYTHON_DYNAMICLOAD,$npy_apiver,[Define to value of sys.api_version if dynamic loading desired])
+		AC_NRN_PYCONF(xxx,get_python_version(),2.4,$ac_nrn_python)
+		npy_pyver10=`echo ${xxx} | sed 's/\\.//'`
+		echo "dynamic npy_pyver10=$npy_pyver10"
+		NRN_DEFINE_UNQUOTED(NRNPYTHON_DYNAMICLOAD,$npy_pyver10,[Define to value of sys.version (without the dot) if dynamic loading desired])
 	fi
+
 	if test "$ac_nrn_python" != "no" ; then
 		ac_nrn_python=`which ${ac_nrn_python}`
 
@@ -287,4 +293,5 @@ PYLIB="${PYLIBLINK} ${PYLINKFORSHARED} -R${PYLIBDIR}"
 	AC_SUBST(PYTHON)
 	AC_SUBST(npy_NRNPYTHON_INCLUDES)
 	AC_SUBST(npy_apiver)
+	AC_SUBST(npy_pyver10)
 ]) dnl end of AC_NRN_PYTHON

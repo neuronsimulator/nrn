@@ -123,6 +123,8 @@ void inithoc() {
   }
 #endif // !defined(__CYGWIN__)
   nrn_is_python_extension = 1;
+  const char* pyver = Py_GetVersion();
+  nrn_is_python_extension = (pyver[0]-'0')*10 + (pyver[2] - '0');
   p_nrnpython_finalize = nrnpython_finalize;
 #if NRNMPI
   nrnmpi_init(1, &argc, &argv);  // may change argc and argv

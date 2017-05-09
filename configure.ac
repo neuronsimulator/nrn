@@ -130,6 +130,13 @@ fi
 AM_CONDITIONAL(NMODL_ONLY, test x$with_nmodl_only = xyes)
 AM_CONDITIONAL(NMODL_BUILD, test x$nmodl_build = xyes)
 
+AC_ARG_WITH([nrnpython-only],
+	AC_HELP_STRING([--with-nrnpython-only],[configure and make only the nrnpython folder]), [
+],[
+	with_nrnpython_only=no
+])
+AM_CONDITIONAL(NRNPYTHON_ONLY, test x$with_nrnpython_only = xyes)
+
 if test "$always_call_mpi_init" = "yes" ; then
 	NRN_DEFINE(ALWAYS_CALL_MPI_INIT,1,[define if needed])
 fi
@@ -575,7 +582,20 @@ AC_CONFIG_FILES([
 	src/modlunit/Makefile src/nmodl/Makefile
 ])
 fi	
-if test "$with_nmodl_only" != "yes" ; then
+
+if test "$with_nmodl_only" != "yes"; then
+AC_CONFIG_HEADERS([src/nrnpython/nrnpython_config.h])
+AC_CONFIG_FILES([
+	src/nrnpython/Makefile
+])
+AC_CONFIG_FILES([src/nrnpython/setup.py share/lib/python/neuron/rxd/geometry3d/setup.py],
+  [if test $NRNPYTHON_PYMAJOR -gt 2 ; then $PY2TO3 -w src/nrnpython/setup.py ; $PY2TO3 share/lib/python/neuron/rxd/geometry3d/setup.py ; fi],
+  [NRNPYTHON_PYMAJOR=$NRNPYTHON_PYMAJOR PY2TO3=$PY2TO3]
+)
+fi	
+
+
+if test "$with_nmodl_only" != "yes" -a "$with_nrnpython_only" != "yes" ; then
 AC_CONFIG_HEADERS([nrnconf.h])
 AC_CONFIG_HEADERS([src/nrnoc/nrnconfigargs.h])
 AC_CONFIG_HEADERS([src/oc/nrnmpiuse.h])
@@ -586,7 +606,6 @@ AC_CONFIG_HEADERS([src/nrnjava/njconf.h])
 AC_CONFIG_HEADERS([src/nrncvode/nrnneosm.h])
 AC_CONFIG_HEADERS([src/ivos/ivstream.h])
 AC_CONFIG_HEADERS([src/sundials/sundials_config.h])
-AC_CONFIG_HEADERS([src/nrnpython/nrnpython_config.h])
 
 AC_CONFIG_FILES([
 	nrnrpm.spec
@@ -601,7 +620,7 @@ AC_CONFIG_FILES([
 	src/ivos/Makefile src/ivos/InterViews/Makefile src/ivos/OS/Makefile
 	src/nrnjava/Makefile src/nrnjava/nrnccmb/Makefile
 	src/nrnjava/neuron/Makefile
-	src/nrnpython/Makefile src/ni_pci_6229/Makefile
+	src/ni_pci_6229/Makefile
 	src/mac/Makefile src/mswin/Makefile src/mswin/batch/Makefile
 	src/mac/macdist.pkgproj src/mac/postinstall.sh
 	src/mswin/nrnsetup.nsi src/mswin/nrncygso.sh src/mswin/lib/mknrndll.mak
@@ -635,10 +654,6 @@ AC_CONFIG_FILES([
 	share/lib/python/neuron/Makefile
 	share/lib/python/neuron/rxd/Makefile
 	])
-AC_CONFIG_FILES([src/nrnpython/setup.py share/lib/python/neuron/rxd/geometry3d/setup.py],
-  [if test $NRNPYTHON_PYMAJOR -gt 2 ; then $PY2TO3 -w src/nrnpython/setup.py ; $PY2TO3 share/lib/python/neuron/rxd/geometry3d/setup.py ; fi],
-  [NRNPYTHON_PYMAJOR=$NRNPYTHON_PYMAJOR PY2TO3=$PY2TO3]
-)
 fi
 
 AC_OUTPUT
