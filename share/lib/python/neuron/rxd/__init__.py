@@ -7,7 +7,7 @@ except:
 
 import rxd
 from species import Species
-from region import Region
+from region import Region, Extracellular
 from rate import Rate
 from reaction import Reaction
 import geometry
