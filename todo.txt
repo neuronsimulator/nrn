@@ -1,7 +1,6 @@
 157   modelspec/programmatic/electrod.rst // issues
 378   programming/gui/pwman.rst     // mostly done, add spaces between line 1 and other thing
 468   visualization/plotshapeclass.rst // finished     
-693   modelspec/programmatic/kschan.rst // finished 
 964   programming/ockeywor.rst //mostly done       
 190   analysis/programmatic/optimization.rst // mostly done
 380   modelspec/programmatic/topology/secspec.rst // mostly done
@@ -69,3 +68,4 @@ Reviewed
 88    programming/gui/nfunc.rst     // finished
 272   visualization/glyph.rst //mostly done <-- finished now
 115   programming/sscanf.rst //q
+693   modelspec/programmatic/kschan.rst // finished 

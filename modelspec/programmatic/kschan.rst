@@ -28,7 +28,7 @@ KSChan
         ability to define HH-style gates in addition to 
         kinetic scheme gates. The administrative extensions 
         allowed a more convenient re-implementation of the 
-        channel builder gui in HOC --- albeit substantially 
+        channel builder gui in NEURON --- albeit substantially 
         similar. The KSChan :meth:`KSChan.setstructure` method 
         uses a slightly modified vector format so the old 
         Java channelbuilder tool will not work without 
@@ -329,7 +329,7 @@ KSChan
         A helper class for :class:`KSChan`. KSChan creates and destroys 
         these objects internally. It cannot be created directly 
         with the "new" keyword. An error message will be printed 
-        if a hoc reference is used after KSChan has destroyed 
+        if a reference is used after KSChan has destroyed 
         the referenced KSState. 
 
     .. seealso::
