@@ -59,30 +59,28 @@ class Extracellular:
             self.alpha = alpha
         else:
             alpha = numpy.array(alpha)
-            if(alpha.size != self.states.size):
+            if(alpha.shape != (self._nx, self._ny, self._nz)):
                  raise RxDException('volume fraction alpha must be a scalar or an array the same size as the grid: {0}x{1}x{2}'.format(self._nx, self._ny, self._nz ))
  
             else:
                 self._alpha = h.Vector(self._nx * self._ny * self._nz);
                 self.alpha = self._alpha.as_numpy().reshape(self._nx, self._ny, self._nz)
                 self.alpha[:] = alpha
-                alpha = self._alpha._ref_x[0]
-
+                
         if(numpy.isscalar(tortuosity)):
             tortuosity = float(tortuosity)
             self._tortuosity = tortuosity
             self.tortuosity = tortuosity
         else:
             tortuosity = numpy.array(tortuosity)
-            if(tortuosity.size != self.states.size):
+            if(tortuosity.shape != (self._nx, self._ny, self._nz)):
                  raise RxDException('tortuosity must be a scalar or an array the same size as the grid: {0}x{1}x{2}'.format(self._nx, self._ny, self._nz ))
     
             else:
-                self._tortuosity = h.Vector(self._nx * self._ny * self._nz);
+                self._tortuosity = h.Vector(self._nx * self._ny * self._nz)
                 self.tortuosity = self._tortuosity.as_numpy().reshape(self._nx, self._ny, self._nz)
                 self.tortuosity[:] = tortuosity
-                tortuosity = self._tortuosity._ref_x[0]
-
+                
 class Region(object):
     """Declare a conceptual region of the neuron.
     

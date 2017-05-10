@@ -22,7 +22,6 @@ and Flux_pair structs and their respective functions
 #define CU(x)       ((x)*(x)*(x))
 #define TRUE 				1
 #define FALSE				0
-#define VOLUME_FRACTION 	3
 #define TORTUOSITY			2
 #define VOLUME_FRACTION 	3
 

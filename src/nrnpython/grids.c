@@ -7,14 +7,11 @@ a linked list of Grid_nodes
 #include <stdio.h>
 #include <assert.h>
 #include "grids.h"
-#include <nrnpython.h>
 #ifdef __APPLE__
 #include <Python/Python.h>
 #else
 #include <Python.h>
 #endif
-
-#define DIE(msg) exit(fprintf(stderr, "%s\n", msg))
 
 
 double *dt_ptr;
@@ -76,7 +73,6 @@ Grid_node *make_Grid(PyHocObject* my_states, int my_num_states_x,
     	new_Grid->dc_y = my_dc_y/SQ(PyFloat_AsDouble((PyObject*)my_lambda));
 	    new_Grid->dc_z = my_dc_z/SQ(PyFloat_AsDouble((PyObject*)my_lambda));
 		
-		/*is it worth storing lambda?*/
 		new_Grid->lambda = (double*)malloc(sizeof(double));
 		new_Grid->lambda[0] = SQ(PyFloat_AsDouble((PyObject*)my_lambda));
 		new_Grid->get_lambda = &get_lambda_scalar;
@@ -138,12 +134,13 @@ int insert(int grid_list_index, PyHocObject* my_states, int my_num_states_x,
         }
         end->next = new_Grid;
     }
-    /*
+
+	/*
     while(save != NULL) {
         printf("SIZE X: %d SIZE Y: %d SIZE Z: %d\n", save->size_x, save->size_y, save->size_z);
         save = save->next;
     }
-    */
+	*/
 
     return i;
 }

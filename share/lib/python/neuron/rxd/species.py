@@ -345,9 +345,6 @@ class _ExtracellularSpecies(rxdmath._Arithmeticed):
         # ensure 3D points exist
         h.define_shape()
 
-        alpha = region._alpha
-        tortuosity = region._tortuosity
-
         self._region = region
         self._species = name
         self._charge = charge
@@ -362,11 +359,21 @@ class _ExtracellularSpecies(rxdmath._Arithmeticed):
         self.states = self._states.as_numpy().reshape(self._nx, self._ny, self._nz)
         self._initial = initial
 
-        self.alpha = self._alpha = alpha
-        self.tortuosity = self._tortuosity = tortuosity
+        if(numpy.isscalar(region.alpha)):
+            self.alpha = self._alpha = region.alpha
+        else:
+            self.alpha = region.alpha
+            self._alpha = region._alpha._ref_x[0]
+        
+        if(numpy.isscalar(region.tortuosity)):
+            self.tortuosity = self._tortuosity = region.tortuosity
+        else:
+            self.tortuosity = region.tortuosity
+            self._tortuosity = region._tortuosity._ref_x[0]
+
 
         # TODO: if allowing different diffusion rates in different directions, verify that they go to the right ones
-        self._grid_id = insert(0, self._states._ref_x[0], self._nx, self._ny, self._nz, self._d, self._d, self._d, self._dx, self._dx, self._dx, alpha, tortuosity)
+        self._grid_id = insert(0, self._states._ref_x[0], self._nx, self._ny, self._nz, self._d, self._d, self._d, self._dx, self._dx, self._dx, self._alpha, self._tortuosity)
 
         self._str = '_species[%d]' % self._grid_id
         self._name = name
