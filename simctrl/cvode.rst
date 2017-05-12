@@ -8,9 +8,8 @@ CVode
 
 
     Syntax:
-        ``objref cvode``
 
-        ``cvode = new CVode()``
+        ``cvode = h.CVode()``
 
 
     Description:
@@ -82,7 +81,12 @@ CVode
         and the general sparse matrix solver. Not all components work together, see 
         :meth:`CVode.current_method` for acceptable mixing. 
 
-         
+    .. note::
+
+        A ``from neuron import gui`` or ``h.load_file('stdrun.hoc')`` will create an instance called
+        ``h.cvode``. Although this class is not strictly speaking a singleton, there is only one
+        integrator and it may be controlled and queried by any instance.\
+
 
 ----
 
@@ -103,10 +107,10 @@ CVode
         With the tout argument, cvode integrates til its step passes tout. Internally 
         cvode returns the interpolated values of the states (at exactly tout) 
         and the CVode class calls the functions necessary to update the assigned variables. 
-        Note that cvode.solve(tout) may be called for any value of tout greater than 
+        Note that ``cvode.solve(tout)`` may be called for any value of tout greater than 
         t-dt where dt is the size of its last single step. 
          
-        For backward compatibility with finitialize/fadvance 
+        For backward compatibility with :func:`finitialize`/:func:`fadvance`
         it is better to use the :meth:`CVode.active` method instead of calling 
         solve directly. 
          
@@ -164,6 +168,9 @@ CVode
              10  number of items removed from event queue. 
 
 
+     .. note::
+
+        ``vector`` must be an instance of :class:`Vector`
          
 
 ----
@@ -176,7 +183,7 @@ CVode
     Syntax:
         ``cvode.print_event_queue()``
 
-        ``cvode.print_event_queue(Vector)``
+        ``cvode.print_event_queue(vector)``
 
 
     Description:
@@ -185,7 +192,7 @@ CVode
         aspect of the model structure. Many types of structure changes invalidate 
         pointers used in the event queue. 
          
-        With a vector argument, the delivery times are copied to the Vector in 
+        With a ``vector`` argument, the delivery times are copied to the :class:`Vector` in 
         proper monotonically increasing order. 
 
 
@@ -206,7 +213,7 @@ CVode
         Returns NetCon (2) or SelfEvent (3) information currently on the event queue. 
         If the type is 2,  NetCon information currently on the event queue 
         is returned: delivery times are returned in tvec and the corresponding 
-        NetCon objects are returned in the List arg. If the type is 3, 
+        NetCon objects are returned in the :class:`List` arg. If the type is 3, 
         SelfEvent information is returned: delivery times are returned in tvec, 
         the flags are returned in flagvec, and the SelfEvent targets 
         (ArtificialCells are PointProcesses) returned in the List arg. 
@@ -218,6 +225,9 @@ CVode
         The delivery times are copied to the Vector in 
         proper monotonically increasing order. 
 
+     .. note::
+
+        ``list`` must be an instance of :class:`List`; you cannot use a Python list ``[]``.
 
 ----
 
@@ -239,14 +249,13 @@ CVode
         The solver attempts to use a step size so that the local error for each 
         state is less than 
 
-        .. code-block::
-            none
+        .. math::
 
-            	rtol*|state| + atol*atolscale_for_state 
+            	(\mathrm{rtol}) |\mathrm{state}| + (\mathrm{atol})(\mathrm{atolscale\_for\_state})
 
         The error test passes if the error in each state, e[i], is such that 
         e[i]/state[i] < rtol OR e[i] < atol*atolscale_for_state 
-        (the default atolscale_for_state is 1, see :meth:`CVode.atolscale` ) 
+        (the default atolscale_for_state is 1, see :meth:`atolscale` ) 
          
 
 ----
@@ -272,10 +281,9 @@ CVode
         The solver attempts to use a step size so that the local error for each 
         state is less than 
 
-        .. code-block::
-            none
+        .. math::
 
-            	rtol*|state| + atol*atolscale_for_state 
+                (\mathrm{rtol}) |\mathrm{state}| + (\mathrm{atol})(\mathrm{atolscale\_for\_state})
 
         The error test passes if the error in each state, e[i], is such that 
         e[i]/state[i] < rtol OR e[i] < atol*atolscale_for_state 
@@ -283,7 +291,7 @@ CVode
         Therefore states should be scaled (or the absolute tolerance reduced) 
         so that when the value is close to 0, the error is not too large. 
          
-        (See :func:`atolscale` for how to set distinct absolute multiplier 
+        (See :meth:`atolscale` for how to set distinct absolute multiplier 
         tolerances for different states.) 
          
         Either rtol or atol may be set to 0 but not both. (pure absolute tolerance 
@@ -299,9 +307,14 @@ CVode
 
 
     Syntax:
-        ``tol = cvode.atolscale(&var, toleranceMultiplier)``
 
-        ``tol = cvode.atolscale(&var)``
+        **only works when called from HOC**
+
+        ``tol = cvode.atolscale(ptr_var, toleranceMultiplier)``
+
+        ``tol = cvode.atolscale(ptr_var)``
+
+        **works for both HOC and Python**
 
         ``tol = cvode.atolscale("basename" [, toleranceMultiplier])``
 
@@ -309,33 +322,30 @@ CVode
     Description:
         Specifies the absolute tolerance scale multiplier (default is 1.0) 
         for all STATE's of which the address 
-        of var is an instance. Eg.  \ ``cvode.atolscale(&soma.v(.5), 1e-8)`` sets 
-        the absolute tolerance multiplier for all membrane potentials everywhere. 
-        (The syntax for merely specifying a name is admittedly cumbersome but 
-        the function is not often needed and it avoids the necessity of 
-        explicitly having to parse strings such as "TrigKSyn.G".) 
-        The currently specified multiplier for that state name 
-        is returned by the function call. 
-         
+        of var is an instance.
+
+        **Only the last form is currently supported in Python**; the first two forms
+        work from HOC but not Python.
+
         Specification of a particular STATEs absolute tolerance multiplier 
         is only needed 
         if its scale is extremely small or large and is best indicated within the 
-        model description file itself using the STATE declaration syntax:n 
+        model description file itself using the STATE declaration syntax:
 
         .. code-block::
             none
 
-            	state (units) <tolerance> 
+                state (units) <tolerance> 
 
         See nrn/demo/release/cabpump.mod for an example of a model which needs 
         a specific scaling of absolute tolerances (ie, calcium concentration 
         and pump density). 
-         
+        
         The "basename" form is simpler than the pointer form and was added to 
         simplify the implementation of the AtolTool. The pointer form required 
         the state to actually exist at the specified location. Base names are 
-        "v", "vext", state_suffix such as m_hh, and PointProcessName.state such 
-        as ExpSyn.g . 
+        ``v``, ``vext``, state_suffix such as ``m_hh``, and PointProcessName.state such 
+        as ``ExpSyn.g``. 
 
          
 
@@ -392,7 +402,7 @@ CVode
 
         ``x = cvode.active(1)``
 
-        ``following two not yet implemented``
+        **following two not yet implemented**
 
         ``x = cvode.active(1, dt)``
 
@@ -453,7 +463,9 @@ CVode
 
     Description:
         0 is the default. Linear solvers supplied by NEURON. 
+
         1 use dense matrix 
+
         2 use diagonal matrix 
 
          
@@ -466,16 +478,16 @@ CVode
 
 
     Syntax:
-        ``objref dest_vector``
+        .. code-block::
+            python
 
-        ``dest_vector = new Vector()``
-
-        ``cvode.states(dest_vector)``
+            states_copy = h.Vector()
+            cvode.states(states_copy)
 
 
     Description:
-        Fill the destination :class:`Vector` with the values of the states. 
-        On return dest_vector.size will be the number of states. 
+        Fill the destination ``states_copy`` :class:`Vector` with the values of the states. 
+        On return ``states_copy.size()`` will be the number of states. 
 
          
 
@@ -507,7 +519,7 @@ CVode
 
 
     Description:
-        returns f(yvec, t) in ypvec. f is the existing model. 
+        returns f(yvec, t) in the :class:`Vector` ypvec. f is the existing model. 
         Size of yvec must be equal to the number of states ( ie vector size 
         returned by :meth:`CVode.states`). ypvec will be resized to the proper size. 
         Note that the order of the states in the vector is indicated by the 
@@ -531,7 +543,7 @@ CVode
 
 
     Description:
-        Fills the state variables with the values specified in yvec. 
+        Fills the state variables with the values specified in the :class:`Vector` yvec. 
         Size of yvec must be equal to the number of states ( ie vector size 
         returned by :meth:`CVode.states`). Note that active CVode requires a subsequent 
         :meth:`CVode.re_init` if one wishes to integrate from the yvec state point. 
@@ -540,6 +552,15 @@ CVode
         Works only for global variable time step method. 
         Works only with single thread. 
 
+    .. note::
+
+        ``yvec`` must be a NEURON :class:`Vector` object. To scatter from an arbitrary Python iterable
+        ``data`` (at the cost of an extra copy), use, e.g.
+
+        .. code-block::
+            python
+
+            h.CVode().yscatter(h.Vector(data))
          
 
 ----
@@ -554,7 +575,7 @@ CVode
 
 
     Description:
-        Fills yvec with the state variables (will be resized to the number of 
+        Fills the :class:`Vector` yvec with the state variables (will be resized to the number of 
         states). This is analogous to :meth:`CVode.states` after a :meth:`CVode.re_init`. 
 
     .. warning::
@@ -588,14 +609,19 @@ CVode
         the fixed step method and avoids the overhead of 
 
         .. code-block::
-            none
+            python
 
-            cvode.active(0) 
-            fadvance() 
-            cvode.active(1) 
+            h.CVode().active(0) 
+            h.fadvance() 
+            h.CVode().active(1) 
 
         in order to allow the use of the CVode functions assigning state and 
-        evaluating states and dstates/dt 
+        evaluating states and dstates/dt; use via:
+
+        .. code-block::
+            python
+
+            h.CVode().fixed_step()
 
     .. warning::
         :meth:`CVode.dstates` are invalid and should be determined by a call to 
@@ -648,15 +674,33 @@ CVode
 
 
     Description:
-        Return the hoc name of the i'th string in dest_string 
+        Return the HOC name of the i'th string in ``dest_string``, a NEURON string reference. 
         The default style, 0, is to attempt to specify the name in terms of 
         object references such as cell[3].syn[2].g. Style 1 specifies the name 
         in terms of the object id, eg. ExpSyn[25].g or Cell[25].soma.v(.5). 
         Style 2 returns the basename, e.g. v, or ExpSyn.g . 
 
-         
-         
+    Example:
 
+        .. code-block::
+            python
+
+            from neuron import h
+            h.load_file('stdrun.hoc')    # defines h.cvode
+
+            result = h.ref('')
+            soma = h.Section(name='soma')
+            h.cvode_active(1)
+            h.cvode.statename(0, result)
+            print(result[0])         
+
+
+        The above code displays: ``soma.v(0.5)``
+
+    .. warning::
+
+        ``dest_string`` must be a NEURON string reference (e.g. ``dest_string = h.ref('')``) 
+        not a Python string, as those are immutable.
 ----
 
 
@@ -692,31 +736,13 @@ CVode
         special and only match themselves. 
 
     Example:
-        A compact method of iterating over a set of NetCon objects is 
-        to create the list iterator 
+        To print all the postcells that the given ``precell`` connects to: 
 
         .. code-block::
-            none
+            python
 
-            iterator ltr() {local i, cnt  localobj nil 
-            	for i in range(0, $o2.count - 1):
-            		$o1 = $o2.object(i) 
-            		iterator_statement 
-            	
-            	$o1 = nil 
-            
-
-        and then take advantage of the automatic creation and destruction 
-        of lists with, for example, to print all the postcells that the 
-        given precell connects to: 
-
-        .. code-block::
-            none
-
-            objref xo 
-            for ltr(xo, cvode.netconlist(precell, "", "")) { 
-            	print xo.postcell 
-            } 
+            for nc in h.CVode().netconlist(precell, '', ''):
+                print(nc.postcell())
 
 
          
@@ -729,9 +755,9 @@ CVode
 
 
     Syntax:
-        ``cvode.record(&rangevar, yvec, tvec)``
+        ``cvode.record(_ref_rangevar, yvec, tvec)``
 
-        ``cvode.record(&rangevar, yvec, tvec, 1)``
+        ``cvode.record(_ref_rangevar, yvec, tvec, 1)``
 
 
     Description:
@@ -740,7 +766,7 @@ CVode
         of density mechanisms and point processes. 
          
         During a run, record the stream of values in the specified range 
-        variable into the yvec Vector along with time values into the tvec Vector. 
+        variable into the yvec :class:`Vector` along with time values into the tvec :class:`Vector`. 
         Note that each recorded range variable must have a separate tvec which 
         will be different for different cells. On initialization 
         the yvec and tvec Vectors are resized to 1 and the initial value of the 
@@ -768,7 +794,7 @@ CVode
 
     Description:
         Remove yvec (and the corresponding xvec) 
-        from the list of recorded vectors. See :func:`record`. 
+        from the list of recorded :class:`Vector`s. See :meth:`record`. 
 
          
 
@@ -819,20 +845,23 @@ CVode
         The statement should only access states and parameters associated with the 
         cell containing the POINT_PROCESS. If any states or parameters are changed, 
         then the fourth arg should be set to 1 to cause a re-initialization of only 
-        the integrator managing the cell (CVode.re_init is nonsense in this context). 
+        the integrator managing the cell (:meth:`CVode.re_init` is nonsense in this context). 
 
         Example:
          
-		from neuron import h, gui
- 
-		def hi():
-			print 'hello from hi, h.t =', h.t
+        .. code-block::
+            python
+    
+    	    from neuron import h, gui
+     
+    	    def hi():
+    	        print('hello from hi, h.t = %g' % h.t)
 
-		h.finitialize(-65)
+    	    h.finitialize(-65)
 
-		h.CVode().event(1.3, hi)
+    	    h.CVode().event(1.3, hi)
 
-		h.continuerun(2)
+    	    h.continuerun(2)
 
 ----
 
@@ -1124,27 +1153,27 @@ CVode
 
         ``cvode.state_magnitudes(Vector, integer)``
 
-        ``maxstate = cvode.state_magnitudes("basename", &maxacor)``
+        ``maxstate = cvode.state_magnitudes("basename", _ref_maxacor)``
 
 
     Description:
          
-        cvode.state_magnitudes(1) activates the calculation of the 
+        ``cvode.state_magnitudes(1)`` activates the calculation of the 
         running maximum magnitudes of states and acor. 0 turns it off. 
          
-        cvode.state_magnitudes(2) creates an internal 
+        ``cvode.state_magnitudes(2)`` creates an internal 
         list of the maximum of the maximum states and acors 
         according to the state basename currently in the model. Statenames not 
         in use have a maximum magnitude state and acor value of -1e9. 
          
-        maxstate = cvode.state_magnitudes("basename", &maxacor) 
+        ``maxstate = cvode.state_magnitudes("basename", _ref_maxacor)`` 
         returns the maxstate and maxacor for the state type, e.g. "v" or 
         "ExpSyn.g", or "m_hh". Note: state type names can be determined from 
         MechanismType and MechanismStandard 
          
-        cvode.state_magnitudes(Vector, 0) returns all the maximum magnitudes for 
+        ``cvode.state_magnitudes(Vector, 0)`` returns all the maximum magnitudes for 
         each state in the Vector. This is analogous to cvode.states(Vector). 
-        cvode.state_magnitudes(Vector, 1) returns the maximum magnitudes for 
+        ``cvode.state_magnitudes(Vector, 1)`` returns the maximum magnitudes for 
         each acor in the Vector. 
          
 
@@ -1245,7 +1274,7 @@ CVode
 
 
     Description:
-        Accumulates all the sent events as adjacent pairs in the vector. 
+        Accumulates all the sent events as adjacent pairs in the :class:`Vector` vec. 
         The pairs are the time at which the event was sent and the time it 
         is to be delivered. The user should do a vec.resize(0) before starting 
         a run. Cvode will stop storing with cvode.store_event(). 
@@ -1312,7 +1341,7 @@ CVode
 
 
     Syntax:
-        ``mode = cache_efficient(0or1)``
+        ``mode = cvode.cache_efficient(0or1)``
 
 
     Description:
