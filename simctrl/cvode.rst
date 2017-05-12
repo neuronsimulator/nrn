@@ -951,7 +951,7 @@ CVode
 
     Description:
         Prints information whenever an event is generated or delivered. When the 
-        argument is true, information is printed at every integration step as well. 
+        argument is 2, information is printed at every integration step as well. 
 
          
 
