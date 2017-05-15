@@ -22,7 +22,7 @@ class Bench(object):
             t2 = time()
             t += t2-t1
 
-        print 'Executed "%s".  Elapsed = %f s' % (cmd,t/repeat)
+        print ('Executed "%s".  Elapsed = %f s' % (cmd,t/repeat))
         
 
 class VectorTestCase(unittest.TestCase):
@@ -55,19 +55,19 @@ class VectorTestCase(unittest.TestCase):
         import numpy
         
         bench = Bench(globals(),locals())
-        print "\n"
+        print ("\n")
         bench('l = range(1000000)')
         bench('v = h.Vector(l)')
-        print "inplace:",
+        print ("inplace:")
         bench('v.from_python(l)')
         bench('a = numpy.array(v)')
-        print "inplace:",
+        print ("inplace:")
         bench('v.to_python(a)')
         bench('v2 = h.Vector(a)')
-        print "inplace:",
+        print ("inplace:")
         bench('v2.from_python(a)')
         bench('l2 = list(v2)')
-        print "inplace:",
+        print ("inplace:")
         bench('v.to_python(l2)')
         bench('v2 = h.Vector(a[::-1])')
         bench('a2 = numpy.array(v2)')
