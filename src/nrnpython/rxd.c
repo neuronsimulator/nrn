@@ -10,7 +10,6 @@
 #include <Python.h>
 #endif
 
-#define DIE(msg) exit(fprintf(stderr, "%s\n", msg))
 #define SAFE_FREE(ptr){if(ptr!=NULL) free(ptr);}
 
 /*
@@ -151,23 +150,6 @@ void register_subregion_reaction(int list_idx, int grid_id, unsigned char* my_su
 }
 
 static int states_cvode_offset;
-void scatter_concentrations(void);
-
-static void update_boundaries_x(int i, int j, int k, int dj, int dk, double rate_x,
- double rate_y, double rate_z, int num_states_x, int num_states_y, int num_states_z,
- const double const* states, double* ydot);
-
-
-static void update_boundaries_y(int i, int j, int k, int di, int dk, double rate_x,
- double rate_y, double rate_z, int num_states_x, int num_states_y, int num_states_z,
- const double const* states, double* ydot);
-
-static void update_boundaries_z(int i, int j, int k, int di, int dj, double rate_x,
- double rate_y, double rate_z, int num_states_x, int num_states_y, int num_states_z,
- const double const* states, double* ydot);
-
-static int dg_adi(Grid_node g);
-static void _rhs_variable_step_helper(Grid_node* grid, const double const* states, double* ydot);
 
 fptr _setup, _initialize;
 
@@ -328,7 +310,6 @@ static void _fadvance_fixed_step(void) {
         n = grid->num_currents;
         c = grid->current_list;
 		/*divided the concentration by the volume fraction of the relevant voxel*/ 
-        
 		if(grid->VARIABLE_ECS_VOLUME == VOLUME_FRACTION) {
         	for (i = 0; i < n; i++) {
             	states[c[i].destination] += dt * c[i].scale_factor * (*c[i].source)/grid->alpha[c[i].destination];
@@ -339,7 +320,7 @@ static void _fadvance_fixed_step(void) {
             	states[c[i].destination] += dt * c[i].scale_factor * (*c[i].source)/grid->alpha[0];
         	}
 		}
-		memcpy(grid->old_states, states, sizeof(double) * grid->size_x * grid->size_y * grid->size_z); 
+		memcpy(grid->old_states, states, sizeof(double) * grid->size_x * grid->size_y * grid->size_z);
     }
 
     /* TODO: implicit reactions*/
@@ -349,14 +330,14 @@ static void _fadvance_fixed_step(void) {
     for (grid = Parallel_grids[0]; grid != NULL; grid = grid -> next) {
 		switch(grid->VARIABLE_ECS_VOLUME)
 		{
-		case VOLUME_FRACTION:
-			dg_adi_vol(*grid);
-			break;
-		case TORTUOSITY:
-			dg_adi_tort(*grid);
-			break;
-		default:
-        	dg_adi(*grid);
+			case VOLUME_FRACTION:
+				dg_adi_vol(*grid);
+				break;
+			case TORTUOSITY:
+				dg_adi_tort(*grid);
+				break;
+			default:
+        		dg_adi(*grid);
 		}
 
     }
@@ -399,7 +380,7 @@ static int ode_count(const int offset) {
     return count;
 }
 
-static int find(const int x, const int y, const int z, const int size_y, const int size_z) {
+int find(const int x, const int y, const int z, const int size_y, const int size_z) {
     int index = z + y * size_z + x * size_z * size_y;
     return index;
 
@@ -485,7 +466,18 @@ static void _rhs_variable_step(const double t, const double* states, double* ydo
 
     /* do the diffusion rates */
     for (grid = Parallel_grids[0]; grid != NULL; grid = grid -> next) {
-        _rhs_variable_step_helper(grid, states, ydot);
+		switch(grid->VARIABLE_ECS_VOLUME)
+		{
+			case VOLUME_FRACTION:
+				_rhs_variable_step_helper_vol(grid, states, ydot);
+				break;
+			case TORTUOSITY:
+				_rhs_variable_step_helper_tort(grid, states, ydot);
+				break;
+			default:
+        		_rhs_variable_step_helper(grid, states, ydot);
+		}
+
         ydot += grid_size;
         states += grid_size;        
     }
@@ -899,7 +891,7 @@ static AdiLineData dg_adi_z(Grid_node g, double const dt, int const x, int const
 {
     int z;
     double *RHS = malloc(sizeof(double)*g.size_z);
-	double r = g.dc_y*dt/SQ(g.dz);
+	double r = g.dc_z*dt/SQ(g.dz);
     AdiLineData result;
     result.copyFrom = RHS;
     result.copyTo = IDX(x, y, 0);
@@ -969,7 +961,7 @@ void run_threaded_dg_adi(AdiGridData* tasks, pthread_t* thread, const int i, con
         tasks[k].vals = vals;
         tasks[k].sizej = j;
         tasks[k].dg_adi_dir = dg_adi_dir;
-        tasks[k].scratchpad = malloc(sizeof(double) * ((g.VARIABLE_ECS_VOLUME==VOLUME_FRACTION?2*n-1:n-1)));
+        tasks[k].scratchpad = malloc(sizeof(double) * (n-1));
 		/*with variable volume fraction there are at most n additional points*/
      }
     tasks[NUM_THREADS - 1].stop = i * j;
