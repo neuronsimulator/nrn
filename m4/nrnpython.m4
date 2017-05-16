@@ -124,8 +124,10 @@ and PYINCDIR to find Python.h
 		dnl 1013 good for 2.5-2.7, 1012 good for 2.3-2.4
 		npy_apiver=`$ac_nrn_python -c "import sys;print (sys.api_version)"`
 		echo "dynamic npy_apiver=$npy_apiver"
-		AC_NRN_PYCONF(xxx,get_python_version(),2.4,$ac_nrn_python)
-		npy_pyver10=`echo ${xxx} | sed 's/\\.//'`
+		#AC_NRN_PYCONF(xxx,get_python_version(),2.4,$ac_nrn_python)
+		#npy_pyver10=`echo ${xxx} | sed 's/\\.//'`
+		AC_NRN_PYCONF(xxx,sys.version_info@<:@0@:>@,2,$ac_nrn_python)
+		npy_pyver10=${xxx}
 		echo "dynamic npy_pyver10=$npy_pyver10"
 		NRN_DEFINE_UNQUOTED(NRNPYTHON_DYNAMICLOAD,$npy_pyver10,[Define to value of sys.version (without the dot) if dynamic loading desired])
 	fi

@@ -255,21 +255,8 @@ static void* load_sym(void* handle, const char* name) {
 	return p;
 }
 
-static void load_nrnpython(int pyver10, const char* pylib) {
-	char npylib[100];
-	char name[100];
-
-	if (pyver10 >= 30) {
-		sprintf(npylib, "libnrnpython35");
-	}else if (pyver10 >= 25) {
-		sprintf(npylib, "libnrnpython27");
-	}else if (pylib) {
-		sprintf(npylib, "libnrnpython27");
-	}else{
-		sprintf(npylib, "libnrnpython");
-	}
-	//printf("npylib = %s\n", npylib);
-
+static void* load_nrnpython_helper(const char* npylib) {
+	char name[2048];
 #ifdef MINGW
 	sprintf(name, "%s.dll", npylib);
 #else
@@ -280,9 +267,18 @@ static void load_nrnpython(int pyver10, const char* pylib) {
 #endif
 #endif
 	void* handle = dlopen(name, RTLD_NOW);
+	return handle;
+}
+
+static void load_nrnpython(int pyver10, const char* pylib) {
+	void* handle = load_nrnpython_helper("libnrnpython3");
 	if (!handle) {
-		printf("Could not load %s\n", name);
-		return;
+		handle = load_nrnpython_helper("libnrnpython2");
+		if (!handle) {
+printf("Could not load either libnrnpython3 or libnrnpython2\n");
+printf("pyver10=%d pylib=%s\n", pyver10, pylib ? pylib : "NULL");
+			return;
+		}
 	}
 	p_nrnpython_start = (void(*)(int))load_sym(handle, "nrnpython_start");
 	p_nrnpython_real = (void(*)())load_sym(handle, "nrnpython_real");
