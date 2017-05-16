@@ -1,7 +1,7 @@
 157   modelspec/programmatic/electrod.rst // issues
 378   programming/gui/pwman.rst     // mostly done, add spaces between line 1 and other thing
 468   visualization/plotshapeclass.rst // finished     
-964   programming/ockeywor.rst //mostly done       
+964   programming/ockeywor.rst //mostly done       <-- should probably be reverted to original... this is about HOC; should not be in Python
 190   analysis/programmatic/optimization.rst // mostly done
 380   modelspec/programmatic/topology/secspec.rst // mostly done
 491   programming/io/file.rst         // mostly done
