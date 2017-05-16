@@ -7,7 +7,6 @@
 491   programming/io/file.rst         // mostly done
 716   programming/math/random.rst // mostly done
 1053    modelspec/programmatic/mechanisms/mech.rst //mostly done  
-37    programming/errors.rst // finished
 50    analysis/programmatic/misc.rst //finished
 96    modelspec/programmatic/obsoletestimuli.rst  //finished  
 122   modelspec/programmatic/ions.rst   //finished     
@@ -69,3 +68,4 @@ Reviewed
 115   programming/sscanf.rst //q
 693   modelspec/programmatic/kschan.rst // finished 
 1503    simctrl/cvode.rst     //finished 
+37    programming/errors.rst // finished

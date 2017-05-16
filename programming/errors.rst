@@ -4,7 +4,7 @@ Error Handling
 .. function:: coredump_on_error
 
     Syntax:
-        ``coredump_on_error(1 or 0)``
+        ``h.coredump_on_error(1 or 0)``
 
     Description:
         On unix machines, sets a flag which requests (1) a coredump in case 
@@ -16,7 +16,7 @@ Error Handling
 .. function:: show_errmess_always
 
     Syntax:
-        ``show_errmess_always(boolean)``
+        ``h.show_errmess_always(boolean)``
 
     Description:
         Sets or turns off a flag which, if on, always prints the error message even 
@@ -29,7 +29,7 @@ Error Handling
 .. function:: execerror
 
     Syntax:
-        ``execerror("message1", "message2")``
+        ``h.execerror("message1", "message2")``
 
     Description:
         Raise an error and print the messages along with an interpreter stack
