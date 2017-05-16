@@ -1,9 +1,14 @@
 Dynamic Code Loading and Execution
 ==================================
 
-These functions either execute code contained in an arbitrary, possibly
-generated-at-runtime string or load code from a file potentially chosen at runtime.
+These functions either execute HOC code contained in an arbitrary, possibly
+generated-at-runtime string or load HOC code from a file potentially chosen at runtime.
 
+.. note::
+    
+    To execute dynamically generated Python code, use Python's ``exec`` function; to evaluate a
+    dynamically generated Python expression, use Python's ``eval`` function. Beware: using these functions
+    (or any of the below) with input from the user potentially allows the user to execute arbitrary code.
 
 code-executing
 --------------
@@ -153,7 +158,7 @@ code-loading
 .. function:: load_func
 
     Syntax:
-        ``h.load_func()``
+        ``h.load_func('name1', ...)``
 
         see :func:`load_proc` 
 
@@ -162,7 +167,7 @@ code-loading
 .. function:: load_template
 
     Syntax:
-        ``h.load_template()``
+        ``h.load_template('name1', ...)``
 
         see :func:`load_proc` 
 

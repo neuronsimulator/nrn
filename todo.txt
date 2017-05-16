@@ -11,7 +11,6 @@
 96    modelspec/programmatic/obsoletestimuli.rst  //finished  
 122   modelspec/programmatic/ions.rst   //finished     
 147   visualization/grapher.rst     //finished
-163   programming/dynamiccode.rst   //finished //no arguments for load_func and load_template
 385   programming/gui/list.rst      //mostly done
 741   modelspec/programmatic/network/netcon.rst //mostly done    
 1313    programming/math/matrix.rst   //first example of Matrix.x needs finish //cholesky_factor() the hoc version also doesn’t work
@@ -69,3 +68,4 @@ Reviewed
 693   modelspec/programmatic/kschan.rst // finished 
 1503    simctrl/cvode.rst     //finished 
 37    programming/errors.rst // finished
+163   programming/dynamiccode.rst   //finished //no arguments for load_func and load_template
