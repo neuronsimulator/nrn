@@ -3,6 +3,7 @@
 
 #include	<stdio.h>
 #include	<stdlib.h>
+#include	<stdarg.h>
 #include <unistd.h>
 #include	"hoc.h"
 #include "ocmisc.h"
@@ -866,3 +867,52 @@ void hoc_Chdir(void) {
 	ret();
 	pushx((double)i);
 }
+
+int nrn_is_python_extension;
+int (*nrnpy_pr_callback)(char*);
+
+void nrnpy_set_pr(int (*cb)(char*)) {
+    if (nrn_is_python_extension) {
+        nrnpy_pr_callback = cb;
+    }
+}
+
+int nrnpy_pr(const char *fmt, ...) {
+    int size = 0;
+    char *p = NULL;
+    va_list ap;
+
+    if (!nrnpy_pr_callback) {
+        va_start(ap, fmt);
+        size = vprintf(fmt, ap);
+        return size;
+    }
+
+    /* Determine required size */
+
+    va_start(ap, fmt);
+    size = vsnprintf(p, size, fmt, ap);
+    va_end(ap);
+
+    if (size < 0)
+        return 0;
+
+    size++;      /* For '\0' */
+    p = malloc(size);
+    if (p == NULL)
+        return 0;
+
+    va_start(ap, fmt);
+    size = vsnprintf(p, size, fmt, ap);
+    if (size < 0) {
+        free(p);
+        return 0;
+    }
+    va_end(ap);
+
+    (*nrnpy_pr_callback)(p);
+
+    free(p);
+    return size;
+}
+

@@ -250,7 +250,7 @@ extern "C" {
 	extern int nrn_global_argc;
 	extern const char** nrn_global_argv;
 	int always_false;
-	int nrn_is_python_extension;
+	extern int nrn_is_python_extension;
 }
 
 // some things are defined in libraries earlier than they are used so...

@@ -422,12 +422,14 @@ def nrn_dll(printpath=False):
     base_path = os.path.join(neuron_home, 'lib' , 'python', 'neuron', 'hoc')
     for extension in ['', '.dll', '.so', '.dylib']:
         dlls = glob.glob(base_path + '*' + extension)
-        try:
-            the_dll = ctypes.cdll[dlls[0]]
-            if printpath : print(dlls[0])
-            success = True
-        except:
-            pass
+        for dll in dlls:
+            try:
+                the_dll = ctypes.cdll[dll]
+                if printpath : print(dll)
+                success = True
+            except:
+                pass
+            if success: break
         if success: break
     else:
         raise Exception('unable to connect to the NEURON library')
@@ -530,3 +532,22 @@ def _has_scipy():
 def _pkl(arg):
   #print 'neuron._pkl arg is ', arg
   return h.Vector(0)
+
+def nrnpy_pr(s):
+  import sys
+  sys.stdout.write(s.decode())
+  return 0
+
+try:
+  # callback in place of hoc printf
+  # ensures consistent with python stdout even with jupyter notebook.
+  nrnpy_pr_proto = ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_char_p)
+  nrnpy_set_pr = nrn_dll_sym('nrnpy_set_pr')
+  nrnpy_set_pr.argtypes = [nrnpy_pr_proto]
+
+  nrnpy_pr_callback = nrnpy_pr_proto(nrnpy_pr)
+  nrnpy_set_pr(nrnpy_pr_callback)
+except:
+  print("Failed to setup nrnpy_pr")
+  pass
+

@@ -215,7 +215,11 @@ void plprint(const char* s)
 		}else
 #endif
 		{
+#if 0
 			IGNORE(fprintf(stdout, "%s", s));
+#else
+			nrnpy_pr("%s", s);
+#endif
 		}
 	}
 	if (hardplot && hpdev && text && strlen(s)) {

@@ -323,7 +323,7 @@ int	ilint;
 #define Strcpy          strcpy
 #define Strncpy         strncpy
 #define Sprintf         sprintf
-#define Printf		printf
+#define Printf		nrnpy_pr
 #define Fprintf		fprintf
 #endif
 
