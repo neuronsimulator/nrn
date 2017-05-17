@@ -37,12 +37,13 @@ PWManager
         Returns number of "Printable" windows on the screen. 
 
     Example:
+
     .. code-block::
         python
 
         from neuron import h, gui
         p = h.PWManager()
-        print p.count()
+        print(p.count())
 
 
 ----
@@ -60,16 +61,17 @@ PWManager
         Return 1 if the index'th window is visible. 
 
     Example:
+
     .. code-block::
         python
 
         from neuron import h, gui
         p = h.PWManager()
         # not mapped
-        print p.is_mapped(1)
+        print(p.is_mapped(1))
         p.map(1)
         # mapped
-        print p.is_mapped(1)
+        print(p.is_mapped(1))
 
 
 
@@ -88,6 +90,7 @@ PWManager
         Makes the index'th window visible. 
 
     Example:
+
     .. code-block::
         python
         
@@ -112,6 +115,7 @@ PWManager
         Unmaps the index'th window. The window is NOT closed.
 
     Example:
+
     .. code-block::
         python
         
@@ -119,10 +123,10 @@ PWManager
         p = h.PWManager()
         # mapped
         p.map(1)
-        print p.is_mapped(1)
+        print(p.is_mapped(1))
         # not mapped 
         p.hide(1)
-        print p.is_mapped(1)
+        print(p.is_mapped(1))
 
 
 ----
@@ -141,6 +145,7 @@ PWManager
         reference count of the associated hoc object (if any). 
 
     Example:
+
     .. code-block::
         python
         
@@ -165,6 +170,7 @@ PWManager
         Hides all windows and iconifies the leader. 
 
     Example:
+
     .. code-block::
         python
         
@@ -221,12 +227,13 @@ PWManager
 
     
     Example:
+
     .. code-block::
         python
 
         from neuron import h, gui
         p = h.PWManager()
-        print p.manager()
+        print(p.manager())
 
 
 
@@ -257,6 +264,7 @@ PWManager
         :func:`save_session`
 
     Example:
+
     .. code-block::
         python
 
@@ -285,6 +293,7 @@ PWManager
         group object associated with that window. 
 
     Example:
+
     .. code-block::
         python
 
@@ -315,6 +324,7 @@ PWManager
         printed to a postscript file with the "filename" or filebrowser selection. 
 
     Example:
+
     .. code-block::
         python
 
@@ -359,6 +369,7 @@ PWManager
         i.e, a scale value of 1 gives normal size windows. 
 
     Example:
+
     .. code-block::
         python
 
@@ -380,12 +391,13 @@ PWManager
         Returns the window title bar string of the index'th window. 
 
     Example:
+
     .. code-block::
         python
 
         from neuron import h, gui
         p = h.PWManager()
-        print p.name(0)
+        print(p.name(0))
 
          
 
@@ -405,6 +417,7 @@ PWManager
         coordinates of the screen. 
 
     Example:
+
     .. code-block::
         python
 

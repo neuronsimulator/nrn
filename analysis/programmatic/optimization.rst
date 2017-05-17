@@ -6,13 +6,13 @@ Optimization
 
 
     Syntax:
-        ``min = fit_praxis(n, "funname", &x[0])``
+        ``min = h.fit_praxis(n, "funname", x._ref_x[0])``
 
-        ``min = fit_praxis(n, "funname", Vector)``
+        ``min = h.fit_praxis(n, "funname", Vector)``
 
-        ``min = fit_praxis(..., ..., ..., "after quad statement")``
+        ``min = h.fit_praxis(..., ..., ..., "after quad statement")``
 
-        ``min = fit_praxis(efun_as_python_callable, hoc_vector)``
+        ``min = h.fit_praxis(efun_as_python_callable, neuron_vector)``
 
 
     Description:
@@ -32,13 +32,14 @@ Optimization
             vector is given by ``$&2[i]``. 
 
         *x* 
-            is a double vector of at least length *n*. Prior to the call set 
+            is a double :class:`Vector` of at least length *n*. Prior to the call set 
             it to a guess of the parameter values. On return it contains the 
             values of the args that minimize ``funname()``. 
 
          
         *funname* may be either 
-        an interpreted hoc function or a compiled NMODL function. 
+        an interpreted HOC function or a compiled NMODL function. This form of calling
+        cannot optimize Python functions directly.
          
         If the variable stoprun is set to 1 during a call to fit_praxis, it will 
         return immediately (when the current call to  funname returns) with 
@@ -53,33 +54,14 @@ Optimization
         function is still called with second arg as a pointer into a double array. 
          
         The Python callable form uses a Python Callable as the function to 
-        minimize and it must take a single hoc Vector argument specifying the 
+        minimize and it must take a single NEURON Vector argument specifying the 
         values of the parameters for use in evaluation the function. On entry to 
         fit_praxis the Vector specifies the number of parameters and the 
         parameter starting values. On return the vector contains the values of 
         parameters which generated the least minimum found so far. 
          
-        Hoc example: minimize ``(x+y - 5)^2 + 5*((x-y) - 15)^2``
-
-        .. code-block::
-            python
-
-            vec = h.Vector(2) #vec.x[0] is x, vec.x[1] is y 
-            def efun(): 
-              x = $&2[0]
-              y = $&2[1] 
-              return (x+y - 5)^2 + 5*(x-y - 15)^2 
-            
-            attr_praxis(1e-5, .5, 0) 
-            e = fit_praxis(vec.size(), "efun", vec) 
-            print("e=%g x=%g y=%g\n", e, vec.x[0], vec.x[1]) 
-             
-            paxis = h.Vector() 
-            for i in range(2): 
-              pval = pval_praxis(i, paxis) 
-              print("%d  %10g      %10g %10g\n", i, pval, paxis.x[0], paxis.x[1]) 
-         
-        Python example: 
+        
+        Example: minimize :math:`(x+y - 5)^2 + 5*((x-y) - 15)^2`
 
         .. code-block::
             python
@@ -110,7 +92,7 @@ Optimization
 
 
     Syntax:
-        ``attr_praxis(tolerance, maxstepsize, printmode)``
+        ``h.attr_praxis(tolerance, maxstepsize, printmode)``
 
         ``previous_index = attr_praxis(mcell_ran4_index)``
 
@@ -149,16 +131,16 @@ Optimization
 
 
     Syntax:
-        ``pval = pval_praxis(i)``
+        ``pval = h.pval_praxis(i)``
 
-        ``pval = pval_praxis(i, &paxis[0])``
+        ``pval = h.pval_praxis(i, paxis._ref_x[0])``
 
-        ``pval = pval_praxis(i, Vector)``
+        ``pval = h.pval_praxis(i, Vector)``
 
 
     Description:
         Return the ith principal value. If the second argument is present, ``pval_praxis`` also fills 
-        the vector with the ith principal axis. 
+        the :class:`Vector` with the ith principal axis. 
 
          
 
@@ -170,9 +152,9 @@ Optimization
 
 
     Syntax:
-        ``stop_praxis()``
+        ``h.stop_praxis()``
 
-        ``stop_praxis(i)``
+        ``h.stop_praxis(i)``
 
 
     Description:

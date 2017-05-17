@@ -5,7 +5,7 @@ Miscellaneous
 
 
     Syntax:
-        ``ghk(v, ci, co, charge)``
+        ``h.ghk(v, ci, co, charge)``
 
 
     Description:
@@ -15,7 +15,7 @@ Miscellaneous
         .. code-block::
             none
 
-            mA/cm2 = (permeability in cm/s)*ghk(mV, mM, mM, valence) 
+            mA/cm2 = (permeability in cm/s)*h.ghk(mV, mM, mM, valence) 
 
 
          
@@ -28,18 +28,18 @@ Miscellaneous
 
 
     Syntax:
-        ``nernst(ci, co, charge, sec=section)``
+        ``h.nernst(ci, co, charge, sec=section)``
 
-        ``nernst("ena" or "nai" or "nao", [x], sec=section)``
+        ``h.nernst("ena" or "nai" or "nao", [x], sec=section)``
 
 
     Description:
 
 
-        ``nernst(ci, co, charge)`` 
+        ``h.nernst(ci, co, charge)`` 
             returns nernst potential. Utilizes the present value of celsius. 
 
-        ``nernst("ena" or "nai" or "nao", [x])`` 
+        ``h.nernst("ena" or "nai" or "nao", [x])`` 
             calculates ``nao/nai = exp(z*ena/RTF)`` for the ionic variable 
             named in the string. 
 

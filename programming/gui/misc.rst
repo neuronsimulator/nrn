@@ -33,15 +33,10 @@ Domain Restrictions for Fields
 .. function:: variable_domain
 
     Syntax:
-        ``variable_domain(&variable, lower_limit, upper_limit)``
-
-        ``variable_domain("varname", lower_limit, upper_limit)``
+        ``h.variable_domain("varname", lower_limit, upper_limit)``
 
     Description:
-        Define the domain limits for any variable for which one can take its address. 
-        At this time only field editors check the variable domain. If one 
-        attempts to enter a value into a field editor which is not in the domain, the 
-        value will be set to the upper or lower limit. Important NEURON 
+        Define the domain limits for NEURON variables. Important NEURON 
         variables such as dt, L, diam, and Ra have reasonable default domains. 
         Many parameters defined in model description files also have reasonable domains. 
          
@@ -51,7 +46,17 @@ Domain Restrictions for Fields
         One can specify different domains only on a per name basis. Thus there 
         is only one domain specification for L and one for all the instances of 
         IClamp.amp but one can have a different specification 
-        for IClamp.amp and VClamp.amp . 
+        for IClamp.amp and VClamp.amp.
+
+    .. note::
+
+        The HOC version also supports a pointer-based specification, but that form does
+        not work from Python.
+
+    .. note::
+
+        ``varname`` here would be things like ``t`` or ``diam`` not ``h.t`` or ``h.diam``; i.e.
+        omit the ``h.`` prefix.
 
 ----
 

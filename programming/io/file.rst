@@ -39,6 +39,7 @@ File Access (objected-oriented via NEURON)
         .. code-block::
             python
  
+            from neuron import h
             f1 = h.File()		//state that f1, f2, and f3 are pointers to the File class 
             f2 = h.File() 
             f3 = h.File() 
@@ -275,12 +276,15 @@ File Access (objected-oriented via NEURON)
 
 
     Syntax:
-        ``.gets(strptr)``
+        ``.gets(_ref_str)``
 
 
     Description:
         Read up to and including end of line. Returns length of	string. 
         If at the end of file, returns -1 and does not change the argument. 
+
+        ``_ref_str`` is a reference to a NEURON string (e.g. one created via
+        ``_ref_str = h.ref('')``); it is not a Python string.
 
          
 
@@ -411,27 +415,40 @@ File Access (objected-oriented via NEURON)
         .. code-block::
             none
 
-            		f.chooser("", "Execute a hoc file", "*.hoc", "Execute") 
-            		if (f.chooser()) { 
-            			f.getname(*str*) 
-            			xopen(*str*) 
-            		} 
+            f.chooser("", "Execute a hoc file", "*.hoc", "Execute") 
+            if f.chooser():
+                h.xopen(f.getname()) 
 
-        The following comes courtesy of Zach Mainen, ``zach@helmholtz.sdsc.edu``. 
+        Example:
 
-         
+        .. code-block::
+            python
+                
+            from neuron import h, gui
+
+            f = h.File()
+            f.chooser('', 'Example file browser', '*', 'Type file name', 'Cancel')
+            while f.chooser():
+                print(f.getname())
+
+        .. image:: ../../images/filechooser.png
+            :align: center
+
 
 ----
 
+The following comes courtesy of Zach Mainen, ``zach@helmholtz.sdsc.edu``:
+
+----
 
 
 .. method:: File.vwrite
 
 
     Syntax:
-        ``.vwrite(&x)``
+        ``.vwrite(_ref_x)``
 
-        ``.vwrite(n, &x)``
+        ``.vwrite(n, _ref_x)``
 
 
     Description:
@@ -441,6 +458,10 @@ File Access (objected-oriented via NEURON)
         begin writing.  With one argument, *n* is assumed to be 1. 
         Must be careful that  *x*\ [] has at least *n* 
         elements after its passed address. 
+
+        i.e. If ``x = h.Vector(10)`` and ``f`` is an instance of a :class:`File`
+        opened for writing, then one might call ``f.vwrite(5, x._ref_x[0]`` to write
+        the first five values to a file.)
 
          
 
@@ -452,13 +473,13 @@ File Access (objected-oriented via NEURON)
 
 
     Syntax:
-        ``.vread(&x)``
+        ``.vread(_ref_x)``
 
-        ``.vread(n, &x)``
+        ``.vread(n, _ref_x)``
 
 
     Description:
-        Read binary doubles from a file into a pre-existing array 
+        Read binary doubles from a file into a pre-existing :class:`Vector` 
         or variable using \ ``fread()``. 
 
     .. seealso::

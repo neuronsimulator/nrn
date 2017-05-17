@@ -5,7 +5,7 @@ Obsolete Stimuli
 
 
     Syntax:
-        ``fstim()``
+        ``h.fstim()``
 
 
     Description:
@@ -22,7 +22,7 @@ Obsolete Stimuli
 
 
     Syntax:
-        ``fstimi()``
+        ``h.fstimi()``
 
 
     Description:
@@ -39,7 +39,7 @@ Obsolete Stimuli
 
 
     Syntax:
-        ``fclamp()``
+        ``h.fclamp()``
 
 
     Description:
@@ -55,7 +55,7 @@ Obsolete Stimuli
 
 
     Syntax:
-        ``fclampi()``
+        ``h.fclampi()``
 
 
     Description:
@@ -71,7 +71,7 @@ Obsolete Stimuli
 
 
     Syntax:
-        ``fclampv()``
+        ``h.fclampv()``
 
 
     Description:
@@ -87,7 +87,7 @@ Obsolete Stimuli
 
 
     Syntax:
-        ``prstim()``
+        ``h.prstim()``
 
 
     Description:

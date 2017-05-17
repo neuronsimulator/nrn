@@ -52,7 +52,7 @@ Ions
         cinit: 0 or 1. 
             If 1 then a call to finitialize() sets the concentrations 
             to the values of the global initial concentrations. eg. ``nai`` set to 
-            ``nai0_na_ion`` and ``nao`` set to ``nao0_na_ion``. 
+            ``h.nai0_na_ion`` and ``nao`` set to ``h.nao0_na_ion``. 
 
          
         The automatic style is chosen based on how the set of mechanisms that 

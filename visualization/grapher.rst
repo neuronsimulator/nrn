@@ -24,8 +24,8 @@ To pop up the widget say:
 .. code-block::
     python
 
-    	h.load_file("grapher.hoc")	#reads this file 
-    	h.makegrapher(1)			# pop up a new grapher 
+    	h.load_file("grapher.hoc")  # reads this file 
+    	h.makegrapher(1)            # pop up a new grapher 
 
  
 Creating a grapher using 
@@ -47,7 +47,7 @@ To use the grapher widget:
     2)  enter the begin, end, and steps values. 
     3)  specify the y variables: 
         in the graph panel press the left button and select "Plot What?" 
-        and enter an expression or variable to plot. eg. sin(x) 
+        and enter a HOC expression or variable to plot. eg. sin(x) 
         You can do this several times to plot several expressions. 
     4)  If the y variables are actual functions of the independent variable 
         press the Plot button to see the plot. If the y variables 
@@ -128,7 +128,7 @@ of variables that depend implicitly on the independent variable.
 IndepBegin
 ~~~~~~~~~~
 
-For a grapher made with makegrapher(1), specifies initial value 
+For a grapher made with ``h.makegrapher(1)``, specifies initial value 
 of the independent variable. 
 
 IndepEnd
@@ -139,7 +139,7 @@ Specifies final value of independent variable.
 Xexpr
 ~~~~~
 
-A grapher made with makegrapher(1) allows separate specification of 
+A grapher made with ``h.makegrapher(1)`` allows separate specification of 
 independent variable and the x axis plot functions. This allows 
 phase plane plots. The Xexpr may be any function of the independent 
 variable or an implicit function if a generator statement exists. 

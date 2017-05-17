@@ -64,8 +64,8 @@ or make the view correspond to the natural size of the scene.
      
 .. _gui_view_equal_plot:
 
-View_equal_Plot
-===============
+View = Plot
+===========
 
 View = plot: scale the view with respect to the variables being 
 plotted. 
@@ -146,8 +146,8 @@ the view zooms out by 10%. ie accepting the default values
 leaves the view unchanged. 
  
 
-Scene_equal_View
-~~~~~~~~~~~~~~~~
+Scene = View
+~~~~~~~~~~~~
 
 Scene=View: Defines the size of the whole scene. 
 Sets the scene size to the size of the view. Subsequent 
@@ -169,17 +169,19 @@ Browsers are visible lists.
 
 .. code-block::
     python
-    
-    # pop up example of a browser 
-    strdef tempstr 
-    f = h.File() 
-    f.chooser("", "Example file browser", "*", "Type file name", "Exit") 
-    while (f.chooser()): 
-    f.getname(tempstr) 
-    print tempstr 
-    
-    quit() 
+        
+    from neuron import h, gui
 
+    f = h.File()
+    f.chooser('', 'Example file browser', '*', 'Type file name', 'Cancel')
+    while f.chooser():
+        print(f.getname())
+
+
+
+.. image:: ../images/filechooser.png
+    :align: center
+            
 
 The list can be scrolled with a scroll bar but 
 I think it is most convenient to drag the list up and down with the middle 
