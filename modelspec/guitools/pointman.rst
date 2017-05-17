@@ -78,7 +78,7 @@ the point process is re-installed, those parameters are restored.
 If the panel is saved in a session, the MechanismStandard's are 
 saved as well. 
  
-hoc usage:
+Python usage:
 
 .. code-block::
     python

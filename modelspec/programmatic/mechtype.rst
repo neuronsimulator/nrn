@@ -37,13 +37,14 @@ MechanismType
         .. code-block::
             python
 
-            #Print the names of all density mechanisms 
+            from neuron import h
+            # Print the names of all density mechanisms 
             mt = h.MechanismType(0) 
-            strdef mname 
+            mname  = h.ref('')
             for i in range(mt.count()):
             	mt.select(i) 
             	mt.selected(mname) 
-            	print mname 
+            	print(mname[0])
 
 
     .. seealso::
@@ -81,8 +82,14 @@ MechanismType
 
 
     Description:
-        returns the index of the current selection.  If present, strarg is assigned 
-        to the name of the current selection. 
+        returns the index of the current selection.  If present, strdef is assigned 
+        to the name of the current selection.
+
+    .. note::
+
+        ``strdef`` must be a NEURON string reference (e.g. one created via ``strdef = h.ref('')``);
+        to access its contents use ``strdef[0]``; see the example for the constructor above. In
+        particular ``stdef`` cannot be a Python string.
 
          
 
@@ -184,7 +191,10 @@ MechanismType
     Description:
         The action to be executed when a submenu item is selected. 
 
-         
+    .. note::
+
+        Currently only allows invoking HOC commands; passing in a Python function is not
+        supported as of NEURON 7.4.
 
 ----
 
@@ -284,22 +294,20 @@ MechanismType
             
             from neuron import h
 
-            create cable 
-            access cable 
-            nseg = 5  
-            for i in range(3):
-                stim[i] = new IClamp(i/2) 
-             
+            cable = h.Section(name='cable')
+            cable.nseg = 5  
+            stim = [h.IClamp(i/2., sec=cable) for i in range(3)]
+
             mt = h.MechanismType(1) 
             mt.select("IClamp") 
-            for pp = mt.pp_begin() and object_id(pp) != 0 and pp = mt.pp_next():
-            	x = pp.get_loc() 
-            	print("%s located at %s(%g)\n", pp, secname(), x) 
-            	h.pop_section() 
-            
+            pp = mt.pp_begin()
+            while h.object_id(pp) != 0:
+                x = pp.get_loc() 
+                print("%s located at %s(%g)" % (pp, h.secname(), x))
+                h.pop_section() # restores section selection from before the get_loc
+                pp = mt.pp_next()
 
 
-         
 
 ----
 
