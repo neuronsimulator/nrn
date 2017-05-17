@@ -1,6 +1,5 @@
 157   modelspec/programmatic/electrod.rst // issues <-- No idea where this comes from
 380   modelspec/programmatic/topology/secspec.rst // mostly done <-- pretty much nonsense; needs rewritten for Python but start with reverted version?
-716   programming/math/random.rst // mostly done
 1053    modelspec/programmatic/mechanisms/mech.rst //mostly done  <-- needs a bunch of work
 work here? even the Python-y things aren't right... remove the redef of list; use a different variable
 741   modelspec/programmatic/network/netcon.rst //mostly done    
@@ -74,3 +73,4 @@ simctrl/bbsavestate.rst
 131   analysis/guitools/funfit.rst  //mostly done
 385   programming/gui/list.rst      //mostly done <-- difficulty: browser has no Python callback form
 183   modelspec/programmatic/linmod.rst    //mostly done 
+716   programming/math/random.rst // mostly done

@@ -16,11 +16,11 @@ Random Class
 .. class:: Random
 
     Syntax:
-        ``Random()``
+        ``h.Random()``
 
-        ``Random(seed)``
+        ``h.Random(seed)``
 
-        ``Random(seed, size)``
+        ``h.Random(seed, size)``
 
 
     Description:
@@ -56,13 +56,14 @@ Random Class
         .. code-block::
             python
 
-			from neuron import h
+            from neuron import h
 
-			r = h.Random() 
-			for i in range(1,11): 
-				print r.uniform(30, 50) # not as efficient as 
-			for i in range(1,11):
-				print r.repick()	   # this 
+            r = h.Random() 
+            for i in range(10): 
+                print(r.uniform(30, 50)) # not as efficient as 
+
+            for i in range(10):
+                print(r.repick())        # this 
 
         prints 20 random numbers ranging in value between 30 and 50. 
          
@@ -161,38 +162,41 @@ Random Class
         .. code-block::
             python
 
-			from neuron import h, gui
+            from neuron import h, gui
 
-			r = h.Random() 
-			index = h.ref(r.MCellRan4())
-			r.uniform(0, 2) 
-			vec = h.Vector(1000) 
-			g1 = h.Graph() 
-			g2 = h.Graph() 
-			g1.size(0, 1000, 0, 2) 
-			g2.size(0, 2, 0, 150) 
- 
-			def doit(): 
-				g1.erase() 
-				g2.erase() 
-				vec.setrand(r) 
-				hist = vec.histogram(0, 2, 0.2) 
-				vec.line(g1) 
-				hist.line(g2, .2) 
-				g1.flush() 
-				g2.flush()
-	
-			def set_index_then_doit():
-				r.MCellRan4(index[0])
-				doit()
+            r = h.Random() 
+            index = h.ref(r.MCellRan4())
+            r.uniform(0, 2) 
+            vec = h.Vector(1000) 
+            g1 = h.Graph() 
+            g2 = h.Graph() 
+            g1.size(0, 1000, 0, 2) 
+            g2.size(0, 2, 0, 150) 
 
-			doit()
+            def doit(): 
+                g1.erase() 
+                g2.erase() 
+                vec.setrand(r) 
+                hist = vec.histogram(0, 2, 0.2) 
+                vec.line(g1) 
+                hist.line(g2, .2) 
+                g1.flush() 
+                g2.flush()
 
-			h.xpanel("MCellRan4 test") 
-			h.xbutton("Sample", doit) 
-			h.xvalue("Original index", index, 1, set_index_then_doit) 
-			h.xpanel()
+            def set_index_then_doit():
+                r.MCellRan4(index[0])
+                doit()
 
+            doit()
+
+            h.xpanel("MCellRan4 test") 
+            h.xbutton("Sample", doit) 
+            h.xvalue("Original index", index, 1, set_index_then_doit) 
+            h.xpanel()
+
+        .. image:: ../../images/random-mcellran4.png
+            :align: center
+            
 
          
 
@@ -247,6 +251,7 @@ Random Class
 
     Syntax:
         ``currenthighindex = r.seq()``
+
         ``r.seq(sethighindex)``
 
     Description:
@@ -270,39 +275,80 @@ Random Class
         .. code-block::
             python
 
-			from neuron import h
+            from neuron import h
 
-			r = h.Random() 
+            r = h.Random() 
 
-			r.negexp(1) 
- 
-			h.mcell_ran4_init(1) 
-			r.MCellRan4(1) 
- 
-			for i in range(11):
-				print i, r.repick() 
- 
-			r.MCellRan4(1) 
-			for i in range(6):
-				print i, r.repick() 
-			idum = r.seq() 
-			print "idum = ", idum 
-			for i in range(6, 11):
-				print i, r.repick() 
- 
-			print "restarting" 
-			r.seq(idum) 
-			for i in range(6, 11):
-				print i, r.repick()
- 
-			print "restarting" 
-			r.seq(idum) 
-			for i in range(6, 11):
-				print i, r.repick()
+            r.negexp(1) 
+
+            h.mcell_ran4_init(1) 
+            r.MCellRan4(1) 
+
+            for i in range(11):
+                print('{} {}'.format(i, r.repick()))
+
+            r.MCellRan4(1) 
+            for i in range(6):
+                print i, r.repick() 
+
+            idum = r.seq() 
+            print("idum = {}".format(idum ))
+            for i in range(6, 11):
+                print('{} {}'.format(i, r.repick()))
+
+            print("restarting")
+            r.seq(idum) 
+            for i in range(6, 11):
+                print('{} {}'.format(i, r.repick()))
+
+            print("restarting")
+            r.seq(idum) 
+            for i in range(6, 11):
+                print('{} {}'.format(i, r.repick()))
+
+        Output:
+
+            .. code-block::
+                None
+
+                0 1.51709661466
+                1 0.485175784418
+                2 0.212032709823
+                3 0.503178330905
+                4 0.114339664628
+                5 1.28075206782
+                6 0.0578608361212
+                7 0.26376087479
+                8 0.291156947261
+                9 3.21937205675
+                10 0.409557452659
+                0 1.51709661466
+                1 0.485175784418
+                2 0.212032709823
+                3 0.503178330905
+                4 0.114339664628
+                5 1.28075206782
+                idum = 7.0
+                6 0.0578608361212
+                7 0.26376087479
+                8 0.291156947261
+                9 3.21937205675
+                10 0.409557452659
+                restarting
+                6 0.0578608361212
+                7 0.26376087479
+                8 0.291156947261
+                9 3.21937205675
+                10 0.409557452659
+                restarting
+                6 0.0578608361212
+                7 0.26376087479
+                8 0.291156947261
+                9 3.21937205675
+                10 0.409557452659
 
 
-         
-
+        
 ----
 
 
@@ -327,7 +373,7 @@ Random Class
 
 
     Syntax:
-        ``r.play(&var)``
+        ``r.play(_ref_var)``
 
 
     Description:
@@ -348,17 +394,24 @@ Random Class
     Example:
 
         .. code-block::
-            None - still to be corrected
+            python
 
-            # run the single script 
-            # use the PointProcessManager to select IClamp 
-            # set dur of IClamp[0] to 100 
-            # open a new Voltage Graph 
+            from neuron import h
+
             r = h.Random() 
-            r.poisson(.01) 
-            r.play(&IClamp[0].amp) 
-            #open a RunControl 
-            # press Init&Run several times 
+            # set the distribution
+            r.uniform(0, 1)
+
+            # create a reference, and have the uniform random variable update it at each time step
+            rv = h.ref(0)
+            r.play(rv)
+
+            # print some random numbers
+            for i in range(5):
+                h.fadvance()
+                print(rv[0])
+
+    More practically, this might be used with a fixed time step to set, say, ``h.IClamp[0]._ref_amp`` for a random current injection.
 
 
 ----
@@ -375,27 +428,7 @@ Random Class
     Description:
         Create a uniform random variable over the open interval (*low*...\ *high*). 
 
-    Example:
-
-        .. code-block::
-            none
-
-            objref r, vec, g1, g2, hist 
-            r = h.Random() 
-            r.uniform(0, 2) 
-            vec = h.Vector(1000) 
-            vec.setrand(r) 
-            hist = vec.histogram(0, 2, 0.2) 
-             
-            g1 = h.Graph() 
-            g2 = h.Graph() 
-            g1.size(0, 1000, 0, 2) 
-            g2.size(0, 2, 0, 150) 
-            vec.plot(g1) 
-            hist.plot(g2, .2) 
-
-
-         
+    See examples of this in :meth:`Random.MCellRan4` and :meth:`Random.play`.
 
 ----
 
@@ -449,13 +482,15 @@ Random Class
             	x = r.repick() 
             	print i, x 
             	j = int((x+3)*10) # -3 to 2 -> 0 to 50 
-            	i+=1
+            	i += 1
             	if j >= 0:
-            		hist.x[j] = hist.x[j]+1 
-            	
+            		hist.x[j] += 1
             	g.flush() 
-            	doNotify() 
+            	h.doNotify() 
 
+        .. image:: ../../images/random-normal.png
+            :align: center
+            
 
 
          
@@ -479,6 +514,7 @@ Random Class
         .. code-block::
             python
 
+            from neuron import h, gui
             r = h.Random() 
             r.lognormal(5,2) 
             n=20 
@@ -500,14 +536,14 @@ Random Class
             	j = 3*j+1 
             	i=i+1
             	if j >= hist.size():  # don't let any off the edge 
-            		j = hist.size() -1 
-            	
+            		j = hist.size() - 1
             	hist.x[j] = hist.x[j]+1 
             	g.flush() 
-            	doNotify() 
+            	h.doNotify() 
             
 
-
+        .. image:: ../../images/random-lognormal.png
+            :align: center
          
 
 ----
@@ -528,6 +564,8 @@ Random Class
 
         .. code-block::
             python
+
+            from neuron import h, gui
 
             r = h.Random() 
             r.poisson(3) 
@@ -552,12 +590,12 @@ Random Class
             	j = 3*j+1 
             	if j >= hist.size():
             		j = hist.size() -1 
-            	
             	hist.x[j] = hist.x[j]+1 
             	g.flush() 
-            	doNotify() 
+            	h.doNotify() 
             
-
+        .. image:: ../../images/random-poisson.png
+            :align: center
 
          
 
@@ -584,6 +622,8 @@ Random Class
         .. code-block::
             python
 
+            from neuron import h, gui
+
             r = h.Random() 
             r.binomial(20, .5) 
              
@@ -591,15 +631,14 @@ Random Class
             g.size(0, 20, 0, 100) 
             hist = h.Vector(20) 
             hist.plot(g) 
-            i = 0
-            while (i<500):
-            	j = r.repick() 
-            	hist.x[j] = hist.x[j]+1 
-            	i += 1
+            for i in range(500):
+            	j = int(r.repick()) # r.repick() always returns a float even though the binomial always is an integer
+            	hist.x[j] += 1
             	g.flush() 
-            	doNotify() 
+            	h.doNotify() 
 
-
+        .. image:: ../../images/random-binomial.png
+            :align: center
          
 
 ----
@@ -626,7 +665,6 @@ Random Class
             
             from neuron import h, gui
 
-            objref r, hist, g 
             r = h.Random() 
             r.geometric(.8) 
             hist = new Vector(1000) 
@@ -640,10 +678,11 @@ Random Class
             g.size(0,40,0,200) 
             sample() 
             h.xpanel("Resample") 
-            h.xbutton("Resample", "sample()") 
+            h.xbutton("Resample", sample)
             h.xpanel() 
 
-
+        .. image:: ../../images/random-geometric.png
+            :align: center
          
 
 ----
@@ -697,10 +736,11 @@ Random Class
             g.size(0,20,0,50) 
             sample() 
             h.xpanel("Resample") 
-            h.xbutton("Resample", "sample()") 
+            h.xbutton("Resample", sample) 
             h.xpanel() 
 
-
+        .. image:: ../../images/random-negexp.png
+            :align: center
          
 
 ----
