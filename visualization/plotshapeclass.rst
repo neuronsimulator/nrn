@@ -22,8 +22,8 @@ PlotShape
     Syntax:
         ``.scale(low, high)``
 
-	Description:
-		Sets blue and red values for the color scale and default axes for
+    Description:
+        Sets blue and red values for the color scale and default axes for
         time and space plots.
 
 
@@ -288,7 +288,7 @@ PlotShape
 
 
     Syntax:
-        ``section  shape.color(i)``
+        ``shape.color(i, sec=sec)``
 
 
     Description:
@@ -440,7 +440,7 @@ PlotShape
 
 
     Syntax:
-        ``section shape.len_scale(scl)``
+        ``shape.len_scale(scl, sec=sec)``
 
 
     Description:
