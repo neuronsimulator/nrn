@@ -3,7 +3,10 @@
 HOC Keywords
 ------------
 
+.. note::
 
+    This is a page about HOC syntax; it is not directly applicable to Python-based simulations.
+    A HOC-based version of the NEURON documentation is also available.
 
 .. index::  help (keyword)
 
@@ -70,13 +73,15 @@ HOC Keywords
     Example:
 
         .. code-block::
-            python
+            none
 
-            def max():
-            	if $1 > $2:
-            		return $1 
-            	else:
-            		return $2 
+            func max(){ 
+                if ($1 > $2){ 
+                    return $1 
+                } else { 
+                    return $2 
+                } 
+            } 
 
         returns the maximum of two arguments which are read into the function.  Eg. ``max(3,6)``, where $1 is the 
         first argument (3) and $2 is the second argument (6).  This use of ``max`` would return the value 6. 
@@ -121,28 +126,29 @@ HOC Keywords
         .. code-block::
             none
 
-            	x.p() break 
+                x.p() break 
 
         should be written 
 
         .. code-block::
             none
 
-            	x.p() 
-            	break 
+                x.p() 
+                break 
 
 
     Example:
 
         .. code-block::
-            python
+            none
 
-            while 1:
-            	x = fscan() 
-            	if x < 0:
-            		break
-            	
-            	print sqrt(x) 
+            while(1) { 
+                x = fscan() 
+                if (x < 0) { 
+                    break; 
+                } 
+                print sqrt(x) 
+            } 
 
 
          
@@ -172,13 +178,14 @@ HOC Keywords
     Example:
 
         .. code-block::
-            python
+            none
 
-            for i in range(1,11): 
-            	if i==6: 
-            		continue 
-            	
-            	print i 
+            for i=1,10{ 
+                if(i==6){ 
+                    continue 
+                } 
+                print i 
+            } 
 
         prints the numbers: 1,2,3,4,5,7,8,9,10.  6 is left out because when i==6, the control is passed 
         beyond the print statement to the next iteration of the loop. 
@@ -186,12 +193,13 @@ HOC Keywords
         You can accomplish the same thing with the following syntax: 
 
         .. code-block::
-            python
+            none
 
-            for i in range(1,11): 
-            	if i<6 or i>6:
-            		print i 
-
+            for i=1,10{ 
+                if(i<6 || i>6){ 
+                    print i 
+                } 
+            } 
 
          
 
@@ -255,20 +263,20 @@ HOC Keywords
         .. code-block::
             none
 
-            i = 0	#initialize i 
-            j = 0	#initialize j 
-            if vec.x[i] <= 10 and i < vec.size():	#if the value of the ith element in vec 
-            					#is less than or equal to 10, and 
-            					#if i is an index within vec 
-            	vec1.x[j] = vec.x[i]		#set the jth element of vec1 equal to that 
-            					#ith element of vec 
-            	i = i+1				#increment i by 1 
-            	j = j+1				#increment j by 1 
-            else:					#otherwise (This must be on the same line as the closing brace of 
-            					#the previous statement in order to indicate that the compound  
-            					#statement has not ended.) 
-            	i = i+1				#simply go to the next element of vec 
-            
+            i = 0   //initialize i 
+            j = 0   //initialize j 
+            if(vec.x[i] <= 10 && i < vec.size()){   //if the value of the ith element in vec 
+                                //is less than or equal to 10, and 
+                                //if i is an index within vec 
+                vec1.x[j] = vec.x[i]        //set the jth element of vec1 equal to that 
+                                //ith element of vec 
+                i = i+1             //increment i by 1 
+                j = j+1             //increment j by 1 
+            } else{                 //otherwise (This must be on the same line as the closing brace of 
+                                //the previous statement in order to indicate that the compound  
+                                //statement has not ended.) 
+                i = i+1             //simply go to the next element of vec 
+            } 
 
          
 
@@ -316,15 +324,15 @@ HOC Keywords
     Example:
 
         .. code-block::
-            python
+            none
 
             numelements = 20 
             i = 0 
-            while i < numelements:
-            	print(cos(vec.x[i])) 
-            	print(sin(vec.x[i])) 
-            	i += 1 
-            
+            while (i < numelements){ 
+                print(cos(vec.x[i])) 
+                print(sin(vec.x[i])) 
+                i += 1 
+            } 
 
         prints the cosines and the sines of the ``vec`` elements up to ``numelements``, which in this case = 20. 
          
@@ -404,20 +412,19 @@ HOC Keywords
 
         .. code-block::
             none
-			
-			i=0
-            while (i<=9):
-            	print i*2 
-            	i += 1
-            
+
+            for(i=0; i<=9; i=i+1){ 
+                print i*2 
+            } 
 
         is equivalent to 
 
         .. code-block::
             none
 
-            for i in range(0, 10) 
-            	print i*2  
+            for i=0, 9 { 
+                print i*2 
+            } 
 
 
         .. code-block::
@@ -426,11 +433,8 @@ HOC Keywords
             create axon 
             access axon 
             {nseg = 5  L=1000  diam=50  insert hh } 
-            for (x):
-                print x, L*x 
-            for (x):
-                if x > 0 and x < 1):
-                print x, gnabar_hh(x)
+            for (x) print x, L*x 
+            for (x) if (x > 0 && x < 1) { print x, gnabar_hh(x) } 
 
 
     .. seealso::
@@ -464,7 +468,7 @@ HOC Keywords
     Example:
 
         .. code-block::
-            python
+            none
 
             x=2 
             y=3 
@@ -473,7 +477,7 @@ HOC Keywords
         prints 
 
         .. code-block::
-            python
+            none
 
             x hello good-bye 3 7 
 
@@ -535,9 +539,10 @@ HOC Keywords
         .. code-block::
             none
 
-            for i in range(1, 6): 
-            	read(x) 
-            	print x*x 
+            for i=1, 5 { 
+                read(x) 
+                print x*x 
+            } 
 
         will await input from the user or from a file, and will print the square of each value typed in 
         by the user, or read from the file, for the first five values. 
@@ -600,16 +605,17 @@ HOC Keywords
     Example:
 
         .. code-block::
-            python
+            none
 
             double vec[40] 
 
         declares an array with 40 elements, whereas 
 
         .. code-block::
-            python
+            none
 
-            vec = h.Vector(40) 
+            objref vec 
+            vec = new Vector(40) 
 
         creates a vector (which is an array by a different name) with 40 elements which you can 
         manipulate using the commands of the Vector class. 
@@ -687,13 +693,14 @@ HOC Keywords
     Example:
 
         .. code-block::
-            python
+            none
 
-             def equations():
+            depvar x, y, z 
+             proc equations() { 
                eqn x:: x + 2*y + z =  6 
                eqn y:: x - y + z   =  2 
                eqn z:: 2*x + y -z  = -3 
-
+             } 
             equations() 
             solve() 
             print x,y,z 
@@ -735,15 +742,16 @@ HOC Keywords
     Example:
 
         .. code-block::
-            python
+            none
 
             eqinit() 
-            def equations():
+            depvar x, y, z 
+             proc equations() { 
                eqn x:: x + 2*y + z =  6 
                eqn y:: x - y + z   =  2 
                eqn z:: 2*x + y -z  = -3 
                eqn z: = 5 + 4y 
-             
+             } 
             equations() 
             solve() 
             print x,y,z 
@@ -779,13 +787,15 @@ HOC Keywords
         .. code-block::
             none
 
-            def count(): 
-            	x = 0 
-            	for i in range(41):
-            		if vec.x[i] == 7):
-            			 x = x+1 
-
-            	return x 
+            func count() {local i, x 
+                x = 0 
+                for i=0,40 { 
+                    if (vec.x[i] == 7) { 
+                         x = x+1 
+                    } 
+                } 
+                return x 
+            } 
 
         returns the number of elements which have the value of 7 in the first 40 elements of ``vec``. ``i`` 
         and ``x`` are local variables, and their usage here will not affect variables of the same name in 
@@ -815,15 +825,14 @@ HOC Keywords
     Example:
 
         .. code-block::
-            python
+            none
 
-            def sum(): # sum from $1 to $2 
-            	i = $1  
-            	j = $2 
-            	tobj = h.Vector() 
-            	tobj.indgen(i, j ,1) 
-            	return tobj.sum 
-            
+            func sum() { local i, j  localobj tobj // sum from $1 to $2 
+                i = $1  j = $2 
+                tobj = new Vector() 
+                tobj.indgen(i, j ,1) 
+                return tobj.sum 
+            } 
             sum(5, 10) == 45 
 
 
@@ -855,8 +864,9 @@ HOC Keywords
     Example:
 
         .. code-block::
-            python
+            none
 
+            strdef a, b, c 
             a = "Hello, " 
             b = "how are you?" 
             c = "What is your name?" 
@@ -866,7 +876,7 @@ HOC Keywords
         will print to the screen: 
 
         .. code-block::
-            python
+            none
 
             Hello, how are you? 
             What is your name? 
@@ -896,10 +906,10 @@ HOC Keywords
         eg. If :file:`$NEURONHOME/examples/nmodl/synpre.mod` is linked into NEURON, then: 
 
         .. code-block::
-            python
+            none
 
-            soma1 syn1=h.synp(.5) 
-            #setpointer syn1.vpre, axon2.v(1) 
+            soma1 syn1=new synp(.5) 
+            setpointer syn1.vpre, axon2.v(1) 
 
         would enable the synapse in soma1 to observe the axon2 membrane potential. 
 
@@ -954,4 +964,3 @@ HOC Keywords
          
 
          
-
