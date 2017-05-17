@@ -318,15 +318,15 @@ Description:
 Pointer
 """""""
 
-Basically what is needed is a way to implement the hoc statement 
+Basically what is needed is a way to implement the Python statement 
 
 .. code-block::
     none
     
-    section1.var1_mech1(x1) =  section2.var2_mech2(x2) 
+    section1(x1).mech1.var1 =  section2(x2).mech2.var2
 
 efficiently from within a mechanism without having to explicitly connect them 
-through assignment at the HOC level everytime the :samp:`{var2}` might change. 
+through assignment at the Python level everytime the :samp:`{var2}` might change. 
  
 First of all, the variables which point to the values in some other mechanism 
 are declared within the NEURON block via 
@@ -345,19 +345,22 @@ just like normal variables.
 It is essential that the user set up the pointers to point to the correct 
 variables. This is done by first making sure that the proper mechanisms 
 are inserted into the sections and the proper point processes are actually 
-"located" in a section. Then, at the hoc level each POINTER variable 
+"located" in a section. Then, at the Python level each POINTER variable 
 that exists should be set up via the command: 
 
 .. code-block::
-    none
+    python
 
-    	setpointer pointer, variable 
+    h.setpointer(_ref_nrnvar, 'POINTER_name', mechanism_object)
 
-where pointer and variable have enough implicit/explicit information to 
+Here mechanism_object (a point process object or a density mechanism) and
+the other arguments
+have enough implicit/explicit information to 
 determine their exact segment and mechanism location. For a continuous 
 mechanism, this means the section and location information. For a point 
-process it means the object. The variable may also be any hoc variable 
-or voltage, v. 
+process it means the object. The reference may also be to any NEURON variable 
+or voltage, e.g. ``soma(0.5)._ref_v``. 
+See ``nrn/share/examples/nrniv/nmodl/(tstpnt1.py and tstpnt2.py)`` for examples of usage. 
  
 For example, consider a synapse which requires a presynaptic potential 
 in order to calculate the amount of transmitter release. Assume the 
@@ -371,12 +374,12 @@ declaration in the presynaptic model
 Then 
 
 .. code-block::
-    none
+    python
 
     syn = h.Syn(.8, sec=section) 
-    setpointer syn.vpre, axon.v(1) # 
+    h.setpointer(axon(1)._ref_v, 'vpre', syn)
 
-will allow the syn object to know the voltage at the distal end of the axon 
+will allow the ``syn`` object to know the voltage at the distal end of the axon 
 section. As a variation on that example, if one supposed that the synapse 
 needed the presynaptic transmitter concentration (call it tpre) calculated 
 from a point process model called "release" (with object reference 
@@ -384,12 +387,9 @@ rel, say) then the
 statement would be 
 
 .. code-block::
-    none
+    python
 
-    setpointer syn.tpre, rel.AcH_release 
-
- 
-
+    h.setpointer(rel._ref_ACH_release, 'trpe', syn)
 
 
 The caveat is that tight coupling between states in different models 
@@ -405,6 +405,11 @@ of the calculation or whether they are important enough to save. If a variable
 value needs to persist only between entry and exit of an instance 
 one may declare it as LOCAL, but in that case the model cannot be vectorized 
 and different instances cannot be called in parallel. 
+
+.. note::
+
+    For density mechanisms, one cannot pass in e.g. ``h.hh`` as this raises a TypeError;
+    one can, however, pass in ``nrn.hh`` where ``nrn`` is defined via ``from neuron import nrn``.
 
 
 Include
@@ -529,21 +534,21 @@ Description:
     However if a procedure is called 
     by the user, and it makes use of any range variables, then the user is 
     responsible for telling the mechanism from what location it should get 
-    its range variable data. This is done with the hoc function: 
+    its range variable data. This is done with the Python function: 
 
     .. code-block::
-        none
+        python
 
-        	setdata_mechname(x) 
+        h.setdata_mechname(x) 
 
-    where mechname is the mechanism name. For range variables there must 
+    where ``mechname`` is the mechanism name. For range variables there must 
     of course be a currently accessed section. In the case of Point processes, 
     one calls procedures using the object notation 
 
     .. code-block::
-        none
+        python
 
-        	pp_objref.procname() 
+        pp_objref.procname() 
 
     In this case procname uses the instance data of the point process referenced 
     by pp_objref. 

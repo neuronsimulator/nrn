@@ -410,20 +410,23 @@ Description:
     .. code-block::
         python
         
-        from neuron import h
+        from neuron import h, nrn
 
-		h.setpointer(_ref_hocvar, 'POINTER_name', point_proces_object)
-		h.setpointer(_ref_hocvar, 'POINTER_name', nrn.Mechanism_object)
+        h.setpointer(_ref_hocvar, 'POINTER_name', point_proces_object)
+        h.setpointer(_ref_hocvar, 'POINTER_name', nrn.Mechanism_object)
  
-		Note: For a density mechanism, the 'POINTER_name' cannot have the SUFFIX appended. For example if a mechanism with suffix foo has a POINTER bar and you want it to point to h.t use
+    Note: For a density mechanism, the 'POINTER_name' cannot have the SUFFIX appended. For example if a mechanism with suffix foo has a POINTER bar and you want it to point to h.t use
 
-		h.setpointer(h._ref_t, 'bar', sec(x).foo)
+    .. code-blocK::
+        python
+
+        h.setpointer(h._ref_t, 'bar', sec(x).foo)
 
     where pointer and variable have enough implicit/explicit information to 
     determine their exact segment and mechanism location. For a continuous 
     mechanism, this means the section and location information. For a point 
-    process it means the object. The variable may also be any hoc variable 
-    or voltage, :samp:`{v}`. 
+    process it means the object. The variable may also be any NEURON variable 
+    or voltage, e.g. ``soma(0.5)._ref_v``. 
      
     For example, consider a synapse which requires a presynaptic potential 
     in order to calculate the amount of transmitter release. Assume the 
@@ -438,9 +441,9 @@ Description:
 
     .. code-block::
         python
- 
-        somedendrite {syn = h.Syn(.8)} 
-        setpointer syn.vpre, axon.v(1) # has to be fixed
+
+        syn = h.Syn(.8, sec=section) 
+        h.setpointer(axon(1)._ref_v, 'vpre', syn)
 
     will allow the syn object to know the voltage at the distal end of the axon 
     section. As a variation on that example, if one supposed that the synapse 
@@ -450,9 +453,9 @@ Description:
     statement would be 
 
     .. code-block::
-        none
+        python
 
-        setpointer syn.tpre, rel.AcH_release 
+        h.setpointer(rel._ref_ACH_release, 'trpe', syn)
 
      
     The caveat is that tight coupling between states in different models 

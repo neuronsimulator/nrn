@@ -17,8 +17,6 @@
 93    modelspec/programmatic/hocmech.rst //problems, Robert supposed to fix   
 183   modelspec/programmatic/linmod.rst    //mostly done 
 337   modelspec/programmatic/mechtype.rst   //mostly done
-455   modelspec/programmatic/mechanisms/nmodl2.rst  //Robert complained and feel like fixing it
-677   modelspec/programmatic/mechanisms/nmodl.rst   //all done except for one line, line similar to the ones in nmodl2 that Robert said he would fix
 903   modelspec/programmatic/topology/geometry.rst  //mostly done <-- needs a lot of rework
 2972    modelspec/programmatic/network/parcon.rst  //done <-- going to need a bunch of edits, look at sprint, $ arguments
 
@@ -70,3 +68,5 @@ modelspec/programmatic/ste.rst // new since the split, but mostly in Python alre
 778   visualization/gui.rst //mostly done
 491   programming/io/file.rst         // mostly done
 simctrl/bbsavestate.rst
+677   modelspec/programmatic/mechanisms/nmodl.rst   //all done except for one line, line similar to the ones in nmodl2 that Robert said he would fix
+455   modelspec/programmatic/mechanisms/nmodl2.rst  //Robert complained and feel like fixing it
