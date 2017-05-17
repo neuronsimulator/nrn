@@ -12,7 +12,8 @@ Electrode
     current section which can be switched between current and voltage 
     clamp modes and can do simple voltage clamp families. 
      
-    usage: :samp:`{section} {e} = new Electrode([{xplacement}, {yplacement}])` 
+    usage: :samp:`{e} = h.Electrode([{xplacement}, {yplacement}], sec=section)` 
+
     e.stim and e.vc can used to set parameters programmatically. 
      
     Electrode can be saved in a .session file and is best used 

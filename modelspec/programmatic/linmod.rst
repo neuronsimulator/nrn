@@ -82,9 +82,12 @@ LinearMechanism
 
     Example:
 
-        .. code::
+        .. code-block::
+            python
 
-            from neuron import h, gui
+            from neuron import h
+
+            tstop = 5
 
             soma = h.Section()
             soma.insert('hh')
@@ -101,16 +104,17 @@ LinearMechanism
             model = h.LinearMechanism(c, g, y, b, 0.5, sec=soma) 
 
             h.finitialize(-65)
-            while h.t < h.tstop:
-                print('t=%g v=%g y[1]=%g' % (h.t, soma(0.5).v, y[1]))
+            while h.t < tstop:
+                print('t=%-8g v=%-8g y[1]=%-8g' % (h.t, soma(0.5).v, y[1]))
                 h.fadvance()
+
 
 
     .. warning::
     
         Does not work with the CVODE integrator but does work with the
         differential-algebraic solver IDA. Note that if the standard
-        run system is loaded, ``cvode_active(1)`` will automatically
+        run system is loaded, ``h.cvode_active(1)`` will automatically
         choose the correct variable step integrator.
 
     .. warning::

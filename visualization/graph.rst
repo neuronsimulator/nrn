@@ -137,7 +137,7 @@ Graph
          
         It is easiest to control the size of the axes and the scale of 
         the graph through the graphical user interface.  Normally, when a 
-        new graph is declared (eg. ``g = new Graph()``), the y axis 
+        new graph is declared (eg. ``g = h.Graph()``), the y axis 
         ranges from 20-180 and the x axis ranges from 50-250. 
         With the mouse arrow on the graph window, click on the right button 
         and set the arrow on :guilabel:`View` at the top of the button window 
@@ -618,21 +618,24 @@ Graph
         unchanged. Note that thisindex is not necessarily equal to previndex+1. 
 
     Example:
-        To iterate over all the lines in a Graph use: 
+        To iterate over all the lines in ``h.Graph[0]`` use: 
 
         .. code-block::
             python
 
+            xline = []
+            yline = []
             xvec = h.Vector() 
             yvec = h.Vector() 
             j = 0
-            i = -1
-            while (i = Graph[0].getline(i, xvec, yvec) != -1) and (j+=1): 
+            i = h.Graph[0].getline(-i, xvec, yvec)
+            while i != -1:
             	# xvec and yvec contain the line with Graph internal index i. 
             	# and can be associated with the sequential index j. 
-            	print j, i, yvec.label 
-            	xline[j] = xvec.c 
-            	yline[j] = yvec.cl # clone label as well 
+            	print('{} {} {}'.format(j, i, yvec.label))
+            	xline.append(xvec.c())
+            	yline.append(yvec.cl()) # clone label as well 
+                i = h.Graph[0].getline(i, xvec, yvec)
 
          
 
@@ -644,12 +647,12 @@ Graph
 
 
     Syntax:
-        ``thisindex = g.line_info(previndex, Vector(5))``
+        ``thisindex = g.line_info(previndex, vector)``
 
 
     Description:
-        For the next line after the internal index, previndex, copy the label into the 
-        vector as well as colorindex, brushindex, label x location, label y location, 
+        For the next line after the internal index, previndex, copy the label into the :class:`Vector`
+        ``vector`` as well as colorindex, brushindex, label x location, label y location, 
         and label style and return the index of the line. If the argument is the 
         index of the last line then -1 is returned and Vector is unchanged. 
         Note that an argument of -1 will always return the line info for the first 
@@ -701,7 +704,7 @@ Graph
 
         ``g.size(1-4)``
 
-        ``g.size(&dbl[0])``
+        ``g.size(_ref_dbl)``
 
 
     Description:
@@ -715,12 +718,13 @@ Graph
         .size(1-4) 
             Returns left, right, bottom or top of first view of the scene. Useful for programming. 
 
-        .size(&dbl[0]) 
+        .size(_ref_dbl) 
             Returns the xmin, xmax, ymin, ymax values of all marks and lines of more than two 
             points in the graph in dbl[0],..., dbl[3] respectively. This allows 
             convenient computation of a view size which will display everything on the 
             graph. See :ref:`gui_view_equal_plot`. In the absence of any graphics, it gives 
-            the size as in the .size(1-4) prototype. 
+            the size as in the .size(1-4) prototype. (e.g. if ``dbl = h.Vector(4)``, then use
+            ``g.size(dbl._ref_x[0]`` to store starting at the beginning.)
 
 
          
@@ -836,6 +840,7 @@ Graph
         .. code-block::
             python
 
+            from neuron import h, gui
             g = h.Graph() 
             g.align(0, 0) 
             g.label(.5,.5, "left bottom at (.5,.5)") 
@@ -844,7 +849,10 @@ Graph
             g.align(1, 0) 
             g.label(.5,.5, "right bottom at (.5,.5)") 
             g.align(.5,2) 
-            g.label(.5,.5, "middle but twice height at (.5, .5)") 
+            g.label(.5,.5, "middle but twice height (i.e. a line below) at (.5, .5)") 
+
+        .. image:: ../images/graph-align.png
+            :align: center
 
 
          
@@ -932,9 +940,7 @@ Graph
 
 
     Syntax:
-        ``.view(mleft, mbottom, mwidth, mheight, wleft,``
-
-        ``wtop, wwidth, wheight)``
+        ``.view(mleft, mbottom, mwidth, mheight, wleft, wtop, wwidth, wheight)``
 
         ``.view(2)``
 
@@ -998,33 +1004,6 @@ Graph
         the ``.plot()`` command. 
         The optional label argument labels the line. 
 
-    Example:
-        Notice that the argument to ``g.line()`` is the expression sin(x) 
-        itself, whereas if you were using the ``.plot()`` command, the arguments 
-        would have to be specified before the ``for`` loop using ``.addexpr()`` 
-        commands. The addexpr/begin/plot method of plotting is preferred since it 
-        is capable of simultaneously plotting multiple lines. 
-
-        .. code-block::
-            python
-
-        	#Creates an object reference "g" which will 
-            		#point to the graph object. 
-            g = h.Graph()		#Assigns "g" the role of pointing to a Graph 
-            			#created from the Graph class, and produces 
-            			#a graph window with x and y axes on the  
-            			#screen. 
-            g.beginline()		#Tells the interpreter that commands to create a line for 
-            			#specific functions will follow. 
-            x = 0
-            while (x<=10): #//States that x values to be plotted 
-            				#//will go from 0 to 10 in increments 
-            				#//of 0.1. 
-            	g.line(x, sin(x))	//States that the y values on the line 
-            				#will be the sin of the x values. 
-                x=x+0.1
-            g.flush()	#Actually draws the plot on the graph in the window. 
-
          
 
          
@@ -1043,9 +1022,8 @@ Graph
     Description:
         Draw a line from the previous point to this point. This command is normally 
         used inside of a ``for`` loop.  It is analogous to ``.plot()`` and the commands which 
-        go along with it.  In the case of ``.line()`` however, all arguments are given in 
-        the line command itself.  Therefore, the line command only plots one line at a time, whereas 
-        the ``.plot*()`` command can plot several lines using the same for loop on the same graph. 
+        go along with it but avoids the need to use HOC expressions, since it plots one line at
+        a time.
          
         This command takes arguments for both x and y values, so it can serve the same purpose of 
         the ``.plot`` command in conjunction with an ``.addexpr()`` command and an ``.xexpr()`` 
@@ -1057,43 +1035,26 @@ Graph
             python
 
               
-            g = h.Graph()		 
-            g.beginline()	
-            t = 0	 
-            while (t<=2*PI+0.1): 
-            	g.line(sin(t), cos(t))	 
-            	t = t+0.1
-            
-            g.flush() 
+            from neuron import h, gui
+            import math
+
+            g = h.Graph()
+            g.size(-1, 1, -1, 1)
+
+            g.beginline()   
+            t = i = 0
+            dt = 0.1
+            while t <= 2 * math.pi + dt:
+                t = i * dt
+                g.line(math.sin(t), math.cos(t))
+                i += 1
+
+            g.flush()
+             
             	 
 
          
-        graphs a circle of radius=1, just as would the following code using ``g.plot()``: 
-         
-
-        .. code-block::
-            python
-
-             	 
-            g = h.Graph()		 
-            t = 0		 
-            g.addexpr("sin(t)")	 
-            g.xexpr("cos(t)")	 
-            g.begin()
-            t = 0		 
-            while (t<=2*PI+0.1):  
-            	g.plot(t)
-            	t = t + 0.1
-            
-            g.flush()	 
-             
-
-         
-        Note that the arguments to ``g.line`` are doubles, and not chars as they are in ``g.plot()``. 
-         
-         
-
-         
+        graphs a circle of radius = 1.
 
 ----
 

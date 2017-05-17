@@ -10,9 +10,9 @@ List
     List of objects 
 
     Syntax:
-        ``List()``
+        ``h.List()``
 
-        ``List("templatename")``
+        ``h.List("templatename")``
 
 
     Description:
@@ -23,17 +23,32 @@ List
         another of post-synaptic connections, as well as a list of all the connecting cells. 
 
 
-        ``List()`` 
+        ``h.List()`` 
             Create an empty list. Objects added to the list are referenced. 
             Objects removed from the list are unreferenced. 
 
-        ``List("templatename")`` 
+        ``h.List("templatename")`` 
             Create a list of all the object instances of the template. 
             These object instances are NOT referenced and therefore the list 
             dynamically changes as objects of template instances are 
-            created and destroyed. Adding and  removing objects 
+            created and destroyed. Adding and removing objects 
             from this kind of list is not allowed. 
 
+    Example:
+
+        .. code-block::
+            python
+
+            from neuron import h
+
+            clamps = h.IClamp(), h.IClamp(), h.IClamp()
+
+            all_iclamps = h.List('IClamp')
+            print('There are initially %d IClamp objects.' % all_iclamps.count()) # 3
+
+            another = h.IClamp()
+
+            print('There are now %d IClamp objects.' % all_iclamps.count())       # 4
 
          
 
@@ -87,7 +102,7 @@ List
         The inserted object has index *i*, following items have an incremented 
         index. 
          
-        Not called :ref:`insert <keyword_insert>` because that name is a keyword 
+        Not called :ref:`insert <keyword_insert>` because that name is a HOC keyword.
 
          
 
@@ -189,6 +204,30 @@ List
             notify the List when they change, ie point processes when they change 
             their location notify the list. 
 
+    .. warning::
+
+        In the third syntactic form, ``command`` must be a HOC command, not a Python command.
+        As of NEURON 7.4, there is no way to directly invoke a Python callback, although it can
+        be done indirectly as in ``"nrnpython(\"foo()\")"``.
+
+    Example:
+
+        .. code-block::
+            python
+
+            from neuron import h, gui
+
+            my_list = h.List()
+
+            for word in ['Python', 'HOC', 'NEURON', 'NMODL']:
+                my_list.append(h.String(word))
+
+            my_list.browser('title', 's')   # h.String objects have an s attribute that returns the Python string
+
+
+        .. image:: ../../images/list-browser1.png
+            :align: center
+                    
 
          
 
@@ -261,53 +300,44 @@ List
 
 
     Syntax:
-        ``list.select_action("command")``
+        ``list.select_action(command)``
 
-        ``list.select_action("command", 0or1)``
+        ``list.select_action(command, 0or1)``
 
 
     Description:
-        Execute a command when an item in the 
+        Execute a command (a Python funciton handle) when an item in the 
         list :meth:`List.browser` is selected by single clicking the mouse. 
-        :data:`hoc_ac_` contains the index when the command is executed. Thus 
-        ``l.select_action("action(hoc_ac_)")`` is convenient usage. 
-        action will be invoked within the object context that existed when 
-        ``select_action`` was called. 
          
         If the second arg exists and is 1 then the action is only called on 
         the mouse button release. If nothing is selected at that time then 
         :data:`hoc_ac_` = -1 
 
     Example:
-        This example shows that the object context is saved when an action is 
-        registered. 
 
         .. code-block::
             python
-            
-            from python import h
 
-            begintemplate A 
-            def init():
-            	list = h.List() 
-            	list.append(this) 
-            	for i in range(5): 
-            		obj = h.Random() 
-            		list.append(obj) 
-            	
-            	list.browser() 
-            	list.select_action("act(hoc_ac_)") 
-            
-            def act():
-            	print("item %d selected in list of object %s\n", $1, this) 
-            
-            endtemplate A 
-             
-            objref a[2] 
-            for i in range(2): 
-                a[i] = h.A() 
+            from neuron import h, gui
+
+            my_list = h.List()
+
+            def on_click():
+                item_id = my_list.selected()
+                if item_id >= 0: # check to make sure selection isn't dragged off
+                    print 'Item %d selected (%s)' % (item_id, my_list.o(item_id).s)
 
 
+            for word in ['Python', 'HOC', 'NEURON', 'NMODL']:
+                my_list.append(h.String(word))
+
+            my_list.browser('title', 's')
+            my_list.select_action(on_click)
+
+
+        .. image:: ../../images/list-browser1.png
+            :align: center
+                    
          
 
 ----
@@ -318,33 +348,14 @@ List
 
 
     Syntax:
-        ``list.accept_action("command")``
+        ``list.accept_action(command)``
 
 
     Description:
-        Execute a command when double clicking 
+        Execute a command (a Python function handle) when double clicking 
         on an item displayed in the list :meth:`List.browser` by the mouse. 
-        :data:`hoc_ac_` contains the index when the command is executed. Command is 
-        executed within the object context that existed when ``accept_action`` 
-        was called. 
 
-    Example:
-
-        .. code-block::
-            python
-
-            list = h.List() 
-            for i in range (5): 
-                    obj = h.Random() 
-                    list.append(obj)  
-            	obj = h.List() 
-            	list.append(obj) 
-            
-            list.browser() 
-            list.accept_action("act()") 
-            def act():
-                    print("item %d accepted\n", hoc_ac_) 
-            
+        Usage mirrors that of :meth:`List.select_action`.
 
 
          
