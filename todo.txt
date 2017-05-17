@@ -35,7 +35,6 @@
 2972    modelspec/programmatic/network/parcon.rst  //done <-- going to need a bunch of edits, look at sprint, $ arguments
 
 
-
 Needs edits:
 ------------
 
@@ -69,3 +68,4 @@ Reviewed
 1503    simctrl/cvode.rst     //finished 
 37    programming/errors.rst // finished
 163   programming/dynamiccode.rst   //finished //no arguments for load_func and load_template
+modelspec/programmatic/ste.rst // new since the split, but mostly in Python already
