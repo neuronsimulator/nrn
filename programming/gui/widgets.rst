@@ -390,14 +390,14 @@ a class. This allows multiple independent instances to be created. For example:
                 from neuron import h, gui
 
                 def select(i):
-                    print 'you selected', i
+                    print('you selected %d' % i)
 
-                n = 0
                 def make():
-                    global n
-                    n += 1
-                    for i in xrange(1, n + 1):
+                    make.n += 1
+                    for i in range(1, make.n + 1):
                         h.xbutton('label %d' % i, (select, i))
+
+                make.n = 0
 
                 h.xpanel("test") 
                 h.xmenu("dynamic", make) 
