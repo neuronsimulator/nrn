@@ -32,7 +32,7 @@ HOC-based Mechanisms
         way as "hh" or mechanism defined by NMODL. Thus, instances are created 
         in each segment with ``section.insert(suffix)`` and after insertion 
         the public names are accessible via the normal range variable notation 
-        as in: ``section(x).suffix.name(x)``.
+        as in: ``section(x).suffix.name``.
          
         At this time the functionality of such interpreter defined membrane 
         mechanisms is a small subset of the functionality of mechanisms described 
