@@ -5,7 +5,6 @@ work here? even the Python-y things aren't right... remove the redef of list; us
 222   visualization/rvarplt.rst     //Range Var Plot - #how to do this in python?
 391   visualization/oldgrph.rst     //mostly done... eh
 874   programming/python.rst //finished <-- this should probably be replaced entirely?
-93    modelspec/programmatic/hocmech.rst //problems, Robert supposed to fix   <-- probably no Python equivalent?
 337   modelspec/programmatic/mechtype.rst   //mostly done <-- attempted to review once; some issues: action does not support Python callbacks, and make seems not to offer a Python solution
 903   modelspec/programmatic/topology/geometry.rst  //mostly done <-- needs a lot of rework
 2972    modelspec/programmatic/network/parcon.rst  //done <-- going to need a bunch of edits, look at sprint, $ arguments
@@ -75,3 +74,4 @@ simctrl/bbsavestate.rst
 166   modelspec/programmatic/topology/seclist.rst  //finished <-- need to adjust printnames, but basically done
 1313    programming/math/matrix.rst   //first example of Matrix.x needs finish //cholesky_factor() the hoc version also doesn’t work
 380   modelspec/programmatic/topology/secspec.rst // mostly done 
+93    modelspec/programmatic/hocmech.rst //problems, Robert supposed to fix   <-- probably no Python equivalent?

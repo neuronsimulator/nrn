@@ -3,26 +3,36 @@
 HOC-based Mechanisms
 --------------------
 
-         
+.. warning::
+
+    The functions on this page create density mechanisms and point processes from
+    HOC templates; they have no direct way to use a Python class, but a HOC wrapper
+    is possible as is inlining a HOC template inside of a file as shown in the
+    example. For faster code, use NMODL to implement mechanisms.
 
 
-.. function:: hocmech
+.. function:: make_pointprocess
 
+    See :func:`make_mechanism`.
+
+
+.. function:: make_mechanism
 
     Syntax:
-        ``make_mechanism("suffix", "Template", "parm1 parm2 parm3 ...")``
-        ``make_pointprocess("Name", "Template", "parm1 parm2 parm3 ...")``
+        ``h.make_mechanism("suffix", "Template", "parm1 parm2 parm3 ...")``
+
+        ``h.make_pointprocess("Name", "Template", "parm1 parm2 parm3 ...")``
 
     Description:
-        Installs the hoc class called "Template" as a density membrane mechanism 
+        Installs the HOC (in particular, *not* Python) class called "Template" as a density membrane mechanism 
         called "suffix" or a POINT_PROCESS called Name. If the third argument exists it must be a space 
         separated list of public variables in the Template which are to be 
         treated as PARAMETERs. Public variables not in this list are treated as 
         ASSIGNED variables. The new mechanism is used in exactly the same 
         way as "hh" or mechanism defined by NMODL. Thus, instances are created 
-        in each segment with \ ``section insert suffix`` and after insertion 
+        in each segment with ``section.insert(suffix)`` and after insertion 
         the public names are accessible via the normal range variable notation 
-        as in: \ ``section.name_suffix(x)`` 
+        as in: ``section(x).suffix.name(x)``.
          
         At this time the functionality of such interpreter defined membrane 
         mechanisms is a small subset of the functionality of mechanisms described 
@@ -56,41 +66,39 @@ HOC-based Mechanisms
 
         .. code-block::
             python
-            
-            from neuron import h
+
+            from neuron import h, gui
             import math
-            h.load_file("noload.hoc") 
-             
+
             soma = h.Section()
-            soma.L = soma.diam = math.sqrt(100. / math.pi)
+            soma.L = soma.diam = math.sqrt(100 / math.pi)
             soma.insert('hh')
-             
-            stim = h.IClamp(.5) 
-            stim.dur = .1
-            stim.amp = .3
-            
-            
 
-            begintemplate Max 
-            public V 
-             
-            def initial(): 
-            	V = h.cas()(x).v 
-            
-             
-            def after_step(x):
-            	if V < h.cas()(x).v):
-            		V = h.cas()(x).v 
+            stim = h.IClamp(0.5, sec=soma)
+            stim.dur = 0.1
+            stim.amp = 0.3
 
-            endtemplate Max 
-             
-             
-            make_mechanism("max", "Max") 
-            insert max 
-            run() 
-            print "V_max=", soma.V_max(.5) 
-             
+            # declare a mechanism using HOC
+            h('''
+                begintemplate Max
+                    public V
 
+                    proc initial() {
+                        V = v($1)
+                    }
 
+                    proc after_step() {
+                        if (V < v($1)) {
+                            V = v($1)
+                        }
+                    }
+                endtemplate Max
+            ''')
+
+            h.make_mechanism('max', 'Max')
+            soma.insert('max')
+            h.run()
+
+            print('V_max = %g' % soma(0.5).V_max)
          
 
