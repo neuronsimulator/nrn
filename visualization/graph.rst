@@ -276,7 +276,7 @@ Graph
             g.flush()
 
 
-         .. image:: ../images/graph-addexpr.png
+        .. image:: ../images/graph-addexpr.png
             :align: center        
 
 ----
@@ -724,7 +724,7 @@ Graph
             convenient computation of a view size which will display everything on the 
             graph. See :ref:`gui_view_equal_plot`. In the absence of any graphics, it gives 
             the size as in the .size(1-4) prototype. (e.g. if ``dbl = h.Vector(4)``, then use
-            ``g.size(dbl._ref_x[0]`` to store starting at the beginning.)
+            ``g.size(dbl._ref_x[0])`` to store starting at the beginning.)
 
 
          
@@ -1123,6 +1123,56 @@ Graph
         limited to the current graphline of an ``addvar`` or ``addexpr``. 
          
         With an empty string arg, the existing action is removed. 
+
+    .. warning::
+
+        As of NEURON 7.4, ``procedure_name`` must be the name of a HOC procedure;
+        the crosshair_action cannot call directly into Python. A workaround is to
+        create a one-line HOC procedure that calls your Python function (see Example).
+
+    Example:
+
+        .. code-block::
+            python
+
+            from neuron import h, gui
+            import numpy
+
+            num_elements = 629
+
+            x = h.Vector(num_elements)
+            y = h.Vector(num_elements)
+
+            # fill x with 0, 0.01, 0.02, etc
+            x.indgen(0.01)
+
+            # set y to the sin of x via numpy
+            y.as_numpy()[:] = numpy.sin(x)
+
+            # create the graph
+            g = h.Graph()
+            g.size(0, 6.28, -1, 1)
+            g.vector(num_elements, x._ref_x[0], y._ref_x[0])
+
+            def crosshair(x, y, key):
+                print 'x = %g, y = %g, key = %c' % (x, y, key)
+
+            # the next line redirects the HOC callback back into Python
+            h('strdef hoc_temp_command\n proc crosshair_callback() {sprint(hoc_temp_command, "crosshair(%g, %g, %d)", $1, $2, $3) nrnpython(hoc_temp_command)}')
+            
+            g.crosshair_action('crosshair_callback')
+
+            g.flush()
+
+        .. image:: ../images/graph-constructor.png
+            :align: center
+
+
+        To test the crosshair_action functionality, run the above code, move the mouse over the graph with the left mouse button held down, and simultaneously press a key;
+        the coordinates and the key pressed will be displayed in the terminal.
+
+
+
 
     .. seealso::
         :ref:`gui_PickVector`, :func:`menu_tool`

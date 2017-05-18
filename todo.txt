@@ -4,7 +4,6 @@
 work here? even the Python-y things aren't right... remove the redef of list; use a different variable
 741   modelspec/programmatic/network/netcon.rst //mostly done    
 1313    programming/math/matrix.rst   //first example of Matrix.x needs finish //cholesky_factor() the hoc version also doesn’t work
-90    modelspec/programmatic/rxd. //finished
 166   modelspec/programmatic/topology/seclist.rst  //finished <-- need to adjust printnames, but basically done
 222   visualization/rvarplt.rst     //Range Var Plot - #how to do this in python?
 391   visualization/oldgrph.rst     //mostly done... eh
@@ -73,3 +72,4 @@ simctrl/bbsavestate.rst
 716   programming/math/random.rst // mostly done
 535   modelspec/programmatic/topology.rst   //done
 300   programming/projectmanagement.rst    //almost done <-- has Python in what should be HOC files... maybe just revert?  looks like tools assume HOC and not Python ... maybe add a warning that it is somewhat dated
+90    modelspec/programmatic/rxd.rst //finished
