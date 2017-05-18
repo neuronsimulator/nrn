@@ -30,6 +30,7 @@ extern double (*nrnpy_praxis_efun)(Object*, Object*);
 extern int (*nrnpy_hoccommand_exec)(Object*);
 extern int (*nrnpy_hoccommand_exec_strret)(Object*, char*, int);
 extern void (*nrnpy_cmdtool)(Object*, int, double, double, int);
+extern double (*nrnpy_func_call)(Object*, int);
 extern double (*nrnpy_guigetval)(Object*);
 extern void (*nrnpy_guisetval)(Object*, double);
 extern int (*nrnpy_guigetstr)(Object*, char**);
@@ -58,6 +59,7 @@ static double praxis_efun(Object*, Object*);
 static int hoccommand_exec(Object*);
 static int hoccommand_exec_strret(Object*, char*, int);
 static void grphcmdtool(Object*, int, double, double, int);
+static double func_call(Object*, int);
 static double guigetval(Object*);
 static void guisetval(Object*, double);
 static int guigetstr(Object*, char**);
@@ -117,6 +119,7 @@ void nrnpython_reg_real() {
   nrnpy_hoccommand_exec = hoccommand_exec;
   nrnpy_hoccommand_exec_strret = hoccommand_exec_strret;
   nrnpy_cmdtool = grphcmdtool;
+  nrnpy_func_call = func_call;
   nrnpy_guigetval = guigetval;
   nrnpy_guisetval = guisetval;
   nrnpy_guigetstr = guigetstr;
@@ -469,6 +472,42 @@ static void grphcmdtool(Object* ho, int type, double x, double y, int key) {
   Py_XDECREF(args);
   Py_XDECREF(r);
   PyGILState_Release(s);
+}
+
+static double func_call(Object* ho, int narg) {
+  PyObject* po = ((Py2Nrn*)ho->u.this_pointer)->po_;
+  PyObject* r;
+  PyGILState_STATE s = PyGILState_Ensure();
+
+  PyObject* args = PyTuple_New((Py_ssize_t)narg);
+  if (args == NULL) {
+    PyGILState_Release(s);
+    hoc_execerror("PyTuple_New failed", 0);
+  }
+  for (int i = 0; i < narg; ++i) {
+    PyObject* item = nrnpy_hoc_pop();
+    if (item == NULL) {
+      Py_XDECREF(args);
+      PyGILState_Release(s);
+      hoc_execerror("nrnpy_hoc_pop failed", 0);
+    }
+    if (PyTuple_SetItem(args, (Py_ssize_t)(narg - i - 1), item) != 0) {
+      Py_XDECREF(args);
+      PyGILState_Release(s);
+      hoc_execerror("PyTuple_SetItem failed", 0);
+    }
+  }
+
+  r = nrnpy_pyCallObject(po, args);
+  Py_XDECREF(args);
+  if (r == NULL) {
+    PyErr_Print();
+    PyGILState_Release(s);
+    hoc_execerror("func_call failed", 0);
+  }
+  Py_XDECREF(r);
+  PyGILState_Release(s);
+  return 0.0;
 }
 
 static double guigetval(Object* ho) {

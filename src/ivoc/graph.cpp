@@ -1021,7 +1021,11 @@ IFGUI
 	if (ifarg(2)) {
 		vector_copy = int(chkarg(2, 0, 1));
 	}
-	g->set_cross_action(gargstr(1), vector_copy);
+	if (hoc_is_str_arg(1)) {
+		g->set_cross_action(gargstr(1), NULL, vector_copy);
+	}else{
+		g->set_cross_action(NULL, *hoc_objgetarg(1), vector_copy);
+	}
 ENDGUI
 	return 0.;
 #else 
@@ -1987,15 +1991,17 @@ void Graph::mark(Coord x, Coord y, char style, float size,
 	move(Scene::count() - 1, x, y);
 }
 
-void Graph::set_cross_action(const char* cp, bool vector_copy) {
+void Graph::set_cross_action(const char* cp, Object* pyact, bool vector_copy) {
 	if (cross_action_) {
 		delete cross_action_;
 		cross_action_ = NULL;
 	}
 	if (cp && strlen(cp) > 0) {
 		cross_action_ = new HocCommand(cp);
-		vector_copy_ = vector_copy;
+	}else if (pyact) {
+		cross_action_ = new HocCommand(pyact);
 	}
+	vector_copy_ = vector_copy;
 }
 
 void Graph::cross_action(char c, GPolyLine* gpl, int i) {
@@ -2012,9 +2018,10 @@ void Graph::cross_action(char c, GPolyLine* gpl, int i) {
 			hoc_obj_unref(op1);
 			hoc_obj_unref(op2);
 		}else{
-		sprintf(buf, "%s(%g, %g, %d)", cross_action_->name(),
-		   gpl->x(i), gpl->y(i), c);
-			cross_action_->execute(buf);
+			hoc_pushx(double(gpl->x_data()->get_val(i)));
+			hoc_pushx(double(gpl->y_data()->get_val(i)));
+			hoc_pushx(double(c));
+			cross_action_->func_call(3);
 		}
 	}else{
 		printf("{x=%g y=%g}\n", gpl->x(i), gpl->y(i));

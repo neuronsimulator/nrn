@@ -149,8 +149,15 @@ int HocCommand::execute(const char* s, bool notify) {
 	return err;
 }
 
+double (*nrnpy_func_call)(Object*, int);
+
 double HocCommand::func_call(int narg) {
-	assert(po_ == NULL);
+	if (po_) {
+		if (nrnpy_func_call) {
+			return (*nrnpy_func_call)(po_, narg);
+	  	}
+        	return 0.0;
+	}
 	Symbol* s = NULL;
 	if (obj_ && obj_->ctemplate) {
 		s = hoc_table_lookup(name(), obj_->ctemplate->symtable);
