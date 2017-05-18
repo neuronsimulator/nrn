@@ -21,8 +21,8 @@ a class. This allows multiple independent instances to be created. For example:
             self.myval = 3.14
             self.checkbox = 1
             h.xpanel('demo')
-            h.xradiobutton('Click me', lambda: self.clicked(0), 1)
-            h.xradiobutton('or me', lambda: self.clicked(1), 0)
+            h.xradiobutton('Click me', (self.clicked, 0), 1)
+            h.xradiobutton('or me', (self.clicked, 1), 0)
             h.xstatebutton('press me', (self, 'mystate'), self.statepressed)
             h.xcheckbox('I am a checkbox', (self, 'checkbox'), self.checkboxpressed)
             h.xvalue('Type a number', (self, 'myval'), 1, self.numberset)
@@ -242,7 +242,9 @@ a class. This allows multiple independent instances to be created. For example:
         panel is mapped onto the screen. However, in 
         this case the action should also be explicitly executed by the programmer. 
         That is not done automatically since it is often the case that the action 
-        is invalid when the radio button is created. 
+        is invalid when the radio button is created. As with ``h.xbutton``, ``action_fn`` may
+        be a Python function handle, a tuple containing a function handle and an argument, or
+        a tuple containing a function handle and a tuple of arguments.
 
     Example:
 
@@ -255,14 +257,10 @@ a class. This allows multiple independent instances to be created. For example:
                 """function to be called when a radio button is toggled"""
                 print n
 
-            def call_a(n):
-                """returns a function that calls a with the specified parameter"""
-                return lambda: a(n)
-
             h.xpanel('panel')
             h.xmenu('menu')
             for i in xrange(1, 11):
-                h.xradiobutton('item %d' % i, call_a(i))
+                h.xradiobutton('item %d' % i, (a, i))
 
             h.xmenu()
             h.xpanel()
@@ -335,29 +333,31 @@ a class. This allows multiple independent instances to be created. For example:
                 python
 
                 from neuron import h, gui
+                import sys
 
                 def item_selected(n):
                     print 'selected value %g' % n
 
                 h.xpanel("menubar") 
                 h.xmenu("first") 
-                h.xbutton("one", lambda: item_selected(1)) 
-                h.xbutton("two", lambda: item_selected(2))
+                h.xbutton("one", (item_selected, 1))
+                h.xbutton("two", (item_selected, 2))
+                h.xbutton("Exit", sys.exit)
                 h.xmenu() 
                 h.xmenu("second", 1) 
-                h.xbutton("three", lambda: item_selected(3))
-                h.xbutton("four", lambda: item_selected(4))
+                h.xbutton("three", (item_selected, 3))
+                h.xbutton("four", (item_selected, 4))
                 h.xmenu("submenu") 
-                h.xbutton("PI", lambda: item_selected(h.PI))
+                h.xbutton("PI", (item_selected, h.PI))
                 h.xmenu() 
                 h.xmenu() 
                 h.xmenu("third", 1) 
-                h.xbutton("five", lambda: item_selected(5)) 
-                h.xbutton("six", lambda: item_selected(6))
+                h.xbutton("five", (item_selected, 5)) 
+                h.xbutton("six", (item_selected, 6))
                 h.xmenu() 
                 h.xmenu("nextline") 
-                h.xbutton("seven", lambda: item_selected(7))
-                h.xbutton("eight", lambda: item_selected(8))
+                h.xbutton("seven", (item_selected, 7))
+                h.xbutton("eight", (item_selected, 8))
                 h.xmenu() 
                 h.xpanel() 
 
@@ -392,16 +392,12 @@ a class. This allows multiple independent instances to be created. For example:
                 def select(i):
                     print 'you selected', i
 
-                def call_select(i):
-                    """returns a function that always calls select(i)"""
-                    return lambda: select(i)
-
                 n = 0
                 def make():
                     global n
                     n += 1
                     for i in xrange(1, n + 1):
-                        h.xbutton('label %d' % i, call_select(i))
+                        h.xbutton('label %d' % i, (select, i))
 
                 h.xpanel("test") 
                 h.xmenu("dynamic", make) 
