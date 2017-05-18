@@ -30,7 +30,7 @@ Matrix
 
         which may appear anywhere in an expression or on the left hand side of 
         an assignment statement. irow can range from 0 to m.nrow-1 and icol 
-        ranges from 0 to m.ncol-1 . (See :data:`~Matrix.x`) 
+        ranges from 0 to m.ncol-1 . 
          
         When possible, Matrix methods returning a Matrix use the form, 
         mobj = m.f(args, [mout]), where mobj is a newly constructed matrix (m 
