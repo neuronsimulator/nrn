@@ -1292,12 +1292,12 @@ Graph
 
 
     Syntax:
-        ``.menu_action("label", "action")``
+        ``.menu_action("label", py_callable)``
 
 
     Description:
-        Add a menu item to the Graph popup menu. When pressed, the action will be 
-        executed 
+        Add a menu item to the Graph popup menu. When pressed, the py_callable will be 
+        called.
 
     Example:
 
@@ -1306,10 +1306,14 @@ Graph
             
             from neuron import h, gui
 
-            g = h.Graph() 
-            g.menu_action("Print File", "g.printfile(\"temp.eps\")  system(\"lp temp.eps\")") 
+            def say_hi():
+                print('Hello world!')
 
+            g = h.Graph()
+            g.menu_action("Say hello", say_hi)
 
+        .. image:: ../images/graph-menuaction.png
+            :align: center
          
 
 ----
@@ -1353,11 +1357,17 @@ Graph
         .. code-block::
             python
 
-            g = h.Graph() 
-            g.menu_tool("mouse events", "p") 
-            def p():
-            	print $1, $2, $3, $4 
-            
+            from neuron import h, gui
+
+            def on_event(event_type, x, y, keystate):
+                print('{} {} {} {}'.format(event_type, x, y, keystate))
+
+            g = h.Graph()
+            g.menu_tool("mouse events", on_event)
+
+        In this example, you must first select "mouse events" from the Graph's menu,
+        then left-click or drag over the graph, optionally while holding a modifier key;
+        output will appear on the terminal.         
 
 
          

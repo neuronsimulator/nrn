@@ -13,10 +13,23 @@ SectionList
 
 
     Description:
-        Class for creating and managing a list of sections 
+        Class for creating and managing a list of sections. Unlike a regular Python list, a ``SectionList`` allows including sections
+        based on neuronal morphology (e.g. subtrees).
+
+        If ``sl`` is a :class:`SectionList`, then to turn that into a Python list, use ``py_list = [sec for sec in sl]``; note
+        that iterating over a SectionList is supported, so it may not be neccessary to create a Python list.
+
+        To turn a Python list ``py_list`` of Sections into a :class:`SectionList`, use:
+
+        .. code-block::
+            python
+
+            sl = h.SectionList()
+            for sec in py_list:
+                sl.append(sec=sec)
 
     .. seealso::
-        :class:`SectionBrowser`, :class:`Shape`, :ref:`forsec <keyword_forsec>`, :meth:`RangeVarPlot.list`
+        :class:`SectionBrowser`, :class:`Shape`, :meth:`RangeVarPlot.list`
 
          
 
@@ -28,11 +41,11 @@ SectionList
 
 
     Syntax:
-        ``sl.append()``
+        ``sl.append(sec=section)``
 
 
     Description:
-        append the currently accessed section to the list 
+        append ``section`` to the list 
 
          
 
@@ -44,15 +57,17 @@ SectionList
 
 
     Syntax:
-        ``n = sl.remove()``
+        ``n = sl.remove(sec=section)``
 
         ``n = sl.remove(sectionlist)``
 
 
     Description:
-        remove the currently accessed section from the list 
-        If the argument is present then all the sections in sectionlist are 
+        Remove ``section`` from the list.
+
+        If ``sectionlist`` is present then all the sections in sectionlist are 
         removed from sl. 
+
         Returns the number of sections removed. 
 
          
@@ -159,8 +174,4 @@ SectionList
     Description:
         print the names of the sections in the list. 
          
-        The normal usage of a section list involves efficiently iterating 
-        over all the sections in the list with 
-        ``forsec sectionlist {statement}``
-
 
