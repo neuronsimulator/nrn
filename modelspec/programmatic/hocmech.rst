@@ -99,6 +99,6 @@ HOC-based Mechanisms
             soma.insert('max')
             h.run()
 
-            print('V_max = %g' % soma(0.5).V_max)
+            print('V_max = %g' % soma(0.5).max.V)
          
 
