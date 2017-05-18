@@ -33,7 +33,7 @@ RangeVarPlot
         The second form is much slower since the expression 
         must be executed by the interpreter for each point along the path 
         for each plot.  Execution of the expression is equivalent to 
-        \ ``forsec seclist`` for (*x*) f(*x*) 
+        \ ``for sec in h.allsec(): for seg in sec: f(seg.x)``
         where the expression is the body of f. (Hence the use of $1 to 
         denote the arc length position of the (temporary 
         currently accessed section.) 
