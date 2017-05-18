@@ -185,7 +185,7 @@ List
 
         ``.browser("title", "strname")``
 
-        ``.browser("title", strdef, "command")``
+        ``.browser("title", py_callable)``
 
 
     Description:
@@ -197,18 +197,11 @@ List
             present and is the name of a string symbol that is defined 
             in the object's	template, then that string is displayed in the list. 
 
-        ``.browser("title", strdef, "command")`` 
-            Browser labels are computed. For each item, command is executed 
-            with :data:`hoc_ac_` set to the index of the item. On return, the 
-            contents of *strdef* are used as the label. Some objects 
+        ``.browser("title", py_callable)`` 
+            Browser labels are computed. For each item, ``py_callable`` is executed 
+            with ``h.hoc_ac_`` set to the index of the item. Some objects 
             notify the List when they change, ie point processes when they change 
             their location notify the list. 
-
-    .. warning::
-
-        In the third syntactic form, ``command`` must be a HOC command, not a Python command.
-        As of NEURON 7.4, there is no way to directly invoke a Python callback, although it can
-        be done indirectly as in ``"nrnpython(\"foo()\")"``.
 
     Example:
 
@@ -228,8 +221,36 @@ List
         .. image:: ../../images/list-browser1.png
             :align: center
                     
+    Example of computed labels:
 
-         
+        .. code-block::
+            python
+
+            from neuron import h, gui
+
+            my_list = h.List()
+            for word in ['NEURON', 'HOC', 'Python', 'NMODL']:
+                my_list.append(h.String(word))
+
+            def label_with_lengths():
+                item_id = h.hoc_ac_
+                item = my_list.o(item_id).s
+                return '%s (%d)' % (item, len(item))
+
+            my_list.browser('Words!', label_with_lengths)
+
+        .. image:: ../../images/list-browser2.png
+            :align: center
+
+        If we now execute the following line to add an entry to the List, the new entry will appear in the browser immediately:         
+
+        .. code-block::
+            python
+
+            my_list.append(h.String('Neuroscience'))
+
+        .. image:: ../../images/list-browser2b.png
+            :align: center
 
 ----
 
