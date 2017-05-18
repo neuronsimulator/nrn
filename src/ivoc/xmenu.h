@@ -206,7 +206,7 @@ private:
 
 class HocMenuAction : public HocAction {
 public:
-	HocMenuAction(const char* action, HocMenu*);
+	HocMenuAction(const char* action, Object* pyact, HocMenu*);
 	virtual ~HocMenuAction();
 	virtual void execute();
 private:

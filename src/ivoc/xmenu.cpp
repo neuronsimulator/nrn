@@ -188,10 +188,14 @@ ENDGUI
 void hoc_xmenu() { IFGUI
 	bool add2menubar = false;
 	char* mk = NULL;
+	Object* pyact = NULL;
 	int i = 2;
 	if (ifarg(i)) {
 		if (hoc_is_str_arg(i)) {
 			mk = gargstr(i);
+			++i;
+		}else if (hoc_is_object_arg(i)) {
+			pyact = *hoc_objgetarg(i);
 			++i;
 		}
 		if (ifarg(i)) {
@@ -199,8 +203,8 @@ void hoc_xmenu() { IFGUI
 		}
 	}
 	if (ifarg(1)) {
-		if (mk) {
-			hoc_ivvarmenu(gargstr(1), mk, add2menubar);
+		if (mk || pyact) {
+			hoc_ivvarmenu(gargstr(1), mk, add2menubar, pyact);
 		}else{
 			hoc_ivmenu(gargstr(1), add2menubar);
 		}
@@ -747,7 +751,7 @@ void hoc_ivvarmenu(const char* name, const char* action, bool add2menubar, Objec
 	checkOpenPanel();
 	hoc_radio->stop();
 	HocMenu* m = curHocPanel->menu(name, add2menubar);
-	HocMenuAction* hma = new HocMenuAction(action, m);
+	HocMenuAction* hma = new HocMenuAction(action, pyvar, m);
 	m->item()->action(hma);
 }
 
@@ -1508,8 +1512,8 @@ void HocVarLabel::update_hoc_item() {
 		
 }
 
-HocMenuAction::HocMenuAction(const char* action, HocMenu* hm)
-: HocAction(action) {
+HocMenuAction::HocMenuAction(const char* action, Object* pyact, HocMenu* hm)
+: HocAction(action, pyact) {
 	hm_ = hm;
 	hp_ = NULL;
 }
