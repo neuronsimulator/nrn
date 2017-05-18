@@ -103,17 +103,23 @@ a class. This allows multiple independent instances to be created. For example:
 
 
     Syntax:
-        .. code-block::
-            python
-            
-            h.xbutton('prompt', py_callable)
+        
+        ``h.xbutton('prompt', py_callable)``
+
+        ``h.xbutton('prompt', (py_callable, arg))``
+
+        ``h.xbutton('prompt', (py_callable, (arg1, arg2, ...))``
 
 
     Description:
 
         Adds a button to the currently open :func:`xpanel`. The label on the
         button is *prompt*, and when the button is clicked, it calls the
-        *py_callable*.
+        *py_callable*. If instead of just ``py_callable`` a tuple containing
+        ``py_callable`` and either an arg or tuple of args is passed, then
+        those are passed to the function when the button is clicked; this can
+        be used to allow one function to handle mutliple buttons, or buttons
+        created in unknown situations.
     
     Example:
 
@@ -132,6 +138,30 @@ a class. This allows multiple independent instances to be created. For example:
 
         .. image:: ../../images/xbutton.png
             :align: center         
+
+
+    Example:
+
+        .. code-block::
+            python
+
+            from neuron import h, gui
+
+            def on_press(button_id):
+                print('You clicked button: %d' % button_id)
+
+            def on_press3(a, b):
+                print('Button args: %s, %s' % (a, b))
+
+            h.xpanel('Button demo 2')
+            h.xbutton('Button 1', (on_press, 1))
+            h.xbutton('Button 2', (on_press, 2))
+            h.xbutton('Button 3', (on_press3, ('arg1', 'arg2')))
+            h.xpanel()
+
+        .. image:: ../../images/xbutton2.png
+            :align: center         
+
 
 ----
 
