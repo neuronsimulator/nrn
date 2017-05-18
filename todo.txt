@@ -5,13 +5,12 @@ work here? even the Python-y things aren't right... remove the redef of list; us
 741   modelspec/programmatic/network/netcon.rst //mostly done    
 1313    programming/math/matrix.rst   //first example of Matrix.x needs finish //cholesky_factor() the hoc version also doesn’t work
 90    modelspec/programmatic/rxd. //finished
-166   modelspec/programmatic/topology/seclist.rst  //finished 
+166   modelspec/programmatic/topology/seclist.rst  //finished <-- need to adjust printnames, but basically done
 222   visualization/rvarplt.rst     //Range Var Plot - #how to do this in python?
-300   programming/projectmanagement.rst    //almost done <-- has Python in what should be HOC files... maybe just revert?  looks like tools assume HOC and not Python ... maybe add a warning that it is somewhat dated
 391   visualization/oldgrph.rst     //mostly done... eh
 874   programming/python.rst //finished <-- this should probably be replaced entirely?
 1563    visualization/graph.rst //mostly done        
-93    modelspec/programmatic/hocmech.rst //problems, Robert supposed to fix   
+93    modelspec/programmatic/hocmech.rst //problems, Robert supposed to fix   <-- probably no Python equivalent?
 337   modelspec/programmatic/mechtype.rst   //mostly done <-- attempted to review once; some issues: action does not support Python callbacks, and make seems not to offer a Python solution
 903   modelspec/programmatic/topology/geometry.rst  //mostly done <-- needs a lot of rework
 2972    modelspec/programmatic/network/parcon.rst  //done <-- going to need a bunch of edits, look at sprint, $ arguments
@@ -20,10 +19,8 @@ work here? even the Python-y things aren't right... remove the redef of list; us
 Needs edits:
 ------------
 
-535   modelspec/programmatic/topology.rst   //done
-
-    missing a picture
-    somewhere we need Section.insert defined, but not necessarily in this file
+Somewhere we need to have:
+section.insert and h.allsec defined (used in modelspec/programmatic/topology.rst)
 
 
 https://www.neuron.yale.edu/neuron/static/py_doc/programming/math/functions.html#erf
@@ -74,3 +71,5 @@ simctrl/bbsavestate.rst
 385   programming/gui/list.rst      //mostly done <-- difficulty: browser has no Python callback form
 183   modelspec/programmatic/linmod.rst    //mostly done 
 716   programming/math/random.rst // mostly done
+535   modelspec/programmatic/topology.rst   //done
+300   programming/projectmanagement.rst    //almost done <-- has Python in what should be HOC files... maybe just revert?  looks like tools assume HOC and not Python ... maybe add a warning that it is somewhat dated

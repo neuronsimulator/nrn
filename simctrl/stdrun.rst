@@ -7,15 +7,14 @@ Standard Run Tools
 
 
 All standard tools are available from the NEURONMainMenu. The fastest 
-way to load these tools is to execute 
+way to load these tools is to execute:
 
 .. code-block::
     python
 
-    h.load_file("nrngui.hoc") 
+    from neuron import gui
 
-which avoids inefficiencies of the :func:`load_proc` command on 
-mswindows machines. 
+ 
 
 Brief summaries of the menu options are provided below, for more information on select functions see also:
 

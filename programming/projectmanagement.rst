@@ -1,6 +1,13 @@
 .. _project:
 
 
+.. warning::
+
+    The commands and methods here are outdated and have thus never been updated
+    to work with Python; consider directly using a modern version control system
+    (e.g. ``git`` or ``hg``) instead. You will likely want to store the version
+    identifier with each figure or datafile so you can recreate the data.
+
 Project Management
 ------------------
 
@@ -41,15 +48,15 @@ A policy that seems to work pretty well is to always start a simulation via
 where init.hoc xopens all necessary files to initialize the simulation. 
 
 .. code-block::
-    python
+    none
 
     init.hoc 
     //------- 
-    h.xopen("$(NEURONHOME)/lib/hoc/noload.hoc")	// standard run tools 
-    h.xopen("morph.hoc")	// topology, geometry, compartmentalization 
-    h.xopen("memb.hoc")	// membrane properties 
-    h.xopen("param.hoc")	// parameters that are occasionally changed 
-    h.xopen("start.ses")	// will automatically change for every new version 
+    xopen("$(NEURONHOME)/lib/hoc/noload.hoc")	// standard run tools 
+    xopen("morph.hoc")	// topology, geometry, compartmentalization 
+    xopen("memb.hoc")	// membrane properties 
+    xopen("param.hoc")	// parameters that are occasionally changed 
+    xopen("start.ses")	// will automatically change for every new version 
     //------- 
 
 With this style, whenever an old version is checked out and run, the appearance 
@@ -87,11 +94,11 @@ init.hoc
 .. code-block::
     none
 
-    h.xopen("$(NEURONHOME)/lib/hoc/noload.hoc") 
-    h.xopen("morph.hoc") 
-    h.xopen("memb.hoc") 
-    h.xopen("param.hoc") 
-    h.xopen("start.ses") 
+    xopen("$(NEURONHOME)/lib/hoc/noload.hoc") 
+    xopen("morph.hoc") 
+    xopen("memb.hoc") 
+    xopen("param.hoc") 
+    xopen("start.ses") 
 
 morph.hoc 
 

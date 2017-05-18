@@ -188,31 +188,36 @@ MechanismStandard (Parameter Control)
         .. code-block::
             python
             
-            ms.in()
-            ms.in(x)
-            ms.in(pointprocess)
-            ms.in(mechanismstandard)
+            ms.__getattribute__('in')()
+            ms.__getattribute__('in')(x)
+            ms.__getattribute__('in')(pointprocess)
+            ms.__getattribute__('in')(mechanismstandard)
 
     Description:
         copies parameter values into this mechanism standard from ... 
 
 
-        ``ms.in()`` 
+        ``ms.__getattribute__('in')()`` 
             the mechanism located in first segment of the currently accessed section. 
 
-        :samp:`ms.in({x})` 
+        :samp:`ms.__getattribute__('in')({x})` 
             the mechanism located in the segment containing x of the currently accessed section. 
             (Note that x=0 and 1 are considered to lie in the 
             0+ and 1- segments respectively so a proper iteration uses for(x, 0). 
             See :ref:`for <keyword_for>`.
 
-        :samp:`ms.in({pointprocess})` 
+        :samp:`ms.__getattribute__('in')({pointprocess})` 
             the point process object 
 
-        :samp:`ms.in({mechanismstandard})` 
+        :samp:`ms.__getattribute__('in')({mechanismstandard})` 
             another mechanism standard 
 
         If the source is not the same type as the standard then nothing happens. 
+
+    .. note::
+
+        In HOC, this function is available via ``ms.in``; unfortunately in Python that is a Syntax Error
+        as ``in`` is a Python keyword.
 
          
 
