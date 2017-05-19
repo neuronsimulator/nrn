@@ -181,45 +181,67 @@ MechanismStandard (Parameter Control)
 
 
 
-.. method:: MechanismStandard.in
+.. method:: MechanismStandard._in
 
 
     Syntax:
         .. code-block::
             python
             
-            ms.__getattribute__('in')()
-            ms.__getattribute__('in')(x)
-            ms.__getattribute__('in')(pointprocess)
-            ms.__getattribute__('in')(mechanismstandard)
+            ms._in(sec=section)
+            ms._in(x, sec=section)
+            ms._in(pointprocess)
+            ms._in(mechanismstandard)
 
     Description:
         copies parameter values into this mechanism standard from ... 
 
 
-        ``ms.__getattribute__('in')()`` 
-            the mechanism located in first segment of the currently accessed section. 
+        ``ms._in(sec=section)`` 
+            the mechanism located in first segment of ``section`` 
 
-        :samp:`ms.__getattribute__('in')({x})` 
-            the mechanism located in the segment containing x of the currently accessed section. 
+        ``ms.__getattribute__('in')(x, sec=section)``
+            the mechanism located in the segment ``section(x)``. 
             (Note that x=0 and 1 are considered to lie in the 
-            0+ and 1- segments respectively so a proper iteration uses for(x, 0). 
-            See :ref:`for <keyword_for>`.
+            0+ and 1- segments respectively. 
 
-        :samp:`ms.__getattribute__('in')({pointprocess})` 
+        ``ms._in(pointprocess)`` 
             the point process object 
 
-        :samp:`ms.__getattribute__('in')({mechanismstandard})` 
+        ``ms._in(mechanismstandard)`` 
             another mechanism standard 
 
         If the source is not the same type as the standard then nothing happens. 
 
+    Example:
+
+
+        .. code-block::
+            python
+
+            from neuron import h
+
+            s = h.Section(name='soma')
+            s.insert('hh')
+            s(.5).hh.gnabar = 0.5
+
+            ms = h.MechanismStandard('hh')
+            ms.set("gnabar_hh", 0.3)
+
+            print(ms.get("gnabar_hh"))
+            ms._in(sec=s)
+            print(ms.get("gnabar_hh"))
+
+
+
     .. note::
 
-        In HOC, this function is available via ``ms.in``; unfortunately in Python that is a Syntax Error
-        as ``in`` is a Python keyword.
+        This is the same as the HOC method ``ms.in``, however the name had to be
+        changed for Python due to ``in`` being a keyword in Python.
 
-         
+    .. note::
+
+        Python support for this method was added in NEURON 7.5.
 
 ----
 
@@ -232,8 +254,8 @@ MechanismStandard (Parameter Control)
         .. code-block::
             python
             
-            ms.out()
-            ms.out(x)
+            ms.out(sec=section)
+            ms.out(x, sec=section)
             ms.out(pointprocess)
             ms.out(mechanismstandard)
 
@@ -243,10 +265,10 @@ MechanismStandard (Parameter Control)
 
 
         ``ms.out()`` 
-            the mechanism located in the currently accessed section (all segments). 
+            the mechanism located in ``section`` (all segments). 
 
         ``ms.out(x)`` 
-            the mechanism located in the currently accessed section in the segment 
+            the mechanism located in ``section`` in the segment 
             containing x.(Note that x=0 and 1 are considered to lie in the 
             0+ and 1- segments respectively) 
 
@@ -278,6 +300,9 @@ MechanismStandard (Parameter Control)
         sets the parameter in the standard to *val*. If the variable is 
         an array, then the optional index can be specified. 
 
+        ``varname`` follows the HOC form convention of ``name_mech``; e.g. ``gnabar_hh``.
+
+        See :meth:`_in` for an example.
          
 
 ----
@@ -298,7 +323,9 @@ MechanismStandard (Parameter Control)
         returns the value of the parameter. If the variable is actually 
         a POINTER and it is nil, then return -1e300. 
 
-         
+        ``varname`` follows the HOC form convention of ``name_mech``; e.g. ``gnabar_hh``.
+
+        See :meth:`_in` for an example.
 
 ----
 
