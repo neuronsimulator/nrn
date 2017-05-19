@@ -28,13 +28,13 @@ General
             python
 
             x = pnt.get_loc()
-            sec = h.allsec()
+            sec = h.cas()
             h.pop_section()
 
 
     Description:
-        get_loc() pushes the section containing the POINT_PROCESS instance, pnt, 
-        onto the section stack (makes it the currently accessed section), and 
+        ``h.get_loc()`` pushes the section containing the POINT_PROCESS instance, pnt, 
+        onto the section stack (makes it the currently accessed section, readable via ``h.cas()``), and 
         returns the position (ranging from 0 to 1) of the POINT_PROCESS instance. 
         The section stack should be popped when the section is no longer needed. 
         Note that the braces are necessary if the statement is typed at the top 
@@ -44,6 +44,11 @@ General
     .. seealso::
         :func:`pop_section`,
         :meth:`get_segment`
+
+    .. warning::
+
+        Due to the manipulation of NEURON's section stack, this function is best
+        avoided in new Python code; use :meth:`get_segment` instead.
 
          
 
@@ -59,10 +64,21 @@ General
 
 
     Description:
-        A more pythonic version of :func:`get_loc` in that it returns a python segment object 
-        without pushing the section stack. From a segment object one can get the 
+        Returns the segment containing the point process.
+        From a segment object one can get the 
         section with ``pyseg.sec`` and the position with ``pyseg.x``. If the 
         point process is not located anywhere, the return value is None. 
+
+    Example:
+
+        .. code-block::
+            python
+
+            >>> s = h.Section(name='s')
+            >>> ic = h.IClamp(s(0.5))
+            >>> ic.get_segment()
+            s(0.5)
+
 
     .. warning::
         Segment objects become invalid if nseg changes. Discard them as soon as 
