@@ -609,6 +609,7 @@ static Member_func ms_members[] = {
 	"panel", ms_panel,
 	"action", ms_action,
 	"in", ms_in,
+	"_in", ms_in,
 	"out", ms_out,
 	"set", ms_set,
 	"get", ms_get,
