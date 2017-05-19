@@ -1091,9 +1091,9 @@ Graph
 
 
     Syntax:
-        ``.crosshair_action("procedure_name")``
+        ``.crosshair_action(py_callable)``
 
-        ``.crosshair_action("procedure_name", vectorflag=0)``
+        ``.crosshair_action(py_callable, vectorflag=0)``
 
         ``.crosshair_action("")``
 
@@ -1101,34 +1101,52 @@ Graph
     Description:
         While the crosshair is visible (left mouse button pressed) one 
         can type any key and the procedure will be executed with 
-        three arguments added: 
-        ``procedure_name(x, y, c)`` 
+        three arguments added: ``py_callable(x, y, c)``
         where x and y are the coordinates of the crosshair (in model 
         coordinates) and c is the ascii code for the key pressed. 
          
-        The procedure will be executed in the context of the object 
-        where ``crosshair_action`` was executed. 
         When the optional vectorflag argument is 1, then, just prior 
         to each call of the *procedure_name* due to a keypress, 
-        two temporary *objectref*'s are created and assigned to a 
-        new ``Vector()`` and the line coordinate data is copied to those Vectors. 
+        two temporary :class:`Vector` objects are created 
+        and the line coordinate data is copied to those Vectors. 
         With this form the call to the procedure has two args added: 
-        ``procedure_name(i, c, $o3, $o4)`` 
+        ``procedure_name(i, c, xvec, yvec)`` 
         where ``i`` is the index of the crosshair into the Vector. 
          
         If you wish the Vector data to persist then you can assign to 
-        another objectvar before returning from the ``procedure_name``. 
+        another objectvar before returning from the ``py_callable``. 
         Note that one can copy any line to a Vector with this method whereas 
         the interpreter controlled ``Graph.dump("expr", y_objectref)`` is 
         limited to the current graphline of an ``addvar`` or ``addexpr``. 
          
         With an empty string arg, the existing action is removed. 
 
-    .. warning::
+    Example:
 
-        As of NEURON 7.4, ``procedure_name`` must be the name of a HOC procedure;
-        the crosshair_action cannot call directly into Python. A workaround is to
-        create a one-line HOC procedure that calls your Python function (see Example).
+        .. code-block::
+            python
+
+            from neuron import h, gui
+
+            g = h.Graph()
+
+            def crossact(x, y, c):
+              '''For g.crosshair_action(crossact)'''
+              print ("x=%g y=%g c=%c" % (x, y, int(c)))
+
+            def crossact_vflag1(i, c, xvec, yvec):
+              '''For g.crosshair_action(crossact_vflag1, 1)'''
+              i = int(i)
+              print ("i=%d x[i]=%g y[i]=%g c=%c" % (i, xvec.x[i], yvec.x[i], int(c)))
+
+            g.crosshair_action(crossact_vflag1, 1)
+
+            # plot something
+            x = h.Vector().indgen(50, 100, 1)
+            y = x.c().add(50)
+            y.line(g, x)
+
+            # now click/drag on the plotted line and occasionally press a key
 
     Example:
 
@@ -1170,6 +1188,10 @@ Graph
 
         To test the crosshair_action functionality, run the above code, move the mouse over the graph with the left mouse button held down, and simultaneously press a key;
         the coordinates and the key pressed will be displayed in the terminal.
+
+    .. note::
+
+        Python support for ``Graph.crosshair_action`` was added in NEURON 7.5.
 
 
 
