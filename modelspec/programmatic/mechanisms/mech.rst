@@ -24,7 +24,12 @@ General
 
 
     Syntax:
-        ``{ x = pnt.get_loc() stmt pop_section()}``
+        .. code-block::
+            python
+
+            x = pnt.get_loc()
+            sec = h.allsec()
+            h.pop_section()
 
 
     Description:
@@ -107,9 +112,9 @@ General
 
 
     Syntax:
-        ``stimobj = new IClamp(x)``
+        ``stimobj = h.IClamp(section(x))``
 
-        ``del -- ms``
+        ``delay -- ms``
 
         ``dur -- ms``
 
@@ -123,10 +128,14 @@ General
          
         Single pulse current clamp point process. This is an electrode current 
         so positive amp depolarizes the cell. i is set to amp when t is within 
-        the closed interval del to del+dur. Time varying current stimuli can 
-        be simulated by setting del=0, dur=1e9 and playing a vector into amp 
+        the closed interval delay to delay+dur. Time varying current stimuli can 
+        be simulated by setting delay=0, dur=1e9 and playing a vector into amp 
         with the :meth:`~Vector.play` :class:`Vector` method. 
 
+    .. note::
+
+        In HOC, ``delay`` was known as ``del``, but this had to be renamed for Python as ``del``
+        is a Python keyword.
 
 ----
 
@@ -136,7 +145,7 @@ General
 
 
     Syntax:
-        ``syn = new AlphaSynapse(x)``
+        ``syn = h.AlphaSynapse(section(x))``
 
         ``syn.onset --- ms``
 
@@ -174,7 +183,7 @@ General
 
 
     Syntax:
-        ``obj = new VClamp(x)``
+        ``obj = new VClamp(section(x))``
 
         ``dur[3]``
 
@@ -253,7 +262,7 @@ General
 
 
     Syntax:
-        ``clampobj = new SEClamp(0.5)``
+        ``clampobj = new SEClamp(section(x))``
 
         ``dur1 dur2 dur3 -- ms``
 
@@ -351,7 +360,7 @@ General
 
 
     Syntax:
-        ``apc = new APCount(x)``
+        ``apc = new APCount(section(x))``
 
         ``apc.thresh ---	mV``
 
@@ -384,7 +393,7 @@ General
 
 
     Syntax:
-        ``syn = new ExpSyn(x)``
+        ``syn = new ExpSyn(section(x))``
 
         ``syn.tau --- ms decay time constant``
 
@@ -420,7 +429,7 @@ General
 
 
     Syntax:
-        ``syn = new Exp2Syn(x)``
+        ``syn = new Exp2Syn(section(x))``
 
         ``syn.tau1 --- ms rise time``
 
@@ -481,7 +490,7 @@ General
 
 
     Syntax:
-        ``s = new NetStim(x)``
+        ``s = new NetStim(section(x))``
 
         ``s.interval ms (mean) time between spikes``
 
@@ -546,7 +555,7 @@ General
 
 
     Syntax:
-        ``c = new IntFire1(x)``
+        ``c = h.IntFire1(section(x))``
 
         ``c.tau --- ms time constant``
 
@@ -587,7 +596,7 @@ General
 
 
     Syntax:
-        ``c = new IntFire2(x)``
+        ``c = h.IntFire2(section(x))``
 
         ``c.taum --- ms membrane time constant``
 
@@ -630,7 +639,7 @@ General
 
 
     Syntax:
-        ``c = new IntFire4(x)``
+        ``c = h.IntFire4(section(x))``
 
         ``c.taue --- ms excitatory input time constant``
 
@@ -738,9 +747,9 @@ Mechanisms
 
 
     Syntax:
-        ``cm (uF/cm2)``
+        ``section.cm (uF/cm2)``
 
-        ``i_cap (mA/cm2)``
+        ``section.i_cap (mA/cm2)``
 
 
     Description:
@@ -801,13 +810,13 @@ Mechanisms
 **pas**
 
     Syntax:
-        ``insert pas``
+        ``section.insert('pas')``
 
-        ``g_pas -- mho/cm2	conductance``
+        ``section.pas.g -- mho/cm2	conductance``
 
-        ``e_pas -- mV		reversal potential``
+        ``section.pas.e -- mV		reversal potential``
 
-        ``i -- mA/cm2		non-specific current``
+        ``section.pas.i -- mA/cm2		non-specific current``
 
 
     Description:
