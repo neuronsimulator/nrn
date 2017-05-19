@@ -42,15 +42,14 @@ RangeVarPlot
         :func:`distance`, :meth:`Graph.addobject`
 
     Example:
-        An example is plotting the 
-        transfer impedance ratio with 
+        An example is plotting the transfer impedance with 
 
         .. code-block::
             none
 
             objectvar imp, rvp, g 
             imp = new Impedance() 
-            rvp = new RangeVarPlot("imp.amp($1)/imp0()") 
+            rvp = new RangeVarPlot("imp.transfer($1)") 
             rvp... //specify range begin and end 
             imp... //specify impedance computation 
             g = new Graph() 
