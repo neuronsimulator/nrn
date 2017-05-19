@@ -37,9 +37,6 @@ General
         onto the section stack (makes it the currently accessed section, readable via ``h.cas()``), and 
         returns the position (ranging from 0 to 1) of the POINT_PROCESS instance. 
         The section stack should be popped when the section is no longer needed. 
-        Note that the braces are necessary if the statement is typed at the top 
-        level since the section stack is automatically popped when waiting for 
-        user input. 
 
     .. seealso::
         :func:`pop_section`,
