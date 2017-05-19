@@ -30,7 +30,7 @@ extern double (*nrnpy_praxis_efun)(Object*, Object*);
 extern int (*nrnpy_hoccommand_exec)(Object*);
 extern int (*nrnpy_hoccommand_exec_strret)(Object*, char*, int);
 extern void (*nrnpy_cmdtool)(Object*, int, double, double, int);
-extern double (*nrnpy_func_call)(Object*, int);
+extern double (*nrnpy_func_call)(Object*, int, int*);
 extern double (*nrnpy_guigetval)(Object*);
 extern void (*nrnpy_guisetval)(Object*, double);
 extern int (*nrnpy_guigetstr)(Object*, char**);
@@ -59,7 +59,7 @@ static double praxis_efun(Object*, Object*);
 static int hoccommand_exec(Object*);
 static int hoccommand_exec_strret(Object*, char*, int);
 static void grphcmdtool(Object*, int, double, double, int);
-static double func_call(Object*, int);
+static double func_call(Object*, int, int*);
 static double guigetval(Object*);
 static void guisetval(Object*, double);
 static int guigetstr(Object*, char**);
@@ -474,7 +474,7 @@ static void grphcmdtool(Object* ho, int type, double x, double y, int key) {
   PyGILState_Release(s);
 }
 
-static double func_call(Object* ho, int narg) {
+static double func_call(Object* ho, int narg, int* err) {
   PyObject* po = ((Py2Nrn*)ho->u.this_pointer)->po_;
   PyObject* r;
   PyGILState_STATE s = PyGILState_Ensure();
@@ -500,14 +500,29 @@ static double func_call(Object* ho, int narg) {
 
   r = nrnpy_pyCallObject(po, args);
   Py_XDECREF(args);
+  double rval = 0.0;
   if (r == NULL) {
-    PyErr_Print();
-    PyGILState_Release(s);
-    hoc_execerror("func_call failed", 0);
+    if (*err) {
+      PyErr_Print();
+    }else{
+      PyErr_Clear();
+    }
+    if (*err) {
+      PyGILState_Release(s);
+      hoc_execerror("func_call failed", 0);
+    }
+    *err = 1;
+  }else{
+    if (nrnpy_numbercheck(r)) {
+      PyObject* pn = PyNumber_Float(r);
+      rval = PyFloat_AsDouble(pn);
+      Py_XDECREF(pn);
+    }
+    Py_XDECREF(r);
+    *err = 0; // success
   }
-  Py_XDECREF(r);
   PyGILState_Release(s);
-  return 0.0;
+  return rval;
 }
 
 static double guigetval(Object* ho) {

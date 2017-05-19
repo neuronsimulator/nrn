@@ -149,13 +149,14 @@ int HocCommand::execute(const char* s, bool notify) {
 	return err;
 }
 
-double (*nrnpy_func_call)(Object*, int);
+double (*nrnpy_func_call)(Object*, int, int*);
 
-double HocCommand::func_call(int narg) {
+double HocCommand::func_call(int narg, int* perr) {
 	if (po_) {
 		if (nrnpy_func_call) {
-			return (*nrnpy_func_call)(po_, narg);
+			return (*nrnpy_func_call)(po_, narg, perr);
 	  	}
+		*perr = 1;
         	return 0.0;
 	}
 	Symbol* s = NULL;

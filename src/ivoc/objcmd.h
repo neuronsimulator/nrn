@@ -25,7 +25,7 @@ public:
 	virtual void update(Observable*);
 	virtual void audit();
 	virtual void help();
-	double func_call(int narg);
+	double func_call(int narg, int* perr = NULL); //perr used only by pyobject
 	Object* object() { return obj_; }
 	Object* pyobject() { return po_; }
 private:

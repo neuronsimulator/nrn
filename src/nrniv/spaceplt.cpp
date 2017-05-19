@@ -37,7 +37,7 @@ implementList(SecPosList, SecPos);
 
 class RangeExpr {
 public:
-	RangeExpr(const char* expr, SecPosList*);
+	RangeExpr(const char* expr, Object* pyobj, SecPosList*);
 	virtual ~RangeExpr();
 	void fill();
 	void compute();
@@ -111,7 +111,7 @@ class RangeVarPlot : public GraphVector {
 class RangeVarPlot : public NoIVGraphVector {
 #endif
 public:
-	RangeVarPlot(const char*);
+	RangeVarPlot(const char*, Object* pyobj);
 	virtual ~RangeVarPlot();
 #if HAVE_IV
 	virtual void save(ostream&);
@@ -256,7 +256,14 @@ static Member_func s_members[] = {
 };
 
 static void* s_cons(Object*) {
-	RangeVarPlot* s = new RangeVarPlot(gargstr(1));
+	char* var = NULL;
+	Object* pyobj = NULL;
+	if (hoc_is_str_arg(1)) {
+		var = gargstr(1);
+	}else{
+		pyobj = *hoc_objgetarg(1);
+	}
+	RangeVarPlot* s = new RangeVarPlot(var, pyobj);
 #if HAVE_IV
 	s->ref();
 #endif
@@ -275,9 +282,9 @@ void RangeVarPlot_reg() {
 }
 
 #if HAVE_IV
-RangeVarPlot::RangeVarPlot(const char* var) : GraphVector(var) {
+RangeVarPlot::RangeVarPlot(const char* var, Object* pyobj) : GraphVector(var ? var : "pyobj") {
 #else
-RangeVarPlot::RangeVarPlot(const char* var) : NoIVGraphVector(var) {
+RangeVarPlot::RangeVarPlot(const char* var, Object* pyobj) : NoIVGraphVector(var) {
 #endif
 	begin_section_ = 0;
 	end_section_ = 0;
@@ -288,12 +295,12 @@ RangeVarPlot::RangeVarPlot(const char* var) : NoIVGraphVector(var) {
 	Oc oc;
 	oc.notify_attach(this);
 #endif
-	if (strstr(var, "$1")) {
-		rexp_ = new RangeExpr(var, sec_list_);
+	if ((var && strstr(var, "$1")) || pyobj) {
+		rexp_ = new RangeExpr(var, pyobj, sec_list_);
 	}else{
 		rexp_ = NULL;
 	}
-	expr_ = var;
+	expr_ = var ? var : "pyobj";
 	origin_ = 0.;
 	d2root_ = 0.;
 }
@@ -419,7 +426,7 @@ bool RangeVarPlot::choose_sym(Graph* g) {
 	s[0] = '\0';
         while (str_chooser("Range Variable or expr involving $1", s,
 	  XYView::current_pick_view()->canvas()->window())) {
-		RangeVarPlot* rvp = new RangeVarPlot(s);
+		RangeVarPlot* rvp = new RangeVarPlot(s, NULL);
 		rvp->ref();		
 
 		rvp->begin_section_ = begin_section_;
@@ -641,11 +648,15 @@ printf("debugging\n");
 #endif
 }
 
-RangeExpr::RangeExpr(const char* expr, SecPosList* spl) {
+RangeExpr::RangeExpr(const char* expr, Object* pycall, SecPosList* spl) {
 	spl_ = spl;
 	n_ = 0;
 	val_ = NULL;
 	exist_ = NULL;
+	if (pycall) {
+		cmd_ = new HocCommand(pycall);
+		return;
+	}
 	char buf[256];
 	const char* p1;
 	char* p2;
@@ -690,6 +701,15 @@ void RangeExpr::fill() {
 		nrn_pushsec(spl_->item(i).sec);
 		hoc_ac_ = spl_->item(i).x;
 		hoc_execerror_messages = 0;
+		if (cmd_->pyobject()) {
+			hoc_pushx(hoc_ac_);
+			int err = 0; // no messages
+			cmd_->func_call(1, &err); // return err==0 means success
+			exist_[i] = err ? false : true;
+			if (err) { val_[i] = 0.0; }
+			nrn_popsec();
+			continue;
+		}
 		if (cmd_->execute(bool(false)) == 0) {
 			exist_[i] = true;
 			val_[i] = 0.;
@@ -712,9 +732,15 @@ void RangeExpr::compute() {
 		if (exist_[i]) {
 			nrn_pushsec(spl_->item(i).sec);
 			hoc_ac_ = spl_->item(i).x;
-			cmd_->execute(bool(false));
+			if (cmd_->pyobject()) {
+				hoc_pushx(hoc_ac_);
+				int err = 1; // messages
+				val_[i] = cmd_->func_call(1, &err);
+			}else{
+				cmd_->execute(bool(false));
+				val_[i] = hoc_ac_;
+			}
 			nrn_popsec();
-			val_[i] = hoc_ac_;
 		}
 	}
 }
