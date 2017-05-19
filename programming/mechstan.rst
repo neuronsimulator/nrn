@@ -200,7 +200,7 @@ MechanismStandard (Parameter Control)
         ``ms._in(sec=section)`` 
             the mechanism located in first segment of ``section`` 
 
-        ``ms.__getattribute__('in')(x, sec=section)``
+        ``ms._in(x, sec=section)``
             the mechanism located in the segment ``section(x)``. 
             (Note that x=0 and 1 are considered to lie in the 
             0+ and 1- segments respectively. 
@@ -302,7 +302,7 @@ MechanismStandard (Parameter Control)
 
         ``varname`` follows the HOC form convention of ``name_mech``; e.g. ``gnabar_hh``.
 
-        See :meth:`_in` for an example.
+        See :meth:`MechanismStandard._in` for an example.
          
 
 ----
@@ -325,7 +325,7 @@ MechanismStandard (Parameter Control)
 
         ``varname`` follows the HOC form convention of ``name_mech``; e.g. ``gnabar_hh``.
 
-        See :meth:`_in` for an example.
+        See :meth:`MechanismStandard._in` for an example.
 
 ----
 
