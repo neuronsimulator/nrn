@@ -502,16 +502,16 @@ static double func_call(Object* ho, int narg, int* err) {
   Py_XDECREF(args);
   double rval = 0.0;
   if (r == NULL) {
-    if (*err) {
+    if (err && *err) {
       PyErr_Print();
     }else{
       PyErr_Clear();
     }
-    if (*err) {
+    if (err && *err) {
       PyGILState_Release(s);
       hoc_execerror("func_call failed", 0);
     }
-    *err = 1;
+    if (err) { *err = 1; }
   }else{
     if (nrnpy_numbercheck(r)) {
       PyObject* pn = PyNumber_Float(r);
@@ -519,7 +519,7 @@ static double func_call(Object* ho, int narg, int* err) {
       Py_XDECREF(pn);
     }
     Py_XDECREF(r);
-    *err = 0; // success
+    if (err) { *err = 0; } // success
   }
   PyGILState_Release(s);
   return rval;
