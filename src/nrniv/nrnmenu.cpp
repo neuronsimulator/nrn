@@ -496,10 +496,15 @@ ENDGUI
 }
 static double ms_action(void* v) {
 	char* a = 0;
+	Object* pyact = NULL;
 	if(ifarg(1)) {
-		a = gargstr(1);
+		if (hoc_is_str_arg(1)) {
+			a = gargstr(1);
+		}else{
+			pyact = *hoc_objgetarg(1);
+		}
 	}
-	((MechanismStandard*)v)->action(a);
+	((MechanismStandard*)v)->action(a, pyact);
 	return 0.;
 }
 
@@ -590,7 +595,7 @@ static double ms_save(void* v) {
 	return 0.;
 }
 
-static void* ms_cons(Object*) {
+static void* ms_cons(Object* ob) {
 	int vartype = nrnocCONST;
 	if (ifarg(2)) {
 		// 0 means all
@@ -598,6 +603,7 @@ static void* ms_cons(Object*) {
 	}
 	MechanismStandard* m = new MechanismStandard(gargstr(1), vartype);
 	m->ref();
+	m->msobj_ = ob;
 	return (void*)m;
 }
 
@@ -624,6 +630,7 @@ void MechanismStandard_reg() {
 }
 
 MechanismStandard::MechanismStandard(const char* name, int vartype) {
+	msobj_ = NULL;
 	glosym_ = NULL;
 	np_ = new NrnProperty(name);
 	name_cnt_ = 0;
@@ -662,8 +669,12 @@ MechanismStandard::MechanismStandard(const char* name, int vartype) {
 	}
     }
 	action_ = "";
+	pyact_ = NULL;
 }
 MechanismStandard::~MechanismStandard() {
+	if (pyact_) {
+		hoc_obj_unref(pyact_);
+	}
 	if (glosym_) {
 		delete [] glosym_;
 	}
@@ -686,6 +697,8 @@ const char* MechanismStandard::name(int i, int& size) {
 	return s->name;
 }
 
+Object* (*nrnpy_callable_with_args)(Object*, int narg);
+
 void MechanismStandard::panel(const char* label) {
 #if HAVE_IV
 	mschk("panel");
@@ -700,27 +713,56 @@ void MechanismStandard::panel(const char* label) {
 	}
 	for (sym = np_->first_var(), i=0; np_->more_var(); sym = np_->next_var(), ++i) {
 		if (vartype_ == 0 || np_->var_type(sym) == vartype_) {
+			Object* pyactval = NULL;
 			int size = hoc_total_array_data(sym, 0);
-			sprintf(buf, "hoc_ac_ = %d  %s", i, action_.string());
-			hoc_ivpvaluerun(sym->name, np_->prop_pval(sym),
-				buf, true, false, sym->extra);
+			if (pyact_) {
+				assert(nrnpy_callable_with_args);
+				hoc_push_object(msobj_);
+				hoc_pushx(double(i));
+				hoc_pushx(0.0);
+				pyactval = (*nrnpy_callable_with_args)(pyact_, 3);
+			}else{
+				sprintf(buf, "hoc_ac_ = %d  %s", i, action_.string());
+			}
+			hoc_ivvaluerun_ex(sym->name,
+				NULL, np_->prop_pval(sym), NULL,
+				pyact_ ? NULL : buf, pyactval,
+				true, false, true, sym->extra);
+			if (pyactval) {
+				hoc_obj_unref(pyactval);
+			}
 			int j;
 			for (j=1; j < size; ++j) {
 				++i;
-				sprintf(buf, "hoc_ac_ = %d %s", i, action_.string());
+				if (pyact_) {
+					assert(nrnpy_callable_with_args);
+					hoc_push_object(msobj_);
+					hoc_pushx(double(i));
+					hoc_pushx(double(j));
+					pyactval = (*nrnpy_callable_with_args)(pyact_, 3);
+				}else{
+					sprintf(buf, "hoc_ac_ = %d %s", i, action_.string());
+				}
 				char buf2[200];
 				sprintf(buf2, "%s[%d]", sym->name, j);
-				hoc_ivpvaluerun(buf2, np_->prop_pval(sym, j),
-					buf, true, false, sym->extra);
+				hoc_ivvaluerun_ex(buf2,
+					NULL, np_->prop_pval(sym, j), NULL,
+					pyact_ ? NULL : buf, pyact_,
+					true, false, true, sym->extra);
+				if (pyactval) { hoc_obj_unref(pyactval); }
 			}
 		}
 	}
 	hoc_ivpanelmap();
 #endif
 }
-void MechanismStandard::action(const char* action){
+void MechanismStandard::action(const char* action, Object* pyact){
 	mschk("action");
-	action_ = action;
+	action_ = action ? action : "";
+	if (pyact) {
+		pyact_ = pyact;
+		hoc_obj_ref(pyact);
+	}
 }
 void MechanismStandard::set(const char* name, double val, int index){
 	mschk("set");

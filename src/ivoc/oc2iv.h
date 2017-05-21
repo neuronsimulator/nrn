@@ -24,7 +24,8 @@ extern void hoc_ivvaluerun(CChar* name, CChar* variable, CChar* action,
 extern void hoc_ivvaluerun_ex(CChar* name,
 	CChar* var, double* pvar, Object* pyvar,
 	CChar* action, Object* pyact,
-	bool deflt=false, bool canrun=false, bool usepointer=false);
+	bool deflt=false, bool canrun=false, bool usepointer=false,
+	HocSymExtension* extra=NULL);
 extern void hoc_ivpvaluerun(CChar* name, double*, CChar* action,
 	bool deflt=false, bool canrun=false, HocSymExtension* extra=NULL);
 

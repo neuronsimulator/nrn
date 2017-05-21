@@ -785,7 +785,7 @@ void hoc_ivvaluerun(const char* name, const char* variable, const char* action,
 void hoc_ivvaluerun_ex(CChar* name,
         CChar* variable, double* pvar, Object* pyvar,
         CChar* action, Object* pyact,
-        bool deflt, bool canrun, bool usepointer)
+        bool deflt, bool canrun, bool usepointer, HocSymExtension* extra)
 {
 	checkOpenPanel();
 	hoc_radio->stop();
@@ -796,8 +796,10 @@ void hoc_ivvaluerun_ex(CChar* name,
 			pvar = hoc_val_pointer(variable);
 		}
 	}
+	HocSymExtension* xtra = extra;
+	if (!xtra) { s ? s->extra : NULL; }
 	curHocPanel->valueEd(name, variable, action, canrun,
-		pvar, deflt, false, (s?s->extra:NULL), pyvar, pyact);
+		pvar, deflt, false, xtra, pyvar, pyact);
 }
 
 void hoc_ivpvaluerun(const char* name, double* pd, const char* action,
