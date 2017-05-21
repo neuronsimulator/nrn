@@ -7,6 +7,7 @@
 #include "oclist.h"
 #include "nrniv_mf.h"
 #include "nrnpy_utils.h"
+#include <list>
 
 extern "C" {
 
@@ -302,7 +303,7 @@ static Inst* save_pc(Inst* newpc) {
   return savpc;
 }
 
-static int hocobj_pushargs(PyObject* args) {
+static int hocobj_pushargs(PyObject* args, std::list<char*>** s2free) {
   int i, narg = PyTuple_Size(args);
   for (i = 0; i < narg; ++i) {
     PyObject* po = PyTuple_GetItem(args, i);
@@ -316,6 +317,10 @@ static int hocobj_pushargs(PyObject* args) {
       char** ts = hoc_temp_charptr();
       Py2NRNString str(po, /* disable_release */ true);
       *ts = str.c_str();
+      if (!(*s2free)) {
+        *s2free = new std::list<char*>;  
+      }
+      (*s2free)->push_back(*ts);
       hoc_pushstr(ts);
     } else if (PyObject_IsInstance(po, (PyObject*)hocobject_type)) {
       PyHocObject* pho = (PyHocObject*)po;
@@ -347,6 +352,14 @@ static int hocobj_pushargs(PyObject* args) {
     }
   }
   return narg;
+}
+
+static void hocobj_pushargs_free_strings(std::list<char*>* s2free) {
+  assert(s2free);
+  for (std::list<char*>::iterator it = s2free->begin(); it != s2free->end(); ++it) {
+    delete *it;
+  }
+  delete s2free;
 }
 
 static Symbol* getsym(char* name, Object* ho, int fail) {
@@ -549,10 +562,12 @@ static void* fcall(void* vself, void* vargs) {
   if (self->ho_) {
     hoc_push_object(self->ho_);
   }
-  int narg = hocobj_pushargs((PyObject*)vargs);
+  std::list<char*>* strings_to_free = NULL;
+  int narg = hocobj_pushargs((PyObject*)vargs, &strings_to_free);
   if (self->ho_) {
     self->nindex_ = narg;
     component(self);
+    if (strings_to_free) hocobj_pushargs_free_strings(strings_to_free);
     return (void*)nrnpy_hoc_pop();
   }
   if (self->sym_->type == BLTIN) {
@@ -566,6 +581,7 @@ static void* fcall(void* vself, void* vargs) {
     PyHocObject* result = (PyHocObject*)hocobj_new(hocobject_type, 0, 0);
     result->ho_ = ho;
     result->type_ = PyHoc::HocObject;
+    if (strings_to_free) hocobj_pushargs_free_strings(strings_to_free);
     return result;
   } else {
     HocTopContextSet Inst fc[4];
@@ -579,6 +595,7 @@ static void* fcall(void* vself, void* vargs) {
     hoc_pc = pcsav;
     HocContextRestore
   }
+  if (strings_to_free) hocobj_pushargs_free_strings(strings_to_free);
   return (void*)nrnpy_hoc_pop();
 }
 
