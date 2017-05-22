@@ -91,12 +91,13 @@ General
 
 
     Syntax:
-        ``pnt.loc(x)``
+        ``pnt.loc(section(x))``
 
 
     Description:
-        Moves the POINT_PROCESS instance, pnt, to the center of the segment containing 
-        x of the currently accessed section. 
+        Moves the POINT_PROCESS instance, pnt, to the center of the segment ``section(x)``.
+
+        The syntax ``pnt.loc(x, sec=section)`` will also work.
 
          
 
@@ -196,15 +197,15 @@ General
 
 
     Syntax:
-        ``obj = new VClamp(section(x))``
+        ``vc = h.VClamp(section(x))``
 
-        ``dur[3]``
+        ``vc.dur[0]``, ``vc.dur[1]``, ``vc.dur[2]``
 
-        ``amp[3]``
+        ``vc.amp[0]``, ``vc.amp[1]``, ``vc.amp[2]``
 
-        ``gain, rstim, tau1, tau2``
+        ``vc.gain, vc.rstim, vc.tau1, vc.tau2``
 
-        ``i``
+        ``vc.i``
 
 
     Description:
@@ -275,18 +276,17 @@ General
 
 
     Syntax:
-        ``clampobj = new SEClamp(section(x))``
+        ``clampobj = h.SEClamp(section(x))``
 
-        ``dur1 dur2 dur3 -- ms``
+        ``.dur1 .dur2 .dur3 -- ms``
 
-        ``amp1 amp2 amp3 -- mV``
+        ``.amp1 .amp2 .amp3 -- mV``
 
-        ``rs -- MOhm``
+        ``.rs -- MOhm``
 
+        ``.vc -- mV``
 
-        ``vc -- mV``
-
-        ``i -- nA``
+        ``.i -- nA``
 
 
     Description:
