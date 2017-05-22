@@ -34,7 +34,7 @@ For example:
 .. code-block::
     python
 
-    my_iclamp = h.IClamp(0.25, sec=soma)
+    my_iclamp = h.IClamp(0.25, sec=soma)   # better to use h.IClamp(soma(0.25)) though
     num_pts_3d = h.n3d(sec=apical)         # could get the same value as an int via apical.n3d()
  
 
@@ -70,13 +70,16 @@ stack by the following commands. *Use this only as a last resort.*
             
             soma = h.Section(name='soma')
             apical = h.Section(name='apical')
-            stims = [h.IClamp(i / 4., sec=soma) for i in range(5)] + [h.IClamp(0.5, sec=apical)]
+            stims = [h.IClamp(soma(i / 4.)) for i in range(5)] + [h.IClamp(apical(0.5))]
             for stim in stims: 
                 x = stim.get_loc() 
                 print("location of %s is %s(%g)" % (stim, h.secname(), x))
                 h.pop_section() 
             
         (Note: in this example as ``nseg=1``, the current clamps will either be at position 0, 0.5, or 1.)
+
+        (Note: a more Pythonic way to get the location of the point-process ``stim`` is to use ``seg = stim.get_segment()``,
+        but this is shown as an example of using ``h.pop_section()``.)
 
 
          

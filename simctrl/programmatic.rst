@@ -32,7 +32,7 @@ Functions
         ``for sec in h.allsec(): sec.Ra=...`` 
 
     .. warning::
-        Not very useful. No way to completely restart neuron exect to :func:`quit` and 
+        Not very useful. No way to completely restart neuron except to :func:`quit` and 
         re-load. 
 
 
@@ -199,11 +199,11 @@ Functions
         confusing way. for debugging only. 
          
         With args, return the matrix element associated with the integer index 
-        in the row corresponding to the currently accessed 
-        section at position x. The index 1...4 is associated with: 
-        The coeeficient for the effect of this locations voltage on current balance at the parent location, 
-        The coeeficient for the effect of this locations voltage on current balance at this location, 
-        The coeeficient for the effect of the parent locations voltage on current balance at this location, 
+        in the row corresponding to ``section(x)``.
+        The index 1...4 is associated with: 
+        The coefficient for the effect of this locations voltage on current balance at the parent location, 
+        The coefficient for the effect of this locations voltage on current balance at this location, 
+        The coefficient for the effect of the parent locations voltage on current balance at this location, 
         The right hand side of the matrix equation for this location. These are the 
         values of NODEA, NODED NODEB, and NODERHS respectively in 
         nrn/src/nrnoc/section.h . The matrix elements are properly setup on return 

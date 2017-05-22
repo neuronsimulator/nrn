@@ -267,7 +267,7 @@ MechanismStandard (Parameter Control)
         ``ms.out()`` 
             the mechanism located in ``section`` (all segments). 
 
-        ``ms.out(x)`` 
+        ``ms.out(x, sec=section)`` 
             the mechanism located in ``section`` in the segment 
             containing x.(Note that x=0 and 1 are considered to lie in the 
             0+ and 1- segments respectively) 

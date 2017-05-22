@@ -376,10 +376,10 @@ Then
 .. code-block::
     python
 
-    syn = h.Syn(.8, sec=section) 
+    syn = h.Syn(section(0.8)) 
     h.setpointer(axon(1)._ref_v, 'vpre', syn)
 
-will allow the ``syn`` object to know the voltage at the distal end of the axon 
+will allow the ``syn`` object located at ``section(0.8)`` to know the voltage at the distal end of the axon 
 section. As a variation on that example, if one supposed that the synapse 
 needed the presynaptic transmitter concentration (call it tpre) calculated 
 from a point process model called "release" (with object reference 
