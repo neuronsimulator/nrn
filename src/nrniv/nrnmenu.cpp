@@ -968,7 +968,11 @@ ENDGUI
 }
 static double mt_action(void* v) {
 	MechanismType* mt = (MechanismType*)v;
-	mt->action(gargstr(1));
+	if (hoc_is_str_arg(1)) {
+		mt->action(gargstr(1), NULL);
+	}else{
+		mt->action(NULL, *hoc_objgetarg(1));
+	}
 	return 0.;
 }
 static double mt_is_target(void* v) {
@@ -1003,9 +1007,10 @@ static Object** mt_pp_next(void* v) {
 	return hoc_temp_objptr(obj);
 }
 
-static void* mt_cons(Object*) {
+static void* mt_cons(Object* obj) {
 	MechanismType* mt = new MechanismType(int(chkarg(1, 0, 1)));
 	mt->ref();
+	mt->mtobj_ = obj;
 	return (void*)mt;
 }
 static void mt_destruct(void* v) {
@@ -1044,6 +1049,7 @@ private:
 	int count_;
 	int select_;
 	CopyString action_;
+	Object* pyact_;
 	Section* sec_iter_;
 	int inode_iter_;
 	Prop* p_iter_;
@@ -1069,10 +1075,14 @@ MechanismType::MechanismType(bool point_process){
 			++j;
 		}
 	}
-	action("");
+	mti_->pyact_ = NULL;
+	action("", NULL);
 	select(0);
 }
 MechanismType::~MechanismType(){
+	if (mti_->pyact_) {
+		hoc_obj_unref(mti_->pyact_);
+	}
 	delete [] mti_->type_;
 	delete mti_;
 }
@@ -1186,24 +1196,41 @@ void MechanismType::point_process(Object** o){
 	(*o)->refcount = 1;
 }
 
-void MechanismType::action(const char* action){
-	mti_->action_ = action;
+void MechanismType::action(const char* action, Object* pyact){
+	mti_->action_ = action ? action : "";
+	if (pyact) {
+		hoc_obj_ref(pyact);
+	}
+	if (mti_->pyact_) {
+		hoc_obj_unref(mti_->pyact_);
+		mti_->pyact_ = NULL;
+	}
+	mti_->pyact_ = pyact;
 }
 void MechanismType::menu(){
 #if HAVE_IV
 	char buf[200];
 	Oc oc;
-	oc.run("xmenu(\"MechType\")\n");
+	oc.run("{xmenu(\"MechType\")}\n");
 	for (int i=0; i < mti_->count_; ++i) {
 	    Symbol* s = memb_func[mti_->type_[i]].sym;
 	    if (s->subtype != MORPHOLOGY) {
-		sprintf(buf, "xbutton(\"%s\", \"hoc_ac_=%d %s\")\n",
-			s->name, i, mti_->action_.string()
-		);
-		oc.run(buf);
+		if (mti_->pyact_) {
+			assert(nrnpy_callable_with_args);
+			hoc_push_object(mtobj_);
+			hoc_pushx(double(i));
+			Object* pyactval = (*nrnpy_callable_with_args)(mti_->pyact_, 2);
+			hoc_ivbutton(s->name, NULL, pyactval);
+			hoc_obj_unref(pyactval);
+		}else {
+			sprintf(buf, "xbutton(\"%s\", \"hoc_ac_=%d %s\")\n",
+				s->name, i, mti_->action_.string()
+			);
+			oc.run(buf);
+		}
 	    }
 	}
-	oc.run("xmenu()\n");
+	oc.run("{xmenu()}\n");
 #endif
 }
 

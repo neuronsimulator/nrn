@@ -57,7 +57,7 @@ public:
 	void insert(Section*);
 	void remove(Section*);
 	void point_process(Object**);
-	void action(const char*);
+	void action(const char*, Object* pyact);
 	void menu();
 
 	int count();
@@ -67,6 +67,8 @@ public:
 
 	Point_process* pp_begin();
 	Point_process* pp_next();
+	
+	Object* mtobj_; // wraps 'this' and used as first arg for pyact_
 private:
 	MechTypeImpl* mti_;
 };
