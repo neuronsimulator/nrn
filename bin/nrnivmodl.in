@@ -26,9 +26,7 @@ export exec_prefix
 export bindir
 export libdir
 
-LIBOBJDIR="${libdir}"
 MAKEFILEDIR="${bindir}"
-
 
 PURIFY="USEPURIFY=no"
 if [ "$1" = "-p" ] ; then
@@ -63,25 +61,27 @@ if [ ! -d $MODSUBDIR ] ; then
 fi
 
 pwd
+
 files=""
 incs=""
 if test $# -gt 0 ; then
-	for i in $* ; do
-		if test -d $i ; then
-			files="$files `echo $i/*.mod`"
-			incs="$incs `echo $i/*.inc`"
+	for i in "$@" ; do
+		if test -d "$i" ; then
+			files="$files $(ls $i/*.mod)"
+			incs="$incs $(ls $i/*.inc)"
 		else
 			files="$files $i"
 		fi
 	done
 else
-	files=`echo *.mod`
+	files=$(ls *.mod)
 fi
 
 mfiles=""
 for i in $files ; do
 	mfiles="$mfiles `basename $i`"
 done
+
 echo $files
 echo $mfiles
 
@@ -94,21 +94,22 @@ fi
 cd $MODSUBDIR
 mdir=`pwd`
 for i in $files; do
-    rm -f "`basename $i`".mod
-    ln -s ../$i.mod .
+	rm -f "`basename $i`".mod
+	ln -s ../$i.mod .
 done
+
 if test "$incs" != "" ; then
 	for i in $incs ; do
-	    rm -f "`basename $i`"
-	    ln -s ../$i .
+		rm -f "`basename $i`"
+		ln -s ../$i .
 	done
 fi
 
 bfiles=`echo "$mfiles" | sed 's/\.mod//g'`
 
 for i in $cfiles; do
-    rm -f $i
-    ln -s ../$i .
+	rm -f $i
+	ln -s ../$i .
 done
 
 COBJS=
@@ -146,11 +147,11 @@ fi
 echo '    fprintf(stderr, "'$newline'");
   }' >>mod_func.c
 
-for i in $bfiles
-do
+for i in $bfiles; do
 	echo '  _'$i'_reg();' >> mod_func.c
 	MODOBJS="$MODOBJS $i.o"
 done
+
 echo "}" >> mod_func.c
 
 
