@@ -54,6 +54,7 @@ int nrnpy_set_vec_as_numpy(PyObject* (*p)(int, double*));  // called by ctypes.
 extern double** nrnpy_setpointer_helper(PyObject*, PyObject*);
 extern Symbol* ivoc_alias_lookup(const char* name, Object* ob);
 extern int nrn_netcon_weight(void*, double**);
+extern int nrn_matrix_dim(void*, int);
 
 extern PyObject* pmech_types;  // Python map for name to Mechanism
 extern PyObject* rangevars_;   // Python map for name to Symbol
@@ -1246,7 +1247,7 @@ static int araylen(Arrayinfo* a, PyHocObject* po) {
   } else if (po->sym_ == nrn_child_sym) {
     n = nrn_secref_nchild((Section*)po->ho_->u.this_pointer);
   } else if (po->sym_ == sym_mat_x) {
-    return 0;
+    n = nrn_matrix_dim(po->ho_->u.this_pointer, po->nindex_);
   } else {
     n = a->sub[po->nindex_];
   }

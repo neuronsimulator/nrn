@@ -16,10 +16,16 @@ extern "C" {
 #include "matrix2.h"
 #include "sparse.h"
 #include "sparse2.h"
+int nrn_matrix_dim(void*, int );
 }
 
 #include "ocmatrix.h"
 using std::vector;
+
+int nrn_matrix_dim(void* vm, int d) {
+  OcMatrix* m = (OcMatrix*)vm;
+  return d ? m->ncol(): m->nrow();
+}
 
 static void Vect2VEC(Vect* v1, VEC& v2) {
 #ifdef WIN32
