@@ -89,7 +89,7 @@ MechanismType
 
         ``strdef`` must be a NEURON string reference (e.g. one created via ``strdef = h.ref('')``);
         to access its contents use ``strdef[0]``; see the example for the constructor above. In
-        particular ``stdef`` cannot be a Python string.
+        particular ``strdef`` cannot be a Python string.
 
          
 
@@ -107,7 +107,7 @@ MechanismType
     Description:
         For distributed mechanisms invoked with the "insert" statement. 
         Deletes selected mechanism from currently 
-        accessed section. A nop if the mechanism is not in the section. 
+        accessed section. A noop if the mechanism is not in the section. 
 
          
 
@@ -119,24 +119,25 @@ MechanismType
 
 
     Syntax:
-        ``mt.make()``
+        ``mt.make(sec=section)``
 
-        ``mt.make(objectvar)``
+        ``mt.make(objectref)``
 
 
     Description:
 
 
-        \ ``mt.make()`` 
-            For distributed mechanisms. Inserts selected mechanism into currently 
-            accessed section. 
+        \ ``mt.make(sec=section)`` 
+            For distributed mechanisms. Inserts selected mechanism into ``section``. 
 
-        \ ``mt.make(objectvar)`` 
+        \ ``mt.make(objectref)`` 
             For point processes.  The arg becomes a reference to a new point process 
             of type given by the selection. 
             Note that the newly created point process is not located in any section. 
-            Note that if *objectvar* was the only reference to another object then 
-            that object is destroyed. 
+            If *objectref* was the only reference to another object then 
+            that object is destroyed. *objectref* is a NEURON pointer to an object, and
+            may be created via ``objectref = h.ref(None)``; the object created by a call
+            to ``make`` may be accessed via ``objectref[0]``.
 
 
          
@@ -153,7 +154,7 @@ MechanismType
 
 
     Description:
-        The number of  different mechanisms in the list. 
+        The number of different mechanisms in the list. 
 
          
 
@@ -185,17 +186,37 @@ MechanismType
 
 
     Syntax:
-        ``mt.action("command")``
+        ``mt.action(py_callable)``
 
 
     Description:
-        The action to be executed when a submenu item is selected. 
+        When a submenu item is selected, ``py_callable`` is invoked with two arguments:
+        the MechanismType object, and the index.
+
+    Example:
+
+        .. code-block::
+            python
+
+            from neuron import h, gui
+
+            def cb(mt, i):
+                mt.select(i)
+                nameref = h.ref("")
+                mt.selected(nameref)
+                print ("selected %s" % nameref[0])
+
+            mtypes = [h.MechanismType(i) for i in range(2)]
+            h.xpanel("MechanismTypes")
+            for mt in mtypes:
+                mt.action(cb)
+                mt.menu()
+            h.xpanel()
+
 
     .. note::
 
-        Currently only allows invoking HOC commands; passing in a Python function is not
-        supported as of NEURON 7.4.
-
+        Python support for this method was added in NEURON 7.5.
 ----
 
 
@@ -267,17 +288,17 @@ MechanismType
 
 
     Syntax:
-        ``obj = mt.pp_begin()``
+        ``obj = mt.pp_begin(sec=section)``
 
 
     Description:
         Initializes an iterator used to iterate over point processes of 
-        a particular type in the currently accessed section. 
-        Returns the first point process in the currently accessed 
-        section having the type specified by the :meth:`MechanismType.select` 
+        a particular type in ``section``. 
+        Returns the first point process in 
+        ``section`` having the type specified by the :meth:`MechanismType.select` 
         statement. This only works if the the MechanismType was instantiated 
         with the (1) argument. If there is no such point process in the 
-        section the method returns NULLobject. Note that, prior to version 
+        section the method returns None. Note that, prior to version 
         6.2, although 
         the x=1 node is normally 
         considered to be part of the section, the parent node 
@@ -302,9 +323,8 @@ MechanismType
             mt.select("IClamp") 
             pp = mt.pp_begin()
             while h.object_id(pp) != 0:
-                x = pp.get_loc() 
-                print("%s located at %s(%g)" % (pp, h.secname(), x))
-                h.pop_section() # restores section selection from before the get_loc
+                seg = pp.get_segment() 
+                print("%s located at %s(%g)" % (pp, seg.sec, seg.x))
                 pp = mt.pp_next()
 
 

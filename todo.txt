@@ -3,7 +3,6 @@
 741   modelspec/programmatic/network/netcon.rst //mostly done    
 391   visualization/oldgrph.rst     //mostly done... eh
 874   programming/python.rst //finished <-- this should probably be replaced entirely?
-337   modelspec/programmatic/mechtype.rst   //mostly done <-- attempted to review once; some issues: action does not support Python callbacks, and make seems not to offer a Python solution
 903   modelspec/programmatic/topology/geometry.rst  //mostly done <-- needs a lot of rework
 2972    modelspec/programmatic/network/parcon.rst  //done <-- going to need a bunch of edits, look at sprint, $ arguments
 
@@ -74,3 +73,4 @@ simctrl/bbsavestate.rst
 380   modelspec/programmatic/topology/secspec.rst // mostly done 
 93    modelspec/programmatic/hocmech.rst //problems, Robert supposed to fix   <-- probably no Python equivalent?
 222   visualization/rvarplt.rst     //Range Var Plot - #how to do this in python?
+337   modelspec/programmatic/mechtype.rst   //mostly done <-- attempted to review once; some issues: action does not support Python callbacks, and make seems not to offer a Python solution (oh but it does)
