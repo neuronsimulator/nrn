@@ -1175,10 +1175,7 @@ Graph
             def crosshair(x, y, key):
                 print 'x = %g, y = %g, key = %c' % (x, y, key)
 
-            # the next line redirects the HOC callback back into Python
-            h('strdef hoc_temp_command\n proc crosshair_callback() {sprint(hoc_temp_command, "crosshair(%g, %g, %d)", $1, $2, $3) nrnpython(hoc_temp_command)}')
-            
-            g.crosshair_action('crosshair_callback')
+            g.crosshair_action(crosshair)
 
             g.flush()
 

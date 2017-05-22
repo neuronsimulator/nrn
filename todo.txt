@@ -17,8 +17,6 @@ section.insert and h.allsec defined (used in modelspec/programmatic/topology.rst
 https://www.neuron.yale.edu/neuron/static/py_doc/programming/math/functions.html#erf
 -- math is not being latex'ed <-- two issues here: (1) https instead of http (which sphinx.ext.mathjax is using), and (2) mathjax CDN now permanently down so doesn't even work over http (see: https://www.mathjax.org/cdn-shutting-down/)
 
-graph.crosshair_action seems unsupported in Python
-
 Reviewed
 --------
 
