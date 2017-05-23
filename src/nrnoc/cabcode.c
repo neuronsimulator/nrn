@@ -1073,9 +1073,10 @@ Prop* hoc_getdata_range(int type)
 {
 	int inode;
 	Section *sec;
+	double x;
 	
-	sec = chk_access();
-	inode = node_index(sec, *getarg(1));
+	nrn_seg_or_x_arg(1, &sec, &x);
+	inode = node_index(sec, x);
 	return nrn_mechanism_check(type, sec, inode);
 }
 

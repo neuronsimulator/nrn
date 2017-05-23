@@ -28,7 +28,7 @@ extern "C" {
 	extern void nrnmpi_source_var(), nrnmpi_target_var(), nrnmpi_setup_transfer();
 	extern int nrnmpi_spike_compress(int nspike, bool gid_compress, int xchng_meth);
 	extern int nrnmpi_splitcell_connect(int that_host);
-	extern int nrnmpi_multisplit(double x, int sid, int backbonestyle);
+	extern int nrnmpi_multisplit(Section*, double x, int sid, int backbonestyle);
 	extern int nrn_set_timeout(int timeout);
 	extern void nrnmpi_gid_clear(int);
 	double nrnmpi_rtcomp_time_;
@@ -572,18 +572,19 @@ static double splitcell_connect(void* v) {
 
 static double multisplit(void* v) {
 	double x = -1.;
+	Section* sec = NULL;
 	int sid = -1;
 	int backbone_style = 2;
 	int reducedtree_host = 0;
 	if (ifarg(1)) {
-		x = chkarg(1, 0, 1);
+		nrn_seg_or_x_arg(1, &sec, &x);
 		sid = (int)chkarg(2, 0, (double)(0x7fffffff));
 	}
 	if (ifarg(3)) {
 		backbone_style = (int)chkarg(3, 0, 2);
 	}
 	// also needs a currently accessed section
-	nrnmpi_multisplit(x, sid, backbone_style);
+	nrnmpi_multisplit(sec, x, sid, backbone_style);
 	return 0.;
 }
 

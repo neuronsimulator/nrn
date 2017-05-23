@@ -119,8 +119,8 @@ public:
 	virtual bool choose_sym(Graph*);
 	virtual void update(Observable*);
 #endif
-	void x_begin(float);
-	void x_end(float);
+	void x_begin(float, Section*);
+	void x_end(float, Section*);
 	void origin(float);
 	double d2root();
 	float left();
@@ -142,12 +142,18 @@ private:
 };
 
 static double s_begin(void* v) {
-	((RangeVarPlot*)v)->x_begin(chkarg(1, 0., 1.));
+	double x;
+	Section* sec;
+	nrn_seg_or_x_arg(1, &sec, &x);
+	((RangeVarPlot*)v)->x_begin(x, sec);
 	return 1.;
 }
 
 static double s_end(void* v) {
-	((RangeVarPlot*)v)->x_end(chkarg(1, 0., 1.));
+	double x;
+	Section* sec;
+	nrn_seg_or_x_arg(1, &sec, &x);
+	((RangeVarPlot*)v)->x_end(x, sec);
 	return 1.;
 }
 
@@ -350,18 +356,18 @@ double RangeVarPlot::d2root() {
 	return d2root_;
 }
 
-void RangeVarPlot::x_begin(float x) {
+void RangeVarPlot::x_begin(float x, Section* sec) {
 	if (begin_section_) { section_unref(begin_section_); }
-	begin_section_ = chk_access();
+	begin_section_ = sec;
 	section_ref(begin_section_);
 	x_begin_ = x;
 	set_x();
 	fill_pointers();
 }
 
-void RangeVarPlot::x_end(float x) {
+void RangeVarPlot::x_end(float x, Section* sec) {
 	if (end_section_) { section_unref(end_section_); }
-	end_section_ = chk_access();
+	end_section_ = sec;
 	section_ref(end_section_);
 	x_end_ = x;
 	set_x();

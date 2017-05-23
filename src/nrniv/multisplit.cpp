@@ -11,7 +11,7 @@
 #include <multisplit.h>
 
 extern "C" {
-void nrnmpi_multisplit(double x, int sid, int backbone_style);
+void nrnmpi_multisplit(Section*, double x, int sid, int backbone_style);
 int nrn_multisplit_active_;
 
 extern int diam_changed;
@@ -305,11 +305,11 @@ implementPtrList(MultiSplitList, MultiSplit)
 #include <multisplitcontrol.h>
 static MultiSplitControl* msc_;
 
-void nrnmpi_multisplit(double x, int sid, int backbone_style) {
+void nrnmpi_multisplit(Section* sec, double x, int sid, int backbone_style) {
 	if (!msc_) {
 		msc_ = new MultiSplitControl();
 	}
-	msc_->multisplit(x, sid, backbone_style);
+	msc_->multisplit(sec, x, sid, backbone_style);
 }
 
 MultiSplitControl::MultiSplitControl() {
@@ -361,7 +361,7 @@ MultiSplitThread::~MultiSplitThread() {
 	del_sidA();
 }
 
-void MultiSplitControl::multisplit(double x, int sid, int backbone_style) {
+void MultiSplitControl::multisplit(Section* sec, double x, int sid, int backbone_style) {
 #if 0
 	if (sid > 1000) { pexch(); return; }
 	if (sid >= 1000) { pmat(sid>1000); return; }
@@ -383,7 +383,6 @@ void MultiSplitControl::multisplit(double x, int sid, int backbone_style) {
 		classical_root_to_multisplit_ = new MultiSplitTable(97);
 		multisplit_list_ = new MultiSplitList();
 	}
-	Section* sec = chk_access();
 	Node* nd = node_exact(sec, x);
 //	printf("root of %s(%g) ", secname(sec), x);
 	Node* root;

@@ -42,7 +42,7 @@ public:
 	void prstruct();
 	void reduce_solve();
 
-	void multisplit(double, int, int);
+	void multisplit(Section*, double, int, int);
 	void solve();
 	void reduced_mark(int, int, int, int*, int*, int*);
 	void matrix_exchange();

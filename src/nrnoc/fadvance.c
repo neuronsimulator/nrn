@@ -656,11 +656,15 @@ printf("%d %d %g %g %g %g\n", isec, inode, ClassicalNODEB(nd), ClassicalNODEA(nd
 
 void fmatrix(void) {
 	if (ifarg(1)) {
-		extern Node* node_exact(Section*, double);
-		double x = chkarg(1, 0., 1.);
-		int id = (int)chkarg(2, 1., 4.);
-		Node* nd = node_exact(chk_access(), x);
-		NrnThread* _nt = nd->_nt;
+		double x;
+		Section* sec;
+		int id;
+		Node* nd;
+		NrnThread* _nt;
+		nrn_seg_or_x_arg(1, &sec, &x);
+		id = (int)chkarg(2, 1., 4.);
+		nd = node_exact(sec, x);
+		_nt = nd->_nt;
 		switch (id) {
 		case 1: hoc_retpushx(NODEA(nd)); break;
 		case 2: hoc_retpushx(NODED(nd)); break;

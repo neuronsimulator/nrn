@@ -80,6 +80,8 @@ extern PyObject* nrnpy_hoc2pyobject(Object*);
 extern PyObject* nrnpy_ho2po(Object*);
 static void nrnpy_reg_mech(int);
 extern void (*nrnpy_reg_mech_p_)(int);
+static int ob_is_seg(Object*);
+extern int (*nrnpy_ob_is_seg)(Object*);
 static void o2loc(Object*, Section**, double*);
 extern void (*nrnpy_o2loc_p_)(Object*, Section**, double*);
 static void nrnpy_unreg_mech(int);
@@ -334,6 +336,17 @@ static int NPySegObj_init(NPySegObj* self, PyObject* args, PyObject* kwds) {
   self->pysec_ = pysec;
   self->x_ = x;
   return 0;
+}
+
+static int ob_is_seg(Object* o) {
+  if (!o || o->ctemplate->sym != nrnpy_pyobj_sym_) {
+    return 0;
+  }
+  PyObject* po = nrnpy_hoc2pyobject(o);
+  if (!PyObject_TypeCheck(po, psegment_type)) {
+    return 0;
+  }
+  return 1;
 }
 
 static void o2loc(Object* o, Section** psec, double* px) {
@@ -1650,6 +1663,7 @@ myPyMODINIT_FUNC nrnpy_nrn(void) {
   PyModule_AddObject(m, "Mechanism", (PyObject*)pmech_generic_type);
   remake_pmech_types();
   nrnpy_reg_mech_p_ = nrnpy_reg_mech;
+  nrnpy_ob_is_seg = ob_is_seg;
   nrnpy_o2loc_p_ = o2loc;
   nrnpy_pysec_name_p_ = pysec_name;
   nrnpy_pysec_cell_p_ = pysec_cell;

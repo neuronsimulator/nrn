@@ -60,7 +60,16 @@ ENDGUI
 void nrnsecmenu() {
 #if HAVE_IV
 IFGUI
-	section_menu(chkarg(1,-1.,1.), (int)chkarg(2,1.,3.));
+	double x;
+	Section* sec = NULL;
+	if (hoc_is_object_arg(1)) { // x = -1 not allowed
+		nrn_seg_or_x_arg(1, &sec, &x);
+		nrn_pushsec(sec);
+	}else{
+		x = chkarg(1,-1.,1.);
+	}
+	section_menu(x, (int)chkarg(2,1.,3.));
+	if (sec) { nrn_popsec(); }
 ENDGUI
 #endif
 	hoc_retpushx(1.);
@@ -508,6 +517,8 @@ static double ms_action(void* v) {
 	return 0.;
 }
 
+int (*nrnpy_ob_is_seg)(Object*);
+
 static double ms_out(void* v) {
 	MechanismStandard* m = (MechanismStandard*)v;
 	if (ifarg(1)) {
@@ -520,6 +531,11 @@ static double ms_out(void* v) {
 			m->out((MechanismStandard*)o->u.this_pointer);
 		}else if (is_point_process(o)) {
 			m->out(ob2pntproc(o));
+		}else if (nrnpy_ob_is_seg && (*nrnpy_ob_is_seg)(o)) {
+			double x;
+			Section* sec;
+			nrn_seg_or_x_arg(1, &sec, &x);
+			m->out(sec, x);
 		}else{
 hoc_execerror("Object arg must be MechanismStandard or a Point Process, not",
 			hoc_object_name(o));
@@ -543,8 +559,13 @@ static double ms_in(void* v) {
 			m->in((MechanismStandard*)o->u.this_pointer);
 		}else if (is_point_process(o)) {
 			m->in(ob2pntproc(o));
+		}else if (nrnpy_ob_is_seg && (*nrnpy_ob_is_seg)(o)) {
+			double x;
+			Section* sec;
+			nrn_seg_or_x_arg(1, &sec, &x);
+			m->in(sec, x);
 		}else{
-hoc_execerror("Object arg must be MechanismStandard or a Point Process, not",
+hoc_execerror("Object arg must be MechanismStandard or a Point Process or a nrn.Segment, not",
 			hoc_object_name(o));
 		}
 	    }
