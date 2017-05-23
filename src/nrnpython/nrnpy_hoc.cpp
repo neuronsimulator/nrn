@@ -2144,8 +2144,10 @@ myPyMODINIT_FUNC nrnpy_hoc() {
   nrnpy_vec_from_python_p_ = nrnpy_vec_from_python;
   nrnpy_vec_to_python_p_ = nrnpy_vec_to_python;
   nrnpy_vec_as_numpy_helper_ = vec_as_numpy_helper;
-  PyGILState_STATE pgs = PyGILState_Ensure();
+  PyLockGIL lock;
+
   char endian_character = 0;
+
 #if PY_MAJOR_VERSION >= 3
   int err = 0;
   PyObject* modules = PyImport_GetModuleDict();
@@ -2195,14 +2197,11 @@ myPyMODINIT_FUNC nrnpy_hoc() {
   err = PyDict_SetItemString(modules, "hoc", m);
   assert(err == 0);
   Py_DECREF(m);
-  PyGILState_Release(pgs);
   return m;
 fail:
-  PyGILState_Release(pgs);
   return NULL;
 #else
 fail:
-  PyGILState_Release(pgs);
   return;
 #endif
 }

@@ -1,4 +1,5 @@
 #include <nrnpython.h>
+#include <nrnpy_utils.h>
 #include <stdio.h>
 #include <InterViews/resource.h>
 #if HAVE_IV
@@ -212,9 +213,11 @@ void nrnpython_start(int b) {
 void nrnpython_real() {
   int retval = 0;
 #if USE_PYTHON
-  HocTopContextSet PyGILState_STATE gilsav = PyGILState_Ensure();
-  retval = PyRun_SimpleString(gargstr(1)) == 0;
-  PyGILState_Release(gilsav);
+  HocTopContextSet
+  {
+    PyLockGIL lock;
+    retval = PyRun_SimpleString(gargstr(1)) == 0;
+  }
   HocContextRestore
 #endif
   hoc_retpushx(double(retval));
