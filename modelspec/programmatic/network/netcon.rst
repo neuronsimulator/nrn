@@ -9,13 +9,9 @@ NetCon
 
 
     Syntax:
-        ``section netcon = h.NetCon(&v(x), target)``
+        ``netcon = h.NetCon(_ref_v, target, [threshold, delay, weight], sec=section)``
 
-        ``netcon = h.NetCon(source, target)``
-
-        ``section netcon = h.NetCon(&v(x), target, threshold, delay, weight)``
-
-        ``netcon = h.NetCon(source, target, threshold, delay, weight)``
+        ``netcon = h.NetCon(source, target, [threshold, delay, weight])``
 
 
     Description:
@@ -28,12 +24,11 @@ NetCon
          
         If the optional threshold, delay, and weight arguments are not 
         specified, their default values are 10, 1, and 0 respectively. In 
-        any case, their values can be specified after the netcon has been 
+        any case, their values can be specified after the NetCon has been 
         constructed, see :data:`NetCon.threshold`, :data:`NetCon.weight`, and :data:`NetCon.delay` . 
          
         Note that prior to 12-Jul-2006, when the first form of the constructor 
-        was used, (i.e. a NetCon having a pointer to a source 
-        variable was created, but having no threshold argument) the threshold was 
+        was used without a threshold, the threshold was 
         reset to the default 10 (mV) even if the threshold for that source location 
         had been explicitly set earlier. That behavior caused confusion and has been 
         changed so that if there is no threshold argument and the threshold location 
@@ -41,22 +36,22 @@ NetCon
          
         The target must be a POINT_PROCESS or ARTIFICIAL_CELL that defines a NET_RECEIVE procedure. 
         The number of NET_RECEIVE procedure arguments define a weight vector 
-        whose elements can be accessed with through the NetCon.weight ( :data:`NetCon.weight` )variable 
+        whose elements can be accessed with through the :data:`NetCon.weight` variable 
         but the weight argument in the above constructors specify the value of 
         the first argument, with the normal interpretation of weight or maximum 
         conductance. On initialization, all weight elements with index > 0 are 
         set to 0 unless the NET_RECEIVE block contains an INITIAL block. In the 
         latter case, that block is executed on a call to :func:`finitialize`  and 
-        allows non-zero initialization of netcon "states" --- args not initialized 
+        allows non-zero initialization of eNtCon "states" --- args not initialized 
         in the INITIAL block would be analogous to a :ref:`Parameter <nmodl_parameter>` except that it 
         can have a different value for different NetCon instances and can be set 
         to a desired value with :data:`NetCon.weight`. 
          
-        The target is allowed to be nil (NULLObject) in which case the NetCon 
+        The target is allowed to be ``None`` in which case the NetCon 
         is always inactive. However this can be useful for recording (see 
         :meth:`NetCon.record`) the spike train from an output cell. 
          
-        The source is normally a reference to a membrane potential which is 
+        The source is normally a reference to a membrane potential (e.g. ``cell.soma(0.5)._ref_v``) which is 
         watched during simulation for passage past threshold. The 
         currently accessed section is required by the local variable 
         time step method in order to determine the source "cell". 

@@ -1,5 +1,5 @@
 157   modelspec/programmatic/electrod.rst // issues <-- No idea where this comes from
-1053    modelspec/programmatic/mechanisms/mech.rst //mostly done  <-- needs a bunch of work
+1053    modelspec/programmatic/mechanisms/mech.rst //mostly done  <-- needs a bunch of work; start with SEClamp example and continue
 741   modelspec/programmatic/network/netcon.rst //mostly done    
 391   visualization/oldgrph.rst     //mostly done... eh
 874   programming/python.rst //finished <-- this should probably be replaced entirely?

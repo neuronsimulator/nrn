@@ -6,7 +6,7 @@ Point Processes and Artificial Cells
 
 
 Description:
-    Built-in POINT_PROCESS models and ARTIFICIAL_CELL models are listed on the left. 
+    Built-in POINT_PROCESS models and ARTIFICIAL_CELL models are listed above. 
     The user may add other classes of those types using mod files. Some properties 
     and functions that are available for all POINT_PROCESS models are described 
     under :ref:`pointprocesses_general`. 
