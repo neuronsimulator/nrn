@@ -1,6 +1,7 @@
 
-NEURON documentation
-====================
+NEURON Python documentation
+===========================
+(`Switch to HOC documentation <../new_doc/index.html>`_)
 
 Quick Links
 -----------

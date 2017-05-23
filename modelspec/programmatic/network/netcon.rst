@@ -9,7 +9,7 @@ NetCon
 
 
     Syntax:
-        ``netcon = h.NetCon(_ref_v, target, [threshold, delay, weight], sec=section)``
+        ``netcon = h.NetCon(source_ref_v, target, [threshold, delay, weight], sec=section)``
 
         ``netcon = h.NetCon(source, target, [threshold, delay, weight])``
 
@@ -42,7 +42,7 @@ NetCon
         conductance. On initialization, all weight elements with index > 0 are 
         set to 0 unless the NET_RECEIVE block contains an INITIAL block. In the 
         latter case, that block is executed on a call to :func:`finitialize`  and 
-        allows non-zero initialization of eNtCon "states" --- args not initialized 
+        allows non-zero initialization of NetCon "states" --- args not initialized 
         in the INITIAL block would be analogous to a :ref:`Parameter <nmodl_parameter>` except that it 
         can have a different value for different NetCon instances and can be set 
         to a desired value with :data:`NetCon.weight`. 
@@ -51,22 +51,16 @@ NetCon
         is always inactive. However this can be useful for recording (see 
         :meth:`NetCon.record`) the spike train from an output cell. 
          
-        The source is normally a reference to a membrane potential (e.g. ``cell.soma(0.5)._ref_v``) which is 
+        The source (``source_ref_v``) is normally a reference to a membrane potential (e.g. ``cell.soma(0.5)._ref_v``) which is 
         watched during simulation for passage past threshold. The 
-        currently accessed section is required by the local variable 
+        section is required by the local variable 
         time step method in order to determine the source "cell". 
         Any range variable may be a source variable but I suspect that membrane 
         potential is the only practical one. 
          
-        N.B. For the local variable time step method :meth:`CVode.use_local_dt` , the 
-        proper currently accessed section for the source must be correct during 
-        the creation of the NetCon so that the proper cell may be associated 
-        with the source. i.e, 
-        \ ``netcon = new NetCon(&obj.sec.v(.5), ...)`` 
-        will not work with the local step method because, although the pointer 
-        is correct, the proper section was popped from the section stack prior 
-        to the constructor call. Instead, the proper syntax is 
-        \ ``obj.sec netcon = new NetCon(&v(.5),...)`` 
+        N.B. When calling with a pointer (the first usage form, above), the
+        specified ``section`` must contain the pointer. If it does not, a
+        RuntimeError exception will be raised.
          
         The source may also be a PointProcess with a NET_RECEIVE block which 
         contains a call to net_event. PointProcesses like this serve as entire 
@@ -78,19 +72,19 @@ NetCon
         explicitly call net_event are much more efficient since they avoid 
         the overhead of threshold detection at every time step. 
          
-        The source may be a NULLObject. In this case events can only occur by 
-        calling :func:`event` from hoc. (It is also used by NEOSIM to implement 
+        The source may be ``None``. In this case events can only occur by 
+        calling :func:`event` from Python. (It is also used by NEOSIM to implement 
         its own delivery system.) 
          
         A source used by multiple NetCon instances is shared by those instances 
         to allow faster threshold detection (ie on a per source basis instead 
-        of a per NetCon basis) Therefore, there is really only one threshold 
+        of a per NetCon basis). Therefore, there is really only one threshold 
         for all NetCon objects that share a source. However, delay and weight 
         are distinct for each NetCon object. 
          
         The only way one can have multiple threshold values at the same location is 
         to create a threshold detector point process with a NET_RECEIVE block implemented 
-        with a WATCH statement and calling net_event . 
+        with a WATCH statement and calling net_event. 
          
         And I'll say it again: 
         Note that prior to 12-Jul-2006, when the first form of the constructor 
@@ -110,11 +104,9 @@ NetCon
     .. warning::
         NetCon can currently only be used if a CVode object exists. 
          
-        The local variable step method does not work when the source is specified 
-        with the syntax \ ``netcon = new NetCon(&soma.v(.5),...)``. The 
-        currently accessed section must be correct during the construction of 
-        the object and the above example is correct only during calculation of 
-        the pointer argument. 
+        When calling with a pointer (the first usage form, above), the
+        specified ``section`` must contain the pointer. If it does not, a
+        RuntimeError exception will be raised.
          
 
          
@@ -145,15 +137,17 @@ NetCon
 
 
     Syntax:
-        ``boolean = netcon.active(boolean)``
+        ``1or0 = netcon.active(boolean)``
 
-        ``boolean = netcon.active()``
+        ``1or0 = netcon.active()``
 
 
     Description:
         Turns the synapse on or off in the sense that when off, no events 
         are delivered using this NetCon instance. Returns the previous 
-        state (or current state if no argument). 
+        state (or current state if no argument) as 1 if True; 0 if False. 
+        The argument must be 0, 1, False, or True; other input values raise
+        a RuntimeError Exception.
 
          
 
@@ -209,7 +203,7 @@ NetCon
 
     Description:
         Returns a reference to the source PointProcess. If the source is a membrane 
-        potential then the return value is NULLobject 
+        potential then the return value is ``None``. 
 
          
 
@@ -221,13 +215,18 @@ NetCon
 
 
     Syntax:
-        ``{x = netcon.preloc() ... pop_section()}``
+        .. code-block::
+            python
+
+            x = netcon.preloc()
+            sec = h.cas()
+            h.pop_section()
 
 
     Description:
         The source section is pushed onto the section stack so that it is 
-        the currently accessed section. Pop_section must be called after you are 
-        finished with the section. 
+        the currently accessed section (``h.cas()``). ``h.pop_section()`` must be called after you are 
+        finished with the section or have saved it as in the syntax block above.
 
     .. warning::
         The return value of x is .5 unless the source is a membrane potential and 
@@ -246,13 +245,18 @@ NetCon
 
 
     Syntax:
-        ``{x = netcon.postloc() ... pop_section()}``
+        .. code-block::
+            python
 
+            x = netcon.postloc()
+            sec = h.cas()
+            h.pop_section()
 
     Description:
         The section of the target point process is pushed onto the section stack 
-        so that it is the currently accessed section. Pop_section must be called 
-        after you are finished with the section. The x return value is the 
+        so that it is the currently accessed section (``h.cas()``). ``h.pop_section()`` must be called 
+        after you are finished with the section or have saved it as in the syntax block above.
+        The x return value is the 
         relative location of the point process in that section. 
 
          
@@ -269,8 +273,9 @@ NetCon
 
 
     Description:
-        If the source is a membrane potential and the section was declared in 
-        an object (defined in a cell template), a reference to the presynaptic cell 
+        If the source is a membrane potential and the section was created with a ``cell=`` keyword
+        argument, then it returns the value of that argument. For sections created inside a HOC
+        object (defined in a cell template), a reference to the presynaptic cell 
         (object) is returned. 
 
          
@@ -287,8 +292,9 @@ NetCon
 
 
     Description:
-        If the synaptic point process is located in a section which was declared in 
-        an object (defined in a cell template), a reference to the postsynaptic cell 
+        If the synaptic point process is located in a section that was created with a ``cell=`` keyword
+        argument, then it returns the value of that argument. For sections created inside a HOC
+        object (defined in a cell template), a reference to the postsynaptic cell 
         (object) is returned. 
 
          
@@ -307,7 +313,7 @@ NetCon
     Description:
         Will change the old postsynaptic POINT_PROCESS target to the one specified 
         by the newtarget. If there is no argument 
-        or the argument is NullObject then NetCon will have no target and the 
+        or the argument is None then NetCon will have no target and the 
         active flag will be set to 0. Note that a target change will preserve the 
         current weight vector only if the new and old targets have the same 
         weight vector size (number of arguments in the NET_RECEIVE block). 
@@ -328,7 +334,7 @@ NetCon
 
 
     Description:
-        List of all the NetCon objects with source the same as netcon. 
+        :class:`List` (i.e. not a Python list) of all the NetCon objects with source the same as ``netcon``. 
         With no argument, a new List is created. 
         If the List arg is present, the objects are appended. 
 
@@ -348,7 +354,7 @@ NetCon
 
 
     Description:
-        List of all the NetCon objects with target the same as netcon. 
+        :class:`List` (i.e. not a Python list) of all the NetCon objects with target the same as ``netcon``. 
         With no argument, a new List is created. 
         If the List arg is present, the objects are appended. 
 
@@ -371,7 +377,7 @@ NetCon
 
 
     Description:
-        List of all the NetCon objects with postsynaptic cell object the same as netcon. 
+        :class:`List` (i.e. not a Python list) of all the NetCon objects with postsynaptic cell object the same as netcon. 
         With no argument, a new List is created. 
         If the List arg is present, the objects are appended. 
 
@@ -394,7 +400,7 @@ NetCon
 
 
     Description:
-        List of all the NetCon objects with presynaptic cell object the same as netcon. 
+        :class:`List` (i.e. not a Python list) of all the NetCon objects with presynaptic cell object the same as netcon. 
         With no argument, a new List is created. 
         If the List arg is present, the objects are appended. 
 
@@ -411,9 +417,9 @@ NetCon
 
 
     Syntax:
-        ``del = netcon.delay``
+        ``delay = netcon.delay``
 
-        ``netcon.delay = del``
+        ``netcon.delay = delay``
 
 
     Description:
@@ -447,10 +453,6 @@ NetCon
 
 
     Syntax:
-        ``w = netcon.weight``
-
-        ``netcon.weight = w``
-
         ``x = netcon.weight[i]``
 
         ``netcon.weight[i] = x``
@@ -460,13 +462,16 @@ NetCon
         Weight variable which is delivered to the target point processes 
         NET_RECEIVE procedure. The number of arguments in the model descriptions 
         NET_RECEIVE procedure determines the size of the weight vector. 
-        Generally the 0th element (no index required) refers to synaptic weight 
+        Generally the 0th element refers to synaptic weight 
         and remaining elements are used as storage by a synaptic model for purposes 
         of distinguishing NetCon streams of events. However if the NET_RECEIVE 
         block of the post synaptic point process contains an INITIAL block, 
         that block is executed instead of setting all weight[i>0] = 0. 
 
-         
+     .. note::
+
+        In Python, the index is `always` required; this is different from HOC, where
+        it can be omitted if it is 0.
 
 ----
 
@@ -510,8 +515,8 @@ NetCon
 
     Description:
         Value of the source variable which is watched for threshold crossing. 
-        If the source is a membrane potential then netcon.x is a reference to 
-        that potential. If the source is an object, then netcon.x is a reference 
+        If the source is a membrane potential then ``netcon.x`` is a reference to 
+        that potential. If the source is an object, then ``netcon.x`` is a reference 
         to the objects field called "x", ie source.x . 
 
          
@@ -528,7 +533,9 @@ NetCon
 
         ``netcon.record()``
 
-        ``netcon.record("stmt")``
+        ``netcon.record(py_callable)``
+
+        ``netcon.record("")``
 
         ``netcon.record(tvec, idvec)``
 
@@ -545,9 +552,9 @@ NetCon
         NB: Recording takes place on a per source, not a per netcon basis, 
         and the source only records into one vector at a time. 
          
-        When the argument is a "stmt", then the statement is called on a 
+        When the argument is a py_callable, then py_callable is called on a 
         source event. Like the Vector case, the source only manages 
-        one statement at a time. The stmt is removed when the arg is "". 
+        one py_callable at a time, which is removed when the arg is "". 
          
         If a source is recording a vector, that source is not destroyed when 
         the last netcon connecting to it is destroyed and it continues to record. 
@@ -559,9 +566,8 @@ NetCon
         .. code-block::
             python
 
-
             vec = h.Vector() 
-            netcon = h.NetCon(source, nil) 
+            netcon = h.NetCon(section(x)._ref_v, None, sec=section) 
             netcon.record(vec) 
 
 
@@ -586,111 +592,36 @@ NetCon
             python  
             
             from neuron import h, gui
-        
-            load_file("nrngui.hoc") 
-            objectvar save_window_, rvp_ 
-            objectvar scene_vector_[4] 
-            objectvar ocbox_, ocbox_list_, scene_, scene_list_ 
-            ocbox_list_ = h.List()  
-            scene_list_ = h.List()
-            pwman_place(0,0,0)
-             
-            #Begin SingleCompartment 
-            
-            load_file("single.hoc") 
-             
-            ocbox_ = h.SingleCompartment(0) 
-            ocbox_.inserter = h.Inserter(0) 
-            object_push(ocbox_.inserter)
-            
-            mt.select("hh") i = mt.selected() 
-            ms[i] = h.MechanismStandard("hh") 
-            ms[i].set("gnabar_hh", 0.12, 0) 
-            ms[i].set("gkbar_hh", 0.036, 0) 
-            ms[i].set("gl_hh", 0.0003, 0) 
-            ms[i].set("el_hh", -54.3, 0) 
-            mstate[i]= 1 
-            maction(i) 
-            
-            object_pop() 
-            doNotify()
-            object_push(ocbox_) 
-            inserter.v1.map()
-            endbox()
-            object_pop() 
-            doNotify()
-            
-            ocbox_ = ocbox_.vbox 
-            ocbox_.map("SingleCompartment", 382, 22, 91.2, 96) 
-            
-            #End SingleCompartment 
-             
-             
-            #Begin PointProcessManager 
-            
-            load_file("pointman.hoc") 
-            
-            
-            soma ocbox_ = new PointProcessManager(0) 
-            
-            object_push(ocbox_)
-             
-            mt.select("IClamp") 
-            i = mt.selected() 
-            ms[i] = new MechanismStandard("IClamp") 
-            ms[i].set("del", 0, 0) 
-            ms[i].set("dur", 0.1, 0) 
-            ms[i].set("amp", 0.3, 0) 
-            mt.select("IClamp") 
-            i = mt.selected() 
-            maction(i) 
-            hoc_ac_ = 0.5 
-            sec.sec move() 
-            d1.flip_to(0) 
-            
-            object_pop() 
-            doNotify()
-            
-            ocbox_ = ocbox_.v1 
-            ocbox_.map("PointProcessManager", 152, 109, 208.32, 326.4) 
-             
-            #End PointProcessManager 
-             
-            
-            save_window_ = h.Graph(0) 
-            save_window_.size(0,5,-80,40) 
-            scene_vector_[2] = save_window_ 
-            save_window_.view(0, -80, 5, 120, 493, 23, 300.48, 200.32)
-            graphList[0].append(save_window_) 
-            save_window_.save_name("graphList[0].") 
-            save_window_.addexpr("v(.5)", 1, 1, 0.8, 0.9, 2) 
-            
-            objectvar scene_vector_[1] 
-            doNotify() 
-             
 
+            soma = h.Section(name='soma')
+            soma.insert('hh')
+            soma.L = 3.183098861837907
+            soma.diam = 10
+            ic = h.IClamp(soma(0.5))
+            ic.dur = 0.1
+            ic.amp = 3
 
-            python
+            g = h.Graph()
+            g.size(0, 5, -80, 40)
+            g.addexpr('v(0.5)', 1, 1, 0.8, 0.9, 2, sec=soma)
 
-            # ... soma with hh, IClamp, and voltage plot ... 
-             
-            soma nc = h.NetCon(&v(.5), nil) 
-            nc.threshold = 0 # watch out! only one threshold per presyn location 
-            nc.record("handle()") 
-             
             def handle():
-            	print "called handle() at time ", t, " when soma.v(.5) = ", soma.v(.5)"
-            	stoprun = 1 # Will stop but may go one extra step. Also with 
-            		# local step the cells will be at different times. 
-            		# So may wish to do a further... 
-            	cvode.event(t+1e-6)  
-            
+                print("called handle() at time %g  when soma(0.5).v = %g" % (h.t, soma(0.5).v))
+                h.stoprun = 1 # Will stop but may go one extra step. Also with 
+                # local step the cells will be at different times. 
+                # So may wish to do a further... 
+                h.cvode.event(h.t + 1e-6)  
+
+            nc = h.NetCon(soma(0.5)._ref_v, None, sec=soma) 
+            nc.threshold = 0 # watch out! only one threshold per presyn location 
+            nc.record(handle) 
              
-            cvode_active(1) # optional. but fixed step will probably do one extra time step 
-            cvode.condition_order(2) # optional. but much more accurate event time evaluation. 
+            h.cvode_active(True) # optional. but fixed step will probably do one extra time step 
+            h.cvode.condition_order(2) # optional. but much more accurate event time evaluation. 
              
-            run() 
-            print "after run(), t = ", t, " and soma.v(.5) = ", soma.v(.5) 
+            h.run() 
+            print("after h.run(), t = %g  when soma(0.5).v = %g" % (h.t, soma(0.5).v))
+
 
 
          
@@ -709,7 +640,7 @@ NetCon
     Description:
         Returns the Vector being recorded by the netcon. If the NetCon is not 
         recording or is recording via a hoc statement, the return value is 
-        NULLobject. Note that record vector is also returned if the NetCon is one of 
+        ``None``. Note that record vector is also returned if the NetCon is one of 
         many recording into the same Vector via the NetCon.record(tvec, idvec) 
         style. 
 
