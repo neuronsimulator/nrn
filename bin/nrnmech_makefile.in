@@ -44,8 +44,8 @@ LINK = $(LIBTOOL) --mode=link $(CCLD) -module $(AM_CFLAGS) $(CFLAGS) \
 @BUILD_NRNMPI_DYNAMIC_TRUE@lnrnmpi =
 @BUILD_NRNMPI_DYNAMIC_FALSE@lnrnmpi = -lnrnmpi
 
-NRNOCLIBS = -L"$(libdir)" -lnrnoc -loc @MEMACSLIB@ \
-	$(lnrnmpi) -lscopmath -lsparse13 @READLINE_LIBS@
+NRNOCLIBS = -L"$(libdir)" -lnrnoc -loc \
+	$(lnrnmpi) -lscopmath -lsparse13
 NRNIVLIBS = -L"$(libdir)" "$(libdir)/libnrniv.la" -livoc \
 	-lneuron_gnu -lmeschach -lsundials \
 	$(IVOS_LIB) $(IV_LIBS) $(NJ_LIBS) $(PY_LIBS) $(NRNNI_LIBS) $(PVM_LIBS)
@@ -53,42 +53,23 @@ NRNIVLIBS = -L"$(libdir)" "$(libdir)/libnrniv.la" -livoc \
 NRNOCOBJS = "$(libobjdir)/ocmain.o" "$(libobjdir)/nrnnoiv.o" "$(libobjdir)/ocnoiv.o"
 NRNIVOBJS = "$(libobjdir)/nrnmain.o" "$(libobjdir)/ivocmain.o" "$(libobjdir)/nvkludge.o"
 
-.SUFFIXES:
+#cancel built-in implicit rules
+%: %.mod
+%.o: %.mod
 
-.SUFFIXES: .c .mod .lo
-#
-# How to make a .o file from a .mod file.  Note that we have to delete the
-# .c file, or else make will get confused.  We have to go directly from
-# a .mod to a .o file because otherwise GNU make will try to use a rule
-# involving m2c.  Argh!!  Why did they have to build in so many implicit
-# rules?
-# 
-#.mod.o:
-#	$(bindir)/nocmodl $* || (rm -f $*.c; exit 1)
-#	$(COMPILE) -c $*.c
-#	rm -f $*.c
-#
-# some experimentation gave promising results for the following.
-# it remains to be seen how portable it is. It seems to work
-# for gnu make and the /usr/ccs/bin/make distributed with solaris.
-
-#%.o : %.mod
-
-.mod.c:
+%.c: %.mod
 	"$(bindir)/nocmodl" $*
-	
-.c.lo:
+
+%.lo: %.c
 	$(LTCOMPILE) -c -o $@ `test -f '$<' || echo '$(srcdir)/'`$<
 
-.mod.lo:
-	"$(bindir)/nocmodl" $*
-	$(LTCOMPILE) -c -o $@ $*.c
-
 mod_func.lo: mod_func.c
-	$(LTCOMPILE) -c -o $@ $*.c
+	$(LTCOMPILE) -c -o $@ $<
 
 libnrnmech_la_OBJECTS = $(MODOBJFILES) mod_func.lo $(COBJFILES)
 libnrnmech_la_LIBADD = $(NRNOCLIBS) $(NRNIVLIBS)
 
-libnrnmech.la: $(libnrnmech_la_OBJECTS) $(libnrnmech_la_DEPENDENCIES)
+libnrnmech.la: $(libnrnmech_la_OBJECTS)
 	$(LINK) -rpath "$(libdir)" $(libnrnmech_la_LDFLAGS) $(libnrnmech_la_OBJECTS) $(libnrnmech_la_LIBADD) $(LIBS)
+
+.SECONDARY:

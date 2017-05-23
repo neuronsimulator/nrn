@@ -60,7 +60,7 @@ LINK = $(LIBTOOL) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(LDFLAGS)
 @BUILD_NRNMPI_DYNAMIC_TRUE@lnrnmpi =
 @BUILD_NRNMPI_DYNAMIC_FALSE@lnrnmpi = -lnrnmpi
 
-NRNLIBS = -L$(libdir) -lnrnoc -loc \
+NRNLIBS = -L$(libdir) -lnrnoc \
 	-lnrniv -livoc -loc \
 	-lneuron_gnu -lscopmath -lsparse13 -lsundials $(lnrnmpi) \
 	@MEMACSLIB@ -lmeschach \
@@ -71,39 +71,18 @@ NRNLIBS = -L$(libdir) -lnrnoc -loc \
 NRNOCOBJS = $(libobjdir)/ocmain.o $(libobjdir)/nrnnoiv.o $(libobjdir)/ocnoiv.o
 NRNIVOBJS = $(libobjdir)/nrnmain.o $(libobjdir)/ivocmain.o $(libobjdir)/nvkludge.o
 
-.SUFFIXES:
-.SUFFIXES: .c .mod .o
-#
-# How to make a .o file from a .mod file.  Note that we have to delete the
-# .c file, or else make will get confused.  We have to go directly from
-# a .mod to a .o file because otherwise GNU make will try to use a rule
-# involving m2c.  Argh!!  Why did they have to build in so many implicit
-# rules?
-# 
-#.mod.o:
-#	$(bindir)/nocmodl $* || (rm -f $*.c; exit 1)
-#	$(COMPILE) -c $*.c
-#	rm -f $*.c
-#
-# some experimentation gave promising results for the following.
-# it remains to be seen how portable it is. It seems to work
-# for gnu make and the /usr/ccs/bin/make distributed with solaris.
+#cancel built-in implicit rules
+%: %.mod
+%.o: %.mod
 
-#%.o : %.mod
+%.c: %.mod
+	"$(bindir)/nocmodl" $*
 
-.mod.c:
-	$(bindir)/nocmodl $*
-	
-.c.o:
-	$(COMPILE) -c $*.c
+%.lo: %.c
+	$(LTCOMPILE) -c -o $@ `test -f '$<' || echo '$(srcdir)/'`$<
 
-.mod.o:
-	$(bindir)/nocmodl $*
-	$(COMPILE) -c $*.c
-
-
-mod_func.o: mod_func.c
-	$(COMPILE) -c $<
+mod_func.lo: mod_func.c
+	$(LTCOMPILE) -c -o $@ $<
 
 @NRNPURIFY_FALSE@special: $(MODOBJFILES) $(COBJFILES) mod_func.o
 @NRNPURIFY_FALSE@	$(CXXLINK) -o special $(NRNIVOBJS) $(MODOBJFILES) mod_func.o $(COBJFILES) $(NRNLIBS) $(LIBS)
@@ -117,3 +96,5 @@ mod_func.o: mod_func.c
 @NRNPURIFY_TRUE@	else \
 @NRNPURIFY_TRUE@	$(CXXLINK) -o special $(NRNIVOBJS) $(MODOBJFILES) mod_func.o $(COBJFILES) $(NRNLIBS) $(LIBS) ;\
 @NRNPURIFY_TRUE@	fi
+
+.SECONDARY:

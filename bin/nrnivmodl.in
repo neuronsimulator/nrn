@@ -9,7 +9,7 @@ if test "x${NRNHOME}" = x ; then
 	bindir=@bindir@
 	libdir=@libdir@
 else
-        prefix="$NRNHOME"
+	prefix="$NRNHOME"
 	exec_prefix="${prefix}/${ARCH}"
 	bindir="${prefix}/${ARCH}/bin"
 	libdir="${prefix}/${ARCH}/lib"
@@ -67,8 +67,8 @@ incs=""
 if test $# -gt 0 ; then
 	for i in "$@" ; do
 		if test -d "$i" ; then
-			files="$files $(ls $i/*.mod)"
-			incs="$incs $(ls $i/*.inc)"
+			files="$files $(ls $i/*.mod 2> /dev/null)"
+			incs="$incs $(ls $i/*.inc 2> /dev/null)"
 		else
 			files="$files $i"
 		fi
@@ -161,28 +161,30 @@ fi
 
 @NRNMECH_DLL_STYLE_FALSE@make -f "${MAKEFILEDIR}/nrniv_makefile" "$PURIFY" "$TRACE" "MODOBJFILES=$MODOBJS" "COBJFILES=$COBJS" "UserLDFLAGS=$UserLDFLAGS" "UserINCFLAGS=$UserINCFLAGS" special &&
 @NRNMECH_DLL_STYLE_FALSE@  echo "Successfully created $MODSUBDIR/special"
-
 @NRNMECH_DLL_STYLE_TRUE@MODLO=`echo "$MODOBJS" | sed 's/\.o/.lo/g'`
 @NRNMECH_DLL_STYLE_TRUE@CLO=`echo "$COBJS" | sed 's/\.o/.lo/g'`
 @NRNMECH_DLL_STYLE_TRUE@if test "${mdir}" = "${prefix}/share/nrn/demo/release/powerpc" ; then
 @NRNMECH_DLL_STYLE_TRUE@  mdir='${NRNHOME}'/share/nrn/demo/release/${MODSUBDIR}
 @NRNMECH_DLL_STYLE_TRUE@fi
 @NRNMECH_DLL_STYLE_TRUE@make -f "$MAKEFILEDIR/nrnmech_makefile" "MODOBJFILES=$MODLO" "COBJFILES=$CLO" "UserLDFLAGS=$UserLDFLAGS" "UserINCFLAGS=$UserINCFLAGS" libnrnmech.la &&
-@NRNMECH_DLL_STYLE_TRUE@  echo '#!/bin/sh
-@NRNMECH_DLL_STYLE_TRUE@if test "x${NRNHOME}" = "x" ; then
-@NRNMECH_DLL_STYLE_TRUE@	NRNHOME='"\"${prefix}\""'
-@NRNMECH_DLL_STYLE_TRUE@fi'> special &&
-@NRNMECH_DLL_STYLE_TRUE@  echo 'if test "x${NRNBIN}" = "x" ; then
-@NRNMECH_DLL_STYLE_TRUE@	NRNBIN='"\"${bindir}/\""'
-@NRNMECH_DLL_STYLE_TRUE@fi'>> special &&
-@NRNMECH_DLL_STYLE_TRUE@echo 'if test "@enable_carbon@" = "yes" ; then
-@NRNMECH_DLL_STYLE_TRUE@	NRNIV="${NRNBIN}nrniv.app/Contents/MacOS/nrniv"
+@NRNMECH_DLL_STYLE_TRUE@cat > special << EOF &&
+@NRNMECH_DLL_STYLE_TRUE@#!/bin/sh
+@NRNMECH_DLL_STYLE_TRUE@if test -n "\${NRNHOME}"; then
+@NRNMECH_DLL_STYLE_TRUE@	NRNHOME="${prefix}"
+@NRNMECH_DLL_STYLE_TRUE@fi
+@NRNMECH_DLL_STYLE_TRUE@if test -n "\${NRNBIN}"; then
+@NRNMECH_DLL_STYLE_TRUE@	NRNBIN="${bindir}/"
+@NRNMECH_DLL_STYLE_TRUE@fi
+@NRNMECH_DLL_STYLE_TRUE@if test "@enable_carbon@" = "yes" ; then
+@NRNMECH_DLL_STYLE_TRUE@	NRNIV="\${NRNBIN}nrniv.app/Contents/MacOS/nrniv"
 @NRNMECH_DLL_STYLE_TRUE@else
-@NRNMECH_DLL_STYLE_TRUE@	NRNIV="${NRNBIN}nrniv"
-@NRNMECH_DLL_STYLE_TRUE@fi' >> special &&
-@NRNMECH_DLL_STYLE_TRUE@  echo '"${NRNIV}"'" -dll \"${mdir}/.libs/libnrnmech.so\" \"\$@\"" >> special &&
+@NRNMECH_DLL_STYLE_TRUE@	NRNIV="\${NRNBIN}nrniv"
+@NRNMECH_DLL_STYLE_TRUE@fi
+@NRNMECH_DLL_STYLE_TRUE@"\$NRNIV" -dll "${mdir}/.libs/libnrnmech.so" "\$@"
+@NRNMECH_DLL_STYLE_TRUE@EOF
 @NRNMECH_DLL_STYLE_TRUE@  chmod 755 special &&
 @NRNMECH_DLL_STYLE_TRUE@  echo "Successfully created $MODSUBDIR/special"
+
 
 @NRNMECH_DLL_STYLE_TRUE@@MAC_DARWIN_TRUE@if false ; then
 @NRNMECH_DLL_STYLE_TRUE@@MAC_DARWIN_FALSE@if false ; then
