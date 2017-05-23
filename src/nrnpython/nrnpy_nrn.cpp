@@ -98,12 +98,12 @@ static char* pysec_name(Section* sec) {
     NPySecObj* ps = (NPySecObj*)sec->prop->dparam[PROP_PY_INDEX]._pvoid;
     buf[0] = '\0';
     if (ps->cell_) {
-      PyGILState_STATE gilsav = PyGILState_Ensure();
+      PyLockGIL lock;
+
       PyObject* cell = PyObject_Str(ps->cell_);
       Py2NRNString str(cell);
       Py_DECREF(cell);
       char* cp = str.c_str();
-      PyGILState_Release(gilsav);
       sprintf(buf, "%s.", cp);
     }
     char* cp = buf + strlen(buf);
