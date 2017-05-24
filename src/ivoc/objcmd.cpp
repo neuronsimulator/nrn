@@ -18,6 +18,7 @@ extern Object* hoc_thisobject;
 int (*nrnpy_hoccommand_exec)(Object*);
 int (*nrnpy_hoccommand_exec_strret)(Object*, char*, int);
 void (*nrnpy_cmdtool)(Object*, int type, double x, double y, int kd);
+double (*nrnpy_func_call)(Object*, int, int*);
 }
 
 HocCommand::HocCommand(const char* cmd) {
@@ -148,8 +149,6 @@ int HocCommand::execute(const char* s, bool notify) {
 #endif
 	return err;
 }
-
-double (*nrnpy_func_call)(Object*, int, int*);
 
 double HocCommand::func_call(int narg, int* perr) {
 	if (po_) {

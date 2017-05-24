@@ -40,6 +40,7 @@ void nrnglobalmechmenu();
 void nrnmechmenu();
 void nrnpointmenu();
 
+Object* (*nrnpy_callable_with_args)(Object*, int narg);
 int (*nrnpy_ob_is_seg)(Object*);
 
 }
@@ -718,8 +719,6 @@ const char* MechanismStandard::name(int i, int& size) {
 	size = hoc_total_array_data(s, 0);
 	return s->name;
 }
-
-Object* (*nrnpy_callable_with_args)(Object*, int narg);
 
 void MechanismStandard::panel(const char* label) {
 #if HAVE_IV
