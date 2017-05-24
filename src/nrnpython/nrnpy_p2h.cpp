@@ -540,12 +540,12 @@ static double func_call(Object* ho, int narg, int* err) {
   Py_XDECREF(args);
   double rval = 0.0;
   if (r == NULL) {
-    if (err && *err) {
+    if (!err || *err) {
       PyErr_Print();
     }else{
       PyErr_Clear();
     }
-    if (err && *err) {
+    if (!err || *err) {
       PyGILState_Release(s);
       hoc_execerror("func_call failed", 0);
     }
