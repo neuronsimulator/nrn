@@ -2,6 +2,7 @@
 #define nrnpy_utils_h
 
 #include <Python.h>
+#include <cassert>
 
 inline bool is_python_string(PyObject* python_string) {
   return PyUnicode_Check(python_string) || PyBytes_Check(python_string);
@@ -35,6 +36,36 @@ class Py2NRNString {
 
   char* str_;
   bool disable_release_;
+};
+
+
+class PyLockGIL
+{
+public:
+  PyLockGIL()
+      : state_(PyGILState_Ensure())
+      , locked_(true)
+  {}
+
+  /* This is mainly used to unlock manually prior to a hoc_execerror() call
+   * since this uses longjmp()
+   */
+  void release() {
+    assert(locked_);
+    locked_ = false;
+    PyGILState_Release(state_);
+  }
+
+  ~PyLockGIL() {
+    release();
+  }
+
+private:
+  PyLockGIL(const PyLockGIL&);
+  PyLockGIL& operator=(const PyLockGIL&);
+
+  PyGILState_STATE state_;
+  bool locked_; /* check if double unlocking */
 };
 
 #endif /* end of include guard: nrnpy_utils_h */
