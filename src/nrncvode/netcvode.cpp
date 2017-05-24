@@ -108,6 +108,7 @@ extern void nrn_use_busywait(int);
 extern double* nrn_recalc_ptr(double*);
 void* nrn_interthread_enqueue(NrnThread*);
 extern void (*nrnthread_v_transfer_)(NrnThread*);
+extern Object* (*nrnpy_seg_from_sec_x)(Section*, double);
 #if NRN_MUSIC
 extern void nrnmusic_injectlist(void*, double);
 #endif
@@ -471,6 +472,29 @@ static double nc_preloc(void* v) { // user must pop section stack after call
 	}
 }
 
+static Object** nc_preseg(void* v) { // user must pop section stack after call
+	NetCon* d = (NetCon*)v;
+	Section* s = NULL;
+	Object* obj = NULL;
+	double x = 0.5;
+	if (d->src_) {
+		s = d->src_->ssrc_;
+	}
+	if (s && nrnpy_seg_from_sec_x) {
+		double* v = d->src_->thvar_;
+		nrn_parent_info(s); // make sure parentnode exists
+		// there is no efficient search for the location of
+		// an arbitrary variable. Search only for v at 0, 1.
+		// Otherwise leave x at .5 .
+		if (v == &NODEV(s->parentnode)) { x = 0.; }
+		if (v == &NODEV(s->pnode[s->nnode-1])) { x = 1.; }
+		// perhaps should search for v
+		obj = (*nrnpy_seg_from_sec_x)(s, x);
+		--obj->refcount;
+	}
+	return hoc_temp_objptr(obj);
+}
+
 static double nc_postloc(void* v) { // user must pop section stack after call
 	NetCon* d = (NetCon*)v;
 	if (d->target_ && d->target_->sec) {
@@ -479,6 +503,17 @@ static double nc_postloc(void* v) { // user must pop section stack after call
 	}else{
 		return -1.;
 	}
+}
+
+static Object** nc_postseg(void* v) { // user must pop section stack after call
+	NetCon* d = (NetCon*)v;
+	Object* obj = NULL;
+	if (d->target_ && d->target_->sec && nrnpy_seg_from_sec_x) {
+		double x =  nrn_arc_position(d->target_->sec, d->target_->node);
+		obj = (*nrnpy_seg_from_sec_x)(d->target_->sec, x);
+		--obj->refcount;
+	}
+	return hoc_temp_objptr(obj);
 }
 
 static Object** nc_syn(void* v) {
@@ -757,6 +792,8 @@ static Member_ret_obj_func omembers[] = {
 	"pre", nc_pre,
 	"precell", nc_precell,
 	"postcell", nc_postcell,
+	"preseg", nc_preseg,
+	"postseg", nc_postseg,
 	"prelist", nc_prelist,
 	"synlist", nc_synlist,
 	"precelllist", nc_precelllist,

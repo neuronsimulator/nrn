@@ -82,6 +82,8 @@ static void nrnpy_reg_mech(int);
 extern void (*nrnpy_reg_mech_p_)(int);
 static int ob_is_seg(Object*);
 extern int (*nrnpy_ob_is_seg)(Object*);
+static Object* seg_from_sec_x(Section*, double x);
+extern Object* (*nrnpy_seg_from_sec_x)(Section*, double x);
 static void o2loc(Object*, Section**, double*);
 extern void (*nrnpy_o2loc_p_)(Object*, Section**, double*);
 static void nrnpy_unreg_mech(int);
@@ -916,33 +918,42 @@ static PyObject* segment_iter(NPySegObj* self) {
   return (PyObject*)m;
 }
 
+static Object* seg_from_sec_x(Section* sec, double x) {
+  PyObject* pyseg = (PyObject*)PyObject_New(NPySegObj, psegment_type);
+  NPySegObj* pseg = (NPySegObj*)pyseg;
+  NPySecObj* pysec = (NPySecObj*)sec->prop->dparam[PROP_PY_INDEX]._pvoid;
+  if (pysec) {
+    pseg->pysec_ = pysec;
+    Py_INCREF(pysec);
+  } else {
+    pysec = (NPySecObj*)psection_type->tp_alloc(psection_type, 0);
+    pysec->sec_ = sec;
+    pysec->name_ = 0;
+    pysec->cell_ = 0;
+    Py_INCREF(pysec);
+    pseg->pysec_ = pysec;
+  }
+  pseg->x_ = x;
+  Object* ho = nrnpy_pyobject_in_obj(pyseg);
+  Py_DECREF(pyseg);
+  return ho;
+}
+
 static Object** pp_get_segment(void* vptr) {
   Point_process* pnt = (Point_process*)vptr;
   // printf("pp_get_segment %s\n", hoc_object_name(pnt->ob));
-  PyObject* pyseg = Py_None;
+  Object* ho = NULL;
   if (pnt->prop) {
     Section* sec = pnt->sec;
     double x = nrn_arc_position(sec, pnt->node);
-    pyseg = (PyObject*)PyObject_New(NPySegObj, psegment_type);
-    NPySegObj* pseg = (NPySegObj*)pyseg;
-    NPySecObj* pysec = (NPySecObj*)sec->prop->dparam[PROP_PY_INDEX]._pvoid;
-    if (pysec) {
-      pseg->pysec_ = pysec;
-      Py_INCREF(pysec);
-    } else {
-      pysec = (NPySecObj*)psection_type->tp_alloc(psection_type, 0);
-      pysec->sec_ = sec;
-      pysec->name_ = 0;
-      pysec->cell_ = 0;
-      Py_INCREF(pysec);
-      pseg->pysec_ = pysec;
-    }
-    pseg->x_ = nrn_arc_position(sec, pnt->node);
+    ho = seg_from_sec_x(sec, x);
   }
-  Object* ho = nrnpy_pyobject_in_obj(pyseg);
-  Py_DECREF(pyseg);
+  if (!ho) {
+    ho = nrnpy_pyobject_in_obj(Py_None);
+  }
+  Object** tobj = hoc_temp_objptr(ho);
   --ho->refcount;
-  return hoc_temp_objptr(ho);
+  return tobj;
 }
 
 static void rv_noexist(Section* sec, const char* n, double x, int err) {
@@ -1664,6 +1675,7 @@ myPyMODINIT_FUNC nrnpy_nrn(void) {
   remake_pmech_types();
   nrnpy_reg_mech_p_ = nrnpy_reg_mech;
   nrnpy_ob_is_seg = ob_is_seg;
+  nrnpy_seg_from_sec_x = seg_from_sec_x;
   nrnpy_o2loc_p_ = o2loc;
   nrnpy_pysec_name_p_ = pysec_name;
   nrnpy_pysec_cell_p_ = pysec_cell;

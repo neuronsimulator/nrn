@@ -39,6 +39,9 @@ void nrnsecmenu();
 void nrnglobalmechmenu();
 void nrnmechmenu();
 void nrnpointmenu();
+
+int (*nrnpy_ob_is_seg)(Object*);
+
 }
 
 #if HAVE_IV
@@ -516,8 +519,6 @@ static double ms_action(void* v) {
 	((MechanismStandard*)v)->action(a, pyact);
 	return 0.;
 }
-
-int (*nrnpy_ob_is_seg)(Object*);
 
 static double ms_out(void* v) {
 	MechanismStandard* m = (MechanismStandard*)v;

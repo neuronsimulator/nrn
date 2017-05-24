@@ -50,6 +50,8 @@ extern Section** secorder;
 extern Point_process* ob2pntproc(Object*);
 extern Point_process* ob2pntproc_0(Object*);
 extern double* nrn_recalc_ptr(double*);
+
+Object* (*nrnpy_seg_from_sec_x)(Section*, double);
 }
 
 #if BEVELJOIN
@@ -259,6 +261,33 @@ IFGUI
 ENDGUI
 #endif
 	return d;
+}
+
+Object** nrniv_sh_nearest_seg(void* v) {
+	ShapeScene* ss = (ShapeScene*)v;
+	Object* obj = NULL;
+	ShapeSection* ssec = NULL;
+	double d = ss->nearest(*getarg(1), *getarg(2));
+	ssec = ss->selected();
+	if (d < 1e15 && nrnpy_seg_from_sec_x && ssec) {
+		d = ss->arc_selected();
+		obj = (*nrnpy_seg_from_sec_x)(ssec->section(), d);
+	}
+	--obj->refcount;
+	return hoc_temp_objptr(obj);
+}
+
+Object** nrniv_sh_selected_seg(void* v) {
+	ShapeScene* ss = (ShapeScene*)v;
+	Object* obj = NULL;
+	ShapeSection* ssec = NULL;
+	ssec = ss->selected();
+	if (nrnpy_seg_from_sec_x && ssec) {
+		double d = ss->arc_selected();
+		obj = (*nrnpy_seg_from_sec_x)(ssec->section(), d);
+	}
+	--obj->refcount;
+	return hoc_temp_objptr(obj);
 }
 
 double nrniv_sh_observe(void* v) {
@@ -481,6 +510,13 @@ static Member_func sh_members[] = {
 	"gif", ivoc_gr_gif,
 	0,0
 };
+
+static Member_ret_obj_func retobj_members[] = {
+	"nearest_seg", nrniv_sh_nearest_seg,
+	"selected_seg", nrniv_sh_selected_seg
+};
+
+
 static void* sh_cons(Object* ho) {
 #if HAVE_IV
 	OcShape* sh = NULL;
@@ -521,7 +557,7 @@ ENDGUI
 }
 void Shape_reg() {
 //	printf("Shape_reg\n");
-	class2oc("Shape", sh_cons, sh_destruct, sh_members, NULL, NULL, NULL);
+	class2oc("Shape", sh_cons, sh_destruct, sh_members, NULL, retobj_members, NULL);
 }
 
 #if HAVE_IV
