@@ -68,6 +68,12 @@ for filename in filenames:
 import cPickle
 import zlib
 compressed = zlib.compress(cPickle.dumps(help_dictionary))
-with open('help_data.dat', 'wb') as f:
+try:
+    import os
+    os.mkdir('_build')
+except:
+    # directory already exists, so nothing to do
+    pass
+with open('_build/help_data.dat', 'wb') as f:
     f.write(compressed)
 

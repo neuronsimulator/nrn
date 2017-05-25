@@ -43,10 +43,13 @@ clean:
 
 html:
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
-	\cp -r $(BUILDDIR)/html/* $(HOME)/public_html/pyhelp/
 	@echo
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html."
-	@echo "Access them via http://neurosimlab.org/$(USER)/pyhelp/"
+
+help_data:
+	python parse_rst.py `find . -name \*.rst -print`
+	@echo
+	@echo "Build finished. help_data.dat is in the $(BUILDDIR) directory."
 
 dirhtml:
 	$(SPHINXBUILD) -b dirhtml $(ALLSPHINXOPTS) $(BUILDDIR)/dirhtml
