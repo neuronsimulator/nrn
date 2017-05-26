@@ -757,6 +757,7 @@ PyObject* nrn_hocobj_ptr(double* pd) {
 static void symlist2dict(Symlist* sl, PyObject* dict) {
   PyObject* nn = Py_BuildValue("");
   for (Symbol* s = sl->first; s; s = s->next) {
+    if (s->type == UNDEF) { continue; }
     if (s->cpublic == 1 || sl == hoc_built_in_symlist ||
         sl == hoc_top_level_symlist) {
       if (strcmp(s->name, "del") == 0) {
