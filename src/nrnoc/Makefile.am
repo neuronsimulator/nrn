@@ -120,7 +120,7 @@ $(MODFILES_C): $(NMODL)
 %.c: %.mod
 	(export MODLUNIT=$(top_srcdir)/share/lib/nrnunits.lib; $(NMODL) $<)
 	sed "s/_reg()/_reg_()/" $(srcdir)/$@ > $(srcdir)/$@.tmp
-	mv $(srcdir)/$@.tmp $@
+	mv $(srcdir)/$@.tmp $(srcdir)/$@
 
 ## Force make to make hocusr.h even before it's done dependency scanning.
 hocusr.lo: hocusr.h
