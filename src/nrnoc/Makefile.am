@@ -115,7 +115,9 @@ $(srcdir)/nrnversion.h: FORCE
 
 nrnversion.o nrnversion.lo: nrnversion.h
 
-%.c: %.mod $(NMODL)
+$(MODFILES_C): $(NMODL)
+
+%.c: %.mod
 	(export MODLUNIT=$(top_srcdir)/share/lib/nrnunits.lib; $(NMODL) $<)
 	sed "s/_reg()/_reg_()/" $(srcdir)/$@ > $(srcdir)/$@.tmp
 	mv $(srcdir)/$@.tmp $@
