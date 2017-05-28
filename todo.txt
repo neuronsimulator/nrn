@@ -1,6 +1,5 @@
 157   modelspec/programmatic/electrod.rst // issues <-- No idea where this comes from
 1053    modelspec/programmatic/mechanisms/mech.rst //mostly done  <-- needs a bunch of work; start with SEClamp example and continue
-391   visualization/oldgrph.rst     //mostly done... eh
 874   programming/python.rst //finished <-- this should probably be replaced entirely?
 903   modelspec/programmatic/topology/geometry.rst  //mostly done <-- needs a lot of rework
 2972    modelspec/programmatic/network/parcon.rst  //done <-- going to need a bunch of edits, look at sprint, $ arguments
@@ -72,3 +71,4 @@ simctrl/bbsavestate.rst
 222   visualization/rvarplt.rst     //Range Var Plot - #how to do this in python?
 337   modelspec/programmatic/mechtype.rst   //mostly done <-- attempted to review once; some issues: action does not support Python callbacks, and make seems not to offer a Python solution (oh but it does)
 741   modelspec/programmatic/network/netcon.rst //mostly done 
+391   visualization/oldgrph.rst     //mostly done... eh
