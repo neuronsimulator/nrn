@@ -328,41 +328,66 @@ General
         .. code-block::
             python
             
-            #setup for three simulations 
-            create s1, s2, s3 // will be stimulated by IClamp, SEClamp, and VClamp 
-            forall:
-                insert hh diam=3 L=3
+            from neuron import h
 
-            s1 
-            c1 = h.IClamp(0.5) 
-            s2 
-            c2 = h.SEClamp(0.5) 
-            s3 
-            c3 = h.VClamp(0.5) 
-            c1.dur=.1 
-            c1.amp=0.3
-            c2.dur1 = 1 
-            c2.rs=0.01 
+            # setup for three simulations
+            s1 = h.Section(name='s1')
+            s2 = h.Section(name='s2')
+            s3 = h.Section(name='s3')
+
+            for sec in [s1, s2, s3]:
+                sec.insert('hh')
+                sec.L = sec.diam = 3
+
+            c1 = h.IClamp(s1(0.5))
+            c2 = h.SEClamp(s2(0.5))
+            c3 = h.VClamp(s3(0.5))
+            c1.dur = 0.1
+            c1.amp = 0.3
+            c2.dur1 = 1
+            c2.rs = 0.01
             c3.dur[0] = 1
-             
-            # record an action potential 
-            ap = h.Vector() 
-            ap.record(&s1.v(0.5)) 
-            finitialize(-65)    
-            while (t<1):
-                fadvance()
-             
-            # do the three cases while playing the recorded ap 
-            apc = ap.c	# unfortunately can't play into two variables so clone it. 
-            ap.play_remove()   
-            ap.play(&c2.amp1, dt) 
-            apc.play(&c3.amp[0], dt) 
-            finitialize(-65) 
-            while (t<0.4):
-                    fadvance() 
-                    print s1.v, s2.v, s3.v, c1.i, c2.i, c3.i 
-            
 
+            # record an action potential
+            ap = h.Vector()
+            ap.record(s1(0.5)._ref_v)
+            h.finitialize(-65)
+            while h.t < 1:
+                h.fadvance()
+
+            # do the three cases while playing the recorder ap
+            apc = ap.c() # unfortunately, cannot play into two variables, so clone it
+            ap.play_remove()
+            ap.play(c2._ref_amp1, h.dt)
+            apc.play(c3._ref_amp[0], h.dt)
+            h.finitialize(-65)
+
+            while h.t < 0.4:
+                h.fadvance()
+                print('%11g %11g %11g %11g %11g %11g' % (s1.v, s2.v, s3.v, c1.i, c2.i, c3.i))
+                        
+
+        Output:
+
+            .. code-block::
+                none
+
+                   -38.9151         -65    -64.9987         0.3 -8.57284e-06 6.08992e-06
+                   -13.2522    -38.9181    -39.9175         0.3    0.299966     0.28846
+                    12.0382    -13.2552    -14.2775         0.3    0.299999    0.299544
+                    36.8707     12.0352     11.0258         0.3         0.3    0.299976
+                    35.8703     36.8677      35.876           0    0.299999    0.299835
+                    35.9246     35.8703     35.8698           0 3.53006e-05   0.0116979
+                     36.944     35.9246     35.9218           0 1.88827e-06 0.000592712
+                    38.5089      36.944     36.9039           0 1.91897e-06 7.48624e-05
+                    40.1456     38.5089     38.4464           0 1.60753e-06 -2.12119e-05
+                    41.5259     40.1456     40.0795           0 1.15519e-06 -6.25541e-05
+                    42.5135     41.5259     41.4695           0 7.13443e-07 -6.92656e-05
+                    43.1106     42.5135     42.4725           0 3.47428e-07 -5.86879e-05
+                    43.3834     43.1106     43.0853           0 6.29392e-08 -4.51288e-05
+                    43.4093     43.3834     43.3711           0 -1.57826e-07 -3.50748e-05
+                    43.2531     43.4093      43.407           0 -3.34836e-07 -2.94783e-05
+                    42.9618     43.2531     43.2582           0 -4.82874e-07 -2.71847e-05
 
 
 ----
@@ -373,7 +398,7 @@ General
 
 
     Syntax:
-        ``apc = new APCount(section(x))``
+        ``apc = h.APCount(section(x))``
 
         ``apc.thresh ---	mV``
 
@@ -389,7 +414,7 @@ General
         threshold voltage in the positive direction. n contains the count 
         and time contains the time of last crossing. 
          
-        If a Vector is attached to the apc, then it is resized to 0 when the 
+        If a :class:`Vector` is attached to the apc, then it is resized to 0 when the 
         INITIAL block is called and the times of threshold crossing are 
         appended to the Vector. apc.record() will stop recording into the vector. 
         The apc is not notified if the vector is freed but this can be fixed if 
@@ -406,7 +431,7 @@ General
 
 
     Syntax:
-        ``syn = new ExpSyn(section(x))``
+        ``syn = h.ExpSyn(section(x))``
 
         ``syn.tau --- ms decay time constant``
 
@@ -442,7 +467,7 @@ General
 
 
     Syntax:
-        ``syn = new Exp2Syn(section(x))``
+        ``syn = h.Exp2Syn(section(x))``
 
         ``syn.tau1 --- ms rise time``
 
@@ -503,7 +528,7 @@ General
 
 
     Syntax:
-        ``s = new NetStim(section(x))``
+        ``s = h.NetStim(section(x))``
 
         ``s.interval ms (mean) time between spikes``
 
@@ -541,10 +566,10 @@ General
             
             from neuron import h
 
-            nc = h.NetStim(0.5) 
+            nc = h.NetStim(section(0.5))
             ns = h.NetCon(nc, target...) 
 
-        That is, do not use ``&nc.y`` as the source for the netcon. 
+        That is, do not use ``nc._ref_y`` as the source for the netcon. 
          
         See `<nrn src dir>/src/nrnoc/netstim.mod <http://neuron.yale.edu/hg/neuron/nrn/file/tip/src/nrnoc/netstim.mod>`_
 
@@ -726,14 +751,14 @@ Mechanisms
 **setdata**
 
     Syntax:
-        ``sec setdata_suffix(x)``
+        ``setdata_suffix(section(x))``
 
 
     Description:
         If a mechanism function is called that uses RANGE variables, then the 
         appropriate data needed by the function must first be indicated via a setdata call. 
         This is unnecessary if the function uses only GLOBAL variables. 
-        The suffix refers to the name of the mechanism. E.g. setdata_hh(). 
+        The suffix refers to the name of the mechanism. E.g. ``setdata_hh(soma(0.5)).`` 
 
     .. warning::
         The THREADSAFE mechanism case is a bit more complicated if the mechanism 
@@ -785,7 +810,7 @@ Mechanisms
 
 
     Syntax:
-        ``insert hh``
+        ``section.insert('hh')``
 
 
     Description:
@@ -797,17 +822,17 @@ Mechanisms
         .. code-block::
             none
 
-            gnabar_hh	0.120 mho/cm2	Maximum specific sodium channel conductance 
-            gkbar_hh	0.036 mho/cm2	Maximum potassium channel conductance 
-            gl_hh	0.0003 mho/cm2	Leakage conductance 
-            el_hh	-54.3 mV	Leakage reversal potential 
-            m_hh			sodium activation state variable 
-            h_hh			sodium inactivation state variable 
-            n_hh			potassium activation state variable 
-            ina_hh	mA/cm2		sodium current through the hh channels 
-            ik_hh	mA/cm2		potassium current through the hh channels 
+            hh.gnabarh	0.120 mho/cm2	Maximum specific sodium channel conductance 
+            hh.gkbar	0.036 mho/cm2	Maximum potassium channel conductance 
+            hh.gl	0.0003 mho/cm2	Leakage conductance 
+            hh.el	-54.3 mV	Leakage reversal potential 
+            hh.m			sodium activation state variable 
+            hh.h			sodium inactivation state variable 
+            hh.n			potassium activation state variable 
+            hh.ina	mA/cm2		sodium current through the hh channels 
+            hh.ik	mA/cm2		potassium current through the hh channels 
              
-            rates_hh(v) computes the global variables [mhn]inf_hh and [mhn]tau_hh 
+            h.rates_hh(v) computes the global variables [mhn]inf_hh and [mhn]tau_hh 
             from the rate functions. usetable_hh defaults to 1. 
 
         This model used the na and k ions to read ena, ek and write ina, ik. 
@@ -868,19 +893,19 @@ Mechanisms
 **extracellular**
 
     Syntax:
-        ``insert extracellular``
+        ``section.insert('extracellular')``
 
-        ``vext[2] -- mV``
+        ``.vext[2] -- mV``
 
-        ``i_membrane -- mA/cm2``
+        ``.i_membrane -- mA/cm2``
 
-        ``xraxial[2] -- MOhms/cm``
+        ``.xraxial[2] -- MOhms/cm``
 
-        ``xg[2]	-- mho/cm2``
+        ``.xg[2]	-- mho/cm2``
 
-        ``xc[2]	-- uF/cm2``
+        ``.xc[2]	-- uF/cm2``
 
-        ``e_extracellular -- mV``
+        ``.extracellular.e -- mV``
 
 
     Description:
@@ -1045,19 +1070,19 @@ Mechanisms
 
         ``#define EXTRACELLULAR 2 /* number of extracellular layers */``
 
-        ``insert extracellular``
+        ``section.insert('extracellular')``
 
-        ``vext[i] -- mV``
+        ``.vext[i] -- mV``
 
-        ``i_membrane -- mA/cm2``
+        ``.i_membrane -- mA/cm2``
 
-        ``xraxial[i] -- MOhms/cm``
+        ``.xraxial[i] -- MOhms/cm``
 
-        ``xg[i]	-- mho/cm2``
+        ``.xg[i]	-- mho/cm2``
 
-        ``xc[i]	-- uF/cm2``
+        ``.xc[i]	-- uF/cm2``
 
-        ``e_extracellular -- mV``
+        ``.extracellular.e -- mV``
 
 
 
@@ -1073,7 +1098,7 @@ Mechanisms
         previous single layer extracellular simulations should produce the same 
         results if either xc or e_extracellular was 0. 
          
-        e_extracellular is connected in series with the conductance of 
+        extracellular.e is connected in series with the conductance of 
         the last extracellular layer. 
 
 
