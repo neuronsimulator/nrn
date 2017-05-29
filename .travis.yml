@@ -1,0 +1,18 @@
+language: cpp
+sudo: false
+dist: trusty
+compiler:
+  - clang
+  - gcc
+env:
+  - CONFIG_OPTIONS="--without-x --without-paranrn --with-nrnpython=$(which python2)"
+  - CONFIG_OPTIONS="--without-x --without-paranrn --with-nrnpython=$(which python3)"
+os:
+  - linux
+before_install:
+  - echo $LANG
+  - echo $LC_ALL
+  - $CXX -v
+script:
+  - ./travis_build.sh .
+  - ./travis_build.sh build_out_of_tree
