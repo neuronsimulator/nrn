@@ -5,6 +5,7 @@ NEURON Python documentation
 
 Quick Links
 -----------
+- :ref:`genindex`
 - Commonly used:
     :class:`Deck`, `File <programming/io/file.html>`_, `Glyph <visualization/glyph.html>`_,
     `Graph <visualization/graph.html>`_, `GUIMath <programming/math/guimath.html>`_,
