@@ -108,7 +108,7 @@ extern void nrn_use_busywait(int);
 extern double* nrn_recalc_ptr(double*);
 void* nrn_interthread_enqueue(NrnThread*);
 extern void (*nrnthread_v_transfer_)(NrnThread*);
-extern Object* (*nrnpy_seg_from_sec_x)(Section*, double);
+Object* (*nrnpy_seg_from_sec_x)(Section*, double);
 #if NRN_MUSIC
 extern void nrnmusic_injectlist(void*, double);
 #endif

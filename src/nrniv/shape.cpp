@@ -50,8 +50,7 @@ extern Section** secorder;
 extern Point_process* ob2pntproc(Object*);
 extern Point_process* ob2pntproc_0(Object*);
 extern double* nrn_recalc_ptr(double*);
-
-Object* (*nrnpy_seg_from_sec_x)(Section*, double);
+extern Object* (*nrnpy_seg_from_sec_x)(Section*, double);
 }
 
 #if BEVELJOIN
@@ -264,8 +263,10 @@ ENDGUI
 }
 
 Object** nrniv_sh_nearest_seg(void* v) {
-	ShapeScene* ss = (ShapeScene*)v;
 	Object* obj = NULL;
+#if HAVE_IV
+IFGUI
+	ShapeScene* ss = (ShapeScene*)v;
 	ShapeSection* ssec = NULL;
 	double d = ss->nearest(*getarg(1), *getarg(2));
 	ssec = ss->selected();
@@ -274,12 +275,16 @@ Object** nrniv_sh_nearest_seg(void* v) {
 		obj = (*nrnpy_seg_from_sec_x)(ssec->section(), d);
 	}
 	--obj->refcount;
+ENDGUI
+#endif
 	return hoc_temp_objptr(obj);
 }
 
 Object** nrniv_sh_selected_seg(void* v) {
-	ShapeScene* ss = (ShapeScene*)v;
 	Object* obj = NULL;
+#if HAVE_IV
+IFGUI
+	ShapeScene* ss = (ShapeScene*)v;
 	ShapeSection* ssec = NULL;
 	ssec = ss->selected();
 	if (nrnpy_seg_from_sec_x && ssec) {
@@ -287,6 +292,8 @@ Object** nrniv_sh_selected_seg(void* v) {
 		obj = (*nrnpy_seg_from_sec_x)(ssec->section(), d);
 	}
 	--obj->refcount;
+ENDGUI
+#endif
 	return hoc_temp_objptr(obj);
 }
 
